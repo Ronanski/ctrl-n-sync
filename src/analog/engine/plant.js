@@ -1639,6 +1639,12 @@ function anStep(S, dt) {
           /* beta.254: a station without a REMOTE leg has only MAN / AUTO, so its status always follows (also after LOAD of a save point
              made before beta.253, where PIC-COBM.MAN was left at 1) */
           if (s.fman || s.rmSw == null) s.lf = 1;
+          /* an M / A / R command (latchMode) wrote the status of the whole tag: the station writes its own mode again (ctrls.js) */
+          if (s.me !== (AN.modeEp || 0)) {
+            s.me = AN.modeEp || 0;
+            s.lf = 1;
+            s.lk = null;
+          }
           if (s.lf) {
             const q = s.rmSw != null ? rt.st[s.rmSw] : null,
               kd = s.pk !== s.al ? 'MAN' : q && q.pk === 'A' ? 'REM' : 'LOC';
