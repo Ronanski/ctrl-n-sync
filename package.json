@@ -1,8 +1,7 @@
 {
-  "name": "logic-sim",
-  "version": "1.20.35",
+  "name": "lmyp-ots",
   "private": true,
-  "description": "DCS Logic Simulator (ABC analog + DITL digital). The sources are in src/; the build writes ONE html file.",
+  "description": "LMYP OTS: the operator training simulator of LMYP Unit 1. The sources are in src/; the build writes ONE html file, and tools/station/build.js adds the frame of the app.",
   "scripts": {
     "dev": "vite",
     "build": "node tools/build/build.js",
@@ -12,7 +11,8 @@
     "scenarios": "node tests/scenarios/run.js",
     "format": "prettier --write \"src/analog/**/*.js\" \"src/ui/**/*.js\" \"src/boot/**/*.js\" \"tests/**/*.js\" \"tools/**/*.js\"",
     "format:check": "prettier --check \"src/analog/**/*.js\" \"src/ui/**/*.js\" \"src/boot/**/*.js\"",
-    "build:app": "node tools/build/app-folder.js"
+    "build:app": "node tools/build/app-folder.js",
+    "build:page": "node tools/station/build.js"
   },
   "devDependencies": {
     "prettier": "^3.9.10",

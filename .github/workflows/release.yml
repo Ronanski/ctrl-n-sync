@@ -1,6 +1,6 @@
 name: Release apk + exe
 # Manual. Builds the app for Android (apk) and Windows (portable exe) and, with dry_run false, publishes a GitHub Release.
-# The version is the one in delivery/station/app.json:
+# The version is the one in delivery/app/app.json:
 #   X.Y.Z-beta.N = EA build  -> a pre-release named "<name> vX.Y.Z-beta.N (EA)"
 #   X.Y.Z        = Final     -> a release named "<name> vX.Y.Z" and the tag the Stable page of the site follows
 # input go must be exactly "GO v<version>". Files: <NAME>-<version>.apk, <NAME>-<version>-Windows.exe, <NAME>-<version>.html,
@@ -32,8 +32,8 @@ jobs:
           CODE=$(node -e "const m=process.argv[1].match(/^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$/);console.log(m[1]*1000000+m[2]*10000+m[3]*100+(m[4]?Math.min(+m[4],98):99))" "$V")
           {
             echo "version=$V"; echo "code=$CODE"; echo "ea=$EA"
-            echo "name=$(node -p "require('./delivery/station/app.json').name")"
-            echo "id=$(node -p "require('./delivery/station/app.json').id")"
+            echo "name=$(node -p "require('./delivery/app/app.json').name")"
+            echo "id=$(node -p "require('./delivery/app/app.json').id")"
             echo "file=$(node tools/station/build.js --file)"
           } >> "$GITHUB_OUTPUT"
           echo "v$V  code $CODE  EA $EA"
@@ -60,8 +60,8 @@ jobs:
           npm install --no-audit --no-fund
           npx cap add android
           npx cap sync android
-          # app icon (delivery/station/icons): launcher icons of every density + adaptive icon background
-          cp -r ../station/icons/android/res/. android/app/src/main/res/
+          # app icon (delivery/app/icons): launcher icons of every density + adaptive icon background
+          cp -r ../app/icons/android/res/. android/app/src/main/res/
           sed -i "s/versionName \".*\"/versionName \"${{ needs.gate.outputs.version }}\"/; s/versionCode [0-9]*/versionCode ${{ needs.gate.outputs.code }}/" android/app/build.gradle
           grep -E "versionName|versionCode" android/app/build.gradle
       - name: Build + sign
@@ -85,11 +85,11 @@ jobs:
         working-directory: delivery/desktop
         shell: bash
         run: |
-          node -e "const a=require('../station/app.json');require('fs').writeFileSync('config.json',JSON.stringify({name:a.name,url:a.site,data:a.name}))"
+          node -e "const a=require('../app/app.json');require('fs').writeFileSync('config.json',JSON.stringify({name:a.name,url:a.site,data:a.name}))"
           node ../../tools/station/build.js "$(ls ../../dist/logic-sim-v*.html | head -1)" station-page/index.html
           node ../../tools/build/app-folder.js station-page/index.html www
-          # app icon (delivery/station/icons): the exe file icon and the window icon
-          mkdir -p build && cp ../station/icons/icon.ico build/icon.ico && cp ../station/icons/png/icon-256.png icon.png
+          # app icon (delivery/app/icons): the exe file icon and the window icon
+          mkdir -p build && cp ../app/icons/icon.ico build/icon.ico && cp ../app/icons/png/icon-256.png icon.png
           npm install --no-audit --no-fund
           npx electron-builder --win portable -c.productName="${{ needs.gate.outputs.name }}" -c.appId=${{ needs.gate.outputs.id }} -c.extraMetadata.version=${{ needs.gate.outputs.version }}
           ls dist

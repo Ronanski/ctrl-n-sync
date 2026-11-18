@@ -22,11 +22,11 @@ writes `dist/logic-sim-v<version>.html`, the simulator page (the sources in `src
 node tools/station/build.js dist/logic-sim-v<version>.html out
 ```
 
-writes `out/LMYP-OTS-<version>.html`, the page of this app: the same html plus the frame. Name, version, app id and site address are in `delivery/station/app.json`.
+writes `out/LMYP-OTS-<version>.html`, the page of this app: the same html plus the frame. Name, version, app id and site address are in `delivery/app/app.json`.
 
 ## Versions
 
-The app has its own version in `delivery/station/app.json`: `1.0.0-beta.1`, `1.0.0-beta.2`, ... are the EA builds (Beta), `1.0.0` is the Final (Stable), then `1.0.1-beta.1` and so on. Every change that reaches `main` raises it. The simulator inside keeps its own version in `src/version.txt` (a save point is checked against that one); it changes only when the simulator sources change.
+The app has its own version in `delivery/app/app.json`: `1.0.0-beta.1`, `1.0.0-beta.2`, ... are the EA builds (Beta), `1.0.0` is the Final (Stable), then `1.0.1-beta.1` and so on. Every change that reaches `main` raises it. The simulator inside keeps its own version in `src/version.txt` (a save point is checked against that one); it changes only when the simulator sources change.
 
 ## Map
 
@@ -38,9 +38,9 @@ The app has its own version in `delivery/station/app.json`: `1.0.0-beta.1`, `1.0
 | `tools/station` | build of the app page (`build.js`) and of its icon files (`icons.js`) |
 | `tools/build`, `tools/engine`, `tools/version.js` | build of the simulator html, the engine in Node, the version |
 | `tests/` | headless checks |
-| `delivery/station` | name and id (`app.json`), icon, web manifest |
-| `delivery/android`, `delivery/desktop`, `delivery/pwa`, `delivery/signing` | apk, portable exe, service worker, apk key (never regenerate it) |
-| `docs/` | spec, handoff, versions, audits |
+| `delivery/app` | everything that names the app: `app.json` (name, version, id, site), `icon.svg` and the icon files made from it, `pwa/` (web manifest, icons, service worker) |
+| `delivery/android`, `delivery/desktop`, `delivery/signing` | the shells of the apk and of the portable exe, the apk key (never regenerate it) |
+| `docs/` | `SPEC.md`, `OPERATOR_GUIDE.md`, `DOCUMENT_INDEX.md`, `handoff/` (rules and findings), `hmi/`, `tcs/`, audits. The reports of the old versions, the turnovers and the Plant Tools stayed in `Ronanski/icms-master-tool` |
 | `document-references/` | plant documents: on the PC only, never committed (`INDEX.md` lists them) |
 
 ## Release

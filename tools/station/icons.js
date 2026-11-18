@@ -1,7 +1,7 @@
-// Makes the icon files of the Operator Station from delivery/station/icon.svg (run by hand after the svg changes; the files are committed).
+// Makes the icon files of the Operator Station from delivery/app/icon.svg (run by hand after the svg changes; the files are committed).
 // usage: node tools/station/icons.js <path of the playwright package> [chrome executable]
-// out: delivery/station/icons/png/icon-<n>.png, icon.ico, android/res/mipmap-*/ic_launcher*.png + values/ic_launcher_background.xml,
-//      delivery/station/pwa/icon-192.png + icon-512.png
+// out: delivery/app/icons/png/icon-<n>.png, icon.ico, android/res/mipmap-*/ic_launcher*.png + values/ic_launcher_background.xml,
+//      delivery/app/pwa/icon-192.png + icon-512.png
 const fs = require('fs'),
   path = require('path');
 const root = path.resolve(__dirname, '..', '..'),
