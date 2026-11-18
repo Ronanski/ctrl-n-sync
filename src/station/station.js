@@ -548,6 +548,64 @@
     }
     body.append(r);
   }
+  /* Engineer: the picked signal. The app explains a picked wire or block itself ("Why is it 55.00?" of its Engineer layout, the
+     element #scewhy: heading .scesec, lines .scewb, links .scelinks); that box is hidden under the station, so the station shows
+     the same words in a popup. Nothing is worked out here. */
+  let whyPop = null,
+    whySig = '',
+    whyShut = '';
+  function why() {
+    const w = eng ? document.getElementById('scewhy') : null,
+      hd = w && w.querySelector('.scesec'),
+      bd = w && w.querySelector('.scewb'),
+      head = hd ? hd.textContent.replace(/\s+/g, ' ').trim() : '',
+      lines = bd
+        ? (bd.children.length ? [...bd.children] : [bd])
+            .map(x => x.textContent.replace(/\s+/g, ' ').trim())
+            .filter(Boolean)
+        : [],
+      sig = head + '|' + lines.join('|');
+    if (!lines.length || /…\?$/.test(head)) {
+      if (whyPop) whyPop.hidden = true;
+      whySig = '';
+      return;
+    }
+    if (sig === whySig) return;
+    whySig = sig;
+    if (sig === whyShut) return;
+    whyShut = '';
+    if (!whyPop) {
+      whyPop = popup('Signal', '', 340);
+      whyPop.style.right = '12px';
+      whyPop.style.top = '56px';
+      const x = whyPop.querySelector('header .st-t');
+      x.onclick = () => {
+        whyPop.hidden = true;
+        whyShut = whySig;
+      };
+    }
+    const body = whyPop._body;
+    body.textContent = '';
+    body.append(E('p', 'st-upd', head));
+    for (const l of lines) body.append(E('p', 'st-why', l));
+    const open = [...w.querySelectorAll('.scelinks button')].find(b => /^Open /.test(b.textContent.trim()));
+    if (open && !open.disabled && !open.hidden) {
+      const r = E('div', 'st-row'),
+        b = E('button', 'st-b', open.textContent.trim());
+      b.title = open.title || '';
+      b.onclick = () => {
+        open.click();
+        setTimeout(() => {
+          tick();
+          paint();
+          zoom('read');
+        }, 600);
+      };
+      r.append(b);
+      body.append(r);
+    }
+    whyPop.hidden = false;
+  }
   /* Instructor: the starting point, the save points, the faults and the trips of the app, through its own controls and functions
      (the same ones its Instructor console presses: shellc-ins.js). A press that changes the plant asks for a second press within 5 s */
   let insPop = null;
@@ -868,6 +926,7 @@
       .trim();
   function tick() {
     updAsk();
+    why();
     /* the reader of the unit overview of the app (LS_LIVE.getV); the plant model value where the reader has none.
        After a start state is loaded and before the first Run the reader still holds the numbers of the state before (shellc-home.js
        "stale"): only the 150 MW state is its own snapshot, so the other states show the plant model value, or "--", until Run */
