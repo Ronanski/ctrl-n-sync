@@ -1883,12 +1883,26 @@ function anCompile(S) {
       a[0].fromDriver = 1;
     }
   }
+  /* 3.2.4 (live Cold start, coal feeder A RUNNING with feed 0 while B / C took the 4 T/H start feed): a sink connector circle that
+     touches two wires, one driven and one bare stub (ABC-004A connector 21 "SI0311": SI0311 and an undriven stub), linked BOTH to the
+     other end, and the stub (always 0) was written last, so the start feed SI0311 never reached the SW of FICCL1061A. A wire with no
+     driver carries no signal: when a sink end has a driven wire, only the driven wire feeds the other ends, and the bare stub is the
+     same wire (it follows the driven one). Same reading on ABC-003A connector 11 and ABC-027 connector A */
+  const drvNet = n => S.drv[n].some(d => d.k !== 'LINK');
   for (const k in by) {
     const sk = by[k].filter(c => c.sink),
       src = by[k].filter(c => !c.sink);
+    for (const d of sk) {
+      const dn = d.nets.filter(drvNet);
+      if (!dn.length) continue;
+      for (const a of d.nets) if (!dn.includes(a) && !S.drv[a].length && !S.link.some(q => q[0] === a)) S.link.push([a, dn[0]]);
+    }
     for (const s of src)
-      for (const d of sk)
-        for (const a of d.nets) for (const bn of s.nets) if (a !== bn && !S.drv[bn].length) S.link.push([bn, a]);
+      for (const d of sk) {
+        const dn = d.nets.filter(drvNet),
+          from = dn.length ? dn : d.nets;
+        for (const a of from) for (const bn of s.nets) if (a !== bn && !S.drv[bn].length) S.link.push([bn, a]);
+      }
   }
   /* the same signal tag written on several wires of one sheet is ONE signal (I.0937 on two places, M.0124 output and input) */
   {
@@ -2334,6 +2348,19 @@ function anInit(S) {
           if (!(c.o || []).some(m => R.has(m))) continue;
           for (const a of c.i || [])
             if (S.aoN.has(a) && R.has(a) && (c.o || []).some(m => fwd(m).has(a))) ((b.vel = true), (b.velNet = a));
+        /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18): the velocity form also when the fed-back MV is the A / M station output and not
+           an AO net: ABC-008 PICFG108A (IDF inlet damper) is drawn MV(n) = FF + (MV(n-1) - FF) + PID, the SUB (FF - MV) going straight
+           into the SUM with the PID output. Read as a position PID, its output was added again every scan: AUTO ran the damper
+           command to 39,200 % in seconds. Only a SUB whose output enters a SUM together with THIS PID's own output is taken (the
+           tracking SUB of ABC-011 / 012 that goes to a high check is not a velocity loop) */
+        if (!b.vel)
+          for (const c of S.blk) {
+            if (c.k !== 'SUB' || !(c.o || []).length) continue;
+            const sm = (S.cns[c.o[0]] || []).find(x => x.k === 'SUM' && (x.i || []).some(n => (b.o || []).includes(n)));
+            if (!sm) continue;
+            for (const a of c.i || [])
+              if (!S.aoN.has(a) && R.has(a) && fwd(c.o[0]).has(a)) ((b.vel = true), (b.velNet = a));
+          }
         }
       }
       const LG = ['AND', 'OR', 'NOT', 'FF', 'TPS', 'TON', 'TOF', 'TPV'];
