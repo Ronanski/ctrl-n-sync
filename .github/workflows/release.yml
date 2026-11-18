@@ -1,8 +1,13 @@
 name: Release apk + exe
-# Manual. Assets: the page (html), the apk (Android), the portable exe (Windows) and, when it exists, the release report pdf.
-# input go must be exactly "GO v<version>" (the version in the html file name). A Beta is never a release: it is the page of main at /beta/.
-# The apk and the exe carry the app inside (they open at once and work without internet); the page asks the site for a newer version
-# and the user chooses. The name, the app id and the site address come from delivery/station/app.json.
+# Manual. Builds the app for Android (apk) and Windows (portable exe) and, with dry_run false, publishes a GitHub Release.
+# The version is the one in delivery/station/app.json:
+#   X.Y.Z-beta.N = EA build  -> a pre-release named "<name> vX.Y.Z-beta.N (EA)"
+#   X.Y.Z        = Final     -> a release named "<name> vX.Y.Z" and the tag the Stable page of the site follows
+# input go must be exactly "GO v<version>". Files: <NAME>-<version>.apk, <NAME>-<version>-Windows.exe, <NAME>-<version>.html,
+# and <NAME>-<version>-Report.pdf when docs/versions/v<version>/Release-Report-v<version>.pdf exists.
+# The apk and the exe carry the app inside (they open at once and work without internet). The page asks the site for a newer
+# version of its channel (Stable or Beta, the switch is in the version popup) and installs it inside the app when the user agrees,
+# so a new apk / exe is needed only when the shell itself changes.
 # apk signing: delivery/signing/logic-sim.jks (self-signed, alias logicsim, made once). Never regenerate it: a new key means a reinstall.
 on:
   workflow_dispatch:
@@ -13,22 +18,25 @@ permissions: { contents: write }
 jobs:
   gate:
     runs-on: ubuntu-latest
-    outputs: { version: '${{ steps.v.outputs.version }}', tag: '${{ steps.v.outputs.tag }}', name: '${{ steps.a.outputs.name }}', id: '${{ steps.a.outputs.id }}', file: '${{ steps.a.outputs.file }}' }
+    outputs: { version: '${{ steps.v.outputs.version }}', code: '${{ steps.v.outputs.code }}', ea: '${{ steps.v.outputs.ea }}', name: '${{ steps.v.outputs.name }}', id: '${{ steps.v.outputs.id }}', file: '${{ steps.v.outputs.file }}' }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - id: v
         run: |
-          node tools/version.js --github
-          V=$(node tools/version.js)
-          case "$V" in *-beta*) echo "v$V is a Beta: set src/version.txt to the Stable number (no -beta.N) before the release"; exit 1;; esac
+          V=$(node tools/station/build.js --version)
           [ "${{ inputs.go }}" = "GO v$V" ] || { echo "go must be exactly: GO v$V"; exit 1; }
-      - id: a
-        run: |
-          echo "name=$(node -p "require('./delivery/station/app.json').name")" >> "$GITHUB_OUTPUT"
-          echo "id=$(node -p "require('./delivery/station/app.json').id")" >> "$GITHUB_OUTPUT"
-          echo "file=$(node -p "require('./delivery/station/app.json').name.replace(/[^A-Za-z0-9]+/g,'-')")" >> "$GITHUB_OUTPUT"
+          case "$V" in *-beta*) EA=true;; *) EA=false;; esac
+          # Android version code: X*1000000 + Y*10000 + Z*100 + (beta N, or 99 for the Final), so every later build is a higher number
+          CODE=$(node -e "const m=process.argv[1].match(/^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$/);console.log(m[1]*1000000+m[2]*10000+m[3]*100+(m[4]?Math.min(+m[4],98):99))" "$V")
+          {
+            echo "version=$V"; echo "code=$CODE"; echo "ea=$EA"
+            echo "name=$(node -p "require('./delivery/station/app.json').name")"
+            echo "id=$(node -p "require('./delivery/station/app.json').id")"
+            echo "file=$(node tools/station/build.js --file)"
+          } >> "$GITHUB_OUTPUT"
+          echo "v$V  code $CODE  EA $EA"
   apk:
     needs: gate
     runs-on: ubuntu-latest
@@ -47,14 +55,15 @@ jobs:
           {"appId":"${{ needs.gate.outputs.id }}","appName":"${{ needs.gate.outputs.name }}","webDir":"www","server":{"androidScheme":"https"}}
           EOF
           # the app is built into the apk as a FOLDER (index.html + js/*.js, same content as the single page; opens at once, works without internet)
-          node ../../tools/station/build.js "../../dist/logic-sim-v${{ needs.gate.outputs.version }}.html" station-page/index.html
+          node ../../tools/station/build.js "$(ls ../../dist/logic-sim-v*.html | head -1)" station-page/index.html
           node ../../tools/build/app-folder.js station-page/index.html www
           npm install --no-audit --no-fund
           npx cap add android
           npx cap sync android
           # app icon (delivery/station/icons): launcher icons of every density + adaptive icon background
           cp -r ../station/icons/android/res/. android/app/src/main/res/
-          sed -i "s/versionName \".*\"/versionName \"${{ needs.gate.outputs.version }}\"/" android/app/build.gradle
+          sed -i "s/versionName \".*\"/versionName \"${{ needs.gate.outputs.version }}\"/; s/versionCode [0-9]*/versionCode ${{ needs.gate.outputs.code }}/" android/app/build.gradle
+          grep -E "versionName|versionCode" android/app/build.gradle
       - name: Build + sign
         working-directory: delivery/android/android
         run: |
@@ -77,7 +86,7 @@ jobs:
         shell: bash
         run: |
           node -e "const a=require('../station/app.json');require('fs').writeFileSync('config.json',JSON.stringify({name:a.name,url:a.site,data:a.name}))"
-          node ../../tools/station/build.js "../../dist/logic-sim-v${{ needs.gate.outputs.version }}.html" station-page/index.html
+          node ../../tools/station/build.js "$(ls ../../dist/logic-sim-v*.html | head -1)" station-page/index.html
           node ../../tools/build/app-folder.js station-page/index.html www
           # app icon (delivery/station/icons): the exe file icon and the window icon
           mkdir -p build && cp ../station/icons/icon.ico build/icon.ico && cp ../station/icons/png/icon-256.png icon.png
@@ -100,18 +109,19 @@ jobs:
         env: { GH_TOKEN: '${{ github.token }}' }
         run: |
           V=${{ needs.gate.outputs.version }}
-          T=${{ needs.gate.outputs.tag }}
+          T=v$V
           N="${{ needs.gate.outputs.name }}"
           F="${{ needs.gate.outputs.file }}"
           mkdir rel
-          find out/apk -type f -name '*.apk' -print0 | while IFS= read -r -d '' f; do cp "$f" "rel/$F-$V.apk"; done
-          find out/exe -type f -name '*.exe' -print0 | while IFS= read -r -d '' f; do cp "$f" "rel/$F-$V-Windows.exe"; done
-          node tools/station/build.js "dist/logic-sim-v$V.html" "rel/$F-$V.html"
-          [ -f "docs/versions/v$V/Release-Report-v$V.pdf" ] && cp "docs/versions/v$V/Release-Report-v$V.pdf" "rel/$F-$V-Report.pdf" || echo "no release report pdf for v$V"
+          find out/apk -type f -name '*.apk' -print0 | while IFS= read -r -d '' f; do cp "$f" "rel/$F.apk"; done
+          find out/exe -type f -name '*.exe' -print0 | while IFS= read -r -d '' f; do cp "$f" "rel/$F-Windows.exe"; done
+          node tools/station/build.js "$(ls dist/logic-sim-v*.html | head -1)" "rel/$F.html"
+          [ -f "docs/versions/v$V/Release-Report-v$V.pdf" ] && cp "docs/versions/v$V/Release-Report-v$V.pdf" "rel/$F-Report.pdf" || echo "no release report pdf for v$V"
           ls rel
-          NOTES="$N $V (Stable). Files: $F-$V.apk (Android), $F-$V-Windows.exe (Windows, portable, no install), $F-$V.html (opens in a browser). The apps ask the site for a newer version and update when you agree."
+          if [ "${{ needs.gate.outputs.ea }}" = true ]; then KIND="EA build (Beta)"; TITLE="$N $T (EA)"; PRE=--prerelease; else KIND="Final (Stable)"; TITLE="$N $T"; PRE=--latest; fi
+          NOTES="$N $V, $KIND. Files: $F.apk (Android), $F-Windows.exe (Windows, portable, no install), $F.html (opens in a browser). The app asks the site for a newer version of its channel and installs it inside the app when you agree; the channel (Stable or Beta) is in the version popup."
           if gh release view "$T" >/dev/null 2>&1; then
             gh release upload "$T" rel/* --clobber
           else
-            gh release create "$T" rel/* --title "$N $T" --notes "$NOTES" --target "${{ github.sha }}"
+            gh release create "$T" rel/* --title "$TITLE" --notes "$NOTES" --target "${{ github.sha }}" $PRE
           fi

@@ -22,7 +22,11 @@ writes `dist/logic-sim-v<version>.html`, the simulator page (the sources in `src
 node tools/station/build.js dist/logic-sim-v<version>.html out
 ```
 
-writes `out/operator-station-v<version>.html`, the page of this app: the same html plus the frame. Name, app id and site address are in `delivery/station/app.json`.
+writes `out/LMYP-OTS-<version>.html`, the page of this app: the same html plus the frame. Name, version, app id and site address are in `delivery/station/app.json`.
+
+## Versions
+
+The app has its own version in `delivery/station/app.json`: `1.0.0-beta.1`, `1.0.0-beta.2`, ... are the EA builds (Beta), `1.0.0` is the Final (Stable), then `1.0.1-beta.1` and so on. Every change that reaches `main` raises it. The simulator inside keeps its own version in `src/version.txt` (a save point is checked against that one); it changes only when the simulator sources change.
 
 ## Map
 
@@ -41,6 +45,7 @@ writes `out/operator-station-v<version>.html`, the page of this app: the same ht
 
 ## Release
 
-- Beta: a merge to `main` when the Checks pass; the site shows it at `/beta/`.
-- Stable: only on "GO STABLE" from the user; `release.yml` by hand with `GO v<version>`.
+- Beta (EA): a merge to `main` when the Checks pass; the site shows it at `/beta/`. An EA apk / exe: `release.yml` by hand with `GO v<version>` while the version is `X.Y.Z-beta.N` (a pre-release).
+- Stable (Final): only on "GO STABLE" from the user; the version is set to `X.Y.Z`, then `release.yml` by hand with `GO v<version>`; the site shows that tag at `/`.
+- Files of a release: `LMYP-OTS-<version>.apk`, `LMYP-OTS-<version>-Windows.exe`, `LMYP-OTS-<version>.html`.
 - The site (`site.yml`) runs only while the repository is public: GitHub Pages of a private repository needs a paid plan.

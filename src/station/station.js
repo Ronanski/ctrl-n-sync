@@ -471,7 +471,10 @@
       E(
         'p',
         'st-none',
-        'Version ' + (VER || 'not known') + (sel ? ' · ' + (sel.value === 'beta' ? 'Beta' : 'Stable') + ' channel' : '')
+        'Version ' +
+          (VER || 'not known') +
+          (sel ? ' · ' + (sel.value === 'beta' ? 'Beta' : 'Stable') + ' channel' : '') +
+          (window.LS_STATION_SIM ? ' · simulator ' + window.LS_STATION_SIM : '')
       )
     );
     const r = E('div', 'st-row'),
