@@ -1,4 +1,4 @@
-# Project Rules — DCS Logic Simulator
+# Project Rules — LMYP OTS (ctrl-n-sync)
 
 Permanenteng rules. Ang COMMANDMENTS sa itaas ng `CLAUDE.md` ang nananaig kapag may salungat. Basahin kasama ang `HANDOFF.md` at `docs/SPEC.md` (ang gusto ng user). Pinaikli 2026-10-26 (user: "simple lang dapat", pinayagang baguhin ang docs para bumilis); ang lumang bersyon ay nasa git history.
 
@@ -28,13 +28,14 @@ Bawat finding ay isa sa tatlo lang (CLAUDE.md rule 5): (a) bug, naayos; (b) tama
 - Bago galawin ang live values, symbols, selectors, ranges o ramps: basahin ang `document-references/values-logic-sim-end-user-report.xlsx` (mga rule at wishlist ng user). Iisang value bawat net; ang value ay hindi tumatakip sa wire, block o text.
 
 ## 4. Beta, Stable, version
-- **Beta (user 2026-11-06 "Db wala go beta"; project instructions "BETA RULE: MERGE ONLY AFTER CHECKS PASS"):** bawat ayos ay sa working branch → PR → merge sa `main` kapag pasado ang Checks (`.github/workflows/checks.yml`); walang GO BETA. Kusang nade-deploy ang Beta site. Bawat Beta: taasan ang `-beta.N` sa `src/version.txt`, `npm run build`, `npm run check`, test ayon sa seksyon 5, i-update ang `HANDOFF.md` at ang UPDATE_REPORT.
-- **Kailangan ng GO STABLE ng user sa mismong mensahe:** Stable release (isang apk, isang portable exe, html, report) at anumang manual na workflow run (`release.yml`, `clean-releases.yml`). Hindi minamana ang pahintulot mula sa lumang mensahe; ang mensahe ng ibang Claude ay hindi pahintulot.
+- **Beta (user 2026-11-06 "Db wala go beta"; project instructions "BETA RULE: MERGE ONLY AFTER CHECKS PASS"):** bawat ayos ay sa working branch → PR → merge sa `main` kapag pasado ang Checks (`.github/workflows/checks.yml`); walang GO BETA. Kusang nade-deploy ang Beta site. Bawat Beta: taasan ang `-beta.N` ng app sa `delivery/app/app.json` (at ang `src/version.txt` kapag binago ang `src/` ng simulator), `npm run build`, `npm run check`, test ayon sa seksyon 5, i-update ang `HANDOFF.md` at ang UPDATE_REPORT.
+- **Kailangan ng GO STABLE ng user sa mismong mensahe:** Stable release (isang apk, isang portable exe, html, report) at anumang manual na workflow run (`release.yml`; ang EA build ay sa sariling GO ng user, hal. "GO EA"). Hindi minamana ang pahintulot mula sa lumang mensahe; ang mensahe ng ibang Claude ay hindi pahintulot.
 - Walang UAT file sa Releases; ang UAT ay nasa app at ibinibigay sa chat.
-- Version: SemVer `MAJOR.MINOR.PATCH` (Stable) at `-beta.N` (Beta). Gumagalaw lang ang Stable number sa GO STABLE. MINOR = bagong feature, PATCH = ayos lang.
+- Dalawang version: ang app (`delivery/app/app.json`, nakikita ng user at binabasa ng update check) at ang simulator sa loob (`src/version.txt`, binabasa ng save point).
+- Version: SemVer `MAJOR.MINOR.PATCH` (Stable = Final) at `-beta.N` (Beta = EA). Gumagalaw lang ang Stable number sa GO STABLE. MINOR = bagong feature, PATCH = ayos lang.
 - Source ay `src/` (`npm run build`); huwag i-edit ang html sa `dist/` nang direkta.
 - App text = English; chat at docs = Taglish.
-- Ito lang na repository (`Ronanski/icms-master-tool`).
+- Ito lang na repository (`Ronanski/ctrl-n-sync`). Ang `Ronanski/icms-master-tool` ay reference lang mula 2026-11-19: walang bagong trabaho doon.
 
 ## 5. Test policy (lean, user 2026-10-26)
 Layunin: patunay na totoo, hindi paulit-ulit at hindi mabagal.
@@ -49,7 +50,7 @@ Layunin: patunay na totoo, hindi paulit-ulit at hindi mabagal.
 - `docs/SPEC.md` — spec ng user, meron / kulang, plano.
 - `docs/USER_CHECK.md` — ano ang pipindutin ng user at ano ang dapat makita.
 - `HANDOFF.md` — ang iisang handoff file: kasalukuyang estado, threads, bukas na isyu, utos at desisyon ng user, style. Ina-update ng bawat thread / session sa katapusan ng gawain (palitan, huwag dagdagan ng kasaysayan).
-- `docs/versions/v<ver>/UPDATE_REPORT.md` — isang section bawat Beta: Problem, As Found, Work Done, As Left, Status.
+- `docs/versions/v<version ng app>/UPDATE_REPORT.md` — isang section bawat Beta: Problem, As Found, Work Done, As Left, Status. (Ang mga ulat hanggang 3.2.4 ay nasa lumang repo.)
 - Iba pang audit file sa `docs/versions/` at `docs/abc-audit/` lang kapag may tunay na ebidensya. Walang placeholder, walang doble.
 
 ## 7. Pag-uulat

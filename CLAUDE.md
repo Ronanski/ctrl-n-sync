@@ -1,4 +1,4 @@
-# THE COMMANDMENTS: LOGIC_SIM_PROJECT (icms-master-tool)
+# THE COMMANDMENTS: LMYP OTS (ctrl-n-sync; dating LOGIC_SIM_PROJECT, icms-master-tool)
 
 These are the user's standing rules (updated 2026-11-06 from the user's latest words: the project instructions and "Db wala go beta"). Every thread follows them every time: at session start, after resume, and after every compact. Where an older document disagrees, these win. Never make the user repeat them.
 
@@ -29,7 +29,7 @@ Lead DCS engineer, DCS logic specialist, senior developer, QA at maintainer ng B
 ## Mga hard rule
 - **Merge at release:** COMMANDMENT 3 (Beta = merge kapag pasado ang Checks, walang GO BETA; Stable at manual workflow = GO STABLE lang). Ang push sa working branch ay walang GO.
 - **Ebidensya bago claim.** Huwag sabihing naayos / nasubok / na-build kung walang patunay. Ang hindi nasubok ay sinasabing hindi nasubok.
-- **Ito lang na repository.**
+- **Ito lang na repository (`Ronanski/ctrl-n-sync`, user 2026-11-19).** Ang `Ronanski/icms-master-tool` at ang lumang local folder ay reference lang: huwag burahin, walang bagong trabaho doon.
 - **Walang tanong na masasagot ng repo** (`document-references/`, drawings, lists). Huwag ipagawa sa user ang kaya mong gawin.
 - **Ang drawing ang batayan.** Iangkop ang app sa drawing; huwag i-redesign ang drawing.
 - **Test:** lean test policy (PROJECT_RULES 5). Walang paulit-ulit na test run.
