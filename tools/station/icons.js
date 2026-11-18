@@ -8,9 +8,9 @@ const root = path.resolve(__dirname, '..', '..'),
   dir = path.join(root, 'delivery', 'station'),
   svg = fs.readFileSync(path.join(dir, 'icon.svg'), 'utf8'),
   /* the adaptive icon of Android: the marks only (the plate is the background colour of the launcher) */
-  fore = svg.replace(/<rect[^>]*rx="88"[^>]*\/>\s*/g, ''),
-  PLATE = '#14181C';
-if (fore === svg) throw new Error('icon.svg: no plate rect (rx="88") found');
+  fore = svg.replace(/<rect[^>]*rx="108"[^>]*\/>\s*/g, ''),
+  PLATE = '#0A0A0B';
+if (fore === svg) throw new Error('icon.svg: no plate rect (rx="108") found');
 const uri = s => 'data:image/svg+xml;base64,' + Buffer.from(s).toString('base64');
 const put = (f, b) => {
   fs.mkdirSync(path.dirname(f), { recursive: true });
@@ -22,13 +22,13 @@ const put = (f, b) => {
     process.argv[3] ? { executablePath: process.argv[3], headless: true } : { headless: true }
   );
   const p = await (await b.newContext({ viewport: { width: 600, height: 600 }, deviceScaleFactor: 1 })).newPage();
-  /* kind: 'sq' the icon as drawn, 'round' the marks at 78 % on a circle of the plate colour, 'fore' the marks at 66 % on a clear ground */
+  /* kind: 'sq' the icon as drawn, 'round' the marks on a circle of the plate colour, 'fore' the marks on a clear ground (the mark of this icon is small: it already sits inside the safe zone of an adaptive icon) */
   const shot = async (n, kind) => {
     const img =
       kind === 'fore'
-        ? `<img src="${uri(fore)}" style="width:66%;height:66%;margin:17%">`
+        ? `<img src="${uri(fore)}" style="width:100%;height:100%">`
         : kind === 'round'
-          ? `<img src="${uri(fore)}" style="width:78%;height:78%;margin:11%">`
+          ? `<img src="${uri(fore)}" style="width:100%;height:100%">`
           : `<img src="${uri(svg)}" style="width:100%;height:100%">`;
     await p.setContent(
       `<body style="margin:0;background:transparent"><div id="i" style="width:${n}px;height:${n}px;overflow:hidden;${kind === 'round' ? 'border-radius:50%;background:' + PLATE : ''}">${img}</div></body>`

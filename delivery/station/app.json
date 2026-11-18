@@ -1,5 +1,6 @@
 {
-  "name": "ctrl-n-sync",
+  "name": "SYNC",
+  "display": ">_SYNC",
   "id": "com.ronanski.ctrlnsync",
   "site": "https://ronanski.github.io/ctrl-n-sync/"
 }

@@ -12,7 +12,7 @@
 const fs = require('fs'),
   path = require('path');
 const APP = require('../../delivery/station/app.json'),
-  NAME = APP.name,
+  NAME = APP.display || APP.name,
   SITE = "'https://ronanski.github.io/icms-master-tool/'";
 const root = path.resolve(__dirname, '..', '..'),
   src = process.argv[2],
@@ -53,7 +53,7 @@ const swap = (re, to, what) => {
 };
 swap(/<link rel="icon"[^>]*>/, '<link rel="icon" type="image/png" sizes="64x64" href="' + png(64) + '">', 'tab icon');
 swap(/<link rel="apple-touch-icon"[^>]*>/, '<link rel="apple-touch-icon" href="' + png(192) + '">', 'touch icon');
-swap(/<meta name="theme-color"[^>]*>/, '<meta name="theme-color" content="#14181c">', 'theme colour');
+swap(/<meta name="theme-color"[^>]*>/, '<meta name="theme-color" content="#0a0a0b">', 'theme colour');
 const f = /\.html$/i.test(out) ? out : path.join(out, 'operator-station-v' + ver + '.html');
 fs.mkdirSync(path.dirname(f), { recursive: true });
 fs.writeFileSync(f, h);

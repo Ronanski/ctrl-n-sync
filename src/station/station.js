@@ -450,7 +450,7 @@
   const speedSel = () => [...document.querySelectorAll('select')].find(x => x.title === 'Simulation speed') || null;
   /* the name and the version the build wrote (tools/station/build.js). The <title> of the page keeps its version: the update check
      and the channel switch of the app read it */
-  const NAME = window.LS_STATION_NAME || 'ctrl-n-sync',
+  const NAME = window.LS_STATION_NAME || '>_SYNC',
     VER = window.LS_STATION_VER || (document.title.match(/v\d+(\.\d+)+(-beta\.\d+)?/) || [''])[0];
   document.title = NAME + (VER ? ' ' + VER : '');
   /* version popup: check for a new version (the update check of the app) and the channel (its own Stable / Beta switch) */
