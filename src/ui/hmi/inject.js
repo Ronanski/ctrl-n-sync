@@ -1,0 +1,141 @@
+// Puts the operator faceplate (css + js) into the html between markers. Idempotent. Usage: node src/ui/hmi/inject.js [html]
+const fs = require('fs');
+const html =
+  process.argv[2] ||
+  fs
+    .readdirSync('dist')
+    .map(x => 'dist/' + x)
+    .find(x => /logic-sim-v\d+\.\d+\.\d+(?:-beta\.\d+)?\.html$/.test(x));
+let s = fs.readFileSync(html, 'utf8');
+const A = '<!--HMI-BEGIN-->',
+  B = '<!--HMI-END-->';
+const i = s.indexOf(A);
+if (i >= 0) {
+  const j = s.indexOf(B);
+  s = s.slice(0, i) + s.slice(j + B.length);
+}
+const block =
+  A +
+  '<style id="hmicss">' +
+  fs.readFileSync(__dirname + '/hmi.css', 'utf8') +
+  '</style><script id="hmijs">' +
+  fs.readFileSync(__dirname + '/hmi.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/overview.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/events.js', 'utf8') +
+  '</script><style id="plantcss">' +
+  fs.readFileSync(__dirname + '/../plant/plant.css', 'utf8') +
+  /* 3.2.0-beta.74: the operator pop-out faceplate */
+  fs.readFileSync(__dirname + '/../plant/fp-pop.css', 'utf8') +
+  /* 3.2.4 (user 2026-11-17): HX, the realistic HMI pages. In the app they are always in the dark set of their colours: the dark
+     block of hx.css also on .hx-app */
+  fs.readFileSync(__dirname + '/../plant/hx/hx.css', 'utf8').split(":root[data-theme='dark']").join(":root[data-theme='dark'],.hx-app") +
+  '.hx-app{width:100%;height:100%;overflow:hidden;background:var(--hx-bg);color:var(--hx-ink)}.hx-app .hx-page{border:0;border-radius:0}.hx-app .hx-head{padding:6px 14px;flex-wrap:nowrap}.hx-app .hx-head p{display:none}.hx-app .hx-legend{display:none}' +
+  '</style><script id="plantjs">' +
+  (fs.existsSync(__dirname + '/../plant/systems.js') ? fs.readFileSync(__dirname + '/../plant/systems.js', 'utf8') : '') +
+  '\n' +
+  /* 2026-10-26: the NEW HMI screens (own vector graphics, roadmap step 6) */
+  fs.readFileSync(__dirname + '/../plant/hmi2.js', 'utf8') +
+  '\n' +
+  /* 2026-10-29: 030 SEAWATER (own vector graphics, STEEL) */
+  fs.readFileSync(__dirname + '/../plant/hmi-sw.js', 'utf8') +
+  '\n' +
+  /* 3.2.0-beta.70: HSYM, the shared symbol library of the HMI pages (pipes, pump, valves, tank, gauge, animation) */
+  fs.readFileSync(__dirname + '/../plant/hmi-sym.js', 'utf8') +
+  '\n' +
+  /* 3.2.0-beta.63: MAKE-UP WATER (own vector graphics, STEEL; PR-OPE-5002 section 7) */
+  fs.readFileSync(__dirname + '/../plant/hmi-mu.js', 'utf8') +
+  '\n' +
+  /* 3.2.0-beta.66: 036 TURBINE OIL (own vector graphics, STEEL; PR-OPE-5002 TURBINE CONTROL OIL) */
+  fs.readFileSync(__dirname + '/../plant/hmi-to.js', 'utf8') +
+  '\n' +
+  /* 3.2.0-beta.68: INSTRUMENT & PLANT AIR (own vector graphics, STEEL; PR-OPE-5002 sections 9 ~ 12) */
+  fs.readFileSync(__dirname + '/../plant/hmi-ia.js', 'utf8') +
+  '\n' +
+  /* 3.2.0-beta.69: 027 CLOSED COOLING WATER (own vector graphics, STEEL; PR-OPE-5002 sections 7 ~ 8) */
+  fs.readFileSync(__dirname + '/../plant/hmi-cw.js', 'utf8') +
+  '\n' +
+  /* 038 AIR PREHEATER (own vector graphics, STEEL; PR-OPE-5002 sections 17 / 27; the #59 two faceplates) */
+  fs.readFileSync(__dirname + '/../plant/hmi-aph.js', 'utf8') +
+  '\n' +
+  /* 2026-11-01: 039 RH / SH BIASING DAMPER (approved mockup) */
+  fs.readFileSync(__dirname + '/../plant/hmi-bias.js', 'utf8') +
+  '\n' +
+  /* 2026-11-03 (user): TEMPORARY HMI pages for the live test until each new HMI page is built (hmi-temp.js) */
+  fs.readFileSync(__dirname + '/../plant/hmi-temp.js', 'utf8') +
+  '\n' +
+  /* 3.2.1 (user 2026-11-04): the approved temporary HMI mockup pages drawn exactly as the mockup (tools/hmi-mock/*.py) */
+  fs.readFileSync(__dirname + '/../plant/hmi-mock.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-cw.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-mu.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-ia.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-to.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-cd.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-fw.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-ms.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-as.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-fg.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-pt.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-db.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-cls.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-ts.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-ea.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-sb.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-pb.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-sp.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-gn.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-ex.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/hmi-mock-ov.js', 'utf8') +
+  '\n' +
+  /* 3.2.4 (user 2026-11-17): HX, the realistic HMI pages (src/ui/plant/hx/README.md): symbols, engine, registry, pages, adapter */
+  ['hx-real.js', 'hx-core.js', 'hx-registry.js', 'hx-page-reheat.js', 'hx-page-boiler-steam.js', 'hx-page-feedwater.js', 'hx-page-condensate.js', 'hx-page-furnace-gas.js', 'hx-page-combustion-air.js', 'hx-page-coal.js', 'hx-page-limestone-sand.js', 'hx-page-ash.js', 'hx-page-sampling.js', 'hx-page-overview.js', 'hx-page-oil-burners.js', 'hx-page-aux-steam.js', 'hx-page-extraction.js', 'hx-page-turbine-oil.js', 'hx-page-sea-water.js', 'hx-page-makeup-cooling.js', 'hx-page-turbine.js', 'hx-page-purge-trip.js', 'hx-page-generator.js', 'hx-page-sootblowers.js', 'hx-page-compressed-air.js', 'hx-app.js'].map(x => fs.readFileSync(__dirname + '/../plant/hx/' + x, 'utf8')).join('\n') +
+  '\n' +
+  /* 3.2.0-beta.74: the operator pop-out faceplate beside the clicked equipment (motor; the controllers of plant.js) */
+  fs.readFileSync(__dirname + '/../plant/fp-pop.js', 'utf8') +
+  '\n' +
+  /* 3.2.0-beta.49: the old snapshot pictures (hmibg.js) and snapshot value pages (values.js) deleted with the old screens */
+  fs.readFileSync(__dirname + '/../plant/plant.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/wiring.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/calc.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/relay.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/iogroups.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/memspace.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/valvectl.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/tracer.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/dcslists.js', 'utf8') +
+  '\n' +
+  fs.readFileSync(__dirname + '/../plant/library.js', 'utf8') +
+  '</script>' +
+  B;
+const k = s.lastIndexOf('</body>');
+fs.writeFileSync(html, s.slice(0, k) + block + s.slice(k));
+console.log('operator faceplate injected into', html);

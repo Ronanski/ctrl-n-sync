@@ -1,0 +1,517 @@
+/* ===== RE-SHELL LAYOUT C, step 3 of 7 (build plan approved by the user 2026-11-09, mockup C RNYt8ceyxutMvDyEt2UFnu, screens
+   team-files/reshell/check/shots 03 ~ 08 and 18): the system page in the new frame, the two faceplates in the C look and placement, the
+   turbine start panel on the Steam and turbine page. Only with ?shell=c (body.sc, shellc.js). It does not change any logic: the bar
+   buttons press the Plant view's own buttons, the turbine panel presses the buttons of the "TCS / Field" menu (app.js tcsroll, tcssync,
+   tcsload, tcstarget, tcsholdoff, tcsshut), and the faceplates are only moved (fp-pop.js / plant.js still build and drive them). ===== */
+(function () {
+  let want = false;
+  try {
+    want = localStorage.getItem('ls-shell') === 'c';
+  } catch (e) {}
+  if (!want) return;
+  const E = (t, cls, txt) => {
+    const e = document.createElement(t);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  };
+  const call = (f, d) => {
+    try {
+      return f();
+    } catch (e) {
+      return d;
+    }
+  };
+  const $ = id => document.getElementById(id);
+
+  /* ---------- (a) the page bar: breadcrumb (shellc-home.js) · Full screen · prev / next · Fit · LIVE ......... the last event ---------- */
+  let bar = null,
+    ev = null,
+    fsOut = null;
+  function full(on) {
+    document.body.classList.toggle('scfull', on);
+    /* Mina beta.213: the button showed with no Full screen pressed (a button rule of the app beat display:none): hidden unless on */
+    if (fsOut) fsOut.hidden = !on;
+    try {
+      if (on && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    } catch (e) {}
+    dispatchEvent(new Event('resize'));
+  }
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && document.body.classList.contains('scfull')) full(false);
+  });
+  addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.body.classList.contains('scfull') && !document.querySelector('.fpo-box,#plfp'))
+      full(false);
+  });
+  function buildBar() {
+    const ws = $('plantws'),
+      b = ws && ws.querySelector('.plbar');
+    if (!b) return false;
+    bar = b;
+    const fs = E('button', 'scfs', 'Full screen');
+    fs.type = 'button';
+    fs.title = 'The page takes the whole screen; the values strip stays (Esc or "Leave full screen" to come back)';
+    fs.onclick = () => full(true);
+    ev = E('span', 'scpev');
+    ev.setAttribute('aria-live', 'polite');
+    b.append(fs, ev);
+    fsOut = E('button', 'scfsout', 'Leave full screen');
+    fsOut.type = 'button';
+    fsOut.hidden = true;
+    fsOut.onclick = () => full(false);
+    document.body.append(fsOut);
+    return true;
+  }
+  /* the bar leaves room for the breadcrumb (a fixed button of shellc-home.js over the bar's left end) */
+  function tickBar() {
+    if (!bar) return;
+    const c = document.querySelector('.sccrumb'),
+      w = c && c.offsetWidth ? c.offsetWidth : 0;
+    bar.style.setProperty('--sccw', w + 'px');
+    /* shell audit M23: where the page starts under the page bar and the turbine panel (the tablet faceplate panel starts there) */
+    const m = $('plmid');
+    if (m) {
+      const M = m.getBoundingClientRect(),
+        tb = tsp && !tsp.hidden ? tsp.getBoundingClientRect() : null,
+        bb = bar.offsetParent ? bar.getBoundingClientRect() : null,
+        y = Math.max(0, tb && tb.height ? tb.bottom - M.top : 0, bb && bb.height ? bb.bottom - M.top : 0);
+      m.style.setProperty('--scph', Math.round(y) + 'px');
+    }
+    const L = call(() => window.lsEvents, null),
+      e = L && L[0],
+      t = e ? (e.sh && e.sh !== 'DCS' ? e.sh + ': ' : '') + (e.text || '') + (e.t ? ' · ' + e.t : '') : '';
+    if (ev.textContent !== t) {
+      ev.textContent = t;
+      ev.title = t ? 'Last event (the Events tab of the alarm list has them all)' : '';
+    }
+  }
+
+  /* ---------- (b) faceplate placement: beside the equipment, never over the pipes that run into it ---------- */
+  /* the equipment that was pressed (the same element fp-pop.js anchors to), in screen coordinates */
+  let anchor = null;
+  document.addEventListener(
+    'pointerdown',
+    e => {
+      const t = e.target && e.target.closest ? e.target : null,
+        m = $('plmid');
+      if (!t || !m || !m.contains(t) || t.closest('.fpo-box,#plfp,#sctsp,.plbar')) return;
+      /* a realistic plant page: the whole equipment with its name is the anchor, so the faceplate does not cover the name */
+      const a =
+        t.closest('.hx-node') ||
+        t.closest('[data-yn],[data-hit],[data-mdh],[data-fan],[data-dmp],[data-eqb],[data-vth],[data-fvh]') ||
+        t.closest('g') ||
+        t;
+      /* Mina beta.213 (Y/N of seawater pump A covered the pumps): the Y/N square stands for its equipment, so the faceplate keeps clear of
+         the square AND the machine it belongs to (data-yn = the id of its data-hit) */
+      const yn = a.dataset && a.dataset.yn,
+        mh = yn ? m.querySelector('[data-hit="' + CSS.escape(yn) + '"]') : null;
+      anchor = { el: a, mh, r: a.getBoundingClientRect(), at: Date.now() };
+    },
+    true
+  );
+  const hitR = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  /* the free area: the page minus the Training dock (fp-pop.js area(), the same rule) */
+  function area() {
+    const R = $('plmid').getBoundingClientRect(),
+      a = { left: R.left, top: R.top, right: R.right, bottom: R.bottom },
+      d = $('gdock'),
+      D = d && d.offsetParent !== null ? d.getBoundingClientRect() : null;
+    if (D && D.width && D.height) {
+      if (document.documentElement.classList.contains('gd-bottom')) {
+        if (D.top < a.bottom && D.top > a.top + 120) a.bottom = D.top;
+      } else if (D.left < a.right && D.left > a.left + 200) a.right = D.left;
+    }
+    const pb = bar && bar.offsetParent ? bar.getBoundingClientRect() : null;
+    if (pb && pb.bottom > a.top && pb.bottom < a.bottom) a.top = pb.bottom;
+    const tp = tsp && !tsp.hidden ? tsp.getBoundingClientRect() : null;
+    if (tp && tp.height && tp.bottom > a.top && tp.bottom < a.bottom) a.top = tp.bottom;
+    return { R, a };
+  }
+  /* points along every line of the drawing that touches the equipment (pipes, ducts, signal lines), in screen pixels */
+  function pipePts(r) {
+    const m = $('plmid'),
+      near = { left: r.left - 14, right: r.right + 14, top: r.top - 14, bottom: r.bottom + 14 },
+      P = [];
+    for (const el of m.querySelectorAll('svg path, svg line, svg polyline')) {
+      if (el.closest('.fpo-box,#plfp,#sctsp')) continue;
+      const b = el.getBoundingClientRect();
+      if ((!b.width && !b.height) || !hitR(b, near) || (b.width < 30 && b.height < 30)) continue;
+      const len = call(() => el.getTotalLength(), 0),
+        M = call(() => el.getScreenCTM(), null);
+      if (!len || !M) continue;
+      const k = Math.hypot(M.a, M.b) || 1,
+        n = Math.min(400, Math.max(2, Math.ceil((len * k) / 6)));
+      let touch = false;
+      const pts = [];
+      for (let i = 0; i <= n; i++) {
+        const p = call(() => el.getPointAtLength((len * i) / n), null);
+        if (!p) continue;
+        const x = M.a * p.x + M.c * p.y + M.e,
+          y = M.b * p.x + M.d * p.y + M.f;
+        pts.push([x, y]);
+        if (x >= near.left && x <= near.right && y >= near.top && y <= near.bottom) touch = true;
+      }
+      if (touch) P.push(...pts);
+    }
+    return P;
+  }
+  function placeC(el) {
+    if (!el.isConnected || !anchor || Date.now() - anchor.at > 4000 || document.body.classList.contains('scnarrow'))
+      return;
+    const { R, a } = area(),
+      w = el.offsetWidth,
+      h = el.offsetHeight,
+      r0 = anchor.el.isConnected ? anchor.el.getBoundingClientRect() : anchor.r,
+      q = anchor.mh && anchor.mh.isConnected ? anchor.mh.getBoundingClientRect() : null,
+      r =
+        q && q.width
+          ? {
+              left: Math.min(r0.left, q.left),
+              top: Math.min(r0.top, q.top),
+              right: Math.max(r0.right, q.right),
+              bottom: Math.max(r0.bottom, q.bottom)
+            }
+          : r0;
+    if (!w || !h) return;
+    const P = pipePts(r),
+      other = [...document.querySelectorAll('.fpo-box,#plfp.fpo-near')]
+        .filter(x => x !== el && x.offsetParent)
+        .map(x => x.getBoundingClientRect()),
+      g = 10,
+      cx = (r.left + r.right) / 2,
+      cy = (r.top + r.bottom) / 2,
+      clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    /* above, below, right, left of the equipment (as the mockup: the control faceplate above the pump), then the same sides slid along */
+    const C = [];
+    const add = (x, y) => C.push([clamp(x, a.left + 6, a.right - w - 6), clamp(y, a.top + 6, a.bottom - h - 6)]);
+    add(cx - w / 2, r.top - g - h);
+    add(cx - w / 2, r.bottom + g);
+    add(r.right + g, cy - h / 2);
+    add(r.left - g - w, cy - h / 2);
+    add(r.right + g, r.top);
+    add(r.right + g, r.bottom - h);
+    add(r.left - g - w, r.top);
+    add(r.left - g - w, r.bottom - h);
+    add(r.left, r.top - g - h);
+    add(r.right - w, r.top - g - h);
+    add(r.left, r.bottom + g);
+    add(r.right - w, r.bottom + g);
+    add(a.right - w - 6, a.top + 6);
+    add(a.left + 6, a.top + 6);
+    let best = null,
+      bs = 1e9;
+    C.forEach(([x, y], i) => {
+      const q = { left: x, top: y, right: x + w, bottom: y + h };
+      let s = hitR(q, { left: r.left - 4, top: r.top - 4, right: r.right + 4, bottom: r.bottom + 4 }) ? 1e6 : 0;
+      for (const o of other) if (hitR(q, o)) s += 1e5;
+      /* compact shell step 4 (approved mockup): the small faceplate stays BESIDE its equipment. A line under it counts a little
+         (capped), the far corners of the page are the last choice (the big faceplate always landed at the top right) */
+      let np = 0;
+      for (const [px, py] of P) if (px > q.left && px < q.right && py > q.top && py < q.bottom) np++;
+      s += Math.min(60, np * 2);
+      if (i >= C.length - 2) s += 500;
+      s += i; /* the earlier side wins a tie */
+      if (s < bs) ((bs = s), (best = [x, y]));
+    });
+    if (!best) return;
+    el.style.left = Math.round(best[0] - R.left) + 'px';
+    el.style.top = Math.round(best[1] - R.top) + 'px';
+    el.dataset.side = 'n';
+  }
+  /* a faceplate that opens (fp-pop.js .fpo-box, the controller faceplate #plfp of plant.js) is placed again by the rule above, once,
+     after its content is drawn; a faceplate the operator drags stays where it is put */
+  function watch() {
+    const m = $('plmid');
+    if (!m) return false;
+    new MutationObserver(L => {
+      for (const x of L)
+        for (const n of x.addedNodes)
+          if (n.nodeType === 1 && (n.classList.contains('fpo-box') || n.id === 'plfp')) {
+            words(n);
+            requestAnimationFrame(() => requestAnimationFrame(() => placeC(n)));
+          }
+    }).observe(m, { childList: true });
+    return true;
+  }
+  /* Mina beta.213 (COMMANDMENT 5, no acronyms as labels): in the C layout the faceplate shows full English words; the name of the
+     equipment on top and its tag under it. Only the text on screen changes (fp-pop.js builds and drives the faceplate as before) */
+  const LBL = {
+    DCS: 'Control room',
+    LCP: 'Local panel',
+    'E-STOP': 'Emergency stop',
+    VCB: 'Breaker',
+    RELAY: 'Protection relay',
+    STATUS: 'Status',
+    SELECTOR: 'Selector',
+    MODE: 'Mode',
+    POSITION: 'Position',
+    AUXILIARY: 'Auxiliary'
+  };
+  function words(box) {
+    const fix = () => {
+      for (const l of box.querySelectorAll('.fpo-l'))
+        if (LBL[l.textContent.trim()]) l.textContent = LBL[l.textContent.trim()];
+      for (const p of box.querySelectorAll('.fpo-lp')) {
+        const tn = [...p.childNodes].find(x => x.nodeType === 3 && x.nodeValue.trim() === 'VCB');
+        if (tn) tn.nodeValue = 'Breaker';
+      }
+      /* the permissive rows: Y = red = complete, N = green = not complete (COMMANDMENT 5); "must be 0" stays in the tooltip */
+      for (const li of box.querySelectorAll('.fpo-il li')) {
+        const i = li.querySelector(':scope > i');
+        if (!i || !(li.classList.contains('ok') || li.classList.contains('bad'))) continue;
+        const y = li.classList.contains('ok') ? 'Y' : 'N';
+        if (i.textContent !== y) i.textContent = y;
+      }
+    };
+    /* the header once: "SWP-A" over "Seawater pump A · DITL-29A" becomes "Seawater pump A" over "SWP-A · DITL-29A" */
+    const b = box.querySelector('.fpo-tt > b, .plfph > b'),
+      sm = box.querySelector('.fpo-tt > small');
+    if (b && sm && !box.dataset.scw) {
+      const tag = b.textContent.trim(),
+        parts = sm.textContent.split(' · '),
+        name = (parts[0] || '').trim();
+      if (name && name.includes(' ') && !tag.includes(' ')) {
+        b.textContent = name;
+        sm.textContent = [tag, ...parts.slice(1)].join(' · ');
+      }
+      box.dataset.scw = '1';
+    }
+    fix();
+    new MutationObserver(fix).observe(box, { childList: true, subtree: true });
+  }
+  /* tablet (narrow): the faceplate is a panel at the right of the page (mockup tablet 07 / 08) */
+  const narrow = () => document.body.classList.toggle('scnarrow', innerWidth < 1100);
+  addEventListener('resize', narrow);
+
+  /* ---------- (c) the turbine start panel on the Steam and turbine page (MK13 TURBINE START) ---------- */
+  const TSB = [
+    ['tcsroll', 'Roll to 3600 rpm'],
+    ['tcsexc', 'Excitation'] /* beta.235: ATS step 4, its own push button (310SC90-775 page 23) */,
+    ['tcssync', 'Synchronize, 4.5 MW'],
+    ['tcsload', 'Load up to 45 MW'],
+    ['tcstarget', 'Target MW…'],
+    ['tcsholdoff', 'Release hold'],
+    ['tcsnormal', 'Normal operation'] /* S149-3: ATS step 7, needed before Shut down (step 8) */,
+    ['tcsshut', 'Shut down']
+  ];
+  let tsp = null,
+    tsv = null,
+    tsb = [];
+  function buildTsp() {
+    const m = $('plmid');
+    if (!m) return false;
+    tsp = E('section');
+    tsp.id = 'sctsp';
+    tsp.setAttribute('aria-label', 'Turbine start, turbine control system');
+    const hd = E('div', 'sctsh');
+    hd.append(E('span', '', 'Turbine start · turbine control system'));
+    const hide = E('button', 'sctsx', 'Hide');
+    hide.type = 'button';
+    hide.title = 'Fold the panel (click again to open)';
+    hide.onclick = () => {
+      tsp.classList.toggle('fold');
+      hide.textContent = tsp.classList.contains('fold') ? 'Show' : 'Hide';
+    };
+    hd.append(hide);
+    tsv = E('div', 'sctsv');
+    const row = E('div', 'sctsb');
+    tsb = TSB.map(([id, t]) => {
+      const b = E('button', id === 'tcsshut' ? 'stop' : '', t);
+      b.type = 'button';
+      b.onclick = () => {
+        const o = $(id);
+        if (o && !o.disabled) o.click();
+      };
+      row.append(b);
+      return { b, id };
+    });
+    tsp.append(hd, tsv, row);
+    /* Mina beta.213: floating over the page it covered the MSV / RSV / CV drawing and its last button went under the status bar: it is a
+       band under the page bar now, the drawing gets the rest of the height */
+    const pb = m.querySelector('.plbar');
+    if (pb) pb.after(tsp);
+    else m.prepend(tsp);
+    return true;
+  }
+  const kv = (k, v) => {
+    const s = E('span');
+    s.append(k + ' ', E('b', '', v));
+    return s;
+  };
+  /* beta.235 (live Cold start, user: "wala ako napansin" on SYNC, "dapat makita ang 13.8 kV sa excitation"): the generator side of the
+     ATS steps 4 and 5 in words: field breaker 41 and the voltage build-up (tcs-gen.js, AVR 30 s), then the automatic synchronizing
+     (G-1B: 25X1 seal-in 3 s, the ASD matches speed and voltage 60 s, then the 52G close order) */
+  function genTxt(U, tb, gcb) {
+    const g = U.gen;
+    if (!g || !tb.st) return '—';
+    if (gcb) return 'on the grid, 13.8 kV, 60 Hz';
+    const v = (13.8 * (g.V || 0)).toFixed(2) + ' kV, ' + (+tb.rpm / 60 || 0).toFixed(2) + ' Hz';
+    if (g.x25)
+      return (
+        v +
+        ' · grid ' +
+        (+g.fgr || 60).toFixed(2) +
+        ' Hz · slip ' +
+        ((g.slip || 0) >= 0 ? '+' : '') +
+        (g.slip || 0).toFixed(3) +
+        ' Hz · phase ' +
+        Math.round(g.th || 0) +
+        '° · auto synchronizing' +
+        (g.cmd ? ', CLOSE command' : '')
+      );
+    if (g.f41)
+      return (
+        v +
+        (Math.abs((g.V || 0) - 1) > 0.02
+          ? ', field breaker closed, voltage building up'
+          : ', excited, ready to synchronize')
+      );
+    return 'not excited (field breaker open)';
+  }
+  /* beta.237 (live Cold start, user: "nasaan ang synchroscope?", "ipakita niyo"): the 24 px dial in the status line was too small. A sync panel
+     under the buttons while the generator is excited and 52G1 is open: a synchroscope (80 px since beta.238: a global svg rule made the 120 px one fill the page) (the pointer is the phase angle of the
+     generator against the grid, clockwise = generator fast, top = in phase; the marked arc is the check synchronizing relay 25 window
+     +-10 deg, GEE-2015-0141 p.26), generator and grid voltage and frequency, slip, voltage difference, phase angle and three lamps:
+     auto synchronizing (25X1), sync check 25 permit (dV 5 %, dF 0.15 Hz, dTheta 10 deg), close command. The grid is 13.8 kV (1.0 pu, NO-SOURCE). */
+  let syp = null;
+  const SYN = TCS_GEN_R25();
+  function TCS_GEN_R25() {
+    return typeof TCS_GEN === 'object' && TCS_GEN.r25 ? TCS_GEN.r25 : { dV: 0.05, dF: 0.15, dTh: 10 };
+  }
+  function buildSyp() {
+    syp = E('div', 'scsync');
+    syp.setAttribute('aria-label', 'Synchronizing panel');
+    let tk = '';
+    for (let a = 0; a < 360; a += 30) {
+      const r = (a * Math.PI) / 180,
+        r1 = a === 0 ? 40 : 46;
+      tk +=
+        '<line x1="' +
+        (60 + r1 * Math.sin(r)).toFixed(1) +
+        '" y1="' +
+        (60 - r1 * Math.cos(r)).toFixed(1) +
+        '" x2="' +
+        (60 + 52 * Math.sin(r)).toFixed(1) +
+        '" y2="' +
+        (60 - 52 * Math.cos(r)).toFixed(1) +
+        '" stroke-width="' +
+        (a === 0 ? 2.5 : 1) +
+        '"/>';
+    }
+    const w = (SYN.dTh * Math.PI) / 180,
+      ax = (52 * Math.sin(w)).toFixed(2),
+      ay = (60 - 52 * Math.cos(w)).toFixed(2);
+    syp.innerHTML =
+      '<svg class="scdial" width="80" height="80" viewBox="0 0 120 120" role="img" aria-label="synchroscope">' +
+      '<circle cx="60" cy="60" r="56" class="rim"/>' +
+      '<path class="win" d="M' +
+      (60 - ax) +
+      ' ' +
+      ay +
+      ' A52 52 0 0 1 ' +
+      (60 + +ax) +
+      ' ' +
+      ay +
+      '"/>' +
+      '<g class="tk">' +
+      tk +
+      '</g>' +
+      '<text x="24" y="98" class="lb">SLOW</text><text x="96" y="98" class="lb">FAST</text>' +
+      '<g class="ptr"><line x1="60" y1="66" x2="60" y2="12"/><circle cx="60" cy="60" r="4"/></g></svg>' +
+      '<div class="scsv"></div><div class="scsl"></div>';
+    tsp.append(syp);
+  }
+  function lamp(t, on) {
+    const s = E('span', 'scl' + (on ? ' on' : ''));
+    s.append(E('i', '', on ? 'Y' : 'N'), document.createTextNode(t));
+    return s;
+  }
+  function tickSyp() {
+    if (!tsp || tsp.hidden) return;
+    const U = call(() => AN.unit, null) || {},
+      tb = U.tb || {},
+      g = U.gen,
+      gcb = tb.st === 'sync' || tb.st === 'load',
+      show = !!(g && tb.st && g.f41 && !gcb) && !tsp.classList.contains('fold');
+    if (!show) {
+      if (syp) syp.hidden = true;
+      return;
+    }
+    if (!syp) buildSyp();
+    syp.hidden = false;
+    const th = +g.th || 0,
+      slip = +g.slip || 0,
+      dv = +g.dv || 0,
+      sg = (x, d) => (x >= 0 ? '+' : '−') + Math.abs(x).toFixed(d),
+      p25 = Math.abs(dv) <= SYN.dV && Math.abs(slip) <= SYN.dF && Math.abs(th) <= SYN.dTh;
+    syp.querySelector('.ptr').setAttribute('transform', 'rotate(' + th.toFixed(1) + ' 60 60)');
+    const v = syp.querySelector('.scsv');
+    v.replaceChildren(
+      kv('Generator', (13.8 * (+g.V || 0)).toFixed(2) + ' kV · ' + ((+tb.rpm || 0) / 60).toFixed(3) + ' Hz'),
+      kv('Grid', '13.80 kV · ' + (+g.fgr || 60).toFixed(3) + ' Hz'),
+      kv(
+        'Slip',
+        sg(slip, 3) + ' Hz' + (Math.abs(slip) < 1e-3 ? '' : slip > 0 ? ' (generator fast)' : ' (generator slow)')
+      ),
+      kv('Voltage difference', sg(dv * 100, 1) + ' %'),
+      kv('Phase angle', sg(th, 0) + '°')
+    );
+    syp
+      .querySelector('.scsl')
+      .replaceChildren(
+        lamp('Auto synchronizing', !!g.x25),
+        lamp('Sync check permit', p25),
+        lamp('Breaker close command', !!(g.cmd || g.close))
+      );
+  }
+  function tickTsp() {
+    if (!tsp) return;
+    const pk = document.querySelector('#plantws .plpick'),
+      on = !!pk && pk.value === 'MK13';
+    tsp.hidden = !on;
+    if (!on) return;
+    const U = call(() => AN.unit, null) || {},
+      tb = U.tb || {},
+      S = call(() => AN.tcs(), null),
+      rpm = isFinite(+tb.rpm) ? Math.round(+tb.rpm) : null,
+      gcb = tb.st === 'sync' || tb.st === 'load',
+      aim = isFinite(+tb.aim) ? +tb.aim : null,
+      /* Mina, beta.2 check: at 150 MW in DCS control mode the header said Target — : the turbine follows the DCS then (unit.js anUnitStep0) */
+      dcs = call(() => U.dcs < 0 || +(U.S && U.S.rt && U.S.rt.v[U.dcs]) > 0.5, false) && gcb;
+    tsv.replaceChildren(
+      kv('Speed', rpm == null ? '—' : rpm + ' rpm'),
+      kv('Generator breaker', tb.st ? (gcb ? 'closed' : 'open') : '—'),
+      kv('Target', dcs ? 'DCS unit load demand' : aim == null ? '—' : Math.round(aim * 10) / 10 + ' MW'),
+      E('span', 'sctsn', dcs ? '' : 'at 7.5 MW/min'),
+      kv('Hold', S ? (S.hold ? 'on' : 'off') : '—'),
+      kv('Generator', genTxt(U, tb, gcb))
+    );
+    for (const x of tsb) {
+      const o = $(x.id);
+      x.b.disabled = !o || o.disabled;
+      x.b.title = o ? o.title : 'Not available';
+    }
+  }
+
+  /* ---------- start ---------- */
+  let k = 0;
+  const iv = setInterval(() => {
+    if (!document.body.classList.contains('sc')) {
+      ++k; /* no time limit (live check beta.241) */
+      return;
+    }
+    if (!bar) buildBar();
+    if (!tsp) buildTsp();
+    if (bar && tsp && watch()) {
+      clearInterval(iv);
+      narrow();
+      setInterval(() => (tickBar(), tickTsp()), 1000);
+      setInterval(tickSyp, 250);
+      tickBar();
+      tickTsp();
+    }
+    /* the Plant view is built the first time it opens: wait for it as long as it takes */
+  }, 300);
+})();

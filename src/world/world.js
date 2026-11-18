@@ -1,0 +1,1855 @@
+/* WORLD (1.22.0): IISANG MUNDO ng ABC at DITL (CHECKLIST #25, CLAUDE.md "HINDI NAGBABAGO NA KAALAMAN" 1).
+   Ang mga sheet ay nag-uusap ayon sa reference na nakasulat sa drawing (walang hula):
+   - DITL -> DITL: ang FROM column ng input row (hal. "28A-77") = output item 77 ng DITL-28A (item 51..79 = row 1..29 sa kanan).
+   - DITL -> ABC : ang "FROM DITL 26A-55" sa ABC = output item 55 ng DITL-26A; ang ABC input ay nagiging "galing sa DITL" (FORCE para baguhin).
+   - ABC -> DITL : ang "TO DITL 26A-05" sa ABC = input row 05 ng DITL-26A.
+   Kapag ON at tumatakbo (ABC Run, o DITL Simulate), bawat 0.2 s: kinukuwenta ang LAHAT ng DITL sheet (timers, MOV, motor din),
+   tapos ipinapasa ang mga value. OFF = dating gawi (ang FROM DITL ay manual na input). Walang binago sa logic ng mga sheet. */
+(function () {
+  /* 3.2.0-beta.25 (user 2026-10-24: "tanggalin mo na rin ang button na ABC plus DITL ON, mula ngayon isang utak na yan"): the one
+     world is ALWAYS ON, there is no switch any more (CLAUDE.md rule 7 changed). W.set stays for the tests that check one DITL sheet
+     by itself; the app never turns it off */
+  const W = (window.WORLD = { on: true, live: false, idx: null, out: {}, stat: null, ms: 0 });
+  try {
+    localStorage.removeItem('ls-world');
+  } catch (e) {}
+  /* 2.3.0-beta.1 (LINK-4): also a one-digit code with its letter, written without the 0 (DITL-15 row 10 MFT "3A-63" = 03A-63) */
+  const RX = /\(?\s*([0-9]{2,3}[A-Z]?|[0-9][A-Z])\s*-\s*(\d{1,3})\s*\)?/gi;
+  /* 2.5.0-beta.14: bottom ash FROM "BA01-11" = output NO. 11 of sheet BA-01 (sheet "(B1)DITL-BA01") */
+  const BRX = /\bBA\s*-?\s*(\d{1,2})\s*-\s*(\d{1,2})\b/gi;
+  /* 2.5.0-beta.15: limestone FROM "SHEET 214 - LINE21" = output LINE 21 of sheet "(L214)DITL-LS214" */
+  const LSRX = /\bSHEET\s*(\d{2,3})\s*-\s*LINE\s*(\d{1,2})\b/gi;
+  const refsOf = t => {
+    const o = [];
+    let m;
+    t = String(t || '').replace(LSRX, (x, a, b) => {
+      o.push({ code: 'LS' + a, nn: +b, other: false });
+      return ' ';
+    });
+    t = String(t || '').replace(BRX, (x, a, b) => {
+      o.push({ code: 'BA' + a.padStart(2, '0'), nn: +b, other: false });
+      return ' ';
+    });
+    RX.lastIndex = 0;
+    while ((m = RX.exec(String(t || ''))))
+      o.push({
+        code: (/^[0-9][A-Z]$/i.test(m[1]) ? '0' : '') + m[1].toUpperCase(),
+        nn: +m[2],
+        other: /^\(/.test(m[0]) && /\)$/.test(m[0])
+      });
+    return o;
+  };
+  const codeOf = name => {
+    const m = /DITL-([0-9]{2,3}[A-Z]?|BA\d{2}|LS\d{2,3})$/i.exec(name || '');
+    return m ? m[1].toUpperCase() : null;
+  };
+  function dSheet(code, from) {
+    /* 2.5.0-beta.12: the sootblower set has its own DITL-80 (ditlIdx in 01-parse-build.js) */
+    if (from && isSB(from)) {
+      const i = ditlIdx(code, from);
+      return i >= 0 ? S.sheets[i] : null;
+    }
+    const byCode = W._byCode;
+    /* 2.3.0-beta.1 (LINK-1): "80S" is the sootblower PLC logic (ABC-017 "FROM DITL 80S-57 FOR S/B LOGIC"), not DITL-80: no fall back */
+    if (/S$/.test(code)) return byCode[code] || null;
+    return byCode[code] || byCode[code.replace(/[A-Z]$/, '')] || null;
+  }
+  function nlOf(s) {
+    if (!s.nl || s.nl.v !== 10) {
+      s.nl = netlist(s);
+      s.uvDone = false;
+    }
+    return s.nl;
+  }
+  /* 2.2.0-beta.6: MACHINES OF A SHARED DRAWING. A DITL drawing says "NOTE: THE DIAGRAM IS THE SAME FOR BURNER B,C,D" (35 sheets)
+     and every row carries the address of each machine ("I.0056/376" = BFWP A / B; "M.0122/222/1622/1722" = burner A ~ D).
+     Machine A is the sheet itself; B / C / D are INSTANCES of it (same logic, own latches, timers, motors, valves). Every
+     reference is connected to the instance of the machine it belongs to (beta.3 ~ 5 left 79 + 48 of them unconnected). */
+  const LET = ['A', 'B', 'C', 'D'];
+  /* the valves of the DITL-38 table (STN101 MV-BD1001 / 1002, STN102 the rest) */
+  W.MCV = ['MV-BD1001', 'MV-BD1002', 'MV-FW1001', 'MV-FW1391', 'MV-FW1002', 'MV-FW1392', 'MV-MS1391', 'MV-MS1392'];
+  /* 3.2.1 d2 (LISA): the sootblowers N-1011 ~ N-1038. DITL-80G is drawn for N-1011 and says "(AS ABOVE BLOCK) N-1012 ~ N-1015
+     SOOTBLOWER CONTROL LOGIC"; DITL-80H / 80I / 80J hold only the boxes "(AS SHEET DITL80G BLOCK)" N-1016 ~ N-1023 / N-1024 ~ N-1031 /
+     N-1032 ~ N-1038. One machine each, named by its tag. Its own addresses: memory list 102 (SB1 ~ SB28 = N-1011 ~ N-1038, "SB1~12,15,16"
+     = the drawing's "N-1011~22,25,26"): SKIP/OPERATING SWITCH, START COMMAND, SKIPED, PROGRAM AUTO OPERATING, RETRACT P.B., START P.B.,
+     FORWARD / BACKWARD STARTER ON (8 in a row from SB_B8), START CONDITION, MANUAL START, RETRACT COMMAND (3 in a row from SB_B3), SYSTEM
+     PROGRAM ON (M.4270 + k), START ABNORMAL (M.4380 + k), START ON (M.4410 + k); the field contacts ZSE / ZSR / MIF / MIR / MIT and the
+     starters MOR / MOS by their tag in the I/O list (window.WIRING) */
+  W.SB = { first: 'N-1011', n: 28 };
+  const SB_B8 = '4010,4018,4020,4028,4030,4038,4040,4048,4050,4058,4060,4068,4070,4078,4080,4088,4090,4098,4100,4108,4110,4118,4120,4128,4130,4138,4140,4148'.split(','),
+    SB_B3 = '4300,4303,4306,4309,430C,4310,4313,4316,4319,431C,4320,4323,4326,4329,432C,4330,4333,4336,4339,433C,4340,4343,4346,4349,434C,4350,4353,4356'.split(',');
+  const hx = (a, d) => (parseInt(a, 16) + d).toString(16).toUpperCase().padStart(4, '0');
+  function sbMap(k) {
+    const m = {};
+    for (let j = 0; j < 8; j++) m['M.' + hx('4010', j)] = 'M.' + hx(SB_B8[k - 1], j);
+    for (let j = 0; j < 3; j++) m['M.' + hx('4300', j)] = 'M.' + hx(SB_B3[k - 1], j);
+    for (const b of ['4270', '4380', '4410']) m['M.' + b] = 'M.' + hx(b, k - 1);
+    const tag = 'N' + (1010 + k);
+    for (const r of window.WIRING || []) {
+      const t = /^([A-Z]{3})-N1011$/.exec(r[3] || '');
+      if (!t || !/^[IO]\.[0-9A-F]{4}$/.test(r[2])) continue;
+      const o = (window.WIRING || []).find(x => x[3] === t[1] + '-' + tag && /^[IO]\.[0-9A-F]{4}$/.test(x[2]));
+      if (o) m[r[2]] = o[2];
+    }
+    return m;
+  }
+  /* N-1011 alone (not the ranges "N-1011~38", "N-1011~22,25,26") */
+  const SB1RX = /\bN-?1011(?![~\d])/g;
+  const txtOf = s => {
+    if (s._alltx === undefined)
+      s._alltx = Object.values(s.cells || {})
+        .flat()
+        .map(x => x.t)
+        .concat(((s.tx || []).map ? s.tx : []).map(x => x.t))
+        .join(' \n ');
+    return s._alltx;
+  };
+  /* "I.0056/376" -> [I.0056, I.0376]; "M.0122/222/1622/1722" -> [M.0122, M.0222, M.1622, M.1722]; "M.0470/480/ M.0490" -> 3 */
+  const LRX = /\b([IMOB])\.([0-9A-F]{4})((?:\s*\/\s*(?:[IMOB]\.)?[0-9A-F]{3,4})+)/i;
+  /* 3.2.0-beta.34 (CHECKLIST 0.2): EVERY address group of the cell, in order. A drawing for machines A ~ D writes them as two groups,
+     "O.0088/408 O.0728/1048" = burner A / B / C / D (I/O list STN104: SVR-DO1043-A5 / B5 / C5 / D5), "M.1150/1160 M.1170" = SWP A / B / C
+     (memory list STN103). Before, only the first group was read: machine C / D took the address of machine A */
+  /* a short end of 2 ~ 4 digits: "I.0085/88/8B" = I.0085 / I.0088 / I.008B (DITL-45 dryer A / B / C) */
+  const LRXG = /\b([IMOB])\.([0-9A-F]{4})((?:\s*\/\s*(?:[IMOB]\.)?[0-9A-F]{2,4}(?![0-9A-F]))*)/gi;
+  const addrList = t => complete(addrList0(t));
+  /* a list written short on one row (DITL-13 row 28 "M.0143/243 BURNER A SHUTDOWN COMMAND") and in full on another (DITL-10 row 20
+     "M.0143/243 M.1643/1743" for the same signal): the full one, from the drawings themselves (the longest list that starts the same) */
+  let FULL = null;
+  function complete(la) {
+    if (la.length < 2) return la;
+    if (!FULL) {
+      FULL = new Map();
+      for (const sh of S.sheets || [])
+        for (const k in sh.cells || {}) {
+          const L = addrList0(cellTxt(sh, +k.split(':')[0], k.split(':')[1]));
+          if (L.length >= 2 && (!FULL.has(L[0]) || FULL.get(L[0]).length < L.length)) FULL.set(L[0], L);
+        }
+    }
+    const f = FULL.get(la[0]);
+    return f && f.length > la.length && la.every((a, i) => f[i] === a) ? f : la;
+  }
+  const addrList0 = t => {
+    const o = [];
+    for (const m of String(t || '').matchAll(LRXG)) {
+      const p = m[1].toUpperCase() + '.',
+        b = m[2].toUpperCase();
+      if (!o.includes(p + b)) o.push(p + b);
+      for (const q of (m[3] || '').split('/').map(x => x.replace(/[IMOB]\./i, '').trim().toUpperCase()).filter(Boolean)) {
+        const a = p + (q.length >= 4 ? q : b.slice(0, 4 - q.length) + q);
+        if (!o.includes(a)) o.push(a);
+      }
+    }
+    return o;
+  };
+  const cellTxt = (s, i, k) => (s.cells[i + ':' + k] || []).map(x => x.t).join(' ');
+  /* 3.2.0-beta.34: the addresses of an input row: the TAG NO. column, or the service column when it lists more (DITL-45 row 6 TAG
+     "I.0084", service "I.0084/87/8A PLANT AIR DRYER-A ALARM" = dryer A / B / C) */
+  const rowList = (s, i) => {
+    const a = addrList(cellTxt(s, i, 'T')),
+      b = addrList(cellTxt(s, i, 'S'));
+    return !a.length || (b.length > a.length && b[0] === a[0]) ? b : a;
+  };
+  /* audit A2 (2026-11-03): DITL-22 "BFWP A AUX. LUB. OIL PUMP" is drawn for FOUR pumps, two per feedwater pump (row 2 "I.0050/370
+     I.0053/373"; IO list Station 103: I.0050 / O.0126 LOP A of BFWP-A, I.0370 / O.0446 LOP B of BFWP-A, I.0053 / O.0127 LOP A of
+     BFWP-B, I.0373 / O.0447 LOP B of BFWP-B). Machine k: BFWP letter k >> 1, LOP letter k & 1; a list of two addresses is per BFWP */
+  const isLop4 = s => !!s && /\)DITL-22$/.test(s.name);
+  const lopIdx = (k, n) => (n >= 4 ? k : n === 2 ? k >> 1 : 0);
+  /* the machines of a sheet: the note of the drawing, and the longest address list */
+  function machinesOf(s) {
+    if (s._mach !== undefined) return s._mach;
+    if (isLop4(s)) return (s._mach = 4);
+    const t = txtOf(s);
+    let n = 1;
+    if (/DIAGRAM IS (?:THE )?SAME|SAME\s+FOR\b|^\s*FOR\s+.*\b[B-D]\b/im.test(t)) {
+      const nt = /(?:SAME\s+)?FOR\s+([^\n]{0,80})/i.exec(t.slice(t.search(/SAME|FOR\s+[A-Z]/i)));
+      const lets = new Set();
+      if (nt) for (const m of nt[1].matchAll(/\b([B-D])\b/g)) lets.add(m[1]);
+      n = Math.max(n, 1 + lets.size);
+      let mx = 1;
+      /* the number of machines: the FIRST address group only (as before 3.2.0-beta.34); the second group of a cell is not always another
+         machine (DITL-28A FAB A / B went to 3 machines with all groups counted) */
+      const one = t => {
+        const m = LRX.exec(String(t || ''));
+        return m ? 1 + m[3].split('/').filter(x => x.trim()).length : 0;
+      };
+      for (const k in s.cells) mx = Math.max(mx, one(cellTxt(s, +k.split(':')[0], k.split(':')[1])));
+      for (const x of (s.tx || []).map ? s.tx : []) mx = Math.max(mx, one(x.t));
+      n = Math.max(n, Math.min(4, mx));
+    }
+    return (s._mach = n);
+  }
+  /* the machine letter of a text: the LAST machine named ("BFWP A AUX. LOP B TRIP" = B). 3.2.3-beta.266: "COLLER" is the spelling of the
+     titles of DITL-117 / 118 BOTTOM ASH SCREW COLLER A INLET VALVE (1) / (2) (GROUP below already reads it as COOLER): without it the
+     family of the drawing was unknown, so DITL-117 #B ~ #D row 18 "COOLER A AUTO SEQUENCE STOP COMMAND" (21B-59, M.2161/2171/2181/2191)
+     read cooler A's 21B, and the drain stop of A stopped B ~ D too */
+  const MRX =
+    /\b(?:BFWP|FAB|BURNER|BNR|FEEDER|PUMP|BLOWER|COOLER|COLLER|IGNITER|COMPRESSOR|DRYER|IWP|MWP|DOP|SWBP|SWP|LOP|CWP|CP|VALVE|SILO)\s*-?\(?([A-D])\)?(?![A-Z0-9])/gi;
+  const machOfDitl = t => {
+    const all = [...String(t || '').matchAll(MRX)];
+    return all.length ? all[all.length - 1][1].toUpperCase() : null;
+  };
+  /* the equipment word of the last machine named ("MWP B RUNNING" -> MWP) */
+  const machWord = t => {
+    const all = [...String(t || '').matchAll(MRX)];
+    return all.length ? all[all.length - 1][0].replace(/\s*-?\(?[A-D]\)?$/i, '').trim().toUpperCase() : null;
+  };
+  /* the equipment of a drawing, from its title ("MAKE-UP WATER PUMP A" -> PUMP, "COAL FEEDER A START/STOP" -> FEEDER) */
+  /* one kind of equipment, several words on the drawings */
+  const GROUP = w => {
+    w = String(w || '').toUpperCase();
+    if (/^(PUMP|BFWP|MWP|IWP|DOP|SWP|SWBP|CWP|CP|LOP)$/.test(w)) return 'PUMP';
+    if (/^(BLOWER|FAB)$/.test(w)) return 'BLOWER';
+    if (/^(BURNER|BNR|IGNITER)$/.test(w)) return 'BURNER';
+    if (/^(FEEDER|SILO)$/.test(w)) return 'FEEDER';
+    if (/^(COOLER|COLLER)$/.test(w)) return 'COOLER';
+    return w;
+  };
+  const famOf = s => {
+    if (s._fam === undefined) {
+      let f = machWord(s.title || '');
+      if (!f) {
+        /* no machine letter in the title (DITL-07 PERMISSION TO BURNER (1)): the note "THE DIAGRAM IS THE SAME FOR BURNER B,C,D" */
+        const t = txtOf(s),
+          m = /FOR\s+([A-Z .]+?)\s*-?\s*[B-D]\b/i.exec(t.slice(Math.max(0, t.search(/SAME|FOR\s+[A-Z]/i))));
+        if (m) f = (m[1].trim().split(/\s+/).pop() || '').replace(/\.$/, '');
+      }
+      s._fam = f ? GROUP(f) : null;
+    }
+    return s._fam;
+  };
+  /* a row names the machine of THIS drawing family (its letter turns with the instance) or an absolute one (BURNER B on the coal
+     feeder drawing DITL-19 is burner B for every feeder) */
+  const relative = (sb, rowT) => {
+    const w = machWord(rowT),
+      f = famOf(sb);
+    if (!w || !f) return false;
+    return GROUP(w) === f;
+  };
+  const machOfDesc = t => {
+    const m =
+      /(?:^|[\s(])([A-D])-(?=[A-Z])/.exec(t || '') ||
+      /-([A-D])\d\b/.exec(t || '') ||
+      /\b(?:BLOWER|PUMP|FEEDER|BFWP|BURNER|BNR|FAN)-([A-D])\b/i.exec(t || '');
+    return m ? m[1].toUpperCase() : null;
+  };
+  /* sister sheets of another machine: DITL-12 BURNER A LIGHT OFF SEQUENCE (1) -> DITL-12A / 12B / 12C (contents DITL-0A ~ 0D) */
+  function sister(base, L) {
+    if (L === 'A') return base;
+    const ti = String(base.title || '').toUpperCase();
+    const m = /\b(BURNER|PUMP|FEEDER|COOLER|BLOWER|FAN)\s+A\b/.exec(ti);
+    if (!m) return null;
+    const want = ti.replace(m[0], m[1] + ' ' + L);
+    return S.sheets.find(x => String(x.title || '').toUpperCase() === want) || null;
+  }
+  /* instance k of a base sheet (k = 0 is the sheet itself) */
+  function makeInst(base, k, lbl) {
+    const o = Object.assign(Object.create(Object.getPrototypeOf(base)), base, {
+      name: base.name + ' #' + (lbl || LET[k]),
+      sig: {},
+      usw: {},
+      av: null,
+      av150: null,
+      _win: null,
+      nl: null,
+      uvDone: true,
+      _inst: lbl ? { base, k, n: 1, lbl } : { base, k, n: machinesOf(base) }
+    });
+    o.nl = netlist(o);
+    return o;
+  }
+  /* the text of a row as it reads for machine instance k (the drawing is written for machine A: "BFWP A RUNNING" is "BFWP B
+     RUNNING" in instance B, "BFWP B" the other pump is A); the k-th address of the row */
+  W.remap = (s, t) => {
+    const I = s && s._inst;
+    if (!I || !I.k) return t;
+    /* 3.2.1 d2: a sootblower of DITL-80G: its tag for N-1011 */
+    if (I.sb) return String(t || '').replace(SB1RX, m => (m[1] === '-' ? I.lbl : I.lbl.replace('-', '')));
+    if (isLop4(I.base)) {
+      const sw = L => ({ A: 'B', B: 'A' })[L.toUpperCase()] || L;
+      return String(t || '').replace(/\b(BFWP|LOP)(\s*-?\(?)([A-D])(?![A-Z0-9])/gi, (m, w, sp, L) => w + sp + (/BFWP/i.test(w) ? (I.k >= 2 ? sw(L) : L) : I.k & 1 ? sw(L) : L));
+    }
+    return String(t || '').replace(MRX, (m, L) => {
+      if (!relative(I.base, m)) return m;
+      const u = L.toUpperCase(),
+        to = LET[(LET.indexOf(u) + I.k) % Math.max(I.n, LET.indexOf(u) + 1)];
+      return m.replace(/([A-D])(\)?)$/i, to + '$2');
+    });
+  };
+  /* 3.2.0-beta.35: a text of the drawing as it reads for machine instance k: the machine letter (W.remap) and, for an address list,
+     the address of that machine only ("M.1150/1160 M.1170 SEAWATER PUMP A START P.B." -> "M.1160 SEAWATER PUMP B START P.B.") */
+  W.showText = (s, t) => {
+    const I = s && s._inst;
+    /* live test #56: machine A (k 0) of a drawing for several machines keeps its own address of the list too */
+    if (!I || !t || (!I.k && !(I.n > 1))) return t;
+    let x = W.remap(s, t);
+    if (I.sb) return x.replace(/\b[IMO]\.[0-9A-F]{4}\b/g, a => I.amap[a] || a);
+    const la = addrList(t),
+      ix = isLop4(I.base) ? lopIdx(I.k, la.length) : I.k;
+    if (la.length > 1 && la[ix]) {
+      let first = true;
+      x = x.replace(LRXG, () => (first ? ((first = false), la[ix]) : '')).replace(/\s{2,}/g, ' ');
+      /* Mina 2026-11-07 (sweep 19): the tag of machine A on the copy of another machine (DITL-21A #B row 20 "SS-BH1060-A I.0538", rows
+         19 / 21 "MIL-L1060A", "LIS4-L1060A"): the tag of the copy's own machine, only when the I/O list gives that tag the very
+         address the copy reads (SS-BH1060-B = I.0538, MIL-L1060B = I.0533, LIS4-L1060B = I.0537). A one-address row keeps its tag
+         (DITL-112 LS-MU0708-A is demi tank A on every pump copy). Not the BFWP / lube oil drawings (their letters cross, isLop4) */
+      if (I.k && !isLop4(I.base) && LET[I.k]) x = x.replace(TAGA, (m, p) => (ioAddr(p + LET[I.k]) === la[ix] ? p + LET[I.k] : m));
+    }
+    return x;
+  };
+  /* a tag that ends with the letter of machine A ("SS-BH1060-A", "MIL-L1060A"); ioAddr = its address in the I/O list */
+  const TAGA = /\b([A-Z]{1,5}\d?-[A-Z]{0,3}\d{3,4}-?)A\b/g;
+  let ioA = null;
+  const ioAddr = t => {
+    if (!ioA) {
+      if (!(window.WIRING && window.WIRING.length)) return null;
+      ioA = new Map(window.WIRING.map(r => [r[3], r[2]]));
+    }
+    return ioA.get(t) || null;
+  };
+  W.addrK = (s, i) => {
+    const I = s && s._inst,
+      b = I ? I.base : s,
+      la = rowList(b, i);
+    if (I && I.sb) return la[0] ? I.amap[la[0]] || la[0] : null;
+    if (I && I.k && la.length < 2) {
+      /* 3.2.0-beta.34: one address and a text that turns into ANOTHER row of the same drawing (DITL-24 PAF LOP A: row 25 "LOP A STOPPED"
+         I.005C and row 26 "LOP B STOPPED" I.037C; for LOP B the two swap): the address of that row */
+      const me = W.remap(s, cellTxt(b, i, 'S')).replace(/\s+/g, ' ').trim();
+      for (const r in b.rows || [])
+        if (+r !== i && cellTxt(b, +r, 'S').replace(/\s+/g, ' ').trim() === me) {
+          const o = rowList(b, +r);
+          if (o.length === 1) return o[0];
+        }
+    }
+    if (I && isLop4(b)) return la[lopIdx(I.k, la.length)] || la[0] || null;
+    return la[I ? I.k : 0] || la[0] || null;
+  };
+  /* index of every link, built once when the world is turned on */
+  function build() {
+    const t0 = performance.now();
+    W._byCode = {};
+    for (const s of S.sheets) {
+      const c = codeOf(s.name);
+      if (c && (!W._byCode[c] || (isSB(W._byCode[c]) && !isSB(s)))) W._byCode[c] = s;
+    }
+    /* the instances (kept when the world is built again: their state stays) */
+    const old = new Map((W.inst || []).map(x => [x.name, x]));
+    W.inst = [];
+    W.instOf = new Map();
+    for (const s of S.sheets) {
+      nlOf(s);
+      const n = machinesOf(s);
+      s._inst = { base: s, k: 0, n };
+      const L = [s];
+      for (let k = 1; k < n; k++) {
+        const nm = s.name + ' #' + LET[k];
+        const x = old.get(nm) || makeInst(s, k);
+        W.inst.push(x);
+        L.push(x);
+      }
+      W.instOf.set(s, L);
+    }
+    /* 3.2.0 P1 #3 / #4 (docs/versions/v3.2.0/INSTRUMENT_VALVE_COVERAGE.md): DITL-38 MOTOR CONTROL VALVE is ONE drawing for the eight
+       MOVs of its table (the drawing itself is MV-BD1001): one machine each, named by its tag, with its own open / close / stop push
+       buttons, timers and position. The plant reads the main steam stop MOV and the BFP discharge MOVs (unit.js) */
+    {
+      const mcv = S.sheets.find(x => /\)DITL-38$/.test(x.name)),
+        L = mcv && W.instOf.get(mcv);
+      if (L && L.length === 1) {
+        mcv._inst.lbl = W.MCV[0];
+        W.MCV.slice(1).forEach((tag, j) => {
+          const nm = mcv.name + ' #' + tag,
+            x = old.get(nm) || makeInst(mcv, j + 1, tag);
+          W.inst.push(x);
+          L.push(x);
+        });
+      }
+    }
+    {
+      const g = S.sheets.find(x => /^\(S\d+\)DITL-80G$/.test(x.name)),
+        L = g && W.instOf.get(g);
+      if (L && L.length === 1) {
+        g._inst.lbl = W.SB.first;
+        for (let k = 2; k <= W.SB.n; k++) {
+          const tag = 'N-' + (1010 + k),
+            nm = g.name + ' #' + tag,
+            x = old.get(nm) || makeInst(g, k - 1, tag);
+          x._inst.sb = 1;
+          x._inst.amap = sbMap(k);
+          x._xn = null;
+          W.inst.push(x);
+          L.push(x);
+        }
+      }
+    }
+    /* 3.2.3-beta.266 (SOHEE, Jennie): a drawing with a block for a RANGE of machines. DITL-21E BOTTOM ASH SCREW COOLER AUTO SEQUENCE (4):
+       the upper half is cooler A, the lower half is ONE block for coolers B ~ D (outputs "B~D CYCLE SEQ. START / STOP COMMAND", inputs
+       with three addresses: row 15 M.1112/1122/1492 B~D AUTO SEQUENCE SELECTED, row 23 I.0530/0640/0680 B~D FORWARD RUNNING, row 25
+       M.2148/2150/2158 B~D START COMMAND; timers TR573/583/593). Each block input that names the range A~C is the cooler BEFORE it (row 16
+       M.2140/2148/2150 START COMMAND, row 17 I.0250/0530/0640 FORWARD RUNNING): the chain A > B > C > D, and the A half reads cooler D
+       (row 2 "(21E-70)" M.2158, row 5 "(21E-74)" M.2159). The block is one machine per letter: the sheet itself is the first letter (B),
+       a copy each for the others (#C, #D) that reads the k-th address of the block rows. Before, one block ran B, C and D in step */
+    /* the machines of a block row as the drawing writes them (no completion from other drawings: DITL-21E row 17 "I.0250/0530 I.0640"
+       = coolers A ~ C, completed from DITL-21A it would read four) */
+    const blkN = (s, i) => Math.max(addrList0(cellTxt(s, i, 'T')).length, addrList0(cellTxt(s, i, 'S')).length);
+    const RNG = t => {
+      const r = /\b([A-D])\s*~\s*([A-D])\b/.exec(String(t || ''));
+      if (!r) return null;
+      const a = LET.indexOf(r[1].toUpperCase()),
+        b = LET.indexOf(r[2].toUpperCase());
+      return b > a ? LET.slice(a, b + 1) : null;
+    };
+    for (const s of S.sheets) {
+      const L = W.instOf.get(s);
+      if (!L || L.length !== 1 || machinesOf(s) !== 1 || !s.nl || isSB(s)) continue;
+      const outs = [...new Set((s.nl.outs || []).map(o => o.row))].map(r => RNG(cellTxt(s, r, 'RS'))).filter(x => x);
+      if (!outs.length || outs.some(x => x.join() !== outs[0].join())) continue;
+      const lets = outs[0],
+        m = lets.length;
+      if (!s.rows.some((_, i) => blkN(s, i) === m)) continue;
+      s._blk = { lets, m, L };
+      s._inst.lbl = lets[0];
+      for (let j = 1; j < m; j++) {
+        const nm = s.name + ' #' + lets[j],
+          x = old.get(nm) || makeInst(s, j, lets[j]);
+        x._inst.blk = 1;
+        W.inst.push(x);
+        L.push(x);
+      }
+    }
+    /* 3.2.1 d2: the row of a sootblower sheet that names one sootblower (output RS text without its addresses), for the copies of DITL-80G */
+    const sbN = t => String(t || '').replace(/\b[IMOB]\.[0-9A-F]{4}\b/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+    let sbIdx = null;
+    const sbOut = txt => {
+      if (!sbIdx) {
+        sbIdx = new Map();
+        for (const d of S.sheets)
+          if (isSB(d) && d.nl)
+            for (const o of d.nl.outs || []) {
+              const k = sbN(cellTxt(d, o.row, 'RS'));
+              if (k && !sbIdx.has(k)) sbIdx.set(k, { d, row: o.row });
+            }
+      }
+      return sbIdx.get(sbN(txt)) || null;
+    };
+    const sbRow = (d, txt) => {
+      const w = sbN(txt);
+      for (let j = 0; j < d.rows.length; j++) if (sbN(cellTxt(d, j, 'S')) === w) return j;
+      return -1;
+    };
+    const inst = (base, k) => {
+      const L = W.instOf.get(base);
+      return L ? L[k] || null : null;
+    };
+    const din = new Map(), // DITL sheet (or instance) -> Map(row -> [sources])
+      ain = [], // ABC inputs fed by a DITL output
+      logic = [], // FROM DITL text on a net that the ABC logic computes
+      lost = [],
+      digFix = [] /* TO DITL by an analog wire: the comparator output next to it */,
+      plc = [],
+      byAddr = [],
+      byLetter = [],
+      bySister = [],
+      byTo = [],
+      byMach = [],
+      byBlk = [],
+      noMach = [];
+    const addIn = (s, row, src) => {
+      if (!din.has(s)) din.set(s, new Map());
+      const m = din.get(s);
+      if (!m.has(row)) m.set(row, []);
+      m.get(row).push(src);
+    };
+    const outRow = (code, nn, from) => {
+      const d = dSheet(code, from);
+      const it = d && ditlItem(d, nn);
+      return it && it.side === 'R' ? { d, row: it.i } : null;
+    };
+    const RNGo = (d, r, col) => {
+      const x = /\b([A-D])\s*~\s*([A-D])\b/.exec(cellTxt(d, r, col || 'RS'));
+      if (!x) return null;
+      const a = LET.indexOf(x[1].toUpperCase()),
+        b = LET.indexOf(x[2].toUpperCase());
+      return b > a ? LET.slice(a, b + 1) : null;
+    };
+    /* the instance (or sister sheet) that a row of machine-instance k of sheet sb gives for the output (d, orow) */
+    const target = (sb, k, i, d, orow, other) => {
+      /* 3.2.0: a DITL-38 valve reads its own outputs (open / closed feedback), not those of the first valve of the table */
+      if (d === sb && d._inst && d._inst.lbl && !d._blk && inst(d, k)) return inst(d, k);
+      /* 3.2.3-beta.266: a block (DITL-21E B~D): the output of the block goes to the copy of the reader's machine (DITL-21B #C row 13 reads
+         the B~D CYCLE SEQ. START of 21E #C) */
+      if (d._blk && d !== sb && RNGo(d, orow)) {
+        const Lk = W.instOf.get(sb).length > 1 ? LET[k] : machOfDitl(cellTxt(sb, i, 'S')),
+          j = d._blk.lets.indexOf(Lk);
+        return j >= 0 ? d._blk.L[j] : d;
+      }
+      /* a row of the block reads the machine of its range at k ("A~C" = the cooler before, "B~D" = its own) */
+      if (sb._blk && blkN(sb, i) === sb._blk.m) {
+        const rg = RNGo(sb, i, 'S'),
+          Lk = rg && rg.length === sb._blk.m ? rg[k] : sb._blk.lets[k],
+          nd2 = machinesOf(d);
+        if (nd2 > 1) {
+          const la = rowList(sb, i),
+            lo = addrList(cellTxt(d, orow, 'RS') + ' ' + cellTxt(d, orow, 'RT')),
+            j = lo.indexOf(la[k]);
+          return inst(d, j >= 0 ? j : LET.indexOf(Lk)) || d;
+        }
+        return (Lk !== 'A' && sister(d, Lk)) || d;
+      }
+      const nd = machinesOf(d),
+        rowT = cellTxt(sb, i, 'S') + ' ' + cellTxt(sb, i, 'T'),
+        n = machinesOf(sb);
+      if (nd > 1) {
+        /* 1. the address of this machine on the row = the address of one machine on the output */
+        const la = rowList(sb, i);
+        if (la.length > 1 && la[k]) {
+          const lo = addrList(cellTxt(d, orow, 'RS') + ' ' + cellTxt(d, orow, 'RT'));
+          const j = lo.indexOf(la[k]);
+          if (j >= 0 && inst(d, j)) {
+            byAddr.push(1);
+            return inst(d, j);
+          }
+        }
+        /* 2. the machine named on the row (the drawing is written from machine A: in instance k the names turn by k) */
+        const rt = rowT.replace(/\(\s*[0-9]{2,3}[A-Z]?\s*-\s*\d{1,2}\s*\)/g, ' '),
+          Lr = machOfDitl(rt);
+        if (Lr) {
+          const j = relative(sb, rt) ? (LET.indexOf(Lr) + k) % Math.max(n, nd, LET.indexOf(Lr) + 1) : LET.indexOf(Lr);
+          if (inst(d, j)) {
+            byLetter.push(1);
+            return inst(d, j);
+          }
+        }
+        /* 3. the other machine of a pair, or the same instance */
+        if (other && nd === 2) return inst(d, 1 - Math.min(k, 1));
+        return inst(d, k < nd ? k : 0);
+      }
+      /* one drawing per machine (DITL-12 / 12A / 12B / 12C): the sister sheet of the machine named on the row */
+      const rt = rowT.replace(/\(\s*[0-9]{2,3}[A-Z]?\s*-\s*\d{1,2}\s*\)/g, ' '),
+        Lr = machOfDitl(rt);
+      if (Lr && (Lr !== 'A' || k > 0)) {
+        const L2 = relative(sb, rt) ? LET[(LET.indexOf(Lr) + k) % Math.max(n, LET.indexOf(Lr) + 1)] : Lr;
+        const ss = sister(d, L2);
+        if (ss) {
+          bySister.push(1);
+          return ss;
+        }
+        if (other) noMach.push(sb.name + ' r' + (i + 1) + ' ' + Lr + ' -> ' + d.name);
+      }
+      return d;
+    };
+    let dd = 0;
+    for (const sb of S.sheets)
+      W.instOf.get(sb).forEach((s, k) =>
+        sb.rows.forEach((r, i) => {
+          const c = sb.cells[i + ':F'];
+          if (!c) return;
+          /* 3.2.1 (SEULGI): a limestone FROM "LINE 3" with no sheet = the output LINE 3 of the same sheet (DITL-LS212 row 15 M.182D
+             VALVE STATE CHANGE PERMIT <- out LINE 3 M.182D; DITL-LS60 row 4 M.1837 <- out LINE 13 M.1837: the same address) */
+          let ft = c.map(x => x.t).join(' ');
+          const lsm = /\)DITL-LS(\d{2,3})$/.exec(sb.name),
+            lln = /^\s*LINE\s*(\d{1,2})\s*$/i.exec(ft);
+          if (lsm && lln) ft = 'SHEET ' + lsm[1] + ' - LINE ' + lln[1];
+          /* 3.2.1 d2: a copy of DITL-80G (N-1012 ~ N-1038): a row that names N-1011 reads the output of its own sootblower (DITL-80B row 2
+             N-1012 SOOTBLOWER OPERATING TO DITL80G, DITL-80M row 5 N-1012 REMOTE START COMMAND TO DITL80G); none found: no link (never N-1011's) */
+          if (s._inst && s._inst.sb) {
+            const st = cellTxt(sb, i, 'S');
+            SB1RX.lastIndex = 0;
+            if (SB1RX.test(st)) {
+              const q = sbOut(W.remap(s, st));
+              if (q) {
+                addIn(s, i, { k: 'd', d: q.d, row: q.row, ref: codeOf(q.d.name) + '-' + (+q.d.rows[q.row].n + 50) });
+                dd++;
+              }
+              return;
+            }
+          }
+          let rf = refsOf(ft);
+          /* 3.2.3-beta.265 (SOHEE, Jennie): one FROM cell, one reference per machine. DITL-21B row 11 "21E-58 21E-72" / row 13 "21E-55 21E-69":
+             DITL-21E (one drawing for the four coolers) out 58 = COOLER A CYCLE SEQ. STOP, out 72 = COOLER B~D CYCLE SEQ. STOP. Machine k of
+             the row reads only the output that names its own machine (A, or the range B~D). Before, every cooler read both: the B~D cycle
+             start of the A stop started A again 3 s after its drain stop, and the four ran in step. Only a drawing with machine copies (#B ~ #D):
+             the B~D half of DITL-21E is one drawing for three coolers and reads both (row 16 "21E-56 (21E-70)") */
+          if (rf.length > 1 && k < LET.length && !sb._blk && W.instOf.get(sb).length > 1 && new Set(rf.map(f => f.code)).size === 1) {
+            const lets = f => {
+              const o = outRow(f.code, f.nn, sb);
+              if (!o || machinesOf(o.d) > 1) return null;
+              const t = cellTxt(o.d, o.row, 'RS'),
+                r = /\b([A-D])\s*~\s*([A-D])\b/.exec(t);
+              if (r) return LET.slice(LET.indexOf(r[1].toUpperCase()), LET.indexOf(r[2].toUpperCase()) + 1);
+              const m = machOfDitl(t);
+              return m ? [m] : null;
+            };
+            const ls = rf.map(lets);
+            if (ls.every(x => x && x.length) && ls.flat().length === new Set(ls.flat()).size) {
+              const mine = rf.filter((f, j) => ls[j].includes(LET[k]));
+              if (mine.length && mine.length < rf.length) {
+                byMach.push(s.name + ' r' + (i + 1) + ' -> ' + mine.map(f => f.code + '-' + f.nn).join(' '));
+                rf = mine;
+              }
+            }
+          }
+          /* 3.2.3-beta.266: a block reads its own outputs along the chain. A row of the block (three addresses) with "21E-56 (21E-70)"
+             (row 16 M.2140/2148/2150): cooler B reads 21E-56 (A START COMMAND of the upper half), C and D the bracket 21E-70 (B~D START
+             COMMAND) of the cooler before (B, C). A row of the A half with a bracket (row 2 "(21E-70)" M.2158) reads the last copy (D) */
+          if (sb._blk) {
+            const B = sb._blk,
+              inB = blkN(sb, i) === B.m,
+              self = rf.filter(f => dSheet(f.code, sb) === sb);
+            if (self.length) {
+              const own = self.filter(f => !f.other),
+                oth = self.filter(f => f.other),
+                use = !inB ? self : k > 0 && oth.length ? oth : own.length ? own : oth;
+              for (const f of use) {
+                const o = outRow(f.code, f.nn, sb);
+                if (!o) continue;
+                const d = !f.other ? s : inB ? (k > 0 ? B.L[k - 1] : sb) : B.L[B.m - 1];
+                addIn(s, i, { k: 'd', d, row: o.row, ref: f.code + '-' + f.nn });
+                if (d !== s) byBlk.push(s.name + ' r' + (i + 1) + ' <- ' + d.name + ' ' + f.code + '-' + f.nn);
+                dd++;
+              }
+              rf = rf.filter(f => !self.includes(f));
+            }
+          }
+          for (const f of rf) {
+            const o = outRow(f.code, f.nn, sb);
+            /* 3.2.4-beta.8 (sootblower sequence stopped after N-1014): the COUNTER of the sootblower DITL-80 (S3) is drawn with its outputs
+               N=0, 1 ~ 4 and 28 ~ 31 only; 5 ~ 27 are left out of the drawing (the same 0.5 SEC ON DELAY to the start command of each
+               sootblower, as 1 ~ 4: TR950 ~ TR953, M.4011 / 4019 / 4021 / 4029). Their readers name them 80-63 ~ 80-85 (DITL-80B row 13
+               N-1015 80-63 ... DITL-80E row 21 N-1038 80-86 = count 28): count = nn - 58. The count of the counter, held 0.5 s */
+            if (!o && f.code === '80' && f.nn >= 63 && f.nn <= 85) {
+              const d3 = dSheet('80', sb),
+                g = d3 && isSB(d3) && d3.nl && (d3.nl.gates || []).find(x => x.t === 'CNT');
+              if (g) {
+                addIn(s, i, { k: 'c', cs: d3, n: f.nn - 58, on: 0, ref: '80-' + f.nn + ' (counter ' + (f.nn - 58) + ')' });
+                dd++;
+              }
+              continue;
+            }
+            if (!o) continue;
+            /* 2.2.0-beta.6: machine k of this row on a drawing made for one machine: the output whose TO column names this row
+               in brackets is the one of the other machine (DITL-03B out 70 FAB A STOPPED TO 28A-29, out 71 FAB B STOPPED TO
+               "(28A-29)"): FAB B of DITL-28A #B row 29 reads out 71, not out 70 */
+            if (k > 0 && machinesOf(o.d) < 2 && !sb._blk && !o.d._blk) {
+              const me = codeOf(sb.name) + '-' + String(+sb.rows[i].n).padStart(2, '0'),
+                alt = o.d.rows
+                  .map((_, j) => j)
+                  .filter(j => j !== o.row && refsOf(cellTxt(o.d, j, 'RT')).some(g => g.other && g.code + '-' + String(g.nn).padStart(2, '0') === me));
+              if (alt[k - 1] != null) {
+                byTo.push(sb.name + ' #' + LET[k] + ' r' + (i + 1) + ' -> ' + o.d.name + ' out ' + (+o.d.rows[alt[k - 1]].n + 50));
+                addIn(s, i, { k: 'd', d: o.d, row: alt[k - 1], ref: f.code + '-' + (+o.d.rows[alt[k - 1]].n + 50) });
+                dd++;
+                continue;
+              }
+            }
+            /* also the same sheet: an output that comes back as an input of the sheet (DITL-26A row 1 PAF TRIP = 26A-66) */
+            const d = target(sb, k, i, o.d, o.row, f.other);
+            addIn(s, i, { k: 'd', d, row: o.row, ref: f.code + '-' + f.nn });
+            dd++;
+          }
+        })
+      );
+    /* 3.2.1 d2 (LISA): a TO reference written at the end of a wire, not in an output row. The sootblower drawing DITL-80G has no output
+       column: "DITL80N-30" is written on the wire of the coil N-1011 S/B STARTER ON, "DITL80T-4" / "DITL80T-6" on M.4016 / M.4017 (memory
+       list 102: SB1 SOOTBLOWER FORWARD / BACKWARD STARTER ON). The net of that wire is the source of the row (DITL-80N row 30 FROM DITL80G,
+       DITL-80T rows 4 / 6 FROM DITL80G); the sheet exports the net as "n<net>" in its output set (tick below) */
+    const wireTo = [];
+    for (const sb of S.sheets) {
+      if (!isSB(sb) || !sb.nl || !sb.nl.segs) continue;
+      for (const t of sb.tx || []) {
+        const m = /^DITL\s?(\d{2,3}[A-Z]?)-(\d{1,2})$/.exec(String(t.t || '').trim());
+        if (!m) continue;
+        let bn = -1,
+          bd = 8;
+        for (const g of sb.nl.segs) {
+          const dx = g.x2 - g.x1,
+            dy = g.y2 - g.y1,
+            L2 = dx * dx + dy * dy,
+            u = L2 > 0 ? Math.max(0, Math.min(1, ((t.x - g.x1) * dx + (t.y - g.y1) * dy) / L2)) : 0,
+            dd2 = Math.hypot(t.x - (g.x1 + u * dx), t.y - (g.y1 + u * dy));
+          if (dd2 < bd) ((bd = dd2), (bn = g.n));
+        }
+        if (bn < 0) continue;
+        const d = dSheet(m[1].toUpperCase(), sb),
+          it = d && d !== sb && ditlItem(d, +m[2]);
+        if (!it || it.side !== 'L') continue;
+        (sb._xn = sb._xn || new Set()).add(bn);
+        addIn(d, it.i, { k: 'd', d: sb, row: 'n' + bn, ref: codeOf(sb.name) + ' ' + String(t.t).trim() });
+        wireTo.push(d.name + ' r' + (+d.rows[it.i].n) + ' <- ' + sb.name + ' net ' + bn);
+        /* the copies (N-1012 ~ N-1038): the row of the same sheet that names their tag (DITL-80N row 41 N-1022 SOOTBLOWER STARTER ON) */
+        for (const x of W.instOf.get(sb).slice(1)) {
+          if (!x._inst.sb) continue;
+          const j = sbRow(d, W.remap(x, cellTxt(d, it.i, 'S')));
+          if (j < 0 || j === it.i) continue;
+          (x._xn = x._xn || new Set()).add(bn);
+          addIn(d, j, { k: 'd', d: x, row: 'n' + bn, ref: codeOf(sb.name) + ' ' + x._inst.lbl });
+          wireTo.push(d.name + ' r' + (+d.rows[j].n) + ' <- ' + x.name + ' net ' + bn);
+        }
+      }
+    }
+    /* 3.2.1 d2 (LISA): the PLC sheets with no FROM column read their inputs by address (CLAUDE.md rule 1: one address = one signal in its
+       station). Sand E10210-3-771 ~ 777 = station 103, limestone DITL-LS = station 104.
+       - an output row of another sheet of the same set that writes the address (sand: 771 row 7 M.0851 SAND SILO LEVEL L <- 774 out
+         M.0851; 777 row 6 O.060A VENT FILTER RUN COMMAND <- 774 out O.060A ...);
+       - an output row that names the address with its station, "S3 I.000F", "S4 I.0560": DITL-03A MFT "S1 I.000F S2 I.000F S3 I.000F
+         MFT S4 I.0560" is the MFT of the sand rows I.000F and of the limestone rows I.0560 MFT (BOILER STOP);
+       - two memories that the drawings of these stations name and no sheet in the app writes, from their names (memory lists):
+         M.1829 ANY BURNER IN SERVICE (list 104) = burner A / B / C / D IN SERVICE (M.0139 / 0239 / 1639 / 1739, DITL-12 / 12A / 12B /
+         12C out 70); M.3224 52G1 OPENED OR 52L1 OPENED (list 102, station wiring) = I.0932 GCB 52G1 off or I.0937 52L1 open (I/O list
+         STN102, the ABC-050 / ABC-013 inputs). Several sources of a row are an OR (tick below) */
+    const byStn = [];
+    {
+      const SG = s => (/^\(D7\d\)/.test(s.name) ? '3' : /\)DITL-LS\d+$/.test(s.name) ? '4' : '');
+      const P = new Map(),
+        put = (k, q) => P.has(k) || P.set(k, q);
+      for (const d of S.sheets) {
+        if (!d.nl) continue;
+        const g = SG(d);
+        for (const o of d.nl.outs || []) {
+          const t = cellTxt(d, o.row, 'RS');
+          for (const m of t.matchAll(/\bS([1-5])\s+([IMOB]\.[0-9A-F]{4})\b/g)) put(m[1] + ' ' + m[2], { d, row: o.row });
+          if (g) for (const m of t.matchAll(/\b[IMOB]\.[0-9A-F]{4}\b/g)) put(g + ' ' + m[0], { d, row: o.row });
+        }
+      }
+      const abcIn = (nm, adr) => {
+        const sh = AN.sheets.find(x => x.name === nm);
+        let T = null;
+        try {
+          T = sh && AN.ensure(sh);
+        } catch (e) {}
+        const n = T && T.ext ? T.ext.find(j => String(AN.nm(T, j) || '').replace(/^S\d\s*/, '').trim() === adr) : undefined;
+        return n == null ? null : { k: 'a', sh, n, ref: nm + ' ' + adr };
+      };
+      const ANY = {
+        /* M.050A ALL COAL FEEDERS STOP (memory list 104) = DITL-01 out 72 ALL COAL FEEDER STOPPED (its address text M.050A; DITL-03F row 3 reads it) */
+        'M.050A': () => [outRow('01', 72)].filter(Boolean).map(o => ({ k: 'd', d: o.d, row: o.row, ref: '01-72' })),
+        'M.1829': () => ['12', '12A', '12B', '12C'].map(c => outRow(c, 70)).filter(Boolean).map(o => ({ k: 'd', d: o.d, row: o.row, ref: codeOf(o.d.name) + '-70' })),
+        'M.3224': () => [abcIn('ABC-050', 'I.0932'), abcIn('ABC-013', 'M.3221') || abcIn('ABC-050', 'I.0937')].filter(Boolean)
+      };
+      for (const s of S.sheets) {
+        const g = SG(s);
+        if (!g || !s.nl) continue;
+        for (const q of s.nl.src || []) {
+          const have = din.get(s) && din.get(s).get(q.row);
+          if (have && have.length) continue;
+          const t = cellTxt(s, q.row, 'T') + ' ' + cellTxt(s, q.row, 'S');
+          for (const m of t.matchAll(/\b[IMOB]\.[0-9A-F]{4}\b/g)) {
+            const o = P.get(g + ' ' + m[0]);
+            if (o && o.d !== s) {
+              addIn(s, q.row, { k: 'd', d: o.d, row: o.row, ref: codeOf(o.d.name) + ' ' + m[0] });
+              byStn.push(s.name + ' r' + s.rows[q.row].n + ' ' + m[0] + ' <- ' + o.d.name + ' row ' + (+o.d.rows[o.row].n));
+              break;
+            }
+            if (g === '4' && ANY[m[0]]) {
+              const L = ANY[m[0]]();
+              for (const x of L) addIn(s, q.row, x);
+              if (L.length) byStn.push(s.name + ' r' + s.rows[q.row].n + ' ' + m[0] + ' <- any of ' + L.map(x => x.ref).join(', '));
+              break;
+            }
+          }
+        }
+      }
+    }
+    /* 3.2.1 (Mina beta.146 ~ 154: 52G1 stayed CLOSED on pages 13 / 17 after a turbine trip): DITL-03E rows 2 / 3 "52L1 OPEN FOR HOUSE
+       OPERATION ON (FROM STATION WIRING) S2 M.3221" and "52G1 OPEN (FROM STATION WIRING) S2 M.3220" had no source. The station wiring
+       carries the station 2 inputs (unit.js U.bcast, ABC-013 "52G1 OPEN M.3220 (FROM S2 L0932)", "52L1 OPEN FOR HOUSE OPERATION M.3221
+       (FROM S2 L0937)"): M.3220 = I.0932 GCB 52G1 off, M.3221 = I.0937 52L1 open, the ABC-050 inputs the unit model writes */
+    for (const [rn, adr] of [
+      [2, 'I.0937'],
+      [3, 'I.0932']
+    ]) {
+      const d = S.sheets.find(x => x.name.endsWith(')DITL-03E')),
+        i = d ? d.rows.findIndex(r => +r.n === rn) : -1;
+      if (!d || i < 0) continue;
+      const have = din.get(d) && din.get(d).get(i);
+      if (have && have.length) continue;
+      const sh = AN.sheets.find(x => x.name === 'ABC-050');
+      let T = null;
+      try {
+        T = sh && AN.ensure(sh);
+      } catch (e) {}
+      const n = T && T.ext ? T.ext.find(j => String(AN.nm(T, j) || '').replace(/^S\d\s*/, '').trim() === adr) : undefined;
+      if (n == null) continue;
+      nlOf(d);
+      addIn(d, i, { k: 'a', sh, n, ref: 'ABC-050 ' + adr + ' (station wiring)' });
+    }
+    /* 3.2.1 c2 gap 2 (LISA, 310SC90-773 rev 2 DI 59 / 60 / 63 / 64, TCS -> DCS): the drain valve commands of the TCS. IBD TE-1 net 66 / 67
+       (the WO gates of HP TURBINE WARMING LINE DRAIN VALVE OPEN / CLOSE, page 90) = TCS-DI1033 / 1034 I.0407 / I.0408 = DITL-75 rows 8 / 11;
+       IBD TE-6 net 45 / 18 (TURBINE GLAND STEAM LINE DRAIN VALVE FULL OPEN / CLOSE, page 94) = TCS-DI1037 / 1038 I.040B / I.040C = the
+       "TURBINE GLAND STEAM LINE GROUP" rows 8 / 11 of DITL-52, 53 and 116. The TCS sheet exports the net (n<net>, tick) */
+    /* 3.2.1 d1 (LISA): sand rows whose producer is another sand sheet of station 103 by the same signal name (the rows carry no address or
+       one the outputs do not write). Memory list 103: M.0810 SAND SYSTEM START, M.0860 SAND AIR TANK PRESSURE LOW, M.0880 SAND SYSTEM
+       TRIP (the M.0880 text of DITL-771 belongs to its SYSTEM TRIP row; its ROUTE OK row is M.0872, DITL-776 OUT14 "M.0872 ROUTE OK" as on
+       DITL-772 / 777). M.1375 SAND SILO BAG FILTER VENTING FAN ON COMMAND = DITL-BA21 OUT9 "TO SAND VENTING FAN ON COMMAND" */
+    const sdLink = [];
+    for (const [sh, rn, from, on] of [
+      ['DITL-771', 2, 'DITL-777', 16] /* SYSTEM READY M.0881 */,
+      ['DITL-771', 6, 'DITL-777', 13] /* SYSTEM TRIP M.0880 */,
+      ['DITL-771', 9, 'DITL-776', 14] /* ROUTE OK M.0872 */,
+      ['DITL-772', 6, 'DITL-771', 22] /* INLET DV OPEN M.081B */,
+      ['DITL-773', 1, 'DITL-771', 22] /* INLET DV OPEN M.081B */,
+      ['DITL-774', 6, 'DITL-BA21', 9] /* VENTING FAN ON COMMAND M.1375 */,
+      ['DITL-774', 7, 'DITL-771', 15] /* SYSTEM (ON) M.0810 */,
+      ['DITL-776', 4, 'DITL-771', 15] /* SYSTEM ON M.0810 */,
+      ['DITL-777', 4, 'DITL-775', 14] /* AIR TANK PRESSURE L M.0860 */,
+      ['DITL-777', 8, 'DITL-772', 19] /* INLET DV OPEN FAULT M.0836 */,
+      ['DITL-777', 9, 'DITL-772', 17] /* INLET DV CLOSE FAULT M.0835 */
+    ]) {
+      const d = S.sheets.find(x => x.name.endsWith(')' + sh)),
+        f = S.sheets.find(x => x.name.endsWith(')' + from)),
+        i = d ? d.rows.findIndex(r => +r.n === rn) : -1;
+      if (!d || !f || i < 0) continue;
+      const nf = nlOf(f);
+      if (!nf.outs.some(q => q.row === on - 1)) continue;
+      nlOf(d);
+      addIn(d, i, { k: 'd', d: f, row: on - 1, ref: from + ' OUT' + on });
+      sdLink.push(d.name + ' r' + rn + ' <- ' + f.name + ' OUT' + on);
+    }
+    const tcsOut = [];
+    for (const [id, net, sh, rn] of [
+      ['TE-1', 66, 'DITL-75', 8],
+      ['TE-1', 67, 'DITL-75', 11],
+      ['TE-6', 45, 'DITL-52', 8],
+      ['TE-6', 18, 'DITL-52', 11],
+      ['TE-6', 45, 'DITL-53', 8],
+      ['TE-6', 18, 'DITL-53', 11],
+      ['TE-6', 45, 'DITL-116', 8],
+      ['TE-6', 18, 'DITL-116', 11]
+    ]) {
+      const t = S.sheets.find(x => x.tcs === id),
+        d = S.sheets.find(x => x.name.endsWith(')' + sh)),
+        i = d ? d.rows.findIndex(r => +r.n === rn) : -1;
+      if (!t || !d || i < 0 || net >= nlOf(t).n) continue;
+      nlOf(d);
+      (t._xn = t._xn || new Set()).add(net);
+      addIn(d, i, { k: 'd', d: t, row: 'n' + net, ref: 'TCS ' + id });
+      tcsOut.push(d.name + ' r' + rn + ' <- ' + t.name + ' net ' + net);
+    }
+    let fa = 0,
+      ta = 0;
+    const wsh = new Set();
+    for (const sh of AN.sheets) {
+      if (/ABC-000/.test(sh.name)) continue;
+      let ix;
+      try {
+        AN.ensure(sh);
+        ix = AN.dsIdx(sh);
+      } catch (e) {
+        continue;
+      }
+      /* the machine of an ABC signal: its memory list description ("B-BFWP RUNNING (BC FROM S3)", M.3344) */
+      const machAbc = n => machOfDesc(AN.descOf ? AN.descOf(sh, AN.nm(sh.S, n)) : '');
+      const pick = (d, L, adr, row, isTo) => {
+        const nd = machinesOf(d);
+        if (nd > 1) {
+          /* the address of the ABC signal is one of the machine addresses of the row (ABC-003B M.3125 -> DITL-07 row 4
+             "M.3124/3125/3144/3145" = burner B; ABC-011 I.0091 -> DITL-32 73 "I.0011/91" = valve (2)) */
+          if (adr) {
+            const la = addrList(
+              isTo ? cellTxt(d, row, 'T') || cellTxt(d, row, 'S') : cellTxt(d, row, 'RS') + ' ' + cellTxt(d, row, 'RT')
+            );
+            const j = la.indexOf(adr);
+            if (j >= 0 && inst(d, j)) return inst(d, j);
+          }
+          if (L && inst(d, LET.indexOf(L))) return inst(d, LET.indexOf(L));
+          return d;
+        }
+        if (L && L !== 'A') return sister(d, L) || d;
+        return d;
+      };
+      for (const [n, refs] of ix.from) {
+        let ok = null;
+        for (const r of refs)
+          for (const f of refsOf(r)) {
+            const o = !ok && outRow(f.code, f.nn);
+            if (o) ok = Object.assign(o, { ref: f.code + '-' + f.nn });
+          }
+        if (ok) ok.d = pick(ok.d, machAbc(n), String(AN.nm(sh.S, n) || '').replace(/^S\d\s*/, '').trim(), ok.row, false);
+        /* only a real input of the sheet; a net that the ABC logic computes (ABC-004A M.3410 = AND of the two valve CLOSE) keeps its logic */
+        if (ok && sh.S.ext.includes(n)) {
+          ain.push({ sh, n, d: ok.d, row: ok.row, ref: ok.ref });
+          fa++;
+        } else if (ok) logic.push(sh.name + ' ' + AN.nm(sh.S, n) + ' (' + ok.ref + ')');
+        else if (refs.some(r => refsOf(r).some(f => /S$/.test(f.code) && !dSheet(f.code))))
+          /* 2.3.0-beta.1 (LINK-1): a PLC logic reference ("FROM DITL 80S-57 FOR S/B LOGIC"): that PLC is not in the app, set by hand */
+          plc.push(sh.name + ' ' + AN.nm(sh.S, n) + ' FROM ' + refs.join('/'));
+        else lost.push(sh.name + ' FROM ' + refs.join('/'));
+      }
+      for (const [n, refs] of ix.to) {
+        let hit = false;
+        for (const r of refs)
+          for (const f of refsOf(r)) {
+            const d0 = dSheet(f.code);
+            const it = d0 && ditlItem(d0, f.nn);
+            if (!it || it.side !== 'L') continue;
+            const row = it.i;
+            /* 2.2.0-beta.4: a TO DITL by an analog wire, to a limit row: the comparator output next to it ("TO DITL 40-09"
+               MAIN STEAM PRESSURE LOW LOW by AI0131 of ABC-001C = M.310D, AI0131 < 72.9 kg/cm2) */
+            const net = sh.S.nets && sh.S.nets[n];
+            let src = n;
+            if (
+              net &&
+              !net.dig &&
+              /\bLOW\b|\bHIGH\b|H\.\s?H\.|L\.\s?L\.|[<>]/i.test((d0.cells[row + ':S'] || []).map(x => x.t).join(' '))
+            ) {
+              const alt = ix.toDig && ix.toDig.get(r + '@' + n);
+              if (alt != null) {
+                src = alt;
+                digFix.push(sh.name + ' ' + AN.nm(sh.S, n) + ' -> ' + AN.nm(sh.S, alt) + ' (' + r + ')');
+              } else lost.push(sh.name + ' ' + AN.nm(sh.S, n) + ' TO ' + r + ' (analog wire, no comparator output beside it)');
+            }
+            const d = pick(d0, machAbc(src), String(AN.nm(sh.S, src) || '').trim(), row, true);
+            addIn(d, row, { k: 'a', sh, n: src, ref: sh.name });
+            /* 3.2.0-beta.23: a signal of no machine (ABC-027 M.2504 FURNACE LOWER LAYER TEMP > 700 C) to a row of a machine drawing
+               that names no machine of the family and has one address (DITL-19 row 16 for coal feeders A, B, C): every instance
+               reads it (CLAUDE.md rule 1, one address = one signal). Before, feeders B and C had no furnace temperature permissive */
+            if (d === d0 && machinesOf(d0) > 1 && !machAbc(src)) {
+              const rt = cellTxt(d0, row, 'T') + ' ' + cellTxt(d0, row, 'S');
+              if (rowList(d0, row).length <= 1 && !relative(d0, rt))
+                W.instOf.get(d0).forEach((x, k) => k && addIn(x, row, { k: 'a', sh, n: src, ref: sh.name }));
+            }
+            hit = true;
+          }
+        if (hit) {
+          ta++;
+          wsh.add(sh.name);
+        } else lost.push(sh.name + ' TO ' + refs.join('/'));
+      }
+    }
+    /* 2.3.0-beta.1 (LINK-4): a DITL input row "FROM ABC-xxx" whose ABC drawing has no "TO DITL" text for it: the address or tag of
+       the row (TAG NO. column, or the tag written on the row wire: DITL-115 row 17 "PICMS1006.MAN") is a signal of that ABC sheet
+       (CLAUDE.md rule 1: one address = one signal). The address may be written there as "M.025B ( TO S4 M.3101 )" (ABC-013).
+       A row that the DITL compares (DITL-79 row 6 TICMS1022.MV > 2 % / < 1 %) takes the analog value; a .MAN of a controller is
+       its MANUAL state (the faceplate) */
+    const WIRE_S1 = { 'M.311A': 'B.0646', 'M.311B': 'B.066E' },
+      fromAbc = [],
+      abcMiss = [],
+      abcOf = code => {
+        const c = /^\d{2}[A-Z]?$/.test(code) ? '0' + code : code;
+        return AN.sheets.filter(p => p.name === 'ABC-' + c || (/^\d{3}$/.test(c) && new RegExp('^ABC-' + c + '[A-Z]$').test(p.name)));
+      };
+    for (const sb of S.sheets)
+      W.instOf.get(sb).forEach((s, k) =>
+        sb.rows.forEach((r, i) => {
+          const F = cellTxt(sb, i, 'F'),
+            fm = /ABC[-\s]?(\d{2,3}[A-Z]?)\b/i.exec(F);
+          if (!fm) return;
+          const have = din.get(s) && din.get(s).get(i);
+          if (have && have.some(q => q.k === 'a' || q.k === 'v' || q.k === 'm')) return;
+          const sheets = abcOf(fm[1].toUpperCase());
+          if (!sheets.length) return;
+          const T = cellTxt(sb, i, 'T') + ' ' + cellTxt(sb, i, 'S'),
+            la = rowList(sb, i);
+          /* machine B / C / D of a shared drawing: only its own address (the address of machine A is not its signal) */
+          /* 3.2.0-beta.23: one address and a row that names no machine of this family (DITL-19 row 16 "FURNACE LOWER LAYER UNDER
+             TEMP. > 700 C" M.3330 is ONE furnace for feeders A, B, C) is the same signal for every instance (CLAUDE.md rule 1);
+             before, feeders B and C had no furnace temperature and tripped when the last start-up burner was put out */
+          const common = k > 0 && !la[k] && la.length === 1 && !relative(sb, T);
+          if (k > 0 && !la[k] && !common) return;
+          const adr = la[k] || (common ? la[0] : null),
+            wt = (sb.tx || []).filter(x => x && x.t && Math.abs((x.iy != null ? x.iy : x.y) - r.y) < 5 && /^[A-Z0-9-]{4,}\.(MAN|MV|PV|SV)$/.test(String(x.t).trim())),
+            tm = /\b([A-Z]{2,}[A-Z0-9-]*\d[A-Z0-9-]*\.(?:MAN|MV|PV|SV))\b/.exec(T),
+            tag = tm ? tm[1] : wt.length ? String(wt[0].t).trim() : null,
+            an = s.nl && (s.nl.an || []).find(a => a.row === i);
+          let src = null;
+          for (const sh of sheets) {
+            let SS;
+            try {
+              SS = AN.ensure(sh);
+            } catch (e) {
+              continue;
+            }
+            const nmOf = n => String(AN.nm(SS, n) || '').replace(/^S\d\s*/, '').trim(),
+              drv = n => SS.drv[n] && SS.drv[n].some(d => d.k !== 'LINK');
+            if (adr) {
+              let n = SS.nets.findIndex((_, j) => nmOf(j) === adr && drv(j));
+              if (n < 0) {
+                const re = new RegExp('([IMB]\\.[0-9A-F]{4})\\s*\\(?\\s*TO\\s+S\\d\\s+' + adr.replace('.', '\\.') + '\\b'),
+                  tx = (SS.tx || []).find(x => re.test(x.t)),
+                  t = tx && re.exec(tx.t);
+                if (t) n = SS.nets.findIndex((_, j) => nmOf(j) === t[1] && drv(j));
+                if (t && n < 0) {
+                  /* the address text names the wire it is written on (ABC-013 "M.025B ( TO S4 M.3101 )"): the nearest digital wire of the logic */
+                  let bd = 20;
+                  SS.nets.forEach((nn, j) => {
+                    if (!nn.dig || !drv(j)) return;
+                    for (const i of nn.segs) {
+                      const g = SS.seg[i],
+                        dx = g.x2 - g.x1,
+                        dy = g.y2 - g.y1,
+                        L2 = dx * dx + dy * dy,
+                        u = L2 > 0 ? Math.max(0, Math.min(1, ((tx.x - g.x1) * dx + (tx.y - g.y1) * dy) / L2)) : 0,
+                        d = Math.hypot(tx.x - (g.x1 + u * dx), tx.y - (g.y1 + u * dy));
+                      if (d < bd) {
+                        bd = d;
+                        n = j;
+                      }
+                    }
+                  });
+                }
+              }
+              /* 2.5.0-beta.5: an address of the STN101 station wiring that the ABC sheet writes by its own name (memory list 101 / 103
+                 M.311A / M.311B "Plenum/upper diff. press.(A) / (B) sig. abnormal (FROM S1)" = the SIG.AB of AI0134 DPT-FG1081 / AI0262
+                 DPT-FG1082, I/O list STN101: B.0646 / B.066E on ABC-009A). DITL-21C row 19 / 20 */
+              if (n < 0 && WIRE_S1[adr]) n = SS.nets.findIndex((_, j) => nmOf(j) === WIRE_S1[adr] && drv(j));
+              if (n >= 0) src = { k: an ? 'v' : 'a', sh, n, ref: sh.name + ' ' + adr + (WIRE_S1[adr] && nmOf(n) === WIRE_S1[adr] ? ' = ' + WIRE_S1[adr] : '') };
+            }
+            if (!src && tag && /\.MAN$/.test(tag)) {
+              const c = (AN.hmiCtrls ? AN.hmiCtrls(SS) : []).find(z => z.tag === tag.replace(/\.MAN$/, ''));
+              if (c && c.amt) src = { k: 'm', sh, c, ref: sh.name + ' ' + tag };
+            }
+            if (!src && tag && /\.(MV|PV|SV)$/.test(tag)) {
+              const c = (AN.hmiCtrls ? AN.hmiCtrls(SS) : []).find(z => z.tag === tag.replace(/\.\w+$/, ''));
+              let n = SS.nets.findIndex((_, j) => nmOf(j) === tag && drv(j));
+              if (n < 0 && c && /\.MV$/.test(tag)) n = c.out;
+              if (n >= 0) src = { k: an ? 'v' : 'a', sh, n, key: an ? an.key : null, ref: sh.name + ' ' + tag };
+            }
+            if (src) break;
+          }
+          if (src) {
+            if (src.k === 'v') src.key = an.key;
+            addIn(s, i, src);
+            fromAbc.push(s.name + ' r' + r.n + ' <- ' + src.ref);
+          } else abcMiss.push(s.name + ' r' + r.n + ' FROM ' + F + ' (no ' + (adr || tag || 'address') + ' on the ABC sheet)');
+        })
+      );
+    /* 3.2.0-beta.39 (roadmap 2, CLAUDE.md rule 1): an input row from the turbine control or the generator breaker (LOCATION TCS / GMCB,
+       no FROM sheet: DITL-35 row 11 ICV TO CV TRANSFER COMPLETE I.0418, DITL-51 / 94 ~ 108 TURBINE TRIP I.0400, DITL-80 ~ 89 GCB 52G1 ON
+       I.0931) is the same address as the ABC input that the turbine model writes (unit.js / tcs.js: ABC-050 I.0418 ...). Unlinked it read
+       0 for ever: DITL-35 held the RH spray shut-off valve shut (NOT I.0418 resets it) and the reheat went to 593 C at 150 MW */
+    const tcsIn = [];
+    for (const sb of S.sheets)
+      W.instOf.get(sb).forEach((s, k) =>
+        sb.rows.forEach((r, i) => {
+          if (!/^(TCS|GMCB)$/.test(cellTxt(sb, i, 'L').trim()) || cellTxt(sb, i, 'F').trim()) return;
+          const have = din.get(s) && din.get(s).get(i);
+          if (have && have.length) return;
+          /* 3.2.1: DITL-03H row 3 names the contact, not the address: TCS-DI1003 "#1 Turbine trip" = I.0400 (IO list STN102). Unlinked, MFT
+             cause 18 read 0 for ever and a turbine trip left the fuel on (FHI T9 p24: on turbine valve closure all fuel trips) */
+          const la = rowList(sb, i),
+            tg = cellTxt(sb, i, 'T').trim(),
+            /* 3.2.1 d1 (LISA): a row that names the field tag, not the address: the I/O list (src/ui/plant/wiring.js) gives it. DITL-03H row 18 MIG-52G1-2 = I.0932 GCB 52G1 off */
+            wr = !la.length && window.WIRING ? window.WIRING.find(x => x[3] === tg && /^I\.[0-9A-F]{4}$/.test(x[2])) : null,
+            adr = la[k] || (la.length === 1 ? la[0] : null) || (tg === 'TCS-DI1003' ? 'I.0400' : wr ? wr[2] : null);
+          if (!adr || !/^I\.[0-9A-F]{4}$/.test(adr)) return;
+          for (const sh of AN.sheets) {
+            if (/^ABC-000/.test(sh.name)) continue;
+            let SS;
+            try {
+              SS = AN.ensure(sh);
+            } catch (e) {
+              continue;
+            }
+            const n = SS && SS.ext ? SS.ext.find(j => String(AN.nm(SS, j) || '').replace(/^S\d\s*/, '').trim() === adr) : undefined;
+            if (n == null) continue;
+            addIn(s, i, { k: 'a', sh, n, ref: sh.name + ' ' + adr });
+            tcsIn.push(s.name + ' r' + r.n + ' <- ' + sh.name + ' ' + adr);
+            wsh.add(sh.name);
+            break;
+          }
+        })
+      );
+    /* 3.2.0-beta.23 (Training dock, IDF interlock): an input row whose FROM column names an output of the SAME sheet that is
+       only a copy of that very row (a wire or a NOT) is not its own source. DITL-43 row 12 AIR PREHEATER SPEED NOT LOW I.0653 has "43-56" in the FROM
+       column (the station channel of the contact, like rows 4 / 5 / 10 / 13: 43-54 / 55 / 53 / 57), and out 56 is the same signal to
+       the CRT: linked, the row read its own output, stayed 0 for ever and the IDF (DITL-25A <- 25B row 27) could never start.
+       The link is left out; the row stays the field contact (docs/versions/v3.2.0/UNLINK_AUDIT.md) */
+    let selfL = 0;
+    const selfDep = (s, orow, irow) => {
+      try {
+        if (!s.nl) s.nl = netlist(s);
+        /* roadmap 2 batch 3: a limit switch of a valve of the drawing (ZSO / ZSC, the solenoid / MOV model) is the field, not a copy of
+           the row. DITL-35 row 2 SOV CLOSED I.088F <- 35-73: the row and the switch wire touch on the sheet (one row of nets), the link
+           was left out, the logic read the row 0 for ever and the RH spray shut-off valve never opened (reheat 593 C at 150 MW) */
+        if ((s.nl.mv || []).some(m => (m.fb || []).some(f => f.row === orow))) return false;
+        const ins = new Set((window.DUI && DUI.rowNets ? DUI.rowNets(s, irow, 'L') : []) || []);
+        if (!ins.size) return false;
+        const drv = new Map();
+        for (const g of s.nl.gates || []) for (const n of [].concat(g.out == null ? [] : g.out)) drv.set(n, g);
+        const seen = new Set(),
+          st = (s.nl.outs || []).filter(o => o.row === orow).map(o => o.n);
+        while (st.length) {
+          const n = st.pop();
+          if (ins.has(n)) return true;
+          if (seen.has(n)) continue;
+          seen.add(n);
+          const g = drv.get(n);
+          /* only a copy of the row (a wire or a NOT): an output computed by logic from the row and other inputs (a motor command
+             sealed in by its RUNNING feedback, DITL-24 row 2 <- out 58) is a real loop through the plant and stays linked */
+          if (g && g.t === 'NOT') for (const m of g.ins || []) st.push(m);
+        }
+      } catch (e) {}
+      return false;
+    };
+    din.forEach((m, s) =>
+      m.forEach((srcs, row) => {
+        const keep = srcs.filter(q => !(q.k === 'd' && q.d === s && selfDep(s, q.row, row)));
+        if (keep.length === srcs.length) return;
+        selfL += srcs.length - keep.length;
+        if (keep.length) m.set(row, keep);
+        else m.delete(row);
+      })
+    );
+    W.selfLinks = selfL;
+    /* 3.2.0-beta.23 (CLAUDE.md rule 1): ABC-004A M.3410 / 3411 / 3416 / 3417 = AND of "A-BNR SUPPLY OIL VALVE(1) CLOSE" and "VALVE(2)
+       CLOSE" (B / C / D-BNR), the limit switches of the station wiring: the same contacts as DITL-16 out 21 / 23 BURNER A OIL SUPPLY LINE
+       VALVE(1) / (2) CLOSED (machine instances #B ~ #D). Unlinked, they kept the Cold value (closed) and the plant burnt no oil while the
+       DITL burner was IN SERVICE with both valves open */
+    {
+      const b16 = S.sheets.find(x => /\)DITL-16$/.test(x.name)),
+        a4 = AN.sheets.find(x => x.name === 'ABC-004A'),
+        T = a4 && a4.S;
+      if (b16 && T)
+        ['M.3410', 'M.3411', 'M.3416', 'M.3417'].forEach((adr, k) => {
+          const d = inst(b16, k);
+          if (!d) return;
+          for (let n = 0; n < T.lab.length; n++) {
+            if (!T.lab[n] || String(T.lab[n].t).trim() !== adr || T.ext.includes(n)) continue;
+            for (const g of T.drv[n] || [])
+              if (g.k === 'AND')
+                (g.i || [])
+                  .filter(i => T.ext.includes(i))
+                  .slice(0, 2)
+                  .forEach((i, j) => ain.push({ sh: a4, n: i, d, row: j ? 22 : 20, ref: d.name + ' out ' + (j ? 23 : 21) + ' VALVE(' + (j + 1) + ') CLOSED' }));
+          }
+        });
+    }
+    /* 3.2.1 d2 (LISA): station 2 to station 1 by the station wiring. ABC-001C reads M.3230 "S/B steam supply motor valve open (BC FROM S2)"
+       and M.3236 "SOOTBLOER PROGRAM END (BC FROM S2)" (memory list 101). Memory list 102 gives the same names to the station 2 signals: the
+       motor valve ZSO-SB1001 I.024A (I/O list STN102), which the sootblower drawings read as 80S-55 (DITL-80S row 6 FULL OPENED, its out 55
+       also goes "TO ABC-001C"), and M.400D SOOTBLOER PROGRAM END, read as 80-89 (DITL-80 row 7). Unlinked, both stayed 0 */
+    {
+      const a1 = AN.sheets.find(x => x.name === 'ABC-001C');
+      let T = null;
+      try {
+        T = a1 && AN.ensure(a1);
+      } catch (e) {}
+      const sb = S.sheets.find(x => isSB(x));
+      if (T && sb)
+        for (const [adr, code, nn] of [
+          ['M.3230', '80S', 55],
+          ['M.3236', '80', 89]
+        ]) {
+          const o = outRow(code, nn, sb),
+            n = T.ext.find(j => String(AN.nm(T, j) || '').replace(/^S\d\s*/, '').trim() === adr);
+          if (o && n != null) ain.push({ sh: a1, n, d: o.d, row: o.row, ref: code + '-' + nn + ' (station wiring ' + adr + ')' });
+        }
+    }
+    W.idx = { din, ain };
+    W._nA = AN.sheets.length;
+    W.stat = {
+      ditlDitl: dd,
+      inst: W.inst.length,
+      byAddr: byAddr.length,
+      byLetter: byLetter.length,
+      bySister: bySister.length,
+      byTo,
+      byMach,
+      byBlk,
+      noMach,
+      digFix,
+      fromDitl: fa,
+      fromAbc,
+      tcsIn,
+      wireTo,
+      byStn,
+      tcsOut,
+      sdLink,
+      abcMiss,
+      plc,
+      toDitl: ta,
+      logic,
+      lost,
+      ms: Math.round(performance.now() - t0)
+    };
+    /* 2.5.0-beta.10: the ABC sheets that READ the DITL too (FROM DITL): stepped with the world, so a DITL input reaches their logic */
+    for (const a of ain) wsh.add(a.sh.name);
+    AN.worldSheets = [...wsh];
+  }
+  const XL = new WeakMap();
+  function fakeFrom(d) {
+    if (!XL.has(d)) XL.set(d, { name: d.name, S: null, ditl: true });
+    return XL.get(d);
+  }
+  /* 3.2.0 Web Worker: the keyframe writes these by their DITL sheet (engine/state.js {$F}), the other side takes its own */
+  W.fakeFrom = fakeFrom;
+  W.fakeAll = () => (typeof ditlAll === "function" ? ditlAll() : []).filter(d => XL.has(d)).map(d => [d, XL.get(d)]);
+  /* one scan of the whole world */
+  /* P3 time-slicing (user 2026-11-01 "T1, 3"): one scan as a generator that yields after each DITL sheet (AN.sched runs it in slices
+     between the frames); tick() runs the same generator to the end at once (W.tick, the tests), after a sliced scan still queued */
+  function tick(dt, opt) {
+    if (window.AN && AN.sched) AN.sched.flush();
+    for (const _ of tickG(dt, opt));
+  }
+  /* 3.2.1 d1 (LISA): sootblower lance travel. Diamond Power N11639-SC1 "Sootblower steam data" (IK4M manual, o&m L10-2, page 93): travel
+     speed 50.8 mm/s for every unit; travel 6210 mm (IK4M, unit operation 244 s = out and back), 3050 mm (IK4M-PT, 120 s), 2580 mm ("Above #1
+     Common Eco", IK4M-PT, 102 s). The groups of DITL-80O give the tags: N-1011 ~ 22, 25, 26 = the 14 IK4M; N-1023, 24, 27 ~ 34 = the 10 IK4M-PT;
+     N-1035 ~ 38 = the 4 of the common economizer. The EXTEND COMMAND of the sheet (wire to DITL-80T row 4, M.4016, net 14) starts one travel:
+     out to the front end, then back (the unit operation time of the table is out and back); the RETRACT COMMAND (DITL-80T row 6, M.4017,
+     net 0) brings it back at once. s._lance.x = mm out of the wall box (0 = on its retract limit) */
+  const SB80G = /\)DITL-80G( #N-\d+)?$/,
+    SB_V = 50.8,
+    sbLen = n => (n >= 1035 ? 2580 : n === 1023 || n === 1024 || (n >= 1027 && n <= 1034) ? 3050 : 6210);
+  function sbLance(s, v, dt) {
+    const m = /#N-(\d+)$/.exec(s.name),
+      n = m ? +m[1] : 1011,
+      L = s._lance || (s._lance = { n, len: sbLen(n), x: 0, dir: 0 });
+    if (v[0]) L.dir = -1;
+    else if (v[14] && L.dir === 0 && L.x <= 0) L.dir = 1;
+    if (L.dir > 0) {
+      L.x = Math.min(L.len, L.x + SB_V * dt);
+      if (L.x >= L.len) L.dir = -1;
+    } else if (L.dir < 0) {
+      L.x = Math.max(0, L.x - SB_V * dt);
+      if (L.x <= 0) L.dir = 0;
+    }
+  }
+  W.sbLances = () => S.sheets.concat(W.inst || []).filter(x => x._lance);
+  /* 3.2.1 e5 FAULTS group 2 (LISA): a running motor trips in the field. The motor sheets draw the field contact of the protection relay as
+     the flag "ELECTRIC(AL) TROUBLE" inside the logic (DITL-23A, PDF sheet 41: output 65 BFWP A TRIP MIT-P1115A = OR of row 23 TRIP COMMAND
+     and the ELECTRIC TROUBLE flag; the TRIP resets the RUNNING latch, output 55 MIR-P1115A). The app has that flag as the user switch of
+     the sheet (nl.usr key ET...); the fault sets it, so the logic of the drawing trips the motor and decides what follows (standby start,
+     run-back, MFT). The motor sheet gets the field trip state too (s._ftrip: TRIP on the faceplate and in the alarms, as the dock). Coal
+     feeder A has no ET flag: its motor model (DITL-19, MIR-CL1061-A I.0130, STN104) stops on s._ftrip. Clear = the relay reset in the
+     field; the operator starts the motor again. I/O list STN103 MIT: P1115A I.0057, F1053 I.0361, F1054 I.0521, F1056 I.0041, P1116A
+     I.0081, P1501A I.032B */
+  const FT = {
+    'mt.bfwpa': { t: 'BFWP A trips in the field (MIT-P1115A)', sh: 'DITL-23A' },
+    'mt.paf': { t: 'PA fan trips in the field (MIT-F1053)', sh: 'DITL-26A' },
+    'mt.saf': { t: 'SA fan trips in the field (MIT-F1054)', sh: 'DITL-27A' },
+    'mt.idf': { t: 'ID fan trips in the field (MIT-F1056)', sh: 'DITL-25A' },
+    'mt.cfa': { t: 'Coal feeder A trips in the field (MIR-CL1061-A)', sh: 'DITL-19' },
+    'mt.cepa': { t: 'Condensate pump A trips in the field (MIT-P1116A)', sh: 'DITL-61A' },
+    /* 3.2.4 (JENNIE): the running FA blower (A at 150 MW, B standby: boiler.js AN_FN fa), IO STN103 I.0047 MIT-F1055A */
+    'mt.faa': { t: 'FA blower A trips in the field (MIT-F1055A)', sh: 'DITL-28A' },
+    /* Mina beta.170: "Seawater pump A trip" tripped a pump that stands STOPPED at 150 MW (snapshot: SWP-A stopped R M, SWP-B 242.5 A and
+       SWP-C 207.6 A running; ditl150.js), so nothing followed. The fault trips SWP-B, a running pump (machine B of DITL-29A) */
+    'mt.swpb': { t: 'Seawater pump B trips in the field (MIT-P1501B)', sh: 'DITL-29A #B' }
+  };
+  W.ft = W.ft || new Set();
+  /* 3.2.4 (JENNIE, user "unahin mo nlng ang mga pinakamahalaga sa operation"): the unit black-out, a trainer fault. Single Line Diagram
+     K1AU3-E1-0-102 RD: 6.6 kV BUS 1AM is fed by TR-1A1 (K1AU3E1-0003) and transfers to unit 2 through the bus tie (HBT12); the fault is
+     the loss of 1AM with no transfer. Every 6.6 kV motor (K1AU3E1-0008) and the 460 V buses behind TR-1B1 / TR-1B2 lose their voltage:
+     the undervoltage relays (27) open the motor breakers, so every motor of the DITL drawings stops (s._ftrip, as a field trip, but no
+     ELECTRIC TROUBLE flag: the relay is not the cause) and stays stopped while the bus is dead. The DCS runs on the UPS (UPS-11,
+     K1AU3E1-0040 / 0047) and keeps scanning: the logic of the drawings decides what trips (MFT on the fans, turbine, generator).
+     Live during the black-out: the 460 V emergency panel EMP-11 through ATS-11 from the diesel generator DG1 750 kW (K1AU3E1-0040):
+     MCC-EMP11 (K1AU3E1-0032: main oil pumps M-1922A / B, vapour extractor M-1937, turning gear M-1906, diesel oil pump A M-0702A), the
+     DC charger DC-11, UPS-11, EPDP-11. The turbine oil side is in tcs.js (tcsOil, AN_EL_BO). No DITL drawing has a motor of EMP-11, so
+     every DITL motor stops. Clear = the bus is back (unit 2 or the grid): the operator starts the motors again */
+  /* 3.2.4 (JENNIE): a coal feeder with its discharge chute plugged, a trainer fault (the coal of that feeder does not reach the furnace:
+     unit.js anUnitStep0 'cf.jam'). Yamato Final Drawing for LMYP-1 (L12 Coal Feeder): the feeder has a chute plugging detector, P7, and
+     sends DISCHARGE PLUGGING to the DCS as a no-voltage contact, P8 signal 18. DITL-19 (the same for B and C) takes it from the local
+     panel as MIA-CL1061-A4 straight to output 65 COAL FEEDER A DISCHARGE PLUGED (CRT, ANN): an alarm only, no gate of the start / stop
+     latch reads it, so the feeder keeps running and its feed rate reads as before (belt load x belt speed). The plug stands until the
+     fault is cleared (the coal poking hole, Instruction Manual 11-3) */
+  const JAM = { 'cf.jamA': 'DITL-19', 'cf.jamB': 'DITL-19 #B', 'cf.jamC': 'DITL-19 #C' },
+    JAM_T = k => 'Coal feeder ' + k.slice(-1) + ' discharge chute plugged (no coal to the furnace)';
+  const jamSet = (id, on) => {
+    on = !!on;
+    const s = ftSheet(JAM[id]);
+    if (!s) return '';
+    if (!s.nl && typeof netlist === 'function') s.nl = netlist(s);
+    s.usw = s.usw || {};
+    for (const u of (s.nl && s.nl.usr) || []) if (u.key === 'FIMIA-CL1061-A4') s.usw[u.key] = on;
+    if (on) W.ft.add(id);
+    else W.ft.delete(id);
+    W.busy = true;
+    return on ? JAM_T(id) : 'cleared: ' + JAM_T(id);
+  };
+  /* 3.2.4-beta.7 (JENNIE): a boiler tube leak, a trainer fault (unit.js anTubeLeak: a 10 mm hole that grows to a rupture, beta.16). No DITL contact: the DCS has no
+     leak detector; the operator finds it from the feedwater against the steam, the make-up and the furnace draft */
+  const TL = { 'tl.ww': 'Boiler tube leak: furnace water wall (grows to a rupture)', 'tl.eco': 'Boiler tube leak: economizer (grows to a rupture)' };
+  /* 3.2.4 (JENNIE): an HP heater tube leak (unit.js anHpLeak), the same set as TL */
+  const HL = { 'hl.1': 'No.1 HP heater tube leak (grows)', 'hl.2': 'No.2 HP heater tube leak (grows)' };
+  /* 3.2.4 (JENNIE): the air heater plugged on the gas side (boiler.js AN_APL), the same set as TL */
+  const AP = {
+    'aph.plug': 'Air heater plugged, gas side (grows)',
+    /* beta.21: worn air heater seals (boiler.js AN_APK) */
+    'aph.leak': 'Air heater seal leak, air to gas (grows)',
+    'cd.air': 'Condenser air in-leakage (grows)',
+    /* 3.2.4 (JENNIE): a grid frequency dip (unit.js anGridHz): a big unit trips elsewhere on the grid */
+    'grid.lo': 'Grid frequency falls to 59.5 Hz (a unit trips elsewhere)'
+  };
+  const tlSet = (id, on) => {
+    if (on) W.ft.add(id);
+    else W.ft.delete(id);
+    W.busy = true;
+    const t = TL[id] || HL[id] || AP[id];
+    return on ? t : 'cleared: ' + t + (id === 'aph.plug' ? ' (washed)' : id === 'aph.leak' ? ' (seals set)' : id === 'cd.air' ? ' (sealed)' : id === 'grid.lo' ? ' (grid back to 60 Hz)' : ' (tube repaired)');
+  };
+  /* 3.2.4-beta.13 (JENNIE, priority list item: coal quality): wet coal, a trainer fault (unit.js anCoalWet: the coal moisture 33.96 % of the
+     performance coal, FHI P2S7 Tab 2, rises to 40 %, NO-SOURCE trainer setting: rain on the coal yard). No DITL contact: the DCS has no
+     coal analyser; the operator sees more coal per MW (FIC-CM), the O2 and the bed temperature */
+  const WET = 'cf.wet',
+    WET_T = 'Wet coal: moisture 34 % to 40 % (less heat per tonne)';
+  const wetSet = on => {
+    if (on) W.ft.add(WET);
+    else W.ft.delete(WET);
+    W.busy = true;
+    return on ? WET_T : 'cleared: ' + WET_T + ' (dry coal again)';
+  };
+  const BO = 'el.1am',
+    BO_T = 'Unit black-out: 6.6 kV bus 1AM lost (no bus transfer)';
+  /* the undervoltage relay of one motor drawing: open = the motor stopped (s._ftrip) and the trip contact into the logic (the ELECTRIC
+     TROUBLE flags of the drawing, as a field trip), so the logic resets its RUNNING latch and the motor does not run again by itself when
+     the voltage comes back */
+  const boRelay = (s, on) => {
+    s.usw = s.usw || {};
+    for (const u of (s.nl && s.nl.usr) || []) if (/^ET/.test(u.key)) s.usw[u.key] = !!on;
+    s._ftrip = !!on;
+  };
+  /* the DITL motors on MCC-EMP11 (K1AU3E1-0032): diesel oil pump A M-0702A = DITL-31 machine A. Live again when EMP-11 is on DG1
+     (elec.js anElecBoStep calls WORLD.boEmp once); the operator starts it again */
+  const BO_EMP = ['DITL-31'];
+  W.boEmp = () => {
+    if (!W.ft.has(BO)) return;
+    for (const c of BO_EMP) {
+      const s = S.sheets.find(x => x.name.endsWith(')' + c));
+      if (s) boRelay(s, false);
+    }
+    W.busy = true;
+    if (window.lsEventAdd) lsEventAdd('ELEC', 'FIELD', 'Diesel generator DG1 on: ATS-11 puts the emergency panel EMP-11 on DG1');
+  };
+  const boSet = on => {
+    on = !!on;
+    if (on === W.ft.has(BO)) return on ? BO_T + ' is already on' : '';
+    const own = new Set([...W.ft].filter(k => FT[k]).map(k => ftSheet(FT[k].sh)));
+    for (const s of S.sheets.concat(W.inst || [])) {
+      if (!s.nl && typeof netlist === 'function') s.nl = netlist(s);
+      /* a motor drawing: RUN / TRIP output rows (DUI.motOuts, the lamps of the dock and the HMI) or a motor model */
+      let o = null;
+      try {
+        o = window.DUI && DUI.motOuts ? DUI.motOuts(s) : null;
+      } catch (e) {}
+      if (!((o && (o.trip || o.run)) || (s.nl && s.nl.mot && s.nl.mot.length))) continue;
+      if (!on && own.has(s)) continue;
+      boRelay(s, on);
+    }
+    if (on) W.ft.add(BO);
+    else W.ft.delete(BO);
+    if (window.AN && AN.elecBo) AN.elecBo(on);
+    W.busy = true;
+    return on ? BO_T : 'cleared: ' + BO_T + ' (bus 1AM back: START the motors again)';
+  };
+  /* a drawing by its name, or a machine copy "DITL-29A #B" (W.inst) */
+  const ftSheet = c => S.sheets.concat(W.inst || []).find(x => x.name.endsWith(')' + c));
+  /* WORLD.ftrip(): the list with the state; WORLD.ftrip(id, on): the fault on / cleared (an ENG call: page and Worker); returns the text */
+  W.ftrip = (id, on) => {
+    if (id == null)
+      return Object.keys(FT)
+        .map(k => ({ id: k, g: 'mt', t: FT[k].t, on: W.ft.has(k) }))
+        .concat([{ id: BO, g: 'el', t: BO_T, on: W.ft.has(BO) }])
+        .concat(Object.keys(JAM).map(k => ({ id: k, g: 'cf', t: JAM_T(k), on: W.ft.has(k) })))
+        .concat(Object.keys(TL).map(k => ({ id: k, g: 'tl', t: TL[k], on: W.ft.has(k) })))
+        .concat(Object.keys(HL).map(k => ({ id: k, g: 'hl', t: HL[k], on: W.ft.has(k) })))
+        .concat(Object.keys(AP).map(k => ({ id: k, g: 'ap', t: AP[k], on: W.ft.has(k) })))
+        .concat([{ id: WET, g: 'cq', t: WET_T, on: W.ft.has(WET) }]);
+    if (id === BO) return boSet(on);
+    if (JAM[id]) return jamSet(id, on);
+    if (TL[id] || HL[id] || AP[id]) return tlSet(id, !!on);
+    if (id === WET) return wetSet(!!on);
+    const f = FT[id],
+      s = f && ftSheet(f.sh);
+    if (!s) return '';
+    if (!s.nl && typeof netlist === 'function') s.nl = netlist(s);
+    s.usw = s.usw || {};
+    for (const u of (s.nl && s.nl.usr) || []) if (/^ET/.test(u.key)) s.usw[u.key] = !!on;
+    s._ftrip = !!on;
+    if (on) W.ft.add(id);
+    else W.ft.delete(id);
+    W.busy = true;
+    return on ? f.t : 'cleared: ' + f.t + ' (relay reset in the field: START it again)';
+  };
+  W.ftClear = () => {
+    if (W.ft.has(BO) && window.AN && AN.elecBo) AN.elecBo(false);
+    for (const k of Object.keys(JAM)) if (W.ft.has(k)) jamSet(k, false);
+    W.ft.clear();
+  };
+  /* the trainer fault that stands on a drawing (its name), or null: the RESET of the protection relay on the motor faceplate clears it
+     (Mina beta.175 PA fan practice step 4: RESET there took off the ELECTRIC TROUBLE but s._ftrip held the fan stopped, START did nothing) */
+  W.ftOf = nm => [...W.ft].find(k => {
+    if (!FT[k]) return false;
+    const s = ftSheet(FT[k].sh);
+    return !!s && s.name === nm;
+  }) || null;
+  /* the outputs of one scan as text, to see when the world has settled */
+  const outSig = o =>
+    Object.keys(o)
+      .sort()
+      .map(k => k + ':' + [...o[k]].join(','))
+      .join('|');
+  function* tickG(dt, opt) {
+    /* 3.2.1 (LISA, sim test ditl150 "Reset: DITL cold again"): the cold DITL is MFT tripped with every motor stopped (src/world/ditl150.js;
+       DITL-03A MFT = FF set by IDF / SAF / PAF STOPPED, E10210 DITL-03A). After a start or a Reset (DITL150.clear: every FF 0, W.tk not
+       set) the trip reached the MFT only after one scan per hop (DITL-25A -> 03B -> 03A: the third scan). The first scan of a cold DITL
+       now repeats the scan with no time (dt 0) until no output changes, 12 at most: the DITL stands in its cold state at once */
+    if (W.tk === undefined && !(window.DITL150 && DITL150.on)) {
+      W.tk = 0;
+      for (let k = 0; k < 12; k++) {
+        const a = outSig(W.out);
+        for (const _ of tickG(0, opt));
+        if (outSig(W.out) === a) break;
+      }
+    }
+    const t0 = performance.now(),
+      { din, ain } = W.idx,
+      prev = W.out,
+      out = {};
+    const ALL = S.sheets.concat(W.inst || []);
+    /* 1. inputs of every DITL sheet (and machine instance) from the last scan (one scan delay, like the DCS) */
+    for (const s of ALL) {
+      const m = din.get(s);
+      if (!m) {
+        s._win = null;
+        continue;
+      }
+      const on = new Set();
+      m.forEach((srcs, row) => {
+        for (const q of srcs) {
+          /* 2.3.0-beta.1: an analog ABC value into a DITL comparator row, and the MANUAL state of an ABC controller */
+          if (q.k === 'v') {
+            const x = q.sh.S && q.sh.S.rt ? +q.sh.S.rt.v[q.n] : NaN;
+            if (isFinite(x)) (s.avw = s.avw || {})[q.key] = x;
+            continue;
+          }
+          /* 3.2.4-beta.8: a step of the sootblower counter left out of the drawing (0.5 SEC ON DELAY of the count) */
+          if (q.k === 'c') {
+            const g = q.cs.nl && (q.cs.nl.gates || []).find(x => x.t === 'CNT');
+            q.on = g && g.N === q.n ? q.on + (dt || 0) : 0;
+            if (q.on >= 0.5) {
+              on.add(row);
+              break;
+            }
+            continue;
+          }
+          const v =
+            q.k === 'd'
+              ? !!(prev[q.d.name] && prev[q.d.name].has(q.row))
+              : q.k === 'm'
+                ? (() => {
+                    const st = q.sh.S && q.sh.S.rt && q.sh.S.rt.st[q.c.amt.id];
+                    return !!st && st.pk !== q.c.autoLeg;
+                  })()
+                : !!(q.sh.S && q.sh.S.rt && q.sh.S.rt.v[q.n] > 0.5);
+          if (v) {
+            on.add(row);
+            break;
+          }
+        }
+      });
+      s._win = on;
+    }
+    /* 3.2.0 P1 #2 (src/world/plantsw.js): the protection switches of the field follow the PV while the plant model is ON */
+    if (W.plantIn)
+      try {
+        W.plantIn(ALL);
+      } catch (e) {}
+    /* 2. every DITL sheet: logic, timers, MOV, motors */
+    const c = cur();
+    let chCur = false;
+    for (const s of ALL) {
+      if (!s.nl) continue;
+      s.nl.avk = avOf(s);
+      let R = simSheet(s),
+        ch = false;
+      if (W.pulseScan) W.pulseScan(s, R);
+      for (const g of s.nl.gates) if (g.t === 'TMR' && tmStep(g, g.ins.some(n => R.v[n]), dt)) ch = true;
+      if (mvStep(s, R.v, dt)) ch = true;
+      if (motStep(s, R.v, dt)) ch = true;
+      if (fdStep(s, dt)) ch = true;
+      if (invStep(s, R.v, dt)) ch = true;
+      if (ch) {
+        R = simSheet(s);
+        if (W.pulseScan) W.pulseScan(s, R);
+      }
+      /* 3.2.1 d2: a wire with a TO reference at its end (wireTo above) */
+      if (s._xn) for (const n of s._xn) if (R.v[n]) R.outOn.add('n' + n);
+      /* 3.2.1 d1 (LISA): the lance of a sootblower (DITL-80G and its 27 copies) travels on the commands of the sheet */
+      if (SB80G.test(s.name)) sbLance(s, R.v, dt);
+      out[s.name] = R.outOn;
+      /* 3.2.0-beta.23: an output that changed in this scan (a push button seen, a step of a sequence): the next scans are short (W.busy) */
+      if (!TMBUSY) {
+        const a = prev[s.name];
+        if (a && (a.size !== R.outOn.size || [...R.outOn].some(x => !a.has(x)))) TMBUSY = true;
+      }
+      if (s === c) {
+        const k = [...R.outOn].join(',') + '|' + [...R.rowOn].join(',');
+        if (ch || k !== W._ck) chCur = true;
+        W._ck = k;
+      }
+      yield;
+    }
+    /* 3.2.0-beta.6 FIRST-OUT: a TRIP / MFT / STOP output that goes 1 in this scan: its cause is read now (DUI.cause), before
+       the other conditions follow, and written to the Event log */
+    W.tk = (W.tk || 0) + 1;
+    W._o = out;
+    if (window.lsEventAdd && window.DUI && DUI.cause && W.tk > 25)
+      for (const s of S.sheets) {
+        const a = prev[s.name],
+          b = out[s.name];
+        if (!a || !b) continue;
+        /* the outputs of one sheet that go 1 in the same scan for the same cause (MFT · SER, MFT 1 · TCS, MFT · IRP ...) are ONE
+           event: named by the MASTER FUEL TRIP output when there is one, "+N outputs" for the rest */
+        const grp = new Map();
+        for (const row of b) {
+          if (a.has(row)) continue;
+          let c = null;
+          try {
+            c = DUI.cause(s, row);
+          } catch (e) {}
+          /* trips only (MFT, boiler / fan / pump / turbine TRIP, RUN BACK): the shutdown and stop sequences of burners and
+             igniters follow from them and are not alarms */
+          /* R9 #80: not a "NOT TRIP" output (DITL-43 row 5 AIR PREHEATER NOT TRIP = 1 is the healthy state; its fall is the trip, below) */
+          if (!c || !/\bTRIP|\bMFT\b|RUN\s*BACK/i.test(c.name) || /\bNOT?\s+(\w+\s+)?TRIP|TRIP\s+RESET/i.test(c.name)) continue;
+          const k = c.lines.map(l => l.txt).join('|'),
+            g = grp.get(k);
+          if (!g) grp.set(k, { c, n: 1, rows: [row] });
+          else {
+            g.n++;
+            g.rows.push(row);
+            if (/MASTER FUEL TRIP/i.test(c.name) && !/MASTER FUEL TRIP/i.test(g.c.name)) g.c = c;
+          }
+        }
+        /* live test 2026-11-04 (SWP-A, SWBP-A): the alarm text is the output's name without "Output row n ·" and the "· CRT (ANN)"
+           location, and the TRIP is reset (RST "… = 0") when that output falls back to 0 (RELAY RESET), so it leaves the alarm band */
+        const tnm = x => String(x || '').replace(/^Output row \d+ · /, '').replace(/\s*·\s*[A-Z]{2,4}(?:\s*\(ANN\))?\s*$/, '').trim();
+        W._trip = W._trip || {};
+        grp.forEach(({ c, n, rows }) => {
+          const t = tnm(c.name) + (n > 1 ? ' (+' + (n - 1) + ' outputs)' : '');
+          lsEventAdd(s.name, 'TRIP', t + ' = 1', deeper(s, c.lines, 1));
+          W._trip[s.name] = W._trip[s.name] || {};
+          for (const row of rows) W._trip[s.name][row] = t;
+        });
+        const tr = W._trip[s.name];
+        if (tr)
+          for (const row in tr)
+            if (!b.has(+row) && !b.has(row)) {
+              const t = tr[row];
+              delete tr[row];
+              if (!Object.values(tr).includes(t)) lsEventAdd(s.name, 'RST', t + ' = 0');
+            }
+        /* R9 #80: a NOT TRIP output that falls (1 -> 0) is the trip of the machine: "AIR PREHEATER TRIP" */
+        for (const row of a) {
+          if (b.has(row)) continue;
+          let nm = '';
+          try {
+            nm = String((DUI.outs(s).find(o => o.row === row) || {}).name || '');
+          } catch (e) {}
+          if (/\bNOT\s+TRIP\b/.test(nm)) lsEventAdd(s.name, 'TRIP', nm.replace(/^Output row \d+ · /, '').replace(/\s*·.*$/, '').replace(/\bNOT\s+TRIP\b/, 'TRIP') + ' (NOT TRIP = 0)');
+        }
+      }
+    /* 3.2.3 S148-3 (Mina beta.148 normal shutdown: CEP A STOPPED by the logic with no cause in the Event log; DITL-61A: the FF of the
+       pump is reset by CONDENSER WATER LSLL-CD1110 LEVEL LOW LOW AND M.3211 LEVEL LL, 2 s on delay TR259): the scan where the STOPPED
+       output of a motor drawing goes 1, its cause is read NOW (the hotwell rises again once the pump stops and the LL falls back to 0
+       within seconds) and kept on the sheet; the Event log (src/ui/hmi/events.js) writes it on the RUN -> STOP line */
+    if (window.DUI && DUI.cause && W.tk > 25)
+      for (const s of ALL) {
+        const a = prev[s.name],
+          b = out[s.name];
+        if (!a || !b || !s.nl) continue;
+        for (const row of b) {
+          if (typeof row !== 'number' || a.has(row)) continue;
+          let nm = '';
+          try {
+            nm = String((DUI.outs(s).find(o => o.row === row) || {}).name || '');
+          } catch (e) {}
+          if (!/\bSTOPPED\b/.test(nm) || /\b(ANY|ALL|LOCAL)\b/.test(nm)) continue;
+          /* a STOP push button pressed now (CRT or local panel, DITL-61A rows 15 / 24): the operator's stop, not the logic's */
+          const lab = q => ['S', 'T', 'L'].map(k => ((s.cells && s.cells[q + ':' + k]) || []).map(x => x.t).join(' ')).join(' ');
+          if (s.nl.src.some(z => /\bSTOP\b/.test(lab(z.row)) && /\b(PB|P\.B\.?|PUSH)/.test(lab(z.row)) && DUI.rowVal(s, z.row) === 1)) {
+            delete s._stopWhy;
+            break;
+          }
+          let c = null;
+          try {
+            c = DUI.cause(s, row);
+          } catch (e) {}
+          /* SOHEE (S160-2): the STOPPED status row that follows the run feedback rises 1 ~ 2 scans after the trip, with "FAB B STOPPED"
+             as its cause: the cause of the stop read first (FAB B CURRENT L.L.) stays until the Event log has written it (10 s at most) */
+          const w0 = s._stopWhy;
+          if (c && c.lines.length && !(w0 && !w0.done && W.tk - w0.tk >= 0 && W.tk - w0.tk < 20)) s._stopWhy = { tk: W.tk, lines: deeper(s, c.lines, 1) };
+          break;
+        }
+      }
+    /* Sakura beta.150 (Jennie's list): a MOV moved by its logic (MV-TS1001 closed by the No.2 HPH level HI-HI, ABC-036 M.0203 -> DITL-94):
+       the scan where the OPEN / CLOSE command of the valve (nl.mv[].open / .close, the MOR- / MOS- O.xxxx) rises, its cause is read and
+       kept on the sheet (s._mvWhy, the last 1200 scans); a cause with a push button is the operator's own (the operator's line is there). The Event
+       log (src/ui/hmi/events.js) writes it */
+    if (window.DUI && DUI.causeNet && DUI.netVal)
+      for (const s of ALL) {
+        if (!s.nl || !s.nl.mv || !s.nl.mv.length) continue;
+        const pv = s._mvc || (s._mvc = {});
+        s.nl.mv.forEach((m, i) => {
+          for (const k of ['close', 'open']) {
+            const n = m[k] && m[k].n;
+            if (n == null) continue;
+            const v = DUI.netVal(s, n),
+              id = i + k,
+              v0 = pv[id];
+            pv[id] = v;
+            if (!(v === 1 && v0 === 0) || W.tk <= 25) continue;
+            let c = null;
+            try {
+              c = DUI.causeNet(s, n, k);
+            } catch (e) {}
+            if (!c || !c.lines.length || c.lines.some(l => l.k === 'input' && /\b(PB|P\.B\.?|PUSH)\b/.test(String(l.txt || '')))) continue;
+            s._mvWhy = (s._mvWhy || []).filter(x => W.tk - x.tk < 1200).concat({ tk: W.tk, i, k, lines: deeper(s, c.lines, 1) });
+          }
+        });
+      }
+    W.out = out;
+    /* 3. DITL -> ABC (not while the one world is OFF: then the DITL 150 MW state is computed for the DITL only) */
+    for (const a of opt && opt.noAbc ? [] : ain) {
+      const AS = a.sh.S;
+      if (!AS || !AS.rt) continue;
+      AS.rt.ext[a.n] = out[a.d.name] && out[a.d.name].has(a.row) ? 1 : 0;
+      AS.xlk = AS.xlk || {};
+      if (!AS.xlk[a.n]) AS.xlk[a.n] = { from: fakeFrom(a.d), fromNets: [], tag: 'DITL ' + a.ref, ditl: true };
+    }
+    /* 4. the DITL page shows the new values (none in the engine alone, 3.2.0 Web Worker: no page) */
+    if (typeof document !== 'undefined') paintD(c, chCur);
+    /* 3.2.0-beta.23: after each scan (the Training dock releases its push buttons after two scans) */
+    if (W.onTick)
+      try {
+        W.onTick(dt);
+      } catch (e) {}
+    W.ms = W.ms * 0.8 + (performance.now() - t0) * 0.2;
+  }
+  /* 3.2.0 Web Worker: the page mirror draws the DITL page after a patch of the engine (src/world/eng-page.js) */
+  W.paintNow = () => typeof document !== 'undefined' && paintD(cur(), true);
+  /* the DITL page after a scan (P2, user 2026-11-01: only while the Logic page is on the screen; it is drawn again when it opens) */
+  function paintD(c, chCur) {
+    const dShown = !(document.body.dataset.tab && document.body.dataset.tab !== 'logic') && !document.body.classList.contains('plant');
+    if (AN.cat !== 'an' && c && !dShown) W._dStale = 1;
+    if (AN.cat !== 'an' && c && dShown) {
+      if (W._dStale) ((W._dStale = 0), (chCur = true));
+      if (chCur) render();
+      else
+        try {
+          updateTP();
+          mvUI(c);
+        } catch (e) {}
+    }
+  }
+  /* 3.2.0-beta.6 FIRST-OUT across sheets: an input row that is 1 because of another sheet is followed to that sheet's output
+     (FROM column, the same map the one world uses) and its cause, up to 4 sheets deep: "IDF STOPPED" on DITL-03A -> the row
+     on DITL-03B that made it 1 -> the motor / ABC signal */
+  function deeper(s, lines, d) {
+    const out = [];
+    for (const l of lines) {
+      out.push(Object.assign({}, l, { d }));
+      if (l.row === undefined || d >= 5 || out.length > 30) continue;
+      const m = W.idx && W.idx.din.get(s),
+        srcs = m && m.get(l.row);
+      for (const q of srcs || []) {
+        /* only a source that IS 1 now made the row 1 (else the operator pressed the row on this sheet) */
+        if (q.k === 'd' && !(W._o && W._o[q.d.name] && W._o[q.d.name].has(q.row))) continue;
+        if (q.k !== 'd' && q.k !== 'm' && q.k !== 'v' && !(q.sh && q.sh.S && q.sh.S.rt && q.sh.S.rt.v[q.n] > 0.5)) continue;
+        if (q.k === 'd') {
+          let c = null;
+          try {
+            c = DUI.cause(q.d, q.row);
+          } catch (e) {}
+          if (c) {
+            out.push({ d: d + 1, k: 'link', txt: 'from ' + q.d.name + ': ' + c.name + ' = 1', sh: q.d.name });
+            out.push(...deeper(q.d, c.lines, d + 2));
+          }
+          break;
+        }
+        if (q.k === 'm') {
+          const st = q.sh.S && q.sh.S.rt && q.sh.S.rt.st[q.c.amt.id];
+          if (!(st && st.pk !== q.c.autoLeg)) continue;
+          out.push({ d: d + 1, k: 'input', txt: 'from ABC: ' + q.c.tag + ' is in MANUAL', sh: q.sh.name });
+          break;
+        }
+        if (q.k !== 'v' && q.sh && q.sh.S) {
+          let nm = '';
+          try {
+            nm = AN.nm(q.sh.S, q.n) || '';
+          } catch (e) {}
+          /* and on the ABC sheet, the same "Why?" walk (src/ui/shell/why.js), a few lines; its first line names the net and its
+             reason (FORCED by you, transmitter, comparator ...) */
+          let L2 = [];
+          try {
+            if (AN.why) L2 = AN.why(q.sh, q.n).lines.slice(0, 9);
+          } catch (e) {}
+          out.push({ d: d + 1, k: L2[0] && L2[0].k === 'force' ? 'force' : 'link', txt: 'from ABC ' + q.sh.name + ': ' + (L2[0] ? L2[0].txt : (nm || 'signal') + ' = 1'), sh: q.sh.name });
+          for (const l2 of L2.slice(1)) out.push(Object.assign({}, l2, { d: d + 1 + l2.d }));
+          break;
+        }
+      }
+    }
+    return out;
+  }
+  function off() {
+    W.live = false;
+    for (const s of S.sheets.concat(W.inst || [])) {
+      s._win = null;
+      s.avw = null;
+    }
+    W.unlinkAbc();
+    AN.worldSheets = [];
+  }
+  /* the DITL links of the ABC inputs (made by the first scan that feeds them, tickG step 3) go; Reset uses it too (sheets.js anResetRun),
+     so a Reset after a run has the links of a fresh page: none until the next scan (Winter's diag_abc4: "(28)DITL-14 #B" left) */
+  W.unlinkAbc = () => {
+    if (W.idx)
+      for (const a of W.idx.ain) {
+        const AS = a.sh.S;
+        if (AS && AS.xlk && AS.xlk[a.n] && AS.xlk[a.n].ditl) {
+          delete AS.xlk[a.n];
+          /* a sheet whose only links were these: no link table, as before its first scan made one (step 3: AS.xlk = AS.xlk || {}) */
+          if (!Object.keys(AS.xlk).length) delete AS.xlk;
+        }
+      }
+  };
+  /* 2.2.0-beta.3: one scan on demand (DITL 150 MW state, src/world/ditl150.js) */
+  W.tick = (dt, opt) => {
+    if (!W.idx) return;
+    const lv = W.live;
+    W.live = true;
+    try {
+      tick(dt, opt);
+    } finally {
+      W.live = lv;
+    }
+  };
+  W.build = () => build();
+  W.set = on => {
+    W.on = !!on;
+    if (W.on) {
+      /* the memory list descriptions (machine A / B of a shared drawing) come with the ABC data: build again when they are in */
+      try {
+        if (AN.ades)
+          AN.ades().then(() => {
+            if (W.on) build();
+          });
+      } catch (e) {}
+      try {
+        build();
+      } catch (e) {
+        W.on = false;
+        console.error(e);
+        msg('One world: could not be built (' + e.message + ')');
+      }
+      if (W.on && W.stat)
+        msg(
+          'One world ON: ' +
+            W.stat.ditlDitl +
+            ' DITL ↔ DITL, ' +
+            (AN.sheets.length
+              ? W.stat.fromDitl + ' FROM DITL, ' + W.stat.toDitl + ' TO DITL linked'
+              : 'the ABC is linked when the ABC page opens') +
+            (W.stat.lost.length ? ' · ' + W.stat.lost.length + ' references without a match (see WORLD.stat.lost)' : '')
+        );
+    } else {
+      off();
+      msg('One world OFF: FROM DITL signals are manual inputs again');
+    }
+  };
+  let last = 0,
+    lastPT = NaN;
+  /* P3 (user 2026-11-01): the DITL scan of the one world is group 2 of the engine scheduler (src/analog/engine/sched.js calls this
+     every 200 ms): the job (a generator) of one scan, or null when the world does not run now */
+  W.scanJob = () => {
+    /* the ABC sheets are loaded the first time the ABC page opens: build the index again when they arrive */
+    if (W.on && W.idx && W._nA !== AN.sheets.length && AN.sheets.length)
+      try {
+        build();
+      } catch (e) {}
+    const go = !AN._loading && W.on && W.idx && ((AN.cat === 'an' && AN.run) || (AN.cat !== 'an' && SIM && !DPAUSE));
+    if (!go) {
+      if (W.live) W.live = false;
+      last = 0;
+      lastPT = NaN;
+      return null;
+    }
+    W.live = true;
+    const now = performance.now();
+    /* Mina F37: the real time since the last scan is kept up to 2 s (a job that took longer lost the rest), and what a frame could not scan is owed
+       to the next one (W._owe, at most 60 s of plant), so the DITL keeps the time of the plant */
+    /* Jennie beta.188 (headless Normal shutdown at x300, step 132 MV-TS1005 / 1004 CLOSE): on the ABC Run the plant model has its own clock
+       (sched.js group 1, AN.unit.t). When a tick of the plant took longer than the 200 ms of the DITL group (x300 on this PC: 10 ms a step,
+       600 steps a tick), the DITL got one scan of 2 s real time while the plant went 600 s: measured 12 scans of the world in 20 minutes of
+       plant, the CLOSE press held for 10 minutes and the turbine stop valves closed in 40 minutes. The world now takes the time the plant
+       model went since its last scan (the same clock as the plant, one world = one time); real time only while the plant clock stands
+       (plant model OFF). What a job could not scan stays owed (up to 600 s) and the plant waits while it is above 60 s (sched.js group 1) */
+    const pt = AN.cat === 'an' && AN.unit ? +AN.unit.t : NaN,
+      byP = isFinite(pt) && isFinite(lastPT) && pt > lastPT;
+    let dt =
+      (byP ? Math.min(pt - lastPT, 600) : Math.min((now - (last || now)) / 1000, 2) * (AN.cat === 'an' ? AN.spd || 1 : TSP)) +
+      (W._owe || 0);
+    W._owe = 0;
+    last = now;
+    lastPT = pt;
+    const job = function* () {
+    try {
+      /* 3.2.0-beta.23: while a short timer counts, a device moves or an output changed (W.busy, set by the scan: tmStep / mvStep / fdStep /
+         tick), scans of 2 s,
+         at most 12 a frame: at x300 a frame is 60 s and a burner light-off of a few seconds (igniter insert, trial for ignition) was
+         jumped over in one scan and failed; the time of that frame is what the scans took (the plant follows the same time) */
+      /* 3.2.1: 2 s scans at x10 jumped over DITL timers of 1.5 to 3 s: TR150 hid a stroke fault (F74), TR164 missed the end of a 3 s pulse and left
+         M.040A set, so one REINSTATE did not open MV-CD1001 (Mina a7). Up to x60 a busy world scans each 0.5 s */
+      const scanH = dt <= 12 ? 0.5 : 2;
+      if (!W.busy || dt <= scanH) {
+        TMBUSY = false;
+        yield* tickG(dt);
+        W.busy = TMBUSY;
+      } else {
+        let used = 0;
+        const t0 = performance.now();
+        for (let n = 0; n < 12 && used < dt - 1e-6 && (n < 2 || performance.now() - t0 < 120); n++) {
+          const h = W.busy ? Math.min(scanH, dt - used) : dt - used;
+          TMBUSY = false;
+          yield* tickG(h);
+          W.busy = TMBUSY;
+          used += h;
+        }
+        W._owe = Math.min(byP ? 600 : 60, dt - used);
+        dt = used;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    /* 2.5.0-beta.10 (user: "kapag from DITL nagforce ako, madedetect ito ng buong sheet DITL at ABC? vice versa?"): one world = one time.
+       While the DITL page simulates, the ABC sheets of the world run too (before, the ABC stood still until its own Run: a DITL input
+       reached the ABC input but not the ABC logic behind it, and an ABC FORCE did not reach the DITL) */
+    if (AN.cat !== 'an' && AN.sheets.length && AN.worldSheets && AN.worldSheets.length)
+      try {
+        const sh = AN.sheets[AN.i] && AN.sheets[AN.i].S ? AN.sheets[AN.i] : AN.sheets.find(s => s.name === AN.worldSheets[0]);
+        /* 3.2.0-beta.23: in steps of 0.5 s and with the Training coach after each, like the ABC Run (src/analog/ui/interaction.js):
+           the plant model goes on the same while the DITL page is on the screen (one RUN for the app) */
+        if (sh && sh.S) {
+          /* Mina F37: the steps of the ABC tick (sched.js anSteps: what fits in 80 ms, 0.5 s each when there is time, never more than 3 s). Fixed 0.5 s
+             steps took a second a job at x300 and the Logic page ran x90 */
+          const k = AN.anSteps ? AN.anSteps(dt) : Math.max(1, Math.min(240, Math.ceil(dt / 0.5))),
+            t1 = performance.now();
+          for (let i = 0; i < k; i++) {
+            AN.stepSet(sh, dt / k);
+            if (AN.onStep)
+              try {
+                AN.onStep(dt / k);
+              } catch (e) {}
+          }
+          const ms = (performance.now() - t1) / k;
+          AN._ms = AN._ms == null ? ms : AN._ms * 0.85 + ms * 0.15;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    return job();
+  };
+  /* the world is built once both pages are there (the ABC sheets are linked again when they load, the interval above); the engine
+     alone (3.2.0 Web Worker, no page) builds it when its host says so */
+  let n = 0;
+  const iv = typeof document !== 'undefined' && setInterval(() => {
+    const a = document.querySelector('#anbar .tbg-run'),
+      d = document.querySelector('#bar .tbg-run');
+    if ((a && d) || ++n > 60) {
+      clearInterval(iv);
+      if (W.on) setTimeout(() => W.set(true), 0);
+    }
+  }, 300);
+})();

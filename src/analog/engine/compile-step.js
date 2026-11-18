@@ -1,0 +1,2557 @@
+/* ===== ANALOG engine: compile the block graph, numeric + boolean evaluation with time ===== */
+function anNum(s) {
+  const m = String(s)
+    .replace(/%%%/g, '%')
+    .match(/-?\d+(?:\.\d+)?/);
+  return m ? +m[0] : null;
+}
+function anRange(S, b, R_) {
+  /* "a ~ b unit" text near a block */
+  const rx = /(-?\d+(?:\.\d+)?)\s*~\s*(-?\d+(?:\.\d+)?)\s*(.*)$/;
+  let best = null,
+    bd = 1e9;
+  for (const t of S.tx) {
+    const m = t.t.replace(/%%%/g, '%').match(rx);
+    if (!m) continue;
+    const d = anD(t.x, t.y, b.cx, b.cy);
+    if (d < R_ && d < bd) {
+      bd = d;
+      best = { lo: +m[1], hi: +m[2], u: (m[3] || '').trim() };
+    }
+  }
+  return best;
+}
+/* apply the defaults that are not on the drawing (called at the start of anInit, before the saved values of the user are applied) */
+function anFace(S) {
+  const F = AN_DEF.FACE;
+  if (!F) return;
+  for (const b of S.blk) {
+    const k = b.k === 'MAN' ? 'MAN' : b.k === 'PID' || b.k === 'PIDV' ? 'PID' : b.k === 'SUMA' ? 'SUMA' : null;
+    if (!k) continue;
+    const m = (b.txt || []).map(t => /^S(\d)-MDL(\d+)$/i.exec(t)).find(Boolean);
+    if (!m) continue;
+    const stn = 100 + +m[1],
+      mno = +m[2],
+      e = (F[k] || []).find(q => q.stn === stn && q.mno === mno);
+    if (!e) continue;
+    const P = b.p;
+    b.face = e;
+    if (k === 'PID') {
+      if (e.P > 0) P.kp = +(100 / e.P).toFixed(6);
+      P.ti = e.I;
+      P.td = e.D;
+      P.lo = e.ML;
+      P.hi = e.MH;
+      const sp = e.SH - e.SL;
+      if (sp > 0) {
+        P.span = sp;
+        P.rlo = e.SL;
+        P.rhi = e.SH;
+      }
+      if (e.unit) P.unit = e.unit;
+      P.ph = e.PH;
+      P.pl = e.PL;
+      P.dmvh = e.dMVH;
+      P.dti = e.DTI;
+      P.tf = e.TF;
+      P.gap = e.GAP;
+      P.bnd = e.BND;
+      P.cut = e.CUT;
+      P.dh = e.DH;
+      P.phondt = e.PHONDT;
+      P.plondt = e.PLONDT;
+    } else if (k === 'MAN') {
+      const sp = e.SH - e.SL;
+      if (sp > 0) {
+        /* 2.2.0-beta.21: a station whose output IS a % position (unit %, SV range inside 0 ~ 100) has its MV limits ML / MH in that
+           same %: ABC-020 HICHR1002A (RH gas biasing damper) SL 10 / SH 100, ML 10 / MH 100 = damper 10 ~ 100 %. Before, ML was
+           taken as 10 % OF the SV span (10 + 0.1 x 90 = 19 %): the operator could not go below 19 %, while the HMI snapshot
+           39.PNG shows 11.0 % and PR-OPE-5003 puts the RH damper to 10 % after the turbine trip. A bias station in % with a
+           range outside 0 ~ 100 (ABC-002 HS-O2 -4 ~ 4, ABC-057 HICFABIASU / L -10 ~ 10) keeps the span mapping (its output is
+           the engineering value of the range) */
+        const pct = String(e.unit || '').trim() === '%' && e.SL >= 0 && e.SH <= 100;
+        P.lo = pct ? e.ML : e.SL + (e.ML / 100) * sp;
+        P.hi = pct ? e.MH : e.SL + (e.MH / 100) * sp;
+        P.rlo = e.SL;
+        P.rhi = e.SH;
+      }
+      if (e.unit) P.u = e.unit;
+      P.ph = e.PH;
+      P.pl = e.PL;
+      P.dh = e.DH;
+      P.dt = e.DT;
+      P.tf = e.TF;
+      P.fsc = e.FSC;
+      P.cut = e.CUT;
+      P.phondt = e.PHONDT;
+      P.plondt = e.PLONDT;
+    } else {
+      P.ph = e.PH;
+      P.pl = e.PL;
+      P.rsts = e.RSTS;
+      P.kk = e.K;
+      P.dt = e.DT;
+      P.tf = e.TF;
+      P.cut = e.CUT;
+      P.phondt = e.PHONDT;
+      P.plondt = e.PLONDT;
+      P.sumUnit = e['SUM unit'];
+    }
+  }
+}
+function anDefaults(S) {
+  /* H-16 the small two-cell box above an I/P converter (valve positioner, field side) was read as a SUB with one input and no output: it is a field device */
+  for (const b of S.blk)
+    if (b.k === 'SUB' && b.o.length === 0 && b.i.length === 1 && b.pins.length === 1) b.k = 'FIELD';
+  /* H-02 same tag, one transmitter */
+  {
+    const by = {};
+    for (const b of S.blk)
+      if (b.k === 'AI') {
+        const o = b.pins.find(p => p.role === 'out'),
+          t = o && S.lab[o.n] ? S.lab[o.n].t : null;
+        if (t) (by[t] = by[t] || []).push(b);
+      }
+    for (const t in by) {
+      const g = by[t];
+      if (g.length < 2) continue;
+      const m = g.find(b => b.fb);
+      if (!m) continue;
+      for (const b of g)
+        if (b !== m && !b.fb) {
+          b.fb = m.fb;
+          b.twin = m;
+          b.pins
+            .filter(p => p.role === 'out')
+            .forEach(p => {
+              if (S._tr) S._tr[p.n] = m.fb.id;
+            });
+        }
+    }
+  }
+  if (typeof AN_DEF === 'undefined') return;
+  anFace(S);
+  /* 2.3.0-beta.3 (drawing audit, group C): the range written on the drawing wins over the parameter workbook (source order 1 > 6) */
+  for (const f of (typeof AN_AUDIT_FIX !== 'undefined' && AN_AUDIT_FIX[S.name]) || [])
+    if (f.op === 'range') {
+      const b = S.blk.find(z => z.id === f.blk && z.k === f.k);
+      if (!b) continue;
+      b.p.rlo = f.rlo;
+      b.p.rhi = f.rhi;
+      b.p.span = f.rhi - f.rlo;
+      b.note = f.why;
+    }
+  /* real values: the DCS carries percent / counts (100 % = 10000), the simulator shows real values (T/H, %), so the scaling is done here as a user would. ABC-005 limestone chain; each change is applied only if the constant still has the drawing value */
+  if (S.name === 'ABC-005') {
+    const fx = (id, from, to, why) => {
+      const c = S.blk.find(q => q.id === id && q.k === 'CONST');
+      if (c && c.p && Math.abs(c.p.val - from) < 1e-9) {
+        c.p.val = to;
+        c.note = why;
+      }
+    };
+    fx(27, 10000, 1, 'x 10000 turns the ratio into counts (100 % = 10000); real value: x 1');
+    fx(20, 1, 100 / 27, 'SCALE CONVERT 12000 / 2700: limestone T/H to feeder speed % (27 T/H = 100 %): x 100 / 27');
+    fx(28, 13, 1.3, 'LIMESTONE DENSITY BASE : 1.3 (drawing label); drawing box shows 13');
+    fx(
+      19,
+      13,
+      (1.3 * 100) / 27,
+      'LIMESTONE DENSITY BASE : 1.3, feeder speed % to T/H (27 T/H = 100 %): 1.3 x 100 / 27'
+    );
+  }
+  for (const b of S.blk) {
+    /* a set point written as "x % MCR ( y T/H )": the signal is in T/H, the set point is y */
+    if ((b.k === 'HC' || b.k === 'LC' || b.k === 'HLC') && b.p && typeof b.p.u === 'string') {
+      const m = /MCR\s*\(\s*([\d.]+)\s*T\/H\s*\)/i.exec(b.p.u);
+      if (m) {
+        b.p.sp = +m[1];
+        b.p.u = 'T/H';
+        b.note = 'set point ' + m[1] + ' T/H (drawing: % MCR with the T/H value in brackets)';
+      }
+    }
+  }
+  if (S.name === 'ABC-001A') {
+    for (const b of S.blk)
+      if (b.k === 'HC' && b.p && b.p.sp === 0.1 && b.p.u === '%') {
+        b.p.sp = 0.2;
+        b.p.u = 'MW';
+        b.note = '> 0.1 % of the 0.0 ~ 200.0 MW range = 0.2 MW (deviation block output compared in MW)';
+      }
+  }
+  if (S.name === 'ABC-006') {
+    for (const b of S.blk)
+      if (b.k === 'LC' && b.p && b.p.sp === 25 && /MCR/.test(b.p.u || '')) {
+        b.p.sp = 151.5;
+        b.p.u = 'T/H';
+        b.note = '25 % MCR = 151.5 T/H (drawing: TOTAL AIR FLOW < 25% MCR (151.5 T/H); 100% MCR = 606 T/H)';
+      }
+  }
+  if (/^ABC-003[A-D]$/.test(S.name)) {
+    for (const b of S.blk)
+      if (b.k === 'LC' && b.p && b.p.sp === 18.7 && b.p.u === '%') {
+        b.p.sp = (18.7 * 65) / 100;
+        b.p.u = 'T/H';
+        b.note = '18.7 % of the 0 ~ 65 T/H SA flow range = 12.155 T/H';
+      }
+  }
+  if (S.name === 'ABC-010') {
+    for (const b of S.blk)
+      if (b.k === 'HC' && b.p && b.p.sp === 5 && b.p.u === '%') {
+        b.p.sp = 5 * 12.42;
+        b.p.u = 'mm';
+        b.note = '5 % of the -422 ~ 820 mm level range = 62.1 mm (drum level (1) / (3) deviation)';
+      }
+  }
+  if (S.name === 'ABC-001B') {
+    /* SCALE CONVERT 10 / 200 feeds the RATE LIMIT time T = B / A * 100 / 60 (B = 10000): here the ratio is kept (0.05), it makes the rate limit equal to the MW/min setting (HIC-MWRL 3 MW/min = 0.05 MW/s) */
+    for (const b of S.blk)
+      if (b.k === 'CONST' && b.p && b.p.val === 1 && b.note && /SCALE CONVERT 10\s*\/\s*200/.test(b.note)) {
+        b.p.val = 0.05;
+        b.note = 'SCALE CONVERT 10 / 200 = 0.05: the rate limit of the unit load equals the MW/min setting';
+      }
+  }
+  if (/^ABC-004[ABC]$/.test(S.name)) {
+    /* 2.2.0-beta.1: coal feeders A / B / C. The MAN FICCL1061x works in T/H (0 ~ 40 T/H); its MV on the drawing is percent of 40 T/H (AO to the inverter, "MV >= 83.3 %", FIC-CF PV = average of the three MVs in %, AUTO-MV = FIC-CF.MV % + bias). The simulator keeps T/H inside the station and converts at the edges */
+    const labs = n =>
+      [(S.lab[n] && S.lab[n].t) || ''].concat((S.tagN || []).filter(z => z.n === n).map(z => z.t)).join('|');
+    const has = (n, re) => re.test(labs(n));
+    const isMV = n => has(n, /(^|\|)(FICCL1061[ABC]\.MV|AO0(231|356|800))(\||$)/);
+    const isSum = n => has(n, /(^|\|)SI01[123]6(\||$)/);
+    for (const b of S.blk) {
+      if (
+        b.k === 'AMT' &&
+        /B\s*\/\s*T/.test((b.txt || []).join('/')) &&
+        b.o.some(n => S.cns[n].some(c => c.k === 'MAN' && /FICCL1061/.test((c.txt || []).join('/'))))
+      ) {
+        b.ag = 0.4;
+        b.note = 'AUTO-MV in % of 40 T/H -> T/H';
+      }
+      if ((b.k === 'SUM' || b.k === 'ADD') && b.ip && b.o.some(isSum))
+        for (const q of b.ip)
+          if (has(q.n, /(^|\|)SI01[123]0(\||$)/)) {
+            q.ia = [2.5, 0];
+            b.note = 'bias (T/H) -> % of 40 T/H, added to FIC-CF.MV (%)';
+          }
+      if (b.k === 'SW' && b.i.some(isMV) && (b.o.some(n => has(n, /(^|\|)SI01[123]3(\||$)/)) || b.i.some(isSum))) {
+        b.ia = b.ia || {};
+        for (const n of b.i) if (isMV(n)) b.ia[n] = [2.5, 0];
+        b.note = 'feeder MV (T/H) -> % of 40 T/H';
+      }
+      if (b.k === 'DEV' && b.ip && b.ip.some(q => isMV(q.n)) && b.ip.some(q => isSum(q.n))) {
+        for (const q of b.ip) if (isMV(q.n)) q.ia = [2.5, 0];
+        b.note = 'feeder MV (T/H) -> % of 40 T/H for the comparison';
+      }
+      if (b.k === 'HC' && b.p && b.p.sp === 83.3 && b.i.some(isMV)) {
+        b.p.sp = 83.3 * 0.4;
+        b.note = 'MV >= 83.3 % of 40 T/H = 33.32 T/H';
+      }
+      if (b.k === 'AMT' && b.o.some(n => has(n, /(^|\|)FIC-CF\.MV(\||$)/)) && b.i.some(n => has(n, /(^|\|)SI0145(\||$)/))) {
+        b.bg = 2.5;
+        b.note = 'RB-MV SI0145 (T/H) -> % of 40 T/H for the FIC-CF tracking';
+      }
+    }
+  }
+  if (S.name === 'ABC-009A' || S.name === 'ABC-009B') {
+    /* bottom ash screw cooler speed controllers: the MAN SICL1060A ~ D work in rpm (0 ~ 5 rpm, workbook), the loop signals are percent of 5 rpm (AUTO-MV, "12 %" back-up value, comparison with the output, average of the four speeds as the PV of PIC-BASC) */
+    const labs = n =>
+      [(S.lab[n] && S.lab[n].t) || ''].concat((S.tagN || []).filter(z => z.n === n).map(z => z.t)).join('|');
+    const lab = labs;
+    const isMV = n => /(^|\|)SICL1060[A-D]\.MV/.test(labs(n)) || /(^|\|)AO0(211|323|339|787)\b/.test(labs(n));
+    for (const b of S.blk) {
+      if (
+        b.k === 'AMT' &&
+        /B\s*\/\s*T/.test((b.txt || []).join('/')) &&
+        b.o.some(n => b.o.length && S.cns[n].some(c => c.k === 'MAN' && /SICL1060/.test((c.txt || []).join('/'))))
+      ) {
+        b.ag = 0.05;
+        b.note = 'AUTO-MV in % of 5 rpm -> rpm';
+      }
+      if (b.k === 'SW' && b.i.some(isMV) && b.i.length >= 3 && !b.o.some(n => /SI03(23|43|53|73)/.test(labs(n)))) {
+        b.ia = b.ia || {};
+        for (const n of b.i) if (isMV(n)) b.ia[n] = [20, 0];
+        b.note = 'speed (rpm) -> % of 5 rpm';
+      }
+      if (b.k === 'DEV' && b.ip && b.ip.some(q => isMV(q.n)) && b.ip.some(q => /SI03[2-7]\d/.test(labs(q.n)))) {
+        for (const q of b.ip) if (isMV(q.n)) q.ia = [20, 0];
+        b.note = 'speed (rpm) -> % of 5 rpm for the comparison';
+      }
+      if (b.k === 'CONST' && b.p && b.p.val === 12 && S.cns[b.o[0]] && S.cns[b.o[0]].some(c => c.k === 'SW')) {
+        b.p.val = 0.6;
+        b.note = '12 % of 5 rpm = 0.6 rpm';
+      }
+      if (b.k === 'CONST' && b.p && b.p.val === 0.25 && b.note && /fraction/.test(b.note)) {
+        b.p.val = 0.25 * 20;
+        b.note = 'average of the four speeds (1/4) in % of 5 rpm (x 20)';
+      }
+    }
+  }
+  if (S.name === 'ABC-001C') {
+    /* the boiler master chain is written in percent of 0 ~ 120 T/H coal (the drawing: -0.42 % = -0.5 T/H, 18 % / Hr = 0.005 % / sec); HIC-BM is 0 ~ 100 % and SI0213 is the coal demand in T/H (ABC-002: 0 ~ 120 T/H) */
+    for (const b of S.blk) {
+      if (b.k === 'MUL' && b.gain === 1 && b.o.some(n => S.lab[n] && /^SI0213/.test(S.lab[n].t))) {
+        b.gain = 1.2;
+        b.note = 'boiler master MV % x 1.2 = coal demand T/H (100 % = 120 T/H)';
+      }
+      if (b.k === 'ADD' && b.ip && b.ip.length === 2 && b.ip.some(q => S.lab[q.n] && S.lab[q.n].t === 'PIC-COBM.MV')) {
+        const q = b.ip.find(z => !(S.lab[z.n] && S.lab[z.n].t === 'PIC-COBM.MV'));
+        q.ia = [100 / 120, 0];
+        b.note = 'SI0201 (T/H) -> % of 120 T/H, added to the pressure controller MV (%)';
+      }
+      if (b.k === 'AMT' && b.o.some(n => S.lab[n] && S.lab[n].t === 'PIC-COBM.MV')) {
+        b.bg = 100 / 120;
+        b.note = 'RB-MV (T/H) -> % of 120 T/H for the PID tracking';
+      }
+      /* 2.2.0-beta.20: the same for the boiler master switch (M.2000 = NOT FIC-CM.REM: B = SI0017 TOTAL FUEL FLOW "RB-MV", T/H of
+         0 ~ 120): while the coal master is not REMOTE the boiler master output tracks the fuel in % of its own range (150 MW: 81 T/H
+         = 67.5 %, 4.PNG 68.3). Before, the T/H value went in as %: at 45 MW the boiler master read 33.6 % for 36 T/H of coal, its
+         demand (x 1.2 / calorie correction) was 46 T/H and the coal master never saw SV = PV for its REMOTE */
+      if (b.k === 'AMT' && b.o.some(n => S.lab[n] && S.lab[n].t === 'HIC-BM.MV')) {
+        b.bg = 100 / 120;
+        b.note = 'RB-MV SI0017 TOTAL FUEL FLOW (T/H) -> % of 120 T/H: the boiler master tracks the fuel while the coal master is not REMOTE (M.2000)';
+      }
+      if (b.k === 'CONST' && b.p && Math.abs(b.p.val + 0.42) < 1e-9) {
+        b.p.val = -0.5;
+        b.note = '-0.42 % (-0.5 T/H) in T/H';
+      }
+      if (b.k === 'RATE' && b.p && b.p.hr === 18) {
+        b.p.rate = (18 * 1.2) / 3600;
+        b.p.spanUnres = false;
+        b.p.span = 120;
+        b.note = '18 % / Hr of 0 ~ 120 T/H = 21.6 T/H per hour';
+      }
+    }
+  }
+  if (S.name === 'ABC-010') {
+    /* drum level pressure compensation is written in percent of the transmitter range (-422 ~ 820 mm = 0 ~ 100 %): 100 % - LT %, - LN38 %, / LN39; the simulator carries mm */
+    const lab = n => S.lab[n] && S.lab[n].t;
+    for (const b of S.blk) {
+      if (b.k === 'SUB' && b.ip && b.ip.length === 2) {
+        const ci = b.ip.find(q => S.drv[q.n].some(d => d.k === 'CONST' && d.p && d.p.val === 100)),
+          ai = b.ip.find(q => q !== ci);
+        if (ci && ai && S.drv[ai.n].some(d => d.k === 'AI')) {
+          ai.ia = [1 / 12.42, 422 / 12.42];
+          b.note = 'LT in mm -> % of -422 ~ 820 mm (the drawing subtracts it from 100 %)';
+        }
+      }
+      if (b.k === 'DIV' && lab(b.de) === 'SI0252') {
+        b.oa = [12.42, -422];
+        b.note = 'compensated level in % of -422 ~ 820 mm -> mm';
+      }
+      if (b.k === 'SUM' && b.ip && b.ip.length === 2) {
+        const q = b.ip.find(z => lab(z.n) === 'LICBR1001.MV');
+        if (q) {
+          q.ia = [5.5, 0];
+          b.note =
+            'drum level master MV (%, limits -25 ~ 25 %) is a % of the feed water range 0 ~ 550 T/H: x 5.5 = T/H, added to the steam flow';
+        }
+      }
+      if (b.k === 'AMT' && b.o.some(n => lab(n) === 'LICBR1001.MV')) {
+        b.bg = 100 / 550;
+        b.note = 'RB-MV (feed water minus steam flow, T/H) -> % of 550 T/H for the master tracking';
+      }
+    }
+  }
+  if (S.name === 'ABC-008') {
+    /* "2" written on the wire into the divider (average of the two fan demands) */
+    for (const b of S.blk)
+      if (b.k === 'DIV' && b.i.length === 2) {
+        const n = b.i[1];
+        if (S.ext.includes(n) && !S.nets[n].dig && !(S.kn && S.kn[n] !== undefined)) {
+          const ends = [];
+          for (const i of S.nets[n].segs) {
+            const sg = S.seg[i];
+            ends.push([sg.x1, sg.y1], [sg.x2, sg.y2]);
+          }
+          let best = null,
+            bd = 8;
+          for (const t of S.tx) {
+            if (!/^\s*-?\d+(?:\.\d+)?\s*$/.test(t.t.trim())) continue;
+            for (const [x, y] of ends) {
+              const d = anD(t.x, t.y, x, y);
+              if (d < bd) {
+                bd = d;
+                best = t;
+              }
+            }
+          }
+          if (best) {
+            (S.kn = S.kn || {})[n] = parseFloat(best.t);
+            S.ext.splice(S.ext.indexOf(n), 1);
+            b.note = 'divisor "' + best.t.trim() + '" written on the wire';
+          }
+        }
+      }
+  }
+  if (S.name === 'ABC-002') {
+    const c = S.blk.find(q => q.id === 34 && q.k === 'CONST');
+    if (c && c.p && Math.abs(c.p.val - 4450) < 1e-9) {
+      c.p.val = 0.445;
+      c.note =
+        'COAL CALORIE BASE 4450 kcal/kg; LN1 gives the diesel calorie in units of 10000 kcal/kg (MV 0-100 % = 8000-12000 kcal/kg = 0.8-1.2): base in the same unit = 0.445';
+    }
+  }
+  if (S.name === 'ABC-011' || S.name === 'ABC-012') {
+    /* cascade: the outlet temperature PID output (% of 0-600 degC) is the set point of the spray water PID (0-600 degC): the net xxx.MV carries degC, the PID tracks in % */
+    S.blk.forEach(b => {
+      if (b.k === 'AMT' && b.o.some(n => S.lab[n] && /^TIC(BR1140|MS1004)\.MV$/.test(S.lab[n].t))) {
+        b.og = 6;
+        b.bg = 1 / 6;
+        b.note =
+          'the outlet PID output is a % of 0-600 degC: x 6 = degC (set point of the spray PID); RB-MV (PV degC) / 6 for the PID tracking';
+      }
+    });
+  }
+  if (S.name === 'ABC-003E') {
+    /* oil master (0-14 T/H) output is a % of its range; each burner flow loop works in T/H (0-3.5): burner SV = MV % x 3.5 / 100 (basis: drawing range text 0.00~14.00 T/H, workbook FICDO1043A-D 0-3.5 T/H). RAMP 5 %/min of the burner range. */
+    const R = 3.5 / 100;
+    S.drv.forEach(l =>
+      l.forEach(d => {
+        if (d.k === 'LINK' && S.lab[d.o[0]] && S.lab[d.o[0]].t === 'FIC-OM.MV') {
+          d.gain = R;
+        }
+      })
+    );
+    S.blk.forEach(b => {
+      if (b.k === 'AMT' && S.lab[b.sel] && S.lab[b.sel].t === 'M.0092') {
+        b.bg = 1 / R;
+        b.note = 'RB-MV (burner SV, T/H) x 100 / 3.5 = % of the oil master range';
+      }
+      if (b.k === 'CMPK' && b.p && b.p.ref >= 0 && S.kn && S.kn[b.p.ref] === 3) {
+        S.kn[b.p.ref] = 3 * R;
+        b.note = 'SET X% = 3 % of the burner range 3.5 T/H = 0.105 T/H';
+      }
+      if (b.k === 'RATE' && b.up !== undefined) {
+        b.up = undefined;
+        b.dn = undefined;
+        b.p.rate = (0.05 * 3.5) / 60;
+        b.p.rtxt = 'RAMP: 5 %/min';
+        b.dflt = null;
+        b.note =
+          'RAMP: 5 %/min of 3.5 T/H (drawing text next to PS0004); the PS0003 PTN004029 value is not in any reference';
+      }
+    });
+  }
+  const kpOf = b => {
+    const q = S.tx
+      .filter(t => /^FIFA\d+[A-D]?\.KP2$/i.test(t.t.trim()) && anD(t.x, t.y, b.cx, b.cy) <= 60)
+      .sort((p, r) => anD(p.x, p.y, b.cx, b.cy) - anD(r.x, r.y, b.cx, b.cy))[0];
+    return q
+      ? q.t
+          .trim()
+          .toUpperCase()
+          .replace(/\.KP2$/, '')
+      : '';
+  };
+  /* 3.2.3-beta.241 (live Cold start, ICV to CV transfer: the LP bypass PCV-HR1010 stayed at 33.0 % while the hot reheat fell to 2.6
+     kg/cm2): ABC-052 "X% / sec Ramp" SI0223 -> SI0224 takes its X from F(X) LN11 (SI0225, PICHR1003.DV vs Time Constant, S2-LN-11:
+     33 for DV <= 0, 1667 at DV +50). The pin reader took the LN11 output on the left as the signal and SI0223 as the limits, so the
+     ramp followed 33 (the X) instead of SI0223 (0 % after the transfer, M.0714). Signal = SI0223, X = LN11 as the time of a full
+     stroke in seconds (NO-SOURCE unit; a time constant per the curve title: close fast when the pressure is at or under the set
+     point, slow while it is still high) */
+  if (S.name === 'ABC-052')
+    for (const b of S.blk) {
+      if (b.k !== 'RATE' || b.main === undefined) continue;
+      const fxIn = [b.main, b.up, b.dn].find(n => n >= 0 && (S.drv[n] || []).some(d => d.k === 'FX' && d.p && d.p.ln === 'LN11'));
+      if (fxIn === undefined) continue;
+      const sig = [b.main, b.up, b.dn].find(n => n >= 0 && n !== fxIn);
+      if (sig === undefined) continue;
+      b.main = sig;
+      b.tpar = fxIn;
+      b.tsec = true;
+      b.span = 100;
+      b.up = undefined;
+      b.dn = undefined;
+      b.p.rate = 0;
+      b.i = [b.main, b.tpar, b.byp].filter(x => x >= 0);
+      b.note = 'X% / sec Ramp: signal SI0223, full stroke time from LN11 (PICHR1003.DV)';
+    }
+  const fixedRate = S.blk
+      .filter(b => b.k === 'RATE' && b.main !== undefined && b.up === undefined && !(b.p.rate > 0))
+      .sort((p, q) => p.id - q.id),
+    rl = AN_DEF.RATE.filter(e => e.sheet === S.name);
+  fixedRate.forEach((b, i) => {
+    const e = rl[i];
+    if (e) {
+      b.p.rate = e.rate;
+      b.dflt = { k: 'RATE', e };
+    }
+  });
+  for (const b of S.blk) {
+    const P = b.p;
+    if (b.k === 'ALM') {
+      const tag = (b.txt || [])[1],
+        e = AN_DEF.ALM.find(q => q.tag === tag);
+      if (e && P.hh == null && P.h == null && P.l == null && P.ll == null) {
+        P.hh = e.hh;
+        P.h = e.h;
+        P.l = e.l;
+        P.ll = e.ll;
+        /* the reset value of the source, where it gives one (TILO1002x: back at 50 / 40, IBD TD-1); panel.js almLv */
+        if (e.hr != null) P.hr = e.hr;
+        if (e.lr != null) P.lr = e.lr;
+        b.dflt = { k: 'ALM', e };
+      }
+    } else if (b.k === 'TP') {
+      const kp = kpOf(b),
+        e = AN_DEF.TP.find(q => q.kp === kp && q.sheet === S.name);
+      if (e) {
+        P.tref = e.top;
+        b.dflt = { k: 'TP', e };
+      }
+    } else if (b.k === 'PO') {
+      const e = AN_DEF.PO;
+      if (P.cyc == null) {
+        P.cyc = e.cyc;
+        P.stroke = e.stroke;
+        P.minp = e.minp;
+        b.dflt = { k: 'PO', e };
+      }
+    }
+  }
+  /* SCALE CONVERT a / b: shows the drawn ratio (only where it is still x 1 here); every consumer must be a multiplier that divides it out (b.scn), otherwise the constant is x 1 */
+  for (const b of S.blk) {
+    if (b.k !== 'CONST' || !b.scr || !b.o || b.o[0] == null) continue;
+    if (b.p.val !== 1) {
+      b.scr = 0;
+      continue;
+    }
+    /* changed on purpose above (a real unit conversion): keep */ const n = b.o[0],
+      cs = (S.cns[n] || []).filter(c => c !== b);
+    if (cs.length && cs.every(c => c.k === 'MUL' && c.i && c.i.length >= 2 && c.i.includes(n))) {
+      for (const c of cs) {
+        c.scn = c.scn || c.i.map(() => 0);
+        c.i.forEach((m, j) => {
+          if (m === n) c.scn[j] = b.scr;
+        });
+      }
+      b.p.val = b.scr;
+    } else {
+      b.p.val = 1;
+      b.note = b.scx1;
+      b.scr = 0;
+    }
+  }
+}
+function anSelIn(S, blk, n) {
+  /* v1.20.9: by CONNECTION (the transmitter whose output wire is the trunk wire of the SIG.AB box), never by distance */ const g =
+    (S.sigab || []).find(q => q.net === n);
+  if (!g || !g.L) return n;
+  const ai = blk.find(a => a.k === 'AI' && a.pins.some(p => p.role === 'out' && p.n === g.L.net));
+  const o = ai && ai.pins.find(p => p.role === 'out');
+  return o ? o.n : n;
+}
+/* v1.20.14: primary AI of a net (the transmitter), through the calculation chain but not through the compensation side (F(X), constants) */
+function anSelAi(S, n, d) {
+  if (d > 10 || n == null || n < 0) return null;
+  const dr = (S.drv[n] || []).find(q => q.k !== 'LINK');
+  if (!dr) return null;
+  const k = dr.k;
+  if (k === 'AI') return dr;
+  if (k === 'FX' || k === 'CONST') return null;
+  let ins = dr.i || [];
+  if (k === 'DIV' && dr.nu != null && dr.nu >= 0) ins = [dr.nu];
+  else if (k === 'TP' && dr.tpd >= 0) ins = [dr.tpd];
+  for (const m of ins) {
+    if (S.nets[m] && S.nets[m].dig) continue;
+    const md = (S.drv[m] || []).find(q => q.k !== 'LINK');
+    if (md && (md.k === 'FX' || md.k === 'CONST')) continue;
+    const r = anSelAi(S, m, d + 1);
+    if (r) return r;
+  }
+  return null;
+}
+function anCompile(S) {
+  const nets = S.nets,
+    blk = S.blk,
+    N = nets.length;
+  S.drv = Array.from({ length: N }, () => []);
+  S.cns = Array.from({ length: N }, () => []);
+  S.health = [];
+  const TX = S.tx,
+    near = (x, y, r, f) =>
+      TX.filter(t => anD(t.x, t.y, x, y) <= r && (!f || f(t))).sort(
+        (a, b) => anD(a.x, a.y, x, y) - anD(b.x, b.y, x, y)
+      );
+  /* F(X): its LN number is the nearest unused "LNxx" text (any side of the box) */
+  {
+    const fx = blk.filter(b => b.k === 'FX'),
+      lt = TX.filter(q => /^LN\s*-?\d+$/i.test(q.t.trim())),
+      pr = [];
+    for (const b of fx)
+      for (const q of lt) {
+        const d = anD(q.x, q.y, b.cx, b.cy);
+        if (d <= 16) pr.push({ b, q, d });
+      }
+    pr.sort((a, c) => a.d - c.d);
+    const ub = new Set(),
+      uq = new Set();
+    for (const p of pr) {
+      if (ub.has(p.b) || uq.has(p.q)) continue;
+      ub.add(p.b);
+      uq.add(p.q);
+      p.b.p.ln = p.q.t.trim().toUpperCase().replace(/[\s-]/g, '');
+    }
+  }
+  /* G-10: 4-way selector table */
+  {
+    const IFL = TX.filter(t => /^\(\d\)\s*IF\b/.test(t.t.trim()));
+    if (IFL.length >= 2) {
+      const cx = IFL.reduce((a, t) => a + t.x, 0) / IFL.length,
+        cy = IFL.reduce((a, t) => a + t.y, 0) / IFL.length;
+      const sw = blk
+        .filter(b => b.k === 'SW' && b.pins.filter(p => p.role === 'in').length >= 5)
+        .sort((p, q) => anD(p.cx, p.cy, cx, cy) - anD(q.cx, q.cy, cx, cy))[0];
+      if (sw && anD(sw.cx, sw.cy, cx, cy) < 150) {
+        const ins = sw.pins.filter(p => p.role === 'in'),
+          leg = { a: -1, b: -1, c: -1, d: -1 };
+        for (const p of ins) {
+          const l = (p.lab || '').trim().toLowerCase();
+          if (l === 'a' || l === 'b') leg[l] = p.n;
+        }
+        for (const L of ['c', 'd']) {
+          let best = -1,
+            bd = 10;
+          for (const t of TX) {
+            if (t.t.trim() !== L || anD(t.x, t.y, sw.cx, sw.cy) > 45) continue;
+            for (const p of ins) {
+              if (Object.values(leg).includes(p.n)) continue;
+              for (const i of nets[p.n].segs) {
+                const d = anPtSeg(t.x, t.y, S.seg[i]);
+                if (d < bd) {
+                  bd = d;
+                  best = p.n;
+                }
+              }
+            }
+          }
+          leg[L] = best;
+        }
+        const cond = IFL.map(t => {
+          const m = /^\((\d)\)\s*IF\s+(.*?)\s*\(\s*([A-Z]\.[0-9A-F]{3,5}[A-Z]?)\s*\)/i.exec(t.t.trim());
+          const se = TX.filter(
+            q => /SELECT\s*(TO)?\s*"?[a-d]"?\s*$/i.test(q.t.trim()) && Math.abs(q.y - t.y) < 14 && q.x > t.x - 12
+          ).sort((p, q) => anD(p.x, p.y, t.x, t.y) - anD(q.x, q.y, t.x, t.y))[0];
+          const lg = se && /"?([a-d])"?\s*$/i.exec(se.t.trim());
+          return m && lg ? { n: +m[1], txt: m[2], tag: m[3], leg: lg[1].toLowerCase() } : null;
+        })
+          .filter(Boolean)
+          .sort((p, q) => p.n - q.n);
+        if (cond.length >= 2 && cond.every(c => leg[c.leg] >= 0)) sw.q4pre = { leg, cond };
+      }
+    }
+  }
+  const posOrder = (a, b) => b.y - a.y || a.x - b.x;
+  /* analog or digital: decided by WHO drives the wire (the CAD layer colour is the same for both on some sheets) */
+  {
+    const DK = new Set([
+        'AND',
+        'OR',
+        'NOT',
+        'FF',
+        'TON',
+        'TOF',
+        'TPS',
+        'TPV',
+        'HC',
+        'LC',
+        'HLC',
+        'CMPK',
+        'PVSV',
+        'DCMP',
+        'SIGAB'
+      ]),
+      AK = new Set([
+        'DRATE',
+        'AI',
+        'PID',
+        'PIDV',
+        'MAN',
+        'SUM',
+        'SUB',
+        'DEV',
+        'ADD',
+        'MUL',
+        'DIV',
+        'ABS',
+        'SQRT',
+        'HS',
+        'LS',
+        'HLIM',
+        'LLIM',
+        'SEL',
+        'FX',
+        'LAG',
+        'RATE',
+        'RAMPB',
+        'CONST',
+        'TP',
+        'AMT',
+        'SW',
+        'CTK'
+      ]),
+      dk = {};
+    for (const b of blk) {
+      const d = DK.has(b.k),
+        a = AK.has(b.k);
+      if (!d && !a) continue;
+      for (const p of b.pins)
+        if (p.role === 'out' && !nets[p.n].sigab) {
+          nets[p.n].dig = d;
+          dk[p.n] = 1;
+        }
+    }
+    for (const b of blk)
+      if (['AND', 'OR', 'NOT', 'FF', 'TON', 'TOF', 'TPS', 'TPV'].includes(b.k))
+        for (const p of b.pins)
+          if (p.role === 'in' && p.lab !== 'X' && !dk[p.n] && !nets[p.n].sigab) nets[p.n].dig = true;
+    /* inputs of comparators / math blocks that nobody drives are analog values */
+    for (const b of blk)
+      if (
+        [
+          'HC',
+          'LC',
+          'HLC',
+          'DCMP',
+          'PVSV',
+          'FX',
+          'SQRT',
+          'SUM',
+          'SUB',
+          'ADD',
+          'MUL',
+          'DIV',
+          'DEV',
+          'LAG',
+          'RATE',
+          'HLIM',
+          'LLIM',
+          'SEL',
+          'HS',
+          'LS',
+          'AO',
+          'ALM',
+          'PID',
+          'PIDV',
+          'ABS'
+        ].includes(b.k)
+      )
+        for (const p of b.pins) if (p.role === 'in' && !dk[p.n] && !nets[p.n].sigab) nets[p.n].dig = false;
+    S.lab.forEach((l, n) => {
+      if (l && nets[n] && !nets[n].sigab && /\.(LOC|REM|MAN)$/i.test(String(l.t).trim())) nets[n].dig = true;
+    });
+  }
+  {
+    const K = blk.filter(b => b.k === 'CONST' && !(b.txt[0] && /^-?\d/.test(b.txt[0].replace(/%%%/g, '%')))),
+      used = new Set(),
+      pairs = [];
+    const nt = TX.filter(
+      q =>
+        /^-?\d+(\.\d+)?\s*([%°A-Za-z][^:]{0,30})?$/.test(q.t.trim()) &&
+        !blk.some(o => o.k !== 'CONST' && q.x >= o.x0 && q.x <= o.x1 && q.y >= o.y0 && q.y <= o.y1)
+    );
+    for (const b of K)
+      for (const q of nt) {
+        const dx = Math.max(b.x0 - q.x, 0, q.x - b.x1),
+          dy = Math.max(b.y0 - q.y, 0, q.y - b.y1),
+          d = Math.hypot(dx, dy);
+        if (d <= 9) pairs.push({ b, q, d });
+      }
+    pairs.sort((x, y) => x.d - y.d);
+    const ub = new Set();
+    for (const p of pairs) {
+      if (ub.has(p.b) || used.has(p.q)) continue;
+      ub.add(p.b);
+      used.add(p.q);
+      p.b.p.val = anNum(p.q.t);
+      /* stacked fraction (numerator above denominator) drawn next to the box */ {
+        const isN = z => /^-?\d+(\.\d+)?$/.test(z.t.trim());
+        const w = isN(p.q)
+          ? nt.find(
+              z =>
+                z !== p.q &&
+                isN(z) &&
+                Math.abs(z.x - p.q.x) < 3 &&
+                Math.abs(z.y - p.q.y) > 3 &&
+                Math.abs(z.y - p.q.y) < 10
+            )
+          : null;
+        if (w) {
+          const up = p.q.y > w.y ? p.q : w,
+            lo = up === p.q ? w : p.q;
+          if (+lo.t) {
+            used.add(w);
+            p.b.p.val = anNum(up.t) / anNum(lo.t);
+            p.b.note = 'fraction ' + up.t.trim() + ' / ' + lo.t.trim();
+            if (TX.some(z => /SCALE\s*CONVERT/i.test(z.t) && Math.hypot(z.x - p.b.cx, z.y - p.b.cy) < 50)) {
+              p.b.p.val = 1;
+              p.b.note =
+                'SCALE CONVERT ' +
+                up.t.trim() +
+                ' / ' +
+                lo.t.trim() +
+                ' (source range / destination range): x 1 in engineering units';
+            }
+          }
+        }
+      }
+    }
+    /* an "A" box labelled with a signal name (not a number) = a reference to that signal, not a constant */
+    const tg = TX.filter(
+      q =>
+        /^[A-Za-z][A-Za-z0-9]*\d[A-Za-z0-9]*(\.[A-Za-z0-9]+)?$/.test(q.t.trim()) &&
+        q.t.trim().length >= 6 &&
+        !blk.some(o => o.k !== 'CONST' && q.x >= o.x0 && q.x <= o.x1 && q.y >= o.y0 && q.y <= o.y1)
+    );
+    for (const b of K) {
+      if (ub.has(b)) continue;
+      if (
+        TX.some(
+          q =>
+            /^\s*\(?\s*-?\d+(?:\.\d+)?\s*(?:%|\/\s*-?\d+(?:\.\d+)?)\s*\)?\s*$/.test(q.t.trim()) &&
+            Math.hypot(q.x - b.cx, q.y - b.cy) < 16
+        )
+      )
+        continue;
+      let bt = null,
+        bd = 9;
+      for (const q of tg) {
+        const w = q.t.trim().length * (q.h || 4) * 0.6,
+          dx = Math.max(b.x0 - (q.x + w), 0, q.x - b.x1),
+          dy = Math.max(b.y0 - q.y, 0, q.y - b.y1),
+          d = Math.hypot(dx, dy);
+        if (d < bd) {
+          bd = d;
+          bt = q;
+        }
+      }
+      if (bt) b.ref = bt.t.trim();
+    }
+  }
+  for (const b of blk) {
+    b.i = [];
+    b.o = [];
+    const ins = b.pins.filter(p => p.role === 'in'),
+      outs = b.pins.filter(p => p.role === 'out');
+    b.o = [...new Set(outs.map(p => p.n))];
+    if ((b.k === 'SW' || b.k === 'AMT') && !ins.length && outs.length) {
+      const pt = near(b.cx, b.cy, 14, t => /^\s*-?\d+(?:\.\d+)?\s*%\s*$/.test(t.t.trim()))[0];
+      if (pt) {
+        b.k = 'CONST';
+        b.txt = [pt.t.trim()];
+        b.p = { val: anNum(pt.t) };
+        b.note = 'T without wires: constant ' + pt.t.trim();
+      }
+    }
+    const P = b.p;
+    switch (b.k) {
+      case 'SW':
+      case 'AMT': {
+        /* controls are the pins marked "1:A" / "1:B" ("when 1 take A / B"); the diagram may have two of them (one for A, one for B) */
+        const isCtl = p => /^\d\s*:\s*\S+/.test(p.lab || ''),
+          isAB = p => /^[ab]$/i.test(p.lab || '');
+        const yn = ins.some(p => /^[yn]$/i.test(p.lab || '') || /^\d\s*:\s*y$/i.test(p.lab || ''));
+        if (yn)
+          for (const p of ins) {
+            if (/^y$/i.test(p.lab || '')) p.lab = 'a';
+            else if (/^n$/i.test(p.lab || '')) p.lab = 'b';
+            else {
+              const mm = /^(\d)\s*:\s*y$/i.exec(p.lab || '');
+              if (mm) p.lab = mm[1] + ':a';
+            }
+          }
+        const tcand = S.tx.filter(t => /^\d\s*:\s*[ab]$/i.test(t.t.trim())),
+          usedT = new Set();
+        for (const p of ins)
+          if (isCtl(p)) {
+            let bt = null,
+              bd = 1e9;
+            for (const t of tcand)
+              if (t.t.trim() === p.lab.trim() && !usedT.has(t)) {
+                const d = Math.hypot(t.x - p.x, t.y - p.y);
+                if (d < bd) {
+                  bd = d;
+                  bt = t;
+                }
+              }
+            if (bt) usedT.add(bt);
+          }
+        const unl = ins.filter(p => !isCtl(p) && !isAB(p));
+        const pr = [];
+        for (const p of unl)
+          for (const t of tcand)
+            if (!usedT.has(t)) {
+              const d = Math.hypot(t.x - p.x, t.y - p.y);
+              if (d <= 24) pr.push({ p, t, d });
+            }
+        pr.sort((x, y) => x.d - y.d);
+        const up = new Set();
+        for (const q of pr) {
+          if (up.has(q.p) || usedT.has(q.t)) continue;
+          up.add(q.p);
+          usedT.add(q.t);
+          q.p.lab = q.t.t.trim();
+        }
+        /* a select signal is a digital net. When the label "1:A / 1:B" landed on an ANALOG pin (e.g. the PID output arrives at the same corner of the diamond as the diagonal select wire: ABC-003A FICFA1043A), the label belongs to the unlabelled digital pin */
+        for (const p of ins)
+          if (isCtl(p) && !nets[p.n].dig) {
+            const q = ins.find(z => z !== p && !isCtl(z) && !isAB(z) && nets[z.n].dig);
+            if (q) {
+              q.lab = p.lab;
+              p.lab = '';
+            }
+          }
+        const lp = ins.filter(isCtl);
+        let dg = lp.length ? lp : ins.filter(p => nets[p.n].dig);
+        if (lp.length && b.k === 'AMT') {
+          const ex = ins.filter(p => !lp.includes(p) && !isAB(p) && nets[p.n].dig);
+          if (ex.length && ins.length - lp.length - ex.length >= 1) {
+            const m0 = /^\d\s*:\s*(\S+)/.exec(lp[0].lab || '');
+            for (const q of ex) q.lab = m0 && /^a$/i.test(m0[1]) ? '1:B' : '1:A';
+            dg = [...lp, ...ex];
+            b.dig2 = ex.length;
+          }
+        }
+        if (!dg.length) {
+          const c = ins.filter(p => !isAB(p));
+          if (c.length === 1 && ins.length >= 3) {
+            const q = c[0];
+            if (!q.lab) {
+              let bt = null,
+                bd = 26;
+              for (const t of tcand) {
+                const d = Math.hypot(t.x - q.x, t.y - q.y);
+                if (d < bd) {
+                  bd = d;
+                  bt = t;
+                }
+              }
+              if (bt) q.lab = bt.t.trim();
+            }
+            dg = [q];
+          }
+        }
+        const an = ins.filter(p => !dg.includes(p)).sort(posOrder);
+        for (const q of dg) nets[q.n].dig = true;
+        if (b.k === 'AMT' || b.k === 'SW')
+          b.buCmd = TX.some(q => /^\s*BU-CMD\s*$/.test(q.t) && Math.hypot(q.x - b.cx, q.y - b.cy) < 70);
+        if (b.k === 'SW' && dg.length === 1 && !dg[0].lab) {
+          /* the condition label (1:a) sits beside a diagonal selector wire, away from the pin */ const lt = TX.filter(
+            t => /^\s*1\s*:\s*[aAbB]\s*$/.test(t.t) && Math.hypot(t.x - b.cx, t.y - b.cy) < 40
+          ).sort((x, y) => Math.hypot(x.x - b.cx, x.y - b.cy) - Math.hypot(y.x - b.cx, y.y - b.cy))[0];
+          if (lt) dg[0].lab = lt.t.trim();
+        }
+        b.sel = dg[0] ? dg[0].n : -1;
+        const sl = (dg[0] && dg[0].lab) || '';
+        const m = sl.match(/^\d\s*:\s*(\S+)/);
+        P.selA = !!((m && /^a$/i.test(m[1])) || (yn && !m));
+        b.cs = dg.map(q => {
+          const mm = (q.lab || '').match(/^\d\s*:\s*(\S+)/);
+          return { n: q.n, A: !!((mm && /^a$/i.test(mm[1])) || (yn && !mm)) };
+        });
+        let A = an.find(p => /^a$/i.test(p.lab || '')),
+          B = an.find(p => /^b$/i.test(p.lab || ''));
+        if (!A && !B && an.length) {
+          if (b.k === 'AMT') {
+            A = an.find(p => p.side === 'T') || an[0];
+            B = an.find(p => p !== A);
+          } else {
+            A = an[0];
+            B = an[1];
+          }
+        } else if (!A) A = an.find(p => p !== B);
+        else if (!B) B = an.find(p => p !== A);
+        b.a = A ? A.n : -1;
+        b.b = B ? B.n : -1;
+        if (b.k === 'AMT' && b.b < 0) {
+          const cs = blk.find(
+            q => q.k === 'COS' && q.vnet !== undefined && !q.used && Math.hypot(q.cx - b.cx, q.cy - b.cy) < 30
+          );
+          if (cs) {
+            cs.used = 1;
+            cs.tb = b.id;
+            b.b = cs.vnet;
+            b.cosB = 1;
+            S.lab[cs.vnet] = { t: 'COS manual value', d: 0, x: cs.cx, y: cs.cy };
+          }
+        } /* the COS drawn beside the switch is its B leg: when the B pin sits on a short wire that nothing drives and that ends at the COS, the wire IS the COS (ABC-003A FICFA1043A SV switch) */
+        if (b.k === 'AMT' && b.b >= 0 && !b.cosB) {
+          const cs = blk.find(
+            q => q.k === 'COS' && q.vnet !== undefined && !q.used && Math.hypot(q.cx - b.cx, q.cy - b.cy) < 30
+          );
+          if (
+            cs &&
+            !blk.some(z => z !== b && z.pins && z.pins.some(p => p.n === b.b && p.role === 'out')) &&
+            !S.lab[b.b] &&
+            (nets[b.b].segs || []).length &&
+            nets[b.b].segs.some(i => {
+              const g = S.seg[i];
+              return g && (Math.hypot(g.x1 - cs.cx, g.y1 - cs.cy) < 14 || Math.hypot(g.x2 - cs.cx, g.y2 - cs.cy) < 14);
+            })
+          ) {
+            cs.used = 1;
+            cs.tb = b.id;
+            b.b = cs.vnet;
+            b.cosB = 1;
+            S.lab[cs.vnet] = { t: 'COS manual value', d: 0, x: cs.cx, y: cs.cy };
+          }
+        }
+        b.i = [...dg.map(q => q.n), b.a, b.b].filter(x => x >= 0);
+        if (b.q4pre) {
+          b.q4 = b.q4pre;
+          b.i = [...new Set([...b.i, ...Object.values(b.q4.leg).filter(x => x >= 0)])];
+          b.q4.cond.forEach((c, i) => {
+            if (P['c' + (i + 1)] === undefined) P['c' + (i + 1)] = 0;
+          });
+        }
+        break;
+      }
+      case 'SIGAB': {
+        /* the box SIG.AB / B.xxxx is the signal-abnormal FLAG of an AI. The same address is written on other wires of the sheet: those wires carry this flag */
+        const tag = (b.txt.find(q => !/SIG/i.test(q)) || '').trim();
+        b.i = [];
+        if (!tag) break;
+        const hit = new Set();
+        for (const t of S.tx) {
+          if (t.t.trim() !== tag || Math.hypot(t.x - b.cx, t.y - b.cy) < 16) continue;
+          const w = tag.length * (t.h || 3) * 0.6,
+            x0 = t.a === 2 ? t.x - w : t.a === 1 || t.a === 4 ? t.x - w / 2 : t.x,
+            x1 = x0 + w;
+          for (const sg of S.seg)
+            for (const [x, y] of [
+              [sg.x1, sg.y1],
+              [sg.x2, sg.y2]
+            ])
+              if (x >= x0 - 4 && x <= x1 + 4 && y >= t.y - 4 && y <= t.y + (t.h || 3) + 3 && sg.net != null)
+                hit.add(sg.net);
+        }
+        if (!hit.size)
+          S.lab.forEach((l, n) => {
+            if (l && l.t.trim() === tag && nets[n] && nets[n].segs.length) hit.add(n);
+          }); /* the tag written mid-wire: the wire carries the flag */
+        for (const n of hit) {
+          if (blk.some(q => q !== b && q.pins.some(p => p.role === 'out' && p.n === n)) || nets[n].sigab) continue;
+          if (!b.pins.some(p => p.n === n)) {
+            b.pins.push({ n, x: b.cx, y: b.cy, role: 'out' });
+            nets[n].dig = true;
+          }
+        }
+        b.o = [...new Set(b.pins.filter(p => p.role === 'out').map(p => p.n))];
+        break;
+      }
+      case 'AI':
+        b.i = [];
+        break;
+      case 'FF': {
+        const ts = S.tx.filter(t => t.x >= b.x0 && t.x <= b.x1 && t.y >= b.y0 && t.y <= b.y1),
+          ts_ = ts.find(t => t.t.trim() === 'S'),
+          tr_ = ts.find(t => t.t.trim() === 'R');
+        let sp = null,
+          rp = null,
+          bs = 1e9,
+          br = 1e9;
+        for (const p of ins) {
+          if (ts_ && Math.abs(p.y - ts_.y) < bs) {
+            bs = Math.abs(p.y - ts_.y);
+            sp = p;
+          }
+        }
+        for (const p of ins) {
+          if (p !== sp && tr_ && Math.abs(p.y - tr_.y) < br) {
+            br = Math.abs(p.y - tr_.y);
+            rp = p;
+          }
+        }
+        b.S = sp ? sp.n : -1;
+        b.Rn = rp ? rp.n : -1;
+        b.i = [b.S, b.Rn].filter(x => x >= 0);
+        break;
+      }
+      case 'DEV':
+      case 'SUB':
+      case 'SUM':
+      case 'ADD': {
+        {
+          const used = new Set(blk.flatMap(q => q.pins.map(p => p.lt)).filter(Boolean));
+          const fr = TX.filter(
+              t =>
+                /^[+\-−]$/.test(t.t.trim()) &&
+                !used.has(t) &&
+                !(t.x >= b.x0 && t.x <= b.x1 && t.y >= b.y0 && t.y <= b.y1)
+            ),
+            prs = [];
+          for (const p of ins)
+            if (!/^[+\-−]$/.test((p.lab || '').trim()))
+              for (const t of fr) {
+                const d = anD(p.x, p.y, t.x, t.y);
+                if (d <= 13) prs.push({ p, t, d });
+              }
+          prs.sort((x, y) => x.d - y.d);
+          const up = new Set(),
+            ut = new Set();
+          for (const q of prs) {
+            if (up.has(q.p) || ut.has(q.t)) continue;
+            up.add(q.p);
+            ut.add(q.t);
+            q.p.lab = q.t.t.trim();
+            q.p.lt = q.t;
+          }
+        }
+        const s = ins.slice().sort((p, q) => (p.side === 'L' ? 0 : 1) - (q.side === 'L' ? 0 : 1) || posOrder(p, q));
+        b.ip = s.map((p, i) => ({
+          n: p.n,
+          sg: /^[-−]$/.test((p.lab || '').trim())
+            ? -1
+            : /^\+$/.test((p.lab || '').trim())
+              ? 1
+              : (b.k === 'SUB' || b.k === 'DEV') && i > 0
+                ? -1
+                : 1
+        }));
+        if ((b.k === 'SUB' || b.k === 'DEV') && b.ip.length && !b.ip.some(x => x.sg < 0) && b.ip.length > 1)
+          b.ip[b.ip.length - 1].sg = -1;
+        b.i = b.ip.map(x => x.n);
+        break;
+      }
+      case 'MUL': {
+        b.i = ins.map(p => p.n);
+        if (ins.length === 1) {
+          const t = near(b.cx, b.cy, 16, q => /^-?\d+(?:\.\d+)?$/.test(q.t.trim()))[0];
+          b.gain = t ? +t.t.trim() : 1;
+        }
+        break;
+      }
+      case 'HLLIM': {
+        const s = ins.slice(),
+          tp = s.find(p => p.side === 'T') || s[0],
+          lm = s.filter(p => p !== tp).sort((p, q) => q.y - p.y);
+        b.main = tp ? tp.n : -1;
+        b.hi = lm[0] ? lm[0].n : -1;
+        b.lo = lm[1] ? lm[1].n : -1;
+        b.i = [b.main, b.hi, b.lo].filter(x => x >= 0);
+        break;
+      }
+      case 'TP': {
+        const s2 = ins.slice(),
+          tp = s2.find(p => p.side === 'T') || s2[0],
+          ot = s2.find(p => p !== tp);
+        b.tpd = tp ? tp.n : -1;
+        b.tpt = ot ? ot.n : -1;
+        b.i = s2.map(p => p.n);
+        if (P.tref === undefined) P.tref = null;
+        break;
+      }
+      case 'SEL': {
+        const s2 = ins.slice().sort((p, q) => p.x - q.x);
+        b.i = s2.map(p => {
+          let m = anSelIn(S, blk, p.n);
+          /* 2.2.0-beta.9: an input wire that no block drives, where the transmitter wire ENDS ON ITS SIDE (a T without a junction dot;
+             ABC-001C PRI / SEC / AVG SELECT CIRCUIT: AI0419 GEN MW (C) and AI0774 GEN MW (D) run sideways into the wires that come
+             down from their SIG.AB boxes to the select circuit): that transmitter is the input. Before, both inputs were 0 and the
+             turbine master PV EIC-TM.PV was 0 MW (33.PNG: 148.6 MW) */
+          if (m === p.n && !blk.some(x => x.pins.some(q => q.role === 'out' && q.n === m))) {
+            const own = (nets[m] ? nets[m].segs : []).map(i => S.seg[i]);
+            const ai = blk.find(
+              x =>
+                x.k === 'AI' &&
+                x.pins.some(
+                  q =>
+                    q.role === 'out' &&
+                    q.n != null &&
+                    q.n !== m &&
+                    nets[q.n] &&
+                    nets[q.n].segs.some(i => {
+                      const g = S.seg[i];
+                      return [
+                        [g.x1, g.y1],
+                        [g.x2, g.y2]
+                      ].some(([x, y]) => own.some(o => anPtSeg(x, y, o) < 0.5));
+                    })
+                )
+            );
+            const ao = ai && ai.pins.find(q => q.role === 'out');
+            if (ao) m = ao.n;
+          }
+          if (m !== p.n) (S.selw = S.selw || {})[p.n] = m;
+          return m;
+        });
+        const tx = (b.txt || []).join(' ');
+        b.mi = {};
+        if (/PRI/i.test(tx)) {
+          b.mopts = ['AVG', 'PRI', 'SEC'];
+          b.mi.PRI = 0;
+          b.mi.SEC = 1;
+        } else {
+          const mm = /\(\s*(\d)\s*\)\s*\/\s*\(\s*(\d)\s*\)\s*\/\s*AVG/i.exec(tx);
+          if (mm) {
+            b.mopts = ['AVG', '(' + mm[1] + ')', '(' + mm[2] + ')'];
+            [mm[1], mm[2]].forEach((dg, k) => {
+              let ix = b.i.findIndex(n => S.lab[n] && new RegExp(dg + '\\.PV$').test(S.lab[n].t));
+              if (ix < 0) ix = k;
+              b.mi['(' + dg + ')'] = ix;
+            });
+          } else b.mopts = ['AVG'];
+        }
+        break;
+      }
+      case 'DIV': {
+        const s = ins.slice().sort(posOrder);
+        let num = null,
+          den = null;
+        const lt = near(b.cx, b.cy, 30, t => /(?:^|=)\s*[ab]\s*\/\s*[ab]\b/i.test(t.t.trim()))[0];
+        if (lt) {
+          const m = lt.t
+            .trim()
+            .toLowerCase()
+            .match(/(?:^|=)\s*([ab])\s*\/\s*([ab])\b/);
+          num = s.find(p => (p.lab || '').toLowerCase() === m[1]);
+          den = s.find(p => (p.lab || '').toLowerCase() === m[2]);
+        } else {
+          /* stacked fraction drawn as two texts (A over B, or B over A): the upper letter is the numerator; the pin letters are the other A/B texts, matched to the pin by the side of the box they sit on */
+          const ft = S.tx.filter(q => /^[AB]$/.test(q.t.trim()) && Math.hypot(q.x - b.cx, q.y - b.cy) < 40);
+          let top = null,
+            low = null;
+          for (const u of ft)
+            for (const w of ft)
+              if (u !== w && Math.abs(u.x - w.x) < 2.5 && u.y - w.y > 3 && u.y - w.y < 12) {
+                top = u;
+                low = w;
+              }
+          if (top && low && top.t.trim() !== low.t.trim()) {
+            const pl = {};
+            for (const q of ft) {
+              if (q === top || q === low) continue;
+              const dx = q.x - b.cx,
+                dy = q.y - b.cy;
+              pl[Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'R' : 'L') : dy > 0 ? 'T' : 'B'] = q.t.trim().toLowerCase();
+            }
+            const byL = l => s.find(p => ((p.lab || '').toLowerCase() || pl[p.side]) === l);
+            num = byL(top.t.trim().toLowerCase());
+            den = byL(low.t.trim().toLowerCase());
+          }
+        }
+        if (!num || !den) {
+          const la = s.find(p => (p.lab || '').toLowerCase() === 'a'),
+            lb = s.find(p => (p.lab || '').toLowerCase() === 'b');
+          if (la && lb && la !== lb) {
+            num = la;
+            den = lb;
+          } else {
+            /* unlabeled: the dividend is the through-line pin (opposite side to the output), the divisor is the side input */ const op =
+                b.pins.find(p => p.role === 'out'),
+              opp = op && { T: 'B', B: 'T', L: 'R', R: 'L' }[op.side],
+              na = s.filter(p => p.side === opp);
+            if (!lt && s.length === 2 && na.length === 1) {
+              num = na[0];
+              den = s.find(p => p !== num);
+            } else {
+              num = s[0];
+              den = s[1];
+            }
+          }
+        }
+        b.nu = num ? num.n : -1;
+        b.de = den ? den.n : -1;
+        b.i = [b.nu, b.de].filter(x => x >= 0);
+        break;
+      }
+      case 'PID':
+      case 'PIDV': {
+        const s = ins.slice().sort(posOrder);
+        b.in0 = s[0] ? s[0].n : -1;
+        b.i = s.map(p => p.n);
+        const at = near(b.cx, b.cy, 40, t => /^ACT\s*:\s*[RN]/i.test(t.t.trim()))[0];
+        P.act = at && /R/i.test(at.t.trim().split(':')[1] || '') ? -1 : 1;
+        {
+          const rg = near(b.cx, b.cy, 50, t => /-?\d+(?:\.\d+)?\s*~\s*-?\d+(?:\.\d+)?/.test(t.t.trim()))[0];
+          if (rg && P.span == null) {
+            const m = /(-?\d+(?:\.\d+)?)\s*~\s*(-?\d+(?:\.\d+)?)\s*([A-Za-z%\/°0-9²³]*)/.exec(rg.t.trim());
+            if (m && Math.abs(+m[2] - +m[1]) > 0) {
+              P.rlo = +m[1];
+              P.rhi = +m[2];
+              P.unit = m[3] || '';
+              P.span = Math.abs(+m[2] - +m[1]);
+            }
+          }
+        }
+        if (P.kp == null) {
+          const tg0 = ((b.txt || []).filter(t => !AN_HDR.test(t.trim()))[0] || '').replace(/^S\d\s*/, '').toUpperCase(),
+            c0 = /^DP/.test(tg0) ? 'P' : tg0[0],
+            LT = {
+              F: { kp: 1, ti: 15, sp: 1, n: 'flow' },
+              P: { kp: 1, ti: 60, sp: 5, n: 'pressure' },
+              T: { kp: 1, ti: 180, sp: 60, n: 'temperature' },
+              L: { kp: 1, ti: 120, sp: 10, n: 'level' },
+              A: { kp: 0.8, ti: 240, sp: 60, n: 'analysis' },
+              S: { kp: 1, ti: 30, sp: 5, n: 'speed' }
+            }[c0] || { kp: 1, ti: 60, sp: 5, n: 'general' };
+          P.kp = LT.kp;
+          P.ti = LT.ti;
+          P.td = 0;
+          P.lo = 0;
+          P.hi = 100;
+          P.lt = LT.n;
+          P.sp = LT.sp;
+        }
+        b.tag = (b.txt || []).filter(t => !AN_HDR.test(t.trim()))[0] || '';
+        break;
+      }
+      case 'MAN': {
+        const r = anRange(S, b, 60);
+        P.lo = r ? r.lo : 0;
+        P.hi = r ? r.hi : 100;
+        P.u = r ? r.u : '%';
+        b.i = ins.map(p => p.n);
+        b.tag = (b.txt || []).filter(t => !AN_HDR.test(t.trim()))[0] || '';
+        break;
+      }
+      case 'AI': {
+        break;
+      }
+      case 'CONST': {
+        if (b.ref) {
+          const on = b.pins.find(p => p.role === 'out');
+          if (on) {
+            (S.tagN = S.tagN || []).push({ t: b.ref, n: on.n, d: 0 });
+            b.o = [];
+            b.i = [];
+            P.val = 0;
+            break;
+          }
+        }
+        const tn = b.txt.length ? b.txt[0].replace(/%%%/g, '%') : null;
+        if (tn && /^-?\d+(\.\d+)?\s*[%A-Za-z°\/]{0,8}$/.test(tn)) P.val = anNum(tn);
+        /* v1.12.1: value written as a ratio next to the box (SCALE CONVERT 40 / 120 = 0.3333) or as a number with a unit / percent note (7.6 kg/cm2, 1.0 (100%)) */
+        if (P.val == null) {
+          const fr = near(b.cx, b.cy, 40, t => /^\s*-?\d+(?:\.\d+)?\s*\/\s*-?\d+(?:\.\d+)?\s*$/.test(t.t.trim()))[0];
+          if (fr) {
+            const m = /(-?\d+(?:\.\d+)?)\s*\/\s*(-?\d+(?:\.\d+)?)/.exec(fr.t);
+            if (+m[2]) {
+              P.val = +m[1] / +m[2];
+              b.note = 'ratio ' + fr.t.trim();
+              /* SCALE CONVERT a / b = source range / destination range: it changes the unit scale in percent-of-range signals. The simulator carries engineering units, where it is x 1 (ABC-006: 648 + 432 + 35 = 1115 T/H total) */ if (
+                near(b.cx, b.cy, 50, t => /SCALE\s*CONVERT/i.test(t.t)).length
+              ) {
+                /* v1.20.43: the constant shows the ratio written on the drawing; the multiplier that takes it divides it out again (the signals are real values), see anDefaults; if its consumer is not a multiplier it is x 1 as before */ b.scr =
+                  P.val;
+                P.val = 1;
+                b.scx1 =
+                  'SCALE CONVERT ' + fr.t.trim() + ' (source range / destination range): x 1 in engineering units';
+                b.note =
+                  'SCALE CONVERT ' +
+                  fr.t.trim() +
+                  ' (source range / destination range): the drawn ratio; the multiplier divides it out (real values)';
+              }
+            }
+          }
+        }
+        if (P.val == null) {
+          const pc = near(b.cx, b.cy, 16, t => /^\(?\s*-?\d+(?:\.\d+)?\s*%\s*\)?$/.test(t.t.trim()))[0];
+          if (pc) {
+            P.val = parseFloat(pc.t.replace(/[()%\s]/g, ''));
+            b.note = 'value ' + pc.t.trim();
+          }
+        }
+        if (P.val == null) {
+          const nu = near(
+            b.cx,
+            b.cy,
+            24,
+            t =>
+              (Math.abs(t.y - b.cy) <= 4 || /^\s*-?\d+(?:\.\d+)?\s*\(\s*\d+\s*%\s*\)\s*$/.test(t.t.trim())) &&
+              /^\s*-?\d+(?:\.\d+)?\s*(?:[A-Za-z%°][\w%°\/²³]*\s*)?(?:\(.*\))?\s*$/.test(t.t.trim()) &&
+              /[A-Za-z%°(]/.test(t.t.trim())
+          )[0];
+          if (nu) {
+            P.val = parseFloat(nu.t.trim());
+            b.note = 'value ' + nu.t.trim();
+          }
+        }
+        if (P.val == null) {
+          P.val = 0;
+          b.warn = 'value not found';
+        }
+        b.i = [];
+        break;
+      }
+      case 'FX': {
+        if (!P.ln) P.ln = '';
+        b.i = ins.map(p => p.n);
+        break;
+      }
+      case 'DRATE': {
+        b.i = ins.map(p => p.n);
+        break;
+      }
+      case 'LAG': {
+        const t = near(b.cx, b.cy, 24, q => /^\d+(\.\d+)?\s*(sec|s|min)/i.test(q.t.trim()))[0];
+        P.tau = t ? anNum(t.t) * (/min/i.test(t.t) ? 60 : 1) : 15;
+        b.i = ins.map(p => p.n).sort((x, y) => (nets[x].dig ? 1 : 0) - (nets[y].dig ? 1 : 0));
+        /* the analog signal first, a digital enable (1: ENABLED) after it */ break;
+      }
+      case 'RATE': {
+        const dg = ins.filter(p => nets[p.n].dig),
+          an = ins.filter(p => !nets[p.n].dig);
+        if (an.length >= 2) {
+          /* rate limiter with its own limit inputs (ABC-003E): signal in on the side, two limit inputs, 1:BYPASS */
+          const tt = near(b.cx, b.cy, 320, q => /^T\s*=/.test(q.t.trim()))[0];
+          if (tt && an.length >= 2) {
+            const lp = an.find(p => p.side === 'L'),
+              tp = an.find(p => p.side === 'T'),
+              bp = an.find(p => p.side === 'B');
+            if (lp && tp && lp !== tp) {
+              const rg2 = anRange(S, b, 120);
+              b.main = tp.n;
+              b.tpar = lp.n;
+              b.span = rg2 ? Math.abs(rg2.hi - rg2.lo) : 100;
+              b.byp = bp ? bp.n : dg[0] ? dg[0].n : -1;
+              if (bp) nets[bp.n].dig = true;
+              b.up = undefined;
+              P.rate = 0;
+              b.i = [b.main, b.tpar, b.byp].filter(x => x >= 0);
+              break;
+            }
+          }
+          const mn = an.find(p => p.side === 'L') || an.slice().sort(posOrder)[0],
+            lm = an.filter(p => p !== mn).sort((p, q) => p.x - q.x);
+          b.main = mn.n;
+          b.up = lm[0] ? lm[0].n : -1;
+          b.dn = lm[1] ? lm[1].n : b.up;
+          b.byp = dg[0] ? dg[0].n : -1;
+          b.i = [b.main, b.up, b.dn, b.byp].filter(x => x >= 0);
+          P.rate = 0;
+        } else {
+          const t = near(b.cx, b.cy, 36, q => /\/\s*(sec|min|hr|h)\b/i.test(q.t) && anNum(q.t) > 0)[0];
+          P.rate =
+            t && anNum(t.t) > 0 ? anNum(t.t) / (/\/\s*min/i.test(t.t) ? 60 : /\/\s*(hr|h)\b/i.test(t.t) ? 3600 : 1) : 0;
+          P.pct = !!t && /%/.test(t.t);
+          P.rtxt = t ? t.t.trim() : '';
+          if ((b.txt || []).some(q => q.trim() === 'V')) {
+            {
+              const at = near(b.cx, b.cy, 70, q => /\d\s*T\s*\/\s*(hr|h)\b/i.test(q.t.trim()))[0];
+              if (at) {
+                const am = /(\d+(?:\.\d+)?)\s*T\s*\/\s*(?:hr|h)\b/i.exec(at.t);
+                P.absHr = +am[1];
+                P.rtxt = at.t.trim();
+              }
+            }
+            const ht = near(b.cx, b.cy, 70, q => /\d\s*%\s*\/\s*(hr|h)\b/i.test(q.t.trim()))[0];
+            if (ht) {
+              const m = /(\d+(?:\.\d+)?)\s*%\s*\/\s*(?:hr|h)\b/i.exec(ht.t),
+                rg_ = anRange(S, b, 90);
+              P.rate = +m[1] / 3600;
+              P.hr = +m[1];
+              P.pct = true;
+              if (P.absHr > 0) {
+                P.rate = P.absHr / 3600;
+                P.pct = false;
+              }
+            } else P.rate = 0;
+          }
+          b.main = an[0] ? an[0].n : ins[0] ? ins[0].n : -1;
+          b.byp = dg[0] ? dg[0].n : -1;
+          b.up = undefined;
+          b.i = [b.main, b.byp].filter(x => x >= 0);
+        }
+        break;
+      }
+      case 'DCMP': {
+        b.i = ins.map(p => p.n);
+        const outs2 = outs.slice(),
+          tl = TX.filter(q => /^(?:[A-Za-z][\w-]*\s*)?[<>≤≥]/.test(q.t.replace(/%%%/g, '%').trim())),
+          pr = [];
+        for (const p of outs2)
+          for (const q of tl) {
+            const dx = p.x - q.x,
+              dy = q.y - p.y;
+            if (dy > -8 && dy < 9 && dx > -14 && dx < 60) pr.push({ p, q, d: Math.abs(dy) + Math.abs(dx) * 0.2 });
+            for (const ar of nets[p.n].arrows) {
+              const ex = ar.x - q.x,
+                ey = q.y - ar.y;
+              if (ey > -1 && ey < 9 && ex > -14 && ex < 10) pr.push({ p, q, d: Math.abs(ey) + Math.abs(ex) * 0.2 + 3 });
+            }
+          }
+        pr.sort((a, c) => a.d - c.d);
+        const up = new Set(),
+          uq = new Set();
+        b.dc = [];
+        for (const e of pr) {
+          if (up.has(e.p) || uq.has(e.q)) continue;
+          up.add(e.p);
+          uq.add(e.q);
+          const m = e.q.t
+            .replace(/%%%/g, '%')
+            .trim()
+            .match(/^(?:[A-Za-z][\w-]*\s*)?([<>≤≥])\s*(=)?\s*(-?\d+(?:\.\d+)?)\s*(.*)$/);
+          if (m)
+            b.dc.push({
+              n: e.p.n,
+              op: /[>≥]/.test(m[1]) ? '>' : '<',
+              inc: /[≥≤]/.test(m[1]) || m[2] === '=',
+              sp: +m[3],
+              u: m[4] || '',
+              txt: e.q.t.trim()
+            });
+        }
+        for (const e of b.dc.slice()) {
+          const pe = outs2.find(p => p.n === e.n);
+          if (!pe) continue;
+          for (const p2 of outs2)
+            if (p2.n !== e.n && !b.dc.some(x => x.n === p2.n) && anD(p2.x, p2.y, pe.x, pe.y) <= 3)
+              b.dc.push(Object.assign({}, e, { n: p2.n }));
+        }
+        break;
+      }
+      case 'VLV': {
+        b.i = ins.map(p => p.n);
+        P.stroke = 20;
+        break;
+      }
+      case 'ACT': {
+        b.i = ins.map(p => p.n);
+        P.stroke = 30;
+        b.tag = near(b.cx, b.y0, 30, q => /^[A-Z]{2,4}-[A-Z]{1,3}\d+/.test(q.t.trim()))[0];
+        b.tag = b.tag ? b.tag.t.trim() : '';
+        break;
+      }
+      case 'RAMPB': {
+        const t = b.txt.find(q => /RAMP/i.test(q));
+        P.rate = t
+          ? anNum(t.replace(/RAMP\s*:/i, '')) / (/\/\s*min/i.test(t) ? 60 : /\/\s*(hr|h)\b/i.test(t) ? 3600 : 1)
+          : 1;
+        P.pct = !!t && /%/.test(t);
+        P.rtxt = t || '';
+        const mp = ins.find(p => p.side === 'L') || ins[0],
+          bp = ins.find(p => p !== mp && /BYPASS|^1:/i.test(p.lab || '')) || ins.find(p => p !== mp && p.side === 'T');
+        b.main = mp ? mp.n : undefined;
+        b.byp = bp ? bp.n : -1;
+        if (bp && !nets[bp.n].sigab) nets[bp.n].dig = true;
+        b.i = [b.main, b.byp].filter(x => x !== undefined && x >= 0);
+        break;
+      }
+      case 'HC':
+      case 'LC':
+      case 'HLC': {
+        /* set point is written beside the box: "> = 2%", ">= 83.3%", "< 50 T/H", "> 0 kg/cm2" */
+        let op = b.k === 'HC' ? '>' : '<',
+          sp = 0,
+          inc = false,
+          u = '',
+          hit = null;
+        const cl = q => q.t.replace(/%%%/g, '%').trim();
+        {
+          let alt = null;
+          for (const R of [16, 30]) {
+            if (hit || alt) break;
+            /* second pass: set point written a little further from the box (ABC-001A "> 0.1%") */ for (const q of near(
+              b.cx,
+              b.cy,
+              R
+            )) {
+              const m = cl(q).match(/^([<>≤≥])\s*(=)?\s*(-?\d+(?:\.\d+)?)\s*(.*)$/);
+              if (!m) continue;
+              if (/[>≥]/.test(m[1]) === (op === '>')) {
+                hit = m;
+                break;
+              }
+              if (!alt) alt = m;
+            }
+          }
+          if (!hit) hit = alt;
+        }
+        if (!hit)
+          for (const q of near(b.cx, b.cy, 16)) {
+            const m = cl(q).match(/^()()(-?\d+(?:\.\d+)?)\s*(%|[A-Za-z°][\w\/°%]*)?$/);
+            if (m) {
+              hit = m;
+              break;
+            }
+          }
+        if (hit) {
+          sp = +hit[3];
+          u = hit[4] || '';
+          if (hit[1]) {
+            op = /[>≥]/.test(hit[1]) ? '>' : '<';
+            inc = /[≥≤]/.test(hit[1]) || hit[2] === '=';
+          }
+          P.found = 1;
+        }
+        P.ref = -1;
+        if (!hit)
+          for (const q of near(b.cx, b.cy, 16)) {
+            const m = cl(q).match(/^([<>≤≥])\s*(=)?\s*([A-Za-z][\w.]{3,})$/);
+            if (!m) continue;
+            {
+              P.refTag = m[3];
+              op = /[>≥]/.test(m[1]) ? '>' : '<';
+              inc = /[≥≤]/.test(m[1]) || m[2] === '=';
+              P.found = 1;
+              break;
+            }
+          }
+        P.op = op;
+        P.sp = sp;
+        P.inc = inc;
+        P.u = u;
+        b.i = ins.map(p => p.n);
+        break;
+      }
+      case 'CMPK': {
+        const m = b.txt[0].replace(/%%%/g, '%').match(/^([<>≤≥])\s*(-?\d+(?:\.\d+)?)/);
+        P.op = m ? (m[1] === '≥' ? '>' : m[1] === '≤' ? '<' : m[1]) : '<';
+        P.sp = m ? +m[2] : 0;
+        b.i = ins.map(p => p.n);
+        if (!m && ins.length >= 2) {
+          const st = TX.filter(q => /^SET\b/i.test(q.t.trim()) && anD(q.x, q.y, b.cx, b.cy) < 24).sort(
+            (a, c) => anD(a.x, a.y, b.cx, b.cy) - anD(c.x, c.y, b.cx, b.cy)
+          )[0];
+          const th = st
+            ? ins.slice().sort((a, c) => anD(a.x, a.y, st.x, st.y) - anD(c.x, c.y, st.x, st.y))[0]
+            : ins.find(p => p.side === 'T');
+          const sg = th && ins.find(p => p !== th);
+          if (th && sg) {
+            P.ref = th.n;
+            P.refSet = 1;
+            b.i = [sg.n, th.n];
+          }
+        }
+        break;
+      }
+      case 'PVSV': {
+        const sd = ins.slice().sort((p, q) => (p.side === 'R' ? 0 : 1) - (q.side === 'R' ? 0 : 1) || posOrder(p, q));
+        b.pv = sd[0] ? sd[0].n : -1;
+        b.sv = sd[1] ? sd[1].n : -1;
+        b.i = [b.pv, b.sv].filter(x => x >= 0);
+        break;
+      }
+      case 'CTK': {
+        const ci = ins.find(p => p.lab === 'ctl'),
+          ii = ins.find(p => p !== ci);
+        b.ctl = ci ? ci.n : -1;
+        b.cin = ii ? ii.n : -1;
+        b.i = [b.cin, b.ctl].filter(x => x >= 0);
+        if (b.ctl >= 0 && !nets[b.ctl].sigab) nets[b.ctl].dig = true;
+        break;
+      }
+      case 'TON':
+      case 'TOF':
+      case 'TPS':
+        b.i = ins.map(p => p.n);
+        break;
+      case 'TPV': {
+        const xp = ins.find(p => p.lab === 'X'),
+          sp = ins.find(p => p !== xp);
+        b.xin = xp ? xp.n : -1;
+        b.sg = sp ? sp.n : -1;
+        if (xp) nets[xp.n].dig = false;
+        b.i = [b.sg, b.xin].filter(x => x >= 0);
+        break;
+      }
+      case 'IP': {
+        const m = ins.find(p => p.side === 'L') || ins[0];
+        b.i = m ? [m.n] : [];
+        ins.forEach(p => {
+          if (p !== m) nets[p.n].pn = 1;
+        });
+        outs.forEach(p => {
+          nets[p.n].pn = 1;
+        });
+        /* the other input pin of an I/P is its air supply, not a signal */ break;
+      }
+      default:
+        b.i = ins.map(p => p.n);
+    }
+    b.o.forEach(n => S.drv[n].push(b));
+    b.i.forEach(n => S.cns[n].push(b));
+  }
+  for (const b of blk)
+    if (b.p && b.p.refTag) {
+      S.lab.forEach((l, n) => {
+        if (b.p.ref < 0 && l && l.t === b.p.refTag && S.drv[n].length) b.p.ref = n;
+      });
+      if (b.p.ref >= 0) {
+        b.i.push(b.p.ref);
+        S.cns[b.p.ref].push(b);
+      }
+    }
+  /* position feedback: the word POSITIONER sits between a valve / actuator and the AI that measures its position */
+  {
+    const used = new Set();
+    for (const p of TX.filter(t => /^POSITIONER/i.test(t.t.trim()))) {
+      let src = null,
+        sd = 260;
+      for (const b of blk)
+        if ((b.k === 'VLV' || b.k === 'ACT') && Math.hypot(b.cx - p.x, b.cy - p.y) < sd) {
+          sd = Math.hypot(b.cx - p.x, b.cy - p.y);
+          src = b;
+        }
+      if (!src) {
+        sd = 260;
+        for (const b of blk)
+          if (b.k === 'IP' && Math.hypot(b.cx - p.x, b.cy - p.y) < sd) {
+            sd = Math.hypot(b.cx - p.x, b.cy - p.y);
+            src = b;
+          }
+        if (src) src.posFb = true;
+      }
+      let ai = null,
+        ad = 45;
+      for (const b of blk)
+        if (b.k === 'AI' && !used.has(b) && Math.hypot(b.cx - p.x, b.cy - p.y) < ad) {
+          ad = Math.hypot(b.cx - p.x, b.cy - p.y);
+          ai = b;
+        }
+      if (src && ai) {
+        used.add(ai);
+        ai.fb = src;
+      }
+    }
+    S.pre = {};
+    for (const t of TX) {
+      const m = /^SET\s+SV\s*=\s*(-?\d+(?:\.\d+)?)\s*(.*)$/i.exec(t.t.trim());
+      if (!m) continue;
+      const cq = TX.find(
+        q =>
+          /^IF\s+(?:S\d\s+)?[A-Za-z]\.[0-9A-F]{3,5}[A-Z]?\s*=\s*1$/.test(q.t.trim()) &&
+          Math.abs(q.x - t.x) < 8 &&
+          q.y >= t.y - 0.5 &&
+          q.y - t.y < 14
+      );
+      if (!cq) continue;
+      const tag = /([A-Za-z]\.[0-9A-F]{3,5}[A-Z]?)/.exec(cq.t)[1],
+        cn = S.lab.findIndex(l => l && l.t.replace(/^S\d\s*/, '') === tag);
+      if (cn < 0) continue;
+      let tb = null,
+        td = 40;
+      for (const b of blk)
+        if (
+          (b.k === 'AMT' || b.k === 'SW') &&
+          b.a >= 0 &&
+          TX.some(q => /^SV$/i.test(q.t.trim()) && Math.hypot(q.x - b.cx, q.y - b.cy) < 30)
+        ) {
+          const d = Math.hypot(b.cx - t.x, b.cy - t.y);
+          if (d < td * 50) {
+            td = d / 50;
+            tb = tb && Math.hypot(tb.cx - t.x, tb.cy - t.y) < d ? tb : b;
+          }
+        }
+      if (tb) {
+        S.pre[tb.a] = { c: cn, val: +m[1], tag };
+      } else {
+        let bn = -1,
+          bd = 200;
+        for (const q of TX) {
+          if (!/^SV$/i.test(q.t.trim())) continue;
+          const d = anD(q.x, q.y, t.x, t.y);
+          if (d >= bd) continue;
+          let nn = -1,
+            nd = 9;
+          for (const sg of S.seg) {
+            const e = anPtSeg(q.x, q.y, sg);
+            if (e < nd) {
+              nd = e;
+              nn = sg.net;
+            }
+          }
+          if (nn >= 0) {
+            bd = d;
+            bn = nn;
+          }
+        }
+        if (bn >= 0) {
+          if (S.pre[bn]) (S.pre[bn].alt = S.pre[bn].alt || []).push({ c: cn, val: +m[1], tag });
+          else S.pre[bn] = { c: cn, val: +m[1], tag };
+        }
+      }
+    }
+    S.sets = [];
+    for (const t of TX) {
+      const m = /^SET\s+(\S+)\s*=>\s*(\S+?)\s*$/i.exec(t.t.trim());
+      if (!m) continue;
+      const ift = TX.filter(q => /^IF\s+\S+\s*=\s*[01]/i.test(q.t.trim()) && anD(q.x, q.y, t.x, t.y) < 40).sort(
+        (a, c) => anD(a.x, a.y, t.x, t.y) - anD(c.x, c.y, t.x, t.y)
+      )[0];
+      if (!ift) continue;
+      const im = /^IF\s+(\S+)\s*=\s*([01])/i.exec(ift.t.trim());
+      const netOf = tag => {
+        let r = -1;
+        S.lab.forEach((l, n) => {
+          if (r < 0 && l && l.t === tag && nets[n].segs.length) r = n;
+        });
+        if (r < 0) {
+          const q = (S.tagN || []).find(z => z.t === tag);
+          if (q) r = q.n;
+        }
+        if (r < 0) {
+          const tx2 = TX.find(z => z.t.trim() === tag);
+          if (tx2) {
+            let bd = 12;
+            for (const sg of S.seg) {
+              const d = anPtSeg(tx2.x, tx2.y, sg);
+              if (d < bd && sg.net != null) {
+                bd = d;
+                r = sg.net;
+              }
+            }
+          }
+        }
+        return r;
+      };
+      const src = netOf(m[1]),
+        ctl = netOf(im[1]);
+      let tgt = -1;
+      const svm = /^(.+)\.SV$/i.exec(m[2]);
+      if (svm) {
+        const pid = blk.find(b => (b.k === 'PID' || b.k === 'PIDV') && (b.txt || []).some(x => x.trim() === svm[1]));
+        const dv = pid && S.drv[pid.in0] && S.drv[pid.in0].find(d => d.k === 'DEV');
+        if (dv) {
+          let best = null,
+            bs = 1e9;
+          const dist = (re, p) =>
+            Math.min(99, ...TX.filter(x => re.test(x.t.trim())).map(x => anD(x.x, x.y, p.x, p.y)));
+          for (const p of dv.pins.filter(p => p.role === 'in')) {
+            const sc = dist(/^SV$/, p) - dist(/^PV$/, p);
+            if (sc < bs) {
+              bs = sc;
+              best = p;
+            }
+          }
+          if (best && dist(/^SV$/, best) < 22) tgt = best.n;
+        }
+      } else {
+        const tt = TX.find(x => x.t.trim() === m[2]);
+        if (tt) {
+          const cb = blk
+            .filter(b => b.k === 'COS' && b.vnet != null)
+            .sort((a, c) => anD(a.cx, a.cy, tt.x, tt.y) - anD(c.cx, c.cy, tt.x, tt.y))[0];
+          if (cb && anD(cb.cx, cb.cy, tt.x, tt.y) < 40) {
+            if (cb.used) tgt = cb.vnet;
+            else {
+              let bd = 14;
+              for (const sg of S.seg) {
+                const d = anPtSeg(cb.cx, cb.cy, sg);
+                if (d < bd && sg.net != null) {
+                  bd = d;
+                  tgt = sg.net;
+                }
+              }
+            }
+          }
+        }
+      }
+      if (ctl >= 0 && !S.drv[ctl].length && !S.cns[ctl].some(x => x.k === 'SET'))
+        S.cns[ctl].push({ k: 'SET', id: -1, i: [], o: [], p: {} }); /* the condition tag is an input the user can set */
+      S.sets.push({ text: t.t.trim(), cond: ift.t.trim(), src, ctl, tgt, eq: +im[2] });
+      if (src >= 0 && ctl >= 0 && tgt >= 0) {
+        const q = { c: ctl, src, eq: +im[2], tag: m[2] };
+        if (S.pre[tgt]) (S.pre[tgt].alt = S.pre[tgt].alt || []).push(q);
+        else S.pre[tgt] = q;
+      }
+    }
+    for (const b of blk)
+      if (b.k === 'VLV') {
+        const ip = b.pins[0] && S.drv[b.pins[0].n].find(d => d.k === 'IP');
+        b.pnl = ip ? [...new Set(ip.pins.map(p => p.n).filter(n => nets[n].pn))] : [];
+      }
+    S._tr = {};
+    for (const b of blk) {
+      if (b.k === 'AI' && b.fb)
+        b.pins
+          .filter(p => p.role === 'out')
+          .forEach(p => {
+            S._tr[p.n] = b.fb.id;
+          });
+      if (b.k === 'ACT')
+        b.o.forEach(n => {
+          S._tr[n] = b.id;
+        });
+    }
+  }
+  /* numbered connectors of one sheet: same number = same wire (the sink end feeds the other ends) */
+  S.link = [];
+  const by = {};
+  for (const c of S.conn) {
+    (by[c.num] = by[c.num] || []).push(c);
+  }
+  for (const k in by) {
+    const g = by[k];
+    if (g.length !== 2 || g.some(c => c.sink || c.tgt)) continue;
+    const dr = c => c.nets.some(n => S.drv[n].some(d => d.k !== 'LINK'));
+    const a = g.filter(dr);
+    if (a.length === 1 && !dr(g.find(c => c !== a[0]))) {
+      a[0].sink = true;
+      a[0].fromDriver = 1;
+    }
+  }
+  for (const k in by) {
+    const sk = by[k].filter(c => c.sink),
+      src = by[k].filter(c => !c.sink);
+    for (const s of src)
+      for (const d of sk)
+        for (const a of d.nets) for (const bn of s.nets) if (a !== bn && !S.drv[bn].length) S.link.push([bn, a]);
+  }
+  /* the same signal tag written on several wires of one sheet is ONE signal (I.0937 on two places, M.0124 output and input) */
+  {
+    const G = {},
+      add = (t, n) => {
+        if (t.length >= 4 && nets[n].segs.length && !(G[t] = G[t] || []).includes(n)) G[t].push(n);
+      };
+    S.lab.forEach((l, n) => {
+      if (l) add(l.t, n);
+    });
+    (S.tagN || []).forEach(q => add(q.t, q.n));
+    {
+      /* THE ADDRESS TABLE (v1.20.6, tools/addr-table-src.js): built once here; the engine merges the nets of one address from it and the display (below) reads the same table. Nothing is tied to "the nearest free wire" any more. */
+      S.tagN = (S.tagN || []).filter(q => !q.by);
+      anAddr(S);
+      for (const a of S.addr) {
+        const k =
+          a.how === 'circle tag'
+            ? 'circle'
+            : a.how === 'AO block input'
+              ? 'AO'
+              : /^wire beside/.test(a.how)
+                ? 'addr'
+                : null;
+        if (!k) continue;
+        add(a.t, a.eng);
+        (S.tagN = S.tagN || []).push({ t: a.t, n: a.eng, d: k === 'circle' ? 0 : k === 'AO' ? 9 : a.gap, by: k });
+      }
+    }
+    for (const k in G) {
+      const g = G[k];
+      if (g.length < 2) continue;
+      const dg = nets[g[0]].dig,
+        isL = n => S.link.some(x => x[0] === n);
+      const src =
+        g.find(n => S.drv[n].length && nets[n].dig === dg && !S.drv[n].some(d => d.k === 'LINK')) ??
+        g.find(n => isL(n)) ??
+        -1;
+      let master = src >= 0 ? src : g.find(n => !S.drv[n].length && S.cns[n].length);
+      if (master == null || master < 0) continue;
+      {
+        /* a master that is itself the end of a connector link: go back to the root of that chain (otherwise two ends of one signal feed each other and the input can not be set) */ let gd = 0,
+          lk;
+        while (gd++ < 20 && (lk = S.link.find(x => x[0] === master))) master = lk[1];
+      }
+      for (const n of g) {
+        if (n === master || S.drv[n].length || nets[n].dig !== nets[master].dig || S.link.some(x => x[0] === n))
+          continue;
+        S.link.push([n, master]);
+      }
+    }
+  }
+  if (S.name === 'ABC-007') {
+    /* the controller PV tags FICFA1071.PV / FICFA1081.PV (and the unlabeled PV wire of the house-load subtraction) are the flow signals FIFA1071.PV / FIFA1081.PV that feed the PID */
+    const lb = t => {
+      let r = -1;
+      S.lab.forEach((l, n) => {
+        if (r < 0 && l && l.t === t && nets[n].segs.length) r = n;
+      });
+      return r;
+    };
+    for (const [al, pv] of [
+      ['FICFA1071.PV', 'FIFA1071.PV'],
+      ['FICFA1081.PV', 'FIFA1081.PV']
+    ]) {
+      const x = lb(al),
+        y = lb(pv);
+      if (x >= 0 && y >= 0 && x !== y && !S.drv[x].length && !S.link.some(q => q[0] === x)) S.link.push([x, y]);
+    }
+    for (const b of blk)
+      if (b.k === 'SUB' && b.i.length === 2) {
+        const cn = b.i.find(n => S.drv[n].some(d => d.k === 'CONST')),
+          o = b.i.find(n => n !== cn);
+        if (cn != null && o != null && !S.drv[o].length && !S.link.some(q => q[0] === o)) {
+          const v = S.drv[cn].find(d => d.k === 'CONST').p.val,
+            y = v === 230 ? lb('FIFA1071.PV') : v === 245 ? lb('FIFA1081.PV') : -1;
+          if (y >= 0 && y !== o) S.link.push([o, y]);
+        }
+      }
+  }
+  /* 2.3.0-beta.1 DRAWING AUDIT (docs/versions/v2.5.0/DRAWING_AUDIT.md, DRAWING_TRACE.md): links of the PDF that the reader missed.
+     Every entry names the block / net of THIS reading and what it must be; an entry whose block or net is not the expected one
+     (the reading changed) is skipped with a warning, never applied to another wire */
+  {
+    const A = AN_AUDIT_FIX[S.name];
+    if (A) {
+      const bad = m => (S.warn = S.warn || []).push('audit 2.3.0: ' + m);
+      const labT = n => (S.lab[n] && S.lab[n].t ? String(S.lab[n].t).trim() : '');
+      const free = n => n >= 0 && n < nets.length && !S.drv[n].length && !S.link.some(q => q[0] === n);
+      const mid = n => {
+        const g = S.seg[nets[n].segs[0]];
+        return g ? { x: (g.x1 + g.x2) / 2, y: (g.y1 + g.y2) / 2 } : { x: 0, y: 0 };
+      };
+      for (const f of A) {
+        const b = f.blk != null ? blk.find(z => z.id === f.blk) : null;
+        if (f.blk != null && (!b || b.k !== f.k)) {
+          bad(f.id + ': block B' + f.blk + ' is not ' + f.k);
+          continue;
+        }
+        if (f.was != null && labT(f.n) !== f.was) {
+          bad(f.id + ': net #' + f.n + ' is "' + labT(f.n) + '", expected "' + f.was + '"');
+          continue;
+        }
+        if (f.op === 'in') {
+          /* a missing input of a gate (the wire enters the gate on the drawing) */
+          if (!b.i.includes(f.n)) {
+            b.i.push(f.n);
+            S.cns[f.n].push(b);
+            (b.pins = b.pins || []).push({ role: 'in', side: 'L', n: f.n, aud: 1 });
+          }
+        } else if (f.op === 'lab') {
+          S.lab[f.n] = Object.assign({ t: f.t, d: 0, aud: 1 }, mid(f.n));
+        } else if (f.op === 'alias') {
+          /* a second name of the wire: the mode status .LOC / .MAN written beside an address-named wire (the M / A / R of that tag write it) */
+          ((S.alias = S.alias || {})[f.n] = S.alias[f.n] || []).push(f.t);
+        } else if (f.op === 'xtag') {
+          /* the cross-sheet source of an input, by the tag written on the drawing (the net keeps its own name) */
+          (S.xtag = S.xtag || {})[f.n] = f.t;
+        } else if (f.op === 'link') {
+          if (S.link.some(q => q[0] === f.n && q[1] === f.src)) continue;
+          if (free(f.n) && f.src >= 0 && f.src < nets.length) S.link.push([f.n, f.src]);
+          else bad(f.id + ': #' + f.n + ' <- #' + f.src + ' not free');
+        } else if (f.op === 'and') {
+          if (free(f.n)) S.drv[f.n].push({ k: 'LINK', id: -1, o: [f.n], i: f.src.slice(), and: 1 });
+          else bad(f.id + ': #' + f.n + ' not free');
+        } else if (f.op === 'split') {
+          /* one wire of a merged net is its own signal (a wire and a gate output on one input bar of an OR) */
+          const nn = nets[f.n],
+            sg = f.segs.filter(i => nn.segs.includes(i));
+          if (sg.length !== f.segs.length || sg.length === nn.segs.length) {
+            bad(f.id + ': segments of #' + f.n + ' differ');
+            continue;
+          }
+          const id = nets.length;
+          nets.push({ id, segs: sg, dig: nn.dig, ana: nn.ana, arrows: [], txt: [], aud: 1 });
+          nn.segs = nn.segs.filter(i => !sg.includes(i));
+          for (const i of sg) S.seg[i].net = id;
+          S.drv.push([]);
+          S.cns.push([]);
+          if (f.to != null) {
+            const g = blk.find(z => z.id === f.to);
+            g.i.push(id);
+            S.cns[id].push(g);
+            (g.pins = g.pins || []).push({ role: 'in', side: 'L', n: id, aud: 1 });
+          }
+          if (f.move) {
+            /* the name written on the split wire goes with it */
+            S.lab[id] = S.lab[f.n];
+            S.lab[f.n] = null;
+            for (const q of S.tagN || []) if (q.n === f.n && q.t === f.move) q.n = id;
+            for (const a of S.addr || []) if (a.eng === f.n && a.t === f.move) a.eng = id;
+          }
+        } else if (f.op === 'setCos') {
+          /* "IF M.035C = 1 SET SV = 49 T/H": the SET writes the controller SV = the operator SV (COS, LOCAL leg of the SV switch) and
+             it stays, as a SV the operator typed; the REMOTE leg keeps its own set */
+          const pr = S.pre[b.a],
+            cos = blk.some(z => z.k === 'COS' && z.vnet === b.b);
+          if (!pr || !cos) {
+            bad(f.id + ': no SET on B' + f.blk);
+            continue;
+          }
+          S.pre[b.b] = Object.assign({}, pr, { hold: 1, alt: undefined });
+        } else if (f.op === 'q4sig') {
+          if (!b.q4 || b.q4.cond.length !== f.sig.length) {
+            bad(f.id + ': B' + f.blk + ' is not a 4-leg switch');
+            continue;
+          }
+          b.q4.sig = b.q4.cond.map(c => f.sig.find(z => z.tag === c.tag) || null);
+        } else if (f.op === 'span') {
+          /* the range of a "% / sec" ramp, from the drawing (where the reader found none or the wrong one) */
+          b.spanFix = { sp: f.sp, t: f.why };
+        } else if (f.op === 'range') {
+          /* applied in anDefaults, after the parameter workbook (anFace) */
+        } else if (f.op === 'dsTo') {
+          /* the "TO DITL" text belongs to the wire named here (it is written under its own box) */
+          (S.dsTo = S.dsTo || {})[f.ref] = f.t;
+        }
+      }
+    }
+  }
+  /* 3.2.0-beta.36 (CHECKLIST 0.3, user 2026-10-25 "may block na MCC na pinutol ang MV at di na nakarating sa VALVE"): ABC-054 / 055
+     PO -> MCC PANEL -> M (motor operator) -> valve: the motor circle splits the wire, so the valve had no driver and stayed 0. The
+     valve drawn under the MCC PANEL / INVERTER box follows the box output (the motor operator moves it, VLV stroke) */
+  for (const v of blk)
+    if ((v.k === 'VLV' || v.k === 'ACT') && v.i.length && !S.drv[v.i[0]].length && !S.link.some(q => q[0] === v.i[0])) {
+      const f = blk.find(b => b.k === 'FIELD' && b.o.length && Math.abs(b.cx - v.cx) < 8 && b.cy > v.cy && b.cy - v.cy < 120);
+      if (f) S.link.push([v.i[0], f.o[0]]);
+    }
+  S.link.forEach(([dst, srcN]) => {
+    /* make the destination net driven */ S.drv[dst].push({ k: 'LINK', id: -1, o: [dst], i: [srcN] });
+  });
+  /* order: dependencies first, back edges ignored (a loop reads the value of the previous step) */
+  const ord = [],
+    st = new Map();
+  const vis = b => {
+    if (st.get(b) === 2) return;
+    if (st.get(b) === 1) return;
+    st.set(b, 1);
+    for (const n of b.i) for (const d of S.drv[n]) if (d !== b) vis(d);
+    st.set(b, 2);
+    ord.push(b);
+  };
+  for (const b of blk) vis(b);
+  for (const l of S.drv) for (const d of l) if (d.k === 'LINK') vis(d);
+  S.ord = ord;
+  /* nets with no driver but a consumer: external inputs (a slider / a switch for the user) */
+  S.multi = new Uint8Array(nets.length);
+  for (let n = 0; n < nets.length; n++)
+    if (S.drv[n].filter(d => d.k !== 'LINK').length > 1)
+      S.multi[n] = 1; /* wired-OR: several outputs joined on one wire */
+  S.ext = [];
+  for (let n = 0; n < nets.length; n++) if (!S.drv[n].length && S.cns[n].length) S.ext.push(n);
+  S.kn = {};
+  for (const id of S.ext.slice()) {
+    const net = nets[id];
+    if (net.dig) continue;
+    const ends = [];
+    for (const i of net.segs) {
+      const sg = S.seg[i];
+      ends.push([sg.x1, sg.y1], [sg.x2, sg.y2]);
+    }
+    let best = null,
+      bd = 10;
+    for (const t of TX) {
+      if (!/^\s*-?\d+(?:\.\d+)?\s*%\s*$/.test(t.t.trim())) continue;
+      for (const [x, y] of ends) {
+        const d = anD(t.x, t.y, x, y);
+        if (d < bd) {
+          bd = d;
+          best = t;
+        }
+      }
+    }
+    if (best) {
+      S.kn[id] = parseFloat(best.t);
+      S.ext.splice(S.ext.indexOf(id), 1);
+    }
+  }
+  {
+    const devPV = d => {
+      let r = null;
+      const ins = d.pins.filter(q => q.role === 'in');
+      for (const t of TX.filter(q => /^(PV|SV)$/i.test(q.t.trim()) && anD(q.x, q.y, d.cx, d.cy) <= 30)) {
+        const p = ins.slice().sort((a, c) => anD(a.x, a.y, t.x, t.y) - anD(c.x, c.y, t.x, t.y))[0],
+          ip = p && d.ip && d.ip.find(x => x.n === p.n);
+        if (ip) {
+          if (/^PV$/i.test(t.t.trim())) r = ip.sg;
+          else if (r == null) r = -ip.sg;
+        }
+      }
+      return r;
+    };
+    for (const b of S.blk)
+      if (b.k === 'DCMP' && b.dc && b.i && b.i.length) {
+        const dv = (S.drv[b.i[0]] || []).find(q => q.k === 'DEV'),
+          sg = dv ? devPV(dv) : null;
+        for (const d of b.dc) {
+          const m = /^(PV|SV)\s*-\s*(PV|SV)/i.exec(d.txt || '');
+          if (!m) continue;
+          d.neg = /^PV$/i.test(m[1]) !== (sg !== null && sg > 0);
+        }
+      }
+  }
+  /* tracking providers: block whose output net feeds the A input of a selector */
+  for (const b of blk)
+    if ((b.k === 'SW' || b.k === 'AMT') && b.a >= 0) {
+      b.trkFrom = S.drv[b.a].filter(d => d.k === 'PID' || d.k === 'PIDV' || d.k === 'MAN');
+      /* the A leg comes from the PID / MAN through a summing block (bias / feed-forward, ABC-005 AICFG10571): the controller follows (target - the other inputs) / its sign, so the return to AUTO has no jump */ b.trkSum =
+        [];
+      for (const sm of S.drv[b.a].filter(
+        d => (d.k === 'SUM' || d.k === 'ADD' || d.k === 'SUB') && d.ip && d.o && d.o.length === 1
+      ))
+        for (const q of sm.ip) {
+          const pd = (S.drv[q.n] || []).find(d => d.k === 'PID' || d.k === 'PIDV' || d.k === 'MAN');
+          if (pd && q.sg) b.trkSum.push({ pid: pd, sg: q.sg, others: sm.ip.filter(z => z !== q) });
+        }
+      b.upA = S.drv[b.a].filter(d => d.k === 'AMT' && d.id !== b.id);
+    }
+  /* auto / manual switch with a COS (operator station) whose select comes from a pulse ("FORCE TO MANUAL" 2 s pulse): the station stays in manual until the operator sets auto (memory list M.0110 "FORCE TO MANUAL", drawing TPs pulses) */
+  {
+    const hasTPS = st => {
+      const seen = new Set(),
+        q = [st];
+      let f = false;
+      while (q.length) {
+        const n = q.pop();
+        if (n == null || n < 0 || seen.has(n)) continue;
+        seen.add(n);
+        for (const d of S.drv[n] || []) {
+          if (d.k === 'TPS' || d.k === 'TPV') f = true;
+          if (['AND', 'OR', 'NOT', 'XOR', 'FF', 'TON', 'TOF', 'TPS', 'TPV', 'HC', 'LC', 'HLC'].includes(d.k))
+            (d.i || []).forEach(x => q.push(x));
+        }
+      }
+      return f;
+    };
+    for (const b of blk)
+      if (
+        b.k === 'AMT' &&
+        b.sel >= 0 &&
+        b.a >= 0 &&
+        b.b >= 0 &&
+        !(b.cs && b.cs.length > 1) &&
+        blk.some(x => x.k === 'COS' && Math.hypot(x.cx - b.cx, x.cy - b.cy) < 14) &&
+        !blk.some(x => x !== b && (x.k === 'AMT' || x.k === 'SW') && x.sel === b.sel && x.cs && x.cs.length > 1) &&
+        hasTPS(b.sel)
+      )
+        b.latch = 1;
+  }
+  return S;
+}
+function anInit(S) {
+  AN._gen = (AN._gen || 0) + 1; /* new block states: engine/sync.js takes its refs again */
+  anDefaults(S);
+  const N = S.nets.length,
+    rt = (S.rt = {
+      v: new Float64Array(N),
+      t: 0,
+      ext: {},
+      st: {},
+      force: {},
+      k: 0,
+      stp: new Int32Array(N),
+      acc: new Float64Array(N)
+    });
+  for (const b of S.blk) {
+    const s = (rt.st[b.id] = {});
+    if (b.k === 'AI') {
+      let r = anRange(S, b, 45);
+      if (!r && !b.fb) r = anRange(S, b, 70);
+      /* range text a little further from the box (ABC-008 AI0481, 0 ~ 1200 rpm) */ b.rng = r;
+      s.val = r ? r.lo : 0;
+    }
+    if (b.k === 'MAN') {
+      s.val = Math.max(b.p.lo, Math.min(b.p.hi, 0));
+      s.trk = null;
+    }
+    if (b.k === 'PID' || b.k === 'PIDV') {
+      s.I = 0;
+      s.out = 0;
+      s.trk = null;
+    }
+    if (b.k === 'SIGAB') {
+      s.val = 0;
+    }
+    if (b.k === 'AMT' || b.k === 'SW') {
+      s.man = 0;
+      s.y = 0;
+    }
+    if (b.k === 'ACT' || b.k === 'VLV') {
+      s.pos = null;
+    }
+    if (b.k === 'FF') {
+      s.q = 0;
+    }
+    if (b.k === 'LAG' || b.k === 'RATE' || b.k === 'RAMPB') {
+      s.y = null;
+    }
+    if (b.k === 'TON' || b.k === 'TOF' || b.k === 'TPS' || b.k === 'TPV') {
+      s.acc = 0;
+      s.out = 0;
+      s.prev = 0;
+    }
+  }
+  for (const b of S.blk)
+    if ((b.k === 'PID' || b.k === 'PIDV') && b.in0 >= 0 && b.p.span == null) {
+      let sp = null;
+      const seen = new Set([b.in0]),
+        q = [b.in0];
+      for (let g = 0; q.length && g < 80 && sp == null; g++) {
+        const n = q.shift();
+        for (const d of S.drv[n] || []) {
+          if (d.k === 'AI' && d.rng) {
+            sp = Math.abs(d.rng.hi - d.rng.lo);
+            break;
+          }
+          for (const m of d.i || [])
+            if (!seen.has(m)) {
+              seen.add(m);
+              q.push(m);
+            }
+        }
+      }
+      b.p.span = sp > 0 ? sp : 100;
+    }
+  {
+    const ai = S.blk.filter(b => b.k === 'AI'),
+      sg = S.blk.filter(b => b.k === 'SIGAB'),
+      byNet = {};
+    for (const a of ai) {
+      const o = a.pins.find(p => p.role === 'out');
+      if (o) (byNet[o.n] = byNet[o.n] || []).push(a);
+    }
+    for (const g of sg) {
+      const q = (S.sigab || []).find(z => z.sh === g.sh),
+        ns = new Set(g.pins.map(p => p.n));
+      if (q && q.L) ns.add(q.L.net);
+      const c = [...new Set([...ns].flatMap(n => byNet[n] || []))];
+      if (c.length === 1 && !c[0].sig) {
+        c[0].sig = g;
+        g.ai = c[0].id;
+      } else g.unpaired = true;
+    }
+    for (const g of sg)
+      if (g.ai != null) {
+        const a = S.blk.find(x => x.id === g.ai),
+          an = a && a.o[0];
+        if (an != null && g.o.includes(an)) {
+          g.o = g.o.filter(n => n !== an);
+          g.pins = g.pins.filter(p => !(p.role === 'out' && p.n === an));
+          S.drv[an] = S.drv[an].filter(x => x !== g);
+        }
+      }
+    for (const b of S.blk)
+      if (b.k === 'SEL')
+        b.sgi = b.i.map(n => {
+          const d = anSelAi(S, n, 0);
+          return d && d.sig ? d.sig.id : null;
+        });
+    S.aoN = new Set(S.blk.filter(x => x.k === 'AO' && x.i && x.i[0] != null && x.i[0] >= 0).map(x => x.i[0]));
+    {
+      const fwd = st => {
+        const seen = new Set(),
+          q = [st];
+        while (q.length) {
+          const n = q.pop();
+          if (seen.has(n)) continue;
+          seen.add(n);
+          for (const c of S.cns[n] || []) {
+            if (['PID', 'PIDV', 'AI', 'AO', 'MAN', 'LINK'].includes(c.k)) continue;
+            for (const m of c.o || []) q.push(m);
+          }
+        }
+        return seen;
+      };
+      for (const b of S.blk) {
+        if (b.k !== 'PID') continue;
+        b.vel = false;
+        const R = new Set();
+        for (const o of b.o || []) if (o >= 0) for (const n of fwd(o)) R.add(n);
+        for (const c of S.blk) {
+          if (c.k !== 'SUB') continue;
+          if (!(c.o || []).some(m => R.has(m))) continue;
+          for (const a of c.i || [])
+            if (S.aoN.has(a) && R.has(a) && (c.o || []).some(m => fwd(m).has(a))) ((b.vel = true), (b.velNet = a));
+        }
+      }
+      const LG = ['AND', 'OR', 'NOT', 'FF', 'TPS', 'TON', 'TOF', 'TPV'];
+      for (const b of S.blk) {
+        if (b.k !== 'HS' && b.k !== 'LS') continue;
+        const o = b.o && b.o[0];
+        const cs = o != null ? S.cns[o] || [] : [];
+        if (!cs.length || !cs.every(x => LG.includes(x.k))) continue;
+        if ((b.i || []).length !== 2) continue;
+        const lb = n => /\.MV$/.test((S.lab[n] && S.lab[n].t) || '');
+        const a = lb(b.i[0]) ? b.i[0] : lb(b.i[1]) ? b.i[1] : b.i[0],
+          c2 = b.i[0] === a ? b.i[1] : b.i[0];
+        b.cmp = b.k === 'LS' ? '<' : '>';
+        b.cmpA = a;
+        b.cmpB = c2;
+      }
+    }
+  }
+  /* span of the signal that enters a RATE / RAMPB written in % (nearest source upstream, analog nets only) */
+  for (const b of S.blk)
+    if ((b.k === 'RATE' || b.k === 'RAMPB') && b.p.pct && b.main !== undefined && b.main >= 0 && b.up === undefined) {
+      const blkOf = d => (d.k && d.id !== undefined && d.i === undefined ? S.blk.find(z => z.id === d.id) : d);
+      const srcOf = bl => {
+        if (bl.k === 'AI' && bl.rng && bl.rng.hi > bl.rng.lo)
+          return {
+            sp: bl.rng.hi - bl.rng.lo,
+            t: 'AI#' + bl.id + ' ' + bl.rng.lo + '~' + bl.rng.hi + ' ' + (bl.rng.u || '')
+          };
+        if (bl.k === 'FX' && bl.p.tbl && bl.p.tbl.yr && bl.p.tbl.yr[1] > bl.p.tbl.yr[0])
+          return {
+            sp: bl.p.tbl.yr[1] - bl.p.tbl.yr[0],
+            t:
+              'FX#' +
+              bl.id +
+              ' ' +
+              bl.p.ln +
+              ' output ' +
+              bl.p.tbl.yr[0] +
+              '~' +
+              bl.p.tbl.yr[1] +
+              ' ' +
+              (bl.p.tbl.yu || '')
+          };
+        if (bl.k === 'MAN' && bl.p && bl.p.rhi > bl.p.rlo)
+          return { sp: bl.p.rhi - bl.p.rlo, t: 'MAN#' + bl.id + ' ' + bl.p.rlo + '~' + bl.p.rhi };
+        if ((bl.k === 'PID' || bl.k === 'PIDV') && bl.p && bl.p.hi > bl.p.lo)
+          return { sp: bl.p.hi - bl.p.lo, t: 'PID#' + bl.id + ' output ' + bl.p.lo + '~' + bl.p.hi };
+        return null;
+      };
+      /* upstream: level by level; the first level with sources must agree on one span, otherwise it is ambiguous */
+      let U = null,
+        Uamb = null;
+      {
+        const seen = new Set([b.main]);
+        let lvl = [b.main];
+        for (let g = 0; lvl.length && g < 40 && !U && !Uamb; g++) {
+          const found = [],
+            nx = [];
+          for (const n of lvl)
+            for (const d of S.drv[n] || []) {
+              const bl = blkOf(d);
+              if (!bl) continue;
+              const sc = srcOf(bl);
+              if (sc) {
+                found.push(sc);
+                continue;
+              }
+              for (const m of bl.i || [])
+                if (m >= 0 && !seen.has(m) && !S.nets[m].dig) {
+                  seen.add(m);
+                  nx.push(m);
+                }
+            }
+          if (found.length) {
+            const u = [...new Set(found.map(f => f.sp))];
+            if (u.length === 1) U = { sp: u[0], t: found.map(f => f.t).join(' + ') };
+            else Uamb = found.map(f => f.t).join(' vs ');
+          }
+          lvl = nx;
+        }
+      }
+      /* downstream: a controller whose input chain contains the output of this block and that has its own drawn range ("0.0 ~ 200.0 T/H") */
+      let D = null;
+      for (const tg of b.o) {
+        /* the first output first; another output is tried only when nothing else gave a span (ABC-007 BUMPLESS FICFA1081: o[0] is a stub, the SV is o[1]); a block that already had an upstream span keeps it (ABC-051) */ if (
+          D ||
+          (tg !== b.o[0] && (U || Uamb))
+        )
+          break;
+        for (const c of S.blk)
+          if ((c.k === 'PID' || c.k === 'PIDV') && c.p && c.p.rhi > c.p.rlo && c.i && c.i.length) {
+            const seen = new Set(),
+              q = c.i.slice();
+            let hit = false;
+            for (let g = 0; q.length && g < 200 && !hit; g++) {
+              const n = q.shift();
+              if (n === tg) {
+                hit = true;
+                break;
+              }
+              if (seen.has(n) || n < 0) continue;
+              seen.add(n);
+              for (const d of S.drv[n] || []) {
+                const bl = blkOf(d);
+                if (!bl || bl.k === 'PID' || bl.k === 'PIDV') continue;
+                for (const m of bl.i || []) if (!S.nets[m].dig) q.push(m);
+              }
+            }
+            if (hit) {
+              D = {
+                sp: c.p.rhi - c.p.rlo,
+                t: 'PID#' + c.id + ' drawn range ' + c.p.rlo + '~' + c.p.rhi + ' ' + (c.p.unit || '')
+              };
+              break;
+            }
+          }
+      }
+      let pick = null,
+        why = '';
+      if (b.spanFix) {
+        pick = b.spanFix;
+        why = 'drawing audit 2.3.0: ' + b.spanFix.t;
+      } else if (D) {
+        pick = D;
+        why =
+          'downstream ' +
+          D.t +
+          (U
+            ? U.sp === D.sp
+              ? ' (agrees with upstream ' + U.t + ')'
+              : ' (upstream source differs: ' + U.t + ' - not used)'
+            : '');
+      } else if (U) {
+        pick = U;
+        why = 'upstream ' + U.t;
+      } else if (Uamb) why = 'AMBIGUOUS upstream: ' + Uamb;
+      if (pick) {
+        if (b.p.ratePct0 == null) b.p.ratePct0 = b.p.rate;
+        /* anInit runs at every Reset: convert from the DRAWN percentage, never from the already converted rate */ b.p.span =
+          pick.sp;
+        b.p.spanSrc = why;
+        b.p.ratePct = b.p.ratePct0;
+        b.p.rate = (b.p.ratePct0 * pick.sp) / 100;
+      } else {
+        b.p.spanUnres = true;
+        b.p.span = 100;
+        b.p.spanSrc = (why || 'no range source found') + ' -> old behaviour kept (span 100)';
+      }
+    }
+  for (const b of S.blk)
+    if (b.k === 'CONST' && P_isMinAir(S, b) && b.p.val > 0) {
+      const P = b.p;
+      if (P.orig == null) P.orig = P.val;
+      if (P.th == null || P.th === 400) P.th = 1115;
+      P.mt = 1;
+    }
+  for (const b of S.blk)
+    if ((b.k === 'RATE' || b.k === 'RAMPB') && b.main !== undefined && b.up === undefined && !b.p.rtxt) {
+      b.p.rate = 1;
+      b.dflt = {
+        k: 'RATE',
+        e: {
+          rate: 1,
+          u: 'signal units / s',
+          loop: 'DEFAULT',
+          basis:
+            'the drawing writes no rate: default 1 per second (user decision 2026-10-10). Change it here; "Reset this block to default" restores it.'
+        }
+      };
+    }
+  for (const n of S.ext) {
+    rt.ext[n] = S.nets[n].dig ? 0 : 0;
+  }
+  /* a COS drawn at the open end of a wire that carries a RANGE text ("LIMESTONE DENSITY SETUP FROM DCS HMI ... RANGE : 1.1 ~ 1.5", ABC-005): the wire is an operator setup input; it starts in the middle of its range (a setup of 0 is outside the range and cuts the chain to 0) */
+  for (const c of S.blk)
+    if (c.k === 'COS' && !c.used)
+      for (const n of S.ext) {
+        const nt = S.nets[n];
+        if (
+          nt.dig ||
+          S.lab[n] ||
+          !(nt.segs || []).some(i => {
+            const g = S.seg[i];
+            return g && (Math.hypot(g.x1 - c.cx, g.y1 - c.cy) < 14 || Math.hypot(g.x2 - c.cx, g.y2 - c.cy) < 14);
+          })
+        )
+          continue;
+        if (S.blk.some(g => g.k === 'DEV' && (g.i || []).includes(n))) continue;
+        /* the SV of a controller is not touched here (operator SV, faceplate) */ const r = anExtRange(S, n);
+        if (r && r.hi > r.lo) {
+          rt.ext[n] = (r.lo + r.hi) / 2;
+          c.setup = n;
+          break;
+        }
+      }
+  /* the A/M stations: the engine knows which leg is AUTO, so a FORCE MANUAL signal works without the panel (s.al) */
+  for (const b of S.blk)
+    if (b.k === 'PID' || b.k === 'PIDV') {
+      try {
+        const t = anStationOf(S, b),
+          sw = anSvSwitchOf(S, b);
+        if (t.amt && rt.st[t.amt.id]) {
+          rt.st[t.amt.id].al = t.autoLeg;
+          /* 3.2.3-beta.253: every A/M station knows its tag, so its mode status can follow a force (plant.js) */
+          /* beta.255: also on the block: a LOAD of a save point replaces rt.st and dropped the tag */
+          rt.st[t.amt.id].mtag = t.amt.mtag = (b.txt || [])[1];
+        }
+        /* the SV switch is a station too: leg A = REMOTE (its auto leg), leg B = LOCAL; REMOTE locks the A/M station to AUTO (see plant.js) */ if (
+          sw &&
+          rt.st[sw.id]
+        ) {
+          rt.st[sw.id].al = 'A';
+          if (t.amt && rt.st[t.amt.id] && anHasRemote(S, b)) {
+            rt.st[t.amt.id].rmSw = sw.id;
+          }
+        }
+      } catch (e) {}
+    }
+  rt.ramp = typeof AN !== 'undefined' && AN.ramp != null ? AN.ramp : 0.05;
+  return rt;
+}

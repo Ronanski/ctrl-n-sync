@@ -1,0 +1,113 @@
+/* ===== RE-SHELL LAYOUT C: one compact density for the whole shell (user 2026-11-09 "Nalalakihan ako s mga cards at fonts.
+   Pwede bang minimalistic, simple, organized and clean?"). Loaded last, shell only: bars, overview tiles, Details column, start
+   screen. Never the HMI drawings, the logic sheets, the faceplate logic, the plant model or the engine.
+   Type scale: 11 (labels, units, notes) / 12 (text, buttons) / 13 (titles) / 14 (values in the top bar). Two families only:
+   IBM Plex Sans for words, IBM Plex Mono for numbers. Spacing on a 4 px grid. Mouse controls 28 px; touch keeps 36 px.
+   Proportional (user 2026-11-09 "Scalable? Proportional?"): every size here is multiplied by --scs, the screen size against a 1366 x 768
+   laptop, between 0.9 (tablet) and 1.5 (large monitor or TV); shellc-ask.js sets it. The touch sizes stay fixed (finger size). ===== */
+
+/* --- values bar: 60 -> 48 px; the name may take two short lines, the values line up at the bottom (never cut) --- */
+html body.sc.scbars #gsbar #scstrip .scv{height:calc(48px*var(--scs,1))!important}
+/* Mina beta.254: values sat at y 22 under a one-line name and at y 27 under a two-line name, two-line names cut 3 px. The cell is a grid:
+   a fixed 25 px name row (two lines of 12 px, the name at its bottom), then the value row, so every value sits on one line */
+html body.sc #gsbar #scstrip .sck{padding:calc(2px*var(--scs,1)) calc(10px*var(--scs,1)) calc(3px*var(--scs,1))!important;line-height:1.1;align-content:end!important;grid-template-rows:calc(25px*var(--scs,1)) auto!important;row-gap:1px!important}
+html body.sc #gsbar #scstrip .sck i{font:500 calc(11px*var(--scs,1))/calc(12px*var(--scs,1)) var(--sc-ui)!important;white-space:normal!important;align-self:end!important;overflow:visible!important}
+html body.sc #gsbar #scstrip .sck b{font:600 calc(14px*var(--scs,1))/1.2 var(--sc-num)!important}
+html body.sc #gsbar #scstrip .sck small{font:400 calc(11px*var(--scs,1))/1.2 var(--sc-ui)!important}
+
+/* --- context bar: 48 -> 38 px, controls 28 px, 12 px text --- */
+html body.sc #scctx{height:calc(38px*var(--scs,1))!important;gap:calc(6px*var(--scs,1))!important}
+html body.sc.scbars #gsbar #scstrip #scctx :is(.pill,.plchip){height:calc(28px*var(--scs,1))!important;min-height:0!important;font-size:calc(12px*var(--scs,1))!important}
+html body.sc.scbars #gsbar #scstrip #scctx :is(.scsrp,.scgearb,.scdetb){width:calc(28px*var(--scs,1))!important;min-width:calc(28px*var(--scs,1))!important;padding:0!important;justify-content:center!important}
+html body.sc.scbars #gsbar #scstrip #scctx .seg{height:calc(28px*var(--scs,1))!important;min-height:0!important;padding:calc(2px*var(--scs,1))!important;box-sizing:border-box}
+html body.sc.scbars #gsbar #scstrip #scctx .seg button{height:calc(24px*var(--scs,1))!important;min-height:0!important;font-size:calc(12px*var(--scs,1))!important;padding:0 calc(8px*var(--scs,1))!important}
+html body.sc #scctx :is(button,a,select){font-size:calc(12px*var(--scs,1))!important}
+html body.sc #scctx .plchip :is(small,span){font-size:calc(11px*var(--scs,1))!important}
+html body.sc.scbars:not(.sceng) #plantws .plbar :is(button,select,.scfs){height:calc(28px*var(--scs,1))!important;min-height:0!important;font-size:calc(12px*var(--scs,1))!important}
+html body.sc.scbars:not(.sceng) #plantws .plbar .scfs{width:calc(28px*var(--scs,1))!important;min-width:calc(28px*var(--scs,1))!important}
+html body.sc.scbars .sccrumb{font-size:calc(12px*var(--scs,1))!important}
+
+/* --- Engineer tabs and pane bars --- */
+html body.sc.scbars.sceng #scetools button{font:600 calc(12px*var(--scs,1)) var(--sc-ui)!important;padding:0 calc(10px*var(--scs,1))!important}
+html body.sc.scbars.sceng{--tool:calc(34px*var(--scs,1))}
+html body.sc.scbars.sceng #gsbar .tbar [data-ic][data-ic]{font-size:calc(12px*var(--scs,1))!important}
+
+/* --- overview: the UNIT FLOW (Jennie 2026-11-09, user "bahala ka, basta ireshell niyo"): one block per system at its place in the flow,
+   flat lines of one width with an arrow, no motion; red only with a trip or an active alarm of its group (shellc-home.js) --- */
+html body.sc #scov .scbar{padding:calc(6px*var(--scs,1)) calc(12px*var(--scs,1))!important;font-size:calc(12px*var(--scs,1))!important}
+html body.sc #scov .scflow{position:relative;flex:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) calc(64px*var(--scs,1));grid-template-rows:auto auto auto;column-gap:calc(48px*var(--scs,1));row-gap:calc(24px*var(--scs,1));padding:calc(12px*var(--scs,1)) calc(16px*var(--scs,1)) calc(8px*var(--scs,1));max-width:calc(1280px*var(--scs,1))}
+html body.sc #scov .scflines{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+html body.sc #scov .scflines .scfl{fill:none;stroke:var(--sc-line2);stroke-width:1.5;stroke-linecap:square}
+html body.sc #scov .scflines marker path{fill:var(--sc-line2)}
+html body.sc #scov .scflines text{fill:var(--sc-ink2);font:400 calc(11px*var(--scs,1)) var(--sc-ui)}
+html body.sc #scov:not(#scnone) .scfb{position:relative;z-index:1;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:calc(6px*var(--scs,1));min-width:0;min-height:0!important;height:auto!important;padding:calc(8px*var(--scs,1)) calc(10px*var(--scs,1))!important;text-align:left!important;white-space:normal;background:var(--sc-paper)!important;border:1px solid var(--sc-line2)!important;border-radius:calc(4px*var(--scs,1))!important;box-shadow:none!important;color:var(--sc-ink)!important;font:inherit!important;cursor:pointer}
+html body.sc #scov:not(#scnone) .scfb:hover{border-color:var(--sc-steel)!important}
+html body.sc #scov:not(#scnone) .scfb:focus-visible{outline:2px solid var(--sc-steel)!important;outline-offset:2px}
+html body.sc #scov:not(#scnone) .scfb.hot{border-color:var(--sc-run)!important;box-shadow:inset 0 0 0 1px var(--sc-run)!important}
+html body.sc #scov .scfb h3{margin:0;font:600 calc(13px*var(--scs,1))/1.3 var(--sc-ui)!important;text-align:left}
+html body.sc #scov .scfkv{display:grid;gap:calc(4px*var(--scs,1));margin:0}
+html body.sc #scov .scfkv span{display:block;font:400 calc(11px*var(--scs,1))/1.25 var(--sc-ui);color:var(--sc-ink2);text-align:left}
+html body.sc #scov .scfkv b{display:block;margin-top:calc(-3px*var(--scs,1));font:600 calc(13px*var(--scs,1))/1.3 var(--sc-num)!important;font-variant-numeric:tabular-nums;color:var(--sc-ink);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body.sc #scov:not(#scnone) .scfb .sclamp{display:flex;align-items:center;justify-content:flex-start;gap:calc(6px*var(--scs,1));margin-top:auto;min-height:0!important;font-size:calc(11px*var(--scs,1))!important;line-height:1.3;color:var(--sc-ink2);text-align:left}
+html body.sc #scov .sclamp .dot{width:calc(8px*var(--scs,1))!important;height:calc(8px*var(--scs,1))!important}
+html body.sc #scov .sclamp .scfwarn{color:var(--sc-run);font-weight:600;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+html body.sc #scov .scfend{align-self:center;font:600 calc(12px*var(--scs,1))/1.3 var(--sc-ui);color:var(--sc-ink2);padding-left:calc(4px*var(--scs,1))}
+/* the alarm box under the flow, newest first */
+html body.sc #scov:not(#scnone) .scfalm{flex:none;display:flex;flex-direction:column;gap:calc(4px*var(--scs,1));min-height:0!important;margin:calc(4px*var(--scs,1)) calc(16px*var(--scs,1)) calc(8px*var(--scs,1));max-width:calc(1248px*var(--scs,1));padding:calc(8px*var(--scs,1)) calc(12px*var(--scs,1))!important;border-radius:calc(4px*var(--scs,1))!important;box-shadow:none!important}
+html body.sc #scov .scfalm h3{font:600 calc(13px*var(--scs,1))/1.3 var(--sc-ui)!important;margin:0 0 calc(2px*var(--scs,1))!important}
+html body.sc #scov :is(.scar,.scnone){font-size:calc(12px*var(--scs,1))!important}
+/* a narrower page (Training dock open): the four columns stay, tighter gaps, no "To the grid" column */
+html.gd-side body.sc #scov .scflow{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:calc(20px*var(--scs,1))}
+html.gd-side body.sc #scov .scfend{display:none}
+/* the Instructor training card stands over the bottom of the page: the alarm box ends above it */
+html body.sc.sccard #scov:not(#scnone) .scfalm{margin-bottom:var(--sccardh,192px)}
+/* the Details column over the page on a tablet: the flow gives it its width, so no block is under it */
+html body.sc.scdet.scdover:not(.sceng) #scov{right:var(--scdw)!important}
+
+/* --- Details column: 320 -> 288 px, 12 px text, tight rows --- */
+html body.sc{--scdw:calc(288px*var(--scs,1))}
+html body.sc #scdet{font:400 calc(12px*var(--scs,1))/1.4 var(--sc-ui)!important}
+html body.sc #scdet .scdh{height:calc(34px*var(--scs,1))!important}
+html body.sc #scdet .scdtl button{font-size:calc(12px*var(--scs,1))!important}
+html body.sc #scdet .scdx{width:calc(34px*var(--scs,1))!important}
+html body.sc #scdet .scdb{padding:calc(8px*var(--scs,1)) calc(12px*var(--scs,1))!important}
+html body.sc #scdet h4{font:600 calc(11px*var(--scs,1)) var(--sc-ui)!important;letter-spacing:.04em!important;margin:calc(2px*var(--scs,1)) 0 0!important}
+html body.sc #scdet .scdev{font-size:calc(12px*var(--scs,1))!important}
+html body.sc #scdet .scdar{grid-template-columns:calc(44px*var(--scs,1)) minmax(0,1fr)!important;padding:calc(6px*var(--scs,1)) 0!important;gap:0 calc(8px*var(--scs,1))!important}
+html body.sc #scdet .scdar :is(.scdt,.scds){font-size:calc(11px*var(--scs,1))!important}
+html body.sc #scdet .scdar .scdn{font-size:calc(12px*var(--scs,1))!important}
+html body.sc #scdet .scdlink{font-size:calc(12px*var(--scs,1))!important;min-height:calc(28px*var(--scs,1))!important}
+
+/* --- start screen: smaller cards --- */
+html body.sc #scstart:not(#scnone) .sccard{min-height:0!important;padding:calc(16px*var(--scs,1)) calc(20px*var(--scs,1))!important;border-radius:calc(6px*var(--scs,1))!important}
+html body.sc #scstart:not(#scnone) .sccard b{font-size:calc(16px*var(--scs,1))!important}
+html body.sc #scstart:not(#scnone) :is(.scsub,.sccard span,.sccont span,.scgear,.scskip){font-size:calc(12px*var(--scs,1))!important}
+html body.sc #scstart .scver{font-size:calc(11px*var(--scs,1))!important}
+/* the start screen box, title, start-state chips, Continue row and links grow with the screen too (262 left them at laptop size on a large monitor) */
+html body.sc #scstart .scsbox{width:min(calc(736px*var(--scs,1)),100%)!important;gap:calc(16px*var(--scs,1))!important}
+html body.sc #scstart h1{font-size:calc(20px*var(--scs,1))!important}
+html body.sc #scstart .sccards{gap:calc(12px*var(--scs,1))!important}
+html body.sc #scstart .sclab{font-size:calc(11px*var(--scs,1))!important}
+html body.sc #scstart .scchips{gap:calc(8px*var(--scs,1))!important}
+html body.sc #scstart .scchips button{min-height:calc(28px*var(--scs,1))!important;padding:0 calc(12px*var(--scs,1))!important;font-size:calc(12px*var(--scs,1))!important}
+html body.sc #scstart .sccont{min-height:calc(36px*var(--scs,1))!important;padding:0 calc(16px*var(--scs,1))!important;font-size:calc(12px*var(--scs,1))!important}
+html body.sc #scstart .scsfoot{gap:calc(16px*var(--scs,1))!important}
+/* top values bar cells keep their share of the bar on a large screen */
+html body.sc #gsbar #scstrip .sck{min-width:calc(80px*var(--scs,1))!important;max-width:calc(128px*var(--scs,1))!important}
+
+/* --- confirmation dialog: same scale --- */
+html body.sc .scaskc h3{font-size:calc(14px*var(--scs,1))!important}
+html body.sc .scaskc p{font-size:calc(12px*var(--scs,1))!important}
+html body.sc .scaskb button{height:calc(28px*var(--scs,1))!important;min-height:0!important;font-size:calc(12px*var(--scs,1))!important}
+
+/* --- touch (tablet): keep 36 px targets, same smaller text --- */
+@media (pointer:coarse){
+  html body.sc #scctx{height:44px!important}
+  html body.sc.scbars #gsbar #scstrip #scctx :is(.pill,.plchip,.seg){height:36px!important}
+  html body.sc.scbars #gsbar #scstrip #scctx .seg button{height:32px!important}
+  html body.sc.scbars #gsbar #scstrip #scctx :is(.scsrp,.scgearb,.scdetb){width:36px!important;min-width:36px!important}
+  html body.sc.scbars:not(.sceng) #plantws .plbar :is(button,select,.scfs){height:36px!important}
+  html body.sc #scdet .scdh{height:40px!important}
+  html body.sc .scaskb button{height:36px!important}
+  html body.sc #scstart .scchips button{min-height:36px!important}
+}

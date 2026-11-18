@@ -1,0 +1,143 @@
+/* ===== RE-SHELL LAYOUT C, step 3 (shellc-pages.js): the system page in the new frame, the two faceplates in the C look, the turbine
+   start panel. Only with body.sc. Colours: the --sc-* tokens of shellc.css (the Leonardo set of mockup C). The HMI art of the pages keeps
+   its temporary style (#86) until every loop check passes (COMMANDMENT 4). ===== */
+
+/* ---------- (a) the page: the whole width under the strip; the overview replaces the systems list and the snapshot values ---------- */
+body.sc #plantws,body.sc #plantws.noval{grid-template-columns:1fr!important;background:var(--sc-page)!important}
+body.sc #plantws #plleft{position:absolute;left:0;top:0;bottom:0;width:min(320px,86vw);z-index:6;display:none}
+body.sc #plantws.lsopen #plleft{display:block}
+body.sc #plantws #plvals{display:none!important}
+body.sc #plantws #plmid{background:var(--sc-page)}
+/* shell audit M17 / M18 (nothing cut, S6): the bar wraps to a second line instead of pushing LIVE past the right edge, and the last event
+   line wraps instead of an ellipsis */
+body.sc #plantws .plbar{display:flex!important;align-items:center;gap:8px!important;flex-wrap:wrap!important;row-gap:4px!important;min-height:48px!important;padding:4px 16px 4px calc(var(--sccw,144px) + 24px)!important;background:var(--sc-paper)!important;border-bottom:1px solid var(--sc-line)!important;font-family:var(--sc-ui)}
+body.sc #plantws .plbar :is(#pltitle,.plchips,.plvb,.plfull,.plpick,#plsys){display:none!important}
+body.sc #plantws .plbar .plnav{order:2;display:inline-flex;gap:4px}
+body.sc #plantws .plbar .scfs{order:1}
+body.sc #plantws .plbar #pllive{order:3}
+body.sc #plantws .plbar .scpev{order:9;flex:1 1 256px;margin-left:auto;min-width:0;text-align:right;white-space:normal;overflow-wrap:anywhere;font:400 12px/1.35 var(--sc-ui);color:var(--sc-ink2)}
+body.sc #plantws .plbar #pllive{white-space:nowrap}
+body.sc #plantws .plbar button{min-height:32px!important;height:auto!important;padding:0 12px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:600 12px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer}
+body.sc #plantws .plbar button:hover{border-color:var(--sc-steel)!important}
+body.sc #plantws .plbar .scfs{border:0!important;background:transparent!important;color:var(--sc-steel)!important;font:500 13px var(--sc-ui)!important;text-decoration:underline;text-underline-offset:2px;padding:0 4px!important}
+body.sc #plantws .plbar #pllive.on{color:var(--sc-stop)!important}
+body.sc #plantws .plbar :focus-visible{outline:2px solid var(--sc-steel)!important;outline-offset:2px}
+/* full screen: the page bar and the breadcrumb go, the values strip stays; "Leave full screen" at the top right of the page */
+body.sc.scfull #plantws .plbar,body.sc.scfull .sccrumb{display:none!important}
+.scfsout,.scfsout[hidden],body.sc:not(.scfull) .scfsout{display:none!important}
+body.sc.scfull[data-tab="operate"] .scfsout:not([hidden]){display:inline-flex!important;align-items:center;position:fixed;top:calc(var(--top) + 8px);right:12px;z-index:var(--z-float,95);min-height:32px!important;padding:0 16px!important;background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;border-radius:16px!important;color:var(--sc-ink)!important;font:600 12px var(--sc-ui)!important;box-shadow:0 2px 8px rgba(34,46,57,.12)!important;cursor:pointer}
+
+/* ---------- (b) the two faceplates in the C look (fp-pop.js .fpo-box and the controller faceplate #plfp) ---------- */
+body.sc .fpo-box,body.sc #plfp.fpo-near{background:var(--sc-white)!important;border:1px solid var(--sc-steel)!important;border-radius:8px!important;box-shadow:0 12px 32px rgba(34,46,57,.22)!important;color:var(--sc-ink)!important;font:400 14px/1.4 var(--sc-ui)!important}
+body.sc .fpo-box::before{display:none}
+body.sc .fpo-box .fpo-h,body.sc #plfp .plfph{background:var(--sc-selbg)!important;border-bottom:1px solid var(--sc-line)!important;border-radius:8px 8px 0 0}
+body.sc .fpo-box .fpo-tt b,body.sc #plfp .plfph b{font:600 16px var(--sc-ui)!important;color:var(--sc-ink)!important}
+body.sc .fpo-box .fpo-tt small{font:400 12px var(--sc-num);color:var(--sc-ink2)}
+body.sc .fpo-box .fpo-hv{font:600 14px var(--sc-num);color:var(--sc-ink)}
+body.sc .fpo-box .fpo-lamp{border:0;background:var(--sc-line2);box-shadow:none}
+body.sc .fpo-box .fpo-lamp.run,body.sc .fpo-box .fpo-lamp.trip{background:var(--sc-run);box-shadow:none}
+body.sc .fpo-box .fpo-lamp.stop{background:var(--sc-stop);box-shadow:none}
+body.sc .fpo-box .fpo-x,body.sc #plfp .plfph .b{background:transparent!important;border:1px solid transparent!important;color:var(--sc-ink2)!important;box-shadow:none!important}
+body.sc .fpo-box .fpo-x:hover,body.sc #plfp .plfph .b:hover{border-color:var(--sc-line2)!important}
+body.sc .fpo-box :is(.fpo-chip,.fpo-k,.fpo-fld){background:var(--sc-white);border-color:var(--sc-line2);color:var(--sc-ink2)}
+body.sc .fpo-box .fpo-chip.ilk{background:var(--sc-ambg);border-color:var(--sc-amber);color:var(--sc-amink)}
+body.sc .fpo-box .fpo-chip.trip{background:var(--sc-runbg);border-color:var(--sc-run);color:var(--sc-run)}
+body.sc .fpo-box :is(.fpo-l,.fpo-sh,.fpo-sh.fld,.fpo-dim,.fpo-nd){color:var(--sc-ink2)}
+body.sc .fpo-box .fpo-lp{color:var(--sc-ink2)}
+body.sc .fpo-box .fpo-lp i{background:var(--sc-band);border-color:var(--sc-line2)}
+body.sc .fpo-box .fpo-lp.run,body.sc .fpo-box .fpo-lp.trip{color:var(--sc-run)}
+body.sc .fpo-box .fpo-lp.run i,body.sc .fpo-box .fpo-lp.trip i{background:var(--sc-run);box-shadow:none}
+body.sc .fpo-box .fpo-lp.stop{color:var(--sc-stop)}
+body.sc .fpo-box .fpo-lp.stop i{background:var(--sc-stop);box-shadow:none}
+body.sc .fpo-box button{background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;color:var(--sc-ink)!important;font:600 13px var(--sc-ui)!important;box-shadow:none!important}
+body.sc .fpo-box button:hover:not(:disabled){border-color:var(--sc-steel)!important}
+body.sc .fpo-box button:focus-visible{outline:2px solid var(--sc-steel);outline-offset:2px}
+body.sc .fpo-box .fpo-seg{border-color:var(--sc-line2)}
+body.sc .fpo-box .fpo-seg button{border:0!important;border-radius:0!important}
+body.sc .fpo-box .fpo-seg button+button{border-left:1px solid var(--sc-line2)!important}
+body.sc .fpo-box .fpo-seg button.on{background:var(--sc-steel)!important;color:var(--sc-white)!important}
+/* the command buttons: RUN red, STOP green (COMMANDMENT 5), lit = the state now */
+body.sc .fpo-box .fpo-cmd.lit-run{background:var(--sc-runbg)!important;border-color:var(--sc-run)!important;color:var(--sc-run)!important}
+body.sc .fpo-box .fpo-cmd.lit-stop{background:var(--sc-stopbg)!important;border-color:var(--sc-stop)!important;color:var(--sc-stop)!important}
+body.sc .fpo-box .fpo-cmd.es:not(:disabled){border-color:var(--sc-run)!important;color:var(--sc-run)!important}
+body.sc .fpo-box .fpo-why{background:var(--sc-paper);border-left-color:var(--sc-line2);color:var(--sc-ink2)}
+body.sc .fpo-box .fpo-ex{background:var(--sc-selbg);border-color:var(--sc-steel)}
+body.sc .fpo-box .fpo-go{background:var(--sc-steel)!important;border-color:var(--sc-steel)!important;color:var(--sc-white)!important}
+body.sc .fpo-box .fpo-ex.fld{background:var(--sc-ambg);border-color:var(--sc-amber)}
+body.sc .fpo-box .fpo-ex.fld .fpo-go{background:var(--sc-amber)!important;border-color:var(--sc-amber)!important}
+body.sc .fpo-box .fpo-vb{background:var(--sc-paper);border-color:var(--sc-line);color:var(--sc-ink);font-family:var(--sc-num)}
+body.sc .fpo-box .fpo-vb.hi{border-color:var(--sc-amber);color:var(--sc-amink)}
+body.sc .fpo-box .fpo-tr{background:var(--sc-paper);border-color:var(--sc-line)}
+body.sc .fpo-box .fpo-tr rect{fill:var(--sc-selbg)}
+body.sc .fpo-box .fpo-il li.ok{color:var(--sc-ink)}
+body.sc .fpo-box .fpo-il li.bad{color:var(--sc-amink)}
+body.sc .fpo-box .fpo-il li em{color:var(--sc-ink2)}
+body.sc .fpo-box .fpo-ln{border-top-color:var(--sc-line)}
+body.sc .fpo-box .fpo-a{color:var(--sc-steel)!important}
+/* tablet (narrow, shellc-pages.js scnarrow): the faceplate is a panel at the right of the page, the graphic stays beside it */
+/* shell audit M23: the panel starts under the page bar (and the turbine panel), --scph from shellc-pages.js */
+body.sc.scnarrow #plmid > :is(.fpo-box,#plfp.fpo-near){left:auto!important;right:0!important;top:var(--scph,0px)!important;bottom:0;width:min(352px,44%)!important;max-height:none!important;height:auto;border-radius:0!important;border-width:0 0 0 3px!important;box-shadow:none!important}
+body.sc.scnarrow #plmid:has(#fpop2) > #fpop{bottom:calc((100% - var(--scph,0px)) / 2)}
+body.sc.scnarrow #plmid:has(#fpop) > #fpop2{top:calc(var(--scph,0px) + (100% - var(--scph,0px)) / 2)!important;border-top-width:1px!important}
+
+/* ---------- (c) the turbine start panel on the Steam and turbine page ---------- */
+#sctsp{position:relative;flex:none;z-index:3;display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin:0;border-radius:0!important;border-width:0 0 1px!important;box-shadow:none!important;padding:8px 12px;background:var(--sc-white);border:1px solid var(--sc-line2);border-radius:8px;box-shadow:0 4px 16px rgba(34,46,57,.14);font-family:var(--sc-ui);color:var(--sc-ink)}
+#sctsp[hidden]{display:none}
+#sctsp .sctsh{flex:1 1 100%;display:flex;align-items:center;gap:8px;font:600 12px var(--sc-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--sc-ink2)}
+#sctsp .sctsh span{flex:1}
+/* shell audit M21: Hide at least 24 px high (S3, PC) */
+#sctsp .sctsx{display:inline-flex!important;align-items:center;justify-content:center;height:auto!important;min-height:24px!important;min-width:48px;padding:0 8px!important;border:0!important;background:transparent!important;color:var(--sc-steel)!important;font:500 12px var(--sc-ui)!important;text-transform:none;letter-spacing:0;text-decoration:underline;box-shadow:none!important;cursor:pointer}
+#sctsp .sctsv{display:flex;flex-wrap:wrap;gap:4px 12px;margin:0;font-size:12px;color:var(--sc-ink2)}
+#sctsp .sctsv b{font:600 12px var(--sc-num);color:var(--sc-ink)}
+#sctsp .sctsn{margin-left:-8px}
+#sctsp .sctsb{display:flex;flex-wrap:wrap;gap:8px}
+#sctsp .sctsb button{min-height:36px!important;height:auto!important;padding:0 12px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-band)!important;color:var(--sc-ink)!important;font:600 13px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer}
+#sctsp .sctsb button:hover:not(:disabled){border-color:var(--sc-steel)!important}
+#sctsp .sctsb button.stop{background:var(--sc-white)!important;border-color:var(--sc-stop)!important;color:var(--sc-stop)!important}
+#sctsp .sctsb button:disabled{opacity:.45;cursor:not-allowed}
+#sctsp .sctsb button:focus-visible,#sctsp .sctsx:focus-visible{outline:2px solid var(--sc-steel)!important;outline-offset:2px}
+#sctsp.fold .sctsv,#sctsp.fold .sctsb{display:none}
+body:not(.sc) #sctsp{display:none!important}
+/* Mina beta.213: Y / N of the permissive rows (COMMANDMENT 5: Y red = complete, N green = not complete) */
+body.sc .fpo-box .fpo-il li i{width:20px;line-height:20px;border-radius:4px;color:var(--sc-white);font:700 12px var(--sc-ui)}
+body.sc .fpo-box .fpo-il li.ok i{background:var(--sc-run)}
+body.sc .fpo-box .fpo-il li.bad i{background:var(--sc-stop)}
+/* ---------- targets: 40 px on a tablet (1024 wide, S3, M20 / M21), 44 px on a touch screen (design-auditor pass) ---------- */
+@media (max-width:1279px){
+  body.sc #plantws .plbar button,#sctsp .sctsx,#sctsp .sctsb button,body.sc.scfull[data-tab="operate"] .scfsout:not([hidden]){min-height:40px!important}
+  body.sc #plantws .plbar .plstep{min-width:40px!important;width:40px!important}
+  /* the breadcrumb of the page bar (shellc-home.js) at the same height as the bar buttons */
+  body.sc .sccrumb{min-height:40px!important}
+}
+@media (pointer:coarse){
+  body.sc #plantws .plbar button,#sctsp .sctsx,#sctsp .sctsb button,body.sc.scfull[data-tab="operate"] .scfsout:not([hidden]),body.sc .sccrumb{min-height:44px!important}
+  body.sc #plantws .plbar .plstep{min-width:44px!important;width:44px!important}
+}
+/* live check beta.233: the old controls of the page bar (TCS / Field, the run group of the dock, Fit, Full screen, the arrows) as the
+   shell pills; the "LIVE · n / m linked · no model" chip is an engineer detail, not in the Operator view */
+body.sc #plantws .plbar .crop{display:flex;align-items:center;gap:8px;padding-right:8px!important;margin-right:4px!important;border-right:1px solid var(--sc-line)!important}
+html body.sc #plantws .plbar > button,html body.sc #plantws .plbar > select,html body.sc #plantws .plbar .plnav > button,html body.sc #plantws .plbar .crop .g-op button:not(.ddm *),html body.sc #plantws .plbar .crop .g-op select{box-sizing:border-box;height:auto!important;min-height:32px!important;padding:0 12px!important;border:1px solid var(--sc-line2)!important;border-radius:16px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:600 13px var(--sc-ui)!important;letter-spacing:0!important;text-decoration:none!important;box-shadow:none!important;cursor:pointer}
+html body.sc #plantws .plbar > button:hover,html body.sc #plantws .plbar > select:hover,html body.sc #plantws .plbar .plnav > button:hover,html body.sc #plantws .plbar .crop .g-op button:not(.ddm *):hover,html body.sc #plantws .plbar .crop .g-op select:hover{border-color:var(--sc-steel)!important}
+html body.sc #plantws .plbar .plstep{width:32px!important;min-width:32px!important;padding:0!important;justify-content:center}
+html body.sc #plantws .plbar .scfs{color:var(--sc-steel)!important}
+body.sc #plantws #pllive{display:none!important}
+@media (max-width:1279px),(pointer:coarse){
+  html body.sc #plantws .plbar > button,html body.sc #plantws .plbar > select,html body.sc #plantws .plbar .plnav > button,html body.sc #plantws .plbar .crop .g-op button:not(.ddm *),html body.sc #plantws .plbar .crop .g-op select{min-height:40px!important;border-radius:20px!important}
+  html body.sc #plantws .plbar .plstep{width:40px!important;min-width:40px!important}
+}
+/* beta.237: the sync panel (synchroscope 120 px, values, lamps) under the turbine start buttons while the generator is excited and 52G1 is open */
+#sctsp .scsync{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;padding:8px 0 0;border-top:1px solid var(--sc-line2)}
+#sctsp .scsync[hidden],#sctsp.fold .scsync{display:none}
+#sctsp .scdial{flex:none;width:80px!important;height:80px!important;display:block;cursor:default!important}
+#sctsp .scdial .rim{fill:var(--sc-white);stroke:var(--sc-ink2);stroke-width:1.5}
+#sctsp .scdial .tk line{stroke:var(--sc-ink2)}
+#sctsp .scdial .win{fill:none;stroke:var(--sc-run);stroke-width:5;opacity:.55}
+#sctsp .scdial .lb{font:600 14px var(--sc-ui);fill:var(--sc-ink2);text-anchor:middle}
+#sctsp .scdial .ptr line{stroke:var(--sc-ink);stroke-width:3;stroke-linecap:round}
+#sctsp .scdial .ptr circle{fill:var(--sc-ink)}
+#sctsp .scsv{display:grid;grid-template-columns:auto;gap:4px;font-size:12px;color:var(--sc-ink2)}
+#sctsp .scsv b{font:600 13px var(--sc-num);color:var(--sc-ink)}
+#sctsp .scsl{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--sc-ink)}
+#sctsp .scl{display:flex;align-items:center;gap:8px}
+#sctsp .scl i{width:20px;line-height:20px;border-radius:4px;text-align:center;font:700 12px var(--sc-ui);font-style:normal;color:var(--sc-white);background:var(--sc-stop)}
+#sctsp .scl.on i{background:var(--sc-run)}

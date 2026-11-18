@@ -1,0 +1,207 @@
+/* 3.2.0-beta.14 (plan "per-loop at unit plant model", phase A; user 2026-10-23: "since walang steam, dapat walang ma-generate na PV
+   ito kahit anong SV MV mo"): the SOURCE of each loop. The loop model of plant.js makes the PV from the valve command alone (PV =
+   middle of the range + effect of the MV, anchored at the 150 MW snapshot), so a loop whose process medium is not there still
+   had a PV: ABC-017 sootblower steam 0.3 ~ 50 kg/cm2 with the boiler cold, ABC-028 diesel oil pump outlet 12.9 kg/cm2 with the
+   pump stopped, ABC-032 condensate flow 380 T/H with no condensate pump. Here every loop of the loop map (docs: "Mapa ng mga loop")
+   that the unit model does not write gets the condition of its medium, from the unit model (steam pressures and flows, turbine,
+   coal) and from the running memories of the machines on the ABC sheets (memory lists, hmi-op.js AN_HMI_DI):
+     mul  = share of the medium that is there (0 = none): PV = mul x model + (1 - mul) x base (base = bottom of the range, or the
+            ambient for a temperature), with the lag of the loop;
+     cap  = the PV cannot be above the pressure of its source (a reducing station: sootblower, aux steam, oil after the pump);
+     hold = the PV (a tank level) does not answer the valve while the pump that moves the water is stopped.
+   Only while the unit model runs (a starting state: Cold, Warm, Hot, 150 MW). With no starting state the loop models are as before.
+   The machines that have no DCS signal (diesel oil pump P-0005, DITL-31) are FIELD equipment: AN.field (Start ▾ > Field equipment).
+   Numbers marked NO-SOURCE are not in the documents searched (user 2026-11-11: no ASSUMED). */
+const AN_SRC = {
+  field: { hypo: true, hypoB: false, hypoU: false, pur: true, mu1033: false, esp: true, cw1001: true, lhd: false, tspA: true, tspB: false, amnA: true, amnB: false, chzA: true, chzB: false, agt: false } /* 3.2.0 retest #33: hypochlorite pump (no DCS signal); R9 #77: turbine oil purifier pump P-n941 (local); live test 2026-10-30 #23: V-MU1033 expansion tank bypass (manual valve, PD-021) */,
+  Tamb: 30,
+  fanMax: { pa: 354.0 * Math.sqrt(2328 / 1551), sa: 213.0 * Math.sqrt(1922 / 1427) } /* T/H, see SRC_RULES R.FICFA1071 / 1081 */,
+  st: null,
+  t: -1,
+  bits: null,
+  bitsOf: null
+};
+/* the value of a memory / input address on the ABC sheets (1 if any copy is 1): the running memories of the motors */
+function srcBit(addrs) {
+  if (AN_SRC.bitsOf !== AN.sheets) {
+    AN_SRC.bitsOf = AN.sheets;
+    AN_SRC.bits = {};
+  }
+  let on = 0,
+    seen = false;
+  for (const a of addrs) {
+    let L = AN_SRC.bits[a];
+    if (!L) {
+      L = AN_SRC.bits[a] = [];
+      for (const sh of AN.sheets) {
+        const S = sh.S;
+        if (!S || !S.lab) continue;
+        const n = S.lab.findIndex(l => l && String(l.t).trim() === a);
+        if (n >= 0) L.push([sh, n]);
+      }
+    }
+    for (const [sh, n] of L) {
+      if (!sh.S || !sh.S.rt) continue;
+      seen = true;
+      if (+sh.S.rt.v[n] > 0.5) on = 1;
+    }
+  }
+  return seen ? on : 1;
+}
+/* the PV of the controller tag of a sheet (another loop that is the source of this one) */
+function srcPv(shn, tag) {
+  const sh = AN.sheets.find(x => x.name === shn),
+    S = sh && sh.S,
+    b = S && S.procs ? S.procs.find(z => (z.txt || [])[1] === tag) : null;
+  return b && b.proc && S.rt && isFinite(S.rt.v[b.proc.pv]) ? +S.rt.v[b.proc.pv] : NaN;
+}
+const srcCl = x => (isFinite(x) ? Math.max(0, Math.min(1, x)) : 0);
+/* the condition of the plant now, once per scan */
+function srcState(t0) {
+  const U = AN_UNIT,
+    t = U.t + '|' + t0;
+  if (AN_SRC.st && AN_SRC.t === t) return AN_SRC.st;
+  if (!U.on) return (AN_SRC.st = null);
+  const m0 = U.m0 > 0 ? U.m0 : 474,
+    tb = U.tb || {},
+    ms = U.ms || 0,
+    s = {
+      Tamb: U.Tamb != null ? U.Tamb : AN_SRC.Tamb,
+      Pms: isFinite(U.Pms) ? U.Pms : 0,
+      Prh: isFinite(U.Prh) ? U.Prh : 0,
+      mhp: U.mhp || 0,
+      ms,
+      qlp: U.qlp || 0,
+      m0,
+      rpm: isFinite(U.rpm) ? U.rpm : tb.rpm || 0,
+      /* extraction steam: the turbine on load (the extractions of the heaters open on load, PR-OPE-5002 4.6) */
+      ext: tb.st === 'load' ? srcCl(ms / (0.2 * m0)) : 0,
+      coal: U.F0 > 0 ? srcCl(((U.Fc || 0) - (U.unb || 0)) / U.F0) : 0,
+      paf: srcBit(['M.3302']),
+      saf: srcBit(['M.3303']),
+      /* 3.2.0-beta.52 (live check #103): the share of the secondary air of the snapshot that the SA fan gives now (ABC-006 FIFA1081) */
+      sar: U.saN >= 0 && U.sa0 > 0 && U.tafS ? srcCl((+U.tafS.rt.v[U.saN] || 0) / U.sa0) : 1,
+      fab: srcBit(['M.3308', 'M.3309']),
+      cep: srcBit(['M.3350', 'M.3351']),
+      /* audit A1: the diesel oil pumps M-0702A / B are DCS motors (DITL-31; IO list STN105 O.0040 / O.0360, I.0003 / I.0323) */
+      dop: typeof anDitlRun === 'function' && (anDitlRun('DITL-31') === 1 || anDitlRun('DITL-31 #B') === 1) ? 1 : 0
+    };
+  /* cold reheat: the hot reheat pressure plus the reheater pressure drop (design 36.6 -> 35.1 kg/cm2 at MCR, SECT_7) */
+  s.Pcrh = s.Prh * (36.6 / 35.1);
+  /* oil header after the diesel oil pump (ABC-028 PICDO0005) and aux steam header (ABC-030 PICAS1005): sources of other loops */
+  /* (never above their own source: the PV of that loop lags one scan, a new plant state must not see the old header) */
+  s.Pdo = s.dop ? srcPv('ABC-028', 'PICDO0005') : 0;
+  /* 3.2.3: PT-AS1004 is the mass balance of the header (unit.js anAuxStep), no cap at its sources any more */
+  s.Paux = srcPv('ABC-030', 'PICAS1005');
+  /* no. 4 extraction to the deaerator (ABC-056 PT-TS1022 0 ~ 5 kg/cm2): proportional to the turbine steam, 4.5 at MCR (NO-SOURCE: the mass balance has one load point, MB-013: extraction III to
+     the deaerator 5.37, IV to LP heater #3 0.91 kg/cm2; which of them PT-TS1022 reads, I/O list STN102 AI0562 "NO.4 extraction" 0 ~ 5, is open) */
+  s.Pext = 4.5 * s.ext * Math.min(1, ms / m0);
+  s.Pex3 = 5.3 * s.ext * Math.min(1.05, ms / 474.1);
+  /* 3.2.3 SOHEE: through the extraction no. 3 shut-off MOV MV-TS1003 (DITL-96; flow diagram PD-013 extraction 3 -> deaerator; 02.png ZT-TS1003 100.4 %
+     open at load). DITL-96 closes it on turbine trip, deaerator level HI-HI and house operation: shut = no extraction to the deaerator */
+  s.ts3 = typeof anDitlPos === 'function' ? anDitlPos('DITL-96', 0) : null;
+  if (s.ts3 != null && isFinite(s.ts3)) s.Pex3 *= Math.max(0, Math.min(1, s.ts3 / 100));
+  AN_SRC.t = t;
+  s.sb1001 = typeof anDitlPos === 'function' ? anDitlPos('DITL-80S', 0) : null;
+  return (AN_SRC.st = s);
+}
+/* the rule of each loop: controller tag -> condition of its medium (loop map: loop number) */
+const SRC_RULES = (() => {
+  const R = {};
+  /* loop 3, start-up burners: the diesel oil pump makes the header pressure; the burner pressure / flow / return line need it */
+  R.PICDO0005 = s => ({ mul: s.dop, base: 0 });
+  R.PICDO1008 = s => ({ cap: s.Pdo });
+  for (const x of 'ABCD') {
+    R['PICDO1043' + x] = s => ({ cap: s.Pdo });
+    /* oil flow: needs header pressure. 3.2.3-beta.91 (CALC, was ASSUMED full flow from 3 kg/cm2): the gun pressure is linear in the
+       flow, 5.0 bar = 5.10 kg/cm2 at the MAX 3072 kg/h (M&S load curve 1612 13-4-71; SOP 27 max 5 kg/cm2), and the gun cannot be above
+       the pump header PT-DO0005, so the share of the demand that can pass is header / 5.10 up to 1 (line losses not counted) */
+    R['FICDO1043' + x] = s => ({ mul: srcCl(s.Pdo / (5.0 / 0.980665)) });
+    /* burner air: from the secondary air fan (HIC-SADBSx = SA damper of the burner) */
+    /* 3.2.0-beta.52 (live check #103: FIFA1043A ~ C HIGH-HIGH in the purge): the burner air is a branch of the secondary air header,
+       so it follows the SA flow (the purge SA 25 % gives less than the full-load SA of the snapshot), not only the SA fan running */
+    R['FICFA1043' + x] = s => ({ mul: s.saf * s.sar });
+  }
+  /* 3.2.3-beta.194 (e5 fault case, coal feeder A trip at 150 MW): the PA / SA air cannot be more than its fan gives with its inlet vanes
+     fully open. Fan specification sheets (Cheng Chen, LMYP-1, for construction 2015-01-14): SA fan design 4222 ACMM at 40 C, discharge
+     static pressure 1922 mmAQ, 1698 BKW, motor 1850 kW; PA fan 6907 ACMM, discharge 2328 mmAQ, 3341 BKW, motor 3700 kW. The duct system
+     curve goes through the 150 MW snapshot (7.PNG: FIFA1081 213.0 T/H at PIFA1085 1427, FIFA1071 354.0 at PIFA1075 1551) with the square
+     of the flow (boiler.js AN_FN), so the most flow is where that curve meets the design discharge pressure:
+     SA 213 x sqrt(1922 / 1427) = 247.2 T/H, PA 354 x sqrt(2328 / 1551) = 433.7 T/H (CALC; the fan curve taken flat at its design
+     pressure, NO-SOURCE for its slope: the real limit is a little higher, never above the design capacity 281 / 460 T/H at 40 C).
+     Before, a feeder trip at 150 MW (boiler master up, air follows) took the SA to about 350 T/H at 394 A, two times the rated 192 A,
+     and the winding temperature HH tripped the fan, then the MFT */
+  R.FICFA1071 = () => ({ cap: AN_SRC.fanMax.pa });
+  R.FICFA1081 = () => ({ cap: AN_SRC.fanMax.sa });
+  /* loop 4, fluidizing air: FA blower A / B running (ABC-014 M.3308 / M.3309) */
+  /* 3.2.3 SOHEE: the flow of the FA blowers that run with their outlet SOV open and their silencer SOV shut, by their dampers
+     (boiler.js anFanStep U.fnFaT); before the fan model has run, a blower running as before */
+  R.FICFA1055A = s => (AN_UNIT.on && isFinite(AN_UNIT.fnFaT) ? { mul: 0, base: AN_UNIT.fnFaT } : { mul: s.fab });
+  /* loop 6, furnace differential pressure: the bed is fluidized by the primary air (PA fan running) */
+  R.DPICFG108 = s => ({ mul: s.paf });
+  /* loop 7, SOx at the stack: from the coal that burns */
+  R.AICFG10571 = s => ({ mul: s.coal });
+  /* loop 11, bypass desuperheaters: the outlet temperature needs steam through the bypass (full from 3 % of the MCR flow, NO-SOURCE; the L21 sheets give the minimum cases of the valves, 62 T/H HP / 27 T/H LP, not this gate) */
+  /* TT-MS1022 is on the cold reheat side of the HP bypass: it also sees the HP turbine exhaust (03.png: 357.5 C at 150 MW with the
+     bypass shut); TT-HR1012 after the LP bypass is kept warm by the warming valve XV-HR1010 while the hot reheat has pressure (DITL-83;
+     snapshot 136 C with the LP bypass shut) */
+  R.TICMS1022 = s => ({ mul: srcCl(Math.max(s.mhp, s.ms) / (0.03 * s.m0)), base: s.Tamb });
+  R.TICHR1012 = s => ({ mul: srcCl(Math.max(s.qlp / (0.03 * s.m0), s.Prh / 5)), base: s.Tamb });
+  /* loop 12, aux steam and sootblower: reducing stations from the main steam (and the cold reheat for the aux steam) */
+  /* 3.2.3 SOHEE: the sootblower header is fed from the S/H panel #1 outlet through the shut-off MOV MV-SB1001 (DITL-80S, 18.PNG: 0 %,
+     header PISB1052 0.4 kg/cm2 at 150 MW): MV-SB1001 shut = no steam to the reducing station. The stroke curve of the MOV is NO-SOURCE:
+     off its closed seat = the source pressure. Without the one world (no MOV state) as before */
+  R.PICSB1052 = s => ({ cap: s.sb1001 == null || s.sb1001 > 0 ? s.Pms : 0 });
+  /* 3.2.3: R.PICAS1005 removed: the header PV is written by the aux steam model (unit.js AN_AS) */
+  /* 3.2.3-beta.223: R.TICAS1001 / R.TICAS1017 removed: TT-AS1001 / TT-AS1017 are written by the aux steam model (unit.js AN_AS) */
+  /* loop 13, condensate and deaerator: the condensate pump moves the water; the deaerator is heated by aux steam or extraction */
+  /* 3.2.3 SOHEE: FT-CD1121 is the flow through the polisher: the condensate (FT-CD1120: to the deaerator + recirculation) x the
+     polisher share of unit.js (MV-CD1007 / 1008 against the bypass FCV-CD1121); before the plant model has run, as before */
+  R.FICCD1121 = s => {
+    const U = AN_UNIT;
+    if (!U.on || !isFinite(U.polS) || typeof anCycFlows !== 'function') return { mul: s.cep };
+    const f = anCycFlows('pol');
+    return { mul: 0, base: (f.fda + f.frec) * U.polS };
+  };
+  R.FICCD1120 = s => ({ mul: s.cep });
+  R.LICCD1104 = s => ({ hold: !s.cep });
+  R.LICCD1110A = s => ({ hold: !s.cep });
+  /* 3.2.1 (IRENE: FEEDWATER): the deaerator gets the turbine extraction while the unit is on load (MV-TS1003 "T/B extraction 3 to
+     deaerator", 4.PNG 100 %): its pressure is not below the extraction pressure, whatever the pegging steam valve does (the pegging
+     PIC holds SV 1.5 only at low load). Extraction no. 3 pressure 5.30 kg/cm2 at 148.8 MW (4.PNG PITS1017), proportional to the turbine
+     steam (NO-SOURCE: linear); 5.png DEAERATOR PV 5.9 */
+  R.PICCD1104 = s => ({ cap: Math.max(s.Paux, s.Pext, s.Pex3), floor: s.Pex3 });
+  /* loop 14, feedwater heaters: the drain level is the extraction steam that condenses (turbine on load) */
+  for (const t of ['LICHD11051', 'LICHD11061', 'LICHD11011', 'LICHD11021', 'LICHD11031']) R[t] = s => ({ mul: s.ext });
+  /* loop 15, turbine oil: the oil is heated by the bearings of the turning turbine */
+  R.TICLO1002 = s => ({ mul: srcCl(s.rpm / 3600), base: s.Tamb });
+  return R;
+})();
+/* plant.js: set the source of one loop for this scan (pr.smul / sbase / scap / shold), or clear it */
+function anSrcSet(b, pr, S) {
+  const s = srcState(S.rt.t),
+    f = s && SRC_RULES[(b.txt || [])[1]];
+  if (!f) {
+    if (pr.src) pr.src = pr.smul = pr.sbase = pr.scap = pr.shold = pr.sflo = undefined;
+    return;
+  }
+  const r = f(s) || {};
+  pr.src = 1;
+  pr.smul = r.mul != null ? srcCl(r.mul) : undefined;
+  pr.sbase = r.base;
+  pr.scap = r.cap != null ? (isFinite(r.cap) ? Math.max(0, r.cap) : 0) : undefined;
+  pr.shold = !!r.hold;
+  pr.sflo = r.floor != null && isFinite(r.floor) ? Math.max(0, r.floor) : undefined;
+}
+/* Start ▾ > Field equipment: the machines without a DCS signal */
+function anField(k, on) {
+  if (!(k in AN_SRC.field)) return false;
+  /* Mina H1: the lower ring header drains are opened by the field operator to a part of their stroke (AN.field('lhd', 25) = 25 %) */
+  if (k === 'lhd') {
+    AN_SRC.lhdPct = typeof on === 'number' ? Math.max(0, Math.min(100, on)) : on ? 100 : 0;
+    on = AN_SRC.lhdPct > 0;
+  }
+  AN_SRC.field[k] = !!on;
+  AN_SRC.t = -1;
+  return true;
+}

@@ -1,0 +1,150 @@
+/* ===== RE-SHELL LAYOUT C, step 6 (shellc-ui.js): search pill and search panel, banners under the strip, the message line, the Settings
+   panel, the tablet and Training dock form of the strip. Only with body.sc; colours = the --sc-* tokens of shellc.css.
+   Shell audit 2026-11-09 (Yuna, team-files/reshell/MEASURE_STANDARD.md; Jennie's design-auditor pass): text at least 12 px (S1), spacing
+   on the 4 px scale (S2), targets 24 px PC / 40 px tablet / 44 px touch (S3), one centre line in the pill row (S5), nothing cut (S6),
+   z-index from the ladder of shellc.css (--z-page 89, --z-float 95, --z-menu 120, --z-panel 131, --z-cover 300). Sizes in px: the app sets
+   html font-size by the screen (13.5 px at 1024, 14.2 px at 1366), rem fell under 12 px and off the 4 px grid (Jennie, beta.227) ===== */
+
+/* ---------- (a) search ---------- */
+#scstrip .scsrp kbd{font:600 12px var(--sc-num);padding:0 4px;border:1px solid var(--sc-line2);border-radius:4px;color:var(--sc-ink2);background:var(--sc-paper)}
+body.sc #gsbar #srchbtn{display:none!important}
+/* the app's search box: hidden in the band, a panel under the strip while the search is open (pill, / or Ctrl+K) */
+body.sc #gsbar .gs-search{display:none!important}
+html body.sc.scsearch #gsbar .gs-search,html body.sc.scsearch #gsbar .gs-search:focus-within{display:flex!important;flex-wrap:wrap;align-items:center;gap:8px;position:fixed!important;top:calc(var(--top) + 4px)!important;left:50%!important;right:auto!important;transform:translateX(-50%);z-index:var(--z-menu,120);width:min(640px,calc(100vw - 32px))!important;max-width:none;padding:12px!important;background:var(--sc-white)!important;border:1px solid var(--sc-steel);border-radius:8px;box-shadow:0 12px 32px rgba(34,46,57,.22)!important}
+body.sc.scsearch #gsbar .gs-search #ansb{flex:1 1 224px;height:40px!important;min-height:40px;padding:0 12px!important;background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;color:var(--sc-ink)!important;font:500 16px var(--sc-num)!important;background-image:none!important}
+body.sc.scsearch #gsbar .gs-search #ansb:focus{border-color:var(--sc-steel)!important;box-shadow:0 0 0 3px rgba(43,108,165,.2)!important}
+body.sc.scsearch #gsbar .gs-search .skbd{display:none}
+body.sc.scsearch #gsbar .gs-search #gscope{display:inline-flex!important;gap:0;border:1px solid var(--sc-steel);border-radius:4px;overflow:hidden}
+body.sc.scsearch #gsbar .gs-search #gscope button{min-height:32px!important;padding:0 12px!important;border:0!important;border-radius:0!important;background:var(--sc-white)!important;color:var(--sc-steel)!important;font:600 12px var(--sc-ui)!important;box-shadow:none!important}
+body.sc.scsearch #gsbar .gs-search #gscope button.on{background:var(--sc-steel)!important;color:var(--sc-white)!important}
+/* the results (above the search panel) */
+body.sc #anfind{z-index:calc(var(--z-menu,120) + 1)!important;padding:4px!important;background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;border-radius:8px!important;box-shadow:0 12px 32px rgba(34,46,57,.22)!important;color:var(--sc-ink);font-family:var(--sc-ui)}
+body.sc #anfind > :not(button):not(.scsr){color:var(--sc-ink2)!important;font-size:12px!important}
+body.sc #anfind .scsr{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--sc-line)}
+/* M26: the result text wraps (no ellipsis) */
+body.sc #anfind .scsr > button:first-child{flex:1 1 auto;min-width:0;white-space:normal!important;flex-wrap:wrap}
+body.sc #anfind .scsr > button:first-child .st{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+body.sc #anfind .scsr > :is(.scso,.scsw){display:inline-flex!important;align-items:center;flex:none;width:auto!important;justify-content:center!important;min-height:32px!important;padding:0 12px!important;border-radius:4px!important;font:600 12px var(--sc-ui)!important;white-space:nowrap}
+body.sc #anfind .scsr > .scso{background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;color:var(--sc-ink)!important}
+body.sc #anfind .scsr > .scsw{background:var(--sc-steel)!important;border:1px solid var(--sc-steel)!important;color:var(--sc-white)!important}
+body.sc #anfind .scsr > .scsw:disabled{background:var(--sc-band)!important;border-color:var(--sc-line2)!important;color:var(--sc-ink2)!important}
+body.sc #anfind .scsr > :is(.scso,.scsw):focus-visible{outline:2px solid var(--sc-steel)!important;outline-offset:2px}
+body.sc #anfind .sn{font-family:var(--sc-num)!important;color:var(--sc-ink)}
+body.sc #anfind .st{color:var(--sc-ink2)!important}
+
+/* ---------- (b) banners under the strip, never over it (above the overview, z 80) ---------- */
+/* the banners are the last row of the top bar (shellc-ui.js layout): the pages start under them (--scb) */
+body.sc #crband > :is(#updask,#errbn,#engerr){position:static!important;flex:1 1 100%;order:99;width:auto!important;margin:0 -8px!important;box-sizing:border-box}
+body.sc #updask{top:var(--top)!important;z-index:var(--z-float,95)!important;justify-content:space-between!important;gap:8px 16px!important;background:var(--sc-selbg)!important;color:var(--sc-ink)!important;border-bottom:1px solid var(--sc-steel)!important;box-shadow:none!important;padding:8px 16px!important;font:400 14px/1.4 var(--sc-ui)!important}
+body.sc #updask b{font-weight:600}
+body.sc #updask button{min-height:32px;padding:0 16px!important;border-radius:4px!important;font:600 14px var(--sc-ui)!important;background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;color:var(--sc-ink)!important}
+body.sc #updask button:first-child{background:var(--sc-steel)!important;border-color:var(--sc-steel)!important;color:var(--sc-white)!important}
+/* the update question waits while the plant runs (update-question.js); one that is already up goes away while RUN */
+body.sc.scrun #updask{display:none!important}
+body.sc :is(#errbn,#engerr){top:var(--top)!important;z-index:var(--z-float,95)!important;background:var(--sc-run)!important;color:var(--sc-white)!important;padding:8px 112px 8px 16px!important;font:400 14px/1.4 var(--sc-ui)!important;max-height:40vh;overflow:auto}
+body.sc > .scbx{position:fixed;right:16px;z-index:calc(var(--z-float,95) + 1);min-height:32px;padding:0 16px;border:1px solid var(--sc-white);border-radius:4px;background:var(--sc-white);color:var(--sc-run);font:600 14px var(--sc-ui);cursor:pointer}
+html body.sc > button.scbx[hidden]{display:none!important}
+html body.sc :is(#errbn,#engerr,#anerr).scgone{display:none!important}
+body.sc #updtoast{background:var(--sc-white)!important;color:var(--sc-ink)!important;border-color:var(--sc-steel)!important;font:400 14px var(--sc-ui)!important}
+
+/* ---------- (c) Settings (M32: text 12 px and up, spacing 4 / 8 / 12 / 16) ---------- */
+#scstrip .scgearb{padding:0 8px!important;min-width:32px;justify-content:center}
+/* over the start screen too (z 300 there) when its Settings link opens it */
+#scset{position:fixed;top:calc(var(--top) + 4px);right:8px;z-index:calc(var(--z-cover,300) + 1);width:min(384px,calc(100vw - 16px));padding:16px;background:var(--sc-white);border:1px solid var(--sc-steel);border-radius:8px;box-shadow:0 12px 32px rgba(34,46,57,.22);font-family:var(--sc-ui);color:var(--sc-ink);display:grid;gap:12px}
+#scset[hidden]{display:none}
+#scset .scshd{display:flex;align-items:center;justify-content:space-between}
+#scset .scshd b{font:600 16px var(--sc-ui)}
+#scset .scsx{min-height:32px;width:32px;border:0;background:transparent;color:var(--sc-ink2);cursor:pointer;font-size:14px}
+#scset .scsrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#scset .scsl{font-size:14px}
+#scset .scsl small{display:block;margin-top:4px;font-size:12px;line-height:1.35;color:var(--sc-ink2)}
+#scset .scseg{display:inline-flex;border:1px solid var(--sc-steel);border-radius:4px;overflow:hidden;flex:none}
+#scset .scseg button{min-height:32px;padding:0 12px;border:0;background:var(--sc-white);color:var(--sc-steel);font:600 12px var(--sc-ui);cursor:pointer}
+#scset .scseg button + button{border-left:1px solid var(--sc-steel)}
+#scset .scseg button.on{background:var(--sc-steel);color:var(--sc-white)}
+#scset .scsbtn{min-height:32px;padding:0 12px;border:1px solid var(--sc-line2);border-radius:4px;background:var(--sc-white);color:var(--sc-ink);font:600 14px var(--sc-ui);cursor:pointer;flex:none}
+#scset .scsver{font:500 14px var(--sc-num);color:var(--sc-ink)}
+#scset button:focus-visible{outline:2px solid var(--sc-steel);outline-offset:2px}
+
+/* ---------- (d) the pill row: one height, one centre line (M08), it wraps instead of running under the Training dock (M06) ---------- */
+/* the pills and Operator / Engineer are Jennie's (shellc.css: 32 px, 40 px on a tablet); the search pill, the gear and the PLANT chip
+   here take the same height, so the row has one centre line */
+body.sc #gsbar #scstrip .scp{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:8px;row-gap:4px;min-width:0}
+body.sc #gsbar #scstrip .scp > :is(.scsrp,.scgearb,#plchip){box-sizing:border-box;height:32px!important;min-height:32px!important;margin:0!important}
+body.sc #gsbar #scstrip .scp #plchip{display:inline-flex!important;align-items:center;gap:4px;padding:0 12px!important;font:600 12px var(--sc-ui)!important;line-height:1!important}
+body.sc #gsbar #scstrip .scp #plchip *{font-size:12px!important}
+/* the strip in 2 rows (values, then the buttons) by the width of the band: tablet, Training dock */
+@container crband (max-width:1279px){
+  body.sc #scstrip{flex-wrap:wrap;align-content:center;row-gap:4px}
+  body.sc #gsbar #scstrip .scv{flex:1 1 100%}
+  body.sc #gsbar #scstrip .scp{margin-left:auto}
+  body.sc #gsbar #scstrip .sck{max-width:none}
+}
+@container crband (max-width:960px){
+  body.sc #scstrip .scsrp kbd{display:none}
+}
+/* the overview in a narrower page (Training dock open): 3 tiles a row, as the tablet */
+html.gd-side body.sc #scov .scgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+/* the scale of the overview trend line (shellc-home.js, Mina step 2 note 11c) */
+#scov .scscale{margin-top:-4px;text-align:right;font:400 12px var(--sc-num);font-variant-numeric:tabular-nums;color:var(--sc-ink2);min-height:16px}
+
+/* ---------- targets: 40 px on a tablet (1024 wide, S3), 44 px on a touch screen (design-auditor pass) ---------- */
+@media (max-width:1279px),(pointer:coarse){
+  body.sc #gsbar #scstrip .scp > :is(.scsrp,.scgearb,#plchip){height:40px!important;min-height:40px!important}
+  body.sc #gsbar #scstrip .scp > .scgearb{min-width:40px}
+}
+@media (max-width:1279px){
+  body.sc #anfind .scsr > :is(.scso,.scsw),body.sc.scsearch #gsbar .gs-search #gscope button,#scset :is(.scseg button,.scsbtn,.scsx),body.sc #updask button,body.sc > .scbx{min-height:40px!important}
+  #scset .scsx{width:40px}
+  body.sc #anfind .scsr > button:first-child{min-height:40px!important}
+}
+@media (pointer:coarse){
+  body.sc #anfind .scsr > :is(.scso,.scsw),body.sc #anfind .scsr > button:first-child,body.sc.scsearch #gsbar .gs-search #gscope button,#scset :is(.scseg button,.scsbtn,.scsx),body.sc #updask button,body.sc > .scbx{min-height:44px!important}
+  #scset .scsx{width:44px}
+}
+/* the app message as a toast under the top bar (shellc-ui.js tickToast); the footer keeps its status line */
+.sctoast{position:fixed;top:calc(var(--scb,var(--top)) + 8px);left:50%;transform:translateX(-50%);z-index:var(--z-menu,120);max-width:min(560px,calc(100vw - 32px));padding:8px 16px;background:var(--sc-white);border:1px solid var(--sc-steel);border-radius:8px;box-shadow:0 8px 24px rgba(34,46,57,.18);font:400 14px/1.4 var(--sc-ui);color:var(--sc-ink);cursor:pointer}
+.sctoast[hidden],body:not(.sc) .sctoast{display:none}
+body.sc.hasmsg #sfoot .smsg{display:none!important}
+body.sc.hasmsg #sfoot #st{display:block!important}
+/* live check beta.240 (Engineer, logic side by side, DITL-56): the overview map of the sheet (#lomap, view.js) covered the drawing. In
+   the C layout it is hidden until the Map button of the zoom bar shows it (shellc-ui.js), in the shell colours */
+body.sc:not(.scmap) #lomap{display:none!important}
+body.sc #lomap{background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;border-radius:8px!important;box-shadow:0 8px 24px rgba(34,46,57,.18)!important}
+body.sc #lomap .lomap-win{border-color:var(--sc-steel)!important;background:rgba(43,108,165,.12)!important}
+body.sc #zbar .scmapb.on{background:var(--sc-steel)!important;border-color:var(--sc-steel)!important;color:var(--sc-white)!important}
+/* the mode label of the sheet (VIEW / TRACE - NO SIMULATION, SIMULATION - RUNNING / PAUSED): shell colours, RUN red (COMMANDMENT 5) */
+body.sc :is(#dmode,#anmode){padding:4px 8px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-band)!important;color:var(--sc-ink2)!important;font:600 12px var(--sc-ui)!important}
+body.sc :is(#dmode.run,#anmode.scrunl){background:var(--sc-runbg)!important;border-color:var(--sc-run)!important;color:var(--sc-run)!important}
+/* ---------- beta.243: one confirmation dialog (shellc-ask.js, user 2026-11-09), light on the shell colours ---------- */
+body.sc .scask{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(34,46,57,.32)}
+body.sc .scask[hidden]{display:none}
+body.sc .scaskc{width:min(420px,100%);box-sizing:border-box;padding:20px 20px 16px;border:1px solid var(--sc-line);border-radius:8px;background:var(--sc-white);color:var(--sc-ink);box-shadow:0 12px 32px rgba(34,46,57,.22);font-family:var(--sc-ui)}
+html body.sc .scaskc input.scaski{display:block;width:100%;box-sizing:border-box;height:36px;margin:0 0 16px;padding:0 8px;border:1px solid var(--sc-line);border-radius:4px;background:var(--sc-white);color:var(--sc-ink);font:400 14px var(--sc-ui)}
+html body.sc .scaskc input.scaski[hidden]{display:none!important}
+body.sc .scaskc h3{margin:0 0 8px;font:600 16px/1.35 var(--sc-ui);color:var(--sc-ink);white-space:pre-line;max-height:50vh;overflow:auto}
+body.sc .scaskc p{margin:0 0 16px;font:400 14px/1.5 var(--sc-ui);color:var(--sc-ink2)}
+body.sc .scaskb{display:flex;justify-content:flex-end;gap:8px}
+body.sc .scaskb button{min-width:96px;height:36px;padding:0 16px;border-radius:6px;font:600 14px var(--sc-ui);cursor:pointer}
+body.sc .scaskb .scno{border:1px solid var(--sc-line2);background:var(--sc-white);color:var(--sc-ink)}
+body.sc .scaskb .scok{border:1px solid var(--sc-steel)!important;background:var(--sc-steel)!important;color:var(--sc-white)!important}
+body.sc .scaskb .scok.danger{border-color:var(--sc-run)!important;background:var(--sc-run)!important}
+body.sc .scaskb button:hover{filter:brightness(.95)}
+body.sc .scaskb button:focus-visible{outline:2px solid var(--sc-steel);outline-offset:2px}
+/* ---------- beta.243: the PLANT chip menu (app.js #plpop) was the last dark box (live dark scan 1366x768) ---------- */
+body.sc #plpop.plpop{border-color:var(--sc-line);background:var(--sc-white);color:var(--sc-ink);box-shadow:0 12px 32px rgba(34,46,57,.18);font-family:var(--sc-ui)}
+body.sc #plpop h5,body.sc #plpop .plh,body.sc #plpop small{color:var(--sc-ink2)}
+body.sc #plpop .plseg{border-color:var(--sc-line2)}
+body.sc #plpop .plseg button{border-right-color:var(--sc-line2);color:var(--sc-ink)}
+body.sc #plpop .plseg button:hover{background:var(--sc-band)}
+body.sc #plpop .plseg button.on{background:var(--sc-steel)!important;border-color:var(--sc-steel);color:var(--sc-white)!important}
+body.sc #plpop input{border-color:var(--sc-line2);background:var(--sc-paper);color:var(--sc-ink)}
+body.sc #plpop .plgo{background:var(--sc-steel);color:var(--sc-white)}
+body.sc #plpop .plnote{color:var(--sc-amber)}
+/* beta.245: the note on a window narrower than 900 px (shellc.js, before the layout is built; Mina beta.244) */
+#scnarrow{position:fixed;left:50%;top:40%;transform:translateX(-50%);z-index:10040;max-width:calc(100vw - 32px);box-sizing:border-box;padding:16px 20px;border:1px solid var(--sc-line);border-radius:8px;background:var(--sc-white);color:var(--sc-ink);font:400 14px/1.5 "IBM Plex Sans",system-ui,"Segoe UI",sans-serif;box-shadow:0 12px 32px rgba(34,46,57,.18);text-align:center}
+#scnarrow b{display:block;margin-bottom:4px;font-weight:600;font-size:16px}
+/* Mina, live test of 272: the update banner began at "· installed": its first words (the new version) were not shown */
+html body.sc #updask:not(#scnone) span > b{display:inline!important;visibility:visible!important;opacity:1!important;width:auto!important;height:auto!important;font-size:inherit!important;color:var(--sc-ink)!important}
+/* Mina, live test of 273: Update now was behind the start screen and could not be pressed */
+html body.sc:has(#scstart) #updask:not(#scnone){position:fixed!important;top:0!important;left:0;right:0;width:auto!important;margin:0!important;z-index:100001!important}

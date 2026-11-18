@@ -1,0 +1,128 @@
+/* RE-SHELL LAYOUT C, step 4 (user approved the build plan 2026-11-09 "G"; mockup C screens pc1366-09 and pc1366-17): the Engineer mode.
+   Only with body.sceng (body.sc + the Logic page, shellc-eng.js). Without ?shell=c nothing here applies.
+   Panes: tool rail (--scetw) | plant page (--scepw) | logic sheet or the tool of the rail. Colours: the shell set of shellc.css.
+   Shell audit 2026-11-09 (Yuna, team-files/reshell/MEASURE_STANDARD.md; Jennie's design-auditor pass): sizes in px, not rem (the app
+   scales its root font to about 13.5 px, so .6875rem was 9 px). Type 12 / 13 / 14 / 16 px (S1: 12 px minimum), spacing 4 / 8 / 12 / 16 px
+   (S2), targets 32 px on PC (S3: 24 px), 40 px at tablet width and 44 px on a touch screen (S3, design-auditor touch 44), z-index from the
+   shell ladder of shellc.css (--z-float 95 for the rail, the panes and the Why box). Only the shell boxes are changed, never the sheets, the HMI pages or the faceplates. */
+body.sceng{--scewhyb:calc(var(--footH,0px) + var(--sccardh,0px) + 8px);--scetw:136px;--scepw:calc((100vw - var(--railW,0px) - var(--scetw)) * .5);--scex:calc(var(--railW,0px) + var(--scetw) + var(--scepw));--scetgt:32px}
+body.sceng.scenopl{--scepw:0px}
+/* M37: at tablet width the rail keeps its 136 px (the names fit on 1 or 2 lines) and the targets are 40 px */
+@media (max-width:1100px){body.sceng{--scetgt:40px}}
+@media (pointer:coarse){body.sceng{--scetgt:44px}}
+/* the loop check panel lives in the right-hand pane here, the page keeps its width */
+html.lc-side body.sceng{width:auto!important;transform:none!important}
+
+/* ---- where you are: Plant › page at the start of the plant page bar (Jennie's live check of beta 233: no second row under the strip;
+   VIEW | RUN is in the strip, the sheet name in the Engineer tool bar, the plant model OFF | Unit in the PLANT chip menu) ---- */
+body:not(.sceng) .scecr{display:none!important}
+body.sc.sceng #plantws .plbar .scecr{order:0;flex:none;display:flex;align-items:center;gap:4px;max-width:50%;overflow:hidden;margin-right:8px;font:400 13px var(--sc-ui);color:var(--sc-ink)}
+#plantws .plbar .scecr .scesep{color:var(--sc-ink2)}
+html body.sc.sceng #plantws .plbar .scecr .scelk{min-height:var(--scetgt,32px)!important;height:auto!important;padding:0 4px!important;border:0!important;background:transparent!important;color:var(--sc-steel)!important;font:500 13px var(--sc-ui)!important;text-decoration:underline;text-underline-offset:.2em;box-shadow:none!important;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body.sc.sceng #scewhy .scelk{min-height:var(--scetgt,32px)!important;height:auto!important;padding:0 4px!important;border:0!important;background:transparent!important;color:var(--sc-steel)!important;font:500 13px var(--sc-ui)!important;text-decoration:underline;text-underline-offset:.2em;box-shadow:none!important;cursor:pointer;white-space:nowrap}
+.scelk[hidden]{display:none!important}
+
+/* ---- the tool rail ---- */
+body:not(.sceng) #scetools{display:none!important}
+body.sceng #scetools{position:fixed;left:var(--railW,0px);top:var(--topH,0px);bottom:var(--footH,0px);width:var(--scetw);z-index:var(--z-float,95);display:flex;flex-direction:column;gap:4px;padding:12px 8px;box-sizing:border-box;background:var(--sc-band);border-right:1px solid var(--sc-line2);font-family:var(--sc-ui);overflow:auto}
+#scetools .scetl{font:600 12px var(--sc-ui);color:var(--sc-ink2);padding:0 4px 4px}
+#scetools button{display:block;width:100%;min-height:var(--scetgt)!important;height:auto!important;padding:4px 8px!important;text-align:left;border:0!important;border-radius:4px!important;background:transparent!important;color:var(--sc-ink)!important;font:600 13px/16px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer;white-space:normal}
+#scetools button:hover{background:var(--sc-white)!important}
+#scetools button.on{background:var(--sc-steel)!important;color:var(--sc-white)!important}
+#scetools button:focus-visible,.scecr button:focus-visible,#scewhy button:focus-visible,#scepane button:focus-visible{outline:2px solid var(--sc-steel)!important;outline-offset:2px}
+
+/* ---- the plant page (left) and the logic sheet (right) ---- */
+html body.sc.sceng #plantws{display:grid!important;left:calc(var(--railW,0px) + var(--scetw))!important;right:auto!important;width:var(--scepw)!important;border-right:1px solid var(--sc-line2)}
+html body.sc.sceng.scenopl #plantws{display:none!important}
+html body.sc.sceng #mid{margin-left:calc(var(--scetw) + var(--scepw))!important}
+/* the sheet list of the Logic page: the sheet picker of the band chooses the sheet, the drawing gets the width (as in the split view) */
+body.sceng #side{display:none!important}
+body.sceng #dp{max-width:40%!important}
+/* M36: the zoom bar sits 8 px above the Why box (--scewhyb above; --scewhyh = the height of the box, set by shellc-eng.js) */
+body.sceng #zbar{left:calc(var(--scex) + 16px)!important;right:auto!important;transform:none!important}
+html body.sc.sceng.scet-logic #zbar{top:auto!important;bottom:calc(var(--scewhyb) + var(--scewhyh,80px) + 8px)!important}
+/* a tool of the rail takes the right-hand pane */
+body.sceng:not(.scet-logic) #mid{visibility:hidden!important}
+body.sceng:not(.scet-logic) #zbar{display:none!important}
+
+/* ---- Why is it X? under the sheet. M30: its bottom (--scewhyb) is the footer (--footH, app.js) + the training card bar (--sccardh, shellc-ins) + 8 px ---- */
+body:not(.sceng.scet-logic) #scewhy{display:none!important}
+body.sceng.scet-logic #scewhy{position:fixed;left:calc(var(--scex) + 16px);right:16px;bottom:var(--scewhyb);z-index:var(--z-float,95);display:grid;gap:4px;max-height:34vh;overflow:auto;padding:8px 12px;box-sizing:border-box;background:var(--sc-white);border:1px solid #89a4ca;border-radius:4px;box-shadow:0 4px 16px rgba(34,46,57,.14);font:400 13px/1.4 var(--sc-ui);color:var(--sc-ink)}
+#scewhy .scesec{font:600 12px var(--sc-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--sc-ink2)}
+#scewhy .scewb{display:grid;gap:4px}
+#scewhy .scewr{font:400 12px/1.4 var(--sc-num);color:var(--sc-ink);overflow-wrap:anywhere}
+#scewhy .scewr:first-child{font:600 13px/1.4 var(--sc-ui)}
+#scewhy .scemore{color:var(--sc-ink2)}
+#scewhy .scelinks{display:flex;flex-wrap:wrap;gap:0 16px}
+
+/* ---- Library, Curves, Loop check in the right-hand pane (their own pages, moved) ---- */
+html body.sc.sceng.scet-lib #libws{left:var(--scex)!important;right:0!important}
+html body.sc.sceng.scet-fx #fxws{left:var(--scex)!important;right:0!important}
+html body.sceng.scet-loop > #lcdock{left:var(--scex)!important;right:0!important;top:var(--topH,0px)!important;bottom:var(--footH,0px)!important;width:auto!important;height:auto!important;z-index:var(--z-float,95)!important;border-left:1px solid var(--sc-line2)!important;border-top:0!important}
+body.sceng.scet-lib #plantws,body.sceng.scet-fx #plantws,body.sceng.scet-loop #plantws{z-index:47}
+/* M35: the Library pane is narrower than the 7 columns of the I/O list (about 850 px): the list takes the 3-row layout the Library itself
+   uses under 820 px (plant.css), so the Range / remark column is no longer past the right edge */
+body.sceng.scet-lib #libws .libhd{display:none}
+body.sceng.scet-lib #libws .libr{grid-template-columns:72px minmax(0,1fr) 48px;grid-template-areas:"ad tg b" "ds ds ds" "rx ty st"}
+body.sceng.scet-lib #libws .libr.pa{grid-template-areas:"ad tg b" "ds ds ds" "rx rx rx" "ty ty st"}
+body.sceng.scet-lib #libws .libr .ad{grid-area:ad}
+body.sceng.scet-lib #libws .libr .tg{grid-area:tg}
+body.sceng.scet-lib #libws .libr .ds{grid-area:ds}
+body.sceng.scet-lib #libws .libr .rx{grid-area:rx}
+body.sceng.scet-lib #libws .libr .ty{grid-area:ty}
+body.sceng.scet-lib #libws .libr .st{grid-area:st;text-align:right}
+body.sceng.scet-lib #libws .libr .b{grid-area:b}
+/* M34: the Curves pane is narrower than the table + About card: one column (About under the table, never over it) and the table picker
+   in place of the list, as the Curves page itself does under 760 px (fx.css) */
+html body.sc.sceng.scet-fx #fxws .fxmain{grid-template-columns:minmax(0,1fr)!important;padding:12px}
+html body.sc.sceng.scet-fx #fxws .fxbody{grid-template-columns:minmax(0,1fr)!important}
+html body.sc.sceng.scet-fx #fxws .fxleft{display:none!important}
+html body.sc.sceng.scet-fx #fxws #fxpick{display:block;margin:8px 12px 0;min-height:var(--scetgt)!important;height:auto!important;padding:0 8px;border-radius:4px;border:1px solid var(--c-line2);background:var(--c-ctl);color:var(--c-tx);font:500 14px var(--uf)}
+html body.sc.sceng.scet-fx #fxws .fxsub{display:none}
+/* M33: the Loop check footer (FAIL list, Export, Reset) is shorter in the pane and the cards scroll above it, never under it */
+html body.sceng.scet-loop > #lcdock .lc-body{flex:1 1 auto;min-height:0;overflow:auto}
+html body.sceng.scet-loop > #lcdock .lc-ft{flex:none;max-height:22%;position:relative;z-index:1}
+html body.sceng.scet-loop > #lcdock .lc-body > :last-child{margin-bottom:8px}
+
+/* ---- Recent and Sheet tools ---- */
+body:not(.sceng) #scepane,#scepane[hidden]{display:none!important}
+body.sceng #scepane:not([hidden]){position:fixed;left:var(--scex);right:0;top:var(--topH,0px);bottom:var(--footH,0px);z-index:var(--z-float,95);display:flex;flex-direction:column;gap:8px;padding:16px;box-sizing:border-box;overflow:auto;background:var(--sc-paper);border-left:1px solid var(--sc-line2);font:400 13px var(--sc-ui);color:var(--sc-ink)}
+#scepane h3{margin:0;font:600 16px var(--sc-ui)}
+#scepane .scesec{margin-top:4px;font:600 12px var(--sc-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--sc-ink2)}
+#scepane .scetl2{display:grid;gap:8px}
+#scepane .sceit{display:grid;gap:4px;min-height:calc(var(--scetgt) + 8px)!important;height:auto!important;padding:8px 12px!important;text-align:left;border:1px solid var(--sc-line)!important;border-radius:4px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:inherit!important;box-shadow:none!important;cursor:pointer;white-space:normal}
+#scepane .sceit:hover{border-color:var(--sc-steel)!important}
+#scepane .sceit:disabled{opacity:.6;cursor:not-allowed}
+#scepane .sceit b{font:600 14px var(--sc-ui)}
+#scepane .sceit small{font-size:12px;color:var(--sc-ink2)}
+#scepane .scenone{margin:0;color:var(--sc-ink2)}
+/* the page bar stays one row (the last-event message shortens); the step-2 page crumb (Operator) is not shown here: the Engineer bar has the place */
+body.sc.sceng #plantws .plbar{flex-wrap:nowrap!important;padding-left:16px!important}
+html body.sc.sceng #plantws .plbar .scpev{flex:1 1 0;min-width:0;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
+body.sceng .sccrumb{display:none!important}
+/* full screen of a plant page (and its exit) is an Operator view: not in the narrow plant pane of the Engineer, so the bar fits one row */
+body.sceng .scfsout,body.sc.sceng #plantws .plbar .scfs{display:none!important}
+/* Loop check buttons (shell audit, Jennie 2026-11-09: card buttons 26 px on a tablet). loopcheck.css is not changed: with ?shell=c only
+   (body.sc), in the Engineer pane and in the old dock alike, its buttons are 40 px at tablet width and 44 px on a touch screen
+   (MEASURE_STANDARD S3; design-auditor touch 44), text 13 px (S1, the .8rem of loopcheck.css is about 11 px here). The FAIL list rows
+   (.lc-fi) are text links in a list and keep their height */
+html body.sc #lcdock button:not(.lc-fi){font-size:13px}
+@media (max-width:1279px){html body.sc #lcdock button:not(.lc-fi){min-height:40px!important;padding-top:4px;padding-bottom:4px}}
+@media (pointer:coarse){html body.sc #lcdock button:not(.lc-fi){min-height:44px!important}}
+/* user 2026-11-09 "ampanget": the logic sheet ends above the Why box (it was under the box); the sheet refits by itself (ditl.js ResizeObserver) */
+html body.sc.sceng.scet-logic #mid{margin-bottom:calc(var(--scewhyh,0px) + var(--sccardh,0px) + 16px)!important;min-height:0}
+/* user 2026-11-09 "ampanget": the plant page takes 42 % of what the tool rail and the open sheet panel (--scedw, shellc-eng.js) leave, the sheet the rest */
+body.sceng{--scepw:calc((100vw - var(--railW,0px) - var(--scetw) - var(--scedw,0px)) * .42)}
+body.sceng.scenopl{--scepw:0px}
+/* Mina, live test of 271: the Sheet tools cards ran past the Details column at 1024 px: name over text, inside the pane */
+html body.sc #scepane .scetl2{grid-template-columns:minmax(0,1fr)}
+html body.sc #scepane .sceit:not(#scnone){display:grid!important;justify-items:start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;white-space:normal!important}
+html body.sc #scepane .sceit:not(#scnone) :is(b,small){display:block;min-width:0;max-width:100%;white-space:normal!important;text-align:left}
+/* Mina, live test of 272: the titles of the Sheet tools cards did not start at one left edge */
+html body.sc #scepane .sceit:not(#scnone){justify-content:stretch!important;grid-template-columns:minmax(0,1fr)!important}
+/* Mina, live test of 275: a long page name was cut on its left side beside the DITL panel */
+html body.sc.sceng #plantws .plbar .scecr .scesep ~ .scelk:not([hidden]){display:block!important;min-width:0;flex:1 1 0;text-align:left}
+/* Mina, live test of 276: the arrows of the plant page moved with the length of its name */
+html body.sc.sceng #plantws .plbar .scecr{flex:none;width:min(50%,400px);max-width:50%}
+/* Mina, live test of 279: the Why is it strip lay over the last rows of Drawing health */
+html body.sc.sceng :is(#anhp,#anln,#anau){z-index:calc(var(--z-float,95) + 1)!important}

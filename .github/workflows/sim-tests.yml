@@ -1,0 +1,60 @@
+name: Simulation tests
+# 3.2.1 p4: the simulation runs by itself on every push (headless Chromium): T1 ~ S5 of the ABC engine, the engine alone,
+# the DITL 150 MW plant. Report only for now: a failed test is marked on its step and listed in the run summary, the run itself stays
+# green so it does not hold the Beta or the auto-merge of any PR (site.yml follows Checks, not this workflow).
+on: { push: { branches: [main] }, workflow_dispatch: {} }
+permissions: { contents: read }
+jobs:
+  sim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Playwright and the browser (no apt step)
+        # The runner image already carries Google Chrome; the old "playwright install --with-deps" ran apt on security.ubuntu.com
+        # and the runner DNS error there stopped the job before any test ran. Only the npm package is installed now; when the image
+        # has no Chrome, Playwright downloads its own Chromium from its CDN (still no apt).
+        run: |
+          for i in 1 2 3; do npm install --no-save --no-package-lock playwright@1.64.1 && break; sleep $((i*5)); done
+          echo "PLAYWRIGHT_MODULE=$PWD/node_modules/playwright" >> "$GITHUB_ENV"
+          B="$(command -v google-chrome || command -v google-chrome-stable || true)"
+          if [ -z "$B" ]; then npx playwright install chromium; B="$(node -e "console.log(require('playwright').chromium.executablePath())")"; fi
+          echo "browser: $B"; "$B" --version
+          echo "CHROMIUM=$B" >> "$GITHUB_ENV"
+      - name: Engine alone (54 ABC sheets, same values as the whole simulator)
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node tests/engine/isolated.js 2>&1 | tee -a sim.log
+      - name: ABC engine T1 ~ S5 (sheets load and step, timers, lag, alarms, blocks, F-30 / F-27 / P-1 / F-31)
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node tests/regress/tests.js 2>&1 | tee -a sim.log
+      - name: DITL 150 MW (no MFT, equipment running, DITL to ABC, 60 s steady, BFWP A stop, Reset = cold)
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node tests/regress/ditl150.js 2>&1 | tee -a sim.log
+      - name: Generator breaker 52G1 on the DITL at 150 MW and after a turbine trip
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node tests/regress/gcb.js 2>&1 | tee -a sim.log
+      - name: Load ramp as the operator does it (MWRL 1.2, ULD 150 -> 90 -> 150), recorder CSV in the log
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node tests/regress/load_ramp.js 2>&1 | tee -a sim.log
+      - name: Re-shell layout C smoke test (ls-shell = c; start screen, strip, tiles, alarm list, Instructor, Engineer tools, trip pill; old layout without it)
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node tests/regress/shellc.js 2>&1 | tee -a sim.log
+      - name: Summary (PASS / FAIL lines)
+        if: always()
+        run: |
+          { echo '### Simulation tests'; echo '```'; grep -E '^(PASS|FAIL|FAILED|ALL PASS|LOAD ERROR|ERROR)' sim.log || true; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          grep -E '^(FAIL|FAILED|LOAD ERROR|ERROR)' sim.log && echo "::warning::simulation tests: some FAIL, see the summary" || true

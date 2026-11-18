@@ -1,0 +1,117 @@
+name: Release apk + exe
+# Manual. Assets: the page (html), the apk (Android), the portable exe (Windows) and, when it exists, the release report pdf.
+# input go must be exactly "GO v<version>" (the version in the html file name). A Beta is never a release: it is the page of main at /beta/.
+# The apk and the exe carry the app inside (they open at once and work without internet); the page asks the site for a newer version
+# and the user chooses. The name, the app id and the site address come from delivery/station/app.json.
+# apk signing: delivery/signing/logic-sim.jks (self-signed, alias logicsim, made once). Never regenerate it: a new key means a reinstall.
+on:
+  workflow_dispatch:
+    inputs:
+      go: { description: 'Type exactly: GO v<version>', required: true, type: string }
+      dry_run: { description: 'true = build only, no GitHub Release', required: true, default: 'true', type: choice, options: ['true', 'false'] }
+permissions: { contents: write }
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs: { version: '${{ steps.v.outputs.version }}', tag: '${{ steps.v.outputs.tag }}', name: '${{ steps.a.outputs.name }}', id: '${{ steps.a.outputs.id }}', file: '${{ steps.a.outputs.file }}' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - id: v
+        run: |
+          node tools/version.js --github
+          V=$(node tools/version.js)
+          case "$V" in *-beta*) echo "v$V is a Beta: set src/version.txt to the Stable number (no -beta.N) before the release"; exit 1;; esac
+          [ "${{ inputs.go }}" = "GO v$V" ] || { echo "go must be exactly: GO v$V"; exit 1; }
+      - id: a
+        run: |
+          echo "name=$(node -p "require('./delivery/station/app.json').name")" >> "$GITHUB_OUTPUT"
+          echo "id=$(node -p "require('./delivery/station/app.json').id")" >> "$GITHUB_OUTPUT"
+          echo "file=$(node -p "require('./delivery/station/app.json').name.replace(/[^A-Za-z0-9]+/g,'-')")" >> "$GITHUB_OUTPUT"
+  apk:
+    needs: gate
+    runs-on: ubuntu-latest
+    env:
+      KS_PASS: logicsim-icms
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Capacitor project
+        working-directory: delivery/android
+        run: |
+          cat > capacitor.config.json <<EOF
+          {"appId":"${{ needs.gate.outputs.id }}","appName":"${{ needs.gate.outputs.name }}","webDir":"www","server":{"androidScheme":"https"}}
+          EOF
+          # the app is built into the apk as a FOLDER (index.html + js/*.js, same content as the single page; opens at once, works without internet)
+          node ../../tools/station/build.js "../../dist/logic-sim-v${{ needs.gate.outputs.version }}.html" station-page/index.html
+          node ../../tools/build/app-folder.js station-page/index.html www
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx cap sync android
+          # app icon (delivery/station/icons): launcher icons of every density + adaptive icon background
+          cp -r ../station/icons/android/res/. android/app/src/main/res/
+          sed -i "s/versionName \".*\"/versionName \"${{ needs.gate.outputs.version }}\"/" android/app/build.gradle
+      - name: Build + sign
+        working-directory: delivery/android/android
+        run: |
+          ./gradlew assembleRelease --no-daemon
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          $BT/zipalign -p 4 app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          $BT/apksigner sign --ks ../../signing/logic-sim.jks --ks-pass env:KS_PASS --key-pass env:KS_PASS --ks-key-alias logicsim --out "../../app.apk" aligned.apk
+          $BT/apksigner verify "../../app.apk"
+      - uses: actions/upload-artifact@v4
+        with: { name: apk, path: delivery/app.apk }
+  exe:
+    needs: gate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Build portable exe
+        working-directory: delivery/desktop
+        shell: bash
+        run: |
+          node -e "const a=require('../station/app.json');require('fs').writeFileSync('config.json',JSON.stringify({name:a.name,url:a.site,data:a.name}))"
+          node ../../tools/station/build.js "../../dist/logic-sim-v${{ needs.gate.outputs.version }}.html" station-page/index.html
+          node ../../tools/build/app-folder.js station-page/index.html www
+          # app icon (delivery/station/icons): the exe file icon and the window icon
+          mkdir -p build && cp ../station/icons/icon.ico build/icon.ico && cp ../station/icons/png/icon-256.png icon.png
+          npm install --no-audit --no-fund
+          npx electron-builder --win portable -c.productName="${{ needs.gate.outputs.name }}" -c.appId=${{ needs.gate.outputs.id }} -c.extraMetadata.version=${{ needs.gate.outputs.version }}
+          ls dist
+      - uses: actions/upload-artifact@v4
+        with: { name: exe, path: 'delivery/desktop/dist/*-portable.exe' }
+  publish:
+    needs: [gate, apk, exe]
+    if: inputs.dry_run == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/download-artifact@v4
+        with: { path: out }
+      - name: GitHub Release
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          V=${{ needs.gate.outputs.version }}
+          T=${{ needs.gate.outputs.tag }}
+          N="${{ needs.gate.outputs.name }}"
+          F="${{ needs.gate.outputs.file }}"
+          mkdir rel
+          find out/apk -type f -name '*.apk' -print0 | while IFS= read -r -d '' f; do cp "$f" "rel/$F-$V.apk"; done
+          find out/exe -type f -name '*.exe' -print0 | while IFS= read -r -d '' f; do cp "$f" "rel/$F-$V-Windows.exe"; done
+          node tools/station/build.js "dist/logic-sim-v$V.html" "rel/$F-$V.html"
+          [ -f "docs/versions/v$V/Release-Report-v$V.pdf" ] && cp "docs/versions/v$V/Release-Report-v$V.pdf" "rel/$F-$V-Report.pdf" || echo "no release report pdf for v$V"
+          ls rel
+          NOTES="$N $V (Stable). Files: $F-$V.apk (Android), $F-$V-Windows.exe (Windows, portable, no install), $F-$V.html (opens in a browser). The apps ask the site for a newer version and update when you agree."
+          if gh release view "$T" >/dev/null 2>&1; then
+            gh release upload "$T" rel/* --clobber
+          else
+            gh release create "$T" rel/* --title "$N $T" --notes "$NOTES" --target "${{ github.sha }}"
+          fi

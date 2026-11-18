@@ -1,0 +1,45 @@
+name: Checks
+# Runs on every push. A green Checks run on a branch publishes the Beta site (site.yml); on main it publishes Stable.
+on: [push, workflow_dispatch]
+permissions: { contents: read }
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: The multi-file app folder (for the apk / exe) builds from the html
+        run: |
+          V=$(node tools/version.js)
+          node tools/build/app-folder.js "dist/logic-sim-v$V.html" /tmp/app-folder
+          test -f /tmp/app-folder/index.html && test -f /tmp/app-folder/js/06-analogjs.js && test -f /tmp/app-folder/js/data-pre.js
+          grep -q 'src="js/06-analogjs.js"' /tmp/app-folder/index.html
+      - name: The Operator Station page (src/station) builds from the html, and its app folder too
+        run: |
+          V=$(node tools/version.js)
+          node tools/station/build.js "dist/logic-sim-v$V.html" /tmp/station/index.html
+          grep -q 'window.LS_STATION=1' /tmp/station/index.html
+          grep -q "ronanski.github.io/ctrl-n-sync/'" /tmp/station/index.html
+          grep -q "<title>Logic Sim v$V</title>" /tmp/station/index.html
+          node tools/build/app-folder.js /tmp/station/index.html /tmp/station-folder
+          test -f /tmp/station-folder/index.html && test -f /tmp/station-folder/js/06-analogjs.js
+      - name: One html, version in file name and title
+        run: |
+          V=$(node tools/version.js)
+          F=dist/logic-sim-v$V.html
+          grep -q "<title>Logic Sim v$V</title>" "$F" || { echo "title does not say v$V"; exit 1; }
+          grep -qE "c3\.textContent ?= ?'v$V'" "$F" || { echo "version label does not say v$V"; exit 1; }
+      - name: The sources build exactly the committed html (src/ is the truth)
+        run: node tools/build/build.js --check
+      - name: The Plant Tools web app (docs/plant-tools/app) is the one its sources build
+        run: node docs/plant-tools/build-app.js --check
+      - name: No team or build name in the operator step texts (Mina B79-2)
+        run: node tools/training/operator-text-check.js
+      - name: Scripts of the html parse (every script, also the ones with an id; the old check read only the 4 without one)
+        run: |
+          node -e "
+          const s=require('fs').readFileSync('dist/'+require('fs').readdirSync('dist').find(x=>/^logic-sim-v.*\.html$/.test(x)),'utf8');
+          const m=[...s.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/g)].filter(x=>!/type=.(?!text\/javascript|module)/.test(x[1]||''));let bad=0;
+          for(const x of m){try{new Function(x[2])}catch(e){bad++;console.log((x[1]||'').trim(),e.message)}}
+          if(bad||!m.length)process.exit(1);console.log('scripts ok',m.length)"

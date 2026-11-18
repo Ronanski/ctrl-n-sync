@@ -1,0 +1,14 @@
+# Order in which the DITL files are joined into ONE script (global scope: later files use the names of earlier ones at run time). Do not reorder without a reason.
+parts/01-parse-build.js
+parts/02-netlist.js
+parts/02b-sand.js
+parts/02c-tcs.js
+parts/03-models.js
+parts/03b-sim.js
+parts/03c-read.js
+parts/03d-state.js
+parts/03e-user.js
+parts/04-render.js
+parts/05-overlay-interaction.js
+parts/06-panels.js
+parts/07-app-events.js
