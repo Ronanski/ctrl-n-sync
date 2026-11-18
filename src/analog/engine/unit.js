@@ -1077,6 +1077,13 @@ function anTurbine0(cmd, arg) {
   const U = AN_UNIT;
   if (!U.on || !U.tb) return 'No unit model: start from Cold first';
   const tb = U.tb;
+  /* live run 2026-11-19 (F-CP): LOAD UP with the TCS panel target load and load-up rate { mw, rate %/min }. The rate is the TCS load-up
+     rate setting, 0 ~ 5 %/min of 150 MW (rateUp, PR-OPE-5002 LOAD UP 5 %/min); a plain number stays the target MW alone */
+  if (cmd === 'loadup' && arg && typeof arg === 'object') {
+    const rt = +arg.rate;
+    if (isFinite(rt) && rt > 0) U.rateUp = (Math.min(5, rt) * 150) / 100;
+    arg = arg.mw;
+  }
   /* 3.2.0-beta.66: the 036 TURBINE OIL pumps at the 150 MW snapshot (no TCS model): the oil-only state of tcs.js */
   if (cmd === 'trip') return tcsTripManual(U);
   /* plan c4: the line breaker 52L1 (instructor): 0 = open (house load operation), 1 = close (elec.js) */
@@ -4959,6 +4966,12 @@ function anUnitStep0(dt) {
   /* plan c4: 52L1 as the ABC input, and on house load the turbine carries the house load only (elec.js) */
   if (typeof anElecStep === 'function') anElecStep(U);
   const D = U.tcsT;
+  /* LMYP OTS 1.0.0-beta.3 (JENNIE, live Hot roll 2026-11-19, F-CN): the load loop of the TCS (TCE207 flow demand tb.fd, MW error integral
+     tb.fi) works only with 52G closed. Off the grid (turbine stopped, tripped or under speed control) it starts again from the valves at
+     the next 52G close (anTbFlow: tb.fd = CV OPENING BIAS x ICV opening). Before, the flow demand of the last loaded run stayed in the
+     plant and in every save point after it (0.82 at S68, 3600 rpm no load): at the 52G close the CVs went to 77 % in seconds, the main
+     steam flow 187 -> 418 T/H at 0 MW and the turbine tripped on HP TURBINE INLET / EXHAUST DIFF. PRESS. VERY HIGH (IBD TA-21) */
+  if (!onGrid) tb.fd = tb.fi = NaN;
   if (U.turb === false) {
     /* 2.2.0-beta.14: cold start, the turbine is not rolled yet: the stop valves are shut (M4 step 4 opens them) */
     U.gv = 0;

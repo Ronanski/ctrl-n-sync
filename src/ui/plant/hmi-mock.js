@@ -343,24 +343,57 @@
             });
             return;
           }
-          /* the press is logged first: a TURBINE TRIP brings its trip and MFT lines in the same scan (Mina: the press line was missing) */
-          call(() => window.lsEventAdd && lsEventAdd('TCS', 'TCS', 'Operator: ' + nm + ' (page 13)'));
-          /* a refused command: its reason is written by the engine (unit.js anTurbine, S149-3); here the status bar only */
-          const r = call(() => AN.turbine(cmd), '');
-          if (typeof r === 'string' && r) call(() => typeof msg === 'function' && msg('TCS: ' + nm + ': ' + r));
-          /* Mina T3, 3.2.3-beta.1: a reset that the logic refuses said nothing. 2.5 s after the press (the push button is held 1.5 s),
-             a trip still standing gets a line with what holds it (the TA-9 trip inputs at 1, tcs-trip.js tcsTripState held) */
-          if (cmd === 'tripreset')
-            setTimeout(() => {
-              const s = call(() => AN.tcsTrip(), null);
-              if (!s || !s.first) return;
-              const h = (s.held || []).filter(Boolean);
-              const t =
-                'TURBINE RESET refused: the trip is still held by ' +
-                (h.length ? h.join(', ') : 'a trip input of the TCS (IBD TA-9)');
-              /* the event line is the engine's (tcs-trip.js, end of the push button): here only the message */
-              call(() => typeof msg === 'function' && msg(t));
-            }, 2500);
+          /* live run 2026-11-19 (F-CP): LOAD UP took no target and always went to 45 MW. The TCS operator panel sets the target load and
+             the load-up rate (310SC90-775 page 26 LOAD UP; rate 0 ~ 5 %/min, unit.js rateUp): LOAD UP asks both, then the press goes to the
+             TCS with them. In DCS control mode (I.0082 = 1) the TCS follows the DCS: the answer is said first, no number is asked */
+          const press = arg => {
+            /* the press is logged first: a TURBINE TRIP brings its trip and MFT lines in the same scan (Mina: the press line was missing) */
+            call(() => window.lsEventAdd && lsEventAdd('TCS', 'TCS', 'Operator: ' + nm + (arg ? ' ' + arg.mw + ' MW at ' + arg.rate + ' %/min' : '') + ' (page 13)'));
+            /* a refused command: its reason is written by the engine (unit.js anTurbine, S149-3); here the status bar only */
+            const r = call(() => AN.turbine(cmd, arg), '');
+            if (typeof r === 'string' && r) call(() => typeof msg === 'function' && msg('TCS: ' + nm + ': ' + r));
+            return r;
+          };
+          if (cmd !== 'loadup' || !window.lsAskText) {
+            press();
+            /* Mina T3, 3.2.3-beta.1: a reset that the logic refuses said nothing. 2.5 s after the press (the push button is held 1.5 s),
+               a trip still standing gets a line with what holds it (the TA-9 trip inputs at 1, tcs-trip.js tcsTripState held) */
+            if (cmd === 'tripreset')
+              setTimeout(() => {
+                const s = call(() => AN.tcsTrip(), null);
+                if (!s || !s.first) return;
+                const h = (s.held || []).filter(Boolean);
+                const t =
+                  'TURBINE RESET refused: the trip is still held by ' +
+                  (h.length ? h.join(', ') : 'a trip input of the TCS (IBD TA-9)');
+                /* the event line is the engine's (tcs-trip.js, end of the push button): here only the message */
+                call(() => typeof msg === 'function' && msg(t));
+              }, 2500);
+            return;
+          }
+          const U = call(() => AN.unit, null) || {},
+            say = t => (window.lsAsk ? lsAsk({ q: 'LOAD UP', t, ok: 'OK' }) : call(() => msg(t))),
+            dcsOn = call(() => U.dcs < 0 || +(U.S && U.S.rt && U.S.rt.v[U.dcs]) > 0.5, false);
+          if (dcsOn) {
+            const r = press();
+            if (typeof r === 'string' && r) say(r);
+            return;
+          }
+          const t0 = U.tb && isFinite(U.tb.aim) && U.tb.aim > 0 ? U.tb.aim : isFinite(U.MW) ? U.MW : 45,
+            r0 = isFinite(U.rateUp) ? U.rateUp / 1.5 : 5;
+          (async () => {
+            const x = await lsAskText('Target load, MW (4.5 ~ 150):', String(Math.round(t0 * 10) / 10));
+            if (x == null) return;
+            const mw = x.trim() ? +x : NaN;
+            if (!(mw >= 4.5 && mw <= 150)) return void say('Target not changed. Type a number from 4.5 to 150 MW.');
+            const y = await lsAskText('Load-up rate, %/min (0.5 ~ 5; 5 %/min = 7.5 MW/min):', String(Math.round(r0 * 10) / 10));
+            if (y == null) return;
+            const rt = y.trim() ? +y : NaN;
+            if (!(rt >= 0.5 && rt <= 5)) return void say('Target not changed. Type a rate from 0.5 to 5 %/min.');
+            const r = press({ mw, rate: rt });
+            if (typeof r === 'string' && r) say(r);
+          })();
+          return;
         });
       });
       /* 3.2.3-beta.249 (live Cold load-up, ABC-010): the CRT push buttons of an analog sheet [data-apb="SHEET|ADDRESS|ADDR=0/1"], first the
