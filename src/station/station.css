@@ -19,6 +19,15 @@ body.st.st-norail { --st-rail: 0px; }
 /* the old frame is not shown: only the plant page (and, until the new faceplate is built, the faceplate of the page) stays */
 body.st > *:not(#station):not(#plantws) { visibility: hidden !important; pointer-events: none !important; }
 body.st #plfp, body.st #plfp *, body.st .fpo-box, body.st .fpo-box * { visibility: visible !important; pointer-events: auto !important; }
+/* live run 2026-11-19 (F-CQ): the question box of the app (shellc-ask.js lsAsk / lsAskText: LOAD UP target load and rate, Load of a
+   save point, every "are you sure") is a child of body, so the rule above hid it: the question stood open and unseen and the press
+   did nothing. It is shown on top of the station, in the station's own dark look */
+html body.st:not(#st0) .scask:not([hidden]), html body.st:not(#st0) .scask:not([hidden]) * { visibility: visible !important; pointer-events: auto !important; }
+html body.st:not(#st0) .scask { z-index: 2147482000 !important; background: rgba(10, 12, 14, 0.55) !important; }
+html body.st:not(#st0) .scask .scaskc { background: var(--st-pop) !important; color: var(--st-tx) !important; border: 1px solid var(--st-line2) !important; border-radius: 6px !important; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important; font-family: var(--st-ui) !important; }
+html body.st:not(#st0) .scask .scaskc h3, html body.st:not(#st0) .scask .scaskc p { color: var(--st-tx) !important; }
+html body.st:not(#st0) .scask input.scaski { background: var(--st-bar) !important; color: var(--st-tx) !important; border: 1px solid var(--st-line2) !important; font-family: var(--st-num) !important; height: 32px !important; }
+html body.st:not(#st0) .scask .scaskb button { min-height: 32px !important; background: var(--st-sel) !important; color: var(--st-tx) !important; border: 1px solid var(--st-line2) !important; border-radius: 4px !important; }
 html body.st:not(#st0):not(#st1) #plantws:not(#st2) { left: var(--st-rail) !important; top: 44px !important; right: 0 !important; bottom: 32px !important; width: auto !important; height: auto !important; background: #1b1f27 !important; }
 html body.st:not(#st0):not(#st1) #plantws:not(#st2) > *:not(#plmid) { display: none !important; }
 body.st #plmid { position: absolute !important; inset: 0 !important; }
