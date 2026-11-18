@@ -1,6 +1,6 @@
 # ctrl-n-sync
 
-The operator training app for LMYP Unit 1 (460 t/h CFB boiler, 150 MW): one screen to run the plant, read the logic and train on faults.
+**LMYP OTS** (operator training simulator), the operator training app for LMYP Unit 1 (460 t/h CFB boiler, 150 MW): one screen to run the plant, read the logic and train on faults.
 
 The app is the station frame (`src/station`) over the DCS logic simulator (analog and digital logic, turbine control, plant model, HMI pages) that was built in the repository `Ronanski/icms-master-tool`. This repository carries everything the app needs: the simulator sources, the frame, the build tools, the tests, the delivery files and the documents of the project. It started on 2026-11-19 as a copy of `icms-master-tool` at 3.2.4-beta.70 plus the HMI overview and the station frame.
 

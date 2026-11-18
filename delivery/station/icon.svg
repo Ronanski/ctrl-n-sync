@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Y2: one AND gate, small, its two inputs and its output; under it the prompt ">_SYNC" with a blue cursor -->
+  <!-- Y3: the prompt itself is logic: the ">" is a NOT gate (triangle and bubble), then the blue cursor and SYNC; one line, nothing else -->
   <rect x="16" y="16" width="480" height="480" rx="108" fill="#0a0a0b"/>
-  <g transform="translate(-4 0)" fill="none" stroke="#ffffff" stroke-width="12" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M196 184h28M196 224h28M300 204h24"/>
-    <path d="M224 164h30a40 40 0 0 1 0 80h-30z"/>
+  <g transform="translate(38 0)" fill="none" stroke="#ffffff" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M96 228v56l44 -28z"/><circle cx="151" cy="256" r="8"/>
   </g>
-  <text x="256" y="330" text-anchor="middle" font-size="58" font-family="Consolas, Cascadia Mono, Courier New, monospace" font-weight="700" fill="#ffffff">&gt;<tspan fill="#2f7df6">_</tspan>SYNC</text>
+  <text x="208" y="278" font-size="62" font-family="Consolas, Cascadia Mono, Courier New, monospace" font-weight="700" fill="#ffffff"><tspan fill="#2f7df6">_</tspan>SYNC</text>
 </svg>
