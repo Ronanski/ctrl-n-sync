@@ -83,8 +83,8 @@ const AN_UNIT = {
      OPERATION select of PR-OPE-5002, an operator step of the ATS, not this permissive). Not modelled from that group: GOV. MANUAL, LLM
      MANUAL, GEN. MW ABN., TARGET MW DEMAND ABN., IP LIMITING (the operator does not select them here). DCS CONTROL MODE ON I.0082 set by
      the pulse O.0178 of ABC-001C while I.0081, reset by O.0179 or by the reset group (permissive lost); while ON the TCS target load
-     tracks GEN. MW (TCE p.134), so at OFF the TCS holds the load it has. These inputs are written only in a start-up (U.cold); the snapshot of
-     "Start at 150 MW" keeps its own. */
+     tracks GEN. MW (TCE p.134), so at OFF the TCS holds the load it has. These inputs are written by the model in every plant state (3.2.5-beta.8; before only in a start-up, U.cold); the snapshot of
+     "Start at 150 MW" gives the first values only. */
   rollRate: 120 /* rpm/min, PR-OPE-5002 cold start (the holds at 1800 / 3600 rpm of the procedure are the operator's; not modelled) */,
   icvRoll: 0.13 /* ICV opening for the roll steam (about 14 T/H at 7.6 kg/cm2 reheat, NO-SOURCE: the SOP gives CV 10 / 3 % at 400 rpm, no ICV opening) */,
   /* 3.2.3-beta.240 (live Cold start Load up): the TCS flow demand splits to the ICV and the CVs (TCE 331DM09784 p.141 TCE207 FLOW
@@ -4291,7 +4291,7 @@ function anTbFlow(U, tb, D, dt, dirt) {
   U.gv = L((+U.gv || 0) + L(cvD - (+U.gv || 0), -s, s), 0, 1.4);
   if (!tb.xfer && cvD > 0.005) {
     tb.xfer = true;
-    if (U.cold) dirt(U.di.xfer, 1);
+    dirt(U.di.xfer, 1);
   }
 }
 /* 3.2.3-beta.240 (user 2026-11-14): the 32 REVERSE POWER relay of the generator protection panel (Beckwith M-3425A, GEE-2015-0173 R1
@@ -5280,8 +5280,11 @@ function anUnitStep0(dt) {
     for (const l of U.vpos.icv) dirt(l, icp);
   }
   U.tbn ={ off: 0, roll: 1, sync: 2, load: 3 }[tb.st];
-  /* the TCS inputs of the DCS in a start-up (the snapshot of "Start at 150 MW" keeps its own) */
-  if (U.cold) {
+  /* the TCS inputs of the DCS, one plant model: 3.2.5-beta.8 (live 75 MW run from a restart of "At 150 MW"): written only in a start-up
+     (U.cold), a plant started at 150 MW (U.cold false, kept by its save points and by a restart after a trip) never wrote DCS CONTROL MODE
+     PERMISSIVE I.0081 nor TRANSFER COMPLETE again: the turbine master could not go AUTO after the restart. The model writes them always */
+  {
+    dirt(U.di.xfer, tb.xfer ? 1 : 0);
     /* TCE p.127 TCE180: permissive = NOT (52G not closed, TURBINE TRIP, FORCED CLOSE by HOUSE LOAD OPERATION, IP START before the
        TRANSFER REGION COMPLETE(IP)); the reset group also resets DCS CONTROL MODE ON */
     tb.perm = onGrid && !trip && tb.xfer && !(U.el && U.el.l52 === false);
