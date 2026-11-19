@@ -24,8 +24,10 @@
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes], plain]   macro block, x y = top left; plain = [[y of each left
                                                                      pin], [y of each right pin]]: a block printed without cells
      tri: [x, y, s]                                                  the filled triangle of an analog PI/O connection on a line
-     w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
-     t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
+     w: [source key, [[x, y], ...], thick, arw, dash]                wire piece: every corner from one end to the other; thick 1 = analog signal;
+                                                                     dash 1 = drawn dashed (an analog line of an IBD sheet)
+     t: [x, y, text, align, size, rot]                               other words of the sheet (align 0 left, 1 centre, 2 right); rot = the turn of
+                                                                     the words in degrees (90 = read from the bottom up)
      live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
                                                                      as a number); none = the sheet is shown without states
 
@@ -318,16 +320,35 @@ function tceSheet(q) {
     (notes || []).forEach(n => tx.push(text(n[2], n[0], n[1], 1.9, 0)));
   }
   /* wires: straight pieces, each with the net of its source */
-  for (const [from, P, thick, arw] of q.w || []) {
+  for (const [from, P, thick, arw, dash] of q.w || []) {
     const n = net(from);
     if (arw === 1 || (q.ar && arw !== 0)) head(P[P.length - 2], P[P.length - 1]);
     for (let i = 1; i < P.length; i++) {
-      ln.push([X(P[i - 1][0]), Y(P[i - 1][1]), X(P[i][0]), Y(P[i][1]), 'CON']);
-      seg.push(n);
-      if (thick) heavy.push([P[i - 1], P[i], n]);
+      const a = P[i - 1],
+        b = P[i];
+      /* a dashed wire: the same net in short pieces (the gaps carry it too) */
+      const L = dash ? Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]) : 0,
+        sx = Math.sign(b[0] - a[0]),
+        sy = Math.sign(b[1] - a[1]),
+        on = 4 * u,
+        off = 3 * u;
+      const parts = [];
+      if (dash) for (let s = 0; s < L; s += on + off) parts.push([s, Math.min(s + on, L)]);
+      else parts.push(null);
+      for (const p of parts) {
+        const c = p ? [a[0] + sx * p[0], a[1] + sy * p[0]] : a,
+          d = p ? [a[0] + sx * p[1], a[1] + sy * p[1]] : b;
+        ln.push([X(c[0]), Y(c[1]), X(d[0]), Y(d[1]), 'CON']);
+        seg.push(n);
+      }
+      if (thick) heavy.push([a, b, n]);
     }
   }
-  for (const [x, y, t, a, h] of q.t || []) tx.push(text(t, x, y, h || 2.05, a || 0));
+  for (const [x, y, t, a, h, rot] of q.t || []) {
+    const e = text(t, x, y, h || 2.05, a || 0);
+    if (rot) e.r = rot;
+    tx.push(e);
+  }
   /* junction dots: a wire end on the middle of another wire of the same net */
   const dots = [];
   /* (a sheet that lists its dots (j) shows only those: the ends of its short wire pieces are no junctions) */
