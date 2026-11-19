@@ -19,8 +19,8 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan bago 
 - **Dalawang version (tingnan ang `README.md`, "Versions"):** app = `delivery/app/app.json` (`1.0.0-beta.N` = EA, `1.0.0` = Final); simulator = `src/version.txt` (ito ang binabasa ng save point). Bawat pagbabagong papasok sa `main` ay nagtataas ng version ng app; ang version ng simulator ay tumataas lang kapag binago ang `src/` ng simulator.
 - **Nailabas:** EA `v1.0.0-beta.1` (2026-11-19, user "go ea"): `LMYP-OTS-1.0.0-beta.1-Windows.exe`, `.apk`, `.html` sa Releases. Laman ng simulator: 3.2.4-beta.70 ng lumang repo + HX overview page.
 - **Repo ay PRIVATE (2026-11-19):** ang `site.yml` ay hindi tumatakbo habang private (walang GitHub Pages sa libreng plano), kaya wala pang site at wala pang auto update. Kusa itong aandar kapag ginawang public ng user; desisyon niya iyon.
-- **Bukas na PR:** tingnan sa GitHub (`gh pr list`); sa oras ng pagsulat: Clean-up 1, ang paglipat ng mga ayos ng live test (sim 3.2.5-beta.3), at ang Signal popup ng Engineer view.
-- **Sa PC na ito, hinaharang ng auto mode ang merge** sa repo na ito hangga't walang nakasulat na pahintulot ng user na pinapangalanan ang PR. Huwag itong lusutan; hingin ang pahintulot.
+- **Sa `main` (2026-11-19 8 AM PHT):** app 1.0.0-beta.7, simulator 3.2.5-beta.8 (mga ayos ng live test ni JENNIE, kasama ang 3.2.4 Stable ng lumang repo), at ang Linis 1 ng repo. Bukas na PR: tingnan sa GitHub (`gh pr list`).
+- **Merge:** sa PC na ito, hinaharang ng auto mode ang merge hangga't walang nakasulat na pahintulot ng user sa mismong thread (hal. "GO MERGE EVERYTHING", 2026-11-19). Huwag itong lusutan; hingin ang pahintulot.
 
 ## 3. Team (2026-11-19)
 - **JENNIE** (lead): engine, logic, plant model, HX pages, at ang live test sa bagong app (pinapanood ng user). **ROSÉ**: frame ng app (`src/station`), `delivery/`, site, release, linis ng repo.
