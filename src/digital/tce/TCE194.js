@@ -11,6 +11,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [168, 85, 2219, 1547],
+  live: { iTrc: 'xfer', iGen: ['mw', 'MW'] },
   k: [
     ['kZero', 295, 241, '0.0', 'sys.ref'],
     ['kOff', 295, 468, 'OFF(0)', 'sys.ref'],

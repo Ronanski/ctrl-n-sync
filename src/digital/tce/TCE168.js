@@ -9,6 +9,7 @@
   ctl: 'EHG+MD',
   cycle: 990,
   f: [180, 84, 2228, 1545],
+  live: { iA: ['tspd', 'rpm'], iGov: ['govSet', '%'] },
   k: [
     ['kInit', 209, 265, 'INITIAL', 'ref'],
     ['kSpd', 206, 478, 'TURBINE SPEED', 'ref'],
