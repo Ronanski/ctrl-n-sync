@@ -13,6 +13,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [181, 88, 2230, 1545],
+  /* live: GOV SET and its manual mode, TURBINE TRIP, TURBINE SPEED (tcs.js tcsLiveRead) */
+  live: { kTt: 'trip', i005: ['govSet', '%'], 'crt.MANU': 'govMan', kSpd: ['rpm', 'rpm'] },
   k: [
     ['kAvc', 242, 151, 'ALL VALVE CLOSED', 'ref'],
     ['kTt', 240, 233, 'TURBINE TRIP', 'ref'],
