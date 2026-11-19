@@ -8,7 +8,10 @@
      id, title, page, ctl (controller), cycle (ms)
      f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
      c: [key, 'in' | 'out', letter, x, y, name, [sheets]]            off-page connector (oval), x y = its centre
-     k: [key, x, y, text, note]                                      constant / system reference (pentagon), x y = its left middle
+     k: [key, x, y, text, note, kind]                                constant / system reference (pentagon), x y = its left middle; kind 'def' =
+                                                                     a definition the sheet gives out
+     r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
+     a: [[x1, y1], [x2, y2]]                                         note arrow of the drawing (open head at the second point)
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}]         small block, x y = its centre; no = the block number printed in it; notes = the
                                                                      parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
@@ -75,19 +78,42 @@ function tceSheet(q) {
     net(key);
   }
   /* constants / system references: a pentagon pointing to the right */
-  for (const [key, x, y, t, note] of q.k || []) {
+  for (const [key, x, y, t, note, kind] of q.k || []) {
     const w = 114 * u,
       h = 8 * u;
-    poly([[x, y - h], [x + w - h, y - h], [x + w, y], [x + w - h, y + h], [x, y + h]], 1);
-    tx.push(text(t, x + (w - h) / 2, y, 2.05, 4));
-    if (note) tx.push(text('(' + note + ')', x + 30 * u, y - h - 5 * u, 1.7, 0));
+    /* kind 'def': a definition the sheet gives out (the left end is notched, the signal comes in there) */
+    if (kind === 'def') poly([[x, y - h], [x + w - h, y - h], [x + w, y], [x + w - h, y + h], [x, y + h], [x + h, y]], 1);
+    else poly([[x, y - h], [x + w - h, y - h], [x + w, y], [x + w - h, y + h], [x, y + h]], 1);
+    tx.push(text(t, x + w / 2, y, 2.05, 4));
+    if (note) tx.push(text('(' + note + ')', kind === 'def' ? x + w / 2 : x + 30 * u, y - h - 5 * u, 1.7, kind === 'def' ? 1 : 0));
     net(key);
+  }
+  /* PI/O table boxes: a plain box with its words (the place of an input / output of the PI/O table) */
+  for (const [key, x, y, w, h, t] of q.r || []) {
+    poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
+    if (t) tx.push(text(t, x + w / 2, y + h / 2, 2.05, 4));
+    net(key);
+  }
+  /* PI/O connection marks: a small triangle on the line, pointing left ('l') or right ('r') */
+  for (const [x, y, d] of q.g || []) {
+    const k = 7 * u * (d === 'l' ? -1 : 1);
+    poly([[x - k / 2, y - 4.5 * u], [x + k / 2, y], [x - k / 2, y + 4.5 * u]], 1);
+  }
+  /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
+  for (const [a, b] of q.a || []) {
+    poly([a, b], 0);
+    const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
+      ux = (b[0] - a[0]) / L,
+      uy = (b[1] - a[1]) / L,
+      k = 9 * u;
+    poly([[b[0] - ux * k - uy * k * 0.45, b[1] - uy * k + ux * k * 0.45], b, [b[0] - ux * k + uy * k * 0.45, b[1] - uy * k - ux * k * 0.45]], 0);
   }
   /* small blocks: the type over the block number */
   for (const [key, type, no, x, y, notes, pins] of q.b || []) {
-    if (type === 'BTR') {
+    if (/^o:/.test(type)) {
+      /* a mark on the wire (a small circle with its name over it and its number under it), type 'o:BTR' */
       ci.push([X(x), Y(y), W(2.2 * u), 'SYM']);
-      tx.push(text('BTR', x, y - 6 * u, 1.7, 1), text(no, x + 8 * u, y + 9 * u, 1.7, 0));
+      tx.push(text(type.slice(2), x, y - 6 * u, 1.7, 1), text(no, x + 8 * u, y + 9 * u, 1.7, 0));
       continue;
     }
     const w = 14 * u,
