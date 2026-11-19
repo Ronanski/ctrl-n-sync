@@ -342,7 +342,7 @@
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it, third: [letter, sheets] of a double-line connector under the input error, fed from the wire of the connector of OUT, src: [letter, sheets] of a connector from another sheet that feeds the lamp and the connector in place of OUT, ex: where the lower or higher input error turns, conn: 1 = OUT goes to its connector only (no lamp) }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], extra { c, d, b, w, t } (more of each), single 1 = the input connectors have a single line, last (mark number of the
+     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it, third: [letter, sheets] of a double-line connector under the input error, fed from the wire of the connector of OUT, src: [letter, sheets] of a connector from another sheet that feeds the lamp and the connector in place of OUT, ex: where the lower or higher input error turns, conn: 1 = OUT goes to its connector only (no lamp), up: [letter, sheets] of a double-line connector over the lamp, en: the letter of the connector of the input error when it is not the output letter + '1' }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], extra { c, d, b, w, t } (more of each), single 1 = the input connectors have a single line, orName = the name of the output of the OR when it is not INPUT DISCREPANCY, last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -383,7 +383,8 @@
           y = p(2 * i);
         const N = nm.in[i];
         c.push([key, 'in', il, 280, y, N[N.length - 1], [r], o.single ? 0 : 1]);
-        if (N.length > 1) t.push([313, y - 32, N[0]]);
+        /* the lines of the name over the last one, which the connector prints on the wire */
+        for (let j = 0; j < N.length - 1; j++) t.push([313, y - 32 - 21 * (N.length - 2 - j), N[j]]);
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
         w.push([key, [[307, y], [BX, y]]]);
       });
@@ -410,6 +411,11 @@
         w.push([so, [[x.src ? 1367 : BX + BW, p(0)], [2070, p(0)]]], [so, [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
         lines(nm.out[0], 1716, p(0));
         lines(nm.out[1], 1716, p(0) + 64);
+        /* one more way out, over the lamp: from the dot on OUT up to a double-line connector (x.up = [letter, sheets]) */
+        if (x.up) {
+          c.push(['o' + x.up[0], 'out', x.up[0], 2103, p(0) - 84, '', x.up[1], 1, 1]);
+          w.push([so, [[1539, p(0) + 64], [1539, p(0) - 84], [2076, p(0) - 84]]]);
+        }
         /* a third way out: from the wire of the connector down, past the input error, to a double-line connector */
         if (x.third) {
           c.push(['o' + x.third[0], 'out', x.third[0], 2103, p(0) + 193, '', x.third[1], 1, 1]);
@@ -425,7 +431,8 @@
         w.push([k + '.DEV E', [[1539, ye], [1539, yc], [2065, yc]]]);
         lines(nm.out[3] || nm.out[2], last ? 1713 : 1704, yc);
       }
-      c.push(['o' + ol + '1', 'out', ol + '1', 2092, yc, '', ['-']]);
+      const en = x.en || ol + '1';
+      c.push(['o' + en, 'out', en, 2092, yc, '', ['-']]);
       b.push(['mo' + (g + 1) + 'c', 'o:BTR', om[2], ex, ye]);
       lines(nm.out[2], last ? 1713 : 1704, ye);
       if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [xe, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
@@ -440,7 +447,7 @@
       b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
       c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
       w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
-      t.push([1714, OY[0] - 6, 'INPUT DISCREPANCY']);
+      t.push([1714, OY[0] - 6, o.orName || 'INPUT DISCREPANCY']);
     }
     t.push(...o.foot);
     /* what a sheet has beyond the pattern */
