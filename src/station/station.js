@@ -24,7 +24,7 @@
   };
   /* the pages of the unit in the order an operator walks the plant; a page that is not in the app is left out */
   const GROUPS = [
-    ['', ['overview']],
+    ['', ['overview', '@soe']],
     [
       'Fuel and air',
       ['coal', 'limestone-sand', 'oil-burners', 'combustion-air', 'furnace-gas', 'purge-trip', 'sootblowers']
@@ -42,7 +42,7 @@
     ['Auxiliaries', ['turbine-oil']]
   ];
   /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
-  const OWN = { '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests', '@ost': 'Overspeed test' };
+  const OWN = { '@soe': 'First out and events', '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests', '@ost': 'Overspeed test' };
   const STATIONS = [
     ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
     ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
@@ -1334,6 +1334,70 @@
      state now, the cause that came first, and the master trip / reset of the operator (the app's own commands). */
   const trp = {};
   let ownWas = '';
+  /* First out and sequence of events (user "go all" 2026-11-19, item 2): after an MFT or a turbine trip, what tripped first and the order
+     of what followed. Read only: the record of the engine (soe.js AN.soeTrip / AN.soe), which takes it from the signals of the DCS and
+     TCS logic. Oldest first, as a sequence-of-events print is read; a new block starts after 60 s without a record */
+  const soe = {};
+  const clock = t => {
+    if (t == null || !isFinite(t)) return '--';
+    const s = Math.max(0, +t),
+      h = Math.floor(s / 3600),
+      m = Math.floor((s % 3600) / 60);
+    return h + ':' + String(m).padStart(2, '0') + ':' + (s % 60).toFixed(1).padStart(4, '0');
+  };
+  const SOEK = { trip: 'Trip input', mft: 'Master fuel trip', fo: 'First out', reset: 'Reset', tt: 'Turbine trip' };
+  function soes() {
+    const T = call(() => AN.soeTrip(), null),
+      L = call(() => AN.soe(400), null);
+    if (!T || !L) {
+      if (soe.key !== 'none') {
+        soe.key = 'none';
+        ownPg.replaceChildren(E('p', 'st-none', 'The sequence of events is not recorded at this starting point.'));
+      }
+      return;
+    }
+    const m = T.mft || {},
+      u = T.turbine || {},
+      key = L.length + '|' + (L.length ? L[L.length - 1].t : '') + '|' + m.on + m.first + '|' + u.on + u.first;
+    if (key === soe.key) return;
+    soe.key = key;
+    const head = E('div', 'st-ph');
+    for (const [k, v, hot] of [
+      ['Boiler', m.on ? 'Master fuel trip' : 'No trip', m.on],
+      ['Boiler first out', m.first || 'None', m.on],
+      ['Turbine', u.on ? 'Turbine trip' : 'No trip', u.on],
+      ['Turbine first out', u.first || 'None', u.on]
+    ]) {
+      const d = E('div'),
+        b = E('b', hot ? 'st-hot' : '', v);
+      d.append(E('i', '', k), b);
+      head.append(d);
+    }
+    const box = E('div', 'st-crit');
+    if (!L.length)
+      box.append(E('p', 'st-none', 'No event since this starting point. The list fills by itself at the next master fuel trip or turbine trip.'));
+    let last = -1e9,
+      t0 = 0;
+    for (const x of L) {
+      if (x.t - last > 60) {
+        t0 = x.t;
+        box.append(E('div', 'st-cg', 'Events from ' + clock(x.t)));
+      }
+      last = x.t;
+      const fo = (x.kind === 'fo' || x.kind === 'tt') && x.on,
+        r = E('div', 'st-cr st-se' + (fo ? ' miss' : ''));
+      r.append(
+        E('i', 'st-mk' + (x.on ? ' new' : ' ok')),
+        E('span', 'st-cn', clock(x.t)),
+        E('em', '', '+' + (x.t - t0).toFixed(1) + ' s'),
+        E('span', '', String(x.name || '')),
+        E('span', 'st-cn st-sy', (x.sys || '') + (x.sheet ? ' · ' + x.sheet : '')),
+        E('span', 'st-cs', (SOEK[x.kind] || '') + (x.on ? '' : ' off'))
+      );
+      box.append(r);
+    }
+    ownPg.replaceChildren(head, E('h2', 'st-h', 'Sequence of events'), box);
+  }
   function trips() {
     const sh = call(() => AN.tcsIbdSheets().find(x => x.id === 'TA-9'), null),
       st = call(() => AN.tcsIbd('TA-9'), null),
@@ -1929,12 +1993,13 @@
     if (own !== ownWas) {
       /* another page of the frame: its content is built anew */
       ownWas = own;
-      crit.key = trp.key = '';
+      crit.key = trp.key = soe.key = '';
       gov.h = null;
       ost.h = null;
       vt.key = '';
       if (ownPg) ownPg.replaceChildren();
     }
+    if (own === '@soe' && !eng) soes();
     if (own === '@criteria' && !eng) criteria();
     if (own === '@trip' && !eng) trips();
     if (own === '@load' && !eng) loads();
