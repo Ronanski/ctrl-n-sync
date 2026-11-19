@@ -119,12 +119,17 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-cr.miss .st-cs { color: var(--st-alm); font-weight: 600; }
 .st-cr.byp .st-cs { color: var(--st-tx); font-weight: 600; }
 .st-cr .st-mk.ok { border-color: #5d6873; }
+.st-cr .st-mk.done { border-color: #7a8692; background: #7a8692; }
 .st-cr .st-b { height: 28px; padding: 0 8px; }
 .st-cr .st-b.arm { outline: 2px solid var(--st-alm); outline-offset: -1px; background: #4a3508; color: #fff; }
 @media (pointer: coarse) { .st-page { bottom: 40px; } .st-cr { min-height: 44px; } .st-cr .st-b { height: 40px; } }
 @media (max-width: 900px) { .st-cr { grid-template-columns: 10px 36px minmax(0, 1fr) 56px 88px; } .st-cr .st-cs { display: none; } }
 .st-cr.st-tr { grid-template-columns: 10px minmax(0, 1fr) 96px; }
 .st-cr.st-se { grid-template-columns: 10px 76px 64px minmax(0, 1fr) 150px 130px; }
+.st-cr.st-sc { grid-template-columns: 10px 84px minmax(0, 1fr) 230px; }
+.st-cr.st-tr.miss { grid-template-columns: 10px minmax(0, 1fr) 110px; }
+.st-scv { align-self: center; flex: 1 1 100%; font-weight: 600; }
+.st-row > .st-cs { align-self: center; font-size: 12px; color: var(--st-dim); }
 .st-ph b.st-hot { color: var(--st-alm); }
 .st-gc .st-gv.st-hot { color: var(--st-alm); }
 .st-sync { display: block; width: 112px; height: 112px; margin: 0 0 12px; color: var(--st-dim); }
