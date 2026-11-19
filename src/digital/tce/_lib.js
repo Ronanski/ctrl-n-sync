@@ -135,7 +135,7 @@
         y = p(0) + Math.round(i * 53.3),
         n = Math.floor(i / 2) + 1;
       const [over, name] = o.name(ch, sig, n);
-      c.push([key, 'in', o.let[sig ? 0 : 1], cx, y, name, ['TCP' + n + sh], 1]);
+      c.push([key, 'in', (o.lets ? o.lets[g] : o.let)[sig ? 0 : 1], cx, y, name, [sh ? 'TCP' + n + sh : '-'], 1]);
       if (over) t.push([cx + 33, y - 32, over]);
       b.push(['mk' + ch + (i + 1), sig ? 'o:FTR' : 'o:BTR', marks[i], cx + 321, y]);
       w.push([key, i ? [[cx + 27, y], [BEND[i], y], [BEND[i], p(i)], [bx, p(i)]] : [[cx + 27, y], [bx, y]], sig ? 1 : 0]);
@@ -309,7 +309,7 @@
     ]
   };
   /* A sheet where the value of each block goes straight out, with no TRIPLE DETECTOR2 and no 2OO3 (the shaft vibrations):
-     o.direct = [[letter, sheets of the first output, sheets of the second, [line 1, line 2] of their name, [four mark numbers]] for each block].
+     o.direct = [[letter, sheets of the first output, sheets of the second, [line 1, line 2] of their name, [four mark numbers]] for each block]; lets = the letters of the inputs for each block when they differ, a sheet number of null in sh = a spare block.
      The right part of the pattern is taken away and each block gets its two outputs. */
   if (o.direct) {
     S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
@@ -330,7 +330,10 @@
         ['mk' + g + 'd', 'o:FTR', mk[3], Z(1823), y2]
       );
       S.w.push(['tmr' + (g + 1) + '.OUT', [[G.bx + 405, y], [Z(2052), y]], 1], ['tmr' + (g + 1) + '.OUT', [[Z(1781), y], [Z(1781), y2], [Z(2051), y2]], 1]);
-      S.t.push([Z(1850), y - 27, nm[0]], [Z(1850), y - 6, nm[1]], [Z(1849), y2 - 27, nm[0]], [Z(1849), y2 - 6, nm[1]]);
+      /* the name of the two outputs: one pair of lines for both, or [lines of the first, lines of the second]; the last line stands on the wire */
+      const two = Array.isArray(nm[0]) ? nm : [nm, nm];
+      two[0].forEach((s, i) => S.t.push([Z(1850), y - 6 - 21 * (two[0].length - 1 - i), s]));
+      two[1].forEach((s, i) => S.t.push([Z(1849), y2 - 6 - 21 * (two[1].length - 1 - i), s]));
     });
   }
   return S;
