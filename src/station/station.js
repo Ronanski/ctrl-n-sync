@@ -29,7 +29,7 @@
       'Fuel and air',
       ['coal', 'limestone-sand', 'oil-burners', 'combustion-air', 'furnace-gas', 'purge-trip', 'sootblowers']
     ],
-    ['Steam', ['drum-steam', 'reheat-steam', 'extraction', 'aux-steam', 'generator']],
+    ['Steam', ['drum-steam', 'reheat-steam', 'extraction', 'aux-steam', 'generator', '@gen']],
     ['Water', ['feedwater', 'condensate', 'sea-water', 'makeup-cooling', 'sampling']],
     ['Auxiliaries', ['compressed-air', 'ash']]
   ];
@@ -42,7 +42,7 @@
     ['Auxiliaries', ['turbine-oil']]
   ];
   /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
-  const OWN = { '@soe': 'First out and events', '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests', '@ost': 'Overspeed test' };
+  const OWN = { '@soe': 'First out and events', '@gen': 'Generator panel', '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests', '@ost': 'Overspeed test' };
   const STATIONS = [
     ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
     ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
@@ -1337,6 +1337,144 @@
   /* First out and sequence of events (user "go all" 2026-11-19, item 2): after an MFT or a turbine trip, what tripped first and the order
      of what followed. Read only: the record of the engine (soe.js AN.soeTrip / AN.soe), which takes it from the signals of the DCS and
      TCS logic. Oldest first, as a sequence-of-events print is read; a new block starts after 60 s without a record */
+  /* Generator panel (user "go all" 2026-11-19, item 5): manual synchronizing, the AVR and the generator lockout relays, as the engine
+     holds them (gen-panel.js: AN.genPanel reads, AN.turbine('gen', { op, v }) presses; sources GEE-2015-0141, GEE-2015-0173,
+     Generator Logic.pdf). The panel devices keep their numbers: 7-90R voltage, 7-65 speed, 25 synchronizing check, 52G, 41, 86 */
+  const gp = {};
+  function gens() {
+    const G = call(() => AN.genPanel(), null);
+    if (!G) {
+      if (gp.h !== 0) {
+        gp.h = 0;
+        ownPg.replaceChildren(E('p', 'st-none', 'The generator panel is not in service at this starting point.'));
+      }
+      return;
+    }
+    if (!gp.h) {
+      const h = (gp.h = {}),
+        head = E('div', 'st-ph');
+      for (const k of [
+        'Generator breaker 52G',
+        'Field breaker 41',
+        'Generator voltage',
+        'Frequency',
+        'Synchronizing check 25',
+        'Lockout relays'
+      ]) {
+        const d = E('div'),
+          b = E('b');
+        d.append(E('i', '', k), b);
+        h[k] = b;
+        head.append(d);
+      }
+      gp.msg = E('p', 'st-pm');
+      const say = m => {
+        gp.msg.textContent = m ? String(m) : '';
+        setTimeout(tick, 120);
+      };
+      const press = (r, t, tip, op, v) => {
+        const b = E('button', 'st-b', t);
+        b.title = tip;
+        b.onclick = () => say(call(() => AN.turbine('gen', { op, v }), ''));
+        r.append(b);
+        return b;
+      };
+      const card = (name, tip) => {
+        const c = E('section', 'st-gc'),
+          v = E('b', 'st-gv'),
+          m = E('span', 'st-cs'),
+          r = E('div', 'st-row');
+        c.title = tip;
+        c.append(E('h2', 'st-h', name), v, m, r);
+        return { c, v, m, r };
+      };
+      const box = E('div', 'st-gov');
+      /* synchronizing: the synchroscope (the pointer at 12 o'clock = in phase), the mode and the close of 52G */
+      const sy = card(
+        'Synchronizing',
+        'The generator is brought to the voltage, the frequency and the phase of the line, then 52G is closed'
+      );
+      const NS = 'http://www.w3.org/2000/svg',
+        sv = document.createElementNS(NS, 'svg');
+      sv.setAttribute('viewBox', '-52 -52 104 104');
+      sv.setAttribute('class', 'st-sync');
+      sv.setAttribute('role', 'img');
+      sv.setAttribute('aria-label', 'Synchroscope');
+      sv.innerHTML =
+        '<circle r="46" fill="none" stroke="currentColor" stroke-width="1.5"/>' +
+        '<path d="M0 -46V-36M-46 0H-40M46 0H40M0 46V40" stroke="currentColor" stroke-width="1.5"/>' +
+        '<path d="M-8 -45.3A46 46 0 0 1 8 -45.3" fill="none" stroke="currentColor" stroke-width="5"/>' +
+        '<line class="p" y2="-38" stroke="currentColor" stroke-width="3"/><circle r="3" fill="currentColor"/>';
+      h.ptr = sv.querySelector('.p');
+      h.scope = sv;
+      sy.c.insertBefore(sv, sy.r);
+      h.sy = sy;
+      h.synA = press(sy.r, 'Automatic', 'Automatic synchronizing (ASD)', 'syn', 'AUTO');
+      h.synM = press(sy.r, 'Manual', 'Manual synchronizing: the operator matches voltage and speed and closes 52G', 'syn', 'MAN');
+      const cl = E('button', 'st-b', 'Close 52G');
+      cl.title = 'Closes the generator breaker; possible only in manual with the synchronizing check 25 operated';
+      arm(cl, 'Close 52G', () => say(call(() => AN.turbine('gen', { op: 'close52g' }), '')));
+      sy.r.append(cl);
+      /* 7-90R: the voltage of the generator through the AVR */
+      const vo = card('Voltage (7-90R)', 'Raise / lower of the generator voltage; the AVR in automatic or manual');
+      h.vo = vo;
+      press(vo.r, 'Lower', 'Lowers the generator voltage', 'v-');
+      press(vo.r, 'Raise', 'Raises the generator voltage', 'v+');
+      h.avrA = press(vo.r, 'AVR automatic', 'The AVR holds the generator voltage', 'avr', 'AUTO');
+      h.avrM = press(vo.r, 'AVR manual', 'The field is set by hand', 'avr', 'MAN');
+      /* 7-65: the speed of the turbine through the governor */
+      const sp = card('Speed (7-65)', 'Raise / lower of the turbine speed through the governor, to match the frequency of the line');
+      h.sp = sp;
+      press(sp.r, 'Lower', 'Lowers the speed', 'n-');
+      press(sp.r, 'Raise', 'Raises the speed', 'n+');
+      /* 86G-A, 86G-B, 86T */
+      const lo = card(
+        'Lockout relays',
+        'A lockout relay opens 52G, 52L and 41 and trips the turbine; it is reset by hand when its cause is gone'
+      );
+      h.lo = lo;
+      press(lo.r, 'Reset lockout relays', 'Refused while the cause stands', 'reset86');
+      box.append(sy.c, vo.c, sp.c, lo.c);
+      ownPg.replaceChildren(head, box, gp.msg);
+    }
+    const h = gp.h,
+      on = (b, x) => {
+        b.classList.toggle('on', !!x);
+        b.setAttribute('aria-pressed', String(!!x));
+      },
+      L = G.lo86 || {},
+      lk = [L.a && '86G-A', L.b && '86G-B', L.t && '86T'].filter(Boolean);
+    h['Generator breaker 52G'].textContent = G.c52g ? 'Closed' : 'Open';
+    h['Field breaker 41'].textContent = G.f41 ? 'Closed' : 'Open';
+    h['Generator voltage'].textContent = fmt(G.kV, 2) + ' kV';
+    h['Frequency'].textContent = fmt(G.hz, 2) + ' Hz';
+    h['Synchronizing check 25'].textContent = G.c52g ? 'On the line' : G.r25 ? 'Operated' : 'Not operated';
+    h['Lockout relays'].textContent = lk.length ? lk.join(', ') + ' operated' : 'Reset';
+    h['Lockout relays'].classList.toggle('st-hot', !!lk.length);
+    h.sy.v.textContent = G.c52g ? 'On the line' : fmt(G.th, 0) + '°';
+    h.sy.m.textContent =
+      'Voltage difference ' +
+      fmt(G.dv, 1) +
+      ' % · slip ' +
+      fmt(G.slip, 3) +
+      ' Hz · line ' +
+      fmt(G.gridHz, 2) +
+      ' Hz · ' +
+      (G.asd ? 'ASD in use' : 'ASD off');
+    h.ptr.setAttribute('transform', 'rotate(' + (G.c52g || !isFinite(G.th) ? 0 : G.th) + ')');
+    h.scope.classList.toggle('ok', !!G.r25 || !!G.c52g);
+    on(h.synA, G.syn !== 'MAN');
+    on(h.synM, G.syn === 'MAN');
+    h.vo.v.textContent = fmt(G.kV, 2) + ' kV';
+    h.vo.m.textContent = 'Field ' + fmt(G.efd, 2) + ' pu · ' + (G.x84 ? 'voltage established' : 'voltage not established');
+    on(h.avrA, G.avr !== 'MAN');
+    on(h.avrM, G.avr === 'MAN');
+    h.sp.v.textContent = fmt(G.hz, 2) + ' Hz';
+    h.sp.m.textContent = 'Slip ' + fmt(G.slip, 3) + ' Hz against the line';
+    h.lo.v.textContent = lk.length ? lk.join(' · ') : 'Reset';
+    h.lo.v.classList.toggle('st-hot', !!lk.length);
+    h.lo.m.textContent = L.why ? 'Cause: ' + L.why : 'No lockout relay is operated';
+  }
   const soe = {};
   const clock = t => {
     if (t == null || !isFinite(t)) return '--';
@@ -1995,11 +2133,13 @@
       ownWas = own;
       crit.key = trp.key = soe.key = '';
       gov.h = null;
+      gp.h = null;
       ost.h = null;
       vt.key = '';
       if (ownPg) ownPg.replaceChildren();
     }
     if (own === '@soe' && !eng) soes();
+    if (own === '@gen' && !eng) gens();
     if (own === '@criteria' && !eng) criteria();
     if (own === '@trip' && !eng) trips();
     if (own === '@load' && !eng) loads();
