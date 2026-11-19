@@ -42,6 +42,7 @@ ui/interaction.js
 engine/sched.js
 engine/hist.js
 engine/soe.js
+engine/gen-panel.js
 ui/trace.js
 ui/panel.js
 ui/plant-window.js

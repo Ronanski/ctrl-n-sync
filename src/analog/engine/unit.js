@@ -1092,6 +1092,8 @@ function anTurbine0(cmd, arg) {
   }
   /* 3.2.0-beta.66: the 036 TURBINE OIL pumps at the 150 MW snapshot (no TCS model): the oil-only state of tcs.js */
   if (cmd === 'trip') return tcsTripManual(U);
+  /* the generator control panel (gen-panel.js): SYN AUTO / MAN, AVR AUTO / MAN, 7-90R, 7-65, 52G CLOSE, lockout reset */
+  if (cmd === 'gen') return tcsGenCmd(U, arg || {});
   /* plan c4: the line breaker 52L1 (instructor): 0 = open (house load operation), 1 = close (elec.js) */
   if (cmd === '52l') return anElecL52(U, arg);
   if (cmd === 'tripreset') return tcsTripReset(U);
@@ -4339,8 +4341,9 @@ function anRp32(U, on, dt) {
   r.al = al;
   if (r.t2 >= AN_RP32.t2 && !r.lo) {
     r.lo = true;
-    ev('2nd REVERSE POWER (32) OPERATED: generator lockout relay 86G-A, turbine trip');
+    ev('2nd REVERSE POWER (32) OPERATED: generator lockout relays 86G-A / 86G-B, turbine trip');
   }
+  tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T */
 }
 /* 3.2.4 (JENNIE, priority list: grid events): the grid frequency the generator is locked to on the grid. Trainer fault 'grid.lo' (world.js):
    59.5 Hz, reached at 0.1 Hz/s (a unit lost elsewhere; NO-SOURCE trainer setting, the Philippine Grid Code normal band is 59.7 ~ 60.3 Hz),
