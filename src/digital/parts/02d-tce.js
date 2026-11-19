@@ -7,7 +7,7 @@
    One sheet:
      id, title, page, ctl (controller), cycle (ms)
      f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
-     c: [key, 'in' | 'out', letter, x, y, name, [sheets]]            off-page connector (oval), x y = its centre
+     c: [key, 'in' | 'out', letter, x, y, name, [sheets], dbl]       off-page connector (oval), x y = its centre; dbl 1 = drawn with a double line
      k: [key, x, y, text, note, kind]                                constant / system reference (pentagon), x y = its left middle; kind 'def' =
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
@@ -65,10 +65,12 @@ function tceSheet(q) {
   };
   const u = (fx1 - fx0) / 1000; /* one thousandth of the width of the frame, for the sizes of the symbols */
   /* off-page connectors: an oval with its letter; the name on the wire side, the sheets it goes to / comes from on the outer side */
-  for (const [key, dir, letter, x, y, name, refs] of q.c || []) {
+  for (const [key, dir, letter, x, y, name, refs, dbl] of q.c || []) {
     const w = 13 * u,
       r = 9 * u;
     poly([...arc(x + w - r, y, r, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r, Math.PI / 2, (3 * Math.PI) / 2)], 1);
+    /* a connector drawn with a double line in the drawing */
+    if (dbl) poly([...arc(x + w - r, y, r - 2 * u, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r - 2 * u, Math.PI / 2, (3 * Math.PI) / 2)], 1);
     tx.push(text(letter, x, y, 1.9, 4));
     const R = (refs || []).map(s => '(' + s + ')');
     if (dir === 'in') {
