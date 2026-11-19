@@ -16,7 +16,8 @@
      d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
-                                                                     parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
+                                                                     parameters printed under it ('^DEF' = over it); l / r = the marks of its pins;
+                                                                     type 'o:BTR' = a mark on the wire, type 'X' = the crossed circle (inverted input)
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
      t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
@@ -81,7 +82,13 @@ function tceSheet(q) {
       R.forEach((s, i) => tx.push(text(s, x - w - 3 * u - col(i), y + (5 + 8 * (i % per)) * u, 1.7, 2)));
     } else {
       if (name) tx.push(text(name, x - w - 4 * u, y - 5 * u, 2.05, 2));
-      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
+      /* near the right edge of the frame there is no room for a second column: the drawing puts the sheets over four on the left of the
+         column, on its last rows (TCE166 A: TCE602 left of TCE601) */
+      if (R.length > 4 && x + w + 37 * u + 34 * u > fx1)
+        R.forEach((s, i) =>
+          tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
+        );
+      else R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
     }
     net(key);
   }
@@ -133,6 +140,15 @@ function tceSheet(q) {
   }
   /* small blocks: the type over the block number */
   for (const [key, type, no, x, y, notes, pins, size] of q.b || []) {
+    if (type === 'X') {
+      /* the crossed circle of the drawing on an input line (the signal taken inverted), type 'X': no name, no number */
+      const r = 3.4 * u,
+        e = r * 0.7071;
+      ci.push([X(x), Y(y), W(r), 'SYM']);
+      poly([[x - e, y - e], [x + e, y + e]], 0);
+      poly([[x - e, y + e], [x + e, y - e]], 0);
+      continue;
+    }
     if (/^o:/.test(type)) {
       /* a mark on the wire (a small circle with its name over it and its number under it), type 'o:BTR' */
       ci.push([X(x), Y(y), W(2.2 * u), 'SYM']);
