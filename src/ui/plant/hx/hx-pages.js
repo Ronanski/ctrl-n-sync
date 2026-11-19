@@ -507,7 +507,7 @@
           M('fan', 'PAF', 'Primary air fan', [V('Current', 'IT-F1053', 'A'), V('Outlet', 'PT-FA1075', 'mmH₂O', 0)], {
             tag: 'F-1053 · DITL-26A'
           }),
-          C('FICFA1071', 'Primary air flow damper', { sym: 'damper', tag: 'MCV-FA1053-1', pv: 't/h' }),
+          C('FICFA1071', 'Primary air fan inlet vane', { sym: 'damper', tag: 'MCV-FA1053-1', pv: 't/h' }),
           E('bank', 'Air preheater, primary air side', '', [V('Air out', 'TT-FA1076', '°C', 0)], { med: 'hotair' }),
           E('header', 'Hot primary air', '', [V('Flow', 'FT-FA1079', 't/h')], { w: 10, h: 40, med: 'hotair' }),
           L('furnace-gas', 'To furnace grid')
@@ -521,7 +521,7 @@
           M('fan', 'SAF', 'Secondary air fan', [V('Current', 'IT-F1054', 'A'), V('Outlet', 'PT-FA1085', 'mmH₂O', 0)], {
             tag: 'F-1054 · DITL-27A'
           }),
-          C('FICFA1081', 'Secondary air flow damper', { sym: 'damper', tag: 'MCV-FA1054-1', pv: 't/h' }),
+          C('FICFA1081', 'Secondary air fan inlet vane', { sym: 'damper', tag: 'MCV-FA1054-1', pv: 't/h' }),
           E('bank', 'Air preheater, secondary air side', '', [V('Air out', 'TT-FA1087', '°C', 0)], { med: 'hotair' }),
           E('header', 'Hot secondary air', '', [V('Pressure', 'PT-FA1088', 'mmH₂O', 0)], {
             w: 10,

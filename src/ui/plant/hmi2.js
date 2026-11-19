@@ -118,8 +118,8 @@
   ];
   /* dampers: click = the faceplate of its controller; hor = a row of louvres across a pass (the gas biasing dampers) */
   const DAMPERS = [
-    { tag: 'MCVFA10531', x: 760, y: 820, w: 14, ref: 'mv:FICFA1071', fp: 'FICFA1071', desc: 'PAF inlet flow control damper MCV-FA1053-1' },
-    { tag: 'MCVFA10541', x: 760, y: 930, w: 14, ref: 'mv:FICFA1081', fp: 'FICFA1081', desc: 'SAF inlet flow control damper MCV-FA1054-1' },
+    { tag: 'MCVFA10531', x: 760, y: 820, w: 14, ref: 'mv:FICFA1071', fp: 'FICFA1071', desc: 'PAF inlet vane MCV-FA1053-1 (PA flow control)' },
+    { tag: 'MCVFA10541', x: 760, y: 930, w: 14, ref: 'mv:FICFA1081', fp: 'FICFA1081', desc: 'SAF inlet vane MCV-FA1054-1 (SA flow control)' },
     { tag: 'PCDFG10561', x: 1532, y: 846, w: 22, ref: 'mv:PICFG108A', fp: 'PICFG108A', desc: 'IDF inlet vane control damper PCD-FG1056-1' },
     { tag: 'FCVFA1055A1', x: 258, y: 930, w: 6, ref: 'mv:FICFA1055A', fp: 'FICFA1055A', desc: 'FA blower-A inlet flow control damper FCV-FA1055-A1' },
     { tag: 'FCVFA1055B1', x: 418, y: 930, w: 6, ref: 'mv:FICFA1055B', fp: 'FICFA1055B', desc: 'FA blower-B inlet flow control damper FCV-FA1055-B1' },
