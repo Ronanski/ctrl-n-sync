@@ -35,9 +35,9 @@
   ];
   /* The turbine has its own control system (TCS) with its own operator station, apart from the DCS of the plant (Hitachi TC-14-116,
      section 5.1 / 5.2): its pages are a list of their own, reached with the Plant / Turbine switch of the page list. */
-  const TCS_GROUPS = [['', ['turbine', '@criteria', '@trip', 'turbine-oil']]];
+  const TCS_GROUPS = [['', ['turbine', '@criteria', '@load', '@trip', 'turbine-oil']]];
   /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
-  const OWN = { '@criteria': 'Start-up criteria', '@trip': 'Turbine trip' };
+  const OWN = { '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip' };
   const STATIONS = [
     ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
     ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
@@ -1051,6 +1051,79 @@
       trp.h.Speed.textContent = fmt(tb ? tb.rpm : null, 0) + ' rpm';
     }
   }
+  /* Speed and load: the governor set and the load limiter of the turbine control (TCS soft logic TCE196 GOVERNOR SET, TCE205 LOAD LIMIT
+     SET), read with AN.tcsGov() and pressed with the app's own commands AN.turbine('gov' | 'llm'). One press = 1 %, as on the real station. */
+  const gov = {};
+  function loads() {
+    const G = call(() => AN.tcsGov(), null),
+      tb = call(() => AN.unit.tb, null);
+    if (!G) {
+      if (gov.h !== 0) {
+        gov.h = 0;
+        ownPg.replaceChildren(E('p', 'st-none', 'The governor of the turbine is not loaded at this starting point.'));
+      }
+      return;
+    }
+    if (!gov.h) {
+      gov.h = {};
+      const head = E('div', 'st-ph');
+      for (const k of ['Speed', 'Load target', 'Load change rate', 'Valve demand', 'In control']) {
+        const d = E('div'),
+          b = E('b');
+        d.append(E('i', '', k), b);
+        gov.h[k] = b;
+        head.append(d);
+      }
+      gov.msg = E('p', 'st-pm');
+      const box = E('div', 'st-gov');
+      for (const [k, name, tip] of [
+        ['gov', 'Governor set', 'The load the governor asks from the valves'],
+        ['llm', 'Load limiter', 'The highest valve demand allowed; in automatic it follows 5 % above the governor']
+      ]) {
+        const c = E('section', 'st-gc'),
+          v = E('b', 'st-gv'),
+          m = E('span', 'st-cs'),
+          r = E('div', 'st-row');
+        c.title = tip;
+        gov.h[k] = v;
+        gov.h[k + 'm'] = m;
+        const press = (t, op, tp) => {
+          const b = E('button', 'st-b', t);
+          b.title = tp;
+          b._op = op;
+          b.onclick = () => {
+            const x = call(() => AN.turbine(k, { op }), '');
+            gov.msg.textContent = x ? String(x) : '';
+            setTimeout(tick, 120);
+          };
+          r.append(b);
+          return b;
+        };
+        press('Lower', 'lower', 'One press lowers it by 1 %; it goes to manual');
+        press('Raise', 'raise', 'One press raises it by 1 %; it goes to manual');
+        gov.h[k + 'a'] = press('Automatic', 'auto', 'Back to automatic');
+        c.append(E('h2', 'st-h', name), v, m, r);
+        box.append(c);
+      }
+      ownPg.replaceChildren(head, box, gov.msg);
+    }
+    const pc = x => (x == null ? '--' : fmt(x, 1) + ' %');
+    gov.h.Speed.textContent = fmt(tb ? tb.rpm : null, 0) + ' rpm';
+    gov.h['Load target'].textContent = G.target == null ? '--' : fmt(G.target, 1) + ' MW';
+    gov.h['Load change rate'].textContent = G.rate == null ? '--' : fmt(G.rate, 1) + ' %/min';
+    gov.h['Valve demand'].textContent = pc(G.fd);
+    gov.h['In control'].textContent = G.limiting ? 'Load limiter (limiting)' : 'Governor';
+    gov.h.gov.textContent = pc(G.gov);
+    gov.h.llm.textContent = pc(G.llm);
+    for (const [k, man] of [
+      ['gov', G.govMan],
+      ['llm', G.llmMan]
+    ]) {
+      gov.h[k + 'm'].textContent = man ? 'Manual' : 'Automatic';
+      gov.h[k + 'a'].classList.toggle('on', !man);
+      gov.h[k + 'a'].setAttribute('aria-pressed', String(!man));
+    }
+  }
   function conds() {
     const pg = $('#plantws .hx-process');
     if (!pg || own) return [];
@@ -1189,10 +1262,12 @@
       /* another page of the frame: its content is built anew */
       ownWas = own;
       crit.key = trp.key = '';
+      gov.h = null;
       if (ownPg) ownPg.replaceChildren();
     }
     if (own === '@criteria' && !eng) criteria();
     if (own === '@trip' && !eng) trips();
+    if (own === '@load' && !eng) loads();
     /* the reader of the unit overview of the app (LS_LIVE.getV); the plant model value where the reader has none.
        After a start state is loaded and before the first Run the reader still holds the numbers of the state before (shellc-home.js
        "stale"): only the 150 MW state is its own snapshot, so the other states show the plant model value, or "--", until Run */
