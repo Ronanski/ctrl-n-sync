@@ -447,5 +447,93 @@
     if (o.extra) for (const [A, n] of [[c, 'c'], [d, 'd'], [b, 'b'], [w, 'w'], [t, 't']]) A.push(...(o.extra[n] || []));
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
   };
-  if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did };
+  /* TCE_LIB.aid(o): a sheet INPUT SIGNAL DIAGNOSTICS of single pressure inputs (TCE102, TCE104): on each line a transmitter (the crossed circle),
+     the analog input card (the mA/V box, the filled triangle of the PI/O connection, the PI/O error box) and one AI DIAG.MD block with its
+     simulation value (SG), its settings and its outputs (the value to connector A.. and, over it, to a double-line connector B..; the abnormal
+     signal, lower, to connector D..). o.id, title, page, f, foot, and o.rows = one object for each line:
+       y (the line of the signal), lab [two lines of the name], pt (transmitter), rng (range), card, xf / mf (x and number of the mark on the input),
+       mx (left edge of the block), tag, foot (number of the block), sg [number, x, how far under the line its middle stands, how far under the
+       line its output leaves, x where that turns up, setting], xe (x where the PI/O error turns up), par [HL, LL, DEV HL, DEV LL],
+       xj (x of the dot on OUT), dyB (how far over the line connector B stands), bx (its x, 2013 unless given), B / A / D [letter, sheets],
+       mo / mb (numbers of the marks on the two outputs), dyD (how far under the line the abnormal signal goes out), abn (the two lines of its
+       name when the drawing prints another name than lab + ' ABN.'). Returns the sheet. */
+  const aid = o => {
+    const r = [],
+      b = [],
+      c = [],
+      w = [],
+      t = [],
+      l = [],
+      tri = [],
+      m = [],
+      two = (x, y, a, bb) => t.push([x, y - 27, a], [x, y - 6, bb]);
+    o.rows.forEach((q, i) => {
+      const n = i + 1,
+        y = q.y,
+        k = 't' + n,
+        M = 'm' + n,
+        mx = q.mx,
+        xr = mx + 235,
+        bx = q.bx || 2013,
+        [sno, sx, sdy, sdo, sxc, snote] = q.sg;
+      /* the transmitter, the card and its PI/O error */
+      b.push(['x' + n, 'X', '', 393, y, [], {}, [21]], ['f' + q.mf, 'o:FTR', q.mf, q.xf, y]);
+      l.push([[414, y], [582, y]]);
+      r.push([k, 582, y - 12, 52, 24, 'mA/V'], ['pe' + n, 631, y + 30, 125, 23, 'PI/O error']);
+      tri.push([728, y, 9]);
+      t.push(
+        [293, y - 62, q.lab[0]],
+        [293, y - 40, q.lab[1]],
+        [245, y + 6, '(' + q.pt + ')'],
+        [420, y - 6, q.rng],
+        [420, y + 26, '4- 20mA'],
+        [634, y - 20, '(' + q.card + ')'],
+        [648, y + 25, '(' + q.card + ')']
+      );
+      w.push([k, [[634, y], [mx, y]], 1], ['pe' + n, [[756, y + 41], [q.xe, y + 41], [q.xe, y + 22], [mx, y + 22]]]);
+      /* the block, its simulation value and its settings */
+      m.push([
+        M,
+        'AI DIAG.MD',
+        q.tag,
+        mx,
+        y - 30,
+        235,
+        128,
+        ['IN', 'ERR', 'SIM'],
+        ['OUT', 'ABN'],
+        q.foot,
+        [
+          [mx + 80, y + 116, '(LME510)'],
+          [mx - 23, y + 145, 'DEF N:3'],
+          [mx - 2, y + 166, 'K:1'],
+          [mx - 24, y + 188, 'H/L HL:' + q.par[0]],
+          [mx - 2, y + 209, 'LL:' + q.par[1]],
+          [mx - 24, y + 230, 'DEF TP:0.18S'],
+          [mx + 137, y + 145, 'DEV HL:' + q.par[2]],
+          [mx + 157, y + 166, 'LL:' + q.par[3]],
+          [mx + 137, y + 188, 'DEF TP:0.03S'],
+          [mx + 137, y + 209, 'DEF N:3'],
+          [mx + 157, y + 230, 'K:1']
+        ],
+        [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+      ]);
+      b.push(['sg' + n, 'SG', sno, sx, y + sdy, [snote]]);
+      w.push(['sg' + n, [[sx + 29, y + sdo], [sxc, y + sdo], [sxc, y + 44], [mx, y + 44]], 1]);
+      /* the outputs: the value to two connectors, the abnormal signal to one */
+      c.push(['o' + q.B[0], 'out', q.B[0], bx, y + q.dyB, '', q.B[1], 1], ['o' + q.A[0], 'out', q.A[0], 2013, y, '', q.A[1]], ['o' + q.D[0], 'out', q.D[0], 2013, y + q.dyD, '', q.D[1]]);
+      b.push(['f' + q.mo, 'o:FTR', q.mo, 1727, y], ['b' + q.mb, 'o:BTR', q.mb, 1727, y + q.dyD]);
+      w.push(
+        [M + '.OUT', [[xr, y], [1986, y]], 1],
+        [M + '.OUT', [[q.xj, y], [q.xj, y + q.dyB], [bx - 27, y + q.dyB]], 1],
+        [M + '.ABN', [[xr, y + 44], [1672, y + 44], [1672, y + q.dyD], [1986, y + q.dyD]]]
+      );
+      two(1775, y, q.lab[0], q.lab[1]);
+      const an = q.abn || [q.lab[0], q.lab[1] + ' ABN.'];
+      two(1773, y + q.dyD, an[0], an[1]);
+    });
+    t.push(...o.foot);
+    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
+  };
+  if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid };
 })();
