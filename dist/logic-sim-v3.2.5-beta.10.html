@@ -8501,6 +8501,220 @@ function tcsSim(s) {
     })
   );
 })();
+/* TCE117 TPC SIGNAL DIAGNOSTICS(7) (331DM09784 page 81, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The master trip solenoid valve test: OPERATED A1 and A2 and the test push buttons of valves A1 and A2, each read from the three protection
+   controllers, out to a lamp and to TCE115. The title block of this page prints PAGE 79; it is page 81 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const M = v => ['MASTER TRIP SOLENOID', 'VALVE(' + v + ') TEST PB'],
+    ME = v => [...M(v), 'DISCREPANCY'],
+    D = ['DISCREPANCY'],
+    T = ['TCE115'],
+    R = ['TCP1200', 'TCP2200', 'TCP3200'],
+    row = (i, o, e) => ({ in: [i, i, i], out: [o || i, o || i, e] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE117',
+      title: 'TPC SIGNAL DIAGNOSTICS(7)',
+      page: 81,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [
+          row(['OPERATED A1'], null, ['OPERATED A1 DISCREPANCY']),
+          'C4',
+          'A',
+          ['001', '004', '032'],
+          ['003', '005', '007'],
+          '031',
+          'TCE117_1',
+          T,
+          R
+        ],
+        [
+          row(['OPERATED A2'], null, ['OPERATED A2 DISCREPANCY']),
+          'C5',
+          'B',
+          ['008', '011', '033'],
+          ['010', '012', '014'],
+          '009',
+          'TCE117_3',
+          T,
+          R
+        ],
+        [
+          row(M('A1'), null, ME('A1')),
+          'C2',
+          'C',
+          ['015', '018', '034'],
+          ['017', '019', '021'],
+          '016',
+          'TCE117_5',
+          T,
+          R
+        ],
+        [row(M('A2'), null, ME('A2')), 'C3', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE117_7', T, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [
+        [247, 1512, 'CONTROLLER:'],
+        [408, 1512, 'EHG+MD'],
+        [670, 1485, 'TRIGGER  :'],
+        [670, 1512, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+/* TCE118 TPC SIGNAL DIAGNOSTICS(8) (331DM09784 page 82, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The master trip solenoid valve test: CRT OPE. PERM., OPERATED B1 and B2 and the test push button of valve B1, each read from the three
+   protection controllers, out to a lamp and to TCE115. The title block of this page prints PAGE 80; it is page 82 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const M = v => ['MASTER TRIP SOLENOID', 'VALVE(' + v + ') TEST PB'],
+    ME = v => [...M(v), 'DISCREPANCY'],
+    D = ['DISCREPANCY'],
+    T = ['TCE115'],
+    R = ['TCP1200', 'TCP2200', 'TCP3200'],
+    row = (i, o, e) => ({ in: [i, i, i], out: [o || i, o || i, e] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE118',
+      title: 'TPC SIGNAL DIAGNOSTICS(8)',
+      page: 82,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [
+          row(['CRT OPE. PERM.'], null, ['CRT OPE. PERM. DISCREPANCY']),
+          'C1',
+          'A',
+          ['001', '004', '032'],
+          ['003', '005', '007'],
+          '031',
+          'TCE118_1',
+          T,
+          R
+        ],
+        [
+          row(['OPERATED B1'], null, ['OPERATED B1 DISCREPANCY']),
+          'C9',
+          'B',
+          ['008', '011', '033'],
+          ['010', '012', '014'],
+          '009',
+          'TCE118_3',
+          T,
+          R
+        ],
+        [
+          row(['OPERATED B2'], null, ['OPERATED B2', 'DISCREPANCY']),
+          'C10',
+          'C',
+          ['015', '018', '034'],
+          ['017', '019', '021'],
+          '016',
+          'TCE118_5',
+          T,
+          R
+        ],
+        [row(M('B1'), null, ME('B1')), 'C7', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE118_7', T, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [
+        [247, 1512, 'CONTROLLER:'],
+        [408, 1512, 'EHG+MD'],
+        [670, 1485, 'TRIGGER  :'],
+        [670, 1512, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+/* TCE119 TPC SIGNAL DIAGNOSTICS(9) (331DM09784 page 83, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The test push button of master trip solenoid valve B2 and CRT OPE. PERM. (out to a lamp and to TCE115), BOILER MFT 1AND 2 NOT SYN. and the
+   turbine manual trip push button of the CCR, each read from the three protection controllers. "1AND 2" is typed as the drawing prints it. The title block of this page prints PAGE 81; it is page 83 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const M = v => ['MASTER TRIP SOLENOID', 'VALVE(' + v + ') TEST PB'],
+    ME = v => [...M(v), 'DISCREPANCY'],
+    D = ['DISCREPANCY'],
+    T = ['TCE115'],
+    R = ['TCP1200', 'TCP2200', 'TCP3200'],
+    row = (i, o, e) => ({ in: [i, i, i], out: [o || i, o || i, e] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE119',
+      title: 'TPC SIGNAL DIAGNOSTICS(9)',
+      page: 83,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [
+          row(M('B2'), null, ME('B2')),
+          'C8',
+          'A',
+          ['001', '004', '032'],
+          ['003', '005', '007'],
+          '031',
+          'TCE119_1',
+          T,
+          R
+        ],
+        [
+          row(['CRT OPE. PERM.'], null, ['CRT OPE. PERM. DISCREPANCY']),
+          'C6',
+          'B',
+          ['008', '011', '033'],
+          ['010', '012', '014'],
+          '009',
+          'TCE119_3',
+          T,
+          R
+        ],
+        [
+          row(['BOILER MFT 1AND 2 NOT SYN.'], null, D),
+          'B',
+          'C',
+          ['015', '018', '034'],
+          ['017', '019', '021'],
+          '016',
+          'TCE119_5',
+          null,
+          ['TCP1503', 'TCP2503', 'TCP3503']
+        ],
+        [
+          row(['TURBINE MANUAL TRIP PB (CCR)'], null, D),
+          'E3',
+          'D',
+          ['022', '025', '035'],
+          ['024', '026', '030'],
+          '023',
+          'TCE119_7',
+          null,
+          ['TCP1121', 'TCP2121', 'TCP3121']
+        ]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [
+        [247, 1512, 'CONTROLLER:'],
+        [408, 1512, 'EHG+MD'],
+        [670, 1485, 'TRIGGER  :'],
+        [670, 1512, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
 /* TCE160 TARGET ACCELERATION (331DM09784 page 111, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE160',
@@ -66791,7 +67005,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 449eb41'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build ce54bef'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -95496,6 +95710,226 @@ function tcsSim(s) {
       or: ['027', '028'],
       e: ['E', ['-']],
       foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE117.js ---- */
+/* TCE117 TPC SIGNAL DIAGNOSTICS(7) (331DM09784 page 81, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The master trip solenoid valve test: OPERATED A1 and A2 and the test push buttons of valves A1 and A2, each read from the three protection
+   controllers, out to a lamp and to TCE115. The title block of this page prints PAGE 79; it is page 81 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const M = v => ['MASTER TRIP SOLENOID', 'VALVE(' + v + ') TEST PB'],
+    ME = v => [...M(v), 'DISCREPANCY'],
+    D = ['DISCREPANCY'],
+    T = ['TCE115'],
+    R = ['TCP1200', 'TCP2200', 'TCP3200'],
+    row = (i, o, e) => ({ in: [i, i, i], out: [o || i, o || i, e] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE117',
+      title: 'TPC SIGNAL DIAGNOSTICS(7)',
+      page: 81,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [
+          row(['OPERATED A1'], null, ['OPERATED A1 DISCREPANCY']),
+          'C4',
+          'A',
+          ['001', '004', '032'],
+          ['003', '005', '007'],
+          '031',
+          'TCE117_1',
+          T,
+          R
+        ],
+        [
+          row(['OPERATED A2'], null, ['OPERATED A2 DISCREPANCY']),
+          'C5',
+          'B',
+          ['008', '011', '033'],
+          ['010', '012', '014'],
+          '009',
+          'TCE117_3',
+          T,
+          R
+        ],
+        [
+          row(M('A1'), null, ME('A1')),
+          'C2',
+          'C',
+          ['015', '018', '034'],
+          ['017', '019', '021'],
+          '016',
+          'TCE117_5',
+          T,
+          R
+        ],
+        [row(M('A2'), null, ME('A2')), 'C3', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE117_7', T, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [
+        [247, 1512, 'CONTROLLER:'],
+        [408, 1512, 'EHG+MD'],
+        [670, 1485, 'TRIGGER  :'],
+        [670, 1512, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE118.js ---- */
+/* TCE118 TPC SIGNAL DIAGNOSTICS(8) (331DM09784 page 82, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The master trip solenoid valve test: CRT OPE. PERM., OPERATED B1 and B2 and the test push button of valve B1, each read from the three
+   protection controllers, out to a lamp and to TCE115. The title block of this page prints PAGE 80; it is page 82 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const M = v => ['MASTER TRIP SOLENOID', 'VALVE(' + v + ') TEST PB'],
+    ME = v => [...M(v), 'DISCREPANCY'],
+    D = ['DISCREPANCY'],
+    T = ['TCE115'],
+    R = ['TCP1200', 'TCP2200', 'TCP3200'],
+    row = (i, o, e) => ({ in: [i, i, i], out: [o || i, o || i, e] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE118',
+      title: 'TPC SIGNAL DIAGNOSTICS(8)',
+      page: 82,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [
+          row(['CRT OPE. PERM.'], null, ['CRT OPE. PERM. DISCREPANCY']),
+          'C1',
+          'A',
+          ['001', '004', '032'],
+          ['003', '005', '007'],
+          '031',
+          'TCE118_1',
+          T,
+          R
+        ],
+        [
+          row(['OPERATED B1'], null, ['OPERATED B1 DISCREPANCY']),
+          'C9',
+          'B',
+          ['008', '011', '033'],
+          ['010', '012', '014'],
+          '009',
+          'TCE118_3',
+          T,
+          R
+        ],
+        [
+          row(['OPERATED B2'], null, ['OPERATED B2', 'DISCREPANCY']),
+          'C10',
+          'C',
+          ['015', '018', '034'],
+          ['017', '019', '021'],
+          '016',
+          'TCE118_5',
+          T,
+          R
+        ],
+        [row(M('B1'), null, ME('B1')), 'C7', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE118_7', T, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [
+        [247, 1512, 'CONTROLLER:'],
+        [408, 1512, 'EHG+MD'],
+        [670, 1485, 'TRIGGER  :'],
+        [670, 1512, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE119.js ---- */
+/* TCE119 TPC SIGNAL DIAGNOSTICS(9) (331DM09784 page 83, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The test push button of master trip solenoid valve B2 and CRT OPE. PERM. (out to a lamp and to TCE115), BOILER MFT 1AND 2 NOT SYN. and the
+   turbine manual trip push button of the CCR, each read from the three protection controllers. "1AND 2" is typed as the drawing prints it. The title block of this page prints PAGE 81; it is page 83 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const M = v => ['MASTER TRIP SOLENOID', 'VALVE(' + v + ') TEST PB'],
+    ME = v => [...M(v), 'DISCREPANCY'],
+    D = ['DISCREPANCY'],
+    T = ['TCE115'],
+    R = ['TCP1200', 'TCP2200', 'TCP3200'],
+    row = (i, o, e) => ({ in: [i, i, i], out: [o || i, o || i, e] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE119',
+      title: 'TPC SIGNAL DIAGNOSTICS(9)',
+      page: 83,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [
+          row(M('B2'), null, ME('B2')),
+          'C8',
+          'A',
+          ['001', '004', '032'],
+          ['003', '005', '007'],
+          '031',
+          'TCE119_1',
+          T,
+          R
+        ],
+        [
+          row(['CRT OPE. PERM.'], null, ['CRT OPE. PERM. DISCREPANCY']),
+          'C6',
+          'B',
+          ['008', '011', '033'],
+          ['010', '012', '014'],
+          '009',
+          'TCE119_3',
+          T,
+          R
+        ],
+        [
+          row(['BOILER MFT 1AND 2 NOT SYN.'], null, D),
+          'B',
+          'C',
+          ['015', '018', '034'],
+          ['017', '019', '021'],
+          '016',
+          'TCE119_5',
+          null,
+          ['TCP1503', 'TCP2503', 'TCP3503']
+        ],
+        [
+          row(['TURBINE MANUAL TRIP PB (CCR)'], null, D),
+          'E3',
+          'D',
+          ['022', '025', '035'],
+          ['024', '026', '030'],
+          '023',
+          'TCE119_7',
+          null,
+          ['TCP1121', 'TCP2121', 'TCP3121']
+        ]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [
+        [247, 1512, 'CONTROLLER:'],
+        [408, 1512, 'EHG+MD'],
+        [670, 1485, 'TRIGGER  :'],
+        [670, 1512, 'CYCLE(ms):30']
+      ]
     })
   );
 })();
@@ -174345,7 +174779,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 449eb41'));
+    row('Version', E('span', 'scsver', ver + ' · build ce54bef'));
   }
   function openSet(near) {
     if (!set) {
