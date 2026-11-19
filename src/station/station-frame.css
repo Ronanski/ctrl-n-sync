@@ -178,3 +178,13 @@ button.st-cond.st-go span { text-decoration: underline; text-decoration-color: #
 .st-who:hover .st-ver { color: var(--st-tx); }
 .st-who:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-railfoot { padding: 8px 12px; }
+/* faults of the instructor: one line per device, its faults beside its name */
+.st-fl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px 0; border-top: 1px solid var(--st-line); }
+.st-fl:first-child { border-top: 0; }
+.st-fl span { flex: 1 1 160px; min-width: 0; }
+.st-fl .st-b { flex: none; height: auto; min-height: 28px; padding: 2px 8px; font-size: 12px; }
+.st-fl .st-b.arm { outline: 2px solid var(--st-alm); outline-offset: -1px; background: #4a3508; color: #fff; }
+.st-flh { margin: 8px 0 0; font: 600 12px var(--st-ui); color: var(--st-dim); }
+@media (pointer: coarse) { .st-fl .st-b { min-height: 40px; padding: 2px 12px; } }
+/* a popup uses the height the screen has (a long list scrolls less) */
+.st-body { max-height: calc(100vh - 150px); }

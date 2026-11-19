@@ -1081,27 +1081,57 @@
       again = () => setTimeout(fillFaults, 300);
     const FL = [...call(() => AN.fault(), []), ...call(() => WORLD.ftrip(), [])];
     if (!FL.length) N.push(E('p', 'st-none', 'No fault in this starting point.'));
+    /* One line per instrument or machine: its name once, its faults as small buttons beside it ("signal lost", "over range"). A fault whose words
+       do not end the name of a tagged device ("... (TAG) fault") is a line of its own. The lines stand in groups by kind of fault. */
+    const D = [];
     for (const f of FL) {
-      const id = 'flt-' + String(f.id).replace(/\W/g, '-'),
-        b = E('button', 'st-b' + (f.on ? ' on' : ''), f.t);
-      b.setAttribute('aria-pressed', String(!!f.on));
-      b.title = f.on ? 'On: press to clear it' : 'Puts the fault on the running plant until it is cleared';
-      if (f.on)
-        b.onclick = () => {
-          pressId(id);
-          again();
-        };
-      else
-        arm(
-          b,
-          f.t,
-          () => {
+      const m = /^(.*\))\s+(\S.*)$/.exec(String(f.t)),
+        dev = m ? m[1] : '',
+        kind = m ? m[2].charAt(0).toUpperCase() + m[2].slice(1) : String(f.t);
+      let d = dev && D.find(x => x.dev === dev);
+      if (!d) D.push((d = { dev, L: [] }));
+      d.L.push([f, kind]);
+    }
+    /* the kinds of fault, in the order an instructor reaches for them; a fault that fits none stands under Other */
+    const KIND = [
+      ['Instruments and valves', t => false],
+      ['Machine trips', t => /trips in the field/i.test(t)],
+      ['Electrical', t => /black-out|frequency|lockout|bus|grid/i.test(t)],
+      ['Fuel', t => /coal/i.test(t)],
+      ['Leaks and plugging', t => /leak|plugged/i.test(t)],
+      ['Other', t => true]
+    ];
+    for (const d of D) d.k = d.dev ? 0 : KIND.findIndex(k => k[1](String(d.L[0][0].t)));
+    D.sort((p, q) => p.k - q.k);
+    let head = -1;
+    for (const d of D) {
+      if (d.k !== head) N.push(E('h3', 'st-flh', KIND[(head = d.k)][0]));
+      const row = E('div', 'st-fl');
+      if (d.dev) row.append(E('span', '', d.dev));
+      for (const [f, kind] of d.L) {
+        const id = 'flt-' + String(f.id).replace(/\W/g, '-'),
+          b = E('button', 'st-b' + (f.on ? ' on' : ''), kind);
+        b.setAttribute('aria-pressed', String(!!f.on));
+        b.setAttribute('aria-label', f.t);
+        b.title = f.on ? 'On: press to clear it' : 'Puts the fault on the running plant until it is cleared';
+        if (f.on)
+          b.onclick = () => {
             pressId(id);
             again();
-          },
-          true
-        );
-      N.push(b);
+          };
+        else
+          arm(
+            b,
+            kind,
+            () => {
+              pressId(id);
+              again();
+            },
+            true
+          );
+        row.append(b);
+      }
+      N.push(row);
     }
     if (FL.some(f => f.on)) {
       const c = E('button', 'st-b', 'Clear all faults');
