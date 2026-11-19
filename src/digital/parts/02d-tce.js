@@ -205,8 +205,9 @@ function tceSheet(q) {
   /* small blocks: the type over the block number */
   for (const [key, type, no, x, y, notes, pins, size] of q.b || []) {
     if (type === 'X') {
-      /* the crossed circle of the drawing on an input line (the signal taken inverted), type 'X': no name, no number */
-      const r = 3.4 * u,
+      /* the crossed circle of the drawing on an input line (the signal taken inverted), type 'X': no name, no number; with a size [r] it is the
+         larger crossed circle of a field transmitter */
+      const r = size ? size[0] : 3.4 * u,
         e = r * 0.7071;
       ci.push([X(x), Y(y), W(r), 'SYM']);
       poly([[x - e, y - e], [x + e, y + e]], 0);
