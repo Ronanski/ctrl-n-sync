@@ -12,7 +12,9 @@
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
      a: [[x1, y1], [x2, y2]]                                         note arrow of the drawing (open head at the second point)
-     l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical
+     l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical;
+                                                                     e: the same, dashed; o: [x, y, r, dbl] circle of a part (a summing point,
+                                                                     dbl 1 = a servo valve coil); p: [[x, y], ...] closed outline (an amplifier)
      d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
@@ -129,6 +131,24 @@ function tceSheet(q) {
   }
   /* plain lines of the drawing that carry no signal (the rules of a table) */
   for (const [a, b] of q.l || []) poly([a, b], 0);
+  /* the same, dashed (the border of a field part such as the servo valve), horizontal or vertical */
+  for (const [a, b] of q.e || []) {
+    const L = Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]),
+      sx = Math.sign(b[0] - a[0]),
+      sy = Math.sign(b[1] - a[1]),
+      on = 4 * u,
+      off = 3 * u;
+    for (let s = 0; s < L; s += on + off) {
+      const t = Math.min(s + on, L);
+      poly([[a[0] + sx * s, a[1] + sy * s], [a[0] + sx * t, a[1] + sy * t]], 0);
+    }
+  }
+  /* part symbols that carry no signal of the sheet: o = a circle (a summing point; dbl 1 = a servo valve coil), p = a closed outline (an amplifier) */
+  for (const [x, y, r, dbl] of q.o || []) {
+    ci.push([X(x), Y(y), W(r), 'SYM']);
+    if (dbl) ci.push([X(x), Y(y), W(r * 0.65), 'SYM']);
+  }
+  for (const P of q.p || []) poly(P, 1);
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
     poly([a, b], 0);
