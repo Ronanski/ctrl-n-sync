@@ -636,6 +636,13 @@ function tcsTripReset(U) {
   /* beta.240: the 86G-A lockout is reset with it, 52G open (unit.js anRp32) */
   if (U.rp32 && !(U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'))) U.rp32.lo = false;
   if (U.tc) U.tc.sdDone = false;
+  /* LMYP OTS (Rose, Turbine trip page): the press is made, but a trip input of TA-9 that is still at 1 keeps the A gate of the reset at 0
+     (IBD TA-1): the answer names what holds the trip, so the page and the Event log say why nothing reset */
+  try {
+    const t = tcsTripState(U),
+      h = t && t.held ? t.held : [];
+    if (h.length) return 'Trip still held by: ' + [...new Set(h)].join(', ');
+  } catch (e) {}
   return '';
 }
 /* a signal of a sheet held at a value (a field contact, a test) */

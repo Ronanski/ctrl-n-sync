@@ -533,6 +533,32 @@ function tcsCmd(U, cmd, arg) {
     case 'auto':
       c.auto = on;
       return '';
+    /* LMYP OTS (TCS study 2026-11-19): the speed control of the TCS CRT with ATS AUTO OFF, Hitachi TCS soft logic 331DM09784:
+       TCE161 / 162 TARGET SPEED: CLOSE VALVES / RUB CHECK 200 / LOW 1800 / MED 2700 / RATED 3600 rpm, one select at a time, CRT only while
+       not ATS AUTO(C), refused after 52G CLOSE (TCE053) and with a TURBINE TRIP (reset of the selects). TCE160 TARGET ACCELERATION: SLOW
+       120 / MED 180 / FAST 360 rpm/min (SG C034 / C037 / C039). TCE164 TARGET SPEED HOLD: the HOLD of the CRT (c.opHold), not in the
+       critical speed zone. arg: rpm (0 = CLOSE VALVES) / 'slow' | 'med' | 'fast' */
+    case 'tspeed': {
+      if (c.auto) return 'ATS AUTO is ON: the ATS selects the target speed (TCA582). Put ATS AUTO OFF first';
+      if (tb.st === 'sync' || tb.st === 'load') return '52G is closed: the governor has the load, not the target speed';
+      if (!c.rst) return 'The turbine is not reset (MSV closed): TURBINE PREPARATION first';
+      const x = +arg;
+      if (![0, 200, 1800, 2700, 3600].includes(x)) return 'Target speed: 0 (CLOSE VALVES), 200, 1800, 2700 or 3600 rpm (TCE161)';
+      if (c.cur >= 0 && c.cur !== 2 && c.cur !== 3) return 'Step running: ' + TCS.names[c.cur];
+      if (c.cur === 2 || c.cur === 3) {
+        c.cur = -1;
+        c.ph = '';
+      }
+      c.spd = Object.assign(c.spd || { acc: 120 }, { sel: x });
+      return '';
+    }
+    case 'accel': {
+      if (c.auto) return 'ATS AUTO is ON: the ATS selects the acceleration rate (TCA584)';
+      const r = { slow: 120, med: 180, fast: 360 }[String(arg).toLowerCase()];
+      if (!r) return 'Acceleration: slow (120), med (180) or fast (360 rpm/min) (TCE160)';
+      c.spd = Object.assign(c.spd || { sel: null }, { acc: r });
+      return '';
+    }
     case 'hold':
       c.opHold = on;
       return '';
@@ -561,7 +587,10 @@ function tcsStepIn(U, k, arg) {
   }
   /* the step before: 0 is skipped when the HP first stage metal is above 150 C (page 13 *1); the rub check is bypassed in warm / hot
      (page 14 Fig. 1: complete when not ambient cold / cold 1, PR-OPE-5002 8267) */
-  const need = k === 1 ? -1 : k === 3 && !(c.mode === 'amb' || c.mode === 'c1') ? 1 : k - 1;
+  /* LMYP OTS: with the speed brought to RATED 3600 rpm by the CRT target speed (ATS AUTO OFF, TCE161) the ACCELERATION step of the ATS is
+     not used; EXCITATION then needs the turbine reset and its own criteria A4 (rated speed 2.4 > 3550 rpm, 310SC90-776) */
+  const crt = k === 4 && c.spd && c.spd.sel === 3600 && c.step >= 1 && tb.rpm > 3550;
+  const need = crt ? 1 : k === 1 ? -1 : k === 3 && !(c.mode === 'amb' || c.mode === 'c1') ? 1 : k - 1;
   if (c.step < need)
     return 'Finish step ' + need + ' ' + TCS.names[need] + ' (ATS page ' + [13, 14, 17, 19, 23, 24, 26, 28][need] + ')';
   if (c.step >= k) return 'Already done: ' + TCS.names[k];
@@ -671,6 +700,19 @@ function tcsStep(U, dt) {
     if (nx <= (c.autoTo == null ? 5 : c.autoTo) && !tcsMiss(U, TCS_A[nx])) tcsStepIn(U, nx);
   }
   c.tm += dt;
+  /* LMYP OTS: the CRT target speed (tcsCmd 'tspeed' / 'accel', TCE160 ~ 164) while no ATS step runs and the generator is off the line:
+     the speed goes to the selected target at the selected acceleration (held by a HOLD outside the critical zone, as the ATS ramp);
+     CLOSE VALVES (0) closes the ICV and the turbine coasts down at the rate of the rub check (100 rpm/min, page 17) */
+  if (c.spd && c.spd.sel != null && c.cur < 0 && tb.st === 'roll') {
+    if (c.spd.sel > 0) {
+      tb.icv = Math.min(TCS_ICV, tb.icv + dt / 60);
+      if (run && tb.rpm < c.spd.sel) tb.rpm = Math.min(c.spd.sel, tb.rpm + (c.spd.acc * dt) / 60);
+      else if (tb.rpm > c.spd.sel) tb.rpm = Math.max(c.spd.sel, tb.rpm - (100 * dt) / 60);
+    } else {
+      tb.icv = 0;
+      tb.rpm = Math.max(0, tb.rpm - (100 * dt) / 60);
+    }
+  }
   switch (c.cur) {
     case 0 /* HP TURBINE WARMING (page 13): metal <= 150 C -> warming with steam through CV (B), until above 150 C (IBD 310SC90-794
         TE-1 page 90: TE-STn001-1 HP TURBINE FIRST STAGE comparator ON >= 150 C, OFF <= 145 C = HP TURBINE WARMING COMPLETE) */:
@@ -1097,6 +1139,7 @@ function tcsTrip(U) {
   if (!c) return;
   tcsGenTrip(U);
   Object.assign(c, { step: -1, cur: -1, ph: '', rst: false, exc: false, auto: false, byp: {} });
+  if (c.spd) c.spd.sel = null; /* TCE161: TURBINE TRIP resets the target speed selects */
   tcsMode(U);
 }
 /* what the TCS panel shows */
@@ -1135,6 +1178,9 @@ function tcsState() {
     holdMin: c.holdMin,
     gen: U.gen ? { f41: U.gen.f41, volt: Math.abs(U.gen.V - 1) <= 0.02, slip: U.gen.slip, th: U.gen.th, sync: U.gen.x25, on25: U.gen.on25, msg: U.gen.last } : null,
     hold: c.hold,
+    /* LMYP OTS: the CRT target speed and acceleration (TCE160 ~ 162); null = none selected */
+    tspeed: c.spd && c.spd.sel != null ? c.spd.sel : null,
+    accel: c.spd ? c.spd.acc : 120,
     rpm: U.tb ? U.tb.rpm : 0,
     Pa: c.Pa,
     Thp: c.Thp,
