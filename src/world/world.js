@@ -1281,6 +1281,19 @@
   /* 3.2.4-beta.13 (JENNIE, priority list item: coal quality): wet coal, a trainer fault (unit.js anCoalWet: the coal moisture 33.96 % of the
      performance coal, FHI P2S7 Tab 2, rises to 40 %, NO-SOURCE trainer setting: rain on the coal yard). No DITL contact: the DCS has no
      coal analyser; the operator sees more coal per MW (FIC-CM), the O2 and the bed temperature */
+  /* Jennie live shutdown 2026-11-19 (F-au): the IRP bypass of an MFT input, a field action of the I&C (a jumper on the interlock relay
+     panel), not a DCS control: DITL-03A rows 2 ~ 19 come from the IRP / ARP and have no bypass push button on any drawing. PR-OPE-5003
+     (normal shutdown, coal-out step): "During normal shutdown, bypass turbine trip alarm at MFT and boiler interlock to maintain boiler
+     operation." Bypassed = the contact of that row reads open on DITL-03A (03b-sim.js simIn), the trip itself stays on DITL-03H, the
+     annunciator and the TCS. The other turbine trip path of DITL-03H (turbine trip AND HP bypass < 10 % AND cyclone gas > 535 C for 5 s ->
+     CYCLONE OUTLET GAS TEMP. H.H. (NO REHEATER STEAM), 03A row 17) is not bypassed: the SOP opens the HP bypass for it */
+  W.IB = { 'ib.tt': { sh: 'DITL-03A', n: 19, t: 'IRP bypass: TURBINE TRIP to MFT (DITL-03A row 19)' } };
+  const ibSet = (id, on) => {
+    if (on) W.ft.add(id);
+    else W.ft.delete(id);
+    W.busy = true;
+    return (on ? 'ON: ' : 'removed: ') + W.IB[id].t;
+  };
   const WET = 'cf.wet',
     WET_T = 'Wet coal: moisture 34 % to 40 % (less heat per tonne)';
   const wetSet = on => {
@@ -1344,11 +1357,13 @@
         .concat(Object.keys(TL).map(k => ({ id: k, g: 'tl', t: TL[k], on: W.ft.has(k) })))
         .concat(Object.keys(HL).map(k => ({ id: k, g: 'hl', t: HL[k], on: W.ft.has(k) })))
         .concat(Object.keys(AP).map(k => ({ id: k, g: 'ap', t: AP[k], on: W.ft.has(k) })))
-        .concat([{ id: WET, g: 'cq', t: WET_T, on: W.ft.has(WET) }]);
+        .concat([{ id: WET, g: 'cq', t: WET_T, on: W.ft.has(WET) }])
+        .concat(Object.keys(W.IB).map(k => ({ id: k, g: 'ib', t: W.IB[k].t, on: W.ft.has(k) })));
     if (id === BO) return boSet(on);
     if (JAM[id]) return jamSet(id, on);
     if (TL[id] || HL[id] || AP[id]) return tlSet(id, !!on);
     if (id === WET) return wetSet(!!on);
+    if (W.IB[id]) return ibSet(id, !!on);
     const f = FT[id],
       s = f && ftSheet(f.sh);
     if (!s) return '';

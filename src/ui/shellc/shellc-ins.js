@@ -148,7 +148,9 @@
     /* faults: the trainer faults of engine/faults.js and the motor trips of WORLD.ftrip, through their buttons (flt-*) */
     body.append(head('Faults (field)'));
     r = row();
-    const FL = [...call(() => AN.fault(), []), ...call(() => WORLD.ftrip(), [])];
+    const FL0 = [...call(() => AN.fault(), []), ...call(() => WORLD.ftrip(), [])],
+      FL = FL0.filter(f => f.g !== 'ib'),
+      IBL = FL0.filter(f => f.g === 'ib');
     if (!FL.length) r.append(E('p', 'scnone', 'Load a start state first.'));
     for (const f of FL) {
       const id = 'flt-' + f.id.replace(/\W/g, '-'),
@@ -190,6 +192,14 @@
     }
     r.append(tt, mft);
     if (l52) r.append(l52);
+    /* F-au (PR-OPE-5003): the IRP bypass of the turbine trip into the MFT, a field action of the I&C (world.js W.IB) */
+    for (const f of IBL) {
+      const id = 'flt-' + f.id.replace(/\W/g, '-'),
+        b = btn(f.on ? f.t + ': ON' : f.t, f.on ? 'Jumper in: press to remove it' : 'Puts the jumper in (asks first)', null, f.on ? 'flt on' : 'flt');
+      if (f.on) b.onclick = () => (press(id), setTimeout(fill, 100));
+      else arm(b, f.t, () => (press(id), setTimeout(fill, 100)), { q: 'Bypass the turbine trip into the MFT?', t: 'I&C puts a jumper on the interlock relay panel (PR-OPE-5003 normal shutdown): a turbine trip no longer trips the boiler. Open the HP bypass at the trip, or the cyclone gas trip (no reheater steam) still trips it.', ok: 'Bypass', danger: true });
+      r.append(b);
+    }
     body.append(r);
     /* turbine panel extras and the recorder */
     body.append(head('Turbine and recorder'));
