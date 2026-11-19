@@ -51,6 +51,9 @@ for (const f of files) {
     for (const h of q.h || []) if (h[0] !== '') add(h[0]);
     for (const b of q.b || []) add(b[0]);
     for (const r of q.r || []) if (r[0] !== '') add(r[0]);
+    for (const s of q.s || []) if (s.length !== 5) E("a source place is not [key, x1, y1, x2, y2]"); else add(s[0]);
+    for (const p of q.j || []) if (!p || p.length !== 2) E("a junction dot is not [x, y]");
+    for (const P of q.v || []) if (!P || P.length < 2) E("an open outline has less than 2 points");
     for (const d of q.d || []) {
       add(d[0]);
       if (d[3] !== 'in' && d[3] !== 'out') E('CRT diamond ' + d[0] + ': in or out');

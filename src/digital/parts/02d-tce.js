@@ -40,7 +40,11 @@
      b types: 'G:A' / 'G:OR' ...                                     gate of the IBD: a box with its letter, size [w, h, bar] (bar = the height of its
                                                                      input edge, longer than the box); 'SR' = the flip-flop (S over a circled R), size
                                                                      [w, h]; 'NC' = the circle of a NOT on a line, size [r]
-     r key '': a box that gives no signal (an annunciator window); t: [x, y, text, align, size] */
+     r key '': a box that gives no signal (an annunciator window); t: [x, y, text, align, size]
+     s: [key, x1, y1, x2, y2]                                        a source with no symbol of its own (the input switch of a row, drawn by its
+                                                                     lines): only its place on the sheet
+     v: [[x, y], ...]                                                open outline with slanted pieces (a mark of the drawing that carries no signal)
+     j: [[x, y], ...]                                                junction dot of the drawing (the net is the one of the wire through it) */
 const TCE_SHEETS = typeof window !== 'undefined' && window.TCE_SHEETS ? window.TCE_SHEETS : [];
 const tceCat = id => (/^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : 'GOVERNOR SOFT LOGIC (TCE)');
 function tceSheet(q) {
@@ -197,6 +201,12 @@ function tceSheet(q) {
     if (dbl) ci.push([X(x), Y(y), W(r * 0.65), 'SYM']);
   }
   for (const P of q.p || []) poly(P, 1);
+  for (const P of q.v || []) poly(P, 0);
+  /* sources drawn by plain lines (the input switch of an IBD row): only the place */
+  for (const [key, x1, y1, x2, y2] of q.s || []) {
+    at(key, x1, y1, x2, y2);
+    net(key);
+  }
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
     poly([a, b], 0);
@@ -300,8 +310,9 @@ function tceSheet(q) {
   for (const [x, y, t, a, h] of q.t || []) tx.push(text(t, x, y, h || 2.05, a || 0));
   /* junction dots: a wire end on the middle of another wire of the same net */
   const dots = [];
+  /* (a sheet that lists its dots (j) shows only those: the ends of its short wire pieces are no junctions) */
   ln.forEach((a, i) => {
-    if (seg[i] === undefined) return;
+    if (seg[i] === undefined || q.j) return;
     [[a[0], a[1]], [a[2], a[3]]].forEach(p =>
       ln.some((b, j) => {
         if (j === i || seg[j] !== seg[i]) return false;
@@ -314,6 +325,20 @@ function tceSheet(q) {
       })
     );
   });
+  /* the junction dots the drawing shows (an IBD sheet): the net of the wire through the point */
+  for (const [x, y] of q.j || []) {
+    const px = X(x),
+      py = Y(y);
+    const i = ln.findIndex(
+      (b, i) =>
+        seg[i] !== undefined &&
+        px >= Math.min(b[0], b[2]) - 0.15 &&
+        px <= Math.max(b[0], b[2]) + 0.15 &&
+        py >= Math.min(b[1], b[3]) - 0.15 &&
+        py <= Math.max(b[1], b[3]) + 0.15
+    );
+    if (i >= 0) dots.push({ x: px, y: py, n: seg[i] });
+  }
   /* an analog signal: a second line close beside the first, as the heavy line of the drawing (after the junction dots are found) */
   for (const [a, b, n] of heavy) {
     const dx = a[1] === b[1] ? 0 : 0.3,

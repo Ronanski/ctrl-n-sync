@@ -105,6 +105,9 @@ tce/TCE305.js
 tce/TCE310.js
 tce/TCE172.js
 tce/IBD-15.js
+tce/IBD-16.js
+tce/IBD-17.js
+tce/IBD-18.js
 parts/02d-tce.js
 parts/03-models.js
 parts/03b-sim.js
