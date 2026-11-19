@@ -4660,7 +4660,7 @@ function tcsSim(s) {
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag, sheets of the output connector] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
+     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -4678,12 +4678,13 @@ function tcsSim(s) {
       OY = [1141, 1161, 1182, 1204],
       OX = [1485, 1432, 1379, 1303],
       OL = 1540;
-    o.g.forEach(([name, il, ol, im, om, no, tag, ref], g) => {
+    o.g.forEach(([name, il, ol, im, om, no, tag, ref, ir, x = {}], g) => {
       const top = o.tops[g],
         k = 'tid' + (g + 1),
         p = i => pin(top, i),
         last = g === 3,
-        ye = last ? 1237 : p(4),
+        ye = last ? (x.el ? 1249 : 1237) : p(4) + (x.ey || 0),
+        ex = last ? 1655 : 1647,
         /* the names: one name for the whole block (with o.line2 under it), or { in: [lines of each input], out: [lines of the lamp, of the connector,
            of the input error] } as the drawing prints them; the last line of a name stands on its wire */
         nm =
@@ -4695,7 +4696,7 @@ function tcsSim(s) {
         [BX + 90, top + 172, 'TP:3.0'],
         [BX + 105, top + 246, '(LME105)']
       ]]);
-      ['TCP1050', 'TCP2050', 'TCP3050'].forEach((r, i) => {
+      (ir || ['TCP1050', 'TCP2050', 'TCP3050']).forEach((r, i) => {
         const key = 'i' + (g + 1) + (i + 1),
           y = p(2 * i);
         const N = nm.in[i];
@@ -4704,17 +4705,39 @@ function tcsSim(s) {
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
         w.push([key, [[307, y], [BX, y]]]);
       });
-      /* OUT: the lamp and the connector */
-      d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
-      c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']], ['o' + ol + '1', 'out', ol + '1', 2092, ye, '', ['-']]);
-      b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64], ['mo' + (g + 1) + 'c', 'o:BTR', om[2], last ? 1655 : 1647, ye]);
-      w.push([k + '.OUT', [[BX + BW, p(0)], [2070, p(0)]]], [k + '.OUT', [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
-      lines(nm.out[0], 1716, p(0));
-      lines(nm.out[1], 1716, p(0) + 64);
+      if (x.two) {
+        /* OUT: a connector and, under it, a second one; no lamp */
+        c.push(['o' + ol, 'out', ol, 2103, p(0), '', ref || ['-']], ['o' + x.two[0], 'out', x.two[0], 2103, p(0) + 56, '', x.two[1], 1]);
+        b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)]);
+        w.push([k + '.OUT', [[BX + BW, p(0)], [2076, p(0)]]], [k + '.OUT', [[1963, p(0)], [1963, p(0) + 56], [2076, p(0) + 56]]]);
+        lines(nm.out[0], 1722, p(0));
+      } else {
+        /* OUT: the lamp and the connector */
+        d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
+        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']]);
+        b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
+        w.push([k + '.OUT', [[BX + BW, p(0)], [2070, p(0)]]], [k + '.OUT', [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
+        lines(nm.out[0], 1716, p(0));
+        lines(nm.out[1], 1716, p(0) + 64);
+      }
+      /* DEV E: the connector (with x.el a lamp, and the connector under it) and the OR */
+      const yc = x.el ? ye + 64 : ye,
+        xe = x.el ? 2070 : 2065;
+      if (x.el) {
+        d.push(['crte' + (g + 1), 2105, ye, 'out', x.el, 'S', '#1C']);
+        b.push(['mo' + (g + 1) + 'd', 'o:BTR', om[3], ex, yc]);
+        w.push([k + '.DEV E', [[1539, ye], [1539, yc], [2065, yc]]]);
+        lines(nm.out[3] || nm.out[2], last ? 1713 : 1704, yc);
+      }
+      c.push(['o' + ol + '1', 'out', ol + '1', 2092, yc, '', ['-']]);
+      b.push(['mo' + (g + 1) + 'c', 'o:BTR', om[2], ex, ye]);
       lines(nm.out[2], last ? 1713 : 1704, ye);
-      /* DEV E: the connector and the OR */
-      if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [2065, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
-      else w.push([k + '.DEV E', [[BX + BW, ye], [2065, ye]]], [k + '.DEV E', [[OX[g], ye], [OX[g], OY[g]], [OL, OY[g]]]]);
+      if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [xe, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
+      else
+        w.push(
+          [k + '.DEV E', x.ey ? [[BX + BW, p(4)], [1535, p(4)], [1535, ye], [xe, ye]] : [[BX + BW, ye], [xe, ye]]],
+          [k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]
+        );
     });
     b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
     c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
@@ -6659,6 +6682,95 @@ function tcsSim(s) {
         [{ in: [B, B, B], out: [B, B, [T, 'PROTECTION B INPUT ERROR']] }, 'B6', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE076_3'],
         [{ in: [M, M, M], out: [M, M, [...M, 'INPUT ERROR']] }, 'B7', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE076_5'],
         [{ in: [G, G, G], out: [G, G, [...G, 'INPUT ERROR']] }, 'B8', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE076_7', ['TCE601']]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE077 DIGITAL INPUT SIGNAL DIAGNOSTICS(3) (331DM09784 page 44, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Four spare signals. The first is read from sheets TCP1055, TCP2055 and TCP3055, the others from TCP1050, TCP2050 and TCP3050. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE077',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(3)',
+      page: 44,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B3', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE077_1', null, ['TCP1055', 'TCP2055', 'TCP3055']],
+        [N, 'B10', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE077_3'],
+        [N, 'B11', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE077_5'],
+        [N, 'B12', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE077_7']
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE078 DIGITAL INPUT SIGNAL DIAGNOSTICS(4) (331DM09784 page 45, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Three spare signals and P.S.NORMAL. On this sheet the input error of each block also has a lamp of the operator station. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const S = ['(SPARE)'],
+    E = ['INPUT ERROR'],
+    N = { in: [S, S, S], out: [S, S, E, E] },
+    P = ['P.S.NORMAL'],
+    PE = ['P.S.NORMAL', 'INPUT ERROR'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE078',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(4)',
+      page: 45,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B13', 'A', ['001', '004', '032'], ['003', '005', '006', '007'], '031', 'TCE078_1', null, null, { el: 'TCE078_2' }],
+        [N, 'B14', 'B', ['008', '011', '033'], ['010', '012', '013', '014'], '009', 'TCE078_3', null, null, { el: 'TCE078_4' }],
+        [N, 'B15', 'C', ['015', '018', '034'], ['017', '019', '020', '021'], '016', 'TCE078_5', null, null, { el: 'TCE078_6' }],
+        [{ in: [P, P, P], out: [P, P, PE, PE] }, 'B16', 'D', ['022', '025', '035'], ['024', '026', '029', '030'], '023', 'TCE078_7', null, null, { el: 'TCE078_8' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE079 DIGITAL INPUT SIGNAL DIAGNOSTICS(5) (331DM09784 page 46, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Ventilator valve full close and full open position, and two spare signals. The two positions have no lamp here: each goes out by two connectors. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1051', 'TCP2051', 'TCP3051'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] },
+    V = p => {
+      const L = ['VENTILATOR VALVE', 'FULL ' + p + ' POSITION'];
+      return { in: [L, L, L], out: [L, L, [...L, 'INPUT ERROR']] };
+    };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE079',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(5)',
+      page: 46,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [V('CLOSE'), 'B1', 'A', ['001', '004', '032'], ['005', '', '007'], '031', '', ['TCE360'], R, { two: ['A2', ['TCT081A']] }],
+        [V('OPEN'), 'B2', 'B', ['008', '011', '033'], ['012', '', '014'], '009', '', ['TCE360'], R, { two: ['B2', ['TCT081A']] }],
+        [N, 'B3', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE079_5', null, R, { ey: 64 }],
+        [N, 'B4', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE079_7', null, R]
       ],
       or: ['027', '028'],
       e: ['E', ['TCE471']],
@@ -51290,7 +51402,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build a2ecc55'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build d5dbeff'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -76029,7 +76141,7 @@ function tcsSim(s) {
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag, sheets of the output connector] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
+     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -76047,12 +76159,13 @@ function tcsSim(s) {
       OY = [1141, 1161, 1182, 1204],
       OX = [1485, 1432, 1379, 1303],
       OL = 1540;
-    o.g.forEach(([name, il, ol, im, om, no, tag, ref], g) => {
+    o.g.forEach(([name, il, ol, im, om, no, tag, ref, ir, x = {}], g) => {
       const top = o.tops[g],
         k = 'tid' + (g + 1),
         p = i => pin(top, i),
         last = g === 3,
-        ye = last ? 1237 : p(4),
+        ye = last ? (x.el ? 1249 : 1237) : p(4) + (x.ey || 0),
+        ex = last ? 1655 : 1647,
         /* the names: one name for the whole block (with o.line2 under it), or { in: [lines of each input], out: [lines of the lamp, of the connector,
            of the input error] } as the drawing prints them; the last line of a name stands on its wire */
         nm =
@@ -76064,7 +76177,7 @@ function tcsSim(s) {
         [BX + 90, top + 172, 'TP:3.0'],
         [BX + 105, top + 246, '(LME105)']
       ]]);
-      ['TCP1050', 'TCP2050', 'TCP3050'].forEach((r, i) => {
+      (ir || ['TCP1050', 'TCP2050', 'TCP3050']).forEach((r, i) => {
         const key = 'i' + (g + 1) + (i + 1),
           y = p(2 * i);
         const N = nm.in[i];
@@ -76073,17 +76186,39 @@ function tcsSim(s) {
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
         w.push([key, [[307, y], [BX, y]]]);
       });
-      /* OUT: the lamp and the connector */
-      d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
-      c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']], ['o' + ol + '1', 'out', ol + '1', 2092, ye, '', ['-']]);
-      b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64], ['mo' + (g + 1) + 'c', 'o:BTR', om[2], last ? 1655 : 1647, ye]);
-      w.push([k + '.OUT', [[BX + BW, p(0)], [2070, p(0)]]], [k + '.OUT', [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
-      lines(nm.out[0], 1716, p(0));
-      lines(nm.out[1], 1716, p(0) + 64);
+      if (x.two) {
+        /* OUT: a connector and, under it, a second one; no lamp */
+        c.push(['o' + ol, 'out', ol, 2103, p(0), '', ref || ['-']], ['o' + x.two[0], 'out', x.two[0], 2103, p(0) + 56, '', x.two[1], 1]);
+        b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)]);
+        w.push([k + '.OUT', [[BX + BW, p(0)], [2076, p(0)]]], [k + '.OUT', [[1963, p(0)], [1963, p(0) + 56], [2076, p(0) + 56]]]);
+        lines(nm.out[0], 1722, p(0));
+      } else {
+        /* OUT: the lamp and the connector */
+        d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
+        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']]);
+        b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
+        w.push([k + '.OUT', [[BX + BW, p(0)], [2070, p(0)]]], [k + '.OUT', [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
+        lines(nm.out[0], 1716, p(0));
+        lines(nm.out[1], 1716, p(0) + 64);
+      }
+      /* DEV E: the connector (with x.el a lamp, and the connector under it) and the OR */
+      const yc = x.el ? ye + 64 : ye,
+        xe = x.el ? 2070 : 2065;
+      if (x.el) {
+        d.push(['crte' + (g + 1), 2105, ye, 'out', x.el, 'S', '#1C']);
+        b.push(['mo' + (g + 1) + 'd', 'o:BTR', om[3], ex, yc]);
+        w.push([k + '.DEV E', [[1539, ye], [1539, yc], [2065, yc]]]);
+        lines(nm.out[3] || nm.out[2], last ? 1713 : 1704, yc);
+      }
+      c.push(['o' + ol + '1', 'out', ol + '1', 2092, yc, '', ['-']]);
+      b.push(['mo' + (g + 1) + 'c', 'o:BTR', om[2], ex, ye]);
       lines(nm.out[2], last ? 1713 : 1704, ye);
-      /* DEV E: the connector and the OR */
-      if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [2065, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
-      else w.push([k + '.DEV E', [[BX + BW, ye], [2065, ye]]], [k + '.DEV E', [[OX[g], ye], [OX[g], OY[g]], [OL, OY[g]]]]);
+      if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [xe, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
+      else
+        w.push(
+          [k + '.DEV E', x.ey ? [[BX + BW, p(4)], [1535, p(4)], [1535, ye], [xe, ye]] : [[BX + BW, ye], [xe, ye]]],
+          [k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]
+        );
     });
     b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
     c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
@@ -78082,6 +78217,101 @@ function tcsSim(s) {
         [{ in: [B, B, B], out: [B, B, [T, 'PROTECTION B INPUT ERROR']] }, 'B6', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE076_3'],
         [{ in: [M, M, M], out: [M, M, [...M, 'INPUT ERROR']] }, 'B7', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE076_5'],
         [{ in: [G, G, G], out: [G, G, [...G, 'INPUT ERROR']] }, 'B8', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE076_7', ['TCE601']]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE077.js ---- */
+/* TCE077 DIGITAL INPUT SIGNAL DIAGNOSTICS(3) (331DM09784 page 44, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Four spare signals. The first is read from sheets TCP1055, TCP2055 and TCP3055, the others from TCP1050, TCP2050 and TCP3050. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE077',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(3)',
+      page: 44,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B3', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE077_1', null, ['TCP1055', 'TCP2055', 'TCP3055']],
+        [N, 'B10', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE077_3'],
+        [N, 'B11', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE077_5'],
+        [N, 'B12', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE077_7']
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE078.js ---- */
+/* TCE078 DIGITAL INPUT SIGNAL DIAGNOSTICS(4) (331DM09784 page 45, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Three spare signals and P.S.NORMAL. On this sheet the input error of each block also has a lamp of the operator station. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const S = ['(SPARE)'],
+    E = ['INPUT ERROR'],
+    N = { in: [S, S, S], out: [S, S, E, E] },
+    P = ['P.S.NORMAL'],
+    PE = ['P.S.NORMAL', 'INPUT ERROR'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE078',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(4)',
+      page: 45,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B13', 'A', ['001', '004', '032'], ['003', '005', '006', '007'], '031', 'TCE078_1', null, null, { el: 'TCE078_2' }],
+        [N, 'B14', 'B', ['008', '011', '033'], ['010', '012', '013', '014'], '009', 'TCE078_3', null, null, { el: 'TCE078_4' }],
+        [N, 'B15', 'C', ['015', '018', '034'], ['017', '019', '020', '021'], '016', 'TCE078_5', null, null, { el: 'TCE078_6' }],
+        [{ in: [P, P, P], out: [P, P, PE, PE] }, 'B16', 'D', ['022', '025', '035'], ['024', '026', '029', '030'], '023', 'TCE078_7', null, null, { el: 'TCE078_8' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE079.js ---- */
+/* TCE079 DIGITAL INPUT SIGNAL DIAGNOSTICS(5) (331DM09784 page 46, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Ventilator valve full close and full open position, and two spare signals. The two positions have no lamp here: each goes out by two connectors. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1051', 'TCP2051', 'TCP3051'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] },
+    V = p => {
+      const L = ['VENTILATOR VALVE', 'FULL ' + p + ' POSITION'];
+      return { in: [L, L, L], out: [L, L, [...L, 'INPUT ERROR']] };
+    };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE079',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(5)',
+      page: 46,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [V('CLOSE'), 'B1', 'A', ['001', '004', '032'], ['005', '', '007'], '031', '', ['TCE360'], R, { two: ['A2', ['TCT081A']] }],
+        [V('OPEN'), 'B2', 'B', ['008', '011', '033'], ['012', '', '014'], '009', '', ['TCE360'], R, { two: ['B2', ['TCT081A']] }],
+        [N, 'B3', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE079_5', null, R, { ey: 64 }],
+        [N, 'B4', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE079_7', null, R]
       ],
       or: ['027', '028'],
       e: ['E', ['TCE471']],
@@ -143217,7 +143447,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build a2ecc55'));
+    row('Version', E('span', 'scsver', ver + ' · build d5dbeff'));
   }
   function openSet(near) {
     if (!set) {
