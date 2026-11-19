@@ -4484,6 +4484,8 @@ function tcsSim(s) {
   /* a third line over the words of the six outputs (o.over) */
   if (o.over)
     [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach((q, i) => xt.push([Z(q[0]), i > 2 ? Y2(q[1]) : q[1], o.over]));
+  /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
+  const EX = o.extra || {};
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
   return {
     id: o.id,
@@ -4492,8 +4494,10 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: F,
+    k: EX.k || [],
     c: [
       ...c,
+      ...(EX.c || []),
       ['oA', 'out', 'A', Z(2077), 170, '', o.refA],
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), Y2(477), '', ['-']],
@@ -4508,6 +4512,7 @@ function tcsSim(s) {
       ...xc
     ],
     d: [
+      ...(EX.d || []),
       ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
       ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
     ],
@@ -4518,6 +4523,7 @@ function tcsSim(s) {
     m,
     b: [
       ...b,
+      ...(EX.b || []),
       ['sg012', 'SG', 'A012', X(562), 478, [o.sg[0]]],
       ['sg017', 'SG', 'A017', X(563), 552, [o.sg[1]]],
       ['sg027', 'SG', 'A027', X(561), 922, [o.sg[2]]],
@@ -4544,6 +4550,7 @@ function tcsSim(s) {
     ],
     w: [
       ...w,
+      ...(EX.w || []),
       /* the limits and the simulation value, the same for the three blocks */
       ['sg012', [[X(591), 467], [X(775), 467]], 1],
       ['sg012', [[X(775), g1.p(6)], [X(775), g3.p(6)], [g3.bx, g3.p(6)]], 1],
@@ -4615,6 +4622,7 @@ function tcsSim(s) {
       [Z(1844), Y2(654), o.out[3] || o.out[0]],
       [Z(1844), Y2(675), o.out[2]],
       ...xt,
+      ...(EX.t || []),
       ...o.foot
     ]
   };
@@ -6148,6 +6156,78 @@ function tcsSim(s) {
       refA: ['-'],
       refA1: ['TCA536', 'TCA825'],
       refB1: ['TCA548'],
+      foot: [[236, 1525, 'CONTROLLER:'], [397, 1525, 'EHG+MD'], [658, 1498, 'TRIGGER  :'], [658, 1525, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE068 ANALOG INPUT SIGNAL DIAGNOSTICS(9) (331DM09784 page 36, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the analog
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr), in the units of sheet TCE060: the frame of this page stands 8 higher on the rendered page, so
+   every height read from it has 8 added. HP turbine exhaust steam temperature: one signal per block, as on TCE067. Beside the pattern the value goes
+   to a comparator (CMP 047, high at 400.0, back at 395.0) with its own lamp, and the 2OO3 part stands lower for it. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE068',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(9)',
+      page: 36,
+      f: [167, 81, 2228, 1545],
+      tag: 'nTE-STn003',
+      let: ['B2', 'D2'],
+      single: [[712, 776, 67], [677, 730, 119], [675, 729, 98]],
+      inref: ['TCA357', 'TCA361', 'TCA365'],
+      cref: ['TCP1108', 'TCP2108', 'TCP3108'],
+      name: (ch, sig) => ['HP TURBINE EXHAUST', 'STEAM TEMP.(' + ch + ')' + (sig ? '' : ' INPUT ERR')],
+      sg: ['K:510.0degC', 'K:-25.0degC', 'K:100.0degC', 'K:50.0degC'],
+      out: ['HP TURBINE EXHAUST', 'STEAM TEMP.', 'STEAM TEMP. ABN.'],
+      refA: ['-'],
+      refA1: ['-'],
+      dy2: 67,
+      extra: {
+        k: [['kInit', 1483, 413, 'INITIAL', 'ref']],
+        b: [['cmp047', 'CMP', '047', 1850, 457]],
+        d: [['crtHigh', 2076, 445, 'out', 'TCE068_1', 'S', '#1C']],
+        w: [
+          ['td2', [[1778, 360], [1778, 445], [1821, 445]], 1],
+          ['kInit', [[1718, 413], [1850, 413], [1850, 436]]],
+          ['cmp047', [[1879, 445], [2041, 445]]]
+        ],
+        t: [
+          [1627, 449, '(TCE050)'],
+          [1806, 438, 'T'],
+          [1864, 393, 'HP TURBINE EXHAUST'],
+          [1864, 415, 'STEAM TEMP. HIGH'],
+          [1895, 464, 'HL:400.0degc'],
+          [1895, 485, 'LL:395.0degc']
+        ]
+      },
+      foot: [[236, 1525, 'CONTROLLER:'], [397, 1525, 'EHG+MD'], [658, 1498, 'TRIGGER  :'], [658, 1525, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE069 ANALOG INPUT SIGNAL DIAGNOSTICS(10) (331DM09784 page 37, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the analog
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr), in the units of sheet TCE060: the frame of this page stands 8 higher on the rendered page, so
+   every height read from it has 8 added. LP turbine exhaust hood steam temperature: one signal per block, as on TCE067. The low limit (SG A017) has
+   a name printed over it; K:-7.5degC is read, and it is the bottom of the range less 5 % as on the other sheets (TCS I/O list, iolist-tcs.zip,
+   HMI_DI_FOR_EDIT.xlsx, analog input sheet, row TE-STn110-1: range 0 to 150 degC, so -7.5). */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE069',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(10)',
+      page: 37,
+      f: [167, 81, 2228, 1545],
+      tag: 'nTE-STn110',
+      let: ['B3', 'D3'],
+      single: [[712, 776, 86], [677, 720, 131], [673, 718, 119]],
+      inref: ['TCA357', 'TCA361', 'TCA365'],
+      cref: ['TCP1104', 'TCP2104', 'TCP3104'],
+      name: (ch, sig) => ['LP TURBINE EXHAUST HOOD', 'STEAM TEMP.(' + ch + ')' + (sig ? '' : ' INPUT ERR')],
+      sg: ['K:153.0degC', 'K:-7.5degC', 'K:30.0degC', 'K:15.0degC'],
+      out: ['LP TURBINE EXHAUST', 'HOOD STEAM TEMP.', 'HOOD STEAM TEMP. ABN.'],
+      refA: ['-'],
+      refA1: ['TCA540'],
       foot: [[236, 1525, 'CONTROLLER:'], [397, 1525, 'EHG+MD'], [658, 1498, 'TRIGGER  :'], [658, 1525, 'CYCLE(ms):30']]
     })
   );
@@ -46363,7 +46443,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build ee9875e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 34c895e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -70926,6 +71006,8 @@ function tcsSim(s) {
   /* a third line over the words of the six outputs (o.over) */
   if (o.over)
     [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach((q, i) => xt.push([Z(q[0]), i > 2 ? Y2(q[1]) : q[1], o.over]));
+  /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
+  const EX = o.extra || {};
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
   return {
     id: o.id,
@@ -70934,8 +71016,10 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: F,
+    k: EX.k || [],
     c: [
       ...c,
+      ...(EX.c || []),
       ['oA', 'out', 'A', Z(2077), 170, '', o.refA],
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), Y2(477), '', ['-']],
@@ -70950,6 +71034,7 @@ function tcsSim(s) {
       ...xc
     ],
     d: [
+      ...(EX.d || []),
       ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
       ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
     ],
@@ -70960,6 +71045,7 @@ function tcsSim(s) {
     m,
     b: [
       ...b,
+      ...(EX.b || []),
       ['sg012', 'SG', 'A012', X(562), 478, [o.sg[0]]],
       ['sg017', 'SG', 'A017', X(563), 552, [o.sg[1]]],
       ['sg027', 'SG', 'A027', X(561), 922, [o.sg[2]]],
@@ -70986,6 +71072,7 @@ function tcsSim(s) {
     ],
     w: [
       ...w,
+      ...(EX.w || []),
       /* the limits and the simulation value, the same for the three blocks */
       ['sg012', [[X(591), 467], [X(775), 467]], 1],
       ['sg012', [[X(775), g1.p(6)], [X(775), g3.p(6)], [g3.bx, g3.p(6)]], 1],
@@ -71057,6 +71144,7 @@ function tcsSim(s) {
       [Z(1844), Y2(654), o.out[3] || o.out[0]],
       [Z(1844), Y2(675), o.out[2]],
       ...xt,
+      ...(EX.t || []),
       ...o.foot
     ]
   };
@@ -72628,6 +72716,82 @@ function tcsSim(s) {
       refA: ['-'],
       refA1: ['TCA536', 'TCA825'],
       refB1: ['TCA548'],
+      foot: [[236, 1525, 'CONTROLLER:'], [397, 1525, 'EHG+MD'], [658, 1498, 'TRIGGER  :'], [658, 1525, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE068.js ---- */
+/* TCE068 ANALOG INPUT SIGNAL DIAGNOSTICS(9) (331DM09784 page 36, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the analog
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr), in the units of sheet TCE060: the frame of this page stands 8 higher on the rendered page, so
+   every height read from it has 8 added. HP turbine exhaust steam temperature: one signal per block, as on TCE067. Beside the pattern the value goes
+   to a comparator (CMP 047, high at 400.0, back at 395.0) with its own lamp, and the 2OO3 part stands lower for it. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE068',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(9)',
+      page: 36,
+      f: [167, 81, 2228, 1545],
+      tag: 'nTE-STn003',
+      let: ['B2', 'D2'],
+      single: [[712, 776, 67], [677, 730, 119], [675, 729, 98]],
+      inref: ['TCA357', 'TCA361', 'TCA365'],
+      cref: ['TCP1108', 'TCP2108', 'TCP3108'],
+      name: (ch, sig) => ['HP TURBINE EXHAUST', 'STEAM TEMP.(' + ch + ')' + (sig ? '' : ' INPUT ERR')],
+      sg: ['K:510.0degC', 'K:-25.0degC', 'K:100.0degC', 'K:50.0degC'],
+      out: ['HP TURBINE EXHAUST', 'STEAM TEMP.', 'STEAM TEMP. ABN.'],
+      refA: ['-'],
+      refA1: ['-'],
+      dy2: 67,
+      extra: {
+        k: [['kInit', 1483, 413, 'INITIAL', 'ref']],
+        b: [['cmp047', 'CMP', '047', 1850, 457]],
+        d: [['crtHigh', 2076, 445, 'out', 'TCE068_1', 'S', '#1C']],
+        w: [
+          ['td2', [[1778, 360], [1778, 445], [1821, 445]], 1],
+          ['kInit', [[1718, 413], [1850, 413], [1850, 436]]],
+          ['cmp047', [[1879, 445], [2041, 445]]]
+        ],
+        t: [
+          [1627, 449, '(TCE050)'],
+          [1806, 438, 'T'],
+          [1864, 393, 'HP TURBINE EXHAUST'],
+          [1864, 415, 'STEAM TEMP. HIGH'],
+          [1895, 464, 'HL:400.0degc'],
+          [1895, 485, 'LL:395.0degc']
+        ]
+      },
+      foot: [[236, 1525, 'CONTROLLER:'], [397, 1525, 'EHG+MD'], [658, 1498, 'TRIGGER  :'], [658, 1525, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE069.js ---- */
+/* TCE069 ANALOG INPUT SIGNAL DIAGNOSTICS(10) (331DM09784 page 37, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the analog
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr), in the units of sheet TCE060: the frame of this page stands 8 higher on the rendered page, so
+   every height read from it has 8 added. LP turbine exhaust hood steam temperature: one signal per block, as on TCE067. The low limit (SG A017) has
+   a name printed over it; K:-7.5degC is read, and it is the bottom of the range less 5 % as on the other sheets (TCS I/O list, iolist-tcs.zip,
+   HMI_DI_FOR_EDIT.xlsx, analog input sheet, row TE-STn110-1: range 0 to 150 degC, so -7.5). */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE069',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(10)',
+      page: 37,
+      f: [167, 81, 2228, 1545],
+      tag: 'nTE-STn110',
+      let: ['B3', 'D3'],
+      single: [[712, 776, 86], [677, 720, 131], [673, 718, 119]],
+      inref: ['TCA357', 'TCA361', 'TCA365'],
+      cref: ['TCP1104', 'TCP2104', 'TCP3104'],
+      name: (ch, sig) => ['LP TURBINE EXHAUST HOOD', 'STEAM TEMP.(' + ch + ')' + (sig ? '' : ' INPUT ERR')],
+      sg: ['K:153.0degC', 'K:-7.5degC', 'K:30.0degC', 'K:15.0degC'],
+      out: ['LP TURBINE EXHAUST', 'HOOD STEAM TEMP.', 'HOOD STEAM TEMP. ABN.'],
+      refA: ['-'],
+      refA1: ['TCA540'],
       foot: [[236, 1525, 'CONTROLLER:'], [397, 1525, 'EHG+MD'], [658, 1498, 'TRIGGER  :'], [658, 1525, 'CYCLE(ms):30']]
     })
   );
@@ -133303,7 +133467,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build ee9875e'));
+    row('Version', E('span', 'scsver', ver + ' · build 34c895e'));
   }
   function openSet(near) {
     if (!set) {

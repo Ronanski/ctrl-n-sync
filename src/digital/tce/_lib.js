@@ -166,6 +166,8 @@
   /* a third line over the words of the six outputs (o.over) */
   if (o.over)
     [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach((q, i) => xt.push([Z(q[0]), i > 2 ? Y2(q[1]) : q[1], o.over]));
+  /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
+  const EX = o.extra || {};
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
   return {
     id: o.id,
@@ -174,8 +176,10 @@
     ctl: 'EHG+MD',
     cycle: 30,
     f: F,
+    k: EX.k || [],
     c: [
       ...c,
+      ...(EX.c || []),
       ['oA', 'out', 'A', Z(2077), 170, '', o.refA],
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), Y2(477), '', ['-']],
@@ -190,6 +194,7 @@
       ...xc
     ],
     d: [
+      ...(EX.d || []),
       ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
       ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
     ],
@@ -200,6 +205,7 @@
     m,
     b: [
       ...b,
+      ...(EX.b || []),
       ['sg012', 'SG', 'A012', X(562), 478, [o.sg[0]]],
       ['sg017', 'SG', 'A017', X(563), 552, [o.sg[1]]],
       ['sg027', 'SG', 'A027', X(561), 922, [o.sg[2]]],
@@ -226,6 +232,7 @@
     ],
     w: [
       ...w,
+      ...(EX.w || []),
       /* the limits and the simulation value, the same for the three blocks */
       ['sg012', [[X(591), 467], [X(775), 467]], 1],
       ['sg012', [[X(775), g1.p(6)], [X(775), g3.p(6)], [g3.bx, g3.p(6)]], 1],
@@ -297,6 +304,7 @@
       [Z(1844), Y2(654), o.out[3] || o.out[0]],
       [Z(1844), Y2(675), o.out[2]],
       ...xt,
+      ...(EX.t || []),
       ...o.foot
     ]
   };
