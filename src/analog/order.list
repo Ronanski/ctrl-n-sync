@@ -43,6 +43,7 @@ engine/sched.js
 engine/hist.js
 engine/soe.js
 engine/gen-panel.js
+engine/instructor.js
 ui/trace.js
 ui/panel.js
 ui/plant-window.js
