@@ -8410,6 +8410,147 @@ function tcsSim(s) {
     [617, 1516, 'CYCLE(ms):30']
   ]
 });
+/* TCE180 DCS CONTOL MODE (331DM09784 page 127, controller EHG+MD, cycle 30 ms; the title is spelled so on the drawing). Typed from
+   the drawing; units = the pixels of the page rendered 2296 wide. DCS CONTROL MODE (FFR011) is set by the CRT DCS CONTROL MODE ON (CRT
+   available) or the DCS ON COMMAND held 1 s, while there is no OFF COMMAND; it is reset by the OFF COMMAND or by any of: turbine trip,
+   52G open, forced close, the CRT OFF, target MW demand or generator MW abnormal, GOV / LLM manual operation, IP limiting, IP start
+   before the transfer region is complete. DCS CONTROL MODE PERMISSIVE = none of these. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE180',
+  title: 'DCS CONTOL MODE',
+  page: 127,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [167, 76, 2231, 1540],
+  k: [
+    ['kInit', 293, 228, 'INITIAL', 'ref'],
+    ['kTrip', 290, 772, 'TURBINE TRIP', 'ref'],
+    ['k52g', 290, 836, '52G CLOSE', 'ref'],
+    ['kIps', 287, 1294, 'IP START', 'ref']
+  ],
+  c: [
+    ['iOn', 'in', 'A1', 306, 636, 'DCS CONTROL MODE ON COMMAND', ['TCE041']],
+    ['iOff', 'in', 'A2', 306, 710, 'DCS CONTROL MODE OFF COMMAND', ['TCE041']],
+    ['iFc', 'in', 'E', 305, 901, 'FORCED CLOSE', ['TCE053']],
+    ['iTmw', 'in', 'D1', 305, 965, 'TARGET MW DEMAND ABN.', ['TCE103']],
+    ['iGovm', 'in', 'D', 305, 1028, 'GOV. MANUAL OPERATION', ['TCE196']],
+    ['iLlmm', 'in', 'D', 305, 1093, 'LLM MANUAL OPERATION', ['TCE205']],
+    ['iGmw', 'in', 'B', 305, 1157, 'GEN. MW ABN.', ['TCE070']],
+    ['iIpl', 'in', 'C', 305, 1231, 'IP LIMITING', ['TCE201']],
+    ['iTrc', 'in', 'C', 303, 1360, 'TRANSFER REGION COMPLETE(IP)', ['TCE184']],
+    ['oB1', 'out', 'B1', 2088, 369, '', ['-']], /* the name is written in three lines over the wire (texts) */
+    ['oA1', 'out', 'A1', 2033, 541, 'DCS CONTROL MODE OFF', ['-'], 1],
+    ['oA', 'out', 'A', 2085, 614, 'DCS CONTROL MODE ON', ['TCE500', 'TCE172', 'TCE183', 'TCE190', 'TCE194', 'TCE195']],
+    ['oA2', 'out', 'A2', 2030, 805, 'DCS CONTROL MODE ON', ['TCA535'], 1],
+    ['oC', 'out', 'C', 2083, 869, 'DCS CONTROL MODE ON', ['-'], 1],
+    ['oB', 'out', 'B', 2082, 1061, 'DCS CONTROL MODE PERMISSIVE', ['TCE602']]
+  ],
+  d: [
+    ['dIyd', 361, 305, 'in', 'TCE180_1_IYD', 'R', '#1C'],
+    ['dIyl', 361, 433, 'in', 'TCE180_1_IYL', 'R', '#1C'],
+    ['dIys', 361, 561, 'in', 'TCE180_1_IYS', 'R', '#1C'],
+    ['dIyp', 2035, 229, 'out', 'TCE180_1_IYP', 'S', '#1C'],
+    ['dYil', 2033, 465, 'out', 'TCE180_1_YIL', 'S', '#1C'],
+    ['dYid', 2033, 740, 'out', 'TCE180_1_YID', 'S', '#1C']
+  ],
+  b: [
+    ['a002', 'A', '002', 651, 313],
+    ['a004', 'A', '004', 651, 441],
+    ['tw012', 'TW', '012', 790, 643, ['TW:1s']],
+    ['or009', 'OR', '009', 1202, 622],
+    ['not013', 'NOT', '013', 1331, 644],
+    ['a010', 'A', '010', 1447, 622],
+    ['or031', 'OR', '031', 1447, 717],
+    ['ffr011', 'FFR', '011', 1586, 622, [], { l: ['S', 'R'] }, [80, 43]],
+    ['not006', 'NOT', '006', 1747, 474],
+    ['not017', 'NOT', '017', 648, 846],
+    ['or015', 'OR', '015', 1202, 856, [], {}, [60, 192]],
+    ['or032', 'OR', '032', 816, 1101],
+    ['a029', 'A', '029', 922, 1303],
+    ['not030', 'NOT', '030', 814, 1368],
+    ['not021', 'NOT', '021', 1445, 1068],
+    ['btr001', 'o:BTR', '001', 1748, 228],
+    ['btr033', 'o:BTR', '033', 1842, 366],
+    ['btr007', 'o:BTR', '007', 1842, 463],
+    ['btr008', 'o:BTR', '008', 1842, 538],
+    ['btr018', 'o:BTR', '018', 1745, 738],
+    ['btr019', 'o:BTR', '019', 1745, 802],
+    ['btr020', 'o:BTR', '020', 1745, 866],
+    ['btr022', 'o:BTR', '022', 1582, 1058]
+  ],
+  w: [
+    /* INITIAL */
+    ['kInit', [[528, 228], [2011, 228]]],
+    ['kInit', [[790, 228], [790, 621]]],
+    /* the CRT ON / OFF */
+    ['dIyd', [[385, 302], [622, 302]]],
+    ['dIyl', [[385, 430], [622, 430]]],
+    ['dIys', [[385, 557], [597, 557], [597, 324], [622, 324]]],
+    ['dIys', [[597, 452], [622, 452]]],
+    ['a002', [[680, 302], [1129, 302], [1129, 611], [1172, 611]]],
+    ['a004', [[680, 430], [1106, 430], [1106, 877], [1172, 877]]],
+    /* the commands and the mode */
+    ['iOn', [[333, 632], [760, 632]]],
+    ['tw012', [[819, 632], [1172, 632]]],
+    ['or009', [[1232, 611], [1418, 611]]],
+    ['iOff', [[333, 707], [1418, 707]]],
+    ['iOff', [[1277, 707], [1277, 633], [1302, 633]]],
+    ['not013', [[1360, 633], [1418, 633]]],
+    ['a010', [[1476, 611], [1546, 611]]],
+    ['or031', [[1476, 707], [1522, 707], [1522, 633], [1546, 633]]],
+    ['ffr011', [[1626, 611], [2058, 611]]],
+    ['ffr011', [[1692, 611], [1692, 463], [1718, 463]]],
+    ['ffr011', [[1692, 611], [1692, 866], [2004, 866]]],
+    ['ffr011', [[1692, 738], [2009, 738]]],
+    ['ffr011', [[1692, 802], [2002, 802]]],
+    ['not006', [[1776, 463], [2009, 463]]],
+    ['not006', [[1810, 463], [1810, 366], [2061, 366]]],
+    ['not006', [[1810, 463], [1810, 538], [2005, 538]]],
+    /* the reset */
+    ['kTrip', [[525, 771], [1172, 771]]],
+    ['k52g', [[525, 835], [619, 835]]],
+    ['not017', [[677, 835], [722, 835], [722, 792], [1172, 792]]],
+    ['iFc', [[332, 898], [1042, 898], [1042, 813], [1172, 813]]],
+    ['iTmw', [[332, 962], [1062, 962], [1062, 835], [1172, 835]]],
+    ['iGovm', [[332, 1025], [1083, 1025], [1083, 856], [1172, 856]]],
+    ['iLlmm', [[332, 1090], [787, 1090]]],
+    ['iGmw', [[332, 1154], [775, 1154], [775, 1112], [787, 1112]]],
+    ['or032', [[845, 1090], [1104, 1090], [1104, 899], [1172, 899]]],
+    ['iIpl', [[332, 1228], [1125, 1228], [1125, 920], [1172, 920]]],
+    ['kIps', [[522, 1293], [893, 1293]]],
+    ['iTrc', [[330, 1357], [785, 1357]]],
+    ['not030', [[843, 1357], [868, 1357], [868, 1314], [893, 1314]]],
+    ['a029', [[951, 1292], [1146, 1292], [1146, 941], [1172, 941]]],
+    ['or015', [[1232, 771], [1372, 771], [1372, 728], [1418, 728]]],
+    ['or015', [[1277, 771], [1277, 1057], [1416, 1057]]],
+    ['not021', [[1474, 1057], [2055, 1057]]]
+  ],
+  t: [
+    [470, 254, '(TCE050)'],
+    [466, 798, '(TCE053)'],
+    [466, 861, '(TCE053)'],
+    [463, 1319, '(TCE057)'],
+    [426, 272, 'DCS CONTROL'],
+    [426, 293, 'MODE ON'],
+    [426, 400, 'DCS CONTROL'],
+    [426, 421, 'MODE OFF'],
+    [425, 549, 'CRT AVAILABLE'],
+    [744, 622, 'C'],
+    [1530, 600, 'T'],
+    [1882, 315, 'COORDINATION'],
+    [1882, 336, 'CONTROL AUTO'],
+    [1882, 357, 'MODE FEEDBACK'],
+    [1880, 432, 'DCS CONTROL'],
+    [1880, 453, 'MODE OFF'],
+    [1802, 709, 'DCS CONTROL'],
+    [1802, 730, 'MODE ON'],
+    [1950, 689, '(TCE601)'],
+    [237, 1514, 'CONTROLLER:'],
+    [397, 1514, 'EHG+MD'],
+    [622, 1493, 'TRIGGER  :'],
+    [622, 1520, 'CYCLE(ms):30']
+  ]
+});
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE172',
@@ -45564,7 +45705,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 670543c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 3ced115'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -74117,6 +74258,149 @@ function tcsSim(s) {
     [393, 1514, 'EHG+MD'],
     [617, 1490, 'TRIGGER  :'],
     [617, 1516, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE180.js ---- */
+/* TCE180 DCS CONTOL MODE (331DM09784 page 127, controller EHG+MD, cycle 30 ms; the title is spelled so on the drawing). Typed from
+   the drawing; units = the pixels of the page rendered 2296 wide. DCS CONTROL MODE (FFR011) is set by the CRT DCS CONTROL MODE ON (CRT
+   available) or the DCS ON COMMAND held 1 s, while there is no OFF COMMAND; it is reset by the OFF COMMAND or by any of: turbine trip,
+   52G open, forced close, the CRT OFF, target MW demand or generator MW abnormal, GOV / LLM manual operation, IP limiting, IP start
+   before the transfer region is complete. DCS CONTROL MODE PERMISSIVE = none of these. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE180',
+  title: 'DCS CONTOL MODE',
+  page: 127,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [167, 76, 2231, 1540],
+  k: [
+    ['kInit', 293, 228, 'INITIAL', 'ref'],
+    ['kTrip', 290, 772, 'TURBINE TRIP', 'ref'],
+    ['k52g', 290, 836, '52G CLOSE', 'ref'],
+    ['kIps', 287, 1294, 'IP START', 'ref']
+  ],
+  c: [
+    ['iOn', 'in', 'A1', 306, 636, 'DCS CONTROL MODE ON COMMAND', ['TCE041']],
+    ['iOff', 'in', 'A2', 306, 710, 'DCS CONTROL MODE OFF COMMAND', ['TCE041']],
+    ['iFc', 'in', 'E', 305, 901, 'FORCED CLOSE', ['TCE053']],
+    ['iTmw', 'in', 'D1', 305, 965, 'TARGET MW DEMAND ABN.', ['TCE103']],
+    ['iGovm', 'in', 'D', 305, 1028, 'GOV. MANUAL OPERATION', ['TCE196']],
+    ['iLlmm', 'in', 'D', 305, 1093, 'LLM MANUAL OPERATION', ['TCE205']],
+    ['iGmw', 'in', 'B', 305, 1157, 'GEN. MW ABN.', ['TCE070']],
+    ['iIpl', 'in', 'C', 305, 1231, 'IP LIMITING', ['TCE201']],
+    ['iTrc', 'in', 'C', 303, 1360, 'TRANSFER REGION COMPLETE(IP)', ['TCE184']],
+    ['oB1', 'out', 'B1', 2088, 369, '', ['-']], /* the name is written in three lines over the wire (texts) */
+    ['oA1', 'out', 'A1', 2033, 541, 'DCS CONTROL MODE OFF', ['-'], 1],
+    ['oA', 'out', 'A', 2085, 614, 'DCS CONTROL MODE ON', ['TCE500', 'TCE172', 'TCE183', 'TCE190', 'TCE194', 'TCE195']],
+    ['oA2', 'out', 'A2', 2030, 805, 'DCS CONTROL MODE ON', ['TCA535'], 1],
+    ['oC', 'out', 'C', 2083, 869, 'DCS CONTROL MODE ON', ['-'], 1],
+    ['oB', 'out', 'B', 2082, 1061, 'DCS CONTROL MODE PERMISSIVE', ['TCE602']]
+  ],
+  d: [
+    ['dIyd', 361, 305, 'in', 'TCE180_1_IYD', 'R', '#1C'],
+    ['dIyl', 361, 433, 'in', 'TCE180_1_IYL', 'R', '#1C'],
+    ['dIys', 361, 561, 'in', 'TCE180_1_IYS', 'R', '#1C'],
+    ['dIyp', 2035, 229, 'out', 'TCE180_1_IYP', 'S', '#1C'],
+    ['dYil', 2033, 465, 'out', 'TCE180_1_YIL', 'S', '#1C'],
+    ['dYid', 2033, 740, 'out', 'TCE180_1_YID', 'S', '#1C']
+  ],
+  b: [
+    ['a002', 'A', '002', 651, 313],
+    ['a004', 'A', '004', 651, 441],
+    ['tw012', 'TW', '012', 790, 643, ['TW:1s']],
+    ['or009', 'OR', '009', 1202, 622],
+    ['not013', 'NOT', '013', 1331, 644],
+    ['a010', 'A', '010', 1447, 622],
+    ['or031', 'OR', '031', 1447, 717],
+    ['ffr011', 'FFR', '011', 1586, 622, [], { l: ['S', 'R'] }, [80, 43]],
+    ['not006', 'NOT', '006', 1747, 474],
+    ['not017', 'NOT', '017', 648, 846],
+    ['or015', 'OR', '015', 1202, 856, [], {}, [60, 192]],
+    ['or032', 'OR', '032', 816, 1101],
+    ['a029', 'A', '029', 922, 1303],
+    ['not030', 'NOT', '030', 814, 1368],
+    ['not021', 'NOT', '021', 1445, 1068],
+    ['btr001', 'o:BTR', '001', 1748, 228],
+    ['btr033', 'o:BTR', '033', 1842, 366],
+    ['btr007', 'o:BTR', '007', 1842, 463],
+    ['btr008', 'o:BTR', '008', 1842, 538],
+    ['btr018', 'o:BTR', '018', 1745, 738],
+    ['btr019', 'o:BTR', '019', 1745, 802],
+    ['btr020', 'o:BTR', '020', 1745, 866],
+    ['btr022', 'o:BTR', '022', 1582, 1058]
+  ],
+  w: [
+    /* INITIAL */
+    ['kInit', [[528, 228], [2011, 228]]],
+    ['kInit', [[790, 228], [790, 621]]],
+    /* the CRT ON / OFF */
+    ['dIyd', [[385, 302], [622, 302]]],
+    ['dIyl', [[385, 430], [622, 430]]],
+    ['dIys', [[385, 557], [597, 557], [597, 324], [622, 324]]],
+    ['dIys', [[597, 452], [622, 452]]],
+    ['a002', [[680, 302], [1129, 302], [1129, 611], [1172, 611]]],
+    ['a004', [[680, 430], [1106, 430], [1106, 877], [1172, 877]]],
+    /* the commands and the mode */
+    ['iOn', [[333, 632], [760, 632]]],
+    ['tw012', [[819, 632], [1172, 632]]],
+    ['or009', [[1232, 611], [1418, 611]]],
+    ['iOff', [[333, 707], [1418, 707]]],
+    ['iOff', [[1277, 707], [1277, 633], [1302, 633]]],
+    ['not013', [[1360, 633], [1418, 633]]],
+    ['a010', [[1476, 611], [1546, 611]]],
+    ['or031', [[1476, 707], [1522, 707], [1522, 633], [1546, 633]]],
+    ['ffr011', [[1626, 611], [2058, 611]]],
+    ['ffr011', [[1692, 611], [1692, 463], [1718, 463]]],
+    ['ffr011', [[1692, 611], [1692, 866], [2004, 866]]],
+    ['ffr011', [[1692, 738], [2009, 738]]],
+    ['ffr011', [[1692, 802], [2002, 802]]],
+    ['not006', [[1776, 463], [2009, 463]]],
+    ['not006', [[1810, 463], [1810, 366], [2061, 366]]],
+    ['not006', [[1810, 463], [1810, 538], [2005, 538]]],
+    /* the reset */
+    ['kTrip', [[525, 771], [1172, 771]]],
+    ['k52g', [[525, 835], [619, 835]]],
+    ['not017', [[677, 835], [722, 835], [722, 792], [1172, 792]]],
+    ['iFc', [[332, 898], [1042, 898], [1042, 813], [1172, 813]]],
+    ['iTmw', [[332, 962], [1062, 962], [1062, 835], [1172, 835]]],
+    ['iGovm', [[332, 1025], [1083, 1025], [1083, 856], [1172, 856]]],
+    ['iLlmm', [[332, 1090], [787, 1090]]],
+    ['iGmw', [[332, 1154], [775, 1154], [775, 1112], [787, 1112]]],
+    ['or032', [[845, 1090], [1104, 1090], [1104, 899], [1172, 899]]],
+    ['iIpl', [[332, 1228], [1125, 1228], [1125, 920], [1172, 920]]],
+    ['kIps', [[522, 1293], [893, 1293]]],
+    ['iTrc', [[330, 1357], [785, 1357]]],
+    ['not030', [[843, 1357], [868, 1357], [868, 1314], [893, 1314]]],
+    ['a029', [[951, 1292], [1146, 1292], [1146, 941], [1172, 941]]],
+    ['or015', [[1232, 771], [1372, 771], [1372, 728], [1418, 728]]],
+    ['or015', [[1277, 771], [1277, 1057], [1416, 1057]]],
+    ['not021', [[1474, 1057], [2055, 1057]]]
+  ],
+  t: [
+    [470, 254, '(TCE050)'],
+    [466, 798, '(TCE053)'],
+    [466, 861, '(TCE053)'],
+    [463, 1319, '(TCE057)'],
+    [426, 272, 'DCS CONTROL'],
+    [426, 293, 'MODE ON'],
+    [426, 400, 'DCS CONTROL'],
+    [426, 421, 'MODE OFF'],
+    [425, 549, 'CRT AVAILABLE'],
+    [744, 622, 'C'],
+    [1530, 600, 'T'],
+    [1882, 315, 'COORDINATION'],
+    [1882, 336, 'CONTROL AUTO'],
+    [1882, 357, 'MODE FEEDBACK'],
+    [1880, 432, 'DCS CONTROL'],
+    [1880, 453, 'MODE OFF'],
+    [1802, 709, 'DCS CONTROL'],
+    [1802, 730, 'MODE ON'],
+    [1950, 689, '(TCE601)'],
+    [237, 1514, 'CONTROLLER:'],
+    [397, 1514, 'EHG+MD'],
+    [622, 1493, 'TRIGGER  :'],
+    [622, 1520, 'CYCLE(ms):30']
   ]
 });
 
@@ -131693,7 +131977,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 670543c'));
+    row('Version', E('span', 'scsver', ver + ' · build 3ced115'));
   }
   function openSet(near) {
     if (!set) {
