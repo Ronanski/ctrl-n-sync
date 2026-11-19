@@ -82,7 +82,7 @@
           sc: FS,
           lab: 'b'
         }),
-        at(C('FICFA1071', 'Primary air inlet damper', { tag: 'MCV-FA1053-1', wrap: 16 }), 130, FY, {
+        at(C('FICFA1071', 'Primary air fan inlet vane', { tag: 'MCV-FA1053-1', wrap: 16 }), 130, FY, {
           id: 'pad',
           lab: 't'
         }),
@@ -99,7 +99,7 @@
           lab: 'b',
           mir: true
         }),
-        at(C('FICFA1081', 'Secondary air inlet damper', { tag: 'MCV-FA1054-1', wrap: 16 }), 1640, FY, {
+        at(C('FICFA1081', 'Secondary air fan inlet vane', { tag: 'MCV-FA1054-1', wrap: 16 }), 1640, FY, {
           id: 'sad',
           lab: 't'
         }),
