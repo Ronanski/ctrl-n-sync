@@ -9,6 +9,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [174, 80, 2226, 1542],
+  /* live: the engine's overspeed test (MAIN) state (tcs.js tcsOst / tcsLiveRead) */
+  live: { kTrip: 'trip', k52g: 'g52', or008: 'or008', not007: '!or008', kGov: 'gov', a015: '!ostInh', not016: 'ostInh', ffr004: 'ostMain', not010: '!ostMain', iBk: 'ostBk', rlA023: ['patMain', 'rpm'] },
   k: [
     ['kGov', 289, 360, 'GOVERNING MODE', 'ref'],
     ['kTrip', 288, 445, 'TURBINE TRIP', 'ref'],

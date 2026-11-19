@@ -29,7 +29,10 @@
      t: [x, y, text, align, size, rot]                               other words of the sheet (align 0 left, 1 centre, 2 right); rot = the turn of
                                                                      the words in degrees (90 = read from the bottom up)
      live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
-                                                                     as a number); none = the sheet is shown without states
+                                                                     as a number); none = the sheet is shown without states. An engine read
+                                                                     is a name of AN.tceRead() (tcs.js tcsLiveRead): 'trip', '!trip' (inverted),
+                                                                     'tsel=1800' (that value). Only values the engine holds: the page runs no
+                                                                     gate of the sheet, so a wire with no read stays without a state
 
    A sheet of the Interlock Block Diagram 310SC90-794 (TCS IBD, typicals and TA / TB ...) typed in the same format takes the place of the sheet the app
    builds from the IBD netlist (02c-tcs.js): same gates, same net numbers, so the logic, the trace and the values of the engine stay; only the picture is
@@ -388,6 +391,18 @@ function tceSheet(q) {
     ln.push([X(a[0]) + dx, Y(a[1]) + dy, X(b[0]) + dx, Y(b[1]) + dy, 'CON']);
     seg.push(n);
   }
+  /* live reads (q.live): the net, the engine read and the place of the value of each (the start of its first wire, else the right of its symbol);
+     every other net of the sheet has no state */
+  const live = [];
+  for (const k in q.live || {}) {
+    if (!(k in src)) continue;
+    const r = q.live[k],
+      w = (q.w || []).find(z => z[0] === k),
+      b = box[k];
+    if (!w && !b) continue;
+    live.push({ key: k, n: src[k], rd: Array.isArray(r) ? r[0] : r, unit: Array.isArray(r) ? r[1] : null, x: w ? X(w[1][0][0]) : b.x2, y: w ? Y(w[1][0][1]) : (b.y1 + b.y2) / 2 });
+  }
+  const nst = Object.values(src).filter(n => !live.some(L => L.n === n));
   const NO = [0, 0],
     no = (/(\d+)/.exec(q.id) || [])[1] || '';
   return {
@@ -408,6 +423,6 @@ function tceSheet(q) {
     syms: [],
     lyr: '',
     bv: BV,
-    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [] }
+    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst }
   };
 }

@@ -1091,7 +1091,7 @@
           machChips() || '',
           dmode,
           E('span', { cls: 'sp' }),
-          E('span', { cls: 'dm-lg' }, [E('i', { cls: 'on' }), document.createTextNode(' 1 = ON  '), E('i'), document.createTextNode(' 0 = OFF')]),
+          E('span', { cls: 'dm-lg' }, [E('i', { cls: 'on' }), document.createTextNode(' 1 = ON  '), E('i'), document.createTextNode(' 0 = OFF')].concat(s.tce ? [E('i', { cls: 'ns' }), document.createTextNode(' no value')] : [])) /* a TCE sheet: a wire the engine gives no value for */,
           E('small', { txt: nIn + ' inputs · ' + (nl ? nl.gates.length : 0) + ' gates / timers · ' + nOut + ' outputs · ' + ditlCat(s) })
         );
       }

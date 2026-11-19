@@ -12,7 +12,15 @@ import fs from 'fs';
 import path from 'path';
 import vm from 'vm';
 import { fileURLToPath } from 'url';
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..'),
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+/* the names the engine gives to the TCE sheets (src/analog/engine/tcs.js tcsLiveRead: the keys of the object it returns) */
+const READS = (() => {
+  const s = fs.readFileSync(path.join(root, 'src/analog/engine/tcs.js'), 'utf8'),
+    i = s.indexOf('function tcsLiveRead'),
+    body = s.slice(s.indexOf('return {', i), s.indexOf('\n  };', i));
+  return new Set([...body.matchAll(/^\s{4}(\w+):/gm)].map(m => m[1]));
+})();
+const
   dir = path.join(root, 'src/digital/tce'),
   files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.js') && f[0] !== '_').sort() : [],
   /* the helpers of the sheets (tce/_lib.js) run before each sheet, as in the app */
@@ -76,7 +84,13 @@ for (const f of files) {
         if (a[0] === b[0] && a[1] === b[1]) E(name + ': the same point twice ' + JSON.stringify(a));
       }
     });
-    for (const k in q.live || {}) if (!keys.has(k)) E('live: ' + k + ' is not a key of the sheet');
+    for (const k in q.live || {}) {
+      if (!keys.has(k)) E('live: ' + k + ' is not a key of the sheet');
+      const r = q.live[k],
+        rd = Array.isArray(r) ? r[0] : r;
+      /* an engine read is a name the engine gives (tcs.js tcsLiveRead), '!' = inverted, '=x' = that value */
+      if (typeof rd !== 'string' || !READS.has(rd.replace(/^!/, '').split('=')[0])) E('live: ' + k + ': ' + JSON.stringify(rd) + ' is not a read of tcsLiveRead');
+    }
     if (q.ibd) {
       if (ibds.has(q.ibd)) E('the IBD sheet ' + q.ibd + ' is typed twice');
       ibds.add(q.ibd);

@@ -8,6 +8,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [168, 76, 2220, 1538],
+  /* live: the engine's overspeed test (BK-UP) state (tcs.js tcsOst / tcsLiveRead) */
+  live: { kTrip: 'trip', k52g: 'g52', or008: 'or008', not007: '!or008', kGov: 'gov', ffr004: 'ostBk', not010: '!ostBk', iMain: 'ostMain', rlA020: ['patBk', 'rpm'] },
   k: [
     ['kGov', 283, 357, 'GOVERNING MODE', 'ref'],
     ['kTrip', 283, 441, 'TURBINE TRIP', 'ref'],

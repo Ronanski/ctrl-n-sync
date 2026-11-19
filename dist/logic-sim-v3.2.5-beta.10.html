@@ -3894,6 +3894,9 @@ function sdNL(sh) {
     pout: [],
     tcs: d.tcs,
     anl: d.anl,
+    /* a TCE soft logic sheet (02d-tce.js): the engine reads of its wires (tlv) and the nets that have none (nst, drawn without a state) */
+    tlv: d.live || null,
+    nst: d.nst ? new Set(d.nst) : null,
     an: d.an || [],
     anRows: new Set((d.an || []).map(a => a.row)),
     mv: [],
@@ -4334,8 +4337,33 @@ if (typeof window !== 'undefined') {
     }
   };
 }
+/* a TCE soft logic sheet (02d-tce.js q.live): the values the engine holds (AN.tceRead), on the wires the sheet names; no gate of the sheet runs
+   here (the TCS logic is the engine's, tcs.js: one logic) */
+function tceRd(R, e) {
+  const neg = e[0] === '!',
+    [k, want] = (neg ? e.slice(1) : e).split('=');
+  let x = R[k];
+  if (want !== undefined) x = x != null && String(x) === want;
+  return neg ? !x : x;
+}
+function tceSim(s) {
+  const nl = s.nl,
+    R = typeof AN !== 'undefined' && AN.tceRead ? AN.tceRead() : null,
+    v = new Array(nl.n).fill(0);
+  s.avw = {};
+  if (R)
+    for (const L of nl.tlv || []) {
+      const x = tceRd(R, L.rd);
+      if (!L.unit) v[L.n] = x ? 1 : 0;
+      else if (x != null && isFinite(x)) s.avw[L.key] = +(+x).toFixed(Math.abs(x) < 100 ? 2 : 1);
+    }
+  nl._v = v;
+  nl.avk = avOf(s);
+  return { rowOn: new Set(), v, outOn: new Set() };
+}
 /* one sheet in RUN: the values of the engine's scan */
 function tcsSim(s) {
+  if (s.tce) return tceSim(s);
   const st = typeof AN !== 'undefined' && AN.tcsIbd ? AN.tcsIbd(s.tcs) : null,
     nl = s.nl,
     raw = (st && st.v) || [],
@@ -10814,6 +10842,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 84, 2222, 1545],
+  /* live: the engine's TCE160 state (tcs.js tcsLiveRead): the CRT acceleration select held, TURBINE TRIP, ATS AUTO(C) */
+  live: { kTrip: 'trip', kAts: 'auto', ffr007: 'accel=120', ffr018: 'accel=180', ffr028: 'accel=360', gC036: ['accel', 'rpm/m'] },
   k: [
     ['kInit', 289, 158, 'INITIAL', 'ref'],
     ['kAts', 279, 1010, 'ATS AUTO(C)', 'ref'],
@@ -10993,6 +11023,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [175, 84, 2224, 1542],
+  /* live: the engine's state for TCE161 (tcs.js tcsLiveRead): TURBINE TRIP, ATS AUTO(C), 52G CLOSE, TURBINE SPEED */
+  live: { kTrip: 'trip', kAts: 'auto', k52g: 'g52', not035: '!g52', kSpd: ['rpm', 'rpm'] },
   k: [
     ['kAts', 279, 1158, 'ATS AUTO(C)', 'ref'],
     ['kSpd', 277, 1275, 'TURBINE SPEED', 'ref'],
@@ -11201,6 +11233,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 84, 2222, 1545],
+  /* live: the CRT target speed select the engine holds (tcs.js tcsLiveRead), its target speed out */
+  live: { ffr003: 'tsel=200', ffr008: 'tsel=1800', ffr013: 'tsel=2700', ffr018: 'tsel=3600', or022: 'tselAny', not023: '!tselAny', asw027: ['tspd', 'rpm'] },
   k: [
     ['kInit', 290, 150, 'INITIAL', 'ref'],
     ['kZero', 277, 1437, '0.0', 'sys.ref'],
@@ -12559,6 +12593,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [174, 80, 2226, 1542],
+  /* live: the engine's overspeed test (MAIN) state (tcs.js tcsOst / tcsLiveRead) */
+  live: { kTrip: 'trip', k52g: 'g52', or008: 'or008', not007: '!or008', kGov: 'gov', a015: '!ostInh', not016: 'ostInh', ffr004: 'ostMain', not010: '!ostMain', iBk: 'ostBk', rlA023: ['patMain', 'rpm'] },
   k: [
     ['kGov', 289, 360, 'GOVERNING MODE', 'ref'],
     ['kTrip', 288, 445, 'TURBINE TRIP', 'ref'],
@@ -12715,6 +12751,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [168, 76, 2220, 1538],
+  /* live: the engine's overspeed test (BK-UP) state (tcs.js tcsOst / tcsLiveRead) */
+  live: { kTrip: 'trip', k52g: 'g52', or008: 'or008', not007: '!or008', kGov: 'gov', ffr004: 'ostBk', not010: '!ostBk', iMain: 'ostMain', rlA020: ['patBk', 'rpm'] },
   k: [
     ['kGov', 283, 357, 'GOVERNING MODE', 'ref'],
     ['kTrip', 283, 441, 'TURBINE TRIP', 'ref'],
@@ -41878,7 +41916,10 @@ function tcsSim(s) {
      t: [x, y, text, align, size, rot]                               other words of the sheet (align 0 left, 1 centre, 2 right); rot = the turn of
                                                                      the words in degrees (90 = read from the bottom up)
      live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
-                                                                     as a number); none = the sheet is shown without states
+                                                                     as a number); none = the sheet is shown without states. An engine read
+                                                                     is a name of AN.tceRead() (tcs.js tcsLiveRead): 'trip', '!trip' (inverted),
+                                                                     'tsel=1800' (that value). Only values the engine holds: the page runs no
+                                                                     gate of the sheet, so a wire with no read stays without a state
 
    A sheet of the Interlock Block Diagram 310SC90-794 (TCS IBD, typicals and TA / TB ...) typed in the same format takes the place of the sheet the app
    builds from the IBD netlist (02c-tcs.js): same gates, same net numbers, so the logic, the trace and the values of the engine stay; only the picture is
@@ -42237,6 +42278,18 @@ function tceSheet(q) {
     ln.push([X(a[0]) + dx, Y(a[1]) + dy, X(b[0]) + dx, Y(b[1]) + dy, 'CON']);
     seg.push(n);
   }
+  /* live reads (q.live): the net, the engine read and the place of the value of each (the start of its first wire, else the right of its symbol);
+     every other net of the sheet has no state */
+  const live = [];
+  for (const k in q.live || {}) {
+    if (!(k in src)) continue;
+    const r = q.live[k],
+      w = (q.w || []).find(z => z[0] === k),
+      b = box[k];
+    if (!w && !b) continue;
+    live.push({ key: k, n: src[k], rd: Array.isArray(r) ? r[0] : r, unit: Array.isArray(r) ? r[1] : null, x: w ? X(w[1][0][0]) : b.x2, y: w ? Y(w[1][0][1]) : (b.y1 + b.y2) / 2 });
+  }
+  const nst = Object.values(src).filter(n => !live.some(L => L.n === n));
   const NO = [0, 0],
     no = (/(\d+)/.exec(q.id) || [])[1] || '';
   return {
@@ -42257,7 +42310,7 @@ function tceSheet(q) {
     syms: [],
     lyr: '',
     bv: BV,
-    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [] }
+    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst }
   };
 }
 /* DITL (digital logic) - Simulation models of the digital blocks (movements, solenoid valves, motors). Part of ONE script (joined by src/digital/order.list, in this order). */
@@ -44312,7 +44365,7 @@ function render() {
         [xa, sp.cx, sp.a],
         [sp.cx, xb, sp.b]
       ].forEach(([u1, u2, kk]) => {
-        const n = SV ? s.nl.seg[kk] : undefined,
+        const n = SV && !(s.nl.nst && s.nl.nst.has(s.nl.seg[kk])) ? s.nl.seg[kk] : undefined,
           lit = n !== undefined && SV[n];
         el(
           'line',
@@ -44329,7 +44382,9 @@ function render() {
       });
       return;
     }
-    const n = SV ? s.nl.seg[k] : undefined,
+    /* a TCE wire with no engine read: no state, drawn grey in RUN (legend 'no value') */
+    const ns = !!(SV && s.nl.nst && s.nl.nst.has(s.nl.seg[k])),
+      n = SV && !ns ? s.nl.seg[k] : undefined,
       lit = n !== undefined && SV[n];
     el(
       'line',
@@ -44338,7 +44393,7 @@ function render() {
         y1: -y1,
         x2,
         y2: -y2,
-        stroke: n === undefined ? stk(l) : lit ? LIVES[LIVE] : '#2b5f46',
+        stroke: ns ? '#9aa5ad' : n === undefined ? stk(l) : lit ? LIVES[LIVE] : '#2b5f46',
         'stroke-width': lit ? 0.7 : 0.35,
         'stroke-dasharray': dash(l)
       },
@@ -44362,7 +44417,7 @@ function render() {
     );
   });
   (s.nl.dots || []).forEach(d =>
-    el('circle', { class: 'jd', cx: d.x, cy: -d.y, r: 0.9, fill: SV ? (d.n >= 0 && SV[d.n] ? LIVES[LIVE] : '#2b5f46') : d.n >= 0 ? '#2b5f46' : COL.CON }, g)
+    el('circle', { class: 'jd', cx: d.x, cy: -d.y, r: 0.9, fill: SV ? (s.nl.nst && s.nl.nst.has(d.n) ? '#9aa5ad' : d.n >= 0 && SV[d.n] ? LIVES[LIVE] : '#2b5f46') : d.n >= 0 ? '#2b5f46' : COL.CON }, g)
   );
   for (const [x, y, r, l] of s.raw.ci) {
     ext(x, y);
@@ -44633,6 +44688,19 @@ function render() {
       t.style.fontFamily = 'Consolas,monospace';
       t.style.fontWeight = 'bold';
       t.textContent = v + (a.unit ? ' ' + a.unit.slice(0, 6) : '');
+    });
+  /* a TCE soft logic sheet: the analog values the engine holds (q.live with a unit), a tag over the start of the wire */
+  if (SV)
+    (s.nl.tlv || []).forEach(L => {
+      const v = L.unit && s.avw ? s.avw[L.key] : undefined;
+      if (v === undefined) return;
+      const txt = v + ' ' + L.unit,
+        w = txt.length * 1.25 + 2;
+      el('rect', { x: L.x + 1, y: -L.y - 4.6, width: w, height: 3.8, rx: 0.9, fill: '#1b2731', stroke: '#7d8e9a', 'stroke-width': 0.25, 'pointer-events': 'none' }, g);
+      const t = el('text', { x: L.x + 1 + w / 2, y: -L.y - 1.9, 'font-size': 2.1, 'text-anchor': 'middle', fill: '#cfd8e0', 'pointer-events': 'none' }, g);
+      t.style.fontFamily = 'Consolas,monospace';
+      t.style.fontWeight = 'bold';
+      t.textContent = txt;
     });
   el('g', { id: 'ov', 'pointer-events': 'none' }, svg);
   drawOv();
@@ -69432,6 +69500,35 @@ function tcsOstGov(U) {
   const gov = !!(c && c.rst) && tb.st === 'roll' && !(c.cur >= 0);
   return { or008, gov, inhibit: !(!or008 && gov) };
 }
+/* LMYP OTS (JENNIE, TCE live reads): the engine's own state, flat, for the TCE soft logic sheets of the Logic page (02d-tce.js q.live). Every
+   value is the one the engine already holds and uses; nothing is decided here. A sheet shows these on the wires it names and nothing else, so
+   the Logic page never runs a second copy of the TCS logic (one plant, one logic) */
+function tcsLiveRead(U) {
+  const c = U && U.tc,
+    tb = U && U.tb;
+  if (!c || !tb) return null;
+  const g = tcsOstGov(U),
+    o = c.ost || {},
+    sel = c.spd && c.spd.sel != null ? c.spd.sel : null;
+  return {
+    trip: c.trip ? 1 : 0 /* TURBINE TRIP */,
+    rst: c.rst ? 1 : 0 /* turbine reset (MSV / RSV open) */,
+    g52: tb.st === 'sync' || tb.st === 'load' ? 1 : 0 /* 52G CLOSE */,
+    gov: g.gov ? 1 : 0 /* GOVERNING MODE as the overspeed test reads it (TCE176 / 177) */,
+    or008: g.or008 ? 1 : 0 /* TURBINE TRIP or 52G CLOSE (TCE176 / 177 OR008) */,
+    ostInh: g.inhibit ? 1 : 0 /* OVERSPEED TEST INHIBIT */,
+    auto: c.auto ? 1 : 0 /* ATS AUTO(C) */,
+    rpm: tb.rpm /* TURBINE SPEED, rpm */,
+    accel: c.spd ? c.spd.acc : null /* TARGET ACCELERATION RATE held by the CRT selection (TCE160), rpm/min; null = none */,
+    tsel: sel /* the CRT target speed select (TCE161 / 162): 0 CLOSE VALVES, 200, 1800, 2700, 3600; null = none */,
+    tspd: sel > 0 ? sel : 0 /* TARGET SPEED out of TCE162 (0 with no speed select) */,
+    tselAny: sel > 0 ? 1 : 0 /* a speed select is held */,
+    ostMain: o.main ? 1 : 0,
+    ostBk: o.bk ? 1 : 0,
+    patMain: +o.pmain || 0 /* overspeed test pattern (MAIN), rpm above the target */,
+    patBk: +o.pbk || 0
+  };
+}
 function tcsOstPerm(U, m) {
   const c = U.tc;
   if (!c || !U.tb) return 'TCS not ready';
@@ -74660,6 +74757,7 @@ function anEngAPI() {
     unitRestart: k => anUnitRestart(k),
     tcsTrip: () => tcsTripState(AN_UNIT),
     tcsIbd: id => tcsIbdState(id),
+    tceRead: () => tcsLiveRead(AN_UNIT) /* the TCE soft logic sheets (02d-tce.js q.live) */,
     tcsIbdSheets: () => TCS_IBD_SHEETS,
     tcsIbdMissing: () => tcsIbdMissing(),
     tcsIO: () => (AN_UNIT.on ? tcsIO(AN_UNIT) : null),
@@ -79048,7 +79146,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 4babc93'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 2f4b6d2'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -103017,6 +103115,9 @@ function sdNL(sh) {
     pout: [],
     tcs: d.tcs,
     anl: d.anl,
+    /* a TCE soft logic sheet (02d-tce.js): the engine reads of its wires (tlv) and the nets that have none (nst, drawn without a state) */
+    tlv: d.live || null,
+    nst: d.nst ? new Set(d.nst) : null,
     an: d.an || [],
     anRows: new Set((d.an || []).map(a => a.row)),
     mv: [],
@@ -103459,8 +103560,33 @@ if (typeof window !== 'undefined') {
     }
   };
 }
+/* a TCE soft logic sheet (02d-tce.js q.live): the values the engine holds (AN.tceRead), on the wires the sheet names; no gate of the sheet runs
+   here (the TCS logic is the engine's, tcs.js: one logic) */
+function tceRd(R, e) {
+  const neg = e[0] === '!',
+    [k, want] = (neg ? e.slice(1) : e).split('=');
+  let x = R[k];
+  if (want !== undefined) x = x != null && String(x) === want;
+  return neg ? !x : x;
+}
+function tceSim(s) {
+  const nl = s.nl,
+    R = typeof AN !== 'undefined' && AN.tceRead ? AN.tceRead() : null,
+    v = new Array(nl.n).fill(0);
+  s.avw = {};
+  if (R)
+    for (const L of nl.tlv || []) {
+      const x = tceRd(R, L.rd);
+      if (!L.unit) v[L.n] = x ? 1 : 0;
+      else if (x != null && isFinite(x)) s.avw[L.key] = +(+x).toFixed(Math.abs(x) < 100 ? 2 : 1);
+    }
+  nl._v = v;
+  nl.avk = avOf(s);
+  return { rowOn: new Set(), v, outOn: new Set() };
+}
 /* one sheet in RUN: the values of the engine's scan */
 function tcsSim(s) {
+  if (s.tce) return tceSim(s);
   const st = typeof AN !== 'undefined' && AN.tcsIbd ? AN.tcsIbd(s.tcs) : null,
     nl = s.nl,
     raw = (st && st.v) || [],
@@ -110103,6 +110229,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 84, 2222, 1545],
+  /* live: the engine's TCE160 state (tcs.js tcsLiveRead): the CRT acceleration select held, TURBINE TRIP, ATS AUTO(C) */
+  live: { kTrip: 'trip', kAts: 'auto', ffr007: 'accel=120', ffr018: 'accel=180', ffr028: 'accel=360', gC036: ['accel', 'rpm/m'] },
   k: [
     ['kInit', 289, 158, 'INITIAL', 'ref'],
     ['kAts', 279, 1010, 'ATS AUTO(C)', 'ref'],
@@ -110284,6 +110412,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [175, 84, 2224, 1542],
+  /* live: the engine's state for TCE161 (tcs.js tcsLiveRead): TURBINE TRIP, ATS AUTO(C), 52G CLOSE, TURBINE SPEED */
+  live: { kTrip: 'trip', kAts: 'auto', k52g: 'g52', not035: '!g52', kSpd: ['rpm', 'rpm'] },
   k: [
     ['kAts', 279, 1158, 'ATS AUTO(C)', 'ref'],
     ['kSpd', 277, 1275, 'TURBINE SPEED', 'ref'],
@@ -110494,6 +110624,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 84, 2222, 1545],
+  /* live: the CRT target speed select the engine holds (tcs.js tcsLiveRead), its target speed out */
+  live: { ffr003: 'tsel=200', ffr008: 'tsel=1800', ffr013: 'tsel=2700', ffr018: 'tsel=3600', or022: 'tselAny', not023: '!tselAny', asw027: ['tspd', 'rpm'] },
   k: [
     ['kInit', 290, 150, 'INITIAL', 'ref'],
     ['kZero', 277, 1437, '0.0', 'sys.ref'],
@@ -111870,6 +112002,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [174, 80, 2226, 1542],
+  /* live: the engine's overspeed test (MAIN) state (tcs.js tcsOst / tcsLiveRead) */
+  live: { kTrip: 'trip', k52g: 'g52', or008: 'or008', not007: '!or008', kGov: 'gov', a015: '!ostInh', not016: 'ostInh', ffr004: 'ostMain', not010: '!ostMain', iBk: 'ostBk', rlA023: ['patMain', 'rpm'] },
   k: [
     ['kGov', 289, 360, 'GOVERNING MODE', 'ref'],
     ['kTrip', 288, 445, 'TURBINE TRIP', 'ref'],
@@ -112028,6 +112162,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [168, 76, 2220, 1538],
+  /* live: the engine's overspeed test (BK-UP) state (tcs.js tcsOst / tcsLiveRead) */
+  live: { kTrip: 'trip', k52g: 'g52', or008: 'or008', not007: '!or008', kGov: 'gov', ffr004: 'ostBk', not010: '!ostBk', iMain: 'ostMain', rlA020: ['patBk', 'rpm'] },
   k: [
     ['kGov', 283, 357, 'GOVERNING MODE', 'ref'],
     ['kTrip', 283, 441, 'TURBINE TRIP', 'ref'],
@@ -141331,7 +141467,10 @@ function tcsSim(s) {
      t: [x, y, text, align, size, rot]                               other words of the sheet (align 0 left, 1 centre, 2 right); rot = the turn of
                                                                      the words in degrees (90 = read from the bottom up)
      live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
-                                                                     as a number); none = the sheet is shown without states
+                                                                     as a number); none = the sheet is shown without states. An engine read
+                                                                     is a name of AN.tceRead() (tcs.js tcsLiveRead): 'trip', '!trip' (inverted),
+                                                                     'tsel=1800' (that value). Only values the engine holds: the page runs no
+                                                                     gate of the sheet, so a wire with no read stays without a state
 
    A sheet of the Interlock Block Diagram 310SC90-794 (TCS IBD, typicals and TA / TB ...) typed in the same format takes the place of the sheet the app
    builds from the IBD netlist (02c-tcs.js): same gates, same net numbers, so the logic, the trace and the values of the engine stay; only the picture is
@@ -141690,6 +141829,18 @@ function tceSheet(q) {
     ln.push([X(a[0]) + dx, Y(a[1]) + dy, X(b[0]) + dx, Y(b[1]) + dy, 'CON']);
     seg.push(n);
   }
+  /* live reads (q.live): the net, the engine read and the place of the value of each (the start of its first wire, else the right of its symbol);
+     every other net of the sheet has no state */
+  const live = [];
+  for (const k in q.live || {}) {
+    if (!(k in src)) continue;
+    const r = q.live[k],
+      w = (q.w || []).find(z => z[0] === k),
+      b = box[k];
+    if (!w && !b) continue;
+    live.push({ key: k, n: src[k], rd: Array.isArray(r) ? r[0] : r, unit: Array.isArray(r) ? r[1] : null, x: w ? X(w[1][0][0]) : b.x2, y: w ? Y(w[1][0][1]) : (b.y1 + b.y2) / 2 });
+  }
+  const nst = Object.values(src).filter(n => !live.some(L => L.n === n));
   const NO = [0, 0],
     no = (/(\d+)/.exec(q.id) || [])[1] || '';
   return {
@@ -141710,7 +141861,7 @@ function tceSheet(q) {
     syms: [],
     lyr: '',
     bv: BV,
-    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [] }
+    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst }
   };
 }
 
@@ -164455,6 +164606,35 @@ function tcsOstGov(U) {
   const gov = !!(c && c.rst) && tb.st === 'roll' && !(c.cur >= 0);
   return { or008, gov, inhibit: !(!or008 && gov) };
 }
+/* LMYP OTS (JENNIE, TCE live reads): the engine's own state, flat, for the TCE soft logic sheets of the Logic page (02d-tce.js q.live). Every
+   value is the one the engine already holds and uses; nothing is decided here. A sheet shows these on the wires it names and nothing else, so
+   the Logic page never runs a second copy of the TCS logic (one plant, one logic) */
+function tcsLiveRead(U) {
+  const c = U && U.tc,
+    tb = U && U.tb;
+  if (!c || !tb) return null;
+  const g = tcsOstGov(U),
+    o = c.ost || {},
+    sel = c.spd && c.spd.sel != null ? c.spd.sel : null;
+  return {
+    trip: c.trip ? 1 : 0 /* TURBINE TRIP */,
+    rst: c.rst ? 1 : 0 /* turbine reset (MSV / RSV open) */,
+    g52: tb.st === 'sync' || tb.st === 'load' ? 1 : 0 /* 52G CLOSE */,
+    gov: g.gov ? 1 : 0 /* GOVERNING MODE as the overspeed test reads it (TCE176 / 177) */,
+    or008: g.or008 ? 1 : 0 /* TURBINE TRIP or 52G CLOSE (TCE176 / 177 OR008) */,
+    ostInh: g.inhibit ? 1 : 0 /* OVERSPEED TEST INHIBIT */,
+    auto: c.auto ? 1 : 0 /* ATS AUTO(C) */,
+    rpm: tb.rpm /* TURBINE SPEED, rpm */,
+    accel: c.spd ? c.spd.acc : null /* TARGET ACCELERATION RATE held by the CRT selection (TCE160), rpm/min; null = none */,
+    tsel: sel /* the CRT target speed select (TCE161 / 162): 0 CLOSE VALVES, 200, 1800, 2700, 3600; null = none */,
+    tspd: sel > 0 ? sel : 0 /* TARGET SPEED out of TCE162 (0 with no speed select) */,
+    tselAny: sel > 0 ? 1 : 0 /* a speed select is held */,
+    ostMain: o.main ? 1 : 0,
+    ostBk: o.bk ? 1 : 0,
+    patMain: +o.pmain || 0 /* overspeed test pattern (MAIN), rpm above the target */,
+    patBk: +o.pbk || 0
+  };
+}
 function tcsOstPerm(U, m) {
   const c = U.tc;
   if (!c || !U.tb) return 'TCS not ready';
@@ -169715,6 +169895,7 @@ function anEngAPI() {
     unitRestart: k => anUnitRestart(k),
     tcsTrip: () => tcsTripState(AN_UNIT),
     tcsIbd: id => tcsIbdState(id),
+    tceRead: () => tcsLiveRead(AN_UNIT) /* the TCE soft logic sheets (02d-tce.js q.live) */,
     tcsIbdSheets: () => TCS_IBD_SHEETS,
     tcsIbdMissing: () => tcsIbdMissing(),
     tcsIO: () => (AN_UNIT.on ? tcsIO(AN_UNIT) : null),
@@ -175140,6 +175321,7 @@ body:not(.an) #dmeta.has{display:flex;align-items:center;gap:14px;min-height:28p
 #dmeta .dm-lg{display:inline-flex;align-items:center;gap:4px;font-size:11.5px}
 #dmeta .dm-lg i{display:inline-block;width:16px;height:3px;background:#2b5f46;margin-left:6px}
 #dmeta .dm-lg i.on{background:#ff4d4d}
+#dmeta .dm-lg i.ns{background:#9aa5ad}
 @media (max-width:1100px){#dmeta small{display:none}}
 @media (max-width:700px){body:not(.an) #dmeta.has{padding:3px 8px;gap:6px}#dmeta .dm-lg{display:none}#dmeta .dm-t{max-width:40vw}#dmode{margin-left:0;font-size:11px}}
 #dsort{display:flex;gap:4px;margin:4px 0}
@@ -181397,7 +181579,7 @@ html body.sc #scstart .sccont:disabled{display:none!important}
           machChips() || '',
           dmode,
           E('span', { cls: 'sp' }),
-          E('span', { cls: 'dm-lg' }, [E('i', { cls: 'on' }), document.createTextNode(' 1 = ON  '), E('i'), document.createTextNode(' 0 = OFF')]),
+          E('span', { cls: 'dm-lg' }, [E('i', { cls: 'on' }), document.createTextNode(' 1 = ON  '), E('i'), document.createTextNode(' 0 = OFF')].concat(s.tce ? [E('i', { cls: 'ns' }), document.createTextNode(' no value')] : [])) /* a TCE sheet: a wire the engine gives no value for */,
           E('small', { txt: nIn + ' inputs · ' + (nl ? nl.gates.length : 0) + ' gates / timers · ' + nOut + ' outputs · ' + ditlCat(s) })
         );
       }
@@ -198919,7 +199101,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 4babc93'));
+    row('Version', E('span', 'scsver', ver + ' · build 2f4b6d2'));
   }
   function openSet(near) {
     if (!set) {

@@ -1657,6 +1657,35 @@ function tcsOstGov(U) {
   const gov = !!(c && c.rst) && tb.st === 'roll' && !(c.cur >= 0);
   return { or008, gov, inhibit: !(!or008 && gov) };
 }
+/* LMYP OTS (JENNIE, TCE live reads): the engine's own state, flat, for the TCE soft logic sheets of the Logic page (02d-tce.js q.live). Every
+   value is the one the engine already holds and uses; nothing is decided here. A sheet shows these on the wires it names and nothing else, so
+   the Logic page never runs a second copy of the TCS logic (one plant, one logic) */
+function tcsLiveRead(U) {
+  const c = U && U.tc,
+    tb = U && U.tb;
+  if (!c || !tb) return null;
+  const g = tcsOstGov(U),
+    o = c.ost || {},
+    sel = c.spd && c.spd.sel != null ? c.spd.sel : null;
+  return {
+    trip: c.trip ? 1 : 0 /* TURBINE TRIP */,
+    rst: c.rst ? 1 : 0 /* turbine reset (MSV / RSV open) */,
+    g52: tb.st === 'sync' || tb.st === 'load' ? 1 : 0 /* 52G CLOSE */,
+    gov: g.gov ? 1 : 0 /* GOVERNING MODE as the overspeed test reads it (TCE176 / 177) */,
+    or008: g.or008 ? 1 : 0 /* TURBINE TRIP or 52G CLOSE (TCE176 / 177 OR008) */,
+    ostInh: g.inhibit ? 1 : 0 /* OVERSPEED TEST INHIBIT */,
+    auto: c.auto ? 1 : 0 /* ATS AUTO(C) */,
+    rpm: tb.rpm /* TURBINE SPEED, rpm */,
+    accel: c.spd ? c.spd.acc : null /* TARGET ACCELERATION RATE held by the CRT selection (TCE160), rpm/min; null = none */,
+    tsel: sel /* the CRT target speed select (TCE161 / 162): 0 CLOSE VALVES, 200, 1800, 2700, 3600; null = none */,
+    tspd: sel > 0 ? sel : 0 /* TARGET SPEED out of TCE162 (0 with no speed select) */,
+    tselAny: sel > 0 ? 1 : 0 /* a speed select is held */,
+    ostMain: o.main ? 1 : 0,
+    ostBk: o.bk ? 1 : 0,
+    patMain: +o.pmain || 0 /* overspeed test pattern (MAIN), rpm above the target */,
+    patBk: +o.pbk || 0
+  };
+}
 function tcsOstPerm(U, m) {
   const c = U.tc;
   if (!c || !U.tb) return 'TCS not ready';
