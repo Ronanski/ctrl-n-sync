@@ -4,7 +4,7 @@
 //   - id, title, page, ctl, cycle and the frame f are there; the id is unique and equals the file name;
 //   - every key of a sheet is unique;
 //   - a wire is made of horizontal and vertical pieces only (no slanted line, no curve), and has at least two points;
-//   - the source of a wire is a connector, a constant, a small block or an output pin of a macro block of the sheet;
+//   - the source of a wire is a connector, a constant, a PI/O box, a small block or an output pin of a macro block of the sheet;
 //   - every sheet is listed in src/digital/order.list before parts/02d-tce.js.
 // A connector that names a sheet which is not typed yet is a note, not an error.
 import fs from 'fs';
@@ -45,6 +45,8 @@ for (const f of files) {
     }
     for (const k of q.k || []) add(k[0]);
     for (const b of q.b || []) add(b[0]);
+    for (const r of q.r || []) add(r[0]);
+    for (const [a, b] of q.a || []) if (!a || !b || a.length !== 2 || b.length !== 2) E('a note arrow is not [[x1, y1], [x2, y2]]');
     for (const m of q.m || []) {
       add(m[0]);
       for (const p of m[8] || []) if (p) keys.add(m[0] + '.' + p);
