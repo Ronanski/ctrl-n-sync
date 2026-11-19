@@ -1152,7 +1152,58 @@
         c.append(E('h2', 'st-h', name), v, m, r);
         box.append(c);
       }
-      ownPg.replaceChildren(head, box, gov.msg);
+      /* the speed control of the station with the automatic start-up off (TCS soft logic TCE160 TARGET ACCELERATION, TCE161 / 162 TARGET
+         SPEED): one select at a time, pressed with the app's own commands */
+      const box2 = E('div', 'st-gov');
+      gov.sel = [];
+      for (const [k, name, tip, L] of [
+        [
+          'tspeed',
+          'Target speed',
+          'Used with the automatic start-up off, the turbine reset and the generator off the line',
+          [
+            [0, 'Close valves'],
+            [200, '200 rpm'],
+            [1800, '1800 rpm'],
+            [2700, '2700 rpm'],
+            [3600, '3600 rpm']
+          ]
+        ],
+        [
+          'accel',
+          'Acceleration rate',
+          'How fast the speed goes to the target',
+          [
+            ['slow', 'Slow 120 rpm/min', 120],
+            ['med', 'Medium 180 rpm/min', 180],
+            ['fast', 'Fast 360 rpm/min', 360]
+          ]
+        ]
+      ]) {
+        const c = E('section', 'st-gc'),
+          r = E('div', 'st-row');
+        c.title = tip;
+        for (const [a, t, v] of L) {
+          const b = E('button', 'st-b', t);
+          b.onclick = () => {
+            /* the rate has its own command name: 'accel' is the ACCELERATION step of the start-up */
+            const x = call(() => AN.turbine(k === 'accel' ? 'accrate' : k, a), '');
+            gov.msg.textContent = x ? String(x) : '';
+            setTimeout(tick, 120);
+          };
+          gov.sel.push([b, k, v == null ? a : v]);
+          r.append(b);
+        }
+        c.append(E('h2', 'st-h', name), r);
+        box2.append(c);
+      }
+      ownPg.replaceChildren(head, box, box2, gov.msg);
+    }
+    const T = call(() => AN.tcs(), null);
+    for (const [b, k, v] of gov.sel || []) {
+      const on = !!T && T[k] === v;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
     }
     const pc = x => (x == null ? '--' : fmt(x, 1) + ' %');
     gov.h.Speed.textContent = fmt(tb ? tb.rpm : null, 0) + ' rpm';
