@@ -8,7 +8,7 @@
      id, title, page, ctl (controller), cycle (ms)
      f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
      c: [key, 'in' | 'out', letter, x, y, name, [sheets], dbl, under] off-page connector (oval), x y = its centre; dbl 1 = drawn with a double line;
-                                                                     under 1 = the sheets stand under the connector
+                                                                     under 1 = the sheets stand under the connector (2 = in one row under an output connector)
      k: [key, x, y, text, note, kind]                                constant / system reference (pentagon), x y = its left middle; kind 'def' =
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
@@ -128,7 +128,8 @@ function tceSheet(q) {
       /* near the right edge of the frame there is no room for a second column: the drawing puts the sheets over four on the left of the
          column, on its last rows (TCE166 A: TCE602 left of TCE601) */
       /* under 1: the drawing prints the sheets under the connector, not beside it */
-      if (under) R.forEach((s, i) => tx.push(text(s, x + 6 * u, y + (17 + 8 * i) * u, 1.7, 0)));
+      if (under === 2) R.forEach((s, i) => tx.push(text(s, x + (i - (R.length - 1) / 2) * 44 * u, y + 17 * u, 1.7, 1)));
+      else if (under) R.forEach((s, i) => tx.push(text(s, x + 6 * u, y + (17 + 8 * i) * u, 1.7, 0)));
       else if (R.length > 4 && x + w + 37 * u + 34 * u > fx1)
         R.forEach((s, i) =>
           tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
