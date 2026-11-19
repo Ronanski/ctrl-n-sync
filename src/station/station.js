@@ -1414,7 +1414,6 @@
               const x = call(() => AN.turbine('vtest', { v, op }), '');
               vt.msg.textContent = x ? name + ': ' + x : '';
               vt.key = '';
-      ost.h = null;
               setTimeout(tick, 150);
             };
             if (op === 'cancel' || op === 'open') b.onclick = fn;
@@ -1762,6 +1761,7 @@
       ownWas = own;
       crit.key = trp.key = '';
       gov.h = null;
+      ost.h = null;
       vt.key = '';
       if (ownPg) ownPg.replaceChildren();
     }
