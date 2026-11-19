@@ -1234,7 +1234,7 @@
           [BX + 85, y(5) + 6, 'ANN ENABLE'],
           [BX + 106, top + 341, '(LME122)'],
           [BX + 222, top + 341, '(LME123)'],
-          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, s]),
+          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, o.dev ? s.replace('20.0', o.dev) : s]),
           ...PAR2.map(([dx, s], i) => [BX + dx, top + 386 + 21.3 * i, s])
         ]
       ]);
@@ -1467,7 +1467,11 @@
      B1), foot, and one of
        fo: sheet of FULL OPEN for CV warming  - a main stop valve: INITIAL, test position, full close and two full open comparators (TCE121)
        cv: { j: sheets of J, j1: sheet of J1 (j1u 1 = printed under it), m: its mark when not 029, f: sheets of F when not (-), g: sheets of G, p: sheets of P }  - a control valve: test position (to the protection
-           controllers and, by a mark, to J1), full close and full close (AUX) (TCE125); its blocks carry the numbers of TCE125. */
+           controllers and, by a mark, to J1), full close and full close (AUX) (TCE125); its blocks carry the numbers of TCE125.
+       icv: { g: sheets of G, p: sheets of P, sg: number of the SG block when not A014 }  - an intercept valve: one full close comparator
+           (TCE129); its blocks carry the numbers of TCE129.
+     r450 / r218: the sheets of the abnormal signals when not TCE450 / TCE218; dev: the DEV limit of the VALVE DIAGNOSIS block when not 20.0
+     (also for the sheets of two blocks). */
   const vd3 = o => {
     const F = [163, 82, 2222, 1541],
       u = (F[2] - F[0]) / 1000,
@@ -1480,31 +1484,42 @@
       z = i => Math.round(764 + 15 * u + (i + 0.5) * ((318 - 30 * u) / 8)),
       V = o.v,
       CV = o.cv,
-      N = CV
+      N = o.icv
         ? {
-            sig: ['011', '013', '014'],
-            en: '018',
-            sg: 'A016',
-            a: '019',
-            or: '020',
-            not: '021',
-            ors: ['012', '015', '017'],
-            tm: 'A010'
+            sig: ['009', '011', '012'],
+            en: '016',
+            sg: o.icv.sg || 'A014',
+            a: '017',
+            or: '018',
+            not: '019',
+            ors: ['010', '013', '015'],
+            tm: 'A008'
           }
-        : {
-            sig: ['013', '015', '016'],
-            en: '020',
-            sg: 'A018',
-            a: '021',
-            or: '022',
-            not: '023',
-            ors: ['014', '017', '019'],
-            tm: 'A012'
-          },
+        : CV
+          ? {
+              sig: ['011', '013', '014'],
+              en: '018',
+              sg: 'A016',
+              a: '019',
+              or: '020',
+              not: '021',
+              ors: ['012', '015', '017'],
+              tm: 'A010'
+            }
+          : {
+              sig: ['013', '015', '016'],
+              en: '020',
+              sg: 'A018',
+              a: '021',
+              or: '022',
+              not: '023',
+              ors: ['014', '017', '019'],
+              tm: 'A012'
+            },
       OX = 2080,
       E = OX - 27,
-      T450 = ['TCE450'],
-      T218 = ['TCE218'],
+      T450 = [o.r450 || 'TCE450'],
+      T218 = [o.r218 || 'TCE218'],
       b = [],
       t = [],
       k = [
@@ -1515,18 +1530,20 @@
       out = (l, y, refs, dbl, under) => ['o' + l, 'out', l, OX, y, '', refs, dbl || 0, under || 0],
       box = (key, type, no, x, y, w, h, notes) => b.push([key, type, no, x, y, notes || [], {}, [w, h]]),
       /* the comparators on the line of the valve position: [key, type, number, y of its line, mark] */
-      CM = CV
-        ? [
-            ['c025', 'CPL', 'C025', 472, '024'],
-            ['c026', 'CPL', 'C026', 621, '006'],
-            ['c027', 'CPL', 'C027', 717, '008']
-          ]
-        : [
-            ['c025', 'CPL', 'C025', 461, '024'],
-            ['c026', 'CPL', 'C026', 556, '006'],
-            ['c027', 'CMP', 'C027', 641, '008'],
-            ['c028', 'CMP', 'C028', 726, '010']
-          ],
+      CM = o.icv
+        ? [['c020', 'CPL', 'C020', 710, '006']]
+        : CV
+          ? [
+              ['c025', 'CPL', 'C025', 472, '024'],
+              ['c026', 'CPL', 'C026', 621, '006'],
+              ['c027', 'CPL', 'C027', 717, '008']
+            ]
+          : [
+              ['c025', 'CPL', 'C025', 461, '024'],
+              ['c026', 'CPL', 'C026', 556, '006'],
+              ['c027', 'CMP', 'C027', 641, '008'],
+              ['c028', 'CMP', 'C028', 726, '010']
+            ],
       c = [],
       w = [];
     [
@@ -1540,9 +1557,9 @@
     ].forEach(([no, x, y]) => mark('FTR', no, x, y));
     mark('BTR', N.en, 767, 1088);
     CM.forEach(([key, type, no, y, mk], i) => {
-      const x = i ? 1739 : 1750;
+      const x = i || o.icv ? 1739 : 1750;
       box(key, type, no, x, y + 11, 59, 43);
-      mark('FTR', mk, i ? 1632 : 1644, y);
+      mark('FTR', mk, i || o.icv ? 1632 : 1644, y);
       t.push([x - 51, y - 9, 'T']);
       w.push(
         [
@@ -1575,7 +1592,15 @@
     box('or1', 'OR', N.ors[0], 1630, 886, 60, 43);
     box('or2', 'OR', N.ors[1], 1629, 982, 60, 43);
     box('or3', 'OR', N.ors[2], 1628, 1077, 60, 43);
-    if (CV) {
+    if (o.icv) {
+      c.push(out('G', 710, o.icv.g), out('P', z(0), o.icv.p));
+      t.push(
+        [1849, 701, V + ' FULL CLOSE'],
+        [1747, z(0) - 6, V + ' POSITION'],
+        [1713, 759, 'HL:3'],
+        [1713, 780, 'LL:2']
+      );
+    } else if (CV) {
       c.push(
         out('J', 472, CV.j, 1),
         out('J1', 547, [CV.j1], 0, CV.j1u ? 1 : 0),
@@ -1726,7 +1751,7 @@
         out('A1', a(0), T450),
         out('D1', a(2), ['-']),
         out('K1', 290, T450),
-        out('C3', a(5), ['*', 'TCE450']),
+        out('C3', a(5), ['*', T450[0]]),
         ...c,
         out('E1', z(2), T218),
         out('L1', 929, T450),
@@ -1759,7 +1784,7 @@
             [BX + 85, a(5) + 6, 'ANN ENABLE'],
             [BX + 106, TOP + 343, '(LME122)'],
             [BX + 225, TOP + 343, '(LME123)'],
-            ...PAR.map(([dx, s], i) => [BX + dx, TOP + 367 + 21.3 * i, s]),
+            ...PAR.map(([dx, s], i) => [BX + dx, TOP + 367 + 21.3 * i, o.dev ? s.replace('20.0', o.dev) : s]),
             ...PAR2.map(([dx, s], i) => [BX + dx, TOP + 388 + 21.3 * i, s])
           ]
         ],

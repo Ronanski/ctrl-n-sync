@@ -5594,7 +5594,7 @@ function tcsSim(s) {
           [BX + 85, y(5) + 6, 'ANN ENABLE'],
           [BX + 106, top + 341, '(LME122)'],
           [BX + 222, top + 341, '(LME123)'],
-          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, s]),
+          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, o.dev ? s.replace('20.0', o.dev) : s]),
           ...PAR2.map(([dx, s], i) => [BX + dx, top + 386 + 21.3 * i, s])
         ]
       ]);
@@ -5827,7 +5827,11 @@ function tcsSim(s) {
      B1), foot, and one of
        fo: sheet of FULL OPEN for CV warming  - a main stop valve: INITIAL, test position, full close and two full open comparators (TCE121)
        cv: { j: sheets of J, j1: sheet of J1 (j1u 1 = printed under it), m: its mark when not 029, f: sheets of F when not (-), g: sheets of G, p: sheets of P }  - a control valve: test position (to the protection
-           controllers and, by a mark, to J1), full close and full close (AUX) (TCE125); its blocks carry the numbers of TCE125. */
+           controllers and, by a mark, to J1), full close and full close (AUX) (TCE125); its blocks carry the numbers of TCE125.
+       icv: { g: sheets of G, p: sheets of P, sg: number of the SG block when not A014 }  - an intercept valve: one full close comparator
+           (TCE129); its blocks carry the numbers of TCE129.
+     r450 / r218: the sheets of the abnormal signals when not TCE450 / TCE218; dev: the DEV limit of the VALVE DIAGNOSIS block when not 20.0
+     (also for the sheets of two blocks). */
   const vd3 = o => {
     const F = [163, 82, 2222, 1541],
       u = (F[2] - F[0]) / 1000,
@@ -5840,31 +5844,42 @@ function tcsSim(s) {
       z = i => Math.round(764 + 15 * u + (i + 0.5) * ((318 - 30 * u) / 8)),
       V = o.v,
       CV = o.cv,
-      N = CV
+      N = o.icv
         ? {
-            sig: ['011', '013', '014'],
-            en: '018',
-            sg: 'A016',
-            a: '019',
-            or: '020',
-            not: '021',
-            ors: ['012', '015', '017'],
-            tm: 'A010'
+            sig: ['009', '011', '012'],
+            en: '016',
+            sg: o.icv.sg || 'A014',
+            a: '017',
+            or: '018',
+            not: '019',
+            ors: ['010', '013', '015'],
+            tm: 'A008'
           }
-        : {
-            sig: ['013', '015', '016'],
-            en: '020',
-            sg: 'A018',
-            a: '021',
-            or: '022',
-            not: '023',
-            ors: ['014', '017', '019'],
-            tm: 'A012'
-          },
+        : CV
+          ? {
+              sig: ['011', '013', '014'],
+              en: '018',
+              sg: 'A016',
+              a: '019',
+              or: '020',
+              not: '021',
+              ors: ['012', '015', '017'],
+              tm: 'A010'
+            }
+          : {
+              sig: ['013', '015', '016'],
+              en: '020',
+              sg: 'A018',
+              a: '021',
+              or: '022',
+              not: '023',
+              ors: ['014', '017', '019'],
+              tm: 'A012'
+            },
       OX = 2080,
       E = OX - 27,
-      T450 = ['TCE450'],
-      T218 = ['TCE218'],
+      T450 = [o.r450 || 'TCE450'],
+      T218 = [o.r218 || 'TCE218'],
       b = [],
       t = [],
       k = [
@@ -5875,18 +5890,20 @@ function tcsSim(s) {
       out = (l, y, refs, dbl, under) => ['o' + l, 'out', l, OX, y, '', refs, dbl || 0, under || 0],
       box = (key, type, no, x, y, w, h, notes) => b.push([key, type, no, x, y, notes || [], {}, [w, h]]),
       /* the comparators on the line of the valve position: [key, type, number, y of its line, mark] */
-      CM = CV
-        ? [
-            ['c025', 'CPL', 'C025', 472, '024'],
-            ['c026', 'CPL', 'C026', 621, '006'],
-            ['c027', 'CPL', 'C027', 717, '008']
-          ]
-        : [
-            ['c025', 'CPL', 'C025', 461, '024'],
-            ['c026', 'CPL', 'C026', 556, '006'],
-            ['c027', 'CMP', 'C027', 641, '008'],
-            ['c028', 'CMP', 'C028', 726, '010']
-          ],
+      CM = o.icv
+        ? [['c020', 'CPL', 'C020', 710, '006']]
+        : CV
+          ? [
+              ['c025', 'CPL', 'C025', 472, '024'],
+              ['c026', 'CPL', 'C026', 621, '006'],
+              ['c027', 'CPL', 'C027', 717, '008']
+            ]
+          : [
+              ['c025', 'CPL', 'C025', 461, '024'],
+              ['c026', 'CPL', 'C026', 556, '006'],
+              ['c027', 'CMP', 'C027', 641, '008'],
+              ['c028', 'CMP', 'C028', 726, '010']
+            ],
       c = [],
       w = [];
     [
@@ -5900,9 +5917,9 @@ function tcsSim(s) {
     ].forEach(([no, x, y]) => mark('FTR', no, x, y));
     mark('BTR', N.en, 767, 1088);
     CM.forEach(([key, type, no, y, mk], i) => {
-      const x = i ? 1739 : 1750;
+      const x = i || o.icv ? 1739 : 1750;
       box(key, type, no, x, y + 11, 59, 43);
-      mark('FTR', mk, i ? 1632 : 1644, y);
+      mark('FTR', mk, i || o.icv ? 1632 : 1644, y);
       t.push([x - 51, y - 9, 'T']);
       w.push(
         [
@@ -5935,7 +5952,15 @@ function tcsSim(s) {
     box('or1', 'OR', N.ors[0], 1630, 886, 60, 43);
     box('or2', 'OR', N.ors[1], 1629, 982, 60, 43);
     box('or3', 'OR', N.ors[2], 1628, 1077, 60, 43);
-    if (CV) {
+    if (o.icv) {
+      c.push(out('G', 710, o.icv.g), out('P', z(0), o.icv.p));
+      t.push(
+        [1849, 701, V + ' FULL CLOSE'],
+        [1747, z(0) - 6, V + ' POSITION'],
+        [1713, 759, 'HL:3'],
+        [1713, 780, 'LL:2']
+      );
+    } else if (CV) {
       c.push(
         out('J', 472, CV.j, 1),
         out('J1', 547, [CV.j1], 0, CV.j1u ? 1 : 0),
@@ -6086,7 +6111,7 @@ function tcsSim(s) {
         out('A1', a(0), T450),
         out('D1', a(2), ['-']),
         out('K1', 290, T450),
-        out('C3', a(5), ['*', 'TCE450']),
+        out('C3', a(5), ['*', T450[0]]),
         ...c,
         out('E1', z(2), T218),
         out('L1', 929, T450),
@@ -6119,7 +6144,7 @@ function tcsSim(s) {
             [BX + 85, a(5) + 6, 'ANN ENABLE'],
             [BX + 106, TOP + 343, '(LME122)'],
             [BX + 225, TOP + 343, '(LME123)'],
-            ...PAR.map(([dx, s], i) => [BX + dx, TOP + 367 + 21.3 * i, s]),
+            ...PAR.map(([dx, s], i) => [BX + dx, TOP + 367 + 21.3 * i, o.dev ? s.replace('20.0', o.dev) : s]),
             ...PAR2.map(([dx, s], i) => [BX + dx, TOP + 388 + 21.3 * i, s])
           ]
         ],
@@ -10625,6 +10650,153 @@ function tcsSim(s) {
         g: ['TCA539', 'TCA690'],
         p: ['TCE212', 'TCE222', 'TCE450', 'TCE500', 'TCE502']
       },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+/* TCE128 VALVE CONTROL DIAGNOSTICS(9) (331DM09784 page 93, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   sheets of two VALVE DIAGNOSIS blocks (tce/_lib.js, TCE_LIB.vd2); the places are those of TCE120 set straight.
+   Position signals (1) and (2) of intercept valve A: LVDT A and B and servo amplifier A and B. The drawing prints no marks at POS.OT, ANN.EN
+   and the outputs of this sheet; none are typed. The title block of this page prints PAGE 91; it is page 93 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd2({
+      id: 'TCE128',
+      title: 'VALVE CONTROL DIAGNOSTICS(9)',
+      page: 93,
+      v: 'ICV(A)',
+      ann: 'ICV ANN ENABLE',
+      dem: ['A', 'TCE214'],
+      sim: ['C1', 'TCE501'],
+      en: ['T', 'TCE053'],
+      io: [
+        ['TCE991-13', 'TCE991-17'],
+        ['TCE992-1', 'TCE992-5']
+      ],
+      tct: ['TCT212', 'TCT212'],
+      pos: ['TCE129', 'TCE451'],
+      abn: ['TCE129', 'TCE451'],
+      q: ['TCE451'],
+      dev: '105.0',
+      mk: {
+        i: ['001', '003', '004', '005', '', ''],
+        j: ['006', '008', '009', '010', '', ''],
+        e: '011',
+        o: ['', '', ''],
+        p: ['', '', '']
+      },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+/* TCE129 VALVE CONTROL DIAGNOSTICS(10) (331DM09784 page 94, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   second sheet of a valve (tce/_lib.js, TCE_LIB.vd3); the places are those of TCE121 set straight.
+   Position signal (3) of intercept valve A, the choice out of the three position signals (TMR LVDT DIAGNOSIS), the full close comparator
+   and the abnormal signals. Connector C3 goes out and comes in again on this sheet; the drawing marks it (*). The title block of this page prints PAGE 92; it is page 94 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd3({
+      id: 'TCE129',
+      title: 'VALVE CONTROL DIAGNOSTICS(10)',
+      page: 94,
+      v: 'ICV(A)',
+      ann: 'ICV ANN ENABLE',
+      en: 'T',
+      dem: ['A', 'TCE214'],
+      sim: ['C1', 'TCE501'],
+      prev: 'TCE128',
+      io: ['TCE992-13', 'TCE992-17'],
+      tct: 'TCT212',
+      r450: 'TCE451',
+      r218: 'TCE219',
+      dev: '105.0',
+      icv: { g: ['TCE350'], p: ['TCE227', 'TCE451', 'TCE500', 'TCE501'] },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+/* TCE130 VALVE CONTROL DIAGNOSTICS(11) (331DM09784 page 95, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   sheets of two VALVE DIAGNOSIS blocks (tce/_lib.js, TCE_LIB.vd2); the places are those of TCE120 set straight.
+   Position signals (1) and (2) of intercept valve B: LVDT A and B and servo amplifier A and B. The drawing prints no marks at POS.OT, ANN.EN
+   and the outputs of this sheet; none are typed. The title block of this page prints PAGE 93; it is page 95 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd2({
+      id: 'TCE130',
+      title: 'VALVE CONTROL DIAGNOSTICS(11)',
+      page: 95,
+      v: 'ICV(B)',
+      ann: 'ICV ANN ENABLE',
+      dem: ['B', 'TCE214'],
+      sim: ['D1', 'TCE501'],
+      en: ['T', 'TCE053'],
+      io: [
+        ['TCE991-14', 'TCE991-18'],
+        ['TCE992-2', 'TCE992-6']
+      ],
+      tct: ['TCT212', 'TCT212'],
+      pos: ['TCE131', 'TCE451'],
+      abn: ['TCE131', 'TCE451'],
+      q: ['TCE451'],
+      dev: '105.0',
+      mk: {
+        i: ['001', '003', '004', '005', '', ''],
+        j: ['006', '008', '009', '010', '', ''],
+        e: '011',
+        o: ['', '', ''],
+        p: ['', '', '']
+      },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+/* TCE131 VALVE CONTROL DIAGNOSTICS(12) (331DM09784 page 96, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   second sheet of a valve (tce/_lib.js, TCE_LIB.vd3); the places are those of TCE121 set straight.
+   Position signal (3) of intercept valve B, the choice out of the three position signals (TMR LVDT DIAGNOSIS), the full close comparator
+   and the abnormal signals. Connector C3 goes out and comes in again on this sheet; the drawing marks it (*). The SG block is
+   numbered 014 on this sheet (A014 on TCE129); typed as printed. The title block of this page prints PAGE 94; it is page 96 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd3({
+      id: 'TCE131',
+      title: 'VALVE CONTROL DIAGNOSTICS(12)',
+      page: 96,
+      v: 'ICV(B)',
+      ann: 'ICV ANN ENABLE',
+      en: 'T',
+      dem: ['B', 'TCE214'],
+      sim: ['D1', 'TCE501'],
+      prev: 'TCE130',
+      io: ['TCE992-14', 'TCE992-18'],
+      tct: 'TCT212',
+      r450: 'TCE451',
+      r218: 'TCE219',
+      dev: '105.0',
+      icv: { g: ['TCE350'], p: ['TCE228', 'TCE451', 'TCE500', 'TCE501'], sg: '014' },
       foot: [
         [233, 1520, 'CONTROLLER:'],
         [392, 1520, 'EHG+MD'],
@@ -78876,7 +79048,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 4e4861e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 4babc93'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -104549,7 +104721,7 @@ function tcsSim(s) {
           [BX + 85, y(5) + 6, 'ANN ENABLE'],
           [BX + 106, top + 341, '(LME122)'],
           [BX + 222, top + 341, '(LME123)'],
-          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, s]),
+          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, o.dev ? s.replace('20.0', o.dev) : s]),
           ...PAR2.map(([dx, s], i) => [BX + dx, top + 386 + 21.3 * i, s])
         ]
       ]);
@@ -104782,7 +104954,11 @@ function tcsSim(s) {
      B1), foot, and one of
        fo: sheet of FULL OPEN for CV warming  - a main stop valve: INITIAL, test position, full close and two full open comparators (TCE121)
        cv: { j: sheets of J, j1: sheet of J1 (j1u 1 = printed under it), m: its mark when not 029, f: sheets of F when not (-), g: sheets of G, p: sheets of P }  - a control valve: test position (to the protection
-           controllers and, by a mark, to J1), full close and full close (AUX) (TCE125); its blocks carry the numbers of TCE125. */
+           controllers and, by a mark, to J1), full close and full close (AUX) (TCE125); its blocks carry the numbers of TCE125.
+       icv: { g: sheets of G, p: sheets of P, sg: number of the SG block when not A014 }  - an intercept valve: one full close comparator
+           (TCE129); its blocks carry the numbers of TCE129.
+     r450 / r218: the sheets of the abnormal signals when not TCE450 / TCE218; dev: the DEV limit of the VALVE DIAGNOSIS block when not 20.0
+     (also for the sheets of two blocks). */
   const vd3 = o => {
     const F = [163, 82, 2222, 1541],
       u = (F[2] - F[0]) / 1000,
@@ -104795,31 +104971,42 @@ function tcsSim(s) {
       z = i => Math.round(764 + 15 * u + (i + 0.5) * ((318 - 30 * u) / 8)),
       V = o.v,
       CV = o.cv,
-      N = CV
+      N = o.icv
         ? {
-            sig: ['011', '013', '014'],
-            en: '018',
-            sg: 'A016',
-            a: '019',
-            or: '020',
-            not: '021',
-            ors: ['012', '015', '017'],
-            tm: 'A010'
+            sig: ['009', '011', '012'],
+            en: '016',
+            sg: o.icv.sg || 'A014',
+            a: '017',
+            or: '018',
+            not: '019',
+            ors: ['010', '013', '015'],
+            tm: 'A008'
           }
-        : {
-            sig: ['013', '015', '016'],
-            en: '020',
-            sg: 'A018',
-            a: '021',
-            or: '022',
-            not: '023',
-            ors: ['014', '017', '019'],
-            tm: 'A012'
-          },
+        : CV
+          ? {
+              sig: ['011', '013', '014'],
+              en: '018',
+              sg: 'A016',
+              a: '019',
+              or: '020',
+              not: '021',
+              ors: ['012', '015', '017'],
+              tm: 'A010'
+            }
+          : {
+              sig: ['013', '015', '016'],
+              en: '020',
+              sg: 'A018',
+              a: '021',
+              or: '022',
+              not: '023',
+              ors: ['014', '017', '019'],
+              tm: 'A012'
+            },
       OX = 2080,
       E = OX - 27,
-      T450 = ['TCE450'],
-      T218 = ['TCE218'],
+      T450 = [o.r450 || 'TCE450'],
+      T218 = [o.r218 || 'TCE218'],
       b = [],
       t = [],
       k = [
@@ -104830,18 +105017,20 @@ function tcsSim(s) {
       out = (l, y, refs, dbl, under) => ['o' + l, 'out', l, OX, y, '', refs, dbl || 0, under || 0],
       box = (key, type, no, x, y, w, h, notes) => b.push([key, type, no, x, y, notes || [], {}, [w, h]]),
       /* the comparators on the line of the valve position: [key, type, number, y of its line, mark] */
-      CM = CV
-        ? [
-            ['c025', 'CPL', 'C025', 472, '024'],
-            ['c026', 'CPL', 'C026', 621, '006'],
-            ['c027', 'CPL', 'C027', 717, '008']
-          ]
-        : [
-            ['c025', 'CPL', 'C025', 461, '024'],
-            ['c026', 'CPL', 'C026', 556, '006'],
-            ['c027', 'CMP', 'C027', 641, '008'],
-            ['c028', 'CMP', 'C028', 726, '010']
-          ],
+      CM = o.icv
+        ? [['c020', 'CPL', 'C020', 710, '006']]
+        : CV
+          ? [
+              ['c025', 'CPL', 'C025', 472, '024'],
+              ['c026', 'CPL', 'C026', 621, '006'],
+              ['c027', 'CPL', 'C027', 717, '008']
+            ]
+          : [
+              ['c025', 'CPL', 'C025', 461, '024'],
+              ['c026', 'CPL', 'C026', 556, '006'],
+              ['c027', 'CMP', 'C027', 641, '008'],
+              ['c028', 'CMP', 'C028', 726, '010']
+            ],
       c = [],
       w = [];
     [
@@ -104855,9 +105044,9 @@ function tcsSim(s) {
     ].forEach(([no, x, y]) => mark('FTR', no, x, y));
     mark('BTR', N.en, 767, 1088);
     CM.forEach(([key, type, no, y, mk], i) => {
-      const x = i ? 1739 : 1750;
+      const x = i || o.icv ? 1739 : 1750;
       box(key, type, no, x, y + 11, 59, 43);
-      mark('FTR', mk, i ? 1632 : 1644, y);
+      mark('FTR', mk, i || o.icv ? 1632 : 1644, y);
       t.push([x - 51, y - 9, 'T']);
       w.push(
         [
@@ -104890,7 +105079,15 @@ function tcsSim(s) {
     box('or1', 'OR', N.ors[0], 1630, 886, 60, 43);
     box('or2', 'OR', N.ors[1], 1629, 982, 60, 43);
     box('or3', 'OR', N.ors[2], 1628, 1077, 60, 43);
-    if (CV) {
+    if (o.icv) {
+      c.push(out('G', 710, o.icv.g), out('P', z(0), o.icv.p));
+      t.push(
+        [1849, 701, V + ' FULL CLOSE'],
+        [1747, z(0) - 6, V + ' POSITION'],
+        [1713, 759, 'HL:3'],
+        [1713, 780, 'LL:2']
+      );
+    } else if (CV) {
       c.push(
         out('J', 472, CV.j, 1),
         out('J1', 547, [CV.j1], 0, CV.j1u ? 1 : 0),
@@ -105041,7 +105238,7 @@ function tcsSim(s) {
         out('A1', a(0), T450),
         out('D1', a(2), ['-']),
         out('K1', 290, T450),
-        out('C3', a(5), ['*', 'TCE450']),
+        out('C3', a(5), ['*', T450[0]]),
         ...c,
         out('E1', z(2), T218),
         out('L1', 929, T450),
@@ -105074,7 +105271,7 @@ function tcsSim(s) {
             [BX + 85, a(5) + 6, 'ANN ENABLE'],
             [BX + 106, TOP + 343, '(LME122)'],
             [BX + 225, TOP + 343, '(LME123)'],
-            ...PAR.map(([dx, s], i) => [BX + dx, TOP + 367 + 21.3 * i, s]),
+            ...PAR.map(([dx, s], i) => [BX + dx, TOP + 367 + 21.3 * i, o.dev ? s.replace('20.0', o.dev) : s]),
             ...PAR2.map(([dx, s], i) => [BX + dx, TOP + 388 + 21.3 * i, s])
           ]
         ],
@@ -109732,6 +109929,161 @@ function tcsSim(s) {
         g: ['TCA539', 'TCA690'],
         p: ['TCE212', 'TCE222', 'TCE450', 'TCE500', 'TCE502']
       },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE128.js ---- */
+/* TCE128 VALVE CONTROL DIAGNOSTICS(9) (331DM09784 page 93, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   sheets of two VALVE DIAGNOSIS blocks (tce/_lib.js, TCE_LIB.vd2); the places are those of TCE120 set straight.
+   Position signals (1) and (2) of intercept valve A: LVDT A and B and servo amplifier A and B. The drawing prints no marks at POS.OT, ANN.EN
+   and the outputs of this sheet; none are typed. The title block of this page prints PAGE 91; it is page 93 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd2({
+      id: 'TCE128',
+      title: 'VALVE CONTROL DIAGNOSTICS(9)',
+      page: 93,
+      v: 'ICV(A)',
+      ann: 'ICV ANN ENABLE',
+      dem: ['A', 'TCE214'],
+      sim: ['C1', 'TCE501'],
+      en: ['T', 'TCE053'],
+      io: [
+        ['TCE991-13', 'TCE991-17'],
+        ['TCE992-1', 'TCE992-5']
+      ],
+      tct: ['TCT212', 'TCT212'],
+      pos: ['TCE129', 'TCE451'],
+      abn: ['TCE129', 'TCE451'],
+      q: ['TCE451'],
+      dev: '105.0',
+      mk: {
+        i: ['001', '003', '004', '005', '', ''],
+        j: ['006', '008', '009', '010', '', ''],
+        e: '011',
+        o: ['', '', ''],
+        p: ['', '', '']
+      },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE129.js ---- */
+/* TCE129 VALVE CONTROL DIAGNOSTICS(10) (331DM09784 page 94, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   second sheet of a valve (tce/_lib.js, TCE_LIB.vd3); the places are those of TCE121 set straight.
+   Position signal (3) of intercept valve A, the choice out of the three position signals (TMR LVDT DIAGNOSIS), the full close comparator
+   and the abnormal signals. Connector C3 goes out and comes in again on this sheet; the drawing marks it (*). The title block of this page prints PAGE 92; it is page 94 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd3({
+      id: 'TCE129',
+      title: 'VALVE CONTROL DIAGNOSTICS(10)',
+      page: 94,
+      v: 'ICV(A)',
+      ann: 'ICV ANN ENABLE',
+      en: 'T',
+      dem: ['A', 'TCE214'],
+      sim: ['C1', 'TCE501'],
+      prev: 'TCE128',
+      io: ['TCE992-13', 'TCE992-17'],
+      tct: 'TCT212',
+      r450: 'TCE451',
+      r218: 'TCE219',
+      dev: '105.0',
+      icv: { g: ['TCE350'], p: ['TCE227', 'TCE451', 'TCE500', 'TCE501'] },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE130.js ---- */
+/* TCE130 VALVE CONTROL DIAGNOSTICS(11) (331DM09784 page 95, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   sheets of two VALVE DIAGNOSIS blocks (tce/_lib.js, TCE_LIB.vd2); the places are those of TCE120 set straight.
+   Position signals (1) and (2) of intercept valve B: LVDT A and B and servo amplifier A and B. The drawing prints no marks at POS.OT, ANN.EN
+   and the outputs of this sheet; none are typed. The title block of this page prints PAGE 93; it is page 95 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd2({
+      id: 'TCE130',
+      title: 'VALVE CONTROL DIAGNOSTICS(11)',
+      page: 95,
+      v: 'ICV(B)',
+      ann: 'ICV ANN ENABLE',
+      dem: ['B', 'TCE214'],
+      sim: ['D1', 'TCE501'],
+      en: ['T', 'TCE053'],
+      io: [
+        ['TCE991-14', 'TCE991-18'],
+        ['TCE992-2', 'TCE992-6']
+      ],
+      tct: ['TCT212', 'TCT212'],
+      pos: ['TCE131', 'TCE451'],
+      abn: ['TCE131', 'TCE451'],
+      q: ['TCE451'],
+      dev: '105.0',
+      mk: {
+        i: ['001', '003', '004', '005', '', ''],
+        j: ['006', '008', '009', '010', '', ''],
+        e: '011',
+        o: ['', '', ''],
+        p: ['', '', '']
+      },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE131.js ---- */
+/* TCE131 VALVE CONTROL DIAGNOSTICS(12) (331DM09784 page 96, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   second sheet of a valve (tce/_lib.js, TCE_LIB.vd3); the places are those of TCE121 set straight.
+   Position signal (3) of intercept valve B, the choice out of the three position signals (TMR LVDT DIAGNOSIS), the full close comparator
+   and the abnormal signals. Connector C3 goes out and comes in again on this sheet; the drawing marks it (*). The SG block is
+   numbered 014 on this sheet (A014 on TCE129); typed as printed. The title block of this page prints PAGE 94; it is page 96 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd3({
+      id: 'TCE131',
+      title: 'VALVE CONTROL DIAGNOSTICS(12)',
+      page: 96,
+      v: 'ICV(B)',
+      ann: 'ICV ANN ENABLE',
+      en: 'T',
+      dem: ['B', 'TCE214'],
+      sim: ['D1', 'TCE501'],
+      prev: 'TCE130',
+      io: ['TCE992-14', 'TCE992-18'],
+      tct: 'TCT212',
+      r450: 'TCE451',
+      r218: 'TCE219',
+      dev: '105.0',
+      icv: { g: ['TCE350'], p: ['TCE228', 'TCE451', 'TCE500', 'TCE501'], sg: '014' },
       foot: [
         [233, 1520, 'CONTROLLER:'],
         [392, 1520, 'EHG+MD'],
@@ -198567,7 +198919,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 4e4861e'));
+    row('Version', E('span', 'scsver', ver + ' · build 4babc93'));
   }
   function openSet(near) {
     if (!set) {
