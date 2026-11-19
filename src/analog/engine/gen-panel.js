@@ -82,15 +82,15 @@ function tcsGenCmd(U, a) {
   }
   if (op === 'v+' || op === 'v-') {
     if (!g.f41) return 'VOLTAGE RAISE / LOWER: the field switch 41 is open';
-    g.oV = K.mpw;
+    g.oV = K.vpw;
     g.oVs = op === 'v+' ? 1 : -1;
     return '';
   }
   if (op === 'n+' || op === 'n-') {
     if (g52) return 'SPEED RAISE / LOWER: 52G is closed, the load is set on the TCS';
     if (!(c && c.step >= 3 && c.cur !== 3 && tb.rpm > 3500 && !c.trip)) return 'SPEED RAISE / LOWER: the turbine is not held at rated speed by the TCS';
-    if (op === 'n+') g.pR = K.mpw;
-    else g.pL = K.mpw;
+    if (op === 'n+') g.pR = K.fpw;
+    else g.pL = K.fpw;
     return '';
   }
   if (op === 'close52g') {
