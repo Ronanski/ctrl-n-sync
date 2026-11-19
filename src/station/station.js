@@ -38,11 +38,11 @@
   const TCS_GROUPS = [
     ['', ['turbine']],
     ['Operation', ['@criteria', '@load']],
-    ['Protection', ['@trip', '@vtest']],
+    ['Protection', ['@trip', '@vtest', '@ost']],
     ['Auxiliaries', ['turbine-oil']]
   ];
   /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
-  const OWN = { '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests' };
+  const OWN = { '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests', '@ost': 'Overspeed test' };
   const STATIONS = [
     ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
     ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
@@ -1414,6 +1414,7 @@
               const x = call(() => AN.turbine('vtest', { v, op }), '');
               vt.msg.textContent = x ? name + ': ' + x : '';
               vt.key = '';
+      ost.h = null;
               setTimeout(tick, 150);
             };
             if (op === 'cancel' || op === 'open') b.onclick = fn;
@@ -1433,6 +1434,66 @@
     vt.h['Valve under test'].textContent = V.sel ? nameOf(V.sel) : 'None';
     vt.h.Phase.textContent = V.on ? VT_PH[V.ph] || String(V.ph || '') : '--';
     for (const v in vt.p) vt.p[v].textContent = V[v] == null ? '--' : fmt(V[v], 0) + ' %';
+  }
+  /* Overspeed test: the main and the back-up overspeed test of the turbine station (TCS HMI faceplates TCE176_1 EMERGENCY OVERSPEED TEST and
+     TCE177_1 BACK UP OVERSPEED TEST), read from AN.tcs().ost and started with the app's own commands AN.turbine('ostmain' | 'ostbk').
+     Permitted only at rated speed, off the line, with no trip standing; a refusal is shown in the words of the turbine control. */
+  const ost = {};
+  const OST = [
+    ['main', 'ostmain', 'Main overspeed test', 'The speed rises until the overspeed trip acts (3978 rpm)'],
+    ['bk', 'ostbk', 'Back-up overspeed test', 'The speed rises until the back-up overspeed trip acts (3915 rpm)']
+  ];
+  function osts() {
+    const T = call(() => AN.tcs(), null),
+      O = T && T.ost;
+    if (!O) {
+      if (ost.h !== 0) {
+        ost.h = 0;
+        ownPg.replaceChildren(E('p', 'st-none', 'The overspeed test is not in use at this starting point (the turbine control holds no start-up there).'));
+      }
+      return;
+    }
+    if (!ost.h) {
+      ost.h = {};
+      const head = E('div', 'st-ph');
+      for (const k of ['Speed', 'Above rated speed', 'Test', 'Permitted']) {
+        const d = E('div'),
+          b = E('b');
+        d.append(E('i', '', k), b);
+        ost.h[k] = b;
+        head.append(d);
+      }
+      ost.msg = E('p', 'st-pm');
+      const box = E('div', 'st-gov');
+      for (const [k, cmd, name, tip] of OST) {
+        const c = E('section', 'st-gc'),
+          st = E('b', 'st-gv'),
+          r = E('div', 'st-row'),
+          on = E('button', 'st-b', 'Start the test'),
+          off = E('button', 'st-b', 'Stop the test');
+        c.title = tip;
+        ost.h[k] = st;
+        ost.h[k + 'c'] = c;
+        const say = m => {
+          ost.msg.textContent = m ? String(m) : '';
+          setTimeout(tick, 150);
+        };
+        arm(on, 'Start the test', () => say(call(() => AN.turbine(cmd, 1), '')));
+        off.onclick = () => say(call(() => AN.turbine(cmd, 0), ''));
+        r.append(on, off);
+        c.append(E('h2', 'st-h', name), st, E('span', 'st-cs', tip), r);
+        box.append(c);
+      }
+      ownPg.replaceChildren(head, E('h2', 'st-h', 'Tests'), box, ost.msg);
+    }
+    ost.h.Speed.textContent = fmt(T.rpm, 0) + ' rpm';
+    ost.h['Above rated speed'].textContent = fmt(O.pattern, 0) + ' rpm';
+    ost.h.Test.textContent = O.main ? 'Main overspeed test' : O.bk ? 'Back-up overspeed test' : 'None';
+    ost.h.Permitted.textContent = O.perm ? 'Yes' : 'No';
+    for (const [k] of OST) {
+      ost.h[k].textContent = O[k] ? 'In progress' : 'Off';
+      ost.h[k + 'c'].classList.toggle('on', !!O[k]);
+    }
   }
   function conds() {
     const pg = $('#plantws .hx-process');
@@ -1708,6 +1769,7 @@
     if (own === '@trip' && !eng) trips();
     if (own === '@load' && !eng) loads();
     if (own === '@vtest' && !eng) vtests();
+    if (own === '@ost' && !eng) osts();
     /* the reader of the unit overview of the app (LS_LIVE.getV); the plant model value where the reader has none.
        After a start state is loaded and before the first Run the reader still holds the numbers of the state before (shellc-home.js
        "stale"): only the 150 MW state is its own snapshot, so the other states show the plant model value, or "--", until Run */
