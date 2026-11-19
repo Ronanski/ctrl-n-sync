@@ -432,13 +432,17 @@
       else
         w.push(
           [k + '.DEV E', x.ey ? [[BX + BW, p(4)], [x.ex || 1535, p(4)], [x.ex || 1535, ye], [xe, ye]] : [[BX + BW, ye], [xe, ye]]],
-          [k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]
+          ...(o.noOr ? [] : [[k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]])
         );
     });
-    b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
-    c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
-    w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
-    t.push([1714, OY[0] - 6, 'INPUT DISCREPANCY'], ...o.foot);
+    /* a sheet with fewer than four blocks has no OR of the input errors (o.noOr) */
+    if (!o.noOr) {
+      b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
+      c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
+      w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
+      t.push([1714, OY[0] - 6, 'INPUT DISCREPANCY']);
+    }
+    t.push(...o.foot);
     /* what a sheet has beyond the pattern */
     if (o.extra) for (const [A, n] of [[c, 'c'], [d, 'd'], [b, 'b'], [w, 'w'], [t, 't']]) A.push(...(o.extra[n] || []));
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };

@@ -4792,13 +4792,17 @@ function tcsSim(s) {
       else
         w.push(
           [k + '.DEV E', x.ey ? [[BX + BW, p(4)], [x.ex || 1535, p(4)], [x.ex || 1535, ye], [xe, ye]] : [[BX + BW, ye], [xe, ye]]],
-          [k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]
+          ...(o.noOr ? [] : [[k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]])
         );
     });
-    b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
-    c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
-    w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
-    t.push([1714, OY[0] - 6, 'INPUT DISCREPANCY'], ...o.foot);
+    /* a sheet with fewer than four blocks has no OR of the input errors (o.noOr) */
+    if (!o.noOr) {
+      b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
+      c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
+      w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
+      t.push([1714, OY[0] - 6, 'INPUT DISCREPANCY']);
+    }
+    t.push(...o.foot);
     /* what a sheet has beyond the pattern */
     if (o.extra) for (const [A, n] of [[c, 'c'], [d, 'd'], [b, 'b'], [w, 'w'], [t, 't']]) A.push(...(o.extra[n] || []));
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
@@ -7455,6 +7459,34 @@ function tcsSim(s) {
       ],
       or: ['027', '028'],
       e: ['E', ['-']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE099A DIGITAL INPUT SIGNAL DIAGNOSTICS(26) (331DM09784 page 67, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The energize commands of the fast acting solenoid valves of ICV(A) and ICV(B): two blocks only, OUT of each to its connector only, and no OR of
+   the input errors. The title block of this page prints PAGE 65, as the page before it does; it is page 67 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = s => {
+      const L = [s + ' FAST ACTING SOLENOID', 'VALVE ENERGIZE COMMAND'];
+      return { in: [L, L, L], out: [L, L, ['INPUT ERROR']] };
+    },
+    O = { conn: 1 };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE099A',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(26)',
+      page: 67,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391],
+      line2: '',
+      noOr: 1,
+      g: [
+        [F('ICV(A)'), 'C1', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', '', ['TCE214'], ['TCP1230', 'TCP2230', 'TCP3230'], O],
+        [F('ICV(B)'), 'C1', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', '', ['TCE214'], ['TCP1231', 'TCP2231', 'TCP3231'], O]
+      ],
       foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
     })
   );
@@ -52856,7 +52888,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 195a93c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 2459eed'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -77727,13 +77759,17 @@ function tcsSim(s) {
       else
         w.push(
           [k + '.DEV E', x.ey ? [[BX + BW, p(4)], [x.ex || 1535, p(4)], [x.ex || 1535, ye], [xe, ye]] : [[BX + BW, ye], [xe, ye]]],
-          [k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]
+          ...(o.noOr ? [] : [[k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]])
         );
     });
-    b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
-    c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
-    w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
-    t.push([1714, OY[0] - 6, 'INPUT DISCREPANCY'], ...o.foot);
+    /* a sheet with fewer than four blocks has no OR of the input errors (o.noOr) */
+    if (!o.noOr) {
+      b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
+      c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
+      w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
+      t.push([1714, OY[0] - 6, 'INPUT DISCREPANCY']);
+    }
+    t.push(...o.foot);
     /* what a sheet has beyond the pattern */
     if (o.extra) for (const [A, n] of [[c, 'c'], [d, 'd'], [b, 'b'], [w, 'w'], [t, 't']]) A.push(...(o.extra[n] || []));
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
@@ -80490,6 +80526,36 @@ function tcsSim(s) {
       ],
       or: ['027', '028'],
       e: ['E', ['-']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE099A.js ---- */
+/* TCE099A DIGITAL INPUT SIGNAL DIAGNOSTICS(26) (331DM09784 page 67, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The energize commands of the fast acting solenoid valves of ICV(A) and ICV(B): two blocks only, OUT of each to its connector only, and no OR of
+   the input errors. The title block of this page prints PAGE 65, as the page before it does; it is page 67 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = s => {
+      const L = [s + ' FAST ACTING SOLENOID', 'VALVE ENERGIZE COMMAND'];
+      return { in: [L, L, L], out: [L, L, ['INPUT ERROR']] };
+    },
+    O = { conn: 1 };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE099A',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(26)',
+      page: 67,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391],
+      line2: '',
+      noOr: 1,
+      g: [
+        [F('ICV(A)'), 'C1', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', '', ['TCE214'], ['TCP1230', 'TCP2230', 'TCP3230'], O],
+        [F('ICV(B)'), 'C1', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', '', ['TCE214'], ['TCP1231', 'TCP2231', 'TCP3231'], O]
+      ],
       foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
     })
   );
@@ -146407,7 +146473,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 195a93c'));
+    row('Version', E('span', 'scsver', ver + ' · build 2459eed'));
   }
   function openSet(near) {
     if (!set) {
