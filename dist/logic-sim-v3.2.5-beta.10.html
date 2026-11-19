@@ -4168,7 +4168,8 @@ function tcsSheetsAdd() {
   const L = typeof AN !== 'undefined' && AN.tcsIbdSheets ? AN.tcsIbdSheets() : [];
   if (!L.length) return;
   const nm = S.sheets[S.cur] && S.sheets[S.cur].name;
-  S.sheets = S.sheets.filter(x => !x.tcs).concat(L.map(tcsSheet));
+  /* then the soft logic sheets of the TCS (02d-tce.js) */
+  S.sheets = S.sheets.filter(x => !x.tcs).concat(L.map(tcsSheet), TCE_SHEETS.map(tceSheet));
   const i = S.sheets.findIndex(x => x.name === nm);
   if (i >= 0) S.cur = i;
 }
@@ -4314,6 +4315,306 @@ function tcsSim(s) {
   for (const z of nl.src) if (v[z.n]) rowOn.add(z.row);
   for (const o of nl.outs) if (v[o.n]) outOn.add(o.row);
   return { rowOn, v, outOn };
+}
+/* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE172',
+  title: 'CHANGE OVER',
+  page: 122,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [165, 77, 2212, 1540],
+  c: [
+    ['iC', 'in', 'C', 302, 424, 'TRANSFER REGION COMPLETE(IP)', ['TCE184']],
+    ['iA15', 'in', 'A15', 302, 490, 'PLU OPERATED', ['TCE043']],
+    ['iF', 'in', 'F', 302, 551, 'HOUSE LOAD OPERATION', ['TCE250']],
+    ['iCa', 'in', 'C', 302, 722, 'CV(A) TEST', ['TCE212']],
+    ['iCb', 'in', 'D', 302, 776, 'CV(B)TEST', ['TCE212']],
+    ['iE1', 'in', 'E1', 302, 829, 'LIMITING', ['TCE171']],
+    ['iGov', 'in', 'A', 302, 882, 'GOV SET', ['TCE196']],
+    ['iLlm', 'in', 'A', 302, 935, 'LLM SET', ['TCE205']],
+    ['iAfr', 'in', 'D', 302, 988, 'AFR USE', ['TCE171']],
+    ['iDcs', 'in', 'A', 302, 1084, 'DCS LOAD CONTROL', ['TCE180']],
+    ['iLup', 'in', 'A', 302, 1159, 'LOAD UP CONTROL MODE', ['TCE184']],
+    ['iAfs', 'in', 'A', 302, 1233, 'AFR SET', ['TCE170']],
+    ['oA', 'out', 'A', 2084, 185, 'MW CONTROL (GOV)', ['TCE196']],
+    ['oB', 'out', 'B', 2084, 324, 'MW CONTROL (LLM)', ['TCE205']],
+    ['oE', 'out', 'E', 2091, 549, 'GOV CONTROL', ['TCE171', 'TCE206']],
+    ['oF', 'out', 'F', 2091, 602, 'LLM CONTROL', ['TCE171', 'TCE206']],
+    ['oG', 'out', 'G', 2091, 666, 'LLM TO GOV', ['TCE196']],
+    ['oH', 'out', 'H', 2091, 730, 'GOV TO LLM', ['TCE205']],
+    ['oN', 'out', 'N', 2091, 793, 'CHANGE OVER', ['TCE206']],
+    ['oJ', 'out', 'J', 2091, 857, 'GOV PERM', ['-']],
+    ['oK', 'out', 'K', 2091, 921, 'LLM PERM', ['-']],
+    ['oL', 'out', 'L', 2091, 985, 'GOV CHANGE FINISH', ['TCE171']],
+    ['oM', 'out', 'M', 2091, 1048, 'LLM CHANGE FINISH', ['TCE171']],
+    ['oP', 'out', 'P', 2091, 1112, 'AFR COMPLETE', ['TCE205']]
+  ],
+  k: [['kOff', 257, 304, 'OFF(0)', 'sys.ref']],
+  b: [
+    ['or013', 'OR', '013', 655, 497],
+    ['or014', 'OR', '014', 632, 731],
+    ['or020', 'OR', '020', 630, 1103],
+    ['not021', 'NOT', '021', 727, 1092],
+    ['not017', 'NOT', '017', 1732, 196],
+    ['a015', 'A', '015', 1806, 251],
+    ['a016', 'A', '016', 1806, 335],
+    ['or018', 'OR', '018', 1892, 196],
+    ['or12', 'OR', '12', 1600, 803],
+    ['btr019', 'BTR', '019', 1514, 1112]
+  ],
+  m: [
+    [
+      'co',
+      'CHANGE OVER',
+      'TCE172_1',
+      888,
+      501,
+      405,
+      383,
+      ['GS', 'LS', 'GM', 'LM', 'TEST', 'LIMIT', 'PERM', 'GOV', 'LLM', 'USE'],
+      ['GOV', 'LLM', 'GC', 'LC', 'GP', 'LP', 'GF', 'LF', 'FIN', ''],
+      'A8',
+      [
+        [995, 903, '(LME300)'],
+        [1112, 903, '(LME301)'],
+        [892, 927, 'HL:5.0'],
+        [892, 948, 'LL:5.0'],
+        [892, 969, 'K:0.1%'],
+        [892, 991, 'K:-0.1%'],
+        [892, 1012, 'K:-0.1%'],
+        [1042, 927, 'K:0.1%'],
+        [1042, 948, 'TD:1.0S'],
+        [1042, 969, 'TD:1.0S']
+      ]
+    ]
+  ],
+  w: [
+    ['iC', [[328, 421], [1666, 421], [1666, 185], [1703, 185]]],
+    ['iC', [[1666, 240], [1777, 240]]],
+    ['iC', [[1666, 324], [1777, 324]]],
+    ['iC', [[816, 421], [816, 741], [888, 741]]],
+    ['iA15', [[328, 486], [626, 486]]],
+    ['iF', [[328, 548], [614, 548], [614, 507], [626, 507]]],
+    ['or013', [[684, 486], [880, 486], [880, 549], [888, 549]]],
+    ['kOff', [[492, 304], [869, 304], [869, 582], [888, 582]]],
+    ['not021', [[756, 1081], [792, 1081], [792, 1028], [750, 1028], [750, 614], [888, 614]]],
+    ['not021', [[750, 646], [888, 646]]],
+    ['iCa', [[328, 719], [603, 719]]],
+    ['iCb', [[328, 772], [568, 772], [568, 742], [603, 742]]],
+    ['or014', [[661, 719], [708, 719], [708, 678], [888, 678]]],
+    ['iE1', [[328, 826], [782, 826], [782, 710], [888, 710]]],
+    ['iGov', [[328, 879], [814, 879], [814, 773], [888, 773]], 1],
+    ['iLlm', [[328, 932], [834, 932], [834, 805], [888, 805]], 1],
+    ['iAfr', [[328, 985], [855, 985], [855, 838], [888, 838]]],
+    ['iDcs', [[328, 1081], [601, 1081]]],
+    ['iLup', [[328, 1156], [568, 1156], [568, 1103], [601, 1103]]],
+    ['iAfs', [[328, 1230], [589, 1230], [589, 1124], [601, 1124]]],
+    ['or020', [[659, 1081], [698, 1081]]],
+    ['co.GOV', [[1293, 549], [2065, 549]]],
+    ['co.GOV', [[1719, 549], [1719, 262], [1777, 262]]],
+    ['co.LLM', [[1293, 581], [1378, 581], [1378, 602], [2065, 602]]],
+    ['co.LLM', [[1740, 602], [1740, 346], [1777, 346]]],
+    ['co.GC', [[1293, 613], [1464, 613], [1464, 666], [2065, 666]]],
+    ['co.GC', [[1464, 666], [1464, 793], [1571, 793]]],
+    ['co.LC', [[1293, 645], [1443, 645], [1443, 730], [2065, 730]]],
+    ['co.LC', [[1443, 730], [1443, 812], [1571, 812]]],
+    ['or12', [[1629, 793], [2065, 793]]],
+    ['co.GP', [[1293, 677], [1421, 677], [1421, 857], [2065, 857]]],
+    ['co.LP', [[1293, 709], [1399, 709], [1399, 921], [2065, 921]]],
+    ['co.GF', [[1293, 741], [1377, 741], [1377, 985], [2065, 985]]],
+    ['co.LF', [[1293, 773], [1355, 773], [1355, 1048], [2065, 1048]]],
+    ['co.FIN', [[1293, 805], [1333, 805], [1333, 1112], [2065, 1112]]],
+    ['not017', [[1761, 185], [1863, 185]]],
+    ['a015', [[1835, 240], [1850, 240], [1850, 207], [1863, 207]]],
+    ['or018', [[1921, 185], [2058, 185]]],
+    ['a016', [[1835, 324], [2058, 324]]]
+  ],
+  t: []
+});
+/* DITL (digital logic) - TCS soft logic sheets (Hitachi logic diagram 331DM09784, sheets TCE... / TCA...) as sheets of the Logic page, in the same
+   viewer, sheet list and panel as the DITL and the TCS (IBD) sheets.
+   The drawing itself is a scan and never comes with the app: every sheet is typed as data (src/digital/tce/<sheet>.js, list TCE_SHEETS) and drawn here with the
+   app's own lines and words. Each block, connector and wire corner stands where the drawing has it, so the layout and the direction of every signal are the
+   ones of the drawing; a wire is made of horizontal and vertical pieces only (tools/data/tce_check.mjs refuses anything else).
+
+   One sheet:
+     id, title, page, ctl (controller), cycle (ms)
+     f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
+     c: [key, 'in' | 'out', letter, x, y, name, [sheets]]            off-page connector (oval), x y = its centre
+     k: [key, x, y, text, note]                                      constant / system reference (pentagon), x y = its left middle
+     b: [key, type, no, x, y, [notes], {l: [...], r: [...]}]         small block, x y = its centre; no = the block number printed in it; notes = the
+                                                                     parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
+     m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
+     w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
+     t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
+     live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
+                                                                     as a number); none = the sheet is shown without states */
+const TCE_SHEETS = typeof window !== 'undefined' && window.TCE_SHEETS ? window.TCE_SHEETS : [];
+const tceCat = id => (/^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : 'GOVERNOR SOFT LOGIC (TCE)');
+function tceSheet(q) {
+  const K = 0.32,
+    [fx0, fy0, fx1, fy1] = q.f,
+    /* the frame of a sheet of the viewer (the same as a TCS sheet: 18 .. 1173 wide, 18 .. 796 under the title line) */
+    sx = 1155 / (fx1 - fx0),
+    sy = 778 / (fy1 - fy0),
+    X = x => +((18 + (x - fx0) * sx) * K).toFixed(2),
+    Y = y => +(-(18 + (y - fy0) * sy) * K).toFixed(2),
+    W = w => w * sx * K,
+    ln = [],
+    seg = [],
+    pl = [],
+    ci = [],
+    tx = [],
+    heavy = [],
+    src = {};
+  /* align: 0 left, 1 centre, 2 right (on the base line); 3 left, 4 centre, 5 right (on the middle line) */
+  const text = (t, x, y, h, a) => ({ t: String(t), ix: X(x), iy: Y(y), x: X(x), y: Y(y), h: h || 2.05, r: 0, a: a === 3 ? 0 : a === 5 ? 2 : a || 0, b: a === 3 || a === 5 ? 2 : 0, l: 'TXT1' });
+  const poly = (P, closed) => pl.push([P.map(p => [X(p[0]), Y(p[1])]), closed ? 1 : 0, 'SYM']);
+  const net = k => (k in src ? src[k] : (src[k] = Object.keys(src).length));
+  /* the frame and the title line of the sheet (the viewer's own, as on the TCS sheets) */
+  [[[18, 18], [1173, 18]], [[1173, 18], [1173, 824]], [[1173, 824], [18, 824]], [[18, 824], [18, 18]], [[18, 796], [1173, 796]]].forEach(([a, b]) => {
+    ln.push([+(a[0] * K).toFixed(2), +(-a[1] * K).toFixed(2), +(b[0] * K).toFixed(2), +(-b[1] * K).toFixed(2), 'SYM']);
+    seg.push(undefined);
+  });
+  const T = (t, x, y, h, a) => ({ t, ix: +(x * K).toFixed(2), iy: +(-y * K).toFixed(2), x: +(x * K).toFixed(2), y: +(-y * K).toFixed(2), h, r: 0, a, b: 0, l: 'TXT1' });
+  tx.push(
+    T(q.id + '  ' + q.title, 30, 815, 2.6, 0),
+    T('CONTROLLER ' + (q.ctl || '') + '   CYCLE ' + (q.cycle || '') + ' ms   PAGE ' + (q.page || ''), 1160, 815, 2.05, 2)
+  );
+  /* a half circle as short straight pieces (the ends of a connector) */
+  const arc = (cx, cy, r, a0, a1) => {
+    const P = [];
+    for (let i = 0; i <= 8; i++) {
+      const a = a0 + ((a1 - a0) * i) / 8;
+      P.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+    return P;
+  };
+  const u = (fx1 - fx0) / 1000; /* one thousandth of the width of the frame, for the sizes of the symbols */
+  /* off-page connectors: an oval with its letter; the name on the wire side, the sheets it goes to / comes from on the outer side */
+  for (const [key, dir, letter, x, y, name, refs] of q.c || []) {
+    const w = 13 * u,
+      r = 9 * u;
+    poly([...arc(x + w - r, y, r, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r, Math.PI / 2, (3 * Math.PI) / 2)], 1);
+    tx.push(text(letter, x, y, 1.9, 4));
+    const R = (refs || []).map(s => '(' + s + ')');
+    if (dir === 'in') {
+      if (name) tx.push(text(name, x + w + 3 * u, y - 5 * u, 2.05, 0));
+      R.forEach((s, i) => tx.push(text(s, x - w - 3 * u, y + (5 + 8 * i) * u, 1.7, 2)));
+    } else {
+      if (name) tx.push(text(name, x - w - 4 * u, y - 5 * u, 2.05, 2));
+      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0)));
+    }
+    net(key);
+  }
+  /* constants / system references: a pentagon pointing to the right */
+  for (const [key, x, y, t, note] of q.k || []) {
+    const w = 114 * u,
+      h = 8 * u;
+    poly([[x, y - h], [x + w - h, y - h], [x + w, y], [x + w - h, y + h], [x, y + h]], 1);
+    tx.push(text(t, x + (w - h) / 2, y, 2.05, 4));
+    if (note) tx.push(text('(' + note + ')', x + 30 * u, y - h - 5 * u, 1.7, 0));
+    net(key);
+  }
+  /* small blocks: the type over the block number */
+  for (const [key, type, no, x, y, notes, pins] of q.b || []) {
+    if (type === 'BTR') {
+      ci.push([X(x), Y(y), W(2.2 * u), 'SYM']);
+      tx.push(text('BTR', x, y - 6 * u, 1.7, 1), text(no, x + 8 * u, y + 9 * u, 1.7, 0));
+      continue;
+    }
+    const w = 14 * u,
+      h = 10.5 * u;
+    poly([[x - w, y - h], [x + w, y - h], [x + w, y + h], [x - w, y + h]], 1);
+    tx.push(text(type, x, y - h / 2, 1.9, 4), text(no, x, y + h / 2, 1.7, 4));
+    /* the parameters printed under the block ('TD:30.0S', 'K:36.0'); a note that starts with ^ stands over it (a DEF / DFE tag) */
+    let below = 0;
+    for (const n of notes || [])
+      if (n[0] === '^') tx.push(text(n.slice(1), x, y - h - 5 * u, 1.7, 1));
+      else tx.push(text(n, x, y + h + (6 + 8 * below++) * u, 1.7, 1));
+    /* the marks of its pins, inside the block: { l: ['S', 'R'], r: ['T'] } top to bottom */
+    for (const [side, L] of Object.entries(pins || {}))
+      L.forEach((p, i) => p && tx.push(text(p, side === 'l' ? x - w + 2.5 * u : x + w - 2.5 * u, y - h + ((i + 0.5) * 2 * h) / L.length, 1.5, side === 'l' ? 3 : 5)));
+    net(key);
+  }
+  /* macro blocks: title bar, pins on both sides, foot bar, the parameter lines under it */
+  for (const [key, name, tag, x, y, w, h, L, R, foot, notes] of q.m || []) {
+    const bar = 15 * u,
+      pw = 36 * u;
+    poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
+    poly([[x, y + bar], [x + w, y + bar]], 0);
+    poly([[x, y + h - bar], [x + w, y + h - bar]], 0);
+    poly([[x + pw, y + bar], [x + pw, y + h - bar]], 0);
+    poly([[x + w - pw, y + bar], [x + w - pw, y + h - bar]], 0);
+    tx.push(text(name, x + w / 2, y + bar / 2, 2.05, 4), text(tag, x + w / 2, y - 4 * u, 1.7, 1), text(foot || '', x + w / 2, y + h - bar / 2, 1.7, 4));
+    const step = (h - 2 * bar) / Math.max(L.length, R.length);
+    L.forEach((p, i) => {
+      if (i) poly([[x, y + bar + i * step], [x + pw, y + bar + i * step]], 0);
+      tx.push(text(p, x + 3 * u, y + bar + (i + 0.5) * step, 1.9, 3));
+    });
+    R.forEach((p, i) => {
+      if (i) poly([[x + w - pw, y + bar + i * step], [x + w, y + bar + i * step]], 0);
+      tx.push(text(p, x + w - pw + 3 * u, y + bar + (i + 0.5) * step, 1.9, 3));
+      net(key + '.' + p);
+    });
+    (notes || []).forEach(n => tx.push(text(n[2], n[0], n[1], 1.9, 0)));
+  }
+  /* wires: straight pieces, each with the net of its source */
+  for (const [from, P, thick] of q.w || []) {
+    const n = net(from);
+    for (let i = 1; i < P.length; i++) {
+      ln.push([X(P[i - 1][0]), Y(P[i - 1][1]), X(P[i][0]), Y(P[i][1]), 'CON']);
+      seg.push(n);
+      if (thick) heavy.push([P[i - 1], P[i], n]);
+    }
+  }
+  for (const [x, y, t, a] of q.t || []) tx.push(text(t, x, y, 2.05, a || 0));
+  /* junction dots: a wire end on the middle of another wire of the same net */
+  const dots = [];
+  ln.forEach((a, i) => {
+    if (seg[i] === undefined) return;
+    [[a[0], a[1]], [a[2], a[3]]].forEach(p =>
+      ln.some((b, j) => {
+        if (j === i || seg[j] !== seg[i]) return false;
+        const on =
+          Math.abs(p[1] - b[1]) < 0.01 && Math.abs(b[1] - b[3]) < 0.01
+            ? p[0] > Math.min(b[0], b[2]) + 0.05 && p[0] < Math.max(b[0], b[2]) - 0.05
+            : Math.abs(p[0] - b[0]) < 0.01 && Math.abs(b[0] - b[2]) < 0.01 && p[1] > Math.min(b[1], b[3]) + 0.05 && p[1] < Math.max(b[1], b[3]) - 0.05;
+        if (on && !dots.some(d => d.x === p[0] && d.y === p[1])) dots.push({ x: p[0], y: p[1], n: seg[i] });
+        return on;
+      })
+    );
+  });
+  /* an analog signal: a second line close beside the first, as the heavy line of the drawing (after the junction dots are found) */
+  for (const [a, b, n] of heavy) {
+    const dx = a[1] === b[1] ? 0 : 0.3,
+      dy = dx ? 0 : 0.3;
+    ln.push([X(a[0]) + dx, Y(a[1]) + dy, X(b[0]) + dx, Y(b[1]) + dy, 'CON']);
+    seg.push(n);
+  }
+  const NO = [0, 0],
+    no = (/(\d+)/.exec(q.id) || [])[1] || '';
+  return {
+    name: 'TCS-' + q.id.replace(/^(TC[AE])0*/, '$1-'),
+    title: q.title,
+    tcs: q.id,
+    tce: q,
+    cat: tceCat(q.id),
+    meta: { dwg: q.id, title: q.title, no: +no || 0 },
+    raw: { ln, pl, ci, ar: [], so: [], lamp: [] },
+    tx,
+    rows: [],
+    rng: { F: NO, L: NO, T: NO, S: NO, RS: NO, RL: NO, RT: NO },
+    vr: { F: NO, L: NO, T: NO, S: NO, RS: NO, RL: NO, RT: NO },
+    rb: [],
+    cells: {},
+    sig: {},
+    syms: [],
+    lyr: '',
+    bv: BV,
+    sd: { tcs: 1, tce: src, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [] }
+  };
 }
 /* DITL (digital logic) - Simulation models of the digital blocks (movements, solenoid valves, motors). Part of ONE script (joined by src/digital/order.list, in this order). */
 /* ---------- MOV block model (v9) ----------
@@ -40936,7 +41237,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build b8c7d88'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 574dd8a'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -64482,7 +64783,8 @@ function tcsSheetsAdd() {
   const L = typeof AN !== 'undefined' && AN.tcsIbdSheets ? AN.tcsIbdSheets() : [];
   if (!L.length) return;
   const nm = S.sheets[S.cur] && S.sheets[S.cur].name;
-  S.sheets = S.sheets.filter(x => !x.tcs).concat(L.map(tcsSheet));
+  /* then the soft logic sheets of the TCS (02d-tce.js) */
+  S.sheets = S.sheets.filter(x => !x.tcs).concat(L.map(tcsSheet), TCE_SHEETS.map(tceSheet));
   const i = S.sheets.findIndex(x => x.name === nm);
   if (i >= 0) S.cur = i;
 }
@@ -64628,6 +64930,310 @@ function tcsSim(s) {
   for (const z of nl.src) if (v[z.n]) rowOn.add(z.row);
   for (const o of nl.outs) if (v[o.n]) outOn.add(o.row);
   return { rowOn, v, outOn };
+}
+
+/* ---- src/digital/tce/TCE172.js ---- */
+/* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE172',
+  title: 'CHANGE OVER',
+  page: 122,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [165, 77, 2212, 1540],
+  c: [
+    ['iC', 'in', 'C', 302, 424, 'TRANSFER REGION COMPLETE(IP)', ['TCE184']],
+    ['iA15', 'in', 'A15', 302, 490, 'PLU OPERATED', ['TCE043']],
+    ['iF', 'in', 'F', 302, 551, 'HOUSE LOAD OPERATION', ['TCE250']],
+    ['iCa', 'in', 'C', 302, 722, 'CV(A) TEST', ['TCE212']],
+    ['iCb', 'in', 'D', 302, 776, 'CV(B)TEST', ['TCE212']],
+    ['iE1', 'in', 'E1', 302, 829, 'LIMITING', ['TCE171']],
+    ['iGov', 'in', 'A', 302, 882, 'GOV SET', ['TCE196']],
+    ['iLlm', 'in', 'A', 302, 935, 'LLM SET', ['TCE205']],
+    ['iAfr', 'in', 'D', 302, 988, 'AFR USE', ['TCE171']],
+    ['iDcs', 'in', 'A', 302, 1084, 'DCS LOAD CONTROL', ['TCE180']],
+    ['iLup', 'in', 'A', 302, 1159, 'LOAD UP CONTROL MODE', ['TCE184']],
+    ['iAfs', 'in', 'A', 302, 1233, 'AFR SET', ['TCE170']],
+    ['oA', 'out', 'A', 2084, 185, 'MW CONTROL (GOV)', ['TCE196']],
+    ['oB', 'out', 'B', 2084, 324, 'MW CONTROL (LLM)', ['TCE205']],
+    ['oE', 'out', 'E', 2091, 549, 'GOV CONTROL', ['TCE171', 'TCE206']],
+    ['oF', 'out', 'F', 2091, 602, 'LLM CONTROL', ['TCE171', 'TCE206']],
+    ['oG', 'out', 'G', 2091, 666, 'LLM TO GOV', ['TCE196']],
+    ['oH', 'out', 'H', 2091, 730, 'GOV TO LLM', ['TCE205']],
+    ['oN', 'out', 'N', 2091, 793, 'CHANGE OVER', ['TCE206']],
+    ['oJ', 'out', 'J', 2091, 857, 'GOV PERM', ['-']],
+    ['oK', 'out', 'K', 2091, 921, 'LLM PERM', ['-']],
+    ['oL', 'out', 'L', 2091, 985, 'GOV CHANGE FINISH', ['TCE171']],
+    ['oM', 'out', 'M', 2091, 1048, 'LLM CHANGE FINISH', ['TCE171']],
+    ['oP', 'out', 'P', 2091, 1112, 'AFR COMPLETE', ['TCE205']]
+  ],
+  k: [['kOff', 257, 304, 'OFF(0)', 'sys.ref']],
+  b: [
+    ['or013', 'OR', '013', 655, 497],
+    ['or014', 'OR', '014', 632, 731],
+    ['or020', 'OR', '020', 630, 1103],
+    ['not021', 'NOT', '021', 727, 1092],
+    ['not017', 'NOT', '017', 1732, 196],
+    ['a015', 'A', '015', 1806, 251],
+    ['a016', 'A', '016', 1806, 335],
+    ['or018', 'OR', '018', 1892, 196],
+    ['or12', 'OR', '12', 1600, 803],
+    ['btr019', 'BTR', '019', 1514, 1112]
+  ],
+  m: [
+    [
+      'co',
+      'CHANGE OVER',
+      'TCE172_1',
+      888,
+      501,
+      405,
+      383,
+      ['GS', 'LS', 'GM', 'LM', 'TEST', 'LIMIT', 'PERM', 'GOV', 'LLM', 'USE'],
+      ['GOV', 'LLM', 'GC', 'LC', 'GP', 'LP', 'GF', 'LF', 'FIN', ''],
+      'A8',
+      [
+        [995, 903, '(LME300)'],
+        [1112, 903, '(LME301)'],
+        [892, 927, 'HL:5.0'],
+        [892, 948, 'LL:5.0'],
+        [892, 969, 'K:0.1%'],
+        [892, 991, 'K:-0.1%'],
+        [892, 1012, 'K:-0.1%'],
+        [1042, 927, 'K:0.1%'],
+        [1042, 948, 'TD:1.0S'],
+        [1042, 969, 'TD:1.0S']
+      ]
+    ]
+  ],
+  w: [
+    ['iC', [[328, 421], [1666, 421], [1666, 185], [1703, 185]]],
+    ['iC', [[1666, 240], [1777, 240]]],
+    ['iC', [[1666, 324], [1777, 324]]],
+    ['iC', [[816, 421], [816, 741], [888, 741]]],
+    ['iA15', [[328, 486], [626, 486]]],
+    ['iF', [[328, 548], [614, 548], [614, 507], [626, 507]]],
+    ['or013', [[684, 486], [880, 486], [880, 549], [888, 549]]],
+    ['kOff', [[492, 304], [869, 304], [869, 582], [888, 582]]],
+    ['not021', [[756, 1081], [792, 1081], [792, 1028], [750, 1028], [750, 614], [888, 614]]],
+    ['not021', [[750, 646], [888, 646]]],
+    ['iCa', [[328, 719], [603, 719]]],
+    ['iCb', [[328, 772], [568, 772], [568, 742], [603, 742]]],
+    ['or014', [[661, 719], [708, 719], [708, 678], [888, 678]]],
+    ['iE1', [[328, 826], [782, 826], [782, 710], [888, 710]]],
+    ['iGov', [[328, 879], [814, 879], [814, 773], [888, 773]], 1],
+    ['iLlm', [[328, 932], [834, 932], [834, 805], [888, 805]], 1],
+    ['iAfr', [[328, 985], [855, 985], [855, 838], [888, 838]]],
+    ['iDcs', [[328, 1081], [601, 1081]]],
+    ['iLup', [[328, 1156], [568, 1156], [568, 1103], [601, 1103]]],
+    ['iAfs', [[328, 1230], [589, 1230], [589, 1124], [601, 1124]]],
+    ['or020', [[659, 1081], [698, 1081]]],
+    ['co.GOV', [[1293, 549], [2065, 549]]],
+    ['co.GOV', [[1719, 549], [1719, 262], [1777, 262]]],
+    ['co.LLM', [[1293, 581], [1378, 581], [1378, 602], [2065, 602]]],
+    ['co.LLM', [[1740, 602], [1740, 346], [1777, 346]]],
+    ['co.GC', [[1293, 613], [1464, 613], [1464, 666], [2065, 666]]],
+    ['co.GC', [[1464, 666], [1464, 793], [1571, 793]]],
+    ['co.LC', [[1293, 645], [1443, 645], [1443, 730], [2065, 730]]],
+    ['co.LC', [[1443, 730], [1443, 812], [1571, 812]]],
+    ['or12', [[1629, 793], [2065, 793]]],
+    ['co.GP', [[1293, 677], [1421, 677], [1421, 857], [2065, 857]]],
+    ['co.LP', [[1293, 709], [1399, 709], [1399, 921], [2065, 921]]],
+    ['co.GF', [[1293, 741], [1377, 741], [1377, 985], [2065, 985]]],
+    ['co.LF', [[1293, 773], [1355, 773], [1355, 1048], [2065, 1048]]],
+    ['co.FIN', [[1293, 805], [1333, 805], [1333, 1112], [2065, 1112]]],
+    ['not017', [[1761, 185], [1863, 185]]],
+    ['a015', [[1835, 240], [1850, 240], [1850, 207], [1863, 207]]],
+    ['or018', [[1921, 185], [2058, 185]]],
+    ['a016', [[1835, 324], [2058, 324]]]
+  ],
+  t: []
+});
+
+/* ---- src/digital/parts/02d-tce.js ---- */
+/* DITL (digital logic) - TCS soft logic sheets (Hitachi logic diagram 331DM09784, sheets TCE... / TCA...) as sheets of the Logic page, in the same
+   viewer, sheet list and panel as the DITL and the TCS (IBD) sheets.
+   The drawing itself is a scan and never comes with the app: every sheet is typed as data (src/digital/tce/<sheet>.js, list TCE_SHEETS) and drawn here with the
+   app's own lines and words. Each block, connector and wire corner stands where the drawing has it, so the layout and the direction of every signal are the
+   ones of the drawing; a wire is made of horizontal and vertical pieces only (tools/data/tce_check.mjs refuses anything else).
+
+   One sheet:
+     id, title, page, ctl (controller), cycle (ms)
+     f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
+     c: [key, 'in' | 'out', letter, x, y, name, [sheets]]            off-page connector (oval), x y = its centre
+     k: [key, x, y, text, note]                                      constant / system reference (pentagon), x y = its left middle
+     b: [key, type, no, x, y, [notes], {l: [...], r: [...]}]         small block, x y = its centre; no = the block number printed in it; notes = the
+                                                                     parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
+     m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
+     w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
+     t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
+     live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
+                                                                     as a number); none = the sheet is shown without states */
+const TCE_SHEETS = typeof window !== 'undefined' && window.TCE_SHEETS ? window.TCE_SHEETS : [];
+const tceCat = id => (/^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : 'GOVERNOR SOFT LOGIC (TCE)');
+function tceSheet(q) {
+  const K = 0.32,
+    [fx0, fy0, fx1, fy1] = q.f,
+    /* the frame of a sheet of the viewer (the same as a TCS sheet: 18 .. 1173 wide, 18 .. 796 under the title line) */
+    sx = 1155 / (fx1 - fx0),
+    sy = 778 / (fy1 - fy0),
+    X = x => +((18 + (x - fx0) * sx) * K).toFixed(2),
+    Y = y => +(-(18 + (y - fy0) * sy) * K).toFixed(2),
+    W = w => w * sx * K,
+    ln = [],
+    seg = [],
+    pl = [],
+    ci = [],
+    tx = [],
+    heavy = [],
+    src = {};
+  /* align: 0 left, 1 centre, 2 right (on the base line); 3 left, 4 centre, 5 right (on the middle line) */
+  const text = (t, x, y, h, a) => ({ t: String(t), ix: X(x), iy: Y(y), x: X(x), y: Y(y), h: h || 2.05, r: 0, a: a === 3 ? 0 : a === 5 ? 2 : a || 0, b: a === 3 || a === 5 ? 2 : 0, l: 'TXT1' });
+  const poly = (P, closed) => pl.push([P.map(p => [X(p[0]), Y(p[1])]), closed ? 1 : 0, 'SYM']);
+  const net = k => (k in src ? src[k] : (src[k] = Object.keys(src).length));
+  /* the frame and the title line of the sheet (the viewer's own, as on the TCS sheets) */
+  [[[18, 18], [1173, 18]], [[1173, 18], [1173, 824]], [[1173, 824], [18, 824]], [[18, 824], [18, 18]], [[18, 796], [1173, 796]]].forEach(([a, b]) => {
+    ln.push([+(a[0] * K).toFixed(2), +(-a[1] * K).toFixed(2), +(b[0] * K).toFixed(2), +(-b[1] * K).toFixed(2), 'SYM']);
+    seg.push(undefined);
+  });
+  const T = (t, x, y, h, a) => ({ t, ix: +(x * K).toFixed(2), iy: +(-y * K).toFixed(2), x: +(x * K).toFixed(2), y: +(-y * K).toFixed(2), h, r: 0, a, b: 0, l: 'TXT1' });
+  tx.push(
+    T(q.id + '  ' + q.title, 30, 815, 2.6, 0),
+    T('CONTROLLER ' + (q.ctl || '') + '   CYCLE ' + (q.cycle || '') + ' ms   PAGE ' + (q.page || ''), 1160, 815, 2.05, 2)
+  );
+  /* a half circle as short straight pieces (the ends of a connector) */
+  const arc = (cx, cy, r, a0, a1) => {
+    const P = [];
+    for (let i = 0; i <= 8; i++) {
+      const a = a0 + ((a1 - a0) * i) / 8;
+      P.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+    return P;
+  };
+  const u = (fx1 - fx0) / 1000; /* one thousandth of the width of the frame, for the sizes of the symbols */
+  /* off-page connectors: an oval with its letter; the name on the wire side, the sheets it goes to / comes from on the outer side */
+  for (const [key, dir, letter, x, y, name, refs] of q.c || []) {
+    const w = 13 * u,
+      r = 9 * u;
+    poly([...arc(x + w - r, y, r, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r, Math.PI / 2, (3 * Math.PI) / 2)], 1);
+    tx.push(text(letter, x, y, 1.9, 4));
+    const R = (refs || []).map(s => '(' + s + ')');
+    if (dir === 'in') {
+      if (name) tx.push(text(name, x + w + 3 * u, y - 5 * u, 2.05, 0));
+      R.forEach((s, i) => tx.push(text(s, x - w - 3 * u, y + (5 + 8 * i) * u, 1.7, 2)));
+    } else {
+      if (name) tx.push(text(name, x - w - 4 * u, y - 5 * u, 2.05, 2));
+      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0)));
+    }
+    net(key);
+  }
+  /* constants / system references: a pentagon pointing to the right */
+  for (const [key, x, y, t, note] of q.k || []) {
+    const w = 114 * u,
+      h = 8 * u;
+    poly([[x, y - h], [x + w - h, y - h], [x + w, y], [x + w - h, y + h], [x, y + h]], 1);
+    tx.push(text(t, x + (w - h) / 2, y, 2.05, 4));
+    if (note) tx.push(text('(' + note + ')', x + 30 * u, y - h - 5 * u, 1.7, 0));
+    net(key);
+  }
+  /* small blocks: the type over the block number */
+  for (const [key, type, no, x, y, notes, pins] of q.b || []) {
+    if (type === 'BTR') {
+      ci.push([X(x), Y(y), W(2.2 * u), 'SYM']);
+      tx.push(text('BTR', x, y - 6 * u, 1.7, 1), text(no, x + 8 * u, y + 9 * u, 1.7, 0));
+      continue;
+    }
+    const w = 14 * u,
+      h = 10.5 * u;
+    poly([[x - w, y - h], [x + w, y - h], [x + w, y + h], [x - w, y + h]], 1);
+    tx.push(text(type, x, y - h / 2, 1.9, 4), text(no, x, y + h / 2, 1.7, 4));
+    /* the parameters printed under the block ('TD:30.0S', 'K:36.0'); a note that starts with ^ stands over it (a DEF / DFE tag) */
+    let below = 0;
+    for (const n of notes || [])
+      if (n[0] === '^') tx.push(text(n.slice(1), x, y - h - 5 * u, 1.7, 1));
+      else tx.push(text(n, x, y + h + (6 + 8 * below++) * u, 1.7, 1));
+    /* the marks of its pins, inside the block: { l: ['S', 'R'], r: ['T'] } top to bottom */
+    for (const [side, L] of Object.entries(pins || {}))
+      L.forEach((p, i) => p && tx.push(text(p, side === 'l' ? x - w + 2.5 * u : x + w - 2.5 * u, y - h + ((i + 0.5) * 2 * h) / L.length, 1.5, side === 'l' ? 3 : 5)));
+    net(key);
+  }
+  /* macro blocks: title bar, pins on both sides, foot bar, the parameter lines under it */
+  for (const [key, name, tag, x, y, w, h, L, R, foot, notes] of q.m || []) {
+    const bar = 15 * u,
+      pw = 36 * u;
+    poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
+    poly([[x, y + bar], [x + w, y + bar]], 0);
+    poly([[x, y + h - bar], [x + w, y + h - bar]], 0);
+    poly([[x + pw, y + bar], [x + pw, y + h - bar]], 0);
+    poly([[x + w - pw, y + bar], [x + w - pw, y + h - bar]], 0);
+    tx.push(text(name, x + w / 2, y + bar / 2, 2.05, 4), text(tag, x + w / 2, y - 4 * u, 1.7, 1), text(foot || '', x + w / 2, y + h - bar / 2, 1.7, 4));
+    const step = (h - 2 * bar) / Math.max(L.length, R.length);
+    L.forEach((p, i) => {
+      if (i) poly([[x, y + bar + i * step], [x + pw, y + bar + i * step]], 0);
+      tx.push(text(p, x + 3 * u, y + bar + (i + 0.5) * step, 1.9, 3));
+    });
+    R.forEach((p, i) => {
+      if (i) poly([[x + w - pw, y + bar + i * step], [x + w, y + bar + i * step]], 0);
+      tx.push(text(p, x + w - pw + 3 * u, y + bar + (i + 0.5) * step, 1.9, 3));
+      net(key + '.' + p);
+    });
+    (notes || []).forEach(n => tx.push(text(n[2], n[0], n[1], 1.9, 0)));
+  }
+  /* wires: straight pieces, each with the net of its source */
+  for (const [from, P, thick] of q.w || []) {
+    const n = net(from);
+    for (let i = 1; i < P.length; i++) {
+      ln.push([X(P[i - 1][0]), Y(P[i - 1][1]), X(P[i][0]), Y(P[i][1]), 'CON']);
+      seg.push(n);
+      if (thick) heavy.push([P[i - 1], P[i], n]);
+    }
+  }
+  for (const [x, y, t, a] of q.t || []) tx.push(text(t, x, y, 2.05, a || 0));
+  /* junction dots: a wire end on the middle of another wire of the same net */
+  const dots = [];
+  ln.forEach((a, i) => {
+    if (seg[i] === undefined) return;
+    [[a[0], a[1]], [a[2], a[3]]].forEach(p =>
+      ln.some((b, j) => {
+        if (j === i || seg[j] !== seg[i]) return false;
+        const on =
+          Math.abs(p[1] - b[1]) < 0.01 && Math.abs(b[1] - b[3]) < 0.01
+            ? p[0] > Math.min(b[0], b[2]) + 0.05 && p[0] < Math.max(b[0], b[2]) - 0.05
+            : Math.abs(p[0] - b[0]) < 0.01 && Math.abs(b[0] - b[2]) < 0.01 && p[1] > Math.min(b[1], b[3]) + 0.05 && p[1] < Math.max(b[1], b[3]) - 0.05;
+        if (on && !dots.some(d => d.x === p[0] && d.y === p[1])) dots.push({ x: p[0], y: p[1], n: seg[i] });
+        return on;
+      })
+    );
+  });
+  /* an analog signal: a second line close beside the first, as the heavy line of the drawing (after the junction dots are found) */
+  for (const [a, b, n] of heavy) {
+    const dx = a[1] === b[1] ? 0 : 0.3,
+      dy = dx ? 0 : 0.3;
+    ln.push([X(a[0]) + dx, Y(a[1]) + dy, X(b[0]) + dx, Y(b[1]) + dy, 'CON']);
+    seg.push(n);
+  }
+  const NO = [0, 0],
+    no = (/(\d+)/.exec(q.id) || [])[1] || '';
+  return {
+    name: 'TCS-' + q.id.replace(/^(TC[AE])0*/, '$1-'),
+    title: q.title,
+    tcs: q.id,
+    tce: q,
+    cat: tceCat(q.id),
+    meta: { dwg: q.id, title: q.title, no: +no || 0 },
+    raw: { ln, pl, ci, ar: [], so: [], lamp: [] },
+    tx,
+    rows: [],
+    rng: { F: NO, L: NO, T: NO, S: NO, RS: NO, RL: NO, RT: NO },
+    vr: { F: NO, L: NO, T: NO, S: NO, RS: NO, RL: NO, RT: NO },
+    rb: [],
+    cells: {},
+    sig: {},
+    syms: [],
+    lyr: '',
+    bv: BV,
+    sd: { tcs: 1, tce: src, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [] }
+  };
 }
 
 /* ---- src/digital/parts/03-models.js ---- */
@@ -123599,7 +124205,7 @@ window.LS_GUIDE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b8c7d88'));
+    row('Version', E('span', 'scsver', ver + ' · build 574dd8a'));
   }
   function openSet(near) {
     if (!set) {

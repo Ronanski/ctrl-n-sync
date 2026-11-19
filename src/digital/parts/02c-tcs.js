@@ -236,7 +236,8 @@ function tcsSheetsAdd() {
   const L = typeof AN !== 'undefined' && AN.tcsIbdSheets ? AN.tcsIbdSheets() : [];
   if (!L.length) return;
   const nm = S.sheets[S.cur] && S.sheets[S.cur].name;
-  S.sheets = S.sheets.filter(x => !x.tcs).concat(L.map(tcsSheet));
+  /* then the soft logic sheets of the TCS (02d-tce.js) */
+  S.sheets = S.sheets.filter(x => !x.tcs).concat(L.map(tcsSheet), TCE_SHEETS.map(tceSheet));
   const i = S.sheets.findIndex(x => x.name === nm);
   if (i >= 0) S.cur = i;
 }
