@@ -7025,6 +7025,126 @@ function tcsSim(s) {
     })
   );
 })();
+/* TCE088 DIGITAL INPUT SIGNAL DIAGNOSTICS(14) (331DM09784 page 55, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Four spare signals. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1053', 'TCP2053', 'TCP3053'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE088',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(14)',
+      page: 55,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B5', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE088_1', null, R],
+        [N, 'B6', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE088_3', null, R],
+        [N, 'B7', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE088_5', null, R],
+        [N, 'B8', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE088_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE089 DIGITAL INPUT SIGNAL DIAGNOSTICS(15) (331DM09784 page 56, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Four spare signals. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1053', 'TCP2053', 'TCP3053'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE089',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(15)',
+      page: 56,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B9', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE089_1', null, R],
+        [N, 'B10', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE089_3', null, R],
+        [N, 'B11', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE089_5', null, R],
+        [N, 'B12', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE089_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE090 DIGITAL INPUT SIGNAL DIAGNOSTICS(16) (331DM09784 page 57, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   A spare signal, the trip position of master trip solenoids A2 and B2, and P.S.NORMAL. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1053', 'TCP2053', 'TCP3053'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] },
+    T = s => {
+      const L = ['MASTER TRIP SOLENOID(' + s + ')', 'TRIP POSITION'];
+      return { in: [L, L, L], out: [L, L, [...L, 'INPUT ERROR']] };
+    },
+    P = ['P.S.NORMAL'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE090',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(16)',
+      page: 57,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B13', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE090_1', null, R],
+        [T('A2'), 'B14', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE090_3', ['TCT081'], R, { dbl: 1 }],
+        [T('B2'), 'B15', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE090_5', ['TCT081A'], R, { dbl: 1 }],
+        [{ in: [P, P, P], out: [P, P, [...P, 'INPUT ERROR']] }, 'B16', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE090_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE091 DIGITAL INPUT SIGNAL DIAGNOSTICS(17) (331DM09784 page 58, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Shaft vibration very high (C) of the four bearings, as TCE075 has (A) and TCE083 (B). For No.3 and No.4 the drawing prints two stray characters
+   between HIGH and (C) (a box and "@", a wide space that the drawing tool could not print); they are typed as the space they stand for. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1054', 'TCP2054', 'TCP3054'],
+    V = s => {
+      const L = [s + ' SHAFT VIBRATION', 'VERY HIGH (C)'];
+      return { in: [L, L, L], out: [L, L, [...L, 'INPUT ERROR']] };
+    };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE091',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(17)',
+      page: 58,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [V('NO.1 BEARING'), 'B1', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE091_1', null, R],
+        [V('NO.2 BEARING'), 'B2', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE091_3', null, R],
+        [V('NO.3 GEN.'), 'B3', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE091_5', null, R],
+        [V('NO.4 GEN.'), 'B4', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE091_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
 /* TCE160 TARGET ACCELERATION (331DM09784 page 111, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE160',
@@ -52190,7 +52310,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build eb9bb07'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 79ee93c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -79363,6 +79483,134 @@ function tcsSim(s) {
         [V('OPEN'), 'B2', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE087_3', ['TCE365'], R, { third: ['B2', ['TCT081B']] }],
         [N, 'B3', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE087_5', null, R],
         [N, 'B4', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE087_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE088.js ---- */
+/* TCE088 DIGITAL INPUT SIGNAL DIAGNOSTICS(14) (331DM09784 page 55, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Four spare signals. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1053', 'TCP2053', 'TCP3053'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE088',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(14)',
+      page: 55,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B5', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE088_1', null, R],
+        [N, 'B6', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE088_3', null, R],
+        [N, 'B7', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE088_5', null, R],
+        [N, 'B8', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE088_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE089.js ---- */
+/* TCE089 DIGITAL INPUT SIGNAL DIAGNOSTICS(15) (331DM09784 page 56, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Four spare signals. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1053', 'TCP2053', 'TCP3053'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE089',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(15)',
+      page: 56,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B9', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE089_1', null, R],
+        [N, 'B10', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE089_3', null, R],
+        [N, 'B11', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE089_5', null, R],
+        [N, 'B12', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE089_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE090.js ---- */
+/* TCE090 DIGITAL INPUT SIGNAL DIAGNOSTICS(16) (331DM09784 page 57, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   A spare signal, the trip position of master trip solenoids A2 and B2, and P.S.NORMAL. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1053', 'TCP2053', 'TCP3053'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['INPUT ERROR']] },
+    T = s => {
+      const L = ['MASTER TRIP SOLENOID(' + s + ')', 'TRIP POSITION'];
+      return { in: [L, L, L], out: [L, L, [...L, 'INPUT ERROR']] };
+    },
+    P = ['P.S.NORMAL'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE090',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(16)',
+      page: 57,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [N, 'B13', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE090_1', null, R],
+        [T('A2'), 'B14', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE090_3', ['TCT081'], R, { dbl: 1 }],
+        [T('B2'), 'B15', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE090_5', ['TCT081A'], R, { dbl: 1 }],
+        [{ in: [P, P, P], out: [P, P, [...P, 'INPUT ERROR']] }, 'B16', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE090_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE091.js ---- */
+/* TCE091 DIGITAL INPUT SIGNAL DIAGNOSTICS(17) (331DM09784 page 58, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   digital input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Shaft vibration very high (C) of the four bearings, as TCE075 has (A) and TCE083 (B). For No.3 and No.4 the drawing prints two stray characters
+   between HIGH and (C) (a box and "@", a wide space that the drawing tool could not print); they are typed as the space they stand for. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1054', 'TCP2054', 'TCP3054'],
+    V = s => {
+      const L = [s + ' SHAFT VIBRATION', 'VERY HIGH (C)'];
+      return { in: [L, L, L], out: [L, L, [...L, 'INPUT ERROR']] };
+    };
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE091',
+      title: 'DIGITAL INPUT SIGNAL DIAGNOSTICS(17)',
+      page: 58,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      g: [
+        [V('NO.1 BEARING'), 'B1', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE091_1', null, R],
+        [V('NO.2 BEARING'), 'B2', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE091_3', null, R],
+        [V('NO.3 GEN.'), 'B3', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE091_5', null, R],
+        [V('NO.4 GEN.'), 'B4', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE091_7', null, R]
       ],
       or: ['027', '028'],
       e: ['E', ['TCE471']],
@@ -145047,7 +145295,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build eb9bb07'));
+    row('Version', E('span', 'scsver', ver + ' · build 79ee93c'));
   }
   function openSet(near) {
     if (!set) {
