@@ -158,3 +158,23 @@ button.st-cond.st-go span { text-decoration: underline; text-decoration-color: #
 .st-tl.sp i { border-top: 2px dashed #9aa5b0; }
 .st-tl.mv i { border-top: 2px dotted #6f7b87; }
 .st-tl b { color: var(--st-tx); font: 600 12px var(--st-num); }
+/* lists: a name is never cut (it takes a second line), the title of a sheet stands under its name, a group folds */
+.st-nav { height: auto; min-height: 32px; padding: 6px 12px 6px 10px; white-space: normal; overflow: visible; line-height: 1.3; }
+.st-nav.fold:not(.on) { display: none; }
+.st-nav small { display: block; margin-top: 1px; font: 400 11px/1.3 var(--st-ui); color: var(--st-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-nav.on small { color: #b4bdc6; }
+.st-grp { display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; border: 0; background: none; text-align: left; white-space: normal; cursor: pointer; padding: 14px 12px 6px; }
+.st-grp::before { content: ''; flex: none; width: 5px; height: 5px; margin-top: -3px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); }
+.st-grp.shut::before { margin-top: 0; transform: rotate(-45deg); }
+.st-grp i { margin-left: auto; font: 500 11px var(--st-num); letter-spacing: 0; }
+.st-grp:hover { color: #fff; }
+.st-grp:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
+.st-grp[hidden], .st-nav[hidden] { display: none; }
+@media (pointer: coarse) { .st-grp { min-height: 40px; padding: 10px 12px 6px; } }
+/* the unit and the version of the app in one place: a press opens version, update and channel */
+.st-who { all: unset; box-sizing: border-box; display: grid; align-content: center; min-width: 0; height: 100%; cursor: pointer; line-height: 1.15; }
+.st-who b { font-weight: 600; }
+.st-who .st-ver { font: 500 11px var(--st-num); color: var(--st-dim); }
+.st-who:hover .st-ver { color: var(--st-tx); }
+.st-who:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
+.st-railfoot { padding: 8px 12px; }
