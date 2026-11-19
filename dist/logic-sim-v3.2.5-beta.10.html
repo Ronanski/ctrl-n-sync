@@ -14460,7 +14460,7 @@ function tcsSim(s) {
   t: [
     [1121, 190, 'T'],
     [671.5, 250, 'T'],
-    [475, 181, '(TCE050)'],
+    [470, 188, '(TCE050)'],
     [1115, 745, 'T'],
     [666, 805, 'T'],
     [1697, 147.5, 'MOP(B) DISCHARGE OIL'],
@@ -14472,6 +14472,158 @@ function tcsSim(s) {
     [1694, 722, 'MOP(A) DISCHARGE OIL'],
     [1694, 743, 'PRESS. LOW'],
     [1694, 807.5, 'MOP(A) DISCHARGE OIL'],
+    [1694, 828.5, 'PRESS. LOW'],
+    [1169, 554, '(LME580A)'],
+    [1285, 554, '(LME580B)'],
+    [1069, 576, 'TD:1.0s'],
+    [1069, 598, 'TP:3.0s'],
+    [1220, 576, 'TP:3.0s'],
+    [1220, 598, 'TP:0.5s'],
+    [1162.5, 1108.5, '(LME580A)'],
+    [1279, 1108.5, '(LME580B)'],
+    [1064, 1130, 'TD:1.0s'],
+    [1064, 1151, 'TP:3.0s'],
+    [1214, 1130, 'TP:3.0s'],
+    [1214, 1151, 'TP:0.5s'],
+    [247, 1534, 'CONTROLLER:'],
+    [406, 1534, 'EHG+MD'],
+    [631, 1513, 'TRIGGER  :'],
+    [631, 1540, 'CYCLE(ms):30']
+  ]
+});
+/* TCE305 CONTROL OIL PUMP(TB-21,22) (331DM09784 page 155, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the
+   pixels of the page rendered 2296 wide, the scan skew taken out. Same frame as TCE300. COP(B) DISCHARGE OIL PRESS.LOW (COP(A) AUTO
+   START) = A002 of TP A001 (CONTROL OIL PUMP(B) RUNNING, TP 15.0 s, reset by INITIAL) and CPL A005 (COP(B) discharge oil press,
+   138.0 / 133.0 kg/cm2g). Motor standard B031 (COP(A)): ASRT = OR006 of that low press and COP(B) MOTOR ELECTRICAL TROUBLE, ASTP from
+   OFF(0), TRP from BEARING OIL PRESS. VERY LOW TRIP, EF from COP(A) MOTOR ELECTRICAL TROUBLE, RUN from COP(A) PUMP RUNNING. B021
+   (COP(B)) is the mirror through TP A015 / CPL A030 / A016 / OR020. NOT013 / NOT027 of the RUN outputs are COP(A) / COP(B) STOPPED,
+   OR028 of both ABN is COP(A),(B) FAULT. Output texts keep the drawing's own spelling. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE305',
+  title: 'CONTROL OIL PUMP(TB-21,22)',
+  page: 155,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [178, 88, 2230, 1552],
+  k: [
+    ['kInit', 296.5, 156, 'INITIAL', 'ref'],
+    ['kOff', 315, 391.212, 'OFF(0)', 'sys.ref']
+  ],
+  c: [
+    ['iRunB', 'in', 'B2', 654, 202.5, 'CONTROL OIL PUMP(B) RUNNINNG', ['*']],
+    ['iPb', 'in', 'A3', 311.5, 263, '', ['TCE104'], 1],
+    ['iEtrA', 'in', 'A2', 305, 531.5, 'COP(A) MOTOR ELECTRICAL TROUBLE', ['TCE040']],
+    ['iRunA', 'in', 'A1', 304, 628, 'COP(A) PUMP RUNNING', ['TCE040']],
+    ['iBrg', 'in', 'B', 305, 711, 'BEARING OIL PRESS. VERY LOW TRIP', ['TCE111']],
+    ['iPa', 'in', 'A3', 304, 819, 'COP(A) DISCHARGE OIL PRESS.', ['TCE102'], 1],
+    ['iEtrB', 'in', 'A2', 304, 1085, 'COP(B) MOTOR ELECTRICAL TROUBLE', ['TCE042']],
+    ['iPRunB', 'in', 'A1', 304, 1181.5, 'COP(B) PUMP RUNNING', ['TCE042']],
+    ['oA1', 'out', 'A1', 2084, 287.5, '', ['-'], 1],
+    ['oF', 'out', 'F', 2083, 360.924, 'CONTOL OIL PUMP(A) START', ['TCE600']],
+    ['oD', 'out', 'D', 2083, 629, 'COP(A) STOPPED', ['-']],
+    ['oA', 'out', 'A', 2084, 694, 'CONTROL OIL PUMP(A) RUNNING', ['-'], 1],
+    ['oB1', 'out', 'B1', 2083, 841.5, '', ['-'], 1],
+    ['oG', 'out', 'G', 2083, 914.924, 'COTROL OIL PUMP(B) START', ['TCE602']],
+    ['oB2', 'out', 'B2', 2090, 979.5, 'CONTROL OIL PUMP(B) RUNNINNG', ['*']],
+    ['oE', 'out', 'E', 2083, 1181.2, 'COP(B) STOPPED', ['-']],
+    ['oC', 'out', 'C', 2083, 1245.2, 'COP(A),(B) FAULT', ['-']],
+    ['oB', 'out', 'B', 2078, 1309.5, 'CONTROL OIL PUMP(B) RUNNING', ['-'], 1]
+  ],
+  d: [
+    ['crtA', 2029, 201.5, 'out', 'nPT-LOn931A_XA', 'S', '#1C'],
+    ['crtB', 2027, 755, 'out', 'nPT-LOn931B_XA', 'S', '#1C']
+  ],
+  m: [
+    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', []],
+    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+  ],
+  b: [
+    ['x000', 'X', '', 1059, 199.5],
+    ['tp001', 'TP', 'A001', 1161, 210.5, ['TP:15.0S']],
+    ['a002', 'A', '002', 1376, 210.5],
+    ['cpl005', 'CPL', 'A005', 711, 273, ['HL:138.0Kg/cm2g', 'LL:133.0Kg/cm2g']],
+    ['or006', 'OR', '006', 893.5, 368.924],
+    ['not013', 'NOT', '013', 1583, 637],
+    ['tp015', 'TP', 'A015', 1159.5, 764, ['TP:15.0S']],
+    ['a016', 'A', '016', 1370.5, 764],
+    ['cpl030', 'CPL', 'A030', 710.4, 827, ['HL:138.0Kg/cm2g', 'LL:133.0Kg/cm2g']],
+    ['or020', 'OR', '020', 892.5, 922.924],
+    ['not027', 'NOT', '027', 1582, 1189.2],
+    ['or028', 'OR', '028', 1582, 1253.2],
+    ['btr003', 'o:BTR', '003', 1585.5, 199.5],
+    ['btr004', 'o:BTR', '004', 1585, 284.5],
+    ['btr009', 'o:BTR', '009', 1692, 357.924],
+    ['btr014', 'o:BTR', '014', 1582.5, 691],
+    ['btr017', 'o:BTR', '017', 1583.5, 753],
+    ['btr018', 'o:BTR', '018', 1582.5, 838.5],
+    ['btr023', 'o:BTR', '023', 1688.5, 911.924],
+    ['btr032', 'o:BTR', '032', 1688.5, 976.5],
+    ['btr029', 'o:BTR', '029', 1577, 1306.5]
+  ],
+  w: [
+    /* COP(B) discharge oil press. low (COP(A) auto start) */
+    ['kInit', [[531.5, 155], [1161, 155], [1161, 189.5]]],
+    ['iRunB', [[681, 199.5], [1132, 199.5]]],
+    ['iPb', [[338.5, 260], [682, 260]], 1],
+    ['cpl005', [[740, 262], [1320, 262], [1320, 221.5], [1347, 221.5]]],
+    ['tp001', [[1190, 199.5], [1347, 199.5]]],
+    ['a002', [[1405, 199.5], [2005, 199.5]]],
+    ['a002', [[1553, 199.5], [1553, 284.5], [2057, 284.5]]],
+    ['a002', [[1553, 284.5], [801, 284.5], [801, 357.924], [864.5, 357.924]]],
+    /* COP(A) motor standard */
+    ['iEtrB', [[331, 1082], [797, 1082], [797, 379.924], [864.5, 379.924]]],
+    ['iEtrB', [[797, 1008.788], [1063, 1008.788]]],
+    ['or006', [[922.5, 357.924], [1063, 357.924]]],
+    ['kOff', [[550, 390.212], [1063, 390.212]]],
+    ['kOff', [[958, 390.212], [958, 944.212], [1063, 944.212]]],
+    ['iBrg', [[332, 708], [945, 708]]],
+    ['iBrg', [[945, 422.5], [945, 976.5], [1063, 976.5]]],
+    ['iBrg', [[945, 422.5], [1063, 422.5]]],
+    ['iEtrA', [[332, 528.5], [819.5, 528.5], [819.5, 454.788], [1063, 454.788]]],
+    ['iEtrA', [[819.5, 528.5], [819.5, 933.924], [863.5, 933.924]]],
+    ['iRunA', [[331, 625], [1022.5, 625], [1022.5, 487.076], [1063, 487.076]]],
+    ['b031', [[1468, 357.924], [2056, 357.924]]],
+    ['b031', [[1468, 422.5], [1531, 422.5], [1531, 626], [1554, 626]]],
+    ['b031', [[1531, 626], [1531, 691], [2057, 691]]],
+    ['b031', [[1531, 626], [1086, 626], [1086, 753], [1130.5, 753]]],
+    ['b031', [[1468, 487.076], [1510, 487.076], [1510, 1242.2], [1553, 1242.2]]],
+    ['not013', [[1612, 626], [2056, 626]]],
+    /* COP(A) discharge oil press. low (COP(B) auto start) */
+    ['kInit', [[1003, 155], [1003, 710.5], [1159.5, 710.5], [1159.5, 743]]],
+    ['iPa', [[331, 816], [681.4, 816]], 1],
+    ['cpl030', [[739.4, 816], [1318, 816], [1318, 775], [1341.5, 775]]],
+    ['tp015', [[1188.5, 753], [1341.5, 753]]],
+    ['a016', [[1399.5, 753], [2003, 753]]],
+    ['a016', [[1530.5, 753], [1530.5, 838.5], [2056, 838.5]]],
+    ['a016', [[1530.5, 838.5], [838, 838.5], [838, 911.924], [863.5, 911.924]]],
+    /* COP(B) motor standard */
+    ['or020', [[921.5, 911.924], [1063, 911.924]]],
+    ['iPRunB', [[331, 1178.5], [1460, 1178.5], [1460, 1306.5], [2051, 1306.5]]],
+    ['iPRunB', [[973, 1178.5], [973, 1041.076], [1063, 1041.076]]],
+    ['b021', [[1468, 911.924], [2056, 911.924]]],
+    ['b021', [[1468, 976.5], [2063, 976.5]]],
+    ['b021', [[1528, 976.5], [1528, 1178.2], [1553, 1178.2]]],
+    ['b021', [[1468, 1041.076], [1484, 1041.076], [1484, 1264.2], [1553, 1264.2]]],
+    ['not027', [[1611, 1178.2], [2056, 1178.2]]],
+    ['or028', [[1611, 1242.2], [2056, 1242.2]]]
+  ],
+  t: [
+    [470, 188, '(TCE050)'],
+    [344, 229, 'COP(B) DISCHARGE'],
+    [344, 250, 'OIL PRESS.'],
+    [1121, 190, 'T'],
+    [671.5, 250, 'T'],
+    [1115, 745, 'T'],
+    [666, 805, 'T'],
+    [1702, 147.5, 'COP(B) DISCHARGE OIL'],
+    [1702, 168.5, 'PRESS.LOW'],
+    [1702, 189.5, '(COP(A) AUTO START)'],
+    [1702, 232.5, 'COP(B) DISCHARGE OIL'],
+    [1702, 253.5, 'PRESS.LOW'],
+    [1702, 274.5, '(COP(A) AUTO START)'],
+    [1694, 722, 'COP(A) DISCHARGE OIL'],
+    [1694, 743, 'PRESS. LOW'],
+    [1694, 807.5, 'COP(A) DISCHARGE OIL'],
     [1694, 828.5, 'PRESS. LOW'],
     [1169, 554, '(LME580A)'],
     [1285, 554, '(LME580B)'],
@@ -51665,7 +51817,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build d6b2900'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 5477914'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -86352,7 +86504,7 @@ function tcsSim(s) {
   t: [
     [1121, 190, 'T'],
     [671.5, 250, 'T'],
-    [475, 181, '(TCE050)'],
+    [470, 188, '(TCE050)'],
     [1115, 745, 'T'],
     [666, 805, 'T'],
     [1697, 147.5, 'MOP(B) DISCHARGE OIL'],
@@ -86364,6 +86516,160 @@ function tcsSim(s) {
     [1694, 722, 'MOP(A) DISCHARGE OIL'],
     [1694, 743, 'PRESS. LOW'],
     [1694, 807.5, 'MOP(A) DISCHARGE OIL'],
+    [1694, 828.5, 'PRESS. LOW'],
+    [1169, 554, '(LME580A)'],
+    [1285, 554, '(LME580B)'],
+    [1069, 576, 'TD:1.0s'],
+    [1069, 598, 'TP:3.0s'],
+    [1220, 576, 'TP:3.0s'],
+    [1220, 598, 'TP:0.5s'],
+    [1162.5, 1108.5, '(LME580A)'],
+    [1279, 1108.5, '(LME580B)'],
+    [1064, 1130, 'TD:1.0s'],
+    [1064, 1151, 'TP:3.0s'],
+    [1214, 1130, 'TP:3.0s'],
+    [1214, 1151, 'TP:0.5s'],
+    [247, 1534, 'CONTROLLER:'],
+    [406, 1534, 'EHG+MD'],
+    [631, 1513, 'TRIGGER  :'],
+    [631, 1540, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE305.js ---- */
+/* TCE305 CONTROL OIL PUMP(TB-21,22) (331DM09784 page 155, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the
+   pixels of the page rendered 2296 wide, the scan skew taken out. Same frame as TCE300. COP(B) DISCHARGE OIL PRESS.LOW (COP(A) AUTO
+   START) = A002 of TP A001 (CONTROL OIL PUMP(B) RUNNING, TP 15.0 s, reset by INITIAL) and CPL A005 (COP(B) discharge oil press,
+   138.0 / 133.0 kg/cm2g). Motor standard B031 (COP(A)): ASRT = OR006 of that low press and COP(B) MOTOR ELECTRICAL TROUBLE, ASTP from
+   OFF(0), TRP from BEARING OIL PRESS. VERY LOW TRIP, EF from COP(A) MOTOR ELECTRICAL TROUBLE, RUN from COP(A) PUMP RUNNING. B021
+   (COP(B)) is the mirror through TP A015 / CPL A030 / A016 / OR020. NOT013 / NOT027 of the RUN outputs are COP(A) / COP(B) STOPPED,
+   OR028 of both ABN is COP(A),(B) FAULT. Output texts keep the drawing's own spelling. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE305',
+  title: 'CONTROL OIL PUMP(TB-21,22)',
+  page: 155,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [178, 88, 2230, 1552],
+  k: [
+    ['kInit', 296.5, 156, 'INITIAL', 'ref'],
+    ['kOff', 315, 391.212, 'OFF(0)', 'sys.ref']
+  ],
+  c: [
+    ['iRunB', 'in', 'B2', 654, 202.5, 'CONTROL OIL PUMP(B) RUNNINNG', ['*']],
+    ['iPb', 'in', 'A3', 311.5, 263, '', ['TCE104'], 1],
+    ['iEtrA', 'in', 'A2', 305, 531.5, 'COP(A) MOTOR ELECTRICAL TROUBLE', ['TCE040']],
+    ['iRunA', 'in', 'A1', 304, 628, 'COP(A) PUMP RUNNING', ['TCE040']],
+    ['iBrg', 'in', 'B', 305, 711, 'BEARING OIL PRESS. VERY LOW TRIP', ['TCE111']],
+    ['iPa', 'in', 'A3', 304, 819, 'COP(A) DISCHARGE OIL PRESS.', ['TCE102'], 1],
+    ['iEtrB', 'in', 'A2', 304, 1085, 'COP(B) MOTOR ELECTRICAL TROUBLE', ['TCE042']],
+    ['iPRunB', 'in', 'A1', 304, 1181.5, 'COP(B) PUMP RUNNING', ['TCE042']],
+    ['oA1', 'out', 'A1', 2084, 287.5, '', ['-'], 1],
+    ['oF', 'out', 'F', 2083, 360.924, 'CONTOL OIL PUMP(A) START', ['TCE600']],
+    ['oD', 'out', 'D', 2083, 629, 'COP(A) STOPPED', ['-']],
+    ['oA', 'out', 'A', 2084, 694, 'CONTROL OIL PUMP(A) RUNNING', ['-'], 1],
+    ['oB1', 'out', 'B1', 2083, 841.5, '', ['-'], 1],
+    ['oG', 'out', 'G', 2083, 914.924, 'COTROL OIL PUMP(B) START', ['TCE602']],
+    ['oB2', 'out', 'B2', 2090, 979.5, 'CONTROL OIL PUMP(B) RUNNINNG', ['*']],
+    ['oE', 'out', 'E', 2083, 1181.2, 'COP(B) STOPPED', ['-']],
+    ['oC', 'out', 'C', 2083, 1245.2, 'COP(A),(B) FAULT', ['-']],
+    ['oB', 'out', 'B', 2078, 1309.5, 'CONTROL OIL PUMP(B) RUNNING', ['-'], 1]
+  ],
+  d: [
+    ['crtA', 2029, 201.5, 'out', 'nPT-LOn931A_XA', 'S', '#1C'],
+    ['crtB', 2027, 755, 'out', 'nPT-LOn931B_XA', 'S', '#1C']
+  ],
+  m: [
+    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', []],
+    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+  ],
+  b: [
+    ['x000', 'X', '', 1059, 199.5],
+    ['tp001', 'TP', 'A001', 1161, 210.5, ['TP:15.0S']],
+    ['a002', 'A', '002', 1376, 210.5],
+    ['cpl005', 'CPL', 'A005', 711, 273, ['HL:138.0Kg/cm2g', 'LL:133.0Kg/cm2g']],
+    ['or006', 'OR', '006', 893.5, 368.924],
+    ['not013', 'NOT', '013', 1583, 637],
+    ['tp015', 'TP', 'A015', 1159.5, 764, ['TP:15.0S']],
+    ['a016', 'A', '016', 1370.5, 764],
+    ['cpl030', 'CPL', 'A030', 710.4, 827, ['HL:138.0Kg/cm2g', 'LL:133.0Kg/cm2g']],
+    ['or020', 'OR', '020', 892.5, 922.924],
+    ['not027', 'NOT', '027', 1582, 1189.2],
+    ['or028', 'OR', '028', 1582, 1253.2],
+    ['btr003', 'o:BTR', '003', 1585.5, 199.5],
+    ['btr004', 'o:BTR', '004', 1585, 284.5],
+    ['btr009', 'o:BTR', '009', 1692, 357.924],
+    ['btr014', 'o:BTR', '014', 1582.5, 691],
+    ['btr017', 'o:BTR', '017', 1583.5, 753],
+    ['btr018', 'o:BTR', '018', 1582.5, 838.5],
+    ['btr023', 'o:BTR', '023', 1688.5, 911.924],
+    ['btr032', 'o:BTR', '032', 1688.5, 976.5],
+    ['btr029', 'o:BTR', '029', 1577, 1306.5]
+  ],
+  w: [
+    /* COP(B) discharge oil press. low (COP(A) auto start) */
+    ['kInit', [[531.5, 155], [1161, 155], [1161, 189.5]]],
+    ['iRunB', [[681, 199.5], [1132, 199.5]]],
+    ['iPb', [[338.5, 260], [682, 260]], 1],
+    ['cpl005', [[740, 262], [1320, 262], [1320, 221.5], [1347, 221.5]]],
+    ['tp001', [[1190, 199.5], [1347, 199.5]]],
+    ['a002', [[1405, 199.5], [2005, 199.5]]],
+    ['a002', [[1553, 199.5], [1553, 284.5], [2057, 284.5]]],
+    ['a002', [[1553, 284.5], [801, 284.5], [801, 357.924], [864.5, 357.924]]],
+    /* COP(A) motor standard */
+    ['iEtrB', [[331, 1082], [797, 1082], [797, 379.924], [864.5, 379.924]]],
+    ['iEtrB', [[797, 1008.788], [1063, 1008.788]]],
+    ['or006', [[922.5, 357.924], [1063, 357.924]]],
+    ['kOff', [[550, 390.212], [1063, 390.212]]],
+    ['kOff', [[958, 390.212], [958, 944.212], [1063, 944.212]]],
+    ['iBrg', [[332, 708], [945, 708]]],
+    ['iBrg', [[945, 422.5], [945, 976.5], [1063, 976.5]]],
+    ['iBrg', [[945, 422.5], [1063, 422.5]]],
+    ['iEtrA', [[332, 528.5], [819.5, 528.5], [819.5, 454.788], [1063, 454.788]]],
+    ['iEtrA', [[819.5, 528.5], [819.5, 933.924], [863.5, 933.924]]],
+    ['iRunA', [[331, 625], [1022.5, 625], [1022.5, 487.076], [1063, 487.076]]],
+    ['b031', [[1468, 357.924], [2056, 357.924]]],
+    ['b031', [[1468, 422.5], [1531, 422.5], [1531, 626], [1554, 626]]],
+    ['b031', [[1531, 626], [1531, 691], [2057, 691]]],
+    ['b031', [[1531, 626], [1086, 626], [1086, 753], [1130.5, 753]]],
+    ['b031', [[1468, 487.076], [1510, 487.076], [1510, 1242.2], [1553, 1242.2]]],
+    ['not013', [[1612, 626], [2056, 626]]],
+    /* COP(A) discharge oil press. low (COP(B) auto start) */
+    ['kInit', [[1003, 155], [1003, 710.5], [1159.5, 710.5], [1159.5, 743]]],
+    ['iPa', [[331, 816], [681.4, 816]], 1],
+    ['cpl030', [[739.4, 816], [1318, 816], [1318, 775], [1341.5, 775]]],
+    ['tp015', [[1188.5, 753], [1341.5, 753]]],
+    ['a016', [[1399.5, 753], [2003, 753]]],
+    ['a016', [[1530.5, 753], [1530.5, 838.5], [2056, 838.5]]],
+    ['a016', [[1530.5, 838.5], [838, 838.5], [838, 911.924], [863.5, 911.924]]],
+    /* COP(B) motor standard */
+    ['or020', [[921.5, 911.924], [1063, 911.924]]],
+    ['iPRunB', [[331, 1178.5], [1460, 1178.5], [1460, 1306.5], [2051, 1306.5]]],
+    ['iPRunB', [[973, 1178.5], [973, 1041.076], [1063, 1041.076]]],
+    ['b021', [[1468, 911.924], [2056, 911.924]]],
+    ['b021', [[1468, 976.5], [2063, 976.5]]],
+    ['b021', [[1528, 976.5], [1528, 1178.2], [1553, 1178.2]]],
+    ['b021', [[1468, 1041.076], [1484, 1041.076], [1484, 1264.2], [1553, 1264.2]]],
+    ['not027', [[1611, 1178.2], [2056, 1178.2]]],
+    ['or028', [[1611, 1242.2], [2056, 1242.2]]]
+  ],
+  t: [
+    [470, 188, '(TCE050)'],
+    [344, 229, 'COP(B) DISCHARGE'],
+    [344, 250, 'OIL PRESS.'],
+    [1121, 190, 'T'],
+    [671.5, 250, 'T'],
+    [1115, 745, 'T'],
+    [666, 805, 'T'],
+    [1702, 147.5, 'COP(B) DISCHARGE OIL'],
+    [1702, 168.5, 'PRESS.LOW'],
+    [1702, 189.5, '(COP(A) AUTO START)'],
+    [1702, 232.5, 'COP(B) DISCHARGE OIL'],
+    [1702, 253.5, 'PRESS.LOW'],
+    [1702, 274.5, '(COP(A) AUTO START)'],
+    [1694, 722, 'COP(A) DISCHARGE OIL'],
+    [1694, 743, 'PRESS. LOW'],
+    [1694, 807.5, 'COP(A) DISCHARGE OIL'],
     [1694, 828.5, 'PRESS. LOW'],
     [1169, 554, '(LME580A)'],
     [1285, 554, '(LME580B)'],
@@ -143977,7 +144283,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build d6b2900'));
+    row('Version', E('span', 'scsver', ver + ' · build 5477914'));
   }
   function openSet(near) {
     if (!set) {
