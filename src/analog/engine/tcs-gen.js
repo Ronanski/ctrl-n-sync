@@ -32,7 +32,12 @@ const TCS_GEN = {
   tcb: 0.1,
   nrr: 3.6 /* rpm/s while a speed pulse is on, NO-SOURCE */,
   tn: 1.0 /* s, NO-SOURCE */,
-  v84: 0.95 /* NO-SOURCE */
+  v84: 0.95 /* NO-SOURCE */,
+  /* the generator control panel (GEE-2015-0141 PDF p.7 manual sync: SYN 7-90R voltage RAISE / LOWER to the AVR, 7-65 speed RAISE / LOWER
+     to the TCS): one press of a switch = a pulse of mpw s (NO-SOURCE). AVR MANUAL (Generator Logic.pdf SH-G-4 AVR signal AUTO / MANUAL):
+     the field set point moves at frr pu/s while RAISE / LOWER is pressed (NO-SOURCE) */
+  mpw: 0.5,
+  frr: 0.02
 };
 /* the grid frequency, Hz (NO-SOURCE: a slow drift, so the slip and the phase angle move as on a real grid) */
 function tcsGridHz(t) {
@@ -55,7 +60,9 @@ function tcsGen(U) {
     ty: 0,
     on25: false,
     close: false,
-    last: ''
+    last: '',
+    syn: 'AUTO' /* SYN selector of the panel: AUTO (ASD1) or MANUAL */,
+    avr: 'AUTO' /* AVR AUTO (voltage regulator) or MANUAL (field set point) */
   });
 }
 function tcsGenStep(U, dt) {
@@ -88,13 +95,26 @@ function tcsGenStep(U, dt) {
   g.ex = false;
   /* field and AVR in sub-steps of 0.05 s: AVR (PI on the terminal voltage, output 0 ~ ceiling) -> exciter (lag te) -> main field (T'do)
      -> open circuit terminal voltage = flux x speed. With 52G closed the grid holds the terminal voltage */
+  /* the operator's RAISE / LOWER of the panel (7-90R): the AVR voltage set (AUTO) or the field set point (MANUAL) */
+  if (!g.syn) g.syn = 'AUTO';
+  if (!g.avr) g.avr = 'AUTO';
+  const man = g.avr === 'MAN';
+  /* MANUAL from the start (no field yet): the set point of the no-load field, 1 pu (NO-SOURCE: the preset of the UNITROL manual channel) */
+  if (man && !isFinite(g.fr)) g.fr = g.f41 && g.efd > 0.05 ? g.efd : 1;
+  if (g.oV > 0) {
+    if (man) g.fr = Math.max(0, Math.min(K.ceil, g.fr + g.oVs * K.frr * Math.min(dt, g.oV)));
+    else g.vr = Math.max(0.9, Math.min(1.1, g.vr + g.oVs * K.vrr * Math.min(dt, g.oV)));
+    g.oV = Math.max(0, g.oV - dt);
+  }
   if (g.f41) {
     const m = Math.max(1, Math.ceil(dt / 0.05)),
       h = dt / m;
     for (let i = 0; i < m; i++) {
       const e = g.vr - (g52 ? 1 : g.eq * n);
       g.ai = Math.max(0, Math.min(K.ceil, g.ai + K.ki * e * h));
-      const u = Math.max(0, Math.min(K.ceil, g.ai + K.kp * e));
+      /* MANUAL: the exciter takes the field set point, no voltage loop; the integrator follows it, so AUTO takes over without a bump */
+      const u = man ? Math.max(0, Math.min(K.ceil, g.fr)) : Math.max(0, Math.min(K.ceil, g.ai + K.kp * e));
+      if (man) g.ai = u;
       g.efd += ((u - g.efd) * h) / K.te;
       g.eq += ((g.efd - g.eq) * h) / K.tdo;
     }
@@ -119,8 +139,8 @@ function tcsGenStep(U, dt) {
   /* c2 gap 4 (310SC90-773 rev 2 DO 79 TCS-DO1006 AUTO SYN START PB ON, pulse, SH-G-3): the DCS output O.0492 = DITL-115 "AUTO SYNCHRONIZE
      START COMMAND" starts the synchronizing too (25X1 seal-in, same conditions). The ATS step 5 path (g.start) stays as it is */
   const pb = typeof tcsDitlOut === 'function' && tcsDitlOut('DITL-115', /^AUTO SYNCHRONIZE START COMMAND/);
-  if (can && (g.start || pb) && !g.x25 && g.ty < K.to) g.x25 = true;
-  if (!can) g.x25 = false;
+  if (can && g.syn !== 'MAN' && (g.start || pb) && !g.x25 && g.ty < K.to) g.x25 = true;
+  if (!can || g.syn === 'MAN') g.x25 = false;
   g.tx = g.x25 ? g.tx + dt : 0;
   const y1 = g.x25 && g.tx >= K.x3;
   g.ty = y1 ? g.ty + dt : 0;
@@ -172,7 +192,9 @@ function tcsGenStep(U, dt) {
     g.on25 = false;
   }
   /* 52G_CLOSE_ORDER = 52G_REMOTE AND 52G_AUTO AND 25_ON AND protection not operated AND 41 and 52L closed */
-  g.close = g.on25 && can && !(U.el && U.el.l52 === false);
+  /* the manual close of the panel (tcsGenCmd close52g): accepted only while 25 was operated at the contact; the breaker closes as ordered */
+  if (g.mc && (!can || g52)) g.mc = false;
+  g.close = (g.on25 || !!g.mc) && can && !(U.el && U.el.l52 === false);
 }
 /* a turbine trip: 52G is open, so ST TRIP opens 41 and the AVR (G-4) */
 function tcsGenTrip(U) {
@@ -189,6 +211,9 @@ function tcsGenTrip(U) {
     tx: 0,
     ty: 0,
     on25: false,
-    close: false
+    close: false,
+    mc: false,
+    oV: 0,
+    fr: NaN
   });
 }

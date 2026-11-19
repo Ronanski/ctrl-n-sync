@@ -27156,6 +27156,8 @@ function anTurbine0(cmd, arg) {
   }
   /* 3.2.0-beta.66: the 036 TURBINE OIL pumps at the 150 MW snapshot (no TCS model): the oil-only state of tcs.js */
   if (cmd === 'trip') return tcsTripManual(U);
+  /* the generator control panel (gen-panel.js): SYN AUTO / MAN, AVR AUTO / MAN, 7-90R, 7-65, 52G CLOSE, lockout reset */
+  if (cmd === 'gen') return tcsGenCmd(U, arg || {});
   /* plan c4: the line breaker 52L1 (instructor): 0 = open (house load operation), 1 = close (elec.js) */
   if (cmd === '52l') return anElecL52(U, arg);
   if (cmd === 'tripreset') return tcsTripReset(U);
@@ -30403,8 +30405,9 @@ function anRp32(U, on, dt) {
   r.al = al;
   if (r.t2 >= AN_RP32.t2 && !r.lo) {
     r.lo = true;
-    ev('2nd REVERSE POWER (32) OPERATED: generator lockout relay 86G-A, turbine trip');
+    ev('2nd REVERSE POWER (32) OPERATED: generator lockout relays 86G-A / 86G-B, turbine trip');
   }
+  tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T */
 }
 /* 3.2.4 (JENNIE, priority list: grid events): the grid frequency the generator is locked to on the grid. Trainer fault 'grid.lo' (world.js):
    59.5 Hz, reached at 0.1 Hz/s (a unit lost elsewhere; NO-SOURCE trainer setting, the Philippine Grid Code normal band is 59.7 ~ 60.3 Hz),
@@ -33672,7 +33675,9 @@ const TCS_IBD_PV = [
   [/^52G OPEN$/, U => (U.tb && (U.tb.st === 'sync' || U.tb.st === 'load') ? 0 : 1)],
   [/^TURBINE TRIP$/, (U, c) => (c.trip ? 1 : 0)],
   /* 3.2.3-beta.240: TA-9 row 17, the generator lockout relay 86G-A (only the 32 reverse power relay is modelled, unit.js anRp32) */
-  [/^GEN\.\/UNIT TRANS\. PROTECTION A/, U => (U.rp32 && U.rp32.lo ? 1 : 0)],
+  [/^GEN\.\/UNIT TRANS\. PROTECTION A/, U => (U.lo86 && U.lo86.a ? 1 : 0)],
+  /* TA-9 row 19, the generator lockout relay 86G-B (gen-panel.js tcsLo86) */
+  [/^GEN\.\/UNIT TRANS\. PROTECTION B/, U => (U.lo86 && U.lo86.b ? 1 : 0)],
   /* 3.2.3 c2 (SAKURA): the parentheses were not escaped, so this matched no input; MSV(B) FULL OPEN of TA-41 and MSV(A) / (B) FULL OPEN
      of TA-42 (page 51 / 52) had no source (their off-page links to TA-31 / TA-32 are not read) */
   [/^MSV\([AB]\) FULL OPEN/, (U, c) => (tcsVp(U, c) >= 1 ? 1 : 0)],
@@ -34203,6 +34208,7 @@ function tcsTripReset(U) {
   ib.pb.rst = 1.5;
   /* beta.240: the 86G-A lockout is reset with it, 52G open (unit.js anRp32) */
   if (U.rp32 && !(U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'))) U.rp32.lo = false;
+  if (U.lo86 && !(U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'))) tcsLo86Reset(U);
   if (U.tc) U.tc.sdDone = false;
   /* LMYP OTS (Rose, Turbine trip page): the press is made, but a trip input of TA-9 that is still at 1 keeps the A gate of the reset at 0
      (IBD TA-1): the answer names what holds the trip, so the page and the Event log say why nothing reset */
@@ -34289,7 +34295,12 @@ const TCS_GEN = {
   tcb: 0.1,
   nrr: 3.6 /* rpm/s while a speed pulse is on, NO-SOURCE */,
   tn: 1.0 /* s, NO-SOURCE */,
-  v84: 0.95 /* NO-SOURCE */
+  v84: 0.95 /* NO-SOURCE */,
+  /* the generator control panel (GEE-2015-0141 PDF p.7 manual sync: SYN 7-90R voltage RAISE / LOWER to the AVR, 7-65 speed RAISE / LOWER
+     to the TCS): one press of a switch = a pulse of mpw s (NO-SOURCE). AVR MANUAL (Generator Logic.pdf SH-G-4 AVR signal AUTO / MANUAL):
+     the field set point moves at frr pu/s while RAISE / LOWER is pressed (NO-SOURCE) */
+  mpw: 0.5,
+  frr: 0.02
 };
 /* the grid frequency, Hz (NO-SOURCE: a slow drift, so the slip and the phase angle move as on a real grid) */
 function tcsGridHz(t) {
@@ -34312,7 +34323,9 @@ function tcsGen(U) {
     ty: 0,
     on25: false,
     close: false,
-    last: ''
+    last: '',
+    syn: 'AUTO' /* SYN selector of the panel: AUTO (ASD1) or MANUAL */,
+    avr: 'AUTO' /* AVR AUTO (voltage regulator) or MANUAL (field set point) */
   });
 }
 function tcsGenStep(U, dt) {
@@ -34345,13 +34358,26 @@ function tcsGenStep(U, dt) {
   g.ex = false;
   /* field and AVR in sub-steps of 0.05 s: AVR (PI on the terminal voltage, output 0 ~ ceiling) -> exciter (lag te) -> main field (T'do)
      -> open circuit terminal voltage = flux x speed. With 52G closed the grid holds the terminal voltage */
+  /* the operator's RAISE / LOWER of the panel (7-90R): the AVR voltage set (AUTO) or the field set point (MANUAL) */
+  if (!g.syn) g.syn = 'AUTO';
+  if (!g.avr) g.avr = 'AUTO';
+  const man = g.avr === 'MAN';
+  /* MANUAL from the start (no field yet): the set point of the no-load field, 1 pu (NO-SOURCE: the preset of the UNITROL manual channel) */
+  if (man && !isFinite(g.fr)) g.fr = g.f41 && g.efd > 0.05 ? g.efd : 1;
+  if (g.oV > 0) {
+    if (man) g.fr = Math.max(0, Math.min(K.ceil, g.fr + g.oVs * K.frr * Math.min(dt, g.oV)));
+    else g.vr = Math.max(0.9, Math.min(1.1, g.vr + g.oVs * K.vrr * Math.min(dt, g.oV)));
+    g.oV = Math.max(0, g.oV - dt);
+  }
   if (g.f41) {
     const m = Math.max(1, Math.ceil(dt / 0.05)),
       h = dt / m;
     for (let i = 0; i < m; i++) {
       const e = g.vr - (g52 ? 1 : g.eq * n);
       g.ai = Math.max(0, Math.min(K.ceil, g.ai + K.ki * e * h));
-      const u = Math.max(0, Math.min(K.ceil, g.ai + K.kp * e));
+      /* MANUAL: the exciter takes the field set point, no voltage loop; the integrator follows it, so AUTO takes over without a bump */
+      const u = man ? Math.max(0, Math.min(K.ceil, g.fr)) : Math.max(0, Math.min(K.ceil, g.ai + K.kp * e));
+      if (man) g.ai = u;
       g.efd += ((u - g.efd) * h) / K.te;
       g.eq += ((g.efd - g.eq) * h) / K.tdo;
     }
@@ -34376,8 +34402,8 @@ function tcsGenStep(U, dt) {
   /* c2 gap 4 (310SC90-773 rev 2 DO 79 TCS-DO1006 AUTO SYN START PB ON, pulse, SH-G-3): the DCS output O.0492 = DITL-115 "AUTO SYNCHRONIZE
      START COMMAND" starts the synchronizing too (25X1 seal-in, same conditions). The ATS step 5 path (g.start) stays as it is */
   const pb = typeof tcsDitlOut === 'function' && tcsDitlOut('DITL-115', /^AUTO SYNCHRONIZE START COMMAND/);
-  if (can && (g.start || pb) && !g.x25 && g.ty < K.to) g.x25 = true;
-  if (!can) g.x25 = false;
+  if (can && g.syn !== 'MAN' && (g.start || pb) && !g.x25 && g.ty < K.to) g.x25 = true;
+  if (!can || g.syn === 'MAN') g.x25 = false;
   g.tx = g.x25 ? g.tx + dt : 0;
   const y1 = g.x25 && g.tx >= K.x3;
   g.ty = y1 ? g.ty + dt : 0;
@@ -34429,7 +34455,9 @@ function tcsGenStep(U, dt) {
     g.on25 = false;
   }
   /* 52G_CLOSE_ORDER = 52G_REMOTE AND 52G_AUTO AND 25_ON AND protection not operated AND 41 and 52L closed */
-  g.close = g.on25 && can && !(U.el && U.el.l52 === false);
+  /* the manual close of the panel (tcsGenCmd close52g): accepted only while 25 was operated at the contact; the breaker closes as ordered */
+  if (g.mc && (!can || g52)) g.mc = false;
+  g.close = (g.on25 || !!g.mc) && can && !(U.el && U.el.l52 === false);
 }
 /* a turbine trip: 52G is open, so ST TRIP opens 41 and the AVR (G-4) */
 function tcsGenTrip(U) {
@@ -34446,7 +34474,10 @@ function tcsGenTrip(U) {
     tx: 0,
     ty: 0,
     on25: false,
-    close: false
+    close: false,
+    mc: false,
+    oV: 0,
+    fr: NaN
   });
 }
 /* 3.2.3 plan c4: a simple electrical model of the unit from the Single Line Diagram (as built):
@@ -43060,7 +43091,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 94c855c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build c5198c6'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -47654,6 +47685,156 @@ AN.soeTrip = () => {
   return {
     mft: { on: mftOn, first: fo ? fo[4] : '', at: fo ? foAt : Z.mft ? Z.mft.at : null, inputs: lit('trip').map(p => p[4]) },
     turbine: { on: !!(c && c.trip), first: (c && c.trip) || '', at: Z.tt ? Z.tt.at : null, inputs: (st && st.held) || [] }
+  };
+};
+/* ===== GENERATOR CONTROL PANEL (user "go all" 2026-11-19, item 5: the generator panel engine) =====
+   The model of the field, the AVR and the ASD is tcs-gen.js; this file is what the operator presses and reads on the panel, and the
+   generator lockout relays.
+   Sources (local notes document-references/_notes/gen-sync-llm-2026-11-14.txt; GEE-2015-0141 R2 SITE TEST PROCEDURE FOR GEN. CONTROL PANEL,
+   GEE-2015-0173 R1 SITE TEST PROCEDURE OF GEN. PROTECTION RELAY PANEL, Generator Logic.pdf):
+   - MANUAL synchronizing (GEE-2015-0141 PDF p.7): SYN 7-90R voltage RAISE / LOWER to the AVR, 7-65 speed RAISE / LOWER to the TCS (GOV),
+     and the 52G CLOSE switch; "SYN. CHECK 25 ON" is needed for the close (Generator Logic.pdf p.4 1.3: 52G can be closed only while the
+     synchronizing check relay 25 is operated: dV 5 %, dF 0.15 Hz, d-theta 10 deg, CSY-96-S2, GEE-2015-0141 p.26). The meters of the
+     panel (D-2): voltmeter, frequency meter, synchroscope.
+   - AVR AUTO / MANUAL (Generator Logic.pdf SH-G-4, AVR signals).
+   - Lockout relays (GEE-2015-0173 2-3 Sequence Test, Trip Interlock and Alarm, Group A rows 1 ~ 35, Group B rows 38 ~ 68): 86G-A takes the
+     protections of relay (A), 86G-B those of relay (B); each opens 52G, 52L and 41 and trips the turbine (TA-9 inputs 17 / 19, GEN./UNIT
+     TRANS. PROTECTION A / B & GEN. LOCKOUT RELAY A / B). "GEN. TRANSF. LOCKOUT RELAY (86T) Operated" is an input of both groups (rows
+     33 / 66). Modelled causes: the 2nd REVERSE POWER (32) of both relays (rows 13 / 50, unit.js anRp32) and 86T (the transformer
+     protections behind it are not in these papers: the instructor operates 86T, world.js 'gen.86t'). The other relays of the panel
+     (87G, 40, 24, 46, 59, 64, 81 ...) are not modelled.
+   - The lockout relays are hand reset (RESET of the relay, here AN.turbine('gen', { op: 'reset86' })), refused while the cause stands.
+     The TURBINE RESET also resets them, as before (NO-SOURCE, kept: the panel reset is not on every page yet).
+   AN.turbine('gen', { op, v }): op 'syn' v 'AUTO' | 'MAN'; 'avr' v 'AUTO' | 'MAN'; 'v+' / 'v-' (7-90R); 'n+' / 'n-' (7-65); 'close52g';
+   'reset86'. Returns '' or why it was refused.
+   AN.genPanel() -> the panel (AN.gen() is the meters of the generator, api.js): syn, avr, f41, c52g, kV, hz, gridHz, slip (Hz), dv (%), th (deg, the synchroscope), r25 (25 operated now),
+   x84 (generator voltage established), asd (ASD1 in use), efd (pu field), fr (MANUAL set point), lo86 { a, b, t, why }, msg. */
+function tcsLo86(U) {
+  const L = U.lo86 || (U.lo86 = { a: false, b: false, t: false, why: '' }),
+    W = typeof window !== 'undefined' ? window.WORLD : null,
+    ev = m => {
+      if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror')) lsEventAdd('GEN', 'GEN', m);
+    },
+    op = (why, m) => {
+      if (L.a && L.b) return;
+      if (!L.a) ev('GEN. LOCKOUT RELAY (86G-A) OPERATED: ' + m);
+      if (!L.b) ev('GEN. LOCKOUT RELAY (86G-B) OPERATED: ' + m);
+      L.a = L.b = true;
+      L.why = why;
+    };
+  if (W && W.ft && W.ft.has('gen.86t') && !L.t) {
+    L.t = true;
+    ev('GEN. TRANSF. LOCKOUT RELAY (86T) OPERATED');
+  }
+  if (L.t) op('86T', 'GEN. TRANSF. LOCKOUT RELAY (86T)');
+  if (U.rp32 && U.rp32.lo) op('32', '2nd REVERSE POWER (32)');
+  return L;
+}
+/* the reset of the lockout relays: 86T first (its cause is the instructor's fault), then 86G-A / B (no cause standing) */
+function tcsLo86Reset(U) {
+  const L = U.lo86;
+  if (!L || !(L.a || L.b || L.t)) return '';
+  const W = typeof window !== 'undefined' ? window.WORLD : null;
+  if (L.t && W && W.ft && W.ft.has('gen.86t')) return 'RESET refused: 86T is still operated by the transformer protection';
+  L.t = false;
+  if (U.rp32 && U.rp32.t2 >= AN_RP32.t2) return 'RESET refused: the 2nd REVERSE POWER (32) is still operated';
+  if (U.rp32) U.rp32.lo = false;
+  L.a = L.b = false;
+  L.why = '';
+  if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
+    lsEventAdd('GEN', 'GEN', 'Generator lockout relays 86G-A / 86G-B / 86T reset');
+  return '';
+}
+function tcsGenCmd(U, a) {
+  if (typeof tcsMirror === 'function' && tcsMirror()) return '';
+  const g = tcsGen(U),
+    K = TCS_GEN,
+    tb = U.tb || {},
+    c = U.tc,
+    g52 = tb.st === 'sync' || tb.st === 'load',
+    op = a && a.op,
+    v = a && String(a.v || '').toUpperCase();
+  if (op === 'syn') {
+    if (v !== 'AUTO' && v !== 'MAN') return 'SYN: AUTO or MAN';
+    g.syn = v;
+    if (v === 'MAN') g.x25 = false;
+    return '';
+  }
+  if (op === 'avr') {
+    if (v !== 'AUTO' && v !== 'MAN') return 'AVR: AUTO or MAN';
+    if (v === g.avr) return '';
+    /* bumpless both ways: MANUAL starts from the field of the moment; AUTO starts from the voltage of the moment (off the grid) */
+    if (v === 'MAN') g.fr = g.f41 ? g.efd : NaN;
+    else if (!g52 && g.f41) g.vr = Math.max(0.9, Math.min(1.1, g.V / Math.max(0.01, (tb.rpm || 0) / 3600)));
+    g.avr = v;
+    return '';
+  }
+  if (op === 'v+' || op === 'v-') {
+    if (!g.f41) return 'VOLTAGE RAISE / LOWER: the field switch 41 is open';
+    g.oV = K.mpw;
+    g.oVs = op === 'v+' ? 1 : -1;
+    return '';
+  }
+  if (op === 'n+' || op === 'n-') {
+    if (g52) return 'SPEED RAISE / LOWER: 52G is closed, the load is set on the TCS';
+    if (!(c && c.step >= 3 && c.cur !== 3 && tb.rpm > 3500 && !c.trip)) return 'SPEED RAISE / LOWER: the turbine is not held at rated speed by the TCS';
+    if (op === 'n+') g.pR = K.mpw;
+    else g.pL = K.mpw;
+    return '';
+  }
+  if (op === 'close52g') {
+    if (g52) return '52G is already closed';
+    if (g.syn !== 'MAN') return '52G CLOSE: put SYN on MANUAL (AUTO: the ASD closes 52G)';
+    if (!g.f41 || g.V < K.v84) return '52G CLOSE refused: generator voltage not established (84GI)';
+    if (U.el && U.el.l52 === false) return '52G CLOSE refused: 52L is open';
+    if (!(c && c.cur === 5 && c.ph === 'in')) return '52G CLOSE refused: the ATS is not at SYNCH. & INITIAL LOAD';
+    /* 25 at the contact: the angle the breaker meets after its closing time */
+    const thc = tcsWrap(g.th + 360 * g.slip * K.tcb),
+      r = K.r25,
+      why = [];
+    if (Math.abs(g.dv) > r.dV) why.push('voltage difference ' + (g.dv * 100).toFixed(1) + ' %');
+    if (Math.abs(g.slip) > r.dF) why.push('frequency difference ' + g.slip.toFixed(2) + ' Hz');
+    if (Math.abs(thc) > r.dTh) why.push('phase angle ' + thc.toFixed(0) + ' deg');
+    if (why.length) {
+      g.last = '52G CLOSE refused: SYN. CHECK 25 not operated (' + why.join(', ') + ')';
+      return g.last;
+    }
+    g.mc = true;
+    g.thC = thc;
+    g.last = '52G closed by hand at ' + thc.toFixed(0) + ' deg';
+    return '';
+  }
+  if (op === 'reset86') return tcsLo86Reset(U);
+  return 'unknown generator panel command';
+}
+AN.genPanel = () => {
+  const U = AN.unit;
+  if (!U || !U.on || !U.tb) return null;
+  const g = tcsGen(U),
+    K = TCS_GEN,
+    tb = U.tb,
+    g52 = tb.st === 'sync' || tb.st === 'load',
+    L = U.lo86 || {},
+    r = K.r25,
+    f = x => (isFinite(x) ? Math.round(x * 1000) / 1000 : null);
+  return {
+    syn: g.syn || 'AUTO',
+    avr: g.avr || 'AUTO',
+    f41: !!g.f41,
+    c52g: g52,
+    kV: f(13.8 * (g.V || 0)),
+    hz: f(g.fg),
+    gridHz: f(g.fgr),
+    slip: f(g.slip),
+    dv: f((g.dv || 0) * 100),
+    th: f(g.th),
+    r25: !g52 && !!g.f41 && Math.abs(g.dv) <= r.dV && Math.abs(g.slip) <= r.dF && Math.abs(g.th) <= r.dTh,
+    x84: (g.V || 0) >= K.v84,
+    asd: !!g.x25,
+    efd: f(g.efd),
+    fr: f(g.fr),
+    lo86: { a: !!L.a, b: !!L.b, t: !!L.t, why: L.why || '' },
+    msg: g.last || ''
   };
 };
 /* ---------- v1.13.0 F: step / view / trace / why ---------- */
@@ -60682,14 +60863,16 @@ jV1eHpSLHlIJuUKcZC50d65hZRirjTo8uYFaEuMHYZh93x7z7vT58xHtJk75Y7HQrrsSLQX2BdoSnYyU
     'aph.leak': 'Air heater seal leak, air to gas (grows)',
     'cd.air': 'Condenser air in-leakage (grows)',
     /* 3.2.4 (JENNIE): a grid frequency dip (unit.js anGridHz): a big unit trips elsewhere on the grid */
-    'grid.lo': 'Grid frequency falls to 59.5 Hz (a unit trips elsewhere)'
+    'grid.lo': 'Grid frequency falls to 59.5 Hz (a unit trips elsewhere)',
+    /* the generator transformer lockout relay (gen-panel.js tcsLo86, GEE-2015-0173 rows 33 / 66): an input of 86G-A and 86G-B */
+    'gen.86t': 'Generator transformer lockout relay 86T operated (transformer protection)'
   };
   const tlSet = (id, on) => {
     if (on) W.ft.add(id);
     else W.ft.delete(id);
     W.busy = true;
     const t = TL[id] || HL[id] || AP[id];
-    return on ? t : 'cleared: ' + t + (id === 'aph.plug' ? ' (washed)' : id === 'aph.leak' ? ' (seals set)' : id === 'cd.air' ? ' (sealed)' : id === 'grid.lo' ? ' (grid back to 60 Hz)' : ' (tube repaired)');
+    return on ? t : 'cleared: ' + t + (id === 'aph.plug' ? ' (washed)' : id === 'aph.leak' ? ' (seals set)' : id === 'cd.air' ? ' (sealed)' : id === 'grid.lo' ? ' (grid back to 60 Hz)' : id === 'gen.86t' ? ' (transformer protection reset: reset 86T and 86G on the panel)' : ' (tube repaired)');
   };
   /* 3.2.4-beta.13 (JENNIE, priority list item: coal quality): wet coal, a trainer fault (unit.js anCoalWet: the coal moisture 33.96 % of the
      performance coal, FHI P2S7 Tab 2, rises to 40 %, NO-SOURCE trainer setting: rain on the coal yard). No DITL contact: the DCS has no
@@ -85426,6 +85609,8 @@ function anTurbine0(cmd, arg) {
   }
   /* 3.2.0-beta.66: the 036 TURBINE OIL pumps at the 150 MW snapshot (no TCS model): the oil-only state of tcs.js */
   if (cmd === 'trip') return tcsTripManual(U);
+  /* the generator control panel (gen-panel.js): SYN AUTO / MAN, AVR AUTO / MAN, 7-90R, 7-65, 52G CLOSE, lockout reset */
+  if (cmd === 'gen') return tcsGenCmd(U, arg || {});
   /* plan c4: the line breaker 52L1 (instructor): 0 = open (house load operation), 1 = close (elec.js) */
   if (cmd === '52l') return anElecL52(U, arg);
   if (cmd === 'tripreset') return tcsTripReset(U);
@@ -88673,8 +88858,9 @@ function anRp32(U, on, dt) {
   r.al = al;
   if (r.t2 >= AN_RP32.t2 && !r.lo) {
     r.lo = true;
-    ev('2nd REVERSE POWER (32) OPERATED: generator lockout relay 86G-A, turbine trip');
+    ev('2nd REVERSE POWER (32) OPERATED: generator lockout relays 86G-A / 86G-B, turbine trip');
   }
+  tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T */
 }
 /* 3.2.4 (JENNIE, priority list: grid events): the grid frequency the generator is locked to on the grid. Trainer fault 'grid.lo' (world.js):
    59.5 Hz, reached at 0.1 Hz/s (a unit lost elsewhere; NO-SOURCE trainer setting, the Philippine Grid Code normal band is 59.7 ~ 60.3 Hz),
@@ -91948,7 +92134,9 @@ const TCS_IBD_PV = [
   [/^52G OPEN$/, U => (U.tb && (U.tb.st === 'sync' || U.tb.st === 'load') ? 0 : 1)],
   [/^TURBINE TRIP$/, (U, c) => (c.trip ? 1 : 0)],
   /* 3.2.3-beta.240: TA-9 row 17, the generator lockout relay 86G-A (only the 32 reverse power relay is modelled, unit.js anRp32) */
-  [/^GEN\.\/UNIT TRANS\. PROTECTION A/, U => (U.rp32 && U.rp32.lo ? 1 : 0)],
+  [/^GEN\.\/UNIT TRANS\. PROTECTION A/, U => (U.lo86 && U.lo86.a ? 1 : 0)],
+  /* TA-9 row 19, the generator lockout relay 86G-B (gen-panel.js tcsLo86) */
+  [/^GEN\.\/UNIT TRANS\. PROTECTION B/, U => (U.lo86 && U.lo86.b ? 1 : 0)],
   /* 3.2.3 c2 (SAKURA): the parentheses were not escaped, so this matched no input; MSV(B) FULL OPEN of TA-41 and MSV(A) / (B) FULL OPEN
      of TA-42 (page 51 / 52) had no source (their off-page links to TA-31 / TA-32 are not read) */
   [/^MSV\([AB]\) FULL OPEN/, (U, c) => (tcsVp(U, c) >= 1 ? 1 : 0)],
@@ -92479,6 +92667,7 @@ function tcsTripReset(U) {
   ib.pb.rst = 1.5;
   /* beta.240: the 86G-A lockout is reset with it, 52G open (unit.js anRp32) */
   if (U.rp32 && !(U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'))) U.rp32.lo = false;
+  if (U.lo86 && !(U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'))) tcsLo86Reset(U);
   if (U.tc) U.tc.sdDone = false;
   /* LMYP OTS (Rose, Turbine trip page): the press is made, but a trip input of TA-9 that is still at 1 keeps the A gate of the reset at 0
      (IBD TA-1): the answer names what holds the trip, so the page and the Event log say why nothing reset */
@@ -92567,7 +92756,12 @@ const TCS_GEN = {
   tcb: 0.1,
   nrr: 3.6 /* rpm/s while a speed pulse is on, NO-SOURCE */,
   tn: 1.0 /* s, NO-SOURCE */,
-  v84: 0.95 /* NO-SOURCE */
+  v84: 0.95 /* NO-SOURCE */,
+  /* the generator control panel (GEE-2015-0141 PDF p.7 manual sync: SYN 7-90R voltage RAISE / LOWER to the AVR, 7-65 speed RAISE / LOWER
+     to the TCS): one press of a switch = a pulse of mpw s (NO-SOURCE). AVR MANUAL (Generator Logic.pdf SH-G-4 AVR signal AUTO / MANUAL):
+     the field set point moves at frr pu/s while RAISE / LOWER is pressed (NO-SOURCE) */
+  mpw: 0.5,
+  frr: 0.02
 };
 /* the grid frequency, Hz (NO-SOURCE: a slow drift, so the slip and the phase angle move as on a real grid) */
 function tcsGridHz(t) {
@@ -92590,7 +92784,9 @@ function tcsGen(U) {
     ty: 0,
     on25: false,
     close: false,
-    last: ''
+    last: '',
+    syn: 'AUTO' /* SYN selector of the panel: AUTO (ASD1) or MANUAL */,
+    avr: 'AUTO' /* AVR AUTO (voltage regulator) or MANUAL (field set point) */
   });
 }
 function tcsGenStep(U, dt) {
@@ -92623,13 +92819,26 @@ function tcsGenStep(U, dt) {
   g.ex = false;
   /* field and AVR in sub-steps of 0.05 s: AVR (PI on the terminal voltage, output 0 ~ ceiling) -> exciter (lag te) -> main field (T'do)
      -> open circuit terminal voltage = flux x speed. With 52G closed the grid holds the terminal voltage */
+  /* the operator's RAISE / LOWER of the panel (7-90R): the AVR voltage set (AUTO) or the field set point (MANUAL) */
+  if (!g.syn) g.syn = 'AUTO';
+  if (!g.avr) g.avr = 'AUTO';
+  const man = g.avr === 'MAN';
+  /* MANUAL from the start (no field yet): the set point of the no-load field, 1 pu (NO-SOURCE: the preset of the UNITROL manual channel) */
+  if (man && !isFinite(g.fr)) g.fr = g.f41 && g.efd > 0.05 ? g.efd : 1;
+  if (g.oV > 0) {
+    if (man) g.fr = Math.max(0, Math.min(K.ceil, g.fr + g.oVs * K.frr * Math.min(dt, g.oV)));
+    else g.vr = Math.max(0.9, Math.min(1.1, g.vr + g.oVs * K.vrr * Math.min(dt, g.oV)));
+    g.oV = Math.max(0, g.oV - dt);
+  }
   if (g.f41) {
     const m = Math.max(1, Math.ceil(dt / 0.05)),
       h = dt / m;
     for (let i = 0; i < m; i++) {
       const e = g.vr - (g52 ? 1 : g.eq * n);
       g.ai = Math.max(0, Math.min(K.ceil, g.ai + K.ki * e * h));
-      const u = Math.max(0, Math.min(K.ceil, g.ai + K.kp * e));
+      /* MANUAL: the exciter takes the field set point, no voltage loop; the integrator follows it, so AUTO takes over without a bump */
+      const u = man ? Math.max(0, Math.min(K.ceil, g.fr)) : Math.max(0, Math.min(K.ceil, g.ai + K.kp * e));
+      if (man) g.ai = u;
       g.efd += ((u - g.efd) * h) / K.te;
       g.eq += ((g.efd - g.eq) * h) / K.tdo;
     }
@@ -92654,8 +92863,8 @@ function tcsGenStep(U, dt) {
   /* c2 gap 4 (310SC90-773 rev 2 DO 79 TCS-DO1006 AUTO SYN START PB ON, pulse, SH-G-3): the DCS output O.0492 = DITL-115 "AUTO SYNCHRONIZE
      START COMMAND" starts the synchronizing too (25X1 seal-in, same conditions). The ATS step 5 path (g.start) stays as it is */
   const pb = typeof tcsDitlOut === 'function' && tcsDitlOut('DITL-115', /^AUTO SYNCHRONIZE START COMMAND/);
-  if (can && (g.start || pb) && !g.x25 && g.ty < K.to) g.x25 = true;
-  if (!can) g.x25 = false;
+  if (can && g.syn !== 'MAN' && (g.start || pb) && !g.x25 && g.ty < K.to) g.x25 = true;
+  if (!can || g.syn === 'MAN') g.x25 = false;
   g.tx = g.x25 ? g.tx + dt : 0;
   const y1 = g.x25 && g.tx >= K.x3;
   g.ty = y1 ? g.ty + dt : 0;
@@ -92707,7 +92916,9 @@ function tcsGenStep(U, dt) {
     g.on25 = false;
   }
   /* 52G_CLOSE_ORDER = 52G_REMOTE AND 52G_AUTO AND 25_ON AND protection not operated AND 41 and 52L closed */
-  g.close = g.on25 && can && !(U.el && U.el.l52 === false);
+  /* the manual close of the panel (tcsGenCmd close52g): accepted only while 25 was operated at the contact; the breaker closes as ordered */
+  if (g.mc && (!can || g52)) g.mc = false;
+  g.close = (g.on25 || !!g.mc) && can && !(U.el && U.el.l52 === false);
 }
 /* a turbine trip: 52G is open, so ST TRIP opens 41 and the AVR (G-4) */
 function tcsGenTrip(U) {
@@ -92724,7 +92935,10 @@ function tcsGenTrip(U) {
     tx: 0,
     ty: 0,
     on25: false,
-    close: false
+    close: false,
+    mc: false,
+    oV: 0,
+    fr: NaN
   });
 }
 
@@ -97353,6 +97567,158 @@ AN.soeTrip = () => {
   };
 };
 
+/* ---- engine/gen-panel.js ---- */
+/* ===== GENERATOR CONTROL PANEL (user "go all" 2026-11-19, item 5: the generator panel engine) =====
+   The model of the field, the AVR and the ASD is tcs-gen.js; this file is what the operator presses and reads on the panel, and the
+   generator lockout relays.
+   Sources (local notes document-references/_notes/gen-sync-llm-2026-11-14.txt; GEE-2015-0141 R2 SITE TEST PROCEDURE FOR GEN. CONTROL PANEL,
+   GEE-2015-0173 R1 SITE TEST PROCEDURE OF GEN. PROTECTION RELAY PANEL, Generator Logic.pdf):
+   - MANUAL synchronizing (GEE-2015-0141 PDF p.7): SYN 7-90R voltage RAISE / LOWER to the AVR, 7-65 speed RAISE / LOWER to the TCS (GOV),
+     and the 52G CLOSE switch; "SYN. CHECK 25 ON" is needed for the close (Generator Logic.pdf p.4 1.3: 52G can be closed only while the
+     synchronizing check relay 25 is operated: dV 5 %, dF 0.15 Hz, d-theta 10 deg, CSY-96-S2, GEE-2015-0141 p.26). The meters of the
+     panel (D-2): voltmeter, frequency meter, synchroscope.
+   - AVR AUTO / MANUAL (Generator Logic.pdf SH-G-4, AVR signals).
+   - Lockout relays (GEE-2015-0173 2-3 Sequence Test, Trip Interlock and Alarm, Group A rows 1 ~ 35, Group B rows 38 ~ 68): 86G-A takes the
+     protections of relay (A), 86G-B those of relay (B); each opens 52G, 52L and 41 and trips the turbine (TA-9 inputs 17 / 19, GEN./UNIT
+     TRANS. PROTECTION A / B & GEN. LOCKOUT RELAY A / B). "GEN. TRANSF. LOCKOUT RELAY (86T) Operated" is an input of both groups (rows
+     33 / 66). Modelled causes: the 2nd REVERSE POWER (32) of both relays (rows 13 / 50, unit.js anRp32) and 86T (the transformer
+     protections behind it are not in these papers: the instructor operates 86T, world.js 'gen.86t'). The other relays of the panel
+     (87G, 40, 24, 46, 59, 64, 81 ...) are not modelled.
+   - The lockout relays are hand reset (RESET of the relay, here AN.turbine('gen', { op: 'reset86' })), refused while the cause stands.
+     The TURBINE RESET also resets them, as before (NO-SOURCE, kept: the panel reset is not on every page yet).
+   AN.turbine('gen', { op, v }): op 'syn' v 'AUTO' | 'MAN'; 'avr' v 'AUTO' | 'MAN'; 'v+' / 'v-' (7-90R); 'n+' / 'n-' (7-65); 'close52g';
+   'reset86'. Returns '' or why it was refused.
+   AN.genPanel() -> the panel (AN.gen() is the meters of the generator, api.js): syn, avr, f41, c52g, kV, hz, gridHz, slip (Hz), dv (%), th (deg, the synchroscope), r25 (25 operated now),
+   x84 (generator voltage established), asd (ASD1 in use), efd (pu field), fr (MANUAL set point), lo86 { a, b, t, why }, msg. */
+function tcsLo86(U) {
+  const L = U.lo86 || (U.lo86 = { a: false, b: false, t: false, why: '' }),
+    W = typeof window !== 'undefined' ? window.WORLD : null,
+    ev = m => {
+      if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror')) lsEventAdd('GEN', 'GEN', m);
+    },
+    op = (why, m) => {
+      if (L.a && L.b) return;
+      if (!L.a) ev('GEN. LOCKOUT RELAY (86G-A) OPERATED: ' + m);
+      if (!L.b) ev('GEN. LOCKOUT RELAY (86G-B) OPERATED: ' + m);
+      L.a = L.b = true;
+      L.why = why;
+    };
+  if (W && W.ft && W.ft.has('gen.86t') && !L.t) {
+    L.t = true;
+    ev('GEN. TRANSF. LOCKOUT RELAY (86T) OPERATED');
+  }
+  if (L.t) op('86T', 'GEN. TRANSF. LOCKOUT RELAY (86T)');
+  if (U.rp32 && U.rp32.lo) op('32', '2nd REVERSE POWER (32)');
+  return L;
+}
+/* the reset of the lockout relays: 86T first (its cause is the instructor's fault), then 86G-A / B (no cause standing) */
+function tcsLo86Reset(U) {
+  const L = U.lo86;
+  if (!L || !(L.a || L.b || L.t)) return '';
+  const W = typeof window !== 'undefined' ? window.WORLD : null;
+  if (L.t && W && W.ft && W.ft.has('gen.86t')) return 'RESET refused: 86T is still operated by the transformer protection';
+  L.t = false;
+  if (U.rp32 && U.rp32.t2 >= AN_RP32.t2) return 'RESET refused: the 2nd REVERSE POWER (32) is still operated';
+  if (U.rp32) U.rp32.lo = false;
+  L.a = L.b = false;
+  L.why = '';
+  if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
+    lsEventAdd('GEN', 'GEN', 'Generator lockout relays 86G-A / 86G-B / 86T reset');
+  return '';
+}
+function tcsGenCmd(U, a) {
+  if (typeof tcsMirror === 'function' && tcsMirror()) return '';
+  const g = tcsGen(U),
+    K = TCS_GEN,
+    tb = U.tb || {},
+    c = U.tc,
+    g52 = tb.st === 'sync' || tb.st === 'load',
+    op = a && a.op,
+    v = a && String(a.v || '').toUpperCase();
+  if (op === 'syn') {
+    if (v !== 'AUTO' && v !== 'MAN') return 'SYN: AUTO or MAN';
+    g.syn = v;
+    if (v === 'MAN') g.x25 = false;
+    return '';
+  }
+  if (op === 'avr') {
+    if (v !== 'AUTO' && v !== 'MAN') return 'AVR: AUTO or MAN';
+    if (v === g.avr) return '';
+    /* bumpless both ways: MANUAL starts from the field of the moment; AUTO starts from the voltage of the moment (off the grid) */
+    if (v === 'MAN') g.fr = g.f41 ? g.efd : NaN;
+    else if (!g52 && g.f41) g.vr = Math.max(0.9, Math.min(1.1, g.V / Math.max(0.01, (tb.rpm || 0) / 3600)));
+    g.avr = v;
+    return '';
+  }
+  if (op === 'v+' || op === 'v-') {
+    if (!g.f41) return 'VOLTAGE RAISE / LOWER: the field switch 41 is open';
+    g.oV = K.mpw;
+    g.oVs = op === 'v+' ? 1 : -1;
+    return '';
+  }
+  if (op === 'n+' || op === 'n-') {
+    if (g52) return 'SPEED RAISE / LOWER: 52G is closed, the load is set on the TCS';
+    if (!(c && c.step >= 3 && c.cur !== 3 && tb.rpm > 3500 && !c.trip)) return 'SPEED RAISE / LOWER: the turbine is not held at rated speed by the TCS';
+    if (op === 'n+') g.pR = K.mpw;
+    else g.pL = K.mpw;
+    return '';
+  }
+  if (op === 'close52g') {
+    if (g52) return '52G is already closed';
+    if (g.syn !== 'MAN') return '52G CLOSE: put SYN on MANUAL (AUTO: the ASD closes 52G)';
+    if (!g.f41 || g.V < K.v84) return '52G CLOSE refused: generator voltage not established (84GI)';
+    if (U.el && U.el.l52 === false) return '52G CLOSE refused: 52L is open';
+    if (!(c && c.cur === 5 && c.ph === 'in')) return '52G CLOSE refused: the ATS is not at SYNCH. & INITIAL LOAD';
+    /* 25 at the contact: the angle the breaker meets after its closing time */
+    const thc = tcsWrap(g.th + 360 * g.slip * K.tcb),
+      r = K.r25,
+      why = [];
+    if (Math.abs(g.dv) > r.dV) why.push('voltage difference ' + (g.dv * 100).toFixed(1) + ' %');
+    if (Math.abs(g.slip) > r.dF) why.push('frequency difference ' + g.slip.toFixed(2) + ' Hz');
+    if (Math.abs(thc) > r.dTh) why.push('phase angle ' + thc.toFixed(0) + ' deg');
+    if (why.length) {
+      g.last = '52G CLOSE refused: SYN. CHECK 25 not operated (' + why.join(', ') + ')';
+      return g.last;
+    }
+    g.mc = true;
+    g.thC = thc;
+    g.last = '52G closed by hand at ' + thc.toFixed(0) + ' deg';
+    return '';
+  }
+  if (op === 'reset86') return tcsLo86Reset(U);
+  return 'unknown generator panel command';
+}
+AN.genPanel = () => {
+  const U = AN.unit;
+  if (!U || !U.on || !U.tb) return null;
+  const g = tcsGen(U),
+    K = TCS_GEN,
+    tb = U.tb,
+    g52 = tb.st === 'sync' || tb.st === 'load',
+    L = U.lo86 || {},
+    r = K.r25,
+    f = x => (isFinite(x) ? Math.round(x * 1000) / 1000 : null);
+  return {
+    syn: g.syn || 'AUTO',
+    avr: g.avr || 'AUTO',
+    f41: !!g.f41,
+    c52g: g52,
+    kV: f(13.8 * (g.V || 0)),
+    hz: f(g.fg),
+    gridHz: f(g.fgr),
+    slip: f(g.slip),
+    dv: f((g.dv || 0) * 100),
+    th: f(g.th),
+    r25: !g52 && !!g.f41 && Math.abs(g.dv) <= r.dV && Math.abs(g.slip) <= r.dF && Math.abs(g.th) <= r.dTh,
+    x84: (g.V || 0) >= K.v84,
+    asd: !!g.x25,
+    efd: f(g.efd),
+    fr: f(g.fr),
+    lo86: { a: !!L.a, b: !!L.b, t: !!L.t, why: L.why || '' },
+    msg: g.last || ''
+  };
+};
+
 ;
 Object.assign(AN,anEngAPI());
 AN.lnSrc=()=>([{"key":"S1-LN38","stn":1,"ln":38,"dwg":"ABC-010","ptn":"S1-LN-38","title":"DRUM LEVEL PRESSURE COMPENSATION F4(p), N x 100 % (from the Drum Level Calculation file)","xr":[0,250],"yr":[0,100],"xu":"RANGE (kg/cm2)","yu":"RANGE (%)","src":"DCS Engr Station pattern 038 (user screenshot 2026-10-10: 16 points LX / LY in % of the range)","pts":[[-50,100],[0,100],[19,99.12],[29,98.66],[39,98.18],[49,97.69],[59,97.17],[69,96.64],[79,96.08],[89,95.48],[99,94.85],[109,94.18],[119,93.47],[129,92.69],[139,91.85],[219,77.15]]},{"key":"S1-LN39","stn":1,"ln":39,"dwg":"ABC-010","ptn":"S1-LN-39","title":"DRUM LEVEL PRESSURE COMPENSATION F3(p), K as a ratio (from the Drum Level Calculation file)","xr":[0,250],"yr":[0,1],"xu":"RANGE (kg/cm2)","yu":"RANGE (%)","src":"DCS Engr Station pattern 039 (user screenshot 2026-10-10: 16 points LX / LY in % of the range)","pts":[[-50,1],[0,1],[19,0.8776],[29,0.8437],[39,0.8142],[49,0.7872],[59,0.7616],[69,0.737],[79,0.7129],[89,0.689],[99,0.6651],[109,0.641],[119,0.6164],[129,0.5911],[139,0.5648],[219,0.1976]]},{"key":"S1-LN1","stn":1,"ln":1,"dwg":"ABC-002","ptn":"S1-LN-01","title":"DIESEL OIL CALORIE CORRECTION","xr":[0,100],"yr":[0,1],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[50,1],[100,1.2],[120,1.2]]},{"key":"S1-LN3","stn":1,"ln":3,"dwg":"ABC-004A","ptn":"S1-LN-03","title":"COAL CALORIE CORRECTION","xr":[0,100],"yr":[0,1],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[50,1],[100,1.2],[120,1.2]]},{"key":"S1-LN5","stn":1,"ln":5,"dwg":"ABC-002","ptn":"S1-LN-05","title":"BM vs AIR DEMAND\n(COAL FIRING)","xr":[0,120],"yr":[0,1115],"xu":"RANGE (T/H)","yu":"RANGE (T/H)","pts":[[-24,446],[0,446],[0,446],[0,446],[0,446],[0,446],[0,446],[35,446],[42.8,490],[50.5,520],[61.9,548],[69.5,582],[81,616],[108,728],[120,728],[144,728]]},{"key":"S1-LN7","stn":1,"ln":7,"dwg":"ABC-002","ptn":"S1-LN-07","title":"TOTAL OIL FLOW vs  SA FLOW DEMAND","xr":[0,14],"yr":[0,432],"xu":"RANGE (T/H)","yu":"RANGE (T/H)","pts":[[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[4,190],[8,225],[12,245],[14,245],[16.8,245]]},{"key":"S1-LN8","stn":1,"ln":8,"dwg":"ABC-002","ptn":"S1-LN-08","title":"TOTAL OIL FLOW vs  PA FLOW DEMAND","xr":[0,14],"yr":[0,648],"xu":"RANGE (T/H)","yu":"RANGE (T/H)","pts":[[-2.8000000000000003,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[0,180],[4,210],[8,210],[12,245],[14,245],[16.8,245]]},{"key":"S1-LN9","stn":1,"ln":9,"dwg":"ABC-003A","ptn":"S1-LN-09","title":"BNR SEC. AIR FLOW BIAS","xr":[0,100],"yr":[0,65],"xu":"RANGE (%)","yu":"RANGE (T/H)","pts":[[-20,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[50,0],[100,10],[120,10]]},{"key":"S1-LN12","stn":1,"ln":12,"dwg":"ABC-002","ptn":"S1-LN-12","title":"TCF vs PA FLOW DEMAND","xr":[0,120],"yr":[0,648],"xu":"RANGE (T/H)","yu":"RANGE (T/H)","pts":[[-24,285],[0,285],[0,285],[0,285],[0,285],[0,285],[0,285],[35,285],[42.8,310],[50.5,330],[61.9,345],[69.5,362],[81,380],[108,506],[120,506],[144,506]]},{"key":"S1-LN13","stn":1,"ln":13,"dwg":"ABC-008","ptn":"S1-LN-13","title":"IDF H/C DEMAND vs DAMPER DEMAND","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[14,100],[100,100],[120,100]]},{"key":"S1-LN14","stn":1,"ln":14,"dwg":"ABC-002","ptn":"S1-LN-14","title":"PA FLOW BIAS","xr":[0,100],"yr":[0,648],"xu":"RANGE (%)","yu":"RANGE (T/H)","pts":[[-20,-30],[0,-30],[0,-30],[0,-30],[0,-30],[0,-30],[0,-30],[0,-30],[0,-30],[0,-30],[0,-30],[0,-30],[0,-30],[50,0],[100,30],[120,30]]},{"key":"S1-LN15","stn":1,"ln":15,"dwg":"ABC-002","ptn":"S1-LN-15","title":"O2 Corr. Constant","xr":[0,100],"yr":[0,1],"xu":"RANGE (%)","yu":"RATIO (0.8 ~ 1.2)","pts":[[-20,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[50,1],[100,1.2],[120,1.2]],"fix":"outputs /100: the drawing gives the output as a ratio 0.8 ~ 1.2"},{"key":"S1-LN16","stn":1,"ln":16,"dwg":"ABC-002","ptn":"S1-LN-16","title":"BM vs O2 DEMAND\n(COAL FIRING)","xr":[0,120],"yr":[0,25],"xu":"RANGE (T/H)","yu":"RANGE (%)","pts":[[-24,8],[0,8],[0,8],[0,8],[0,8],[0,8],[0,8],[35,8],[42.8,6.2],[50.5,5.6],[61.9,4.6],[69.5,3.8],[81,3.5],[108,3.5],[120,3.5],[144,3.5]]},{"key":"S1-LN17","stn":1,"ln":17,"dwg":"ABC-002","ptn":"S1-LN-17","title":"O2 BIAS","xr":[0,100],"yr":[0,21],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,-4],[0,-4],[0,-4],[0,-4],[0,-4],[0,-4],[0,-4],[0,-4],[0,-4],[0,-4],[0,-4],[0,-4],[0,-4],[50,0],[100,4],[120,4]]},{"key":"S1-LN18","stn":1,"ln":18,"dwg":"ABC-013","ptn":"S1-LN-18","title":"Blow-Off flow request vs Blow-Off control demand","xr":[0,500],"yr":[0,100],"xu":"RANGE (T/H)","yu":"RANGE (%)","pts":[[-100,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[8.84,14],[184,76],[221,100],[650,100]]},{"key":"S1-LN19","stn":1,"ln":19,"dwg":"ABC-003A","ptn":"S1-LN-19","title":"BNR OIL FLOW vs BNR SA FLOW DEMAND","xr":[0,3.5],"yr":[0,65],"xu":"RANGE (T/H)","yu":"RANGE (T/H)","pts":[[-0.7000000000000001,26],[0,26],[0,26],[0,26],[0,26],[0,26],[0,26],[0,26],[0,26],[0,26],[0,26],[1,26],[2,45],[3,60],[3.5,70],[4.2,70]]},{"key":"S1-LN21","stn":1,"ln":21,"dwg":"ABC-003A","ptn":"S1-LN-21","title":"FUEL / AIR RATIO","xr":[0,100],"yr":[0,1],"xu":"RANGE (%)","yu":"RATIO (0.8 ~ 1.2)","pts":[[-20,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[0,0.8],[50,1],[100,1.2],[120,1.2]],"fix":"outputs /100: the drawing gives the output as a ratio 0.8 ~ 1.2"},{"key":"S1-LN22","stn":1,"ln":22,"dwg":"ABC-002","ptn":"S1-LN-22","title":"TFF vs TAF DEMAND","xr":[0,120],"yr":[0,1115],"xu":"RANGE (T/H)","yu":"RANGE (T/H)","pts":[[-24,446],[0,446],[0,446],[0,446],[0,446],[0,446],[0,446],[35,446],[42.8,471],[50.5,501],[61.9,529],[69.5,563],[81,606],[108,728],[120,728],[144,728]]},{"key":"S1-LN23","stn":1,"ln":23,"dwg":"ABC-004A","ptn":"S1-LN-23","title":"A-COAL FLOW BIAS","xr":[0,100],"yr":[0,40],"xu":"RANGE (%)","yu":"RANGE (T/H)","pts":[[-20,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[50,0],[100,8],[120,8]]},{"key":"S1-LN25","stn":1,"ln":25,"dwg":"ABC-004B","ptn":"S1-LN-25","title":"B-COAL FLOW BIAS","xr":[0,100],"yr":[0,40],"xu":"RANGE (%)","yu":"RANGE (T/H)","pts":[[-20,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[50,0],[100,8],[120,8]]},{"key":"S1-LN27","stn":1,"ln":27,"dwg":"ABC-004C","ptn":"S1-LN-27","title":"C-COAL FLOW BIAS","xr":[0,100],"yr":[0,40],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[0,-8],[50,0],[100,8],[120,8]]},{"key":"S1-LN29","stn":1,"ln":29,"dwg":"ABC-002","ptn":"S1-LN-29","title":"O2 CONTROL FUNCTION","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[80,0],[100,50],[120,100]]},{"key":"S1-LN30","stn":1,"ln":30,"dwg":"ABC-010","ptn":"S1-LN-30","title":"FEED WATER FLOW COMPENSATION","xr":[0,300],"yr":[0,833.34],"xu":"RANGE  (°C)","yu":"RANGE (kg/cm2)","pts":[[-60,1007.76],[0,1007.76],[50,995.025],[100,965.717],[150,925.669],[200,875.503],[220,852.224],[245.4,833.333],[250,812.612],[270,782.35],[290,747.608],[300,728.014],[300,728.014],[300,728.014],[300,728.014],[360,728.014]]},{"key":"S1-LN31","stn":1,"ln":31,"dwg":"ABC-001C","ptn":"S1-LN-31","title":"MAIN STEAM FLOW COMPENSATION(Press.)","xr":[0,150],"yr":[0,35.971],"xu":"RANGE (kg/cm2)","yu":"RANGE (kg/cm2)","pts":[[-30,2.636],[0,2.636],[9,2.636],[29,8.006],[49,13.514],[70,19.455],[80,22.371],[90,25.316],[100,28.329],[110,31.348],[120,34.364],[125,35.971],[130,37.453],[140,40.65],[150,43.86],[187.5,43.86]]},{"key":"S1-LN32","stn":1,"ln":32,"dwg":"ABC-001C","ptn":"S1-LN-32","title":"MAIN STEAM FLOW COMPENSATION(Temp.)","xr":[0,600],"yr":[0,35.97],"xu":"RANGE (°C)","yu":"RANGE (kg/cm2)","pts":[[-120,70.423],[300,70.423],[330,70.423],[350,60.976],[380,52.91],[410,47.619],[440,43.859],[470,40.984],[500,38.462],[538,35.971],[541,35.714],[549,35.336],[600,32.573],[600,32.573],[600,32.573],[750,32.573]]},{"key":"S1-LN34","stn":1,"ln":34,"dwg":"ABC-009A,9B","ptn":"S1-LN-34","title":"A/B/C/D-BOTTOM ASH COOLER SPEED BIAS","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,-25],[0,-25],[0,-25],[0,-25],[0,-25],[0,-25],[0,-25],[0,-25],[0,-25],[0,-25],[0,-25],[0,-25],[0,-25],[50,0],[100,25],[120,25]]},{"key":"S1-LN40","stn":1,"ln":40,"dwg":"ABC-002","ptn":"S1-LN-40","title":"TAF TRANSFER TO FFD(COAL FIRING)","xr":[0,1115],"yr":[0,120],"xu":"RANGE (T/H)","yu":"RANGE (T/H)","pts":[[-223,0],[0,0],[0,0],[0,0],[0,0],[0,0],[414,0],[446,35],[471,42.8],[501,50.5],[529,61.9],[563,69.5],[606,81],[728,108],[1115,108],[1338,108]]},{"key":"S1-LN42","stn":1,"ln":42,"dwg":"ABC-011","ptn":"S1-LN-42","title":"DRUM PRESS. TRANSFER TO TEMP.","xr":[0,250],"yr":[0,600],"xu":"RANGE (kg/cm2)","yu":"RANGE (°C)","pts":[[-50,100.02],[0,100.02],[9,179.88],[19,212.4],[29,233.88],[39,250.38],[44,257.52],[49,264],[79,295.02],[89,303],[99,311.11],[109,318.18],[119,324.78],[129,330.9],[139,336.78],[300,336.78]]},{"key":"S1-LN43","stn":1,"ln":43,"dwg":"ABC-012","ptn":"S1-LN-43","title":"MAIN STEAM PRESS. TRANSFER TO TEMP.","xr":[0,150],"yr":[0,600],"xu":"RANGE (kg/cm2)","yu":"RANGE (°C)","pts":[[-30,100.02],[9,179.88],[19,212.4],[29,233.88],[39,250.38],[44,257.52],[49,264],[79,295.02],[89,303],[99,311.1],[109,318.18],[119,324.78],[129,330.9],[139,336.78],[150,336.78],[180,336.78]]},{"key":"S1-LN44","stn":1,"ln":44,"dwg":"ABC-004A","ptn":"S1-LN-44","title":"Fuel Flow Deviation vs Coal Flow Correction","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,1],[-20,1],[-20,1],[-20,1],[-20,1],[-20,1],[-20,1],[-20,1],[-20,1],[-20,1],[-1,1],[-1,0],[0,0],[1,0],[1,-1],[100,-1]]},{"key":"S1-LN46","stn":1,"ln":46,"dwg":"ABC-011","ptn":"S1-LN-46","title":"1ST DE-S/H Water Control\nvs Control Valve(2) Demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[22.22,100],[100,100],[120,100]]},{"key":"S1-LN47","stn":1,"ln":47,"dwg":"ABC-011","ptn":"S1-LN-47","title":"1ST DE-S/H Water Control\nvs Control Valve(1) Demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[22,0],[100,100],[120,100]]},{"key":"S1-LN48","stn":1,"ln":48,"dwg":"ABC-012","ptn":"S1-LN-48","title":"2ND DE-S/H Water Control\nvs Control Valve(2) Demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[22,100],[100,100],[120,100]]},{"key":"S1-LN49","stn":1,"ln":49,"dwg":"ABC-012","ptn":"S1-LN-49","title":"2ND DE-S/H Water Control\nvs Control Valve(1) Demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[18,0],[100,100],[120,100]]},{"key":"S1-LN50","stn":1,"ln":50,"dwg":"ABC-008","ptn":"S1-LN-50","title":"PA & SA flow ctl demand - \nFurnace press. demand(H/C)","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[100,100],[120,100]]},{"key":"S1-LN51","stn":1,"ln":51,"dwg":"ABC-008","ptn":"S1-LN-51","title":"PA & SA flow ctl demand - \nFur. press. demand(damper)","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[100,100],[120,100]]},{"key":"S1-LN54","stn":1,"ln":54,"dwg":"ABC-001C","ptn":"S1-LN-54","title":"ULD vs FUEL FLOW DEMAND","xr":[0,200],"yr":[0,120],"xu":"RANGE (MW)","yu":"RANGE (T/H)","pts":[[-40,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[60,35],[75,42.8],[90,50.5],[112.5,61.9],[127.5,69.5],[150,81],[200,108],[240,108]]},{"key":"S1-LN55","stn":1,"ln":55,"dwg":"ABC-001C","ptn":"S1-LN-55","title":"MSP vs T/B Override MW","xr":[0,150],"yr":[0,200],"xu":"RANGE (kg/cm2)","yu":"RANGE (MW)","pts":[[-30,-2],[-9.5,-2],[-9.5,-2],[-9.5,-2],[-9.5,-2],[-6.5,-2],[-5.5,-2],[-3.5,-2],[-3,-1],[-2.99,0],[0,0],[2.99,0],[3,1],[3.5,2],[5.5,2],[30,2]]},{"key":"S1-LN58","stn":1,"ln":58,"dwg":"ABC-001D","ptn":"S1-LN58","title":"MWD DV GAIN FOR BIR LOGIC(LOAD UP)","xr":[0,200],"yr":[0,1],"xu":"RANGE (MW)","yu":"RANGE","pts":[[-40,0.55],[0,0.55],[0,0.55],[0,0.55],[0,0.55],[0,0.55],[0,0.55],[0,0.55],[0,0.55],[4.9,0.55],[5,1],[10,1],[20,1.2],[30,1.2],[200,1.2],[240,1.2]]},{"key":"S1-LN59","stn":1,"ln":59,"dwg":"ABC-001D","ptn":"S1-LN-59","title":"MWD DV GAIN FOR BIR LOGIC(LOAD DOWN)","xr":[0,200],"yr":[0,1],"xu":"RANGE (MW)","yu":"RANGE ","pts":[[-40,0.25],[0,0.25],[0,0.25],[0,0.25],[0,0.25],[0,0.25],[0,0.25],[0,0.25],[0,0.25],[1.98,0.25],[2,1],[10,1],[20,1],[30,1],[200,1],[240,1]]},{"key":"S1-LN60","stn":1,"ln":60,"dwg":"ABC-001D","ptn":"S1-LN-60","title":"RAMP RATE GAIN FOR BIR LOGIC","xr":[0,10],"yr":[0,1],"xu":"RANGE (MW/MIN)","yu":"RANGE ","pts":[[-2,0.95],[0,0.95],[0,0.95],[0,0.95],[0,0.95],[0,0.95],[0,0.95],[0,0.95],[0,0.95],[0,0.95],[0.6,0.95],[0.8,1],[1,1.05],[1.2,1.1],[10,1.1],[12,1.1]]},{"key":"S1-LN61","stn":1,"ln":61,"dwg":"ABC-001D","ptn":"S1-LN-61","title":"ULD UP MWD vs BIR FUEL DEMAND","xr":[0,200],"yr":[0,120],"xu":"RANGE (MW)","yu":"RANGE (T/H)","pts":[[-40,0],[0,0],[0,0],[0,0],[0,0],[64,0],[70,0.25],[75,0.5],[91.9,0.5],[92,0.65],[110,0.65],[110.1,0.6],[115,0.6],[150,0.6],[200,0.6],[240,0.6]]},{"key":"S1-LN62","stn":1,"ln":62,"dwg":"ABC-001D","ptn":"S1-LN-62","title":"ULD DOWN MWD vs BIR FUEL DEMAND","xr":[0,200],"yr":[0,120],"xu":"RANGE (MW)","yu":"RANGE (T/H)","pts":[[-40,0],[0,0],[0,0],[0,0],[50,0],[60,-0.44],[75.8,-0.44],[76,0],[90,0],[95,-0.65],[109.9,-0.65],[110,-0.44],[149.9,-0.44],[150,0],[200,0],[240,0]]},{"key":"S2-LN2","stn":2,"ln":2,"dwg":"ABC-019","ptn":"S2-LN-02","title":"R/H Inlet Header Press. Transfer to Temp.","xr":[0,50],"yr":[0,600],"xu":"RANGE (kg/cm2)","yu":"RANGE (°C)","pts":[[-10,0],[0,99.09],[5,158.08],[9,179.04],[13,194.13],[17,206.15],[20,213.86],[23,220.76],[26,227.02],[29,232.76],[32,238.08],[35,243.04],[40,250.64],[45,257.56],[50,265.15],[60,274.28]]},{"key":"S2-LN3","stn":2,"ln":3,"dwg":"ABC-020","ptn":"S2-LN-03","title":"Unit Load Demand\nvs R/H Gas Damper Pos.","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[30,15],[75,45],[112,25],[150,25],[200,25],[240,25]]},{"key":"S2-LN5","stn":2,"ln":5,"dwg":"ABC-020","ptn":"S2-LN-05","title":"RH gas damper demand - SH gas damper demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,100],[0,100],[0,100],[0,100],[0,100],[0,100],[0,100],[0,100],[0,100],[0,100],[0,100],[0,100],[0,100],[50,50],[90,10],[100,10]]},{"key":"S2-LN6","stn":2,"ln":6,"dwg":"ABC-020","ptn":"S2-LN-06","title":"MW vs R/H Outlet Header Temp. SV Demand","xr":[0,200],"yr":[0,600],"xu":"RANGE (MW)","yu":"RANGE (°C)","pts":[[-40,420],[0,420],[0,420],[0,420],[0,420],[0,420],[0,420],[0,420],[0,420],[0,420],[37.5,480],[75,520],[112,538],[150,538],[200,538],[240,538]]},{"key":"S2-LN7","stn":2,"ln":7,"dwg":"ABC-020","ptn":"S2-LN-07","title":"R/H Outlet Header Temp. Control Demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[0,-50],[100,50]]},{"key":"S2-LN8","stn":2,"ln":8,"dwg":"ABC-020","ptn":"S2-LN-08","title":"R/H Outlet Header Temp. Control Tracking","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[-50,0],[50,100]]},{"key":"S2-LN9","stn":2,"ln":9,"dwg":"ABC-019","ptn":"S2-LN-09","title":"MW vs R/H Outlet Header Temp. R-SV BIAS","xr":[0,200],"yr":[0,600],"xu":"RANGE (MW)","yu":"RANGE (°C)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[37.5,10],[75,10],[112,5],[150,5],[200,5],[240,5]]},{"key":"S2-LN10","stn":2,"ln":10,"dwg":"ABC-051","ptn":"S2-LN-10","title":"Cold reheat steam press. transfer to temp.","xr":[0,50],"yr":[0,600],"xu":"RANGE (kg/cm2)","yu":"RANGE (°C)","pts":[[-10,0],[0,129.09],[5,188.08],[9,209.04],[13,224.13],[17,236.15],[20,243.86],[23,250.76],[26,257.02],[29,262.76],[32,268.08000000000004],[35,273.03999999999996],[40,280.64],[45,287.56],[50,295.15],[60,304.28]]},{"key":"S2-LN11","stn":2,"ln":11,"dwg":"ABC-052","ptn":"S2-LN-11","title":"PICHR1003.DV vs Time Constant","xr":[0,50],"yr":[0,10000],"xu":"RANGE (kg/cm2)","yu":"RANGE ","pts":[[-50,33],[0,33],[0,33],[0,33],[0,33],[0,33],[0,33],[0,33],[0,33],[0,33],[0,33],[0,33],[0,33],[0,33],[50,1667],[60,1667]]},{"key":"S2-LN12","stn":2,"ln":12,"dwg":"ABC-052","ptn":"S2-LN12","title":"HP turbine 1st stage pressure - Output","xr":[0,150],"yr":[0,50],"xu":"RANGE (kg/cm2)","yu":"RANGE (kg/cm2)","pts":[[-30,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[108.94,34.77],[150,34.77],[180,34.77]]},{"key":"S2-LN13","stn":2,"ln":13,"dwg":"ABC-051","ptn":"S2-LN-13","title":"HP bypass outlet pressure transfer to temp.","xr":[0,50],"yr":[0,600],"xu":"RANGE (kg/cm2)","yu":"RANGE (°C)","pts":[[-10,0],[0,99.09],[5,158.07],[9,179.04],[13,194.14],[17,206.16],[20,213.86],[23,220.76],[26,227.03],[29,232.76],[32,238.1],[35,243.06],[40,250.64],[45,257.56],[50,265.15],[60,274.28]]},{"key":"S2-LN16","stn":2,"ln":16,"dwg":"ABC-030","ptn":"S2-LN-16","title":"Cold reheat to aux. press. control- control valve(2) demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-30,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[13,100],[100,100],[130,100]]},{"key":"S2-LN17","stn":2,"ln":17,"dwg":"ABC-030","ptn":"S2-LN-17","title":"Cold reheat to aux. press. control- control valve(1) demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-30,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[13,0],[100,100],[130,100]]},{"key":"S2-LN18","stn":2,"ln":18,"dwg":"ABC-034","ptn":"S2-LN-18","title":"Steam seal feed valve manipulation value - Cv value","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[100,28],[130,28]]},{"key":"S2-LN19","stn":2,"ln":19,"dwg":"ABC-034","ptn":"S2-LN-19","title":"HP turbine warming valve position - Cv value","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-20,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[100,50],[120,50]]},{"key":"S2-LN20","stn":2,"ln":20,"dwg":"ABC-034","ptn":"S2-LN-20","title":"Aux. steam header temp. - Output","xr":[0,600],"yr":[0,100],"xu":"RANGE  (°C)","yu":"RANGE (%)","pts":[[-120,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[250,0],[350,100],[600,100],[720,100]]},{"key":"S2-LN21","stn":2,"ln":21,"dwg":"ABC-034","ptn":"S2-LN-21","title":"Cv value - Output","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-30,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[2.5,10],[7,20],[40,80],[50,100],[100,100],[130,100]]},{"key":"S2-LN22","stn":2,"ln":22,"dwg":"ABC-053","ptn":"S2-LN-22","title":"T/B rated speed - T/B lube oil temp. demand","xr":[0,4000],"yr":[0,100],"xu":"RANGE (rpm)","yu":"RANGE (°C)","pts":[[-800,38],[0,38],[0,38],[0,38],[0,38],[0,38],[0,38],[0,38],[0,38],[0,38],[0,38],[0,38],[0,38],[3600,46],[4000,46],[4800,46]]},{"key":"S2-LN31","stn":2,"ln":31,"dwg":"ABC-050","ptn":"S2-LN-31","title":"Steam Flow - HP Bypass Pressure C.V. Demand","xr":[0,500],"yr":[0,100],"xu":"RANGE T/H)","yu":"RANGE (%)","pts":[[-150,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[8.6,19],[141,62],[193,80],[227,100],[650,100]]},{"key":"S2-LN32","stn":2,"ln":32,"dwg":"ABC-050","ptn":"S2-LN32","title":"Steam Flow - LP Bypass Pressure C.V. Demand","xr":[0,500],"yr":[0,100],"xu":"RANGE T/H)","yu":"RANGE (%)","pts":[[-100,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[12.6,19],[90,34],[171.8,46],[387.6,81],[503,100],[650,100]]},{"key":"S2-LN33","stn":2,"ln":33,"dwg":"ABC-051","ptn":"S2-LN-33","title":"HP bypass PCV demand - HP bypass TCV demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-30,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[19,19],[23,33],[42,62],[62,73],[92,100],[130,100]]},{"key":"S2-LN34","stn":2,"ln":34,"dwg":"ABC-052","ptn":"S2-LN-34","title":"LP bypass PCV demand - LP bypass TCV demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-30,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[19,12.5],[32.5,52],[42,76],[46,81],[62,100],[130,100]]},{"key":"S2-LN38","stn":2,"ln":38,"dwg":"ABC-35-39","ptn":"S2-LN-38","title":"Primary drain level Control\nvs control valve demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-30,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[60,100],[100,100],[130,100]]},{"key":"S2-LN39","stn":2,"ln":39,"dwg":"ABC-35-39","ptn":"S2-LN-39","title":"Alternate drain level Control\nvs control valve demand","xr":[0,100],"yr":[0,100],"xu":"RANGE (%)","yu":"RANGE (%)","pts":[[-30,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[55,0],[100,100],[130,100]]},{"key":"S3-LN1","stn":3,"ln":1,"dwg":"ABC-057","ptn":"S3-LN-01","title":"Gen. power - Furnace upper MCV-FA1005 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN2","stn":3,"ln":2,"dwg":"ABC-057","ptn":"S3-LN-02","title":"Gen. power - Furnace lower MCV-FA1006 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN3","stn":3,"ln":3,"dwg":"ABC-057","ptn":"S3-LN-03","title":"Gen. power - Furnace upper MCV-FA1007 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN4","stn":3,"ln":4,"dwg":"ABC-057","ptn":"S3-LN-04","title":"Gen. power - Furnace lower MCV-FA1008 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN5","stn":3,"ln":5,"dwg":"ABC-057","ptn":"S3-LN-05","title":"Gen. power - Furnace upper MCV-FA1009 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN6","stn":3,"ln":6,"dwg":"ABC-057","ptn":"S3-LN-06","title":"Gen. power - Furnace lower MCV-FA1010 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN7","stn":3,"ln":7,"dwg":"ABC-057","ptn":"S3-LN-07","title":"Gen. power - Furnace upper MCV-FA1011 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN8","stn":3,"ln":8,"dwg":"ABC-057","ptn":"S3-LN-08","title":"Gen. power - Furnace lower MCV-FA1012 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN9","stn":3,"ln":9,"dwg":"ABC-057","ptn":"S3-LN-09","title":"Gen. power - Furnace upper MCV-FA1013 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN10","stn":3,"ln":10,"dwg":"ABC-057","ptn":"S3-LN-10","title":"Gen. power - Furnace lower MCV-FA1014 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN11","stn":3,"ln":11,"dwg":"ABC-057","ptn":"S3-LN-11","title":"Gen. power - Furnace upper MCV-FA1015 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN12","stn":3,"ln":12,"dwg":"ABC-057","ptn":"S3-LN-12","title":"Gen. power - Furnace lower MCV-FA1016 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN13","stn":3,"ln":13,"dwg":"ABC-057","ptn":"S3-LN-13","title":"Gen. power - Furnace upper MCV-FA1017 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN14","stn":3,"ln":14,"dwg":"ABC-057","ptn":"S3-LN-14","title":"Gen. power - Furnace lower MCV-FA1018 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN15","stn":3,"ln":15,"dwg":"ABC-057","ptn":"S3-LN-15","title":"Gen. power - Furnace upper MCV-FA1019 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN16","stn":3,"ln":16,"dwg":"ABC-057","ptn":"S3-LN-16","title":"Gen. power - Furnace lower MCV-FA1020 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN17","stn":3,"ln":17,"dwg":"ABC-057","ptn":"S3-LN-17","title":"Gen. power - Furnace upper MCV-FA1021 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN18","stn":3,"ln":18,"dwg":"ABC-057","ptn":"S3-LN-18","title":"Gen. power - Furnace lower MCV-FA1022 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN19","stn":3,"ln":19,"dwg":"ABC-057","ptn":"S3-LN-19","title":"Gen. power - Furnace upper MCV-FA1023 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN20","stn":3,"ln":20,"dwg":"ABC-057","ptn":"S3-LN-20","title":"Gen. power - Furnace lower MCV-FA1024 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN21","stn":3,"ln":21,"dwg":"ABC-057","ptn":"S3-LN-21","title":"Gen. power - Furnace upper MCV-FA1025 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE (MW)","yu":"RANGE (%)","pts":[[-40,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[0,10],[75,10],[90,10],[110,15],[130,15],[150,15],[200,15],[240,15]]},{"key":"S3-LN22","stn":3,"ln":22,"dwg":"ABC-057","ptn":"S3-LN-22","title":"Gen. power - Furnace lower MCV-FA1026 pos. demand","xr":[0,200],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-40,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[0,15],[75,15],[80,20],[90,30],[110,40],[130,50],[150,60],[200,60],[240,60]]},{"key":"S3-LN23","stn":3,"ln":23,"dwg":"ABC-057","ptn":"S3-LN-23","title":"Furnace upper wall front/rear bias","xr":[0,100],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-20,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[50,0],[100,10],[120,10]]},{"key":"S3-LN24","stn":3,"ln":24,"dwg":"ABC-057","ptn":"S3-LN-24","title":"Furnace lower wall front/rear bias","xr":[0,100],"yr":[0,100],"xu":"RANGE","yu":"RANGE (%)","pts":[[-20,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[0,-10],[50,0],[100,10],[120,10]]}]);
@@ -98637,14 +99003,16 @@ window.WIRING=[["DI","1","I.0000","ZSO-BD1002"],["DI","1","I.0001","ZSC-BD1002"]
     'aph.leak': 'Air heater seal leak, air to gas (grows)',
     'cd.air': 'Condenser air in-leakage (grows)',
     /* 3.2.4 (JENNIE): a grid frequency dip (unit.js anGridHz): a big unit trips elsewhere on the grid */
-    'grid.lo': 'Grid frequency falls to 59.5 Hz (a unit trips elsewhere)'
+    'grid.lo': 'Grid frequency falls to 59.5 Hz (a unit trips elsewhere)',
+    /* the generator transformer lockout relay (gen-panel.js tcsLo86, GEE-2015-0173 rows 33 / 66): an input of 86G-A and 86G-B */
+    'gen.86t': 'Generator transformer lockout relay 86T operated (transformer protection)'
   };
   const tlSet = (id, on) => {
     if (on) W.ft.add(id);
     else W.ft.delete(id);
     W.busy = true;
     const t = TL[id] || HL[id] || AP[id];
-    return on ? t : 'cleared: ' + t + (id === 'aph.plug' ? ' (washed)' : id === 'aph.leak' ? ' (seals set)' : id === 'cd.air' ? ' (sealed)' : id === 'grid.lo' ? ' (grid back to 60 Hz)' : ' (tube repaired)');
+    return on ? t : 'cleared: ' + t + (id === 'aph.plug' ? ' (washed)' : id === 'aph.leak' ? ' (seals set)' : id === 'cd.air' ? ' (sealed)' : id === 'grid.lo' ? ' (grid back to 60 Hz)' : id === 'gen.86t' ? ' (transformer protection reset: reset 86T and 86G on the panel)' : ' (tube repaired)');
   };
   /* 3.2.4-beta.13 (JENNIE, priority list item: coal quality): wet coal, a trainer fault (unit.js anCoalWet: the coal moisture 33.96 % of the
      performance coal, FHI P2S7 Tab 2, rises to 40 %, NO-SOURCE trainer setting: rain on the coal yard). No DITL contact: the DCS has no
@@ -125707,7 +126075,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 94c855c'));
+    row('Version', E('span', 'scsver', ver + ' · build c5198c6'));
   }
   function openSet(near) {
     if (!set) {
