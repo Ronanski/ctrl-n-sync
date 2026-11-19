@@ -21,7 +21,9 @@
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
                                                                      parameters printed under it ('^DEF' = over it); l / r = the marks of its pins;
                                                                      type 'o:BTR' = a mark on the wire, type 'X' = the crossed circle (inverted input)
-     m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
+     m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes], plain]   macro block, x y = top left; plain = [[y of each left
+                                                                     pin], [y of each right pin]]: a block printed without cells
+     tri: [x, y, s]                                                  the filled triangle of an analog PI/O connection on a line
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
      t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
      live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
@@ -207,6 +209,11 @@ function tceSheet(q) {
     at(key, x1, y1, x2, y2);
     net(key);
   }
+  /* the filled triangle of an analog PI/O connection on a line, pointing left: [x, y, s] = its middle and half its size */
+  for (const [x, y, s] of q.tri || []) {
+    poly([[x + s, y - s], [x - s, y], [x + s, y + s]], 1);
+    for (let i = 1.5; i < 2 * s; i += 1.5) poly([[x - s + i, y - i / 2], [x - s + i, y + i / 2]], 0);
+  }
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
     poly([a, b], 0);
@@ -276,7 +283,20 @@ function tceSheet(q) {
     net(key);
   }
   /* macro blocks: title bar, pins on both sides, foot bar, the parameter lines under it */
-  for (const [key, name, tag, x, y, w, h, L, R, foot, notes] of q.m || []) {
+  for (const [key, name, tag, x, y, w, h, L, R, foot, notes, plain] of q.m || []) {
+    if (plain) {
+      /* a block the drawing prints without cells: its name at the top left, the names of its pins inside at the heights given
+         (plain = [[y of each left pin], [y of each right pin]]), its number at the bottom */
+      poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
+      tx.push(text(name, x + 3 * u, y + 7 * u, 2.05, 3), text(tag, x + w / 2, y - 4 * u, 1.7, 1), text(foot || '', x + w / 2, y + h - 3.5 * u, 1.7, 4));
+      L.forEach((p, i) => tx.push(text(p, x + 3 * u, plain[0][i], 2.05, 3)));
+      R.forEach((p, i) => {
+        tx.push(text(p, x + w - 2 * u, plain[1][i], 2.05, 5));
+        net(key + '.' + p);
+      });
+      (notes || []).forEach(n => tx.push(text(n[2], n[0], n[1], 1.9, 0)));
+      continue;
+    }
     const bar = 15 * u,
       pw = 36 * u;
     poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);

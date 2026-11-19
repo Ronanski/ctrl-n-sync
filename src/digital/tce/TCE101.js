@@ -2,8 +2,8 @@
    2296 wide. The scan of this page is turned a little (its frame is 13 lower at the right than at the left and 26 further left at the bottom than
    at the top); every place is typed as it stands on the page set straight.
    MSV inlet steam pressure (A) and (B): two transmitters (0 - 150 kg/cm2g, 4 - 20 mA) through the analog input card (TCE930-1, TCE930-9) into one
-   DUAL INPUT DIAGNOSTICS block. The transmitter is drawn as the crossed circle of the drawing, the card as its mA/V box and the triangle of the
-   PI/O connection. Pins ERR1 and ERR2 of the block are left open in the drawing. The title block of this page prints PAGE 67; it is page 69 of
+   DUAL INPUT DIAGNOSTICS block. The transmitter is drawn as the crossed circle of the drawing, the card as its mA/V box and the filled triangle of
+   the PI/O connection. Pins ERR1 and ERR2 of the block are left open in the drawing. The title block of this page prints PAGE 67; it is page 69 of
    the document. */
 (function () {
   if (typeof window === 'undefined') return;
@@ -33,7 +33,7 @@
     w = [],
     t = [],
     l = [],
-    p = [];
+    tri = [];
   /* the two transmitters: [letter, row, card, x of the line up to the lamp, row of the lamp, row of the connector, marks, x of the marks] */
   [
     ['A', L('SIG1'), 'TCE930-1', 1117, 137, 180, ['015', '016'], 1150],
@@ -44,7 +44,7 @@
     b.push(['x' + ch, 'X', '', 436, y, [], {}, [21]]);
     l.push([[457, y], [611, y]]);
     r.push([k, 611, y - 12, 54, 24, 'mA/V'], ['pe' + n, 1021, y + 53, 125, 22, 'PI/O error']);
-    p.push([[786, y - 9], [768, y], [786, y + 9]]);
+    tri.push([777, y, 9]);
     t.push(
       [344, y - 71, 'MSV INLET'],
       [344, y - 49, 'STEAM PRESS.(' + ch + ')'],
@@ -151,7 +151,7 @@
     ],
     r,
     l,
-    p,
+    tri,
     c,
     d,
     m: [
