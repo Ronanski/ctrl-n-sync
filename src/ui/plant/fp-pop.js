@@ -833,7 +833,10 @@
       auto: 'opens below 40 % of LT-CW1109, closes above 85 % (1.7 m) · DITL-78',
       why: () => (window.AN && AN.unit && (+AN.unit.iaP || 0) < 3.5 ? 'No instrument air (below 3.5 kg/cm²): XV-MU1109 is spring opening (vendor sheet K1AU3-E2-0-123 item 39), it is open and cannot be closed.' : '')
     }
-  };
+  };  /* the trend history of the engine (hist.js AN.histReg): open (100) / closed (0) of each of these valves, each simulated second */
+  for (const tg in VALVES)
+    (window.LS_HISTQ = window.LS_HISTQ || []).push([[tg], 'valve', { pos: () => (VALVES[tg].isOpen() ? 100 : 0), unit: '%' }]);
+
   /* a manual valve the field operator turns (Training: FIELD, a digital field item of the plant model, logged as "Field operator") */
   const FIELDV = {
     'V-MU1033': { n: 'V-MU1033', t: 'Expansion tank bypass (manual)', k: 'mu1033', io: 'V-MU1033', use: 'Second fill path of T-1109 (PR-OPE-5002 section 7: XV-MU1109 or the bypass V-MU1033). Close it when LT-CW1109 reaches 1.7 m.' },

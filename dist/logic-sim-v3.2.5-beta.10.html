@@ -43097,7 +43097,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 1dc7186'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 8ef71c1'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -47477,7 +47477,13 @@ AN.patchPaint = () => {
    - One sample a second of SIMULATION time (at x10 the 30 minutes pass in 3 minutes of wall time), 1800 samples kept per tag in
      typed ring buffers (68 controllers about 1.5 MB). Sampled at the end of each plant model step (anUnitStep), the same place for
      the page and the headless engine. Oldest first. A MAN station has no PV / SP: those arrays hold null.
-   - History starts when the plant is loaded or the sheet is first stepped; nothing is invented before that. */
+   - History starts when the plant is loaded or the sheet is first stepped; nothing is invented before that.
+   Machines and valves (the same faceplate trend, user "go all" item 3, fpHist for machines and valves): AN.histReg(keys, kind, read)
+   puts a machine ('mach': read.st() -> 'RUN' | 'STOP' | 'TRIP' | null, read.cur() -> A or null) or a valve ('valve': read.pos() -> %)
+   in the same 1 s sampling, under each of its keys (the equipment tag and the name). The HMI pages give the readers of their machines
+   and valves (hmi-mock.js, fp-pop.js, through the queue window.LS_HISTQ, taken in here), the same reads their faceplates show.
+   AN.fpHist(key) of a machine -> { kind: 'mach', t: [], run: [1 RUN | 0 STOP | -1 TRIP | null], cur: [A | null], unit, now };
+   of a valve -> { kind: 'valve', t: [], pos: [], unit: '%', now }. A control valve is the MV of its controller (above). */
 const AN_HIST_N = 1800;
 const AN_HIST = { T: 0, next: 0, ix: null, of: null, scan: 0 };
 function anHistIndex() {
@@ -47520,11 +47526,48 @@ function anHistIndex() {
       }
   }
 }
+AN.histReg = (keys, kind, read) => {
+  const H = AN_HIST,
+    R = (H.reg = H.reg || {}),
+    r = { kind, read, unit: (read && read.unit) || '', t: new Float64Array(AN_HIST_N), a: new Float32Array(AN_HIST_N), b: new Float32Array(AN_HIST_N), i: 0, n: 0 };
+  for (const k of [].concat(keys)) if (k) R[String(k).trim().toUpperCase()] = R[String(k).trim().toUpperCase()] || r;
+};
+function anHistRegStep() {
+  const H = AN_HIST;
+  if (typeof window !== 'undefined' && window.LS_HISTQ && window.LS_HISTQ.length) for (const q of window.LS_HISTQ.splice(0)) AN.histReg(q[0], q[1], q[2]);
+  const seen = new Set(),
+    num = f => {
+      try {
+        const v = f ? f() : null;
+        return v == null || !isFinite(v) ? NaN : +v;
+      } catch (e) {
+        return NaN;
+      }
+    };
+  for (const k in H.reg || {}) {
+    const r = H.reg[k];
+    if (seen.has(r)) continue;
+    seen.add(r);
+    const j = r.i;
+    r.t[j] = H.T;
+    if (r.kind === 'mach') {
+      let st = null;
+      try {
+        st = r.read.st();
+      } catch (e) {}
+      r.a[j] = st === 'RUN' ? 1 : st === 'STOP' ? 0 : st === 'TRIP' ? -1 : NaN;
+      r.b[j] = num(r.read.cur);
+    } else r.a[j] = num(r.read.pos);
+    r.i = (j + 1) % AN_HIST_N;
+    if (r.n < AN_HIST_N) r.n++;
+  }
+}
 function anHistStep(dt) {
   const H = AN_HIST;
   H.T += dt;
   if (H.T < H.next || !AN.sheets) return;
   H.next = Math.floor(H.T) + 1;
+  anHistRegStep();
   anHistIndex();
   for (const k in H.ix) {
     const r = H.ix[k];
@@ -47542,7 +47585,23 @@ function anHistStep(dt) {
   }
 }
 AN.fpHist = (key, seconds) => {
-  const r = AN_HIST.ix && AN_HIST.ix[String(key || '').trim().toUpperCase()];
+  const K = String(key || '').trim().toUpperCase(),
+    c = AN_HIST.ix && AN_HIST.ix[K],
+    g = !(c && c !== 1) && AN_HIST.reg && AN_HIST.reg[K]; /* a controller's own trend first: some machine entries carry the tag of their controller */
+  if (g) {
+    const from = AN_HIST.T - (seconds > 0 ? seconds : AN_HIST_N),
+      o = g.kind === 'mach' ? { kind: 'mach', t: [], run: [], cur: [], unit: g.unit, now: AN_HIST.T } : { kind: 'valve', t: [], pos: [], unit: g.unit, now: AN_HIST.T },
+      f = x => (isFinite(x) ? Math.round(x * 1000) / 1000 : null);
+    for (let q = 0; q < g.n; q++) {
+      const j = (g.i - g.n + q + AN_HIST_N) % AN_HIST_N;
+      if (g.t[j] < from) continue;
+      o.t.push(g.t[j]);
+      if (g.kind === 'mach') (o.run.push(f(g.a[j])), o.cur.push(f(g.b[j])));
+      else o.pos.push(f(g.a[j]));
+    }
+    return o;
+  }
+  const r = c;
   if (!r || r === 1) return null;
   const from = AN_HIST.T - (seconds > 0 ? seconds : AN_HIST_N),
     o = { t: [], pv: [], sp: [], mv: [], unit: r.unit, lo: r.lo, hi: r.hi, now: AN_HIST.T },
@@ -47557,6 +47616,7 @@ AN.fpHist = (key, seconds) => {
   }
   return o;
 };
+AN._hist = AN_HIST; /* the state, for the regression test (tests/regress/fphist_mach.js) */
 /* ===== SEQUENCE OF EVENTS AND FIRST OUT (user "go all" 2026-11-19, item 2: first-out / SOE per MFT and turbine trip) =====
    Nothing here decides a trip. The DCS and the TCS logic already do it; this file only records what their signals did, in order:
    - MFT (DCS): the 18 trip inputs of DITL-03A (rows 1 ~ 18), its MFT output (row 17, MASTER FUEL TRIP (MFT) · SER: the output the
@@ -97619,7 +97679,13 @@ function anEngAPI() {
    - One sample a second of SIMULATION time (at x10 the 30 minutes pass in 3 minutes of wall time), 1800 samples kept per tag in
      typed ring buffers (68 controllers about 1.5 MB). Sampled at the end of each plant model step (anUnitStep), the same place for
      the page and the headless engine. Oldest first. A MAN station has no PV / SP: those arrays hold null.
-   - History starts when the plant is loaded or the sheet is first stepped; nothing is invented before that. */
+   - History starts when the plant is loaded or the sheet is first stepped; nothing is invented before that.
+   Machines and valves (the same faceplate trend, user "go all" item 3, fpHist for machines and valves): AN.histReg(keys, kind, read)
+   puts a machine ('mach': read.st() -> 'RUN' | 'STOP' | 'TRIP' | null, read.cur() -> A or null) or a valve ('valve': read.pos() -> %)
+   in the same 1 s sampling, under each of its keys (the equipment tag and the name). The HMI pages give the readers of their machines
+   and valves (hmi-mock.js, fp-pop.js, through the queue window.LS_HISTQ, taken in here), the same reads their faceplates show.
+   AN.fpHist(key) of a machine -> { kind: 'mach', t: [], run: [1 RUN | 0 STOP | -1 TRIP | null], cur: [A | null], unit, now };
+   of a valve -> { kind: 'valve', t: [], pos: [], unit: '%', now }. A control valve is the MV of its controller (above). */
 const AN_HIST_N = 1800;
 const AN_HIST = { T: 0, next: 0, ix: null, of: null, scan: 0 };
 function anHistIndex() {
@@ -97662,11 +97728,48 @@ function anHistIndex() {
       }
   }
 }
+AN.histReg = (keys, kind, read) => {
+  const H = AN_HIST,
+    R = (H.reg = H.reg || {}),
+    r = { kind, read, unit: (read && read.unit) || '', t: new Float64Array(AN_HIST_N), a: new Float32Array(AN_HIST_N), b: new Float32Array(AN_HIST_N), i: 0, n: 0 };
+  for (const k of [].concat(keys)) if (k) R[String(k).trim().toUpperCase()] = R[String(k).trim().toUpperCase()] || r;
+};
+function anHistRegStep() {
+  const H = AN_HIST;
+  if (typeof window !== 'undefined' && window.LS_HISTQ && window.LS_HISTQ.length) for (const q of window.LS_HISTQ.splice(0)) AN.histReg(q[0], q[1], q[2]);
+  const seen = new Set(),
+    num = f => {
+      try {
+        const v = f ? f() : null;
+        return v == null || !isFinite(v) ? NaN : +v;
+      } catch (e) {
+        return NaN;
+      }
+    };
+  for (const k in H.reg || {}) {
+    const r = H.reg[k];
+    if (seen.has(r)) continue;
+    seen.add(r);
+    const j = r.i;
+    r.t[j] = H.T;
+    if (r.kind === 'mach') {
+      let st = null;
+      try {
+        st = r.read.st();
+      } catch (e) {}
+      r.a[j] = st === 'RUN' ? 1 : st === 'STOP' ? 0 : st === 'TRIP' ? -1 : NaN;
+      r.b[j] = num(r.read.cur);
+    } else r.a[j] = num(r.read.pos);
+    r.i = (j + 1) % AN_HIST_N;
+    if (r.n < AN_HIST_N) r.n++;
+  }
+}
 function anHistStep(dt) {
   const H = AN_HIST;
   H.T += dt;
   if (H.T < H.next || !AN.sheets) return;
   H.next = Math.floor(H.T) + 1;
+  anHistRegStep();
   anHistIndex();
   for (const k in H.ix) {
     const r = H.ix[k];
@@ -97684,7 +97787,23 @@ function anHistStep(dt) {
   }
 }
 AN.fpHist = (key, seconds) => {
-  const r = AN_HIST.ix && AN_HIST.ix[String(key || '').trim().toUpperCase()];
+  const K = String(key || '').trim().toUpperCase(),
+    c = AN_HIST.ix && AN_HIST.ix[K],
+    g = !(c && c !== 1) && AN_HIST.reg && AN_HIST.reg[K]; /* a controller's own trend first: some machine entries carry the tag of their controller */
+  if (g) {
+    const from = AN_HIST.T - (seconds > 0 ? seconds : AN_HIST_N),
+      o = g.kind === 'mach' ? { kind: 'mach', t: [], run: [], cur: [], unit: g.unit, now: AN_HIST.T } : { kind: 'valve', t: [], pos: [], unit: g.unit, now: AN_HIST.T },
+      f = x => (isFinite(x) ? Math.round(x * 1000) / 1000 : null);
+    for (let q = 0; q < g.n; q++) {
+      const j = (g.i - g.n + q + AN_HIST_N) % AN_HIST_N;
+      if (g.t[j] < from) continue;
+      o.t.push(g.t[j]);
+      if (g.kind === 'mach') (o.run.push(f(g.a[j])), o.cur.push(f(g.b[j])));
+      else o.pos.push(f(g.a[j]));
+    }
+    return o;
+  }
+  const r = c;
   if (!r || r === 1) return null;
   const from = AN_HIST.T - (seconds > 0 ? seconds : AN_HIST_N),
     o = { t: [], pv: [], sp: [], mv: [], unit: r.unit, lo: r.lo, hi: r.hi, now: AN_HIST.T },
@@ -97699,6 +97818,7 @@ AN.fpHist = (key, seconds) => {
   }
   return o;
 };
+AN._hist = AN_HIST; /* the state, for the regression test (tests/regress/fphist_mach.js) */
 
 /* ---- engine/soe.js ---- */
 /* ===== SEQUENCE OF EVENTS AND FIRST OUT (user "go all" 2026-11-19, item 2: first-out / SOE per MFT and turbine trip) =====
@@ -126603,7 +126723,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 1dc7186'));
+    row('Version', E('span', 'scsver', ver + ' · build 8ef71c1'));
   }
   function openSet(near) {
     if (!set) {
@@ -140056,6 +140176,49 @@ window.PLANT_SYS = [
      (plant.js fitW: drag to see the lower part, as 007), and its text grows by def.fz, except the lines of def.fzAt ("x,y" or the column
      "x,*": their own factor, 1 = as drawn; the long notes and lists that would run into the next column) */
   const frameOf = def => (def.tall ? { w: def.w + 32, h: 54 + def.h + 16 + 32 } : { w: 1920, h: 1000 });
+  /* the state of a machine and the reads of its drawing (moved out of page(): the trend history of the engine, AN.histReg, reads them for
+     every machine of every page from the start, not only for the page on screen) */
+  const rin = (ad, row) =>
+    call(() => {
+      const s = D().dOf(ad);
+      return s ? (DUI.rowVal(s, row) ? 1 : 0) : null;
+    }, null);
+  const rout = (ad, row) => call(() => D().dout(ad, row), null);
+  const mst = m =>
+    call(() => {
+      if (m.fld) return AN.fieldState && AN.fieldState()[m.fld] ? 'RUN' : 'STOP';
+      if (m.sti) {
+        const r = rin(m.sti[0], m.sti[1]),
+          t = m.sti[2] != null ? rin(m.sti[0], m.sti[2]) : 0;
+        return r == null ? null : t ? 'TRIP' : r ? 'RUN' : 'STOP';
+      }
+      if (m.tcs) {
+        const U = AN.unit;
+        /* F36 (live Cold start 2026-11-14): the gland steam seal of the TCS (tcs.js 'gland'), in service = RUN */
+        /* beta.34: Start at 150 MW has no ATS program (U.tc null, tcs-trip.js): the gland seal is the gland steam pressure of the model
+           (U.gsP >= 0.1, as unit.js aux steam), the hood spray is in AUTO with the turbine running (PR-OPE-5002 6307 is done before the roll) */
+        const noTc = U && U.on && !U.tc;
+        if (m.tcs === 'gland' && noTc)
+          return (isFinite(U.gsP) ? U.gsP >= 0.1 : !!(U.tb && U.tb.st !== 'off')) ? 'RUN' : 'STOP';
+        if (m.tcs === 'hood' && noTc) return U.tb && U.tb.st !== 'off' ? 'RUN' : 'STOP';
+        if (m.tcs === 'gland') return U && U.on && U.tc ? (U.tc.gland ? 'RUN' : 'STOP') : null;
+        /* live Cold start 2026-11-14 (3.2.3-beta.234): the LP exhaust hood spray FV-CD1904 of the TCS (tcs.js 'hood', PR-OPE-5002 6307), in AUTO = RUN */
+        if (m.tcs === 'hood') return U && U.on && U.tc ? (U.tc.hsp ? 'RUN' : 'STOP') : null;
+        /* live Cold run 2026-11-18 F-W: the turning gear of the TCS (tcs.js 'tg', ATS 1.19): selected with the shaft turning = RUN; the
+           realistic pages had no way to select it, so gland sealing (needs the shaft turning, PR-OPE-5002 6219) could not start */
+        if (m.tcs === 'tg') return U && U.on && U.tc ? (U.tc.tg && U.tb && U.tb.rpm >= 1 ? 'RUN' : 'STOP') : null;
+        if (!U || !U.on || !U.loMop) return null;
+        if (m.tcs === 'vex') return U.loVex ? 'RUN' : 'STOP';
+        if (m.tcs === 'eop') return U.loEopR ? 'RUN' : 'STOP';
+        const x = /^(mop|cop)([AB])$/.exec(m.tcs);
+        return U['lo' + (x[1] === 'mop' ? 'Mop' : 'Cop')][x[2] === 'A' ? 0 : 1] ? 'RUN' : 'STOP';
+      }
+      if (m.sto) {
+        const r = rout(m.sto[0], m.sto[1]);
+        return r == null ? null : r ? 'RUN' : 'STOP';
+      }
+      return m.ad ? D().mst(m.ad) : null;
+    }, null);
   function page(def) {
     return function (g, api) {
       const F = frameOf(def),
@@ -140549,47 +140712,6 @@ window.PLANT_SYS = [
       /* machines */
       /* run state: field equipment of the model (fld), DITL input rows (sti: [sheet, running row, trip row], a local panel start),
          a DITL output row (sto: [sheet, row]), else the motor of LS_DOCK */
-      const rin = (ad, row) =>
-        call(() => {
-          const s = D().dOf(ad);
-          return s ? (DUI.rowVal(s, row) ? 1 : 0) : null;
-        }, null);
-      const rout = (ad, row) => call(() => D().dout(ad, row), null);
-      const mst = m =>
-        call(() => {
-          if (m.fld) return AN.fieldState && AN.fieldState()[m.fld] ? 'RUN' : 'STOP';
-          if (m.sti) {
-            const r = rin(m.sti[0], m.sti[1]),
-              t = m.sti[2] != null ? rin(m.sti[0], m.sti[2]) : 0;
-            return r == null ? null : t ? 'TRIP' : r ? 'RUN' : 'STOP';
-          }
-          if (m.tcs) {
-            const U = AN.unit;
-            /* F36 (live Cold start 2026-11-14): the gland steam seal of the TCS (tcs.js 'gland'), in service = RUN */
-            /* beta.34: Start at 150 MW has no ATS program (U.tc null, tcs-trip.js): the gland seal is the gland steam pressure of the model
-               (U.gsP >= 0.1, as unit.js aux steam), the hood spray is in AUTO with the turbine running (PR-OPE-5002 6307 is done before the roll) */
-            const noTc = U && U.on && !U.tc;
-            if (m.tcs === 'gland' && noTc)
-              return (isFinite(U.gsP) ? U.gsP >= 0.1 : !!(U.tb && U.tb.st !== 'off')) ? 'RUN' : 'STOP';
-            if (m.tcs === 'hood' && noTc) return U.tb && U.tb.st !== 'off' ? 'RUN' : 'STOP';
-            if (m.tcs === 'gland') return U && U.on && U.tc ? (U.tc.gland ? 'RUN' : 'STOP') : null;
-            /* live Cold start 2026-11-14 (3.2.3-beta.234): the LP exhaust hood spray FV-CD1904 of the TCS (tcs.js 'hood', PR-OPE-5002 6307), in AUTO = RUN */
-            if (m.tcs === 'hood') return U && U.on && U.tc ? (U.tc.hsp ? 'RUN' : 'STOP') : null;
-            /* live Cold run 2026-11-18 F-W: the turning gear of the TCS (tcs.js 'tg', ATS 1.19): selected with the shaft turning = RUN; the
-               realistic pages had no way to select it, so gland sealing (needs the shaft turning, PR-OPE-5002 6219) could not start */
-            if (m.tcs === 'tg') return U && U.on && U.tc ? (U.tc.tg && U.tb && U.tb.rpm >= 1 ? 'RUN' : 'STOP') : null;
-            if (!U || !U.on || !U.loMop) return null;
-            if (m.tcs === 'vex') return U.loVex ? 'RUN' : 'STOP';
-            if (m.tcs === 'eop') return U.loEopR ? 'RUN' : 'STOP';
-            const x = /^(mop|cop)([AB])$/.exec(m.tcs);
-            return U['lo' + (x[1] === 'mop' ? 'Mop' : 'Cop')][x[2] === 'A' ? 0 : 1] ? 'RUN' : 'STOP';
-          }
-          if (m.sto) {
-            const r = rout(m.sto[0], m.sto[1]);
-            return r == null ? null : r ? 'RUN' : 'STOP';
-          }
-          return m.ad ? D().mst(m.ad) : null;
-        }, null);
       /* mode of a motor: LS_DOCK.modeOf; a drawing with other names (DITL-76 / 77 "REMOTE SELECTED", "AUTO SELECTED"): its output rows */
       const outV = (ad, re) =>
         call(() => {
@@ -141262,6 +141384,17 @@ window.PLANT_SYS = [
   const DEFS = [];
   function add(def) {
     DEFS.push(def);
+    /* the trend history of the engine (hist.js AN.histReg): the state of every machine of the page, and its current where the plant
+       model has it (def.unit), sampled each simulated second from the load of the app, the page open or not; a queue, hist.js takes it in */
+    for (const id in def.mach || {}) {
+      const m = def.mach[id],
+        uk = m.cur && def.unit && def.unit[m.cur] && !/^(tt|ux):/.test(def.unit[m.cur]) ? def.unit[m.cur] : null;
+      (window.LS_HISTQ = window.LS_HISTQ || []).push([[m.t, m.n], 'mach', {
+          st: () => mst(m),
+          cur: uk ? () => (AN.unit && AN.unit.on && isFinite(AN.unit[uk]) ? +AN.unit[uk] : null) : null,
+          unit: m.cur ? 'A' : ''
+        }]);
+    }
     PLANT_V2.screens[def.id] = page(def);
     const L = (window.PLANT_SYS = window.PLANT_SYS || []),
       i = def.before ? L.findIndex(x => x.id === def.before) : -1;
@@ -152064,7 +152197,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       auto: 'opens below 40 % of LT-CW1109, closes above 85 % (1.7 m) · DITL-78',
       why: () => (window.AN && AN.unit && (+AN.unit.iaP || 0) < 3.5 ? 'No instrument air (below 3.5 kg/cm²): XV-MU1109 is spring opening (vendor sheet K1AU3-E2-0-123 item 39), it is open and cannot be closed.' : '')
     }
-  };
+  };  /* the trend history of the engine (hist.js AN.histReg): open (100) / closed (0) of each of these valves, each simulated second */
+  for (const tg in VALVES)
+    (window.LS_HISTQ = window.LS_HISTQ || []).push([[tg], 'valve', { pos: () => (VALVES[tg].isOpen() ? 100 : 0), unit: '%' }]);
+
   /* a manual valve the field operator turns (Training: FIELD, a digital field item of the plant model, logged as "Field operator") */
   const FIELDV = {
     'V-MU1033': { n: 'V-MU1033', t: 'Expansion tank bypass (manual)', k: 'mu1033', io: 'V-MU1033', use: 'Second fill path of T-1109 (PR-OPE-5002 section 7: XV-MU1109 or the bypass V-MU1033). Close it when LT-CW1109 reaches 1.7 m.' },
