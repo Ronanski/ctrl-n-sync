@@ -1,6 +1,6 @@
 /* TCE064 ANALOG INPUT SIGNAL DIAGNOSTICS(5) (331DM09784 page 32, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
    rendered 2296 wide. Drawn in the pattern of the analog input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr). Here C1, C2, C3 carry their name and
-   also go to D1, D2, D3. The lamp of "abnormal" is tagged nPT-STn003_PVC in the drawing (not STn001); it is typed as drawn. */
+   also go to D1, D2, D3. The lamp of "abnormal" is tagged nPT-STn003_PVQ in the drawing (not STn001); it is typed as drawn. */
 (function () {
   if (typeof window === 'undefined') return;
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
@@ -10,7 +10,7 @@
       page: 32,
       f: [162, 81, 2221, 1546],
       tag: 'nPT-STn001',
-      tagAbn: 'nPT-STn003_PVC',
+      tagAbn: 'nPT-STn003_PVQ',
       let: ['D5', 'E5'],
       name: (ch, sig) => ['HP TURBINE FIRST STAGE', 'STEAM PRESS.(' + ch + ')' + (sig ? '' : ' INPUT ERR')],
       sg: ['K:153.0kg/cm2g', 'K:-7.5g/cm2g', 'K:30.0kg/cm2g', 'K:125.0kg/cm2g'],
