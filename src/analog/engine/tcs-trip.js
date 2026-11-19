@@ -685,10 +685,11 @@ function tcsTripState(U) {
   if (!c) return null;
   const ib = tcsIb(c);
   /* Mina T3, 3.2.3-beta.1: a Turbine reset refused showed no cause. held = the TA-9 trip inputs at 1 now (a held trip keeps the A gate
-     of the reset at 0, IBD TA-1), so the page can say what holds the trip */
+     of the reset at 0, IBD TA-1), so the page can say what holds the trip. Redundant channels (BOILER MFT 1 / 2, TA-9 in 21 / 22) give the
+     same name once their numbers are cleaned: each name is listed once (live overspeed test 2026-11-19 showed BOILER MFT twice) */
   const s = TCS_IBD.by['TA-9'],
     v = ib.v['TA-9'] || [],
-    held = s ? s.i.filter(i => v[i[0]] > 0.5).map(i => tcsIbdName(i[1])) : [];
+    held = s ? [...new Set(s.i.filter(i => v[i[0]] > 0.5).map(i => tcsIbdName(i[1])))] : [];
   return { first: ib.first, at: ib.at, held };
 }
 /* the live values of one sheet, for the drawing */
