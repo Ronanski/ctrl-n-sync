@@ -26,10 +26,11 @@ const roll = rpm => ({ tb: { st: 'roll', rpm } });
   U.gen.ex = true;
   run(U, 1);
   ck(U.gen.f41, '41 closes at rated speed with the start pulse');
+  /* beta.236: the voltage builds by the physics (T'do 7.69 s, field forcing): 84GI (95 %) in about 2 s, not the old 30 s ramp */
   U.gen.start = true;
-  run(U, 20);
-  ck(!U.gen.x25, 'no synchronizing before the generator voltage');
-  run(U, 12);
+  tcsGenStep(U, 0.5);
+  ck(!U.gen.x25 && U.gen.V < 0.95, 'no synchronizing before the generator voltage');
+  run(U, 5);
   ck(U.gen.x25 && !U.gen.close, '25X1 seals in with voltage, 25 not yet on');
   run(U, 60);
   ck(U.gen.close, 'close order after ASD matches');
@@ -48,7 +49,7 @@ const roll = rpm => ({ tb: { st: 'roll', rpm } });
   const U = roll(3600);
   tcsGen(U).ex = true;
   run(U, 31);
-  const on = U.gen.V >= 1;
+  const on = U.gen.V >= 0.99;
   U.gen.start = true;
   /* the 5 min window: ASD never reaches 25 ON */
   ctx.TCS_GEN_OVERRIDE = 1;
@@ -57,6 +58,29 @@ const roll = rpm => ({ tb: { st: 'roll', rpm } });
   run(U, 310);
   ck(on && !U.gen.start && !U.gen.x25 && /timed out/.test(U.gen.last), 'auto synchronizing times out at 5 min');
   vm.runInContext('TCS_GEN.asd=' + asd, ctx);
+}
+{
+  /* the generator control panel (gen-panel.js): manual synchronizing, GEE-2015-0141 p.7, 52G only with SYN. CHECK 25 */
+  vm.runInContext('var AN={};' + fs.readFileSync('src/analog/engine/gen-panel.js', 'utf8') + ';this.P={tcsGenCmd}', ctx);
+  const { tcsGenCmd } = ctx.P;
+  const U = roll(3600);
+  U.tc = { cur: 5, ph: 'in', step: 5 };
+  tcsGen(U).ex = true;
+  U.gen.start = true;
+  run(U, 5);
+  ck(tcsGenCmd(U, { op: 'syn', v: 'MAN' }) === '' && !U.gen.x25, 'SYN MANUAL takes the ASD away');
+  ck(/SYN on MANUAL/.test(tcsGenCmd({ tb: U.tb, tc: U.tc, gen: Object.assign({}, U.gen, { syn: 'AUTO' }) }, { op: 'close52g' })), '52G CLOSE refused in SYN AUTO');
+  /* wait for a phase angle far from 0, press: refused; then for the angle near 0 with a small slip, press: accepted */
+  let far = '', ok = null;
+  for (let i = 0; i < 4000 && (ok === null || !far); i++) {
+    tcsGenStep(U, 0.05);
+    const g = U.gen;
+    if (!far && Math.abs(g.th) > 90) far = tcsGenCmd(U, { op: 'close52g' });
+    if (far && ok === null && Math.abs(g.th) < 3 && Math.abs(g.slip) < 0.1 && Math.abs(g.dv) < 0.05) ok = tcsGenCmd(U, { op: 'close52g' });
+  }
+  ck(/SYN. CHECK 25 not operated.*phase angle/.test(far), '52G CLOSE refused out of phase: ' + far);
+  run(U, 0.5);
+  ck(ok === '' && U.gen.close, '52G CLOSE accepted inside 25, close order given');
 }
 console.log(f ? 'FAIL ' + f : 'ALL PASS');
 process.exit(f ? 1 : 0);
