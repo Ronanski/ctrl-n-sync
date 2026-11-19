@@ -4374,13 +4374,14 @@ function tcsSim(s) {
   /* TCE_LIB.tmr(o): a sheet ANALOG INPUT SIGNAL DIAGNOSTICS. One signal (A), (B), (C), each read by the three protection controllers and checked by one
      TMR AI DIAGNOSTICS block; the three results go to TRIPLE DETECTOR2 (the value) and to 2OO3 (abnormal). Those sheets are drawn the same way; a sheet
      gives what differs: o.id, title, page, f, tag, let [signal letter, error letter], name(ch, sig) => [words over the line, name], sg [four constants],
-     out [line 1, line 2, line 2 of abnormal], refA, refA1, cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
+     out [line 1, line 2, line 2 of abnormal], refA, refA1, refC (sheets of C1, C2, C3), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
   const F = o.f,
     dx = o.dx || 0,
     dr = o.dr || 0,
     [C1, C2, C3] = o.cs,
+    RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
     u = (F[2] - F[0]) / 1000,
     c = [],
     b = [],
@@ -4439,9 +4440,9 @@ function tcsSim(s) {
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), 477, '', ['-']],
       ['oB1', 'out', 'B1', Z(2074), 573, '', ['-'], 1],
-      ['oC1', 'out', 'C1', o.cx, C1[1], '', ['TCT200'], 1],
-      ['oC2', 'out', 'C2', o.cx - 1, C2[1], '', ['TCT200'], 1],
-      ['oC3', 'out', 'C3', o.cx - 1, C3[1], '', ['TCT200'], 1]
+      ['oC1', 'out', 'C1', o.cx, C1[1], '', [RC[0]], 1],
+      ['oC2', 'out', 'C2', o.cx - 1, C2[1], '', [RC[1]], 1],
+      ['oC3', 'out', 'C3', o.cx - 1, C3[1], '', [RC[2]], 1]
     ],
     d: [
       ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
@@ -5902,6 +5903,59 @@ function tcsSim(s) {
       dx: -9,
       dr: -7,
       foot: [[230, 1527, 'CONTROLLER:'], [389, 1527, 'EHG+MD'], [650, 1499, 'TRIGGER  :'], [650, 1527, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE062 ANALOG INPUT SIGNAL DIAGNOSTICS(3) (331DM09784 page 30, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Drawn in the pattern of the analog input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr). */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE062',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(3)',
+      page: 30,
+      f: [163, 81, 2222, 1546],
+      tag: 'nPT-LOn006',
+      let: ['D3', 'E3'],
+      name: (ch, sig) => (sig ? ['', 'CONTROL OIL PRESS.(' + ch + ')'] : ['CONTROL OIL PRESS.(' + ch + ')', 'INPUT ERR']),
+      sg: ['K:255.0kg/cm2g', 'K:-12.5kg/cm2g', 'K:50.0g/cm2g', 'K:150.0kg/cm2g'],
+      out: ['CONTROL OIL', 'PRESS.', 'PRESS. ABN.'],
+      refA: ['-'],
+      refA1: ['TCA536'],
+      refC: ['TCT200', 'TCT201', 'TCT201'],
+      cs: [[1335, 786], [1312, 870], [1543, 956]],
+      cx: 2067,
+      dx: -7,
+      dr: -5,
+      foot: [[232, 1527, 'CONTROLLER:'], [393, 1527, 'EHG+MD'], [655, 1499, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE063 ANALOG INPUT SIGNAL DIAGNOSTICS(4) (331DM09784 page 31, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Drawn in the pattern of the analog input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr). */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE063',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(4)',
+      page: 31,
+      f: [163, 83, 2223, 1547],
+      tag: 'nPT-LOn007',
+      let: ['D4', 'E4'],
+      name: (ch, sig) => ['TURBINE TRIP OIL', 'PRESS.(' + ch + ')' + (sig ? '' : ' INPUT ERR')],
+      sg: ['K:255.0kg/cm2g', 'K:-12.5g/cm2g', 'K:50.0kg/cm2g', 'K:25.0kg/cm2g'],
+      out: ['TURBINE TRIP OIL', 'PRESS.', 'PRESS. ABN.'],
+      refA: ['-'],
+      refA1: ['-'],
+      refC: ['TCT201', 'TCT201', 'TCT201'],
+      /* C3 leaves the line to IN C of the detector (x = 1436 + dr) */
+      cs: [[1335, 778], [1311, 862], [1433, 947]],
+      cx: 2067,
+      dx: -5,
+      dr: -3,
+      foot: [[232, 1528, 'CONTROLLER:'], [391, 1528, 'EHG+MD'], [653, 1501, 'TRIGGER  :'], [653, 1528, 'CYCLE(ms):30']]
     })
   );
 })();
@@ -43006,7 +43060,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 19e8f4a'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 94c855c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -66988,13 +67042,14 @@ function tcsSim(s) {
   /* TCE_LIB.tmr(o): a sheet ANALOG INPUT SIGNAL DIAGNOSTICS. One signal (A), (B), (C), each read by the three protection controllers and checked by one
      TMR AI DIAGNOSTICS block; the three results go to TRIPLE DETECTOR2 (the value) and to 2OO3 (abnormal). Those sheets are drawn the same way; a sheet
      gives what differs: o.id, title, page, f, tag, let [signal letter, error letter], name(ch, sig) => [words over the line, name], sg [four constants],
-     out [line 1, line 2, line 2 of abnormal], refA, refA1, cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
+     out [line 1, line 2, line 2 of abnormal], refA, refA1, refC (sheets of C1, C2, C3), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
   const F = o.f,
     dx = o.dx || 0,
     dr = o.dr || 0,
     [C1, C2, C3] = o.cs,
+    RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
     u = (F[2] - F[0]) / 1000,
     c = [],
     b = [],
@@ -67053,9 +67108,9 @@ function tcsSim(s) {
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), 477, '', ['-']],
       ['oB1', 'out', 'B1', Z(2074), 573, '', ['-'], 1],
-      ['oC1', 'out', 'C1', o.cx, C1[1], '', ['TCT200'], 1],
-      ['oC2', 'out', 'C2', o.cx - 1, C2[1], '', ['TCT200'], 1],
-      ['oC3', 'out', 'C3', o.cx - 1, C3[1], '', ['TCT200'], 1]
+      ['oC1', 'out', 'C1', o.cx, C1[1], '', [RC[0]], 1],
+      ['oC2', 'out', 'C2', o.cx - 1, C2[1], '', [RC[1]], 1],
+      ['oC3', 'out', 'C3', o.cx - 1, C3[1], '', [RC[2]], 1]
     ],
     d: [
       ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
@@ -68542,6 +68597,63 @@ function tcsSim(s) {
       dx: -9,
       dr: -7,
       foot: [[230, 1527, 'CONTROLLER:'], [389, 1527, 'EHG+MD'], [650, 1499, 'TRIGGER  :'], [650, 1527, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE062.js ---- */
+/* TCE062 ANALOG INPUT SIGNAL DIAGNOSTICS(3) (331DM09784 page 30, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Drawn in the pattern of the analog input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr). */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE062',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(3)',
+      page: 30,
+      f: [163, 81, 2222, 1546],
+      tag: 'nPT-LOn006',
+      let: ['D3', 'E3'],
+      name: (ch, sig) => (sig ? ['', 'CONTROL OIL PRESS.(' + ch + ')'] : ['CONTROL OIL PRESS.(' + ch + ')', 'INPUT ERR']),
+      sg: ['K:255.0kg/cm2g', 'K:-12.5kg/cm2g', 'K:50.0g/cm2g', 'K:150.0kg/cm2g'],
+      out: ['CONTROL OIL', 'PRESS.', 'PRESS. ABN.'],
+      refA: ['-'],
+      refA1: ['TCA536'],
+      refC: ['TCT200', 'TCT201', 'TCT201'],
+      cs: [[1335, 786], [1312, 870], [1543, 956]],
+      cx: 2067,
+      dx: -7,
+      dr: -5,
+      foot: [[232, 1527, 'CONTROLLER:'], [393, 1527, 'EHG+MD'], [655, 1499, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE063.js ---- */
+/* TCE063 ANALOG INPUT SIGNAL DIAGNOSTICS(4) (331DM09784 page 31, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Drawn in the pattern of the analog input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr). */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE063',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(4)',
+      page: 31,
+      f: [163, 83, 2223, 1547],
+      tag: 'nPT-LOn007',
+      let: ['D4', 'E4'],
+      name: (ch, sig) => ['TURBINE TRIP OIL', 'PRESS.(' + ch + ')' + (sig ? '' : ' INPUT ERR')],
+      sg: ['K:255.0kg/cm2g', 'K:-12.5g/cm2g', 'K:50.0kg/cm2g', 'K:25.0kg/cm2g'],
+      out: ['TURBINE TRIP OIL', 'PRESS.', 'PRESS. ABN.'],
+      refA: ['-'],
+      refA1: ['-'],
+      refC: ['TCT201', 'TCT201', 'TCT201'],
+      /* C3 leaves the line to IN C of the detector (x = 1436 + dr) */
+      cs: [[1335, 778], [1311, 862], [1433, 947]],
+      cx: 2067,
+      dx: -5,
+      dr: -3,
+      foot: [[232, 1528, 'CONTROLLER:'], [391, 1528, 'EHG+MD'], [653, 1501, 'TRIGGER  :'], [653, 1528, 'CYCLE(ms):30']]
     })
   );
 })();
@@ -125595,7 +125707,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 19e8f4a'));
+    row('Version', E('span', 'scsver', ver + ' · build 94c855c'));
   }
   function openSet(near) {
     if (!set) {

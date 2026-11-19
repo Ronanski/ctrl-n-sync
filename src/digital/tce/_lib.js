@@ -56,13 +56,14 @@
   /* TCE_LIB.tmr(o): a sheet ANALOG INPUT SIGNAL DIAGNOSTICS. One signal (A), (B), (C), each read by the three protection controllers and checked by one
      TMR AI DIAGNOSTICS block; the three results go to TRIPLE DETECTOR2 (the value) and to 2OO3 (abnormal). Those sheets are drawn the same way; a sheet
      gives what differs: o.id, title, page, f, tag, let [signal letter, error letter], name(ch, sig) => [words over the line, name], sg [four constants],
-     out [line 1, line 2, line 2 of abnormal], refA, refA1, cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
+     out [line 1, line 2, line 2 of abnormal], refA, refA1, refC (sheets of C1, C2, C3), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
   const F = o.f,
     dx = o.dx || 0,
     dr = o.dr || 0,
     [C1, C2, C3] = o.cs,
+    RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
     u = (F[2] - F[0]) / 1000,
     c = [],
     b = [],
@@ -121,9 +122,9 @@
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), 477, '', ['-']],
       ['oB1', 'out', 'B1', Z(2074), 573, '', ['-'], 1],
-      ['oC1', 'out', 'C1', o.cx, C1[1], '', ['TCT200'], 1],
-      ['oC2', 'out', 'C2', o.cx - 1, C2[1], '', ['TCT200'], 1],
-      ['oC3', 'out', 'C3', o.cx - 1, C3[1], '', ['TCT200'], 1]
+      ['oC1', 'out', 'C1', o.cx, C1[1], '', [RC[0]], 1],
+      ['oC2', 'out', 'C2', o.cx - 1, C2[1], '', [RC[1]], 1],
+      ['oC3', 'out', 'C3', o.cx - 1, C3[1], '', [RC[2]], 1]
     ],
     d: [
       ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
