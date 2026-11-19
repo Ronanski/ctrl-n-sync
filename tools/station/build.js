@@ -51,7 +51,8 @@ if (!sim) throw new Error('<title>Logic Sim v...</title> not found in ' + src);
    page would ask for a Stable only, and an EA install would never hear of the next EA. The user's own choice, once made, stays. */
 const EA =
   '<script>try{if(/-beta\\./.test(document.title)&&(location.protocol==="file:"||(location.protocol==="https:"&&location.hostname==="localhost"&&!location.port))&&!localStorage.getItem("logic.channel"))localStorage.setItem("logic.channel","beta")}catch(e){}</script>';
-swap(/<title>Logic Sim v[^<]*<\/title>/, '<title>Logic Sim v' + VER + '</title>' + EA, 'title');
+/* the station flag before any script of the simulator: the old shell (cr.js) builds its layout on every width under the station */
+swap(/<title>Logic Sim v[^<]*<\/title>/, '<title>Logic Sim v' + VER + '</title>' + EA + '<script>window.LS_STATION=1</script>', 'title');
 const i = h.lastIndexOf('</body>');
 if (i < 0) throw new Error('no </body> in ' + src);
 h =

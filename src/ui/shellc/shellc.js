@@ -370,7 +370,7 @@
       if (note) note.remove();
       return;
     }
-    const narrow = innerWidth < 900;
+    const narrow = !window.LS_STATION && innerWidth < 900;
     if (narrow && !note && document.body) {
       note = E('div');
       note.id = 'scnarrow';

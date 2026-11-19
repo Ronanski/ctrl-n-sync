@@ -13,7 +13,10 @@
     if (txt != null) e.textContent = txt;
     return e;
   };
-  const WIDE = matchMedia('(min-width:900px)'),
+  /* LMYP OTS station (window.LS_STATION, set in the head by tools/station/build.js): the station frame covers this shell and lays out
+     its own pages, so the control room shell is built on every width; on a tablet in portrait (800 px) it was never built and the
+     station waited for it for good ("Starting...") */
+  const WIDE = window.LS_STATION ? { matches: true, addEventListener() {}, addListener() {} } : matchMedia('(min-width:900px)'),
     PHONE = matchMedia('(max-width:640px)');
   let P = null;
   /* every moved element goes back before its marker when the window gets narrow */
