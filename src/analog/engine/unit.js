@@ -83,8 +83,8 @@ const AN_UNIT = {
      OPERATION select of PR-OPE-5002, an operator step of the ATS, not this permissive). Not modelled from that group: GOV. MANUAL, LLM
      MANUAL, GEN. MW ABN., TARGET MW DEMAND ABN., IP LIMITING (the operator does not select them here). DCS CONTROL MODE ON I.0082 set by
      the pulse O.0178 of ABC-001C while I.0081, reset by O.0179 or by the reset group (permissive lost); while ON the TCS target load
-     tracks GEN. MW (TCE p.134), so at OFF the TCS holds the load it has. These inputs are written only in a start-up (U.cold); the snapshot of
-     "Start at 150 MW" keeps its own. */
+     tracks GEN. MW (TCE p.134), so at OFF the TCS holds the load it has. These inputs are written by the model in every plant state (3.2.5-beta.8; before only in a start-up, U.cold); the snapshot of
+     "Start at 150 MW" gives the first values only. */
   rollRate: 120 /* rpm/min, PR-OPE-5002 cold start (the holds at 1800 / 3600 rpm of the procedure are the operator's; not modelled) */,
   icvRoll: 0.13 /* ICV opening for the roll steam (about 14 T/H at 7.6 kg/cm2 reheat, NO-SOURCE: the SOP gives CV 10 / 3 % at 400 rpm, no ICV opening) */,
   /* 3.2.3-beta.240 (live Cold start Load up): the TCS flow demand splits to the ICV and the CVs (TCE 331DM09784 p.141 TCE207 FLOW
@@ -284,7 +284,7 @@ function anUnitStop() {
   U.iaRun = U.paRun = null; /* 3.2.1: the compressors are read again from the DITL (anAirStep) */
   U.acT1 = U.acT2 = NaN; /* 3.2.0-beta.69: the aux cooling water temperatures start again (AN_ACW) */
   for (const m of U.mul || []) for (const p of m.pr) p.mul = undefined;
-  for (const z of U.spr || []) z.pr.uf = undefined;
+  for (const z of U.spr || []) z.pr.uf = z.pr.hx = undefined;
   U.lpbSp = null; /* 3.2.1 anCdTagStep: the LP bypass spray controller is found again */
   U.fwC = null; /* 3.2.1 anFwTagStep: its controllers and F(X) are found again */
   U.asC = null; /* 3.2.1 anAsTagStep: page 08 values */
@@ -727,6 +727,12 @@ function anUnitStart() {
     const X = U.xt,
       a = L => (L && L.a0 && isFinite(L.a0[0]) ? L.a0[0] : NaN);
     X.cr0 = a(X.cr);
+    /* TT-MS1022 at the anchor: the HMI snapshot TIMS10221 359 C (bypass shut: the HP exhaust it sees); the a0 of the start state is
+       the old snapshot loop, not a plant reading */
+    {
+      const q = typeof AN_HMI_AI !== 'undefined' ? Object.values(AN_HMI_AI).find(x => x[1] === 'TIMS10221') : null;
+      X.byo0 = q && isFinite(+q[0]) ? +q[0] : a(X.byo);
+    }
     X.rhi0 = X.rhi.map(L => a(L));
     X.rhv0 = X.rhPv && X.rhPv.c.q ? +X.rhPv.S.rt.v[X.rhPv.n] : NaN; /* RH spray MV at the anchor */
     X.hrOff = X.rhPv && X.rhPv.c.q && X.rhPv.c.q.pv != null ? a(X.hr) - +X.rhPv.S.rt.v[X.rhPv.c.q.pv] : 0;
@@ -1071,6 +1077,13 @@ function anTurbine0(cmd, arg) {
   const U = AN_UNIT;
   if (!U.on || !U.tb) return 'No unit model: start from Cold first';
   const tb = U.tb;
+  /* live run 2026-11-19 (F-CP): LOAD UP with the TCS panel target load and load-up rate { mw, rate %/min }. The rate is the TCS load-up
+     rate setting, 0 ~ 5 %/min of 150 MW (rateUp, PR-OPE-5002 LOAD UP 5 %/min); a plain number stays the target MW alone */
+  if (cmd === 'loadup' && arg && typeof arg === 'object') {
+    const rt = +arg.rate;
+    if (isFinite(rt) && rt > 0) U.rateUp = (Math.min(5, rt) * 150) / 100;
+    arg = arg.mw;
+  }
   /* 3.2.0-beta.66: the 036 TURBINE OIL pumps at the 150 MW snapshot (no TCS model): the oil-only state of tcs.js */
   if (cmd === 'trip') return tcsTripManual(U);
   /* plan c4: the line breaker 52L1 (instructor): 0 = open (house load operation), 1 = close (elec.js) */
@@ -1964,6 +1977,64 @@ function anAcwStep(U, dt) {
   }
   U.acT6 = U.acT2;
   U.acTb = n ? U.acT2 + 1 : U.acT2;
+  anBacStep(U, dt);
+}
+/* 3.2.4-beta.71 (JENNIE, for the ESP AND ASH page: TT-BH1060 / TT-CW1060 were '-----', no model). The bottom ash screw coolers
+   L-1060A ~ D (DITL-21A / #B / #C / #D): bed drain ash in, cooled ash out to the chain conveyor; closed cooling water (supply TT-CW1156
+   = AN_ACW acT6) through the shell and the shaft. Source: Rauma "Technical specification" E130122B (O&M V13 Bottom ash screw cooler,
+   01_Technical Specification/3094): ash 2000 kg/h normal, 4000 kg/h max at 0.5 ~ 5 rpm; ash in max 920 C, out < 150 C normal,
+   about 250 C at max; cooling water in max 33 C, out about 60 C, 3 kg/s normal, 5.5 kg/s max; K 57 W/m2K.
+     UA      from the max case: Q = 4000 / 3600 x 0.84 x (920 - 250) = 625 kW; water 5.5 kg/s 33 -> 60 C; counter flow LMTD
+             (860, 217) = 466 K -> UA = 1.34 kW/K per cooler. Check at the normal case (2000 kg/h, 3 kg/s, 33 C): ash out 89 C < 150 OK.
+     ash     the flow of the bed drain step (AN_BI.q 0.8 T/H per rpm, the SIC-L1060x speed) while the cooler runs; in = the bed
+             temperature, at most the 920 C of the spec; cp 0.84 kJ/kgK (NO-SOURCE, textbook value of ash).
+     water   3 kg/s per cooler (spec normal) while an ACWP gives flow (x acQ / 1500); in = the supply of the loop (TT-CW1156).
+     stopped no ash: no heat; the water outlets go to the supply, the ash thermocouples cool to the water in. tau 120 s running, 1800 s
+             stopped (NO-SOURCE: the metal mass is not in the spec). 16.PNG (all four stopped at 150 MW): ash 31 ~ 55 C, water 36 ~ 38 C.
+   TT-BH1060-x1 / x2 = ash in / out (DITL-21A rows 11 / 12 INLET / OUTLET ASH TEMP.); TT-CW1060-x1 / x2 = the SHELL SIDE OUTLET /
+   SHAFT COOLING water temperatures (DITL-21A rows 14 / 13, also fed from here by plantsw.js): both outlets, one water outlet
+   temperature for both (NO-SOURCE: the shell / shaft split of the 3 kg/s is not in the spec); the inlet is TT-CW1156. LT-BH1750 bottom ash silo: silos stand in this simulator (scope 2026-11-07), 15.8 % of 16.PNG. */
+const AN_BAC = { UA: 1.34, cpA: 0.84, mw: 3, Tmax: 920, tauR: 120, tauS: 1800, silo: 15.8 };
+function anBacStep(U, dt) {
+  const K = AN_BAC,
+    Tw = isFinite(U.acT6) ? U.acT6 : 30,
+    fw = Math.max(0, Math.min(1, (+U.acQ || 0) / 1500)),
+    Tb = isFinite(U.Tb) ? U.Tb : 30;
+  U.bhSilo = K.silo;
+  'ABCD'.split('').forEach((x, i) => {
+    const o = (U.bedSc || [])[i],
+      run = typeof anDitlRun === 'function' && anDitlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1,
+      rpm = run && o && o.S ? Math.max(0, Math.min(5, +o.S.rt.v[o.n] || 0)) : 0,
+      ma = (AN_BI.q * rpm) / 3.6 /* kg/s */,
+      Ch = ma * K.cpA,
+      Cc = K.mw * fw * 4.18,
+      Ti = Math.min(K.Tmax, Math.max(Tw, Tb));
+    let a1 = Tw,
+      a2 = Tw,
+      w2 = Tw,
+      tau = K.tauS;
+    if (Ch > 0) {
+      a1 = Ti;
+      if (Cc > 0) {
+        const cmin = Math.min(Ch, Cc),
+          cr = cmin / Math.max(Ch, Cc),
+          ntu = K.UA / cmin,
+          e = cr < 0.999 ? (1 - Math.exp(-ntu * (1 - cr))) / (1 - cr * Math.exp(-ntu * (1 - cr))) : ntu / (1 + ntu),
+          q = e * cmin * (Ti - Tw);
+        a2 = Ti - q / Ch;
+        w2 = Tw + q / Cc;
+      } else {
+        a2 = Ti; /* no cooling water flow: no heat taken, the ash leaves hot */
+      }
+      tau = K.tauR;
+    }
+    const f = Math.min(1, dt / tau),
+      L = (k, v) => (U[k] = isFinite(U[k]) ? U[k] + (v - U[k]) * f : v);
+    L('bh' + x + '1', a1);
+    L('bh' + x + '2', a2);
+    L('bw' + x + '1', w2);
+    L('bw' + x + '2', w2);
+  });
 }
 /* 3.2.1 (IRENE: PLANT MODEL, TURBINE OIL; user 2026-11-04 cross-system: "Kung mag adjust ka dito, mag aadjust din doon ang effect").
    The lube oil cooler H-1921A (B standby) on the closed cooling water: oil from the bearings (main oil tank) -> cooler -> bearings; cooling
@@ -3460,6 +3531,7 @@ function anFwTagStep(U) {
   U.w1s = isFinite(w1) ? Math.max(0, w1) : 0;
   U.w2s = isFinite(w2) ? Math.max(0, w2) : 0;
   U.wrhs = isFinite(wrh) ? Math.max(0, wrh) : 0;
+  U.whps = isFinite(whp) ? Math.max(0, whp) : 0; /* 3.2.4: HP bypass spray water, T/H (TT-MS1022 below, anUnitStepX) */
   U.mEco = ffw;
   U.tSp = isFinite(Pda) && Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30;
   const dA = mvOf('ABC-020', 'HICHR1002A'),
@@ -4219,7 +4291,7 @@ function anTbFlow(U, tb, D, dt, dirt) {
   U.gv = L((+U.gv || 0) + L(cvD - (+U.gv || 0), -s, s), 0, 1.4);
   if (!tb.xfer && cvD > 0.005) {
     tb.xfer = true;
-    if (U.cold) dirt(U.di.xfer, 1);
+    dirt(U.di.xfer, 1);
   }
 }
 /* 3.2.3-beta.240 (user 2026-11-14): the 32 REVERSE POWER relay of the generator protection panel (Beckwith M-3425A, GEE-2015-0173 R1
@@ -4376,8 +4448,12 @@ function anGenInt(dt) {
      pH        target 9.0 (PR-OPE-5002 3929 "PH level = 9.0"; FHI 2-8-TAB_3 p 2 amines 8.8 ~ 9.2). A weak base: [OH-] grows with the
                square root of its concentration, pH = 9.0 + 0.5 log10(c), not below the make-up water pH 7.5 (alarm list AT-SP1006
                normal). Feedwater AT-SP1001 / 1003 / 1009 and main steam AT-SP1016 (the amine goes with the steam).
-     phosphate stays in the boiler water: dP/dt = (dose - P x Fbd) / Mb, Mb = the boiler 252 m3 above. The dose holds 5 ppm PO4 at the
-               design CBD 15 T/H: the low end of the coordinated phosphate band (FHI Figure 2-8-TAB_3-2: PO4 5 ~ 10 ppm, pH 9.1 ~ 9.8).
+     phosphate stays in the boiler water: dP/dt = (dose - P x Fbd) / Mb, Mb = the boiler 252 m3 above. The dose holds 2 ppm PO4 at the
+               design CBD 15 T/H. 3.2.4-beta.71 (JENNIE, Rosé: AL2-SP01 stood in ALARM at 150 MW): was 5 ppm, the low end of the FHI band
+               (Figure 2-8-TAB_3-2: PO4 5 ~ 10 ppm, pH 9.1 ~ 9.8), but there the drum water of this curve is pH 9.50 and 19.1 uS/cm,
+               over the plant alarm list (AT-SP1011 H 9.5, AT-SP1012 H 10 uS/cm; snapshot AISP1012 4.6 uS/cm). The plant runs its
+               phosphate inside its own alarm limits: 2 ppm = pH 9.08, 7.6 uS/cm (NO-SOURCE: the plant PO4 is not in a snapshot; the
+               snapshot pair pH 9.5 / 4.6 uS/cm cannot be one water: OH- alone at pH 9.5 and 25 C is 6.3 uS/cm).
      drum pH   AT-SP1011: FHI Figure 2-8-TAB_3-3, curve Na/PO4 = 2.6 (FHI: maintain Na/PO4 <= 2.6), read at 1 / 2.5 / 5 / 7.5 / 10 / 15 /
                20 ppm (the curve is the phosphate water; no phosphate = the feedwater pH, never below it).
      drum cond AT-SP1012 specific conductivity of the phosphate water at 25 C: Na+ = 2.6 PO4, HPO4-- / PO4--- from the charge balance,
@@ -4409,7 +4485,7 @@ const AN_CHEM = {
   Fbd0: 15,
   pH0: 9.0,
   pHmu: 7.5,
-  P0: 5,
+  P0: 2,
   hw: 61.9,
   fwt: 100.4,
   da: 3.54,
@@ -4890,6 +4966,12 @@ function anUnitStep0(dt) {
   /* plan c4: 52L1 as the ABC input, and on house load the turbine carries the house load only (elec.js) */
   if (typeof anElecStep === 'function') anElecStep(U);
   const D = U.tcsT;
+  /* LMYP OTS 1.0.0-beta.3 (JENNIE, live Hot roll 2026-11-19, F-CN): the load loop of the TCS (TCE207 flow demand tb.fd, MW error integral
+     tb.fi) works only with 52G closed. Off the grid (turbine stopped, tripped or under speed control) it starts again from the valves at
+     the next 52G close (anTbFlow: tb.fd = CV OPENING BIAS x ICV opening). Before, the flow demand of the last loaded run stayed in the
+     plant and in every save point after it (0.82 at S68, 3600 rpm no load): at the 52G close the CVs went to 77 % in seconds, the main
+     steam flow 187 -> 418 T/H at 0 MW and the turbine tripped on HP TURBINE INLET / EXHAUST DIFF. PRESS. VERY HIGH (IBD TA-21) */
+  if (!onGrid) tb.fd = tb.fi = NaN;
   if (U.turb === false) {
     /* 2.2.0-beta.14: cold start, the turbine is not rolled yet: the stop valves are shut (M4 step 4 opens them) */
     U.gv = 0;
@@ -5198,8 +5280,11 @@ function anUnitStep0(dt) {
     for (const l of U.vpos.icv) dirt(l, icp);
   }
   U.tbn ={ off: 0, roll: 1, sync: 2, load: 3 }[tb.st];
-  /* the TCS inputs of the DCS in a start-up (the snapshot of "Start at 150 MW" keeps its own) */
-  if (U.cold) {
+  /* the TCS inputs of the DCS, one plant model: 3.2.5-beta.8 (live 75 MW run from a restart of "At 150 MW"): written only in a start-up
+     (U.cold), a plant started at 150 MW (U.cold false, kept by its save points and by a restart after a trip) never wrote DCS CONTROL MODE
+     PERMISSIVE I.0081 nor TRANSFER COMPLETE again: the turbine master could not go AUTO after the restart. The model writes them always */
+  {
+    dirt(U.di.xfer, tb.xfer ? 1 : 0);
     /* TCE p.127 TCE180: permissive = NOT (52G not closed, TURBINE TRIP, FORCED CLOSE by HOUSE LOAD OPERATION, IP START before the
        TRANSFER REGION COMPLETE(IP)); the reset group also resets DCS CONTROL MODE ON */
     tb.perm = onGrid && !trip && tb.xfer && !(U.el && U.el.l52 === false);
@@ -5519,8 +5604,38 @@ function anUnitStepX(dt, mso) {
     /* cold reheat: the HP turbine exhaust and the HP bypass outlet, mixed by their steam */
     const mst = pvOf(X.mst),
       thx = isFinite(X.cr0) ? X.cr0 + (isFinite(mst) ? mst - X.MST0 : 0) : NaN,
-      tby = val(X.byo),
       w = (U.ms || 0) + (U.mhp || 0);
+    /* 3.2.4 (live Cold start F-T: HP bypass outlet TT-MS1022 64 C with the bypass 8 % open at 60 kg/cm2): the outlet of the HP bypass
+       is an energy balance, not the snapshot loop gated by 3 % of the MCR flow (source.js R.TICMS1022). The main steam (PT-MS1006
+       pressure U.Pms, SH outlet TICMS1004 PV) is throttled at constant enthalpy to the cold reheat pressure and mixed with the spray
+       water of TCV-FW1060 (U.whps, 67 T/H at 100 %, L21) at the deaerator water temperature (the spray comes from the BFP discharge,
+       before the HP heaters); IF97 steam table (steam.js), wet = saturation. TT-MS1022 sits on the cold reheat side: it also sees the
+       HP exhaust (snapshot 359 C at 150 MW with the bypass shut), mixed by their steam; no steam = the pipe cools to the room */
+    const mhp = U.mhp || 0,
+      whp = U.whps || 0,
+      Pms = isFinite(U.Pms) ? U.Pms : NaN,
+      Prh = isFinite(U.Prh) ? Math.max(0, U.Prh) : 0;
+    let tby = val(X.byo);
+    if (mhp > 0.05 && isFinite(Pms) && isFinite(mst)) {
+      const hs = steamH(Pms, mst),
+        hw = 4.19 * (isFinite(U.tSp) ? U.tSp : U.Tamb),
+        h = (mhp * hs + whp * hw) / (mhp + whp);
+      tby = steamTph(Prh, h);
+    }
+    const spB = U.spr && U.spr.find(z => z.v[0] === 'DITL-79');
+    if (spB) {
+      const tex = isFinite(thx) && isFinite(X.byo0) && isFinite(X.cr0) ? thx + X.byo0 - X.cr0 : thx,
+        t1022 = lag(
+          'by',
+          w > 1
+            ? ((U.ms || 0) * Math.max(U.Tamb, isFinite(tex) ? tex : U.Tamb) + mhp * (isFinite(tby) ? tby : U.Tamb)) / w
+            : X.T.by != null
+              ? X.T.by + ((U.Tamb - X.T.by) * dt) / (20 * U.tauT)
+              : U.Tamb,
+          U.tauT
+        );
+      if (isFinite(t1022)) spB.pr.hx = Math.max(U.Tamb, t1022);
+    }
     const tcr = lag(
       'cr',
       w > 1

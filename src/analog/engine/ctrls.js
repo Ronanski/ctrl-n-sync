@@ -135,6 +135,10 @@ const latchMode = (tag, kind, own) => {
   for (const k in MODEK) for (const [S2, n] of modeNetsByTag(tag, MODEK[k], k === kind ? own : null)) w.push([S2, n, k === kind ? 1 : 0]);
   w.sort((a, b) => a[2] - b[2]);
   for (const [S2, n, v] of w) S2.rt.ext[n] = v;
+  /* 3.2.5-beta.7 (live 75 MW, FIC-CM): A on a station that is REMOTE wrote .LOC = 1 / .REM = 0 after the scan of the press had already
+     written .REM = 1 from the station, so ABC-001C FIC-CM.REM stayed 0: AMT 23 kept the boiler master on its tracking leg (0.833 x coal)
+     and boiler master and coal fell together. The station is the truth: every station writes its mode status again on the next scan */
+  AN.modeEp = (AN.modeEp || 0) + 1;
   try {
     AN.settle();
   } catch (e) {}
