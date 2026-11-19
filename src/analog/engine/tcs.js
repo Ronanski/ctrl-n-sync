@@ -1683,7 +1683,18 @@ function tcsLiveRead(U) {
     ostMain: o.main ? 1 : 0,
     ostBk: o.bk ? 1 : 0,
     patMain: +o.pmain || 0 /* overspeed test pattern (MAIN), rpm above the target */,
-    patBk: +o.pbk || 0
+    patBk: +o.pbk || 0,
+    /* TCE250 / TCE224: the valve positions of the valve test model (tcsVtMsv / Cv / Rsv, the ICV of side A / B); full close = at 0 */
+    msvAc: tcsVtMsv(U, 'A') <= 0 ? 1 : 0,
+    msvBc: tcsVtMsv(U, 'B') <= 0 ? 1 : 0,
+    cvAc: tcsVtCv(U, 'A') <= 0 ? 1 : 0,
+    cvBc: tcsVtCv(U, 'B') <= 0 ? 1 : 0,
+    rsvAc: tcsVtRsv(U, 'A') <= 0 ? 1 : 0,
+    rsvBc: tcsVtRsv(U, 'B') <= 0 ? 1 : 0,
+    icvAc: (tb.icv || 0) * tcsVtIcvS(U, 'A') <= 0 ? 1 : 0,
+    icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
+    l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
+    vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */
   };
 }
 function tcsOstPerm(U, m) {

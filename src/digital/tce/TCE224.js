@@ -11,6 +11,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [176, 88, 2226, 1553],
+  /* live: TURBINE VALVE TEST, any valve test on (tcs.js tcsLiveRead) */
+  live: { or017: 'vtOn' },
   c: [
     ['oH1', 'out', 'H1', 2087, 148, 'CRV(A) FULL CLOSE TEST PERMISSIVE', ['TCE226']],
     ['oH2', 'out', 'H2', 2087, 297, 'CRV(B) FULL CLOSE TEST PERMISSIVE', ['TCE226']],

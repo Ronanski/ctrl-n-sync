@@ -12,6 +12,8 @@
   ctl: 'EHG+MD',
   cycle: 10,
   f: [166, 80, 2216, 1542],
+  /* live: the valve positions and breakers the engine holds (tcs.js tcsLiveRead) */
+  live: { iCb: '!g52', iMa: 'msvAc', iMb: 'msvBc', iRa: 'rsvAc', iRb: 'rsvBc', iIa: 'icvAc', iIb: 'icvBc', iCa: 'cvAc', iCbv: 'cvBc', k52g: 'g52', i52l: 'l52o' },
   k: [
     ['kInit', 228.5, 882, 'INITIAL', 'ref'],
     ['k52g', 230, 1169, '52G CLOSE', 'ref']
