@@ -4778,6 +4778,7 @@ function anUnitStep(dt) {
   try {
     anUnitStep0(dt);
     anGenInt(dt);
+    anHistStep(dt); /* hist.js: the faceplate trend history, one sample a simulated second */
   } finally {
     if (M) M.on = 0;
   }
@@ -4925,6 +4926,10 @@ function anUnitStep0(dt) {
     dirt = (l, x) => {
       if (l && l.S.rt.force[l.n] === undefined && l.S.ext.includes(l.n) && l.S.rt.ext[l.n] !== x) l.S.rt.ext[l.n] = x;
     };
+  /* the TCS is always there on the real unit (Hitachi HIACS, its own controllers): at the Start at 150 MW snapshot / its save points the
+     TCS state is the in-service one (oil pumps of the snapshot carried over, ATS step 7 NORMAL OPERATION), so AN.tcs(), the governor and
+     the tests read and command the same TCS as after a start-up (checked: MW / drum pressure the same after 120 s with or without it) */
+  if (!U.tc && U.turb && !trip && tb.st === 'load') tcsFromOil(U);
   /* 3.2.0-beta.38: the turbine auxiliaries and the ATS program (tcs.js) */
   if (U.tc && !trip) tcsStep(U, dt);
   else if (U.tc) tcsTripHold(U, dt);
