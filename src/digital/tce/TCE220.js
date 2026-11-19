@@ -1,0 +1,215 @@
+/* TCE220 MSV TEST (331DM09784 page 148, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide, the scan skew taken out. Two VALVE TEST macros (LME252, TD 5.0 s / TW 3.0 s / TP 300.0 s, TP 200.0 s / 5.0 s):
+   MSV(A) A002 and MSV(B) A021. MSV(A): FPERM = A001 (MSV/CV(A) FULL CLOSE TEST PERMISSIVE, MSV(B) FULL OPEN, A004), PPERM = A009
+   (A008 (MSV(B) FULL OPEN and MSV(A) PARTIAL TEST PERMISSIVE), NOT005 GENERATOR LOAD ABNORMAL, NOT011 of CPL C010), PPOS = CPL C012
+   MSV(A) POSITION 86.0 % / 85.0 %, COMP = TRANSFER REGION COMPLETE(IP), CLOSE = MSV(A) FULL CLOSE; A004 = CPL C003 GENERATOR LOAD
+   76.0 / 75.0 MW and NOT005. MSV(B): FPERM = A020 (MSV(A) FULL OPEN, A004, MSV/CV(B) FULL CLOSE TEST PERMISSIVE), PPERM = A023
+   (A022 (MSV(A) FULL OPEN and MSV(B) PARTIAL TEST PERMISSIVE), NOT005, NOT011), PPOS = CPL C026 MSV(B) POSITION, COMP = TRANSFER
+   REGION COMPLETE(IP), CLOSE = MSV(B) FULL CLOSE. PTEST / FTEST / CNCL go out as the PARTIAL / FULL CLOSE TEST STATE and TEST CANCEL,
+   FTEST also as the TEST PB ON lamp; the full open / full close inputs go out again for the other sheets and the CRT. The drawing
+   prints the A3 output "MSV(A) FULL OPEN"; its line is the MSV(A) FULL CLOSE input, typed as drawn. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE220',
+  title: 'MSV TEST',
+  page: 148,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [172, 90, 2222, 1555],
+  c: [
+    ['iE', 'in', 'E', 302, 225, 'MSV/CV(A) FULL CLOSE TEST PERMISSIVE', ['TCE224']],
+    ['iGl', 'in', 'A', 302, 267, 'GENERATOR LOAD', ['TCE070']],
+    ['iGla', 'in', 'B', 302, 353, '', ['TCE070']], /* two lines (texts) */
+    ['iFoB', 'in', 'F', 302, 438, 'MSV(B) FULL OPEN', ['TCE123']],
+    ['iPtA', 'in', 'A', 302, 503, '', ['TCE224']], /* two lines (texts) */
+    ['iPosA', 'in', 'P', 302, 577, 'MSV(A) POSITION', ['TCE121']],
+    ['iTr', 'in', 'C', 302, 662, '', ['TCE184']], /* two lines (texts) */
+    ['iFcA', 'in', 'G', 302, 832, 'MSV(A) FULL CLOSE', ['TCE121']],
+    ['iFoA', 'in', 'F', 302, 971, 'MSV(A) FULL OPEN', ['TCE121']],
+    ['iPtB', 'in', 'B', 302, 1057, '', ['TCE224']], /* two lines (texts) */
+    ['iFpB', 'in', 'F', 302, 1130, 'MSV/CV(B) FULL CLOSE TEST PERMISSIVE', ['TCE224']],
+    ['iPosB', 'in', 'P', 302, 1193, 'MSV(B) POSITION', ['TCE123']],
+    ['iFcB', 'in', 'G', 302, 1290, 'MSV(B) FULL CLOSE', ['TCE123']],
+    ['oA', 'out', 'A', 2082, 225, '', ['TCE210', 'TCE224']], /* two lines (texts) */
+    ['oC', 'out', 'C', 2082, 289, '', ['TCE210', 'TCE212', 'TCE224', 'TCE601']], /* two lines (texts) */
+    ['oE', 'out', 'E', 2082, 353, 'MSV/CV(A) TEST CANCEL', ['-']],
+    ['oA1', 'out', 'A1', 2082, 417, 'MSV/CV(A) TEST PB ON', ['TCP1210', 'TCP2210', 'TCP3210'], 1],
+    ['oA2', 'out', 'A2', 2082, 768, 'MSV(A) FULL OPEN', ['TCE212']],
+    ['oA3', 'out', 'A3', 2082, 832, 'MSV(A) FULL OPEN', ['TCE250', 'TCE350']],
+    ['oB2', 'out', 'B2', 2082, 895, 'MSV(B) FULL OPEN', ['TCE212']],
+    ['oB', 'out', 'B', 2082, 971, '', ['TCE211', 'TCE224']], /* two lines (texts) */
+    ['oD', 'out', 'D', 2082, 1035, '', ['TCE211', 'TCE212', 'TCE224', 'TCE601']], /* two lines (texts) */
+    ['oF', 'out', 'F', 2082, 1099, 'MSV/CV(B) TEST CANCEL', ['-']],
+    ['oB1', 'out', 'B1', 2082, 1161, 'MSV/CV(B) TEST PB ON', ['TCP1210', 'TCP2210', 'TCP3210'], 1],
+    ['oB3', 'out', 'B3', 2082, 1290, 'MSV(B) FULL CLOSE', ['TCE155', 'TCE212', 'TCE250', 'TCE350']]
+  ],
+  d: [
+    ['crtXa1', 2002, 554, 'out', 'nSV-STn903-A_XB01', 'S', '#1C'],
+    ['crtXa2', 2002, 618, 'out', 'nSV-STn903-A_XB02', 'S', '#1C'],
+    ['crtXb1', 2002, 683, 'out', 'nSV-STn903-B_XB01', 'S', '#1C'],
+    ['crtXb2', 1981, 1246, 'out', 'nSV-STn903-B_XB02', 'S', '#1C']
+  ],
+  b: [
+    ['a001', 'A', '001', 1082, 243, [], {}, [59, 64]],
+    ['cpl003', 'CPL', 'C003', 709, 275, ['HL:76.0MW', 'LL:75.0MW']],
+    ['a004', 'A', '004', 954, 275],
+    ['not005', 'NOT', '005', 580, 361],
+    ['a008', 'A', '008', 580, 446],
+    ['cpl010', 'CPL', 'C010', 709, 489, ['HL:76.0MW', 'LL:75.0MW']],
+    ['not011', 'NOT', '011', 815, 489],
+    ['a009', 'A', '009', 954, 457, [], {}, [59, 64]],
+    ['cpl012', 'CPL', 'C012', 708, 585, ['HL:86.0%', 'LL:85.0%']],
+    ['a020', 'A', '020', 1081, 989, [], {}, [59, 64]],
+    ['a022', 'A', '022', 578, 1043],
+    ['a023', 'A', '023', 952, 1053, [], {}, [59, 64]],
+    ['cpl026', 'CPL', 'C026', 708, 1201, ['HL:86.0%', 'LL:85.0%']],
+    ['btr006', 'o:BTR', '006', 1742, 350],
+    ['btr007', 'o:BTR', '007', 1742, 414],
+    ['btr028', 'o:BTR', '028', 1708, 552],
+    ['btr029', 'o:BTR', '029', 1708, 616],
+    ['btr030', 'o:BTR', '030', 1708, 681],
+    ['btr017', 'o:BTR', '017', 1742, 765],
+    ['btr018', 'o:BTR', '018', 1742, 829],
+    ['btr019', 'o:BTR', '019', 1742, 892],
+    ['btr024', 'o:BTR', '024', 1742, 1096],
+    ['btr025', 'o:BTR', '025', 1742, 1158],
+    ['btr031', 'o:BTR', '031', 1743, 1244],
+    ['btr027', 'o:BTR', '027', 1742, 1287]
+  ],
+  m: [
+    [
+      'vtA',
+      'VALVE TEST',
+      '',
+      1219,
+      175,
+      404,
+      319,
+      ['FPERM', '', 'PPERM', 'PPOS', 'COMP', 'CLOSE', '', ''],
+      ['PTEST', '', 'FTEST', '', 'CNCL', '', '', ''],
+      'A002',
+      [
+        [1326, 518, '(LME252)'],
+        [1223, 541, 'TP:200.0s'],
+        [1223, 562, 'TP:5.0s'],
+        [1648, 467, 'TD:5.0s'],
+        [1648, 488, 'TW:3.0s'],
+        [1648, 509, 'TP:300.0s']
+      ]
+    ],
+    [
+      'vtB',
+      'VALVE TEST',
+      '',
+      1219,
+      921,
+      404,
+      319,
+      ['FPERM', '', 'PPERM', 'PPOS', 'COMP', 'CLOSE', '', ''],
+      ['PTEST', '', 'FTEST', '', 'CNCL', '', '', ''],
+      'A021',
+      [
+        [1326, 1264, '(LME252)'],
+        [1223, 1287, 'TP:200.0s'],
+        [1223, 1308, 'TP:5.0s'],
+        [1648, 1212, 'TD:5.0s'],
+        [1648, 1233, 'TW:3.0s'],
+        [1648, 1254, 'TP:300.0s']
+      ]
+    ]
+  ],
+  w: [
+    /* MSV(A) */
+    ['iE', [[329, 222], [1053, 222]]],
+    ['a001', [[1111, 222], [1219, 222]]],
+    ['iGl', [[329, 264], [680, 264]], 1],
+    ['iGl', [[645, 264], [645, 478], [680, 478]], 1],
+    ['cpl003', [[738, 264], [925, 264]]],
+    ['a004', [[983, 264], [1053, 264]]],
+    ['a004', [[1029, 264], [1029, 989], [1052, 989]]],
+    ['iGla', [[329, 350], [551, 350]]],
+    ['not005', [[609, 350], [900, 350], [900, 286], [925, 286]]],
+    ['not005', [[900, 350], [900, 1053], [923, 1053]]],
+    ['not005', [[900, 457], [925, 457]]],
+    ['iFoB', [[329, 435], [551, 435]]],
+    ['iFoB', [[525, 435], [525, 892], [2055, 892]]],
+    ['iFoB', [[1006, 892], [1006, 243], [1053, 243]]],
+    ['iFoB', [[1635, 892], [1635, 681], [1978, 681]]],
+    ['iPtA', [[329, 500], [505, 500], [505, 457], [551, 457]]],
+    ['a008', [[609, 435], [925, 435]]],
+    ['cpl010', [[738, 478], [786, 478]]],
+    ['not011', [[844, 478], [925, 478]]],
+    ['not011', [[877, 478], [877, 1074], [923, 1074]]],
+    ['a009', [[983, 435], [1103, 435], [1103, 286], [1219, 286]]],
+    ['iPosA', [[329, 574], [679, 574]], 1],
+    ['cpl012', [[737, 574], [1124, 574], [1124, 318], [1219, 318]]],
+    ['iTr', [[329, 659], [1145, 659]]],
+    ['iTr', [[1145, 659], [1145, 350], [1219, 350]]],
+    ['iTr', [[1145, 659], [1145, 1096], [1219, 1096]]],
+    ['iFcA', [[329, 829], [2055, 829]]],
+    ['iFcA', [[1167, 829], [1167, 382], [1219, 382]]],
+    ['iFcA', [[1600, 829], [1600, 616], [1978, 616]]],
+    ['vtA', [[1623, 222], [2055, 222]]],
+    ['vtA', [[1623, 286], [2055, 286]]],
+    ['vtA', [[1688, 286], [1688, 414], [2055, 414]]],
+    ['vtA', [[1623, 350], [2055, 350]]],
+    /* MSV(B) */
+    ['iFoA', [[329, 968], [1052, 968]]],
+    ['iFoA', [[525, 968], [525, 1032], [549, 1032]]],
+    ['iFoA', [[985, 968], [985, 765], [2055, 765]]],
+    ['iFoA', [[1557, 765], [1557, 552], [1978, 552]]],
+    ['iPtB', [[329, 1054], [549, 1054]]],
+    ['a022', [[607, 1032], [923, 1032]]],
+    ['a023', [[982, 1032], [1219, 1032]]],
+    ['a020', [[1111, 968], [1219, 968]]],
+    ['iFpB', [[329, 1127], [1006, 1127], [1006, 1010], [1052, 1010]]],
+    ['iPosB', [[329, 1190], [679, 1190]], 1],
+    ['cpl026', [[737, 1190], [1124, 1190], [1124, 1064], [1219, 1064]]],
+    ['iFcB', [[329, 1287], [2055, 1287]]],
+    ['iFcB', [[1141, 1287], [1141, 1128], [1219, 1128]]],
+    ['iFcB', [[1675, 1287], [1675, 1244], [1957, 1244]]],
+    ['vtB', [[1623, 968], [2055, 968]]],
+    ['vtB', [[1623, 1032], [2055, 1032]]],
+    ['vtB', [[1688, 1032], [1688, 1158], [2055, 1158]]],
+    ['vtB', [[1623, 1096], [2055, 1096]]]
+  ],
+  t: [
+    [334, 322, 'GENERATOR LOAD'],
+    [334, 343, 'ABNORMAL'],
+    [333, 472, 'MSV(A) PARTIAL'],
+    [333, 493, 'TEST PERMISSIVE'],
+    [332, 632, 'TRANSFER REGION'],
+    [332, 653, 'COMPLETE(IP)'],
+    [330, 1025, 'MSV(B) PARTIAL'],
+    [330, 1046, 'TEST PERMISSIVE'],
+    [664, 258, 'T'],
+    [662, 471, 'T'],
+    [662, 567, 'T'],
+    [657, 1184, 'T'],
+    [1220, 168, 'MSV(A)'],
+    [1515, 168, 'nSV-STn903-A'],
+    [1220, 914, 'MSV(B)'],
+    [1515, 914, 'nSV-STn903-B'],
+    [1800, 195, 'MSV(A) PARTIAL'],
+    [1800, 216, 'CLOSE TEST STATE'],
+    [1800, 259, 'MSV/CV(A) FULL'],
+    [1800, 280, 'CLOSE TEST STATE'],
+    [2020, 458, '(TCP1220)'],
+    [2020, 479, '(TCP2220)'],
+    [2020, 500, '(TCP3220)'],
+    [1765, 547, 'MSV(A) FULL OPEN'],
+    [1765, 611, 'MSV(A) FULL CLOSE'],
+    [1765, 676, 'MSV(B) FULL OPEN'],
+    [1794, 941, 'MSV(B) PARTIAL'],
+    [1794, 962, 'CLOSE TEST STATE'],
+    [1794, 1005, 'MSV/CV(B) FULL'],
+    [1794, 1026, 'CLOSE TEST STATE'],
+    [2028, 1189, '(TCP1220)'],
+    [2028, 1205, '(TCP2220)'],
+    [2028, 1221, '(TCP3220)'],
+    [1792, 1239, 'MSV(B) FULL CLOSE'],
+    [227, 1536, 'CONTROLLER:'],
+    [389, 1536, 'EHG+MD'],
+    [613, 1515, 'TRIGGER  :'],
+    [613, 1542, 'CYCLE(ms):30']
+  ]
+});
