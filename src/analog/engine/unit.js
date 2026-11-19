@@ -307,7 +307,8 @@ function anVposOf() {
     return n >= 0 ? { S: x.S, n } : null;
   };
   const of = ts => ts.flatMap(t => [lab('ABC-050', t), lab('ABC-051', t)]).filter(Boolean);
-  return { cv: of(['SI1812', 'SI1813', 'SI1814', 'SI1815', 'SI1816', 'SI1817']), icv: of(['SI1821', 'SI1822', 'SI1823', 'SI1827', 'SI1828', 'SI1829']) };
+  /* LMYP OTS valve tests: CV(A) SI1812 ~ SI1814 and CV(B) SI1815 ~ SI1817 apart (a CV test moves one group) */
+  return { cvA: of(['SI1812', 'SI1813', 'SI1814']), cvB: of(['SI1815', 'SI1816', 'SI1817']), icv: of(['SI1821', 'SI1822', 'SI1823', 'SI1827', 'SI1828', 'SI1829']) };
 }
 function anUnitStart() {
   const U = AN_UNIT;
@@ -1060,7 +1061,8 @@ const AN_TCS_CMD = {
   tripreset: 'TURBINE RESET',
   normal: 'NORMAL OPERATION',
   gov: 'GOV SET',
-  llm: 'LOAD LIMIT'
+  llm: 'LOAD LIMIT',
+  vtest: 'VALVE TEST'
 };
 function anTurbine(cmd, arg) {
   const r = anTurbine0(cmd, arg);
@@ -1094,6 +1096,8 @@ function anTurbine0(cmd, arg) {
   if (cmd === 'fault') return tcsTripFault(U, arg);
   /* LMYP OTS: GOV RAISE / LOWER and the LOAD LIMITER of the TCS CRT (tcs.js tcsGovCmd, TCE196 / TCE205) */
   if (cmd === 'gov' || cmd === 'llm') return tcsGovCmd(U, cmd, arg);
+  /* LMYP OTS: the MSV / CV valve tests of the TCS CRT (tcs.js tcsVtCmd, TCE220 / TCE222 / TCE224) */
+  if (cmd === 'vtest') return tcsVtCmd(U, arg);
   if (!U.tc && cmd === 'oil') return tcsOilCmd(tcsOilState(U), arg || {});
   if (!U.tc && cmd === 'vex') {
     tcsOilState(U).vex = arg !== 0 && arg !== false;
@@ -5074,7 +5078,9 @@ function anUnitStep0(dt) {
   }
   /* steam flow through the valves: m = Kt x gv x MSP, MSP = drum - kdp x m^2 */
   /* 3.2.0 P1 #3: the steam reaches the turbine through the main steam stop MOV MV-MS1391 (or its warming bypass, anUnitStepX) */
-  const k = U.Kt * U.gv * (U.msG == null ? 1 : U.msG),
+  /* LMYP OTS valve tests (tcs.js tcsVtStep / tcsVtLift, TCE220 / 222): the two CV groups in series with their MSV, half the steam each */
+  tcsVtStep(U, dt);
+  const k = U.Kt * tcsVtLift(U) * (U.msG == null ? 1 : U.msG),
     a2 = U.kdp * k,
     ms = a2 > 0 ? (-1 + Math.sqrt(1 + 4 * a2 * k * Math.max(0, U.Pd))) / (2 * a2) : k * U.Pd;
   U.ms = Math.max(0, ms);
@@ -5285,14 +5291,15 @@ function anUnitStep0(dt) {
   if (U.tc && (tb.st === 'off' || tb.st === 'roll')) U.MW = 0;
   U.rpm = tb.rpm;
   U.icvp = 100 * tb.icv;
-  if (U.vpos === undefined) U.vpos = anVposOf(); /* a save point from before 3.2.3-beta.244 */
+  if (U.vpos === undefined || (U.vpos && !U.vpos.cvA)) U.vpos = anVposOf(); /* a save point from before 3.2.3-beta.244 / the A, B split */
   if (U.vpos) {
     /* T/G Modbus valve positions (U.vpos above): CV = the governor valve lift U.gv (0 ~ 100 %), ICV = tb.icv; a tripped or stopped
        machine has its valves shut */
     const run = tb.st !== 'off',
-      cvp = run ? Math.max(0, Math.min(100, 100 * (+U.gv || 0))) : 0,
+      cvp = s => (run ? Math.max(0, Math.min(100, 100 * tcsVtCv(U, s))) : 0),
       icp = Math.max(0, Math.min(100, 100 * (+tb.icv || 0)));
-    for (const l of U.vpos.cv) dirt(l, cvp);
+    for (const l of U.vpos.cvA) dirt(l, cvp('A'));
+    for (const l of U.vpos.cvB) dirt(l, cvp('B'));
     for (const l of U.vpos.icv) dirt(l, icp);
   }
   U.tbn ={ off: 0, roll: 1, sync: 2, load: 3 }[tb.st];

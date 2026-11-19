@@ -1332,3 +1332,201 @@ function tcsGovState(U) {
     rate: isFinite(U.rateUp) ? (U.rateUp * 100) / 150 : null
   };
 }
+/* ===== TURBINE VALVE TESTS (LMYP OTS, TCS engine): TCE220 MSV TEST (p.150), TCE222 CV TEST (p.151), TCE224 MSV/CV TEST STATE (p.152),
+   TCE250 MAIN STOP VALVE FULL CLOSE (p.156) of 331DM09784 "SOFT LOGIC DIAGRAM OF TCS".
+   - Two main stop valves MSV(A) / (B), each in series with its control valve group CV(A) / (B) (T/G Modbus ZT-ST1903-A / B MSV, ZT-ST1904-A / B
+     CV positions). Each side passes half of the steam: the model's one CV lift U.gv is split into side A and side B.
+   - One test at a time (TCE224: every test permissive = NOT any other test state); any test on = TURBINE VALVE TEST (TCE224_1).
+   - MSV PARTIAL CLOSE TEST (TCE220): the MSV strokes to 85 % open (MSV POSITION CPL HL 86 % / LL 85 %) and back; the other MSV must be full
+     open (TCE123 / TCE121). Closing and opening speed for the partial test 0.56 %/s (TCE210 / 211
+     SG A030 / A033; the IBD note "100 %/180 s OR LESS DURING THE PARTIAL VALVE TEST", _notes/tg-inertia-2026-11-12.txt). TP 200 s (LME252).
+   - MSV/CV FULL CLOSE TEST (TCE220 FTEST, TCE224 "MSV/CV(A) FULL CLOSE TEST STATE"): the side's CVs close first at the test rate 0.56 %/s
+     (TCE211 SG A031 ~ A035), slow enough for the MW loop (TCE195, flow demand 1 %/s) to open the other side, then 2 s later the MSV closes
+     at 10 %/s (TCE210 SG C016, TD A036). Only at
+     GENERATOR LOAD <= 75 MW (CPL HL 78 / LL 75 MW): one CV group open alone passes half the steam at a lift of 1.0, so above half load the
+     other side cannot carry it (the CV lift is limited to 140 %). FULL OPEN reopens the MSV, then the CVs. Both MSVs closed = TURBINE
+     TRIP (TCE250 A002), which the one-test rule prevents.
+   - CV PARTIAL CLOSE TEST (TCE222): the CV group closes 10 % from the opening held at the start (CPL HL -9 % / LL -10 %) and reopens;
+     <= 75 MW (CPL C007 HL 78 / LL 75 MW), TP 200 s. CV FULL CLOSE / FULL OPEN PBs (nSV-STn904) close the group to 0 and back.
+   - Test permissive common to all (TCE220 / 222): TRANSFER REGION COMPLETE(IP) (TCE184; here the ICV -> CV transfer of the model, tb.xfer),
+     not GENERATOR LOAD ABNORMAL, turbine not tripped, 52G closed.
+   - Series flow of MSV and CV: the flow area of a side = the smaller of the CV lift and the MSV opening; the MSV full open area is taken as
+     the CV group's at its 140 % lift (derived: a stop valve passes the full CV flow without throttling, so the 85 % partial stroke of
+     TCE220, done at any load, takes no MW; 0.85 x 1.4 = 1.19 > the CV lift of 0.975 at 150 MW) ===== */
+/* the valve speeds during a test (TCE210 / TCE211 MSV(A) / (B) CONTROL, TCE212 CV(A), (B) CONTROL): CV opening and closing rate DURING CV TEST
+   SG A031 ~ A035 K 0.56 %/s (else 10 %/s); MSV OPENING / CLOSING SPEED FOR PARTIAL TEST SG A030 / A033 K 0.56 %/s (= the IBD "100 %/180 s");
+   MSV OPENING / CLOSING SPEED FOR FULL CLOSE TEST SG C014 / C016 K 10 %/s. The MSV of a full close test starts to close 2.0 s (TD A036)
+   after its CVs reach the test position (MSV/CV FULL CLOSE TEST STATE AND CV TEST POSITION) */
+const TCS_VT_SLOW = 0.0056,
+  TCS_VT_FAST = 0.1;
+const TCS_VT_ON = { msvA: 'MSV(A)', msvB: 'MSV(B)', cvA: 'CV(A)', cvB: 'CV(B)' };
+function tcsVt(U) {
+  const tb = U.tb || (U.tb = {});
+  if (!tb.vt || typeof tb.vt !== 'object') tb.vt = { sel: null, op: null, ph: null, t: 0, mA: 1, mB: 1, dA: 0, dB: 0, lo: false, cv0: null };
+  return tb.vt;
+}
+/* the flow area of one side: the smaller of its CV group lift and its MSV opening (MSV full open = the CV area at 140 % lift) */
+function tcsVtSide(U, s) {
+  const g = +U.gv || 0,
+    vt = U.tb && U.tb.vt;
+  if (!vt) return g;
+  return Math.max(0, Math.min(g - vt['d' + s], 1.4 * vt['m' + s]));
+}
+/* the effective CV lift that passes steam: the two sides, half the flow each */
+function tcsVtLift(U) {
+  const g = +U.gv || 0,
+    vt = U.tb && U.tb.vt;
+  if (!vt || (!vt.sel && !vt.dA && !vt.dB && vt.mA >= 1 && vt.mB >= 1)) return g;
+  return 0.5 * (tcsVtSide(U, 'A') + tcsVtSide(U, 'B'));
+}
+/* the CV group lift of a side alone (the T/G Modbus CV position), 0 ~ 1.4 */
+function tcsVtCv(U, s) {
+  const vt = U.tb && U.tb.vt;
+  return Math.max(0, (+U.gv || 0) - (vt ? vt['d' + s] : 0));
+}
+/* the MSV opening of a side as the test leaves it, 0 ~ 1 (the trip oil position tcsVp of tcs-trip.js multiplies it) */
+function tcsVtMsv(U, s) {
+  const vt = U.tb && U.tb.vt;
+  return vt ? vt['m' + s] : 1;
+}
+function tcsVtLog(t) {
+  try {
+    if (typeof lsEventAdd === 'function') lsEventAdd('TCS', 'TCS', 'VALVE TEST: ' + t);
+  } catch (e) {}
+}
+/* the permissive of a test: '' = allowed, else why not */
+function tcsVtPerm(U, v, op) {
+  const tb = U.tb || {},
+    vt = tcsVt(U),
+    o = v.slice(-1) === 'A' ? 'B' : 'A';
+  if (tcsOilState(U).trip) return 'the turbine is tripped';
+  if (tb.st !== 'load') return '52G is not closed';
+  if (!tb.xfer) return 'TRANSFER REGION COMPLETE is not on';
+  if (!isFinite(U.MW)) return 'GENERATOR LOAD ABNORMAL';
+  if (vt.sel && vt.sel !== v) return TCS_VT_ON[vt.sel] + ' test is on (one test at a time)';
+  if (vt.sel === v) return TCS_VT_ON[v] + ' test is already on';
+  if (vt.dA || vt.dB || vt.mA < 1 || vt.mB < 1) return 'a valve is still closed: press its FULL OPEN first';
+  if ((op === 'close' || v.startsWith('cv')) && !vt.lo) return 'GENERATOR LOAD is over 75 MW';
+  if (v.startsWith('msv') && op === 'partial' && vt['m' + o] < 1) return 'MSV(' + o + ') is not full open';
+  return '';
+}
+/* CRT PBs: AN.turbine('vtest', { v: 'msvA' | 'msvB' | 'cvA' | 'cvB', op: 'partial' | 'close' | 'open' | 'cancel' }) */
+function tcsVtCmd(U, arg) {
+  const a = arg || {},
+    v = a.v,
+    op = a.op,
+    vt = tcsVt(U);
+  if (!TCS_VT_ON[v]) return 'Unknown valve: ' + v;
+  if (op === 'open' || op === 'cancel') {
+    const s = v.slice(-1),
+      shut = vt['d' + s] > 0 || vt['m' + s] < 1;
+    if (vt.sel !== v && !shut) return TCS_VT_ON[v] + ' is not under test';
+    if (vt.sel && vt.sel !== v) return TCS_VT_ON[vt.sel] + ' test is on (one test at a time)';
+    Object.assign(vt, { sel: v, op: vt.op || 'close', ph: 'reopen', t: 0 });
+    tcsVtLog(TCS_VT_ON[v] + (op === 'cancel' ? ' TEST CANCEL' : ' FULL OPEN'));
+    return '';
+  }
+  if (op !== 'partial' && op !== 'close') return 'Unknown test: ' + op;
+  const r = tcsVtPerm(U, v, op);
+  if (r) return r;
+  Object.assign(vt, { sel: v, op, t: 0, cv0: null, ph: v.startsWith('msv') && op === 'partial' ? 'msv' : 'cv' });
+  tcsVtLog(TCS_VT_ON[v] + (op === 'partial' ? ' PARTIAL CLOSE TEST' : ' FULL CLOSE TEST') + ' start');
+  return '';
+}
+/* one scan of the valve tests (unit.js anUnitStep, every model step) */
+function tcsVtStep(U, dt) {
+  const tb = U.tb;
+  if (!tb) return;
+  const vt = tcsVt(U);
+  /* GENERATOR LOAD <= 75 MW, back above 78 MW (CPL HL 78 / LL 75 of TCE220 C003 and TCE222 C007) */
+  if (isFinite(U.MW)) vt.lo = U.MW <= 75 ? true : U.MW >= 78 ? false : vt.lo;
+  /* a trip or a 52G open ends any test: the trip oil closes every valve, the reset opens them full (tcs-trip.js tcsValves) */
+  if (tb.st !== 'load' || tcsOilState(U).trip) {
+    if (vt.sel || vt.dA || vt.dB || vt.mA < 1 || vt.mB < 1) {
+      if (vt.sel) tcsVtLog(TCS_VT_ON[vt.sel] + ' test ended by the turbine trip / 52G open');
+      Object.assign(vt, { sel: null, op: null, ph: null, t: 0, mA: 1, mB: 1, dA: 0, dB: 0, cv0: null });
+    }
+    return;
+  }
+  if (!vt.sel) return;
+  const v = vt.sel,
+    s = v.slice(-1),
+    d = 'd' + s,
+    m = 'm' + s,
+    rc = TCS_VT_SLOW * dt,
+    rm = (vt.op === 'partial' ? TCS_VT_SLOW : TCS_VT_FAST) * dt,
+    msv = v.startsWith('msv');
+  vt.t += dt;
+  /* the load rose to 78 MW during a full close or CV test: the permissive of LME252 / 253 is lost, TEST CANCEL */
+  if (vt.ph !== 'reopen' && (vt.op === 'close' || !msv) && !vt.lo) {
+    Object.assign(vt, { ph: 'reopen', t: 0 });
+    tcsVtLog(TCS_VT_ON[v] + ' test cancelled: GENERATOR LOAD over 78 MW');
+  }
+  /* TP 200 s of LME252 / 253: a partial stroke that does not reach its position is cancelled */
+  if (vt.op === 'partial' && vt.ph !== 'reopen' && vt.t > 200) {
+    Object.assign(vt, { ph: 'reopen', t: 0 });
+    tcsVtLog(TCS_VT_ON[v] + ' test cancelled: position not reached in 200 s');
+  }
+  if (vt.ph === 'msv') {
+    /* the MSV strokes to 85 % (partial), or to full close once its CVs are shut */
+    const end = vt.op === 'partial' ? 0.85 : 0;
+    vt[m] = Math.max(end, vt[m] - rm);
+    if (vt[m] <= end) {
+      if (vt.op === 'partial') vt.ph = 'reopen';
+      else {
+        vt.ph = 'held';
+        tcsVtLog(TCS_VT_ON[v] + ' FULL CLOSE');
+      }
+    }
+  } else if (vt.ph === 'msvw') {
+    /* TD A036 2.0 s after the CV test position */
+    vt.tw = (vt.tw || 0) + dt;
+    if (vt.tw >= 2) vt.ph = 'msv';
+  } else if (vt.ph === 'cv') {
+    /* the CV group closes at the test rate 0.56 %/s: 10 % from its opening (partial, CPL -10 %), or to full close (the lift offset 1.4 covers any lift) */
+    if (vt.cv0 == null) vt.cv0 = +U.gv || 0;
+    const end = vt.op === 'partial' ? 0.1 : 1.4;
+    vt[d] = Math.min(end, vt[d] + rc);
+    /* full close: the CVs are shut once the lift is 0 (CV(A) FULL CLOSE CPL 2 / 3 %); the offset then goes to 1.4 so a rising demand keeps them shut */
+    if (vt.op !== 'partial' && (+U.gv || 0) - vt[d] <= 0) vt[d] = 1.4;
+    if (vt[d] >= end) {
+      if (vt.op === 'partial') vt.ph = 'reopen';
+      else if (msv) {
+        vt.ph = 'msvw';
+        vt.tw = 0;
+      }
+      else {
+        vt.ph = 'held';
+        tcsVtLog(TCS_VT_ON[v] + ' FULL CLOSE');
+      }
+    }
+  } else if (vt.ph === 'reopen') {
+    /* the MSV first (10 %/s after a full close, 0.56 %/s in a partial test), then the CV group (0.56 %/s) */
+    if (vt[m] < 1) vt[m] = Math.min(1, vt[m] + rm);
+    else if (vt[d] > 0) vt[d] = Math.max(0, Math.min(vt[d], +U.gv || 0) - rc); /* from the shut position, not from the 1.4 offset */
+    else {
+      tcsVtLog(TCS_VT_ON[v] + ' full open, test complete');
+      Object.assign(vt, { sel: null, op: null, ph: null, t: 0, cv0: null });
+    }
+  }
+}
+function tcsVtState(U) {
+  if (!U || !U.tb) return null;
+  const vt = tcsVt(U),
+    p = x => Math.round(Math.min(100, 100 * x) * 10) / 10,
+    perm = {};
+  for (const v of ['msvA', 'msvB', 'cvA', 'cvB']) for (const op of ['partial', 'close']) perm[v + ':' + op] = tcsVtPerm(U, v, op);
+  return {
+    on: !!vt.sel /* TURBINE VALVE TEST (TCE224_1) */,
+    sel: vt.sel,
+    op: vt.op,
+    ph: vt.ph,
+    t: vt.t,
+    lowLoad: !!vt.lo,
+    msvA: p(tcsVtMsv(U, 'A')),
+    msvB: p(tcsVtMsv(U, 'B')),
+    cvA: p(tcsVtCv(U, 'A')),
+    cvB: p(tcsVtCv(U, 'B')),
+    perm
+  };
+}

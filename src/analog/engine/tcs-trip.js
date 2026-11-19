@@ -86,7 +86,17 @@ const TCS_IBD_PV = [
   [/PT-CRn901|HP TURBINE EXHAUST .*STEAM PRESS[.] [(][ABC]/, U => tcsCrp(U)],
   [/GENERATOR LOAD/, U => ((+U.MW || 0) / 150) * 100],
   /* the valves (IBD TA-6, TA-31 ~ 38) */
-  [/^MSV\([AB]\) FULL CLOSE/, (U, c) => (tcsVp(U, c) <= 0 ? 1 : 0)],
+  /* LMYP OTS valve tests (tcs.js tcsVtMsv / tcsVtCv): side A and side B apart */
+  [/^MSV\(A\) FULL CLOSE/, (U, c) => (tcsVp(U, c) * tcsVtMsv(U, 'A') <= 0 ? 1 : 0)],
+  [/^MSV\(B\) FULL CLOSE/, (U, c) => (tcsVp(U, c) * tcsVtMsv(U, 'B') <= 0 ? 1 : 0)],
+  [/^CV\(A\) FULL CLOSE/, U => (tcsVtCv(U, 'A') > 0.001 ? 0 : 1)],
+  [/^CV\(B\) FULL CLOSE/, U => (tcsVtCv(U, 'B') > 0.001 ? 0 : 1)],
+  [/^MSV\(A\) FULL OPEN/, (U, c) => (tcsVp(U, c) * tcsVtMsv(U, 'A') >= 1 ? 1 : 0)],
+  [/^MSV\(B\) FULL OPEN/, (U, c) => (tcsVp(U, c) * tcsVtMsv(U, 'B') >= 1 ? 1 : 0)],
+  [/^ZT-STn903-A/, (U, c) => tcsVp(U, c) * tcsVtMsv(U, 'A') * 100],
+  [/^ZT-STn903-B/, (U, c) => tcsVp(U, c) * tcsVtMsv(U, 'B') * 100],
+  [/^ZT-STn904-A/, U => Math.min(100, tcsVtCv(U, 'A') * 100)],
+  [/^ZT-STn904-B/, U => Math.min(100, tcsVtCv(U, 'B') * 100)],
   [/^RSV\([AB]\) FULL CLOSE/, (U, c) => (tcsVp(U, c) <= 0 ? 1 : 0)],
   [/^ICV\([AB]\) FULL CLOSE/, U => (U.tb && U.tb.icv > 0.001 ? 0 : 1)],
   [/^CV\([AB]\) FULL CLOSE/, U => (U.gv > 0.001 ? 0 : 1)],
