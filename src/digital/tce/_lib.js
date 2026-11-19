@@ -342,7 +342,7 @@
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
+     lamp tag, sheets of the output connector] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -360,12 +360,19 @@
       OY = [1141, 1161, 1182, 1204],
       OX = [1485, 1432, 1379, 1303],
       OL = 1540;
-    o.g.forEach(([name, il, ol, im, om, no, tag], g) => {
+    o.g.forEach(([name, il, ol, im, om, no, tag, ref], g) => {
       const top = o.tops[g],
         k = 'tid' + (g + 1),
         p = i => pin(top, i),
         last = g === 3,
-        ye = last ? 1237 : p(4);
+        ye = last ? 1237 : p(4),
+        /* the names: one name for the whole block (with o.line2 under it), or { in: [lines of each input], out: [lines of the lamp, of the connector,
+           of the input error] } as the drawing prints them; the last line of a name stands on its wire */
+        nm =
+          typeof name === 'string'
+            ? { in: [0, 1, 2].map(() => [name, o.line2]), out: [[name, o.line2], [name, o.line2], [name, o.line2 + ' INPUT ERROR']] }
+            : name,
+        lines = (L, x, y) => L.forEach((s, j) => t.push([x, y - 6 - 21 * (L.length - 1 - j), s]));
       m.push([k, 'TRIPPLE INPUT DIAGNOSTICS', '', BX, top, BW, BH, ['IN1', '', 'IN2', '', 'IN3'], ['OUT', '', '', '', 'DEV E'], no, [
         [BX + 90, top + 172, 'TP:3.0'],
         [BX + 105, top + 246, '(LME105)']
@@ -373,17 +380,20 @@
       ['TCP1050', 'TCP2050', 'TCP3050'].forEach((r, i) => {
         const key = 'i' + (g + 1) + (i + 1),
           y = p(2 * i);
-        c.push([key, 'in', il, 280, y, o.line2, [r], 1]);
-        t.push([313, y - 32, name]);
+        const N = nm.in[i];
+        c.push([key, 'in', il, 280, y, N[N.length - 1], [r], 1]);
+        if (N.length > 1) t.push([313, y - 32, N[0]]);
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
         w.push([key, [[307, y], [BX, y]]]);
       });
       /* OUT: the lamp and the connector */
       d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
-      c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ['-']], ['o' + ol + '1', 'out', ol + '1', 2092, ye, '', ['-']]);
+      c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']], ['o' + ol + '1', 'out', ol + '1', 2092, ye, '', ['-']]);
       b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64], ['mo' + (g + 1) + 'c', 'o:BTR', om[2], last ? 1655 : 1647, ye]);
       w.push([k + '.OUT', [[BX + BW, p(0)], [2070, p(0)]]], [k + '.OUT', [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
-      t.push([1716, p(0) - 27, name], [1716, p(0) - 6, o.line2], [1716, p(0) + 37, name], [1716, p(0) + 58, o.line2], [last ? 1713 : 1704, ye - 27, name], [last ? 1713 : 1704, ye - 6, o.line2 + ' INPUT ERROR']);
+      lines(nm.out[0], 1716, p(0));
+      lines(nm.out[1], 1716, p(0) + 64);
+      lines(nm.out[2], last ? 1713 : 1704, ye);
       /* DEV E: the connector and the OR */
       if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [2065, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
       else w.push([k + '.DEV E', [[BX + BW, ye], [2065, ye]]], [k + '.DEV E', [[OX[g], ye], [OX[g], OY[g]], [OL, OY[g]]]]);
