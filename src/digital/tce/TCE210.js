@@ -16,6 +16,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [163, 83, 2215, 1550],
+  live: { iDur: 'vtSel=msvA' },
   k: [
     ['kInit', 259, 144, 'INITIAL', 'ref'],
     ['kMax', 354, 592, 'MAX', 'sys.ref'],

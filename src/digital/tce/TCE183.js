@@ -10,6 +10,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [181, 80, 2229, 1540],
+  live: { iLl: 'limiting', iMan: 'govMan' },
   k: [
     ['kInit', 296, 156, 'INITIAL', 'ref'],
     ['k52g', 295, 232, '52G CLOSE', 'ref'],
