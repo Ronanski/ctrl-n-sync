@@ -12,6 +12,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 88, 2230, 1552],
+  live: { iRunA: 'copA', iPRunB: 'copB', iRunB: 'copB', not013: '!copA', not027: '!copB', iPa: ['copPa', 'kg/cm2'], iPb: ['copPb', 'kg/cm2'] },
   k: [
     ['kInit', 296.5, 156, 'INITIAL', 'ref'],
     ['kOff', 315, 391.212, 'OFF(0)', 'sys.ref']

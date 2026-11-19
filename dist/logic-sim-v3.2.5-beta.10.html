@@ -18093,6 +18093,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 88, 2230, 1552],
+  live: { iRunA: 'mopA', iPRunB: 'mopB', iRunB: 'mopB', not013: '!mopA', not027: '!mopB', iPa: ['mopPa', 'kg/cm2'], iPb: ['mopPb', 'kg/cm2'] },
   k: [
     ['kInit', 292, 156.5, 'INITIAL', 'ref'],
     ['kOff', 280, 391.212, 'OFF(0)', 'sys.ref']
@@ -18240,6 +18241,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 88, 2230, 1552],
+  live: { iRunA: 'copA', iPRunB: 'copB', iRunB: 'copB', not013: '!copA', not027: '!copB', iPa: ['copPa', 'kg/cm2'], iPb: ['copPb', 'kg/cm2'] },
   k: [
     ['kInit', 296.5, 156, 'INITIAL', 'ref'],
     ['kOff', 315, 391.212, 'OFF(0)', 'sys.ref']
@@ -18391,6 +18393,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 88, 2230, 1550],
+  live: { iBrg: 'brgLow', iStA: '!mopA', iStB: '!mopB', iRun: 'eop', iPr: ['eopP', 'kg/cm2'] },
   k: [
     ['kInit', 293.5, 356, 'INITIAL', 'ref'],
     ['kOff', 279, 856, 'OFF(0)', 'sys.ref']
@@ -69214,7 +69217,19 @@ function tcsLiveRead(U) {
     fd: G ? G.fd : null,
     govMan: G && G.govMan ? 1 : 0 /* GOV. MANUAL OPERATION */,
     llmMan: G && G.llmMan ? 1 : 0 /* LLM MANUAL OPERATION */,
-    limiting: G && G.limiting ? 1 : 0 /* LOAD LIMITING */
+    limiting: G && G.limiting ? 1 : 0 /* LOAD LIMITING */,
+    /* TCE300 / 305 / 310: the oil pumps of the oil model (tcsOil): running, and the discharge / bearing oil pressures, kg/cm2g */
+    mopA: c.mop && c.mop[0] ? 1 : 0,
+    mopB: c.mop && c.mop[1] ? 1 : 0,
+    copA: c.cop && c.cop[0] ? 1 : 0,
+    copB: c.cop && c.cop[1] ? 1 : 0,
+    eop: c.eop ? 1 : 0,
+    mopPa: isFinite(U.loPa) ? U.loPa : null,
+    mopPb: isFinite(U.loPb) ? U.loPb : null,
+    copPa: isFinite(U.loCa) ? U.loCa : null,
+    copPb: isFinite(U.loCb) ? U.loCb : null,
+    eopP: isFinite(U.loEop) ? U.loEop : null,
+    brgLow: isFinite(U.loBrg) && U.loBrg <= TCS_OIL.brgLo ? 1 : 0 /* the bearing oil low of the EOP auto start (tcsOil) */
   };
 }
 function tcsOstPerm(U, m) {
@@ -78834,7 +78849,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 23df3fd'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 513883e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -117268,6 +117283,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 88, 2230, 1552],
+  live: { iRunA: 'mopA', iPRunB: 'mopB', iRunB: 'mopB', not013: '!mopA', not027: '!mopB', iPa: ['mopPa', 'kg/cm2'], iPb: ['mopPb', 'kg/cm2'] },
   k: [
     ['kInit', 292, 156.5, 'INITIAL', 'ref'],
     ['kOff', 280, 391.212, 'OFF(0)', 'sys.ref']
@@ -117417,6 +117433,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 88, 2230, 1552],
+  live: { iRunA: 'copA', iPRunB: 'copB', iRunB: 'copB', not013: '!copA', not027: '!copB', iPa: ['copPa', 'kg/cm2'], iPb: ['copPb', 'kg/cm2'] },
   k: [
     ['kInit', 296.5, 156, 'INITIAL', 'ref'],
     ['kOff', 315, 391.212, 'OFF(0)', 'sys.ref']
@@ -117570,6 +117587,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 88, 2230, 1550],
+  live: { iBrg: 'brgLow', iStA: '!mopA', iStB: '!mopB', iRun: 'eop', iPr: ['eopP', 'kg/cm2'] },
   k: [
     ['kInit', 293.5, 356, 'INITIAL', 'ref'],
     ['kOff', 279, 856, 'OFF(0)', 'sys.ref']
@@ -164022,7 +164040,19 @@ function tcsLiveRead(U) {
     fd: G ? G.fd : null,
     govMan: G && G.govMan ? 1 : 0 /* GOV. MANUAL OPERATION */,
     llmMan: G && G.llmMan ? 1 : 0 /* LLM MANUAL OPERATION */,
-    limiting: G && G.limiting ? 1 : 0 /* LOAD LIMITING */
+    limiting: G && G.limiting ? 1 : 0 /* LOAD LIMITING */,
+    /* TCE300 / 305 / 310: the oil pumps of the oil model (tcsOil): running, and the discharge / bearing oil pressures, kg/cm2g */
+    mopA: c.mop && c.mop[0] ? 1 : 0,
+    mopB: c.mop && c.mop[1] ? 1 : 0,
+    copA: c.cop && c.cop[0] ? 1 : 0,
+    copB: c.cop && c.cop[1] ? 1 : 0,
+    eop: c.eop ? 1 : 0,
+    mopPa: isFinite(U.loPa) ? U.loPa : null,
+    mopPb: isFinite(U.loPb) ? U.loPb : null,
+    copPa: isFinite(U.loCa) ? U.loCa : null,
+    copPb: isFinite(U.loCb) ? U.loCb : null,
+    eopP: isFinite(U.loEop) ? U.loEop : null,
+    brgLow: isFinite(U.loBrg) && U.loBrg <= TCS_OIL.brgLo ? 1 : 0 /* the bearing oil low of the EOP auto start (tcsOil) */
   };
 }
 function tcsOstPerm(U, m) {
@@ -198491,7 +198521,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 23df3fd'));
+    row('Version', E('span', 'scsver', ver + ' · build 513883e'));
   }
   function openSet(near) {
     if (!set) {
