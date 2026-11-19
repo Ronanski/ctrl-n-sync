@@ -1062,7 +1062,9 @@ const AN_TCS_CMD = {
   normal: 'NORMAL OPERATION',
   gov: 'GOV SET',
   llm: 'LOAD LIMIT',
-  vtest: 'VALVE TEST'
+  vtest: 'VALVE TEST',
+  ostmain: 'OVERSPEED TEST (MAIN)',
+  ostbk: 'OVERSPEED TEST (BK-UP)'
 };
 function anTurbine(cmd, arg) {
   const r = anTurbine0(cmd, arg);
@@ -1098,6 +1100,9 @@ function anTurbine0(cmd, arg) {
   if (cmd === 'gov' || cmd === 'llm') return tcsGovCmd(U, cmd, arg);
   /* LMYP OTS: the MSV / CV valve tests of the TCS CRT (tcs.js tcsVtCmd, TCE220 / TCE222 / TCE224) */
   if (cmd === 'vtest') return tcsVtCmd(U, arg);
+  /* TCE176 / 177: without the ATS model (a starting point on load) the overspeed test is refused by its own permissive */
+  if (!U.tc && (cmd === 'ostmain' || cmd === 'ostbk'))
+    return 'OVERSPEED TEST not permitted: ' + (tb.st === 'sync' || tb.st === 'load' ? '52G CLOSE' : 'not in GOVERNING MODE at rated speed (TCE167)');
   if (!U.tc && cmd === 'oil') return tcsOilCmd(tcsOilState(U), arg || {});
   if (!U.tc && cmd === 'vex') {
     tcsOilState(U).vex = arg !== 0 && arg !== false;

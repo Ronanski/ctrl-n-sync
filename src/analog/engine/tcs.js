@@ -560,6 +560,10 @@ function tcsCmd(U, cmd, arg) {
       c.spd = Object.assign(c.spd || { sel: null }, { acc: r });
       return '';
     }
+    /* LMYP OTS overspeed test (TCE176 MAIN / TCE177 BK-UP, CRT PB ON / OFF): arg 1 = ON, 0 = OFF. tcsOstCmd below */
+    case 'ostmain':
+    case 'ostbk':
+      return tcsOstCmd(U, cmd === 'ostmain' ? 'main' : 'bk', on);
     case 'hold':
       c.opHold = on;
       return '';
@@ -704,7 +708,8 @@ function tcsStep(U, dt) {
   /* LMYP OTS: the CRT target speed (tcsCmd 'tspeed' / 'accel', TCE160 ~ 164) while no ATS step runs and the generator is off the line:
      the speed goes to the selected target at the selected acceleration (held by a HOLD outside the critical zone, as the ATS ramp);
      CLOSE VALVES (0) closes the ICV and the turbine coasts down at the rate of the rub check (100 rpm/min, page 17) */
-  if (c.spd && c.spd.sel != null && c.cur < 0 && tb.st === 'roll') {
+  tcsOstStep(U, dt);
+  if (c.spd && c.spd.sel != null && c.cur < 0 && tb.st === 'roll' && !tcsOstOn(c)) {
     if (c.spd.sel > 0) {
       tb.icv = Math.min(TCS_ICV, tb.icv + dt / 60);
       if (run && tb.rpm < c.spd.sel) tb.rpm = Math.min(c.spd.sel, tb.rpm + (c.spd.acc * dt) / 60);
@@ -1141,6 +1146,7 @@ function tcsTrip(U) {
   tcsGenTrip(U);
   Object.assign(c, { step: -1, cur: -1, ph: '', rst: false, exc: false, auto: false, byp: {} });
   if (c.spd) c.spd.sel = null; /* TCE161: TURBINE TRIP resets the target speed selects */
+  if (c.ost) c.ost.main = c.ost.bk = 0; /* TCE176 / 177 OR008: TURBINE TRIP resets the overspeed test mode */
   tcsMode(U);
 }
 /* what the TCS panel shows */
@@ -1181,6 +1187,8 @@ function tcsState() {
     hold: c.hold,
     /* LMYP OTS: the CRT target speed and acceleration (TCE160 ~ 162); null = none selected */
     tspeed: c.spd && c.spd.sel != null ? c.spd.sel : null,
+    /* LMYP OTS overspeed test (TCE176 / 177): mode 'main' | 'bk' | '', pattern = the speed above 3600 rpm */
+    ost: { main: c.ost && c.ost.main ? 1 : 0, bk: c.ost && c.ost.bk ? 1 : 0, pattern: c.ost ? Math.round((c.ost.pmain || 0) + (c.ost.pbk || 0)) : 0, patMain: c.ost ? Math.round(c.ost.pmain || 0) : 0, patBk: c.ost ? Math.round(c.ost.pbk || 0) : 0, perm: tcsOstPerm(U, 'main') === '' ? 1 : 0, inhibit: tcsOstGov(U).inhibit ? 1 : 0 },
     accel: c.spd ? c.spd.acc : 120,
     rpm: U.tb ? U.tb.rpm : 0,
     Pa: c.Pa,
@@ -1606,4 +1614,112 @@ function tcsVtState(U) {
     rsvB: p(tcsVtRsv(U, 'B')),
     perm
   };
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------------------
+   LMYP OTS OVERSPEED TEST (Hitachi TCS soft logic 331DM09784, TCE176 OVERSPEED TEST (MAIN), TCE177 OVERSPEED TEST (SUB = BK-UP),
+   TCE178 OVERSPEED / SPEED SWING, TCE145 BACK UP GOVERNOR; the trips are IBD TA-15 TRIP LOGIC (7) of tcs-ibd-data.js).
+   Per test (MAIN / BK-UP the same drawing):
+   - A001 = CRT ON PB AND CRT AVAILABLE; A003 = A001 AND GOVERNING MODE (TCE167) AND NOT007 (NOT OR008 (TURBINE TRIP, 52G CLOSE))
+     -> S of FFR004 (reset dominant). OR009 -> R: OR008, A013 (CRT OFF PB AND CRT AVAILABLE), TD A018 30.0 s of the OTHER test's
+     mode (T = INITIAL). So a second test pressed while one is on resets the first after 30 s.
+   - OVERSPEED TEST INHIBIT (lamp) = NOT016 (A015 (NOT007 AND GOVERNING MODE)).
+   - Pattern (speed above the target): ASW022 = MODE ? SG A020 x G A021 36.0 (rpm per %): MAIN 11.5 % = 414 rpm, BK-UP 12.0 % =
+     432 rpm : sys.ref 0.0 -> RL A023 (T = INITIAL). Rates PA2 023: increase = ASW028 (A024 = MODE AND LCK A026 (pattern - SG C027
+     <= 0 rpm) ? HIGH : LOW), decrease = HIGH (through FTR 031). HIGH = SG A029 360 rpm/min x G 0.01667 = 6 rpm/s, LOW = SG A032
+     120 rpm/min x 0.01667 = 2 rpm/s. RATE CHANGE SPEED SET (OFF-SET) SG C027: MAIN 288 rpm, BK-UP 216 rpm.
+   - TCE178 ADD024 = MAIN + BK-UP pattern = OVERSPEED TEST PATTERN -> TCE206: added to the speed reference; off the line the speed
+     governor holds the turbine on its reference (dead band 7.2 rpm), so the speed follows the target + pattern.
+   - The trips are the drawing's own: MAIN = electrical overspeed 110.5 % (3978 rpm, TA-15 SE-STn001-4/5/6, 2 out of 3); BK-UP =
+     back-up governor 111.75 % (4023 rpm, TA-15 SE-STn001-1/2/3) with TCE145 ADD002 / 015 / 018 + SG D019 108.0 rpm while OVER SPEED
+     TEST MODE (BK-UP) (ASW020, else SG D023 0.0): the BK-UP test trips at 4023 - 108 = 3915 rpm (tcs-trip.js TCS_IBD_PV).
+   - GOVERNING MODE is read here as: the turbine reset and rolling off the line with no ATS step running (TCE167, its own sheet
+     still to be typed).
+   --------------------------------------------------------------------------------------------------------------------------------- */
+const TCS_OST = {
+  main: { max: 11.5 * 36, chg: 288, name: 'OVERSPEED TEST (MAIN)' },
+  bk: { max: 12.0 * 36, chg: 216, name: 'OVERSPEED TEST (BK-UP)' },
+  hi: 360 * 0.01667,
+  lo: 120 * 0.01667,
+  td: 30,
+  bias: 108
+};
+function tcsOst(c) {
+  if (!c.ost || c.ost.main == null) c.ost = { main: 0, bk: 0, pmain: 0, pbk: 0, tmain: 0, tbk: 0 };
+  return c.ost;
+}
+const tcsOstOn = c => !!(c && c.ost && (c.ost.main || c.ost.bk || c.ost.pmain > 0 || c.ost.pbk > 0));
+/* the state of OR008 / GOVERNING MODE of the drawing */
+function tcsOstGov(U) {
+  const c = U.tc,
+    tb = U.tb;
+  const or008 = !!(c && c.trip) || tb.st === 'sync' || tb.st === 'load';
+  const gov = !!(c && c.rst) && tb.st === 'roll' && !(c.cur >= 0);
+  return { or008, gov, inhibit: !(!or008 && gov) };
+}
+function tcsOstPerm(U, m) {
+  const c = U.tc;
+  if (!c || !U.tb) return 'TCS not ready';
+  const g = tcsOstGov(U);
+  if (c.trip) return 'TURBINE TRIP';
+  if (g.or008) return '52G CLOSE';
+  if (!g.gov) return 'not in GOVERNING MODE (TCE167): turbine reset, rolling, no ATS step running';
+  return '';
+}
+function tcsOstLog(t) {
+  try {
+    if (typeof lsEventAdd === 'function') lsEventAdd('TCS', 'TCS', t);
+  } catch (e) {}
+}
+/* CRT ON / OFF push buttons (CRT AVAILABLE: the CRT of the app is always available) */
+function tcsOstCmd(U, m, on) {
+  const o = tcsOst(U.tc);
+  if (!on) {
+    if (o[m]) {
+      o[m] = 0;
+      tcsOstLog(TCS_OST[m].name + ' OFF');
+    }
+    return '';
+  }
+  const p = tcsOstPerm(U, m);
+  if (p) return TCS_OST[m].name + ' not permitted: ' + p;
+  if (!o[m]) tcsOstLog(TCS_OST[m].name + ' ON');
+  o[m] = 1;
+  return '';
+}
+function tcsOstStep(U, dt) {
+  const c = U.tc,
+    tb = U.tb;
+  if (!c || !c.ost) return;
+  const o = tcsOst(c),
+    g = tcsOstGov(U);
+  /* TD A018: 30 s of the other test's mode (T = INITIAL), then OR009 resets this one */
+  o.tmain = o.main ? o.tmain + dt : 0;
+  o.tbk = o.bk ? o.tbk + dt : 0;
+  for (const [m, other] of [['main', 'tbk'], ['bk', 'tmain']]) {
+    if (!o[m]) continue;
+    const why = c.trip ? 'TURBINE TRIP at ' + Math.round(tb.rpm) + ' rpm' : g.or008 ? '52G CLOSE' : o[other] >= TCS_OST.td ? 'the other overspeed test is ON' : '';
+    if (why) {
+      o[m] = 0;
+      tcsOstLog(TCS_OST[m].name + ' reset (' + why + ')');
+    }
+  }
+  if (tb.st !== 'roll') {
+    o.pmain = o.pbk = 0;
+    return;
+  }
+  for (const m of ['main', 'bk']) {
+    const k = TCS_OST[m],
+      p = 'p' + m,
+      goal = o[m] ? k.max : 0;
+    /* A024: the high rate while the pattern is at or below the rate change speed; down always at the high rate (PA2 decrease) */
+    const ri = (o[m] && o[p] <= k.chg ? TCS_OST.hi : TCS_OST.lo) * dt,
+      rd = TCS_OST.hi * dt;
+    o[p] = goal > o[p] ? Math.min(goal, o[p] + ri) : Math.max(goal, o[p] - rd);
+  }
+  /* TCE178 ADD024: the pattern on the speed reference (base = the selected target speed, else rated) */
+  const pat = o.pmain + o.pbk,
+    base = c.spd && c.spd.sel > 0 ? c.spd.sel : 3600;
+  if (pat > 0 && tb.rpm >= base - 7.2) tb.rpm = base + pat;
+  o.pat = pat;
 }
