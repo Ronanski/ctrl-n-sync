@@ -111,6 +111,45 @@
     tools,
     eng = false;
 
+  /* The groups of a list fold: a press on the title of a group hides its entries (the entry that is open stays). What the operator folded is
+     remembered per list. dflt 1 = a long list starts folded; q = a search is on, so every group is open. */
+  const folds = {
+    get: k => {
+      try {
+        return JSON.parse(mem.get('fold-' + k) || '{}') || {};
+      } catch (e) {
+        return {};
+      }
+    },
+    set: (k, o) => mem.set('fold-' + k, JSON.stringify(o))
+  };
+  function foldApply(box, key, dflt, q) {
+    const F = folds.get(key);
+    let shut = false,
+      head = null;
+    for (const e of box.children) {
+      if (e.classList.contains('st-grp')) {
+        head = e;
+        shut = !q && (F[e._g] != null ? !!F[e._g] : !!dflt);
+        e.classList.toggle('shut', shut);
+        e.setAttribute('aria-expanded', String(!shut));
+      } else if (e.classList.contains('st-nav')) e.classList.toggle('fold', !!head && shut);
+    }
+  }
+  function grpHead(box, key, name, n, dflt) {
+    const b = E('button', 'st-grp');
+    b.append(E('span', '', name));
+    if (n != null) b.append(E('i', '', String(n)));
+    b._g = name;
+    b.onclick = () => {
+      const F = folds.get(key);
+      F[name] = b.classList.contains('shut') ? 0 : 1;
+      folds.set(key, F);
+      foldApply(box, key, dflt, box._find && box._find.value.trim());
+    };
+    box.append(b);
+    return b;
+  }
   function drag(pop) {
     const h = $('header', pop);
     h.addEventListener('pointerdown', e => {
@@ -162,10 +201,14 @@
     sh.append(root);
     const rail = E('nav', 'st-rail');
     rail.setAttribute('aria-label', 'Pages of the unit');
-    const unit = E('div', 'st-unit', 'LMYP Unit 1'),
-      hide = E('button', 'st-t', '‹ Hide');
+    const unit = E('div', 'st-unit'),
+      hide = E('button', 'st-t', '‹ Hide'),
+      verB = E('button', 'st-who');
     hide.setAttribute('aria-label', 'Hide the page list');
-    unit.append(hide);
+    verB.append(E('b', '', 'LMYP Unit 1'), E('small', 'st-ver', VER || 'Version'));
+    verB.title = 'Version, update and channel';
+    verB.onclick = about;
+    unit.append(verB, hide);
     stnSeg = E('div', 'st-stn');
     for (const [k, t, tip] of STATIONS) {
       const b = E('button', 'st-b', t);
@@ -192,10 +235,7 @@
     const insB = E('button', 'st-b st-ins', 'Instructor');
     insB.title = 'Starting point, save points, faults and trips';
     insB.onclick = instructor;
-    const verB = E('button', 'st-t st-ver', VER || 'Version');
-    verB.title = 'Version, update and channel';
-    verB.onclick = about;
-    foot.append(mode, insB, verB);
+    foot.append(mode, insB);
     rail.append(unit, stnSeg, list, sheets, foot);
     const top = E('header', 'st-top'),
       show = E('button', 'st-b', 'Pages ›');
@@ -275,6 +315,19 @@
       true
     );
     document.body.append(host);
+    /* Esc closes the popup on top (at the window, before the key handlers of the app) */
+    addEventListener(
+      'keydown',
+      e => {
+        if (e.key !== 'Escape') return;
+        const P = [...root.querySelectorAll('.st-pop')].filter(p => !p.hidden);
+        if (!P.length) return;
+        P[P.length - 1].hidden = true;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      },
+      true
+    );
     const setRail = on => {
       document.body.classList.toggle('st-norail', !on);
       root.classList.toggle('norail', !on);
@@ -317,7 +370,7 @@
     for (const [g, ids] of STATIONS.find(x => x[0] === stn)[3]) {
       const have = ids.filter(i => P[i]);
       if (!have.length) continue;
-      if (g) list.append(E('div', 'st-grp', g));
+      if (g) grpHead(list, 'pages-' + stn, g, null, 0);
       for (const i of have) {
         const b = E('button', 'st-nav', P[i]);
         b._id = i;
@@ -325,6 +378,7 @@
         list.append(b);
       }
     }
+    foldApply(list, 'pages-' + stn, 0);
     for (const b of stnSeg.children) {
       b.classList.toggle('on', b._k === stn);
       b.setAttribute('aria-pressed', String(b._k === stn));
@@ -344,6 +398,7 @@
   /* Engineer shows the logic view of the app (its own drawing, zoom and trace) inside the station; Operator shows the plant pages */
   function setEng(on) {
     eng = !!on;
+    mem.set('eng', eng ? '1' : '0');
     document.body.classList.toggle('st-eng', eng);
     list.hidden = eng;
     stnSeg.hidden = eng;
@@ -458,8 +513,26 @@
       .split(' · ')[0]
       .trim();
   const optTitle = t => String(t).split(' · ').slice(1).join(' · ').trim();
+  /* the view of the last time: Engineer, its family of sheets and the sheet that was open there */
+  let restoring = false;
+  function restore() {
+    restoring = true;
+    setEng(true);
+    const f = mem.get('fam'),
+      last = () => {
+        const n = mem.get('sheet-' + fam),
+          b = n && [...sheets.querySelectorAll('.st-nav')].find(x => x._name === n);
+        restoring = false;
+        if (b && !b.classList.contains('on')) b.click();
+      };
+    if (f && f !== fam && FAMS.some(x => x[0] === f)) {
+      setFam(f);
+      setTimeout(last, 1600);
+    } else setTimeout(last, 900);
+  }
   function setFam(f) {
     fam = f;
+    mem.set('fam', f);
     const b = [...document.querySelectorAll('#gsbar button')].find(x =>
       x.title.startsWith(FAMS.find(y => y[0] === f)[2])
     );
@@ -484,6 +557,46 @@
     TCA: 'Start-up logic (TCA)',
     '': 'Typical logic'
   };
+  /* The groups of the Analog sheets (ABC) and of the Digital sheets (DITL), by the number of the sheet: sheets of one system stand together under the
+     name of that system, in the words of the page list. A sheet whose number is in no group stands under Other. */
+  const AN_G = [
+    ['Contents and symbols', [0]],
+    ['Unit master', [1]],
+    ['Fuel and limestone', [3, 4, 5, 28, 29]],
+    ['Air and furnace pressure', [2, 6, 7, 8, 14]],
+    ['Furnace temperature and bottom ash', [9, 15, 16, 26, 27, 57]],
+    ['Drum and steam', [10, 11, 12, 13, 17, 19, 20, 54, 55]],
+    ['Auxiliary steam, condensate and heaters', [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 56]],
+    ['Turbine bypass and oil', [50, 51, 52, 53]]
+  ];
+  const rng = (p, q) => Array.from({ length: q - p + 1 }, (_, i) => p + i);
+  const DI_G = [
+    ['Contents', [0]],
+    ['Purge and master fuel trip', rng(1, 6)],
+    ['Burners', rng(7, 18)],
+    ['Coal feeders and bottom ash', [19, 20, 21, 117, 118]],
+    ['Pumps and fans', [...rng(22, 31), 111, 112, 120]],
+    ['Spray valves, alarms and annunciator', [...rng(32, 38), 40, 41, 42, 50]],
+    ['Air preheater and compressed air', [43, 44, 45, 113, 114]],
+    ['Auxiliary steam, vents and drains', [...rng(51, 57), 116]],
+    ['Condensate', [...rng(60, 72), 119]],
+    ['Steam lines and bypass', [73, 74, 75, 79, 80, 81, 83, 88, 89, 121]],
+    ['Cooling and service water', [39, 76, 77, 78, 86, 87, 92, 93]],
+    ['Extraction steam', rng(94, 110)],
+    ['Turbine interface', [115]]
+  ];
+  /* the sheets of the other drawings of the digital logic, told by the letter the app lists them with */
+  const DI_X = { S: 'Sootblowers', B: 'DITL-BA sheets', L: 'Limestone feeding (LS)', D: 'Sand injection' };
+  const inG = (G, n) => {
+    const i = G.findIndex(g => g[1].includes(n));
+    return i < 0 ? [90, 'Other'] : [i, G[i][0]];
+  };
+  const anGroup = name => inG(AN_G, +((/-(\d+)/.exec(name) || [])[1] || -1));
+  const diGroup = (text, name) => {
+    const x = (/^\(([A-Z]+)\d+\)/.exec(text) || [])[1];
+    if (x && DI_X[x]) return [50 + Object.keys(DI_X).indexOf(x), DI_X[x]];
+    return inG(DI_G, +((/-(\d+)/.exec(name) || [])[1] || -1));
+  };
   function fillSheets() {
     const q0 = sheets._find ? sheets._find.value : '';
     sheets.textContent = '';
@@ -501,37 +614,60 @@
     find.value = q0;
     sheets._find = find;
     sheets.append(seg, find);
-    const add = (name, title, i, open) => {
-      const b = E('button', 'st-nav', name);
-      b._i = i;
-      b.title = title;
-      b._q = (name + ' ' + title).toLowerCase();
-      b.onclick = () => {
-        call(open);
-        setTimeout(tick, 150);
-        setTimeout(() => zoom('fit'), 500);
-      };
-      sheets.append(b);
-    };
+    const key = 'sh-' + fam,
+      L = [];
     if (fam === 'an')
-      ((window.AN && AN.sheets) || []).forEach((x, i) => add(sheetName(x), sheetTitle(x), i, () => AN.go(i)));
+      ((window.AN && AN.sheets) || []).forEach((x, i) =>
+        L.push({ name: sheetName(x), title: sheetTitle(x), i, open: () => AN.go(i), g: anGroup(sheetName(x)) })
+      );
     else {
-      const sel = shsel();
-      let grp = null;
+      const sel = shsel(),
+        seen = [];
       if (sel)
         for (const o of sel.options) {
           const tcs = /TCS-/.test(o.textContent);
           if (tcs !== (fam === 'tcs')) continue;
+          const name = optName(o.textContent);
+          let g;
           if (tcs) {
-            /* the sheets of the turbine control in the groups of their drawing (the letters of the sheet number) */
-            const g = TCS_SHEETS[(/TCS-([A-Z]+)-/.exec(o.textContent) || [])[1] || ''] || TCS_SHEETS[''];
-            if (g !== grp) sheets.append(E('div', 'st-grp', (grp = g)));
-          }
-          add(optName(o.textContent), optTitle(o.textContent), o.value, () => {
-            sel.value = o.value;
-            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            /* the sheets of the turbine control in the groups of their drawing (the letters of the sheet number), in the order they come */
+            const t = TCS_SHEETS[(/TCS-([A-Z]+)-/.exec(o.textContent) || [])[1] || ''] || TCS_SHEETS[''];
+            if (!seen.includes(t)) seen.push(t);
+            g = [seen.indexOf(t), t];
+          } else g = diGroup(o.textContent, name);
+          L.push({
+            name,
+            title: optTitle(o.textContent),
+            i: o.value,
+            g,
+            open: () => {
+              sel.value = o.value;
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+            }
           });
         }
+    }
+    const nat = t => t.replace(/\d+/g, d => d.padStart(5, '0'));
+    L.forEach((x, n) => (x.n = n));
+    L.sort((p, q) => p.g[0] - q.g[0] || (fam === 'an' ? (nat(p.name) < nat(q.name) ? -1 : nat(p.name) > nat(q.name) ? 1 : 0) : p.n - q.n));
+    let grp = null;
+    for (const x of L) {
+      if (x.g[1] !== grp) {
+        grp = x.g[1];
+        grpHead(sheets, key, grp, L.filter(y => y.g[1] === grp).length, 1);
+      }
+      const b = E('button', 'st-nav');
+      b.append(E('span', '', x.name));
+      if (x.title) b.append(E('small', '', x.title));
+      b._i = x.i;
+      b._name = x.name;
+      b._q = (x.name + ' ' + x.title).toLowerCase();
+      b.onclick = () => {
+        call(x.open);
+        setTimeout(tick, 150);
+        setTimeout(() => zoom('fit'), 500);
+      };
+      sheets.append(b);
     }
     find.oninput = () => {
       const q = find.value.trim().toLowerCase();
@@ -543,6 +679,7 @@
         for (; e && !e.classList.contains('st-grp'); e = e.nextElementSibling) if (!e.hidden) any = true;
         g.hidden = !any;
       }
+      foldApply(sheets, key, 1, q);
     };
     find.oninput();
   }
@@ -1738,7 +1875,10 @@
       b.classList.toggle('on', b._e === eng);
       b.setAttribute('aria-pressed', String(b._e === eng));
     }
-    for (const b of sheets.querySelectorAll('.st-nav')) b.classList.toggle('on', b._i === ci);
+    for (const b of sheets.querySelectorAll('.st-nav')) {
+      b.classList.toggle('on', b._i === ci);
+      if (eng && !restoring && b._i === ci && b._name) mem.set('sheet-' + fam, b._name);
+    }
     for (const b of list.querySelectorAll('.st-nav')) {
       const on = b._id === c;
       b.classList.toggle('on', on);
@@ -1889,6 +2029,7 @@
       const P = pages(),
         want = mem.get('page');
       go(P[want] ? want : P.overview ? 'overview' : Object.keys(P)[0]);
+      if (mem.get('eng') === '1') setTimeout(restore, 800);
       /* the refresh of the station: each half second, each second in Lite mode */
       const loop = () => {
         tick();
