@@ -43092,7 +43092,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 3fda2e3'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build e67f741'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -47925,14 +47925,20 @@ AN.freeze = (on, why) => {
      its booster, the auxiliary cooling water, the condensate, the feedwater; the air and gas line: air heater, IDF, FAB, SAF, PAF, purge,
      burner, coal; the turbine: roll after the burner, synchronizing after the roll). A milestone done while one of those is not done is
      "out of order". The plant interlocks block most of these by themselves; what they let through is what the score shows.
-   - Trips: every MFT and every turbine trip after the start of the score (the records of soe.js).
-   - Score: 100 minus the deductions of AN_SOP_W (NO-SOURCE: the instructor's weights, not from a document; set them with
-     AN.sopScore({ w: { mft, tt, order } })). A milestone already done when the score starts (a 150 MW starting point) is "given".
-   AN.sopScore()            -> { from, t, score, steps: [{ id, sec, name, at, given, late: [ids not yet done then] }], trips: { mft, tt },
-                                 deduct: [{ why, pts }], w }
+   - Trips: every MFT and every turbine trip after the start of the score (the records of soe.js). A trip costs what it undoes, measured
+     on the plant: while the trip stands (the MFT until its reset, the turbine trip until the TCS reset) every milestone that was done and
+     whose signal drops is lost and has to be done again; an MFT also takes the furnace purge (a new purge before the burners, PR-OPE-5002
+     section 26 / DITL-02).
+   - Score, how it is derived (no weight is typed in; no plant document gives a scoring rule: the document lists, file-lists/*.tsv, hold
+     knowledge exams only, CFB/TG_Line Tracing/TG_Presentation/Exam): the procedure is the yardstick, so every point is a share of the
+     procedure. One milestone = 100 / (number of milestones) points, 5.6 with 18. A milestone lost to a trip costs its share (the work
+     the trainee has to do again: a turbine trip at 150 MW that drops roll, synchronizing, burners and coal costs 4 shares, a trip that drops
+     more costs more, as on the real plant). A milestone done out of the order of the procedure costs its share (it was not done as the
+     procedure says). A milestone already done when the score starts (a 150 MW starting point) is "given".
+   AN.sopScore()            -> { from, t, score, of (milestones), steps: [{ id, sec, name, at, given, late: [ids not yet done then] }],
+                                 todo, lost: [{ id, name, by, at }], trips: { mft, tt }, deduct: [{ why, n, pts }] }
    AN.sopScore({ restart }) -> starts the score again from now (the instructor, a new trainee); the score also starts again at each load
                                 of a plant. */
-const AN_SOP_W = { mft: 25, tt: 25, order: 5 };
 /* [id, PR-OPE-5002 section (1-based, as printed), sheet, output name, the milestones before it] */
 const AN_SOP_M = [
   ['swp', 2, /DITL-39$/, /^ANY SEAWATER PUMP RUNNING/, []],
@@ -47954,7 +47960,7 @@ const AN_SOP_M = [
   ['sync', 42, null, 'sync', ['roll']],
   ['coal', 44, /DITL-19$/, /^COAL FEEDER A RUNNING/, ['burner']]
 ];
-const AN_SOP = { of: null, from: null, pts: null, st: {}, steps: [], soeN: 0, trips: { mft: 0, tt: 0 }, w: Object.assign({}, AN_SOP_W), lt: -1 };
+const AN_SOP = { of: null, from: null, pts: null, st: {}, steps: [], soeN: 0, trips: { mft: 0, tt: 0 }, lost: [] };
 function anSopName(id) {
   const m = AN_SOP_M.find(x => x[0] === id),
     P = (typeof window !== 'undefined' && window.LS_PROC5002) || [];
@@ -48006,9 +48012,9 @@ function anSopRestart() {
   Z.from = Math.round(anPlantT() * 10) / 10;
   Z.st = {};
   Z.steps = [];
+  Z.lost = [];
   Z.trips = { mft: 0, tt: 0 };
   Z.soeN = typeof AN_SOE !== 'undefined' ? AN_SOE.log.length : 0;
-  Z.lt = -1;
   Z.init = false;
 }
 function anSopStep() {
@@ -48018,6 +48024,23 @@ function anSopStep() {
   if (Z.of !== S.sheets) anSopRestart();
   const t = Math.round(anPlantT() * 10) / 10;
   anSopPoints();
+  /* the trips: the new records of the sequence of events (soe.js keeps its own record; it is emptied at a new plant, as this score) */
+  const L = typeof AN_SOE !== 'undefined' ? AN_SOE.log : [];
+  if (Z.soeN > L.length) Z.soeN = 0;
+  for (let i = Z.soeN; i < L.length; i++) {
+    if (L[i].kind === 'mft' && L[i].on === 1) {
+      Z.trips.mft++;
+      /* an MFT takes the furnace purge away: the burners are lit again only after a new purge (PR-OPE-5002 section 26, DITL-02) */
+      if (Z.init && Z.st.purge) anSopLose('purge', 'MASTER FUEL TRIP', t);
+    }
+    if (L[i].kind === 'tt' && L[i].on === 1) Z.trips.tt++;
+  }
+  Z.soeN = L.length;
+  /* what a trip undoes, while the trip stands (the MFT until its reset, the turbine trip until the TCS reset): each milestone that was done
+     and whose signal drops is lost and must be done again */
+  const by = typeof AN_SOE !== 'undefined' ? (AN_SOE.tt ? 'TURBINE TRIP' : AN_SOE.mft ? 'MASTER FUEL TRIP' : '') : '';
+  if (Z.init && by)
+    for (const [id, , re, nm] of AN_SOP_M) if (id !== 'purge' && Z.st[id] && !anSopDone(id, re, nm)) anSopLose(id, by, t);
   for (const [id, sec, re, nm, before] of AN_SOP_M) {
     if (Z.st[id]) continue;
     if (!anSopDone(id, re, nm)) continue;
@@ -48039,35 +48062,32 @@ function anSopStep() {
         }
     }
   Z.init = true;
-  /* the trips: the new records of the sequence of events (soe.js keeps its own record; it is emptied at a new plant, as this score) */
-  const L = typeof AN_SOE !== 'undefined' ? AN_SOE.log : [];
-  if (Z.soeN > L.length) Z.soeN = 0;
-  for (let i = Z.soeN; i < L.length; i++) {
-    if (L[i].kind === 'mft' && L[i].on === 1) Z.trips.mft++;
-    if (L[i].kind === 'tt' && L[i].on === 1) Z.trips.tt++;
-  }
-  Z.soeN = L.length;
+}
+function anSopLose(id, by, t) {
+  const Z = AN_SOP;
+  delete Z.st[id];
+  Z.lost.push({ id, name: anSopName(id), by, at: t });
 }
 AN.sopScore = o => {
   const Z = AN_SOP;
-  if (o && o.w) for (const k of Object.keys(AN_SOP_W)) if (isFinite(o.w[k]) && o.w[k] >= 0) Z.w[k] = +o.w[k];
   if (o && o.restart) anSopRestart();
-  const D = [];
-  if (Z.trips.mft) D.push({ why: Z.trips.mft + ' x MASTER FUEL TRIP', pts: Z.trips.mft * Z.w.mft });
-  if (Z.trips.tt) D.push({ why: Z.trips.tt + ' x TURBINE TRIP', pts: Z.trips.tt * Z.w.tt });
+  const N = AN_SOP_M.length,
+    D = [];
+  for (const x of Z.lost || []) D.push({ why: x.name + ' undone by the ' + x.by + ' at ' + x.at + ' s', n: 1 });
   for (const s of Z.steps)
-    if (s.late.length)
-      D.push({ why: s.name + ' before ' + s.late.map(anSopName).join(', ') + ' (PR-OPE-5002 order)', pts: Z.w.order });
-  const lost = D.reduce((a, x) => a + x.pts, 0);
+    if (s.late.length) D.push({ why: s.name + ' done before ' + s.late.map(anSopName).join(', ') + ' (PR-OPE-5002 order)', n: 1 });
+  const pts = 100 / N;
+  for (const d of D) d.pts = Math.round(d.n * pts * 10) / 10;
   return {
     from: Z.from,
     t: Math.round(anPlantT() * 10) / 10,
-    score: Math.max(0, 100 - lost),
+    score: Math.max(0, Math.round((100 - D.length * pts) * 10) / 10),
+    of: N,
     steps: Z.steps.map(s => Object.assign({}, s, { late: s.late.slice() })),
     todo: AN_SOP_M.filter(m => !Z.st[m[0]]).map(m => ({ id: m[0], sec: m[1], name: anSopName(m[0]) })),
+    lost: (Z.lost || []).map(x => Object.assign({}, x)),
     trips: Object.assign({}, Z.trips),
-    deduct: D,
-    w: Object.assign({}, Z.w)
+    deduct: D
   };
 };
 AN._sop = AN_SOP; /* the state, for the regression test (tests/regress/sop_score.js) */
@@ -98050,14 +98070,20 @@ AN.freeze = (on, why) => {
      its booster, the auxiliary cooling water, the condensate, the feedwater; the air and gas line: air heater, IDF, FAB, SAF, PAF, purge,
      burner, coal; the turbine: roll after the burner, synchronizing after the roll). A milestone done while one of those is not done is
      "out of order". The plant interlocks block most of these by themselves; what they let through is what the score shows.
-   - Trips: every MFT and every turbine trip after the start of the score (the records of soe.js).
-   - Score: 100 minus the deductions of AN_SOP_W (NO-SOURCE: the instructor's weights, not from a document; set them with
-     AN.sopScore({ w: { mft, tt, order } })). A milestone already done when the score starts (a 150 MW starting point) is "given".
-   AN.sopScore()            -> { from, t, score, steps: [{ id, sec, name, at, given, late: [ids not yet done then] }], trips: { mft, tt },
-                                 deduct: [{ why, pts }], w }
+   - Trips: every MFT and every turbine trip after the start of the score (the records of soe.js). A trip costs what it undoes, measured
+     on the plant: while the trip stands (the MFT until its reset, the turbine trip until the TCS reset) every milestone that was done and
+     whose signal drops is lost and has to be done again; an MFT also takes the furnace purge (a new purge before the burners, PR-OPE-5002
+     section 26 / DITL-02).
+   - Score, how it is derived (no weight is typed in; no plant document gives a scoring rule: the document lists, file-lists/*.tsv, hold
+     knowledge exams only, CFB/TG_Line Tracing/TG_Presentation/Exam): the procedure is the yardstick, so every point is a share of the
+     procedure. One milestone = 100 / (number of milestones) points, 5.6 with 18. A milestone lost to a trip costs its share (the work
+     the trainee has to do again: a turbine trip at 150 MW that drops roll, synchronizing, burners and coal costs 4 shares, a trip that drops
+     more costs more, as on the real plant). A milestone done out of the order of the procedure costs its share (it was not done as the
+     procedure says). A milestone already done when the score starts (a 150 MW starting point) is "given".
+   AN.sopScore()            -> { from, t, score, of (milestones), steps: [{ id, sec, name, at, given, late: [ids not yet done then] }],
+                                 todo, lost: [{ id, name, by, at }], trips: { mft, tt }, deduct: [{ why, n, pts }] }
    AN.sopScore({ restart }) -> starts the score again from now (the instructor, a new trainee); the score also starts again at each load
                                 of a plant. */
-const AN_SOP_W = { mft: 25, tt: 25, order: 5 };
 /* [id, PR-OPE-5002 section (1-based, as printed), sheet, output name, the milestones before it] */
 const AN_SOP_M = [
   ['swp', 2, /DITL-39$/, /^ANY SEAWATER PUMP RUNNING/, []],
@@ -98079,7 +98105,7 @@ const AN_SOP_M = [
   ['sync', 42, null, 'sync', ['roll']],
   ['coal', 44, /DITL-19$/, /^COAL FEEDER A RUNNING/, ['burner']]
 ];
-const AN_SOP = { of: null, from: null, pts: null, st: {}, steps: [], soeN: 0, trips: { mft: 0, tt: 0 }, w: Object.assign({}, AN_SOP_W), lt: -1 };
+const AN_SOP = { of: null, from: null, pts: null, st: {}, steps: [], soeN: 0, trips: { mft: 0, tt: 0 }, lost: [] };
 function anSopName(id) {
   const m = AN_SOP_M.find(x => x[0] === id),
     P = (typeof window !== 'undefined' && window.LS_PROC5002) || [];
@@ -98131,9 +98157,9 @@ function anSopRestart() {
   Z.from = Math.round(anPlantT() * 10) / 10;
   Z.st = {};
   Z.steps = [];
+  Z.lost = [];
   Z.trips = { mft: 0, tt: 0 };
   Z.soeN = typeof AN_SOE !== 'undefined' ? AN_SOE.log.length : 0;
-  Z.lt = -1;
   Z.init = false;
 }
 function anSopStep() {
@@ -98143,6 +98169,23 @@ function anSopStep() {
   if (Z.of !== S.sheets) anSopRestart();
   const t = Math.round(anPlantT() * 10) / 10;
   anSopPoints();
+  /* the trips: the new records of the sequence of events (soe.js keeps its own record; it is emptied at a new plant, as this score) */
+  const L = typeof AN_SOE !== 'undefined' ? AN_SOE.log : [];
+  if (Z.soeN > L.length) Z.soeN = 0;
+  for (let i = Z.soeN; i < L.length; i++) {
+    if (L[i].kind === 'mft' && L[i].on === 1) {
+      Z.trips.mft++;
+      /* an MFT takes the furnace purge away: the burners are lit again only after a new purge (PR-OPE-5002 section 26, DITL-02) */
+      if (Z.init && Z.st.purge) anSopLose('purge', 'MASTER FUEL TRIP', t);
+    }
+    if (L[i].kind === 'tt' && L[i].on === 1) Z.trips.tt++;
+  }
+  Z.soeN = L.length;
+  /* what a trip undoes, while the trip stands (the MFT until its reset, the turbine trip until the TCS reset): each milestone that was done
+     and whose signal drops is lost and must be done again */
+  const by = typeof AN_SOE !== 'undefined' ? (AN_SOE.tt ? 'TURBINE TRIP' : AN_SOE.mft ? 'MASTER FUEL TRIP' : '') : '';
+  if (Z.init && by)
+    for (const [id, , re, nm] of AN_SOP_M) if (id !== 'purge' && Z.st[id] && !anSopDone(id, re, nm)) anSopLose(id, by, t);
   for (const [id, sec, re, nm, before] of AN_SOP_M) {
     if (Z.st[id]) continue;
     if (!anSopDone(id, re, nm)) continue;
@@ -98164,35 +98207,32 @@ function anSopStep() {
         }
     }
   Z.init = true;
-  /* the trips: the new records of the sequence of events (soe.js keeps its own record; it is emptied at a new plant, as this score) */
-  const L = typeof AN_SOE !== 'undefined' ? AN_SOE.log : [];
-  if (Z.soeN > L.length) Z.soeN = 0;
-  for (let i = Z.soeN; i < L.length; i++) {
-    if (L[i].kind === 'mft' && L[i].on === 1) Z.trips.mft++;
-    if (L[i].kind === 'tt' && L[i].on === 1) Z.trips.tt++;
-  }
-  Z.soeN = L.length;
+}
+function anSopLose(id, by, t) {
+  const Z = AN_SOP;
+  delete Z.st[id];
+  Z.lost.push({ id, name: anSopName(id), by, at: t });
 }
 AN.sopScore = o => {
   const Z = AN_SOP;
-  if (o && o.w) for (const k of Object.keys(AN_SOP_W)) if (isFinite(o.w[k]) && o.w[k] >= 0) Z.w[k] = +o.w[k];
   if (o && o.restart) anSopRestart();
-  const D = [];
-  if (Z.trips.mft) D.push({ why: Z.trips.mft + ' x MASTER FUEL TRIP', pts: Z.trips.mft * Z.w.mft });
-  if (Z.trips.tt) D.push({ why: Z.trips.tt + ' x TURBINE TRIP', pts: Z.trips.tt * Z.w.tt });
+  const N = AN_SOP_M.length,
+    D = [];
+  for (const x of Z.lost || []) D.push({ why: x.name + ' undone by the ' + x.by + ' at ' + x.at + ' s', n: 1 });
   for (const s of Z.steps)
-    if (s.late.length)
-      D.push({ why: s.name + ' before ' + s.late.map(anSopName).join(', ') + ' (PR-OPE-5002 order)', pts: Z.w.order });
-  const lost = D.reduce((a, x) => a + x.pts, 0);
+    if (s.late.length) D.push({ why: s.name + ' done before ' + s.late.map(anSopName).join(', ') + ' (PR-OPE-5002 order)', n: 1 });
+  const pts = 100 / N;
+  for (const d of D) d.pts = Math.round(d.n * pts * 10) / 10;
   return {
     from: Z.from,
     t: Math.round(anPlantT() * 10) / 10,
-    score: Math.max(0, 100 - lost),
+    score: Math.max(0, Math.round((100 - D.length * pts) * 10) / 10),
+    of: N,
     steps: Z.steps.map(s => Object.assign({}, s, { late: s.late.slice() })),
     todo: AN_SOP_M.filter(m => !Z.st[m[0]]).map(m => ({ id: m[0], sec: m[1], name: anSopName(m[0]) })),
+    lost: (Z.lost || []).map(x => Object.assign({}, x)),
     trips: Object.assign({}, Z.trips),
-    deduct: D,
-    w: Object.assign({}, Z.w)
+    deduct: D
   };
 };
 AN._sop = AN_SOP; /* the state, for the regression test (tests/regress/sop_score.js) */
@@ -126553,7 +126593,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 3fda2e3'));
+    row('Version', E('span', 'scsver', ver + ' · build e67f741'));
   }
   function openSet(near) {
     if (!set) {
