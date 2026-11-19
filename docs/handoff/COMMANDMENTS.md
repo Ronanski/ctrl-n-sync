@@ -1,4 +1,4 @@
-# THE COMMANDMENTS: LOGIC_SIM_PROJECT (icms-master-tool)
+# THE COMMANDMENTS: LMYP OTS (ctrl-n-sync; dating LOGIC_SIM_PROJECT, icms-master-tool)
 
 These are the user's standing rules (updated 2026-11-06 from the user's latest words: the project instructions and "Db wala go beta"). Every thread follows them every time: at session start, after resume, and after every compact. Where an older document disagrees, these win. Never make the user repeat them.
 
