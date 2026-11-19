@@ -101,7 +101,8 @@ html body.st:not(#st0):not(#st1) #plfp:not(#st2) .tg { flex-wrap: wrap !importan
 /* Engineer: the logic drawing of the app inside the station, as an engineering drawing: one ink on dark grey paper, no fill.
    Amber stays for alarm blocks; the live colours of a traced or forced signal are left as the app sets them. */
 html body.st.st-eng:not(#st0):not(#st1) #plantws:not(#st2) { display: none !important; }
-html body.st.st-eng:not(#st0):not(#st1) #cv:not(#st2) { visibility: visible !important; pointer-events: auto !important; position: fixed !important; left: var(--st-rail) !important; top: 44px !important; right: 0 !important; bottom: 32px !important; width: auto !important; height: auto !important; margin: 0 !important; border: 0 !important; background: #1f2428 !important; z-index: 5 !important; }
+/* the zoom tools of a sheet stand in their own strip of 40 px over the drawing, so they never cover a part of it (tablet check 2026-11-20) */
+html body.st.st-eng:not(#st0):not(#st1) #cv:not(#st2) { visibility: visible !important; pointer-events: auto !important; position: fixed !important; left: var(--st-rail) !important; top: 84px !important; right: 0 !important; bottom: 32px !important; width: auto !important; height: auto !important; margin: 0 !important; border: 0 !important; background: #1f2428 !important; z-index: 5 !important; }
 html body.st.st-eng:not(#st0):not(#st1) #cv:not(#st2) * { visibility: visible !important; pointer-events: auto !important; }
 html body.st.st-eng:not(#st0):not(#st1) #svg:not(#st2) { background: #1f2428 !important; width: 100% !important; height: 100% !important; }
 html body.st.st-eng:not(#st0):not(#st1) #svg:not(#st2) text { stroke: #1f2428 !important; }
