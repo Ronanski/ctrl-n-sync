@@ -127,3 +127,8 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-pa { align-items: center; padding-top: 12px; }
 .st-pa .st-b.arm { outline: 2px solid var(--st-alm); outline-offset: -1px; background: #4a3508; color: #fff; }
 .st-pm { color: var(--st-alm); }
+.st-gov { display: flex; flex-wrap: wrap; gap: 16px; padding-top: 16px; }
+.st-gc { flex: 1 1 280px; max-width: 420px; border: 1px solid var(--st-line); border-radius: 2px; padding: 0 16px 16px; }
+.st-gc .st-gv { display: block; font: 600 28px var(--st-num); font-variant-numeric: tabular-nums; }
+.st-gc .st-cs { display: block; font-size: 12px; color: var(--st-dim); margin: 4px 0 12px; }
+p.st-pm { margin: 16px 0 0; min-height: 18px; }
