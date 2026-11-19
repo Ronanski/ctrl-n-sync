@@ -1702,7 +1702,19 @@ function tcsLiveRead(U) {
     fd: G ? G.fd : null,
     govMan: G && G.govMan ? 1 : 0 /* GOV. MANUAL OPERATION */,
     llmMan: G && G.llmMan ? 1 : 0 /* LLM MANUAL OPERATION */,
-    limiting: G && G.limiting ? 1 : 0 /* LOAD LIMITING */
+    limiting: G && G.limiting ? 1 : 0 /* LOAD LIMITING */,
+    /* TCE300 / 305 / 310: the oil pumps of the oil model (tcsOil): running, and the discharge / bearing oil pressures, kg/cm2g */
+    mopA: c.mop && c.mop[0] ? 1 : 0,
+    mopB: c.mop && c.mop[1] ? 1 : 0,
+    copA: c.cop && c.cop[0] ? 1 : 0,
+    copB: c.cop && c.cop[1] ? 1 : 0,
+    eop: c.eop ? 1 : 0,
+    mopPa: isFinite(U.loPa) ? U.loPa : null,
+    mopPb: isFinite(U.loPb) ? U.loPb : null,
+    copPa: isFinite(U.loCa) ? U.loCa : null,
+    copPb: isFinite(U.loCb) ? U.loCb : null,
+    eopP: isFinite(U.loEop) ? U.loEop : null,
+    brgLow: isFinite(U.loBrg) && U.loBrg <= TCS_OIL.brgLo ? 1 : 0 /* the bearing oil low of the EOP auto start (tcsOil) */
   };
 }
 function tcsOstPerm(U, m) {
