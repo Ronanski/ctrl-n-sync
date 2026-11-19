@@ -34126,10 +34126,11 @@ function tcsTripState(U) {
   if (!c) return null;
   const ib = tcsIb(c);
   /* Mina T3, 3.2.3-beta.1: a Turbine reset refused showed no cause. held = the TA-9 trip inputs at 1 now (a held trip keeps the A gate
-     of the reset at 0, IBD TA-1), so the page can say what holds the trip */
+     of the reset at 0, IBD TA-1), so the page can say what holds the trip. Redundant channels (BOILER MFT 1 / 2, TA-9 in 21 / 22) give the
+     same name once their numbers are cleaned: each name is listed once (live overspeed test 2026-11-19 showed BOILER MFT twice) */
   const s = TCS_IBD.by['TA-9'],
     v = ib.v['TA-9'] || [],
-    held = s ? s.i.filter(i => v[i[0]] > 0.5).map(i => tcsIbdName(i[1])) : [];
+    held = s ? [...new Set(s.i.filter(i => v[i[0]] > 0.5).map(i => tcsIbdName(i[1])))] : [];
   return { first: ib.first, at: ib.at, held };
 }
 /* the live values of one sheet, for the drawing */
@@ -42952,7 +42953,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 7b6e9ee'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build d839df3'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -92152,10 +92153,11 @@ function tcsTripState(U) {
   if (!c) return null;
   const ib = tcsIb(c);
   /* Mina T3, 3.2.3-beta.1: a Turbine reset refused showed no cause. held = the TA-9 trip inputs at 1 now (a held trip keeps the A gate
-     of the reset at 0, IBD TA-1), so the page can say what holds the trip */
+     of the reset at 0, IBD TA-1), so the page can say what holds the trip. Redundant channels (BOILER MFT 1 / 2, TA-9 in 21 / 22) give the
+     same name once their numbers are cleaned: each name is listed once (live overspeed test 2026-11-19 showed BOILER MFT twice) */
   const s = TCS_IBD.by['TA-9'],
     v = ib.v['TA-9'] || [],
-    held = s ? s.i.filter(i => v[i[0]] > 0.5).map(i => tcsIbdName(i[1])) : [];
+    held = s ? [...new Set(s.i.filter(i => v[i[0]] > 0.5).map(i => tcsIbdName(i[1])))] : [];
   return { first: ib.first, at: ib.at, held };
 }
 /* the live values of one sheet, for the drawing */
@@ -127847,7 +127849,7 @@ window.LS_GUIDE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 7b6e9ee'));
+    row('Version', E('span', 'scsver', ver + ' · build d839df3'));
   }
   function openSet(near) {
     if (!set) {
