@@ -135,3 +135,5 @@ p.st-pm { margin: 16px 0 0; min-height: 18px; }
 .st-steps .st-b.done { color: var(--st-dim); }
 .st-steps .st-b.done::before { content: "\2713  "; }
 .st-steps .st-b.arm { outline: 2px solid var(--st-alm); outline-offset: -1px; background: #4a3508; color: #fff; }
+.st-crit .st-cg { padding: 16px 0 4px; }
+.st-crit .st-cg:first-child { padding-top: 4px; }
