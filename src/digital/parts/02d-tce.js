@@ -12,6 +12,9 @@
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
      a: [[x1, y1], [x2, y2]]                                         note arrow of the drawing (open head at the second point)
+     l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical
+     d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
+                                                                     under it, note ('#1C') over it; an 'in' diamond is a wire source
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}]         small block, x y = its centre; no = the block number printed in it; notes = the
                                                                      parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
@@ -99,6 +102,19 @@ function tceSheet(q) {
     const k = 7 * u * (d === 'l' ? -1 : 1);
     poly([[x - k / 2, y - 4.5 * u], [x + k / 2, y], [x - k / 2, y + 4.5 * u]], 1);
   }
+  /* CRT diamonds: a push button of the operator station coming in ('in', tag at the left) or a lamp of it going out ('out', tag at the right) */
+  for (const [key, x, y, dir, tag, letter, note] of q.d || []) {
+    const w = 17 * u,
+      h = 11 * u;
+    poly([[x - w, y], [x, y - h], [x + w, y], [x, y + h]], 1);
+    tx.push(text('CRT', x, y, 1.6, 4));
+    if (letter) tx.push(text(letter, x, y + h + 7 * u, 1.7, 1));
+    if (note) tx.push(text('(' + note + ')', x, y - h - 4 * u, 1.7, 1));
+    if (tag) tx.push(text(tag, dir === 'in' ? x - w - 4 * u : x + w + 4 * u, y, 1.9, dir === 'in' ? 5 : 3));
+    net(key);
+  }
+  /* plain lines of the drawing that carry no signal (the rules of a table) */
+  for (const [a, b] of q.l || []) poly([a, b], 0);
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
     poly([a, b], 0);

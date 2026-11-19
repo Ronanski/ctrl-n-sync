@@ -46,6 +46,11 @@ for (const f of files) {
     for (const k of q.k || []) add(k[0]);
     for (const b of q.b || []) add(b[0]);
     for (const r of q.r || []) add(r[0]);
+    for (const d of q.d || []) {
+      add(d[0]);
+      if (d[3] !== 'in' && d[3] !== 'out') E('CRT diamond ' + d[0] + ': in or out');
+    }
+    for (const [a, b] of q.l || []) if (!a || !b || (a[0] !== b[0] && a[1] !== b[1])) E('a plain line is not horizontal or vertical: ' + JSON.stringify([a, b]));
     for (const [a, b] of q.a || []) if (!a || !b || a.length !== 2 || b.length !== 2) E('a note arrow is not [[x1, y1], [x2, y2]]');
     for (const m of q.m || []) {
       add(m[0]);

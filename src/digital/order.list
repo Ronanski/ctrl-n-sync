@@ -4,6 +4,7 @@ parts/02-netlist.js
 parts/02b-sand.js
 parts/02c-tcs.js
 tce/TCE022.js
+tce/TCE023.js
 tce/TCE172.js
 parts/02d-tce.js
 parts/03-models.js
