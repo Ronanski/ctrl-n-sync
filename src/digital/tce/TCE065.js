@@ -1,6 +1,9 @@
 /* TCE065 ANALOG INPUT SIGNAL DIAGNOSTICS(6) (331DM09784 page 33, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
    rendered 2296 wide. Drawn in the pattern of the analog input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr). The three values leave by D1, D2, D3.
-   The low limit (SG A017) is overprinted by a name in the drawing: K:-0.05 is read, its unit is typed like the unit of the high limit. */
+   The limits are typed as the drawing prints them: K:1.05g/cm2g (SG A012) and K:-0.05cm2g (SG A017, read from the page rendered three times
+   larger; a name is printed over it). The drawing cuts the unit short. Second source, TCS I/O list (iolist-tcs.zip, HMI_DI_FOR_EDIT.xlsx, analog
+   input sheet, PT-STn110-1 / -2 / -3): range 0 to 1 kg/cm2g. The limits are that range plus and minus 5 %, the same rule as on TCE060
+   (range 0 to 50: 51.0 and -2.5), so the values are 1.05 and -0.05 kg/cm2g. */
 (function () {
   if (typeof window === 'undefined') return;
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
@@ -14,7 +17,7 @@
       sh: ['071', '073', '075'],
       name: (ch, sig) =>
         sig ? ['LP TURBINE EXHAUST HOOD', 'STEAM PRESS.(COND VAC)(' + ch + ')'] : ['LP TURBINE EXHAUST HOOD STEAM', 'PRESS.(COND VAC)(' + ch + ') INPUT ERR'],
-      sg: ['K:1.05g/cm2g', 'K:-0.05g/cm2g', 'K:0.2kg/cm2g', 'K:0.1kg/cm2g'],
+      sg: ['K:1.05g/cm2g', 'K:-0.05cm2g', 'K:0.2kg/cm2g', 'K:0.1kg/cm2g'],
       over: 'LP TURBINE EXHAUST',
       out: ['HOOD STEAM PRESS.', '(COND VAC)', '(COND VAC) ABN.'],
       refA: ['-'],
