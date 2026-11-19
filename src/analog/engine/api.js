@@ -30,6 +30,7 @@ function anEngAPI() {
     fault: anFault,
     turbine: anTurbine,
     tcs: () => tcsState(),
+    tcsGov: () => tcsGovState(AN_UNIT),
     gen: () => anGenEl(),
     elec: () => anElec(),
     unitRestart: k => anUnitRestart(k),
