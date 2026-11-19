@@ -77,6 +77,22 @@ function anEngAPI() {
               if (S0.rt.st[z.id]) (S0.rt.st[z.id].hold = x), (S0.rt.st[z.id].y = x);
             }
       } catch (e) {}
+      /* Jennie live shutdown 2026-11-19 (post-MFT purge, ABC-020 HICHR1002A): a MAN station whose set input comes from an A / M switch on its
+         B leg (COS manual value, the station's own manual output in the DCS: AMT#40 selected by M.0179 / the station's MAN status) holds that
+         COS value. The faceplate wrote st.val only; the COS stayed 10 % and the station went back to it, so the purge permissive "RH gas
+         damper >= 30 %" dropped before the 5 minutes ended. The operator's value goes on that COS manual leg too. (The return to 10 % at
+         FURNACE PURGE COMPLETE is the drawing's own logic: M.3406 pulse -> M.017B -> M.0178 -> AMT#39 B leg SI0131 = 10 %) */
+      try {
+        const S1 = s && s.S,
+          b1 = S1 && S1.blk.find(q => q.id === id && q.k === 'MAN'),
+          si1 = b1 && b1.svI >= 0 ? b1.i[b1.svI] : null,
+          d1 = si1 != null ? (S1.drv[si1] || []).find(z => z.k === 'AMT') : null;
+        if (d1 && d1.b != null && d1.b >= 0 && S1.ext.includes(d1.b) && S1.rt.force[d1.b] === undefined && !(S1.xlk && S1.xlk[d1.b]) && /^COS manual/.test(AN.nm(S1, d1.b) || '')) {
+          const xb = d1.bg != null && d1.bg !== 0 ? x / d1.bg : x;
+          S1.rt.ext[d1.b] = xb;
+          S1.rt.v[d1.b] = xb;
+        }
+      } catch (e) {}
       /* Mina beta.114 / 115 (Worker: HIC-MWRL stayed 3.0 after the operator's presses): a station whose AUTO leg is its OWN output
          through the AMT (ABC-001B HIC-MWRL) reads that loop back on the next scan. The operator's value goes on the loop too (the AMT
          out and the station outputs), as the snapshot load does (hmi-op.js, 2.2.0-beta.9) */
