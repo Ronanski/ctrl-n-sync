@@ -342,7 +342,7 @@
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
+     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it, third: [letter, sheets] of a double-line connector under the input error, fed from the wire of the connector of OUT }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -401,6 +401,11 @@
         w.push([k + '.OUT', [[BX + BW, p(0)], [2070, p(0)]]], [k + '.OUT', [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
         lines(nm.out[0], 1716, p(0));
         lines(nm.out[1], 1716, p(0) + 64);
+        /* a third way out: from the wire of the connector down, past the input error, to a double-line connector */
+        if (x.third) {
+          c.push(['o' + x.third[0], 'out', x.third[0], 2103, p(0) + 193, '', x.third[1], 1, 1]);
+          w.push([k + '.OUT', [[1999, p(0) + 64], [1999, p(0) + 193], [2076, p(0) + 193]]]);
+        }
       }
       /* DEV E: the connector (with x.el a lamp, and the connector under it) and the OR */
       const yc = x.el ? ye + 64 : ye,
