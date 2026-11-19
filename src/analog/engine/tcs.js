@@ -1695,6 +1695,10 @@ function tcsLiveRead(U) {
     icvAc: (tb.icv || 0) * tcsVtIcvS(U, 'A') <= 0 ? 1 : 0,
     icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
     l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
+    l52c: U.el && U.el.l52 === true ? 1 : 0 /* 52L CLOSE (elec.js) */,
+    /* TCE185 / 194: TRANSFER REGION COMPLETE = the ICV -> CV transfer of the model (tb.xfer); TCE190 / 191 / 194: GENERATOR LOAD, MW */
+    xfer: tb.xfer ? 1 : 0,
+    mw: isFinite(U.MW) ? U.MW : null,
     vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */,
     /* TCE210 / 211 / 212: the valve under test (tcsVtCmd: msvA, msvB, cvA, cvB, crvA, crvB; '' = none), read as 'vtSel=msvA' */
     vtSel: (tb.vt && tb.vt.sel) || '',

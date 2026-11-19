@@ -8,6 +8,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [160, 85, 2210, 1547],
+  live: { iD1: 'l52c', iK: ['tspd', 'rpm'] },
   k: [
     ['kInit', 281, 216, 'INITIAL', 'ref'],
     ['kSpd', 275, 758, 'TURBINE SPEED', 'ref'],

@@ -12,6 +12,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 82, 2232, 1545],
+  live: { iGen: ['mw', 'MW'] },
   k: [
     ['k52g', 300, 158, '52G CLOSE', 'ref'],
     ['kAts', 298, 243, 'ATS AUTO(C)', 'ref'],

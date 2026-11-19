@@ -15312,6 +15312,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [176, 84, 2226, 1543],
+  live: { iA: 'tsel=200', iF: ['tspd', 'rpm'] },
   k: [
     ['kSpd', 290, 136, 'TURBINE SPEED', 'ref'],
     ['kAts', 285, 712, 'ATS AUTO(C)', 'ref'],
@@ -15489,6 +15490,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [160, 85, 2210, 1547],
+  live: { iD1: 'l52c', iK: ['tspd', 'rpm'] },
   k: [
     ['kInit', 281, 216, 'INITIAL', 'ref'],
     ['kSpd', 275, 758, 'TURBINE SPEED', 'ref'],
@@ -15941,6 +15943,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 990,
   f: [180, 84, 2228, 1545],
+  live: { iA: ['tspd', 'rpm'], iGov: ['govSet', '%'] },
   k: [
     ['kInit', 209, 265, 'INITIAL', 'ref'],
     ['kSpd', 206, 478, 'TURBINE SPEED', 'ref'],
@@ -17779,6 +17782,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 85, 2222, 1545],
+  live: { iTrc: 'xfer' },
   k: [
     ['kInit', 238, 259, 'INITIAL', 'ref'],
     ['kAts', 237, 343, 'ATS AUTO(C)', 'ref']
@@ -17844,6 +17848,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 82, 2232, 1545],
+  live: { iGen: ['mw', 'MW'] },
   k: [
     ['k52g', 300, 158, '52G CLOSE', 'ref'],
     ['kAts', 298, 243, 'ATS AUTO(C)', 'ref'],
@@ -18004,6 +18009,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [167, 85, 2220, 1547],
+  live: { iGen: ['mw', 'MW'], iGov: ['govSet', '%'] },
   k: [
     ['kInit', 285, 150, 'INITIAL', 'ref'],
     ['k52g', 284, 246, '52G CLOSE', 'ref'],
@@ -18177,6 +18183,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [168, 85, 2219, 1547],
+  live: { iTrc: 'xfer', iGen: ['mw', 'MW'] },
   k: [
     ['kZero', 295, 241, '0.0', 'sys.ref'],
     ['kOff', 295, 468, 'OFF(0)', 'sys.ref'],
@@ -73493,6 +73500,10 @@ function tcsLiveRead(U) {
     icvAc: (tb.icv || 0) * tcsVtIcvS(U, 'A') <= 0 ? 1 : 0,
     icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
     l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
+    l52c: U.el && U.el.l52 === true ? 1 : 0 /* 52L CLOSE (elec.js) */,
+    /* TCE185 / 194: TRANSFER REGION COMPLETE = the ICV -> CV transfer of the model (tb.xfer); TCE190 / 191 / 194: GENERATOR LOAD, MW */
+    xfer: tb.xfer ? 1 : 0,
+    mw: isFinite(U.MW) ? U.MW : null,
     vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */,
     /* TCE210 / 211 / 212: the valve under test (tcsVtCmd: msvA, msvB, cvA, cvB, crvA, crvB; '' = none), read as 'vtSel=msvA' */
     vtSel: (tb.vt && tb.vt.sel) || '',
@@ -83134,7 +83145,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 915fb15'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 97b0ca7'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -118723,6 +118734,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [176, 84, 2226, 1543],
+  live: { iA: 'tsel=200', iF: ['tspd', 'rpm'] },
   k: [
     ['kSpd', 290, 136, 'TURBINE SPEED', 'ref'],
     ['kAts', 285, 712, 'ATS AUTO(C)', 'ref'],
@@ -118902,6 +118914,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [160, 85, 2210, 1547],
+  live: { iD1: 'l52c', iK: ['tspd', 'rpm'] },
   k: [
     ['kInit', 281, 216, 'INITIAL', 'ref'],
     ['kSpd', 275, 758, 'TURBINE SPEED', 'ref'],
@@ -119360,6 +119373,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 990,
   f: [180, 84, 2228, 1545],
+  live: { iA: ['tspd', 'rpm'], iGov: ['govSet', '%'] },
   k: [
     ['kInit', 209, 265, 'INITIAL', 'ref'],
     ['kSpd', 206, 478, 'TURBINE SPEED', 'ref'],
@@ -121222,6 +121236,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 85, 2222, 1545],
+  live: { iTrc: 'xfer' },
   k: [
     ['kInit', 238, 259, 'INITIAL', 'ref'],
     ['kAts', 237, 343, 'ATS AUTO(C)', 'ref']
@@ -121289,6 +121304,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 82, 2232, 1545],
+  live: { iGen: ['mw', 'MW'] },
   k: [
     ['k52g', 300, 158, '52G CLOSE', 'ref'],
     ['kAts', 298, 243, 'ATS AUTO(C)', 'ref'],
@@ -121451,6 +121467,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [167, 85, 2220, 1547],
+  live: { iGen: ['mw', 'MW'], iGov: ['govSet', '%'] },
   k: [
     ['kInit', 285, 150, 'INITIAL', 'ref'],
     ['k52g', 284, 246, '52G CLOSE', 'ref'],
@@ -121626,6 +121643,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [168, 85, 2219, 1547],
+  live: { iTrc: 'xfer', iGen: ['mw', 'MW'] },
   k: [
     ['kZero', 295, 241, '0.0', 'sys.ref'],
     ['kOff', 295, 468, 'OFF(0)', 'sys.ref'],
@@ -172617,6 +172635,10 @@ function tcsLiveRead(U) {
     icvAc: (tb.icv || 0) * tcsVtIcvS(U, 'A') <= 0 ? 1 : 0,
     icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
     l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
+    l52c: U.el && U.el.l52 === true ? 1 : 0 /* 52L CLOSE (elec.js) */,
+    /* TCE185 / 194: TRANSFER REGION COMPLETE = the ICV -> CV transfer of the model (tb.xfer); TCE190 / 191 / 194: GENERATOR LOAD, MW */
+    xfer: tb.xfer ? 1 : 0,
+    mw: isFinite(U.MW) ? U.MW : null,
     vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */,
     /* TCE210 / 211 / 212: the valve under test (tcsVtCmd: msvA, msvB, cvA, cvB, crvA, crvB; '' = none), read as 'vtSel=msvA' */
     vtSel: (tb.vt && tb.vt.sel) || '',
@@ -207107,7 +207129,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 915fb15'));
+    row('Version', E('span', 'scsver', ver + ' · build 97b0ca7'));
   }
   function openSet(near) {
     if (!set) {
