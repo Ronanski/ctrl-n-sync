@@ -4436,7 +4436,7 @@ function tcsSim(s) {
   const P = G.map(([ch, top, bx, cx, sh, no, marks], g) => {
     const k = 'tmr' + (g + 1),
       p = i => pin(top, i);
-    m.push([k, 'TMR AI DIAGNOSTICS', o.tag + '-' + (g + 1), bx, top, 405, 381, L, R, no, [
+    m.push([k, 'TMR AI DIAGNOSTICS', o.tags ? o.tags[g] : o.tag + '-' + (g + 1), bx, top, 405, 381, L, R, no, [
       [bx + 90, top + 225, 'TP:1.0'],
       [bx + 90, top + 246, 'TP:1.0'],
       [bx + 90, top + 267, 'TP:1.0'],
@@ -4452,7 +4452,7 @@ function tcsSim(s) {
         key = 'i' + ch + (i + 1),
         y = p(0) + Math.round(i * 53.3),
         n = Math.floor(i / 2) + 1;
-      const [over, name] = o.name(ch, sig);
+      const [over, name] = o.name(ch, sig, n);
       c.push([key, 'in', o.let[sig ? 0 : 1], cx, y, name, ['TCP' + n + sh], 1]);
       if (over) t.push([cx + 33, y - 32, over]);
       b.push(['mk' + ch + (i + 1), sig ? 'o:FTR' : 'o:BTR', marks[i], cx + 321, y]);
@@ -4487,7 +4487,7 @@ function tcsSim(s) {
   /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
   const EX = o.extra || {};
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
-  return {
+  const S = {
     id: o.id,
     title: o.title,
     page: o.page,
@@ -4626,6 +4626,32 @@ function tcsSim(s) {
       ...o.foot
     ]
   };
+  /* A sheet where the value of each block goes straight out, with no TRIPLE DETECTOR2 and no 2OO3 (the shaft vibrations):
+     o.direct = [[letter, sheets of the first output, sheets of the second, [line 1, line 2] of their name, [four mark numbers]] for each block].
+     The right part of the pattern is taken away and each block gets its two outputs. */
+  if (o.direct) {
+    S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
+    S.d = [];
+    S.r = [];
+    S.b = S.b.filter(x => !/^(ftr03[89]|btr04[0136]|ftr04[245]|ftr00[468]|btr01[56]|btr021)$/.test(x[0]));
+    S.w = S.w.filter(x => !/^(td2|v2o3|tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
+    S.t = S.t.filter(x => x[0] < Z(1480));
+    o.direct.forEach(([ch, r1, r2, nm, mk], g) => {
+      const G = [g1, g2, g3][g],
+        y = G.p(0),
+        y2 = y + 96;
+      S.c.push(['o' + ch, 'out', ch, Z(2079), y, '', r1], ['o' + ch + '1', 'out', ch + '1', Z(2078), y2, '', r2, 1]);
+      S.b.push(
+        ['mk' + g + 'a', 'o:FTR', mk[0], Z(1377), y],
+        ['mk' + g + 'b', 'o:FTR', mk[1], Z(1750), y],
+        ['mk' + g + 'c', 'o:FTR', mk[2], Z(1824), y],
+        ['mk' + g + 'd', 'o:FTR', mk[3], Z(1823), y2]
+      );
+      S.w.push(['tmr' + (g + 1) + '.OUT', [[G.bx + 405, y], [Z(2052), y]], 1], ['tmr' + (g + 1) + '.OUT', [[Z(1781), y], [Z(1781), y2], [Z(2051), y2]], 1]);
+      S.t.push([Z(1850), y - 27, nm[0]], [Z(1850), y - 6, nm[1]], [Z(1849), y2 - 27, nm[0]], [Z(1849), y2 - 6, nm[1]]);
+    });
+  }
+  return S;
   };
   if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr };
 })();
@@ -6399,6 +6425,42 @@ function tcsSim(s) {
       [656, 1518, 'CYCLE(ms):30']
     ]
   });
+})();
+/* TCE071 ANALOG INPUT SIGNAL DIAGNOSTICS(12) (331DM09784 page 39, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the analog
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr), in the units of sheet TCE060: the frame of this page stands 4 to the right and 7 higher on
+   the rendered page. Shaft vibration of turbine bearing No.1 (X), No.1 (Y) and No.2 (X): the value of each block goes straight out. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const AX = [['NO.1 TURBINE SHAFT', 'VIBRATION(X)'], ['NO.1 TURBINE SHAFT', 'VIBRATION(Y)'], ['NO.2 TURBINE SHAFT', 'VIBRATION(X)']];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE071',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(12)',
+      page: 39,
+      f: [167, 81, 2228, 1545],
+      tags: ['nVE-STn001-1', 'nVE-STn001-2', 'nVE-STn002-1'],
+      tag: 'nVE-STn',
+      let: ['D7', 'E7'],
+      sh: ['070', '071', '072'],
+      /* the blocks are the three measurements; (A), (B), (C) are the three controllers that read each of them */
+      name: (ch, sig, n) => {
+        const a = AX['ABC'.indexOf(ch)];
+        return [a[0], a[1] + '(' + 'ABC'[n - 1] + ')' + (sig ? '' : ' INPUT ERR')];
+      },
+      sg: ['K:0.408mm', 'K:-0.02mm', 'K:0.08mm', 'K:0.0mm'],
+      out: ['', '', ''],
+      refA: ['-'],
+      refA1: ['-'],
+      direct: [
+        ['A', ['-'], ['TCT209'], AX[0], ['038', '039', '004', '006']],
+        ['B', ['-'], ['TCT209'], AX[1], ['042', '046', '047', '048']],
+        ['C', ['-'], ['TCT209'], AX[2], ['045', '049', '050', '051']]
+      ],
+      dx: -5,
+      dr: -4,
+      foot: [[236, 1525, 'CONTROLLER:'], [397, 1525, 'EHG+MD'], [658, 1498, 'TRIGGER  :'], [658, 1525, 'CYCLE(ms):30']]
+    })
+  );
 })();
 /* TCE160 TARGET ACCELERATION (331DM09784 page 111, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -47602,7 +47664,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build c85acf9'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 7f15fe0'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -72117,7 +72179,7 @@ function tcsSim(s) {
   const P = G.map(([ch, top, bx, cx, sh, no, marks], g) => {
     const k = 'tmr' + (g + 1),
       p = i => pin(top, i);
-    m.push([k, 'TMR AI DIAGNOSTICS', o.tag + '-' + (g + 1), bx, top, 405, 381, L, R, no, [
+    m.push([k, 'TMR AI DIAGNOSTICS', o.tags ? o.tags[g] : o.tag + '-' + (g + 1), bx, top, 405, 381, L, R, no, [
       [bx + 90, top + 225, 'TP:1.0'],
       [bx + 90, top + 246, 'TP:1.0'],
       [bx + 90, top + 267, 'TP:1.0'],
@@ -72133,7 +72195,7 @@ function tcsSim(s) {
         key = 'i' + ch + (i + 1),
         y = p(0) + Math.round(i * 53.3),
         n = Math.floor(i / 2) + 1;
-      const [over, name] = o.name(ch, sig);
+      const [over, name] = o.name(ch, sig, n);
       c.push([key, 'in', o.let[sig ? 0 : 1], cx, y, name, ['TCP' + n + sh], 1]);
       if (over) t.push([cx + 33, y - 32, over]);
       b.push(['mk' + ch + (i + 1), sig ? 'o:FTR' : 'o:BTR', marks[i], cx + 321, y]);
@@ -72168,7 +72230,7 @@ function tcsSim(s) {
   /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
   const EX = o.extra || {};
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
-  return {
+  const S = {
     id: o.id,
     title: o.title,
     page: o.page,
@@ -72307,6 +72369,32 @@ function tcsSim(s) {
       ...o.foot
     ]
   };
+  /* A sheet where the value of each block goes straight out, with no TRIPLE DETECTOR2 and no 2OO3 (the shaft vibrations):
+     o.direct = [[letter, sheets of the first output, sheets of the second, [line 1, line 2] of their name, [four mark numbers]] for each block].
+     The right part of the pattern is taken away and each block gets its two outputs. */
+  if (o.direct) {
+    S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
+    S.d = [];
+    S.r = [];
+    S.b = S.b.filter(x => !/^(ftr03[89]|btr04[0136]|ftr04[245]|ftr00[468]|btr01[56]|btr021)$/.test(x[0]));
+    S.w = S.w.filter(x => !/^(td2|v2o3|tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
+    S.t = S.t.filter(x => x[0] < Z(1480));
+    o.direct.forEach(([ch, r1, r2, nm, mk], g) => {
+      const G = [g1, g2, g3][g],
+        y = G.p(0),
+        y2 = y + 96;
+      S.c.push(['o' + ch, 'out', ch, Z(2079), y, '', r1], ['o' + ch + '1', 'out', ch + '1', Z(2078), y2, '', r2, 1]);
+      S.b.push(
+        ['mk' + g + 'a', 'o:FTR', mk[0], Z(1377), y],
+        ['mk' + g + 'b', 'o:FTR', mk[1], Z(1750), y],
+        ['mk' + g + 'c', 'o:FTR', mk[2], Z(1824), y],
+        ['mk' + g + 'd', 'o:FTR', mk[3], Z(1823), y2]
+      );
+      S.w.push(['tmr' + (g + 1) + '.OUT', [[G.bx + 405, y], [Z(2052), y]], 1], ['tmr' + (g + 1) + '.OUT', [[Z(1781), y], [Z(1781), y2], [Z(2051), y2]], 1]);
+      S.t.push([Z(1850), y - 27, nm[0]], [Z(1850), y - 6, nm[1]], [Z(1849), y2 - 27, nm[0]], [Z(1849), y2 - 6, nm[1]]);
+    });
+  }
+  return S;
   };
   if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr };
 })();
@@ -74124,6 +74212,44 @@ function tcsSim(s) {
       [656, 1518, 'CYCLE(ms):30']
     ]
   });
+})();
+
+/* ---- src/digital/tce/TCE071.js ---- */
+/* TCE071 ANALOG INPUT SIGNAL DIAGNOSTICS(12) (331DM09784 page 39, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the analog
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr), in the units of sheet TCE060: the frame of this page stands 4 to the right and 7 higher on
+   the rendered page. Shaft vibration of turbine bearing No.1 (X), No.1 (Y) and No.2 (X): the value of each block goes straight out. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const AX = [['NO.1 TURBINE SHAFT', 'VIBRATION(X)'], ['NO.1 TURBINE SHAFT', 'VIBRATION(Y)'], ['NO.2 TURBINE SHAFT', 'VIBRATION(X)']];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE071',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(12)',
+      page: 39,
+      f: [167, 81, 2228, 1545],
+      tags: ['nVE-STn001-1', 'nVE-STn001-2', 'nVE-STn002-1'],
+      tag: 'nVE-STn',
+      let: ['D7', 'E7'],
+      sh: ['070', '071', '072'],
+      /* the blocks are the three measurements; (A), (B), (C) are the three controllers that read each of them */
+      name: (ch, sig, n) => {
+        const a = AX['ABC'.indexOf(ch)];
+        return [a[0], a[1] + '(' + 'ABC'[n - 1] + ')' + (sig ? '' : ' INPUT ERR')];
+      },
+      sg: ['K:0.408mm', 'K:-0.02mm', 'K:0.08mm', 'K:0.0mm'],
+      out: ['', '', ''],
+      refA: ['-'],
+      refA1: ['-'],
+      direct: [
+        ['A', ['-'], ['TCT209'], AX[0], ['038', '039', '004', '006']],
+        ['B', ['-'], ['TCT209'], AX[1], ['042', '046', '047', '048']],
+        ['C', ['-'], ['TCT209'], AX[2], ['045', '049', '050', '051']]
+      ],
+      dx: -5,
+      dr: -4,
+      foot: [[236, 1525, 'CONTROLLER:'], [397, 1525, 'EHG+MD'], [658, 1498, 'TRIGGER  :'], [658, 1525, 'CYCLE(ms):30']]
+    })
+  );
 })();
 
 /* ---- src/digital/tce/TCE160.js ---- */
@@ -135799,7 +135925,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build c85acf9'));
+    row('Version', E('span', 'scsver', ver + ' · build 7f15fe0'));
   }
   function openSet(near) {
     if (!set) {
