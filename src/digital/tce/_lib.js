@@ -56,7 +56,7 @@
   /* TCE_LIB.tmr(o): a sheet ANALOG INPUT SIGNAL DIAGNOSTICS. One signal (A), (B), (C), each read by the three protection controllers and checked by one
      TMR AI DIAGNOSTICS block; the three results go to TRIPLE DETECTOR2 (the value) and to 2OO3 (abnormal). Those sheets are drawn the same way; a sheet
      gives what differs: o.id, title, page, f, tag, let [signal letter, error letter], name(ch, sig) => [words over the line, name], sg [four constants],
-     out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], refA, refA1, refC (sheets of C1, C2, C3), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
+     out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], over (a line over those words), refA, refA1, refC (sheets of C1, C2, C3), cl (their letter when it is not C), c1via ([y, x] of the step the line of C1 makes on its way down), sh (the numbers of the input sheets), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
   const F = o.f,
@@ -64,6 +64,8 @@
     dr = o.dr || 0,
     [C1, C2, C3] = o.cs,
     RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
+    SH = o.sh || ['070', '072', '074'],
+    CL = o.cl || 'C',
     u = (F[2] - F[0]) / 1000,
     c = [],
     b = [],
@@ -72,9 +74,9 @@
     t = [];
   /* [letter, top of the block, left of the block, x of the connectors, sheet number of the inputs, block number, first mark number list] */
   const G = [
-    ['A', 123, 885 + dx, 307 + dx, '070', 'A002', ['001', '005', '007', '009', '010', '011']],
-    ['B', 570, 882 + dx, 304 + dx, '072', 'A020', ['019', '022', '023', '024', '025', '026']],
-    ['C', 1017, 880 + dx, 302 + dx, '074', 'A030', ['029', '031', '032', '033', '034', '035']]
+    ['A', 123, 885 + dx, 307 + dx, SH[0], 'A002', ['001', '005', '007', '009', '010', '011']],
+    ['B', 570, 882 + dx, 304 + dx, SH[1], 'A020', ['019', '022', '023', '024', '025', '026']],
+    ['C', 1017, 880 + dx, 302 + dx, SH[2], 'A030', ['029', '031', '032', '033', '034', '035']]
   ];
   const L = ['SIG1', 'ERR1', 'SIG2', 'ERR2', 'SIG3', 'ERR3', 'HL', 'LL', 'DEV', 'SIM'],
     R = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
@@ -126,6 +128,9 @@
       const n = o.cname(ch);
       xt.push([o.cnx, CY[i] - 27, n[0]], [o.cnx, CY[i] - 6, n[1]]);
     });
+  /* a third line over the words of the six outputs (o.over) */
+  if (o.over)
+    [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach(q => xt.push([Z(q[0]), q[1], o.over]));
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
   return {
     id: o.id,
@@ -140,9 +145,9 @@
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), 477, '', ['-']],
       ['oB1', 'out', 'B1', Z(2074), 573, '', ['-'], 1],
-      ['oC1', 'out', 'C1', o.cx, CY[0], '', [RC[0]], cd],
-      ['oC2', 'out', 'C2', o.cx - 1, CY[1], '', [RC[1]], cd],
-      ['oC3', 'out', 'C3', o.cx - 1, CY[2], '', [RC[2]], cd],
+      ['oC1', 'out', CL + '1', o.cx, CY[0], '', [].concat(RC[0]), cd],
+      ['oC2', 'out', CL + '2', o.cx - 1, CY[1], '', [].concat(RC[1]), cd],
+      ['oC3', 'out', CL + '3', o.cx - 1, CY[2], '', [].concat(RC[2]), cd],
       ...xc
     ],
     d: [
@@ -201,7 +206,7 @@
       ['sg036', [[X(838), g3.p(9)], [g3.bx, g3.p(9)]], 1],
       /* the three values to TRIPLE DETECTOR2 and to the turbine supervisory sheets */
       ['tmr1.OUT', [[g1.bx + 405, 170], [Z(1481), 170]], 1],
-      ['tmr1.OUT', [[C1[0], 170], [C1[0], CY[0]], [o.cx - 27, CY[0]]], 1],
+      ['tmr1.OUT', o.c1via ? [[C1[0], 170], [C1[0], o.c1via[0]], [o.c1via[1], o.c1via[0]], [o.c1via[1], CY[0]], [o.cx - 27, CY[0]]] : [[C1[0], 170], [C1[0], CY[0]], [o.cx - 27, CY[0]]], 1],
       ['tmr2.OUT', [[g2.bx + 405, g2.p(0)], [Z(1414), g2.p(0)], [Z(1414), 191], [Z(1481), 191]], 1],
       ['tmr2.OUT', [[C2[0], g2.p(0)], [C2[0], CY[1]], [o.cx - 28, CY[1]]], 1],
       ['tmr3.OUT', straight([[g3.bx + 405, g3.p(0)], [C3[0], g3.p(0)], [C3[0], CY[2]], [o.cx - 28, CY[2]]]), 1],
