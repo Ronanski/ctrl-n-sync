@@ -42,7 +42,7 @@
     ['Auxiliaries', ['turbine-oil']]
   ];
   /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
-  const OWN = { '@soe': 'First out and events', '@gen': 'Generator panel', '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests', '@ost': 'Overspeed test' };
+  const OWN = { '@soe': 'First out and events', '@gen': 'Generator panel', '@score': 'Trainee score', '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests', '@ost': 'Overspeed test' };
   const STATIONS = [
     ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
     ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
@@ -968,7 +968,68 @@
       fillSaves();
       fillTrips();
       fillFaults();
+      fillFrz();
+      fillScore();
     }
+  }
+  /* the freeze of the instructor: the plant time stops and Run is refused until the instructor takes it off (instructor.js AN.freeze) */
+  function fillFrz() {
+    const F = call(() => AN.freeze(), null),
+      N = [],
+      again = () =>
+        setTimeout(() => {
+          fillFrz();
+          tick();
+        }, 200);
+    if (!F) N.push(E('p', 'st-none', 'Not available at this starting point.'));
+    else if (F.on) {
+      const b = E('button', 'st-b on', 'Take the freeze off');
+      b.title = 'The trainee can press Run again';
+      b.onclick = () => {
+        call(() => AN.freeze(false));
+        again();
+      };
+      N.push(b, E('span', 'st-cs', 'The plant is held since ' + clock(F.at) + '. Run is refused.'));
+    } else {
+      const b = E('button', 'st-b', 'Freeze the plant'),
+        m = E('span', 'st-pm');
+      b.title = 'The plant time stops and the trainee cannot run it on until the freeze is taken off';
+      b.onclick = () => {
+        const x = call(() => AN.freeze(true, 'Instructor'), '');
+        if (x) m.textContent = String(x);
+        else again();
+      };
+      N.push(b, m);
+    }
+    ins.frz.replaceChildren(...N);
+  }
+  function fillScore() {
+    const Z = call(() => AN.sopScore(), null),
+      N = [];
+    if (!Z || !Z.of) N.push(E('p', 'st-none', 'Not kept at this starting point.'));
+    else {
+      const op = E('button', 'st-b', 'Open the score'),
+        ag = E('button', 'st-b', 'Start again');
+      op.title = 'The steps of the start-up procedure and the points lost';
+      op.onclick = () => {
+        insPop.hidden = true;
+        go('@score');
+      };
+      ag.title = 'A new trainee: the score starts again from now';
+      arm(ag, 'Start again', () => {
+        call(() => AN.sopScore({ restart: true }));
+        setTimeout(() => {
+          fillScore();
+          tick();
+        }, 200);
+      });
+      N.push(
+        E('span', 'st-scv', fmt(Z.score, 1) + ' of 100 · ' + (Z.of - Z.todo.length) + ' of ' + Z.of + ' steps done'),
+        op,
+        ag
+      );
+    }
+    ins.score.replaceChildren(...N);
   }
   function buildIns() {
     const body = insPop._body;
@@ -994,6 +1055,10 @@
       });
       r.append(b);
     }
+    head('Freeze');
+    ins.frz = row();
+    head('Trainee score');
+    ins.score = row();
     head('Save points');
     r = row('st-save');
     const nm = E('input', 'st-find');
@@ -1083,6 +1148,9 @@
     if (!FL.length) N.push(E('p', 'st-none', 'No fault in this starting point.'));
     /* One line per instrument or machine: its name once, its faults as small buttons beside it ("signal lost", "over range"). A fault whose words
        do not end the name of a tagged device ("... (TAG) fault") is a line of its own. The lines stand in groups by kind of fault. */
+    const FG = call(() => AN.faultGroups(), null),
+      gOf = {};
+    if (FG) FG.forEach((g, i) => g.items.forEach(x => (gOf[x.id] = i)));
     const D = [];
     for (const f of FL) {
       const m = /^(.*\))\s+(\S.*)$/.exec(String(f.t)),
@@ -1101,11 +1169,19 @@
       ['Leaks and plugging', t => /leak|plugged/i.test(t)],
       ['Other', t => true]
     ];
-    for (const d of D) d.k = d.dev ? 0 : KIND.findIndex(k => k[1](String(d.L[0][0].t)));
+    /* the group of a line: the plant system of its first fault; without the list of the engine, the kinds above */
+    for (const d of D)
+      d.k = FG
+        ? gOf[d.L[0][0].id] != null
+          ? gOf[d.L[0][0].id]
+          : FG.length
+        : d.dev
+          ? 0
+          : KIND.findIndex(k => k[1](String(d.L[0][0].t)));
     D.sort((p, q) => p.k - q.k);
     let head = -1;
     for (const d of D) {
-      if (d.k !== head) N.push(E('h3', 'st-flh', KIND[(head = d.k)][0]));
+      if (d.k !== head) N.push(E('h3', 'st-flh', FG ? (FG[(head = d.k)] || { g: 'Other' }).g : KIND[(head = d.k)][0]));
       const row = E('div', 'st-fl');
       if (d.dev) row.append(E('span', '', d.dev));
       for (const [f, kind] of d.L) {
@@ -1474,6 +1550,84 @@
     h.lo.v.textContent = lk.length ? lk.join(' · ') : 'Reset';
     h.lo.v.classList.toggle('st-hot', !!lk.length);
     h.lo.m.textContent = L.why ? 'Cause: ' + L.why : 'No lockout relay is operated';
+  }
+  /* Trainee score (user "go all" 2026-11-19, item 6): the start-up of the trainee against the procedure PR-OPE-5002, as the engine
+     scores it (sop-score.js AN.sopScore: one share of 100 per milestone of the procedure; a share is lost for a milestone done out of
+     the order of the procedure and for one undone by a trip). Read only; the instructor starts it again from the Instructor popup */
+  const sc = {};
+  function scores() {
+    const Z = call(() => AN.sopScore(), null);
+    if (!Z || !Z.of) {
+      if (sc.key !== 'none') {
+        sc.key = 'none';
+        ownPg.replaceChildren(E('p', 'st-none', 'The score is not kept at this starting point.'));
+      }
+      return;
+    }
+    const tr = Z.trips || {},
+      key = [Z.score, Z.steps.length, Z.todo.length, Z.deduct.length, tr.mft, tr.tt, Z.from].join('|');
+    if (key === sc.key) return;
+    sc.key = key;
+    const head = E('div', 'st-ph');
+    for (const [k, v, hot] of [
+      ['Score', fmt(Z.score, 1) + ' of 100', Z.deduct.length > 0],
+      ['Steps of the procedure done', Z.of - Z.todo.length + ' of ' + Z.of],
+      ['Trips', (tr.mft || 0) + ' master fuel trip · ' + (tr.tt || 0) + ' turbine trip', (tr.mft || 0) + (tr.tt || 0) > 0]
+    ]) {
+      const d = E('div'),
+        b = E('b', hot ? 'st-hot' : '', v);
+      d.append(E('i', '', k), b);
+      head.append(d);
+    }
+    const ded = E('div', 'st-crit');
+    if (!Z.deduct.length) ded.append(E('p', 'st-none', 'No point lost.'));
+    for (const d of Z.deduct) {
+      const r = E('div', 'st-cr st-tr miss');
+      /* the engine writes the plant time in seconds: shown as the clock of the other lists */
+      const why = String(d.why).replace(/ at ([\d.]+) s$/, (m, t) => ' at ' + clock(+t));
+      r.append(E('i', 'st-mk new'), E('span', '', why), E('span', 'st-cs', '−' + fmt(d.pts, 1) + ' points'));
+      ded.append(r);
+    }
+    const lost = new Set((Z.lost || []).map(x => x.id)),
+      todo = new Set(Z.todo.map(x => x.id)),
+      /* one line per step of the procedure: a step undone by a trip stands as to do, not also as done */
+      all = Z.steps
+        .filter(x => !todo.has(x.id))
+        .map(x => Object.assign({ done: 1 }, x))
+        .concat(Z.todo.map(x => Object.assign({ done: 0 }, x)));
+    all.sort((p, q) => p.sec - q.sec);
+    const box = E('div', 'st-crit');
+    for (const x of all) {
+      const late = x.done && x.late && x.late.length,
+        undone = !x.done && lost.has(x.id),
+        r = E('div', 'st-cr st-sc' + (late || undone ? ' miss' : ''));
+      r.append(
+        E('i', 'st-mk' + (late || undone ? ' new' : x.done ? ' done' : ' ok')),
+        E('span', 'st-cn', 'Section ' + x.sec),
+        E('span', '', String(x.name)),
+        E(
+          'span',
+          'st-cs',
+          undone
+            ? 'Undone by a trip, to do again'
+            : !x.done
+              ? 'To do'
+              : late
+                ? 'Done out of order at ' + clock(x.at)
+                : x.given
+                  ? 'Done before the score started'
+                  : 'Done at ' + clock(x.at)
+        )
+      );
+      box.append(r);
+    }
+    ownPg.replaceChildren(
+      head,
+      E('h2', 'st-h', 'Points lost'),
+      ded,
+      E('h2', 'st-h', 'Start-up procedure PR-OPE-5002'),
+      box
+    );
   }
   const soe = {};
   const clock = t => {
@@ -2134,12 +2288,14 @@
       crit.key = trp.key = soe.key = '';
       gov.h = null;
       gp.h = null;
+      sc.key = '';
       ost.h = null;
       vt.key = '';
       if (ownPg) ownPg.replaceChildren();
     }
     if (own === '@soe' && !eng) soes();
     if (own === '@gen' && !eng) gens();
+    if (own === '@score' && !eng) scores();
     if (own === '@criteria' && !eng) criteria();
     if (own === '@trip' && !eng) trips();
     if (own === '@load' && !eng) loads();
