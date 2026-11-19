@@ -575,6 +575,32 @@
   document.title = NAME + (VER ? ' ' + VER : '');
   /* version popup: check for a new version (the update check of the app) and the channel (its own Stable / Beta switch) */
   let verPop = null;
+  /* Lite mode, for a weak tablet (user, Xiaomi Pad 5, 2026-11-19: the app felt heavy and slow). The station measures how many pictures a
+     second the device draws at start; under 40 it turns Lite on by itself (the setting Auto), and the user can set On or Off. Lite = the body
+     class st-lite and window.LS_LITE (the pages and the engine hang their own savings on these), the station refreshes each second instead
+     of each half second, and its popups drop their shadows. */
+  const lite = { fps: 0, on: false };
+  function liteApply() {
+    const pref = mem.get('lite') || 'auto';
+    lite.on = pref === 'on' || (pref === 'auto' && lite.fps > 0 && lite.fps < 40);
+    document.body.classList.toggle('st-lite', lite.on);
+    if (root) root.classList.toggle('lite', lite.on);
+    window.LS_LITE = lite.on;
+    call(() => dispatchEvent(new CustomEvent('ls-lite', { detail: lite.on })));
+  }
+  function liteMeasure() {
+    let n = 0,
+      t0 = 0;
+    const step = t => {
+      if (!t0) t0 = t;
+      n++;
+      if (t - t0 < 2000) return requestAnimationFrame(step);
+      lite.fps = Math.round((n - 1) / ((t - t0) / 1000));
+      liteApply();
+    };
+    /* after the first pages have settled, and only while the page is shown (a hidden page draws nothing) */
+    setTimeout(() => (document.hidden ? 0 : requestAnimationFrame(step)), 4000);
+  }
   function about() {
     if (!verPop) {
       verPop = popup(NAME, '', 300);
@@ -626,6 +652,35 @@
       }
       body.append(h, c);
     }
+    const lh = E('h2', 'st-h', 'Lite mode'),
+      lr = E('div', 'st-row'),
+      pref = mem.get('lite') || 'auto';
+    for (const [v, t, tip] of [
+      ['auto', 'Auto', 'On by itself on a slow device'],
+      ['on', 'On', 'Fewer moving pictures and a slower refresh, for a slow device'],
+      ['off', 'Off', 'Everything moves, the fastest refresh']
+    ]) {
+      const b = E('button', 'st-b' + (pref === v ? ' on' : ''), t);
+      b.title = tip;
+      b.setAttribute('aria-pressed', String(pref === v));
+      b.onclick = () => {
+        mem.set('lite', v);
+        liteApply();
+        verPop.hidden = true;
+        about();
+      };
+      lr.append(b);
+    }
+    body.append(
+      lh,
+      lr,
+      E(
+        'p',
+        'st-none',
+        (lite.on ? 'Lite mode is on. ' : 'Lite mode is off. ') +
+          (lite.fps ? 'This device draws ' + lite.fps + ' pictures a second.' : 'The speed of this device is not measured yet.')
+      )
+    );
   }
   /* the update question of the app (#updask of src/boot/update-question.js, hidden under the station): the station shows the same
      question in its own popup; its buttons press the buttons of the app, so the update itself is the app's own */
@@ -1638,7 +1693,14 @@
       const P = pages(),
         want = mem.get('page');
       go(P[want] ? want : P.overview ? 'overview' : Object.keys(P)[0]);
-      setInterval(tick, 500);
+      /* the refresh of the station: each half second, each second in Lite mode */
+      const loop = () => {
+        tick();
+        setTimeout(loop, lite.on ? 1000 : 500);
+      };
+      setTimeout(loop, 500);
+      liteApply();
+      liteMeasure();
       tick();
       setTimeout(() => dispatchEvent(new Event('resize')), 200);
     }, 300);

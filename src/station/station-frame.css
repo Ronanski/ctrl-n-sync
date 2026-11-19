@@ -139,3 +139,5 @@ p.st-pm { margin: 16px 0 0; min-height: 18px; }
 .st-crit .st-cg:first-child { padding-top: 4px; }
 .st-gc.on { border-color: #c9d1d9; }
 .st-gc .st-b.no { color: var(--st-dim); border-style: dashed; }
+/* Lite mode (a slow device): the popups and the tools of the station drop their shadows */
+.st-frame.lite .st-pop, .st-frame.lite .st-tools { box-shadow: none; }
