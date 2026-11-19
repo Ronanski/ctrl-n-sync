@@ -132,3 +132,6 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-gc .st-gv { display: block; font: 600 28px var(--st-num); font-variant-numeric: tabular-nums; }
 .st-gc .st-cs { display: block; font-size: 12px; color: var(--st-dim); margin: 4px 0 12px; }
 p.st-pm { margin: 16px 0 0; min-height: 18px; }
+.st-steps .st-b.done { color: var(--st-dim); }
+.st-steps .st-b.done::before { content: "\2713  "; }
+.st-steps .st-b.arm { outline: 2px solid var(--st-alm); outline-offset: -1px; background: #4a3508; color: #fff; }
