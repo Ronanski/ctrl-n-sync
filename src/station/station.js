@@ -38,11 +38,11 @@
   const TCS_GROUPS = [
     ['', ['turbine']],
     ['Operation', ['@criteria', '@load']],
-    ['Protection', ['@trip']],
+    ['Protection', ['@trip', '@vtest']],
     ['Auxiliaries', ['turbine-oil']]
   ];
   /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
-  const OWN = { '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip' };
+  const OWN = { '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests' };
   const STATIONS = [
     ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
     ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
@@ -1248,6 +1248,89 @@
       gov.h[k + 'a'].setAttribute('aria-pressed', String(!man));
     }
   }
+  /* Valve tests: the tests of the main stop valves and the control valves of the turbine station (TCS HMI faceplates 1SVST1903A / B MSV
+     TEST, 1SVST1904A / B CV TEST), read with AN.tcsVt() and started with the app's own command AN.turbine('vtest'). One test at a time;
+     a test that is not allowed says why, in the words of the turbine control. */
+  const vt = {};
+  const VT_VALVES = [
+    ['Main stop valves', [['msvA', 'Main stop valve A'], ['msvB', 'Main stop valve B']]],
+    ['Control valves', [['cvA', 'Control valve A'], ['cvB', 'Control valve B']]]
+  ];
+  const VT_OPS = [
+    ['partial', 'Partial test', 'Moves the valve a part of its travel and back'],
+    ['close', 'Full close test', 'Closes the valve fully; on a main stop valve the control valves of that side close first'],
+    ['open', 'Open again', 'Opens the valve again after a full close test'],
+    ['cancel', 'Cancel', 'Stops the test and brings the valve back']
+  ];
+  const VT_PH = { msv: 'Main stop valve moving', cv: 'Control valves moving', reopen: 'Opening again', held: 'Held closed' };
+  function vtests() {
+    const V = call(() => AN.tcsVt(), null);
+    if (!V) {
+      if (vt.key !== 'none') {
+        vt.key = 'none';
+        ownPg.replaceChildren(E('p', 'st-none', 'The valve tests of the turbine are not loaded at this starting point.'));
+      }
+      return;
+    }
+    const perm = V.perm || {},
+      why = (v, op) => {
+        const k = v + ':' + op;
+        return Array.isArray(perm) ? '' : perm[k] == null ? null : String(perm[k]);
+      },
+      key = JSON.stringify([perm, V.on, V.sel, V.op, V.ph]);
+    if (key !== vt.key && !ownPg.querySelector('.arm')) {
+      vt.key = key;
+      vt.h = {};
+      vt.p = {};
+      const head = E('div', 'st-ph');
+      for (const k of ['Valve test', 'Valve under test', 'Phase']) {
+        const d = E('div'),
+          b = E('b');
+        d.append(E('i', '', k), b);
+        vt.h[k] = b;
+        head.append(d);
+      }
+      vt.msg = vt.msg || E('p', 'st-pm');
+      const N1 = [head];
+      for (const [grp, L] of VT_VALVES) {
+        N1.push(E('h2', 'st-h', grp));
+        const box = E('div', 'st-gov');
+        for (const [v, name] of L) {
+          const c = E('section', 'st-gc' + (V.sel === v ? ' on' : '')),
+            pos = E('b', 'st-gv'),
+            r = E('div', 'st-row');
+          vt.p[v] = pos;
+          for (const [op, t, tip] of VT_OPS) {
+            const w = why(v, op);
+            /* an operation the turbine control does not list for this valve is not offered */
+            if (w === null && (op === 'partial' || op === 'close') && Object.keys(perm).length) continue;
+            const b = E('button', 'st-b', t);
+            b.title = w ? 'Not allowed now: ' + w : tip;
+            if (w) b.classList.add('no');
+            const fn = () => {
+              const x = call(() => AN.turbine('vtest', { v, op }), '');
+              vt.msg.textContent = x ? name + ': ' + x : '';
+              vt.key = '';
+              setTimeout(tick, 150);
+            };
+            if (op === 'cancel' || op === 'open') b.onclick = fn;
+            else arm(b, t, fn);
+            r.append(b);
+          }
+          c.append(E('h2', 'st-h', name), pos, E('span', 'st-cs', 'Position'), r);
+          box.append(c);
+        }
+        N1.push(box);
+      }
+      N1.push(vt.msg);
+      ownPg.replaceChildren(...N1);
+    }
+    const nameOf = v => (VT_VALVES.flatMap(g => g[1]).find(x => x[0] === v) || [])[1] || '';
+    vt.h['Valve test'].textContent = V.on ? 'In progress' : 'None';
+    vt.h['Valve under test'].textContent = V.sel ? nameOf(V.sel) : 'None';
+    vt.h.Phase.textContent = V.on ? VT_PH[V.ph] || String(V.ph || '') : '--';
+    for (const v in vt.p) vt.p[v].textContent = V[v] == null ? '--' : fmt(V[v], 0) + ' %';
+  }
   function conds() {
     const pg = $('#plantws .hx-process');
     if (!pg || own) return [];
@@ -1387,11 +1470,13 @@
       ownWas = own;
       crit.key = trp.key = '';
       gov.h = null;
+      vt.key = '';
       if (ownPg) ownPg.replaceChildren();
     }
     if (own === '@criteria' && !eng) criteria();
     if (own === '@trip' && !eng) trips();
     if (own === '@load' && !eng) loads();
+    if (own === '@vtest' && !eng) vtests();
     /* the reader of the unit overview of the app (LS_LIVE.getV); the plant model value where the reader has none.
        After a start state is loaded and before the first Run the reader still holds the numbers of the state before (shellc-home.js
        "stale"): only the 150 MW state is its own snapshot, so the other states show the plant model value, or "--", until Run */
