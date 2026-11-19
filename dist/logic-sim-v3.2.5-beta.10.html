@@ -4393,10 +4393,38 @@ function tcsSim(s) {
         by = y + (dy == null ? 75 : dy);
       P[no] = { y, xj, xo };
       r.push(['di' + no, x0, top, W, 54, '']);
-      t.push([x0 + 6, name[1] ? top + 27 : top + 30, name[0]], [x0 + 6, top + 49, name[1]], [x0, top + 76, 'DI'], [xe + 137, top - 2, '(' + o.table + '-' + (o.first + n) + ')']);
-      w.push(['di' + no, [[xe, y], [xe + 118, y]], 1], ['di' + no, [[xe + 134, y], [xo - 30, y]]]);
+      t.push(
+        [x0 + 6, name[1] ? top + 27 : top + 30, name[0]],
+        [x0 + 6, top + 49, name[1]],
+        [x0, top + 76, 'DI'],
+        [xe + 137, top - 2, '(' + o.table + '-' + (o.first + n) + ')']
+      );
+      w.push(
+        [
+          'di' + no,
+          [
+            [xe, y],
+            [xe + 118, y]
+          ],
+          1
+        ],
+        [
+          'di' + no,
+          [
+            [xe + 134, y],
+            [xo - 30, y]
+          ]
+        ]
+      );
       if (rb) {
-        w.push(['di' + no, [[xj, y], [xj, by], [xo - 30, by]]]);
+        w.push([
+          'di' + no,
+          [
+            [xj, y],
+            [xj, by],
+            [xo - 30, by]
+          ]
+        ]);
         c.push(['b' + no, 'out', 'B' + no, xo, by, '', rb, 1]);
       }
       g.push([xe + 126, y, 'l']);
@@ -4407,7 +4435,13 @@ function tcsSim(s) {
       const [x, y, ew, note, xb, xf, rf] = o.err;
       r.push(['pioErr', x, y, ew, 22, 'PI/O error']);
       t.push([x + 16, y - 5, '(' + note + ')']);
-      w.push(['pioErr', [[x + ew, y + 11], [xf - 30, y + 11]]]);
+      w.push([
+        'pioErr',
+        [
+          [x + ew, y + 11],
+          [xf - 30, y + 11]
+        ]
+      ]);
       b.push(['btr17', 'o:BTR', '017', xb, y + 11]);
       c.push(['oF', 'out', 'F', xf, y + 11, '', rf]);
     }
@@ -4419,284 +4453,652 @@ function tcsSim(s) {
      out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], over (a line over those words), refA, refA1, refC (sheets of C1, C2, C3), cl (their letter when it is not C), c1via ([y, x] of the step the line of C1 makes on its way down), refB1, dy2 (the 2OO3 and its outputs stand that much lower); without cs the sheet has no C1, C2, C3 at the right, sh (the numbers of the input sheets), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
-  const F = o.f,
-    dx = o.dx || 0,
-    dr = o.dr || 0,
-    [C1, C2, C3] = o.cs || [[0, 0], [0, 0], [1436 + (o.dr || 0), null]],
-    RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
-    SH = o.sh || ['070', '072', '074'],
-    CL = o.cl || 'C',
-    u = (F[2] - F[0]) / 1000,
-    c = [],
-    b = [],
-    m = [],
-    w = [],
-    t = [];
-  /* [letter, top of the block, left of the block, x of the connectors, sheet number of the inputs, block number, first mark number list] */
-  const G = [
-    ['A', 123, 885 + dx, 307 + dx, SH[0], 'A002', ['001', '005', '007', '009', '010', '011']],
-    ['B', 570, 882 + dx, 304 + dx, SH[1], 'A020', ['019', '022', '023', '024', '025', '026']],
-    ['C', 1017, 880 + dx, 302 + dx, SH[2], 'A030', ['029', '031', '032', '033', '034', '035']]
-  ];
-  const L = ['SIG1', 'ERR1', 'SIG2', 'ERR2', 'SIG3', 'ERR3', 'HL', 'LL', 'DEV', 'SIM'],
-    R = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
-    pin = (top, i) => Math.round(top + 15 * u + (i + 0.5) * ((381 - 30 * u) / 10)),
-    BEND = [0, 659, 680, 701, 722, 743].map(x => x + dx);
-  /* A sheet where each block reads one signal for its three inputs (and one error for its three error inputs), and the signal also leaves by
+    const F = o.f,
+      dx = o.dx || 0,
+      dr = o.dr || 0,
+      [C1, C2, C3] = o.cs || [
+        [0, 0],
+        [0, 0],
+        [1436 + (o.dr || 0), null]
+      ],
+      RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
+      SH = o.sh || ['070', '072', '074'],
+      CL = o.cl || 'C',
+      u = (F[2] - F[0]) / 1000,
+      c = [],
+      b = [],
+      m = [],
+      w = [],
+      t = [];
+    /* [letter, top of the block, left of the block, x of the connectors, sheet number of the inputs, block number, first mark number list] */
+    const G = [
+      ['A', 123, 885 + dx, 307 + dx, SH[0], 'A002', ['001', '005', '007', '009', '010', '011']],
+      ['B', 570, 882 + dx, 304 + dx, SH[1], 'A020', ['019', '022', '023', '024', '025', '026']],
+      ['C', 1017, 880 + dx, 302 + dx, SH[2], 'A030', ['029', '031', '032', '033', '034', '035']]
+    ];
+    const L = ['SIG1', 'ERR1', 'SIG2', 'ERR2', 'SIG3', 'ERR3', 'HL', 'LL', 'DEV', 'SIM'],
+      R = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
+      pin = (top, i) => Math.round(top + 15 * u + (i + 0.5) * ((381 - 30 * u) / 10)),
+      BEND = [0, 659, 680, 701, 722, 743].map(x => x + dx);
+    /* A sheet where each block reads one signal for its three inputs (and one error for its three error inputs), and the signal also leaves by
      C1, C2, C3 at the left: o.single = [[x of the branch to C, x of C, how far C stands under the signal] for each block], o.inref = the sheet of
      the inputs of each block, o.cref = the sheets of C1, C2, C3. */
-  const single = (ch, g, p, bx, cx, marks) => {
-    const [xj, xc, dyc] = o.single[g],
-      ks = 'i' + ch + 'S',
-      ke = 'i' + ch + 'E',
-      y = p(0),
-      ye = y + 53,
-      xs = bx - 55,
-      xe = bx - 32,
-      [over, name] = o.name(ch, true),
-      [overE, nameE] = o.name(ch, false);
-    c.push(
-      [ks, 'in', o.let[0], cx, y, name, [o.inref[g]], 1],
-      [ke, 'in', o.let[1], cx, ye, nameE, [o.inref[g]], 1],
-      ['oC' + (g + 1), 'out', 'C' + (g + 1), xc, y + dyc, '', [], 1]
-    );
-    /* the sheets of C stand under it, each a little more to the right, as the drawing has them (beside it they would lie on the lines) */
-    o.cref.forEach((r, i) => t.push([xc - 52 + 5 * i, y + dyc + 33 + 21 * i, '(' + r + ')']));
-    if (over) t.push([cx + 33, y - 32, over]);
-    if (overE) t.push([cx + 33, ye - 32, overE]);
-    b.push(['mk' + ch + 'S', 'o:FTR', marks[0], cx + 321, y], ['mk' + ch + 'E', 'o:BTR', marks[1], cx + 321, ye]);
-    w.push(
-      [ks, [[cx + 27, y], [bx, y]], 1],
-      [ks, [[xj, y], [xj, y + dyc], [xc - 27, y + dyc]], 1],
-      [ks, [[xs, y], [xs, p(4)], [bx, p(4)]], 1],
-      [ks, [[xs, p(2)], [bx, p(2)]], 1],
-      [ke, [[cx + 27, ye], [BEND[1], ye], [BEND[1], p(1)], [bx, p(1)]]],
-      [ke, [[xe, p(1)], [xe, p(5)], [bx, p(5)]]],
-      [ke, [[xe, p(3)], [bx, p(3)]]]
-    );
-  };
-  const P = G.map(([ch, top, bx, cx, sh, no, marks], g) => {
-    const k = 'tmr' + (g + 1),
-      p = i => pin(top, i);
-    m.push([k, 'TMR AI DIAGNOSTICS', o.tags ? o.tags[g] : o.tag + '-' + (g + 1), bx, top, 405, 381, L, R, no, [
-      [bx + 90, top + 225, 'TP:1.0'],
-      [bx + 90, top + 246, 'TP:1.0'],
-      [bx + 90, top + 267, 'TP:1.0'],
-      [bx + 84, top + 288, 'DELAY TP:3.0s'],
-      [bx + 84, top + 310, 'DELAY TP:3.0s'],
-      [bx + 84, top + 331, 'DELAY TP:3.0s'],
-      [bx + 105, top + 404, '(LME111)'],
-      [bx + 217, top + 404, '(LME111A)']
-    ]]);
-    if (o.single) single(ch, g, p, bx, cx, marks);
-    else for (let i = 0; i < 6; i++) {
-      const sig = i % 2 === 0,
-        key = 'i' + ch + (i + 1),
-        y = p(0) + Math.round(i * 53.3),
-        n = Math.floor(i / 2) + 1;
-      const [over, name] = o.name(ch, sig, n);
-      c.push([key, 'in', (o.lets ? o.lets[g] : o.let)[sig ? 0 : 1], cx, y, name, [sh ? 'TCP' + n + sh : '-'], 1]);
+    const single = (ch, g, p, bx, cx, marks) => {
+      const [xj, xc, dyc] = o.single[g],
+        ks = 'i' + ch + 'S',
+        ke = 'i' + ch + 'E',
+        y = p(0),
+        ye = y + 53,
+        xs = bx - 55,
+        xe = bx - 32,
+        [over, name] = o.name(ch, true),
+        [overE, nameE] = o.name(ch, false);
+      c.push(
+        [ks, 'in', o.let[0], cx, y, name, [o.inref[g]], 1],
+        [ke, 'in', o.let[1], cx, ye, nameE, [o.inref[g]], 1],
+        ['oC' + (g + 1), 'out', 'C' + (g + 1), xc, y + dyc, '', [], 1]
+      );
+      /* the sheets of C stand under it, each a little more to the right, as the drawing has them (beside it they would lie on the lines) */
+      o.cref.forEach((r, i) => t.push([xc - 52 + 5 * i, y + dyc + 33 + 21 * i, '(' + r + ')']));
       if (over) t.push([cx + 33, y - 32, over]);
-      b.push(['mk' + ch + (i + 1), sig ? 'o:FTR' : 'o:BTR', marks[i], cx + 321, y]);
-      w.push([key, i ? [[cx + 27, y], [BEND[i], y], [BEND[i], p(i)], [bx, p(i)]] : [[cx + 27, y], [bx, y]], sig ? 1 : 0]);
-    }
-    return { k, p, bx };
-  });
-  const [g1, g2, g3] = P;
-  const X = x => x + dx,
-    Z = x => x + dr,
-    Y2 = y => y + (o.dy2 || 0);
-  /* the lines of C1, C2, C3: a y of null = level with the output of the third block. A sheet can send them to D1, D2, D3 too
-     (o.ds: [x of the branch, [y of D1, D2, D3], [x of D1, D2, D3], sheet]) and write their name over them (o.cname(ch) => [line 1, line 2], at x o.cnx). */
-  const CY = [C1[1], C2[1], C3[1] == null ? g3.p(0) : C3[1]],
-    cd = o.cdbl === 0 ? 0 : 1,
-    xc = [],
-    xw = [],
-    xt = [];
-  if (o.ds)
-    o.ds[1].forEach((y, i) => {
-      xc.push(['oD' + (i + 1), 'out', 'D' + (i + 1), o.ds[2][i], y, '', [o.ds[3]], 1]);
-      xw.push(['tmr' + (i + 1) + '.OUT', [[o.ds[0], CY[i]], [o.ds[0], y], [o.ds[2][i] - 27, y]], 1]);
-    });
-  if (o.cname)
-    ['A', 'B', 'C'].forEach((ch, i) => {
-      const n = o.cname(ch);
-      xt.push([o.cnx, CY[i] - 27, n[0]], [o.cnx, CY[i] - 6, n[1]]);
-    });
-  /* a third line over the words of the six outputs (o.over) */
-  if (o.over)
-    [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach((q, i) => xt.push([Z(q[0]), i > 2 ? Y2(q[1]) : q[1], o.over]));
-  /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
-  const EX = o.extra || {};
-  const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
-  const S = {
-    id: o.id,
-    title: o.title,
-    page: o.page,
-    ctl: 'EHG+MD',
-    cycle: 30,
-    f: F,
-    k: EX.k || [],
-    c: [
-      ...c,
-      ...(EX.c || []),
-      ['oA', 'out', 'A', Z(2077), 170, '', o.refA],
-      ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
-      ['oB', 'out', 'B', Z(2075), Y2(477), '', ['-']],
-      ['oB1', 'out', 'B1', Z(2074), Y2(573), '', o.refB1 || ['-'], 1],
-      ...(o.cs
-        ? [
-            ['oC1', 'out', CL + '1', o.cx, CY[0], '', [].concat(RC[0]), cd],
-            ['oC2', 'out', CL + '2', o.cx - 1, CY[1], '', [].concat(RC[1]), cd],
-            ['oC3', 'out', CL + '3', o.cx - 1, CY[2], '', [].concat(RC[2]), cd]
+      if (overE) t.push([cx + 33, ye - 32, overE]);
+      b.push(['mk' + ch + 'S', 'o:FTR', marks[0], cx + 321, y], ['mk' + ch + 'E', 'o:BTR', marks[1], cx + 321, ye]);
+      w.push(
+        [
+          ks,
+          [
+            [cx + 27, y],
+            [bx, y]
+          ],
+          1
+        ],
+        [
+          ks,
+          [
+            [xj, y],
+            [xj, y + dyc],
+            [xc - 27, y + dyc]
+          ],
+          1
+        ],
+        [
+          ks,
+          [
+            [xs, y],
+            [xs, p(4)],
+            [bx, p(4)]
+          ],
+          1
+        ],
+        [
+          ks,
+          [
+            [xs, p(2)],
+            [bx, p(2)]
+          ],
+          1
+        ],
+        [
+          ke,
+          [
+            [cx + 27, ye],
+            [BEND[1], ye],
+            [BEND[1], p(1)],
+            [bx, p(1)]
           ]
-        : []),
-      ...xc
-    ],
-    d: [
-      ...(EX.d || []),
-      ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
-      ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
-    ],
-    r: [
-      ['td2', Z(1481), 136, 235, 128, ''],
-      ['v2o3', Z(1564), Y2(445), 86, 107, '']
-    ],
-    m,
-    b: [
-      ...b,
-      ...(EX.b || []),
-      ['sg012', 'SG', 'A012', X(562), 478, [o.sg[0]]],
-      ['sg017', 'SG', 'A017', X(563), 552, [o.sg[1]]],
-      ['sg027', 'SG', 'A027', X(561), 922, [o.sg[2]]],
-      ['sg036', 'SG', 'B036', X(558), 1404, [o.sg[3]]],
-      ['ftr013', 'o:FTR', '013', X(732), 467],
-      ['ftr018', 'o:FTR', '018', X(731), 541],
-      ['ftr028', 'o:FTR', '028', X(731), 911],
-      ['ftr037', 'o:FTR', '037', X(632), 1393],
-      ['ftr038', 'o:FTR', '038', Z(1374), 170],
-      ['btr040', 'o:BTR', '040', Z(1374), g1.p(2)],
-      ['ftr042', 'o:FTR', '042', Z(1371), g2.p(0)],
-      ['btr043', 'o:BTR', '043', Z(1371), g2.p(2)],
-      ['ftr044', 'o:FTR', '044', Z(1370), 988],
-      ['ftr045', 'o:FTR', '045', Z(1369), g3.p(0)],
-      ['btr046', 'o:BTR', '046', Z(1369), g3.p(2)],
-      ['ftr039', 'o:FTR', '039', Z(1746), 170],
-      ['ftr004', 'o:FTR', '004', Z(1821), 170],
-      ['ftr006', 'o:FTR', '006', Z(1820), 264],
-      ['ftr008', 'o:FTR', '008', Z(1819), 360],
-      ['btr041', 'o:BTR', '041', Z(1744), Y2(477)],
-      ['btr015', 'o:BTR', '015', Z(1818), Y2(477)],
-      ['btr016', 'o:BTR', '016', Z(1817), Y2(573)],
-      ['btr021', 'o:BTR', '021', Z(1816), Y2(679)]
-    ],
-    w: [
-      ...w,
-      ...(EX.w || []),
-      /* the limits and the simulation value, the same for the three blocks */
-      ['sg012', [[X(591), 467], [X(775), 467]], 1],
-      ['sg012', [[X(775), g1.p(6)], [X(775), g3.p(6)], [g3.bx, g3.p(6)]], 1],
-      ['sg012', [[X(775), g1.p(6)], [g1.bx, g1.p(6)]], 1],
-      ['sg012', [[X(775), g2.p(6)], [g2.bx, g2.p(6)]], 1],
-      ['sg017', [[X(592), 541], [X(796), 541]], 1],
-      ['sg017', [[X(796), g1.p(7)], [X(796), g3.p(7)], [g3.bx, g3.p(7)]], 1],
-      ['sg017', [[X(796), g1.p(7)], [g1.bx, g1.p(7)]], 1],
-      ['sg017', [[X(796), g2.p(7)], [g2.bx, g2.p(7)]], 1],
-      ['sg027', [[X(590), 911], [X(817), 911]], 1],
-      ['sg027', [[X(817), g1.p(8)], [X(817), g3.p(8)], [g3.bx, g3.p(8)]], 1],
-      ['sg027', [[X(817), g1.p(8)], [g1.bx, g1.p(8)]], 1],
-      ['sg027', [[X(817), g2.p(8)], [g2.bx, g2.p(8)]], 1],
-      ['sg027', [[X(817), 988], [Z(1459), 988], [Z(1459), 233], [Z(1481), 233]], 1],
-      ['sg036', [[X(587), 1393], [X(838), 1393], [X(838), g1.p(9)], [g1.bx, g1.p(9)]], 1],
-      ['sg036', [[X(838), g2.p(9)], [g2.bx, g2.p(9)]], 1],
-      ['sg036', [[X(838), g3.p(9)], [g3.bx, g3.p(9)]], 1],
-      /* the three values to TRIPLE DETECTOR2 and to the turbine supervisory sheets */
-      ['tmr1.OUT', [[g1.bx + 405, 170], [Z(1481), 170]], 1],
-      ...(o.cs ? [['tmr2.OUT', [[C2[0], g2.p(0)], [C2[0], CY[1]], [o.cx - 28, CY[1]]], 1]] : []),
-      ...(!o.cs ? [] : [[
-      'tmr1.OUT', o.c1via ? [[C1[0], 170], [C1[0], o.c1via[0]], [o.c1via[1], o.c1via[0]], [o.c1via[1], CY[0]], [o.cx - 27, CY[0]]] : [[C1[0], 170], [C1[0], CY[0]], [o.cx - 27, CY[0]]], 1]]),
-      ['tmr2.OUT', [[g2.bx + 405, g2.p(0)], [Z(1414), g2.p(0)], [Z(1414), 191], [Z(1481), 191]], 1],
-      ['tmr3.OUT', o.cs ? straight([[g3.bx + 405, g3.p(0)], [C3[0], g3.p(0)], [C3[0], CY[2]], [o.cx - 28, CY[2]]]) : [[g3.bx + 405, g3.p(0)], [Z(1436), g3.p(0)]], 1],
-      ...xw,
-      ['tmr3.OUT', [[Z(1436), g3.p(0)], [Z(1436), 212], [Z(1481), 212]], 1],
-      /* abnormal: two out of three */
-      ['tmr1.ABN', [[g1.bx + 405, g1.p(2)], [Z(1395), g1.p(2)], [Z(1395), Y2(477)], [Z(1564), Y2(477)]]],
-      ['tmr2.ABN', [[g2.bx + 405, g2.p(2)], [Z(1478), g2.p(2)], [Z(1478), Y2(499)], [Z(1564), Y2(499)]]],
-      ['tmr3.ABN', [[g3.bx + 405, g3.p(2)], [Z(1500), g3.p(2)], [Z(1500), Y2(520)], [Z(1564), Y2(520)]]],
-      ['td2', [[Z(1716), 170], [Z(2050), 170]], 1],
-      ['td2', [[Z(1778), 170], [Z(1778), 360], [Z(2041), 360]], 1],
-      ['td2', [[Z(1778), 264], [Z(2049), 264]], 1],
-      ['v2o3', [[Z(1650), Y2(477)], [Z(2048), Y2(477)]]],
-      ['v2o3', [[Z(1775), Y2(477)], [Z(1775), Y2(679)], [Z(2038), Y2(679)]]],
-      ['v2o3', [[Z(1775), Y2(573)], [Z(2047), Y2(573)]]]
-    ],
-    t: [
-      ...t,
-      [Z(1487), 157, 'TRIPLE DETECTOR2'],
-      [Z(1487), 178, 'IN A'],
-      [Z(1487), 199, 'IN B'],
-      [Z(1487), 221, 'IN C'],
-      [Z(1487), 242, 'DEV'],
-      [Z(1678), 178, 'OUT'],
-      [Z(1678), 199, 'DEV'],
-      [Z(1578), 261, 'A003'],
-      [Z(1561), 287, '(LME113)'],
-      [Z(1517), 327, 'TP:1.0'],
-      [Z(1517), 348, 'TP:1.0'],
-      [Z(1517), 370, 'TP:1.0'],
-      [Z(1585), Y2(467), '2OO3'],
-      [Z(1569), Y2(488), 'IN1'],
-      [Z(1612), Y2(488), 'OUT'],
-      [Z(1569), Y2(510), 'IN2'],
-      [Z(1569), Y2(531), 'IN3'],
-      [Z(1595), Y2(550), '014'],
-      [Z(1569), Y2(576), '(LME120)'],
-      [Z(1848), 143, o.out[0]],
-      [Z(1848), 165, o.out[1]],
-      [Z(1847), 239, o.out[0]],
-      [Z(1847), 260, o.out[1]],
-      [Z(1846), 335, o.out[0]],
-      [Z(1846), 356, o.out[1]],
-      [Z(1846), Y2(452), o.out[3] || o.out[0]],
-      [Z(1846), Y2(473), o.out[2]],
-      [Z(1845), Y2(548), o.out[3] || o.out[0]],
-      [Z(1845), Y2(569), o.out[2]],
-      [Z(1844), Y2(654), o.out[3] || o.out[0]],
-      [Z(1844), Y2(675), o.out[2]],
-      ...xt,
-      ...(EX.t || []),
-      ...o.foot
-    ]
-  };
-  /* A sheet where the value of each block goes straight out, with no TRIPLE DETECTOR2 and no 2OO3 (the shaft vibrations):
+        ],
+        [
+          ke,
+          [
+            [xe, p(1)],
+            [xe, p(5)],
+            [bx, p(5)]
+          ]
+        ],
+        [
+          ke,
+          [
+            [xe, p(3)],
+            [bx, p(3)]
+          ]
+        ]
+      );
+    };
+    const P = G.map(([ch, top, bx, cx, sh, no, marks], g) => {
+      const k = 'tmr' + (g + 1),
+        p = i => pin(top, i);
+      m.push([
+        k,
+        'TMR AI DIAGNOSTICS',
+        o.tags ? o.tags[g] : o.tag + '-' + (g + 1),
+        bx,
+        top,
+        405,
+        381,
+        L,
+        R,
+        no,
+        [
+          [bx + 90, top + 225, 'TP:1.0'],
+          [bx + 90, top + 246, 'TP:1.0'],
+          [bx + 90, top + 267, 'TP:1.0'],
+          [bx + 84, top + 288, 'DELAY TP:3.0s'],
+          [bx + 84, top + 310, 'DELAY TP:3.0s'],
+          [bx + 84, top + 331, 'DELAY TP:3.0s'],
+          [bx + 105, top + 404, '(LME111)'],
+          [bx + 217, top + 404, '(LME111A)']
+        ]
+      ]);
+      if (o.single) single(ch, g, p, bx, cx, marks);
+      else
+        for (let i = 0; i < 6; i++) {
+          const sig = i % 2 === 0,
+            key = 'i' + ch + (i + 1),
+            y = p(0) + Math.round(i * 53.3),
+            n = Math.floor(i / 2) + 1;
+          const [over, name] = o.name(ch, sig, n);
+          c.push([key, 'in', (o.lets ? o.lets[g] : o.let)[sig ? 0 : 1], cx, y, name, [sh ? 'TCP' + n + sh : '-'], 1]);
+          if (over) t.push([cx + 33, y - 32, over]);
+          b.push(['mk' + ch + (i + 1), sig ? 'o:FTR' : 'o:BTR', marks[i], cx + 321, y]);
+          w.push([
+            key,
+            i
+              ? [
+                  [cx + 27, y],
+                  [BEND[i], y],
+                  [BEND[i], p(i)],
+                  [bx, p(i)]
+                ]
+              : [
+                  [cx + 27, y],
+                  [bx, y]
+                ],
+            sig ? 1 : 0
+          ]);
+        }
+      return { k, p, bx };
+    });
+    const [g1, g2, g3] = P;
+    const X = x => x + dx,
+      Z = x => x + dr,
+      Y2 = y => y + (o.dy2 || 0);
+    /* the lines of C1, C2, C3: a y of null = level with the output of the third block. A sheet can send them to D1, D2, D3 too
+     (o.ds: [x of the branch, [y of D1, D2, D3], [x of D1, D2, D3], sheet]) and write their name over them (o.cname(ch) => [line 1, line 2], at x o.cnx). */
+    const CY = [C1[1], C2[1], C3[1] == null ? g3.p(0) : C3[1]],
+      cd = o.cdbl === 0 ? 0 : 1,
+      xc = [],
+      xw = [],
+      xt = [];
+    if (o.ds)
+      o.ds[1].forEach((y, i) => {
+        xc.push(['oD' + (i + 1), 'out', 'D' + (i + 1), o.ds[2][i], y, '', [o.ds[3]], 1]);
+        xw.push([
+          'tmr' + (i + 1) + '.OUT',
+          [
+            [o.ds[0], CY[i]],
+            [o.ds[0], y],
+            [o.ds[2][i] - 27, y]
+          ],
+          1
+        ]);
+      });
+    if (o.cname)
+      ['A', 'B', 'C'].forEach((ch, i) => {
+        const n = o.cname(ch);
+        xt.push([o.cnx, CY[i] - 27, n[0]], [o.cnx, CY[i] - 6, n[1]]);
+      });
+    /* a third line over the words of the six outputs (o.over) */
+    if (o.over)
+      [
+        [1848, 122],
+        [1847, 218],
+        [1846, 314],
+        [1846, 431],
+        [1845, 527],
+        [1844, 633]
+      ].forEach((q, i) => xt.push([Z(q[0]), i > 2 ? Y2(q[1]) : q[1], o.over]));
+    /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
+    const EX = o.extra || {};
+    const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
+    const S = {
+      id: o.id,
+      title: o.title,
+      page: o.page,
+      ctl: 'EHG+MD',
+      cycle: 30,
+      f: F,
+      k: EX.k || [],
+      c: [
+        ...c,
+        ...(EX.c || []),
+        ['oA', 'out', 'A', Z(2077), 170, '', o.refA],
+        ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
+        ['oB', 'out', 'B', Z(2075), Y2(477), '', ['-']],
+        ['oB1', 'out', 'B1', Z(2074), Y2(573), '', o.refB1 || ['-'], 1],
+        ...(o.cs
+          ? [
+              ['oC1', 'out', CL + '1', o.cx, CY[0], '', [].concat(RC[0]), cd],
+              ['oC2', 'out', CL + '2', o.cx - 1, CY[1], '', [].concat(RC[1]), cd],
+              ['oC3', 'out', CL + '3', o.cx - 1, CY[2], '', [].concat(RC[2]), cd]
+            ]
+          : []),
+        ...xc
+      ],
+      d: [
+        ...(EX.d || []),
+        ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
+        ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
+      ],
+      r: [
+        ['td2', Z(1481), 136, 235, 128, ''],
+        ['v2o3', Z(1564), Y2(445), 86, 107, '']
+      ],
+      m,
+      b: [
+        ...b,
+        ...(EX.b || []),
+        ['sg012', 'SG', 'A012', X(562), 478, [o.sg[0]]],
+        ['sg017', 'SG', 'A017', X(563), 552, [o.sg[1]]],
+        ['sg027', 'SG', 'A027', X(561), 922, [o.sg[2]]],
+        ['sg036', 'SG', 'B036', X(558), 1404, [o.sg[3]]],
+        ['ftr013', 'o:FTR', '013', X(732), 467],
+        ['ftr018', 'o:FTR', '018', X(731), 541],
+        ['ftr028', 'o:FTR', '028', X(731), 911],
+        ['ftr037', 'o:FTR', '037', X(632), 1393],
+        ['ftr038', 'o:FTR', '038', Z(1374), 170],
+        ['btr040', 'o:BTR', '040', Z(1374), g1.p(2)],
+        ['ftr042', 'o:FTR', '042', Z(1371), g2.p(0)],
+        ['btr043', 'o:BTR', '043', Z(1371), g2.p(2)],
+        ['ftr044', 'o:FTR', '044', Z(1370), 988],
+        ['ftr045', 'o:FTR', '045', Z(1369), g3.p(0)],
+        ['btr046', 'o:BTR', '046', Z(1369), g3.p(2)],
+        ['ftr039', 'o:FTR', '039', Z(1746), 170],
+        ['ftr004', 'o:FTR', '004', Z(1821), 170],
+        ['ftr006', 'o:FTR', '006', Z(1820), 264],
+        ['ftr008', 'o:FTR', '008', Z(1819), 360],
+        ['btr041', 'o:BTR', '041', Z(1744), Y2(477)],
+        ['btr015', 'o:BTR', '015', Z(1818), Y2(477)],
+        ['btr016', 'o:BTR', '016', Z(1817), Y2(573)],
+        ['btr021', 'o:BTR', '021', Z(1816), Y2(679)]
+      ],
+      w: [
+        ...w,
+        ...(EX.w || []),
+        /* the limits and the simulation value, the same for the three blocks */
+        [
+          'sg012',
+          [
+            [X(591), 467],
+            [X(775), 467]
+          ],
+          1
+        ],
+        [
+          'sg012',
+          [
+            [X(775), g1.p(6)],
+            [X(775), g3.p(6)],
+            [g3.bx, g3.p(6)]
+          ],
+          1
+        ],
+        [
+          'sg012',
+          [
+            [X(775), g1.p(6)],
+            [g1.bx, g1.p(6)]
+          ],
+          1
+        ],
+        [
+          'sg012',
+          [
+            [X(775), g2.p(6)],
+            [g2.bx, g2.p(6)]
+          ],
+          1
+        ],
+        [
+          'sg017',
+          [
+            [X(592), 541],
+            [X(796), 541]
+          ],
+          1
+        ],
+        [
+          'sg017',
+          [
+            [X(796), g1.p(7)],
+            [X(796), g3.p(7)],
+            [g3.bx, g3.p(7)]
+          ],
+          1
+        ],
+        [
+          'sg017',
+          [
+            [X(796), g1.p(7)],
+            [g1.bx, g1.p(7)]
+          ],
+          1
+        ],
+        [
+          'sg017',
+          [
+            [X(796), g2.p(7)],
+            [g2.bx, g2.p(7)]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(590), 911],
+            [X(817), 911]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(817), g1.p(8)],
+            [X(817), g3.p(8)],
+            [g3.bx, g3.p(8)]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(817), g1.p(8)],
+            [g1.bx, g1.p(8)]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(817), g2.p(8)],
+            [g2.bx, g2.p(8)]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(817), 988],
+            [Z(1459), 988],
+            [Z(1459), 233],
+            [Z(1481), 233]
+          ],
+          1
+        ],
+        [
+          'sg036',
+          [
+            [X(587), 1393],
+            [X(838), 1393],
+            [X(838), g1.p(9)],
+            [g1.bx, g1.p(9)]
+          ],
+          1
+        ],
+        [
+          'sg036',
+          [
+            [X(838), g2.p(9)],
+            [g2.bx, g2.p(9)]
+          ],
+          1
+        ],
+        [
+          'sg036',
+          [
+            [X(838), g3.p(9)],
+            [g3.bx, g3.p(9)]
+          ],
+          1
+        ],
+        /* the three values to TRIPLE DETECTOR2 and to the turbine supervisory sheets */
+        [
+          'tmr1.OUT',
+          [
+            [g1.bx + 405, 170],
+            [Z(1481), 170]
+          ],
+          1
+        ],
+        ...(o.cs
+          ? [
+              [
+                'tmr2.OUT',
+                [
+                  [C2[0], g2.p(0)],
+                  [C2[0], CY[1]],
+                  [o.cx - 28, CY[1]]
+                ],
+                1
+              ]
+            ]
+          : []),
+        ...(!o.cs
+          ? []
+          : [
+              [
+                'tmr1.OUT',
+                o.c1via
+                  ? [
+                      [C1[0], 170],
+                      [C1[0], o.c1via[0]],
+                      [o.c1via[1], o.c1via[0]],
+                      [o.c1via[1], CY[0]],
+                      [o.cx - 27, CY[0]]
+                    ]
+                  : [
+                      [C1[0], 170],
+                      [C1[0], CY[0]],
+                      [o.cx - 27, CY[0]]
+                    ],
+                1
+              ]
+            ]),
+        [
+          'tmr2.OUT',
+          [
+            [g2.bx + 405, g2.p(0)],
+            [Z(1414), g2.p(0)],
+            [Z(1414), 191],
+            [Z(1481), 191]
+          ],
+          1
+        ],
+        [
+          'tmr3.OUT',
+          o.cs
+            ? straight([
+                [g3.bx + 405, g3.p(0)],
+                [C3[0], g3.p(0)],
+                [C3[0], CY[2]],
+                [o.cx - 28, CY[2]]
+              ])
+            : [
+                [g3.bx + 405, g3.p(0)],
+                [Z(1436), g3.p(0)]
+              ],
+          1
+        ],
+        ...xw,
+        [
+          'tmr3.OUT',
+          [
+            [Z(1436), g3.p(0)],
+            [Z(1436), 212],
+            [Z(1481), 212]
+          ],
+          1
+        ],
+        /* abnormal: two out of three */
+        [
+          'tmr1.ABN',
+          [
+            [g1.bx + 405, g1.p(2)],
+            [Z(1395), g1.p(2)],
+            [Z(1395), Y2(477)],
+            [Z(1564), Y2(477)]
+          ]
+        ],
+        [
+          'tmr2.ABN',
+          [
+            [g2.bx + 405, g2.p(2)],
+            [Z(1478), g2.p(2)],
+            [Z(1478), Y2(499)],
+            [Z(1564), Y2(499)]
+          ]
+        ],
+        [
+          'tmr3.ABN',
+          [
+            [g3.bx + 405, g3.p(2)],
+            [Z(1500), g3.p(2)],
+            [Z(1500), Y2(520)],
+            [Z(1564), Y2(520)]
+          ]
+        ],
+        [
+          'td2',
+          [
+            [Z(1716), 170],
+            [Z(2050), 170]
+          ],
+          1
+        ],
+        [
+          'td2',
+          [
+            [Z(1778), 170],
+            [Z(1778), 360],
+            [Z(2041), 360]
+          ],
+          1
+        ],
+        [
+          'td2',
+          [
+            [Z(1778), 264],
+            [Z(2049), 264]
+          ],
+          1
+        ],
+        [
+          'v2o3',
+          [
+            [Z(1650), Y2(477)],
+            [Z(2048), Y2(477)]
+          ]
+        ],
+        [
+          'v2o3',
+          [
+            [Z(1775), Y2(477)],
+            [Z(1775), Y2(679)],
+            [Z(2038), Y2(679)]
+          ]
+        ],
+        [
+          'v2o3',
+          [
+            [Z(1775), Y2(573)],
+            [Z(2047), Y2(573)]
+          ]
+        ]
+      ],
+      t: [
+        ...t,
+        [Z(1487), 157, 'TRIPLE DETECTOR2'],
+        [Z(1487), 178, 'IN A'],
+        [Z(1487), 199, 'IN B'],
+        [Z(1487), 221, 'IN C'],
+        [Z(1487), 242, 'DEV'],
+        [Z(1678), 178, 'OUT'],
+        [Z(1678), 199, 'DEV'],
+        [Z(1578), 261, 'A003'],
+        [Z(1561), 287, '(LME113)'],
+        [Z(1517), 327, 'TP:1.0'],
+        [Z(1517), 348, 'TP:1.0'],
+        [Z(1517), 370, 'TP:1.0'],
+        [Z(1585), Y2(467), '2OO3'],
+        [Z(1569), Y2(488), 'IN1'],
+        [Z(1612), Y2(488), 'OUT'],
+        [Z(1569), Y2(510), 'IN2'],
+        [Z(1569), Y2(531), 'IN3'],
+        [Z(1595), Y2(550), '014'],
+        [Z(1569), Y2(576), '(LME120)'],
+        [Z(1848), 143, o.out[0]],
+        [Z(1848), 165, o.out[1]],
+        [Z(1847), 239, o.out[0]],
+        [Z(1847), 260, o.out[1]],
+        [Z(1846), 335, o.out[0]],
+        [Z(1846), 356, o.out[1]],
+        [Z(1846), Y2(452), o.out[3] || o.out[0]],
+        [Z(1846), Y2(473), o.out[2]],
+        [Z(1845), Y2(548), o.out[3] || o.out[0]],
+        [Z(1845), Y2(569), o.out[2]],
+        [Z(1844), Y2(654), o.out[3] || o.out[0]],
+        [Z(1844), Y2(675), o.out[2]],
+        ...xt,
+        ...(EX.t || []),
+        ...o.foot
+      ]
+    };
+    /* A sheet where the value of each block goes straight out, with no TRIPLE DETECTOR2 and no 2OO3 (the shaft vibrations):
      o.direct = [[letter, sheets of the first output, sheets of the second, [line 1, line 2] of their name, [four mark numbers]] for each block]; lets = the letters of the inputs for each block when they differ, a sheet number of null in sh = a spare block.
      The right part of the pattern is taken away and each block gets its two outputs. */
-  if (o.direct) {
-    S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
-    S.d = [];
-    S.r = [];
-    S.b = S.b.filter(x => !/^(ftr03[89]|btr04[0136]|ftr04[245]|ftr00[468]|btr01[56]|btr021)$/.test(x[0]));
-    S.w = S.w.filter(x => !/^(td2|v2o3|tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
-    S.t = S.t.filter(x => x[0] < Z(1480));
-    o.direct.forEach(([ch, r1, r2, nm, mk], g) => {
-      const G = [g1, g2, g3][g],
-        y = G.p(0),
-        y2 = y + 96;
-      S.c.push(['o' + ch, 'out', ch, Z(2079), y, '', r1], ['o' + ch + '1', 'out', ch + '1', Z(2078), y2, '', r2, 1]);
-      S.b.push(
-        ['mk' + g + 'a', 'o:FTR', mk[0], Z(1377), y],
-        ['mk' + g + 'b', 'o:FTR', mk[1], Z(1750), y],
-        ['mk' + g + 'c', 'o:FTR', mk[2], Z(1824), y],
-        ['mk' + g + 'd', 'o:FTR', mk[3], Z(1823), y2]
-      );
-      S.w.push(['tmr' + (g + 1) + '.OUT', [[G.bx + 405, y], [Z(2052), y]], 1], ['tmr' + (g + 1) + '.OUT', [[Z(1781), y], [Z(1781), y2], [Z(2051), y2]], 1]);
-      /* the name of the two outputs: one pair of lines for both, or [lines of the first, lines of the second]; the last line stands on the wire */
-      const two = Array.isArray(nm[0]) ? nm : [nm, nm];
-      two[0].forEach((s, i) => S.t.push([Z(1850), y - 6 - 21 * (two[0].length - 1 - i), s]));
-      two[1].forEach((s, i) => S.t.push([Z(1849), y2 - 6 - 21 * (two[1].length - 1 - i), s]));
-    });
-  }
-  return S;
+    if (o.direct) {
+      S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
+      S.d = [];
+      S.r = [];
+      S.b = S.b.filter(x => !/^(ftr03[89]|btr04[0136]|ftr04[245]|ftr00[468]|btr01[56]|btr021)$/.test(x[0]));
+      S.w = S.w.filter(x => !/^(td2|v2o3|tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
+      S.t = S.t.filter(x => x[0] < Z(1480));
+      o.direct.forEach(([ch, r1, r2, nm, mk], g) => {
+        const G = [g1, g2, g3][g],
+          y = G.p(0),
+          y2 = y + 96;
+        S.c.push(['o' + ch, 'out', ch, Z(2079), y, '', r1], ['o' + ch + '1', 'out', ch + '1', Z(2078), y2, '', r2, 1]);
+        S.b.push(
+          ['mk' + g + 'a', 'o:FTR', mk[0], Z(1377), y],
+          ['mk' + g + 'b', 'o:FTR', mk[1], Z(1750), y],
+          ['mk' + g + 'c', 'o:FTR', mk[2], Z(1824), y],
+          ['mk' + g + 'd', 'o:FTR', mk[3], Z(1823), y2]
+        );
+        S.w.push(
+          [
+            'tmr' + (g + 1) + '.OUT',
+            [
+              [G.bx + 405, y],
+              [Z(2052), y]
+            ],
+            1
+          ],
+          [
+            'tmr' + (g + 1) + '.OUT',
+            [
+              [Z(1781), y],
+              [Z(1781), y2],
+              [Z(2051), y2]
+            ],
+            1
+          ]
+        );
+        /* the name of the two outputs: one pair of lines for both, or [lines of the first, lines of the second]; the last line stands on the wire */
+        const two = Array.isArray(nm[0]) ? nm : [nm, nm];
+        two[0].forEach((s, i) => S.t.push([Z(1850), y - 6 - 21 * (two[0].length - 1 - i), s]));
+        two[1].forEach((s, i) => S.t.push([Z(1849), y2 - 6 - 21 * (two[1].length - 1 - i), s]));
+      });
+    }
+    return S;
   };
   /* TCE_LIB.did(o): a sheet DIGITAL INPUT SIGNAL DIAGNOSTICS. Four signals, each read by the three protection controllers and checked by one
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
@@ -4731,13 +5133,32 @@ function tcsSim(s) {
            of the input error] } as the drawing prints them; the last line of a name stands on its wire */
         nm =
           typeof name === 'string'
-            ? { in: [0, 1, 2].map(() => [name, o.line2]), out: [[name, o.line2], [name, o.line2], [name, o.line2 + ' INPUT ERROR']] }
+            ? {
+                in: [0, 1, 2].map(() => [name, o.line2]),
+                out: [
+                  [name, o.line2],
+                  [name, o.line2],
+                  [name, o.line2 + ' INPUT ERROR']
+                ]
+              }
             : name,
         lines = (L, x, y) => L.forEach((s, j) => t.push([x, y - 6 - 21 * (L.length - 1 - j), s]));
-      m.push([k, 'TRIPPLE INPUT DIAGNOSTICS', '', BX, top, BW, BH, ['IN1', '', 'IN2', '', 'IN3'], ['OUT', '', '', '', 'DEV E'], no, [
-        [BX + 90, top + 172, 'TP:3.0'],
-        [BX + 105, top + 246, '(LME105)']
-      ]]);
+      m.push([
+        k,
+        'TRIPPLE INPUT DIAGNOSTICS',
+        '',
+        BX,
+        top,
+        BW,
+        BH,
+        ['IN1', '', 'IN2', '', 'IN3'],
+        ['OUT', '', '', '', 'DEV E'],
+        no,
+        [
+          [BX + 90, top + 172, 'TP:3.0'],
+          [BX + 105, top + 246, '(LME105)']
+        ]
+      ]);
       (ir || ['TCP1050', 'TCP2050', 'TCP3050']).forEach((r, i) => {
         const key = 'i' + (g + 1) + (i + 1),
           y = p(2 * i);
@@ -4746,40 +5167,106 @@ function tcsSim(s) {
         /* the lines of the name over the last one, which the connector prints on the wire */
         for (let j = 0; j < N.length - 1; j++) t.push([313, y - 32 - 21 * (N.length - 2 - j), N[j]]);
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
-        w.push([key, [[307, y], [BX, y]]]);
+        w.push([
+          key,
+          [
+            [307, y],
+            [BX, y]
+          ]
+        ]);
       });
       if (x.two) {
         /* OUT: a connector and, under it, a second one; no lamp */
-        c.push(['o' + ol, 'out', ol, 2103, p(0), '', ref || ['-']], ['o' + x.two[0], 'out', x.two[0], 2103, p(0) + 56, '', x.two[1], 1, 1]);
+        c.push(
+          ['o' + ol, 'out', ol, 2103, p(0), '', ref || ['-']],
+          ['o' + x.two[0], 'out', x.two[0], 2103, p(0) + 56, '', x.two[1], 1, 1]
+        );
         b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)]);
-        w.push([k + '.OUT', [[BX + BW, p(0)], [2076, p(0)]]], [k + '.OUT', [[1963, p(0)], [1963, p(0) + 56], [2076, p(0) + 56]]]);
+        w.push(
+          [
+            k + '.OUT',
+            [
+              [BX + BW, p(0)],
+              [2076, p(0)]
+            ]
+          ],
+          [
+            k + '.OUT',
+            [
+              [1963, p(0)],
+              [1963, p(0) + 56],
+              [2076, p(0) + 56]
+            ]
+          ]
+        );
         lines(nm.out[0], 1722, p(0));
       } else if (x.conn) {
         /* OUT: the connector only, one step lower than OUT */
         c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']]);
         b.push(['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
-        w.push([k + '.OUT', [[BX + BW, p(0)], [1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
+        w.push([
+          k + '.OUT',
+          [
+            [BX + BW, p(0)],
+            [1539, p(0)],
+            [1539, p(0) + 64],
+            [2076, p(0) + 64]
+          ]
+        ]);
         lines(nm.out[1], 1716, p(0) + 64);
       } else {
         /* OUT: the lamp and the connector */
         d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
         c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-'], x.dbl ? 1 : 0, x.dbl === 1 ? 1 : 0]);
-        b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
+        b.push(
+          ['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)],
+          ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]
+        );
         /* x.src: the lamp and the connector are fed by a connector from another sheet that stands right of the block; OUT of the block is left open */
         const so = x.src ? 's' + (g + 1) : k + '.OUT';
         if (x.src) c.push([so, 'in', x.src[0], 1340, p(0), '', x.src[1], 0, 1]);
-        w.push([so, [[x.src ? 1367 : BX + BW, p(0)], [2070, p(0)]]], [so, [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
+        w.push(
+          [
+            so,
+            [
+              [x.src ? 1367 : BX + BW, p(0)],
+              [2070, p(0)]
+            ]
+          ],
+          [
+            so,
+            [
+              [1539, p(0)],
+              [1539, p(0) + 64],
+              [2076, p(0) + 64]
+            ]
+          ]
+        );
         lines(nm.out[0], 1716, p(0));
         lines(nm.out[1], 1716, p(0) + 64);
         /* one more way out, over the lamp: from the dot on OUT up to a double-line connector (x.up = [letter, sheets]) */
         if (x.up) {
           c.push(['o' + x.up[0], 'out', x.up[0], 2103, p(0) - 84, '', x.up[1], 1, 1]);
-          w.push([so, [[1539, p(0) + 64], [1539, p(0) - 84], [2076, p(0) - 84]]]);
+          w.push([
+            so,
+            [
+              [1539, p(0) + 64],
+              [1539, p(0) - 84],
+              [2076, p(0) - 84]
+            ]
+          ]);
         }
         /* a third way out: from the wire of the connector down, past the input error, to a double-line connector */
         if (x.third) {
           c.push(['o' + x.third[0], 'out', x.third[0], 2103, p(0) + 193, '', x.third[1], 1, 1]);
-          w.push([k + '.OUT', [[1999, p(0) + 64], [1999, p(0) + 193], [2076, p(0) + 193]]]);
+          w.push([
+            k + '.OUT',
+            [
+              [1999, p(0) + 64],
+              [1999, p(0) + 193],
+              [2076, p(0) + 193]
+            ]
+          ]);
         }
       }
       /* DEV E: the connector (with x.el a lamp, and the connector under it) and the OR */
@@ -4788,30 +5275,93 @@ function tcsSim(s) {
       if (x.el) {
         d.push(['crte' + (g + 1), 2105, ye, 'out', x.el, 'S', '#1C']);
         b.push(['mo' + (g + 1) + 'd', 'o:BTR', om[3], ex, yc]);
-        w.push([k + '.DEV E', [[1539, ye], [1539, yc], [2065, yc]]]);
+        w.push([
+          k + '.DEV E',
+          [
+            [1539, ye],
+            [1539, yc],
+            [2065, yc]
+          ]
+        ]);
         lines(nm.out[3] || nm.out[2], last ? 1713 : 1704, yc);
       }
       const en = x.en || ol + '1';
       c.push(['o' + en, 'out', en, 2092, yc, '', ['-']]);
       b.push(['mo' + (g + 1) + 'c', 'o:BTR', om[2], ex, ye]);
       lines(nm.out[2], last ? 1713 : 1704, ye);
-      if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [xe, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
+      if (last)
+        w.push(
+          [
+            k + '.DEV E',
+            [
+              [BX + BW, p(4)],
+              [OX[3], p(4)],
+              [OX[3], ye],
+              [xe, ye]
+            ]
+          ],
+          [
+            k + '.DEV E',
+            [
+              [OX[3], OY[3]],
+              [OL, OY[3]]
+            ]
+          ]
+        );
       else
         w.push(
-          [k + '.DEV E', x.ey ? [[BX + BW, p(4)], [x.ex || 1535, p(4)], [x.ex || 1535, ye], [xe, ye]] : [[BX + BW, ye], [xe, ye]]],
-          ...(o.noOr ? [] : [[k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]])
+          [
+            k + '.DEV E',
+            x.ey
+              ? [
+                  [BX + BW, p(4)],
+                  [x.ex || 1535, p(4)],
+                  [x.ex || 1535, ye],
+                  [xe, ye]
+                ]
+              : [
+                  [BX + BW, ye],
+                  [xe, ye]
+                ]
+          ],
+          ...(o.noOr
+            ? []
+            : [
+                [
+                  k + '.DEV E',
+                  [
+                    [OX[g], p(4)],
+                    [OX[g], OY[g]],
+                    [OL, OY[g]]
+                  ]
+                ]
+              ])
         );
     });
     /* a sheet with fewer than four blocks has no OR of the input errors (o.noOr) */
     if (!o.noOr) {
       b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
       c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
-      w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
+      w.push([
+        'or',
+        [
+          [1598, OY[0]],
+          [2075, OY[0]]
+        ]
+      ]);
       t.push([1714, OY[0] - 6, o.orName || 'INPUT DISCREPANCY']);
     }
     t.push(...o.foot);
     /* what a sheet has beyond the pattern */
-    if (o.extra) for (const [A, n] of [[c, 'c'], [d, 'd'], [b, 'b'], [w, 'w'], [t, 't']]) A.push(...(o.extra[n] || []));
+    if (o.extra)
+      for (const [A, n] of [
+        [c, 'c'],
+        [d, 'd'],
+        [b, 'b'],
+        [w, 'w'],
+        [t, 't']
+      ])
+        A.push(...(o.extra[n] || []));
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
   };
   /* TCE_LIB.aid(o): a sheet INPUT SIGNAL DIAGNOSTICS of single pressure inputs (TCE102, TCE104): on each line a transmitter (the crossed circle),
@@ -4845,7 +5395,10 @@ function tcsSim(s) {
         [sno, sx, sdy, sdo, sxc, snote] = q.sg;
       /* the transmitter, the card and its PI/O error */
       b.push(['x' + n, 'X', '', 393, y, [], {}, [21]], ['f' + q.mf, 'o:FTR', q.mf, q.xf, y]);
-      l.push([[414, y], [582, y]]);
+      l.push([
+        [414, y],
+        [582, y]
+      ]);
       r.push([k, 582, y - 12, 52, 24, 'mA/V'], ['pe' + n, 631, y + 30, 125, 23, 'PI/O error']);
       tri.push([728, y, 9]);
       t.push(
@@ -4857,7 +5410,25 @@ function tcsSim(s) {
         [634, y - 20, '(' + q.card + ')'],
         [648, y + 25, '(' + q.card + ')']
       );
-      w.push([k, [[634, y], [mx, y]], 1], ['pe' + n, [[756, y + 41], [q.xe, y + 41], [q.xe, y + 22], [mx, y + 22]]]);
+      w.push(
+        [
+          k,
+          [
+            [634, y],
+            [mx, y]
+          ],
+          1
+        ],
+        [
+          'pe' + n,
+          [
+            [756, y + 41],
+            [q.xe, y + 41],
+            [q.xe, y + 22],
+            [mx, y + 22]
+          ]
+        ]
+      );
       /* the block, its simulation value and its settings */
       m.push([
         M,
@@ -4883,17 +5454,56 @@ function tcsSim(s) {
           [mx + 137, y + 209, 'DEF N:3'],
           [mx + 157, y + 230, 'K:1']
         ],
-        [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+        [
+          [y + 5, y + 27, y + 49],
+          [y + 5, y + 49]
+        ]
       ]);
       b.push(['sg' + n, 'SG', sno, sx, y + sdy, [snote]]);
-      w.push(['sg' + n, [[sx + 29, y + sdo], [sxc, y + sdo], [sxc, y + 44], [mx, y + 44]], 1]);
+      w.push([
+        'sg' + n,
+        [
+          [sx + 29, y + sdo],
+          [sxc, y + sdo],
+          [sxc, y + 44],
+          [mx, y + 44]
+        ],
+        1
+      ]);
       /* the outputs: the value to two connectors, the abnormal signal to one */
-      c.push(['o' + q.B[0], 'out', q.B[0], bx, y + q.dyB, '', q.B[1], 1], ['o' + q.A[0], 'out', q.A[0], 2013, y, '', q.A[1]], ['o' + q.D[0], 'out', q.D[0], 2013, y + q.dyD, '', q.D[1]]);
+      c.push(
+        ['o' + q.B[0], 'out', q.B[0], bx, y + q.dyB, '', q.B[1], 1],
+        ['o' + q.A[0], 'out', q.A[0], 2013, y, '', q.A[1]],
+        ['o' + q.D[0], 'out', q.D[0], 2013, y + q.dyD, '', q.D[1]]
+      );
       b.push(['f' + q.mo, 'o:FTR', q.mo, 1727, y], ['b' + q.mb, 'o:BTR', q.mb, 1727, y + q.dyD]);
       w.push(
-        [M + '.OUT', [[xr, y], [1986, y]], 1],
-        [M + '.OUT', [[q.xj, y], [q.xj, y + q.dyB], [bx - 27, y + q.dyB]], 1],
-        [M + '.ABN', [[xr, y + 44], [1672, y + 44], [1672, y + q.dyD], [1986, y + q.dyD]]]
+        [
+          M + '.OUT',
+          [
+            [xr, y],
+            [1986, y]
+          ],
+          1
+        ],
+        [
+          M + '.OUT',
+          [
+            [q.xj, y],
+            [q.xj, y + q.dyB],
+            [bx - 27, y + q.dyB]
+          ],
+          1
+        ],
+        [
+          M + '.ABN',
+          [
+            [xr, y + 44],
+            [1672, y + 44],
+            [1672, y + q.dyD],
+            [1986, y + q.dyD]
+          ]
+        ]
       );
       two(1775, y, q.lab[0], q.lab[1]);
       const an = q.abn || [q.lab[0], q.lab[1] + ' ABN.'];
@@ -4902,7 +5512,313 @@ function tcsSim(s) {
     t.push(...o.foot);
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
   };
-  if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid };
+  /* A sheet of two VALVE DIAGNOSIS blocks (VALVE CONTROL DIAGNOSTICS, TCE120, TCE122): the two position signals of one valve, each with its
+     LVDT and servo amplifier from the PI/O sheets, the position demand, the simulator position and the annunciator enable; out go the position,
+     its abnormal signals and the quality. The places are those of TCE120 set straight (the second block stands 650 lower than the first).
+     o: id, title, page, v (the valve as printed: 'MSV(A)'), ann (name of the annunciator enable), dem / sim / en: [letter, sheet] of the three
+     input connectors, io: [[sheet of the LVDT, sheet of the amplifier] for each block], tct: [sheet of connector B1, of B2], pos / abn: [sheets
+     of the position connector, of the abnormal (annunciator) connector] (the same for both blocks), q: sheets of the quality connector,
+     mk: { i: [marks of block 1: POS., AMP (its own line), DEMAND, S.POS., POS.OT, ANN.EN], j: the same of block 2, e: mark of the enable,
+     o: [marks of ABN.O, ABN.A, QUA of block 1], p: the same of block 2 } ('' = the drawing prints no mark there), foot. */
+  const vd2 = o => {
+    const F = [175, 78, 2228, 1541],
+      u = (F[2] - F[0]) / 1000,
+      BX = 1041,
+      BW = 405,
+      BH = 320,
+      XR = BX + BW,
+      c = [],
+      k = [],
+      s = [],
+      p = [],
+      l = [],
+      tri = [],
+      b = [],
+      m = [],
+      w = [],
+      t = [],
+      V = o.v,
+      mark = (ty, no, x, y) => no && b.push(['m' + no, 'o:' + ty, no, x, y]),
+      PAR = [
+        [-2, 'RATE HL:10.0%'],
+        [24, 'LL:-50.0%'],
+        [8, 'DEF N:1'],
+        [29, 'K:1'],
+        [7, 'H/L HL:103.5%'],
+        [28, 'LL:-3.5%'],
+        [7, 'DEF TP:0.1S'],
+        [12, 'HL:100.0%'],
+        [12, 'LL:-5.0%'],
+        [7, 'DEV HL:20.0%'],
+        [27, 'LL:-20.0%']
+      ],
+      PAR2 = [
+        [200, 'DEF TP:5S'],
+        [200, 'DEF HL:102.4%'],
+        [220, 'LL:-102.4%'],
+        [199, 'DEF HL:200.0%'],
+        [219, 'LL:-200.0%'],
+        [199, 'DEF TP:0.1S'],
+        [199, 'DEF HL:100.0%'],
+        [219, 'LL:-100.0%'],
+        [204, 'K:0.0']
+      ],
+      tops = [173, 823],
+      P = tops.map(top => i => Math.round(top + 15 * u + (i + 0.5) * ((BH - 30 * u) / 8)));
+    tops.forEach((top, g) => {
+      const n = g + 1,
+        K = 'vd' + n,
+        y = P[g],
+        S = 'AB'[g],
+        mi = o.mk[g ? 'j' : 'i'],
+        mo = o.mk[g ? 'p' : 'o'],
+        lv = 'lv' + n,
+        am = 'am' + n;
+      m.push([
+        K,
+        'VALVE DIAGNOSIS',
+        '',
+        BX,
+        top,
+        BW,
+        BH,
+        ['POS.', 'AMP', 'DEMAND', '', 'S.POS.', 'ANN SW', 'POS.OT', 'ANN.EN'],
+        ['POS.', '', 'ABN.O', '', '', 'ABN.A', 'ABN.M', 'QUA'],
+        g ? 'A007' : 'A002',
+        [
+          [BX + 85, y(0) + 6, 'POSITION'],
+          [BX + 85, y(1) + 6, 'SERVO AMP OUTPUT'],
+          [BX + 85, y(2) + 6, 'POSITION DEMAND'],
+          [BX + 85, y(4) + 6, 'SIMULATOR POS.'],
+          [BX + 85, y(5) + 6, 'ANN ENABLE'],
+          [BX + 106, top + 341, '(LME122)'],
+          [BX + 222, top + 341, '(LME123)'],
+          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, s]),
+          ...PAR2.map(([dx, s], i) => [BX + dx, top + 386 + 21.3 * i, s])
+        ]
+      ]);
+      /* the LVDT (a small box on a stem) and the servo amplifier (a triangle), each through its PI/O connection */
+      s.push([lv, 235, y(0) - 13, 245, y(0) + 10], [am, 230, y(2) - 10, 250, y(2) + 10]);
+      p.push(
+        [
+          [235, y(0) - 13],
+          [245, y(0) - 13],
+          [245, y(0) + 10],
+          [235, y(0) + 10]
+        ],
+        [
+          [230, y(2) - 10],
+          [250, y(2)],
+          [230, y(2) + 10]
+        ]
+      );
+      l.push([
+        [240, y(0) - 22],
+        [240, y(0) - 13]
+      ]);
+      tri.push([370, y(0), 9], [370, y(2), 9]);
+      t.push(
+        [189, y(0) - 42, V + ' POSITION-' + S],
+        [226, y(0) + 27, 'LVDT'],
+        [328, y(0) - 18, '(' + o.io[g][0] + ')'],
+        [225, y(2) + 26, 'AMP'],
+        [328, y(2) - 18, '(' + o.io[g][1] + ')'],
+        [188, y(2) + 54, V + ' SERVO AMP-' + S]
+      );
+      w.push(
+        [
+          lv,
+          [
+            [245, y(0)],
+            [BX, y(0)]
+          ],
+          1
+        ],
+        [
+          am,
+          [
+            [250, y(2)],
+            [849, y(2)],
+            [849, y(1)],
+            [BX, y(1)]
+          ],
+          1
+        ]
+      );
+      mark('FTR', mi[0], 785, y(0));
+      mark('FTR', mi[1], 785, y(2));
+      mark('FTR', mi[2], 988, y(2));
+      mark('FTR', mi[3], 988, y(4));
+      mark('FTR', mi[4], 988, y(6));
+      mark('BTR', mi[5], 988, y(7));
+      /* out */
+      c.push(
+        ['oB' + n, 'out', 'B' + n, 2083, y(0) - 74, '', [o.tct[g]], 1, 1],
+        ['oA' + n, 'out', 'A' + n, 2083, y(0), '', o.pos],
+        ['oD' + n, 'out', 'D' + n, 2083, y(2), '', ['-']],
+        ['oK' + n, 'out', 'K' + n, 2083, y(2) + 43, '', o.q],
+        ['oC' + n, 'out', 'C' + n, 2083, y(5), '', o.abn]
+      );
+      w.push(
+        [
+          K + '.POS.',
+          [
+            [XR, y(0)],
+            [2056, y(0)]
+          ],
+          1
+        ],
+        [
+          K + '.POS.',
+          [
+            [1594, y(0)],
+            [1594, y(0) - 74],
+            [2056, y(0) - 74]
+          ],
+          1
+        ],
+        [
+          K + '.ABN.O',
+          [
+            [XR, y(2)],
+            [2056, y(2)]
+          ]
+        ],
+        [
+          K + '.ABN.A',
+          [
+            [XR, y(5)],
+            [2056, y(5)]
+          ]
+        ],
+        [
+          K + '.QUA',
+          [
+            [XR, y(7)],
+            [1582, y(7)],
+            [1582, y(2) + 43],
+            [2056, y(2) + 43]
+          ]
+        ]
+      );
+      mark('BTR', mo[0], 1531, y(2));
+      mark('BTR', mo[1], 1531, y(5));
+      mark('BTR', mo[2], 1531, y(7));
+      t.push(
+        [1748, y(0) - 6, V + ' POSITION(' + n + ')'],
+        [1748, y(2) - 6, V + ' POSITION ABN(' + n + ')'],
+        [1748, y(2) + 37, V + ' POSITION ABN(' + n + ') Q'],
+        [1748, y(5) - 6, V + '(' + n + ') ABN.(ANN)']
+      );
+    });
+    const [a, z] = P,
+      yD = a(2) + 75,
+      yS = a(2) + 150,
+      yE = z(5),
+      y0 = z(6) + 43,
+      yF = z(6) + 117;
+    c.push(
+      ['iD', 'in', o.dem[0], 463, yD, V + ' POSITION DEMAND', [o.dem[1]]],
+      ['iS', 'in', o.sim[0], 463, yS, V + ' POSITION SIM', [o.sim[1]]],
+      ['iE', 'in', o.en[0], 459, yE, o.ann, [o.en[1]]]
+    );
+    k.push(['k0', 571, y0, '0.0', 'sys.ref'], ['kF', 571, yF, 'OFF(0)', 'sys.ref']);
+    w.push(
+      /* the position demand: to DEMAND of both blocks */
+      [
+        'iD',
+        [
+          [490, yD],
+          [871, yD]
+        ],
+        1
+      ],
+      [
+        'iD',
+        [
+          [BX, a(2)],
+          [871, a(2)],
+          [871, z(2)],
+          [BX, z(2)]
+        ],
+        1
+      ],
+      /* the simulator position */
+      [
+        'iS',
+        [
+          [490, yS],
+          [893, yS]
+        ],
+        1
+      ],
+      [
+        'iS',
+        [
+          [BX, a(4)],
+          [893, a(4)],
+          [893, z(4)],
+          [BX, z(4)]
+        ],
+        1
+      ],
+      /* the annunciator enable */
+      [
+        'iE',
+        [
+          [486, yE],
+          [BX, yE]
+        ]
+      ],
+      [
+        'iE',
+        [
+          [908, yE],
+          [908, a(5)],
+          [BX, a(5)]
+        ]
+      ],
+      /* 0.0 to POS.OT, OFF(0) to ANN.EN */
+      [
+        'k0',
+        [
+          [805, y0],
+          [930, y0],
+          [930, a(6)],
+          [BX, a(6)]
+        ],
+        1
+      ],
+      [
+        'k0',
+        [
+          [930, z(6)],
+          [BX, z(6)]
+        ],
+        1
+      ],
+      [
+        'kF',
+        [
+          [805, yF],
+          [950, yF],
+          [950, a(7)],
+          [BX, a(7)]
+        ]
+      ],
+      [
+        'kF',
+        [
+          [950, z(7)],
+          [BX, z(7)]
+        ]
+      ]
+    );
+    mark('BTR', o.mk.e, 781, yE);
+    t.push(...o.foot);
+    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, c, k, s, p, l, tri, m, b, w, t };
+  };
+  if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid, vd2 };
 })();
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -8711,6 +9627,120 @@ function tcsSim(s) {
         [408, 1512, 'EHG+MD'],
         [670, 1485, 'TRIGGER  :'],
         [670, 1512, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+/* TCE119A TPC SIGNAL DIAGNOSTICS(10) (331DM09784 page 84, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The shaft vibration very high trips (No.1 and No.2 turbine, No.3 and No.4 generator), each read from the three protection controllers.
+   The title block of this page prints PAGE 82; it is page 84 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const N = (n, m) => ['NO.' + n + ' ' + m + ' SHAFT', 'VIBRATION VERY HIGH TRIP'],
+    row = (n, m) => ({ in: [N(n, m), N(n, m), N(n, m)], out: [N(n, m), N(n, m), [...N(n, m), 'DISCREPANCY']] }),
+    R = ['TCP1105', 'TCP2105', 'TCP3105'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE119A',
+      title: 'TPC SIGNAL DIAGNOSTICS(10)',
+      page: 84,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [row(1, 'TURBINE'), 'A2', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE119A_1', null, R],
+        [row(2, 'TURBINE'), 'B2', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE119A_3', null, R],
+        [row(3, 'GENERATOR'), 'C2', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE119A_5', null, R],
+        [row(4, 'GENERATOR'), 'D2', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE119A_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [
+        [247, 1512, 'CONTROLLER:'],
+        [408, 1512, 'EHG+MD'],
+        [670, 1485, 'TRIGGER  :'],
+        [670, 1512, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+/* TCE120 VALVE CONTROL DIAGNOSTICS(1) (331DM09784 page 85, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   sheets of two VALVE DIAGNOSIS blocks (tce/_lib.js, TCE_LIB.vd2); the places are those of TCE120 set straight.
+   Position signals (1) and (2) of main stop valve A: LVDT A and B and servo amplifier A and B. The title block of this page prints PAGE 83; it is page 85 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd2({
+      id: 'TCE120',
+      title: 'VALVE CONTROL DIAGNOSTICS(1)',
+      page: 85,
+      v: 'MSV(A)',
+      ann: 'MSV ANN ENABLE',
+      dem: ['A', 'TCE210'],
+      sim: ['A1', 'TCE501'],
+      en: ['R', 'TCE053'],
+      io: [
+        ['TCE990-1', 'TCE990-5'],
+        ['TCE990-13', 'TCE990-17']
+      ],
+      tct: ['TCT210', 'TCT210'],
+      pos: ['TCE121', 'TCE450'],
+      abn: ['TCE121', 'TCE450'],
+      q: ['TCE450'],
+      mk: {
+        i: ['001', '003', '004', '005', '014', '015'],
+        j: ['006', '008', '009', '010', '019', '020'],
+        e: '011',
+        o: ['012', '013', '016'],
+        p: ['017', '018', '021']
+      },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+/* TCE122 VALVE CONTROL DIAGNOSTICS(3) (331DM09784 page 87, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   sheets of two VALVE DIAGNOSIS blocks (tce/_lib.js, TCE_LIB.vd2); the places are those of TCE120 set straight.
+   Position signals (1) and (2) of main stop valve B: LVDT A and B and servo amplifier A and B. The drawing prints no marks at POS.OT, ANN.EN
+   and the outputs of this sheet; none are typed. The title block of this page prints PAGE 85; it is page 87 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd2({
+      id: 'TCE122',
+      title: 'VALVE CONTROL DIAGNOSTICS(3)',
+      page: 87,
+      v: 'MSV(B)',
+      ann: 'MSV ANN ENABLE',
+      dem: ['A', 'TCE211'],
+      sim: ['B1', 'TCE501'],
+      en: ['R', 'TCE053'],
+      io: [
+        ['TCE990-2', 'TCE990-6'],
+        ['TCE990-14', 'TCE990-18']
+      ],
+      tct: ['TCT210', 'TCT211'],
+      pos: ['TCE123', 'TCE450'],
+      abn: ['TCE123', 'TCE450'],
+      q: ['TCE450'],
+      mk: {
+        i: ['001', '003', '004', '005', '', ''],
+        j: ['006', '008', '009', '010', '', ''],
+        e: '011',
+        o: ['', '', ''],
+        p: ['', '', '']
+      },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
       ]
     })
   );
@@ -76957,7 +77987,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build e58fca0'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build fb7eb53'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -101429,10 +102459,38 @@ function tcsSim(s) {
         by = y + (dy == null ? 75 : dy);
       P[no] = { y, xj, xo };
       r.push(['di' + no, x0, top, W, 54, '']);
-      t.push([x0 + 6, name[1] ? top + 27 : top + 30, name[0]], [x0 + 6, top + 49, name[1]], [x0, top + 76, 'DI'], [xe + 137, top - 2, '(' + o.table + '-' + (o.first + n) + ')']);
-      w.push(['di' + no, [[xe, y], [xe + 118, y]], 1], ['di' + no, [[xe + 134, y], [xo - 30, y]]]);
+      t.push(
+        [x0 + 6, name[1] ? top + 27 : top + 30, name[0]],
+        [x0 + 6, top + 49, name[1]],
+        [x0, top + 76, 'DI'],
+        [xe + 137, top - 2, '(' + o.table + '-' + (o.first + n) + ')']
+      );
+      w.push(
+        [
+          'di' + no,
+          [
+            [xe, y],
+            [xe + 118, y]
+          ],
+          1
+        ],
+        [
+          'di' + no,
+          [
+            [xe + 134, y],
+            [xo - 30, y]
+          ]
+        ]
+      );
       if (rb) {
-        w.push(['di' + no, [[xj, y], [xj, by], [xo - 30, by]]]);
+        w.push([
+          'di' + no,
+          [
+            [xj, y],
+            [xj, by],
+            [xo - 30, by]
+          ]
+        ]);
         c.push(['b' + no, 'out', 'B' + no, xo, by, '', rb, 1]);
       }
       g.push([xe + 126, y, 'l']);
@@ -101443,7 +102501,13 @@ function tcsSim(s) {
       const [x, y, ew, note, xb, xf, rf] = o.err;
       r.push(['pioErr', x, y, ew, 22, 'PI/O error']);
       t.push([x + 16, y - 5, '(' + note + ')']);
-      w.push(['pioErr', [[x + ew, y + 11], [xf - 30, y + 11]]]);
+      w.push([
+        'pioErr',
+        [
+          [x + ew, y + 11],
+          [xf - 30, y + 11]
+        ]
+      ]);
       b.push(['btr17', 'o:BTR', '017', xb, y + 11]);
       c.push(['oF', 'out', 'F', xf, y + 11, '', rf]);
     }
@@ -101455,284 +102519,652 @@ function tcsSim(s) {
      out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], over (a line over those words), refA, refA1, refC (sheets of C1, C2, C3), cl (their letter when it is not C), c1via ([y, x] of the step the line of C1 makes on its way down), refB1, dy2 (the 2OO3 and its outputs stand that much lower); without cs the sheet has no C1, C2, C3 at the right, sh (the numbers of the input sheets), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
-  const F = o.f,
-    dx = o.dx || 0,
-    dr = o.dr || 0,
-    [C1, C2, C3] = o.cs || [[0, 0], [0, 0], [1436 + (o.dr || 0), null]],
-    RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
-    SH = o.sh || ['070', '072', '074'],
-    CL = o.cl || 'C',
-    u = (F[2] - F[0]) / 1000,
-    c = [],
-    b = [],
-    m = [],
-    w = [],
-    t = [];
-  /* [letter, top of the block, left of the block, x of the connectors, sheet number of the inputs, block number, first mark number list] */
-  const G = [
-    ['A', 123, 885 + dx, 307 + dx, SH[0], 'A002', ['001', '005', '007', '009', '010', '011']],
-    ['B', 570, 882 + dx, 304 + dx, SH[1], 'A020', ['019', '022', '023', '024', '025', '026']],
-    ['C', 1017, 880 + dx, 302 + dx, SH[2], 'A030', ['029', '031', '032', '033', '034', '035']]
-  ];
-  const L = ['SIG1', 'ERR1', 'SIG2', 'ERR2', 'SIG3', 'ERR3', 'HL', 'LL', 'DEV', 'SIM'],
-    R = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
-    pin = (top, i) => Math.round(top + 15 * u + (i + 0.5) * ((381 - 30 * u) / 10)),
-    BEND = [0, 659, 680, 701, 722, 743].map(x => x + dx);
-  /* A sheet where each block reads one signal for its three inputs (and one error for its three error inputs), and the signal also leaves by
+    const F = o.f,
+      dx = o.dx || 0,
+      dr = o.dr || 0,
+      [C1, C2, C3] = o.cs || [
+        [0, 0],
+        [0, 0],
+        [1436 + (o.dr || 0), null]
+      ],
+      RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
+      SH = o.sh || ['070', '072', '074'],
+      CL = o.cl || 'C',
+      u = (F[2] - F[0]) / 1000,
+      c = [],
+      b = [],
+      m = [],
+      w = [],
+      t = [];
+    /* [letter, top of the block, left of the block, x of the connectors, sheet number of the inputs, block number, first mark number list] */
+    const G = [
+      ['A', 123, 885 + dx, 307 + dx, SH[0], 'A002', ['001', '005', '007', '009', '010', '011']],
+      ['B', 570, 882 + dx, 304 + dx, SH[1], 'A020', ['019', '022', '023', '024', '025', '026']],
+      ['C', 1017, 880 + dx, 302 + dx, SH[2], 'A030', ['029', '031', '032', '033', '034', '035']]
+    ];
+    const L = ['SIG1', 'ERR1', 'SIG2', 'ERR2', 'SIG3', 'ERR3', 'HL', 'LL', 'DEV', 'SIM'],
+      R = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
+      pin = (top, i) => Math.round(top + 15 * u + (i + 0.5) * ((381 - 30 * u) / 10)),
+      BEND = [0, 659, 680, 701, 722, 743].map(x => x + dx);
+    /* A sheet where each block reads one signal for its three inputs (and one error for its three error inputs), and the signal also leaves by
      C1, C2, C3 at the left: o.single = [[x of the branch to C, x of C, how far C stands under the signal] for each block], o.inref = the sheet of
      the inputs of each block, o.cref = the sheets of C1, C2, C3. */
-  const single = (ch, g, p, bx, cx, marks) => {
-    const [xj, xc, dyc] = o.single[g],
-      ks = 'i' + ch + 'S',
-      ke = 'i' + ch + 'E',
-      y = p(0),
-      ye = y + 53,
-      xs = bx - 55,
-      xe = bx - 32,
-      [over, name] = o.name(ch, true),
-      [overE, nameE] = o.name(ch, false);
-    c.push(
-      [ks, 'in', o.let[0], cx, y, name, [o.inref[g]], 1],
-      [ke, 'in', o.let[1], cx, ye, nameE, [o.inref[g]], 1],
-      ['oC' + (g + 1), 'out', 'C' + (g + 1), xc, y + dyc, '', [], 1]
-    );
-    /* the sheets of C stand under it, each a little more to the right, as the drawing has them (beside it they would lie on the lines) */
-    o.cref.forEach((r, i) => t.push([xc - 52 + 5 * i, y + dyc + 33 + 21 * i, '(' + r + ')']));
-    if (over) t.push([cx + 33, y - 32, over]);
-    if (overE) t.push([cx + 33, ye - 32, overE]);
-    b.push(['mk' + ch + 'S', 'o:FTR', marks[0], cx + 321, y], ['mk' + ch + 'E', 'o:BTR', marks[1], cx + 321, ye]);
-    w.push(
-      [ks, [[cx + 27, y], [bx, y]], 1],
-      [ks, [[xj, y], [xj, y + dyc], [xc - 27, y + dyc]], 1],
-      [ks, [[xs, y], [xs, p(4)], [bx, p(4)]], 1],
-      [ks, [[xs, p(2)], [bx, p(2)]], 1],
-      [ke, [[cx + 27, ye], [BEND[1], ye], [BEND[1], p(1)], [bx, p(1)]]],
-      [ke, [[xe, p(1)], [xe, p(5)], [bx, p(5)]]],
-      [ke, [[xe, p(3)], [bx, p(3)]]]
-    );
-  };
-  const P = G.map(([ch, top, bx, cx, sh, no, marks], g) => {
-    const k = 'tmr' + (g + 1),
-      p = i => pin(top, i);
-    m.push([k, 'TMR AI DIAGNOSTICS', o.tags ? o.tags[g] : o.tag + '-' + (g + 1), bx, top, 405, 381, L, R, no, [
-      [bx + 90, top + 225, 'TP:1.0'],
-      [bx + 90, top + 246, 'TP:1.0'],
-      [bx + 90, top + 267, 'TP:1.0'],
-      [bx + 84, top + 288, 'DELAY TP:3.0s'],
-      [bx + 84, top + 310, 'DELAY TP:3.0s'],
-      [bx + 84, top + 331, 'DELAY TP:3.0s'],
-      [bx + 105, top + 404, '(LME111)'],
-      [bx + 217, top + 404, '(LME111A)']
-    ]]);
-    if (o.single) single(ch, g, p, bx, cx, marks);
-    else for (let i = 0; i < 6; i++) {
-      const sig = i % 2 === 0,
-        key = 'i' + ch + (i + 1),
-        y = p(0) + Math.round(i * 53.3),
-        n = Math.floor(i / 2) + 1;
-      const [over, name] = o.name(ch, sig, n);
-      c.push([key, 'in', (o.lets ? o.lets[g] : o.let)[sig ? 0 : 1], cx, y, name, [sh ? 'TCP' + n + sh : '-'], 1]);
+    const single = (ch, g, p, bx, cx, marks) => {
+      const [xj, xc, dyc] = o.single[g],
+        ks = 'i' + ch + 'S',
+        ke = 'i' + ch + 'E',
+        y = p(0),
+        ye = y + 53,
+        xs = bx - 55,
+        xe = bx - 32,
+        [over, name] = o.name(ch, true),
+        [overE, nameE] = o.name(ch, false);
+      c.push(
+        [ks, 'in', o.let[0], cx, y, name, [o.inref[g]], 1],
+        [ke, 'in', o.let[1], cx, ye, nameE, [o.inref[g]], 1],
+        ['oC' + (g + 1), 'out', 'C' + (g + 1), xc, y + dyc, '', [], 1]
+      );
+      /* the sheets of C stand under it, each a little more to the right, as the drawing has them (beside it they would lie on the lines) */
+      o.cref.forEach((r, i) => t.push([xc - 52 + 5 * i, y + dyc + 33 + 21 * i, '(' + r + ')']));
       if (over) t.push([cx + 33, y - 32, over]);
-      b.push(['mk' + ch + (i + 1), sig ? 'o:FTR' : 'o:BTR', marks[i], cx + 321, y]);
-      w.push([key, i ? [[cx + 27, y], [BEND[i], y], [BEND[i], p(i)], [bx, p(i)]] : [[cx + 27, y], [bx, y]], sig ? 1 : 0]);
-    }
-    return { k, p, bx };
-  });
-  const [g1, g2, g3] = P;
-  const X = x => x + dx,
-    Z = x => x + dr,
-    Y2 = y => y + (o.dy2 || 0);
-  /* the lines of C1, C2, C3: a y of null = level with the output of the third block. A sheet can send them to D1, D2, D3 too
-     (o.ds: [x of the branch, [y of D1, D2, D3], [x of D1, D2, D3], sheet]) and write their name over them (o.cname(ch) => [line 1, line 2], at x o.cnx). */
-  const CY = [C1[1], C2[1], C3[1] == null ? g3.p(0) : C3[1]],
-    cd = o.cdbl === 0 ? 0 : 1,
-    xc = [],
-    xw = [],
-    xt = [];
-  if (o.ds)
-    o.ds[1].forEach((y, i) => {
-      xc.push(['oD' + (i + 1), 'out', 'D' + (i + 1), o.ds[2][i], y, '', [o.ds[3]], 1]);
-      xw.push(['tmr' + (i + 1) + '.OUT', [[o.ds[0], CY[i]], [o.ds[0], y], [o.ds[2][i] - 27, y]], 1]);
-    });
-  if (o.cname)
-    ['A', 'B', 'C'].forEach((ch, i) => {
-      const n = o.cname(ch);
-      xt.push([o.cnx, CY[i] - 27, n[0]], [o.cnx, CY[i] - 6, n[1]]);
-    });
-  /* a third line over the words of the six outputs (o.over) */
-  if (o.over)
-    [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach((q, i) => xt.push([Z(q[0]), i > 2 ? Y2(q[1]) : q[1], o.over]));
-  /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
-  const EX = o.extra || {};
-  const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
-  const S = {
-    id: o.id,
-    title: o.title,
-    page: o.page,
-    ctl: 'EHG+MD',
-    cycle: 30,
-    f: F,
-    k: EX.k || [],
-    c: [
-      ...c,
-      ...(EX.c || []),
-      ['oA', 'out', 'A', Z(2077), 170, '', o.refA],
-      ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
-      ['oB', 'out', 'B', Z(2075), Y2(477), '', ['-']],
-      ['oB1', 'out', 'B1', Z(2074), Y2(573), '', o.refB1 || ['-'], 1],
-      ...(o.cs
-        ? [
-            ['oC1', 'out', CL + '1', o.cx, CY[0], '', [].concat(RC[0]), cd],
-            ['oC2', 'out', CL + '2', o.cx - 1, CY[1], '', [].concat(RC[1]), cd],
-            ['oC3', 'out', CL + '3', o.cx - 1, CY[2], '', [].concat(RC[2]), cd]
+      if (overE) t.push([cx + 33, ye - 32, overE]);
+      b.push(['mk' + ch + 'S', 'o:FTR', marks[0], cx + 321, y], ['mk' + ch + 'E', 'o:BTR', marks[1], cx + 321, ye]);
+      w.push(
+        [
+          ks,
+          [
+            [cx + 27, y],
+            [bx, y]
+          ],
+          1
+        ],
+        [
+          ks,
+          [
+            [xj, y],
+            [xj, y + dyc],
+            [xc - 27, y + dyc]
+          ],
+          1
+        ],
+        [
+          ks,
+          [
+            [xs, y],
+            [xs, p(4)],
+            [bx, p(4)]
+          ],
+          1
+        ],
+        [
+          ks,
+          [
+            [xs, p(2)],
+            [bx, p(2)]
+          ],
+          1
+        ],
+        [
+          ke,
+          [
+            [cx + 27, ye],
+            [BEND[1], ye],
+            [BEND[1], p(1)],
+            [bx, p(1)]
           ]
-        : []),
-      ...xc
-    ],
-    d: [
-      ...(EX.d || []),
-      ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
-      ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
-    ],
-    r: [
-      ['td2', Z(1481), 136, 235, 128, ''],
-      ['v2o3', Z(1564), Y2(445), 86, 107, '']
-    ],
-    m,
-    b: [
-      ...b,
-      ...(EX.b || []),
-      ['sg012', 'SG', 'A012', X(562), 478, [o.sg[0]]],
-      ['sg017', 'SG', 'A017', X(563), 552, [o.sg[1]]],
-      ['sg027', 'SG', 'A027', X(561), 922, [o.sg[2]]],
-      ['sg036', 'SG', 'B036', X(558), 1404, [o.sg[3]]],
-      ['ftr013', 'o:FTR', '013', X(732), 467],
-      ['ftr018', 'o:FTR', '018', X(731), 541],
-      ['ftr028', 'o:FTR', '028', X(731), 911],
-      ['ftr037', 'o:FTR', '037', X(632), 1393],
-      ['ftr038', 'o:FTR', '038', Z(1374), 170],
-      ['btr040', 'o:BTR', '040', Z(1374), g1.p(2)],
-      ['ftr042', 'o:FTR', '042', Z(1371), g2.p(0)],
-      ['btr043', 'o:BTR', '043', Z(1371), g2.p(2)],
-      ['ftr044', 'o:FTR', '044', Z(1370), 988],
-      ['ftr045', 'o:FTR', '045', Z(1369), g3.p(0)],
-      ['btr046', 'o:BTR', '046', Z(1369), g3.p(2)],
-      ['ftr039', 'o:FTR', '039', Z(1746), 170],
-      ['ftr004', 'o:FTR', '004', Z(1821), 170],
-      ['ftr006', 'o:FTR', '006', Z(1820), 264],
-      ['ftr008', 'o:FTR', '008', Z(1819), 360],
-      ['btr041', 'o:BTR', '041', Z(1744), Y2(477)],
-      ['btr015', 'o:BTR', '015', Z(1818), Y2(477)],
-      ['btr016', 'o:BTR', '016', Z(1817), Y2(573)],
-      ['btr021', 'o:BTR', '021', Z(1816), Y2(679)]
-    ],
-    w: [
-      ...w,
-      ...(EX.w || []),
-      /* the limits and the simulation value, the same for the three blocks */
-      ['sg012', [[X(591), 467], [X(775), 467]], 1],
-      ['sg012', [[X(775), g1.p(6)], [X(775), g3.p(6)], [g3.bx, g3.p(6)]], 1],
-      ['sg012', [[X(775), g1.p(6)], [g1.bx, g1.p(6)]], 1],
-      ['sg012', [[X(775), g2.p(6)], [g2.bx, g2.p(6)]], 1],
-      ['sg017', [[X(592), 541], [X(796), 541]], 1],
-      ['sg017', [[X(796), g1.p(7)], [X(796), g3.p(7)], [g3.bx, g3.p(7)]], 1],
-      ['sg017', [[X(796), g1.p(7)], [g1.bx, g1.p(7)]], 1],
-      ['sg017', [[X(796), g2.p(7)], [g2.bx, g2.p(7)]], 1],
-      ['sg027', [[X(590), 911], [X(817), 911]], 1],
-      ['sg027', [[X(817), g1.p(8)], [X(817), g3.p(8)], [g3.bx, g3.p(8)]], 1],
-      ['sg027', [[X(817), g1.p(8)], [g1.bx, g1.p(8)]], 1],
-      ['sg027', [[X(817), g2.p(8)], [g2.bx, g2.p(8)]], 1],
-      ['sg027', [[X(817), 988], [Z(1459), 988], [Z(1459), 233], [Z(1481), 233]], 1],
-      ['sg036', [[X(587), 1393], [X(838), 1393], [X(838), g1.p(9)], [g1.bx, g1.p(9)]], 1],
-      ['sg036', [[X(838), g2.p(9)], [g2.bx, g2.p(9)]], 1],
-      ['sg036', [[X(838), g3.p(9)], [g3.bx, g3.p(9)]], 1],
-      /* the three values to TRIPLE DETECTOR2 and to the turbine supervisory sheets */
-      ['tmr1.OUT', [[g1.bx + 405, 170], [Z(1481), 170]], 1],
-      ...(o.cs ? [['tmr2.OUT', [[C2[0], g2.p(0)], [C2[0], CY[1]], [o.cx - 28, CY[1]]], 1]] : []),
-      ...(!o.cs ? [] : [[
-      'tmr1.OUT', o.c1via ? [[C1[0], 170], [C1[0], o.c1via[0]], [o.c1via[1], o.c1via[0]], [o.c1via[1], CY[0]], [o.cx - 27, CY[0]]] : [[C1[0], 170], [C1[0], CY[0]], [o.cx - 27, CY[0]]], 1]]),
-      ['tmr2.OUT', [[g2.bx + 405, g2.p(0)], [Z(1414), g2.p(0)], [Z(1414), 191], [Z(1481), 191]], 1],
-      ['tmr3.OUT', o.cs ? straight([[g3.bx + 405, g3.p(0)], [C3[0], g3.p(0)], [C3[0], CY[2]], [o.cx - 28, CY[2]]]) : [[g3.bx + 405, g3.p(0)], [Z(1436), g3.p(0)]], 1],
-      ...xw,
-      ['tmr3.OUT', [[Z(1436), g3.p(0)], [Z(1436), 212], [Z(1481), 212]], 1],
-      /* abnormal: two out of three */
-      ['tmr1.ABN', [[g1.bx + 405, g1.p(2)], [Z(1395), g1.p(2)], [Z(1395), Y2(477)], [Z(1564), Y2(477)]]],
-      ['tmr2.ABN', [[g2.bx + 405, g2.p(2)], [Z(1478), g2.p(2)], [Z(1478), Y2(499)], [Z(1564), Y2(499)]]],
-      ['tmr3.ABN', [[g3.bx + 405, g3.p(2)], [Z(1500), g3.p(2)], [Z(1500), Y2(520)], [Z(1564), Y2(520)]]],
-      ['td2', [[Z(1716), 170], [Z(2050), 170]], 1],
-      ['td2', [[Z(1778), 170], [Z(1778), 360], [Z(2041), 360]], 1],
-      ['td2', [[Z(1778), 264], [Z(2049), 264]], 1],
-      ['v2o3', [[Z(1650), Y2(477)], [Z(2048), Y2(477)]]],
-      ['v2o3', [[Z(1775), Y2(477)], [Z(1775), Y2(679)], [Z(2038), Y2(679)]]],
-      ['v2o3', [[Z(1775), Y2(573)], [Z(2047), Y2(573)]]]
-    ],
-    t: [
-      ...t,
-      [Z(1487), 157, 'TRIPLE DETECTOR2'],
-      [Z(1487), 178, 'IN A'],
-      [Z(1487), 199, 'IN B'],
-      [Z(1487), 221, 'IN C'],
-      [Z(1487), 242, 'DEV'],
-      [Z(1678), 178, 'OUT'],
-      [Z(1678), 199, 'DEV'],
-      [Z(1578), 261, 'A003'],
-      [Z(1561), 287, '(LME113)'],
-      [Z(1517), 327, 'TP:1.0'],
-      [Z(1517), 348, 'TP:1.0'],
-      [Z(1517), 370, 'TP:1.0'],
-      [Z(1585), Y2(467), '2OO3'],
-      [Z(1569), Y2(488), 'IN1'],
-      [Z(1612), Y2(488), 'OUT'],
-      [Z(1569), Y2(510), 'IN2'],
-      [Z(1569), Y2(531), 'IN3'],
-      [Z(1595), Y2(550), '014'],
-      [Z(1569), Y2(576), '(LME120)'],
-      [Z(1848), 143, o.out[0]],
-      [Z(1848), 165, o.out[1]],
-      [Z(1847), 239, o.out[0]],
-      [Z(1847), 260, o.out[1]],
-      [Z(1846), 335, o.out[0]],
-      [Z(1846), 356, o.out[1]],
-      [Z(1846), Y2(452), o.out[3] || o.out[0]],
-      [Z(1846), Y2(473), o.out[2]],
-      [Z(1845), Y2(548), o.out[3] || o.out[0]],
-      [Z(1845), Y2(569), o.out[2]],
-      [Z(1844), Y2(654), o.out[3] || o.out[0]],
-      [Z(1844), Y2(675), o.out[2]],
-      ...xt,
-      ...(EX.t || []),
-      ...o.foot
-    ]
-  };
-  /* A sheet where the value of each block goes straight out, with no TRIPLE DETECTOR2 and no 2OO3 (the shaft vibrations):
+        ],
+        [
+          ke,
+          [
+            [xe, p(1)],
+            [xe, p(5)],
+            [bx, p(5)]
+          ]
+        ],
+        [
+          ke,
+          [
+            [xe, p(3)],
+            [bx, p(3)]
+          ]
+        ]
+      );
+    };
+    const P = G.map(([ch, top, bx, cx, sh, no, marks], g) => {
+      const k = 'tmr' + (g + 1),
+        p = i => pin(top, i);
+      m.push([
+        k,
+        'TMR AI DIAGNOSTICS',
+        o.tags ? o.tags[g] : o.tag + '-' + (g + 1),
+        bx,
+        top,
+        405,
+        381,
+        L,
+        R,
+        no,
+        [
+          [bx + 90, top + 225, 'TP:1.0'],
+          [bx + 90, top + 246, 'TP:1.0'],
+          [bx + 90, top + 267, 'TP:1.0'],
+          [bx + 84, top + 288, 'DELAY TP:3.0s'],
+          [bx + 84, top + 310, 'DELAY TP:3.0s'],
+          [bx + 84, top + 331, 'DELAY TP:3.0s'],
+          [bx + 105, top + 404, '(LME111)'],
+          [bx + 217, top + 404, '(LME111A)']
+        ]
+      ]);
+      if (o.single) single(ch, g, p, bx, cx, marks);
+      else
+        for (let i = 0; i < 6; i++) {
+          const sig = i % 2 === 0,
+            key = 'i' + ch + (i + 1),
+            y = p(0) + Math.round(i * 53.3),
+            n = Math.floor(i / 2) + 1;
+          const [over, name] = o.name(ch, sig, n);
+          c.push([key, 'in', (o.lets ? o.lets[g] : o.let)[sig ? 0 : 1], cx, y, name, [sh ? 'TCP' + n + sh : '-'], 1]);
+          if (over) t.push([cx + 33, y - 32, over]);
+          b.push(['mk' + ch + (i + 1), sig ? 'o:FTR' : 'o:BTR', marks[i], cx + 321, y]);
+          w.push([
+            key,
+            i
+              ? [
+                  [cx + 27, y],
+                  [BEND[i], y],
+                  [BEND[i], p(i)],
+                  [bx, p(i)]
+                ]
+              : [
+                  [cx + 27, y],
+                  [bx, y]
+                ],
+            sig ? 1 : 0
+          ]);
+        }
+      return { k, p, bx };
+    });
+    const [g1, g2, g3] = P;
+    const X = x => x + dx,
+      Z = x => x + dr,
+      Y2 = y => y + (o.dy2 || 0);
+    /* the lines of C1, C2, C3: a y of null = level with the output of the third block. A sheet can send them to D1, D2, D3 too
+     (o.ds: [x of the branch, [y of D1, D2, D3], [x of D1, D2, D3], sheet]) and write their name over them (o.cname(ch) => [line 1, line 2], at x o.cnx). */
+    const CY = [C1[1], C2[1], C3[1] == null ? g3.p(0) : C3[1]],
+      cd = o.cdbl === 0 ? 0 : 1,
+      xc = [],
+      xw = [],
+      xt = [];
+    if (o.ds)
+      o.ds[1].forEach((y, i) => {
+        xc.push(['oD' + (i + 1), 'out', 'D' + (i + 1), o.ds[2][i], y, '', [o.ds[3]], 1]);
+        xw.push([
+          'tmr' + (i + 1) + '.OUT',
+          [
+            [o.ds[0], CY[i]],
+            [o.ds[0], y],
+            [o.ds[2][i] - 27, y]
+          ],
+          1
+        ]);
+      });
+    if (o.cname)
+      ['A', 'B', 'C'].forEach((ch, i) => {
+        const n = o.cname(ch);
+        xt.push([o.cnx, CY[i] - 27, n[0]], [o.cnx, CY[i] - 6, n[1]]);
+      });
+    /* a third line over the words of the six outputs (o.over) */
+    if (o.over)
+      [
+        [1848, 122],
+        [1847, 218],
+        [1846, 314],
+        [1846, 431],
+        [1845, 527],
+        [1844, 633]
+      ].forEach((q, i) => xt.push([Z(q[0]), i > 2 ? Y2(q[1]) : q[1], o.over]));
+    /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
+    const EX = o.extra || {};
+    const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
+    const S = {
+      id: o.id,
+      title: o.title,
+      page: o.page,
+      ctl: 'EHG+MD',
+      cycle: 30,
+      f: F,
+      k: EX.k || [],
+      c: [
+        ...c,
+        ...(EX.c || []),
+        ['oA', 'out', 'A', Z(2077), 170, '', o.refA],
+        ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
+        ['oB', 'out', 'B', Z(2075), Y2(477), '', ['-']],
+        ['oB1', 'out', 'B1', Z(2074), Y2(573), '', o.refB1 || ['-'], 1],
+        ...(o.cs
+          ? [
+              ['oC1', 'out', CL + '1', o.cx, CY[0], '', [].concat(RC[0]), cd],
+              ['oC2', 'out', CL + '2', o.cx - 1, CY[1], '', [].concat(RC[1]), cd],
+              ['oC3', 'out', CL + '3', o.cx - 1, CY[2], '', [].concat(RC[2]), cd]
+            ]
+          : []),
+        ...xc
+      ],
+      d: [
+        ...(EX.d || []),
+        ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
+        ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
+      ],
+      r: [
+        ['td2', Z(1481), 136, 235, 128, ''],
+        ['v2o3', Z(1564), Y2(445), 86, 107, '']
+      ],
+      m,
+      b: [
+        ...b,
+        ...(EX.b || []),
+        ['sg012', 'SG', 'A012', X(562), 478, [o.sg[0]]],
+        ['sg017', 'SG', 'A017', X(563), 552, [o.sg[1]]],
+        ['sg027', 'SG', 'A027', X(561), 922, [o.sg[2]]],
+        ['sg036', 'SG', 'B036', X(558), 1404, [o.sg[3]]],
+        ['ftr013', 'o:FTR', '013', X(732), 467],
+        ['ftr018', 'o:FTR', '018', X(731), 541],
+        ['ftr028', 'o:FTR', '028', X(731), 911],
+        ['ftr037', 'o:FTR', '037', X(632), 1393],
+        ['ftr038', 'o:FTR', '038', Z(1374), 170],
+        ['btr040', 'o:BTR', '040', Z(1374), g1.p(2)],
+        ['ftr042', 'o:FTR', '042', Z(1371), g2.p(0)],
+        ['btr043', 'o:BTR', '043', Z(1371), g2.p(2)],
+        ['ftr044', 'o:FTR', '044', Z(1370), 988],
+        ['ftr045', 'o:FTR', '045', Z(1369), g3.p(0)],
+        ['btr046', 'o:BTR', '046', Z(1369), g3.p(2)],
+        ['ftr039', 'o:FTR', '039', Z(1746), 170],
+        ['ftr004', 'o:FTR', '004', Z(1821), 170],
+        ['ftr006', 'o:FTR', '006', Z(1820), 264],
+        ['ftr008', 'o:FTR', '008', Z(1819), 360],
+        ['btr041', 'o:BTR', '041', Z(1744), Y2(477)],
+        ['btr015', 'o:BTR', '015', Z(1818), Y2(477)],
+        ['btr016', 'o:BTR', '016', Z(1817), Y2(573)],
+        ['btr021', 'o:BTR', '021', Z(1816), Y2(679)]
+      ],
+      w: [
+        ...w,
+        ...(EX.w || []),
+        /* the limits and the simulation value, the same for the three blocks */
+        [
+          'sg012',
+          [
+            [X(591), 467],
+            [X(775), 467]
+          ],
+          1
+        ],
+        [
+          'sg012',
+          [
+            [X(775), g1.p(6)],
+            [X(775), g3.p(6)],
+            [g3.bx, g3.p(6)]
+          ],
+          1
+        ],
+        [
+          'sg012',
+          [
+            [X(775), g1.p(6)],
+            [g1.bx, g1.p(6)]
+          ],
+          1
+        ],
+        [
+          'sg012',
+          [
+            [X(775), g2.p(6)],
+            [g2.bx, g2.p(6)]
+          ],
+          1
+        ],
+        [
+          'sg017',
+          [
+            [X(592), 541],
+            [X(796), 541]
+          ],
+          1
+        ],
+        [
+          'sg017',
+          [
+            [X(796), g1.p(7)],
+            [X(796), g3.p(7)],
+            [g3.bx, g3.p(7)]
+          ],
+          1
+        ],
+        [
+          'sg017',
+          [
+            [X(796), g1.p(7)],
+            [g1.bx, g1.p(7)]
+          ],
+          1
+        ],
+        [
+          'sg017',
+          [
+            [X(796), g2.p(7)],
+            [g2.bx, g2.p(7)]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(590), 911],
+            [X(817), 911]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(817), g1.p(8)],
+            [X(817), g3.p(8)],
+            [g3.bx, g3.p(8)]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(817), g1.p(8)],
+            [g1.bx, g1.p(8)]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(817), g2.p(8)],
+            [g2.bx, g2.p(8)]
+          ],
+          1
+        ],
+        [
+          'sg027',
+          [
+            [X(817), 988],
+            [Z(1459), 988],
+            [Z(1459), 233],
+            [Z(1481), 233]
+          ],
+          1
+        ],
+        [
+          'sg036',
+          [
+            [X(587), 1393],
+            [X(838), 1393],
+            [X(838), g1.p(9)],
+            [g1.bx, g1.p(9)]
+          ],
+          1
+        ],
+        [
+          'sg036',
+          [
+            [X(838), g2.p(9)],
+            [g2.bx, g2.p(9)]
+          ],
+          1
+        ],
+        [
+          'sg036',
+          [
+            [X(838), g3.p(9)],
+            [g3.bx, g3.p(9)]
+          ],
+          1
+        ],
+        /* the three values to TRIPLE DETECTOR2 and to the turbine supervisory sheets */
+        [
+          'tmr1.OUT',
+          [
+            [g1.bx + 405, 170],
+            [Z(1481), 170]
+          ],
+          1
+        ],
+        ...(o.cs
+          ? [
+              [
+                'tmr2.OUT',
+                [
+                  [C2[0], g2.p(0)],
+                  [C2[0], CY[1]],
+                  [o.cx - 28, CY[1]]
+                ],
+                1
+              ]
+            ]
+          : []),
+        ...(!o.cs
+          ? []
+          : [
+              [
+                'tmr1.OUT',
+                o.c1via
+                  ? [
+                      [C1[0], 170],
+                      [C1[0], o.c1via[0]],
+                      [o.c1via[1], o.c1via[0]],
+                      [o.c1via[1], CY[0]],
+                      [o.cx - 27, CY[0]]
+                    ]
+                  : [
+                      [C1[0], 170],
+                      [C1[0], CY[0]],
+                      [o.cx - 27, CY[0]]
+                    ],
+                1
+              ]
+            ]),
+        [
+          'tmr2.OUT',
+          [
+            [g2.bx + 405, g2.p(0)],
+            [Z(1414), g2.p(0)],
+            [Z(1414), 191],
+            [Z(1481), 191]
+          ],
+          1
+        ],
+        [
+          'tmr3.OUT',
+          o.cs
+            ? straight([
+                [g3.bx + 405, g3.p(0)],
+                [C3[0], g3.p(0)],
+                [C3[0], CY[2]],
+                [o.cx - 28, CY[2]]
+              ])
+            : [
+                [g3.bx + 405, g3.p(0)],
+                [Z(1436), g3.p(0)]
+              ],
+          1
+        ],
+        ...xw,
+        [
+          'tmr3.OUT',
+          [
+            [Z(1436), g3.p(0)],
+            [Z(1436), 212],
+            [Z(1481), 212]
+          ],
+          1
+        ],
+        /* abnormal: two out of three */
+        [
+          'tmr1.ABN',
+          [
+            [g1.bx + 405, g1.p(2)],
+            [Z(1395), g1.p(2)],
+            [Z(1395), Y2(477)],
+            [Z(1564), Y2(477)]
+          ]
+        ],
+        [
+          'tmr2.ABN',
+          [
+            [g2.bx + 405, g2.p(2)],
+            [Z(1478), g2.p(2)],
+            [Z(1478), Y2(499)],
+            [Z(1564), Y2(499)]
+          ]
+        ],
+        [
+          'tmr3.ABN',
+          [
+            [g3.bx + 405, g3.p(2)],
+            [Z(1500), g3.p(2)],
+            [Z(1500), Y2(520)],
+            [Z(1564), Y2(520)]
+          ]
+        ],
+        [
+          'td2',
+          [
+            [Z(1716), 170],
+            [Z(2050), 170]
+          ],
+          1
+        ],
+        [
+          'td2',
+          [
+            [Z(1778), 170],
+            [Z(1778), 360],
+            [Z(2041), 360]
+          ],
+          1
+        ],
+        [
+          'td2',
+          [
+            [Z(1778), 264],
+            [Z(2049), 264]
+          ],
+          1
+        ],
+        [
+          'v2o3',
+          [
+            [Z(1650), Y2(477)],
+            [Z(2048), Y2(477)]
+          ]
+        ],
+        [
+          'v2o3',
+          [
+            [Z(1775), Y2(477)],
+            [Z(1775), Y2(679)],
+            [Z(2038), Y2(679)]
+          ]
+        ],
+        [
+          'v2o3',
+          [
+            [Z(1775), Y2(573)],
+            [Z(2047), Y2(573)]
+          ]
+        ]
+      ],
+      t: [
+        ...t,
+        [Z(1487), 157, 'TRIPLE DETECTOR2'],
+        [Z(1487), 178, 'IN A'],
+        [Z(1487), 199, 'IN B'],
+        [Z(1487), 221, 'IN C'],
+        [Z(1487), 242, 'DEV'],
+        [Z(1678), 178, 'OUT'],
+        [Z(1678), 199, 'DEV'],
+        [Z(1578), 261, 'A003'],
+        [Z(1561), 287, '(LME113)'],
+        [Z(1517), 327, 'TP:1.0'],
+        [Z(1517), 348, 'TP:1.0'],
+        [Z(1517), 370, 'TP:1.0'],
+        [Z(1585), Y2(467), '2OO3'],
+        [Z(1569), Y2(488), 'IN1'],
+        [Z(1612), Y2(488), 'OUT'],
+        [Z(1569), Y2(510), 'IN2'],
+        [Z(1569), Y2(531), 'IN3'],
+        [Z(1595), Y2(550), '014'],
+        [Z(1569), Y2(576), '(LME120)'],
+        [Z(1848), 143, o.out[0]],
+        [Z(1848), 165, o.out[1]],
+        [Z(1847), 239, o.out[0]],
+        [Z(1847), 260, o.out[1]],
+        [Z(1846), 335, o.out[0]],
+        [Z(1846), 356, o.out[1]],
+        [Z(1846), Y2(452), o.out[3] || o.out[0]],
+        [Z(1846), Y2(473), o.out[2]],
+        [Z(1845), Y2(548), o.out[3] || o.out[0]],
+        [Z(1845), Y2(569), o.out[2]],
+        [Z(1844), Y2(654), o.out[3] || o.out[0]],
+        [Z(1844), Y2(675), o.out[2]],
+        ...xt,
+        ...(EX.t || []),
+        ...o.foot
+      ]
+    };
+    /* A sheet where the value of each block goes straight out, with no TRIPLE DETECTOR2 and no 2OO3 (the shaft vibrations):
      o.direct = [[letter, sheets of the first output, sheets of the second, [line 1, line 2] of their name, [four mark numbers]] for each block]; lets = the letters of the inputs for each block when they differ, a sheet number of null in sh = a spare block.
      The right part of the pattern is taken away and each block gets its two outputs. */
-  if (o.direct) {
-    S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
-    S.d = [];
-    S.r = [];
-    S.b = S.b.filter(x => !/^(ftr03[89]|btr04[0136]|ftr04[245]|ftr00[468]|btr01[56]|btr021)$/.test(x[0]));
-    S.w = S.w.filter(x => !/^(td2|v2o3|tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
-    S.t = S.t.filter(x => x[0] < Z(1480));
-    o.direct.forEach(([ch, r1, r2, nm, mk], g) => {
-      const G = [g1, g2, g3][g],
-        y = G.p(0),
-        y2 = y + 96;
-      S.c.push(['o' + ch, 'out', ch, Z(2079), y, '', r1], ['o' + ch + '1', 'out', ch + '1', Z(2078), y2, '', r2, 1]);
-      S.b.push(
-        ['mk' + g + 'a', 'o:FTR', mk[0], Z(1377), y],
-        ['mk' + g + 'b', 'o:FTR', mk[1], Z(1750), y],
-        ['mk' + g + 'c', 'o:FTR', mk[2], Z(1824), y],
-        ['mk' + g + 'd', 'o:FTR', mk[3], Z(1823), y2]
-      );
-      S.w.push(['tmr' + (g + 1) + '.OUT', [[G.bx + 405, y], [Z(2052), y]], 1], ['tmr' + (g + 1) + '.OUT', [[Z(1781), y], [Z(1781), y2], [Z(2051), y2]], 1]);
-      /* the name of the two outputs: one pair of lines for both, or [lines of the first, lines of the second]; the last line stands on the wire */
-      const two = Array.isArray(nm[0]) ? nm : [nm, nm];
-      two[0].forEach((s, i) => S.t.push([Z(1850), y - 6 - 21 * (two[0].length - 1 - i), s]));
-      two[1].forEach((s, i) => S.t.push([Z(1849), y2 - 6 - 21 * (two[1].length - 1 - i), s]));
-    });
-  }
-  return S;
+    if (o.direct) {
+      S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
+      S.d = [];
+      S.r = [];
+      S.b = S.b.filter(x => !/^(ftr03[89]|btr04[0136]|ftr04[245]|ftr00[468]|btr01[56]|btr021)$/.test(x[0]));
+      S.w = S.w.filter(x => !/^(td2|v2o3|tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
+      S.t = S.t.filter(x => x[0] < Z(1480));
+      o.direct.forEach(([ch, r1, r2, nm, mk], g) => {
+        const G = [g1, g2, g3][g],
+          y = G.p(0),
+          y2 = y + 96;
+        S.c.push(['o' + ch, 'out', ch, Z(2079), y, '', r1], ['o' + ch + '1', 'out', ch + '1', Z(2078), y2, '', r2, 1]);
+        S.b.push(
+          ['mk' + g + 'a', 'o:FTR', mk[0], Z(1377), y],
+          ['mk' + g + 'b', 'o:FTR', mk[1], Z(1750), y],
+          ['mk' + g + 'c', 'o:FTR', mk[2], Z(1824), y],
+          ['mk' + g + 'd', 'o:FTR', mk[3], Z(1823), y2]
+        );
+        S.w.push(
+          [
+            'tmr' + (g + 1) + '.OUT',
+            [
+              [G.bx + 405, y],
+              [Z(2052), y]
+            ],
+            1
+          ],
+          [
+            'tmr' + (g + 1) + '.OUT',
+            [
+              [Z(1781), y],
+              [Z(1781), y2],
+              [Z(2051), y2]
+            ],
+            1
+          ]
+        );
+        /* the name of the two outputs: one pair of lines for both, or [lines of the first, lines of the second]; the last line stands on the wire */
+        const two = Array.isArray(nm[0]) ? nm : [nm, nm];
+        two[0].forEach((s, i) => S.t.push([Z(1850), y - 6 - 21 * (two[0].length - 1 - i), s]));
+        two[1].forEach((s, i) => S.t.push([Z(1849), y2 - 6 - 21 * (two[1].length - 1 - i), s]));
+      });
+    }
+    return S;
   };
   /* TCE_LIB.did(o): a sheet DIGITAL INPUT SIGNAL DIAGNOSTICS. Four signals, each read by the three protection controllers and checked by one
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
@@ -101767,13 +103199,32 @@ function tcsSim(s) {
            of the input error] } as the drawing prints them; the last line of a name stands on its wire */
         nm =
           typeof name === 'string'
-            ? { in: [0, 1, 2].map(() => [name, o.line2]), out: [[name, o.line2], [name, o.line2], [name, o.line2 + ' INPUT ERROR']] }
+            ? {
+                in: [0, 1, 2].map(() => [name, o.line2]),
+                out: [
+                  [name, o.line2],
+                  [name, o.line2],
+                  [name, o.line2 + ' INPUT ERROR']
+                ]
+              }
             : name,
         lines = (L, x, y) => L.forEach((s, j) => t.push([x, y - 6 - 21 * (L.length - 1 - j), s]));
-      m.push([k, 'TRIPPLE INPUT DIAGNOSTICS', '', BX, top, BW, BH, ['IN1', '', 'IN2', '', 'IN3'], ['OUT', '', '', '', 'DEV E'], no, [
-        [BX + 90, top + 172, 'TP:3.0'],
-        [BX + 105, top + 246, '(LME105)']
-      ]]);
+      m.push([
+        k,
+        'TRIPPLE INPUT DIAGNOSTICS',
+        '',
+        BX,
+        top,
+        BW,
+        BH,
+        ['IN1', '', 'IN2', '', 'IN3'],
+        ['OUT', '', '', '', 'DEV E'],
+        no,
+        [
+          [BX + 90, top + 172, 'TP:3.0'],
+          [BX + 105, top + 246, '(LME105)']
+        ]
+      ]);
       (ir || ['TCP1050', 'TCP2050', 'TCP3050']).forEach((r, i) => {
         const key = 'i' + (g + 1) + (i + 1),
           y = p(2 * i);
@@ -101782,40 +103233,106 @@ function tcsSim(s) {
         /* the lines of the name over the last one, which the connector prints on the wire */
         for (let j = 0; j < N.length - 1; j++) t.push([313, y - 32 - 21 * (N.length - 2 - j), N[j]]);
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
-        w.push([key, [[307, y], [BX, y]]]);
+        w.push([
+          key,
+          [
+            [307, y],
+            [BX, y]
+          ]
+        ]);
       });
       if (x.two) {
         /* OUT: a connector and, under it, a second one; no lamp */
-        c.push(['o' + ol, 'out', ol, 2103, p(0), '', ref || ['-']], ['o' + x.two[0], 'out', x.two[0], 2103, p(0) + 56, '', x.two[1], 1, 1]);
+        c.push(
+          ['o' + ol, 'out', ol, 2103, p(0), '', ref || ['-']],
+          ['o' + x.two[0], 'out', x.two[0], 2103, p(0) + 56, '', x.two[1], 1, 1]
+        );
         b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)]);
-        w.push([k + '.OUT', [[BX + BW, p(0)], [2076, p(0)]]], [k + '.OUT', [[1963, p(0)], [1963, p(0) + 56], [2076, p(0) + 56]]]);
+        w.push(
+          [
+            k + '.OUT',
+            [
+              [BX + BW, p(0)],
+              [2076, p(0)]
+            ]
+          ],
+          [
+            k + '.OUT',
+            [
+              [1963, p(0)],
+              [1963, p(0) + 56],
+              [2076, p(0) + 56]
+            ]
+          ]
+        );
         lines(nm.out[0], 1722, p(0));
       } else if (x.conn) {
         /* OUT: the connector only, one step lower than OUT */
         c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']]);
         b.push(['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
-        w.push([k + '.OUT', [[BX + BW, p(0)], [1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
+        w.push([
+          k + '.OUT',
+          [
+            [BX + BW, p(0)],
+            [1539, p(0)],
+            [1539, p(0) + 64],
+            [2076, p(0) + 64]
+          ]
+        ]);
         lines(nm.out[1], 1716, p(0) + 64);
       } else {
         /* OUT: the lamp and the connector */
         d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
         c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-'], x.dbl ? 1 : 0, x.dbl === 1 ? 1 : 0]);
-        b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
+        b.push(
+          ['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)],
+          ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]
+        );
         /* x.src: the lamp and the connector are fed by a connector from another sheet that stands right of the block; OUT of the block is left open */
         const so = x.src ? 's' + (g + 1) : k + '.OUT';
         if (x.src) c.push([so, 'in', x.src[0], 1340, p(0), '', x.src[1], 0, 1]);
-        w.push([so, [[x.src ? 1367 : BX + BW, p(0)], [2070, p(0)]]], [so, [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
+        w.push(
+          [
+            so,
+            [
+              [x.src ? 1367 : BX + BW, p(0)],
+              [2070, p(0)]
+            ]
+          ],
+          [
+            so,
+            [
+              [1539, p(0)],
+              [1539, p(0) + 64],
+              [2076, p(0) + 64]
+            ]
+          ]
+        );
         lines(nm.out[0], 1716, p(0));
         lines(nm.out[1], 1716, p(0) + 64);
         /* one more way out, over the lamp: from the dot on OUT up to a double-line connector (x.up = [letter, sheets]) */
         if (x.up) {
           c.push(['o' + x.up[0], 'out', x.up[0], 2103, p(0) - 84, '', x.up[1], 1, 1]);
-          w.push([so, [[1539, p(0) + 64], [1539, p(0) - 84], [2076, p(0) - 84]]]);
+          w.push([
+            so,
+            [
+              [1539, p(0) + 64],
+              [1539, p(0) - 84],
+              [2076, p(0) - 84]
+            ]
+          ]);
         }
         /* a third way out: from the wire of the connector down, past the input error, to a double-line connector */
         if (x.third) {
           c.push(['o' + x.third[0], 'out', x.third[0], 2103, p(0) + 193, '', x.third[1], 1, 1]);
-          w.push([k + '.OUT', [[1999, p(0) + 64], [1999, p(0) + 193], [2076, p(0) + 193]]]);
+          w.push([
+            k + '.OUT',
+            [
+              [1999, p(0) + 64],
+              [1999, p(0) + 193],
+              [2076, p(0) + 193]
+            ]
+          ]);
         }
       }
       /* DEV E: the connector (with x.el a lamp, and the connector under it) and the OR */
@@ -101824,30 +103341,93 @@ function tcsSim(s) {
       if (x.el) {
         d.push(['crte' + (g + 1), 2105, ye, 'out', x.el, 'S', '#1C']);
         b.push(['mo' + (g + 1) + 'd', 'o:BTR', om[3], ex, yc]);
-        w.push([k + '.DEV E', [[1539, ye], [1539, yc], [2065, yc]]]);
+        w.push([
+          k + '.DEV E',
+          [
+            [1539, ye],
+            [1539, yc],
+            [2065, yc]
+          ]
+        ]);
         lines(nm.out[3] || nm.out[2], last ? 1713 : 1704, yc);
       }
       const en = x.en || ol + '1';
       c.push(['o' + en, 'out', en, 2092, yc, '', ['-']]);
       b.push(['mo' + (g + 1) + 'c', 'o:BTR', om[2], ex, ye]);
       lines(nm.out[2], last ? 1713 : 1704, ye);
-      if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [xe, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
+      if (last)
+        w.push(
+          [
+            k + '.DEV E',
+            [
+              [BX + BW, p(4)],
+              [OX[3], p(4)],
+              [OX[3], ye],
+              [xe, ye]
+            ]
+          ],
+          [
+            k + '.DEV E',
+            [
+              [OX[3], OY[3]],
+              [OL, OY[3]]
+            ]
+          ]
+        );
       else
         w.push(
-          [k + '.DEV E', x.ey ? [[BX + BW, p(4)], [x.ex || 1535, p(4)], [x.ex || 1535, ye], [xe, ye]] : [[BX + BW, ye], [xe, ye]]],
-          ...(o.noOr ? [] : [[k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]])
+          [
+            k + '.DEV E',
+            x.ey
+              ? [
+                  [BX + BW, p(4)],
+                  [x.ex || 1535, p(4)],
+                  [x.ex || 1535, ye],
+                  [xe, ye]
+                ]
+              : [
+                  [BX + BW, ye],
+                  [xe, ye]
+                ]
+          ],
+          ...(o.noOr
+            ? []
+            : [
+                [
+                  k + '.DEV E',
+                  [
+                    [OX[g], p(4)],
+                    [OX[g], OY[g]],
+                    [OL, OY[g]]
+                  ]
+                ]
+              ])
         );
     });
     /* a sheet with fewer than four blocks has no OR of the input errors (o.noOr) */
     if (!o.noOr) {
       b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
       c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
-      w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
+      w.push([
+        'or',
+        [
+          [1598, OY[0]],
+          [2075, OY[0]]
+        ]
+      ]);
       t.push([1714, OY[0] - 6, o.orName || 'INPUT DISCREPANCY']);
     }
     t.push(...o.foot);
     /* what a sheet has beyond the pattern */
-    if (o.extra) for (const [A, n] of [[c, 'c'], [d, 'd'], [b, 'b'], [w, 'w'], [t, 't']]) A.push(...(o.extra[n] || []));
+    if (o.extra)
+      for (const [A, n] of [
+        [c, 'c'],
+        [d, 'd'],
+        [b, 'b'],
+        [w, 'w'],
+        [t, 't']
+      ])
+        A.push(...(o.extra[n] || []));
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
   };
   /* TCE_LIB.aid(o): a sheet INPUT SIGNAL DIAGNOSTICS of single pressure inputs (TCE102, TCE104): on each line a transmitter (the crossed circle),
@@ -101881,7 +103461,10 @@ function tcsSim(s) {
         [sno, sx, sdy, sdo, sxc, snote] = q.sg;
       /* the transmitter, the card and its PI/O error */
       b.push(['x' + n, 'X', '', 393, y, [], {}, [21]], ['f' + q.mf, 'o:FTR', q.mf, q.xf, y]);
-      l.push([[414, y], [582, y]]);
+      l.push([
+        [414, y],
+        [582, y]
+      ]);
       r.push([k, 582, y - 12, 52, 24, 'mA/V'], ['pe' + n, 631, y + 30, 125, 23, 'PI/O error']);
       tri.push([728, y, 9]);
       t.push(
@@ -101893,7 +103476,25 @@ function tcsSim(s) {
         [634, y - 20, '(' + q.card + ')'],
         [648, y + 25, '(' + q.card + ')']
       );
-      w.push([k, [[634, y], [mx, y]], 1], ['pe' + n, [[756, y + 41], [q.xe, y + 41], [q.xe, y + 22], [mx, y + 22]]]);
+      w.push(
+        [
+          k,
+          [
+            [634, y],
+            [mx, y]
+          ],
+          1
+        ],
+        [
+          'pe' + n,
+          [
+            [756, y + 41],
+            [q.xe, y + 41],
+            [q.xe, y + 22],
+            [mx, y + 22]
+          ]
+        ]
+      );
       /* the block, its simulation value and its settings */
       m.push([
         M,
@@ -101919,17 +103520,56 @@ function tcsSim(s) {
           [mx + 137, y + 209, 'DEF N:3'],
           [mx + 157, y + 230, 'K:1']
         ],
-        [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+        [
+          [y + 5, y + 27, y + 49],
+          [y + 5, y + 49]
+        ]
       ]);
       b.push(['sg' + n, 'SG', sno, sx, y + sdy, [snote]]);
-      w.push(['sg' + n, [[sx + 29, y + sdo], [sxc, y + sdo], [sxc, y + 44], [mx, y + 44]], 1]);
+      w.push([
+        'sg' + n,
+        [
+          [sx + 29, y + sdo],
+          [sxc, y + sdo],
+          [sxc, y + 44],
+          [mx, y + 44]
+        ],
+        1
+      ]);
       /* the outputs: the value to two connectors, the abnormal signal to one */
-      c.push(['o' + q.B[0], 'out', q.B[0], bx, y + q.dyB, '', q.B[1], 1], ['o' + q.A[0], 'out', q.A[0], 2013, y, '', q.A[1]], ['o' + q.D[0], 'out', q.D[0], 2013, y + q.dyD, '', q.D[1]]);
+      c.push(
+        ['o' + q.B[0], 'out', q.B[0], bx, y + q.dyB, '', q.B[1], 1],
+        ['o' + q.A[0], 'out', q.A[0], 2013, y, '', q.A[1]],
+        ['o' + q.D[0], 'out', q.D[0], 2013, y + q.dyD, '', q.D[1]]
+      );
       b.push(['f' + q.mo, 'o:FTR', q.mo, 1727, y], ['b' + q.mb, 'o:BTR', q.mb, 1727, y + q.dyD]);
       w.push(
-        [M + '.OUT', [[xr, y], [1986, y]], 1],
-        [M + '.OUT', [[q.xj, y], [q.xj, y + q.dyB], [bx - 27, y + q.dyB]], 1],
-        [M + '.ABN', [[xr, y + 44], [1672, y + 44], [1672, y + q.dyD], [1986, y + q.dyD]]]
+        [
+          M + '.OUT',
+          [
+            [xr, y],
+            [1986, y]
+          ],
+          1
+        ],
+        [
+          M + '.OUT',
+          [
+            [q.xj, y],
+            [q.xj, y + q.dyB],
+            [bx - 27, y + q.dyB]
+          ],
+          1
+        ],
+        [
+          M + '.ABN',
+          [
+            [xr, y + 44],
+            [1672, y + 44],
+            [1672, y + q.dyD],
+            [1986, y + q.dyD]
+          ]
+        ]
       );
       two(1775, y, q.lab[0], q.lab[1]);
       const an = q.abn || [q.lab[0], q.lab[1] + ' ABN.'];
@@ -101938,7 +103578,313 @@ function tcsSim(s) {
     t.push(...o.foot);
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
   };
-  if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid };
+  /* A sheet of two VALVE DIAGNOSIS blocks (VALVE CONTROL DIAGNOSTICS, TCE120, TCE122): the two position signals of one valve, each with its
+     LVDT and servo amplifier from the PI/O sheets, the position demand, the simulator position and the annunciator enable; out go the position,
+     its abnormal signals and the quality. The places are those of TCE120 set straight (the second block stands 650 lower than the first).
+     o: id, title, page, v (the valve as printed: 'MSV(A)'), ann (name of the annunciator enable), dem / sim / en: [letter, sheet] of the three
+     input connectors, io: [[sheet of the LVDT, sheet of the amplifier] for each block], tct: [sheet of connector B1, of B2], pos / abn: [sheets
+     of the position connector, of the abnormal (annunciator) connector] (the same for both blocks), q: sheets of the quality connector,
+     mk: { i: [marks of block 1: POS., AMP (its own line), DEMAND, S.POS., POS.OT, ANN.EN], j: the same of block 2, e: mark of the enable,
+     o: [marks of ABN.O, ABN.A, QUA of block 1], p: the same of block 2 } ('' = the drawing prints no mark there), foot. */
+  const vd2 = o => {
+    const F = [175, 78, 2228, 1541],
+      u = (F[2] - F[0]) / 1000,
+      BX = 1041,
+      BW = 405,
+      BH = 320,
+      XR = BX + BW,
+      c = [],
+      k = [],
+      s = [],
+      p = [],
+      l = [],
+      tri = [],
+      b = [],
+      m = [],
+      w = [],
+      t = [],
+      V = o.v,
+      mark = (ty, no, x, y) => no && b.push(['m' + no, 'o:' + ty, no, x, y]),
+      PAR = [
+        [-2, 'RATE HL:10.0%'],
+        [24, 'LL:-50.0%'],
+        [8, 'DEF N:1'],
+        [29, 'K:1'],
+        [7, 'H/L HL:103.5%'],
+        [28, 'LL:-3.5%'],
+        [7, 'DEF TP:0.1S'],
+        [12, 'HL:100.0%'],
+        [12, 'LL:-5.0%'],
+        [7, 'DEV HL:20.0%'],
+        [27, 'LL:-20.0%']
+      ],
+      PAR2 = [
+        [200, 'DEF TP:5S'],
+        [200, 'DEF HL:102.4%'],
+        [220, 'LL:-102.4%'],
+        [199, 'DEF HL:200.0%'],
+        [219, 'LL:-200.0%'],
+        [199, 'DEF TP:0.1S'],
+        [199, 'DEF HL:100.0%'],
+        [219, 'LL:-100.0%'],
+        [204, 'K:0.0']
+      ],
+      tops = [173, 823],
+      P = tops.map(top => i => Math.round(top + 15 * u + (i + 0.5) * ((BH - 30 * u) / 8)));
+    tops.forEach((top, g) => {
+      const n = g + 1,
+        K = 'vd' + n,
+        y = P[g],
+        S = 'AB'[g],
+        mi = o.mk[g ? 'j' : 'i'],
+        mo = o.mk[g ? 'p' : 'o'],
+        lv = 'lv' + n,
+        am = 'am' + n;
+      m.push([
+        K,
+        'VALVE DIAGNOSIS',
+        '',
+        BX,
+        top,
+        BW,
+        BH,
+        ['POS.', 'AMP', 'DEMAND', '', 'S.POS.', 'ANN SW', 'POS.OT', 'ANN.EN'],
+        ['POS.', '', 'ABN.O', '', '', 'ABN.A', 'ABN.M', 'QUA'],
+        g ? 'A007' : 'A002',
+        [
+          [BX + 85, y(0) + 6, 'POSITION'],
+          [BX + 85, y(1) + 6, 'SERVO AMP OUTPUT'],
+          [BX + 85, y(2) + 6, 'POSITION DEMAND'],
+          [BX + 85, y(4) + 6, 'SIMULATOR POS.'],
+          [BX + 85, y(5) + 6, 'ANN ENABLE'],
+          [BX + 106, top + 341, '(LME122)'],
+          [BX + 222, top + 341, '(LME123)'],
+          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, s]),
+          ...PAR2.map(([dx, s], i) => [BX + dx, top + 386 + 21.3 * i, s])
+        ]
+      ]);
+      /* the LVDT (a small box on a stem) and the servo amplifier (a triangle), each through its PI/O connection */
+      s.push([lv, 235, y(0) - 13, 245, y(0) + 10], [am, 230, y(2) - 10, 250, y(2) + 10]);
+      p.push(
+        [
+          [235, y(0) - 13],
+          [245, y(0) - 13],
+          [245, y(0) + 10],
+          [235, y(0) + 10]
+        ],
+        [
+          [230, y(2) - 10],
+          [250, y(2)],
+          [230, y(2) + 10]
+        ]
+      );
+      l.push([
+        [240, y(0) - 22],
+        [240, y(0) - 13]
+      ]);
+      tri.push([370, y(0), 9], [370, y(2), 9]);
+      t.push(
+        [189, y(0) - 42, V + ' POSITION-' + S],
+        [226, y(0) + 27, 'LVDT'],
+        [328, y(0) - 18, '(' + o.io[g][0] + ')'],
+        [225, y(2) + 26, 'AMP'],
+        [328, y(2) - 18, '(' + o.io[g][1] + ')'],
+        [188, y(2) + 54, V + ' SERVO AMP-' + S]
+      );
+      w.push(
+        [
+          lv,
+          [
+            [245, y(0)],
+            [BX, y(0)]
+          ],
+          1
+        ],
+        [
+          am,
+          [
+            [250, y(2)],
+            [849, y(2)],
+            [849, y(1)],
+            [BX, y(1)]
+          ],
+          1
+        ]
+      );
+      mark('FTR', mi[0], 785, y(0));
+      mark('FTR', mi[1], 785, y(2));
+      mark('FTR', mi[2], 988, y(2));
+      mark('FTR', mi[3], 988, y(4));
+      mark('FTR', mi[4], 988, y(6));
+      mark('BTR', mi[5], 988, y(7));
+      /* out */
+      c.push(
+        ['oB' + n, 'out', 'B' + n, 2083, y(0) - 74, '', [o.tct[g]], 1, 1],
+        ['oA' + n, 'out', 'A' + n, 2083, y(0), '', o.pos],
+        ['oD' + n, 'out', 'D' + n, 2083, y(2), '', ['-']],
+        ['oK' + n, 'out', 'K' + n, 2083, y(2) + 43, '', o.q],
+        ['oC' + n, 'out', 'C' + n, 2083, y(5), '', o.abn]
+      );
+      w.push(
+        [
+          K + '.POS.',
+          [
+            [XR, y(0)],
+            [2056, y(0)]
+          ],
+          1
+        ],
+        [
+          K + '.POS.',
+          [
+            [1594, y(0)],
+            [1594, y(0) - 74],
+            [2056, y(0) - 74]
+          ],
+          1
+        ],
+        [
+          K + '.ABN.O',
+          [
+            [XR, y(2)],
+            [2056, y(2)]
+          ]
+        ],
+        [
+          K + '.ABN.A',
+          [
+            [XR, y(5)],
+            [2056, y(5)]
+          ]
+        ],
+        [
+          K + '.QUA',
+          [
+            [XR, y(7)],
+            [1582, y(7)],
+            [1582, y(2) + 43],
+            [2056, y(2) + 43]
+          ]
+        ]
+      );
+      mark('BTR', mo[0], 1531, y(2));
+      mark('BTR', mo[1], 1531, y(5));
+      mark('BTR', mo[2], 1531, y(7));
+      t.push(
+        [1748, y(0) - 6, V + ' POSITION(' + n + ')'],
+        [1748, y(2) - 6, V + ' POSITION ABN(' + n + ')'],
+        [1748, y(2) + 37, V + ' POSITION ABN(' + n + ') Q'],
+        [1748, y(5) - 6, V + '(' + n + ') ABN.(ANN)']
+      );
+    });
+    const [a, z] = P,
+      yD = a(2) + 75,
+      yS = a(2) + 150,
+      yE = z(5),
+      y0 = z(6) + 43,
+      yF = z(6) + 117;
+    c.push(
+      ['iD', 'in', o.dem[0], 463, yD, V + ' POSITION DEMAND', [o.dem[1]]],
+      ['iS', 'in', o.sim[0], 463, yS, V + ' POSITION SIM', [o.sim[1]]],
+      ['iE', 'in', o.en[0], 459, yE, o.ann, [o.en[1]]]
+    );
+    k.push(['k0', 571, y0, '0.0', 'sys.ref'], ['kF', 571, yF, 'OFF(0)', 'sys.ref']);
+    w.push(
+      /* the position demand: to DEMAND of both blocks */
+      [
+        'iD',
+        [
+          [490, yD],
+          [871, yD]
+        ],
+        1
+      ],
+      [
+        'iD',
+        [
+          [BX, a(2)],
+          [871, a(2)],
+          [871, z(2)],
+          [BX, z(2)]
+        ],
+        1
+      ],
+      /* the simulator position */
+      [
+        'iS',
+        [
+          [490, yS],
+          [893, yS]
+        ],
+        1
+      ],
+      [
+        'iS',
+        [
+          [BX, a(4)],
+          [893, a(4)],
+          [893, z(4)],
+          [BX, z(4)]
+        ],
+        1
+      ],
+      /* the annunciator enable */
+      [
+        'iE',
+        [
+          [486, yE],
+          [BX, yE]
+        ]
+      ],
+      [
+        'iE',
+        [
+          [908, yE],
+          [908, a(5)],
+          [BX, a(5)]
+        ]
+      ],
+      /* 0.0 to POS.OT, OFF(0) to ANN.EN */
+      [
+        'k0',
+        [
+          [805, y0],
+          [930, y0],
+          [930, a(6)],
+          [BX, a(6)]
+        ],
+        1
+      ],
+      [
+        'k0',
+        [
+          [930, z(6)],
+          [BX, z(6)]
+        ],
+        1
+      ],
+      [
+        'kF',
+        [
+          [805, yF],
+          [950, yF],
+          [950, a(7)],
+          [BX, a(7)]
+        ]
+      ],
+      [
+        'kF',
+        [
+          [950, z(7)],
+          [BX, z(7)]
+        ]
+      ]
+    );
+    mark('BTR', o.mk.e, 781, yE);
+    t.push(...o.foot);
+    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, c, k, s, p, l, tri, m, b, w, t };
+  };
+  if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid, vd2 };
 })();
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -105881,6 +107827,126 @@ function tcsSim(s) {
         [408, 1512, 'EHG+MD'],
         [670, 1485, 'TRIGGER  :'],
         [670, 1512, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE119A.js ---- */
+/* TCE119A TPC SIGNAL DIAGNOSTICS(10) (331DM09784 page 84, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   The shaft vibration very high trips (No.1 and No.2 turbine, No.3 and No.4 generator), each read from the three protection controllers.
+   The title block of this page prints PAGE 82; it is page 84 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const N = (n, m) => ['NO.' + n + ' ' + m + ' SHAFT', 'VIBRATION VERY HIGH TRIP'],
+    row = (n, m) => ({ in: [N(n, m), N(n, m), N(n, m)], out: [N(n, m), N(n, m), [...N(n, m), 'DISCREPANCY']] }),
+    R = ['TCP1105', 'TCP2105', 'TCP3105'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE119A',
+      title: 'TPC SIGNAL DIAGNOSTICS(10)',
+      page: 84,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [row(1, 'TURBINE'), 'A2', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE119A_1', null, R],
+        [row(2, 'TURBINE'), 'B2', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE119A_3', null, R],
+        [row(3, 'GENERATOR'), 'C2', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE119A_5', null, R],
+        [row(4, 'GENERATOR'), 'D2', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE119A_7', null, R]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [
+        [247, 1512, 'CONTROLLER:'],
+        [408, 1512, 'EHG+MD'],
+        [670, 1485, 'TRIGGER  :'],
+        [670, 1512, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE120.js ---- */
+/* TCE120 VALVE CONTROL DIAGNOSTICS(1) (331DM09784 page 85, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   sheets of two VALVE DIAGNOSIS blocks (tce/_lib.js, TCE_LIB.vd2); the places are those of TCE120 set straight.
+   Position signals (1) and (2) of main stop valve A: LVDT A and B and servo amplifier A and B. The title block of this page prints PAGE 83; it is page 85 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd2({
+      id: 'TCE120',
+      title: 'VALVE CONTROL DIAGNOSTICS(1)',
+      page: 85,
+      v: 'MSV(A)',
+      ann: 'MSV ANN ENABLE',
+      dem: ['A', 'TCE210'],
+      sim: ['A1', 'TCE501'],
+      en: ['R', 'TCE053'],
+      io: [
+        ['TCE990-1', 'TCE990-5'],
+        ['TCE990-13', 'TCE990-17']
+      ],
+      tct: ['TCT210', 'TCT210'],
+      pos: ['TCE121', 'TCE450'],
+      abn: ['TCE121', 'TCE450'],
+      q: ['TCE450'],
+      mk: {
+        i: ['001', '003', '004', '005', '014', '015'],
+        j: ['006', '008', '009', '010', '019', '020'],
+        e: '011',
+        o: ['012', '013', '016'],
+        p: ['017', '018', '021']
+      },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
+      ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE122.js ---- */
+/* TCE122 VALVE CONTROL DIAGNOSTICS(3) (331DM09784 page 87, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the
+   sheets of two VALVE DIAGNOSIS blocks (tce/_lib.js, TCE_LIB.vd2); the places are those of TCE120 set straight.
+   Position signals (1) and (2) of main stop valve B: LVDT A and B and servo amplifier A and B. The drawing prints no marks at POS.OT, ANN.EN
+   and the outputs of this sheet; none are typed. The title block of this page prints PAGE 85; it is page 87 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.vd2({
+      id: 'TCE122',
+      title: 'VALVE CONTROL DIAGNOSTICS(3)',
+      page: 87,
+      v: 'MSV(B)',
+      ann: 'MSV ANN ENABLE',
+      dem: ['A', 'TCE211'],
+      sim: ['B1', 'TCE501'],
+      en: ['R', 'TCE053'],
+      io: [
+        ['TCE990-2', 'TCE990-6'],
+        ['TCE990-14', 'TCE990-18']
+      ],
+      tct: ['TCT210', 'TCT211'],
+      pos: ['TCE123', 'TCE450'],
+      abn: ['TCE123', 'TCE450'],
+      q: ['TCE450'],
+      mk: {
+        i: ['001', '003', '004', '005', '', ''],
+        j: ['006', '008', '009', '010', '', ''],
+        e: '011',
+        o: ['', '', ''],
+        p: ['', '', '']
+      },
+      foot: [
+        [233, 1520, 'CONTROLLER:'],
+        [392, 1520, 'EHG+MD'],
+        [622, 1493, 'TRIGGER  :'],
+        [622, 1520, 'CYCLE(ms):30']
       ]
     })
   );
@@ -194711,7 +196777,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build e58fca0'));
+    row('Version', E('span', 'scsver', ver + ' · build fb7eb53'));
   }
   function openSet(near) {
     if (!set) {
