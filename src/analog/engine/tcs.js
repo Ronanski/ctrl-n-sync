@@ -1696,6 +1696,8 @@ function tcsLiveRead(U) {
     icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
     l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
     vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */,
+    /* TCE210 / 211 / 212: the valve under test (tcsVtCmd: msvA, msvB, cvA, cvB, crvA, crvB; '' = none), read as 'vtSel=msvA' */
+    vtSel: (tb.vt && tb.vt.sel) || '',
     /* TCE196 / 205 / 206: the GOV SET and LLM SET integrators and the flow demand of the governor model (tcsGovState), % */
     govSet: G ? G.gov : null,
     llmSet: G ? G.llm : null,

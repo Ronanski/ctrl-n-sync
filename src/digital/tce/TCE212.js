@@ -19,6 +19,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 89, 2224, 1552],
+  live: { iDa: 'vtSel=cvA', iDb: 'vtSel=cvB' },
   k: [
     ['kIps', 258, 148, 'IP START', 'ref'],
     ['kFd', 257, 275, 'FLOW DEMAND', 'ref'],

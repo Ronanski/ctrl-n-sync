@@ -14991,6 +14991,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [181, 80, 2229, 1540],
+  live: { iLl: 'limiting', iMan: 'govMan' },
   k: [
     ['kInit', 296, 156, 'INITIAL', 'ref'],
     ['k52g', 295, 232, '52G CLOSE', 'ref'],
@@ -17194,6 +17195,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [163, 83, 2215, 1550],
+  live: { iDur: 'vtSel=msvA' },
   k: [
     ['kInit', 259, 144, 'INITIAL', 'ref'],
     ['kMax', 354, 592, 'MAX', 'sys.ref'],
@@ -17425,6 +17427,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [175, 89, 2222, 1552],
+  live: { iDur: 'vtSel=msvB' },
   k: [
     ['kInit', 259, 147, 'INITIAL', 'ref'],
     ['kMax', 384, 487, 'MAX', 'sys.ref'],
@@ -17715,6 +17718,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 89, 2224, 1552],
+  live: { iDa: 'vtSel=cvA', iDb: 'vtSel=cvB' },
   k: [
     ['kIps', 258, 148, 'IP START', 'ref'],
     ['kFd', 257, 275, 'FLOW DEMAND', 'ref'],
@@ -71095,6 +71099,8 @@ function tcsLiveRead(U) {
     icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
     l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
     vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */,
+    /* TCE210 / 211 / 212: the valve under test (tcsVtCmd: msvA, msvB, cvA, cvB, crvA, crvB; '' = none), read as 'vtSel=msvA' */
+    vtSel: (tb.vt && tb.vt.sel) || '',
     /* TCE196 / 205 / 206: the GOV SET and LLM SET integrators and the flow demand of the governor model (tcsGovState), % */
     govSet: G ? G.gov : null,
     llmSet: G ? G.llm : null,
@@ -80733,7 +80739,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 478df91'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 70782bd'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -116021,6 +116027,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [181, 80, 2229, 1540],
+  live: { iLl: 'limiting', iMan: 'govMan' },
   k: [
     ['kInit', 296, 156, 'INITIAL', 'ref'],
     ['k52g', 295, 232, '52G CLOSE', 'ref'],
@@ -118250,6 +118257,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [163, 83, 2215, 1550],
+  live: { iDur: 'vtSel=msvA' },
   k: [
     ['kInit', 259, 144, 'INITIAL', 'ref'],
     ['kMax', 354, 592, 'MAX', 'sys.ref'],
@@ -118483,6 +118491,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [175, 89, 2222, 1552],
+  live: { iDur: 'vtSel=msvB' },
   k: [
     ['kInit', 259, 147, 'INITIAL', 'ref'],
     ['kMax', 384, 487, 'MAX', 'sys.ref'],
@@ -118775,6 +118784,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 89, 2224, 1552],
+  live: { iDa: 'vtSel=cvA', iDb: 'vtSel=cvB' },
   k: [
     ['kIps', 258, 148, 'IP START', 'ref'],
     ['kFd', 257, 275, 'FLOW DEMAND', 'ref'],
@@ -167810,6 +167820,8 @@ function tcsLiveRead(U) {
     icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
     l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
     vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */,
+    /* TCE210 / 211 / 212: the valve under test (tcsVtCmd: msvA, msvB, cvA, cvB, crvA, crvB; '' = none), read as 'vtSel=msvA' */
+    vtSel: (tb.vt && tb.vt.sel) || '',
     /* TCE196 / 205 / 206: the GOV SET and LLM SET integrators and the flow demand of the governor model (tcsGovState), % */
     govSet: G ? G.gov : null,
     llmSet: G ? G.llm : null,
@@ -202297,7 +202309,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 478df91'));
+    row('Version', E('span', 'scsver', ver + ' · build 70782bd'));
   }
   function openSet(near) {
     if (!set) {
