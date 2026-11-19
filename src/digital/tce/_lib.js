@@ -118,7 +118,7 @@
   const P = G.map(([ch, top, bx, cx, sh, no, marks], g) => {
     const k = 'tmr' + (g + 1),
       p = i => pin(top, i);
-    m.push([k, 'TMR AI DIAGNOSTICS', o.tag + '-' + (g + 1), bx, top, 405, 381, L, R, no, [
+    m.push([k, 'TMR AI DIAGNOSTICS', o.tags ? o.tags[g] : o.tag + '-' + (g + 1), bx, top, 405, 381, L, R, no, [
       [bx + 90, top + 225, 'TP:1.0'],
       [bx + 90, top + 246, 'TP:1.0'],
       [bx + 90, top + 267, 'TP:1.0'],
@@ -134,7 +134,7 @@
         key = 'i' + ch + (i + 1),
         y = p(0) + Math.round(i * 53.3),
         n = Math.floor(i / 2) + 1;
-      const [over, name] = o.name(ch, sig);
+      const [over, name] = o.name(ch, sig, n);
       c.push([key, 'in', o.let[sig ? 0 : 1], cx, y, name, ['TCP' + n + sh], 1]);
       if (over) t.push([cx + 33, y - 32, over]);
       b.push(['mk' + ch + (i + 1), sig ? 'o:FTR' : 'o:BTR', marks[i], cx + 321, y]);
@@ -169,7 +169,7 @@
   /* what one sheet has beside the pattern: o.extra = { k, c, d, b, w, t } in the format of a sheet */
   const EX = o.extra || {};
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
-  return {
+  const S = {
     id: o.id,
     title: o.title,
     page: o.page,
@@ -308,6 +308,32 @@
       ...o.foot
     ]
   };
+  /* A sheet where the value of each block goes straight out, with no TRIPLE DETECTOR2 and no 2OO3 (the shaft vibrations):
+     o.direct = [[letter, sheets of the first output, sheets of the second, [line 1, line 2] of their name, [four mark numbers]] for each block].
+     The right part of the pattern is taken away and each block gets its two outputs. */
+  if (o.direct) {
+    S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
+    S.d = [];
+    S.r = [];
+    S.b = S.b.filter(x => !/^(ftr03[89]|btr04[0136]|ftr04[245]|ftr00[468]|btr01[56]|btr021)$/.test(x[0]));
+    S.w = S.w.filter(x => !/^(td2|v2o3|tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
+    S.t = S.t.filter(x => x[0] < Z(1480));
+    o.direct.forEach(([ch, r1, r2, nm, mk], g) => {
+      const G = [g1, g2, g3][g],
+        y = G.p(0),
+        y2 = y + 96;
+      S.c.push(['o' + ch, 'out', ch, Z(2079), y, '', r1], ['o' + ch + '1', 'out', ch + '1', Z(2078), y2, '', r2, 1]);
+      S.b.push(
+        ['mk' + g + 'a', 'o:FTR', mk[0], Z(1377), y],
+        ['mk' + g + 'b', 'o:FTR', mk[1], Z(1750), y],
+        ['mk' + g + 'c', 'o:FTR', mk[2], Z(1824), y],
+        ['mk' + g + 'd', 'o:FTR', mk[3], Z(1823), y2]
+      );
+      S.w.push(['tmr' + (g + 1) + '.OUT', [[G.bx + 405, y], [Z(2052), y]], 1], ['tmr' + (g + 1) + '.OUT', [[Z(1781), y], [Z(1781), y2], [Z(2051), y2]], 1]);
+      S.t.push([Z(1850), y - 27, nm[0]], [Z(1850), y - 6, nm[1]], [Z(1849), y2 - 27, nm[0]], [Z(1849), y2 - 6, nm[1]]);
+    });
+  }
+  return S;
   };
   if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr };
 })();
