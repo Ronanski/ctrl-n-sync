@@ -1666,7 +1666,8 @@ function tcsLiveRead(U) {
   if (!c || !tb) return null;
   const g = tcsOstGov(U),
     o = c.ost || {},
-    sel = c.spd && c.spd.sel != null ? c.spd.sel : null;
+    sel = c.spd && c.spd.sel != null ? c.spd.sel : null,
+    G = tcsGovState(U);
   return {
     trip: c.trip ? 1 : 0 /* TURBINE TRIP */,
     rst: c.rst ? 1 : 0 /* turbine reset (MSV / RSV open) */,
@@ -1694,7 +1695,14 @@ function tcsLiveRead(U) {
     icvAc: (tb.icv || 0) * tcsVtIcvS(U, 'A') <= 0 ? 1 : 0,
     icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
     l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
-    vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */
+    vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */,
+    /* TCE196 / 205 / 206: the GOV SET and LLM SET integrators and the flow demand of the governor model (tcsGovState), % */
+    govSet: G ? G.gov : null,
+    llmSet: G ? G.llm : null,
+    fd: G ? G.fd : null,
+    govMan: G && G.govMan ? 1 : 0 /* GOV. MANUAL OPERATION */,
+    llmMan: G && G.llmMan ? 1 : 0 /* LLM MANUAL OPERATION */,
+    limiting: G && G.limiting ? 1 : 0 /* LOAD LIMITING */
   };
 }
 function tcsOstPerm(U, m) {

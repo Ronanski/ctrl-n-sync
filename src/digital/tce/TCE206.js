@@ -13,6 +13,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [158, 85, 2212, 1550],
+  /* live: GOV SET, LLM SET, the flow demand (their low select) and TURBINE SPEED (tcs.js tcsLiveRead) */
+  live: { iGs: ['govSet', '%'], iLs: ['llmSet', '%'], lsg009: ['fd', '%'], kTs: ['rpm', 'rpm'] },
   k: [
     ['kGm', 330, 149, 'GOVERNING MODE', 'ref'],
     ['kTs', 331, 481, 'TURBINE SPEED', 'ref'],

@@ -14,6 +14,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [166, 85, 2217, 1550],
+  /* live: LLM SET and its manual mode, LOAD LIMITING, TURBINE TRIP (tcs.js tcsLiveRead) */
+  live: { kTt: 'trip', iA007: ['llmSet', '%'], 'crt.MANU': 'llmMan', iLl: 'limiting' },
   k: [
     ['kTt', 228, 300, 'TURBINE TRIP', 'ref'],
     ['kZero', 1030, 825, '0.0', 'sys.ref'],
