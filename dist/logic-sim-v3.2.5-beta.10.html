@@ -33524,7 +33524,7 @@ const TCS_IBD_PV = [
   [/PT-LOn007/, U => U.loTrip],
   [/TE-STn110/, (U, c) => c.Tx],
   /* TCE145 BACK UP GOVERNOR ADD002 / 015 / 018: SE-STn001-1 / 2 / 3 (1A / 1B / 1C) + 108 rpm during OVER SPEED TEST MODE (BK-UP) */
-  [/SE-STn001-[123]/, U => (U.tb ? U.tb.rpm : 0) + (U.tc && U.tc.ost && U.tc.ost.bk ? TCS_OST.bias : 0)],
+  [/SE-STn001-[123]\b/, U => (U.tb ? U.tb.rpm : 0) + (U.tc && U.tc.ost && U.tc.ost.bk ? TCS_OST.bias : 0)],
   [/SE-STn001/, U => (U.tb ? U.tb.rpm : 0)],
   [/PT-CRn901|HP TURBINE EXHAUST .*STEAM PRESS[.] [(][ABC]/, U => tcsCrp(U)],
   [/GENERATOR LOAD/, U => ((+U.MW || 0) / 150) * 100],
@@ -42952,7 +42952,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build af1386c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 7b6e9ee'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -91550,7 +91550,7 @@ const TCS_IBD_PV = [
   [/PT-LOn007/, U => U.loTrip],
   [/TE-STn110/, (U, c) => c.Tx],
   /* TCE145 BACK UP GOVERNOR ADD002 / 015 / 018: SE-STn001-1 / 2 / 3 (1A / 1B / 1C) + 108 rpm during OVER SPEED TEST MODE (BK-UP) */
-  [/SE-STn001-[123]/, U => (U.tb ? U.tb.rpm : 0) + (U.tc && U.tc.ost && U.tc.ost.bk ? TCS_OST.bias : 0)],
+  [/SE-STn001-[123]\b/, U => (U.tb ? U.tb.rpm : 0) + (U.tc && U.tc.ost && U.tc.ost.bk ? TCS_OST.bias : 0)],
   [/SE-STn001/, U => (U.tb ? U.tb.rpm : 0)],
   [/PT-CRn901|HP TURBINE EXHAUST .*STEAM PRESS[.] [(][ABC]/, U => tcsCrp(U)],
   [/GENERATOR LOAD/, U => ((+U.MW || 0) / 150) * 100],
@@ -127847,7 +127847,7 @@ window.LS_GUIDE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build af1386c'));
+    row('Version', E('span', 'scsver', ver + ' · build 7b6e9ee'));
   }
   function openSet(near) {
     if (!set) {
