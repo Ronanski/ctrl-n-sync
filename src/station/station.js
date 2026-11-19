@@ -614,22 +614,26 @@
     if (b) b.click();
     return !!b;
   };
-  function arm(b, label, fn) {
+  /* keep: true = the words of the button stay as they are and a "Press again" mark is laid over its right end (CSS .arm.keep), so
+     nothing in a list changes size or place between the two presses; without it the short button says "Press again: ..." itself */
+  function arm(b, label, fn, keep) {
+    const off = () => {
+      b._arm = 0;
+      if (!keep) b.textContent = label;
+      b.classList.remove('arm', 'keep');
+      b.removeAttribute('aria-description');
+    };
     b.onclick = () => {
       if (!b._arm) {
-        b._arm = setTimeout(() => {
-          b._arm = 0;
-          b.textContent = label;
-          b.classList.remove('arm');
-        }, 5000);
-        b.textContent = 'Press again: ' + label;
+        b._arm = setTimeout(off, 5000);
+        if (keep) b.classList.add('keep');
+        else b.textContent = 'Press again: ' + label;
         b.classList.add('arm');
+        b.setAttribute('aria-description', 'Press again within 5 seconds to confirm');
         return;
       }
       clearTimeout(b._arm);
-      b._arm = 0;
-      b.textContent = label;
-      b.classList.remove('arm');
+      off();
       fn();
     };
   }
@@ -637,7 +641,7 @@
     if (!insPop) {
       insPop = popup('Instructor', '', 360);
       insPop.style.left = 'calc(var(--st-rail) + 12px)';
-      insPop.style.bottom = '44px';
+      insPop.style.top = '56px';
       insPop.hidden = true;
     }
     insPop.hidden = !insPop.hidden;
@@ -754,10 +758,15 @@
           again();
         };
       else
-        arm(b, f.t, () => {
-          pressId(id);
-          again();
-        });
+        arm(
+          b,
+          f.t,
+          () => {
+            pressId(id);
+            again();
+          },
+          true
+        );
       r.append(b);
     }
     if (FL.some(f => f.on)) {
