@@ -114,9 +114,8 @@ const block =
   /* 3.2.0-beta.10: Live Training (auto / field / TCS steps, the sync and load-up sections) */
   fs.readFileSync(__dirname + '/../training/live.js', 'utf8') +
   '\n' +
-  /* 3.2.0-beta.21: guided Training (one step at a time, actions on the card, the coach) */
-  fs.readFileSync(__dirname + '/../training/guide.js', 'utf8') +
-  '\n' +
+  /* the guided Training (guide.js, window.LS_GUIDE) was removed 2026-11-19 (user: no guided start-up; live runs from the HMI and the
+     faceplates only). Its hooks in the shell and the dock all test window.LS_GUIDE first */
   /* 3.2.0-beta.23: the Training dock (guided start-up beside the app) */
   fs.readFileSync(__dirname + '/../training/dock.js', 'utf8') +
   '\n' +

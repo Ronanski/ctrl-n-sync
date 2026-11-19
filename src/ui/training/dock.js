@@ -1576,7 +1576,7 @@
     ov.dataset.k = k;
     /* live test 2026-10-30 #7 (H5 / H6: the "HAKBANG n" tag lay on the value box of S-1502 and on the label of SWBP-A): the tag goes to the
        first place beside the box that covers no text of the HMI (above, below, left, right), not always on top of the box */
-    const tl = 'STEP ' + (GD().cur + 1),
+    const tl = 'STEP ' + ((GD() ? GD().cur : 0) + 1),
       tw = tl.length * 6.6 + 12,
       th = 15,
       svg = document.getElementById('plsvg'),
@@ -1748,7 +1748,7 @@
     if (n)
       n.textContent =
         'Step ' +
-        (GD().cur + 1) +
+        ((GD() ? GD().cur : 0) + 1) +
         ' is a field step (' +
         s.t +
         '): no DCS sheet. Pick a sheet in the list, or press "Next" in the Training.';

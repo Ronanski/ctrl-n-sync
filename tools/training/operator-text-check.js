@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..', '..');
-const FILES = ['src/ui/training/guide.js', 'src/ui/training/live.js', 'src/ui/training/dock.js'];
+const FILES = ['src/ui/training/live.js', 'src/ui/training/dock.js'];
 const BAD = /\b(Mina|Jennie|Chaewon|Lisa|Sakura|Yuna|Giselle|Karina|Ros[eé]|Winter|Ningning)\b|\bbeta\.\d+|\bB\d{2,3}-\d\b/;
 
 function strings(src) {

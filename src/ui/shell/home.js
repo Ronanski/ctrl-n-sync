@@ -343,8 +343,6 @@
     if (!L.length) return;
     cur = Math.max(0, Math.min(L.length - 1, +cur || 0));
     const [tn, tm] = total();
-    const rb = train.querySelector('.trresume');
-    if (rb) rb.hidden = !(window.LS_GUIDE && LS_GUIDE.on && !(window.LS_DOCK && LS_DOCK.el && !LS_DOCK.el.hidden));
     train.querySelector('.trbar i').style.width = (tm ? (100 * tn) / tm : 0) + '%';
     train.querySelector('.trpct').textContent = tn + ' of ' + tm + ' steps done (' + (tm ? Math.round((100 * tn) / tm) : 0) + ' %)';
     const nav = train.querySelector('.trlist');
@@ -536,69 +534,6 @@
       E('div', { cls: 'trhead' }, [
         E('div', { cls: 'trtitle' }, [E('b', { txt: 'Start-up procedure' }), E('span', { txt: 'PR-OPE-5002 Rev 03 + sync, load up to 150 MW and load change practice · ' + P().length + ' sections' })]),
         E('div', { cls: 'trprog' }, [E('div', { cls: 'trbar', role: 'presentation' }, [E('i')]), E('span', { cls: 'trpct' })]),
-        /* 3.2.0-beta.23: the guided start-up in the Training dock beside the logic (src/ui/training/dock.js): one step at a time, Cold -> 150 MW */
-        E('button', {
-          cls: 'trbtn go',
-          type: 'button',
-          txt: 'Guide: Cold → 150 MW',
-          title: 'Guided start-up beside the logic: the plant cold, RUN, one step at a time with the interlock of each motor, the faceplates and the values to watch',
-          /* 3.2.0 walkthrough #10: a new Cold start-up = a clean checklist (the ticks of an earlier run stayed: 13 ticked at Cold); #15: the
-             button says it is loading until the cold plant is in */
-          on: e0 => armRun(e0, () => {
-            const e = e0,
-              b = e && e.currentTarget,
-              [tn] = total(),
-              was = { hand: ls.get('ls-train', {}), auto: LV() ? Object.assign({}, LV().done()) : {} };
-            ls.set('ls-train', {});
-            if (LV()) LV().reset();
-            /* retest #13: the last opened sheets are forgotten; the Gabay opens the sheet of its first DCS step */
-            try {
-              localStorage.removeItem('ditl.curname');
-              localStorage.removeItem('ditl.an.cur');
-              if (window.AN) AN._cur = null;
-            } catch (e) {}
-            /* retest #13 (R8: after Clear the Logic page still opened DITL-56 / DITL-29A·B of the run before): the sheets held in the page
-               are forgotten too, not only the stored names: the first ABC and the first DITL sheet */
-            try {
-              /* the ABC sheet through AN.go (drawn with its own layers; AN.i alone left the layers of the old sheet: the Reset of the
-                 next load painted ABC-000A with them and stopped, unit model OFF) */
-              if (window.AN && AN.sheets && AN.sheets.length && AN.go) AN.go(0);
-              if (typeof S !== 'undefined' && S.sheets && S.sheets.length) {
-                S.cur = 0;
-                const ss = document.getElementById('shsel');
-                if (ss) ss.value = '0';
-              }
-              if (window.lsLogicForget) lsLogicForget();
-            } catch (e) {}
-            fillTrain();
-            /* 3.2.0 retest #12: the ticks of the earlier run are cleared without a pop-up; the page says so, with Undo */
-            if (tn > 0) clearNote(was, 'New guide from Cold: cleared ' + tn + ' ticks');
-            const t0 = b ? b.textContent : '';
-            const back = () => {
-              if (window.lsBusy) lsBusy.hide();
-              if (b) {
-                b.disabled = false;
-                b.textContent = t0;
-              }
-            };
-            if (b) {
-              b.disabled = true;
-              b.textContent = 'Loading Cold…';
-            }
-            setTimeout(back, 300000);
-            /* 3.2.0 retest #54: the progress bar from the click (the logic of the ABC page is read first, then the cold plant loads) */
-            if (window.lsBusy) lsBusy.show('Loading the Cold plant…');
-            setTimeout(() => abcReady(() => (window.LS_DOCK ? LS_DOCK.start(() => (back(), fillTrain())) : back())), 40);
-          })
-        }),
-        E('button', {
-          cls: 'trbtn trresume',
-          type: 'button',
-          txt: 'Resume the guide',
-          hidden: true,
-          title: 'Go on with the guided start-up where it stopped',
-          on: () => abcReady(() => window.LS_DOCK && LS_DOCK.resume())
-        }),
         E('button', {
           cls: 'trbtn',
           type: 'button',
