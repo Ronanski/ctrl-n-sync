@@ -134,6 +134,8 @@
     ['FG1056-1', 'ABC-008', 'PICFG108A', 'M.3117', null]
   ]) {
     const v = mvOf(sh, tag);
+    v.tag = tag; /* the station that moves it (W.plantSwSrc, AN.condTarget) */
+    v.dev = (id === 'FG1056-1' ? 'PCD-' : 'MCV-') + id;
     L.push(['ZSC-' + id, v, 2, 'lo', 0, 1], ['ZSO-' + id, v, 98, 'ge', 0, 0], [cl, v, 2, 'lo', 0, 1, /\bVANE CLOSED\b/]);
     if (op) L.push([op, v, 98, 'ge', 0, 0, /\bVANE OPENED\b/]);
   }
@@ -553,6 +555,9 @@
     }
   };
   W.plantSw = () => (map ? map.map(m => ({ sheet: m.s.name, row: m.row + 1, tag: m.d[0], on: m.on })) : pend || []);
+  /* what a switch follows: the station tag of a vane, the ABC transmitter of a level / pressure ('LIBR10011' of LIBR10011.PV), or '' */
+  W.plantSwSrc = () => (map ? map.map(m => ({ sheet: m.s.name, row: m.row, tag: m.d[0], src: swSrc(m.d[1]) })) : []);
+  const swSrc = x => (typeof x === 'function' ? (x.tag ? { tag: x.tag, dev: x.dev || '' } : null) : Array.isArray(x) && x[1] ? { tag: String(x[1]).split('.')[0], dev: '' } : null);
   /* 3.2.0 Web Worker: the state of the switches (their dead band) back from a keyframe (src/digital/parts/03d-state.js); kept until the
      list is built (the first scan) */
   /* Reset (ditl150.js clear): the switches as on a fresh page (no list yet: the first scan with the plant model builds it, W.plantIn) */
