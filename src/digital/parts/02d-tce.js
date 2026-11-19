@@ -70,6 +70,7 @@ function tceSheet(q) {
     ci = [],
     tx = [],
     heavy = [],
+    lk = [],
     src = {};
   /* align: 0 left, 1 centre, 2 right (on the base line); 3 left, 4 centre, 5 right (on the middle line) */
   const fs = q.fs || 1,
@@ -150,6 +151,18 @@ function tceSheet(q) {
           tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
         );
       else R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
+    }
+    /* sheet links (as the FROM / TO page links of the DITL): a click on the connector offers every sheet it names, a click on one
+       sheet name opens that sheet (src/ui/shell/ditl.js D.sheetLink) */
+    if ((refs || []).length) {
+      lk.push({ x1: X(x - w), x2: X(x + w), y1: Y(y + r), y2: Y(y - r), refs: refs.slice() });
+      /* the sheet names are the last words pushed for this connector, in the order of refs */
+      tx.slice(tx.length - refs.length).forEach((e, i) => {
+        const L = e.t.length * e.h * 0.62,
+          x1 = e.a === 1 ? e.x - L / 2 : e.a === 2 ? e.x - L : e.x,
+          y1 = e.b === 2 ? e.y - e.h / 2 : e.y - e.h * 0.25;
+        if (refs[i]) lk.push({ x1: x1 - 0.3, x2: x1 + L + 0.3, y1: y1 - 0.3, y2: y1 + e.h + 0.3, refs: [refs[i]] });
+      });
     }
     net(key);
   }
@@ -433,6 +446,6 @@ function tceSheet(q) {
     syms: [],
     lyr: '',
     bv: BV,
-    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst }
+    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst, lk }
   };
 }
