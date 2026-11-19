@@ -342,7 +342,7 @@
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
+     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -389,14 +389,14 @@
       });
       if (x.two) {
         /* OUT: a connector and, under it, a second one; no lamp */
-        c.push(['o' + ol, 'out', ol, 2103, p(0), '', ref || ['-']], ['o' + x.two[0], 'out', x.two[0], 2103, p(0) + 56, '', x.two[1], 1]);
+        c.push(['o' + ol, 'out', ol, 2103, p(0), '', ref || ['-']], ['o' + x.two[0], 'out', x.two[0], 2103, p(0) + 56, '', x.two[1], 1, 1]);
         b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)]);
         w.push([k + '.OUT', [[BX + BW, p(0)], [2076, p(0)]]], [k + '.OUT', [[1963, p(0)], [1963, p(0) + 56], [2076, p(0) + 56]]]);
         lines(nm.out[0], 1722, p(0));
       } else {
         /* OUT: the lamp and the connector */
         d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
-        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']]);
+        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-'], x.dbl ? 1 : 0, x.dbl ? 1 : 0]);
         b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
         w.push([k + '.OUT', [[BX + BW, p(0)], [2070, p(0)]]], [k + '.OUT', [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
         lines(nm.out[0], 1716, p(0));
