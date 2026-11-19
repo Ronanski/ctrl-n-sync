@@ -4779,6 +4779,7 @@ function anUnitStep(dt) {
     anUnitStep0(dt);
     anGenInt(dt);
     anHistStep(dt); /* hist.js: the faceplate trend history, one sample a simulated second */
+    anSoeStep(); /* soe.js: the sequence of events of the MFT and the turbine trip, one look per step */
   } finally {
     if (M) M.on = 0;
   }
