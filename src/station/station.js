@@ -351,7 +351,7 @@
     if (eng) {
       call(() => lsSetTab('logic'));
       if (!sheets.firstChild) fillSheets();
-      setTimeout(() => zoom('read'), 500);
+      setTimeout(() => zoom('fit'), 500);
     } else {
       call(() => lsSetTab('operate'));
       call(() => lsPlant(true));
@@ -365,8 +365,30 @@
       paint();
     }, 120);
   }
+  /* the whole sheet of a Digital / Turbine sheet: the frame of its drawing in the middle of the place, as the app's own first view of a sheet
+     (the Fit button of the app answers for the Analog page while the station shows another family) */
+  function fitSheet() {
+    return call(() => {
+      const sh = S.sheets[S.cur],
+        e = LOVIEW.dext(sh),
+        svg = document.getElementById('svg'),
+        r = svg.getBoundingClientRect();
+      if (!e || !r.width || !r.height) return false;
+      let w = e[2] - e[0] + 8,
+        h = e[3] - e[1] + 8;
+      const ar = r.width / r.height;
+      if (w / h < ar) w = h * ar;
+      else h = w / ar;
+      const v = [(e[0] + e[2]) / 2 - w / 2, (e[1] + e[3]) / 2 - h / 2, w, h];
+      if (VB[S.cur]) VB[S.cur].splice(0, 4, ...v);
+      else VB[S.cur] = v;
+      svg.setAttribute('viewBox', v.join(' '));
+      return true;
+    }, false);
+  }
   function zoom(k) {
     if (k === 'read') return readable();
+    if (k === 'fit' && fam !== 'an' && fitSheet()) return;
     const B = [...document.querySelectorAll('button')],
       b =
         k === 'out'
@@ -446,7 +468,7 @@
       fillSheets();
       tick();
       paint();
-      zoom('read');
+      zoom('fit');
     }, 700);
   }
   /* the groups of the turbine control sheets, named after what their sheets hold (IBD SC90794: TA-1 TURBINE MASTER TRIP ..., TB-1 MAIN OIL
@@ -458,6 +480,8 @@
     TD: 'Turbine alarms',
     TE: 'Group control',
     GD: 'Generator',
+    TCE: 'Governor logic (TCE)',
+    TCA: 'Start-up logic (TCA)',
     '': 'Typical logic'
   };
   function fillSheets() {
@@ -485,7 +509,7 @@
       b.onclick = () => {
         call(open);
         setTimeout(tick, 150);
-        setTimeout(() => zoom('read'), 500);
+        setTimeout(() => zoom('fit'), 500);
       };
       sheets.append(b);
     };
