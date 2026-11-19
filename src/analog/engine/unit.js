@@ -1058,7 +1058,9 @@ const AN_TCS_CMD = {
   holdoff: 'HOLD OFF',
   trip: 'TURBINE TRIP',
   tripreset: 'TURBINE RESET',
-  normal: 'NORMAL OPERATION'
+  normal: 'NORMAL OPERATION',
+  gov: 'GOV SET',
+  llm: 'LOAD LIMIT'
 };
 function anTurbine(cmd, arg) {
   const r = anTurbine0(cmd, arg);
@@ -1090,6 +1092,8 @@ function anTurbine0(cmd, arg) {
   if (cmd === '52l') return anElecL52(U, arg);
   if (cmd === 'tripreset') return tcsTripReset(U);
   if (cmd === 'fault') return tcsTripFault(U, arg);
+  /* LMYP OTS: GOV RAISE / LOWER and the LOAD LIMITER of the TCS CRT (tcs.js tcsGovCmd, TCE196 / TCE205) */
+  if (cmd === 'gov' || cmd === 'llm') return tcsGovCmd(U, cmd, arg);
   if (!U.tc && cmd === 'oil') return tcsOilCmd(tcsOilState(U), arg || {});
   if (!U.tc && cmd === 'vex') {
     tcsOilState(U).vex = arg !== 0 && arg !== false;
@@ -4280,15 +4284,24 @@ function anTbFlow(U, tb, D, dt, dirt) {
      added after the rate limit (the FILTER LME240 T 0.3 s is shorter than the scan of the model): the droop answers at once */
   const r = (U.fdRate || 0.01) * dt,
     dr = tb.st === 'load' ? (U.flowSpan * anDb((tb.rpm || 3600) - 3600, U.dbRpm || 0)) / ((U.droop || 0.06) * 3600) : 0;
-  tb.fd = L(tb.fd + L(L(D / M0 + tb.fi, 0, 1.4) - tb.fd, -r, r), 0, 1.4);
+  /* TCS GOV. MANUAL (tcs.js tcsGovCmd, TCE196): the flow demand goes to the operator's GOV SET at the same rate; the MW error integral and
+     the target load follow it, so the return to MW CONTROL is bumpless (TCE195 PIV022 X tracks GOV SET) */
+  if (tb.govMan && isFinite(tb.gov)) {
+    tb.fd = L(tb.fd + L(L(tb.gov / (tb.gk || 1), 0, 1.4) - tb.fd, -r, r), 0, 1.4);
+    tb.fi = L(tb.fd - D / M0, -0.5, 0.5);
+    if (isFinite(U.MW)) tb.aim = tb.tgt = U.MW;
+  } else tb.fd = L(tb.fd + L(L(D / M0 + tb.fi, 0, 1.4) - tb.fd, -r, r), 0, 1.4);
   tb.fdD = dr;
   const s = (U.vRate || 0.1) * dt,
-    fdT = L(tb.fd - dr, 0, 1.4),
+    /* TCE206: FLOW DEMAND = low select of GOV SET and LLM SET (tcs.js tcsGovLlm), then the speed path */
+    fdT = L(tcsGovLlm(U, tb, tb.fd, dt) - dr, 0, 1.4),
     icvD = L(fdT / B, 0, 1),
     cvD = L((fdT - B) / (1 - B), 0, 1.4),
     i0 = tb.icv == null ? icvD : tb.icv;
   tb.icv = L(i0 + L(icvD - i0, -s, s), 0, 1);
   U.gv = L((+U.gv || 0) + L(cvD - (+U.gv || 0), -s, s), 0, 1.4);
+  /* the MW error integral follows the GOV SET held by the LLM (tcs.js tcsGovLlm, TCE196 GOV follow): no wind-up while limiting */
+  if (tb.lim && !tb.govMan) tb.fi = L(tb.fd - D / M0, -0.5, 0.5);
   if (!tb.xfer && cvD > 0.005) {
     tb.xfer = true;
     dirt(U.di.xfer, 1);
@@ -5290,7 +5303,8 @@ function anUnitStep0(dt) {
     dirt(U.di.xfer, tb.xfer ? 1 : 0);
     /* TCE p.127 TCE180: permissive = NOT (52G not closed, TURBINE TRIP, FORCED CLOSE by HOUSE LOAD OPERATION, IP START before the
        TRANSFER REGION COMPLETE(IP)); the reset group also resets DCS CONTROL MODE ON */
-    tb.perm = onGrid && !trip && tb.xfer && !(U.el && U.el.l52 === false);
+    /* LMYP OTS: + GOV. MANUAL and LLM MANUAL of the TCS CRT (TCE180 reset group, tcs.js tcsGovCmd) */
+    tb.perm = onGrid && !trip && tb.xfer && !(U.el && U.el.l52 === false) && !tb.govMan && !tb.llmMan;
     dirt(U.di.perm, tb.perm ? 1 : 0);
     if (U.di.onCmd >= 0 && +v[U.di.onCmd] > 0.5 && tb.perm) dirt(U.di.on, 1);
     if ((U.di.offCmd >= 0 && +v[U.di.offCmd] > 0.5) || !tb.perm) dirt(U.di.on, 0);

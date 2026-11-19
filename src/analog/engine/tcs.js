@@ -1171,3 +1171,117 @@ function tcsState() {
     next: c.cur < 0 && c.step < 7 ? tcsMiss(U, TCS_A[Math.min(7, c.step + 1)] || []) : ''
   };
 }
+/* LMYP OTS (JENNIE, TCS study 2026-11-19, user: "Dalawang magkaibang system at hmi at controllers tlga c tcs at dcs"): the GOVERNOR SET and
+   the LOAD LIMITER of the TCS CRT, from the Hitachi TCS soft logic 331DM09784 (TCE, read on the PC 2026-11-19; page = index page):
+   - TCE196 GOVERNOR CONTROL(2) p.138: GOV SET integrator. In MW CONTROL it follows the GOV CONTROL SIGNAL (TCE195 PI on TARGET MW - GEN MW,
+     the model's anTbFlow tb.fd / tb.fi); GOV RAISE / LOWER of the CRT (CRT OPE INC/DEC, rate 1.0 %) sets GOV. MANUAL OPERATION, limits
+     107 % / -67.7 %. TCE195 PIV022: its X input tracks GOV SET, so the return to MW CONTROL is bumpless (here: the MW error integral is set
+     from the flow demand while in manual).
+   - TCE205 LLM CONTROL p.141: LLM SET integrator (TI 0.03 s, HL 102 %, LL -2 %), CRT INC/DEC (rate 1.0 %), LLM MANUAL OPERATION by the CRT.
+     AFR LLM FOLLOW ON: LLM follows FLOW DEMAND (TCE206) + 5.0 % (SG022) at 0.05 % per 30 ms cycle (LMS A032) = 1.67 %/s. TCE206 p.140:
+     FLOW DEMAND = low select of GOV SET and LLM SET; LOAD LIMITING when the LLM is the lower one.
+   - TCE180 p.129: GOV MANUAL and LLM MANUAL are in the reset group of DCS CONTROL MODE (the permissive I.0081 drops).
+   Scale: 100 % = flow demand 1.0. TCE191 p.135 note *1: NORMALIZATION 0 ~ 100 % = 0 ~ 150 MW; measured in the model (headless, Start at
+   150 MW, 20 min at x300, 2026-11-19): 151.0 MW at flow demand 0.980, CV lift 0.975, drum 133.4 kg/cm2. So the LLM follow value (flow
+   demand + 5 %, TCE205 SG022) is 103 % and the LLM sits at its HL 102 %, 4 % over the demand: no limiting in normal operation, as the
+   drawing intends (LLM UPPER, TCA533). The model's flow demand above 1.0 (clamp 1.4) is the PRESS COMPENSATE range of TCE206 (LME237
+   HL 40 %), which the drawing adds after the low select; here it is inside the one flow demand, so a low main steam pressure at full
+   load reaches the LLM at 102 %.
+   The state is on U.tb (the 150 MW plant and a Cold start both have it; U.tc exists only after a start-up) */
+const TCS_FD = 1.0;
+function tcsGovCmd(U, cmd, arg) {
+  const tb = U.tb,
+    a = arg && typeof arg === 'object' ? arg : { op: arg },
+    op = String(a.op || '').toLowerCase(),
+    L = (x, lo, hi) => Math.max(lo, Math.min(hi, x)),
+    trip = !!(tcsOilState(U) || {}).trip;
+  if (!(tb.st === 'sync' || tb.st === 'load')) return 'The generator is not on the line (52G open): the speed control has the governor';
+  if (trip) return 'The turbine is tripped';
+  const d = isFinite(+a.d) ? +a.d : 1 /* % per press (CRT INC/DEC rate 1.0 %, TCE196 / TCE205) */;
+  if (cmd === 'gov') {
+    const fd = isFinite(tb.fd) ? tb.fd : 0;
+    if (op === 'auto' || op === 'mw') {
+      if (!tb.govMan) return '';
+      tb.govMan = false;
+      tb.gov = NaN;
+      if (isFinite(U.MW)) tb.aim = tb.tgt = U.MW;
+      return '';
+    }
+    if (op === 'raise' || op === 'lower' || op === 'set') {
+      if (!tb.govMan) {
+        tb.govMan = true;
+        tb.gov = fd * (tb.gk || 1);
+      }
+      const x = op === 'set' ? +a.v / 100 : tb.gov + ((op === 'raise' ? 1 : -1) * d * TCS_FD) / 100;
+      if (!isFinite(x)) return 'GOV SET: no value';
+      tb.gov = L(x, (-67.7 * TCS_FD) / 100, (107 * TCS_FD) / 100) /* TCE196 SG C010 / C013 K 107.0, SG C015 / C017 K -67.7 */;
+      return '';
+    }
+    if (op === 'man') {
+      if (!tb.govMan) (tb.govMan = true), (tb.gov = fd * (tb.gk || 1));
+      return '';
+    }
+    return 'GOV: raise, lower, set, man or auto';
+  }
+  if (cmd === 'llm') {
+    if (!isFinite(tb.llm)) tb.llm = TCS_FD * 1.02;
+    if (op === 'auto' || op === 'follow') {
+      tb.llmMan = false;
+      return '';
+    }
+    if (op === 'raise' || op === 'lower' || op === 'set') {
+      tb.llmMan = true;
+      const x = op === 'set' ? (+a.v * TCS_FD) / 100 : tb.llm + ((op === 'raise' ? 1 : -1) * d * TCS_FD) / 100;
+      if (!isFinite(x)) return 'LLM SET: no value';
+      tb.llm = L(x, (-2 * TCS_FD) / 100, (102 * TCS_FD) / 100);
+      return '';
+    }
+    if (op === 'man') {
+      tb.llmMan = true;
+      return '';
+    }
+    return 'LLM: raise, lower, set, man or auto';
+  }
+  return null;
+}
+/* one scan of the GOV SET / LLM SET (called by anTbFlow with the flow demand fd before the LLM select); returns the flow demand after the
+   low select of TCE206. TCE206 p.140: LSG009 (GOV path, LLM SET) comes BEFORE ADD010 PRESS COMPENSATE (LME237): the GOV SET and the LLM are
+   in load (steam flow at the rated pressure), the compensation turns that into valve opening. Steam flow through the CVs is proportional
+   to opening x main steam pressure (this model: m = Kt x gv x MSP, anUnitStep), so the load-equivalent GOV path = fd x MSP / MSP at the
+   150 MW anchor (U.Pms / U.P0), and the flow demand after the select = that over the same ratio. So a low main steam pressure at full
+   load opens the valves past 100 % without the LLM cutting it, as on the drawing */
+function tcsGovLlm(U, tb, fd, dt) {
+  const L = (x, lo, hi) => Math.max(lo, Math.min(hi, x)),
+    hi = (102 * TCS_FD) / 100,
+    lo = (-2 * TCS_FD) / 100,
+    k = U.P0 > 0 && U.Pms > 0 ? L(U.Pms / U.P0, 0.3, 1.5) : 1,
+    g = fd * k;
+  tb.gk = k;
+  if (!isFinite(tb.llm)) tb.llm = hi;
+  if (!tb.llmMan) {
+    const r = (1.67 * TCS_FD * dt) / 100;
+    tb.llm = L(tb.llm + L(L(g + (5 * TCS_FD) / 100, lo, hi) - tb.llm, -r, r), lo, hi);
+  }
+  tb.lim = g > tb.llm;
+  /* TCE196 (GOV follow, ADD041 LLM SET + SG040 K 5.0 %) with TCE172 CHANGE OVER (MW CONTROL (LLM)): while the LLM limits, the GOV SET is
+     held at LLM SET + 5 %, so it does not wind up and takes over again as soon as the LLM is raised over the load demand */
+  if (tb.lim && !tb.govMan) tb.fd = Math.min(tb.fd, (tb.llm + (5 * TCS_FD) / 100) / k);
+  return Math.min(g, Math.max(0, tb.llm)) / k;
+}
+/* the CRT numbers of the GOV / LLM (TCS station pages) */
+function tcsGovState(U) {
+  const tb = U && U.tb;
+  if (!tb) return null;
+  const p = x => (isFinite(x) ? (100 * x) / TCS_FD : null);
+  return {
+    gov: p(tb.govMan ? tb.gov : tb.fd * (tb.gk || 1)) /* GOV SET, load equivalent (before the press compensation) */,
+    fd: p(tb.fd) /* flow demand to the valves */,
+    govMan: !!tb.govMan,
+    llm: p(isFinite(tb.llm) ? tb.llm : (102 * TCS_FD) / 100),
+    llmMan: !!tb.llmMan,
+    limiting: !!tb.lim,
+    target: isFinite(tb.aim) ? tb.aim : null,
+    ramp: isFinite(tb.tgt) ? tb.tgt : null,
+    rate: isFinite(U.rateUp) ? (U.rateUp * 100) / 150 : null
+  };
+}
