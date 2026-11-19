@@ -35,7 +35,9 @@
   ];
   /* The turbine has its own control system (TCS) with its own operator station, apart from the DCS of the plant (Hitachi TC-14-116,
      section 5.1 / 5.2): its pages are a list of their own, reached with the Plant / Turbine switch of the page list. */
-  const TCS_GROUPS = [['', ['turbine', 'turbine-oil']]];
+  const TCS_GROUPS = [['', ['turbine', '@criteria', 'turbine-oil']]];
+  /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
+  const OWN = { '@criteria': 'Start-up criteria' };
   const STATIONS = [
     ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
     ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
@@ -55,13 +57,25 @@
     const o = {},
       p = pick();
     if (p) for (const x of p.options) if (/^HX-/.test(x.value)) o[x.value.slice(3)] = x.textContent.trim();
+    if (o.turbine) Object.assign(o, OWN);
     return o;
   };
+  let own = '';
   const cur = () => {
     const p = pick();
-    return p && /^HX-/.test(p.value) ? p.value.slice(3) : '';
+    return own || (p && /^HX-/.test(p.value) ? p.value.slice(3) : '');
   };
   const go = id => {
+    if (OWN[id]) {
+      own = id;
+      mem.set('page', id);
+      setTimeout(() => {
+        paint();
+        tick();
+      }, 30);
+      return;
+    }
+    own = '';
     const p = pick();
     if (!p || ![...p.options].some(o => o.value === 'HX-' + id)) return;
     p.value = 'HX-' + id;
@@ -71,6 +85,7 @@
   };
   let stn = 'plant',
     stnSeg,
+    ownPg,
     root,
     list,
     title,
@@ -240,7 +255,20 @@
       b.onclick = () => zoom(k);
       tools.append(b);
     }
-    root.append(rail, top, alm, tools);
+    ownPg = E('main', 'st-page');
+    ownPg.hidden = true;
+    root.append(rail, top, ownPg, alm, tools);
+    /* a plant page opened by the app itself (a link of a drawing) closes a page of the frame */
+    document.addEventListener(
+      'change',
+      e => {
+        if (own && e.target === pick()) {
+          own = '';
+          setTimeout(paint, 30);
+        }
+      },
+      true
+    );
     document.body.append(host);
     const setRail = on => {
       document.body.classList.toggle('st-norail', !on);
@@ -870,9 +898,101 @@
     const m = /translate\(([-\d.]+)[ ,]+([-\d.]+)/.exec(e.getAttribute('transform') || '');
     return m ? [+m[1], +m[2]] : [+e.getAttribute('x') || 0, +e.getAttribute('y') || 0];
   };
+  /* Start-up criteria: the criteria of the automatic turbine start-up as the turbine control of the app holds them (AN.tcs():
+     drawings 310SC90-775 / 776). A criterion that is not met can be bypassed, one at a time, with the app's own command. */
+  const crit = {};
+  function criteria() {
+    const T = call(() => AN.tcs(), null);
+    if (!T || !T.crit) {
+      /* a starting point without the automatic start-up (the turbine control of the app holds no start-up there) */
+      if (crit.key !== 'none') {
+        crit.key = 'none';
+        crit.h = null;
+        crit.v = {};
+        ownPg.replaceChildren(E('p', 'st-none', 'The automatic start-up is not in use at this starting point.'));
+      }
+      return;
+    }
+    const num = k => String(k).split('.').map(Number),
+      byp = T.byp || [],
+      all = Object.values(T.crit).sort((a, b) => num(a.no)[0] - num(b.no)[0] || num(a.no)[1] - num(b.no)[1]),
+      /* what the next step still waits for, as the turbine control of the app lists it ("1.10 TEXT [value]; 1.11 ...") */
+      need = String(T.next || '')
+        .split('; ')
+        .map(x => x.split(' ')[0])
+        .filter(k => T.crit[k]);
+    const key = all.map(c => c.no + (c.ok ? 1 : 0) + (byp.includes(c.no) ? 'b' : '')).join() + '|' + need.join() + '|' + T.cur;
+    const val = c => (c.val != null && isFinite(c.val) ? fmt(c.val, Math.abs(c.val) < 2 ? 2 : 1) : '');
+    const armed = !!ownPg.querySelector('.arm');
+    if (key !== crit.key && !armed) {
+      crit.key = key;
+      crit.v = {};
+      crit.h = {};
+      const N1 = [],
+        head = E('div', 'st-ph');
+      for (const k of ['Start-up mode', 'Step', 'Speed', 'Hold']) {
+        const d = E('div'),
+          b = E('b');
+        d.append(E('i', '', k), b);
+        crit.h[k] = b;
+        head.append(d);
+      }
+      N1.push(head);
+      const sec = (t, L) => {
+        if (!L.length) return;
+        N1.push(E('h2', 'st-h', t));
+        const box = E('div', 'st-crit');
+        for (const c of L) {
+          const b = byp.includes(c.no),
+            r = E('div', 'st-cr' + (c.ok ? '' : b ? ' byp' : ' miss')),
+            v = E('em', '', val(c)),
+            st = E('span', 'st-cs', c.ok ? 'Met' : b ? 'Bypassed' : 'Not met');
+          (crit.v[c.no] = crit.v[c.no] || []).push(v);
+          r.append(
+            E('i', 'st-mk' + (c.ok ? ' ok' : b ? '' : ' new')),
+            E('span', 'st-cn', c.no),
+            E('span', '', c.txt),
+            v,
+            st
+          );
+          if (!c.ok || b) {
+            const x = E('button', 'st-b', b ? 'Put back' : 'Bypass');
+            x.title = b
+              ? 'The criterion counts again'
+              : 'Takes this criterion out of the step until it is put back; a hold is not bypassed';
+            const fn = () => {
+              const m = call(() => AN.turbine('critbypass', c.no), '');
+              if (m) x.title = m;
+              crit.key = '';
+              setTimeout(tick, 100);
+            };
+            if (b) x.onclick = fn;
+            else arm(x, 'Bypass', fn);
+            r.append(x);
+          } else r.append(E('span'));
+          box.append(r);
+        }
+        N1.push(box);
+      };
+      sec(
+        'The next step waits for',
+        need.map(k => T.crit[k])
+      );
+      sec('All criteria', all);
+      ownPg.replaceChildren(...N1);
+    }
+    if (crit.h) {
+      crit.h['Start-up mode'].textContent = T.mode || '--';
+      crit.h.Step.textContent =
+        T.cur >= 0 ? T.curName + ' (in progress)' : T.step >= 0 ? T.stepName + ' (complete)' : 'Not started';
+      crit.h.Speed.textContent = fmt(T.rpm, 0) + ' rpm';
+      crit.h.Hold.textContent = T.hold ? String(T.hold === true ? 'On' : T.hold) : 'Off';
+    }
+    for (const c of all) for (const v of crit.v[c.no] || []) v.textContent = val(c);
+  }
   function conds() {
     const pg = $('#plantws .hx-process');
-    if (!pg) return [];
+    if (!pg || own) return [];
     const Z = [...pg.querySelectorAll('.hx-zone')].map(z => ({
       z,
       p: xy(z),
@@ -981,7 +1101,8 @@
     if (c) mem.set('page-' + stn, c);
     const ci = eng ? curSheet() : -1;
     title.textContent = eng ? curTitle() : P[c] || '';
-    tabs.hidden = eng;
+    tabs.hidden = eng || !!own;
+    ownPg.hidden = eng || !own;
     for (const b of mode.children) {
       b.classList.toggle('on', b._e === eng);
       b.setAttribute('aria-pressed', String(b._e === eng));
@@ -1003,6 +1124,7 @@
   function tick() {
     updAsk();
     why();
+    if (own === '@criteria' && !eng) criteria();
     /* the reader of the unit overview of the app (LS_LIVE.getV); the plant model value where the reader has none.
        After a start state is loaded and before the first Run the reader still holds the numbers of the state before (shellc-home.js
        "stale"): only the 150 MW state is its own snapshot, so the other states show the plant model value, or "--", until Run */
