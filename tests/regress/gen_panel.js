@@ -12,7 +12,7 @@ const r=await page.evaluate(()=>{AN.run=false;AN.reset();ditlStates();AN.plantLo
  const nUp=G({op:'n+'}),cl=G({op:'close52g'}),bad=G({op:'avr',v:'X'});
  const e0=AN.genPanel().efd;G({op:'avr',v:'MAN'});run(1);const e1=AN.genPanel().efd,fr1=AN.genPanel().fr;
  run(20);const e2=AN.genPanel().efd;
- for(let k=0;k<4;k++){G({op:'v+'});run(1)}const e3=AN.genPanel().efd,fr3=AN.genPanel().fr;
+ for(let k=0;k<15;k++){G({op:'v+'});run(1)}const e3=AN.genPanel().efd,fr3=AN.genPanel().fr;
  G({op:'avr',v:'AUTO'});run(30);const g1=AN.genPanel();
  const f1=WORLD.ftrip('gen.86t',true);run(10);const g2=AN.genPanel(),tr=AN.unit.tc&&AN.unit.tc.trip,st=AN.unit.tb.st,ta9=(AN.unit.tc.ib.v['TA-9']||[]);
  const s9=AN.soe().filter(x=>x.sheet==='TA-9'&&/PROTECTION [AB]/.test(x.name)&&x.on===1).map(x=>x.name);

@@ -34,10 +34,14 @@ const TCS_GEN = {
   tn: 1.0 /* s, NO-SOURCE */,
   v84: 0.95 /* NO-SOURCE */,
   /* the generator control panel (GEE-2015-0141 PDF p.7 manual sync: SYN 7-90R voltage RAISE / LOWER to the AVR, 7-65 speed RAISE / LOWER
-     to the TCS): one press of a switch = a pulse of mpw s (NO-SOURCE). AVR MANUAL (Generator Logic.pdf SH-G-4 AVR signal AUTO / MANUAL):
-     the field set point moves at frr pu/s while RAISE / LOWER is pressed (NO-SOURCE) */
-  mpw: 0.5,
-  frr: 0.02
+     to the TCS): the switches act on the same AVR 90R and TCS 65 inputs as the ASD pulses 60R / 15R (GEE-2015-0141 p.8 / p.20), so one
+     press is one pulse of the ASD's own width: the voltage pulse vpw (0.2 s) and the speed pulse fpw (0.5 s); the change per press then
+     follows from the AVR / TCS set rates. AVR MANUAL (Generator Logic.pdf SH-G-4 AVR signal AUTO / MANUAL): the field set point moves at
+     the rate that changes the no-load voltage as much as the AUTO set rate vrr does: the open circuit voltage is field x speed (linear,
+     above), so at rated speed 1 pu of field = 1 pu of voltage and frr = vrr (it follows vrr, no number of its own) */
+  get frr() {
+    return this.vrr;
+  }
 };
 /* the grid frequency, Hz (NO-SOURCE: a slow drift, so the slip and the phase angle move as on a real grid) */
 function tcsGridHz(t) {
@@ -99,7 +103,8 @@ function tcsGenStep(U, dt) {
   if (!g.syn) g.syn = 'AUTO';
   if (!g.avr) g.avr = 'AUTO';
   const man = g.avr === 'MAN';
-  /* MANUAL from the start (no field yet): the set point of the no-load field, 1 pu (NO-SOURCE: the preset of the UNITROL manual channel) */
+  /* MANUAL from the start (no field yet): the field that gives the rated voltage at rated speed, 1 pu (the open circuit voltage = field x
+     speed, above: the no-load field; GEE-2015-0152 exciter no-load field 4.5 A is this 1 pu) */
   if (man && !isFinite(g.fr)) g.fr = g.f41 && g.efd > 0.05 ? g.efd : 1;
   if (g.oV > 0) {
     if (man) g.fr = Math.max(0, Math.min(K.ceil, g.fr + g.oVs * K.frr * Math.min(dt, g.oV)));
