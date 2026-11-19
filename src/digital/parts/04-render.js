@@ -191,7 +191,7 @@ function render() {
     );
   });
   (s.nl.dots || []).forEach(d =>
-    el('circle', { cx: d.x, cy: -d.y, r: 0.9, fill: SV ? (d.n >= 0 && SV[d.n] ? LIVES[LIVE] : '#2b5f46') : COL.CON }, g)
+    el('circle', { class: 'jd', cx: d.x, cy: -d.y, r: 0.9, fill: SV ? (d.n >= 0 && SV[d.n] ? LIVES[LIVE] : '#2b5f46') : d.n >= 0 ? '#2b5f46' : COL.CON }, g)
   );
   for (const [x, y, r, l] of s.raw.ci) {
     ext(x, y);

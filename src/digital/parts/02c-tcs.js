@@ -231,13 +231,54 @@ function tcsSheet(q) {
     sd: { tcs: 1, n: q.n, seg, gates, src, outs, term: [], dots, xcon: [], an, anl: [...new Set(B.flatMap(b => (/CMP|MID|FG|LS/.test(b.t) ? b.ins.concat(/MID|FG|LS/.test(b.t) ? [b.out] : []) : [])))] }
   };
 }
+/* an IBD sheet typed like the drawing (src/digital/tce/IBD-*.js, format in 02d-tce.js) in place of the picture the app builds: the gates, the input rows and the
+   nets of the netlist stay (the logic, the trace and the values of the engine), the lines, words and symbols are the typed ones. Every typed source takes its
+   IBD net number (q.nets); a gate takes the place of the typed block that gives its output net, an input row the place of the typed source of its net. */
+function tcsRetype(s, q) {
+  const p = tceSheet(q),
+    src = p.sd.tce,
+    nets = q.nets || {},
+    map = [];
+  let free = s.sd.n;
+  for (const k in src) map[src[k]] = k in nets ? nets[k] : free++;
+  const at = {};
+  for (const k in p.sd.box) if (k in nets) at[nets[k]] = at[nets[k]] || p.sd.box[k];
+  s.raw = p.raw;
+  s.tx = p.tx;
+  s.sd.seg = p.sd.seg.map(n => (n === undefined ? undefined : map[n]));
+  s.sd.dots = p.sd.dots.map(d => ({ x: d.x, y: d.y, n: map[d.n] }));
+  s.sd.n = free;
+  for (const g of s.sd.gates) {
+    const b = at[g.gt.out[0]];
+    if (!b) continue;
+    g.box = g.gt.box = b;
+    if (g.gt.tm) Object.assign(g.gt.tm, { ax: (b.x1 + b.x2) / 2, ay: (b.y1 + b.y2) / 2, rr: (b.y2 - b.y1) / 2, bx1: b.x1, bx2: b.x2 });
+  }
+  s.rows.forEach((r, i) => {
+    const b = at[r.tn];
+    if (!b) return;
+    const c = r.vx && r.vx.RT ? 'RT' : 'S';
+    r.y = +(b.y1 + (b.y2 - b.y1) / 2 - 1.2).toFixed(2);
+    r.vx = { [c]: [b.x1, b.x2] };
+    s.rb[i] = [b.y1, b.y2];
+  });
+  /* the cells of the built sheet are not drawn (their words are on the typed picture) */
+  s.drw = 1;
+  s.typed = q.id;
+  return s;
+}
 /* the TCS sheets come after the DITL sheets; they are part of S.sheets, so the search, the viewer and the panel know them */
 function tcsSheetsAdd() {
   const L = typeof AN !== 'undefined' && AN.tcsIbdSheets ? AN.tcsIbdSheets() : [];
   if (!L.length) return;
-  const nm = S.sheets[S.cur] && S.sheets[S.cur].name;
+  const nm = S.sheets[S.cur] && S.sheets[S.cur].name,
+    T = {};
+  for (const q of TCE_SHEETS) if (q.ibd) T[q.ibd] = q;
   /* then the soft logic sheets of the TCS (02d-tce.js) */
-  S.sheets = S.sheets.filter(x => !x.tcs).concat(L.map(tcsSheet), TCE_SHEETS.map(tceSheet));
+  S.sheets = S.sheets.filter(x => !x.tcs).concat(
+    L.map(q => (T[q.id] ? tcsRetype(tcsSheet(q), T[q.id]) : tcsSheet(q))),
+    TCE_SHEETS.filter(q => !q.ibd).map(tceSheet)
+  );
   const i = S.sheets.findIndex(x => x.name === nm);
   if (i >= 0) S.cur = i;
 }
@@ -274,7 +315,8 @@ function tcsDraw(L) {
       return out;
     };
   for (const s of S.sheets) {
-    if (!s.tcs) continue;
+    /* a sheet typed like the drawing keeps its typed picture */
+    if (!s.tcs || s.typed) continue;
     if (!s._app) s._app = { raw: s.raw, tx: s.tx, seg: s.sd.seg, dots: s.sd.dots };
     const D = L && L.find(q => q.id === s.tcs && q.n === s.sd.gates.length);
     s.drw = D ? 1 : 0;

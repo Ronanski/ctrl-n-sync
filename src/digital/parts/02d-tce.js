@@ -25,7 +25,22 @@
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
      t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
      live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
-                                                                     as a number); none = the sheet is shown without states */
+                                                                     as a number); none = the sheet is shown without states
+
+   A sheet of the Interlock Block Diagram 310SC90-794 (TCS IBD, typicals and TA / TB ...) typed in the same format takes the place of the sheet the app
+   builds from the IBD netlist (02c-tcs.js): same gates, same net numbers, so the logic, the trace and the values of the engine stay; only the picture is
+   the typed one. More fields for it:
+     ibd: '15' | 'TA-9'                                              the IBD sheet it replaces (no ctl / cycle needed)
+     nets: { source key: net number of the IBD netlist }             the net of every source; a source without one gets a free number
+     fs: 1.1                                                         the size of the words (1 = the size of the TCE sheets)
+     ar: 1                                                           every wire ends in an open arrow head (w[3] = 0: this one not); ah = its length
+                                                                     in thousandths of the frame width (also the head of a note arrow), default 9
+     h: [key, x, y, w, hh, [lines]]                                  condition label (a hexagon pointed at both ends), x y = its left tip, w its width,
+                                                                     hh half its height; the lines stand left inside it; key '' = no signal
+     b types: 'G:A' / 'G:OR' ...                                     gate of the IBD: a box with its letter, size [w, h, bar] (bar = the height of its
+                                                                     input edge, longer than the box); 'SR' = the flip-flop (S over a circled R), size
+                                                                     [w, h]; 'NC' = the circle of a NOT on a line, size [r]
+     r key '': a box that gives no signal (an annunciator window); t: [x, y, text, align, size] */
 const TCE_SHEETS = typeof window !== 'undefined' && window.TCE_SHEETS ? window.TCE_SHEETS : [];
 const tceCat = id => (/^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : 'GOVERNOR SOFT LOGIC (TCE)');
 function tceSheet(q) {
@@ -45,19 +60,35 @@ function tceSheet(q) {
     heavy = [],
     src = {};
   /* align: 0 left, 1 centre, 2 right (on the base line); 3 left, 4 centre, 5 right (on the middle line) */
-  const text = (t, x, y, h, a) => ({ t: String(t), ix: X(x), iy: Y(y), x: X(x), y: Y(y), h: h || 2.05, r: 0, a: a === 3 ? 0 : a === 5 ? 2 : a || 0, b: a === 3 || a === 5 ? 2 : 0, l: 'TXT1' });
+  const fs = q.fs || 1,
+    hk = (q.ah || 9) * ((fx1 - fx0) / 1000);
+  const text = (t, x, y, h, a) => ({ t: String(t), ix: X(x), iy: Y(y), x: X(x), y: Y(y), h: (h || 2.05) * fs, r: 0, a: a === 3 ? 0 : a === 5 ? 2 : a || 0, b: a === 3 || a === 5 ? 2 : 0, l: 'TXT1' });
   const poly = (P, closed) => pl.push([P.map(p => [X(p[0]), Y(p[1])]), closed ? 1 : 0, 'SYM']);
-  const net = k => (k in src ? src[k] : (src[k] = Object.keys(src).length));
+  const net = k => (k === '' ? -1 : k in src ? src[k] : (src[k] = Object.keys(src).length)),
+    box = {},
+    /* the place of a source on the sheet (the viewer's units): an IBD sheet puts its input switches and its gates there */
+    at = (k, x0, y0, x1, y1) => k !== '' && (box[k] = { x1: X(x0), x2: X(x1), y1: Y(y1), y2: Y(y0) }),
+    /* an open arrow head at b, coming from a */
+    head = (a, b) => {
+      const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
+        ux = (b[0] - a[0]) / L,
+        uy = (b[1] - a[1]) / L,
+        k = hk;
+      poly([[b[0] - ux * k - uy * k * 0.42, b[1] - uy * k + ux * k * 0.42], b, [b[0] - ux * k + uy * k * 0.42, b[1] - uy * k - ux * k * 0.42]], 0);
+    };
   /* the frame and the title line of the sheet (the viewer's own, as on the TCS sheets) */
   [[[18, 18], [1173, 18]], [[1173, 18], [1173, 824]], [[1173, 824], [18, 824]], [[18, 824], [18, 18]], [[18, 796], [1173, 796]]].forEach(([a, b]) => {
     ln.push([+(a[0] * K).toFixed(2), +(-a[1] * K).toFixed(2), +(b[0] * K).toFixed(2), +(-b[1] * K).toFixed(2), 'SYM']);
     seg.push(undefined);
   });
   const T = (t, x, y, h, a) => ({ t, ix: +(x * K).toFixed(2), iy: +(-y * K).toFixed(2), x: +(x * K).toFixed(2), y: +(-y * K).toFixed(2), h, r: 0, a, b: 0, l: 'TXT1' });
-  tx.push(
-    T(q.id + '  ' + q.title, 30, 815, 2.6, 0),
-    T('CONTROLLER ' + (q.ctl || '') + '   CYCLE ' + (q.cycle || '') + ' ms   PAGE ' + (q.page || ''), 1160, 815, 2.05, 2)
-  );
+  /* an IBD sheet keeps the title line of the IBD sheets */
+  if (q.ibd) tx.push(T((/^\d/.test(q.ibd) ? 'TYPICAL ' : '') + q.ibd + '  ' + q.title, 30, 815, 2.6, 0), T('TCS SHEET ' + q.page + ' OF 99', 1160, 815, 2.05, 2));
+  else
+    tx.push(
+      T(q.id + '  ' + q.title, 30, 815, 2.6, 0),
+      T('CONTROLLER ' + (q.ctl || '') + '   CYCLE ' + (q.cycle || '') + ' ms   PAGE ' + (q.page || ''), 1160, 815, 2.05, 2)
+    );
   /* a half circle as short straight pieces (the ends of a connector) */
   const arc = (cx, cy, r, a0, a1) => {
     const P = [];
@@ -76,6 +107,7 @@ function tceSheet(q) {
     /* a connector drawn with a double line in the drawing */
     if (dbl) poly([...arc(x + w - r, y, r - 2 * u, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r - 2 * u, Math.PI / 2, (3 * Math.PI) / 2)], 1);
     tx.push(text(letter, x, y, 1.9, 4));
+    at(key, x - w, y - r, x + w, y + r);
     const R = (refs || []).map(s => '(' + s + ')'),
       /* more than four sheets: columns of three, side by side, as the drawing packs them */
       per = R.length > 4 ? 3 : 4,
@@ -108,12 +140,22 @@ function tceSheet(q) {
     else poly([[x, y - h], [x + w - h, y - h], [x + w, y], [x + w - h, y + h], [x, y + h]], 1);
     tx.push(text(t, x + w / 2, y, 2.05, 4));
     if (note) tx.push(text('(' + note + ')', kind === 'def' ? x + w / 2 : x + 30 * u, y - h - 5 * u, 1.7, kind === 'def' ? 1 : 0));
+    at(key, x, y - h, x + w, y + h);
+    net(key);
+  }
+  /* condition labels of the IBD: a hexagon pointed at both ends, its lines left inside it */
+  for (const [key, x, y, w, hh, L] of q.h || []) {
+    const e = hh * 0.92;
+    poly([[x, y], [x + e, y - hh], [x + w - e, y - hh], [x + w, y], [x + w - e, y + hh], [x + e, y + hh]], 1);
+    (L || []).forEach((t, i) => tx.push(text(t, x + e, y + (i - (L.length - 1) / 2) * hh * 0.84, 2.05, 3)));
+    at(key, x, y - hh, x + w, y + hh);
     net(key);
   }
   /* PI/O table boxes: a plain box with its words (the place of an input / output of the PI/O table) */
   for (const [key, x, y, w, h, t] of q.r || []) {
     poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
     if (t) tx.push(text(t, x + w / 2, y + h / 2, 2.05, 4));
+    at(key, x, y, x + w, y + h);
     net(key);
   }
   /* PI/O connection marks: a small triangle on the line, pointing left ('l') or right ('r') */
@@ -132,6 +174,7 @@ function tceSheet(q) {
     if (letter) tx.push(text(letter, x + sd * 9 * u, y + 10 * u, 1.7, 1));
     if (note) tx.push(text('(' + note + ')', x + sd * 7 * u, y - 9 * u, 1.7, dir === 'in' ? 0 : 2));
     if (tag) tx.push(text(tag, dir === 'in' ? x - w - 4 * u : x + w + 4 * u, y, 1.9, dir === 'in' ? 5 : 3));
+    at(key, x - w, y - h, x + w, y + h);
     net(key);
   }
   /* plain lines of the drawing that carry no signal (the rules of a table) */
@@ -157,11 +200,7 @@ function tceSheet(q) {
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
     poly([a, b], 0);
-    const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
-      ux = (b[0] - a[0]) / L,
-      uy = (b[1] - a[1]) / L,
-      k = 9 * u;
-    poly([[b[0] - ux * k - uy * k * 0.45, b[1] - uy * k + ux * k * 0.45], b, [b[0] - ux * k + uy * k * 0.45, b[1] - uy * k - ux * k * 0.45]], 0);
+    head(a, b);
   }
   /* small blocks: the type over the block number */
   for (const [key, type, no, x, y, notes, pins, size] of q.b || []) {
@@ -172,6 +211,35 @@ function tceSheet(q) {
       ci.push([X(x), Y(y), W(r), 'SYM']);
       poly([[x - e, y - e], [x + e, y + e]], 0);
       poly([[x - e, y + e], [x + e, y - e]], 0);
+      continue;
+    }
+    if (/^G:/.test(type)) {
+      /* a gate of the IBD: a box with its letter, the input edge longer than the box */
+      const [w, h, bar] = size;
+      poly([[x - w / 2, y - h / 2], [x + w / 2, y - h / 2], [x + w / 2, y + h / 2], [x - w / 2, y + h / 2]], 1);
+      if (bar > h) poly([[x - w / 2, y - bar / 2], [x - w / 2, y + bar / 2]], 0);
+      tx.push(text(type.slice(2), x, y, 2.05, 4));
+      at(key, x - w / 2, y - Math.max(h, bar) / 2, x + w / 2, y + Math.max(h, bar) / 2);
+      net(key);
+      continue;
+    }
+    if (type === 'SR') {
+      /* the flip-flop of the IBD: S over a circled R, the output at the S side */
+      const [w, h] = size;
+      poly([[x - w / 2, y - h / 2], [x + w / 2, y - h / 2], [x + w / 2, y + h / 2], [x - w / 2, y + h / 2]], 1);
+      poly([[x - w / 2, y], [x + w / 2, y]], 0);
+      ci.push([X(x), Y(y + h / 4), W(Math.min(w, h / 2) * 0.47), 'SYM']);
+      tx.push(text('S', x, y - h / 4, 2.05, 4), text('R', x, y + h / 4, 2.05, 4));
+      at(key, x - w / 2, y - h / 2, x + w / 2, y + h / 2);
+      net(key);
+      continue;
+    }
+    if (type === 'NC') {
+      /* the circle of a NOT on a line */
+      const r = size ? size[0] : 5.25 * u;
+      ci.push([X(x), Y(y), W(r), 'SYM']);
+      at(key, x - r, y - r, x + r, y + r);
+      net(key);
       continue;
     }
     if (/^o:/.test(type)) {
@@ -193,6 +261,7 @@ function tceSheet(q) {
     /* the marks of its pins, inside the block: { l: ['S', 'R'], r: ['T'] } top to bottom */
     for (const [side, L] of Object.entries(pins || {}))
       L.forEach((p, i) => p && tx.push(text(p, side === 'l' ? x - w + 2.5 * u : x + w - 2.5 * u, y - h + ((i + 0.5) * 2 * h) / L.length, 1.5, side === 'l' ? 3 : 5)));
+    at(key, x - w, y - h, x + w, y + h);
     net(key);
   }
   /* macro blocks: title bar, pins on both sides, foot bar, the parameter lines under it */
@@ -218,15 +287,16 @@ function tceSheet(q) {
     (notes || []).forEach(n => tx.push(text(n[2], n[0], n[1], 1.9, 0)));
   }
   /* wires: straight pieces, each with the net of its source */
-  for (const [from, P, thick] of q.w || []) {
+  for (const [from, P, thick, arw] of q.w || []) {
     const n = net(from);
+    if (arw === 1 || (q.ar && arw !== 0)) head(P[P.length - 2], P[P.length - 1]);
     for (let i = 1; i < P.length; i++) {
       ln.push([X(P[i - 1][0]), Y(P[i - 1][1]), X(P[i][0]), Y(P[i][1]), 'CON']);
       seg.push(n);
       if (thick) heavy.push([P[i - 1], P[i], n]);
     }
   }
-  for (const [x, y, t, a] of q.t || []) tx.push(text(t, x, y, 2.05, a || 0));
+  for (const [x, y, t, a, h] of q.t || []) tx.push(text(t, x, y, h || 2.05, a || 0));
   /* junction dots: a wire end on the middle of another wire of the same net */
   const dots = [];
   ln.forEach((a, i) => {
@@ -270,6 +340,6 @@ function tceSheet(q) {
     syms: [],
     lyr: '',
     bv: BV,
-    sd: { tcs: 1, tce: src, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [] }
+    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [] }
   };
 }

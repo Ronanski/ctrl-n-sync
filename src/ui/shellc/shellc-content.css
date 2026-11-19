@@ -449,6 +449,8 @@ html body.sc:not(.sc-dgdark) #svg :not(text,tspan,textPath)[stroke="#2b5f46" i]{
 html body.sc:not(.sc-dgdark) #svg :not(text,tspan,textPath)[stroke="#e0a030" i]{stroke:#966816}
 html body.sc:not(.sc-dgdark) #svg :not(text,tspan,textPath)[fill="#ff4d4d" i]{fill:#ce3a34}
 html body.sc:not(.sc-dgdark) #svg :not(text,tspan,textPath)[fill="#2b5f46" i]{fill:hsl(151 38% 93%)}
+/* a junction dot of a line that is off keeps the colour of its line (the light fill above is for areas) */
+html body.sc:not(.sc-dgdark) #svg circle.jd[fill="#2b5f46" i]{fill:#1f7a5a}
 html body.sc:not(.sc-dgdark) #svg :not(text,tspan,textPath)[fill="#4fd18b" i]{fill:#1f7a5a}
 html body.sc:not(.sc-dgdark) #svg :is(text,tspan,textPath)[fill="#e6edf3" i]{fill:#2b6ca5}
 html body.sc:not(.sc-dgdark) #svg text.plink{stroke:#f7f8f8}
