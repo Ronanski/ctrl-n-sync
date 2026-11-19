@@ -9623,6 +9623,268 @@ function tcsSim(s) {
     [606, 1521, 'CYCLE(ms):30']
   ]
 });
+/* TCE194 TARGET LOAD (331DM09784 page 134, controller EHG+MD, cycle 30 ms; there are no TCE192 / TCE193 in the drawing set). Typed
+   from the drawing; units = the pixels of the page rendered 2296 wide. TARGET LOAD(TCS) = the integrator I 004 (TI 0.03, 0 .. 155.0)
+   on the CRT operator INC/DEC macro (TCE194_A1, LME025, DEF HL 1.0 / LL -1.0, K 0.030 s, rate SG 002 1.0 %, INC/DEC/HSS/LSS OFF)
+   with Z = the target load itself; the integrator has F = 0.0, Z = GEN. MW and the A005 permissive (transfer region complete (IP) and A015) on top.
+   A015 = no GOV / LLM manual operation for 5 s after INITIAL, no IP limiting, no DCS control, no load hold command, no GEN. MW ABN.
+   TRACKING = A005 or the DCS control on. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE194',
+  title: 'TARGET LOAD',
+  page: 134,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [168, 85, 2219, 1547],
+  k: [
+    ['kZero', 295, 241, '0.0', 'sys.ref'],
+    ['kOff', 295, 468, 'OFF(0)', 'sys.ref'],
+    ['kInit', 231, 660, 'INITIAL', 'ref']
+  ],
+  c: [
+    ['iTrc', 'in', 'C', 322, 321, 'TRANSFER REGION COMPLETE(IP)', ['TCE184']],
+    ['iGm', 'in', 'D', 333, 758, '', ['TCE196']], /* two lines (texts) */
+    ['iLm', 'in', 'D', 333, 832, '', ['TCE205']], /* two lines (texts) */
+    ['iIpl', 'in', 'C', 334, 906, 'IP LIMITTING', ['TCE201']],
+    ['iDcs', 'in', 'A', 334, 980, 'DCS CONTROL ON', ['TCE180']],
+    ['iLh', 'in', 'C', 334, 1054, 'LOAD HOLD COMMAND', ['TCE164']],
+    ['iAbn', 'in', 'B', 334, 1118, 'GEN. MW ABN.', ['TCE070']],
+    ['iGen', 'in', 'A', 323, 1231, 'GEN. MW', ['TCE070']],
+    ['oB', 'out', 'B', 2082, 132, 'TRACKING', ['-']],
+    ['oA', 'out', 'A', 2070, 243, 'TARGET LOAD(TCS)', ['TCE195']]
+  ],
+  b: [
+    ['a005', 'A', '005', 793, 283],
+    ['sg002', 'SG', '002', 333, 552, ['K:1.0%']],
+    ['i004', 'I', '004', 1549, 263, ['TI:0.03', 'HL:155.0', 'LL:0.0'], { l: ['X', 'F', 'Z'] }, [79, 64]],
+    ['ftr003', 'o:FTR', '003', 1644, 240],
+    ['or014', 'OR', '014', 1805, 140],
+    ['xm', 'X', '', 1271, 709],
+    /* the permissive */
+    ['or006', 'OR', '006', 621, 766],
+    ['td007', 'TD', '007', 716, 766, ['TD:5.0s']],
+    ['not008', 'NOT', '008', 803, 766],
+    ['not010', 'NOT', '010', 792, 914],
+    ['not011', 'NOT', '011', 792, 988],
+    ['not012', 'NOT', '012', 792, 1062],
+    ['not016', 'NOT', '016', 792, 1126],
+    ['a015', 'A', '015', 1037, 798, [], {}, [59, 107]]
+  ],
+  m: [
+    [
+      'crt',
+      'CRT OPE INC/DEC',
+      'TCE194_A1',
+      909,
+      193,
+      404,
+      321,
+      ['X', 'PERM', 'Z', 'INC', 'RATE', 'DEC', 'HSS', 'LSS'],
+      ['OUT', 'MANU', '', '', '', '', '', ''],
+      '001',
+      [
+        [1017, 530, '(LME025)'],
+        [909, 554, 'DEF HL:1.0'],
+        [930, 576, 'LL:-1.0'],
+        [957, 597, 'K:0.030S']
+      ]
+    ]
+  ],
+  w: [
+    /* the CRT operator INC/DEC */
+    ['kZero', [[530, 240], [909, 240]], 1],
+    ['kZero', [[760, 240], [760, 155], [1500, 155], [1500, 263], [1509, 263]], 1],
+    ['iTrc', [[349, 318], [695, 318], [695, 272], [764, 272]]],
+    ['a005', [[822, 272], [909, 272]]],
+    ['a005', [[868, 272], [868, 129], [1776, 129]]],
+    ['a005', [[1549, 129], [1549, 231]]],
+    ['sg002', [[362, 541], [889, 541], [889, 370], [909, 370]], 1],
+    ['kOff', [[530, 467], [909, 467]]],
+    ['kOff', [[857, 467], [857, 337], [909, 337]]],
+    ['kOff', [[857, 402], [909, 402]]],
+    ['kOff', [[857, 435], [909, 435]]],
+    ['crt.OUT', [[1313, 240], [1509, 240]], 1],
+    /* the target load */
+    ['i004', [[1589, 240], [2043, 240]], 1],
+    ['i004', [[1707, 240], [1707, 709], [835, 709], [835, 305], [909, 305]], 1],
+    ['iGen', [[350, 1228], [1486, 1228], [1486, 285], [1509, 285]], 1],
+    /* tracking */
+    ['iDcs', [[361, 977], [763, 977]]],
+    ['iDcs', [[728, 977], [728, 1030], [1731, 1030], [1731, 151], [1776, 151]]],
+    ['or014', [[1834, 129], [2055, 129]]],
+    /* the permissive */
+    ['kInit', [[466, 659], [716, 659], [716, 745]]],
+    ['iGm', [[360, 755], [592, 755]]],
+    ['iLm', [[360, 829], [582, 829], [582, 777], [592, 777]]],
+    ['or006', [[650, 755], [687, 755]]],
+    ['td007', [[745, 755], [774, 755]]],
+    ['not008', [[832, 755], [1008, 755]]],
+    ['iIpl', [[361, 903], [763, 903]]],
+    ['not010', [[821, 903], [965, 903], [965, 776], [1008, 776]]],
+    ['not011', [[821, 977], [976, 977], [976, 798], [1008, 798]]],
+    ['iLh', [[361, 1051], [763, 1051]]],
+    ['not012', [[821, 1051], [986, 1051], [986, 819], [1008, 819]]],
+    ['iAbn', [[361, 1115], [763, 1115]]],
+    ['not016', [[821, 1115], [997, 1115], [997, 840], [1008, 840]]],
+    ['a015', [[1066, 755], [1120, 755], [1120, 630], [751, 630], [751, 294], [764, 294]]]
+  ],
+  t: [
+    [375, 688, '(TCE050)'],
+    [365, 723, 'GOV MANUAL'],
+    [365, 745, 'OPRATION'],
+    [365, 798, 'LLM MANUAL'],
+    [365, 819, 'OPRATION'],
+    [668, 744, 'T'],
+    [238, 1522, 'CONTROLLER:'],
+    [398, 1522, 'EHG+MD'],
+    [622, 1493, 'TRIGGER  :'],
+    [622, 1519, 'CYCLE(ms):30']
+  ]
+});
+/* TCE195 GOVERNOR CONTROL(1) (331DM09784 page 135, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of
+   the page rendered 2296 wide. The MW demand (ASW024: the target MW demand in DCS control mode, else the target load (TCS)) minus
+   GEN. MW, through LMS 027 (limits PA2 027: the load up / down rate (or +/-0.06 in runback) x 2.5) and G 021 (K 1, site adjustment for
+   the DCS interface), is the PI controller PIV C022 (G1 0.05, G2 1.0, TI 5.0, -5.0 .. 110.0) that tracks GOV.SET in INITIAL.
+   GOV.CONTROL SIGNAL = ASW004 (governing mode): the speed control signal, or ASW003 (TCE184 C): the PIV output or ASW015 (load up or
+   initial load control mode): the load control signal, or the heat soak reset speed steps (-0.01 / +0.01 %, else 0.0). CCS SET POINT =
+   the MW demand, CCS ACTUAL SET = GOV.SET. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE195',
+  title: 'GOVERNOR CONTROL(1)',
+  page: 135,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [172, 82, 2227, 1550],
+  k: [
+    ['kGov', 290, 141, 'GOVERNING MODE', 'ref'],
+    ['kInit', 857, 183, 'INITIAL', 'ref'],
+    ['kZero', 963, 502, '0.0', 'sys.ref'],
+    ['kZero2', 288, 1270, '0.0', 'sys.ref']
+  ],
+  c: [
+    ['iDcs', 'in', 'A', 308, 218, 'DCS CONTROL MODE ON', ['TCE180']],
+    ['iTmw', 'in', 'A1', 308, 282, 'TARGET MW DEMAND', ['TCE103']],
+    ['iRb', 'in', 'C', 308, 335, 'RUNBACK COMMAND', ['-'], 1],
+    ['iLur', 'in', 'A', 308, 453, 'LOAD UP RATE', ['TCE185']],
+    ['iLdr', 'in', 'B', 308, 570, 'LOAD DOWN RATE', ['TCE185']],
+    ['iGmw', 'in', 'A', 308, 633, 'GEN. MW', ['TCE070']],
+    ['iGov', 'in', 'A', 308, 717, 'GOV.SET', ['TCE196']],
+    ['iTl', 'in', 'A', 308, 771, 'TARGET LOAD(TCS)', ['TCE194']],
+    ['iLum', 'in', 'B', 308, 825, 'LOAD UP or INIT LOAD CONTROL MODE', ['TCE191']],
+    ['iLcs', 'in', 'A', 308, 921, 'LOAD CONTROL SIGNAL', ['TCE191']],
+    ['iDec', 'in', 'B', 308, 994, 'DEC.SPEED(HEAT SOAK RESET)', ['TCE179']],
+    ['iInc', 'in', 'A', 308, 1134, 'INC.SPEED(HEAT SOAK RESET)', ['TCE179']],
+    ['iSpd', 'in', 'A', 308, 1343, 'SPEED CONTROL SIGNAL', ['TCE169']],
+    ['iC', 'in', 'C', 1343, 186, '', []], /* the ref stands under the circle (text) */
+    ['oGov', 'out', 'A', 2089, 282, 'GOV.CONTROL SIGNAL', ['TCE196', 'TCE205']],
+    ['oB1', 'out', 'B1', 2077, 631, 'CCS SET POINT', ['TCE610']],
+    ['oD1', 'out', 'D1', 2087, 771, '', ['-']],
+    ['oC1', 'out', 'C1', 2085, 939, 'CCS ACTUAL SET', ['-'], 1]
+  ],
+  d: [
+    ['dA1', 2031, 556, 'out', 'TCE195_A1', 'S', '#1C'],
+    ['dA2', 2031, 864, 'out', 'TCE195_A2', 'S', '#1C']
+  ],
+  b: [
+    /* the MW demand and the PI control */
+    ['asw024', 'ASW', '024', 617, 290],
+    ['sub001', 'SUB', '001', 885, 290],
+    ['lms027', 'LMS', '027', 1012, 290],
+    ['g021', 'G', '021', 1119, 290, ['K:1']],
+    ['pivC022', 'PIV', '022', 1280, 302, ['G1:0.05', 'G2:1.0', 'TI:5.0', 'HL:110.0', 'LL:-5.0', 'ML:110.0'], { l: ['X', 'F', 'Z'] }, [79, 64]],
+    ['asw003', 'ASW', '003', 1438, 290],
+    ['asw004', 'ASW', '004', 1576, 290],
+    /* the rate limits */
+    ['sgC005', 'SG', 'C005', 436, 375],
+    ['asw006', 'ASW', '006', 650, 375],
+    ['g028', 'G', '028', 926, 375, ['K:2.5']],
+    ['pa2027', 'PA2', '027', 1045, 375, [], {}, [59, 85]],
+    ['sgC008', 'SG', 'C008', 436, 504],
+    ['asw009', 'ASW', '009', 671, 504],
+    ['g029', 'G', '029', 926, 448, ['K:2.5']],
+    /* the load control signal and the heat soak reset */
+    ['asw015', 'ASW', '015', 1106, 928],
+    ['sgB017', 'SG', 'B017', 434, 1056],
+    ['asw018', 'ASW', '018', 946, 1056],
+    ['sgB019', 'SG', 'B019', 434, 1195],
+    ['asw020', 'ASW', '020', 786, 1195],
+    /* the CCS outputs */
+    ['ftr011', 'o:FTR', '011', 1268, 554],
+    ['ftr012', 'o:FTR', '012', 1574, 554],
+    ['ftr013', 'o:FTR', '013', 1574, 628],
+    ['ftr023', 'o:FTR', '023', 1573, 768],
+    ['ftr014', 'o:FTR', '014', 1574, 862],
+    ['ftr016', 'o:FTR', '016', 1574, 936]
+  ],
+  w: [
+    /* the MW demand and the PI control */
+    ['iDcs', [[335, 215], [617, 215], [617, 269]]],
+    ['iTmw', [[335, 279], [588, 279]], 1],
+    ['iTl', [[335, 768], [576, 768], [576, 301], [588, 301]], 1],
+    ['asw024', [[646, 279], [856, 279]], 1],
+    ['asw024', [[820, 279], [820, 554], [2007, 554]], 1],
+    ['asw024', [[1520, 554], [1520, 628], [2050, 628]], 1],
+    ['iGmw', [[335, 630], [842, 630], [842, 301], [856, 301]], 1],
+    ['sub001', [[914, 279], [983, 279]], 1],
+    ['lms027', [[1041, 279], [1090, 279]], 1],
+    ['g021', [[1148, 279], [1240, 279]], 1],
+    ['kInit', [[1092, 182], [1280, 182], [1280, 270]]],
+    ['kZero', [[1198, 501], [1217, 501], [1217, 302], [1240, 302]], 1],
+    ['iGov', [[335, 714], [1227, 714], [1227, 324], [1240, 324]], 1],
+    ['iGov', [[776, 714], [776, 862], [2007, 862]], 1],
+    ['iGov', [[1518, 862], [1518, 936], [2058, 936]], 1],
+    ['pivC022', [[1320, 279], [1409, 279]], 1],
+    ['iC', [[1370, 183], [1438, 183], [1438, 269]]],
+    ['asw003', [[1467, 279], [1547, 279]], 1],
+    ['kGov', [[525, 140], [1576, 140], [1576, 269]]],
+    ['iSpd', [[335, 1340], [1500, 1340], [1500, 301], [1547, 301]], 1],
+    ['asw004', [[1605, 279], [2062, 279]], 1],
+    /* the rate limits */
+    ['iRb', [[335, 332], [650, 332], [650, 354]]],
+    ['iRb', [[596, 332], [596, 462], [671, 462], [671, 483]]],
+    ['sgC005', [[465, 364], [621, 364]], 1],
+    ['iLur', [[335, 450], [610, 450], [610, 386], [621, 386]], 1],
+    ['asw006', [[679, 364], [897, 364]], 1],
+    ['asw006', [[862, 364], [862, 768], [2060, 768]], 1],
+    ['g028', [[955, 364], [1015, 364]], 1],
+    ['sgC008', [[465, 493], [642, 493]], 1],
+    ['iLdr', [[335, 567], [616, 567], [616, 515], [642, 515]], 1],
+    ['asw009', [[700, 493], [884, 493], [884, 437], [897, 437]], 1],
+    ['g029', [[955, 437], [1005, 437], [1005, 385], [1015, 385]], 1],
+    /* the load control signal and the heat soak reset */
+    ['iLum', [[335, 822], [1106, 822], [1106, 907]]],
+    ['iLcs', [[335, 918], [1077, 918]], 1],
+    ['asw015', [[1135, 918], [1398, 918], [1398, 301], [1409, 301]], 1],
+    ['iDec', [[335, 991], [946, 991], [946, 1035]]],
+    ['sgB017', [[463, 1045], [917, 1045]], 1],
+    ['asw018', [[975, 1045], [1053, 1045], [1053, 939], [1077, 939]], 1],
+    ['iInc', [[335, 1131], [786, 1131], [786, 1174]]],
+    ['sgB019', [[463, 1184], [757, 1184]], 1],
+    ['asw020', [[815, 1184], [891, 1184], [891, 1067], [917, 1067]], 1],
+    ['kZero2', [[522, 1269], [734, 1269], [734, 1206], [757, 1206]], 1]
+  ],
+  t: [
+    [437, 168, '(TCE167)'],
+    [1003, 209, '(TCE050)'],
+    [1305, 217, '(TCE184)'],
+    [310, 383, 'K:0.06'],
+    [310, 512, 'K:-0.06'],
+    [308, 1065, 'K:-0.01%'],
+    [318, 1203, 'K:0.01%'],
+    [848, 269, '+'],
+    [848, 290, '-'],
+    [1150, 266, '(*)'],
+    [940, 353, '(HL)'],
+    [962, 418, '(LL)'],
+    [1803, 544, 'CCS SET POINT'],
+    [1801, 852, 'CCS ACTUAL SET'],
+    [527, 1460, '(*) site adjustment for DCS interface'],
+    [240, 1525, 'CONTROLLER:'],
+    [402, 1525, 'EHG+MD'],
+    [625, 1497, 'TRIGGER  :'],
+    [625, 1523, 'CYCLE(ms):30']
+  ]
+});
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE172',
@@ -46777,7 +47039,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 0840d8a'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 1288e15'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -76563,6 +76825,272 @@ function tcsSim(s) {
     [382, 1519, 'EHG+MD'],
     [606, 1494, 'TRIGGER  :'],
     [606, 1521, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE194.js ---- */
+/* TCE194 TARGET LOAD (331DM09784 page 134, controller EHG+MD, cycle 30 ms; there are no TCE192 / TCE193 in the drawing set). Typed
+   from the drawing; units = the pixels of the page rendered 2296 wide. TARGET LOAD(TCS) = the integrator I 004 (TI 0.03, 0 .. 155.0)
+   on the CRT operator INC/DEC macro (TCE194_A1, LME025, DEF HL 1.0 / LL -1.0, K 0.030 s, rate SG 002 1.0 %, INC/DEC/HSS/LSS OFF)
+   with Z = the target load itself; the integrator has F = 0.0, Z = GEN. MW and the A005 permissive (transfer region complete (IP) and A015) on top.
+   A015 = no GOV / LLM manual operation for 5 s after INITIAL, no IP limiting, no DCS control, no load hold command, no GEN. MW ABN.
+   TRACKING = A005 or the DCS control on. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE194',
+  title: 'TARGET LOAD',
+  page: 134,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [168, 85, 2219, 1547],
+  k: [
+    ['kZero', 295, 241, '0.0', 'sys.ref'],
+    ['kOff', 295, 468, 'OFF(0)', 'sys.ref'],
+    ['kInit', 231, 660, 'INITIAL', 'ref']
+  ],
+  c: [
+    ['iTrc', 'in', 'C', 322, 321, 'TRANSFER REGION COMPLETE(IP)', ['TCE184']],
+    ['iGm', 'in', 'D', 333, 758, '', ['TCE196']], /* two lines (texts) */
+    ['iLm', 'in', 'D', 333, 832, '', ['TCE205']], /* two lines (texts) */
+    ['iIpl', 'in', 'C', 334, 906, 'IP LIMITTING', ['TCE201']],
+    ['iDcs', 'in', 'A', 334, 980, 'DCS CONTROL ON', ['TCE180']],
+    ['iLh', 'in', 'C', 334, 1054, 'LOAD HOLD COMMAND', ['TCE164']],
+    ['iAbn', 'in', 'B', 334, 1118, 'GEN. MW ABN.', ['TCE070']],
+    ['iGen', 'in', 'A', 323, 1231, 'GEN. MW', ['TCE070']],
+    ['oB', 'out', 'B', 2082, 132, 'TRACKING', ['-']],
+    ['oA', 'out', 'A', 2070, 243, 'TARGET LOAD(TCS)', ['TCE195']]
+  ],
+  b: [
+    ['a005', 'A', '005', 793, 283],
+    ['sg002', 'SG', '002', 333, 552, ['K:1.0%']],
+    ['i004', 'I', '004', 1549, 263, ['TI:0.03', 'HL:155.0', 'LL:0.0'], { l: ['X', 'F', 'Z'] }, [79, 64]],
+    ['ftr003', 'o:FTR', '003', 1644, 240],
+    ['or014', 'OR', '014', 1805, 140],
+    ['xm', 'X', '', 1271, 709],
+    /* the permissive */
+    ['or006', 'OR', '006', 621, 766],
+    ['td007', 'TD', '007', 716, 766, ['TD:5.0s']],
+    ['not008', 'NOT', '008', 803, 766],
+    ['not010', 'NOT', '010', 792, 914],
+    ['not011', 'NOT', '011', 792, 988],
+    ['not012', 'NOT', '012', 792, 1062],
+    ['not016', 'NOT', '016', 792, 1126],
+    ['a015', 'A', '015', 1037, 798, [], {}, [59, 107]]
+  ],
+  m: [
+    [
+      'crt',
+      'CRT OPE INC/DEC',
+      'TCE194_A1',
+      909,
+      193,
+      404,
+      321,
+      ['X', 'PERM', 'Z', 'INC', 'RATE', 'DEC', 'HSS', 'LSS'],
+      ['OUT', 'MANU', '', '', '', '', '', ''],
+      '001',
+      [
+        [1017, 530, '(LME025)'],
+        [909, 554, 'DEF HL:1.0'],
+        [930, 576, 'LL:-1.0'],
+        [957, 597, 'K:0.030S']
+      ]
+    ]
+  ],
+  w: [
+    /* the CRT operator INC/DEC */
+    ['kZero', [[530, 240], [909, 240]], 1],
+    ['kZero', [[760, 240], [760, 155], [1500, 155], [1500, 263], [1509, 263]], 1],
+    ['iTrc', [[349, 318], [695, 318], [695, 272], [764, 272]]],
+    ['a005', [[822, 272], [909, 272]]],
+    ['a005', [[868, 272], [868, 129], [1776, 129]]],
+    ['a005', [[1549, 129], [1549, 231]]],
+    ['sg002', [[362, 541], [889, 541], [889, 370], [909, 370]], 1],
+    ['kOff', [[530, 467], [909, 467]]],
+    ['kOff', [[857, 467], [857, 337], [909, 337]]],
+    ['kOff', [[857, 402], [909, 402]]],
+    ['kOff', [[857, 435], [909, 435]]],
+    ['crt.OUT', [[1313, 240], [1509, 240]], 1],
+    /* the target load */
+    ['i004', [[1589, 240], [2043, 240]], 1],
+    ['i004', [[1707, 240], [1707, 709], [835, 709], [835, 305], [909, 305]], 1],
+    ['iGen', [[350, 1228], [1486, 1228], [1486, 285], [1509, 285]], 1],
+    /* tracking */
+    ['iDcs', [[361, 977], [763, 977]]],
+    ['iDcs', [[728, 977], [728, 1030], [1731, 1030], [1731, 151], [1776, 151]]],
+    ['or014', [[1834, 129], [2055, 129]]],
+    /* the permissive */
+    ['kInit', [[466, 659], [716, 659], [716, 745]]],
+    ['iGm', [[360, 755], [592, 755]]],
+    ['iLm', [[360, 829], [582, 829], [582, 777], [592, 777]]],
+    ['or006', [[650, 755], [687, 755]]],
+    ['td007', [[745, 755], [774, 755]]],
+    ['not008', [[832, 755], [1008, 755]]],
+    ['iIpl', [[361, 903], [763, 903]]],
+    ['not010', [[821, 903], [965, 903], [965, 776], [1008, 776]]],
+    ['not011', [[821, 977], [976, 977], [976, 798], [1008, 798]]],
+    ['iLh', [[361, 1051], [763, 1051]]],
+    ['not012', [[821, 1051], [986, 1051], [986, 819], [1008, 819]]],
+    ['iAbn', [[361, 1115], [763, 1115]]],
+    ['not016', [[821, 1115], [997, 1115], [997, 840], [1008, 840]]],
+    ['a015', [[1066, 755], [1120, 755], [1120, 630], [751, 630], [751, 294], [764, 294]]]
+  ],
+  t: [
+    [375, 688, '(TCE050)'],
+    [365, 723, 'GOV MANUAL'],
+    [365, 745, 'OPRATION'],
+    [365, 798, 'LLM MANUAL'],
+    [365, 819, 'OPRATION'],
+    [668, 744, 'T'],
+    [238, 1522, 'CONTROLLER:'],
+    [398, 1522, 'EHG+MD'],
+    [622, 1493, 'TRIGGER  :'],
+    [622, 1519, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE195.js ---- */
+/* TCE195 GOVERNOR CONTROL(1) (331DM09784 page 135, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of
+   the page rendered 2296 wide. The MW demand (ASW024: the target MW demand in DCS control mode, else the target load (TCS)) minus
+   GEN. MW, through LMS 027 (limits PA2 027: the load up / down rate (or +/-0.06 in runback) x 2.5) and G 021 (K 1, site adjustment for
+   the DCS interface), is the PI controller PIV C022 (G1 0.05, G2 1.0, TI 5.0, -5.0 .. 110.0) that tracks GOV.SET in INITIAL.
+   GOV.CONTROL SIGNAL = ASW004 (governing mode): the speed control signal, or ASW003 (TCE184 C): the PIV output or ASW015 (load up or
+   initial load control mode): the load control signal, or the heat soak reset speed steps (-0.01 / +0.01 %, else 0.0). CCS SET POINT =
+   the MW demand, CCS ACTUAL SET = GOV.SET. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE195',
+  title: 'GOVERNOR CONTROL(1)',
+  page: 135,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [172, 82, 2227, 1550],
+  k: [
+    ['kGov', 290, 141, 'GOVERNING MODE', 'ref'],
+    ['kInit', 857, 183, 'INITIAL', 'ref'],
+    ['kZero', 963, 502, '0.0', 'sys.ref'],
+    ['kZero2', 288, 1270, '0.0', 'sys.ref']
+  ],
+  c: [
+    ['iDcs', 'in', 'A', 308, 218, 'DCS CONTROL MODE ON', ['TCE180']],
+    ['iTmw', 'in', 'A1', 308, 282, 'TARGET MW DEMAND', ['TCE103']],
+    ['iRb', 'in', 'C', 308, 335, 'RUNBACK COMMAND', ['-'], 1],
+    ['iLur', 'in', 'A', 308, 453, 'LOAD UP RATE', ['TCE185']],
+    ['iLdr', 'in', 'B', 308, 570, 'LOAD DOWN RATE', ['TCE185']],
+    ['iGmw', 'in', 'A', 308, 633, 'GEN. MW', ['TCE070']],
+    ['iGov', 'in', 'A', 308, 717, 'GOV.SET', ['TCE196']],
+    ['iTl', 'in', 'A', 308, 771, 'TARGET LOAD(TCS)', ['TCE194']],
+    ['iLum', 'in', 'B', 308, 825, 'LOAD UP or INIT LOAD CONTROL MODE', ['TCE191']],
+    ['iLcs', 'in', 'A', 308, 921, 'LOAD CONTROL SIGNAL', ['TCE191']],
+    ['iDec', 'in', 'B', 308, 994, 'DEC.SPEED(HEAT SOAK RESET)', ['TCE179']],
+    ['iInc', 'in', 'A', 308, 1134, 'INC.SPEED(HEAT SOAK RESET)', ['TCE179']],
+    ['iSpd', 'in', 'A', 308, 1343, 'SPEED CONTROL SIGNAL', ['TCE169']],
+    ['iC', 'in', 'C', 1343, 186, '', []], /* the ref stands under the circle (text) */
+    ['oGov', 'out', 'A', 2089, 282, 'GOV.CONTROL SIGNAL', ['TCE196', 'TCE205']],
+    ['oB1', 'out', 'B1', 2077, 631, 'CCS SET POINT', ['TCE610']],
+    ['oD1', 'out', 'D1', 2087, 771, '', ['-']],
+    ['oC1', 'out', 'C1', 2085, 939, 'CCS ACTUAL SET', ['-'], 1]
+  ],
+  d: [
+    ['dA1', 2031, 556, 'out', 'TCE195_A1', 'S', '#1C'],
+    ['dA2', 2031, 864, 'out', 'TCE195_A2', 'S', '#1C']
+  ],
+  b: [
+    /* the MW demand and the PI control */
+    ['asw024', 'ASW', '024', 617, 290],
+    ['sub001', 'SUB', '001', 885, 290],
+    ['lms027', 'LMS', '027', 1012, 290],
+    ['g021', 'G', '021', 1119, 290, ['K:1']],
+    ['pivC022', 'PIV', '022', 1280, 302, ['G1:0.05', 'G2:1.0', 'TI:5.0', 'HL:110.0', 'LL:-5.0', 'ML:110.0'], { l: ['X', 'F', 'Z'] }, [79, 64]],
+    ['asw003', 'ASW', '003', 1438, 290],
+    ['asw004', 'ASW', '004', 1576, 290],
+    /* the rate limits */
+    ['sgC005', 'SG', 'C005', 436, 375],
+    ['asw006', 'ASW', '006', 650, 375],
+    ['g028', 'G', '028', 926, 375, ['K:2.5']],
+    ['pa2027', 'PA2', '027', 1045, 375, [], {}, [59, 85]],
+    ['sgC008', 'SG', 'C008', 436, 504],
+    ['asw009', 'ASW', '009', 671, 504],
+    ['g029', 'G', '029', 926, 448, ['K:2.5']],
+    /* the load control signal and the heat soak reset */
+    ['asw015', 'ASW', '015', 1106, 928],
+    ['sgB017', 'SG', 'B017', 434, 1056],
+    ['asw018', 'ASW', '018', 946, 1056],
+    ['sgB019', 'SG', 'B019', 434, 1195],
+    ['asw020', 'ASW', '020', 786, 1195],
+    /* the CCS outputs */
+    ['ftr011', 'o:FTR', '011', 1268, 554],
+    ['ftr012', 'o:FTR', '012', 1574, 554],
+    ['ftr013', 'o:FTR', '013', 1574, 628],
+    ['ftr023', 'o:FTR', '023', 1573, 768],
+    ['ftr014', 'o:FTR', '014', 1574, 862],
+    ['ftr016', 'o:FTR', '016', 1574, 936]
+  ],
+  w: [
+    /* the MW demand and the PI control */
+    ['iDcs', [[335, 215], [617, 215], [617, 269]]],
+    ['iTmw', [[335, 279], [588, 279]], 1],
+    ['iTl', [[335, 768], [576, 768], [576, 301], [588, 301]], 1],
+    ['asw024', [[646, 279], [856, 279]], 1],
+    ['asw024', [[820, 279], [820, 554], [2007, 554]], 1],
+    ['asw024', [[1520, 554], [1520, 628], [2050, 628]], 1],
+    ['iGmw', [[335, 630], [842, 630], [842, 301], [856, 301]], 1],
+    ['sub001', [[914, 279], [983, 279]], 1],
+    ['lms027', [[1041, 279], [1090, 279]], 1],
+    ['g021', [[1148, 279], [1240, 279]], 1],
+    ['kInit', [[1092, 182], [1280, 182], [1280, 270]]],
+    ['kZero', [[1198, 501], [1217, 501], [1217, 302], [1240, 302]], 1],
+    ['iGov', [[335, 714], [1227, 714], [1227, 324], [1240, 324]], 1],
+    ['iGov', [[776, 714], [776, 862], [2007, 862]], 1],
+    ['iGov', [[1518, 862], [1518, 936], [2058, 936]], 1],
+    ['pivC022', [[1320, 279], [1409, 279]], 1],
+    ['iC', [[1370, 183], [1438, 183], [1438, 269]]],
+    ['asw003', [[1467, 279], [1547, 279]], 1],
+    ['kGov', [[525, 140], [1576, 140], [1576, 269]]],
+    ['iSpd', [[335, 1340], [1500, 1340], [1500, 301], [1547, 301]], 1],
+    ['asw004', [[1605, 279], [2062, 279]], 1],
+    /* the rate limits */
+    ['iRb', [[335, 332], [650, 332], [650, 354]]],
+    ['iRb', [[596, 332], [596, 462], [671, 462], [671, 483]]],
+    ['sgC005', [[465, 364], [621, 364]], 1],
+    ['iLur', [[335, 450], [610, 450], [610, 386], [621, 386]], 1],
+    ['asw006', [[679, 364], [897, 364]], 1],
+    ['asw006', [[862, 364], [862, 768], [2060, 768]], 1],
+    ['g028', [[955, 364], [1015, 364]], 1],
+    ['sgC008', [[465, 493], [642, 493]], 1],
+    ['iLdr', [[335, 567], [616, 567], [616, 515], [642, 515]], 1],
+    ['asw009', [[700, 493], [884, 493], [884, 437], [897, 437]], 1],
+    ['g029', [[955, 437], [1005, 437], [1005, 385], [1015, 385]], 1],
+    /* the load control signal and the heat soak reset */
+    ['iLum', [[335, 822], [1106, 822], [1106, 907]]],
+    ['iLcs', [[335, 918], [1077, 918]], 1],
+    ['asw015', [[1135, 918], [1398, 918], [1398, 301], [1409, 301]], 1],
+    ['iDec', [[335, 991], [946, 991], [946, 1035]]],
+    ['sgB017', [[463, 1045], [917, 1045]], 1],
+    ['asw018', [[975, 1045], [1053, 1045], [1053, 939], [1077, 939]], 1],
+    ['iInc', [[335, 1131], [786, 1131], [786, 1174]]],
+    ['sgB019', [[463, 1184], [757, 1184]], 1],
+    ['asw020', [[815, 1184], [891, 1184], [891, 1067], [917, 1067]], 1],
+    ['kZero2', [[522, 1269], [734, 1269], [734, 1206], [757, 1206]], 1]
+  ],
+  t: [
+    [437, 168, '(TCE167)'],
+    [1003, 209, '(TCE050)'],
+    [1305, 217, '(TCE184)'],
+    [310, 383, 'K:0.06'],
+    [310, 512, 'K:-0.06'],
+    [308, 1065, 'K:-0.01%'],
+    [318, 1203, 'K:0.01%'],
+    [848, 269, '+'],
+    [848, 290, '-'],
+    [1150, 266, '(*)'],
+    [940, 353, '(HL)'],
+    [962, 418, '(LL)'],
+    [1803, 544, 'CCS SET POINT'],
+    [1801, 852, 'CCS ACTUAL SET'],
+    [527, 1460, '(*) site adjustment for DCS interface'],
+    [240, 1525, 'CONTROLLER:'],
+    [402, 1525, 'EHG+MD'],
+    [625, 1497, 'TRIGGER  :'],
+    [625, 1523, 'CYCLE(ms):30']
   ]
 });
 
@@ -134139,7 +134667,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 0840d8a'));
+    row('Version', E('span', 'scsver', ver + ' · build 1288e15'));
   }
   function openSet(near) {
     if (!set) {
