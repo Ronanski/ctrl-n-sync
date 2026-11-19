@@ -31,6 +31,7 @@ function anEngAPI() {
     turbine: anTurbine,
     tcs: () => tcsState(),
     tcsGov: () => tcsGovState(AN_UNIT),
+    tcsVt: () => tcsVtState(AN_UNIT),
     gen: () => anGenEl(),
     elec: () => anElec(),
     unitRestart: k => anUnitRestart(k),
