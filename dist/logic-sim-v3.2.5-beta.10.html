@@ -17180,6 +17180,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [176, 88, 2226, 1553],
+  /* live: TURBINE VALVE TEST, any valve test on (tcs.js tcsLiveRead) */
+  live: { or017: 'vtOn' },
   c: [
     ['oH1', 'out', 'H1', 2087, 148, 'CRV(A) FULL CLOSE TEST PERMISSIVE', ['TCE226']],
     ['oH2', 'out', 'H2', 2087, 297, 'CRV(B) FULL CLOSE TEST PERMISSIVE', ['TCE226']],
@@ -17782,6 +17784,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 10,
   f: [166, 80, 2216, 1542],
+  /* live: the valve positions and breakers the engine holds (tcs.js tcsLiveRead) */
+  live: { iCb: '!g52', iMa: 'msvAc', iMb: 'msvBc', iRa: 'rsvAc', iRb: 'rsvBc', iIa: 'icvAc', iIb: 'icvBc', iCa: 'cvAc', iCbv: 'cvBc', k52g: 'g52', i52l: 'l52o' },
   k: [
     ['kInit', 228.5, 882, 'INITIAL', 'ref'],
     ['k52g', 230, 1169, '52G CLOSE', 'ref']
@@ -69000,7 +69004,18 @@ function tcsLiveRead(U) {
     ostMain: o.main ? 1 : 0,
     ostBk: o.bk ? 1 : 0,
     patMain: +o.pmain || 0 /* overspeed test pattern (MAIN), rpm above the target */,
-    patBk: +o.pbk || 0
+    patBk: +o.pbk || 0,
+    /* TCE250 / TCE224: the valve positions of the valve test model (tcsVtMsv / Cv / Rsv, the ICV of side A / B); full close = at 0 */
+    msvAc: tcsVtMsv(U, 'A') <= 0 ? 1 : 0,
+    msvBc: tcsVtMsv(U, 'B') <= 0 ? 1 : 0,
+    cvAc: tcsVtCv(U, 'A') <= 0 ? 1 : 0,
+    cvBc: tcsVtCv(U, 'B') <= 0 ? 1 : 0,
+    rsvAc: tcsVtRsv(U, 'A') <= 0 ? 1 : 0,
+    rsvBc: tcsVtRsv(U, 'B') <= 0 ? 1 : 0,
+    icvAc: (tb.icv || 0) * tcsVtIcvS(U, 'A') <= 0 ? 1 : 0,
+    icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
+    l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
+    vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */
   };
 }
 function tcsOstPerm(U, m) {
@@ -78620,7 +78635,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 3c9ef6f'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 353ed7b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -116125,6 +116140,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [176, 88, 2226, 1553],
+  /* live: TURBINE VALVE TEST, any valve test on (tcs.js tcsLiveRead) */
+  live: { or017: 'vtOn' },
   c: [
     ['oH1', 'out', 'H1', 2087, 148, 'CRV(A) FULL CLOSE TEST PERMISSIVE', ['TCE226']],
     ['oH2', 'out', 'H2', 2087, 297, 'CRV(B) FULL CLOSE TEST PERMISSIVE', ['TCE226']],
@@ -116735,6 +116752,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 10,
   f: [166, 80, 2216, 1542],
+  /* live: the valve positions and breakers the engine holds (tcs.js tcsLiveRead) */
+  live: { iCb: '!g52', iMa: 'msvAc', iMb: 'msvBc', iRa: 'rsvAc', iRb: 'rsvBc', iIa: 'icvAc', iIb: 'icvBc', iCa: 'cvAc', iCbv: 'cvBc', k52g: 'g52', i52l: 'l52o' },
   k: [
     ['kInit', 228.5, 882, 'INITIAL', 'ref'],
     ['k52g', 230, 1169, '52G CLOSE', 'ref']
@@ -163588,7 +163607,18 @@ function tcsLiveRead(U) {
     ostMain: o.main ? 1 : 0,
     ostBk: o.bk ? 1 : 0,
     patMain: +o.pmain || 0 /* overspeed test pattern (MAIN), rpm above the target */,
-    patBk: +o.pbk || 0
+    patBk: +o.pbk || 0,
+    /* TCE250 / TCE224: the valve positions of the valve test model (tcsVtMsv / Cv / Rsv, the ICV of side A / B); full close = at 0 */
+    msvAc: tcsVtMsv(U, 'A') <= 0 ? 1 : 0,
+    msvBc: tcsVtMsv(U, 'B') <= 0 ? 1 : 0,
+    cvAc: tcsVtCv(U, 'A') <= 0 ? 1 : 0,
+    cvBc: tcsVtCv(U, 'B') <= 0 ? 1 : 0,
+    rsvAc: tcsVtRsv(U, 'A') <= 0 ? 1 : 0,
+    rsvBc: tcsVtRsv(U, 'B') <= 0 ? 1 : 0,
+    icvAc: (tb.icv || 0) * tcsVtIcvS(U, 'A') <= 0 ? 1 : 0,
+    icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
+    l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,
+    vtOn: tb.vt && tb.vt.sel ? 1 : 0 /* TURBINE VALVE TEST (TCE224_1) */
   };
 }
 function tcsOstPerm(U, m) {
@@ -198057,7 +198087,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 3c9ef6f'));
+    row('Version', E('span', 'scsver', ver + ' · build 353ed7b'));
   }
   function openSet(near) {
     if (!set) {
