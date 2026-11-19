@@ -29,10 +29,18 @@
       'Fuel and air',
       ['coal', 'limestone-sand', 'oil-burners', 'combustion-air', 'furnace-gas', 'purge-trip', 'sootblowers']
     ],
-    ['Steam', ['drum-steam', 'reheat-steam', 'turbine', 'extraction', 'aux-steam', 'generator']],
+    ['Steam', ['drum-steam', 'reheat-steam', 'extraction', 'aux-steam', 'generator']],
     ['Water', ['feedwater', 'condensate', 'sea-water', 'makeup-cooling', 'sampling']],
-    ['Auxiliaries', ['turbine-oil', 'compressed-air', 'ash']]
+    ['Auxiliaries', ['compressed-air', 'ash']]
   ];
+  /* The turbine has its own control system (TCS) with its own operator station, apart from the DCS of the plant (Hitachi TC-14-116,
+     section 5.1 / 5.2): its pages are a list of their own, reached with the Plant / Turbine switch of the page list. */
+  const TCS_GROUPS = [['', ['turbine', 'turbine-oil']]];
+  const STATIONS = [
+    ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
+    ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
+  ];
+  const stnOf = id => (TCS_GROUPS.some(g => g[1].includes(id)) ? 'turbine' : 'plant');
   /* the five numbers of the unit: the keys of the plant model that the unit overview of the app reads */
   const NUMS = [
     ['Load', 'MW', 'MW', 1],
@@ -61,7 +69,9 @@
     mem.set('page', id);
     setTimeout(paint, 50);
   };
-  let root,
+  let stn = 'plant',
+    stnSeg,
+    root,
     list,
     title,
     tabs,
@@ -136,6 +146,14 @@
       hide = E('button', 'st-t', '‹ Hide');
     hide.setAttribute('aria-label', 'Hide the page list');
     unit.append(hide);
+    stnSeg = E('div', 'st-stn');
+    for (const [k, t, tip] of STATIONS) {
+      const b = E('button', 'st-b', t);
+      b._k = k;
+      b.title = tip;
+      b.onclick = () => setStn(k);
+      stnSeg.append(b);
+    }
     list = E('div', 'st-list');
     /* Engineer: the logic sheets instead of the plant pages */
     sheets = E('div', 'st-list');
@@ -158,7 +176,7 @@
     verB.title = 'Version, update and channel';
     verB.onclick = about;
     foot.append(mode, insB, verB);
-    rail.append(unit, list, sheets, foot);
+    rail.append(unit, stnSeg, list, sheets, foot);
     const top = E('header', 'st-top'),
       show = E('button', 'st-b', 'Pages ›');
     show.hidden = true;
@@ -257,8 +275,13 @@
       almPop.hidden = false;
       tick();
     };
+    fillPages();
+  }
+  /* the page list of the station that is shown (Plant or Turbine) */
+  function fillPages() {
     const P = pages();
-    for (const [g, ids] of GROUPS) {
+    list.textContent = '';
+    for (const [g, ids] of STATIONS.find(x => x[0] === stn)[3]) {
       const have = ids.filter(i => P[i]);
       if (!have.length) continue;
       if (g) list.append(E('div', 'st-grp', g));
@@ -269,12 +292,28 @@
         list.append(b);
       }
     }
+    for (const b of stnSeg.children) {
+      b.classList.toggle('on', b._k === stn);
+      b.setAttribute('aria-pressed', String(b._k === stn));
+    }
+  }
+  /* the operator moves to the other station: its page list, and the page that was open there last */
+  function setStn(k) {
+    if (k === stn) return;
+    stn = k;
+    fillPages();
+    const P = pages(),
+      ids = STATIONS.find(x => x[0] === k)[3].flatMap(g => g[1]).filter(i => P[i]),
+      last = mem.get('page-' + k);
+    if (ids.length) go(ids.includes(last) ? last : ids[0]);
+    setTimeout(paint, 60);
   }
   /* Engineer shows the logic view of the app (its own drawing, zoom and trace) inside the station; Operator shows the plant pages */
   function setEng(on) {
     eng = !!on;
     document.body.classList.toggle('st-eng', eng);
     list.hidden = eng;
+    stnSeg.hidden = eng;
     sheets.hidden = !eng;
     if (eng) {
       call(() => lsSetTab('logic'));
@@ -934,6 +973,12 @@
   function paint() {
     const c = cur(),
       P = pages();
+    /* a page opened from somewhere else (a link of a drawing, a save point) brings its own station with it */
+    if (c && stnOf(c) !== stn) {
+      stn = stnOf(c);
+      fillPages();
+    }
+    if (c) mem.set('page-' + stn, c);
     const ci = eng ? curSheet() : -1;
     title.textContent = eng ? curTitle() : P[c] || '';
     tabs.hidden = eng;
