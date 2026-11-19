@@ -901,6 +901,17 @@
   /* Start-up criteria: the criteria of the automatic turbine start-up as the turbine control of the app holds them (AN.tcs():
      drawings 310SC90-775 / 776). A criterion that is not met can be bypassed, one at a time, with the app's own command. */
   const crit = {};
+  const STEPS = [
+    ['warm', 'HP turbine warming'],
+    ['prep', 'Preparation'],
+    ['rub', 'Turbine rub check'],
+    ['accel', 'Acceleration'],
+    ['excite', 'Excitation'],
+    ['sync', 'Synchronizing and initial load'],
+    ['loadup', 'Load up'],
+    ['normal', 'Normal operation'],
+    ['shutdown', 'Turbine shut-down']
+  ];
   function criteria() {
     const T = call(() => AN.tcs(), null);
     if (!T || !T.crit) {
@@ -921,7 +932,11 @@
         .split('; ')
         .map(x => x.split(' ')[0])
         .filter(k => T.crit[k]);
-    const key = all.map(c => c.no + (c.ok ? 1 : 0) + (byp.includes(c.no) ? 'b' : '')).join() + '|' + need.join() + '|' + T.cur;
+    const auto = !!(T.aux && T.aux.auto);
+    const key =
+      all.map(c => c.no + (c.ok ? 1 : 0) + (byp.includes(c.no) ? 'b' : '')).join() +
+      '|' +
+      [need.join(), T.cur, T.step, auto, T.hold ? 1 : 0].join('|');
     const val = c => (c.val != null && isFinite(c.val) ? fmt(c.val, Math.abs(c.val) < 2 ? 2 : 1) : '');
     const armed = !!ownPg.querySelector('.arm');
     if (key !== crit.key && !armed) {
@@ -938,6 +953,38 @@
         head.append(d);
       }
       N1.push(head);
+      /* the push buttons of the automatic start-up (TCS HMI faceplates TCA501 ATS MODE SELECT, TCA520 ~ 528 the nine steps, TCE164
+         SPEED / LOAD HOLD): each presses the app's own turbine command; what the turbine control refuses is shown in its words */
+      crit.msg = crit.msg || E('p', 'st-pm');
+      const say = m => {
+        crit.msg.textContent = m ? String(m) : '';
+        crit.key = '';
+        setTimeout(tick, 150);
+      };
+      const act = E('div', 'st-row st-pa'),
+        au = E('button', 'st-b' + (auto ? ' on' : ''), 'Automatic start-up'),
+        hd = E('button', 'st-b', 'Hold'),
+        ho = E('button', 'st-b', 'Hold off');
+      au.setAttribute('aria-pressed', String(auto));
+      au.title = auto
+        ? 'On: each step starts by itself when its criteria are met. Press for off'
+        : 'Off: the operator starts each step. Press for on';
+      au.onclick = () => say(call(() => AN.turbine('auto', auto ? 0 : 1), ''));
+      hd.title = 'Holds the speed or the load where it is';
+      hd.onclick = () => say(call(() => AN.turbine('hold', 1), ''));
+      ho.title = 'Lets the start-up go on, if no hold condition stands';
+      ho.onclick = () => say(call(() => AN.turbine('holdoff'), ''));
+      act.append(au, hd, ho);
+      N1.push(act);
+      const steps = E('div', 'st-row st-steps');
+      STEPS.forEach(([cmd, name], i) => {
+        const b = E('button', 'st-b' + (i === T.cur ? ' on' : ''), name);
+        b.title = i === T.cur ? 'In progress' : i <= T.step ? 'Complete' : 'Starts this step, if its criteria are met';
+        if (i <= T.step && i !== T.cur) b.classList.add('done');
+        arm(b, name, () => say(call(() => AN.turbine(cmd), '')));
+        steps.append(b);
+      });
+      N1.push(E('h2', 'st-h', 'Steps'), steps, crit.msg);
       const sec = (t, L) => {
         if (!L.length) return;
         N1.push(E('h2', 'st-h', t));
