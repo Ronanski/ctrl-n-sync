@@ -342,7 +342,7 @@
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag, sheets of the output connector] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
+     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -360,12 +360,13 @@
       OY = [1141, 1161, 1182, 1204],
       OX = [1485, 1432, 1379, 1303],
       OL = 1540;
-    o.g.forEach(([name, il, ol, im, om, no, tag, ref], g) => {
+    o.g.forEach(([name, il, ol, im, om, no, tag, ref, ir, x = {}], g) => {
       const top = o.tops[g],
         k = 'tid' + (g + 1),
         p = i => pin(top, i),
         last = g === 3,
-        ye = last ? 1237 : p(4),
+        ye = last ? (x.el ? 1249 : 1237) : p(4) + (x.ey || 0),
+        ex = last ? 1655 : 1647,
         /* the names: one name for the whole block (with o.line2 under it), or { in: [lines of each input], out: [lines of the lamp, of the connector,
            of the input error] } as the drawing prints them; the last line of a name stands on its wire */
         nm =
@@ -377,7 +378,7 @@
         [BX + 90, top + 172, 'TP:3.0'],
         [BX + 105, top + 246, '(LME105)']
       ]]);
-      ['TCP1050', 'TCP2050', 'TCP3050'].forEach((r, i) => {
+      (ir || ['TCP1050', 'TCP2050', 'TCP3050']).forEach((r, i) => {
         const key = 'i' + (g + 1) + (i + 1),
           y = p(2 * i);
         const N = nm.in[i];
@@ -386,17 +387,39 @@
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
         w.push([key, [[307, y], [BX, y]]]);
       });
-      /* OUT: the lamp and the connector */
-      d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
-      c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']], ['o' + ol + '1', 'out', ol + '1', 2092, ye, '', ['-']]);
-      b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64], ['mo' + (g + 1) + 'c', 'o:BTR', om[2], last ? 1655 : 1647, ye]);
-      w.push([k + '.OUT', [[BX + BW, p(0)], [2070, p(0)]]], [k + '.OUT', [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
-      lines(nm.out[0], 1716, p(0));
-      lines(nm.out[1], 1716, p(0) + 64);
+      if (x.two) {
+        /* OUT: a connector and, under it, a second one; no lamp */
+        c.push(['o' + ol, 'out', ol, 2103, p(0), '', ref || ['-']], ['o' + x.two[0], 'out', x.two[0], 2103, p(0) + 56, '', x.two[1], 1]);
+        b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)]);
+        w.push([k + '.OUT', [[BX + BW, p(0)], [2076, p(0)]]], [k + '.OUT', [[1963, p(0)], [1963, p(0) + 56], [2076, p(0) + 56]]]);
+        lines(nm.out[0], 1722, p(0));
+      } else {
+        /* OUT: the lamp and the connector */
+        d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
+        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']]);
+        b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
+        w.push([k + '.OUT', [[BX + BW, p(0)], [2070, p(0)]]], [k + '.OUT', [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
+        lines(nm.out[0], 1716, p(0));
+        lines(nm.out[1], 1716, p(0) + 64);
+      }
+      /* DEV E: the connector (with x.el a lamp, and the connector under it) and the OR */
+      const yc = x.el ? ye + 64 : ye,
+        xe = x.el ? 2070 : 2065;
+      if (x.el) {
+        d.push(['crte' + (g + 1), 2105, ye, 'out', x.el, 'S', '#1C']);
+        b.push(['mo' + (g + 1) + 'd', 'o:BTR', om[3], ex, yc]);
+        w.push([k + '.DEV E', [[1539, ye], [1539, yc], [2065, yc]]]);
+        lines(nm.out[3] || nm.out[2], last ? 1713 : 1704, yc);
+      }
+      c.push(['o' + ol + '1', 'out', ol + '1', 2092, yc, '', ['-']]);
+      b.push(['mo' + (g + 1) + 'c', 'o:BTR', om[2], ex, ye]);
       lines(nm.out[2], last ? 1713 : 1704, ye);
-      /* DEV E: the connector and the OR */
-      if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [2065, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
-      else w.push([k + '.DEV E', [[BX + BW, ye], [2065, ye]]], [k + '.DEV E', [[OX[g], ye], [OX[g], OY[g]], [OL, OY[g]]]]);
+      if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [xe, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
+      else
+        w.push(
+          [k + '.DEV E', x.ey ? [[BX + BW, p(4)], [1535, p(4)], [1535, ye], [xe, ye]] : [[BX + BW, ye], [xe, ye]]],
+          [k + '.DEV E', [[OX[g], p(4)], [OX[g], OY[g]], [OL, OY[g]]]]
+        );
     });
     b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
     c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
