@@ -1461,6 +1461,8 @@
         g: GROUPS_OF[grp] || SHEETS[sh] || '',
         label: h.dataset.label || '',
         state: st ? st.textContent.trim() : '',
+        /* the row of the logic sheet the condition is read from ("DITL-01|i|1"): the app can say which object it belongs to */
+        dy: (/data-dy="([^"]+)"/.exec(hk) || [])[1] || '',
         k: h.classList.contains('run') ? 'run' : h.classList.contains('stop') ? 'stop' : ''
       });
     }
@@ -1483,6 +1485,118 @@
   const GROUPS_OF = { PP: 'Purge permissive' };
   const title1 = t => t || 'Conditions';
 
+  /* from a condition to its object: the page of the object, its faceplate opened by the page's own press, the object marked for a moment */
+  function jump(tg) {
+    const P = pages();
+    if (tg.page && P[tg.page] && cur() !== tg.page) go(tg.page);
+    let n = 0;
+    const t = setInterval(() => {
+      const el = [...document.querySelectorAll('#plantws [data-open]')].find(x => x.dataset.open === tg.open);
+      if (!el && ++n < 20) return;
+      clearInterval(t);
+      if (!el) return;
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: el.getBoundingClientRect().left + 4, clientY: el.getBoundingClientRect().top + 4 }));
+      const M = [el];
+      if (tg.mark) for (const x of document.querySelectorAll('#plantws .hx-process text')) if (x.textContent.includes(tg.mark)) M.push(x);
+      M.forEach(x => x.classList.add('st-mark'));
+      setTimeout(() => M.forEach(x => x.classList.remove('st-mark')), 5000);
+      setTimeout(tick, 200);
+    }, 150);
+  }
+  /* The trend of a faceplate: the measured value, the set point and the output of its controller or valve over the last 10 or 30 minutes,
+     as the app has kept them (AN.fpHist(key, seconds), one sample a second). A button "Trend" on the faceplate opens it. */
+  const trend = { key: '', span: 600 };
+  let trendPop = null;
+  function trendOpen(key, name) {
+    if (!trendPop) {
+      trendPop = popup('Trend', '', 380);
+      trendPop.style.right = '12px';
+      trendPop.style.top = '56px';
+      const row = E('div', 'st-row');
+      trend.b = [];
+      for (const [sec, t] of [
+        [600, '10 minutes'],
+        [1800, '30 minutes']
+      ]) {
+        const b = E('button', 'st-b', t);
+        b.onclick = () => {
+          trend.span = sec;
+          trendDraw();
+        };
+        b._s = sec;
+        trend.b.push(b);
+        row.append(b);
+      }
+      trend.box = E('div', 'st-trend');
+      trend.leg = E('div', 'st-tleg');
+      trendPop._body.append(row, trend.box, trend.leg);
+    }
+    trend.key = key;
+    trendPop._sub.textContent = name || key;
+    trendPop.hidden = false;
+    trendDraw();
+  }
+  function trendDraw() {
+    if (!trendPop || trendPop.hidden || !trend.key) return;
+    for (const b of trend.b) {
+      b.classList.toggle('on', b._s === trend.span);
+      b.setAttribute('aria-pressed', String(b._s === trend.span));
+    }
+    const H = call(() => AN.fpHist(trend.key, trend.span), null);
+    if (!H || !H.t || H.t.length < 2) {
+      trend.box.replaceChildren(E('p', 'st-none', 'No history yet for this faceplate. It is kept from the moment the app starts.'));
+      trend.leg.replaceChildren();
+      return;
+    }
+    const W = 340,
+      Ht = 140,
+      t1 = H.t[H.t.length - 1],
+      t0 = t1 - trend.span,
+      ok = v => v != null && isFinite(v),
+      all = [...(H.pv || []), ...(H.sp || [])].filter(ok);
+    let lo = ok(H.lo) ? H.lo : Math.min(...all),
+      hi = ok(H.hi) ? H.hi : Math.max(...all);
+    if (!(hi > lo)) {
+      lo -= 1;
+      hi += 1;
+    }
+    const path = (A, a, z) =>
+      (A || [])
+        .map((v, i) => (ok(v) && H.t[i] >= t0 ? ((W * (H.t[i] - t0)) / trend.span).toFixed(1) + ',' + (Ht - (Ht * (v - a)) / (z - a)).toFixed(1) : ''))
+        .filter(Boolean)
+        .join(' ');
+    const ns = 'http://www.w3.org/2000/svg',
+      svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + Ht);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Trend of ' + trend.key);
+    for (const [A, cls, a, z] of [
+      [H.mv, 'mv', 0, 100],
+      [H.sp, 'sp', lo, hi],
+      [H.pv, 'pv', lo, hi]
+    ]) {
+      const p = document.createElementNS(ns, 'polyline');
+      p.setAttribute('points', path(A, a, z));
+      p.setAttribute('class', cls);
+      svg.append(p);
+    }
+    trend.box.replaceChildren(svg);
+    const last = A => {
+      const v = (A || []).filter(ok);
+      return v.length ? v[v.length - 1] : null;
+    };
+    const item = (cls, name, v, unit) => {
+      const d = E('span', 'st-tl ' + cls);
+      d.append(E('i'), name + ' ', E('b', '', v == null ? '--' : fmt(v, Math.abs(v) < 100 ? 2 : 1)), ' ' + (unit || ''));
+      return d;
+    };
+    trend.leg.replaceChildren(
+      item('pv', 'Measured', last(H.pv), H.unit),
+      item('sp', 'Set point', last(H.sp), H.unit),
+      item('mv', 'Output', last(H.mv), '%'),
+      E('span', 'st-tl', 'Scale ' + fmt(lo, 1) + ' to ' + fmt(hi, 1) + ' ' + (H.unit || '') + '; output 0 to 100 %')
+    );
+  }
   /* the faceplate of the page (its own popup): it takes the full name of the machine from the page, and it can be dragged by its title */
   function face() {
     faceOf($('#fpop'), '.fpo-h', f => {
@@ -1506,6 +1620,19 @@
     if (f._st) return;
     f._st = 1;
     const h = $(head, f);
+    if (h && typeof window.AN === 'object' && typeof AN.fpHist === 'function') {
+      const tb = document.createElement('button');
+      tb.type = 'button';
+      tb.className = 'st-fptrend';
+      tb.textContent = 'Trend';
+      tb.title = 'The measured value, the set point and the output over the last 10 or 30 minutes';
+      tb.onclick = e => {
+        e.stopPropagation();
+        const key = f.dataset.tag || (($('.fpo-tt > b', f) || {}).textContent || '').trim();
+        trendOpen(key, String(name(f)).replace(/\s+/g, ' ').trim());
+      };
+      h.append(tb);
+    }
     if (h)
       h.addEventListener('pointerdown', e => {
         if (e.target.closest('button')) return;
@@ -1568,6 +1695,7 @@
   function tick() {
     updAsk();
     why();
+    trendDraw();
     if (own !== ownWas) {
       /* another page of the frame: its content is built anew */
       ownWas = own;
@@ -1644,8 +1772,14 @@
         for (const c of C) {
           if (c.g !== last) condPop._body.append(E('div', 'st-cg', title1(c.g)));
           last = c.g;
-          const r = E('div', 'st-cond');
+          /* a condition whose object the app knows is a button: it goes to the page of that object and opens its faceplate */
+          const tg = c.dy ? call(() => AN.condTarget(c.dy), null) : null,
+            r = E(tg && tg.open ? 'button' : 'div', 'st-cond' + (tg && tg.open ? ' st-go' : ''));
           r.append(E('i', c.k ? 'st-dot ' + c.k : 'st-dot'), E('span', '', c.label), E('em', '', c.state));
+          if (tg && tg.open) {
+            r.title = 'Opens ' + (tg.mark || tg.open.split(':')[1] || 'its faceplate');
+            r.onclick = () => jump(tg);
+          }
           condPop._body.append(r);
         }
       }

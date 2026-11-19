@@ -141,3 +141,20 @@ p.st-pm { margin: 16px 0 0; min-height: 18px; }
 .st-gc .st-b.no { color: var(--st-dim); border-style: dashed; }
 /* Lite mode (a slow device): the popups and the tools of the station drop their shadows */
 .st-frame.lite .st-pop, .st-frame.lite .st-tools { box-shadow: none; }
+/* a condition that opens the faceplate of its object */
+button.st-cond.st-go { width: 100%; text-align: left; border-radius: 2px; }
+button.st-cond.st-go:hover { background: #2b333b; }
+button.st-cond.st-go span { text-decoration: underline; text-decoration-color: #5d6873; text-underline-offset: 3px; }
+/* the trend of a faceplate */
+.st-trend { margin-top: 12px; border: 1px solid var(--st-line); background: #14181c; }
+.st-trend svg { display: block; width: 100%; height: auto; }
+.st-trend polyline { fill: none; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.st-trend .pv { stroke: #fff; }
+.st-trend .sp { stroke: #9aa5b0; stroke-dasharray: 5 4; }
+.st-trend .mv { stroke: #6f7b87; stroke-dasharray: 1 3; }
+.st-trend .st-none { padding: 16px 12px; }
+.st-tleg { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-top: 8px; font-size: 12px; color: var(--st-dim); }
+.st-tl i { display: inline-block; width: 16px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 2px solid #fff; }
+.st-tl.sp i { border-top: 2px dashed #9aa5b0; }
+.st-tl.mv i { border-top: 2px dotted #6f7b87; }
+.st-tl b { color: var(--st-tx); font: 600 12px var(--st-num); }
