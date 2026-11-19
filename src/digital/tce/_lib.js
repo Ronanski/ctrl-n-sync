@@ -342,7 +342,7 @@
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it, third: [letter, sheets] of a double-line connector under the input error, fed from the wire of the connector of OUT, src: [letter, sheets] of a connector from another sheet that feeds the lamp and the connector in place of OUT, ex: where the lower or higher input error turns }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], extra { c, d, b, w, t } (more of each), last (mark number of the
+     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it, third: [letter, sheets] of a double-line connector under the input error, fed from the wire of the connector of OUT, src: [letter, sheets] of a connector from another sheet that feeds the lamp and the connector in place of OUT, ex: where the lower or higher input error turns, conn: 1 = OUT goes to its connector only (no lamp) }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], extra { c, d, b, w, t } (more of each), single 1 = the input connectors have a single line, last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -382,7 +382,7 @@
         const key = 'i' + (g + 1) + (i + 1),
           y = p(2 * i);
         const N = nm.in[i];
-        c.push([key, 'in', il, 280, y, N[N.length - 1], [r], 1]);
+        c.push([key, 'in', il, 280, y, N[N.length - 1], [r], o.single ? 0 : 1]);
         if (N.length > 1) t.push([313, y - 32, N[0]]);
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
         w.push([key, [[307, y], [BX, y]]]);
@@ -393,6 +393,12 @@
         b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)]);
         w.push([k + '.OUT', [[BX + BW, p(0)], [2076, p(0)]]], [k + '.OUT', [[1963, p(0)], [1963, p(0) + 56], [2076, p(0) + 56]]]);
         lines(nm.out[0], 1722, p(0));
+      } else if (x.conn) {
+        /* OUT: the connector only, one step lower than OUT */
+        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-']]);
+        b.push(['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
+        w.push([k + '.OUT', [[BX + BW, p(0)], [1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
+        lines(nm.out[1], 1716, p(0) + 64);
       } else {
         /* OUT: the lamp and the connector */
         d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
