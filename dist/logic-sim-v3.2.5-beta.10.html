@@ -4737,6 +4737,380 @@ function tcsSim(s) {
     t: s.t
   });
 })();
+/* TCE043 DIGITAL INPUT(4) (331DM09784 page 22, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   Inputs 17 ~ 32 of the PI/O table TCE901, drawn in the pattern of the digital input sheets (tce/_lib.js). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const s = window.TCE_LIB.di({
+    table: 'TCE901',
+    first: 17,
+    left: [197, 155],
+    right: [1213, 154],
+    rows: [
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['COM CPU(A) RUN', ''], ['TCE465'], ['-']],
+      [['COM CPU(B) RUN', ''], ['TCE465'], ['-']],
+      [['COM P.S.(A) ABNORMAL', ''], ['TCE465'], ['-']],
+      [['COM P.S.(B) ABNORMAL', ''], ['TCE465'], ['-']],
+      [['PLU OPERATED', ''], ['TCE053', 'TCE095', 'TCE170', 'TCE172', 'TCE182'], ['TCP1220', 'TCP1230', 'TCP2220', 'TCP2230', 'TCP3220', 'TCP3230']],
+      [['DI P.S. NORMAL (AXR4)', ''], ['TCE469'], ['-']]
+    ],
+    err: [1341, 1287, 125, 'TCE901-1', 1731, 1976, ['TCE465']]
+  });
+  s.t.push([226, 1522, 'CONTROLLER:'], [388, 1522, 'EHG+MD'], [613, 1496, 'TRIGGER  :'], [613, 1522, 'CYCLE(ms):30']);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE043',
+    title: 'DIGITAL INPUT(4)',
+    page: 22,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [158, 83, 2220, 1546],
+    r: s.r,
+    g: s.g,
+    b: s.b,
+    c: s.c,
+    d: s.d,
+    w: s.w,
+    t: s.t
+  });
+})();
+/* TCE050 CONTROLLER CONDITION(1) (331DM09784 page 23, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE050',
+  title: 'CONTROLLER CONDITION(1)',
+  page: 23,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [175, 84, 2226, 1548],
+  k: [
+    ['kOn1', 289, 215, 'ON(1)', 'sys.ref'],
+    ['kMy', 287, 513, 'MYCTLMST', 'sys.ref'],
+    ['kIso', 287, 588, 'GR1A_ISOLATION', 'sys.ref'],
+    ['kS0', 287, 652, 'SLOT0HARD_ERR', 'sys.ref'],
+    ['kS1', 286, 716, 'SLOT1HARD_ERR', 'sys.ref'],
+    ['kOn2', 286, 779, 'ON(1)', 'sys.ref'],
+    ['kYch', 286, 875, 'YOURCHANGE', 'sys.ref'],
+    ['kYerr', 285, 939, 'YOURCTL1ERR', 'sys.ref'],
+    ['kSt26', 285, 1002, 'GR1A-ST26_NoReceived', 'sys.ref'],
+    ['kSt27', 285, 1066, 'GR1A-ST27_NoReceived', 'sys.ref'],
+    ['kSt20', 284, 1237, 'GR1A-ST20_NoReceived', 'sys.ref'],
+    ['kSt21', 284, 1301, 'GR1A-ST21_NoReceived', 'sys.ref'],
+    ['dCrt', 1873, 150, 'CRT OPE PERM', 'def', 'def'],
+    ['dInit', 1873, 215, 'INITIAL', 'def', 'def'],
+    ['dAnn', 1862, 459, 'ANN RESET', 'def', 'def'],
+    ['dCpu', 1870, 588, 'CPU CHANGE', 'sys.def', 'def'],
+    ['dHmi', 1869, 779, 'TCS HMI SELECTED', 'def', 'def'],
+    ['dMont', 1868, 1002, 'MONT IF NORMAL', 'def', 'def'],
+    ['dDcs', 1866, 1161, 'DCS IF NORMAL', 'def', 'def'],
+    ['dCrtN', 1866, 1237, 'CRT NORMAL', 'def', 'def']
+  ],
+  d: [
+    ['crtIys', 422, 333, 'in', 'TCE050_1_IYS', 'R', '#1C'],
+    ['crtIkr', 422, 387, 'in', 'TCE050_1_IKR', 'R', '#1C'],
+    ['crtIyp', 1895, 279, 'out', 'TCE050_1_IYP', 'S', '#1C'],
+    ['crtIir', 1895, 333, 'out', 'TCE050_1_IIR', 'S', '#1C']
+  ],
+  c: [
+    ['oA1', 'out', 'A1', 2083, 387, '', ['TCT050'], 1],
+    ['oA', 'out', 'A', 2083, 513, '', ['TCP1050', 'TCP2050', 'TCP3050', 'TCA100'], 1],
+    ['oE', 'out', 'E', 1334, 1119, '', ['-']],
+    ['oF', 'out', 'F', 1334, 1161, '', ['TCE051']],
+    ['oG', 'out', 'G', 1334, 1204, '', ['TCE051']],
+    ['oB', 'out', 'B', 1333, 1353, '', ['-']],
+    ['oC', 'out', 'C', 1333, 1396, '', ['TCE051', 'TCE052']],
+    ['oD', 'out', 'D', 1333, 1438, '', ['TCE051']]
+  ],
+  b: [
+    ['tp002', 'TP', 'A002', 700, 225, ['TP:10.0S']],
+    ['a003', 'A', '003', 700, 343],
+    ['td005', 'TD', 'A005', 946, 343, ['TD:0.03S']],
+    ['tw006', 'TW', 'A006', 1074, 343, ['TW:2.0S']],
+    ['not009', 'NOT', '009', 945, 524],
+    ['td010', 'TD', 'A010', 1255, 524, ['TD:1.0S']],
+    ['a012', 'A', '012', 944, 598],
+    ['tp013', 'TP', 'A013', 1071, 598, ['TP:0.2S']],
+    ['or014', 'OR', '014', 1254, 609, [], {}, [58, 64]],
+    ['tp015', 'TP', 'A015', 1391, 598, ['TP:2.0S']],
+    ['dsw016', 'DSW', '016', 1519, 598],
+    ['a017', 'A', '017', 1646, 598],
+    ['td019', 'TD', 'A019', 1069, 822, ['TD:2.0S']],
+    ['dsw020', 'DSW', '020', 1252, 865],
+    ['not021', 'NOT', '021', 1390, 865],
+    ['a022', 'A', '022', 1517, 865],
+    ['not023', 'NOT', '023', 1389, 950],
+    ['not024', 'NOT', '024', 781, 1013],
+    ['or025', 'OR', '025', 942, 1013],
+    ['not027', 'NOT', '027', 781, 1077],
+    ['a028', 'A', '028', 780, 1130],
+    ['not032', 'NOT', '032', 779, 1248],
+    ['or033', 'OR', '033', 940, 1248],
+    ['not035', 'NOT', '035', 779, 1312],
+    ['a036', 'A', '036', 778, 1364],
+    ['btr001', 'o:BTR', '001', 1427, 150],
+    ['btr007', 'o:BTR', '007', 1647, 333],
+    ['btr008', 'o:BTR', '008', 1647, 387],
+    ['btr011', 'o:BTR', '011', 1646, 513],
+    ['btr018', 'o:BTR', '018', 1645, 779],
+    ['btr026', 'o:BTR', '026', 1644, 1002],
+    ['btr029', 'o:BTR', '029', 942, 1161],
+    ['btr031', 'o:BTR', '031', 942, 1204],
+    ['btr030', 'o:BTR', '030', 1643, 1161],
+    ['btr034', 'o:BTR', '034', 1643, 1237],
+    ['btr037', 'o:BTR', '037', 941, 1396],
+    ['btr038', 'o:BTR', '038', 941, 1438]
+  ],
+  w: [
+    /* start pulse: INITIAL, and everything it resets */
+    ['kOn1', [[523, 215], [671, 215]]],
+    ['kOn1', [[626, 215], [626, 183], [700, 183], [700, 204]]],
+    ['tp002', [[729, 215], [1873, 215]]],
+    ['tp002', [[881, 215], [881, 672], [1070, 672], [1070, 800]]],
+    ['tp002', [[881, 555], [1071, 555], [1071, 577]]],
+    ['tp002', [[881, 608], [915, 608]]],
+    ['tp002', [[947, 215], [947, 322]]],
+    ['tp002', [[1074, 215], [1074, 322]]],
+    ['tp002', [[1257, 215], [1257, 503]]],
+    ['tp002', [[1394, 215], [1394, 150], [1873, 150]]],
+    ['tp002', [[1394, 215], [1394, 577]]],
+    ['tp002', [[1597, 215], [1597, 279], [1860, 279]]],
+    /* reset from the operator station */
+    ['crtIys', [[457, 333], [671, 333]]],
+    ['crtIkr', [[457, 387], [647, 387], [647, 354], [671, 354]]],
+    ['a003', [[729, 333], [917, 333]]],
+    ['td005', [[975, 333], [1045, 333]]],
+    ['tw006', [[1103, 333], [1860, 333]]],
+    ['tw006', [[1617, 333], [1617, 387], [2056, 387]]],
+    ['tw006', [[1595, 333], [1595, 513], [2056, 513]]],
+    ['tw006', [[1595, 459], [1862, 459]]],
+    /* change of the controlling CPU */
+    ['kMy', [[521, 513], [916, 513]]],
+    ['kMy', [[859, 513], [859, 693], [1253, 693], [1253, 843]]],
+    ['not009', [[974, 513], [1226, 513]]],
+    ['td010', [[1284, 513], [1520, 513], [1520, 577]]],
+    ['kIso', [[521, 588], [915, 588]]],
+    ['a012', [[973, 588], [1042, 588]]],
+    ['tp013', [[1100, 588], [1225, 588]]],
+    ['kS0', [[521, 652], [1177, 652], [1177, 610], [1225, 610]]],
+    ['kS1', [[520, 716], [1199, 716], [1199, 632], [1225, 632]]],
+    ['or014', [[1283, 588], [1362, 588]]],
+    ['or014', [[1328, 588], [1328, 651], [1466, 651], [1466, 608], [1490, 608]]],
+    ['tp015', [[1420, 588], [1490, 588]]],
+    ['dsw016', [[1548, 588], [1617, 588]]],
+    ['a017', [[1675, 588], [1870, 588]]],
+    ['kOn2', [[520, 779], [1869, 779]]],
+    ['kYch', [[520, 875], [1223, 875]]],
+    ['kYch', [[1017, 875], [1017, 811], [1040, 811]]],
+    ['td019', [[1098, 811], [1197, 811], [1197, 853], [1223, 853]]],
+    ['dsw020', [[1281, 853], [1361, 853]]],
+    ['not021', [[1419, 853], [1488, 853]]],
+    ['kYerr', [[519, 939], [1360, 939]]],
+    ['not023', [[1418, 939], [1464, 939], [1464, 875], [1488, 875]]],
+    ['a022', [[1546, 853], [1592, 853], [1592, 608], [1617, 608]]],
+    /* monitor (MONT) interface */
+    ['kSt26', [[519, 1002], [752, 1002]]],
+    ['kSt26', [[726, 1002], [726, 1161], [1307, 1161]]],
+    ['kSt26', [[726, 1119], [751, 1119]]],
+    ['kSt27', [[519, 1066], [752, 1066]]],
+    ['kSt27', [[706, 1066], [706, 1204], [1307, 1204]]],
+    ['kSt27', [[706, 1140], [751, 1140]]],
+    ['not024', [[810, 1002], [913, 1002]]],
+    ['not027', [[810, 1066], [889, 1066], [889, 1023], [913, 1023]]],
+    ['or025', [[971, 1002], [1868, 1002]]],
+    ['a028', [[809, 1119], [1307, 1119]]],
+    /* operator station (CRT) and DCS interface */
+    ['kSt20', [[518, 1237], [750, 1237]]],
+    ['kSt20', [[726, 1237], [726, 1396], [1306, 1396]]],
+    ['kSt20', [[726, 1353], [749, 1353]]],
+    ['kSt21', [[518, 1301], [750, 1301]]],
+    ['kSt21', [[704, 1301], [704, 1438], [1306, 1438]]],
+    ['kSt21', [[704, 1375], [749, 1375]]],
+    ['not032', [[808, 1237], [911, 1237]]],
+    ['not035', [[808, 1301], [887, 1301], [887, 1258], [911, 1258]]],
+    ['or033', [[969, 1237], [1866, 1237]]],
+    ['or033', [[1590, 1237], [1590, 1161], [1866, 1161]]],
+    ['a036', [[807, 1353], [1306, 1353]]]
+  ],
+  t: [
+    [653, 212, 'C'],
+    [898, 327, 'C'],
+    [1026, 327, 'C'],
+    [1206, 507, 'C'],
+    [1024, 584, 'C'],
+    [1344, 584, 'C'],
+    [1022, 807, 'C'],
+    [453, 329, 'CRT AVAILABLE'],
+    [453, 383, 'RESET'],
+    [592, 534, '(MYCTL:1)'],
+    [1620, 275, 'RESET CRT OPE PERM'],
+    [1535, 329, '(RESET)'],
+    [1716, 329, 'ANN RESET'],
+    [1716, 383, 'ANN RESET'],
+    [1715, 509, 'ANN RESET'],
+    [1049, 1115, 'MONI MAJOR TROUBLE'],
+    [1051, 1157, 'MONI(A) NORECEIVE'],
+    [1051, 1200, 'MONI(B) NORECEIVE'],
+    [1048, 1349, 'HMI MAJOR TROUBLE'],
+    [1050, 1392, 'GW(A) NORECEIVE'],
+    [1050, 1434, 'GW(B) NORECEIVE'],
+    [243, 1531, 'CONTROLLER:'],
+    [400, 1531, 'EHG+MD'],
+    [573, 1504, 'TRIGGER  :'],
+    [573, 1531, 'CYCLE(ms):30']
+  ]
+});
+/* TCE051 CONTROLLER CONDITION(2) (331DM09784 page 24, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   Six "no receive" alarms of the network, each held by a flip-flop until ANN RESET, drawn the same way: flip-flop, lamp of the operator station (CRT)
+   and connector A<n>; then NETWORK IF TROUBLE and the battery error of the controller. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const b = [],
+    c = [],
+    d = [],
+    w = [],
+    t = [];
+  /* [words of the lamp, y of the flip-flop, x of the flip-flop, x of the branch to the OR, y of that OR input, x of the junction to A<n>, x of the BTR marks,
+     x of the lamp, x of A<n>, source of the set input] */
+  const ROWS = [
+    ['ATS(A)CPU NORECEIVE', 327, 914, 1396, 965, 1523, 1565, 1938, 2075, 'kSt12'],
+    ['ATS(B)CPU NORECEIVE', 434, 913, 1373, 986, 1521, 1563, 1937, 2075, 'kSt13'],
+    ['GW(A)CPU NORECEIVE', 541, 912, 1350, 1007, 1520, 1562, 1936, 2074, 'iC'],
+    ['GW(B)CPU NORECEIVE', 647, 911, 1328, 1028, 1519, 1561, 1935, 2073, 'iD'],
+    ['MNT(A)CPU NORECEIVE', 753, 910, 1305, 1049, 1518, 1560, 1934, 2072, 'iF'],
+    ['MNT(B)CPU NORECEIVE', 859, 910, 1283, 1070, 1517, 1559, 1933, 2071, 'iG']
+  ];
+  ROWS.forEach(([name, yc, xc, xb, yo, xj, xm, xl, xa, set], i) => {
+    const n = i + 1,
+      no = k => String(k).padStart(3, '0'),
+      ys = yc - 11 /* the set input and the output */,
+      yr = yc + 11 /* the reset input */,
+      ya = ys + 53; /* the line to connector A<n> */
+    b.push(['ffs' + n, 'FFS', no(6 + 3 * i), xc, yc, [], { l: ['S', 'R'] }, [80, 43]]);
+    b.push(['btrL' + n, 'o:BTR', no(7 + 3 * i), xm, ys], ['btrA' + n, 'o:BTR', no(8 + 3 * i), xm, ya]);
+    d.push(['crt' + n, xl, ys, 'out', 'TCE051_' + n, 'S', '#1C']);
+    c.push(['oA' + n, 'out', 'A' + n, xa, ya, '', ['-'], 1]);
+    w.push(
+      ['ffs' + n, [[xc + 40, ys], [xl - 35, ys]]],
+      ['ffs' + n, [[xj, ys], [xj, ya], [xa - 27, ya]]],
+      ['ffs' + n, [[xb, ys], [xb, yo], [1414, yo]]],
+      ['kAnn', [[837, yr], [xc - 40, yr]]]
+    );
+    t.push([xc - 57, ys - 14, 'C'], [xm + 68, ys - 24, name], [xm + 68, ys - 3, '(EHG)'], [xm + 68, ya - 24, name], [xm + 68, ya - 3, '(EHG)']);
+    if (i > 1) w.push([set, [[321 - (i > 3 ? 1 : 0), ys], [xc - 40, ys]]]);
+  });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE051',
+    title: 'CONTROLLER CONDITION(2)',
+    page: 24,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [157, 80, 2217, 1543],
+    k: [
+      ['kSt12', 277, 147, 'GR1A-ST12_NoReceived', 'sys.ref'],
+      ['kSt13', 277, 210, 'GR1A-ST13_NoReceived', 'sys.ref'],
+      ['kBat', 274, 1113, 'BATTERYERR', 'sys.ref'],
+      ['kAnn', 274, 1177, 'ANN RESET', 'ref'],
+      ['kYd', 273, 1241, 'YOURDATA_D_EX9', 'sys.ref'],
+      ['kMyB', 273, 1316, 'MYCTL-B', 'sys.ref'],
+      ['kYerr', 273, 1380, 'YOURCTL1ERR', 'sys.ref'],
+      ['kMyA', 273, 1443, 'MYCTL-A', 'sys.ref'],
+      ['dAtsN', 1866, 147, 'ATS IF NORMAL', 'def', 'def'],
+      ['dAtsC', 1865, 253, 'ATS AUTO(C)', 'def', 'def'],
+      ['dMyd', 1857, 1188, 'MYDATA_D_EX9', 'sys.def', 'def']
+    ],
+    c: [
+      ['iB', 'in', 'B', 295, 273, 'ATS AUTO', ['TCA501'], 1],
+      ['iC', 'in', 'C', 294, 530, 'ETHER(A) NORECEIVE', ['TCE050']],
+      ['iD', 'in', 'D', 294, 636, 'ETHER(B) NORECEIVE', ['TCE050']],
+      ['iF', 'in', 'F', 293, 742, 'MONI(A) NORECEIVE', ['TCE050']],
+      ['iG', 'in', 'G', 293, 848, 'MONI(B) NORECEIVE', ['TCE050']],
+      ['oA', 'out', 'A', 2071, 965, 'NETWORK IF TROUBLE', ['TCE470']],
+      ['oF', 'out', 'F', 2069, 1113, 'EHG BATTERY ERR', ['TCE470']],
+      ['oB1', 'out', 'B1', 2067, 1304, '', ['-'], 1],
+      ...c
+    ],
+    d: [...d, ['crt7', 1928, 1251, 'out', 'TCE051_7', 'S', '#1C']],
+    b: [
+      ['not001', 'NOT', '001', 724, 157],
+      ['or002', 'OR', '002', 915, 157],
+      ['not003', 'NOT', '003', 723, 221],
+      ['a004', 'A', '004', 1449, 264],
+      ['btr005', 'o:BTR', '005', 723, 273],
+      ...b,
+      ['or024', 'OR', '024', 1442, 1018, [], {}, [58, 126]],
+      ['ffs025', 'FFS', '025', 909, 1124, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or026', 'OR', '026', 1442, 1124],
+      ['a027', 'A', '027', 713, 1252],
+      ['a028', 'A', '028', 904, 1252],
+      ['or029', 'OR', '029', 1103, 1252],
+      ['or030', 'OR', '030', 1270, 1252],
+      ['a032', 'A', '032', 909, 1305],
+      ['a034', 'A', '034', 1101, 1358],
+      ['not035', 'NOT', '035', 590, 1391],
+      ['not036', 'NOT', '036', 908, 1454],
+      ['btr031', 'o:BTR', '031', 1557, 1251],
+      ['btr033', 'o:BTR', '033', 1556, 1304]
+    ],
+    w: [
+      /* ATS interface */
+      ['kSt12', [[512, 147], [695, 147]]],
+      ['kSt12', [[669, 147], [669, 316], [874, 316]]],
+      ['kSt13', [[512, 210], [694, 210]]],
+      ['kSt13', [[648, 210], [648, 423], [873, 423]]],
+      ['not001', [[753, 147], [886, 147]]],
+      ['not003', [[752, 210], [864, 210], [864, 168], [886, 168]]],
+      ['or002', [[944, 147], [1866, 147]]],
+      ['or002', [[1397, 147], [1397, 253], [1420, 253]]],
+      ['iB', [[322, 273], [1420, 273]]],
+      ['a004', [[1478, 253], [1865, 253]]],
+      ...w,
+      /* ANN RESET to the reset input of every flip-flop */
+      ['kAnn', [[510, 1177], [837, 1177], [837, 338]]],
+      ['kAnn', [[837, 1135], [869, 1135]]],
+      ['or024', [[1471, 965], [2044, 965]]],
+      /* battery error of this controller or of the other one */
+      ['kBat', [[510, 1113], [869, 1113]]],
+      ['ffs025', [[949, 1113], [1413, 1113]]],
+      ['ffs025', [[1027, 1113], [1027, 1347], [1072, 1347]]],
+      ['ffs025', [[1027, 1188], [1857, 1188]]],
+      ['kYd', [[510, 1241], [684, 1241]]],
+      ['kYerr', [[510, 1380], [561, 1380]]],
+      ['not035', [[619, 1380], [663, 1380], [663, 1263], [684, 1263]]],
+      ['a027', [[742, 1241], [875, 1241]]],
+      ['a027', [[825, 1241], [825, 1294], [880, 1294]]],
+      ['kMyB', [[510, 1316], [880, 1316]]],
+      ['kMyA', [[510, 1443], [879, 1443]]],
+      ['kMyA', [[846, 1443], [846, 1263], [875, 1263]]],
+      ['a028', [[933, 1241], [1074, 1241]]],
+      ['a032', [[938, 1294], [1048, 1294], [1048, 1263], [1074, 1263]]],
+      ['not036', [[937, 1443], [1027, 1443], [1027, 1369], [1072, 1369]]],
+      ['or029', [[1132, 1241], [1241, 1241]]],
+      ['a034', [[1130, 1347], [1218, 1347], [1218, 1263], [1241, 1263]]],
+      ['or030', [[1299, 1241], [1388, 1241], [1388, 1135], [1413, 1135]]],
+      ['or026', [[1471, 1113], [2042, 1113]]],
+      ['or026', [[1516, 1113], [1516, 1304], [2040, 1304]]],
+      ['or026', [[1516, 1251], [1893, 1251]]]
+    ],
+    t: [
+      ...t,
+      [853, 1100, 'C'],
+      [1625, 1247, 'EHG BATTERY ERR'],
+      [1625, 1300, 'EHG BATTERY ERR'],
+      [225, 1524, 'CONTROLLER:'],
+      [388, 1524, 'EHG+MD'],
+      [610, 1497, 'TRIGGER  :'],
+      [610, 1524, 'CYCLE(ms):30']
+    ]
+  });
+})();
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE172',
@@ -4870,7 +5244,7 @@ function tcsSim(s) {
      l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical
      d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
-     b: [key, type, no, x, y, [notes], {l: [...], r: [...]}]         small block, x y = its centre; no = the block number printed in it; notes = the
+     b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
                                                                      parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
@@ -4927,13 +5301,16 @@ function tceSheet(q) {
     /* a connector drawn with a double line in the drawing */
     if (dbl) poly([...arc(x + w - r, y, r - 2 * u, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r - 2 * u, Math.PI / 2, (3 * Math.PI) / 2)], 1);
     tx.push(text(letter, x, y, 1.9, 4));
-    const R = (refs || []).map(s => '(' + s + ')');
+    const R = (refs || []).map(s => '(' + s + ')'),
+      /* more than four sheets: columns of three, side by side, as the drawing packs them */
+      per = R.length > 4 ? 3 : 4,
+      col = i => Math.floor(i / per) * 34 * u;
     if (dir === 'in') {
       if (name) tx.push(text(name, x + w + 3 * u, y - 5 * u, 2.05, 0));
-      R.forEach((s, i) => tx.push(text(s, x - w - 3 * u, y + (5 + 8 * i) * u, 1.7, 2)));
+      R.forEach((s, i) => tx.push(text(s, x - w - 3 * u - col(i), y + (5 + 8 * (i % per)) * u, 1.7, 2)));
     } else {
       if (name) tx.push(text(name, x - w - 4 * u, y - 5 * u, 2.05, 2));
-      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0)));
+      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
     }
     net(key);
   }
@@ -4965,8 +5342,10 @@ function tceSheet(q) {
       h = 11 * u;
     poly([[x - w, y], [x, y - h], [x + w, y], [x, y + h]], 1);
     tx.push(text('CRT', x, y, 1.6, 4));
-    if (letter) tx.push(text(letter, x, y + h + 7 * u, 1.7, 1));
-    if (note) tx.push(text('(' + note + ')', x, y - h - 4 * u, 1.7, 1));
+    /* the letter and the note stand at the wire side of the diamond, as in the drawing (two diamonds can stand close under each other) */
+    const sd = dir === 'in' ? 1 : -1;
+    if (letter) tx.push(text(letter, x + sd * 9 * u, y + 10 * u, 1.7, 1));
+    if (note) tx.push(text('(' + note + ')', x + sd * 7 * u, y - 9 * u, 1.7, dir === 'in' ? 0 : 2));
     if (tag) tx.push(text(tag, dir === 'in' ? x - w - 4 * u : x + w + 4 * u, y, 1.9, dir === 'in' ? 5 : 3));
     net(key);
   }
@@ -4982,17 +5361,18 @@ function tceSheet(q) {
     poly([[b[0] - ux * k - uy * k * 0.45, b[1] - uy * k + ux * k * 0.45], b, [b[0] - ux * k + uy * k * 0.45, b[1] - uy * k - ux * k * 0.45]], 0);
   }
   /* small blocks: the type over the block number */
-  for (const [key, type, no, x, y, notes, pins] of q.b || []) {
+  for (const [key, type, no, x, y, notes, pins, size] of q.b || []) {
     if (/^o:/.test(type)) {
       /* a mark on the wire (a small circle with its name over it and its number under it), type 'o:BTR' */
       ci.push([X(x), Y(y), W(2.2 * u), 'SYM']);
       tx.push(text(type.slice(2), x, y - 6 * u, 1.7, 1), text(no, x + 8 * u, y + 9 * u, 1.7, 0));
       continue;
     }
-    const w = 14 * u,
-      h = 10.5 * u;
+    /* size [w, h]: a block the drawing makes wider or taller than the usual one (an OR with many inputs, a flip-flop); its type stays at the top, its number at the bottom */
+    const w = size ? size[0] / 2 : 14 * u,
+      h = size ? size[1] / 2 : 10.5 * u;
     poly([[x - w, y - h], [x + w, y - h], [x + w, y + h], [x - w, y + h]], 1);
-    tx.push(text(type, x, y - h / 2, 1.9, 4), text(no, x, y + h / 2, 1.7, 4));
+    tx.push(text(type, x, y - h + 5.25 * u, 1.9, 4), text(no, x, y + h - 5.25 * u, 1.7, 4));
     /* the parameters printed under the block ('TD:30.0S', 'K:36.0'); a note that starts with ^ stands over it (a DEF / DFE tag) */
     let below = 0;
     for (const n of notes || [])
@@ -41830,7 +42210,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build e3e2403'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 3888cf8'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -66045,6 +66425,386 @@ function tcsSim(s) {
   });
 })();
 
+/* ---- src/digital/tce/TCE043.js ---- */
+/* TCE043 DIGITAL INPUT(4) (331DM09784 page 22, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   Inputs 17 ~ 32 of the PI/O table TCE901, drawn in the pattern of the digital input sheets (tce/_lib.js). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const s = window.TCE_LIB.di({
+    table: 'TCE901',
+    first: 17,
+    left: [197, 155],
+    right: [1213, 154],
+    rows: [
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['COM CPU(A) RUN', ''], ['TCE465'], ['-']],
+      [['COM CPU(B) RUN', ''], ['TCE465'], ['-']],
+      [['COM P.S.(A) ABNORMAL', ''], ['TCE465'], ['-']],
+      [['COM P.S.(B) ABNORMAL', ''], ['TCE465'], ['-']],
+      [['PLU OPERATED', ''], ['TCE053', 'TCE095', 'TCE170', 'TCE172', 'TCE182'], ['TCP1220', 'TCP1230', 'TCP2220', 'TCP2230', 'TCP3220', 'TCP3230']],
+      [['DI P.S. NORMAL (AXR4)', ''], ['TCE469'], ['-']]
+    ],
+    err: [1341, 1287, 125, 'TCE901-1', 1731, 1976, ['TCE465']]
+  });
+  s.t.push([226, 1522, 'CONTROLLER:'], [388, 1522, 'EHG+MD'], [613, 1496, 'TRIGGER  :'], [613, 1522, 'CYCLE(ms):30']);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE043',
+    title: 'DIGITAL INPUT(4)',
+    page: 22,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [158, 83, 2220, 1546],
+    r: s.r,
+    g: s.g,
+    b: s.b,
+    c: s.c,
+    d: s.d,
+    w: s.w,
+    t: s.t
+  });
+})();
+
+/* ---- src/digital/tce/TCE050.js ---- */
+/* TCE050 CONTROLLER CONDITION(1) (331DM09784 page 23, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE050',
+  title: 'CONTROLLER CONDITION(1)',
+  page: 23,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [175, 84, 2226, 1548],
+  k: [
+    ['kOn1', 289, 215, 'ON(1)', 'sys.ref'],
+    ['kMy', 287, 513, 'MYCTLMST', 'sys.ref'],
+    ['kIso', 287, 588, 'GR1A_ISOLATION', 'sys.ref'],
+    ['kS0', 287, 652, 'SLOT0HARD_ERR', 'sys.ref'],
+    ['kS1', 286, 716, 'SLOT1HARD_ERR', 'sys.ref'],
+    ['kOn2', 286, 779, 'ON(1)', 'sys.ref'],
+    ['kYch', 286, 875, 'YOURCHANGE', 'sys.ref'],
+    ['kYerr', 285, 939, 'YOURCTL1ERR', 'sys.ref'],
+    ['kSt26', 285, 1002, 'GR1A-ST26_NoReceived', 'sys.ref'],
+    ['kSt27', 285, 1066, 'GR1A-ST27_NoReceived', 'sys.ref'],
+    ['kSt20', 284, 1237, 'GR1A-ST20_NoReceived', 'sys.ref'],
+    ['kSt21', 284, 1301, 'GR1A-ST21_NoReceived', 'sys.ref'],
+    ['dCrt', 1873, 150, 'CRT OPE PERM', 'def', 'def'],
+    ['dInit', 1873, 215, 'INITIAL', 'def', 'def'],
+    ['dAnn', 1862, 459, 'ANN RESET', 'def', 'def'],
+    ['dCpu', 1870, 588, 'CPU CHANGE', 'sys.def', 'def'],
+    ['dHmi', 1869, 779, 'TCS HMI SELECTED', 'def', 'def'],
+    ['dMont', 1868, 1002, 'MONT IF NORMAL', 'def', 'def'],
+    ['dDcs', 1866, 1161, 'DCS IF NORMAL', 'def', 'def'],
+    ['dCrtN', 1866, 1237, 'CRT NORMAL', 'def', 'def']
+  ],
+  d: [
+    ['crtIys', 422, 333, 'in', 'TCE050_1_IYS', 'R', '#1C'],
+    ['crtIkr', 422, 387, 'in', 'TCE050_1_IKR', 'R', '#1C'],
+    ['crtIyp', 1895, 279, 'out', 'TCE050_1_IYP', 'S', '#1C'],
+    ['crtIir', 1895, 333, 'out', 'TCE050_1_IIR', 'S', '#1C']
+  ],
+  c: [
+    ['oA1', 'out', 'A1', 2083, 387, '', ['TCT050'], 1],
+    ['oA', 'out', 'A', 2083, 513, '', ['TCP1050', 'TCP2050', 'TCP3050', 'TCA100'], 1],
+    ['oE', 'out', 'E', 1334, 1119, '', ['-']],
+    ['oF', 'out', 'F', 1334, 1161, '', ['TCE051']],
+    ['oG', 'out', 'G', 1334, 1204, '', ['TCE051']],
+    ['oB', 'out', 'B', 1333, 1353, '', ['-']],
+    ['oC', 'out', 'C', 1333, 1396, '', ['TCE051', 'TCE052']],
+    ['oD', 'out', 'D', 1333, 1438, '', ['TCE051']]
+  ],
+  b: [
+    ['tp002', 'TP', 'A002', 700, 225, ['TP:10.0S']],
+    ['a003', 'A', '003', 700, 343],
+    ['td005', 'TD', 'A005', 946, 343, ['TD:0.03S']],
+    ['tw006', 'TW', 'A006', 1074, 343, ['TW:2.0S']],
+    ['not009', 'NOT', '009', 945, 524],
+    ['td010', 'TD', 'A010', 1255, 524, ['TD:1.0S']],
+    ['a012', 'A', '012', 944, 598],
+    ['tp013', 'TP', 'A013', 1071, 598, ['TP:0.2S']],
+    ['or014', 'OR', '014', 1254, 609, [], {}, [58, 64]],
+    ['tp015', 'TP', 'A015', 1391, 598, ['TP:2.0S']],
+    ['dsw016', 'DSW', '016', 1519, 598],
+    ['a017', 'A', '017', 1646, 598],
+    ['td019', 'TD', 'A019', 1069, 822, ['TD:2.0S']],
+    ['dsw020', 'DSW', '020', 1252, 865],
+    ['not021', 'NOT', '021', 1390, 865],
+    ['a022', 'A', '022', 1517, 865],
+    ['not023', 'NOT', '023', 1389, 950],
+    ['not024', 'NOT', '024', 781, 1013],
+    ['or025', 'OR', '025', 942, 1013],
+    ['not027', 'NOT', '027', 781, 1077],
+    ['a028', 'A', '028', 780, 1130],
+    ['not032', 'NOT', '032', 779, 1248],
+    ['or033', 'OR', '033', 940, 1248],
+    ['not035', 'NOT', '035', 779, 1312],
+    ['a036', 'A', '036', 778, 1364],
+    ['btr001', 'o:BTR', '001', 1427, 150],
+    ['btr007', 'o:BTR', '007', 1647, 333],
+    ['btr008', 'o:BTR', '008', 1647, 387],
+    ['btr011', 'o:BTR', '011', 1646, 513],
+    ['btr018', 'o:BTR', '018', 1645, 779],
+    ['btr026', 'o:BTR', '026', 1644, 1002],
+    ['btr029', 'o:BTR', '029', 942, 1161],
+    ['btr031', 'o:BTR', '031', 942, 1204],
+    ['btr030', 'o:BTR', '030', 1643, 1161],
+    ['btr034', 'o:BTR', '034', 1643, 1237],
+    ['btr037', 'o:BTR', '037', 941, 1396],
+    ['btr038', 'o:BTR', '038', 941, 1438]
+  ],
+  w: [
+    /* start pulse: INITIAL, and everything it resets */
+    ['kOn1', [[523, 215], [671, 215]]],
+    ['kOn1', [[626, 215], [626, 183], [700, 183], [700, 204]]],
+    ['tp002', [[729, 215], [1873, 215]]],
+    ['tp002', [[881, 215], [881, 672], [1070, 672], [1070, 800]]],
+    ['tp002', [[881, 555], [1071, 555], [1071, 577]]],
+    ['tp002', [[881, 608], [915, 608]]],
+    ['tp002', [[947, 215], [947, 322]]],
+    ['tp002', [[1074, 215], [1074, 322]]],
+    ['tp002', [[1257, 215], [1257, 503]]],
+    ['tp002', [[1394, 215], [1394, 150], [1873, 150]]],
+    ['tp002', [[1394, 215], [1394, 577]]],
+    ['tp002', [[1597, 215], [1597, 279], [1860, 279]]],
+    /* reset from the operator station */
+    ['crtIys', [[457, 333], [671, 333]]],
+    ['crtIkr', [[457, 387], [647, 387], [647, 354], [671, 354]]],
+    ['a003', [[729, 333], [917, 333]]],
+    ['td005', [[975, 333], [1045, 333]]],
+    ['tw006', [[1103, 333], [1860, 333]]],
+    ['tw006', [[1617, 333], [1617, 387], [2056, 387]]],
+    ['tw006', [[1595, 333], [1595, 513], [2056, 513]]],
+    ['tw006', [[1595, 459], [1862, 459]]],
+    /* change of the controlling CPU */
+    ['kMy', [[521, 513], [916, 513]]],
+    ['kMy', [[859, 513], [859, 693], [1253, 693], [1253, 843]]],
+    ['not009', [[974, 513], [1226, 513]]],
+    ['td010', [[1284, 513], [1520, 513], [1520, 577]]],
+    ['kIso', [[521, 588], [915, 588]]],
+    ['a012', [[973, 588], [1042, 588]]],
+    ['tp013', [[1100, 588], [1225, 588]]],
+    ['kS0', [[521, 652], [1177, 652], [1177, 610], [1225, 610]]],
+    ['kS1', [[520, 716], [1199, 716], [1199, 632], [1225, 632]]],
+    ['or014', [[1283, 588], [1362, 588]]],
+    ['or014', [[1328, 588], [1328, 651], [1466, 651], [1466, 608], [1490, 608]]],
+    ['tp015', [[1420, 588], [1490, 588]]],
+    ['dsw016', [[1548, 588], [1617, 588]]],
+    ['a017', [[1675, 588], [1870, 588]]],
+    ['kOn2', [[520, 779], [1869, 779]]],
+    ['kYch', [[520, 875], [1223, 875]]],
+    ['kYch', [[1017, 875], [1017, 811], [1040, 811]]],
+    ['td019', [[1098, 811], [1197, 811], [1197, 853], [1223, 853]]],
+    ['dsw020', [[1281, 853], [1361, 853]]],
+    ['not021', [[1419, 853], [1488, 853]]],
+    ['kYerr', [[519, 939], [1360, 939]]],
+    ['not023', [[1418, 939], [1464, 939], [1464, 875], [1488, 875]]],
+    ['a022', [[1546, 853], [1592, 853], [1592, 608], [1617, 608]]],
+    /* monitor (MONT) interface */
+    ['kSt26', [[519, 1002], [752, 1002]]],
+    ['kSt26', [[726, 1002], [726, 1161], [1307, 1161]]],
+    ['kSt26', [[726, 1119], [751, 1119]]],
+    ['kSt27', [[519, 1066], [752, 1066]]],
+    ['kSt27', [[706, 1066], [706, 1204], [1307, 1204]]],
+    ['kSt27', [[706, 1140], [751, 1140]]],
+    ['not024', [[810, 1002], [913, 1002]]],
+    ['not027', [[810, 1066], [889, 1066], [889, 1023], [913, 1023]]],
+    ['or025', [[971, 1002], [1868, 1002]]],
+    ['a028', [[809, 1119], [1307, 1119]]],
+    /* operator station (CRT) and DCS interface */
+    ['kSt20', [[518, 1237], [750, 1237]]],
+    ['kSt20', [[726, 1237], [726, 1396], [1306, 1396]]],
+    ['kSt20', [[726, 1353], [749, 1353]]],
+    ['kSt21', [[518, 1301], [750, 1301]]],
+    ['kSt21', [[704, 1301], [704, 1438], [1306, 1438]]],
+    ['kSt21', [[704, 1375], [749, 1375]]],
+    ['not032', [[808, 1237], [911, 1237]]],
+    ['not035', [[808, 1301], [887, 1301], [887, 1258], [911, 1258]]],
+    ['or033', [[969, 1237], [1866, 1237]]],
+    ['or033', [[1590, 1237], [1590, 1161], [1866, 1161]]],
+    ['a036', [[807, 1353], [1306, 1353]]]
+  ],
+  t: [
+    [653, 212, 'C'],
+    [898, 327, 'C'],
+    [1026, 327, 'C'],
+    [1206, 507, 'C'],
+    [1024, 584, 'C'],
+    [1344, 584, 'C'],
+    [1022, 807, 'C'],
+    [453, 329, 'CRT AVAILABLE'],
+    [453, 383, 'RESET'],
+    [592, 534, '(MYCTL:1)'],
+    [1620, 275, 'RESET CRT OPE PERM'],
+    [1535, 329, '(RESET)'],
+    [1716, 329, 'ANN RESET'],
+    [1716, 383, 'ANN RESET'],
+    [1715, 509, 'ANN RESET'],
+    [1049, 1115, 'MONI MAJOR TROUBLE'],
+    [1051, 1157, 'MONI(A) NORECEIVE'],
+    [1051, 1200, 'MONI(B) NORECEIVE'],
+    [1048, 1349, 'HMI MAJOR TROUBLE'],
+    [1050, 1392, 'GW(A) NORECEIVE'],
+    [1050, 1434, 'GW(B) NORECEIVE'],
+    [243, 1531, 'CONTROLLER:'],
+    [400, 1531, 'EHG+MD'],
+    [573, 1504, 'TRIGGER  :'],
+    [573, 1531, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE051.js ---- */
+/* TCE051 CONTROLLER CONDITION(2) (331DM09784 page 24, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   Six "no receive" alarms of the network, each held by a flip-flop until ANN RESET, drawn the same way: flip-flop, lamp of the operator station (CRT)
+   and connector A<n>; then NETWORK IF TROUBLE and the battery error of the controller. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const b = [],
+    c = [],
+    d = [],
+    w = [],
+    t = [];
+  /* [words of the lamp, y of the flip-flop, x of the flip-flop, x of the branch to the OR, y of that OR input, x of the junction to A<n>, x of the BTR marks,
+     x of the lamp, x of A<n>, source of the set input] */
+  const ROWS = [
+    ['ATS(A)CPU NORECEIVE', 327, 914, 1396, 965, 1523, 1565, 1938, 2075, 'kSt12'],
+    ['ATS(B)CPU NORECEIVE', 434, 913, 1373, 986, 1521, 1563, 1937, 2075, 'kSt13'],
+    ['GW(A)CPU NORECEIVE', 541, 912, 1350, 1007, 1520, 1562, 1936, 2074, 'iC'],
+    ['GW(B)CPU NORECEIVE', 647, 911, 1328, 1028, 1519, 1561, 1935, 2073, 'iD'],
+    ['MNT(A)CPU NORECEIVE', 753, 910, 1305, 1049, 1518, 1560, 1934, 2072, 'iF'],
+    ['MNT(B)CPU NORECEIVE', 859, 910, 1283, 1070, 1517, 1559, 1933, 2071, 'iG']
+  ];
+  ROWS.forEach(([name, yc, xc, xb, yo, xj, xm, xl, xa, set], i) => {
+    const n = i + 1,
+      no = k => String(k).padStart(3, '0'),
+      ys = yc - 11 /* the set input and the output */,
+      yr = yc + 11 /* the reset input */,
+      ya = ys + 53; /* the line to connector A<n> */
+    b.push(['ffs' + n, 'FFS', no(6 + 3 * i), xc, yc, [], { l: ['S', 'R'] }, [80, 43]]);
+    b.push(['btrL' + n, 'o:BTR', no(7 + 3 * i), xm, ys], ['btrA' + n, 'o:BTR', no(8 + 3 * i), xm, ya]);
+    d.push(['crt' + n, xl, ys, 'out', 'TCE051_' + n, 'S', '#1C']);
+    c.push(['oA' + n, 'out', 'A' + n, xa, ya, '', ['-'], 1]);
+    w.push(
+      ['ffs' + n, [[xc + 40, ys], [xl - 35, ys]]],
+      ['ffs' + n, [[xj, ys], [xj, ya], [xa - 27, ya]]],
+      ['ffs' + n, [[xb, ys], [xb, yo], [1414, yo]]],
+      ['kAnn', [[837, yr], [xc - 40, yr]]]
+    );
+    t.push([xc - 57, ys - 14, 'C'], [xm + 68, ys - 24, name], [xm + 68, ys - 3, '(EHG)'], [xm + 68, ya - 24, name], [xm + 68, ya - 3, '(EHG)']);
+    if (i > 1) w.push([set, [[321 - (i > 3 ? 1 : 0), ys], [xc - 40, ys]]]);
+  });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE051',
+    title: 'CONTROLLER CONDITION(2)',
+    page: 24,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [157, 80, 2217, 1543],
+    k: [
+      ['kSt12', 277, 147, 'GR1A-ST12_NoReceived', 'sys.ref'],
+      ['kSt13', 277, 210, 'GR1A-ST13_NoReceived', 'sys.ref'],
+      ['kBat', 274, 1113, 'BATTERYERR', 'sys.ref'],
+      ['kAnn', 274, 1177, 'ANN RESET', 'ref'],
+      ['kYd', 273, 1241, 'YOURDATA_D_EX9', 'sys.ref'],
+      ['kMyB', 273, 1316, 'MYCTL-B', 'sys.ref'],
+      ['kYerr', 273, 1380, 'YOURCTL1ERR', 'sys.ref'],
+      ['kMyA', 273, 1443, 'MYCTL-A', 'sys.ref'],
+      ['dAtsN', 1866, 147, 'ATS IF NORMAL', 'def', 'def'],
+      ['dAtsC', 1865, 253, 'ATS AUTO(C)', 'def', 'def'],
+      ['dMyd', 1857, 1188, 'MYDATA_D_EX9', 'sys.def', 'def']
+    ],
+    c: [
+      ['iB', 'in', 'B', 295, 273, 'ATS AUTO', ['TCA501'], 1],
+      ['iC', 'in', 'C', 294, 530, 'ETHER(A) NORECEIVE', ['TCE050']],
+      ['iD', 'in', 'D', 294, 636, 'ETHER(B) NORECEIVE', ['TCE050']],
+      ['iF', 'in', 'F', 293, 742, 'MONI(A) NORECEIVE', ['TCE050']],
+      ['iG', 'in', 'G', 293, 848, 'MONI(B) NORECEIVE', ['TCE050']],
+      ['oA', 'out', 'A', 2071, 965, 'NETWORK IF TROUBLE', ['TCE470']],
+      ['oF', 'out', 'F', 2069, 1113, 'EHG BATTERY ERR', ['TCE470']],
+      ['oB1', 'out', 'B1', 2067, 1304, '', ['-'], 1],
+      ...c
+    ],
+    d: [...d, ['crt7', 1928, 1251, 'out', 'TCE051_7', 'S', '#1C']],
+    b: [
+      ['not001', 'NOT', '001', 724, 157],
+      ['or002', 'OR', '002', 915, 157],
+      ['not003', 'NOT', '003', 723, 221],
+      ['a004', 'A', '004', 1449, 264],
+      ['btr005', 'o:BTR', '005', 723, 273],
+      ...b,
+      ['or024', 'OR', '024', 1442, 1018, [], {}, [58, 126]],
+      ['ffs025', 'FFS', '025', 909, 1124, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or026', 'OR', '026', 1442, 1124],
+      ['a027', 'A', '027', 713, 1252],
+      ['a028', 'A', '028', 904, 1252],
+      ['or029', 'OR', '029', 1103, 1252],
+      ['or030', 'OR', '030', 1270, 1252],
+      ['a032', 'A', '032', 909, 1305],
+      ['a034', 'A', '034', 1101, 1358],
+      ['not035', 'NOT', '035', 590, 1391],
+      ['not036', 'NOT', '036', 908, 1454],
+      ['btr031', 'o:BTR', '031', 1557, 1251],
+      ['btr033', 'o:BTR', '033', 1556, 1304]
+    ],
+    w: [
+      /* ATS interface */
+      ['kSt12', [[512, 147], [695, 147]]],
+      ['kSt12', [[669, 147], [669, 316], [874, 316]]],
+      ['kSt13', [[512, 210], [694, 210]]],
+      ['kSt13', [[648, 210], [648, 423], [873, 423]]],
+      ['not001', [[753, 147], [886, 147]]],
+      ['not003', [[752, 210], [864, 210], [864, 168], [886, 168]]],
+      ['or002', [[944, 147], [1866, 147]]],
+      ['or002', [[1397, 147], [1397, 253], [1420, 253]]],
+      ['iB', [[322, 273], [1420, 273]]],
+      ['a004', [[1478, 253], [1865, 253]]],
+      ...w,
+      /* ANN RESET to the reset input of every flip-flop */
+      ['kAnn', [[510, 1177], [837, 1177], [837, 338]]],
+      ['kAnn', [[837, 1135], [869, 1135]]],
+      ['or024', [[1471, 965], [2044, 965]]],
+      /* battery error of this controller or of the other one */
+      ['kBat', [[510, 1113], [869, 1113]]],
+      ['ffs025', [[949, 1113], [1413, 1113]]],
+      ['ffs025', [[1027, 1113], [1027, 1347], [1072, 1347]]],
+      ['ffs025', [[1027, 1188], [1857, 1188]]],
+      ['kYd', [[510, 1241], [684, 1241]]],
+      ['kYerr', [[510, 1380], [561, 1380]]],
+      ['not035', [[619, 1380], [663, 1380], [663, 1263], [684, 1263]]],
+      ['a027', [[742, 1241], [875, 1241]]],
+      ['a027', [[825, 1241], [825, 1294], [880, 1294]]],
+      ['kMyB', [[510, 1316], [880, 1316]]],
+      ['kMyA', [[510, 1443], [879, 1443]]],
+      ['kMyA', [[846, 1443], [846, 1263], [875, 1263]]],
+      ['a028', [[933, 1241], [1074, 1241]]],
+      ['a032', [[938, 1294], [1048, 1294], [1048, 1263], [1074, 1263]]],
+      ['not036', [[937, 1443], [1027, 1443], [1027, 1369], [1072, 1369]]],
+      ['or029', [[1132, 1241], [1241, 1241]]],
+      ['a034', [[1130, 1347], [1218, 1347], [1218, 1263], [1241, 1263]]],
+      ['or030', [[1299, 1241], [1388, 1241], [1388, 1135], [1413, 1135]]],
+      ['or026', [[1471, 1113], [2042, 1113]]],
+      ['or026', [[1516, 1113], [1516, 1304], [2040, 1304]]],
+      ['or026', [[1516, 1251], [1893, 1251]]]
+    ],
+    t: [
+      ...t,
+      [853, 1100, 'C'],
+      [1625, 1247, 'EHG BATTERY ERR'],
+      [1625, 1300, 'EHG BATTERY ERR'],
+      [225, 1524, 'CONTROLLER:'],
+      [388, 1524, 'EHG+MD'],
+      [610, 1497, 'TRIGGER  :'],
+      [610, 1524, 'CYCLE(ms):30']
+    ]
+  });
+})();
+
 /* ---- src/digital/tce/TCE172.js ---- */
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -66181,7 +66941,7 @@ function tcsSim(s) {
      l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical
      d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
-     b: [key, type, no, x, y, [notes], {l: [...], r: [...]}]         small block, x y = its centre; no = the block number printed in it; notes = the
+     b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
                                                                      parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
@@ -66238,13 +66998,16 @@ function tceSheet(q) {
     /* a connector drawn with a double line in the drawing */
     if (dbl) poly([...arc(x + w - r, y, r - 2 * u, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r - 2 * u, Math.PI / 2, (3 * Math.PI) / 2)], 1);
     tx.push(text(letter, x, y, 1.9, 4));
-    const R = (refs || []).map(s => '(' + s + ')');
+    const R = (refs || []).map(s => '(' + s + ')'),
+      /* more than four sheets: columns of three, side by side, as the drawing packs them */
+      per = R.length > 4 ? 3 : 4,
+      col = i => Math.floor(i / per) * 34 * u;
     if (dir === 'in') {
       if (name) tx.push(text(name, x + w + 3 * u, y - 5 * u, 2.05, 0));
-      R.forEach((s, i) => tx.push(text(s, x - w - 3 * u, y + (5 + 8 * i) * u, 1.7, 2)));
+      R.forEach((s, i) => tx.push(text(s, x - w - 3 * u - col(i), y + (5 + 8 * (i % per)) * u, 1.7, 2)));
     } else {
       if (name) tx.push(text(name, x - w - 4 * u, y - 5 * u, 2.05, 2));
-      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0)));
+      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
     }
     net(key);
   }
@@ -66276,8 +67039,10 @@ function tceSheet(q) {
       h = 11 * u;
     poly([[x - w, y], [x, y - h], [x + w, y], [x, y + h]], 1);
     tx.push(text('CRT', x, y, 1.6, 4));
-    if (letter) tx.push(text(letter, x, y + h + 7 * u, 1.7, 1));
-    if (note) tx.push(text('(' + note + ')', x, y - h - 4 * u, 1.7, 1));
+    /* the letter and the note stand at the wire side of the diamond, as in the drawing (two diamonds can stand close under each other) */
+    const sd = dir === 'in' ? 1 : -1;
+    if (letter) tx.push(text(letter, x + sd * 9 * u, y + 10 * u, 1.7, 1));
+    if (note) tx.push(text('(' + note + ')', x + sd * 7 * u, y - 9 * u, 1.7, dir === 'in' ? 0 : 2));
     if (tag) tx.push(text(tag, dir === 'in' ? x - w - 4 * u : x + w + 4 * u, y, 1.9, dir === 'in' ? 5 : 3));
     net(key);
   }
@@ -66293,17 +67058,18 @@ function tceSheet(q) {
     poly([[b[0] - ux * k - uy * k * 0.45, b[1] - uy * k + ux * k * 0.45], b, [b[0] - ux * k + uy * k * 0.45, b[1] - uy * k - ux * k * 0.45]], 0);
   }
   /* small blocks: the type over the block number */
-  for (const [key, type, no, x, y, notes, pins] of q.b || []) {
+  for (const [key, type, no, x, y, notes, pins, size] of q.b || []) {
     if (/^o:/.test(type)) {
       /* a mark on the wire (a small circle with its name over it and its number under it), type 'o:BTR' */
       ci.push([X(x), Y(y), W(2.2 * u), 'SYM']);
       tx.push(text(type.slice(2), x, y - 6 * u, 1.7, 1), text(no, x + 8 * u, y + 9 * u, 1.7, 0));
       continue;
     }
-    const w = 14 * u,
-      h = 10.5 * u;
+    /* size [w, h]: a block the drawing makes wider or taller than the usual one (an OR with many inputs, a flip-flop); its type stays at the top, its number at the bottom */
+    const w = size ? size[0] / 2 : 14 * u,
+      h = size ? size[1] / 2 : 10.5 * u;
     poly([[x - w, y - h], [x + w, y - h], [x + w, y + h], [x - w, y + h]], 1);
-    tx.push(text(type, x, y - h / 2, 1.9, 4), text(no, x, y + h / 2, 1.7, 4));
+    tx.push(text(type, x, y - h + 5.25 * u, 1.9, 4), text(no, x, y + h - 5.25 * u, 1.7, 4));
     /* the parameters printed under the block ('TD:30.0S', 'K:36.0'); a note that starts with ^ stands over it (a DEF / DFE tag) */
     let below = 0;
     for (const n of notes || [])
@@ -125579,7 +126345,7 @@ window.LS_GUIDE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build e3e2403'));
+    row('Version', E('span', 'scsver', ver + ' · build 3888cf8'));
   }
   function openSet(near) {
     if (!set) {

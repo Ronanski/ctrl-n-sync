@@ -15,7 +15,7 @@
      l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical
      d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
-     b: [key, type, no, x, y, [notes], {l: [...], r: [...]}]         small block, x y = its centre; no = the block number printed in it; notes = the
+     b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
                                                                      parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
@@ -72,13 +72,16 @@ function tceSheet(q) {
     /* a connector drawn with a double line in the drawing */
     if (dbl) poly([...arc(x + w - r, y, r - 2 * u, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r - 2 * u, Math.PI / 2, (3 * Math.PI) / 2)], 1);
     tx.push(text(letter, x, y, 1.9, 4));
-    const R = (refs || []).map(s => '(' + s + ')');
+    const R = (refs || []).map(s => '(' + s + ')'),
+      /* more than four sheets: columns of three, side by side, as the drawing packs them */
+      per = R.length > 4 ? 3 : 4,
+      col = i => Math.floor(i / per) * 34 * u;
     if (dir === 'in') {
       if (name) tx.push(text(name, x + w + 3 * u, y - 5 * u, 2.05, 0));
-      R.forEach((s, i) => tx.push(text(s, x - w - 3 * u, y + (5 + 8 * i) * u, 1.7, 2)));
+      R.forEach((s, i) => tx.push(text(s, x - w - 3 * u - col(i), y + (5 + 8 * (i % per)) * u, 1.7, 2)));
     } else {
       if (name) tx.push(text(name, x - w - 4 * u, y - 5 * u, 2.05, 2));
-      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0)));
+      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
     }
     net(key);
   }
@@ -110,8 +113,10 @@ function tceSheet(q) {
       h = 11 * u;
     poly([[x - w, y], [x, y - h], [x + w, y], [x, y + h]], 1);
     tx.push(text('CRT', x, y, 1.6, 4));
-    if (letter) tx.push(text(letter, x, y + h + 7 * u, 1.7, 1));
-    if (note) tx.push(text('(' + note + ')', x, y - h - 4 * u, 1.7, 1));
+    /* the letter and the note stand at the wire side of the diamond, as in the drawing (two diamonds can stand close under each other) */
+    const sd = dir === 'in' ? 1 : -1;
+    if (letter) tx.push(text(letter, x + sd * 9 * u, y + 10 * u, 1.7, 1));
+    if (note) tx.push(text('(' + note + ')', x + sd * 7 * u, y - 9 * u, 1.7, dir === 'in' ? 0 : 2));
     if (tag) tx.push(text(tag, dir === 'in' ? x - w - 4 * u : x + w + 4 * u, y, 1.9, dir === 'in' ? 5 : 3));
     net(key);
   }
@@ -127,17 +132,18 @@ function tceSheet(q) {
     poly([[b[0] - ux * k - uy * k * 0.45, b[1] - uy * k + ux * k * 0.45], b, [b[0] - ux * k + uy * k * 0.45, b[1] - uy * k - ux * k * 0.45]], 0);
   }
   /* small blocks: the type over the block number */
-  for (const [key, type, no, x, y, notes, pins] of q.b || []) {
+  for (const [key, type, no, x, y, notes, pins, size] of q.b || []) {
     if (/^o:/.test(type)) {
       /* a mark on the wire (a small circle with its name over it and its number under it), type 'o:BTR' */
       ci.push([X(x), Y(y), W(2.2 * u), 'SYM']);
       tx.push(text(type.slice(2), x, y - 6 * u, 1.7, 1), text(no, x + 8 * u, y + 9 * u, 1.7, 0));
       continue;
     }
-    const w = 14 * u,
-      h = 10.5 * u;
+    /* size [w, h]: a block the drawing makes wider or taller than the usual one (an OR with many inputs, a flip-flop); its type stays at the top, its number at the bottom */
+    const w = size ? size[0] / 2 : 14 * u,
+      h = size ? size[1] / 2 : 10.5 * u;
     poly([[x - w, y - h], [x + w, y - h], [x + w, y + h], [x - w, y + h]], 1);
-    tx.push(text(type, x, y - h / 2, 1.9, 4), text(no, x, y + h / 2, 1.7, 4));
+    tx.push(text(type, x, y - h + 5.25 * u, 1.9, 4), text(no, x, y + h - 5.25 * u, 1.7, 4));
     /* the parameters printed under the block ('TD:30.0S', 'K:36.0'); a note that starts with ^ stands over it (a DEF / DFE tag) */
     let below = 0;
     for (const n of notes || [])
