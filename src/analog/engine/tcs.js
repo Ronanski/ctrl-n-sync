@@ -1359,10 +1359,42 @@ function tcsGovState(U) {
    after its CVs reach the test position (MSV/CV FULL CLOSE TEST STATE AND CV TEST POSITION) */
 const TCS_VT_SLOW = 0.0056,
   TCS_VT_FAST = 0.1;
-const TCS_VT_ON = { msvA: 'MSV(A)', msvB: 'MSV(B)', cvA: 'CV(A)', cvB: 'CV(B)' };
+const TCS_VT_ON = { msvA: 'MSV(A)', msvB: 'MSV(B)', cvA: 'CV(A)', cvB: 'CV(B)', crvA: 'CRV(A)', crvB: 'CRV(B)' };
+/* CRV (combined reheat valve: RSV + ICV) TEST, TCE226 CRV TEST(1) (p.153), TCE227 CRV TEST(2) (p.154), TCE214 ICV(A), (B) CONTROL (p.147):
+   - PERM: CRV(A) FULL CLOSE TEST PERMISSIVE (TCE224, one test at a time), TRANSFER REGION COMPLETE(IP), RSV(B) POSITION >= 98 % (CMP 97 / 98 %).
+     No load limit on the sheets (the other side passes the IP steam, below).
+   - CRV(A) TEST PB ON -> ICV(A) TEST SIGNAL (TCE227 OR002) -> the ICV closes at the valve test speed 10 %/s (TCE214 SG 016 / 018) to the
+     ICV TEST POSITION (CPL 10 / 11 %); then, after TD A019 1.0 s, ICV(A) FAST ACTING (TEST) dumps it shut (the trip oil speed U.tauTrip);
+     then the CRV(A) TEST COMMAND closes RSV(A) the same way (LME250 TP 5 s: the RSV must move at once); at RSV(A) FULL CLOSE (CPL 2 / 3 %)
+     the test is complete (COMP), the RSV reopens (the reset opening speed of the stop valves of tcs-trip.js tcsValves, 10 s full stroke,
+     inside the 10 ~ 40 s of the vendor) and, once RSV(A) is FULL OPEN, the ICV test signal goes off and the ICV reopens at 10 %/s.
+     TP 60 s (LME250): an RSV not closed in 60 s cancels the test.
+   - Flow: the IP steam (unit.js qip = m0 x reheat pressure x ICV) passes the two ICV / RSV sides in parallel, then the IP nozzles in series.
+     The ICV pair loss at rated flow is taken as 2 % of the reheat pressure: heat balance 310SD09-053 (PPE-14-0725 R1, case 2 127.5 MW) gives
+     the HP exhaust 32.89 ata and the IP inlet 29.60 ata, a reheat system loss of 10 %; of it the stop / intercept valves are the usual 2 %
+     (the reheater and its pipes the rest). With the loss dp = k (q / a)^2 of the valve area a (1 = both sides full open) in series with the
+     IP section (flow proportional to its inlet pressure): q (1 + k / a^2) = P, k = 0.02 / 0.98^2 = 0.0208, so the flow at a given reheat
+     pressure is (1 + k) / (1 + k / a^2) of the rated one: one side shut (a = 0.5) passes 94 %, the reheat pressure rises about 6 % */
+const TCS_VT_K = 0.02 / (0.98 * 0.98);
+function tcsVtIcvF(U) {
+  const vt = U.tb && U.tb.vt;
+  if (!vt || vt.iA == null || (vt.iA >= 1 && vt.iB >= 1 && vt.rA >= 1 && vt.rB >= 1)) return 1;
+  const a = 0.5 * (Math.min(vt.iA, vt.rA) + Math.min(vt.iB, vt.rB));
+  return a <= 0 ? 0 : (1 + TCS_VT_K) / (1 + TCS_VT_K / (a * a));
+}
+/* the ICV / RSV of a side as the CRV test leaves it, 0 ~ 1 (times tb.icv / the trip oil position) */
+function tcsVtIcvS(U, s) {
+  const vt = U.tb && U.tb.vt;
+  return vt && vt['i' + s] != null ? vt['i' + s] : 1;
+}
+function tcsVtRsv(U, s) {
+  const vt = U.tb && U.tb.vt;
+  return vt && vt['r' + s] != null ? vt['r' + s] : 1;
+}
 function tcsVt(U) {
   const tb = U.tb || (U.tb = {});
   if (!tb.vt || typeof tb.vt !== 'object') tb.vt = { sel: null, op: null, ph: null, t: 0, mA: 1, mB: 1, dA: 0, dB: 0, lo: false, cv0: null };
+  if (tb.vt.iA == null) Object.assign(tb.vt, { iA: 1, iB: 1, rA: 1, rB: 1 }); /* the CRV test (a test state from before it) */
   return tb.vt;
 }
 /* the flow area of one side: the smaller of its CV group lift and its MSV opening (MSV full open = the CV area at 140 % lift) */
@@ -1405,8 +1437,9 @@ function tcsVtPerm(U, v, op) {
   if (!isFinite(U.MW)) return 'GENERATOR LOAD ABNORMAL';
   if (vt.sel && vt.sel !== v) return TCS_VT_ON[vt.sel] + ' test is on (one test at a time)';
   if (vt.sel === v) return TCS_VT_ON[v] + ' test is already on';
-  if (vt.dA || vt.dB || vt.mA < 1 || vt.mB < 1) return 'a valve is still closed: press its FULL OPEN first';
-  if ((op === 'close' || v.startsWith('cv')) && !vt.lo) return 'GENERATOR LOAD is over 75 MW';
+  if (vt.dA || vt.dB || vt.mA < 1 || vt.mB < 1 || vt.iA < 1 || vt.iB < 1 || vt.rA < 1 || vt.rB < 1) return 'a valve is still closed: press its FULL OPEN first';
+  if (v.startsWith('crv')) return vt['r' + o] < 0.98 ? 'RSV(' + o + ') is not full open' : op === 'close' ? '' : 'the CRV test has one PB (TEST)';
+  if (((v.startsWith('msv') && op === 'close') || v.startsWith('cv')) && !vt.lo) return 'GENERATOR LOAD is over 75 MW';
   if (v.startsWith('msv') && op === 'partial' && vt['m' + o] < 1) return 'MSV(' + o + ') is not full open';
   return '';
 }
@@ -1419,17 +1452,17 @@ function tcsVtCmd(U, arg) {
   if (!TCS_VT_ON[v]) return 'Unknown valve: ' + v;
   if (op === 'open' || op === 'cancel') {
     const s = v.slice(-1),
-      shut = vt['d' + s] > 0 || vt['m' + s] < 1;
+      shut = v.startsWith('crv') ? vt['i' + s] < 1 || vt['r' + s] < 1 : vt['d' + s] > 0 || vt['m' + s] < 1;
     if (vt.sel !== v && !shut) return TCS_VT_ON[v] + ' is not under test';
     if (vt.sel && vt.sel !== v) return TCS_VT_ON[vt.sel] + ' test is on (one test at a time)';
-    Object.assign(vt, { sel: v, op: vt.op || 'close', ph: 'reopen', t: 0 });
+    Object.assign(vt, { sel: v, op: vt.op || 'close', ph: v.startsWith('crv') ? 'rsvo' : 'reopen', t: 0 });
     tcsVtLog(TCS_VT_ON[v] + (op === 'cancel' ? ' TEST CANCEL' : ' FULL OPEN'));
     return '';
   }
   if (op !== 'partial' && op !== 'close') return 'Unknown test: ' + op;
   const r = tcsVtPerm(U, v, op);
   if (r) return r;
-  Object.assign(vt, { sel: v, op, t: 0, cv0: null, ph: v.startsWith('msv') && op === 'partial' ? 'msv' : 'cv' });
+  Object.assign(vt, { sel: v, op, t: 0, cv0: null, ph: v.startsWith('crv') ? 'icv' : v.startsWith('msv') && op === 'partial' ? 'msv' : 'cv' });
   tcsVtLog(TCS_VT_ON[v] + (op === 'partial' ? ' PARTIAL CLOSE TEST' : ' FULL CLOSE TEST') + ' start');
   return '';
 }
@@ -1442,12 +1475,13 @@ function tcsVtStep(U, dt) {
   if (isFinite(U.MW)) vt.lo = U.MW <= 75 ? true : U.MW >= 78 ? false : vt.lo;
   /* a trip or a 52G open ends any test: the trip oil closes every valve, the reset opens them full (tcs-trip.js tcsValves) */
   if (tb.st !== 'load' || tcsOilState(U).trip) {
-    if (vt.sel || vt.dA || vt.dB || vt.mA < 1 || vt.mB < 1) {
+    if (vt.sel || vt.dA || vt.dB || vt.mA < 1 || vt.mB < 1 || vt.iA < 1 || vt.iB < 1 || vt.rA < 1 || vt.rB < 1) {
       if (vt.sel) tcsVtLog(TCS_VT_ON[vt.sel] + ' test ended by the turbine trip / 52G open');
-      Object.assign(vt, { sel: null, op: null, ph: null, t: 0, mA: 1, mB: 1, dA: 0, dB: 0, cv0: null });
+      Object.assign(vt, { sel: null, op: null, ph: null, t: 0, mA: 1, mB: 1, dA: 0, dB: 0, cv0: null, iA: 1, iB: 1, rA: 1, rB: 1 });
     }
     return;
   }
+  if (vt.sel && vt.sel.startsWith('crv')) return tcsVtCrv(U, vt, dt);
   if (!vt.sel) return;
   const v = vt.sel,
     s = v.slice(-1),
@@ -1510,12 +1544,51 @@ function tcsVtStep(U, dt) {
     }
   }
 }
+/* one scan of the CRV test (TCE226 / 227 sequence, above) */
+function tcsVtCrv(U, vt, dt) {
+  const v = vt.sel,
+    s = v.slice(-1),
+    i = 'i' + s,
+    r = 'r' + s,
+    fast = dt / (U.tauTrip || 1);
+  vt.t += dt;
+  if ((vt.ph === 'icv' || vt.ph === 'icvw' || vt.ph === 'rsv') && vt.t > 60) {
+    Object.assign(vt, { ph: 'rsvo', t: 0 });
+    tcsVtLog(TCS_VT_ON[v] + ' test cancelled: RSV not closed in 60 s');
+  }
+  if (vt.ph === 'icv') {
+    vt[i] = Math.max(0.1, vt[i] - TCS_VT_FAST * dt);
+    if (vt[i] <= 0.1) Object.assign(vt, { ph: 'icvw', tw: 0 });
+  } else if (vt.ph === 'icvw') {
+    /* TD A019 1.0 s, then ICV FAST ACTING (TEST) */
+    vt.tw = (vt.tw || 0) + dt;
+    if (vt.tw >= 1) vt[i] = Math.max(0, vt[i] - fast);
+    if (vt[i] <= 0) vt.ph = 'rsv';
+  } else if (vt.ph === 'rsv') {
+    vt[r] = Math.max(0, vt[r] - fast);
+    if (vt[r] <= 0) {
+      tcsVtLog(TCS_VT_ON[v] + ' RSV and ICV FULL CLOSE, test complete');
+      Object.assign(vt, { ph: 'rsvo', t: 0 });
+    }
+  } else if (vt.ph === 'rsvo') {
+    if (vt[i] > 0 && vt[r] >= 1) vt.ph = 'icvo';
+    else if (vt[r] < 1) vt[r] = Math.min(1, vt[r] + dt / 10);
+    else vt.ph = 'icvo';
+  } else if (vt.ph === 'icvo') {
+    vt[i] = Math.min(1, vt[i] + TCS_VT_FAST * dt);
+    if (vt[i] >= 1) {
+      tcsVtLog(TCS_VT_ON[v] + ' full open');
+      Object.assign(vt, { sel: null, op: null, ph: null, t: 0 });
+    }
+  }
+}
 function tcsVtState(U) {
   if (!U || !U.tb) return null;
   const vt = tcsVt(U),
     p = x => Math.round(Math.min(100, 100 * x) * 10) / 10,
     perm = {};
   for (const v of ['msvA', 'msvB', 'cvA', 'cvB']) for (const op of ['partial', 'close']) perm[v + ':' + op] = tcsVtPerm(U, v, op);
+  for (const v of ['crvA', 'crvB']) perm[v + ':close'] = tcsVtPerm(U, v, 'close');
   return {
     on: !!vt.sel /* TURBINE VALVE TEST (TCE224_1) */,
     sel: vt.sel,
@@ -1527,6 +1600,10 @@ function tcsVtState(U) {
     msvB: p(tcsVtMsv(U, 'B')),
     cvA: p(tcsVtCv(U, 'A')),
     cvB: p(tcsVtCv(U, 'B')),
+    icvA: p((U.tb.icv || 0) * tcsVtIcvS(U, 'A')),
+    icvB: p((U.tb.icv || 0) * tcsVtIcvS(U, 'B')),
+    rsvA: p(tcsVtRsv(U, 'A')),
+    rsvB: p(tcsVtRsv(U, 'B')),
     perm
   };
 }

@@ -308,7 +308,7 @@ function anVposOf() {
   };
   const of = ts => ts.flatMap(t => [lab('ABC-050', t), lab('ABC-051', t)]).filter(Boolean);
   /* LMYP OTS valve tests: CV(A) SI1812 ~ SI1814 and CV(B) SI1815 ~ SI1817 apart (a CV test moves one group) */
-  return { cvA: of(['SI1812', 'SI1813', 'SI1814']), cvB: of(['SI1815', 'SI1816', 'SI1817']), icv: of(['SI1821', 'SI1822', 'SI1823', 'SI1827', 'SI1828', 'SI1829']) };
+  return { cvA: of(['SI1812', 'SI1813', 'SI1814']), cvB: of(['SI1815', 'SI1816', 'SI1817']), icvA: of(['SI1821', 'SI1822', 'SI1823']), icvB: of(['SI1827', 'SI1828', 'SI1829']) };
 }
 function anUnitStart() {
   const U = AN_UNIT;
@@ -5261,7 +5261,7 @@ function anUnitStep0(dt) {
   /* 3.2.3-beta.240 (user 2026-11-14, reverse power): on the grid the MW is not held at 0 or above. With too little steam the generator
      takes power from the grid to keep the shaft at 3600 rpm (motoring): the losses of anTbGen stay when the steam is gone. The 32 relay
      (anRp32) sees the negative power */
-  const qip = U.m0 * U.rr * tb.icv,
+  const qip = U.m0 * U.rr * tb.icv * tcsVtIcvF(U) /* the CRV test of tcs.js (TCE226 / 227): one RSV / ICV side shut */,
     MWss = onGrid ? anTbGen(U.ms, qip) - anVacMW(U) + (U.dMWx || 0) : 0;
   /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of anTbGen, each behind its steam volume (tSc,
      tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft. Before, Pm fell
@@ -5291,7 +5291,7 @@ function anUnitStep0(dt) {
   if (U.tc && (tb.st === 'off' || tb.st === 'roll')) U.MW = 0;
   U.rpm = tb.rpm;
   U.icvp = 100 * tb.icv;
-  if (U.vpos === undefined || (U.vpos && !U.vpos.cvA)) U.vpos = anVposOf(); /* a save point from before 3.2.3-beta.244 / the A, B split */
+  if (U.vpos === undefined || (U.vpos && !U.vpos.icvA)) U.vpos = anVposOf(); /* a save point from before 3.2.3-beta.244 / the A, B split */
   if (U.vpos) {
     /* T/G Modbus valve positions (U.vpos above): CV = the governor valve lift U.gv (0 ~ 100 %), ICV = tb.icv; a tripped or stopped
        machine has its valves shut */
@@ -5300,7 +5300,8 @@ function anUnitStep0(dt) {
       icp = Math.max(0, Math.min(100, 100 * (+tb.icv || 0)));
     for (const l of U.vpos.cvA) dirt(l, cvp('A'));
     for (const l of U.vpos.cvB) dirt(l, cvp('B'));
-    for (const l of U.vpos.icv) dirt(l, icp);
+    for (const l of U.vpos.icvA) dirt(l, icp * tcsVtIcvS(U, 'A'));
+    for (const l of U.vpos.icvB) dirt(l, icp * tcsVtIcvS(U, 'B'));
   }
   U.tbn ={ off: 0, roll: 1, sync: 2, load: 3 }[tb.st];
   /* the TCS inputs of the DCS, one plant model: 3.2.5-beta.8 (live 75 MW run from a restart of "At 150 MW"): written only in a start-up
