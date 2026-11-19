@@ -2,8 +2,9 @@
    rendered 2296 wide. Drawn in the pattern of the analog input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr). The three values leave by D1, D2, D3.
    The limits are typed as the drawing prints them: K:1.05g/cm2g (SG A012) and K:-0.05cm2g (SG A017, read from the page rendered three times
    larger; a name is printed over it). The drawing cuts the unit short. Second source, TCS I/O list (iolist-tcs.zip, HMI_DI_FOR_EDIT.xlsx, analog
-   input sheet, PT-STn110-1 / -2 / -3): range 0 to 1 kg/cm2g. The limits are that range plus and minus 5 %, the same rule as on TCE060
-   (range 0 to 50: 51.0 and -2.5), so the values are 1.05 and -0.05 kg/cm2g. */
+   input sheet, rows PT-STn110-1 / -2 / -3): range 0 to 1 kg/cm2g, so the unit is kg/cm2g. The low limit of every sheet of this kind is the bottom
+   of the range of that list less 5 % of the range (TCE060 0 to 50: -2.5; TCE061 0 to 5: -0.25; TCE062 and TCE063 0 to 250: -12.5; TCE064 0 to
+   150: -7.5); here 0 to 1 gives -0.05, the value read. */
 (function () {
   if (typeof window === 'undefined') return;
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
