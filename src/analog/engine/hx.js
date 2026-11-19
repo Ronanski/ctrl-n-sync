@@ -392,7 +392,8 @@ function anHxStep(U, I, dt) {
        no fit. The bank where the tube breaks is not known (NO-SOURCE): the gas mixed ahead of the No.1 economizer is used */
     mL = Math.max(0, +I.mL || 0),
     tE1 = mL > 0 && mG > 0.01 ? Math.max(+I.Tfw > 0 ? +I.Tfw : 0, tMix - (mL * Math.max(0, steamH(0, tMix) - anHxHw(+I.Tfw || 0))) / (mG * anHxCp(tMix))) : tMix,
-    gE1 = anHxGas(M.e1, K.gE1, mG, tE1, Rf.e1);
+    /* 1.0.0-beta.14: the flashed leak water is gas from here on: the No.1 economizer carries the flue gas plus the leak */
+    gE1 = anHxGas(M.e1, K.gE1, mG + mL, tE1, Rf.e1);
   /* each bank's mean gas temperature, for the next scan's pass split */
   {
     const mean = (a, b) => (a + b) / 2;
