@@ -56,13 +56,13 @@
   /* TCE_LIB.tmr(o): a sheet ANALOG INPUT SIGNAL DIAGNOSTICS. One signal (A), (B), (C), each read by the three protection controllers and checked by one
      TMR AI DIAGNOSTICS block; the three results go to TRIPLE DETECTOR2 (the value) and to 2OO3 (abnormal). Those sheets are drawn the same way; a sheet
      gives what differs: o.id, title, page, f, tag, let [signal letter, error letter], name(ch, sig) => [words over the line, name], sg [four constants],
-     out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], over (a line over those words), refA, refA1, refC (sheets of C1, C2, C3), cl (their letter when it is not C), c1via ([y, x] of the step the line of C1 makes on its way down), sh (the numbers of the input sheets), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
+     out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], over (a line over those words), refA, refA1, refC (sheets of C1, C2, C3), cl (their letter when it is not C), c1via ([y, x] of the step the line of C1 makes on its way down), refB1, dy2 (the 2OO3 and its outputs stand that much lower); without cs the sheet has no C1, C2, C3 at the right, sh (the numbers of the input sheets), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
   const F = o.f,
     dx = o.dx || 0,
     dr = o.dr || 0,
-    [C1, C2, C3] = o.cs,
+    [C1, C2, C3] = o.cs || [[0, 0], [0, 0], [1436 + (o.dr || 0), null]],
     RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
     SH = o.sh || ['070', '072', '074'],
     CL = o.cl || 'C',
@@ -82,6 +82,39 @@
     R = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
     pin = (top, i) => Math.round(top + 15 * u + (i + 0.5) * ((381 - 30 * u) / 10)),
     BEND = [0, 659, 680, 701, 722, 743].map(x => x + dx);
+  /* A sheet where each block reads one signal for its three inputs (and one error for its three error inputs), and the signal also leaves by
+     C1, C2, C3 at the left: o.single = [[x of the branch to C, x of C, how far C stands under the signal] for each block], o.inref = the sheet of
+     the inputs of each block, o.cref = the sheets of C1, C2, C3. */
+  const single = (ch, g, p, bx, cx, marks) => {
+    const [xj, xc, dyc] = o.single[g],
+      ks = 'i' + ch + 'S',
+      ke = 'i' + ch + 'E',
+      y = p(0),
+      ye = y + 53,
+      xs = bx - 55,
+      xe = bx - 32,
+      [over, name] = o.name(ch, true),
+      [overE, nameE] = o.name(ch, false);
+    c.push(
+      [ks, 'in', o.let[0], cx, y, name, [o.inref[g]], 1],
+      [ke, 'in', o.let[1], cx, ye, nameE, [o.inref[g]], 1],
+      ['oC' + (g + 1), 'out', 'C' + (g + 1), xc, y + dyc, '', [], 1]
+    );
+    /* the sheets of C stand under it, each a little more to the right, as the drawing has them (beside it they would lie on the lines) */
+    o.cref.forEach((r, i) => t.push([xc - 52 + 5 * i, y + dyc + 33 + 21 * i, '(' + r + ')']));
+    if (over) t.push([cx + 33, y - 32, over]);
+    if (overE) t.push([cx + 33, ye - 32, overE]);
+    b.push(['mk' + ch + 'S', 'o:FTR', marks[0], cx + 321, y], ['mk' + ch + 'E', 'o:BTR', marks[1], cx + 321, ye]);
+    w.push(
+      [ks, [[cx + 27, y], [bx, y]], 1],
+      [ks, [[xj, y], [xj, y + dyc], [xc - 27, y + dyc]], 1],
+      [ks, [[xs, y], [xs, p(4)], [bx, p(4)]], 1],
+      [ks, [[xs, p(2)], [bx, p(2)]], 1],
+      [ke, [[cx + 27, ye], [BEND[1], ye], [BEND[1], p(1)], [bx, p(1)]]],
+      [ke, [[xe, p(1)], [xe, p(5)], [bx, p(5)]]],
+      [ke, [[xe, p(3)], [bx, p(3)]]]
+    );
+  };
   const P = G.map(([ch, top, bx, cx, sh, no, marks], g) => {
     const k = 'tmr' + (g + 1),
       p = i => pin(top, i);
@@ -95,7 +128,8 @@
       [bx + 105, top + 404, '(LME111)'],
       [bx + 217, top + 404, '(LME111A)']
     ]]);
-    for (let i = 0; i < 6; i++) {
+    if (o.single) single(ch, g, p, bx, cx, marks);
+    else for (let i = 0; i < 6; i++) {
       const sig = i % 2 === 0,
         key = 'i' + ch + (i + 1),
         y = p(0) + Math.round(i * 53.3),
@@ -110,7 +144,8 @@
   });
   const [g1, g2, g3] = P;
   const X = x => x + dx,
-    Z = x => x + dr;
+    Z = x => x + dr,
+    Y2 = y => y + (o.dy2 || 0);
   /* the lines of C1, C2, C3: a y of null = level with the output of the third block. A sheet can send them to D1, D2, D3 too
      (o.ds: [x of the branch, [y of D1, D2, D3], [x of D1, D2, D3], sheet]) and write their name over them (o.cname(ch) => [line 1, line 2], at x o.cnx). */
   const CY = [C1[1], C2[1], C3[1] == null ? g3.p(0) : C3[1]],
@@ -130,7 +165,7 @@
     });
   /* a third line over the words of the six outputs (o.over) */
   if (o.over)
-    [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach(q => xt.push([Z(q[0]), q[1], o.over]));
+    [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach((q, i) => xt.push([Z(q[0]), i > 2 ? Y2(q[1]) : q[1], o.over]));
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
   return {
     id: o.id,
@@ -143,20 +178,24 @@
       ...c,
       ['oA', 'out', 'A', Z(2077), 170, '', o.refA],
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
-      ['oB', 'out', 'B', Z(2075), 477, '', ['-']],
-      ['oB1', 'out', 'B1', Z(2074), 573, '', ['-'], 1],
-      ['oC1', 'out', CL + '1', o.cx, CY[0], '', [].concat(RC[0]), cd],
-      ['oC2', 'out', CL + '2', o.cx - 1, CY[1], '', [].concat(RC[1]), cd],
-      ['oC3', 'out', CL + '3', o.cx - 1, CY[2], '', [].concat(RC[2]), cd],
+      ['oB', 'out', 'B', Z(2075), Y2(477), '', ['-']],
+      ['oB1', 'out', 'B1', Z(2074), Y2(573), '', o.refB1 || ['-'], 1],
+      ...(o.cs
+        ? [
+            ['oC1', 'out', CL + '1', o.cx, CY[0], '', [].concat(RC[0]), cd],
+            ['oC2', 'out', CL + '2', o.cx - 1, CY[1], '', [].concat(RC[1]), cd],
+            ['oC3', 'out', CL + '3', o.cx - 1, CY[2], '', [].concat(RC[2]), cd]
+          ]
+        : []),
       ...xc
     ],
     d: [
       ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
-      ['crtAbn', Z(2073), 679, 'out', o.tagAbn || o.tag + '_PVC', 'S', '#1C']
+      ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
     ],
     r: [
       ['td2', Z(1481), 136, 235, 128, ''],
-      ['v2o3', Z(1564), 445, 86, 107, '']
+      ['v2o3', Z(1564), Y2(445), 86, 107, '']
     ],
     m,
     b: [
@@ -180,10 +219,10 @@
       ['ftr004', 'o:FTR', '004', Z(1821), 170],
       ['ftr006', 'o:FTR', '006', Z(1820), 264],
       ['ftr008', 'o:FTR', '008', Z(1819), 360],
-      ['btr041', 'o:BTR', '041', Z(1744), 477],
-      ['btr015', 'o:BTR', '015', Z(1818), 477],
-      ['btr016', 'o:BTR', '016', Z(1817), 573],
-      ['btr021', 'o:BTR', '021', Z(1816), 679]
+      ['btr041', 'o:BTR', '041', Z(1744), Y2(477)],
+      ['btr015', 'o:BTR', '015', Z(1818), Y2(477)],
+      ['btr016', 'o:BTR', '016', Z(1817), Y2(573)],
+      ['btr021', 'o:BTR', '021', Z(1816), Y2(679)]
     ],
     w: [
       ...w,
@@ -206,22 +245,23 @@
       ['sg036', [[X(838), g3.p(9)], [g3.bx, g3.p(9)]], 1],
       /* the three values to TRIPLE DETECTOR2 and to the turbine supervisory sheets */
       ['tmr1.OUT', [[g1.bx + 405, 170], [Z(1481), 170]], 1],
-      ['tmr1.OUT', o.c1via ? [[C1[0], 170], [C1[0], o.c1via[0]], [o.c1via[1], o.c1via[0]], [o.c1via[1], CY[0]], [o.cx - 27, CY[0]]] : [[C1[0], 170], [C1[0], CY[0]], [o.cx - 27, CY[0]]], 1],
+      ...(o.cs ? [['tmr2.OUT', [[C2[0], g2.p(0)], [C2[0], CY[1]], [o.cx - 28, CY[1]]], 1]] : []),
+      ...(!o.cs ? [] : [[
+      'tmr1.OUT', o.c1via ? [[C1[0], 170], [C1[0], o.c1via[0]], [o.c1via[1], o.c1via[0]], [o.c1via[1], CY[0]], [o.cx - 27, CY[0]]] : [[C1[0], 170], [C1[0], CY[0]], [o.cx - 27, CY[0]]], 1]]),
       ['tmr2.OUT', [[g2.bx + 405, g2.p(0)], [Z(1414), g2.p(0)], [Z(1414), 191], [Z(1481), 191]], 1],
-      ['tmr2.OUT', [[C2[0], g2.p(0)], [C2[0], CY[1]], [o.cx - 28, CY[1]]], 1],
-      ['tmr3.OUT', straight([[g3.bx + 405, g3.p(0)], [C3[0], g3.p(0)], [C3[0], CY[2]], [o.cx - 28, CY[2]]]), 1],
+      ['tmr3.OUT', o.cs ? straight([[g3.bx + 405, g3.p(0)], [C3[0], g3.p(0)], [C3[0], CY[2]], [o.cx - 28, CY[2]]]) : [[g3.bx + 405, g3.p(0)], [Z(1436), g3.p(0)]], 1],
       ...xw,
       ['tmr3.OUT', [[Z(1436), g3.p(0)], [Z(1436), 212], [Z(1481), 212]], 1],
       /* abnormal: two out of three */
-      ['tmr1.ABN', [[g1.bx + 405, g1.p(2)], [Z(1395), g1.p(2)], [Z(1395), 477], [Z(1564), 477]]],
-      ['tmr2.ABN', [[g2.bx + 405, g2.p(2)], [Z(1478), g2.p(2)], [Z(1478), 499], [Z(1564), 499]]],
-      ['tmr3.ABN', [[g3.bx + 405, g3.p(2)], [Z(1500), g3.p(2)], [Z(1500), 520], [Z(1564), 520]]],
+      ['tmr1.ABN', [[g1.bx + 405, g1.p(2)], [Z(1395), g1.p(2)], [Z(1395), Y2(477)], [Z(1564), Y2(477)]]],
+      ['tmr2.ABN', [[g2.bx + 405, g2.p(2)], [Z(1478), g2.p(2)], [Z(1478), Y2(499)], [Z(1564), Y2(499)]]],
+      ['tmr3.ABN', [[g3.bx + 405, g3.p(2)], [Z(1500), g3.p(2)], [Z(1500), Y2(520)], [Z(1564), Y2(520)]]],
       ['td2', [[Z(1716), 170], [Z(2050), 170]], 1],
       ['td2', [[Z(1778), 170], [Z(1778), 360], [Z(2041), 360]], 1],
       ['td2', [[Z(1778), 264], [Z(2049), 264]], 1],
-      ['v2o3', [[Z(1650), 477], [Z(2048), 477]]],
-      ['v2o3', [[Z(1775), 477], [Z(1775), 679], [Z(2038), 679]]],
-      ['v2o3', [[Z(1775), 573], [Z(2047), 573]]]
+      ['v2o3', [[Z(1650), Y2(477)], [Z(2048), Y2(477)]]],
+      ['v2o3', [[Z(1775), Y2(477)], [Z(1775), Y2(679)], [Z(2038), Y2(679)]]],
+      ['v2o3', [[Z(1775), Y2(573)], [Z(2047), Y2(573)]]]
     ],
     t: [
       ...t,
@@ -237,25 +277,25 @@
       [Z(1517), 327, 'TP:1.0'],
       [Z(1517), 348, 'TP:1.0'],
       [Z(1517), 370, 'TP:1.0'],
-      [Z(1585), 467, '2OO3'],
-      [Z(1569), 488, 'IN1'],
-      [Z(1612), 488, 'OUT'],
-      [Z(1569), 510, 'IN2'],
-      [Z(1569), 531, 'IN3'],
-      [Z(1595), 550, '014'],
-      [Z(1569), 576, '(LME120)'],
+      [Z(1585), Y2(467), '2OO3'],
+      [Z(1569), Y2(488), 'IN1'],
+      [Z(1612), Y2(488), 'OUT'],
+      [Z(1569), Y2(510), 'IN2'],
+      [Z(1569), Y2(531), 'IN3'],
+      [Z(1595), Y2(550), '014'],
+      [Z(1569), Y2(576), '(LME120)'],
       [Z(1848), 143, o.out[0]],
       [Z(1848), 165, o.out[1]],
       [Z(1847), 239, o.out[0]],
       [Z(1847), 260, o.out[1]],
       [Z(1846), 335, o.out[0]],
       [Z(1846), 356, o.out[1]],
-      [Z(1846), 452, o.out[3] || o.out[0]],
-      [Z(1846), 473, o.out[2]],
-      [Z(1845), 548, o.out[3] || o.out[0]],
-      [Z(1845), 569, o.out[2]],
-      [Z(1844), 654, o.out[3] || o.out[0]],
-      [Z(1844), 675, o.out[2]],
+      [Z(1846), Y2(452), o.out[3] || o.out[0]],
+      [Z(1846), Y2(473), o.out[2]],
+      [Z(1845), Y2(548), o.out[3] || o.out[0]],
+      [Z(1845), Y2(569), o.out[2]],
+      [Z(1844), Y2(654), o.out[3] || o.out[0]],
+      [Z(1844), Y2(675), o.out[2]],
       ...xt,
       ...o.foot
     ]
