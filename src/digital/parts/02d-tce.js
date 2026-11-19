@@ -7,7 +7,8 @@
    One sheet:
      id, title, page, ctl (controller), cycle (ms)
      f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
-     c: [key, 'in' | 'out', letter, x, y, name, [sheets], dbl]       off-page connector (oval), x y = its centre; dbl 1 = drawn with a double line
+     c: [key, 'in' | 'out', letter, x, y, name, [sheets], dbl, under] off-page connector (oval), x y = its centre; dbl 1 = drawn with a double line;
+                                                                     under 1 = the sheets stand under an output connector
      k: [key, x, y, text, note, kind]                                constant / system reference (pentagon), x y = its left middle; kind 'def' =
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
@@ -68,7 +69,7 @@ function tceSheet(q) {
   };
   const u = (fx1 - fx0) / 1000; /* one thousandth of the width of the frame, for the sizes of the symbols */
   /* off-page connectors: an oval with its letter; the name on the wire side, the sheets it goes to / comes from on the outer side */
-  for (const [key, dir, letter, x, y, name, refs, dbl] of q.c || []) {
+  for (const [key, dir, letter, x, y, name, refs, dbl, under] of q.c || []) {
     const w = 13 * u,
       r = 9 * u;
     poly([...arc(x + w - r, y, r, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r, Math.PI / 2, (3 * Math.PI) / 2)], 1);
@@ -86,7 +87,9 @@ function tceSheet(q) {
       if (name) tx.push(text(name, x - w - 4 * u, y - 5 * u, 2.05, 2));
       /* near the right edge of the frame there is no room for a second column: the drawing puts the sheets over four on the left of the
          column, on its last rows (TCE166 A: TCE602 left of TCE601) */
-      if (R.length > 4 && x + w + 37 * u + 34 * u > fx1)
+      /* under 1: the drawing prints the sheets under the connector, not beside it */
+      if (under) R.forEach((s, i) => tx.push(text(s, x + 6 * u, y + (17 + 8 * i) * u, 1.7, 0)));
+      else if (R.length > 4 && x + w + 37 * u + 34 * u > fx1)
         R.forEach((s, i) =>
           tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
         );
