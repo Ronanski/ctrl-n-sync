@@ -35,9 +35,9 @@
   ];
   /* The turbine has its own control system (TCS) with its own operator station, apart from the DCS of the plant (Hitachi TC-14-116,
      section 5.1 / 5.2): its pages are a list of their own, reached with the Plant / Turbine switch of the page list. */
-  const TCS_GROUPS = [['', ['turbine', '@criteria', 'turbine-oil']]];
+  const TCS_GROUPS = [['', ['turbine', '@criteria', '@trip', 'turbine-oil']]];
   /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
-  const OWN = { '@criteria': 'Start-up criteria' };
+  const OWN = { '@criteria': 'Start-up criteria', '@trip': 'Turbine trip' };
   const STATIONS = [
     ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
     ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
@@ -990,6 +990,67 @@
     }
     for (const c of all) for (const v of crit.v[c.no] || []) v.textContent = val(c);
   }
+  /* Turbine trip: the inputs of the trip logic of the turbine control (sheet TA-9 TRIP LOGIC (TOTAL) of the IBD SC90794), each with its
+     state now, the cause that came first, and the master trip / reset of the operator (the app's own commands). */
+  const trp = {};
+  let ownWas = '';
+  function trips() {
+    const sh = call(() => AN.tcsIbdSheets().find(x => x.id === 'TA-9'), null),
+      st = call(() => AN.tcsIbd('TA-9'), null),
+      T = call(() => AN.tcsTrip(), null),
+      tb = call(() => AN.unit.tb, null);
+    if (!sh || !T) {
+      if (trp.key !== 'none') {
+        trp.key = 'none';
+        ownPg.replaceChildren(E('p', 'st-none', 'The trip logic of the turbine is not loaded at this starting point.'));
+      }
+      return;
+    }
+    const L = sh.i.map(i => ({ t: String(i[1]), on: !!(st && st.v[i[0]] > 0.5) })),
+      off = !!tb && tb.st === 'off',
+      key = L.map(x => (x.on ? 1 : 0)).join('') + '|' + T.first + '|' + off;
+    if (key !== trp.key && !ownPg.querySelector('.arm')) {
+      trp.key = key;
+      const head = E('div', 'st-ph');
+      trp.h = {};
+      for (const k of ['Turbine', 'First cause', 'Speed']) {
+        const d = E('div'),
+          b = E('b');
+        d.append(E('i', '', k), b);
+        trp.h[k] = b;
+        head.append(d);
+      }
+      const act = E('div', 'st-row st-pa'),
+        tr = E('button', 'st-b', 'Trip the turbine'),
+        rs = E('button', 'st-b', 'Reset the turbine');
+      trp.msg = trp.msg || E('span', 'st-pm');
+      tr.title = 'Master trip: the stop valves and the control valves close at once';
+      rs.title = 'Master reset: possible only when no trip cause is standing';
+      const say = m => {
+        trp.msg.textContent = m ? String(m) : '';
+        setTimeout(tick, 150);
+      };
+      arm(tr, 'Trip the turbine', () => say(call(() => AN.turbine('trip'), '')));
+      rs.onclick = () => say(call(() => AN.turbine('tripreset'), ''));
+      act.append(tr, rs, trp.msg);
+      const box = E('div', 'st-crit');
+      for (const x of L) {
+        const r = E('div', 'st-cr st-tr' + (x.on ? ' miss' : ''));
+        r.append(
+          E('i', 'st-mk' + (x.on ? ' new' : ' ok')),
+          E('span', '', x.t),
+          E('span', 'st-cs', x.on ? 'Standing' : 'Normal')
+        );
+        box.append(r);
+      }
+      ownPg.replaceChildren(head, act, E('h2', 'st-h', 'Trip causes'), box);
+    }
+    if (trp.h) {
+      trp.h.Turbine.textContent = L.some(x => x.on) ? 'Trip standing' : off ? 'Tripped or not started' : 'Reset';
+      trp.h['First cause'].textContent = T.first || 'None';
+      trp.h.Speed.textContent = fmt(tb ? tb.rpm : null, 0) + ' rpm';
+    }
+  }
   function conds() {
     const pg = $('#plantws .hx-process');
     if (!pg || own) return [];
@@ -1124,7 +1185,14 @@
   function tick() {
     updAsk();
     why();
+    if (own !== ownWas) {
+      /* another page of the frame: its content is built anew */
+      ownWas = own;
+      crit.key = trp.key = '';
+      if (ownPg) ownPg.replaceChildren();
+    }
     if (own === '@criteria' && !eng) criteria();
+    if (own === '@trip' && !eng) trips();
     /* the reader of the unit overview of the app (LS_LIVE.getV); the plant model value where the reader has none.
        After a start state is loaded and before the first Run the reader still holds the numbers of the state before (shellc-home.js
        "stale"): only the 150 MW state is its own snapshot, so the other states show the plant model value, or "--", until Run */
