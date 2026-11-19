@@ -7684,8 +7684,8 @@ function tcsSim(s) {
    2296 wide. The scan of this page is turned a little (its frame is 13 lower at the right than at the left and 26 further left at the bottom than
    at the top); every place is typed as it stands on the page set straight.
    MSV inlet steam pressure (A) and (B): two transmitters (0 - 150 kg/cm2g, 4 - 20 mA) through the analog input card (TCE930-1, TCE930-9) into one
-   DUAL INPUT DIAGNOSTICS block. The transmitter is drawn as the crossed circle of the drawing, the card as its mA/V box and the triangle of the
-   PI/O connection. Pins ERR1 and ERR2 of the block are left open in the drawing. The title block of this page prints PAGE 67; it is page 69 of
+   DUAL INPUT DIAGNOSTICS block. The transmitter is drawn as the crossed circle of the drawing, the card as its mA/V box and the filled triangle of
+   the PI/O connection. Pins ERR1 and ERR2 of the block are left open in the drawing. The title block of this page prints PAGE 67; it is page 69 of
    the document. */
 (function () {
   if (typeof window === 'undefined') return;
@@ -7715,7 +7715,7 @@ function tcsSim(s) {
     w = [],
     t = [],
     l = [],
-    p = [];
+    tri = [];
   /* the two transmitters: [letter, row, card, x of the line up to the lamp, row of the lamp, row of the connector, marks, x of the marks] */
   [
     ['A', L('SIG1'), 'TCE930-1', 1117, 137, 180, ['015', '016'], 1150],
@@ -7726,7 +7726,7 @@ function tcsSim(s) {
     b.push(['x' + ch, 'X', '', 436, y, [], {}, [21]]);
     l.push([[457, y], [611, y]]);
     r.push([k, 611, y - 12, 54, 24, 'mA/V'], ['pe' + n, 1021, y + 53, 125, 22, 'PI/O error']);
-    p.push([[786, y - 9], [768, y], [786, y + 9]]);
+    tri.push([777, y, 9]);
     t.push(
       [344, y - 71, 'MSV INLET'],
       [344, y - 49, 'STEAM PRESS.(' + ch + ')'],
@@ -7833,7 +7833,7 @@ function tcsSim(s) {
     ],
     r,
     l,
-    p,
+    tri,
     c,
     d,
     m: [
@@ -7863,6 +7863,96 @@ function tcsSim(s) {
     w,
     t
   });
+})();
+/* TCE102 INPUT SIGNAL DIAGNOSTICS(2) (331DM09784 page 70, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The scan of this page is turned a little; every place is typed as it stands on the page set straight, and what stands on one line of
+   the drawing has one height here.
+   Three single pressure inputs, each a transmitter through the analog input card into one AI DIAG.MD block: MOP(A) discharge oil pressure, COP(A)
+   discharge oil pressure, hot reheat steam pressure. The block is printed without cells (its pins as words inside it); the settings under each
+   block are typed as the drawing lists them. The title block of this page prints PAGE 68; it is page 70 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const r = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    l = [],
+    tri = [],
+    m = [],
+    two = (x, y, a, bb) => t.push([x, y - 27, a], [x, y - 6, bb]);
+  [
+    {
+      y: 214, lab: ['MOP(A) DISCHARGE', 'OIL PRESS.'], pt: 'PT-LOn922-A', rng: '0- 10kg/cm2g', card: 'TCE930-2', xf: 1217, mf: '001', mx: 1374, tag: 'nPT-LOn922-A',
+      foot: 'A002', sg: ['B004', 1216, 87, 76, 1353, 'K:7.0kg/cm2g'], xe: 1343, par: ['10.2', '-0.5', '2.0', '-2.0'], xj: 1660, dyB: -82, B: ['B2', ['TCT201']],
+      A: ['A2', ['TCE300']], mo: '003', D: ['D2', ['TCE470']], mb: '005', dyD: 108
+    },
+    {
+      y: 502, lab: ['COP(A) DISCHARGE', 'OIL PRESS.'], pt: 'PT-LOn931-A', rng: '0- 250kg/cm2g', card: 'TCE930-3', xf: 897, mf: '006', mx: 1045, tag: 'nPT-LOn931-A',
+      foot: 'A007', sg: ['B009', 897, 97, 86, 1024, 'K:150.0kg/cm2g'], xe: 1014, par: ['255.0', '-12.5', '50.0', '-50.0'], xj: 1662, dyB: -75, B: ['B3', ['TCT201']],
+      A: ['A3', ['TCE305']], mo: '008', D: ['D3', ['TCE470']], mb: '010', dyD: 104
+    },
+    {
+      y: 821, lab: ['HOT REHEAT', 'STEAM PRESS.'], pt: 'PT-HRn901', rng: '0- 50kg/cm2g', card: 'TCE930-4', xf: 1218, mf: '011', mx: 1375, tag: 'nPT-HRn901',
+      foot: 'A012', sg: ['B014', 1216, 97, 87, 1354, 'K:5.0kg/cm2g'], xe: 1344, par: ['51.0', '-2.5', '10.0', '-10.0'], xj: 1672, dyB: -74, B: ['B4', ['TCA532', 'TCT200']],
+      A: ['A4', ['-']], mo: '013', D: ['D4', ['TCE470']], mb: '015', dyD: 106
+    }
+  ].forEach((o, i) => {
+    const n = i + 1,
+      y = o.y,
+      k = 't' + n,
+      M = 'm' + n,
+      mx = o.mx,
+      xr = mx + 235,
+      [sno, sx, sdy, sdo, sxc, snote] = o.sg;
+    /* the transmitter, the card and its PI/O error */
+    b.push(['x' + n, 'X', '', 393, y, [], {}, [21]], ['f' + o.mf, 'o:FTR', o.mf, o.xf, y]);
+    l.push([[414, y], [582, y]]);
+    r.push([k, 582, y - 12, 52, 24, 'mA/V'], ['pe' + n, 631, y + 30, 125, 23, 'PI/O error']);
+    tri.push([728, y, 9]);
+    t.push(
+      [293, y - 62, o.lab[0]],
+      [293, y - 40, o.lab[1]],
+      [245, y + 6, '(' + o.pt + ')'],
+      [420, y - 6, o.rng],
+      [420, y + 26, '4- 20mA'],
+      [634, y - 20, '(' + o.card + ')'],
+      [648, y + 25, '(' + o.card + ')']
+    );
+    w.push([k, [[634, y], [mx, y]], 1], ['pe' + n, [[756, y + 41], [o.xe, y + 41], [o.xe, y + 22], [mx, y + 22]]]);
+    /* the block, its simulation value and its settings */
+    m.push([
+      M, 'AI DIAG.MD', o.tag, mx, y - 30, 235, 128, ['IN', 'ERR', 'SIM'], ['OUT', 'ABN'], o.foot,
+      [
+        [mx + 80, y + 116, '(LME510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + o.par[0]],
+        [mx - 2, y + 209, 'LL:' + o.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + o.par[2]],
+        [mx + 157, y + 166, 'LL:' + o.par[3]],
+        [mx + 137, y + 188, 'DEF TP:0.03S'],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    b.push(['sg' + n, 'SG', sno, sx, y + sdy, [snote]]);
+    w.push(['sg' + n, [[sx + 29, y + sdo], [sxc, y + sdo], [sxc, y + 44], [mx, y + 44]], 1]);
+    /* the outputs: the value to two connectors, the abnormal signal to one */
+    c.push(['o' + o.B[0], 'out', o.B[0], 2013, y + o.dyB, '', o.B[1], 1], ['o' + o.A[0], 'out', o.A[0], 2013, y, '', o.A[1]], ['o' + o.D[0], 'out', o.D[0], 2013, y + o.dyD, '', o.D[1]]);
+    b.push(['f' + o.mo, 'o:FTR', o.mo, 1727, y], ['b' + o.mb, 'o:BTR', o.mb, 1727, y + o.dyD]);
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[o.xj, y], [o.xj, y + o.dyB], [1986, y + o.dyB]], 1],
+      [M + '.ABN', [[xr, y + 44], [1672, y + 44], [1672, y + o.dyD], [1986, y + o.dyD]]]
+    );
+    two(1775, y, o.lab[0], o.lab[1]);
+    two(1773, y + o.dyD, o.lab[0], o.lab[1] + ' ABN.');
+  });
+  t.push([247, 1523, 'CONTROLLER:'], [406, 1523, 'EHG+MD'], [668, 1497, 'TRIGGER  :'], [668, 1524, 'CYCLE(ms):30']);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({ id: 'TCE102', title: 'INPUT SIGNAL DIAGNOSTICS(2)', page: 70, ctl: 'EHG+MD', cycle: 30, f: [178, 82, 2228, 1546], r, l, tri, c, m, b, w, t });
 })();
 /* TCE160 TARGET ACCELERATION (331DM09784 page 111, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -19720,7 +19810,9 @@ function tcsSim(s) {
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
                                                                      parameters printed under it ('^DEF' = over it); l / r = the marks of its pins;
                                                                      type 'o:BTR' = a mark on the wire, type 'X' = the crossed circle (inverted input)
-     m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
+     m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes], plain]   macro block, x y = top left; plain = [[y of each left
+                                                                     pin], [y of each right pin]]: a block printed without cells
+     tri: [x, y, s]                                                  the filled triangle of an analog PI/O connection on a line
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
      t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
      live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
@@ -19906,6 +19998,11 @@ function tceSheet(q) {
     at(key, x1, y1, x2, y2);
     net(key);
   }
+  /* the filled triangle of an analog PI/O connection on a line, pointing left: [x, y, s] = its middle and half its size */
+  for (const [x, y, s] of q.tri || []) {
+    poly([[x + s, y - s], [x - s, y], [x + s, y + s]], 1);
+    for (let i = 1.5; i < 2 * s; i += 1.5) poly([[x - s + i, y - i / 2], [x - s + i, y + i / 2]], 0);
+  }
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
     poly([a, b], 0);
@@ -19975,7 +20072,20 @@ function tceSheet(q) {
     net(key);
   }
   /* macro blocks: title bar, pins on both sides, foot bar, the parameter lines under it */
-  for (const [key, name, tag, x, y, w, h, L, R, foot, notes] of q.m || []) {
+  for (const [key, name, tag, x, y, w, h, L, R, foot, notes, plain] of q.m || []) {
+    if (plain) {
+      /* a block the drawing prints without cells: its name at the top left, the names of its pins inside at the heights given
+         (plain = [[y of each left pin], [y of each right pin]]), its number at the bottom */
+      poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
+      tx.push(text(name, x + 3 * u, y + 7 * u, 2.05, 3), text(tag, x + w / 2, y - 4 * u, 1.7, 1), text(foot || '', x + w / 2, y + h - 3.5 * u, 1.7, 4));
+      L.forEach((p, i) => tx.push(text(p, x + 3 * u, plain[0][i], 2.05, 3)));
+      R.forEach((p, i) => {
+        tx.push(text(p, x + w - 2 * u, plain[1][i], 2.05, 5));
+        net(key + '.' + p);
+      });
+      (notes || []).forEach(n => tx.push(text(n[2], n[0], n[1], 1.9, 0)));
+      continue;
+    }
     const bar = 15 * u,
       pw = 36 * u;
     poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
@@ -56856,7 +56966,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build b27144a'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 8f1c685'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -84725,8 +84835,8 @@ function tcsSim(s) {
    2296 wide. The scan of this page is turned a little (its frame is 13 lower at the right than at the left and 26 further left at the bottom than
    at the top); every place is typed as it stands on the page set straight.
    MSV inlet steam pressure (A) and (B): two transmitters (0 - 150 kg/cm2g, 4 - 20 mA) through the analog input card (TCE930-1, TCE930-9) into one
-   DUAL INPUT DIAGNOSTICS block. The transmitter is drawn as the crossed circle of the drawing, the card as its mA/V box and the triangle of the
-   PI/O connection. Pins ERR1 and ERR2 of the block are left open in the drawing. The title block of this page prints PAGE 67; it is page 69 of
+   DUAL INPUT DIAGNOSTICS block. The transmitter is drawn as the crossed circle of the drawing, the card as its mA/V box and the filled triangle of
+   the PI/O connection. Pins ERR1 and ERR2 of the block are left open in the drawing. The title block of this page prints PAGE 67; it is page 69 of
    the document. */
 (function () {
   if (typeof window === 'undefined') return;
@@ -84756,7 +84866,7 @@ function tcsSim(s) {
     w = [],
     t = [],
     l = [],
-    p = [];
+    tri = [];
   /* the two transmitters: [letter, row, card, x of the line up to the lamp, row of the lamp, row of the connector, marks, x of the marks] */
   [
     ['A', L('SIG1'), 'TCE930-1', 1117, 137, 180, ['015', '016'], 1150],
@@ -84767,7 +84877,7 @@ function tcsSim(s) {
     b.push(['x' + ch, 'X', '', 436, y, [], {}, [21]]);
     l.push([[457, y], [611, y]]);
     r.push([k, 611, y - 12, 54, 24, 'mA/V'], ['pe' + n, 1021, y + 53, 125, 22, 'PI/O error']);
-    p.push([[786, y - 9], [768, y], [786, y + 9]]);
+    tri.push([777, y, 9]);
     t.push(
       [344, y - 71, 'MSV INLET'],
       [344, y - 49, 'STEAM PRESS.(' + ch + ')'],
@@ -84874,7 +84984,7 @@ function tcsSim(s) {
     ],
     r,
     l,
-    p,
+    tri,
     c,
     d,
     m: [
@@ -84904,6 +85014,98 @@ function tcsSim(s) {
     w,
     t
   });
+})();
+
+/* ---- src/digital/tce/TCE102.js ---- */
+/* TCE102 INPUT SIGNAL DIAGNOSTICS(2) (331DM09784 page 70, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The scan of this page is turned a little; every place is typed as it stands on the page set straight, and what stands on one line of
+   the drawing has one height here.
+   Three single pressure inputs, each a transmitter through the analog input card into one AI DIAG.MD block: MOP(A) discharge oil pressure, COP(A)
+   discharge oil pressure, hot reheat steam pressure. The block is printed without cells (its pins as words inside it); the settings under each
+   block are typed as the drawing lists them. The title block of this page prints PAGE 68; it is page 70 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const r = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    l = [],
+    tri = [],
+    m = [],
+    two = (x, y, a, bb) => t.push([x, y - 27, a], [x, y - 6, bb]);
+  [
+    {
+      y: 214, lab: ['MOP(A) DISCHARGE', 'OIL PRESS.'], pt: 'PT-LOn922-A', rng: '0- 10kg/cm2g', card: 'TCE930-2', xf: 1217, mf: '001', mx: 1374, tag: 'nPT-LOn922-A',
+      foot: 'A002', sg: ['B004', 1216, 87, 76, 1353, 'K:7.0kg/cm2g'], xe: 1343, par: ['10.2', '-0.5', '2.0', '-2.0'], xj: 1660, dyB: -82, B: ['B2', ['TCT201']],
+      A: ['A2', ['TCE300']], mo: '003', D: ['D2', ['TCE470']], mb: '005', dyD: 108
+    },
+    {
+      y: 502, lab: ['COP(A) DISCHARGE', 'OIL PRESS.'], pt: 'PT-LOn931-A', rng: '0- 250kg/cm2g', card: 'TCE930-3', xf: 897, mf: '006', mx: 1045, tag: 'nPT-LOn931-A',
+      foot: 'A007', sg: ['B009', 897, 97, 86, 1024, 'K:150.0kg/cm2g'], xe: 1014, par: ['255.0', '-12.5', '50.0', '-50.0'], xj: 1662, dyB: -75, B: ['B3', ['TCT201']],
+      A: ['A3', ['TCE305']], mo: '008', D: ['D3', ['TCE470']], mb: '010', dyD: 104
+    },
+    {
+      y: 821, lab: ['HOT REHEAT', 'STEAM PRESS.'], pt: 'PT-HRn901', rng: '0- 50kg/cm2g', card: 'TCE930-4', xf: 1218, mf: '011', mx: 1375, tag: 'nPT-HRn901',
+      foot: 'A012', sg: ['B014', 1216, 97, 87, 1354, 'K:5.0kg/cm2g'], xe: 1344, par: ['51.0', '-2.5', '10.0', '-10.0'], xj: 1672, dyB: -74, B: ['B4', ['TCA532', 'TCT200']],
+      A: ['A4', ['-']], mo: '013', D: ['D4', ['TCE470']], mb: '015', dyD: 106
+    }
+  ].forEach((o, i) => {
+    const n = i + 1,
+      y = o.y,
+      k = 't' + n,
+      M = 'm' + n,
+      mx = o.mx,
+      xr = mx + 235,
+      [sno, sx, sdy, sdo, sxc, snote] = o.sg;
+    /* the transmitter, the card and its PI/O error */
+    b.push(['x' + n, 'X', '', 393, y, [], {}, [21]], ['f' + o.mf, 'o:FTR', o.mf, o.xf, y]);
+    l.push([[414, y], [582, y]]);
+    r.push([k, 582, y - 12, 52, 24, 'mA/V'], ['pe' + n, 631, y + 30, 125, 23, 'PI/O error']);
+    tri.push([728, y, 9]);
+    t.push(
+      [293, y - 62, o.lab[0]],
+      [293, y - 40, o.lab[1]],
+      [245, y + 6, '(' + o.pt + ')'],
+      [420, y - 6, o.rng],
+      [420, y + 26, '4- 20mA'],
+      [634, y - 20, '(' + o.card + ')'],
+      [648, y + 25, '(' + o.card + ')']
+    );
+    w.push([k, [[634, y], [mx, y]], 1], ['pe' + n, [[756, y + 41], [o.xe, y + 41], [o.xe, y + 22], [mx, y + 22]]]);
+    /* the block, its simulation value and its settings */
+    m.push([
+      M, 'AI DIAG.MD', o.tag, mx, y - 30, 235, 128, ['IN', 'ERR', 'SIM'], ['OUT', 'ABN'], o.foot,
+      [
+        [mx + 80, y + 116, '(LME510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + o.par[0]],
+        [mx - 2, y + 209, 'LL:' + o.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + o.par[2]],
+        [mx + 157, y + 166, 'LL:' + o.par[3]],
+        [mx + 137, y + 188, 'DEF TP:0.03S'],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    b.push(['sg' + n, 'SG', sno, sx, y + sdy, [snote]]);
+    w.push(['sg' + n, [[sx + 29, y + sdo], [sxc, y + sdo], [sxc, y + 44], [mx, y + 44]], 1]);
+    /* the outputs: the value to two connectors, the abnormal signal to one */
+    c.push(['o' + o.B[0], 'out', o.B[0], 2013, y + o.dyB, '', o.B[1], 1], ['o' + o.A[0], 'out', o.A[0], 2013, y, '', o.A[1]], ['o' + o.D[0], 'out', o.D[0], 2013, y + o.dyD, '', o.D[1]]);
+    b.push(['f' + o.mo, 'o:FTR', o.mo, 1727, y], ['b' + o.mb, 'o:BTR', o.mb, 1727, y + o.dyD]);
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[o.xj, y], [o.xj, y + o.dyB], [1986, y + o.dyB]], 1],
+      [M + '.ABN', [[xr, y + 44], [1672, y + 44], [1672, y + o.dyD], [1986, y + o.dyD]]]
+    );
+    two(1775, y, o.lab[0], o.lab[1]);
+    two(1773, y + o.dyD, o.lab[0], o.lab[1] + ' ABN.');
+  });
+  t.push([247, 1523, 'CONTROLLER:'], [406, 1523, 'EHG+MD'], [668, 1497, 'TRIGGER  :'], [668, 1524, 'CYCLE(ms):30']);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({ id: 'TCE102', title: 'INPUT SIGNAL DIAGNOSTICS(2)', page: 70, ctl: 'EHG+MD', cycle: 30, f: [178, 82, 2228, 1546], r, l, tri, c, m, b, w, t });
 })();
 
 /* ---- src/digital/tce/TCE160.js ---- */
@@ -96865,7 +97067,9 @@ function tcsSim(s) {
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
                                                                      parameters printed under it ('^DEF' = over it); l / r = the marks of its pins;
                                                                      type 'o:BTR' = a mark on the wire, type 'X' = the crossed circle (inverted input)
-     m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
+     m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes], plain]   macro block, x y = top left; plain = [[y of each left
+                                                                     pin], [y of each right pin]]: a block printed without cells
+     tri: [x, y, s]                                                  the filled triangle of an analog PI/O connection on a line
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
      t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
      live: { source key: 'engine read' | ['engine read', 'unit'] }   the state of every wire of that source (with a unit: an analog value, shown
@@ -97051,6 +97255,11 @@ function tceSheet(q) {
     at(key, x1, y1, x2, y2);
     net(key);
   }
+  /* the filled triangle of an analog PI/O connection on a line, pointing left: [x, y, s] = its middle and half its size */
+  for (const [x, y, s] of q.tri || []) {
+    poly([[x + s, y - s], [x - s, y], [x + s, y + s]], 1);
+    for (let i = 1.5; i < 2 * s; i += 1.5) poly([[x - s + i, y - i / 2], [x - s + i, y + i / 2]], 0);
+  }
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
     poly([a, b], 0);
@@ -97120,7 +97329,20 @@ function tceSheet(q) {
     net(key);
   }
   /* macro blocks: title bar, pins on both sides, foot bar, the parameter lines under it */
-  for (const [key, name, tag, x, y, w, h, L, R, foot, notes] of q.m || []) {
+  for (const [key, name, tag, x, y, w, h, L, R, foot, notes, plain] of q.m || []) {
+    if (plain) {
+      /* a block the drawing prints without cells: its name at the top left, the names of its pins inside at the heights given
+         (plain = [[y of each left pin], [y of each right pin]]), its number at the bottom */
+      poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
+      tx.push(text(name, x + 3 * u, y + 7 * u, 2.05, 3), text(tag, x + w / 2, y - 4 * u, 1.7, 1), text(foot || '', x + w / 2, y + h - 3.5 * u, 1.7, 4));
+      L.forEach((p, i) => tx.push(text(p, x + 3 * u, plain[0][i], 2.05, 3)));
+      R.forEach((p, i) => {
+        tx.push(text(p, x + w - 2 * u, plain[1][i], 2.05, 5));
+        net(key + '.' + p);
+      });
+      (notes || []).forEach(n => tx.push(text(n[2], n[0], n[1], 1.9, 0)));
+      continue;
+    }
     const bar = 15 * u,
       pw = 36 * u;
     poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
@@ -154419,7 +154641,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b27144a'));
+    row('Version', E('span', 'scsver', ver + ' · build 8f1c685'));
   }
   function openSet(near) {
     if (!set) {
