@@ -53,6 +53,7 @@ for (const f of files) {
       if (d[3] !== 'in' && d[3] !== 'out') E('CRT diamond ' + d[0] + ': in or out');
     }
     for (const [a, b] of q.l || []) if (!a || !b || (a[0] !== b[0] && a[1] !== b[1])) E('a plain line is not horizontal or vertical: ' + JSON.stringify([a, b]));
+    for (const [a, b] of q.e || []) if (!a || !b || (a[0] !== b[0] && a[1] !== b[1])) E('a dashed line is not horizontal or vertical: ' + JSON.stringify([a, b]));
     for (const [a, b] of q.a || []) if (!a || !b || a.length !== 2 || b.length !== 2) E('a note arrow is not [[x1, y1], [x2, y2]]');
     for (const m of q.m || []) {
       add(m[0]);

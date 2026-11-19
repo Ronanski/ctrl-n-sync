@@ -10834,6 +10834,683 @@ function tcsSim(s) {
     [622, 1526, 'CYCLE(ms):30']
   ]
 });
+/* TCE206 FLOW CONTROL(1) (331DM09784 page 140, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide. The speed error (RATED SPEED 3600 rpm + OVERSPEED TEST PATTERN - TURBINE SPEED) through FG C003 (table *1,
+   the 5 % droop: +/-216 rpm = +/-87.3 %) or, in LOW DROOP SELECT, through MLT014 x the droop gain (FLOW DEMAND SPAN 87.3 / (droop
+   RL C024 (3 .. 16 %, rate 1 %/s, tracks INITIAL) x 0.01 x RATED SPEED)), ASW005 (52L CLOSE), FILTER 006 (LME240, K 0.1, T 0.3 s,
+   bypassed by FORCED CLOSE), ASW007 (GOVERNING MODE, else 0.0), ADD008 + GOV.SET, LSG 009 with LLM SET and the UNLOADING SIGNAL,
+   ADD010 + the PRESS COMPENSATE MT1 value (B030, LME237) = FLOW DEMAND. TURBINE FLOW DEMAND = CMP016 (on > 59 %, off < 55 %).
+   LOAD LIMITING = A041 (LLM SET below the demand by 0.1 %, GOV CONTROL held 10 s (TP A042), not CHANGE OVER (TD A045 1 s));
+   GOV LIMITING = A044 (the demand below the governor demand, LLM CONTROL held 10 s (TP A043), not CHANGE OVER). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE206',
+  title: 'FLOW CONTROL(1)',
+  page: 140,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [158, 85, 2212, 1550],
+  k: [
+    ['kGm', 330, 149, 'GOVERNING MODE', 'ref'],
+    ['kTs', 331, 481, 'TURBINE SPEED', 'ref'],
+    ['kInit', 1462, 145, 'INITIAL', 'ref'],
+    ['kZero', 1032, 638, '0.0', 'sys.ref'],
+    ['kFd', 1902, 309, 'FLOW DEMAND', 'def', 'def'],
+    ['kOs', 343, 1335, 'OUTSIDE SIMULATION', 'ref'],
+    ['kOff', 343, 1397, 'OFF(0)', 'sys.ref'],
+    ['kSu', 343, 1462, 'SIMULATION USE', 'ref']
+  ],
+  c: [
+    ['iD1', 'in', 'D1', 292, 215, '52L CLOSE', ['TCE053']],
+    ['iOtp', 'in', 'D', 292, 433, '', ['TCE178']], /* two lines (texts) */
+    ['iLds', 'in', 'C', 292, 646, 'LOW DROOP SELECT', ['TCE182']],
+    ['iFc', 'in', 'E', 1094, 533, 'FORCED CLOSE', ['TCE053']],
+    ['iGc', 'in', 'E', 1094, 703, 'GOV CONTROL', ['TCE172']],
+    ['iLc', 'in', 'F', 1094, 788, 'LLM CONTROL', ['TCE172']],
+    ['iCo', 'in', 'N', 1094, 873, 'CHANGE OVER', ['TCE172']],
+    ['iGs', 'in', 'A', 294, 931, 'GOV.SET', ['TCE196']],
+    ['iLs', 'in', 'A', 294, 983, 'LLM SET', ['TCE205']],
+    ['iUn', 'in', 'A', 294, 1036, 'UNLOADING SIGNAL', ['TCE202']],
+    ['iCv', 'in', 'C1', 294, 1090, 'CV TEST MODE', ['TCE212']],
+    ['iMsv', 'in', 'H', 294, 1145, 'DURING MSV TEST', ['TCE211']],
+    ['iSim', 'in', 'B', 295, 1230, '', ['TCE500']], /* two lines (texts) */
+    ['iHp', 'in', 'A', 295, 1304, 'HP TURB 1ST STG STM PRESS.', ['TCE064']],
+    ['oB1', 'out', 'B1', 786, 398, '', ['-'], 1], /* two lines (texts) */
+    ['oB2', 'out', 'B2', 2075, 222, '', ['-'], 1], /* two lines (texts) */
+    ['oE', 'out', 'E', 2073, 382, 'FLOW DEMAND(LVG)', ['TCE202']],
+    ['oD', 'out', 'D', 2073, 489, '', ['-'], 1], /* four lines (texts) */
+    ['oA', 'out', 'A', 2073, 628, '', ['TCE171', 'TCE183', 'TCE205']],
+    ['oA2', 'out', 'A2', 2072, 702, '', ['TCT081E'], 1],
+    ['oC1', 'out', 'C1', 2083, 829, '', ['TCE171']],
+    ['oC2', 'out', 'C2', 2083, 903, '', ['TCT081E'], 1]
+  ],
+  d: [
+    ['crtA2', 785, 270, 'out', 'TCE206_A2', 'S', '#1C'],
+    ['crtA1', 2062, 146, 'out', 'TCE206_A1', 'S', '#1C']
+  ],
+  b: [
+    /* the speed error */
+    ['sgA011', 'SG', 'A011', 399, 342],
+    ['add012', 'ADD', '012', 516, 342],
+    ['ftr004', 'o:FTR', '004', 591, 268],
+    ['ftr015', 'o:FTR', '015', 591, 395],
+    ['sub013', 'SUB', '013', 944, 342],
+    ['fgC003', 'FG', 'C003', 1062, 265, ['^*1']],
+    ['mlt014', 'MLT', '014', 1062, 342],
+    ['asw005', 'ASW', '005', 1169, 320],
+    ['flt006', 'FILTER', '006', 1286, 320, [], { l: ['', 'IN', 'BYP', ''], r: ['', 'OUT', '', ''] }, [86, 86]],
+    ['asw007', 'ASW', '007', 1404, 320],
+    ['add008', 'ADD', '008', 1510, 320],
+    ['lsg009', 'LSG', '009', 1637, 331, [], {}, [59, 64]],
+    ['add010', 'ADD', '010', 1786, 320],
+    ['ftr001', 'o:FTR', '001', 1872, 144],
+    ['ftr002', 'o:FTR', '002', 1872, 219],
+    ['cmp016', 'CMP', '016', 1892, 496, ['HL:59%', 'LL:55%']],
+    /* the droop gain */
+    ['sg017', 'SG', '017', 325, 559, ['K:87.3']],
+    ['sgC020', 'SG', 'C020', 326, 697, ['K:16.0%']],
+    ['sgA027', 'SG', 'A027', 326, 781, ['K:6.0%']],
+    ['asw022', 'ASW', '022', 442, 759],
+    ['lmsC023', 'LMS', 'C023', 538, 759, ['HL:16.0%', 'LL:3.0%']],
+    ['rlC024', 'RL', 'C024', 634, 759, ['RI:1.0%', 'RD:1.0%']],
+    ['gA025', 'G', 'A025', 731, 759, ['K:0.01']],
+    ['mlt026', 'MLT', '026', 837, 759],
+    ['sg029', 'SG', '029', 443, 877],
+    ['div021', 'DIV', '021', 944, 737],
+    /* LOAD LIMITING, GOV LIMITING */
+    ['tpA042', 'TP', 'A042', 1338, 711, ['TP:10.0S']],
+    ['tpA043', 'TP', 'A043', 1338, 796, ['TP:10.0S']],
+    ['tdA045', 'TD', 'A045', 1338, 881, ['TD:1.0S']],
+    ['sub018', 'SUB', '018', 1785, 636],
+    ['cmpA019', 'CMP', 'A019', 1869, 635, ['HL:-0.1%', 'LL:-0.5%']],
+    ['a041', 'A', '041', 1987, 647, [], {}, [59, 64]],
+    ['sub039', 'SUB', '039', 1774, 837],
+    ['cmpA040', 'CMP', 'A040', 1858, 837, ['HL:-0.1%', 'LL:-0.5%']],
+    ['a044', 'A', '044', 1986, 848, [], {}, [59, 64]],
+    ['not046', 'NOT', '046', 1774, 954],
+    /* the steam pressure compensation */
+    ['or048', 'OR', '048', 604, 1098],
+    ['asw034', 'ASW', '034', 722, 1290],
+    ['dsw047', 'DSW', '047', 690, 1407],
+    ['ftr035', 'o:FTR', '035', 870, 1279],
+    ['hld031', 'HLD', '031', 870, 1149],
+    ['sub032', 'SUB', '032', 1030, 1149],
+    ['sgC033', 'SG', 'C033', 1030, 1213, ['K:125.0kg/cm2']],
+    ['sgC036', 'SG', 'C036', 1030, 1287, ['K:104.2kg/cm2']],
+    ['sgC037', 'SG', 'C037', 1030, 1362, ['K:4.0']],
+    ['sgC038', 'SG', 'C038', 1030, 1436, ['K:87.3%']],
+    [
+      'pc030',
+      'PRESS COMPENSATE MT1',
+      'B030',
+      1400,
+      1161,
+      [],
+      { l: ['', 'TEST', 'DEV', 'MAINPS', 'CRCTG', 'R-HP', 'R-MP', 'R-NLOAD', '', ''], r: ['', 'VALUE', '', '', '', '', '', '', '', ''] },
+      [233, 212]
+    ]
+  ],
+  w: [
+    /* the speed error */
+    ['sgA011', [[428, 331], [487, 331]], 1],
+    ['iOtp', [[319, 430], [464, 430], [464, 353], [487, 353]], 1],
+    ['add012', [[545, 331], [915, 331]], 1],
+    ['add012', [[570, 331], [570, 268], [761, 268]], 1],
+    ['add012', [[570, 331], [570, 395], [759, 395]], 1],
+    ['kTs', [[566, 480], [890, 480], [890, 353], [915, 353]], 1],
+    ['sub013', [[973, 331], [1033, 331]], 1],
+    ['sub013', [[1009, 331], [1009, 254], [1033, 254]], 1],
+    ['fgC003', [[1091, 254], [1116, 254], [1116, 309], [1140, 309]], 1],
+    ['mlt014', [[1091, 331], [1140, 331]], 1],
+    ['iD1', [[319, 212], [1169, 212], [1169, 299]]],
+    ['asw005', [[1198, 309], [1243, 309]], 1],
+    ['iFc', [[1121, 530], [1306, 530], [1306, 476], [1222, 476], [1222, 331], [1243, 331]]],
+    ['flt006', [[1329, 309], [1375, 309]], 1],
+    ['kGm', [[565, 148], [1405, 148], [1405, 299]]],
+    ['kZero', [[1267, 637], [1350, 637], [1350, 331], [1375, 331]], 1],
+    ['asw007', [[1433, 309], [1481, 309]], 1],
+    ['iGs', [[321, 928], [1456, 928], [1456, 331], [1481, 331]], 1],
+    ['add008', [[1539, 309], [1607, 309]], 1],
+    ['add008', [[1583, 309], [1583, 272], [1680, 272], [1680, 848], [1745, 848]], 1],
+    ['iLs', [[321, 980], [1561, 980], [1561, 331], [1607, 331]], 1],
+    ['iLs', [[1561, 647], [1756, 647]], 1],
+    ['iUn', [[321, 1033], [1581, 1033], [1581, 352], [1607, 352]], 1],
+    ['lsg009', [[1666, 309], [1757, 309]], 1],
+    ['lsg009', [[1722, 309], [1722, 826], [1745, 826]], 1],
+    ['lsg009', [[1722, 379], [2046, 379]], 1],
+    ['lsg009', [[1722, 625], [1756, 625]], 1],
+    ['pc030', [[1517, 1087], [1699, 1087], [1699, 331], [1757, 331]], 1],
+    /* FLOW DEMAND */
+    ['add010', [[1815, 309], [1918, 309]], 1],
+    ['add010', [[1839, 309], [1839, 144], [2038, 144]], 1],
+    ['add010', [[1839, 219], [2048, 219]], 1],
+    ['add010', [[1839, 309], [1839, 486], [1863, 486]], 1],
+    ['cmp016', [[1921, 486], [2046, 486]]],
+    /* INITIAL */
+    ['kInit', [[1697, 144], [1744, 144], [1744, 583], [636, 583], [636, 738]]],
+    ['kInit', [[1744, 443], [1892, 443], [1892, 475]]],
+    ['kInit', [[1744, 583], [1869, 583], [1869, 614]]],
+    ['kInit', [[1414, 583], [1414, 848], [1338, 848], [1338, 860]]],
+    ['kInit', [[1414, 678], [1338, 678], [1338, 690]]],
+    ['kInit', [[1414, 763], [1338, 763], [1338, 775]]],
+    /* the droop gain */
+    ['sg017', [[355, 548], [890, 548], [890, 726], [915, 726]], 1],
+    ['iLds', [[319, 643], [442, 643], [442, 738]]],
+    ['sgC020', [[355, 686], [390, 686], [390, 748], [413, 748]], 1],
+    ['sgA027', [[355, 770], [413, 770]], 1],
+    ['asw022', [[471, 748], [509, 748]], 1],
+    ['lmsC023', [[567, 748], [605, 748]], 1],
+    ['rlC024', [[663, 748], [702, 748]], 1],
+    ['gA025', [[760, 748], [808, 748]], 1],
+    ['sg029', [[472, 866], [785, 866], [785, 770], [808, 770]], 1],
+    ['mlt026', [[866, 748], [915, 748]], 1],
+    ['div021', [[973, 726], [1009, 726], [1009, 353], [1033, 353]], 1],
+    /* LOAD LIMITING */
+    ['sub018', [[1814, 625], [1840, 625]], 1],
+    ['cmpA019', [[1898, 625], [1958, 625]]],
+    ['iGc', [[1121, 700], [1309, 700]]],
+    ['tpA042', [[1367, 700], [1912, 700], [1912, 647], [1958, 647]]],
+    ['a041', [[2016, 625], [2046, 625]]],
+    ['a041', [[2030, 625], [2030, 699], [2045, 699]]],
+    /* GOV LIMITING */
+    ['sub039', [[1803, 826], [1829, 826]], 1],
+    ['cmpA040', [[1887, 826], [1957, 826]]],
+    ['iLc', [[1121, 785], [1309, 785]]],
+    ['tpA043', [[1367, 785], [1635, 785], [1635, 911], [1911, 911], [1911, 848], [1957, 848]]],
+    ['iCo', [[1121, 870], [1309, 870]]],
+    ['tdA045', [[1367, 870], [1414, 870], [1414, 943], [1745, 943]]],
+    ['not046', [[1803, 943], [1933, 943], [1933, 668], [1958, 668]]],
+    ['not046', [[1933, 869], [1957, 869]]],
+    ['a044', [[2015, 826], [2056, 826]]],
+    ['a044', [[2040, 826], [2040, 900], [2056, 900]]],
+    /* the steam pressure compensation */
+    ['iCv', [[321, 1087], [575, 1087]]],
+    ['iMsv', [[321, 1142], [539, 1142], [539, 1109], [575, 1109]]],
+    ['or048', [[633, 1087], [1284, 1087]]],
+    ['or048', [[870, 1087], [870, 1128]]],
+    ['iSim', [[322, 1227], [668, 1227], [668, 1279], [693, 1279]], 1],
+    ['iHp', [[322, 1301], [693, 1301]], 1],
+    ['kOs', [[578, 1334], [690, 1334], [690, 1386]]],
+    ['kOff', [[578, 1396], [661, 1396]]],
+    ['kSu', [[578, 1461], [625, 1461], [625, 1418], [661, 1418]]],
+    ['dsw047', [[720, 1396], [775, 1396], [775, 1205], [722, 1205], [722, 1269]]],
+    ['asw034', [[751, 1279], [965, 1279], [965, 1160], [1001, 1160]], 1],
+    ['asw034', [[817, 1279], [817, 1138], [841, 1138]], 1],
+    ['hld031', [[899, 1138], [1001, 1138]], 1],
+    ['sub032', [[1059, 1138], [1157, 1138], [1157, 1108], [1284, 1108]], 1],
+    ['sgC033', [[1059, 1202], [1179, 1202], [1179, 1172], [1284, 1172]], 1],
+    ['sgC036', [[1059, 1276], [1199, 1276], [1199, 1130], [1284, 1130]], 1],
+    ['sgC036', [[1199, 1193], [1284, 1193]], 1],
+    ['sgC037', [[1059, 1351], [1220, 1351], [1220, 1151], [1284, 1151]], 1],
+    ['sgC038', [[1059, 1425], [1240, 1425], [1240, 1214], [1284, 1214]], 1]
+  ],
+  /* the FG*1 table */
+  l: [
+    [[1836, 1044], [2039, 1044]],
+    [[1836, 1071], [2039, 1071]],
+    [[1836, 1097], [2039, 1097]],
+    [[1836, 1124], [2039, 1124]],
+    [[1836, 1151], [2039, 1151]],
+    [[1836, 1177], [2039, 1177]],
+    [[1836, 1204], [2039, 1204]],
+    [[1836, 1230], [2039, 1230]],
+    [[1836, 1257], [2039, 1257]],
+    [[1836, 1283], [2039, 1283]],
+    [[1836, 1044], [1836, 1283]],
+    [[1868, 1044], [1868, 1283]],
+    [[1953, 1044], [1953, 1283]],
+    [[2039, 1044], [2039, 1283]]
+  ],
+  t: [
+    [474, 184, '(TCE167)'],
+    [474, 514, '(TCE143)'],
+    [1605, 177, '(TCE050)'],
+    [241, 329, 'RATED SPEED'],
+    [241, 358, 'K:3600.0rpm'],
+    [326, 401, 'OVERSPEED'],
+    [326, 423, 'TEST PATTERN'],
+    [619, 240, 'OVERSPEED'],
+    [1958, 598, 'LOAD LIMITING'],
+    [1936, 806, 'GOV LIMITING'],
+    [619, 261, 'TEST TARGET'],
+    [619, 366, 'OVERSPEED'],
+    [619, 388, 'TEST TARGET'],
+    [906, 326, '+', 1],
+    [906, 348, '-', 1],
+    [1249, 383, '(LME240)'],
+    [1232, 411, 'DEF K:0.1'],
+    [1232, 433, 'DEF T:0.3S'],
+    [1920, 118, 'FLOW'],
+    [1920, 140, 'DEMAND'],
+    [1920, 193, 'FLOW'],
+    [1920, 215, 'DEMAND'],
+    [1849, 480, 'T'],
+    [1927, 417, 'TURBINE FLOW'],
+    [1927, 439, 'DEMAND'],
+    [1927, 461, '(ON>59%,'],
+    [1932, 482, 'OFF<55%)'],
+    [166, 552, 'FLOW DEMAND'],
+    [166, 575, 'SPAN'],
+    [177, 776, 'SPEED'],
+    [177, 797, 'DROOP SET'],
+    [591, 743, 'T'],
+    [286, 861, 'RATED SPEED'],
+    [286, 890, 'K:3600.0rpm'],
+    [1294, 698, 'T'],
+    [1294, 783, 'T'],
+    [1294, 865, 'T'],
+    [1748, 621, '+', 1],
+    [1748, 643, '-', 1],
+    [1827, 619, 'T'],
+    [1737, 823, '+', 1],
+    [1737, 845, '-', 1],
+    [1815, 821, 'T'],
+    [328, 1201, 'SIMULATOR HP'],
+    [328, 1221, 'FIRST STAGE OUTLET STEAM PRESS.'],
+    [827, 1134, 'T'],
+    [992, 1135, '+', 1],
+    [992, 1157, '-', 1],
+    [915, 1355, 'CONTROL'],
+    [915, 1377, 'GAIN'],
+    [1399, 1287, '(LME237)', 1],
+    [1295, 1315, 'DEF RI:999999.9%/S'],
+    [1316, 1337, 'RD:999999.9%/S'],
+    [1295, 1358, 'DEF RI:1.0%/S'],
+    [1316, 1380, 'RD:1.0%/S'],
+    [1295, 1401, 'DEF HL:10000.0'],
+    [1316, 1423, 'LL:1.0'],
+    [1300, 1444, 'HL:40.0%'],
+    [1300, 1465, 'LL:-40.0%'],
+    [1858, 1033, 'FG*1'],
+    [1852, 1062, 'NO', 1],
+    [1910, 1062, 'Xn(rpm)', 1],
+    [1996, 1062, 'Yn(%)', 1],
+    [1852, 1089, '0', 1], [1910, 1089, '-648.0', 1], [1996, 1089, '-261.9', 1],
+    [1852, 1115, '1', 1], [1910, 1115, '-432.0', 1], [1996, 1115, '-174.6', 1],
+    [1852, 1142, '2', 1], [1910, 1142, '-216.0', 1], [1996, 1142, '-87.3', 1],
+    [1852, 1169, '3', 1], [1910, 1169, '-7.2', 1], [1996, 1169, '0.0', 1],
+    [1852, 1195, '4', 1], [1910, 1195, '0.0', 1], [1996, 1195, '0.0', 1],
+    [1852, 1222, '5', 1], [1910, 1222, '7.2', 1], [1996, 1222, '0.0', 1],
+    [1852, 1248, '6', 1], [1910, 1248, '216.0', 1], [1996, 1248, '87.3', 1],
+    [1852, 1275, '7', 1], [1910, 1275, '432.0', 1], [1996, 1275, '174.6', 1],
+    [230, 1531, 'CONTROLLER:'],
+    [393, 1531, 'EHG+MD'],
+    [615, 1502, 'TRIGGER  :'],
+    [615, 1528, 'CYCLE(ms):30']
+  ]
+});
+/* TCE207 FLOW CONTROL(2) (331DM09784 page 141, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide. The HEAT SOAK CONTROL macro A007 (LME242 / LME243): DEMAND = FLOW DEMAND, OPEN1 = CV OPENING BIAS (SG C008
+   20.0 %), OPEN2 = ICV MIN OPENING (SG C009 -0.5 %), CV HLD = AT CV HOLD SPEED +TD60S, CONT = SPEED CONTROL MODE, HOLD = SPEED HOLD,
+   RESET = not HEAT SOAK MODE, S.SEL1 = 1800 RPM SELECTED, S.SEL2 = 2700 RPM SELECTED, S.TARG = TW C014 (1.0 s) after 2700 or 3600 RPM
+   SELECTED (OR013), with INITIAL. CV FLOW DEMAND = ASW006 (switched by not FASV OPERATED, NOT001: ASW005, else 0.0), ASW005 = FLOW
+   DEMAND or the macro CV output, switched by A003 (not HEAT SOAK CONTROL (NOT002) and BIAS.C). CV OPEN = CMP C004
+   (20.5 / 20.0 %), ICV OPEN = CMP C010 (0.2 / 0.1 %), ICV open demand > 0.1 % = CMP C011 (0.1 / 0.1 %), all three with INITIAL. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE207',
+  title: 'FLOW CONTROL(2)',
+  page: 141,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [172, 88, 2222, 1552],
+  k: [
+    ['kInit', 287, 146, 'INITIAL', 'ref'],
+    ['kHsc', 287, 317, 'HEAT SOAK CONTROL', 'ref'],
+    ['kFd', 287, 424, 'FLOW DEMAND', 'ref'],
+    ['kZero', 1277, 550, '0.0', 'sys.ref']
+  ],
+  c: [
+    ['iFasv', 'in', 'B', 303, 223, 'FASV OPERATED', ['TCE182']],
+    ['iHold', 'in', 'D', 297, 883, '', ['TCE163']], /* two lines (texts) */
+    ['iScm', 'in', 'B', 297, 947, 'SPEED CONTROL MODE', ['TCE167']],
+    ['iSh', 'in', 'B', 297, 1011, 'SPEED HOLD', ['TCE164']],
+    ['iHsm', 'in', 'C', 297, 1075, 'HEAT SOAK MODE', ['TCE163']],
+    ['i1800', 'in', 'B', 297, 1139, '1800 RPM SELECTED', ['TCE162']],
+    ['i2700', 'in', 'C', 297, 1203, '2700 RPM SELECTED', ['TCE162']],
+    ['i3600', 'in', 'D', 297, 1267, '3600 RPM SELECTED', ['TCE162']],
+    ['oD', 'out', 'D', 2080, 319, 'CV OPEN', ['-'], 1],
+    ['oA', 'out', 'A', 2080, 426, 'CV FLOW DEMAND', ['TCE182', 'TCE212']],
+    ['oB', 'out', 'B', 2078, 653, 'HEAT SOAK BIAS"0"', ['TCE179']],
+    ['oC', 'out', 'C', 2078, 716, 'ICV FLOW DEMAND', ['TCE214']],
+    ['oE', 'out', 'E', 2080, 820, 'ICV OPEN', ['-'], 1],
+    ['oF', 'out', 'F', 2078, 936, '', []] /* two lines and the reference below (texts) */
+  ],
+  b: [
+    ['not001', 'NOT', '001', 1306, 231],
+    ['not002', 'NOT', '002', 1007, 327],
+    ['a003', 'A', '003', 1305, 327],
+    ['asw005', 'ASW', '005', 1399, 434],
+    ['asw006', 'ASW', '006', 1591, 434],
+    ['cmpC004', 'CMP', 'C004', 1719, 327, ['HL:20.5%', 'LL:20.0%']],
+    ['sgC008', 'SG', 'C008', 438, 691, ['K:20.0%']],
+    ['sgC009', 'SG', 'C009', 438, 775, ['K:-0.5%']],
+    ['cmpC010', 'CMP', 'C010', 1715, 828, ['HL:0.2%', 'LL:0.1%']],
+    ['cmpC011', 'CMP', 'C011', 1715, 944, ['HL:0.1%', 'LL:0.1%']],
+    ['not012', 'NOT', '012', 618, 1083],
+    ['or013', 'OR', '013', 595, 1275],
+    ['twC014', 'TW', 'C014', 680, 1275, ['TW:1.0S']]
+  ],
+  m: [
+    [
+      'hsc',
+      'HEAT SOAK CONTROL',
+      '',
+      779,
+      603,
+      404,
+      537,
+      ['DEMAND', 'OPEN1', 'OPEN2', 'CV HLD', 'CONT', 'HOLD', 'RESET', '', '', 'S.SEL1', 'S.SEL2', '', 'S.TARG', '', ''],
+      ['BIAS.C', 'CV', 'ICV', 'RESET', '', '', '', '', '', '', '', '', '', '', ''],
+      'A007',
+      [
+        [884, 1164, '(LME242)'],
+        [1002, 1164, '(LME243)'],
+        [775, 1187, 'DEF TD:0.05S'],
+        [775, 1209, 'DEF TP:1.0S'],
+        [783, 1230, 'TP:180.0S'],
+        [775, 1251, 'DEF TW:0.03S'],
+        [775, 1273, 'DEF TD:1.0S'],
+        [775, 1294, 'DEF TD:2.0S'],
+        [775, 1315, 'DEF RI:0.03%'],
+        [795, 1337, 'RD:0.03%'],
+        [775, 1358, 'DEF K:0.1%']
+      ]
+    ]
+  ],
+  w: [
+    /* INITIAL */
+    ['kInit', [[522, 145], [1719, 145], [1719, 306]]],
+    ['kInit', [[566, 145], [566, 1231], [680, 1231], [680, 1254]]],
+    ['kInit', [[1661, 145], [1661, 784], [1715, 784], [1715, 807]]],
+    ['kInit', [[1661, 784], [1661, 903], [1715, 903], [1715, 923]]],
+    /* CV FLOW DEMAND */
+    ['iFasv', [[330, 220], [1277, 220]]],
+    ['not001', [[1335, 220], [1591, 220], [1591, 413]]],
+    ['kHsc', [[522, 316], [978, 316]]],
+    ['not002', [[1036, 316], [1276, 316]]],
+    ['a003', [[1334, 316], [1399, 316], [1399, 413]]],
+    ['kFd', [[522, 423], [1370, 423]], 1],
+    ['kFd', [[749, 423], [749, 650], [779, 650]], 1],
+    ['hsc.CV', [[1183, 681], [1248, 681], [1248, 445], [1370, 445]], 1],
+    ['asw005', [[1428, 423], [1562, 423]], 1],
+    ['kZero', [[1512, 549], [1535, 549], [1535, 445], [1562, 445]], 1],
+    ['asw006', [[1620, 423], [2053, 423]], 1],
+    ['asw006', [[1645, 423], [1645, 316], [1690, 316]], 1],
+    ['cmpC004', [[1748, 316], [2053, 316]]],
+    /* HEAT SOAK BIAS and ICV */
+    ['hsc.BIAS.C', [[1183, 650], [2051, 650]]],
+    ['hsc.BIAS.C', [[1228, 650], [1228, 338], [1276, 338]]],
+    ['hsc.ICV', [[1183, 713], [2051, 713]], 1],
+    ['hsc.ICV', [[1640, 713], [1640, 933], [1686, 933]], 1],
+    ['hsc.ICV', [[1640, 817], [1686, 817]], 1],
+    ['cmpC010', [[1744, 817], [2053, 817]]],
+    ['cmpC011', [[1744, 933], [2051, 933]]],
+    /* the macro inputs */
+    ['sgC008', [[467, 680], [779, 680]], 1],
+    ['sgC009', [[467, 764], [587, 764], [587, 713], [779, 713]], 1],
+    ['iHold', [[324, 880], [608, 880], [608, 745], [779, 745]]],
+    ['iScm', [[324, 944], [628, 944], [628, 776], [779, 776]]],
+    ['iSh', [[324, 1008], [650, 1008], [650, 808], [779, 808]]],
+    ['iHsm', [[324, 1072], [589, 1072]]],
+    ['not012', [[647, 1072], [671, 1072], [671, 840], [779, 840]]],
+    ['i1800', [[324, 1136], [691, 1136], [691, 935], [779, 935]]],
+    ['i2700', [[324, 1200], [712, 1200], [712, 967], [779, 967]]],
+    ['i2700', [[541, 1200], [541, 1286], [566, 1286]]],
+    ['i3600', [[324, 1264], [566, 1264]]],
+    ['or013', [[624, 1264], [651, 1264]]],
+    ['twC014', [[709, 1264], [733, 1264], [733, 1030], [779, 1030]]]
+  ],
+  t: [
+    [431, 177, '(TCE050)'],
+    [416, 347, '(TCE163)'],
+    [431, 454, '(TCE206)'],
+    [291, 682, 'CV OPENING'],
+    [291, 704, 'BIAS'],
+    [291, 767, 'ICV MIN'],
+    [291, 789, 'OPENING'],
+    [329, 852, 'AT CV HOLD SPEED'],
+    [329, 873, '+TD60S'],
+    [633, 1257, 'C'],
+    [1673, 310, 'T'],
+    [1669, 810, 'T'],
+    [1669, 926, 'T'],
+    [1845, 907, 'INTERCEPT VALVE'],
+    [1845, 929, 'OPEN DEMAND>0.1%'],
+    [1940, 973, '(TCE365)'],
+    [229, 1533, 'CONTROLLER:'],
+    [389, 1533, 'EHG+MD'],
+    [614, 1506, 'TRIGGER  :'],
+    [614, 1532, 'CYCLE(ms):30']
+  ]
+});
+/* TCE210 MSV(A) CONTROL (331DM09784 page 142, controller EHG+MD, cycle 30 ms; there are no TCE208 / TCE209 in the drawing set). Typed
+   from the drawing; units = the pixels of the page rendered 2296 wide. VALVE CONTROL MT1 A003 (LME244, DEF RI 1.0 / RD 1.0, HL 0.1 % /
+   LL -0.1 %): DEMAND = ASW001 (switched by TD C025, 60 s after CV WARMING NOT COMPLETE, with INITIAL: CV WARMING (A) SET, else OPEN
+   POSITION SG A006 105.0 %), CL.POS = SG A007 -5.0 %, OP.SPD = SG C009 10.0 %/s, CL.SPD = MAX, TO.SPD = ASW029 (full close test
+   10 %/s SG C014, else partial test 0.56 %/s SG A030), TC.SPD = ASW031 (SG C016 10 %/s, else SG A033 0.56 %/s), TEST = OR036 (TD A035
+   2.0 s after MSV/CV(A) FULL CLOSE TEST STATE and CV(A) TEST POSITION (A034), with INITIAL, or MSV(A) PARTIAL TEST), CLOSE = OR026
+   (MSV FORCED CLOSE or the MSV(A) fast acting solenoid valve energize command), WARM = OFF(0). ASW029 switches on OR028 (A027:
+   DURING MSV(A) TEST taken inverted and OR028 itself taken inverted; or TD A035); ASW031 switches on TD A035. The DEMAND output goes
+   to the three servo cards (AEH006A, TCE990-9 / TCE990-21 / TCE991-9) and out as MSV(A) POSITION DEMAND; D.TEST = DURING MSV(A)
+   TEST. The servo card: demand minus MSV(A) position into the servo amplifier, its output to the servo valve coils and read back as
+   SERVO AMP OUTPUT (AI); drawn as on the drawing, it is no logic of the sheet. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE210',
+  title: 'MSV(A) CONTROL',
+  page: 142,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [163, 83, 2215, 1550],
+  k: [
+    ['kInit', 259, 144, 'INITIAL', 'ref'],
+    ['kMax', 354, 592, 'MAX', 'sys.ref'],
+    ['kOff', 351, 1442, 'OFF(0)', 'sys.ref']
+  ],
+  c: [
+    ['iCvw', 'in', 'F', 306, 220, 'CV WARMING NOT COMPLETE', ['TCE152']],
+    ['iSet', 'in', 'C', 306, 285, 'CV WARMING (A) SET', ['TCE155']],
+    ['iDur', 'in', 'B', 305, 700, 'DURING MSV(A) TEST', ['*']],
+    ['iFct', 'in', 'C', 305, 1115, '', ['TCE220']], /* two lines (texts) */
+    ['iCvt', 'in', 'J1', 303, 1181, '', ['TCE125']], /* two lines (texts) */
+    ['iPt', 'in', 'A', 305, 1245, 'MSV(A) PARTIAL TEST', ['TCE220']],
+    ['iFc', 'in', 'H', 305, 1305, 'MSV FORCED CLOSE', ['TCE053']],
+    ['iFas', 'in', 'A', 305, 1370, '', ['TCE099']], /* two lines (texts) */
+    ['oA', 'out', 'A', 2083, 726, 'MSV(A) POSITION DEMAND', ['TCE120', 'TCE121', 'TCE501']],
+    ['oA1', 'out', 'A1', 2083, 896, '', ['-'], 1], /* two lines (texts) */
+    ['oB', 'out', 'B', 2083, 983, 'DURING MSV(A) TEST', ['*', 'TCE211']]
+  ],
+  d: [['crtPd', 2085, 810, 'out', 'TCE210_A1', 'S', '#1C']],
+  b: [
+    /* DEMAND */
+    ['btr024', 'o:BTR', '024', 607, 143],
+    ['tdC025', 'TD', 'C025', 660, 228, ['TD:60.0']],
+    ['asw001', 'ASW', '001', 713, 324],
+    ['sgA006', 'SG', 'A006', 295, 346, ['K:105.0%']],
+    ['ftr002', 'o:FTR', '002', 851, 313],
+    /* the positions and the speeds */
+    ['sgA007', 'SG', 'A007', 295, 431, ['K:-5.0%']],
+    ['ftr008', 'o:FTR', '008', 851, 420],
+    ['sgC009', 'SG', 'C009', 295, 516, ['K:10.0%/S']],
+    ['ftr010', 'o:FTR', '010', 851, 505],
+    ['ftr012', 'o:FTR', '012', 851, 591],
+    ['x027', 'X', '', 722, 643],
+    ['x027b', 'X', '', 615, 697],
+    ['a027', 'A', '027', 721, 686],
+    ['or028', 'OR', '028', 851, 686],
+    ['sgC014', 'SG', 'C014', 295, 781, ['K:10%/S']],
+    ['ftr015', 'o:FTR', '015', 851, 770],
+    ['sgA030', 'SG', 'A030', 295, 858, ['K:0.56%/S']],
+    ['asw029', 'ASW', '029', 966, 781],
+    ['sgC016', 'SG', 'C016', 295, 941, ['K:10%/S']],
+    ['ftr017', 'o:FTR', '017', 851, 930],
+    ['sgA033', 'SG', 'A033', 295, 1017, ['K:0.56%/S']],
+    ['asw031', 'ASW', '031', 966, 941],
+    /* TEST, CLOSE, WARM */
+    ['a034', 'A', '034', 507, 1123],
+    ['tdA035', 'TD', 'A035', 614, 1123, ['TD:2.0s']],
+    ['or036', 'OR', '036', 720, 1123],
+    ['btr018', 'o:BTR', '018', 849, 1112],
+    ['or026', 'OR', '026', 720, 1313],
+    ['btr019', 'o:BTR', '019', 849, 1302],
+    ['btr020', 'o:BTR', '020', 849, 1441],
+    /* VALVE CONTROL MT1 */
+    [
+      'mt003',
+      'VALVE CONTROL MT1',
+      'A003',
+      1256,
+      410,
+      [],
+      {
+        l: ['', 'DEMAND', 'CL.POS.', 'OP.SPD', 'CL.SPD', 'TO.SPD', 'TC.SPD', 'TEST', 'CLOSE', 'WARM', '', ''],
+        r: ['', 'DEMAND', 'D.TEST', '', '', '', '', '', '', '', '', '']
+      },
+      [232, 258]
+    ],
+    /* the outputs */
+    ['ftr004', 'o:FTR', '004', 1576, 313],
+    ['ftr005', 'o:FTR', '005', 1670, 313],
+    ['ftr011', 'o:FTR', '011', 1670, 532],
+    ['ftr013', 'o:FTR', '013', 1670, 617],
+    ['ftr023', 'o:FTR', '023', 1670, 808],
+    ['ftr022', 'o:FTR', '022', 1670, 893],
+    ['btr032', 'o:BTR', '032', 1670, 980]
+  ],
+  /* the servo cards */
+  r: [
+    ['svA', 1745, 234, 330, 256, ''],
+    ['svT1', 1745, 234, 155, 21, 'SERVO'],
+    ['svT2', 1900, 234, 175, 21, 'AEH006A'],
+    ['svP', 1804, 383, 10, 21, ''],
+    ['svB', 1744, 507, 330, 52, ''],
+    ['svC', 1744, 592, 330, 52, '']
+  ],
+  g: [
+    [1752, 313, 'r'],
+    [1751, 532, 'r'],
+    [1751, 617, 'r']
+  ],
+  o: [
+    [1852, 313, 12],
+    [2183, 309, 15, 1],
+    [2183, 362, 15, 1]
+  ],
+  p: [[[1877, 300], [1877, 326], [1903, 313]]],
+  a: [
+    [[1760, 313], [1840, 313]],
+    [[1852, 394], [1852, 325]]
+  ],
+  l: [
+    [[1864, 313], [1877, 313]],
+    [[1903, 313], [2168, 313]],
+    [[1915, 313], [1915, 393]],
+    [[1915, 393], [2000, 393]],
+    [[1814, 394], [1852, 394]],
+    [[1809, 372], [1809, 383]],
+    [[2074, 532], [2108, 532]],
+    [[2074, 617], [2108, 617]],
+    [[2108, 313], [2108, 617]],
+    [[2151, 313], [2151, 362]],
+    [[2151, 362], [2168, 362]]
+  ],
+  e: [
+    [[2140, 276], [2212, 276]],
+    [[2140, 276], [2140, 393]],
+    [[2140, 393], [2212, 393]]
+  ],
+  w: [
+    /* INITIAL */
+    ['kInit', [[494, 143], [777, 143], [777, 375], [647, 375], [647, 1080], [614, 1080], [614, 1102]]],
+    ['kInit', [[660, 143], [660, 207]]],
+    /* DEMAND */
+    ['iCvw', [[333, 217], [631, 217]]],
+    ['tdC025', [[689, 217], [713, 217], [713, 303]]],
+    ['iSet', [[333, 282], [637, 282], [637, 313], [684, 313]], 1],
+    ['sgA006', [[324, 335], [684, 335]], 1],
+    ['asw001', [[742, 313], [1140, 313]], 1],
+    /* the positions and the speeds */
+    ['sgA007', [[324, 420], [968, 420], [968, 335], [1140, 335]], 1],
+    ['sgC009', [[324, 505], [988, 505], [988, 356], [1140, 356]], 1],
+    ['kMax', [[589, 591], [1008, 591], [1008, 378], [1140, 378]], 1],
+    ['iDur', [[332, 697], [692, 697]]],
+    ['or028', [[880, 675], [966, 675], [966, 760]]],
+    ['or028', [[966, 675], [966, 643], [667, 643], [667, 675], [692, 675]]],
+    ['a027', [[750, 675], [822, 675]]],
+    ['tdA035', [[667, 1112], [667, 739], [796, 739], [796, 697], [822, 697]]],
+    ['tdA035', [[667, 899], [966, 899], [966, 920]]],
+    ['sgC014', [[324, 770], [937, 770]], 1],
+    ['sgA030', [[324, 847], [913, 847], [913, 792], [937, 792]], 1],
+    ['asw029', [[995, 770], [1030, 770], [1030, 399], [1140, 399]], 1],
+    ['sgC016', [[324, 930], [937, 930]], 1],
+    ['sgA033', [[324, 1006], [913, 1006], [913, 952], [937, 952]], 1],
+    ['asw031', [[995, 930], [1051, 930], [1051, 421], [1140, 421]], 1],
+    /* TEST, CLOSE, WARM */
+    ['iFct', [[332, 1112], [478, 1112]]],
+    ['iCvt', [[330, 1178], [454, 1178], [454, 1134], [478, 1134]]],
+    ['a034', [[536, 1112], [585, 1112]]],
+    ['tdA035', [[643, 1112], [691, 1112]]],
+    ['iPt', [[332, 1242], [667, 1242], [667, 1134], [691, 1134]]],
+    ['or036', [[749, 1112], [1073, 1112], [1073, 442], [1140, 442]]],
+    ['iFc', [[332, 1302], [691, 1302]]],
+    ['iFas', [[332, 1367], [667, 1367], [667, 1324], [691, 1324]]],
+    ['or026', [[749, 1302], [1094, 1302], [1094, 464], [1140, 464]]],
+    ['kOff', [[586, 1441], [1115, 1441], [1115, 485], [1140, 485]]],
+    /* the outputs */
+    ['mt003', [[1372, 313], [1745, 313]], 1],
+    ['mt003', [[1636, 313], [1636, 893], [2056, 893]], 1],
+    ['mt003', [[1636, 532], [1744, 532]], 1],
+    ['mt003', [[1636, 617], [1744, 617]], 1],
+    ['mt003', [[1636, 723], [2056, 723]], 1],
+    ['mt003', [[1636, 808], [2061, 808]], 1],
+    ['mt003', [[1372, 335], [1615, 335], [1615, 980], [2056, 980]]]
+  ],
+  t: [
+    [404, 175, '(TCE050)'],
+    [331, 329, 'OPEN POSITION'],
+    [331, 414, 'CLOSE POSITION'],
+    [331, 499, 'OPENING SPEED'],
+    [351, 744, 'OPENING SPEED FOR FULL'],
+    [351, 765, 'CLOSE TEST'],
+    [351, 818, 'OPENING SPEED FOR PARTIAL'],
+    [351, 840, 'TEST'],
+    [351, 903, 'CLOSING SPEED FOR FULL'],
+    [351, 924, 'CLOSE TEST'],
+    [351, 978, 'CLOSING SPEED FOR PARTIAL'],
+    [351, 999, 'TEST'],
+    [336, 1084, 'MSV/CV(A) FULL CLOSE'],
+    [336, 1105, 'TEST STATE'],
+    [336, 1148, 'CV(A) TEST'],
+    [336, 1169, 'POSITION'],
+    [336, 1339, 'MSV(A) FAST ACTING SOLENOID'],
+    [336, 1361, 'VALVE ENERGIZE COMMAND'],
+    [616, 211, 'T'],
+    [567, 1106, 'T'],
+    [1128, 586, 'DEF RI:1.0'],
+    [1145, 608, 'RD:1.0'],
+    [1128, 629, 'DEF HL:0.1%'],
+    [1145, 651, 'LL:-0.1%'],
+    [1220, 557, '(LME244)'],
+    [1770, 290, '(TCE990-9)'],
+    [1862, 288, 'MSV(A) DEMAND'],
+    [1824, 303, '+'],
+    [1834, 342, '-'],
+    [1751, 352, 'MSV(A)'],
+    [1751, 368, 'POSITION'],
+    [1921, 372, 'SERVO AMP'],
+    [1921, 388, 'OUTPUT'],
+    [2008, 398, 'AI'],
+    [1760, 525, '(TCE990-21)'],
+    [1910, 543, 'DITTO', 1],
+    [1768, 610, '(TCE991-9)'],
+    [1910, 628, 'DITTO', 1],
+    [1737, 800, 'MSV(A) POSITION DEMAND'],
+    [1737, 864, 'MSV(A)'],
+    [1737, 886, 'POSITION DEMAND'],
+    [228, 1532, 'CONTROLLER:'],
+    [389, 1532, 'EHG+MD'],
+    [618, 1503, 'TRIGGER  :'],
+    [618, 1530, 'CYCLE(ms):30']
+  ]
+});
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE172',
@@ -10964,7 +11641,9 @@ function tcsSim(s) {
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
      a: [[x1, y1], [x2, y2]]                                         note arrow of the drawing (open head at the second point)
-     l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical
+     l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical;
+                                                                     e: the same, dashed; o: [x, y, r, dbl] circle of a part (a summing point,
+                                                                     dbl 1 = a servo valve coil); p: [[x, y], ...] closed outline (an amplifier)
      d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
@@ -11081,6 +11760,24 @@ function tceSheet(q) {
   }
   /* plain lines of the drawing that carry no signal (the rules of a table) */
   for (const [a, b] of q.l || []) poly([a, b], 0);
+  /* the same, dashed (the border of a field part such as the servo valve), horizontal or vertical */
+  for (const [a, b] of q.e || []) {
+    const L = Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]),
+      sx = Math.sign(b[0] - a[0]),
+      sy = Math.sign(b[1] - a[1]),
+      on = 4 * u,
+      off = 3 * u;
+    for (let s = 0; s < L; s += on + off) {
+      const t = Math.min(s + on, L);
+      poly([[a[0] + sx * s, a[1] + sy * s], [a[0] + sx * t, a[1] + sy * t]], 0);
+    }
+  }
+  /* part symbols that carry no signal of the sheet: o = a circle (a summing point; dbl 1 = a servo valve coil), p = a closed outline (an amplifier) */
+  for (const [x, y, r, dbl] of q.o || []) {
+    ci.push([X(x), Y(y), W(r), 'SYM']);
+    if (dbl) ci.push([X(x), Y(y), W(r * 0.65), 'SYM']);
+  }
+  for (const P of q.p || []) poly(P, 1);
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
     poly([a, b], 0);
@@ -47988,7 +48685,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build bb4b2be'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 61d6128'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -79006,6 +79703,689 @@ function tcsSim(s) {
   ]
 });
 
+/* ---- src/digital/tce/TCE206.js ---- */
+/* TCE206 FLOW CONTROL(1) (331DM09784 page 140, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide. The speed error (RATED SPEED 3600 rpm + OVERSPEED TEST PATTERN - TURBINE SPEED) through FG C003 (table *1,
+   the 5 % droop: +/-216 rpm = +/-87.3 %) or, in LOW DROOP SELECT, through MLT014 x the droop gain (FLOW DEMAND SPAN 87.3 / (droop
+   RL C024 (3 .. 16 %, rate 1 %/s, tracks INITIAL) x 0.01 x RATED SPEED)), ASW005 (52L CLOSE), FILTER 006 (LME240, K 0.1, T 0.3 s,
+   bypassed by FORCED CLOSE), ASW007 (GOVERNING MODE, else 0.0), ADD008 + GOV.SET, LSG 009 with LLM SET and the UNLOADING SIGNAL,
+   ADD010 + the PRESS COMPENSATE MT1 value (B030, LME237) = FLOW DEMAND. TURBINE FLOW DEMAND = CMP016 (on > 59 %, off < 55 %).
+   LOAD LIMITING = A041 (LLM SET below the demand by 0.1 %, GOV CONTROL held 10 s (TP A042), not CHANGE OVER (TD A045 1 s));
+   GOV LIMITING = A044 (the demand below the governor demand, LLM CONTROL held 10 s (TP A043), not CHANGE OVER). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE206',
+  title: 'FLOW CONTROL(1)',
+  page: 140,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [158, 85, 2212, 1550],
+  k: [
+    ['kGm', 330, 149, 'GOVERNING MODE', 'ref'],
+    ['kTs', 331, 481, 'TURBINE SPEED', 'ref'],
+    ['kInit', 1462, 145, 'INITIAL', 'ref'],
+    ['kZero', 1032, 638, '0.0', 'sys.ref'],
+    ['kFd', 1902, 309, 'FLOW DEMAND', 'def', 'def'],
+    ['kOs', 343, 1335, 'OUTSIDE SIMULATION', 'ref'],
+    ['kOff', 343, 1397, 'OFF(0)', 'sys.ref'],
+    ['kSu', 343, 1462, 'SIMULATION USE', 'ref']
+  ],
+  c: [
+    ['iD1', 'in', 'D1', 292, 215, '52L CLOSE', ['TCE053']],
+    ['iOtp', 'in', 'D', 292, 433, '', ['TCE178']], /* two lines (texts) */
+    ['iLds', 'in', 'C', 292, 646, 'LOW DROOP SELECT', ['TCE182']],
+    ['iFc', 'in', 'E', 1094, 533, 'FORCED CLOSE', ['TCE053']],
+    ['iGc', 'in', 'E', 1094, 703, 'GOV CONTROL', ['TCE172']],
+    ['iLc', 'in', 'F', 1094, 788, 'LLM CONTROL', ['TCE172']],
+    ['iCo', 'in', 'N', 1094, 873, 'CHANGE OVER', ['TCE172']],
+    ['iGs', 'in', 'A', 294, 931, 'GOV.SET', ['TCE196']],
+    ['iLs', 'in', 'A', 294, 983, 'LLM SET', ['TCE205']],
+    ['iUn', 'in', 'A', 294, 1036, 'UNLOADING SIGNAL', ['TCE202']],
+    ['iCv', 'in', 'C1', 294, 1090, 'CV TEST MODE', ['TCE212']],
+    ['iMsv', 'in', 'H', 294, 1145, 'DURING MSV TEST', ['TCE211']],
+    ['iSim', 'in', 'B', 295, 1230, '', ['TCE500']], /* two lines (texts) */
+    ['iHp', 'in', 'A', 295, 1304, 'HP TURB 1ST STG STM PRESS.', ['TCE064']],
+    ['oB1', 'out', 'B1', 786, 398, '', ['-'], 1], /* two lines (texts) */
+    ['oB2', 'out', 'B2', 2075, 222, '', ['-'], 1], /* two lines (texts) */
+    ['oE', 'out', 'E', 2073, 382, 'FLOW DEMAND(LVG)', ['TCE202']],
+    ['oD', 'out', 'D', 2073, 489, '', ['-'], 1], /* four lines (texts) */
+    ['oA', 'out', 'A', 2073, 628, '', ['TCE171', 'TCE183', 'TCE205']],
+    ['oA2', 'out', 'A2', 2072, 702, '', ['TCT081E'], 1],
+    ['oC1', 'out', 'C1', 2083, 829, '', ['TCE171']],
+    ['oC2', 'out', 'C2', 2083, 903, '', ['TCT081E'], 1]
+  ],
+  d: [
+    ['crtA2', 785, 270, 'out', 'TCE206_A2', 'S', '#1C'],
+    ['crtA1', 2062, 146, 'out', 'TCE206_A1', 'S', '#1C']
+  ],
+  b: [
+    /* the speed error */
+    ['sgA011', 'SG', 'A011', 399, 342],
+    ['add012', 'ADD', '012', 516, 342],
+    ['ftr004', 'o:FTR', '004', 591, 268],
+    ['ftr015', 'o:FTR', '015', 591, 395],
+    ['sub013', 'SUB', '013', 944, 342],
+    ['fgC003', 'FG', 'C003', 1062, 265, ['^*1']],
+    ['mlt014', 'MLT', '014', 1062, 342],
+    ['asw005', 'ASW', '005', 1169, 320],
+    ['flt006', 'FILTER', '006', 1286, 320, [], { l: ['', 'IN', 'BYP', ''], r: ['', 'OUT', '', ''] }, [86, 86]],
+    ['asw007', 'ASW', '007', 1404, 320],
+    ['add008', 'ADD', '008', 1510, 320],
+    ['lsg009', 'LSG', '009', 1637, 331, [], {}, [59, 64]],
+    ['add010', 'ADD', '010', 1786, 320],
+    ['ftr001', 'o:FTR', '001', 1872, 144],
+    ['ftr002', 'o:FTR', '002', 1872, 219],
+    ['cmp016', 'CMP', '016', 1892, 496, ['HL:59%', 'LL:55%']],
+    /* the droop gain */
+    ['sg017', 'SG', '017', 325, 559, ['K:87.3']],
+    ['sgC020', 'SG', 'C020', 326, 697, ['K:16.0%']],
+    ['sgA027', 'SG', 'A027', 326, 781, ['K:6.0%']],
+    ['asw022', 'ASW', '022', 442, 759],
+    ['lmsC023', 'LMS', 'C023', 538, 759, ['HL:16.0%', 'LL:3.0%']],
+    ['rlC024', 'RL', 'C024', 634, 759, ['RI:1.0%', 'RD:1.0%']],
+    ['gA025', 'G', 'A025', 731, 759, ['K:0.01']],
+    ['mlt026', 'MLT', '026', 837, 759],
+    ['sg029', 'SG', '029', 443, 877],
+    ['div021', 'DIV', '021', 944, 737],
+    /* LOAD LIMITING, GOV LIMITING */
+    ['tpA042', 'TP', 'A042', 1338, 711, ['TP:10.0S']],
+    ['tpA043', 'TP', 'A043', 1338, 796, ['TP:10.0S']],
+    ['tdA045', 'TD', 'A045', 1338, 881, ['TD:1.0S']],
+    ['sub018', 'SUB', '018', 1785, 636],
+    ['cmpA019', 'CMP', 'A019', 1869, 635, ['HL:-0.1%', 'LL:-0.5%']],
+    ['a041', 'A', '041', 1987, 647, [], {}, [59, 64]],
+    ['sub039', 'SUB', '039', 1774, 837],
+    ['cmpA040', 'CMP', 'A040', 1858, 837, ['HL:-0.1%', 'LL:-0.5%']],
+    ['a044', 'A', '044', 1986, 848, [], {}, [59, 64]],
+    ['not046', 'NOT', '046', 1774, 954],
+    /* the steam pressure compensation */
+    ['or048', 'OR', '048', 604, 1098],
+    ['asw034', 'ASW', '034', 722, 1290],
+    ['dsw047', 'DSW', '047', 690, 1407],
+    ['ftr035', 'o:FTR', '035', 870, 1279],
+    ['hld031', 'HLD', '031', 870, 1149],
+    ['sub032', 'SUB', '032', 1030, 1149],
+    ['sgC033', 'SG', 'C033', 1030, 1213, ['K:125.0kg/cm2']],
+    ['sgC036', 'SG', 'C036', 1030, 1287, ['K:104.2kg/cm2']],
+    ['sgC037', 'SG', 'C037', 1030, 1362, ['K:4.0']],
+    ['sgC038', 'SG', 'C038', 1030, 1436, ['K:87.3%']],
+    [
+      'pc030',
+      'PRESS COMPENSATE MT1',
+      'B030',
+      1400,
+      1161,
+      [],
+      { l: ['', 'TEST', 'DEV', 'MAINPS', 'CRCTG', 'R-HP', 'R-MP', 'R-NLOAD', '', ''], r: ['', 'VALUE', '', '', '', '', '', '', '', ''] },
+      [233, 212]
+    ]
+  ],
+  w: [
+    /* the speed error */
+    ['sgA011', [[428, 331], [487, 331]], 1],
+    ['iOtp', [[319, 430], [464, 430], [464, 353], [487, 353]], 1],
+    ['add012', [[545, 331], [915, 331]], 1],
+    ['add012', [[570, 331], [570, 268], [761, 268]], 1],
+    ['add012', [[570, 331], [570, 395], [759, 395]], 1],
+    ['kTs', [[566, 480], [890, 480], [890, 353], [915, 353]], 1],
+    ['sub013', [[973, 331], [1033, 331]], 1],
+    ['sub013', [[1009, 331], [1009, 254], [1033, 254]], 1],
+    ['fgC003', [[1091, 254], [1116, 254], [1116, 309], [1140, 309]], 1],
+    ['mlt014', [[1091, 331], [1140, 331]], 1],
+    ['iD1', [[319, 212], [1169, 212], [1169, 299]]],
+    ['asw005', [[1198, 309], [1243, 309]], 1],
+    ['iFc', [[1121, 530], [1306, 530], [1306, 476], [1222, 476], [1222, 331], [1243, 331]]],
+    ['flt006', [[1329, 309], [1375, 309]], 1],
+    ['kGm', [[565, 148], [1405, 148], [1405, 299]]],
+    ['kZero', [[1267, 637], [1350, 637], [1350, 331], [1375, 331]], 1],
+    ['asw007', [[1433, 309], [1481, 309]], 1],
+    ['iGs', [[321, 928], [1456, 928], [1456, 331], [1481, 331]], 1],
+    ['add008', [[1539, 309], [1607, 309]], 1],
+    ['add008', [[1583, 309], [1583, 272], [1680, 272], [1680, 848], [1745, 848]], 1],
+    ['iLs', [[321, 980], [1561, 980], [1561, 331], [1607, 331]], 1],
+    ['iLs', [[1561, 647], [1756, 647]], 1],
+    ['iUn', [[321, 1033], [1581, 1033], [1581, 352], [1607, 352]], 1],
+    ['lsg009', [[1666, 309], [1757, 309]], 1],
+    ['lsg009', [[1722, 309], [1722, 826], [1745, 826]], 1],
+    ['lsg009', [[1722, 379], [2046, 379]], 1],
+    ['lsg009', [[1722, 625], [1756, 625]], 1],
+    ['pc030', [[1517, 1087], [1699, 1087], [1699, 331], [1757, 331]], 1],
+    /* FLOW DEMAND */
+    ['add010', [[1815, 309], [1918, 309]], 1],
+    ['add010', [[1839, 309], [1839, 144], [2038, 144]], 1],
+    ['add010', [[1839, 219], [2048, 219]], 1],
+    ['add010', [[1839, 309], [1839, 486], [1863, 486]], 1],
+    ['cmp016', [[1921, 486], [2046, 486]]],
+    /* INITIAL */
+    ['kInit', [[1697, 144], [1744, 144], [1744, 583], [636, 583], [636, 738]]],
+    ['kInit', [[1744, 443], [1892, 443], [1892, 475]]],
+    ['kInit', [[1744, 583], [1869, 583], [1869, 614]]],
+    ['kInit', [[1414, 583], [1414, 848], [1338, 848], [1338, 860]]],
+    ['kInit', [[1414, 678], [1338, 678], [1338, 690]]],
+    ['kInit', [[1414, 763], [1338, 763], [1338, 775]]],
+    /* the droop gain */
+    ['sg017', [[355, 548], [890, 548], [890, 726], [915, 726]], 1],
+    ['iLds', [[319, 643], [442, 643], [442, 738]]],
+    ['sgC020', [[355, 686], [390, 686], [390, 748], [413, 748]], 1],
+    ['sgA027', [[355, 770], [413, 770]], 1],
+    ['asw022', [[471, 748], [509, 748]], 1],
+    ['lmsC023', [[567, 748], [605, 748]], 1],
+    ['rlC024', [[663, 748], [702, 748]], 1],
+    ['gA025', [[760, 748], [808, 748]], 1],
+    ['sg029', [[472, 866], [785, 866], [785, 770], [808, 770]], 1],
+    ['mlt026', [[866, 748], [915, 748]], 1],
+    ['div021', [[973, 726], [1009, 726], [1009, 353], [1033, 353]], 1],
+    /* LOAD LIMITING */
+    ['sub018', [[1814, 625], [1840, 625]], 1],
+    ['cmpA019', [[1898, 625], [1958, 625]]],
+    ['iGc', [[1121, 700], [1309, 700]]],
+    ['tpA042', [[1367, 700], [1912, 700], [1912, 647], [1958, 647]]],
+    ['a041', [[2016, 625], [2046, 625]]],
+    ['a041', [[2030, 625], [2030, 699], [2045, 699]]],
+    /* GOV LIMITING */
+    ['sub039', [[1803, 826], [1829, 826]], 1],
+    ['cmpA040', [[1887, 826], [1957, 826]]],
+    ['iLc', [[1121, 785], [1309, 785]]],
+    ['tpA043', [[1367, 785], [1635, 785], [1635, 911], [1911, 911], [1911, 848], [1957, 848]]],
+    ['iCo', [[1121, 870], [1309, 870]]],
+    ['tdA045', [[1367, 870], [1414, 870], [1414, 943], [1745, 943]]],
+    ['not046', [[1803, 943], [1933, 943], [1933, 668], [1958, 668]]],
+    ['not046', [[1933, 869], [1957, 869]]],
+    ['a044', [[2015, 826], [2056, 826]]],
+    ['a044', [[2040, 826], [2040, 900], [2056, 900]]],
+    /* the steam pressure compensation */
+    ['iCv', [[321, 1087], [575, 1087]]],
+    ['iMsv', [[321, 1142], [539, 1142], [539, 1109], [575, 1109]]],
+    ['or048', [[633, 1087], [1284, 1087]]],
+    ['or048', [[870, 1087], [870, 1128]]],
+    ['iSim', [[322, 1227], [668, 1227], [668, 1279], [693, 1279]], 1],
+    ['iHp', [[322, 1301], [693, 1301]], 1],
+    ['kOs', [[578, 1334], [690, 1334], [690, 1386]]],
+    ['kOff', [[578, 1396], [661, 1396]]],
+    ['kSu', [[578, 1461], [625, 1461], [625, 1418], [661, 1418]]],
+    ['dsw047', [[720, 1396], [775, 1396], [775, 1205], [722, 1205], [722, 1269]]],
+    ['asw034', [[751, 1279], [965, 1279], [965, 1160], [1001, 1160]], 1],
+    ['asw034', [[817, 1279], [817, 1138], [841, 1138]], 1],
+    ['hld031', [[899, 1138], [1001, 1138]], 1],
+    ['sub032', [[1059, 1138], [1157, 1138], [1157, 1108], [1284, 1108]], 1],
+    ['sgC033', [[1059, 1202], [1179, 1202], [1179, 1172], [1284, 1172]], 1],
+    ['sgC036', [[1059, 1276], [1199, 1276], [1199, 1130], [1284, 1130]], 1],
+    ['sgC036', [[1199, 1193], [1284, 1193]], 1],
+    ['sgC037', [[1059, 1351], [1220, 1351], [1220, 1151], [1284, 1151]], 1],
+    ['sgC038', [[1059, 1425], [1240, 1425], [1240, 1214], [1284, 1214]], 1]
+  ],
+  /* the FG*1 table */
+  l: [
+    [[1836, 1044], [2039, 1044]],
+    [[1836, 1071], [2039, 1071]],
+    [[1836, 1097], [2039, 1097]],
+    [[1836, 1124], [2039, 1124]],
+    [[1836, 1151], [2039, 1151]],
+    [[1836, 1177], [2039, 1177]],
+    [[1836, 1204], [2039, 1204]],
+    [[1836, 1230], [2039, 1230]],
+    [[1836, 1257], [2039, 1257]],
+    [[1836, 1283], [2039, 1283]],
+    [[1836, 1044], [1836, 1283]],
+    [[1868, 1044], [1868, 1283]],
+    [[1953, 1044], [1953, 1283]],
+    [[2039, 1044], [2039, 1283]]
+  ],
+  t: [
+    [474, 184, '(TCE167)'],
+    [474, 514, '(TCE143)'],
+    [1605, 177, '(TCE050)'],
+    [241, 329, 'RATED SPEED'],
+    [241, 358, 'K:3600.0rpm'],
+    [326, 401, 'OVERSPEED'],
+    [326, 423, 'TEST PATTERN'],
+    [619, 240, 'OVERSPEED'],
+    [1958, 598, 'LOAD LIMITING'],
+    [1936, 806, 'GOV LIMITING'],
+    [619, 261, 'TEST TARGET'],
+    [619, 366, 'OVERSPEED'],
+    [619, 388, 'TEST TARGET'],
+    [906, 326, '+', 1],
+    [906, 348, '-', 1],
+    [1249, 383, '(LME240)'],
+    [1232, 411, 'DEF K:0.1'],
+    [1232, 433, 'DEF T:0.3S'],
+    [1920, 118, 'FLOW'],
+    [1920, 140, 'DEMAND'],
+    [1920, 193, 'FLOW'],
+    [1920, 215, 'DEMAND'],
+    [1849, 480, 'T'],
+    [1927, 417, 'TURBINE FLOW'],
+    [1927, 439, 'DEMAND'],
+    [1927, 461, '(ON>59%,'],
+    [1932, 482, 'OFF<55%)'],
+    [166, 552, 'FLOW DEMAND'],
+    [166, 575, 'SPAN'],
+    [177, 776, 'SPEED'],
+    [177, 797, 'DROOP SET'],
+    [591, 743, 'T'],
+    [286, 861, 'RATED SPEED'],
+    [286, 890, 'K:3600.0rpm'],
+    [1294, 698, 'T'],
+    [1294, 783, 'T'],
+    [1294, 865, 'T'],
+    [1748, 621, '+', 1],
+    [1748, 643, '-', 1],
+    [1827, 619, 'T'],
+    [1737, 823, '+', 1],
+    [1737, 845, '-', 1],
+    [1815, 821, 'T'],
+    [328, 1201, 'SIMULATOR HP'],
+    [328, 1221, 'FIRST STAGE OUTLET STEAM PRESS.'],
+    [827, 1134, 'T'],
+    [992, 1135, '+', 1],
+    [992, 1157, '-', 1],
+    [915, 1355, 'CONTROL'],
+    [915, 1377, 'GAIN'],
+    [1399, 1287, '(LME237)', 1],
+    [1295, 1315, 'DEF RI:999999.9%/S'],
+    [1316, 1337, 'RD:999999.9%/S'],
+    [1295, 1358, 'DEF RI:1.0%/S'],
+    [1316, 1380, 'RD:1.0%/S'],
+    [1295, 1401, 'DEF HL:10000.0'],
+    [1316, 1423, 'LL:1.0'],
+    [1300, 1444, 'HL:40.0%'],
+    [1300, 1465, 'LL:-40.0%'],
+    [1858, 1033, 'FG*1'],
+    [1852, 1062, 'NO', 1],
+    [1910, 1062, 'Xn(rpm)', 1],
+    [1996, 1062, 'Yn(%)', 1],
+    [1852, 1089, '0', 1], [1910, 1089, '-648.0', 1], [1996, 1089, '-261.9', 1],
+    [1852, 1115, '1', 1], [1910, 1115, '-432.0', 1], [1996, 1115, '-174.6', 1],
+    [1852, 1142, '2', 1], [1910, 1142, '-216.0', 1], [1996, 1142, '-87.3', 1],
+    [1852, 1169, '3', 1], [1910, 1169, '-7.2', 1], [1996, 1169, '0.0', 1],
+    [1852, 1195, '4', 1], [1910, 1195, '0.0', 1], [1996, 1195, '0.0', 1],
+    [1852, 1222, '5', 1], [1910, 1222, '7.2', 1], [1996, 1222, '0.0', 1],
+    [1852, 1248, '6', 1], [1910, 1248, '216.0', 1], [1996, 1248, '87.3', 1],
+    [1852, 1275, '7', 1], [1910, 1275, '432.0', 1], [1996, 1275, '174.6', 1],
+    [230, 1531, 'CONTROLLER:'],
+    [393, 1531, 'EHG+MD'],
+    [615, 1502, 'TRIGGER  :'],
+    [615, 1528, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE207.js ---- */
+/* TCE207 FLOW CONTROL(2) (331DM09784 page 141, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide. The HEAT SOAK CONTROL macro A007 (LME242 / LME243): DEMAND = FLOW DEMAND, OPEN1 = CV OPENING BIAS (SG C008
+   20.0 %), OPEN2 = ICV MIN OPENING (SG C009 -0.5 %), CV HLD = AT CV HOLD SPEED +TD60S, CONT = SPEED CONTROL MODE, HOLD = SPEED HOLD,
+   RESET = not HEAT SOAK MODE, S.SEL1 = 1800 RPM SELECTED, S.SEL2 = 2700 RPM SELECTED, S.TARG = TW C014 (1.0 s) after 2700 or 3600 RPM
+   SELECTED (OR013), with INITIAL. CV FLOW DEMAND = ASW006 (switched by not FASV OPERATED, NOT001: ASW005, else 0.0), ASW005 = FLOW
+   DEMAND or the macro CV output, switched by A003 (not HEAT SOAK CONTROL (NOT002) and BIAS.C). CV OPEN = CMP C004
+   (20.5 / 20.0 %), ICV OPEN = CMP C010 (0.2 / 0.1 %), ICV open demand > 0.1 % = CMP C011 (0.1 / 0.1 %), all three with INITIAL. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE207',
+  title: 'FLOW CONTROL(2)',
+  page: 141,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [172, 88, 2222, 1552],
+  k: [
+    ['kInit', 287, 146, 'INITIAL', 'ref'],
+    ['kHsc', 287, 317, 'HEAT SOAK CONTROL', 'ref'],
+    ['kFd', 287, 424, 'FLOW DEMAND', 'ref'],
+    ['kZero', 1277, 550, '0.0', 'sys.ref']
+  ],
+  c: [
+    ['iFasv', 'in', 'B', 303, 223, 'FASV OPERATED', ['TCE182']],
+    ['iHold', 'in', 'D', 297, 883, '', ['TCE163']], /* two lines (texts) */
+    ['iScm', 'in', 'B', 297, 947, 'SPEED CONTROL MODE', ['TCE167']],
+    ['iSh', 'in', 'B', 297, 1011, 'SPEED HOLD', ['TCE164']],
+    ['iHsm', 'in', 'C', 297, 1075, 'HEAT SOAK MODE', ['TCE163']],
+    ['i1800', 'in', 'B', 297, 1139, '1800 RPM SELECTED', ['TCE162']],
+    ['i2700', 'in', 'C', 297, 1203, '2700 RPM SELECTED', ['TCE162']],
+    ['i3600', 'in', 'D', 297, 1267, '3600 RPM SELECTED', ['TCE162']],
+    ['oD', 'out', 'D', 2080, 319, 'CV OPEN', ['-'], 1],
+    ['oA', 'out', 'A', 2080, 426, 'CV FLOW DEMAND', ['TCE182', 'TCE212']],
+    ['oB', 'out', 'B', 2078, 653, 'HEAT SOAK BIAS"0"', ['TCE179']],
+    ['oC', 'out', 'C', 2078, 716, 'ICV FLOW DEMAND', ['TCE214']],
+    ['oE', 'out', 'E', 2080, 820, 'ICV OPEN', ['-'], 1],
+    ['oF', 'out', 'F', 2078, 936, '', []] /* two lines and the reference below (texts) */
+  ],
+  b: [
+    ['not001', 'NOT', '001', 1306, 231],
+    ['not002', 'NOT', '002', 1007, 327],
+    ['a003', 'A', '003', 1305, 327],
+    ['asw005', 'ASW', '005', 1399, 434],
+    ['asw006', 'ASW', '006', 1591, 434],
+    ['cmpC004', 'CMP', 'C004', 1719, 327, ['HL:20.5%', 'LL:20.0%']],
+    ['sgC008', 'SG', 'C008', 438, 691, ['K:20.0%']],
+    ['sgC009', 'SG', 'C009', 438, 775, ['K:-0.5%']],
+    ['cmpC010', 'CMP', 'C010', 1715, 828, ['HL:0.2%', 'LL:0.1%']],
+    ['cmpC011', 'CMP', 'C011', 1715, 944, ['HL:0.1%', 'LL:0.1%']],
+    ['not012', 'NOT', '012', 618, 1083],
+    ['or013', 'OR', '013', 595, 1275],
+    ['twC014', 'TW', 'C014', 680, 1275, ['TW:1.0S']]
+  ],
+  m: [
+    [
+      'hsc',
+      'HEAT SOAK CONTROL',
+      '',
+      779,
+      603,
+      404,
+      537,
+      ['DEMAND', 'OPEN1', 'OPEN2', 'CV HLD', 'CONT', 'HOLD', 'RESET', '', '', 'S.SEL1', 'S.SEL2', '', 'S.TARG', '', ''],
+      ['BIAS.C', 'CV', 'ICV', 'RESET', '', '', '', '', '', '', '', '', '', '', ''],
+      'A007',
+      [
+        [884, 1164, '(LME242)'],
+        [1002, 1164, '(LME243)'],
+        [775, 1187, 'DEF TD:0.05S'],
+        [775, 1209, 'DEF TP:1.0S'],
+        [783, 1230, 'TP:180.0S'],
+        [775, 1251, 'DEF TW:0.03S'],
+        [775, 1273, 'DEF TD:1.0S'],
+        [775, 1294, 'DEF TD:2.0S'],
+        [775, 1315, 'DEF RI:0.03%'],
+        [795, 1337, 'RD:0.03%'],
+        [775, 1358, 'DEF K:0.1%']
+      ]
+    ]
+  ],
+  w: [
+    /* INITIAL */
+    ['kInit', [[522, 145], [1719, 145], [1719, 306]]],
+    ['kInit', [[566, 145], [566, 1231], [680, 1231], [680, 1254]]],
+    ['kInit', [[1661, 145], [1661, 784], [1715, 784], [1715, 807]]],
+    ['kInit', [[1661, 784], [1661, 903], [1715, 903], [1715, 923]]],
+    /* CV FLOW DEMAND */
+    ['iFasv', [[330, 220], [1277, 220]]],
+    ['not001', [[1335, 220], [1591, 220], [1591, 413]]],
+    ['kHsc', [[522, 316], [978, 316]]],
+    ['not002', [[1036, 316], [1276, 316]]],
+    ['a003', [[1334, 316], [1399, 316], [1399, 413]]],
+    ['kFd', [[522, 423], [1370, 423]], 1],
+    ['kFd', [[749, 423], [749, 650], [779, 650]], 1],
+    ['hsc.CV', [[1183, 681], [1248, 681], [1248, 445], [1370, 445]], 1],
+    ['asw005', [[1428, 423], [1562, 423]], 1],
+    ['kZero', [[1512, 549], [1535, 549], [1535, 445], [1562, 445]], 1],
+    ['asw006', [[1620, 423], [2053, 423]], 1],
+    ['asw006', [[1645, 423], [1645, 316], [1690, 316]], 1],
+    ['cmpC004', [[1748, 316], [2053, 316]]],
+    /* HEAT SOAK BIAS and ICV */
+    ['hsc.BIAS.C', [[1183, 650], [2051, 650]]],
+    ['hsc.BIAS.C', [[1228, 650], [1228, 338], [1276, 338]]],
+    ['hsc.ICV', [[1183, 713], [2051, 713]], 1],
+    ['hsc.ICV', [[1640, 713], [1640, 933], [1686, 933]], 1],
+    ['hsc.ICV', [[1640, 817], [1686, 817]], 1],
+    ['cmpC010', [[1744, 817], [2053, 817]]],
+    ['cmpC011', [[1744, 933], [2051, 933]]],
+    /* the macro inputs */
+    ['sgC008', [[467, 680], [779, 680]], 1],
+    ['sgC009', [[467, 764], [587, 764], [587, 713], [779, 713]], 1],
+    ['iHold', [[324, 880], [608, 880], [608, 745], [779, 745]]],
+    ['iScm', [[324, 944], [628, 944], [628, 776], [779, 776]]],
+    ['iSh', [[324, 1008], [650, 1008], [650, 808], [779, 808]]],
+    ['iHsm', [[324, 1072], [589, 1072]]],
+    ['not012', [[647, 1072], [671, 1072], [671, 840], [779, 840]]],
+    ['i1800', [[324, 1136], [691, 1136], [691, 935], [779, 935]]],
+    ['i2700', [[324, 1200], [712, 1200], [712, 967], [779, 967]]],
+    ['i2700', [[541, 1200], [541, 1286], [566, 1286]]],
+    ['i3600', [[324, 1264], [566, 1264]]],
+    ['or013', [[624, 1264], [651, 1264]]],
+    ['twC014', [[709, 1264], [733, 1264], [733, 1030], [779, 1030]]]
+  ],
+  t: [
+    [431, 177, '(TCE050)'],
+    [416, 347, '(TCE163)'],
+    [431, 454, '(TCE206)'],
+    [291, 682, 'CV OPENING'],
+    [291, 704, 'BIAS'],
+    [291, 767, 'ICV MIN'],
+    [291, 789, 'OPENING'],
+    [329, 852, 'AT CV HOLD SPEED'],
+    [329, 873, '+TD60S'],
+    [633, 1257, 'C'],
+    [1673, 310, 'T'],
+    [1669, 810, 'T'],
+    [1669, 926, 'T'],
+    [1845, 907, 'INTERCEPT VALVE'],
+    [1845, 929, 'OPEN DEMAND>0.1%'],
+    [1940, 973, '(TCE365)'],
+    [229, 1533, 'CONTROLLER:'],
+    [389, 1533, 'EHG+MD'],
+    [614, 1506, 'TRIGGER  :'],
+    [614, 1532, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE210.js ---- */
+/* TCE210 MSV(A) CONTROL (331DM09784 page 142, controller EHG+MD, cycle 30 ms; there are no TCE208 / TCE209 in the drawing set). Typed
+   from the drawing; units = the pixels of the page rendered 2296 wide. VALVE CONTROL MT1 A003 (LME244, DEF RI 1.0 / RD 1.0, HL 0.1 % /
+   LL -0.1 %): DEMAND = ASW001 (switched by TD C025, 60 s after CV WARMING NOT COMPLETE, with INITIAL: CV WARMING (A) SET, else OPEN
+   POSITION SG A006 105.0 %), CL.POS = SG A007 -5.0 %, OP.SPD = SG C009 10.0 %/s, CL.SPD = MAX, TO.SPD = ASW029 (full close test
+   10 %/s SG C014, else partial test 0.56 %/s SG A030), TC.SPD = ASW031 (SG C016 10 %/s, else SG A033 0.56 %/s), TEST = OR036 (TD A035
+   2.0 s after MSV/CV(A) FULL CLOSE TEST STATE and CV(A) TEST POSITION (A034), with INITIAL, or MSV(A) PARTIAL TEST), CLOSE = OR026
+   (MSV FORCED CLOSE or the MSV(A) fast acting solenoid valve energize command), WARM = OFF(0). ASW029 switches on OR028 (A027:
+   DURING MSV(A) TEST taken inverted and OR028 itself taken inverted; or TD A035); ASW031 switches on TD A035. The DEMAND output goes
+   to the three servo cards (AEH006A, TCE990-9 / TCE990-21 / TCE991-9) and out as MSV(A) POSITION DEMAND; D.TEST = DURING MSV(A)
+   TEST. The servo card: demand minus MSV(A) position into the servo amplifier, its output to the servo valve coils and read back as
+   SERVO AMP OUTPUT (AI); drawn as on the drawing, it is no logic of the sheet. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE210',
+  title: 'MSV(A) CONTROL',
+  page: 142,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [163, 83, 2215, 1550],
+  k: [
+    ['kInit', 259, 144, 'INITIAL', 'ref'],
+    ['kMax', 354, 592, 'MAX', 'sys.ref'],
+    ['kOff', 351, 1442, 'OFF(0)', 'sys.ref']
+  ],
+  c: [
+    ['iCvw', 'in', 'F', 306, 220, 'CV WARMING NOT COMPLETE', ['TCE152']],
+    ['iSet', 'in', 'C', 306, 285, 'CV WARMING (A) SET', ['TCE155']],
+    ['iDur', 'in', 'B', 305, 700, 'DURING MSV(A) TEST', ['*']],
+    ['iFct', 'in', 'C', 305, 1115, '', ['TCE220']], /* two lines (texts) */
+    ['iCvt', 'in', 'J1', 303, 1181, '', ['TCE125']], /* two lines (texts) */
+    ['iPt', 'in', 'A', 305, 1245, 'MSV(A) PARTIAL TEST', ['TCE220']],
+    ['iFc', 'in', 'H', 305, 1305, 'MSV FORCED CLOSE', ['TCE053']],
+    ['iFas', 'in', 'A', 305, 1370, '', ['TCE099']], /* two lines (texts) */
+    ['oA', 'out', 'A', 2083, 726, 'MSV(A) POSITION DEMAND', ['TCE120', 'TCE121', 'TCE501']],
+    ['oA1', 'out', 'A1', 2083, 896, '', ['-'], 1], /* two lines (texts) */
+    ['oB', 'out', 'B', 2083, 983, 'DURING MSV(A) TEST', ['*', 'TCE211']]
+  ],
+  d: [['crtPd', 2085, 810, 'out', 'TCE210_A1', 'S', '#1C']],
+  b: [
+    /* DEMAND */
+    ['btr024', 'o:BTR', '024', 607, 143],
+    ['tdC025', 'TD', 'C025', 660, 228, ['TD:60.0']],
+    ['asw001', 'ASW', '001', 713, 324],
+    ['sgA006', 'SG', 'A006', 295, 346, ['K:105.0%']],
+    ['ftr002', 'o:FTR', '002', 851, 313],
+    /* the positions and the speeds */
+    ['sgA007', 'SG', 'A007', 295, 431, ['K:-5.0%']],
+    ['ftr008', 'o:FTR', '008', 851, 420],
+    ['sgC009', 'SG', 'C009', 295, 516, ['K:10.0%/S']],
+    ['ftr010', 'o:FTR', '010', 851, 505],
+    ['ftr012', 'o:FTR', '012', 851, 591],
+    ['x027', 'X', '', 722, 643],
+    ['x027b', 'X', '', 615, 697],
+    ['a027', 'A', '027', 721, 686],
+    ['or028', 'OR', '028', 851, 686],
+    ['sgC014', 'SG', 'C014', 295, 781, ['K:10%/S']],
+    ['ftr015', 'o:FTR', '015', 851, 770],
+    ['sgA030', 'SG', 'A030', 295, 858, ['K:0.56%/S']],
+    ['asw029', 'ASW', '029', 966, 781],
+    ['sgC016', 'SG', 'C016', 295, 941, ['K:10%/S']],
+    ['ftr017', 'o:FTR', '017', 851, 930],
+    ['sgA033', 'SG', 'A033', 295, 1017, ['K:0.56%/S']],
+    ['asw031', 'ASW', '031', 966, 941],
+    /* TEST, CLOSE, WARM */
+    ['a034', 'A', '034', 507, 1123],
+    ['tdA035', 'TD', 'A035', 614, 1123, ['TD:2.0s']],
+    ['or036', 'OR', '036', 720, 1123],
+    ['btr018', 'o:BTR', '018', 849, 1112],
+    ['or026', 'OR', '026', 720, 1313],
+    ['btr019', 'o:BTR', '019', 849, 1302],
+    ['btr020', 'o:BTR', '020', 849, 1441],
+    /* VALVE CONTROL MT1 */
+    [
+      'mt003',
+      'VALVE CONTROL MT1',
+      'A003',
+      1256,
+      410,
+      [],
+      {
+        l: ['', 'DEMAND', 'CL.POS.', 'OP.SPD', 'CL.SPD', 'TO.SPD', 'TC.SPD', 'TEST', 'CLOSE', 'WARM', '', ''],
+        r: ['', 'DEMAND', 'D.TEST', '', '', '', '', '', '', '', '', '']
+      },
+      [232, 258]
+    ],
+    /* the outputs */
+    ['ftr004', 'o:FTR', '004', 1576, 313],
+    ['ftr005', 'o:FTR', '005', 1670, 313],
+    ['ftr011', 'o:FTR', '011', 1670, 532],
+    ['ftr013', 'o:FTR', '013', 1670, 617],
+    ['ftr023', 'o:FTR', '023', 1670, 808],
+    ['ftr022', 'o:FTR', '022', 1670, 893],
+    ['btr032', 'o:BTR', '032', 1670, 980]
+  ],
+  /* the servo cards */
+  r: [
+    ['svA', 1745, 234, 330, 256, ''],
+    ['svT1', 1745, 234, 155, 21, 'SERVO'],
+    ['svT2', 1900, 234, 175, 21, 'AEH006A'],
+    ['svP', 1804, 383, 10, 21, ''],
+    ['svB', 1744, 507, 330, 52, ''],
+    ['svC', 1744, 592, 330, 52, '']
+  ],
+  g: [
+    [1752, 313, 'r'],
+    [1751, 532, 'r'],
+    [1751, 617, 'r']
+  ],
+  o: [
+    [1852, 313, 12],
+    [2183, 309, 15, 1],
+    [2183, 362, 15, 1]
+  ],
+  p: [[[1877, 300], [1877, 326], [1903, 313]]],
+  a: [
+    [[1760, 313], [1840, 313]],
+    [[1852, 394], [1852, 325]]
+  ],
+  l: [
+    [[1864, 313], [1877, 313]],
+    [[1903, 313], [2168, 313]],
+    [[1915, 313], [1915, 393]],
+    [[1915, 393], [2000, 393]],
+    [[1814, 394], [1852, 394]],
+    [[1809, 372], [1809, 383]],
+    [[2074, 532], [2108, 532]],
+    [[2074, 617], [2108, 617]],
+    [[2108, 313], [2108, 617]],
+    [[2151, 313], [2151, 362]],
+    [[2151, 362], [2168, 362]]
+  ],
+  e: [
+    [[2140, 276], [2212, 276]],
+    [[2140, 276], [2140, 393]],
+    [[2140, 393], [2212, 393]]
+  ],
+  w: [
+    /* INITIAL */
+    ['kInit', [[494, 143], [777, 143], [777, 375], [647, 375], [647, 1080], [614, 1080], [614, 1102]]],
+    ['kInit', [[660, 143], [660, 207]]],
+    /* DEMAND */
+    ['iCvw', [[333, 217], [631, 217]]],
+    ['tdC025', [[689, 217], [713, 217], [713, 303]]],
+    ['iSet', [[333, 282], [637, 282], [637, 313], [684, 313]], 1],
+    ['sgA006', [[324, 335], [684, 335]], 1],
+    ['asw001', [[742, 313], [1140, 313]], 1],
+    /* the positions and the speeds */
+    ['sgA007', [[324, 420], [968, 420], [968, 335], [1140, 335]], 1],
+    ['sgC009', [[324, 505], [988, 505], [988, 356], [1140, 356]], 1],
+    ['kMax', [[589, 591], [1008, 591], [1008, 378], [1140, 378]], 1],
+    ['iDur', [[332, 697], [692, 697]]],
+    ['or028', [[880, 675], [966, 675], [966, 760]]],
+    ['or028', [[966, 675], [966, 643], [667, 643], [667, 675], [692, 675]]],
+    ['a027', [[750, 675], [822, 675]]],
+    ['tdA035', [[667, 1112], [667, 739], [796, 739], [796, 697], [822, 697]]],
+    ['tdA035', [[667, 899], [966, 899], [966, 920]]],
+    ['sgC014', [[324, 770], [937, 770]], 1],
+    ['sgA030', [[324, 847], [913, 847], [913, 792], [937, 792]], 1],
+    ['asw029', [[995, 770], [1030, 770], [1030, 399], [1140, 399]], 1],
+    ['sgC016', [[324, 930], [937, 930]], 1],
+    ['sgA033', [[324, 1006], [913, 1006], [913, 952], [937, 952]], 1],
+    ['asw031', [[995, 930], [1051, 930], [1051, 421], [1140, 421]], 1],
+    /* TEST, CLOSE, WARM */
+    ['iFct', [[332, 1112], [478, 1112]]],
+    ['iCvt', [[330, 1178], [454, 1178], [454, 1134], [478, 1134]]],
+    ['a034', [[536, 1112], [585, 1112]]],
+    ['tdA035', [[643, 1112], [691, 1112]]],
+    ['iPt', [[332, 1242], [667, 1242], [667, 1134], [691, 1134]]],
+    ['or036', [[749, 1112], [1073, 1112], [1073, 442], [1140, 442]]],
+    ['iFc', [[332, 1302], [691, 1302]]],
+    ['iFas', [[332, 1367], [667, 1367], [667, 1324], [691, 1324]]],
+    ['or026', [[749, 1302], [1094, 1302], [1094, 464], [1140, 464]]],
+    ['kOff', [[586, 1441], [1115, 1441], [1115, 485], [1140, 485]]],
+    /* the outputs */
+    ['mt003', [[1372, 313], [1745, 313]], 1],
+    ['mt003', [[1636, 313], [1636, 893], [2056, 893]], 1],
+    ['mt003', [[1636, 532], [1744, 532]], 1],
+    ['mt003', [[1636, 617], [1744, 617]], 1],
+    ['mt003', [[1636, 723], [2056, 723]], 1],
+    ['mt003', [[1636, 808], [2061, 808]], 1],
+    ['mt003', [[1372, 335], [1615, 335], [1615, 980], [2056, 980]]]
+  ],
+  t: [
+    [404, 175, '(TCE050)'],
+    [331, 329, 'OPEN POSITION'],
+    [331, 414, 'CLOSE POSITION'],
+    [331, 499, 'OPENING SPEED'],
+    [351, 744, 'OPENING SPEED FOR FULL'],
+    [351, 765, 'CLOSE TEST'],
+    [351, 818, 'OPENING SPEED FOR PARTIAL'],
+    [351, 840, 'TEST'],
+    [351, 903, 'CLOSING SPEED FOR FULL'],
+    [351, 924, 'CLOSE TEST'],
+    [351, 978, 'CLOSING SPEED FOR PARTIAL'],
+    [351, 999, 'TEST'],
+    [336, 1084, 'MSV/CV(A) FULL CLOSE'],
+    [336, 1105, 'TEST STATE'],
+    [336, 1148, 'CV(A) TEST'],
+    [336, 1169, 'POSITION'],
+    [336, 1339, 'MSV(A) FAST ACTING SOLENOID'],
+    [336, 1361, 'VALVE ENERGIZE COMMAND'],
+    [616, 211, 'T'],
+    [567, 1106, 'T'],
+    [1128, 586, 'DEF RI:1.0'],
+    [1145, 608, 'RD:1.0'],
+    [1128, 629, 'DEF HL:0.1%'],
+    [1145, 651, 'LL:-0.1%'],
+    [1220, 557, '(LME244)'],
+    [1770, 290, '(TCE990-9)'],
+    [1862, 288, 'MSV(A) DEMAND'],
+    [1824, 303, '+'],
+    [1834, 342, '-'],
+    [1751, 352, 'MSV(A)'],
+    [1751, 368, 'POSITION'],
+    [1921, 372, 'SERVO AMP'],
+    [1921, 388, 'OUTPUT'],
+    [2008, 398, 'AI'],
+    [1760, 525, '(TCE990-21)'],
+    [1910, 543, 'DITTO', 1],
+    [1768, 610, '(TCE991-9)'],
+    [1910, 628, 'DITTO', 1],
+    [1737, 800, 'MSV(A) POSITION DEMAND'],
+    [1737, 864, 'MSV(A)'],
+    [1737, 886, 'POSITION DEMAND'],
+    [228, 1532, 'CONTROLLER:'],
+    [389, 1532, 'EHG+MD'],
+    [618, 1503, 'TRIGGER  :'],
+    [618, 1530, 'CYCLE(ms):30']
+  ]
+});
+
 /* ---- src/digital/tce/TCE172.js ---- */
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -79139,7 +80519,9 @@ function tcsSim(s) {
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
      a: [[x1, y1], [x2, y2]]                                         note arrow of the drawing (open head at the second point)
-     l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical
+     l: [[x1, y1], [x2, y2]]                                         plain line with no signal (the rules of a table), horizontal or vertical;
+                                                                     e: the same, dashed; o: [x, y, r, dbl] circle of a part (a summing point,
+                                                                     dbl 1 = a servo valve coil); p: [[x, y], ...] closed outline (an amplifier)
      d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
@@ -79256,6 +80638,24 @@ function tceSheet(q) {
   }
   /* plain lines of the drawing that carry no signal (the rules of a table) */
   for (const [a, b] of q.l || []) poly([a, b], 0);
+  /* the same, dashed (the border of a field part such as the servo valve), horizontal or vertical */
+  for (const [a, b] of q.e || []) {
+    const L = Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]),
+      sx = Math.sign(b[0] - a[0]),
+      sy = Math.sign(b[1] - a[1]),
+      on = 4 * u,
+      off = 3 * u;
+    for (let s = 0; s < L; s += on + off) {
+      const t = Math.min(s + on, L);
+      poly([[a[0] + sx * s, a[1] + sy * s], [a[0] + sx * t, a[1] + sy * t]], 0);
+    }
+  }
+  /* part symbols that carry no signal of the sheet: o = a circle (a summing point; dbl 1 = a servo valve coil), p = a closed outline (an amplifier) */
+  for (const [x, y, r, dbl] of q.o || []) {
+    ci.push([X(x), Y(y), W(r), 'SYM']);
+    if (dbl) ci.push([X(x), Y(y), W(r * 0.65), 'SYM']);
+  }
+  for (const P of q.p || []) poly(P, 1);
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
     poly([a, b], 0);
@@ -136579,7 +137979,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build bb4b2be'));
+    row('Version', E('span', 'scsver', ver + ' · build 61d6128'));
   }
   function openSet(near) {
     if (!set) {
