@@ -4374,7 +4374,7 @@ function tcsSim(s) {
   /* TCE_LIB.tmr(o): a sheet ANALOG INPUT SIGNAL DIAGNOSTICS. One signal (A), (B), (C), each read by the three protection controllers and checked by one
      TMR AI DIAGNOSTICS block; the three results go to TRIPLE DETECTOR2 (the value) and to 2OO3 (abnormal). Those sheets are drawn the same way; a sheet
      gives what differs: o.id, title, page, f, tag, let [signal letter, error letter], name(ch, sig) => [words over the line, name], sg [four constants],
-     out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], refA, refA1, refC (sheets of C1, C2, C3), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
+     out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], over (a line over those words), refA, refA1, refC (sheets of C1, C2, C3), cl (their letter when it is not C), sh (the numbers of the input sheets), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
   const F = o.f,
@@ -4382,6 +4382,8 @@ function tcsSim(s) {
     dr = o.dr || 0,
     [C1, C2, C3] = o.cs,
     RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
+    SH = o.sh || ['070', '072', '074'],
+    CL = o.cl || 'C',
     u = (F[2] - F[0]) / 1000,
     c = [],
     b = [],
@@ -4390,9 +4392,9 @@ function tcsSim(s) {
     t = [];
   /* [letter, top of the block, left of the block, x of the connectors, sheet number of the inputs, block number, first mark number list] */
   const G = [
-    ['A', 123, 885 + dx, 307 + dx, '070', 'A002', ['001', '005', '007', '009', '010', '011']],
-    ['B', 570, 882 + dx, 304 + dx, '072', 'A020', ['019', '022', '023', '024', '025', '026']],
-    ['C', 1017, 880 + dx, 302 + dx, '074', 'A030', ['029', '031', '032', '033', '034', '035']]
+    ['A', 123, 885 + dx, 307 + dx, SH[0], 'A002', ['001', '005', '007', '009', '010', '011']],
+    ['B', 570, 882 + dx, 304 + dx, SH[1], 'A020', ['019', '022', '023', '024', '025', '026']],
+    ['C', 1017, 880 + dx, 302 + dx, SH[2], 'A030', ['029', '031', '032', '033', '034', '035']]
   ];
   const L = ['SIG1', 'ERR1', 'SIG2', 'ERR2', 'SIG3', 'ERR3', 'HL', 'LL', 'DEV', 'SIM'],
     R = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
@@ -4444,6 +4446,9 @@ function tcsSim(s) {
       const n = o.cname(ch);
       xt.push([o.cnx, CY[i] - 27, n[0]], [o.cnx, CY[i] - 6, n[1]]);
     });
+  /* a third line over the words of the six outputs (o.over) */
+  if (o.over)
+    [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach(q => xt.push([Z(q[0]), q[1], o.over]));
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
   return {
     id: o.id,
@@ -4458,9 +4463,9 @@ function tcsSim(s) {
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), 477, '', ['-']],
       ['oB1', 'out', 'B1', Z(2074), 573, '', ['-'], 1],
-      ['oC1', 'out', 'C1', o.cx, CY[0], '', [RC[0]], cd],
-      ['oC2', 'out', 'C2', o.cx - 1, CY[1], '', [RC[1]], cd],
-      ['oC3', 'out', 'C3', o.cx - 1, CY[2], '', [RC[2]], cd],
+      ['oC1', 'out', CL + '1', o.cx, CY[0], '', [RC[0]], cd],
+      ['oC2', 'out', CL + '2', o.cx - 1, CY[1], '', [RC[1]], cd],
+      ['oC3', 'out', CL + '3', o.cx - 1, CY[2], '', [RC[2]], cd],
       ...xc
     ],
     d: [
@@ -6010,6 +6015,38 @@ function tcsSim(s) {
       dx: -8,
       dr: -6,
       foot: [[229, 1527, 'CONTROLLER:'], [391, 1527, 'EHG+MD'], [652, 1499, 'TRIGGER  :'], [652, 1527, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE065 ANALOG INPUT SIGNAL DIAGNOSTICS(6) (331DM09784 page 33, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Drawn in the pattern of the analog input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr). The three values leave by D1, D2, D3.
+   The low limit (SG A017) is overprinted by a name in the drawing: K:-0.05 is read, its unit is typed like the unit of the high limit. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE065',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(6)',
+      page: 33,
+      f: [160, 81, 2221, 1546],
+      tag: 'nPT-STn110',
+      let: ['D1', 'E1'],
+      sh: ['071', '073', '075'],
+      name: (ch, sig) =>
+        sig ? ['LP TURBINE EXHAUST HOOD', 'STEAM PRESS.(COND VAC)(' + ch + ')'] : ['LP TURBINE EXHAUST HOOD STEAM', 'PRESS.(COND VAC)(' + ch + ') INPUT ERR'],
+      sg: ['K:1.05g/cm2g', 'K:-0.05g/cm2g', 'K:0.2kg/cm2g', 'K:0.1kg/cm2g'],
+      over: 'LP TURBINE EXHAUST',
+      out: ['HOOD STEAM PRESS.', '(COND VAC)', '(COND VAC) ABN.'],
+      refA: ['-'],
+      refA1: ['TCA536'],
+      cl: 'D',
+      refC: ['TCT202', 'TCT202', 'TCT203'],
+      /* D3 leaves the line to IN C of the detector (x = 1436 + dr), level with the output */
+      cs: [[1340, 871], [1320, 967], [1428, null]],
+      cx: 2063,
+      dx: -9,
+      dr: -8,
+      foot: [[230, 1527, 'CONTROLLER:'], [388, 1527, 'EHG+MD'], [650, 1499, 'TRIGGER  :'], [650, 1527, 'CYCLE(ms):30']]
     })
   );
 })();
@@ -44095,7 +44132,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 36f8fc6'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 3bf81fd'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -68548,7 +68585,7 @@ function tcsSim(s) {
   /* TCE_LIB.tmr(o): a sheet ANALOG INPUT SIGNAL DIAGNOSTICS. One signal (A), (B), (C), each read by the three protection controllers and checked by one
      TMR AI DIAGNOSTICS block; the three results go to TRIPLE DETECTOR2 (the value) and to 2OO3 (abnormal). Those sheets are drawn the same way; a sheet
      gives what differs: o.id, title, page, f, tag, let [signal letter, error letter], name(ch, sig) => [words over the line, name], sg [four constants],
-     out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], refA, refA1, refC (sheets of C1, C2, C3), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
+     out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], over (a line over those words), refA, refA1, refC (sheets of C1, C2, C3), cl (their letter when it is not C), sh (the numbers of the input sheets), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
   const F = o.f,
@@ -68556,6 +68593,8 @@ function tcsSim(s) {
     dr = o.dr || 0,
     [C1, C2, C3] = o.cs,
     RC = o.refC || ['TCT200', 'TCT200', 'TCT200'],
+    SH = o.sh || ['070', '072', '074'],
+    CL = o.cl || 'C',
     u = (F[2] - F[0]) / 1000,
     c = [],
     b = [],
@@ -68564,9 +68603,9 @@ function tcsSim(s) {
     t = [];
   /* [letter, top of the block, left of the block, x of the connectors, sheet number of the inputs, block number, first mark number list] */
   const G = [
-    ['A', 123, 885 + dx, 307 + dx, '070', 'A002', ['001', '005', '007', '009', '010', '011']],
-    ['B', 570, 882 + dx, 304 + dx, '072', 'A020', ['019', '022', '023', '024', '025', '026']],
-    ['C', 1017, 880 + dx, 302 + dx, '074', 'A030', ['029', '031', '032', '033', '034', '035']]
+    ['A', 123, 885 + dx, 307 + dx, SH[0], 'A002', ['001', '005', '007', '009', '010', '011']],
+    ['B', 570, 882 + dx, 304 + dx, SH[1], 'A020', ['019', '022', '023', '024', '025', '026']],
+    ['C', 1017, 880 + dx, 302 + dx, SH[2], 'A030', ['029', '031', '032', '033', '034', '035']]
   ];
   const L = ['SIG1', 'ERR1', 'SIG2', 'ERR2', 'SIG3', 'ERR3', 'HL', 'LL', 'DEV', 'SIM'],
     R = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
@@ -68618,6 +68657,9 @@ function tcsSim(s) {
       const n = o.cname(ch);
       xt.push([o.cnx, CY[i] - 27, n[0]], [o.cnx, CY[i] - 6, n[1]]);
     });
+  /* a third line over the words of the six outputs (o.over) */
+  if (o.over)
+    [[1848, 122], [1847, 218], [1846, 314], [1846, 431], [1845, 527], [1844, 633]].forEach(q => xt.push([Z(q[0]), q[1], o.over]));
   const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
   return {
     id: o.id,
@@ -68632,9 +68674,9 @@ function tcsSim(s) {
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), 477, '', ['-']],
       ['oB1', 'out', 'B1', Z(2074), 573, '', ['-'], 1],
-      ['oC1', 'out', 'C1', o.cx, CY[0], '', [RC[0]], cd],
-      ['oC2', 'out', 'C2', o.cx - 1, CY[1], '', [RC[1]], cd],
-      ['oC3', 'out', 'C3', o.cx - 1, CY[2], '', [RC[2]], cd],
+      ['oC1', 'out', CL + '1', o.cx, CY[0], '', [RC[0]], cd],
+      ['oC2', 'out', CL + '2', o.cx - 1, CY[1], '', [RC[1]], cd],
+      ['oC3', 'out', CL + '3', o.cx - 1, CY[2], '', [RC[2]], cd],
       ...xc
     ],
     d: [
@@ -70216,6 +70258,40 @@ function tcsSim(s) {
       dx: -8,
       dr: -6,
       foot: [[229, 1527, 'CONTROLLER:'], [391, 1527, 'EHG+MD'], [652, 1499, 'TRIGGER  :'], [652, 1527, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE065.js ---- */
+/* TCE065 ANALOG INPUT SIGNAL DIAGNOSTICS(6) (331DM09784 page 33, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Drawn in the pattern of the analog input diagnostics sheets (tce/_lib.js, TCE_LIB.tmr). The three values leave by D1, D2, D3.
+   The low limit (SG A017) is overprinted by a name in the drawing: K:-0.05 is read, its unit is typed like the unit of the high limit. */
+(function () {
+  if (typeof window === 'undefined') return;
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.tmr({
+      id: 'TCE065',
+      title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(6)',
+      page: 33,
+      f: [160, 81, 2221, 1546],
+      tag: 'nPT-STn110',
+      let: ['D1', 'E1'],
+      sh: ['071', '073', '075'],
+      name: (ch, sig) =>
+        sig ? ['LP TURBINE EXHAUST HOOD', 'STEAM PRESS.(COND VAC)(' + ch + ')'] : ['LP TURBINE EXHAUST HOOD STEAM', 'PRESS.(COND VAC)(' + ch + ') INPUT ERR'],
+      sg: ['K:1.05g/cm2g', 'K:-0.05g/cm2g', 'K:0.2kg/cm2g', 'K:0.1kg/cm2g'],
+      over: 'LP TURBINE EXHAUST',
+      out: ['HOOD STEAM PRESS.', '(COND VAC)', '(COND VAC) ABN.'],
+      refA: ['-'],
+      refA1: ['TCA536'],
+      cl: 'D',
+      refC: ['TCT202', 'TCT202', 'TCT203'],
+      /* D3 leaves the line to IN C of the detector (x = 1436 + dr), level with the output */
+      cs: [[1340, 871], [1320, 967], [1428, null]],
+      cx: 2063,
+      dx: -9,
+      dr: -8,
+      foot: [[230, 1527, 'CONTROLLER:'], [388, 1527, 'EHG+MD'], [650, 1499, 'TRIGGER  :'], [650, 1527, 'CYCLE(ms):30']]
     })
   );
 })();
@@ -128731,7 +128807,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 36f8fc6'));
+    row('Version', E('span', 'scsver', ver + ' · build 3bf81fd'));
   }
   function openSet(near) {
     if (!set) {
