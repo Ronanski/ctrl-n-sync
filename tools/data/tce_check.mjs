@@ -13,7 +13,9 @@ import vm from 'vm';
 import { fileURLToPath } from 'url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..'),
   dir = path.join(root, 'src/digital/tce'),
-  files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.js')).sort() : [],
+  files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.js') && f[0] !== '_').sort() : [],
+  /* the helpers of the sheets (tce/_lib.js) run before each sheet, as in the app */
+  lib = fs.existsSync(path.join(dir, '_lib.js')) ? fs.readFileSync(path.join(dir, '_lib.js'), 'utf8') : '',
   order = fs.readFileSync(path.join(root, 'src/digital/order.list'), 'utf8').split(/\r?\n/).map(s => s.trim()),
   at = order.indexOf('parts/02d-tce.js');
 const errs = [],
@@ -22,7 +24,7 @@ const errs = [],
 for (const f of files) {
   const win = {};
   try {
-    vm.runInNewContext(fs.readFileSync(path.join(dir, f), 'utf8'), { window: win });
+    vm.runInNewContext(lib + ';' + fs.readFileSync(path.join(dir, f), 'utf8'), { window: win });
   } catch (e) {
     errs.push(f + ': does not run: ' + e.message);
     continue;
@@ -74,7 +76,7 @@ if (new Set(all).size !== all.length) errs.push('a sheet id is typed twice');
 for (const f of files) {
   const win = {};
   try {
-    vm.runInNewContext(fs.readFileSync(path.join(dir, f), 'utf8'), { window: win });
+    vm.runInNewContext(lib + ';' + fs.readFileSync(path.join(dir, f), 'utf8'), { window: win });
   } catch (e) {
     continue;
   }

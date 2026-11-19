@@ -4316,6 +4316,63 @@ function tcsSim(s) {
   for (const o of nl.outs) if (v[o.n]) outOn.add(o.row);
   return { rowOn, v, outOn };
 }
+/* Helpers for the typed TCS soft logic sheets (src/digital/tce/*.js). Loaded before the sheets (src/digital/order.list).
+   TCE_LIB.di(o): the parts of a DIGITAL INPUT sheet. Those sheets draw sixteen inputs of one PI/O table the same way, eight at the left and eight at
+   the right: the PI/O box, the connection mark, the BTR mark, connector A (to its logic sheet) and connector B under it, then the PI/O error of the
+   card. A sheet gives only what differs: its rows, where its two columns start, and the pieces a row has beside the pattern.
+     o.table  'TCE901'         the PI/O table of the inputs
+     o.first  1                the order number of the first input in that table
+     o.left / o.right [x, y]   left edge and top of the first PI/O box of each column
+     o.w      270              width of a PI/O box
+     o.rows   [[line 1, line 2], [sheets of A], [sheets of B] | null, dy of B (75 where not given)]  sixteen of them
+     o.err    [x, y, w, table order text, x of BTR 017, x of connector F, [sheets of F]]            the PI/O error box (y = its top)
+   Returns { r, g, b, c, d, w, t, P }: the lists of the sheet, and P[n] = { y, xj, xo } the line, junction and connector places of input n. */
+(function () {
+  const di = o => {
+    const r = [],
+      g = [],
+      b = [],
+      c = [],
+      w = [],
+      t = [],
+      d = [],
+      P = {},
+      W = o.w || 270;
+    o.rows.forEach(([name, ra, rb, dy], n) => {
+      const right = n >= 8,
+        i = n % 8,
+        [x0, y0] = right ? o.right : o.left,
+        top = Math.round(y0 + i * 138.4),
+        y = top + 27,
+        no = n + 1,
+        xe = x0 + W,
+        xj = xe + 368,
+        xo = xe + 506,
+        by = y + (dy == null ? 75 : dy);
+      P[no] = { y, xj, xo };
+      r.push(['di' + no, x0, top, W, 54, '']);
+      t.push([x0 + 6, name[1] ? top + 27 : top + 30, name[0]], [x0 + 6, top + 49, name[1]], [x0, top + 76, 'DI'], [xe + 137, top - 2, '(' + o.table + '-' + (o.first + n) + ')']);
+      w.push(['di' + no, [[xe, y], [xe + 118, y]], 1], ['di' + no, [[xe + 134, y], [xo - 30, y]]]);
+      if (rb) {
+        w.push(['di' + no, [[xj, y], [xj, by], [xo - 30, by]]]);
+        c.push(['b' + no, 'out', 'B' + no, xo, by, '', rb, 1]);
+      }
+      g.push([xe + 126, y, 'l']);
+      b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xe + 263, y]);
+      c.push(['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    });
+    if (o.err) {
+      const [x, y, ew, note, xb, xf, rf] = o.err;
+      r.push(['pioErr', x, y, ew, 22, 'PI/O error']);
+      t.push([x + 16, y - 5, '(' + note + ')']);
+      w.push(['pioErr', [[x + ew, y + 11], [xf - 30, y + 11]]]);
+      b.push(['btr17', 'o:BTR', '017', xb, y + 11]);
+      c.push(['oF', 'out', 'F', xf, y + 11, '', rf]);
+    }
+    return { r, g, b, c, d, w, t, P };
+  };
+  if (typeof window !== 'undefined') window.TCE_LIB = { di };
+})();
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE022',
@@ -4632,6 +4689,52 @@ function tcsSim(s) {
     d,
     w,
     t
+  });
+})();
+/* TCE042 DIGITAL INPUT(3) (331DM09784 page 21, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   Inputs 1 ~ 16 of the PI/O table TCE901, drawn in the pattern of the digital input sheets (tce/_lib.js). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const s = window.TCE_LIB.di({
+    table: 'TCE901',
+    first: 1,
+    left: [204, 153],
+    right: [1220, 156],
+    rows: [
+      [['CONTROL OIL PUMP(B)', 'RUNNING'], ['TCE305'], ['-']],
+      [['CONTROL OIL PUMP(B)', 'ELECTRICAL TROUBLE'], ['TCE305'], ['-']],
+      [['MAIN OIL PUMP(B)', 'RUNNING'], ['TCE300'], ['-']],
+      [['MAIN OIL PUMP(B)', 'MOTOR ELECTRICAL TROUBLE'], ['TCE300', 'TCE310'], ['-']],
+      [['TURNING GEAR', 'MOTOR JOG PB'], ['TCE350'], ['-']],
+      [['TURNING GEAR', 'MOTOR RUNNING'], ['TCE350'], ['-']],
+      [['TURNING GEAR MOTOR', 'ELECTRICAL TROUBLE'], ['TCE350'], ['-']],
+      [['AUTO SYN', 'START PB'], ['TCE178'], ['-']],
+      [['AUTO SYNC', 'REMOTE SELECT'], ['TCE178'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['DI P.S. NORMAL (AXR3)', ''], ['TCE469'], ['-']]
+    ],
+    err: [1344, 1288, 127, 'TCE901-1', 1737, 1978, ['TCE465']]
+  });
+  s.t.push([230, 1525, 'CONTROLLER:'], [392, 1525, 'EHG+MD'], [615, 1499, 'TRIGGER  :'], [615, 1525, 'CYCLE(ms):30']);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE042',
+    title: 'DIGITAL INPUT(3)',
+    page: 21,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [178, 86, 2228, 1543],
+    r: s.r,
+    g: s.g,
+    b: s.b,
+    c: s.c,
+    d: s.d,
+    w: s.w,
+    t: s.t
   });
 })();
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
@@ -41722,7 +41825,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 642fc18'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 5cc11a8'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -65417,6 +65520,65 @@ function tcsSim(s) {
   return { rowOn, v, outOn };
 }
 
+/* ---- src/digital/tce/_lib.js ---- */
+/* Helpers for the typed TCS soft logic sheets (src/digital/tce/*.js). Loaded before the sheets (src/digital/order.list).
+   TCE_LIB.di(o): the parts of a DIGITAL INPUT sheet. Those sheets draw sixteen inputs of one PI/O table the same way, eight at the left and eight at
+   the right: the PI/O box, the connection mark, the BTR mark, connector A (to its logic sheet) and connector B under it, then the PI/O error of the
+   card. A sheet gives only what differs: its rows, where its two columns start, and the pieces a row has beside the pattern.
+     o.table  'TCE901'         the PI/O table of the inputs
+     o.first  1                the order number of the first input in that table
+     o.left / o.right [x, y]   left edge and top of the first PI/O box of each column
+     o.w      270              width of a PI/O box
+     o.rows   [[line 1, line 2], [sheets of A], [sheets of B] | null, dy of B (75 where not given)]  sixteen of them
+     o.err    [x, y, w, table order text, x of BTR 017, x of connector F, [sheets of F]]            the PI/O error box (y = its top)
+   Returns { r, g, b, c, d, w, t, P }: the lists of the sheet, and P[n] = { y, xj, xo } the line, junction and connector places of input n. */
+(function () {
+  const di = o => {
+    const r = [],
+      g = [],
+      b = [],
+      c = [],
+      w = [],
+      t = [],
+      d = [],
+      P = {},
+      W = o.w || 270;
+    o.rows.forEach(([name, ra, rb, dy], n) => {
+      const right = n >= 8,
+        i = n % 8,
+        [x0, y0] = right ? o.right : o.left,
+        top = Math.round(y0 + i * 138.4),
+        y = top + 27,
+        no = n + 1,
+        xe = x0 + W,
+        xj = xe + 368,
+        xo = xe + 506,
+        by = y + (dy == null ? 75 : dy);
+      P[no] = { y, xj, xo };
+      r.push(['di' + no, x0, top, W, 54, '']);
+      t.push([x0 + 6, name[1] ? top + 27 : top + 30, name[0]], [x0 + 6, top + 49, name[1]], [x0, top + 76, 'DI'], [xe + 137, top - 2, '(' + o.table + '-' + (o.first + n) + ')']);
+      w.push(['di' + no, [[xe, y], [xe + 118, y]], 1], ['di' + no, [[xe + 134, y], [xo - 30, y]]]);
+      if (rb) {
+        w.push(['di' + no, [[xj, y], [xj, by], [xo - 30, by]]]);
+        c.push(['b' + no, 'out', 'B' + no, xo, by, '', rb, 1]);
+      }
+      g.push([xe + 126, y, 'l']);
+      b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xe + 263, y]);
+      c.push(['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    });
+    if (o.err) {
+      const [x, y, ew, note, xb, xf, rf] = o.err;
+      r.push(['pioErr', x, y, ew, 22, 'PI/O error']);
+      t.push([x + 16, y - 5, '(' + note + ')']);
+      w.push(['pioErr', [[x + ew, y + 11], [xf - 30, y + 11]]]);
+      b.push(['btr17', 'o:BTR', '017', xb, y + 11]);
+      c.push(['oF', 'out', 'F', xf, y + 11, '', rf]);
+    }
+    return { r, g, b, c, d, w, t, P };
+  };
+  if (typeof window !== 'undefined') window.TCE_LIB = { di };
+})();
+
 /* ---- src/digital/tce/TCE022.js ---- */
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -65740,6 +65902,54 @@ function tcsSim(s) {
     d,
     w,
     t
+  });
+})();
+
+/* ---- src/digital/tce/TCE042.js ---- */
+/* TCE042 DIGITAL INPUT(3) (331DM09784 page 21, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   Inputs 1 ~ 16 of the PI/O table TCE901, drawn in the pattern of the digital input sheets (tce/_lib.js). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const s = window.TCE_LIB.di({
+    table: 'TCE901',
+    first: 1,
+    left: [204, 153],
+    right: [1220, 156],
+    rows: [
+      [['CONTROL OIL PUMP(B)', 'RUNNING'], ['TCE305'], ['-']],
+      [['CONTROL OIL PUMP(B)', 'ELECTRICAL TROUBLE'], ['TCE305'], ['-']],
+      [['MAIN OIL PUMP(B)', 'RUNNING'], ['TCE300'], ['-']],
+      [['MAIN OIL PUMP(B)', 'MOTOR ELECTRICAL TROUBLE'], ['TCE300', 'TCE310'], ['-']],
+      [['TURNING GEAR', 'MOTOR JOG PB'], ['TCE350'], ['-']],
+      [['TURNING GEAR', 'MOTOR RUNNING'], ['TCE350'], ['-']],
+      [['TURNING GEAR MOTOR', 'ELECTRICAL TROUBLE'], ['TCE350'], ['-']],
+      [['AUTO SYN', 'START PB'], ['TCE178'], ['-']],
+      [['AUTO SYNC', 'REMOTE SELECT'], ['TCE178'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['SPARE', ''], ['-'], ['-']],
+      [['DI P.S. NORMAL (AXR3)', ''], ['TCE469'], ['-']]
+    ],
+    err: [1344, 1288, 127, 'TCE901-1', 1737, 1978, ['TCE465']]
+  });
+  s.t.push([230, 1525, 'CONTROLLER:'], [392, 1525, 'EHG+MD'], [615, 1499, 'TRIGGER  :'], [615, 1525, 'CYCLE(ms):30']);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE042',
+    title: 'DIGITAL INPUT(3)',
+    page: 21,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [178, 86, 2228, 1543],
+    r: s.r,
+    g: s.g,
+    b: s.b,
+    c: s.c,
+    d: s.d,
+    w: s.w,
+    t: s.t
   });
 })();
 
@@ -125183,7 +125393,7 @@ window.LS_GUIDE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 642fc18'));
+    row('Version', E('span', 'scsver', ver + ' · build 5cc11a8'));
   }
   function openSet(near) {
     if (!set) {
