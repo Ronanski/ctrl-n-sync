@@ -243,6 +243,8 @@ svg.addEventListener('pointerup', e => {
   clearTimeout(tm);
   /* 2.5.0-beta.8: a page link (FROM / TO column) opens the other end, in View and Run (src/ui/shell/ditl.js) */
   if (h && window.DUI && DUI.link && DUI.link(s, h, e)) return;
+  /* a connector of a TCS soft logic sheet (or one sheet name beside it) opens the sheet it names */
+  if (!h && window.DUI && DUI.sheetLink && DUI.sheetLink(s, e)) return;
   /* 2.5.0-beta.13: the click also selects the row / gate / wire for the Selected tab of the right panel (View and Run) */
   if (window.DUI && DUI.pick) DUI.pick(s, h, e);
   if (SIM) {

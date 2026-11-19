@@ -46515,6 +46515,7 @@ function tceSheet(q) {
     ci = [],
     tx = [],
     heavy = [],
+    lk = [],
     src = {};
   /* align: 0 left, 1 centre, 2 right (on the base line); 3 left, 4 centre, 5 right (on the middle line) */
   const fs = q.fs || 1,
@@ -46595,6 +46596,18 @@ function tceSheet(q) {
           tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
         );
       else R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
+    }
+    /* sheet links (as the FROM / TO page links of the DITL): a click on the connector offers every sheet it names, a click on one
+       sheet name opens that sheet (src/ui/shell/ditl.js D.sheetLink) */
+    if ((refs || []).length) {
+      lk.push({ x1: X(x - w), x2: X(x + w), y1: Y(y + r), y2: Y(y - r), refs: refs.slice() });
+      /* the sheet names are the last words pushed for this connector, in the order of refs */
+      tx.slice(tx.length - refs.length).forEach((e, i) => {
+        const L = e.t.length * e.h * 0.62,
+          x1 = e.a === 1 ? e.x - L / 2 : e.a === 2 ? e.x - L : e.x,
+          y1 = e.b === 2 ? e.y - e.h / 2 : e.y - e.h * 0.25;
+        if (refs[i]) lk.push({ x1: x1 - 0.3, x2: x1 + L + 0.3, y1: y1 - 0.3, y2: y1 + e.h + 0.3, refs: [refs[i]] });
+      });
     }
     net(key);
   }
@@ -46878,7 +46891,7 @@ function tceSheet(q) {
     syms: [],
     lyr: '',
     bv: BV,
-    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst }
+    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst, lk }
   };
 }
 /* DITL (digital logic) - Simulation models of the digital blocks (movements, solenoid valves, motors). Part of ONE script (joined by src/digital/order.list, in this order). */
@@ -50666,6 +50679,8 @@ svg.addEventListener('pointerup', e => {
   clearTimeout(tm);
   /* 2.5.0-beta.8: a page link (FROM / TO column) opens the other end, in View and Run (src/ui/shell/ditl.js) */
   if (h && window.DUI && DUI.link && DUI.link(s, h, e)) return;
+  /* a connector of a TCS soft logic sheet (or one sheet name beside it) opens the sheet it names */
+  if (!h && window.DUI && DUI.sheetLink && DUI.sheetLink(s, e)) return;
   /* 2.5.0-beta.13: the click also selects the row / gate / wire for the Selected tab of the right panel (View and Run) */
   if (window.DUI && DUI.pick) DUI.pick(s, h, e);
   if (SIM) {
@@ -83751,7 +83766,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 3efd0e9'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 3510569'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -150703,6 +150718,7 @@ function tceSheet(q) {
     ci = [],
     tx = [],
     heavy = [],
+    lk = [],
     src = {};
   /* align: 0 left, 1 centre, 2 right (on the base line); 3 left, 4 centre, 5 right (on the middle line) */
   const fs = q.fs || 1,
@@ -150783,6 +150799,18 @@ function tceSheet(q) {
           tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
         );
       else R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
+    }
+    /* sheet links (as the FROM / TO page links of the DITL): a click on the connector offers every sheet it names, a click on one
+       sheet name opens that sheet (src/ui/shell/ditl.js D.sheetLink) */
+    if ((refs || []).length) {
+      lk.push({ x1: X(x - w), x2: X(x + w), y1: Y(y + r), y2: Y(y - r), refs: refs.slice() });
+      /* the sheet names are the last words pushed for this connector, in the order of refs */
+      tx.slice(tx.length - refs.length).forEach((e, i) => {
+        const L = e.t.length * e.h * 0.62,
+          x1 = e.a === 1 ? e.x - L / 2 : e.a === 2 ? e.x - L : e.x,
+          y1 = e.b === 2 ? e.y - e.h / 2 : e.y - e.h * 0.25;
+        if (refs[i]) lk.push({ x1: x1 - 0.3, x2: x1 + L + 0.3, y1: y1 - 0.3, y2: y1 + e.h + 0.3, refs: [refs[i]] });
+      });
     }
     net(key);
   }
@@ -151066,7 +151094,7 @@ function tceSheet(q) {
     syms: [],
     lyr: '',
     bv: BV,
-    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst }
+    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst, lk }
   };
 }
 
@@ -190122,6 +190150,50 @@ html body.sc #scstart .sccont:disabled{display:none!important}
     return true;
   };
   D.goItem = goItem;
+  /* a TCS soft logic sheet: its connectors name the sheets at the other end (s.sd.lk, 02d-tce.js); a click opens that sheet, and
+     on a connector that names several the chooser lists them */
+  const tceName = id => {
+    const i = S.sheets.findIndex(x => x.tcs === id);
+    return i >= 0 ? S.sheets[i].name + ' · ' + S.sheets[i].title : id + ' (not typed in the app yet)';
+  };
+  const tceGo = id => {
+    if (!goRef({ tcs: id })) msg(id + ' is not typed in the app yet.');
+    else msg(tceName(id));
+  };
+  D.sheetLink = (s, e) => {
+    const L = s && s.sd && s.sd.lk;
+    if (!L || !L.length) return false;
+    const [x, y] = xy(e);
+    let b = null;
+    for (const k of L)
+      if (x >= k.x1 && x <= k.x2 && y >= k.y1 && y <= k.y2 && (!b || (k.x2 - k.x1) * (k.y2 - k.y1) < (b.x2 - b.x1) * (b.y2 - b.y1))) b = k;
+    if (!b) return false;
+    if (b.refs.length === 1) {
+      tceGo(b.refs[0]);
+      return true;
+    }
+    pick.textContent = '';
+    pick.append(E('div', { cls: 'plhd', txt: 'Connector: pick the sheet' }));
+    b.refs.forEach(id =>
+      pick.append(
+        E('button', {
+          txt: tceName(id),
+          on: () => {
+            if (Date.now() - pick.t0 < 400) return;
+            closePick();
+            tceGo(id);
+          }
+        })
+      )
+    );
+    pick.hidden = false;
+    pick.t0 = Date.now();
+    const w = pick.offsetWidth,
+      hh = pick.offsetHeight;
+    pick.style.left = Math.max(8, Math.min(innerWidth - w - 8, e.clientX - w / 2)) + 'px';
+    pick.style.top = Math.max(8, Math.min(innerHeight - hh - 8, e.clientY + 12)) + 'px';
+    return true;
+  };
   /* R9 #86 (window ~655 px: DITL-29A small in a corner, most of the area empty): the drawing had no fit when its area changes size
      (window resize, the Training panel opening, a sheet zoomed while the area was 0 wide). The view keeps its left edge, its centre
      height and its width and takes the shape of the area, so the drawing fills it */
@@ -208343,7 +208415,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 3efd0e9'));
+    row('Version', E('span', 'scsver', ver + ' · build 3510569'));
   }
   function openSet(near) {
     if (!set) {

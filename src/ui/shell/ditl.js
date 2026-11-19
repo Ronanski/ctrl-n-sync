@@ -392,6 +392,50 @@
     return true;
   };
   D.goItem = goItem;
+  /* a TCS soft logic sheet: its connectors name the sheets at the other end (s.sd.lk, 02d-tce.js); a click opens that sheet, and
+     on a connector that names several the chooser lists them */
+  const tceName = id => {
+    const i = S.sheets.findIndex(x => x.tcs === id);
+    return i >= 0 ? S.sheets[i].name + ' · ' + S.sheets[i].title : id + ' (not typed in the app yet)';
+  };
+  const tceGo = id => {
+    if (!goRef({ tcs: id })) msg(id + ' is not typed in the app yet.');
+    else msg(tceName(id));
+  };
+  D.sheetLink = (s, e) => {
+    const L = s && s.sd && s.sd.lk;
+    if (!L || !L.length) return false;
+    const [x, y] = xy(e);
+    let b = null;
+    for (const k of L)
+      if (x >= k.x1 && x <= k.x2 && y >= k.y1 && y <= k.y2 && (!b || (k.x2 - k.x1) * (k.y2 - k.y1) < (b.x2 - b.x1) * (b.y2 - b.y1))) b = k;
+    if (!b) return false;
+    if (b.refs.length === 1) {
+      tceGo(b.refs[0]);
+      return true;
+    }
+    pick.textContent = '';
+    pick.append(E('div', { cls: 'plhd', txt: 'Connector: pick the sheet' }));
+    b.refs.forEach(id =>
+      pick.append(
+        E('button', {
+          txt: tceName(id),
+          on: () => {
+            if (Date.now() - pick.t0 < 400) return;
+            closePick();
+            tceGo(id);
+          }
+        })
+      )
+    );
+    pick.hidden = false;
+    pick.t0 = Date.now();
+    const w = pick.offsetWidth,
+      hh = pick.offsetHeight;
+    pick.style.left = Math.max(8, Math.min(innerWidth - w - 8, e.clientX - w / 2)) + 'px';
+    pick.style.top = Math.max(8, Math.min(innerHeight - hh - 8, e.clientY + 12)) + 'px';
+    return true;
+  };
   /* R9 #86 (window ~655 px: DITL-29A small in a corner, most of the area empty): the drawing had no fit when its area changes size
      (window resize, the Training panel opening, a sheet zoomed while the area was 0 wide). The view keeps its left edge, its centre
      height and its width and takes the shape of the area, so the drawing fills it */
