@@ -83,7 +83,7 @@ const TCS_IBD_PV = [
   [/PT-LOn007/, U => U.loTrip],
   [/TE-STn110/, (U, c) => c.Tx],
   /* TCE145 BACK UP GOVERNOR ADD002 / 015 / 018: SE-STn001-1 / 2 / 3 (1A / 1B / 1C) + 108 rpm during OVER SPEED TEST MODE (BK-UP) */
-  [/SE-STn001-[123]/, U => (U.tb ? U.tb.rpm : 0) + (U.tc && U.tc.ost && U.tc.ost.bk ? TCS_OST.bias : 0)],
+  [/SE-STn001-[123]\b/, U => (U.tb ? U.tb.rpm : 0) + (U.tc && U.tc.ost && U.tc.ost.bk ? TCS_OST.bias : 0)],
   [/SE-STn001/, U => (U.tb ? U.tb.rpm : 0)],
   [/PT-CRn901|HP TURBINE EXHAUST .*STEAM PRESS[.] [(][ABC]/, U => tcsCrp(U)],
   [/GENERATOR LOAD/, U => ((+U.MW || 0) / 150) * 100],
