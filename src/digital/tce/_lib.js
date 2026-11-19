@@ -1152,6 +1152,31 @@
     t.push(...o.foot);
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
   };
+  /* the parameters printed under a VALVE DIAGNOSIS block: [distance from the left edge of the block, words], left and right column */
+  const PAR = [
+      [-2, 'RATE HL:10.0%'],
+      [24, 'LL:-50.0%'],
+      [8, 'DEF N:1'],
+      [29, 'K:1'],
+      [7, 'H/L HL:103.5%'],
+      [28, 'LL:-3.5%'],
+      [7, 'DEF TP:0.1S'],
+      [12, 'HL:100.0%'],
+      [12, 'LL:-5.0%'],
+      [7, 'DEV HL:20.0%'],
+      [27, 'LL:-20.0%']
+    ],
+    PAR2 = [
+      [200, 'DEF TP:5S'],
+      [200, 'DEF HL:102.4%'],
+      [220, 'LL:-102.4%'],
+      [199, 'DEF HL:200.0%'],
+      [219, 'LL:-200.0%'],
+      [199, 'DEF TP:0.1S'],
+      [199, 'DEF HL:100.0%'],
+      [219, 'LL:-100.0%'],
+      [204, 'K:0.0']
+    ];
   /* A sheet of two VALVE DIAGNOSIS blocks (VALVE CONTROL DIAGNOSTICS, TCE120, TCE122): the two position signals of one valve, each with its
      LVDT and servo amplifier from the PI/O sheets, the position demand, the simulator position and the annunciator enable; out go the position,
      its abnormal signals and the quality. The places are those of TCE120 set straight (the second block stands 650 lower than the first).
@@ -1179,30 +1204,6 @@
       t = [],
       V = o.v,
       mark = (ty, no, x, y) => no && b.push(['m' + no, 'o:' + ty, no, x, y]),
-      PAR = [
-        [-2, 'RATE HL:10.0%'],
-        [24, 'LL:-50.0%'],
-        [8, 'DEF N:1'],
-        [29, 'K:1'],
-        [7, 'H/L HL:103.5%'],
-        [28, 'LL:-3.5%'],
-        [7, 'DEF TP:0.1S'],
-        [12, 'HL:100.0%'],
-        [12, 'LL:-5.0%'],
-        [7, 'DEV HL:20.0%'],
-        [27, 'LL:-20.0%']
-      ],
-      PAR2 = [
-        [200, 'DEF TP:5S'],
-        [200, 'DEF HL:102.4%'],
-        [220, 'LL:-102.4%'],
-        [199, 'DEF HL:200.0%'],
-        [219, 'LL:-200.0%'],
-        [199, 'DEF TP:0.1S'],
-        [199, 'DEF HL:100.0%'],
-        [219, 'LL:-100.0%'],
-        [204, 'K:0.0']
-      ],
       tops = [173, 823],
       P = tops.map(top => i => Math.round(top + 15 * u + (i + 0.5) * ((BH - 30 * u) / 8)));
     tops.forEach((top, g) => {
@@ -1233,7 +1234,7 @@
           [BX + 85, y(5) + 6, 'ANN ENABLE'],
           [BX + 106, top + 341, '(LME122)'],
           [BX + 222, top + 341, '(LME123)'],
-          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, s]),
+          ...PAR.map(([dx, s], i) => [BX + dx, top + 365 + 21.3 * i, o.dev ? s.replace('20.0', o.dev) : s]),
           ...PAR2.map(([dx, s], i) => [BX + dx, top + 386 + 21.3 * i, s])
         ]
       ]);
@@ -1458,5 +1459,709 @@
     t.push(...o.foot);
     return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, c, k, s, p, l, tri, m, b, w, t };
   };
-  if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid, vd2 };
+  /* The second sheet of a valve (VALVE CONTROL DIAGNOSTICS, TCE121, TCE123, TCE125 ...): the VALVE DIAGNOSIS block of the third position
+     signal, the TMR LVDT DIAGNOSIS block that takes the three position signals, the comparators of the valve position and the abnormal
+     signals. The places are those of TCE121 set straight.
+     o: id, title, page, v (the valve as printed: 'MSV(A)'), ann, en (letter of the annunciator enable connector), dem / sim: [letter, sheet]
+     of the input connectors, prev (the first sheet of the valve), io: [sheet of the LVDT, sheet of the amplifier], tct (sheet of connector
+     B1), foot, and one of
+       fo: sheet of FULL OPEN for CV warming  - a main stop valve: INITIAL, test position, full close and two full open comparators (TCE121)
+       cv: { j: sheets of J, j1: sheet of J1 (j1u 1 = printed under it), m: its mark when not 029, f: sheets of F when not (-), g: sheets of G, p: sheets of P }  - a control valve: test position (to the protection
+           controllers and, by a mark, to J1), full close and full close (AUX) (TCE125); its blocks carry the numbers of TCE125.
+       icv: { g: sheets of G, p: sheets of P, sg: number of the SG block when not A014 }  - an intercept valve: one full close comparator
+           (TCE129); its blocks carry the numbers of TCE129.
+     r450 / r218: the sheets of the abnormal signals when not TCE450 / TCE218; dev: the DEV limit of the VALVE DIAGNOSIS block when not 20.0
+     (also for the sheets of two blocks). */
+  const vd3 = o => {
+    const F = [163, 82, 2222, 1541],
+      u = (F[2] - F[0]) / 1000,
+      BX = 984,
+      XR = BX + 405,
+      TOP = 136,
+      TX = 981,
+      TR = TX + 405,
+      a = i => Math.round(TOP + 15 * u + (i + 0.5) * ((320 - 30 * u) / 8)),
+      z = i => Math.round(764 + 15 * u + (i + 0.5) * ((318 - 30 * u) / 8)),
+      V = o.v,
+      CV = o.cv,
+      N = o.icv
+        ? {
+            sig: ['009', '011', '012'],
+            en: '016',
+            sg: o.icv.sg || 'A014',
+            a: '017',
+            or: '018',
+            not: '019',
+            ors: ['010', '013', '015'],
+            tm: 'A008'
+          }
+        : CV
+          ? {
+              sig: ['011', '013', '014'],
+              en: '018',
+              sg: 'A016',
+              a: '019',
+              or: '020',
+              not: '021',
+              ors: ['012', '015', '017'],
+              tm: 'A010'
+            }
+          : {
+              sig: ['013', '015', '016'],
+              en: '020',
+              sg: 'A018',
+              a: '021',
+              or: '022',
+              not: '023',
+              ors: ['014', '017', '019'],
+              tm: 'A012'
+            },
+      OX = 2080,
+      E = OX - 27,
+      T450 = [o.r450 || 'TCE450'],
+      T218 = [o.r218 || 'TCE218'],
+      b = [],
+      t = [],
+      k = [
+        ['k0', 571, 484, '0.0', 'sys.ref'],
+        ['kF', 571, 558, 'OFF(0)', 'sys.ref']
+      ],
+      mark = (ty, no, x, y) => b.push(['m' + no, 'o:' + ty, no, x, y]),
+      out = (l, y, refs, dbl, under) => ['o' + l, 'out', l, OX, y, '', refs, dbl || 0, under || 0],
+      box = (key, type, no, x, y, w, h, notes) => b.push([key, type, no, x, y, notes || [], {}, [w, h]]),
+      /* the comparators on the line of the valve position: [key, type, number, y of its line, mark] */
+      CM = o.icv
+        ? [['c020', 'CPL', 'C020', 710, '006']]
+        : CV
+          ? [
+              ['c025', 'CPL', 'C025', 472, '024'],
+              ['c026', 'CPL', 'C026', 621, '006'],
+              ['c027', 'CPL', 'C027', 717, '008']
+            ]
+          : [
+              ['c025', 'CPL', 'C025', 461, '024'],
+              ['c026', 'CPL', 'C026', 556, '006'],
+              ['c027', 'CMP', 'C027', 641, '008'],
+              ['c028', 'CMP', 'C028', 726, '010']
+            ],
+      c = [],
+      w = [];
+    [
+      ['001', 771, a(0)],
+      ['003', 771, a(2)],
+      ['004', 771, 326],
+      ['005', 769, 401],
+      [N.sig[0], 767, z(1)],
+      [N.sig[1], 767, z(3)],
+      [N.sig[2], 927, z(5)]
+    ].forEach(([no, x, y]) => mark('FTR', no, x, y));
+    mark('BTR', N.en, 767, 1088);
+    CM.forEach(([key, type, no, y, mk], i) => {
+      const x = i || o.icv ? 1739 : 1750;
+      box(key, type, no, x, y + 11, 59, 43);
+      mark('FTR', mk, i || o.icv ? 1632 : 1644, y);
+      t.push([x - 51, y - 9, 'T']);
+      w.push(
+        [
+          'tm.OUT',
+          i
+            ? [
+                [1578, y],
+                [x - 30, y]
+              ]
+            : [
+                [1578, z(0)],
+                [1578, y],
+                [x - 30, y]
+              ],
+          1
+        ],
+        [
+          key,
+          [
+            [x + 30, y],
+            [E, y]
+          ]
+        ]
+      );
+    });
+    box('sg', 'SG', N.sg, 715, 1015, 59, 43, ['K:5.0%']);
+    box('and', 'A', N.a, 938, 1046, 59, 43);
+    box('orA', 'OR', N.or, 757, 1333, 58, 64);
+    box('not', 'NOT', N.not, 841, 1323, 59, 43);
+    box('or1', 'OR', N.ors[0], 1630, 886, 60, 43);
+    box('or2', 'OR', N.ors[1], 1629, 982, 60, 43);
+    box('or3', 'OR', N.ors[2], 1628, 1077, 60, 43);
+    if (o.icv) {
+      c.push(out('G', 710, o.icv.g), out('P', z(0), o.icv.p));
+      t.push(
+        [1849, 701, V + ' FULL CLOSE'],
+        [1747, z(0) - 6, V + ' POSITION'],
+        [1713, 759, 'HL:3'],
+        [1713, 780, 'LL:2']
+      );
+    } else if (CV) {
+      c.push(
+        out('J', 472, CV.j, 1),
+        out('J1', 547, [CV.j1], 0, CV.j1u ? 1 : 0),
+        out('F', 621, CV.f || ['-']),
+        out('G', 717, CV.g, 1),
+        out('P', z(0), CV.p)
+      );
+      w.push([
+        'c025',
+        [
+          [1805, 472],
+          [1805, 547],
+          [E, 547]
+        ]
+      ]);
+      mark('BTR', CV.m || '029', 1848, 547);
+      t.push(
+        [1848, 464, V + ' TEST POSITION'],
+        [1884, 518, V + ' TEST'],
+        [1884, 539, 'POSITION'],
+        [1846, 613, V + ' FULL CLOSE'],
+        [1846, 709, V + ' FULL CLOSE(AUX)'],
+        [1743, z(0) - 6, V + ' POSITION'],
+        [1711, 522, 'HL:11.0'],
+        [1711, 543, 'LL:10.0'],
+        [1709, 671, 'HL:7'],
+        [1709, 692, 'LL:5'],
+        [1709, 767, 'HL:7'],
+        [1709, 788, 'LL:5']
+      );
+    } else {
+      k.unshift(['kI', 454, 131, 'INITIAL', 'ref']);
+      c.push(
+        out('J', 461, ['TCP1210', 'TCP2210', 'TCP3210'], 1),
+        out('G', 556, ['TCE151', 'TCE220']),
+        out('F', 641, [o.fo, 'TCE220']),
+        out('H', 726, ['TCA533', 'TCP1220', 'TCP2220', 'TCP3220'], 1),
+        out('P', z(0), ['TCE151', 'TCE220', 'TCE450', 'TCE501'])
+      );
+      /* INITIAL to the two full open comparators */
+      w.push(
+        [
+          'kI',
+          [
+            [688, 131],
+            [1451, 131],
+            [1451, 610],
+            [1738, 610],
+            [1738, 630]
+          ]
+        ],
+        [
+          'kI',
+          [
+            [1556, 610],
+            [1556, 684],
+            [1738, 684],
+            [1738, 715]
+          ]
+        ]
+      );
+      t.push(
+        [588, 175, '(TCE050)'],
+        [1793, 455, V + ' TEST POSITION'],
+        [1845, 550, V + ' FULL CLOSE'],
+        [1846, 614, V + ' FULL OPEN'],
+        [1846, 635, 'for CV warming'],
+        [1845, 720, V + ' FULL OPEN'],
+        [1837, z(0) - 6, V + ' POSITION'],
+        [1721, 511, 'HL:11.0'],
+        [1721, 532, 'LL:10.0'],
+        [1773, 575, 'HL:2.0'],
+        [1773, 596, 'LL:1.5'],
+        [1773, 660, 'HL:98'],
+        [1773, 681, 'LL:97'],
+        [1773, 745, 'HL:98'],
+        [1773, 766, 'LL:97']
+      );
+    }
+    t.push(
+      [179, a(0) - 38, V + ' POSITION-C'],
+      [217, a(0) + 32, 'LVDT'],
+      [322, a(0) - 15, '(' + o.io[0] + ')'],
+      [217, a(2) + 30, 'AMP'],
+      [322, a(2) - 16, '(' + o.io[1] + ')'],
+      [179, a(2) + 56, V + ' SERVO AMP-C'],
+      [1746, a(0) - 6, V + ' POSITION(3)'],
+      [1746, a(2) - 6, V + ' POSITION ABN(3)'],
+      [1746, 284, V + ' POSITION ABN(3) Q'],
+      [1746, a(5) - 6, V + '(3) ABN.(ANN)'],
+      [1741, z(2) - 6, V + '(1) ABN'],
+      [1741, 923, V + '(A) ABN'],
+      [1741, 965, V + '(2) ABN'],
+      [1741, 1018, V + '(B) ABN'],
+      [1741, 1060, V + '(3) ABN'],
+      [1741, 1114, V + '(C) ABN'],
+      [1741, 1167, V + ' ERR.(ANN)'],
+      [1741, 1210, V + '(A) ABN_Q'],
+      [1741, 1253, V + '(B) ABN_Q'],
+      [1741, 1295, V + '(C) ABN_Q'],
+      ...o.foot
+    );
+    return {
+      id: o.id,
+      title: o.title,
+      page: o.page,
+      ctl: 'EHG+MD',
+      cycle: 30,
+      f: F,
+      k,
+      s: [
+        ['lv', 230, a(0) - 13, 240, a(0) + 10],
+        ['am', 225, a(2) - 10, 245, a(2) + 10]
+      ],
+      p: [
+        [
+          [230, a(0) - 13],
+          [240, a(0) - 13],
+          [240, a(0) + 10],
+          [230, a(0) + 10]
+        ],
+        [
+          [225, a(2) - 10],
+          [245, a(2)],
+          [225, a(2) + 10]
+        ]
+      ],
+      l: [
+        [
+          [235, a(0) - 22],
+          [235, a(0) - 13]
+        ]
+      ],
+      tri: [
+        [368, a(0), 9],
+        [368, a(2), 9]
+      ],
+      c: [
+        ['iD', 'in', o.dem[0], 458, 326, V + ' POSITION DEMAND', [o.dem[1]]],
+        ['iS', 'in', o.sim[0], 458, 401, V + ' POSITION SIM', [o.sim[1]]],
+        ['iP1', 'in', 'A1', 458, z(1), V + ' POSITION(1)', [o.prev]],
+        ['iP2', 'in', 'A2', 458, z(3), V + ' POSITION(2)', [o.prev]],
+        ['iR', 'in', o.en || 'R', 458, 1088, o.ann, ['TCE053']],
+        ['iC1', 'in', 'C1', 458, 1312, V + '(1) ABN.(ANN)', [o.prev]],
+        ['iC2', 'in', 'C2', 458, 1366, V + '(2) ABN.(ANN)', [o.prev]],
+        ['iC3', 'in', 'C3', 458, 1419, V + '(3) ABN.(ANN)', ['*']],
+        out('B1', 121, [o.tct], 1, 1),
+        out('A1', a(0), T450),
+        out('D1', a(2), ['-']),
+        out('K1', 290, T450),
+        out('C3', a(5), ['*', T450[0]]),
+        ...c,
+        out('E1', z(2), T218),
+        out('L1', 929, T450),
+        out('E2', 971, T218),
+        out('L2', 1024, T450),
+        out('E3', 1066, T218),
+        out('L3', 1120, T450),
+        out('E4', 1173, ['-']),
+        out('M1', 1216, T450),
+        out('M2', 1259, T450),
+        out('M3', 1301, T450)
+      ],
+      m: [
+        [
+          'vd',
+          'VALVE DIAGNOSIS',
+          '',
+          BX,
+          TOP,
+          405,
+          320,
+          ['POS.', 'AMP', 'DEMAND', '', 'S.POS.', 'ANN SW', 'POS.OT', 'ANN.EN'],
+          ['POS.', '', 'ABN.O', '', '', 'ABN.A', 'ABN.M', 'QUA'],
+          'A002',
+          [
+            [BX + 85, a(0) + 6, 'POSITION'],
+            [BX + 85, a(1) + 6, 'SERVO AMP OUTPUT'],
+            [BX + 85, a(2) + 6, 'POSITION DEMAND'],
+            [BX + 85, a(4) + 6, 'SIMULATOR POS.'],
+            [BX + 85, a(5) + 6, 'ANN ENABLE'],
+            [BX + 106, TOP + 343, '(LME122)'],
+            [BX + 225, TOP + 343, '(LME123)'],
+            ...PAR.map(([dx, s], i) => [BX + dx, TOP + 367 + 21.3 * i, o.dev ? s.replace('20.0', o.dev) : s]),
+            ...PAR2.map(([dx, s], i) => [BX + dx, TOP + 388 + 21.3 * i, s])
+          ]
+        ],
+        [
+          'tm',
+          'TMR LVDT DIAGNOSIS',
+          '',
+          TX,
+          764,
+          405,
+          318,
+          ['', 'SIG1', '', 'SIG2', '', 'SIG3', 'DEV', 'ANN SW'],
+          ['OUT', 'ERR', 'ERR1', 'ERR2', 'ERR3', 'QUA1', 'QUA2', 'QUA3'],
+          N.tm,
+          [
+            [TX + 85, z(7) + 6, 'ANN ENABLE'],
+            [TX + 106, 1107, '(LME124)'],
+            ...[
+              'HL:1.0',
+              'LL:-1.0',
+              'DELAY TP:3.0s',
+              'HL:1.0',
+              'LL:-1.0',
+              'DELAY TP:3.0s',
+              'HL:1.0',
+              'LL:-1.0',
+              'DELAY TP:3.0s'
+            ].map((s, i) => [i % 3 === 2 ? 980 : 985, 1280 + 21.3 * i, s])
+          ]
+        ]
+      ],
+      b,
+      w: [
+        /* the third position signal: LVDT C and servo amplifier C */
+        [
+          'lv',
+          [
+            [240, a(0)],
+            [BX, a(0)]
+          ],
+          1
+        ],
+        [
+          'am',
+          [
+            [245, a(2)],
+            [812, a(2)],
+            [812, a(1)],
+            [BX, a(1)]
+          ],
+          1
+        ],
+        [
+          'iD',
+          [
+            [485, 326],
+            [833, 326],
+            [833, a(2)],
+            [BX, a(2)]
+          ],
+          1
+        ],
+        [
+          'iS',
+          [
+            [485, 401],
+            [854, 401],
+            [854, a(4)],
+            [BX, a(4)]
+          ],
+          1
+        ],
+        [
+          'k0',
+          [
+            [805, 484],
+            [897, 484],
+            [897, a(6)],
+            [BX, a(6)]
+          ],
+          1
+        ],
+        [
+          'kF',
+          [
+            [805, 558],
+            [919, 558],
+            [919, a(7)],
+            [BX, a(7)]
+          ]
+        ],
+        /* the annunciator enable: to the VALVE DIAGNOSIS block, and with "no abnormal position signal" to the TMR block */
+        [
+          'iR',
+          [
+            [485, 1088],
+            [874, 1088],
+            [874, a(5)],
+            [BX, a(5)]
+          ]
+        ],
+        [
+          'iR',
+          [
+            [874, z(7)],
+            [908, z(7)]
+          ]
+        ],
+        [
+          'and',
+          [
+            [968, z(7)],
+            [TX, z(7)]
+          ]
+        ],
+        [
+          'iC1',
+          [
+            [485, 1312],
+            [728, 1312]
+          ]
+        ],
+        [
+          'iC1',
+          [
+            [683, 1312],
+            [683, 1152],
+            [1534, 1152],
+            [1534, 897],
+            [1600, 897]
+          ]
+        ],
+        [
+          'iC2',
+          [
+            [485, 1366],
+            [704, 1366],
+            [704, 1228],
+            [1574, 1228],
+            [1574, 993],
+            [1599, 993]
+          ]
+        ],
+        [
+          'iC2',
+          [
+            [704, 1334],
+            [728, 1334]
+          ]
+        ],
+        [
+          'iC3',
+          [
+            [485, 1419],
+            [714, 1419],
+            [714, 1356],
+            [728, 1356]
+          ]
+        ],
+        [
+          'orA',
+          [
+            [786, 1312],
+            [812, 1312]
+          ]
+        ],
+        [
+          'not',
+          [
+            [871, 1312],
+            [895, 1312],
+            [895, 1057],
+            [908, 1057]
+          ]
+        ],
+        /* the three position signals and the deviation setting */
+        [
+          'iP1',
+          [
+            [485, z(1)],
+            [TX, z(1)]
+          ],
+          1
+        ],
+        [
+          'iP2',
+          [
+            [485, z(3)],
+            [TX, z(3)]
+          ],
+          1
+        ],
+        [
+          'sg',
+          [
+            [745, z(6)],
+            [TX, z(6)]
+          ],
+          1
+        ],
+        [
+          'vd.POS.',
+          [
+            [XR, a(0)],
+            [E, a(0)]
+          ],
+          1
+        ],
+        [
+          'vd.POS.',
+          [
+            [1528, a(0)],
+            [1528, 121],
+            [E, 121]
+          ],
+          1
+        ],
+        [
+          'vd.POS.',
+          [
+            [1497, a(0)],
+            [1497, 727],
+            [895, 727],
+            [895, z(5)],
+            [TX, z(5)]
+          ],
+          1
+        ],
+        [
+          'vd.ABN.O',
+          [
+            [XR, a(2)],
+            [E, a(2)]
+          ]
+        ],
+        [
+          'vd.ABN.A',
+          [
+            [XR, a(5)],
+            [E, a(5)]
+          ]
+        ],
+        [
+          'vd.ABN.A',
+          [
+            [1515, a(5)],
+            [1515, 1066],
+            [1598, 1066]
+          ]
+        ],
+        [
+          'vd.QUA',
+          [
+            [XR, a(7)],
+            [1581, a(7)],
+            [1581, 290],
+            [E, 290]
+          ]
+        ],
+        /* the valve position and its comparators */
+        [
+          'tm.OUT',
+          [
+            [TR, z(0)],
+            [E, z(0)]
+          ],
+          1
+        ],
+        ...w,
+        /* the abnormal signals */
+        [
+          'tm.ERR',
+          [
+            [TR, z(1)],
+            [1471, z(1)],
+            [1471, 1173],
+            [E, 1173]
+          ]
+        ],
+        [
+          'tm.ERR1',
+          [
+            [TR, z(2)],
+            [1600, z(2)]
+          ]
+        ],
+        [
+          'tm.ERR1',
+          [
+            [1576, z(2)],
+            [1576, 929],
+            [E, 929]
+          ]
+        ],
+        [
+          'tm.ERR2',
+          [
+            [TR, z(3)],
+            [1555, z(3)],
+            [1555, 1024],
+            [E, 1024]
+          ]
+        ],
+        [
+          'tm.ERR2',
+          [
+            [1555, 971],
+            [1599, 971]
+          ]
+        ],
+        [
+          'tm.ERR3',
+          [
+            [TR, z(4)],
+            [1491, z(4)],
+            [1491, 1120],
+            [E, 1120]
+          ]
+        ],
+        [
+          'tm.ERR3',
+          [
+            [1491, 1087],
+            [1598, 1087]
+          ]
+        ],
+        [
+          'tm.QUA1',
+          [
+            [TR, z(5)],
+            [1448, z(5)],
+            [1448, 1216],
+            [E, 1216]
+          ]
+        ],
+        [
+          'tm.QUA2',
+          [
+            [TR, z(6)],
+            [1427, z(6)],
+            [1427, 1259],
+            [E, 1259]
+          ]
+        ],
+        [
+          'tm.QUA3',
+          [
+            [TR, z(7)],
+            [1405, z(7)],
+            [1405, 1301],
+            [E, 1301]
+          ]
+        ],
+        [
+          'or1',
+          [
+            [1660, z(2)],
+            [E, z(2)]
+          ]
+        ],
+        [
+          'or2',
+          [
+            [1659, 971],
+            [E, 971]
+          ]
+        ],
+        [
+          'or3',
+          [
+            [1658, 1066],
+            [E, 1066]
+          ]
+        ]
+      ],
+      t
+    };
+  };
+  if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid, vd2, vd3 };
 })();
