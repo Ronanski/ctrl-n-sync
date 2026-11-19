@@ -449,6 +449,17 @@
       zoom('read');
     }, 700);
   }
+  /* the groups of the turbine control sheets, named after what their sheets hold (IBD SC90794: TA-1 TURBINE MASTER TRIP ..., TB-1 MAIN OIL
+     PUMP ..., TC-1 ... DRAIN VALVE ..., TD-1 TURBINE ALARM ..., TE-1 ... GROUP CONTROL, GD-1 ... GEN.; sheets 15 ~ 23 are the typical logics) */
+  const TCS_SHEETS = {
+    TA: 'Trip and valve tests',
+    TB: 'Oil pumps',
+    TC: 'Valves and drains',
+    TD: 'Turbine alarms',
+    TE: 'Group control',
+    GD: 'Generator',
+    '': 'Typical logic'
+  };
   function fillSheets() {
     const q0 = sheets._find ? sheets._find.value : '';
     sheets.textContent = '';
@@ -482,10 +493,16 @@
       ((window.AN && AN.sheets) || []).forEach((x, i) => add(sheetName(x), sheetTitle(x), i, () => AN.go(i)));
     else {
       const sel = shsel();
+      let grp = null;
       if (sel)
         for (const o of sel.options) {
           const tcs = /TCS-/.test(o.textContent);
           if (tcs !== (fam === 'tcs')) continue;
+          if (tcs) {
+            /* the sheets of the turbine control in the groups of their drawing (the letters of the sheet number) */
+            const g = TCS_SHEETS[(/TCS-([A-Z]+)-/.exec(o.textContent) || [])[1] || ''] || TCS_SHEETS[''];
+            if (g !== grp) sheets.append(E('div', 'st-grp', (grp = g)));
+          }
           add(optName(o.textContent), optTitle(o.textContent), o.value, () => {
             sel.value = o.value;
             sel.dispatchEvent(new Event('change', { bubbles: true }));
@@ -495,6 +512,13 @@
     find.oninput = () => {
       const q = find.value.trim().toLowerCase();
       for (const b of sheets.querySelectorAll('.st-nav')) b.hidden = !!q && !b._q.includes(q);
+      /* a group title with no sheet left under it is not shown */
+      for (const g of sheets.querySelectorAll('.st-grp')) {
+        let e = g.nextElementSibling,
+          any = false;
+        for (; e && !e.classList.contains('st-grp'); e = e.nextElementSibling) if (!e.hidden) any = true;
+        g.hidden = !any;
+      }
     };
     find.oninput();
   }
