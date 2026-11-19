@@ -4468,6 +4468,79 @@ function tcsSim(s) {
     t
   });
 })();
+/* TCE040 DIGITAL INPUT(1) (331DM09784 page 19, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   Sixteen inputs of the PI/O table TCE900, eight at the left and eight at the right, each drawn the same way: the PI/O box, the connection mark, the
+   BTR mark, connector A (to its logic sheet) and connector B under it. The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B] */
+  const ROWS = [
+    [['CONTROL OIL PUMP(A)', 'RUNNING'], ['TCE305'], ['-']],
+    [['CONTROL OIL PUMP(A)', 'ELECTRICAL TROUBLE'], ['TCE305'], ['-']],
+    [['MAIN OIL PUMP(A)', 'RUNNING'], ['TCE300'], ['-']],
+    [['MAIN OIL PUMP(A)', 'MOTOR ELECTRICAL TROUBLE'], ['TCE300', 'TCE310'], ['-']],
+    [['DC EMERGENCY', 'OIL PUMP RUNNING'], ['TCE310'], ['-']],
+    [['DC EMERGENCY OIL', 'PUMP ELECTRICAL TROUBLE'], ['TCE310'], ['-']],
+    [['BEARING OIL PRESS.', '(FOR EOP AUTO START)'], ['TCE310'], ['TCT081']],
+    [['HAND TURNING', 'INTERLOCK POSITION'], ['TCE350'], ['TCT081']],
+    [['TURNING GEAR', 'ENGAGE POSITION'], ['TCE350'], ['TCT081']],
+    [['TURNING GEAR', 'DISENGAGE POSITION'], ['TCE350'], ['TCT081']],
+    [['TURNING GEAR', 'MOTOR ENGAGE PB'], ['TCE352'], ['-']],
+    [['SPARE', ''], ['-'], ['-']],
+    [['SPARE', ''], ['-'], ['-']],
+    [['SPARE', ''], ['-'], ['-']],
+    [['SPARE', ''], ['-'], ['-']],
+    [['DI P.S. NORMAL (AXR1)', ''], ['TCE469'], ['-']]
+  ];
+  ROWS.forEach(([name, ra, rb], n) => {
+    const right = n >= 8,
+      i = n % 8,
+      x0 = right ? 1220 : 204 /* left edge of the PI/O box */,
+      top = Math.round((right ? 157 : 158) + i * 138.4),
+      y = top + 27,
+      no = n + 1,
+      xe = x0 + 270 /* right edge of the box */,
+      xj = x0 + 638 /* the junction to connector B */,
+      xo = x0 + 776; /* centre of the connectors */
+    r.push(['di' + no, x0, top, 270, 54, '']);
+    t.push([x0 + 6, top + 27, name[0]], [x0 + 6, top + 49, name[1]], [x0, top + 76, 'DI'], [x0 + 407, top - 2, '(TCE900-' + no + ')']);
+    w.push(['di' + no, [[xe, y], [xe + 118, y]], 1], ['di' + no, [[xe + 134, y], [xo - 30, y]]], ['di' + no, [[xj, y], [xj, y + 75], [xo - 30, y + 75]]]);
+    g.push([xe + 126, y, 'l']);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), x0 + 533, y]);
+    c.push(['a' + no, 'out', 'A' + no, xo, y, '', ra], ['b' + no, 'out', 'B' + no, xo, y + 75, '', rb, 1]);
+  });
+  /* input 8 also goes to the operator station (CRT) */
+  w.push(['di8', [[842, 1229], [842, 1304], [958, 1304]]]);
+  d.push(['crt8', 975, 1304, 'out', 'TCE040_8', 'S', '#1C']);
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1350, 1289, 125, 22, 'PI/O error']);
+  t.push([1368, 1284, '(TCE900-1)']);
+  w.push(['pioErr', [[1475, 1300], [1955, 1300]]]);
+  b.push(['btr17', 'o:BTR', '017', 1741, 1300]);
+  c.push(['oF', 'out', 'F', 1985, 1300, '', ['TCE465']]);
+  t.push([236, 1531, 'CONTROLLER:'], [399, 1531, 'EHG+MD'], [621, 1504, 'TRIGGER  :'], [621, 1531, 'CYCLE(ms):30']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCE040',
+    title: 'DIGITAL INPUT(1)',
+    page: 19,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [175, 86, 2228, 1548],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE172',
@@ -4593,7 +4666,7 @@ function tcsSim(s) {
    One sheet:
      id, title, page, ctl (controller), cycle (ms)
      f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
-     c: [key, 'in' | 'out', letter, x, y, name, [sheets]]            off-page connector (oval), x y = its centre
+     c: [key, 'in' | 'out', letter, x, y, name, [sheets], dbl]       off-page connector (oval), x y = its centre; dbl 1 = drawn with a double line
      k: [key, x, y, text, note, kind]                                constant / system reference (pentagon), x y = its left middle; kind 'def' =
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
@@ -4651,10 +4724,12 @@ function tceSheet(q) {
   };
   const u = (fx1 - fx0) / 1000; /* one thousandth of the width of the frame, for the sizes of the symbols */
   /* off-page connectors: an oval with its letter; the name on the wire side, the sheets it goes to / comes from on the outer side */
-  for (const [key, dir, letter, x, y, name, refs] of q.c || []) {
+  for (const [key, dir, letter, x, y, name, refs, dbl] of q.c || []) {
     const w = 13 * u,
       r = 9 * u;
     poly([...arc(x + w - r, y, r, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r, Math.PI / 2, (3 * Math.PI) / 2)], 1);
+    /* a connector drawn with a double line in the drawing */
+    if (dbl) poly([...arc(x + w - r, y, r - 2 * u, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r - 2 * u, Math.PI / 2, (3 * Math.PI) / 2)], 1);
     tx.push(text(letter, x, y, 1.9, 4));
     const R = (refs || []).map(s => '(' + s + ')');
     if (dir === 'in') {
@@ -41431,7 +41506,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 4b42fc1'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build c4590b8'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -65282,6 +65357,81 @@ function tcsSim(s) {
   });
 })();
 
+/* ---- src/digital/tce/TCE040.js ---- */
+/* TCE040 DIGITAL INPUT(1) (331DM09784 page 19, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   Sixteen inputs of the PI/O table TCE900, eight at the left and eight at the right, each drawn the same way: the PI/O box, the connection mark, the
+   BTR mark, connector A (to its logic sheet) and connector B under it. The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B] */
+  const ROWS = [
+    [['CONTROL OIL PUMP(A)', 'RUNNING'], ['TCE305'], ['-']],
+    [['CONTROL OIL PUMP(A)', 'ELECTRICAL TROUBLE'], ['TCE305'], ['-']],
+    [['MAIN OIL PUMP(A)', 'RUNNING'], ['TCE300'], ['-']],
+    [['MAIN OIL PUMP(A)', 'MOTOR ELECTRICAL TROUBLE'], ['TCE300', 'TCE310'], ['-']],
+    [['DC EMERGENCY', 'OIL PUMP RUNNING'], ['TCE310'], ['-']],
+    [['DC EMERGENCY OIL', 'PUMP ELECTRICAL TROUBLE'], ['TCE310'], ['-']],
+    [['BEARING OIL PRESS.', '(FOR EOP AUTO START)'], ['TCE310'], ['TCT081']],
+    [['HAND TURNING', 'INTERLOCK POSITION'], ['TCE350'], ['TCT081']],
+    [['TURNING GEAR', 'ENGAGE POSITION'], ['TCE350'], ['TCT081']],
+    [['TURNING GEAR', 'DISENGAGE POSITION'], ['TCE350'], ['TCT081']],
+    [['TURNING GEAR', 'MOTOR ENGAGE PB'], ['TCE352'], ['-']],
+    [['SPARE', ''], ['-'], ['-']],
+    [['SPARE', ''], ['-'], ['-']],
+    [['SPARE', ''], ['-'], ['-']],
+    [['SPARE', ''], ['-'], ['-']],
+    [['DI P.S. NORMAL (AXR1)', ''], ['TCE469'], ['-']]
+  ];
+  ROWS.forEach(([name, ra, rb], n) => {
+    const right = n >= 8,
+      i = n % 8,
+      x0 = right ? 1220 : 204 /* left edge of the PI/O box */,
+      top = Math.round((right ? 157 : 158) + i * 138.4),
+      y = top + 27,
+      no = n + 1,
+      xe = x0 + 270 /* right edge of the box */,
+      xj = x0 + 638 /* the junction to connector B */,
+      xo = x0 + 776; /* centre of the connectors */
+    r.push(['di' + no, x0, top, 270, 54, '']);
+    t.push([x0 + 6, top + 27, name[0]], [x0 + 6, top + 49, name[1]], [x0, top + 76, 'DI'], [x0 + 407, top - 2, '(TCE900-' + no + ')']);
+    w.push(['di' + no, [[xe, y], [xe + 118, y]], 1], ['di' + no, [[xe + 134, y], [xo - 30, y]]], ['di' + no, [[xj, y], [xj, y + 75], [xo - 30, y + 75]]]);
+    g.push([xe + 126, y, 'l']);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), x0 + 533, y]);
+    c.push(['a' + no, 'out', 'A' + no, xo, y, '', ra], ['b' + no, 'out', 'B' + no, xo, y + 75, '', rb, 1]);
+  });
+  /* input 8 also goes to the operator station (CRT) */
+  w.push(['di8', [[842, 1229], [842, 1304], [958, 1304]]]);
+  d.push(['crt8', 975, 1304, 'out', 'TCE040_8', 'S', '#1C']);
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1350, 1289, 125, 22, 'PI/O error']);
+  t.push([1368, 1284, '(TCE900-1)']);
+  w.push(['pioErr', [[1475, 1300], [1955, 1300]]]);
+  b.push(['btr17', 'o:BTR', '017', 1741, 1300]);
+  c.push(['oF', 'out', 'F', 1985, 1300, '', ['TCE465']]);
+  t.push([236, 1531, 'CONTROLLER:'], [399, 1531, 'EHG+MD'], [621, 1504, 'TRIGGER  :'], [621, 1531, 'CYCLE(ms):30']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCE040',
+    title: 'DIGITAL INPUT(1)',
+    page: 19,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [175, 86, 2228, 1548],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
 /* ---- src/digital/tce/TCE172.js ---- */
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -65410,7 +65560,7 @@ function tcsSim(s) {
    One sheet:
      id, title, page, ctl (controller), cycle (ms)
      f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
-     c: [key, 'in' | 'out', letter, x, y, name, [sheets]]            off-page connector (oval), x y = its centre
+     c: [key, 'in' | 'out', letter, x, y, name, [sheets], dbl]       off-page connector (oval), x y = its centre; dbl 1 = drawn with a double line
      k: [key, x, y, text, note, kind]                                constant / system reference (pentagon), x y = its left middle; kind 'def' =
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
@@ -65468,10 +65618,12 @@ function tceSheet(q) {
   };
   const u = (fx1 - fx0) / 1000; /* one thousandth of the width of the frame, for the sizes of the symbols */
   /* off-page connectors: an oval with its letter; the name on the wire side, the sheets it goes to / comes from on the outer side */
-  for (const [key, dir, letter, x, y, name, refs] of q.c || []) {
+  for (const [key, dir, letter, x, y, name, refs, dbl] of q.c || []) {
     const w = 13 * u,
       r = 9 * u;
     poly([...arc(x + w - r, y, r, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r, Math.PI / 2, (3 * Math.PI) / 2)], 1);
+    /* a connector drawn with a double line in the drawing */
+    if (dbl) poly([...arc(x + w - r, y, r - 2 * u, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r - 2 * u, Math.PI / 2, (3 * Math.PI) / 2)], 1);
     tx.push(text(letter, x, y, 1.9, 4));
     const R = (refs || []).map(s => '(' + s + ')');
     if (dir === 'in') {
@@ -124597,7 +124749,7 @@ window.LS_GUIDE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 4b42fc1'));
+    row('Version', E('span', 'scsver', ver + ' · build c4590b8'));
   }
   function openSet(near) {
     if (!set) {
