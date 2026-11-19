@@ -35,7 +35,12 @@
   ];
   /* The turbine has its own control system (TCS) with its own operator station, apart from the DCS of the plant (Hitachi TC-14-116,
      section 5.1 / 5.2): its pages are a list of their own, reached with the Plant / Turbine switch of the page list. */
-  const TCS_GROUPS = [['', ['turbine', '@criteria', '@load', '@trip', 'turbine-oil']]];
+  const TCS_GROUPS = [
+    ['', ['turbine']],
+    ['Operation', ['@criteria', '@load']],
+    ['Protection', ['@trip']],
+    ['Auxiliaries', ['turbine-oil']]
+  ];
   /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
   const OWN = { '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip' };
   const STATIONS = [
@@ -900,6 +905,21 @@
   };
   /* Start-up criteria: the criteria of the automatic turbine start-up as the turbine control of the app holds them (AN.tcs():
      drawings 310SC90-775 / 776). A criterion that is not met can be bypassed, one at a time, with the app's own command. */
+  /* every list of the Turbine station is shown in groups: the part of the turbine a line belongs to, read from its own words */
+  const KINDS = ['Steam and vacuum', 'Oil', 'Turbine', 'Generator', 'Other systems'];
+  const kindOf = t =>
+    /VIBRATION|SPEED|THRUST|EXPANSION/.test(t)
+      ? 'Turbine'
+      : /\bOIL\b|EXTRACTOR/.test(t)
+        ? 'Oil'
+        : /52G|GEN\.|AVR|FIELD|EXCIT|V\/F|PROTECTION|LOCKOUT/.test(t)
+          ? 'Generator'
+          : /MFT|SHUTDOWN COMMAND|TCS MAJOR/.test(t)
+            ? 'Other systems'
+            : /STEAM|BYPASS|GLAND|CONDENSER|VACUUM|HOOD/.test(t)
+              ? 'Steam and vacuum'
+              : 'Turbine';
+  const byKind = (L, text) => KINDS.map(k => [k, L.filter(x => kindOf(text(x)) === k)]).filter(g => g[1].length);
   const crit = {};
   const STEPS = [
     ['warm', 'HP turbine warming'],
@@ -985,11 +1005,13 @@
         steps.append(b);
       });
       N1.push(E('h2', 'st-h', 'Steps'), steps, crit.msg);
-      const sec = (t, L) => {
-        if (!L.length) return;
+      const sec = (t, L0) => {
+        if (!L0.length) return;
         N1.push(E('h2', 'st-h', t));
         const box = E('div', 'st-crit');
-        for (const c of L) {
+        for (const [kind, L] of byKind(L0, c => c.txt)) {
+          box.append(E('div', 'st-cg', kind));
+          for (const c of L) {
           const b = byp.includes(c.no),
             r = E('div', 'st-cr' + (c.ok ? '' : b ? ' byp' : ' miss')),
             v = E('em', '', val(c)),
@@ -1018,6 +1040,7 @@
             r.append(x);
           } else r.append(E('span'));
           box.append(r);
+          }
         }
         N1.push(box);
       };
@@ -1081,14 +1104,17 @@
       rs.onclick = () => say(call(() => AN.turbine('tripreset'), ''));
       act.append(tr, rs, trp.msg);
       const box = E('div', 'st-crit');
-      for (const x of L) {
-        const r = E('div', 'st-cr st-tr' + (x.on ? ' miss' : ''));
-        r.append(
-          E('i', 'st-mk' + (x.on ? ' new' : ' ok')),
-          E('span', '', x.t),
-          E('span', 'st-cs', x.on ? 'Standing' : 'Normal')
-        );
-        box.append(r);
+      for (const [kind, K] of byKind(L, x => x.t)) {
+        box.append(E('div', 'st-cg', kind));
+        for (const x of K) {
+          const r = E('div', 'st-cr st-tr' + (x.on ? ' miss' : ''));
+          r.append(
+            E('i', 'st-mk' + (x.on ? ' new' : ' ok')),
+            E('span', '', x.t),
+            E('span', 'st-cs', x.on ? 'Standing' : 'Normal')
+          );
+          box.append(r);
+        }
       }
       ownPg.replaceChildren(head, act, E('h2', 'st-h', 'Trip causes'), box);
     }
