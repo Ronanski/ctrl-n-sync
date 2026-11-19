@@ -6,6 +6,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [175, 84, 2224, 1542],
+  /* live: the engine's state for TCE161 (tcs.js tcsLiveRead): TURBINE TRIP, ATS AUTO(C), 52G CLOSE, TURBINE SPEED */
+  live: { kTrip: 'trip', kAts: 'auto', k52g: 'g52', not035: '!g52', kSpd: ['rpm', 'rpm'] },
   k: [
     ['kAts', 279, 1158, 'ATS AUTO(C)', 'ref'],
     ['kSpd', 277, 1275, 'TURBINE SPEED', 'ref'],

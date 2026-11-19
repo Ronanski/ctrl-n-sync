@@ -141,7 +141,7 @@ function render() {
         [xa, sp.cx, sp.a],
         [sp.cx, xb, sp.b]
       ].forEach(([u1, u2, kk]) => {
-        const n = SV ? s.nl.seg[kk] : undefined,
+        const n = SV && !(s.nl.nst && s.nl.nst.has(s.nl.seg[kk])) ? s.nl.seg[kk] : undefined,
           lit = n !== undefined && SV[n];
         el(
           'line',
@@ -158,7 +158,9 @@ function render() {
       });
       return;
     }
-    const n = SV ? s.nl.seg[k] : undefined,
+    /* a TCE wire with no engine read: no state, drawn grey in RUN (legend 'no value') */
+    const ns = !!(SV && s.nl.nst && s.nl.nst.has(s.nl.seg[k])),
+      n = SV && !ns ? s.nl.seg[k] : undefined,
       lit = n !== undefined && SV[n];
     el(
       'line',
@@ -167,7 +169,7 @@ function render() {
         y1: -y1,
         x2,
         y2: -y2,
-        stroke: n === undefined ? stk(l) : lit ? LIVES[LIVE] : '#2b5f46',
+        stroke: ns ? '#9aa5ad' : n === undefined ? stk(l) : lit ? LIVES[LIVE] : '#2b5f46',
         'stroke-width': lit ? 0.7 : 0.35,
         'stroke-dasharray': dash(l)
       },
@@ -191,7 +193,7 @@ function render() {
     );
   });
   (s.nl.dots || []).forEach(d =>
-    el('circle', { class: 'jd', cx: d.x, cy: -d.y, r: 0.9, fill: SV ? (d.n >= 0 && SV[d.n] ? LIVES[LIVE] : '#2b5f46') : d.n >= 0 ? '#2b5f46' : COL.CON }, g)
+    el('circle', { class: 'jd', cx: d.x, cy: -d.y, r: 0.9, fill: SV ? (s.nl.nst && s.nl.nst.has(d.n) ? '#9aa5ad' : d.n >= 0 && SV[d.n] ? LIVES[LIVE] : '#2b5f46') : d.n >= 0 ? '#2b5f46' : COL.CON }, g)
   );
   for (const [x, y, r, l] of s.raw.ci) {
     ext(x, y);
@@ -462,6 +464,19 @@ function render() {
       t.style.fontFamily = 'Consolas,monospace';
       t.style.fontWeight = 'bold';
       t.textContent = v + (a.unit ? ' ' + a.unit.slice(0, 6) : '');
+    });
+  /* a TCE soft logic sheet: the analog values the engine holds (q.live with a unit), a tag over the start of the wire */
+  if (SV)
+    (s.nl.tlv || []).forEach(L => {
+      const v = L.unit && s.avw ? s.avw[L.key] : undefined;
+      if (v === undefined) return;
+      const txt = v + ' ' + L.unit,
+        w = txt.length * 1.25 + 2;
+      el('rect', { x: L.x + 1, y: -L.y - 4.6, width: w, height: 3.8, rx: 0.9, fill: '#1b2731', stroke: '#7d8e9a', 'stroke-width': 0.25, 'pointer-events': 'none' }, g);
+      const t = el('text', { x: L.x + 1 + w / 2, y: -L.y - 1.9, 'font-size': 2.1, 'text-anchor': 'middle', fill: '#cfd8e0', 'pointer-events': 'none' }, g);
+      t.style.fontFamily = 'Consolas,monospace';
+      t.style.fontWeight = 'bold';
+      t.textContent = txt;
     });
   el('g', { id: 'ov', 'pointer-events': 'none' }, svg);
   drawOv();

@@ -6,6 +6,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 84, 2222, 1545],
+  /* live: the CRT target speed select the engine holds (tcs.js tcsLiveRead), its target speed out */
+  live: { ffr003: 'tsel=200', ffr008: 'tsel=1800', ffr013: 'tsel=2700', ffr018: 'tsel=3600', or022: 'tselAny', not023: '!tselAny', asw027: ['tspd', 'rpm'] },
   k: [
     ['kInit', 290, 150, 'INITIAL', 'ref'],
     ['kZero', 277, 1437, '0.0', 'sys.ref'],

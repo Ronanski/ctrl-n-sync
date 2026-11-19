@@ -402,8 +402,33 @@ if (typeof window !== 'undefined') {
     }
   };
 }
+/* a TCE soft logic sheet (02d-tce.js q.live): the values the engine holds (AN.tceRead), on the wires the sheet names; no gate of the sheet runs
+   here (the TCS logic is the engine's, tcs.js: one logic) */
+function tceRd(R, e) {
+  const neg = e[0] === '!',
+    [k, want] = (neg ? e.slice(1) : e).split('=');
+  let x = R[k];
+  if (want !== undefined) x = x != null && String(x) === want;
+  return neg ? !x : x;
+}
+function tceSim(s) {
+  const nl = s.nl,
+    R = typeof AN !== 'undefined' && AN.tceRead ? AN.tceRead() : null,
+    v = new Array(nl.n).fill(0);
+  s.avw = {};
+  if (R)
+    for (const L of nl.tlv || []) {
+      const x = tceRd(R, L.rd);
+      if (!L.unit) v[L.n] = x ? 1 : 0;
+      else if (x != null && isFinite(x)) s.avw[L.key] = +(+x).toFixed(Math.abs(x) < 100 ? 2 : 1);
+    }
+  nl._v = v;
+  nl.avk = avOf(s);
+  return { rowOn: new Set(), v, outOn: new Set() };
+}
 /* one sheet in RUN: the values of the engine's scan */
 function tcsSim(s) {
+  if (s.tce) return tceSim(s);
   const st = typeof AN !== 'undefined' && AN.tcsIbd ? AN.tcsIbd(s.tcs) : null,
     nl = s.nl,
     raw = (st && st.v) || [],

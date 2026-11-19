@@ -67,6 +67,9 @@ function sdNL(sh) {
     pout: [],
     tcs: d.tcs,
     anl: d.anl,
+    /* a TCE soft logic sheet (02d-tce.js): the engine reads of its wires (tlv) and the nets that have none (nst, drawn without a state) */
+    tlv: d.live || null,
+    nst: d.nst ? new Set(d.nst) : null,
     an: d.an || [],
     anRows: new Set((d.an || []).map(a => a.row)),
     mv: [],

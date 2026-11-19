@@ -6,6 +6,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 84, 2222, 1545],
+  /* live: the engine's TCE160 state (tcs.js tcsLiveRead): the CRT acceleration select held, TURBINE TRIP, ATS AUTO(C) */
+  live: { kTrip: 'trip', kAts: 'auto', ffr007: 'accel=120', ffr018: 'accel=180', ffr028: 'accel=360', gC036: ['accel', 'rpm/m'] },
   k: [
     ['kInit', 289, 158, 'INITIAL', 'ref'],
     ['kAts', 279, 1010, 'ATS AUTO(C)', 'ref'],
