@@ -552,7 +552,8 @@ function tcsCmd(U, cmd, arg) {
       c.spd = Object.assign(c.spd || { acc: 120 }, { sel: x });
       return '';
     }
-    case 'accel': {
+    /* 'accrate', not 'accel': 'accel' is the ATS step 3 ACCELERATION push button (step map below) */
+    case 'accrate': {
       if (c.auto) return 'ATS AUTO is ON: the ATS selects the acceleration rate (TCA584)';
       const r = { slow: 120, med: 180, fast: 360 }[String(arg).toLowerCase()];
       if (!r) return 'Acceleration: slow (120), med (180) or fast (360 rpm/min) (TCE160)';

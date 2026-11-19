@@ -30359,7 +30359,8 @@ function tcsCmd(U, cmd, arg) {
       c.spd = Object.assign(c.spd || { acc: 120 }, { sel: x });
       return '';
     }
-    case 'accel': {
+    /* 'accrate', not 'accel': 'accel' is the ATS step 3 ACCELERATION push button (step map below) */
+    case 'accrate': {
       if (c.auto) return 'ATS AUTO is ON: the ATS selects the acceleration rate (TCA584)';
       const r = { slow: 120, med: 180, fast: 360 }[String(arg).toLowerCase()];
       if (!r) return 'Acceleration: slow (120), med (180) or fast (360 rpm/min) (TCE160)';
@@ -40633,7 +40634,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build f2b0b93'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 67884af'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -85940,7 +85941,8 @@ function tcsCmd(U, cmd, arg) {
       c.spd = Object.assign(c.spd || { acc: 120 }, { sel: x });
       return '';
     }
-    case 'accel': {
+    /* 'accrate', not 'accel': 'accel' is the ATS step 3 ACCELERATION push button (step map below) */
+    case 'accrate': {
       if (c.auto) return 'ATS AUTO is ON: the ATS selects the acceleration rate (TCA584)';
       const r = { slow: 120, med: 180, fast: 360 }[String(arg).toLowerCase()];
       if (!r) return 'Acceleration: slow (120), med (180) or fast (360 rpm/min) (TCE160)';
@@ -122993,7 +122995,7 @@ window.LS_GUIDE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build f2b0b93'));
+    row('Version', E('span', 'scsver', ver + ' · build 67884af'));
   }
   function openSet(near) {
     if (!set) {
