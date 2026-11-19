@@ -56,7 +56,7 @@
   /* TCE_LIB.tmr(o): a sheet ANALOG INPUT SIGNAL DIAGNOSTICS. One signal (A), (B), (C), each read by the three protection controllers and checked by one
      TMR AI DIAGNOSTICS block; the three results go to TRIPLE DETECTOR2 (the value) and to 2OO3 (abnormal). Those sheets are drawn the same way; a sheet
      gives what differs: o.id, title, page, f, tag, let [signal letter, error letter], name(ch, sig) => [words over the line, name], sg [four constants],
-     out [line 1, line 2, line 2 of abnormal], refA, refA1, refC (sheets of C1, C2, C3), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
+     out [line 1, line 2, line 2 of abnormal, line 1 of abnormal when it differs], refA, refA1, refC (sheets of C1, C2, C3), cs [[x of the branch, y] of C1, C2, C3], cx (x of C1), dx / dr (the left part and the right
      part stand that far from where sheet TCE060 has them), foot (the words of the foot line). Returns the sheet. */
   const tmr = o => {
   const F = o.f,
@@ -109,6 +109,24 @@
   const [g1, g2, g3] = P;
   const X = x => x + dx,
     Z = x => x + dr;
+  /* the lines of C1, C2, C3: a y of null = level with the output of the third block. A sheet can send them to D1, D2, D3 too
+     (o.ds: [x of the branch, [y of D1, D2, D3], [x of D1, D2, D3], sheet]) and write their name over them (o.cname(ch) => [line 1, line 2], at x o.cnx). */
+  const CY = [C1[1], C2[1], C3[1] == null ? g3.p(0) : C3[1]],
+    cd = o.cdbl === 0 ? 0 : 1,
+    xc = [],
+    xw = [],
+    xt = [];
+  if (o.ds)
+    o.ds[1].forEach((y, i) => {
+      xc.push(['oD' + (i + 1), 'out', 'D' + (i + 1), o.ds[2][i], y, '', [o.ds[3]], 1]);
+      xw.push(['tmr' + (i + 1) + '.OUT', [[o.ds[0], CY[i]], [o.ds[0], y], [o.ds[2][i] - 27, y]], 1]);
+    });
+  if (o.cname)
+    ['A', 'B', 'C'].forEach((ch, i) => {
+      const n = o.cname(ch);
+      xt.push([o.cnx, CY[i] - 27, n[0]], [o.cnx, CY[i] - 6, n[1]]);
+    });
+  const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
   return {
     id: o.id,
     title: o.title,
@@ -122,13 +140,14 @@
       ['oA1', 'out', 'A1', Z(2076), 264, '', o.refA1, 1],
       ['oB', 'out', 'B', Z(2075), 477, '', ['-']],
       ['oB1', 'out', 'B1', Z(2074), 573, '', ['-'], 1],
-      ['oC1', 'out', 'C1', o.cx, C1[1], '', [RC[0]], 1],
-      ['oC2', 'out', 'C2', o.cx - 1, C2[1], '', [RC[1]], 1],
-      ['oC3', 'out', 'C3', o.cx - 1, C3[1], '', [RC[2]], 1]
+      ['oC1', 'out', 'C1', o.cx, CY[0], '', [RC[0]], cd],
+      ['oC2', 'out', 'C2', o.cx - 1, CY[1], '', [RC[1]], cd],
+      ['oC3', 'out', 'C3', o.cx - 1, CY[2], '', [RC[2]], cd],
+      ...xc
     ],
     d: [
       ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
-      ['crtAbn', Z(2073), 679, 'out', o.tag + '_PVC', 'S', '#1C']
+      ['crtAbn', Z(2073), 679, 'out', o.tagAbn || o.tag + '_PVC', 'S', '#1C']
     ],
     r: [
       ['td2', Z(1481), 136, 235, 128, ''],
@@ -182,10 +201,11 @@
       ['sg036', [[X(838), g3.p(9)], [g3.bx, g3.p(9)]], 1],
       /* the three values to TRIPLE DETECTOR2 and to the turbine supervisory sheets */
       ['tmr1.OUT', [[g1.bx + 405, 170], [Z(1481), 170]], 1],
-      ['tmr1.OUT', [[C1[0], 170], [C1[0], C1[1]], [o.cx - 27, C1[1]]], 1],
+      ['tmr1.OUT', [[C1[0], 170], [C1[0], CY[0]], [o.cx - 27, CY[0]]], 1],
       ['tmr2.OUT', [[g2.bx + 405, g2.p(0)], [Z(1414), g2.p(0)], [Z(1414), 191], [Z(1481), 191]], 1],
-      ['tmr2.OUT', [[C2[0], g2.p(0)], [C2[0], C2[1]], [o.cx - 28, C2[1]]], 1],
-      ['tmr3.OUT', [[g3.bx + 405, g3.p(0)], [C3[0], g3.p(0)], [C3[0], C3[1]], [o.cx - 28, C3[1]]], 1],
+      ['tmr2.OUT', [[C2[0], g2.p(0)], [C2[0], CY[1]], [o.cx - 28, CY[1]]], 1],
+      ['tmr3.OUT', straight([[g3.bx + 405, g3.p(0)], [C3[0], g3.p(0)], [C3[0], CY[2]], [o.cx - 28, CY[2]]]), 1],
+      ...xw,
       ['tmr3.OUT', [[Z(1436), g3.p(0)], [Z(1436), 212], [Z(1481), 212]], 1],
       /* abnormal: two out of three */
       ['tmr1.ABN', [[g1.bx + 405, g1.p(2)], [Z(1395), g1.p(2)], [Z(1395), 477], [Z(1564), 477]]],
@@ -225,12 +245,13 @@
       [Z(1847), 260, o.out[1]],
       [Z(1846), 335, o.out[0]],
       [Z(1846), 356, o.out[1]],
-      [Z(1846), 452, o.out[0]],
+      [Z(1846), 452, o.out[3] || o.out[0]],
       [Z(1846), 473, o.out[2]],
-      [Z(1845), 548, o.out[0]],
+      [Z(1845), 548, o.out[3] || o.out[0]],
       [Z(1845), 569, o.out[2]],
-      [Z(1844), 654, o.out[0]],
+      [Z(1844), 654, o.out[3] || o.out[0]],
       [Z(1844), 675, o.out[2]],
+      ...xt,
       ...o.foot
     ]
   };
