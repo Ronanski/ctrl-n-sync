@@ -1,7 +1,8 @@
 // Checks the TCS soft logic sheets typed in src/digital/tce/*.js (format: src/digital/parts/02d-tce.js).
 // usage: node tools/data/tce_check.mjs        exit 1 when a sheet breaks a rule
 // Rules:
-//   - id, title, page, ctl, cycle and the frame f are there; the id is unique and equals the file name;
+//   - id, title, page, ctl, cycle and the frame f are there (an IBD sheet, ibd set: no ctl / cycle); the id is unique and equals the file name;
+//   - an IBD sheet: every key of nets is a key of the sheet, every net a whole number, one IBD sheet typed once;
 //   - every key of a sheet is unique;
 //   - a wire is made of horizontal and vertical pieces only (no slanted line, no curve), and has at least two points;
 //   - the source of a wire is a connector, a constant, a PI/O box, a small block or an output pin of a macro block of the sheet;
@@ -19,6 +20,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
   order = fs.readFileSync(path.join(root, 'src/digital/order.list'), 'utf8').split(/\r?\n/).map(s => s.trim()),
   at = order.indexOf('parts/02d-tce.js');
 const errs = [],
+  ibds = new Set(),
   notes = [],
   all = [];
 for (const f of files) {
@@ -37,7 +39,7 @@ for (const f of files) {
     const E = m => errs.push(q.id + ': ' + m);
     all.push(q.id);
     if (q.id + '.js' !== f) E('the file is named ' + f);
-    for (const k of ['id', 'title', 'page', 'ctl', 'cycle']) if (q[k] == null || q[k] === '') E('no ' + k);
+    for (const k of q.ibd ? ['id', 'title', 'page'] : ['id', 'title', 'page', 'ctl', 'cycle']) if (q[k] == null || q[k] === '') E('no ' + k);
     if (!Array.isArray(q.f) || q.f.length !== 4 || !(q.f[2] > q.f[0]) || !(q.f[3] > q.f[1])) E('the frame f is not [x0, y0, x1, y1]');
     const keys = new Set(),
       add = k => (keys.has(k) ? E('key twice: ' + k) : keys.add(k));
@@ -46,8 +48,9 @@ for (const f of files) {
       if (c[1] !== 'in' && c[1] !== 'out') E('connector ' + c[0] + ': in or out');
     }
     for (const k of q.k || []) add(k[0]);
+    for (const h of q.h || []) if (h[0] !== '') add(h[0]);
     for (const b of q.b || []) add(b[0]);
-    for (const r of q.r || []) add(r[0]);
+    for (const r of q.r || []) if (r[0] !== '') add(r[0]);
     for (const d of q.d || []) {
       add(d[0]);
       if (d[3] !== 'in' && d[3] !== 'out') E('CRT diamond ' + d[0] + ': in or out');
@@ -71,6 +74,14 @@ for (const f of files) {
       }
     });
     for (const k in q.live || {}) if (!keys.has(k)) E('live: ' + k + ' is not a key of the sheet');
+    if (q.ibd) {
+      if (ibds.has(q.ibd)) E('the IBD sheet ' + q.ibd + ' is typed twice');
+      ibds.add(q.ibd);
+      for (const k in q.nets || {}) {
+        if (!keys.has(k)) E('nets: ' + k + ' is not a key of the sheet');
+        if (!Number.isInteger(q.nets[k]) || q.nets[k] < 0) E('nets: ' + k + ' is not a net number');
+      }
+    }
   }
 }
 if (new Set(all).size !== all.length) errs.push('a sheet id is typed twice');
