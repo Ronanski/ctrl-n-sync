@@ -637,27 +637,35 @@
       fn();
     };
   }
+  /* The popup is built ONCE; after that each part is filled again on its own, and a part swaps its old rows for the new ones in one
+     step. Before (live test, Jennie, 2026-11-19): every press rebuilt the whole popup, and the save points came back a moment
+     later (their list is read from storage), so with save points kept the fault rows first moved up and then down again, and the
+     next press landed on another fault. */
+  const ins = {};
   function instructor() {
     if (!insPop) {
       insPop = popup('Instructor', '', 360);
       insPop.style.left = 'calc(var(--st-rail) + 12px)';
       insPop.style.top = '56px';
       insPop.hidden = true;
+      buildIns();
     }
     insPop.hidden = !insPop.hidden;
-    if (!insPop.hidden) fillIns();
+    if (!insPop.hidden) {
+      ins.name.value = call(() => lsSaves.name(), '') || '';
+      fillSaves();
+      fillTrips();
+      fillFaults();
+    }
   }
-  function fillIns() {
-    const body = insPop._body,
-      keep = body.scrollTop;
-    body.textContent = '';
+  function buildIns() {
+    const body = insPop._body;
     const head = t => body.append(E('h2', 'st-h', t));
-    const row = () => {
-      const r = E('div', 'st-row');
+    const row = cls => {
+      const r = E('div', 'st-row' + (cls ? ' ' + cls : ''));
       body.append(r);
       return r;
     };
-    const again = () => setTimeout(fillIns, 300);
     head('Starting point');
     let r = row();
     for (const [t, id] of [
@@ -675,28 +683,38 @@
       r.append(b);
     }
     head('Save points');
-    r = row();
+    r = row('st-save');
     const nm = E('input', 'st-find');
     nm.type = 'text';
     nm.setAttribute('aria-label', 'Name of the save point');
     nm.placeholder = 'Name…';
-    nm.value = call(() => lsSaves.name(), '') || '';
     const sv = E('button', 'st-b', 'Save now');
     sv.title = 'Keeps the whole plant at this moment under this name';
     sv.onclick = () => {
       const t = nm.value.trim();
       if (!t) return nm.focus();
       sv.disabled = true;
-      Promise.resolve(call(() => lsSaves.save(t))).then(fillIns, fillIns);
+      const done = () => {
+        sv.disabled = false;
+        fillSaves();
+      };
+      Promise.resolve(call(() => lsSaves.save(t))).then(done, done);
     };
-    r.classList.add('st-save');
     r.append(nm, sv);
-    const svl = E('div', 'st-svl');
-    body.append(svl);
-    Promise.resolve(call(() => lsSaves.list(), [])).then(
-      L => {
-        svl.textContent = '';
-        if (!L || !L.length) return svl.append(E('p', 'st-none', 'No save point yet.'));
+    ins.name = nm;
+    ins.saves = E('div', 'st-svl');
+    body.append(ins.saves);
+    head('Trips');
+    ins.trips = row();
+    head('Faults');
+    ins.faults = row('st-col');
+  }
+  /* the save points: the rows on screen stay until the new list is read, then they are swapped in one step */
+  function fillSaves() {
+    const show = L => {
+      const N = [];
+      if (!L || !L.length) N.push(E('p', 'st-none', 'No save point yet.'));
+      else
         for (const e of L.slice().reverse()) {
           const rr = E('div', 'st-svr'),
             ld = E('button', 'st-b', 'Load'),
@@ -708,16 +726,17 @@
             call(() => lsSaves.load(e));
             setTimeout(tick, 1500);
           });
-          arm(dl, 'Delete', () => Promise.resolve(call(() => lsSaves.del(e))).then(fillIns, fillIns));
+          arm(dl, 'Delete', () => Promise.resolve(call(() => lsSaves.del(e))).then(fillSaves, fillSaves));
           rr.append(E('span', '', e.name), ld, dl);
-          svl.append(rr);
+          N.push(rr);
         }
-        body.scrollTop = keep;
-      },
-      () => svl.append(E('p', 'st-none', 'No save point yet.'))
-    );
-    head('Trips');
-    r = row();
+      ins.saves.replaceChildren(...N);
+    };
+    Promise.resolve(call(() => lsSaves.list(), [])).then(show, () => show([]));
+  }
+  function fillTrips() {
+    const N = [],
+      again = () => setTimeout(fillTrips, 300);
     const tt = E('button', 'st-b', 'Turbine trip');
     tt.title = 'The turbine trips now and the plant reacts to it';
     arm(tt, 'Turbine trip', () => {
@@ -725,7 +744,7 @@
       call(() => lsEventAdd('TCS', 'TCS', 'Instructor: TURBINE TRIP (TA-1)'));
       again();
     });
-    r.append(tt);
+    N.push(tt);
     const el = call(() => (AN.elec ? AN.elec() : null), null);
     if (el) {
       const t = el.l52 ? 'Open line breaker' : 'Close line breaker',
@@ -740,13 +759,16 @@
         );
         again();
       });
-      r.append(lb);
+      N.push(lb);
     }
-    head('Faults');
-    r = row();
-    r.classList.add('st-col');
+    ins.trips.replaceChildren(...N);
+  }
+  /* the faults: always the same rows in the same order; "Clear all faults" is the last row, so nothing above it ever moves */
+  function fillFaults() {
+    const N = [],
+      again = () => setTimeout(fillFaults, 300);
     const FL = [...call(() => AN.fault(), []), ...call(() => WORLD.ftrip(), [])];
-    if (!FL.length) r.append(E('p', 'st-none', 'No fault in this starting point.'));
+    if (!FL.length) N.push(E('p', 'st-none', 'No fault in this starting point.'));
     for (const f of FL) {
       const id = 'flt-' + String(f.id).replace(/\W/g, '-'),
         b = E('button', 'st-b' + (f.on ? ' on' : ''), f.t);
@@ -767,7 +789,7 @@
           },
           true
         );
-      r.append(b);
+      N.push(b);
     }
     if (FL.some(f => f.on)) {
       const c = E('button', 'st-b', 'Clear all faults');
@@ -775,9 +797,9 @@
         pressId('flt-clear');
         again();
       };
-      r.append(c);
+      N.push(c);
     }
-    body.scrollTop = keep;
+    ins.faults.replaceChildren(...N);
   }
   function speeds() {
     const sel = speedSel();
