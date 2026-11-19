@@ -7024,6 +7024,224 @@ function tcsSim(s) {
     [605, 1528, 'CYCLE(ms):30']
   ]
 });
+/* TCE166 ACCELERATION RELAY (331DM09784 page 116, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE166',
+  title: 'ACCELERATION RELAY',
+  page: 116,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [165, 85, 2215, 1545],
+  k: [
+    ['kHp', 285, 256, 'HP START', 'ref'],
+    ['kSpd', 285, 330, 'TURBINE SPEED', 'ref'],
+    ['kAnn', 278, 821, 'ANN RESET', 'ref']
+  ],
+  c: [
+    ['iB', 'in', 'B', 296, 651, 'FASV OPERATED', ['TCE182']],
+    ['oA', 'out', 'A', 2079, 259, 'ACC.RELAY OPERATED', ['TCE053', 'TCE095', 'TCE170', 'TCE601', 'TCE602']],
+    ['oB', 'out', 'B', 2078, 387, '', ['TCP1230', 'TCP2230', 'TCP3230'], 1],
+    ['oA1', 'out', 'A1', 2072, 879, '', ['-'], 1]
+  ],
+  d: [['dAcc', 2018, 801, 'out', 'TCE166_1', 'S', '#1C']],
+  m: [
+    [
+      'acc',
+      'ACCELERATION RELAY',
+      '',
+      908,
+      209,
+      405,
+      319,
+      ['HPMODE', 'SPEED', 'ACC.S', 'OPE.S', 'BACK.S', 'CLOSE', 'RATEDS', ''],
+      ['OPE', '', '', '', '', '', '', ''],
+      'C001',
+      [
+        [1013, 551, '(LME249)'],
+        [906, 575, 'DEF K:1.0'],
+        [906, 596, 'DEF K:0.0rpm/S'],
+        [906, 617, 'DEF K:0.0rpm'],
+        [906, 638, 'DEF K:0.0rpm/S'],
+        [906, 660, 'DEF K:0.0rpm'],
+        [943, 681, 'K:1.005'],
+        [906, 702, 'DEF K:0.0rpm'],
+        [906, 723, 'DEF TP:10.0S']
+      ]
+    ]
+  ],
+  b: [
+    ['sgA003', 'SG', 'A003', 502, 415],
+    ['sgA004', 'SG', 'A004', 501, 490],
+    ['sgA005', 'SG', 'A005', 500, 565],
+    ['sgA006', 'SG', 'A006', 498, 724],
+    ['ffs008', 'FFS', '008', 1625, 810, [], { l: ['S', 'R'] }, [80, 43]],
+    ['btr002', 'o:BTR', '002', 1366, 257],
+    ['btr007', 'o:BTR', '007', 1510, 799],
+    ['btr010', 'o:BTR', '010', 1360, 821],
+    ['btr009', 'o:BTR', '009', 1733, 799],
+    ['btr011', 'o:BTR', '011', 1733, 877]
+  ],
+  w: [
+    /* the conditions and the settings of the acceleration relay */
+    ['kHp', [[520, 257], [908, 257]]],
+    ['kSpd', [[520, 330], [737, 330], [737, 289], [908, 289]], 1],
+    ['sgA003', [[532, 405], [757, 405], [757, 321], [908, 321]], 1],
+    ['sgA004', [[531, 479], [778, 479], [778, 353], [908, 353]], 1],
+    ['sgA005', [[530, 555], [799, 555], [799, 385], [908, 385]], 1],
+    ['iB', [[323, 650], [820, 650], [820, 417], [908, 417]]],
+    ['sgA006', [[528, 714], [840, 714], [840, 449], [908, 449]], 1],
+    /* ACC.RELAY OPERATED: out, and kept for the CRT lamp until ANN RESET */
+    ['acc.OPE', [[1313, 257], [2052, 257]]],
+    ['acc.OPE', [[1663, 257], [1663, 386], [2052, 386]]],
+    ['acc.OPE', [[1472, 257], [1472, 799], [1585, 799]]],
+    ['kAnn', [[513, 821], [1585, 821]]],
+    ['ffs008', [[1665, 799], [1994, 799]]],
+    ['ffs008', [[1700, 799], [1700, 877], [2045, 877]]]
+  ],
+  t: [
+    [462, 286, '(TCE057)'],
+    [462, 360, '(TCE143)'],
+    [301, 407, 'ACC.RATE SET'],
+    [333, 437, 'K:55.7rpm/S'],
+    [301, 482, 'OPERATED SPEED'],
+    [331, 511, 'K:3672.0rpm'],
+    [300, 556, 'BACK UP SPEED'],
+    [331, 586, 'K:3780.0rpm'],
+    [298, 716, 'RATED SPEED'],
+    [329, 745, 'K:3600.0rpm'],
+    [455, 850, '(TCE050)'],
+    [1573, 790, 'T'],
+    [1790, 776, 'ACCELERATION'],
+    [1790, 796, 'RELAY OPERATED'],
+    [1790, 851, 'ACCELERATION'],
+    [1790, 872, 'RELAY OPERATED'],
+    [221, 1524, 'CONTROLLER:'],
+    [382, 1524, 'EHG+MD'],
+    [607, 1499, 'TRIGGER  :'],
+    [607, 1526, 'CYCLE(ms):30']
+  ]
+});
+/* TCE167 SPEED CONTROL MODE (331DM09784 page 117, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   SPEED CONTROL MODE (FFR007) is set when the turbine speed reaches the target (MR A003 +-15 rpm) or a speed hold comes, and reset by
+   GOVERNING MODE (FFR020: 5 rpm under rated speed for 1 s) or by a turbine trip / all valves closed (OR021). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE167',
+  title: 'SPEED CONTROL MODE',
+  page: 117,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [175, 84, 2228, 1545],
+  k: [
+    ['kInit', 298, 265, 'INITIAL', 'ref'],
+    ['kSpd', 296, 446, 'TURBINE SPEED', 'ref'],
+    ['kTrip', 289, 1075, 'TURBINE TRIP', 'ref'],
+    ['kAvc', 288, 1159, 'ALL VALVE CLOSED', 'ref'],
+    ['dGov', 1872, 948, 'GOVERNING MODE', 'def', 'def']
+  ],
+  c: [
+    ['iA', 'in', 'A', 313, 353, 'TARGET SPEED', ['TCE164']],
+    ['iB', 'in', 'B', 311, 566, 'SPEED HOLD', ['TCE164']],
+    ['oA', 'out', 'A', 2093, 229, '', ['TCE169']],
+    ['oB', 'out', 'B', 2092, 356, 'SPEED CONTROL MODE', ['TCE169', 'TCE207']],
+    ['oC', 'out', 'C', 2085, 1175, 'TURBINE RATED SPEED', ['-'], 1]
+  ],
+  b: [
+    ['mrA003', 'MR', 'A003', 741, 362, ['HL:15.0rpm', 'LL:-15.0rpm']],
+    ['not004', 'NOT', '004', 837, 362],
+    ['a005', 'A', '005', 953, 362],
+    ['or006', 'OR', '006', 1071, 362],
+    ['tpA008', 'TP', 'A008', 835, 490, ['TP:2.000S']],
+    ['xA008', 'X', '', 740, 480],
+    ['a009', 'A', '009', 834, 575],
+    ['xA009', 'X', '', 739, 585],
+    ['mrA010', 'MR', 'A010', 896, 692, ['HL:100.0rpm', 'LL:-100.0rpm']],
+    ['pdA013', 'PD', 'A013', 736, 745, ['N:1', 'K:1']],
+    ['or011', 'OR', '011', 1068, 692],
+    ['not014', 'NOT', '014', 735, 863],
+    ['pdf015', 'PDF', '015', 895, 863],
+    ['sgA016', 'SG', 'A016', 468, 958, ['K:3600.0rpm']],
+    ['sub017', 'SUB', '017', 735, 958],
+    ['lckA018', 'LCK', 'A018', 894, 958, ['K:5.0rpm']],
+    ['tpA019', 'TP', 'A019', 1065, 958, ['TP:1.000s']],
+    ['ffr020', 'FFR', '020', 1225, 959, [], { l: ['S', 'R'] }, [79, 43]],
+    ['or012', 'OR', '012', 1355, 704, [], {}, [59, 64]],
+    ['ffr007', 'FFR', '007', 1486, 363, [], { l: ['S', 'R'] }, [79, 43]],
+    ['or001', 'OR', '001', 1667, 246, [], {}, [59, 64]],
+    ['not002', 'NOT', '002', 1785, 235],
+    ['or021', 'OR', '021', 893, 1086],
+    ['btr022', 'o:BTR', '022', 1583, 1172]
+  ],
+  w: [
+    /* INITIAL: the clear (C) of the pulses and of the differential, the reset (T) of the timer */
+    ['kInit', [[534, 265], [664, 265], [664, 820], [1066, 820], [1066, 937]]],
+    ['kInit', [[664, 446], [836, 446], [836, 469]]],
+    ['kInit', [[664, 703], [736, 703], [736, 724]]],
+    ['kInit', [[895, 820], [895, 841]]],
+    /* the turbine speed against the target speed */
+    ['iA', [[340, 351], [711, 351]], 1],
+    ['iA', [[643, 351], [643, 735], [706, 735]], 1],
+    ['iA', [[643, 681], [866, 681]], 1],
+    ['kSpd', [[531, 446], [601, 446], [601, 371], [711, 371]], 1],
+    ['kSpd', [[601, 446], [601, 967], [705, 967]], 1],
+    ['mrA003', [[771, 351], [808, 351]]],
+    ['not004', [[866, 351], [923, 351]]],
+    ['a005', [[983, 351], [1041, 351]]],
+    ['tpA008', [[865, 480], [900, 480], [900, 373], [923, 373]]],
+    ['iB', [[338, 564], [805, 564]]],
+    ['iB', [[621, 564], [621, 851], [705, 851]]],
+    ['a009', [[864, 564], [1016, 564], [1016, 373], [1041, 373]]],
+    ['or006', [[1101, 352], [1446, 352]]],
+    /* SPEED CONTROL MODE and SPEED UP CONTROL MODE */
+    ['ffr007', [[1525, 352], [2066, 352]]],
+    ['ffr007', [[1569, 352], [1569, 225], [1637, 225]]],
+    ['or001', [[1697, 225], [1755, 225]]],
+    ['not002', [[1814, 225], [2067, 225]]],
+    ['not002', [[1838, 225], [1838, 618], [684, 618], [684, 480], [806, 480]]],
+    ['not002', [[684, 585], [805, 585]]],
+    /* the reset of SPEED CONTROL MODE */
+    ['pdA013', [[765, 735], [844, 735], [844, 703], [866, 703]], 1],
+    ['mrA010', [[925, 681], [1038, 681]]],
+    ['not014', [[765, 851], [866, 851]]],
+    ['pdf015', [[924, 851], [1012, 851], [1012, 703], [1038, 703]]],
+    ['or011', [[1098, 681], [1325, 681]]],
+    ['or012', [[1384, 683], [1422, 683], [1422, 374], [1446, 374]]],
+    /* GOVERNING MODE: 5 rpm under the rated speed for 1 s */
+    ['sgA016', [[498, 948], [705, 948]], 1],
+    ['sub017', [[764, 948], [865, 948]], 1],
+    ['lckA018', [[923, 948], [1035, 948]]],
+    ['lckA018', [[979, 948], [979, 1172], [2058, 1172]]],
+    ['tpA019', [[1095, 948], [1185, 948]]],
+    ['ffr020', [[1264, 948], [1872, 948]]],
+    ['ffr020', [[1299, 948], [1299, 725], [1325, 725]]],
+    ['ffr020', [[1588, 948], [1588, 246], [1637, 246]]],
+    ['kTrip', [[525, 1075], [865, 1075]]],
+    ['kAvc', [[524, 1159], [840, 1159], [840, 1097], [865, 1097]]],
+    ['or021', [[922, 1075], [1610, 1075], [1610, 268], [1637, 268]]],
+    ['or021', [[1151, 1075], [1151, 704], [1325, 704]]],
+    ['or021', [[1151, 969], [1185, 969]]]
+  ],
+  t: [
+    [476, 295, '(TCE050)'],
+    [474, 476, '(TCE143)'],
+    [467, 1104, '(TCE053)'],
+    [467, 1189, '(TCE162)'],
+    [439, 920, 'RATED SPEED'],
+    [697, 943, '+', 1],
+    [697, 964, '-', 1],
+    [792, 474, 'C'],
+    [694, 728, 'C'],
+    [853, 845, 'C'],
+    [1021, 943, 'C'],
+    [1432, 345, 'T'],
+    [1172, 942, 'T'],
+    [1862, 198, 'SPEED UP'],
+    [1862, 220, 'CONTROL MODE'],
+    [236, 1523, 'CONTROLLER:'],
+    [398, 1523, 'EHG+MD'],
+    [627, 1498, 'TRIGGER  :'],
+    [627, 1525, 'CYCLE(ms):30']
+  ]
+});
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE172',
@@ -7158,7 +7376,8 @@ function tcsSim(s) {
      d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
-                                                                     parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
+                                                                     parameters printed under it ('^DEF' = over it); l / r = the marks of its pins;
+                                                                     type 'o:BTR' = a mark on the wire, type 'X' = the crossed circle (inverted input)
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
      t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
@@ -7223,7 +7442,13 @@ function tceSheet(q) {
       R.forEach((s, i) => tx.push(text(s, x - w - 3 * u - col(i), y + (5 + 8 * (i % per)) * u, 1.7, 2)));
     } else {
       if (name) tx.push(text(name, x - w - 4 * u, y - 5 * u, 2.05, 2));
-      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
+      /* near the right edge of the frame there is no room for a second column: the drawing puts the sheets over four on the left of the
+         column, on its last rows (TCE166 A: TCE602 left of TCE601) */
+      if (R.length > 4 && x + w + 37 * u + 34 * u > fx1)
+        R.forEach((s, i) =>
+          tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
+        );
+      else R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
     }
     net(key);
   }
@@ -7275,6 +7500,15 @@ function tceSheet(q) {
   }
   /* small blocks: the type over the block number */
   for (const [key, type, no, x, y, notes, pins, size] of q.b || []) {
+    if (type === 'X') {
+      /* the crossed circle of the drawing on an input line (the signal taken inverted), type 'X': no name, no number */
+      const r = 3.4 * u,
+        e = r * 0.7071;
+      ci.push([X(x), Y(y), W(r), 'SYM']);
+      poly([[x - e, y - e], [x + e, y + e]], 0);
+      poly([[x - e, y + e], [x + e, y - e]], 0);
+      continue;
+    }
     if (/^o:/.test(type)) {
       /* a mark on the wire (a small circle with its name over it and its number under it), type 'o:BTR' */
       ci.push([X(x), Y(y), W(2.2 * u), 'SYM']);
@@ -44162,7 +44396,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 77a4fbf'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 557d536'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -71312,6 +71546,228 @@ function tcsSim(s) {
   ]
 });
 
+/* ---- src/digital/tce/TCE166.js ---- */
+/* TCE166 ACCELERATION RELAY (331DM09784 page 116, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE166',
+  title: 'ACCELERATION RELAY',
+  page: 116,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [165, 85, 2215, 1545],
+  k: [
+    ['kHp', 285, 256, 'HP START', 'ref'],
+    ['kSpd', 285, 330, 'TURBINE SPEED', 'ref'],
+    ['kAnn', 278, 821, 'ANN RESET', 'ref']
+  ],
+  c: [
+    ['iB', 'in', 'B', 296, 651, 'FASV OPERATED', ['TCE182']],
+    ['oA', 'out', 'A', 2079, 259, 'ACC.RELAY OPERATED', ['TCE053', 'TCE095', 'TCE170', 'TCE601', 'TCE602']],
+    ['oB', 'out', 'B', 2078, 387, '', ['TCP1230', 'TCP2230', 'TCP3230'], 1],
+    ['oA1', 'out', 'A1', 2072, 879, '', ['-'], 1]
+  ],
+  d: [['dAcc', 2018, 801, 'out', 'TCE166_1', 'S', '#1C']],
+  m: [
+    [
+      'acc',
+      'ACCELERATION RELAY',
+      '',
+      908,
+      209,
+      405,
+      319,
+      ['HPMODE', 'SPEED', 'ACC.S', 'OPE.S', 'BACK.S', 'CLOSE', 'RATEDS', ''],
+      ['OPE', '', '', '', '', '', '', ''],
+      'C001',
+      [
+        [1013, 551, '(LME249)'],
+        [906, 575, 'DEF K:1.0'],
+        [906, 596, 'DEF K:0.0rpm/S'],
+        [906, 617, 'DEF K:0.0rpm'],
+        [906, 638, 'DEF K:0.0rpm/S'],
+        [906, 660, 'DEF K:0.0rpm'],
+        [943, 681, 'K:1.005'],
+        [906, 702, 'DEF K:0.0rpm'],
+        [906, 723, 'DEF TP:10.0S']
+      ]
+    ]
+  ],
+  b: [
+    ['sgA003', 'SG', 'A003', 502, 415],
+    ['sgA004', 'SG', 'A004', 501, 490],
+    ['sgA005', 'SG', 'A005', 500, 565],
+    ['sgA006', 'SG', 'A006', 498, 724],
+    ['ffs008', 'FFS', '008', 1625, 810, [], { l: ['S', 'R'] }, [80, 43]],
+    ['btr002', 'o:BTR', '002', 1366, 257],
+    ['btr007', 'o:BTR', '007', 1510, 799],
+    ['btr010', 'o:BTR', '010', 1360, 821],
+    ['btr009', 'o:BTR', '009', 1733, 799],
+    ['btr011', 'o:BTR', '011', 1733, 877]
+  ],
+  w: [
+    /* the conditions and the settings of the acceleration relay */
+    ['kHp', [[520, 257], [908, 257]]],
+    ['kSpd', [[520, 330], [737, 330], [737, 289], [908, 289]], 1],
+    ['sgA003', [[532, 405], [757, 405], [757, 321], [908, 321]], 1],
+    ['sgA004', [[531, 479], [778, 479], [778, 353], [908, 353]], 1],
+    ['sgA005', [[530, 555], [799, 555], [799, 385], [908, 385]], 1],
+    ['iB', [[323, 650], [820, 650], [820, 417], [908, 417]]],
+    ['sgA006', [[528, 714], [840, 714], [840, 449], [908, 449]], 1],
+    /* ACC.RELAY OPERATED: out, and kept for the CRT lamp until ANN RESET */
+    ['acc.OPE', [[1313, 257], [2052, 257]]],
+    ['acc.OPE', [[1663, 257], [1663, 386], [2052, 386]]],
+    ['acc.OPE', [[1472, 257], [1472, 799], [1585, 799]]],
+    ['kAnn', [[513, 821], [1585, 821]]],
+    ['ffs008', [[1665, 799], [1994, 799]]],
+    ['ffs008', [[1700, 799], [1700, 877], [2045, 877]]]
+  ],
+  t: [
+    [462, 286, '(TCE057)'],
+    [462, 360, '(TCE143)'],
+    [301, 407, 'ACC.RATE SET'],
+    [333, 437, 'K:55.7rpm/S'],
+    [301, 482, 'OPERATED SPEED'],
+    [331, 511, 'K:3672.0rpm'],
+    [300, 556, 'BACK UP SPEED'],
+    [331, 586, 'K:3780.0rpm'],
+    [298, 716, 'RATED SPEED'],
+    [329, 745, 'K:3600.0rpm'],
+    [455, 850, '(TCE050)'],
+    [1573, 790, 'T'],
+    [1790, 776, 'ACCELERATION'],
+    [1790, 796, 'RELAY OPERATED'],
+    [1790, 851, 'ACCELERATION'],
+    [1790, 872, 'RELAY OPERATED'],
+    [221, 1524, 'CONTROLLER:'],
+    [382, 1524, 'EHG+MD'],
+    [607, 1499, 'TRIGGER  :'],
+    [607, 1526, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE167.js ---- */
+/* TCE167 SPEED CONTROL MODE (331DM09784 page 117, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
+   SPEED CONTROL MODE (FFR007) is set when the turbine speed reaches the target (MR A003 +-15 rpm) or a speed hold comes, and reset by
+   GOVERNING MODE (FFR020: 5 rpm under rated speed for 1 s) or by a turbine trip / all valves closed (OR021). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE167',
+  title: 'SPEED CONTROL MODE',
+  page: 117,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [175, 84, 2228, 1545],
+  k: [
+    ['kInit', 298, 265, 'INITIAL', 'ref'],
+    ['kSpd', 296, 446, 'TURBINE SPEED', 'ref'],
+    ['kTrip', 289, 1075, 'TURBINE TRIP', 'ref'],
+    ['kAvc', 288, 1159, 'ALL VALVE CLOSED', 'ref'],
+    ['dGov', 1872, 948, 'GOVERNING MODE', 'def', 'def']
+  ],
+  c: [
+    ['iA', 'in', 'A', 313, 353, 'TARGET SPEED', ['TCE164']],
+    ['iB', 'in', 'B', 311, 566, 'SPEED HOLD', ['TCE164']],
+    ['oA', 'out', 'A', 2093, 229, '', ['TCE169']],
+    ['oB', 'out', 'B', 2092, 356, 'SPEED CONTROL MODE', ['TCE169', 'TCE207']],
+    ['oC', 'out', 'C', 2085, 1175, 'TURBINE RATED SPEED', ['-'], 1]
+  ],
+  b: [
+    ['mrA003', 'MR', 'A003', 741, 362, ['HL:15.0rpm', 'LL:-15.0rpm']],
+    ['not004', 'NOT', '004', 837, 362],
+    ['a005', 'A', '005', 953, 362],
+    ['or006', 'OR', '006', 1071, 362],
+    ['tpA008', 'TP', 'A008', 835, 490, ['TP:2.000S']],
+    ['xA008', 'X', '', 740, 480],
+    ['a009', 'A', '009', 834, 575],
+    ['xA009', 'X', '', 739, 585],
+    ['mrA010', 'MR', 'A010', 896, 692, ['HL:100.0rpm', 'LL:-100.0rpm']],
+    ['pdA013', 'PD', 'A013', 736, 745, ['N:1', 'K:1']],
+    ['or011', 'OR', '011', 1068, 692],
+    ['not014', 'NOT', '014', 735, 863],
+    ['pdf015', 'PDF', '015', 895, 863],
+    ['sgA016', 'SG', 'A016', 468, 958, ['K:3600.0rpm']],
+    ['sub017', 'SUB', '017', 735, 958],
+    ['lckA018', 'LCK', 'A018', 894, 958, ['K:5.0rpm']],
+    ['tpA019', 'TP', 'A019', 1065, 958, ['TP:1.000s']],
+    ['ffr020', 'FFR', '020', 1225, 959, [], { l: ['S', 'R'] }, [79, 43]],
+    ['or012', 'OR', '012', 1355, 704, [], {}, [59, 64]],
+    ['ffr007', 'FFR', '007', 1486, 363, [], { l: ['S', 'R'] }, [79, 43]],
+    ['or001', 'OR', '001', 1667, 246, [], {}, [59, 64]],
+    ['not002', 'NOT', '002', 1785, 235],
+    ['or021', 'OR', '021', 893, 1086],
+    ['btr022', 'o:BTR', '022', 1583, 1172]
+  ],
+  w: [
+    /* INITIAL: the clear (C) of the pulses and of the differential, the reset (T) of the timer */
+    ['kInit', [[534, 265], [664, 265], [664, 820], [1066, 820], [1066, 937]]],
+    ['kInit', [[664, 446], [836, 446], [836, 469]]],
+    ['kInit', [[664, 703], [736, 703], [736, 724]]],
+    ['kInit', [[895, 820], [895, 841]]],
+    /* the turbine speed against the target speed */
+    ['iA', [[340, 351], [711, 351]], 1],
+    ['iA', [[643, 351], [643, 735], [706, 735]], 1],
+    ['iA', [[643, 681], [866, 681]], 1],
+    ['kSpd', [[531, 446], [601, 446], [601, 371], [711, 371]], 1],
+    ['kSpd', [[601, 446], [601, 967], [705, 967]], 1],
+    ['mrA003', [[771, 351], [808, 351]]],
+    ['not004', [[866, 351], [923, 351]]],
+    ['a005', [[983, 351], [1041, 351]]],
+    ['tpA008', [[865, 480], [900, 480], [900, 373], [923, 373]]],
+    ['iB', [[338, 564], [805, 564]]],
+    ['iB', [[621, 564], [621, 851], [705, 851]]],
+    ['a009', [[864, 564], [1016, 564], [1016, 373], [1041, 373]]],
+    ['or006', [[1101, 352], [1446, 352]]],
+    /* SPEED CONTROL MODE and SPEED UP CONTROL MODE */
+    ['ffr007', [[1525, 352], [2066, 352]]],
+    ['ffr007', [[1569, 352], [1569, 225], [1637, 225]]],
+    ['or001', [[1697, 225], [1755, 225]]],
+    ['not002', [[1814, 225], [2067, 225]]],
+    ['not002', [[1838, 225], [1838, 618], [684, 618], [684, 480], [806, 480]]],
+    ['not002', [[684, 585], [805, 585]]],
+    /* the reset of SPEED CONTROL MODE */
+    ['pdA013', [[765, 735], [844, 735], [844, 703], [866, 703]], 1],
+    ['mrA010', [[925, 681], [1038, 681]]],
+    ['not014', [[765, 851], [866, 851]]],
+    ['pdf015', [[924, 851], [1012, 851], [1012, 703], [1038, 703]]],
+    ['or011', [[1098, 681], [1325, 681]]],
+    ['or012', [[1384, 683], [1422, 683], [1422, 374], [1446, 374]]],
+    /* GOVERNING MODE: 5 rpm under the rated speed for 1 s */
+    ['sgA016', [[498, 948], [705, 948]], 1],
+    ['sub017', [[764, 948], [865, 948]], 1],
+    ['lckA018', [[923, 948], [1035, 948]]],
+    ['lckA018', [[979, 948], [979, 1172], [2058, 1172]]],
+    ['tpA019', [[1095, 948], [1185, 948]]],
+    ['ffr020', [[1264, 948], [1872, 948]]],
+    ['ffr020', [[1299, 948], [1299, 725], [1325, 725]]],
+    ['ffr020', [[1588, 948], [1588, 246], [1637, 246]]],
+    ['kTrip', [[525, 1075], [865, 1075]]],
+    ['kAvc', [[524, 1159], [840, 1159], [840, 1097], [865, 1097]]],
+    ['or021', [[922, 1075], [1610, 1075], [1610, 268], [1637, 268]]],
+    ['or021', [[1151, 1075], [1151, 704], [1325, 704]]],
+    ['or021', [[1151, 969], [1185, 969]]]
+  ],
+  t: [
+    [476, 295, '(TCE050)'],
+    [474, 476, '(TCE143)'],
+    [467, 1104, '(TCE053)'],
+    [467, 1189, '(TCE162)'],
+    [439, 920, 'RATED SPEED'],
+    [697, 943, '+', 1],
+    [697, 964, '-', 1],
+    [792, 474, 'C'],
+    [694, 728, 'C'],
+    [853, 845, 'C'],
+    [1021, 943, 'C'],
+    [1432, 345, 'T'],
+    [1172, 942, 'T'],
+    [1862, 198, 'SPEED UP'],
+    [1862, 220, 'CONTROL MODE'],
+    [236, 1523, 'CONTROLLER:'],
+    [398, 1523, 'EHG+MD'],
+    [627, 1498, 'TRIGGER  :'],
+    [627, 1525, 'CYCLE(ms):30']
+  ]
+});
+
 /* ---- src/digital/tce/TCE172.js ---- */
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -71449,7 +71905,8 @@ function tcsSim(s) {
      d: [key, x, y, 'in' | 'out', tag, letter, note]                 CRT diamond (operator push button in / lamp out), x y = its centre; letter 'R' | 'S'
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
-                                                                     parameters printed under it ('^DEF' = over it); l / r = the marks of its pins
+                                                                     parameters printed under it ('^DEF' = over it); l / r = the marks of its pins;
+                                                                     type 'o:BTR' = a mark on the wire, type 'X' = the crossed circle (inverted input)
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes]]   macro block, x y = top left
      w: [source key, [[x, y], ...], thick]                           wire piece: every corner from one end to the other; thick 1 = analog signal
      t: [x, y, text, align]                                          other words of the sheet (align 0 left, 1 centre, 2 right)
@@ -71514,7 +71971,13 @@ function tceSheet(q) {
       R.forEach((s, i) => tx.push(text(s, x - w - 3 * u - col(i), y + (5 + 8 * (i % per)) * u, 1.7, 2)));
     } else {
       if (name) tx.push(text(name, x - w - 4 * u, y - 5 * u, 2.05, 2));
-      R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
+      /* near the right edge of the frame there is no room for a second column: the drawing puts the sheets over four on the left of the
+         column, on its last rows (TCE166 A: TCE602 left of TCE601) */
+      if (R.length > 4 && x + w + 37 * u + 34 * u > fx1)
+        R.forEach((s, i) =>
+          tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
+        );
+      else R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
     }
     net(key);
   }
@@ -71566,6 +72029,15 @@ function tceSheet(q) {
   }
   /* small blocks: the type over the block number */
   for (const [key, type, no, x, y, notes, pins, size] of q.b || []) {
+    if (type === 'X') {
+      /* the crossed circle of the drawing on an input line (the signal taken inverted), type 'X': no name, no number */
+      const r = 3.4 * u,
+        e = r * 0.7071;
+      ci.push([X(x), Y(y), W(r), 'SYM']);
+      poly([[x - e, y - e], [x + e, y + e]], 0);
+      poly([[x - e, y + e], [x + e, y - e]], 0);
+      continue;
+    }
     if (/^o:/.test(type)) {
       /* a mark on the wire (a small circle with its name over it and its number under it), type 'o:BTR' */
       ci.push([X(x), Y(y), W(2.2 * u), 'SYM']);
@@ -128869,7 +129341,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 77a4fbf'));
+    row('Version', E('span', 'scsver', ver + ' · build 557d536'));
   }
   function openSet(near) {
     if (!set) {
