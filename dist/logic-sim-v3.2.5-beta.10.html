@@ -4702,7 +4702,7 @@ function tcsSim(s) {
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it, third: [letter, sheets] of a double-line connector under the input error, fed from the wire of the connector of OUT, src: [letter, sheets] of a connector from another sheet that feeds the lamp and the connector in place of OUT, ex: where the lower or higher input error turns, conn: 1 = OUT goes to its connector only (no lamp) }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], extra { c, d, b, w, t } (more of each), single 1 = the input connectors have a single line, last (mark number of the
+     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it (2 = a double line, its sheets beside it), third: [letter, sheets] of a double-line connector under the input error, fed from the wire of the connector of OUT, src: [letter, sheets] of a connector from another sheet that feeds the lamp and the connector in place of OUT, ex: where the lower or higher input error turns, conn: 1 = OUT goes to its connector only (no lamp), up: [letter, sheets] of a double-line connector over the lamp, en: the letter of the connector of the input error when it is not the output letter + '1' }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], extra { c, d, b, w, t } (more of each), single 1 = the input connectors have a single line, orName = the name of the output of the OR when it is not INPUT DISCREPANCY, last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -4743,7 +4743,8 @@ function tcsSim(s) {
           y = p(2 * i);
         const N = nm.in[i];
         c.push([key, 'in', il, 280, y, N[N.length - 1], [r], o.single ? 0 : 1]);
-        if (N.length > 1) t.push([313, y - 32, N[0]]);
+        /* the lines of the name over the last one, which the connector prints on the wire */
+        for (let j = 0; j < N.length - 1; j++) t.push([313, y - 32 - 21 * (N.length - 2 - j), N[j]]);
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
         w.push([key, [[307, y], [BX, y]]]);
       });
@@ -4762,7 +4763,7 @@ function tcsSim(s) {
       } else {
         /* OUT: the lamp and the connector */
         d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
-        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-'], x.dbl ? 1 : 0, x.dbl ? 1 : 0]);
+        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-'], x.dbl ? 1 : 0, x.dbl === 1 ? 1 : 0]);
         b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
         /* x.src: the lamp and the connector are fed by a connector from another sheet that stands right of the block; OUT of the block is left open */
         const so = x.src ? 's' + (g + 1) : k + '.OUT';
@@ -4770,6 +4771,11 @@ function tcsSim(s) {
         w.push([so, [[x.src ? 1367 : BX + BW, p(0)], [2070, p(0)]]], [so, [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
         lines(nm.out[0], 1716, p(0));
         lines(nm.out[1], 1716, p(0) + 64);
+        /* one more way out, over the lamp: from the dot on OUT up to a double-line connector (x.up = [letter, sheets]) */
+        if (x.up) {
+          c.push(['o' + x.up[0], 'out', x.up[0], 2103, p(0) - 84, '', x.up[1], 1, 1]);
+          w.push([so, [[1539, p(0) + 64], [1539, p(0) - 84], [2076, p(0) - 84]]]);
+        }
         /* a third way out: from the wire of the connector down, past the input error, to a double-line connector */
         if (x.third) {
           c.push(['o' + x.third[0], 'out', x.third[0], 2103, p(0) + 193, '', x.third[1], 1, 1]);
@@ -4785,7 +4791,8 @@ function tcsSim(s) {
         w.push([k + '.DEV E', [[1539, ye], [1539, yc], [2065, yc]]]);
         lines(nm.out[3] || nm.out[2], last ? 1713 : 1704, yc);
       }
-      c.push(['o' + ol + '1', 'out', ol + '1', 2092, yc, '', ['-']]);
+      const en = x.en || ol + '1';
+      c.push(['o' + en, 'out', en, 2092, yc, '', ['-']]);
       b.push(['mo' + (g + 1) + 'c', 'o:BTR', om[2], ex, ye]);
       lines(nm.out[2], last ? 1713 : 1704, ye);
       if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [xe, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
@@ -4800,7 +4807,7 @@ function tcsSim(s) {
       b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
       c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
       w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
-      t.push([1714, OY[0] - 6, 'INPUT DISCREPANCY']);
+      t.push([1714, OY[0] - 6, o.orName || 'INPUT DISCREPANCY']);
     }
     t.push(...o.foot);
     /* what a sheet has beyond the pattern */
@@ -8084,6 +8091,413 @@ function tcsSim(s) {
         { y: 502, lab: ['COP(B) DISCHARGE', 'OIL PRESS.'], pt: 'PT-LOn931-B', rng: '0- 250kg/cm2g', card: 'TCE930-11', xf: 897, mf: '006', mx: 1045, tag: 'nPT-LOn931-B', foot: 'A007', sg: ['B009', 897, 97, 86, 1024, 'K:150.0kg/cm2g'], xe: 1014, par: ['255.0', '-12.5', '50.0', '-50.0'], xj: 1672, dyB: -85, bx: 2004, B: ['B3', ['TCT201']], A: ['A3', ['TCE305']], mo: '008', D: ['D3', ['TCE470']], mb: '010', dyD: 104 },
         { y: 821, lab: ['EOP DISCHARGE', 'OIL PRESS.'], pt: 'PT-LOn923', rng: '0- 5kg/cm2g', card: 'TCE930-12', xf: 1218, mf: '011', mx: 1375, tag: 'nPT-LOn923', foot: 'A012', sg: ['B014', 1216, 97, 87, 1354, 'K:0.5kg/cm2g'], xe: 1344, par: ['5.1', '-0.25', '1.0', '-1.0'], xj: 1695, dyB: -104, B: ['B4', ['TCT201']], A: ['A4', ['TCE310']], mo: '013', D: ['D4', ['TCE470']], mb: '015', dyD: 106, abn: ['HOT DISCHARGE', 'OIL PRESS. ABN.'] }
       ]
+    })
+  );
+})();
+/* TCE110 TPC SIGNAL DIAGNOSTICS(1) (331DM09784 page 73, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Trip signals of the turbine protection, each read from the three protection controllers: condenser vacuum very low (the drawing prints
+   "CNDENSER"; typed as printed), main steam temperature very low, thrust bearing failure front and rear. The discrepancy of each also has a
+   lamp of the operator station. The title block of this page prints PAGE 71; it is page 73 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1120', 'TCP2120', 'TCP3120'],
+    N = (a, b, e) => ({ in: [[a, b], [a, b], [a, b]], out: [[a, b], [a, b], [a, e], [a, e]] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE110',
+      title: 'TPC SIGNAL DIAGNOSTICS(1)',
+      page: 73,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [N('CNDENSER VACUUM', 'VERY LOW TRIP', 'VERY LOW TRIP DISCREPANCY'), 'B1', 'A', ['001', '004', '032'], ['003', '005', '006', '007'], '031', 'TCE110_1', null, R, { el: 'TCE110_2' }],
+        [N('MAIN STEAM TEMP.VERY', 'LOW TRIP', 'LOW TRIP DISCREPANCY'), 'B2', 'B', ['008', '011', '033'], ['010', '012', '013', '014'], '009', 'TCE110_3', null, R, { el: 'TCE110_4' }],
+        [N('THRUST BRG. FAILURE', '(FRONT) TRIP', '(FRONT) DISCREPANCY'), 'B3', 'C', ['015', '018', '034'], ['017', '019', '020', '021'], '016', 'TCE110_5', null, R, { el: 'TCE110_6' }],
+        [N('THRUST BRG. FAILURE', '(REAR)TRIP', '(REAR) DISCREPANCY'), 'B4', 'D', ['022', '025', '035'], ['024', '026', '029', '030'], '023', 'TCE110_7', null, R, { el: 'TCE110_8' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE111 TPC SIGNAL DIAGNOSTICS(2) (331DM09784 page 74, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Control pressure very low, bearing oil pressure very low, LP exhaust hood steam temperature very high and turbine trip oil pressure very low.
+   The last also goes out by a double-line connector D1 over its lamp, so its discrepancy goes out by D2. The title block of this page prints
+   PAGE 72; it is page 74 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1120', 'TCP2120', 'TCP3120'],
+    N = (a, b) => ({ in: [[a, b], [a, b], [a, b]], out: [[a, b], [a, b], [a, b + ' DISCREPANCY']] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE111',
+      title: 'TPC SIGNAL DIAGNOSTICS(2)',
+      page: 74,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [N('CONTROL PRESSURE', 'VERY LOW TRIP'), 'B5', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE111_1', null, R],
+        [N('BEARING OIL PRESS.', 'VERY LOW TRIP'), 'B6', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE111_3', ['TCE305'], R],
+        [N('LP EXHAUST HOOD STEAM', 'TEMP. VERY HIGH TRIP'), 'B7', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE111_5', null, R],
+        [N('TURBINE TRIP OIL PRESS.', 'VERY LOW TRIP'), 'B8', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE111_7', ['TCE053', 'TCE212'], R, { up: ['D1', ['TCA103']], en: 'D2' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE112 TPC SIGNAL DIAGNOSTICS(3) (331DM09784 page 75, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   HP turbine exhaust steam temperature very high, HP turbine inlet / exhaust steam differential pressure very high, HP turbine exhaust steam
+   pressure very high and boiler MFT. The discrepancy of each also has a lamp of the operator station. The discrepancy of the second is
+   named "VERY DISCREPANCY" in the drawing; typed as printed. The title block of this page prints PAGE 73; it is page 75 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1120', 'TCP2120', 'TCP3120'],
+    N = (L, E) => ({ in: [L, L, L], out: [L, L, E, E] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE112',
+      title: 'TPC SIGNAL DIAGNOSTICS(3)',
+      page: 75,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [N(['HP TURBINE EXHAUST STEAM', 'TEMP. VERY HIGH TRIP'], ['HP TURBINE EXHAUST STEAM', 'TEMP. VERY HIGH TRIP DISCREPANCY']), 'B9', 'A', ['001', '004', '032'], ['003', '005', '006', '007'], '031', 'TCE112_1', null, R, { el: 'TCE112_2' }],
+        [N(['HP TURBINE INLET/EXHAUST', 'STEAM DIFF.PRESS.', 'VERY HIGH TRIP'], ['HP TURBINE INLET/EXHAUST', 'STEAM DIFF.PRESS.', 'VERY DISCREPANCY']), 'B10', 'B', ['008', '011', '033'], ['010', '012', '013', '014'], '009', 'TCE112_3', null, R, { el: 'TCE112_4' }],
+        [N(['HP TURBINE EXHAUST', 'STEAM PRESS.', 'VERY HIGH TRIP'], ['HP TURBINE EXHAUST', 'STEAM PRESS.', 'VERY HIGH TRIP DISCREPANCY']), 'B11', 'C', ['015', '018', '034'], ['017', '019', '020', '021'], '016', 'TCE112_5', null, R, { el: 'TCE112_6' }],
+        [N(['BOILER MFT'], ['BOILER MFT DISCREPANCY']), 'B12', 'D', ['022', '025', '035'], ['024', '026', '029', '030'], '023', 'TCE112_7', null, R, { el: 'TCE112_8' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE113 TPC SIGNAL DIAGNOSTICS(4) (331DM09784 page 76, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Generator / unit transformer protection and generator lockout relay operated, turbine shut-down command, turbine manual trip push button of
+   the TCS HMI, and turbine manual trip. The discrepancy of each also has a lamp of the operator station. The names are typed as the drawing
+   prints them: the outputs of the third block read "TURBINE MANUALTRIP PB (TCS HMI)" on one line and their discrepancy only "DISCREPANCY";
+   the discrepancy lamp of the fourth block reads "DISCREPANCY", its connector "TURBINE MANUAL TRIP DISCREPANCY". The title block of this page
+   prints PAGE 74; it is page 76 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R0 = ['TCP1120', 'TCP2120', 'TCP3120'],
+    R1 = ['TCP1121', 'TCP2121', 'TCP3121'],
+    G = ['GEN./UNIT TRANS.PROTECTION', '& GEN.LOCKOUT RELAY', 'OPERATED'],
+    GE = ['GEN./UNIT TRANS.PROTECTION', '& GEN.LOCKOUT RELAY DISCREPANCY'],
+    S = ['TURBINE SHUT-DOWN', 'COMMAND'],
+    SE = ['TURBINE SHUT-DOWN', 'COMMAND DISCREPANCY'],
+    P = ['TURBINE MANUAL', 'TRIP PB (TCS HMI)'],
+    PO = ['TURBINE MANUALTRIP PB (TCS HMI)'],
+    T = ['TURBINE MANUAL TRIP'],
+    D = ['DISCREPANCY'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE113',
+      title: 'TPC SIGNAL DIAGNOSTICS(4)',
+      page: 76,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [{ in: [G, G, G], out: [G, G, GE, GE] }, 'B13', 'A', ['001', '004', '032'], ['003', '005', '006', '007'], '031', 'TCE113_1', ['TCA533'], R0, { el: 'TCE113_2', dbl: 2 }],
+        [{ in: [S, S, S], out: [S, S, SE, SE] }, 'B14', 'B', ['008', '011', '033'], ['010', '012', '013', '014'], '009', 'TCE113_3', null, R0, { el: 'TCE113_4' }],
+        [{ in: [P, P, P], out: [PO, PO, D, D] }, 'F2', 'C', ['015', '018', '034'], ['017', '019', '020', '021'], '016', 'TCE113_5', null, R1, { el: 'TCE113_6' }],
+        [{ in: [T, T, T], out: [T, T, D, [...T, 'DISCREPANCY']] }, 'D1', 'D', ['022', '025', '035'], ['024', '026', '029', '030'], '023', 'TCE113_7', null, R1, { el: 'TCE113_8' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+/* TCE113A TPC SIGNAL DIAGNOSTICS(5) (331DM09784 page 77, controller EHG+MD, cycle 30 ms). Typed from the drawing; the places are those of the sheets of
+   the digital input diagnostics (tce/_lib.js, TCE_LIB.did, as on TCE075), with the page set straight.
+   Only the first block reads a signal: TURBINE TRIP from the three protection controllers, out to a lamp and to connectors A and A2; its
+   discrepancy has a lamp ("TRIP COMMAND DICREPANCY", typed as the drawing prints it) and no connector. The other three blocks read the constant
+   OFF(0); their OUT is left open and their discrepancy goes only to the OR. The title block of this page prints PAGE 75; it is page 77 of the
+   document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = [180, 75, 2232, 1535],
+    u = (F[2] - F[0]) / 1000,
+    BX = 866,
+    BW = 407,
+    BH = 226,
+    XR = BX + BW,
+    TOPS = [103, 391, 668, 976],
+    NO = ['031', '009', '016', '023'],
+    IM = [['001', '004', '032'], ['008', '011', '033'], ['015', '018', '034'], ['022', '025', '035']],
+    pin = (top, i) => Math.round(top + 15 * u + (i + 0.5) * ((BH - 30 * u) / 5)),
+    /* the OR of the four discrepancies: its inputs, top to bottom, and where each line comes down */
+    OY = [1141, 1161, 1182, 1204],
+    OX = [1485, 1432, 1379, 1303],
+    c = [],
+    k = [],
+    b = [],
+    m = [],
+    w = [];
+  TOPS.forEach((top, g) => {
+    const key = 'tid' + (g + 1),
+      p = i => pin(top, i);
+    m.push([key, 'TRIPPLE INPUT DIAGNOSTICS', '', BX, top, BW, BH, ['IN1', '', 'IN2', '', 'IN3'], ['OUT', '', '', '', 'DEV E'], NO[g], [
+      [BX + 90, top + 172, 'TP:3.0'],
+      [BX + 105, top + 246, '(LME105)']
+    ]]);
+    [0, 1, 2].forEach(i => {
+      const y = p(2 * i),
+        s = 'i' + (g + 1) + (i + 1);
+      if (g === 0) {
+        c.push([s, 'in', 'A1', 280, y, 'TURBINE TRIP', ['TCP' + (i + 1) + '121'], 1]);
+        w.push([s, [[307, y], [BX, y]]]);
+      } else {
+        k.push([s, 216, y, 'OFF(0)', 'sys.ref']);
+        w.push([s, [[450, y], [BX, y]]]);
+      }
+      b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', IM[g][i], 709, y]);
+    });
+    /* the discrepancy: down to the OR */
+    w.push([key + '.DEV E', [[XR, p(4)], [OX[g], p(4)], [OX[g], OY[g]], [1540, OY[g]]]]);
+  });
+  const y0 = pin(TOPS[0], 0);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE113A',
+    title: 'TPC SIGNAL DIAGNOSTICS(5)',
+    page: 77,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: F,
+    k,
+    c: [
+      ...c,
+      ['oA', 'out', 'A', 2103, y0 + 64, '', ['TCA825'], 1],
+      ['oA2', 'out', 'A2', 2092, y0 + 162, '', ['TCE053'], 0, 1],
+      ['oE', 'out', 'E', 2102, OY[0], '', ['-']]
+    ],
+    d: [
+      ['crt1', 2105, y0, 'out', 'TCE113A_1', 'S', '#1C'],
+      ['crt2', 2105, 416, 'out', 'TCE113A_2', 'S', '#1C']
+    ],
+    m,
+    b: [
+      ...b,
+      ['mo1', 'o:BTR', '003', 1657, y0],
+      ['mo2', 'o:BTR', '005', 1657, y0 + 64],
+      ['mo3', 'o:BTR', '036', 1647, y0 + 162],
+      ['mo4', 'o:BTR', '037', 1647, 416],
+      ['or', 'OR', '027', 1569, 1172, [], {}, [58, 85]],
+      ['mor', 'o:BTR', '028', 1656, OY[0]]
+    ],
+    w: [
+      ...w,
+      ['tid1.OUT', [[XR, y0], [2070, y0]]],
+      ['tid1.OUT', [[1539, y0], [1539, y0 + 162], [2065, y0 + 162]]],
+      ['tid1.OUT', [[1539, y0 + 64], [2076, y0 + 64]]],
+      ['tid1.DEV E', [[OX[0], 416], [2070, 416]]],
+      ['or', [[1598, OY[0]], [2075, OY[0]]]]
+    ],
+    t: [
+      [1716, y0 - 6, 'TURBINE TRIP'],
+      [1716, y0 + 58, 'TURBINE TRIP'],
+      [1736, y0 + 156, 'TURBINE TRIP'],
+      [1736, 410, 'TRIP COMMAND DICREPANCY'],
+      [1714, OY[0] - 6, 'DISCREPANCY'],
+      [247, 1512, 'CONTROLLER:'],
+      [408, 1512, 'EHG+MD'],
+      [670, 1485, 'TRIGGER  :'],
+      [670, 1512, 'CYCLE(ms):30']
+    ]
+  });
+})();
+/* TCE114 TPC SIGNAL DIAGNOSTICS(5) (331DM09784 page 78, controller EHG+MD, cycle 30 ms; the drawing gives the number (5) to this sheet and to TCE113A).
+   Typed from the drawing; units = the pixels of the page rendered 2296 wide. The scan of this page is turned a little; every place is typed as it
+   stands on the page set straight.
+   The turbine trip and reset push buttons of the operator station (with CRT AVAILABLE) out to the three protection controllers, the lamps
+   TRIPD and RESET from TURBINE TRIP, and three signals passed on to the protection controllers. The sheets of the output connectors stand in
+   one row under them, in the order the drawing prints them. The title block of this page prints PAGE 76; it is page 78 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const P1 = ['TCP1121', 'TCP2121', 'TCP3121'],
+    P0 = ['TCP1120', 'TCP2120', 'TCP3120'],
+    out = (k, l, x, y, refs) => [k, 'out', l, x, y, '', refs, 1, 2],
+    mk = (no, x, y) => ['b' + no, 'o:BTR', no, x, y];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE114',
+    title: 'TPC SIGNAL DIAGNOSTICS(5)',
+    page: 78,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [182, 84, 2230, 1546],
+    k: [
+      ['kInit', 1353, 183, 'INITIAL', 'ref'],
+      ['kTrip', 372, 638, 'TURBINE TRIP', 'ref']
+    ],
+    d: [
+      ['dIys', 435, 297, 'in', 'TCE114_1_IYS', 'R', '#1C'],
+      ['dTrip', 435, 350, 'in', 'TCE114_1_TRIP', 'R', '#1C'],
+      ['dRset', 434, 490, 'in', 'TCE114_1_RSET', 'R', '#1C'],
+      ['crtIyp', 2013, 183, 'out', 'TCE114_1_IYP', 'S', '#1C'],
+      ['crtTrpd', 1177, 638, 'out', 'TCE114_1_TRPD', 'S', '#1C'],
+      ['crtRstd', 1168, 734, 'out', 'TCE114_1_RSTD', 'S', '#1C']
+    ],
+    c: [
+      ['c1', 'in', 'C', 400, 1010, 'TURBINE AUTO RESET COMMAND', ['TCA580'], 1],
+      ['c2', 'in', 'C', 399, 1116, 'TURBINE SHUT-DOWN COMMAND', ['TCA587'], 1],
+      ['c3', 'in', 'C1', 400, 1222, 'EOS OPERATED', ['TCA781'], 1],
+      out('oA3', 'A3', 1157, 297, ['TCP2121', 'TCP3121', 'TCP1121']),
+      out('oA1', 'A1', 1157, 436, P1),
+      out('oA2', 'A2', 1138, 1010, P1),
+      out('oA4', 'A4', 1138, 1116, P0),
+      out('oA5', 'A5', 1138, 1222, P0)
+    ],
+    b: [
+      ['a008', 'A', '008', 709, 308],
+      ['a010', 'A', '010', 709, 447],
+      ['not012', 'NOT', '012', 773, 745],
+      mk('011', 1773, 183),
+      mk('003', 870, 297),
+      mk('001', 870, 436),
+      mk('007', 933, 638),
+      mk('009', 923, 734),
+      mk('002', 849, 1010),
+      mk('013', 849, 1116),
+      mk('014', 849, 1222)
+    ],
+    w: [
+      ['kInit', [[1587, 183], [1978, 183]]],
+      /* CRT AVAILABLE with TRIP, and with RESET */
+      ['dIys', [[470, 297], [680, 297]]],
+      ['dIys', [[624, 297], [624, 436], [680, 436]]],
+      ['dTrip', [[470, 350], [656, 350], [656, 319], [680, 319]]],
+      ['a008', [[738, 297], [1130, 297]]],
+      ['dRset', [[469, 490], [656, 490], [656, 458], [680, 458]]],
+      ['a010', [[738, 436], [1130, 436]]],
+      /* the lamps */
+      ['kTrip', [[606, 638], [1142, 638]]],
+      ['kTrip', [[665, 638], [665, 734], [744, 734]]],
+      ['not012', [[802, 734], [1133, 734]]],
+      /* passed on */
+      ['c1', [[427, 1010], [1111, 1010]]],
+      ['c2', [[426, 1116], [1111, 1116]]],
+      ['c3', [[427, 1222], [1111, 1222]]]
+    ],
+    t: [
+      [1496, 215, '(TCE050)'],
+      [466, 291, 'CRT AVAILABLE'],
+      [466, 344, 'TRIP'],
+      [464, 484, 'RESET'],
+      [959, 291, 'TRIP'],
+      [957, 430, 'RESET'],
+      [1012, 632, 'TRIPD'],
+      [1012, 728, 'RESET'],
+      [247, 1523, 'CONTROLLER:'],
+      [408, 1523, 'EHG+MD'],
+      [670, 1499, 'TRIGGER  :'],
+      [670, 1526, 'CYCLE(ms):30']
+    ]
+  });
+})();
+/* TCE115 TPC SIGNAL DIAGNOSTICS(5) (331DM09784 page 79, controller EHG+MD, cycle 30 ms; the drawing gives the number (5) to this sheet too). Typed from
+   the drawing; units = the pixels of the page rendered 2296 wide. The scan of this page is turned a little; every place is typed as it stands on
+   the page set straight, the ten lines at one distance.
+   The lamps of the master trip solenoid valve test (from TCE117, TCE118, TCE119) at the left, and its test push buttons of the operator station
+   out to the three protection controllers at the right. The name of the fifth input is printed "CRT OPR. PERM." and its lamp "CRT OPE. PERM.";
+   typed as printed. The title block of this page prints PAGE 77; it is page 79 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const Y = i => Math.round(206 + 106.55 * i),
+    M = (v, p) => ['MASTER TRIP SOLENOID', 'VALVE(' + v + ') ' + p],
+    c = [],
+    d = [],
+    b = [],
+    w = [],
+    t = [],
+    lines = (L, x, y) => L.forEach((s, j) => t.push([x, y - 6 - 21 * (L.length - 1 - j), s]));
+  /* the lamps: [letter, sheet, name at the input, mark, name at the lamp, lamp tag] */
+  [
+    ['A', 'TCE117', ['OPERATED A1'], '001', null, 'TCE115_1_X01'],
+    ['B', 'TCE117', ['OPERATED A2'], '003', null, 'TCE115_1_X02'],
+    ['C', 'TCE117', M('A1', 'TEST PB'), '005', null, 'TCE115_1_IT1'],
+    ['D', 'TCE117', M('A2', 'TEST PB'), '007', null, 'TCE115_1_IT2'],
+    ['A', 'TCE118', ['CRT OPR. PERM.'], '008', ['CRT OPE. PERM.'], 'TCE115_1_IYP'],
+    ['B', 'TCE118', ['OPERATED B1'], '009', null, 'TCE115_2_X01'],
+    ['C', 'TCE118', ['OPERATED B2'], '011', null, 'TCE115_2_X02'],
+    ['D', 'TCE118', M('B1', 'TEST PB'), '013', null, 'TCE115_2_IT1'],
+    ['A', 'TCE119', M('B2', 'TEST PB'), '015', null, 'TCE115_2_IT2'],
+    ['B', 'TCE119', ['CRT OPE. PERM.'], '016', null, 'TCE115_2_IYP']
+  ].forEach(([l, sh, name, mk, lamp, tag], i) => {
+    const y = Y(i),
+      k = 'i' + (i + 1);
+    c.push([k, 'in', l, 339, y, name[name.length - 1], [sh]]);
+    if (name.length > 1) t.push([372, y - 32, name[0]]);
+    b.push(['b' + mk, 'o:BTR', mk, 682, y]);
+    w.push([k, [[366, y], [1019, y]]]);
+    d.push(['crt' + (i + 1), 1054, y, 'out', tag, 'S', '#1C']);
+    lines(lamp || name, 770, y);
+  });
+  /* the push buttons: [line, tag, name, mark, letter of the connector] */
+  [
+    [0, 'TCE115_1_KT1', 'TEST A1', '002', 'A1'],
+    [1, 'TCE115_1_KT2', 'TEST A2', '004', 'A2'],
+    [2, 'TCE115_1_IYS', 'CRT AVAILABLE', '006', 'A3'],
+    [5, 'TCE115_2_KT1', 'TEST B1', '010', 'B1'],
+    [6, 'TCE115_2_KT2', 'TEST B2', '012', 'B2'],
+    [7, 'TCE115_2_IYS', 'CRT AVAILABLE', '014', 'B3']
+  ].forEach(([i, tag, name, mk, l]) => {
+    const y = Y(i),
+      k = 'p' + l;
+    d.push([k, 1374, y, 'in', tag, 'R', '#1C']);
+    b.push(['b' + mk, 'o:BTR', mk, 1743, y]);
+    w.push([k, [[1409, y], [2067, y]]]);
+    c.push(['o' + l, 'out', l, 2094, y, '', ['TCP1200', 'TCP2200', 'TCP3200'], 1, 2]);
+    t.push([1404, y - 6, name], [1834, y - 6, name]);
+  });
+  t.push([247, 1516, 'CONTROLLER:'], [408, 1516, 'EHG+MD'], [670, 1491, 'TRIGGER  :'], [670, 1518, 'CYCLE(ms):30']);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({ id: 'TCE115', title: 'TPC SIGNAL DIAGNOSTICS(5)', page: 79, ctl: 'EHG+MD', cycle: 30, f: [172, 78, 2223, 1540], c, d, b, w, t });
+})();
+/* TCE116 TPC SIGNAL DIAGNOSTICS(6) (331DM09784 page 80, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   ICV(A) and ICV(B) fast acting during valve test, each read from the three protection controllers, and two spare signals. The names are typed
+   as the drawing prints them: it breaks the word VALVE over two lines ("DURING V" / "ALVE TEST") on most lines and not on others, and it
+   writes "DICREPANCY" on the first two blocks. The title block of this page prints PAGE 78; it is page 80 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const V = s => ['ICV(' + s + ') FAST ACTING DURING V', 'ALVE TEST'],
+    W = s => ['ICV(' + s + ') FAST ACTING', 'DURING VALVE TEST'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['DISCREPANCY']] },
+    NR = ['-', '-', '-'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE116',
+      title: 'TPC SIGNAL DIAGNOSTICS(6)',
+      page: 80,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [{ in: [V('A'), W('A'), V('A')], out: [V('A'), V('A'), [V('A')[0], 'ALVE TEST DICREPANCY']] }, 'E', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE116_1', ['TCE227'], ['TCP1230', 'TCP2230', 'TCP3230']],
+        [{ in: [V('B'), V('B'), V('B')], out: [W('B'), W('B'), [W('B')[0], 'DURING VALVE TEST DICREPANCY']] }, 'E', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE116_3', ['TCE228'], ['TCP1231', 'TCP2231', 'TCP3231']],
+        [N, 'B11', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE116_5', null, NR],
+        [N, 'B12', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE116_7', null, NR]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
     })
   );
 })();
@@ -29186,7 +29600,7 @@ function tcsSim(s) {
      id, title, page, ctl (controller), cycle (ms)
      f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
      c: [key, 'in' | 'out', letter, x, y, name, [sheets], dbl, under] off-page connector (oval), x y = its centre; dbl 1 = drawn with a double line;
-                                                                     under 1 = the sheets stand under the connector
+                                                                     under 1 = the sheets stand under the connector (2 = in one row under an output connector)
      k: [key, x, y, text, note, kind]                                constant / system reference (pentagon), x y = its left middle; kind 'def' =
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
@@ -29308,7 +29722,8 @@ function tceSheet(q) {
       /* near the right edge of the frame there is no room for a second column: the drawing puts the sheets over four on the left of the
          column, on its last rows (TCE166 A: TCE602 left of TCE601) */
       /* under 1: the drawing prints the sheets under the connector, not beside it */
-      if (under) R.forEach((s, i) => tx.push(text(s, x + 6 * u, y + (17 + 8 * i) * u, 1.7, 0)));
+      if (under === 2) R.forEach((s, i) => tx.push(text(s, x + (i - (R.length - 1) / 2) * 44 * u, y + 17 * u, 1.7, 1)));
+      else if (under) R.forEach((s, i) => tx.push(text(s, x + 6 * u, y + (17 + 8 * i) * u, 1.7, 0)));
       else if (R.length > 4 && x + w + 37 * u + 34 * u > fx1)
         R.forEach((s, i) =>
           tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
@@ -66376,7 +66791,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 81fe652'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 449eb41'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -91157,7 +91572,7 @@ function tcsSim(s) {
      TRIPPLE INPUT DIAGNOSTICS block (the drawing spells it so); OUT goes to a lamp of the operator station and to a connector, DEV E (input
      error) to a connector and to one OR for the four (INPUT DISCREPANCY). A sheet gives what differs:
      o.id, title, page, f, tops [top of each block], g [[name, input letter, output letter, [three input marks], [three output marks], block number,
-     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it, third: [letter, sheets] of a double-line connector under the input error, fed from the wire of the connector of OUT, src: [letter, sheets] of a connector from another sheet that feeds the lamp and the connector in place of OUT, ex: where the lower or higher input error turns, conn: 1 = OUT goes to its connector only (no lamp) }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], extra { c, d, b, w, t } (more of each), single 1 = the input connectors have a single line, last (mark number of the
+     lamp tag, sheets of the output connector, sheets of the three inputs, { el: tag of a lamp for the input error (the connector then stands under it, with the fourth output mark), two: [letter, sheets] of a second connector of OUT in place of the lamp, ey: how much lower than DEV E the input error goes out, dbl: 1 = the connector of OUT has a double line and its sheets under it (2 = a double line, its sheets beside it), third: [letter, sheets] of a double-line connector under the input error, fed from the wire of the connector of OUT, src: [letter, sheets] of a connector from another sheet that feeds the lamp and the connector in place of OUT, ex: where the lower or higher input error turns, conn: 1 = OUT goes to its connector only (no lamp), up: [letter, sheets] of a double-line connector over the lamp, en: the letter of the connector of the input error when it is not the output letter + '1' }] for each block], line2 (second line of every name), or [block number, mark number], e [letter, [sheets]], extra { c, d, b, w, t } (more of each), single 1 = the input connectors have a single line, orName = the name of the output of the OR when it is not INPUT DISCREPANCY, last (mark number of the
      input error of the fourth block), foot. Returns the sheet. */
   const did = o => {
     const u = (o.f[2] - o.f[0]) / 1000,
@@ -91198,7 +91613,8 @@ function tcsSim(s) {
           y = p(2 * i);
         const N = nm.in[i];
         c.push([key, 'in', il, 280, y, N[N.length - 1], [r], o.single ? 0 : 1]);
-        if (N.length > 1) t.push([313, y - 32, N[0]]);
+        /* the lines of the name over the last one, which the connector prints on the wire */
+        for (let j = 0; j < N.length - 1; j++) t.push([313, y - 32 - 21 * (N.length - 2 - j), N[j]]);
         b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', im[i], 709, y]);
         w.push([key, [[307, y], [BX, y]]]);
       });
@@ -91217,7 +91633,7 @@ function tcsSim(s) {
       } else {
         /* OUT: the lamp and the connector */
         d.push(['crt' + (g + 1), 2105, p(0), 'out', tag, 'S', '#1C']);
-        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-'], x.dbl ? 1 : 0, x.dbl ? 1 : 0]);
+        c.push(['o' + ol, 'out', ol, 2103, p(0) + 64, '', ref || ['-'], x.dbl ? 1 : 0, x.dbl === 1 ? 1 : 0]);
         b.push(['mo' + (g + 1) + 'a', 'o:BTR', om[0], 1657, p(0)], ['mo' + (g + 1) + 'b', 'o:BTR', om[1], 1657, p(0) + 64]);
         /* x.src: the lamp and the connector are fed by a connector from another sheet that stands right of the block; OUT of the block is left open */
         const so = x.src ? 's' + (g + 1) : k + '.OUT';
@@ -91225,6 +91641,11 @@ function tcsSim(s) {
         w.push([so, [[x.src ? 1367 : BX + BW, p(0)], [2070, p(0)]]], [so, [[1539, p(0)], [1539, p(0) + 64], [2076, p(0) + 64]]]);
         lines(nm.out[0], 1716, p(0));
         lines(nm.out[1], 1716, p(0) + 64);
+        /* one more way out, over the lamp: from the dot on OUT up to a double-line connector (x.up = [letter, sheets]) */
+        if (x.up) {
+          c.push(['o' + x.up[0], 'out', x.up[0], 2103, p(0) - 84, '', x.up[1], 1, 1]);
+          w.push([so, [[1539, p(0) + 64], [1539, p(0) - 84], [2076, p(0) - 84]]]);
+        }
         /* a third way out: from the wire of the connector down, past the input error, to a double-line connector */
         if (x.third) {
           c.push(['o' + x.third[0], 'out', x.third[0], 2103, p(0) + 193, '', x.third[1], 1, 1]);
@@ -91240,7 +91661,8 @@ function tcsSim(s) {
         w.push([k + '.DEV E', [[1539, ye], [1539, yc], [2065, yc]]]);
         lines(nm.out[3] || nm.out[2], last ? 1713 : 1704, yc);
       }
-      c.push(['o' + ol + '1', 'out', ol + '1', 2092, yc, '', ['-']]);
+      const en = x.en || ol + '1';
+      c.push(['o' + en, 'out', en, 2092, yc, '', ['-']]);
       b.push(['mo' + (g + 1) + 'c', 'o:BTR', om[2], ex, ye]);
       lines(nm.out[2], last ? 1713 : 1704, ye);
       if (last) w.push([k + '.DEV E', [[BX + BW, p(4)], [OX[3], p(4)], [OX[3], ye], [xe, ye]]], [k + '.DEV E', [[OX[3], OY[3]], [OL, OY[3]]]]);
@@ -91255,7 +91677,7 @@ function tcsSim(s) {
       b.push(['or', 'OR', o.or[0], 1569, 1172, [], {}, [58, 85]], ['mor', 'o:BTR', o.or[1], 1656, OY[0]]);
       c.push(['oE', 'out', o.e[0], 2102, OY[0], '', o.e[1]]);
       w.push(['or', [[1598, OY[0]], [2075, OY[0]]]]);
-      t.push([1714, OY[0] - 6, 'INPUT DISCREPANCY']);
+      t.push([1714, OY[0] - 6, o.orName || 'INPUT DISCREPANCY']);
     }
     t.push(...o.foot);
     /* what a sheet has beyond the pattern */
@@ -94651,6 +95073,429 @@ function tcsSim(s) {
         { y: 502, lab: ['COP(B) DISCHARGE', 'OIL PRESS.'], pt: 'PT-LOn931-B', rng: '0- 250kg/cm2g', card: 'TCE930-11', xf: 897, mf: '006', mx: 1045, tag: 'nPT-LOn931-B', foot: 'A007', sg: ['B009', 897, 97, 86, 1024, 'K:150.0kg/cm2g'], xe: 1014, par: ['255.0', '-12.5', '50.0', '-50.0'], xj: 1672, dyB: -85, bx: 2004, B: ['B3', ['TCT201']], A: ['A3', ['TCE305']], mo: '008', D: ['D3', ['TCE470']], mb: '010', dyD: 104 },
         { y: 821, lab: ['EOP DISCHARGE', 'OIL PRESS.'], pt: 'PT-LOn923', rng: '0- 5kg/cm2g', card: 'TCE930-12', xf: 1218, mf: '011', mx: 1375, tag: 'nPT-LOn923', foot: 'A012', sg: ['B014', 1216, 97, 87, 1354, 'K:0.5kg/cm2g'], xe: 1344, par: ['5.1', '-0.25', '1.0', '-1.0'], xj: 1695, dyB: -104, B: ['B4', ['TCT201']], A: ['A4', ['TCE310']], mo: '013', D: ['D4', ['TCE470']], mb: '015', dyD: 106, abn: ['HOT DISCHARGE', 'OIL PRESS. ABN.'] }
       ]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE110.js ---- */
+/* TCE110 TPC SIGNAL DIAGNOSTICS(1) (331DM09784 page 73, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Trip signals of the turbine protection, each read from the three protection controllers: condenser vacuum very low (the drawing prints
+   "CNDENSER"; typed as printed), main steam temperature very low, thrust bearing failure front and rear. The discrepancy of each also has a
+   lamp of the operator station. The title block of this page prints PAGE 71; it is page 73 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1120', 'TCP2120', 'TCP3120'],
+    N = (a, b, e) => ({ in: [[a, b], [a, b], [a, b]], out: [[a, b], [a, b], [a, e], [a, e]] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE110',
+      title: 'TPC SIGNAL DIAGNOSTICS(1)',
+      page: 73,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [N('CNDENSER VACUUM', 'VERY LOW TRIP', 'VERY LOW TRIP DISCREPANCY'), 'B1', 'A', ['001', '004', '032'], ['003', '005', '006', '007'], '031', 'TCE110_1', null, R, { el: 'TCE110_2' }],
+        [N('MAIN STEAM TEMP.VERY', 'LOW TRIP', 'LOW TRIP DISCREPANCY'), 'B2', 'B', ['008', '011', '033'], ['010', '012', '013', '014'], '009', 'TCE110_3', null, R, { el: 'TCE110_4' }],
+        [N('THRUST BRG. FAILURE', '(FRONT) TRIP', '(FRONT) DISCREPANCY'), 'B3', 'C', ['015', '018', '034'], ['017', '019', '020', '021'], '016', 'TCE110_5', null, R, { el: 'TCE110_6' }],
+        [N('THRUST BRG. FAILURE', '(REAR)TRIP', '(REAR) DISCREPANCY'), 'B4', 'D', ['022', '025', '035'], ['024', '026', '029', '030'], '023', 'TCE110_7', null, R, { el: 'TCE110_8' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE111.js ---- */
+/* TCE111 TPC SIGNAL DIAGNOSTICS(2) (331DM09784 page 74, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Control pressure very low, bearing oil pressure very low, LP exhaust hood steam temperature very high and turbine trip oil pressure very low.
+   The last also goes out by a double-line connector D1 over its lamp, so its discrepancy goes out by D2. The title block of this page prints
+   PAGE 72; it is page 74 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1120', 'TCP2120', 'TCP3120'],
+    N = (a, b) => ({ in: [[a, b], [a, b], [a, b]], out: [[a, b], [a, b], [a, b + ' DISCREPANCY']] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE111',
+      title: 'TPC SIGNAL DIAGNOSTICS(2)',
+      page: 74,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [N('CONTROL PRESSURE', 'VERY LOW TRIP'), 'B5', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE111_1', null, R],
+        [N('BEARING OIL PRESS.', 'VERY LOW TRIP'), 'B6', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE111_3', ['TCE305'], R],
+        [N('LP EXHAUST HOOD STEAM', 'TEMP. VERY HIGH TRIP'), 'B7', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE111_5', null, R],
+        [N('TURBINE TRIP OIL PRESS.', 'VERY LOW TRIP'), 'B8', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE111_7', ['TCE053', 'TCE212'], R, { up: ['D1', ['TCA103']], en: 'D2' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE112.js ---- */
+/* TCE112 TPC SIGNAL DIAGNOSTICS(3) (331DM09784 page 75, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   HP turbine exhaust steam temperature very high, HP turbine inlet / exhaust steam differential pressure very high, HP turbine exhaust steam
+   pressure very high and boiler MFT. The discrepancy of each also has a lamp of the operator station. The discrepancy of the second is
+   named "VERY DISCREPANCY" in the drawing; typed as printed. The title block of this page prints PAGE 73; it is page 75 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R = ['TCP1120', 'TCP2120', 'TCP3120'],
+    N = (L, E) => ({ in: [L, L, L], out: [L, L, E, E] });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE112',
+      title: 'TPC SIGNAL DIAGNOSTICS(3)',
+      page: 75,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [N(['HP TURBINE EXHAUST STEAM', 'TEMP. VERY HIGH TRIP'], ['HP TURBINE EXHAUST STEAM', 'TEMP. VERY HIGH TRIP DISCREPANCY']), 'B9', 'A', ['001', '004', '032'], ['003', '005', '006', '007'], '031', 'TCE112_1', null, R, { el: 'TCE112_2' }],
+        [N(['HP TURBINE INLET/EXHAUST', 'STEAM DIFF.PRESS.', 'VERY HIGH TRIP'], ['HP TURBINE INLET/EXHAUST', 'STEAM DIFF.PRESS.', 'VERY DISCREPANCY']), 'B10', 'B', ['008', '011', '033'], ['010', '012', '013', '014'], '009', 'TCE112_3', null, R, { el: 'TCE112_4' }],
+        [N(['HP TURBINE EXHAUST', 'STEAM PRESS.', 'VERY HIGH TRIP'], ['HP TURBINE EXHAUST', 'STEAM PRESS.', 'VERY HIGH TRIP DISCREPANCY']), 'B11', 'C', ['015', '018', '034'], ['017', '019', '020', '021'], '016', 'TCE112_5', null, R, { el: 'TCE112_6' }],
+        [N(['BOILER MFT'], ['BOILER MFT DISCREPANCY']), 'B12', 'D', ['022', '025', '035'], ['024', '026', '029', '030'], '023', 'TCE112_7', null, R, { el: 'TCE112_8' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE113.js ---- */
+/* TCE113 TPC SIGNAL DIAGNOSTICS(4) (331DM09784 page 76, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   Generator / unit transformer protection and generator lockout relay operated, turbine shut-down command, turbine manual trip push button of
+   the TCS HMI, and turbine manual trip. The discrepancy of each also has a lamp of the operator station. The names are typed as the drawing
+   prints them: the outputs of the third block read "TURBINE MANUALTRIP PB (TCS HMI)" on one line and their discrepancy only "DISCREPANCY";
+   the discrepancy lamp of the fourth block reads "DISCREPANCY", its connector "TURBINE MANUAL TRIP DISCREPANCY". The title block of this page
+   prints PAGE 74; it is page 76 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const R0 = ['TCP1120', 'TCP2120', 'TCP3120'],
+    R1 = ['TCP1121', 'TCP2121', 'TCP3121'],
+    G = ['GEN./UNIT TRANS.PROTECTION', '& GEN.LOCKOUT RELAY', 'OPERATED'],
+    GE = ['GEN./UNIT TRANS.PROTECTION', '& GEN.LOCKOUT RELAY DISCREPANCY'],
+    S = ['TURBINE SHUT-DOWN', 'COMMAND'],
+    SE = ['TURBINE SHUT-DOWN', 'COMMAND DISCREPANCY'],
+    P = ['TURBINE MANUAL', 'TRIP PB (TCS HMI)'],
+    PO = ['TURBINE MANUALTRIP PB (TCS HMI)'],
+    T = ['TURBINE MANUAL TRIP'],
+    D = ['DISCREPANCY'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE113',
+      title: 'TPC SIGNAL DIAGNOSTICS(4)',
+      page: 76,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [{ in: [G, G, G], out: [G, G, GE, GE] }, 'B13', 'A', ['001', '004', '032'], ['003', '005', '006', '007'], '031', 'TCE113_1', ['TCA533'], R0, { el: 'TCE113_2', dbl: 2 }],
+        [{ in: [S, S, S], out: [S, S, SE, SE] }, 'B14', 'B', ['008', '011', '033'], ['010', '012', '013', '014'], '009', 'TCE113_3', null, R0, { el: 'TCE113_4' }],
+        [{ in: [P, P, P], out: [PO, PO, D, D] }, 'F2', 'C', ['015', '018', '034'], ['017', '019', '020', '021'], '016', 'TCE113_5', null, R1, { el: 'TCE113_6' }],
+        [{ in: [T, T, T], out: [T, T, D, [...T, 'DISCREPANCY']] }, 'D1', 'D', ['022', '025', '035'], ['024', '026', '029', '030'], '023', 'TCE113_7', null, R1, { el: 'TCE113_8' }]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['TCE471']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
+    })
+  );
+})();
+
+/* ---- src/digital/tce/TCE113A.js ---- */
+/* TCE113A TPC SIGNAL DIAGNOSTICS(5) (331DM09784 page 77, controller EHG+MD, cycle 30 ms). Typed from the drawing; the places are those of the sheets of
+   the digital input diagnostics (tce/_lib.js, TCE_LIB.did, as on TCE075), with the page set straight.
+   Only the first block reads a signal: TURBINE TRIP from the three protection controllers, out to a lamp and to connectors A and A2; its
+   discrepancy has a lamp ("TRIP COMMAND DICREPANCY", typed as the drawing prints it) and no connector. The other three blocks read the constant
+   OFF(0); their OUT is left open and their discrepancy goes only to the OR. The title block of this page prints PAGE 75; it is page 77 of the
+   document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = [180, 75, 2232, 1535],
+    u = (F[2] - F[0]) / 1000,
+    BX = 866,
+    BW = 407,
+    BH = 226,
+    XR = BX + BW,
+    TOPS = [103, 391, 668, 976],
+    NO = ['031', '009', '016', '023'],
+    IM = [['001', '004', '032'], ['008', '011', '033'], ['015', '018', '034'], ['022', '025', '035']],
+    pin = (top, i) => Math.round(top + 15 * u + (i + 0.5) * ((BH - 30 * u) / 5)),
+    /* the OR of the four discrepancies: its inputs, top to bottom, and where each line comes down */
+    OY = [1141, 1161, 1182, 1204],
+    OX = [1485, 1432, 1379, 1303],
+    c = [],
+    k = [],
+    b = [],
+    m = [],
+    w = [];
+  TOPS.forEach((top, g) => {
+    const key = 'tid' + (g + 1),
+      p = i => pin(top, i);
+    m.push([key, 'TRIPPLE INPUT DIAGNOSTICS', '', BX, top, BW, BH, ['IN1', '', 'IN2', '', 'IN3'], ['OUT', '', '', '', 'DEV E'], NO[g], [
+      [BX + 90, top + 172, 'TP:3.0'],
+      [BX + 105, top + 246, '(LME105)']
+    ]]);
+    [0, 1, 2].forEach(i => {
+      const y = p(2 * i),
+        s = 'i' + (g + 1) + (i + 1);
+      if (g === 0) {
+        c.push([s, 'in', 'A1', 280, y, 'TURBINE TRIP', ['TCP' + (i + 1) + '121'], 1]);
+        w.push([s, [[307, y], [BX, y]]]);
+      } else {
+        k.push([s, 216, y, 'OFF(0)', 'sys.ref']);
+        w.push([s, [[450, y], [BX, y]]]);
+      }
+      b.push(['mi' + (g + 1) + (i + 1), 'o:BTR', IM[g][i], 709, y]);
+    });
+    /* the discrepancy: down to the OR */
+    w.push([key + '.DEV E', [[XR, p(4)], [OX[g], p(4)], [OX[g], OY[g]], [1540, OY[g]]]]);
+  });
+  const y0 = pin(TOPS[0], 0);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE113A',
+    title: 'TPC SIGNAL DIAGNOSTICS(5)',
+    page: 77,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: F,
+    k,
+    c: [
+      ...c,
+      ['oA', 'out', 'A', 2103, y0 + 64, '', ['TCA825'], 1],
+      ['oA2', 'out', 'A2', 2092, y0 + 162, '', ['TCE053'], 0, 1],
+      ['oE', 'out', 'E', 2102, OY[0], '', ['-']]
+    ],
+    d: [
+      ['crt1', 2105, y0, 'out', 'TCE113A_1', 'S', '#1C'],
+      ['crt2', 2105, 416, 'out', 'TCE113A_2', 'S', '#1C']
+    ],
+    m,
+    b: [
+      ...b,
+      ['mo1', 'o:BTR', '003', 1657, y0],
+      ['mo2', 'o:BTR', '005', 1657, y0 + 64],
+      ['mo3', 'o:BTR', '036', 1647, y0 + 162],
+      ['mo4', 'o:BTR', '037', 1647, 416],
+      ['or', 'OR', '027', 1569, 1172, [], {}, [58, 85]],
+      ['mor', 'o:BTR', '028', 1656, OY[0]]
+    ],
+    w: [
+      ...w,
+      ['tid1.OUT', [[XR, y0], [2070, y0]]],
+      ['tid1.OUT', [[1539, y0], [1539, y0 + 162], [2065, y0 + 162]]],
+      ['tid1.OUT', [[1539, y0 + 64], [2076, y0 + 64]]],
+      ['tid1.DEV E', [[OX[0], 416], [2070, 416]]],
+      ['or', [[1598, OY[0]], [2075, OY[0]]]]
+    ],
+    t: [
+      [1716, y0 - 6, 'TURBINE TRIP'],
+      [1716, y0 + 58, 'TURBINE TRIP'],
+      [1736, y0 + 156, 'TURBINE TRIP'],
+      [1736, 410, 'TRIP COMMAND DICREPANCY'],
+      [1714, OY[0] - 6, 'DISCREPANCY'],
+      [247, 1512, 'CONTROLLER:'],
+      [408, 1512, 'EHG+MD'],
+      [670, 1485, 'TRIGGER  :'],
+      [670, 1512, 'CYCLE(ms):30']
+    ]
+  });
+})();
+
+/* ---- src/digital/tce/TCE114.js ---- */
+/* TCE114 TPC SIGNAL DIAGNOSTICS(5) (331DM09784 page 78, controller EHG+MD, cycle 30 ms; the drawing gives the number (5) to this sheet and to TCE113A).
+   Typed from the drawing; units = the pixels of the page rendered 2296 wide. The scan of this page is turned a little; every place is typed as it
+   stands on the page set straight.
+   The turbine trip and reset push buttons of the operator station (with CRT AVAILABLE) out to the three protection controllers, the lamps
+   TRIPD and RESET from TURBINE TRIP, and three signals passed on to the protection controllers. The sheets of the output connectors stand in
+   one row under them, in the order the drawing prints them. The title block of this page prints PAGE 76; it is page 78 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const P1 = ['TCP1121', 'TCP2121', 'TCP3121'],
+    P0 = ['TCP1120', 'TCP2120', 'TCP3120'],
+    out = (k, l, x, y, refs) => [k, 'out', l, x, y, '', refs, 1, 2],
+    mk = (no, x, y) => ['b' + no, 'o:BTR', no, x, y];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCE114',
+    title: 'TPC SIGNAL DIAGNOSTICS(5)',
+    page: 78,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [182, 84, 2230, 1546],
+    k: [
+      ['kInit', 1353, 183, 'INITIAL', 'ref'],
+      ['kTrip', 372, 638, 'TURBINE TRIP', 'ref']
+    ],
+    d: [
+      ['dIys', 435, 297, 'in', 'TCE114_1_IYS', 'R', '#1C'],
+      ['dTrip', 435, 350, 'in', 'TCE114_1_TRIP', 'R', '#1C'],
+      ['dRset', 434, 490, 'in', 'TCE114_1_RSET', 'R', '#1C'],
+      ['crtIyp', 2013, 183, 'out', 'TCE114_1_IYP', 'S', '#1C'],
+      ['crtTrpd', 1177, 638, 'out', 'TCE114_1_TRPD', 'S', '#1C'],
+      ['crtRstd', 1168, 734, 'out', 'TCE114_1_RSTD', 'S', '#1C']
+    ],
+    c: [
+      ['c1', 'in', 'C', 400, 1010, 'TURBINE AUTO RESET COMMAND', ['TCA580'], 1],
+      ['c2', 'in', 'C', 399, 1116, 'TURBINE SHUT-DOWN COMMAND', ['TCA587'], 1],
+      ['c3', 'in', 'C1', 400, 1222, 'EOS OPERATED', ['TCA781'], 1],
+      out('oA3', 'A3', 1157, 297, ['TCP2121', 'TCP3121', 'TCP1121']),
+      out('oA1', 'A1', 1157, 436, P1),
+      out('oA2', 'A2', 1138, 1010, P1),
+      out('oA4', 'A4', 1138, 1116, P0),
+      out('oA5', 'A5', 1138, 1222, P0)
+    ],
+    b: [
+      ['a008', 'A', '008', 709, 308],
+      ['a010', 'A', '010', 709, 447],
+      ['not012', 'NOT', '012', 773, 745],
+      mk('011', 1773, 183),
+      mk('003', 870, 297),
+      mk('001', 870, 436),
+      mk('007', 933, 638),
+      mk('009', 923, 734),
+      mk('002', 849, 1010),
+      mk('013', 849, 1116),
+      mk('014', 849, 1222)
+    ],
+    w: [
+      ['kInit', [[1587, 183], [1978, 183]]],
+      /* CRT AVAILABLE with TRIP, and with RESET */
+      ['dIys', [[470, 297], [680, 297]]],
+      ['dIys', [[624, 297], [624, 436], [680, 436]]],
+      ['dTrip', [[470, 350], [656, 350], [656, 319], [680, 319]]],
+      ['a008', [[738, 297], [1130, 297]]],
+      ['dRset', [[469, 490], [656, 490], [656, 458], [680, 458]]],
+      ['a010', [[738, 436], [1130, 436]]],
+      /* the lamps */
+      ['kTrip', [[606, 638], [1142, 638]]],
+      ['kTrip', [[665, 638], [665, 734], [744, 734]]],
+      ['not012', [[802, 734], [1133, 734]]],
+      /* passed on */
+      ['c1', [[427, 1010], [1111, 1010]]],
+      ['c2', [[426, 1116], [1111, 1116]]],
+      ['c3', [[427, 1222], [1111, 1222]]]
+    ],
+    t: [
+      [1496, 215, '(TCE050)'],
+      [466, 291, 'CRT AVAILABLE'],
+      [466, 344, 'TRIP'],
+      [464, 484, 'RESET'],
+      [959, 291, 'TRIP'],
+      [957, 430, 'RESET'],
+      [1012, 632, 'TRIPD'],
+      [1012, 728, 'RESET'],
+      [247, 1523, 'CONTROLLER:'],
+      [408, 1523, 'EHG+MD'],
+      [670, 1499, 'TRIGGER  :'],
+      [670, 1526, 'CYCLE(ms):30']
+    ]
+  });
+})();
+
+/* ---- src/digital/tce/TCE115.js ---- */
+/* TCE115 TPC SIGNAL DIAGNOSTICS(5) (331DM09784 page 79, controller EHG+MD, cycle 30 ms; the drawing gives the number (5) to this sheet too). Typed from
+   the drawing; units = the pixels of the page rendered 2296 wide. The scan of this page is turned a little; every place is typed as it stands on
+   the page set straight, the ten lines at one distance.
+   The lamps of the master trip solenoid valve test (from TCE117, TCE118, TCE119) at the left, and its test push buttons of the operator station
+   out to the three protection controllers at the right. The name of the fifth input is printed "CRT OPR. PERM." and its lamp "CRT OPE. PERM.";
+   typed as printed. The title block of this page prints PAGE 77; it is page 79 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const Y = i => Math.round(206 + 106.55 * i),
+    M = (v, p) => ['MASTER TRIP SOLENOID', 'VALVE(' + v + ') ' + p],
+    c = [],
+    d = [],
+    b = [],
+    w = [],
+    t = [],
+    lines = (L, x, y) => L.forEach((s, j) => t.push([x, y - 6 - 21 * (L.length - 1 - j), s]));
+  /* the lamps: [letter, sheet, name at the input, mark, name at the lamp, lamp tag] */
+  [
+    ['A', 'TCE117', ['OPERATED A1'], '001', null, 'TCE115_1_X01'],
+    ['B', 'TCE117', ['OPERATED A2'], '003', null, 'TCE115_1_X02'],
+    ['C', 'TCE117', M('A1', 'TEST PB'), '005', null, 'TCE115_1_IT1'],
+    ['D', 'TCE117', M('A2', 'TEST PB'), '007', null, 'TCE115_1_IT2'],
+    ['A', 'TCE118', ['CRT OPR. PERM.'], '008', ['CRT OPE. PERM.'], 'TCE115_1_IYP'],
+    ['B', 'TCE118', ['OPERATED B1'], '009', null, 'TCE115_2_X01'],
+    ['C', 'TCE118', ['OPERATED B2'], '011', null, 'TCE115_2_X02'],
+    ['D', 'TCE118', M('B1', 'TEST PB'), '013', null, 'TCE115_2_IT1'],
+    ['A', 'TCE119', M('B2', 'TEST PB'), '015', null, 'TCE115_2_IT2'],
+    ['B', 'TCE119', ['CRT OPE. PERM.'], '016', null, 'TCE115_2_IYP']
+  ].forEach(([l, sh, name, mk, lamp, tag], i) => {
+    const y = Y(i),
+      k = 'i' + (i + 1);
+    c.push([k, 'in', l, 339, y, name[name.length - 1], [sh]]);
+    if (name.length > 1) t.push([372, y - 32, name[0]]);
+    b.push(['b' + mk, 'o:BTR', mk, 682, y]);
+    w.push([k, [[366, y], [1019, y]]]);
+    d.push(['crt' + (i + 1), 1054, y, 'out', tag, 'S', '#1C']);
+    lines(lamp || name, 770, y);
+  });
+  /* the push buttons: [line, tag, name, mark, letter of the connector] */
+  [
+    [0, 'TCE115_1_KT1', 'TEST A1', '002', 'A1'],
+    [1, 'TCE115_1_KT2', 'TEST A2', '004', 'A2'],
+    [2, 'TCE115_1_IYS', 'CRT AVAILABLE', '006', 'A3'],
+    [5, 'TCE115_2_KT1', 'TEST B1', '010', 'B1'],
+    [6, 'TCE115_2_KT2', 'TEST B2', '012', 'B2'],
+    [7, 'TCE115_2_IYS', 'CRT AVAILABLE', '014', 'B3']
+  ].forEach(([i, tag, name, mk, l]) => {
+    const y = Y(i),
+      k = 'p' + l;
+    d.push([k, 1374, y, 'in', tag, 'R', '#1C']);
+    b.push(['b' + mk, 'o:BTR', mk, 1743, y]);
+    w.push([k, [[1409, y], [2067, y]]]);
+    c.push(['o' + l, 'out', l, 2094, y, '', ['TCP1200', 'TCP2200', 'TCP3200'], 1, 2]);
+    t.push([1404, y - 6, name], [1834, y - 6, name]);
+  });
+  t.push([247, 1516, 'CONTROLLER:'], [408, 1516, 'EHG+MD'], [670, 1491, 'TRIGGER  :'], [670, 1518, 'CYCLE(ms):30']);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({ id: 'TCE115', title: 'TPC SIGNAL DIAGNOSTICS(5)', page: 79, ctl: 'EHG+MD', cycle: 30, f: [172, 78, 2223, 1540], c, d, b, w, t });
+})();
+
+/* ---- src/digital/tce/TCE116.js ---- */
+/* TCE116 TPC SIGNAL DIAGNOSTICS(6) (331DM09784 page 80, controller EHG+MD, cycle 30 ms). Typed from the drawing with the builder of the digital
+   input diagnostics sheets (tce/_lib.js, TCE_LIB.did); the places are those of the page set straight, as on TCE075.
+   ICV(A) and ICV(B) fast acting during valve test, each read from the three protection controllers, and two spare signals. The names are typed
+   as the drawing prints them: it breaks the word VALVE over two lines ("DURING V" / "ALVE TEST") on most lines and not on others, and it
+   writes "DICREPANCY" on the first two blocks. The title block of this page prints PAGE 78; it is page 80 of the document. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const V = s => ['ICV(' + s + ') FAST ACTING DURING V', 'ALVE TEST'],
+    W = s => ['ICV(' + s + ') FAST ACTING', 'DURING VALVE TEST'],
+    S = ['(SPARE)'],
+    N = { in: [S, S, S], out: [S, S, ['DISCREPANCY']] },
+    NR = ['-', '-', '-'];
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
+    window.TCE_LIB.did({
+      id: 'TCE116',
+      title: 'TPC SIGNAL DIAGNOSTICS(6)',
+      page: 80,
+      f: [180, 75, 2232, 1535],
+      tops: [103, 391, 668, 976],
+      line2: '',
+      orName: 'DISCREPANCY',
+      g: [
+        [{ in: [V('A'), W('A'), V('A')], out: [V('A'), V('A'), [V('A')[0], 'ALVE TEST DICREPANCY']] }, 'E', 'A', ['001', '004', '032'], ['003', '005', '007'], '031', 'TCE116_1', ['TCE227'], ['TCP1230', 'TCP2230', 'TCP3230']],
+        [{ in: [V('B'), V('B'), V('B')], out: [W('B'), W('B'), [W('B')[0], 'DURING VALVE TEST DICREPANCY']] }, 'E', 'B', ['008', '011', '033'], ['010', '012', '014'], '009', 'TCE116_3', ['TCE228'], ['TCP1231', 'TCP2231', 'TCP3231']],
+        [N, 'B11', 'C', ['015', '018', '034'], ['017', '019', '021'], '016', 'TCE116_5', null, NR],
+        [N, 'B12', 'D', ['022', '025', '035'], ['024', '026', '030'], '023', 'TCE116_7', null, NR]
+      ],
+      or: ['027', '028'],
+      e: ['E', ['-']],
+      foot: [[247, 1512, 'CONTROLLER:'], [408, 1512, 'EHG+MD'], [670, 1485, 'TRIGGER  :'], [670, 1512, 'CYCLE(ms):30']]
     })
   );
 })();
@@ -115891,7 +116736,7 @@ function tcsSim(s) {
      id, title, page, ctl (controller), cycle (ms)
      f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
      c: [key, 'in' | 'out', letter, x, y, name, [sheets], dbl, under] off-page connector (oval), x y = its centre; dbl 1 = drawn with a double line;
-                                                                     under 1 = the sheets stand under the connector
+                                                                     under 1 = the sheets stand under the connector (2 = in one row under an output connector)
      k: [key, x, y, text, note, kind]                                constant / system reference (pentagon), x y = its left middle; kind 'def' =
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
@@ -116013,7 +116858,8 @@ function tceSheet(q) {
       /* near the right edge of the frame there is no room for a second column: the drawing puts the sheets over four on the left of the
          column, on its last rows (TCE166 A: TCE602 left of TCE601) */
       /* under 1: the drawing prints the sheets under the connector, not beside it */
-      if (under) R.forEach((s, i) => tx.push(text(s, x + 6 * u, y + (17 + 8 * i) * u, 1.7, 0)));
+      if (under === 2) R.forEach((s, i) => tx.push(text(s, x + (i - (R.length - 1) / 2) * 44 * u, y + 17 * u, 1.7, 1)));
+      else if (under) R.forEach((s, i) => tx.push(text(s, x + 6 * u, y + (17 + 8 * i) * u, 1.7, 0)));
       else if (R.length > 4 && x + w + 37 * u + 34 * u > fx1)
         R.forEach((s, i) =>
           tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
@@ -173499,7 +174345,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 81fe652'));
+    row('Version', E('span', 'scsver', ver + ' · build 449eb41'));
   }
   function openSet(near) {
     if (!set) {
