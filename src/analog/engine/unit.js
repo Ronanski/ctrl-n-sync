@@ -5160,7 +5160,10 @@ function anUnitStep0(dt) {
     /* the furnace exit gas: the bed less the upper walls, held at the bed by the circulating solids in the share phi */
     U.tgF = gcp > 0.01 ? U.Tb - (1 - Math.min(1, phi)) * (qGas / gcp) : U.Tb;
     U.gcp = gcp;
-    U.mG = (av[0] + av[1] + av[2]) / 3.6 + fg + ((U.tlW || 0) + (U.tlE || 0)) / 3.6 /* flue gas kg/s, to the backpass (hx.js), with a tube leak */;
+    /* 1.0.0-beta.14 (JENNIE, live test F-t): only the water wall leak leaves the furnace with the gas. The economizer leak enters the
+       gas at the No.1 economizer (hx.js, I.mL), after the superheaters and reheaters: adding it here sent its mass through the SH / RH
+       banks at the furnace exit temperature and the hot reheat went HIGH-HIGH (live run S87, 75 MW, 63 T/H leak) */
+    U.mG = (av[0] + av[1] + av[2]) / 3.6 + fg + (U.tlW || 0) / 3.6 /* flue gas kg/s, to the backpass (hx.js), with a water wall leak */;
     U.phi = phi;
     /* water walls, T/H of steam-equivalent (the unit of Cw / C): both ways, a bed under the water cools it. The air cooling of the
        unfired boiler (kcool) is inside this balance now; the loss to the room (kamb) stays */

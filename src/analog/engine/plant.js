@@ -1367,8 +1367,20 @@ function anStep(S, dt) {
           /* Mina beta.116 (HIC-MWRL still 3.0 after the presses): the operator's value of such a station is kept as s.op and wins over the
              loop read-back while the switch stays on its AUTO leg; any other leg clears it (HIC-BM in MANUAL by its BU-CMD and back) */
           const pkA = dr && rt.st[dr.id] && rt.st[dr.id].pk === 'A';
+          /* 3.2.5-beta.9 (live 75 MW, ABC-001A HIC-ULD): the station's own mode. With HIC-ULD.MAN = 1 ("UNIT LOAD DEMAND SETTER IN
+             MANUAL", the drawing's IF HIC-ULD.MAN = 1 SET SI0243 = SI0200) the station still read its AUTO input every scan, and that input
+             is its own output: the operator's ▲ / ▼ came back at once and the load could not be changed in MANUAL. A manual station in
+             MANUAL holds the operator's value (textbook: MAN = the operator sets the output); the interlock tracking below still wins */
+          if (b._mo === undefined && b.tag && AN.modeNets && AN.sheets.every(x => x.S || /^ABC-000/.test(x.name)))
+            try {
+              b._mo = (AN.modeNets(b.tag) || []).filter(q => q[0] === S);
+            } catch (e) {
+              b._mo = [];
+            }
+          const ownMan = !!(b._mo && b._mo.length && b._mo.some(([S2, n]) => +S2.rt.ext[n] > 0.5));
           if (!pkA) s.op = null;
-          if (pkA && s.op != null) s.val = s.op;
+          if (ownMan) s.op = null;
+          else if (pkA && s.op != null) s.val = s.op;
           else if (pkA && !(dr.a != null && ((b.o || []).includes(dr.a) || (b.tag && (AN.nm(S, dr.a) || '').toUpperCase() === b.tag.toUpperCase() + '.MV'))))
             s.val = rd(b.i[b.svI]);
           /* 2.2.0-beta.9: .MAN is the MODE STATUS of the station (textbook status word; CLAUDE.md 2): while its A / M switch of the
