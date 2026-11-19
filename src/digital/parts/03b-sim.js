@@ -779,6 +779,14 @@ function simIn(s) {
   F.forEach((v, i) => {
     if (v) on.add(i);
   });
+  /* the IRP bypass of an MFT input (world.js W.IB, a field action): the contact of that row reads open */
+  const W = window.WORLD;
+  if (sim && W && W.IB && W.ft && W.ft.size)
+    for (const k in W.IB)
+      if (W.ft.has(k) && s.name.endsWith(')' + W.IB[k].sh)) {
+        const i = (s.rows || []).findIndex(r => +r.n === W.IB[k].n);
+        if (i >= 0) on.delete(i);
+      }
   if (sim && s.nl && s.nl.mv && s.nl.mv.length) {
     const rt = mvRT(s);
     s.nl.mv.forEach((b, j) => {

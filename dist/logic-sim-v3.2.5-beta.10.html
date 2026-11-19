@@ -5557,6 +5557,14 @@ function simIn(s) {
   F.forEach((v, i) => {
     if (v) on.add(i);
   });
+  /* the IRP bypass of an MFT input (world.js W.IB, a field action): the contact of that row reads open */
+  const W = window.WORLD;
+  if (sim && W && W.IB && W.ft && W.ft.size)
+    for (const k in W.IB)
+      if (W.ft.has(k) && s.name.endsWith(')' + W.IB[k].sh)) {
+        const i = (s.rows || []).findIndex(r => +r.n === W.IB[k].n);
+        if (i >= 0) on.delete(i);
+      }
   if (sim && s.nl && s.nl.mv && s.nl.mv.length) {
     const rt = mvRT(s);
     s.nl.mv.forEach((b, j) => {
@@ -40443,7 +40451,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 360d68d'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 2eba36b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -57854,6 +57862,19 @@ jV1eHpSLHlIJuUKcZC50d65hZRirjTo8uYFaEuMHYZh93x7z7vT58xHtJk75Y7HQrrsSLQX2BdoSnYyU
   /* 3.2.4-beta.13 (JENNIE, priority list item: coal quality): wet coal, a trainer fault (unit.js anCoalWet: the coal moisture 33.96 % of the
      performance coal, FHI P2S7 Tab 2, rises to 40 %, NO-SOURCE trainer setting: rain on the coal yard). No DITL contact: the DCS has no
      coal analyser; the operator sees more coal per MW (FIC-CM), the O2 and the bed temperature */
+  /* Jennie live shutdown 2026-11-19 (F-au): the IRP bypass of an MFT input, a field action of the I&C (a jumper on the interlock relay
+     panel), not a DCS control: DITL-03A rows 2 ~ 19 come from the IRP / ARP and have no bypass push button on any drawing. PR-OPE-5003
+     (normal shutdown, coal-out step): "During normal shutdown, bypass turbine trip alarm at MFT and boiler interlock to maintain boiler
+     operation." Bypassed = the contact of that row reads open on DITL-03A (03b-sim.js simIn), the trip itself stays on DITL-03H, the
+     annunciator and the TCS. The other turbine trip path of DITL-03H (turbine trip AND HP bypass < 10 % AND cyclone gas > 535 C for 5 s ->
+     CYCLONE OUTLET GAS TEMP. H.H. (NO REHEATER STEAM), 03A row 17) is not bypassed: the SOP opens the HP bypass for it */
+  W.IB = { 'ib.tt': { sh: 'DITL-03A', n: 19, t: 'IRP bypass: TURBINE TRIP to MFT (DITL-03A row 19)' } };
+  const ibSet = (id, on) => {
+    if (on) W.ft.add(id);
+    else W.ft.delete(id);
+    W.busy = true;
+    return (on ? 'ON: ' : 'removed: ') + W.IB[id].t;
+  };
   const WET = 'cf.wet',
     WET_T = 'Wet coal: moisture 34 % to 40 % (less heat per tonne)';
   const wetSet = on => {
@@ -57917,11 +57938,13 @@ jV1eHpSLHlIJuUKcZC50d65hZRirjTo8uYFaEuMHYZh93x7z7vT58xHtJk75Y7HQrrsSLQX2BdoSnYyU
         .concat(Object.keys(TL).map(k => ({ id: k, g: 'tl', t: TL[k], on: W.ft.has(k) })))
         .concat(Object.keys(HL).map(k => ({ id: k, g: 'hl', t: HL[k], on: W.ft.has(k) })))
         .concat(Object.keys(AP).map(k => ({ id: k, g: 'ap', t: AP[k], on: W.ft.has(k) })))
-        .concat([{ id: WET, g: 'cq', t: WET_T, on: W.ft.has(WET) }]);
+        .concat([{ id: WET, g: 'cq', t: WET_T, on: W.ft.has(WET) }])
+        .concat(Object.keys(W.IB).map(k => ({ id: k, g: 'ib', t: W.IB[k].t, on: W.ft.has(k) })));
     if (id === BO) return boSet(on);
     if (JAM[id]) return jamSet(id, on);
     if (TL[id] || HL[id] || AP[id]) return tlSet(id, !!on);
     if (id === WET) return wetSet(!!on);
+    if (W.IB[id]) return ibSet(id, !!on);
     const f = FT[id],
       s = f && ftSheet(f.sh);
     if (!s) return '';
@@ -65367,6 +65390,14 @@ function simIn(s) {
   F.forEach((v, i) => {
     if (v) on.add(i);
   });
+  /* the IRP bypass of an MFT input (world.js W.IB, a field action): the contact of that row reads open */
+  const W = window.WORLD;
+  if (sim && W && W.IB && W.ft && W.ft.size)
+    for (const k in W.IB)
+      if (W.ft.has(k) && s.name.endsWith(')' + W.IB[k].sh)) {
+        const i = (s.rows || []).findIndex(r => +r.n === W.IB[k].n);
+        if (i >= 0) on.delete(i);
+      }
   if (sim && s.nl && s.nl.mv && s.nl.mv.length) {
     const rt = mvRT(s);
     s.nl.mv.forEach((b, j) => {
@@ -92909,6 +92940,19 @@ window.WIRING=[["DI","1","I.0000","ZSO-BD1002"],["DI","1","I.0001","ZSC-BD1002"]
   /* 3.2.4-beta.13 (JENNIE, priority list item: coal quality): wet coal, a trainer fault (unit.js anCoalWet: the coal moisture 33.96 % of the
      performance coal, FHI P2S7 Tab 2, rises to 40 %, NO-SOURCE trainer setting: rain on the coal yard). No DITL contact: the DCS has no
      coal analyser; the operator sees more coal per MW (FIC-CM), the O2 and the bed temperature */
+  /* Jennie live shutdown 2026-11-19 (F-au): the IRP bypass of an MFT input, a field action of the I&C (a jumper on the interlock relay
+     panel), not a DCS control: DITL-03A rows 2 ~ 19 come from the IRP / ARP and have no bypass push button on any drawing. PR-OPE-5003
+     (normal shutdown, coal-out step): "During normal shutdown, bypass turbine trip alarm at MFT and boiler interlock to maintain boiler
+     operation." Bypassed = the contact of that row reads open on DITL-03A (03b-sim.js simIn), the trip itself stays on DITL-03H, the
+     annunciator and the TCS. The other turbine trip path of DITL-03H (turbine trip AND HP bypass < 10 % AND cyclone gas > 535 C for 5 s ->
+     CYCLONE OUTLET GAS TEMP. H.H. (NO REHEATER STEAM), 03A row 17) is not bypassed: the SOP opens the HP bypass for it */
+  W.IB = { 'ib.tt': { sh: 'DITL-03A', n: 19, t: 'IRP bypass: TURBINE TRIP to MFT (DITL-03A row 19)' } };
+  const ibSet = (id, on) => {
+    if (on) W.ft.add(id);
+    else W.ft.delete(id);
+    W.busy = true;
+    return (on ? 'ON: ' : 'removed: ') + W.IB[id].t;
+  };
   const WET = 'cf.wet',
     WET_T = 'Wet coal: moisture 34 % to 40 % (less heat per tonne)';
   const wetSet = on => {
@@ -92972,11 +93016,13 @@ window.WIRING=[["DI","1","I.0000","ZSO-BD1002"],["DI","1","I.0001","ZSC-BD1002"]
         .concat(Object.keys(TL).map(k => ({ id: k, g: 'tl', t: TL[k], on: W.ft.has(k) })))
         .concat(Object.keys(HL).map(k => ({ id: k, g: 'hl', t: HL[k], on: W.ft.has(k) })))
         .concat(Object.keys(AP).map(k => ({ id: k, g: 'ap', t: AP[k], on: W.ft.has(k) })))
-        .concat([{ id: WET, g: 'cq', t: WET_T, on: W.ft.has(WET) }]);
+        .concat([{ id: WET, g: 'cq', t: WET_T, on: W.ft.has(WET) }])
+        .concat(Object.keys(W.IB).map(k => ({ id: k, g: 'ib', t: W.IB[k].t, on: W.ft.has(k) })));
     if (id === BO) return boSet(on);
     if (JAM[id]) return jamSet(id, on);
     if (TL[id] || HL[id] || AP[id]) return tlSet(id, !!on);
     if (id === WET) return wetSet(!!on);
+    if (W.IB[id]) return ibSet(id, !!on);
     const f = FT[id],
       s = f && ftSheet(f.sh);
     if (!s) return '';
@@ -104346,16 +104392,17 @@ html body.sc #scstart .sccont:disabled{display:none!important}
     /* group 2: a running motor trips in the field (world.js WORLD.ftrip) */
     const ftL = () => (window.WORLD && WORLD.ftrip ? WORLD.ftrip() : []);
     for (const f of ftL())
-      btn('flt-' + f.id.replace(/\W/g, '-'), f.t, f.g === 'tl' ? 'Field fault: ' + f.t + '. Water leaks into the furnace or the backpass: the feedwater reads above the steam, the make-up rises, the drum level and the furnace draft move. It starts as a small hole and cuts the tubes next to it: left on, the feedwater reads far above the steam after about 20 min and the boiler trips in about half an hour. Press again when the tube is repaired.' : f.g === 'hl' ? 'Field fault: ' + f.t + '. Feedwater leaks into the heater shell: its drain valves open more, then the alternate drain to the condenser, then HEATER LEVEL HIGH-HIGH closes its extraction. The hole grows until the heater is taken out (bypass open, inlet and outlet shut). Press again when the tube is plugged.' : f.id === 'cd.air' ? 'Field fault: ' + f.t + '. Air leaks into the condenser: the vacuum falls (the condenser pressure rises), the turbine makes less power for the same steam and the exhaust gets hotter. The air ejectors take more only at a worse vacuum. Press again when the leak is sealed.' : f.id === 'grid.lo' ? 'Grid fault: ' + f.t + '. The grid frequency falls, so the turbine turns slower with the grid: the governor (6 % droop, dead band 7.2 rpm) opens the control valves for a few seconds and the MW jumps up, then the MW control of the turbine brings the load back to its target. The boiler sees the steam taken from its pressure. Press again when the grid is back to 60 Hz.' : f.id === 'aph.leak' ? 'Field fault: ' + f.t + '. The seals of the air heater wear: more primary and secondary air goes straight to the gas side. The air flows read the same, but less air reaches the furnace: the O2 falls, the air control raises the fans, the ID fan takes more gas and the gas leaving the air heater gets colder. Press again when the seals are set.' : f.g === 'ap' ? 'Field fault: ' + f.t + '. Ash fills the air heater: the draft loss rises, the ID fan pulls a deeper suction and takes more current, and the fan opens more to hold the furnace pressure. Press again when the air heater is washed.' : f.g === 'cq' ? 'Field fault: ' + f.t + '. The feeders weigh the same tonnes, but each tonne gives less heat: the coal master and the calorie correction raise the coal, the bed temperature falls. Press again when the coal is dry again.' : f.g === 'cf' ? 'Field fault: ' + f.t + '. The feeder keeps running and its feed rate reads as before; the DCS shows DISCHARGE PLUGGED. Press again when the chute is cleared.' : f.g === 'el' ? 'Field fault: ' + f.t + '. Every motor stops; the DCS stays on the UPS, the turbine oil on the emergency oil pump (DC), the emergency panel on the diesel generator. Press again when the bus is back; the operator starts the motors again.' : 'Field fault: ' + f.t + ' (its protection relay opens the MCC). Press again to reset the relay; the operator starts it again.', () => {
+      btn('flt-' + f.id.replace(/\W/g, '-'), f.t, f.g === 'ib' ? 'Field action (I&C): ' + f.t + '. A jumper on the interlock relay panel: the turbine trip no longer trips the boiler (PR-OPE-5003 normal shutdown). The other MFT inputs stay in service; with the turbine tripped the HP bypass must open, or the cyclone gas trip (no reheater steam) still trips the boiler. Press again to remove the jumper.' : f.g === 'tl' ? 'Field fault: ' + f.t + '. Water leaks into the furnace or the backpass: the feedwater reads above the steam, the make-up rises, the drum level and the furnace draft move. It starts as a small hole and cuts the tubes next to it: left on, the feedwater reads far above the steam after about 20 min and the boiler trips in about half an hour. Press again when the tube is repaired.' : f.g === 'hl' ? 'Field fault: ' + f.t + '. Feedwater leaks into the heater shell: its drain valves open more, then the alternate drain to the condenser, then HEATER LEVEL HIGH-HIGH closes its extraction. The hole grows until the heater is taken out (bypass open, inlet and outlet shut). Press again when the tube is plugged.' : f.id === 'cd.air' ? 'Field fault: ' + f.t + '. Air leaks into the condenser: the vacuum falls (the condenser pressure rises), the turbine makes less power for the same steam and the exhaust gets hotter. The air ejectors take more only at a worse vacuum. Press again when the leak is sealed.' : f.id === 'grid.lo' ? 'Grid fault: ' + f.t + '. The grid frequency falls, so the turbine turns slower with the grid: the governor (6 % droop, dead band 7.2 rpm) opens the control valves for a few seconds and the MW jumps up, then the MW control of the turbine brings the load back to its target. The boiler sees the steam taken from its pressure. Press again when the grid is back to 60 Hz.' : f.id === 'aph.leak' ? 'Field fault: ' + f.t + '. The seals of the air heater wear: more primary and secondary air goes straight to the gas side. The air flows read the same, but less air reaches the furnace: the O2 falls, the air control raises the fans, the ID fan takes more gas and the gas leaving the air heater gets colder. Press again when the seals are set.' : f.g === 'ap' ? 'Field fault: ' + f.t + '. Ash fills the air heater: the draft loss rises, the ID fan pulls a deeper suction and takes more current, and the fan opens more to hold the furnace pressure. Press again when the air heater is washed.' : f.g === 'cq' ? 'Field fault: ' + f.t + '. The feeders weigh the same tonnes, but each tonne gives less heat: the coal master and the calorie correction raise the coal, the bed temperature falls. Press again when the coal is dry again.' : f.g === 'cf' ? 'Field fault: ' + f.t + '. The feeder keeps running and its feed rate reads as before; the DCS shows DISCHARGE PLUGGED. Press again when the chute is cleared.' : f.g === 'el' ? 'Field fault: ' + f.t + '. Every motor stops; the DCS stays on the UPS, the turbine oil on the emergency oil pump (DC), the emergency panel on the diesel generator. Press again when the bus is back; the operator starts the motors again.' : 'Field fault: ' + f.t + ' (its protection relay opens the MCC). Press again to reset the relay; the operator starts it again.', () => {
         const now = ftL().find(q => q.id === f.id),
           r = WORLD.ftrip(f.id, !(now && now.on));
         if (!r) return msg('Fault ' + f.t + ': not found.');
+        if (f.g === 'ib') return window.lsEventAdd && lsEventAdd('FIELD', 'FIELD', r), msg(r);
         fltLog(r);
         msg('FAULT: ' + r);
       });
     btn('flt-clear', 'Clear all faults', 'Puts the field back: every fault that is on is cleared.', () => {
       const on = (AN.fault ? AN.fault() : []).filter(q => q.on),
-        om = ftL().filter(q => q.on);
+        om = ftL().filter(q => q.on && q.g !== 'ib'); /* an IRP bypass is a field action, not a fault: it stays */
       if (!on.length && !om.length) return msg('No fault is on.');
       for (const q of on) {
         const r = AN.fault(q.id, false);
@@ -122144,7 +122191,9 @@ window.LS_GUIDE = (function () {
     /* faults: the trainer faults of engine/faults.js and the motor trips of WORLD.ftrip, through their buttons (flt-*) */
     body.append(head('Faults (field)'));
     r = row();
-    const FL = [...call(() => AN.fault(), []), ...call(() => WORLD.ftrip(), [])];
+    const FL0 = [...call(() => AN.fault(), []), ...call(() => WORLD.ftrip(), [])],
+      FL = FL0.filter(f => f.g !== 'ib'),
+      IBL = FL0.filter(f => f.g === 'ib');
     if (!FL.length) r.append(E('p', 'scnone', 'Load a start state first.'));
     for (const f of FL) {
       const id = 'flt-' + f.id.replace(/\W/g, '-'),
@@ -122186,6 +122235,14 @@ window.LS_GUIDE = (function () {
     }
     r.append(tt, mft);
     if (l52) r.append(l52);
+    /* F-au (PR-OPE-5003): the IRP bypass of the turbine trip into the MFT, a field action of the I&C (world.js W.IB) */
+    for (const f of IBL) {
+      const id = 'flt-' + f.id.replace(/\W/g, '-'),
+        b = btn(f.on ? f.t + ': ON' : f.t, f.on ? 'Jumper in: press to remove it' : 'Puts the jumper in (asks first)', null, f.on ? 'flt on' : 'flt');
+      if (f.on) b.onclick = () => (press(id), setTimeout(fill, 100));
+      else arm(b, f.t, () => (press(id), setTimeout(fill, 100)), { q: 'Bypass the turbine trip into the MFT?', t: 'I&C puts a jumper on the interlock relay panel (PR-OPE-5003 normal shutdown): a turbine trip no longer trips the boiler. Open the HP bypass at the trip, or the cyclone gas trip (no reheater steam) still trips it.', ok: 'Bypass', danger: true });
+      r.append(b);
+    }
     body.append(r);
     /* turbine panel extras and the recorder */
     body.append(head('Turbine and recorder'));
@@ -122572,7 +122629,7 @@ window.LS_GUIDE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 360d68d'));
+    row('Version', E('span', 'scsver', ver + ' · build 2eba36b'));
   }
   function openSet(near) {
     if (!set) {
