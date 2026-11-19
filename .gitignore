@@ -6,3 +6,6 @@ document-references/*
 !document-references/INDEX.md
 .claude/launch.json
 turnover-private/
+
+# build outputs of the app page and test pictures (never committed)
+out/
