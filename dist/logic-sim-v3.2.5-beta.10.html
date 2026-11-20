@@ -6107,6 +6107,8 @@ const TCS_DESC = {
     'Field switch (41) logic: 41 close with ES and 52G open, rated speed, no trip demand and the excitation start; 41 open on the protection trip demands and AVR major trouble; AVR on / off; 41 and AVR states to the other sheets, ATS, DCS, annunciator and SOE',
   'G-5A':
     'GENERATOR PROTECTION LOGIC A (1/2): the relays of generator protection panel A, with 52G closed and 60FLA not on, to the lockout relay 86G-A and its trips',
+  'G-5B':
+    'GENERATOR PROTECTION LOGIC A (2/2): pole slip, VT fuse failure, under and over frequency to generator protection A operated, and the ST trip to the generator trip and breaker trip coils',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -6544,7 +6546,9 @@ const TCS_DESC = {
   TCA777:
     'SIMULATOR: simulated CV inner and outer wall metal temperatures, HP-T inner casing temperature and MSV inlet steam temperature',
   TCA780:
-    'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis'
+    'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis',
+  TCA781:
+    'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -30795,6 +30799,179 @@ const TCS_DESC = {
     dwg: '310SD03-743',
     of: 20,
     f: [204, 128, 2168, 1518],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    a,
+    j
+  });
+})();
+/* SH-G-5B GENERATOR PROTECTION LOGIC "A" (2/2) (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 14). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide. Pole slip, VT fuse failure, under and over frequency of the generator
+   protection panel A (each with 52G closed and 60FLA not on where the drawing has it) out to SH-G-8A and into one OR gate: generator
+   protection "A" operated / not operated. Below: the ST trip of protection A or B to the generator trip and the two breaker trip coils
+   (the mark: the signal also goes to that panel). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    a = [],
+    j = [];
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh, sx) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4]);
+    if (sh) t.push([sx, y + 5, sh]);
+  };
+  /* a gate: bar x, centre y, the bar from y1 to y2 */
+  const gate = (k, ty, bar, y, y1, y2) => {
+    b.push([k, 'G:' + ty, '', bar + 9, y, [], {}, [18, ty === 'OR' ? 18 : 20, 0]]);
+    l.push([[bar, y1], [bar, y2]]);
+  };
+  /* an on delay timer: left x, centre y, the time */
+  const di = (k, x, y, tm) => {
+    r.push([k, x, y - 12, 31, 24, '']);
+    t.push([x + 16, y - 5, 'DI', 4], [x + 16, y + 6, tm, 4]);
+  };
+  /* a relay of the panel: tag, name, top / bottom, the contacts [key, word] */
+  const relay = (tg, nm, y1, y2, P) => {
+    l.push([[254, y1], [585, y1]], [[585, y1], [585, y2]], [[585, y2], [254, y2]], [[254, y2], [254, y1]], [[521, y1], [521, y2]]);
+    t.push([256, y1 - 8, '(' + tg + ')'], [344, y1 - 8, '(GPP)'], [266, (y1 + y2) / 2, nm]);
+    const hh = (y2 - y1) / P.length;
+    P.forEach(([k, z], i) => {
+      const ya = y1 + hh * i;
+      if (i) l.push([[521, ya], [585, ya]]);
+      t.push([553, ya + hh / 2, z, 4]);
+      s.push([k, 521, Math.round(ya), 585, Math.round(ya + hh)]);
+    });
+  };
+  /* a mark that the signal also goes to a panel: x, top / bottom, words, the lines it crosses; the top arrow points right */
+  const mark = (x, y1, y2, z1, z2, X) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[x, P[i]], [x, P[i + 1]]]);
+    a.push([[x, y1], [x + 18, y1]], [[x, y2], [x - 18, y2]]);
+    t.push([x + 21, y1 + 4, z1], [x - 20, y2 + 4, z2, 2]);
+  };
+  /* the relays of the panel */
+  relay('78A', 'POLE SLIP', 306, 338, [['r78', 'ON']]);
+  relay('60FLA', 'VT FUSE FAILURE', 375, 406, [['r60', 'ON']]);
+  relay('81LA', 'UNDER FREQUENCY', 435, 488, [['r81l1', '1ST STEP'], ['r81l2', '2ND STEP']]);
+  relay('81HA', 'OVER FREQUENCY', 536, 590, [['r81h1', '1ST STEP'], ['r81h2', '2ND STEP']]);
+  /* the inputs from the other sheets: [key, number, sheet, x, line, words] */
+  [
+    ['i52', '2', 'SH-G-5A', 266, 268, '52G CLOSED'],
+    ['ia', '1', 'SH-G-5A', 262, 752, 'ST TRIP/GEN. PROTECTION "A" OPERATED (86G-A)'],
+    ['ib', '1', 'SH-G-6A', 262, 843, 'ST TRIP/GEN. PROTECTION "B" OPERATED (86G-B)']
+  ].forEach(([k, n, sh, x, y, z]) => {
+    circ(x, y, n);
+    s.push([k, x - 13, y - 13, x + 13, y + 13]);
+    t.push([x + 18, y - 9, z], [x + 18, y + 15, sh]);
+  });
+  /* the gates */
+  gate('g1', 'A', 809, 310, 259, 361);
+  gate('g2', 'A', 808, 431, 408, 457);
+  gate('g3', 'A', 808, 491, 467, 514);
+  gate('g4', 'A', 808, 540, 522, 557);
+  gate('g5', 'A', 808, 593, 567, 619);
+  gate('gor', 'OR', 1090, 449, 296, 607);
+  gate('gt1', 'OR', 721, 705, 682, 725);
+  gate('gt2', 'OR', 720, 767, 745, 788);
+  gate('gt3', 'OR', 720, 828, 807, 848);
+  b.push(['nc1', 'NC', '', 629, 351, [], {}, [8]], ['nc2', 'NC', '', 1642, 405, [], {}, [8]]);
+  di('d1', 849, 431, 't');
+  di('d2', 849, 491, 't');
+  di('d3', 849, 540, 't');
+  di('d4', 849, 593, 't');
+  /* 52G closed (bus 755) and 60FLA not on (bus 767) */
+  w.push(
+    ['i52', [[279, 268], [809, 268]]],
+    ['i52', [[755, 268], [755, 611], [808, 611]]],
+    ['i52', [[755, 431], [808, 431]]],
+    ['i52', [[755, 508], [808, 508]]],
+    ['i52', [[755, 530], [808, 530]]],
+    ['r60', [[585, 391], [669, 391]]],
+    ['r60', [[593, 391], [593, 351], [621, 351]], 0, 0],
+    ['nc1', [[637, 351], [809, 351]]],
+    ['nc1', [[767, 351], [767, 491], [808, 491]]],
+    ['nc1', [[767, 381], [1006, 381]]],
+    ['nc1', [[767, 414], [808, 414]]]
+  );
+  j.push([755, 268], [755, 431], [755, 508], [755, 530], [593, 391], [767, 351], [767, 381], [767, 414]);
+  /* the relays into the gates, the timers and the OR gate */
+  w.push(
+    ['r78', [[585, 322], [809, 322]]],
+    ['g1', [[828, 310], [1090, 310]]],
+    ['g1', [[902, 310], [902, 287], [1006, 287]]],
+    ['r81l1', [[585, 448], [808, 448]]],
+    ['g2', [[827, 431], [849, 431]]],
+    ['d1', [[880, 431], [1006, 431]]],
+    ['r81l2', [[585, 475], [808, 475]]],
+    ['g3', [[827, 491], [849, 491]]],
+    ['d2', [[880, 491], [901, 491], [901, 504], [1090, 504]]],
+    ['d2', [[901, 491], [901, 468], [1006, 468]]],
+    ['r81h1', [[585, 551], [808, 551]]],
+    ['g4', [[827, 540], [849, 540]]],
+    ['d3', [[880, 540], [1006, 540]]],
+    ['r81h2', [[585, 577], [808, 577]]],
+    ['g5', [[827, 593], [849, 593]]],
+    ['d4', [[880, 593], [900, 593], [900, 606], [1090, 606]]],
+    ['d4', [[900, 593], [900, 570], [1006, 570]]],
+    ['gor', [[1109, 449], [1961, 449]]],
+    ['gor', [[1603, 449], [1603, 405], [1634, 405]], 0, 0],
+    ['nc2', [[1650, 405], [1961, 405]]]
+  );
+  j.push([902, 310], [901, 491], [900, 593], [1603, 449]);
+  /* the outputs: [line, words, number, sheet, x of the circle] */
+  [
+    [287, '78A "ON"', '17', 'SH-G-8A', 1019],
+    [381, '60FLA NOT "ON"', '1', 'SH-G-5A', 1019],
+    [431, '81LA "1ST STEP"', '19', 'SH-G-8A', 1019],
+    [468, '81LA "2ND STEP"', '20', 'SH-G-8A', 1019],
+    [540, '81HA "1ST STEP"', '21', 'SH-G-8A', 1019],
+    [570, '81HA "2ND STEP"', '22', 'SH-G-8A', 1019],
+    [405, 'GEN. PROTECTION "A" NOT OPERATED', '16', 'SH-G-2B', 1974],
+    [449, 'GEN. PROTECTION "A" OPERATED', '4', 'SH-G-6B', 1974],
+    [705, 'GENERATOR TRIP', '15', 'SH-G-8B', 1974],
+    [767, 'GEN. PROTECTION OPERATED (52G-TC1)', '2', 'SH-G-1A', 1974],
+    [828, 'GEN. PROTECTION OPERATED (52G-TC2)', '3', 'SH-G-1A', 1974]
+  ].forEach(([y, z, n, sh, x]) => {
+    t.push([x - 28, y - 9, z, 2]);
+    circ(x, y, n, sh, x + 17);
+  });
+  circ(682, 391, '10', 'SH-G-8A', 699);
+  t.push([596, 382, '60FLA "ON"']);
+  /* the ST trip of protection A or B to the generator trip and the breaker trip coils */
+  w.push(
+    ['ia', [[275, 752], [720, 752]]],
+    ['ia', [[587, 752], [587, 688], [721, 688]]],
+    ['ia', [[587, 752], [587, 813], [720, 813]]],
+    ['ib', [[275, 843], [720, 843]]],
+    ['ib', [[637, 843], [637, 719], [721, 719]]],
+    ['ib', [[637, 783], [720, 783]]],
+    ['gt1', [[740, 705], [1961, 705]]],
+    ['gt2', [[739, 767], [1961, 767]]],
+    ['gt3', [[739, 828], [1961, 828]]]
+  );
+  j.push([587, 752], [637, 843], [637, 783]);
+  mark(1261, 752, 844, 'OTHERS', '(GPP)', [767, 828]);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-5B',
+    title: 'GENERATOR PROTECTION LOGIC "A" (2/2)',
+    page: 14,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [205, 118, 2178, 1512],
     fs: 1.2,
     ar: 1,
     o,
@@ -61218,6 +61395,196 @@ const TCS_DESC = {
     b,
     m,
     w,
+    t
+  });
+})();
+/* TCA781 EOS TEST (331DM09788 page 202, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn (the EOS twin of TCA780):
+   - PLU/BUG TEST MT1 A033 (TCA781_1, LMA290): PERM = NOT 001 of the AB output of A004 (back through BTR 016, the crossed circle),
+     SIG = TURBINE SPEED (TCA104) through FTR 035, SET = SG A034 (K:3540rpm). TEST1 / TEST2 / TEST3 through BTR 009 / 010 / 011 =
+     EOS TEST (1) / (2) / (3), A1 / A2 / A3 (to TCA833); TEST through BTR 012 into TEST of A004.
+   - PLU/BUG DIAGNOSIS MT1 A004 (TCA781_2, LMA291): OP1 / OP2 / OP3 = EOS(1) / (2) / (3) OPERATED (A10 / A11 / A12 of TCA053) through
+     BTR 013 / 015 / 018. AB1 / AB2 / AB3 through BTR 014 / 017 / 019 = EOS(1) / (2) / (3) DETECTOR ABNORMAL, B1 / B2 / B3.
+   - Two of three: A 040 / 042 / 043 of OP1-OP2, OP1-OP3, OP2-OP3 into OR 041 = EOS OPERATED, CRT TCA781_4 and C1 (to TCE114);
+     A 036 / 038 / 039 of AB1-AB2, AB1-AB3, AB2-AB3 into OR 037 = EOS DETECTOR ABNORMAL, CRT TCA781_3.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    c = [],
+    t = [],
+    j = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const WT = (key, ...pts) => w.push([key, pts, 1]);
+  const HW = 28.76,
+    X1 = 647,
+    X2 = 1136,
+    xA = 2075,
+    xB = 2070,
+    xG1 = 1539,
+    xG2 = 1537;
+  /* A033 inputs */
+  W('mA004.AB', [1369, 938], [1413, 938], [1413, 612], [465, 612], [465, 265], [530 - HW, 265]);
+  W('not001', [530 + HW, 265], [X1, 265]);
+  WT('kSpeed', [418, 327], [595, 327], [595, 287], [X1, 287]);
+  WT('sgA034', [315 + HW, 391], [615, 391], [615, 309], [X1, 309]);
+  /* A033 outputs */
+  W('mA033.TEST1', [883, 265], [xA - 27, 265]);
+  W('mA033.TEST2', [883, 287], [1470, 287], [1470, 372], [xA - 27, 372]);
+  W('mA033.TEST3', [883, 309], [1414, 309], [1414, 479], [xA - 27, 479]);
+  W('mA033.TEST', [883, 331], [1085, 331], [1085, 960], [X2, 960]);
+  /* A004 inputs and the two of three of them */
+  W('iA10', [533, 872], [X2, 872]);
+  W('iA10', [984, 872], [984, 635], [xG1 - HW, 635]);
+  W('iA10', [1488, 635], [1488, 710], [xG1 - HW, 710]);
+  W('iA11', [533, 935], [1027, 935], [1027, 894], [X2, 894]);
+  W('iA11', [1027, 894], [1027, 657], [xG1 - HW, 657]);
+  W('iA11', [1466, 657], [1466, 774], [xG1 - HW, 774]);
+  W('iA12', [533, 999], [1049, 999], [1049, 916], [X2, 916]);
+  W('iA12', [1049, 916], [1049, 732], [xG1 - HW, 732]);
+  W('iA12', [1445, 732], [1445, 796], [xG1 - HW, 796]);
+  j.push([984, 872], [1027, 894], [1049, 916], [1488, 635], [1466, 657], [1445, 732]);
+  W('a040', [xG1 + HW, 635], [1699 - 29.5, 635]);
+  W('a042', [xG1 + HW, 710], [1625, 710], [1625, 657], [1699 - 29.5, 657]);
+  W('a043', [xG1 + HW, 774], [1646, 774], [1646, 679], [1699 - 29.5, 679]);
+  W('or041', [1699 + 29.5, 635], [2037 - 35, 635]);
+  W('or041', [1806, 635], [1806, 711], [2028 - 27, 711]);
+  j.push([1806, 635]);
+  /* A004 outputs and the two of three of them */
+  W('mA004.AB1', [1369, 872], [xB - 27, 872]);
+  W('mA004.AB1', [1486, 872], [1486, 1125], [xG2 - HW, 1125]);
+  W('mA004.AB1', [1486, 1050], [xG2 - HW, 1050]);
+  W('mA004.AB2', [1369, 894], [1452, 894], [1452, 1189], [xG2 - HW, 1189]);
+  W('mA004.AB2', [1452, 935], [xB - 27, 935]);
+  W('mA004.AB2', [1452, 1072], [xG2 - HW, 1072]);
+  W('mA004.AB3', [1369, 916], [1431, 916], [1431, 1211], [xG2 - HW, 1211]);
+  W('mA004.AB3', [1431, 999], [xB - 27, 999]);
+  W('mA004.AB3', [1431, 1147], [xG2 - HW, 1147]);
+  j.push([1486, 872], [1486, 1050], [1452, 935], [1452, 1072], [1431, 999], [1431, 1147]);
+  W('a036', [xG2 + HW, 1050], [1696 - 29.5, 1050]);
+  W('a038', [xG2 + HW, 1125], [1621, 1125], [1621, 1072], [1696 - 29.5, 1072]);
+  W('a039', [xG2 + HW, 1189], [1643, 1189], [1643, 1094], [1696 - 29.5, 1094]);
+  W('or037', [1696 + 29.5, 1050], [2033 - 35, 1050]);
+  [
+    ['009', 1075, 265],
+    ['010', 1042, 287],
+    ['011', 999, 309],
+    ['012', 957, 331],
+    ['013', 941, 872],
+    ['015', 941, 935],
+    ['018', 941, 999],
+    ['014', 1534, 872],
+    ['017', 1534, 935],
+    ['019', 1534, 999],
+    ['016', 1389, 938]
+  ].forEach(([n, x, y]) => b.push(['btr' + n, 'o:BTR', n, x, y]));
+  b.push(
+    ['ftr035', 'o:FTR', '035', 530, 327],
+    ['not001', 'NOT', '001', 530, 276],
+    ['sgA034', 'SG', 'A034', 315, 402, ['K:3540rpm']],
+    ['x', 'X', '', 465, 284],
+    ['a040', 'A', '040', xG1, 646],
+    ['a042', 'A', '042', xG1, 721],
+    ['a043', 'A', '043', xG1, 785],
+    ['or041', 'OR', '041', 1699, 657, [], {}, [59, 64]],
+    ['a036', 'A', '036', xG2, 1061],
+    ['a038', 'A', '038', xG2, 1136],
+    ['a039', 'A', '039', xG2, 1200],
+    ['or037', 'OR', '037', 1696, 1072, [], {}, [59, 64]]
+  );
+  const DEF1 = ['DEF TD:2.0S', 'DEF TD:5.0S', 'DEF TD:2.0S', 'DEF TD:5.0S', 'DEF TD:2.0S', 'DEF TD:5.0S', 'DEF K:0.0'];
+  const DEF2 = ['DEF TP:15.0S', 'DEF TP:15.0S', 'DEF TP:15.0S', 'DEF TD:2.0S', 'DEF TD:2.0S'];
+  const m = [
+    [
+      'mA033',
+      'PLU/BUG TEST MT1',
+      'TCA781_1',
+      X1,
+      230,
+      236,
+      171,
+      ['PERM', 'SIG', 'SET', 'TEST1', 'TEST2', 'TEST3'],
+      ['TEST1', 'TEST2', 'TEST3', 'TEST'],
+      'A033',
+      DEF1.map((s, i) => [699, Math.round(454 + 21.3 * i), s]),
+      [
+        [265, 287, 309, 331, 353, 375],
+        [265, 287, 309, 331]
+      ]
+    ],
+    [
+      'mA004',
+      'PLU/BUG DIAGNOSIS MT1',
+      'TCA781_2',
+      X2,
+      838,
+      233,
+      148,
+      ['OP1', 'OP2', 'OP3', 'OP', 'TEST'],
+      ['AB1', 'AB2', 'AB3', 'AB'],
+      'A004',
+      [...DEF2.map((s, i) => [1134, Math.round(1039 + 21.3 * i), s]), [1282, 1039, 'DEF TD:2.0S'], [1282, 1060, 'DEF TD:2.0S']],
+      [
+        [872, 894, 916, 938, 960],
+        [872, 894, 916, 938]
+      ]
+    ]
+  ];
+  [
+    ['oA1', 'A1', 265],
+    ['oA2', 'A2', 372],
+    ['oA3', 'A3', 479]
+  ].forEach(([k, n, y]) => c.push([k, 'out', n, xA, y, '', ['TCA833'], 0, 0]));
+  [
+    ['oB1', 'B1', 872],
+    ['oB2', 'B2', 935],
+    ['oB3', 'B3', 999]
+  ].forEach(([k, n, y]) => c.push([k, 'out', n, xB, y, '', ['-'], 0, 0]));
+  [
+    ['iA10', 'A10', 872],
+    ['iA11', 'A11', 935],
+    ['iA12', 'A12', 999]
+  ].forEach(([k, n, y]) => c.push([k, 'in', n, 506, y, '', ['TCA053'], 0, 1]));
+  c.push(['oC1', 'out', 'C1', 2028, 711, '', ['TCE114'], 1, 1]);
+  t.push(
+    [350, 358, '(TCA104)', 1],
+    [762, 424, '(LMA290)', 1],
+    [1248, 1009, '(LMA291)', 1],
+    [1784, 260, 'EOS TEST (1)'],
+    [1783, 367, 'EOS TEST (2)'],
+    [1782, 474, 'EOS TEST (3)'],
+    [538, 868, 'EOS(1) OPERATED'],
+    [538, 931, 'EOS(2) OPERATED'],
+    [538, 995, 'EOS(3) OPERATED'],
+    [1778, 868, 'EOS(1) DETECTOR ABNORMAL'],
+    [1778, 931, 'EOS(2) DETECTOR ABNORMAL'],
+    [1777, 995, 'EOS(3) DETECTOR ABNORMAL'],
+    [1810, 631, 'EOS OPERATED'],
+    [1773, 1046, 'EOS DETECTOR ABNORMAL'],
+    [224, 1525, 'CONTROLLER:'],
+    [384, 1525, 'COMM+MD'],
+    [609, 1498, 'TRIGGER  :'],
+    [609, 1525, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA781',
+    title: 'EOS TEST',
+    page: 202,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [156, 80, 2218, 1543],
+    k: [['kSpeed', 183, 327, 'TURBINE SPEED', 'ref']],
+    c,
+    d: [
+      ['crt4', 2037, 635, 'out', 'TCA781_4', 'S', '#1C'],
+      ['crt3', 2033, 1050, 'out', 'TCA781_3', 'S', '#1C']
+    ],
+    b,
+    m,
+    w,
+    j,
     t
   });
 })();
@@ -144008,7 +144375,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build a9235f3'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build e220ea4'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -170227,6 +170594,8 @@ const TCS_DESC = {
     'Field switch (41) logic: 41 close with ES and 52G open, rated speed, no trip demand and the excitation start; 41 open on the protection trip demands and AVR major trouble; AVR on / off; 41 and AVR states to the other sheets, ATS, DCS, annunciator and SOE',
   'G-5A':
     'GENERATOR PROTECTION LOGIC A (1/2): the relays of generator protection panel A, with 52G closed and 60FLA not on, to the lockout relay 86G-A and its trips',
+  'G-5B':
+    'GENERATOR PROTECTION LOGIC A (2/2): pole slip, VT fuse failure, under and over frequency to generator protection A operated, and the ST trip to the generator trip and breaker trip coils',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -170664,7 +171033,9 @@ const TCS_DESC = {
   TCA777:
     'SIMULATOR: simulated CV inner and outer wall metal temperatures, HP-T inner casing temperature and MSV inlet steam temperature',
   TCA780:
-    'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis'
+    'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis',
+  TCA781:
+    'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -195303,6 +195674,181 @@ const TCS_DESC = {
     dwg: '310SD03-743',
     of: 20,
     f: [204, 128, 2168, 1518],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    a,
+    j
+  });
+})();
+
+/* ---- src/digital/tce/G-5B.js ---- */
+/* SH-G-5B GENERATOR PROTECTION LOGIC "A" (2/2) (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 14). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide. Pole slip, VT fuse failure, under and over frequency of the generator
+   protection panel A (each with 52G closed and 60FLA not on where the drawing has it) out to SH-G-8A and into one OR gate: generator
+   protection "A" operated / not operated. Below: the ST trip of protection A or B to the generator trip and the two breaker trip coils
+   (the mark: the signal also goes to that panel). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    a = [],
+    j = [];
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh, sx) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4]);
+    if (sh) t.push([sx, y + 5, sh]);
+  };
+  /* a gate: bar x, centre y, the bar from y1 to y2 */
+  const gate = (k, ty, bar, y, y1, y2) => {
+    b.push([k, 'G:' + ty, '', bar + 9, y, [], {}, [18, ty === 'OR' ? 18 : 20, 0]]);
+    l.push([[bar, y1], [bar, y2]]);
+  };
+  /* an on delay timer: left x, centre y, the time */
+  const di = (k, x, y, tm) => {
+    r.push([k, x, y - 12, 31, 24, '']);
+    t.push([x + 16, y - 5, 'DI', 4], [x + 16, y + 6, tm, 4]);
+  };
+  /* a relay of the panel: tag, name, top / bottom, the contacts [key, word] */
+  const relay = (tg, nm, y1, y2, P) => {
+    l.push([[254, y1], [585, y1]], [[585, y1], [585, y2]], [[585, y2], [254, y2]], [[254, y2], [254, y1]], [[521, y1], [521, y2]]);
+    t.push([256, y1 - 8, '(' + tg + ')'], [344, y1 - 8, '(GPP)'], [266, (y1 + y2) / 2, nm]);
+    const hh = (y2 - y1) / P.length;
+    P.forEach(([k, z], i) => {
+      const ya = y1 + hh * i;
+      if (i) l.push([[521, ya], [585, ya]]);
+      t.push([553, ya + hh / 2, z, 4]);
+      s.push([k, 521, Math.round(ya), 585, Math.round(ya + hh)]);
+    });
+  };
+  /* a mark that the signal also goes to a panel: x, top / bottom, words, the lines it crosses; the top arrow points right */
+  const mark = (x, y1, y2, z1, z2, X) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[x, P[i]], [x, P[i + 1]]]);
+    a.push([[x, y1], [x + 18, y1]], [[x, y2], [x - 18, y2]]);
+    t.push([x + 21, y1 + 4, z1], [x - 20, y2 + 4, z2, 2]);
+  };
+  /* the relays of the panel */
+  relay('78A', 'POLE SLIP', 306, 338, [['r78', 'ON']]);
+  relay('60FLA', 'VT FUSE FAILURE', 375, 406, [['r60', 'ON']]);
+  relay('81LA', 'UNDER FREQUENCY', 435, 488, [['r81l1', '1ST STEP'], ['r81l2', '2ND STEP']]);
+  relay('81HA', 'OVER FREQUENCY', 536, 590, [['r81h1', '1ST STEP'], ['r81h2', '2ND STEP']]);
+  /* the inputs from the other sheets: [key, number, sheet, x, line, words] */
+  [
+    ['i52', '2', 'SH-G-5A', 266, 268, '52G CLOSED'],
+    ['ia', '1', 'SH-G-5A', 262, 752, 'ST TRIP/GEN. PROTECTION "A" OPERATED (86G-A)'],
+    ['ib', '1', 'SH-G-6A', 262, 843, 'ST TRIP/GEN. PROTECTION "B" OPERATED (86G-B)']
+  ].forEach(([k, n, sh, x, y, z]) => {
+    circ(x, y, n);
+    s.push([k, x - 13, y - 13, x + 13, y + 13]);
+    t.push([x + 18, y - 9, z], [x + 18, y + 15, sh]);
+  });
+  /* the gates */
+  gate('g1', 'A', 809, 310, 259, 361);
+  gate('g2', 'A', 808, 431, 408, 457);
+  gate('g3', 'A', 808, 491, 467, 514);
+  gate('g4', 'A', 808, 540, 522, 557);
+  gate('g5', 'A', 808, 593, 567, 619);
+  gate('gor', 'OR', 1090, 449, 296, 607);
+  gate('gt1', 'OR', 721, 705, 682, 725);
+  gate('gt2', 'OR', 720, 767, 745, 788);
+  gate('gt3', 'OR', 720, 828, 807, 848);
+  b.push(['nc1', 'NC', '', 629, 351, [], {}, [8]], ['nc2', 'NC', '', 1642, 405, [], {}, [8]]);
+  di('d1', 849, 431, 't');
+  di('d2', 849, 491, 't');
+  di('d3', 849, 540, 't');
+  di('d4', 849, 593, 't');
+  /* 52G closed (bus 755) and 60FLA not on (bus 767) */
+  w.push(
+    ['i52', [[279, 268], [809, 268]]],
+    ['i52', [[755, 268], [755, 611], [808, 611]]],
+    ['i52', [[755, 431], [808, 431]]],
+    ['i52', [[755, 508], [808, 508]]],
+    ['i52', [[755, 530], [808, 530]]],
+    ['r60', [[585, 391], [669, 391]]],
+    ['r60', [[593, 391], [593, 351], [621, 351]], 0, 0],
+    ['nc1', [[637, 351], [809, 351]]],
+    ['nc1', [[767, 351], [767, 491], [808, 491]]],
+    ['nc1', [[767, 381], [1006, 381]]],
+    ['nc1', [[767, 414], [808, 414]]]
+  );
+  j.push([755, 268], [755, 431], [755, 508], [755, 530], [593, 391], [767, 351], [767, 381], [767, 414]);
+  /* the relays into the gates, the timers and the OR gate */
+  w.push(
+    ['r78', [[585, 322], [809, 322]]],
+    ['g1', [[828, 310], [1090, 310]]],
+    ['g1', [[902, 310], [902, 287], [1006, 287]]],
+    ['r81l1', [[585, 448], [808, 448]]],
+    ['g2', [[827, 431], [849, 431]]],
+    ['d1', [[880, 431], [1006, 431]]],
+    ['r81l2', [[585, 475], [808, 475]]],
+    ['g3', [[827, 491], [849, 491]]],
+    ['d2', [[880, 491], [901, 491], [901, 504], [1090, 504]]],
+    ['d2', [[901, 491], [901, 468], [1006, 468]]],
+    ['r81h1', [[585, 551], [808, 551]]],
+    ['g4', [[827, 540], [849, 540]]],
+    ['d3', [[880, 540], [1006, 540]]],
+    ['r81h2', [[585, 577], [808, 577]]],
+    ['g5', [[827, 593], [849, 593]]],
+    ['d4', [[880, 593], [900, 593], [900, 606], [1090, 606]]],
+    ['d4', [[900, 593], [900, 570], [1006, 570]]],
+    ['gor', [[1109, 449], [1961, 449]]],
+    ['gor', [[1603, 449], [1603, 405], [1634, 405]], 0, 0],
+    ['nc2', [[1650, 405], [1961, 405]]]
+  );
+  j.push([902, 310], [901, 491], [900, 593], [1603, 449]);
+  /* the outputs: [line, words, number, sheet, x of the circle] */
+  [
+    [287, '78A "ON"', '17', 'SH-G-8A', 1019],
+    [381, '60FLA NOT "ON"', '1', 'SH-G-5A', 1019],
+    [431, '81LA "1ST STEP"', '19', 'SH-G-8A', 1019],
+    [468, '81LA "2ND STEP"', '20', 'SH-G-8A', 1019],
+    [540, '81HA "1ST STEP"', '21', 'SH-G-8A', 1019],
+    [570, '81HA "2ND STEP"', '22', 'SH-G-8A', 1019],
+    [405, 'GEN. PROTECTION "A" NOT OPERATED', '16', 'SH-G-2B', 1974],
+    [449, 'GEN. PROTECTION "A" OPERATED', '4', 'SH-G-6B', 1974],
+    [705, 'GENERATOR TRIP', '15', 'SH-G-8B', 1974],
+    [767, 'GEN. PROTECTION OPERATED (52G-TC1)', '2', 'SH-G-1A', 1974],
+    [828, 'GEN. PROTECTION OPERATED (52G-TC2)', '3', 'SH-G-1A', 1974]
+  ].forEach(([y, z, n, sh, x]) => {
+    t.push([x - 28, y - 9, z, 2]);
+    circ(x, y, n, sh, x + 17);
+  });
+  circ(682, 391, '10', 'SH-G-8A', 699);
+  t.push([596, 382, '60FLA "ON"']);
+  /* the ST trip of protection A or B to the generator trip and the breaker trip coils */
+  w.push(
+    ['ia', [[275, 752], [720, 752]]],
+    ['ia', [[587, 752], [587, 688], [721, 688]]],
+    ['ia', [[587, 752], [587, 813], [720, 813]]],
+    ['ib', [[275, 843], [720, 843]]],
+    ['ib', [[637, 843], [637, 719], [721, 719]]],
+    ['ib', [[637, 783], [720, 783]]],
+    ['gt1', [[740, 705], [1961, 705]]],
+    ['gt2', [[739, 767], [1961, 767]]],
+    ['gt3', [[739, 828], [1961, 828]]]
+  );
+  j.push([587, 752], [637, 843], [637, 783]);
+  mark(1261, 752, 844, 'OTHERS', '(GPP)', [767, 828]);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-5B',
+    title: 'GENERATOR PROTECTION LOGIC "A" (2/2)',
+    page: 14,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [205, 118, 2178, 1512],
     fs: 1.2,
     ar: 1,
     o,
@@ -225984,6 +226530,198 @@ const TCS_DESC = {
     b,
     m,
     w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA781.js ---- */
+/* TCA781 EOS TEST (331DM09788 page 202, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn (the EOS twin of TCA780):
+   - PLU/BUG TEST MT1 A033 (TCA781_1, LMA290): PERM = NOT 001 of the AB output of A004 (back through BTR 016, the crossed circle),
+     SIG = TURBINE SPEED (TCA104) through FTR 035, SET = SG A034 (K:3540rpm). TEST1 / TEST2 / TEST3 through BTR 009 / 010 / 011 =
+     EOS TEST (1) / (2) / (3), A1 / A2 / A3 (to TCA833); TEST through BTR 012 into TEST of A004.
+   - PLU/BUG DIAGNOSIS MT1 A004 (TCA781_2, LMA291): OP1 / OP2 / OP3 = EOS(1) / (2) / (3) OPERATED (A10 / A11 / A12 of TCA053) through
+     BTR 013 / 015 / 018. AB1 / AB2 / AB3 through BTR 014 / 017 / 019 = EOS(1) / (2) / (3) DETECTOR ABNORMAL, B1 / B2 / B3.
+   - Two of three: A 040 / 042 / 043 of OP1-OP2, OP1-OP3, OP2-OP3 into OR 041 = EOS OPERATED, CRT TCA781_4 and C1 (to TCE114);
+     A 036 / 038 / 039 of AB1-AB2, AB1-AB3, AB2-AB3 into OR 037 = EOS DETECTOR ABNORMAL, CRT TCA781_3.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    c = [],
+    t = [],
+    j = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const WT = (key, ...pts) => w.push([key, pts, 1]);
+  const HW = 28.76,
+    X1 = 647,
+    X2 = 1136,
+    xA = 2075,
+    xB = 2070,
+    xG1 = 1539,
+    xG2 = 1537;
+  /* A033 inputs */
+  W('mA004.AB', [1369, 938], [1413, 938], [1413, 612], [465, 612], [465, 265], [530 - HW, 265]);
+  W('not001', [530 + HW, 265], [X1, 265]);
+  WT('kSpeed', [418, 327], [595, 327], [595, 287], [X1, 287]);
+  WT('sgA034', [315 + HW, 391], [615, 391], [615, 309], [X1, 309]);
+  /* A033 outputs */
+  W('mA033.TEST1', [883, 265], [xA - 27, 265]);
+  W('mA033.TEST2', [883, 287], [1470, 287], [1470, 372], [xA - 27, 372]);
+  W('mA033.TEST3', [883, 309], [1414, 309], [1414, 479], [xA - 27, 479]);
+  W('mA033.TEST', [883, 331], [1085, 331], [1085, 960], [X2, 960]);
+  /* A004 inputs and the two of three of them */
+  W('iA10', [533, 872], [X2, 872]);
+  W('iA10', [984, 872], [984, 635], [xG1 - HW, 635]);
+  W('iA10', [1488, 635], [1488, 710], [xG1 - HW, 710]);
+  W('iA11', [533, 935], [1027, 935], [1027, 894], [X2, 894]);
+  W('iA11', [1027, 894], [1027, 657], [xG1 - HW, 657]);
+  W('iA11', [1466, 657], [1466, 774], [xG1 - HW, 774]);
+  W('iA12', [533, 999], [1049, 999], [1049, 916], [X2, 916]);
+  W('iA12', [1049, 916], [1049, 732], [xG1 - HW, 732]);
+  W('iA12', [1445, 732], [1445, 796], [xG1 - HW, 796]);
+  j.push([984, 872], [1027, 894], [1049, 916], [1488, 635], [1466, 657], [1445, 732]);
+  W('a040', [xG1 + HW, 635], [1699 - 29.5, 635]);
+  W('a042', [xG1 + HW, 710], [1625, 710], [1625, 657], [1699 - 29.5, 657]);
+  W('a043', [xG1 + HW, 774], [1646, 774], [1646, 679], [1699 - 29.5, 679]);
+  W('or041', [1699 + 29.5, 635], [2037 - 35, 635]);
+  W('or041', [1806, 635], [1806, 711], [2028 - 27, 711]);
+  j.push([1806, 635]);
+  /* A004 outputs and the two of three of them */
+  W('mA004.AB1', [1369, 872], [xB - 27, 872]);
+  W('mA004.AB1', [1486, 872], [1486, 1125], [xG2 - HW, 1125]);
+  W('mA004.AB1', [1486, 1050], [xG2 - HW, 1050]);
+  W('mA004.AB2', [1369, 894], [1452, 894], [1452, 1189], [xG2 - HW, 1189]);
+  W('mA004.AB2', [1452, 935], [xB - 27, 935]);
+  W('mA004.AB2', [1452, 1072], [xG2 - HW, 1072]);
+  W('mA004.AB3', [1369, 916], [1431, 916], [1431, 1211], [xG2 - HW, 1211]);
+  W('mA004.AB3', [1431, 999], [xB - 27, 999]);
+  W('mA004.AB3', [1431, 1147], [xG2 - HW, 1147]);
+  j.push([1486, 872], [1486, 1050], [1452, 935], [1452, 1072], [1431, 999], [1431, 1147]);
+  W('a036', [xG2 + HW, 1050], [1696 - 29.5, 1050]);
+  W('a038', [xG2 + HW, 1125], [1621, 1125], [1621, 1072], [1696 - 29.5, 1072]);
+  W('a039', [xG2 + HW, 1189], [1643, 1189], [1643, 1094], [1696 - 29.5, 1094]);
+  W('or037', [1696 + 29.5, 1050], [2033 - 35, 1050]);
+  [
+    ['009', 1075, 265],
+    ['010', 1042, 287],
+    ['011', 999, 309],
+    ['012', 957, 331],
+    ['013', 941, 872],
+    ['015', 941, 935],
+    ['018', 941, 999],
+    ['014', 1534, 872],
+    ['017', 1534, 935],
+    ['019', 1534, 999],
+    ['016', 1389, 938]
+  ].forEach(([n, x, y]) => b.push(['btr' + n, 'o:BTR', n, x, y]));
+  b.push(
+    ['ftr035', 'o:FTR', '035', 530, 327],
+    ['not001', 'NOT', '001', 530, 276],
+    ['sgA034', 'SG', 'A034', 315, 402, ['K:3540rpm']],
+    ['x', 'X', '', 465, 284],
+    ['a040', 'A', '040', xG1, 646],
+    ['a042', 'A', '042', xG1, 721],
+    ['a043', 'A', '043', xG1, 785],
+    ['or041', 'OR', '041', 1699, 657, [], {}, [59, 64]],
+    ['a036', 'A', '036', xG2, 1061],
+    ['a038', 'A', '038', xG2, 1136],
+    ['a039', 'A', '039', xG2, 1200],
+    ['or037', 'OR', '037', 1696, 1072, [], {}, [59, 64]]
+  );
+  const DEF1 = ['DEF TD:2.0S', 'DEF TD:5.0S', 'DEF TD:2.0S', 'DEF TD:5.0S', 'DEF TD:2.0S', 'DEF TD:5.0S', 'DEF K:0.0'];
+  const DEF2 = ['DEF TP:15.0S', 'DEF TP:15.0S', 'DEF TP:15.0S', 'DEF TD:2.0S', 'DEF TD:2.0S'];
+  const m = [
+    [
+      'mA033',
+      'PLU/BUG TEST MT1',
+      'TCA781_1',
+      X1,
+      230,
+      236,
+      171,
+      ['PERM', 'SIG', 'SET', 'TEST1', 'TEST2', 'TEST3'],
+      ['TEST1', 'TEST2', 'TEST3', 'TEST'],
+      'A033',
+      DEF1.map((s, i) => [699, Math.round(454 + 21.3 * i), s]),
+      [
+        [265, 287, 309, 331, 353, 375],
+        [265, 287, 309, 331]
+      ]
+    ],
+    [
+      'mA004',
+      'PLU/BUG DIAGNOSIS MT1',
+      'TCA781_2',
+      X2,
+      838,
+      233,
+      148,
+      ['OP1', 'OP2', 'OP3', 'OP', 'TEST'],
+      ['AB1', 'AB2', 'AB3', 'AB'],
+      'A004',
+      [...DEF2.map((s, i) => [1134, Math.round(1039 + 21.3 * i), s]), [1282, 1039, 'DEF TD:2.0S'], [1282, 1060, 'DEF TD:2.0S']],
+      [
+        [872, 894, 916, 938, 960],
+        [872, 894, 916, 938]
+      ]
+    ]
+  ];
+  [
+    ['oA1', 'A1', 265],
+    ['oA2', 'A2', 372],
+    ['oA3', 'A3', 479]
+  ].forEach(([k, n, y]) => c.push([k, 'out', n, xA, y, '', ['TCA833'], 0, 0]));
+  [
+    ['oB1', 'B1', 872],
+    ['oB2', 'B2', 935],
+    ['oB3', 'B3', 999]
+  ].forEach(([k, n, y]) => c.push([k, 'out', n, xB, y, '', ['-'], 0, 0]));
+  [
+    ['iA10', 'A10', 872],
+    ['iA11', 'A11', 935],
+    ['iA12', 'A12', 999]
+  ].forEach(([k, n, y]) => c.push([k, 'in', n, 506, y, '', ['TCA053'], 0, 1]));
+  c.push(['oC1', 'out', 'C1', 2028, 711, '', ['TCE114'], 1, 1]);
+  t.push(
+    [350, 358, '(TCA104)', 1],
+    [762, 424, '(LMA290)', 1],
+    [1248, 1009, '(LMA291)', 1],
+    [1784, 260, 'EOS TEST (1)'],
+    [1783, 367, 'EOS TEST (2)'],
+    [1782, 474, 'EOS TEST (3)'],
+    [538, 868, 'EOS(1) OPERATED'],
+    [538, 931, 'EOS(2) OPERATED'],
+    [538, 995, 'EOS(3) OPERATED'],
+    [1778, 868, 'EOS(1) DETECTOR ABNORMAL'],
+    [1778, 931, 'EOS(2) DETECTOR ABNORMAL'],
+    [1777, 995, 'EOS(3) DETECTOR ABNORMAL'],
+    [1810, 631, 'EOS OPERATED'],
+    [1773, 1046, 'EOS DETECTOR ABNORMAL'],
+    [224, 1525, 'CONTROLLER:'],
+    [384, 1525, 'COMM+MD'],
+    [609, 1498, 'TRIGGER  :'],
+    [609, 1525, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA781',
+    title: 'EOS TEST',
+    page: 202,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [156, 80, 2218, 1543],
+    k: [['kSpeed', 183, 327, 'TURBINE SPEED', 'ref']],
+    c,
+    d: [
+      ['crt4', 2037, 635, 'out', 'TCA781_4', 'S', '#1C'],
+      ['crt3', 2033, 1050, 'out', 'TCA781_3', 'S', '#1C']
+    ],
+    b,
+    m,
+    w,
+    j,
     t
   });
 })();
@@ -329857,7 +330595,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build a9235f3'));
+    row('Version', E('span', 'scsver', ver + ' · build e220ea4'));
   }
   function openSet(near) {
     if (!set) {
