@@ -5,7 +5,7 @@
    (FFR 020 / 024 / 039 with 52G, 41 and 52L close, TW A028), and the system OFF(0). ATS AUTO and ATS OFF are given out as definitions, to
    the operator station lamps (TCA501_1_IIA / _YIP) and to TCT081D / TCE051; CRT OPE PERM goes to the lamp TCA501_1_IYP. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA501',
+  id: 'TCA501', live: { k52g: 'g52', k52l: 'l52c', dAuto: 'auto' },
   title: 'ATS AUTO/OFF',
   page: 79,
   ctl: 'COMM+MD',

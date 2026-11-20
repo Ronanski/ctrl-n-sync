@@ -6,7 +6,7 @@
    step 1 select permissive; HP turbine warming complete with LLM not upper and none of the step conditions (A033) = step 0. Each
    condition with HALFWAY START-UP gives the bypass of its step (A1 .. G2 to TCA520 .. TCA526); step 1 to step 6 bypass (OR 020) to TCA520. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA512',
+  id: 'TCA512', live: { kTs: ['rpm', 'rpm'], k52g: 'g52', k52l: 'l52c' },
   title: 'STEP CONTROL CONDITION',
   page: 82,
   ctl: 'COMM+MD',

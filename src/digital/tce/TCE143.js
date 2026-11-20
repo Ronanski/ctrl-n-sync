@@ -707,7 +707,7 @@
   two(1856, 1212, 'HIGH COUNTER', 'EFFECTIVE');
   two(1902, 1288, 'EHG SOFT', 'MAJOR TROUBLE');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'TCE143',
+    id: 'TCE143', live: { kTS: ['rpm', 'rpm'], i1A: ['rpm', 'rpm'], i1B: ['rpm', 'rpm'], i1C: ['rpm', 'rpm'] },
     title: 'TURBINE SPEED DIAGNOSTICS(4)',
     page: 104,
     ctl: 'EHG+MD',

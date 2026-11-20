@@ -161,7 +161,7 @@
     '2) TC : TRIP COIL OF 52G.'
   ].forEach((z, i) => z && t.push([1272, 1129 + 15.5 * i, z]));
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-1A',
+    id: 'G-1A', live: { i1: 'close52g', nc: 'g52' },
     title: 'GENERATOR CIRCUIT BREAKER LOGIC (52G) (1/2)',
     page: 7,
     dwg: '310SD03-743',

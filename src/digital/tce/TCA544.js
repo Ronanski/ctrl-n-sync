@@ -263,7 +263,7 @@
   );
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
-    id: 'TCA544',
+    id: 'TCA544', live: { kTrip: 'trip', k52g: 'g52' },
     title: 'CRITERIA CONDITION',
     page: 114,
     ctl: 'COMM+MD',

@@ -5,7 +5,7 @@
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 2 ORDER and STEP 2 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA522',
+  id: 'TCA522', live: { i0: 'done1', 'md.EXEC': 'atsCur=2', 'md.EXEC1': 'atsCur=2', 'md.FINISH': 'done2', 'md.FINI1': 'done2' },
   title: 'STEP CONTROL(STEP 2)',
   page: 91,
   ctl: 'COMM+MD',

@@ -234,7 +234,7 @@
     [1000, 1156]
   );
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-1B',
+    id: 'G-1B', live: { i24: 'synAuto', i1: 'f41', i25: 'l52c', i44: 'g52', i8: 'synStart', i41: 'x25', x1: 'x25', k84r: 'v84', y1: 'y25', a25: 'c25', a60r: 'p60r', a60l: 'p60l', a15r: 'p15r', a15l: 'p15l' },
     title: 'GENERATOR CIRCUIT BREAKER LOGIC (52G) (2/2)',
     page: 8,
     dwg: '310SD03-743',

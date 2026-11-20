@@ -38,7 +38,7 @@
     if (i > 1) w.push([set, [[321 - (i > 3 ? 1 : 0), ys], [xc - 40, ys]]]);
   });
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'TCE051',
+    id: 'TCE051', live: { dAtsC: 'auto', iB: 'auto' },
     title: 'CONTROLLER CONDITION(2)',
     page: 24,
     ctl: 'EHG+MD',
