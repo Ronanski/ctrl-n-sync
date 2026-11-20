@@ -525,5 +525,7 @@ const TCS_DESC = {
   TCA685:
     'HP turbine warming valve (TC-20) motor valve: opened by the HP turbine warming start group while the aux steam header pressure permits; open / close signals, AUTO, positions and permissive out.',
   TCA686:
-    'HP turbine warming valve (TC-20) open / close: open and close signals, or in AUTO with program control by exhaust steam pressure and valve position through flickers; each blocks the other.'
+    'HP turbine warming valve (TC-20) open / close: open and close signals, or in AUTO with program control by exhaust steam pressure and valve position through flickers; each blocks the other.',
+  TCA690:
+    'Cold reheat steam non-return valve (TC-19) air operated valve: test set / reset with feedback, solenoid open / close by the ventilator valve, full open / close positions out; trouble alarm when it is not closed with both CVs closed.'
 };
