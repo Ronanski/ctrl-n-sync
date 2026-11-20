@@ -571,5 +571,7 @@ const TCS_DESC = {
   TCA729:
     'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.',
   TCA738:
-    'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.'
+    'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.',
+  TCA740:
+    'Gland seal steam header pressure (aux steam) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn031 with MV, position open / close lamps, SSAFV abnormal latch and lamp, inlet valve initial ramp.'
 };

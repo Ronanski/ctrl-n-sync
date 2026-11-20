@@ -6424,7 +6424,9 @@ const TCS_DESC = {
   TCA729:
     'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.',
   TCA738:
-    'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.'
+    'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.',
+  TCA740:
+    'Gland seal steam header pressure (aux steam) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn031 with MV, position open / close lamps, SSAFV abnormal latch and lamp, inlet valve initial ramp.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -51902,6 +51904,244 @@ const TCS_DESC = {
       [1054.6, R1]
     ],
     t
+  });
+})();
+/* TCA740 GLAND SEAL STEAM HEADER PRESS.(AUX STEAM) CONTROL (331DM09788 page 178, controller COMM+MD, cycle 100 ms). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide. The pressure loop of the gland seal steam spill / supply valve nZT-GSn031,
+   block by block as drawn:
+   - GLAND SEAL STEAM PRESS. (A1 of TCA371, -1 to 2 barg) is PV of the set station TCA-740_1 (SET A031, LMA043, TR = SG A039 0.28
+     kg/cm2g); SUB 008 = PV minus its OUT, G A057 (K -33.334) of it is X of PIF 009.
+   - PIF 009 tracks (top) on the AUT output of the valve station nZT-GSn031 (SET A030, LMA040); ASW 005 takes the PIF output in AUT, else
+     the station OUT. The ASW output = MV (lamp nZT-GSn031_PPV), A1 to TCA850, A to TCA322, Z of PIF 009 and, through the crossed
+     circle, TR of the station; also C of LG C052 (T 1.0 s, INITIAL on its top).
+   - The station POS = SSAFV POS. (A1 of TCA322, 0-100 %): UCK A040 (99.0 %) = OPEN, LCK A041 (1.0 %) = CLOSE lamps.
+   - SSAFV abnormal: MR C047 (POS against LG C052, 20 %) or PI/O error (TCA932-1), A 049 with ANN ENABLE, TP C050 (1.0 s, INITIAL on its
+     top) sets FFS 051, ANN RESET resets it: B out, lamp nZT-GSn031_ABN. ABN of the station = OR 055 of GLAND SEAL PRESS. ABN (D1 of
+     TCA371) and the FFS output taken inverted.
+   - The INITIAL of the inlet valve: RL A003 (0.5 %/s, INITIAL on its top) of ASW 002 (105.0 % when SSAFV INLET VALVE OPEN, B1 of TCA650,
+     else -5.0 %) into PA4 009 with SG C032 1.0, C033 20.0 and A036 -5.0.
+   The words are the ones of the drawing. The tags keep the small n of the drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const h = 28.76,
+    I = cx => cx - h,
+    O = cx => cx + h;
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA740',
+    title: 'GLAND SEAL STEAM HEADER PRESS.(AUX STEAM) CONTROL',
+    page: 178,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [166, 82, 2218, 1540],
+    k: [
+      ['kInit', 274.5, 806.5, 'INITIAL', 'ref'],
+      ['kAnnE', 1293, 1075, 'ANN ENABLE', 'ref'],
+      ['kAnnR', 1293, 1149.5, 'ANN RESET', 'ref']
+    ],
+    c: [
+      ['iA1', 'in', 'A1', 278, 435, '', ['TCA371']],
+      ['iB1', 'in', 'B1', 287, 905, '', ['TCA650']],
+      ['iD1', 'in', 'D1', 273, 1148, '', ['TCA371']],
+      ['iA1p', 'in', 'A1', 272, 1243.5, '', ['TCA322']],
+      ['oC1', 'out', 'C1', 1986, 363, '', ['TCA636']],
+      ['oA1', 'out', 'A1', 1985.5, 436, '', ['TCA850']],
+      ['oA', 'out', 'A', 1982, 641, '', ['TCA322']],
+      ['oB', 'out', 'B', 2130.5, 882.5, '', []] /* the drawing prints no sheet */
+    ],
+    d: [
+      ['crtPpv', 1985, 236, 'out', 'nZT-GSn031_PPV', 'S', '#1C'],
+      ['crtAbn', 2136.5, 970, 'out', '', 'S', '#1C'],
+      ['crtPzso', 1357.5, 1244, 'out', 'nZT-GSn031_PZSO', 'S', '#1C'],
+      ['crtPzsc', 1356, 1371, 'out', 'nZT-GSn031_PZSC', 'S', '#1C']
+    ],
+    r: [['pio', 1301, 997.5, 126.5, 24, 'PI/O error']],
+    m: [
+      [
+        'set1',
+        'SET',
+        'TCA-740_1',
+        535,
+        510,
+        87.5,
+        148.5,
+        ['PV', 'TR'],
+        ['OUT'],
+        'A031',
+        [
+          [542, 678, '(LMA043)'],
+          [517, 707, 'R :2.5%/s'],
+          [517, 728, 'M :10'],
+          [517, 749, 'HL:100.0%'],
+          [517, 770, 'LL:-100.0%']
+        ],
+        [
+          [541, 587.5],
+          [541]
+        ]
+      ],
+      [
+        'set2',
+        'SET',
+        'nZT-GSn031',
+        1388,
+        544,
+        86,
+        148.5,
+        ['ABN', 'POS', 'TR'],
+        ['OUT', 'MAN', 'AUT', 'OPN', 'CLS'],
+        'A030',
+        [
+          [1395, 714, '(LMA040)'],
+          ...['R :2.5%/s', 'M :10', 'HL:100.0%', 'LL:0.0%', 'K:99.0%', 'K:1.0%', 'HL:2.0%', 'LL:-2.0%'].map((s, i) => [
+            1541,
+            Math.round(616 + 21.2 * i),
+            s
+          ])
+        ],
+        [
+          [575, 597.5, 619],
+          [576, 597.5, 619, 641, 664]
+        ]
+      ]
+    ],
+    b: [
+      /* the pressure loop */
+      ['sub008', 'SUB', '008', 718, 446],
+      ['sgA039', 'SG', 'A039', 419, 594.5, ['K:0.28kg/cm2g']],
+      ['gA057', 'G', 'A057', 890, 446, ['K:-33.334']],
+      ['pif009', 'PIF', '009', 1039, 457.5, [], { l: ['X', 'F', 'Z'] }, [82, 65]],
+      ['asw005', 'ASW', '005', 1613, 447],
+      ['ftr043', 'o:FTR', '043', 1742, 236],
+      ['ftr038', 'o:FTR', '038', 1720, 436],
+      ['ftr056', 'o:FTR', '056', 1313, 597.5],
+      ['x1', 'X', '', 1109, 786.5],
+      ['x2', 'X', '', 1355, 619],
+      /* the inlet valve initial */
+      ['sgA001', 'SG', 'A001', 340, 977, ['K:105.0%']],
+      ['sgA006', 'SG', 'A006', 340, 1061.5, ['K:-5.0%']],
+      ['asw002', 'ASW', '002', 628.5, 977.5],
+      ['rlA003', 'RL', 'A003', 724.5, 977.5, ['RI:0.5%/s', 'RD:0.5%/s']],
+      ['btr042', 'o:BTR', '042', 521.5, 905],
+      ['pa4009', 'PA4', '009', 1034.5, 861.5, [], {}, [59, 127]],
+      ['sgC032', 'SG', 'C032', 885.5, 840, ['K:1.0']],
+      ['sgC033', 'SG', 'C033', 885.5, 914.5, ['K:20.0']],
+      ['sgA036', 'SG', 'A036', 884.5, 1031.5, ['K:-5.0']],
+      /* SSAFV abnormal */
+      ['lgC052', 'LG', 'C052', 1193, 915, ['T:1.0S']],
+      ['mrC047', 'MR', 'C047', 1331, 893.5, ['HL:20.0%', 'LL:-20.0%']],
+      ['or048', 'OR', '048', 1533, 893.5],
+      ['a049', 'A', '049', 1617.5, 893.5],
+      ['tpC050', 'TP', 'C050', 1704.5, 893.5, ['TP:1.0S']],
+      ['ffs051', 'FFS', '051', 1799, 893.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['btr053', 'o:BTR', '053', 1883.5, 970],
+      ['btr027', 'o:BTR', '027', 765, 1148],
+      ['or055', 'OR', '055', 1191, 1159],
+      ['x3', 'X', '', 1137.5, 1169.5],
+      /* open / close */
+      ['uckA040', 'UCK', 'A040', 1094, 1254, ['K:99.0%']],
+      ['lckA041', 'LCK', 'A041', 1094, 1382, ['K:1.0%']]
+    ],
+    w: [
+      /* the pressure loop */
+      ['iA1', [[305, 435], [I(718), 435]], 1],
+      ['iA1', [[516, 435], [516, 541], [535, 541]], 1],
+      ['sgA039', [[O(419), 583.5], [535, 583.5]], 1],
+      ['set1.OUT', [[622.5, 541], [664, 541], [664, 457], [I(718), 457]], 1],
+      ['sub008', [[O(718), 435], [I(890), 435]], 1],
+      ['gA057', [[O(890), 435], [998, 435]], 1],
+      ['pif009', [[1080, 436], [I(1613), 436]], 1],
+      ['set2.OUT', [[1474, 576], [1528.5, 576], [1528.5, 457.5], [I(1613), 457.5]], 1],
+      ['set2.AUT', [[1474, 619], [1506, 619], [1506, 373]]],
+      ['set2.AUT', [[1039, 425], [1039, 373], [1613.5, 373], [1613.5, 363], [1959, 363]]],
+      ['set2.AUT', [[1613.5, 373], [1613.5, 425.5]]],
+      /* MV and its users */
+      ['asw005', [[O(1613), 436], [1958.5, 436]], 1],
+      ['asw005', [[1697, 436], [1697, 236], [1950, 236]], 1],
+      ['asw005', [[1697, 436], [1697, 786.5], [941, 786.5], [941, 479], [998, 479]], 1],
+      ['asw005', [[1697, 641], [1955, 641]], 1],
+      ['asw005', [[1332.5, 786.5], [1332.5, 619], [1388, 619]], 1],
+      ['asw005', [[1142.5, 786.5], [1142.5, 904], [I(1193), 904]], 1],
+      /* the valve position */
+      ['iA1p', [[299, 1243.5], [I(1094), 1243.5]], 1],
+      ['iA1p', [[1020, 1243.5], [1020, 1201], [1267.5, 1201], [1267.5, 597.5], [1388, 597.5]], 1],
+      ['iA1p', [[1267.5, 882.5], [I(1331), 882.5]], 1],
+      ['iA1p', [[1020, 1243.5], [1020, 1371], [I(1094), 1371]], 1],
+      ['uckA040', [[O(1094), 1243.5], [1322.5, 1243.5]]],
+      ['lckA041', [[O(1094), 1371], [1321, 1371]]],
+      /* the inlet valve initial */
+      ['iB1', [[314, 905], [628.5, 905], [628.5, 956]]],
+      ['sgA001', [[O(340), 966], [I(628.5), 966]], 1],
+      ['sgA006', [[O(340), 1050.5], [576, 1050.5], [576, 988], [I(628.5), 988]], 1],
+      ['asw002', [[O(628.5), 966.5], [I(724.5), 966.5]], 1],
+      ['kInit', [[507.5, 806.5], [726, 806.5], [726, 956]]],
+      ['kInit', [[726, 806.5], [726, 765], [1195, 765], [1195, 893.5]]],
+      ['kInit', [[1195, 851.5], [1704, 851.5], [1704, 872]]],
+      ['rlA003', [[O(724.5), 966.5], [958.5, 966.5], [958.5, 871.5], [1005, 871.5]], 1],
+      ['sgC032', [[O(885.5), 829], [1005, 829]], 1],
+      ['sgC033', [[O(885.5), 903.5], [938.5, 903.5], [938.5, 850], [1005, 850]], 1],
+      ['sgA036', [[O(884.5), 1020.5], [980, 1020.5], [980, 892.5], [1005, 892.5]], 1],
+      /* SSAFV abnormal */
+      ['lgC052', [[O(1193), 904], [I(1331), 904]], 1],
+      ['mrC047', [[O(1331), 882.5], [I(1533), 882.5]]],
+      ['pio', [[1427.5, 1009.5], [1481, 1009.5], [1481, 904], [I(1533), 904]]],
+      ['or048', [[O(1533), 882.5], [I(1617.5), 882.5]]],
+      ['kAnnE', [[1526, 1075], [1574, 1075], [1574, 904], [I(1617.5), 904]]],
+      ['a049', [[O(1617.5), 882.5], [I(1704.5), 882.5]]],
+      ['tpC050', [[O(1704.5), 882.5], [1759, 882.5]]],
+      ['kAnnR', [[1526, 1149.5], [1747.5, 1149.5], [1747.5, 904], [1759, 904]]],
+      ['ffs051', [[1839, 882.5], [2103.5, 882.5]]],
+      ['ffs051', [[1862.5, 882.5], [1862.5, 970], [2101.5, 970]]],
+      ['ffs051', [[1862.5, 882.5], [1862.5, 831], [1117.5, 831], [1117.5, 1169.5], [I(1191), 1169.5]]],
+      ['iD1', [[300, 1148], [I(1191), 1148]]],
+      ['or055', [[O(1191), 1148], [1248, 1148], [1248, 575], [1388, 575]]]
+    ],
+    j: [
+      [516, 435],
+      [1506, 373],
+      [1613.5, 373],
+      [1697, 436],
+      [1697, 641],
+      [1332.5, 786.5],
+      [1142.5, 786.5],
+      [726, 806.5],
+      [1195, 851.5],
+      [1267.5, 882.5],
+      [1020, 1243.5],
+      [1862.5, 882.5]
+    ],
+    t: [
+      [313, 428, 'GLAND SEAL STEAM PRESS.'],
+      [313, 455, '-1- 2barg'],
+      [676, 430, '+'],
+      [676, 452, '-'],
+      [985, 426, 'T', 1],
+      [1815, 227, 'MV'],
+      [319, 872, 'SSAFV'],
+      [319, 893, 'INLET VALVE OPEN'],
+      [681.5, 956, 'T', 1],
+      [443, 839, '(TCA100)', 1],
+      [305, 1137, 'GLAND SEAL PRESS. ABN'],
+      [305, 1232, 'SSAFV POS.'],
+      [305, 1259, '0- 100%'],
+      [1150, 895, 'C', 1],
+      [1660, 877, 'C', 1],
+      [1747, 876, 'T', 1],
+      [1363.5, 990, '(TCA932-1)', 1],
+      [1463, 1106, '(TCA103)', 1],
+      [1463, 1181, '(TCA100)', 1],
+      [1909, 877, 'SSAFV ABNORMAL'],
+      [1909, 962, 'SSAFV ABNORMAL'],
+      [2107, 921, '(-)', 1],
+      [2072, 941, 'nZT-GSn031_ABN'],
+      [1204, 1237, 'OPEN'],
+      [1202, 1364, 'CLOSE'],
+      [228, 1519, 'CONTROLLER:'],
+      [390, 1519, 'COMM+MD'],
+      [650, 1493, 'TRIGGER  :'],
+      [650, 1519, 'CYCLE(ms):100']
+    ]
   });
 })();
 /* TCA768 SPEED LOAD HOLD (331DM09788 page 195, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
@@ -135215,7 +135455,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 60d883e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 847f86d'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -161751,7 +161991,9 @@ const TCS_DESC = {
   TCA729:
     'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.',
   TCA738:
-    'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.'
+    'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.',
+  TCA740:
+    'Gland seal steam header pressure (aux steam) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn031 with MV, position open / close lamps, SSAFV abnormal latch and lamp, inlet valve initial ramp.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -207751,6 +207993,246 @@ const TCS_DESC = {
       [1054.6, R1]
     ],
     t
+  });
+})();
+
+/* ---- src/digital/tce/TCA740.js ---- */
+/* TCA740 GLAND SEAL STEAM HEADER PRESS.(AUX STEAM) CONTROL (331DM09788 page 178, controller COMM+MD, cycle 100 ms). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide. The pressure loop of the gland seal steam spill / supply valve nZT-GSn031,
+   block by block as drawn:
+   - GLAND SEAL STEAM PRESS. (A1 of TCA371, -1 to 2 barg) is PV of the set station TCA-740_1 (SET A031, LMA043, TR = SG A039 0.28
+     kg/cm2g); SUB 008 = PV minus its OUT, G A057 (K -33.334) of it is X of PIF 009.
+   - PIF 009 tracks (top) on the AUT output of the valve station nZT-GSn031 (SET A030, LMA040); ASW 005 takes the PIF output in AUT, else
+     the station OUT. The ASW output = MV (lamp nZT-GSn031_PPV), A1 to TCA850, A to TCA322, Z of PIF 009 and, through the crossed
+     circle, TR of the station; also C of LG C052 (T 1.0 s, INITIAL on its top).
+   - The station POS = SSAFV POS. (A1 of TCA322, 0-100 %): UCK A040 (99.0 %) = OPEN, LCK A041 (1.0 %) = CLOSE lamps.
+   - SSAFV abnormal: MR C047 (POS against LG C052, 20 %) or PI/O error (TCA932-1), A 049 with ANN ENABLE, TP C050 (1.0 s, INITIAL on its
+     top) sets FFS 051, ANN RESET resets it: B out, lamp nZT-GSn031_ABN. ABN of the station = OR 055 of GLAND SEAL PRESS. ABN (D1 of
+     TCA371) and the FFS output taken inverted.
+   - The INITIAL of the inlet valve: RL A003 (0.5 %/s, INITIAL on its top) of ASW 002 (105.0 % when SSAFV INLET VALVE OPEN, B1 of TCA650,
+     else -5.0 %) into PA4 009 with SG C032 1.0, C033 20.0 and A036 -5.0.
+   The words are the ones of the drawing. The tags keep the small n of the drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const h = 28.76,
+    I = cx => cx - h,
+    O = cx => cx + h;
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA740',
+    title: 'GLAND SEAL STEAM HEADER PRESS.(AUX STEAM) CONTROL',
+    page: 178,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [166, 82, 2218, 1540],
+    k: [
+      ['kInit', 274.5, 806.5, 'INITIAL', 'ref'],
+      ['kAnnE', 1293, 1075, 'ANN ENABLE', 'ref'],
+      ['kAnnR', 1293, 1149.5, 'ANN RESET', 'ref']
+    ],
+    c: [
+      ['iA1', 'in', 'A1', 278, 435, '', ['TCA371']],
+      ['iB1', 'in', 'B1', 287, 905, '', ['TCA650']],
+      ['iD1', 'in', 'D1', 273, 1148, '', ['TCA371']],
+      ['iA1p', 'in', 'A1', 272, 1243.5, '', ['TCA322']],
+      ['oC1', 'out', 'C1', 1986, 363, '', ['TCA636']],
+      ['oA1', 'out', 'A1', 1985.5, 436, '', ['TCA850']],
+      ['oA', 'out', 'A', 1982, 641, '', ['TCA322']],
+      ['oB', 'out', 'B', 2130.5, 882.5, '', []] /* the drawing prints no sheet */
+    ],
+    d: [
+      ['crtPpv', 1985, 236, 'out', 'nZT-GSn031_PPV', 'S', '#1C'],
+      ['crtAbn', 2136.5, 970, 'out', '', 'S', '#1C'],
+      ['crtPzso', 1357.5, 1244, 'out', 'nZT-GSn031_PZSO', 'S', '#1C'],
+      ['crtPzsc', 1356, 1371, 'out', 'nZT-GSn031_PZSC', 'S', '#1C']
+    ],
+    r: [['pio', 1301, 997.5, 126.5, 24, 'PI/O error']],
+    m: [
+      [
+        'set1',
+        'SET',
+        'TCA-740_1',
+        535,
+        510,
+        87.5,
+        148.5,
+        ['PV', 'TR'],
+        ['OUT'],
+        'A031',
+        [
+          [542, 678, '(LMA043)'],
+          [517, 707, 'R :2.5%/s'],
+          [517, 728, 'M :10'],
+          [517, 749, 'HL:100.0%'],
+          [517, 770, 'LL:-100.0%']
+        ],
+        [
+          [541, 587.5],
+          [541]
+        ]
+      ],
+      [
+        'set2',
+        'SET',
+        'nZT-GSn031',
+        1388,
+        544,
+        86,
+        148.5,
+        ['ABN', 'POS', 'TR'],
+        ['OUT', 'MAN', 'AUT', 'OPN', 'CLS'],
+        'A030',
+        [
+          [1395, 714, '(LMA040)'],
+          ...['R :2.5%/s', 'M :10', 'HL:100.0%', 'LL:0.0%', 'K:99.0%', 'K:1.0%', 'HL:2.0%', 'LL:-2.0%'].map((s, i) => [
+            1541,
+            Math.round(616 + 21.2 * i),
+            s
+          ])
+        ],
+        [
+          [575, 597.5, 619],
+          [576, 597.5, 619, 641, 664]
+        ]
+      ]
+    ],
+    b: [
+      /* the pressure loop */
+      ['sub008', 'SUB', '008', 718, 446],
+      ['sgA039', 'SG', 'A039', 419, 594.5, ['K:0.28kg/cm2g']],
+      ['gA057', 'G', 'A057', 890, 446, ['K:-33.334']],
+      ['pif009', 'PIF', '009', 1039, 457.5, [], { l: ['X', 'F', 'Z'] }, [82, 65]],
+      ['asw005', 'ASW', '005', 1613, 447],
+      ['ftr043', 'o:FTR', '043', 1742, 236],
+      ['ftr038', 'o:FTR', '038', 1720, 436],
+      ['ftr056', 'o:FTR', '056', 1313, 597.5],
+      ['x1', 'X', '', 1109, 786.5],
+      ['x2', 'X', '', 1355, 619],
+      /* the inlet valve initial */
+      ['sgA001', 'SG', 'A001', 340, 977, ['K:105.0%']],
+      ['sgA006', 'SG', 'A006', 340, 1061.5, ['K:-5.0%']],
+      ['asw002', 'ASW', '002', 628.5, 977.5],
+      ['rlA003', 'RL', 'A003', 724.5, 977.5, ['RI:0.5%/s', 'RD:0.5%/s']],
+      ['btr042', 'o:BTR', '042', 521.5, 905],
+      ['pa4009', 'PA4', '009', 1034.5, 861.5, [], {}, [59, 127]],
+      ['sgC032', 'SG', 'C032', 885.5, 840, ['K:1.0']],
+      ['sgC033', 'SG', 'C033', 885.5, 914.5, ['K:20.0']],
+      ['sgA036', 'SG', 'A036', 884.5, 1031.5, ['K:-5.0']],
+      /* SSAFV abnormal */
+      ['lgC052', 'LG', 'C052', 1193, 915, ['T:1.0S']],
+      ['mrC047', 'MR', 'C047', 1331, 893.5, ['HL:20.0%', 'LL:-20.0%']],
+      ['or048', 'OR', '048', 1533, 893.5],
+      ['a049', 'A', '049', 1617.5, 893.5],
+      ['tpC050', 'TP', 'C050', 1704.5, 893.5, ['TP:1.0S']],
+      ['ffs051', 'FFS', '051', 1799, 893.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['btr053', 'o:BTR', '053', 1883.5, 970],
+      ['btr027', 'o:BTR', '027', 765, 1148],
+      ['or055', 'OR', '055', 1191, 1159],
+      ['x3', 'X', '', 1137.5, 1169.5],
+      /* open / close */
+      ['uckA040', 'UCK', 'A040', 1094, 1254, ['K:99.0%']],
+      ['lckA041', 'LCK', 'A041', 1094, 1382, ['K:1.0%']]
+    ],
+    w: [
+      /* the pressure loop */
+      ['iA1', [[305, 435], [I(718), 435]], 1],
+      ['iA1', [[516, 435], [516, 541], [535, 541]], 1],
+      ['sgA039', [[O(419), 583.5], [535, 583.5]], 1],
+      ['set1.OUT', [[622.5, 541], [664, 541], [664, 457], [I(718), 457]], 1],
+      ['sub008', [[O(718), 435], [I(890), 435]], 1],
+      ['gA057', [[O(890), 435], [998, 435]], 1],
+      ['pif009', [[1080, 436], [I(1613), 436]], 1],
+      ['set2.OUT', [[1474, 576], [1528.5, 576], [1528.5, 457.5], [I(1613), 457.5]], 1],
+      ['set2.AUT', [[1474, 619], [1506, 619], [1506, 373]]],
+      ['set2.AUT', [[1039, 425], [1039, 373], [1613.5, 373], [1613.5, 363], [1959, 363]]],
+      ['set2.AUT', [[1613.5, 373], [1613.5, 425.5]]],
+      /* MV and its users */
+      ['asw005', [[O(1613), 436], [1958.5, 436]], 1],
+      ['asw005', [[1697, 436], [1697, 236], [1950, 236]], 1],
+      ['asw005', [[1697, 436], [1697, 786.5], [941, 786.5], [941, 479], [998, 479]], 1],
+      ['asw005', [[1697, 641], [1955, 641]], 1],
+      ['asw005', [[1332.5, 786.5], [1332.5, 619], [1388, 619]], 1],
+      ['asw005', [[1142.5, 786.5], [1142.5, 904], [I(1193), 904]], 1],
+      /* the valve position */
+      ['iA1p', [[299, 1243.5], [I(1094), 1243.5]], 1],
+      ['iA1p', [[1020, 1243.5], [1020, 1201], [1267.5, 1201], [1267.5, 597.5], [1388, 597.5]], 1],
+      ['iA1p', [[1267.5, 882.5], [I(1331), 882.5]], 1],
+      ['iA1p', [[1020, 1243.5], [1020, 1371], [I(1094), 1371]], 1],
+      ['uckA040', [[O(1094), 1243.5], [1322.5, 1243.5]]],
+      ['lckA041', [[O(1094), 1371], [1321, 1371]]],
+      /* the inlet valve initial */
+      ['iB1', [[314, 905], [628.5, 905], [628.5, 956]]],
+      ['sgA001', [[O(340), 966], [I(628.5), 966]], 1],
+      ['sgA006', [[O(340), 1050.5], [576, 1050.5], [576, 988], [I(628.5), 988]], 1],
+      ['asw002', [[O(628.5), 966.5], [I(724.5), 966.5]], 1],
+      ['kInit', [[507.5, 806.5], [726, 806.5], [726, 956]]],
+      ['kInit', [[726, 806.5], [726, 765], [1195, 765], [1195, 893.5]]],
+      ['kInit', [[1195, 851.5], [1704, 851.5], [1704, 872]]],
+      ['rlA003', [[O(724.5), 966.5], [958.5, 966.5], [958.5, 871.5], [1005, 871.5]], 1],
+      ['sgC032', [[O(885.5), 829], [1005, 829]], 1],
+      ['sgC033', [[O(885.5), 903.5], [938.5, 903.5], [938.5, 850], [1005, 850]], 1],
+      ['sgA036', [[O(884.5), 1020.5], [980, 1020.5], [980, 892.5], [1005, 892.5]], 1],
+      /* SSAFV abnormal */
+      ['lgC052', [[O(1193), 904], [I(1331), 904]], 1],
+      ['mrC047', [[O(1331), 882.5], [I(1533), 882.5]]],
+      ['pio', [[1427.5, 1009.5], [1481, 1009.5], [1481, 904], [I(1533), 904]]],
+      ['or048', [[O(1533), 882.5], [I(1617.5), 882.5]]],
+      ['kAnnE', [[1526, 1075], [1574, 1075], [1574, 904], [I(1617.5), 904]]],
+      ['a049', [[O(1617.5), 882.5], [I(1704.5), 882.5]]],
+      ['tpC050', [[O(1704.5), 882.5], [1759, 882.5]]],
+      ['kAnnR', [[1526, 1149.5], [1747.5, 1149.5], [1747.5, 904], [1759, 904]]],
+      ['ffs051', [[1839, 882.5], [2103.5, 882.5]]],
+      ['ffs051', [[1862.5, 882.5], [1862.5, 970], [2101.5, 970]]],
+      ['ffs051', [[1862.5, 882.5], [1862.5, 831], [1117.5, 831], [1117.5, 1169.5], [I(1191), 1169.5]]],
+      ['iD1', [[300, 1148], [I(1191), 1148]]],
+      ['or055', [[O(1191), 1148], [1248, 1148], [1248, 575], [1388, 575]]]
+    ],
+    j: [
+      [516, 435],
+      [1506, 373],
+      [1613.5, 373],
+      [1697, 436],
+      [1697, 641],
+      [1332.5, 786.5],
+      [1142.5, 786.5],
+      [726, 806.5],
+      [1195, 851.5],
+      [1267.5, 882.5],
+      [1020, 1243.5],
+      [1862.5, 882.5]
+    ],
+    t: [
+      [313, 428, 'GLAND SEAL STEAM PRESS.'],
+      [313, 455, '-1- 2barg'],
+      [676, 430, '+'],
+      [676, 452, '-'],
+      [985, 426, 'T', 1],
+      [1815, 227, 'MV'],
+      [319, 872, 'SSAFV'],
+      [319, 893, 'INLET VALVE OPEN'],
+      [681.5, 956, 'T', 1],
+      [443, 839, '(TCA100)', 1],
+      [305, 1137, 'GLAND SEAL PRESS. ABN'],
+      [305, 1232, 'SSAFV POS.'],
+      [305, 1259, '0- 100%'],
+      [1150, 895, 'C', 1],
+      [1660, 877, 'C', 1],
+      [1747, 876, 'T', 1],
+      [1363.5, 990, '(TCA932-1)', 1],
+      [1463, 1106, '(TCA103)', 1],
+      [1463, 1181, '(TCA100)', 1],
+      [1909, 877, 'SSAFV ABNORMAL'],
+      [1909, 962, 'SSAFV ABNORMAL'],
+      [2107, 921, '(-)', 1],
+      [2072, 941, 'nZT-GSn031_ABN'],
+      [1204, 1237, 'OPEN'],
+      [1202, 1364, 'CLOSE'],
+      [228, 1519, 'CONTROLLER:'],
+      [390, 1519, 'COMM+MD'],
+      [650, 1493, 'TRIGGER  :'],
+      [650, 1519, 'CYCLE(ms):100']
+    ]
   });
 })();
 
@@ -312151,7 +312633,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 60d883e'));
+    row('Version', E('span', 'scsver', ver + ' · build 847f86d'));
   }
   function openSet(near) {
     if (!set) {
