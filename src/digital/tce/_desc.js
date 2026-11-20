@@ -425,6 +425,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA990:
+    'Communication analog output table (1): lube oil cooler outlet temperature, gland steam and SPUV valve demand, HP warming valve, generator current, voltage, MVar, power factor and frequency.',
   TCE022: 'Explanation of the symbols used on the logic sheets.',
   TCE023: 'Explanation of the PI/O tables on the logic sheets (slot, type, unit, address).',
   TCE040:
