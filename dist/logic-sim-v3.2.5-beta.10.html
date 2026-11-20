@@ -6512,6 +6512,7 @@ const TCS_DESC = {
   TCE305: 'Control oil pump (TB-21, 22): the standby pump starts on low discharge pressure of the running pump.',
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
   TCE350: 'Turning gear (1): the turning gear block, start / stop / auto of the motor, the jog push button, main valve full close, the turning condition with bearing oil pressure normal, and the AUX SIM switches of running, engage and dis-engage.',
+  TCE351: 'Turning gear (2): the turning gear motor start demand (jog, start flip-flop and its reset), and the engage sequence from zero speed: engage condition, start signal, engage failure and during turbine turning.',
   TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
@@ -24334,6 +24335,175 @@ const TCS_DESC = {
     [395, 1529, 'EHG+MD'],
     [620, 1507, 'TRIGGER  :'],
     [620, 1529, 'CYCLE(ms):30']
+  ]
+});
+/* TCE351 TURNING GEAR(2)(TB-9) (331DM09784 page 158, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of
+   the page rendered 2296 wide, the scan skew taken out (x + 0.0158 (y - 800), y - 0.0079 (x - 1100)). The turning gear motor start
+   demand (E) = the jog push button with the turning condition, or the flip-flop FFR 005: set by the turning condition with the motor
+   start (or AUTO with the engage sequence), reset by bearing oil pressure not normal, the motor stop, the electrical trouble or AUTO
+   with the turning sequence. The engage sequence from zero speed and TURNING GEAR ENGAGE (TP pulses A018, A016, A020, A030, C034)
+   gives the engage condition and start signal (A, B), the engage failure (C, lamp) and during turbine turning (D, F, lamp). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE351',
+  title: 'TURNING GEAR(2)(TB-9)',
+  page: 158,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [165, 82, 2215, 1546],
+  k: [['kInit', 283, 671, 'INITIAL', 'ref']],
+  d: [
+    ['crtIee', 2020, 1033, 'out', 'TCE350_T1_IEE', 'S', '#1C'],
+    ['crt2', 2002, 1278, 'out', 'TCE351_2', 'S', '#1C']
+  ],
+  c: [
+    ['cA', 'in', 'A', 300, 191, 'GEAR MOTOR JOG PB', ['TCE350']],
+    ['cC', 'in', 'C', 300, 265, 'TURNING CONDITION', ['TCE350']],
+    ['cE', 'in', 'E', 300, 340, 'TURNING GEAR MOTOR START', ['TCE350']],
+    ['cD', 'in', 'D', 300, 404, 'BEARING OIL PRESS NORMAL', ['TCE350']],
+    ['cH', 'in', 'H', 300, 468, 'TURNING GEAR MOTOR AUTO', ['TCE350']],
+    ['cF', 'in', 'F', 300, 532, 'TURNING GEAR MOTOR STOP', ['TCE350']],
+    ['cK', 'in', 'K', 300, 596, 'ELECTRICAL TROUBLE', ['TCE350']],
+    ['cZ', 'in', 'D', 300, 745, 'ZERO SPEED', ['TCE100']],
+    ['cA1', 'in', 'A1', 300, 820, 'ENGAGE', ['TCE350']],
+    ['cL', 'in', 'L', 300, 1053, 'MOTOR RUNNING', ['TCE350']],
+    ['oE', 'out', 'E', 2077, 191, '', ['TCE350', 'TCE600']],
+    ['oA', 'out', 'A', 2077, 862, '', ['TCE352']],
+    ['oB', 'out', 'B', 2077, 926, '', ['TCE352']],
+    ['oC', 'out', 'C', 2077, 990, '', ['-']],
+    ['oD', 'out', 'D', 2077, 1128, '', ['-']],
+    ['oF', 'out', 'F', 2077, 1203, '', ['TCA539'], 1]
+  ],
+  b: [
+    ['a001', 'A', '001', 760, 201],
+    ['or002', 'OR', '002', 1748, 202],
+    ['a004', 'A', '004', 1513, 276],
+    ['ffr005', 'FFR', '005', 1630, 276, [], { l: ['S', 'R'] }, [80, 43]],
+    ['a006', 'A', '006', 1323, 298],
+    ['or007', 'OR', '007', 1429, 298],
+    ['not010', 'NOT', '010', 1004, 415],
+    ['or011', 'OR', '011', 1514, 436, [], {}, [58, 87]],
+    ['a012', 'A', '012', 1429, 479],
+    ['a013', 'A', '013', 759, 745, [], {}, [58, 63]],
+    ['a014', 'A', '014', 1110, 735],
+    ['or015', 'OR', '015', 1217, 735],
+    ['tp018', 'TP', 'A018', 545, 830, ['TP:5.0S']],
+    ['not019', 'NOT', '019', 651, 830],
+    ['tp016', 'TP', 'A016', 885, 820, ['TP:5.0S']],
+    ['not017', 'NOT', '017', 1003, 820],
+    ['tp020', 'TP', 'A020', 885, 1000, ['TP:45.0S']],
+    ['a021', 'A', '021', 1110, 1000],
+    ['not022', 'NOT', '022', 545, 1064],
+    ['or023', 'OR', '023', 651, 1064],
+    ['not024', 'NOT', '024', 545, 1139],
+    ['not025', 'NOT', '025', 886, 1139],
+    ['or026', 'OR', '026', 1110, 1139],
+    ['a027', 'A', '027', 651, 1213],
+    ['not032', 'NOT', '032', 546, 1288],
+    ['a029', 'A', '029', 759, 1278, [], {}, [58, 66]],
+    ['tp030', 'TP', 'A030', 885, 1267, ['TP:30.0S']],
+    ['or031', 'OR', '031', 1323, 1266],
+    ['a033', 'A', '033', 1217, 1320],
+    ['tp034', 'TP', 'C034', 1003, 1373, ['TP:3.0S']],
+    ['not035', 'NOT', '035', 1111, 1373],
+    ['btr036', 'o:BTR', '036', 1622, 1033],
+    ['btr028', 'o:BTR', '028', 1622, 1203],
+    ['btr038', 'o:BTR', '038', 1622, 1278]
+  ],
+  w: [
+    /* the start demand: jog push button, or the start flip-flop */
+    ['cA', [[327, 191], [731, 191]]],
+    ['cC', [[327, 265], [1484, 265]]],
+    ['cC', [[706, 265], [706, 212], [731, 212]]],
+    ['a001', [[789, 191], [1719, 191]]],
+    ['cE', [[327, 340], [1377, 340], [1377, 308], [1400, 308]]],
+    ['cH', [[327, 468], [1400, 468]]],
+    ['cH', [[706, 468], [706, 287], [1294, 287]]],
+    ['cH', [[706, 468], [706, 724], [730, 724]]],
+    ['a006', [[1352, 287], [1400, 287]]],
+    ['or007', [[1458, 287], [1484, 287]]],
+    ['a004', [[1542, 265], [1590, 265]]],
+    ['ffr005', [[1670, 265], [1695, 265], [1695, 213], [1719, 213]]],
+    ['or002', [[1777, 191], [2050, 191]]],
+    /* the reset of the flip-flop */
+    ['cD', [[327, 404], [975, 404]]],
+    ['not010', [[1033, 404], [1485, 404]]],
+    ['cF', [[327, 532], [1333, 532], [1333, 426], [1485, 426]]],
+    ['cK', [[327, 596], [1355, 596], [1355, 447], [1485, 447]]],
+    ['a012', [[1458, 468], [1485, 468]]],
+    ['or011', [[1543, 404], [1566, 404], [1566, 287], [1590, 287]]],
+    /* the engage sequence */
+    ['kInit', [[517, 671], [886, 671], [886, 799]]],
+    ['kInit', [[545, 671], [545, 809]]],
+    ['kInit', [[812, 671], [812, 1331], [1004, 1331], [1004, 1352]]],
+    ['kInit', [[812, 959], [886, 959], [886, 979]]],
+    ['kInit', [[812, 1224], [886, 1224], [886, 1245]]],
+    ['cZ', [[327, 745], [730, 745]]],
+    ['cZ', [[470, 745], [470, 1277], [517, 1277]]],
+    ['cZ', [[470, 990], [856, 990]]],
+    ['cZ', [[832, 990], [832, 1128], [857, 1128]]],
+    ['cA1', [[327, 820], [516, 820]]],
+    ['cA1', [[491, 820], [491, 1203], [622, 1203]]],
+    ['cA1', [[491, 1128], [516, 1128]]],
+    ['tp018', [[574, 820], [622, 820]]],
+    ['tp018', [[598, 820], [598, 926], [2050, 926]]],
+    ['tp018', [[1164, 926], [1164, 746], [1188, 746]]],
+    ['not019', [[680, 820], [706, 820], [706, 768], [730, 768]]],
+    ['not019', [[706, 820], [706, 1256], [730, 1256]]],
+    ['a013', [[788, 724], [1081, 724]]],
+    ['a013', [[832, 724], [832, 809], [856, 809]]],
+    ['tp016', [[914, 809], [974, 809]]],
+    ['tp016', [[950, 809], [950, 1363], [974, 1363]]],
+    ['tp016', [[950, 862], [2050, 862]]],
+    ['tp016', [[950, 1309], [1188, 1309]]],
+    ['not017', [[1032, 809], [1058, 809], [1058, 746], [1081, 746]]],
+    ['a014', [[1139, 724], [1188, 724]]],
+    ['or015', [[1246, 724], [1269, 724], [1269, 308], [1294, 308]]],
+    ['tp020', [[914, 990], [1081, 990]]],
+    ['cL', [[327, 1053], [516, 1053]]],
+    ['cL', [[449, 1053], [449, 1331], [706, 1331], [706, 1299], [730, 1299]]],
+    ['cL', [[449, 1224], [622, 1224]]],
+    ['not022', [[574, 1053], [622, 1053]]],
+    ['not024', [[574, 1128], [598, 1128], [598, 1075], [622, 1075]]],
+    ['or023', [[680, 1053], [1058, 1053], [1058, 1011], [1081, 1011]]],
+    ['a021', [[1139, 990], [2050, 990]]],
+    ['a021', [[1587, 990], [1587, 1033], [1985, 1033]]],
+    ['not025', [[915, 1128], [1081, 1128]]],
+    ['a027', [[680, 1203], [1058, 1203], [1058, 1150], [1081, 1150]]],
+    ['or026', [[1139, 1128], [2050, 1128]]],
+    ['or026', [[1587, 1128], [1587, 1278], [1967, 1278]]],
+    ['or026', [[1587, 1203], [2050, 1203]]],
+    ['not032', [[575, 1277], [730, 1277]]],
+    ['a029', [[788, 1256], [856, 1256]]],
+    ['tp030', [[914, 1256], [1294, 1256]]],
+    ['tp034', [[1032, 1363], [1082, 1363]]],
+    ['not035', [[1140, 1363], [1164, 1363], [1164, 1331], [1188, 1331]]],
+    ['a033', [[1246, 1309], [1270, 1309], [1270, 1277], [1294, 1277]]],
+    ['or031', [[1352, 1256], [1376, 1256], [1376, 490], [1400, 490]]]
+  ],
+  t: [
+    [333, 565, 'TURNING GEAR MOTOR', 0, 2.05],
+    [333, 789, 'TURNING GEAR', 0, 2.05],
+    [333, 1022, 'TURNING GEAR', 0, 2.05],
+    [428, 703, '(TCE050)', 0, 1.7],
+    [503, 812, 'T', 0, 1.9],
+    [843, 801, 'T', 0, 1.9],
+    [843, 982, 'T', 0, 1.9],
+    [843, 1248, 'T', 0, 1.9],
+    [960, 1355, 'T', 0, 1.9],
+    [1577, 257, 'T', 0, 1.9],
+    [1825, 160, 'TURNING GEAR', 0, 2.05],
+    [1825, 181, 'MOTOR START DEMAND', 0, 2.05],
+    [1688, 852, 'TURNING GEAR ENGAGE CONDITION', 0, 2.05],
+    [1688, 916, 'TURNING GEAR ENGAGE START SIGNAL', 0, 2.05],
+    [1688, 980, 'TURNING GEAR ENGAGE FAILURE', 0, 2.05],
+    [1687, 1023, 'TURNING FAILURE', 0, 2.05],
+    [1688, 1118, 'DURING TURBINE TURNING', 0, 2.05],
+    [1690, 1193, 'TURBINE TURNING', 0, 2.05],
+    [1690, 1268, 'TURBINE TURNING', 0, 2.05],
+    [235, 1522, 'CONTROLLER:'],
+    [395, 1522, 'EHG+MD'],
+    [620, 1500, 'TRIGGER  :'],
+    [620, 1522, 'CYCLE(ms):30']
   ]
 });
 /* TCE450 INDICATION FOR VALVE(1) (331DM09784 page 162, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
@@ -152320,7 +152490,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 33bdb1b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build d06f82a'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -178944,6 +179114,7 @@ const TCS_DESC = {
   TCE305: 'Control oil pump (TB-21, 22): the standby pump starts on low discharge pressure of the running pump.',
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
   TCE350: 'Turning gear (1): the turning gear block, start / stop / auto of the motor, the jog push button, main valve full close, the turning condition with bearing oil pressure normal, and the AUX SIM switches of running, engage and dis-engage.',
+  TCE351: 'Turning gear (2): the turning gear motor start demand (jog, start flip-flop and its reset), and the engage sequence from zero speed: engage condition, start signal, engage failure and during turbine turning.',
   TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
@@ -197052,6 +197223,177 @@ const TCS_DESC = {
     [395, 1529, 'EHG+MD'],
     [620, 1507, 'TRIGGER  :'],
     [620, 1529, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE351.js ---- */
+/* TCE351 TURNING GEAR(2)(TB-9) (331DM09784 page 158, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of
+   the page rendered 2296 wide, the scan skew taken out (x + 0.0158 (y - 800), y - 0.0079 (x - 1100)). The turning gear motor start
+   demand (E) = the jog push button with the turning condition, or the flip-flop FFR 005: set by the turning condition with the motor
+   start (or AUTO with the engage sequence), reset by bearing oil pressure not normal, the motor stop, the electrical trouble or AUTO
+   with the turning sequence. The engage sequence from zero speed and TURNING GEAR ENGAGE (TP pulses A018, A016, A020, A030, C034)
+   gives the engage condition and start signal (A, B), the engage failure (C, lamp) and during turbine turning (D, F, lamp). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE351',
+  title: 'TURNING GEAR(2)(TB-9)',
+  page: 158,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [165, 82, 2215, 1546],
+  k: [['kInit', 283, 671, 'INITIAL', 'ref']],
+  d: [
+    ['crtIee', 2020, 1033, 'out', 'TCE350_T1_IEE', 'S', '#1C'],
+    ['crt2', 2002, 1278, 'out', 'TCE351_2', 'S', '#1C']
+  ],
+  c: [
+    ['cA', 'in', 'A', 300, 191, 'GEAR MOTOR JOG PB', ['TCE350']],
+    ['cC', 'in', 'C', 300, 265, 'TURNING CONDITION', ['TCE350']],
+    ['cE', 'in', 'E', 300, 340, 'TURNING GEAR MOTOR START', ['TCE350']],
+    ['cD', 'in', 'D', 300, 404, 'BEARING OIL PRESS NORMAL', ['TCE350']],
+    ['cH', 'in', 'H', 300, 468, 'TURNING GEAR MOTOR AUTO', ['TCE350']],
+    ['cF', 'in', 'F', 300, 532, 'TURNING GEAR MOTOR STOP', ['TCE350']],
+    ['cK', 'in', 'K', 300, 596, 'ELECTRICAL TROUBLE', ['TCE350']],
+    ['cZ', 'in', 'D', 300, 745, 'ZERO SPEED', ['TCE100']],
+    ['cA1', 'in', 'A1', 300, 820, 'ENGAGE', ['TCE350']],
+    ['cL', 'in', 'L', 300, 1053, 'MOTOR RUNNING', ['TCE350']],
+    ['oE', 'out', 'E', 2077, 191, '', ['TCE350', 'TCE600']],
+    ['oA', 'out', 'A', 2077, 862, '', ['TCE352']],
+    ['oB', 'out', 'B', 2077, 926, '', ['TCE352']],
+    ['oC', 'out', 'C', 2077, 990, '', ['-']],
+    ['oD', 'out', 'D', 2077, 1128, '', ['-']],
+    ['oF', 'out', 'F', 2077, 1203, '', ['TCA539'], 1]
+  ],
+  b: [
+    ['a001', 'A', '001', 760, 201],
+    ['or002', 'OR', '002', 1748, 202],
+    ['a004', 'A', '004', 1513, 276],
+    ['ffr005', 'FFR', '005', 1630, 276, [], { l: ['S', 'R'] }, [80, 43]],
+    ['a006', 'A', '006', 1323, 298],
+    ['or007', 'OR', '007', 1429, 298],
+    ['not010', 'NOT', '010', 1004, 415],
+    ['or011', 'OR', '011', 1514, 436, [], {}, [58, 87]],
+    ['a012', 'A', '012', 1429, 479],
+    ['a013', 'A', '013', 759, 745, [], {}, [58, 63]],
+    ['a014', 'A', '014', 1110, 735],
+    ['or015', 'OR', '015', 1217, 735],
+    ['tp018', 'TP', 'A018', 545, 830, ['TP:5.0S']],
+    ['not019', 'NOT', '019', 651, 830],
+    ['tp016', 'TP', 'A016', 885, 820, ['TP:5.0S']],
+    ['not017', 'NOT', '017', 1003, 820],
+    ['tp020', 'TP', 'A020', 885, 1000, ['TP:45.0S']],
+    ['a021', 'A', '021', 1110, 1000],
+    ['not022', 'NOT', '022', 545, 1064],
+    ['or023', 'OR', '023', 651, 1064],
+    ['not024', 'NOT', '024', 545, 1139],
+    ['not025', 'NOT', '025', 886, 1139],
+    ['or026', 'OR', '026', 1110, 1139],
+    ['a027', 'A', '027', 651, 1213],
+    ['not032', 'NOT', '032', 546, 1288],
+    ['a029', 'A', '029', 759, 1278, [], {}, [58, 66]],
+    ['tp030', 'TP', 'A030', 885, 1267, ['TP:30.0S']],
+    ['or031', 'OR', '031', 1323, 1266],
+    ['a033', 'A', '033', 1217, 1320],
+    ['tp034', 'TP', 'C034', 1003, 1373, ['TP:3.0S']],
+    ['not035', 'NOT', '035', 1111, 1373],
+    ['btr036', 'o:BTR', '036', 1622, 1033],
+    ['btr028', 'o:BTR', '028', 1622, 1203],
+    ['btr038', 'o:BTR', '038', 1622, 1278]
+  ],
+  w: [
+    /* the start demand: jog push button, or the start flip-flop */
+    ['cA', [[327, 191], [731, 191]]],
+    ['cC', [[327, 265], [1484, 265]]],
+    ['cC', [[706, 265], [706, 212], [731, 212]]],
+    ['a001', [[789, 191], [1719, 191]]],
+    ['cE', [[327, 340], [1377, 340], [1377, 308], [1400, 308]]],
+    ['cH', [[327, 468], [1400, 468]]],
+    ['cH', [[706, 468], [706, 287], [1294, 287]]],
+    ['cH', [[706, 468], [706, 724], [730, 724]]],
+    ['a006', [[1352, 287], [1400, 287]]],
+    ['or007', [[1458, 287], [1484, 287]]],
+    ['a004', [[1542, 265], [1590, 265]]],
+    ['ffr005', [[1670, 265], [1695, 265], [1695, 213], [1719, 213]]],
+    ['or002', [[1777, 191], [2050, 191]]],
+    /* the reset of the flip-flop */
+    ['cD', [[327, 404], [975, 404]]],
+    ['not010', [[1033, 404], [1485, 404]]],
+    ['cF', [[327, 532], [1333, 532], [1333, 426], [1485, 426]]],
+    ['cK', [[327, 596], [1355, 596], [1355, 447], [1485, 447]]],
+    ['a012', [[1458, 468], [1485, 468]]],
+    ['or011', [[1543, 404], [1566, 404], [1566, 287], [1590, 287]]],
+    /* the engage sequence */
+    ['kInit', [[517, 671], [886, 671], [886, 799]]],
+    ['kInit', [[545, 671], [545, 809]]],
+    ['kInit', [[812, 671], [812, 1331], [1004, 1331], [1004, 1352]]],
+    ['kInit', [[812, 959], [886, 959], [886, 979]]],
+    ['kInit', [[812, 1224], [886, 1224], [886, 1245]]],
+    ['cZ', [[327, 745], [730, 745]]],
+    ['cZ', [[470, 745], [470, 1277], [517, 1277]]],
+    ['cZ', [[470, 990], [856, 990]]],
+    ['cZ', [[832, 990], [832, 1128], [857, 1128]]],
+    ['cA1', [[327, 820], [516, 820]]],
+    ['cA1', [[491, 820], [491, 1203], [622, 1203]]],
+    ['cA1', [[491, 1128], [516, 1128]]],
+    ['tp018', [[574, 820], [622, 820]]],
+    ['tp018', [[598, 820], [598, 926], [2050, 926]]],
+    ['tp018', [[1164, 926], [1164, 746], [1188, 746]]],
+    ['not019', [[680, 820], [706, 820], [706, 768], [730, 768]]],
+    ['not019', [[706, 820], [706, 1256], [730, 1256]]],
+    ['a013', [[788, 724], [1081, 724]]],
+    ['a013', [[832, 724], [832, 809], [856, 809]]],
+    ['tp016', [[914, 809], [974, 809]]],
+    ['tp016', [[950, 809], [950, 1363], [974, 1363]]],
+    ['tp016', [[950, 862], [2050, 862]]],
+    ['tp016', [[950, 1309], [1188, 1309]]],
+    ['not017', [[1032, 809], [1058, 809], [1058, 746], [1081, 746]]],
+    ['a014', [[1139, 724], [1188, 724]]],
+    ['or015', [[1246, 724], [1269, 724], [1269, 308], [1294, 308]]],
+    ['tp020', [[914, 990], [1081, 990]]],
+    ['cL', [[327, 1053], [516, 1053]]],
+    ['cL', [[449, 1053], [449, 1331], [706, 1331], [706, 1299], [730, 1299]]],
+    ['cL', [[449, 1224], [622, 1224]]],
+    ['not022', [[574, 1053], [622, 1053]]],
+    ['not024', [[574, 1128], [598, 1128], [598, 1075], [622, 1075]]],
+    ['or023', [[680, 1053], [1058, 1053], [1058, 1011], [1081, 1011]]],
+    ['a021', [[1139, 990], [2050, 990]]],
+    ['a021', [[1587, 990], [1587, 1033], [1985, 1033]]],
+    ['not025', [[915, 1128], [1081, 1128]]],
+    ['a027', [[680, 1203], [1058, 1203], [1058, 1150], [1081, 1150]]],
+    ['or026', [[1139, 1128], [2050, 1128]]],
+    ['or026', [[1587, 1128], [1587, 1278], [1967, 1278]]],
+    ['or026', [[1587, 1203], [2050, 1203]]],
+    ['not032', [[575, 1277], [730, 1277]]],
+    ['a029', [[788, 1256], [856, 1256]]],
+    ['tp030', [[914, 1256], [1294, 1256]]],
+    ['tp034', [[1032, 1363], [1082, 1363]]],
+    ['not035', [[1140, 1363], [1164, 1363], [1164, 1331], [1188, 1331]]],
+    ['a033', [[1246, 1309], [1270, 1309], [1270, 1277], [1294, 1277]]],
+    ['or031', [[1352, 1256], [1376, 1256], [1376, 490], [1400, 490]]]
+  ],
+  t: [
+    [333, 565, 'TURNING GEAR MOTOR', 0, 2.05],
+    [333, 789, 'TURNING GEAR', 0, 2.05],
+    [333, 1022, 'TURNING GEAR', 0, 2.05],
+    [428, 703, '(TCE050)', 0, 1.7],
+    [503, 812, 'T', 0, 1.9],
+    [843, 801, 'T', 0, 1.9],
+    [843, 982, 'T', 0, 1.9],
+    [843, 1248, 'T', 0, 1.9],
+    [960, 1355, 'T', 0, 1.9],
+    [1577, 257, 'T', 0, 1.9],
+    [1825, 160, 'TURNING GEAR', 0, 2.05],
+    [1825, 181, 'MOTOR START DEMAND', 0, 2.05],
+    [1688, 852, 'TURNING GEAR ENGAGE CONDITION', 0, 2.05],
+    [1688, 916, 'TURNING GEAR ENGAGE START SIGNAL', 0, 2.05],
+    [1688, 980, 'TURNING GEAR ENGAGE FAILURE', 0, 2.05],
+    [1687, 1023, 'TURNING FAILURE', 0, 2.05],
+    [1688, 1118, 'DURING TURBINE TURNING', 0, 2.05],
+    [1690, 1193, 'TURBINE TURNING', 0, 2.05],
+    [1690, 1268, 'TURBINE TURNING', 0, 2.05],
+    [235, 1522, 'CONTROLLER:'],
+    [395, 1522, 'EHG+MD'],
+    [620, 1500, 'TRIGGER  :'],
+    [620, 1522, 'CYCLE(ms):30']
   ]
 });
 
@@ -346611,7 +346953,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 33bdb1b'));
+    row('Version', E('span', 'scsver', ver + ' · build d06f82a'));
   }
   function openSet(near) {
     if (!set) {
