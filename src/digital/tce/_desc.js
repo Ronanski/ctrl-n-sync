@@ -791,5 +791,7 @@ const TCS_DESC = {
   TCA819:
     'Alarm: TPC power supply, EHG CPU (through a NOT) and EHG power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT; grouped through three ORs as A, B and C to TCA822.',
   TCA820:
-    'Alarm: trip PCM and Modbus CPU faults (each through a NOT) and Modbus power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT; grouped through two ORs as A and B to TCA822.'
+    'Alarm: trip PCM and Modbus CPU faults (each through a NOT) and Modbus power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT; grouped through two ORs as A and B to TCA822.',
+  TCA821:
+    'Alarm: the AC / DC control, lighting and space heater, and AC / DC protection power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT and all through one OR to TCA822; both DC protection power supplies abnormal (AND) = PROTECTION P.S. LOST to TCE472.'
 };
