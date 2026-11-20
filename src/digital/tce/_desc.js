@@ -541,5 +541,7 @@ const TCS_DESC = {
   TCA714:
     'No.3 extraction steam secondary non-return valve (TC-43) air operated valve: test set / reset with feedback, open / close by the deaerator storage tank level very high, opened / closed positions in; positions and trouble lamp out.',
   TCA715:
-    'No.5 extraction steam non-return valve (TC-45) air operated valve: test set / reset with feedback, open / close by the No.2 LP heater level very high, opened / closed positions in; positions and abnormal lamp out.'
+    'No.5 extraction steam non-return valve (TC-45) air operated valve: test set / reset with feedback, open / close by the No.2 LP heater level very high, opened / closed positions in; positions and abnormal lamp out.',
+  TCA729:
+    'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.'
 };
