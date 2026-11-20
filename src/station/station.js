@@ -598,6 +598,7 @@
     TD: 'Turbine alarms',
     TE: 'Group control',
     GD: 'Generator',
+    G: 'Generator protection and breakers',
     TCE: 'Governor logic (TCE)',
     TCA: 'Start-up logic (TCA)',
     '': 'Typical logic'

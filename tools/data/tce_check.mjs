@@ -1,7 +1,7 @@
 // Checks the TCS soft logic sheets typed in src/digital/tce/*.js (format: src/digital/parts/02d-tce.js).
 // usage: node tools/data/tce_check.mjs        exit 1 when a sheet breaks a rule
 // Rules:
-//   - id, title, page, ctl, cycle and the frame f are there (an IBD sheet, ibd set: no ctl / cycle); the id is unique and equals the file name;
+//   - id, title, page, ctl, cycle and the frame f are there (an IBD sheet, ibd set, or a sheet of another drawing, dwg set: no ctl / cycle); the id is unique and equals the file name;
 //   - an IBD sheet: every key of nets is a key of the sheet, every net a whole number, one IBD sheet typed once;
 //   - every key of a sheet is unique;
 //   - a wire is made of horizontal and vertical pieces only (no slanted line, no curve), and has at least two points;
@@ -51,7 +51,7 @@ for (const f of files) {
     all.push(q.id);
     if (q.id + '.js' !== f) E('the file is named ' + f);
     if (!DESC[q.ibd ? 'IBD-' + q.ibd : q.id]) E('no description in src/digital/tce/_desc.js');
-    for (const k of q.ibd ? ['id', 'title', 'page'] : ['id', 'title', 'page', 'ctl', 'cycle']) if (q[k] == null || q[k] === '') E('no ' + k);
+    for (const k of q.ibd || q.dwg ? ['id', 'title', 'page'] : ['id', 'title', 'page', 'ctl', 'cycle']) if (q[k] == null || q[k] === '') E('no ' + k);
     if (!Array.isArray(q.f) || q.f.length !== 4 || !(q.f[2] > q.f[0]) || !(q.f[3] > q.f[1])) E('the frame f is not [x0, y0, x1, y1]');
     const keys = new Set(),
       add = k => (keys.has(k) ? E('key twice: ' + k) : keys.add(k));
