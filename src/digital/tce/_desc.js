@@ -240,6 +240,8 @@ const TCS_DESC = {
     'Analog input diagnostics (15), card TCA970: generator cooling gas air cooler outlet temperatures (A) to (D), each through an AI DIAG.MD block to the TCE controller.',
   TCA443:
     'Analog input diagnostics (15), card TCA970: AC exciter outlet air temperature and generator stator coil temperature (F), each through an AI DIAG.MD block to the TCE controller.',
+  'G-1A':
+    'Generator breaker 52G (1/2): the close order through the closing interlock, the open orders through two OR gates to trip coils TC1 and TC2, and the breaker state out to the panels, lamps and other sheets.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:

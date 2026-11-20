@@ -39,6 +39,7 @@
    A sheet of the Interlock Block Diagram 310SC90-794 (TCS IBD, typicals and TA / TB ...) typed in the same format takes the place of the sheet the app
    builds from the IBD netlist (02c-tcs.js): same gates, same net numbers, so the logic, the trace and the values of the engine stay; only the picture is
    the typed one. More fields for it:
+     dwg: '310SD03-743', of: 20                                  a sheet of another drawing (no ctl / cycle): its drawing number and the sheets of it
      ibd: '15' | 'TA-9'                                              the IBD sheet it replaces (no ctl / cycle needed)
      nets: { source key: net number of the IBD netlist }             the net of every source; a source without one gets a free number
      fs: 1.1                                                         the size of the words (1 = the size of the TCE sheets)
@@ -56,7 +57,8 @@
      j: [[x, y], ...]                                                junction dot of the drawing (the net is the one of the wire through it) */
 const TCE_SHEETS = typeof window !== 'undefined' && window.TCE_SHEETS ? window.TCE_SHEETS : [];
 const tceDesc = q => (typeof TCS_DESC !== 'undefined' && TCS_DESC[q.ibd ? 'IBD-' + q.ibd : q.id]) || '';
-const tceCat = id => (/^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : 'GOVERNOR SOFT LOGIC (TCE)');
+const tceCat = id =>
+  /^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : /^G-/.test(id) ? 'GENERATOR PROTECTION / BREAKER LOGIC' : 'GOVERNOR SOFT LOGIC (TCE)';
 function tceSheet(q) {
   const K = 0.32,
     [fx0, fy0, fx1, fy1] = q.f,
@@ -153,6 +155,9 @@ function tceSheet(q) {
       T((/^\d/.test(q.ibd) ? 'TYPICAL ' : '') + q.ibd + '  ' + q.title, 30, 815, 2.6, 0),
       T('TCS SHEET ' + q.page + ' OF 99', 1160, 815, 2.05, 2)
     );
+  else if (q.dwg)
+    /* a sheet of another drawing (the generator protection / breaker logic 310SD03-743): its sheet number and the sheet of that drawing */
+    tx.push(T('SH-' + q.id + '  ' + q.title, 30, 815, 2.6, 0), T(q.dwg + '   SHEET ' + q.page + (q.of ? ' OF ' + q.of : ''), 1160, 815, 2.05, 2));
   else
     tx.push(
       T(q.id + '  ' + q.title, 30, 815, 2.6, 0),
