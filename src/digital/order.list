@@ -182,6 +182,15 @@ tce/IBD-TA-38.js
 tce/IBD-TA-41.js
 tce/IBD-TA-42.js
 tce/IBD-TA-43.js
+tce/IBD-TB-1.js
+tce/IBD-TB-2.js
+tce/IBD-TB-5.js
+tce/IBD-TB-9.js
+tce/IBD-TB-10.js
+tce/IBD-TB-12.js
+tce/IBD-TB-15.js
+tce/IBD-TB-21.js
+tce/IBD-TB-22.js
 parts/02d-tce.js
 parts/03-models.js
 parts/03b-sim.js
