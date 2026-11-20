@@ -6109,6 +6109,10 @@ const TCS_DESC = {
     'GENERATOR PROTECTION LOGIC A (1/2): the relays of generator protection panel A, with 52G closed and 60FLA not on, to the lockout relay 86G-A and its trips',
   'G-5B':
     'GENERATOR PROTECTION LOGIC A (2/2): pole slip, VT fuse failure, under and over frequency to generator protection A operated, and the ST trip to the generator trip and breaker trip coils',
+  'G-6A':
+    'GENERATOR PROTECTION LOGIC B (1/2): the relays of generator protection panel B, with 52G closed and 60FLB not on, to the lockout relay 86G-B and its trips',
+  'G-6B':
+    'GENERATOR PROTECTION LOGIC B (2/2): pole slip, VT fuse failure, under and over frequency to generator protection B operated, and protection A or B to the line breaker trip coils',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -6548,7 +6552,9 @@ const TCS_DESC = {
   TCA780:
     'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis',
   TCA781:
-    'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated'
+    'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated',
+  TCA782:
+    'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -30969,6 +30975,456 @@ const TCS_DESC = {
     id: 'G-5B',
     title: 'GENERATOR PROTECTION LOGIC "A" (2/2)',
     page: 14,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [205, 118, 2178, 1512],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    a,
+    j
+  });
+})();
+/* SH-G-6A GENERATOR PROTECTION LOGIC "B" (1/2) (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 15). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide (the scan of sheet 15 is turned a little; its layout is the one of SH-G-5A, measured on sheet 13). The relays of the generator protection panel B (GPP): each relay (with its
+   delay, with 52G closed and 60FLB not on where the drawing has it) out to SH-G-8A and into one OR gate to the lockout relay 86G-B; 86G-B
+   out to the ST trip, the 41 trip demand, the breaker sheets, the annunciator, the SOE and the fault recorder (each mark: the signal also
+   goes to that panel). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    a = [],
+    j = [];
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh, sx) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4]);
+    if (sh) t.push([sx, y + 5, sh]);
+  };
+  /* a gate: bar x, centre y, the bar from y1 to y2 */
+  const gate = (k, ty, bar, y, y1, y2) => {
+    b.push([k, 'G:' + ty, '', bar + 9, y, [], {}, [18, ty === 'OR' ? 18 : 20, 0]]);
+    l.push([[bar, y1], [bar, y2]]);
+  };
+  /* an on delay timer: left x, centre y, the time */
+  const di = (k, x, y, tm) => {
+    r.push([k, x, y - 12, 33, 24, '']);
+    t.push([x + 16, y - 5, 'DI', 4], [x + 16, y + 6, tm, 4]);
+  };
+  /* a relay of the panel: tag, name, top / bottom, the contacts [key, word] */
+  const relay = (tg, nm, y1, y2, P) => {
+    l.push([[244, y1], [575, y1]], [[575, y1], [575, y2]], [[575, y2], [244, y2]], [[244, y2], [244, y1]], [[512, y1], [512, y2]]);
+    t.push([246, y1 - 9, '(' + tg + ')'], [335, y1 - 9, '(GPP)'], [258, (y1 + y2) / 2, nm]);
+    const hh = (y2 - y1) / P.length;
+    P.forEach(([k, z], i) => {
+      const ya = y1 + hh * i;
+      if (i) l.push([[512, ya], [575, ya]]);
+      t.push([543, ya + hh / 2, z, 4]);
+      s.push([k, 512, Math.round(ya), 575, Math.round(ya + hh)]);
+    });
+  };
+  /* a mark that the signal also goes to a panel: x, top / bottom, words, the lines it crosses; rev: the top arrow points right */
+  const mark = (x, y1, y2, z1, z2, X, rev) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[x, P[i]], [x, P[i + 1]]]);
+    if (rev) {
+      a.push([[x, y1], [x + 18, y1]], [[x, y2], [x - 18, y2]]);
+      t.push([x + 21, y1 + 4, z1], [x - 20, y2 + 4, z2, 2]);
+    } else {
+      a.push([[x, y1], [x - 18, y1]], [[x, y2], [x + 18, y2]]);
+      t.push([x - 20, y1 + 4, z1, 2], [x + 21, y2 + 4, z2]);
+    }
+  };
+  /* the relays of the panel */
+  relay('87GB', 'PHASE DIFFERENTIAL OF GENERATOR', 175, 208, [['r87', 'ON']]);
+  relay('59GNB', 'GEN. EARTH FAULT', 293, 326, [['r59g', 'ON']]);
+  relay('40B', 'LOSS OF EXCITATION (ZONE 1)', 367, 399, [['r40a', 'ON']]);
+  relay('40B', 'LOSS OF EXCITATION (ZONE 2)', 445, 477, [['r40b', 'ON']]);
+  relay('24B', 'VOLTS/HERTZ', 618, 700, [['r24a', '1ST STEP'], ['r24b', '2ND STEP'], ['r24c', '3RD STEP']]);
+  relay('46B', 'NEGATIVE-PHASE SEQ.', 847, 901, [['r46a', '1ST STEP'], ['r46b', '2ND STEP']]);
+  relay('59B', 'OVER VOLTAGE', 948, 1001, [['r59a', '1ST STEP'], ['r59b', '2ND STEP']]);
+  relay('51VB', 'VOLTAGE RESTRAINED PHASE OVER CURRENT', 1050, 1082, [['r51', 'ON']]);
+  relay('32B', 'REVERSE POWER', 1129, 1182, [['r32a', '1ST STEP'], ['r32b', '2ND STEP']]);
+  relay('50B', 'HIGH SET PHASE OVER CURRENT', 1262, 1294, [['r50', 'ON']]);
+  relay('27B', 'UNDER VOLTAGE', 1321, 1353, [['r27', 'ON']]);
+  /* the inputs from the other sheets: [key, number, sheet, line, words] */
+  [
+    ['i60', '1', 'SH-G-6B', 520, '60FLB NOT "ON"'],
+    ['i52', '1', 'SH-G-1A', 570, '52G CLOSED'],
+    ['iavr', '4', 'SH-G-4', 1225, 'AVR MAJOR TROUBLE'],
+    ['ibt', '2', 'SH-G-8B', 1377, 'BOTH GEN. PROTECTION RELAY IN TROUBLE'],
+    ['ist', '6', 'SH-G-9', 1422, 'ST TRIP (FOR GENERATOR TRIP)']
+  ].forEach(([k, n, sh, y, z]) => {
+    circ(253, y, n);
+    s.push([k, 240, y - 13, 266, y + 13]);
+    t.push([270, y - 10, z], [270, y + 13, sh]);
+  });
+  /* the gates */
+  gate('g1', 'A', 838, 399, 373, 425);
+  gate('g2', 'A', 838, 477, 452, 503);
+  gate('g3', 'A', 838, 630, 560, 682);
+  gate('gvh', 'OR', 685, 673, 649, 696);
+  gate('g4', 'A', 838, 819, 796, 843);
+  gate('g5', 'A', 838, 1056, 1036, 1076);
+  gate('g6', 'A', 838, 1126, 1100, 1152);
+  gate('g7', 'A', 838, 1186, 1159, 1212);
+  gate('g8', 'A', 838, 1337, 1309, 1366);
+  gate('gor', 'OR', 1080, 818, 179, 1387);
+  b.push(['nca', 'NC', '', 808, 570, [], {}, [9]]);
+  di('d59g', 600, 310, 't');
+  di('d24b', 599, 659, 't');
+  di('d24c', 599, 686, 't');
+  di('d59a', 838, 930, 't');
+  di('d59b', 838, 988, 't');
+  di('d32', 642, 1169, '10s');
+  di('d27', 866, 1337, 't');
+  /* 52G closed (bus) and 60FLB not on (bus) */
+  w.push(
+    ['i52', [[266, 570], [799, 570]], 0, 0],
+    ['nca', [[817, 570], [838, 570]]],
+    ['i52', [[761, 570], [761, 399], [838, 399]]],
+    ['i52', [[761, 477], [838, 477]]],
+    ['i52', [[761, 542], [997, 542]]],
+    ['i52', [[761, 570], [761, 1319], [838, 1319]]],
+    ['i52', [[761, 836], [838, 836]]],
+    ['i52', [[761, 1110], [838, 1110]]],
+    ['i52', [[761, 1186], [838, 1186]]],
+    ['i60', [[266, 520], [788, 520]], 0, 0],
+    ['i60', [[788, 520], [788, 415], [838, 415]]],
+    ['i60', [[788, 493], [838, 493]]],
+    ['i60', [[788, 520], [788, 1356], [838, 1356]]],
+    ['i60', [[788, 1046], [838, 1046]]],
+    ['i60', [[788, 1126], [838, 1126]]],
+    ['i60', [[788, 1204], [838, 1204]]]
+  );
+  j.push([761, 477], [761, 542], [761, 570], [761, 836], [761, 1110], [761, 1186], [788, 493], [788, 520], [788, 1046], [788, 1126], [788, 1204]);
+  /* the relays into the gates, the timers and the OR gate to 86G-B */
+  w.push(
+    ['r87', [[575, 191], [1080, 191]]],
+    ['r87', [[891, 191], [891, 168], [997, 168]]],
+    ['r59g', [[575, 310], [600, 310]]],
+    ['d59g', [[633, 310], [1080, 310]]],
+    ['d59g', [[788, 310], [788, 237], [997, 237]]],
+    ['r40a', [[575, 383], [838, 383]]],
+    ['g1', [[858, 399], [1080, 399]]],
+    ['g1', [[889, 399], [889, 377], [997, 377]]],
+    ['r40b', [[575, 460], [838, 460]]],
+    ['g2', [[858, 477], [1080, 477]]],
+    ['g2', [[889, 477], [889, 453], [997, 453]]],
+    ['r24a', [[575, 632], [675, 632]]],
+    ['r24b', [[575, 659], [599, 659]]],
+    ['r24c', [[575, 686], [599, 686]]],
+    ['d24b', [[632, 659], [685, 659]]],
+    ['d24b', [[657, 659], [657, 720], [997, 720]]],
+    ['d24c', [[632, 686], [685, 686]]],
+    ['d24c', [[643, 686], [643, 774], [997, 774]]],
+    ['gvh', [[704, 673], [838, 673]]],
+    ['gvh', [[723, 673], [723, 805], [838, 805]]],
+    ['g3', [[858, 630], [997, 630]]],
+    ['g4', [[858, 819], [1080, 819]]],
+    ['r46a', [[575, 861], [675, 861]]],
+    ['r46b', [[575, 888], [1080, 888]]],
+    ['r46b', [[889, 888], [889, 865], [997, 865]]],
+    ['r59a', [[575, 961], [811, 961], [811, 930], [838, 930]]],
+    ['d59a', [[871, 930], [997, 930]]],
+    ['r59b', [[575, 988], [838, 988]]],
+    ['d59b', [[871, 988], [1080, 988]]],
+    ['d59b', [[888, 988], [888, 963], [997, 963]]],
+    ['r51', [[575, 1066], [838, 1066]]],
+    ['g5', [[858, 1056], [1080, 1056]]],
+    ['g5', [[888, 1056], [888, 1030], [997, 1030]]],
+    ['r32a', [[575, 1142], [838, 1142]]],
+    ['g6', [[858, 1126], [997, 1126]]],
+    ['r32b', [[575, 1169], [642, 1169]]],
+    ['d32', [[675, 1169], [838, 1169]]],
+    ['g7', [[858, 1186], [1080, 1186]]],
+    ['g7', [[888, 1186], [888, 1160], [997, 1160]]],
+    ['iavr', [[266, 1225], [1080, 1225]]],
+    ['r50', [[575, 1278], [1080, 1278]]],
+    ['r50', [[887, 1278], [887, 1255], [997, 1255]]],
+    ['r27', [[575, 1337], [838, 1337]]],
+    ['g8', [[858, 1337], [866, 1337]]],
+    ['d27', [[899, 1337], [1080, 1337]]],
+    ['d27', [[913, 1337], [913, 1311], [997, 1311]]],
+    ['ibt', [[266, 1377], [1080, 1377]]]
+  );
+  j.push([891, 191], [788, 310], [889, 399], [889, 477], [657, 659], [643, 686], [723, 673], [889, 888], [888, 988], [888, 1056], [888, 1186], [887, 1278], [913, 1337]);
+  /* the outputs to SH-G-8A and the other sheets: [line, words, number, sheet, x of the circle] */
+  [
+    [168, '87GB "ON"', '12', 'SH-G-8A', 1010],
+    [237, '59GNB "ON"', '36', 'SH-G-8A', 1010],
+    [377, '40B ZONE 1 "ON"', '26', 'SH-G-8A', 1010],
+    [453, '40B ZONE 2 "ON"', '27', 'SH-G-8A', 1010],
+    [542, '52G CLOSED', '2', 'SH-G-6B', 1010],
+    [630, '', '6', 'SH-G-*', 1010],
+    [632, '24B "1ST STEP"', '9', 'SH-G-8A', 688],
+    [720, '24B "2ND STEP"', '7', 'SH-G-8A', 1010],
+    [774, '24B "3RD STEP"', '15', 'SH-G-8A', 1010],
+    [861, '46B "1ST STEP"', '8', 'SH-G-8A', 688],
+    [865, '46B "2ND STEP"', '14', 'SH-G-8A', 1010],
+    [930, '59B "1ST STEP"', '23', 'SH-G-8A', 1010],
+    [963, '59B "2ND STEP"', '24', 'SH-G-8A', 1010],
+    [1030, '51VB "ON"', '25', 'SH-G-8A', 1010],
+    [1126, '32B "1ST STEP"', '11', 'SH-G-8A', 1010],
+    [1160, '32B "2ND STEP"', '28', 'SH-G-8A', 1010],
+    [1255, '50B "ON"', '43', 'SH-G-8A', 1010],
+    [1311, '27B "ON"', '44', 'SH-G-8A', 1010]
+  ].forEach(([y, z, n, sh, x]) => {
+    if (z) t.push(x < 900 ? [581, y - 9, z] : [x - 25, y - 9, z, 2]);
+    circ(x, y, n, sh, x + 17);
+  });
+  t.push([985, 607, '24B "2ND or 3RD STEP"', 2], [985, 620, '(BEFORE STARTUP)', 2]);
+  /* the lockout relay 86G-B */
+  l.push([[1145, 803], [1477, 803]], [[1477, 803], [1477, 858]], [[1477, 858], [1145, 858]], [[1145, 858], [1145, 803]], [[1416, 803], [1416, 858]], [[1145, 830], [1477, 830]]);
+  t.push([1146, 795, '(86G-B)'], [1240, 795, '(GPP)'], [1160, 817, 'GEN. LOCKOUT RELAY "B"'], [1160, 844, 'RELAY COIL OPEN "B"'], [1446, 817, 'ON', 4], [1446, 844, 'ON', 4]);
+  s.push(['k86', 1416, 803, 1477, 830], ['krc', 1416, 830, 1477, 858]);
+  w.push(['gor', [[1099, 818], [1145, 818]]]);
+  /* the inputs from the other sheets in the middle */
+  [
+    ['m7', '5', 'SH-G-7', 537, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION OPERATED (BY OTHERS)']],
+    ['m6', '6', 'SH-G-*', 589, ['24B "2ND or 3RD STEP"', '(BEFORE STARTUP)']],
+    ['m8', '6', 'SH-G-7', 732, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION OPERATED (BY OTHERS)']]
+  ].forEach(([k, n, sh, y, Z]) => {
+    circ(1156, y, n);
+    s.push([k, 1143, y - 13, 1169, y + 13]);
+    t.push([1176, y - 22, Z[0]], [1176, y - 9, Z[1]], [1176, y + 13, sh]);
+    w.push([k, [[1169, y], [1678, y]]]);
+  });
+  /* the OR gates of the trips */
+  gate('gt1', 'OR', 1678, 385, 350, 418);
+  gate('gt2', 'OR', 1678, 560, 526, 594);
+  gate('gt3', 'OR', 1678, 715, 689, 739);
+  b.push(['ncb', 'NC', '', 1687, 463, [], {}, [9]]);
+  w.push(
+    ['ist', [[266, 1422], [1148, 1422], [1148, 1209], [1487, 1209], [1487, 361], [1678, 361]]],
+    ['k86', [[1477, 817], [1953, 817]]],
+    ['k86', [[1514, 817], [1514, 409], [1678, 409]]],
+    ['k86', [[1514, 463], [1678, 463]], 0, 0],
+    ['ncb', [[1696, 463], [1952, 463]]],
+    ['k86', [[1514, 560], [1678, 560]]],
+    ['k86', [[1514, 697], [1678, 697]]],
+    ['k86', [[1640, 697], [1640, 647], [1952, 647]]],
+    ['k86', [[1540, 817], [1540, 779], [1953, 779]]],
+    ['krc', [[1477, 844], [1953, 844]]],
+    ['gt1', [[1697, 385], [1952, 385]]],
+    ['gt2', [[1697, 560], [1952, 560]]],
+    ['gt3', [[1697, 715], [1952, 715]]]
+  );
+  j.push([1514, 817], [1514, 463], [1514, 560], [1514, 697], [1640, 697], [1540, 817]);
+  circ(1965, 385, '1', 'SH-G-5B', 1982);
+  circ(1965, 463, '3', 'SH-G-1B', 1982);
+  circ(1965, 560, '4', 'SH-G-4', 1982);
+  circ(1965, 715, '5', 'SH-G-9', 1982);
+  [
+    [647, 'ANN'],
+    [779, 'FTRP'],
+    [817, 'SOE'],
+    [844, 'ANN']
+  ].forEach(([y, z]) => r.push(['', 1953, y - 9, 34, 18, z]));
+  t.push(
+    [1938, 349, 'ST TRIP/', 2],
+    [1938, 361, 'GEN. PROTECTION "B"', 2],
+    [1938, 374, 'OPERATED (86G-B)', 2],
+    [1938, 441, 'GEN. PROTECTION "B"', 2],
+    [1938, 454, 'NOT OPERATED (86G-B)', 2],
+    [1938, 521, '41 TRIP DEMAND FROM GEN.', 2],
+    [1938, 534, 'PROTECTION B, GEN. TRANSF. &', 2],
+    [1938, 547, 'UNIT PROTECTION', 2],
+    [1938, 638, 'GEN. LOCKOUT RELAY "B" OPERATED', 2],
+    [1938, 678, 'ST TRIP DEMAND FROM GEN.', 2],
+    [1938, 691, 'PROTECTION B, GEN. TRANSF. &', 2],
+    [1938, 704, 'UNIT PROTECTION', 2],
+    [1938, 835, 'RELAY COIL OPEN "B" OPERATED', 2]
+  );
+  /* the marks: the signal also goes to that panel */
+  mark(682, 1410, 1438, '(TCS)', '(GPP)', [1422]);
+  mark(1579, 682, 709, '(TCS)', '(GPP)', [697], 1);
+  mark(1579, 762, 831, 'OTHERS', '(GPP)', [779, 817], 1);
+  mark(1579, 831, 862, '(TCS)', '(GPP)', [844], 1);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-6A',
+    title: 'GENERATOR PROTECTION LOGIC "B" (1/2)',
+    page: 15,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [204, 128, 2168, 1518],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    a,
+    j
+  });
+})();
+/* SH-G-6B GENERATOR PROTECTION LOGIC "B" (2/2) (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 16). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide (the layout of sheet 16 is the one of SH-G-5B, measured on sheet 14). Pole slip, VT fuse failure, under and over frequency of the generator
+   protection panel B (each with 52G closed and 60FLB not on where the drawing has it) out to SH-G-8A and into one OR gate: generator
+   protection "B" operated / not operated. Below: protection A or B operated to the two trip coils of the line breaker 52L
+   (the mark: the signal also goes to that panel). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    a = [],
+    j = [];
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh, sx) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4]);
+    if (sh) t.push([sx, y + 5, sh]);
+  };
+  /* a gate: bar x, centre y, the bar from y1 to y2 */
+  const gate = (k, ty, bar, y, y1, y2) => {
+    b.push([k, 'G:' + ty, '', bar + 9, y, [], {}, [18, ty === 'OR' ? 18 : 20, 0]]);
+    l.push([[bar, y1], [bar, y2]]);
+  };
+  /* an on delay timer: left x, centre y, the time */
+  const di = (k, x, y, tm) => {
+    r.push([k, x, y - 12, 31, 24, '']);
+    t.push([x + 16, y - 5, 'DI', 4], [x + 16, y + 6, tm, 4]);
+  };
+  /* a relay of the panel: tag, name, top / bottom, the contacts [key, word] */
+  const relay = (tg, nm, y1, y2, P) => {
+    l.push([[254, y1], [585, y1]], [[585, y1], [585, y2]], [[585, y2], [254, y2]], [[254, y2], [254, y1]], [[521, y1], [521, y2]]);
+    t.push([256, y1 - 8, '(' + tg + ')'], [344, y1 - 8, '(GPP)'], [266, (y1 + y2) / 2, nm]);
+    const hh = (y2 - y1) / P.length;
+    P.forEach(([k, z], i) => {
+      const ya = y1 + hh * i;
+      if (i) l.push([[521, ya], [585, ya]]);
+      t.push([553, ya + hh / 2, z, 4]);
+      s.push([k, 521, Math.round(ya), 585, Math.round(ya + hh)]);
+    });
+  };
+  /* a mark that the signal also goes to a panel: x, top / bottom, words, the lines it crosses; the top arrow points right */
+  const mark = (x, y1, y2, z1, z2, X) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[x, P[i]], [x, P[i + 1]]]);
+    a.push([[x, y1], [x + 18, y1]], [[x, y2], [x - 18, y2]]);
+    t.push([x + 21, y1 + 4, z1], [x - 20, y2 + 4, z2, 2]);
+  };
+  /* the relays of the panel */
+  relay('78B', 'POLE SLIP', 306, 338, [['r78', 'ON']]);
+  relay('60FLB', 'VT FUSE FAILURE', 375, 406, [['r60', 'ON']]);
+  relay('81LB', 'UNDER FREQUENCY', 435, 488, [['r81l1', '1ST STEP'], ['r81l2', '2ND STEP']]);
+  relay('81HB', 'OVER FREQUENCY', 536, 590, [['r81h1', '1ST STEP'], ['r81h2', '2ND STEP']]);
+  /* the inputs from the other sheets: [key, number, sheet, x, line, words] */
+  [
+    ['i52', '2', 'SH-G-6A', 266, 268, '52G CLOSED'],
+    ['ia', '4', 'SH-G-5B', 262, 752, 'GEN. PROTECTION "A" OPERATED'],
+    ['ib', '4', 'SH-G-*', 262, 843, 'GEN. PROTECTION "B" OPERATED']
+  ].forEach(([k, n, sh, x, y, z]) => {
+    circ(x, y, n);
+    s.push([k, x - 13, y - 13, x + 13, y + 13]);
+    t.push([x + 18, y - 9, z], [x + 18, y + 15, sh]);
+  });
+  /* the gates */
+  gate('g1', 'A', 809, 310, 259, 361);
+  gate('g2', 'A', 808, 431, 408, 457);
+  gate('g3', 'A', 808, 491, 467, 514);
+  gate('g4', 'A', 808, 540, 522, 557);
+  gate('g5', 'A', 808, 593, 567, 619);
+  gate('gor', 'OR', 1090, 449, 296, 607);
+  gate('gt2', 'OR', 720, 767, 745, 788);
+  gate('gt3', 'OR', 720, 828, 807, 848);
+  b.push(['nc1', 'NC', '', 629, 351, [], {}, [8]], ['nc2', 'NC', '', 1642, 405, [], {}, [8]]);
+  di('d1', 849, 431, 't');
+  di('d2', 849, 491, 't');
+  di('d3', 849, 540, 't');
+  di('d4', 849, 593, 't');
+  /* 52G closed (bus 755) and 60FLB not on (bus 767) */
+  w.push(
+    ['i52', [[279, 268], [809, 268]]],
+    ['i52', [[755, 268], [755, 611], [808, 611]]],
+    ['i52', [[755, 431], [808, 431]]],
+    ['i52', [[755, 508], [808, 508]]],
+    ['i52', [[755, 530], [808, 530]]],
+    ['r60', [[585, 391], [669, 391]]],
+    ['r60', [[593, 391], [593, 351], [621, 351]], 0, 0],
+    ['nc1', [[637, 351], [809, 351]]],
+    ['nc1', [[767, 351], [767, 491], [808, 491]]],
+    ['nc1', [[767, 381], [1006, 381]]],
+    ['nc1', [[767, 414], [808, 414]]]
+  );
+  j.push([755, 268], [755, 431], [755, 508], [755, 530], [593, 391], [767, 351], [767, 381], [767, 414]);
+  /* the relays into the gates, the timers and the OR gate */
+  w.push(
+    ['r78', [[585, 322], [809, 322]]],
+    ['g1', [[828, 310], [1090, 310]]],
+    ['g1', [[902, 310], [902, 287], [1006, 287]]],
+    ['r81l1', [[585, 448], [808, 448]]],
+    ['g2', [[827, 431], [849, 431]]],
+    ['d1', [[880, 431], [1006, 431]]],
+    ['r81l2', [[585, 475], [808, 475]]],
+    ['g3', [[827, 491], [849, 491]]],
+    ['d2', [[880, 491], [901, 491], [901, 504], [1090, 504]]],
+    ['d2', [[901, 491], [901, 468], [1006, 468]]],
+    ['r81h1', [[585, 551], [808, 551]]],
+    ['g4', [[827, 540], [849, 540]]],
+    ['d3', [[880, 540], [1006, 540]]],
+    ['r81h2', [[585, 577], [808, 577]]],
+    ['g5', [[827, 593], [849, 593]]],
+    ['d4', [[880, 593], [900, 593], [900, 606], [1090, 606]]],
+    ['d4', [[900, 593], [900, 570], [1006, 570]]],
+    ['gor', [[1109, 449], [1961, 449]]],
+    ['gor', [[1603, 449], [1603, 405], [1634, 405]], 0, 0],
+    ['nc2', [[1650, 405], [1961, 405]]]
+  );
+  j.push([902, 310], [901, 491], [900, 593], [1603, 449]);
+  /* the outputs: [line, words, number, sheet, x of the circle] */
+  [
+    [287, '78B "ON"', '17', 'SH-G-8A', 1019],
+    [381, '60FLB NOT "ON"', '1', 'SH-G-6A', 1019],
+    [431, '81LB "1ST STEP"', '19', 'SH-G-8A', 1019],
+    [468, '81LB "2ND STEP"', '20', 'SH-G-8A', 1019],
+    [540, '81HB "1ST STEP"', '21', 'SH-G-8A', 1019],
+    [570, '81HB "2ND STEP"', '22', 'SH-G-8A', 1019],
+    [405, 'GEN. PROTECTION "B" NOT OPERATED', '16', 'SH-G-2B', 1974],
+    [449, 'GEN. PROTECTION "B" OPERATED', '4', 'SH-G-*', 1974],
+    [767, 'GEN. PROTECTION OPERATED (52L-TC1)', '2', 'SH-G-2A', 1974],
+    [828, 'GEN. PROTECTION OPERATED (52L-TC2)', '3', 'SH-G-2A', 1974]
+  ].forEach(([y, z, n, sh, x]) => {
+    t.push([x - 28, y - 9, z, 2]);
+    circ(x, y, n, sh, x + 17);
+  });
+  circ(682, 391, '10', 'SH-G-8A', 699);
+  t.push([596, 382, '60FLB "ON"']);
+  /* the ST trip of protection A or B to the generator trip and the breaker trip coils */
+  w.push(
+    ['ia', [[275, 752], [720, 752]]],
+    ['ia', [[587, 752], [587, 813], [720, 813]]],
+    ['ib', [[275, 843], [720, 843]]],
+    ['ib', [[637, 843], [637, 783], [720, 783]]],
+    ['gt2', [[739, 767], [1961, 767]]],
+    ['gt3', [[739, 828], [1961, 828]]]
+  );
+  j.push([587, 752], [637, 843]);
+  mark(1261, 752, 844, 'OTHERS', '(GPP)', [767, 828]);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-6B',
+    title: 'GENERATOR PROTECTION LOGIC "B" (2/2)',
+    page: 16,
     dwg: '310SD03-743',
     of: 20,
     f: [205, 118, 2178, 1512],
@@ -61581,6 +62037,119 @@ const TCS_DESC = {
       ['crt4', 2037, 635, 'out', 'TCA781_4', 'S', '#1C'],
       ['crt3', 2033, 1050, 'out', 'TCA781_3', 'S', '#1C']
     ],
+    b,
+    m,
+    w,
+    j,
+    t
+  });
+})();
+/* TCA782 EOS TURBINE SPEED (331DM09788 page 203, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - MJL A002 (S:0, M:30.0): X = EOS(1) / (2) / (3) TURBINE SPEED (Z1 / Z2 / Z3), T = INITIAL (ref, TCA100) through BTR 001;
+     1 / 2 / 3 = OFF(0) through BTR 007 / 008 / 009.
+   - Y through FTR 003 = A; from it FTR 013 = EOS TURBINE SPEED to CRT TCA782_A1 and FTR 014 to B1.
+   - 1 / 2 / 3 through BTR 010 / 011 / 012 = A1 / A2 / A3.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const WT = (key, ...pts) => w.push([key, pts, 1]);
+  const xL = 1169,
+    xR = 1272,
+    xO = 1998,
+    P = [304, 325, 346, 368, 389, 411];
+  /* inputs */
+  W('kInit', [766, 229], [1221, 229], [1221, 292]);
+  WT('iZ1', [372, P[0]], [xL, P[0]]);
+  WT('iZ2', [372, P[5]], [1117, P[5]], [1117, P[1]], [xL, P[1]]);
+  WT('iZ3', [372, 518], [1127, 518], [1127, P[2]], [xL, P[2]]);
+  W('kOff', [968, 582], [997, 582], [997, P[3]], [xL, P[3]]);
+  W('kOff', [997, P[4]], [xL, P[4]]);
+  W('kOff', [997, P[5]], [xL, P[5]]);
+  /* outputs */
+  WT('mA002.Y', [xR, P[0]], [xO - 27, P[0]]);
+  WT('mA002.Y', [1582, P[0]], [1582, 165], [xO - 35, 165]);
+  WT('mA002.Y', [1582, 228], [1991 - 27, 228]);
+  W('mA002.1', [xR, 325], [1721, 325], [1721, 377], [xO - 27, 377]);
+  W('mA002.2', [xR, 346], [1613, 346], [1613, 452], [xO - 27, 452]);
+  W('mA002.3', [xR, 368], [1528, 368], [1528, 527], [xO - 27, 527]);
+  const b = [
+    ['btr001', 'o:BTR', '001', 944, 229],
+    ['btr007', 'o:BTR', '007', 1050, P[3]],
+    ['btr008', 'o:BTR', '008', 1124, P[4]],
+    ['btr009', 'o:BTR', '009', 1050, P[5]],
+    ['ftr003', 'o:FTR', '003', 1529, P[0]],
+    ['ftr013', 'o:FTR', '013', 1637, 165],
+    ['ftr014', 'o:FTR', '014', 1637, 228],
+    ['btr010', 'o:BTR', '010', 1434, 325],
+    ['btr011', 'o:BTR', '011', 1529, 346],
+    ['btr012', 'o:BTR', '012', 1434, 368]
+  ];
+  const m = [
+    [
+      'mA002',
+      '',
+      '',
+      xL,
+      292,
+      xR - xL,
+      129,
+      ['X', 'X', 'X', '1', '2', '3'],
+      ['Y', '1', '2', '3'],
+      'A002',
+      [
+        [1170, 444, 'S:0'],
+        [1170, 466, 'M:30.0']
+      ],
+      [P, P.slice(0, 4)]
+    ]
+  ];
+  const c = [
+    ['iZ1', 'in', 'Z1', 345, P[0], '', ['-'], 1, 0],
+    ['iZ2', 'in', 'Z2', 345, P[5], '', ['-'], 1, 0],
+    ['iZ3', 'in', 'Z3', 345, 518, '', ['-'], 1, 0],
+    ['oA', 'out', 'A', xO, P[0], '', ['-'], 0, 0],
+    ['oB1', 'out', 'B1', 1991, 228, '', ['-'], 1, 0],
+    ['oA1', 'out', 'A1', xO, 377, '', ['-'], 0, 0],
+    ['oA2', 'out', 'A2', xO, 452, '', ['-'], 0, 0],
+    ['oA3', 'out', 'A3', xO, 527, '', ['-'], 0, 0]
+  ];
+  const j = [
+    [1582, P[0]],
+    [1582, 228],
+    [997, P[4]],
+    [997, P[5]]
+  ];
+  t.push(
+    [700, 268, '(TCA100)', 1],
+    [1153, 296, 'T'],
+    [1221, 318, 'MJL', 1],
+    [378, 296, 'EOS(1) TURBINE SPEED'],
+    [378, 403, 'EOS(2) TURBINE SPEED'],
+    [378, 510, 'EOS(3) TURBINE SPEED'],
+    [1729, 160, 'EOS TURBINE SPEED'],
+    [235, 1522, 'CONTROLLER:'],
+    [397, 1522, 'COMM+MD'],
+    [620, 1495, 'TRIGGER  :'],
+    [620, 1520, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA782',
+    title: 'EOS TURBINE SPEED',
+    page: 203,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [165, 78, 2225, 1545],
+    k: [
+      ['kInit', 533, 229, 'INITIAL', 'ref'],
+      ['kOff', 735, 582, 'OFF(0)', 'sys.ref']
+    ],
+    c,
+    d: [['crt1', xO, 165, 'out', 'TCA782_A1', 'S', '#1C']],
     b,
     m,
     w,
@@ -144375,7 +144944,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build e220ea4'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build b6a0ed9'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -170596,6 +171165,10 @@ const TCS_DESC = {
     'GENERATOR PROTECTION LOGIC A (1/2): the relays of generator protection panel A, with 52G closed and 60FLA not on, to the lockout relay 86G-A and its trips',
   'G-5B':
     'GENERATOR PROTECTION LOGIC A (2/2): pole slip, VT fuse failure, under and over frequency to generator protection A operated, and the ST trip to the generator trip and breaker trip coils',
+  'G-6A':
+    'GENERATOR PROTECTION LOGIC B (1/2): the relays of generator protection panel B, with 52G closed and 60FLB not on, to the lockout relay 86G-B and its trips',
+  'G-6B':
+    'GENERATOR PROTECTION LOGIC B (2/2): pole slip, VT fuse failure, under and over frequency to generator protection B operated, and protection A or B to the line breaker trip coils',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -171035,7 +171608,9 @@ const TCS_DESC = {
   TCA780:
     'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis',
   TCA781:
-    'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated'
+    'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated',
+  TCA782:
+    'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -195846,6 +196421,460 @@ const TCS_DESC = {
     id: 'G-5B',
     title: 'GENERATOR PROTECTION LOGIC "A" (2/2)',
     page: 14,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [205, 118, 2178, 1512],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    a,
+    j
+  });
+})();
+
+/* ---- src/digital/tce/G-6A.js ---- */
+/* SH-G-6A GENERATOR PROTECTION LOGIC "B" (1/2) (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 15). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide (the scan of sheet 15 is turned a little; its layout is the one of SH-G-5A, measured on sheet 13). The relays of the generator protection panel B (GPP): each relay (with its
+   delay, with 52G closed and 60FLB not on where the drawing has it) out to SH-G-8A and into one OR gate to the lockout relay 86G-B; 86G-B
+   out to the ST trip, the 41 trip demand, the breaker sheets, the annunciator, the SOE and the fault recorder (each mark: the signal also
+   goes to that panel). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    a = [],
+    j = [];
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh, sx) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4]);
+    if (sh) t.push([sx, y + 5, sh]);
+  };
+  /* a gate: bar x, centre y, the bar from y1 to y2 */
+  const gate = (k, ty, bar, y, y1, y2) => {
+    b.push([k, 'G:' + ty, '', bar + 9, y, [], {}, [18, ty === 'OR' ? 18 : 20, 0]]);
+    l.push([[bar, y1], [bar, y2]]);
+  };
+  /* an on delay timer: left x, centre y, the time */
+  const di = (k, x, y, tm) => {
+    r.push([k, x, y - 12, 33, 24, '']);
+    t.push([x + 16, y - 5, 'DI', 4], [x + 16, y + 6, tm, 4]);
+  };
+  /* a relay of the panel: tag, name, top / bottom, the contacts [key, word] */
+  const relay = (tg, nm, y1, y2, P) => {
+    l.push([[244, y1], [575, y1]], [[575, y1], [575, y2]], [[575, y2], [244, y2]], [[244, y2], [244, y1]], [[512, y1], [512, y2]]);
+    t.push([246, y1 - 9, '(' + tg + ')'], [335, y1 - 9, '(GPP)'], [258, (y1 + y2) / 2, nm]);
+    const hh = (y2 - y1) / P.length;
+    P.forEach(([k, z], i) => {
+      const ya = y1 + hh * i;
+      if (i) l.push([[512, ya], [575, ya]]);
+      t.push([543, ya + hh / 2, z, 4]);
+      s.push([k, 512, Math.round(ya), 575, Math.round(ya + hh)]);
+    });
+  };
+  /* a mark that the signal also goes to a panel: x, top / bottom, words, the lines it crosses; rev: the top arrow points right */
+  const mark = (x, y1, y2, z1, z2, X, rev) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[x, P[i]], [x, P[i + 1]]]);
+    if (rev) {
+      a.push([[x, y1], [x + 18, y1]], [[x, y2], [x - 18, y2]]);
+      t.push([x + 21, y1 + 4, z1], [x - 20, y2 + 4, z2, 2]);
+    } else {
+      a.push([[x, y1], [x - 18, y1]], [[x, y2], [x + 18, y2]]);
+      t.push([x - 20, y1 + 4, z1, 2], [x + 21, y2 + 4, z2]);
+    }
+  };
+  /* the relays of the panel */
+  relay('87GB', 'PHASE DIFFERENTIAL OF GENERATOR', 175, 208, [['r87', 'ON']]);
+  relay('59GNB', 'GEN. EARTH FAULT', 293, 326, [['r59g', 'ON']]);
+  relay('40B', 'LOSS OF EXCITATION (ZONE 1)', 367, 399, [['r40a', 'ON']]);
+  relay('40B', 'LOSS OF EXCITATION (ZONE 2)', 445, 477, [['r40b', 'ON']]);
+  relay('24B', 'VOLTS/HERTZ', 618, 700, [['r24a', '1ST STEP'], ['r24b', '2ND STEP'], ['r24c', '3RD STEP']]);
+  relay('46B', 'NEGATIVE-PHASE SEQ.', 847, 901, [['r46a', '1ST STEP'], ['r46b', '2ND STEP']]);
+  relay('59B', 'OVER VOLTAGE', 948, 1001, [['r59a', '1ST STEP'], ['r59b', '2ND STEP']]);
+  relay('51VB', 'VOLTAGE RESTRAINED PHASE OVER CURRENT', 1050, 1082, [['r51', 'ON']]);
+  relay('32B', 'REVERSE POWER', 1129, 1182, [['r32a', '1ST STEP'], ['r32b', '2ND STEP']]);
+  relay('50B', 'HIGH SET PHASE OVER CURRENT', 1262, 1294, [['r50', 'ON']]);
+  relay('27B', 'UNDER VOLTAGE', 1321, 1353, [['r27', 'ON']]);
+  /* the inputs from the other sheets: [key, number, sheet, line, words] */
+  [
+    ['i60', '1', 'SH-G-6B', 520, '60FLB NOT "ON"'],
+    ['i52', '1', 'SH-G-1A', 570, '52G CLOSED'],
+    ['iavr', '4', 'SH-G-4', 1225, 'AVR MAJOR TROUBLE'],
+    ['ibt', '2', 'SH-G-8B', 1377, 'BOTH GEN. PROTECTION RELAY IN TROUBLE'],
+    ['ist', '6', 'SH-G-9', 1422, 'ST TRIP (FOR GENERATOR TRIP)']
+  ].forEach(([k, n, sh, y, z]) => {
+    circ(253, y, n);
+    s.push([k, 240, y - 13, 266, y + 13]);
+    t.push([270, y - 10, z], [270, y + 13, sh]);
+  });
+  /* the gates */
+  gate('g1', 'A', 838, 399, 373, 425);
+  gate('g2', 'A', 838, 477, 452, 503);
+  gate('g3', 'A', 838, 630, 560, 682);
+  gate('gvh', 'OR', 685, 673, 649, 696);
+  gate('g4', 'A', 838, 819, 796, 843);
+  gate('g5', 'A', 838, 1056, 1036, 1076);
+  gate('g6', 'A', 838, 1126, 1100, 1152);
+  gate('g7', 'A', 838, 1186, 1159, 1212);
+  gate('g8', 'A', 838, 1337, 1309, 1366);
+  gate('gor', 'OR', 1080, 818, 179, 1387);
+  b.push(['nca', 'NC', '', 808, 570, [], {}, [9]]);
+  di('d59g', 600, 310, 't');
+  di('d24b', 599, 659, 't');
+  di('d24c', 599, 686, 't');
+  di('d59a', 838, 930, 't');
+  di('d59b', 838, 988, 't');
+  di('d32', 642, 1169, '10s');
+  di('d27', 866, 1337, 't');
+  /* 52G closed (bus) and 60FLB not on (bus) */
+  w.push(
+    ['i52', [[266, 570], [799, 570]], 0, 0],
+    ['nca', [[817, 570], [838, 570]]],
+    ['i52', [[761, 570], [761, 399], [838, 399]]],
+    ['i52', [[761, 477], [838, 477]]],
+    ['i52', [[761, 542], [997, 542]]],
+    ['i52', [[761, 570], [761, 1319], [838, 1319]]],
+    ['i52', [[761, 836], [838, 836]]],
+    ['i52', [[761, 1110], [838, 1110]]],
+    ['i52', [[761, 1186], [838, 1186]]],
+    ['i60', [[266, 520], [788, 520]], 0, 0],
+    ['i60', [[788, 520], [788, 415], [838, 415]]],
+    ['i60', [[788, 493], [838, 493]]],
+    ['i60', [[788, 520], [788, 1356], [838, 1356]]],
+    ['i60', [[788, 1046], [838, 1046]]],
+    ['i60', [[788, 1126], [838, 1126]]],
+    ['i60', [[788, 1204], [838, 1204]]]
+  );
+  j.push([761, 477], [761, 542], [761, 570], [761, 836], [761, 1110], [761, 1186], [788, 493], [788, 520], [788, 1046], [788, 1126], [788, 1204]);
+  /* the relays into the gates, the timers and the OR gate to 86G-B */
+  w.push(
+    ['r87', [[575, 191], [1080, 191]]],
+    ['r87', [[891, 191], [891, 168], [997, 168]]],
+    ['r59g', [[575, 310], [600, 310]]],
+    ['d59g', [[633, 310], [1080, 310]]],
+    ['d59g', [[788, 310], [788, 237], [997, 237]]],
+    ['r40a', [[575, 383], [838, 383]]],
+    ['g1', [[858, 399], [1080, 399]]],
+    ['g1', [[889, 399], [889, 377], [997, 377]]],
+    ['r40b', [[575, 460], [838, 460]]],
+    ['g2', [[858, 477], [1080, 477]]],
+    ['g2', [[889, 477], [889, 453], [997, 453]]],
+    ['r24a', [[575, 632], [675, 632]]],
+    ['r24b', [[575, 659], [599, 659]]],
+    ['r24c', [[575, 686], [599, 686]]],
+    ['d24b', [[632, 659], [685, 659]]],
+    ['d24b', [[657, 659], [657, 720], [997, 720]]],
+    ['d24c', [[632, 686], [685, 686]]],
+    ['d24c', [[643, 686], [643, 774], [997, 774]]],
+    ['gvh', [[704, 673], [838, 673]]],
+    ['gvh', [[723, 673], [723, 805], [838, 805]]],
+    ['g3', [[858, 630], [997, 630]]],
+    ['g4', [[858, 819], [1080, 819]]],
+    ['r46a', [[575, 861], [675, 861]]],
+    ['r46b', [[575, 888], [1080, 888]]],
+    ['r46b', [[889, 888], [889, 865], [997, 865]]],
+    ['r59a', [[575, 961], [811, 961], [811, 930], [838, 930]]],
+    ['d59a', [[871, 930], [997, 930]]],
+    ['r59b', [[575, 988], [838, 988]]],
+    ['d59b', [[871, 988], [1080, 988]]],
+    ['d59b', [[888, 988], [888, 963], [997, 963]]],
+    ['r51', [[575, 1066], [838, 1066]]],
+    ['g5', [[858, 1056], [1080, 1056]]],
+    ['g5', [[888, 1056], [888, 1030], [997, 1030]]],
+    ['r32a', [[575, 1142], [838, 1142]]],
+    ['g6', [[858, 1126], [997, 1126]]],
+    ['r32b', [[575, 1169], [642, 1169]]],
+    ['d32', [[675, 1169], [838, 1169]]],
+    ['g7', [[858, 1186], [1080, 1186]]],
+    ['g7', [[888, 1186], [888, 1160], [997, 1160]]],
+    ['iavr', [[266, 1225], [1080, 1225]]],
+    ['r50', [[575, 1278], [1080, 1278]]],
+    ['r50', [[887, 1278], [887, 1255], [997, 1255]]],
+    ['r27', [[575, 1337], [838, 1337]]],
+    ['g8', [[858, 1337], [866, 1337]]],
+    ['d27', [[899, 1337], [1080, 1337]]],
+    ['d27', [[913, 1337], [913, 1311], [997, 1311]]],
+    ['ibt', [[266, 1377], [1080, 1377]]]
+  );
+  j.push([891, 191], [788, 310], [889, 399], [889, 477], [657, 659], [643, 686], [723, 673], [889, 888], [888, 988], [888, 1056], [888, 1186], [887, 1278], [913, 1337]);
+  /* the outputs to SH-G-8A and the other sheets: [line, words, number, sheet, x of the circle] */
+  [
+    [168, '87GB "ON"', '12', 'SH-G-8A', 1010],
+    [237, '59GNB "ON"', '36', 'SH-G-8A', 1010],
+    [377, '40B ZONE 1 "ON"', '26', 'SH-G-8A', 1010],
+    [453, '40B ZONE 2 "ON"', '27', 'SH-G-8A', 1010],
+    [542, '52G CLOSED', '2', 'SH-G-6B', 1010],
+    [630, '', '6', 'SH-G-*', 1010],
+    [632, '24B "1ST STEP"', '9', 'SH-G-8A', 688],
+    [720, '24B "2ND STEP"', '7', 'SH-G-8A', 1010],
+    [774, '24B "3RD STEP"', '15', 'SH-G-8A', 1010],
+    [861, '46B "1ST STEP"', '8', 'SH-G-8A', 688],
+    [865, '46B "2ND STEP"', '14', 'SH-G-8A', 1010],
+    [930, '59B "1ST STEP"', '23', 'SH-G-8A', 1010],
+    [963, '59B "2ND STEP"', '24', 'SH-G-8A', 1010],
+    [1030, '51VB "ON"', '25', 'SH-G-8A', 1010],
+    [1126, '32B "1ST STEP"', '11', 'SH-G-8A', 1010],
+    [1160, '32B "2ND STEP"', '28', 'SH-G-8A', 1010],
+    [1255, '50B "ON"', '43', 'SH-G-8A', 1010],
+    [1311, '27B "ON"', '44', 'SH-G-8A', 1010]
+  ].forEach(([y, z, n, sh, x]) => {
+    if (z) t.push(x < 900 ? [581, y - 9, z] : [x - 25, y - 9, z, 2]);
+    circ(x, y, n, sh, x + 17);
+  });
+  t.push([985, 607, '24B "2ND or 3RD STEP"', 2], [985, 620, '(BEFORE STARTUP)', 2]);
+  /* the lockout relay 86G-B */
+  l.push([[1145, 803], [1477, 803]], [[1477, 803], [1477, 858]], [[1477, 858], [1145, 858]], [[1145, 858], [1145, 803]], [[1416, 803], [1416, 858]], [[1145, 830], [1477, 830]]);
+  t.push([1146, 795, '(86G-B)'], [1240, 795, '(GPP)'], [1160, 817, 'GEN. LOCKOUT RELAY "B"'], [1160, 844, 'RELAY COIL OPEN "B"'], [1446, 817, 'ON', 4], [1446, 844, 'ON', 4]);
+  s.push(['k86', 1416, 803, 1477, 830], ['krc', 1416, 830, 1477, 858]);
+  w.push(['gor', [[1099, 818], [1145, 818]]]);
+  /* the inputs from the other sheets in the middle */
+  [
+    ['m7', '5', 'SH-G-7', 537, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION OPERATED (BY OTHERS)']],
+    ['m6', '6', 'SH-G-*', 589, ['24B "2ND or 3RD STEP"', '(BEFORE STARTUP)']],
+    ['m8', '6', 'SH-G-7', 732, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION OPERATED (BY OTHERS)']]
+  ].forEach(([k, n, sh, y, Z]) => {
+    circ(1156, y, n);
+    s.push([k, 1143, y - 13, 1169, y + 13]);
+    t.push([1176, y - 22, Z[0]], [1176, y - 9, Z[1]], [1176, y + 13, sh]);
+    w.push([k, [[1169, y], [1678, y]]]);
+  });
+  /* the OR gates of the trips */
+  gate('gt1', 'OR', 1678, 385, 350, 418);
+  gate('gt2', 'OR', 1678, 560, 526, 594);
+  gate('gt3', 'OR', 1678, 715, 689, 739);
+  b.push(['ncb', 'NC', '', 1687, 463, [], {}, [9]]);
+  w.push(
+    ['ist', [[266, 1422], [1148, 1422], [1148, 1209], [1487, 1209], [1487, 361], [1678, 361]]],
+    ['k86', [[1477, 817], [1953, 817]]],
+    ['k86', [[1514, 817], [1514, 409], [1678, 409]]],
+    ['k86', [[1514, 463], [1678, 463]], 0, 0],
+    ['ncb', [[1696, 463], [1952, 463]]],
+    ['k86', [[1514, 560], [1678, 560]]],
+    ['k86', [[1514, 697], [1678, 697]]],
+    ['k86', [[1640, 697], [1640, 647], [1952, 647]]],
+    ['k86', [[1540, 817], [1540, 779], [1953, 779]]],
+    ['krc', [[1477, 844], [1953, 844]]],
+    ['gt1', [[1697, 385], [1952, 385]]],
+    ['gt2', [[1697, 560], [1952, 560]]],
+    ['gt3', [[1697, 715], [1952, 715]]]
+  );
+  j.push([1514, 817], [1514, 463], [1514, 560], [1514, 697], [1640, 697], [1540, 817]);
+  circ(1965, 385, '1', 'SH-G-5B', 1982);
+  circ(1965, 463, '3', 'SH-G-1B', 1982);
+  circ(1965, 560, '4', 'SH-G-4', 1982);
+  circ(1965, 715, '5', 'SH-G-9', 1982);
+  [
+    [647, 'ANN'],
+    [779, 'FTRP'],
+    [817, 'SOE'],
+    [844, 'ANN']
+  ].forEach(([y, z]) => r.push(['', 1953, y - 9, 34, 18, z]));
+  t.push(
+    [1938, 349, 'ST TRIP/', 2],
+    [1938, 361, 'GEN. PROTECTION "B"', 2],
+    [1938, 374, 'OPERATED (86G-B)', 2],
+    [1938, 441, 'GEN. PROTECTION "B"', 2],
+    [1938, 454, 'NOT OPERATED (86G-B)', 2],
+    [1938, 521, '41 TRIP DEMAND FROM GEN.', 2],
+    [1938, 534, 'PROTECTION B, GEN. TRANSF. &', 2],
+    [1938, 547, 'UNIT PROTECTION', 2],
+    [1938, 638, 'GEN. LOCKOUT RELAY "B" OPERATED', 2],
+    [1938, 678, 'ST TRIP DEMAND FROM GEN.', 2],
+    [1938, 691, 'PROTECTION B, GEN. TRANSF. &', 2],
+    [1938, 704, 'UNIT PROTECTION', 2],
+    [1938, 835, 'RELAY COIL OPEN "B" OPERATED', 2]
+  );
+  /* the marks: the signal also goes to that panel */
+  mark(682, 1410, 1438, '(TCS)', '(GPP)', [1422]);
+  mark(1579, 682, 709, '(TCS)', '(GPP)', [697], 1);
+  mark(1579, 762, 831, 'OTHERS', '(GPP)', [779, 817], 1);
+  mark(1579, 831, 862, '(TCS)', '(GPP)', [844], 1);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-6A',
+    title: 'GENERATOR PROTECTION LOGIC "B" (1/2)',
+    page: 15,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [204, 128, 2168, 1518],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    a,
+    j
+  });
+})();
+
+/* ---- src/digital/tce/G-6B.js ---- */
+/* SH-G-6B GENERATOR PROTECTION LOGIC "B" (2/2) (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 16). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide (the layout of sheet 16 is the one of SH-G-5B, measured on sheet 14). Pole slip, VT fuse failure, under and over frequency of the generator
+   protection panel B (each with 52G closed and 60FLB not on where the drawing has it) out to SH-G-8A and into one OR gate: generator
+   protection "B" operated / not operated. Below: protection A or B operated to the two trip coils of the line breaker 52L
+   (the mark: the signal also goes to that panel). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    a = [],
+    j = [];
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh, sx) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4]);
+    if (sh) t.push([sx, y + 5, sh]);
+  };
+  /* a gate: bar x, centre y, the bar from y1 to y2 */
+  const gate = (k, ty, bar, y, y1, y2) => {
+    b.push([k, 'G:' + ty, '', bar + 9, y, [], {}, [18, ty === 'OR' ? 18 : 20, 0]]);
+    l.push([[bar, y1], [bar, y2]]);
+  };
+  /* an on delay timer: left x, centre y, the time */
+  const di = (k, x, y, tm) => {
+    r.push([k, x, y - 12, 31, 24, '']);
+    t.push([x + 16, y - 5, 'DI', 4], [x + 16, y + 6, tm, 4]);
+  };
+  /* a relay of the panel: tag, name, top / bottom, the contacts [key, word] */
+  const relay = (tg, nm, y1, y2, P) => {
+    l.push([[254, y1], [585, y1]], [[585, y1], [585, y2]], [[585, y2], [254, y2]], [[254, y2], [254, y1]], [[521, y1], [521, y2]]);
+    t.push([256, y1 - 8, '(' + tg + ')'], [344, y1 - 8, '(GPP)'], [266, (y1 + y2) / 2, nm]);
+    const hh = (y2 - y1) / P.length;
+    P.forEach(([k, z], i) => {
+      const ya = y1 + hh * i;
+      if (i) l.push([[521, ya], [585, ya]]);
+      t.push([553, ya + hh / 2, z, 4]);
+      s.push([k, 521, Math.round(ya), 585, Math.round(ya + hh)]);
+    });
+  };
+  /* a mark that the signal also goes to a panel: x, top / bottom, words, the lines it crosses; the top arrow points right */
+  const mark = (x, y1, y2, z1, z2, X) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[x, P[i]], [x, P[i + 1]]]);
+    a.push([[x, y1], [x + 18, y1]], [[x, y2], [x - 18, y2]]);
+    t.push([x + 21, y1 + 4, z1], [x - 20, y2 + 4, z2, 2]);
+  };
+  /* the relays of the panel */
+  relay('78B', 'POLE SLIP', 306, 338, [['r78', 'ON']]);
+  relay('60FLB', 'VT FUSE FAILURE', 375, 406, [['r60', 'ON']]);
+  relay('81LB', 'UNDER FREQUENCY', 435, 488, [['r81l1', '1ST STEP'], ['r81l2', '2ND STEP']]);
+  relay('81HB', 'OVER FREQUENCY', 536, 590, [['r81h1', '1ST STEP'], ['r81h2', '2ND STEP']]);
+  /* the inputs from the other sheets: [key, number, sheet, x, line, words] */
+  [
+    ['i52', '2', 'SH-G-6A', 266, 268, '52G CLOSED'],
+    ['ia', '4', 'SH-G-5B', 262, 752, 'GEN. PROTECTION "A" OPERATED'],
+    ['ib', '4', 'SH-G-*', 262, 843, 'GEN. PROTECTION "B" OPERATED']
+  ].forEach(([k, n, sh, x, y, z]) => {
+    circ(x, y, n);
+    s.push([k, x - 13, y - 13, x + 13, y + 13]);
+    t.push([x + 18, y - 9, z], [x + 18, y + 15, sh]);
+  });
+  /* the gates */
+  gate('g1', 'A', 809, 310, 259, 361);
+  gate('g2', 'A', 808, 431, 408, 457);
+  gate('g3', 'A', 808, 491, 467, 514);
+  gate('g4', 'A', 808, 540, 522, 557);
+  gate('g5', 'A', 808, 593, 567, 619);
+  gate('gor', 'OR', 1090, 449, 296, 607);
+  gate('gt2', 'OR', 720, 767, 745, 788);
+  gate('gt3', 'OR', 720, 828, 807, 848);
+  b.push(['nc1', 'NC', '', 629, 351, [], {}, [8]], ['nc2', 'NC', '', 1642, 405, [], {}, [8]]);
+  di('d1', 849, 431, 't');
+  di('d2', 849, 491, 't');
+  di('d3', 849, 540, 't');
+  di('d4', 849, 593, 't');
+  /* 52G closed (bus 755) and 60FLB not on (bus 767) */
+  w.push(
+    ['i52', [[279, 268], [809, 268]]],
+    ['i52', [[755, 268], [755, 611], [808, 611]]],
+    ['i52', [[755, 431], [808, 431]]],
+    ['i52', [[755, 508], [808, 508]]],
+    ['i52', [[755, 530], [808, 530]]],
+    ['r60', [[585, 391], [669, 391]]],
+    ['r60', [[593, 391], [593, 351], [621, 351]], 0, 0],
+    ['nc1', [[637, 351], [809, 351]]],
+    ['nc1', [[767, 351], [767, 491], [808, 491]]],
+    ['nc1', [[767, 381], [1006, 381]]],
+    ['nc1', [[767, 414], [808, 414]]]
+  );
+  j.push([755, 268], [755, 431], [755, 508], [755, 530], [593, 391], [767, 351], [767, 381], [767, 414]);
+  /* the relays into the gates, the timers and the OR gate */
+  w.push(
+    ['r78', [[585, 322], [809, 322]]],
+    ['g1', [[828, 310], [1090, 310]]],
+    ['g1', [[902, 310], [902, 287], [1006, 287]]],
+    ['r81l1', [[585, 448], [808, 448]]],
+    ['g2', [[827, 431], [849, 431]]],
+    ['d1', [[880, 431], [1006, 431]]],
+    ['r81l2', [[585, 475], [808, 475]]],
+    ['g3', [[827, 491], [849, 491]]],
+    ['d2', [[880, 491], [901, 491], [901, 504], [1090, 504]]],
+    ['d2', [[901, 491], [901, 468], [1006, 468]]],
+    ['r81h1', [[585, 551], [808, 551]]],
+    ['g4', [[827, 540], [849, 540]]],
+    ['d3', [[880, 540], [1006, 540]]],
+    ['r81h2', [[585, 577], [808, 577]]],
+    ['g5', [[827, 593], [849, 593]]],
+    ['d4', [[880, 593], [900, 593], [900, 606], [1090, 606]]],
+    ['d4', [[900, 593], [900, 570], [1006, 570]]],
+    ['gor', [[1109, 449], [1961, 449]]],
+    ['gor', [[1603, 449], [1603, 405], [1634, 405]], 0, 0],
+    ['nc2', [[1650, 405], [1961, 405]]]
+  );
+  j.push([902, 310], [901, 491], [900, 593], [1603, 449]);
+  /* the outputs: [line, words, number, sheet, x of the circle] */
+  [
+    [287, '78B "ON"', '17', 'SH-G-8A', 1019],
+    [381, '60FLB NOT "ON"', '1', 'SH-G-6A', 1019],
+    [431, '81LB "1ST STEP"', '19', 'SH-G-8A', 1019],
+    [468, '81LB "2ND STEP"', '20', 'SH-G-8A', 1019],
+    [540, '81HB "1ST STEP"', '21', 'SH-G-8A', 1019],
+    [570, '81HB "2ND STEP"', '22', 'SH-G-8A', 1019],
+    [405, 'GEN. PROTECTION "B" NOT OPERATED', '16', 'SH-G-2B', 1974],
+    [449, 'GEN. PROTECTION "B" OPERATED', '4', 'SH-G-*', 1974],
+    [767, 'GEN. PROTECTION OPERATED (52L-TC1)', '2', 'SH-G-2A', 1974],
+    [828, 'GEN. PROTECTION OPERATED (52L-TC2)', '3', 'SH-G-2A', 1974]
+  ].forEach(([y, z, n, sh, x]) => {
+    t.push([x - 28, y - 9, z, 2]);
+    circ(x, y, n, sh, x + 17);
+  });
+  circ(682, 391, '10', 'SH-G-8A', 699);
+  t.push([596, 382, '60FLB "ON"']);
+  /* the ST trip of protection A or B to the generator trip and the breaker trip coils */
+  w.push(
+    ['ia', [[275, 752], [720, 752]]],
+    ['ia', [[587, 752], [587, 813], [720, 813]]],
+    ['ib', [[275, 843], [720, 843]]],
+    ['ib', [[637, 843], [637, 783], [720, 783]]],
+    ['gt2', [[739, 767], [1961, 767]]],
+    ['gt3', [[739, 828], [1961, 828]]]
+  );
+  j.push([587, 752], [637, 843]);
+  mark(1261, 752, 844, 'OTHERS', '(GPP)', [767, 828]);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-6B',
+    title: 'GENERATOR PROTECTION LOGIC "B" (2/2)',
+    page: 16,
     dwg: '310SD03-743',
     of: 20,
     f: [205, 118, 2178, 1512],
@@ -226718,6 +227747,121 @@ const TCS_DESC = {
       ['crt4', 2037, 635, 'out', 'TCA781_4', 'S', '#1C'],
       ['crt3', 2033, 1050, 'out', 'TCA781_3', 'S', '#1C']
     ],
+    b,
+    m,
+    w,
+    j,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA782.js ---- */
+/* TCA782 EOS TURBINE SPEED (331DM09788 page 203, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - MJL A002 (S:0, M:30.0): X = EOS(1) / (2) / (3) TURBINE SPEED (Z1 / Z2 / Z3), T = INITIAL (ref, TCA100) through BTR 001;
+     1 / 2 / 3 = OFF(0) through BTR 007 / 008 / 009.
+   - Y through FTR 003 = A; from it FTR 013 = EOS TURBINE SPEED to CRT TCA782_A1 and FTR 014 to B1.
+   - 1 / 2 / 3 through BTR 010 / 011 / 012 = A1 / A2 / A3.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const WT = (key, ...pts) => w.push([key, pts, 1]);
+  const xL = 1169,
+    xR = 1272,
+    xO = 1998,
+    P = [304, 325, 346, 368, 389, 411];
+  /* inputs */
+  W('kInit', [766, 229], [1221, 229], [1221, 292]);
+  WT('iZ1', [372, P[0]], [xL, P[0]]);
+  WT('iZ2', [372, P[5]], [1117, P[5]], [1117, P[1]], [xL, P[1]]);
+  WT('iZ3', [372, 518], [1127, 518], [1127, P[2]], [xL, P[2]]);
+  W('kOff', [968, 582], [997, 582], [997, P[3]], [xL, P[3]]);
+  W('kOff', [997, P[4]], [xL, P[4]]);
+  W('kOff', [997, P[5]], [xL, P[5]]);
+  /* outputs */
+  WT('mA002.Y', [xR, P[0]], [xO - 27, P[0]]);
+  WT('mA002.Y', [1582, P[0]], [1582, 165], [xO - 35, 165]);
+  WT('mA002.Y', [1582, 228], [1991 - 27, 228]);
+  W('mA002.1', [xR, 325], [1721, 325], [1721, 377], [xO - 27, 377]);
+  W('mA002.2', [xR, 346], [1613, 346], [1613, 452], [xO - 27, 452]);
+  W('mA002.3', [xR, 368], [1528, 368], [1528, 527], [xO - 27, 527]);
+  const b = [
+    ['btr001', 'o:BTR', '001', 944, 229],
+    ['btr007', 'o:BTR', '007', 1050, P[3]],
+    ['btr008', 'o:BTR', '008', 1124, P[4]],
+    ['btr009', 'o:BTR', '009', 1050, P[5]],
+    ['ftr003', 'o:FTR', '003', 1529, P[0]],
+    ['ftr013', 'o:FTR', '013', 1637, 165],
+    ['ftr014', 'o:FTR', '014', 1637, 228],
+    ['btr010', 'o:BTR', '010', 1434, 325],
+    ['btr011', 'o:BTR', '011', 1529, 346],
+    ['btr012', 'o:BTR', '012', 1434, 368]
+  ];
+  const m = [
+    [
+      'mA002',
+      '',
+      '',
+      xL,
+      292,
+      xR - xL,
+      129,
+      ['X', 'X', 'X', '1', '2', '3'],
+      ['Y', '1', '2', '3'],
+      'A002',
+      [
+        [1170, 444, 'S:0'],
+        [1170, 466, 'M:30.0']
+      ],
+      [P, P.slice(0, 4)]
+    ]
+  ];
+  const c = [
+    ['iZ1', 'in', 'Z1', 345, P[0], '', ['-'], 1, 0],
+    ['iZ2', 'in', 'Z2', 345, P[5], '', ['-'], 1, 0],
+    ['iZ3', 'in', 'Z3', 345, 518, '', ['-'], 1, 0],
+    ['oA', 'out', 'A', xO, P[0], '', ['-'], 0, 0],
+    ['oB1', 'out', 'B1', 1991, 228, '', ['-'], 1, 0],
+    ['oA1', 'out', 'A1', xO, 377, '', ['-'], 0, 0],
+    ['oA2', 'out', 'A2', xO, 452, '', ['-'], 0, 0],
+    ['oA3', 'out', 'A3', xO, 527, '', ['-'], 0, 0]
+  ];
+  const j = [
+    [1582, P[0]],
+    [1582, 228],
+    [997, P[4]],
+    [997, P[5]]
+  ];
+  t.push(
+    [700, 268, '(TCA100)', 1],
+    [1153, 296, 'T'],
+    [1221, 318, 'MJL', 1],
+    [378, 296, 'EOS(1) TURBINE SPEED'],
+    [378, 403, 'EOS(2) TURBINE SPEED'],
+    [378, 510, 'EOS(3) TURBINE SPEED'],
+    [1729, 160, 'EOS TURBINE SPEED'],
+    [235, 1522, 'CONTROLLER:'],
+    [397, 1522, 'COMM+MD'],
+    [620, 1495, 'TRIGGER  :'],
+    [620, 1520, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA782',
+    title: 'EOS TURBINE SPEED',
+    page: 203,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [165, 78, 2225, 1545],
+    k: [
+      ['kInit', 533, 229, 'INITIAL', 'ref'],
+      ['kOff', 735, 582, 'OFF(0)', 'sys.ref']
+    ],
+    c,
+    d: [['crt1', xO, 165, 'out', 'TCA782_A1', 'S', '#1C']],
     b,
     m,
     w,
@@ -330595,7 +331739,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build e220ea4'));
+    row('Version', E('span', 'scsver', ver + ' · build b6a0ed9'));
   }
   function openSet(near) {
     if (!set) {

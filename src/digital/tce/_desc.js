@@ -699,5 +699,7 @@ const TCS_DESC = {
   TCA780:
     'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis',
   TCA781:
-    'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated'
+    'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated',
+  TCA782:
+    'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.'
 };
