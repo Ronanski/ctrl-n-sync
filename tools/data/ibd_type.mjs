@@ -97,7 +97,8 @@ if (!same) throw new Error('page ' + pg + ': the gates differ from tcs-ibd-data'
 if (ids.size !== Q.n) notes.push('net count ' + ids.size + ' vs ' + Q.n);
 let free = Q.n;
 const netNo = n => (ids.has(n) ? ids.get(n) : (ids.set(n, free++), free - 1));
-/* per page: places where the drawing has words drawn as lines (typed here as words instead) */
+/* per page (fix-<page>.json): drop = places where the drawing has words drawn as lines or a word of a font that reads wrong, t = the words
+   typed in their place, v = open outlines for a curve of the drawing the tool leaves out (a curve as a few straight pieces) */
 const FX = fs.existsSync(gdir + '/fix-' + pg + '.json') ? JSON.parse(fs.readFileSync(gdir + '/fix-' + pg + '.json', 'utf8')) : { drop: [], t: [] };
 const dropped = (x, y) => FX.drop.some(([a, b, c, d]) => x >= a && x <= c && y >= b && y <= d);
 const inFrame = (x, y) => x > 142 && x < 2206 && y > 87.5 && y < 1537 && !(x > 1226 && y > 1276) && !dropped(x, y);
@@ -304,7 +305,7 @@ list('b', B.concat(NC));
 list('o', O);
 list('j', J2);
 list('p', P);
-list('v', V);
+list('v', V.concat(FX.v || []));
 list('l', L);
 if (E.length) list('e', E);
 list('a', A);
