@@ -677,5 +677,7 @@ const TCS_DESC = {
   TCA766:
     'IP LIFE TIME COUNTER: IP LCFI summed at each summing timing into the IP life expenditure value, to the CRT',
   TCA767:
-    'THSC SPEED/LOAD HOLD: HP / IP surface stress against the mode limits; speed/load hold, stress high, the THSC surface limits and the present stress'
+    'THSC SPEED/LOAD HOLD: HP / IP surface stress against the mode limits; speed/load hold, stress high, the THSC surface limits and the present stress',
+  TCA768A:
+    'SPEED LOAD HOLD: the load rate of the start-up mode (MODE blocks on generator load) or the normal/stop rate, to TCA769'
 };
