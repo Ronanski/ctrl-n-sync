@@ -521,5 +521,7 @@ const TCS_DESC = {
   TCA655:
     'Main oil tank vapour extractor (TB-12) motor: start command held by a set / reset memory, running out, and the extractor stopped alarm when it is not running while an oil pump runs for 5 s.',
   TCA680:
-    'Gland steam exhauster (TC-28) motor: auto start and stop by the gland seal start and stop groups; start command, running and AUTO out.'
+    'Gland steam exhauster (TC-28) motor: auto start and stop by the gland seal start and stop groups; start command, running and AUTO out.',
+  TCA685:
+    'HP turbine warming valve (TC-20) motor valve: opened by the HP turbine warming start group while the aux steam header pressure permits; open / close signals, AUTO, positions and permissive out.'
 };
