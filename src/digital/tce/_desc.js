@@ -597,5 +597,7 @@ const TCS_DESC = {
   TCA741:
     'Gland seal steam header pressure (unloading) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn034 with MV, position open / close lamps, SPUV abnormal latch and lamp.',
   TCA745:
-    'AVR interface: PSS, PF control and reactive power ON / OFF commands from the CRT through TW 1.0 s to the AVR, with their lamps'
+    'AVR interface: PSS, PF control and reactive power ON / OFF commands from the CRT through TW 1.0 s to the AVR, with their lamps',
+  TCA750:
+    'THSC interlock (1): THSC INPUT ABNORMAL = INITIAL or one of the four HP-T casing and reheat bowl metal temperature input errors'
 };
