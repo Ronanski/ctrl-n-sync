@@ -839,5 +839,9 @@ const TCS_DESC = {
   TCE900:
     'PI/O table of the EHG digital input card (unit 4 slot 0, LYD050A3), 32 channels: oil pumps running and trouble, bearing oil pressure for EOP auto start, turning gear positions, DCS control mode, DS, 52G, 41 and 52L positions, speed raise and lower, HP bypass valve full close; the rest spare.',
   TCE901:
-    'PI/O table of the EHG digital input card (unit 4 slot 1, LYD050A3), 32 channels: control and main oil pumps (B), turning gear motor jog, running and trouble, auto synchronizer start and remote select, COM CPU run and power supply abnormal, PLU operated; the rest spare.'
+    'PI/O table of the EHG digital input card (unit 4 slot 1, LYD050A3), 32 channels: control and main oil pumps (B), turning gear motor jog, running and trouble, auto synchronizer start and remote select, COM CPU run and power supply abnormal, PLU operated; the rest spare.',
+  TCE930:
+    'PI/O table of the EHG analog input cards (unit 4 slots 5 and 6, LYA000A): MSV inlet steam pressures (A) and (B), MOP and COP discharge oil pressures for the standby pump auto start, hot reheat steam pressure, target MW demand and EOP discharge oil pressure, with their ranges and instruments; the third card is empty.',
+  TCE960:
+    'PI/O table of the EHG digital output card (unit 4 slot 2, LYD105A), 32 channels fed by TCE600 and TCE601: oil pump and turning gear commands, valve full close, turbine trip and valve test states, 41 close, generator lockout relays, ICV to CV transfer; the rest spare.'
 };
