@@ -695,5 +695,7 @@ const TCS_DESC = {
   TCA777:
     'SIMULATOR: simulated CV inner and outer wall metal temperatures, HP-T inner casing temperature and MSV inlet steam temperature',
   TCA780:
-    'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis'
+    'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis',
+  TCA781:
+    'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated'
 };
