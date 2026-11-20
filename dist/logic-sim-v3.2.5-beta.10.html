@@ -6386,7 +6386,13 @@ const TCS_DESC = {
   TCA700:
     'Oil purifier pump (TB-15) motor: held at OFF(0) for auto start, auto stop and trip; electrical trouble and running in; the start command out through an FFR set by STS and reset by OUT.',
   TCA711:
-    'No.2 extraction steam non-return valve (TC-41) air operated valve: test set / reset with feedback, open / close by the No.1 HP heater level high, opened / closed positions in; energize command, positions and abnormal lamp out.'
+    'No.2 extraction steam non-return valve (TC-41) air operated valve: test set / reset with feedback, open / close by the No.1 HP heater level high, opened / closed positions in; energize command, positions and abnormal lamp out.',
+  TCA712:
+    'No.3 extraction steam primary non-return valve (TC-42) air operated valve: test set / reset with feedback, open / close by the deaerator storage tank level very high, opened / closed positions in; positions and abnormal lamp out.',
+  TCA713:
+    'No.4 extraction steam non-return valve (TC-41) air operated valve: test set / reset with feedback, open / close by the No.3 LP heater level very high, opened / closed positions in; positions and abnormal lamp out.',
+  TCA714:
+    'No.3 extraction steam secondary non-return valve (TC-43) air operated valve: test set / reset with feedback, open / close by the deaerator storage tank level very high, opened / closed positions in; positions and trouble lamp out.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -49747,6 +49753,498 @@ const TCS_DESC = {
       [991, R1],
       [1014, R1],
       [1172.8, R1]
+    ],
+    t
+  });
+})();
+/* TCA712 NO.3 EXTRUCTION STEAM PRIMARY NON RETURN VALVE (TC-42) (331DM09788 page 172, controller COMM+MD, cycle 100 ms). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide. The air operated valve nXV-TSn710 (AIR OPERAT VALVE A021, LMA593), gate
+   by gate as drawn:
+   - FFP = OFF(0). A 023 = AVEIRABLE and the TEST push button, into S of FFR 024. A 026 = AVEIRABLE and TEST CANCEL, into OR 039;
+     TP 040 (10.0, INITIAL on its top) of the FFR output taken inverted is the other input of OR 039, into R of FFR 024.
+   - The FFR output = the TEST FB lamp, and OR 025 with DEAERATOR STRAGE TANK LEVEL VERY HIGH (A3 of TCA045): NOT 037 of it to SVE,
+     OR 025 itself to SVD. A 027 = AVEIRABLE and the RESET push button, to RESET. Valve opened / closed (A2 / A1 of TCA045) to LTOP /
+     LTCL.
+   - SVE out (A1 to TCA835), LTOP out (A2), LTCL out (A3); ABN = the valve abnormal lamp.
+   The words are the ones of the drawing (EXTRUCTION, AVEIRABLE, STRAGE, OPERAT as printed). The tag keeps the small n of the drawing (the
+   unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [168, 86, 2228, 1546],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1310,
+    MR = 1712,
+    TOP = 253,
+    H = 384,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1),
+    R2 = R1 + 21.5;
+  /* the push buttons and AVEIRABLE into the gates */
+  W('crtIys', [376.7, 129.4], [536.7, 129.4], [536.7, 502.5], [567.6, 502.5]);
+  W('crtIys', [536.7, R1], [567.6, R1]);
+  W('crtIys', [536.7, 417], [567.6, 417]);
+  W('crtKta', [387, R2], [567.6, R2]);
+  W('crtKtac', [388.3, 438.5], [567.6, 438.5]);
+  W('crtIkr', [385.6, 524], [567.6, 524]);
+  /* test: set / reset */
+  W('a023', [625.2, R1], [865.8, R1]);
+  W('a026', [625.2, 417], [768.4, 417]);
+  W('or039', [826, 417], [853.9, 417], [853.9, R2], [865.8, R2]);
+  W('tp040', [729.8, 438.5], [768.4, 438.5]);
+  W('ffr024', [945.8, R1], [1078.7, R1]);
+  W('ffr024', [1002.2, R1], [1002.2, 162.2], [1307, 162.2]);
+  W('ffr024', [980, R1], [980, 492.2], [649, 492.2], [649, 438.5], [672.2, 438.5]);
+  W('kInit', [485, 203.9], [701, 203.9], [701, 427.5]);
+  /* to the valve */
+  W('kOff', [472.8, 278.3], [1233.3, 278.3], [1233.3, P(0)], [MX, P(0)]);
+  W('iA3', [311, 608], [1000, 608], [1000, R2], [1078.7, R2]);
+  W('or025', [1136.3, R1], [1175.1, R1]);
+  W('or025', [1150, R1], [1150, P(3)], [MX, P(3)]);
+  W('not037', [1232.7, R1], [MX, R1]);
+  W('a027', [625.2, 502.5], [1244.4, 502.5], [1244.4, P(5)], [MX, P(5)]);
+  W('iA2', [289, 746], [1074.4, 746], [1074.4, P(7)], [MX, P(7)]);
+  W('iA1', [289, 831], [1137.2, 831], [1137.2, P(8)], [MX, P(8)]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2059, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2058, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1807.8, P(6)], [1807.8, 578.9], [2058, 578.9]);
+  W('aov.ABN', [MR, P(8)], [1742.8, P(8)], [1742.8, 684.4], [2055, 684.4]);
+  t.push(
+    [383, 120.6, 'AVEIRABLE'],
+    [416, 231, '(TCA100)', 1],
+    [393, 344.4, 'TEST'],
+    [394, 430, 'TEST CANCEL'],
+    [392, 515, 'RESET'],
+    [1158, 153, 'TEST FB'],
+    [317, 576, 'DEAERATOR STRAGE TANK'],
+    [317, 597, 'LEVEL VERY HIGH'],
+    [294, 714, 'NO.3 EXTRUCTION STEAM PRIMARY'],
+    [294, 735, 'NON RETURN VALVE OPENED'],
+    [294, 799, 'NO.3 EXTRUCTION STEAM PRIMARY'],
+    [294, 820, 'NON RETURN VALVE CLOSED'],
+    [1791, 623.3, 'NO.3 EXTRUCTION NON RETURN'],
+    [1791, 644, 'VALVE ABNORMAL'],
+    [2140, 652, 'nXV-TSn710_ABN', 1],
+    /* the timer: its time and the T of its input */
+    [851, 321.7, 'T', 1],
+    [659, 431, 'T', 1],
+    [673, 489, 'TP:10.0'],
+    [237, 1521, 'CONTROLLER:'],
+    [395, 1521, 'COMM+MD'],
+    [621, 1495, 'TRIGGER  :'],
+    [621, 1521, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA712',
+    title: 'NO.3 EXTRUCTION STEAM PRIMARY NON RETURN VALVE(TC-42)',
+    page: 172,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kInit', 252, 203.9, 'INITIAL', 'ref'],
+      ['kOff', 239.8, 278.3, 'OFF(0)', 'sys.ref']
+    ],
+    c: [
+      ['iA3', 'in', 'A3', 284, 608, '', ['TCA045']],
+      ['iA2', 'in', 'A2', 262, 746, '', ['TCA045']],
+      ['iA1', 'in', 'A1', 262, 831, '', ['TCA045']],
+      ['oA1', 'out', 'A1', 2086, P(0), '', ['TCA835']],
+      ['oA2', 'out', 'A2', 2085, P(5), '', ['-']],
+      ['oA3', 'out', 'A3', 2085, 578.9, '', ['-']]
+    ],
+    d: [
+      ['crtIys', 341.7, 129.4, 'in', 'nXV-TSn710_IYS', 'R', '#1C'],
+      ['crtKta', 352, R2, 'in', 'nXV-TSn710_KTA', 'R', '#1C'],
+      ['crtKtac', 353.3, 438.5, 'in', 'nXV-TSn710_KTAC', 'R', '#1C'],
+      ['crtIkr', 350.6, 524, 'in', 'nXV-TSn710_IKR', 'R', '#1C'],
+      ['crtIta', 1342, 162.2, 'out', 'nXV-TSn710_ITA', 'S', '#1C'],
+      ['crtAbn', 2090, 684.4, 'out', '', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nXV-TSn710',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1415, 655, '(LMA593)'],
+          [1514, 678, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:20.0', 'K:1.0%'].map((s, i) => [
+            1313,
+            Math.round(678 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 596.4, R1 + 10.5],
+      ['ffr024', 'FFR', '024', 905.8, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or025', 'OR', '025', 1107.5, R1 + 10.5],
+      ['a026', 'A', '026', 596.4, 427.5],
+      ['a027', 'A', '027', 596.4, 513],
+      ['or039', 'OR', '039', 797.2, 427.5],
+      ['tp040', 'TP', '040', 701, 449],
+      ['x1', 'X', '', 807.2, 492.2],
+      ['not037', 'NOT', '037', 1203.9, R1 + 10.5],
+      ['btr022', 'o:BTR', '022', 1067, 162.2],
+      ['btr036', 'o:BTR', '036', 1256.7, P(0)],
+      ['btr029', 'o:BTR', '029', 1267.8, R1],
+      ['btr030', 'o:BTR', '030', 1267.8, P(3)],
+      ['btr031', 'o:BTR', '031', 1267, P(5)],
+      ['btr034', 'o:BTR', '034', 1266, P(7)],
+      ['btr035', 'o:BTR', '035', 1266, P(8)],
+      ['btr028', 'o:BTR', '028', 1798.9, P(0)],
+      ['btr032', 'o:BTR', '032', 1745, P(5)],
+      ['btr033', 'o:BTR', '033', 1745, P(6)],
+      ['btr038', 'o:BTR', '038', 1816, 684.4]
+    ],
+    w,
+    j: [
+      [536.7, R1],
+      [536.7, 417],
+      [980, R1],
+      [1002.2, R1],
+      [1150, R1]
+    ],
+    t
+  });
+})();
+/* TCA713 NO.4 EXTRUCTION STEAM NON RETURN VALVE (TC-41) (331DM09788 page 173, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. The air operated valve nXV-TSn720 (AIR OPERAT VALVE A021, LMA593), gate by gate
+   as drawn:
+   - FFP = OFF(0). A 023 = AVEIRABLE and the TEST push button, into S of FFR 024. A 026 = AVEIRABLE and TEST CANCEL, into OR 039;
+     TP 040 (10.0, INITIAL on its top) of the FFR output taken inverted is the other input of OR 039, into R of FFR 024.
+   - The FFR output = the TEST FB lamp, and OR 025 with NO.3 LP HEATER LEVEL VERY HIGH (A7 of TCA041): NOT 037 of it to SVE, OR 025
+     itself to SVD. A 027 = AVEIRABLE and the RESET push button, to RESET. Valve opened / closed (A6 / A5 of TCA041) to LTOP / LTCL.
+   - SVE out (A1 to TCA835), LTOP out (A2), LTCL out (A3); ABN = the valve abnormal lamp.
+   The words are the ones of the drawing (EXTRUCTION, AVEIRABLE, SDECONDARY, OPERAT as printed). The tag keeps the small n of the
+   drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [172, 90, 2232, 1550],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1313,
+    MR = 1717,
+    TOP = 329,
+    H = 383,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1),
+    R2 = R1 + 21.5;
+  /* the push buttons and AVEIRABLE into the gates */
+  W('crtIys', [400, 163], [540, 163], [540, 600], [558.7, 600]);
+  W('crtIys', [540, R1], [558.7, R1]);
+  W('crtIys', [540, 493], [558.7, 493]);
+  W('crtKta', [392, R2], [558.7, R2]);
+  W('crtKtac', [392, 514.5], [558.7, 514.5]);
+  W('crtKtr', [392, 621.5], [558.7, 621.5]);
+  /* test: set / reset */
+  W('a023', [616.3, R1], [866.5, R1]);
+  W('a026', [616.3, 493], [781.7, 493]);
+  W('or039', [839.3, 493], [856, 493], [856, R2], [866.5, R2]);
+  W('tp040', [743.8, 514.5], [781.7, 514.5]);
+  W('ffr024', [946.5, R1], [1081.2, R1]);
+  W('ffr024', [1004, R1], [1004, 163], [1312, 163]);
+  W('ffr024', [981, R1], [981, 578], [651, 578], [651, 514.5], [686.2, 514.5]);
+  W('kInit', [498, 249], [715, 249], [715, 503.5]);
+  /* to the valve */
+  W('kOff', [498, 345], [1240, 345], [1240, P(0)], [MX, P(0)]);
+  W('iA7', [290, 706], [1068, 706], [1068, R2], [1081.2, R2]);
+  W('or025', [1138.8, R1], [1177.2, R1]);
+  W('or025', [1153, R1], [1153, P(3)], [MX, P(3)]);
+  W('not037', [1234.8, R1], [MX, R1]);
+  W('a027', [616.3, 600], [1193, 600], [1193, P(5)], [MX, P(5)]);
+  W('iA6', [290, 845], [1212, 845], [1212, P(7)], [MX, P(7)]);
+  W('iA5', [290, 930], [1243, 930], [1243, P(8)], [MX, P(8)]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2063, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2061, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1810, P(6)], [1810, 657], [2060, 657]);
+  W('aov.ABN', [MR, P(8)], [1745, P(8)], [1745, 772], [2047, 772]);
+  t.push(
+    [406, 154, 'AVEIRABLE'],
+    [431, 285, '(TCA100)', 1],
+    [398, 419, 'TEST'],
+    [398, 505, 'TEST CANCEL'],
+    [398, 611, 'RESET'],
+    [1162, 156, 'TEST FB'],
+    [297, 694, 'NO.3 LP HEATER LEVEL VERY HIGH'],
+    [295, 810, 'NO.4 EXTRUCTION STEAM SECONDARY'],
+    [295, 831, 'NON RETURN VALVE OPENED'],
+    [295, 895, 'NO.4 EXTRUCTION STEAM SDECONDARY'],
+    [295, 916, 'NON RETURN VALVE CLOSED'],
+    [1803, 713, 'NO.4 EXTRUCTION NON RETURN'],
+    [1803, 734, 'VALVE ABNORMAL'],
+    [2150, 742, 'nXV-TSn720_ABN', 1],
+    /* the timer: its time and the T of its input */
+    [853, 398, 'T', 1],
+    [672, 507, 'T', 1],
+    [685, 564, 'TP:10.0'],
+    [233, 1521, 'CONTROLLER:'],
+    [393, 1521, 'COMM+MD'],
+    [619, 1496, 'TRIGGER  :'],
+    [619, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA713',
+    title: 'NO.4 EXTRUCTION STEAM NON RETURN VALVE(TC-41)',
+    page: 173,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kInit', 265, 249, 'INITIAL', 'ref'],
+      ['kOff', 265, 345, 'OFF(0)', 'sys.ref']
+    ],
+    c: [
+      ['iA7', 'in', 'A7', 263, 706, '', ['TCA041']],
+      ['iA6', 'in', 'A6', 263, 845, '', ['TCA041']],
+      ['iA5', 'in', 'A5', 263, 930, '', ['TCA041']],
+      ['oA1', 'out', 'A1', 2090, P(0), '', ['TCA835']],
+      ['oA2', 'out', 'A2', 2088, P(5), '', ['-']],
+      ['oA3', 'out', 'A3', 2087, 657, '', ['-']]
+    ],
+    d: [
+      ['crtIys', 365, 163, 'in', 'nXV-TSn720_IYS', 'R', '#1C'],
+      ['crtKta', 357, R2, 'in', 'nXV-TSn720_KTA', 'R', '#1C'],
+      ['crtKtac', 357, 514.5, 'in', 'nXV-TSn720_KTAC', 'R', '#1C'],
+      ['crtKtr', 357, 621.5, 'in', 'nXV-TSn720_KTR', 'R', '#1C'],
+      ['crtIta', 1347, 163, 'out', 'nXV-TSn720_ITA', 'S', '#1C'],
+      ['crtAbn', 2082, 772, 'out', '', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nXV-TSn720',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1417, 733, '(LMA593)'],
+          [1515, 757, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:20.0', 'K:1.0%'].map((s, i) => [
+            1314,
+            Math.round(757 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 587.5, R1 + 10.5],
+      ['ffr024', 'FFR', '024', 906.5, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or025', 'OR', '025', 1110, R1 + 10.5],
+      ['a026', 'A', '026', 587.5, 503.5],
+      ['a027', 'A', '027', 587.5, 610.5],
+      ['or039', 'OR', '039', 810.5, 503.5],
+      ['tp040', 'TP', '040', 715, 525],
+      ['x1', 'X', '', 852, 578],
+      ['not037', 'NOT', '037', 1206, R1 + 10.5],
+      ['btr022', 'o:BTR', '022', 1071, 163],
+      ['btr036', 'o:BTR', '036', 1268, P(0)],
+      ['btr029', 'o:BTR', '029', 1270, R1],
+      ['btr030', 'o:BTR', '030', 1271, P(3)],
+      ['btr031', 'o:BTR', '031', 1270, P(5)],
+      ['btr034', 'o:BTR', '034', 1270, P(7)],
+      ['btr035', 'o:BTR', '035', 1268, P(8)],
+      ['btr028', 'o:BTR', '028', 1804, P(0)],
+      ['btr032', 'o:BTR', '032', 1748, P(5)],
+      ['btr033', 'o:BTR', '033', 1748, P(6)],
+      ['btr038', 'o:BTR', '038', 1808, 772]
+    ],
+    w,
+    j: [
+      [540, R1],
+      [540, 493],
+      [981, R1],
+      [1004, R1],
+      [1153, R1]
+    ],
+    t
+  });
+})();
+/* TCA714 NO.3 EXTRUCTION STEAM SECONDARY NON RETURN VALVE (TC-43) (331DM09788 page 174, controller COMM+MD, cycle 100 ms). Typed from
+   the drawing; units = the pixels of the page rendered 2296 wide. The air operated valve nXV-TSn740 (AIR OPERAT VALVE A021, LMA593),
+   gate by gate as drawn:
+   - FFP = OFF(0). A 023 = AVEIRABLE and the TEST push button, into S of FFR 024. A 026 = AVEIRABLE and TEST CANCEL, into OR 039;
+     TP 040 (10.0, INITIAL on its top) of the FFR output taken inverted is the other input of OR 039, into R of FFR 024.
+   - The FFR output = the TEST FB lamp, and OR 025 with DEAERATOR STRAGE TANK LEVEL VERY HIGH (A3 of TCA045): NOT 037 of it to SVE,
+     OR 025 itself to SVD. A 027 = AVEIRABLE and the RESET push button, to RESET. Valve opened / closed (A2 / A1 of TCA047) to LTOP /
+     LTCL.
+   - SVE out (A1 to TCA834), LTOP out (A2), LTCL out (A3); ABN = the valve trouble lamp.
+   The words are the ones of the drawing (EXTRUCTION, AVEIRABLE, STRAGE, SDECONDARY, OPERAT as printed). The tag keeps the small n of
+   the drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [170, 84, 2226, 1546],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1319,
+    MR = 1722,
+    TOP = 346,
+    H = 383,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1),
+    R2 = R1 + 21.5;
+  /* the push buttons and AVEIRABLE into the gates */
+  W('crtIys', [395, 162], [542, 162], [542, 618], [574.7, 618]);
+  W('crtIys', [542, R1], [574.7, R1]);
+  W('crtIys', [542, 511], [574.7, 511]);
+  W('crtKta', [394, R2], [574.7, R2]);
+  W('crtKtac', [395, 532.5], [574.7, 532.5]);
+  W('crtIkr', [392, 639.5], [574.7, 639.5]);
+  /* test: set / reset */
+  W('a023', [632.3, R1], [873, R1]);
+  W('a026', [632.3, 511], [768.2, 511]);
+  W('or039', [825.8, 511], [861, 511], [861, R2], [873, R2]);
+  W('tp040', [739.8, 532.5], [768.2, 532.5]);
+  W('ffr024', [953, R1], [1088.2, R1]);
+  W('ffr024', [1010, R1], [1010, 162], [1306, 162]);
+  W('ffr024', [977, R1], [977, 597], [657, 597], [657, 532.5], [682.2, 532.5]);
+  W('kInit', [525, 256], [712, 256], [712, 521.5]);
+  /* to the valve */
+  W('kOff', [525, 352], [1043, 352], [1043, P(0)], [MX, P(0)]);
+  W('iA3', [287, 756], [1020, 756], [1020, R2], [1088.2, R2]);
+  W('or025', [1145.8, R1], [1183.7, R1]);
+  W('or025', [1159, R1], [1159, P(3)], [MX, P(3)]);
+  W('not037', [1241.3, R1], [MX, R1]);
+  W('a027', [632.3, 618], [1062, 618], [1062, P(5)], [MX, P(5)]);
+  W('iA2', [287, 894], [1102, 894], [1102, P(7)], [MX, P(7)]);
+  W('iA1', [287, 978], [1133, 978], [1133, P(8)], [MX, P(8)]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2067, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2066, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1815, P(6)], [1815, 673], [2065, 673]);
+  W('aov.ABN', [MR, P(8)], [1762, P(8)], [1762, 788], [2059, 788]);
+  t.push(
+    [401, 153, 'AVEIRABLE'],
+    [457, 294, '(TCA100)', 1],
+    [397, 439, 'TEST'],
+    [397, 524, 'TEST CANCEL'],
+    [397, 631, 'RESET'],
+    [1156, 151, 'TEST FB'],
+    [293, 745, 'DEAERATOR STRAGE TANK LEVEL VERY HIGH'],
+    [293, 861, 'NO.3 EXTRUCTION STEAM SECONDARY'],
+    [293, 883, 'NON RETURN VALVE OPENED'],
+    [293, 946, 'NO.3 EXTRUCTION STEAM SDECONDARY'],
+    [293, 968, 'NON RETURN VALVE CLOSED'],
+    [1799, 716, 'NO.3 EXTRUCTION STM SEC.NON RETURN'],
+    [1799, 737, 'VALVE TROUBLE'],
+    [2160, 760, 'nXV-TSn740_ABN', 1],
+    /* the timer: its time and the T of its input */
+    [858, 415, 'T', 1],
+    [667, 524, 'T', 1],
+    [681, 582, 'TP:10.0'],
+    [234, 1520, 'CONTROLLER:'],
+    [396, 1520, 'COMM+MD'],
+    [620, 1494, 'TRIGGER  :'],
+    [620, 1520, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA714',
+    title: 'NO.3 EXTRUCTION STEAM SECONDARY NON RETURN VALVE(TC-43)',
+    page: 174,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kInit', 292, 256, 'INITIAL', 'ref'],
+      ['kOff', 292, 352, 'OFF(0)', 'sys.ref']
+    ],
+    c: [
+      ['iA3', 'in', 'A3', 260, 756, '', ['TCA045']],
+      ['iA2', 'in', 'A2', 260, 894, '', ['TCA047']],
+      ['iA1', 'in', 'A1', 260, 978, '', ['TCA047']],
+      ['oA1', 'out', 'A1', 2094, P(0), '', ['TCA834']],
+      ['oA2', 'out', 'A2', 2093, P(5), '', ['-']],
+      ['oA3', 'out', 'A3', 2092, 673, '', ['-']]
+    ],
+    d: [
+      ['crtIys', 360, 162, 'in', 'nXV-TSn740_IYS', 'R', '#1C'],
+      ['crtKta', 359, R2, 'in', 'nXV-TSn740_KTA', 'R', '#1C'],
+      ['crtKtac', 360, 532.5, 'in', 'nXV-TSn740_KTAC', 'R', '#1C'],
+      ['crtIkr', 357, 639.5, 'in', 'nXV-TSn740_IKR', 'R', '#1C'],
+      ['crtIta', 1341, 162, 'out', 'nXV-TSn740_ITA', 'S', '#1C'],
+      ['crtAbn', 2094, 788, 'out', '', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nXV-TSn740',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1423, 748, '(LMA593)'],
+          [1522, 771, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:20.0', 'K:1.0%'].map((s, i) => [
+            1321,
+            Math.round(771 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 603.5, R1 + 10.5],
+      ['ffr024', 'FFR', '024', 913, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or025', 'OR', '025', 1117, R1 + 10.5],
+      ['a026', 'A', '026', 603.5, 521.5],
+      ['a027', 'A', '027', 603.5, 628.5],
+      ['or039', 'OR', '039', 797, 521.5],
+      ['tp040', 'TP', '040', 711, 543],
+      ['x1', 'X', '', 805, 597],
+      ['not037', 'NOT', '037', 1212.5, R1 + 10.5],
+      ['btr022', 'o:BTR', '022', 1066, 162],
+      ['btr036', 'o:BTR', '036', 1274, P(0)],
+      ['btr029', 'o:BTR', '029', 1275, R1],
+      ['btr030', 'o:BTR', '030', 1275, P(3)],
+      ['btr031', 'o:BTR', '031', 1275, P(5)],
+      ['btr034', 'o:BTR', '034', 1275, P(7)],
+      ['btr035', 'o:BTR', '035', 1273, P(8)],
+      ['btr028', 'o:BTR', '028', 1807, P(0)],
+      ['btr032', 'o:BTR', '032', 1752, P(5)],
+      ['btr033', 'o:BTR', '033', 1752, P(6)],
+      ['btr038', 'o:BTR', '038', 1822, 788]
+    ],
+    w,
+    j: [
+      [542, R1],
+      [542, 511],
+      [977, R1],
+      [1010, R1],
+      [1159, R1]
     ],
     t
   });
@@ -133062,7 +133560,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 9d32e85'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 50c9651'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -159560,7 +160058,13 @@ const TCS_DESC = {
   TCA700:
     'Oil purifier pump (TB-15) motor: held at OFF(0) for auto start, auto stop and trip; electrical trouble and running in; the start command out through an FFR set by STS and reset by OUT.',
   TCA711:
-    'No.2 extraction steam non-return valve (TC-41) air operated valve: test set / reset with feedback, open / close by the No.1 HP heater level high, opened / closed positions in; energize command, positions and abnormal lamp out.'
+    'No.2 extraction steam non-return valve (TC-41) air operated valve: test set / reset with feedback, open / close by the No.1 HP heater level high, opened / closed positions in; energize command, positions and abnormal lamp out.',
+  TCA712:
+    'No.3 extraction steam primary non-return valve (TC-42) air operated valve: test set / reset with feedback, open / close by the deaerator storage tank level very high, opened / closed positions in; positions and abnormal lamp out.',
+  TCA713:
+    'No.4 extraction steam non-return valve (TC-41) air operated valve: test set / reset with feedback, open / close by the No.3 LP heater level very high, opened / closed positions in; positions and abnormal lamp out.',
+  TCA714:
+    'No.3 extraction steam secondary non-return valve (TC-43) air operated valve: test set / reset with feedback, open / close by the deaerator storage tank level very high, opened / closed positions in; positions and trouble lamp out.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -203405,6 +203909,504 @@ const TCS_DESC = {
       [991, R1],
       [1014, R1],
       [1172.8, R1]
+    ],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA712.js ---- */
+/* TCA712 NO.3 EXTRUCTION STEAM PRIMARY NON RETURN VALVE (TC-42) (331DM09788 page 172, controller COMM+MD, cycle 100 ms). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide. The air operated valve nXV-TSn710 (AIR OPERAT VALVE A021, LMA593), gate
+   by gate as drawn:
+   - FFP = OFF(0). A 023 = AVEIRABLE and the TEST push button, into S of FFR 024. A 026 = AVEIRABLE and TEST CANCEL, into OR 039;
+     TP 040 (10.0, INITIAL on its top) of the FFR output taken inverted is the other input of OR 039, into R of FFR 024.
+   - The FFR output = the TEST FB lamp, and OR 025 with DEAERATOR STRAGE TANK LEVEL VERY HIGH (A3 of TCA045): NOT 037 of it to SVE,
+     OR 025 itself to SVD. A 027 = AVEIRABLE and the RESET push button, to RESET. Valve opened / closed (A2 / A1 of TCA045) to LTOP /
+     LTCL.
+   - SVE out (A1 to TCA835), LTOP out (A2), LTCL out (A3); ABN = the valve abnormal lamp.
+   The words are the ones of the drawing (EXTRUCTION, AVEIRABLE, STRAGE, OPERAT as printed). The tag keeps the small n of the drawing (the
+   unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [168, 86, 2228, 1546],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1310,
+    MR = 1712,
+    TOP = 253,
+    H = 384,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1),
+    R2 = R1 + 21.5;
+  /* the push buttons and AVEIRABLE into the gates */
+  W('crtIys', [376.7, 129.4], [536.7, 129.4], [536.7, 502.5], [567.6, 502.5]);
+  W('crtIys', [536.7, R1], [567.6, R1]);
+  W('crtIys', [536.7, 417], [567.6, 417]);
+  W('crtKta', [387, R2], [567.6, R2]);
+  W('crtKtac', [388.3, 438.5], [567.6, 438.5]);
+  W('crtIkr', [385.6, 524], [567.6, 524]);
+  /* test: set / reset */
+  W('a023', [625.2, R1], [865.8, R1]);
+  W('a026', [625.2, 417], [768.4, 417]);
+  W('or039', [826, 417], [853.9, 417], [853.9, R2], [865.8, R2]);
+  W('tp040', [729.8, 438.5], [768.4, 438.5]);
+  W('ffr024', [945.8, R1], [1078.7, R1]);
+  W('ffr024', [1002.2, R1], [1002.2, 162.2], [1307, 162.2]);
+  W('ffr024', [980, R1], [980, 492.2], [649, 492.2], [649, 438.5], [672.2, 438.5]);
+  W('kInit', [485, 203.9], [701, 203.9], [701, 427.5]);
+  /* to the valve */
+  W('kOff', [472.8, 278.3], [1233.3, 278.3], [1233.3, P(0)], [MX, P(0)]);
+  W('iA3', [311, 608], [1000, 608], [1000, R2], [1078.7, R2]);
+  W('or025', [1136.3, R1], [1175.1, R1]);
+  W('or025', [1150, R1], [1150, P(3)], [MX, P(3)]);
+  W('not037', [1232.7, R1], [MX, R1]);
+  W('a027', [625.2, 502.5], [1244.4, 502.5], [1244.4, P(5)], [MX, P(5)]);
+  W('iA2', [289, 746], [1074.4, 746], [1074.4, P(7)], [MX, P(7)]);
+  W('iA1', [289, 831], [1137.2, 831], [1137.2, P(8)], [MX, P(8)]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2059, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2058, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1807.8, P(6)], [1807.8, 578.9], [2058, 578.9]);
+  W('aov.ABN', [MR, P(8)], [1742.8, P(8)], [1742.8, 684.4], [2055, 684.4]);
+  t.push(
+    [383, 120.6, 'AVEIRABLE'],
+    [416, 231, '(TCA100)', 1],
+    [393, 344.4, 'TEST'],
+    [394, 430, 'TEST CANCEL'],
+    [392, 515, 'RESET'],
+    [1158, 153, 'TEST FB'],
+    [317, 576, 'DEAERATOR STRAGE TANK'],
+    [317, 597, 'LEVEL VERY HIGH'],
+    [294, 714, 'NO.3 EXTRUCTION STEAM PRIMARY'],
+    [294, 735, 'NON RETURN VALVE OPENED'],
+    [294, 799, 'NO.3 EXTRUCTION STEAM PRIMARY'],
+    [294, 820, 'NON RETURN VALVE CLOSED'],
+    [1791, 623.3, 'NO.3 EXTRUCTION NON RETURN'],
+    [1791, 644, 'VALVE ABNORMAL'],
+    [2140, 652, 'nXV-TSn710_ABN', 1],
+    /* the timer: its time and the T of its input */
+    [851, 321.7, 'T', 1],
+    [659, 431, 'T', 1],
+    [673, 489, 'TP:10.0'],
+    [237, 1521, 'CONTROLLER:'],
+    [395, 1521, 'COMM+MD'],
+    [621, 1495, 'TRIGGER  :'],
+    [621, 1521, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA712',
+    title: 'NO.3 EXTRUCTION STEAM PRIMARY NON RETURN VALVE(TC-42)',
+    page: 172,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kInit', 252, 203.9, 'INITIAL', 'ref'],
+      ['kOff', 239.8, 278.3, 'OFF(0)', 'sys.ref']
+    ],
+    c: [
+      ['iA3', 'in', 'A3', 284, 608, '', ['TCA045']],
+      ['iA2', 'in', 'A2', 262, 746, '', ['TCA045']],
+      ['iA1', 'in', 'A1', 262, 831, '', ['TCA045']],
+      ['oA1', 'out', 'A1', 2086, P(0), '', ['TCA835']],
+      ['oA2', 'out', 'A2', 2085, P(5), '', ['-']],
+      ['oA3', 'out', 'A3', 2085, 578.9, '', ['-']]
+    ],
+    d: [
+      ['crtIys', 341.7, 129.4, 'in', 'nXV-TSn710_IYS', 'R', '#1C'],
+      ['crtKta', 352, R2, 'in', 'nXV-TSn710_KTA', 'R', '#1C'],
+      ['crtKtac', 353.3, 438.5, 'in', 'nXV-TSn710_KTAC', 'R', '#1C'],
+      ['crtIkr', 350.6, 524, 'in', 'nXV-TSn710_IKR', 'R', '#1C'],
+      ['crtIta', 1342, 162.2, 'out', 'nXV-TSn710_ITA', 'S', '#1C'],
+      ['crtAbn', 2090, 684.4, 'out', '', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nXV-TSn710',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1415, 655, '(LMA593)'],
+          [1514, 678, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:20.0', 'K:1.0%'].map((s, i) => [
+            1313,
+            Math.round(678 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 596.4, R1 + 10.5],
+      ['ffr024', 'FFR', '024', 905.8, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or025', 'OR', '025', 1107.5, R1 + 10.5],
+      ['a026', 'A', '026', 596.4, 427.5],
+      ['a027', 'A', '027', 596.4, 513],
+      ['or039', 'OR', '039', 797.2, 427.5],
+      ['tp040', 'TP', '040', 701, 449],
+      ['x1', 'X', '', 807.2, 492.2],
+      ['not037', 'NOT', '037', 1203.9, R1 + 10.5],
+      ['btr022', 'o:BTR', '022', 1067, 162.2],
+      ['btr036', 'o:BTR', '036', 1256.7, P(0)],
+      ['btr029', 'o:BTR', '029', 1267.8, R1],
+      ['btr030', 'o:BTR', '030', 1267.8, P(3)],
+      ['btr031', 'o:BTR', '031', 1267, P(5)],
+      ['btr034', 'o:BTR', '034', 1266, P(7)],
+      ['btr035', 'o:BTR', '035', 1266, P(8)],
+      ['btr028', 'o:BTR', '028', 1798.9, P(0)],
+      ['btr032', 'o:BTR', '032', 1745, P(5)],
+      ['btr033', 'o:BTR', '033', 1745, P(6)],
+      ['btr038', 'o:BTR', '038', 1816, 684.4]
+    ],
+    w,
+    j: [
+      [536.7, R1],
+      [536.7, 417],
+      [980, R1],
+      [1002.2, R1],
+      [1150, R1]
+    ],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA713.js ---- */
+/* TCA713 NO.4 EXTRUCTION STEAM NON RETURN VALVE (TC-41) (331DM09788 page 173, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. The air operated valve nXV-TSn720 (AIR OPERAT VALVE A021, LMA593), gate by gate
+   as drawn:
+   - FFP = OFF(0). A 023 = AVEIRABLE and the TEST push button, into S of FFR 024. A 026 = AVEIRABLE and TEST CANCEL, into OR 039;
+     TP 040 (10.0, INITIAL on its top) of the FFR output taken inverted is the other input of OR 039, into R of FFR 024.
+   - The FFR output = the TEST FB lamp, and OR 025 with NO.3 LP HEATER LEVEL VERY HIGH (A7 of TCA041): NOT 037 of it to SVE, OR 025
+     itself to SVD. A 027 = AVEIRABLE and the RESET push button, to RESET. Valve opened / closed (A6 / A5 of TCA041) to LTOP / LTCL.
+   - SVE out (A1 to TCA835), LTOP out (A2), LTCL out (A3); ABN = the valve abnormal lamp.
+   The words are the ones of the drawing (EXTRUCTION, AVEIRABLE, SDECONDARY, OPERAT as printed). The tag keeps the small n of the
+   drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [172, 90, 2232, 1550],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1313,
+    MR = 1717,
+    TOP = 329,
+    H = 383,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1),
+    R2 = R1 + 21.5;
+  /* the push buttons and AVEIRABLE into the gates */
+  W('crtIys', [400, 163], [540, 163], [540, 600], [558.7, 600]);
+  W('crtIys', [540, R1], [558.7, R1]);
+  W('crtIys', [540, 493], [558.7, 493]);
+  W('crtKta', [392, R2], [558.7, R2]);
+  W('crtKtac', [392, 514.5], [558.7, 514.5]);
+  W('crtKtr', [392, 621.5], [558.7, 621.5]);
+  /* test: set / reset */
+  W('a023', [616.3, R1], [866.5, R1]);
+  W('a026', [616.3, 493], [781.7, 493]);
+  W('or039', [839.3, 493], [856, 493], [856, R2], [866.5, R2]);
+  W('tp040', [743.8, 514.5], [781.7, 514.5]);
+  W('ffr024', [946.5, R1], [1081.2, R1]);
+  W('ffr024', [1004, R1], [1004, 163], [1312, 163]);
+  W('ffr024', [981, R1], [981, 578], [651, 578], [651, 514.5], [686.2, 514.5]);
+  W('kInit', [498, 249], [715, 249], [715, 503.5]);
+  /* to the valve */
+  W('kOff', [498, 345], [1240, 345], [1240, P(0)], [MX, P(0)]);
+  W('iA7', [290, 706], [1068, 706], [1068, R2], [1081.2, R2]);
+  W('or025', [1138.8, R1], [1177.2, R1]);
+  W('or025', [1153, R1], [1153, P(3)], [MX, P(3)]);
+  W('not037', [1234.8, R1], [MX, R1]);
+  W('a027', [616.3, 600], [1193, 600], [1193, P(5)], [MX, P(5)]);
+  W('iA6', [290, 845], [1212, 845], [1212, P(7)], [MX, P(7)]);
+  W('iA5', [290, 930], [1243, 930], [1243, P(8)], [MX, P(8)]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2063, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2061, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1810, P(6)], [1810, 657], [2060, 657]);
+  W('aov.ABN', [MR, P(8)], [1745, P(8)], [1745, 772], [2047, 772]);
+  t.push(
+    [406, 154, 'AVEIRABLE'],
+    [431, 285, '(TCA100)', 1],
+    [398, 419, 'TEST'],
+    [398, 505, 'TEST CANCEL'],
+    [398, 611, 'RESET'],
+    [1162, 156, 'TEST FB'],
+    [297, 694, 'NO.3 LP HEATER LEVEL VERY HIGH'],
+    [295, 810, 'NO.4 EXTRUCTION STEAM SECONDARY'],
+    [295, 831, 'NON RETURN VALVE OPENED'],
+    [295, 895, 'NO.4 EXTRUCTION STEAM SDECONDARY'],
+    [295, 916, 'NON RETURN VALVE CLOSED'],
+    [1803, 713, 'NO.4 EXTRUCTION NON RETURN'],
+    [1803, 734, 'VALVE ABNORMAL'],
+    [2150, 742, 'nXV-TSn720_ABN', 1],
+    /* the timer: its time and the T of its input */
+    [853, 398, 'T', 1],
+    [672, 507, 'T', 1],
+    [685, 564, 'TP:10.0'],
+    [233, 1521, 'CONTROLLER:'],
+    [393, 1521, 'COMM+MD'],
+    [619, 1496, 'TRIGGER  :'],
+    [619, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA713',
+    title: 'NO.4 EXTRUCTION STEAM NON RETURN VALVE(TC-41)',
+    page: 173,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kInit', 265, 249, 'INITIAL', 'ref'],
+      ['kOff', 265, 345, 'OFF(0)', 'sys.ref']
+    ],
+    c: [
+      ['iA7', 'in', 'A7', 263, 706, '', ['TCA041']],
+      ['iA6', 'in', 'A6', 263, 845, '', ['TCA041']],
+      ['iA5', 'in', 'A5', 263, 930, '', ['TCA041']],
+      ['oA1', 'out', 'A1', 2090, P(0), '', ['TCA835']],
+      ['oA2', 'out', 'A2', 2088, P(5), '', ['-']],
+      ['oA3', 'out', 'A3', 2087, 657, '', ['-']]
+    ],
+    d: [
+      ['crtIys', 365, 163, 'in', 'nXV-TSn720_IYS', 'R', '#1C'],
+      ['crtKta', 357, R2, 'in', 'nXV-TSn720_KTA', 'R', '#1C'],
+      ['crtKtac', 357, 514.5, 'in', 'nXV-TSn720_KTAC', 'R', '#1C'],
+      ['crtKtr', 357, 621.5, 'in', 'nXV-TSn720_KTR', 'R', '#1C'],
+      ['crtIta', 1347, 163, 'out', 'nXV-TSn720_ITA', 'S', '#1C'],
+      ['crtAbn', 2082, 772, 'out', '', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nXV-TSn720',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1417, 733, '(LMA593)'],
+          [1515, 757, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:20.0', 'K:1.0%'].map((s, i) => [
+            1314,
+            Math.round(757 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 587.5, R1 + 10.5],
+      ['ffr024', 'FFR', '024', 906.5, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or025', 'OR', '025', 1110, R1 + 10.5],
+      ['a026', 'A', '026', 587.5, 503.5],
+      ['a027', 'A', '027', 587.5, 610.5],
+      ['or039', 'OR', '039', 810.5, 503.5],
+      ['tp040', 'TP', '040', 715, 525],
+      ['x1', 'X', '', 852, 578],
+      ['not037', 'NOT', '037', 1206, R1 + 10.5],
+      ['btr022', 'o:BTR', '022', 1071, 163],
+      ['btr036', 'o:BTR', '036', 1268, P(0)],
+      ['btr029', 'o:BTR', '029', 1270, R1],
+      ['btr030', 'o:BTR', '030', 1271, P(3)],
+      ['btr031', 'o:BTR', '031', 1270, P(5)],
+      ['btr034', 'o:BTR', '034', 1270, P(7)],
+      ['btr035', 'o:BTR', '035', 1268, P(8)],
+      ['btr028', 'o:BTR', '028', 1804, P(0)],
+      ['btr032', 'o:BTR', '032', 1748, P(5)],
+      ['btr033', 'o:BTR', '033', 1748, P(6)],
+      ['btr038', 'o:BTR', '038', 1808, 772]
+    ],
+    w,
+    j: [
+      [540, R1],
+      [540, 493],
+      [981, R1],
+      [1004, R1],
+      [1153, R1]
+    ],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA714.js ---- */
+/* TCA714 NO.3 EXTRUCTION STEAM SECONDARY NON RETURN VALVE (TC-43) (331DM09788 page 174, controller COMM+MD, cycle 100 ms). Typed from
+   the drawing; units = the pixels of the page rendered 2296 wide. The air operated valve nXV-TSn740 (AIR OPERAT VALVE A021, LMA593),
+   gate by gate as drawn:
+   - FFP = OFF(0). A 023 = AVEIRABLE and the TEST push button, into S of FFR 024. A 026 = AVEIRABLE and TEST CANCEL, into OR 039;
+     TP 040 (10.0, INITIAL on its top) of the FFR output taken inverted is the other input of OR 039, into R of FFR 024.
+   - The FFR output = the TEST FB lamp, and OR 025 with DEAERATOR STRAGE TANK LEVEL VERY HIGH (A3 of TCA045): NOT 037 of it to SVE,
+     OR 025 itself to SVD. A 027 = AVEIRABLE and the RESET push button, to RESET. Valve opened / closed (A2 / A1 of TCA047) to LTOP /
+     LTCL.
+   - SVE out (A1 to TCA834), LTOP out (A2), LTCL out (A3); ABN = the valve trouble lamp.
+   The words are the ones of the drawing (EXTRUCTION, AVEIRABLE, STRAGE, SDECONDARY, OPERAT as printed). The tag keeps the small n of
+   the drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [170, 84, 2226, 1546],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1319,
+    MR = 1722,
+    TOP = 346,
+    H = 383,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1),
+    R2 = R1 + 21.5;
+  /* the push buttons and AVEIRABLE into the gates */
+  W('crtIys', [395, 162], [542, 162], [542, 618], [574.7, 618]);
+  W('crtIys', [542, R1], [574.7, R1]);
+  W('crtIys', [542, 511], [574.7, 511]);
+  W('crtKta', [394, R2], [574.7, R2]);
+  W('crtKtac', [395, 532.5], [574.7, 532.5]);
+  W('crtIkr', [392, 639.5], [574.7, 639.5]);
+  /* test: set / reset */
+  W('a023', [632.3, R1], [873, R1]);
+  W('a026', [632.3, 511], [768.2, 511]);
+  W('or039', [825.8, 511], [861, 511], [861, R2], [873, R2]);
+  W('tp040', [739.8, 532.5], [768.2, 532.5]);
+  W('ffr024', [953, R1], [1088.2, R1]);
+  W('ffr024', [1010, R1], [1010, 162], [1306, 162]);
+  W('ffr024', [977, R1], [977, 597], [657, 597], [657, 532.5], [682.2, 532.5]);
+  W('kInit', [525, 256], [712, 256], [712, 521.5]);
+  /* to the valve */
+  W('kOff', [525, 352], [1043, 352], [1043, P(0)], [MX, P(0)]);
+  W('iA3', [287, 756], [1020, 756], [1020, R2], [1088.2, R2]);
+  W('or025', [1145.8, R1], [1183.7, R1]);
+  W('or025', [1159, R1], [1159, P(3)], [MX, P(3)]);
+  W('not037', [1241.3, R1], [MX, R1]);
+  W('a027', [632.3, 618], [1062, 618], [1062, P(5)], [MX, P(5)]);
+  W('iA2', [287, 894], [1102, 894], [1102, P(7)], [MX, P(7)]);
+  W('iA1', [287, 978], [1133, 978], [1133, P(8)], [MX, P(8)]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2067, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2066, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1815, P(6)], [1815, 673], [2065, 673]);
+  W('aov.ABN', [MR, P(8)], [1762, P(8)], [1762, 788], [2059, 788]);
+  t.push(
+    [401, 153, 'AVEIRABLE'],
+    [457, 294, '(TCA100)', 1],
+    [397, 439, 'TEST'],
+    [397, 524, 'TEST CANCEL'],
+    [397, 631, 'RESET'],
+    [1156, 151, 'TEST FB'],
+    [293, 745, 'DEAERATOR STRAGE TANK LEVEL VERY HIGH'],
+    [293, 861, 'NO.3 EXTRUCTION STEAM SECONDARY'],
+    [293, 883, 'NON RETURN VALVE OPENED'],
+    [293, 946, 'NO.3 EXTRUCTION STEAM SDECONDARY'],
+    [293, 968, 'NON RETURN VALVE CLOSED'],
+    [1799, 716, 'NO.3 EXTRUCTION STM SEC.NON RETURN'],
+    [1799, 737, 'VALVE TROUBLE'],
+    [2160, 760, 'nXV-TSn740_ABN', 1],
+    /* the timer: its time and the T of its input */
+    [858, 415, 'T', 1],
+    [667, 524, 'T', 1],
+    [681, 582, 'TP:10.0'],
+    [234, 1520, 'CONTROLLER:'],
+    [396, 1520, 'COMM+MD'],
+    [620, 1494, 'TRIGGER  :'],
+    [620, 1520, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA714',
+    title: 'NO.3 EXTRUCTION STEAM SECONDARY NON RETURN VALVE(TC-43)',
+    page: 174,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kInit', 292, 256, 'INITIAL', 'ref'],
+      ['kOff', 292, 352, 'OFF(0)', 'sys.ref']
+    ],
+    c: [
+      ['iA3', 'in', 'A3', 260, 756, '', ['TCA045']],
+      ['iA2', 'in', 'A2', 260, 894, '', ['TCA047']],
+      ['iA1', 'in', 'A1', 260, 978, '', ['TCA047']],
+      ['oA1', 'out', 'A1', 2094, P(0), '', ['TCA834']],
+      ['oA2', 'out', 'A2', 2093, P(5), '', ['-']],
+      ['oA3', 'out', 'A3', 2092, 673, '', ['-']]
+    ],
+    d: [
+      ['crtIys', 360, 162, 'in', 'nXV-TSn740_IYS', 'R', '#1C'],
+      ['crtKta', 359, R2, 'in', 'nXV-TSn740_KTA', 'R', '#1C'],
+      ['crtKtac', 360, 532.5, 'in', 'nXV-TSn740_KTAC', 'R', '#1C'],
+      ['crtIkr', 357, 639.5, 'in', 'nXV-TSn740_IKR', 'R', '#1C'],
+      ['crtIta', 1341, 162, 'out', 'nXV-TSn740_ITA', 'S', '#1C'],
+      ['crtAbn', 2094, 788, 'out', '', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nXV-TSn740',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1423, 748, '(LMA593)'],
+          [1522, 771, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:20.0', 'K:1.0%'].map((s, i) => [
+            1321,
+            Math.round(771 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 603.5, R1 + 10.5],
+      ['ffr024', 'FFR', '024', 913, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or025', 'OR', '025', 1117, R1 + 10.5],
+      ['a026', 'A', '026', 603.5, 521.5],
+      ['a027', 'A', '027', 603.5, 628.5],
+      ['or039', 'OR', '039', 797, 521.5],
+      ['tp040', 'TP', '040', 711, 543],
+      ['x1', 'X', '', 805, 597],
+      ['not037', 'NOT', '037', 1212.5, R1 + 10.5],
+      ['btr022', 'o:BTR', '022', 1066, 162],
+      ['btr036', 'o:BTR', '036', 1274, P(0)],
+      ['btr029', 'o:BTR', '029', 1275, R1],
+      ['btr030', 'o:BTR', '030', 1275, P(3)],
+      ['btr031', 'o:BTR', '031', 1275, P(5)],
+      ['btr034', 'o:BTR', '034', 1275, P(7)],
+      ['btr035', 'o:BTR', '035', 1273, P(8)],
+      ['btr028', 'o:BTR', '028', 1807, P(0)],
+      ['btr032', 'o:BTR', '032', 1752, P(5)],
+      ['btr033', 'o:BTR', '033', 1752, P(6)],
+      ['btr038', 'o:BTR', '038', 1822, 788]
+    ],
+    w,
+    j: [
+      [542, R1],
+      [542, 511],
+      [977, R1],
+      [1010, R1],
+      [1159, R1]
     ],
     t
   });
@@ -307807,7 +308809,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 9d32e85'));
+    row('Version', E('span', 'scsver', ver + ' · build 50c9651'));
   }
   function openSet(near) {
     if (!set) {
