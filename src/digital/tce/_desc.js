@@ -822,5 +822,7 @@ const TCS_DESC = {
   TCE502:
     'CV and oil pump simulators: two SIMCV blocks give the simulated CV(A) and CV(B) positions and servo amp outputs from the position demands (TCE212), forced closed by CV FORCED CLOSE (TCE053); PRESS.FLOW simulators give the MOP(B), COP(A) and COP(B) discharge oil pressures.',
   TCE503:
-    'Metal temperature simulator: from CV WARMING (LOWER) SET and CV WARMING COMP (TCE155 / TCE152) the AM blocks give the CV lower and upper inner and outer wall metal temperatures (to TCA359 / TCA363), reset by INITIAL and switched by TURBINE TRIP and TURBINE SPEED; plus the HP-T inner casing first stage inner wall metal temperature and, from GEN. LOAD, the MSV inlet steam temperatures and BOILER LIGHT OFF SIM.'
+    'Metal temperature simulator: from CV WARMING (LOWER) SET and CV WARMING COMP (TCE155 / TCE152) the AM blocks give the CV lower and upper inner and outer wall metal temperatures (to TCA359 / TCA363), reset by INITIAL and switched by TURBINE TRIP and TURBINE SPEED; plus the HP-T inner casing first stage inner wall metal temperature and, from GEN. LOAD, the MSV inlet steam temperatures and BOILER LIGHT OFF SIM.',
+  TCE600:
+    'EHG digital outputs (PI/O TCE960 points 1 to 16): control and main oil pump (A) start commands, DC emergency oil pump start and manual stop, turning gear motor start command and engaged, RSV/ICV and MSV/ICV full closed to the boiler reheater protection, and EHG soft major trouble or backup over speed (AND of TCE145 and TCE472, also to TCE602); six spare points.'
 };
