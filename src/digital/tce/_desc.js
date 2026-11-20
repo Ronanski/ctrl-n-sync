@@ -830,5 +830,7 @@ const TCS_DESC = {
   TCE602:
     'EHG digital outputs (PI/O TCE961 points 1 to 16): control and main oil pump (B) start commands, ASD1 start signal, DCS control mode permissive, power load unbalance relay operated, RSV/ICV and MSV/ICV full close, EHG soft not major trouble, EHG soft major trouble or backup over speed; the rest spare.',
   TCE603:
-    'EHG digital outputs (PI/O TCE961 points 17 to 32): turning gear engage solenoid valve, turning gear engage lamp and turning gear motor start lamp; the other thirteen points are spare.'
+    'EHG digital outputs (PI/O TCE961 points 17 to 32): turning gear engage solenoid valve, turning gear engage lamp and turning gear motor start lamp; the other thirteen points are spare.',
+  TCE610:
+    'EHG analog outputs (PI/O TCE970 points 1 to 8): target MW set point feedback, turbine load up rate, HP turbine first stage steam pressure (A), (B), (C) and turbine speed; points 7 and 8 are spare (SG K:0.0).'
 };
