@@ -266,6 +266,8 @@ const TCS_DESC = {
     'Alarm for generator protection 1/2: each A/B relay pair to the annunciator and the SOE, the volts/hertz to the ATS',
   'G-8B':
     'Alarm for generator protection 2/2: diode and field earth fault, exciter earth fault, control panel trouble, relay A/B trouble; trip and ready to synchronize to the DCS',
+  'G-9':
+    'Turbine operation: the signals between the turbine control and the generator sheets',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:

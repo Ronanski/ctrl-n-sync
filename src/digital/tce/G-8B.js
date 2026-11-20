@@ -35,7 +35,7 @@
   /* an input from another sheet: key, number, sheet, words, line */
   const inp = (k, n, sh, z, y) => {
     o.push([265, y, 12]);
-    t.push([265, y, n, 4], [284, y - 8, z], [284, y + 9, sh]);
+    t.push([265, y, n, 4], [284, y - 8, z], [284, y + 12, sh]);
     s.push([k, 253, y - 12, 277, y + 12]);
   };
   /* an output box (ANN, SOE, DCS) at line y, with its words right-aligned before it */
