@@ -254,6 +254,8 @@ const TCS_DESC = {
     'Field switch (41) logic: 41 close with ES and 52G open, rated speed, no trip demand and the excitation start; 41 open on the protection trip demands and AVR major trouble; AVR on / off; 41 and AVR states to the other sheets, ATS, DCS, annunciator and SOE',
   'G-5A':
     'GENERATOR PROTECTION LOGIC A (1/2): the relays of generator protection panel A, with 52G closed and 60FLA not on, to the lockout relay 86G-A and its trips',
+  'G-5B':
+    'GENERATOR PROTECTION LOGIC A (2/2): pole slip, VT fuse failure, under and over frequency to generator protection A operated, and the ST trip to the generator trip and breaker trip coils',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
