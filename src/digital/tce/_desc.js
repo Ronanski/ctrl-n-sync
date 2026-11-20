@@ -627,5 +627,7 @@ const TCS_DESC = {
   TCA750:
     'THSC interlock (1): THSC INPUT ABNORMAL = INITIAL or one of the four HP-T casing and reheat bowl metal temperature input errors',
   TCA751:
-    'Thermal stress (HP): THSC trigger and timer, INIT1 loading / INIT2 half speed / INIT3 others, LAG_ON, and the THSC INITIAL block with the stage and casing metal temperatures (real or simulated)'
+    'Thermal stress (HP): THSC trigger and timer, INIT1 loading / INIT2 half speed / INIT3 others, LAG_ON, and the THSC INITIAL block with the stage and casing metal temperatures (real or simulated)',
+  TCA752:
+    'Thermal stress (HP): three DISTRIBUTION blocks turn the stage temperatures TH(2)-TH(5) into TH(3)N-TH(5)N and QH(3)N'
 };
