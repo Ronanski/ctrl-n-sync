@@ -6278,6 +6278,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA982:
+    'Communication digital output table (3): solenoid valve commands of the cold reheat and extraction non return valves, steam seal diverting valve and LP exhaust hood spray.',
   TCA990:
     'Communication analog output table (1): lube oil cooler outlet temperature, gland steam and SPUV valve demand, HP warming valve, generator current, voltage, MVar, power factor and frequency.',
   TCE022: 'Explanation of the symbols used on the logic sheets.',
@@ -6584,7 +6586,9 @@ const TCS_DESC = {
   TCA802A:
     'Comm alarm (hardware) 9: the PI/O errors of unit 1 slot 1 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.',
   TCA802B:
-    'Comm alarm (hardware) 10: the PI/O errors of unit 1 slot 2 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
+    'Comm alarm (hardware) 10: the PI/O errors of unit 1 slot 2 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.',
+  TCA802C:
+    'Comm alarm (hardware) 11: the PI/O errors of unit 1 slot 3 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -63717,6 +63721,82 @@ const TCS_DESC = {
     t
   });
 })();
+/* TCA802C COMM ALARM(HARDWARE)(11) (331DM09788 page 214, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - PI/O error (TCA961-17 ... TCA961-24) through BTR 004 / 005 / 006 / 008 / 009 / 010 / 011 / 012 into OR 001.
+   - PI/O error (TCA961-25 ... TCA961-32) through BTR 013 / 015 / 016 / 017 / 018 / 019 / 020 / 021 into OR 014.
+   - OR 001 and OR 014 into OR 022; its output through BTR 003 = UNIT1 SLOT-3 THC AI ERROR, A (to TCA806), and through BTR 007
+     to CRT TCA802C_1.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    r = [],
+        t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const HW = 28.76;
+  /* [rows, OR left x, OR inputs, bends, BTR x, BTR nos] */
+  const Y1 = [240, 294, 347, 400, 453, 507, 560, 613],
+    I1 = [241, 262, 283, 306, 327, 348, 368, 389],
+    B1 = [1185, 1197, 1207, 1217, 1227, 1237, 1248],
+    N1 = ['004', '005', '006', '008', '009', '010', '011', '012'],
+    Y2 = [677, 730, 783, 836, 889, 942, 995, 1048],
+    I2 = [677, 698, 719, 740, 761, 783, 803, 825],
+    B2 = [1184, 1194, 1204, 1214, 1224, 1234, 1244],
+    N2 = ['013', '015', '016', '017', '018', '019', '020', '021'];
+  const row = (key, x0, y, i, xOR, I, B) =>
+    i === 0 ? W(key, [x0, I[0]], [xOR, I[0]]) : W(key, [x0, y], [B[i - 1], y], [B[i - 1], I[i]], [xOR, I[i]]);
+  Y1.forEach((y, i) => {
+    const key = 'pe' + (1 + i);
+    r.push([key, 237, y - 11, 126, 23, 'PI/O error']);
+    t.push([297, y - 16, '(TCA961-' + (17 + i) + ')', 1]);
+    b.push(['btr' + N1[i], 'o:BTR', N1[i], 793, i ? y : I1[0]]);
+    row(key, 363, y, i, 1262, I1, B1);
+  });
+  Y2.forEach((y, i) => {
+    const key = 'pe' + (9 + i);
+    r.push([key, 233, y - 11, 126, 23, 'PI/O error']);
+    t.push([293, y - 16, '(TCA961-' + (25 + i) + ')', 1]);
+    b.push(['btr' + N2[i], 'o:BTR', N2[i], 788, y]);
+    row(key, 359, y, i, 1258, I2, B2);
+  });
+  b.push(
+    ['or001', 'OR', '001', 1291, 315.5, [], {}, [58, 173]],
+    ['or014', 'OR', '014', 1288, 751.5, [], {}, [60, 171]],
+    ['or022', 'OR', '022', 1422, 252],
+    ['btr003', 'o:BTR', '003', 1696, 241],
+    ['btr007', 'o:BTR', '007', 1696, 401]
+  );
+  W('or001', [1320, 241], [1422 - HW, 241]);
+  W('or014', [1318, 677], [1378, 677], [1378, 263], [1422 - HW, 263]);
+  W('or022', [1422 + HW, 241], [2103 - 27, 241]);
+  W('or022', [1654, 241], [1654, 401], [2108 - 35, 401]);
+  t.push(
+    [1722, 237, 'UNIT1 SLOT-3 THC AI ERROR'],
+    [1722, 397, 'UNIT1 SLOT-3 THC AI ERROR'],
+    [233, 1522, 'CONTROLLER:'],
+    [394, 1522, 'COMM+MD'],
+    [656, 1495, 'TRIGGER  :'],
+    [656, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA802C',
+    title: 'COMM ALARM(HARDWARE)(11)',
+    page: 214,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [168, 80, 2228, 1542],
+    r,
+    c: [['oA', 'out', 'A', 2103, 241, '', ['TCA806'], 0, 1]],
+    d: [['crtA', 2108, 401, 'out', 'TCA802C_1', 'S', '#1C']],
+    b,
+    w,
+    j: [[1654, 241]],
+    t
+  });
+})();
 /* TCA825 ALARM (331DM09788 page 232, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
    Three alarms to the operator station (CRT TCA825_1.._3) and the connectors A1 / A2 / A3, and TURBINE TRIP on to TCA826 / TCA831:
    MAIN STEAM TEMP. LOW: turbine not tripped, the MSV inlet steam temperature low (CPL 295.0 / 290.0 degC) and the generator load once over
@@ -64639,6 +64719,85 @@ const TCS_DESC = {
       [617, 1504, 'TRIGGER  :'],
       [617, 1530, 'CYCLE(ms):100']
     ]
+  });
+})();
+/* TCA982 COMM DO TABLE(3) (331DM09788 page 256, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital output card unit 0 slot E (LYD105A) of the COMM controller, 32 channels (CH 0 ~ 1F): the
+   solenoid valve commands of the cold reheat and extraction non return valves, the steam seal diverting valve and the LP exhaust hood
+   spray; the rest spare. The rules are plain lines. */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) => l.push([[x0, y], [x1, y]]),
+    V = (x, y0, y1) => l.push([[x, y0], [x, y1]]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 272,
+    y0 = 137;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 696));
+  [0, 205, 495, 696].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 87, 130, 248, 290, 332, 376, 419, 537, 579, 621].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 350, y0 + 21, 'PI/O', 1], [x0 + 595, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [205, 'UNIT'],
+    [248, '0'],
+    [290, 'SLOT'],
+    [332, 'E'],
+    [376, 'TYPE'],
+    [419, 'LYD105A'],
+    [495, 'DVA'],
+    [579, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [269, 312, 356, 852, 931, 1012, 1152, 1326, 1457],
+    T = 196,
+    Y1 = 250,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 269, 1457);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 269, 1457);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DO Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['COLD REHEAT STEAM NON RETURN VALVE SV ENERGIZE COMMAND', 'SV-CRn901'],
+    1: ['NO.3 EXTRACTION STEAM NON RETURN VALVE ENERGIZE COMMAND', 'SV-TSn740'],
+    2: ['NO.2 EXTRACTION STEAM NON RETURN VALVE ENERGIZE COMMAND', 'SV-TSn700'],
+    3: ['STEAM SEAL DIVERTING VALVE SOLENOID VALVE ENERGIZE COMMAND', 'SV-GSn036'],
+    16: ['LP EXHAUST HOOD WATER SPRAY VALVE SOLENOID VALVE ENERGIZE', 'SV-CDn904'],
+    17: ['NO.5 EXTRACTION STEAM NON RETURN VALVE ENERGIZE COMMAND', 'SV-TSn730'],
+    18: ['NO.3 EXTRACTION STEAM PRIMARY NON RETURN VALVE ENERGIZE', 'SV-TSn710'],
+    19: ['NO.4 EXTRACTION STEAM NON RETURN VALVE ENERGIZE COMMAND', 'SV-TSn720']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([232, 1520, 'CONTROLLER:'], [392, 1520, 'COMM+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA982',
+    title: 'COMM DO TABLE(3)',
+    page: 256,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [168, 71, 2228, 1536],
+    l,
+    t
   });
 })();
 /* TCA990 COMM AO TABLE(1) (331DM09788 page 257, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
@@ -146631,7 +146790,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build b6d8f9f'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 99bbe8c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -173021,6 +173180,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA982:
+    'Communication digital output table (3): solenoid valve commands of the cold reheat and extraction non return valves, steam seal diverting valve and LP exhaust hood spray.',
   TCA990:
     'Communication analog output table (1): lube oil cooler outlet temperature, gland steam and SPUV valve demand, HP warming valve, generator current, voltage, MVar, power factor and frequency.',
   TCE022: 'Explanation of the symbols used on the logic sheets.',
@@ -173327,7 +173488,9 @@ const TCS_DESC = {
   TCA802A:
     'Comm alarm (hardware) 9: the PI/O errors of unit 1 slot 1 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.',
   TCA802B:
-    'Comm alarm (hardware) 10: the PI/O errors of unit 1 slot 2 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
+    'Comm alarm (hardware) 10: the PI/O errors of unit 1 slot 2 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.',
+  TCA802C:
+    'Comm alarm (hardware) 11: the PI/O errors of unit 1 slot 3 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -231145,6 +231308,84 @@ const TCS_DESC = {
   });
 })();
 
+/* ---- src/digital/tce/TCA802C.js ---- */
+/* TCA802C COMM ALARM(HARDWARE)(11) (331DM09788 page 214, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - PI/O error (TCA961-17 ... TCA961-24) through BTR 004 / 005 / 006 / 008 / 009 / 010 / 011 / 012 into OR 001.
+   - PI/O error (TCA961-25 ... TCA961-32) through BTR 013 / 015 / 016 / 017 / 018 / 019 / 020 / 021 into OR 014.
+   - OR 001 and OR 014 into OR 022; its output through BTR 003 = UNIT1 SLOT-3 THC AI ERROR, A (to TCA806), and through BTR 007
+     to CRT TCA802C_1.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    r = [],
+        t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const HW = 28.76;
+  /* [rows, OR left x, OR inputs, bends, BTR x, BTR nos] */
+  const Y1 = [240, 294, 347, 400, 453, 507, 560, 613],
+    I1 = [241, 262, 283, 306, 327, 348, 368, 389],
+    B1 = [1185, 1197, 1207, 1217, 1227, 1237, 1248],
+    N1 = ['004', '005', '006', '008', '009', '010', '011', '012'],
+    Y2 = [677, 730, 783, 836, 889, 942, 995, 1048],
+    I2 = [677, 698, 719, 740, 761, 783, 803, 825],
+    B2 = [1184, 1194, 1204, 1214, 1224, 1234, 1244],
+    N2 = ['013', '015', '016', '017', '018', '019', '020', '021'];
+  const row = (key, x0, y, i, xOR, I, B) =>
+    i === 0 ? W(key, [x0, I[0]], [xOR, I[0]]) : W(key, [x0, y], [B[i - 1], y], [B[i - 1], I[i]], [xOR, I[i]]);
+  Y1.forEach((y, i) => {
+    const key = 'pe' + (1 + i);
+    r.push([key, 237, y - 11, 126, 23, 'PI/O error']);
+    t.push([297, y - 16, '(TCA961-' + (17 + i) + ')', 1]);
+    b.push(['btr' + N1[i], 'o:BTR', N1[i], 793, i ? y : I1[0]]);
+    row(key, 363, y, i, 1262, I1, B1);
+  });
+  Y2.forEach((y, i) => {
+    const key = 'pe' + (9 + i);
+    r.push([key, 233, y - 11, 126, 23, 'PI/O error']);
+    t.push([293, y - 16, '(TCA961-' + (25 + i) + ')', 1]);
+    b.push(['btr' + N2[i], 'o:BTR', N2[i], 788, y]);
+    row(key, 359, y, i, 1258, I2, B2);
+  });
+  b.push(
+    ['or001', 'OR', '001', 1291, 315.5, [], {}, [58, 173]],
+    ['or014', 'OR', '014', 1288, 751.5, [], {}, [60, 171]],
+    ['or022', 'OR', '022', 1422, 252],
+    ['btr003', 'o:BTR', '003', 1696, 241],
+    ['btr007', 'o:BTR', '007', 1696, 401]
+  );
+  W('or001', [1320, 241], [1422 - HW, 241]);
+  W('or014', [1318, 677], [1378, 677], [1378, 263], [1422 - HW, 263]);
+  W('or022', [1422 + HW, 241], [2103 - 27, 241]);
+  W('or022', [1654, 241], [1654, 401], [2108 - 35, 401]);
+  t.push(
+    [1722, 237, 'UNIT1 SLOT-3 THC AI ERROR'],
+    [1722, 397, 'UNIT1 SLOT-3 THC AI ERROR'],
+    [233, 1522, 'CONTROLLER:'],
+    [394, 1522, 'COMM+MD'],
+    [656, 1495, 'TRIGGER  :'],
+    [656, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA802C',
+    title: 'COMM ALARM(HARDWARE)(11)',
+    page: 214,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [168, 80, 2228, 1542],
+    r,
+    c: [['oA', 'out', 'A', 2103, 241, '', ['TCA806'], 0, 1]],
+    d: [['crtA', 2108, 401, 'out', 'TCA802C_1', 'S', '#1C']],
+    b,
+    w,
+    j: [[1654, 241]],
+    t
+  });
+})();
+
 /* ---- src/digital/tce/TCA825.js ---- */
 /* TCA825 ALARM (331DM09788 page 232, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
    Three alarms to the operator station (CRT TCA825_1.._3) and the connectors A1 / A2 / A3, and TURBINE TRIP on to TCA826 / TCA831:
@@ -232074,6 +232315,87 @@ const TCS_DESC = {
       [617, 1504, 'TRIGGER  :'],
       [617, 1530, 'CYCLE(ms):100']
     ]
+  });
+})();
+
+/* ---- src/digital/tce/TCA982.js ---- */
+/* TCA982 COMM DO TABLE(3) (331DM09788 page 256, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital output card unit 0 slot E (LYD105A) of the COMM controller, 32 channels (CH 0 ~ 1F): the
+   solenoid valve commands of the cold reheat and extraction non return valves, the steam seal diverting valve and the LP exhaust hood
+   spray; the rest spare. The rules are plain lines. */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) => l.push([[x0, y], [x1, y]]),
+    V = (x, y0, y1) => l.push([[x, y0], [x, y1]]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 272,
+    y0 = 137;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 696));
+  [0, 205, 495, 696].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 87, 130, 248, 290, 332, 376, 419, 537, 579, 621].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 350, y0 + 21, 'PI/O', 1], [x0 + 595, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [205, 'UNIT'],
+    [248, '0'],
+    [290, 'SLOT'],
+    [332, 'E'],
+    [376, 'TYPE'],
+    [419, 'LYD105A'],
+    [495, 'DVA'],
+    [579, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [269, 312, 356, 852, 931, 1012, 1152, 1326, 1457],
+    T = 196,
+    Y1 = 250,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 269, 1457);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 269, 1457);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DO Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['COLD REHEAT STEAM NON RETURN VALVE SV ENERGIZE COMMAND', 'SV-CRn901'],
+    1: ['NO.3 EXTRACTION STEAM NON RETURN VALVE ENERGIZE COMMAND', 'SV-TSn740'],
+    2: ['NO.2 EXTRACTION STEAM NON RETURN VALVE ENERGIZE COMMAND', 'SV-TSn700'],
+    3: ['STEAM SEAL DIVERTING VALVE SOLENOID VALVE ENERGIZE COMMAND', 'SV-GSn036'],
+    16: ['LP EXHAUST HOOD WATER SPRAY VALVE SOLENOID VALVE ENERGIZE', 'SV-CDn904'],
+    17: ['NO.5 EXTRACTION STEAM NON RETURN VALVE ENERGIZE COMMAND', 'SV-TSn730'],
+    18: ['NO.3 EXTRACTION STEAM PRIMARY NON RETURN VALVE ENERGIZE', 'SV-TSn710'],
+    19: ['NO.4 EXTRACTION STEAM NON RETURN VALVE ENERGIZE COMMAND', 'SV-TSn720']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([232, 1520, 'CONTROLLER:'], [392, 1520, 'COMM+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA982',
+    title: 'COMM DO TABLE(3)',
+    page: 256,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [168, 71, 2228, 1536],
+    l,
+    t
   });
 })();
 
@@ -335143,7 +335465,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b6d8f9f'));
+    row('Version', E('span', 'scsver', ver + ' · build 99bbe8c'));
   }
   function openSet(near) {
     if (!set) {
