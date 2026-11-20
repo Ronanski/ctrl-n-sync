@@ -6278,6 +6278,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA990:
+    'Communication analog output table (1): lube oil cooler outlet temperature, gland steam and SPUV valve demand, HP warming valve, generator current, voltage, MVar, power factor and frequency.',
   TCE022: 'Explanation of the symbols used on the logic sheets.',
   TCE023: 'Explanation of the PI/O tables on the logic sheets (slot, type, unit, address).',
   TCE040:
@@ -6578,7 +6580,9 @@ const TCS_DESC = {
   TCA801D:
     'Comm alarm (hardware) 7: the PI/O errors of unit 1 slot C through an OR (eight spare OFF inputs on a second OR), as AI error to the CRT and TCA806.',
   TCA802:
-    'Comm alarm (hardware) 8: the PI/O errors of unit 1 slot 0 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
+    'Comm alarm (hardware) 8: the PI/O errors of unit 1 slot 0 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.',
+  TCA802A:
+    'Comm alarm (hardware) 9: the PI/O errors of unit 1 slot 1 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -63559,6 +63563,82 @@ const TCS_DESC = {
     t
   });
 })();
+/* TCA802A COMM ALARM(HARDWARE)(9) (331DM09788 page 212, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - PI/O error (TCA960-17 ... TCA960-24) through BTR 004 / 005 / 006 / 008 / 009 / 010 / 011 / 012 into OR 001.
+   - PI/O error (TCA960-25 ... TCA960-32) through BTR 013 / 015 / 016 / 017 / 018 / 019 / 020 / 021 into OR 014.
+   - OR 001 and OR 014 into OR 022; its output through BTR 003 = UNIT1 SLOT-1 THC AI ERROR, A (to TCA806), and through BTR 007
+     to CRT TCA802A_1.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    r = [],
+        t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const HW = 28.76;
+  /* [rows, OR left x, OR inputs, bends, BTR x, BTR nos] */
+  const Y1 = [240, 294, 347, 400, 453, 507, 560, 613],
+    I1 = [241, 262, 283, 306, 327, 348, 368, 389],
+    B1 = [1185, 1197, 1207, 1217, 1227, 1237, 1248],
+    N1 = ['004', '005', '006', '008', '009', '010', '011', '012'],
+    Y2 = [677, 730, 783, 836, 889, 942, 995, 1048],
+    I2 = [677, 698, 719, 740, 761, 783, 803, 825],
+    B2 = [1184, 1194, 1204, 1214, 1224, 1234, 1244],
+    N2 = ['013', '015', '016', '017', '018', '019', '020', '021'];
+  const row = (key, x0, y, i, xOR, I, B) =>
+    i === 0 ? W(key, [x0, I[0]], [xOR, I[0]]) : W(key, [x0, y], [B[i - 1], y], [B[i - 1], I[i]], [xOR, I[i]]);
+  Y1.forEach((y, i) => {
+    const key = 'pe' + (1 + i);
+    r.push([key, 237, y - 11, 126, 23, 'PI/O error']);
+    t.push([297, y - 16, '(TCA960-' + (17 + i) + ')', 1]);
+    b.push(['btr' + N1[i], 'o:BTR', N1[i], 793, i ? y : I1[0]]);
+    row(key, 363, y, i, 1262, I1, B1);
+  });
+  Y2.forEach((y, i) => {
+    const key = 'pe' + (9 + i);
+    r.push([key, 233, y - 11, 126, 23, 'PI/O error']);
+    t.push([293, y - 16, '(TCA960-' + (25 + i) + ')', 1]);
+    b.push(['btr' + N2[i], 'o:BTR', N2[i], 788, y]);
+    row(key, 359, y, i, 1258, I2, B2);
+  });
+  b.push(
+    ['or001', 'OR', '001', 1291, 315.5, [], {}, [58, 173]],
+    ['or014', 'OR', '014', 1288, 751.5, [], {}, [60, 171]],
+    ['or022', 'OR', '022', 1422, 252],
+    ['btr003', 'o:BTR', '003', 1695, 241],
+    ['btr007', 'o:BTR', '007', 1695, 401]
+  );
+  W('or001', [1320, 241], [1422 - HW, 241]);
+  W('or014', [1318, 677], [1378, 677], [1378, 263], [1422 - HW, 263]);
+  W('or022', [1422 + HW, 241], [2101 - 27, 241]);
+  W('or022', [1653, 241], [1653, 401], [2106 - 35, 401]);
+  t.push(
+    [1722, 237, 'UNIT1 SLOT-1 THC AI ERROR'],
+    [1722, 397, 'UNIT1 SLOT-1 THC AI ERROR'],
+    [233, 1522, 'CONTROLLER:'],
+    [394, 1522, 'COMM+MD'],
+    [656, 1495, 'TRIGGER  :'],
+    [656, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA802A',
+    title: 'COMM ALARM(HARDWARE)(9)',
+    page: 212,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [168, 80, 2228, 1542],
+    r,
+    c: [['oA', 'out', 'A', 2101, 241, '', ['TCA806'], 0, 1]],
+    d: [['crtA', 2106, 401, 'out', 'TCA802A_1', 'S', '#1C']],
+    b,
+    w,
+    j: [[1653, 241]],
+    t
+  });
+})();
 /* TCA825 ALARM (331DM09788 page 232, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
    Three alarms to the operator station (CRT TCA825_1.._3) and the connectors A1 / A2 / A3, and TURBINE TRIP on to TCA826 / TCA831:
    MAIN STEAM TEMP. LOW: turbine not tripped, the MSV inlet steam temperature low (CPL 295.0 / 290.0 degC) and the generator load once over
@@ -64481,6 +64561,133 @@ const TCS_DESC = {
       [617, 1504, 'TRIGGER  :'],
       [617, 1530, 'CYCLE(ms):100']
     ]
+  });
+})();
+/* TCA990 COMM AO TABLE(1) (331DM09788 page 257, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the analog outputs of the COMM controller: three cards (unit 1 slot D, unit 1 slot E, unit 0 slot F,
+   type LYA100A), eight channels each, with the bare, engineering and execution range of each output. The rules are plain lines; the
+   scan is a little turned, so each card table is placed at its own corner. */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) => l.push([[x0, y], [x1, y]]),
+    V = (x, y0, y1) => l.push([[x, y0], [x, y1]]);
+  /* the columns of a table, from the left rule */
+  const X = [0, 43, 85, 582, 648, 712, 776, 855, 919, 983, 1048, 1126, 1207, 1270, 1350, 1429, 1569, 1744, 1873];
+  /* one card: left x, top y of the card definition, unit, slot, rows [name, bare low, up, unit, span, eng low, up, unit, exec low, up, unit, instrument] */
+  const card = (x0, y0, no, unit, slot, R) => {
+    const x = i => x0 + X[i];
+    /* the card definition: SDIO/CE, PI/O, RTB */
+    const C = [0, 43, 86, 128, 203, 247, 290, 334, 376, 419, 492, 534, 578, 622, 697];
+    H(y0, x0, x0 + 697);
+    H(y0 + 27, x0, x0 + 697);
+    H(y0 + 54, x0, x0 + 697);
+    [0, 203, 492, 697].forEach(c => V(x0 + c, y0, y0 + 54));
+    C.forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+    t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 347, y0 + 21, 'PI/O', 1], [x0 + 594, y0 + 21, 'RTB', 1]);
+    [
+      [0, 'SLOT'],
+      [86, 'TYPE'],
+      [203, 'UNIT'],
+      [247, unit],
+      [290, 'SLOT'],
+      [334, slot],
+      [376, 'TYPE'],
+      [419, 'LYA100A'],
+      [492, 'DVA'],
+      [578, 'TYPE']
+    ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+    /* the table head */
+    const T = y0 + 59,
+      M = T + 26,
+      Y1 = T + 53,
+      RH = 31.5,
+      B = Y1 + 8 * RH;
+    H(T, x0, x0 + 1873);
+    H(M, x(3), x(6));
+    H(M, x(7), x(13));
+    H(Y1, x0, x0 + 1873);
+    X.forEach((c, i) => {
+      const top = [4, 5, 8, 9, 11, 12].includes(i) ? M : T;
+      V(x0 + c, top, B);
+    });
+    for (let i = 1; i <= 8; i++) H(Y1 + i * RH, x0, x0 + 1873);
+    const hc = (a, b2) => (x(a) + x(b2)) / 2;
+    t.push(
+      [hc(0, 1), T + 22, 'thr.', 1],
+      [hc(0, 1), T + 48, 'No.', 1],
+      [hc(1, 2), T + 22, 'CH', 1],
+      [hc(1, 2), T + 48, 'No.', 1],
+      [hc(2, 3), T + 37, 'AO Signal Name', 1],
+      [hc(3, 6), T + 22, 'bare range', 1],
+      [hc(3, 4), T + 48, 'low', 1],
+      [hc(4, 5), T + 48, 'up', 1],
+      [hc(5, 6), T + 48, 'unit', 1],
+      [hc(6, 7), T + 22, 'range', 1],
+      [hc(6, 7), T + 48, 'span', 1],
+      [hc(7, 10), T + 22, 'eng. range', 1],
+      [hc(7, 8), T + 48, 'low', 1],
+      [hc(8, 9), T + 48, 'up', 1],
+      [hc(9, 10), T + 48, 'unit', 1],
+      [hc(10, 13), T + 22, 'exec. range', 1],
+      [hc(10, 11), T + 48, 'low', 1],
+      [hc(11, 12), T + 48, 'up', 1],
+      [hc(12, 13), T + 48, 'unit', 1],
+      [hc(13, 14), T + 22, 'logic', 1],
+      [hc(13, 14), T + 48, 'SH No.', 1],
+      [hc(14, 15), T + 22, 'seq.', 1],
+      [hc(14, 15), T + 48, 'SH No.', 1],
+      [hc(15, 16), T + 37, 'connect', 1],
+      [hc(16, 17), T + 37, 'instrument No.', 1],
+      [hc(17, 18), T + 37, 'EDB idNo.', 1]
+    );
+    /* the rows */
+    for (let i = 0; i < 8; i++) {
+      const y = Y1 + (i + 1) * RH - 8,
+        r = R[i] || [];
+      t.push([x(0) + 6, y, String(no + i)], [x(1) + 8, y, String(i)]);
+      const at = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16];
+      r.forEach((z, k) => {
+        if (z !== '') t.push([x(at[k]) + 7, y, z]);
+      });
+    }
+  };
+  const range = (bl, bu, en, eu, un, xl, xu) => [bl, bu, 'mA', '20', en, eu, un, xl, xu, un];
+  card(271, 101, 1, '1', 'D', [
+    ['LUBE OIL COOLER OUTLET OIL TEMP.(A)', ...range('4', '20', '0', '100', 'degC', '0', '100')],
+    ['STEAM SEAL FEED VALVE POSITION DEMAND', ...range('20', '4', '0', '100', '%', '0', '100'), 'PV-GSn031'],
+    ['HP TURBINE WARMING VALVE POSITION', ...range('4', '20', '0', '100', '%', '0', '100')],
+    ['STEAM SEAL FEED VALVE MANIPULATION VALUE', ...range('4', '20', '0', '100', '%', '0', '100')],
+    ['GEN. CURRENT(A)', ...range('4', '20', '0', '10', 'kA', '0', '10')],
+    ['GEN. VOLTAGE(A-B)', ...range('4', '20', '0', '18', 'kV', '0', '18')],
+    ['(SPARE)'],
+    ['(SPARE)']
+  ]);
+  card(269, 496, 9, '1', 'E', [
+    ['LUBE OIL COOLER OUTLET OIL TEMP.(B)', ...range('4', '20', '0', '100', 'degC', '0', '100')],
+    ['SPUV POSITION DEMAND', ...range('4', '20', '0', '100', '%', '0', '100'), 'PV-GSn034'],
+    ['GEN. MVAR', ...range('4', '20', '-240', '240', 'MVar', '-240', '240')],
+    ['GEN. CURRENT(B)', ...range('4', '20', '0', '10', 'kA', '0', '10')],
+    ['GEN. VOLTAGE(B-C)', ...range('4', '20', '0', '18', 'kV', '0', '18')],
+    ['GEN. POWER FACTOR', ...range('4', '20', '0.5', '1.5', '', '0.5', '1.5')],
+    ['FREQUENCY', ...range('4', '20', '55', '65', 'Hz', '55', '65')],
+    ['(SPARE)']
+  ]);
+  card(268, 890, 17, '0', 'F', [
+    ['GEN. CURRENT(C)', ...range('4', '20', '0', '10', 'kA', '0', '10')],
+    ['GEN. VOLTAGE(C-A)', ...range('4', '20', '0', '18', 'kV', '0', '18')],
+    ['SPARE', '4', '20', 'mA', '20', '0', '100', '%', '0', '5', '%']
+  ]);
+  t.push([232, 1520, 'CONTROLLER:'], [392, 1520, 'COMM+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA990',
+    title: 'COMM AO TABLE(1)',
+    page: 257,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [168, 73, 2226, 1537],
+    l,
+    t
   });
 })();
 /* IBD typical 15 SIMPLIFIED LOGIC FOR MOTOR (Interlock Block Diagram 310SC90-794 rev 2, page 15). Typed from the drawing; units = the pixels of the page
@@ -146346,7 +146553,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 9400c57'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 0a7b978'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -172736,6 +172943,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA990:
+    'Communication analog output table (1): lube oil cooler outlet temperature, gland steam and SPUV valve demand, HP warming valve, generator current, voltage, MVar, power factor and frequency.',
   TCE022: 'Explanation of the symbols used on the logic sheets.',
   TCE023: 'Explanation of the PI/O tables on the logic sheets (slot, type, unit, address).',
   TCE040:
@@ -173036,7 +173245,9 @@ const TCS_DESC = {
   TCA801D:
     'Comm alarm (hardware) 7: the PI/O errors of unit 1 slot C through an OR (eight spare OFF inputs on a second OR), as AI error to the CRT and TCA806.',
   TCA802:
-    'Comm alarm (hardware) 8: the PI/O errors of unit 1 slot 0 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
+    'Comm alarm (hardware) 8: the PI/O errors of unit 1 slot 0 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.',
+  TCA802A:
+    'Comm alarm (hardware) 9: the PI/O errors of unit 1 slot 1 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -230698,6 +230909,84 @@ const TCS_DESC = {
   });
 })();
 
+/* ---- src/digital/tce/TCA802A.js ---- */
+/* TCA802A COMM ALARM(HARDWARE)(9) (331DM09788 page 212, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - PI/O error (TCA960-17 ... TCA960-24) through BTR 004 / 005 / 006 / 008 / 009 / 010 / 011 / 012 into OR 001.
+   - PI/O error (TCA960-25 ... TCA960-32) through BTR 013 / 015 / 016 / 017 / 018 / 019 / 020 / 021 into OR 014.
+   - OR 001 and OR 014 into OR 022; its output through BTR 003 = UNIT1 SLOT-1 THC AI ERROR, A (to TCA806), and through BTR 007
+     to CRT TCA802A_1.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    r = [],
+        t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const HW = 28.76;
+  /* [rows, OR left x, OR inputs, bends, BTR x, BTR nos] */
+  const Y1 = [240, 294, 347, 400, 453, 507, 560, 613],
+    I1 = [241, 262, 283, 306, 327, 348, 368, 389],
+    B1 = [1185, 1197, 1207, 1217, 1227, 1237, 1248],
+    N1 = ['004', '005', '006', '008', '009', '010', '011', '012'],
+    Y2 = [677, 730, 783, 836, 889, 942, 995, 1048],
+    I2 = [677, 698, 719, 740, 761, 783, 803, 825],
+    B2 = [1184, 1194, 1204, 1214, 1224, 1234, 1244],
+    N2 = ['013', '015', '016', '017', '018', '019', '020', '021'];
+  const row = (key, x0, y, i, xOR, I, B) =>
+    i === 0 ? W(key, [x0, I[0]], [xOR, I[0]]) : W(key, [x0, y], [B[i - 1], y], [B[i - 1], I[i]], [xOR, I[i]]);
+  Y1.forEach((y, i) => {
+    const key = 'pe' + (1 + i);
+    r.push([key, 237, y - 11, 126, 23, 'PI/O error']);
+    t.push([297, y - 16, '(TCA960-' + (17 + i) + ')', 1]);
+    b.push(['btr' + N1[i], 'o:BTR', N1[i], 793, i ? y : I1[0]]);
+    row(key, 363, y, i, 1262, I1, B1);
+  });
+  Y2.forEach((y, i) => {
+    const key = 'pe' + (9 + i);
+    r.push([key, 233, y - 11, 126, 23, 'PI/O error']);
+    t.push([293, y - 16, '(TCA960-' + (25 + i) + ')', 1]);
+    b.push(['btr' + N2[i], 'o:BTR', N2[i], 788, y]);
+    row(key, 359, y, i, 1258, I2, B2);
+  });
+  b.push(
+    ['or001', 'OR', '001', 1291, 315.5, [], {}, [58, 173]],
+    ['or014', 'OR', '014', 1288, 751.5, [], {}, [60, 171]],
+    ['or022', 'OR', '022', 1422, 252],
+    ['btr003', 'o:BTR', '003', 1695, 241],
+    ['btr007', 'o:BTR', '007', 1695, 401]
+  );
+  W('or001', [1320, 241], [1422 - HW, 241]);
+  W('or014', [1318, 677], [1378, 677], [1378, 263], [1422 - HW, 263]);
+  W('or022', [1422 + HW, 241], [2101 - 27, 241]);
+  W('or022', [1653, 241], [1653, 401], [2106 - 35, 401]);
+  t.push(
+    [1722, 237, 'UNIT1 SLOT-1 THC AI ERROR'],
+    [1722, 397, 'UNIT1 SLOT-1 THC AI ERROR'],
+    [233, 1522, 'CONTROLLER:'],
+    [394, 1522, 'COMM+MD'],
+    [656, 1495, 'TRIGGER  :'],
+    [656, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA802A',
+    title: 'COMM ALARM(HARDWARE)(9)',
+    page: 212,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [168, 80, 2228, 1542],
+    r,
+    c: [['oA', 'out', 'A', 2101, 241, '', ['TCA806'], 0, 1]],
+    d: [['crtA', 2106, 401, 'out', 'TCA802A_1', 'S', '#1C']],
+    b,
+    w,
+    j: [[1653, 241]],
+    t
+  });
+})();
+
 /* ---- src/digital/tce/TCA825.js ---- */
 /* TCA825 ALARM (331DM09788 page 232, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
    Three alarms to the operator station (CRT TCA825_1.._3) and the connectors A1 / A2 / A3, and TURBINE TRIP on to TCA826 / TCA831:
@@ -231627,6 +231916,135 @@ const TCS_DESC = {
       [617, 1504, 'TRIGGER  :'],
       [617, 1530, 'CYCLE(ms):100']
     ]
+  });
+})();
+
+/* ---- src/digital/tce/TCA990.js ---- */
+/* TCA990 COMM AO TABLE(1) (331DM09788 page 257, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the analog outputs of the COMM controller: three cards (unit 1 slot D, unit 1 slot E, unit 0 slot F,
+   type LYA100A), eight channels each, with the bare, engineering and execution range of each output. The rules are plain lines; the
+   scan is a little turned, so each card table is placed at its own corner. */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) => l.push([[x0, y], [x1, y]]),
+    V = (x, y0, y1) => l.push([[x, y0], [x, y1]]);
+  /* the columns of a table, from the left rule */
+  const X = [0, 43, 85, 582, 648, 712, 776, 855, 919, 983, 1048, 1126, 1207, 1270, 1350, 1429, 1569, 1744, 1873];
+  /* one card: left x, top y of the card definition, unit, slot, rows [name, bare low, up, unit, span, eng low, up, unit, exec low, up, unit, instrument] */
+  const card = (x0, y0, no, unit, slot, R) => {
+    const x = i => x0 + X[i];
+    /* the card definition: SDIO/CE, PI/O, RTB */
+    const C = [0, 43, 86, 128, 203, 247, 290, 334, 376, 419, 492, 534, 578, 622, 697];
+    H(y0, x0, x0 + 697);
+    H(y0 + 27, x0, x0 + 697);
+    H(y0 + 54, x0, x0 + 697);
+    [0, 203, 492, 697].forEach(c => V(x0 + c, y0, y0 + 54));
+    C.forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+    t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 347, y0 + 21, 'PI/O', 1], [x0 + 594, y0 + 21, 'RTB', 1]);
+    [
+      [0, 'SLOT'],
+      [86, 'TYPE'],
+      [203, 'UNIT'],
+      [247, unit],
+      [290, 'SLOT'],
+      [334, slot],
+      [376, 'TYPE'],
+      [419, 'LYA100A'],
+      [492, 'DVA'],
+      [578, 'TYPE']
+    ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+    /* the table head */
+    const T = y0 + 59,
+      M = T + 26,
+      Y1 = T + 53,
+      RH = 31.5,
+      B = Y1 + 8 * RH;
+    H(T, x0, x0 + 1873);
+    H(M, x(3), x(6));
+    H(M, x(7), x(13));
+    H(Y1, x0, x0 + 1873);
+    X.forEach((c, i) => {
+      const top = [4, 5, 8, 9, 11, 12].includes(i) ? M : T;
+      V(x0 + c, top, B);
+    });
+    for (let i = 1; i <= 8; i++) H(Y1 + i * RH, x0, x0 + 1873);
+    const hc = (a, b2) => (x(a) + x(b2)) / 2;
+    t.push(
+      [hc(0, 1), T + 22, 'thr.', 1],
+      [hc(0, 1), T + 48, 'No.', 1],
+      [hc(1, 2), T + 22, 'CH', 1],
+      [hc(1, 2), T + 48, 'No.', 1],
+      [hc(2, 3), T + 37, 'AO Signal Name', 1],
+      [hc(3, 6), T + 22, 'bare range', 1],
+      [hc(3, 4), T + 48, 'low', 1],
+      [hc(4, 5), T + 48, 'up', 1],
+      [hc(5, 6), T + 48, 'unit', 1],
+      [hc(6, 7), T + 22, 'range', 1],
+      [hc(6, 7), T + 48, 'span', 1],
+      [hc(7, 10), T + 22, 'eng. range', 1],
+      [hc(7, 8), T + 48, 'low', 1],
+      [hc(8, 9), T + 48, 'up', 1],
+      [hc(9, 10), T + 48, 'unit', 1],
+      [hc(10, 13), T + 22, 'exec. range', 1],
+      [hc(10, 11), T + 48, 'low', 1],
+      [hc(11, 12), T + 48, 'up', 1],
+      [hc(12, 13), T + 48, 'unit', 1],
+      [hc(13, 14), T + 22, 'logic', 1],
+      [hc(13, 14), T + 48, 'SH No.', 1],
+      [hc(14, 15), T + 22, 'seq.', 1],
+      [hc(14, 15), T + 48, 'SH No.', 1],
+      [hc(15, 16), T + 37, 'connect', 1],
+      [hc(16, 17), T + 37, 'instrument No.', 1],
+      [hc(17, 18), T + 37, 'EDB idNo.', 1]
+    );
+    /* the rows */
+    for (let i = 0; i < 8; i++) {
+      const y = Y1 + (i + 1) * RH - 8,
+        r = R[i] || [];
+      t.push([x(0) + 6, y, String(no + i)], [x(1) + 8, y, String(i)]);
+      const at = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16];
+      r.forEach((z, k) => {
+        if (z !== '') t.push([x(at[k]) + 7, y, z]);
+      });
+    }
+  };
+  const range = (bl, bu, en, eu, un, xl, xu) => [bl, bu, 'mA', '20', en, eu, un, xl, xu, un];
+  card(271, 101, 1, '1', 'D', [
+    ['LUBE OIL COOLER OUTLET OIL TEMP.(A)', ...range('4', '20', '0', '100', 'degC', '0', '100')],
+    ['STEAM SEAL FEED VALVE POSITION DEMAND', ...range('20', '4', '0', '100', '%', '0', '100'), 'PV-GSn031'],
+    ['HP TURBINE WARMING VALVE POSITION', ...range('4', '20', '0', '100', '%', '0', '100')],
+    ['STEAM SEAL FEED VALVE MANIPULATION VALUE', ...range('4', '20', '0', '100', '%', '0', '100')],
+    ['GEN. CURRENT(A)', ...range('4', '20', '0', '10', 'kA', '0', '10')],
+    ['GEN. VOLTAGE(A-B)', ...range('4', '20', '0', '18', 'kV', '0', '18')],
+    ['(SPARE)'],
+    ['(SPARE)']
+  ]);
+  card(269, 496, 9, '1', 'E', [
+    ['LUBE OIL COOLER OUTLET OIL TEMP.(B)', ...range('4', '20', '0', '100', 'degC', '0', '100')],
+    ['SPUV POSITION DEMAND', ...range('4', '20', '0', '100', '%', '0', '100'), 'PV-GSn034'],
+    ['GEN. MVAR', ...range('4', '20', '-240', '240', 'MVar', '-240', '240')],
+    ['GEN. CURRENT(B)', ...range('4', '20', '0', '10', 'kA', '0', '10')],
+    ['GEN. VOLTAGE(B-C)', ...range('4', '20', '0', '18', 'kV', '0', '18')],
+    ['GEN. POWER FACTOR', ...range('4', '20', '0.5', '1.5', '', '0.5', '1.5')],
+    ['FREQUENCY', ...range('4', '20', '55', '65', 'Hz', '55', '65')],
+    ['(SPARE)']
+  ]);
+  card(268, 890, 17, '0', 'F', [
+    ['GEN. CURRENT(C)', ...range('4', '20', '0', '10', 'kA', '0', '10')],
+    ['GEN. VOLTAGE(C-A)', ...range('4', '20', '0', '18', 'kV', '0', '18')],
+    ['SPARE', '4', '20', 'mA', '20', '0', '100', '%', '0', '5', '%']
+  ]);
+  t.push([232, 1520, 'CONTROLLER:'], [392, 1520, 'COMM+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA990',
+    title: 'COMM AO TABLE(1)',
+    page: 257,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [168, 73, 2226, 1537],
+    l,
+    t
   });
 })();
 
@@ -334567,7 +334985,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 9400c57'));
+    row('Version', E('span', 'scsver', ver + ' · build 0a7b978'));
   }
   function openSet(near) {
     if (!set) {
