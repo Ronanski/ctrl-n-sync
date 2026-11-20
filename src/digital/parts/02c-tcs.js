@@ -197,6 +197,7 @@ function tcsRetype(s, q) {
   for (const k in p.sd.box) if (k in nets) at[nets[k]] = at[nets[k]] || p.sd.box[k];
   s.raw = p.raw;
   s.tx = p.tx;
+  s.desc = p.desc;
   s.sd.seg = p.sd.seg.map(n => (n === undefined ? undefined : map[n]));
   s.sd.dots = p.sd.dots.map(d => ({ x: d.x, y: d.y, n: map[d.n] }));
   s.sd.n = free;

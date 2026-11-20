@@ -915,7 +915,7 @@
         }
       })
     ]);
-    dp.append(hd, E('p', { cls: 'dp-note', txt: 'Run, then click an input to switch it. PB = press and hold. A dashed (auto) input follows the equipment or another sheet.' }), selBox);
+    dp.append(hd, s.desc ? E('p', { cls: 'dp-desc', txt: s.desc }) : '', E('p', { cls: 'dp-note', txt: 'Run, then click an input to switch it. PB = press and hold. A dashed (auto) input follows the equipment or another sheet.' }), selBox);
     if (pk && pk.s !== s) pk = null;
     buildSel();
     /* inputs */
