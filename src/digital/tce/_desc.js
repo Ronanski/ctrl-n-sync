@@ -824,5 +824,7 @@ const TCS_DESC = {
   TCE503:
     'Metal temperature simulator: from CV WARMING (LOWER) SET and CV WARMING COMP (TCE155 / TCE152) the AM blocks give the CV lower and upper inner and outer wall metal temperatures (to TCA359 / TCA363), reset by INITIAL and switched by TURBINE TRIP and TURBINE SPEED; plus the HP-T inner casing first stage inner wall metal temperature and, from GEN. LOAD, the MSV inlet steam temperatures and BOILER LIGHT OFF SIM.',
   TCE600:
-    'EHG digital outputs (PI/O TCE960 points 1 to 16): control and main oil pump (A) start commands, DC emergency oil pump start and manual stop, turning gear motor start command and engaged, RSV/ICV and MSV/ICV full closed to the boiler reheater protection, and EHG soft major trouble or backup over speed (AND of TCE145 and TCE472, also to TCE602); six spare points.'
+    'EHG digital outputs (PI/O TCE960 points 1 to 16): control and main oil pump (A) start commands, DC emergency oil pump start and manual stop, turning gear motor start command and engaged, RSV/ICV and MSV/ICV full closed to the boiler reheater protection, and EHG soft major trouble or backup over speed (AND of TCE145 and TCE472, also to TCE602); six spare points.',
+  TCE601:
+    'EHG digital outputs (PI/O TCE960 points 17 to 32): 52L open for house load operation, turbine speed <2400 rpm, acceleration relay operated, DCS mode on feedback, ASD2 start signal, HP-CV full close, turbine trip, MSV/CV(A) and (B) sequential full close test, 41 close, generator lockout relay (86G) A and B operated, ICV to CV transfer complete; three spare points.'
 };
