@@ -687,5 +687,7 @@ const TCS_DESC = {
   TCA770:
     'THSC SIMULATION: a ramp integrator through four curves gives the simulated HP / IP inner and outer wall metal temperatures',
   TCA775:
-    'GEN MONITOR: three pulse counters total the generator watt-hours, var-hours and excitation transformer watt-hours'
+    'GEN MONITOR: three pulse counters total the generator watt-hours, var-hours and excitation transformer watt-hours',
+  TCA777:
+    'SIMULATOR: simulated CV inner and outer wall metal temperatures, HP-T inner casing temperature and MSV inlet steam temperature'
 };
