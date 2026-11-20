@@ -43,7 +43,10 @@
           if (!ok) return;
           const b = document.getElementById(id);
           if (b) b.click();
-          (AN._startP || Promise.resolve()).then(() => go && go(), () => {});
+          (AN._startP || Promise.resolve()).then(
+            () => go && go(),
+            () => {}
+          );
         }, 250);
       };
     [
@@ -210,7 +213,11 @@
      by step) are pages of their own (src/ui/shell/home.js); TOOLS has no rail button any more: ⚙ > Engineering tools */
   const TABS = [
     ['home', 'Home', 'Start here: what do you want to do, starting state of the plant, recent sheets'],
-    ['operate', 'Plant view', 'Plant graphics with the faceplates (A / M / R, SV, MV) like the operator station; on a PC it opens in its own window'],
+    [
+      'operate',
+      'Plant view',
+      'Plant graphics with the faceplates (A / M / R, SV, MV) like the operator station; on a PC it opens in its own window'
+    ],
     ['logic', 'Logic', 'The ABC (analog), DITL (digital) and TCS (turbine) drawings: trace, run, force'],
     ['library', 'Library', 'I/O list, memory list, wiring, relay / SER, calculations'],
     ['tools', 'Tools', 'Block tests, audit, health, project files, drawing edit', 1]
@@ -261,9 +268,13 @@
     if (!w || w.closed || !w.document) return false;
     const d = w.document;
     d.open();
-    d.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PLANT VIEW · DCS Logic Simulator</title></head><body></body></html>');
+    d.write(
+      '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PLANT VIEW · DCS Logic Simulator</title></head><body></body></html>'
+    );
     d.close();
-    document.querySelectorAll('style,link[rel=stylesheet],link[rel=icon]').forEach(x => d.head.append(x.cloneNode(true)));
+    document
+      .querySelectorAll('style,link[rel=stylesheet],link[rel=icon]')
+      .forEach(x => d.head.append(x.cloneNode(true)));
     for (const a of document.documentElement.attributes) d.documentElement.setAttribute(a.name, a.value);
     d.head.append(
       Object.assign(d.createElement('style'), {
@@ -282,12 +293,23 @@
     d.body.className = document.body.className + ' pvwin';
     d.body.dataset.tab = 'operate';
     const mk = (t, a) => Object.assign(d.createElement(t), a || {});
-    const rb = mk('button', { title: 'Run / Pause the simulation (the same as the Run button of the LOGIC tab)', onclick: () => run && run.click() }),
+    const rb = mk('button', {
+        title: 'Run / Pause the simulation (the same as the Run button of the LOGIC tab)',
+        onclick: () => run && run.click()
+      }),
       st = mk('span', { className: 'pvs' }),
       ck = mk('span', { className: 'pvs' }),
       dock = mk('button', { textContent: 'Dock', title: 'Bring the PLANT VIEW back into the main window (tab)' }),
       bar = mk('div', { id: 'pvbar' });
-    bar.append(mk('span', { className: 'pvt', textContent: 'PLANT VIEW' }), rb, startW, st, ck, mk('span', { className: 'pvg' }), dock);
+    bar.append(
+      mk('span', { className: 'pvt', textContent: 'PLANT VIEW' }),
+      rb,
+      startW,
+      st,
+      ck,
+      mk('span', { className: 'pvg' }),
+      dock
+    );
     const ws = window.lsPlantWs();
     plantUx(); /* Systems button and the empty values column, before the workspace leaves this document */
     d.body.append(bar, ws);
@@ -509,7 +531,11 @@
     list.addEventListener('click', () => ws.classList.remove('lsopen'));
     /* 2.4.1-beta.1: the list and the values slide out over the graphic on every screen; a click on the graphic closes them */
     const mid = $('plmid');
-    if (mid) mid.addEventListener('pointerdown', e => !e.target.closest('#plfp,.plbar') && ws.classList.remove('lsopen', 'vals'));
+    if (mid)
+      mid.addEventListener(
+        'pointerdown',
+        e => !e.target.closest('#plfp,.plbar') && ws.classList.remove('lsopen', 'vals')
+      );
   }
   function build() {
     const gs = $('gsbar'),
@@ -586,10 +612,22 @@
       clock.classList.add('sclock'); /* Mina F39: the plant time on the Logic page too */
       foot.append(clock);
     }
-    foot.append(st, E('span', { cls: 'shint' }), E('span', { cls: 'spm', txt: 'PLANT MODEL OFF', title: 'The plant model is OFF (TOOLS > Simulation): the PV does not answer the valves' }));
+    foot.append(
+      st,
+      E('span', { cls: 'shint' }),
+      E('span', {
+        cls: 'spm',
+        txt: 'PLANT MODEL OFF',
+        title: 'The plant model is OFF (TOOLS > Simulation): the PV does not answer the valves'
+      })
+    );
     /* the app's messages (the old toast) show in the status bar for 7 s; a click hides them */
     {
-      const sm = E('span', { cls: 'smsg', title: 'Message (click to hide)', on: () => document.body.classList.remove('hasmsg') });
+      const sm = E('span', {
+        cls: 'smsg',
+        title: 'Message (click to hide)',
+        on: () => document.body.classList.remove('hasmsg')
+      });
       foot.append(sm);
       const t = $('toast');
       if (t) {
@@ -606,8 +644,17 @@
           }
           document.body.classList.toggle('hasmsg', on && mtab === document.body.dataset.tab);
         };
-        new MutationObserver(() => sync(false)).observe(document.body, { attributes: true, attributeFilter: ['data-tab'] });
-        new MutationObserver(() => sync(true)).observe(t, { attributes: true, attributeFilter: ['hidden'], childList: true, characterData: true, subtree: true });
+        new MutationObserver(() => sync(false)).observe(document.body, {
+          attributes: true,
+          attributeFilter: ['data-tab']
+        });
+        new MutationObserver(() => sync(true)).observe(t, {
+          attributes: true,
+          attributeFilter: ['hidden'],
+          childList: true,
+          characterData: true,
+          subtree: true
+        });
         sync(true);
       }
       /* retest #42 (R7: "…as yo…" in the status bar at 1280 px with the Training panel open): a text longer than its cell goes on two
@@ -620,7 +667,14 @@
       const fit2 = () => {
         fitQ = 0;
         const L = foot.querySelectorAll('#st,.shint,.smsg'),
-          k = fitW + '|' + document.body.className + '|' + document.body.dataset.tab + '|' + [...L].map(x => x.textContent.length).join('|');
+          k =
+            fitW +
+            '|' +
+            document.body.className +
+            '|' +
+            document.body.dataset.tab +
+            '|' +
+            [...L].map(x => x.textContent.length).join('|');
         if (k === fitK) return;
         fitK = k;
         L.forEach(x => {
@@ -647,7 +701,16 @@
       gscope = $('gscope'),
       uisel = $('uisel');
     [...gs.children].forEach(c => {
-      if (c !== ansb && c !== gscope && c !== uisel && c.id !== 'updbtn' && c.id !== 'chsel' && c.id !== 'dgsel' && c.id !== 'dgtsel') c.remove();
+      if (
+        c !== ansb &&
+        c !== gscope &&
+        c !== uisel &&
+        c.id !== 'updbtn' &&
+        c.id !== 'chsel' &&
+        c.id !== 'dgsel' &&
+        c.id !== 'dgtsel'
+      )
+        c.remove();
     });
     const tabs = E('div', { cls: 'tabs' });
     TABS.forEach(([k, l, t, hid]) => {
@@ -683,10 +746,23 @@
       if (!s) return;
       const r = s.getBoundingClientRect();
       for (let i = 0; i < 2; i++)
-        s.dispatchEvent(new WheelEvent('wheel', { deltaY: dy, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, bubbles: true, cancelable: true }));
+        s.dispatchEvent(
+          new WheelEvent('wheel', {
+            deltaY: dy,
+            clientX: r.left + r.width / 2,
+            clientY: r.top + r.height / 2,
+            bubbles: true,
+            cancelable: true
+          })
+        );
     };
     const zOut = E('button', { txt: '−', title: 'Zoom out', 'aria-label': 'Zoom out', on: () => zoomBy(100) }),
-      zIn = E('button', { txt: '+', title: 'Zoom in (read the small text)', 'aria-label': 'Zoom in', on: () => zoomBy(-100) });
+      zIn = E('button', {
+        txt: '+',
+        title: 'Zoom in (read the small text)',
+        'aria-label': 'Zoom in',
+        on: () => zoomBy(-100)
+      });
     const gRun = E('div', { cls: 'tb g-run', 'data-label': 'SIM' }, [run, view, reset, speedSel, back, next, stepSel]);
     /* 2.5.0-beta.9/13 (user): the DITL bar = [VIEW | ▶ Run] + Reset + Back + Zoom + Panel (src/ui/shell/ditl.js); its Fit stays in the VIEW group */
     const gDitl = E('div', { cls: 'tb g-ditl', 'data-label': 'SIM' }, window.DUI ? DUI.bar(null) : [mode]);
@@ -694,7 +770,8 @@
     /* 3.0.0: Inputs layer = rings on the drawing at what the operator can set or force (AN.markInputs, plant-window.js) */
     const inputs = E('button', {
       txt: 'Inputs',
-      title: 'Amber rings on the drawing = the digital / analog inputs you can switch or force (listed in the Inspector)',
+      title:
+        'Amber rings on the drawing = the digital / analog inputs you can switch or force (listed in the Inspector)',
       on: () => {
         AN.inMark = !AN.inMark;
         inputs.classList.toggle('on', AN.inMark);
@@ -715,7 +792,11 @@
     /* OPERATE: Start ▾ (starting state of the plant, TCS, field valves) and the CHECK scenarios */
     /* 3.2.0-beta.20: the starting state and the plant model moved to the Plant chip beside VIEW | RUN (user pick B); this menu keeps
        the TCS panel and the field equipment / valves */
-    const startBtn = E('button', { txt: 'TCS / Field ▾', title: 'TCS panel (turbine roll, sync, load up, target MW) and the field equipment and valves without a DCS signal. The starting state and the plant model: the Plant chip beside VIEW | RUN.' });
+    const startBtn = E('button', {
+      txt: 'TCS / Field ▾',
+      title:
+        'TCS panel (turbine roll, sync, load up, target MW) and the field equipment and valves without a DCS signal. The starting state and the plant model: the Plant chip beside VIEW | RUN.'
+    });
     const start = dropdown(startBtn, 'left');
     buildStart(start);
     buildPlantChip(start);
@@ -756,7 +837,11 @@
     /* 3.0.0: one app font; the older look selectors (font, UI skin, live colour, symbol theme) keep their defaults and are not shown */
     document.documentElement.dataset.font = 'plexc';
     {
-      const th = E('select', { id: 'thsel', title: 'Colours of the app (the drawing has its own setting below)', 'aria-label': 'App theme' });
+      const th = E('select', {
+        id: 'thsel',
+        title: 'Colours of the app (the drawing has its own setting below)',
+        'aria-label': 'App theme'
+      });
       /* 3.2.0-beta.8 (user 2026-10-23 "bakit light lang, bakit dark lang, hindi pwedeng baguhin ang mga kulay?"): four themes */
       [
         ['light', 'Theme: Light'],
@@ -782,7 +867,14 @@
       document.body.append(hold);
     }
     set.head('Engineering');
-    set.m.append(E('button', { id: 'engtools', txt: 'Engineering tools', title: 'Block tests, audit, health, project files, drawing edit, simulation switches', on: () => setTab('tools') }));
+    set.m.append(
+      E('button', {
+        id: 'engtools',
+        txt: 'Engineering tools',
+        title: 'Block tests, audit, health, project files, drawing edit, simulation switches',
+        on: () => setTab('tools')
+      })
+    );
     set.head('Channel and update');
     if ($('chsel')) set.m.append($('chsel'));
     if ($('updbtn')) {
@@ -807,15 +899,30 @@
     }
     gs.append(brand, tabs, sub, srchBtn, srch, set.w, tbar);
     /* 3.0.0: CAD icons on the ribbon and the tabs (CSS masks in app.css); the labels stay, no handler reads them */
-    [[view, 'eye'], [reset, 'reset'], [fit, 'fit'], [dfit, 'fit'], [values, 'hash'], [wire, 'wave'], [inputs, 'target'], [panel, 'side']].forEach(
-      ([b, k]) => {
-        if (!b) return;
-        b.dataset.ic = k;
-        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', b.textContent.trim());
-        if (!b.title) b.title = b.textContent.trim();
-      }
-    );
-    const TIC = { Home: 'home', 'Plant view': 'plant', Logic: 'logic', TCS: 'wave', Library: 'book', Training: 'learn', Tools: 'tool' };
+    [
+      [view, 'eye'],
+      [reset, 'reset'],
+      [fit, 'fit'],
+      [dfit, 'fit'],
+      [values, 'hash'],
+      [wire, 'wave'],
+      [inputs, 'target'],
+      [panel, 'side']
+    ].forEach(([b, k]) => {
+      if (!b) return;
+      b.dataset.ic = k;
+      if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', b.textContent.trim());
+      if (!b.title) b.title = b.textContent.trim();
+    });
+    const TIC = {
+      Home: 'home',
+      'Plant view': 'plant',
+      Logic: 'logic',
+      TCS: 'wave',
+      Library: 'book',
+      Training: 'learn',
+      Tools: 'tool'
+    };
     tabs.querySelectorAll('button').forEach(b => {
       const k = TIC[b.textContent.trim()];
       if (k) {
@@ -863,15 +970,24 @@
         on: () => {
           if (isAn()) {
             if (AN.view || !AN.run) run.click();
-          } else if (dui('.dui-run')) dui('.dui-run').click(); /* the DITL Run of ditl.js: SIM on, not paused, 1x (2.5.0-beta.9) */
+          } else if (dui('.dui-run'))
+            dui('.dui-run').click(); /* the DITL Run of ditl.js: SIM on, not paused, 1x (2.5.0-beta.9) */
           else if (!ditlSim()) mode.click();
         }
       }),
       seg = E('div', { cls: 'seg' }, [segV, segR]);
     srch.after(seg);
     /* VIEW ribbon: Navigate / View / Layers / Reference (the group name is under the buttons) */
-    const ioBtn = E('button', { txt: 'I/O list', title: 'LIBRARY: I/O list and memory lists', on: () => setTab('library') }),
-      fxBtn = E('button', { txt: 'F(X)', title: 'F(X) curves: the linear tables as in the workbook, editable, with what each one does', on: () => ln && ln.click() }),
+    const ioBtn = E('button', {
+        txt: 'I/O list',
+        title: 'LIBRARY: I/O list and memory lists',
+        on: () => setTab('library')
+      }),
+      fxBtn = E('button', {
+        txt: 'F(X)',
+        title: 'F(X) curves: the linear tables as in the workbook, editable, with what each one does',
+        on: () => ln && ln.click()
+      }),
       gRef = E('div', { cls: 'tb g-ref', 'data-label': 'REFERENCE' }, [ioBtn, AN_(fxBtn)]);
     gNav.dataset.label = 'NAVIGATE';
     gView.after(gRef);
@@ -881,7 +997,10 @@
       const lgMk = id =>
         E('button', {
           txt: 'Legend',
-          title: id === 'anlg' ? 'Colour code of the symbols, valves and wires; wire style' : 'DITL legend: 1 / 0 colours, rows and symbols',
+          title:
+            id === 'anlg'
+              ? 'Colour code of the symbols, valves and wires; wire style'
+              : 'DITL legend: 1 / 0 colours, rows and symbols',
           on: e => {
             const p = $(id),
               r = e.currentTarget.getBoundingClientRect();
@@ -900,7 +1019,14 @@
       /* live check #90: the DITL toolbar has its own Legend (ditl.js #dilg) */
       gDitl.append(lgDi);
       lgDi.dataset.ic = 'legend';
-      [[ioBtn, 'book'], [fxBtn, 'curve'], [lgBtn, 'legend'], [zIn, 'zin'], [zOut, 'zout'], [xback, 'back']].forEach(([b, k]) => b && (b.dataset.ic = k));
+      [
+        [ioBtn, 'book'],
+        [fxBtn, 'curve'],
+        [lgBtn, 'legend'],
+        [zIn, 'zin'],
+        [zOut, 'zout'],
+        [xback, 'back']
+      ].forEach(([b, k]) => b && (b.dataset.ic = k));
       zIn.textContent = 'Zoom in';
       zOut.textContent = 'Zoom out';
       if (xback) xback.title = xback.title || 'Back to where the trace jumped from';
@@ -944,7 +1070,12 @@
         const i = ORD.findIndex(re => re.test(x));
         return i < 0 ? 99 : i;
       };
-      const flt = E('input', { cls: 'inq', type: 'search', placeholder: 'Filter: tag, address, description', 'aria-label': 'Filter the inputs of this sheet' });
+      const flt = E('input', {
+        cls: 'inq',
+        type: 'search',
+        placeholder: 'Filter: tag, address, description',
+        'aria-label': 'Filter the inputs of this sheet'
+      });
       flt.value = inQ;
       flt.oninput = () => {
         inQ = flt.value;
@@ -986,7 +1117,10 @@
             ds = r.querySelector('.ds'),
             ctl = r.querySelector('.l1 button'),
             num = r.querySelector('.l1 input[type=number]'),
-            nm = E('div', { cls: 'inn', title: (tg ? tg.textContent : '') + (ds ? '\n' + ds.textContent : '') }, [E('b', { txt: tg ? tg.textContent : '' }), ds ? E('small', { txt: ds.textContent }) : null]); /* 3.2.0-beta.6 (audit L1): full name on hover */
+            nm = E('div', { cls: 'inn', title: (tg ? tg.textContent : '') + (ds ? '\n' + ds.textContent : '') }, [
+              E('b', { txt: tg ? tg.textContent : '' }),
+              ds ? E('small', { txt: ds.textContent }) : null
+            ]); /* 3.2.0-beta.6 (audit L1): full name on hover */
           nm.onclick = () => tg && tg.click();
           const it = E('div', { cls: 'ini' }, [nm]);
           it.dataset.s = s;
@@ -1014,7 +1148,13 @@
             /* 3.2.0-beta.9 (user: "dami ko na indi nafoforce, sa lumang version na-foforce ko"): an analog input (transmitter, COS
                manual SV / MV) is typed here again, as in the 2.4.0 Inspector list: the value goes to the same field of the row */
             const unit = r.querySelector('.l1 small'),
-              v = E('input', { cls: 'inset', type: 'number', step: 'any', 'aria-label': 'Value of ' + (tg ? tg.textContent : 'input'), title: 'Type a value, Enter = set (RUN)' });
+              v = E('input', {
+                cls: 'inset',
+                type: 'number',
+                step: 'any',
+                'aria-label': 'Value of ' + (tg ? tg.textContent : 'input'),
+                title: 'Type a value, Enter = set (RUN)'
+              });
             const put = () => {
               const x = parseFloat(v.value);
               if (!isFinite(x)) return;
@@ -1071,7 +1211,9 @@
     /* modes: VIEW (large ribbon) or RUN (one compact row); the switch and the status line follow */
     setInterval(() => {
       const an_ = isAn(),
-        sim = an_ ? !!(window.AN && (!AN.view || AN.run)) : ditlSim(); /* 3.2.0-beta.8: Start ▾ runs the clock while the page was in VIEW: show RUN */
+        sim = an_
+          ? !!(window.AN && (!AN.view || AN.run))
+          : ditlSim(); /* 3.2.0-beta.8: Start ▾ runs the clock while the page was in VIEW: show RUN */
       document.body.classList.toggle('simmode', sim);
       segV.classList.toggle('on', !sim);
       segR.classList.toggle('on', sim);
@@ -1106,10 +1248,24 @@
           }
         });
       const zPct = E('span', { cls: 'zpct', txt: '100%', title: '100% = the whole sheet (Fit)' });
-      const zo = E('button', { cls: 'zb', txt: '−', title: 'Zoom out', 'aria-label': 'Zoom out', on: () => zoomBy(100) }),
+      const zo = E('button', {
+          cls: 'zb',
+          txt: '−',
+          title: 'Zoom out',
+          'aria-label': 'Zoom out',
+          on: () => zoomBy(100)
+        }),
         zi = E('button', { cls: 'zb', txt: '+', title: 'Zoom in', 'aria-label': 'Zoom in', on: () => zoomBy(-100) });
       const fitW = [...gZoom.children].filter(x => x.querySelector && x.querySelector('#bfit, button'));
-      const zbar = E('div', { id: 'zbar' }, [sheetBtn(-1, 'Previous sheet'), sheetBtn(1, 'Next sheet'), E('i', { cls: 'zsep' }), zo, zPct, zi, E('i', { cls: 'zsep' })]);
+      const zbar = E('div', { id: 'zbar' }, [
+        sheetBtn(-1, 'Previous sheet'),
+        sheetBtn(1, 'Next sheet'),
+        E('i', { cls: 'zsep' }),
+        zo,
+        zPct,
+        zi,
+        E('i', { cls: 'zsep' })
+      ]);
       fitW.forEach(w => zbar.append(w));
       document.body.append(zbar);
       zIn.remove();
@@ -1195,7 +1351,14 @@
         if (!ink || ink.k !== theme) {
           const cs = getComputedStyle(document.documentElement),
             v = n => cs.getPropertyValue(n).trim();
-          ink = { k: theme, bg: v('--c-ribbon') || '#f7f8fa', line: v('--c-line2') || '#8f989f', tx: v('--c-dim') || '#5b646c', edge: v('--c-line') || '#d6dadf', font: v('--mf') || 'monospace' };
+          ink = {
+            k: theme,
+            bg: v('--c-ribbon') || '#f7f8fa',
+            line: v('--c-line2') || '#8f989f',
+            tx: v('--c-dim') || '#5b646c',
+            edge: v('--c-line') || '#d6dadf',
+            font: v('--mf') || 'monospace'
+          };
         }
         /* the svg keeps the aspect (meet): the visible drawing area is the view box widened on one axis */
         const s = Math.min(r.width / vb[2], r.height / vb[3]),
@@ -1208,7 +1371,10 @@
         drawRuler(rL, r.height - 18, false, y0 + 18 / s, 1 / s, isAn());
         /* Mina, live test of 276 and 277: the same view had a different label each time: 100 % is the whole sheet in this pane, worked out from the view itself */
         const e_ = window.LOVIEW && LOVIEW.ext();
-        zPct.textContent = (e_ && e_[2] > e_[0] && e_[3] > e_[1] ? Math.round((s / Math.min(r.width / (e_[2] - e_[0]), r.height / (e_[3] - e_[1]))) * 100) : 100) + '%';
+        zPct.textContent =
+          (e_ && e_[2] > e_[0] && e_[3] > e_[1]
+            ? Math.round((s / Math.min(r.width / (e_[2] - e_[0]), r.height / (e_[3] - e_[1]))) * 100)
+            : 100) + '%';
         /* centred on the part of the drawing that is not under an overlay panel (tablet) */
         let right = r.right;
         [$('anp'), $('opp')].forEach(pn => {
@@ -1238,7 +1404,10 @@
       /* selected block card (ABC): name, kind, the values in and out, Open faceplate */
       const card = E('div', { id: 'selcard' });
       let cardKey = '';
-      const fmt = x => (x == null || !isFinite(x) ? '—' : (Math.abs(x) >= 100 ? x.toFixed(1) : x.toFixed(2)).replace(/^-(0(?:\.0+)?)$/, '$1'));
+      const fmt = x =>
+        x == null || !isFinite(x)
+          ? '—'
+          : (Math.abs(x) >= 100 ? x.toFixed(1) : x.toFixed(2)).replace(/^-(0(?:\.0+)?)$/, '$1');
       const cardUpd = () => {
         const anp = $('anp'),
           sel = $('ansel');
@@ -1277,7 +1446,10 @@
             kind = b ? b.k : 'WIRE',
             fp = b && b.tag && /^(PID|PIDV|MAN)/.test(b.k);
           card.append(
-            E('div', { cls: 'sch' }, [E('small', { txt: b ? 'SELECTED BLOCK' : 'SELECTED WIRE' }), E('span', { cls: 'chip', txt: kind })]),
+            E('div', { cls: 'sch' }, [
+              E('small', { txt: b ? 'SELECTED BLOCK' : 'SELECTED WIRE' }),
+              E('span', { cls: 'chip', txt: kind })
+            ]),
             E('b', { cls: 'scn', txt: name }),
             ...(b && b.txt ? [E('div', { cls: 'scd', txt: b.txt.filter(Boolean).join(' · ') })] : [])
           );
@@ -1303,17 +1475,25 @@
                 rows.slice(0, 6).forEach(([n, t]) => {
                   const v = E('b', { txt: val(n) });
                   v._n = n;
-                  box.append(E('div', { title: [t, wn(n)].filter(Boolean).join(' · ') }, [E('span', { cls: 'scn2', txt: t }), E('span', { cls: 'scw', txt: wn(n) }), v]));
+                  box.append(
+                    E('div', { title: [t, wn(n)].filter(Boolean).join(' · ') }, [
+                      E('span', { cls: 'scn2', txt: t }),
+                      E('span', { cls: 'scw', txt: wn(n) }),
+                      v
+                    ])
+                  );
                 });
                 if (rows.length > 6) box.append(E('div', { cls: 'scm', txt: '+ ' + (rows.length - 6) + ' more' }));
                 card.append(box);
               };
             lst(
               'COMES FROM',
-              (b.i || []).filter(n => n != null && n >= 0).map(n => {
-                const d = S.blk.find(x => x !== b && (x.o || []).includes(n));
-                return [n, d ? who(d) : 'input of the sheet'];
-              })
+              (b.i || [])
+                .filter(n => n != null && n >= 0)
+                .map(n => {
+                  const d = S.blk.find(x => x !== b && (x.o || []).includes(n));
+                  return [n, d ? who(d) : 'input of the sheet'];
+                })
             );
             const go = [];
             (b.o || []).forEach(n => {
@@ -1330,7 +1510,9 @@
                 cls: 'scb keep',
                 txt: 'Open faceplate',
                 on: () => {
-                  const f = [...document.querySelectorAll('.hmitabs button')].find(x => x.textContent.trim() === 'Faceplate');
+                  const f = [...document.querySelectorAll('.hmitabs button')].find(
+                    x => x.textContent.trim() === 'Faceplate'
+                  );
                   if (f) f.click();
                   setTimeout(() => {
                     const c = [...document.querySelectorAll('.fpov .ovc')].find(x => x.dataset.t === b.tag);
@@ -1360,7 +1542,12 @@
         sForce.classList.toggle('on', n > 0);
         const s = isAn() && window.AN && AN.sel,
           sh = s && AN.sheets[AN.i];
-        sSel.textContent = s && s.blk ? 'Selected: ' + s.blk.k + ' ' + (s.blk.tag || '#' + s.blk.id) : s && s.net != null && sh && sh.S && typeof nm === 'function' ? 'Selected: ' + nm(sh.S, s.net) : '';
+        sSel.textContent =
+          s && s.blk
+            ? 'Selected: ' + s.blk.k + ' ' + (s.blk.tag || '#' + s.blk.id)
+            : s && s.net != null && sh && sh.S && typeof nm === 'function'
+              ? 'Selected: ' + nm(sh.S, s.net)
+              : '';
         const cp = crumb.querySelector('.cpath');
         if (cp) cp.textContent = isAn() ? 'ABC analog ›' : 'DITL digital ›';
       }, 300);
@@ -1369,7 +1556,35 @@
        line icons. The text of the button does not change (handlers and tests read it): a whole-symbol button gets
        data-g, a symbol before / after a word is wrapped in <span class="gi" data-g> and the stylesheet draws the icon. */
     {
-      const G = { '✕': 'x', '×': 'x', '✖': 'x', '✓': 'check', '✔': 'check', '◀': 'cl', '‹': 'cl', '◄': 'cl', '▶': 'cr', '›': 'cr', '►': 'cr', '◀◀': 'skipb', '▶▶': 'skipf', '▲': 'cu', '▼': 'cd', '▾': 'cd', 'ⓘ': 'info', '⤢': 'expand', '−': 'minus', '+': 'plus', '❚❚': 'pause', '↩': 'back', '☰': 'menu', '📍': 'pin', '🎲': 'dice', '📂': 'folder', '💾': 'save' };
+      const G = {
+        '✕': 'x',
+        '×': 'x',
+        '✖': 'x',
+        '✓': 'check',
+        '✔': 'check',
+        '◀': 'cl',
+        '‹': 'cl',
+        '◄': 'cl',
+        '▶': 'cr',
+        '›': 'cr',
+        '►': 'cr',
+        '◀◀': 'skipb',
+        '▶▶': 'skipf',
+        '▲': 'cu',
+        '▼': 'cd',
+        '▾': 'cd',
+        'ⓘ': 'info',
+        '⤢': 'expand',
+        '−': 'minus',
+        '+': 'plus',
+        '❚❚': 'pause',
+        '↩': 'back',
+        '☰': 'menu',
+        '📍': 'pin',
+        '🎲': 'dice',
+        '📂': 'folder',
+        '💾': 'save'
+      };
       const LEAD = { '▶': 'play', '❚❚': 'pause' };
       const skip = b => b.closest('.fp,.fpop,svg,#sidelist,#anlist,#pllist,.libg,#anfind');
       const tag = L => {
@@ -1410,7 +1625,9 @@
           const t = r.target.nodeType === 1 ? r.target : r.target.parentElement,
             ob = t && t.closest && t.closest('button');
           if (ob) tB.add(ob);
-          for (const n of r.addedNodes) if (n.nodeType === 1) n.tagName === 'BUTTON' ? tB.add(n) : n.querySelectorAll('button').forEach(x => tB.add(x));
+          for (const n of r.addedNodes)
+            if (n.nodeType === 1)
+              n.tagName === 'BUTTON' ? tB.add(n) : n.querySelectorAll('button').forEach(x => tB.add(x));
         }
         if (tq || !tB.size) return;
         tq = true;
@@ -1428,7 +1645,11 @@
     const grid = E('div', { cls: 'tgrid' });
     toolsws.append(grid);
     const card = (title, text, els) => {
-      const c = E('div', { cls: 'tcard' }, [E('h3', { txt: title }), text ? E('p', { txt: text }) : null, E('div', { cls: 'row' }, els.filter(Boolean))]);
+      const c = E('div', { cls: 'tcard' }, [
+        E('h3', { txt: title }),
+        text ? E('p', { txt: text }) : null,
+        E('div', { cls: 'row' }, els.filter(Boolean))
+      ]);
       grid.append(c);
       return c;
     };
@@ -1448,7 +1669,8 @@
        OFF = transmitters are free inputs and only the drawn logic runs (debugging the logic). The switch is the engine's own (AN.plantSwitch) */
     const pmBtn = E('button', {
       id: 'pmbtn',
-      title: 'Plant model ON: the PV follows the valve (each PID loop + the boiler / turbine model). OFF: the PV is a free input, only the drawing logic runs.',
+      title:
+        'Plant model ON: the PV follows the valve (each PID loop + the boiler / turbine model). OFF: the PV is a free input, only the drawing logic runs.',
       on: () => {
         try {
           AN.plantSwitch(!AN.plantOn);
@@ -1459,7 +1681,9 @@
     const pmUpd = () => {
       const on = !!(window.AN && AN.plantOn);
       const t = 'Plant model: ' + (on ? 'ON' : 'OFF');
-      if (pmBtn.textContent !== t) pmBtn.textContent = t; /* P2: every 300 ms, written only on a change (a hidden Tools page did a DOM write each time) */
+      if (pmBtn.textContent !== t)
+        pmBtn.textContent =
+          t; /* P2: every 300 ms, written only on a change (a hidden Tools page did a DOM write each time) */
       pmBtn.classList.toggle('on', on);
       document.body.classList.toggle('pmoff', !on);
     };
@@ -1467,7 +1691,13 @@
     /* 2.4.0-beta.5: the old Plant window is replaced by the PLANT VIEW (its own window on a PC) */
     if (plantwin) plantwin.remove();
     if (prj) prj.classList.add('lp');
-    const cPrj = card('Project files', 'Save or open the forced values and user values.', [AN_(save), AN_(saveas), AN_(openp), AN_(prj), AN_(importAbc)]);
+    const cPrj = card('Project files', 'Save or open the forced values and user values.', [
+      AN_(save),
+      AN_(saveas),
+      AN_(openp),
+      AN_(prj),
+      AN_(importAbc)
+    ]);
     /* anything left in the old toolbars (future buttons) stays reachable here */
     const cOther = card('Other', '', []);
     document.body.append(toolsws);
@@ -1494,7 +1724,8 @@
         up.textContent = 'Check for update';
         set.m.append(up);
       }
-      if ($('chsel') && $('chsel').parentNode !== set.m) set.m.insertBefore($('chsel'), up && up.parentNode === set.m ? up : null);
+      if ($('chsel') && $('chsel').parentNode !== set.m)
+        set.m.insertBefore($('chsel'), up && up.parentNode === set.m ? up : null);
       if (dg && dg.parentNode !== set.m) $('thsel') ? $('thsel').after(dg) : set.m.append(dg);
       if ($('dgtsel') && $('dgtsel').parentNode !== set.m) dg ? dg.after($('dgtsel')) : set.m.append($('dgtsel'));
       if (w.length) {
@@ -1505,7 +1736,14 @@
       /* leftovers of the old toolbars */
       [an, bar].forEach(b => {
         [...b.children].forEach(x => {
-          if (x.classList.contains('cat') || x.classList.contains('tbg') || x.id === 'tabs' || x.id === 'hp' || x.tagName === 'INPUT') return;
+          if (
+            x.classList.contains('cat') ||
+            x.classList.contains('tbg') ||
+            x.id === 'tabs' ||
+            x.id === 'hp' ||
+            x.tagName === 'INPUT'
+          )
+            return;
           if (x.tagName === 'DIV' && !x.textContent.trim()) return;
           if (x.hidden || x.style.display === 'none') return;
           cOther.querySelector('.row').append(b === an ? AN_(x) : DI_(x));
@@ -1520,11 +1758,17 @@
       [/^Audit/, 'Blocks and links the reader could not resolve.'],
       [/^Health/, 'Every sheet: OK, issue or failed.'],
       [/^Review marks/, 'Orange boxes where a link is in doubt.'],
-      [/^F\(X\) tables/, 'Each linear curve as in the LINEAR CURVE workbook: edit the table, see what it does and where it goes.'],
+      [
+        /^F\(X\) tables/,
+        'Each linear curve as in the LINEAR CURVE workbook: edit the table, see what it does and where it goes.'
+      ],
       [/^Assumed/, 'Inputs that start from an assumed value.'],
       [/^DITL signals/, 'DITL addresses of the open sheet.'],
       [/^Second sheet/, 'Open another sheet side by side.'],
-      [/^Plant model/, 'ON: the PV answers the valve (each PID loop and the boiler / turbine model). OFF: the PV is a free input.'],
+      [
+        /^Plant model/,
+        'ON: the PV answers the valve (each PID loop and the boiler / turbine model). OFF: the PV is a free input.'
+      ],
       [/^ABC\s*\+\s*DITL/, 'ON: all the DITL sheets run with the ABC Run and pass signals both ways (one world).']
     ];
     function cardsUpd() {
@@ -1536,7 +1780,9 @@
       const w = e => e.getBoundingClientRect().width > 0;
       grid.querySelectorAll('.tcard').forEach(c => {
         c.style.display = '';
-        const vis = [...c.querySelectorAll('.row > *')].some(x => (x.classList.contains('only') ? [...x.children].some(w) : w(x)));
+        const vis = [...c.querySelectorAll('.row > *')].some(x =>
+          x.classList.contains('only') ? [...x.children].some(w) : w(x)
+        );
         c.style.display = vis ? '' : 'none';
       });
     }
@@ -1570,7 +1816,13 @@
     if (t0 !== 'logic') {
       let k = 0;
       const iv2 = setInterval(() => {
-        if ((t0 === 'tools' || ((t0 === 'home' || t0 === 'training') && window.lsHome) || (t0 === 'operate' && window.lsPlant) || (t0 === 'library' && window.lsLibrary)) || ++k > 40) {
+        if (
+          t0 === 'tools' ||
+          ((t0 === 'home' || t0 === 'training') && window.lsHome) ||
+          (t0 === 'operate' && window.lsPlant) ||
+          (t0 === 'library' && window.lsLibrary) ||
+          ++k > 40
+        ) {
           clearInterval(iv2);
           setTab(t0, true);
         }
@@ -1604,36 +1856,57 @@
       AN.paint();
       msg('Plant at 150 MW: the steady state of the plant model, every loop in AUTO. Press Run.');
     };
-    btn('load150', 'At 150 MW', 'Reset, then the plant at 150 MW in the steady state of its own model (every loop in AUTO), from the line-up of the control-room HMI snapshots', () => {
-      /* roadmap 3 (SPEC S5 / S6): a starting state is for the plant model ON only: picking one turns the model ON */
-      AN._startP = AN.loadStart('150', true).then(
-        n => {
-          AN.settle();
-          AN.paint();
-          msg('Plant at 150 MW: ' + n + ' transmitters set from the HMI snapshots. Press Run.');
-          /* the DITL is part of the start: AN._startP waits for it, else a Run right after the pick scans a cold DITL */
-          if (window.DITL150)
-            return (AN.ades ? AN.ades() : Promise.resolve())
-              /* 3.2.0 Web Worker: DITL150.apply runs in the engine only there and gives a promise of its answer */
-              .then(() => DITL150.apply())
-              .then(r => {
-                if (r) msg('Plant at 150 MW: ' + n + ' ABC transmitters from the HMI snapshots, DITL in service (MFT reset). Press Run.');
-                return st150();
-              })
-              .catch(() => {});
-        },
-        e => msg('Could not load the 150 MW state: ' + e.message)
-      );
-    });
-    btn('loadcold', 'Cold (start-up from zero)', 'Reset, the 150 MW anchors, then the plant cold: drum 0 kg/cm2, water and bed 30 C, feeders and fans stopped, oil valves closed, every controller LOCAL + MANUAL 0 %. Training has the procedure.', () => {
-      AN._startP = AN.loadStart('cold', true).then(
-        n => {
-          AN.paint();
-          msg('Plant cold: drum 0 kg/cm2, water 30 C, no fire. Press Run, then start the utilities (seawater pump M.3354 and condensate pump M.3350 on ABC-052, FA blower M.3308, diesel oil pump in Field equipment), the fans (Buttons M.3302 / 3303 / 3304), purge, open the oil valves (M.3410 / 3411 = 0) and fire the burners (FICDO1043A / B). ' + n + ' anchors.');
-        },
-        e => msg('Could not load the cold state: ' + e.message)
-      );
-    });
+    btn(
+      'load150',
+      'At 150 MW',
+      'Reset, then the plant at 150 MW in the steady state of its own model (every loop in AUTO), from the line-up of the control-room HMI snapshots',
+      () => {
+        /* roadmap 3 (SPEC S5 / S6): a starting state is for the plant model ON only: picking one turns the model ON */
+        AN._startP = AN.loadStart('150', true).then(
+          n => {
+            AN.settle();
+            AN.paint();
+            msg('Plant at 150 MW: ' + n + ' transmitters set from the HMI snapshots. Press Run.');
+            /* the DITL is part of the start: AN._startP waits for it, else a Run right after the pick scans a cold DITL */
+            if (window.DITL150)
+              return (
+                (AN.ades ? AN.ades() : Promise.resolve())
+                  /* 3.2.0 Web Worker: DITL150.apply runs in the engine only there and gives a promise of its answer */
+                  .then(() => DITL150.apply())
+                  .then(r => {
+                    if (r)
+                      msg(
+                        'Plant at 150 MW: ' +
+                          n +
+                          ' ABC transmitters from the HMI snapshots, DITL in service (MFT reset). Press Run.'
+                      );
+                    return st150();
+                  })
+                  .catch(() => {})
+              );
+          },
+          e => msg('Could not load the 150 MW state: ' + e.message)
+        );
+      }
+    );
+    btn(
+      'loadcold',
+      'Cold (start-up from zero)',
+      'Reset, the 150 MW anchors, then the plant cold: drum 0 kg/cm2, water and bed 30 C, feeders and fans stopped, oil valves closed, every controller LOCAL + MANUAL 0 %. Training has the procedure.',
+      () => {
+        AN._startP = AN.loadStart('cold', true).then(
+          n => {
+            AN.paint();
+            msg(
+              'Plant cold: drum 0 kg/cm2, water 30 C, no fire. Press Run, then start the utilities (seawater pump M.3354 and condensate pump M.3350 on ABC-052, FA blower M.3308, diesel oil pump in Field equipment), the fans (Buttons M.3302 / 3303 / 3304), purge, open the oil valves (M.3410 / 3411 = 0) and fire the burners (FICDO1043A / B). ' +
+                n +
+                ' anchors.'
+            );
+          },
+          e => msg('Could not load the cold state: ' + e.message)
+        );
+      }
+    );
     /* WARM / HOT restart (FHI SECT_7 Fig 3 / Fig 4): the Cold equipment line-up with the heat the boiler and the turbine keep */
     const rst = (id, kind, label, title, done) =>
       btn(id, label, title, () => {
@@ -1642,8 +1915,20 @@
           e => msg('Could not load the ' + kind + ' restart: ' + e.message)
         );
       });
-    rst('loadwarm', 'warm', 'Warm restart (down 8 ~ 56 h)', 'FHI Fig 3: drum 40 kg/cm2, bed about 360 C, turbine metal in the WARM band; every machine stopped as in Cold. The furnace purge is needed (bed below 700 C)', 'Warm restart: drum 40 kg/cm2, bed about 360 C, turbine WARM. Press Run, then start the utilities, fans, purge and burners as in the cold start.');
-    rst('loadhot', 'hot', 'Hot restart (down under 8 h)', 'FHI Fig 4: drum 100 kg/cm2, bed about 700 C, turbine metal in the HOT band; every machine stopped as in Cold', 'Hot restart: drum 100 kg/cm2, bed about 700 C, turbine HOT. Press Run, then start the utilities and fans; the logic decides the purge.');
+    rst(
+      'loadwarm',
+      'warm',
+      'Warm restart (down 8 ~ 56 h)',
+      'FHI Fig 3: drum 40 kg/cm2, bed about 360 C, turbine metal in the WARM band; every machine stopped as in Cold. The furnace purge is needed (bed below 700 C)',
+      'Warm restart: drum 40 kg/cm2, bed about 360 C, turbine WARM. Press Run, then start the utilities, fans, purge and burners as in the cold start.'
+    );
+    rst(
+      'loadhot',
+      'hot',
+      'Hot restart (down under 8 h)',
+      'FHI Fig 4: drum 100 kg/cm2, bed about 700 C, turbine metal in the HOT band; every machine stopped as in Cold',
+      'Hot restart: drum 100 kg/cm2, bed about 700 C, turbine HOT. Press Run, then start the utilities and fans; the logic decides the purge.'
+    );
     /* 3.2.1 SAVE POINTS (user 2026-11-08 "approved lahat", testing plan 1): the whole plant at this moment (every ABC and DITL sheet, the
        turbine, the plant models, the modes, the Training ticks and step) is kept in this browser (IndexedDB) under a name; LOAD puts it
        back and pauses, so a test goes on from the step before a fault instead of from Cold */
@@ -1681,16 +1966,24 @@
        nothing was saved. The questions of SAVE, LOAD and Delete are asked in the page (lsAskText / lsAsk, shellc-ask.js) */
     const svAsk = (q, d) => (window.lsAskText ? lsAskText(q, d) : Promise.resolve(prompt(q, d)));
     const svPick = (L, what) => {
-      if (!L.length) return msg('No save point yet: press SAVE first.'), Promise.resolve(null);
-      return svAsk(what + ': type its number\n' + L.map((e, i) => i + 1 + '. ' + e.name).join('\n'), String(L.length)).then(x => {
+      if (!L.length) return (msg('No save point yet: press SAVE first.'), Promise.resolve(null));
+      return svAsk(
+        what + ': type its number\n' + L.map((e, i) => i + 1 + '. ' + e.name).join('\n'),
+        String(L.length)
+      ).then(x => {
         const i = +x - 1;
         return x && L[i] ? L[i] : null;
       });
     };
-    btn('savenow', 'SAVE the plant now', 'Keeps the whole plant at this moment (ABC, DITL, turbine, plant model, modes, Training) in this browser under a name. LOAD puts it back.', () => {
-      if (AN._loading) return msg('Wait: a starting state is still loading.');
-      svAsk('Name of this save point:', svName()).then(nm => nm && svSave(nm));
-    });
+    btn(
+      'savenow',
+      'SAVE the plant now',
+      'Keeps the whole plant at this moment (ABC, DITL, turbine, plant model, modes, Training) in this browser under a name. LOAD puts it back.',
+      () => {
+        if (AN._loading) return msg('Wait: a starting state is still loading.');
+        svAsk('Name of this save point:', svName()).then(nm => nm && svSave(nm));
+      }
+    );
     /* Mina beta.210: the save itself, apart from the name question (prompt() is blocked in some browsers and app views: the Instructor
        console of the new layout asks the name in the page) */
     const svSave = nm => {
@@ -1707,7 +2000,9 @@
           /* Mina F151-1: APP_VERSION never existed, so every save had no version; the build writes it here (tools/build/build.js) */
           sv.ver = '@@VERSION@@';
           sv.flt = svFlt();
-          return svDo('readwrite', st => st.put(sv)).then(() => msg('Saved: ' + nm + '. LOAD a save point puts the plant back here.'));
+          return svDo('readwrite', st => st.put(sv)).then(() =>
+            msg('Saved: ' + nm + '. LOAD a save point puts the plant back here.')
+          );
         })
         .catch(e => msg('Could not save: ' + e.message));
     };
@@ -1718,7 +2013,21 @@
       load: e => svLoad(e),
       save: nm => svSave(nm),
       name: () => svName(),
-      del: e => svDo('readwrite', st => st.delete(e.id)).then(() => msg('Deleted: ' + e.name))
+      del: e => svDo('readwrite', st => st.delete(e.id)).then(() => msg('Deleted: ' + e.name)),
+      /* JENNIE 2026-11-20 (the save points were lost when the PC restarted: they live only in the browser): a save point as the text of a
+         file and back. exp gives the file text; imp keeps a file's save point in this browser again under a new id, so LOAD finds it */
+      exp: e => JSON.stringify(Object.assign({ lsSave: 1 }, e)),
+      imp: txt => {
+        const o = typeof txt === 'string' ? JSON.parse(txt) : Object.assign({}, txt);
+        if (!o || !o.kf || !o.kd) return Promise.reject(new Error('this file is not a save point'));
+        delete o.lsSave;
+        o.id = 'sv' + Date.now();
+        o.at = o.at || Date.now();
+        o.name = o.name || 'imported';
+        return svDo('readwrite', st => st.put(o)).then(
+          () => (msg('Imported: ' + o.name + '. LOAD puts the plant back there.'), o)
+        );
+      }
     };
     /* 3.2.4-beta.71 (JENNIE, live test 2026-11-17): a save point keeps the trainer faults that were on (AN.fault of engine/faults.js and
        WORLD.ftrip of world.js), and LOAD puts them back as saved. Before, LOAD left the faults of the running plant on: the black-out
@@ -1730,7 +2039,8 @@
     const svFltPut = f => {
       const want = f || { an: [], w: [] };
       for (const q of AN.fault ? AN.fault() : []) if (!!q.on !== want.an.includes(q.id)) AN.fault(q.id, !q.on);
-      for (const q of window.WORLD && WORLD.ftrip ? WORLD.ftrip() : []) if (!!q.on !== want.w.includes(q.id)) WORLD.ftrip(q.id, !q.on);
+      for (const q of window.WORLD && WORLD.ftrip ? WORLD.ftrip() : [])
+        if (!!q.on !== want.w.includes(q.id)) WORLD.ftrip(q.id, !q.on);
     };
     const svLoad = e => {
       if (AN.pauseOn && AN.run) AN.pauseOn();
@@ -1751,10 +2061,14 @@
         msg('Plant back at: ' + e.name + '. Paused: press Run to go on.');
       });
     };
-    btn('loadsave', 'LOAD a save point…', 'Puts the whole plant back as it was saved, then pauses: press Run to go on.', () =>
-      svList()
-        .then(L => svPick(L, 'Load which save point').then(e => e && svLoad(e)))
-        .catch(x => msg('Could not load: ' + x.message))
+    btn(
+      'loadsave',
+      'LOAD a save point…',
+      'Puts the whole plant back as it was saved, then pauses: press Run to go on.',
+      () =>
+        svList()
+          .then(L => svPick(L, 'Load which save point').then(e => e && svLoad(e)))
+          .catch(x => msg('Could not load: ' + x.message))
     );
     btn('delsave', 'Delete a save point…', 'Removes one save point from this browser.', () =>
       svList()
@@ -1771,17 +2085,23 @@
         .catch(x => msg('Could not delete: ' + x.message))
     );
     /* 3.2.1 trend recorder (live.js REC): one row per minute of plant time; the CSV goes to the PC comparison script */
-    btn('recdl', 'Download recorder CSV', 'The plant values recorded each minute of plant time since the last starting state (MW, steam flow and pressure, MST, RHT, coal, air, O2, bed, drum level, feedwater, furnace pressure). For the comparison with the plant trends on the PC.', () => {
-      const L = window.LS_LIVE;
-      if (!L || !L.rec || !L.rec().length) return msg('The recorder has no rows yet: it writes one each minute of plant time while the plant runs.');
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([L.recCsv()], { type: 'text/csv' }));
-      a.download = 'logic-sim-trend-' + new Date().toISOString().slice(0, 16).replace(/[T:]/g, '-') + '.csv';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      msg('Recorder: ' + L.rec().length + ' rows downloaded.');
-    });
+    btn(
+      'recdl',
+      'Download recorder CSV',
+      'The plant values recorded each minute of plant time since the last starting state (MW, steam flow and pressure, MST, RHT, coal, air, O2, bed, drum level, feedwater, furnace pressure). For the comparison with the plant trends on the PC.',
+      () => {
+        const L = window.LS_LIVE;
+        if (!L || !L.rec || !L.rec().length)
+          return msg('The recorder has no rows yet: it writes one each minute of plant time while the plant runs.');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([L.recCsv()], { type: 'text/csv' }));
+        a.download = 'logic-sim-trend-' + new Date().toISOString().slice(0, 16).replace(/[T:]/g, '-') + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        msg('Recorder: ' + L.rec().length + ' rows downloaded.');
+      }
+    );
     /* 3.2.1 e5 FAULTS (engine/faults.js): what the field does; the logic of the drawings decides what follows. Each press puts the
        fault on, a second press clears it; every fault and clear is an event "FAULT: ..." */
     d.head('Faults (trainer)');
@@ -1799,14 +2119,61 @@
     /* group 2: a running motor trips in the field (world.js WORLD.ftrip) */
     const ftL = () => (window.WORLD && WORLD.ftrip ? WORLD.ftrip() : []);
     for (const f of ftL())
-      btn('flt-' + f.id.replace(/\W/g, '-'), f.t, f.g === 'ib' ? 'Field action (I&C): ' + f.t + '. A jumper on the interlock relay panel: the turbine trip no longer trips the boiler (PR-OPE-5003 normal shutdown). The other MFT inputs stay in service; with the turbine tripped the HP bypass must open, or the cyclone gas trip (no reheater steam) still trips the boiler. Press again to remove the jumper.' : f.g === 'tl' ? 'Field fault: ' + f.t + '. Water leaks into the furnace or the backpass: the feedwater reads above the steam, the make-up rises, the drum level and the furnace draft move. It starts as a small hole and cuts the tubes next to it: left on, the feedwater reads far above the steam after about 20 min and the boiler trips in about half an hour. Press again when the tube is repaired.' : f.g === 'hl' ? 'Field fault: ' + f.t + '. Feedwater leaks into the heater shell: its drain valves open more, then the alternate drain to the condenser, then HEATER LEVEL HIGH-HIGH closes its extraction. The hole grows until the heater is taken out (bypass open, inlet and outlet shut). Press again when the tube is plugged.' : f.id === 'cd.air' ? 'Field fault: ' + f.t + '. Air leaks into the condenser: the vacuum falls (the condenser pressure rises), the turbine makes less power for the same steam and the exhaust gets hotter. The air ejectors take more only at a worse vacuum. Press again when the leak is sealed.' : f.id === 'grid.lo' ? 'Grid fault: ' + f.t + '. The grid frequency falls, so the turbine turns slower with the grid: the governor (6 % droop, dead band 7.2 rpm) opens the control valves for a few seconds and the MW jumps up, then the MW control of the turbine brings the load back to its target. The boiler sees the steam taken from its pressure. Press again when the grid is back to 60 Hz.' : f.id === 'aph.leak' ? 'Field fault: ' + f.t + '. The seals of the air heater wear: more primary and secondary air goes straight to the gas side. The air flows read the same, but less air reaches the furnace: the O2 falls, the air control raises the fans, the ID fan takes more gas and the gas leaving the air heater gets colder. Press again when the seals are set.' : f.g === 'ap' ? 'Field fault: ' + f.t + '. Ash fills the air heater: the draft loss rises, the ID fan pulls a deeper suction and takes more current, and the fan opens more to hold the furnace pressure. Press again when the air heater is washed.' : f.g === 'cq' ? 'Field fault: ' + f.t + '. The feeders weigh the same tonnes, but each tonne gives less heat: the coal master and the calorie correction raise the coal, the bed temperature falls. Press again when the coal is dry again.' : f.g === 'cf' ? 'Field fault: ' + f.t + '. The feeder keeps running and its feed rate reads as before; the DCS shows DISCHARGE PLUGGED. Press again when the chute is cleared.' : f.g === 'el' ? 'Field fault: ' + f.t + '. Every motor stops; the DCS stays on the UPS, the turbine oil on the emergency oil pump (DC), the emergency panel on the diesel generator. Press again when the bus is back; the operator starts the motors again.' : 'Field fault: ' + f.t + ' (its protection relay opens the MCC). Press again to reset the relay; the operator starts it again.', () => {
-        const now = ftL().find(q => q.id === f.id),
-          r = WORLD.ftrip(f.id, !(now && now.on));
-        if (!r) return msg('Fault ' + f.t + ': not found.');
-        if (f.g === 'ib') return window.lsEventAdd && lsEventAdd('FIELD', 'FIELD', r), msg(r);
-        fltLog(r);
-        msg('FAULT: ' + r);
-      });
+      btn(
+        'flt-' + f.id.replace(/\W/g, '-'),
+        f.t,
+        f.g === 'ib'
+          ? 'Field action (I&C): ' +
+              f.t +
+              '. A jumper on the interlock relay panel: the turbine trip no longer trips the boiler (PR-OPE-5003 normal shutdown). The other MFT inputs stay in service; with the turbine tripped the HP bypass must open, or the cyclone gas trip (no reheater steam) still trips the boiler. Press again to remove the jumper.'
+          : f.g === 'tl'
+            ? 'Field fault: ' +
+              f.t +
+              '. Water leaks into the furnace or the backpass: the feedwater reads above the steam, the make-up rises, the drum level and the furnace draft move. It starts as a small hole and cuts the tubes next to it: left on, the feedwater reads far above the steam after about 20 min and the boiler trips in about half an hour. Press again when the tube is repaired.'
+            : f.g === 'hl'
+              ? 'Field fault: ' +
+                f.t +
+                '. Feedwater leaks into the heater shell: its drain valves open more, then the alternate drain to the condenser, then HEATER LEVEL HIGH-HIGH closes its extraction. The hole grows until the heater is taken out (bypass open, inlet and outlet shut). Press again when the tube is plugged.'
+              : f.id === 'cd.air'
+                ? 'Field fault: ' +
+                  f.t +
+                  '. Air leaks into the condenser: the vacuum falls (the condenser pressure rises), the turbine makes less power for the same steam and the exhaust gets hotter. The air ejectors take more only at a worse vacuum. Press again when the leak is sealed.'
+                : f.id === 'grid.lo'
+                  ? 'Grid fault: ' +
+                    f.t +
+                    '. The grid frequency falls, so the turbine turns slower with the grid: the governor (6 % droop, dead band 7.2 rpm) opens the control valves for a few seconds and the MW jumps up, then the MW control of the turbine brings the load back to its target. The boiler sees the steam taken from its pressure. Press again when the grid is back to 60 Hz.'
+                  : f.id === 'aph.leak'
+                    ? 'Field fault: ' +
+                      f.t +
+                      '. The seals of the air heater wear: more primary and secondary air goes straight to the gas side. The air flows read the same, but less air reaches the furnace: the O2 falls, the air control raises the fans, the ID fan takes more gas and the gas leaving the air heater gets colder. Press again when the seals are set.'
+                    : f.g === 'ap'
+                      ? 'Field fault: ' +
+                        f.t +
+                        '. Ash fills the air heater: the draft loss rises, the ID fan pulls a deeper suction and takes more current, and the fan opens more to hold the furnace pressure. Press again when the air heater is washed.'
+                      : f.g === 'cq'
+                        ? 'Field fault: ' +
+                          f.t +
+                          '. The feeders weigh the same tonnes, but each tonne gives less heat: the coal master and the calorie correction raise the coal, the bed temperature falls. Press again when the coal is dry again.'
+                        : f.g === 'cf'
+                          ? 'Field fault: ' +
+                            f.t +
+                            '. The feeder keeps running and its feed rate reads as before; the DCS shows DISCHARGE PLUGGED. Press again when the chute is cleared.'
+                          : f.g === 'el'
+                            ? 'Field fault: ' +
+                              f.t +
+                              '. Every motor stops; the DCS stays on the UPS, the turbine oil on the emergency oil pump (DC), the emergency panel on the diesel generator. Press again when the bus is back; the operator starts the motors again.'
+                            : 'Field fault: ' +
+                              f.t +
+                              ' (its protection relay opens the MCC). Press again to reset the relay; the operator starts it again.',
+        () => {
+          const now = ftL().find(q => q.id === f.id),
+            r = WORLD.ftrip(f.id, !(now && now.on));
+          if (!r) return msg('Fault ' + f.t + ': not found.');
+          if (f.g === 'ib') return (window.lsEventAdd && lsEventAdd('FIELD', 'FIELD', r), msg(r));
+          fltLog(r);
+          msg('FAULT: ' + r);
+        }
+      );
     btn('flt-clear', 'Clear all faults', 'Puts the field back: every fault that is on is cleared.', () => {
       const on = (AN.fault ? AN.fault() : []).filter(q => q.on),
         om = ftL().filter(q => q.on && q.g !== 'ib'); /* an IRP bypass is a field action, not a fault: it stays */
@@ -1828,64 +2195,138 @@
           msg('TCS: ' + e.message);
         }
       });
-    tcs('tcsroll', 'Turbine ROLL', 'TCS panel: open the stop valves, IP start mode, 120 rpm/min to 3600 rpm (PR-OPE-5002 4.4). Needs Start cold and the plant running.', 'roll', null, 'TCS: turbine rolling, 120 rpm/min to 3600 (OPERATE > UNIT shows the speed).');
-    tcs('tcsexc', 'EXCITATION', 'ATS step 4 at 3600 rpm (ATS sequence page 23): field breaker 41 closes, the AVR builds the generator voltage up to 13.8 kV. Needed before SYNC.', 'excite', null, 'TCS: EXCITATION started, generator voltage building up to 13.8 kV.');
-    tcs('tcssync', 'SYNC + initial load 4.5 MW', 'TCS panel after EXCITATION: auto synchronizing (speed and voltage matched), GCB 52G1 closed (ABC-050 I.0931 = 1, I.0932 = 0), initial load 4.5 MW on the ICV (PR-OPE-5002 4.5).', 'sync', null, 'TCS: generator synchronised, initial load 4.5 MW.');
+    tcs(
+      'tcsroll',
+      'Turbine ROLL',
+      'TCS panel: open the stop valves, IP start mode, 120 rpm/min to 3600 rpm (PR-OPE-5002 4.4). Needs Start cold and the plant running.',
+      'roll',
+      null,
+      'TCS: turbine rolling, 120 rpm/min to 3600 (OPERATE > UNIT shows the speed).'
+    );
+    tcs(
+      'tcsexc',
+      'EXCITATION',
+      'ATS step 4 at 3600 rpm (ATS sequence page 23): field breaker 41 closes, the AVR builds the generator voltage up to 13.8 kV. Needed before SYNC.',
+      'excite',
+      null,
+      'TCS: EXCITATION started, generator voltage building up to 13.8 kV.'
+    );
+    tcs(
+      'tcssync',
+      'SYNC + initial load 4.5 MW',
+      'TCS panel after EXCITATION: auto synchronizing (speed and voltage matched), GCB 52G1 closed (ABC-050 I.0931 = 1, I.0932 = 0), initial load 4.5 MW on the ICV (PR-OPE-5002 4.5).',
+      'sync',
+      null,
+      'TCS: generator synchronised, initial load 4.5 MW.'
+    );
     /* S149-3: ATS step 7 (310SC90-775 page 28); SHUT-DOWN (step 8) is taken only after it */
-    tcs('tcsnormal', 'NORMAL OPERATION', 'ATS step 7 at 45 MW (ATS sequence page 28). The SHUT-DOWN (step 8) needs it done.', 'normal', undefined, 'TCS: NORMAL OPERATION (ATS step 7) done.');
-    tcs('tcsshut', 'Turbine SHUT-DOWN', 'ATS step 8: below 20 % load: 52G open, 41 open, turbine trip (ATS sequence page 29)', 'shutdown', undefined, () => true);
-    tcs('tcsholdoff', 'HOLD OFF', 'TCS panel: release the ATS hold after its condition has cleared (ATS sequence page 11)', 'holdoff', undefined, () => true);
-    tcs('tcsload', 'LOAD UP to 45 MW', 'TCS panel: target 45 MW at 5 %/min (7.5 MW/min). ICV -> CV transfer at 20 MW (I.0418 = 1), DCS control mode permissive I.0081 at 45 MW (PR-OPE-5002 4.6).', 'loadup', 45, 'TCS: load up to 45 MW at 7.5 MW/min.');
-    btn('tcsbyp', 'CRITERIA BYPASS…', 'TCS panel: take one unsatisfied ATS criterion out of the step check, or put it back (ATS sequence pages 3 and 10). A hold is not bypassed', async () => {
-      const s = AN.tcs();
-      if (!s) return msg('TCS: no ATS program at this start');
-      const q_ = 'Criterion number to bypass or restore. Missing now: ' + (s.next || 'none') + '. Bypassed: ' + (s.byp.join(', ') || 'none'),
-        x = window.lsAskText ? await lsAskText(q_, '') : prompt(q_, '');
-      if (!x) return;
-      const r = AN.turbine('critbypass', x);
-      msg(r ? 'TCS: ' + r : 'TCS: criterion ' + x + ' changed. Bypassed: ' + (AN.tcs().byp.join(', ') || 'none'));
-    });
-    btn('tcstarget', 'TARGET MW…', 'TCS panel: a target MW of your own (reached at 7.5 MW/min) while the DCS control mode is OFF. Once I.0082 = 1 (boiler master and PIC-COBM in AUTO above 230 T/H) the TCS follows the turbine master EIC-TM of the DCS instead.', async () => {
-      /* Mina, load run of 3.2.2: the question opened at 50, not at the target now (the TCS target, else the MW) */
-      let d0 = '50',
-        dcsOn = false;
-      /* Mina, beta.2 check: window.AN_UNIT is not on window (a const of the engine), and in Worker mode the page has only the mirror:
-         AN.unit is the unit on both sides (sync.js) */
-      try {
-        const U = window.AN && AN.unit,
-          t = U && U.tb && isFinite(U.tb.aim) ? U.tb.aim : U && isFinite(U.MW) ? U.MW : NaN;
-        if (isFinite(t)) d0 = String(Math.round(t * 10) / 10);
-        /* the same DCS control mode test as the engine (unit.js anUnitStep0 / anTurbine) */
-        dcsOn = !!U && (U.dcs < 0 || +(U.S && U.S.rt && U.S.rt.v[U.dcs]) > 0.5);
-      } catch (e) {}
-      /* Mina, beta.2 check: the answer in DCS mode was cut off in the status bar, after a number was asked for nothing: it is said first, in the dialog */
-      const say = t => (window.lsAsk ? lsAsk({ q: 'Target MW', t, ok: 'OK' }) : alert(t));
-      if (dcsOn) return void say('DCS control mode is ON: the turbine follows the unit load demand of the DCS. Change the load with Unit load demand (HIC-ULD, ABC-001A).');
-      const x =window.lsAskText ? await lsAskText('TCS target MW (4.5 ~ 150):', d0) : prompt('TCS target MW (4.5 ~ 150):', d0);
-      if (x == null) return;
-      /* Mina, live test of 280: a word or a number out of the range went on and the message named it: the question is checked here */
-      const mw = x.trim() ? +x : NaN;
-      if (!(mw >= 4.5 && mw <= 150)) return msg('TCS: target not changed. Type a number from 4.5 to 150 MW.');
-      try {
-        const r = AN.turbine('loadup', mw);
-        if (r) say(r);
-        msg(r ? 'TCS: ' + r : 'TCS: target ' + mw + ' MW at 7.5 MW/min (the DCS target takes over when I.0082 = 1).');
-      } catch (e) {
-        msg('TCS: ' + e.message);
+    tcs(
+      'tcsnormal',
+      'NORMAL OPERATION',
+      'ATS step 7 at 45 MW (ATS sequence page 28). The SHUT-DOWN (step 8) needs it done.',
+      'normal',
+      undefined,
+      'TCS: NORMAL OPERATION (ATS step 7) done.'
+    );
+    tcs(
+      'tcsshut',
+      'Turbine SHUT-DOWN',
+      'ATS step 8: below 20 % load: 52G open, 41 open, turbine trip (ATS sequence page 29)',
+      'shutdown',
+      undefined,
+      () => true
+    );
+    tcs(
+      'tcsholdoff',
+      'HOLD OFF',
+      'TCS panel: release the ATS hold after its condition has cleared (ATS sequence page 11)',
+      'holdoff',
+      undefined,
+      () => true
+    );
+    tcs(
+      'tcsload',
+      'LOAD UP to 45 MW',
+      'TCS panel: target 45 MW at 5 %/min (7.5 MW/min). ICV -> CV transfer at 20 MW (I.0418 = 1), DCS control mode permissive I.0081 at 45 MW (PR-OPE-5002 4.6).',
+      'loadup',
+      45,
+      'TCS: load up to 45 MW at 7.5 MW/min.'
+    );
+    btn(
+      'tcsbyp',
+      'CRITERIA BYPASS…',
+      'TCS panel: take one unsatisfied ATS criterion out of the step check, or put it back (ATS sequence pages 3 and 10). A hold is not bypassed',
+      async () => {
+        const s = AN.tcs();
+        if (!s) return msg('TCS: no ATS program at this start');
+        const q_ =
+            'Criterion number to bypass or restore. Missing now: ' +
+            (s.next || 'none') +
+            '. Bypassed: ' +
+            (s.byp.join(', ') || 'none'),
+          x = window.lsAskText ? await lsAskText(q_, '') : prompt(q_, '');
+        if (!x) return;
+        const r = AN.turbine('critbypass', x);
+        msg(r ? 'TCS: ' + r : 'TCS: criterion ' + x + ' changed. Bypassed: ' + (AN.tcs().byp.join(', ') || 'none'));
       }
-    });
+    );
+    btn(
+      'tcstarget',
+      'TARGET MW…',
+      'TCS panel: a target MW of your own (reached at 7.5 MW/min) while the DCS control mode is OFF. Once I.0082 = 1 (boiler master and PIC-COBM in AUTO above 230 T/H) the TCS follows the turbine master EIC-TM of the DCS instead.',
+      async () => {
+        /* Mina, load run of 3.2.2: the question opened at 50, not at the target now (the TCS target, else the MW) */
+        let d0 = '50',
+          dcsOn = false;
+        /* Mina, beta.2 check: window.AN_UNIT is not on window (a const of the engine), and in Worker mode the page has only the mirror:
+         AN.unit is the unit on both sides (sync.js) */
+        try {
+          const U = window.AN && AN.unit,
+            t = U && U.tb && isFinite(U.tb.aim) ? U.tb.aim : U && isFinite(U.MW) ? U.MW : NaN;
+          if (isFinite(t)) d0 = String(Math.round(t * 10) / 10);
+          /* the same DCS control mode test as the engine (unit.js anUnitStep0 / anTurbine) */
+          dcsOn = !!U && (U.dcs < 0 || +(U.S && U.S.rt && U.S.rt.v[U.dcs]) > 0.5);
+        } catch (e) {}
+        /* Mina, beta.2 check: the answer in DCS mode was cut off in the status bar, after a number was asked for nothing: it is said first, in the dialog */
+        const say = t => (window.lsAsk ? lsAsk({ q: 'Target MW', t, ok: 'OK' }) : alert(t));
+        if (dcsOn)
+          return void say(
+            'DCS control mode is ON: the turbine follows the unit load demand of the DCS. Change the load with Unit load demand (HIC-ULD, ABC-001A).'
+          );
+        const x = window.lsAskText
+          ? await lsAskText('TCS target MW (4.5 ~ 150):', d0)
+          : prompt('TCS target MW (4.5 ~ 150):', d0);
+        if (x == null) return;
+        /* Mina, live test of 280: a word or a number out of the range went on and the message named it: the question is checked here */
+        const mw = x.trim() ? +x : NaN;
+        if (!(mw >= 4.5 && mw <= 150)) return msg('TCS: target not changed. Type a number from 4.5 to 150 MW.');
+        try {
+          const r = AN.turbine('loadup', mw);
+          if (r) say(r);
+          msg(r ? 'TCS: ' + r : 'TCS: target ' + mw + ' MW at 7.5 MW/min (the DCS target takes over when I.0082 = 1).');
+        } catch (e) {
+          msg('TCS: ' + e.message);
+        }
+      }
+    );
     /* audit A1: the diesel oil pumps are DCS motors (DITL-31): started from their drawing / the Training, not from here */
     d.head('Field valves');
     for (const [id, txt, open, ok] of [
       ['bdclose', 'Drum BLOWDOWN valve CLOSE', false, 'Blowdown closed: no water leaves the drum except the steam.'],
       ['bdopen', 'Drum BLOWDOWN valve OPEN', true, 'Blowdown open: 25 T/H (03.png, 150 MW).']
     ])
-      btn(id, txt, 'Field hand valve of the drum blowdown (not a DCS station). PR-OPE-5003: "Before stopping BFP, set the drum level near HH (blow down valve must be close)".', () => {
-        const done = !!(AN.blowdown && AN.blowdown(open));
-        msg(done ? ok : 'Blowdown: no drum level loop.');
-        /* sweep 16: a field action is logged in the Event log, as the other field actions (dock.js fieldRow) */
-        if (done && window.lsEventAdd) lsEventAdd('Field', 'FIELD', 'Field operator: drum blowdown valve ' + (open ? 'OPEN' : 'CLOSE'));
-      });
+      btn(
+        id,
+        txt,
+        'Field hand valve of the drum blowdown (not a DCS station). PR-OPE-5003: "Before stopping BFP, set the drum level near HH (blow down valve must be close)".',
+        () => {
+          const done = !!(AN.blowdown && AN.blowdown(open));
+          msg(done ? ok : 'Blowdown: no drum level loop.');
+          /* sweep 16: a field action is logged in the Event log, as the other field actions (dock.js fieldRow) */
+          if (done && window.lsEventAdd)
+            lsEventAdd('Field', 'FIELD', 'Field operator: drum blowdown valve ' + (open ? 'OPEN' : 'CLOSE'));
+        }
+      );
     /* the precipitator runs from the EP PLC panel (PR-OPE-5002 1.1): no DCS station; AN.field had no control, dust and opacity follow it */
     d.head('Precipitator');
     for (const [id, txt, on, ok] of [
@@ -1896,7 +2337,12 @@
         const done = !!(AN.field && AN.field('esp', on));
         msg(done ? ok : 'ESP: no plant model.');
         /* sweep 16 (Mina 11-07: no Event line for ESP ON / OFF): logged as a field action at the EP PLC panel */
-        if (done && window.lsEventAdd) lsEventAdd('ESP', 'FIELD', 'Field operator: electrostatic precipitator ' + (on ? 'ON' : 'OFF') + ' (EP PLC panel)');
+        if (done && window.lsEventAdd)
+          lsEventAdd(
+            'ESP',
+            'FIELD',
+            'Field operator: electrostatic precipitator ' + (on ? 'ON' : 'OFF') + ' (EP PLC panel)'
+          );
       });
   }
   /* 3.2.0-beta.20 (user 2026-10-24 "dpt common tools yn s simulate", pick B of https://claude.ai/artifact/ShJf2VmTtFDsMGFCMD5zeT):
@@ -1914,7 +2360,12 @@
       if (/^Starting state/.test(h.textContent)) h.classList.add('lsmoved');
     /* Mina beta.154: Warm / Hot restart were only in the TCS / Field menu: they are starting states of the unit as Cold and 150 MW */
     const NAMES = { plantCold: 'Cold', plantLoad150: '150 MW', plantWarm: 'Warm restart', plantHot: 'Hot restart' };
-    const stNow = () => (AN.startState === 'plantCold' && AN.restartKind === 'warm' ? 'plantWarm' : AN.startState === 'plantCold' && AN.restartKind === 'hot' ? 'plantHot' : AN.startState);
+    const stNow = () =>
+      AN.startState === 'plantCold' && AN.restartKind === 'warm'
+        ? 'plantWarm'
+        : AN.startState === 'plantCold' && AN.restartKind === 'hot'
+          ? 'plantHot'
+          : AN.startState;
     const model = () => (!(window.AN && AN.plantOn) ? 'off' : 'unit');
     let pick = null;
     const txt = () => {
@@ -1922,11 +2373,15 @@
       if (m === 'off') return 'OFF';
       return 'Unit · ' + (NAMES[stNow()] || 'not started');
     };
-    const chip = E('button', { id: 'plchip', cls: 'plchip', title: 'Plant model and starting state: OFF, Unit (Cold to 150 MW)' }, [
-      E('i', { 'aria-hidden': 'true' }),
-      E('span', {}, [E('small', { txt: 'PLANT' }), E('em', {})]),
-      E('b', { txt: '▾', 'aria-hidden': 'true' })
-    ]);
+    const chip = E(
+      'button',
+      { id: 'plchip', cls: 'plchip', title: 'Plant model and starting state: OFF, Unit (Cold to 150 MW)' },
+      [
+        E('i', { 'aria-hidden': 'true' }),
+        E('span', {}, [E('small', { txt: 'PLANT' }), E('em', {})]),
+        E('b', { txt: '▾', 'aria-hidden': 'true' })
+      ]
+    );
     const pop = E('div', { id: 'plpop', cls: 'plpop', role: 'dialog', 'aria-label': 'Plant model' });
     pop.hidden = true;
     document.body.append(pop);
@@ -1977,8 +2432,23 @@
       upd();
       if (!pop.hidden) render();
     };
-    const seg = (items, on) => E('div', { cls: 'plseg' }, items.map(([k, label, fn]) => E('button', { cls: k === on ? 'on' : '', txt: label, on: guard(fn) })));
-    const mwBox = (id, val) => E('input', { id, type: 'number', min: '45', max: '150', step: '0.5', value: String(val), inputmode: 'decimal', 'aria-label': 'MW' });
+    const seg = (items, on) =>
+      E(
+        'div',
+        { cls: 'plseg' },
+        items.map(([k, label, fn]) => E('button', { cls: k === on ? 'on' : '', txt: label, on: guard(fn) }))
+      );
+    const mwBox = (id, val) =>
+      E('input', {
+        id,
+        type: 'number',
+        min: '45',
+        max: '150',
+        step: '0.5',
+        value: String(val),
+        inputmode: 'decimal',
+        'aria-label': 'MW'
+      });
     const plantOn = on => {
       if (!!AN.plantOn !== on) AN.plantSwitch(on, true);
     };
@@ -1989,7 +2459,20 @@
         E('h5', { txt: 'Plant model' }),
         seg(
           [
-            ['off', 'OFF', () => withAN(() => (pick = null, plantOn(false), say('Plant model OFF: the transmitters are free inputs, only the drawn logic runs (simulate and force).')))],
+            [
+              'off',
+              'OFF',
+              () =>
+                withAN(
+                  () => (
+                    (pick = null),
+                    plantOn(false),
+                    say(
+                      'Plant model OFF: the transmitters are free inputs, only the drawn logic runs (simulate and force).'
+                    )
+                  )
+                )
+            ],
             ['unit', 'Unit', () => (pick = 'unit')]
           ],
           m
@@ -2043,7 +2526,13 @@
                   const mw = Math.max(4.5, Math.min(150, +t.value || 150));
                   try {
                     const r = AN.turbine('loadup', mw);
-                    say(r ? 'TCS: ' + r : 'Target ' + mw + ' MW at 7.5 MW/min (TCS). In CCS (DCS control mode ON) the load is set on HIC-ULD (ABC-001A).');
+                    say(
+                      r
+                        ? 'TCS: ' + r
+                        : 'Target ' +
+                            mw +
+                            ' MW at 7.5 MW/min (TCS). In CCS (DCS control mode ON) the load is set on HIC-ULD (ABC-001A).'
+                    );
                   } catch (e) {
                     say('TCS: ' + e.message);
                   }
@@ -2051,7 +2540,9 @@
               )
             })
           ]),
-          E('small', { txt: 'Target load = the TCS target while the DCS control mode is OFF. In CCS, change HIC-ULD (ABC-001A faceplate).' })
+          E('small', {
+            txt: 'Target load = the TCS target while the DCS control mode is OFF. In CCS, change HIC-ULD (ABC-001A faceplate).'
+          })
         );
         /* plan c1: IBD TA-1 TURBINE TRIP / TURBINE RESET push buttons and the first-out of TA-9 (src/analog/engine/tcs-trip.js) */
         const tt = AN.tcsTrip ? AN.tcsTrip() : null;
@@ -2091,15 +2582,31 @@
         } catch (e) {}
         if (el) {
           const f = x => (isFinite(x) ? (+x).toFixed(1) : '-'),
-            st = el.house ? 'HOUSE LOAD OPERATION: 52L1 open, the generator carries the house load only. ' : el.l52 ? '52L1 closed. ' : '52L1 open. ',
+            st = el.house
+              ? 'HOUSE LOAD OPERATION: 52L1 open, the generator carries the house load only. '
+              : el.l52
+                ? '52L1 closed. '
+                : '52L1 open. ',
             grid = el.exp >= 0 ? 'to the grid ' + f(el.exp) : 'from the grid ' + f(-el.exp);
           pop.append(
             E('h5', { txt: 'Grid (line breaker 52L1)' }),
             E('small', {
               txt:
                 st +
-                ('Generator ' + f(el.gen) + ' MW, house load ' + f(el.aux) + ' MW (6.6 kV motors, ' + Math.round(el.busA) + ' A), ' + grid + ' MW. ') +
-                ('Main transformer ' + Math.round(el.mtPct) + ' %, unit auxiliary transformer ' + Math.round(el.uatPct) + ' %.')
+                ('Generator ' +
+                  f(el.gen) +
+                  ' MW, house load ' +
+                  f(el.aux) +
+                  ' MW (6.6 kV motors, ' +
+                  Math.round(el.busA) +
+                  ' A), ' +
+                  grid +
+                  ' MW. ') +
+                ('Main transformer ' +
+                  Math.round(el.mtPct) +
+                  ' %, unit auxiliary transformer ' +
+                  Math.round(el.uatPct) +
+                  ' %.')
             }),
             E('div', { cls: 'plrow' }, [
               E('button', {
@@ -2109,7 +2616,12 @@
                   withAN(() => {
                     const r = AN.turbine('52l', el.l52 ? 0 : 1);
                     try {
-                      window.lsEventAdd && lsEventAdd('TCS', 'TCS', 'Instructor: ' + (el.l52 ? 'open' : 'close') + ' 52L1' + (r ? ': ' + r : ''));
+                      window.lsEventAdd &&
+                        lsEventAdd(
+                          'TCS',
+                          'TCS',
+                          'Instructor: ' + (el.l52 ? 'open' : 'close') + ' 52L1' + (r ? ': ' + r : '')
+                        );
                     } catch (e) {}
                     say(r ? 'Grid: ' + r : 'Grid: 52L1 ' + (el.l52 ? 'opened (house load operation)' : 'closed'));
                     setTimeout(() => !pop.hidden && render(), 1500);
@@ -2174,7 +2686,9 @@
     }
     /* beside VIEW | RUN, wherever the bar puts them (the unit band moves the segment) */
     setInterval(() => {
-      const sg = [...document.querySelectorAll('.seg')].find(x => /VIEW/.test(x.textContent) && /RUN/.test(x.textContent));
+      const sg = [...document.querySelectorAll('.seg')].find(
+        x => /VIEW/.test(x.textContent) && /RUN/.test(x.textContent)
+      );
       if (sg && chip.nextSibling !== sg) sg.before(chip);
       upd();
     }, 400);

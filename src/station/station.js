@@ -42,7 +42,16 @@
     ['Auxiliaries', ['turbine-oil']]
   ];
   /* pages the frame draws itself (their id starts with @): a list read from the turbine control of the app, no drawing */
-  const OWN = { '@soe': 'First out and events', '@gen': 'Generator panel', '@score': 'Trainee score', '@criteria': 'Start-up criteria', '@load': 'Speed and load', '@trip': 'Turbine trip', '@vtest': 'Valve tests', '@ost': 'Overspeed test' };
+  const OWN = {
+    '@soe': 'First out and events',
+    '@gen': 'Generator panel',
+    '@score': 'Trainee score',
+    '@criteria': 'Start-up criteria',
+    '@load': 'Speed and load',
+    '@trip': 'Turbine trip',
+    '@vtest': 'Valve tests',
+    '@ost': 'Overspeed test'
+  };
   const STATIONS = [
     ['plant', 'Plant', 'Pages of the plant control system (DCS)', GROUPS],
     ['turbine', 'Turbine', 'Pages of the turbine control system (TCS)', TCS_GROUPS]
@@ -403,7 +412,9 @@
     stn = k;
     fillPages();
     const P = pages(),
-      ids = STATIONS.find(x => x[0] === k)[3].flatMap(g => g[1]).filter(i => P[i]),
+      ids = STATIONS.find(x => x[0] === k)[3]
+        .flatMap(g => g[1])
+        .filter(i => P[i]),
       last = mem.get('page-' + k);
     if (ids.length) go(ids.includes(last) ? last : ids[0]);
     setTimeout(paint, 60);
@@ -683,7 +694,11 @@
     }
     const nat = t => t.replace(/\d+/g, d => d.padStart(5, '0'));
     L.forEach((x, n) => (x.n = n));
-    L.sort((p, q) => p.g[0] - q.g[0] || (fam === 'an' ? (nat(p.name) < nat(q.name) ? -1 : nat(p.name) > nat(q.name) ? 1 : 0) : p.n - q.n));
+    L.sort(
+      (p, q) =>
+        p.g[0] - q.g[0] ||
+        (fam === 'an' ? (nat(p.name) < nat(q.name) ? -1 : nat(p.name) > nat(q.name) ? 1 : 0) : p.n - q.n)
+    );
     let grp = null;
     for (const x of L) {
       if (x.g[1] !== grp) {
@@ -849,7 +864,9 @@
         'p',
         'st-none',
         (lite.on ? 'Lite mode is on. ' : 'Lite mode is off. ') +
-          (lite.fps ? 'This device draws ' + lite.fps + ' pictures a second.' : 'The speed of this device is not measured yet.')
+          (lite.fps
+            ? 'This device draws ' + lite.fps + ' pictures a second.'
+            : 'The speed of this device is not measured yet.')
       )
     );
   }
@@ -1111,7 +1128,23 @@
       };
       Promise.resolve(call(() => lsSaves.save(t))).then(done, done);
     };
-    r.append(nm, sv);
+    /* a save point from a file (one written by File of a row below), so a save survives a new browser or a restart of the PC */
+    const fi = E('input');
+    fi.type = 'file';
+    fi.accept = '.json,application/json';
+    fi.hidden = true;
+    fi.onchange = () => {
+      const fl = fi.files && fi.files[0];
+      fi.value = '';
+      if (fl)
+        fl.text()
+          .then(t => call(() => lsSaves.imp(t)))
+          .then(fillSaves, fillSaves);
+    };
+    const op = E('button', 'st-b', 'Open file…');
+    op.title = 'Adds a save point from a file kept on this computer';
+    op.onclick = () => fi.click();
+    r.append(nm, sv, op, fi);
     ins.name = nm;
     ins.saves = E('div', 'st-svl');
     body.append(ins.saves);
@@ -1138,7 +1171,16 @@
             setTimeout(tick, 1500);
           });
           arm(dl, 'Delete', () => Promise.resolve(call(() => lsSaves.del(e))).then(fillSaves, fillSaves));
-          rr.append(E('span', '', e.name), ld, dl);
+          const fb = E('button', 'st-b', 'File');
+          fb.title = 'Keeps this save point as a file on this computer; Open file… puts it back';
+          fb.onclick = () => {
+            const a = E('a');
+            a.href = URL.createObjectURL(new Blob([lsSaves.exp(e)], { type: 'application/json' }));
+            a.download = 'save-' + e.name.replace(/[^A-Za-z0-9.-]+/g, '_') + '.json';
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+          };
+          rr.append(E('span', '', e.name), ld, fb, dl);
           N.push(rr);
         }
       ins.saves.replaceChildren(...N);
@@ -1392,34 +1434,34 @@
         for (const [kind, L] of byKind(L0, c => c.txt)) {
           box.append(E('div', 'st-cg', kind));
           for (const c of L) {
-          const b = byp.includes(c.no),
-            r = E('div', 'st-cr' + (c.ok ? '' : b ? ' byp' : ' miss')),
-            v = E('em', '', val(c)),
-            st = E('span', 'st-cs', c.ok ? 'Met' : b ? 'Bypassed' : 'Not met');
-          (crit.v[c.no] = crit.v[c.no] || []).push(v);
-          r.append(
-            E('i', 'st-mk' + (c.ok ? ' ok' : b ? '' : ' new')),
-            E('span', 'st-cn', c.no),
-            E('span', '', c.txt),
-            v,
-            st
-          );
-          if (!c.ok || b) {
-            const x = E('button', 'st-b', b ? 'Put back' : 'Bypass');
-            x.title = b
-              ? 'The criterion counts again'
-              : 'Takes this criterion out of the step until it is put back; a hold is not bypassed';
-            const fn = () => {
-              const m = call(() => AN.turbine('critbypass', c.no), '');
-              if (m) x.title = m;
-              crit.key = '';
-              setTimeout(tick, 100);
-            };
-            if (b) x.onclick = fn;
-            else arm(x, 'Bypass', fn);
-            r.append(x);
-          } else r.append(E('span'));
-          box.append(r);
+            const b = byp.includes(c.no),
+              r = E('div', 'st-cr' + (c.ok ? '' : b ? ' byp' : ' miss')),
+              v = E('em', '', val(c)),
+              st = E('span', 'st-cs', c.ok ? 'Met' : b ? 'Bypassed' : 'Not met');
+            (crit.v[c.no] = crit.v[c.no] || []).push(v);
+            r.append(
+              E('i', 'st-mk' + (c.ok ? ' ok' : b ? '' : ' new')),
+              E('span', 'st-cn', c.no),
+              E('span', '', c.txt),
+              v,
+              st
+            );
+            if (!c.ok || b) {
+              const x = E('button', 'st-b', b ? 'Put back' : 'Bypass');
+              x.title = b
+                ? 'The criterion counts again'
+                : 'Takes this criterion out of the step until it is put back; a hold is not bypassed';
+              const fn = () => {
+                const m = call(() => AN.turbine('critbypass', c.no), '');
+                if (m) x.title = m;
+                crit.key = '';
+                setTimeout(tick, 100);
+              };
+              if (b) x.onclick = fn;
+              else arm(x, 'Bypass', fn);
+              r.append(x);
+            } else r.append(E('span'));
+            box.append(r);
           }
         }
         N1.push(box);
@@ -1520,7 +1562,13 @@
       sy.c.insertBefore(sv, sy.r);
       h.sy = sy;
       h.synA = press(sy.r, 'Automatic', 'Automatic synchronizing (ASD)', 'syn', 'AUTO');
-      h.synM = press(sy.r, 'Manual', 'Manual synchronizing: the operator matches voltage and speed and closes 52G', 'syn', 'MAN');
+      h.synM = press(
+        sy.r,
+        'Manual',
+        'Manual synchronizing: the operator matches voltage and speed and closes 52G',
+        'syn',
+        'MAN'
+      );
       const cl = E('button', 'st-b', 'Close 52G');
       cl.title = 'Closes the generator breaker; possible only in manual with the synchronizing check 25 operated';
       arm(cl, 'Close 52G', () => say(call(() => AN.turbine('gen', { op: 'close52g' }), '')));
@@ -1533,7 +1581,10 @@
       h.avrA = press(vo.r, 'AVR automatic', 'The AVR holds the generator voltage', 'avr', 'AUTO');
       h.avrM = press(vo.r, 'AVR manual', 'The field is set by hand', 'avr', 'MAN');
       /* 7-65: the speed of the turbine through the governor */
-      const sp = card('Speed (7-65)', 'Raise / lower of the turbine speed through the governor, to match the frequency of the line');
+      const sp = card(
+        'Speed (7-65)',
+        'Raise / lower of the turbine speed through the governor, to match the frequency of the line'
+      );
       h.sp = sp;
       press(sp.r, 'Lower', 'Lowers the speed', 'n-');
       press(sp.r, 'Raise', 'Raises the speed', 'n+');
@@ -1576,7 +1627,8 @@
     on(h.synA, G.syn !== 'MAN');
     on(h.synM, G.syn === 'MAN');
     h.vo.v.textContent = fmt(G.kV, 2) + ' kV';
-    h.vo.m.textContent = 'Field ' + fmt(G.efd, 2) + ' pu · ' + (G.x84 ? 'voltage established' : 'voltage not established');
+    h.vo.m.textContent =
+      'Field ' + fmt(G.efd, 2) + ' pu · ' + (G.x84 ? 'voltage established' : 'voltage not established');
     on(h.avrA, G.avr !== 'MAN');
     on(h.avrM, G.avr === 'MAN');
     h.sp.v.textContent = fmt(G.hz, 2) + ' Hz';
@@ -1606,7 +1658,11 @@
     for (const [k, v, hot] of [
       ['Score', fmt(Z.score, 1) + ' of 100', Z.deduct.length > 0],
       ['Steps of the procedure done', Z.of - Z.todo.length + ' of ' + Z.of],
-      ['Trips', (tr.mft || 0) + ' master fuel trip · ' + (tr.tt || 0) + ' turbine trip', (tr.mft || 0) + (tr.tt || 0) > 0]
+      [
+        'Trips',
+        (tr.mft || 0) + ' master fuel trip · ' + (tr.tt || 0) + ' turbine trip',
+        (tr.mft || 0) + (tr.tt || 0) > 0
+      ]
     ]) {
       const d = E('div'),
         b = E('b', hot ? 'st-hot' : '', v);
@@ -1701,7 +1757,13 @@
     }
     const box = E('div', 'st-crit');
     if (!L.length)
-      box.append(E('p', 'st-none', 'No event since this starting point. The list fills by itself at the next master fuel trip or turbine trip.'));
+      box.append(
+        E(
+          'p',
+          'st-none',
+          'No event since this starting point. The list fills by itself at the next master fuel trip or turbine trip.'
+        )
+      );
     let last = -1e9,
       t0 = 0;
     for (const x of L) {
@@ -1913,22 +1975,45 @@
      a test that is not allowed says why, in the words of the turbine control. */
   const vt = {};
   const VT_VALVES = [
-    ['Main stop valves', [['msvA', 'Main stop valve A'], ['msvB', 'Main stop valve B']]],
-    ['Control valves', [['cvA', 'Control valve A'], ['cvB', 'Control valve B']]]
+    [
+      'Main stop valves',
+      [
+        ['msvA', 'Main stop valve A'],
+        ['msvB', 'Main stop valve B']
+      ]
+    ],
+    [
+      'Control valves',
+      [
+        ['cvA', 'Control valve A'],
+        ['cvB', 'Control valve B']
+      ]
+    ]
   ];
   const VT_OPS = [
     ['partial', 'Partial test', 'Moves the valve a part of its travel and back'],
-    ['close', 'Full close test', 'Closes the valve fully; on a main stop valve the control valves of that side close first'],
+    [
+      'close',
+      'Full close test',
+      'Closes the valve fully; on a main stop valve the control valves of that side close first'
+    ],
     ['open', 'Open again', 'Opens the valve again after a full close test'],
     ['cancel', 'Cancel', 'Stops the test and brings the valve back']
   ];
-  const VT_PH = { msv: 'Main stop valve moving', cv: 'Control valves moving', reopen: 'Opening again', held: 'Held closed' };
+  const VT_PH = {
+    msv: 'Main stop valve moving',
+    cv: 'Control valves moving',
+    reopen: 'Opening again',
+    held: 'Held closed'
+  };
   function vtests() {
     const V = call(() => AN.tcsVt(), null);
     if (!V) {
       if (vt.key !== 'none') {
         vt.key = 'none';
-        ownPg.replaceChildren(E('p', 'st-none', 'The valve tests of the turbine are not loaded at this starting point.'));
+        ownPg.replaceChildren(
+          E('p', 'st-none', 'The valve tests of the turbine are not loaded at this starting point.')
+        );
       }
       return;
     }
@@ -2005,7 +2090,13 @@
     if (!O) {
       if (ost.h !== 0) {
         ost.h = 0;
-        ownPg.replaceChildren(E('p', 'st-none', 'The overspeed test is not in use at this starting point (the turbine control holds no start-up there).'));
+        ownPg.replaceChildren(
+          E(
+            'p',
+            'st-none',
+            'The overspeed test is not in use at this starting point (the turbine control holds no start-up there).'
+          )
+        );
       }
       return;
     }
@@ -2112,9 +2203,17 @@
       if (!el && ++n < 20) return;
       clearInterval(t);
       if (!el) return;
-      el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: el.getBoundingClientRect().left + 4, clientY: el.getBoundingClientRect().top + 4 }));
+      el.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: el.getBoundingClientRect().left + 4,
+          clientY: el.getBoundingClientRect().top + 4
+        })
+      );
       const M = [el];
-      if (tg.mark) for (const x of document.querySelectorAll('#plantws .hx-process text')) if (x.textContent.includes(tg.mark)) M.push(x);
+      if (tg.mark)
+        for (const x of document.querySelectorAll('#plantws .hx-process text'))
+          if (x.textContent.includes(tg.mark)) M.push(x);
       M.forEach(x => x.classList.add('st-mark'));
       setTimeout(() => M.forEach(x => x.classList.remove('st-mark')), 5000);
       setTimeout(tick, 200);
@@ -2161,7 +2260,9 @@
     }
     const H = call(() => AN.fpHist(trend.key, trend.span), null);
     if (!H || !H.t || H.t.length < 2) {
-      trend.box.replaceChildren(E('p', 'st-none', 'No history yet for this faceplate. It is kept from the moment the app starts.'));
+      trend.box.replaceChildren(
+        E('p', 'st-none', 'No history yet for this faceplate. It is kept from the moment the app starts.')
+      );
       trend.leg.replaceChildren();
       return;
     }
@@ -2179,7 +2280,11 @@
     }
     const path = (A, a, z) =>
       (A || [])
-        .map((v, i) => (ok(v) && H.t[i] >= t0 ? ((W * (H.t[i] - t0)) / trend.span).toFixed(1) + ',' + (Ht - (Ht * (v - a)) / (z - a)).toFixed(1) : ''))
+        .map((v, i) =>
+          ok(v) && H.t[i] >= t0
+            ? ((W * (H.t[i] - t0)) / trend.span).toFixed(1) + ',' + (Ht - (Ht * (v - a)) / (z - a)).toFixed(1)
+            : ''
+        )
         .filter(Boolean)
         .join(' ');
     const ns = 'http://www.w3.org/2000/svg',
@@ -2204,7 +2309,12 @@
     };
     const item = (cls, name, v, unit) => {
       const d = E('span', 'st-tl ' + cls);
-      d.append(E('i'), name + ' ', E('b', '', v == null ? '--' : fmt(v, Math.abs(v) < 100 ? 2 : 1)), ' ' + (unit || ''));
+      d.append(
+        E('i'),
+        name + ' ',
+        E('b', '', v == null ? '--' : fmt(v, Math.abs(v) < 100 ? 2 : 1)),
+        ' ' + (unit || '')
+      );
       return d;
     };
     trend.leg.replaceChildren(

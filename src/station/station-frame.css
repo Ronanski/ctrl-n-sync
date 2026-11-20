@@ -92,7 +92,7 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-row .st-b.arm { border-color: var(--st-alm); color: var(--st-alm); }
 .st-save .st-find { flex: 1; min-width: 0; margin: 0; }
 .st-svl { margin-top: 8px; display: grid; gap: 4px; }
-.st-svr { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+.st-svr { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: center; }
 .st-svr span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-row.st-col { display: grid; gap: 4px; }
 @media (pointer: coarse) { .st-row .st-b, .st-find { min-height: 40px; } .st-alm { height: 40px; } }
