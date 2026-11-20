@@ -651,5 +651,7 @@ const TCS_DESC = {
   TCA755:
     'THERMAL STRESS(IP): the THSC INITIAL block A015 (LMA626 / LMA626A) for the IP stage temperatures, as drawn.',
   TCA756:
-    'THERMAL STRESS(IP): three DISTRIBUTION blocks A001 / A004 / A007 (LMA627) for TI(5) to TI(3), as drawn.'
+    'THERMAL STRESS(IP): three DISTRIBUTION blocks A001 / A004 / A007 (LMA627) for TI(5) to TI(3), as drawn.',
+  TCA757:
+    'THERMAL STRESS(IP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TI(2) and TI(1), as drawn.'
 };
