@@ -787,5 +787,7 @@ const TCS_DESC = {
   TCA818:
     'Alarm: the TCS cubicle fan trouble and temperature high signals, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT, and all through one OR to TCA822.',
   TCA819:
-    'Alarm: TPC power supply, EHG CPU (through a NOT) and EHG power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT; grouped through three ORs as A, B and C to TCA822.'
+    'Alarm: TPC power supply, EHG CPU (through a NOT) and EHG power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT; grouped through three ORs as A, B and C to TCA822.',
+  TCA820:
+    'Alarm: trip PCM and Modbus CPU faults (each through a NOT) and Modbus power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT; grouped through two ORs as A and B to TCA822.'
 };
