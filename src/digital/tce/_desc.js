@@ -753,5 +753,7 @@ const TCS_DESC = {
   TCA805:
     'Comm alarm (hardware) 14: the PI/O errors of unit 1 slots D and E (other OR inputs on OFF), each through an OR, as AO error to the CRT and TCA806.',
   TCA806:
-    'Comm alarm (hardware) 15: the DI, AI, DO and AO card errors, each group through an OR, into one OR that sets a flip-flop (ANN RESET resets it), as COM I/O HARD ERROR to the CRT and TCA822.'
+    'Comm alarm (hardware) 15: the DI, AI, DO and AO card errors, each group through an OR, into one OR that sets a flip-flop (ANN RESET resets it), as COM I/O HARD ERROR to the CRT and TCA822.',
+  TCA810:
+    'Alarm: gland steam seal, generator voltage and field, and reheat bowl pressure abnormals through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(1) to TCA816.'
 };
