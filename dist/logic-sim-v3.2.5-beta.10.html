@@ -6512,6 +6512,7 @@ const TCS_DESC = {
   TCE305: 'Control oil pump (TB-21, 22): the standby pump starts on low discharge pressure of the running pump.',
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
   TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
+  TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
@@ -6665,7 +6666,9 @@ const TCS_DESC = {
   TCA835:
     'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.',
   TCE500:
-    'Turbine simulator: the CV and ICV positions drive the turbine simulators MT2 (IP START) and MT1 (HP START); IP START picks which one gives the simulated speeds (to TCE143), the HP first stage pressure (to TCE206) and the HP exhaust pressure; with 52G closed the generator load simulator gives the simulated MW (to TCE070 / 101 / 179); the CCS simulator gives the target MW demand (held by LOAD HOLD COMMAND, to TCE103); plus the IP extraction flow and MOP(A) discharge pressure simulators.'
+    'Turbine simulator: the CV and ICV positions drive the turbine simulators MT2 (IP START) and MT1 (HP START); IP START picks which one gives the simulated speeds (to TCE143), the HP first stage pressure (to TCE206) and the HP exhaust pressure; with 52G closed the generator load simulator gives the simulated MW (to TCE070 / 101 / 179); the CCS simulator gives the target MW demand (held by LOAD HOLD COMMAND, to TCE103); plus the IP extraction flow and MOP(A) discharge pressure simulators.',
+  TCE501:
+    'Valve simulators: four SIMCV blocks give the simulated ICV(A), ICV(B), MSV(A) and MSV(B) positions and servo amp outputs from the position demands (TCE214 / 210 / 211), forced closed by ICV FORCED CLOSE or MSV FORCED CLOSE (TCE053); RSV(A) and RSV(B) position simulators ramp to 100 % on TURBINE TRIP or on ICV FA with CRV TEST (TCE226 / 227 / 228), reset by INITIAL (TCE050).'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -24345,6 +24348,203 @@ const TCS_DESC = {
     t: [...t, [228, 1523, 'CONTROLLER:'], [388, 1523, 'EHG+MD'], [668, 1501, 'TRIGGER  :'], [668, 1521, 'CYCLE(ms):30']]
   });
 })();
+/* TCE451 INDICATION FOR VALVE(2) (331DM09784 page 163, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide, the scan skew taken out (x + 0.012 (y - 800), y - 0.0047 (x - 1100)). Four HMI INDI FOR VALVE blocks (LME125):
+   ICV(A) nZT-STn905-AA, ICV(B) nZT-STn905-BA, RSV(A) nZT-STn905-AB, RSV(B) nZT-STn905-BB. Each takes sixteen signals from the valve sheets
+   (TCE128 to TCE135): the position and positions (1) to (3) (FTR, heavy lines), the position ABN Q, the ABN_Q of each channel, the ABN.
+   (ANN) and the ABN of each channel (BTR). The ABN.O of each block goes to TCE470 (A, B, C, D). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    m = [],
+    w = [],
+    t = [];
+  const PINS = [
+      'POS',
+      'POS1',
+      'POS2',
+      'POS3',
+      'QUA1',
+      'QUA2',
+      'QUA3',
+      'QUAA',
+      'QUAB',
+      'QUAC',
+      'ABN1',
+      'ABN2',
+      'ABN3',
+      'ABNA',
+      'ABNB',
+      'ABNC'
+    ],
+    LET = ['P', 'A1', 'A2', 'A1', 'K1', 'K2', 'K1', 'M1', 'M2', 'M3', 'C1', 'C2', 'C3', 'L1', 'L2', 'L3'],
+    /* the sheet each connector comes from: 0 = the first sheet of the pair, 1 = the second */
+    REF = [1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+    /* the x where the line of each row turns to its pin (rows 1 to 15; row 0 runs straight) */
+    STAIR = [0, 624, 635, 645, ...Array.from({ length: 12 }, (_, k) => Math.round(655 + 10.75 * k))],
+    rowY = i => Math.round(161.5 + 42.6 * i);
+  /* one block and its sixteen rows: side (0 left, 1 right), group (0 top, 1 bottom), valve, tag, the two sheets, block no., marks, names */
+  const group = (side, gr, valve, tag, sheets, no, marks, names) => {
+    const dx = (side ? 894 : 0) + 7,
+      top = gr ? 812 : 130,
+      bx = 794 + dx,
+      pin = p => Math.round((gr ? 843.5 : 162) + 21.3 * p),
+      cx = 292 + dx,
+      key = 'm' + no;
+    m.push([
+      key,
+      'HMI INDI FOR VALVE',
+      '',
+      bx,
+      top,
+      235,
+      383,
+      PINS,
+      ['ABN.O'],
+      no,
+      [
+        [bx, top - 6, '(' + valve + ')'],
+        [bx + 138, top - 6, tag],
+        [bx + 50, top + 405, '(LME125)']
+      ],
+      [PINS.map((_, p) => pin(p)), [pin(4)]]
+    ]);
+    names.forEach((nm, j) => {
+      const i = gr * 16 + j,
+        y = j ? rowY(i) : pin(0),
+        k = (side ? 'r' : 'l') + i,
+        two = Array.isArray(nm);
+      c.push([k, 'in', LET[j], cx, y, two ? nm[1] : nm, [sheets[REF[j]]]]);
+      if (two) t.push([cx + 33, y - 31, nm[0], 0, 2.05]);
+      b.push(['f' + marks[j], j < 4 ? 'o:FTR' : 'o:BTR', marks[j], 581.5 + dx, y]);
+      const heavy = j < 4 ? 1 : 0;
+      if (!j)
+        w.push([
+          k,
+          [
+            [cx + 27, y],
+            [bx, y]
+          ],
+          heavy
+        ]);
+      else
+        w.push([
+          k,
+          [
+            [cx + 27, y],
+            [STAIR[j] + dx, y],
+            [STAIR[j] + dx, pin(j)],
+            [bx, pin(j)]
+          ],
+          heavy
+        ]);
+    });
+    return [key + '.ABN.O', bx + 235, pin(4)];
+  };
+  const num = n => String(n).padStart(3, '0'),
+    marks = (a, b4) =>
+      [...a, ...Array.from({ length: 12 }, (_, k) => num(b4 + 2 * k))].map(x => (typeof x === 'number' ? num(x) : x));
+  const names = (v, ab1) => [
+    v + ' POSITION',
+    v + ' POSITION(1)',
+    v + ' POSITION(2)',
+    v + ' POSITION(3)',
+    ab1 ? v + ' POSITION ABN(1) Q' : [v + ' POSITION', 'ABN(1) Q'],
+    [v + ' POSITION', 'ABN(2) Q'],
+    [v + ' POSITION', 'ABN(3) Q'],
+    v + '(A) ABN_Q',
+    v + '(B) ABN_Q',
+    v + '(C) ABN_Q',
+    [v + '(1) ABN.', '(ANN)'],
+    [v + '(2) ABN.', '(ANN)'],
+    [v + '(3) ABN.', '(ANN)'],
+    v + '(A) ABN',
+    v + '(B) ABN',
+    v + '(C) ABN'
+  ];
+  const oA = group(
+      0,
+      0,
+      'ICV(A)',
+      'nZT-STn905-AA',
+      ['TCE128', 'TCE129'],
+      '002',
+      marks([1, 5, 7, 9], 11),
+      names('ICV(A)')
+    ),
+    oB = group(
+      0,
+      1,
+      'ICV(B)',
+      'nZT-STn905-BA',
+      ['TCE130', 'TCE131'],
+      '036',
+      marks([35, 39, 41, 43], 45),
+      names('ICV(B)')
+    ),
+    oC = group(1, 0, 'RSV(A)', 'nZT-STn905-AB', ['TCE132', 'TCE133'], '004', marks([3, 6, 8, 10], 12), names('RSV(A)')),
+    oD = group(1, 1, 'RSV(B)', 'nZT-STn905-BB', ['TCE134', 'TCE135'], '038', marks([37, 40, 42, 44], 46), names('RSV(B)'));
+  /* the ABN.O of the ICV blocks go round under the block to A / B; those of the RSV blocks straight to C / D */
+  c.push(
+    ['oA', 'out', 'A', 993, 631, '', ['TCE470'], 0, 2],
+    ['oB', 'out', 'B', 994, 1312, '', ['TCE470'], 0, 2],
+    ['oC', 'out', 'C', 2067, oC[2], '', ['TCE470'], 0, 2],
+    ['oD', 'out', 'D', 2067, oD[2], '', ['TCE470'], 0, 2]
+  );
+  w.push(
+    [
+      oA[0],
+      [
+        [oA[1], oA[2]],
+        [1068, oA[2]],
+        [1068, 590],
+        [866, 590],
+        [866, 631],
+        [966, 631]
+      ]
+    ],
+    [
+      oB[0],
+      [
+        [oB[1], oB[2]],
+        [1068, oB[2]],
+        [1068, 1271],
+        [866, 1271],
+        [866, 1312],
+        [967, 1312]
+      ]
+    ],
+    [
+      oC[0],
+      [
+        [oC[1], oC[2]],
+        [2040, oC[2]]
+      ]
+    ],
+    [
+      oD[0],
+      [
+        [oD[1], oD[2]],
+        [2040, oD[2]]
+      ]
+    ]
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE451',
+    title: 'INDICATION FOR VALVE(2)',
+    page: 163,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [166, 85, 2217, 1549],
+    c,
+    b,
+    m,
+    w,
+    t: [...t, [235, 1523, 'CONTROLLER:'], [395, 1523, 'EHG+MD'], [675, 1501, 'TRIGGER  :'], [675, 1521, 'CYCLE(ms):30']]
+  });
+})();
 /* TCE500 SIMULATOR(1) (331DM09784 page 173, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
    rendered 2296 wide. The turbine simulator of the EHG controller, block by block as drawn:
    - CV(A) + CV(B) POSITION (TCE125 / TCE127) = ADD 001; through G A002 (K 1.0) and FG A003 (table *1) to CV of TURBINE SIM.MT2 B004
@@ -24644,6 +24844,177 @@ const TCS_DESC = {
     v,
     t
   });
+})();
+/* TCE501 SIMULATOR(2) (331DM09784 page 174, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. The valve simulators of the EHG controller, as drawn:
+   - Four SIMCV blocks (ICV(A) A002, ICV(B) A007, MSV(A) A014, MSV(B) A022; LME271, K 20.0, B 0.00 %, TI 2.0 s, 0-100 %): X1 = the
+     POSITION DEMAND, X2 = the real POSITION (each through its FTR), SW = the forced close. Y1 through LMS (-3 to 103 %) = the POSITION
+     SIM., Y2 through LMS (-200 to 200 %) = the SERVO AMP OUTPUT SIM.
+   - ICV FORCED CLOSE (G of TCE053) through NOT 011, or OFF(0), = OR 012: SW of the two ICV blocks; MSV FORCED CLOSE (H of TCE053, BTR
+     018) through NOT 019, or OFF(0), = OR 020: SW of the two MSV blocks.
+   - RSV(A): ICV(A) FA (D of TCE227) and CRV(A) TEST (B of TCE226) through TD B035 (2.0 s) = A 034, or TURBINE TRIP (ref, TCE053) =
+     OR 026, which switches ASW 028 from SG B027 (0.0) to SG B030 (100.0); RL B029 (10 %/s, INITIAL on its top) = RSV(A) POSITION
+     SIM, E1 to TCE132 / TCE133. RSV(B) the same with ICV(B) FA (D of TCE228), CRV(B) TEST (E of TCE226), TD B036, A 037, OR 031,
+     ASW 032 and RL B033: E2 to TCE134 / TCE135. INITIAL (ref, TCE050) is also on the tops (C) of TD B035 / B036.
+   The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const h = 28.76,
+    I = cx => cx - h,
+    O = cx => cx + h,
+    T = cy => cy - 21.57 /* top of a block */,
+    k = [],
+    c = [],
+    m = [],
+    b = [],
+    w = [],
+    j = [],
+    t = [];
+  /* one SIMCV row: top y, left x of the block, its row number r (0-3) and its words */
+  const row = (r, top, X, d, inLetter, inSheet, posSheet, outs, nos, words) => {
+    const y1 = top + 31,
+      y2 = top + 53,
+      yp = top + 94,
+      sw = top + 76,
+      cx = X + 287 - 2 * r /* LMS */,
+      bend = X + 234 - r,
+      cxo = 2085 - 2 * r,
+      [f1, f2, blk, l1, l2] = nos,
+      key = 'sim' + r;
+    c.push(
+      ['iD' + r, 'in', inLetter, 308 - 3 * r, y1, '', [inSheet]],
+      ['iP' + r, 'in', 'P', 306 - 3 * r, yp, '', [posSheet]],
+      ['oY1' + r, 'out', outs[0], cxo, y1, '', outs[1]],
+      ['oY2' + r, 'out', outs[2], cxo - 1, y1 + 107, '', ['-']]
+    );
+    m.push([key, 'SIMCV', '', X, top, 86, 106, ['X1', 'X2', 'SW'], ['Y1', 'Y2'], blk,
+      [[X + 4, top + 162, 'K :20.0'], [X + 4, top + 183, 'B :0.00%'], [X + 4, top + 204, 'TI:2.0S'], [X + 4, top + 226, 'HL:100.0%'], [X + 4, top + 247, 'LL:0.0%']],
+      [[y1, y2, sw], [y1, y2]]]);
+    b.push(
+      ['ftr' + f1, 'o:FTR', f1, 906 - 3 * r, y1],
+      ['ftr' + f2, 'o:FTR', f2, 906 - 3 * r, yp],
+      ['lms' + l1, 'LMS', l1, cx, y1 + 11, ['HL:103.0%', 'LL:-3.0%']],
+      ['lms' + l2, 'LMS', l2, cx - 1, y1 + 118, ['HL:200.0%', 'LL:-200.0%']]
+    );
+    w.push(
+      ['iD' + r, [[308 - 3 * r + 27, y1], [X, y1]], 1],
+      ['iP' + r, [[306 - 3 * r + 27, yp], [X - 85, yp], [X - 85, y2], [X, y2]], 1],
+      [key + '.Y1', [[X + 86, y1], [I(cx), y1]], 1],
+      [key + '.Y2', [[X + 86, y2], [bend, y2], [bend, y1 + 107], [I(cx - 1), y1 + 107]], 1],
+      ['lms' + l1, [[O(cx), y1], [cxo - 27, y1]], 1],
+      ['lms' + l2, [[O(cx - 1), y1 + 107], [cxo - 28, y1 + 107]], 1]
+    );
+    t.push(
+      [308 - 3 * r + 33, y1 - 6, words[0]],
+      [306 - 3 * r + 33, yp - 6, words[1]],
+      [1693 - 3 * r, y1 - 5, words[2]],
+      [1693 - 3 * r, y1 + 102, words[3]],
+      [X + 43, top + 134, '(LME271)', 1]
+    );
+  };
+  row(0, 127, 1086, 0, 'A', 'TCE214', 'TCE129', ['C1', ['TCE128', 'TCE129'], 'C2'], ['001', '004', 'A002', 'B003', 'B005'],
+    ['ICV(A) POSITION DEMAND', 'ICV(A) POSITION', 'ICV(A) POSITION SIM.', 'ICV(A) SERVO AMP OUTPUT SIM.']);
+  row(1, 394, 1083, 0, 'B', 'TCE214', 'TCE131', ['D1', ['TCE130', 'TCE131'], 'D2'], ['006', '009', 'A007', 'B008', 'B010'],
+    ['ICV(B) POSITION DEMAND', 'ICV(B) POSITION', 'ICV(B) POSITION SIM.', 'ICV(B) SERVO AMP OUTPUT SIM.']);
+  row(2, 660, 1080, 0, 'A', 'TCE210', 'TCE121', ['A1', ['TCE120', 'TCE121'], 'A2'], ['013', '016', 'A014', 'B015', 'B017'],
+    ['MSV(A) POSITION DEMAND', 'MSV(A) POSITION', 'MSV(A) POSITION SIM.', 'MSV(A) SERVO AMP OUTPUT SIM.']);
+  row(3, 926, 1076, 0, 'A', 'TCE211', 'TCE123', ['B1', ['TCE122', 'TCE123'], 'B2'], ['021', '024', 'A022', 'B023', 'B025'],
+    ['MSV(B) POSITION DEMAND', 'MSV(B) POSITION', 'MSV(B) POSITION SIM.', 'MSV(B) SERVO AMP OUTPUT SIM.']);
+  /* the forced closes */
+  k.push(['kOff', 431, 892, 'OFF(0)', 'sys.ref'], ['kInit', 257, 1082, 'INITIAL', 'ref'], ['kTrip', 257, 1158, 'TURBINE TRIP', 'ref']);
+  c.push(
+    ['iIcvFc', 'in', 'G', 299, 563, '', ['TCE053']],
+    ['iMsvFc', 'in', 'H', 297, 839, '', ['TCE053']],
+    ['iFaA', 'in', 'D', 294, 1221, '', ['TCE227']],
+    ['iCrvA', 'in', 'B', 292, 1263, '', ['TCE226']],
+    ['iCrvB', 'in', 'E', 291, 1348, '', ['TCE226']],
+    ['iFaB', 'in', 'D', 291, 1423, '', ['TCE228']],
+    ['oE1', 'out', 'E1', 1370, 1254, '', ['TCE132', 'TCE133']],
+    ['oE2', 'out', 'E2', 1368, 1435, '', ['TCE134', 'TCE135']]
+  );
+  b.push(
+    ['not011', 'NOT', '011', 781.5, 574],
+    ['or012', 'OR', '012', 964, 574],
+    ['btr018', 'o:BTR', '018', 673, 839],
+    ['not019', 'NOT', '019', 778.5, 850],
+    ['or020', 'OR', '020', 961, 850],
+    /* RSV simulators */
+    ['tdB035', 'TD', 'B035', 615, 1274, ['TD:2.0S']],
+    ['and034', 'A', '034', 700, 1232],
+    ['or026', 'OR', '026', 796.5, 1169],
+    ['sgB027', 'SG', 'B027', 796, 1264.5, ['K:0.0']],
+    ['sgB030', 'SG', 'B030', 794.5, 1339, ['K:100.0']],
+    ['asw028', 'ASW', '028', 946, 1264.5],
+    ['rlB029', 'RL', 'B029', 1062.5, 1265, ['RI:10.0%/S', 'RD:10.0%/S']],
+    ['tdB036', 'TD', 'B036', 613.5, 1359, ['TD:2.0S']],
+    ['and037', 'A', '037', 698, 1434],
+    ['or031', 'OR', '031', 793, 1412],
+    ['asw032', 'ASW', '032', 943.5, 1445.5],
+    ['rlB033', 'RL', 'B033', 1060.5, 1446, ['RI:10.0%/S', 'RD:10.0%/S']]
+  );
+  w.push(
+    ['iIcvFc', [[326, 563], [I(781.5), 563]]],
+    ['not011', [[O(781.5), 563], [I(964), 563]]],
+    ['kOff', [[667, 892], [853, 892], [853, 585], [I(964), 585]]],
+    ['kOff', [[853, 861], [I(961), 861]]],
+    ['or012', [[O(964), 563], [1017, 563], [1017, 203], [1086, 203]]],
+    ['or012', [[1017, 470], [1083, 470]]],
+    ['iMsvFc', [[324, 839], [I(778.5), 839]]],
+    ['not019', [[O(778.5), 839], [I(961), 839]]],
+    ['or020', [[O(961), 839], [1013, 839], [1013, 736], [1080, 736]]],
+    ['or020', [[1013, 839], [1013, 1002], [1076, 1002]]],
+    /* RSV(A) */
+    ['iFaA', [[321, 1221], [I(700), 1221]]],
+    ['iCrvA', [[319, 1263], [I(615), 1263]]],
+    ['tdB035', [[O(615), 1263], [657, 1263], [657, 1243], [I(700), 1243]]],
+    ['and034', [[O(700), 1221], [756, 1221], [756, 1180], [I(796.5), 1180]]],
+    ['kTrip', [[494, 1158], [I(796.5), 1158]]],
+    ['kTrip', [[743, 1158], [743, 1401], [I(793), 1401]]],
+    ['or026', [[O(796.5), 1158], [948, 1158], [948, T(1264.5)]]],
+    ['sgB027', [[O(796), 1253.5], [I(946), 1253.5]], 1],
+    ['sgB027', [[870, 1253.5], [870, 1434.5], [I(943.5), 1434.5]], 1],
+    ['sgB030', [[O(794.5), 1328], [892, 1328], [892, 1275.5], [I(946), 1275.5]], 1],
+    ['sgB030', [[847.5, 1328], [847.5, 1456.5], [I(943.5), 1456.5]], 1],
+    ['asw028', [[O(946), 1253.5], [I(1062.5), 1253.5]], 1],
+    ['rlB029', [[O(1062.5), 1253.5], [1343, 1253.5]], 1],
+    /* RSV(B) */
+    ['iCrvB', [[318, 1348], [I(613.5), 1348]]],
+    ['tdB036', [[O(613.5), 1348], [656, 1348], [656, 1445], [I(698), 1445]]],
+    ['iFaB', [[318, 1423], [I(698), 1423]]],
+    ['and037', [[O(698), 1423], [I(793), 1423]]],
+    ['or031', [[O(793), 1401], [945.5, 1401], [945.5, T(1445.5)]]],
+    ['asw032', [[O(943.5), 1434.5], [I(1060.5), 1434.5]], 1],
+    ['rlB033', [[O(1060.5), 1434.5], [1341, 1434.5]], 1],
+    /* INITIAL */
+    ['kInit', [[494.5, 1082], [1063, 1082], [1063, T(1265)]]],
+    ['kInit', [[1011, 1082], [1011, 1404], [1061, 1404], [1061, T(1446)]]],
+    ['kInit', [[564, 1082], [564, 1241], [615, 1241], [615, T(1274)]]],
+    ['kInit', [[564, 1241], [564, 1326], [613.5, 1326], [613.5, T(1359)]]]
+  );
+  j.push([853, 861], [1017, 470], [1013, 839], [743, 1158], [870, 1253.5], [847.5, 1328], [1011, 1082], [564, 1082], [564, 1241]);
+  t.push(
+    [335, 559, 'ICV FORCED CLOSE'],
+    [330, 834, 'MSV FORCED CLOSE'],
+    [325, 1215, 'ICV(A) FA'],
+    [325, 1258, 'CRV(A) TEST'],
+    [324, 1343, 'CRV(B) TEST'],
+    [322, 1418, 'ICV(B) FA'],
+    [434, 1116, '(TCE050)', 1],
+    [434, 1190, '(TCE053)', 1],
+    [571, 1259, 'C', 1],
+    [571, 1345, 'C', 1],
+    [1019, 1250, 'T', 1],
+    [1017, 1431, 'T', 1],
+    [1129, 1252, 'RSV(A) POSITION SIM'],
+    [1127, 1433, 'RSV(B) POSITION SIM'],
+    [227, 1524, 'CONTROLLER:'],
+    [387, 1524, 'EHG+MD'],
+    [650, 1500, 'TRIGGER  :'],
+    [650, 1526, 'CYCLE(ms):30']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({ id: 'TCE501', title: 'SIMULATOR(2)', page: 174, ctl: 'EHG+MD', cycle: 30, f: [178, 86, 2226, 1540], k, c, m, b, w, j, t });
 })();
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -151654,7 +152025,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 5104837'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build eb42e0c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -178278,6 +178649,7 @@ const TCS_DESC = {
   TCE305: 'Control oil pump (TB-21, 22): the standby pump starts on low discharge pressure of the running pump.',
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
   TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
+  TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
@@ -178431,7 +178803,9 @@ const TCS_DESC = {
   TCA835:
     'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.',
   TCE500:
-    'Turbine simulator: the CV and ICV positions drive the turbine simulators MT2 (IP START) and MT1 (HP START); IP START picks which one gives the simulated speeds (to TCE143), the HP first stage pressure (to TCE206) and the HP exhaust pressure; with 52G closed the generator load simulator gives the simulated MW (to TCE070 / 101 / 179); the CCS simulator gives the target MW demand (held by LOAD HOLD COMMAND, to TCE103); plus the IP extraction flow and MOP(A) discharge pressure simulators.'
+    'Turbine simulator: the CV and ICV positions drive the turbine simulators MT2 (IP START) and MT1 (HP START); IP START picks which one gives the simulated speeds (to TCE143), the HP first stage pressure (to TCE206) and the HP exhaust pressure; with 52G closed the generator load simulator gives the simulated MW (to TCE070 / 101 / 179); the CCS simulator gives the target MW demand (held by LOAD HOLD COMMAND, to TCE103); plus the IP extraction flow and MOP(A) discharge pressure simulators.',
+  TCE501:
+    'Valve simulators: four SIMCV blocks give the simulated ICV(A), ICV(B), MSV(A) and MSV(B) positions and servo amp outputs from the position demands (TCE214 / 210 / 211), forced closed by ICV FORCED CLOSE or MSV FORCED CLOSE (TCE053); RSV(A) and RSV(B) position simulators ramp to 100 % on TURBINE TRIP or on ICV FA with CRV TEST (TCE226 / 227 / 228), reset by INITIAL (TCE050).'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -196398,6 +196772,205 @@ const TCS_DESC = {
   });
 })();
 
+/* ---- src/digital/tce/TCE451.js ---- */
+/* TCE451 INDICATION FOR VALVE(2) (331DM09784 page 163, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide, the scan skew taken out (x + 0.012 (y - 800), y - 0.0047 (x - 1100)). Four HMI INDI FOR VALVE blocks (LME125):
+   ICV(A) nZT-STn905-AA, ICV(B) nZT-STn905-BA, RSV(A) nZT-STn905-AB, RSV(B) nZT-STn905-BB. Each takes sixteen signals from the valve sheets
+   (TCE128 to TCE135): the position and positions (1) to (3) (FTR, heavy lines), the position ABN Q, the ABN_Q of each channel, the ABN.
+   (ANN) and the ABN of each channel (BTR). The ABN.O of each block goes to TCE470 (A, B, C, D). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    m = [],
+    w = [],
+    t = [];
+  const PINS = [
+      'POS',
+      'POS1',
+      'POS2',
+      'POS3',
+      'QUA1',
+      'QUA2',
+      'QUA3',
+      'QUAA',
+      'QUAB',
+      'QUAC',
+      'ABN1',
+      'ABN2',
+      'ABN3',
+      'ABNA',
+      'ABNB',
+      'ABNC'
+    ],
+    LET = ['P', 'A1', 'A2', 'A1', 'K1', 'K2', 'K1', 'M1', 'M2', 'M3', 'C1', 'C2', 'C3', 'L1', 'L2', 'L3'],
+    /* the sheet each connector comes from: 0 = the first sheet of the pair, 1 = the second */
+    REF = [1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+    /* the x where the line of each row turns to its pin (rows 1 to 15; row 0 runs straight) */
+    STAIR = [0, 624, 635, 645, ...Array.from({ length: 12 }, (_, k) => Math.round(655 + 10.75 * k))],
+    rowY = i => Math.round(161.5 + 42.6 * i);
+  /* one block and its sixteen rows: side (0 left, 1 right), group (0 top, 1 bottom), valve, tag, the two sheets, block no., marks, names */
+  const group = (side, gr, valve, tag, sheets, no, marks, names) => {
+    const dx = (side ? 894 : 0) + 7,
+      top = gr ? 812 : 130,
+      bx = 794 + dx,
+      pin = p => Math.round((gr ? 843.5 : 162) + 21.3 * p),
+      cx = 292 + dx,
+      key = 'm' + no;
+    m.push([
+      key,
+      'HMI INDI FOR VALVE',
+      '',
+      bx,
+      top,
+      235,
+      383,
+      PINS,
+      ['ABN.O'],
+      no,
+      [
+        [bx, top - 6, '(' + valve + ')'],
+        [bx + 138, top - 6, tag],
+        [bx + 50, top + 405, '(LME125)']
+      ],
+      [PINS.map((_, p) => pin(p)), [pin(4)]]
+    ]);
+    names.forEach((nm, j) => {
+      const i = gr * 16 + j,
+        y = j ? rowY(i) : pin(0),
+        k = (side ? 'r' : 'l') + i,
+        two = Array.isArray(nm);
+      c.push([k, 'in', LET[j], cx, y, two ? nm[1] : nm, [sheets[REF[j]]]]);
+      if (two) t.push([cx + 33, y - 31, nm[0], 0, 2.05]);
+      b.push(['f' + marks[j], j < 4 ? 'o:FTR' : 'o:BTR', marks[j], 581.5 + dx, y]);
+      const heavy = j < 4 ? 1 : 0;
+      if (!j)
+        w.push([
+          k,
+          [
+            [cx + 27, y],
+            [bx, y]
+          ],
+          heavy
+        ]);
+      else
+        w.push([
+          k,
+          [
+            [cx + 27, y],
+            [STAIR[j] + dx, y],
+            [STAIR[j] + dx, pin(j)],
+            [bx, pin(j)]
+          ],
+          heavy
+        ]);
+    });
+    return [key + '.ABN.O', bx + 235, pin(4)];
+  };
+  const num = n => String(n).padStart(3, '0'),
+    marks = (a, b4) =>
+      [...a, ...Array.from({ length: 12 }, (_, k) => num(b4 + 2 * k))].map(x => (typeof x === 'number' ? num(x) : x));
+  const names = (v, ab1) => [
+    v + ' POSITION',
+    v + ' POSITION(1)',
+    v + ' POSITION(2)',
+    v + ' POSITION(3)',
+    ab1 ? v + ' POSITION ABN(1) Q' : [v + ' POSITION', 'ABN(1) Q'],
+    [v + ' POSITION', 'ABN(2) Q'],
+    [v + ' POSITION', 'ABN(3) Q'],
+    v + '(A) ABN_Q',
+    v + '(B) ABN_Q',
+    v + '(C) ABN_Q',
+    [v + '(1) ABN.', '(ANN)'],
+    [v + '(2) ABN.', '(ANN)'],
+    [v + '(3) ABN.', '(ANN)'],
+    v + '(A) ABN',
+    v + '(B) ABN',
+    v + '(C) ABN'
+  ];
+  const oA = group(
+      0,
+      0,
+      'ICV(A)',
+      'nZT-STn905-AA',
+      ['TCE128', 'TCE129'],
+      '002',
+      marks([1, 5, 7, 9], 11),
+      names('ICV(A)')
+    ),
+    oB = group(
+      0,
+      1,
+      'ICV(B)',
+      'nZT-STn905-BA',
+      ['TCE130', 'TCE131'],
+      '036',
+      marks([35, 39, 41, 43], 45),
+      names('ICV(B)')
+    ),
+    oC = group(1, 0, 'RSV(A)', 'nZT-STn905-AB', ['TCE132', 'TCE133'], '004', marks([3, 6, 8, 10], 12), names('RSV(A)')),
+    oD = group(1, 1, 'RSV(B)', 'nZT-STn905-BB', ['TCE134', 'TCE135'], '038', marks([37, 40, 42, 44], 46), names('RSV(B)'));
+  /* the ABN.O of the ICV blocks go round under the block to A / B; those of the RSV blocks straight to C / D */
+  c.push(
+    ['oA', 'out', 'A', 993, 631, '', ['TCE470'], 0, 2],
+    ['oB', 'out', 'B', 994, 1312, '', ['TCE470'], 0, 2],
+    ['oC', 'out', 'C', 2067, oC[2], '', ['TCE470'], 0, 2],
+    ['oD', 'out', 'D', 2067, oD[2], '', ['TCE470'], 0, 2]
+  );
+  w.push(
+    [
+      oA[0],
+      [
+        [oA[1], oA[2]],
+        [1068, oA[2]],
+        [1068, 590],
+        [866, 590],
+        [866, 631],
+        [966, 631]
+      ]
+    ],
+    [
+      oB[0],
+      [
+        [oB[1], oB[2]],
+        [1068, oB[2]],
+        [1068, 1271],
+        [866, 1271],
+        [866, 1312],
+        [967, 1312]
+      ]
+    ],
+    [
+      oC[0],
+      [
+        [oC[1], oC[2]],
+        [2040, oC[2]]
+      ]
+    ],
+    [
+      oD[0],
+      [
+        [oD[1], oD[2]],
+        [2040, oD[2]]
+      ]
+    ]
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE451',
+    title: 'INDICATION FOR VALVE(2)',
+    page: 163,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [166, 85, 2217, 1549],
+    c,
+    b,
+    m,
+    w,
+    t: [...t, [235, 1523, 'CONTROLLER:'], [395, 1523, 'EHG+MD'], [675, 1501, 'TRIGGER  :'], [675, 1521, 'CYCLE(ms):30']]
+  });
+})();
+
 /* ---- src/digital/tce/TCE500.js ---- */
 /* TCE500 SIMULATOR(1) (331DM09784 page 173, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
    rendered 2296 wide. The turbine simulator of the EHG controller, block by block as drawn:
@@ -196698,6 +197271,179 @@ const TCS_DESC = {
     v,
     t
   });
+})();
+
+/* ---- src/digital/tce/TCE501.js ---- */
+/* TCE501 SIMULATOR(2) (331DM09784 page 174, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. The valve simulators of the EHG controller, as drawn:
+   - Four SIMCV blocks (ICV(A) A002, ICV(B) A007, MSV(A) A014, MSV(B) A022; LME271, K 20.0, B 0.00 %, TI 2.0 s, 0-100 %): X1 = the
+     POSITION DEMAND, X2 = the real POSITION (each through its FTR), SW = the forced close. Y1 through LMS (-3 to 103 %) = the POSITION
+     SIM., Y2 through LMS (-200 to 200 %) = the SERVO AMP OUTPUT SIM.
+   - ICV FORCED CLOSE (G of TCE053) through NOT 011, or OFF(0), = OR 012: SW of the two ICV blocks; MSV FORCED CLOSE (H of TCE053, BTR
+     018) through NOT 019, or OFF(0), = OR 020: SW of the two MSV blocks.
+   - RSV(A): ICV(A) FA (D of TCE227) and CRV(A) TEST (B of TCE226) through TD B035 (2.0 s) = A 034, or TURBINE TRIP (ref, TCE053) =
+     OR 026, which switches ASW 028 from SG B027 (0.0) to SG B030 (100.0); RL B029 (10 %/s, INITIAL on its top) = RSV(A) POSITION
+     SIM, E1 to TCE132 / TCE133. RSV(B) the same with ICV(B) FA (D of TCE228), CRV(B) TEST (E of TCE226), TD B036, A 037, OR 031,
+     ASW 032 and RL B033: E2 to TCE134 / TCE135. INITIAL (ref, TCE050) is also on the tops (C) of TD B035 / B036.
+   The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const h = 28.76,
+    I = cx => cx - h,
+    O = cx => cx + h,
+    T = cy => cy - 21.57 /* top of a block */,
+    k = [],
+    c = [],
+    m = [],
+    b = [],
+    w = [],
+    j = [],
+    t = [];
+  /* one SIMCV row: top y, left x of the block, its row number r (0-3) and its words */
+  const row = (r, top, X, d, inLetter, inSheet, posSheet, outs, nos, words) => {
+    const y1 = top + 31,
+      y2 = top + 53,
+      yp = top + 94,
+      sw = top + 76,
+      cx = X + 287 - 2 * r /* LMS */,
+      bend = X + 234 - r,
+      cxo = 2085 - 2 * r,
+      [f1, f2, blk, l1, l2] = nos,
+      key = 'sim' + r;
+    c.push(
+      ['iD' + r, 'in', inLetter, 308 - 3 * r, y1, '', [inSheet]],
+      ['iP' + r, 'in', 'P', 306 - 3 * r, yp, '', [posSheet]],
+      ['oY1' + r, 'out', outs[0], cxo, y1, '', outs[1]],
+      ['oY2' + r, 'out', outs[2], cxo - 1, y1 + 107, '', ['-']]
+    );
+    m.push([key, 'SIMCV', '', X, top, 86, 106, ['X1', 'X2', 'SW'], ['Y1', 'Y2'], blk,
+      [[X + 4, top + 162, 'K :20.0'], [X + 4, top + 183, 'B :0.00%'], [X + 4, top + 204, 'TI:2.0S'], [X + 4, top + 226, 'HL:100.0%'], [X + 4, top + 247, 'LL:0.0%']],
+      [[y1, y2, sw], [y1, y2]]]);
+    b.push(
+      ['ftr' + f1, 'o:FTR', f1, 906 - 3 * r, y1],
+      ['ftr' + f2, 'o:FTR', f2, 906 - 3 * r, yp],
+      ['lms' + l1, 'LMS', l1, cx, y1 + 11, ['HL:103.0%', 'LL:-3.0%']],
+      ['lms' + l2, 'LMS', l2, cx - 1, y1 + 118, ['HL:200.0%', 'LL:-200.0%']]
+    );
+    w.push(
+      ['iD' + r, [[308 - 3 * r + 27, y1], [X, y1]], 1],
+      ['iP' + r, [[306 - 3 * r + 27, yp], [X - 85, yp], [X - 85, y2], [X, y2]], 1],
+      [key + '.Y1', [[X + 86, y1], [I(cx), y1]], 1],
+      [key + '.Y2', [[X + 86, y2], [bend, y2], [bend, y1 + 107], [I(cx - 1), y1 + 107]], 1],
+      ['lms' + l1, [[O(cx), y1], [cxo - 27, y1]], 1],
+      ['lms' + l2, [[O(cx - 1), y1 + 107], [cxo - 28, y1 + 107]], 1]
+    );
+    t.push(
+      [308 - 3 * r + 33, y1 - 6, words[0]],
+      [306 - 3 * r + 33, yp - 6, words[1]],
+      [1693 - 3 * r, y1 - 5, words[2]],
+      [1693 - 3 * r, y1 + 102, words[3]],
+      [X + 43, top + 134, '(LME271)', 1]
+    );
+  };
+  row(0, 127, 1086, 0, 'A', 'TCE214', 'TCE129', ['C1', ['TCE128', 'TCE129'], 'C2'], ['001', '004', 'A002', 'B003', 'B005'],
+    ['ICV(A) POSITION DEMAND', 'ICV(A) POSITION', 'ICV(A) POSITION SIM.', 'ICV(A) SERVO AMP OUTPUT SIM.']);
+  row(1, 394, 1083, 0, 'B', 'TCE214', 'TCE131', ['D1', ['TCE130', 'TCE131'], 'D2'], ['006', '009', 'A007', 'B008', 'B010'],
+    ['ICV(B) POSITION DEMAND', 'ICV(B) POSITION', 'ICV(B) POSITION SIM.', 'ICV(B) SERVO AMP OUTPUT SIM.']);
+  row(2, 660, 1080, 0, 'A', 'TCE210', 'TCE121', ['A1', ['TCE120', 'TCE121'], 'A2'], ['013', '016', 'A014', 'B015', 'B017'],
+    ['MSV(A) POSITION DEMAND', 'MSV(A) POSITION', 'MSV(A) POSITION SIM.', 'MSV(A) SERVO AMP OUTPUT SIM.']);
+  row(3, 926, 1076, 0, 'A', 'TCE211', 'TCE123', ['B1', ['TCE122', 'TCE123'], 'B2'], ['021', '024', 'A022', 'B023', 'B025'],
+    ['MSV(B) POSITION DEMAND', 'MSV(B) POSITION', 'MSV(B) POSITION SIM.', 'MSV(B) SERVO AMP OUTPUT SIM.']);
+  /* the forced closes */
+  k.push(['kOff', 431, 892, 'OFF(0)', 'sys.ref'], ['kInit', 257, 1082, 'INITIAL', 'ref'], ['kTrip', 257, 1158, 'TURBINE TRIP', 'ref']);
+  c.push(
+    ['iIcvFc', 'in', 'G', 299, 563, '', ['TCE053']],
+    ['iMsvFc', 'in', 'H', 297, 839, '', ['TCE053']],
+    ['iFaA', 'in', 'D', 294, 1221, '', ['TCE227']],
+    ['iCrvA', 'in', 'B', 292, 1263, '', ['TCE226']],
+    ['iCrvB', 'in', 'E', 291, 1348, '', ['TCE226']],
+    ['iFaB', 'in', 'D', 291, 1423, '', ['TCE228']],
+    ['oE1', 'out', 'E1', 1370, 1254, '', ['TCE132', 'TCE133']],
+    ['oE2', 'out', 'E2', 1368, 1435, '', ['TCE134', 'TCE135']]
+  );
+  b.push(
+    ['not011', 'NOT', '011', 781.5, 574],
+    ['or012', 'OR', '012', 964, 574],
+    ['btr018', 'o:BTR', '018', 673, 839],
+    ['not019', 'NOT', '019', 778.5, 850],
+    ['or020', 'OR', '020', 961, 850],
+    /* RSV simulators */
+    ['tdB035', 'TD', 'B035', 615, 1274, ['TD:2.0S']],
+    ['and034', 'A', '034', 700, 1232],
+    ['or026', 'OR', '026', 796.5, 1169],
+    ['sgB027', 'SG', 'B027', 796, 1264.5, ['K:0.0']],
+    ['sgB030', 'SG', 'B030', 794.5, 1339, ['K:100.0']],
+    ['asw028', 'ASW', '028', 946, 1264.5],
+    ['rlB029', 'RL', 'B029', 1062.5, 1265, ['RI:10.0%/S', 'RD:10.0%/S']],
+    ['tdB036', 'TD', 'B036', 613.5, 1359, ['TD:2.0S']],
+    ['and037', 'A', '037', 698, 1434],
+    ['or031', 'OR', '031', 793, 1412],
+    ['asw032', 'ASW', '032', 943.5, 1445.5],
+    ['rlB033', 'RL', 'B033', 1060.5, 1446, ['RI:10.0%/S', 'RD:10.0%/S']]
+  );
+  w.push(
+    ['iIcvFc', [[326, 563], [I(781.5), 563]]],
+    ['not011', [[O(781.5), 563], [I(964), 563]]],
+    ['kOff', [[667, 892], [853, 892], [853, 585], [I(964), 585]]],
+    ['kOff', [[853, 861], [I(961), 861]]],
+    ['or012', [[O(964), 563], [1017, 563], [1017, 203], [1086, 203]]],
+    ['or012', [[1017, 470], [1083, 470]]],
+    ['iMsvFc', [[324, 839], [I(778.5), 839]]],
+    ['not019', [[O(778.5), 839], [I(961), 839]]],
+    ['or020', [[O(961), 839], [1013, 839], [1013, 736], [1080, 736]]],
+    ['or020', [[1013, 839], [1013, 1002], [1076, 1002]]],
+    /* RSV(A) */
+    ['iFaA', [[321, 1221], [I(700), 1221]]],
+    ['iCrvA', [[319, 1263], [I(615), 1263]]],
+    ['tdB035', [[O(615), 1263], [657, 1263], [657, 1243], [I(700), 1243]]],
+    ['and034', [[O(700), 1221], [756, 1221], [756, 1180], [I(796.5), 1180]]],
+    ['kTrip', [[494, 1158], [I(796.5), 1158]]],
+    ['kTrip', [[743, 1158], [743, 1401], [I(793), 1401]]],
+    ['or026', [[O(796.5), 1158], [948, 1158], [948, T(1264.5)]]],
+    ['sgB027', [[O(796), 1253.5], [I(946), 1253.5]], 1],
+    ['sgB027', [[870, 1253.5], [870, 1434.5], [I(943.5), 1434.5]], 1],
+    ['sgB030', [[O(794.5), 1328], [892, 1328], [892, 1275.5], [I(946), 1275.5]], 1],
+    ['sgB030', [[847.5, 1328], [847.5, 1456.5], [I(943.5), 1456.5]], 1],
+    ['asw028', [[O(946), 1253.5], [I(1062.5), 1253.5]], 1],
+    ['rlB029', [[O(1062.5), 1253.5], [1343, 1253.5]], 1],
+    /* RSV(B) */
+    ['iCrvB', [[318, 1348], [I(613.5), 1348]]],
+    ['tdB036', [[O(613.5), 1348], [656, 1348], [656, 1445], [I(698), 1445]]],
+    ['iFaB', [[318, 1423], [I(698), 1423]]],
+    ['and037', [[O(698), 1423], [I(793), 1423]]],
+    ['or031', [[O(793), 1401], [945.5, 1401], [945.5, T(1445.5)]]],
+    ['asw032', [[O(943.5), 1434.5], [I(1060.5), 1434.5]], 1],
+    ['rlB033', [[O(1060.5), 1434.5], [1341, 1434.5]], 1],
+    /* INITIAL */
+    ['kInit', [[494.5, 1082], [1063, 1082], [1063, T(1265)]]],
+    ['kInit', [[1011, 1082], [1011, 1404], [1061, 1404], [1061, T(1446)]]],
+    ['kInit', [[564, 1082], [564, 1241], [615, 1241], [615, T(1274)]]],
+    ['kInit', [[564, 1241], [564, 1326], [613.5, 1326], [613.5, T(1359)]]]
+  );
+  j.push([853, 861], [1017, 470], [1013, 839], [743, 1158], [870, 1253.5], [847.5, 1328], [1011, 1082], [564, 1082], [564, 1241]);
+  t.push(
+    [335, 559, 'ICV FORCED CLOSE'],
+    [330, 834, 'MSV FORCED CLOSE'],
+    [325, 1215, 'ICV(A) FA'],
+    [325, 1258, 'CRV(A) TEST'],
+    [324, 1343, 'CRV(B) TEST'],
+    [322, 1418, 'ICV(B) FA'],
+    [434, 1116, '(TCE050)', 1],
+    [434, 1190, '(TCE053)', 1],
+    [571, 1259, 'C', 1],
+    [571, 1345, 'C', 1],
+    [1019, 1250, 'T', 1],
+    [1017, 1431, 'T', 1],
+    [1129, 1252, 'RSV(A) POSITION SIM'],
+    [1127, 1433, 'RSV(B) POSITION SIM'],
+    [227, 1524, 'CONTROLLER:'],
+    [387, 1524, 'EHG+MD'],
+    [650, 1500, 'TRIGGER  :'],
+    [650, 1526, 'CYCLE(ms):30']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({ id: 'TCE501', title: 'SIMULATOR(2)', page: 174, ctl: 'EHG+MD', cycle: 30, f: [178, 86, 2226, 1540], k, c, m, b, w, j, t });
 })();
 
 /* ---- src/digital/tce/TCE172.js ---- */
@@ -345271,7 +346017,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 5104837'));
+    row('Version', E('span', 'scsver', ver + ' · build eb42e0c'));
   }
   function openSet(near) {
     if (!set) {
