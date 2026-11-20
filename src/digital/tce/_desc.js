@@ -250,6 +250,8 @@ const TCS_DESC = {
     '230 kV breaker 52L (2/2): the permissives for synchronizing, the auto synchronizer start and ASD2 with its pulses, the initial manual close for the first power receive, and the 52L close order to G-2A.',
   'G-3':
     'AVR, governor and other operation: voltage / speed raise-lower to the AVR and governor (manual or ASD1/ASD2), the manual close of 52G / 52L with the selector, 43-25 and the operation location, the open orders and the auto synchronizer start',
+  'G-4':
+    'Field switch (41) logic: 41 close with ES and 52G open, rated speed, no trip demand and the excitation start; 41 open on the protection trip demands and AVR major trouble; AVR on / off; 41 and AVR states to the other sheets, ATS, DCS, annunciator and SOE',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
