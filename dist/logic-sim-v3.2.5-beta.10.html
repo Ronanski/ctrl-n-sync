@@ -6925,6 +6925,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [163, 82, 2221, 1547],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iA4: 'g52', iA10: 'l52o', iA2: 'trip' },
   k: [
     ['kInit', 282, 139, 'INITIAL', 'ref'],
     ['kAnn', 1298, 201, 'ANN RESET', 'ref'],
@@ -7185,6 +7187,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [173, 84, 2226, 1548],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kTrip: 'trip' },
   k: [
     ['kInit', 290, 213, 'INITIAL', 'ref'],
     ['kTrip', 286, 842, 'TURBINE TRIP', 'ref'],
@@ -7647,6 +7651,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: F,
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { iA1: ['mw', 'MW'], iA3: ['mw', 'MW'], iA5: ['mw', 'MW'], iB1: ['mw', 'MW'], iB3: ['mw', 'MW'], iB5: ['mw', 'MW'] },
     c: [
       ...c,
       ['iSim', 'in', 'C', 268, 1407, 'GENERATOR LOAD', ['TCE500']],
@@ -8680,6 +8686,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [182, 86, 2232, 1546],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kSpd1: ['rpm', 'rpm'], kSpd2: ['rpm', 'rpm'] },
     k: [
       ['kInit', 235, 137, 'INITIAL', 'ref'],
       ['kSpd1', 235, 822, 'TURBINE SPEED', 'ref'],
@@ -9351,6 +9359,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: F,
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { i11: 'trip', i12: 'trip', i13: 'trip' },
     k,
     c: [
       ...c,
@@ -9412,6 +9422,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [182, 84, 2230, 1546],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip' },
     k: [
       ['kInit', 1353, 183, 'INITIAL', 'ref'],
       ['kTrip', 372, 638, 'TURBINE TRIP', 'ref']
@@ -11758,6 +11770,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [165, 80, 2228, 1543],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTS: ['rpm', 'rpm'] },
     c,
     k: [
       ['kInit', 1110, 510, 'INITIAL', 'ref'],
@@ -12365,6 +12379,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [158, 82, 2218, 1545],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kAts: 'auto', kTrip: 'trip' },
     c,
     k: [
       ['kAts', 273, 1170, 'ATS AUTO(C)', 'ref'],
@@ -13119,6 +13135,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [160, 82, 2228, 1543],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kAts: 'auto', kTrip: 'trip' },
     c,
     k: [
       ['kAts', 284, 1017, 'ATS AUTO(C)', 'ref'],
@@ -13598,6 +13616,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [160, 82, 2222, 1543],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip', kAts: 'auto' },
     c,
     k: [
       ['kInit', 287, 156, 'INITIAL', 'ref'],
@@ -14064,6 +14084,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [160, 80, 2214, 1543],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip' },
     c,
     k: [
       ['kInit', 293, 170, 'INITIAL', 'ref'],
@@ -14091,6 +14113,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [152, 78, 2203, 1542],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip' },
     c: [
       ['iA', 'in', 'A', 299, 252, 'DURING CV WARMING CONTROL', ['TCE152']],
       ['iUp', 'in', 'B', 296, 530, 'WARMING (LOWER) SET', ['TCE155']],
@@ -15329,6 +15353,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [156, 80, 2218, 1542],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip' },
     c,
     k: [
       ['kInit', 242, 1061, 'INITIAL', 'ref'],
@@ -15918,7 +15944,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [176, 84, 2226, 1543],
-  live: { iA: 'tsel=200', iF: ['tspd', 'rpm'] },
+  live: { iA: 'tsel=200', iF: ['tspd', 'rpm'], kSpd: ['rpm', 'rpm'], kAts: 'auto', kTrip: 'trip', k52g: 'g52' },
   k: [
     ['kSpd', 290, 136, 'TURBINE SPEED', 'ref'],
     ['kAts', 285, 712, 'ATS AUTO(C)', 'ref'],
@@ -16096,7 +16122,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [160, 85, 2210, 1547],
-  live: { iD1: 'l52c', iK: ['tspd', 'rpm'] },
+  live: { iD1: 'l52c', iK: ['tspd', 'rpm'], kSpd: ['rpm', 'rpm'], kAts: 'auto', k52g: 'g52', kFlow: ['fd', '%'] },
   k: [
     ['kInit', 281, 216, 'INITIAL', 'ref'],
     ['kSpd', 275, 758, 'TURBINE SPEED', 'ref'],
@@ -16328,6 +16354,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [165, 85, 2215, 1545],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kSpd: ['rpm', 'rpm'] },
   k: [
     ['kHp', 285, 256, 'HP START', 'ref'],
     ['kSpd', 285, 330, 'TURBINE SPEED', 'ref'],
@@ -16427,6 +16455,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [175, 84, 2228, 1545],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kSpd: ['rpm', 'rpm'], kTrip: 'trip' },
   k: [
     ['kInit', 298, 265, 'INITIAL', 'ref'],
     ['kSpd', 296, 446, 'TURBINE SPEED', 'ref'],
@@ -16549,7 +16579,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 990,
   f: [180, 84, 2228, 1545],
-  live: { iA: ['tspd', 'rpm'], iGov: ['govSet', '%'] },
+  live: { iA: ['tspd', 'rpm'], iGov: ['govSet', '%'], kSpd: ['rpm', 'rpm'] },
   k: [
     ['kInit', 209, 265, 'INITIAL', 'ref'],
     ['kSpd', 206, 478, 'TURBINE SPEED', 'ref'],
@@ -16726,6 +16756,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [182, 84, 2232, 1543],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iGov: ['govSet', '%'], kSpd: ['rpm', 'rpm'] },
   k: [
     ['kInit', 275, 211, 'INITIAL', 'ref'],
     ['kSpd', 273, 360, 'TURBINE SPEED', 'ref'],
@@ -16862,6 +16894,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 84, 2230, 1546],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iTrc: 'xfer', k52g: 'g52', kTrip: 'trip' },
   k: [
     ['kZero', 262, 213, '0.0', 'sys.ref'],
     ['k52g', 257, 661, '52G CLOSE', 'ref'],
@@ -16992,6 +17026,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 82, 2222, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iLlms: ['llmSet', '%'], iGovs: ['govSet', '%'] },
   k: [['kInit', 303, 459, 'INITIAL', 'ref']],
   c: [
     ['iLlmc', 'in', 'F', 302, 152, 'LLM CONTROL', ['TCE172']],
@@ -17615,6 +17651,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [183, 80, 2235, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kSpd: ['rpm', 'rpm'] },
   k: [
     ['kInit', 298, 165, 'INITIAL', 'ref'],
     ['kSpd', 291, 656, 'TURBINE SPEED', 'ref'],
@@ -17719,6 +17757,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [167, 76, 2231, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iTrc: 'xfer', kTrip: 'trip', k52g: 'g52' },
   k: [
     ['kInit', 293, 228, 'INITIAL', 'ref'],
     ['kTrip', 290, 772, 'TURBINE TRIP', 'ref'],
@@ -17860,6 +17900,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [187, 82, 2237, 1545],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { i52l: 'l52c', kTrip: 'trip' },
   k: [
     ['kInit', 301, 213, 'INITIAL', 'ref'],
     ['kTrip', 294, 661, 'TURBINE TRIP', 'ref'],
@@ -17985,7 +18027,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [181, 80, 2229, 1540],
-  live: { iLl: 'limiting', iMan: 'govMan' },
+  live: { iLl: 'limiting', iMan: 'govMan', k52g: 'g52', k52l: 'l52c', kTrip: 'trip', kFlow: ['fd', '%'] },
   k: [
     ['kInit', 296, 156, 'INITIAL', 'ref'],
     ['k52g', 295, 232, '52G CLOSE', 'ref'],
@@ -18131,6 +18173,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [181, 90, 2231, 1550],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kAts: 'auto', kFlow: ['fd', '%'], k52g: 'g52' },
   k: [
     ['kInit', 296, 205, 'INITIAL', 'ref'],
     ['kAts', 291, 523, 'ATS AUTO(C)', 'ref'],
@@ -18388,7 +18432,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 85, 2222, 1545],
-  live: { iTrc: 'xfer' },
+  live: { iTrc: 'xfer', kAts: 'auto' },
   k: [
     ['kInit', 238, 259, 'INITIAL', 'ref'],
     ['kAts', 237, 343, 'ATS AUTO(C)', 'ref']
@@ -18454,7 +18498,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 82, 2232, 1545],
-  live: { iGen: ['mw', 'MW'] },
+  live: { iGen: ['mw', 'MW'], k52g: 'g52', kAts: 'auto' },
   k: [
     ['k52g', 300, 158, '52G CLOSE', 'ref'],
     ['kAts', 298, 243, 'ATS AUTO(C)', 'ref'],
@@ -18615,7 +18659,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [167, 85, 2220, 1547],
-  live: { iGen: ['mw', 'MW'], iGov: ['govSet', '%'] },
+  live: { iGen: ['mw', 'MW'], iGov: ['govSet', '%'], k52g: 'g52' },
   k: [
     ['kInit', 285, 150, 'INITIAL', 'ref'],
     ['k52g', 284, 246, '52G CLOSE', 'ref'],
@@ -18909,6 +18953,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 82, 2227, 1550],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iGmw: ['mw', 'MW'], iGov: ['govSet', '%'] },
   k: [
     ['kGov', 290, 141, 'GOVERNING MODE', 'ref'],
     ['kInit', 857, 183, 'INITIAL', 'ref'],
@@ -19055,7 +19101,7 @@ function tcsSim(s) {
   cycle: 30,
   f: [181, 88, 2230, 1545],
   /* live: GOV SET and its manual mode, TURBINE TRIP, TURBINE SPEED (tcs.js tcsLiveRead) */
-  live: { kTt: 'trip', i005: ['govSet', '%'], 'crt.MANU': 'govMan', kSpd: ['rpm', 'rpm'] },
+  live: { kTt: 'trip', i005: ['govSet', '%'], 'crt.MANU': 'govMan', kSpd: ['rpm', 'rpm'], iLls: ['llmSet', '%'] },
   k: [
     ['kAvc', 242, 151, 'ALL VALVE CLOSED', 'ref'],
     ['kTt', 240, 233, 'TURBINE TRIP', 'ref'],
@@ -19305,6 +19351,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [160, 82, 2211, 1548],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { k52l: 'l52c', k52g: 'g52' },
   k: [
     ['k52l', 269, 768, '52L CLOSE', 'ref'],
     ['k52g', 269, 830, '52G CLOSE', 'ref'],
@@ -19567,7 +19615,7 @@ function tcsSim(s) {
   cycle: 30,
   f: [166, 85, 2217, 1550],
   /* live: LLM SET and its manual mode, LOAD LIMITING, TURBINE TRIP (tcs.js tcsLiveRead) */
-  live: { kTt: 'trip', iA007: ['llmSet', '%'], 'crt.MANU': 'llmMan', iLl: 'limiting' },
+  live: { kTt: 'trip', iA007: ['llmSet', '%'], 'crt.MANU': 'llmMan', iLl: 'limiting', kFd: ['fd', '%'] },
   k: [
     ['kTt', 228, 300, 'TURBINE TRIP', 'ref'],
     ['kZero', 1030, 825, '0.0', 'sys.ref'],
@@ -19741,7 +19789,7 @@ function tcsSim(s) {
   cycle: 30,
   f: [158, 85, 2212, 1550],
   /* live: GOV SET, LLM SET, the flow demand (their low select) and TURBINE SPEED (tcs.js tcsLiveRead) */
-  live: { iGs: ['govSet', '%'], iLs: ['llmSet', '%'], lsg009: ['fd', '%'], kTs: ['rpm', 'rpm'] },
+  live: { iGs: ['govSet', '%'], iLs: ['llmSet', '%'], lsg009: ['fd', '%'], kTs: ['rpm', 'rpm'], iD1: 'l52c' },
   k: [
     ['kGm', 330, 149, 'GOVERNING MODE', 'ref'],
     ['kTs', 331, 481, 'TURBINE SPEED', 'ref'],
@@ -20045,6 +20093,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 88, 2222, 1552],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kFd: ['fd', '%'] },
   k: [
     ['kInit', 287, 146, 'INITIAL', 'ref'],
     ['kHsc', 287, 317, 'HEAT SOAK CONTROL', 'ref'],
@@ -20425,7 +20475,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [175, 89, 2222, 1552],
-  live: { iDur: 'vtSel=msvB' },
+  live: { iDur: 'vtSel=msvB', kTs: ['rpm', 'rpm'] },
   k: [
     ['kInit', 259, 147, 'INITIAL', 'ref'],
     ['kMax', 384, 487, 'MAX', 'sys.ref'],
@@ -20716,7 +20766,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 89, 2224, 1552],
-  live: { iDa: 'vtSel=cvA', iDb: 'vtSel=cvB' },
+  live: { iDa: 'vtSel=cvA', iDb: 'vtSel=cvB', kFd: ['fd', '%'], kTt: 'trip' },
   k: [
     ['kIps', 258, 148, 'IP START', 'ref'],
     ['kFd', 257, 275, 'FLOW DEMAND', 'ref'],
@@ -21186,6 +21236,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [174, 84, 2232, 1543],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kFd: ['fd', '%'] },
   k: [
     ['kIps', 265, 180, 'IP START', 'ref'],
     ['kFd', 263, 349, 'FLOW DEMAND', 'ref'],
@@ -22440,6 +22492,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 90, 2228, 1553],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iTr: 'xfer' },
   k: [['kHp', 294, 263.5, 'HP START', 'ref']],
   c: [
     ['iH1', 'in', 'H1', 311, 160, 'CRV(A) FULL CLOSE TEST PERMISSIVE', ['TCE224']],
@@ -23398,6 +23452,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [165, 77, 2212, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iC: 'xfer', iGov: ['govSet', '%'], iLlm: ['llmSet', '%'] },
   c: [
     ['iC', 'in', 'C', 302, 424, 'TRANSFER REGION COMPLETE(IP)', ['TCE184']],
     ['iA15', 'in', 'A15', 302, 490, 'PLU OPERATED', ['TCE043']],
@@ -49277,8 +49333,11 @@ function render() {
       if (v === undefined) return;
       const txt = v + ' ' + L.unit,
         w = txt.length * 1.25 + 2;
-      el('rect', { x: L.x + 1, y: -L.y - 4.6, width: w, height: 3.8, rx: 0.9, fill: '#1b2731', stroke: '#7d8e9a', 'stroke-width': 0.25, 'pointer-events': 'none' }, g);
-      const t = el('text', { x: L.x + 1 + w / 2, y: -L.y - 1.9, 'font-size': 2.1, 'text-anchor': 'middle', fill: '#cfd8e0', 'pointer-events': 'none' }, g);
+      /* the tag keeps its own colours on every sheet look (inline style: the paper colour maps and the text halo do not reach it) */
+      const rc = el('rect', { x: L.x + 1, y: -L.y - 4.6, width: w, height: 3.8, rx: 0.9, 'pointer-events': 'none' }, g);
+      rc.setAttribute('style', 'fill:#2a323a !important;stroke:#5c6875 !important;stroke-width:0.25');
+      const t = el('text', { x: L.x + 1 + w / 2, y: -L.y - 1.9, 'font-size': 2.1, 'text-anchor': 'middle', 'pointer-events': 'none' }, g);
+      t.setAttribute('style', 'fill:#e6eaed !important;stroke:none !important');
       t.style.fontFamily = 'Consolas,monospace';
       t.style.fontWeight = 'bold';
       t.textContent = txt;
@@ -83766,7 +83825,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 3510569'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 055a9c8'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -110790,6 +110849,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [163, 82, 2221, 1547],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iA4: 'g52', iA10: 'l52o', iA2: 'trip' },
   k: [
     ['kInit', 282, 139, 'INITIAL', 'ref'],
     ['kAnn', 1298, 201, 'ANN RESET', 'ref'],
@@ -111052,6 +111113,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [173, 84, 2226, 1548],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kTrip: 'trip' },
   k: [
     ['kInit', 290, 213, 'INITIAL', 'ref'],
     ['kTrip', 286, 842, 'TURBINE TRIP', 'ref'],
@@ -111536,6 +111599,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: F,
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { iA1: ['mw', 'MW'], iA3: ['mw', 'MW'], iA5: ['mw', 'MW'], iB1: ['mw', 'MW'], iB3: ['mw', 'MW'], iB5: ['mw', 'MW'] },
     c: [
       ...c,
       ['iSim', 'in', 'C', 268, 1407, 'GENERATOR LOAD', ['TCE500']],
@@ -112629,6 +112694,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [182, 86, 2232, 1546],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kSpd1: ['rpm', 'rpm'], kSpd2: ['rpm', 'rpm'] },
     k: [
       ['kInit', 235, 137, 'INITIAL', 'ref'],
       ['kSpd1', 235, 822, 'TURBINE SPEED', 'ref'],
@@ -113318,6 +113385,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: F,
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { i11: 'trip', i12: 'trip', i13: 'trip' },
     k,
     c: [
       ...c,
@@ -113381,6 +113450,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [182, 84, 2230, 1546],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip' },
     k: [
       ['kInit', 1353, 183, 'INITIAL', 'ref'],
       ['kTrip', 372, 638, 'TURBINE TRIP', 'ref']
@@ -115783,6 +115854,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [165, 80, 2228, 1543],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTS: ['rpm', 'rpm'] },
     c,
     k: [
       ['kInit', 1110, 510, 'INITIAL', 'ref'],
@@ -116392,6 +116465,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [158, 82, 2218, 1545],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kAts: 'auto', kTrip: 'trip' },
     c,
     k: [
       ['kAts', 273, 1170, 'ATS AUTO(C)', 'ref'],
@@ -117148,6 +117223,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [160, 82, 2228, 1543],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kAts: 'auto', kTrip: 'trip' },
     c,
     k: [
       ['kAts', 284, 1017, 'ATS AUTO(C)', 'ref'],
@@ -117629,6 +117706,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [160, 82, 2222, 1543],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip', kAts: 'auto' },
     c,
     k: [
       ['kInit', 287, 156, 'INITIAL', 'ref'],
@@ -118097,6 +118176,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [160, 80, 2214, 1543],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip' },
     c,
     k: [
       ['kInit', 293, 170, 'INITIAL', 'ref'],
@@ -118126,6 +118207,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [152, 78, 2203, 1542],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip' },
     c: [
       ['iA', 'in', 'A', 299, 252, 'DURING CV WARMING CONTROL', ['TCE152']],
       ['iUp', 'in', 'B', 296, 530, 'WARMING (LOWER) SET', ['TCE155']],
@@ -119366,6 +119449,8 @@ function tcsSim(s) {
     ctl: 'EHG+MD',
     cycle: 30,
     f: [156, 80, 2218, 1542],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip' },
     c,
     k: [
       ['kInit', 242, 1061, 'INITIAL', 'ref'],
@@ -119963,7 +120048,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [176, 84, 2226, 1543],
-  live: { iA: 'tsel=200', iF: ['tspd', 'rpm'] },
+  live: { iA: 'tsel=200', iF: ['tspd', 'rpm'], kSpd: ['rpm', 'rpm'], kAts: 'auto', kTrip: 'trip', k52g: 'g52' },
   k: [
     ['kSpd', 290, 136, 'TURBINE SPEED', 'ref'],
     ['kAts', 285, 712, 'ATS AUTO(C)', 'ref'],
@@ -120143,7 +120228,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [160, 85, 2210, 1547],
-  live: { iD1: 'l52c', iK: ['tspd', 'rpm'] },
+  live: { iD1: 'l52c', iK: ['tspd', 'rpm'], kSpd: ['rpm', 'rpm'], kAts: 'auto', k52g: 'g52', kFlow: ['fd', '%'] },
   k: [
     ['kInit', 281, 216, 'INITIAL', 'ref'],
     ['kSpd', 275, 758, 'TURBINE SPEED', 'ref'],
@@ -120377,6 +120462,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [165, 85, 2215, 1545],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kSpd: ['rpm', 'rpm'] },
   k: [
     ['kHp', 285, 256, 'HP START', 'ref'],
     ['kSpd', 285, 330, 'TURBINE SPEED', 'ref'],
@@ -120478,6 +120565,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [175, 84, 2228, 1545],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kSpd: ['rpm', 'rpm'], kTrip: 'trip' },
   k: [
     ['kInit', 298, 265, 'INITIAL', 'ref'],
     ['kSpd', 296, 446, 'TURBINE SPEED', 'ref'],
@@ -120602,7 +120691,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 990,
   f: [180, 84, 2228, 1545],
-  live: { iA: ['tspd', 'rpm'], iGov: ['govSet', '%'] },
+  live: { iA: ['tspd', 'rpm'], iGov: ['govSet', '%'], kSpd: ['rpm', 'rpm'] },
   k: [
     ['kInit', 209, 265, 'INITIAL', 'ref'],
     ['kSpd', 206, 478, 'TURBINE SPEED', 'ref'],
@@ -120781,6 +120870,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [182, 84, 2232, 1543],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iGov: ['govSet', '%'], kSpd: ['rpm', 'rpm'] },
   k: [
     ['kInit', 275, 211, 'INITIAL', 'ref'],
     ['kSpd', 273, 360, 'TURBINE SPEED', 'ref'],
@@ -120919,6 +121010,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 84, 2230, 1546],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iTrc: 'xfer', k52g: 'g52', kTrip: 'trip' },
   k: [
     ['kZero', 262, 213, '0.0', 'sys.ref'],
     ['k52g', 257, 661, '52G CLOSE', 'ref'],
@@ -121051,6 +121144,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 82, 2222, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iLlms: ['llmSet', '%'], iGovs: ['govSet', '%'] },
   k: [['kInit', 303, 459, 'INITIAL', 'ref']],
   c: [
     ['iLlmc', 'in', 'F', 302, 152, 'LLM CONTROL', ['TCE172']],
@@ -121682,6 +121777,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [183, 80, 2235, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kSpd: ['rpm', 'rpm'] },
   k: [
     ['kInit', 298, 165, 'INITIAL', 'ref'],
     ['kSpd', 291, 656, 'TURBINE SPEED', 'ref'],
@@ -121788,6 +121885,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [167, 76, 2231, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iTrc: 'xfer', kTrip: 'trip', k52g: 'g52' },
   k: [
     ['kInit', 293, 228, 'INITIAL', 'ref'],
     ['kTrip', 290, 772, 'TURBINE TRIP', 'ref'],
@@ -121931,6 +122030,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [187, 82, 2237, 1545],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { i52l: 'l52c', kTrip: 'trip' },
   k: [
     ['kInit', 301, 213, 'INITIAL', 'ref'],
     ['kTrip', 294, 661, 'TURBINE TRIP', 'ref'],
@@ -122058,7 +122159,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [181, 80, 2229, 1540],
-  live: { iLl: 'limiting', iMan: 'govMan' },
+  live: { iLl: 'limiting', iMan: 'govMan', k52g: 'g52', k52l: 'l52c', kTrip: 'trip', kFlow: ['fd', '%'] },
   k: [
     ['kInit', 296, 156, 'INITIAL', 'ref'],
     ['k52g', 295, 232, '52G CLOSE', 'ref'],
@@ -122206,6 +122307,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [181, 90, 2231, 1550],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kAts: 'auto', kFlow: ['fd', '%'], k52g: 'g52' },
   k: [
     ['kInit', 296, 205, 'INITIAL', 'ref'],
     ['kAts', 291, 523, 'ATS AUTO(C)', 'ref'],
@@ -122465,7 +122568,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 85, 2222, 1545],
-  live: { iTrc: 'xfer' },
+  live: { iTrc: 'xfer', kAts: 'auto' },
   k: [
     ['kInit', 238, 259, 'INITIAL', 'ref'],
     ['kAts', 237, 343, 'ATS AUTO(C)', 'ref']
@@ -122533,7 +122636,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 82, 2232, 1545],
-  live: { iGen: ['mw', 'MW'] },
+  live: { iGen: ['mw', 'MW'], k52g: 'g52', kAts: 'auto' },
   k: [
     ['k52g', 300, 158, '52G CLOSE', 'ref'],
     ['kAts', 298, 243, 'ATS AUTO(C)', 'ref'],
@@ -122696,7 +122799,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [167, 85, 2220, 1547],
-  live: { iGen: ['mw', 'MW'], iGov: ['govSet', '%'] },
+  live: { iGen: ['mw', 'MW'], iGov: ['govSet', '%'], k52g: 'g52' },
   k: [
     ['kInit', 285, 150, 'INITIAL', 'ref'],
     ['k52g', 284, 246, '52G CLOSE', 'ref'],
@@ -122994,6 +123097,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 82, 2227, 1550],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iGmw: ['mw', 'MW'], iGov: ['govSet', '%'] },
   k: [
     ['kGov', 290, 141, 'GOVERNING MODE', 'ref'],
     ['kInit', 857, 183, 'INITIAL', 'ref'],
@@ -123142,7 +123247,7 @@ function tcsSim(s) {
   cycle: 30,
   f: [181, 88, 2230, 1545],
   /* live: GOV SET and its manual mode, TURBINE TRIP, TURBINE SPEED (tcs.js tcsLiveRead) */
-  live: { kTt: 'trip', i005: ['govSet', '%'], 'crt.MANU': 'govMan', kSpd: ['rpm', 'rpm'] },
+  live: { kTt: 'trip', i005: ['govSet', '%'], 'crt.MANU': 'govMan', kSpd: ['rpm', 'rpm'], iLls: ['llmSet', '%'] },
   k: [
     ['kAvc', 242, 151, 'ALL VALVE CLOSED', 'ref'],
     ['kTt', 240, 233, 'TURBINE TRIP', 'ref'],
@@ -123394,6 +123499,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [160, 82, 2211, 1548],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { k52l: 'l52c', k52g: 'g52' },
   k: [
     ['k52l', 269, 768, '52L CLOSE', 'ref'],
     ['k52g', 269, 830, '52G CLOSE', 'ref'],
@@ -123660,7 +123767,7 @@ function tcsSim(s) {
   cycle: 30,
   f: [166, 85, 2217, 1550],
   /* live: LLM SET and its manual mode, LOAD LIMITING, TURBINE TRIP (tcs.js tcsLiveRead) */
-  live: { kTt: 'trip', iA007: ['llmSet', '%'], 'crt.MANU': 'llmMan', iLl: 'limiting' },
+  live: { kTt: 'trip', iA007: ['llmSet', '%'], 'crt.MANU': 'llmMan', iLl: 'limiting', kFd: ['fd', '%'] },
   k: [
     ['kTt', 228, 300, 'TURBINE TRIP', 'ref'],
     ['kZero', 1030, 825, '0.0', 'sys.ref'],
@@ -123836,7 +123943,7 @@ function tcsSim(s) {
   cycle: 30,
   f: [158, 85, 2212, 1550],
   /* live: GOV SET, LLM SET, the flow demand (their low select) and TURBINE SPEED (tcs.js tcsLiveRead) */
-  live: { iGs: ['govSet', '%'], iLs: ['llmSet', '%'], lsg009: ['fd', '%'], kTs: ['rpm', 'rpm'] },
+  live: { iGs: ['govSet', '%'], iLs: ['llmSet', '%'], lsg009: ['fd', '%'], kTs: ['rpm', 'rpm'], iD1: 'l52c' },
   k: [
     ['kGm', 330, 149, 'GOVERNING MODE', 'ref'],
     ['kTs', 331, 481, 'TURBINE SPEED', 'ref'],
@@ -124142,6 +124249,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 88, 2222, 1552],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kFd: ['fd', '%'] },
   k: [
     ['kInit', 287, 146, 'INITIAL', 'ref'],
     ['kHsc', 287, 317, 'HEAT SOAK CONTROL', 'ref'],
@@ -124526,7 +124635,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [175, 89, 2222, 1552],
-  live: { iDur: 'vtSel=msvB' },
+  live: { iDur: 'vtSel=msvB', kTs: ['rpm', 'rpm'] },
   k: [
     ['kInit', 259, 147, 'INITIAL', 'ref'],
     ['kMax', 384, 487, 'MAX', 'sys.ref'],
@@ -124819,7 +124928,7 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 89, 2224, 1552],
-  live: { iDa: 'vtSel=cvA', iDb: 'vtSel=cvB' },
+  live: { iDa: 'vtSel=cvA', iDb: 'vtSel=cvB', kFd: ['fd', '%'], kTt: 'trip' },
   k: [
     ['kIps', 258, 148, 'IP START', 'ref'],
     ['kFd', 257, 275, 'FLOW DEMAND', 'ref'],
@@ -125291,6 +125400,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [174, 84, 2232, 1543],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kFd: ['fd', '%'] },
   k: [
     ['kIps', 265, 180, 'IP START', 'ref'],
     ['kFd', 263, 349, 'FLOW DEMAND', 'ref'],
@@ -126557,6 +126668,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 90, 2228, 1553],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iTr: 'xfer' },
   k: [['kHp', 294, 263.5, 'HP START', 'ref']],
   c: [
     ['iH1', 'in', 'H1', 311, 160, 'CRV(A) FULL CLOSE TEST PERMISSIVE', ['TCE224']],
@@ -127529,6 +127642,8 @@ function tcsSim(s) {
   ctl: 'EHG+MD',
   cycle: 30,
   f: [165, 77, 2212, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iC: 'xfer', iGov: ['govSet', '%'], iLlm: ['llmSet', '%'] },
   c: [
     ['iC', 'in', 'C', 302, 424, 'TRANSFER REGION COMPLETE(IP)', ['TCE184']],
     ['iA15', 'in', 'A15', 302, 490, 'PLU OPERATED', ['TCE043']],
@@ -208415,7 +208530,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 3510569'));
+    row('Version', E('span', 'scsver', ver + ' · build 055a9c8'));
   }
   function openSet(near) {
     if (!set) {

@@ -54,6 +54,8 @@
     ctl: 'EHG+MD',
     cycle: 30,
     f: F,
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { i11: 'trip', i12: 'trip', i13: 'trip' },
     k,
     c: [
       ...c,

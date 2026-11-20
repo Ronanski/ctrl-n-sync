@@ -575,6 +575,8 @@
     ctl: 'EHG+MD',
     cycle: 30,
     f: [158, 82, 2218, 1545],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kAts: 'auto', kTrip: 'trip' },
     c,
     k: [
       ['kAts', 273, 1170, 'ATS AUTO(C)', 'ref'],

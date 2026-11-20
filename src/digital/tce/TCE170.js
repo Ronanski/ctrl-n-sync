@@ -9,6 +9,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 84, 2230, 1546],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iTrc: 'xfer', k52g: 'g52', kTrip: 'trip' },
   k: [
     ['kZero', 262, 213, '0.0', 'sys.ref'],
     ['k52g', 257, 661, '52G CLOSE', 'ref'],

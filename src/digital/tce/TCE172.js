@@ -6,6 +6,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [165, 77, 2212, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iC: 'xfer', iGov: ['govSet', '%'], iLlm: ['llmSet', '%'] },
   c: [
     ['iC', 'in', 'C', 302, 424, 'TRANSFER REGION COMPLETE(IP)', ['TCE184']],
     ['iA15', 'in', 'A15', 302, 490, 'PLU OPERATED', ['TCE043']],

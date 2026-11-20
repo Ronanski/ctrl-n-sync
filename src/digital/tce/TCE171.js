@@ -8,6 +8,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 82, 2222, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iLlms: ['llmSet', '%'], iGovs: ['govSet', '%'] },
   k: [['kInit', 303, 459, 'INITIAL', 'ref']],
   c: [
     ['iLlmc', 'in', 'F', 302, 152, 'LLM CONTROL', ['TCE172']],
