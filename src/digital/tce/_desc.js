@@ -625,5 +625,7 @@ const TCS_DESC = {
   TCA745:
     'AVR interface: PSS, PF control and reactive power ON / OFF commands from the CRT through TW 1.0 s to the AVR, with their lamps',
   TCA750:
-    'THSC interlock (1): THSC INPUT ABNORMAL = INITIAL or one of the four HP-T casing and reheat bowl metal temperature input errors'
+    'THSC interlock (1): THSC INPUT ABNORMAL = INITIAL or one of the four HP-T casing and reheat bowl metal temperature input errors',
+  TCA751:
+    'Thermal stress (HP): THSC trigger and timer, INIT1 loading / INIT2 half speed / INIT3 others, LAG_ON, and the THSC INITIAL block with the stage and casing metal temperatures (real or simulated)'
 };
