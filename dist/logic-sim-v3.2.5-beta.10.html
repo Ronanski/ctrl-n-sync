@@ -6511,6 +6511,7 @@ const TCS_DESC = {
   TCE300: 'Main oil pump (TB-1, 2): the standby pump starts on low discharge pressure of the running pump.',
   TCE305: 'Control oil pump (TB-21, 22): the standby pump starts on low discharge pressure of the running pump.',
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
+  TCE350: 'Turning gear (1): the turning gear block, start / stop / auto of the motor, the jog push button, main valve full close, the turning condition with bearing oil pressure normal, and the AUX SIM switches of running, engage and dis-engage.',
   TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
@@ -24149,6 +24150,188 @@ const TCS_DESC = {
     [406, 1532, 'EHG+MD'],
     [631, 1511, 'TRIGGER  :'],
     [631, 1538, 'CYCLE(ms):30']
+  ]
+});
+/* TCE350 TURNING GEAR(1)(TB-9) (331DM09784 page 157, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of
+   the page rendered 2296 wide, the scan skew taken out (x + 0.013 (y - 800), y - 0.0032 (x - 1100)). The TURNING GEAR block (LME030)
+   gives the turning gear motor start / stop (E, F) and AUTO; the jog push button goes out only when not in AUTO (A). MSV(A)/(B) full
+   close and ICV(A)/(B) full close make MAIN VALVE FULL CLOSE (B, and TCA638); with BEARING OIL PRESS. normal (CMP 029, from TCE061,
+   reset by INITIAL) it is the TURNING CONDITION (C). AUX SIM switches the motor running, engage and dis-engage signals to their
+   simulated values (DSW 016, 021, 026); they go to the next sheets, the indications (TCE603) and the operator station lamps (CRT). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE350',
+  title: 'TURNING GEAR(1)(TB-9)',
+  page: 157,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [164, 90, 2215, 1555],
+  k: [
+    ['kInit', 228, 211, 'INITIAL', 'ref'],
+    ['kAux', 322, 829, 'AUX SIM', 'ref']
+  ],
+  d: [
+    ['crtYip', 2040, 1105, 'out', 'TCE350_T1_YIP', 'S', '#1C'],
+    ['crtYir', 2040, 1180, 'out', 'TCE350_T1_YIR', 'S', '#1C'],
+    ['crtEng', 1425, 1297, 'out', 'nZS-LOn906-1', 'S', '#1C'],
+    ['crtDis', 1047, 1361, 'out', 'nZS-LOn906-2', 'S', '#1C']
+  ],
+  c: [
+    ['cA5', 'in', 'A5', 295, 147, 'TURNING GEAR MOTOR JOG PB', ['TCE042']],
+    ['cA3', 'in', 'A3', 295, 285, 'MSV(A) FULL CLOSE', ['TCE220']],
+    ['cB3', 'in', 'B3', 295, 339, 'MSV(B) FULL CLOSE', ['TCE220']],
+    ['cG1', 'in', 'G', 295, 392, 'ICV(A) FULL CLOSE', ['TCE129']],
+    ['cG2', 'in', 'G', 295, 445, 'ICV(B) FULL CLOSE', ['TCE131']],
+    ['cA', 'in', 'A', 295, 499, 'BEARING OIL PRESS.', ['TCE061']],
+    ['cA8', 'in', 'A8', 295, 606, 'HAND TURNING INTERLOCK', ['TCE040']],
+    ['cA7', 'in', 'A7', 295, 712, 'TURNING GEAR MOTOR ELECTRICAL TROUBLE', ['TCE042']],
+    ['cE', 'in', 'E', 295, 935, 'START DEMAND', ['TCE351']],
+    ['cA6', 'in', 'A6', 295, 999, 'TURNING GEAR MOTOR RUNNING', ['TCE042']],
+    ['cB1', 'in', 'B1', 295, 1191, 'ENGAGE SIM', ['TCE352']],
+    ['cA9', 'in', 'A9', 295, 1254, 'TURNING GEAR ENGAGE', ['TCE040']],
+    ['cB2', 'in', 'B2', 295, 1318, 'DIS-ENGAGE SIM', ['TCE352']],
+    ['cA10', 'in', 'A10', 295, 1382, 'TURNING GEAR DIS-ENGAGE', ['TCE040']],
+    ['oA', 'out', 'A', 2077, 147, '', ['TCE351']],
+    ['oB', 'out', 'B', 2077, 232, '', ['TCE352']],
+    ['oC', 'out', 'C', 2077, 285, '', ['TCE351']],
+    ['oD', 'out', 'D', 2077, 499, '', ['TCE351']],
+    ['oH', 'out', 'H', 2077, 557, '', ['TCE351', 'TCE352']],
+    ['oE', 'out', 'E', 2077, 616, '', ['TCE351']],
+    ['oF', 'out', 'F', 2077, 712, '', ['TCE351']],
+    ['oK', 'out', 'K', 2077, 925, '', ['TCE351']],
+    ['oL', 'out', 'L', 2077, 978, '', ['TCE351', 'TCE352']],
+    ['oM', 'out', 'M', 2077, 1041, '', ['TCE603']],
+    ['oN', 'out', 'N', 2077, 1233, '', ['TCE603']],
+    ['oP', 'out', 'P', 1235, 371, '', ['TCA638'], 1, 2],
+    ['oA1', 'out', 'A1', 1432, 1361, '', ['TCE351', 'TCE600']],
+    ['oB1', 'out', 'B1', 1440, 1435, '', ['TCA539'], 1, 1]
+  ],
+  b: [
+    ['a003', 'A', '003', 724, 295],
+    ['a007', 'A', '007', 724, 402],
+    ['or004', 'OR', '004', 884, 295],
+    ['cmp029', 'CMP', '029', 596, 509],
+    ['a008', 'A', '008', 884, 509],
+    ['not009', 'NOT', '009', 724, 616],
+    ['not002', 'NOT', '002', 1447, 178],
+    ['a001', 'A', '001', 1596, 157],
+    ['a005', 'A', '005', 1596, 295],
+    ['dsw016', 'DSW', '016', 703, 988],
+    ['dsw021', 'DSW', '021', 703, 1243],
+    ['dsw026', 'DSW', '026', 703, 1371],
+    ['not030', 'NOT', '030', 1704, 1115],
+    ['btr032', 'o:BTR', '032', 882, 371],
+    ['btr012', 'o:BTR', '012', 882, 712],
+    ['btr011', 'o:BTR', '011', 1565, 616],
+    ['btr013', 'o:BTR', '013', 1565, 712],
+    ['btr015', 'o:BTR', '015', 1565, 925],
+    ['btr017', 'o:BTR', '017', 1565, 978],
+    ['btr018', 'o:BTR', '018', 1565, 1041],
+    ['btr031', 'o:BTR', '031', 1697, 1180],
+    ['btr022', 'o:BTR', '022', 1565, 1233],
+    ['btr024', 'o:BTR', '024', 1268, 1297],
+    ['btr028', 'o:BTR', '028', 1268, 1361],
+    ['btr027', 'o:BTR', '027', 885, 1361]
+  ],
+  m: [
+    [
+      'm010',
+      'TURNING GEAR',
+      '',
+      948,
+      568,
+      404,
+      319,
+      ['', '', '', 'EL', '', '', '', ''],
+      ['STS', 'MANU', 'AUTO', 'STOP', '', '', '', ''],
+      '010',
+      [
+        [1035, 718, 'E.TROUBLE'],
+        [1025, 913, '(LME030)']
+      ]
+    ]
+  ],
+  w: [
+    /* jog push button: only when the turning gear is not in AUTO */
+    ['cA5', [[322, 147], [1567, 147]]],
+    ['m010.AUTO', [[1352, 680], [1393, 680], [1393, 168], [1418, 168]]],
+    ['m010.AUTO', [[1393, 563], [2038, 563], [2038, 557], [2050, 557]]],
+    ['not002', [[1476, 168], [1567, 168]]],
+    ['a001', [[1625, 147], [2050, 147]]],
+    /* main valves full close */
+    ['cA3', [[322, 285], [695, 285]]],
+    ['cB3', [[322, 339], [670, 339], [670, 306], [695, 306]]],
+    ['cG1', [[322, 392], [695, 392]]],
+    ['cG2', [[322, 445], [670, 445], [670, 413], [695, 413]]],
+    ['a003', [[753, 285], [855, 285]]],
+    ['a003', [[810, 285], [810, 371], [1208, 371]]],
+    ['a007', [[753, 392], [831, 392], [831, 306], [855, 306]]],
+    ['or004', [[913, 285], [1567, 285]]],
+    ['or004', [[1544, 285], [1544, 232], [2050, 232]]],
+    /* bearing oil pressure normal */
+    ['kInit', [[462, 211], [596, 211], [596, 488]]],
+    ['cA', [[322, 499], [567, 499]], 1],
+    ['cmp029', [[625, 499], [855, 499]]],
+    ['cA8', [[322, 606], [695, 606]]],
+    ['not009', [[753, 606], [844, 606], [844, 520], [855, 520]]],
+    ['a008', [[913, 499], [2050, 499]]],
+    ['a008', [[1544, 499], [1544, 306], [1567, 306]]],
+    ['a005', [[1625, 285], [2050, 285]]],
+    /* motor electrical trouble, start, stop */
+    ['cA7', [[322, 712], [948, 712]]],
+    ['cA7', [[830, 712], [830, 925], [2050, 925]]],
+    ['m010.STS', [[1352, 616], [2050, 616]]],
+    ['m010.STOP', [[1352, 712], [2050, 712]]],
+    /* simulation switches */
+    ['kAux', [[560, 829], [703, 829], [703, 967]]],
+    ['kAux', [[629, 829], [629, 1298], [703, 1298], [703, 1350]]],
+    ['kAux', [[629, 1170], [703, 1170], [703, 1222]]],
+    ['cE', [[322, 935], [650, 935], [650, 978], [674, 978]]],
+    ['cA6', [[322, 999], [674, 999]]],
+    ['dsw016', [[732, 978], [2050, 978]]],
+    ['dsw016', [[1525, 978], [1525, 1180], [2005, 1180]]],
+    ['dsw016', [[1525, 1041], [2050, 1041]]],
+    ['dsw016', [[1525, 1105], [1675, 1105]]],
+    ['not030', [[1733, 1105], [2005, 1105]]],
+    ['cB1', [[322, 1191], [650, 1191], [650, 1233], [674, 1233]]],
+    ['cA9', [[322, 1254], [674, 1254]]],
+    ['dsw021', [[732, 1233], [2050, 1233]]],
+    ['dsw021', [[1218, 1233], [1218, 1435], [1413, 1435]]],
+    ['dsw021', [[1218, 1297], [1390, 1297]]],
+    ['dsw021', [[1218, 1361], [1405, 1361]]],
+    ['cB2', [[322, 1318], [650, 1318], [650, 1361], [674, 1361]]],
+    ['cA10', [[322, 1382], [674, 1382]]],
+    ['dsw026', [[732, 1361], [1012, 1361]]]
+  ],
+  t: [
+    [326, 904, 'TURNING GEAR MOTOR', 0, 2.05],
+    [553, 489, 'T', 0, 1.9],
+    [558, 555, 'HL:1.02kg/cm2g', 0, 1.9],
+    [558, 575, 'LL:0.71kg/cm2g', 0, 1.9],
+    [288, 243, '(TCE050)', 0, 1.7],
+    [470, 861, '(TCE052)', 0, 1.7],
+    [1297, 560, 'TCE350_T1', 1, 1.7],
+    [975, 361, 'MSV ICV BOTH FULL CLOSE', 0, 2.05],
+    [1740, 137, 'GEAR MOTOR JOG PB', 0, 2.05],
+    [1740, 222, 'MAIN VALVE FULL CLOSE', 0, 2.05],
+    [1740, 275, 'TURNING CONDITION', 0, 2.05],
+    [1740, 489, 'BEARING OIL PRESS NORMAL', 0, 2.05],
+    [1743, 547, 'TURNING GEAR MOTOR AUTO', 0, 2.05],
+    [1743, 606, 'TURNING GEAR MOTOR START', 0, 2.05],
+    [1743, 702, 'TURNING GEAR MOTOR STOP', 0, 2.05],
+    [1743, 894, 'TURNING GEAR MOTOR', 0, 2.05],
+    [1743, 915, 'ELECTRICAL TROUBLE', 0, 2.05],
+    [1743, 968, 'TURNING GEAR MOTOR RUNNING', 0, 2.05],
+    [1743, 1010, 'TURNING GEAR', 0, 2.05],
+    [1743, 1031, 'MOTOR RUNNING IND', 0, 2.05],
+    [1815, 1074, 'TURNING GEAR', 0, 2.05],
+    [1815, 1095, 'MOTOR STOPPED', 0, 2.05],
+    [1797, 1149, 'TURNING GEAR', 0, 2.05],
+    [1797, 1170, 'MOTOR RUNNING', 0, 2.05],
+    [1743, 1223, 'TURNING GEAR ENGAGE IND', 0, 2.05],
+    [235, 1529, 'CONTROLLER:'],
+    [395, 1529, 'EHG+MD'],
+    [620, 1507, 'TRIGGER  :'],
+    [620, 1529, 'CYCLE(ms):30']
   ]
 });
 /* TCE450 INDICATION FOR VALVE(1) (331DM09784 page 162, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
@@ -152025,7 +152208,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build eb42e0c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 4a1659e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -178648,6 +178831,7 @@ const TCS_DESC = {
   TCE300: 'Main oil pump (TB-1, 2): the standby pump starts on low discharge pressure of the running pump.',
   TCE305: 'Control oil pump (TB-21, 22): the standby pump starts on low discharge pressure of the running pump.',
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
+  TCE350: 'Turning gear (1): the turning gear block, start / stop / auto of the motor, the jog push button, main valve full close, the turning condition with bearing oil pressure normal, and the AUX SIM switches of running, engage and dis-engage.',
   TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
@@ -196570,6 +196754,190 @@ const TCS_DESC = {
     [406, 1532, 'EHG+MD'],
     [631, 1511, 'TRIGGER  :'],
     [631, 1538, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE350.js ---- */
+/* TCE350 TURNING GEAR(1)(TB-9) (331DM09784 page 157, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of
+   the page rendered 2296 wide, the scan skew taken out (x + 0.013 (y - 800), y - 0.0032 (x - 1100)). The TURNING GEAR block (LME030)
+   gives the turning gear motor start / stop (E, F) and AUTO; the jog push button goes out only when not in AUTO (A). MSV(A)/(B) full
+   close and ICV(A)/(B) full close make MAIN VALVE FULL CLOSE (B, and TCA638); with BEARING OIL PRESS. normal (CMP 029, from TCE061,
+   reset by INITIAL) it is the TURNING CONDITION (C). AUX SIM switches the motor running, engage and dis-engage signals to their
+   simulated values (DSW 016, 021, 026); they go to the next sheets, the indications (TCE603) and the operator station lamps (CRT). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE350',
+  title: 'TURNING GEAR(1)(TB-9)',
+  page: 157,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [164, 90, 2215, 1555],
+  k: [
+    ['kInit', 228, 211, 'INITIAL', 'ref'],
+    ['kAux', 322, 829, 'AUX SIM', 'ref']
+  ],
+  d: [
+    ['crtYip', 2040, 1105, 'out', 'TCE350_T1_YIP', 'S', '#1C'],
+    ['crtYir', 2040, 1180, 'out', 'TCE350_T1_YIR', 'S', '#1C'],
+    ['crtEng', 1425, 1297, 'out', 'nZS-LOn906-1', 'S', '#1C'],
+    ['crtDis', 1047, 1361, 'out', 'nZS-LOn906-2', 'S', '#1C']
+  ],
+  c: [
+    ['cA5', 'in', 'A5', 295, 147, 'TURNING GEAR MOTOR JOG PB', ['TCE042']],
+    ['cA3', 'in', 'A3', 295, 285, 'MSV(A) FULL CLOSE', ['TCE220']],
+    ['cB3', 'in', 'B3', 295, 339, 'MSV(B) FULL CLOSE', ['TCE220']],
+    ['cG1', 'in', 'G', 295, 392, 'ICV(A) FULL CLOSE', ['TCE129']],
+    ['cG2', 'in', 'G', 295, 445, 'ICV(B) FULL CLOSE', ['TCE131']],
+    ['cA', 'in', 'A', 295, 499, 'BEARING OIL PRESS.', ['TCE061']],
+    ['cA8', 'in', 'A8', 295, 606, 'HAND TURNING INTERLOCK', ['TCE040']],
+    ['cA7', 'in', 'A7', 295, 712, 'TURNING GEAR MOTOR ELECTRICAL TROUBLE', ['TCE042']],
+    ['cE', 'in', 'E', 295, 935, 'START DEMAND', ['TCE351']],
+    ['cA6', 'in', 'A6', 295, 999, 'TURNING GEAR MOTOR RUNNING', ['TCE042']],
+    ['cB1', 'in', 'B1', 295, 1191, 'ENGAGE SIM', ['TCE352']],
+    ['cA9', 'in', 'A9', 295, 1254, 'TURNING GEAR ENGAGE', ['TCE040']],
+    ['cB2', 'in', 'B2', 295, 1318, 'DIS-ENGAGE SIM', ['TCE352']],
+    ['cA10', 'in', 'A10', 295, 1382, 'TURNING GEAR DIS-ENGAGE', ['TCE040']],
+    ['oA', 'out', 'A', 2077, 147, '', ['TCE351']],
+    ['oB', 'out', 'B', 2077, 232, '', ['TCE352']],
+    ['oC', 'out', 'C', 2077, 285, '', ['TCE351']],
+    ['oD', 'out', 'D', 2077, 499, '', ['TCE351']],
+    ['oH', 'out', 'H', 2077, 557, '', ['TCE351', 'TCE352']],
+    ['oE', 'out', 'E', 2077, 616, '', ['TCE351']],
+    ['oF', 'out', 'F', 2077, 712, '', ['TCE351']],
+    ['oK', 'out', 'K', 2077, 925, '', ['TCE351']],
+    ['oL', 'out', 'L', 2077, 978, '', ['TCE351', 'TCE352']],
+    ['oM', 'out', 'M', 2077, 1041, '', ['TCE603']],
+    ['oN', 'out', 'N', 2077, 1233, '', ['TCE603']],
+    ['oP', 'out', 'P', 1235, 371, '', ['TCA638'], 1, 2],
+    ['oA1', 'out', 'A1', 1432, 1361, '', ['TCE351', 'TCE600']],
+    ['oB1', 'out', 'B1', 1440, 1435, '', ['TCA539'], 1, 1]
+  ],
+  b: [
+    ['a003', 'A', '003', 724, 295],
+    ['a007', 'A', '007', 724, 402],
+    ['or004', 'OR', '004', 884, 295],
+    ['cmp029', 'CMP', '029', 596, 509],
+    ['a008', 'A', '008', 884, 509],
+    ['not009', 'NOT', '009', 724, 616],
+    ['not002', 'NOT', '002', 1447, 178],
+    ['a001', 'A', '001', 1596, 157],
+    ['a005', 'A', '005', 1596, 295],
+    ['dsw016', 'DSW', '016', 703, 988],
+    ['dsw021', 'DSW', '021', 703, 1243],
+    ['dsw026', 'DSW', '026', 703, 1371],
+    ['not030', 'NOT', '030', 1704, 1115],
+    ['btr032', 'o:BTR', '032', 882, 371],
+    ['btr012', 'o:BTR', '012', 882, 712],
+    ['btr011', 'o:BTR', '011', 1565, 616],
+    ['btr013', 'o:BTR', '013', 1565, 712],
+    ['btr015', 'o:BTR', '015', 1565, 925],
+    ['btr017', 'o:BTR', '017', 1565, 978],
+    ['btr018', 'o:BTR', '018', 1565, 1041],
+    ['btr031', 'o:BTR', '031', 1697, 1180],
+    ['btr022', 'o:BTR', '022', 1565, 1233],
+    ['btr024', 'o:BTR', '024', 1268, 1297],
+    ['btr028', 'o:BTR', '028', 1268, 1361],
+    ['btr027', 'o:BTR', '027', 885, 1361]
+  ],
+  m: [
+    [
+      'm010',
+      'TURNING GEAR',
+      '',
+      948,
+      568,
+      404,
+      319,
+      ['', '', '', 'EL', '', '', '', ''],
+      ['STS', 'MANU', 'AUTO', 'STOP', '', '', '', ''],
+      '010',
+      [
+        [1035, 718, 'E.TROUBLE'],
+        [1025, 913, '(LME030)']
+      ]
+    ]
+  ],
+  w: [
+    /* jog push button: only when the turning gear is not in AUTO */
+    ['cA5', [[322, 147], [1567, 147]]],
+    ['m010.AUTO', [[1352, 680], [1393, 680], [1393, 168], [1418, 168]]],
+    ['m010.AUTO', [[1393, 563], [2038, 563], [2038, 557], [2050, 557]]],
+    ['not002', [[1476, 168], [1567, 168]]],
+    ['a001', [[1625, 147], [2050, 147]]],
+    /* main valves full close */
+    ['cA3', [[322, 285], [695, 285]]],
+    ['cB3', [[322, 339], [670, 339], [670, 306], [695, 306]]],
+    ['cG1', [[322, 392], [695, 392]]],
+    ['cG2', [[322, 445], [670, 445], [670, 413], [695, 413]]],
+    ['a003', [[753, 285], [855, 285]]],
+    ['a003', [[810, 285], [810, 371], [1208, 371]]],
+    ['a007', [[753, 392], [831, 392], [831, 306], [855, 306]]],
+    ['or004', [[913, 285], [1567, 285]]],
+    ['or004', [[1544, 285], [1544, 232], [2050, 232]]],
+    /* bearing oil pressure normal */
+    ['kInit', [[462, 211], [596, 211], [596, 488]]],
+    ['cA', [[322, 499], [567, 499]], 1],
+    ['cmp029', [[625, 499], [855, 499]]],
+    ['cA8', [[322, 606], [695, 606]]],
+    ['not009', [[753, 606], [844, 606], [844, 520], [855, 520]]],
+    ['a008', [[913, 499], [2050, 499]]],
+    ['a008', [[1544, 499], [1544, 306], [1567, 306]]],
+    ['a005', [[1625, 285], [2050, 285]]],
+    /* motor electrical trouble, start, stop */
+    ['cA7', [[322, 712], [948, 712]]],
+    ['cA7', [[830, 712], [830, 925], [2050, 925]]],
+    ['m010.STS', [[1352, 616], [2050, 616]]],
+    ['m010.STOP', [[1352, 712], [2050, 712]]],
+    /* simulation switches */
+    ['kAux', [[560, 829], [703, 829], [703, 967]]],
+    ['kAux', [[629, 829], [629, 1298], [703, 1298], [703, 1350]]],
+    ['kAux', [[629, 1170], [703, 1170], [703, 1222]]],
+    ['cE', [[322, 935], [650, 935], [650, 978], [674, 978]]],
+    ['cA6', [[322, 999], [674, 999]]],
+    ['dsw016', [[732, 978], [2050, 978]]],
+    ['dsw016', [[1525, 978], [1525, 1180], [2005, 1180]]],
+    ['dsw016', [[1525, 1041], [2050, 1041]]],
+    ['dsw016', [[1525, 1105], [1675, 1105]]],
+    ['not030', [[1733, 1105], [2005, 1105]]],
+    ['cB1', [[322, 1191], [650, 1191], [650, 1233], [674, 1233]]],
+    ['cA9', [[322, 1254], [674, 1254]]],
+    ['dsw021', [[732, 1233], [2050, 1233]]],
+    ['dsw021', [[1218, 1233], [1218, 1435], [1413, 1435]]],
+    ['dsw021', [[1218, 1297], [1390, 1297]]],
+    ['dsw021', [[1218, 1361], [1405, 1361]]],
+    ['cB2', [[322, 1318], [650, 1318], [650, 1361], [674, 1361]]],
+    ['cA10', [[322, 1382], [674, 1382]]],
+    ['dsw026', [[732, 1361], [1012, 1361]]]
+  ],
+  t: [
+    [326, 904, 'TURNING GEAR MOTOR', 0, 2.05],
+    [553, 489, 'T', 0, 1.9],
+    [558, 555, 'HL:1.02kg/cm2g', 0, 1.9],
+    [558, 575, 'LL:0.71kg/cm2g', 0, 1.9],
+    [288, 243, '(TCE050)', 0, 1.7],
+    [470, 861, '(TCE052)', 0, 1.7],
+    [1297, 560, 'TCE350_T1', 1, 1.7],
+    [975, 361, 'MSV ICV BOTH FULL CLOSE', 0, 2.05],
+    [1740, 137, 'GEAR MOTOR JOG PB', 0, 2.05],
+    [1740, 222, 'MAIN VALVE FULL CLOSE', 0, 2.05],
+    [1740, 275, 'TURNING CONDITION', 0, 2.05],
+    [1740, 489, 'BEARING OIL PRESS NORMAL', 0, 2.05],
+    [1743, 547, 'TURNING GEAR MOTOR AUTO', 0, 2.05],
+    [1743, 606, 'TURNING GEAR MOTOR START', 0, 2.05],
+    [1743, 702, 'TURNING GEAR MOTOR STOP', 0, 2.05],
+    [1743, 894, 'TURNING GEAR MOTOR', 0, 2.05],
+    [1743, 915, 'ELECTRICAL TROUBLE', 0, 2.05],
+    [1743, 968, 'TURNING GEAR MOTOR RUNNING', 0, 2.05],
+    [1743, 1010, 'TURNING GEAR', 0, 2.05],
+    [1743, 1031, 'MOTOR RUNNING IND', 0, 2.05],
+    [1815, 1074, 'TURNING GEAR', 0, 2.05],
+    [1815, 1095, 'MOTOR STOPPED', 0, 2.05],
+    [1797, 1149, 'TURNING GEAR', 0, 2.05],
+    [1797, 1170, 'MOTOR RUNNING', 0, 2.05],
+    [1743, 1223, 'TURNING GEAR ENGAGE IND', 0, 2.05],
+    [235, 1529, 'CONTROLLER:'],
+    [395, 1529, 'EHG+MD'],
+    [620, 1507, 'TRIGGER  :'],
+    [620, 1529, 'CYCLE(ms):30']
   ]
 });
 
@@ -346017,7 +346385,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build eb42e0c'));
+    row('Version', E('span', 'scsver', ver + ' · build 4a1659e'));
   }
   function openSet(near) {
     if (!set) {

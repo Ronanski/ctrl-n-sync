@@ -658,6 +658,7 @@ const TCS_DESC = {
   TCE300: 'Main oil pump (TB-1, 2): the standby pump starts on low discharge pressure of the running pump.',
   TCE305: 'Control oil pump (TB-21, 22): the standby pump starts on low discharge pressure of the running pump.',
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
+  TCE350: 'Turning gear (1): the turning gear block, start / stop / auto of the motor, the jog push button, main valve full close, the turning condition with bearing oil pressure normal, and the AUX SIM switches of running, engage and dis-engage.',
   TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
