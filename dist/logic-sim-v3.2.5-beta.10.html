@@ -6511,6 +6511,7 @@ const TCS_DESC = {
   TCE300: 'Main oil pump (TB-1, 2): the standby pump starts on low discharge pressure of the running pump.',
   TCE305: 'Control oil pump (TB-21, 22): the standby pump starts on low discharge pressure of the running pump.',
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
+  TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
@@ -6662,7 +6663,9 @@ const TCS_DESC = {
   TCA834:
     'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.',
   TCA835:
-    'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.'
+    'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.',
+  TCE500:
+    'Turbine simulator: the CV and ICV positions drive the turbine simulators MT2 (IP START) and MT1 (HP START); IP START picks which one gives the simulated speeds (to TCE143), the HP first stage pressure (to TCE206) and the HP exhaust pressure; with 52G closed the generator load simulator gives the simulated MW (to TCE070 / 101 / 179); the CCS simulator gives the target MW demand (held by LOAD HOLD COMMAND, to TCE103); plus the IP extraction flow and MOP(A) discharge pressure simulators.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -24145,6 +24148,503 @@ const TCS_DESC = {
     [631, 1538, 'CYCLE(ms):30']
   ]
 });
+/* TCE450 INDICATION FOR VALVE(1) (331DM09784 page 162, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide, the scan skew taken out (x + 0.0157 (y - 800), y - 0.0059 (x - 1100)). Four HMI INDI FOR VALVE blocks (LME125):
+   MSV(A) nZT-STn903-A, MSV(B) nZT-STn903-B, CV(A) nZT-STn904-A, CV(B) nZT-STn904-B. Each takes sixteen signals from the valve sheets
+   (TCE120 to TCE127): the position and positions (1) to (3) (FTR, heavy lines), the position ABN Q, the ABN_Q of each channel, the ABN.
+   (ANN) and the ABN of each channel (BTR). The ABN.O of each block goes to TCE470 (A, B, C, D). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    m = [],
+    w = [],
+    t = [];
+  const PINS = [
+      'POS',
+      'POS1',
+      'POS2',
+      'POS3',
+      'QUA1',
+      'QUA2',
+      'QUA3',
+      'QUAA',
+      'QUAB',
+      'QUAC',
+      'ABN1',
+      'ABN2',
+      'ABN3',
+      'ABNA',
+      'ABNB',
+      'ABNC'
+    ],
+    LET = ['P', 'A1', 'A2', 'A1', 'K1', 'K2', 'K1', 'M1', 'M2', 'M3', 'C1', 'C2', 'C3', 'L1', 'L2', 'L3'],
+    /* the sheet each connector comes from: 0 = the first sheet of the pair, 1 = the second */
+    REF = [1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+    /* the x where the line of each row turns to its pin (rows 1 to 15; row 0 runs straight) */
+    STAIR = [0, 624, 635, 645, ...Array.from({ length: 12 }, (_, k) => Math.round(655 + 10.75 * k))],
+    rowY = i => Math.round(161.5 + 42.6 * i);
+  /* one block and its sixteen rows: side (0 left, 1 right), group (0 top, 1 bottom), valve, tag, the two sheets, block no., marks, names */
+  const group = (side, gr, valve, tag, sheets, no, marks, names) => {
+    const dx = side ? 894 : 0,
+      top = gr ? 812 : 130,
+      bx = 794 + dx,
+      pin = p => Math.round((gr ? 843.5 : 162) + 21.3 * p),
+      cx = 292 + dx,
+      key = 'm' + no;
+    m.push([
+      key,
+      'HMI INDI FOR VALVE',
+      '',
+      bx,
+      top,
+      235,
+      383,
+      PINS,
+      ['ABN.O'],
+      no,
+      [
+        [bx, top - 6, '(' + valve + ')'],
+        [bx + 138, top - 6, tag],
+        [bx + 50, top + 405, '(LME125)']
+      ],
+      [PINS.map((_, p) => pin(p)), [pin(4)]]
+    ]);
+    names.forEach((nm, j) => {
+      const i = gr * 16 + j,
+        y = j ? rowY(i) : pin(0),
+        k = (side ? 'r' : 'l') + i,
+        two = Array.isArray(nm);
+      c.push([k, 'in', LET[j], cx, y, two ? nm[1] : nm, [sheets[REF[j]]]]);
+      if (two) t.push([cx + 33, y - 31, nm[0], 0, 2.05]);
+      b.push(['f' + marks[j], j < 4 ? 'o:FTR' : 'o:BTR', marks[j], 581.5 + dx, y]);
+      const heavy = j < 4 ? 1 : 0;
+      if (!j)
+        w.push([
+          k,
+          [
+            [cx + 27, y],
+            [bx, y]
+          ],
+          heavy
+        ]);
+      else
+        w.push([
+          k,
+          [
+            [cx + 27, y],
+            [STAIR[j] + dx, y],
+            [STAIR[j] + dx, pin(j)],
+            [bx, pin(j)]
+          ],
+          heavy
+        ]);
+    });
+    return [key + '.ABN.O', bx + 235, pin(4)];
+  };
+  const num = n => String(n).padStart(3, '0'),
+    marks = (a, b4) =>
+      [...a, ...Array.from({ length: 12 }, (_, k) => num(b4 + 2 * k))].map(x => (typeof x === 'number' ? num(x) : x));
+  const names = (v, ab1) => [
+    v + ' POSITION',
+    v + ' POSITION(1)',
+    v + ' POSITION(2)',
+    v + ' POSITION(3)',
+    ab1 ? v + ' POSITION ABN(1) Q' : [v + ' POSITION', 'ABN(1) Q'],
+    [v + ' POSITION', 'ABN(2) Q'],
+    [v + ' POSITION', 'ABN(3) Q'],
+    v + '(A) ABN_Q',
+    v + '(B) ABN_Q',
+    v + '(C) ABN_Q',
+    [v + '(1) ABN.', '(ANN)'],
+    [v + '(2) ABN.', '(ANN)'],
+    [v + '(3) ABN.', '(ANN)'],
+    v + '(A) ABN',
+    v + '(B) ABN',
+    v + '(C) ABN'
+  ];
+  const oA = group(
+      0,
+      0,
+      'MSV(A)',
+      'nZT-STn903-A',
+      ['TCE120', 'TCE121'],
+      '002',
+      marks([1, 5, 7, 9], 11),
+      names('MSV(A)')
+    ),
+    oB = group(
+      0,
+      1,
+      'MSV(B)',
+      'nZT-STn903-B',
+      ['TCE122', 'TCE123'],
+      '036',
+      marks([35, 39, 41, 43], 45),
+      names('MSV(B)', 1)
+    ),
+    oC = group(1, 0, 'CV(A)', 'nZT-STn904-A', ['TCE124', 'TCE125'], '004', marks([3, 6, 8, 10], 12), names('CV(A)')),
+    oD = group(1, 1, 'CV(B)', 'nZT-STn904-B', ['TCE126', 'TCE127'], '038', marks([37, 40, 42, 44], 46), names('CV(B)'));
+  /* the ABN.O of the MSV blocks go round under the block to A / B; those of the CV blocks straight to C / D */
+  c.push(
+    ['oA', 'out', 'A', 986, 631, '', ['TCE470'], 0, 2],
+    ['oB', 'out', 'B', 987, 1312, '', ['TCE470'], 0, 2],
+    ['oC', 'out', 'C', 2060, oC[2], '', ['TCE470'], 0, 2],
+    ['oD', 'out', 'D', 2060, oD[2], '', ['TCE470'], 0, 2]
+  );
+  w.push(
+    [
+      oA[0],
+      [
+        [oA[1], oA[2]],
+        [1061, oA[2]],
+        [1061, 590],
+        [859, 590],
+        [859, 631],
+        [959, 631]
+      ]
+    ],
+    [
+      oB[0],
+      [
+        [oB[1], oB[2]],
+        [1061, oB[2]],
+        [1061, 1271],
+        [859, 1271],
+        [859, 1312],
+        [960, 1312]
+      ]
+    ],
+    [
+      oC[0],
+      [
+        [oC[1], oC[2]],
+        [2033, oC[2]]
+      ]
+    ],
+    [
+      oD[0],
+      [
+        [oD[1], oD[2]],
+        [2033, oD[2]]
+      ]
+    ]
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE450',
+    title: 'INDICATION FOR VALVE(1)',
+    page: 162,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [159, 84, 2210, 1549],
+    c,
+    b,
+    m,
+    w,
+    t: [...t, [228, 1523, 'CONTROLLER:'], [388, 1523, 'EHG+MD'], [668, 1501, 'TRIGGER  :'], [668, 1521, 'CYCLE(ms):30']]
+  });
+})();
+/* TCE500 SIMULATOR(1) (331DM09784 page 173, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. The turbine simulator of the EHG controller, block by block as drawn:
+   - CV(A) + CV(B) POSITION (TCE125 / TCE127) = ADD 001; through G A002 (K 1.0) and FG A003 (table *1) to CV of TURBINE SIM.MT2 B004
+     (IP START), through G A010 (K 1.0) and FG A011 (table *2) to CV of TURBINE SIM.MT1 B020 (HP START).
+   - ICV(A) + ICV(B) POSITION (TCE129 / TCE131) = ADD 018, G A019 (K 0.5): through FG A007 (table *3) to ICV of MT2, straight to ICV of
+     MT1. SG A038 (3600 rpm) is R.S of both.
+   - IP START (ref, TCE057) switches ASW 005 / 008 / 012 (SPEED of MT2, else of MT1), through LMS C006 / C009 / C013 (0-5000 rpm) =
+     SIMULATOR TURBINE SPEED(1) to (3), A1 to A3 to TCE143; ASW 014 (OUT of MT2, else of MT1), G A015 (K 1.95335), PROCESS SIM.MT1 A016
+     and LMS C017 (0-200 MPa) = SIMULATOR HP FIRST STAGE OUTLET STEAM PRESS., B to TCE206; ASW 026 = HP TURBINE EXHAUST PRESS.SIM, F (-).
+   - ASW 022 (FG C040 of the MT2 OUT, else FG C041 of the MT1 OUT), PROCESS SIM.MT1 A023; with 52G CLOSE (ref, BTR 042) ASW 043 takes
+     it, else SG 044 (0.0); LMS C024 (-5 to 200 MW) = SIMULATOR GENERATOR LOAD: C to TCE070 / 101 / 179 and through FTR 039 C1 (-).
+   - CCS SIM.MT1 A028: SET = ASW 045 (TARGET MW DEMAND SG C027 150.0 MW, or under LOAD HOLD COMMAND C of TCE164 its own held output
+     through the crossed circle), FB = GEN. MW (A of TCE070, FTR 030), AUTO = DCS CONTROL MODE ON (A of TCE180, BTR 031); HLD 046 (LOAD
+     HOLD COMMAND) and LMS C029 (0-200 MW) = SIMULATOR TARGET MW DEMAND, D to TCE103.
+   - PRESS.FLOW SIM.MT1 A033 of SG C032 (IP.EX.FLOW 5.0) and LMS C034 = SIMULATOR IP EXTRACTION TO AUX.STEAM FLOW, E1 (-);
+     PRESS.FLOW SIM.MT1 A036 of SG 035 (10.0) and LMS C037 = SIMULATOR MOP(A) DISGARGE OIL PRESS., E2 (-).
+   The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const h = 28.76,
+    I = cx => cx - h,
+    O = cx => cx + h,
+    T = cy => cy - 21.57 /* top of a block */,
+    l = [],
+    v = [],
+    t = [];
+  /* the three FG tables (*1 *2 *3) */
+  const rows = [659, 682, 703];
+  for (let i = 1; i <= 8; i++) rows.push(703 + 21.25 * i);
+  const tables = [
+    ['FG *1', [217, 261, 327, 391], ['0.0', '10.0', '15.0', '20.0', '30.0', '40.0', '50.0', '100.0'], ['0.0', '10.0', '15.0', '20.0', '30.0', '40.0', '50.0', '100.0']],
+    ['FG *2', [399.5, 443, 507, 572], ['0.0', '10.0', '20.0', '30.0', '40.0', '50.0', '60.0', '140.0'], ['0.0', '14.0', '24.0', '34.0', '44.0', '54.0', '64.0', '140.0']],
+    ['FG *3', [580.5, 626, 689, 753], ['0.0', '11.0', '15.6', '19.19', '30.0', '110.0', '130.0', '140.0'], ['0.0', '6.0', '9.9', '12.0', '16.0', '22.0', '24.0', '25.0']]
+  ];
+  for (const [name, x, X, Y] of tables) {
+    rows.forEach((y, i) => l.push([[i === 1 ? x[0] : x[0], y], [x[3], y]]));
+    l.push([[x[0], rows[0]], [x[0], rows[10]]], [[x[1], rows[0]], [x[1], rows[10]]], [[x[2], rows[1]], [x[2], rows[10]]], [[x[3], rows[0]], [x[3], rows[10]]]);
+    v.push([[x[0], rows[0]], [x[1], rows[1]]]);
+    const c0 = (x[0] + x[1]) / 2,
+      c1 = (x[1] + x[2]) / 2,
+      c2 = (x[2] + x[3]) / 2;
+    t.push([(x[1] + x[3]) / 2, rows[1] - 5, name, 1], [c0, rows[2] - 5, 'n', 1], [c1, rows[2] - 5, 'Xn(%)', 1], [c2, rows[2] - 5, 'Yn(%)', 1]);
+    for (let i = 0; i < 8; i++) t.push([c0, rows[3 + i] - 4, String(i), 1], [c1, rows[3 + i] - 4, X[i], 1], [c2, rows[3 + i] - 4, Y[i], 1]);
+  }
+  /* the parameters of the two turbine simulators */
+  const col = (x, y0, list) => list.map((s, i) => [x + (/^K:/.test(s) ? 10 : 0), Math.round(y0 + 21.4 * i), s]);
+  const mt2 = [
+    ...col(911, 354, ['TW:5.0S', 'RI:1.0rpm/S', 'RD:1.0rpm/S', 'TD:0.3S', 'G1:1.0', 'G2:1.0', 'G3:0.0', 'B :0.0', 'K:300.0', 'TI:200.0S']),
+    ...col(1051, 354, ['HL:5000.0rpm', 'LL:0.0rpm', 'HL:100.0%', 'LL:0.0%', 'TD:0.3S', 'K:0.0', 'K:0.0033', 'HL:100.0%', 'LL:0.0%', 'K:1.0'])
+  ];
+  const mt1 = [
+    ...col(901, 728, ['TW:5.0S', 'RI:1.0rpm/S', 'RD:1.0rpm/S', 'TD:0.3S', 'G1:0.8', 'G2:0.2', 'G3:0.0', 'B :0.0', 'K:300.0', 'TI:200.0S']),
+    ...col(1041, 728, ['HL:5000.0rpm', 'LL:0.0rpm', 'G1:1.0', 'G2:-1.0', 'G3:0.0', 'B :0.0', 'TI:5.0S', 'HL:100.0%', 'LL:0.0%', 'HL:100.0%'])
+  ];
+  t.push(
+    [655, 174, '(TCE057)', 1],
+    [1515, 655, 'TD:5.0S', 1],
+    [344, 177, 'CV(A)'],
+    [344, 198, 'POSITION'],
+    [343, 263, 'CV(B)'],
+    [343, 284, 'POSITION'],
+    [340, 529, 'ICV(A) POSITION'],
+    [339, 593, 'ICV(B) POSITION'],
+    [336, 922, 'LOAD HOLD COMMAND'],
+    [334, 1061, 'GEN. MW'],
+    [334, 1103, 'DCS CONTROL MODE ON'],
+    [583, 1000, 'TARGET MW DEMAND'],
+    [677, 1158, 'IP.EX.FLOW'],
+    [675, 1297, 'MOP(A)'],
+    [675, 1318, 'DISCHARGE OIL PRESS.'],
+    [751, 222, '*1'],
+    [748, 393, '*2'],
+    [887, 244, '*3'],
+    [1034, 326, '(LME281)', 1],
+    [1118, 326, '(IP START)', 1],
+    [1029, 700, '(LME280)', 1],
+    [1117, 700, '(HP START)', 1],
+    [1593, 648, '(LME286)', 1],
+    [1590, 860, '(LME286)', 1],
+    [1494, 867, 'TD:2.5S', 1],
+    [1025, 1125, '(LME285)', 1],
+    [849, 1136, 'RI:0.2', 1],
+    [849, 1158, 'RD:0.2', 1],
+    [1022, 1284, '(LME286)', 1],
+    [861, 1291, 'TD:5.0S', 1],
+    [1020, 1443, '(LME286)', 1],
+    [860, 1450, 'TD:5.0S', 1],
+    [1858, 186, 'SIMULATOR'],
+    [1858, 202, 'TURBINE SPEED(1)'],
+    [1856, 292, 'SIMULATOR'],
+    [1856, 309, 'TURBINE SPEED(2)'],
+    [1855, 399, 'SIMULATOR'],
+    [1855, 416, 'TURBINE SPEED(3)'],
+    [1854, 484, 'SIMULATOR HP'],
+    [1854, 505, 'FIRST STAGE'],
+    [1854, 522, 'OUTLET STEAM PRESS.'],
+    [1930, 612, 'SIMULATOR'],
+    [1930, 633, 'GENERATOR'],
+    [1930, 652, 'LOAD'],
+    [1925, 696, 'SIMULATOR'],
+    [1925, 717, 'GENERATOR'],
+    [1925, 735, 'LOAD'],
+    [1689, 915, 'HP TURBINE EXHAUST PRESS.SIM'],
+    [1688, 999, 'SIMULATOR TARGET MW DEMAND'],
+    [1687, 1141, 'SIMULATOR'],
+    [1687, 1158, 'IP EXTRACTION TO AUX.STEAM FLOW'],
+    [1685, 1300, 'SIMULATOR'],
+    [1685, 1318, 'MOP(A) DISGARGE OIL PRESS.'],
+    [230, 1528, 'CONTROLLER:'],
+    [393, 1528, 'EHG+MD'],
+    [653, 1502, 'TRIGGER  :'],
+    [653, 1528, 'CYCLE(ms):30']
+  );
+  const LMS = (key, no, cx, cy, hl, ll) => [key, 'LMS', no, cx, cy, ['HL:' + hl, 'LL:' + ll]];
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE500',
+    title: 'SIMULATOR(1)',
+    page: 173,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [176, 88, 2228, 1543],
+    k: [
+      ['kIp', 478, 140, 'IP START', 'ref'],
+      ['k52g', 1291, 674, '52G CLOSE', 'ref']
+    ],
+    c: [
+      ['iCva', 'in', 'P', 311, 202, '', ['TCE125']],
+      ['iCvb', 'in', 'P', 311, 287, '', ['TCE127']],
+      ['iIcva', 'in', 'P', 308, 533, '', ['TCE129']],
+      ['iIcvb', 'in', 'P', 307, 596, '', ['TCE131']],
+      ['iLh', 'in', 'C', 302, 927, '', ['TCE164']],
+      ['iMw', 'in', 'A', 301, 1064, '', ['TCE070']],
+      ['iDcs', 'in', 'A', 301, 1107, '', ['TCE180']],
+      ['oA1', 'out', 'A1', 2090, 205, '', ['TCE143']],
+      ['oA2', 'out', 'A2', 2089, 312, '', ['TCE143']],
+      ['oA3', 'out', 'A3', 2088, 419, '', ['TCE143']],
+      ['oB', 'out', 'B', 2084, 525, '', ['TCE206']],
+      ['oC1', 'out', 'C1', 2084, 655, '', ['-'], 1],
+      ['oC', 'out', 'C', 2084, 738, '', ['TCE070', 'TCE101', 'TCE179']],
+      ['oF', 'out', 'F', 2082, 918, '', ['-']],
+      ['oD', 'out', 'D', 2080, 1002, '', ['TCE103']],
+      ['oE1', 'out', 'E1', 2076, 1161, '', ['-']],
+      ['oE2', 'out', 'E2', 2077, 1321, '', ['-']]
+    ],
+    m: [
+      ['mt2', 'TURBINE SIM.MT2', '', 918, 172, 236, 128, ['CV', 'ICV', 'R.S'], ['SPEED', 'OUT'], 'B004', mt2, [[202, 224, 247], [205, 227]]],
+      ['mt1', 'TURBINE SIM.MT1', '', 913, 545, 236, 127, ['CV', 'ICV', 'R.S'], ['SPEED', 'OUT'], 'B020', mt1, [[576, 597, 618], [576, 597]]],
+      ['a016', 'PROCESS SIM.MT1', '', 1479, 495, 234, 126, ['SET'], ['OUT'], 'A016', [], [[525], [525]]],
+      ['a023', 'PROCESS SIM.MT1', '', 1476, 706, 234, 128, ['SET'], ['OUT'], 'A023', [], [[738], [738]]],
+      ['a028', 'CCS SIM.MT1', '', 910, 970, 235, 129, ['SET', 'FB', 'AUTO'], ['DEMAND'], 'A028', [], [[1002, 1023, 1045], [1002]]],
+      ['a033', 'PRESS.FLOW SIM.MT1', '', 908, 1130, 235, 128, ['SET'], ['OUT'], 'A033', [], [[1161], [1161]]],
+      ['a036', 'PRESS.FLOW SIM.MT1', '', 906, 1289, 236, 127, ['SET'], ['OUT'], 'A036', [], [[1321], [1321]]]
+    ],
+    b: [
+      ['add001', 'ADD', '001', 503.5, 213],
+      ['gA002', 'G', 'A002', 610, 213, ['K:1.0']],
+      ['fgA003', 'FG', 'A003', 706, 213],
+      ['gA010', 'G', 'A010', 607.5, 384, ['K:1.0']],
+      ['fgA011', 'FG', 'A011', 704, 384],
+      ['fgA007', 'FG', 'A007', 823, 235],
+      ['sgA038', 'SG', 'A038', 823, 310, ['K:3600rpm']],
+      ['add018', 'ADD', '018', 606, 544],
+      ['gA019', 'G', 'A019', 702.5, 544, ['K:0.5']],
+      ['asw005', 'ASW', '005', 1323, 216],
+      LMS('lmsC006', 'C006', 1420, 216, '5000.0rpm', '0.0rpm'),
+      ['asw008', 'ASW', '008', 1322, 323],
+      LMS('lmsC009', 'C009', 1419, 323, '5000.0rpm', '0.0rpm'),
+      ['asw012', 'ASW', '012', 1320, 430],
+      LMS('lmsC013', 'C013', 1417, 430, '5000.0rpm', '0.0rpm'),
+      ['asw014', 'ASW', '014', 1319, 536],
+      ['gA015', 'G', 'A015', 1415.5, 536, ['K:1.95335']],
+      LMS('lmsC017', 'C017', 1787, 536, '200.0MPa', '0.0MPa'),
+      ['fgC040', 'FG', 'C040', 1306, 749],
+      ['fgC041', 'FG', 'C041', 1305, 822],
+      ['asw022', 'ASW', '022', 1413, 749],
+      ['btr042', 'o:BTR', '042', 1690, 674],
+      ['sg044', 'SG', '044', 1602, 887, ['K:0.0']],
+      ['asw043', 'ASW', '043', 1764, 749],
+      LMS('lmsC024', 'C024', 1837, 749, '200.0MW', '-5.0MW'),
+      ['ftr039', 'o:FTR', '039', 1902, 655],
+      ['asw026', 'ASW', '026', 1400.5, 929],
+      ['sgC027', 'SG', 'C027', 504.5, 1013, ['K:150.0MW']],
+      ['asw045', 'ASW', '045', 825, 991],
+      ['x1', 'X', '', 887, 958],
+      ['ftr030', 'o:FTR', '030', 696, 1064],
+      ['btr031', 'o:BTR', '031', 696, 1107],
+      ['hld046', 'HLD', '046', 1197, 1013],
+      LMS('lmsC029', 'C029', 1399.5, 1013, '200MW', '0.0%'),
+      ['sgC032', 'SG', 'C032', 598, 1172, ['K:5.0']],
+      LMS('lmsC034', 'C034', 1398, 1172, '100', '-1.0'),
+      ['sg035', 'SG', '035', 596.5, 1332, ['K:10.0']],
+      LMS('lmsC037', 'C037', 1396, 1332, '10.0kg/cm2', '0.0kg/cm2g')
+    ],
+    w: [
+      /* CV and ICV positions into the two turbine simulators */
+      ['iCva', [[338, 202], [I(503.5), 202]], 1],
+      ['iCvb', [[338, 287], [449, 287], [449, 224], [I(503.5), 224]], 1],
+      ['add001', [[O(503.5), 202], [I(610), 202]], 1],
+      ['add001', [[556, 202], [556, 373], [I(607.5), 373]], 1],
+      ['gA002', [[O(610), 202], [I(706), 202]], 1],
+      ['fgA003', [[O(706), 202], [918, 202]], 1],
+      ['gA010', [[O(607.5), 373], [I(704), 373]], 1],
+      ['fgA011', [[O(704), 373], [788, 373], [788, 576], [913, 576]], 1],
+      ['iIcva', [[335, 533], [I(606), 533]], 1],
+      ['iIcvb', [[334, 596], [551, 596], [551, 555], [I(606), 555]], 1],
+      ['add018', [[O(606), 533], [I(702.5), 533]], 1],
+      ['gA019', [[O(702.5), 533], [771, 533], [771, 224], [I(823), 224]], 1],
+      ['gA019', [[771, 533], [771, 597], [913, 597]], 1],
+      ['fgA007', [[O(823), 224], [918, 224]], 1],
+      ['sgA038', [[O(823), 299], [897, 299], [897, 247], [918, 247]], 1],
+      ['sgA038', [[897, 299], [897, 618], [913, 618]], 1],
+      /* the speeds and outputs of MT2 (IP START) and MT1 (HP START) */
+      ['mt2.SPEED', [[1154, 205], [I(1323), 205]], 1],
+      ['mt2.SPEED', [[1247, 205], [1247, 419], [I(1320), 419]], 1],
+      ['mt2.SPEED', [[1247, 312], [I(1322), 312]], 1],
+      ['mt2.OUT', [[1154, 227], [1204, 227], [1204, 738], [I(1306), 738]], 1],
+      ['mt2.OUT', [[1204, 525], [I(1319), 525]], 1],
+      ['mt2.OUT', [[1245, 738], [1245, 918], [I(1400.5), 918]], 1],
+      ['mt1.SPEED', [[1149, 576], [1224, 576], [1224, 227], [I(1323), 227]], 1],
+      ['mt1.SPEED', [[1224, 334], [I(1322), 334]], 1],
+      ['mt1.SPEED', [[1224, 441], [I(1320), 441]], 1],
+      ['mt1.OUT', [[1149, 597], [1245, 597], [1245, 547], [I(1319), 547]], 1],
+      ['mt1.OUT', [[1180, 597], [1180, 811], [I(1305), 811]], 1],
+      ['mt1.OUT', [[1220, 811], [1220, 940], [I(1400.5), 940]], 1],
+      /* IP START switches */
+      ['kIp', [[712, 140], [1323, 140], [1323, T(216)]]],
+      ['kIp', [[1268, 140], [1268, 865], [1400.5, 865], [1400.5, T(929)]]],
+      ['kIp', [[1268, 279], [1322, 279], [1322, T(323)]]],
+      ['kIp', [[1268, 386], [1320, 386], [1320, T(430)]]],
+      ['kIp', [[1268, 492], [1319, 492], [1319, T(536)]]],
+      ['kIp', [[1268, 705], [1413, 705], [1413, T(749)]]],
+      /* speeds and the HP first stage pressure */
+      ['asw005', [[O(1323), 205], [I(1420), 205]], 1],
+      ['lmsC006', [[O(1420), 205], [2063, 205]], 1],
+      ['asw008', [[O(1322), 312], [I(1419), 312]], 1],
+      ['lmsC009', [[O(1419), 312], [2062, 312]], 1],
+      ['asw012', [[O(1320), 419], [I(1417), 419]], 1],
+      ['lmsC013', [[O(1417), 419], [2061, 419]], 1],
+      ['asw014', [[O(1319), 525], [I(1415.5), 525]], 1],
+      ['gA015', [[O(1415.5), 525], [1479, 525]], 1],
+      ['a016.OUT', [[1713, 525], [I(1787), 525]], 1],
+      ['lmsC017', [[O(1787), 525], [2057, 525]], 1],
+      /* generator load */
+      ['fgC040', [[O(1306), 738], [I(1413), 738]], 1],
+      ['fgC041', [[O(1305), 811], [1359, 811], [1359, 760], [I(1413), 760]], 1],
+      ['asw022', [[O(1413), 738], [1476, 738]], 1],
+      ['a023.OUT', [[1710, 738], [I(1764), 738]], 1],
+      ['k52g', [[1525, 674], [1764, 674], [1764, T(749)]]],
+      ['sg044', [[O(1602), 876], [1720, 876], [1720, 760], [I(1764), 760]], 1],
+      ['asw043', [[O(1764), 738], [I(1837), 738]], 1],
+      ['lmsC024', [[O(1837), 738], [2057, 738]], 1],
+      ['lmsC024', [[1880, 738], [1880, 655], [2052, 655]], 1],
+      ['asw026', [[O(1400.5), 918], [2055, 918]], 1],
+      /* CCS simulator */
+      ['iLh', [[329, 927], [1197, 927], [1197, T(1013)]]],
+      ['iLh', [[825, 927], [825, T(991)]]],
+      ['sgC027', [[O(504.5), 1002], [I(825), 1002]], 1],
+      ['asw045', [[O(825), 980], [880, 980], [880, 1002], [910, 1002]], 1],
+      ['iMw', [[328, 1064], [877, 1064], [877, 1023], [910, 1023]], 1],
+      ['iDcs', [[328, 1107], [887, 1107], [887, 1045], [910, 1045]]],
+      ['a028.DEMAND', [[1145, 1002], [I(1197), 1002]], 1],
+      ['hld046', [[O(1197), 1002], [I(1399.5), 1002]], 1],
+      ['hld046', [[1250, 1002], [1250, 958], [773, 958], [773, 980], [I(825), 980]], 1],
+      ['lmsC029', [[O(1399.5), 1002], [2053, 1002]], 1],
+      /* extraction flow and MOP discharge pressure */
+      ['sgC032', [[O(598), 1161], [908, 1161]], 1],
+      ['a033.OUT', [[1143, 1161], [I(1398), 1161]], 1],
+      ['lmsC034', [[O(1398), 1161], [2049, 1161]], 1],
+      ['sg035', [[O(596.5), 1321], [906, 1321]], 1],
+      ['a036.OUT', [[1142, 1321], [I(1396), 1321]], 1],
+      ['lmsC037', [[O(1396), 1321], [2050, 1321]], 1]
+    ],
+    j: [
+      [556, 202],
+      [771, 533],
+      [897, 299],
+      [1247, 205],
+      [1247, 312],
+      [1204, 525],
+      [1245, 738],
+      [1224, 334],
+      [1224, 441],
+      [1180, 597],
+      [1220, 811],
+      [1268, 140],
+      [1268, 279],
+      [1268, 386],
+      [1268, 492],
+      [1268, 705],
+      [1880, 738],
+      [825, 927],
+      [1250, 1002]
+    ],
+    l,
+    v,
+    t
+  });
+})();
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE172',
@@ -151154,7 +151654,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 5a3f74b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 5104837'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -177777,6 +178277,7 @@ const TCS_DESC = {
   TCE300: 'Main oil pump (TB-1, 2): the standby pump starts on low discharge pressure of the running pump.',
   TCE305: 'Control oil pump (TB-21, 22): the standby pump starts on low discharge pressure of the running pump.',
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
+  TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
@@ -177928,7 +178429,9 @@ const TCS_DESC = {
   TCA834:
     'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.',
   TCA835:
-    'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.'
+    'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.',
+  TCE500:
+    'Turbine simulator: the CV and ICV positions drive the turbine simulators MT2 (IP START) and MT1 (HP START); IP START picks which one gives the simulated speeds (to TCE143), the HP first stage pressure (to TCE206) and the HP exhaust pressure; with 52G closed the generator load simulator gives the simulated MW (to TCE070 / 101 / 179); the CCS simulator gives the target MW demand (held by LOAD HOLD COMMAND, to TCE103); plus the IP extraction flow and MOP(A) discharge pressure simulators.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -195695,6 +196198,507 @@ const TCS_DESC = {
     [631, 1538, 'CYCLE(ms):30']
   ]
 });
+
+/* ---- src/digital/tce/TCE450.js ---- */
+/* TCE450 INDICATION FOR VALVE(1) (331DM09784 page 162, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide, the scan skew taken out (x + 0.0157 (y - 800), y - 0.0059 (x - 1100)). Four HMI INDI FOR VALVE blocks (LME125):
+   MSV(A) nZT-STn903-A, MSV(B) nZT-STn903-B, CV(A) nZT-STn904-A, CV(B) nZT-STn904-B. Each takes sixteen signals from the valve sheets
+   (TCE120 to TCE127): the position and positions (1) to (3) (FTR, heavy lines), the position ABN Q, the ABN_Q of each channel, the ABN.
+   (ANN) and the ABN of each channel (BTR). The ABN.O of each block goes to TCE470 (A, B, C, D). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    m = [],
+    w = [],
+    t = [];
+  const PINS = [
+      'POS',
+      'POS1',
+      'POS2',
+      'POS3',
+      'QUA1',
+      'QUA2',
+      'QUA3',
+      'QUAA',
+      'QUAB',
+      'QUAC',
+      'ABN1',
+      'ABN2',
+      'ABN3',
+      'ABNA',
+      'ABNB',
+      'ABNC'
+    ],
+    LET = ['P', 'A1', 'A2', 'A1', 'K1', 'K2', 'K1', 'M1', 'M2', 'M3', 'C1', 'C2', 'C3', 'L1', 'L2', 'L3'],
+    /* the sheet each connector comes from: 0 = the first sheet of the pair, 1 = the second */
+    REF = [1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+    /* the x where the line of each row turns to its pin (rows 1 to 15; row 0 runs straight) */
+    STAIR = [0, 624, 635, 645, ...Array.from({ length: 12 }, (_, k) => Math.round(655 + 10.75 * k))],
+    rowY = i => Math.round(161.5 + 42.6 * i);
+  /* one block and its sixteen rows: side (0 left, 1 right), group (0 top, 1 bottom), valve, tag, the two sheets, block no., marks, names */
+  const group = (side, gr, valve, tag, sheets, no, marks, names) => {
+    const dx = side ? 894 : 0,
+      top = gr ? 812 : 130,
+      bx = 794 + dx,
+      pin = p => Math.round((gr ? 843.5 : 162) + 21.3 * p),
+      cx = 292 + dx,
+      key = 'm' + no;
+    m.push([
+      key,
+      'HMI INDI FOR VALVE',
+      '',
+      bx,
+      top,
+      235,
+      383,
+      PINS,
+      ['ABN.O'],
+      no,
+      [
+        [bx, top - 6, '(' + valve + ')'],
+        [bx + 138, top - 6, tag],
+        [bx + 50, top + 405, '(LME125)']
+      ],
+      [PINS.map((_, p) => pin(p)), [pin(4)]]
+    ]);
+    names.forEach((nm, j) => {
+      const i = gr * 16 + j,
+        y = j ? rowY(i) : pin(0),
+        k = (side ? 'r' : 'l') + i,
+        two = Array.isArray(nm);
+      c.push([k, 'in', LET[j], cx, y, two ? nm[1] : nm, [sheets[REF[j]]]]);
+      if (two) t.push([cx + 33, y - 31, nm[0], 0, 2.05]);
+      b.push(['f' + marks[j], j < 4 ? 'o:FTR' : 'o:BTR', marks[j], 581.5 + dx, y]);
+      const heavy = j < 4 ? 1 : 0;
+      if (!j)
+        w.push([
+          k,
+          [
+            [cx + 27, y],
+            [bx, y]
+          ],
+          heavy
+        ]);
+      else
+        w.push([
+          k,
+          [
+            [cx + 27, y],
+            [STAIR[j] + dx, y],
+            [STAIR[j] + dx, pin(j)],
+            [bx, pin(j)]
+          ],
+          heavy
+        ]);
+    });
+    return [key + '.ABN.O', bx + 235, pin(4)];
+  };
+  const num = n => String(n).padStart(3, '0'),
+    marks = (a, b4) =>
+      [...a, ...Array.from({ length: 12 }, (_, k) => num(b4 + 2 * k))].map(x => (typeof x === 'number' ? num(x) : x));
+  const names = (v, ab1) => [
+    v + ' POSITION',
+    v + ' POSITION(1)',
+    v + ' POSITION(2)',
+    v + ' POSITION(3)',
+    ab1 ? v + ' POSITION ABN(1) Q' : [v + ' POSITION', 'ABN(1) Q'],
+    [v + ' POSITION', 'ABN(2) Q'],
+    [v + ' POSITION', 'ABN(3) Q'],
+    v + '(A) ABN_Q',
+    v + '(B) ABN_Q',
+    v + '(C) ABN_Q',
+    [v + '(1) ABN.', '(ANN)'],
+    [v + '(2) ABN.', '(ANN)'],
+    [v + '(3) ABN.', '(ANN)'],
+    v + '(A) ABN',
+    v + '(B) ABN',
+    v + '(C) ABN'
+  ];
+  const oA = group(
+      0,
+      0,
+      'MSV(A)',
+      'nZT-STn903-A',
+      ['TCE120', 'TCE121'],
+      '002',
+      marks([1, 5, 7, 9], 11),
+      names('MSV(A)')
+    ),
+    oB = group(
+      0,
+      1,
+      'MSV(B)',
+      'nZT-STn903-B',
+      ['TCE122', 'TCE123'],
+      '036',
+      marks([35, 39, 41, 43], 45),
+      names('MSV(B)', 1)
+    ),
+    oC = group(1, 0, 'CV(A)', 'nZT-STn904-A', ['TCE124', 'TCE125'], '004', marks([3, 6, 8, 10], 12), names('CV(A)')),
+    oD = group(1, 1, 'CV(B)', 'nZT-STn904-B', ['TCE126', 'TCE127'], '038', marks([37, 40, 42, 44], 46), names('CV(B)'));
+  /* the ABN.O of the MSV blocks go round under the block to A / B; those of the CV blocks straight to C / D */
+  c.push(
+    ['oA', 'out', 'A', 986, 631, '', ['TCE470'], 0, 2],
+    ['oB', 'out', 'B', 987, 1312, '', ['TCE470'], 0, 2],
+    ['oC', 'out', 'C', 2060, oC[2], '', ['TCE470'], 0, 2],
+    ['oD', 'out', 'D', 2060, oD[2], '', ['TCE470'], 0, 2]
+  );
+  w.push(
+    [
+      oA[0],
+      [
+        [oA[1], oA[2]],
+        [1061, oA[2]],
+        [1061, 590],
+        [859, 590],
+        [859, 631],
+        [959, 631]
+      ]
+    ],
+    [
+      oB[0],
+      [
+        [oB[1], oB[2]],
+        [1061, oB[2]],
+        [1061, 1271],
+        [859, 1271],
+        [859, 1312],
+        [960, 1312]
+      ]
+    ],
+    [
+      oC[0],
+      [
+        [oC[1], oC[2]],
+        [2033, oC[2]]
+      ]
+    ],
+    [
+      oD[0],
+      [
+        [oD[1], oD[2]],
+        [2033, oD[2]]
+      ]
+    ]
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE450',
+    title: 'INDICATION FOR VALVE(1)',
+    page: 162,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [159, 84, 2210, 1549],
+    c,
+    b,
+    m,
+    w,
+    t: [...t, [228, 1523, 'CONTROLLER:'], [388, 1523, 'EHG+MD'], [668, 1501, 'TRIGGER  :'], [668, 1521, 'CYCLE(ms):30']]
+  });
+})();
+
+/* ---- src/digital/tce/TCE500.js ---- */
+/* TCE500 SIMULATOR(1) (331DM09784 page 173, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. The turbine simulator of the EHG controller, block by block as drawn:
+   - CV(A) + CV(B) POSITION (TCE125 / TCE127) = ADD 001; through G A002 (K 1.0) and FG A003 (table *1) to CV of TURBINE SIM.MT2 B004
+     (IP START), through G A010 (K 1.0) and FG A011 (table *2) to CV of TURBINE SIM.MT1 B020 (HP START).
+   - ICV(A) + ICV(B) POSITION (TCE129 / TCE131) = ADD 018, G A019 (K 0.5): through FG A007 (table *3) to ICV of MT2, straight to ICV of
+     MT1. SG A038 (3600 rpm) is R.S of both.
+   - IP START (ref, TCE057) switches ASW 005 / 008 / 012 (SPEED of MT2, else of MT1), through LMS C006 / C009 / C013 (0-5000 rpm) =
+     SIMULATOR TURBINE SPEED(1) to (3), A1 to A3 to TCE143; ASW 014 (OUT of MT2, else of MT1), G A015 (K 1.95335), PROCESS SIM.MT1 A016
+     and LMS C017 (0-200 MPa) = SIMULATOR HP FIRST STAGE OUTLET STEAM PRESS., B to TCE206; ASW 026 = HP TURBINE EXHAUST PRESS.SIM, F (-).
+   - ASW 022 (FG C040 of the MT2 OUT, else FG C041 of the MT1 OUT), PROCESS SIM.MT1 A023; with 52G CLOSE (ref, BTR 042) ASW 043 takes
+     it, else SG 044 (0.0); LMS C024 (-5 to 200 MW) = SIMULATOR GENERATOR LOAD: C to TCE070 / 101 / 179 and through FTR 039 C1 (-).
+   - CCS SIM.MT1 A028: SET = ASW 045 (TARGET MW DEMAND SG C027 150.0 MW, or under LOAD HOLD COMMAND C of TCE164 its own held output
+     through the crossed circle), FB = GEN. MW (A of TCE070, FTR 030), AUTO = DCS CONTROL MODE ON (A of TCE180, BTR 031); HLD 046 (LOAD
+     HOLD COMMAND) and LMS C029 (0-200 MW) = SIMULATOR TARGET MW DEMAND, D to TCE103.
+   - PRESS.FLOW SIM.MT1 A033 of SG C032 (IP.EX.FLOW 5.0) and LMS C034 = SIMULATOR IP EXTRACTION TO AUX.STEAM FLOW, E1 (-);
+     PRESS.FLOW SIM.MT1 A036 of SG 035 (10.0) and LMS C037 = SIMULATOR MOP(A) DISGARGE OIL PRESS., E2 (-).
+   The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const h = 28.76,
+    I = cx => cx - h,
+    O = cx => cx + h,
+    T = cy => cy - 21.57 /* top of a block */,
+    l = [],
+    v = [],
+    t = [];
+  /* the three FG tables (*1 *2 *3) */
+  const rows = [659, 682, 703];
+  for (let i = 1; i <= 8; i++) rows.push(703 + 21.25 * i);
+  const tables = [
+    ['FG *1', [217, 261, 327, 391], ['0.0', '10.0', '15.0', '20.0', '30.0', '40.0', '50.0', '100.0'], ['0.0', '10.0', '15.0', '20.0', '30.0', '40.0', '50.0', '100.0']],
+    ['FG *2', [399.5, 443, 507, 572], ['0.0', '10.0', '20.0', '30.0', '40.0', '50.0', '60.0', '140.0'], ['0.0', '14.0', '24.0', '34.0', '44.0', '54.0', '64.0', '140.0']],
+    ['FG *3', [580.5, 626, 689, 753], ['0.0', '11.0', '15.6', '19.19', '30.0', '110.0', '130.0', '140.0'], ['0.0', '6.0', '9.9', '12.0', '16.0', '22.0', '24.0', '25.0']]
+  ];
+  for (const [name, x, X, Y] of tables) {
+    rows.forEach((y, i) => l.push([[i === 1 ? x[0] : x[0], y], [x[3], y]]));
+    l.push([[x[0], rows[0]], [x[0], rows[10]]], [[x[1], rows[0]], [x[1], rows[10]]], [[x[2], rows[1]], [x[2], rows[10]]], [[x[3], rows[0]], [x[3], rows[10]]]);
+    v.push([[x[0], rows[0]], [x[1], rows[1]]]);
+    const c0 = (x[0] + x[1]) / 2,
+      c1 = (x[1] + x[2]) / 2,
+      c2 = (x[2] + x[3]) / 2;
+    t.push([(x[1] + x[3]) / 2, rows[1] - 5, name, 1], [c0, rows[2] - 5, 'n', 1], [c1, rows[2] - 5, 'Xn(%)', 1], [c2, rows[2] - 5, 'Yn(%)', 1]);
+    for (let i = 0; i < 8; i++) t.push([c0, rows[3 + i] - 4, String(i), 1], [c1, rows[3 + i] - 4, X[i], 1], [c2, rows[3 + i] - 4, Y[i], 1]);
+  }
+  /* the parameters of the two turbine simulators */
+  const col = (x, y0, list) => list.map((s, i) => [x + (/^K:/.test(s) ? 10 : 0), Math.round(y0 + 21.4 * i), s]);
+  const mt2 = [
+    ...col(911, 354, ['TW:5.0S', 'RI:1.0rpm/S', 'RD:1.0rpm/S', 'TD:0.3S', 'G1:1.0', 'G2:1.0', 'G3:0.0', 'B :0.0', 'K:300.0', 'TI:200.0S']),
+    ...col(1051, 354, ['HL:5000.0rpm', 'LL:0.0rpm', 'HL:100.0%', 'LL:0.0%', 'TD:0.3S', 'K:0.0', 'K:0.0033', 'HL:100.0%', 'LL:0.0%', 'K:1.0'])
+  ];
+  const mt1 = [
+    ...col(901, 728, ['TW:5.0S', 'RI:1.0rpm/S', 'RD:1.0rpm/S', 'TD:0.3S', 'G1:0.8', 'G2:0.2', 'G3:0.0', 'B :0.0', 'K:300.0', 'TI:200.0S']),
+    ...col(1041, 728, ['HL:5000.0rpm', 'LL:0.0rpm', 'G1:1.0', 'G2:-1.0', 'G3:0.0', 'B :0.0', 'TI:5.0S', 'HL:100.0%', 'LL:0.0%', 'HL:100.0%'])
+  ];
+  t.push(
+    [655, 174, '(TCE057)', 1],
+    [1515, 655, 'TD:5.0S', 1],
+    [344, 177, 'CV(A)'],
+    [344, 198, 'POSITION'],
+    [343, 263, 'CV(B)'],
+    [343, 284, 'POSITION'],
+    [340, 529, 'ICV(A) POSITION'],
+    [339, 593, 'ICV(B) POSITION'],
+    [336, 922, 'LOAD HOLD COMMAND'],
+    [334, 1061, 'GEN. MW'],
+    [334, 1103, 'DCS CONTROL MODE ON'],
+    [583, 1000, 'TARGET MW DEMAND'],
+    [677, 1158, 'IP.EX.FLOW'],
+    [675, 1297, 'MOP(A)'],
+    [675, 1318, 'DISCHARGE OIL PRESS.'],
+    [751, 222, '*1'],
+    [748, 393, '*2'],
+    [887, 244, '*3'],
+    [1034, 326, '(LME281)', 1],
+    [1118, 326, '(IP START)', 1],
+    [1029, 700, '(LME280)', 1],
+    [1117, 700, '(HP START)', 1],
+    [1593, 648, '(LME286)', 1],
+    [1590, 860, '(LME286)', 1],
+    [1494, 867, 'TD:2.5S', 1],
+    [1025, 1125, '(LME285)', 1],
+    [849, 1136, 'RI:0.2', 1],
+    [849, 1158, 'RD:0.2', 1],
+    [1022, 1284, '(LME286)', 1],
+    [861, 1291, 'TD:5.0S', 1],
+    [1020, 1443, '(LME286)', 1],
+    [860, 1450, 'TD:5.0S', 1],
+    [1858, 186, 'SIMULATOR'],
+    [1858, 202, 'TURBINE SPEED(1)'],
+    [1856, 292, 'SIMULATOR'],
+    [1856, 309, 'TURBINE SPEED(2)'],
+    [1855, 399, 'SIMULATOR'],
+    [1855, 416, 'TURBINE SPEED(3)'],
+    [1854, 484, 'SIMULATOR HP'],
+    [1854, 505, 'FIRST STAGE'],
+    [1854, 522, 'OUTLET STEAM PRESS.'],
+    [1930, 612, 'SIMULATOR'],
+    [1930, 633, 'GENERATOR'],
+    [1930, 652, 'LOAD'],
+    [1925, 696, 'SIMULATOR'],
+    [1925, 717, 'GENERATOR'],
+    [1925, 735, 'LOAD'],
+    [1689, 915, 'HP TURBINE EXHAUST PRESS.SIM'],
+    [1688, 999, 'SIMULATOR TARGET MW DEMAND'],
+    [1687, 1141, 'SIMULATOR'],
+    [1687, 1158, 'IP EXTRACTION TO AUX.STEAM FLOW'],
+    [1685, 1300, 'SIMULATOR'],
+    [1685, 1318, 'MOP(A) DISGARGE OIL PRESS.'],
+    [230, 1528, 'CONTROLLER:'],
+    [393, 1528, 'EHG+MD'],
+    [653, 1502, 'TRIGGER  :'],
+    [653, 1528, 'CYCLE(ms):30']
+  );
+  const LMS = (key, no, cx, cy, hl, ll) => [key, 'LMS', no, cx, cy, ['HL:' + hl, 'LL:' + ll]];
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE500',
+    title: 'SIMULATOR(1)',
+    page: 173,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [176, 88, 2228, 1543],
+    k: [
+      ['kIp', 478, 140, 'IP START', 'ref'],
+      ['k52g', 1291, 674, '52G CLOSE', 'ref']
+    ],
+    c: [
+      ['iCva', 'in', 'P', 311, 202, '', ['TCE125']],
+      ['iCvb', 'in', 'P', 311, 287, '', ['TCE127']],
+      ['iIcva', 'in', 'P', 308, 533, '', ['TCE129']],
+      ['iIcvb', 'in', 'P', 307, 596, '', ['TCE131']],
+      ['iLh', 'in', 'C', 302, 927, '', ['TCE164']],
+      ['iMw', 'in', 'A', 301, 1064, '', ['TCE070']],
+      ['iDcs', 'in', 'A', 301, 1107, '', ['TCE180']],
+      ['oA1', 'out', 'A1', 2090, 205, '', ['TCE143']],
+      ['oA2', 'out', 'A2', 2089, 312, '', ['TCE143']],
+      ['oA3', 'out', 'A3', 2088, 419, '', ['TCE143']],
+      ['oB', 'out', 'B', 2084, 525, '', ['TCE206']],
+      ['oC1', 'out', 'C1', 2084, 655, '', ['-'], 1],
+      ['oC', 'out', 'C', 2084, 738, '', ['TCE070', 'TCE101', 'TCE179']],
+      ['oF', 'out', 'F', 2082, 918, '', ['-']],
+      ['oD', 'out', 'D', 2080, 1002, '', ['TCE103']],
+      ['oE1', 'out', 'E1', 2076, 1161, '', ['-']],
+      ['oE2', 'out', 'E2', 2077, 1321, '', ['-']]
+    ],
+    m: [
+      ['mt2', 'TURBINE SIM.MT2', '', 918, 172, 236, 128, ['CV', 'ICV', 'R.S'], ['SPEED', 'OUT'], 'B004', mt2, [[202, 224, 247], [205, 227]]],
+      ['mt1', 'TURBINE SIM.MT1', '', 913, 545, 236, 127, ['CV', 'ICV', 'R.S'], ['SPEED', 'OUT'], 'B020', mt1, [[576, 597, 618], [576, 597]]],
+      ['a016', 'PROCESS SIM.MT1', '', 1479, 495, 234, 126, ['SET'], ['OUT'], 'A016', [], [[525], [525]]],
+      ['a023', 'PROCESS SIM.MT1', '', 1476, 706, 234, 128, ['SET'], ['OUT'], 'A023', [], [[738], [738]]],
+      ['a028', 'CCS SIM.MT1', '', 910, 970, 235, 129, ['SET', 'FB', 'AUTO'], ['DEMAND'], 'A028', [], [[1002, 1023, 1045], [1002]]],
+      ['a033', 'PRESS.FLOW SIM.MT1', '', 908, 1130, 235, 128, ['SET'], ['OUT'], 'A033', [], [[1161], [1161]]],
+      ['a036', 'PRESS.FLOW SIM.MT1', '', 906, 1289, 236, 127, ['SET'], ['OUT'], 'A036', [], [[1321], [1321]]]
+    ],
+    b: [
+      ['add001', 'ADD', '001', 503.5, 213],
+      ['gA002', 'G', 'A002', 610, 213, ['K:1.0']],
+      ['fgA003', 'FG', 'A003', 706, 213],
+      ['gA010', 'G', 'A010', 607.5, 384, ['K:1.0']],
+      ['fgA011', 'FG', 'A011', 704, 384],
+      ['fgA007', 'FG', 'A007', 823, 235],
+      ['sgA038', 'SG', 'A038', 823, 310, ['K:3600rpm']],
+      ['add018', 'ADD', '018', 606, 544],
+      ['gA019', 'G', 'A019', 702.5, 544, ['K:0.5']],
+      ['asw005', 'ASW', '005', 1323, 216],
+      LMS('lmsC006', 'C006', 1420, 216, '5000.0rpm', '0.0rpm'),
+      ['asw008', 'ASW', '008', 1322, 323],
+      LMS('lmsC009', 'C009', 1419, 323, '5000.0rpm', '0.0rpm'),
+      ['asw012', 'ASW', '012', 1320, 430],
+      LMS('lmsC013', 'C013', 1417, 430, '5000.0rpm', '0.0rpm'),
+      ['asw014', 'ASW', '014', 1319, 536],
+      ['gA015', 'G', 'A015', 1415.5, 536, ['K:1.95335']],
+      LMS('lmsC017', 'C017', 1787, 536, '200.0MPa', '0.0MPa'),
+      ['fgC040', 'FG', 'C040', 1306, 749],
+      ['fgC041', 'FG', 'C041', 1305, 822],
+      ['asw022', 'ASW', '022', 1413, 749],
+      ['btr042', 'o:BTR', '042', 1690, 674],
+      ['sg044', 'SG', '044', 1602, 887, ['K:0.0']],
+      ['asw043', 'ASW', '043', 1764, 749],
+      LMS('lmsC024', 'C024', 1837, 749, '200.0MW', '-5.0MW'),
+      ['ftr039', 'o:FTR', '039', 1902, 655],
+      ['asw026', 'ASW', '026', 1400.5, 929],
+      ['sgC027', 'SG', 'C027', 504.5, 1013, ['K:150.0MW']],
+      ['asw045', 'ASW', '045', 825, 991],
+      ['x1', 'X', '', 887, 958],
+      ['ftr030', 'o:FTR', '030', 696, 1064],
+      ['btr031', 'o:BTR', '031', 696, 1107],
+      ['hld046', 'HLD', '046', 1197, 1013],
+      LMS('lmsC029', 'C029', 1399.5, 1013, '200MW', '0.0%'),
+      ['sgC032', 'SG', 'C032', 598, 1172, ['K:5.0']],
+      LMS('lmsC034', 'C034', 1398, 1172, '100', '-1.0'),
+      ['sg035', 'SG', '035', 596.5, 1332, ['K:10.0']],
+      LMS('lmsC037', 'C037', 1396, 1332, '10.0kg/cm2', '0.0kg/cm2g')
+    ],
+    w: [
+      /* CV and ICV positions into the two turbine simulators */
+      ['iCva', [[338, 202], [I(503.5), 202]], 1],
+      ['iCvb', [[338, 287], [449, 287], [449, 224], [I(503.5), 224]], 1],
+      ['add001', [[O(503.5), 202], [I(610), 202]], 1],
+      ['add001', [[556, 202], [556, 373], [I(607.5), 373]], 1],
+      ['gA002', [[O(610), 202], [I(706), 202]], 1],
+      ['fgA003', [[O(706), 202], [918, 202]], 1],
+      ['gA010', [[O(607.5), 373], [I(704), 373]], 1],
+      ['fgA011', [[O(704), 373], [788, 373], [788, 576], [913, 576]], 1],
+      ['iIcva', [[335, 533], [I(606), 533]], 1],
+      ['iIcvb', [[334, 596], [551, 596], [551, 555], [I(606), 555]], 1],
+      ['add018', [[O(606), 533], [I(702.5), 533]], 1],
+      ['gA019', [[O(702.5), 533], [771, 533], [771, 224], [I(823), 224]], 1],
+      ['gA019', [[771, 533], [771, 597], [913, 597]], 1],
+      ['fgA007', [[O(823), 224], [918, 224]], 1],
+      ['sgA038', [[O(823), 299], [897, 299], [897, 247], [918, 247]], 1],
+      ['sgA038', [[897, 299], [897, 618], [913, 618]], 1],
+      /* the speeds and outputs of MT2 (IP START) and MT1 (HP START) */
+      ['mt2.SPEED', [[1154, 205], [I(1323), 205]], 1],
+      ['mt2.SPEED', [[1247, 205], [1247, 419], [I(1320), 419]], 1],
+      ['mt2.SPEED', [[1247, 312], [I(1322), 312]], 1],
+      ['mt2.OUT', [[1154, 227], [1204, 227], [1204, 738], [I(1306), 738]], 1],
+      ['mt2.OUT', [[1204, 525], [I(1319), 525]], 1],
+      ['mt2.OUT', [[1245, 738], [1245, 918], [I(1400.5), 918]], 1],
+      ['mt1.SPEED', [[1149, 576], [1224, 576], [1224, 227], [I(1323), 227]], 1],
+      ['mt1.SPEED', [[1224, 334], [I(1322), 334]], 1],
+      ['mt1.SPEED', [[1224, 441], [I(1320), 441]], 1],
+      ['mt1.OUT', [[1149, 597], [1245, 597], [1245, 547], [I(1319), 547]], 1],
+      ['mt1.OUT', [[1180, 597], [1180, 811], [I(1305), 811]], 1],
+      ['mt1.OUT', [[1220, 811], [1220, 940], [I(1400.5), 940]], 1],
+      /* IP START switches */
+      ['kIp', [[712, 140], [1323, 140], [1323, T(216)]]],
+      ['kIp', [[1268, 140], [1268, 865], [1400.5, 865], [1400.5, T(929)]]],
+      ['kIp', [[1268, 279], [1322, 279], [1322, T(323)]]],
+      ['kIp', [[1268, 386], [1320, 386], [1320, T(430)]]],
+      ['kIp', [[1268, 492], [1319, 492], [1319, T(536)]]],
+      ['kIp', [[1268, 705], [1413, 705], [1413, T(749)]]],
+      /* speeds and the HP first stage pressure */
+      ['asw005', [[O(1323), 205], [I(1420), 205]], 1],
+      ['lmsC006', [[O(1420), 205], [2063, 205]], 1],
+      ['asw008', [[O(1322), 312], [I(1419), 312]], 1],
+      ['lmsC009', [[O(1419), 312], [2062, 312]], 1],
+      ['asw012', [[O(1320), 419], [I(1417), 419]], 1],
+      ['lmsC013', [[O(1417), 419], [2061, 419]], 1],
+      ['asw014', [[O(1319), 525], [I(1415.5), 525]], 1],
+      ['gA015', [[O(1415.5), 525], [1479, 525]], 1],
+      ['a016.OUT', [[1713, 525], [I(1787), 525]], 1],
+      ['lmsC017', [[O(1787), 525], [2057, 525]], 1],
+      /* generator load */
+      ['fgC040', [[O(1306), 738], [I(1413), 738]], 1],
+      ['fgC041', [[O(1305), 811], [1359, 811], [1359, 760], [I(1413), 760]], 1],
+      ['asw022', [[O(1413), 738], [1476, 738]], 1],
+      ['a023.OUT', [[1710, 738], [I(1764), 738]], 1],
+      ['k52g', [[1525, 674], [1764, 674], [1764, T(749)]]],
+      ['sg044', [[O(1602), 876], [1720, 876], [1720, 760], [I(1764), 760]], 1],
+      ['asw043', [[O(1764), 738], [I(1837), 738]], 1],
+      ['lmsC024', [[O(1837), 738], [2057, 738]], 1],
+      ['lmsC024', [[1880, 738], [1880, 655], [2052, 655]], 1],
+      ['asw026', [[O(1400.5), 918], [2055, 918]], 1],
+      /* CCS simulator */
+      ['iLh', [[329, 927], [1197, 927], [1197, T(1013)]]],
+      ['iLh', [[825, 927], [825, T(991)]]],
+      ['sgC027', [[O(504.5), 1002], [I(825), 1002]], 1],
+      ['asw045', [[O(825), 980], [880, 980], [880, 1002], [910, 1002]], 1],
+      ['iMw', [[328, 1064], [877, 1064], [877, 1023], [910, 1023]], 1],
+      ['iDcs', [[328, 1107], [887, 1107], [887, 1045], [910, 1045]]],
+      ['a028.DEMAND', [[1145, 1002], [I(1197), 1002]], 1],
+      ['hld046', [[O(1197), 1002], [I(1399.5), 1002]], 1],
+      ['hld046', [[1250, 1002], [1250, 958], [773, 958], [773, 980], [I(825), 980]], 1],
+      ['lmsC029', [[O(1399.5), 1002], [2053, 1002]], 1],
+      /* extraction flow and MOP discharge pressure */
+      ['sgC032', [[O(598), 1161], [908, 1161]], 1],
+      ['a033.OUT', [[1143, 1161], [I(1398), 1161]], 1],
+      ['lmsC034', [[O(1398), 1161], [2049, 1161]], 1],
+      ['sg035', [[O(596.5), 1321], [906, 1321]], 1],
+      ['a036.OUT', [[1142, 1321], [I(1396), 1321]], 1],
+      ['lmsC037', [[O(1396), 1321], [2050, 1321]], 1]
+    ],
+    j: [
+      [556, 202],
+      [771, 533],
+      [897, 299],
+      [1247, 205],
+      [1247, 312],
+      [1204, 525],
+      [1245, 738],
+      [1224, 334],
+      [1224, 441],
+      [1180, 597],
+      [1220, 811],
+      [1268, 140],
+      [1268, 279],
+      [1268, 386],
+      [1268, 492],
+      [1268, 705],
+      [1880, 738],
+      [825, 927],
+      [1250, 1002]
+    ],
+    l,
+    v,
+    t
+  });
+})();
 
 /* ---- src/digital/tce/TCE172.js ---- */
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
@@ -344267,7 +345271,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 5a3f74b'));
+    row('Version', E('span', 'scsver', ver + ' · build 5104837'));
   }
   function openSet(near) {
     if (!set) {
