@@ -663,5 +663,7 @@ const TCS_DESC = {
   TCA760:
     'IP/HP THSC CHANGE(4): HP / IP surface and bore stress and the bore limits (FG of TB-H / TB-I) to the CRT and TCA769',
   TCA762:
-    'HP LCFI: HP surface stress above the threshold through the HSG and the FG-1(LCFI) curve, summing timing by CMP, TD and PDF'
+    'HP LCFI: HP surface stress above the threshold through the HSG and the FG-1(LCFI) curve, summing timing by CMP, TD and PDF',
+  TCA763:
+    'IP LCFI: IP surface stress above the threshold through the HSG and the FG-1(LCFI) curve, summing timing by CMP, TD and PDF'
 };
