@@ -657,5 +657,7 @@ const TCS_DESC = {
   TCA757:
     'THERMAL STRESS(IP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TI(2) and TI(1), as drawn.',
   TCA758:
-    'THERMAL STRESS(IP): IP surface and bore stress from the 5 stage temperatures, bore plus speed ratio term, TB-I'
+    'THERMAL STRESS(IP): IP surface and bore stress from the 5 stage temperatures, bore plus speed ratio term, TB-I',
+  TCA760:
+    'IP/HP THSC CHANGE(4): HP / IP surface and bore stress and the bore limits (FG of TB-H / TB-I) to the CRT and TCA769'
 };
