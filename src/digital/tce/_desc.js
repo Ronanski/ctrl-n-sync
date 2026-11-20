@@ -662,6 +662,7 @@ const TCS_DESC = {
   TCE351: 'Turning gear (2): the turning gear motor start demand (jog, start flip-flop and its reset), and the engage sequence from zero speed: engage condition, start signal, engage failure and during turbine turning.',
   TCE352: 'Turning gear (3): engage solenoid valve, zero speed indication, engage simulation',
   TCE360: 'Ventilator valve: solenoid energize command, open signal, full open / full close with simulation, open and close faults with reset.',
+  TCE365: 'Blow down valve: the air operated valve block (energize, de-energize, reset, open / close limits) and the close signal.',
   TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
