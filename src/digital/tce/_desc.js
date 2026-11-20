@@ -573,5 +573,7 @@ const TCS_DESC = {
   TCA738:
     'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.',
   TCA740:
-    'Gland seal steam header pressure (aux steam) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn031 with MV, position open / close lamps, SSAFV abnormal latch and lamp, inlet valve initial ramp.'
+    'Gland seal steam header pressure (aux steam) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn031 with MV, position open / close lamps, SSAFV abnormal latch and lamp, inlet valve initial ramp.',
+  TCA741:
+    'Gland seal steam header pressure (unloading) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn034 with MV, position open / close lamps, SPUV abnormal latch and lamp.'
 };
