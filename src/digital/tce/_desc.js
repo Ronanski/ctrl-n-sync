@@ -797,5 +797,7 @@ const TCS_DESC = {
   TCA821:
     'Alarm: the AC / DC control, lighting and space heater, and AC / DC protection power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT and all through one OR to TCA822; both DC protection power supplies abnormal (AND) = PROTECTION P.S. LOST to TCE472.',
   TCA822:
-    'Alarm: the COM error, simulation, network, power supply and HMI signals and the alarm groups of TCA818 to TCA821 into one OR as COM MINOR TROUBLE (to CRT); with the EHG, TPC and Modbus faults through a second OR as TCS MINOR TROUBLE to CRT and TCA532.'
+    'Alarm: the COM error, simulation, network, power supply and HMI signals and the alarm groups of TCA818 to TCA821 into one OR as COM MINOR TROUBLE (to CRT); with the EHG, TPC and Modbus faults through a second OR as TCS MINOR TROUBLE to CRT and TCA532.',
+  TCA826:
+    'Alarm: house load operation with the LP exhaust hood water spray valve open for 7200 s sets HOUSE LOAD OPERATION OVER 2HOURS (reset by the end of house load, the hood steam valve closed or a turbine trip); with generator voltage OK for 5 s, the RSR diode fault, the generator field earth fault, or a 30DF/64F relay trouble or loss of control power give the two relay alarms. Each to A1 / A2 / A3 and CRT.'
 };
