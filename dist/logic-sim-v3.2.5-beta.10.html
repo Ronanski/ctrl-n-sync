@@ -6119,6 +6119,8 @@ const TCS_DESC = {
     'Alarm for generator protection 1/2: each A/B relay pair to the annunciator and the SOE, the volts/hertz to the ATS',
   'G-8B':
     'Alarm for generator protection 2/2: diode and field earth fault, exciter earth fault, control panel trouble, relay A/B trouble; trip and ready to synchronize to the DCS',
+  'G-9':
+    'Turbine operation: the signals between the turbine control and the generator sheets',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -6572,7 +6574,9 @@ const TCS_DESC = {
   TCA801B:
     'Comm alarm (hardware) 5: the PI/O errors of unit 1 slots 9 and A, eight each through an OR, as AI error to the CRT and TCA806.',
   TCA801C:
-    'Comm alarm (hardware) 6: the PI/O errors of unit 1 slot B through an OR (eight spare OFF inputs on a second OR), as AI error to the CRT and TCA806.'
+    'Comm alarm (hardware) 6: the PI/O errors of unit 1 slot B through an OR (eight spare OFF inputs on a second OR), as AI error to the CRT and TCA806.',
+  TCA801D:
+    'Comm alarm (hardware) 7: the PI/O errors of unit 1 slot C through an OR (eight spare OFF inputs on a second OR), as AI error to the CRT and TCA806.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -31717,7 +31721,7 @@ const TCS_DESC = {
   /* an input from another sheet: column, key, number, sheet, words, line, the gate bar it runs to */
   const inp = (C, k, n, sh, z, y, x2) => {
     o.push([C.cx, y, 12]);
-    t.push([C.cx, y, n, 4], [C.tx, y - 8, z], [C.tx, y + 9, sh]);
+    t.push([C.cx, y, n, 4], [C.tx, y - 8, z], [C.tx, y + 12, sh]);
     s.push([k, C.cx - 12, y - 12, C.cx + 12, y + 12]);
     w.push([k, [[C.cx + 12, y], [x2, y]]]);
   };
@@ -32091,7 +32095,7 @@ const TCS_DESC = {
   /* an input from another sheet: key, number, sheet, words, line */
   const inp = (k, n, sh, z, y) => {
     o.push([265, y, 12]);
-    t.push([265, y, n, 4], [284, y - 8, z], [284, y + 9, sh]);
+    t.push([265, y, n, 4], [284, y - 8, z], [284, y + 12, sh]);
     s.push([k, 253, y - 12, 277, y + 12]);
   };
   /* an output box (ANN, SOE, DCS) at line y, with its words right-aligned before it */
@@ -32212,6 +32216,55 @@ const TCS_DESC = {
     e,
     a,
     j
+  });
+})();
+/* SH-G-9 TURBINE OPERATION (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 20). Typed from the drawing; units =
+   the pixels of the page rendered 2296 wide. The signals between the turbine control (310SC90-774 / -775) and the generator sheets:
+   each comes in on the left and goes on to the sheet on the right ("-" in a circle: no number on the drawing). The scan is a little
+   turned; each line is at the height of its left end. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    w = [],
+    t = [];
+  /* [line, number in, words, from, number out, to (one or two lines)] */
+  [
+    [184, '1', '52G OPENED', 'SH-G-1A', '12', ['SH-TC-2', '(310SC90-774)']],
+    [250, '-', '41 OPEN COMMAND FOR TURBINE SHUT-DOWN (ATS)', '(310SC90-775, SH-30)', '14', ['SH-G-4']],
+    [334, '2', 'ST TRIP (41 OPEN)', '(310SC90-774, SH-TA-1)', '1', ['SH-G-4']],
+    [382, '1', 'TURBINE RATED SPEED (TCS)', '(310SC90-774, SH-TD-1)', '2', ['SH-G-4']],
+    [430, '-', 'EXCITATION AUTO START SIGNAL (TCS/ATS)', '(310SC90-775, SH-24)', '3', ['SH-G-4']],
+    [522, '1', 'ST TRIP (FOR GENERATOR TRIP)', '(310SC90-774, SH-TA-6)', '4', ['SH-G-5A']],
+    [618, '2', 'ST TRIP (FOR GENERATOR TRIP)', '(310SC90-774, SH-TA-6)', '6', ['SH-G-6A']],
+    [727, '-', '52G CLOSE ORDER (TCS/ATS)', '(310SC90-775, SH-25)', '8', ['SH-G-1B']],
+    [824, '32', '52L OPENED (FOR HOUSE LOAD OPERATION)', 'SH-G-2A', '15', ['SH-TD-10', '(310SC90-774)']],
+    [932, '5', 'ST TRIP DEMAND FROM GEN. PROTECTION A, GEN. TRANSF. & UNIT PROTECTION', 'SH-G-5A', '9', ['SH-TA-9', '(310SC90-774)']],
+    [1041, '5', 'ST TRIP DEMAND FROM GEN. PROTECTION B, GEN. TRANSF. & UNIT PROTECTION', 'SH-G-6A', '10', ['SH-TA-9', '(310SC90-774)']],
+    [1150, '5', '52G CLOSED (FOR HOUSE LOAD OPERATION)', 'SH-G-1A', '11', ['SH-TA-6', '(310SC90-774)']],
+    [1246, '-', '52L CLOSED ORDER (TCS/ATS)', '(310SC90-775, SH-25)', '13', ['SH-G-2B']]
+  ].forEach(([y, n, z, sh, m, to], i) => {
+    const k = 'i' + i;
+    o.push([266, y, 13], [1976, y, 13]);
+    t.push([266, y, n, 4], [284, y - 9, z], [284, y + 12, sh], [1976, y, m, 4]);
+    if (to.length > 1) t.push([1994, y - 7, to[0]], [1994, y + 7, to[1]]);
+    else t.push([1994, y, to[0]]);
+    s.push([k, 253, y - 13, 279, y + 13]);
+    w.push([k, [[279, y], [1962, y]]]);
+  });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-9',
+    title: 'TURBINE OPERATION',
+    page: 20,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [203, 116, 2176, 1518],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    w,
+    t
   });
 })();
 /* TCA100 CONTROLLER CONDITION(1) (331DM09788 page 34, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
@@ -63348,6 +63401,83 @@ const TCS_DESC = {
     b,
     w,
     j: [[1655, 241]],
+    t
+  });
+})();
+/* TCA801D COMM ALARM(HARDWARE)(7) (331DM09788 page 210, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - PI/O error (TCA932-1 ... TCA932-8) through BTR 004 / 005 / 006 / 008 / 009 / 010 / 011 / 012 into OR 001.
+   - Eight OFF(0) (sys.ref) through BTR 013 / 015 / 016 / 017 / 018 / 019 / 020 / 021 into OR 014 (spare inputs).
+   - OR 001 and OR 014 into OR 022; its output through BTR 003 = UNIT1 SLOT-C AI ERROR, A (to TCA806), and through BTR 007
+     to CRT TCA801D_1.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    r = [],
+    k = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const HW = 28.76;
+  /* [rows, OR left x, OR inputs, bends, BTR x, BTR nos] */
+  const Y1 = [240, 294, 347, 400, 453, 507, 560, 613],
+    I1 = [241, 262, 283, 306, 327, 348, 368, 389],
+    B1 = [1185, 1197, 1207, 1217, 1227, 1237, 1248],
+    N1 = ['004', '005', '006', '008', '009', '010', '011', '012'],
+    Y2 = [679, 732, 785, 837, 890, 942, 997, 1050],
+    I2 = [679, 700, 721, 742, 763, 785, 805, 827],
+    B2 = [1181, 1192, 1202, 1213, 1223, 1235, 1245],
+    N2 = ['013', '015', '016', '017', '018', '019', '020', '021'];
+  const row = (key, x0, y, i, xOR, I, B) =>
+    i === 0 ? W(key, [x0, I[0]], [xOR, I[0]]) : W(key, [x0, y], [B[i - 1], y], [B[i - 1], I[i]], [xOR, I[i]]);
+  Y1.forEach((y, i) => {
+    const key = 'pe' + (17 + i);
+    r.push([key, 237, y - 11, 126, 23, 'PI/O error']);
+    t.push([297, y - 16, '(TCA932-' + (1 + i) + ')', 1]);
+    b.push(['btr' + N1[i], 'o:BTR', N1[i], 789, i ? y : I1[0]]);
+    row(key, 363, y, i, 1258, I1, B1);
+  });
+  Y2.forEach((y, i) => {
+    const key = 'kOff' + (i + 1);
+    k.push([key, 222, y, 'OFF(0)', 'sys.ref']);
+    b.push(['btr' + N2[i], 'o:BTR', N2[i], 782, y]);
+    row(key, 455, y, i, 1256.5, I2, B2);
+  });
+  b.push(
+    ['or001', 'OR', '001', 1287, 315.5, [], {}, [58, 173]],
+    ['or014', 'OR', '014', 1285, 753.5, [], {}, [57, 171]],
+    ['or022', 'OR', '022', 1416, 252],
+    ['btr003', 'o:BTR', '003', 1702, 241],
+    ['btr007', 'o:BTR', '007', 1702, 401]
+  );
+  W('or001', [1316, 241], [1416 - HW, 241]);
+  W('or014', [1314, 679], [1373, 679], [1373, 263], [1416 - HW, 263]);
+  W('or022', [1416 + HW, 241], [2068 - 27, 241]);
+  W('or022', [1660, 241], [1660, 401], [2074 - 35, 401]);
+  t.push(
+    [1729, 237, 'UNIT1 SLOT-C AI ERROR'],
+    [1729, 397, 'UNIT1 SLOT-C AI ERROR'],
+    [233, 1522, 'CONTROLLER:'],
+    [394, 1522, 'COMM+MD'],
+    [656, 1495, 'TRIGGER  :'],
+    [656, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA801D',
+    title: 'COMM ALARM(HARDWARE)(7)',
+    page: 210,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [168, 80, 2228, 1542],
+    r,
+    k,
+    c: [['oA', 'out', 'A', 2068, 241, '', ['TCA806'], 0, 1]],
+    d: [['crtA', 2074, 401, 'out', 'TCA801D_1', 'S', '#1C']],
+    b,
+    w,
+    j: [[1660, 241]],
     t
   });
 })();
@@ -146138,7 +146268,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 8164ffe'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 51be2d1'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -172369,6 +172499,8 @@ const TCS_DESC = {
     'Alarm for generator protection 1/2: each A/B relay pair to the annunciator and the SOE, the volts/hertz to the ATS',
   'G-8B':
     'Alarm for generator protection 2/2: diode and field earth fault, exciter earth fault, control panel trouble, relay A/B trouble; trip and ready to synchronize to the DCS',
+  'G-9':
+    'Turbine operation: the signals between the turbine control and the generator sheets',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -172822,7 +172954,9 @@ const TCS_DESC = {
   TCA801B:
     'Comm alarm (hardware) 5: the PI/O errors of unit 1 slots 9 and A, eight each through an OR, as AI error to the CRT and TCA806.',
   TCA801C:
-    'Comm alarm (hardware) 6: the PI/O errors of unit 1 slot B through an OR (eight spare OFF inputs on a second OR), as AI error to the CRT and TCA806.'
+    'Comm alarm (hardware) 6: the PI/O errors of unit 1 slot B through an OR (eight spare OFF inputs on a second OR), as AI error to the CRT and TCA806.',
+  TCA801D:
+    'Comm alarm (hardware) 7: the PI/O errors of unit 1 slot C through an OR (eight spare OFF inputs on a second OR), as AI error to the CRT and TCA806.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -198365,7 +198499,7 @@ const TCS_DESC = {
   /* an input from another sheet: column, key, number, sheet, words, line, the gate bar it runs to */
   const inp = (C, k, n, sh, z, y, x2) => {
     o.push([C.cx, y, 12]);
-    t.push([C.cx, y, n, 4], [C.tx, y - 8, z], [C.tx, y + 9, sh]);
+    t.push([C.cx, y, n, 4], [C.tx, y - 8, z], [C.tx, y + 12, sh]);
     s.push([k, C.cx - 12, y - 12, C.cx + 12, y + 12]);
     w.push([k, [[C.cx + 12, y], [x2, y]]]);
   };
@@ -198741,7 +198875,7 @@ const TCS_DESC = {
   /* an input from another sheet: key, number, sheet, words, line */
   const inp = (k, n, sh, z, y) => {
     o.push([265, y, 12]);
-    t.push([265, y, n, 4], [284, y - 8, z], [284, y + 9, sh]);
+    t.push([265, y, n, 4], [284, y - 8, z], [284, y + 12, sh]);
     s.push([k, 253, y - 12, 277, y + 12]);
   };
   /* an output box (ANN, SOE, DCS) at line y, with its words right-aligned before it */
@@ -198862,6 +198996,57 @@ const TCS_DESC = {
     e,
     a,
     j
+  });
+})();
+
+/* ---- src/digital/tce/G-9.js ---- */
+/* SH-G-9 TURBINE OPERATION (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 20). Typed from the drawing; units =
+   the pixels of the page rendered 2296 wide. The signals between the turbine control (310SC90-774 / -775) and the generator sheets:
+   each comes in on the left and goes on to the sheet on the right ("-" in a circle: no number on the drawing). The scan is a little
+   turned; each line is at the height of its left end. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    w = [],
+    t = [];
+  /* [line, number in, words, from, number out, to (one or two lines)] */
+  [
+    [184, '1', '52G OPENED', 'SH-G-1A', '12', ['SH-TC-2', '(310SC90-774)']],
+    [250, '-', '41 OPEN COMMAND FOR TURBINE SHUT-DOWN (ATS)', '(310SC90-775, SH-30)', '14', ['SH-G-4']],
+    [334, '2', 'ST TRIP (41 OPEN)', '(310SC90-774, SH-TA-1)', '1', ['SH-G-4']],
+    [382, '1', 'TURBINE RATED SPEED (TCS)', '(310SC90-774, SH-TD-1)', '2', ['SH-G-4']],
+    [430, '-', 'EXCITATION AUTO START SIGNAL (TCS/ATS)', '(310SC90-775, SH-24)', '3', ['SH-G-4']],
+    [522, '1', 'ST TRIP (FOR GENERATOR TRIP)', '(310SC90-774, SH-TA-6)', '4', ['SH-G-5A']],
+    [618, '2', 'ST TRIP (FOR GENERATOR TRIP)', '(310SC90-774, SH-TA-6)', '6', ['SH-G-6A']],
+    [727, '-', '52G CLOSE ORDER (TCS/ATS)', '(310SC90-775, SH-25)', '8', ['SH-G-1B']],
+    [824, '32', '52L OPENED (FOR HOUSE LOAD OPERATION)', 'SH-G-2A', '15', ['SH-TD-10', '(310SC90-774)']],
+    [932, '5', 'ST TRIP DEMAND FROM GEN. PROTECTION A, GEN. TRANSF. & UNIT PROTECTION', 'SH-G-5A', '9', ['SH-TA-9', '(310SC90-774)']],
+    [1041, '5', 'ST TRIP DEMAND FROM GEN. PROTECTION B, GEN. TRANSF. & UNIT PROTECTION', 'SH-G-6A', '10', ['SH-TA-9', '(310SC90-774)']],
+    [1150, '5', '52G CLOSED (FOR HOUSE LOAD OPERATION)', 'SH-G-1A', '11', ['SH-TA-6', '(310SC90-774)']],
+    [1246, '-', '52L CLOSED ORDER (TCS/ATS)', '(310SC90-775, SH-25)', '13', ['SH-G-2B']]
+  ].forEach(([y, n, z, sh, m, to], i) => {
+    const k = 'i' + i;
+    o.push([266, y, 13], [1976, y, 13]);
+    t.push([266, y, n, 4], [284, y - 9, z], [284, y + 12, sh], [1976, y, m, 4]);
+    if (to.length > 1) t.push([1994, y - 7, to[0]], [1994, y + 7, to[1]]);
+    else t.push([1994, y, to[0]]);
+    s.push([k, 253, y - 13, 279, y + 13]);
+    w.push([k, [[279, y], [1962, y]]]);
+  });
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-9',
+    title: 'TURBINE OPERATION',
+    page: 20,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [203, 116, 2176, 1518],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    w,
+    t
   });
 })();
 
@@ -230272,6 +230457,85 @@ const TCS_DESC = {
     b,
     w,
     j: [[1655, 241]],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA801D.js ---- */
+/* TCA801D COMM ALARM(HARDWARE)(7) (331DM09788 page 210, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - PI/O error (TCA932-1 ... TCA932-8) through BTR 004 / 005 / 006 / 008 / 009 / 010 / 011 / 012 into OR 001.
+   - Eight OFF(0) (sys.ref) through BTR 013 / 015 / 016 / 017 / 018 / 019 / 020 / 021 into OR 014 (spare inputs).
+   - OR 001 and OR 014 into OR 022; its output through BTR 003 = UNIT1 SLOT-C AI ERROR, A (to TCA806), and through BTR 007
+     to CRT TCA801D_1.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    r = [],
+    k = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const HW = 28.76;
+  /* [rows, OR left x, OR inputs, bends, BTR x, BTR nos] */
+  const Y1 = [240, 294, 347, 400, 453, 507, 560, 613],
+    I1 = [241, 262, 283, 306, 327, 348, 368, 389],
+    B1 = [1185, 1197, 1207, 1217, 1227, 1237, 1248],
+    N1 = ['004', '005', '006', '008', '009', '010', '011', '012'],
+    Y2 = [679, 732, 785, 837, 890, 942, 997, 1050],
+    I2 = [679, 700, 721, 742, 763, 785, 805, 827],
+    B2 = [1181, 1192, 1202, 1213, 1223, 1235, 1245],
+    N2 = ['013', '015', '016', '017', '018', '019', '020', '021'];
+  const row = (key, x0, y, i, xOR, I, B) =>
+    i === 0 ? W(key, [x0, I[0]], [xOR, I[0]]) : W(key, [x0, y], [B[i - 1], y], [B[i - 1], I[i]], [xOR, I[i]]);
+  Y1.forEach((y, i) => {
+    const key = 'pe' + (17 + i);
+    r.push([key, 237, y - 11, 126, 23, 'PI/O error']);
+    t.push([297, y - 16, '(TCA932-' + (1 + i) + ')', 1]);
+    b.push(['btr' + N1[i], 'o:BTR', N1[i], 789, i ? y : I1[0]]);
+    row(key, 363, y, i, 1258, I1, B1);
+  });
+  Y2.forEach((y, i) => {
+    const key = 'kOff' + (i + 1);
+    k.push([key, 222, y, 'OFF(0)', 'sys.ref']);
+    b.push(['btr' + N2[i], 'o:BTR', N2[i], 782, y]);
+    row(key, 455, y, i, 1256.5, I2, B2);
+  });
+  b.push(
+    ['or001', 'OR', '001', 1287, 315.5, [], {}, [58, 173]],
+    ['or014', 'OR', '014', 1285, 753.5, [], {}, [57, 171]],
+    ['or022', 'OR', '022', 1416, 252],
+    ['btr003', 'o:BTR', '003', 1702, 241],
+    ['btr007', 'o:BTR', '007', 1702, 401]
+  );
+  W('or001', [1316, 241], [1416 - HW, 241]);
+  W('or014', [1314, 679], [1373, 679], [1373, 263], [1416 - HW, 263]);
+  W('or022', [1416 + HW, 241], [2068 - 27, 241]);
+  W('or022', [1660, 241], [1660, 401], [2074 - 35, 401]);
+  t.push(
+    [1729, 237, 'UNIT1 SLOT-C AI ERROR'],
+    [1729, 397, 'UNIT1 SLOT-C AI ERROR'],
+    [233, 1522, 'CONTROLLER:'],
+    [394, 1522, 'COMM+MD'],
+    [656, 1495, 'TRIGGER  :'],
+    [656, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA801D',
+    title: 'COMM ALARM(HARDWARE)(7)',
+    page: 210,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [168, 80, 2228, 1542],
+    r,
+    k,
+    c: [['oA', 'out', 'A', 2068, 241, '', ['TCA806'], 0, 1]],
+    d: [['crtA', 2074, 401, 'out', 'TCA801D_1', 'S', '#1C']],
+    b,
+    w,
+    j: [[1660, 241]],
     t
   });
 })();
@@ -334145,7 +334409,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 8164ffe'));
+    row('Version', E('span', 'scsver', ver + ' · build 51be2d1'));
   }
   function openSet(near) {
     if (!set) {
