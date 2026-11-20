@@ -6687,7 +6687,11 @@ const TCS_DESC = {
   TCE603:
     'EHG digital outputs (PI/O TCE961 points 17 to 32): turning gear engage solenoid valve, turning gear engage lamp and turning gear motor start lamp; the other thirteen points are spare.',
   TCE610:
-    'EHG analog outputs (PI/O TCE970 points 1 to 8): target MW set point feedback, turbine load up rate, HP turbine first stage steam pressure (A), (B), (C) and turbine speed; points 7 and 8 are spare (SG K:0.0).'
+    'EHG analog outputs (PI/O TCE970 points 1 to 8): target MW set point feedback, turbine load up rate, HP turbine first stage steam pressure (A), (B), (C) and turbine speed; points 7 and 8 are spare (SG K:0.0).',
+  TCE900:
+    'PI/O table of the EHG digital input card (unit 4 slot 0, LYD050A3), 32 channels: oil pumps running and trouble, bearing oil pressure for EOP auto start, turning gear positions, DCS control mode, DS, 52G, 41 and 52L positions, speed raise and lower, HP bypass valve full close; the rest spare.',
+  TCE901:
+    'PI/O table of the EHG digital input card (unit 4 slot 1, LYD050A3), 32 channels: control and main oil pumps (B), turning gear motor jog, running and trouble, auto synchronizer start and remote select, COM CPU run and power supply abnormal, PLU operated; the rest spare.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -26624,6 +26628,205 @@ const TCS_DESC = {
     g,
     w,
     t: [...t, [222, 1522, 'CONTROLLER:'], [384, 1522, 'EHG+MD'], [608, 1497, 'TRIGGER  :'], [608, 1524, 'CYCLE(ms):30']]
+  });
+})();
+/* TCE900 EHG DI TABLE(1) (331DM09784 page 182, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital input card unit 4 slot 0 (LYD050A3) of the EHG controller, 32 channels (CH 0 ~ 1F): the
+   control, main and DC emergency oil pumps, the bearing oil pressure for the EOP auto start, the hand turning interlock and turning gear
+   positions, the DCS control mode, DS, 52G, 41 and 52L positions, speed raise and lower and the HP bypass valve full close; the rest
+   spare. Names are typed as drawn. */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) =>
+      l.push([
+        [x0, y],
+        [x1, y]
+      ]),
+    V = (x, y0, y1) =>
+      l.push([
+        [x, y0],
+        [x, y1]
+      ]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 272,
+    y0 = 149;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 693));
+  [0, 201, 491, 693].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 84, 126, 244, 288, 330, 374, 416, 533, 576, 618].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 346, y0 + 21, 'PI/O', 1], [x0 + 592, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [201, 'UNIT'],
+    [244, '4'],
+    [288, 'SLOT'],
+    [330, '0'],
+    [374, 'TYPE'],
+    [416, 'LYD050A3'],
+    [491, 'DVA'],
+    [576, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [267, 309, 352, 847, 927, 1007, 1145, 1321, 1448],
+    T = 208,
+    Y1 = 262,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 267, 1448);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 267, 1448);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DI Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['CONTROL OIL PUMP (A) RUNNING', ''],
+    1: ['CONTROL OIL PUMP (A) ELECTRICAL TROUBLE', ''],
+    2: ['MAIN OIL PUMP (A) RUNNING', ''],
+    3: ['MAIN OIL PUMP (A) MOTOR ELECTRICAL TROUBLE', ''],
+    4: ['DC EMERGENCY OIL PUMP RUNNING', ''],
+    5: ['DC EMERGENCY OIL PUMP ELECTRICAL TROUBLE', ''],
+    6: ['BEARING OIL PRESS. (For EOP Auto Start)', 'PS-LOn004'],
+    7: ['HAND TURNING INTERLOCK POSITION', 'ZS-LOn003'],
+    8: ['TURNING GEAR ENGAGE POSITION', 'ZS-LOn906-1'],
+    9: ['TURNING GEAR DISENGAGE POSITION', 'ZS-LOn906-2'],
+    10: ['TURNING GEAR MOTOR ENGAGE PB', ''],
+    15: ['P.S.NORMAL', ''],
+    16: ['DCS CONTROL MODE ON', ''],
+    17: ['DCS CONTROL MODE OFF', ''],
+    18: ['DS CLOSED', ''],
+    19: ['52G CLOSED', ''],
+    20: ['52G OPENED', ''],
+    21: ['SPEED RAISE', ''],
+    22: ['SPEED LOWER', ''],
+    23: ['41 CLOSE', ''],
+    24: ['41 OPEN', ''],
+    25: ['52L OPEN', ''],
+    26: ['HP BYPASS VALVE FULL CLOSE', ''],
+    31: ['P.S.NORMAL', '']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([225, 1525, 'CONTROLLER:'], [385, 1525, 'EHG+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCE900',
+    title: 'EHG DI TABLE(1)',
+    page: 182,
+    ctl: 'EHG+MD',
+    cycle: '-',
+    f: [162, 86, 2214, 1544],
+    l,
+    t
+  });
+})();
+/* TCE901 EHG DI TABLE(2) (331DM09784 page 183, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital input card unit 4 slot 1 (LYD050A3) of the EHG controller, 32 channels (CH 0 ~ 1F): the
+   control and main oil pumps (B), the turning gear motor, the auto synchronizer start and remote select, the COM CPU run and power supply
+   states and PLU OPERATED; the rest spare. Names are typed as drawn (TURNINNG on CH 6). */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) =>
+      l.push([
+        [x0, y],
+        [x1, y]
+      ]),
+    V = (x, y0, y1) =>
+      l.push([
+        [x, y0],
+        [x, y1]
+      ]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 277,
+    y0 = 149;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 693));
+  [0, 201, 491, 693].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 84, 126, 244, 288, 330, 374, 416, 533, 576, 618].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 346, y0 + 21, 'PI/O', 1], [x0 + 592, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [201, 'UNIT'],
+    [244, '4'],
+    [288, 'SLOT'],
+    [330, '1'],
+    [374, 'TYPE'],
+    [416, 'LYD050A3'],
+    [491, 'DVA'],
+    [576, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [272, 314, 357, 852, 932, 1012, 1150, 1326, 1453],
+    T = 208,
+    Y1 = 262,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 272, 1453);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 272, 1453);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DI Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['CONTROL OIL PUMP (B) RUNNING', ''],
+    1: ['CONTROL OIL PUMP (B) ELECTRICAL TROUBLE', ''],
+    2: ['MAIN OIL PUMP (B) RUNNING', ''],
+    3: ['MAIN OIL PUMP (B) MOTOR ELECTRICAL TROUBLE', ''],
+    4: ['TURNING GEAR MOTOR JOG PB', ''],
+    5: ['TURNING GEAR MOTOR RUNNING', ''],
+    6: ['TURNINNG GEAR MOTOR ELECTRICAL TROUBLE', ''],
+    7: ['AUTO SYN START PB', ''],
+    8: ['AUTO SYNC. REMOTE SELECT', ''],
+    15: ['P.S.NORMAL', ''],
+    26: ['COM CPU(A) RUN', ''],
+    27: ['COM CPU(B) RUN', ''],
+    28: ['COM P.S.(A) ABNORMAL', ''],
+    29: ['COM P.S.(B) ABNORMAL', ''],
+    30: ['PLU OPERATED', ''],
+    31: ['P.S.NORMAL', '']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([229, 1525, 'CONTROLLER:'], [390, 1525, 'EHG+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCE901',
+    title: 'EHG DI TABLE(2)',
+    page: 183,
+    ctl: 'EHG+MD',
+    cycle: '-',
+    f: [166, 86, 2218, 1546],
+    l,
+    t
   });
 })();
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
@@ -153635,7 +153838,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 7d7039c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build fb15bd1'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -180434,7 +180637,11 @@ const TCS_DESC = {
   TCE603:
     'EHG digital outputs (PI/O TCE961 points 17 to 32): turning gear engage solenoid valve, turning gear engage lamp and turning gear motor start lamp; the other thirteen points are spare.',
   TCE610:
-    'EHG analog outputs (PI/O TCE970 points 1 to 8): target MW set point feedback, turbine load up rate, HP turbine first stage steam pressure (A), (B), (C) and turbine speed; points 7 and 8 are spare (SG K:0.0).'
+    'EHG analog outputs (PI/O TCE970 points 1 to 8): target MW set point feedback, turbine load up rate, HP turbine first stage steam pressure (A), (B), (C) and turbine speed; points 7 and 8 are spare (SG K:0.0).',
+  TCE900:
+    'PI/O table of the EHG digital input card (unit 4 slot 0, LYD050A3), 32 channels: oil pumps running and trouble, bearing oil pressure for EOP auto start, turning gear positions, DCS control mode, DS, 52G, 41 and 52L positions, speed raise and lower, HP bypass valve full close; the rest spare.',
+  TCE901:
+    'PI/O table of the EHG digital input card (unit 4 slot 1, LYD050A3), 32 channels: control and main oil pumps (B), turning gear motor jog, running and trouble, auto synchronizer start and remote select, COM CPU run and power supply abnormal, PLU operated; the rest spare.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -200687,6 +200894,209 @@ const TCS_DESC = {
     g,
     w,
     t: [...t, [222, 1522, 'CONTROLLER:'], [384, 1522, 'EHG+MD'], [608, 1497, 'TRIGGER  :'], [608, 1524, 'CYCLE(ms):30']]
+  });
+})();
+
+/* ---- src/digital/tce/TCE900.js ---- */
+/* TCE900 EHG DI TABLE(1) (331DM09784 page 182, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital input card unit 4 slot 0 (LYD050A3) of the EHG controller, 32 channels (CH 0 ~ 1F): the
+   control, main and DC emergency oil pumps, the bearing oil pressure for the EOP auto start, the hand turning interlock and turning gear
+   positions, the DCS control mode, DS, 52G, 41 and 52L positions, speed raise and lower and the HP bypass valve full close; the rest
+   spare. Names are typed as drawn. */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) =>
+      l.push([
+        [x0, y],
+        [x1, y]
+      ]),
+    V = (x, y0, y1) =>
+      l.push([
+        [x, y0],
+        [x, y1]
+      ]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 272,
+    y0 = 149;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 693));
+  [0, 201, 491, 693].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 84, 126, 244, 288, 330, 374, 416, 533, 576, 618].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 346, y0 + 21, 'PI/O', 1], [x0 + 592, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [201, 'UNIT'],
+    [244, '4'],
+    [288, 'SLOT'],
+    [330, '0'],
+    [374, 'TYPE'],
+    [416, 'LYD050A3'],
+    [491, 'DVA'],
+    [576, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [267, 309, 352, 847, 927, 1007, 1145, 1321, 1448],
+    T = 208,
+    Y1 = 262,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 267, 1448);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 267, 1448);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DI Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['CONTROL OIL PUMP (A) RUNNING', ''],
+    1: ['CONTROL OIL PUMP (A) ELECTRICAL TROUBLE', ''],
+    2: ['MAIN OIL PUMP (A) RUNNING', ''],
+    3: ['MAIN OIL PUMP (A) MOTOR ELECTRICAL TROUBLE', ''],
+    4: ['DC EMERGENCY OIL PUMP RUNNING', ''],
+    5: ['DC EMERGENCY OIL PUMP ELECTRICAL TROUBLE', ''],
+    6: ['BEARING OIL PRESS. (For EOP Auto Start)', 'PS-LOn004'],
+    7: ['HAND TURNING INTERLOCK POSITION', 'ZS-LOn003'],
+    8: ['TURNING GEAR ENGAGE POSITION', 'ZS-LOn906-1'],
+    9: ['TURNING GEAR DISENGAGE POSITION', 'ZS-LOn906-2'],
+    10: ['TURNING GEAR MOTOR ENGAGE PB', ''],
+    15: ['P.S.NORMAL', ''],
+    16: ['DCS CONTROL MODE ON', ''],
+    17: ['DCS CONTROL MODE OFF', ''],
+    18: ['DS CLOSED', ''],
+    19: ['52G CLOSED', ''],
+    20: ['52G OPENED', ''],
+    21: ['SPEED RAISE', ''],
+    22: ['SPEED LOWER', ''],
+    23: ['41 CLOSE', ''],
+    24: ['41 OPEN', ''],
+    25: ['52L OPEN', ''],
+    26: ['HP BYPASS VALVE FULL CLOSE', ''],
+    31: ['P.S.NORMAL', '']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([225, 1525, 'CONTROLLER:'], [385, 1525, 'EHG+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCE900',
+    title: 'EHG DI TABLE(1)',
+    page: 182,
+    ctl: 'EHG+MD',
+    cycle: '-',
+    f: [162, 86, 2214, 1544],
+    l,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCE901.js ---- */
+/* TCE901 EHG DI TABLE(2) (331DM09784 page 183, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital input card unit 4 slot 1 (LYD050A3) of the EHG controller, 32 channels (CH 0 ~ 1F): the
+   control and main oil pumps (B), the turning gear motor, the auto synchronizer start and remote select, the COM CPU run and power supply
+   states and PLU OPERATED; the rest spare. Names are typed as drawn (TURNINNG on CH 6). */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) =>
+      l.push([
+        [x0, y],
+        [x1, y]
+      ]),
+    V = (x, y0, y1) =>
+      l.push([
+        [x, y0],
+        [x, y1]
+      ]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 277,
+    y0 = 149;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 693));
+  [0, 201, 491, 693].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 84, 126, 244, 288, 330, 374, 416, 533, 576, 618].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 346, y0 + 21, 'PI/O', 1], [x0 + 592, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [201, 'UNIT'],
+    [244, '4'],
+    [288, 'SLOT'],
+    [330, '1'],
+    [374, 'TYPE'],
+    [416, 'LYD050A3'],
+    [491, 'DVA'],
+    [576, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [272, 314, 357, 852, 932, 1012, 1150, 1326, 1453],
+    T = 208,
+    Y1 = 262,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 272, 1453);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 272, 1453);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DI Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['CONTROL OIL PUMP (B) RUNNING', ''],
+    1: ['CONTROL OIL PUMP (B) ELECTRICAL TROUBLE', ''],
+    2: ['MAIN OIL PUMP (B) RUNNING', ''],
+    3: ['MAIN OIL PUMP (B) MOTOR ELECTRICAL TROUBLE', ''],
+    4: ['TURNING GEAR MOTOR JOG PB', ''],
+    5: ['TURNING GEAR MOTOR RUNNING', ''],
+    6: ['TURNINNG GEAR MOTOR ELECTRICAL TROUBLE', ''],
+    7: ['AUTO SYN START PB', ''],
+    8: ['AUTO SYNC. REMOTE SELECT', ''],
+    15: ['P.S.NORMAL', ''],
+    26: ['COM CPU(A) RUN', ''],
+    27: ['COM CPU(B) RUN', ''],
+    28: ['COM P.S.(A) ABNORMAL', ''],
+    29: ['COM P.S.(B) ABNORMAL', ''],
+    30: ['PLU OPERATED', ''],
+    31: ['P.S.NORMAL', '']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([229, 1525, 'CONTROLLER:'], [390, 1525, 'EHG+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCE901',
+    title: 'EHG DI TABLE(2)',
+    page: 183,
+    ctl: 'EHG+MD',
+    cycle: '-',
+    f: [166, 86, 2218, 1546],
+    l,
+    t
   });
 })();
 
@@ -349261,7 +349671,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 7d7039c'));
+    row('Version', E('span', 'scsver', ver + ' · build fb15bd1'));
   }
   function openSet(near) {
     if (!set) {
