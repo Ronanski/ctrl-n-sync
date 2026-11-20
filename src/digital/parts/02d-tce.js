@@ -9,7 +9,8 @@
      f: [x0, y0, x1, y1]   the inner frame of the drawing, in the units the sheet is typed in (any: the pixels of a rendered page are fine)
      c: [key, 'in' | 'out', letter, x, y, name, [sheets], dbl, under] off-page connector (oval), x y = its centre; dbl 1 = drawn with a double line;
                                                                      under 1 = the sheets stand under the connector (2 = in one row under an output connector,
-                                                                     3 = the first beside an output connector, the others two in a row under it)
+                                                                     3 = the first beside an output connector, the others two in a row under it,
+                                                                     4 = two in a row under it, the next rows under them)
      k: [key, x, y, text, note, kind]                                constant / system reference (pentagon), x y = its left middle; kind 'def' =
                                                                      a definition the sheet gives out
      r: [key, x, y, w, h, text]                                      PI/O table box; g: [x, y, 'l' | 'r'] PI/O connection mark on a line;
@@ -75,7 +76,18 @@ function tceSheet(q) {
   /* align: 0 left, 1 centre, 2 right (on the base line); 3 left, 4 centre, 5 right (on the middle line) */
   const fs = q.fs || 1,
     hk = (q.ah || 9) * ((fx1 - fx0) / 1000);
-  const text = (t, x, y, h, a) => ({ t: String(t), ix: X(x), iy: Y(y), x: X(x), y: Y(y), h: (h || 2.05) * fs, r: 0, a: a === 3 ? 0 : a === 5 ? 2 : a || 0, b: a === 3 || a === 5 ? 2 : 0, l: 'TXT1' });
+  const text = (t, x, y, h, a) => ({
+    t: String(t),
+    ix: X(x),
+    iy: Y(y),
+    x: X(x),
+    y: Y(y),
+    h: (h || 2.05) * fs,
+    r: 0,
+    a: a === 3 ? 0 : a === 5 ? 2 : a || 0,
+    b: a === 3 || a === 5 ? 2 : 0,
+    l: 'TXT1'
+  });
   const poly = (P, closed) => pl.push([P.map(p => [X(p[0]), Y(p[1])]), closed ? 1 : 0, 'SYM']);
   const net = k => (k === '' ? -1 : k in src ? src[k] : (src[k] = Object.keys(src).length)),
     box = {},
@@ -87,20 +99,69 @@ function tceSheet(q) {
         ux = (b[0] - a[0]) / L,
         uy = (b[1] - a[1]) / L,
         k = hk;
-      poly([[b[0] - ux * k - uy * k * 0.42, b[1] - uy * k + ux * k * 0.42], b, [b[0] - ux * k + uy * k * 0.42, b[1] - uy * k - ux * k * 0.42]], 0);
+      poly(
+        [
+          [b[0] - ux * k - uy * k * 0.42, b[1] - uy * k + ux * k * 0.42],
+          b,
+          [b[0] - ux * k + uy * k * 0.42, b[1] - uy * k - ux * k * 0.42]
+        ],
+        0
+      );
     };
   /* the frame and the title line of the sheet (the viewer's own, as on the TCS sheets) */
-  [[[18, 18], [1173, 18]], [[1173, 18], [1173, 824]], [[1173, 824], [18, 824]], [[18, 824], [18, 18]], [[18, 796], [1173, 796]]].forEach(([a, b]) => {
+  [
+    [
+      [18, 18],
+      [1173, 18]
+    ],
+    [
+      [1173, 18],
+      [1173, 824]
+    ],
+    [
+      [1173, 824],
+      [18, 824]
+    ],
+    [
+      [18, 824],
+      [18, 18]
+    ],
+    [
+      [18, 796],
+      [1173, 796]
+    ]
+  ].forEach(([a, b]) => {
     ln.push([+(a[0] * K).toFixed(2), +(-a[1] * K).toFixed(2), +(b[0] * K).toFixed(2), +(-b[1] * K).toFixed(2), 'SYM']);
     seg.push(undefined);
   });
-  const T = (t, x, y, h, a) => ({ t, ix: +(x * K).toFixed(2), iy: +(-y * K).toFixed(2), x: +(x * K).toFixed(2), y: +(-y * K).toFixed(2), h, r: 0, a, b: 0, l: 'TXT1' });
+  const T = (t, x, y, h, a) => ({
+    t,
+    ix: +(x * K).toFixed(2),
+    iy: +(-y * K).toFixed(2),
+    x: +(x * K).toFixed(2),
+    y: +(-y * K).toFixed(2),
+    h,
+    r: 0,
+    a,
+    b: 0,
+    l: 'TXT1'
+  });
   /* an IBD sheet keeps the title line of the IBD sheets */
-  if (q.ibd) tx.push(T((/^\d/.test(q.ibd) ? 'TYPICAL ' : '') + q.ibd + '  ' + q.title, 30, 815, 2.6, 0), T('TCS SHEET ' + q.page + ' OF 99', 1160, 815, 2.05, 2));
+  if (q.ibd)
+    tx.push(
+      T((/^\d/.test(q.ibd) ? 'TYPICAL ' : '') + q.ibd + '  ' + q.title, 30, 815, 2.6, 0),
+      T('TCS SHEET ' + q.page + ' OF 99', 1160, 815, 2.05, 2)
+    );
   else
     tx.push(
       T(q.id + '  ' + q.title, 30, 815, 2.6, 0),
-      T('CONTROLLER ' + (q.ctl || '') + '   CYCLE ' + (q.cycle || '') + ' ms   PAGE ' + (q.page || ''), 1160, 815, 2.05, 2)
+      T(
+        'CONTROLLER ' + (q.ctl || '') + '   CYCLE ' + (q.cycle || '') + ' ms   PAGE ' + (q.page || ''),
+        1160,
+        815,
+        2.05,
+        2
+      )
     );
   /* a half circle as short straight pieces (the ends of a connector) */
   const arc = (cx, cy, r, a0, a1) => {
@@ -116,9 +177,19 @@ function tceSheet(q) {
   for (const [key, dir, letter, x, y, name, refs, dbl, under] of q.c || []) {
     const w = 13 * u,
       r = 9 * u;
-    poly([...arc(x + w - r, y, r, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r, Math.PI / 2, (3 * Math.PI) / 2)], 1);
+    poly(
+      [...arc(x + w - r, y, r, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r, Math.PI / 2, (3 * Math.PI) / 2)],
+      1
+    );
     /* a connector drawn with a double line in the drawing */
-    if (dbl) poly([...arc(x + w - r, y, r - 2 * u, -Math.PI / 2, Math.PI / 2), ...arc(x - w + r, y, r - 2 * u, Math.PI / 2, (3 * Math.PI) / 2)], 1);
+    if (dbl)
+      poly(
+        [
+          ...arc(x + w - r, y, r - 2 * u, -Math.PI / 2, Math.PI / 2),
+          ...arc(x - w + r, y, r - 2 * u, Math.PI / 2, (3 * Math.PI) / 2)
+        ],
+        1
+      );
     tx.push(text(letter, x, y, 1.9, 4));
     at(key, x - w, y - r, x + w, y + r);
     const R = (refs || []).map(s => '(' + s + ')'),
@@ -136,6 +207,11 @@ function tceSheet(q) {
          column, on its last rows (TCE166 A: TCE602 left of TCE601) */
       /* under 1: the drawing prints the sheets under the connector, not beside it */
       if (under === 2) R.forEach((s, i) => tx.push(text(s, x + (i - (R.length - 1) / 2) * 44 * u, y + 17 * u, 1.7, 1)));
+      /* under 4: two in a row under the connector, the next rows under the first (TCA543 B) */
+      else if (under === 4)
+        R.forEach((s, i) =>
+          tx.push(text(s, x + ((i % 2) - 0.5) * 44 * u, y + (17 + 8 * Math.floor(i / 2)) * u, 1.7, 1))
+        );
       else if (under === 3)
         /* under 3: the first sheet beside the connector, the others two in a row under it (TCE152 B) */
         R.forEach((s, i) =>
@@ -148,7 +224,11 @@ function tceSheet(q) {
       else if (under) R.forEach((s, i) => tx.push(text(s, x + 6 * u, y + (17 + 8 * i) * u, 1.7, 0)));
       else if (R.length > 4 && x + w + 37 * u + 34 * u > fx1)
         R.forEach((s, i) =>
-          tx.push(i < 4 ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0) : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2))
+          tx.push(
+            i < 4
+              ? text(s, x + w + 3 * u, y + (5 + 8 * i) * u, 1.7, 0)
+              : text(s, x + w + 1 * u, y + (5 + 8 * (3 - (i - 4))) * u, 1.7, 2)
+          )
         );
       else R.forEach((s, i) => tx.push(text(s, x + w + 3 * u + col(i), y + (5 + 8 * (i % per)) * u, 1.7, 0)));
     }
@@ -171,24 +251,66 @@ function tceSheet(q) {
     const w = 114 * u,
       h = 8 * u;
     /* kind 'def': a definition the sheet gives out (the left end is notched, the signal comes in there) */
-    if (kind === 'def') poly([[x, y - h], [x + w - h, y - h], [x + w, y], [x + w - h, y + h], [x, y + h], [x + h, y]], 1);
-    else poly([[x, y - h], [x + w - h, y - h], [x + w, y], [x + w - h, y + h], [x, y + h]], 1);
+    if (kind === 'def')
+      poly(
+        [
+          [x, y - h],
+          [x + w - h, y - h],
+          [x + w, y],
+          [x + w - h, y + h],
+          [x, y + h],
+          [x + h, y]
+        ],
+        1
+      );
+    else
+      poly(
+        [
+          [x, y - h],
+          [x + w - h, y - h],
+          [x + w, y],
+          [x + w - h, y + h],
+          [x, y + h]
+        ],
+        1
+      );
     tx.push(text(t, x + w / 2, y, 2.05, 4));
-    if (note) tx.push(text('(' + note + ')', kind === 'def' ? x + w / 2 : x + 30 * u, y - h - 5 * u, 1.7, kind === 'def' ? 1 : 0));
+    if (note)
+      tx.push(
+        text('(' + note + ')', kind === 'def' ? x + w / 2 : x + 30 * u, y - h - 5 * u, 1.7, kind === 'def' ? 1 : 0)
+      );
     at(key, x, y - h, x + w, y + h);
     net(key);
   }
   /* condition labels of the IBD: a hexagon pointed at both ends, its lines left inside it */
   for (const [key, x, y, w, hh, L] of q.h || []) {
     const e = hh * 0.92;
-    poly([[x, y], [x + e, y - hh], [x + w - e, y - hh], [x + w, y], [x + w - e, y + hh], [x + e, y + hh]], 1);
+    poly(
+      [
+        [x, y],
+        [x + e, y - hh],
+        [x + w - e, y - hh],
+        [x + w, y],
+        [x + w - e, y + hh],
+        [x + e, y + hh]
+      ],
+      1
+    );
     (L || []).forEach((t, i) => tx.push(text(t, x + e, y + (i - (L.length - 1) / 2) * hh * 0.84, 2.05, 3)));
     at(key, x, y - hh, x + w, y + hh);
     net(key);
   }
   /* PI/O table boxes: a plain box with its words (the place of an input / output of the PI/O table) */
   for (const [key, x, y, w, h, t] of q.r || []) {
-    poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
+    poly(
+      [
+        [x, y],
+        [x + w, y],
+        [x + w, y + h],
+        [x, y + h]
+      ],
+      1
+    );
     if (t) tx.push(text(t, x + w / 2, y + h / 2, 2.05, 4));
     at(key, x, y, x + w, y + h);
     net(key);
@@ -196,13 +318,28 @@ function tceSheet(q) {
   /* PI/O connection marks: a small triangle on the line, pointing left ('l') or right ('r') */
   for (const [x, y, d] of q.g || []) {
     const k = 7 * u * (d === 'l' ? -1 : 1);
-    poly([[x - k / 2, y - 4.5 * u], [x + k / 2, y], [x - k / 2, y + 4.5 * u]], 1);
+    poly(
+      [
+        [x - k / 2, y - 4.5 * u],
+        [x + k / 2, y],
+        [x - k / 2, y + 4.5 * u]
+      ],
+      1
+    );
   }
   /* CRT diamonds: a push button of the operator station coming in ('in', tag at the left) or a lamp of it going out ('out', tag at the right) */
   for (const [key, x, y, dir, tag, letter, note] of q.d || []) {
     const w = 17 * u,
       h = 11 * u;
-    poly([[x - w, y], [x, y - h], [x + w, y], [x, y + h]], 1);
+    poly(
+      [
+        [x - w, y],
+        [x, y - h],
+        [x + w, y],
+        [x, y + h]
+      ],
+      1
+    );
     tx.push(text('CRT', x, y, 1.6, 4));
     /* the letter and the note stand at the wire side of the diamond, as in the drawing (two diamonds can stand close under each other) */
     const sd = dir === 'in' ? 1 : -1;
@@ -223,7 +360,13 @@ function tceSheet(q) {
       off = 3 * u;
     for (let s = 0; s < L; s += on + off) {
       const t = Math.min(s + on, L);
-      poly([[a[0] + sx * s, a[1] + sy * s], [a[0] + sx * t, a[1] + sy * t]], 0);
+      poly(
+        [
+          [a[0] + sx * s, a[1] + sy * s],
+          [a[0] + sx * t, a[1] + sy * t]
+        ],
+        0
+      );
     }
   }
   /* part symbols that carry no signal of the sheet: o = a circle (a summing point; dbl 1 = a servo valve coil), p = a closed outline (an amplifier) */
@@ -240,8 +383,22 @@ function tceSheet(q) {
   }
   /* the filled triangle of an analog PI/O connection on a line, pointing left: [x, y, s] = its middle and half its size */
   for (const [x, y, s] of q.tri || []) {
-    poly([[x + s, y - s], [x - s, y], [x + s, y + s]], 1);
-    for (let i = 1.5; i < 2 * s; i += 1.5) poly([[x - s + i, y - i / 2], [x - s + i, y + i / 2]], 0);
+    poly(
+      [
+        [x + s, y - s],
+        [x - s, y],
+        [x + s, y + s]
+      ],
+      1
+    );
+    for (let i = 1.5; i < 2 * s; i += 1.5)
+      poly(
+        [
+          [x - s + i, y - i / 2],
+          [x - s + i, y + i / 2]
+        ],
+        0
+      );
   }
   /* note arrows of the drawing (an explanation pointing at a part): a line with an open head at its end */
   for (const [a, b] of q.a || []) {
@@ -256,15 +413,42 @@ function tceSheet(q) {
       const r = size ? size[0] : 3.4 * u,
         e = r * 0.7071;
       ci.push([X(x), Y(y), W(r), 'SYM']);
-      poly([[x - e, y - e], [x + e, y + e]], 0);
-      poly([[x - e, y + e], [x + e, y - e]], 0);
+      poly(
+        [
+          [x - e, y - e],
+          [x + e, y + e]
+        ],
+        0
+      );
+      poly(
+        [
+          [x - e, y + e],
+          [x + e, y - e]
+        ],
+        0
+      );
       continue;
     }
     if (/^G:/.test(type)) {
       /* a gate of the IBD: a box with its letter, the input edge longer than the box */
       const [w, h, bar] = size;
-      poly([[x - w / 2, y - h / 2], [x + w / 2, y - h / 2], [x + w / 2, y + h / 2], [x - w / 2, y + h / 2]], 1);
-      if (bar > h) poly([[x - w / 2, y - bar / 2], [x - w / 2, y + bar / 2]], 0);
+      poly(
+        [
+          [x - w / 2, y - h / 2],
+          [x + w / 2, y - h / 2],
+          [x + w / 2, y + h / 2],
+          [x - w / 2, y + h / 2]
+        ],
+        1
+      );
+      if (bar > h)
+        poly(
+          [
+            [x - w / 2, y - bar / 2],
+            [x - w / 2, y + bar / 2]
+          ],
+          0
+        );
       tx.push(text(type.slice(2), x, y, 2.05, 4));
       at(key, x - w / 2, y - Math.max(h, bar) / 2, x + w / 2, y + Math.max(h, bar) / 2);
       net(key);
@@ -273,8 +457,22 @@ function tceSheet(q) {
     if (type === 'SR') {
       /* the flip-flop of the IBD: S over a circled R, the output at the S side */
       const [w, h] = size;
-      poly([[x - w / 2, y - h / 2], [x + w / 2, y - h / 2], [x + w / 2, y + h / 2], [x - w / 2, y + h / 2]], 1);
-      poly([[x - w / 2, y], [x + w / 2, y]], 0);
+      poly(
+        [
+          [x - w / 2, y - h / 2],
+          [x + w / 2, y - h / 2],
+          [x + w / 2, y + h / 2],
+          [x - w / 2, y + h / 2]
+        ],
+        1
+      );
+      poly(
+        [
+          [x - w / 2, y],
+          [x + w / 2, y]
+        ],
+        0
+      );
       ci.push([X(x), Y(y + h / 4), W(Math.min(w, h / 2) * 0.47), 'SYM']);
       tx.push(text('S', x, y - h / 4, 2.05, 4), text('R', x, y + h / 4, 2.05, 4));
       at(key, x - w / 2, y - h / 2, x + w / 2, y + h / 2);
@@ -298,7 +496,15 @@ function tceSheet(q) {
     /* size [w, h]: a block the drawing makes wider or taller than the usual one (an OR with many inputs, a flip-flop); its type stays at the top, its number at the bottom */
     const w = size ? size[0] / 2 : 14 * u,
       h = size ? size[1] / 2 : 10.5 * u;
-    poly([[x - w, y - h], [x + w, y - h], [x + w, y + h], [x - w, y + h]], 1);
+    poly(
+      [
+        [x - w, y - h],
+        [x + w, y - h],
+        [x + w, y + h],
+        [x - w, y + h]
+      ],
+      1
+    );
     tx.push(text(type, x, y - h + 5.25 * u, 1.9, 4), text(no, x, y + h - 5.25 * u, 1.7, 4));
     /* the parameters printed under the block ('TD:30.0S', 'K:36.0'); a note that starts with ^ stands over it (a DEF / DFE tag) */
     let below = 0;
@@ -307,7 +513,19 @@ function tceSheet(q) {
       else tx.push(text(n, x, y + h + (6 + 8 * below++) * u, 1.7, 1));
     /* the marks of its pins, inside the block: { l: ['S', 'R'], r: ['T'] } top to bottom */
     for (const [side, L] of Object.entries(pins || {}))
-      L.forEach((p, i) => p && tx.push(text(p, side === 'l' ? x - w + 2.5 * u : x + w - 2.5 * u, y - h + ((i + 0.5) * 2 * h) / L.length, 1.5, side === 'l' ? 3 : 5)));
+      L.forEach(
+        (p, i) =>
+          p &&
+          tx.push(
+            text(
+              p,
+              side === 'l' ? x - w + 2.5 * u : x + w - 2.5 * u,
+              y - h + ((i + 0.5) * 2 * h) / L.length,
+              1.5,
+              side === 'l' ? 3 : 5
+            )
+          )
+      );
     at(key, x - w, y - h, x + w, y + h);
     net(key);
   }
@@ -316,8 +534,20 @@ function tceSheet(q) {
     if (plain) {
       /* a block the drawing prints without cells: its name at the top left, the names of its pins inside at the heights given
          (plain = [[y of each left pin], [y of each right pin]]), its number at the bottom */
-      poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
-      tx.push(text(name, x + 3 * u, y + 7 * u, 2.05, 3), text(tag, x + w / 2, y - 4 * u, 1.7, 1), text(foot || '', x + w / 2, y + h - 3.5 * u, 1.7, 4));
+      poly(
+        [
+          [x, y],
+          [x + w, y],
+          [x + w, y + h],
+          [x, y + h]
+        ],
+        1
+      );
+      tx.push(
+        text(name, x + 3 * u, y + 7 * u, 2.05, 3),
+        text(tag, x + w / 2, y - 4 * u, 1.7, 1),
+        text(foot || '', x + w / 2, y + h - 3.5 * u, 1.7, 4)
+      );
       L.forEach((p, i) => tx.push(text(p, x + 3 * u, plain[0][i], 2.05, 3)));
       R.forEach((p, i) => {
         tx.push(text(p, x + w - 2 * u, plain[1][i], 2.05, 5));
@@ -328,19 +558,69 @@ function tceSheet(q) {
     }
     const bar = 15 * u,
       pw = 36 * u;
-    poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], 1);
-    poly([[x, y + bar], [x + w, y + bar]], 0);
-    poly([[x, y + h - bar], [x + w, y + h - bar]], 0);
-    poly([[x + pw, y + bar], [x + pw, y + h - bar]], 0);
-    poly([[x + w - pw, y + bar], [x + w - pw, y + h - bar]], 0);
-    tx.push(text(name, x + w / 2, y + bar / 2, 2.05, 4), text(tag, x + w / 2, y - 4 * u, 1.7, 1), text(foot || '', x + w / 2, y + h - bar / 2, 1.7, 4));
+    poly(
+      [
+        [x, y],
+        [x + w, y],
+        [x + w, y + h],
+        [x, y + h]
+      ],
+      1
+    );
+    poly(
+      [
+        [x, y + bar],
+        [x + w, y + bar]
+      ],
+      0
+    );
+    poly(
+      [
+        [x, y + h - bar],
+        [x + w, y + h - bar]
+      ],
+      0
+    );
+    poly(
+      [
+        [x + pw, y + bar],
+        [x + pw, y + h - bar]
+      ],
+      0
+    );
+    poly(
+      [
+        [x + w - pw, y + bar],
+        [x + w - pw, y + h - bar]
+      ],
+      0
+    );
+    tx.push(
+      text(name, x + w / 2, y + bar / 2, 2.05, 4),
+      text(tag, x + w / 2, y - 4 * u, 1.7, 1),
+      text(foot || '', x + w / 2, y + h - bar / 2, 1.7, 4)
+    );
     const step = (h - 2 * bar) / Math.max(L.length, R.length);
     L.forEach((p, i) => {
-      if (i) poly([[x, y + bar + i * step], [x + pw, y + bar + i * step]], 0);
+      if (i)
+        poly(
+          [
+            [x, y + bar + i * step],
+            [x + pw, y + bar + i * step]
+          ],
+          0
+        );
       tx.push(text(p, x + 3 * u, y + bar + (i + 0.5) * step, 1.9, 3));
     });
     R.forEach((p, i) => {
-      if (i) poly([[x + w - pw, y + bar + i * step], [x + w, y + bar + i * step]], 0);
+      if (i)
+        poly(
+          [
+            [x + w - pw, y + bar + i * step],
+            [x + w, y + bar + i * step]
+          ],
+          0
+        );
       tx.push(text(p, x + w - pw + 3 * u, y + bar + (i + 0.5) * step, 1.9, 3));
       net(key + '.' + p);
     });
@@ -381,13 +661,19 @@ function tceSheet(q) {
   /* (a sheet that lists its dots (j) shows only those: the ends of its short wire pieces are no junctions) */
   ln.forEach((a, i) => {
     if (seg[i] === undefined || q.j) return;
-    [[a[0], a[1]], [a[2], a[3]]].forEach(p =>
+    [
+      [a[0], a[1]],
+      [a[2], a[3]]
+    ].forEach(p =>
       ln.some((b, j) => {
         if (j === i || seg[j] !== seg[i]) return false;
         const on =
           Math.abs(p[1] - b[1]) < 0.01 && Math.abs(b[1] - b[3]) < 0.01
             ? p[0] > Math.min(b[0], b[2]) + 0.05 && p[0] < Math.max(b[0], b[2]) - 0.05
-            : Math.abs(p[0] - b[0]) < 0.01 && Math.abs(b[0] - b[2]) < 0.01 && p[1] > Math.min(b[1], b[3]) + 0.05 && p[1] < Math.max(b[1], b[3]) - 0.05;
+            : Math.abs(p[0] - b[0]) < 0.01 &&
+              Math.abs(b[0] - b[2]) < 0.01 &&
+              p[1] > Math.min(b[1], b[3]) + 0.05 &&
+              p[1] < Math.max(b[1], b[3]) - 0.05;
         if (on && !dots.some(d => d.x === p[0] && d.y === p[1])) dots.push({ x: p[0], y: p[1], n: seg[i] });
         return on;
       })
@@ -423,7 +709,14 @@ function tceSheet(q) {
       w = (q.w || []).find(z => z[0] === k),
       b = box[k];
     if (!w && !b) continue;
-    live.push({ key: k, n: src[k], rd: Array.isArray(r) ? r[0] : r, unit: Array.isArray(r) ? r[1] : null, x: w ? X(w[1][0][0]) : b.x2, y: w ? Y(w[1][0][1]) : (b.y1 + b.y2) / 2 });
+    live.push({
+      key: k,
+      n: src[k],
+      rd: Array.isArray(r) ? r[0] : r,
+      unit: Array.isArray(r) ? r[1] : null,
+      x: w ? X(w[1][0][0]) : b.x2,
+      y: w ? Y(w[1][0][1]) : (b.y1 + b.y2) / 2
+    });
   }
   const nst = Object.values(src).filter(n => !live.some(L => L.n === n));
   const NO = [0, 0],
@@ -446,6 +739,23 @@ function tceSheet(q) {
     syms: [],
     lyr: '',
     bv: BV,
-    sd: { tcs: 1, tce: src, box, n: Object.keys(src).length, seg, gates: [], src: [], outs: [], term: [], dots, xcon: [], an: [], anl: [], live, nst, lk }
+    sd: {
+      tcs: 1,
+      tce: src,
+      box,
+      n: Object.keys(src).length,
+      seg,
+      gates: [],
+      src: [],
+      outs: [],
+      term: [],
+      dots,
+      xcon: [],
+      an: [],
+      anl: [],
+      live,
+      nst,
+      lk
+    }
   };
 }
