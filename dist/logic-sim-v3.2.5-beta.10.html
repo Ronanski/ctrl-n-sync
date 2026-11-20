@@ -117630,7 +117630,13 @@ function anBacStep(U, dt) {
      heat         1,032 kW x speed / 3600 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js), NO-SOURCE shape (as the
                   16 C x speed of tcs.js); the water flow also needs the ACW loop (x ACW flow / 1500);
      oil tank     one temperature node (the return oil), 25,800 kJ/K (about 15 m3 of oil, NO-SOURCE: the tank volume is not in the docs);
-                  the cooler outlet = the return - heat removed / oil flow. TE-LO1002-1 / -2 = the outlet: the PV of TICLO1002, so
+     cooler node  3.2.5 (JENNIE): the oil and the plates inside the cooler are a second node, Ch = 730 kJ/K (CALC from the vendor area
+                  146.94 m2: oil channels = half of a 3 mm plate gap -> 0.22 m3 x 0.86 kg/L x 2.0 kJ/kg K = 379 kJ/K; plates 0.6 mm
+                  stainless -> 0.088 m3 x 7,900 kg/m3 x 0.5 kJ/kg K = 348 kJ/K; gap and plate thickness NO-SOURCE, the usual values of a
+                  plate cooler): Ch dTo/dt = Co (Treturn - To) - q, the tank takes back Co (Treturn - To) - its bearing heat. Before, the
+                  outlet was the return - q / Co at once: a valve move reached TE-LO1002 in the same scan, and TICLO1002 in AUTO swung
+                  the outlet 44.5 <-> 49.8 C on every scan (headless S68 3600 rpm soak, 2026-11-20), which the ATS 1.16 then read;
+                  the steady outlet stays the return - heat removed / oil flow. TE-LO1002-1 / -2 = the outlet: the PV of TICLO1002, so
                   the logic, tcs.js (TILO1001, the bearing outlets TIGE1007 / 1008, the bearing metal) and the HMI read the same value.
    Chain: SWBP trip -> CCWHE no seawater -> ACW supply hot (AN_ACW) -> TCV-CW1201 opens (TICLO1002 in AUTO) -> at 100 % the oil gets
    hot -> the bearings get hot (tcs.js). */
@@ -119146,7 +119152,7 @@ function anFwTagStep(U) {
     'FT-FW1059': r1(whp)
   });
 }
-const AN_LO = { UA: 95.8, Co: 64.5, Qb: 1032, Wmax: 170, M: 25800, Tamb: 30 };
+const AN_LO = { UA: 95.8, Co: 64.5, Qb: 1032, Wmax: 170, M: 25800, Ch: 730, Tamb: 30 };
 function anLubeCoolStep(U, dt) {
   const K = AN_LO,
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
@@ -119180,12 +119186,21 @@ function anLubeCoolStep(U, dt) {
         else b = m;
       }
     U.loTr = Qb > 0 && Cw > 0 ? (a + b) / 2 : Math.max(Tw, K.Tamb);
+    U.loCoolOut = NaN;
   }
   q = hx(U.loTr);
-  U.loTr += ((Qb - q) * dt) / K.M;
-  if (!flow) U.loTr += ((K.Tamb - U.loTr) * Math.min(dt, 3600)) / 3600; /* no circulation: the tank goes to the room */
+  /* the cooler node (see the notes above): a starting state or an older save point starts it at its steady value */
+  if (!isFinite(U.loCoolOut)) U.loCoolOut = flow ? U.loTr - q / K.Co : U.loTr;
+  if (flow) {
+    const To = U.loCoolOut;
+    U.loTr += ((Qb - K.Co * (U.loTr - To)) * dt) / K.M;
+    /* exact for any step: the node goes to its steady outlet with the time constant Ch / Co (11 s) */
+    U.loCoolOut = U.loTr - q / K.Co + (To - (U.loTr - q / K.Co)) * Math.exp((-K.Co * dt) / K.Ch);
+  } else {
+    U.loTr += ((K.Tamb - U.loTr) * Math.min(dt, 3600)) / 3600; /* no circulation: the tank goes to the room */
+    U.loCoolOut = U.loTr;
+  }
   U.loTr = Math.max(0, Math.min(99, U.loTr));
-  U.loCoolOut = flow ? U.loTr - q / K.Co : U.loTr;
   U.loCwF = Math.round(W);
   U.loCwOut = Cw > 0 ? Tw + q / Cw : Tw;
   U.loQ = Math.round(q);
@@ -132713,7 +132728,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 0b6b3fe'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build d1ba6fe'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -266651,7 +266666,13 @@ function anBacStep(U, dt) {
      heat         1,032 kW x speed / 3600 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js), NO-SOURCE shape (as the
                   16 C x speed of tcs.js); the water flow also needs the ACW loop (x ACW flow / 1500);
      oil tank     one temperature node (the return oil), 25,800 kJ/K (about 15 m3 of oil, NO-SOURCE: the tank volume is not in the docs);
-                  the cooler outlet = the return - heat removed / oil flow. TE-LO1002-1 / -2 = the outlet: the PV of TICLO1002, so
+     cooler node  3.2.5 (JENNIE): the oil and the plates inside the cooler are a second node, Ch = 730 kJ/K (CALC from the vendor area
+                  146.94 m2: oil channels = half of a 3 mm plate gap -> 0.22 m3 x 0.86 kg/L x 2.0 kJ/kg K = 379 kJ/K; plates 0.6 mm
+                  stainless -> 0.088 m3 x 7,900 kg/m3 x 0.5 kJ/kg K = 348 kJ/K; gap and plate thickness NO-SOURCE, the usual values of a
+                  plate cooler): Ch dTo/dt = Co (Treturn - To) - q, the tank takes back Co (Treturn - To) - its bearing heat. Before, the
+                  outlet was the return - q / Co at once: a valve move reached TE-LO1002 in the same scan, and TICLO1002 in AUTO swung
+                  the outlet 44.5 <-> 49.8 C on every scan (headless S68 3600 rpm soak, 2026-11-20), which the ATS 1.16 then read;
+                  the steady outlet stays the return - heat removed / oil flow. TE-LO1002-1 / -2 = the outlet: the PV of TICLO1002, so
                   the logic, tcs.js (TILO1001, the bearing outlets TIGE1007 / 1008, the bearing metal) and the HMI read the same value.
    Chain: SWBP trip -> CCWHE no seawater -> ACW supply hot (AN_ACW) -> TCV-CW1201 opens (TICLO1002 in AUTO) -> at 100 % the oil gets
    hot -> the bearings get hot (tcs.js). */
@@ -268167,7 +268188,7 @@ function anFwTagStep(U) {
     'FT-FW1059': r1(whp)
   });
 }
-const AN_LO = { UA: 95.8, Co: 64.5, Qb: 1032, Wmax: 170, M: 25800, Tamb: 30 };
+const AN_LO = { UA: 95.8, Co: 64.5, Qb: 1032, Wmax: 170, M: 25800, Ch: 730, Tamb: 30 };
 function anLubeCoolStep(U, dt) {
   const K = AN_LO,
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
@@ -268201,12 +268222,21 @@ function anLubeCoolStep(U, dt) {
         else b = m;
       }
     U.loTr = Qb > 0 && Cw > 0 ? (a + b) / 2 : Math.max(Tw, K.Tamb);
+    U.loCoolOut = NaN;
   }
   q = hx(U.loTr);
-  U.loTr += ((Qb - q) * dt) / K.M;
-  if (!flow) U.loTr += ((K.Tamb - U.loTr) * Math.min(dt, 3600)) / 3600; /* no circulation: the tank goes to the room */
+  /* the cooler node (see the notes above): a starting state or an older save point starts it at its steady value */
+  if (!isFinite(U.loCoolOut)) U.loCoolOut = flow ? U.loTr - q / K.Co : U.loTr;
+  if (flow) {
+    const To = U.loCoolOut;
+    U.loTr += ((Qb - K.Co * (U.loTr - To)) * dt) / K.M;
+    /* exact for any step: the node goes to its steady outlet with the time constant Ch / Co (11 s) */
+    U.loCoolOut = U.loTr - q / K.Co + (To - (U.loTr - q / K.Co)) * Math.exp((-K.Co * dt) / K.Ch);
+  } else {
+    U.loTr += ((K.Tamb - U.loTr) * Math.min(dt, 3600)) / 3600; /* no circulation: the tank goes to the room */
+    U.loCoolOut = U.loTr;
+  }
   U.loTr = Math.max(0, Math.min(99, U.loTr));
-  U.loCoolOut = flow ? U.loTr - q / K.Co : U.loTr;
   U.loCwF = Math.round(W);
   U.loCwOut = Cw > 0 ? Tw + q / Cw : Tw;
   U.loQ = Math.round(q);
@@ -307103,7 +307133,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 0b6b3fe'));
+    row('Version', E('span', 'scsver', ver + ' · build d1ba6fe'));
   }
   function openSet(near) {
     if (!set) {
