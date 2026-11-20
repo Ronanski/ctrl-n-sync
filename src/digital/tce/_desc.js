@@ -703,5 +703,7 @@ const TCS_DESC = {
   TCA781:
     'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated',
   TCA782:
-    'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.'
+    'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.',
+  TCA800:
+    'Comm alarm (hardware) 1: DI error of unit 0 slots 5 to A, each from two channels through an OR, to the CRT and TCA806.'
 };

@@ -6113,6 +6113,8 @@ const TCS_DESC = {
     'GENERATOR PROTECTION LOGIC B (1/2): the relays of generator protection panel B, with 52G closed and 60FLB not on, to the lockout relay 86G-B and its trips',
   'G-6B':
     'GENERATOR PROTECTION LOGIC B (2/2): pole slip, VT fuse failure, under and over frequency to generator protection B operated, and protection A or B to the line breaker trip coils',
+  'G-7':
+    '230kV SWITCHYARD AND TRANSFORMER PROTECTION LOGIC: switchyard, 86T, 50BF and unit transformer relays to the 52L / 52G trips, 6.6kV incomers, switchyard BF, the generator protection panels and the TCS',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -6554,7 +6556,9 @@ const TCS_DESC = {
   TCA781:
     'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated',
   TCA782:
-    'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.'
+    'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.',
+  TCA800:
+    'Comm alarm (hardware) 1: DI error of unit 0 slots 5 to A, each from two channels through an OR, to the CRT and TCA806.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -31437,6 +31441,225 @@ const TCS_DESC = {
     w,
     t,
     l,
+    a,
+    j
+  });
+})();
+/* SH-G-7 230kV SWITCHYARD AND TRANSFORMER PROTECTION LOGIC (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 17).
+   Typed from the drawing; units = the pixels of the page rendered 2296 wide (the scan is turned a little: each line is put at the height
+   of its left end). The relays of the switchyard and of the transformers (by others, in the dashed box): the 230kV switchyard lockout
+   relay, the generator transformer lockout relay 86T, breaker failure 50BF -> 86BF and the unit transformer / 6.6kV switchgear relays
+   (87T, 51N), each gathered by OR gates to the line breaker 52L, the generator breaker trip coils 52G-TC1 / TC2, the 6.6kV incomers,
+   the switchyard breaker failure, the generator protection panels, the annunciator and the TCS (each mark: the signal also goes to
+   that panel). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    e = [],
+    a = [],
+    j = [];
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4], [x + 19, y + 5, sh]);
+  };
+  /* a gate: bar x, centre y, the bar from y1 to y2 */
+  const gate = (k, ty, bar, y, y1, y2) => {
+    b.push([k, 'G:' + ty, '', bar + 9, y, [], {}, [18, ty === 'OR' ? 18 : 20, 0]]);
+    l.push([[bar, y1], [bar, y2]]);
+  };
+  /* a solid outline */
+  const box = (x1, y1, x2, y2) => l.push([[x1, y1], [x2, y1]], [[x2, y1], [x2, y2]], [[x2, y2], [x1, y2]], [[x1, y2], [x1, y1]]);
+  /* a dashed outline */
+  const dbox = (x1, y1, x2, y2) =>
+    e.push([[x1, y1], [x2, y1]], [[x2, y1], [x2, y2]], [[x2, y2], [x1, y2]], [[x1, y2], [x1, y1]]);
+  /* a mark that the signal also goes to a panel: x, top / bottom, words, the lines it crosses; the top arrow points right */
+  const mark = (x, y1, y2, z1, z2, X) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[x, P[i]], [x, P[i + 1]]]);
+    a.push([[x, y1], [x + 18, y1]], [[x, y2], [x - 18, y2]]);
+    t.push([x + 21, y1 + 4, z1], [x - 20, y2 + 4, z2, 2]);
+  };
+  /* the relays by others */
+  dbox(306, 236, 1574, 1286);
+  t.push([320, 231, '230kV SWYD., GEN. TRANSF. AND UNIT TRANSF. (BY OTHERS)']);
+  box(338, 249, 523, 280);
+  t.push([430, 258, '230kV SWYD.', 4], [430, 272, 'LOCKOUT RELAY', 4]);
+  s.push(['swy', 338, 249, 523, 280]);
+  box(337, 625, 521, 754);
+  t.push([429, 673, 'GEN. TRANSF.', 4], [429, 689, 'LOCKOUT RELAY', 4], [429, 705, '(86T)', 4]);
+  box(338, 758, 521, 790);
+  t.push([429, 774, '50BF -> 86BF', 4]);
+  s.push(['bf', 338, 758, 521, 790]);
+  box(337, 857, 520, 983);
+  t.push([429, 904, 'UNIT TRANSF. /', 4], [429, 920, '6.6kV SWGR.', 4], [429, 936, '(87T, 51N)', 4]);
+  /* the outputs of the lockout relay 86T and of the unit transformer relays: [key, line, words] */
+  [
+    ['ta', 648, 'TRIP GCB (52L)'],
+    ['tb', 666, 'TRIP GEN. BKR. (52G) / TRIP AUX. BKR.'],
+    ['tc', 687, 'TRIP GEN. BKR. (52G) / TRIP AUX. BKR.'],
+    ['td', 709, ''],
+    ['te', 730, ''],
+    ['ua', 878, 'TRIP GCB (52L)'],
+    ['ub', 899, 'TRIP GEN. BKR. (52G) / TRIP AUX. BKR.'],
+    ['uc', 920, 'TRIP GEN. BKR. (52G) / TRIP AUX. BKR.'],
+    ['ud', 941, ''],
+    ['ue', 962, '']
+  ].forEach(([k, y, z]) => {
+    s.push([k, 505, y - 8, 521, y + 8]);
+    if (z) t.push([529, y - 6, z]);
+  });
+  /* the gates */
+  gate('g1', 'OR', 1132, 282, 257, 309);
+  gate('g2', 'OR', 1133, 687, 660, 714);
+  gate('g3', 'OR', 1134, 919, 890, 946);
+  gate('g4', 'OR', 1134, 1240, 1224, 1255);
+  gate('g5', 'OR', 1695, 428, 400, 452);
+  gate('g6', 'OR', 1695, 516, 486, 541);
+  gate('g7', 'OR', 1695, 611, 584, 637);
+  gate('g8', 'OR', 1697, 995, 966, 1020);
+  gate('g9', 'OR', 1698, 1080, 1050, 1107);
+  gate('g10', 'A', 1784, 361, 340, 382);
+  b.push(['nc1', 'NC', '', 1733, 349, [], {}, [9]], ['nc2', 'NC', '', 1733, 428, [], {}, [9]]);
+  /* the switchyard lockout relay; the line breaker */
+  w.push(
+    ['swy', [[523, 262], [1132, 262]]],
+    ['swy', [[1050, 262], [1050, 349], [1724, 349]], 0, 0],
+    ['ta', [[521, 648], [885, 648], [885, 282], [1132, 282]]],
+    ['ua', [[520, 878], [907, 878], [907, 301], [1132, 301]]],
+    ['g1', [[1151, 282], [1394, 282]]],
+    ['g1', [[1194, 282], [1194, 325], [1394, 325]]]
+  );
+  j.push([1050, 262], [1194, 282]);
+  /* breaker failure 50BF -> 86BF (bus 1050) */
+  w.push(
+    ['bf', [[521, 771], [1050, 771]], 0, 0],
+    ['bf', [[1050, 771], [1050, 409], [1695, 409]]],
+    ['bf', [[1050, 536], [1695, 536]]],
+    ['bf', [[1050, 631], [1695, 631]]],
+    ['bf', [[1050, 708], [1133, 708]]],
+    ['bf', [[1050, 771], [1050, 1101], [1698, 1101]]],
+    ['bf', [[1050, 896], [1134, 896]]],
+    ['bf', [[1050, 1016], [1697, 1016]]]
+  );
+  j.push([1050, 536], [1050, 631], [1050, 708], [1050, 771], [1050, 896], [1050, 1016]);
+  /* the lockout relay 86T: the first trip of the generator breaker (bus 1094), the second (bus 1095), the annunciator, the switchyard */
+  w.push(
+    ['tb', [[521, 666], [1133, 666]]],
+    ['tb', [[1094, 666], [1094, 449], [1695, 449]]],
+    ['tb', [[1094, 496], [1695, 496]]],
+    ['tb', [[1094, 592], [1695, 592]]],
+    ['tc', [[521, 687], [844, 687], [844, 940], [1134, 940]]],
+    ['tc', [[1095, 940], [1095, 1059], [1698, 1059]]],
+    ['tc', [[1095, 975], [1697, 975]]],
+    ['td', [[521, 709], [802, 709], [802, 1162], [1966, 1162]]],
+    ['te', [[521, 730], [762, 730], [762, 1230], [1134, 1230]]]
+  );
+  j.push([1094, 666], [1094, 496], [1094, 592], [1095, 940], [1095, 975]);
+  /* the unit transformer: the first trip of the generator breaker (bus 1072), the second (bus 1072 below), the annunciator, the switchyard */
+  w.push(
+    ['ub', [[520, 899], [968, 899], [968, 687], [1133, 687]]],
+    ['ub', [[1072, 687], [1072, 428], [1695, 428]]],
+    ['ub', [[1072, 516], [1695, 516]]],
+    ['ub', [[1072, 611], [1695, 611]]],
+    ['uc', [[520, 920], [1134, 920]]],
+    ['uc', [[1072, 920], [1072, 1080], [1698, 1080]]],
+    ['uc', [[1072, 995], [1697, 995]]],
+    ['ud', [[520, 941], [782, 941], [782, 1188], [1966, 1188]]],
+    ['ue', [[520, 962], [740, 962], [740, 1250], [1134, 1250]]]
+  );
+  j.push([1072, 687], [1072, 516], [1072, 611], [1072, 920], [1072, 995]);
+  /* the generator breaker trip coils, the 6.6kV incomers, the switchyard breaker failure */
+  w.push(
+    ['g2', [[1152, 687], [1394, 687]]],
+    ['g2', [[1195, 687], [1195, 749], [1393, 749]]],
+    ['g3', [[1153, 919], [1394, 919]]],
+    ['g3', [[1195, 919], [1195, 855], [1393, 855]]],
+    ['g4', [[1153, 1240], [1292, 1240]]]
+  );
+  j.push([1195, 687], [1195, 919]);
+  /* the gates to the other panels */
+  w.push(
+    ['g5', [[1714, 428], [1724, 428]], 0, 0],
+    ['nc2', [[1742, 428], [1962, 428]]],
+    ['nc2', [[1760, 428], [1760, 376], [1784, 376]]],
+    ['nc1', [[1742, 349], [1784, 349]]],
+    ['g10', [[1803, 361], [1962, 361]]],
+    ['g6', [[1714, 516], [1962, 516]]],
+    ['g7', [[1714, 611], [1962, 611]]],
+    ['g8', [[1716, 995], [1964, 995]]],
+    ['g9', [[1717, 1080], [1964, 1080]]]
+  );
+  j.push([1760, 428]);
+  /* the outputs */
+  circ(1407, 282, '1', 'SH-G-2A');
+  circ(1407, 325, '2', 'SH-G-2A');
+  circ(1407, 687, '3', 'SH-G-1A');
+  circ(1407, 919, '4', 'SH-G-1A');
+  circ(1975, 361, '11', 'SH-G-2B');
+  circ(1975, 428, '9', 'SH-G-1B');
+  circ(1975, 516, '7', 'SH-G-5A');
+  circ(1975, 611, '8', 'SH-G-5A');
+  circ(1977, 995, '5', 'SH-G-6A');
+  circ(1977, 1080, '6', 'SH-G-6A');
+  r.push(['', 1966, 1153, 32, 18, 'ANN'], ['', 1966, 1179, 32, 18, 'ANN']);
+  [
+    [1213, 251, ['230kV SWYD., GEN. TRANSF.', 'AND UNIT TRANSF. PROTECTION', 'OPERATED']],
+    [1213, 294, ['230kV SWYD., GEN. TRANSF.', 'AND UNIT TRANSF. PROTECTION', 'OPERATED']],
+    [1213, 645, ['GEN. TRANSF. AND UNIT', 'TRANSF. PROTECTION', 'OPERATED (FOR 52G-TC1)']],
+    [1400, 744, ['6.6kV SWGR INCOM. CB TRIP', 'AND CLOSE BLOCKING']],
+    [1400, 850, ['6.6kV SWGR INCOM. CB TRIP', 'AND CLOSE BLOCKING']],
+    [1213, 878, ['GEN. TRANSF. AND UNIT', 'TRANSF. PROTECTION', 'OPERATED (FOR 52G-TC2)']],
+    [1298, 1235, ['SWYD. BF AND SWYD. CLOSE', 'BLOCKING']],
+    [1807, 312, ['230kV SWYD., GEN. TRANSF.', 'AND UNIT TRANSF.', 'PROTECTION RELAY NOT', 'OPERATED (BY OTHERS)']],
+    [1798, 392, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION NOT', 'OPERATED (BY OTHERS)']],
+    [1778, 481, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION', 'OPERATED (BY OTHERS)']],
+    [1778, 577, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION', 'OPERATED (BY OTHERS)']],
+    [1780, 959, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION', 'OPERATED (BY OTHERS)']],
+    [1780, 1044, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION', 'OPERATED (BY OTHERS)']]
+  ].forEach(([x, y, Z]) => Z.forEach((z, i) => t.push([x, y + 13 * i, z])));
+  t.push([1945, 1153, 'GEN. TRANSF. PROTECTION OPERATED', 2], [1945, 1179, 'UNIT TRANSF. PROTECTION OPERATED', 2]);
+  /* the marks: the signal also goes to that panel */
+  mark(1645, 334, 464, '(GCP)', 'OTHERS', [349, 409, 428, 449]);
+  mark(1645, 481, 553, '(GPP)', 'OTHERS', [496, 516, 536]);
+  mark(1645, 577, 650, '(TCS)', 'OTHERS', [592, 611, 631]);
+  mark(1645, 960, 1029, '(GPP)', 'OTHERS', [975, 995, 1016]);
+  mark(1645, 1045, 1114, '(TCS)', 'OTHERS', [1059, 1080, 1101]);
+  mark(1645, 1146, 1200, '(TCS)', 'OTHERS', [1162, 1188]);
+  /* the notes */
+  t.push(
+    [341, 1170, 'NOTE: 1) LOGICS ENCLOSED WITH'],
+    [592, 1170, 'SHOULD BE'],
+    [394, 1185, 'REVIEWED AND DETERMINED BY OTHERS.'],
+    [378, 1216, '2) THE DRAWING OF LOGIC ENCLOSED WITH'],
+    [394, 1231, 'SHOULD BE SUBMITTED TO MHPS BY OTHERS'],
+    [394, 1246, 'FOR SIGNAL INTERFACE REVIEW.']
+  );
+  dbox(542, 1161, 584, 1172);
+  dbox(637, 1207, 681, 1218);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-7',
+    title: '230kV SWITCHYARD AND TRANSFORMER PROTECTION LOGIC',
+    page: 17,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [205, 120, 2178, 1518],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    e,
     a,
     j
   });
@@ -62152,6 +62375,71 @@ const TCS_DESC = {
     d: [['crt1', xO, 165, 'out', 'TCA782_A1', 'S', '#1C']],
     b,
     m,
+    w,
+    j,
+    t
+  });
+})();
+/* TCA800 COMM ALARM(HARDWARE)(1) (331DM09788 page 204, controller COMM+MD, cycle not printed). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn, six groups alike:
+   - F (from TCA040 / 042 / 044 / 046 / 048 / 050) through BTR (TCA900-1 ... TCA905-1) and F (from TCA041 / 043 / 045 / 047 /
+     049 / 051) through BTR (TCA900-17 ... TCA905-17) into OR 004 / 010 / 016 / 005 / 011 / 017.
+   - Each OR output = A1 ... A6 (to TCA806), and through BTR 020 / 024 / 028 / 021 / 025 / 029 = UNIT 0 SLOT-5 / 6 / 7 / 8 / 9 / A
+     DI ERROR to CRT TCA800_1 ... TCA800_6.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    c = [],
+    d = [],
+    t = [],
+    j = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const HW = 28.76;
+  /* [top y, bottom y, branch y, F x, BTR x, bend x, OR x, OR no, junction x, BTR2 x, CRT x, out x,
+      BTR1 no, BTR2 no, BTR3 no, ref1, ref2, card, slot, out letter, CRT tag] */
+  const G = [
+    [372, 477, 457, 252, 357, 477, 529.5, '004', 838, 869, 1061, 1051, '003', '006', '020', 'TCA040', 'TCA041', 'TCA900', '5', 'A1', 'TCA800_1'],
+    [639, 745, 733, 250, 354, 473, 527, '010', 836, 867, 1056, 1051, '009', '012', '024', 'TCA042', 'TCA043', 'TCA901', '6', 'A2', 'TCA800_2'],
+    [904, 1010, 1000, 250, 353, 472, 525, '016', 833, 865, 1056, 1048, '015', '018', '028', 'TCA044', 'TCA045', 'TCA902', '7', 'A3', 'TCA800_3'],
+    [372, 477, 467, 1361, 1444, 1577, 1617.5, '005', 1850, 1882, 2069, 2064, '019', '022', '021', 'TCA046', 'TCA047', 'TCA903', '8', 'A4', 'TCA800_4'],
+    [639, 743, 735, 1358, 1442, 1575, 1612.5, '011', 1847, 1868, 2067, 2059, '023', '026', '025', 'TCA048', 'TCA049', 'TCA904', '9', 'A5', 'TCA800_5'],
+    [904, 1008, 1000, 1357, 1442, 1573, 1610, '017', 1846, 1878, 2065, 2059, '027', '030', '029', 'TCA050', 'TCA051', 'TCA905', 'A', 'A6', 'TCA800_6']
+  ];
+  G.forEach(([y1, y2, y3, xF, xB, xBend, xOR, nOR, xJ, xB2, xC, xO, n1, n2, n3, r1, r2, card, slot, o, tag]) => {
+    const k1 = 'i' + r1,
+      k2 = 'i' + r2,
+      ko = 'or' + nOR;
+    c.push([k1, 'in', 'F', xF, y1, '', [r1], 0, 1], [k2, 'in', 'F', xF, y2, '', [r2], 0, 1]);
+    W(k1, [xF + 27, y1], [xOR - HW, y1]);
+    W(k2, [xF + 27, y2], [xBend, y2], [xBend, y1 + 22], [xOR - HW, y1 + 22]);
+    b.push(['btr' + n1, 'o:BTR', n1, xB, y1], ['btr' + n2, 'o:BTR', n2, xB, y2], [ko, 'OR', nOR, xOR, y1 + 11]);
+    b.push(['btr' + n3, 'o:BTR', n3, xB2, y3]);
+    W(ko, [xOR + HW, y1], [xO - 27, y1]);
+    W(ko, [xJ, y1], [xJ, y3], [xC - 35, y3]);
+    j.push([xJ, y1]);
+    c.push(['o' + o, 'out', o, xO, y1, '', ['TCA806'], 0, 1]);
+    d.push(['crt' + o, xC, y3, 'out', tag, 'S', '#1C']);
+    t.push(
+      [xB + 21, y1 - 13, card + '-1'],
+      [xB + 21, y2 - 13, card + '-17'],
+      [xJ + 60, y3 - 26, 'UNIT 0 SLOT-' + slot],
+      [xJ + 60, y3 - 5, 'DI ERROR']
+    );
+  });
+  t.push([233, 1525, 'CONTROLLER:'], [392, 1525, 'COMM+MD'], [617, 1498, 'TRIGGER  :'], [617, 1525, 'CYCLE(ms):']);
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA800',
+    title: 'COMM ALARM(HARDWARE)(1)',
+    page: 204,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [168, 82, 2222, 1545],
+    c,
+    d,
+    b,
     w,
     j,
     t
@@ -144944,7 +145232,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build b6a0ed9'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build e78137b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -171169,6 +171457,8 @@ const TCS_DESC = {
     'GENERATOR PROTECTION LOGIC B (1/2): the relays of generator protection panel B, with 52G closed and 60FLB not on, to the lockout relay 86G-B and its trips',
   'G-6B':
     'GENERATOR PROTECTION LOGIC B (2/2): pole slip, VT fuse failure, under and over frequency to generator protection B operated, and protection A or B to the line breaker trip coils',
+  'G-7':
+    '230kV SWITCHYARD AND TRANSFORMER PROTECTION LOGIC: switchyard, 86T, 50BF and unit transformer relays to the 52L / 52G trips, 6.6kV incomers, switchyard BF, the generator protection panels and the TCS',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -171610,7 +171900,9 @@ const TCS_DESC = {
   TCA781:
     'EOS TEST: the EOS test sequence on turbine speed, the EOS detector abnormal diagnosis and two-of-three EOS operated',
   TCA782:
-    'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.'
+    'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.',
+  TCA800:
+    'Comm alarm (hardware) 1: DI error of unit 0 slots 5 to A, each from two channels through an OR, to the CRT and TCA806.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -196887,6 +197179,227 @@ const TCS_DESC = {
     w,
     t,
     l,
+    a,
+    j
+  });
+})();
+
+/* ---- src/digital/tce/G-7.js ---- */
+/* SH-G-7 230kV SWITCHYARD AND TRANSFORMER PROTECTION LOGIC (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 17).
+   Typed from the drawing; units = the pixels of the page rendered 2296 wide (the scan is turned a little: each line is put at the height
+   of its left end). The relays of the switchyard and of the transformers (by others, in the dashed box): the 230kV switchyard lockout
+   relay, the generator transformer lockout relay 86T, breaker failure 50BF -> 86BF and the unit transformer / 6.6kV switchgear relays
+   (87T, 51N), each gathered by OR gates to the line breaker 52L, the generator breaker trip coils 52G-TC1 / TC2, the 6.6kV incomers,
+   the switchyard breaker failure, the generator protection panels, the annunciator and the TCS (each mark: the signal also goes to
+   that panel). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    e = [],
+    a = [],
+    j = [];
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4], [x + 19, y + 5, sh]);
+  };
+  /* a gate: bar x, centre y, the bar from y1 to y2 */
+  const gate = (k, ty, bar, y, y1, y2) => {
+    b.push([k, 'G:' + ty, '', bar + 9, y, [], {}, [18, ty === 'OR' ? 18 : 20, 0]]);
+    l.push([[bar, y1], [bar, y2]]);
+  };
+  /* a solid outline */
+  const box = (x1, y1, x2, y2) => l.push([[x1, y1], [x2, y1]], [[x2, y1], [x2, y2]], [[x2, y2], [x1, y2]], [[x1, y2], [x1, y1]]);
+  /* a dashed outline */
+  const dbox = (x1, y1, x2, y2) =>
+    e.push([[x1, y1], [x2, y1]], [[x2, y1], [x2, y2]], [[x2, y2], [x1, y2]], [[x1, y2], [x1, y1]]);
+  /* a mark that the signal also goes to a panel: x, top / bottom, words, the lines it crosses; the top arrow points right */
+  const mark = (x, y1, y2, z1, z2, X) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[x, P[i]], [x, P[i + 1]]]);
+    a.push([[x, y1], [x + 18, y1]], [[x, y2], [x - 18, y2]]);
+    t.push([x + 21, y1 + 4, z1], [x - 20, y2 + 4, z2, 2]);
+  };
+  /* the relays by others */
+  dbox(306, 236, 1574, 1286);
+  t.push([320, 231, '230kV SWYD., GEN. TRANSF. AND UNIT TRANSF. (BY OTHERS)']);
+  box(338, 249, 523, 280);
+  t.push([430, 258, '230kV SWYD.', 4], [430, 272, 'LOCKOUT RELAY', 4]);
+  s.push(['swy', 338, 249, 523, 280]);
+  box(337, 625, 521, 754);
+  t.push([429, 673, 'GEN. TRANSF.', 4], [429, 689, 'LOCKOUT RELAY', 4], [429, 705, '(86T)', 4]);
+  box(338, 758, 521, 790);
+  t.push([429, 774, '50BF -> 86BF', 4]);
+  s.push(['bf', 338, 758, 521, 790]);
+  box(337, 857, 520, 983);
+  t.push([429, 904, 'UNIT TRANSF. /', 4], [429, 920, '6.6kV SWGR.', 4], [429, 936, '(87T, 51N)', 4]);
+  /* the outputs of the lockout relay 86T and of the unit transformer relays: [key, line, words] */
+  [
+    ['ta', 648, 'TRIP GCB (52L)'],
+    ['tb', 666, 'TRIP GEN. BKR. (52G) / TRIP AUX. BKR.'],
+    ['tc', 687, 'TRIP GEN. BKR. (52G) / TRIP AUX. BKR.'],
+    ['td', 709, ''],
+    ['te', 730, ''],
+    ['ua', 878, 'TRIP GCB (52L)'],
+    ['ub', 899, 'TRIP GEN. BKR. (52G) / TRIP AUX. BKR.'],
+    ['uc', 920, 'TRIP GEN. BKR. (52G) / TRIP AUX. BKR.'],
+    ['ud', 941, ''],
+    ['ue', 962, '']
+  ].forEach(([k, y, z]) => {
+    s.push([k, 505, y - 8, 521, y + 8]);
+    if (z) t.push([529, y - 6, z]);
+  });
+  /* the gates */
+  gate('g1', 'OR', 1132, 282, 257, 309);
+  gate('g2', 'OR', 1133, 687, 660, 714);
+  gate('g3', 'OR', 1134, 919, 890, 946);
+  gate('g4', 'OR', 1134, 1240, 1224, 1255);
+  gate('g5', 'OR', 1695, 428, 400, 452);
+  gate('g6', 'OR', 1695, 516, 486, 541);
+  gate('g7', 'OR', 1695, 611, 584, 637);
+  gate('g8', 'OR', 1697, 995, 966, 1020);
+  gate('g9', 'OR', 1698, 1080, 1050, 1107);
+  gate('g10', 'A', 1784, 361, 340, 382);
+  b.push(['nc1', 'NC', '', 1733, 349, [], {}, [9]], ['nc2', 'NC', '', 1733, 428, [], {}, [9]]);
+  /* the switchyard lockout relay; the line breaker */
+  w.push(
+    ['swy', [[523, 262], [1132, 262]]],
+    ['swy', [[1050, 262], [1050, 349], [1724, 349]], 0, 0],
+    ['ta', [[521, 648], [885, 648], [885, 282], [1132, 282]]],
+    ['ua', [[520, 878], [907, 878], [907, 301], [1132, 301]]],
+    ['g1', [[1151, 282], [1394, 282]]],
+    ['g1', [[1194, 282], [1194, 325], [1394, 325]]]
+  );
+  j.push([1050, 262], [1194, 282]);
+  /* breaker failure 50BF -> 86BF (bus 1050) */
+  w.push(
+    ['bf', [[521, 771], [1050, 771]], 0, 0],
+    ['bf', [[1050, 771], [1050, 409], [1695, 409]]],
+    ['bf', [[1050, 536], [1695, 536]]],
+    ['bf', [[1050, 631], [1695, 631]]],
+    ['bf', [[1050, 708], [1133, 708]]],
+    ['bf', [[1050, 771], [1050, 1101], [1698, 1101]]],
+    ['bf', [[1050, 896], [1134, 896]]],
+    ['bf', [[1050, 1016], [1697, 1016]]]
+  );
+  j.push([1050, 536], [1050, 631], [1050, 708], [1050, 771], [1050, 896], [1050, 1016]);
+  /* the lockout relay 86T: the first trip of the generator breaker (bus 1094), the second (bus 1095), the annunciator, the switchyard */
+  w.push(
+    ['tb', [[521, 666], [1133, 666]]],
+    ['tb', [[1094, 666], [1094, 449], [1695, 449]]],
+    ['tb', [[1094, 496], [1695, 496]]],
+    ['tb', [[1094, 592], [1695, 592]]],
+    ['tc', [[521, 687], [844, 687], [844, 940], [1134, 940]]],
+    ['tc', [[1095, 940], [1095, 1059], [1698, 1059]]],
+    ['tc', [[1095, 975], [1697, 975]]],
+    ['td', [[521, 709], [802, 709], [802, 1162], [1966, 1162]]],
+    ['te', [[521, 730], [762, 730], [762, 1230], [1134, 1230]]]
+  );
+  j.push([1094, 666], [1094, 496], [1094, 592], [1095, 940], [1095, 975]);
+  /* the unit transformer: the first trip of the generator breaker (bus 1072), the second (bus 1072 below), the annunciator, the switchyard */
+  w.push(
+    ['ub', [[520, 899], [968, 899], [968, 687], [1133, 687]]],
+    ['ub', [[1072, 687], [1072, 428], [1695, 428]]],
+    ['ub', [[1072, 516], [1695, 516]]],
+    ['ub', [[1072, 611], [1695, 611]]],
+    ['uc', [[520, 920], [1134, 920]]],
+    ['uc', [[1072, 920], [1072, 1080], [1698, 1080]]],
+    ['uc', [[1072, 995], [1697, 995]]],
+    ['ud', [[520, 941], [782, 941], [782, 1188], [1966, 1188]]],
+    ['ue', [[520, 962], [740, 962], [740, 1250], [1134, 1250]]]
+  );
+  j.push([1072, 687], [1072, 516], [1072, 611], [1072, 920], [1072, 995]);
+  /* the generator breaker trip coils, the 6.6kV incomers, the switchyard breaker failure */
+  w.push(
+    ['g2', [[1152, 687], [1394, 687]]],
+    ['g2', [[1195, 687], [1195, 749], [1393, 749]]],
+    ['g3', [[1153, 919], [1394, 919]]],
+    ['g3', [[1195, 919], [1195, 855], [1393, 855]]],
+    ['g4', [[1153, 1240], [1292, 1240]]]
+  );
+  j.push([1195, 687], [1195, 919]);
+  /* the gates to the other panels */
+  w.push(
+    ['g5', [[1714, 428], [1724, 428]], 0, 0],
+    ['nc2', [[1742, 428], [1962, 428]]],
+    ['nc2', [[1760, 428], [1760, 376], [1784, 376]]],
+    ['nc1', [[1742, 349], [1784, 349]]],
+    ['g10', [[1803, 361], [1962, 361]]],
+    ['g6', [[1714, 516], [1962, 516]]],
+    ['g7', [[1714, 611], [1962, 611]]],
+    ['g8', [[1716, 995], [1964, 995]]],
+    ['g9', [[1717, 1080], [1964, 1080]]]
+  );
+  j.push([1760, 428]);
+  /* the outputs */
+  circ(1407, 282, '1', 'SH-G-2A');
+  circ(1407, 325, '2', 'SH-G-2A');
+  circ(1407, 687, '3', 'SH-G-1A');
+  circ(1407, 919, '4', 'SH-G-1A');
+  circ(1975, 361, '11', 'SH-G-2B');
+  circ(1975, 428, '9', 'SH-G-1B');
+  circ(1975, 516, '7', 'SH-G-5A');
+  circ(1975, 611, '8', 'SH-G-5A');
+  circ(1977, 995, '5', 'SH-G-6A');
+  circ(1977, 1080, '6', 'SH-G-6A');
+  r.push(['', 1966, 1153, 32, 18, 'ANN'], ['', 1966, 1179, 32, 18, 'ANN']);
+  [
+    [1213, 251, ['230kV SWYD., GEN. TRANSF.', 'AND UNIT TRANSF. PROTECTION', 'OPERATED']],
+    [1213, 294, ['230kV SWYD., GEN. TRANSF.', 'AND UNIT TRANSF. PROTECTION', 'OPERATED']],
+    [1213, 645, ['GEN. TRANSF. AND UNIT', 'TRANSF. PROTECTION', 'OPERATED (FOR 52G-TC1)']],
+    [1400, 744, ['6.6kV SWGR INCOM. CB TRIP', 'AND CLOSE BLOCKING']],
+    [1400, 850, ['6.6kV SWGR INCOM. CB TRIP', 'AND CLOSE BLOCKING']],
+    [1213, 878, ['GEN. TRANSF. AND UNIT', 'TRANSF. PROTECTION', 'OPERATED (FOR 52G-TC2)']],
+    [1298, 1235, ['SWYD. BF AND SWYD. CLOSE', 'BLOCKING']],
+    [1807, 312, ['230kV SWYD., GEN. TRANSF.', 'AND UNIT TRANSF.', 'PROTECTION RELAY NOT', 'OPERATED (BY OTHERS)']],
+    [1798, 392, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION NOT', 'OPERATED (BY OTHERS)']],
+    [1778, 481, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION', 'OPERATED (BY OTHERS)']],
+    [1778, 577, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION', 'OPERATED (BY OTHERS)']],
+    [1780, 959, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION', 'OPERATED (BY OTHERS)']],
+    [1780, 1044, ['GEN. TRANSF. AND UNIT TRANSF.', 'PROTECTION', 'OPERATED (BY OTHERS)']]
+  ].forEach(([x, y, Z]) => Z.forEach((z, i) => t.push([x, y + 13 * i, z])));
+  t.push([1945, 1153, 'GEN. TRANSF. PROTECTION OPERATED', 2], [1945, 1179, 'UNIT TRANSF. PROTECTION OPERATED', 2]);
+  /* the marks: the signal also goes to that panel */
+  mark(1645, 334, 464, '(GCP)', 'OTHERS', [349, 409, 428, 449]);
+  mark(1645, 481, 553, '(GPP)', 'OTHERS', [496, 516, 536]);
+  mark(1645, 577, 650, '(TCS)', 'OTHERS', [592, 611, 631]);
+  mark(1645, 960, 1029, '(GPP)', 'OTHERS', [975, 995, 1016]);
+  mark(1645, 1045, 1114, '(TCS)', 'OTHERS', [1059, 1080, 1101]);
+  mark(1645, 1146, 1200, '(TCS)', 'OTHERS', [1162, 1188]);
+  /* the notes */
+  t.push(
+    [341, 1170, 'NOTE: 1) LOGICS ENCLOSED WITH'],
+    [592, 1170, 'SHOULD BE'],
+    [394, 1185, 'REVIEWED AND DETERMINED BY OTHERS.'],
+    [378, 1216, '2) THE DRAWING OF LOGIC ENCLOSED WITH'],
+    [394, 1231, 'SHOULD BE SUBMITTED TO MHPS BY OTHERS'],
+    [394, 1246, 'FOR SIGNAL INTERFACE REVIEW.']
+  );
+  dbox(542, 1161, 584, 1172);
+  dbox(637, 1207, 681, 1218);
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-7',
+    title: '230kV SWITCHYARD AND TRANSFORMER PROTECTION LOGIC',
+    page: 17,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [205, 120, 2178, 1518],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    e,
     a,
     j
   });
@@ -227864,6 +228377,73 @@ const TCS_DESC = {
     d: [['crt1', xO, 165, 'out', 'TCA782_A1', 'S', '#1C']],
     b,
     m,
+    w,
+    j,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA800.js ---- */
+/* TCA800 COMM ALARM(HARDWARE)(1) (331DM09788 page 204, controller COMM+MD, cycle not printed). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn, six groups alike:
+   - F (from TCA040 / 042 / 044 / 046 / 048 / 050) through BTR (TCA900-1 ... TCA905-1) and F (from TCA041 / 043 / 045 / 047 /
+     049 / 051) through BTR (TCA900-17 ... TCA905-17) into OR 004 / 010 / 016 / 005 / 011 / 017.
+   - Each OR output = A1 ... A6 (to TCA806), and through BTR 020 / 024 / 028 / 021 / 025 / 029 = UNIT 0 SLOT-5 / 6 / 7 / 8 / 9 / A
+     DI ERROR to CRT TCA800_1 ... TCA800_6.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    c = [],
+    d = [],
+    t = [],
+    j = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const HW = 28.76;
+  /* [top y, bottom y, branch y, F x, BTR x, bend x, OR x, OR no, junction x, BTR2 x, CRT x, out x,
+      BTR1 no, BTR2 no, BTR3 no, ref1, ref2, card, slot, out letter, CRT tag] */
+  const G = [
+    [372, 477, 457, 252, 357, 477, 529.5, '004', 838, 869, 1061, 1051, '003', '006', '020', 'TCA040', 'TCA041', 'TCA900', '5', 'A1', 'TCA800_1'],
+    [639, 745, 733, 250, 354, 473, 527, '010', 836, 867, 1056, 1051, '009', '012', '024', 'TCA042', 'TCA043', 'TCA901', '6', 'A2', 'TCA800_2'],
+    [904, 1010, 1000, 250, 353, 472, 525, '016', 833, 865, 1056, 1048, '015', '018', '028', 'TCA044', 'TCA045', 'TCA902', '7', 'A3', 'TCA800_3'],
+    [372, 477, 467, 1361, 1444, 1577, 1617.5, '005', 1850, 1882, 2069, 2064, '019', '022', '021', 'TCA046', 'TCA047', 'TCA903', '8', 'A4', 'TCA800_4'],
+    [639, 743, 735, 1358, 1442, 1575, 1612.5, '011', 1847, 1868, 2067, 2059, '023', '026', '025', 'TCA048', 'TCA049', 'TCA904', '9', 'A5', 'TCA800_5'],
+    [904, 1008, 1000, 1357, 1442, 1573, 1610, '017', 1846, 1878, 2065, 2059, '027', '030', '029', 'TCA050', 'TCA051', 'TCA905', 'A', 'A6', 'TCA800_6']
+  ];
+  G.forEach(([y1, y2, y3, xF, xB, xBend, xOR, nOR, xJ, xB2, xC, xO, n1, n2, n3, r1, r2, card, slot, o, tag]) => {
+    const k1 = 'i' + r1,
+      k2 = 'i' + r2,
+      ko = 'or' + nOR;
+    c.push([k1, 'in', 'F', xF, y1, '', [r1], 0, 1], [k2, 'in', 'F', xF, y2, '', [r2], 0, 1]);
+    W(k1, [xF + 27, y1], [xOR - HW, y1]);
+    W(k2, [xF + 27, y2], [xBend, y2], [xBend, y1 + 22], [xOR - HW, y1 + 22]);
+    b.push(['btr' + n1, 'o:BTR', n1, xB, y1], ['btr' + n2, 'o:BTR', n2, xB, y2], [ko, 'OR', nOR, xOR, y1 + 11]);
+    b.push(['btr' + n3, 'o:BTR', n3, xB2, y3]);
+    W(ko, [xOR + HW, y1], [xO - 27, y1]);
+    W(ko, [xJ, y1], [xJ, y3], [xC - 35, y3]);
+    j.push([xJ, y1]);
+    c.push(['o' + o, 'out', o, xO, y1, '', ['TCA806'], 0, 1]);
+    d.push(['crt' + o, xC, y3, 'out', tag, 'S', '#1C']);
+    t.push(
+      [xB + 21, y1 - 13, card + '-1'],
+      [xB + 21, y2 - 13, card + '-17'],
+      [xJ + 60, y3 - 26, 'UNIT 0 SLOT-' + slot],
+      [xJ + 60, y3 - 5, 'DI ERROR']
+    );
+  });
+  t.push([233, 1525, 'CONTROLLER:'], [392, 1525, 'COMM+MD'], [617, 1498, 'TRIGGER  :'], [617, 1525, 'CYCLE(ms):']);
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA800',
+    title: 'COMM ALARM(HARDWARE)(1)',
+    page: 204,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [168, 82, 2222, 1545],
+    c,
+    d,
+    b,
     w,
     j,
     t
@@ -331739,7 +332319,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b6a0ed9'));
+    row('Version', E('span', 'scsver', ver + ' · build e78137b'));
   }
   function openSet(near) {
     if (!set) {
