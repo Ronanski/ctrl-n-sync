@@ -154,6 +154,32 @@ const TCS_DESC = {
     'Turbine gland seal related auxiliaries in AUTO: gland steam exhauster and steam seal feed inlet valve in AUTO; first stage and reheat bowl metal temperature checks.',
   TCA040:
     'Digital input (1): MSV, CV and CRV secondary drain valve open / closed / trouble and torque switches to their valve sheets; AC exciter earth fault, auto start ready and control local to the operator station; DI power supply normal.',
+  TCA041:
+    'Digital input (2): steam seal diverting valve positions, No.4 extraction non-return valve positions, LP heater levels, generator field earth fault, AVR in use / troubles to the operator station, secondary drain valve torque switches; DI power supply normal.',
+  TCA042:
+    'Digital input (3): MSV(B), CV(B) and CRV(B) secondary drain valve opened / closed / trouble and torque switches, gland steam line drain valve closed, primary and back-up AVR trouble and PSS on; DI power supply normal.',
+  TCA043:
+    'Digital input (4): No.2 and No.5 extraction non-return valve positions, No.1 HP and No.2 LP heater levels, HP/LP bypass control in auto, oil purifier pump, MSV(B), CV(B) and CRV(B) drain valve torque switches; DI power supply normal.',
+  TCA044:
+    'Digital input (5): CV(B) secondary warming drain valve positions, trouble and torque switches, HP turbine warming valve positions and torque switches, cold reheat drain valve feedback to the operator station; DI power supply normal.',
+  TCA045:
+    'Digital input (6): No.3 extraction primary non-return valve positions, deaerator level very high, duplex oil filter dP, generator panel and transformer protection, generator voltage OK, 52L close / open, ASD1 and AVR mode and channel to the operator station; DI power supply normal.',
+  TCA046:
+    'Digital input (7): AVR set point max / min, over and under excitation limit, PF and reactive power control, AVR VT fuse normal to the operator station; DI power supply normal.',
+  TCA047:
+    'Digital input (8): No.3 extraction non-return valve positions, HP turbine warming line drain valve auto / open / close (to the operator station), warming valve trouble, main oil tank vapour extractor running and trouble; DI power supply normal.',
+  TCA048:
+    'Digital input (9): No.1 / No.3 shaft vibration high, LP exhaust hood spray and cold reheat non-return valve positions, generator leakage level, coalescer filter dP, supervisory instrument trouble, condenser vacuum break, gland steam exhauster; DI power supply normal.',
+  TCA049:
+    'Digital input (10): No.1 / No.3 shaft vibration high, RSR diode fault, steam seal feed and inlet valve positions, trouble and torque switches, generator protection relay and 30DF/64F relay troubles; DI power supply normal.',
+  TCA050:
+    'Digital input (11): No.2 / No.4 shaft vibration high, 86G-A relay coil open and protection relay (A) trouble to the operator station, main oil tank level low, control oil filter (A) dP, generator and exciter space heaters; DI power supply normal.',
+  TCA051:
+    'Digital input (12): No.2 / No.4 shaft vibration high, 86G-B relay coil open and protection relay (B) trouble, main oil tank level high, control oil filter (B) dP, gland steam line drain valve, unit transformer protection, all to the operator station; DI power supply normal.',
+  TCA052:
+    'Digital input (13): trip PCM A / B / C normal, TCS-8 temperature high, Modbus CPU A / B normal and power supply abnormal; DI power supply normal.',
+  TCA053:
+    'Digital input (14): AC / DC control, lighting and protection power supplies abnormal, TCS-4 / TCS-5 temperature high, EOS operated A / B / C, PLU operated A / B / C; DI power supply normal.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
