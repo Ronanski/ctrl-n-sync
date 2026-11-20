@@ -679,5 +679,7 @@ const TCS_DESC = {
   TCA767:
     'THSC SPEED/LOAD HOLD: HP / IP surface stress against the mode limits; speed/load hold, stress high, the THSC surface limits and the present stress',
   TCA768A:
-    'SPEED LOAD HOLD: the load rate of the start-up mode (MODE blocks on generator load) or the normal/stop rate, to TCA769'
+    'SPEED LOAD HOLD: the load rate of the start-up mode (MODE blocks on generator load) or the normal/stop rate, to TCA769',
+  TCA770:
+    'THSC SIMULATION: a ramp integrator through four curves gives the simulated HP / IP inner and outer wall metal temperatures'
 };
