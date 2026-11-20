@@ -226,6 +226,20 @@ const TCS_DESC = {
     'Analog input diagnostics (15), card TCA961: HP turbine first stage outer wall metal temperature and No.3 and No.4 bearing outlet oil temperatures through AI DIAG.MD blocks.',
   TCA365:
     'Analog input diagnostics (15), card TCA961: MSV inlet, HP exhaust and LP exhaust hood steam temperatures (C), each through an AI DIAG.MD block to the TCE controller; one spare RTD input.',
+  TCA370:
+    'Input signal diagnostics (1): reheat bowl inner wall metal temperature (A) and (B) into one DUAL INPUT DIAGNOSTICS block; value, abnormal, input error, deviation high and I/O error out.',
+  TCA371:
+    'Input signal diagnostics (2): gland steam seal header pressure (A) and (B) into one DUAL INPUT DIAGNOSTICS block; value, abnormal, input error, deviation high and I/O error out.',
+  TCA372:
+    'Input signal diagnostics (3): reheat bowl steam pressure (A), (B) and (C) into one TMR AI DIAGNOSTICS block; the value and the abnormal word out.',
+  TCA440:
+    'Analog input diagnostics (15), card TCA970: lube oil cooler inlet and outlet (A), (B) oil temperatures and generator stator coil temperature (A), each through an AI DIAG.MD block to the TCE controller.',
+  TCA441:
+    'Analog input diagnostics (15), card TCA970: generator stator coil temperatures (B) to (E), each through an AI DIAG.MD block to the TCE controller.',
+  TCA442:
+    'Analog input diagnostics (15), card TCA970: generator cooling gas air cooler outlet temperatures (A) to (D), each through an AI DIAG.MD block to the TCE controller.',
+  TCA443:
+    'Analog input diagnostics (15), card TCA970: AC exciter outlet air temperature and generator stator coil temperature (F), each through an AI DIAG.MD block to the TCE controller.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
