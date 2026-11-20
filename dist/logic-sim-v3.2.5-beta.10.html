@@ -6660,7 +6660,9 @@ const TCS_DESC = {
   TCA830:
     'COMM digital output (1): sixteen points of the PI/O table TCA980 (1 to 16): the CRV, CV and MSV secondary drain valve commands, the steam seal feed inlet valve commands and closed signal, the turbine gland steam line drain valve commands, AMB. COLD MODE TEMP. and MODE JUDGEMENT INSTRUMENT NORMAL (no first stage or reheat bowl inner wall metal temperature abnormal); one point spare.',
   TCA834:
-    'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.'
+    'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.',
+  TCA835:
+    'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -66891,6 +66893,80 @@ const TCS_DESC = {
       [400, 1517, 'COMM+MD'],
       [624, 1495, 'TRIGGER  :'],
       [624, 1522, 'CYCLE(ms):100']
+    ]
+  });
+})();
+/* TCA835 COMM DIGITAL OUTPUT(6) (331DM09788 page 239, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen digital outputs of the COMM controller (PI/O table TCA982, points 17 to 32): the LP exhaust hood water spray valve
+   solenoid valve, the No.5 extraction steam, No.3 extraction steam primary and No.4 extraction steam non return valve energize commands (TCA738 /
+   715 / 712 / 713); the other twelve points are spare (OFF(0)). The A1 line of TCA712 steps down once before its BTR, as drawn. The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    k = [],
+    b = [],
+    r = [],
+    g = [],
+    l = [],
+    w = [],
+    t = [];
+  /* one output: the connector (or the reference), BTR, the PI/O mark, the box of the PI/O table with its words and DO under it */
+  const row = (col, i, src, sheet, btr, no, words) => {
+    const L = col === 0,
+      off = src === 'OFF(0)',
+      y = Math.round((L ? 157 : 160) + 159.8 * i),
+      cx = L ? (off ? 330 : 346) : 1383 /* connector */,
+      bx = L ? 571 : 1614 /* BTR */,
+      gx = L ? 685 : 1727 /* PI/O mark */,
+      rx = L ? (off ? 792 : 767) : 1842 /* box */,
+      rw = L ? (off ? 288 : 352) : 288,
+      two = words.length > 1,
+      key = (L ? 'l' : 'r') + (i + 1);
+    if (off) k.push([key, cx - 84, y, 'OFF(0)', 'sys.ref']);
+    else c.push([key, 'in', src, cx, y, '', [sheet]]);
+    b.push(['btr' + btr, 'o:BTR', btr, bx, y]);
+    g.push([gx, y, 'r']);
+    const yc = src === 'A1' && sheet === 'TCA712' ? y - 11 : y /* the connector of TCA712 sits 11 higher */;
+    if (yc !== y) c[c.length - 1][4] = yc;
+    w.push([key, yc === y ? [[off ? cx + 150 : cx + 27, y], [gx - 7, y]] : [[cx + 27, yc], [545, yc], [545, y], [gx - 7, y]]], [key, [[gx + 7, y], [rx, y]], 1]);
+    r.push(['', rx, y - (two ? 28 : 17), rw, two ? 53 : 33, '']);
+    l.push([[rx + 21, y - (two ? 28 : 17)], [rx + 21, y + (two ? 25 : 16)]]);
+    words.forEach((s, n) => t.push([rx + 27, y + (two ? -3 + 22 * n : 8), s]));
+    t.push([rx + rw - 15, y + (two ? 46 : 36), 'DO'], [gx - 69, y - 19, '(TCA982-' + no + ')', 0, 1.7]);
+  };
+  [
+    ['A1', 'TCA738', '001', ['LP EXH HOOD WATER SPRAY VLV SO', 'LENOID VALVE ENERGIZE COMMAND']],
+    ['A1', 'TCA715', '003', ['NO.5 EXTRACTION STEAM NON', 'RETURN VALVE ENERGIZE COMMAND']],
+    ['A1', 'TCA712', '005', ['NO.3 EXTRACTION STM PRIMARY NO', 'N RETURN VLV ENERGIZE COMMAND']],
+    ['A1', 'TCA713', '007', ['NO.4 EXTRACTION STM NON RETURN', ' VALVE ENERGIZE COMMAND']],
+    ['OFF(0)', '', '009', ['(SPARE)']],
+    ['OFF(0)', '', '011', ['(SPARE)']],
+    ['OFF(0)', '', '013', ['(SPARE)']],
+    ['OFF(0)', '', '015', ['(SPARE)']]
+  ].forEach(([src, sheet, btr, words], i) => row(0, i, src, sheet, btr, 17 + i, words));
+  ['002', '004', '006', '008', '010', '012', '014', '016'].forEach((btr, i) => row(1, i, 'OFF(0)', '', btr, 25 + i, ['(SPARE)']));
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA835',
+    title: 'COMM DIGITAL OUTPUT(6)',
+    page: 239,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [164, 82, 2232, 1544],
+    k,
+    c,
+    b,
+    r,
+    g,
+    l,
+    w,
+    t: [
+      ...t,
+      [234, 1518, 'CONTROLLER:'],
+      [395, 1518, 'COMM+MD'],
+      [620, 1498, 'TRIGGER  :'],
+      [620, 1525, 'CYCLE(ms):100']
     ]
   });
 })();
@@ -151078,7 +151154,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 424225f'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 5a3f74b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -177850,7 +177926,9 @@ const TCS_DESC = {
   TCA830:
     'COMM digital output (1): sixteen points of the PI/O table TCA980 (1 to 16): the CRV, CV and MSV secondary drain valve commands, the steam seal feed inlet valve commands and closed signal, the turbine gland steam line drain valve commands, AMB. COLD MODE TEMP. and MODE JUDGEMENT INSTRUMENT NORMAL (no first stage or reheat bowl inner wall metal temperature abnormal); one point spare.',
   TCA834:
-    'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.'
+    'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.',
+  TCA835:
+    'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -238815,6 +238893,82 @@ const TCS_DESC = {
       [400, 1517, 'COMM+MD'],
       [624, 1495, 'TRIGGER  :'],
       [624, 1522, 'CYCLE(ms):100']
+    ]
+  });
+})();
+
+/* ---- src/digital/tce/TCA835.js ---- */
+/* TCA835 COMM DIGITAL OUTPUT(6) (331DM09788 page 239, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen digital outputs of the COMM controller (PI/O table TCA982, points 17 to 32): the LP exhaust hood water spray valve
+   solenoid valve, the No.5 extraction steam, No.3 extraction steam primary and No.4 extraction steam non return valve energize commands (TCA738 /
+   715 / 712 / 713); the other twelve points are spare (OFF(0)). The A1 line of TCA712 steps down once before its BTR, as drawn. The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    k = [],
+    b = [],
+    r = [],
+    g = [],
+    l = [],
+    w = [],
+    t = [];
+  /* one output: the connector (or the reference), BTR, the PI/O mark, the box of the PI/O table with its words and DO under it */
+  const row = (col, i, src, sheet, btr, no, words) => {
+    const L = col === 0,
+      off = src === 'OFF(0)',
+      y = Math.round((L ? 157 : 160) + 159.8 * i),
+      cx = L ? (off ? 330 : 346) : 1383 /* connector */,
+      bx = L ? 571 : 1614 /* BTR */,
+      gx = L ? 685 : 1727 /* PI/O mark */,
+      rx = L ? (off ? 792 : 767) : 1842 /* box */,
+      rw = L ? (off ? 288 : 352) : 288,
+      two = words.length > 1,
+      key = (L ? 'l' : 'r') + (i + 1);
+    if (off) k.push([key, cx - 84, y, 'OFF(0)', 'sys.ref']);
+    else c.push([key, 'in', src, cx, y, '', [sheet]]);
+    b.push(['btr' + btr, 'o:BTR', btr, bx, y]);
+    g.push([gx, y, 'r']);
+    const yc = src === 'A1' && sheet === 'TCA712' ? y - 11 : y /* the connector of TCA712 sits 11 higher */;
+    if (yc !== y) c[c.length - 1][4] = yc;
+    w.push([key, yc === y ? [[off ? cx + 150 : cx + 27, y], [gx - 7, y]] : [[cx + 27, yc], [545, yc], [545, y], [gx - 7, y]]], [key, [[gx + 7, y], [rx, y]], 1]);
+    r.push(['', rx, y - (two ? 28 : 17), rw, two ? 53 : 33, '']);
+    l.push([[rx + 21, y - (two ? 28 : 17)], [rx + 21, y + (two ? 25 : 16)]]);
+    words.forEach((s, n) => t.push([rx + 27, y + (two ? -3 + 22 * n : 8), s]));
+    t.push([rx + rw - 15, y + (two ? 46 : 36), 'DO'], [gx - 69, y - 19, '(TCA982-' + no + ')', 0, 1.7]);
+  };
+  [
+    ['A1', 'TCA738', '001', ['LP EXH HOOD WATER SPRAY VLV SO', 'LENOID VALVE ENERGIZE COMMAND']],
+    ['A1', 'TCA715', '003', ['NO.5 EXTRACTION STEAM NON', 'RETURN VALVE ENERGIZE COMMAND']],
+    ['A1', 'TCA712', '005', ['NO.3 EXTRACTION STM PRIMARY NO', 'N RETURN VLV ENERGIZE COMMAND']],
+    ['A1', 'TCA713', '007', ['NO.4 EXTRACTION STM NON RETURN', ' VALVE ENERGIZE COMMAND']],
+    ['OFF(0)', '', '009', ['(SPARE)']],
+    ['OFF(0)', '', '011', ['(SPARE)']],
+    ['OFF(0)', '', '013', ['(SPARE)']],
+    ['OFF(0)', '', '015', ['(SPARE)']]
+  ].forEach(([src, sheet, btr, words], i) => row(0, i, src, sheet, btr, 17 + i, words));
+  ['002', '004', '006', '008', '010', '012', '014', '016'].forEach((btr, i) => row(1, i, 'OFF(0)', '', btr, 25 + i, ['(SPARE)']));
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA835',
+    title: 'COMM DIGITAL OUTPUT(6)',
+    page: 239,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [164, 82, 2232, 1544],
+    k,
+    c,
+    b,
+    r,
+    g,
+    l,
+    w,
+    t: [
+      ...t,
+      [234, 1518, 'CONTROLLER:'],
+      [395, 1518, 'COMM+MD'],
+      [620, 1498, 'TRIGGER  :'],
+      [620, 1525, 'CYCLE(ms):100']
     ]
   });
 })();
@@ -344113,7 +344267,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 424225f'));
+    row('Version', E('span', 'scsver', ver + ' · build 5a3f74b'));
   }
   function openSet(near) {
     if (!set) {
