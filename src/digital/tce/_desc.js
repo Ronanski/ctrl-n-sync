@@ -523,5 +523,7 @@ const TCS_DESC = {
   TCA680:
     'Gland steam exhauster (TC-28) motor: auto start and stop by the gland seal start and stop groups; start command, running and AUTO out.',
   TCA685:
-    'HP turbine warming valve (TC-20) motor valve: opened by the HP turbine warming start group while the aux steam header pressure permits; open / close signals, AUTO, positions and permissive out.'
+    'HP turbine warming valve (TC-20) motor valve: opened by the HP turbine warming start group while the aux steam header pressure permits; open / close signals, AUTO, positions and permissive out.',
+  TCA686:
+    'HP turbine warming valve (TC-20) open / close: open and close signals, or in AUTO with program control by exhaust steam pressure and valve position through flickers; each blocks the other.'
 };
