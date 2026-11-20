@@ -673,6 +673,7 @@ const TCS_DESC = {
   TCE470: 'EHG minor trouble annunciation (1): ALARM(1) of the network, battery, simulation and pressure troubles, ALARM(2) of the valve abnormals.',
   TCE471: 'EHG minor trouble annunciation (2): ALARM(3) of the input discrepancies, ALARM(4) of the turbine speed abnormals.',
   TCE472: 'EHG minor trouble annunciation (3): TCS MAJOR TROUBLE (two of three B5-B7 lost), EHG TROUBLE and EHG MINOR TROUBLE.',
+  TCE476: 'TPC alarm: PCM no-received held until ANN RESET, TPC(A) to (C) ABNORMAL and PCM NORECEIVE.',
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
