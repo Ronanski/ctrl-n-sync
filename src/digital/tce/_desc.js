@@ -509,5 +509,17 @@ const TCS_DESC = {
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
-    'Turbine gland seal group control (TE-6, 7): start in progress from the group start command or the operator station, with the seal feed and unloading valves in AUTO, vacuum break complete and aux. steam temperature OK; reset and complete.'
+    'Turbine gland seal group control (TE-6, 7): start in progress from the group start command or the operator station, with the seal feed and unloading valves in AUTO, vacuum break complete and aux. steam temperature OK; reset and complete.',
+  TCA637:
+    'Turbine gland seal group control (TE-6, 7), start steps: drain valve full open and full close commands, open command of the steam seal feed inlet valve, start complete, and start trouble after 480 s.',
+  TCA638:
+    'Turbine gland seal group control (TE-6, 7), stop: stop in progress from the group stop command or the operator station with vacuum broken and the valves in AUTO, the stop permissive, the stop command to the exhauster, stop complete and stop trouble after 400 s.',
+  TCA639:
+    'Turbine gland seal group control (TE-6, 7), conditions: the start and stop related auxiliaries in AUTO, and aux. steam temperature OK (over 275 degC in ambient cold mode, else over 200 degC).',
+  TCA650:
+    'Steam seal feed inlet valve (TC-31) motor valve: auto open by the gland seal start group, auto close by the stop group; open / close commands, opened, closed and AUTO out.',
+  TCA655:
+    'Main oil tank vapour extractor (TB-12) motor: start command held by a set / reset memory, running out, and the extractor stopped alarm when it is not running while an oil pump runs for 5 s.',
+  TCA680:
+    'Gland steam exhauster (TC-28) motor: auto start and stop by the gland seal start and stop groups; start command, running and AUTO out.'
 };
