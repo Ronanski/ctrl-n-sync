@@ -669,5 +669,7 @@ const TCS_DESC = {
   TCA763:
     'IP LCFI: IP surface stress above the threshold through the HSG and the FG-1(LCFI) curve, summing timing by CMP, TD and PDF',
   TCA765:
-    'HP LIFE TIME COUNTER: HP LCFI summed at each summing timing into the HP life expenditure value, to the CRT'
+    'HP LIFE TIME COUNTER: HP LCFI summed at each summing timing into the HP life expenditure value, to the CRT',
+  TCA766:
+    'IP LIFE TIME COUNTER: IP LCFI summed at each summing timing into the IP life expenditure value, to the CRT'
 };
