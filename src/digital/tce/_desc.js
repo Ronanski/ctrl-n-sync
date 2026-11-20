@@ -629,5 +629,7 @@ const TCS_DESC = {
   TCA751:
     'Thermal stress (HP): THSC trigger and timer, INIT1 loading / INIT2 half speed / INIT3 others, LAG_ON, and the THSC INITIAL block with the stage and casing metal temperatures (real or simulated)',
   TCA752:
-    'Thermal stress (HP): three DISTRIBUTION blocks turn the stage temperatures TH(2)-TH(5) into TH(3)N-TH(5)N and QH(3)N'
+    'Thermal stress (HP): three DISTRIBUTION blocks turn the stage temperatures TH(2)-TH(5) into TH(3)N-TH(5)N and QH(3)N',
+  TCA753:
+    'THERMAL STRESS(HP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TH(2) and TH(1), as drawn.'
 };
