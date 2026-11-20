@@ -1580,6 +1580,18 @@
       press(vo.r, 'Raise', 'Raises the generator voltage', 'v+');
       h.avrA = press(vo.r, 'AVR automatic', 'The AVR holds the generator voltage', 'avr', 'AUTO');
       h.avrM = press(vo.r, 'AVR manual', 'The field is set by hand', 'avr', 'MAN');
+      /* 41: the field breaker by hand (TCA587, the operator station 41 close / open commands); the engine refuses with the reason */
+      const fb = card('Field breaker 41', 'Closes or opens the field breaker; the ATS closes it by itself in the excitation step');
+      h.fb = fb;
+      for (const [t, op, tip] of [
+        ['Close 41', 'close41', 'Closes the field breaker: 52G open, rated speed, no trip'],
+        ['Open 41', 'open41', 'Opens the field breaker: only with 52G open']
+      ]) {
+        const b41 = E('button', 'st-b', t);
+        b41.title = tip;
+        arm(b41, t, () => say(call(() => AN.turbine('gen', { op }), '')));
+        fb.r.append(b41);
+      }
       /* 7-65: the speed of the turbine through the governor */
       const sp = card(
         'Speed (7-65)',
@@ -1595,7 +1607,7 @@
       );
       h.lo = lo;
       press(lo.r, 'Reset lockout relays', 'Refused while the cause stands', 'reset86');
-      box.append(sy.c, vo.c, sp.c, lo.c);
+      box.append(sy.c, fb.c, vo.c, sp.c, lo.c);
       ownPg.replaceChildren(head, box, gp.msg);
     }
     const h = gp.h,
@@ -1608,16 +1620,13 @@
     h['Generator breaker 52G'].textContent = G.c52g ? 'Closed' : 'Open';
     h['Field breaker 41'].textContent = G.f41 ? 'Closed' : 'Open';
     h['Generator voltage'].textContent = fmt(G.kV, 2) + ' kV';
-    /* on the line the generator runs at the frequency of the line: one number, no slip */
-    const hz = G.c52g && isFinite(G.gridHz) ? G.gridHz : G.hz;
-    h['Frequency'].textContent = fmt(hz, 2) + ' Hz';
+    h['Frequency'].textContent = fmt(G.hz, 2) + ' Hz';
     h['Synchronizing check 25'].textContent = G.c52g ? 'On the line' : G.r25 ? 'Operated' : 'Not operated';
     h['Lockout relays'].textContent = lk.length ? lk.join(', ') + ' operated' : 'Reset';
     h['Lockout relays'].classList.toggle('st-hot', !!lk.length);
     h.sy.v.textContent = G.c52g ? 'On the line' : fmt(G.th, 0) + '°';
-    h.sy.m.textContent = G.c52g
-      ? 'Line ' + fmt(G.gridHz, 2) + ' Hz · ' + (G.asd ? 'ASD in use' : 'ASD off')
-      : 'Voltage difference ' +
+    h.sy.m.textContent =
+      'Voltage difference ' +
       fmt(G.dv, 1) +
       ' % · slip ' +
       fmt(G.slip, 3) +
@@ -1634,8 +1643,10 @@
       'Field ' + fmt(G.efd, 2) + ' pu · ' + (G.x84 ? 'voltage established' : 'voltage not established');
     on(h.avrA, G.avr !== 'MAN');
     on(h.avrM, G.avr === 'MAN');
-    h.sp.v.textContent = fmt(hz, 2) + ' Hz';
-    h.sp.m.textContent = G.c52g ? 'On the line' : 'Slip ' + fmt(G.slip, 3) + ' Hz against the line';
+    h.fb.v.textContent = G.f41 ? 'Closed' : 'Open';
+    h.fb.m.textContent = G.x84 ? 'Voltage established' : 'Voltage not established';
+    h.sp.v.textContent = fmt(G.hz, 2) + ' Hz';
+    h.sp.m.textContent = 'Slip ' + fmt(G.slip, 3) + ' Hz against the line';
     h.lo.v.textContent = lk.length ? lk.join(' · ') : 'Reset';
     h.lo.v.classList.toggle('st-hot', !!lk.length);
     h.lo.m.textContent = L.why ? 'Cause: ' + L.why : 'No lockout relay is operated';
