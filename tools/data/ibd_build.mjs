@@ -1,13 +1,19 @@
 // Plan c2: builds the app data of the IBD sheets from the page JSON of ibd_extract.mjs and the netlists of ibd_read.mjs.
-// Writes src/analog/engine/tcs-ibd-data.js (the logic) and, outside the repository, <out>/ibd-drawing.json.gz (lines and words of each sheet, no vendor logo).
+// Writes src/analog/engine/tcs-ibd-data.js (the logic only) and, outside the repository, <out>/check.txt. No line or word of the drawing is written: the sheets are typed (src/digital/tce/IBD-*.js).
 // Usage: node tools/data/ibd_build.mjs <dir with p<n>.json> [out dir, default ../team-files/ibd-local]
 import fs from 'fs';
-import zlib from 'zlib';
 import { readPage } from './ibd_read.mjs';
 const dir = process.argv[2];
 const NO_LOGIC = new Set([41, 42, 47, 50, 57, 89, 93]); /* charts and notes: no gate */
 /* the symbol font of the ON / OFF lines is shifted by 29; two glyphs are the comparison signs */
-const dec = t => (t.f === 'g_d0_f5' ? [...t.s].map(c => (c === 'Ӎ' ? '≥' : c === 'ӌ' ? '≤' : c.charCodeAt(0) < 128 ? String.fromCharCode(c.charCodeAt(0) + 29) : c)).join('') : t.s);
+const dec = t =>
+  t.f === 'g_d0_f5'
+    ? [...t.s]
+        .map(c =>
+          c === 'Ӎ' ? '≥' : c === 'ӌ' ? '≤' : c.charCodeAt(0) < 128 ? String.fromCharCode(c.charCodeAt(0) + 29) : c
+        )
+        .join('')
+    : t.s;
 /* the set point written under a comparator: [1 high side or 0 low side, on, off, unit]; null = none or a variable limit */
 function setPoint(J, g) {
   const line = J.texts
@@ -20,7 +26,6 @@ function setPoint(J, g) {
   return on ? [on[1] === '≥' ? 1 : 0, +on[2], off ? +off[2] : +on[2], on[3].replace(/[^%a-zA-Z.]/g, '')] : null;
 }
 const data = [],
-  text = [],
   check = [];
 for (let p = 15; p <= 99; p++) {
   if (NO_LOGIC.has(p)) continue;
@@ -29,7 +34,15 @@ for (let p = 15; p <= 99; p++) {
     tb = J.texts.filter(t => t.x > 630 && t.y < 175);
   const id = (tb.filter(t => t.x > 1000 && t.y > 145).sort((a, b) => b.h - a.h)[0] || { s: 'P' + p }).s.trim();
   const title = tb
-    .filter(t => t.y > 116 && t.y < 175 && t.x > 660 && t.x < 1040 && t.s.trim() !== '-' && !/^(SERVICE|TYPE|PAGE|Scale)$/.test(t.s.trim()))
+    .filter(
+      t =>
+        t.y > 116 &&
+        t.y < 175 &&
+        t.x > 660 &&
+        t.x < 1040 &&
+        t.s.trim() !== '-' &&
+        !/^(SERVICE|TYPE|PAGE|Scale)$/.test(t.s.trim())
+    )
     .sort((a, b) => b.y - a.y)
     .map(t => t.s.trim())
     .join(' ');
@@ -42,7 +55,11 @@ for (let p = 15; p <= 99; p++) {
     if (l < 13 || l > 19 || Math.hypot(q[3][2] - q[0][0], q[3][3] - q[0][1]) > 0.6) continue;
     const xs = q.flatMap(o => [o[0], o[2]]),
       ys = q.flatMap(o => [o[1], o[3]]);
-    circ.push({ cx: (Math.min(...xs) + Math.max(...xs)) / 2, cy: (Math.min(...ys) + Math.max(...ys)) / 2, r: (Math.max(...xs) - Math.min(...xs)) / 2 });
+    circ.push({
+      cx: (Math.min(...xs) + Math.max(...xs)) / 2,
+      cy: (Math.min(...ys) + Math.max(...ys)) / 2,
+      r: (Math.max(...xs) - Math.min(...xs)) / 2
+    });
     i += 3;
   }
   const refs = [];
@@ -56,7 +73,9 @@ for (let p = 15; p <= 99; p++) {
       [s[0], s[1], i],
       [s[2], s[3], i]
     ]);
-    const e = ends.filter(([x, y]) => Math.abs(Math.hypot(x - c.cx, y - c.cy) - c.r) < 8).sort((a, b) => Math.hypot(a[0] - c.cx, a[1] - c.cy) - Math.hypot(b[0] - c.cx, b[1] - c.cy))[0];
+    const e = ends
+      .filter(([x, y]) => Math.abs(Math.hypot(x - c.cx, y - c.cy) - c.r) < 8)
+      .sort((a, b) => Math.hypot(a[0] - c.cx, a[1] - c.cy) - Math.hypot(b[0] - c.cx, b[1] - c.cy))[0];
     if (!e) continue;
     /* a link that comes in usually enters a named box: the wire on the far side of the box is the signal of this sheet */
     const dep = e[0] > c.cx,
@@ -77,52 +96,109 @@ for (let p = 15; p <= 99; p++) {
     if (g.t === 'R' && g.ff) continue;
     if (g.t === 'S' && g.r) {
       ffs.add(g.r);
-      G.push(['FF', g.ins.map(nn), nn(g.out), g.r.ins.map(nn), Math.round(g.x0), Math.round(g.y0), Math.round(g.x1 - g.x0), Math.round(g.y1 - g.y0)]);
+      G.push([
+        'FF',
+        g.ins.map(nn),
+        nn(g.out),
+        g.r.ins.map(nn),
+        Math.round(g.x0),
+        Math.round(g.y0),
+        Math.round(g.x1 - g.x0),
+        Math.round(g.y1 - g.y0)
+      ]);
       continue;
     }
     if (g.t === 'S' || g.t === 'R') continue;
-    const r = [g.t, g.ins.map(nn), nn(g.out), g.t === 'WO' ? [nn(g.wipe)] : g.t === 'CMP' ? setPoint(J, g) : g.tm || 0, Math.round(g.x0), Math.round(g.y0), g.x1 ? Math.round(g.x1 - g.x0) : 0, g.y1 ? Math.round(g.y1 - g.y0) : 0];
+    const r = [
+      g.t,
+      g.ins.map(nn),
+      nn(g.out),
+      g.t === 'WO' ? [nn(g.wipe)] : g.t === 'CMP' ? setPoint(J, g) : g.tm || 0,
+      Math.round(g.x0),
+      Math.round(g.y0),
+      g.x1 ? Math.round(g.x1 - g.x0) : 0,
+      g.y1 ? Math.round(g.y1 - g.y0) : 0
+    ];
     G.push(r);
   }
-  const I = R.inputs.map(i => [nn(i.net), i.name.replace(/\s+/g, ' ').slice(0, 120), Math.round(i.x), Math.round(i.y), i.bx == null ? null : Math.round(i.bx)]);
+  const I = R.inputs.map(i => [
+    nn(i.net),
+    i.name.replace(/\s+/g, ' ').slice(0, 120),
+    Math.round(i.x),
+    Math.round(i.y),
+    i.bx == null ? null : Math.round(i.bx)
+  ]);
   const X = refs.map(r => [nn(r.net), r.n, r.to, r.dep ? 1 : 0, Math.round(r.x), Math.round(r.y)]);
   /* the words of the sheet stay where they are, so no name is lost; the title block is a header of the page, its logo is left out */
   const inTitle = t => t.x > 630 && t.y < 178;
-  const gateWord = t => R.gates.some(g => !g.bad && g.cx != null && Math.abs(g.cx - (t.x + t.w / 2)) < 1 && Math.abs(g.cy - (t.y + t.h / 3)) < 1);
+  const gateWord = t =>
+    R.gates.some(
+      g => !g.bad && g.cx != null && Math.abs(g.cx - (t.x + t.w / 2)) < 1 && Math.abs(g.cy - (t.y + t.h / 3)) < 1
+    );
   const all = J.texts.filter(t => !inTitle(t));
-  const W = all.filter(t => !gateWord(t)).map(t => [dec(t), Math.round(t.x * 10) / 10, Math.round(t.y * 10) / 10, t.h, t.a]);
-  const K = R.sinks.map(r => [Math.round(r.x0), Math.round(r.y0), Math.round(r.x1 - r.x0), Math.round(r.y1 - r.y0), r.nets.map(q => [nn(q[0]), Math.round(q[1])])]);
-  const O = R.outputs.filter(o => o.x != null && o.name && !refs.some(r => r.net === o.net) && !R.sinks.some(r => r.nets.some(q => q[0] === o.net))).map(o => [nn(o.net), Math.round(o.x), Math.round(o.y)]);
+  const W = all
+    .filter(t => !gateWord(t))
+    .map(t => [dec(t), Math.round(t.x * 10) / 10, Math.round(t.y * 10) / 10, t.h, t.a]);
+  const K = R.sinks.map(r => [
+    Math.round(r.x0),
+    Math.round(r.y0),
+    Math.round(r.x1 - r.x0),
+    Math.round(r.y1 - r.y0),
+    r.nets.map(q => [nn(q[0]), Math.round(q[1])])
+  ]);
+  const O = R.outputs
+    .filter(
+      o =>
+        o.x != null &&
+        o.name &&
+        !refs.some(r => r.net === o.net) &&
+        !R.sinks.some(r => r.nets.some(q => q[0] === o.net))
+    )
+    .map(o => [nn(o.net), Math.round(o.x), Math.round(o.y)]);
   const C = [];
-  for (const c of circ) if (!refs.some(r => Math.hypot(r.x - c.cx, r.y - c.cy) < 1)) C.push([Math.round(c.cx), Math.round(c.cy), Math.round(c.r)]);
-  /* everything of the sheet but the vendor logo: its lines and the company name (x 750 to 800, y 50 to 100 of the title block) */
-  const logo = p => {
-    const n = p[1].match(/-?[0-9.]+/g).map(Number);
-    for (let i = 0; i < n.length; i += 2) if (!(n[i] > 745 && n[i] < 802 && 842 - n[i + 1] > 45 && 842 - n[i + 1] < 105)) return false;
-    return true;
-  };
-  const stroke = (J.paths || []).filter(p => !p[0] && !logo(p)).map(p => p[1]).join(''),
-    fill = (J.paths || []).filter(p => p[0] && !logo(p)).map(p => p[1]).join('');
-  const netW = {};
-  R.wireSegs.forEach((q, i) => {
-    const n = ids.get(R.netOf[i]);
-    if (n != null) netW[n] = (netW[n] || '') + 'M' + q[0] + ' ' + (842 - q[1]) + 'L' + q[2] + ' ' + (842 - q[3]);
-  });
-  const words = J.texts.filter(t => !/MITSUBISHI|Engineering Headquarters/.test(t.s) && !/^[㻝䠖]+$/.test(t.s.trim())).map(t => [dec(t), t.x, 842 - t.y, t.h, t.a, t.w]);
-  text.push({ id, sh: p, n: G.length, d: stroke, f: fill, w: netW, t: words });
-  check.push([id, p, all.length, W.length, R.gates.filter(g => !g.bad).length, J.texts.filter(t => !inTitle(t) && /^(ANN|SOE|ATS)$/.test(t.s.trim())).length, W.filter(q => /^(ANN|SOE|ATS)$/.test(q[0].trim())).length, K.length]);
+  for (const c of circ)
+    if (!refs.some(r => Math.hypot(r.x - c.cx, r.y - c.cy) < 1))
+      C.push([Math.round(c.cx), Math.round(c.cy), Math.round(c.r)]);
+  check.push([
+    id,
+    p,
+    all.length,
+    W.length,
+    R.gates.filter(g => !g.bad).length,
+    J.texts.filter(t => !inTitle(t) && /^(ANN|SOE|ATS)$/.test(t.s.trim())).length,
+    W.filter(q => /^(ANN|SOE|ATS)$/.test(q[0].trim())).length,
+    K.length
+  ]);
   data.push({ id, sh: p, t: title, n: ids.size, g: G, i: I, x: X });
 }
 fs.writeFileSync(
   'src/analog/engine/tcs-ibd-data.js',
-  '/* GENERATED by tools/data/ibd_build.mjs from the Interlock Block Diagram 310SC90-794 rev 2: do not edit by hand.\n   g: [type, inputs, output, extra, x, y]; i: inputs of the sheet [net, name]; x: off-page links [net, number, sheet, 1 = comes in] */\nconst TCS_IBD_SHEETS = ' + JSON.stringify(data) + ';\n'
+  '/* GENERATED by tools/data/ibd_build.mjs from the Interlock Block Diagram 310SC90-794 rev 2: do not edit by hand.\n   g: [type, inputs, output, extra, x, y]; i: inputs of the sheet [net, name]; x: off-page links [net, number, sheet, 1 = comes in] */\nconst TCS_IBD_SHEETS = ' +
+    JSON.stringify(data) +
+    ';\n'
 );
-/* the drawing stays on this PC, outside the repository: the app reads it with its file picker. Never under src, dist or docs */
+/* the check list stays on this PC, outside the repository */
 const out = process.argv[3] || '../team-files/ibd-local';
 fs.mkdirSync(out, { recursive: true });
-fs.writeFileSync(out + '/ibd-drawing.json.gz', zlib.gzipSync(Buffer.from(JSON.stringify({ doc: '310SC90-794 rev 2', n: text.length, sheets: text })), { level: 9 }));
-fs.writeFileSync(out + '/check.txt', check.map(r => r.join(' ')).join(String.fromCharCode(10)) + String.fromCharCode(10));
+fs.writeFileSync(
+  out + '/check.txt',
+  check.map(r => r.join(' ')).join(String.fromCharCode(10)) + String.fromCharCode(10)
+);
 const bad = check.filter(r => r[5] !== r[6]);
-console.log('drawing MB', ((fs.statSync(out + '/ibd-drawing.json.gz').size / 1048576) * 100 | 0) / 100, 'ANN SOE ATS lost on', bad.length, 'sheets');
-console.log('sheets', data.length, 'gates', data.reduce((a, s) => a + s.g.length, 0), 'links', data.reduce((a, s) => a + s.x.length, 0), 'logic kB', (fs.statSync('src/analog/engine/tcs-ibd-data.js').size / 1024) | 0);
-console.log(data.slice(9, 16).map(s => s.id + ' ' + s.t).join('\n'));
+console.log('ANN SOE ATS lost on', bad.length, 'sheets');
+console.log(
+  'sheets',
+  data.length,
+  'gates',
+  data.reduce((a, s) => a + s.g.length, 0),
+  'links',
+  data.reduce((a, s) => a + s.x.length, 0),
+  'logic kB',
+  (fs.statSync('src/analog/engine/tcs-ibd-data.js').size / 1024) | 0
+);
+console.log(
+  data
+    .slice(9, 16)
+    .map(s => s.id + ' ' + s.t)
+    .join('\n')
+);
