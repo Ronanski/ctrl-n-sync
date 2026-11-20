@@ -845,5 +845,7 @@ const TCS_DESC = {
   TCE960:
     'PI/O table of the EHG digital output card (unit 4 slot 2, LYD105A), 32 channels fed by TCE600 and TCE601: oil pump and turning gear commands, valve full close, turbine trip and valve test states, 41 close, generator lockout relays, ICV to CV transfer; the rest spare.',
   TCE961:
-    'EHG DO TABLE(2): PI/O table of EHG digital output card unit 4 slot 3 (LYD105A), 32 channels; oil pump (B) starts, ASD1 start, DCS mode permissive, ICV full close, EHG soft trouble, turning gear.'
+    'EHG DO TABLE(2): PI/O table of EHG digital output card unit 4 slot 3 (LYD105A), 32 channels; oil pump (B) starts, ASD1 start, DCS mode permissive, ICV full close, EHG soft trouble, turning gear.',
+  TCE970:
+    'EHG AO TABLE(1): PI/O table of EHG analog output card unit 4 slot 7 (LYA100A), 4-20 mA; target MW feed back, load up rate, HP first stage pressures (A)(B)(C), turbine speed.'
 };
