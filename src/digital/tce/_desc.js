@@ -660,6 +660,7 @@ const TCS_DESC = {
   TCE310: 'Emergency oil pump (TB-5): starts on AC trouble of both main oil pumps or low bearing oil pressure.',
   TCE350: 'Turning gear (1): the turning gear block, start / stop / auto of the motor, the jog push button, main valve full close, the turning condition with bearing oil pressure normal, and the AUX SIM switches of running, engage and dis-engage.',
   TCE351: 'Turning gear (2): the turning gear motor start demand (jog, start flip-flop and its reset), and the engage sequence from zero speed: engage condition, start signal, engage failure and during turbine turning.',
+  TCE352: 'Turning gear (3): engage solenoid valve, zero speed indication, engage simulation',
   TCE450: 'Indication for valve (1): the HMI valve indication blocks of MSV(A), MSV(B), CV(A) and CV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCA634:
