@@ -667,6 +667,7 @@ const TCS_DESC = {
   TCE451: 'Indication for valve (2): the HMI valve indication blocks of ICV(A), ICV(B), RSV(A) and RSV(B), their positions and abnormal signals; ABN.O to TCE470.',
   TCE465: 'EHG alarm (DI error): DI slot and COM CPU / P.S. alarms held until ANN RESET, DI ERROR and ATS ALARM.',
   TCE466: 'EHG alarm (AI error): PI/O errors of the AI slot 5 and slot 6 cards held until ANN RESET, AI ERROR.',
+  TCE467: 'EHG alarm (DO error): PI/O errors of the DO slot 2 and slot 3 cards held until ANN RESET, DO ERROR.',
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
