@@ -425,6 +425,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA930:
+    'COMM AI TABLE(1): analog inputs of the COMM controller, cards unit 1 slot 6, 7 and 8 LYA000A (gland steam seal header and reheat bowl steam pressures, generator voltages, currents and field voltage / current).',
   TCA931:
     'COMM AI TABLE(2): analog inputs of the COMM controller, cards unit 1 slot 9, A and B LYA000A (aux steam header pressure, gland drain separator temperature, turbine expansions and eccentricity, generator MVAR, power factor and frequency).',
   TCA932:
