@@ -239,7 +239,7 @@
     [993, 1139]
   );
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-2B',
+    id: 'G-2B', live: { i43: 'l52c', i24: 'g52' },
     title: '230kV CIRCUIT BREAKER LOGIC (52L) (2/2)',
     page: 10,
     dwg: '310SD03-743',

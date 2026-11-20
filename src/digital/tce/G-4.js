@@ -258,7 +258,7 @@
     '· FIELD FLASH, FAULT'
   ].forEach((z, i) => t.push([i === 0 ? 507 : i === 1 ? 516 : 537, 1364 + 14.6 * i, z]));
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-4',
+    id: 'G-4', live: { i2: 'rated', i6: 'trip', i8: 'g52' },
     title: 'FIELD SWITCH (41) LOGIC',
     page: 12,
     dwg: '310SD03-743',

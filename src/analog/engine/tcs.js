@@ -1696,7 +1696,8 @@ function tcsLiveRead(U) {
   const g = tcsOstGov(U),
     o = c.ost || {},
     sel = c.spd && c.spd.sel != null ? c.spd.sel : null,
-    G = tcsGovState(U);
+    G = tcsGovState(U),
+    gn = U.gen || {};
   return {
     trip: c.trip ? 1 : 0 /* TURBINE TRIP */,
     rst: c.rst ? 1 : 0 /* turbine reset (MSV / RSV open) */,
@@ -1749,7 +1750,33 @@ function tcsLiveRead(U) {
     copPa: isFinite(U.loCa) ? U.loCa : null,
     copPb: isFinite(U.loCb) ? U.loCb : null,
     eopP: isFinite(U.loEop) ? U.loEop : null,
-    brgLow: isFinite(U.loBrg) && U.loBrg <= TCS_OIL.brgLo ? 1 : 0 /* the bearing oil low of the EOP auto start (tcsOil) */
+    brgLow: isFinite(U.loBrg) && U.loBrg <= TCS_OIL.brgLo ? 1 : 0 /* the bearing oil low of the EOP auto start (tcsOil) */,
+    /* the ATS steps (tcsStep): the step being executed (-1 none, read as 'atsCur=n') and done0 .. done7 = STEP n COMPLETED (TCA520 .. TCA527, MD FINISH) */
+    atsCur: c.cur,
+    done0: c.step >= 0 ? 1 : 0,
+    done1: c.step >= 1 ? 1 : 0,
+    done2: c.step >= 2 ? 1 : 0,
+    done3: c.step >= 3 ? 1 : 0,
+    done4: c.step >= 4 ? 1 : 0,
+    done5: c.step >= 5 ? 1 : 0,
+    done6: c.step >= 6 ? 1 : 0,
+    done7: c.step >= 7 ? 1 : 0,
+    /* the generator side (tcs-gen.js tcsGenStep), read only: U.gen as it is (none before the first scan = all 0). SH-G-1A / 1B / 4 / 9 */
+    f41: gn.f41 ? 1 : 0 /* 41 CLOSED */,
+    rated: gn.rated ? 1 : 0 /* TURBINE RATED SPEED (ON >= 3550, OFF <= 3540 rpm) */,
+    v84: gn.V >= TCS_GEN.v84 ? 1 : 0 /* VOLTAGE ESTABLISHED (84R) */,
+    synAuto: gn.syn !== 'MAN' ? 1 : 0 /* 43-25 AUTO SELECTED */,
+    synStart: gn.start ? 1 : 0 /* 52G CLOSE ORDER (TCS/ATS) to the auto synchronizer */,
+    x25: gn.x25 ? 1 : 0 /* 25X1 ON */,
+    y25: gn.x25 && gn.tx >= TCS_GEN.x3 ? 1 : 0 /* 25Y1 ON */,
+    c25: gn.cmd ? 1 : 0 /* ASD1 25A close pulse */,
+    p60r: gn.pV > 0 && gn.vs > 0 ? 1 : 0 /* ASD1 60R */,
+    p60l: gn.pV > 0 && gn.vs < 0 ? 1 : 0 /* ASD1 60L */,
+    p15r: gn.pR > 0 ? 1 : 0 /* ASD1 15R */,
+    p15l: gn.pL > 0 ? 1 : 0 /* ASD1 15L */,
+    close52g: gn.close ? 1 : 0 /* 52G CLOSE ORDER (SH-G-1B to SH-G-1A) */,
+    avrAuto: gn.avr !== 'MAN' ? 1 : 0,
+    avrMan: gn.avr === 'MAN' ? 1 : 0
   };
 }
 function tcsOstPerm(U, m) {

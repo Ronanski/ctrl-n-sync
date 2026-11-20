@@ -7352,7 +7352,7 @@ const TCS_DESC = {
     if (i > 1) w.push([set, [[321 - (i > 3 ? 1 : 0), ys], [xc - 40, ys]]]);
   });
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'TCE051',
+    id: 'TCE051', live: { dAtsC: 'auto', iB: 'auto' },
     title: 'CONTROLLER CONDITION(2)',
     page: 24,
     ctl: 'EHG+MD',
@@ -11963,7 +11963,7 @@ const TCS_DESC = {
   two(1856, 1212, 'HIGH COUNTER', 'EFFECTIVE');
   two(1902, 1288, 'EHG SOFT', 'MAJOR TROUBLE');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'TCE143',
+    id: 'TCE143', live: { kTS: ['rpm', 'rpm'], i1A: ['rpm', 'rpm'], i1B: ['rpm', 'rpm'], i1C: ['rpm', 'rpm'] },
     title: 'TURBINE SPEED DIAGNOSTICS(4)',
     page: 104,
     ctl: 'EHG+MD',
@@ -24682,7 +24682,7 @@ const TCS_DESC = {
    The valve full open / full close come through the simulation switches (DSW 042, 043); the open fault (FFS 031) and the close fault
    (FFS 036, generator MW above 75 MW, MONT IF normal, no MW abnormal, not full close) are reset by RESET with CRT AVAILABLE. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCE360',
+  id: 'TCE360', live: { kTrip: 'trip', cMw: ['mw', 'MW'] },
   title: 'VENTILATOR VALVE',
   page: 160,
   ctl: 'EHG+MD',
@@ -33747,7 +33747,7 @@ const TCS_DESC = {
     '2) TC : TRIP COIL OF 52G.'
   ].forEach((z, i) => z && t.push([1272, 1129 + 15.5 * i, z]));
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-1A',
+    id: 'G-1A', live: { i1: 'close52g', nc: 'g52' },
     title: 'GENERATOR CIRCUIT BREAKER LOGIC (52G) (1/2)',
     page: 7,
     dwg: '310SD03-743',
@@ -34003,7 +34003,7 @@ const TCS_DESC = {
     [1000, 1156]
   );
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-1B',
+    id: 'G-1B', live: { i24: 'synAuto', i1: 'f41', i25: 'l52c', i44: 'g52', i8: 'synStart', i41: 'x25', x1: 'x25', k84r: 'v84', y1: 'y25', a25: 'c25', a60r: 'p60r', a60l: 'p60l', a15r: 'p15r', a15l: 'p15l' },
     title: 'GENERATOR CIRCUIT BREAKER LOGIC (52G) (2/2)',
     page: 8,
     dwg: '310SD03-743',
@@ -34448,7 +34448,7 @@ const TCS_DESC = {
     [993, 1139]
   );
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-2B',
+    id: 'G-2B', live: { i43: 'l52c', i24: 'g52' },
     title: '230kV CIRCUIT BREAKER LOGIC (52L) (2/2)',
     page: 10,
     dwg: '310SD03-743',
@@ -34994,7 +34994,7 @@ const TCS_DESC = {
     '· FIELD FLASH, FAULT'
   ].forEach((z, i) => t.push([i === 0 ? 507 : i === 1 ? 516 : 537, 1364 + 14.6 * i, z]));
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-4',
+    id: 'G-4', live: { i2: 'rated', i6: 'trip', i8: 'g52' },
     title: 'FIELD SWITCH (41) LOGIC',
     page: 12,
     dwg: '310SD03-743',
@@ -36709,7 +36709,7 @@ const TCS_DESC = {
     w.push([k, [[279, y], [1962, y]]]);
   });
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-9',
+    id: 'G-9', live: { i0: '!g52', i2: 'trip', i3: 'rated', i5: 'trip', i6: 'trip', i7: 'synStart', i8: 'l52o', i11: 'g52' },
     title: 'TURBINE OPERATION',
     page: 20,
     dwg: '310SD03-743',
@@ -38880,7 +38880,7 @@ const TCS_DESC = {
    (FFR 020 / 024 / 039 with 52G, 41 and 52L close, TW A028), and the system OFF(0). ATS AUTO and ATS OFF are given out as definitions, to
    the operator station lamps (TCA501_1_IIA / _YIP) and to TCT081D / TCE051; CRT OPE PERM goes to the lamp TCA501_1_IYP. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA501',
+  id: 'TCA501', live: { k52g: 'g52', k52l: 'l52c', dAuto: 'auto' },
   title: 'ATS AUTO/OFF',
   page: 79,
   ctl: 'COMM+MD',
@@ -40754,7 +40754,7 @@ const TCS_DESC = {
    step 1 select permissive; HP turbine warming complete with LLM not upper and none of the step conditions (A033) = step 0. Each
    condition with HALFWAY START-UP gives the bypass of its step (A1 .. G2 to TCA520 .. TCA526); step 1 to step 6 bypass (OR 020) to TCA520. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA512',
+  id: 'TCA512', live: { kTs: ['rpm', 'rpm'], k52g: 'g52', k52l: 'l52c' },
   title: 'STEP CONTROL CONDITION',
   page: 82,
   ctl: 'COMM+MD',
@@ -43638,7 +43638,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 0 ORDER and STEP 0 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA520',
+  id: 'TCA520', live: { 'md.EXEC': 'atsCur=0', 'md.EXEC1': 'atsCur=0', 'md.FINISH': 'done0', 'md.FINI1': 'done0' },
   title: 'STEP CONTROL(STEP 0)',
   page: 89,
   ctl: 'COMM+MD',
@@ -44027,7 +44027,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 1 ORDER and STEP 1 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA521',
+  id: 'TCA521', live: { i0: 'done0', 'md.EXEC': 'atsCur=1', 'md.EXEC1': 'atsCur=1', 'md.FINISH': 'done1', 'md.FINI1': 'done1' },
   title: 'STEP CONTROL(STEP 1)',
   page: 90,
   ctl: 'COMM+MD',
@@ -44408,7 +44408,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 2 ORDER and STEP 2 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA522',
+  id: 'TCA522', live: { i0: 'done1', 'md.EXEC': 'atsCur=2', 'md.EXEC1': 'atsCur=2', 'md.FINISH': 'done2', 'md.FINI1': 'done2' },
   title: 'STEP CONTROL(STEP 2)',
   page: 91,
   ctl: 'COMM+MD',
@@ -44789,7 +44789,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 3 ORDER and STEP 3 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA523',
+  id: 'TCA523', live: { i0: 'done2', 'md.EXEC': 'atsCur=3', 'md.EXEC1': 'atsCur=3', 'md.FINISH': 'done3', 'md.FINI1': 'done3' },
   title: 'STEP CONTROL(STEP 3)',
   page: 92,
   ctl: 'COMM+MD',
@@ -45170,7 +45170,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 4 ORDER and STEP 4 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA524',
+  id: 'TCA524', live: { i0: 'done3', 'md.EXEC': 'atsCur=4', 'md.EXEC1': 'atsCur=4', 'md.FINISH': 'done4', 'md.FINI1': 'done4' },
   title: 'STEP CONTROL(STEP 4)',
   page: 93,
   ctl: 'COMM+MD',
@@ -45551,7 +45551,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 5 ORDER and STEP 5 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA525',
+  id: 'TCA525', live: { i0: 'done4', 'md.EXEC': 'atsCur=5', 'md.EXEC1': 'atsCur=5', 'md.FINISH': 'done5', 'md.FINI1': 'done5' },
   title: 'STEP CONTROL(STEP 5)',
   page: 94,
   ctl: 'COMM+MD',
@@ -45932,7 +45932,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 6 ORDER and STEP 6 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA526',
+  id: 'TCA526', live: { i0: 'done5', 'md.EXEC': 'atsCur=6', 'md.EXEC1': 'atsCur=6', 'md.FINISH': 'done6', 'md.FINI1': 'done6' },
   title: 'STEP CONTROL(STEP 6)',
   page: 95,
   ctl: 'COMM+MD',
@@ -46450,7 +46450,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 7 ORDER and STEP 7 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA527',
+  id: 'TCA527', live: { i0: 'done6', 'md.EXEC': 'atsCur=7', 'md.EXEC1': 'atsCur=7', 'md.FINISH': 'done7', 'md.FINI1': 'done7' },
   title: 'STEP CONTROL(STEP 7)',
   page: 96,
   ctl: 'COMM+MD',
@@ -51382,7 +51382,7 @@ const TCS_DESC = {
   );
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
-    id: 'TCA544',
+    id: 'TCA544', live: { kTrip: 'trip', k52g: 'g52' },
     title: 'CRITERIA CONDITION',
     page: 114,
     ctl: 'COMM+MD',
@@ -145838,7 +145838,8 @@ function tcsLiveRead(U) {
   const g = tcsOstGov(U),
     o = c.ost || {},
     sel = c.spd && c.spd.sel != null ? c.spd.sel : null,
-    G = tcsGovState(U);
+    G = tcsGovState(U),
+    gn = U.gen || {};
   return {
     trip: c.trip ? 1 : 0 /* TURBINE TRIP */,
     rst: c.rst ? 1 : 0 /* turbine reset (MSV / RSV open) */,
@@ -145891,7 +145892,33 @@ function tcsLiveRead(U) {
     copPa: isFinite(U.loCa) ? U.loCa : null,
     copPb: isFinite(U.loCb) ? U.loCb : null,
     eopP: isFinite(U.loEop) ? U.loEop : null,
-    brgLow: isFinite(U.loBrg) && U.loBrg <= TCS_OIL.brgLo ? 1 : 0 /* the bearing oil low of the EOP auto start (tcsOil) */
+    brgLow: isFinite(U.loBrg) && U.loBrg <= TCS_OIL.brgLo ? 1 : 0 /* the bearing oil low of the EOP auto start (tcsOil) */,
+    /* the ATS steps (tcsStep): the step being executed (-1 none, read as 'atsCur=n') and done0 .. done7 = STEP n COMPLETED (TCA520 .. TCA527, MD FINISH) */
+    atsCur: c.cur,
+    done0: c.step >= 0 ? 1 : 0,
+    done1: c.step >= 1 ? 1 : 0,
+    done2: c.step >= 2 ? 1 : 0,
+    done3: c.step >= 3 ? 1 : 0,
+    done4: c.step >= 4 ? 1 : 0,
+    done5: c.step >= 5 ? 1 : 0,
+    done6: c.step >= 6 ? 1 : 0,
+    done7: c.step >= 7 ? 1 : 0,
+    /* the generator side (tcs-gen.js tcsGenStep), read only: U.gen as it is (none before the first scan = all 0). SH-G-1A / 1B / 4 / 9 */
+    f41: gn.f41 ? 1 : 0 /* 41 CLOSED */,
+    rated: gn.rated ? 1 : 0 /* TURBINE RATED SPEED (ON >= 3550, OFF <= 3540 rpm) */,
+    v84: gn.V >= TCS_GEN.v84 ? 1 : 0 /* VOLTAGE ESTABLISHED (84R) */,
+    synAuto: gn.syn !== 'MAN' ? 1 : 0 /* 43-25 AUTO SELECTED */,
+    synStart: gn.start ? 1 : 0 /* 52G CLOSE ORDER (TCS/ATS) to the auto synchronizer */,
+    x25: gn.x25 ? 1 : 0 /* 25X1 ON */,
+    y25: gn.x25 && gn.tx >= TCS_GEN.x3 ? 1 : 0 /* 25Y1 ON */,
+    c25: gn.cmd ? 1 : 0 /* ASD1 25A close pulse */,
+    p60r: gn.pV > 0 && gn.vs > 0 ? 1 : 0 /* ASD1 60R */,
+    p60l: gn.pV > 0 && gn.vs < 0 ? 1 : 0 /* ASD1 60L */,
+    p15r: gn.pR > 0 ? 1 : 0 /* ASD1 15R */,
+    p15l: gn.pL > 0 ? 1 : 0 /* ASD1 15L */,
+    close52g: gn.close ? 1 : 0 /* 52G CLOSE ORDER (SH-G-1B to SH-G-1A) */,
+    avrAuto: gn.avr !== 'MAN' ? 1 : 0,
+    avrMan: gn.avr === 'MAN' ? 1 : 0
   };
 }
 function tcsOstPerm(U, m) {
@@ -155524,7 +155551,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build b0f617b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 3777cb8'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -183004,7 +183031,7 @@ const TCS_DESC = {
     if (i > 1) w.push([set, [[321 - (i > 3 ? 1 : 0), ys], [xc - 40, ys]]]);
   });
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'TCE051',
+    id: 'TCE051', live: { dAtsC: 'auto', iB: 'auto' },
     title: 'CONTROLLER CONDITION(2)',
     page: 24,
     ctl: 'EHG+MD',
@@ -187775,7 +187802,7 @@ const TCS_DESC = {
   two(1856, 1212, 'HIGH COUNTER', 'EFFECTIVE');
   two(1902, 1288, 'EHG SOFT', 'MAJOR TROUBLE');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'TCE143',
+    id: 'TCE143', live: { kTS: ['rpm', 'rpm'], i1A: ['rpm', 'rpm'], i1B: ['rpm', 'rpm'], i1C: ['rpm', 'rpm'] },
     title: 'TURBINE SPEED DIAGNOSTICS(4)',
     page: 104,
     ctl: 'EHG+MD',
@@ -200610,7 +200637,7 @@ const TCS_DESC = {
    The valve full open / full close come through the simulation switches (DSW 042, 043); the open fault (FFS 031) and the close fault
    (FFS 036, generator MW above 75 MW, MONT IF normal, no MW abnormal, not full close) are reset by RESET with CRT AVAILABLE. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCE360',
+  id: 'TCE360', live: { kTrip: 'trip', cMw: ['mw', 'MW'] },
   title: 'VENTILATOR VALVE',
   page: 160,
   ctl: 'EHG+MD',
@@ -209829,7 +209856,7 @@ const TCS_DESC = {
     '2) TC : TRIP COIL OF 52G.'
   ].forEach((z, i) => z && t.push([1272, 1129 + 15.5 * i, z]));
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-1A',
+    id: 'G-1A', live: { i1: 'close52g', nc: 'g52' },
     title: 'GENERATOR CIRCUIT BREAKER LOGIC (52G) (1/2)',
     page: 7,
     dwg: '310SD03-743',
@@ -210087,7 +210114,7 @@ const TCS_DESC = {
     [1000, 1156]
   );
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-1B',
+    id: 'G-1B', live: { i24: 'synAuto', i1: 'f41', i25: 'l52c', i44: 'g52', i8: 'synStart', i41: 'x25', x1: 'x25', k84r: 'v84', y1: 'y25', a25: 'c25', a60r: 'p60r', a60l: 'p60l', a15r: 'p15r', a15l: 'p15l' },
     title: 'GENERATOR CIRCUIT BREAKER LOGIC (52G) (2/2)',
     page: 8,
     dwg: '310SD03-743',
@@ -210536,7 +210563,7 @@ const TCS_DESC = {
     [993, 1139]
   );
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-2B',
+    id: 'G-2B', live: { i43: 'l52c', i24: 'g52' },
     title: '230kV CIRCUIT BREAKER LOGIC (52L) (2/2)',
     page: 10,
     dwg: '310SD03-743',
@@ -211086,7 +211113,7 @@ const TCS_DESC = {
     '· FIELD FLASH, FAULT'
   ].forEach((z, i) => t.push([i === 0 ? 507 : i === 1 ? 516 : 537, 1364 + 14.6 * i, z]));
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-4',
+    id: 'G-4', live: { i2: 'rated', i6: 'trip', i8: 'g52' },
     title: 'FIELD SWITCH (41) LOGIC',
     page: 12,
     dwg: '310SD03-743',
@@ -212817,7 +212844,7 @@ const TCS_DESC = {
     w.push([k, [[279, y], [1962, y]]]);
   });
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-9',
+    id: 'G-9', live: { i0: '!g52', i2: 'trip', i3: 'rated', i5: 'trip', i6: 'trip', i7: 'synStart', i8: 'l52o', i11: 'g52' },
     title: 'TURBINE OPERATION',
     page: 20,
     dwg: '310SD03-743',
@@ -215004,7 +215031,7 @@ const TCS_DESC = {
    (FFR 020 / 024 / 039 with 52G, 41 and 52L close, TW A028), and the system OFF(0). ATS AUTO and ATS OFF are given out as definitions, to
    the operator station lamps (TCA501_1_IIA / _YIP) and to TCT081D / TCE051; CRT OPE PERM goes to the lamp TCA501_1_IYP. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA501',
+  id: 'TCA501', live: { k52g: 'g52', k52l: 'l52c', dAuto: 'auto' },
   title: 'ATS AUTO/OFF',
   page: 79,
   ctl: 'COMM+MD',
@@ -216884,7 +216911,7 @@ const TCS_DESC = {
    step 1 select permissive; HP turbine warming complete with LLM not upper and none of the step conditions (A033) = step 0. Each
    condition with HALFWAY START-UP gives the bypass of its step (A1 .. G2 to TCA520 .. TCA526); step 1 to step 6 bypass (OR 020) to TCA520. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA512',
+  id: 'TCA512', live: { kTs: ['rpm', 'rpm'], k52g: 'g52', k52l: 'l52c' },
   title: 'STEP CONTROL CONDITION',
   page: 82,
   ctl: 'COMM+MD',
@@ -219782,7 +219809,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 0 ORDER and STEP 0 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA520',
+  id: 'TCA520', live: { 'md.EXEC': 'atsCur=0', 'md.EXEC1': 'atsCur=0', 'md.FINISH': 'done0', 'md.FINI1': 'done0' },
   title: 'STEP CONTROL(STEP 0)',
   page: 89,
   ctl: 'COMM+MD',
@@ -220173,7 +220200,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 1 ORDER and STEP 1 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA521',
+  id: 'TCA521', live: { i0: 'done0', 'md.EXEC': 'atsCur=1', 'md.EXEC1': 'atsCur=1', 'md.FINISH': 'done1', 'md.FINI1': 'done1' },
   title: 'STEP CONTROL(STEP 1)',
   page: 90,
   ctl: 'COMM+MD',
@@ -220556,7 +220583,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 2 ORDER and STEP 2 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA522',
+  id: 'TCA522', live: { i0: 'done1', 'md.EXEC': 'atsCur=2', 'md.EXEC1': 'atsCur=2', 'md.FINISH': 'done2', 'md.FINI1': 'done2' },
   title: 'STEP CONTROL(STEP 2)',
   page: 91,
   ctl: 'COMM+MD',
@@ -220939,7 +220966,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 3 ORDER and STEP 3 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA523',
+  id: 'TCA523', live: { i0: 'done2', 'md.EXEC': 'atsCur=3', 'md.EXEC1': 'atsCur=3', 'md.FINISH': 'done3', 'md.FINI1': 'done3' },
   title: 'STEP CONTROL(STEP 3)',
   page: 92,
   ctl: 'COMM+MD',
@@ -221322,7 +221349,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 4 ORDER and STEP 4 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA524',
+  id: 'TCA524', live: { i0: 'done3', 'md.EXEC': 'atsCur=4', 'md.EXEC1': 'atsCur=4', 'md.FINISH': 'done4', 'md.FINI1': 'done4' },
   title: 'STEP CONTROL(STEP 4)',
   page: 93,
   ctl: 'COMM+MD',
@@ -221705,7 +221732,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 5 ORDER and STEP 5 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA525',
+  id: 'TCA525', live: { i0: 'done4', 'md.EXEC': 'atsCur=5', 'md.EXEC1': 'atsCur=5', 'md.FINISH': 'done5', 'md.FINI1': 'done5' },
   title: 'STEP CONTROL(STEP 5)',
   page: 94,
   ctl: 'COMM+MD',
@@ -222088,7 +222115,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 6 ORDER and STEP 6 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA526',
+  id: 'TCA526', live: { i0: 'done5', 'md.EXEC': 'atsCur=6', 'md.EXEC1': 'atsCur=6', 'md.FINISH': 'done6', 'md.FINI1': 'done6' },
   title: 'STEP CONTROL(STEP 6)',
   page: 95,
   ctl: 'COMM+MD',
@@ -222608,7 +222635,7 @@ const TCS_DESC = {
    select, step in order, executing, completed, start, PB select and step select to the step sheets, ORDER1 / SEL / EXEC1 / FINI1 to TCT081,
    STEP IN 7 ORDER and STEP 7 EXECUTING as definitions. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCA527',
+  id: 'TCA527', live: { i0: 'done6', 'md.EXEC': 'atsCur=7', 'md.EXEC1': 'atsCur=7', 'md.FINISH': 'done7', 'md.FINI1': 'done7' },
   title: 'STEP CONTROL(STEP 7)',
   page: 96,
   ctl: 'COMM+MD',
@@ -227576,7 +227603,7 @@ const TCS_DESC = {
   );
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
-    id: 'TCA544',
+    id: 'TCA544', live: { kTrip: 'trip', k52g: 'g52' },
     title: 'CRITERIA CONDITION',
     page: 114,
     ctl: 'COMM+MD',
@@ -318024,7 +318051,8 @@ function tcsLiveRead(U) {
   const g = tcsOstGov(U),
     o = c.ost || {},
     sel = c.spd && c.spd.sel != null ? c.spd.sel : null,
-    G = tcsGovState(U);
+    G = tcsGovState(U),
+    gn = U.gen || {};
   return {
     trip: c.trip ? 1 : 0 /* TURBINE TRIP */,
     rst: c.rst ? 1 : 0 /* turbine reset (MSV / RSV open) */,
@@ -318077,7 +318105,33 @@ function tcsLiveRead(U) {
     copPa: isFinite(U.loCa) ? U.loCa : null,
     copPb: isFinite(U.loCb) ? U.loCb : null,
     eopP: isFinite(U.loEop) ? U.loEop : null,
-    brgLow: isFinite(U.loBrg) && U.loBrg <= TCS_OIL.brgLo ? 1 : 0 /* the bearing oil low of the EOP auto start (tcsOil) */
+    brgLow: isFinite(U.loBrg) && U.loBrg <= TCS_OIL.brgLo ? 1 : 0 /* the bearing oil low of the EOP auto start (tcsOil) */,
+    /* the ATS steps (tcsStep): the step being executed (-1 none, read as 'atsCur=n') and done0 .. done7 = STEP n COMPLETED (TCA520 .. TCA527, MD FINISH) */
+    atsCur: c.cur,
+    done0: c.step >= 0 ? 1 : 0,
+    done1: c.step >= 1 ? 1 : 0,
+    done2: c.step >= 2 ? 1 : 0,
+    done3: c.step >= 3 ? 1 : 0,
+    done4: c.step >= 4 ? 1 : 0,
+    done5: c.step >= 5 ? 1 : 0,
+    done6: c.step >= 6 ? 1 : 0,
+    done7: c.step >= 7 ? 1 : 0,
+    /* the generator side (tcs-gen.js tcsGenStep), read only: U.gen as it is (none before the first scan = all 0). SH-G-1A / 1B / 4 / 9 */
+    f41: gn.f41 ? 1 : 0 /* 41 CLOSED */,
+    rated: gn.rated ? 1 : 0 /* TURBINE RATED SPEED (ON >= 3550, OFF <= 3540 rpm) */,
+    v84: gn.V >= TCS_GEN.v84 ? 1 : 0 /* VOLTAGE ESTABLISHED (84R) */,
+    synAuto: gn.syn !== 'MAN' ? 1 : 0 /* 43-25 AUTO SELECTED */,
+    synStart: gn.start ? 1 : 0 /* 52G CLOSE ORDER (TCS/ATS) to the auto synchronizer */,
+    x25: gn.x25 ? 1 : 0 /* 25X1 ON */,
+    y25: gn.x25 && gn.tx >= TCS_GEN.x3 ? 1 : 0 /* 25Y1 ON */,
+    c25: gn.cmd ? 1 : 0 /* ASD1 25A close pulse */,
+    p60r: gn.pV > 0 && gn.vs > 0 ? 1 : 0 /* ASD1 60R */,
+    p60l: gn.pV > 0 && gn.vs < 0 ? 1 : 0 /* ASD1 60L */,
+    p15r: gn.pR > 0 ? 1 : 0 /* ASD1 15R */,
+    p15l: gn.pL > 0 ? 1 : 0 /* ASD1 15L */,
+    close52g: gn.close ? 1 : 0 /* 52G CLOSE ORDER (SH-G-1B to SH-G-1A) */,
+    avrAuto: gn.avr !== 'MAN' ? 1 : 0,
+    avrMan: gn.avr === 'MAN' ? 1 : 0
   };
 }
 function tcsOstPerm(U, m) {
@@ -353077,7 +353131,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b0f617b'));
+    row('Version', E('span', 'scsver', ver + ' · build 3777cb8'));
   }
   function openSet(near) {
     if (!set) {

@@ -5,7 +5,7 @@
    The valve full open / full close come through the simulation switches (DSW 042, 043); the open fault (FFS 031) and the close fault
    (FFS 036, generator MW above 75 MW, MONT IF normal, no MW abnormal, not full close) are reset by RESET with CRT AVAILABLE. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
-  id: 'TCE360',
+  id: 'TCE360', live: { kTrip: 'trip', cMw: ['mw', 'MW'] },
   title: 'VENTILATOR VALVE',
   page: 160,
   ctl: 'EHG+MD',

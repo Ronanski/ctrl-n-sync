@@ -33,7 +33,7 @@
     w.push([k, [[279, y], [1962, y]]]);
   });
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
-    id: 'G-9',
+    id: 'G-9', live: { i0: '!g52', i2: 'trip', i3: 'rated', i5: 'trip', i6: 'trip', i7: 'synStart', i8: 'l52o', i11: 'g52' },
     title: 'TURBINE OPERATION',
     page: 20,
     dwg: '310SD03-743',
