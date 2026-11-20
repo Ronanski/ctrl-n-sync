@@ -705,5 +705,7 @@ const TCS_DESC = {
   TCA782:
     'EOS turbine speed: the three EOS speed channels into MJL A002, its Y to the CRT and the other sheets.',
   TCA800:
-    'Comm alarm (hardware) 1: DI error of unit 0 slots 5 to A, each from two channels through an OR, to the CRT and TCA806.'
+    'Comm alarm (hardware) 1: DI error of unit 0 slots 5 to A, each from two channels through an OR, to the CRT and TCA806.',
+  TCA800A:
+    'Comm alarm (hardware) 2: DI error of unit 0 slot B from two channels through an OR, to the CRT and TCA806; five spare groups.'
 };
