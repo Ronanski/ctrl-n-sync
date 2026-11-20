@@ -6278,6 +6278,10 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA850:
+    'COM analog output: the sixteen analog outputs of the COMM controller to the PI/O table TCA990 (lube oil cooler temperatures, steam seal feed valve and SPUV demands, HP warming valve, generator current, voltage, MVAR, power factor, frequency).',
+  TCA900:
+    'COMM DI TABLE(1): digital input card unit 0 slot 5 LYD050A3 of the COMM controller (MSV(A), CV(A), CRV(A) secondary drains, exciter and field earth faults, AVR status, steam seal diverting valve, No.4 extraction NRV).',
   TCA901:
     'COMM DI TABLE(2): digital input card unit 0 slot 6 LYD050A3 of the COMM controller (MSV(B), CV(B), CRV(B) secondary drains, AVR trouble, No.2 and No.5 extraction NRV, heater levels, oil purifier).',
   TCA902:
@@ -6654,7 +6658,9 @@ const TCS_DESC = {
   TCA826:
     'Alarm: house load operation with the LP exhaust hood water spray valve open for 7200 s sets HOUSE LOAD OPERATION OVER 2HOURS (reset by the end of house load, the hood steam valve closed or a turbine trip); with generator voltage OK for 5 s, the RSR diode fault, the generator field earth fault, or a 30DF/64F relay trouble or loss of control power give the two relay alarms. Each to A1 / A2 / A3 and CRT.',
   TCA830:
-    'COMM digital output (1): sixteen points of the PI/O table TCA980 (1 to 16): the CRV, CV and MSV secondary drain valve commands, the steam seal feed inlet valve commands and closed signal, the turbine gland steam line drain valve commands, AMB. COLD MODE TEMP. and MODE JUDGEMENT INSTRUMENT NORMAL (no first stage or reheat bowl inner wall metal temperature abnormal); one point spare.'
+    'COMM digital output (1): sixteen points of the PI/O table TCA980 (1 to 16): the CRV, CV and MSV secondary drain valve commands, the steam seal feed inlet valve commands and closed signal, the turbine gland steam line drain valve commands, AMB. COLD MODE TEMP. and MODE JUDGEMENT INSTRUMENT NORMAL (no first stage or reheat bowl inner wall metal temperature abnormal); one point spare.',
+  TCA834:
+    'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -66814,6 +66820,302 @@ const TCS_DESC = {
       [617, 1504, 'TRIGGER  :'],
       [617, 1530, 'CYCLE(ms):100']
     ]
+  });
+})();
+/* TCA834 COMM DIGITAL OUTPUT(5) (331DM09788 page 238, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen digital outputs of the COMM controller (PI/O table TCA982, points 1 to 16): the cold reheat non return valve SV,
+   the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands (TCA690 / 714 / 711 /
+   605); the other twelve points are spare (OFF(0)). The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    k = [],
+    b = [],
+    r = [],
+    g = [],
+    l = [],
+    w = [],
+    t = [];
+  /* one output: the connector (or the reference), BTR, the PI/O mark, the box of the PI/O table with its words and DO under it */
+  const row = (col, i, src, sheet, btr, no, words) => {
+    const L = col === 0,
+      off = src === 'OFF(0)',
+      y = Math.round((L ? 154 : 153) + 159.7 * i),
+      cx = L ? (off ? 331 : 341) : 1382 /* connector */,
+      bx = L ? 568 : 1612 /* BTR */,
+      gx = L ? 681 : 1726 /* PI/O mark */,
+      rx = L ? (off ? 793 : 765) : 1842 /* box */,
+      rw = L ? (off ? 288 : 353) : 289,
+      two = words.length > 1,
+      key = (L ? 'l' : 'r') + (i + 1);
+    if (off) k.push([key, cx - 84, y, 'OFF(0)', 'sys.ref']);
+    else c.push([key, 'in', src, cx, y, '', [sheet]]);
+    b.push(['btr' + btr, 'o:BTR', btr, bx, y]);
+    g.push([gx, y, 'r']);
+    w.push([key, [[off ? cx + 150 : cx + 27, y], [gx - 7, y]]], [key, [[gx + 7, y], [rx, y]], 1]);
+    r.push(['', rx, y - (two ? 28 : 17), rw, two ? 53 : 33, '']);
+    l.push([[rx + 21, y - (two ? 28 : 17)], [rx + 21, y + (two ? 25 : 16)]]);
+    words.forEach((s, n) => t.push([rx + 27, y + (two ? -3 + 22 * n : 8), s]));
+    t.push([rx + rw - 15, y + (two ? 46 : 36), 'DO'], [gx - 69, y - 19, '(TCA982-' + no + ')', 0, 1.7]);
+  };
+  [
+    ['A1', 'TCA690', '001', ['COLD REHEAT  NON RETURN VALVE', 'SV ENERGIZE COMMAND']],
+    ['A1', 'TCA714', '003', ['NO.3 EXTRACTION STEAM NON RETU', 'RN VALVE ENERGIZE COMMAND']],
+    ['A1', 'TCA711', '005', ['NO.2 EXTRACTION STEAM NON RETU', 'RN VALVE ENERGIZE COMMAND']],
+    ['A1', 'TCA605', '007', ['STEAM SEAL DIVERTING VALVE', ' SOLENOID VALVE ENERGIZE COMMAND']],
+    ['OFF(0)', '', '009', ['(SPARE)']],
+    ['OFF(0)', '', '011', ['(SPARE)']],
+    ['OFF(0)', '', '013', ['(SPARE)']],
+    ['OFF(0)', '', '015', ['(SPARE)']]
+  ].forEach(([src, sheet, btr, words], i) => row(0, i, src, sheet, btr, 1 + i, words));
+  ['002', '004', '006', '008', '010', '012', '014', '016'].forEach((btr, i) => row(1, i, 'OFF(0)', '', btr, 9 + i, ['(SPARE)']));
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA834',
+    title: 'COMM DIGITAL OUTPUT(5)',
+    page: 238,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [172, 76, 2232, 1542],
+    k,
+    c,
+    b,
+    r,
+    g,
+    l,
+    w,
+    t: [
+      ...t,
+      [239, 1517, 'CONTROLLER:'],
+      [400, 1517, 'COMM+MD'],
+      [624, 1495, 'TRIGGER  :'],
+      [624, 1522, 'CYCLE(ms):100']
+    ]
+  });
+})();
+/* TCA850 COM ANALOG OUTPUT (331DM09788 page 240, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. The sixteen analog outputs of the COMM controller to the PI/O table TCA990 (points 1 to 19): the lube oil cooler
+   outlet temperatures, the steam seal feed valve and SPUV demands, the HP turbine warming valve position and the generator current,
+   voltage, MVAR, power factor and frequency; point 19 is a spare fed from SG 017 (K:0.0). Each line: the connector of the sheet that
+   makes the value, its FTR mark, the PI/O mark and the box of the PI/O table with AO under it. One connector (A1 of TCA740) feeds two
+   lines through a branch. The PDF prints this sheet twice (pages 231 and 232); it is drawn once. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    r = [],
+    g = [],
+    w = [],
+    j = [],
+    t = [];
+  const Y = i => Math.round(154 + 95.9 * i);
+  /* one output: column (0 left, 1 right), row, its key, the PI/O mark x, FTR number, PI/O point, the words of the box */
+  const out = (col, i, key, from, ftr, no, words) => {
+    const L = col === 0,
+      y = Y(i),
+      fx = L ? 610 : 1645 /* FTR */,
+      gx = L ? 789 : 1822 /* PI/O mark */,
+      rx = L ? 872 : 1905; /* box */
+    b.push(['f' + ftr, 'o:FTR', ftr, fx, y]);
+    g.push([gx, y, 'r']);
+    w.push(
+      [
+        key,
+        [
+          [from, y],
+          [gx - 7, y]
+        ]
+      ],
+      [
+        key,
+        [
+          [gx + 7, y],
+          [rx, y]
+        ],
+        1
+      ]
+    );
+    r.push(['', rx, y - 28, 268, 54, '']);
+    words.forEach((s, n) => t.push([rx + 6, y - 4 + 22 * n, s]));
+    t.push([rx + 250, y + 48, 'AO'], [gx - 55, y - 18, '(TCA990-' + no + ')', 0, 1.7]);
+  };
+  /* the connectors: key, letter, row, the sheet that makes the value */
+  const con = (col, key, l, i, sh) => c.push([key, 'in', l, col === 0 ? 277 : 1315, Y(i), '', [sh]]);
+  [
+    ['l1', 'A2', 0, 'TCA440'],
+    ['l2', 'A1', 1, 'TCA740'],
+    ['l3', 'A4', 2, 'TCA322'],
+    ['l5', 'A3', 4, 'TCA440'],
+    ['l6', 'A1', 5, 'TCA741'],
+    ['l7', 'A1', 6, 'TCA320'],
+    ['l8', 'A3', 7, 'TCA312'],
+    ['l9', 'A2', 8, 'TCA312'],
+    ['l10', 'A2', 9, 'TCA320'],
+    ['l11', 'A1', 10, 'TCA321'],
+    ['l12', 'A2', 11, 'TCA314'],
+    ['l13', 'A1', 12, 'TCA314']
+  ].forEach(([k, l, i, sh]) => con(0, k, l, i, sh));
+  con(1, 'r1', 'A3', 0, 'TCA310');
+  con(1, 'r2', 'A2', 1, 'TCA310');
+  /* the left column */
+  out(0, 0, 'l1', 304, '001', 1, ['LUBE OIL COOLER', 'OUTLET OIL TEMP.(A)']);
+  out(0, 1, 'l2', 304, '003', 2, ['SSFV POSITION DEMAND']);
+  out(0, 2, 'l3', 304, '005', 3, ['HP TURBINE WARMING', 'VALVE POSITION']);
+  out(0, 3, 'l2', 513, '006', 4, ['STEAM SEAL FEED VALVE', 'MANIPULATION VALUE']);
+  w.push([
+    'l2',
+    [
+      [513, Y(1)],
+      [513, Y(3)]
+    ]
+  ]);
+  j.push([513, Y(1)]);
+  out(0, 4, 'l5', 304, '007', 9, ['LUBE OIL COOLER', 'OUTLET OIL TEMP.(B)']);
+  out(0, 5, 'l6', 304, '008', 10, ['SPUV POSITION DEMAND']);
+  out(0, 6, 'l7', 304, '009', 11, ['GEN. MVAR']);
+  out(0, 7, 'l8', 304, '010', 12, ['GEN. CURRENT(B)']);
+  out(0, 8, 'l9', 304, '011', 13, ['GEN. VOLTAGE(B-C)']);
+  out(0, 9, 'l10', 304, '012', 14, ['GEN. POWER FACTOR']);
+  out(0, 10, 'l11', 304, '013', 15, ['FREQUENCY']);
+  out(0, 11, 'l12', 304, '014', 17, ['GEN. CURRENT(C)']);
+  out(0, 12, 'l13', 304, '015', 18, ['GEN. VOLTAGE(C-A)']);
+  /* the right column */
+  out(1, 0, 'r1', 1342, '002', 5, ['GEN. CURRENT(A)']);
+  out(1, 1, 'r2', 1342, '004', 6, ['GEN. VOLTAGE(A-B)']);
+  b.push(['sg017', 'SG', '017', 1326, Y(2) + 12, ['K:0.0']]);
+  out(1, 2, 'sg017', 1355, '016', 19, ['SPARE']);
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA850',
+    title: 'COM ANALOG OUTPUT',
+    page: 240,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [162, 77, 2221, 1541],
+    c,
+    b,
+    r,
+    g,
+    w,
+    j,
+    t: [
+      ...t,
+      [228, 1527, 'CONTROLLER:'],
+      [388, 1527, 'COMM+MD'],
+      [617, 1498, 'TRIGGER  :'],
+      [617, 1527, 'CYCLE(ms):100']
+    ]
+  });
+})();
+/* TCA900 COMM DI TABLE(1) (331DM09788 page 241, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital input card unit 0 slot 5 (LYD050A3) of the COMM controller, 32 channels (CH 0 ~ 1F): the MSV(A),
+   CV(A) and CRV(A) secondary drain valves, the AC exciter and generator field earth faults, the AVR status, the steam seal diverting valve,
+   the No.4 extraction non return valve and the LP heater levels; the rest spare. Names are typed as drawn (SPARE on CH 13). */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) =>
+      l.push([
+        [x0, y],
+        [x1, y]
+      ]),
+    V = (x, y0, y1) =>
+      l.push([
+        [x, y0],
+        [x, y1]
+      ]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 275,
+    y0 = 141;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 696));
+  [0, 205, 495, 696].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 87, 130, 248, 290, 332, 376, 419, 537, 579, 621].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 350, y0 + 21, 'PI/O', 1], [x0 + 595, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [205, 'UNIT'],
+    [248, '0'],
+    [290, 'SLOT'],
+    [332, '5'],
+    [376, 'TYPE'],
+    [419, 'LYD050A3'],
+    [495, 'DVA'],
+    [579, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [272, 315, 359, 855, 934, 1015, 1155, 1329, 1460],
+    T = 200,
+    Y1 = 254,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 272, 1460);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 272, 1460);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DI Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['MSV(A) ABOVE SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    1: ['MSV(A) ABOVE SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    2: ['MSV(A) ABOVE SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    3: ['CV(A) ABOVE SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    4: ['CV(A) ABOVE SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    5: ['CV(A) ABOVE SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    6: ['CRV(A) BELOW SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    7: ['CRV(A) BELOW SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    8: ['CRV(A) BELOW SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    9: ['AC EXCITER EARTH FAULT', ''],
+    10: ['AUTO MANUAL START READY', ''],
+    11: ['CONTROL LOCAL', ''],
+    12: ['MSV(A) ABV SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    13: ['CRV(A) BELOW SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    14: ['CV(A) ABV SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    15: ['P.S.NORMAL', ''],
+    16: ['STEAM SEAL DIVERTING VALVE CONDENSER SIDE', 'ZSC-GSn017'],
+    17: ['STEAM SEAL DIVERTING VALVE HEATER SIDE', 'ZSO-GSn017'],
+    18: ['NO.1 LP HEATER LEVEL VERY HIGH', ''],
+    19: ['SPARE', ''],
+    20: ['NO.4 EXTRACTION STEAM NON RETURN VALVE FULL CLOSE POSITION', 'ZSC-TSn720'],
+    21: ['NO.4 EXTRACTION STEAM NON RETURN VALVE FULL OPEN POSITION', 'ZSO-TSn720'],
+    22: ['NO.3 LP HEATER LEVEL HIGH HIGH', ''],
+    23: ['GEN FIELD EARTH FAULT (64F OPERATED)', ''],
+    24: ['AVR IN USE', ''],
+    25: ['AVR MAJOR TROUBLE', ''],
+    26: ['AVR MINOR TROUBLE', ''],
+    28: ['MSV(A) ABV SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    29: ['CRV(A) BELOW SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    30: ['CV(A) ABV SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    31: ['P.S.NORMAL', '']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([232, 1520, 'CONTROLLER:'], [392, 1520, 'COMM+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA900',
+    title: 'COMM DI TABLE(1)',
+    page: 241,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [171, 75, 2212, 1539],
+    l,
+    t
   });
 })();
 /* TCA901 COMM DI TABLE(2) (331DM09788 page 242, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
@@ -150776,7 +151078,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build b392209'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 424225f'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -177166,6 +177468,10 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA850:
+    'COM analog output: the sixteen analog outputs of the COMM controller to the PI/O table TCA990 (lube oil cooler temperatures, steam seal feed valve and SPUV demands, HP warming valve, generator current, voltage, MVAR, power factor, frequency).',
+  TCA900:
+    'COMM DI TABLE(1): digital input card unit 0 slot 5 LYD050A3 of the COMM controller (MSV(A), CV(A), CRV(A) secondary drains, exciter and field earth faults, AVR status, steam seal diverting valve, No.4 extraction NRV).',
   TCA901:
     'COMM DI TABLE(2): digital input card unit 0 slot 6 LYD050A3 of the COMM controller (MSV(B), CV(B), CRV(B) secondary drains, AVR trouble, No.2 and No.5 extraction NRV, heater levels, oil purifier).',
   TCA902:
@@ -177542,7 +177848,9 @@ const TCS_DESC = {
   TCA826:
     'Alarm: house load operation with the LP exhaust hood water spray valve open for 7200 s sets HOUSE LOAD OPERATION OVER 2HOURS (reset by the end of house load, the hood steam valve closed or a turbine trip); with generator voltage OK for 5 s, the RSR diode fault, the generator field earth fault, or a 30DF/64F relay trouble or loss of control power give the two relay alarms. Each to A1 / A2 / A3 and CRT.',
   TCA830:
-    'COMM digital output (1): sixteen points of the PI/O table TCA980 (1 to 16): the CRV, CV and MSV secondary drain valve commands, the steam seal feed inlet valve commands and closed signal, the turbine gland steam line drain valve commands, AMB. COLD MODE TEMP. and MODE JUDGEMENT INSTRUMENT NORMAL (no first stage or reheat bowl inner wall metal temperature abnormal); one point spare.'
+    'COMM digital output (1): sixteen points of the PI/O table TCA980 (1 to 16): the CRV, CV and MSV secondary drain valve commands, the steam seal feed inlet valve commands and closed signal, the turbine gland steam line drain valve commands, AMB. COLD MODE TEMP. and MODE JUDGEMENT INSTRUMENT NORMAL (no first stage or reheat bowl inner wall metal temperature abnormal); one point spare.',
+  TCA834:
+    'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -238434,6 +238742,308 @@ const TCS_DESC = {
       [617, 1504, 'TRIGGER  :'],
       [617, 1530, 'CYCLE(ms):100']
     ]
+  });
+})();
+
+/* ---- src/digital/tce/TCA834.js ---- */
+/* TCA834 COMM DIGITAL OUTPUT(5) (331DM09788 page 238, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen digital outputs of the COMM controller (PI/O table TCA982, points 1 to 16): the cold reheat non return valve SV,
+   the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands (TCA690 / 714 / 711 /
+   605); the other twelve points are spare (OFF(0)). The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    k = [],
+    b = [],
+    r = [],
+    g = [],
+    l = [],
+    w = [],
+    t = [];
+  /* one output: the connector (or the reference), BTR, the PI/O mark, the box of the PI/O table with its words and DO under it */
+  const row = (col, i, src, sheet, btr, no, words) => {
+    const L = col === 0,
+      off = src === 'OFF(0)',
+      y = Math.round((L ? 154 : 153) + 159.7 * i),
+      cx = L ? (off ? 331 : 341) : 1382 /* connector */,
+      bx = L ? 568 : 1612 /* BTR */,
+      gx = L ? 681 : 1726 /* PI/O mark */,
+      rx = L ? (off ? 793 : 765) : 1842 /* box */,
+      rw = L ? (off ? 288 : 353) : 289,
+      two = words.length > 1,
+      key = (L ? 'l' : 'r') + (i + 1);
+    if (off) k.push([key, cx - 84, y, 'OFF(0)', 'sys.ref']);
+    else c.push([key, 'in', src, cx, y, '', [sheet]]);
+    b.push(['btr' + btr, 'o:BTR', btr, bx, y]);
+    g.push([gx, y, 'r']);
+    w.push([key, [[off ? cx + 150 : cx + 27, y], [gx - 7, y]]], [key, [[gx + 7, y], [rx, y]], 1]);
+    r.push(['', rx, y - (two ? 28 : 17), rw, two ? 53 : 33, '']);
+    l.push([[rx + 21, y - (two ? 28 : 17)], [rx + 21, y + (two ? 25 : 16)]]);
+    words.forEach((s, n) => t.push([rx + 27, y + (two ? -3 + 22 * n : 8), s]));
+    t.push([rx + rw - 15, y + (two ? 46 : 36), 'DO'], [gx - 69, y - 19, '(TCA982-' + no + ')', 0, 1.7]);
+  };
+  [
+    ['A1', 'TCA690', '001', ['COLD REHEAT  NON RETURN VALVE', 'SV ENERGIZE COMMAND']],
+    ['A1', 'TCA714', '003', ['NO.3 EXTRACTION STEAM NON RETU', 'RN VALVE ENERGIZE COMMAND']],
+    ['A1', 'TCA711', '005', ['NO.2 EXTRACTION STEAM NON RETU', 'RN VALVE ENERGIZE COMMAND']],
+    ['A1', 'TCA605', '007', ['STEAM SEAL DIVERTING VALVE', ' SOLENOID VALVE ENERGIZE COMMAND']],
+    ['OFF(0)', '', '009', ['(SPARE)']],
+    ['OFF(0)', '', '011', ['(SPARE)']],
+    ['OFF(0)', '', '013', ['(SPARE)']],
+    ['OFF(0)', '', '015', ['(SPARE)']]
+  ].forEach(([src, sheet, btr, words], i) => row(0, i, src, sheet, btr, 1 + i, words));
+  ['002', '004', '006', '008', '010', '012', '014', '016'].forEach((btr, i) => row(1, i, 'OFF(0)', '', btr, 9 + i, ['(SPARE)']));
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA834',
+    title: 'COMM DIGITAL OUTPUT(5)',
+    page: 238,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [172, 76, 2232, 1542],
+    k,
+    c,
+    b,
+    r,
+    g,
+    l,
+    w,
+    t: [
+      ...t,
+      [239, 1517, 'CONTROLLER:'],
+      [400, 1517, 'COMM+MD'],
+      [624, 1495, 'TRIGGER  :'],
+      [624, 1522, 'CYCLE(ms):100']
+    ]
+  });
+})();
+
+/* ---- src/digital/tce/TCA850.js ---- */
+/* TCA850 COM ANALOG OUTPUT (331DM09788 page 240, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. The sixteen analog outputs of the COMM controller to the PI/O table TCA990 (points 1 to 19): the lube oil cooler
+   outlet temperatures, the steam seal feed valve and SPUV demands, the HP turbine warming valve position and the generator current,
+   voltage, MVAR, power factor and frequency; point 19 is a spare fed from SG 017 (K:0.0). Each line: the connector of the sheet that
+   makes the value, its FTR mark, the PI/O mark and the box of the PI/O table with AO under it. One connector (A1 of TCA740) feeds two
+   lines through a branch. The PDF prints this sheet twice (pages 231 and 232); it is drawn once. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    r = [],
+    g = [],
+    w = [],
+    j = [],
+    t = [];
+  const Y = i => Math.round(154 + 95.9 * i);
+  /* one output: column (0 left, 1 right), row, its key, the PI/O mark x, FTR number, PI/O point, the words of the box */
+  const out = (col, i, key, from, ftr, no, words) => {
+    const L = col === 0,
+      y = Y(i),
+      fx = L ? 610 : 1645 /* FTR */,
+      gx = L ? 789 : 1822 /* PI/O mark */,
+      rx = L ? 872 : 1905; /* box */
+    b.push(['f' + ftr, 'o:FTR', ftr, fx, y]);
+    g.push([gx, y, 'r']);
+    w.push(
+      [
+        key,
+        [
+          [from, y],
+          [gx - 7, y]
+        ]
+      ],
+      [
+        key,
+        [
+          [gx + 7, y],
+          [rx, y]
+        ],
+        1
+      ]
+    );
+    r.push(['', rx, y - 28, 268, 54, '']);
+    words.forEach((s, n) => t.push([rx + 6, y - 4 + 22 * n, s]));
+    t.push([rx + 250, y + 48, 'AO'], [gx - 55, y - 18, '(TCA990-' + no + ')', 0, 1.7]);
+  };
+  /* the connectors: key, letter, row, the sheet that makes the value */
+  const con = (col, key, l, i, sh) => c.push([key, 'in', l, col === 0 ? 277 : 1315, Y(i), '', [sh]]);
+  [
+    ['l1', 'A2', 0, 'TCA440'],
+    ['l2', 'A1', 1, 'TCA740'],
+    ['l3', 'A4', 2, 'TCA322'],
+    ['l5', 'A3', 4, 'TCA440'],
+    ['l6', 'A1', 5, 'TCA741'],
+    ['l7', 'A1', 6, 'TCA320'],
+    ['l8', 'A3', 7, 'TCA312'],
+    ['l9', 'A2', 8, 'TCA312'],
+    ['l10', 'A2', 9, 'TCA320'],
+    ['l11', 'A1', 10, 'TCA321'],
+    ['l12', 'A2', 11, 'TCA314'],
+    ['l13', 'A1', 12, 'TCA314']
+  ].forEach(([k, l, i, sh]) => con(0, k, l, i, sh));
+  con(1, 'r1', 'A3', 0, 'TCA310');
+  con(1, 'r2', 'A2', 1, 'TCA310');
+  /* the left column */
+  out(0, 0, 'l1', 304, '001', 1, ['LUBE OIL COOLER', 'OUTLET OIL TEMP.(A)']);
+  out(0, 1, 'l2', 304, '003', 2, ['SSFV POSITION DEMAND']);
+  out(0, 2, 'l3', 304, '005', 3, ['HP TURBINE WARMING', 'VALVE POSITION']);
+  out(0, 3, 'l2', 513, '006', 4, ['STEAM SEAL FEED VALVE', 'MANIPULATION VALUE']);
+  w.push([
+    'l2',
+    [
+      [513, Y(1)],
+      [513, Y(3)]
+    ]
+  ]);
+  j.push([513, Y(1)]);
+  out(0, 4, 'l5', 304, '007', 9, ['LUBE OIL COOLER', 'OUTLET OIL TEMP.(B)']);
+  out(0, 5, 'l6', 304, '008', 10, ['SPUV POSITION DEMAND']);
+  out(0, 6, 'l7', 304, '009', 11, ['GEN. MVAR']);
+  out(0, 7, 'l8', 304, '010', 12, ['GEN. CURRENT(B)']);
+  out(0, 8, 'l9', 304, '011', 13, ['GEN. VOLTAGE(B-C)']);
+  out(0, 9, 'l10', 304, '012', 14, ['GEN. POWER FACTOR']);
+  out(0, 10, 'l11', 304, '013', 15, ['FREQUENCY']);
+  out(0, 11, 'l12', 304, '014', 17, ['GEN. CURRENT(C)']);
+  out(0, 12, 'l13', 304, '015', 18, ['GEN. VOLTAGE(C-A)']);
+  /* the right column */
+  out(1, 0, 'r1', 1342, '002', 5, ['GEN. CURRENT(A)']);
+  out(1, 1, 'r2', 1342, '004', 6, ['GEN. VOLTAGE(A-B)']);
+  b.push(['sg017', 'SG', '017', 1326, Y(2) + 12, ['K:0.0']]);
+  out(1, 2, 'sg017', 1355, '016', 19, ['SPARE']);
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA850',
+    title: 'COM ANALOG OUTPUT',
+    page: 240,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [162, 77, 2221, 1541],
+    c,
+    b,
+    r,
+    g,
+    w,
+    j,
+    t: [
+      ...t,
+      [228, 1527, 'CONTROLLER:'],
+      [388, 1527, 'COMM+MD'],
+      [617, 1498, 'TRIGGER  :'],
+      [617, 1527, 'CYCLE(ms):100']
+    ]
+  });
+})();
+
+/* ---- src/digital/tce/TCA900.js ---- */
+/* TCA900 COMM DI TABLE(1) (331DM09788 page 241, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital input card unit 0 slot 5 (LYD050A3) of the COMM controller, 32 channels (CH 0 ~ 1F): the MSV(A),
+   CV(A) and CRV(A) secondary drain valves, the AC exciter and generator field earth faults, the AVR status, the steam seal diverting valve,
+   the No.4 extraction non return valve and the LP heater levels; the rest spare. Names are typed as drawn (SPARE on CH 13). */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) =>
+      l.push([
+        [x0, y],
+        [x1, y]
+      ]),
+    V = (x, y0, y1) =>
+      l.push([
+        [x, y0],
+        [x, y1]
+      ]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 275,
+    y0 = 141;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 696));
+  [0, 205, 495, 696].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 87, 130, 248, 290, 332, 376, 419, 537, 579, 621].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 350, y0 + 21, 'PI/O', 1], [x0 + 595, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [205, 'UNIT'],
+    [248, '0'],
+    [290, 'SLOT'],
+    [332, '5'],
+    [376, 'TYPE'],
+    [419, 'LYD050A3'],
+    [495, 'DVA'],
+    [579, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [272, 315, 359, 855, 934, 1015, 1155, 1329, 1460],
+    T = 200,
+    Y1 = 254,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 272, 1460);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 272, 1460);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DI Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['MSV(A) ABOVE SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    1: ['MSV(A) ABOVE SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    2: ['MSV(A) ABOVE SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    3: ['CV(A) ABOVE SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    4: ['CV(A) ABOVE SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    5: ['CV(A) ABOVE SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    6: ['CRV(A) BELOW SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    7: ['CRV(A) BELOW SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    8: ['CRV(A) BELOW SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    9: ['AC EXCITER EARTH FAULT', ''],
+    10: ['AUTO MANUAL START READY', ''],
+    11: ['CONTROL LOCAL', ''],
+    12: ['MSV(A) ABV SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    13: ['CRV(A) BELOW SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    14: ['CV(A) ABV SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    15: ['P.S.NORMAL', ''],
+    16: ['STEAM SEAL DIVERTING VALVE CONDENSER SIDE', 'ZSC-GSn017'],
+    17: ['STEAM SEAL DIVERTING VALVE HEATER SIDE', 'ZSO-GSn017'],
+    18: ['NO.1 LP HEATER LEVEL VERY HIGH', ''],
+    19: ['SPARE', ''],
+    20: ['NO.4 EXTRACTION STEAM NON RETURN VALVE FULL CLOSE POSITION', 'ZSC-TSn720'],
+    21: ['NO.4 EXTRACTION STEAM NON RETURN VALVE FULL OPEN POSITION', 'ZSO-TSn720'],
+    22: ['NO.3 LP HEATER LEVEL HIGH HIGH', ''],
+    23: ['GEN FIELD EARTH FAULT (64F OPERATED)', ''],
+    24: ['AVR IN USE', ''],
+    25: ['AVR MAJOR TROUBLE', ''],
+    26: ['AVR MINOR TROUBLE', ''],
+    28: ['MSV(A) ABV SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    29: ['CRV(A) BELOW SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    30: ['CV(A) ABV SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    31: ['P.S.NORMAL', '']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([232, 1520, 'CONTROLLER:'], [392, 1520, 'COMM+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA900',
+    title: 'COMM DI TABLE(1)',
+    page: 241,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [171, 75, 2212, 1539],
+    l,
+    t
   });
 })();
 
@@ -343503,7 +344113,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b392209'));
+    row('Version', E('span', 'scsver', ver + ' · build 424225f'));
   }
   function openSet(near) {
     if (!set) {
