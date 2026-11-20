@@ -805,5 +805,7 @@ const TCS_DESC = {
   TCA826:
     'Alarm: house load operation with the LP exhaust hood water spray valve open for 7200 s sets HOUSE LOAD OPERATION OVER 2HOURS (reset by the end of house load, the hood steam valve closed or a turbine trip); with generator voltage OK for 5 s, the RSR diode fault, the generator field earth fault, or a 30DF/64F relay trouble or loss of control power give the two relay alarms. Each to A1 / A2 / A3 and CRT.',
   TCA830:
-    'COMM digital output (1): sixteen points of the PI/O table TCA980 (1 to 16): the CRV, CV and MSV secondary drain valve commands, the steam seal feed inlet valve commands and closed signal, the turbine gland steam line drain valve commands, AMB. COLD MODE TEMP. and MODE JUDGEMENT INSTRUMENT NORMAL (no first stage or reheat bowl inner wall metal temperature abnormal); one point spare.'
+    'COMM digital output (1): sixteen points of the PI/O table TCA980 (1 to 16): the CRV, CV and MSV secondary drain valve commands, the steam seal feed inlet valve commands and closed signal, the turbine gland steam line drain valve commands, AMB. COLD MODE TEMP. and MODE JUDGEMENT INSTRUMENT NORMAL (no first stage or reheat bowl inner wall metal temperature abnormal); one point spare.',
+  TCA834:
+    'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.'
 };
