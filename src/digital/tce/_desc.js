@@ -849,5 +849,7 @@ const TCS_DESC = {
   TCE961:
     'EHG DO TABLE(2): PI/O table of EHG digital output card unit 4 slot 3 (LYD105A), 32 channels; oil pump (B) starts, ASD1 start, DCS mode permissive, ICV full close, EHG soft trouble, turning gear.',
   TCE970:
-    'EHG AO TABLE(1): PI/O table of EHG analog output card unit 4 slot 7 (LYA100A), 4-20 mA; target MW feed back, load up rate, HP first stage pressures (A)(B)(C), turbine speed.'
+    'EHG AO TABLE(1): PI/O table of EHG analog output card unit 4 slot 7 (LYA100A), 4-20 mA; target MW feed back, load up rate, HP first stage pressures (A)(B)(C), turbine speed.',
+  TCE980:
+    'EHG PTI TABLE(1): PI/O table of EHG pulse input cards unit 0 slot A/B/C (LYT000A), turbine speed pick-ups SE-STn001-1/2/3; high and low speed counters, count exchange constants.'
 };
