@@ -10,7 +10,7 @@
   cycle: 30,
   f: [183, 80, 2235, 1540],
   /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
-  live: { kSpd: ['rpm', 'rpm'] },
+  live: { kSpd: ['rpm', 'rpm'], iGen: ['mw', 'MW'] },
   k: [
     ['kInit', 298, 165, 'INITIAL', 'ref'],
     ['kSpd', 291, 656, 'TURBINE SPEED', 'ref'],

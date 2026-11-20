@@ -16,6 +16,8 @@
       title: 'TPC SIGNAL DIAGNOSTICS(6)',
       page: 80,
       f: [180, 75, 2232, 1535],
+      /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+      live: { i12: 'vtOn' },
       tops: [103, 391, 668, 976],
       line2: '',
       orName: 'DISCREPANCY',

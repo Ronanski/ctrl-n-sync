@@ -11,7 +11,7 @@
   cycle: 30,
   f: [182, 84, 2232, 1543],
   /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
-  live: { iGov: ['govSet', '%'], kSpd: ['rpm', 'rpm'] },
+  live: { iGov: ['govSet', '%'], kSpd: ['rpm', 'rpm'], iA: ['tspd', 'rpm'] },
   k: [
     ['kInit', 275, 211, 'INITIAL', 'ref'],
     ['kSpd', 273, 360, 'TURBINE SPEED', 'ref'],
