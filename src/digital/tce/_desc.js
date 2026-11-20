@@ -856,5 +856,9 @@ const TCS_DESC = {
   TCE980:
     'EHG PTI TABLE(1): PI/O table of EHG pulse input cards unit 0 slot A/B/C (LYT000A), turbine speed pick-ups SE-STn001-1/2/3; high and low speed counters, count exchange constants.',
   TCE990:
-    'EHG SERVO TABLE(1): PI/O table of EHG servo cards unit 0 slot 4/5 (AEH006A); MSV/CV position and servo valve inputs, servo valve outputs, A and B sides.'
+    'EHG SERVO TABLE(1): PI/O table of EHG servo cards unit 0 slot 4/5 (AEH006A); MSV/CV position and servo valve inputs, servo valve outputs, A and B sides.',
+  TCE991:
+    'EHG SERVO TABLE(2): PI/O table of EHG servo cards unit 0 slot 6/7 (AEH006A); MSV/CV C-side positions and servo valves, ICV and RSV positions, ICV servo valves.',
+  TCE992:
+    'EHG SERVO TABLE(3): PI/O table of EHG servo cards unit 0 slot 8/9 (AEH006A); ICV and RSV B and C side positions, ICV servo valve inputs and outputs.'
 };
