@@ -425,6 +425,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA901:
+    'COMM DI TABLE(2): digital input card unit 0 slot 6 LYD050A3 of the COMM controller (MSV(B), CV(B), CRV(B) secondary drains, AVR trouble, No.2 and No.5 extraction NRV, heater levels, oil purifier).',
   TCA902:
     'COMM DI TABLE(3): digital input card unit 0 slot 7 LYD050A3 of the COMM controller (CV(B) warming drain, HP warming valve, No.3 extraction primary NRV, generator, 52L and AVR status).',
   TCA903:
