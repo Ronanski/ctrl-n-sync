@@ -6093,6 +6093,8 @@ const TCS_DESC = {
     'Analog input diagnostics (15), card TCA970: generator cooling gas air cooler outlet temperatures (A) to (D), each through an AI DIAG.MD block to the TCE controller.',
   TCA443:
     'Analog input diagnostics (15), card TCA970: AC exciter outlet air temperature and generator stator coil temperature (F), each through an AI DIAG.MD block to the TCE controller.',
+  'G-1A':
+    'Generator breaker 52G (1/2): the close order through the closing interlock, the open orders through two OR gates to trip coils TC1 and TC2, and the breaker state out to the panels, lamps and other sheets.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -6506,7 +6508,9 @@ const TCS_DESC = {
   TCA756:
     'THERMAL STRESS(IP): three DISTRIBUTION blocks A001 / A004 / A007 (LMA627) for TI(5) to TI(3), as drawn.',
   TCA757:
-    'THERMAL STRESS(IP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TI(2) and TI(1), as drawn.'
+    'THERMAL STRESS(IP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TI(2) and TI(1), as drawn.',
+  TCA758:
+    'THERMAL STRESS(IP): IP surface and bore stress from the 5 stage temperatures, bore plus speed ratio term, TB-I'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -29056,6 +29060,189 @@ const TCS_DESC = {
     m,
     w,
     t
+  });
+})();
+/* SH-G-1A GENERATOR CIRCUIT BREAKER LOGIC (52G) (1/2) (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 7). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide. The interfaces of the generator breaker 52G (inside the GMCB, supplied by others): the
+   close order through the closing interlock to CLOSE, the open orders (protection, DCS, synchronizing 3-52G, transformer protection) through two OR
+   gates to the trip coils TC1 and TC2 through the opening interlock to OPEN; the breaker state out to the other sheets, the lamps and the panels
+   (each OTHERS mark: the signal goes to that panel). The pen notes written on the print are not part of the drawing. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    e = [],
+    a = [],
+    j = [];
+  /* a dashed outline */
+  const dbox = (x1, y1, x2, y2) =>
+    e.push([[x1, y1], [x2, y1]], [[x2, y1], [x2, y2]], [[x2, y2], [x1, y2]], [[x1, y2], [x1, y1]]);
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh, sx) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4]);
+    if (sh) t.push([sx, y + 5, sh]);
+  };
+  /* the inputs from the other sheets: [key, number, sheet, line, words, end of the line] */
+  [
+    ['i1', '1', 'SH-G-1B', 595, '52G CLOSE ORDER', 1372],
+    ['i2', '2', 'SH-G-5B', 717, 'GEN. PROTECTION OPERATED (52G-TC1)', 1310],
+    ['i3', '13', 'SH-G-3', 768, '52G OPEN ORDER FROM DCS', 1310],
+    ['i4', '4', 'SH-G-3', 820, '3-52G "OPEN"', 1310],
+    ['i5', '3', 'SH-G-7', 873, 'GEN. TRANSF. AND UNIT TRANSF. PROTECTION OPERATED (FOR 52G-TC1)', 1310],
+    ['i6', '14', 'SH-G-3', 945, '52G OPEN ORDER FROM DCS', 1310],
+    ['i7', '5', 'SH-G-3', 998, '3-52G "OPEN"', 1310],
+    ['i8', '4', 'SH-G-7', 1050, 'GEN. TRANSF. AND UNIT TRANSF. PROTECTION OPERATED (FOR 52G-TC2)', 1310],
+    ['i9', '3', 'SH-G-5B', 1105, 'GEN. PROTECTION OPERATED (52G-TC2)', 1310]
+  ].forEach(([k, n, sh, y, z, xe]) => {
+    circ(268, y, n);
+    s.push([k, 255, y - 13, 281, y + 13]);
+    t.push([288, y - 7, z], [288, y + 17, sh]);
+    w.push([k, [[281, y], [xe, y]]]);
+  });
+  /* the field of the breaker (GMCB) and of 52G itself */
+  e.push(
+    [[1090, 180], [1632, 180]],
+    [[1632, 180], [1632, 1298]],
+    [[1632, 1298], [1090, 1298]],
+    [[1090, 1298], [1090, 1078]],
+    [[1090, 1078], [243, 1078]],
+    [[243, 1078], [243, 745]],
+    [[243, 745], [1090, 745]],
+    [[1090, 745], [1090, 180]]
+  );
+  t.push([1580, 193, '(GMCB)']);
+  dbox(1356, 550, 1548, 895);
+  t.push([1354, 546, '52G']);
+  /* the selector, the earthing switch and the disconnecting switch */
+  r.push(['rem', 1145, 212, 97, 39, ''], ['es', 1145, 268, 97, 28, 'ES OPENED'], ['ds', 1145, 371, 97, 18, 'DS CLOSED']);
+  l.push([[1145, 231], [1242, 231]]);
+  t.push([1145, 207, '(52G)'], [1193, 222, 'REMOTE', 4], [1193, 241, 'LOCAL', 4]);
+  /* the closing interlock and CLOSE */
+  dbox(1375, 563, 1480, 618);
+  t.push([1427, 576, '52G', 4], [1427, 591, 'CLOSING', 4], [1427, 606, 'INTERLOCK', 4]);
+  l.push([[1480, 590], [1490, 590]]);
+  dbox(1490, 581, 1535, 599);
+  s.push(['cl', 1490, 581, 1535, 599]);
+  t.push([1512, 590, 'CLOSE', 4]);
+  /* the open orders: two OR gates to the trip coils, the opening interlock and OPEN */
+  b.push(['or1', 'G:OR', '', 1322, 793, [], {}, [20, 20, 172]], ['or2', 'G:OR', '', 1322, 1023, [], {}, [20, 20, 172]]);
+  w.push(['or1', [[1332, 793], [1373, 793]]], ['or2', [[1332, 1023], [1342, 1023], [1342, 820], [1373, 820]]]);
+  dbox(1375, 778, 1480, 835);
+  l.push([[1405, 778], [1405, 835]], [[1375, 806], [1405, 806]], [[1480, 820], [1488, 820]]);
+  t.push([1390, 793, 'TC1', 4], [1390, 820, 'TC2', 4], [1443, 790, '52G', 4], [1443, 806, 'OPENING', 4], [1443, 822, 'INTERLOCK', 4]);
+  dbox(1488, 812, 1538, 830);
+  s.push(['op', 1488, 812, 1538, 830]);
+  t.push([1513, 821, 'OPEN', 4]);
+  /* earthing switch opened and 52G open */
+  b.push(['a1', 'G:A', '', 1451, 300, [], {}, [18, 20, 46]]);
+  w.push(['es', [[1242, 281], [1440, 281]]], ['op', [[1570, 820], [1570, 359], [1390, 359], [1390, 320], [1440, 320]]]);
+  /* the outputs: [line, words over the line, circle number, sheet] */
+  [
+    [222, '52G "REMOTE" SELECTED', '45', 'SH-G-1B'],
+    [298, 'ES AND 52G OPEN', '14', 'SH-G-4'],
+    [444, '52G CLOSED', '2', 'SH-G-8A'],
+    [476, '', '5', 'SH-G-9'],
+    [514, '52G CLOSED', '3', 'SH-G-5A'],
+    [546, '52G CLOSED', '1', 'SH-G-6A'],
+    [590, '', 'R', ''],
+    [622, '', 'G', ''],
+    [675, '52G CLOSED', '4', 'SH-G-4'],
+    [717, '52G CLOSED', '24', 'SH-G-2B'],
+    [748, '52G CLOSED', '44', 'SH-G-1B'],
+    [930, '52G OPENED', '8', 'SH-G-8A'],
+    [982, '52G OPENED', '1', 'SH-G-9']
+  ].forEach(([y, z, n, sh]) => {
+    if (z) t.push([1945, y - 7, z, 2]);
+    circ(1977, y, n, sh, 1994);
+  });
+  t.push([1945, 460, '52G CLOSED (FOR HOUSE', 2], [1945, 473, 'LOAD OPERATION)', 2]);
+  /* the ATS of the turbine and the indications */
+  [
+    [378, '(DS CLOSED)'],
+    [416, '(52G CLOSED)'],
+    [890, '(52G OPENED)']
+  ].forEach(([y, z]) => {
+    r.push(['', 1965, y - 8, 30, 17, 'ATS']);
+    t.push([1963, y - 13, z]);
+  });
+  t.push([1945, 813, '52G CLOSED', 2], [1970, 824, 'INDICATION'], [1945, 838, '52G OPENED', 2], [1970, 849, 'INDICATION']);
+  b.push(['nc', 'NC', '', 1818, 820, [], {}, [11]]);
+  w.push(
+    ['rem', [[1242, 222], [1963, 222]]],
+    ['a1', [[1460, 300], [1963, 300]]],
+    ['ds', [[1242, 378], [1963, 378]]],
+    ['cl', [[1535, 590], [1963, 590]]],
+    ['cl', [[1597, 590], [1597, 444], [1963, 444]]],
+    ['cl', [[1787, 444], [1787, 416], [1963, 416]]],
+    ['cl', [[1787, 444], [1787, 476], [1963, 476]]],
+    ['cl', [[1597, 514], [1963, 514]]],
+    ['cl', [[1597, 546], [1963, 546]]],
+    ['cl', [[1597, 590], [1597, 675], [1963, 675]]],
+    ['cl', [[1597, 675], [1597, 717], [1963, 717]]],
+    ['cl', [[1787, 717], [1787, 748], [1963, 748]]],
+    ['op', [[1538, 820], [1807, 820]], 0, 0],
+    ['nc', [[1829, 820], [1963, 820]]],
+    ['op', [[1570, 622], [1963, 622]]],
+    ['op', [[1787, 820], [1787, 845], [1963, 845]]],
+    ['op', [[1787, 845], [1787, 890], [1963, 890]]],
+    ['op', [[1787, 890], [1787, 930], [1963, 930]]],
+    ['op', [[1787, 930], [1787, 982], [1963, 982]]]
+  );
+  j.push([1570, 820], [1570, 622], [1597, 590], [1597, 514], [1597, 546], [1597, 675], [1787, 444], [1787, 717], [1787, 820], [1787, 845], [1787, 890], [1787, 930]);
+  /* OTHERS marks: the signal leaves the breaker to that panel ([top, bottom, panel, the lines it crosses]) */
+  [
+    [204, 236, 'GCP', [222]],
+    [286, 315, 'AVR', [300]],
+    [363, 393, 'TCS', [378]],
+    [428, 460, 'TCS', [444]],
+    [497, 561, 'GPP', [514, 546]],
+    [574, 633, 'SYN', [590, 622]],
+    [658, 688, 'AVR', [675]],
+    [703, 735, 'GCP', [717]],
+    [805, 833, 'TCS', [820]]
+  ].forEach(([y1, y2, z, X]) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[1708, P[i]], [1708, P[i + 1]]]);
+    a.push([[1708, y1], [1690, y1]], [[1708, y2], [1727, y2]]);
+    t.push([1640, y1 + 4, 'OTHERS'], [1731, y2 + 5, '(' + z + ')']);
+  });
+  /* the notes */
+  [
+    'NOTE:',
+    '1) ACTUAL INTERNAL LOGICS (INTERLOCKS) OF 52G, DS',
+    '    AND ES SUPPLIED BY OTHERS ARE NOT INDICATED',
+    '    IN THIS PART.',
+    '    HOWEVER, THE SIGNAL INTERFACES BETWEEN "52G, DS',
+    '    AND ES"AND "TCS, AVR, GCP, GPP"ARE INDICATED',
+    '    IN THIS PART.',
+    '',
+    '2) TC : TRIP COIL OF 52G.'
+  ].forEach((z, i) => z && t.push([1272, 1129 + 15.5 * i, z]));
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-1A',
+    title: 'GENERATOR CIRCUIT BREAKER LOGIC (52G) (1/2)',
+    page: 7,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [205, 120, 2177, 1522],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    e,
+    a,
+    j
   });
 })();
 /* TCA100 CONTROLLER CONDITION(1) (331DM09788 page 34, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
@@ -57310,6 +57497,136 @@ const TCS_DESC = {
     b,
     w,
     j: [[621, P(B, 1)]],
+    t
+  });
+})();
+/* TCA758 THERMAL STRESS(IP) (331DM09788 page 188, controller COMM+MD, trigger Trigger-of_LOGIC_2, cycle 60 s). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - The THERMAL STRESS block A001 (LMA628): T1-T5 = TI(1)N-TI(5)N (TCA757 / TCA756), SG1-SG5 = SG A002-A006 (DMI1-DMI5), TS = TS_I
+     (TCA755). SURF = THERMAL STRESS (IP SURFACE), A out (to TCA760 / TCA763 / TCA767); TB = TB-I, 1 out (to TCA760).
+   - BORE plus MLT 008 of SPEED RATIO (D of TCA754) and SG A009 (K:76.2N/mm) in ADD 007 = THERMAL STRESS (IP BORE), B out (to TCA760);
+     ABS 010 of it = IP BORE STRESS (ABS), C out (to TCA769).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const WT = (key, ...pts) => w.push([key, pts, 1]);
+  const F = [168, 81, 2223, 1550],
+    u = (F[2] - F[0]) / 1000,
+    MX = 889,
+    MW = 408,
+    MR = MX + MW,
+    TOP = 221,
+    H = 859,
+    N = 25,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / N,
+    HW = 28.76;
+  /* the THERMAL STRESS block inputs */
+  [1, 2, 3, 4, 5].forEach(n => WT('iT' + n, [307, P(2 * n - 2)], [MX, P(2 * n - 2)]));
+  WT('iS', [295, P(24)], [MX, P(24)]);
+  const SG = [
+    ['A002', 'DMI1', 'K:940.164'],
+    ['A003', 'DMI2', 'K:731.239'],
+    ['A004', 'DMI3', 'K:522.314'],
+    ['A005', 'DMI4', 'K:313.388'],
+    ['A006', 'DMI5', 'K:104.463']
+  ];
+  const yA = P(4),
+    b = [
+      ['mlt008', 'MLT', '008', 1549, 459],
+      ['sgA009', 'SG', 'A009', 1360, 551, ['K:76.2N/mm']],
+      ['add007', 'ADD', '007', 1659, yA + 11],
+      ['abs010', 'ABS', '010', 1765, 499]
+    ];
+  SG.forEach(([a, d, k], i) => {
+    const y = P(11 + 2 * i);
+    b.push(['sg' + a, 'SG', a, 547.5, y + 11]);
+    WT('sg' + a, [547.5 + HW, y], [MX, y]);
+    t.push([380, Math.round(y + 1), d], [380, Math.round(y + 27), k]);
+  });
+  /* speed ratio part and outputs */
+  WT('iD', [1386, 448], [1549 - HW, 448]);
+  WT('sgA009', [1360 + HW, 540], [1497, 540], [1497, 470], [1549 - HW, 470]);
+  WT('mlt008', [1549 + HW, 448], [1602, 448], [1602, yA + 22], [1659 - HW, yA + 22]);
+  WT('ts.SURF', [MR, P(0)], [2107 - 27, P(0)]);
+  WT('ts.BORE', [MR, yA], [1659 - HW, yA]);
+  WT('add007', [1659 + HW, yA], [2107 - 27, yA]);
+  WT('add007', [1710, yA], [1710, 488], [1765 - HW, 488]);
+  WT('abs010', [1765 + HW, 488], [2107 - 27, 488]);
+  WT('ts.TB', [MR, P(11)], [2105 - 27, P(11)]);
+  t.push(
+    ...[1, 2, 3, 4, 5].map(n => [314, P(2 * n - 2) - 2, 'TI(' + n + ')N']),
+    [300, P(24) - 2, 'TS_I'],
+    [1392, 446, 'SPEED RATIO'],
+    [1855, 237, 'THERMAL STRESS'],
+    [1855, 259, '(IP SURFACE)'],
+    [1852, 365, 'THERMAL STRESS'],
+    [1852, 387, '(IP BORE)'],
+    [1852, 461, 'IP BORE STRESS'],
+    [1852, 483, '(ABS)'],
+    [1852, 614, 'TB-I'],
+    [997, 1105, '(LMA628)', 1],
+    ...['XO:0.0', 'YO:0.0', 'G :1.0', 'C :0.0', 'XO:0.0', 'YO:0.0', 'G :1.0', 'XC:0.0', 'K:3.989', 'XO:0.0'].map((s, i) => [
+      892,
+      Math.round(1129 + 21 * i),
+      s
+    ]),
+    ...['YO:0.0', 'G :1.0', 'C :0.0', 'K:3.989', 'XO:0.0', 'YO:0.0', 'G :1.0', 'C :0.0', 'XO:0.0', 'YO:0.0'].map((s, i) => [
+      1095,
+      Math.round(1129 + 21 * i),
+      s
+    ]),
+    [235, 1532, 'CONTROLLER:'],
+    [397, 1532, 'COMM+MD'],
+    [620, 1515, 'TRIGGER  :Trigger-of_LOGIC_2'],
+    [620, 1541, 'CYCLE(s):60']
+  );
+  const L = Array(N).fill(''),
+    R = Array(N).fill('');
+  [
+    [0, 'T1'],
+    [2, 'T2'],
+    [4, 'T3'],
+    [6, 'T4'],
+    [8, 'T5'],
+    [11, 'SG1'],
+    [13, 'SG2'],
+    [15, 'SG3'],
+    [17, 'SG4'],
+    [19, 'SG5'],
+    [24, 'TS']
+  ].forEach(([i, s]) => (L[i] = s));
+  [
+    [0, 'SURF'],
+    [4, 'BORE'],
+    [11, 'TB']
+  ].forEach(([i, s]) => (R[i] = s));
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA758',
+    title: 'THERMAL STRESS(IP)',
+    page: 188,
+    ctl: 'COMM+MD',
+    cycle: 60000,
+    f: F,
+    c: [
+      ['iT1', 'in', '1', 280, P(0), '', ['TCA757'], 0, 1],
+      ['iT2', 'in', '2', 280, P(2), '', ['TCA757'], 0, 1],
+      ['iT3', 'in', '3', 280, P(4), '', ['TCA756'], 0, 1],
+      ['iT4', 'in', '4', 280, P(6), '', ['TCA756'], 0, 1],
+      ['iT5', 'in', '5', 280, P(8), '', ['TCA756'], 0, 1],
+      ['iS', 'in', 'S', 268, P(24), '', ['TCA755'], 0, 1],
+      ['iD', 'in', 'D', 1359, 448, '', ['TCA754'], 0, 1],
+      ['oA', 'out', 'A', 2107, P(0), '', ['TCA760', 'TCA763', 'TCA767'], 0, 1],
+      ['oB', 'out', 'B', 2107, yA, '', ['TCA760'], 0, 1],
+      ['oC', 'out', 'C', 2107, 488, '', ['TCA769'], 0, 1],
+      ['o1', 'out', '1', 2105, P(11), '', ['TCA760'], 0, 1]
+    ],
+    m: [['ts', 'THERMAL STRESS', '', MX, TOP, MW, H, L, R, 'A001', []]],
+    b,
+    w,
+    j: [[1710, yA]],
     t
   });
 })();
@@ -102966,6 +103283,7 @@ const TCS_DESC = {
    A sheet of the Interlock Block Diagram 310SC90-794 (TCS IBD, typicals and TA / TB ...) typed in the same format takes the place of the sheet the app
    builds from the IBD netlist (02c-tcs.js): same gates, same net numbers, so the logic, the trace and the values of the engine stay; only the picture is
    the typed one. More fields for it:
+     dwg: '310SD03-743', of: 20                                  a sheet of another drawing (no ctl / cycle): its drawing number and the sheets of it
      ibd: '15' | 'TA-9'                                              the IBD sheet it replaces (no ctl / cycle needed)
      nets: { source key: net number of the IBD netlist }             the net of every source; a source without one gets a free number
      fs: 1.1                                                         the size of the words (1 = the size of the TCE sheets)
@@ -102983,7 +103301,8 @@ const TCS_DESC = {
      j: [[x, y], ...]                                                junction dot of the drawing (the net is the one of the wire through it) */
 const TCE_SHEETS = typeof window !== 'undefined' && window.TCE_SHEETS ? window.TCE_SHEETS : [];
 const tceDesc = q => (typeof TCS_DESC !== 'undefined' && TCS_DESC[q.ibd ? 'IBD-' + q.ibd : q.id]) || '';
-const tceCat = id => (/^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : 'GOVERNOR SOFT LOGIC (TCE)');
+const tceCat = id =>
+  /^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : /^G-/.test(id) ? 'GENERATOR PROTECTION / BREAKER LOGIC' : 'GOVERNOR SOFT LOGIC (TCE)';
 function tceSheet(q) {
   const K = 0.32,
     [fx0, fy0, fx1, fy1] = q.f,
@@ -103080,6 +103399,9 @@ function tceSheet(q) {
       T((/^\d/.test(q.ibd) ? 'TYPICAL ' : '') + q.ibd + '  ' + q.title, 30, 815, 2.6, 0),
       T('TCS SHEET ' + q.page + ' OF 99', 1160, 815, 2.05, 2)
     );
+  else if (q.dwg)
+    /* a sheet of another drawing (the generator protection / breaker logic 310SD03-743): its sheet number and the sheet of that drawing */
+    tx.push(T('SH-' + q.id + '  ' + q.title, 30, 815, 2.6, 0), T(q.dwg + '   SHEET ' + q.page + (q.of ? ' OF ' + q.of : ''), 1160, 815, 2.05, 2));
   else
     tx.push(
       T(q.id + '  ' + q.title, 30, 815, 2.6, 0),
@@ -140624,7 +140946,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 7a7d32d'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build b0571fc'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -166829,6 +167151,8 @@ const TCS_DESC = {
     'Analog input diagnostics (15), card TCA970: generator cooling gas air cooler outlet temperatures (A) to (D), each through an AI DIAG.MD block to the TCE controller.',
   TCA443:
     'Analog input diagnostics (15), card TCA970: AC exciter outlet air temperature and generator stator coil temperature (F), each through an AI DIAG.MD block to the TCE controller.',
+  'G-1A':
+    'Generator breaker 52G (1/2): the close order through the closing interlock, the open orders through two OR gates to trip coils TC1 and TC2, and the breaker state out to the panels, lamps and other sheets.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -167242,7 +167566,9 @@ const TCS_DESC = {
   TCA756:
     'THERMAL STRESS(IP): three DISTRIBUTION blocks A001 / A004 / A007 (LMA627) for TI(5) to TI(3), as drawn.',
   TCA757:
-    'THERMAL STRESS(IP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TI(2) and TI(1), as drawn.'
+    'THERMAL STRESS(IP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TI(2) and TI(1), as drawn.',
+  TCA758:
+    'THERMAL STRESS(IP): IP surface and bore stress from the 5 stage temperatures, bore plus speed ratio term, TB-I'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -190166,6 +190492,191 @@ const TCS_DESC = {
     m,
     w,
     t
+  });
+})();
+
+/* ---- src/digital/tce/G-1A.js ---- */
+/* SH-G-1A GENERATOR CIRCUIT BREAKER LOGIC (52G) (1/2) (Generator Protection / Breaker Logic Diagram 310SD03-743 rev 1, sheet 7). Typed from the
+   drawing; units = the pixels of the page rendered 2296 wide. The interfaces of the generator breaker 52G (inside the GMCB, supplied by others): the
+   close order through the closing interlock to CLOSE, the open orders (protection, DCS, synchronizing 3-52G, transformer protection) through two OR
+   gates to the trip coils TC1 and TC2 through the opening interlock to OPEN; the breaker state out to the other sheets, the lamps and the panels
+   (each OTHERS mark: the signal goes to that panel). The pen notes written on the print are not part of the drawing. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const o = [],
+    s = [],
+    b = [],
+    r = [],
+    w = [],
+    t = [],
+    l = [],
+    e = [],
+    a = [],
+    j = [];
+  /* a dashed outline */
+  const dbox = (x1, y1, x2, y2) =>
+    e.push([[x1, y1], [x2, y1]], [[x2, y1], [x2, y2]], [[x2, y2], [x1, y2]], [[x1, y2], [x1, y1]]);
+  /* a continuation circle: the number in it, the sheet beside it */
+  const circ = (x, y, n, sh, sx) => {
+    o.push([x, y, 13]);
+    t.push([x, y, n, 4]);
+    if (sh) t.push([sx, y + 5, sh]);
+  };
+  /* the inputs from the other sheets: [key, number, sheet, line, words, end of the line] */
+  [
+    ['i1', '1', 'SH-G-1B', 595, '52G CLOSE ORDER', 1372],
+    ['i2', '2', 'SH-G-5B', 717, 'GEN. PROTECTION OPERATED (52G-TC1)', 1310],
+    ['i3', '13', 'SH-G-3', 768, '52G OPEN ORDER FROM DCS', 1310],
+    ['i4', '4', 'SH-G-3', 820, '3-52G "OPEN"', 1310],
+    ['i5', '3', 'SH-G-7', 873, 'GEN. TRANSF. AND UNIT TRANSF. PROTECTION OPERATED (FOR 52G-TC1)', 1310],
+    ['i6', '14', 'SH-G-3', 945, '52G OPEN ORDER FROM DCS', 1310],
+    ['i7', '5', 'SH-G-3', 998, '3-52G "OPEN"', 1310],
+    ['i8', '4', 'SH-G-7', 1050, 'GEN. TRANSF. AND UNIT TRANSF. PROTECTION OPERATED (FOR 52G-TC2)', 1310],
+    ['i9', '3', 'SH-G-5B', 1105, 'GEN. PROTECTION OPERATED (52G-TC2)', 1310]
+  ].forEach(([k, n, sh, y, z, xe]) => {
+    circ(268, y, n);
+    s.push([k, 255, y - 13, 281, y + 13]);
+    t.push([288, y - 7, z], [288, y + 17, sh]);
+    w.push([k, [[281, y], [xe, y]]]);
+  });
+  /* the field of the breaker (GMCB) and of 52G itself */
+  e.push(
+    [[1090, 180], [1632, 180]],
+    [[1632, 180], [1632, 1298]],
+    [[1632, 1298], [1090, 1298]],
+    [[1090, 1298], [1090, 1078]],
+    [[1090, 1078], [243, 1078]],
+    [[243, 1078], [243, 745]],
+    [[243, 745], [1090, 745]],
+    [[1090, 745], [1090, 180]]
+  );
+  t.push([1580, 193, '(GMCB)']);
+  dbox(1356, 550, 1548, 895);
+  t.push([1354, 546, '52G']);
+  /* the selector, the earthing switch and the disconnecting switch */
+  r.push(['rem', 1145, 212, 97, 39, ''], ['es', 1145, 268, 97, 28, 'ES OPENED'], ['ds', 1145, 371, 97, 18, 'DS CLOSED']);
+  l.push([[1145, 231], [1242, 231]]);
+  t.push([1145, 207, '(52G)'], [1193, 222, 'REMOTE', 4], [1193, 241, 'LOCAL', 4]);
+  /* the closing interlock and CLOSE */
+  dbox(1375, 563, 1480, 618);
+  t.push([1427, 576, '52G', 4], [1427, 591, 'CLOSING', 4], [1427, 606, 'INTERLOCK', 4]);
+  l.push([[1480, 590], [1490, 590]]);
+  dbox(1490, 581, 1535, 599);
+  s.push(['cl', 1490, 581, 1535, 599]);
+  t.push([1512, 590, 'CLOSE', 4]);
+  /* the open orders: two OR gates to the trip coils, the opening interlock and OPEN */
+  b.push(['or1', 'G:OR', '', 1322, 793, [], {}, [20, 20, 172]], ['or2', 'G:OR', '', 1322, 1023, [], {}, [20, 20, 172]]);
+  w.push(['or1', [[1332, 793], [1373, 793]]], ['or2', [[1332, 1023], [1342, 1023], [1342, 820], [1373, 820]]]);
+  dbox(1375, 778, 1480, 835);
+  l.push([[1405, 778], [1405, 835]], [[1375, 806], [1405, 806]], [[1480, 820], [1488, 820]]);
+  t.push([1390, 793, 'TC1', 4], [1390, 820, 'TC2', 4], [1443, 790, '52G', 4], [1443, 806, 'OPENING', 4], [1443, 822, 'INTERLOCK', 4]);
+  dbox(1488, 812, 1538, 830);
+  s.push(['op', 1488, 812, 1538, 830]);
+  t.push([1513, 821, 'OPEN', 4]);
+  /* earthing switch opened and 52G open */
+  b.push(['a1', 'G:A', '', 1451, 300, [], {}, [18, 20, 46]]);
+  w.push(['es', [[1242, 281], [1440, 281]]], ['op', [[1570, 820], [1570, 359], [1390, 359], [1390, 320], [1440, 320]]]);
+  /* the outputs: [line, words over the line, circle number, sheet] */
+  [
+    [222, '52G "REMOTE" SELECTED', '45', 'SH-G-1B'],
+    [298, 'ES AND 52G OPEN', '14', 'SH-G-4'],
+    [444, '52G CLOSED', '2', 'SH-G-8A'],
+    [476, '', '5', 'SH-G-9'],
+    [514, '52G CLOSED', '3', 'SH-G-5A'],
+    [546, '52G CLOSED', '1', 'SH-G-6A'],
+    [590, '', 'R', ''],
+    [622, '', 'G', ''],
+    [675, '52G CLOSED', '4', 'SH-G-4'],
+    [717, '52G CLOSED', '24', 'SH-G-2B'],
+    [748, '52G CLOSED', '44', 'SH-G-1B'],
+    [930, '52G OPENED', '8', 'SH-G-8A'],
+    [982, '52G OPENED', '1', 'SH-G-9']
+  ].forEach(([y, z, n, sh]) => {
+    if (z) t.push([1945, y - 7, z, 2]);
+    circ(1977, y, n, sh, 1994);
+  });
+  t.push([1945, 460, '52G CLOSED (FOR HOUSE', 2], [1945, 473, 'LOAD OPERATION)', 2]);
+  /* the ATS of the turbine and the indications */
+  [
+    [378, '(DS CLOSED)'],
+    [416, '(52G CLOSED)'],
+    [890, '(52G OPENED)']
+  ].forEach(([y, z]) => {
+    r.push(['', 1965, y - 8, 30, 17, 'ATS']);
+    t.push([1963, y - 13, z]);
+  });
+  t.push([1945, 813, '52G CLOSED', 2], [1970, 824, 'INDICATION'], [1945, 838, '52G OPENED', 2], [1970, 849, 'INDICATION']);
+  b.push(['nc', 'NC', '', 1818, 820, [], {}, [11]]);
+  w.push(
+    ['rem', [[1242, 222], [1963, 222]]],
+    ['a1', [[1460, 300], [1963, 300]]],
+    ['ds', [[1242, 378], [1963, 378]]],
+    ['cl', [[1535, 590], [1963, 590]]],
+    ['cl', [[1597, 590], [1597, 444], [1963, 444]]],
+    ['cl', [[1787, 444], [1787, 416], [1963, 416]]],
+    ['cl', [[1787, 444], [1787, 476], [1963, 476]]],
+    ['cl', [[1597, 514], [1963, 514]]],
+    ['cl', [[1597, 546], [1963, 546]]],
+    ['cl', [[1597, 590], [1597, 675], [1963, 675]]],
+    ['cl', [[1597, 675], [1597, 717], [1963, 717]]],
+    ['cl', [[1787, 717], [1787, 748], [1963, 748]]],
+    ['op', [[1538, 820], [1807, 820]], 0, 0],
+    ['nc', [[1829, 820], [1963, 820]]],
+    ['op', [[1570, 622], [1963, 622]]],
+    ['op', [[1787, 820], [1787, 845], [1963, 845]]],
+    ['op', [[1787, 845], [1787, 890], [1963, 890]]],
+    ['op', [[1787, 890], [1787, 930], [1963, 930]]],
+    ['op', [[1787, 930], [1787, 982], [1963, 982]]]
+  );
+  j.push([1570, 820], [1570, 622], [1597, 590], [1597, 514], [1597, 546], [1597, 675], [1787, 444], [1787, 717], [1787, 820], [1787, 845], [1787, 890], [1787, 930]);
+  /* OTHERS marks: the signal leaves the breaker to that panel ([top, bottom, panel, the lines it crosses]) */
+  [
+    [204, 236, 'GCP', [222]],
+    [286, 315, 'AVR', [300]],
+    [363, 393, 'TCS', [378]],
+    [428, 460, 'TCS', [444]],
+    [497, 561, 'GPP', [514, 546]],
+    [574, 633, 'SYN', [590, 622]],
+    [658, 688, 'AVR', [675]],
+    [703, 735, 'GCP', [717]],
+    [805, 833, 'TCS', [820]]
+  ].forEach(([y1, y2, z, X]) => {
+    const P = [y1, ...X.flatMap(y => [y - 6, y + 6]), y2];
+    for (let i = 0; i < P.length; i += 2) l.push([[1708, P[i]], [1708, P[i + 1]]]);
+    a.push([[1708, y1], [1690, y1]], [[1708, y2], [1727, y2]]);
+    t.push([1640, y1 + 4, 'OTHERS'], [1731, y2 + 5, '(' + z + ')']);
+  });
+  /* the notes */
+  [
+    'NOTE:',
+    '1) ACTUAL INTERNAL LOGICS (INTERLOCKS) OF 52G, DS',
+    '    AND ES SUPPLIED BY OTHERS ARE NOT INDICATED',
+    '    IN THIS PART.',
+    '    HOWEVER, THE SIGNAL INTERFACES BETWEEN "52G, DS',
+    '    AND ES"AND "TCS, AVR, GCP, GPP"ARE INDICATED',
+    '    IN THIS PART.',
+    '',
+    '2) TC : TRIP COIL OF 52G.'
+  ].forEach((z, i) => z && t.push([1272, 1129 + 15.5 * i, z]));
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'G-1A',
+    title: 'GENERATOR CIRCUIT BREAKER LOGIC (52G) (1/2)',
+    page: 7,
+    dwg: '310SD03-743',
+    of: 20,
+    f: [205, 120, 2177, 1522],
+    fs: 1.2,
+    ar: 1,
+    o,
+    s,
+    b,
+    r,
+    w,
+    t,
+    l,
+    e,
+    a,
+    j
   });
 })();
 
@@ -218650,6 +219161,138 @@ const TCS_DESC = {
     b,
     w,
     j: [[621, P(B, 1)]],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA758.js ---- */
+/* TCA758 THERMAL STRESS(IP) (331DM09788 page 188, controller COMM+MD, trigger Trigger-of_LOGIC_2, cycle 60 s). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - The THERMAL STRESS block A001 (LMA628): T1-T5 = TI(1)N-TI(5)N (TCA757 / TCA756), SG1-SG5 = SG A002-A006 (DMI1-DMI5), TS = TS_I
+     (TCA755). SURF = THERMAL STRESS (IP SURFACE), A out (to TCA760 / TCA763 / TCA767); TB = TB-I, 1 out (to TCA760).
+   - BORE plus MLT 008 of SPEED RATIO (D of TCA754) and SG A009 (K:76.2N/mm) in ADD 007 = THERMAL STRESS (IP BORE), B out (to TCA760);
+     ABS 010 of it = IP BORE STRESS (ABS), C out (to TCA769).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const WT = (key, ...pts) => w.push([key, pts, 1]);
+  const F = [168, 81, 2223, 1550],
+    u = (F[2] - F[0]) / 1000,
+    MX = 889,
+    MW = 408,
+    MR = MX + MW,
+    TOP = 221,
+    H = 859,
+    N = 25,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / N,
+    HW = 28.76;
+  /* the THERMAL STRESS block inputs */
+  [1, 2, 3, 4, 5].forEach(n => WT('iT' + n, [307, P(2 * n - 2)], [MX, P(2 * n - 2)]));
+  WT('iS', [295, P(24)], [MX, P(24)]);
+  const SG = [
+    ['A002', 'DMI1', 'K:940.164'],
+    ['A003', 'DMI2', 'K:731.239'],
+    ['A004', 'DMI3', 'K:522.314'],
+    ['A005', 'DMI4', 'K:313.388'],
+    ['A006', 'DMI5', 'K:104.463']
+  ];
+  const yA = P(4),
+    b = [
+      ['mlt008', 'MLT', '008', 1549, 459],
+      ['sgA009', 'SG', 'A009', 1360, 551, ['K:76.2N/mm']],
+      ['add007', 'ADD', '007', 1659, yA + 11],
+      ['abs010', 'ABS', '010', 1765, 499]
+    ];
+  SG.forEach(([a, d, k], i) => {
+    const y = P(11 + 2 * i);
+    b.push(['sg' + a, 'SG', a, 547.5, y + 11]);
+    WT('sg' + a, [547.5 + HW, y], [MX, y]);
+    t.push([380, Math.round(y + 1), d], [380, Math.round(y + 27), k]);
+  });
+  /* speed ratio part and outputs */
+  WT('iD', [1386, 448], [1549 - HW, 448]);
+  WT('sgA009', [1360 + HW, 540], [1497, 540], [1497, 470], [1549 - HW, 470]);
+  WT('mlt008', [1549 + HW, 448], [1602, 448], [1602, yA + 22], [1659 - HW, yA + 22]);
+  WT('ts.SURF', [MR, P(0)], [2107 - 27, P(0)]);
+  WT('ts.BORE', [MR, yA], [1659 - HW, yA]);
+  WT('add007', [1659 + HW, yA], [2107 - 27, yA]);
+  WT('add007', [1710, yA], [1710, 488], [1765 - HW, 488]);
+  WT('abs010', [1765 + HW, 488], [2107 - 27, 488]);
+  WT('ts.TB', [MR, P(11)], [2105 - 27, P(11)]);
+  t.push(
+    ...[1, 2, 3, 4, 5].map(n => [314, P(2 * n - 2) - 2, 'TI(' + n + ')N']),
+    [300, P(24) - 2, 'TS_I'],
+    [1392, 446, 'SPEED RATIO'],
+    [1855, 237, 'THERMAL STRESS'],
+    [1855, 259, '(IP SURFACE)'],
+    [1852, 365, 'THERMAL STRESS'],
+    [1852, 387, '(IP BORE)'],
+    [1852, 461, 'IP BORE STRESS'],
+    [1852, 483, '(ABS)'],
+    [1852, 614, 'TB-I'],
+    [997, 1105, '(LMA628)', 1],
+    ...['XO:0.0', 'YO:0.0', 'G :1.0', 'C :0.0', 'XO:0.0', 'YO:0.0', 'G :1.0', 'XC:0.0', 'K:3.989', 'XO:0.0'].map((s, i) => [
+      892,
+      Math.round(1129 + 21 * i),
+      s
+    ]),
+    ...['YO:0.0', 'G :1.0', 'C :0.0', 'K:3.989', 'XO:0.0', 'YO:0.0', 'G :1.0', 'C :0.0', 'XO:0.0', 'YO:0.0'].map((s, i) => [
+      1095,
+      Math.round(1129 + 21 * i),
+      s
+    ]),
+    [235, 1532, 'CONTROLLER:'],
+    [397, 1532, 'COMM+MD'],
+    [620, 1515, 'TRIGGER  :Trigger-of_LOGIC_2'],
+    [620, 1541, 'CYCLE(s):60']
+  );
+  const L = Array(N).fill(''),
+    R = Array(N).fill('');
+  [
+    [0, 'T1'],
+    [2, 'T2'],
+    [4, 'T3'],
+    [6, 'T4'],
+    [8, 'T5'],
+    [11, 'SG1'],
+    [13, 'SG2'],
+    [15, 'SG3'],
+    [17, 'SG4'],
+    [19, 'SG5'],
+    [24, 'TS']
+  ].forEach(([i, s]) => (L[i] = s));
+  [
+    [0, 'SURF'],
+    [4, 'BORE'],
+    [11, 'TB']
+  ].forEach(([i, s]) => (R[i] = s));
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA758',
+    title: 'THERMAL STRESS(IP)',
+    page: 188,
+    ctl: 'COMM+MD',
+    cycle: 60000,
+    f: F,
+    c: [
+      ['iT1', 'in', '1', 280, P(0), '', ['TCA757'], 0, 1],
+      ['iT2', 'in', '2', 280, P(2), '', ['TCA757'], 0, 1],
+      ['iT3', 'in', '3', 280, P(4), '', ['TCA756'], 0, 1],
+      ['iT4', 'in', '4', 280, P(6), '', ['TCA756'], 0, 1],
+      ['iT5', 'in', '5', 280, P(8), '', ['TCA756'], 0, 1],
+      ['iS', 'in', 'S', 268, P(24), '', ['TCA755'], 0, 1],
+      ['iD', 'in', 'D', 1359, 448, '', ['TCA754'], 0, 1],
+      ['oA', 'out', 'A', 2107, P(0), '', ['TCA760', 'TCA763', 'TCA767'], 0, 1],
+      ['oB', 'out', 'B', 2107, yA, '', ['TCA760'], 0, 1],
+      ['oC', 'out', 'C', 2107, 488, '', ['TCA769'], 0, 1],
+      ['o1', 'out', '1', 2105, P(11), '', ['TCA760'], 0, 1]
+    ],
+    m: [['ts', 'THERMAL STRESS', '', MX, TOP, MW, H, L, R, 'A001', []]],
+    b,
+    w,
+    j: [[1710, yA]],
     t
   });
 })();
@@ -264476,6 +265119,7 @@ const TCS_DESC = {
    A sheet of the Interlock Block Diagram 310SC90-794 (TCS IBD, typicals and TA / TB ...) typed in the same format takes the place of the sheet the app
    builds from the IBD netlist (02c-tcs.js): same gates, same net numbers, so the logic, the trace and the values of the engine stay; only the picture is
    the typed one. More fields for it:
+     dwg: '310SD03-743', of: 20                                  a sheet of another drawing (no ctl / cycle): its drawing number and the sheets of it
      ibd: '15' | 'TA-9'                                              the IBD sheet it replaces (no ctl / cycle needed)
      nets: { source key: net number of the IBD netlist }             the net of every source; a source without one gets a free number
      fs: 1.1                                                         the size of the words (1 = the size of the TCE sheets)
@@ -264493,7 +265137,8 @@ const TCS_DESC = {
      j: [[x, y], ...]                                                junction dot of the drawing (the net is the one of the wire through it) */
 const TCE_SHEETS = typeof window !== 'undefined' && window.TCE_SHEETS ? window.TCE_SHEETS : [];
 const tceDesc = q => (typeof TCS_DESC !== 'undefined' && TCS_DESC[q.ibd ? 'IBD-' + q.ibd : q.id]) || '';
-const tceCat = id => (/^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : 'GOVERNOR SOFT LOGIC (TCE)');
+const tceCat = id =>
+  /^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : /^G-/.test(id) ? 'GENERATOR PROTECTION / BREAKER LOGIC' : 'GOVERNOR SOFT LOGIC (TCE)';
 function tceSheet(q) {
   const K = 0.32,
     [fx0, fy0, fx1, fy1] = q.f,
@@ -264590,6 +265235,9 @@ function tceSheet(q) {
       T((/^\d/.test(q.ibd) ? 'TYPICAL ' : '') + q.ibd + '  ' + q.title, 30, 815, 2.6, 0),
       T('TCS SHEET ' + q.page + ' OF 99', 1160, 815, 2.05, 2)
     );
+  else if (q.dwg)
+    /* a sheet of another drawing (the generator protection / breaker logic 310SD03-743): its sheet number and the sheet of that drawing */
+    tx.push(T('SH-' + q.id + '  ' + q.title, 30, 815, 2.6, 0), T(q.dwg + '   SHEET ' + q.page + (q.of ? ' OF ' + q.of : ''), 1160, 815, 2.05, 2));
   else
     tx.push(
       T(q.id + '  ' + q.title, 30, 815, 2.6, 0),
@@ -323051,7 +323699,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 7a7d32d'));
+    row('Version', E('span', 'scsver', ver + ' · build b0571fc'));
   }
   function openSet(near) {
     if (!set) {
