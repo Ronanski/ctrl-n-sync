@@ -180,6 +180,26 @@ const TCS_DESC = {
     'Digital input (13): trip PCM A / B / C normal, TCS-8 temperature high, Modbus CPU A / B normal and power supply abnormal; DI power supply normal.',
   TCA053:
     'Digital input (14): AC / DC control, lighting and protection power supplies abnormal, TCS-4 / TCS-5 temperature high, EOS operated A / B / C, PLU operated A / B / C; DI power supply normal.',
+  TCA310:
+    'Analog input diagnostics (1): gland steam seal header pressure (A), generator voltage (A-B) and current (A), each through an AI DIAG.MD block (range, deviation and simulation value) to its logic sheets and the other controller; abnormal to the alarm sheets.',
+  TCA311:
+    'Analog input diagnostics (2): reheat bowl steam pressure (A), (B) and (C), each through an AI DIAG.MD block to the reheat bowl pressure sheet and the other controller; abnormal to the alarm sheets.',
+  TCA312:
+    'Analog input diagnostics (3): gland steam seal header pressure (B), generator voltage (B-C), current (B) and field voltage, each through an AI DIAG.MD block to its logic sheets and the other controller; abnormal to the alarm sheets.',
+  TCA313:
+    'Analog input diagnostics (4): generator field current through an AI DIAG.MD block to the other controller; abnormal to the alarm sheets.',
+  TCA314:
+    'Analog input diagnostics (5): generator voltage (C-A) and current (C), each through an AI DIAG.MD block to its logic sheets and the other controller; two spare inputs.',
+  TCA316:
+    'Analog input diagnostics (7): auxiliary steam header pressure (lower) and gland steam drain separator turbine side temperature, each through an AI DIAG.MD block to its logic sheets; one spare input.',
+  TCA318:
+    'Analog input diagnostics (9): LP turbine differential expansion, turbine shell expansion (HP side) and low speed eccentricity, each through an AI DIAG.MD block to the supervisory sheets and the other controller; abnormal to the alarm sheets.',
+  TCA320:
+    'Analog input diagnostics (11): generator MVAR and power factor; the power factor goes through a lock, a signal change and a switch to the generator sheets and the other controller; two spare inputs.',
+  TCA321:
+    'Analog input diagnostics (12): generator frequency through an AI DIAG.MD block to the generator sheets and the other controller; abnormal to the alarm sheets.',
+  TCA322:
+    'Analog input diagnostics (13): steam seal feed valve, steam packing unloading valve, CV (B) below seat warming drain valve and HP turbine warming valve positions; each simulation value comes from its valve sheet.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
