@@ -828,5 +828,7 @@ const TCS_DESC = {
   TCE601:
     'EHG digital outputs (PI/O TCE960 points 17 to 32): 52L open for house load operation, turbine speed <2400 rpm, acceleration relay operated, DCS mode on feedback, ASD2 start signal, HP-CV full close, turbine trip, MSV/CV(A) and (B) sequential full close test, 41 close, generator lockout relay (86G) A and B operated, ICV to CV transfer complete; three spare points.',
   TCE602:
-    'EHG digital outputs (PI/O TCE961 points 1 to 16): control and main oil pump (B) start commands, ASD1 start signal, DCS control mode permissive, power load unbalance relay operated, RSV/ICV and MSV/ICV full close, EHG soft not major trouble, EHG soft major trouble or backup over speed; the rest spare.'
+    'EHG digital outputs (PI/O TCE961 points 1 to 16): control and main oil pump (B) start commands, ASD1 start signal, DCS control mode permissive, power load unbalance relay operated, RSV/ICV and MSV/ICV full close, EHG soft not major trouble, EHG soft major trouble or backup over speed; the rest spare.',
+  TCE603:
+    'EHG digital outputs (PI/O TCE961 points 17 to 32): turning gear engage solenoid valve, turning gear engage lamp and turning gear motor start lamp; the other thirteen points are spare.'
 };
