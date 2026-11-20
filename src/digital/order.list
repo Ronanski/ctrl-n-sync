@@ -199,6 +199,12 @@ tce/IBD-TD-10.js
 tce/IBD-GD-1.js
 tce/IBD-GD-2.js
 tce/IBD-GD-5.js
+tce/IBD-TE-1.js
+tce/IBD-TE-2.js
+tce/IBD-TE-3.js
+tce/IBD-TE-6.js
+tce/IBD-TE-7.js
+tce/IBD-TE-8.js
 parts/02d-tce.js
 parts/03-models.js
 parts/03b-sim.js
