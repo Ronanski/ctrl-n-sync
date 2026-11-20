@@ -6079,6 +6079,20 @@ const TCS_DESC = {
     'Analog input diagnostics (15), card TCA961: HP turbine first stage outer wall metal temperature and No.3 and No.4 bearing outlet oil temperatures through AI DIAG.MD blocks.',
   TCA365:
     'Analog input diagnostics (15), card TCA961: MSV inlet, HP exhaust and LP exhaust hood steam temperatures (C), each through an AI DIAG.MD block to the TCE controller; one spare RTD input.',
+  TCA370:
+    'Input signal diagnostics (1): reheat bowl inner wall metal temperature (A) and (B) into one DUAL INPUT DIAGNOSTICS block; value, abnormal, input error, deviation high and I/O error out.',
+  TCA371:
+    'Input signal diagnostics (2): gland steam seal header pressure (A) and (B) into one DUAL INPUT DIAGNOSTICS block; value, abnormal, input error, deviation high and I/O error out.',
+  TCA372:
+    'Input signal diagnostics (3): reheat bowl steam pressure (A), (B) and (C) into one TMR AI DIAGNOSTICS block; the value and the abnormal word out.',
+  TCA440:
+    'Analog input diagnostics (15), card TCA970: lube oil cooler inlet and outlet (A), (B) oil temperatures and generator stator coil temperature (A), each through an AI DIAG.MD block to the TCE controller.',
+  TCA441:
+    'Analog input diagnostics (15), card TCA970: generator stator coil temperatures (B) to (E), each through an AI DIAG.MD block to the TCE controller.',
+  TCA442:
+    'Analog input diagnostics (15), card TCA970: generator cooling gas air cooler outlet temperatures (A) to (D), each through an AI DIAG.MD block to the TCE controller.',
+  TCA443:
+    'Analog input diagnostics (15), card TCA970: AC exciter outlet air temperature and generator stator coil temperature (F), each through an AI DIAG.MD block to the TCE controller.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -6486,7 +6500,9 @@ const TCS_DESC = {
   TCA753:
     'THERMAL STRESS(HP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TH(2) and TH(1), as drawn.',
   TCA754:
-    'THERMAL STRESS(HP): speed ratio, the THERMAL STRESS block A001 (LMA628) and the HP bore stress, as drawn.'
+    'THERMAL STRESS(HP): speed ratio, the THERMAL STRESS block A001 (LMA628) and the HP bore stress, as drawn.',
+  TCA755:
+    'THERMAL STRESS(IP): the THSC INITIAL block A015 (LMA626 / LMA626A) for the IP stage temperatures, as drawn.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -28204,6 +28220,828 @@ const TCS_DESC = {
     id: 'TCA365',
     title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
     page: 70,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    m,
+    w,
+    t
+  });
+})();
+/* TCA370 INPUT SIGNAL DIAGNOSTICS(1) (331DM09788 page 71, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Reheat bowl inner wall metal temperature (A) and (B): the value and the abnormal signal of input (A) and of input (B), each from its AI DIAG sheet, into one
+   DUAL INPUT DIAGNOSTICS block with its limits (SG / SGW); the value out to connector A1 and, over it, to F1 (other controller, double
+   line); the abnormal signal to D1; input error, deviation high and I/O error to A, B and C. Pins QT1, QT2, ERR1 and ERR2 are left open
+   in the drawing. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = [180, 88, 2232, 1552],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1196,
+    MY = 292,
+    MW = 402,
+    MH = 860,
+    N = 25,
+    pin = i => Math.round(MY + 15 * u + (i + 0.5) * ((MH - 30 * u) / N)),
+    row = o => {
+      const a = Array(N).fill('');
+      for (const k in o) a[o[k]] = k;
+      return a;
+    },
+    LI = { SIG1: 0, 'I-ERR1': 2, SIG2: 4, 'I-ERR2': 6, HL: 12, LL: 14, DEV: 16, S: 18, M: 20, SIM: 23 },
+    RI = { OUT: 0, ABN: 4, QT1: 8, QT2: 10, ERR1: 12, ERR2: 13, ERR: 15, 'DEV E': 18, 'I-ERR': 21 },
+    L = k => pin(LI[k]),
+    R = k => pin(RI[k]),
+    XR = MX + MW,
+    b = [],
+    c = [],
+    w = [],
+    t = [];
+  /* the two inputs: [letter, pin, thick, name, sheet] (value: thick line; abnormal: thin line) */
+  [["A1","SIG1",1,"REHEAT BOWL INNER WALL METAL TEMP. (A)","TCA358"],["D1","I-ERR1",0,"REHEAT BOWL INNER WALL METAL TEMP. (A) ABN.","TCA358"],["A1","SIG2",1,"REHEAT BOWL INNER WALL METAL TEMP. (B)","TCA362"],["D1","I-ERR2",0,"REHEAT BOWL INNER WALL METAL TEMP. (B) ABN.","TCA362"]].forEach(([ch, pn, thick, name, sheet], i) => {
+    const y = L(pn),
+      k = 'i' + i;
+    c.push([k, 'in', ch, 516, y, name, []]);
+    t.push([375, y + 31, '(' + sheet + ')']);
+    w.push([k, [[543, y], [MX, y]], thick]);
+  });
+  /* the limits and the simulation value: [key, type, number, x, pin, note] */
+  [["sg004","SG","A004",745,"HL","K:714desc"],["sg005","SG","A005",904,"LL","K:-35desc"],["sg007","SG","A007",745,"DEV","K:140desc"],["sgw012","SGW","A012",904,"S","K:1"],["sg010","SG","A010",745,"M","K:10000.0"],["sg028","SG","B028",900,"SIM","K:450.0desc"]].forEach(([k, ty, no, x, pn, note]) => {
+    b.push([k, ty, no, x, L(pn) + 10, [note]]);
+    w.push([k, [[x + 29, L(pn)], [MX, L(pn)]], 1]);
+  });
+  /* the outputs */
+  const XM = 1726,
+    XC = 2046;
+  w.push(
+    ['m.OUT', [[XR, R('OUT')], [XC - 27, R('OUT')]], 1],
+    ['m.OUT', [[1647, R('OUT')], [1647, R('OUT') + 64], [XC - 28, R('OUT') + 64]], 1],
+    ['m.ABN', [[XR, R('ABN')], [XC - 27, R('ABN')]]]
+  );
+  c.push(
+    ['oA1', 'out', 'A1', XC, R('OUT'), '', []],
+    ['oF1', 'out', 'F1', XC, R('OUT') + 64, '', ["-"], 1],
+    ['oD1', 'out', 'D1', XC, R('ABN'), '', []]
+  );
+  b.push(['f019', 'o:FTR', '019', XM, R('OUT')], ['f029', 'o:FTR', '029', XM, R('OUT') + 64], ['b003', 'o:BTR', '003', XM, R('ABN')]);
+  /* sheets of A1 and D1 as the drawing prints them: [x, height over the line, words] */
+  [[2081,-4,"(TCA500) (TCA531)","OUT"],[2081,12,"(TCA548) (TCA755)","OUT"],[2052,31,"(-)","ABN"]].forEach(([x, dy, z, pn]) => t.push([x, R(pn) + dy, z]));
+  [['ERR', '006', 'INPUT ERROR', 'A'], ['DEV E', '009', 'DEVIATION HIGH', 'B'], ['I-ERR', '011', 'I/O ERROR', 'C']].forEach(([pn, m, name, ch]) => {
+    w.push(['m.' + pn, [[XR, R(pn)], [XC - 27, R(pn)]]]);
+    b.push(['b' + m, 'o:BTR', m, XM, R(pn)]);
+    c.push(['o' + ch, 'out', ch, XC, R(pn), '', {"A":["TCA531","TCA750"],"B":["-"],"C":["-"]}[ch], 0, 1]);
+    t.push([1812, R(pn) - 6, name]);
+  });
+  [[-29,"REHEAT BOWL INNER","OUT"],[-8,"WALL METAL TEMP.","OUT"],[35,"REHEAT BOWL INNER","OUT"],[56,"WALL METAL TEMP.","OUT"],[-29,"REHEAT BOWL INNER","ABN"],[-8,"WALL METAL TEMP. ABN.","ABN"]].forEach(([dy, z, pn]) => t.push([1814, R(pn) + dy, z]));
+  t.push(
+    [1512, 284, 'nTE-STn004'],
+    [228, 1527, 'CONTROLLER:'],
+    [388, 1527, 'COMM+MD'],
+    [655, 1500, 'TRIGGER  :'],
+    [655, 1527, 'CYCLE(ms):100']
+  );
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCA370',
+    title: 'INPUT SIGNAL DIAGNOSTICS(1)',
+    page: 71,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    c,
+    m: [
+      [
+        'm',
+        'DUAL INPUT DIAGNOSTICS',
+        '',
+        MX,
+        MY,
+        MW,
+        MH,
+        row(LI),
+        row(RI),
+        'A001',
+        [
+          [1292, 1171, '(LMA110)'],
+          [1404, 1171, '(LMA110A)'],
+          [1194, 1193, 'K:-0.01'],
+          [1194, 1214, 'TP:3.0'],
+          [1189, 1236, 'DELAY TP:3.0s'],
+          [1189, 1257, 'DELAY TP:3.0s'],
+          [1194, 1279, 'K:2']
+        ]
+      ]
+    ],
+    b,
+    w,
+    t
+  });
+})();
+/* TCA371 INPUT SIGNAL DIAGNOSTICS(2) (331DM09788 page 72, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Gland steam seal header pressure (A) and (B): the value and the abnormal signal of input (A) and of input (B), each from its AI DIAG sheet, into one
+   DUAL INPUT DIAGNOSTICS block with its limits (SG / SGW); the value out to connector A1 and, over it, to F1 (other controller, double
+   line); the abnormal signal to D1; input error, deviation high and I/O error to A, B and C. Pins QT1, QT2, ERR1 and ERR2 are left open
+   in the drawing. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = [180, 88, 2232, 1552],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1196,
+    MY = 292,
+    MW = 402,
+    MH = 860,
+    N = 25,
+    pin = i => Math.round(MY + 15 * u + (i + 0.5) * ((MH - 30 * u) / N)),
+    row = o => {
+      const a = Array(N).fill('');
+      for (const k in o) a[o[k]] = k;
+      return a;
+    },
+    LI = { SIG1: 0, 'I-ERR1': 2, SIG2: 4, 'I-ERR2': 6, HL: 12, LL: 14, DEV: 16, S: 18, M: 20, SIM: 23 },
+    RI = { OUT: 0, ABN: 4, QT1: 8, QT2: 10, ERR1: 12, ERR2: 13, ERR: 15, 'DEV E': 18, 'I-ERR': 21 },
+    L = k => pin(LI[k]),
+    R = k => pin(RI[k]),
+    XR = MX + MW,
+    b = [],
+    c = [],
+    w = [],
+    t = [];
+  /* the two inputs: [letter, pin, thick, name, sheet] (value: thick line; abnormal: thin line) */
+  [["A1","SIG1",1,"GLAND STEAM SEAL HEADER PRESS. (A)","TCA310"],["D1","I-ERR1",0,"GLAND STEAM SEAL HEADER PRESS. (A) ABN.","TCA310"],["A1","SIG2",1,"GLAND STEAM SEAL HEADER PRESS. (B)","TCA312"],["D1","I-ERR2",0,"GLAND STEAM SEAL HEADER PRESS. (B) ABN.","TCA312"]].forEach(([ch, pn, thick, name, sheet], i) => {
+    const y = L(pn),
+      k = 'i' + i;
+    c.push([k, 'in', ch, 516, y, name, []]);
+    t.push([375, y + 31, '(' + sheet + ')']);
+    w.push([k, [[543, y], [MX, y]], thick]);
+  });
+  /* the limits and the simulation value: [key, type, number, x, pin, note] */
+  [["sg004","SG","A004",745,"HL","K:2.06"],["sg005","SG","A005",904,"LL","K:-1.15"],["sg007","SG","A007",745,"DEV","K:0.06"],["sgw012","SGW","A012",904,"S","K:1"],["sg010","SG","A010",745,"M","K:10000.0"],["sg028","SG","B028",900,"SIM","K:0.3desc"]].forEach(([k, ty, no, x, pn, note]) => {
+    b.push([k, ty, no, x, L(pn) + 10, [note]]);
+    w.push([k, [[x + 29, L(pn)], [MX, L(pn)]], 1]);
+  });
+  /* the outputs */
+  const XM = 1726,
+    XC = 2046;
+  w.push(
+    ['m.OUT', [[XR, R('OUT')], [XC - 27, R('OUT')]], 1],
+    ['m.OUT', [[1647, R('OUT')], [1647, R('OUT') + 64], [XC - 28, R('OUT') + 64]], 1],
+    ['m.ABN', [[XR, R('ABN')], [XC - 27, R('ABN')]]]
+  );
+  c.push(
+    ['oA1', 'out', 'A1', XC, R('OUT'), '', []],
+    ['oF1', 'out', 'F1', XC, R('OUT') + 64, '', ["-"], 1],
+    ['oD1', 'out', 'D1', XC, R('ABN'), '', []]
+  );
+  b.push(['f019', 'o:FTR', '019', XM, R('OUT')], ['f029', 'o:FTR', '029', XM, R('OUT') + 64], ['b003', 'o:BTR', '003', XM, R('ABN')]);
+  /* sheets of A1 and D1 as the drawing prints them: [x, height over the line, words] */
+  [[2081,4,"(TCA740) (TCA741)","OUT"],[2052,36,"(TCA740)","ABN"],[2052,57,"(TCA741)","ABN"]].forEach(([x, dy, z, pn]) => t.push([x, R(pn) + dy, z]));
+  [['ERR', '006', 'INPUT ERROR', 'A'], ['DEV E', '009', 'DEVIATION HIGH', 'B'], ['I-ERR', '011', 'I/O ERROR', 'C']].forEach(([pn, m, name, ch]) => {
+    w.push(['m.' + pn, [[XR, R(pn)], [XC - 27, R(pn)]]]);
+    b.push(['b' + m, 'o:BTR', m, XM, R(pn)]);
+    c.push(['o' + ch, 'out', ch, XC, R(pn), '', {"A":["-"],"B":["-"],"C":["-"]}[ch], 0, 1]);
+    t.push([1812, R(pn) - 6, name]);
+  });
+  [[-29,"GLAND STEAM SEAL H","OUT"],[-8,"EADER PRESS.","OUT"],[35,"GLAND STEAM SEAL","OUT"],[56,"HEADER PRESS.","OUT"],[-29,"GLAND STEAM SEAL","ABN"],[-8,"HEADER PRESS. ABN.","ABN"]].forEach(([dy, z, pn]) => t.push([1814, R(pn) + dy, z]));
+  t.push(
+    [1512, 284, 'nPT-GSn001'],
+    [228, 1527, 'CONTROLLER:'],
+    [388, 1527, 'COMM+MD'],
+    [655, 1500, 'TRIGGER  :'],
+    [655, 1527, 'CYCLE(ms):100']
+  );
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCA371',
+    title: 'INPUT SIGNAL DIAGNOSTICS(2)',
+    page: 72,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    c,
+    m: [
+      [
+        'm',
+        'DUAL INPUT DIAGNOSTICS',
+        '',
+        MX,
+        MY,
+        MW,
+        MH,
+        row(LI),
+        row(RI),
+        'A001',
+        [
+          [1292, 1171, '(LMA110)'],
+          [1404, 1171, '(LMA110A)'],
+          [1194, 1193, 'K:-0.01'],
+          [1194, 1214, 'TP:3.0'],
+          [1189, 1236, 'DELAY TP:3.0s'],
+          [1189, 1257, 'DELAY TP:3.0s'],
+          [1194, 1279, 'K:2']
+        ]
+      ]
+    ],
+    b,
+    w,
+    t
+  });
+})();
+/* TCA372 INPUT SIGNAL DIAGNOSTICS(3) (331DM09788 page 73, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of
+   the page rendered 2296 wide. Reheat bowl steam pressure (A), (B) and (C), each with its abnormal signal, from the AI DIAG sheet TCA311,
+   into one TMR AI DIAGNOSTICS block with its limits (SG); the value out over FTR 003 and 004 to connector A, and to A1 (other controller,
+   double line) as the abnormal word line. Each input line runs to its pin over its own step, as in the drawing. Pins ABN, DEV E and ERR
+   are left open in the drawing. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = [180, 88, 2232, 1552],
+    u = (F[2] - F[0]) / 1000,
+    MX = 930,
+    MY = 167,
+    MW = 407,
+    MH = 380,
+    N = 10,
+    pin = i => Math.round(MY + 15 * u + (i + 0.5) * ((MH - 30 * u) / N)),
+    LP = ['SIG1', 'ERR1', 'SIG2', 'ERR2', 'SIG3', 'ERR3', 'HL', 'LL', 'DEV', 'SIM'],
+    RP = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
+    L = k => pin(LP.indexOf(k)),
+    XR = MX + MW,
+    b = [],
+    c = [],
+    w = [],
+    t = [];
+  /* the six inputs from TCA311: [letter, pin, mark, number, name, x of the step]; the value lines thick, the abnormal lines thin */
+  [
+    ['A2', 'SIG1', 'FTR', '001', '(A)', 0],
+    ['D2', 'ERR1', 'BTR', '006', '(A)', 740],
+    ['A3', 'SIG2', 'FTR', '008', '(B)', 762],
+    ['D3', 'ERR2', 'BTR', '009', '(B)', 782],
+    ['A4', 'SIG3', 'FTR', '010', '(C)', 802],
+    ['D4', 'ERR3', 'BTR', '011', '(C)', 822]
+  ].forEach(([ch, pn, mk, no, s, sx], i) => {
+    const y = pin(0) + 64 * i,
+      k = 'i' + i,
+      thick = ch[0] === 'A' ? 1 : 0;
+    c.push([k, 'in', ch, 302, y, 'REHEAT BOWL STEAM PRESS. ' + s, []]);
+    t.push([198, y + 10, '(TCA311)']);
+    b.push(['m' + no, 'o:' + mk, no, 677, y]);
+    w.push([k, sx ? [[329, y], [sx, y], [sx, L(pn)], [MX, L(pn)]] : [[329, y], [MX, y]], thick]);
+  });
+  /* the limits and the simulation value: [key, number, line, pin, note, x of the step, FTR mark] */
+  [
+    ['sg012', 'A012', 594, 'HL', 'K:51.0kg/cm2g', 843, '013'],
+    ['sg014', 'A014', 679, 'LL', 'K:-2.5kg/cm2g', 863, '015'],
+    ['sg016', 'A016', 764, 'DEV', 'K:10.0kg/cm2g', 884, '017'],
+    ['sg018', 'B018', 849, 'SIM', 'K:-10.0kg/cm2g', 905, '019']
+  ].forEach(([k, no, y, pn, note, sx, f]) => {
+    b.push([k, 'SG', no, 566, y + 10, [note]], ['f' + f, 'o:FTR', f, 674, y]);
+    w.push([k, [[595, y], [sx, y], [sx, L(pn)], [MX, L(pn)]], 1]);
+  });
+  /* the output: the value over FTR 003 and 004, then to A over FTR 005 and, down a step, to A1 over FTR 007 */
+  const yo = pin(0),
+    y1 = pin(0) + 96,
+    XC = 2062;
+  w.push(['m.OUT', [[XR, yo], [XC - 27, yo]], 1], ['m.OUT', [[1699, yo], [1699, y1], [XC - 28, y1]], 1]);
+  b.push(['f003', 'o:FTR', '003', 1424, yo], ['f004', 'o:FTR', '004', 1636, yo], ['f005', 'o:FTR', '005', 1743, yo], ['f007', 'o:FTR', '007', 1743, y1]);
+  c.push(['oA', 'out', 'A', XC, yo, '', ['-']], ['oA1', 'out', 'A1', XC, y1, '', ['-'], 1]);
+  t.push(
+    [1770, yo - 8, 'REHEAT BOWL STEAM PRESS.'],
+    [1770, y1 - 30, 'REHEAT BOWL STEAM PRESS.'],
+    [1770, y1 - 8, 'ABNORMAL'],
+    [1240, 151, 'nPT-STn002'],
+    [228, 1527, 'CONTROLLER:'],
+    [388, 1527, 'COMM+MD'],
+    [655, 1500, 'TRIGGER  :'],
+    [655, 1527, 'CYCLE(ms):100']
+  );
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCA372',
+    title: 'INPUT SIGNAL DIAGNOSTICS(3)',
+    page: 73,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    c,
+    m: [
+      [
+        'm',
+        'TMR AI DIAGNOSTICS',
+        '',
+        MX,
+        MY,
+        MW,
+        MH,
+        LP,
+        RP,
+        'A002',
+        [
+          [1040, 570, '(LMA111)'],
+          [1150, 570, '(LMA111A)'],
+          [1020, 390, 'TP:1.0'],
+          [1020, 411, 'TP:1.0'],
+          [1020, 432, 'TP:1.0'],
+          [1018, 454, 'DELAY TP:3.0s'],
+          [1018, 475, 'DELAY TP:3.0s'],
+          [1018, 496, 'DELAY TP:3.0s']
+        ]
+      ]
+    ],
+    b,
+    w,
+    t
+  });
+})();
+/* TCA440 COMM INPUT SIGNAL DIAGNOSTICS(AI)(15) (331DM09788 page 74, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Up to four analog inputs, each on one of the four lines of the sheet and drawn the same way: the AI box with its range,
+   the PI/O connection (filled triangle) and its PI/O error, one AI DIAG.MD block (left or right on the sheet) with its simulation value (SG)
+   and settings; the value goes out to connector A and, over it, to connector B (other controller, double outline); the abnormal signal to
+   connector D. The marks and block numbers follow the line: line s has FTR 020+4s (B), 021+4s (input), 022+4s (A), BTR 023+4s (D). */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    m = [],
+    w = [],
+    t = [];
+  const Y = [226, 537, 824, 1136] /* the four lines of the sheet */,
+    num = v => String(v).padStart(3, '0');
+  /* s = line (0-3), lab = [the two lines of the AI box], rng = range, card = PI/O point, tag = block tag, R = block at the right,
+     sg = SG note, par = [H/L HL, LL, DEV HL, LL], B / A / D = sheets of the connectors; where the drawing differs: y (the line),
+     mk (marks B, input, A, D), foot (block number), sgno (SG number), txt ([x, height over the line, words]), box ([left, width] of the AI box), dtp (DEV DEF TP), ma (signal under the range, "" = none: RTD), nob (no mark on the B line),
+     sim ({l: letter, x, ref: sheet, f: FTR mark}: simulation value from another sheet in place of the SG) */
+  const ROWS = [
+    {"s":0,"lab":["LUBE OIL COOLER INLET OIL TEMP","."],"rng":"0 -100degC","ma":"","box":[185,327],"card":1,"tag":"nTE-LOn001","sg":"K:50.0degC","par":["102.0","-5.0","20.0","-20.0"],"B":["TCT203"],"A":["-"],"D":["TCA815"]},
+    {"s":1,"lab":["LUBE OIL COOLER OUTLET","OIL TEMP.(A)"],"rng":"0 -100degC","ma":"","box":[185,327],"card":2,"tag":"nTE-LOn002-1","R":1,"sg":"K:40.0degC","par":["102.0","-5.0","20.0","-20.0"],"B":["TCT203"],"A":["TCA539","TCA850"],"D":["TCA815"]},
+    {"s":2,"lab":["LUBE OIL COOLER OUTLET OIL TEM","P.(B)"],"rng":"0 -100degc","ma":"","box":[185,327],"card":3,"tag":"nTE-LOn002-2","sg":"K:0.0degc","par":["102.0","-5.0","20.0","-20.0"],"B":["TCT203"],"A":["TCA539","TCA850"],"D":["TCA815"]},
+    {"s":3,"lab":["GEN. STATOR COIL TEMP.(A)",""],"rng":"0 -150degC","ma":"","box":[185,327],"card":4,"tag":"nTE-GEn006-1","R":1,"sg":"K:0.0degc","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]}
+  ];
+  ROWS.forEach(q => {
+    const s = q.s,
+      k = s + 1,
+      y = q.y || Y[s],
+      mk = q.mk || [20 + 4 * s, 21 + 4 * s, 22 + 4 * s, 23 + 4 * s].map(num) /* marks: B, input, A, D */,
+      mx = q.R ? 1306 : 1043 /* left edge of the block */,
+      xr = mx + 235,
+      sx = mx - (q.R ? 128 : 170) /* middle of the SG box */,
+      M = 'm' + k;
+    /* the analog input and its PI/O error */
+    const bx = q.box || [215, 270] /* the AI box: left edge, width */,
+      rx = q.box ? bx[0] + bx[1] + 11 : 490;
+    r.push(['ai' + k, bx[0], y - 27, bx[1], 54, ''], ['pe' + k, 598, y + 30, 127, 23, 'PI/O error']);
+    t.push(
+      [bx[0] + 6, y - 6, q.lab[0]],
+      [bx[0] + 6, y + 16, q.lab[1]],
+      [bx[0] + 2, y + 43, 'AI'],
+      [rx, y - 6, q.rng],
+      ...(q.ma === '' ? [] : [[rx, y + 26, q.ma || '4 -20mA']]),
+      [606, y - 20, '(TCA970-' + q.card + ')'],
+      [614, y + 25, '(TCA970-' + q.card + ')']
+    );
+    w.push(['ai' + k, [[bx[0] + bx[1], y], [689, y]], 1], ...(q.x ? [] : [['ai' + k, [[705, y], [mx, y]]]]), ['pe' + k, [[725, y + 41], [mx - 32, y + 41], [mx - 32, y + 22], [mx, y + 22]]]);
+    g.push([697, y, 'l']);
+    if (!q.x) b.push(['f' + mk[1], 'o:FTR', mk[1], 915, y]) /* a line built its own way has no mark on the input */;
+    /* the block, its simulation value and its settings */
+    m.push([
+      M,
+      'AI DIAG.MD',
+      q.tag,
+      mx,
+      y - 30,
+      235,
+      128,
+      ['IN', 'ERR', 'SIM'],
+      ['OUT', 'ABN'],
+      q.foot || 'A' + num(2 + 5 * s),
+      [
+        [mx + 80, y + 116, '(LMA510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + q.par[0]],
+        [mx - 2, y + 209, 'LL:' + q.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + q.par[2]],
+        [mx + 157, y + 166, 'LL:' + q.par[3]],
+        [mx + 137, y + 188, 'DEF TP:' + (q.dtp || '0.03S')],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    if (q.sim) {
+      /* the simulation value comes from another sheet: connector, its sheet under it at the left, maybe an FTR mark on the line */
+      const p = q.sim;
+      c.push(['iS' + k, 'in', p.l, p.x, y + 86, '', [], ...(p.dbl ? [1] : [])]) /* dbl: from the other controller */;
+      t.push([p.x - 104, y + 118, '(' + p.ref + ')']);
+      if (p.f) b.push(['f' + p.f, 'o:FTR', p.f, p.x + 65, y + 85]);
+      w.push(['iS' + k, [[p.x + 27, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    } else {
+      b.push(['sg' + k, 'SG', q.sgno || 'B' + num(4 + 5 * s), sx, y + 97, [q.sg]]);
+      w.push(['sg' + k, [[sx + 29, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    }
+    /* the outputs: the value to A and B, the abnormal signal to D */
+    c.push(['oD' + k, 'out', 'D' + k, 2013, y + 107, '', q.D, ...(q.ddbl ? [1] : [])]) /* ddbl: D to the other controller, double line */;
+    b.push(['b' + mk[3], 'o:BTR', mk[3], 1640, y + 107]);
+    w.push([M + '.ABN', [[xr, y + 44], [1597, y + 44], [1597, y + 107], [1986, y + 107]]]);
+    if (q.x) {
+      /* a line the drawing builds its own way: its parts as typed (absolute places), the value of the block not used */
+      for (const [a, L] of Object.entries(q.x)) ({ b, c, w, t })[a].push(...L);
+      return;
+    }
+    c.push(['oB' + k, 'out', 'B' + k, 2013, y - 85, '', q.B, 1], ['oA' + k, 'out', 'A' + k, 2013, y, '', q.A]);
+    b.push(
+      ...(q.nob ? [] : [['f' + mk[0], 'o:FTR', mk[0], 1640, y - 85]]),
+      ['f' + mk[2], 'o:FTR', mk[2], 1640, y]
+    );
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[1585, y], [1585, y - 85], [1986, y - 85]], 1]
+    );
+    /* words the drawing prints on a line */
+    if (q.txt) t.push(...q.txt.map(([x, dy, z]) => [x, y + dy, z]));
+  });
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [655, 1500, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA440',
+    title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
+    page: 74,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    m,
+    w,
+    t
+  });
+})();
+/* TCA441 COMM INPUT SIGNAL DIAGNOSTICS(AI)(15) (331DM09788 page 75, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Up to four analog inputs, each on one of the four lines of the sheet and drawn the same way: the AI box with its range,
+   the PI/O connection (filled triangle) and its PI/O error, one AI DIAG.MD block (left or right on the sheet) with its simulation value (SG)
+   and settings; the value goes out to connector A and, over it, to connector B (other controller, double outline); the abnormal signal to
+   connector D. The marks and block numbers follow the line: line s has FTR 020+4s (B), 021+4s (input), 022+4s (A), BTR 023+4s (D). */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    m = [],
+    w = [],
+    t = [];
+  const Y = [226, 537, 824, 1136] /* the four lines of the sheet */,
+    num = v => String(v).padStart(3, '0');
+  /* s = line (0-3), lab = [the two lines of the AI box], rng = range, card = PI/O point, tag = block tag, R = block at the right,
+     sg = SG note, par = [H/L HL, LL, DEV HL, LL], B / A / D = sheets of the connectors; where the drawing differs: y (the line),
+     mk (marks B, input, A, D), foot (block number), sgno (SG number), txt ([x, height over the line, words]), box ([left, width] of the AI box), dtp (DEV DEF TP), ma (signal under the range, "" = none: RTD), nob (no mark on the B line),
+     sim ({l: letter, x, ref: sheet, f: FTR mark}: simulation value from another sheet in place of the SG) */
+  const ROWS = [
+    {"s":0,"lab":["GEN. STATOR COIL TEMP.(B)",""],"rng":"0 -120degC","ma":"","box":[185,330],"card":5,"tag":"nTE-GEn006-2","sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":1,"lab":["GEN. STATOR COIL TEMP.(C",")"],"rng":"0 -120degC","ma":"","card":6,"tag":"nTE-GEn006-3","R":1,"sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":2,"lab":["GEN. STATOR COIL TEMP.(D",")"],"rng":"0 -120degC","ma":"","card":7,"tag":"nTE-GEn006-4","sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":3,"lab":["GEN. STATOR COIL TEMP.(E)",""],"rng":"0 -120degC","ma":"","box":[185,327],"card":8,"tag":"nTE-GEn006-5","R":1,"sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT208"],"A":["TCA530A"],"D":["TCA815"]}
+  ];
+  ROWS.forEach(q => {
+    const s = q.s,
+      k = s + 1,
+      y = q.y || Y[s],
+      mk = q.mk || [20 + 4 * s, 21 + 4 * s, 22 + 4 * s, 23 + 4 * s].map(num) /* marks: B, input, A, D */,
+      mx = q.R ? 1306 : 1043 /* left edge of the block */,
+      xr = mx + 235,
+      sx = mx - (q.R ? 128 : 170) /* middle of the SG box */,
+      M = 'm' + k;
+    /* the analog input and its PI/O error */
+    const bx = q.box || [215, 270] /* the AI box: left edge, width */,
+      rx = q.box ? bx[0] + bx[1] + 11 : 490;
+    r.push(['ai' + k, bx[0], y - 27, bx[1], 54, ''], ['pe' + k, 598, y + 30, 127, 23, 'PI/O error']);
+    t.push(
+      [bx[0] + 6, y - 6, q.lab[0]],
+      [bx[0] + 6, y + 16, q.lab[1]],
+      [bx[0] + 2, y + 43, 'AI'],
+      [rx, y - 6, q.rng],
+      ...(q.ma === '' ? [] : [[rx, y + 26, q.ma || '4 -20mA']]),
+      [606, y - 20, '(TCA970-' + q.card + ')'],
+      [614, y + 25, '(TCA970-' + q.card + ')']
+    );
+    w.push(['ai' + k, [[bx[0] + bx[1], y], [689, y]], 1], ...(q.x ? [] : [['ai' + k, [[705, y], [mx, y]]]]), ['pe' + k, [[725, y + 41], [mx - 32, y + 41], [mx - 32, y + 22], [mx, y + 22]]]);
+    g.push([697, y, 'l']);
+    if (!q.x) b.push(['f' + mk[1], 'o:FTR', mk[1], 915, y]) /* a line built its own way has no mark on the input */;
+    /* the block, its simulation value and its settings */
+    m.push([
+      M,
+      'AI DIAG.MD',
+      q.tag,
+      mx,
+      y - 30,
+      235,
+      128,
+      ['IN', 'ERR', 'SIM'],
+      ['OUT', 'ABN'],
+      q.foot || 'A' + num(2 + 5 * s),
+      [
+        [mx + 80, y + 116, '(LMA510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + q.par[0]],
+        [mx - 2, y + 209, 'LL:' + q.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + q.par[2]],
+        [mx + 157, y + 166, 'LL:' + q.par[3]],
+        [mx + 137, y + 188, 'DEF TP:' + (q.dtp || '0.03S')],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    if (q.sim) {
+      /* the simulation value comes from another sheet: connector, its sheet under it at the left, maybe an FTR mark on the line */
+      const p = q.sim;
+      c.push(['iS' + k, 'in', p.l, p.x, y + 86, '', [], ...(p.dbl ? [1] : [])]) /* dbl: from the other controller */;
+      t.push([p.x - 104, y + 118, '(' + p.ref + ')']);
+      if (p.f) b.push(['f' + p.f, 'o:FTR', p.f, p.x + 65, y + 85]);
+      w.push(['iS' + k, [[p.x + 27, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    } else {
+      b.push(['sg' + k, 'SG', q.sgno || 'B' + num(4 + 5 * s), sx, y + 97, [q.sg]]);
+      w.push(['sg' + k, [[sx + 29, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    }
+    /* the outputs: the value to A and B, the abnormal signal to D */
+    c.push(['oD' + k, 'out', 'D' + k, 2013, y + 107, '', q.D, ...(q.ddbl ? [1] : [])]) /* ddbl: D to the other controller, double line */;
+    b.push(['b' + mk[3], 'o:BTR', mk[3], 1640, y + 107]);
+    w.push([M + '.ABN', [[xr, y + 44], [1597, y + 44], [1597, y + 107], [1986, y + 107]]]);
+    if (q.x) {
+      /* a line the drawing builds its own way: its parts as typed (absolute places), the value of the block not used */
+      for (const [a, L] of Object.entries(q.x)) ({ b, c, w, t })[a].push(...L);
+      return;
+    }
+    c.push(['oB' + k, 'out', 'B' + k, 2013, y - 85, '', q.B, 1], ['oA' + k, 'out', 'A' + k, 2013, y, '', q.A]);
+    b.push(
+      ...(q.nob ? [] : [['f' + mk[0], 'o:FTR', mk[0], 1640, y - 85]]),
+      ['f' + mk[2], 'o:FTR', mk[2], 1640, y]
+    );
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[1585, y], [1585, y - 85], [1986, y - 85]], 1]
+    );
+    /* words the drawing prints on a line */
+    if (q.txt) t.push(...q.txt.map(([x, dy, z]) => [x, y + dy, z]));
+  });
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [655, 1500, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA441',
+    title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
+    page: 75,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    m,
+    w,
+    t
+  });
+})();
+/* TCA442 COMM INPUT SIGNAL DIAGNOSTICS(AI)(15) (331DM09788 page 76, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Up to four analog inputs, each on one of the four lines of the sheet and drawn the same way: the AI box with its range,
+   the PI/O connection (filled triangle) and its PI/O error, one AI DIAG.MD block (left or right on the sheet) with its simulation value (SG)
+   and settings; the value goes out to connector A and, over it, to connector B (other controller, double outline); the abnormal signal to
+   connector D. The marks and block numbers follow the line: line s has FTR 020+4s (B), 021+4s (input), 022+4s (A), BTR 023+4s (D). */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    m = [],
+    w = [],
+    t = [];
+  const Y = [226, 537, 824, 1136] /* the four lines of the sheet */,
+    num = v => String(v).padStart(3, '0');
+  /* s = line (0-3), lab = [the two lines of the AI box], rng = range, card = PI/O point, tag = block tag, R = block at the right,
+     sg = SG note, par = [H/L HL, LL, DEV HL, LL], B / A / D = sheets of the connectors; where the drawing differs: y (the line),
+     mk (marks B, input, A, D), foot (block number), sgno (SG number), txt ([x, height over the line, words]), box ([left, width] of the AI box), dtp (DEV DEF TP), ma (signal under the range, "" = none: RTD), nob (no mark on the B line),
+     sim ({l: letter, x, ref: sheet, f: FTR mark}: simulation value from another sheet in place of the SG) */
+  const ROWS = [
+    {"s":0,"lab":["GEN. COOLING GAS AIR","COOLER OUTLET TEMP.(A)"],"rng":"0 -200degC","ma":"","card":9,"tag":"nTE-GEn004-1","sg":"K:0.0degC","par":["204.0","-10.0","40.0","-40.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":1,"lab":["GEN. COOLING GAS AIR","COOLER OUTLET TEMP.(B)"],"rng":"0 -200degC","ma":"","card":10,"tag":"nTE-GEn004-2","R":1,"sg":"K:0.0degC","par":["204.0","-10.0","40.0","-40.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":2,"lab":["GEN. COOLING GAS AIR","COOLER OUTLET TEMP.(C)"],"rng":"0 -200degC","ma":"","card":11,"tag":"nTE-GEn004-3","sg":"K:0.0degC","par":["204.0","-10.0","40.0","-40.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":3,"lab":["GEN. COOLING GAS AIR","COOLER OUTLET TEMP.(D)"],"rng":"0 -200degC","ma":"","card":12,"tag":"nTE-GEn004-4","R":1,"sg":"K:0.0degC","par":["204.0","-10.0","40.0","-40.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]}
+  ];
+  ROWS.forEach(q => {
+    const s = q.s,
+      k = s + 1,
+      y = q.y || Y[s],
+      mk = q.mk || [20 + 4 * s, 21 + 4 * s, 22 + 4 * s, 23 + 4 * s].map(num) /* marks: B, input, A, D */,
+      mx = q.R ? 1306 : 1043 /* left edge of the block */,
+      xr = mx + 235,
+      sx = mx - (q.R ? 128 : 170) /* middle of the SG box */,
+      M = 'm' + k;
+    /* the analog input and its PI/O error */
+    const bx = q.box || [215, 270] /* the AI box: left edge, width */,
+      rx = q.box ? bx[0] + bx[1] + 11 : 490;
+    r.push(['ai' + k, bx[0], y - 27, bx[1], 54, ''], ['pe' + k, 598, y + 30, 127, 23, 'PI/O error']);
+    t.push(
+      [bx[0] + 6, y - 6, q.lab[0]],
+      [bx[0] + 6, y + 16, q.lab[1]],
+      [bx[0] + 2, y + 43, 'AI'],
+      [rx, y - 6, q.rng],
+      ...(q.ma === '' ? [] : [[rx, y + 26, q.ma || '4 -20mA']]),
+      [606, y - 20, '(TCA970-' + q.card + ')'],
+      [614, y + 25, '(TCA970-' + q.card + ')']
+    );
+    w.push(['ai' + k, [[bx[0] + bx[1], y], [689, y]], 1], ...(q.x ? [] : [['ai' + k, [[705, y], [mx, y]]]]), ['pe' + k, [[725, y + 41], [mx - 32, y + 41], [mx - 32, y + 22], [mx, y + 22]]]);
+    g.push([697, y, 'l']);
+    if (!q.x) b.push(['f' + mk[1], 'o:FTR', mk[1], 915, y]) /* a line built its own way has no mark on the input */;
+    /* the block, its simulation value and its settings */
+    m.push([
+      M,
+      'AI DIAG.MD',
+      q.tag,
+      mx,
+      y - 30,
+      235,
+      128,
+      ['IN', 'ERR', 'SIM'],
+      ['OUT', 'ABN'],
+      q.foot || 'A' + num(2 + 5 * s),
+      [
+        [mx + 80, y + 116, '(LMA510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + q.par[0]],
+        [mx - 2, y + 209, 'LL:' + q.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + q.par[2]],
+        [mx + 157, y + 166, 'LL:' + q.par[3]],
+        [mx + 137, y + 188, 'DEF TP:' + (q.dtp || '0.03S')],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    if (q.sim) {
+      /* the simulation value comes from another sheet: connector, its sheet under it at the left, maybe an FTR mark on the line */
+      const p = q.sim;
+      c.push(['iS' + k, 'in', p.l, p.x, y + 86, '', [], ...(p.dbl ? [1] : [])]) /* dbl: from the other controller */;
+      t.push([p.x - 104, y + 118, '(' + p.ref + ')']);
+      if (p.f) b.push(['f' + p.f, 'o:FTR', p.f, p.x + 65, y + 85]);
+      w.push(['iS' + k, [[p.x + 27, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    } else {
+      b.push(['sg' + k, 'SG', q.sgno || 'B' + num(4 + 5 * s), sx, y + 97, [q.sg]]);
+      w.push(['sg' + k, [[sx + 29, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    }
+    /* the outputs: the value to A and B, the abnormal signal to D */
+    c.push(['oD' + k, 'out', 'D' + k, 2013, y + 107, '', q.D, ...(q.ddbl ? [1] : [])]) /* ddbl: D to the other controller, double line */;
+    b.push(['b' + mk[3], 'o:BTR', mk[3], 1640, y + 107]);
+    w.push([M + '.ABN', [[xr, y + 44], [1597, y + 44], [1597, y + 107], [1986, y + 107]]]);
+    if (q.x) {
+      /* a line the drawing builds its own way: its parts as typed (absolute places), the value of the block not used */
+      for (const [a, L] of Object.entries(q.x)) ({ b, c, w, t })[a].push(...L);
+      return;
+    }
+    c.push(['oB' + k, 'out', 'B' + k, 2013, y - 85, '', q.B, 1], ['oA' + k, 'out', 'A' + k, 2013, y, '', q.A]);
+    b.push(
+      ...(q.nob ? [] : [['f' + mk[0], 'o:FTR', mk[0], 1640, y - 85]]),
+      ['f' + mk[2], 'o:FTR', mk[2], 1640, y]
+    );
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[1585, y], [1585, y - 85], [1986, y - 85]], 1]
+    );
+    /* words the drawing prints on a line */
+    if (q.txt) t.push(...q.txt.map(([x, dy, z]) => [x, y + dy, z]));
+  });
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [655, 1500, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA442',
+    title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
+    page: 76,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    m,
+    w,
+    t
+  });
+})();
+/* TCA443 COMM INPUT SIGNAL DIAGNOSTICS(AI)(15) (331DM09788 page 77, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Up to four analog inputs, each on one of the four lines of the sheet and drawn the same way: the AI box with its range,
+   the PI/O connection (filled triangle) and its PI/O error, one AI DIAG.MD block (left or right on the sheet) with its simulation value (SG)
+   and settings; the value goes out to connector A and, over it, to connector B (other controller, double outline); the abnormal signal to
+   connector D. The marks and block numbers follow the line: line s has FTR 020+4s (B), 021+4s (input), 022+4s (A), BTR 023+4s (D). */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    m = [],
+    w = [],
+    t = [];
+  const Y = [226, 537, 824, 1136] /* the four lines of the sheet */,
+    num = v => String(v).padStart(3, '0');
+  /* s = line (0-3), lab = [the two lines of the AI box], rng = range, card = PI/O point, tag = block tag, R = block at the right,
+     sg = SG note, par = [H/L HL, LL, DEV HL, LL], B / A / D = sheets of the connectors; where the drawing differs: y (the line),
+     mk (marks B, input, A, D), foot (block number), sgno (SG number), txt ([x, height over the line, words]), box ([left, width] of the AI box), dtp (DEV DEF TP), ma (signal under the range, "" = none: RTD), nob (no mark on the B line),
+     sim ({l: letter, x, ref: sheet, f: FTR mark}: simulation value from another sheet in place of the SG) */
+  const ROWS = [
+    {"s":0,"lab":["AC EXCITER OUTLET AIR","TEMP."],"rng":"0 -150degC","ma":"","card":13,"tag":"nTE-GEn005","sg":"K:0.0degC","par":["153.0","-7.5","30.0","-30.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":1,"lab":["GEN. STATOR COIL","TEMP.(F)"],"rng":"0 -120degC","ma":"","card":14,"tag":"nTE-GEn006-6","R":1,"sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT208"],"A":["TCA530A"],"D":["TCA815"]}
+  ];
+  ROWS.forEach(q => {
+    const s = q.s,
+      k = s + 1,
+      y = q.y || Y[s],
+      mk = q.mk || [20 + 4 * s, 21 + 4 * s, 22 + 4 * s, 23 + 4 * s].map(num) /* marks: B, input, A, D */,
+      mx = q.R ? 1306 : 1043 /* left edge of the block */,
+      xr = mx + 235,
+      sx = mx - (q.R ? 128 : 170) /* middle of the SG box */,
+      M = 'm' + k;
+    /* the analog input and its PI/O error */
+    const bx = q.box || [215, 270] /* the AI box: left edge, width */,
+      rx = q.box ? bx[0] + bx[1] + 11 : 490;
+    r.push(['ai' + k, bx[0], y - 27, bx[1], 54, ''], ['pe' + k, 598, y + 30, 127, 23, 'PI/O error']);
+    t.push(
+      [bx[0] + 6, y - 6, q.lab[0]],
+      [bx[0] + 6, y + 16, q.lab[1]],
+      [bx[0] + 2, y + 43, 'AI'],
+      [rx, y - 6, q.rng],
+      ...(q.ma === '' ? [] : [[rx, y + 26, q.ma || '4 -20mA']]),
+      [606, y - 20, '(TCA970-' + q.card + ')'],
+      [614, y + 25, '(TCA970-' + q.card + ')']
+    );
+    w.push(['ai' + k, [[bx[0] + bx[1], y], [689, y]], 1], ...(q.x ? [] : [['ai' + k, [[705, y], [mx, y]]]]), ['pe' + k, [[725, y + 41], [mx - 32, y + 41], [mx - 32, y + 22], [mx, y + 22]]]);
+    g.push([697, y, 'l']);
+    if (!q.x) b.push(['f' + mk[1], 'o:FTR', mk[1], 915, y]) /* a line built its own way has no mark on the input */;
+    /* the block, its simulation value and its settings */
+    m.push([
+      M,
+      'AI DIAG.MD',
+      q.tag,
+      mx,
+      y - 30,
+      235,
+      128,
+      ['IN', 'ERR', 'SIM'],
+      ['OUT', 'ABN'],
+      q.foot || 'A' + num(2 + 5 * s),
+      [
+        [mx + 80, y + 116, '(LMA510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + q.par[0]],
+        [mx - 2, y + 209, 'LL:' + q.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + q.par[2]],
+        [mx + 157, y + 166, 'LL:' + q.par[3]],
+        [mx + 137, y + 188, 'DEF TP:' + (q.dtp || '0.03S')],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    if (q.sim) {
+      /* the simulation value comes from another sheet: connector, its sheet under it at the left, maybe an FTR mark on the line */
+      const p = q.sim;
+      c.push(['iS' + k, 'in', p.l, p.x, y + 86, '', [], ...(p.dbl ? [1] : [])]) /* dbl: from the other controller */;
+      t.push([p.x - 104, y + 118, '(' + p.ref + ')']);
+      if (p.f) b.push(['f' + p.f, 'o:FTR', p.f, p.x + 65, y + 85]);
+      w.push(['iS' + k, [[p.x + 27, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    } else {
+      b.push(['sg' + k, 'SG', q.sgno || 'B' + num(4 + 5 * s), sx, y + 97, [q.sg]]);
+      w.push(['sg' + k, [[sx + 29, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    }
+    /* the outputs: the value to A and B, the abnormal signal to D */
+    c.push(['oD' + k, 'out', 'D' + k, 2013, y + 107, '', q.D, ...(q.ddbl ? [1] : [])]) /* ddbl: D to the other controller, double line */;
+    b.push(['b' + mk[3], 'o:BTR', mk[3], 1640, y + 107]);
+    w.push([M + '.ABN', [[xr, y + 44], [1597, y + 44], [1597, y + 107], [1986, y + 107]]]);
+    if (q.x) {
+      /* a line the drawing builds its own way: its parts as typed (absolute places), the value of the block not used */
+      for (const [a, L] of Object.entries(q.x)) ({ b, c, w, t })[a].push(...L);
+      return;
+    }
+    c.push(['oB' + k, 'out', 'B' + k, 2013, y - 85, '', q.B, 1], ['oA' + k, 'out', 'A' + k, 2013, y, '', q.A]);
+    b.push(
+      ...(q.nob ? [] : [['f' + mk[0], 'o:FTR', mk[0], 1640, y - 85]]),
+      ['f' + mk[2], 'o:FTR', mk[2], 1640, y]
+    );
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[1585, y], [1585, y - 85], [1986, y - 85]], 1]
+    );
+    /* words the drawing prints on a line */
+    if (q.txt) t.push(...q.txt.map(([x, dy, z]) => [x, y + dy, z]));
+  });
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [655, 1500, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA443',
+    title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
+    page: 77,
     ctl: 'COMM+MD',
     cycle: 100,
     f: [180, 88, 2232, 1552],
@@ -56132,6 +56970,132 @@ const TCS_DESC = {
       [1378.7, 173.3],
       [1706.7, P(4)]
     ],
+    t
+  });
+})();
+/* TCA755 THERMAL STRESS(IP) (331DM09788 page 185, controller COMM+MD, trigger Trigger-of_LOGIC_2, cycle 60 s). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - The THSC INITIAL block A015 (LMA626 / LMA626A): INT1-INT3 = INIT1(LOADING), INIT2(HALF SPEED), INIT3(OTHERS) (D1-D3 of TCA751);
+     T1IN-T5IN = the IP stage temperatures TI(1)N-TI(5)N (TCA757 / TCA756, the second one printed TH(2)N); out T1-T5 as TI(1)-TI(5)
+     and TS as TS_I.
+   - MTIN / MTOUT: reheat bowl inner wall metal temp (A1 of TCA370) and A3 of TCA356, through ASW 013 / 014 switched by THSC SIMULATION
+     to SIM IP INNER / OUTER WALL MET TEMP (B1 / B2 of TCA770).
+   The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const WT = (key, ...pts) => w.push([key, pts, 1]);
+  const F = [174, 85, 2229, 1549],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1089.3,
+    MW = 404,
+    MR = MX + MW,
+    TOP = 400,
+    H = 701.7,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 20,
+    HW = 28.76,
+    AX = 818;
+  /* INIT1-3 */
+  W('iD1', [302, 183], [948, 183], [948, P(0)], [MX, P(0)]);
+  W('iD2', [302, 258.7], [895.3, 258.7], [895.3, P(1)], [MX, P(1)]);
+  W('iD3', [302, 333.3], [841.3, 333.3], [841.3, P(2)], [MX, P(2)]);
+  /* stage temperatures in and out */
+  [1, 2, 3, 4, 5].forEach(n => WT('iT' + n, [311.7, P(2 + 2 * n)], [MX, P(2 + 2 * n)]));
+  [
+    [4, 'T1'],
+    [6, 'T2'],
+    [8, 'T3'],
+    [10, 'T4'],
+    [12, 'T5'],
+    [15, 'TS']
+  ].forEach(([i, n]) => WT('thsc.' + n, [MR, P(i)], [2065.3 - 27, P(i)]));
+  /* metal temperatures, real or simulated */
+  W('kSim', [633, 878.7], [AX, 878.7], [AX, P(15) + 11 - 21.5]);
+  W('kSim', [680, 878.7], [680, 990.7], [AX, 990.7], [AX, P(18) + 11 - 21.5]);
+  WT('iA1', [311.7, P(15) + 22], [AX - HW, P(15) + 22]);
+  WT('iB1', [311.7, 1118.7], [733.3, 1118.7], [733.3, P(15)], [AX - HW, P(15)]);
+  WT('iA3', [311.7, P(18) + 22], [AX - HW, P(18) + 22]);
+  WT('iB2', [311.7, 1202.7], [753.3, 1202.7], [753.3, P(18)], [AX - HW, P(18)]);
+  WT('asw013', [AX + HW, P(15)], [MX, P(15)]);
+  WT('asw014', [AX + HW, P(18)], [MX, P(18)]);
+  t.push(
+    [308, 181, 'INIT1(LOADING)'],
+    [308, 257, 'INIT2(HALF SPEED)'],
+    [308, 331, 'INIT3(OTHERS)'],
+    ...['TI(1)N', 'TH(2)N', 'TI(3)N', 'TI(4)N', 'TI(5)N'].map((s, i) => [318, P(4 + 2 * i) - 2, s]),
+    ...[1, 2, 3, 4, 5].map(n => [1687, P(2 + 2 * n) - 2, 'TI(' + n + ')']),
+    [1685, P(15) - 2, 'TS_I'],
+    [565, 913, '(TCA102)', 1],
+    [318, 924, 'REHEAT BOWL INNER'],
+    [318, 945, 'WALL METAL TEMP.'],
+    [318, 1115, 'SIM IP INNER WALL MET TEMP'],
+    [318, 1200, 'SIM IP OUTER WALL MET TEMP'],
+    [1225, 1126, '(LMA626)', 1],
+    [1345, 1126, '(LMA626A)', 1],
+    ...['T:60.0s', 'K:0.5', 'T:60.0s', 'T:60.0s', 'K:0.9', 'T:60.0s', 'K:0.7', 'T:60.0s', 'K:0.5', 'T:60.0s'].map((s, i) => [
+      1091,
+      Math.round(1149 + 21.33 * i),
+      s
+    ]),
+    ...['K:0.3', 'T:60.0s', 'K:0.1'].map((s, i) => [1291, Math.round(1149 + 21.33 * i), s]),
+    [242, 1530, 'CONTROLLER:'],
+    [403, 1530, 'COMM+MD'],
+    [627, 1512, 'TRIGGER  :Trigger-of_LOGIC_2'],
+    [627, 1538, 'CYCLE(s):60']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA755',
+    title: 'THERMAL STRESS(IP)',
+    page: 185,
+    ctl: 'COMM+MD',
+    cycle: 60000,
+    f: F,
+    k: [['kSim', 400, 878.7, 'THSC SIMULATION', 'ref']],
+    c: [
+      ['iD1', 'in', 'D1', 275, 183, '', ['TCA751'], 0, 1],
+      ['iD2', 'in', 'D2', 275, 258.7, '', ['TCA751'], 0, 1],
+      ['iD3', 'in', 'D3', 275, 333.3, '', ['TCA751'], 0, 1],
+      ['iT1', 'in', '1', 284.7, P(4), '', ['TCA757'], 0, 1],
+      ['iT2', 'in', '2', 284.7, P(6), '', ['TCA757'], 0, 1],
+      ['iT3', 'in', '3', 284.7, P(8), '', ['TCA756'], 0, 1],
+      ['iT4', 'in', '4', 284.7, P(10), '', ['TCA756'], 0, 1],
+      ['iT5', 'in', '5', 284.7, P(12), '', ['TCA756'], 0, 1],
+      ['iA1', 'in', 'A1', 284.7, P(15) + 22, '', ['TCA370'], 0, 1],
+      ['iA3', 'in', 'A3', 284.7, P(18) + 22, '', ['TCA356'], 0, 1],
+      ['iB1', 'in', 'B1', 284.7, 1118.7, '', ['TCA770'], 0, 1],
+      ['iB2', 'in', 'B2', 284.7, 1202.7, '', ['TCA770'], 0, 1],
+      ['o1', 'out', '1', 2065.3, P(4), '', ['TCA757'], 0, 1],
+      ['o2', 'out', '2', 2065.3, P(6), '', ['TCA756', 'TCA757'], 0, 4],
+      ['o3', 'out', '3', 2065.3, P(8), '', ['TCA756'], 0, 1],
+      ['o4', 'out', '4', 2065.3, P(10), '', ['TCA756'], 0, 1],
+      ['o5', 'out', '5', 2065.3, P(12), '', ['TCA756'], 0, 1],
+      ['oS', 'out', 'S', 2065.3, P(15), '', ['TCA757', 'TCA758'], 0, 4]
+    ],
+    m: [
+      [
+        'thsc',
+        'THSC INITIAL',
+        '',
+        MX,
+        TOP,
+        MW,
+        H,
+        ['INT1', 'INT2', 'INT3', '', 'T1IN', '', 'T2IN', '', 'T3IN', '', 'T4IN', '', 'T5IN', '', '', 'MTIN', '', '', 'MTOUT', ''],
+        ['', '', '', '', 'T1', '', 'T2', '', 'T3', '', 'T4', '', 'T5', '', '', 'TS', '', '', '', ''],
+        'A015',
+        []
+      ]
+    ],
+    b: [
+      ['asw013', 'ASW', '013', AX, P(15) + 11],
+      ['asw014', 'ASW', '014', AX, P(18) + 11]
+    ],
+    w,
+    j: [[680, 878.7]],
     t
   });
 })();
@@ -139446,7 +140410,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 3a9df85'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 527f33c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -165637,6 +166601,20 @@ const TCS_DESC = {
     'Analog input diagnostics (15), card TCA961: HP turbine first stage outer wall metal temperature and No.3 and No.4 bearing outlet oil temperatures through AI DIAG.MD blocks.',
   TCA365:
     'Analog input diagnostics (15), card TCA961: MSV inlet, HP exhaust and LP exhaust hood steam temperatures (C), each through an AI DIAG.MD block to the TCE controller; one spare RTD input.',
+  TCA370:
+    'Input signal diagnostics (1): reheat bowl inner wall metal temperature (A) and (B) into one DUAL INPUT DIAGNOSTICS block; value, abnormal, input error, deviation high and I/O error out.',
+  TCA371:
+    'Input signal diagnostics (2): gland steam seal header pressure (A) and (B) into one DUAL INPUT DIAGNOSTICS block; value, abnormal, input error, deviation high and I/O error out.',
+  TCA372:
+    'Input signal diagnostics (3): reheat bowl steam pressure (A), (B) and (C) into one TMR AI DIAGNOSTICS block; the value and the abnormal word out.',
+  TCA440:
+    'Analog input diagnostics (15), card TCA970: lube oil cooler inlet and outlet (A), (B) oil temperatures and generator stator coil temperature (A), each through an AI DIAG.MD block to the TCE controller.',
+  TCA441:
+    'Analog input diagnostics (15), card TCA970: generator stator coil temperatures (B) to (E), each through an AI DIAG.MD block to the TCE controller.',
+  TCA442:
+    'Analog input diagnostics (15), card TCA970: generator cooling gas air cooler outlet temperatures (A) to (D), each through an AI DIAG.MD block to the TCE controller.',
+  TCA443:
+    'Analog input diagnostics (15), card TCA970: AC exciter outlet air temperature and generator stator coil temperature (F), each through an AI DIAG.MD block to the TCE controller.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -166044,7 +167022,9 @@ const TCS_DESC = {
   TCA753:
     'THERMAL STRESS(HP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TH(2) and TH(1), as drawn.',
   TCA754:
-    'THERMAL STRESS(HP): speed ratio, the THERMAL STRESS block A001 (LMA628) and the HP bore stress, as drawn.'
+    'THERMAL STRESS(HP): speed ratio, the THERMAL STRESS block A001 (LMA628) and the HP bore stress, as drawn.',
+  TCA755:
+    'THERMAL STRESS(IP): the THSC INITIAL block A015 (LMA626 / LMA626A) for the IP stage temperatures, as drawn.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -188122,6 +189102,842 @@ const TCS_DESC = {
     id: 'TCA365',
     title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
     page: 70,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    m,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA370.js ---- */
+/* TCA370 INPUT SIGNAL DIAGNOSTICS(1) (331DM09788 page 71, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Reheat bowl inner wall metal temperature (A) and (B): the value and the abnormal signal of input (A) and of input (B), each from its AI DIAG sheet, into one
+   DUAL INPUT DIAGNOSTICS block with its limits (SG / SGW); the value out to connector A1 and, over it, to F1 (other controller, double
+   line); the abnormal signal to D1; input error, deviation high and I/O error to A, B and C. Pins QT1, QT2, ERR1 and ERR2 are left open
+   in the drawing. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = [180, 88, 2232, 1552],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1196,
+    MY = 292,
+    MW = 402,
+    MH = 860,
+    N = 25,
+    pin = i => Math.round(MY + 15 * u + (i + 0.5) * ((MH - 30 * u) / N)),
+    row = o => {
+      const a = Array(N).fill('');
+      for (const k in o) a[o[k]] = k;
+      return a;
+    },
+    LI = { SIG1: 0, 'I-ERR1': 2, SIG2: 4, 'I-ERR2': 6, HL: 12, LL: 14, DEV: 16, S: 18, M: 20, SIM: 23 },
+    RI = { OUT: 0, ABN: 4, QT1: 8, QT2: 10, ERR1: 12, ERR2: 13, ERR: 15, 'DEV E': 18, 'I-ERR': 21 },
+    L = k => pin(LI[k]),
+    R = k => pin(RI[k]),
+    XR = MX + MW,
+    b = [],
+    c = [],
+    w = [],
+    t = [];
+  /* the two inputs: [letter, pin, thick, name, sheet] (value: thick line; abnormal: thin line) */
+  [["A1","SIG1",1,"REHEAT BOWL INNER WALL METAL TEMP. (A)","TCA358"],["D1","I-ERR1",0,"REHEAT BOWL INNER WALL METAL TEMP. (A) ABN.","TCA358"],["A1","SIG2",1,"REHEAT BOWL INNER WALL METAL TEMP. (B)","TCA362"],["D1","I-ERR2",0,"REHEAT BOWL INNER WALL METAL TEMP. (B) ABN.","TCA362"]].forEach(([ch, pn, thick, name, sheet], i) => {
+    const y = L(pn),
+      k = 'i' + i;
+    c.push([k, 'in', ch, 516, y, name, []]);
+    t.push([375, y + 31, '(' + sheet + ')']);
+    w.push([k, [[543, y], [MX, y]], thick]);
+  });
+  /* the limits and the simulation value: [key, type, number, x, pin, note] */
+  [["sg004","SG","A004",745,"HL","K:714desc"],["sg005","SG","A005",904,"LL","K:-35desc"],["sg007","SG","A007",745,"DEV","K:140desc"],["sgw012","SGW","A012",904,"S","K:1"],["sg010","SG","A010",745,"M","K:10000.0"],["sg028","SG","B028",900,"SIM","K:450.0desc"]].forEach(([k, ty, no, x, pn, note]) => {
+    b.push([k, ty, no, x, L(pn) + 10, [note]]);
+    w.push([k, [[x + 29, L(pn)], [MX, L(pn)]], 1]);
+  });
+  /* the outputs */
+  const XM = 1726,
+    XC = 2046;
+  w.push(
+    ['m.OUT', [[XR, R('OUT')], [XC - 27, R('OUT')]], 1],
+    ['m.OUT', [[1647, R('OUT')], [1647, R('OUT') + 64], [XC - 28, R('OUT') + 64]], 1],
+    ['m.ABN', [[XR, R('ABN')], [XC - 27, R('ABN')]]]
+  );
+  c.push(
+    ['oA1', 'out', 'A1', XC, R('OUT'), '', []],
+    ['oF1', 'out', 'F1', XC, R('OUT') + 64, '', ["-"], 1],
+    ['oD1', 'out', 'D1', XC, R('ABN'), '', []]
+  );
+  b.push(['f019', 'o:FTR', '019', XM, R('OUT')], ['f029', 'o:FTR', '029', XM, R('OUT') + 64], ['b003', 'o:BTR', '003', XM, R('ABN')]);
+  /* sheets of A1 and D1 as the drawing prints them: [x, height over the line, words] */
+  [[2081,-4,"(TCA500) (TCA531)","OUT"],[2081,12,"(TCA548) (TCA755)","OUT"],[2052,31,"(-)","ABN"]].forEach(([x, dy, z, pn]) => t.push([x, R(pn) + dy, z]));
+  [['ERR', '006', 'INPUT ERROR', 'A'], ['DEV E', '009', 'DEVIATION HIGH', 'B'], ['I-ERR', '011', 'I/O ERROR', 'C']].forEach(([pn, m, name, ch]) => {
+    w.push(['m.' + pn, [[XR, R(pn)], [XC - 27, R(pn)]]]);
+    b.push(['b' + m, 'o:BTR', m, XM, R(pn)]);
+    c.push(['o' + ch, 'out', ch, XC, R(pn), '', {"A":["TCA531","TCA750"],"B":["-"],"C":["-"]}[ch], 0, 1]);
+    t.push([1812, R(pn) - 6, name]);
+  });
+  [[-29,"REHEAT BOWL INNER","OUT"],[-8,"WALL METAL TEMP.","OUT"],[35,"REHEAT BOWL INNER","OUT"],[56,"WALL METAL TEMP.","OUT"],[-29,"REHEAT BOWL INNER","ABN"],[-8,"WALL METAL TEMP. ABN.","ABN"]].forEach(([dy, z, pn]) => t.push([1814, R(pn) + dy, z]));
+  t.push(
+    [1512, 284, 'nTE-STn004'],
+    [228, 1527, 'CONTROLLER:'],
+    [388, 1527, 'COMM+MD'],
+    [655, 1500, 'TRIGGER  :'],
+    [655, 1527, 'CYCLE(ms):100']
+  );
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCA370',
+    title: 'INPUT SIGNAL DIAGNOSTICS(1)',
+    page: 71,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    c,
+    m: [
+      [
+        'm',
+        'DUAL INPUT DIAGNOSTICS',
+        '',
+        MX,
+        MY,
+        MW,
+        MH,
+        row(LI),
+        row(RI),
+        'A001',
+        [
+          [1292, 1171, '(LMA110)'],
+          [1404, 1171, '(LMA110A)'],
+          [1194, 1193, 'K:-0.01'],
+          [1194, 1214, 'TP:3.0'],
+          [1189, 1236, 'DELAY TP:3.0s'],
+          [1189, 1257, 'DELAY TP:3.0s'],
+          [1194, 1279, 'K:2']
+        ]
+      ]
+    ],
+    b,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA371.js ---- */
+/* TCA371 INPUT SIGNAL DIAGNOSTICS(2) (331DM09788 page 72, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Gland steam seal header pressure (A) and (B): the value and the abnormal signal of input (A) and of input (B), each from its AI DIAG sheet, into one
+   DUAL INPUT DIAGNOSTICS block with its limits (SG / SGW); the value out to connector A1 and, over it, to F1 (other controller, double
+   line); the abnormal signal to D1; input error, deviation high and I/O error to A, B and C. Pins QT1, QT2, ERR1 and ERR2 are left open
+   in the drawing. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = [180, 88, 2232, 1552],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1196,
+    MY = 292,
+    MW = 402,
+    MH = 860,
+    N = 25,
+    pin = i => Math.round(MY + 15 * u + (i + 0.5) * ((MH - 30 * u) / N)),
+    row = o => {
+      const a = Array(N).fill('');
+      for (const k in o) a[o[k]] = k;
+      return a;
+    },
+    LI = { SIG1: 0, 'I-ERR1': 2, SIG2: 4, 'I-ERR2': 6, HL: 12, LL: 14, DEV: 16, S: 18, M: 20, SIM: 23 },
+    RI = { OUT: 0, ABN: 4, QT1: 8, QT2: 10, ERR1: 12, ERR2: 13, ERR: 15, 'DEV E': 18, 'I-ERR': 21 },
+    L = k => pin(LI[k]),
+    R = k => pin(RI[k]),
+    XR = MX + MW,
+    b = [],
+    c = [],
+    w = [],
+    t = [];
+  /* the two inputs: [letter, pin, thick, name, sheet] (value: thick line; abnormal: thin line) */
+  [["A1","SIG1",1,"GLAND STEAM SEAL HEADER PRESS. (A)","TCA310"],["D1","I-ERR1",0,"GLAND STEAM SEAL HEADER PRESS. (A) ABN.","TCA310"],["A1","SIG2",1,"GLAND STEAM SEAL HEADER PRESS. (B)","TCA312"],["D1","I-ERR2",0,"GLAND STEAM SEAL HEADER PRESS. (B) ABN.","TCA312"]].forEach(([ch, pn, thick, name, sheet], i) => {
+    const y = L(pn),
+      k = 'i' + i;
+    c.push([k, 'in', ch, 516, y, name, []]);
+    t.push([375, y + 31, '(' + sheet + ')']);
+    w.push([k, [[543, y], [MX, y]], thick]);
+  });
+  /* the limits and the simulation value: [key, type, number, x, pin, note] */
+  [["sg004","SG","A004",745,"HL","K:2.06"],["sg005","SG","A005",904,"LL","K:-1.15"],["sg007","SG","A007",745,"DEV","K:0.06"],["sgw012","SGW","A012",904,"S","K:1"],["sg010","SG","A010",745,"M","K:10000.0"],["sg028","SG","B028",900,"SIM","K:0.3desc"]].forEach(([k, ty, no, x, pn, note]) => {
+    b.push([k, ty, no, x, L(pn) + 10, [note]]);
+    w.push([k, [[x + 29, L(pn)], [MX, L(pn)]], 1]);
+  });
+  /* the outputs */
+  const XM = 1726,
+    XC = 2046;
+  w.push(
+    ['m.OUT', [[XR, R('OUT')], [XC - 27, R('OUT')]], 1],
+    ['m.OUT', [[1647, R('OUT')], [1647, R('OUT') + 64], [XC - 28, R('OUT') + 64]], 1],
+    ['m.ABN', [[XR, R('ABN')], [XC - 27, R('ABN')]]]
+  );
+  c.push(
+    ['oA1', 'out', 'A1', XC, R('OUT'), '', []],
+    ['oF1', 'out', 'F1', XC, R('OUT') + 64, '', ["-"], 1],
+    ['oD1', 'out', 'D1', XC, R('ABN'), '', []]
+  );
+  b.push(['f019', 'o:FTR', '019', XM, R('OUT')], ['f029', 'o:FTR', '029', XM, R('OUT') + 64], ['b003', 'o:BTR', '003', XM, R('ABN')]);
+  /* sheets of A1 and D1 as the drawing prints them: [x, height over the line, words] */
+  [[2081,4,"(TCA740) (TCA741)","OUT"],[2052,36,"(TCA740)","ABN"],[2052,57,"(TCA741)","ABN"]].forEach(([x, dy, z, pn]) => t.push([x, R(pn) + dy, z]));
+  [['ERR', '006', 'INPUT ERROR', 'A'], ['DEV E', '009', 'DEVIATION HIGH', 'B'], ['I-ERR', '011', 'I/O ERROR', 'C']].forEach(([pn, m, name, ch]) => {
+    w.push(['m.' + pn, [[XR, R(pn)], [XC - 27, R(pn)]]]);
+    b.push(['b' + m, 'o:BTR', m, XM, R(pn)]);
+    c.push(['o' + ch, 'out', ch, XC, R(pn), '', {"A":["-"],"B":["-"],"C":["-"]}[ch], 0, 1]);
+    t.push([1812, R(pn) - 6, name]);
+  });
+  [[-29,"GLAND STEAM SEAL H","OUT"],[-8,"EADER PRESS.","OUT"],[35,"GLAND STEAM SEAL","OUT"],[56,"HEADER PRESS.","OUT"],[-29,"GLAND STEAM SEAL","ABN"],[-8,"HEADER PRESS. ABN.","ABN"]].forEach(([dy, z, pn]) => t.push([1814, R(pn) + dy, z]));
+  t.push(
+    [1512, 284, 'nPT-GSn001'],
+    [228, 1527, 'CONTROLLER:'],
+    [388, 1527, 'COMM+MD'],
+    [655, 1500, 'TRIGGER  :'],
+    [655, 1527, 'CYCLE(ms):100']
+  );
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCA371',
+    title: 'INPUT SIGNAL DIAGNOSTICS(2)',
+    page: 72,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    c,
+    m: [
+      [
+        'm',
+        'DUAL INPUT DIAGNOSTICS',
+        '',
+        MX,
+        MY,
+        MW,
+        MH,
+        row(LI),
+        row(RI),
+        'A001',
+        [
+          [1292, 1171, '(LMA110)'],
+          [1404, 1171, '(LMA110A)'],
+          [1194, 1193, 'K:-0.01'],
+          [1194, 1214, 'TP:3.0'],
+          [1189, 1236, 'DELAY TP:3.0s'],
+          [1189, 1257, 'DELAY TP:3.0s'],
+          [1194, 1279, 'K:2']
+        ]
+      ]
+    ],
+    b,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA372.js ---- */
+/* TCA372 INPUT SIGNAL DIAGNOSTICS(3) (331DM09788 page 73, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of
+   the page rendered 2296 wide. Reheat bowl steam pressure (A), (B) and (C), each with its abnormal signal, from the AI DIAG sheet TCA311,
+   into one TMR AI DIAGNOSTICS block with its limits (SG); the value out over FTR 003 and 004 to connector A, and to A1 (other controller,
+   double line) as the abnormal word line. Each input line runs to its pin over its own step, as in the drawing. Pins ABN, DEV E and ERR
+   are left open in the drawing. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const F = [180, 88, 2232, 1552],
+    u = (F[2] - F[0]) / 1000,
+    MX = 930,
+    MY = 167,
+    MW = 407,
+    MH = 380,
+    N = 10,
+    pin = i => Math.round(MY + 15 * u + (i + 0.5) * ((MH - 30 * u) / N)),
+    LP = ['SIG1', 'ERR1', 'SIG2', 'ERR2', 'SIG3', 'ERR3', 'HL', 'LL', 'DEV', 'SIM'],
+    RP = ['OUT', '', 'ABN', '', 'DEV E', '', 'ERR', '', '', ''],
+    L = k => pin(LP.indexOf(k)),
+    XR = MX + MW,
+    b = [],
+    c = [],
+    w = [],
+    t = [];
+  /* the six inputs from TCA311: [letter, pin, mark, number, name, x of the step]; the value lines thick, the abnormal lines thin */
+  [
+    ['A2', 'SIG1', 'FTR', '001', '(A)', 0],
+    ['D2', 'ERR1', 'BTR', '006', '(A)', 740],
+    ['A3', 'SIG2', 'FTR', '008', '(B)', 762],
+    ['D3', 'ERR2', 'BTR', '009', '(B)', 782],
+    ['A4', 'SIG3', 'FTR', '010', '(C)', 802],
+    ['D4', 'ERR3', 'BTR', '011', '(C)', 822]
+  ].forEach(([ch, pn, mk, no, s, sx], i) => {
+    const y = pin(0) + 64 * i,
+      k = 'i' + i,
+      thick = ch[0] === 'A' ? 1 : 0;
+    c.push([k, 'in', ch, 302, y, 'REHEAT BOWL STEAM PRESS. ' + s, []]);
+    t.push([198, y + 10, '(TCA311)']);
+    b.push(['m' + no, 'o:' + mk, no, 677, y]);
+    w.push([k, sx ? [[329, y], [sx, y], [sx, L(pn)], [MX, L(pn)]] : [[329, y], [MX, y]], thick]);
+  });
+  /* the limits and the simulation value: [key, number, line, pin, note, x of the step, FTR mark] */
+  [
+    ['sg012', 'A012', 594, 'HL', 'K:51.0kg/cm2g', 843, '013'],
+    ['sg014', 'A014', 679, 'LL', 'K:-2.5kg/cm2g', 863, '015'],
+    ['sg016', 'A016', 764, 'DEV', 'K:10.0kg/cm2g', 884, '017'],
+    ['sg018', 'B018', 849, 'SIM', 'K:-10.0kg/cm2g', 905, '019']
+  ].forEach(([k, no, y, pn, note, sx, f]) => {
+    b.push([k, 'SG', no, 566, y + 10, [note]], ['f' + f, 'o:FTR', f, 674, y]);
+    w.push([k, [[595, y], [sx, y], [sx, L(pn)], [MX, L(pn)]], 1]);
+  });
+  /* the output: the value over FTR 003 and 004, then to A over FTR 005 and, down a step, to A1 over FTR 007 */
+  const yo = pin(0),
+    y1 = pin(0) + 96,
+    XC = 2062;
+  w.push(['m.OUT', [[XR, yo], [XC - 27, yo]], 1], ['m.OUT', [[1699, yo], [1699, y1], [XC - 28, y1]], 1]);
+  b.push(['f003', 'o:FTR', '003', 1424, yo], ['f004', 'o:FTR', '004', 1636, yo], ['f005', 'o:FTR', '005', 1743, yo], ['f007', 'o:FTR', '007', 1743, y1]);
+  c.push(['oA', 'out', 'A', XC, yo, '', ['-']], ['oA1', 'out', 'A1', XC, y1, '', ['-'], 1]);
+  t.push(
+    [1770, yo - 8, 'REHEAT BOWL STEAM PRESS.'],
+    [1770, y1 - 30, 'REHEAT BOWL STEAM PRESS.'],
+    [1770, y1 - 8, 'ABNORMAL'],
+    [1240, 151, 'nPT-STn002'],
+    [228, 1527, 'CONTROLLER:'],
+    [388, 1527, 'COMM+MD'],
+    [655, 1500, 'TRIGGER  :'],
+    [655, 1527, 'CYCLE(ms):100']
+  );
+  (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
+    id: 'TCA372',
+    title: 'INPUT SIGNAL DIAGNOSTICS(3)',
+    page: 73,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    c,
+    m: [
+      [
+        'm',
+        'TMR AI DIAGNOSTICS',
+        '',
+        MX,
+        MY,
+        MW,
+        MH,
+        LP,
+        RP,
+        'A002',
+        [
+          [1040, 570, '(LMA111)'],
+          [1150, 570, '(LMA111A)'],
+          [1020, 390, 'TP:1.0'],
+          [1020, 411, 'TP:1.0'],
+          [1020, 432, 'TP:1.0'],
+          [1018, 454, 'DELAY TP:3.0s'],
+          [1018, 475, 'DELAY TP:3.0s'],
+          [1018, 496, 'DELAY TP:3.0s']
+        ]
+      ]
+    ],
+    b,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA440.js ---- */
+/* TCA440 COMM INPUT SIGNAL DIAGNOSTICS(AI)(15) (331DM09788 page 74, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Up to four analog inputs, each on one of the four lines of the sheet and drawn the same way: the AI box with its range,
+   the PI/O connection (filled triangle) and its PI/O error, one AI DIAG.MD block (left or right on the sheet) with its simulation value (SG)
+   and settings; the value goes out to connector A and, over it, to connector B (other controller, double outline); the abnormal signal to
+   connector D. The marks and block numbers follow the line: line s has FTR 020+4s (B), 021+4s (input), 022+4s (A), BTR 023+4s (D). */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    m = [],
+    w = [],
+    t = [];
+  const Y = [226, 537, 824, 1136] /* the four lines of the sheet */,
+    num = v => String(v).padStart(3, '0');
+  /* s = line (0-3), lab = [the two lines of the AI box], rng = range, card = PI/O point, tag = block tag, R = block at the right,
+     sg = SG note, par = [H/L HL, LL, DEV HL, LL], B / A / D = sheets of the connectors; where the drawing differs: y (the line),
+     mk (marks B, input, A, D), foot (block number), sgno (SG number), txt ([x, height over the line, words]), box ([left, width] of the AI box), dtp (DEV DEF TP), ma (signal under the range, "" = none: RTD), nob (no mark on the B line),
+     sim ({l: letter, x, ref: sheet, f: FTR mark}: simulation value from another sheet in place of the SG) */
+  const ROWS = [
+    {"s":0,"lab":["LUBE OIL COOLER INLET OIL TEMP","."],"rng":"0 -100degC","ma":"","box":[185,327],"card":1,"tag":"nTE-LOn001","sg":"K:50.0degC","par":["102.0","-5.0","20.0","-20.0"],"B":["TCT203"],"A":["-"],"D":["TCA815"]},
+    {"s":1,"lab":["LUBE OIL COOLER OUTLET","OIL TEMP.(A)"],"rng":"0 -100degC","ma":"","box":[185,327],"card":2,"tag":"nTE-LOn002-1","R":1,"sg":"K:40.0degC","par":["102.0","-5.0","20.0","-20.0"],"B":["TCT203"],"A":["TCA539","TCA850"],"D":["TCA815"]},
+    {"s":2,"lab":["LUBE OIL COOLER OUTLET OIL TEM","P.(B)"],"rng":"0 -100degc","ma":"","box":[185,327],"card":3,"tag":"nTE-LOn002-2","sg":"K:0.0degc","par":["102.0","-5.0","20.0","-20.0"],"B":["TCT203"],"A":["TCA539","TCA850"],"D":["TCA815"]},
+    {"s":3,"lab":["GEN. STATOR COIL TEMP.(A)",""],"rng":"0 -150degC","ma":"","box":[185,327],"card":4,"tag":"nTE-GEn006-1","R":1,"sg":"K:0.0degc","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]}
+  ];
+  ROWS.forEach(q => {
+    const s = q.s,
+      k = s + 1,
+      y = q.y || Y[s],
+      mk = q.mk || [20 + 4 * s, 21 + 4 * s, 22 + 4 * s, 23 + 4 * s].map(num) /* marks: B, input, A, D */,
+      mx = q.R ? 1306 : 1043 /* left edge of the block */,
+      xr = mx + 235,
+      sx = mx - (q.R ? 128 : 170) /* middle of the SG box */,
+      M = 'm' + k;
+    /* the analog input and its PI/O error */
+    const bx = q.box || [215, 270] /* the AI box: left edge, width */,
+      rx = q.box ? bx[0] + bx[1] + 11 : 490;
+    r.push(['ai' + k, bx[0], y - 27, bx[1], 54, ''], ['pe' + k, 598, y + 30, 127, 23, 'PI/O error']);
+    t.push(
+      [bx[0] + 6, y - 6, q.lab[0]],
+      [bx[0] + 6, y + 16, q.lab[1]],
+      [bx[0] + 2, y + 43, 'AI'],
+      [rx, y - 6, q.rng],
+      ...(q.ma === '' ? [] : [[rx, y + 26, q.ma || '4 -20mA']]),
+      [606, y - 20, '(TCA970-' + q.card + ')'],
+      [614, y + 25, '(TCA970-' + q.card + ')']
+    );
+    w.push(['ai' + k, [[bx[0] + bx[1], y], [689, y]], 1], ...(q.x ? [] : [['ai' + k, [[705, y], [mx, y]]]]), ['pe' + k, [[725, y + 41], [mx - 32, y + 41], [mx - 32, y + 22], [mx, y + 22]]]);
+    g.push([697, y, 'l']);
+    if (!q.x) b.push(['f' + mk[1], 'o:FTR', mk[1], 915, y]) /* a line built its own way has no mark on the input */;
+    /* the block, its simulation value and its settings */
+    m.push([
+      M,
+      'AI DIAG.MD',
+      q.tag,
+      mx,
+      y - 30,
+      235,
+      128,
+      ['IN', 'ERR', 'SIM'],
+      ['OUT', 'ABN'],
+      q.foot || 'A' + num(2 + 5 * s),
+      [
+        [mx + 80, y + 116, '(LMA510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + q.par[0]],
+        [mx - 2, y + 209, 'LL:' + q.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + q.par[2]],
+        [mx + 157, y + 166, 'LL:' + q.par[3]],
+        [mx + 137, y + 188, 'DEF TP:' + (q.dtp || '0.03S')],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    if (q.sim) {
+      /* the simulation value comes from another sheet: connector, its sheet under it at the left, maybe an FTR mark on the line */
+      const p = q.sim;
+      c.push(['iS' + k, 'in', p.l, p.x, y + 86, '', [], ...(p.dbl ? [1] : [])]) /* dbl: from the other controller */;
+      t.push([p.x - 104, y + 118, '(' + p.ref + ')']);
+      if (p.f) b.push(['f' + p.f, 'o:FTR', p.f, p.x + 65, y + 85]);
+      w.push(['iS' + k, [[p.x + 27, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    } else {
+      b.push(['sg' + k, 'SG', q.sgno || 'B' + num(4 + 5 * s), sx, y + 97, [q.sg]]);
+      w.push(['sg' + k, [[sx + 29, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    }
+    /* the outputs: the value to A and B, the abnormal signal to D */
+    c.push(['oD' + k, 'out', 'D' + k, 2013, y + 107, '', q.D, ...(q.ddbl ? [1] : [])]) /* ddbl: D to the other controller, double line */;
+    b.push(['b' + mk[3], 'o:BTR', mk[3], 1640, y + 107]);
+    w.push([M + '.ABN', [[xr, y + 44], [1597, y + 44], [1597, y + 107], [1986, y + 107]]]);
+    if (q.x) {
+      /* a line the drawing builds its own way: its parts as typed (absolute places), the value of the block not used */
+      for (const [a, L] of Object.entries(q.x)) ({ b, c, w, t })[a].push(...L);
+      return;
+    }
+    c.push(['oB' + k, 'out', 'B' + k, 2013, y - 85, '', q.B, 1], ['oA' + k, 'out', 'A' + k, 2013, y, '', q.A]);
+    b.push(
+      ...(q.nob ? [] : [['f' + mk[0], 'o:FTR', mk[0], 1640, y - 85]]),
+      ['f' + mk[2], 'o:FTR', mk[2], 1640, y]
+    );
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[1585, y], [1585, y - 85], [1986, y - 85]], 1]
+    );
+    /* words the drawing prints on a line */
+    if (q.txt) t.push(...q.txt.map(([x, dy, z]) => [x, y + dy, z]));
+  });
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [655, 1500, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA440',
+    title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
+    page: 74,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    m,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA441.js ---- */
+/* TCA441 COMM INPUT SIGNAL DIAGNOSTICS(AI)(15) (331DM09788 page 75, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Up to four analog inputs, each on one of the four lines of the sheet and drawn the same way: the AI box with its range,
+   the PI/O connection (filled triangle) and its PI/O error, one AI DIAG.MD block (left or right on the sheet) with its simulation value (SG)
+   and settings; the value goes out to connector A and, over it, to connector B (other controller, double outline); the abnormal signal to
+   connector D. The marks and block numbers follow the line: line s has FTR 020+4s (B), 021+4s (input), 022+4s (A), BTR 023+4s (D). */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    m = [],
+    w = [],
+    t = [];
+  const Y = [226, 537, 824, 1136] /* the four lines of the sheet */,
+    num = v => String(v).padStart(3, '0');
+  /* s = line (0-3), lab = [the two lines of the AI box], rng = range, card = PI/O point, tag = block tag, R = block at the right,
+     sg = SG note, par = [H/L HL, LL, DEV HL, LL], B / A / D = sheets of the connectors; where the drawing differs: y (the line),
+     mk (marks B, input, A, D), foot (block number), sgno (SG number), txt ([x, height over the line, words]), box ([left, width] of the AI box), dtp (DEV DEF TP), ma (signal under the range, "" = none: RTD), nob (no mark on the B line),
+     sim ({l: letter, x, ref: sheet, f: FTR mark}: simulation value from another sheet in place of the SG) */
+  const ROWS = [
+    {"s":0,"lab":["GEN. STATOR COIL TEMP.(B)",""],"rng":"0 -120degC","ma":"","box":[185,330],"card":5,"tag":"nTE-GEn006-2","sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":1,"lab":["GEN. STATOR COIL TEMP.(C",")"],"rng":"0 -120degC","ma":"","card":6,"tag":"nTE-GEn006-3","R":1,"sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":2,"lab":["GEN. STATOR COIL TEMP.(D",")"],"rng":"0 -120degC","ma":"","card":7,"tag":"nTE-GEn006-4","sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":3,"lab":["GEN. STATOR COIL TEMP.(E)",""],"rng":"0 -120degC","ma":"","box":[185,327],"card":8,"tag":"nTE-GEn006-5","R":1,"sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT208"],"A":["TCA530A"],"D":["TCA815"]}
+  ];
+  ROWS.forEach(q => {
+    const s = q.s,
+      k = s + 1,
+      y = q.y || Y[s],
+      mk = q.mk || [20 + 4 * s, 21 + 4 * s, 22 + 4 * s, 23 + 4 * s].map(num) /* marks: B, input, A, D */,
+      mx = q.R ? 1306 : 1043 /* left edge of the block */,
+      xr = mx + 235,
+      sx = mx - (q.R ? 128 : 170) /* middle of the SG box */,
+      M = 'm' + k;
+    /* the analog input and its PI/O error */
+    const bx = q.box || [215, 270] /* the AI box: left edge, width */,
+      rx = q.box ? bx[0] + bx[1] + 11 : 490;
+    r.push(['ai' + k, bx[0], y - 27, bx[1], 54, ''], ['pe' + k, 598, y + 30, 127, 23, 'PI/O error']);
+    t.push(
+      [bx[0] + 6, y - 6, q.lab[0]],
+      [bx[0] + 6, y + 16, q.lab[1]],
+      [bx[0] + 2, y + 43, 'AI'],
+      [rx, y - 6, q.rng],
+      ...(q.ma === '' ? [] : [[rx, y + 26, q.ma || '4 -20mA']]),
+      [606, y - 20, '(TCA970-' + q.card + ')'],
+      [614, y + 25, '(TCA970-' + q.card + ')']
+    );
+    w.push(['ai' + k, [[bx[0] + bx[1], y], [689, y]], 1], ...(q.x ? [] : [['ai' + k, [[705, y], [mx, y]]]]), ['pe' + k, [[725, y + 41], [mx - 32, y + 41], [mx - 32, y + 22], [mx, y + 22]]]);
+    g.push([697, y, 'l']);
+    if (!q.x) b.push(['f' + mk[1], 'o:FTR', mk[1], 915, y]) /* a line built its own way has no mark on the input */;
+    /* the block, its simulation value and its settings */
+    m.push([
+      M,
+      'AI DIAG.MD',
+      q.tag,
+      mx,
+      y - 30,
+      235,
+      128,
+      ['IN', 'ERR', 'SIM'],
+      ['OUT', 'ABN'],
+      q.foot || 'A' + num(2 + 5 * s),
+      [
+        [mx + 80, y + 116, '(LMA510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + q.par[0]],
+        [mx - 2, y + 209, 'LL:' + q.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + q.par[2]],
+        [mx + 157, y + 166, 'LL:' + q.par[3]],
+        [mx + 137, y + 188, 'DEF TP:' + (q.dtp || '0.03S')],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    if (q.sim) {
+      /* the simulation value comes from another sheet: connector, its sheet under it at the left, maybe an FTR mark on the line */
+      const p = q.sim;
+      c.push(['iS' + k, 'in', p.l, p.x, y + 86, '', [], ...(p.dbl ? [1] : [])]) /* dbl: from the other controller */;
+      t.push([p.x - 104, y + 118, '(' + p.ref + ')']);
+      if (p.f) b.push(['f' + p.f, 'o:FTR', p.f, p.x + 65, y + 85]);
+      w.push(['iS' + k, [[p.x + 27, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    } else {
+      b.push(['sg' + k, 'SG', q.sgno || 'B' + num(4 + 5 * s), sx, y + 97, [q.sg]]);
+      w.push(['sg' + k, [[sx + 29, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    }
+    /* the outputs: the value to A and B, the abnormal signal to D */
+    c.push(['oD' + k, 'out', 'D' + k, 2013, y + 107, '', q.D, ...(q.ddbl ? [1] : [])]) /* ddbl: D to the other controller, double line */;
+    b.push(['b' + mk[3], 'o:BTR', mk[3], 1640, y + 107]);
+    w.push([M + '.ABN', [[xr, y + 44], [1597, y + 44], [1597, y + 107], [1986, y + 107]]]);
+    if (q.x) {
+      /* a line the drawing builds its own way: its parts as typed (absolute places), the value of the block not used */
+      for (const [a, L] of Object.entries(q.x)) ({ b, c, w, t })[a].push(...L);
+      return;
+    }
+    c.push(['oB' + k, 'out', 'B' + k, 2013, y - 85, '', q.B, 1], ['oA' + k, 'out', 'A' + k, 2013, y, '', q.A]);
+    b.push(
+      ...(q.nob ? [] : [['f' + mk[0], 'o:FTR', mk[0], 1640, y - 85]]),
+      ['f' + mk[2], 'o:FTR', mk[2], 1640, y]
+    );
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[1585, y], [1585, y - 85], [1986, y - 85]], 1]
+    );
+    /* words the drawing prints on a line */
+    if (q.txt) t.push(...q.txt.map(([x, dy, z]) => [x, y + dy, z]));
+  });
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [655, 1500, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA441',
+    title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
+    page: 75,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    m,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA442.js ---- */
+/* TCA442 COMM INPUT SIGNAL DIAGNOSTICS(AI)(15) (331DM09788 page 76, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Up to four analog inputs, each on one of the four lines of the sheet and drawn the same way: the AI box with its range,
+   the PI/O connection (filled triangle) and its PI/O error, one AI DIAG.MD block (left or right on the sheet) with its simulation value (SG)
+   and settings; the value goes out to connector A and, over it, to connector B (other controller, double outline); the abnormal signal to
+   connector D. The marks and block numbers follow the line: line s has FTR 020+4s (B), 021+4s (input), 022+4s (A), BTR 023+4s (D). */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    m = [],
+    w = [],
+    t = [];
+  const Y = [226, 537, 824, 1136] /* the four lines of the sheet */,
+    num = v => String(v).padStart(3, '0');
+  /* s = line (0-3), lab = [the two lines of the AI box], rng = range, card = PI/O point, tag = block tag, R = block at the right,
+     sg = SG note, par = [H/L HL, LL, DEV HL, LL], B / A / D = sheets of the connectors; where the drawing differs: y (the line),
+     mk (marks B, input, A, D), foot (block number), sgno (SG number), txt ([x, height over the line, words]), box ([left, width] of the AI box), dtp (DEV DEF TP), ma (signal under the range, "" = none: RTD), nob (no mark on the B line),
+     sim ({l: letter, x, ref: sheet, f: FTR mark}: simulation value from another sheet in place of the SG) */
+  const ROWS = [
+    {"s":0,"lab":["GEN. COOLING GAS AIR","COOLER OUTLET TEMP.(A)"],"rng":"0 -200degC","ma":"","card":9,"tag":"nTE-GEn004-1","sg":"K:0.0degC","par":["204.0","-10.0","40.0","-40.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":1,"lab":["GEN. COOLING GAS AIR","COOLER OUTLET TEMP.(B)"],"rng":"0 -200degC","ma":"","card":10,"tag":"nTE-GEn004-2","R":1,"sg":"K:0.0degC","par":["204.0","-10.0","40.0","-40.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":2,"lab":["GEN. COOLING GAS AIR","COOLER OUTLET TEMP.(C)"],"rng":"0 -200degC","ma":"","card":11,"tag":"nTE-GEn004-3","sg":"K:0.0degC","par":["204.0","-10.0","40.0","-40.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":3,"lab":["GEN. COOLING GAS AIR","COOLER OUTLET TEMP.(D)"],"rng":"0 -200degC","ma":"","card":12,"tag":"nTE-GEn004-4","R":1,"sg":"K:0.0degC","par":["204.0","-10.0","40.0","-40.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]}
+  ];
+  ROWS.forEach(q => {
+    const s = q.s,
+      k = s + 1,
+      y = q.y || Y[s],
+      mk = q.mk || [20 + 4 * s, 21 + 4 * s, 22 + 4 * s, 23 + 4 * s].map(num) /* marks: B, input, A, D */,
+      mx = q.R ? 1306 : 1043 /* left edge of the block */,
+      xr = mx + 235,
+      sx = mx - (q.R ? 128 : 170) /* middle of the SG box */,
+      M = 'm' + k;
+    /* the analog input and its PI/O error */
+    const bx = q.box || [215, 270] /* the AI box: left edge, width */,
+      rx = q.box ? bx[0] + bx[1] + 11 : 490;
+    r.push(['ai' + k, bx[0], y - 27, bx[1], 54, ''], ['pe' + k, 598, y + 30, 127, 23, 'PI/O error']);
+    t.push(
+      [bx[0] + 6, y - 6, q.lab[0]],
+      [bx[0] + 6, y + 16, q.lab[1]],
+      [bx[0] + 2, y + 43, 'AI'],
+      [rx, y - 6, q.rng],
+      ...(q.ma === '' ? [] : [[rx, y + 26, q.ma || '4 -20mA']]),
+      [606, y - 20, '(TCA970-' + q.card + ')'],
+      [614, y + 25, '(TCA970-' + q.card + ')']
+    );
+    w.push(['ai' + k, [[bx[0] + bx[1], y], [689, y]], 1], ...(q.x ? [] : [['ai' + k, [[705, y], [mx, y]]]]), ['pe' + k, [[725, y + 41], [mx - 32, y + 41], [mx - 32, y + 22], [mx, y + 22]]]);
+    g.push([697, y, 'l']);
+    if (!q.x) b.push(['f' + mk[1], 'o:FTR', mk[1], 915, y]) /* a line built its own way has no mark on the input */;
+    /* the block, its simulation value and its settings */
+    m.push([
+      M,
+      'AI DIAG.MD',
+      q.tag,
+      mx,
+      y - 30,
+      235,
+      128,
+      ['IN', 'ERR', 'SIM'],
+      ['OUT', 'ABN'],
+      q.foot || 'A' + num(2 + 5 * s),
+      [
+        [mx + 80, y + 116, '(LMA510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + q.par[0]],
+        [mx - 2, y + 209, 'LL:' + q.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + q.par[2]],
+        [mx + 157, y + 166, 'LL:' + q.par[3]],
+        [mx + 137, y + 188, 'DEF TP:' + (q.dtp || '0.03S')],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    if (q.sim) {
+      /* the simulation value comes from another sheet: connector, its sheet under it at the left, maybe an FTR mark on the line */
+      const p = q.sim;
+      c.push(['iS' + k, 'in', p.l, p.x, y + 86, '', [], ...(p.dbl ? [1] : [])]) /* dbl: from the other controller */;
+      t.push([p.x - 104, y + 118, '(' + p.ref + ')']);
+      if (p.f) b.push(['f' + p.f, 'o:FTR', p.f, p.x + 65, y + 85]);
+      w.push(['iS' + k, [[p.x + 27, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    } else {
+      b.push(['sg' + k, 'SG', q.sgno || 'B' + num(4 + 5 * s), sx, y + 97, [q.sg]]);
+      w.push(['sg' + k, [[sx + 29, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    }
+    /* the outputs: the value to A and B, the abnormal signal to D */
+    c.push(['oD' + k, 'out', 'D' + k, 2013, y + 107, '', q.D, ...(q.ddbl ? [1] : [])]) /* ddbl: D to the other controller, double line */;
+    b.push(['b' + mk[3], 'o:BTR', mk[3], 1640, y + 107]);
+    w.push([M + '.ABN', [[xr, y + 44], [1597, y + 44], [1597, y + 107], [1986, y + 107]]]);
+    if (q.x) {
+      /* a line the drawing builds its own way: its parts as typed (absolute places), the value of the block not used */
+      for (const [a, L] of Object.entries(q.x)) ({ b, c, w, t })[a].push(...L);
+      return;
+    }
+    c.push(['oB' + k, 'out', 'B' + k, 2013, y - 85, '', q.B, 1], ['oA' + k, 'out', 'A' + k, 2013, y, '', q.A]);
+    b.push(
+      ...(q.nob ? [] : [['f' + mk[0], 'o:FTR', mk[0], 1640, y - 85]]),
+      ['f' + mk[2], 'o:FTR', mk[2], 1640, y]
+    );
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[1585, y], [1585, y - 85], [1986, y - 85]], 1]
+    );
+    /* words the drawing prints on a line */
+    if (q.txt) t.push(...q.txt.map(([x, dy, z]) => [x, y + dy, z]));
+  });
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [655, 1500, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA442',
+    title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
+    page: 76,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    m,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA443.js ---- */
+/* TCA443 COMM INPUT SIGNAL DIAGNOSTICS(AI)(15) (331DM09788 page 77, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Up to four analog inputs, each on one of the four lines of the sheet and drawn the same way: the AI box with its range,
+   the PI/O connection (filled triangle) and its PI/O error, one AI DIAG.MD block (left or right on the sheet) with its simulation value (SG)
+   and settings; the value goes out to connector A and, over it, to connector B (other controller, double outline); the abnormal signal to
+   connector D. The marks and block numbers follow the line: line s has FTR 020+4s (B), 021+4s (input), 022+4s (A), BTR 023+4s (D). */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    m = [],
+    w = [],
+    t = [];
+  const Y = [226, 537, 824, 1136] /* the four lines of the sheet */,
+    num = v => String(v).padStart(3, '0');
+  /* s = line (0-3), lab = [the two lines of the AI box], rng = range, card = PI/O point, tag = block tag, R = block at the right,
+     sg = SG note, par = [H/L HL, LL, DEV HL, LL], B / A / D = sheets of the connectors; where the drawing differs: y (the line),
+     mk (marks B, input, A, D), foot (block number), sgno (SG number), txt ([x, height over the line, words]), box ([left, width] of the AI box), dtp (DEV DEF TP), ma (signal under the range, "" = none: RTD), nob (no mark on the B line),
+     sim ({l: letter, x, ref: sheet, f: FTR mark}: simulation value from another sheet in place of the SG) */
+  const ROWS = [
+    {"s":0,"lab":["AC EXCITER OUTLET AIR","TEMP."],"rng":"0 -150degC","ma":"","card":13,"tag":"nTE-GEn005","sg":"K:0.0degC","par":["153.0","-7.5","30.0","-30.0"],"B":["TCT207"],"A":["TCA530A"],"D":["TCA815"]},
+    {"s":1,"lab":["GEN. STATOR COIL","TEMP.(F)"],"rng":"0 -120degC","ma":"","card":14,"tag":"nTE-GEn006-6","R":1,"sg":"K:0.0degC","par":["122.4","-6.0","24.0","-24.0"],"B":["TCT208"],"A":["TCA530A"],"D":["TCA815"]}
+  ];
+  ROWS.forEach(q => {
+    const s = q.s,
+      k = s + 1,
+      y = q.y || Y[s],
+      mk = q.mk || [20 + 4 * s, 21 + 4 * s, 22 + 4 * s, 23 + 4 * s].map(num) /* marks: B, input, A, D */,
+      mx = q.R ? 1306 : 1043 /* left edge of the block */,
+      xr = mx + 235,
+      sx = mx - (q.R ? 128 : 170) /* middle of the SG box */,
+      M = 'm' + k;
+    /* the analog input and its PI/O error */
+    const bx = q.box || [215, 270] /* the AI box: left edge, width */,
+      rx = q.box ? bx[0] + bx[1] + 11 : 490;
+    r.push(['ai' + k, bx[0], y - 27, bx[1], 54, ''], ['pe' + k, 598, y + 30, 127, 23, 'PI/O error']);
+    t.push(
+      [bx[0] + 6, y - 6, q.lab[0]],
+      [bx[0] + 6, y + 16, q.lab[1]],
+      [bx[0] + 2, y + 43, 'AI'],
+      [rx, y - 6, q.rng],
+      ...(q.ma === '' ? [] : [[rx, y + 26, q.ma || '4 -20mA']]),
+      [606, y - 20, '(TCA970-' + q.card + ')'],
+      [614, y + 25, '(TCA970-' + q.card + ')']
+    );
+    w.push(['ai' + k, [[bx[0] + bx[1], y], [689, y]], 1], ...(q.x ? [] : [['ai' + k, [[705, y], [mx, y]]]]), ['pe' + k, [[725, y + 41], [mx - 32, y + 41], [mx - 32, y + 22], [mx, y + 22]]]);
+    g.push([697, y, 'l']);
+    if (!q.x) b.push(['f' + mk[1], 'o:FTR', mk[1], 915, y]) /* a line built its own way has no mark on the input */;
+    /* the block, its simulation value and its settings */
+    m.push([
+      M,
+      'AI DIAG.MD',
+      q.tag,
+      mx,
+      y - 30,
+      235,
+      128,
+      ['IN', 'ERR', 'SIM'],
+      ['OUT', 'ABN'],
+      q.foot || 'A' + num(2 + 5 * s),
+      [
+        [mx + 80, y + 116, '(LMA510)'],
+        [mx - 23, y + 145, 'DEF N:3'],
+        [mx - 2, y + 166, 'K:1'],
+        [mx - 24, y + 188, 'H/L HL:' + q.par[0]],
+        [mx - 2, y + 209, 'LL:' + q.par[1]],
+        [mx - 24, y + 230, 'DEF TP:0.18S'],
+        [mx + 137, y + 145, 'DEV HL:' + q.par[2]],
+        [mx + 157, y + 166, 'LL:' + q.par[3]],
+        [mx + 137, y + 188, 'DEF TP:' + (q.dtp || '0.03S')],
+        [mx + 137, y + 209, 'DEF N:3'],
+        [mx + 157, y + 230, 'K:1']
+      ],
+      [[y + 5, y + 27, y + 49], [y + 5, y + 49]]
+    ]);
+    if (q.sim) {
+      /* the simulation value comes from another sheet: connector, its sheet under it at the left, maybe an FTR mark on the line */
+      const p = q.sim;
+      c.push(['iS' + k, 'in', p.l, p.x, y + 86, '', [], ...(p.dbl ? [1] : [])]) /* dbl: from the other controller */;
+      t.push([p.x - 104, y + 118, '(' + p.ref + ')']);
+      if (p.f) b.push(['f' + p.f, 'o:FTR', p.f, p.x + 65, y + 85]);
+      w.push(['iS' + k, [[p.x + 27, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    } else {
+      b.push(['sg' + k, 'SG', q.sgno || 'B' + num(4 + 5 * s), sx, y + 97, [q.sg]]);
+      w.push(['sg' + k, [[sx + 29, y + 85], [mx - 22, y + 85], [mx - 22, y + 44], [mx, y + 44]], 1]);
+    }
+    /* the outputs: the value to A and B, the abnormal signal to D */
+    c.push(['oD' + k, 'out', 'D' + k, 2013, y + 107, '', q.D, ...(q.ddbl ? [1] : [])]) /* ddbl: D to the other controller, double line */;
+    b.push(['b' + mk[3], 'o:BTR', mk[3], 1640, y + 107]);
+    w.push([M + '.ABN', [[xr, y + 44], [1597, y + 44], [1597, y + 107], [1986, y + 107]]]);
+    if (q.x) {
+      /* a line the drawing builds its own way: its parts as typed (absolute places), the value of the block not used */
+      for (const [a, L] of Object.entries(q.x)) ({ b, c, w, t })[a].push(...L);
+      return;
+    }
+    c.push(['oB' + k, 'out', 'B' + k, 2013, y - 85, '', q.B, 1], ['oA' + k, 'out', 'A' + k, 2013, y, '', q.A]);
+    b.push(
+      ...(q.nob ? [] : [['f' + mk[0], 'o:FTR', mk[0], 1640, y - 85]]),
+      ['f' + mk[2], 'o:FTR', mk[2], 1640, y]
+    );
+    w.push(
+      [M + '.OUT', [[xr, y], [1986, y]], 1],
+      [M + '.OUT', [[1585, y], [1585, y - 85], [1986, y - 85]], 1]
+    );
+    /* words the drawing prints on a line */
+    if (q.txt) t.push(...q.txt.map(([x, dy, z]) => [x, y + dy, z]));
+  });
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [655, 1500, 'TRIGGER  :'], [655, 1527, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA443',
+    title: 'COMM INPUT SIGNAL DIAGNOSTICS(AI)(15)',
+    page: 77,
     ctl: 'COMM+MD',
     cycle: 100,
     f: [180, 88, 2232, 1552],
@@ -216274,6 +218090,134 @@ const TCS_DESC = {
       [1378.7, 173.3],
       [1706.7, P(4)]
     ],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA755.js ---- */
+/* TCA755 THERMAL STRESS(IP) (331DM09788 page 185, controller COMM+MD, trigger Trigger-of_LOGIC_2, cycle 60 s). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - The THSC INITIAL block A015 (LMA626 / LMA626A): INT1-INT3 = INIT1(LOADING), INIT2(HALF SPEED), INIT3(OTHERS) (D1-D3 of TCA751);
+     T1IN-T5IN = the IP stage temperatures TI(1)N-TI(5)N (TCA757 / TCA756, the second one printed TH(2)N); out T1-T5 as TI(1)-TI(5)
+     and TS as TS_I.
+   - MTIN / MTOUT: reheat bowl inner wall metal temp (A1 of TCA370) and A3 of TCA356, through ASW 013 / 014 switched by THSC SIMULATION
+     to SIM IP INNER / OUTER WALL MET TEMP (B1 / B2 of TCA770).
+   The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const WT = (key, ...pts) => w.push([key, pts, 1]);
+  const F = [174, 85, 2229, 1549],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1089.3,
+    MW = 404,
+    MR = MX + MW,
+    TOP = 400,
+    H = 701.7,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 20,
+    HW = 28.76,
+    AX = 818;
+  /* INIT1-3 */
+  W('iD1', [302, 183], [948, 183], [948, P(0)], [MX, P(0)]);
+  W('iD2', [302, 258.7], [895.3, 258.7], [895.3, P(1)], [MX, P(1)]);
+  W('iD3', [302, 333.3], [841.3, 333.3], [841.3, P(2)], [MX, P(2)]);
+  /* stage temperatures in and out */
+  [1, 2, 3, 4, 5].forEach(n => WT('iT' + n, [311.7, P(2 + 2 * n)], [MX, P(2 + 2 * n)]));
+  [
+    [4, 'T1'],
+    [6, 'T2'],
+    [8, 'T3'],
+    [10, 'T4'],
+    [12, 'T5'],
+    [15, 'TS']
+  ].forEach(([i, n]) => WT('thsc.' + n, [MR, P(i)], [2065.3 - 27, P(i)]));
+  /* metal temperatures, real or simulated */
+  W('kSim', [633, 878.7], [AX, 878.7], [AX, P(15) + 11 - 21.5]);
+  W('kSim', [680, 878.7], [680, 990.7], [AX, 990.7], [AX, P(18) + 11 - 21.5]);
+  WT('iA1', [311.7, P(15) + 22], [AX - HW, P(15) + 22]);
+  WT('iB1', [311.7, 1118.7], [733.3, 1118.7], [733.3, P(15)], [AX - HW, P(15)]);
+  WT('iA3', [311.7, P(18) + 22], [AX - HW, P(18) + 22]);
+  WT('iB2', [311.7, 1202.7], [753.3, 1202.7], [753.3, P(18)], [AX - HW, P(18)]);
+  WT('asw013', [AX + HW, P(15)], [MX, P(15)]);
+  WT('asw014', [AX + HW, P(18)], [MX, P(18)]);
+  t.push(
+    [308, 181, 'INIT1(LOADING)'],
+    [308, 257, 'INIT2(HALF SPEED)'],
+    [308, 331, 'INIT3(OTHERS)'],
+    ...['TI(1)N', 'TH(2)N', 'TI(3)N', 'TI(4)N', 'TI(5)N'].map((s, i) => [318, P(4 + 2 * i) - 2, s]),
+    ...[1, 2, 3, 4, 5].map(n => [1687, P(2 + 2 * n) - 2, 'TI(' + n + ')']),
+    [1685, P(15) - 2, 'TS_I'],
+    [565, 913, '(TCA102)', 1],
+    [318, 924, 'REHEAT BOWL INNER'],
+    [318, 945, 'WALL METAL TEMP.'],
+    [318, 1115, 'SIM IP INNER WALL MET TEMP'],
+    [318, 1200, 'SIM IP OUTER WALL MET TEMP'],
+    [1225, 1126, '(LMA626)', 1],
+    [1345, 1126, '(LMA626A)', 1],
+    ...['T:60.0s', 'K:0.5', 'T:60.0s', 'T:60.0s', 'K:0.9', 'T:60.0s', 'K:0.7', 'T:60.0s', 'K:0.5', 'T:60.0s'].map((s, i) => [
+      1091,
+      Math.round(1149 + 21.33 * i),
+      s
+    ]),
+    ...['K:0.3', 'T:60.0s', 'K:0.1'].map((s, i) => [1291, Math.round(1149 + 21.33 * i), s]),
+    [242, 1530, 'CONTROLLER:'],
+    [403, 1530, 'COMM+MD'],
+    [627, 1512, 'TRIGGER  :Trigger-of_LOGIC_2'],
+    [627, 1538, 'CYCLE(s):60']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA755',
+    title: 'THERMAL STRESS(IP)',
+    page: 185,
+    ctl: 'COMM+MD',
+    cycle: 60000,
+    f: F,
+    k: [['kSim', 400, 878.7, 'THSC SIMULATION', 'ref']],
+    c: [
+      ['iD1', 'in', 'D1', 275, 183, '', ['TCA751'], 0, 1],
+      ['iD2', 'in', 'D2', 275, 258.7, '', ['TCA751'], 0, 1],
+      ['iD3', 'in', 'D3', 275, 333.3, '', ['TCA751'], 0, 1],
+      ['iT1', 'in', '1', 284.7, P(4), '', ['TCA757'], 0, 1],
+      ['iT2', 'in', '2', 284.7, P(6), '', ['TCA757'], 0, 1],
+      ['iT3', 'in', '3', 284.7, P(8), '', ['TCA756'], 0, 1],
+      ['iT4', 'in', '4', 284.7, P(10), '', ['TCA756'], 0, 1],
+      ['iT5', 'in', '5', 284.7, P(12), '', ['TCA756'], 0, 1],
+      ['iA1', 'in', 'A1', 284.7, P(15) + 22, '', ['TCA370'], 0, 1],
+      ['iA3', 'in', 'A3', 284.7, P(18) + 22, '', ['TCA356'], 0, 1],
+      ['iB1', 'in', 'B1', 284.7, 1118.7, '', ['TCA770'], 0, 1],
+      ['iB2', 'in', 'B2', 284.7, 1202.7, '', ['TCA770'], 0, 1],
+      ['o1', 'out', '1', 2065.3, P(4), '', ['TCA757'], 0, 1],
+      ['o2', 'out', '2', 2065.3, P(6), '', ['TCA756', 'TCA757'], 0, 4],
+      ['o3', 'out', '3', 2065.3, P(8), '', ['TCA756'], 0, 1],
+      ['o4', 'out', '4', 2065.3, P(10), '', ['TCA756'], 0, 1],
+      ['o5', 'out', '5', 2065.3, P(12), '', ['TCA756'], 0, 1],
+      ['oS', 'out', 'S', 2065.3, P(15), '', ['TCA757', 'TCA758'], 0, 4]
+    ],
+    m: [
+      [
+        'thsc',
+        'THSC INITIAL',
+        '',
+        MX,
+        TOP,
+        MW,
+        H,
+        ['INT1', 'INT2', 'INT3', '', 'T1IN', '', 'T2IN', '', 'T3IN', '', 'T4IN', '', 'T5IN', '', '', 'MTIN', '', '', 'MTOUT', ''],
+        ['', '', '', '', 'T1', '', 'T2', '', 'T3', '', 'T4', '', 'T5', '', '', 'TS', '', '', '', ''],
+        'A015',
+        []
+      ]
+    ],
+    b: [
+      ['asw013', 'ASW', '013', AX, P(15) + 11],
+      ['asw014', 'ASW', '014', AX, P(18) + 11]
+    ],
+    w,
+    j: [[680, 878.7]],
     t
   });
 })();
@@ -320675,7 +322619,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 3a9df85'));
+    row('Version', E('span', 'scsver', ver + ' · build 527f33c'));
   }
   function openSet(near) {
     if (!set) {
