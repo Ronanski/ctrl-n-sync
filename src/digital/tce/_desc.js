@@ -531,5 +531,7 @@ const TCS_DESC = {
   TCA700:
     'Oil purifier pump (TB-15) motor: held at OFF(0) for auto start, auto stop and trip; electrical trouble and running in; the start command out through an FFR set by STS and reset by OUT.',
   TCA711:
-    'No.2 extraction steam non-return valve (TC-41) air operated valve: test set / reset with feedback, open / close by the No.1 HP heater level high, opened / closed positions in; energize command, positions and abnormal lamp out.'
+    'No.2 extraction steam non-return valve (TC-41) air operated valve: test set / reset with feedback, open / close by the No.1 HP heater level high, opened / closed positions in; energize command, positions and abnormal lamp out.',
+  TCA712:
+    'No.3 extraction steam primary non-return valve (TC-42) air operated valve: test set / reset with feedback, open / close by the deaerator storage tank level very high, opened / closed positions in; positions and abnormal lamp out.'
 };
