@@ -6007,6 +6007,32 @@ const TCS_DESC = {
     'Turbine gland seal related auxiliaries in AUTO: gland steam exhauster and steam seal feed inlet valve in AUTO; first stage and reheat bowl metal temperature checks.',
   TCA040:
     'Digital input (1): MSV, CV and CRV secondary drain valve open / closed / trouble and torque switches to their valve sheets; AC exciter earth fault, auto start ready and control local to the operator station; DI power supply normal.',
+  TCA041:
+    'Digital input (2): steam seal diverting valve positions, No.4 extraction non-return valve positions, LP heater levels, generator field earth fault, AVR in use / troubles to the operator station, secondary drain valve torque switches; DI power supply normal.',
+  TCA042:
+    'Digital input (3): MSV(B), CV(B) and CRV(B) secondary drain valve opened / closed / trouble and torque switches, gland steam line drain valve closed, primary and back-up AVR trouble and PSS on; DI power supply normal.',
+  TCA043:
+    'Digital input (4): No.2 and No.5 extraction non-return valve positions, No.1 HP and No.2 LP heater levels, HP/LP bypass control in auto, oil purifier pump, MSV(B), CV(B) and CRV(B) drain valve torque switches; DI power supply normal.',
+  TCA044:
+    'Digital input (5): CV(B) secondary warming drain valve positions, trouble and torque switches, HP turbine warming valve positions and torque switches, cold reheat drain valve feedback to the operator station; DI power supply normal.',
+  TCA045:
+    'Digital input (6): No.3 extraction primary non-return valve positions, deaerator level very high, duplex oil filter dP, generator panel and transformer protection, generator voltage OK, 52L close / open, ASD1 and AVR mode and channel to the operator station; DI power supply normal.',
+  TCA046:
+    'Digital input (7): AVR set point max / min, over and under excitation limit, PF and reactive power control, AVR VT fuse normal to the operator station; DI power supply normal.',
+  TCA047:
+    'Digital input (8): No.3 extraction non-return valve positions, HP turbine warming line drain valve auto / open / close (to the operator station), warming valve trouble, main oil tank vapour extractor running and trouble; DI power supply normal.',
+  TCA048:
+    'Digital input (9): No.1 / No.3 shaft vibration high, LP exhaust hood spray and cold reheat non-return valve positions, generator leakage level, coalescer filter dP, supervisory instrument trouble, condenser vacuum break, gland steam exhauster; DI power supply normal.',
+  TCA049:
+    'Digital input (10): No.1 / No.3 shaft vibration high, RSR diode fault, steam seal feed and inlet valve positions, trouble and torque switches, generator protection relay and 30DF/64F relay troubles; DI power supply normal.',
+  TCA050:
+    'Digital input (11): No.2 / No.4 shaft vibration high, 86G-A relay coil open and protection relay (A) trouble to the operator station, main oil tank level low, control oil filter (A) dP, generator and exciter space heaters; DI power supply normal.',
+  TCA051:
+    'Digital input (12): No.2 / No.4 shaft vibration high, 86G-B relay coil open and protection relay (B) trouble, main oil tank level high, control oil filter (B) dP, gland steam line drain valve, unit transformer protection, all to the operator station; DI power supply normal.',
+  TCA052:
+    'Digital input (13): trip PCM A / B / C normal, TCS-8 temperature high, Modbus CPU A / B normal and power supply abnormal; DI power supply normal.',
+  TCA053:
+    'Digital input (14): AC / DC control, lighting and protection power supplies abnormal, TCS-4 / TCS-5 temperature high, EOS operated A / B / C, PLU operated A / B / C; DI power supply normal.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -6396,7 +6422,9 @@ const TCS_DESC = {
   TCA715:
     'No.5 extraction steam non-return valve (TC-45) air operated valve: test set / reset with feedback, open / close by the No.2 LP heater level very high, opened / closed positions in; positions and abnormal lamp out.',
   TCA729:
-    'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.'
+    'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.',
+  TCA738:
+    'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -24063,6 +24091,1176 @@ const TCS_DESC = {
     id: 'TCA040',
     title: 'COMM DIGITAL INPUT(1)',
     page: 20,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA041 COMM DIGITAL INPUT(2) (331DM09788 page 21, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["STEAM SEAL DIVERTING VALVE","CONDENSER SIDE"],["TCA605"],["TCT081A"]],
+    [["STEAM SEAL DIVERTING VALVE","HEATER SIDE"],["TCA605"],["TCT081A"]],
+    [["NO.1 LP HEATER LEVEL","VERY HIGH"],["TCA605"],["-"]],
+    [["SPARE",""],["-"],["-"]],
+    [["NO.4 EXTRACTION STEAM NON","RETURN VALVE FULL CLOSE POSITION"],["TCA713"],["TCT081B"]],
+    [["NO.4 EXTRACTION STEAM NON","RETURN VALVE FULL OPEN POSITION"],["TCA713"],["TCT081B"]],
+    [["NO.3 LP HEATER LEVEL","HIGH HIGH"],["TCA713"],["-"]],
+    [["GEN. FIELD EARTH FAULT",""],["TCA826"],["-"]],
+    [["AVR IN USE",""],["-"],["-"],1],
+    [["AVR MAJOR TROUBLE",""],["-"],["-"],1],
+    [["AVR MINOR TROUBLE",""],["TCA542"],["-"],1],
+    [["(SPARE)",""],["-"],["-"]],
+    [["MSV(A) ABV SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA610"],["-"]],
+    [["CRV(A) BELOW SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA625"],["-"]],
+    [["CV(A) ABV SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA615"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 233 : 228) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA900-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA041_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA041_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA041_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA900-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA041',
+    title: 'COMM DIGITAL INPUT(2)',
+    page: 21,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA042 COMM DIGITAL INPUT(3) (331DM09788 page 22, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["MSV (B) ABOVE SEAT SECONDARY","DRAIN VALVE OPENED"],["TCA611"],["-"]],
+    [["MSV (B) ABOVE SEAT SECONDARY","DRAIN VALVE CLOSED"],["TCA611"],["-"]],
+    [["MSV (B) ABOVE SEAT SECONDARY","DRAIN VALVE ELECTRICAL TROUBLE"],["TCA611"],["-"]],
+    [["CV (B) ABOVE SEAT SECONDARY","DRAIN VALVE OPENED"],["TCA616"],["-"]],
+    [["CV (B) ABOVE SEAT SECONDARY","DRAIN VALVE CLOSED"],["TCA616"],["-"]],
+    [["CV (B) ABOVE SEAT SECONDARY","DRAIN VALVE ELECTRICAL TROUBLE"],["TCA616"],["-"]],
+    [["CRV (B) BELOW SEAT SECONDARY","DRAIN VALVE OPENED"],["TCA626"],["-"]],
+    [["CRV (B) BELOW SEAT SECONDARY","DRAIN VALVE CLOSED"],["TCA626"],["-"]],
+    [["CRV (B) BELOW SEAT SECONDARY","DRAIN VALVE ELECTRICAL TROUBLE"],["TCA626"],["-"]],
+    [["TURBINE GLAND STEAM LINE","DRAIN VALVE CLOSED"],["TCA637"],["-"],1],
+    [["BACK UP AVR TROUBLE",""],["-"],["-"],1],
+    [["PRIMARY AVR TROUBLE",""],["-"],["-"],1],
+    [["PSS ON",""],["TCA745"],["-"],1],
+    [["CV(B) ABV SEC DRAIN VALVE","TORQUE SW OPEN"],["TCA616"],["-"]],
+    [["CRV(B) BELOW SEC DRAIN VALVE","TORQUE SW OPEN"],["TCA626"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 236 : 230) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA901-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA042_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA042_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA042_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA901-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA042',
+    title: 'COMM DIGITAL INPUT(3)',
+    page: 22,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA043 COMM DIGITAL INPUT(4) (331DM09788 page 23, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.2 EXTRACTION STEAM NON","RETURN VALVE FULL CLOSE POSITION"],["TCA711"],["TCT081A"]],
+    [["NO.2 EXTRACTION STEAM NON","RETURN VALVE FULL OPEN POSITION"],["TCA711"],["TCT081A"]],
+    [["NO.1 HP HEATER LEVEL","VERY HIGH"],["TCA711"],["-"]],
+    [["NO.5 EXTRACTION STEAM NON","RETURN VALVE FULL CLOSE POSITION"],["TCA715"],["TCT081B"]],
+    [["NO.5 EXTRACTION STEAM NON","RETURN VALVE FULL OPEN POSITION"],["TCA715"],["TCT081B"]],
+    [["NO.2 LP HEATER LEVEL","HIGH HIGH"],["TCA715"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["HP/LP BYPASS CONTROL IN","AUTO"],["TCA532"],["-"]],
+    [["OIL PURIFIER PUMP RUNNIN","G"],["TCA700"],["-"]],
+    [["OIL PURIFIER PUMP MOTOR","ELECTRICAL TROUBLE"],["TCA700"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["MSV(B) ABV SEC DRAIN VALVE","TORQUE SW OPEN"],["TCA611"],["-"]],
+    [["MSV(B) ABV SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA611"],["-"]],
+    [["CV(B) BELOW SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA616"],["-"]],
+    [["CRV(B) BELOW SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA626"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 229) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA901-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA043_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA043_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA043_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA901-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA043',
+    title: 'COMM DIGITAL INPUT(4)',
+    page: 23,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA044 COMM DIGITAL INPUT(5) (331DM09788 page 24, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["CV (B) BELOW SEAT SECONDARY","WARMING DRAIN VALVE OPENED"],["TCA618"],["-"]],
+    [["CV (B) BELOW SEAT SECONDARY","WARMING DRAIN VALVE CLOSED"],["TCA618"],["-"]],
+    [["CV (B) BEL SEAT SEC.WARMING","DRAIN VALVE ELEC. TROUBLE"],["TCA618"],["-"]],
+    [["HP TURBINE WARMING VALVE","FULL CLOSE POSITION"],["TCA685"],["-"]],
+    [["HP TURBINE WARMING VALVE","FULL OPEN POSITION"],["TCA685"],["-"]],
+    [["COLD REHEAT DRAIN VALVE","CLOSE FEED BACK"],["-"],["-"],205],
+    [["COLD REHEAT DRAIN VALVE","FULL OPEN FEED BACK"],["-"],["-"],205],
+    [["(SPARE)",""],["-"],["-"],205],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["CV(B) BEL SEC WARMING DRAIN","VALVE TORQUE SW OPEN"],["TCA618"],["-"]],
+    [["CV(B) BEL SEC WARMING DRAIN","VALVE TORQUE SW CLOSE"],["TCA618"],["-"]],
+    [["HP TURBINE WARMING VALVE","TORQUE SW OPEN"],["TCA685"],["-"]],
+    [["HP TURBINE WARMING VALVE","TORQUE SW CLOSE"],["TCA685"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 232 : 227) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA902-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA044_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA044_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA044_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA902-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA044',
+    title: 'COMM DIGITAL INPUT(5)',
+    page: 24,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA045 COMM DIGITAL INPUT(6) (331DM09788 page 25, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.3 EXTRACTION STEAM PRIMARY","NON RETURN VLV FULL CLOSE POS"],["TCA712"],["TCT081A"]],
+    [["NO.3 EXTRACTION STEAM PRIMARY","NON RETURN VLV FULL OPEN POS"],["TCA712"],["TCT081B"]],
+    [["DEAERATOR STORAGE TANK","LEVEL VERY HIGH"],["TCA712","TCA714"],["-"]],
+    [["DUPLEX OIL FILTER","DIFF. PRESS."],["-"],["TCT081"],1],
+    [["GEN CONTROL PANEL TROUBL","E"],["-"],["-"],1],
+    [["GEN TRANSF. PROTECTION","OPERATED"],["-"],["-"],1],
+    [["GEN VOLTAGE OK",""],["TCA543","TCA826"],["-"]],
+    [["52L CLOSE",""],["TCA562"],["-"]],
+    [["52L OPEN",""],["-"],["-"]],
+    [["ASD1 IN USE",""],["TCA533"],["-"]],
+    [["AVR FAILURE TO BACKUP","STATUS"],["-"],["-"],1],
+    [["AVR IN AUTO",""],["TCA533","TCA587"],["-"],1],
+    [["AVR IN MANUAL",""],["TCA587"],["-"],1],
+    [["AVR CHANNEL1 SELECT",""],["-"],["-"],1],
+    [["AVR CHANNEL2 SELECT",""],["-"],["-"],1],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 229) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA902-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA045_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA045_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA045_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA902-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA045',
+    title: 'COMM DIGITAL INPUT(6)',
+    page: 25,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA046 COMM DIGITAL INPUT(7) (331DM09788 page 26, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["SET POINT MAX",""],["-"],["-"],1],
+    [["SET POINT MIN",""],["-"],["-"],1],
+    [["OVER EXCITATION LIMIT",""],["-"],["-"],1],
+    [["UNDER EXCITATION LIMIT",""],["-"],["-"],1],
+    [["PF CONTROL ON",""],["TCA745"],["-"],1],
+    [["REACTIVE POWER ON",""],["TCA745"],["-"],1],
+    [["AVR VT FUSE NORMAL",""],["-"],["-"],1,"018"],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["PSNORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 232 : 226) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA903-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA046_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA046_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA046_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA903-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA046',
+    title: 'COMM DIGITAL INPUT(7)',
+    page: 26,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA047 COMM DIGITAL INPUT(8) (331DM09788 page 27, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.3 EXTRACTION STEAM SEC","NON RETURN VALVE FULL CLOSE POS"],["TCA714"],["TCT081B"]],
+    [["NO.3 EXTRACTION STEAM SEC","NON RETURN VALVE FULL OPEN POS"],["TCA714"],["TCT081B"]],
+    [["HP TURBINE WARMING LINE DRAIN","VALVE AUTO SELECTED"],["TCA631"],["-"],200],
+    [["HP TURBINE WARMING LINE DRAIN","VALVE OPEN FEED BACK"],["TCA632"],["-"],205],
+    [["HP TURBINE WARMING LINE DRAIN","VALVE CLOSE FEED BACK"],["TCA632"],["-"],205],
+    [["HP TURBINE WARMING VALVE","ELECTRICAL TROUBLE"],["TCA685"],["-"]],
+    [["MAIN OIL TANK VAPOUR","EXTRACTOR RUNNING"],["TCA655"],["-"]],
+    [["MAIN OIL TANK VAPOUR","EXTRACTOR ELEC. TROUBLE"],["TCA655"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 229) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA903-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA047_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA047_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA047_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA903-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA047',
+    title: 'COMM DIGITAL INPUT(8)',
+    page: 27,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA048 COMM DIGITAL INPUT(9) (331DM09788 page 28, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.1 TURBINE SHAFT","VIBRATION (X) HIGH"],["TCA537"],["-"]],
+    [["NO.3 GEN. SHAFT","VIBRATION (Y) HIGH"],["TCA537"],["-"]],
+    [["LP EXHAUST HOOD WATER SPRAY","VALVE FULL CLOSE POSITION"],["TCA738"],["TCT081A"]],
+    [["LP EXHAUST HOOD WATER SPRAY","VALVE FULL OPEN POSITION"],["TCA738"],["TCT081A"]],
+    [["COLD REHEAT NON RETURN VALVE","FULL CLOSE POSITION"],["TCA690"],["TCT081A"]],
+    [["COLD REHEAT NON RETURN VALVE","FULL OPEN POSITION"],["TCA690"],["TCT081A"]],
+    [["GEN. WATER AND OIL LEAKAGE","LEVEL HIGH"],["TCA530A"],["TCT081"]],
+    [["LUBE OIL CONDITIONER COALESCER","FILTER DIFF. PRESS. HIGH"],["-"],["TCT081"],180],
+    [["TURBINE SUPERVISORY","INSTRUMENT TROUBLE"],["TCA542"],["-"]],
+    [["CONDENSER VACUUM BREAK","COMPLETE"],["TCA636","TCA638"],["-"],180],
+    [["GLAND STEAM EXHAUSTER","ELECTRICAL TROUBLE"],["TCA680"],["-"]],
+    [["GLAND STEAM EXHAUSTER","RUNNING"],["TCA680"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 232 : 228) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA904-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA048_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA048_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA048_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA904-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA048',
+    title: 'COMM DIGITAL INPUT(9)',
+    page: 28,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA049 COMM DIGITAL INPUT(10) (331DM09788 page 29, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.1 TURBINE SHAFT","VIBRATION (Y) HIGH"],["TCA537"],["-"]],
+    [["NO.3 GEN. SHAFT","VIBRATION (X) HIGH"],["TCA537"],["-"]],
+    [["RSR DIODE FAULT",""],["TCA826"],["-"]],
+    [["STEAM SEAL FEED VALVE","FULL CLOSE POSITION"],["-"],["TCT081A"]],
+    [["STEAM SEAL FEED INLET VALVE","FULL CLOSE POSITION"],["TCA650"],["-"]],
+    [["STEAM SEAL FEED INLET VALVE","FULL OPEN POSITION"],["TCA650"],["-"]],
+    [["STEAM SEAL FEED INLET VALVE","ELECTRICAL TROUBLE"],["TCA650"],["-"]],
+    [["SSFV BYPASS VALVE FULL","CLOSE POSITION"],["TCA605"],["TCT081A"]],
+    [["BOTH GEN PROTECTION RELAY","TROUBLE"],["-"],["-"],"top"],
+    [["30DF/64F RELAY TROUBLE",""],["TCA826"],["-"]],
+    [["30DF/64F LOSS OF","CONTROL POWER"],["TCA826"],["-"]],
+    [["STEAM SEAL FEED INLET VALVE","TORQUE SW OPEN"],["TCA650"],["-"]],
+    [["STEAM SEAL FEED INLET VALVE","TORQUE SW CLOSE"],["TCA650"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 228 : 226) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA904-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA049_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA049_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA049_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA904-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA049',
+    title: 'COMM DIGITAL INPUT(10)',
+    page: 29,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA050 COMM DIGITAL INPUT(11) (331DM09788 page 30, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.2 TURBINE SHAFT","VIBRATION (X) HIGH"],["TCA537"],["-"]],
+    [["NO.4 GEN. SHAFT","VIBRATION (Y) HIGH"],["TCA537"],["-"]],
+    [["86G-A RELAY COIL OPEN",""],["-"],["-"],1],
+    [["GEN PROTECTION RELAY (A)","TROUBLE"],["-"],["-"],1],
+    [["MAIN OIL TANK LEVEL LOW",""],["TCA542"],["TCT081"]],
+    [["CONTROL OIL LINE FILTER (A)","DIFF. PRESS. HIGH"],["-"],["TCT081"],"b"],
+    [["SPACE HEATER RUNNING (GEN)",""],["TCA729"],["-"]],
+    [["SPACE HEATER RUNNING","(AC EXCITER)"],["TCA729"],["-"]],
+    [["SPACE HEATER FOR AC EXCITER","ELECTRICAL TROUBLE"],["TCA729"],["-"]],
+    [["SPACE HEATER FOR GEN.","ELECTRICAL TROUBLE"],["TCA729"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 228) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA905-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA050_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA050_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA050_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA905-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA050',
+    title: 'COMM DIGITAL INPUT(11)',
+    page: 30,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA051 COMM DIGITAL INPUT(12) (331DM09788 page 31, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.2 TURBINE SHAFT","VIBRATION (Y) HIGH"],["TCA537"],["-"]],
+    [["NO.4 GEN. SHAFT","VIBRATION (X) HIGH"],["TCA537"],["-"]],
+    [["86G-B RELAY COIL OPEN",""],["-"],["-"],180],
+    [["GEN PROTECTION RELAY (B)","TROUBLE"],["-"],["-"],195],
+    [["MAIN OIL TANK LEVEL HIGH",""],["TCA542"],["TCT081"]],
+    [["CONTROL OIL LINE FILTER (B)","DIFF. PRESS. HIGH"],["-"],["TCT081"],"b"],
+    [["TURBINE GLAND STEAM LINE","DRAIN VALVE FULL OPENED"],["TCA637"],["-"],195],
+    [["TURBINE GLAND STEAM LINE","DRAIN VALVE AUTO"],["TCA639"],["-"],195],
+    [["UNIT TRANSF. PROTECTION","OPERATED"],["-"],["-"],1],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 228 : 225) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA905-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA051_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA051_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA051_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA905-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA051',
+    title: 'COMM DIGITAL INPUT(12)',
+    page: 31,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA052 COMM DIGITAL INPUT(13) (331DM09788 page 32, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["TRIP PCM (A) NORMAL",""],["TCA820"],["TCE472"]],
+    [["TRIP PCM (B) NORMAL",""],["TCA820"],["TCE472"]],
+    [["TRIP PCM (C) NORMAL",""],["TCA820"],["TCE472"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["TCS-8 TEMP HIGH",""],["TCA818"],["-"]],
+    [["MODBUS CPU(A) NORMAL",""],["TCA820"],["-"],0,0,14],
+    [["MODBUS CPU(B) NORMAL",""],["TCA820"],["-"],0,0,15],
+    [["MODBUS P.S(A) ABNORMAL","(DC)"],["TCA820"],["-"],0,0,13],
+    [["MODBUS P.S(B) ABNORMAL","(AC)"],["TCA820"],["-"],0,0,12],
+    [["PS NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 228) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA906-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA052_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA052_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA052_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA906-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800A"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA052',
+    title: 'COMM DIGITAL INPUT(13)',
+    page: 32,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+/* TCA053 COMM DIGITAL INPUT(14) (331DM09788 page 33, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["(SPARE)",""],["-"],["-"]],
+    [["AC CONTROL P.S. ABNORMAL",""],["TCA821"],["-"]],
+    [["DC CONTROL P.S. ABNORMAL",""],["TCA821"],["-"]],
+    [["LIGHTING&SPACE HEATER","P.S.ABNORMAL"],["TCA821"],["-"]],
+    [["AC PROTECTION P.S.","ABNORMAL"],["TCA821"],["-"]],
+    [["DC PROTECTION P.S.(2)","ABNORMAL"],["TCA821"],["-"]],
+    [["DC PROTECTION P.S.(1)","ABNORMAL"],["TCA821"],["-"]],
+    [["TCS-4 TEMP HIGH",""],["TCA818"],["-"]],
+    [["TCS-5 TEMP.HIGH",""],["TCA818"],["-"]],
+    [["EOS OPERATED(A)",""],["TCA781"],["-"]],
+    [["EOS OPERATED(B)",""],["TCA781"],["-"]],
+    [["EOS OPERATED(C)",""],["TCA781"],["-"]],
+    [["PLU OPERATED (A)",""],["TCA780"],["-"]],
+    [["PLU OPERATED (B)",""],["TCA780"],["-"]],
+    [["PLU OPERATED (C)",""],["TCA780"],["-"]],
+    [["PS NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 230 : 226) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA906-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA053_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA053_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA053_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA906-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800A"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA053',
+    title: 'COMM DIGITAL INPUT(14)',
+    page: 33,
     ctl: 'COMM+MD',
     cycle: 100,
     f: [180, 88, 2232, 1552],
@@ -50506,6 +51704,202 @@ const TCS_DESC = {
       [828, 300],
       [1098, 442],
       [1091, 963]
+    ],
+    t
+  });
+})();
+/* TCA738 LP EXHAUST HOOD WATER SPLAY VALVE (TC-35) (331DM09788 page 177, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. The air operated valve nFV-CDn904 (AIR OPERAT VALVE A021, LMA593), gate by gate
+   as drawn:
+   - FFP = ON(1). A 023 = AVEIRABLE and the AUTO push button, into S of FFR 024. A 026 = AVEIRABLE and MANUAL, into OR 039; A 040 =
+     AVEIRABLE and OPEN is the other input of OR 039, into R of FFR 024. The FFR output = the AUTO lamp, NOT 036 of it = the MANUAL lamp.
+   - A 037 = the FFR output, TP 041 (3.0 s, INITIAL on its top) of GLAND STEAM EXHAUSTERRUNNING (B1 of TCA680) and CPL 042 (22.5 MW) of
+     GEN LOAD (A1 of TCE070). OR 048 of A 040 and A 037 goes to SVE, and through NOT 045, TP 049 (1.0 s, INITIAL on its top) and A 047
+     with the FFR output to SVD. A 027 = AVEIRABLE and the RESET push button, to RESET. Valve opened / closed (A4 / A3 of TCA048) to
+     LTOP / LTCL.
+   - SVE out (A1 to TCA835), LTOP out (A2 to TCA826), LTCL out (A3 to TCA826); ABN = the valve abnormal lamp.
+   The words are the ones of the drawing (AVEIRABLE, SPLAY, EXHAUSTERRUNNING, OPERAT as printed). The tag keeps the small n of the
+   drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [174, 84, 2228, 1545],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1306,
+    MR = 1712,
+    TOP = 251,
+    H = 383,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1),
+    R3 = P(3);
+  /* the push buttons and AVEIRABLE into the gates */
+  W('crtIys', [390, 160], [555, 160], [555, 596], [617.7, 596]);
+  W('crtIys', [555, R1], [617.7, R1]);
+  W('crtIys', [555, 415], [617.7, 415]);
+  W('crtIys', [555, 500.5], [617.7, 500.5]);
+  W('crtIka', [383, R1 + 21.5], [617.7, R1 + 21.5]);
+  W('crtIkh', [383, 436.5], [617.7, 436.5]);
+  W('crtIkr', [383, 522], [617.7, 522]);
+  W('crtJyo', [382, 617.5], [617.7, 617.5]);
+  /* auto / manual */
+  W('a023', [675.3, R1], [832, R1]);
+  W('a026', [675.3, 415], [736.2, 415]);
+  W('a040', [675.3, 596], [709.4, 596], [709.4, 223.5], [833.2, 223.5]);
+  W('a040', [709.4, 436.5], [736.2, 436.5]);
+  W('or039', [793.8, 415], [822, 415], [822, R1 + 21.5], [832, R1 + 21.5]);
+  W('ffr024', [912, R1], [970, R1]);
+  W('ffr024', [937, R1], [937, 162], [1241, 162]);
+  W('ffr024', [937, 212.5], [971, 212.5]);
+  W('ffr024', [937, R1], [937, 478.8], [1212, 478.8], [1212, R3 + 21.5], [1226.2, R3 + 21.5]);
+  W('not036', [1031, 212.5], [1241, 212.5]);
+  /* open in auto: gland steam exhauster running and gen load */
+  W('kInit', [533, 702], [1042, 702], [1042, 361.7], [1170, 361.7], [1170, R3 - 11]);
+  W('kInit', [815, 702], [815, 797.5]);
+  W('iB1', [362, 808], [785.6, 808]);
+  W('tp041', [843.8, 808], [943.8, 808], [943.8, R1 + 21.5], [970, R1 + 21.5]);
+  W('iA1', [361, 903], [785.6, 903]);
+  W('cpl042', [843.8, 903], [953, 903], [953, R1 + 43], [970, R1 + 43]);
+  W('a037', [1030, R1], [1042, R1], [1042, 276.7], [808.3, 276.7], [808.3, 245], [833.2, 245]);
+  /* to the valve */
+  W('kOn', [515, 256], [765, 256], [765, P(0)], [MX, P(0)]);
+  W('or048', [890.8, 223.5], [916.3, 223.5], [916.3, 254.6], [1054.6, 254.6], [1054.6, R3], [1066.7, R3]);
+  W('or048', [1054.6, R1], [MX, R1]);
+  W('not045', [1124.3, R3], [1141.2, R3]);
+  W('tp049', [1198.8, R3], [1226.2, R3]);
+  W('a047', [1283.8, R3], [MX, R3]);
+  W('a027', [675.3, 500.5], [1243, 500.5], [1243, P(5)], [MX, P(5)]);
+  W('iA4', [361, 999], [1070, 999], [1070, P(7)], [MX, P(7)]);
+  W('iA3', [361, 1083], [1133, 1083], [1133, P(8)], [MX, P(8)]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2058, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2057, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1828, P(6)], [1828, 577], [2056, 577]);
+  W('aov.ABN', [MR, P(8)], [1806, P(8)], [1806, 690], [2035, 690]);
+  t.push(
+    [394, 151, 'AVEIRABLE'],
+    [389, 342, 'AUTO'],
+    [389, 428, 'MANUAL'],
+    [389, 513, 'RESET'],
+    [388, 609, 'OPEN'],
+    [1092, 151, 'AUTO'],
+    [1090, 204, 'MANUAL'],
+    [465, 729, '(TCA100)', 1],
+    [367, 797, 'GLAND STEAM EXHAUSTERRUNNING'],
+    [366, 893, 'GEN LOAD'],
+    [366, 967, 'LP EXHAUST HOOD WATER'],
+    [366, 988, 'SPLAY VALVE OPENED'],
+    [366, 1052, 'LP EXHAUST HOOD WATER'],
+    [366, 1073, 'SPLAY VALVE CLOSED'],
+    [1822, 640, 'LP EXHAUST HOOD'],
+    [1822, 661, 'WATER SPLAY VALVE'],
+    [1822, 683, 'ABNORMAL'],
+    [2145, 672, 'nFV-CDn904_ABN', 1],
+    /* the timers: their time and the T of their input */
+    [817, 320, 'T', 1],
+    [1126, 385, 'T', 1],
+    [771, 800, 'T', 1],
+    [771, 893, 'T', 1],
+    [1140, 443, 'TP:1.0s'],
+    [786, 858, 'TP:3.0s'],
+    [236, 1519, 'CONTROLLER:'],
+    [396, 1519, 'COMM+MD'],
+    [620, 1493, 'TRIGGER  :'],
+    [620, 1519, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA738',
+    title: 'LP EXHAUST HOOD WATER SPLAY VALVE(TC-35)',
+    page: 177,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kOn', 282, 256, 'ON(1)', 'sys.ref'],
+      ['kInit', 300, 702, 'INITIAL', 'ref']
+    ],
+    c: [
+      ['iB1', 'in', 'B1', 335, 808, '', ['TCA680']],
+      ['iA1', 'in', 'A1', 334, 903, '', ['TCE070'], 1],
+      ['iA4', 'in', 'A4', 334, 999, '', ['TCA048']],
+      ['iA3', 'in', 'A3', 334, 1083, '', ['TCA048']],
+      ['oA1', 'out', 'A1', 2085, P(0), '', ['TCA835']],
+      ['oA2', 'out', 'A2', 2084, P(5), '', ['TCA826']],
+      ['oA3', 'out', 'A3', 2083, 577, '', ['TCA826']]
+    ],
+    d: [
+      ['crtIys', 355, 160, 'in', 'nFV-CDn904_IYS', 'R', '#1C'],
+      ['crtIka', 348, R1 + 21.5, 'in', 'nFV-CDn904_IKA', 'R', '#1C'],
+      ['crtIkh', 348, 436.5, 'in', 'nFV-CDn904_IKH', 'R', '#1C'],
+      ['crtIkr', 348, 522, 'in', 'nFV-CDn904_IKR', 'R', '#1C'],
+      ['crtJyo', 347, 617.5, 'in', 'nFV-CDn904_JYO', 'R', '#1C'],
+      ['crtIia', 1276, 162, 'out', 'nFV-CDn904_IIA', 'S', '#1C'],
+      ['crtIih', 1276, 212.5, 'out', 'nFV-CDn904_IIH', 'S', '#1C'],
+      ['crtAbn', 2070, 690, 'out', '', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nFV-CDn904',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1414, 652, '(LMA593)'],
+          [1513, 675, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:10.0', 'K:1.0%'].map((s, i) => [
+            1310,
+            Math.round(675 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 646.5, R1 + 10.5],
+      ['a026', 'A', '026', 646.5, 425.5],
+      ['a027', 'A', '027', 646.5, 511],
+      ['a040', 'A', '040', 646.5, 606.5],
+      ['or039', 'OR', '039', 765, 425.5],
+      ['ffr024', 'FFR', '024', 872, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or048', 'OR', '048', 862, 234],
+      ['not036', 'NOT', '036', 1001, 223],
+      ['a037', 'A', '037', 1000, R1 + 21, [], {}, [60, 64]],
+      ['tp041', 'TP', '041', 814.7, 818.5],
+      ['cpl042', 'CPL', '042', 814.7, 913.5, ['HL:22.5MW', 'LL:22.5MW']],
+      ['not045', 'NOT', '045', 1095.5, R3 + 10.5],
+      ['tp049', 'TP', '049', 1170, R3 + 10.5],
+      ['a047', 'A', '047', 1255, R3 + 10.5],
+      ['btr022', 'o:BTR', '022', 1002, 162],
+      ['btr044', 'o:BTR', '044', 617, 256],
+      ['btr043', 'o:BTR', '043', 603, 702],
+      ['btr029', 'o:BTR', '029', 1270, R1],
+      ['btr031', 'o:BTR', '031', 1268, P(5)],
+      ['btr034', 'o:BTR', '034', 1266, P(7)],
+      ['btr035', 'o:BTR', '035', 1266, P(8)],
+      ['btr028', 'o:BTR', '028', 1800, P(0)],
+      ['btr032', 'o:BTR', '032', 1745, P(5)],
+      ['btr033', 'o:BTR', '033', 1745, P(6)],
+      ['btr050', 'o:BTR', '050', 1743, P(8)]
+    ],
+    w,
+    j: [
+      [555, R1],
+      [555, 415],
+      [555, 500.5],
+      [709.4, 436.5],
+      [937, R1],
+      [937, 212.5],
+      [815, 702],
+      [1054.6, R1]
     ],
     t
   });
@@ -133821,7 +135215,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build b0d333c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 60d883e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -159940,6 +161334,32 @@ const TCS_DESC = {
     'Turbine gland seal related auxiliaries in AUTO: gland steam exhauster and steam seal feed inlet valve in AUTO; first stage and reheat bowl metal temperature checks.',
   TCA040:
     'Digital input (1): MSV, CV and CRV secondary drain valve open / closed / trouble and torque switches to their valve sheets; AC exciter earth fault, auto start ready and control local to the operator station; DI power supply normal.',
+  TCA041:
+    'Digital input (2): steam seal diverting valve positions, No.4 extraction non-return valve positions, LP heater levels, generator field earth fault, AVR in use / troubles to the operator station, secondary drain valve torque switches; DI power supply normal.',
+  TCA042:
+    'Digital input (3): MSV(B), CV(B) and CRV(B) secondary drain valve opened / closed / trouble and torque switches, gland steam line drain valve closed, primary and back-up AVR trouble and PSS on; DI power supply normal.',
+  TCA043:
+    'Digital input (4): No.2 and No.5 extraction non-return valve positions, No.1 HP and No.2 LP heater levels, HP/LP bypass control in auto, oil purifier pump, MSV(B), CV(B) and CRV(B) drain valve torque switches; DI power supply normal.',
+  TCA044:
+    'Digital input (5): CV(B) secondary warming drain valve positions, trouble and torque switches, HP turbine warming valve positions and torque switches, cold reheat drain valve feedback to the operator station; DI power supply normal.',
+  TCA045:
+    'Digital input (6): No.3 extraction primary non-return valve positions, deaerator level very high, duplex oil filter dP, generator panel and transformer protection, generator voltage OK, 52L close / open, ASD1 and AVR mode and channel to the operator station; DI power supply normal.',
+  TCA046:
+    'Digital input (7): AVR set point max / min, over and under excitation limit, PF and reactive power control, AVR VT fuse normal to the operator station; DI power supply normal.',
+  TCA047:
+    'Digital input (8): No.3 extraction non-return valve positions, HP turbine warming line drain valve auto / open / close (to the operator station), warming valve trouble, main oil tank vapour extractor running and trouble; DI power supply normal.',
+  TCA048:
+    'Digital input (9): No.1 / No.3 shaft vibration high, LP exhaust hood spray and cold reheat non-return valve positions, generator leakage level, coalescer filter dP, supervisory instrument trouble, condenser vacuum break, gland steam exhauster; DI power supply normal.',
+  TCA049:
+    'Digital input (10): No.1 / No.3 shaft vibration high, RSR diode fault, steam seal feed and inlet valve positions, trouble and torque switches, generator protection relay and 30DF/64F relay troubles; DI power supply normal.',
+  TCA050:
+    'Digital input (11): No.2 / No.4 shaft vibration high, 86G-A relay coil open and protection relay (A) trouble to the operator station, main oil tank level low, control oil filter (A) dP, generator and exciter space heaters; DI power supply normal.',
+  TCA051:
+    'Digital input (12): No.2 / No.4 shaft vibration high, 86G-B relay coil open and protection relay (B) trouble, main oil tank level high, control oil filter (B) dP, gland steam line drain valve, unit transformer protection, all to the operator station; DI power supply normal.',
+  TCA052:
+    'Digital input (13): trip PCM A / B / C normal, TCS-8 temperature high, Modbus CPU A / B normal and power supply abnormal; DI power supply normal.',
+  TCA053:
+    'Digital input (14): AC / DC control, lighting and protection power supplies abnormal, TCS-4 / TCS-5 temperature high, EOS operated A / B / C, PLU operated A / B / C; DI power supply normal.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
@@ -160329,7 +161749,9 @@ const TCS_DESC = {
   TCA715:
     'No.5 extraction steam non-return valve (TC-45) air operated valve: test set / reset with feedback, open / close by the No.2 LP heater level very high, opened / closed positions in; positions and abnormal lamp out.',
   TCA729:
-    'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.'
+    'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.',
+  TCA738:
+    'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -178284,6 +179706,1202 @@ const TCS_DESC = {
     id: 'TCA040',
     title: 'COMM DIGITAL INPUT(1)',
     page: 20,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA041.js ---- */
+/* TCA041 COMM DIGITAL INPUT(2) (331DM09788 page 21, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["STEAM SEAL DIVERTING VALVE","CONDENSER SIDE"],["TCA605"],["TCT081A"]],
+    [["STEAM SEAL DIVERTING VALVE","HEATER SIDE"],["TCA605"],["TCT081A"]],
+    [["NO.1 LP HEATER LEVEL","VERY HIGH"],["TCA605"],["-"]],
+    [["SPARE",""],["-"],["-"]],
+    [["NO.4 EXTRACTION STEAM NON","RETURN VALVE FULL CLOSE POSITION"],["TCA713"],["TCT081B"]],
+    [["NO.4 EXTRACTION STEAM NON","RETURN VALVE FULL OPEN POSITION"],["TCA713"],["TCT081B"]],
+    [["NO.3 LP HEATER LEVEL","HIGH HIGH"],["TCA713"],["-"]],
+    [["GEN. FIELD EARTH FAULT",""],["TCA826"],["-"]],
+    [["AVR IN USE",""],["-"],["-"],1],
+    [["AVR MAJOR TROUBLE",""],["-"],["-"],1],
+    [["AVR MINOR TROUBLE",""],["TCA542"],["-"],1],
+    [["(SPARE)",""],["-"],["-"]],
+    [["MSV(A) ABV SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA610"],["-"]],
+    [["CRV(A) BELOW SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA625"],["-"]],
+    [["CV(A) ABV SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA615"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 233 : 228) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA900-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA041_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA041_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA041_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA900-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA041',
+    title: 'COMM DIGITAL INPUT(2)',
+    page: 21,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA042.js ---- */
+/* TCA042 COMM DIGITAL INPUT(3) (331DM09788 page 22, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["MSV (B) ABOVE SEAT SECONDARY","DRAIN VALVE OPENED"],["TCA611"],["-"]],
+    [["MSV (B) ABOVE SEAT SECONDARY","DRAIN VALVE CLOSED"],["TCA611"],["-"]],
+    [["MSV (B) ABOVE SEAT SECONDARY","DRAIN VALVE ELECTRICAL TROUBLE"],["TCA611"],["-"]],
+    [["CV (B) ABOVE SEAT SECONDARY","DRAIN VALVE OPENED"],["TCA616"],["-"]],
+    [["CV (B) ABOVE SEAT SECONDARY","DRAIN VALVE CLOSED"],["TCA616"],["-"]],
+    [["CV (B) ABOVE SEAT SECONDARY","DRAIN VALVE ELECTRICAL TROUBLE"],["TCA616"],["-"]],
+    [["CRV (B) BELOW SEAT SECONDARY","DRAIN VALVE OPENED"],["TCA626"],["-"]],
+    [["CRV (B) BELOW SEAT SECONDARY","DRAIN VALVE CLOSED"],["TCA626"],["-"]],
+    [["CRV (B) BELOW SEAT SECONDARY","DRAIN VALVE ELECTRICAL TROUBLE"],["TCA626"],["-"]],
+    [["TURBINE GLAND STEAM LINE","DRAIN VALVE CLOSED"],["TCA637"],["-"],1],
+    [["BACK UP AVR TROUBLE",""],["-"],["-"],1],
+    [["PRIMARY AVR TROUBLE",""],["-"],["-"],1],
+    [["PSS ON",""],["TCA745"],["-"],1],
+    [["CV(B) ABV SEC DRAIN VALVE","TORQUE SW OPEN"],["TCA616"],["-"]],
+    [["CRV(B) BELOW SEC DRAIN VALVE","TORQUE SW OPEN"],["TCA626"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 236 : 230) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA901-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA042_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA042_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA042_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA901-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA042',
+    title: 'COMM DIGITAL INPUT(3)',
+    page: 22,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA043.js ---- */
+/* TCA043 COMM DIGITAL INPUT(4) (331DM09788 page 23, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.2 EXTRACTION STEAM NON","RETURN VALVE FULL CLOSE POSITION"],["TCA711"],["TCT081A"]],
+    [["NO.2 EXTRACTION STEAM NON","RETURN VALVE FULL OPEN POSITION"],["TCA711"],["TCT081A"]],
+    [["NO.1 HP HEATER LEVEL","VERY HIGH"],["TCA711"],["-"]],
+    [["NO.5 EXTRACTION STEAM NON","RETURN VALVE FULL CLOSE POSITION"],["TCA715"],["TCT081B"]],
+    [["NO.5 EXTRACTION STEAM NON","RETURN VALVE FULL OPEN POSITION"],["TCA715"],["TCT081B"]],
+    [["NO.2 LP HEATER LEVEL","HIGH HIGH"],["TCA715"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["HP/LP BYPASS CONTROL IN","AUTO"],["TCA532"],["-"]],
+    [["OIL PURIFIER PUMP RUNNIN","G"],["TCA700"],["-"]],
+    [["OIL PURIFIER PUMP MOTOR","ELECTRICAL TROUBLE"],["TCA700"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["MSV(B) ABV SEC DRAIN VALVE","TORQUE SW OPEN"],["TCA611"],["-"]],
+    [["MSV(B) ABV SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA611"],["-"]],
+    [["CV(B) BELOW SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA616"],["-"]],
+    [["CRV(B) BELOW SEC DRAIN VALVE","TORQUE SW CLOSE"],["TCA626"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 229) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA901-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA043_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA043_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA043_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA901-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA043',
+    title: 'COMM DIGITAL INPUT(4)',
+    page: 23,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA044.js ---- */
+/* TCA044 COMM DIGITAL INPUT(5) (331DM09788 page 24, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["CV (B) BELOW SEAT SECONDARY","WARMING DRAIN VALVE OPENED"],["TCA618"],["-"]],
+    [["CV (B) BELOW SEAT SECONDARY","WARMING DRAIN VALVE CLOSED"],["TCA618"],["-"]],
+    [["CV (B) BEL SEAT SEC.WARMING","DRAIN VALVE ELEC. TROUBLE"],["TCA618"],["-"]],
+    [["HP TURBINE WARMING VALVE","FULL CLOSE POSITION"],["TCA685"],["-"]],
+    [["HP TURBINE WARMING VALVE","FULL OPEN POSITION"],["TCA685"],["-"]],
+    [["COLD REHEAT DRAIN VALVE","CLOSE FEED BACK"],["-"],["-"],205],
+    [["COLD REHEAT DRAIN VALVE","FULL OPEN FEED BACK"],["-"],["-"],205],
+    [["(SPARE)",""],["-"],["-"],205],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["CV(B) BEL SEC WARMING DRAIN","VALVE TORQUE SW OPEN"],["TCA618"],["-"]],
+    [["CV(B) BEL SEC WARMING DRAIN","VALVE TORQUE SW CLOSE"],["TCA618"],["-"]],
+    [["HP TURBINE WARMING VALVE","TORQUE SW OPEN"],["TCA685"],["-"]],
+    [["HP TURBINE WARMING VALVE","TORQUE SW CLOSE"],["TCA685"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 232 : 227) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA902-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA044_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA044_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA044_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA902-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA044',
+    title: 'COMM DIGITAL INPUT(5)',
+    page: 24,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA045.js ---- */
+/* TCA045 COMM DIGITAL INPUT(6) (331DM09788 page 25, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.3 EXTRACTION STEAM PRIMARY","NON RETURN VLV FULL CLOSE POS"],["TCA712"],["TCT081A"]],
+    [["NO.3 EXTRACTION STEAM PRIMARY","NON RETURN VLV FULL OPEN POS"],["TCA712"],["TCT081B"]],
+    [["DEAERATOR STORAGE TANK","LEVEL VERY HIGH"],["TCA712","TCA714"],["-"]],
+    [["DUPLEX OIL FILTER","DIFF. PRESS."],["-"],["TCT081"],1],
+    [["GEN CONTROL PANEL TROUBL","E"],["-"],["-"],1],
+    [["GEN TRANSF. PROTECTION","OPERATED"],["-"],["-"],1],
+    [["GEN VOLTAGE OK",""],["TCA543","TCA826"],["-"]],
+    [["52L CLOSE",""],["TCA562"],["-"]],
+    [["52L OPEN",""],["-"],["-"]],
+    [["ASD1 IN USE",""],["TCA533"],["-"]],
+    [["AVR FAILURE TO BACKUP","STATUS"],["-"],["-"],1],
+    [["AVR IN AUTO",""],["TCA533","TCA587"],["-"],1],
+    [["AVR IN MANUAL",""],["TCA587"],["-"],1],
+    [["AVR CHANNEL1 SELECT",""],["-"],["-"],1],
+    [["AVR CHANNEL2 SELECT",""],["-"],["-"],1],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 229) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA902-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA045_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA045_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA045_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA902-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA045',
+    title: 'COMM DIGITAL INPUT(6)',
+    page: 25,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA046.js ---- */
+/* TCA046 COMM DIGITAL INPUT(7) (331DM09788 page 26, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["SET POINT MAX",""],["-"],["-"],1],
+    [["SET POINT MIN",""],["-"],["-"],1],
+    [["OVER EXCITATION LIMIT",""],["-"],["-"],1],
+    [["UNDER EXCITATION LIMIT",""],["-"],["-"],1],
+    [["PF CONTROL ON",""],["TCA745"],["-"],1],
+    [["REACTIVE POWER ON",""],["TCA745"],["-"],1],
+    [["AVR VT FUSE NORMAL",""],["-"],["-"],1,"018"],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["PSNORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 232 : 226) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA903-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA046_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA046_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA046_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA903-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA046',
+    title: 'COMM DIGITAL INPUT(7)',
+    page: 26,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA047.js ---- */
+/* TCA047 COMM DIGITAL INPUT(8) (331DM09788 page 27, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.3 EXTRACTION STEAM SEC","NON RETURN VALVE FULL CLOSE POS"],["TCA714"],["TCT081B"]],
+    [["NO.3 EXTRACTION STEAM SEC","NON RETURN VALVE FULL OPEN POS"],["TCA714"],["TCT081B"]],
+    [["HP TURBINE WARMING LINE DRAIN","VALVE AUTO SELECTED"],["TCA631"],["-"],200],
+    [["HP TURBINE WARMING LINE DRAIN","VALVE OPEN FEED BACK"],["TCA632"],["-"],205],
+    [["HP TURBINE WARMING LINE DRAIN","VALVE CLOSE FEED BACK"],["TCA632"],["-"],205],
+    [["HP TURBINE WARMING VALVE","ELECTRICAL TROUBLE"],["TCA685"],["-"]],
+    [["MAIN OIL TANK VAPOUR","EXTRACTOR RUNNING"],["TCA655"],["-"]],
+    [["MAIN OIL TANK VAPOUR","EXTRACTOR ELEC. TROUBLE"],["TCA655"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 229) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA903-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA047_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA047_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA047_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA903-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA047',
+    title: 'COMM DIGITAL INPUT(8)',
+    page: 27,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA048.js ---- */
+/* TCA048 COMM DIGITAL INPUT(9) (331DM09788 page 28, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.1 TURBINE SHAFT","VIBRATION (X) HIGH"],["TCA537"],["-"]],
+    [["NO.3 GEN. SHAFT","VIBRATION (Y) HIGH"],["TCA537"],["-"]],
+    [["LP EXHAUST HOOD WATER SPRAY","VALVE FULL CLOSE POSITION"],["TCA738"],["TCT081A"]],
+    [["LP EXHAUST HOOD WATER SPRAY","VALVE FULL OPEN POSITION"],["TCA738"],["TCT081A"]],
+    [["COLD REHEAT NON RETURN VALVE","FULL CLOSE POSITION"],["TCA690"],["TCT081A"]],
+    [["COLD REHEAT NON RETURN VALVE","FULL OPEN POSITION"],["TCA690"],["TCT081A"]],
+    [["GEN. WATER AND OIL LEAKAGE","LEVEL HIGH"],["TCA530A"],["TCT081"]],
+    [["LUBE OIL CONDITIONER COALESCER","FILTER DIFF. PRESS. HIGH"],["-"],["TCT081"],180],
+    [["TURBINE SUPERVISORY","INSTRUMENT TROUBLE"],["TCA542"],["-"]],
+    [["CONDENSER VACUUM BREAK","COMPLETE"],["TCA636","TCA638"],["-"],180],
+    [["GLAND STEAM EXHAUSTER","ELECTRICAL TROUBLE"],["TCA680"],["-"]],
+    [["GLAND STEAM EXHAUSTER","RUNNING"],["TCA680"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 232 : 228) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA904-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA048_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA048_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA048_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA904-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA048',
+    title: 'COMM DIGITAL INPUT(9)',
+    page: 28,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA049.js ---- */
+/* TCA049 COMM DIGITAL INPUT(10) (331DM09788 page 29, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.1 TURBINE SHAFT","VIBRATION (Y) HIGH"],["TCA537"],["-"]],
+    [["NO.3 GEN. SHAFT","VIBRATION (X) HIGH"],["TCA537"],["-"]],
+    [["RSR DIODE FAULT",""],["TCA826"],["-"]],
+    [["STEAM SEAL FEED VALVE","FULL CLOSE POSITION"],["-"],["TCT081A"]],
+    [["STEAM SEAL FEED INLET VALVE","FULL CLOSE POSITION"],["TCA650"],["-"]],
+    [["STEAM SEAL FEED INLET VALVE","FULL OPEN POSITION"],["TCA650"],["-"]],
+    [["STEAM SEAL FEED INLET VALVE","ELECTRICAL TROUBLE"],["TCA650"],["-"]],
+    [["SSFV BYPASS VALVE FULL","CLOSE POSITION"],["TCA605"],["TCT081A"]],
+    [["BOTH GEN PROTECTION RELAY","TROUBLE"],["-"],["-"],"top"],
+    [["30DF/64F RELAY TROUBLE",""],["TCA826"],["-"]],
+    [["30DF/64F LOSS OF","CONTROL POWER"],["TCA826"],["-"]],
+    [["STEAM SEAL FEED INLET VALVE","TORQUE SW OPEN"],["TCA650"],["-"]],
+    [["STEAM SEAL FEED INLET VALVE","TORQUE SW CLOSE"],["TCA650"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 228 : 226) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA904-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA049_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA049_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA049_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA904-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA049',
+    title: 'COMM DIGITAL INPUT(10)',
+    page: 29,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA050.js ---- */
+/* TCA050 COMM DIGITAL INPUT(11) (331DM09788 page 30, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.2 TURBINE SHAFT","VIBRATION (X) HIGH"],["TCA537"],["-"]],
+    [["NO.4 GEN. SHAFT","VIBRATION (Y) HIGH"],["TCA537"],["-"]],
+    [["86G-A RELAY COIL OPEN",""],["-"],["-"],1],
+    [["GEN PROTECTION RELAY (A)","TROUBLE"],["-"],["-"],1],
+    [["MAIN OIL TANK LEVEL LOW",""],["TCA542"],["TCT081"]],
+    [["CONTROL OIL LINE FILTER (A)","DIFF. PRESS. HIGH"],["-"],["TCT081"],"b"],
+    [["SPACE HEATER RUNNING (GEN)",""],["TCA729"],["-"]],
+    [["SPACE HEATER RUNNING","(AC EXCITER)"],["TCA729"],["-"]],
+    [["SPACE HEATER FOR AC EXCITER","ELECTRICAL TROUBLE"],["TCA729"],["-"]],
+    [["SPACE HEATER FOR GEN.","ELECTRICAL TROUBLE"],["TCA729"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 228) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA905-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA050_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA050_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA050_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA905-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA050',
+    title: 'COMM DIGITAL INPUT(11)',
+    page: 30,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA051.js ---- */
+/* TCA051 COMM DIGITAL INPUT(12) (331DM09788 page 31, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["NO.2 TURBINE SHAFT","VIBRATION (Y) HIGH"],["TCA537"],["-"]],
+    [["NO.4 GEN. SHAFT","VIBRATION (X) HIGH"],["TCA537"],["-"]],
+    [["86G-B RELAY COIL OPEN",""],["-"],["-"],180],
+    [["GEN PROTECTION RELAY (B)","TROUBLE"],["-"],["-"],195],
+    [["MAIN OIL TANK LEVEL HIGH",""],["TCA542"],["TCT081"]],
+    [["CONTROL OIL LINE FILTER (B)","DIFF. PRESS. HIGH"],["-"],["TCT081"],"b"],
+    [["TURBINE GLAND STEAM LINE","DRAIN VALVE FULL OPENED"],["TCA637"],["-"],195],
+    [["TURBINE GLAND STEAM LINE","DRAIN VALVE AUTO"],["TCA639"],["-"],195],
+    [["UNIT TRANSF. PROTECTION","OPERATED"],["-"],["-"],1],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["P.S.NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 228 : 225) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA905-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA051_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA051_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA051_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA905-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA051',
+    title: 'COMM DIGITAL INPUT(12)',
+    page: 31,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA052.js ---- */
+/* TCA052 COMM DIGITAL INPUT(13) (331DM09788 page 32, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["TRIP PCM (A) NORMAL",""],["TCA820"],["TCE472"]],
+    [["TRIP PCM (B) NORMAL",""],["TCA820"],["TCE472"]],
+    [["TRIP PCM (C) NORMAL",""],["TCA820"],["TCE472"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["(SPARE)",""],["-"],["-"]],
+    [["TCS-8 TEMP HIGH",""],["TCA818"],["-"]],
+    [["MODBUS CPU(A) NORMAL",""],["TCA820"],["-"],0,0,14],
+    [["MODBUS CPU(B) NORMAL",""],["TCA820"],["-"],0,0,15],
+    [["MODBUS P.S(A) ABNORMAL","(DC)"],["TCA820"],["-"],0,0,13],
+    [["MODBUS P.S(B) ABNORMAL","(AC)"],["TCA820"],["-"],0,0,12],
+    [["PS NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 234 : 228) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA906-' + (pn || no + 0) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA052_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA052_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA052_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA906-1)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800A"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA052',
+    title: 'COMM DIGITAL INPUT(13)',
+    page: 32,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [180, 88, 2232, 1552],
+    r,
+    g,
+    b,
+    c,
+    d,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA053.js ---- */
+/* TCA053 COMM DIGITAL INPUT(14) (331DM09788 page 33, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. Sixteen inputs of the PI/O table TCA900, eight at the left and eight at the right, each drawn the same way: the PI/O
+   box, the connection mark, the BTR mark, connector B (other controller, double outline) above and connector A (to its logic sheet) at the
+   line; some inputs also go to the operator station (CRT). The rows are counted here as the drawing counts them. */
+(function () {
+  const r = [],
+    g = [],
+    b = [],
+    c = [],
+    w = [],
+    t = [],
+    d = [];
+  /* [the two lines of the PI/O box], [sheets of A], [sheets of B], CRT on the line (1, or the distance of its branch from the junction), the NOT on the line */
+  const ROWS = [
+    [["(SPARE)",""],["-"],["-"]],
+    [["AC CONTROL P.S. ABNORMAL",""],["TCA821"],["-"]],
+    [["DC CONTROL P.S. ABNORMAL",""],["TCA821"],["-"]],
+    [["LIGHTING&SPACE HEATER","P.S.ABNORMAL"],["TCA821"],["-"]],
+    [["AC PROTECTION P.S.","ABNORMAL"],["TCA821"],["-"]],
+    [["DC PROTECTION P.S.(2)","ABNORMAL"],["TCA821"],["-"]],
+    [["DC PROTECTION P.S.(1)","ABNORMAL"],["TCA821"],["-"]],
+    [["TCS-4 TEMP HIGH",""],["TCA818"],["-"]],
+    [["TCS-5 TEMP.HIGH",""],["TCA818"],["-"]],
+    [["EOS OPERATED(A)",""],["TCA781"],["-"]],
+    [["EOS OPERATED(B)",""],["TCA781"],["-"]],
+    [["EOS OPERATED(C)",""],["TCA781"],["-"]],
+    [["PLU OPERATED (A)",""],["TCA780"],["-"]],
+    [["PLU OPERATED (B)",""],["TCA780"],["-"]],
+    [["PLU OPERATED (C)",""],["TCA780"],["-"]],
+    [["PS NORMAL",""],["TCA817"],["-"]]
+  ];
+  ROWS.forEach(([name, ra, rb, crt, not, pn], k) => {
+    const right = k >= 8,
+      i = k % 8,
+      no = k + 1,
+      x0 = right ? 1210 : 220 /* left edge of the PI/O box */,
+      y = Math.round((right ? 230 : 226) + i * 127.9) /* the signal line */,
+      xe = x0 + 300 /* right edge of the box */,
+      xa = right ? 1610 : 607 /* the connection mark */,
+      xb = right ? 1781 : 790 /* the BTR mark */,
+      xj = right ? 2022 : 1035 /* the junction to connector B */,
+      xo = right ? 2088 : 1090; /* centre of the connectors */
+    r.push(['di' + no, x0, y - 27, 300, 54, '']);
+    t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA906-' + (pn || no + 16) + ')']);
+    w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
+        ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+    g.push([xa, y, 'l']);
+    /* a NOT between the connection mark and the BTR */
+    if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
+    b.push(['btr' + no, 'o:BTR', String(right ? 2 * i + 2 : 2 * i + 1).padStart(3, '0'), xb, y]);
+    if (crt === "b") {
+      /* only connector B, on the signal line; CRT above it from the junction (TCA050 row 6) */
+      c.push(['b' + no, 'out', 'B' + no, xo, y, '', rb, 1]);
+      d.push(["crt" + no, xj + 58, y - 53, "out", "TCA053_" + no, "S", "#1C"]);
+    } else c.push(['b' + no, 'out', 'B' + no, xo, y - 53, '', rb, 1], ['a' + no, 'out', 'A' + no, xo, y, '', ra]);
+    if (crt === "top") {
+      /* CRT taken above connector B, from the B junction (TCA049 row 9) */
+      w.push(["di" + no, [[xj, y - 53], [xj, y - 105], [xj + 40, y - 105]]]);
+      d.push(["crt" + no, xj + 68, y - 105, "out", "TCA053_" + no, "S", "#1C"]);
+    } else if (crt && crt !== "b") {
+      /* to the operator station (CRT) */
+      const xc = xj - (crt === 1 ? 168 : crt);
+      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA053_' + no, 'S', '#1C']);
+    }
+  });
+  /* the PI/O error of the card */
+  r.push(['pioErr', 1290, 1301, 128, 23, 'PI/O error']);
+  t.push([1308, 1296, '(TCA906-17)']);
+  w.push(['pioErr', [[1418, 1312], [2045, 1312]]]);
+  b.push(['btr17', 'o:BTR', '017', 1778, 1312]);
+  c.push(['oF', 'out', 'F', 2075, 1312, '', ["TCA800A"]]);
+  t.push([228, 1527, 'CONTROLLER:'], [388, 1527, 'COMM+MD'], [613, 1508, 'TRIGGER  :'], [613, 1535, 'CYCLE(ms):100']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA053',
+    title: 'COMM DIGITAL INPUT(14)',
+    page: 33,
     ctl: 'COMM+MD',
     cycle: 100,
     f: [180, 88, 2232, 1552],
@@ -204933,6 +207551,204 @@ const TCS_DESC = {
       [828, 300],
       [1098, 442],
       [1091, 963]
+    ],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA738.js ---- */
+/* TCA738 LP EXHAUST HOOD WATER SPLAY VALVE (TC-35) (331DM09788 page 177, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. The air operated valve nFV-CDn904 (AIR OPERAT VALVE A021, LMA593), gate by gate
+   as drawn:
+   - FFP = ON(1). A 023 = AVEIRABLE and the AUTO push button, into S of FFR 024. A 026 = AVEIRABLE and MANUAL, into OR 039; A 040 =
+     AVEIRABLE and OPEN is the other input of OR 039, into R of FFR 024. The FFR output = the AUTO lamp, NOT 036 of it = the MANUAL lamp.
+   - A 037 = the FFR output, TP 041 (3.0 s, INITIAL on its top) of GLAND STEAM EXHAUSTERRUNNING (B1 of TCA680) and CPL 042 (22.5 MW) of
+     GEN LOAD (A1 of TCE070). OR 048 of A 040 and A 037 goes to SVE, and through NOT 045, TP 049 (1.0 s, INITIAL on its top) and A 047
+     with the FFR output to SVD. A 027 = AVEIRABLE and the RESET push button, to RESET. Valve opened / closed (A4 / A3 of TCA048) to
+     LTOP / LTCL.
+   - SVE out (A1 to TCA835), LTOP out (A2 to TCA826), LTCL out (A3 to TCA826); ABN = the valve abnormal lamp.
+   The words are the ones of the drawing (AVEIRABLE, SPLAY, EXHAUSTERRUNNING, OPERAT as printed). The tag keeps the small n of the
+   drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [174, 84, 2228, 1545],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1306,
+    MR = 1712,
+    TOP = 251,
+    H = 383,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1),
+    R3 = P(3);
+  /* the push buttons and AVEIRABLE into the gates */
+  W('crtIys', [390, 160], [555, 160], [555, 596], [617.7, 596]);
+  W('crtIys', [555, R1], [617.7, R1]);
+  W('crtIys', [555, 415], [617.7, 415]);
+  W('crtIys', [555, 500.5], [617.7, 500.5]);
+  W('crtIka', [383, R1 + 21.5], [617.7, R1 + 21.5]);
+  W('crtIkh', [383, 436.5], [617.7, 436.5]);
+  W('crtIkr', [383, 522], [617.7, 522]);
+  W('crtJyo', [382, 617.5], [617.7, 617.5]);
+  /* auto / manual */
+  W('a023', [675.3, R1], [832, R1]);
+  W('a026', [675.3, 415], [736.2, 415]);
+  W('a040', [675.3, 596], [709.4, 596], [709.4, 223.5], [833.2, 223.5]);
+  W('a040', [709.4, 436.5], [736.2, 436.5]);
+  W('or039', [793.8, 415], [822, 415], [822, R1 + 21.5], [832, R1 + 21.5]);
+  W('ffr024', [912, R1], [970, R1]);
+  W('ffr024', [937, R1], [937, 162], [1241, 162]);
+  W('ffr024', [937, 212.5], [971, 212.5]);
+  W('ffr024', [937, R1], [937, 478.8], [1212, 478.8], [1212, R3 + 21.5], [1226.2, R3 + 21.5]);
+  W('not036', [1031, 212.5], [1241, 212.5]);
+  /* open in auto: gland steam exhauster running and gen load */
+  W('kInit', [533, 702], [1042, 702], [1042, 361.7], [1170, 361.7], [1170, R3 - 11]);
+  W('kInit', [815, 702], [815, 797.5]);
+  W('iB1', [362, 808], [785.6, 808]);
+  W('tp041', [843.8, 808], [943.8, 808], [943.8, R1 + 21.5], [970, R1 + 21.5]);
+  W('iA1', [361, 903], [785.6, 903]);
+  W('cpl042', [843.8, 903], [953, 903], [953, R1 + 43], [970, R1 + 43]);
+  W('a037', [1030, R1], [1042, R1], [1042, 276.7], [808.3, 276.7], [808.3, 245], [833.2, 245]);
+  /* to the valve */
+  W('kOn', [515, 256], [765, 256], [765, P(0)], [MX, P(0)]);
+  W('or048', [890.8, 223.5], [916.3, 223.5], [916.3, 254.6], [1054.6, 254.6], [1054.6, R3], [1066.7, R3]);
+  W('or048', [1054.6, R1], [MX, R1]);
+  W('not045', [1124.3, R3], [1141.2, R3]);
+  W('tp049', [1198.8, R3], [1226.2, R3]);
+  W('a047', [1283.8, R3], [MX, R3]);
+  W('a027', [675.3, 500.5], [1243, 500.5], [1243, P(5)], [MX, P(5)]);
+  W('iA4', [361, 999], [1070, 999], [1070, P(7)], [MX, P(7)]);
+  W('iA3', [361, 1083], [1133, 1083], [1133, P(8)], [MX, P(8)]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2058, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2057, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1828, P(6)], [1828, 577], [2056, 577]);
+  W('aov.ABN', [MR, P(8)], [1806, P(8)], [1806, 690], [2035, 690]);
+  t.push(
+    [394, 151, 'AVEIRABLE'],
+    [389, 342, 'AUTO'],
+    [389, 428, 'MANUAL'],
+    [389, 513, 'RESET'],
+    [388, 609, 'OPEN'],
+    [1092, 151, 'AUTO'],
+    [1090, 204, 'MANUAL'],
+    [465, 729, '(TCA100)', 1],
+    [367, 797, 'GLAND STEAM EXHAUSTERRUNNING'],
+    [366, 893, 'GEN LOAD'],
+    [366, 967, 'LP EXHAUST HOOD WATER'],
+    [366, 988, 'SPLAY VALVE OPENED'],
+    [366, 1052, 'LP EXHAUST HOOD WATER'],
+    [366, 1073, 'SPLAY VALVE CLOSED'],
+    [1822, 640, 'LP EXHAUST HOOD'],
+    [1822, 661, 'WATER SPLAY VALVE'],
+    [1822, 683, 'ABNORMAL'],
+    [2145, 672, 'nFV-CDn904_ABN', 1],
+    /* the timers: their time and the T of their input */
+    [817, 320, 'T', 1],
+    [1126, 385, 'T', 1],
+    [771, 800, 'T', 1],
+    [771, 893, 'T', 1],
+    [1140, 443, 'TP:1.0s'],
+    [786, 858, 'TP:3.0s'],
+    [236, 1519, 'CONTROLLER:'],
+    [396, 1519, 'COMM+MD'],
+    [620, 1493, 'TRIGGER  :'],
+    [620, 1519, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA738',
+    title: 'LP EXHAUST HOOD WATER SPLAY VALVE(TC-35)',
+    page: 177,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kOn', 282, 256, 'ON(1)', 'sys.ref'],
+      ['kInit', 300, 702, 'INITIAL', 'ref']
+    ],
+    c: [
+      ['iB1', 'in', 'B1', 335, 808, '', ['TCA680']],
+      ['iA1', 'in', 'A1', 334, 903, '', ['TCE070'], 1],
+      ['iA4', 'in', 'A4', 334, 999, '', ['TCA048']],
+      ['iA3', 'in', 'A3', 334, 1083, '', ['TCA048']],
+      ['oA1', 'out', 'A1', 2085, P(0), '', ['TCA835']],
+      ['oA2', 'out', 'A2', 2084, P(5), '', ['TCA826']],
+      ['oA3', 'out', 'A3', 2083, 577, '', ['TCA826']]
+    ],
+    d: [
+      ['crtIys', 355, 160, 'in', 'nFV-CDn904_IYS', 'R', '#1C'],
+      ['crtIka', 348, R1 + 21.5, 'in', 'nFV-CDn904_IKA', 'R', '#1C'],
+      ['crtIkh', 348, 436.5, 'in', 'nFV-CDn904_IKH', 'R', '#1C'],
+      ['crtIkr', 348, 522, 'in', 'nFV-CDn904_IKR', 'R', '#1C'],
+      ['crtJyo', 347, 617.5, 'in', 'nFV-CDn904_JYO', 'R', '#1C'],
+      ['crtIia', 1276, 162, 'out', 'nFV-CDn904_IIA', 'S', '#1C'],
+      ['crtIih', 1276, 212.5, 'out', 'nFV-CDn904_IIH', 'S', '#1C'],
+      ['crtAbn', 2070, 690, 'out', '', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nFV-CDn904',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1414, 652, '(LMA593)'],
+          [1513, 675, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:10.0', 'K:1.0%'].map((s, i) => [
+            1310,
+            Math.round(675 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 646.5, R1 + 10.5],
+      ['a026', 'A', '026', 646.5, 425.5],
+      ['a027', 'A', '027', 646.5, 511],
+      ['a040', 'A', '040', 646.5, 606.5],
+      ['or039', 'OR', '039', 765, 425.5],
+      ['ffr024', 'FFR', '024', 872, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or048', 'OR', '048', 862, 234],
+      ['not036', 'NOT', '036', 1001, 223],
+      ['a037', 'A', '037', 1000, R1 + 21, [], {}, [60, 64]],
+      ['tp041', 'TP', '041', 814.7, 818.5],
+      ['cpl042', 'CPL', '042', 814.7, 913.5, ['HL:22.5MW', 'LL:22.5MW']],
+      ['not045', 'NOT', '045', 1095.5, R3 + 10.5],
+      ['tp049', 'TP', '049', 1170, R3 + 10.5],
+      ['a047', 'A', '047', 1255, R3 + 10.5],
+      ['btr022', 'o:BTR', '022', 1002, 162],
+      ['btr044', 'o:BTR', '044', 617, 256],
+      ['btr043', 'o:BTR', '043', 603, 702],
+      ['btr029', 'o:BTR', '029', 1270, R1],
+      ['btr031', 'o:BTR', '031', 1268, P(5)],
+      ['btr034', 'o:BTR', '034', 1266, P(7)],
+      ['btr035', 'o:BTR', '035', 1266, P(8)],
+      ['btr028', 'o:BTR', '028', 1800, P(0)],
+      ['btr032', 'o:BTR', '032', 1745, P(5)],
+      ['btr033', 'o:BTR', '033', 1745, P(6)],
+      ['btr050', 'o:BTR', '050', 1743, P(8)]
+    ],
+    w,
+    j: [
+      [555, R1],
+      [555, 415],
+      [555, 500.5],
+      [709.4, 436.5],
+      [937, R1],
+      [937, 212.5],
+      [815, 702],
+      [1054.6, R1]
     ],
     t
   });
@@ -309335,7 +312151,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b0d333c'));
+    row('Version', E('span', 'scsver', ver + ' · build 60d883e'));
   }
   function openSet(near) {
     if (!set) {
