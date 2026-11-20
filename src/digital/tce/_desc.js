@@ -807,5 +807,7 @@ const TCS_DESC = {
   TCA830:
     'COMM digital output (1): sixteen points of the PI/O table TCA980 (1 to 16): the CRV, CV and MSV secondary drain valve commands, the steam seal feed inlet valve commands and closed signal, the turbine gland steam line drain valve commands, AMB. COLD MODE TEMP. and MODE JUDGEMENT INSTRUMENT NORMAL (no first stage or reheat bowl inner wall metal temperature abnormal); one point spare.',
   TCA834:
-    'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.'
+    'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.',
+  TCA835:
+    'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.'
 };
