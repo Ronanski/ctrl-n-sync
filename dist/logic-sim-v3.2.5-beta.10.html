@@ -6374,7 +6374,13 @@ const TCS_DESC = {
   TCA655:
     'Main oil tank vapour extractor (TB-12) motor: start command held by a set / reset memory, running out, and the extractor stopped alarm when it is not running while an oil pump runs for 5 s.',
   TCA680:
-    'Gland steam exhauster (TC-28) motor: auto start and stop by the gland seal start and stop groups; start command, running and AUTO out.'
+    'Gland steam exhauster (TC-28) motor: auto start and stop by the gland seal start and stop groups; start command, running and AUTO out.',
+  TCA685:
+    'HP turbine warming valve (TC-20) motor valve: opened by the HP turbine warming start group while the aux steam header pressure permits; open / close signals, AUTO, positions and permissive out.',
+  TCA686:
+    'HP turbine warming valve (TC-20) open / close: open and close signals, or in AUTO with program control by exhaust steam pressure and valve position through flickers; each blocks the other.',
+  TCA690:
+    'Cold reheat steam non-return valve (TC-19) air operated valve: test set / reset with feedback, solenoid open / close by the ventilator valve, full open / close positions out; trouble alarm when it is not closed with both CVs closed.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -48903,6 +48909,511 @@ const TCS_DESC = {
     ],
     w,
     j: [],
+    t
+  });
+})();
+/* TCA685 HP TURBINE WARMING VALVE (TC-20) (331DM09788 page 167, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the
+   pixels of the page rendered 2296 wide. The motor valve nMV-ASn011 (AUXILIARY TYPE 15 A002, LMA584A / B): trip oil pressure low,
+   condenser vacuum low, the program control start and the open command of the HP turbine warming start group, the close command,
+   the open / close simulation, ON(1), the full open / full close positions, torque switches, position (analog) and electrical trouble
+   in. The permissive = AUX SYSTEM HEADER PRESS. (LOWER) above CMP A033 (HL 7.0 / LL 6.0 kg/cm2g, INITIAL on its top), to PIN06 and
+   out. OPEN / CLOSE SIGNAL, AUTO, PROGRAM CONTROL, OPEN, CLOSE, FULL OPEN, FULL CLOSE, ELEC TROUBLE, TORQUE SW OPEN / CLOSE and
+   POS.SIM out.
+   The words are the ones of the drawing (VALVEOPEN SIM, VALVECLOSE SIM as printed). The tag keeps the small n of the drawing (the unit
+   number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [168, 88, 2222, 1550],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1295,
+    MR = 1697,
+    TOP = 223,
+    H = 860,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 25,
+    BX = 1228;
+  /* inputs: [key, letter, sheet, x of the connector, y, words, pin row, BTR, x of the jog] */
+  [
+    ['iC1', 'C1', 'TCA536', 280.5, P(2), ['CONDENSER VACUUM LOW'], 2, '004'],
+    ['iA6', 'A6', 'TCA632', 280.3, P(4), ['PROGRAM CONTROL START COMMAND', 'FROM HP TURBINE WARMING START'], 4, '006'],
+    ['iA3', 'A3', 'TCA632', 280, P(6), ['OPEN COMMAND FROM HP TURBINE', 'WARMING START GROUP CONTROL'], 6, '007'],
+    ['iC', 'C', 'TCA633', 279.5, P(8), ['HP TURBINE WARMING VALVE CLOSE COMMAND'], 8, '009'],
+    ['iB', 'B', 'TCA686', 278.5, P(12), ['HP TURBINE WARMING VALVECLOSE SIM'], 12, '013'],
+    ['iA5', 'A5', 'TCA044', 278, P(16), ['HP TURBINE WARMING VALVE', 'FULL OPEN POSITION'], 16, '020'],
+    ['iA4', 'A4', 'TCA044', 278, P(18), ['HP TURBINE WARMING VALVE', 'FULL CLOSE POSITION'], 18, '021'],
+    ['iA14', 'A14', 'TCA044', 277.5, P(20), ['HP TURBINE WARMING VALVE', 'TORQUE OPEN'], 20, '023'],
+    ['iA15', 'A15', 'TCA044', 277.5, 962.3, ['HP TURBINE WARMING VALVE', 'TORQUE CLOSE'], 22, '028', 1192.8],
+    ['iA6b', 'A6', 'TCA047', 277, 1058.6, ['HP TURBINE WARMING VALVE', 'ELECTRICAL TROUBLE'], 24, '030', 1192.8]
+  ].forEach(([key, l, sh, cx, y, names, row, btr, jx]) => {
+    c.push([key, 'in', l, cx, y, '', [sh]]);
+    names.forEach((s, i) => t.push([cx + 44, y - 11 - 21 * (names.length - 1 - i), s]));
+    b.push(['btr' + btr, 'o:BTR', btr, BX, P(row)]);
+    if (jx) W(key, [cx + 27, y], [jx, y], [jx, P(row)], [MX, P(row)]);
+    else W(key, [cx + 27, y], [MX, y]);
+  });
+  /* open simulation: A (TCA686) jogs down to OPEN.S */
+  c.push(['iA', 'in', 'A', 279, 590.7, '', ['TCA686']]);
+  t.push([323, 579.7, 'HP TURBINE WARMING VALVEOPEN SIM']);
+  W('iA', [306, 590.7], [1070.7, 590.7], [1070.7, P(11)], [MX, P(11)]);
+  b.push(['btr012', 'o:BTR', '012', 1165, P(11)]);
+  /* position (analog, thick) */
+  c.push(['iA4p', 'in', 'A4', 277, P(23), '', ['TCA322']]);
+  w.push(['iA4p', [[304, P(23)], [MX, P(23)]], 1]);
+  b.push(['ftr032', 'o:FTR', '032', BX, P(23)]);
+  /* trip oil pressure low and ON(1) */
+  W('kTrip', [518.5, P(0)], [MX, P(0)]);
+  b.push(['btr001', 'o:BTR', '001', BX, P(0)]);
+  W('kOn', [526.6, P(14)], [MX, P(14)]);
+  b.push(['btr016', 'o:BTR', '016', BX, P(14)]);
+  /* the permissive: aux system header pressure above CMP A033, to PIN06 and out */
+  c.push(['iA2', 'in', 'A2', 276.6, 1248.5, '', ['TCA316']]);
+  t.push([320, 1237.5, 'AUX SYSTEM HEADER PRESS. (LOWER)']);
+  w.push(['iA2', [[303.6, 1248.5], [1206, 1248.5]], 1]);
+  W('kInit', [524.4, 1121.4], [1235, 1121.4], [1235, 1237.5]);
+  W('cmp033', [1264, 1248.5], [2059, 1248.5]);
+  W('cmp033', [1363, 1248.5], [1363, 1100], [1110, 1100], [1110, P(10)], [MX, P(10)]);
+  b.push(
+    ['btr010', 'o:BTR', '010', BX, P(10)],
+    ['cmp033', 'CMP', 'A033', 1235, 1259.2],
+    ['btr031', 'o:BTR', '031', 1734, 1248.5]
+  );
+  t.push([1196, 1240, 'T', 2], [1205, 1301, 'HL:7.0kg/cm2g'], [1205, 1322, 'LL:6.0kg/cm2g']);
+  /* out: [pin row, pin, key, letter, sheets, x of the connector, y, BTR, x of the BTR, x of the riser, words, x of the words] */
+  [
+    [0, 'OPEN', 'oA', 'A', ['TCA686'], 2093.5, P(0), '003', 1774, 0, ['VALVE OPEN SIGNAL'], 1843],
+    [3, 'CLOSE', 'oB', 'B', ['TCA686'], 2093, P(3), '005', 1773, 0, ['VALVE CLOSE SIGNAL'], 1843],
+    [7, 'OUT1', 'oC', 'C', ['TCA631', 'TCA686'], 2092, P(7), '008', 1772, 0, ['VALVE AUTO'], 1842],
+    [10, 'OUT2', 'oD', 'D', ['TCA632', 'TCA686'], 2090, P(10), '011', 1770, 0, ['VALVE PROGRAM CONTROL'], 1841],
+    [12, 'PIN61', 'oE', 'E', ['-'], 2089, P(12), '014', 1770, 0, ['VALVE OPEN'], 1840],
+    [13, 'PIN62', 'oF', 'F', ['-'], 2089, 718.3, '015', 1739, 1801.7, ['VALVE CLOSE'], 1840],
+    [14, 'PIN64', 'oG', 'G', ['-'], 2089, 781.7, '017', 1770, 1791, ['VALVE FULL OPEN'], 1839],
+    [15, 'PIN65', 'oH', 'H', ['TCA500', 'TCA633'], 2088.5, 845, '019', 1739, 1779.3, ['VALVE FULL CLOSE'], 1839],
+    [19, 'E.TR', 'oK', 'K', ['TCA686'], 2087.5, 982.7, '022', 1739, 1800, ['VALVE ELEC TROUBLE'], 1837],
+    [20, 'TSO', 'oL', 'L', ['TCA686'], 2087, 1047.3, '024', 1769, 1789, ['VALVE TORQUE SW OPEN'], 1836],
+    [21, 'TSC', 'oM', 'M', ['TCA686'], 2086.5, 1110.7, '027', 1739, 1778.3, ['VALVE TORQUE SW CLOSE'], 1836]
+  ].forEach(([row, pin, key, l, sh, cx, y, btr, bx, rx, words, tx0]) => {
+    c.push([key, 'out', l, cx, y, '', sh]);
+    b.push(['btr' + btr, 'o:BTR', btr, bx, P(row)]);
+    if (rx) W('aux.' + pin, [MR, P(row)], [rx, P(row)], [rx, y], [cx - 27, y]);
+    else W('aux.' + pin, [MR, P(row)], [cx - 27, y]);
+    t.push([tx0, y - 28, 'HP TURBINE WARMING'], [tx0, y - 7, words[0]]);
+  });
+  /* full close also to the other controller (J, double outline) */
+  c.push(['oJ', 'out', 'J', 2088, 909.3, '', ['TCE360'], 1]);
+  W('aux.PIN65', [1811, 845], [1811, 909.3], [2061, 909.3]);
+  b.push(['btr025', 'o:BTR', '025', 1832, 909.3]);
+  t.push([1850, 881.3, 'HP TURBINE WARMING'], [1850, 902.3, 'VALVE FULL CLOSE']);
+  /* position simulation (analog, thick) */
+  c.push(['oP', 'out', 'P', 2086, 1175, '', ['TCA322', 'TCA777']]);
+  w.push(['aux.PIN66', [[MR, P(23)], [1767.7, P(23)], [1767.7, 1175], [2059, 1175]], 1]);
+  b.push(['ftr029', 'o:FTR', '029', 1736, P(23)]);
+  t.push([1836, 1147, 'HP TURBINE WARMING'], [1836, 1168, 'VALVE POS.SIM']);
+  /* permissive out */
+  c.push(['oN', 'out', 'N', 2086, 1248.5, '', ['TCA631', 'TCA686']]);
+  t.push([1836, 1220.5, 'HP TURBINE WARMING'], [1836, 1241.5, 'PERMISSIVE']);
+  t.push(
+    [466, 298, '(TCA103)', 1],
+    [460, 1161, '(TCA100)', 1],
+    [232, 1526, 'CONTROLLER:'],
+    [392, 1526, 'COMM+MD'],
+    [617, 1499, 'TRIGGER  :'],
+    [617, 1526, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA685',
+    title: 'HP TURBINE WARMING VALVE (TC-20)',
+    page: 167,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kTrip', 285.5, P(0), 'TRIP PRESS.LOW', 'ref'],
+      ['kOn', 293.6, P(14), 'ON(1)', 'sys.ref'],
+      ['kInit', 291.4, 1121.4, 'INITIAL', 'ref']
+    ],
+    c,
+    m: [
+      [
+        'aux',
+        'AUXILIARY TYPE 15',
+        'nMV-ASn011',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['PIN01', '', 'PIN02', '', 'PIN03', '', 'PIN04', '', 'PIN05', '', 'PIN06', 'OPEN.S', 'CLSE.S', '', 'PIN15', '', 'PIN11', '',
+          'PIN12', '', 'PIN13', '', 'PIN14', 'POS', 'PIN21'],
+        ['OPEN', '', '', 'CLOSE', '', 'ABN', '', 'OUT1', '', '', 'OUT2', '', 'PIN61', 'PIN62', 'PIN64', 'PIN65', '', '', '', 'E.TR',
+          'TSO', 'TSC', '', 'PIN66', ''],
+        'A002',
+        [
+          [1393, 1103, '(LMA584A)'],
+          [1510, 1103, '(LMA584B)'],
+          ...['K:99.0%', 'R :1.0', 'M :10', 'HL:100.0', 'LL:0.0', 'K:1.0%', 'K:0.0%'].map((s, i) => [1414, Math.round(849 + 21.3 * i), s])
+        ]
+      ]
+    ],
+    b,
+    w,
+    j: [
+      [1811, 845],
+      [1363, 1248.5]
+    ],
+    t
+  });
+})();
+/* TCA686 HP TURBINE WARMING VALVE (TC-20) (331DM09788 page 168, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the
+   pixels of the page rendered 2296 wide. The open / close of the valve of TCA685, gate by gate as drawn:
+   - A 001 = trip press low, the warming permissive and OR 006 (open signal, or FLK A009 of A 008 = exhaust steam press CPL A007
+     (HL 5.0 / LL 4.0 barg), valve pos CPL A010 (HL 41.0 / LL 40.0 %) and A 020). A 002 = A 001 and NOT 005 of OR 004 (OR 011 and
+     OR 023 = torque sw open). OPEN to TCA685 and TCA832.
+   - OR 011 = close signal or FLK A015 of A 014 (exhaust steam press CMP A013 (HL 5.0 / LL 4.0 barg), valve pos CMP A019 (HL 5.0 /
+     LL 4.0 %) and A 020). A 012 = OR 011 and NOT 018 of OR 017 (A 001 and OR 022 = torque sw close or elec trouble). CLOSE to
+     TCA685 and TCA832.
+   - A 020 = valve AUTO and program control; elec trouble also into OR 023. INITIAL on the top of the flickers and the CMPs.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const T = (key, ...pts) => w.push([key, pts, 1]);
+  /* inputs: [key, letter, sheets, x of the connector, y, words, double] */
+  [
+    ['iN', 'N', ['TCA685'], 323.5, 341.8, ['HP TURBINE WARMING PERMISSIVE']],
+    ['iA', 'A', ['TCA685'], 322.8, 405, ['HP TURBINE WARMING', 'VALVE OPEN SIGNAL']],
+    ['iA1', 'A1', ['TCE060'], 320.8, 490, ['HP TURBINE EXHAUST', 'STEAM PRESS.(MEDIAN)'], 1],
+    ['iA4', 'A4', ['TCA322'], 320.2, 596.4, ['HP TURBINE WARMING VALVE', 'POS.']],
+    ['iB', 'B', ['TCA685'], 319, 703.5, ['HP TURBINE WARMING VALVE', 'CLOSE SIGNAL']],
+    ['iC', 'C', ['TCA685'], 316.8, 1010.5, ['HP TURBINE WARMING VALVE AUTO']],
+    ['iD', 'D', ['TCA685'], 316.3, 1074, ['HP TURBINE WARMING VALVE', 'PROGRAM CONTROL']],
+    ['iL', 'L', ['TCA685'], 316, 1148.7, ['HP TURBINE WARMING VALVE', 'TORQUE SW OPEN']],
+    ['iM', 'M', ['TCA685'], 314.5, 1276, ['HP TURBINE WARMING VALVE', 'TORQUE SW CLOSE']],
+    ['iK', 'K', ['TCA685'], 314, 1340, ['HP TURBINE WARMING VALVE', 'ELEC TROUBLE']]
+  ].forEach(([key, l, sh, cx, y, names, dbl]) => {
+    c.push(dbl ? [key, 'in', l, cx, y, '', sh, 1] : [key, 'in', l, cx, y, '', sh]);
+    names.forEach((s, i) => t.push([cx + 33, y - 12 - 21 * (names.length - 1 - i), s]));
+  });
+  /* INITIAL to the top of the flickers and the comparators */
+  W('kInit', [540.7, 160], [716, 160], [716, 851], [789.5, 851], [789.5, 872]);
+  W('kInit', [716, 458.2], [1048, 458.2], [1048, 479.5]);
+  W('kInit', [716, 723.6], [1045.5, 723.6], [1045.5, 745.5]);
+  W('kInit', [789.5, 723.6], [789.5, 745.5]);
+  /* open path */
+  W('kTrip', [539.4, 278], [1244.5, 278]);
+  W('iN', [350.5, 341.8], [1200, 341.8], [1200, 299.5], [1244.5, 299.5]);
+  W('iA', [349.8, 405], [1136.4, 405]);
+  T('iA1', [347.8, 490], [762.3, 490]);
+  T('iA1', [695, 490], [695, 755.5], [759.5, 755.5]);
+  T('iA4', [347.2, 596.4], [761, 596.4]);
+  T('iA4', [671, 596.4], [671, 883], [758, 883]);
+  W('cpl007', [822.3, 490], [910.5, 490]);
+  W('cpl010', [821, 596.4], [866, 596.4], [866, 512], [910.5, 512]);
+  W('a008', [970.5, 490], [1017, 490]);
+  W('flk009', [1077, 490], [1112, 490], [1112, 426.5], [1136.4, 426.5]);
+  W('or006', [1196.4, 405], [1220.5, 405], [1220.5, 321], [1244.5, 321]);
+  W('a001', [1303.4, 278], [1562.5, 278]);
+  W('a001', [1323, 278], [1323, 842.2], [1343.3, 842.2]);
+  W('or004', [1408.4, 395.5], [1444.5, 395.5]);
+  W('not005', [1504.5, 395.5], [1539, 395.5], [1539, 300], [1562.5, 300]);
+  W('a002', [1622.5, 278], [1646, 278], [1646, 386], [2096.7, 386]);
+  /* close path */
+  W('iB', [346, 703.5], [1132.7, 703.5]);
+  W('cmp013', [819.5, 755.5], [908, 755.5]);
+  W('cmp019', [818, 883], [862.7, 883], [862.7, 777.8], [908, 777.8]);
+  W('a014', [968, 755.5], [1015, 755.5]);
+  W('flk015', [1075, 755.5], [1109, 755.5], [1109, 725.2], [1132.7, 725.2]);
+  W('or011', [1192.7, 703.5], [1557.2, 703.5]);
+  W('or011', [1237, 703.5], [1237, 395.5], [1348.4, 395.5]);
+  W('or017', [1403.3, 842.2], [1450.5, 842.2]);
+  W('not018', [1510.5, 842.2], [1533.6, 842.2], [1533.6, 725.5], [1557.2, 725.5]);
+  W('a012', [1617.2, 703.5], [1640.5, 703.5], [1640.5, 811.5], [2092, 811.5]);
+  /* auto and program control; torque switches and electrical trouble */
+  W('iC', [343.8, 1010.5], [757.2, 1010.5]);
+  W('iD', [343.3, 1074], [733.2, 1074], [733.2, 1032], [757.2, 1032]);
+  W('a020', [817.2, 1010.5], [884, 1010.5], [884, 533.5], [910.5, 533.5]);
+  W('a020', [884, 799.3], [908, 799.3]);
+  W('iL', [343, 1148.7], [756.2, 1148.7]);
+  W('iM', [341.5, 1276], [755, 1276]);
+  W('iK', [341, 1340], [732.3, 1340], [732.3, 1170.2], [756.2, 1170.2]);
+  W('iK', [732.3, 1297.5], [755, 1297.5]);
+  W('or023', [816.2, 1148.7], [1257, 1148.7], [1257, 417], [1348.4, 417]);
+  W('or022', [815, 1276], [1320, 1276], [1320, 863.7], [1343.3, 863.7]);
+  /* out */
+  c.push(['oA', 'out', 'A', 2123.7, 386, '', ['TCA685', 'TCA832']], ['oB', 'out', 'B', 2119, 811.5, '', ['TCA685', 'TCA832']]);
+  t.push(
+    [1800, 359, 'HP TURBINE WARMING VALVE'],
+    [1800, 379, 'OPEN'],
+    [1795.5, 784.5, 'HP TURBINE WARMING VALVE'],
+    [1795.5, 805, 'CLOSE'],
+    /* the parameters of the comparators and flickers, the T of their top */
+    [752, 542, 'HL:5.0barg'],
+    [752, 563, 'LL:4.0barg'],
+    [762, 648, 'HL:41.0%'],
+    [762, 670, 'LL:40.0%'],
+    [750, 808, 'HL:5.0barg'],
+    [750, 829, 'LL:4.0barg'],
+    [759, 935, 'HL:5.0%'],
+    [759, 956, 'LL:4.0%'],
+    [1017, 542, 'T1:1.0s'],
+    [1017, 563, 'T2:15.0s'],
+    [1015, 808, 'T1:1.0s'],
+    [1015, 829, 'T2:15.0s'],
+    [749, 481, 'T', 1],
+    [747.7, 588, 'T', 1],
+    [746.4, 746, 'T', 1],
+    [744.5, 874, 'T', 1],
+    [1003.6, 481, 'T', 1],
+    [1001, 746, 'T', 1],
+    [476, 199, '(TCA100)', 1],
+    [476, 305, '(TCA103)', 1],
+    [228, 1521, 'CONTROLLER:'],
+    [388, 1521, 'COMM+MD'],
+    [613, 1495, 'TRIGGER  :'],
+    [613, 1521, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA686',
+    title: 'HP TURBINE WARMING VALVE (TC-20)',
+    page: 168,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [170, 86, 2222, 1546],
+    k: [
+      ['kInit', 307.7, 160, 'INITIAL', 'ref'],
+      ['kTrip', 306.4, 278, 'TRIP PRESS.LOW', 'ref']
+    ],
+    c,
+    b: [
+      ['a001', 'A', '001', 1273.4, 299, [], {}, [60, 64]],
+      ['a002', 'A', '002', 1592.5, 288.6],
+      ['btr003', 'o:BTR', '003', 1708, 386],
+      ['or004', 'OR', '004', 1378.4, 406],
+      ['not005', 'NOT', '005', 1474.5, 406],
+      ['or006', 'OR', '006', 1166.4, 415.5],
+      ['cpl007', 'CPL', 'A007', 792.3, 500.5],
+      ['a008', 'A', '008', 940.5, 511.5, [], {}, [60, 64]],
+      ['flk009', 'FLK', 'A009', 1047, 501],
+      ['cpl010', 'CPL', 'A010', 791, 607],
+      ['or011', 'OR', '011', 1162.7, 714.2],
+      ['a012', 'A', '012', 1587.2, 714.2],
+      ['cmp013', 'CMP', 'A013', 789.5, 766.3],
+      ['a014', 'A', '014', 938, 777.3, [], {}, [60, 64]],
+      ['flk015', 'FLK', 'A015', 1045, 767],
+      ['btr016', 'o:BTR', '016', 1703.6, 811.5],
+      ['or017', 'OR', '017', 1373.3, 852.7],
+      ['not018', 'NOT', '018', 1480.5, 852.7],
+      ['cmp019', 'CMP', 'A019', 788, 893.5],
+      ['a020', 'A', '020', 787.2, 1021],
+      ['or022', 'OR', '022', 785, 1286.5],
+      ['or023', 'OR', '023', 786.2, 1159.2]
+    ],
+    w,
+    j: [
+      [716, 458.2],
+      [716, 723.6],
+      [789.5, 723.6],
+      [695, 490],
+      [671, 596.4],
+      [1323, 278],
+      [1237, 703.5],
+      [884, 799.3],
+      [732.3, 1297.5]
+    ],
+    t
+  });
+})();
+/* TCA690 COLD R/H STM NON-RETURN VLV (TC-19) (331DM09788 page 169, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the
+   pixels of the page rendered 2296 wide. The air operated valve nXV-CRn901AF (AIR OPERAT VALVE A021, LMA593A), gate by gate as drawn:
+   - FFP = OFF(0). A 023 = AVAIRABLE and the TEST push button, into S of FFR 024. A 026 = AVAIRABLE and TEST CANCEL, into OR 039;
+     TP 040 (10.0 s, INITIAL on its top) of the FFR output taken inverted is the other input of OR 039, into R of FFR 024.
+   - The FFR output = the TEST FB lamp, and OR 025 with the ventilator valve open signal (D1 of TCE360): NOT 037 of it to SVE, OR 025
+     itself to SVD. A 027 = AVAIRABLE and the RESET push button, to RESET. The full open / full close positions (A6 / A5 of TCA048) to
+     LTOP / LTCL.
+   - SVE out (A1 to TCA834), LTOP out (A2), LTCL out (A3); ABN = the valve trouble lamp. A 011 = NOT 010 of LTCL and CV(A) / CV(B) full
+     close (G of TCE125 / TCE127), through TP A012 (30.0 s, INITIAL on its top) to the TCA690_1 lamp.
+   The words are the ones of the drawing (AVAIRABLE, OPERAT, RETRN as printed). The tag keeps the small n of the drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [166, 82, 2220, 1542],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1301,
+    MR = 1707,
+    TOP = 250,
+    H = 382,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1);
+  /* the push buttons and AVAIRABLE into the gates */
+  W('crtIir', [392, 157], [529, 157], [529, 497.5], [560.2, 497.5]);
+  W('crtIir', [529, R1], [560.2, R1]);
+  W('crtIir', [529, 402], [560.2, 402]);
+  W('crtKta', [379, 350.4], [560.2, 350.4]);
+  W('crtKtac', [389, 423.5], [560.2, 423.5]);
+  W('crtKtr', [377.7, 519], [560.2, 519]);
+  /* test: set / reset */
+  W('a023', [617.8, R1], [879, R1]);
+  W('a026', [617.8, 402], [784.2, 402]);
+  W('or039', [841.8, 402], [869.5, 402], [869.5, 350.4], [879, 350.4]);
+  W('tp040', [746.3, 423.5], [784.2, 423.5]);
+  W('ffr024', [959, R1], [1073.2, R1]);
+  W('ffr024', [994.5, R1], [994.5, 157], [1297, 157]);
+  W('ffr024', [994.5, R1], [994.5, 487], [663.6, 487], [663.6, 423.5], [688.7, 423.5]);
+  /* to the valve */
+  W('kOff', [510, 252.3], [1027, 252.3], [1027, P(0)], [MX, P(0)]);
+  W('iD1', [276, 606], [1046, 606], [1046, 350.4], [1073.2, 350.4]);
+  W('or025', [1130.8, R1], [1178.2, R1]);
+  W('or025', [1155.5, R1], [1155.5, P(3)], [MX, P(3)]);
+  W('not037', [1235.8, R1], [MX, R1]);
+  W('a027', [617.8, 497.5], [1237, 497.5], [1237, P(5)], [MX, P(5)]);
+  W('iA6', [275, 745.5], [1068, 745.5], [1068, P(7)], [MX, P(7)]);
+  W('iA5', [275, 830], [1132, 830], [1132, P(8)], [MX, P(8)]);
+  /* INITIAL to the top of the two timers */
+  W('kInit', [446.5, 924], [1383, 924], [1383, 986.5]);
+  W('kInit', [640, 924], [640, 369.5], [717.5, 369.5], [717.5, 412.5]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2053, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2051, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1800, P(6)], [1800, 862], [1032.7, 862], [1032.7, 997.5], [1088.2, 997.5]);
+  W('aov.LTCL', [1800, 576.4], [2051, 576.4]);
+  W('aov.ABN', [MR, P(8)], [1737, P(8)], [1737, 704.5], [2048.6, 704.5], [2048.6, 716], [2059, 716]);
+  /* valve trouble: LTCL inverted and CV(A) / CV(B) full close */
+  W('iGa', [273.5, 1062], [1181.8, 1062], [1181.8, 1019], [1224.5, 1019]);
+  W('iGb', [273.5, 1137.7], [1202, 1137.7], [1202, 1040.5], [1224.5, 1040.5]);
+  W('not010', [1145.8, 997.5], [1224.5, 997.5]);
+  W('a011', [1284.5, 997.5], [1354.2, 997.5]);
+  W('tp012', [1411.8, 997.5], [1971, 997.5]);
+  t.push(
+    [398, 148.6, 'AVAIRABLE'],
+    [385, 339.5, 'TEST'],
+    [395, 413.6, 'TEST CANCEL'],
+    [384, 510, 'RESET'],
+    [1152, 148, 'TEST FB'],
+    [293, 594, 'VENTILATOR VALVE OPEN SIGNAL'],
+    [282, 712.5, 'COLD REHEAT NON RETURN VALVE'],
+    [282, 733.5, 'FULL OPEN POSITION'],
+    [282, 797, 'COLD REHEAT NON RETURN VALVE'],
+    [282, 818, 'FULL CLOSE POSITION'],
+    [290.5, 1050, 'CV(A)FULL CLOSE(AUX)'],
+    [290.5, 1125.7, 'CV(B)FULL CLOSE(AUX)'],
+    [1857, 673.6, 'COLD R/H STM NON RETRN'],
+    [1857, 695, 'VLV  TROUBLE'],
+    [2074, 672, 'nXV-CRn901AF_ABN', 1],
+    [1683, 969.5, 'COLD R/H STM NON RETRN'],
+    [1683, 990.5, 'VLV  TROUBLE'],
+    /* the timers: their time and the T of their input or top */
+    [866, 317, 'T', 1],
+    [674, 415, 'T', 1],
+    [688, 474, 'TP:10.0s'],
+    [1340, 989.5, 'T', 1],
+    [1353, 1047, 'TP:30.0s'],
+    [369, 962, '(TCA100)', 1],
+    [232, 1517, 'CONTROLLER:'],
+    [392, 1517, 'COMM+MD'],
+    [616, 1491, 'TRIGGER  :'],
+    [616, 1517, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA690',
+    title: 'COLD R/H STM NON-RETURN VLV(TC-19)',
+    page: 169,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kOff', 277, 252.3, 'OFF(0)', 'sys.ref'],
+      ['kInit', 213.5, 924, 'INITIAL', 'ref']
+    ],
+    c: [
+      ['iD1', 'in', 'D1', 249, 606, '', ['TCE360'], 1],
+      ['iA6', 'in', 'A6', 248, 745.5, '', ['TCA048']],
+      ['iA5', 'in', 'A5', 248, 830, '', ['TCA048']],
+      ['iGa', 'in', 'G', 246.5, 1062, '', ['TCE125'], 1],
+      ['iGb', 'in', 'G', 246.5, 1137.7, '', ['TCE127'], 1],
+      ['oA1', 'out', 'A1', 2080, P(0), '', ['TCA834']],
+      ['oA2', 'out', 'A2', 2078, P(5), '', ['-']],
+      ['oA3', 'out', 'A3', 2078, 576.4, '', ['-']]
+    ],
+    d: [
+      ['crtIir', 357, 157, 'in', 'nXV-CRn901AF_IIR', 'R', '#1C'],
+      ['crtKta', 344, 350.4, 'in', 'nXV-CRn901AF_KTA', 'R', '#1C'],
+      ['crtKtac', 354, 423.5, 'in', 'nXV-CRn901AF_KTAC', 'R', '#1C'],
+      ['crtKtr', 342.7, 519, 'in', 'nXV-CRn901AF_KTR', 'R', '#1C'],
+      ['crtIta', 1332, 157, 'out', 'nXV-CRn901AF_ITA', 'S', '#1C'],
+      ['crtAbn', 2094, 716, 'out', '', 'S', '#1C'],
+      ['crtTca690', 2006, 997.5, 'out', 'TCA690_1', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nXV-CRn901AF',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1404.5, 653.6, '(LMA593A)'],
+          [1507.7, 675.5, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:20.0', 'K:1.0%'].map((s, i) => [
+            1304.5,
+            Math.round(675.5 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 589, R1 + 10.5],
+      ['ffr024', 'FFR', '024', 919, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or025', 'OR', '025', 1102, R1 + 10.5],
+      ['a026', 'A', '026', 589, 412.5],
+      ['a027', 'A', '027', 589, 508],
+      ['or039', 'OR', '039', 813, 412.5],
+      ['tp040', 'TP', '040', 717.5, 434],
+      ['x1', 'X', '', 823.6, 487],
+      ['not037', 'NOT', '037', 1207, R1 + 10.5],
+      ['btr022', 'o:BTR', '022', 1061, 157],
+      ['btr036', 'o:BTR', '036', 1249.5, P(0)],
+      ['btr029', 'o:BTR', '029', 1260, R1],
+      ['btr030', 'o:BTR', '030', 1259, P(3)],
+      ['btr031', 'o:BTR', '031', 1258.6, P(5)],
+      ['btr034', 'o:BTR', '034', 1258.6, P(7)],
+      ['btr035', 'o:BTR', '035', 1258, P(8)],
+      ['btr028', 'o:BTR', '028', 1792, P(0)],
+      ['btr032', 'o:BTR', '032', 1738.6, P(5)],
+      ['btr033', 'o:BTR', '033', 1737.7, P(6)],
+      ['btr038', 'o:BTR', '038', 1768, 704.5],
+      ['btr014', 'o:BTR', '014', 642, 1062],
+      ['btr015', 'o:BTR', '015', 642, 1137.7],
+      ['not010', 'NOT', '010', 1117, 1008],
+      ['a011', 'A', '011', 1254.5, 1018.5, [], {}, [60, 64]],
+      ['tp012', 'TP', 'A012', 1383, 1008]
+    ],
+    w,
+    j: [
+      [529, R1],
+      [529, 402],
+      [994.5, R1],
+      [1155.5, R1],
+      [640, 924],
+      [1800, 576.4]
+    ],
     t
   });
 })();
@@ -132217,7 +132728,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build fc19a72'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build d1ba6fe'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -158703,7 +159214,13 @@ const TCS_DESC = {
   TCA655:
     'Main oil tank vapour extractor (TB-12) motor: start command held by a set / reset memory, running out, and the extractor stopped alarm when it is not running while an oil pump runs for 5 s.',
   TCA680:
-    'Gland steam exhauster (TC-28) motor: auto start and stop by the gland seal start and stop groups; start command, running and AUTO out.'
+    'Gland steam exhauster (TC-28) motor: auto start and stop by the gland seal start and stop groups; start command, running and AUTO out.',
+  TCA685:
+    'HP turbine warming valve (TC-20) motor valve: opened by the HP turbine warming start group while the aux steam header pressure permits; open / close signals, AUTO, positions and permissive out.',
+  TCA686:
+    'HP turbine warming valve (TC-20) open / close: open and close signals, or in AUTO with program control by exhaust steam pressure and valve position through flickers; each blocks the other.',
+  TCA690:
+    'Cold reheat steam non-return valve (TC-19) air operated valve: test set / reset with feedback, solenoid open / close by the ventilator valve, full open / close positions out; trouble alarm when it is not closed with both CVs closed.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -201704,6 +202221,517 @@ const TCS_DESC = {
     ],
     w,
     j: [],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA685.js ---- */
+/* TCA685 HP TURBINE WARMING VALVE (TC-20) (331DM09788 page 167, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the
+   pixels of the page rendered 2296 wide. The motor valve nMV-ASn011 (AUXILIARY TYPE 15 A002, LMA584A / B): trip oil pressure low,
+   condenser vacuum low, the program control start and the open command of the HP turbine warming start group, the close command,
+   the open / close simulation, ON(1), the full open / full close positions, torque switches, position (analog) and electrical trouble
+   in. The permissive = AUX SYSTEM HEADER PRESS. (LOWER) above CMP A033 (HL 7.0 / LL 6.0 kg/cm2g, INITIAL on its top), to PIN06 and
+   out. OPEN / CLOSE SIGNAL, AUTO, PROGRAM CONTROL, OPEN, CLOSE, FULL OPEN, FULL CLOSE, ELEC TROUBLE, TORQUE SW OPEN / CLOSE and
+   POS.SIM out.
+   The words are the ones of the drawing (VALVEOPEN SIM, VALVECLOSE SIM as printed). The tag keeps the small n of the drawing (the unit
+   number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [168, 88, 2222, 1550],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1295,
+    MR = 1697,
+    TOP = 223,
+    H = 860,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 25,
+    BX = 1228;
+  /* inputs: [key, letter, sheet, x of the connector, y, words, pin row, BTR, x of the jog] */
+  [
+    ['iC1', 'C1', 'TCA536', 280.5, P(2), ['CONDENSER VACUUM LOW'], 2, '004'],
+    ['iA6', 'A6', 'TCA632', 280.3, P(4), ['PROGRAM CONTROL START COMMAND', 'FROM HP TURBINE WARMING START'], 4, '006'],
+    ['iA3', 'A3', 'TCA632', 280, P(6), ['OPEN COMMAND FROM HP TURBINE', 'WARMING START GROUP CONTROL'], 6, '007'],
+    ['iC', 'C', 'TCA633', 279.5, P(8), ['HP TURBINE WARMING VALVE CLOSE COMMAND'], 8, '009'],
+    ['iB', 'B', 'TCA686', 278.5, P(12), ['HP TURBINE WARMING VALVECLOSE SIM'], 12, '013'],
+    ['iA5', 'A5', 'TCA044', 278, P(16), ['HP TURBINE WARMING VALVE', 'FULL OPEN POSITION'], 16, '020'],
+    ['iA4', 'A4', 'TCA044', 278, P(18), ['HP TURBINE WARMING VALVE', 'FULL CLOSE POSITION'], 18, '021'],
+    ['iA14', 'A14', 'TCA044', 277.5, P(20), ['HP TURBINE WARMING VALVE', 'TORQUE OPEN'], 20, '023'],
+    ['iA15', 'A15', 'TCA044', 277.5, 962.3, ['HP TURBINE WARMING VALVE', 'TORQUE CLOSE'], 22, '028', 1192.8],
+    ['iA6b', 'A6', 'TCA047', 277, 1058.6, ['HP TURBINE WARMING VALVE', 'ELECTRICAL TROUBLE'], 24, '030', 1192.8]
+  ].forEach(([key, l, sh, cx, y, names, row, btr, jx]) => {
+    c.push([key, 'in', l, cx, y, '', [sh]]);
+    names.forEach((s, i) => t.push([cx + 44, y - 11 - 21 * (names.length - 1 - i), s]));
+    b.push(['btr' + btr, 'o:BTR', btr, BX, P(row)]);
+    if (jx) W(key, [cx + 27, y], [jx, y], [jx, P(row)], [MX, P(row)]);
+    else W(key, [cx + 27, y], [MX, y]);
+  });
+  /* open simulation: A (TCA686) jogs down to OPEN.S */
+  c.push(['iA', 'in', 'A', 279, 590.7, '', ['TCA686']]);
+  t.push([323, 579.7, 'HP TURBINE WARMING VALVEOPEN SIM']);
+  W('iA', [306, 590.7], [1070.7, 590.7], [1070.7, P(11)], [MX, P(11)]);
+  b.push(['btr012', 'o:BTR', '012', 1165, P(11)]);
+  /* position (analog, thick) */
+  c.push(['iA4p', 'in', 'A4', 277, P(23), '', ['TCA322']]);
+  w.push(['iA4p', [[304, P(23)], [MX, P(23)]], 1]);
+  b.push(['ftr032', 'o:FTR', '032', BX, P(23)]);
+  /* trip oil pressure low and ON(1) */
+  W('kTrip', [518.5, P(0)], [MX, P(0)]);
+  b.push(['btr001', 'o:BTR', '001', BX, P(0)]);
+  W('kOn', [526.6, P(14)], [MX, P(14)]);
+  b.push(['btr016', 'o:BTR', '016', BX, P(14)]);
+  /* the permissive: aux system header pressure above CMP A033, to PIN06 and out */
+  c.push(['iA2', 'in', 'A2', 276.6, 1248.5, '', ['TCA316']]);
+  t.push([320, 1237.5, 'AUX SYSTEM HEADER PRESS. (LOWER)']);
+  w.push(['iA2', [[303.6, 1248.5], [1206, 1248.5]], 1]);
+  W('kInit', [524.4, 1121.4], [1235, 1121.4], [1235, 1237.5]);
+  W('cmp033', [1264, 1248.5], [2059, 1248.5]);
+  W('cmp033', [1363, 1248.5], [1363, 1100], [1110, 1100], [1110, P(10)], [MX, P(10)]);
+  b.push(
+    ['btr010', 'o:BTR', '010', BX, P(10)],
+    ['cmp033', 'CMP', 'A033', 1235, 1259.2],
+    ['btr031', 'o:BTR', '031', 1734, 1248.5]
+  );
+  t.push([1196, 1240, 'T', 2], [1205, 1301, 'HL:7.0kg/cm2g'], [1205, 1322, 'LL:6.0kg/cm2g']);
+  /* out: [pin row, pin, key, letter, sheets, x of the connector, y, BTR, x of the BTR, x of the riser, words, x of the words] */
+  [
+    [0, 'OPEN', 'oA', 'A', ['TCA686'], 2093.5, P(0), '003', 1774, 0, ['VALVE OPEN SIGNAL'], 1843],
+    [3, 'CLOSE', 'oB', 'B', ['TCA686'], 2093, P(3), '005', 1773, 0, ['VALVE CLOSE SIGNAL'], 1843],
+    [7, 'OUT1', 'oC', 'C', ['TCA631', 'TCA686'], 2092, P(7), '008', 1772, 0, ['VALVE AUTO'], 1842],
+    [10, 'OUT2', 'oD', 'D', ['TCA632', 'TCA686'], 2090, P(10), '011', 1770, 0, ['VALVE PROGRAM CONTROL'], 1841],
+    [12, 'PIN61', 'oE', 'E', ['-'], 2089, P(12), '014', 1770, 0, ['VALVE OPEN'], 1840],
+    [13, 'PIN62', 'oF', 'F', ['-'], 2089, 718.3, '015', 1739, 1801.7, ['VALVE CLOSE'], 1840],
+    [14, 'PIN64', 'oG', 'G', ['-'], 2089, 781.7, '017', 1770, 1791, ['VALVE FULL OPEN'], 1839],
+    [15, 'PIN65', 'oH', 'H', ['TCA500', 'TCA633'], 2088.5, 845, '019', 1739, 1779.3, ['VALVE FULL CLOSE'], 1839],
+    [19, 'E.TR', 'oK', 'K', ['TCA686'], 2087.5, 982.7, '022', 1739, 1800, ['VALVE ELEC TROUBLE'], 1837],
+    [20, 'TSO', 'oL', 'L', ['TCA686'], 2087, 1047.3, '024', 1769, 1789, ['VALVE TORQUE SW OPEN'], 1836],
+    [21, 'TSC', 'oM', 'M', ['TCA686'], 2086.5, 1110.7, '027', 1739, 1778.3, ['VALVE TORQUE SW CLOSE'], 1836]
+  ].forEach(([row, pin, key, l, sh, cx, y, btr, bx, rx, words, tx0]) => {
+    c.push([key, 'out', l, cx, y, '', sh]);
+    b.push(['btr' + btr, 'o:BTR', btr, bx, P(row)]);
+    if (rx) W('aux.' + pin, [MR, P(row)], [rx, P(row)], [rx, y], [cx - 27, y]);
+    else W('aux.' + pin, [MR, P(row)], [cx - 27, y]);
+    t.push([tx0, y - 28, 'HP TURBINE WARMING'], [tx0, y - 7, words[0]]);
+  });
+  /* full close also to the other controller (J, double outline) */
+  c.push(['oJ', 'out', 'J', 2088, 909.3, '', ['TCE360'], 1]);
+  W('aux.PIN65', [1811, 845], [1811, 909.3], [2061, 909.3]);
+  b.push(['btr025', 'o:BTR', '025', 1832, 909.3]);
+  t.push([1850, 881.3, 'HP TURBINE WARMING'], [1850, 902.3, 'VALVE FULL CLOSE']);
+  /* position simulation (analog, thick) */
+  c.push(['oP', 'out', 'P', 2086, 1175, '', ['TCA322', 'TCA777']]);
+  w.push(['aux.PIN66', [[MR, P(23)], [1767.7, P(23)], [1767.7, 1175], [2059, 1175]], 1]);
+  b.push(['ftr029', 'o:FTR', '029', 1736, P(23)]);
+  t.push([1836, 1147, 'HP TURBINE WARMING'], [1836, 1168, 'VALVE POS.SIM']);
+  /* permissive out */
+  c.push(['oN', 'out', 'N', 2086, 1248.5, '', ['TCA631', 'TCA686']]);
+  t.push([1836, 1220.5, 'HP TURBINE WARMING'], [1836, 1241.5, 'PERMISSIVE']);
+  t.push(
+    [466, 298, '(TCA103)', 1],
+    [460, 1161, '(TCA100)', 1],
+    [232, 1526, 'CONTROLLER:'],
+    [392, 1526, 'COMM+MD'],
+    [617, 1499, 'TRIGGER  :'],
+    [617, 1526, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA685',
+    title: 'HP TURBINE WARMING VALVE (TC-20)',
+    page: 167,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kTrip', 285.5, P(0), 'TRIP PRESS.LOW', 'ref'],
+      ['kOn', 293.6, P(14), 'ON(1)', 'sys.ref'],
+      ['kInit', 291.4, 1121.4, 'INITIAL', 'ref']
+    ],
+    c,
+    m: [
+      [
+        'aux',
+        'AUXILIARY TYPE 15',
+        'nMV-ASn011',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['PIN01', '', 'PIN02', '', 'PIN03', '', 'PIN04', '', 'PIN05', '', 'PIN06', 'OPEN.S', 'CLSE.S', '', 'PIN15', '', 'PIN11', '',
+          'PIN12', '', 'PIN13', '', 'PIN14', 'POS', 'PIN21'],
+        ['OPEN', '', '', 'CLOSE', '', 'ABN', '', 'OUT1', '', '', 'OUT2', '', 'PIN61', 'PIN62', 'PIN64', 'PIN65', '', '', '', 'E.TR',
+          'TSO', 'TSC', '', 'PIN66', ''],
+        'A002',
+        [
+          [1393, 1103, '(LMA584A)'],
+          [1510, 1103, '(LMA584B)'],
+          ...['K:99.0%', 'R :1.0', 'M :10', 'HL:100.0', 'LL:0.0', 'K:1.0%', 'K:0.0%'].map((s, i) => [1414, Math.round(849 + 21.3 * i), s])
+        ]
+      ]
+    ],
+    b,
+    w,
+    j: [
+      [1811, 845],
+      [1363, 1248.5]
+    ],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA686.js ---- */
+/* TCA686 HP TURBINE WARMING VALVE (TC-20) (331DM09788 page 168, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the
+   pixels of the page rendered 2296 wide. The open / close of the valve of TCA685, gate by gate as drawn:
+   - A 001 = trip press low, the warming permissive and OR 006 (open signal, or FLK A009 of A 008 = exhaust steam press CPL A007
+     (HL 5.0 / LL 4.0 barg), valve pos CPL A010 (HL 41.0 / LL 40.0 %) and A 020). A 002 = A 001 and NOT 005 of OR 004 (OR 011 and
+     OR 023 = torque sw open). OPEN to TCA685 and TCA832.
+   - OR 011 = close signal or FLK A015 of A 014 (exhaust steam press CMP A013 (HL 5.0 / LL 4.0 barg), valve pos CMP A019 (HL 5.0 /
+     LL 4.0 %) and A 020). A 012 = OR 011 and NOT 018 of OR 017 (A 001 and OR 022 = torque sw close or elec trouble). CLOSE to
+     TCA685 and TCA832.
+   - A 020 = valve AUTO and program control; elec trouble also into OR 023. INITIAL on the top of the flickers and the CMPs.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const T = (key, ...pts) => w.push([key, pts, 1]);
+  /* inputs: [key, letter, sheets, x of the connector, y, words, double] */
+  [
+    ['iN', 'N', ['TCA685'], 323.5, 341.8, ['HP TURBINE WARMING PERMISSIVE']],
+    ['iA', 'A', ['TCA685'], 322.8, 405, ['HP TURBINE WARMING', 'VALVE OPEN SIGNAL']],
+    ['iA1', 'A1', ['TCE060'], 320.8, 490, ['HP TURBINE EXHAUST', 'STEAM PRESS.(MEDIAN)'], 1],
+    ['iA4', 'A4', ['TCA322'], 320.2, 596.4, ['HP TURBINE WARMING VALVE', 'POS.']],
+    ['iB', 'B', ['TCA685'], 319, 703.5, ['HP TURBINE WARMING VALVE', 'CLOSE SIGNAL']],
+    ['iC', 'C', ['TCA685'], 316.8, 1010.5, ['HP TURBINE WARMING VALVE AUTO']],
+    ['iD', 'D', ['TCA685'], 316.3, 1074, ['HP TURBINE WARMING VALVE', 'PROGRAM CONTROL']],
+    ['iL', 'L', ['TCA685'], 316, 1148.7, ['HP TURBINE WARMING VALVE', 'TORQUE SW OPEN']],
+    ['iM', 'M', ['TCA685'], 314.5, 1276, ['HP TURBINE WARMING VALVE', 'TORQUE SW CLOSE']],
+    ['iK', 'K', ['TCA685'], 314, 1340, ['HP TURBINE WARMING VALVE', 'ELEC TROUBLE']]
+  ].forEach(([key, l, sh, cx, y, names, dbl]) => {
+    c.push(dbl ? [key, 'in', l, cx, y, '', sh, 1] : [key, 'in', l, cx, y, '', sh]);
+    names.forEach((s, i) => t.push([cx + 33, y - 12 - 21 * (names.length - 1 - i), s]));
+  });
+  /* INITIAL to the top of the flickers and the comparators */
+  W('kInit', [540.7, 160], [716, 160], [716, 851], [789.5, 851], [789.5, 872]);
+  W('kInit', [716, 458.2], [1048, 458.2], [1048, 479.5]);
+  W('kInit', [716, 723.6], [1045.5, 723.6], [1045.5, 745.5]);
+  W('kInit', [789.5, 723.6], [789.5, 745.5]);
+  /* open path */
+  W('kTrip', [539.4, 278], [1244.5, 278]);
+  W('iN', [350.5, 341.8], [1200, 341.8], [1200, 299.5], [1244.5, 299.5]);
+  W('iA', [349.8, 405], [1136.4, 405]);
+  T('iA1', [347.8, 490], [762.3, 490]);
+  T('iA1', [695, 490], [695, 755.5], [759.5, 755.5]);
+  T('iA4', [347.2, 596.4], [761, 596.4]);
+  T('iA4', [671, 596.4], [671, 883], [758, 883]);
+  W('cpl007', [822.3, 490], [910.5, 490]);
+  W('cpl010', [821, 596.4], [866, 596.4], [866, 512], [910.5, 512]);
+  W('a008', [970.5, 490], [1017, 490]);
+  W('flk009', [1077, 490], [1112, 490], [1112, 426.5], [1136.4, 426.5]);
+  W('or006', [1196.4, 405], [1220.5, 405], [1220.5, 321], [1244.5, 321]);
+  W('a001', [1303.4, 278], [1562.5, 278]);
+  W('a001', [1323, 278], [1323, 842.2], [1343.3, 842.2]);
+  W('or004', [1408.4, 395.5], [1444.5, 395.5]);
+  W('not005', [1504.5, 395.5], [1539, 395.5], [1539, 300], [1562.5, 300]);
+  W('a002', [1622.5, 278], [1646, 278], [1646, 386], [2096.7, 386]);
+  /* close path */
+  W('iB', [346, 703.5], [1132.7, 703.5]);
+  W('cmp013', [819.5, 755.5], [908, 755.5]);
+  W('cmp019', [818, 883], [862.7, 883], [862.7, 777.8], [908, 777.8]);
+  W('a014', [968, 755.5], [1015, 755.5]);
+  W('flk015', [1075, 755.5], [1109, 755.5], [1109, 725.2], [1132.7, 725.2]);
+  W('or011', [1192.7, 703.5], [1557.2, 703.5]);
+  W('or011', [1237, 703.5], [1237, 395.5], [1348.4, 395.5]);
+  W('or017', [1403.3, 842.2], [1450.5, 842.2]);
+  W('not018', [1510.5, 842.2], [1533.6, 842.2], [1533.6, 725.5], [1557.2, 725.5]);
+  W('a012', [1617.2, 703.5], [1640.5, 703.5], [1640.5, 811.5], [2092, 811.5]);
+  /* auto and program control; torque switches and electrical trouble */
+  W('iC', [343.8, 1010.5], [757.2, 1010.5]);
+  W('iD', [343.3, 1074], [733.2, 1074], [733.2, 1032], [757.2, 1032]);
+  W('a020', [817.2, 1010.5], [884, 1010.5], [884, 533.5], [910.5, 533.5]);
+  W('a020', [884, 799.3], [908, 799.3]);
+  W('iL', [343, 1148.7], [756.2, 1148.7]);
+  W('iM', [341.5, 1276], [755, 1276]);
+  W('iK', [341, 1340], [732.3, 1340], [732.3, 1170.2], [756.2, 1170.2]);
+  W('iK', [732.3, 1297.5], [755, 1297.5]);
+  W('or023', [816.2, 1148.7], [1257, 1148.7], [1257, 417], [1348.4, 417]);
+  W('or022', [815, 1276], [1320, 1276], [1320, 863.7], [1343.3, 863.7]);
+  /* out */
+  c.push(['oA', 'out', 'A', 2123.7, 386, '', ['TCA685', 'TCA832']], ['oB', 'out', 'B', 2119, 811.5, '', ['TCA685', 'TCA832']]);
+  t.push(
+    [1800, 359, 'HP TURBINE WARMING VALVE'],
+    [1800, 379, 'OPEN'],
+    [1795.5, 784.5, 'HP TURBINE WARMING VALVE'],
+    [1795.5, 805, 'CLOSE'],
+    /* the parameters of the comparators and flickers, the T of their top */
+    [752, 542, 'HL:5.0barg'],
+    [752, 563, 'LL:4.0barg'],
+    [762, 648, 'HL:41.0%'],
+    [762, 670, 'LL:40.0%'],
+    [750, 808, 'HL:5.0barg'],
+    [750, 829, 'LL:4.0barg'],
+    [759, 935, 'HL:5.0%'],
+    [759, 956, 'LL:4.0%'],
+    [1017, 542, 'T1:1.0s'],
+    [1017, 563, 'T2:15.0s'],
+    [1015, 808, 'T1:1.0s'],
+    [1015, 829, 'T2:15.0s'],
+    [749, 481, 'T', 1],
+    [747.7, 588, 'T', 1],
+    [746.4, 746, 'T', 1],
+    [744.5, 874, 'T', 1],
+    [1003.6, 481, 'T', 1],
+    [1001, 746, 'T', 1],
+    [476, 199, '(TCA100)', 1],
+    [476, 305, '(TCA103)', 1],
+    [228, 1521, 'CONTROLLER:'],
+    [388, 1521, 'COMM+MD'],
+    [613, 1495, 'TRIGGER  :'],
+    [613, 1521, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA686',
+    title: 'HP TURBINE WARMING VALVE (TC-20)',
+    page: 168,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [170, 86, 2222, 1546],
+    k: [
+      ['kInit', 307.7, 160, 'INITIAL', 'ref'],
+      ['kTrip', 306.4, 278, 'TRIP PRESS.LOW', 'ref']
+    ],
+    c,
+    b: [
+      ['a001', 'A', '001', 1273.4, 299, [], {}, [60, 64]],
+      ['a002', 'A', '002', 1592.5, 288.6],
+      ['btr003', 'o:BTR', '003', 1708, 386],
+      ['or004', 'OR', '004', 1378.4, 406],
+      ['not005', 'NOT', '005', 1474.5, 406],
+      ['or006', 'OR', '006', 1166.4, 415.5],
+      ['cpl007', 'CPL', 'A007', 792.3, 500.5],
+      ['a008', 'A', '008', 940.5, 511.5, [], {}, [60, 64]],
+      ['flk009', 'FLK', 'A009', 1047, 501],
+      ['cpl010', 'CPL', 'A010', 791, 607],
+      ['or011', 'OR', '011', 1162.7, 714.2],
+      ['a012', 'A', '012', 1587.2, 714.2],
+      ['cmp013', 'CMP', 'A013', 789.5, 766.3],
+      ['a014', 'A', '014', 938, 777.3, [], {}, [60, 64]],
+      ['flk015', 'FLK', 'A015', 1045, 767],
+      ['btr016', 'o:BTR', '016', 1703.6, 811.5],
+      ['or017', 'OR', '017', 1373.3, 852.7],
+      ['not018', 'NOT', '018', 1480.5, 852.7],
+      ['cmp019', 'CMP', 'A019', 788, 893.5],
+      ['a020', 'A', '020', 787.2, 1021],
+      ['or022', 'OR', '022', 785, 1286.5],
+      ['or023', 'OR', '023', 786.2, 1159.2]
+    ],
+    w,
+    j: [
+      [716, 458.2],
+      [716, 723.6],
+      [789.5, 723.6],
+      [695, 490],
+      [671, 596.4],
+      [1323, 278],
+      [1237, 703.5],
+      [884, 799.3],
+      [732.3, 1297.5]
+    ],
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCA690.js ---- */
+/* TCA690 COLD R/H STM NON-RETURN VLV (TC-19) (331DM09788 page 169, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the
+   pixels of the page rendered 2296 wide. The air operated valve nXV-CRn901AF (AIR OPERAT VALVE A021, LMA593A), gate by gate as drawn:
+   - FFP = OFF(0). A 023 = AVAIRABLE and the TEST push button, into S of FFR 024. A 026 = AVAIRABLE and TEST CANCEL, into OR 039;
+     TP 040 (10.0 s, INITIAL on its top) of the FFR output taken inverted is the other input of OR 039, into R of FFR 024.
+   - The FFR output = the TEST FB lamp, and OR 025 with the ventilator valve open signal (D1 of TCE360): NOT 037 of it to SVE, OR 025
+     itself to SVD. A 027 = AVAIRABLE and the RESET push button, to RESET. The full open / full close positions (A6 / A5 of TCA048) to
+     LTOP / LTCL.
+   - SVE out (A1 to TCA834), LTOP out (A2), LTCL out (A3); ABN = the valve trouble lamp. A 011 = NOT 010 of LTCL and CV(A) / CV(B) full
+     close (G of TCE125 / TCE127), through TP A012 (30.0 s, INITIAL on its top) to the TCA690_1 lamp.
+   The words are the ones of the drawing (AVAIRABLE, OPERAT, RETRN as printed). The tag keeps the small n of the drawing (the unit number).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    t = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const F = [166, 82, 2220, 1542],
+    u = (F[2] - F[0]) / 1000,
+    MX = 1301,
+    MR = 1707,
+    TOP = 250,
+    H = 382,
+    P = i => TOP + 15 * u + ((i + 0.5) * (H - 30 * u)) / 10,
+    R1 = P(1);
+  /* the push buttons and AVAIRABLE into the gates */
+  W('crtIir', [392, 157], [529, 157], [529, 497.5], [560.2, 497.5]);
+  W('crtIir', [529, R1], [560.2, R1]);
+  W('crtIir', [529, 402], [560.2, 402]);
+  W('crtKta', [379, 350.4], [560.2, 350.4]);
+  W('crtKtac', [389, 423.5], [560.2, 423.5]);
+  W('crtKtr', [377.7, 519], [560.2, 519]);
+  /* test: set / reset */
+  W('a023', [617.8, R1], [879, R1]);
+  W('a026', [617.8, 402], [784.2, 402]);
+  W('or039', [841.8, 402], [869.5, 402], [869.5, 350.4], [879, 350.4]);
+  W('tp040', [746.3, 423.5], [784.2, 423.5]);
+  W('ffr024', [959, R1], [1073.2, R1]);
+  W('ffr024', [994.5, R1], [994.5, 157], [1297, 157]);
+  W('ffr024', [994.5, R1], [994.5, 487], [663.6, 487], [663.6, 423.5], [688.7, 423.5]);
+  /* to the valve */
+  W('kOff', [510, 252.3], [1027, 252.3], [1027, P(0)], [MX, P(0)]);
+  W('iD1', [276, 606], [1046, 606], [1046, 350.4], [1073.2, 350.4]);
+  W('or025', [1130.8, R1], [1178.2, R1]);
+  W('or025', [1155.5, R1], [1155.5, P(3)], [MX, P(3)]);
+  W('not037', [1235.8, R1], [MX, R1]);
+  W('a027', [617.8, 497.5], [1237, 497.5], [1237, P(5)], [MX, P(5)]);
+  W('iA6', [275, 745.5], [1068, 745.5], [1068, P(7)], [MX, P(7)]);
+  W('iA5', [275, 830], [1132, 830], [1132, P(8)], [MX, P(8)]);
+  /* INITIAL to the top of the two timers */
+  W('kInit', [446.5, 924], [1383, 924], [1383, 986.5]);
+  W('kInit', [640, 924], [640, 369.5], [717.5, 369.5], [717.5, 412.5]);
+  /* out */
+  W('aov.SVE', [MR, P(0)], [2053, P(0)]);
+  W('aov.LTOP', [MR, P(5)], [2051, P(5)]);
+  W('aov.LTCL', [MR, P(6)], [1800, P(6)], [1800, 862], [1032.7, 862], [1032.7, 997.5], [1088.2, 997.5]);
+  W('aov.LTCL', [1800, 576.4], [2051, 576.4]);
+  W('aov.ABN', [MR, P(8)], [1737, P(8)], [1737, 704.5], [2048.6, 704.5], [2048.6, 716], [2059, 716]);
+  /* valve trouble: LTCL inverted and CV(A) / CV(B) full close */
+  W('iGa', [273.5, 1062], [1181.8, 1062], [1181.8, 1019], [1224.5, 1019]);
+  W('iGb', [273.5, 1137.7], [1202, 1137.7], [1202, 1040.5], [1224.5, 1040.5]);
+  W('not010', [1145.8, 997.5], [1224.5, 997.5]);
+  W('a011', [1284.5, 997.5], [1354.2, 997.5]);
+  W('tp012', [1411.8, 997.5], [1971, 997.5]);
+  t.push(
+    [398, 148.6, 'AVAIRABLE'],
+    [385, 339.5, 'TEST'],
+    [395, 413.6, 'TEST CANCEL'],
+    [384, 510, 'RESET'],
+    [1152, 148, 'TEST FB'],
+    [293, 594, 'VENTILATOR VALVE OPEN SIGNAL'],
+    [282, 712.5, 'COLD REHEAT NON RETURN VALVE'],
+    [282, 733.5, 'FULL OPEN POSITION'],
+    [282, 797, 'COLD REHEAT NON RETURN VALVE'],
+    [282, 818, 'FULL CLOSE POSITION'],
+    [290.5, 1050, 'CV(A)FULL CLOSE(AUX)'],
+    [290.5, 1125.7, 'CV(B)FULL CLOSE(AUX)'],
+    [1857, 673.6, 'COLD R/H STM NON RETRN'],
+    [1857, 695, 'VLV  TROUBLE'],
+    [2074, 672, 'nXV-CRn901AF_ABN', 1],
+    [1683, 969.5, 'COLD R/H STM NON RETRN'],
+    [1683, 990.5, 'VLV  TROUBLE'],
+    /* the timers: their time and the T of their input or top */
+    [866, 317, 'T', 1],
+    [674, 415, 'T', 1],
+    [688, 474, 'TP:10.0s'],
+    [1340, 989.5, 'T', 1],
+    [1353, 1047, 'TP:30.0s'],
+    [369, 962, '(TCA100)', 1],
+    [232, 1517, 'CONTROLLER:'],
+    [392, 1517, 'COMM+MD'],
+    [616, 1491, 'TRIGGER  :'],
+    [616, 1517, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA690',
+    title: 'COLD R/H STM NON-RETURN VLV(TC-19)',
+    page: 169,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: F,
+    k: [
+      ['kOff', 277, 252.3, 'OFF(0)', 'sys.ref'],
+      ['kInit', 213.5, 924, 'INITIAL', 'ref']
+    ],
+    c: [
+      ['iD1', 'in', 'D1', 249, 606, '', ['TCE360'], 1],
+      ['iA6', 'in', 'A6', 248, 745.5, '', ['TCA048']],
+      ['iA5', 'in', 'A5', 248, 830, '', ['TCA048']],
+      ['iGa', 'in', 'G', 246.5, 1062, '', ['TCE125'], 1],
+      ['iGb', 'in', 'G', 246.5, 1137.7, '', ['TCE127'], 1],
+      ['oA1', 'out', 'A1', 2080, P(0), '', ['TCA834']],
+      ['oA2', 'out', 'A2', 2078, P(5), '', ['-']],
+      ['oA3', 'out', 'A3', 2078, 576.4, '', ['-']]
+    ],
+    d: [
+      ['crtIir', 357, 157, 'in', 'nXV-CRn901AF_IIR', 'R', '#1C'],
+      ['crtKta', 344, 350.4, 'in', 'nXV-CRn901AF_KTA', 'R', '#1C'],
+      ['crtKtac', 354, 423.5, 'in', 'nXV-CRn901AF_KTAC', 'R', '#1C'],
+      ['crtKtr', 342.7, 519, 'in', 'nXV-CRn901AF_KTR', 'R', '#1C'],
+      ['crtIta', 1332, 157, 'out', 'nXV-CRn901AF_ITA', 'S', '#1C'],
+      ['crtAbn', 2094, 716, 'out', '', 'S', '#1C'],
+      ['crtTca690', 2006, 997.5, 'out', 'TCA690_1', 'S', '#1C']
+    ],
+    m: [
+      [
+        'aov',
+        'AIR OPERAT VALVE',
+        'nXV-CRn901AF',
+        MX,
+        TOP,
+        MR - MX,
+        H,
+        ['FFP', 'SVE', '', 'SVD', '', 'RESET', '', 'LTOP', 'LTCL', ''],
+        ['SVE', '', '', '', '', 'LTOP', 'LTCL', '', 'ABN', ''],
+        'A021',
+        [
+          [1404.5, 653.6, '(LMA593A)'],
+          [1507.7, 675.5, 'TP:5.0s'],
+          ...['R :20.0', 'M :1', 'HL:100.0', 'LL:0.0', 'K:99.0%', 'TP:5.0s', 'K:0.0%', 'TP:10.0', 'TP:20.0', 'K:1.0%'].map((s, i) => [
+            1304.5,
+            Math.round(675.5 + 21.2 * i),
+            s
+          ])
+        ]
+      ]
+    ],
+    b: [
+      ['a023', 'A', '023', 589, R1 + 10.5],
+      ['ffr024', 'FFR', '024', 919, R1 + 10.5, [], { l: ['S', 'R'] }, [80, 43]],
+      ['or025', 'OR', '025', 1102, R1 + 10.5],
+      ['a026', 'A', '026', 589, 412.5],
+      ['a027', 'A', '027', 589, 508],
+      ['or039', 'OR', '039', 813, 412.5],
+      ['tp040', 'TP', '040', 717.5, 434],
+      ['x1', 'X', '', 823.6, 487],
+      ['not037', 'NOT', '037', 1207, R1 + 10.5],
+      ['btr022', 'o:BTR', '022', 1061, 157],
+      ['btr036', 'o:BTR', '036', 1249.5, P(0)],
+      ['btr029', 'o:BTR', '029', 1260, R1],
+      ['btr030', 'o:BTR', '030', 1259, P(3)],
+      ['btr031', 'o:BTR', '031', 1258.6, P(5)],
+      ['btr034', 'o:BTR', '034', 1258.6, P(7)],
+      ['btr035', 'o:BTR', '035', 1258, P(8)],
+      ['btr028', 'o:BTR', '028', 1792, P(0)],
+      ['btr032', 'o:BTR', '032', 1738.6, P(5)],
+      ['btr033', 'o:BTR', '033', 1737.7, P(6)],
+      ['btr038', 'o:BTR', '038', 1768, 704.5],
+      ['btr014', 'o:BTR', '014', 642, 1062],
+      ['btr015', 'o:BTR', '015', 642, 1137.7],
+      ['not010', 'NOT', '010', 1117, 1008],
+      ['a011', 'A', '011', 1254.5, 1018.5, [], {}, [60, 64]],
+      ['tp012', 'TP', 'A012', 1383, 1008]
+    ],
+    w,
+    j: [
+      [529, R1],
+      [529, 402],
+      [994.5, R1],
+      [1155.5, R1],
+      [640, 924],
+      [1800, 576.4]
+    ],
     t
   });
 })();
@@ -306105,7 +307133,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build fc19a72'));
+    row('Version', E('span', 'scsver', ver + ' · build d1ba6fe'));
   }
   function openSet(near) {
     if (!set) {
