@@ -835,5 +835,7 @@ const TCS_DESC = {
   TCE610:
     'EHG analog outputs (PI/O TCE970 points 1 to 8): target MW set point feedback, turbine load up rate, HP turbine first stage steam pressure (A), (B), (C) and turbine speed; points 7 and 8 are spare (SG K:0.0).',
   TCE900:
-    'PI/O table of the EHG digital input card (unit 4 slot 0, LYD050A3), 32 channels: oil pumps running and trouble, bearing oil pressure for EOP auto start, turning gear positions, DCS control mode, DS, 52G, 41 and 52L positions, speed raise and lower, HP bypass valve full close; the rest spare.'
+    'PI/O table of the EHG digital input card (unit 4 slot 0, LYD050A3), 32 channels: oil pumps running and trouble, bearing oil pressure for EOP auto start, turning gear positions, DCS control mode, DS, 52G, 41 and 52L positions, speed raise and lower, HP bypass valve full close; the rest spare.',
+  TCE901:
+    'PI/O table of the EHG digital input card (unit 4 slot 1, LYD050A3), 32 channels: control and main oil pumps (B), turning gear motor jog, running and trouble, auto synchronizer start and remote select, COM CPU run and power supply abnormal, PLU operated; the rest spare.'
 };
