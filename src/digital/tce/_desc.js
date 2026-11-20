@@ -262,6 +262,8 @@ const TCS_DESC = {
     'GENERATOR PROTECTION LOGIC B (2/2): pole slip, VT fuse failure, under and over frequency to generator protection B operated, and protection A or B to the line breaker trip coils',
   'G-7':
     '230kV SWITCHYARD AND TRANSFORMER PROTECTION LOGIC: switchyard, 86T, 50BF and unit transformer relays to the 52L / 52G trips, 6.6kV incomers, switchyard BF, the generator protection panels and the TCS',
+  'G-8A':
+    'Alarm for generator protection 1/2: each A/B relay pair to the annunciator and the SOE, the volts/hertz to the ATS',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
