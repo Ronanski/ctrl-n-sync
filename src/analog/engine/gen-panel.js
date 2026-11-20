@@ -16,7 +16,7 @@
      (87G, 40, 24, 46, 59, 64, 81 ...) are not modelled.
    - The lockout relays are hand reset (RESET of the relay, here AN.turbine('gen', { op: 'reset86' })), refused while the cause stands.
      The TURBINE RESET also resets them, as before (NO-SOURCE, kept: the panel reset is not on every page yet).
-   AN.turbine('gen', { op, v }): op 'syn' v 'AUTO' | 'MAN'; 'avr' v 'AUTO' | 'MAN'; 'v+' / 'v-' (7-90R); 'n+' / 'n-' (7-65); 'close52g';
+   AN.turbine('gen', { op, v }): op 'syn' v 'AUTO' | 'MAN'; 'avr' v 'AUTO' | 'MAN'; 'v+' / 'v-' (7-90R); 'n+' / 'n-' (7-65); 'close52g'; 'close41' / 'open41' (TCA587);
    'reset86'. Returns '' or why it was refused.
    AN.genPanel() -> the panel (AN.gen() is the meters of the generator, api.js): syn, avr, f41, c52g, kV, hz, gridHz, slip (Hz), dv (%), th (deg, the synchroscope), r25 (25 operated now),
    x84 (generator voltage established), asd (ASD1 in use), efd (pu field), fr (MANUAL set point), lo86 { a, b, t, why }, msg. */
@@ -24,7 +24,8 @@ function tcsLo86(U) {
   const L = U.lo86 || (U.lo86 = { a: false, b: false, t: false, why: '' }),
     W = typeof window !== 'undefined' ? window.WORLD : null,
     ev = m => {
-      if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror')) lsEventAdd('GEN', 'GEN', m);
+      if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
+        lsEventAdd('GEN', 'GEN', m);
     },
     op = (why, m) => {
       if (L.a && L.b) return;
@@ -46,7 +47,8 @@ function tcsLo86Reset(U) {
   const L = U.lo86;
   if (!L || !(L.a || L.b || L.t)) return '';
   const W = typeof window !== 'undefined' ? window.WORLD : null;
-  if (L.t && W && W.ft && W.ft.has('gen.86t')) return 'RESET refused: 86T is still operated by the transformer protection';
+  if (L.t && W && W.ft && W.ft.has('gen.86t'))
+    return 'RESET refused: 86T is still operated by the transformer protection';
   L.t = false;
   if (U.rp32 && U.rp32.t2 >= AN_RP32.t2) return 'RESET refused: the 2nd REVERSE POWER (32) is still operated';
   if (U.rp32) U.rp32.lo = false;
@@ -88,7 +90,8 @@ function tcsGenCmd(U, a) {
   }
   if (op === 'n+' || op === 'n-') {
     if (g52) return 'SPEED RAISE / LOWER: 52G is closed, the load is set on the TCS';
-    if (!(c && c.step >= 3 && c.cur !== 3 && tb.rpm > 3500 && !c.trip)) return 'SPEED RAISE / LOWER: the turbine is not held at rated speed by the TCS';
+    if (!(c && c.step >= 3 && c.cur !== 3 && tb.rpm > 3500 && !c.trip))
+      return 'SPEED RAISE / LOWER: the turbine is not held at rated speed by the TCS';
     if (op === 'n+') g.pR = K.fpw;
     else g.pL = K.fpw;
     return '';
@@ -113,6 +116,34 @@ function tcsGenCmd(U, a) {
     g.mc = true;
     g.thC = thc;
     g.last = '52G closed by hand at ' + thc.toFixed(0) + ' deg';
+    return '';
+  }
+  /* the operator station 41 CLOSE / OPEN COMMAND (TCA587 CRT TCA587_1_IKA / _JYP, to TCA833 / TCA831). CLOSE: the same gates as the
+     EXCITATION AUTO START of the ATS step 4 (Generator Logic.pdf G-4: 41_CLOSE_CMD = 52G OPEN AND TURBINE RATED SPEED AND NOT 41 TRIP AND
+     41 CLOSE REQ). OPEN: the plant opens 41 only with 52G open (TCA587: GEN. CB OPEN, then on GCB OPENED the FIELD SWITCH OPEN); on the
+     line 41 open is a loss of field (relay 40, not in this model), so the command waits for 52G open. The field then decays with T'do */
+  if (op === 'close41' || op === 'open41') {
+    const ev = m => {
+      if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
+        lsEventAdd('GEN', 'GEN', m);
+    };
+    if (op === 'close41') {
+      if (g.f41) return '41 is already closed';
+      if (g52) return '41 CLOSE refused: 52G is closed';
+      if (c && c.trip) return '41 CLOSE refused: the turbine is tripped (41 TRIP)';
+      if (!g.rated)
+        return '41 CLOSE refused: turbine not at rated speed (' + Math.round(tb.rpm || 0) + ' rpm, 3550 rpm)';
+      g.f41 = true;
+      if (g.avr === 'MAN' && !isFinite(g.fr)) g.fr = 1;
+      ev('Field switch 41 closed by the operator');
+      return '';
+    }
+    if (!g.f41) return '41 is already open';
+    if (g52) return '41 OPEN refused: 52G is closed (open 52G first)';
+    g.f41 = false;
+    g.x25 = false;
+    g.start = false;
+    ev('Field switch 41 opened by the operator');
     return '';
   }
   if (op === 'reset86') return tcsLo86Reset(U);

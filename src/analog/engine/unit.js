@@ -4351,7 +4351,11 @@ function anRp32(U, on, dt) {
 const AN_GRID = { lo: 59.5, down: 0.1, up: 0.02 };
 function anGridHz(U, dt) {
   const W = typeof window !== 'undefined' ? window.WORLD : null,
-    aim = W && W.ft && W.ft.has('grid.lo') ? AN_GRID.lo : 60,
+    /* one grid for the whole model (Rosé, manual sync from S68: on the line the panel read 60.00 for the machine and 60.02 for the grid):
+       the slow drift of the synchronizing (tcs-gen.js tcsGridHz) is this frequency too, so the shaft turns with the grid the ASD and the 25
+       relay see */
+    drift = typeof tcsGridHz === 'function' ? tcsGridHz(isFinite(U.t) ? U.t : 0) - 60 : 0,
+    aim = (W && W.ft && W.ft.has('grid.lo') ? AN_GRID.lo : 60) + drift,
     f = isFinite(U.gridHz) ? U.gridHz : 60;
   U.gridHz = aim < f ? Math.max(aim, f - AN_GRID.down * dt) : Math.min(aim, f + AN_GRID.up * dt);
   return U.gridHz;
