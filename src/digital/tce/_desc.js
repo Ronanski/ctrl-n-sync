@@ -769,5 +769,7 @@ const TCS_DESC = {
   TCA813:
     'Alarm: turbine bearing metal, gland steam seal, steam and turbine casing metal temperature abnormals and RTD abnormal, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(4) to TCA816.',
   TCA814:
-    'Alarm: HP and IP turbine casing metal, thrust bearing, MSV and CV metal and bearing outlet oil temperature abnormals and RTD abnormals, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(5) to TCA816.'
+    'Alarm: HP and IP turbine casing metal, thrust bearing, MSV and CV metal and bearing outlet oil temperature abnormals and RTD abnormals, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(5) to TCA816.',
+  TCA815:
+    'Alarm: lube oil cooler oil, generator stator coil, cooling gas air cooler outlet and AC exciter outlet air temperature abnormals, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(2) (as printed) to TCA816.'
 };
