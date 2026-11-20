@@ -819,5 +819,7 @@ const TCS_DESC = {
   TCE501:
     'Valve simulators: four SIMCV blocks give the simulated ICV(A), ICV(B), MSV(A) and MSV(B) positions and servo amp outputs from the position demands (TCE214 / 210 / 211), forced closed by ICV FORCED CLOSE or MSV FORCED CLOSE (TCE053); RSV(A) and RSV(B) position simulators ramp to 100 % on TURBINE TRIP or on ICV FA with CRV TEST (TCE226 / 227 / 228), reset by INITIAL (TCE050).',
   TCE502:
-    'CV and oil pump simulators: two SIMCV blocks give the simulated CV(A) and CV(B) positions and servo amp outputs from the position demands (TCE212), forced closed by CV FORCED CLOSE (TCE053); PRESS.FLOW simulators give the MOP(B), COP(A) and COP(B) discharge oil pressures.'
+    'CV and oil pump simulators: two SIMCV blocks give the simulated CV(A) and CV(B) positions and servo amp outputs from the position demands (TCE212), forced closed by CV FORCED CLOSE (TCE053); PRESS.FLOW simulators give the MOP(B), COP(A) and COP(B) discharge oil pressures.',
+  TCE503:
+    'Metal temperature simulator: from CV WARMING (LOWER) SET and CV WARMING COMP (TCE155 / TCE152) the AM blocks give the CV lower and upper inner and outer wall metal temperatures (to TCA359 / TCA363), reset by INITIAL and switched by TURBINE TRIP and TURBINE SPEED; plus the HP-T inner casing first stage inner wall metal temperature and, from GEN. LOAD, the MSV inlet steam temperatures and BOILER LIGHT OFF SIM.'
 };
