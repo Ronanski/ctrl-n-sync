@@ -529,5 +529,7 @@ const TCS_DESC = {
   TCA690:
     'Cold reheat steam non-return valve (TC-19) air operated valve: test set / reset with feedback, solenoid open / close by the ventilator valve, full open / close positions out; trouble alarm when it is not closed with both CVs closed.',
   TCA700:
-    'Oil purifier pump (TB-15) motor: held at OFF(0) for auto start, auto stop and trip; electrical trouble and running in; the start command out through an FFR set by STS and reset by OUT.'
+    'Oil purifier pump (TB-15) motor: held at OFF(0) for auto start, auto stop and trip; electrical trouble and running in; the start command out through an FFR set by STS and reset by OUT.',
+  TCA711:
+    'No.2 extraction steam non-return valve (TC-41) air operated valve: test set / reset with feedback, open / close by the No.1 HP heater level high, opened / closed positions in; energize command, positions and abnormal lamp out.'
 };
