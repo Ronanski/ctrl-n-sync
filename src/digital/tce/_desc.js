@@ -517,5 +517,7 @@ const TCS_DESC = {
   TCA639:
     'Turbine gland seal group control (TE-6, 7), conditions: the start and stop related auxiliaries in AUTO, and aux. steam temperature OK (over 275 degC in ambient cold mode, else over 200 degC).',
   TCA650:
-    'Steam seal feed inlet valve (TC-31) motor valve: auto open by the gland seal start group, auto close by the stop group; open / close commands, opened, closed and AUTO out.'
+    'Steam seal feed inlet valve (TC-31) motor valve: auto open by the gland seal start group, auto close by the stop group; open / close commands, opened, closed and AUTO out.',
+  TCA655:
+    'Main oil tank vapour extractor (TB-12) motor: start command held by a set / reset memory, running out, and the extractor stopped alarm when it is not running while an oil pump runs for 5 s.'
 };
