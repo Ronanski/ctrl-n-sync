@@ -569,5 +569,7 @@ const TCS_DESC = {
   TCA715:
     'No.5 extraction steam non-return valve (TC-45) air operated valve: test set / reset with feedback, open / close by the No.2 LP heater level very high, opened / closed positions in; positions and abnormal lamp out.',
   TCA729:
-    'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.'
+    'Space heater: 52G open sets, its inverse or the electrical trouble resets the generator and the AC exciter space heater commands; trouble and on lamps.',
+  TCA738:
+    'LP exhaust hood water spray valve (TC-35) air operated valve: auto / manual by push buttons with lamps, opened in auto by gland steam exhauster running and gen load, open push button, reset; opened / closed positions in, outputs and abnormal lamp out.'
 };
