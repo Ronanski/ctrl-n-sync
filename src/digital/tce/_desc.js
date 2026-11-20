@@ -727,5 +727,7 @@ const TCS_DESC = {
   TCA801D:
     'Comm alarm (hardware) 7: the PI/O errors of unit 1 slot C through an OR (eight spare OFF inputs on a second OR), as AI error to the CRT and TCA806.',
   TCA802:
-    'Comm alarm (hardware) 8: the PI/O errors of unit 1 slot 0 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
+    'Comm alarm (hardware) 8: the PI/O errors of unit 1 slot 0 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.',
+  TCA802A:
+    'Comm alarm (hardware) 9: the PI/O errors of unit 1 slot 1 (THC) through two ORs into a third OR, as AI error to the CRT and TCA806.'
 };
