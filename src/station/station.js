@@ -603,6 +603,45 @@
     TCA: 'Start-up logic (TCA)',
     '': 'Typical logic'
   };
+  /* the governor (TCE 331DM09784) and start-up (TCA 331DM09788) drawings hold some 200 sheets each: they are split by the number of the
+     sheet into the sections of the drawing, named short (the list is narrow) from the titles of their sheets */
+  const TCS_SUB = {
+    TCE: [
+      [59, 'inputs'],
+      [144, 'diagnostics'],
+      [175, 'speed control'],
+      [209, 'load control'],
+      [299, 'valves'],
+      [399, 'oil pumps'],
+      [499, 'alarms'],
+      [599, 'simulator'],
+      [899, 'outputs'],
+      [999, 'I/O tables']
+    ],
+    TCA: [
+      [299, 'inputs'],
+      [499, 'diagnostics'],
+      [529, 'step control'],
+      [549, 'criteria'],
+      [579, 'criteria monitor'],
+      [599, 'sequence'],
+      [749, 'valves and auxiliaries'],
+      [799, 'thermal stress and tests'],
+      [829, 'alarms'],
+      [899, 'outputs'],
+      [999, 'I/O tables']
+    ]
+  };
+  const TCS_ORDER = ['', 'TA', 'TB', 'TC', 'TD', 'TE', 'GD', 'G', 'TCE', 'TCA'];
+  const tcsGroup = text => {
+    const m = /TCS-([A-Z]+)-(\d+)/.exec(text) || /TCS-([A-Z]+)-/.exec(text) || [],
+      k = TCS_SHEETS[m[1]] ? m[1] : '',
+      i = TCS_ORDER.indexOf(k) * 20;
+    const sub = TCS_SUB[k];
+    if (!sub || !m[2]) return [i, TCS_SHEETS[k]];
+    const j = sub.findIndex(s => +m[2] <= s[0]);
+    return [i + 1 + j, (k === 'TCE' ? 'Governor' : 'Start-up') + ' ' + sub[j][1]];
+  };
   /* The groups of the Analog sheets (ABC) and of the Digital sheets (DITL), by the number of the sheet: sheets of one system stand together under the
      name of that system, in the words of the page list. A sheet whose number is in no group stands under Other. */
   const AN_G = [
@@ -667,20 +706,16 @@
         L.push({ name: sheetName(x), title: sheetTitle(x), i, open: () => AN.go(i), g: anGroup(sheetName(x)) })
       );
     else {
-      const sel = shsel(),
-        seen = [];
+      const sel = shsel();
       if (sel)
         for (const o of sel.options) {
           const tcs = /TCS-/.test(o.textContent);
           if (tcs !== (fam === 'tcs')) continue;
           const name = optName(o.textContent);
           let g;
-          if (tcs) {
-            /* the sheets of the turbine control in the groups of their drawing (the letters of the sheet number), in the order they come */
-            const t = TCS_SHEETS[(/TCS-([A-Z]+)-/.exec(o.textContent) || [])[1] || ''] || TCS_SHEETS[''];
-            if (!seen.includes(t)) seen.push(t);
-            g = [seen.indexOf(t), t];
-          } else g = diGroup(o.textContent, name);
+          /* the sheets of the turbine control in the groups of their drawing (the letters of the sheet number) and its sections */
+          if (tcs) g = tcsGroup(o.textContent);
+          else g = diGroup(o.textContent, name);
           L.push({
             name,
             title: optTitle(o.textContent),
@@ -698,7 +733,7 @@
     L.sort(
       (p, q) =>
         p.g[0] - q.g[0] ||
-        (fam === 'an' ? (nat(p.name) < nat(q.name) ? -1 : nat(p.name) > nat(q.name) ? 1 : 0) : p.n - q.n)
+        (fam !== 'dig' ? (nat(p.name) < nat(q.name) ? -1 : nat(p.name) > nat(q.name) ? 1 : 0) : p.n - q.n)
     );
     let grp = null;
     for (const x of L) {
