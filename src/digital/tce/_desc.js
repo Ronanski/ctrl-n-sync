@@ -647,5 +647,7 @@ const TCS_DESC = {
   TCA753:
     'THERMAL STRESS(HP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TH(2) and TH(1), as drawn.',
   TCA754:
-    'THERMAL STRESS(HP): speed ratio, the THERMAL STRESS block A001 (LMA628) and the HP bore stress, as drawn.'
+    'THERMAL STRESS(HP): speed ratio, the THERMAL STRESS block A001 (LMA628) and the HP bore stress, as drawn.',
+  TCA755:
+    'THERMAL STRESS(IP): the THSC INITIAL block A015 (LMA626 / LMA626A) for the IP stage temperatures, as drawn.'
 };
