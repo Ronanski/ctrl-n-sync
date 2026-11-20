@@ -244,6 +244,12 @@ function tcsBand(c, k, v, bad, ok) {
   else if (hi ? v <= ok : v >= ok) B[k] = 0;
   return !B[k];
 }
+/* tcsBand with a first state: inside the band at the first scan counts as not OK (the comparator has not come ON yet) */
+function tcsBandI(c, k, v, bad, ok) {
+  const B = c.band || (c.band = {});
+  if (!(k in B) && isFinite(v)) B[k] = (bad > ok ? v > ok : v < ok) ? 1 : 0;
+  return tcsBand(c, k, v, bad, ok);
+}
 /* the criteria (page 3 / 5 ~ 14) that the model has: true = satisfied. txt = the name on the ATS criteria display */
 function tcsCrit(U) {
   const c = U.tc,
@@ -284,7 +290,7 @@ function tcsCrit(U) {
       s.rht >= f3l && s.rht <= f3u,
       s.rht
     ),
-    '1.10': f('1.10', 'GLAND STEAM SEAL HEADER PRESS. NOT LOW', isFinite(U.gsP) ? U.gsP >= 0.1 : c.gland && c.Pa > 7),
+    '1.10': f('1.10', 'GLAND STEAM SEAL HEADER PRESS. NOT LOW', c.gsOk !== undefined ? c.gsOk : c.gland && c.Pa > 7, U.gsP),
     1.11: f(
       '1.11',
       'CONDENSER VACUUM OK',
@@ -294,16 +300,14 @@ function tcsCrit(U) {
     1.12: f('1.12', 'LP TURBINE EXHAUST HOOD STEAM TEMP. NOT HIGH (≤ 80 C)', tcsBand(c, '1.12', c.Tx, 80, 77), c.Tx),
     1.14: f('1.14', 'CONTROL OIL PRESS. NOT LOW', tcsBand(c, '1.14', U.loCtl, 133, 138), U.loCtl),
     1.15: f('1.15', 'BEARING OIL PRESS. NOT LOW', tcsBand(c, '1.15', U.loBrg, 1.05, 1.33), U.loBrg),
-    /* c3 (3.2.3): IBD TD-1 (page 84) is the logic of 1.16: lube oil cooler outlet (MAX of TE-LO1002-1 / -2) 27 ~ 40 C on the turning gear,
-       27 ~ 50 C while rolling, 40 ~ 50 C at rated speed (after 60 s), net 14 (PR-OPE-5002: bearing oil at least 40 C before synchronizing).
-       Before the IBD has run once: the old reading (oil in service) */
+    /* 1.16: c.brgTok, the logic of TCA539 (tcsStep); the IBD TD-1 sheet shows it. Before the first step: the old reading (oil in service) */
     1.16: f(
       '1.16',
       'BEARING OIL TEMP. OK',
-      c.ib && c.ib.v['TD-1'] ? c.ib.v['TD-1'][14] > 0.5 : c.brgOk !== undefined ? c.brgOk : c.lop,
+      c.brgTok !== undefined ? c.brgTok : c.brgOk !== undefined ? c.brgOk : c.lop,
       U.loTout
     ),
-    1.17: f('1.17', 'MAIN OIL TANK LEVEL OK', true),
+    1.17: f('1.17', 'MAIN OIL TANK LEVEL OK', c.tankOk),
     1.18: f('1.18', 'MAIN OIL TANK VAPOUR EXTRACTOR RUNNING', c.vex),
     1.19: f(
       '1.19',
@@ -632,7 +636,13 @@ function tcsStep(U, dt) {
      AN_AS anAuxStep): Pa = PT-AS1004, the gland seal is in service while its header holds >= 0.10 kg/cm2 G (ATS 1.10, IBD TD-3 LOW).
      Before: a lag toward min(10.5, drum - 1) and a switch */
   if (isFinite(U.asP)) c.Pa = U.asP;
-  if (isFinite(U.gsP)) c.gland = !!c.gsOn && U.gsP >= 0.1;
+  /* one logic (user 2026-11-20): the ATS criteria are computed here once, as the TCA sheets draw them; the IBD sheets that show the same signal
+     take these values (tcs-trip.js TCS_IBD_OUT), they never compute them a second time.
+     1.10 TCA542: the lower of PT-GS1001 (A) / (B), CPL A035 HL / LL 0.1 kg/cm2 G, NOT 015 = not low (IBD TD-3 net 5).
+     1.17 TCA542: MAIN OIL TANK LEVEL HIGH / LOW switches (TCA051 / 050); the tank level is not modelled, the switches stay off = OK (IBD TD-3 net 6) */
+  if (isFinite(U.gsP)) c.gsOk = U.gsP >= 0.1;
+  c.tankOk = true;
+  if (isFinite(U.gsP)) c.gland = !!c.gsOn && c.gsOk;
   if (!c.brgOk) c.tg = false;
   /* turning gear: about 3 rpm (PR-OPE-5002 7955); disengages above 4 rpm and engages again at zero speed */
   const steam = tb.st !== 'off' && (tb.icv > 0.001 || U.gv > 0.001);
@@ -653,6 +663,25 @@ function tcsStep(U, dt) {
   c.Tcvo += ((c.Tcvi - c.Tcvo) * dt) / TCS.tauChestO;
   /* shell expansion (HP side), mm: 3 mm at about 180 C (page 20 question 2 > 3 mm after the 1800 rpm soak; IBD TD-4 3 mm ON / 2.5 OFF; the linear law is NO-SOURCE) */
   c.sexp = Math.max(0, (c.Thp - Ta) * 0.02);
+  /* 2.1 SHELL EXPANSION OK, TCA535 CMP A003 HL 3.0 mm / LL 2.5 mm: on at 3.0, off below 2.5 (IBD TD-4 net 6) */
+  c.sexOk = tcsBandI(c, '2.1', c.sexp, 2.5, 3);
+  /* 1.16 BEARING OIL TEMP. OK, TCA539 OR 003 (IBD TD-1 net 14): T = the higher lube oil cooler outlet (HS 033, U.loTout);
+     A 002 turning gear engaged, over 27 C (CMP A007 27 / 25) and under 42 C (CPL A006 42 / 40);
+     A 008 not on the turning gear, over 27 C, under 52 C (CPL A010 52 / 50), not at rated speed;
+     A 013 over 40 C (CMP A012 40 / 38), under 52 C, rated speed held 60 s (TP A014; IBD TD-1 DI 60 s of speed >= 3550 rpm) */
+  {
+    const T = U.loTout,
+      r = !!(tb && tb.rpm >= 3550),
+      eng = !!c.tg && !!tb && tb.rpm <= 4; /* TURNING GEAR ENGAGED: selected and at turning speed (it disengages above 4 rpm, PR-OPE-5002 7955) */
+    /* a save made before this timer existed: a turbine already at rated speed counts as held (the IBD DI timer of that save had run) */
+    c.ratedT = r ? (c.ratedT === undefined ? 60 : c.ratedT + dt) : 0;
+    const held = c.ratedT >= 60,
+      lo27 = tcsBandI(c, '1.16a', T, 25, 27),
+      hi42 = tcsBandI(c, '1.16b', T, 42, 40),
+      hi52 = tcsBandI(c, '1.16c', T, 52, 50),
+      lo40 = tcsBandI(c, '1.16d', T, 38, 40);
+    if (isFinite(T)) c.brgTok = (eng && lo27 && hi42) || (!eng && lo27 && hi52 && !held) || (lo40 && hi52 && held);
+  }
   /* LP exhaust hood: windage of the blades with little steam, the hood spray below 15 % load (PR-OPE-5002 9195), the vacuum
      (NO-SOURCE law, limits 80 / 52 C sourced, ambient 30 C: with the spray about 56 C at 3600 rpm with no load, about 49 C at the initial load 4.5 MW, about 58 C on load: under the 80 C of 1.12) */
   /* live Cold start sweep (user 2026-11-13): the 15 C of the windage counts with the speed: a turbine at rest makes no heat, the hood
@@ -771,7 +800,7 @@ function tcsStep(U, dt) {
           c.soakMin = TCS.soak1800[c.mode];
         }
       } else if (c.ph === 'soak1800') {
-        if (c.tm >= c.soakMin * 60 && c.Thp > 170 && c.sexp > 3) c.ph = 'to3600';
+        if (c.tm >= c.soakMin * 60 && c.Thp > 170 && c.sexOk) c.ph = 'to3600';
       } else if (c.ph === 'to3600') {
         ramp(3600);
         if (tb.rpm > 3550) {

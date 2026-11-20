@@ -231,6 +231,8 @@ const TCS_IBD_NET = {
   'TD-1': { 8: U => U.loTout },
   /* TD-4 (page 87): ZE-ST1001 TURBINE SHELL EXPANSION (HP side) = c.sexp of the ATS model (NORMAL ON >= 3 mm, ATS criteria 2.1) */
   'TD-4': { 5: U => (U.tc ? U.tc.sexp : NaN) },
+  /* TD-3 (page 86): PT-GS1001-2 GLAND STEAM SEAL HEADER PRESS. (A) = the gland header of unit.js (U.gsP), shown on the sheet */
+  'TD-3': { 0: U => U.gsP },
   /* GD-5 (page 99): TE-GE1006-1 ~ 6 GEN. STATOR COIL TEMP. (HIGH ON >= 123 C), TE-GE1004-1 ~ 4 GEN. COOLING GAS AIR (ON >= 50 C), TE-GE1005
      AC EXCITER OUTLET AIR (ON >= 95 C) = the generator temperatures of unit.js anGenTemp (U.genT ts / ta / ex, snapshot 035 SHAFT MONITOR) */
   'GD-5': {
@@ -345,6 +347,13 @@ const TCS_IBD_PATCH = {
     ['NOT', [23], 16, 0, 555, 498, 0, 0]
   ]
 };
+/* one logic (user 2026-11-20): where a TCA sheet draws the same signal as an IBD sheet, the TCA logic of the ATS model (tcs.js) gives it and the IBD
+   net only shows it: these outputs are set from the model after the sheet's gates, by sheet and net */
+const TCS_IBD_OUT = {
+  'TD-1': { 14: c => c.brgTok } /* 1.16 bearing oil temp. OK (TCA539) */,
+  'TD-3': { 5: c => c.gsOk, 6: c => c.tankOk } /* 1.10 gland seal header press. not low, 1.17 main oil tank level OK (TCA542) */,
+  'TD-4': { 6: c => c.sexOk } /* 2.1 shell expansion OK (TCA535) */
+};
 const TCS_IBD_DROP = { 'TD-2': [3, 4, 5, 14, 15, 16] };
 const TCS_IBD = {
   by: {},
@@ -450,6 +459,7 @@ function tcsIbdStep(U, c, dt) {
       const r = s.i.find(i => /TURBINE SHUTDOWN COMMAND/.test(i[1]));
       if (r) v[r[0]] = 1;
     }
+    const so = U.tc && TCS_IBD_OUT[id];
     /* two passes: a chain of gates settles in one step */
     for (let pass = 0; pass < 2; pass++)
       s.g.forEach((g, i) => {
@@ -498,7 +508,9 @@ function tcsIbdStep(U, c, dt) {
           o =
             a[0] ||
             0; /* FG, LS, FLK: the value passes; a sheet that needs them has its comparator as a function above */
-        v[out] = o;
+        /* a net the model gives (TCS_IBD_OUT): its value, so the gates after it read the same */
+        const m = so && so[out] ? so[out](U.tc) : undefined;
+        v[out] = m !== undefined ? (m ? 1 : 0) : o;
       });
     for (const k in ib.fx) if (k.startsWith(id + ':')) v[+k.split(':')[1]] = ib.fx[k];
   }
