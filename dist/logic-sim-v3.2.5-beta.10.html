@@ -6680,7 +6680,11 @@ const TCS_DESC = {
   TCE600:
     'EHG digital outputs (PI/O TCE960 points 1 to 16): control and main oil pump (A) start commands, DC emergency oil pump start and manual stop, turning gear motor start command and engaged, RSV/ICV and MSV/ICV full closed to the boiler reheater protection, and EHG soft major trouble or backup over speed (AND of TCE145 and TCE472, also to TCE602); six spare points.',
   TCE601:
-    'EHG digital outputs (PI/O TCE960 points 17 to 32): 52L open for house load operation, turbine speed <2400 rpm, acceleration relay operated, DCS mode on feedback, ASD2 start signal, HP-CV full close, turbine trip, MSV/CV(A) and (B) sequential full close test, 41 close, generator lockout relay (86G) A and B operated, ICV to CV transfer complete; three spare points.'
+    'EHG digital outputs (PI/O TCE960 points 17 to 32): 52L open for house load operation, turbine speed <2400 rpm, acceleration relay operated, DCS mode on feedback, ASD2 start signal, HP-CV full close, turbine trip, MSV/CV(A) and (B) sequential full close test, 41 close, generator lockout relay (86G) A and B operated, ICV to CV transfer complete; three spare points.',
+  TCE602:
+    'EHG digital outputs (PI/O TCE961 points 1 to 16): control and main oil pump (B) start commands, ASD1 start signal, DCS control mode permissive, power load unbalance relay operated, RSV/ICV and MSV/ICV full close, EHG soft not major trouble, EHG soft major trouble or backup over speed; the rest spare.',
+  TCE603:
+    'EHG digital outputs (PI/O TCE961 points 17 to 32): turning gear engage solenoid valve, turning gear engage lamp and turning gear motor start lamp; the other thirteen points are spare.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -26283,6 +26287,182 @@ const TCS_DESC = {
     w,
     j,
     t: [...t, [222, 1525, 'CONTROLLER:'], [384, 1525, 'EHG+MD'], [647, 1502, 'TRIGGER  :'], [647, 1527, 'CYCLE(ms):10']]
+  });
+})();
+/* TCE602 EHG DIGITAL OUTPUT(3) (331DM09784 page 179, controller EHG+MD, cycle 10 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide. Sixteen digital outputs of the EHG controller (PI/O table TCE961, points 1 to 16): the control oil pump (B)
+   and main oil pump (B) start commands (TCE305 / TCE300), ASD1 START SIGNAL (52G) (TCE178), DCS CONTROL MODE PERMISSIVE (TCE180),
+   POWER LOAD UNBALANCE RY OPERATED (TCE095), RSV/ICV and MSV/ICV FULL CLOSE to the boiler reheater protection (TCE250), EHG SOFT NOT
+   MAJOR TROUBLE (TCE472) and EHG SOFT MAJOR TROUBLE or BACKUP OVER SPEED (B8 of TCE600); point 7 carries A of TCE166 to a spare box,
+   six points are spare (OFF(0)). The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    k = [],
+    b = [],
+    r = [],
+    g = [],
+    l = [],
+    w = [],
+    t = [],
+    j = [];
+  /* one output: the source (a connector, OFF(0), or a wire end x), BTR, the PI/O mark, the box of the PI/O table with its words and DO */
+  const row = (col, i, src, sheet, btr, words, above, cx, x0) => {
+    const L = col === 0,
+      y = Math.round((L ? 158 : 162) + 159.3 * i),
+      d = (L ? -1.9 : -2.1) * i /* the drawing leans a little */,
+      bx = Math.round((L ? 563 : 1607) + d) /* BTR */,
+      gx = Math.round((L ? 677 : 1720) + 1.3 * d) /* PI/O mark */,
+      rx = Math.round((L ? 792 : 1835) + 1.6 * d) /* box */,
+      rw = L ? 290 : 288,
+      key = (L ? 'l' : 'r') + (i + 1);
+    let xs = x0;
+    if (src === 'OFF(0)') {
+      k.push([key, cx - 234, y, 'OFF(0)', 'sys.ref']);
+      xs = cx;
+    } else if (src) {
+      c.push([key, 'in', src, cx, y, '', [sheet]]);
+      xs = cx + 27;
+    }
+    b.push(['btr' + btr, 'o:BTR', btr, bx, y]);
+    g.push([gx, y, 'r']);
+    if (xs) w.push([key, [[xs, y], [gx - 7, y]]]);
+    w.push([key, [[gx + 7, y], [rx, y]], 1]);
+    r.push(['', rx, y - 28, rw, 55, '']);
+    l.push([[rx + 21, y - 28], [rx + 21, y + 27]]);
+    words.forEach((s, n) => t.push([rx + 27, y + (words.length > 1 ? 2 + 20 * n : 8), s]));
+    t.push([rx + rw - 15, y + 48, 'DO'], [gx - 69, y - 19, '(TCE961-' + (L ? i + 1 : i + 9) + ')', 0, 1.7]);
+    above.forEach((s, n) => t.push([cx + 35, y + (above.length > 1 ? -30 + 21 * n : -9), s]));
+  };
+  [
+    ['G', 'TCE305', '001', ['CONTROL OIL PUMP(B)', 'START COMMAND'], ['COTROL OIL PUMP(B)', 'START'], 288],
+    ['G', 'TCE300', '003', ['MAIN OIL PUMP(B)', 'START COMMAND'], ['MAIN OIL PUMP(B)', 'START'], 286],
+    ['E', 'TCE178', '005', ['ASD1 START SIGNAL (52G)'], ['ASD1 START'], 283],
+    ['OFF(0)', '', '007', ['SPARE'], [], 466],
+    ['B', 'TCE180', '009', ['DCS CONTROL MODE', 'PERMISSIVE'], ['DCS CONTROL', 'MODE PERMISSIVE'], 277],
+    ['OFF(0)', '', '011', ['(SPARE)'], [], 474],
+    ['A', 'TCE166', '013', ['(SPARE)'], [], 285],
+    ['B', 'TCE095', '015', ['POWER LOAD UNBALANCE', 'RY OPERATED'], [], 284]
+  ].forEach(([src, sheet, btr, words, above, cx, x0], i) => row(0, i, src, sheet, btr, words, above, cx, x0));
+  [
+    ['OFF(0)', '', '002', ['(SPARE)'], [], 1528],
+    ['OFF(0)', '', '004', ['(SPARE)'], [], 1526],
+    ['OFF(0)', '', '006', ['(SPARE)'], [], 1524],
+    ['', '', '008', ['(SPARE)'], [], 0, 1549],
+    ['B', 'TCE250', '010', ['RSV/ICV FULL CLOSE'], ['BOILER REHEATER', 'PROTECTION'], 1303],
+    ['C', 'TCE250', '012', ['MSV/ICV FULL CLOSE'], ['BOILER REHEATER', 'PROTECTION'], 1301],
+    ['D', 'TCE472', '014', ['EHG SOFT NOT', 'MAJOR TROUBLE'], ['EHG NOT SOFT', 'MAJOR TROUBLE'], 1299],
+    ['B8', 'TCE600', '016', ['EHG SOFT MAJOR TROUBLE', 'or BACKUP OVER SPEED'], ['NOT EHG SOFT MAJOR TROUBLE', 'or BACKUP OVER SPEED'], 1318]
+  ].forEach(([src, sheet, btr, words, above, cx, x0], i) => row(1, i, src, sheet, btr, words, above, cx, x0));
+  /* the spare point 12 shares the OFF(0) of point 11 */
+  const y11 = Math.round(162 + 159.3 * 2),
+    y12 = Math.round(162 + 159.3 * 3);
+  w.push(['r3', [[1549, y11], [1549, y12]]]);
+  j.push([1549, y11]);
+  w.forEach(x => {
+    if (x[0] === 'r4') x[0] = 'r3';
+  });
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE602',
+    title: 'EHG DIGITAL OUTPUT(3)',
+    page: 179,
+    ctl: 'EHG+MD',
+    cycle: 10,
+    f: [168, 84, 2222, 1544],
+    k,
+    c,
+    b,
+    r,
+    g,
+    l,
+    w,
+    j,
+    t: [...t, [222, 1525, 'CONTROLLER:'], [384, 1525, 'EHG+MD'], [647, 1502, 'TRIGGER  :'], [647, 1527, 'CYCLE(ms):10']]
+  });
+})();
+/* TCE603 EHG DIGITAL OUTPUT(4) (331DM09784 page 180, controller EHG+MD, cycle 10 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide (this page sits about 11 px to the right of TCE600). Sixteen digital outputs of the EHG controller (PI/O table
+   TCE961, points 17 to 32): TURNING GEAR ENGAGE SOLENOID VALVE (B of TCE352), TURNING GEAR ENGAGE (LAMP) (N of TCE350) and TURNING GEAR
+   MOTOR START (LAMP) (M of TCE350); the other thirteen points are spare (OFF(0)). The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    k = [],
+    b = [],
+    r = [],
+    g = [],
+    l = [],
+    w = [],
+    t = [],
+    j = [];
+  /* one output: the source (a connector, OFF(0), or a wire end x), BTR, the PI/O mark, the box of the PI/O table with its words and DO */
+  const row = (col, i, src, sheet, btr, words, above, cx, x0) => {
+    const L = col === 0,
+      y = Math.round((L ? 158 : 162) + 159.3 * i),
+      d = (L ? -1.9 : -2.1) * i /* the drawing leans a little */,
+      bx = Math.round((L ? 574 : 1618) + d) /* BTR */,
+      gx = Math.round((L ? 688 : 1731) + 1.3 * d) /* PI/O mark */,
+      rx = Math.round((L ? 804 : 1846) + 1.6 * d) /* box */,
+      rw = L ? 290 : 288,
+      key = (L ? 'l' : 'r') + (i + 1);
+    let xs = x0;
+    if (src === 'OFF(0)') {
+      k.push([key, cx - 234, y, 'OFF(0)', 'sys.ref']);
+      xs = cx;
+    } else if (src) {
+      c.push([key, 'in', src, cx, y, '', [sheet]]);
+      xs = cx + 27;
+    }
+    b.push(['btr' + btr, 'o:BTR', btr, bx, y]);
+    g.push([gx, y, 'r']);
+    if (xs) w.push([key, [[xs, y], [gx - 7, y]]]);
+    w.push([key, [[gx + 7, y], [rx, y]], 1]);
+    r.push(['', rx, y - 28, rw, 55, '']);
+    l.push([[rx + 21, y - 28], [rx + 21, y + 27]]);
+    words.forEach((s, n) => t.push([rx + 27, y + (words.length > 1 ? 2 + 20 * n : 8), s]));
+    t.push([rx + rw - 15, y + 48, 'DO'], [gx - 69, y - 19, '(TCE961-' + (L ? i + 17 : i + 25) + ')', 0, 1.7]);
+    above.forEach((s, n) => t.push([cx + 35, y + (above.length > 1 ? -30 + 21 * n : -9), s]));
+  };
+  [
+    ['B', 'TCE352', '001', ['TURNING GEAR ENGAGE', 'SOLENOID VALVE'], ['TURNING GEAR ENGAGE', 'SOL VLV ENERGIZE'], 297],
+    ['N', 'TCE350', '003', ['TURNING GEAR ENGAGE', '(LAMP)'], ['TURNING GEAR ENGAGE IND'], 295],
+    ['M', 'TCE350', '005', ['TURNING GEAR MOTOR START', '(LAMP)'], ['TURNING GEAR', 'MOTOR RUNNING IND'], 293],
+    ['OFF(0)', '', '007', ['(SPARE)'], [], 487],
+    ['OFF(0)', '', '009', ['(SPARE)'], [], 485],
+    ['OFF(0)', '', '011', ['(SPARE)'], [], 483],
+    ['OFF(0)', '', '013', ['(SPARE)'], [], 481],
+    ['OFF(0)', '', '015', ['(SPARE)'], [], 479],
+  ].forEach(([src, sheet, btr, words, above, cx, x0], i) => row(0, i, src, sheet, btr, words, above, cx, x0));
+  [
+    ['OFF(0)', '', '002', ['(SPARE)'], [], 1537],
+    ['OFF(0)', '', '004', ['(SPARE)'], [], 1535],
+    ['OFF(0)', '', '006', ['(SPARE)'], [], 1533],
+    ['OFF(0)', '', '008', ['(SPARE)'], [], 1531],
+    ['OFF(0)', '', '010', ['(SPARE)'], [], 1529],
+    ['OFF(0)', '', '012', ['(SPARE)'], [], 1527],
+    ['OFF(0)', '', '014', ['(SPARE)'], [], 1525],
+    ['OFF(0)', '', '016', ['(SPARE)'], [], 1523],
+  ].forEach(([src, sheet, btr, words, above, cx, x0], i) => row(1, i, src, sheet, btr, words, above, cx, x0));
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE603',
+    title: 'EHG DIGITAL OUTPUT(4)',
+    page: 180,
+    ctl: 'EHG+MD',
+    cycle: 10,
+    f: [178, 86, 2234, 1546],
+    k,
+    c,
+    b,
+    r,
+    g,
+    l,
+    w,
+    j,
+    t: [...t, [234, 1527, 'CONTROLLER:'], [396, 1527, 'EHG+MD'], [658, 1504, 'TRIGGER  :'], [658, 1529, 'CYCLE(ms):10']]
   });
 })();
 /* TCE172 CHANGE OVER (331DM09784 page 122, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
@@ -153294,7 +153474,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 991b230'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 34a450e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -180086,7 +180266,11 @@ const TCS_DESC = {
   TCE600:
     'EHG digital outputs (PI/O TCE960 points 1 to 16): control and main oil pump (A) start commands, DC emergency oil pump start and manual stop, turning gear motor start command and engaged, RSV/ICV and MSV/ICV full closed to the boiler reheater protection, and EHG soft major trouble or backup over speed (AND of TCE145 and TCE472, also to TCE602); six spare points.',
   TCE601:
-    'EHG digital outputs (PI/O TCE960 points 17 to 32): 52L open for house load operation, turbine speed <2400 rpm, acceleration relay operated, DCS mode on feedback, ASD2 start signal, HP-CV full close, turbine trip, MSV/CV(A) and (B) sequential full close test, 41 close, generator lockout relay (86G) A and B operated, ICV to CV transfer complete; three spare points.'
+    'EHG digital outputs (PI/O TCE960 points 17 to 32): 52L open for house load operation, turbine speed <2400 rpm, acceleration relay operated, DCS mode on feedback, ASD2 start signal, HP-CV full close, turbine trip, MSV/CV(A) and (B) sequential full close test, 41 close, generator lockout relay (86G) A and B operated, ICV to CV transfer complete; three spare points.',
+  TCE602:
+    'EHG digital outputs (PI/O TCE961 points 1 to 16): control and main oil pump (B) start commands, ASD1 start signal, DCS control mode permissive, power load unbalance relay operated, RSV/ICV and MSV/ICV full close, EHG soft not major trouble, EHG soft major trouble or backup over speed; the rest spare.',
+  TCE603:
+    'EHG digital outputs (PI/O TCE961 points 17 to 32): turning gear engage solenoid valve, turning gear engage lamp and turning gear motor start lamp; the other thirteen points are spare.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -199997,6 +200181,186 @@ const TCS_DESC = {
     w,
     j,
     t: [...t, [222, 1525, 'CONTROLLER:'], [384, 1525, 'EHG+MD'], [647, 1502, 'TRIGGER  :'], [647, 1527, 'CYCLE(ms):10']]
+  });
+})();
+
+/* ---- src/digital/tce/TCE602.js ---- */
+/* TCE602 EHG DIGITAL OUTPUT(3) (331DM09784 page 179, controller EHG+MD, cycle 10 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide. Sixteen digital outputs of the EHG controller (PI/O table TCE961, points 1 to 16): the control oil pump (B)
+   and main oil pump (B) start commands (TCE305 / TCE300), ASD1 START SIGNAL (52G) (TCE178), DCS CONTROL MODE PERMISSIVE (TCE180),
+   POWER LOAD UNBALANCE RY OPERATED (TCE095), RSV/ICV and MSV/ICV FULL CLOSE to the boiler reheater protection (TCE250), EHG SOFT NOT
+   MAJOR TROUBLE (TCE472) and EHG SOFT MAJOR TROUBLE or BACKUP OVER SPEED (B8 of TCE600); point 7 carries A of TCE166 to a spare box,
+   six points are spare (OFF(0)). The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    k = [],
+    b = [],
+    r = [],
+    g = [],
+    l = [],
+    w = [],
+    t = [],
+    j = [];
+  /* one output: the source (a connector, OFF(0), or a wire end x), BTR, the PI/O mark, the box of the PI/O table with its words and DO */
+  const row = (col, i, src, sheet, btr, words, above, cx, x0) => {
+    const L = col === 0,
+      y = Math.round((L ? 158 : 162) + 159.3 * i),
+      d = (L ? -1.9 : -2.1) * i /* the drawing leans a little */,
+      bx = Math.round((L ? 563 : 1607) + d) /* BTR */,
+      gx = Math.round((L ? 677 : 1720) + 1.3 * d) /* PI/O mark */,
+      rx = Math.round((L ? 792 : 1835) + 1.6 * d) /* box */,
+      rw = L ? 290 : 288,
+      key = (L ? 'l' : 'r') + (i + 1);
+    let xs = x0;
+    if (src === 'OFF(0)') {
+      k.push([key, cx - 234, y, 'OFF(0)', 'sys.ref']);
+      xs = cx;
+    } else if (src) {
+      c.push([key, 'in', src, cx, y, '', [sheet]]);
+      xs = cx + 27;
+    }
+    b.push(['btr' + btr, 'o:BTR', btr, bx, y]);
+    g.push([gx, y, 'r']);
+    if (xs) w.push([key, [[xs, y], [gx - 7, y]]]);
+    w.push([key, [[gx + 7, y], [rx, y]], 1]);
+    r.push(['', rx, y - 28, rw, 55, '']);
+    l.push([[rx + 21, y - 28], [rx + 21, y + 27]]);
+    words.forEach((s, n) => t.push([rx + 27, y + (words.length > 1 ? 2 + 20 * n : 8), s]));
+    t.push([rx + rw - 15, y + 48, 'DO'], [gx - 69, y - 19, '(TCE961-' + (L ? i + 1 : i + 9) + ')', 0, 1.7]);
+    above.forEach((s, n) => t.push([cx + 35, y + (above.length > 1 ? -30 + 21 * n : -9), s]));
+  };
+  [
+    ['G', 'TCE305', '001', ['CONTROL OIL PUMP(B)', 'START COMMAND'], ['COTROL OIL PUMP(B)', 'START'], 288],
+    ['G', 'TCE300', '003', ['MAIN OIL PUMP(B)', 'START COMMAND'], ['MAIN OIL PUMP(B)', 'START'], 286],
+    ['E', 'TCE178', '005', ['ASD1 START SIGNAL (52G)'], ['ASD1 START'], 283],
+    ['OFF(0)', '', '007', ['SPARE'], [], 466],
+    ['B', 'TCE180', '009', ['DCS CONTROL MODE', 'PERMISSIVE'], ['DCS CONTROL', 'MODE PERMISSIVE'], 277],
+    ['OFF(0)', '', '011', ['(SPARE)'], [], 474],
+    ['A', 'TCE166', '013', ['(SPARE)'], [], 285],
+    ['B', 'TCE095', '015', ['POWER LOAD UNBALANCE', 'RY OPERATED'], [], 284]
+  ].forEach(([src, sheet, btr, words, above, cx, x0], i) => row(0, i, src, sheet, btr, words, above, cx, x0));
+  [
+    ['OFF(0)', '', '002', ['(SPARE)'], [], 1528],
+    ['OFF(0)', '', '004', ['(SPARE)'], [], 1526],
+    ['OFF(0)', '', '006', ['(SPARE)'], [], 1524],
+    ['', '', '008', ['(SPARE)'], [], 0, 1549],
+    ['B', 'TCE250', '010', ['RSV/ICV FULL CLOSE'], ['BOILER REHEATER', 'PROTECTION'], 1303],
+    ['C', 'TCE250', '012', ['MSV/ICV FULL CLOSE'], ['BOILER REHEATER', 'PROTECTION'], 1301],
+    ['D', 'TCE472', '014', ['EHG SOFT NOT', 'MAJOR TROUBLE'], ['EHG NOT SOFT', 'MAJOR TROUBLE'], 1299],
+    ['B8', 'TCE600', '016', ['EHG SOFT MAJOR TROUBLE', 'or BACKUP OVER SPEED'], ['NOT EHG SOFT MAJOR TROUBLE', 'or BACKUP OVER SPEED'], 1318]
+  ].forEach(([src, sheet, btr, words, above, cx, x0], i) => row(1, i, src, sheet, btr, words, above, cx, x0));
+  /* the spare point 12 shares the OFF(0) of point 11 */
+  const y11 = Math.round(162 + 159.3 * 2),
+    y12 = Math.round(162 + 159.3 * 3);
+  w.push(['r3', [[1549, y11], [1549, y12]]]);
+  j.push([1549, y11]);
+  w.forEach(x => {
+    if (x[0] === 'r4') x[0] = 'r3';
+  });
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE602',
+    title: 'EHG DIGITAL OUTPUT(3)',
+    page: 179,
+    ctl: 'EHG+MD',
+    cycle: 10,
+    f: [168, 84, 2222, 1544],
+    k,
+    c,
+    b,
+    r,
+    g,
+    l,
+    w,
+    j,
+    t: [...t, [222, 1525, 'CONTROLLER:'], [384, 1525, 'EHG+MD'], [647, 1502, 'TRIGGER  :'], [647, 1527, 'CYCLE(ms):10']]
+  });
+})();
+
+/* ---- src/digital/tce/TCE603.js ---- */
+/* TCE603 EHG DIGITAL OUTPUT(4) (331DM09784 page 180, controller EHG+MD, cycle 10 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide (this page sits about 11 px to the right of TCE600). Sixteen digital outputs of the EHG controller (PI/O table
+   TCE961, points 17 to 32): TURNING GEAR ENGAGE SOLENOID VALVE (B of TCE352), TURNING GEAR ENGAGE (LAMP) (N of TCE350) and TURNING GEAR
+   MOTOR START (LAMP) (M of TCE350); the other thirteen points are spare (OFF(0)). The words are the ones of the drawing.
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    k = [],
+    b = [],
+    r = [],
+    g = [],
+    l = [],
+    w = [],
+    t = [],
+    j = [];
+  /* one output: the source (a connector, OFF(0), or a wire end x), BTR, the PI/O mark, the box of the PI/O table with its words and DO */
+  const row = (col, i, src, sheet, btr, words, above, cx, x0) => {
+    const L = col === 0,
+      y = Math.round((L ? 158 : 162) + 159.3 * i),
+      d = (L ? -1.9 : -2.1) * i /* the drawing leans a little */,
+      bx = Math.round((L ? 574 : 1618) + d) /* BTR */,
+      gx = Math.round((L ? 688 : 1731) + 1.3 * d) /* PI/O mark */,
+      rx = Math.round((L ? 804 : 1846) + 1.6 * d) /* box */,
+      rw = L ? 290 : 288,
+      key = (L ? 'l' : 'r') + (i + 1);
+    let xs = x0;
+    if (src === 'OFF(0)') {
+      k.push([key, cx - 234, y, 'OFF(0)', 'sys.ref']);
+      xs = cx;
+    } else if (src) {
+      c.push([key, 'in', src, cx, y, '', [sheet]]);
+      xs = cx + 27;
+    }
+    b.push(['btr' + btr, 'o:BTR', btr, bx, y]);
+    g.push([gx, y, 'r']);
+    if (xs) w.push([key, [[xs, y], [gx - 7, y]]]);
+    w.push([key, [[gx + 7, y], [rx, y]], 1]);
+    r.push(['', rx, y - 28, rw, 55, '']);
+    l.push([[rx + 21, y - 28], [rx + 21, y + 27]]);
+    words.forEach((s, n) => t.push([rx + 27, y + (words.length > 1 ? 2 + 20 * n : 8), s]));
+    t.push([rx + rw - 15, y + 48, 'DO'], [gx - 69, y - 19, '(TCE961-' + (L ? i + 17 : i + 25) + ')', 0, 1.7]);
+    above.forEach((s, n) => t.push([cx + 35, y + (above.length > 1 ? -30 + 21 * n : -9), s]));
+  };
+  [
+    ['B', 'TCE352', '001', ['TURNING GEAR ENGAGE', 'SOLENOID VALVE'], ['TURNING GEAR ENGAGE', 'SOL VLV ENERGIZE'], 297],
+    ['N', 'TCE350', '003', ['TURNING GEAR ENGAGE', '(LAMP)'], ['TURNING GEAR ENGAGE IND'], 295],
+    ['M', 'TCE350', '005', ['TURNING GEAR MOTOR START', '(LAMP)'], ['TURNING GEAR', 'MOTOR RUNNING IND'], 293],
+    ['OFF(0)', '', '007', ['(SPARE)'], [], 487],
+    ['OFF(0)', '', '009', ['(SPARE)'], [], 485],
+    ['OFF(0)', '', '011', ['(SPARE)'], [], 483],
+    ['OFF(0)', '', '013', ['(SPARE)'], [], 481],
+    ['OFF(0)', '', '015', ['(SPARE)'], [], 479],
+  ].forEach(([src, sheet, btr, words, above, cx, x0], i) => row(0, i, src, sheet, btr, words, above, cx, x0));
+  [
+    ['OFF(0)', '', '002', ['(SPARE)'], [], 1537],
+    ['OFF(0)', '', '004', ['(SPARE)'], [], 1535],
+    ['OFF(0)', '', '006', ['(SPARE)'], [], 1533],
+    ['OFF(0)', '', '008', ['(SPARE)'], [], 1531],
+    ['OFF(0)', '', '010', ['(SPARE)'], [], 1529],
+    ['OFF(0)', '', '012', ['(SPARE)'], [], 1527],
+    ['OFF(0)', '', '014', ['(SPARE)'], [], 1525],
+    ['OFF(0)', '', '016', ['(SPARE)'], [], 1523],
+  ].forEach(([src, sheet, btr, words, above, cx, x0], i) => row(1, i, src, sheet, btr, words, above, cx, x0));
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE603',
+    title: 'EHG DIGITAL OUTPUT(4)',
+    page: 180,
+    ctl: 'EHG+MD',
+    cycle: 10,
+    f: [178, 86, 2234, 1546],
+    k,
+    c,
+    b,
+    r,
+    g,
+    l,
+    w,
+    j,
+    t: [...t, [234, 1527, 'CONTROLLER:'], [396, 1527, 'EHG+MD'], [658, 1504, 'TRIGGER  :'], [658, 1529, 'CYCLE(ms):10']]
   });
 })();
 
@@ -348571,7 +348935,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 991b230'));
+    row('Version', E('span', 'scsver', ver + ' · build 34a450e'));
   }
   function openSet(near) {
     if (!set) {
