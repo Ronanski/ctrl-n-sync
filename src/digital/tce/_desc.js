@@ -631,5 +631,7 @@ const TCS_DESC = {
   TCA752:
     'Thermal stress (HP): three DISTRIBUTION blocks turn the stage temperatures TH(2)-TH(5) into TH(3)N-TH(5)N and QH(3)N',
   TCA753:
-    'THERMAL STRESS(HP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TH(2) and TH(1), as drawn.'
+    'THERMAL STRESS(HP): two DISTRIBUTION blocks A004 / A007 (LMA627) for TH(2) and TH(1), as drawn.',
+  TCA754:
+    'THERMAL STRESS(HP): speed ratio, the THERMAL STRESS block A001 (LMA628) and the HP bore stress, as drawn.'
 };
