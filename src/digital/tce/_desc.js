@@ -850,5 +850,7 @@ const TCS_DESC = {
   TCE970:
     'EHG AO TABLE(1): PI/O table of EHG analog output card unit 4 slot 7 (LYA100A), 4-20 mA; target MW feed back, load up rate, HP first stage pressures (A)(B)(C), turbine speed.',
   TCE980:
-    'EHG PTI TABLE(1): PI/O table of EHG pulse input cards unit 0 slot A/B/C (LYT000A), turbine speed pick-ups SE-STn001-1/2/3; high and low speed counters, count exchange constants.'
+    'EHG PTI TABLE(1): PI/O table of EHG pulse input cards unit 0 slot A/B/C (LYT000A), turbine speed pick-ups SE-STn001-1/2/3; high and low speed counters, count exchange constants.',
+  TCE990:
+    'EHG SERVO TABLE(1): PI/O table of EHG servo cards unit 0 slot 4/5 (AEH006A); MSV/CV position and servo valve inputs, servo valve outputs, A and B sides.'
 };
