@@ -425,6 +425,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA980:
+    'Communication digital output table (1): CRV, CV and MSV secondary drain valves, steam seal feed inlet valve, gland steam line drain, start-up mode, load hold, 41 open, PSS / PF control, rated speed, ST trip.',
   TCA981:
     'Communication digital output table (2): CRV, MSV and CV secondary drain valves, HP warming valve and line drain, excitation start and mode, auxiliaries start, reactive power regulator, PLU / EOS tests.',
   TCA982:
