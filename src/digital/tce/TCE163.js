@@ -7,7 +7,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [176, 84, 2226, 1543],
-  live: { iA: 'tsel=200', iF: ['tspd', 'rpm'] },
+  live: { iA: 'tsel=200', iF: ['tspd', 'rpm'], kSpd: ['rpm', 'rpm'], kAts: 'auto', kTrip: 'trip', k52g: 'g52' },
   k: [
     ['kSpd', 290, 136, 'TURBINE SPEED', 'ref'],
     ['kAts', 285, 712, 'ATS AUTO(C)', 'ref'],

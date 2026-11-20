@@ -12,6 +12,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 88, 2222, 1552],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kFd: ['fd', '%'] },
   k: [
     ['kInit', 287, 146, 'INITIAL', 'ref'],
     ['kHsc', 287, 317, 'HEAT SOAK CONTROL', 'ref'],

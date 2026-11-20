@@ -9,7 +9,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [170, 85, 2222, 1545],
-  live: { iTrc: 'xfer' },
+  live: { iTrc: 'xfer', kAts: 'auto' },
   k: [
     ['kInit', 238, 259, 'INITIAL', 'ref'],
     ['kAts', 237, 343, 'ATS AUTO(C)', 'ref']

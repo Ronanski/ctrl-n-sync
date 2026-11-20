@@ -11,7 +11,7 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [167, 85, 2220, 1547],
-  live: { iGen: ['mw', 'MW'], iGov: ['govSet', '%'] },
+  live: { iGen: ['mw', 'MW'], iGov: ['govSet', '%'], k52g: 'g52' },
   k: [
     ['kInit', 285, 150, 'INITIAL', 'ref'],
     ['k52g', 284, 246, '52G CLOSE', 'ref'],

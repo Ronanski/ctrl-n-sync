@@ -472,8 +472,11 @@ function render() {
       if (v === undefined) return;
       const txt = v + ' ' + L.unit,
         w = txt.length * 1.25 + 2;
-      el('rect', { x: L.x + 1, y: -L.y - 4.6, width: w, height: 3.8, rx: 0.9, fill: '#1b2731', stroke: '#7d8e9a', 'stroke-width': 0.25, 'pointer-events': 'none' }, g);
-      const t = el('text', { x: L.x + 1 + w / 2, y: -L.y - 1.9, 'font-size': 2.1, 'text-anchor': 'middle', fill: '#cfd8e0', 'pointer-events': 'none' }, g);
+      /* the tag keeps its own colours on every sheet look (inline style: the paper colour maps and the text halo do not reach it) */
+      const rc = el('rect', { x: L.x + 1, y: -L.y - 4.6, width: w, height: 3.8, rx: 0.9, 'pointer-events': 'none' }, g);
+      rc.setAttribute('style', 'fill:#2a323a !important;stroke:#5c6875 !important;stroke-width:0.25');
+      const t = el('text', { x: L.x + 1 + w / 2, y: -L.y - 1.9, 'font-size': 2.1, 'text-anchor': 'middle', 'pointer-events': 'none' }, g);
+      t.setAttribute('style', 'fill:#e6eaed !important;stroke:none !important');
       t.style.fontFamily = 'Consolas,monospace';
       t.style.fontWeight = 'bold';
       t.textContent = txt;

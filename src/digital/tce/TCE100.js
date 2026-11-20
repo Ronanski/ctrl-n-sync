@@ -21,6 +21,8 @@
     ctl: 'EHG+MD',
     cycle: 30,
     f: [182, 86, 2232, 1546],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kSpd1: ['rpm', 'rpm'], kSpd2: ['rpm', 'rpm'] },
     k: [
       ['kInit', 235, 137, 'INITIAL', 'ref'],
       ['kSpd1', 235, 822, 'TURBINE SPEED', 'ref'],

@@ -6,6 +6,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [173, 84, 2226, 1548],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kTrip: 'trip' },
   k: [
     ['kInit', 290, 213, 'INITIAL', 'ref'],
     ['kTrip', 286, 842, 'TURBINE TRIP', 'ref'],

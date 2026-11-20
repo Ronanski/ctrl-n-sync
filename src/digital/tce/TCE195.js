@@ -12,6 +12,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 82, 2227, 1550],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iGmw: ['mw', 'MW'], iGov: ['govSet', '%'] },
   k: [
     ['kGov', 290, 141, 'GOVERNING MODE', 'ref'],
     ['kInit', 857, 183, 'INITIAL', 'ref'],

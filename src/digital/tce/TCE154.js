@@ -15,6 +15,8 @@
     ctl: 'EHG+MD',
     cycle: 30,
     f: [152, 78, 2203, 1542],
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { kTrip: 'trip' },
     c: [
       ['iA', 'in', 'A', 299, 252, 'DURING CV WARMING CONTROL', ['TCE152']],
       ['iUp', 'in', 'B', 296, 530, 'WARMING (LOWER) SET', ['TCE155']],

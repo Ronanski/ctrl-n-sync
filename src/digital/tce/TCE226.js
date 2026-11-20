@@ -14,6 +14,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [178, 90, 2228, 1553],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iTr: 'xfer' },
   k: [['kHp', 294, 263.5, 'HP START', 'ref']],
   c: [
     ['iH1', 'in', 'H1', 311, 160, 'CRV(A) FULL CLOSE TEST PERMISSIVE', ['TCE224']],

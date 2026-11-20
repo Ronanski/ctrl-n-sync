@@ -13,6 +13,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [174, 84, 2232, 1543],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { kFd: ['fd', '%'] },
   k: [
     ['kIps', 265, 180, 'IP START', 'ref'],
     ['kFd', 263, 349, 'FLOW DEMAND', 'ref'],
