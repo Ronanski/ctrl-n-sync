@@ -152,6 +152,8 @@ const TCS_DESC = {
     'Turbine gland seal stop group control: stops the gland seal after condenser vacuum break and both MSV closed.',
   'IBD-TE-8':
     'Turbine gland seal related auxiliaries in AUTO: gland steam exhauster and steam seal feed inlet valve in AUTO; first stage and reheat bowl metal temperature checks.',
+  TCA040:
+    'Digital input (1): MSV, CV and CRV secondary drain valve open / closed / trouble and torque switches to their valve sheets; AC exciter earth fault, auto start ready and control local to the operator station; DI power supply normal.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
