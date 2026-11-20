@@ -515,5 +515,7 @@ const TCS_DESC = {
   TCA638:
     'Turbine gland seal group control (TE-6, 7), stop: stop in progress from the group stop command or the operator station with vacuum broken and the valves in AUTO, the stop permissive, the stop command to the exhauster, stop complete and stop trouble after 400 s.',
   TCA639:
-    'Turbine gland seal group control (TE-6, 7), conditions: the start and stop related auxiliaries in AUTO, and aux. steam temperature OK (over 275 degC in ambient cold mode, else over 200 degC).'
+    'Turbine gland seal group control (TE-6, 7), conditions: the start and stop related auxiliaries in AUTO, and aux. steam temperature OK (over 275 degC in ambient cold mode, else over 200 degC).',
+  TCA650:
+    'Steam seal feed inlet valve (TC-31) motor valve: auto open by the gland seal start group, auto close by the stop group; open / close commands, opened, closed and AUTO out.'
 };
