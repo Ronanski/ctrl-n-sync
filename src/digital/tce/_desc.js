@@ -747,5 +747,7 @@ const TCS_DESC = {
   TCA804:
     'Comm alarm (hardware) 13: the PI/O errors of unit 0 slots C, D and E, each pair through an OR, as DO error to the CRT and TCA806 (three spare groups on OFF).',
   TCA805:
-    'Comm alarm (hardware) 14: the PI/O errors of unit 1 slots D and E (other OR inputs on OFF), each through an OR, as AO error to the CRT and TCA806.'
+    'Comm alarm (hardware) 14: the PI/O errors of unit 1 slots D and E (other OR inputs on OFF), each through an OR, as AO error to the CRT and TCA806.',
+  TCA806:
+    'Comm alarm (hardware) 15: the DI, AI, DO and AO card errors, each group through an OR, into one OR that sets a flip-flop (ANN RESET resets it), as COM I/O HARD ERROR to the CRT and TCA822.'
 };
