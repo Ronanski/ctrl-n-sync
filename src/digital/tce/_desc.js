@@ -767,5 +767,7 @@ const TCS_DESC = {
   TCA812:
     'Alarm: steam seal feed, steam packing unloading, CV(B) secondary warming drain and HP turbine warming valve positions, and RTD abnormal, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(3) to TCA816.',
   TCA813:
-    'Alarm: turbine bearing metal, gland steam seal, steam and turbine casing metal temperature abnormals and RTD abnormal, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(4) to TCA816.'
+    'Alarm: turbine bearing metal, gland steam seal, steam and turbine casing metal temperature abnormals and RTD abnormal, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(4) to TCA816.',
+  TCA814:
+    'Alarm: HP and IP turbine casing metal, thrust bearing, MSV and CV metal and bearing outlet oil temperature abnormals and RTD abnormals, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(5) to TCA816.'
 };
