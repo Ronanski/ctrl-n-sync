@@ -258,6 +258,8 @@ const TCS_DESC = {
     'GENERATOR PROTECTION LOGIC A (2/2): pole slip, VT fuse failure, under and over frequency to generator protection A operated, and the ST trip to the generator trip and breaker trip coils',
   'G-6A':
     'GENERATOR PROTECTION LOGIC B (1/2): the relays of generator protection panel B, with 52G closed and 60FLB not on, to the lockout relay 86G-B and its trips',
+  'G-6B':
+    'GENERATOR PROTECTION LOGIC B (2/2): pole slip, VT fuse failure, under and over frequency to generator protection B operated, and protection A or B to the line breaker trip coils',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
