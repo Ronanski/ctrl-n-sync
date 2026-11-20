@@ -26231,6 +26231,374 @@ function tcsSim(s) {
     t
   });
 })();
+/* TCA539 CRITERIA CONDITION (331DM09788 page 109, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. CRI 1.16 bearing oil temp. OK = OR 003 of: A 002 (turning gear engaged, oil temp (higher of the two lube oil cooler
+   outlets, HS 033) over 27 degC (CMP A007) and under 42 degC (CPL A006)), A 008 (over 27 degC, not on the turning gear, under 52 degC
+   (CPL A010), not at rated speed) and A 013 (over 40 degC (CMP A012), under 52 degC, rated speed held 60 s (TP A014)); the CMP reset by
+   INITIAL. Its NOT is the bearing oil temp. abnormal (lamp TCA539_1, A1). Also CRI 1.19 turbine turning and CRI 1.37 CV (A) and (B)
+   completely closed confirmation (A 041 with the heat soak reset and a cold start mode (OR 039), held 120 s by TP A037, or no cold mode). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const OX = 2068 /* the output connectors */,
+    w = [];
+  const W = (key, pts, thick) => w.push(thick ? [key, pts, 1] : [key, pts]);
+  /* the oil temp.: the higher of the two coolers to the four limits */
+  W(
+    'iA2',
+    [
+      [309, 321],
+      [531, 321]
+    ],
+    1
+  );
+  W(
+    'iA3',
+    [
+      [308, 417],
+      [510, 417],
+      [510, 343],
+      [531, 343]
+    ],
+    1
+  );
+  W(
+    'iA3',
+    [
+      [510, 365],
+      [531, 365]
+    ],
+    1
+  );
+  W(
+    'hs033',
+    [
+      [590, 321],
+      [767, 321]
+    ],
+    1
+  );
+  W(
+    'hs033',
+    [
+      [657, 321],
+      [657, 694],
+      [762, 694]
+    ],
+    1
+  );
+  W(
+    'hs033',
+    [
+      [657, 449],
+      [767, 449]
+    ],
+    1
+  );
+  W(
+    'hs033',
+    [
+      [657, 567],
+      [765, 567]
+    ],
+    1
+  );
+  /* INITIAL resets the CMP and the timers */
+  W('kInit', [
+    [457, 150],
+    [711, 150],
+    [711, 1003],
+    [940, 1003],
+    [940, 1067]
+  ]);
+  W('kInit', [
+    [711, 418],
+    [795, 418],
+    [795, 438]
+  ]);
+  W('kInit', [
+    [711, 662],
+    [792, 662],
+    [792, 685]
+  ]);
+  W('kInit', [
+    [711, 738],
+    [760, 738],
+    [760, 811]
+  ]);
+  /* turning gear engaged, rated speed */
+  W('iB1', [
+    [311, 237],
+    [1109, 237]
+  ]);
+  W('iB1', [
+    [881, 237],
+    [881, 471],
+    [902, 471]
+  ]);
+  W('iB1', [
+    [1063, 237],
+    [1063, 183],
+    [1389, 183]
+  ]);
+  W('iB', [
+    [304, 822],
+    [731, 822]
+  ]);
+  W('tpA014', [
+    [789, 822],
+    [OX - 27, 822]
+  ]);
+  W('tpA014', [
+    [879, 822],
+    [879, 610],
+    [901, 610]
+  ]);
+  W('tpA014', [
+    [1080, 822],
+    [1080, 738],
+    [1105, 738]
+  ]);
+  /* the three cases */
+  W('cplA006', [
+    [825, 321],
+    [1098, 321],
+    [1098, 280],
+    [1109, 280]
+  ]);
+  W('cmpA007', [
+    [825, 449],
+    [1107, 449]
+  ]);
+  W('cmpA007', [
+    [1063, 449],
+    [1063, 258],
+    [1109, 258]
+  ]);
+  W('not009', [
+    [962, 471],
+    [1107, 471]
+  ]);
+  W('cplA010', [
+    [822, 567],
+    [1060, 567],
+    [1060, 492],
+    [1107, 492]
+  ]);
+  W('cplA010', [
+    [1060, 567],
+    [1060, 715],
+    [1105, 715]
+  ]);
+  W('not011', [
+    [962, 610],
+    [1083, 610],
+    [1083, 513],
+    [1107, 513]
+  ]);
+  W('cmpA012', [
+    [822, 694],
+    [1105, 694]
+  ]);
+  W('a002', [
+    [1167, 237],
+    [1289, 237]
+  ]);
+  W('a008', [
+    [1165, 449],
+    [1241, 449],
+    [1241, 258],
+    [1289, 258]
+  ]);
+  W('a013', [
+    [1163, 694],
+    [1261, 694],
+    [1261, 279],
+    [1289, 279]
+  ]);
+  W('or003', [
+    [1347, 237],
+    [OX - 27, 237]
+  ]);
+  W('or003', [
+    [1617, 237],
+    [1617, 313],
+    [1662, 313]
+  ]);
+  W('not029', [
+    [1722, 313],
+    [2035, 313]
+  ]);
+  W('not029', [
+    [1745, 313],
+    [1745, 388],
+    [2045, 388]
+  ]);
+  /* turbine turning, the CV closed confirmation */
+  W('iF', [
+    [304, 950],
+    [OX - 27, 950]
+  ]);
+  W('iGa', [
+    [291, 1078],
+    [730, 1078]
+  ]);
+  W('iGb', [
+    [291, 1183],
+    [697, 1183],
+    [697, 1099],
+    [730, 1099]
+  ]);
+  W('iA2s', [
+    [291, 1257],
+    [707, 1257],
+    [707, 1120],
+    [730, 1120]
+  ]);
+  W('iA', [
+    [279, 1331],
+    [553, 1331]
+  ]);
+  W('iB2', [
+    [279, 1405],
+    [533, 1405],
+    [533, 1353],
+    [553, 1353]
+  ]);
+  W('iC', [
+    [279, 1468],
+    [543, 1468],
+    [543, 1377],
+    [553, 1377]
+  ]);
+  W('or039', [
+    [615, 1331],
+    [907, 1331]
+  ]);
+  W('or039', [
+    [717, 1331],
+    [717, 1140],
+    [730, 1140]
+  ]);
+  W('a041', [
+    [787, 1078],
+    [908, 1078]
+  ]);
+  W('tpA037', [
+    [968, 1078],
+    [1132, 1078]
+  ]);
+  W('not040', [
+    [965, 1331],
+    [1121, 1331],
+    [1121, 1099],
+    [1132, 1099]
+  ]);
+  W('or038', [
+    [1190, 1078],
+    [OX - 27, 1078]
+  ]);
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA539',
+    title: 'CRITERIA CONDITION',
+    page: 109,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [160, 85, 2208, 1550],
+    k: [['kInit', 224, 150, 'INITIAL', 'ref']],
+    c: [
+      ['iB1', 'in', 'B1', 284, 237, 'TURNING GEAR ENGAGED', ['TCE350'], 1],
+      ['iA2', 'in', 'A2', 282, 321, '', ['TCA440']],
+      ['iA3', 'in', 'A3', 281, 417, '', ['TCA440']],
+      ['iB', 'in', 'B', 277, 822, 'CRI 2.4 TURBINE RATED SPEED', ['TCA547']],
+      ['iF', 'in', 'F', 277, 950, 'TURBINE TURNING', ['TCE351'], 1],
+      ['iGa', 'in', 'G', 264, 1078, 'CV(A) FULL CLOSE', ['TCE125'], 1],
+      ['iGb', 'in', 'G', 264, 1183, 'CV(B) FULL CLOSE', ['TCE127'], 1],
+      ['iA2s', 'in', 'A2', 264, 1257, 'HEAT SOAK RESET', ['TCE163'], 1],
+      ['iA', 'in', 'A', 252, 1331, 'AMB.COLD MODE', ['TCA500']],
+      ['iB2', 'in', 'B', 252, 1405, 'COLD1 MODE', ['TCA500']],
+      ['iC', 'in', 'C', 252, 1468, 'COLD2 MODE', ['TCA500']],
+      ['oC1', 'out', 'C1', 1416, 183, '', ['-']],
+      ['oA', 'out', 'A', OX, 237, '', ['TCA554'], 0, 1],
+      ['oA1', 'out', 'A1', 2072, 388, '', ['-'], 1],
+      ['oC', 'out', 'C', OX, 822, '', ['TCA831'], 0, 1],
+      ['oB', 'out', 'B', OX, 950, '', ['TCA554', 'TCA630', 'TCA631', 'TCA636'], 0, 3],
+      ['oD', 'out', 'D', OX, 1078, '', ['TCA511', 'TCA559'], 0, 2]
+    ],
+    d: [['crt1', 2070, 313, 'out', 'TCA539_1', 'S', '#1C']],
+    b: [
+      ['hs033', 'HS', '033', 561, 353, [], {}, [59, 87]],
+      ['cplA006', 'CPL', 'A006', 796, 332, ['HL:42.0degC', 'LL:40.0degC']],
+      ['cmpA007', 'CMP', 'A007', 796, 460, ['HL:27.0degC', 'LL:25.0degC']],
+      ['cplA010', 'CPL', 'A010', 794, 578, ['HL:52.0degC', 'LL:50.0degC']],
+      ['cmpA012', 'CMP', 'A012', 792, 706, ['HL:40.0degC', 'LL:38.0degC']],
+      ['tpA014', 'TP', 'A014', 760, 832, ['TP:60.0S']],
+      ['not009', 'NOT', '009', 932, 482],
+      ['not011', 'NOT', '011', 932, 621],
+      ['a002', 'A', '002', 1138, 257, [], {}, [59, 65]],
+      ['a008', 'A', '008', 1136, 482, [], {}, [59, 86]],
+      ['a013', 'A', '013', 1134, 717, [], {}, [59, 64]],
+      ['or003', 'OR', '003', 1318, 257, [], {}, [58, 64]],
+      ['not029', 'NOT', '029', 1692, 323],
+      ['btr030', 'o:BTR', '030', 1097, 183],
+      ['btr032', 'o:BTR', '032', 1773, 388],
+      ['btr031', 'o:BTR', '031', 1685, 950],
+      ['btr035', 'o:BTR', '035', 1672, 1078],
+      ['a041', 'A', '041', 758, 1109, [], {}, [57, 85]],
+      ['tpA037', 'TP', 'A037', 938, 1088, ['TP:120.0S']],
+      ['or038', 'OR', '038', 1161, 1088],
+      ['or039', 'OR', '039', 584, 1354, [], {}, [62, 66]],
+      ['not040', 'NOT', '040', 936, 1342]
+    ],
+    w,
+    j: [
+      [510, 365],
+      [657, 321],
+      [657, 449],
+      [657, 567],
+      [711, 418],
+      [711, 662],
+      [711, 738],
+      [881, 237],
+      [1063, 237],
+      [1063, 449],
+      [879, 822],
+      [1080, 822],
+      [1060, 567],
+      [1617, 237],
+      [1745, 313],
+      [717, 1331]
+    ],
+    t: [
+      [1145, 173, 'TURNING GEAR ENGAGED'],
+      [316, 289, 'LUBE OIL COOLER'],
+      [316, 310, 'OUTLET OIL TEMP(A)'],
+      [316, 384, 'LUBE OIL COOLER'],
+      [316, 405, 'OUTLET OIL TEMP.(B)'],
+      [1820, 207, 'CRI 1.16 BEARING'],
+      [1820, 228, 'OIL TEMP. OK'],
+      [1820, 282, 'BEARING OIL'],
+      [1820, 303, 'TEMP. ABN.'],
+      [1822, 357, 'BEARING OIL'],
+      [1822, 378, 'TEMP. ABN.'],
+      [1762, 793, 'TURBINE RATED SPEED'],
+      [1775, 941, 'CRI 1.19 TURBINE TURNING'],
+      [1763, 1048, 'CRI 1.37 CV(A)&(B) COMPLETRY'],
+      [1763, 1069, 'CLOSED CONFIRMATION'],
+      [753, 311, 'T', 2],
+      [752, 439, 'T', 2],
+      [750, 556, 'T', 2],
+      [749, 684, 'T', 2],
+      [720, 814, 'T', 2],
+      [898, 1069, 'T', 2],
+      [360, 178, '(TCA050)'],
+      [228, 1532, 'CONTROLLER:'],
+      [392, 1532, 'COMM+MD'],
+      [652, 1506, 'TRIGGER  :'],
+      [652, 1532, 'CYCLE(ms):100']
+    ]
+  });
+})();
 /* TCA541 CRITERIA CONDITION (331DM09788 page 111, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
    rendered 2296 wide. The turbine rotor position: the middle value of the three transmitters (A, B, C) by HS 001 / 004 / 006 (the higher of
    each pair) and LS 002 (the lowest of the three), out as ROTOR POSITION and to the thrust bearing failure criteria (CMP A003 front HL 0.6 /
@@ -110870,7 +111238,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 4f39e61'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build b17b1a5'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -157476,6 +157844,376 @@ function tcsSim(s) {
     w,
     j,
     t
+  });
+})();
+
+/* ---- src/digital/tce/TCA539.js ---- */
+/* TCA539 CRITERIA CONDITION (331DM09788 page 109, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
+   rendered 2296 wide. CRI 1.16 bearing oil temp. OK = OR 003 of: A 002 (turning gear engaged, oil temp (higher of the two lube oil cooler
+   outlets, HS 033) over 27 degC (CMP A007) and under 42 degC (CPL A006)), A 008 (over 27 degC, not on the turning gear, under 52 degC
+   (CPL A010), not at rated speed) and A 013 (over 40 degC (CMP A012), under 52 degC, rated speed held 60 s (TP A014)); the CMP reset by
+   INITIAL. Its NOT is the bearing oil temp. abnormal (lamp TCA539_1, A1). Also CRI 1.19 turbine turning and CRI 1.37 CV (A) and (B)
+   completely closed confirmation (A 041 with the heat soak reset and a cold start mode (OR 039), held 120 s by TP A037, or no cold mode). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const OX = 2068 /* the output connectors */,
+    w = [];
+  const W = (key, pts, thick) => w.push(thick ? [key, pts, 1] : [key, pts]);
+  /* the oil temp.: the higher of the two coolers to the four limits */
+  W(
+    'iA2',
+    [
+      [309, 321],
+      [531, 321]
+    ],
+    1
+  );
+  W(
+    'iA3',
+    [
+      [308, 417],
+      [510, 417],
+      [510, 343],
+      [531, 343]
+    ],
+    1
+  );
+  W(
+    'iA3',
+    [
+      [510, 365],
+      [531, 365]
+    ],
+    1
+  );
+  W(
+    'hs033',
+    [
+      [590, 321],
+      [767, 321]
+    ],
+    1
+  );
+  W(
+    'hs033',
+    [
+      [657, 321],
+      [657, 694],
+      [762, 694]
+    ],
+    1
+  );
+  W(
+    'hs033',
+    [
+      [657, 449],
+      [767, 449]
+    ],
+    1
+  );
+  W(
+    'hs033',
+    [
+      [657, 567],
+      [765, 567]
+    ],
+    1
+  );
+  /* INITIAL resets the CMP and the timers */
+  W('kInit', [
+    [457, 150],
+    [711, 150],
+    [711, 1003],
+    [940, 1003],
+    [940, 1067]
+  ]);
+  W('kInit', [
+    [711, 418],
+    [795, 418],
+    [795, 438]
+  ]);
+  W('kInit', [
+    [711, 662],
+    [792, 662],
+    [792, 685]
+  ]);
+  W('kInit', [
+    [711, 738],
+    [760, 738],
+    [760, 811]
+  ]);
+  /* turning gear engaged, rated speed */
+  W('iB1', [
+    [311, 237],
+    [1109, 237]
+  ]);
+  W('iB1', [
+    [881, 237],
+    [881, 471],
+    [902, 471]
+  ]);
+  W('iB1', [
+    [1063, 237],
+    [1063, 183],
+    [1389, 183]
+  ]);
+  W('iB', [
+    [304, 822],
+    [731, 822]
+  ]);
+  W('tpA014', [
+    [789, 822],
+    [OX - 27, 822]
+  ]);
+  W('tpA014', [
+    [879, 822],
+    [879, 610],
+    [901, 610]
+  ]);
+  W('tpA014', [
+    [1080, 822],
+    [1080, 738],
+    [1105, 738]
+  ]);
+  /* the three cases */
+  W('cplA006', [
+    [825, 321],
+    [1098, 321],
+    [1098, 280],
+    [1109, 280]
+  ]);
+  W('cmpA007', [
+    [825, 449],
+    [1107, 449]
+  ]);
+  W('cmpA007', [
+    [1063, 449],
+    [1063, 258],
+    [1109, 258]
+  ]);
+  W('not009', [
+    [962, 471],
+    [1107, 471]
+  ]);
+  W('cplA010', [
+    [822, 567],
+    [1060, 567],
+    [1060, 492],
+    [1107, 492]
+  ]);
+  W('cplA010', [
+    [1060, 567],
+    [1060, 715],
+    [1105, 715]
+  ]);
+  W('not011', [
+    [962, 610],
+    [1083, 610],
+    [1083, 513],
+    [1107, 513]
+  ]);
+  W('cmpA012', [
+    [822, 694],
+    [1105, 694]
+  ]);
+  W('a002', [
+    [1167, 237],
+    [1289, 237]
+  ]);
+  W('a008', [
+    [1165, 449],
+    [1241, 449],
+    [1241, 258],
+    [1289, 258]
+  ]);
+  W('a013', [
+    [1163, 694],
+    [1261, 694],
+    [1261, 279],
+    [1289, 279]
+  ]);
+  W('or003', [
+    [1347, 237],
+    [OX - 27, 237]
+  ]);
+  W('or003', [
+    [1617, 237],
+    [1617, 313],
+    [1662, 313]
+  ]);
+  W('not029', [
+    [1722, 313],
+    [2035, 313]
+  ]);
+  W('not029', [
+    [1745, 313],
+    [1745, 388],
+    [2045, 388]
+  ]);
+  /* turbine turning, the CV closed confirmation */
+  W('iF', [
+    [304, 950],
+    [OX - 27, 950]
+  ]);
+  W('iGa', [
+    [291, 1078],
+    [730, 1078]
+  ]);
+  W('iGb', [
+    [291, 1183],
+    [697, 1183],
+    [697, 1099],
+    [730, 1099]
+  ]);
+  W('iA2s', [
+    [291, 1257],
+    [707, 1257],
+    [707, 1120],
+    [730, 1120]
+  ]);
+  W('iA', [
+    [279, 1331],
+    [553, 1331]
+  ]);
+  W('iB2', [
+    [279, 1405],
+    [533, 1405],
+    [533, 1353],
+    [553, 1353]
+  ]);
+  W('iC', [
+    [279, 1468],
+    [543, 1468],
+    [543, 1377],
+    [553, 1377]
+  ]);
+  W('or039', [
+    [615, 1331],
+    [907, 1331]
+  ]);
+  W('or039', [
+    [717, 1331],
+    [717, 1140],
+    [730, 1140]
+  ]);
+  W('a041', [
+    [787, 1078],
+    [908, 1078]
+  ]);
+  W('tpA037', [
+    [968, 1078],
+    [1132, 1078]
+  ]);
+  W('not040', [
+    [965, 1331],
+    [1121, 1331],
+    [1121, 1099],
+    [1132, 1099]
+  ]);
+  W('or038', [
+    [1190, 1078],
+    [OX - 27, 1078]
+  ]);
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA539',
+    title: 'CRITERIA CONDITION',
+    page: 109,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [160, 85, 2208, 1550],
+    k: [['kInit', 224, 150, 'INITIAL', 'ref']],
+    c: [
+      ['iB1', 'in', 'B1', 284, 237, 'TURNING GEAR ENGAGED', ['TCE350'], 1],
+      ['iA2', 'in', 'A2', 282, 321, '', ['TCA440']],
+      ['iA3', 'in', 'A3', 281, 417, '', ['TCA440']],
+      ['iB', 'in', 'B', 277, 822, 'CRI 2.4 TURBINE RATED SPEED', ['TCA547']],
+      ['iF', 'in', 'F', 277, 950, 'TURBINE TURNING', ['TCE351'], 1],
+      ['iGa', 'in', 'G', 264, 1078, 'CV(A) FULL CLOSE', ['TCE125'], 1],
+      ['iGb', 'in', 'G', 264, 1183, 'CV(B) FULL CLOSE', ['TCE127'], 1],
+      ['iA2s', 'in', 'A2', 264, 1257, 'HEAT SOAK RESET', ['TCE163'], 1],
+      ['iA', 'in', 'A', 252, 1331, 'AMB.COLD MODE', ['TCA500']],
+      ['iB2', 'in', 'B', 252, 1405, 'COLD1 MODE', ['TCA500']],
+      ['iC', 'in', 'C', 252, 1468, 'COLD2 MODE', ['TCA500']],
+      ['oC1', 'out', 'C1', 1416, 183, '', ['-']],
+      ['oA', 'out', 'A', OX, 237, '', ['TCA554'], 0, 1],
+      ['oA1', 'out', 'A1', 2072, 388, '', ['-'], 1],
+      ['oC', 'out', 'C', OX, 822, '', ['TCA831'], 0, 1],
+      ['oB', 'out', 'B', OX, 950, '', ['TCA554', 'TCA630', 'TCA631', 'TCA636'], 0, 3],
+      ['oD', 'out', 'D', OX, 1078, '', ['TCA511', 'TCA559'], 0, 2]
+    ],
+    d: [['crt1', 2070, 313, 'out', 'TCA539_1', 'S', '#1C']],
+    b: [
+      ['hs033', 'HS', '033', 561, 353, [], {}, [59, 87]],
+      ['cplA006', 'CPL', 'A006', 796, 332, ['HL:42.0degC', 'LL:40.0degC']],
+      ['cmpA007', 'CMP', 'A007', 796, 460, ['HL:27.0degC', 'LL:25.0degC']],
+      ['cplA010', 'CPL', 'A010', 794, 578, ['HL:52.0degC', 'LL:50.0degC']],
+      ['cmpA012', 'CMP', 'A012', 792, 706, ['HL:40.0degC', 'LL:38.0degC']],
+      ['tpA014', 'TP', 'A014', 760, 832, ['TP:60.0S']],
+      ['not009', 'NOT', '009', 932, 482],
+      ['not011', 'NOT', '011', 932, 621],
+      ['a002', 'A', '002', 1138, 257, [], {}, [59, 65]],
+      ['a008', 'A', '008', 1136, 482, [], {}, [59, 86]],
+      ['a013', 'A', '013', 1134, 717, [], {}, [59, 64]],
+      ['or003', 'OR', '003', 1318, 257, [], {}, [58, 64]],
+      ['not029', 'NOT', '029', 1692, 323],
+      ['btr030', 'o:BTR', '030', 1097, 183],
+      ['btr032', 'o:BTR', '032', 1773, 388],
+      ['btr031', 'o:BTR', '031', 1685, 950],
+      ['btr035', 'o:BTR', '035', 1672, 1078],
+      ['a041', 'A', '041', 758, 1109, [], {}, [57, 85]],
+      ['tpA037', 'TP', 'A037', 938, 1088, ['TP:120.0S']],
+      ['or038', 'OR', '038', 1161, 1088],
+      ['or039', 'OR', '039', 584, 1354, [], {}, [62, 66]],
+      ['not040', 'NOT', '040', 936, 1342]
+    ],
+    w,
+    j: [
+      [510, 365],
+      [657, 321],
+      [657, 449],
+      [657, 567],
+      [711, 418],
+      [711, 662],
+      [711, 738],
+      [881, 237],
+      [1063, 237],
+      [1063, 449],
+      [879, 822],
+      [1080, 822],
+      [1060, 567],
+      [1617, 237],
+      [1745, 313],
+      [717, 1331]
+    ],
+    t: [
+      [1145, 173, 'TURNING GEAR ENGAGED'],
+      [316, 289, 'LUBE OIL COOLER'],
+      [316, 310, 'OUTLET OIL TEMP(A)'],
+      [316, 384, 'LUBE OIL COOLER'],
+      [316, 405, 'OUTLET OIL TEMP.(B)'],
+      [1820, 207, 'CRI 1.16 BEARING'],
+      [1820, 228, 'OIL TEMP. OK'],
+      [1820, 282, 'BEARING OIL'],
+      [1820, 303, 'TEMP. ABN.'],
+      [1822, 357, 'BEARING OIL'],
+      [1822, 378, 'TEMP. ABN.'],
+      [1762, 793, 'TURBINE RATED SPEED'],
+      [1775, 941, 'CRI 1.19 TURBINE TURNING'],
+      [1763, 1048, 'CRI 1.37 CV(A)&(B) COMPLETRY'],
+      [1763, 1069, 'CLOSED CONFIRMATION'],
+      [753, 311, 'T', 2],
+      [752, 439, 'T', 2],
+      [750, 556, 'T', 2],
+      [749, 684, 'T', 2],
+      [720, 814, 'T', 2],
+      [898, 1069, 'T', 2],
+      [360, 178, '(TCA050)'],
+      [228, 1532, 'CONTROLLER:'],
+      [392, 1532, 'COMM+MD'],
+      [652, 1506, 'TRIGGER  :'],
+      [652, 1532, 'CYCLE(ms):100']
+    ]
   });
 })();
 
@@ -262738,7 +263476,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 4f39e61'));
+    row('Version', E('span', 'scsver', ver + ' · build b17b1a5'));
   }
   function openSet(near) {
     if (!set) {
