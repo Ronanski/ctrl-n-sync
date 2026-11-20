@@ -89,6 +89,7 @@
     setTimeout(paint, 50);
   };
   let stn = 'plant',
+    backB,
     stnSeg,
     ownPg,
     root,
@@ -288,6 +289,18 @@
     /* the tools of a logic sheet: the zoom controls the app already has, as one small bar */
     tools = E('div', 'st-tools');
     tools.hidden = true;
+    /* Back: the way back after a link of a drawing (a connector of a TCS sheet, a page link of a DITL sheet, a trace jump of an analog
+       sheet). The history is the app's own (ditl.js hist, AN.hist): this presses its Back, which the station does not show */
+    backB = E('button', 'st-b st-back', '‹ Back');
+    backB.title = 'Back to the sheet before the last link';
+    backB.hidden = true;
+    backB.onclick = () => {
+      const b = appBack();
+      if (b) b.click();
+      setTimeout(tick, 200);
+      setTimeout(tick, 700);
+    };
+    tools.append(backB);
     for (const [t, lab, k] of [
       ['−', 'Zoom out', 'out'],
       ['+', 'Zoom in', 'in'],
@@ -506,6 +519,27 @@
   ];
   let fam = 'an';
   const shsel = () => $('#shsel');
+  /* the Back button of the app that is live for the open family: shown by the app only while there is a way back */
+  const appBack = () => {
+    const b = fam === 'an' ? document.querySelector('button[data-ic="back"]') : document.querySelector('.dui-back');
+    return b && !b.disabled && b.style.display !== 'none' ? b : null;
+  };
+  /* the sheet list follows the open sheet: its line is shown (search cleared, its group opened) and scrolled into the list */
+  function showCur() {
+    const ci = curSheet(),
+      b = [...sheets.querySelectorAll('.st-nav')].find(x => x._i === ci);
+    if (!b) return;
+    if (b.hidden && sheets._find) {
+      sheets._find.value = '';
+      sheets._find.oninput();
+    }
+    if (b.classList.contains('fold')) {
+      let g = b.previousElementSibling;
+      while (g && !g.classList.contains('st-grp')) g = g.previousElementSibling;
+      if (g && g.classList.contains('shut')) g.click();
+    }
+    call(() => b.scrollIntoView({ block: 'nearest' }));
+  }
   /* an entry of the sheet list of the app: "(6)DITL-01 · FURNACE PURGE CONDITION" */
   const optName = t =>
     String(t)
@@ -2378,10 +2412,18 @@
       }
     }
     face();
+    /* a link of a drawing opens another sheet without the sheet list of the app: the list entry is set to the open sheet (no event) */
+    if (eng && fam !== 'an') {
+      const sel = shsel(),
+        c = call(() => String(S.cur), '');
+      if (sel && c && sel.value !== c && [...sel.options].some(o => o.value === c)) sel.value = c;
+    }
     if (eng && curSheet() !== tick._s) {
       tick._s = curSheet();
       paint();
+      showCur();
     }
+    if (backB) backB.hidden = !eng || !appBack();
     if (cur() !== tick._c) {
       tick._c = cur();
       tabs._v = 0;
