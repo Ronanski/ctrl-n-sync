@@ -129,9 +129,9 @@
     [1851, 792, 'CLOSE COMMAND'],
     [328, 198, '(TCA050)'],
     [327, 518, '(TCA053)'],
-    [232, 1524, 'CONTROLLER:'],
-    [392, 1524, 'COMM+MD'],
-    [615, 1524, 'CYCLE(ms):100']
+    [232, 1522, 'CONTROLLER:'],
+    [392, 1522, 'COMM+MD'],
+    [616, 1522, 'CYCLE(ms):100']
   );
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
