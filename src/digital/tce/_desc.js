@@ -785,5 +785,7 @@ const TCS_DESC = {
   TCA817:
     'Com alarm (DI PS abnormal): each of the 15 DI power supply NORMAL signals through a NOT sets its own flip-flop (ANN RESET resets them); the flip-flops through one OR as COM DI P.S. ABNORMAL to TCA822.',
   TCA818:
-    'Alarm: the TCS cubicle fan trouble and temperature high signals, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT, and all through one OR to TCA822.'
+    'Alarm: the TCS cubicle fan trouble and temperature high signals, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT, and all through one OR to TCA822.',
+  TCA819:
+    'Alarm: TPC power supply, EHG CPU (through a NOT) and EHG power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT; grouped through three ORs as A, B and C to TCA822.'
 };
