@@ -427,6 +427,8 @@ const TCS_DESC = {
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
   TCA850:
     'COM analog output: the sixteen analog outputs of the COMM controller to the PI/O table TCA990 (lube oil cooler temperatures, steam seal feed valve and SPUV demands, HP warming valve, generator current, voltage, MVAR, power factor, frequency).',
+  TCA900:
+    'COMM DI TABLE(1): digital input card unit 0 slot 5 LYD050A3 of the COMM controller (MSV(A), CV(A), CRV(A) secondary drains, exciter and field earth faults, AVR status, steam seal diverting valve, No.4 extraction NRV).',
   TCA901:
     'COMM DI TABLE(2): digital input card unit 0 slot 6 LYD050A3 of the COMM controller (MSV(B), CV(B), CRV(B) secondary drains, AVR trouble, No.2 and No.5 extraction NRV, heater levels, oil purifier).',
   TCA902:
