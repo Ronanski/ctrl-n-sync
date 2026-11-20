@@ -264,7 +264,9 @@ for (const s of polys) {
   else V.push(pts.concat([e]));
 }
 /* the words (not the title block) */
-const shifted = new Set(G2.words.filter(w => w[4] && /[\x00-\x1f]/.test(w[0])).map(w => w[4]));
+/* a font whose codes are shifted: seen by a control character, or by the shifted codes of the comparison signs (a page whose shifted
+   words are only ON / OFF with their sign, as TD-4, has no control character) */
+const shifted = new Set(G2.words.filter(w => w[4] && /[\x00-\x1f\u04ca\u04cc\u04cd]/.test(w[0])).map(w => w[4]));
 const SP = { 0x20: '(', 0x4ca: '≤', 0x6b9: '△', 0x72: '\u00b0', 0x74: '\u00b2', 0x4cc: '\u2266', 0x4cd: '\u2267', 0x3a5: '\u2103', 0x3e38: ':' };
 const unshift = t => {
   let r = [...t].map(c => { const k = c.charCodeAt(0); return SP[k] || (k + 29 < 127 ? String.fromCharCode(k + 29) : c); }).join('');
@@ -282,7 +284,7 @@ const T = G2.words
     const t = shifted.has(w[4]) ? unshift(w[0]) : w[0];
     if (shifted.has(w[4])) notes.push('font word: ' + t);
     /* words printed smaller than the common size keep their size */
-    const h = w[6] && w[6] < 0.9 * STD ? +((2.05 * w[6]) / STD).toFixed(2) : 0;
+    const h = w[6] && w[6] < 0.95 * STD ? +((2.05 * w[6]) / STD).toFixed(2) : 0;
     return w[5] ? [w[1], w[2], t, 0, h, -w[5]] : h ? [w[1], w[2], t, 0, h] : [w[1], w[2], t];
   })
   .concat(FX.t);

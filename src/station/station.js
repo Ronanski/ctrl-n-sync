@@ -582,7 +582,7 @@
      PUMP ..., TC-1 ... DRAIN VALVE ..., TD-1 TURBINE ALARM ..., TE-1 ... GROUP CONTROL, GD-1 ... GEN.; sheets 15 ~ 23 are the typical logics) */
   const TCS_SHEETS = {
     TA: 'Trip and valve tests',
-    TB: 'Oil pumps',
+    TB: 'Oil pumps and turning gear',
     TC: 'Valves and drains',
     TD: 'Turbine alarms',
     TE: 'Group control',
