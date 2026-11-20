@@ -244,6 +244,8 @@ const TCS_DESC = {
     'Generator breaker 52G (1/2): the close order through the closing interlock, the open orders through two OR gates to trip coils TC1 and TC2, and the breaker state out to the panels, lamps and other sheets.',
   'G-1B':
     'Generator breaker 52G (2/2): the permissives for synchronizing, the auto synchronizer start and ASD1 with its close, voltage and speed pulses, and the 52G close order to G-1A.',
+  'G-2A':
+    '230 kV breaker 52L (1/2): the close order with the close permit through the closing interlock, the open orders through two OR gates to trip coils TC1 and TC2, and the breaker state out to the panels, lamps, DCS and other sheets.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
