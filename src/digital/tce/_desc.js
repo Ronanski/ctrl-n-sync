@@ -595,5 +595,7 @@ const TCS_DESC = {
   TCA740:
     'Gland seal steam header pressure (aux steam) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn031 with MV, position open / close lamps, SSAFV abnormal latch and lamp, inlet valve initial ramp.',
   TCA741:
-    'Gland seal steam header pressure (unloading) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn034 with MV, position open / close lamps, SPUV abnormal latch and lamp.'
+    'Gland seal steam header pressure (unloading) control: set station and PIF loop on gland seal steam pressure, valve station nZT-GSn034 with MV, position open / close lamps, SPUV abnormal latch and lamp.',
+  TCA745:
+    'AVR interface: PSS, PF control and reactive power ON / OFF commands from the CRT through TW 1.0 s to the AVR, with their lamps'
 };
