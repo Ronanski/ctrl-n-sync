@@ -683,5 +683,7 @@ const TCS_DESC = {
   TCA768A:
     'SPEED LOAD HOLD: the load rate of the start-up mode (MODE blocks on generator load) or the normal/stop rate, to TCA769',
   TCA770:
-    'THSC SIMULATION: a ramp integrator through four curves gives the simulated HP / IP inner and outer wall metal temperatures'
+    'THSC SIMULATION: a ramp integrator through four curves gives the simulated HP / IP inner and outer wall metal temperatures',
+  TCA775:
+    'GEN MONITOR: three pulse counters total the generator watt-hours, var-hours and excitation transformer watt-hours'
 };
