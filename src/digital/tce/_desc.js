@@ -777,5 +777,7 @@ const TCS_DESC = {
   TCA815:
     'Alarm: lube oil cooler oil, generator stator coil, cooling gas air cooler outlet and AC exciter outlet air temperature abnormals, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(2) (as printed) to TCA816.',
   TCA816:
-    'Alarm: SIGNAL ERROR(1) to (6) from TCA810 to TCA815 through one OR, as COM SIGNAL ERROR to TCA822.'
+    'Alarm: SIGNAL ERROR(1) to (6) from TCA810 to TCA815 through one OR, as COM SIGNAL ERROR to TCA822.',
+  TCA817:
+    'Com alarm (DI PS abnormal): each of the 15 DI power supply NORMAL signals through a NOT sets its own flip-flop (ANN RESET resets them); the flip-flops through one OR as COM DI P.S. ABNORMAL to TCA822.'
 };
