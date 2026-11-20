@@ -145,6 +145,8 @@
     ctl: 'EHG+MD',
     cycle: 30,
     f: F,
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { iC: ['mw', 'MW'] },
     k: [
       ['kInit', 388, 1074, 'INITIAL', 'ref'],
       ['kSim', 388, 1138, 'SIMULATION USE', 'ref']

@@ -68,6 +68,8 @@
     cycle: 30,
     f: F,
     /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+    live: { iSim: ['mw', 'MW'] },
+    /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
     live: { iA1: ['mw', 'MW'], iA3: ['mw', 'MW'], iA5: ['mw', 'MW'], iB1: ['mw', 'MW'], iB3: ['mw', 'MW'], iB5: ['mw', 'MW'] },
     c: [
       ...c,

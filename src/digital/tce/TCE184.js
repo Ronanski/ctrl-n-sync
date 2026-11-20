@@ -14,7 +14,7 @@
   cycle: 30,
   f: [181, 90, 2231, 1550],
   /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
-  live: { kAts: 'auto', kFlow: ['fd', '%'], k52g: 'g52' },
+  live: { kAts: 'auto', kFlow: ['fd', '%'], k52g: 'g52', iGen: ['mw', 'MW'] },
   k: [
     ['kInit', 296, 205, 'INITIAL', 'ref'],
     ['kAts', 291, 523, 'ATS AUTO(C)', 'ref'],

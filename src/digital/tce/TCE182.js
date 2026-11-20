@@ -11,7 +11,7 @@
   cycle: 30,
   f: [187, 82, 2237, 1545],
   /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
-  live: { i52l: 'l52c', kTrip: 'trip' },
+  live: { i52l: 'l52c', kTrip: 'trip', iMan: 'govMan' },
   k: [
     ['kInit', 301, 213, 'INITIAL', 'ref'],
     ['kTrip', 294, 661, 'TURBINE TRIP', 'ref'],

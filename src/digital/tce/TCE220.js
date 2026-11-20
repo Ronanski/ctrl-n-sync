@@ -15,6 +15,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [172, 90, 2222, 1555],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iGl: ['mw', 'MW'] },
   c: [
     ['iE', 'in', 'E', 302, 225, 'MSV/CV(A) FULL CLOSE TEST PERMISSIVE', ['TCE224']],
     ['iGl', 'in', 'A', 302, 267, 'GENERATOR LOAD', ['TCE070']],

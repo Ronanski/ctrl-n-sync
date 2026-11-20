@@ -10,6 +10,8 @@
   ctl: 'EHG+MD',
   cycle: 30,
   f: [162, 74, 2214, 1540],
+  /* live: the engine's state of the signals named on this sheet (tcs.js tcsLiveRead) */
+  live: { iMan: 'govMan' },
   k: [
     ['kInit', 282, 157, 'INITIAL', 'ref'],
     ['kGov', 280, 722, 'GOVERNING MODE', 'ref'],
