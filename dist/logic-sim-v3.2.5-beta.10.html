@@ -6521,6 +6521,9 @@ const TCS_DESC = {
   TCE465: 'EHG alarm (DI error): DI slot and COM CPU / P.S. alarms held until ANN RESET, DI ERROR and ATS ALARM.',
   TCE466: 'EHG alarm (AI error): PI/O errors of the AI slot 5 and slot 6 cards held until ANN RESET, AI ERROR.',
   TCE467: 'EHG alarm (DO error): PI/O errors of the DO slot 2 and slot 3 cards held until ANN RESET, DO ERROR.',
+  TCE468: 'EHG alarm (AO error): PI/O errors of the AO slot 7 card held until ANN RESET, AO ERROR.',
+  TCE469: 'EHG alarm (DI P.S. abnormal): DI power supply normal signals inverted and held until ANN RESET, EHG DI P.S. ABNORMAL.',
+  TCE470: 'EHG minor trouble annunciation (1): ALARM(1) of the network, battery, simulation and pressure troubles, ALARM(2) of the valve abnormals.',
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
@@ -25645,6 +25648,194 @@ const TCS_DESC = {
     d,
     c,
     b,
+    w,
+    t
+  });
+})();
+/* TCE468 EHG ALARM(AO ERROR) (331DM09784 page 167, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide, the scan skew taken out. The PI/O errors of the AO card of slot 7 (TCE970-1, -2), OR 001 (the spare inputs
+   tied to OFF(0)), are held in a flip-flop (FFS 002) until ANN RESET; it goes to the operator station lamp (CRT), A1 and the AO ERROR
+   (A, TCE472). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE468',
+  title: 'EHG ALARM(AO ERROR)',
+  page: 167,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [170, 84, 2219, 1547],
+  r: [
+    ['pio1', 334, 256, 127, 24, 'PI/O error'],
+    ['pio2', 334, 341, 127, 24, 'PI/O error']
+  ],
+  k: [
+    ['kOff', 305, 642, 'OFF(0)', 'sys.ref'],
+    ['kAnn', 892, 642, 'ANN RESET', 'ref']
+  ],
+  d: [['crt1', 2025, 268, 'out', 'TCE468_1', 'S', '#1C']],
+  c: [
+    ['oA1', 'out', 'A1', 2014, 332, '', ['-'], 1],
+    ['oA', 'out', 'A', 2080, 642, '', ['TCE472']]
+  ],
+  b: [
+    ['or001', 'OR', '001', 951, 343, [], {}, [60, 170]],
+    ['ffs002', 'FFS', '002', 1281, 279, [], { l: ['S', 'R'] }, [80, 43]],
+    ['btr003', 'o:BTR', '003', 1579, 268],
+    ['btr004', 'o:BTR', '004', 1579, 332],
+    ['btr005', 'o:BTR', '005', 1580, 642]
+  ],
+  w: [
+    ['pio1', [[461, 268], [921, 268]]],
+    ['pio2', [[461, 353], [834, 353], [834, 290], [921, 290]]],
+    /* the spare inputs of OR 001 */
+    ['kOff', [[539, 642], [856, 642], [856, 312], [921, 312]]],
+    ['kOff', [[856, 332], [921, 332]]],
+    ['kOff', [[856, 354], [921, 354]]],
+    ['kOff', [[856, 374], [921, 374]]],
+    ['kOff', [[856, 396], [921, 396]]],
+    ['kOff', [[856, 418], [921, 418]]],
+    ['or001', [[981, 268], [1241, 268]]],
+    ['kAnn', [[1126, 642], [1218, 642], [1218, 290], [1241, 290]]],
+    ['ffs002', [[1321, 268], [1990, 268]]],
+    ['ffs002', [[1526, 268], [1526, 642], [2053, 642]]],
+    ['ffs002', [[1526, 332], [1987, 332]]]
+  ],
+  t: [
+    [352, 249, '(TCE970-1)'],
+    [352, 334, '(TCE970-2)'],
+    [1227, 252, 'T', 0, 1.9],
+    [1037, 668, '(TCE050)', 0, 1.7],
+    [1744, 258, 'AO SLOT7 ABN', 0, 2.05],
+    [1744, 322, 'AO SLOT7 ABN', 0, 2.05],
+    [1670, 632, 'AO ERROR', 0, 2.05],
+    [238, 1523, 'CONTROLLER:'],
+    [400, 1523, 'EHG+MD'],
+    [634, 1497, 'TRIGGER  :'],
+    [634, 1523, 'CYCLE(ms):30']
+  ]
+});
+/* TCE469 EHG ALARM(DI PS ABNORMAL) (331DM09784 page 168, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels
+   of the page rendered 2296 wide, the scan skew taken out. Each DI power supply normal signal (AXR1 to AXR4, TCE040 to TCE043),
+   inverted (NOT), is held in a flip-flop (FFS) until ANN RESET; OR 004 of the four is the EHG DI P.S. ABNORMAL (A, TCE472). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    w = [],
+    t = [];
+  const BUS = 1160,
+    pins = [218, 239, 260, 281],
+    risers = [0, 1510, 1532, 1554];
+  [
+    ['TCE040', '001', '002', '003'],
+    ['TCE041', '005', '006', '007'],
+    ['TCE042', '008', '009', '010'],
+    ['TCE043', '011', '012', '013']
+  ].forEach(([ref, btr, not, ffs], i) => {
+    const y = [218, 292, 368, 442][i],
+      k = 'i' + i,
+      f = 'ffs' + ffs,
+      n = 'not' + not;
+    c.push([k, 'in', 'A16', 327, y, 'DI P.S. NORMAL(AXR' + (i + 1) + ')', [ref]]);
+    b.push(['btr' + btr, 'o:BTR', btr, 829, y], [n, 'NOT', not, 1053, y + 11], [f, 'FFS', ffs, 1234, y + 11, [], { l: ['S', 'R'] }, [80, 43]]);
+    t.push([1180, y - 18, 'T', 0, 1.9]);
+    w.push([k, [[354, y], [1024, y]]], [n, [[1082, y], [1194, y]]], ['kAnn', [[BUS, y + 22], [1194, y + 22]]]);
+    w.push([f, risers[i] ? [[1274, y], [risers[i], y], [risers[i], pins[i]], [1577, pins[i]]] : [[1274, y], [1577, y]]]);
+  });
+  b.push(['or004', 'OR', '004', 1606, 249, [], {}, [58, 86]]);
+  c.push(['oA', 'out', 'A', 2096, 218, '', ['TCE472']]);
+  w.push(['kAnn', [[534, 538], [BUS, 538], [BUS, 240]]], ['or004', [[1635, 218], [2069, 218]]]);
+  t.push(
+    [435, 564, '(TCE050)', 0, 1.7],
+    [1790, 208, 'EHG DI P.S. ABNORMAL', 0, 2.05],
+    [232, 1526, 'CONTROLLER:'],
+    [395, 1526, 'EHG+MD'],
+    [619, 1500, 'TRIGGER  :'],
+    [619, 1526, 'CYCLE(ms):30']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE469',
+    title: 'EHG ALARM(DI PS ABNORMAL)',
+    page: 168,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [161, 87, 2214, 1550],
+    k: [['kAnn', 300, 538, 'ANN RESET', 'ref']],
+    c,
+    b,
+    w,
+    t
+  });
+})();
+/* TCE470 EHG MINOR TROUBLE ANN(1) (331DM09784 page 169, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels
+   of the page rendered 2296 wide, the scan skew taken out. OR 003 of the twelve minor troubles (network, battery, simulation,
+   communication, the pressure abnormals of TCE101 to TCE104) is ALARM(1) (A, TCE472); OR 002 of the eight valve abnormals (MSV, CV,
+   ICV, RSV of TCE450 / TCE451, the spare inputs tied to OFF(0)) is ALARM(2) (B, TCE472). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    w = [],
+    t = [];
+  /* one input: connector, its name (one or two lines), the line to the OR pin by its riser */
+  const inp = (k, y, let, nm, ref, xr, pin, or) => {
+    const two = Array.isArray(nm);
+    c.push([k, 'in', let, 302, y, two ? '' : nm, [ref]]);
+    if (two) t.push([333, y - 33, nm[0], 0, 2.05], [333, y - 12, nm[1], 0, 2.05]);
+    w.push([k, xr ? [[329, y], [xr, y], [xr, pin], [1126, pin]] : [[329, y], [1126, y]]]);
+  };
+  [
+    ['A', 'NETWORK IF TROUBLE', 'TCE051', 0],
+    ['F', 'EHG BATTERY ERR', 'TCE051', 888],
+    ['A', 'DURING SIMULATION', 'TCE052', 910],
+    ['F', 'COMMUNICATION LOST', 'TCE052', 932],
+    ['D1', ['MSV INLET', 'STEAM PRESS. ABN.'], 'TCE101', 954],
+    ['D2', ['MOP(A) DISCHARGE', 'OIL PRESS. ABN.'], 'TCE102', 974],
+    ['D3', ['COP(A) DISCHARGE', 'OIL PRESS. ABN.'], 'TCE102', 996],
+    ['D4', ['HOT REHEAT', 'STEAM PRESS. ABN.'], 'TCE102', 1016],
+    ['D1', ['COORDINATE CONTROL', 'LOAD DEMAND ABN.'], 'TCE103', 1038],
+    ['D2', ['MOP(B) DISCHARGE', 'OIL PRESS. ABN.'], 'TCE104', 1060],
+    ['D3', ['COP(B) DISCHARGE', 'OIL PRESS. ABN.'], 'TCE104', 1080],
+    ['D4', ['HOT DISCHARGE', 'OIL PRESS. ABN.'], 'TCE104', 1102]
+  ].forEach(([let, nm, ref, xr], i) => inp('i' + i, 162 + 64 * i, let, nm, ref, xr, [162, 183, 204, 225, 246, 268, 289, 310, 331, 353, 374, 395][i]));
+  [
+    ['A', 'MSV(A) ABN.', 'TCE450', 0],
+    ['B', 'MSV(B) ABN.', 'TCE450', 932],
+    ['C', 'CV(A) ABN.', 'TCE450', 954],
+    ['D', 'CV(B) ABN.', 'TCE450', 975],
+    ['A', 'ICV(A) ABN.', 'TCE451', 996],
+    ['B', 'ICV(B) ABN.', 'TCE451', 1018],
+    ['C', 'RSV(A) ABN.', 'TCE451', 1040],
+    ['D', 'RSV(B) ABN.', 'TCE451', 1060]
+  ].forEach(([let, nm, ref, xr], i) => inp('j' + i, 928 + 64 * i, let, nm, ref, xr, [928, 949, 970, 991, 1013, 1034, 1055, 1077][i]));
+  c.push(['oA', 'out', 'A', 2080, 162, '', ['TCE472']], ['oB', 'out', 'B', 2080, 928, '', ['TCE472']]);
+  w.push(
+    ['kOff', [[490, 1440], [1102, 1440], [1102, 1119], [1126, 1119]]],
+    ['kOff', [[1082, 1440], [1082, 1098], [1126, 1098]]],
+    ['or003', [[1184, 162], [2053, 162]]],
+    ['or002', [[1184, 928], [2053, 928]]]
+  );
+  t.push(
+    [1795, 152, 'ALARM(1)', 0, 2.05],
+    [1795, 918, 'ALARM(2)', 0, 2.05],
+    [240, 1523, 'CONTROLLER:'],
+    [398, 1523, 'EHG+MD'],
+    [624, 1497, 'TRIGGER  :'],
+    [624, 1523, 'CYCLE(ms):30']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE470',
+    title: 'EHG MINOR TROUBLE ANN(1)',
+    page: 169,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [170, 84, 2219, 1547],
+    k: [['kOff', 256, 1440, 'OFF(0)', 'sys.ref']],
+    c,
+    b: [
+      ['or003', 'OR', '003', 1155, 278, [], {}, [58, 256]],
+      ['or002', 'OR', '002', 1155, 1023, [], {}, [58, 214]]
+    ],
     w,
     t
   });
@@ -155066,7 +155257,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build cb53509'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 4a0a64c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -181699,6 +181890,9 @@ const TCS_DESC = {
   TCE465: 'EHG alarm (DI error): DI slot and COM CPU / P.S. alarms held until ANN RESET, DI ERROR and ATS ALARM.',
   TCE466: 'EHG alarm (AI error): PI/O errors of the AI slot 5 and slot 6 cards held until ANN RESET, AI ERROR.',
   TCE467: 'EHG alarm (DO error): PI/O errors of the DO slot 2 and slot 3 cards held until ANN RESET, DO ERROR.',
+  TCE468: 'EHG alarm (AO error): PI/O errors of the AO slot 7 card held until ANN RESET, AO ERROR.',
+  TCE469: 'EHG alarm (DI P.S. abnormal): DI power supply normal signals inverted and held until ANN RESET, EHG DI P.S. ABNORMAL.',
+  TCE470: 'EHG minor trouble annunciation (1): ALARM(1) of the network, battery, simulation and pressure troubles, ALARM(2) of the valve abnormals.',
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
@@ -201127,6 +201321,200 @@ const TCS_DESC = {
     d,
     c,
     b,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCE468.js ---- */
+/* TCE468 EHG ALARM(AO ERROR) (331DM09784 page 167, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the
+   page rendered 2296 wide, the scan skew taken out. The PI/O errors of the AO card of slot 7 (TCE970-1, -2), OR 001 (the spare inputs
+   tied to OFF(0)), are held in a flip-flop (FFS 002) until ANN RESET; it goes to the operator station lamp (CRT), A1 and the AO ERROR
+   (A, TCE472). */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCE468',
+  title: 'EHG ALARM(AO ERROR)',
+  page: 167,
+  ctl: 'EHG+MD',
+  cycle: 30,
+  f: [170, 84, 2219, 1547],
+  r: [
+    ['pio1', 334, 256, 127, 24, 'PI/O error'],
+    ['pio2', 334, 341, 127, 24, 'PI/O error']
+  ],
+  k: [
+    ['kOff', 305, 642, 'OFF(0)', 'sys.ref'],
+    ['kAnn', 892, 642, 'ANN RESET', 'ref']
+  ],
+  d: [['crt1', 2025, 268, 'out', 'TCE468_1', 'S', '#1C']],
+  c: [
+    ['oA1', 'out', 'A1', 2014, 332, '', ['-'], 1],
+    ['oA', 'out', 'A', 2080, 642, '', ['TCE472']]
+  ],
+  b: [
+    ['or001', 'OR', '001', 951, 343, [], {}, [60, 170]],
+    ['ffs002', 'FFS', '002', 1281, 279, [], { l: ['S', 'R'] }, [80, 43]],
+    ['btr003', 'o:BTR', '003', 1579, 268],
+    ['btr004', 'o:BTR', '004', 1579, 332],
+    ['btr005', 'o:BTR', '005', 1580, 642]
+  ],
+  w: [
+    ['pio1', [[461, 268], [921, 268]]],
+    ['pio2', [[461, 353], [834, 353], [834, 290], [921, 290]]],
+    /* the spare inputs of OR 001 */
+    ['kOff', [[539, 642], [856, 642], [856, 312], [921, 312]]],
+    ['kOff', [[856, 332], [921, 332]]],
+    ['kOff', [[856, 354], [921, 354]]],
+    ['kOff', [[856, 374], [921, 374]]],
+    ['kOff', [[856, 396], [921, 396]]],
+    ['kOff', [[856, 418], [921, 418]]],
+    ['or001', [[981, 268], [1241, 268]]],
+    ['kAnn', [[1126, 642], [1218, 642], [1218, 290], [1241, 290]]],
+    ['ffs002', [[1321, 268], [1990, 268]]],
+    ['ffs002', [[1526, 268], [1526, 642], [2053, 642]]],
+    ['ffs002', [[1526, 332], [1987, 332]]]
+  ],
+  t: [
+    [352, 249, '(TCE970-1)'],
+    [352, 334, '(TCE970-2)'],
+    [1227, 252, 'T', 0, 1.9],
+    [1037, 668, '(TCE050)', 0, 1.7],
+    [1744, 258, 'AO SLOT7 ABN', 0, 2.05],
+    [1744, 322, 'AO SLOT7 ABN', 0, 2.05],
+    [1670, 632, 'AO ERROR', 0, 2.05],
+    [238, 1523, 'CONTROLLER:'],
+    [400, 1523, 'EHG+MD'],
+    [634, 1497, 'TRIGGER  :'],
+    [634, 1523, 'CYCLE(ms):30']
+  ]
+});
+
+/* ---- src/digital/tce/TCE469.js ---- */
+/* TCE469 EHG ALARM(DI PS ABNORMAL) (331DM09784 page 168, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels
+   of the page rendered 2296 wide, the scan skew taken out. Each DI power supply normal signal (AXR1 to AXR4, TCE040 to TCE043),
+   inverted (NOT), is held in a flip-flop (FFS) until ANN RESET; OR 004 of the four is the EHG DI P.S. ABNORMAL (A, TCE472). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    b = [],
+    w = [],
+    t = [];
+  const BUS = 1160,
+    pins = [218, 239, 260, 281],
+    risers = [0, 1510, 1532, 1554];
+  [
+    ['TCE040', '001', '002', '003'],
+    ['TCE041', '005', '006', '007'],
+    ['TCE042', '008', '009', '010'],
+    ['TCE043', '011', '012', '013']
+  ].forEach(([ref, btr, not, ffs], i) => {
+    const y = [218, 292, 368, 442][i],
+      k = 'i' + i,
+      f = 'ffs' + ffs,
+      n = 'not' + not;
+    c.push([k, 'in', 'A16', 327, y, 'DI P.S. NORMAL(AXR' + (i + 1) + ')', [ref]]);
+    b.push(['btr' + btr, 'o:BTR', btr, 829, y], [n, 'NOT', not, 1053, y + 11], [f, 'FFS', ffs, 1234, y + 11, [], { l: ['S', 'R'] }, [80, 43]]);
+    t.push([1180, y - 18, 'T', 0, 1.9]);
+    w.push([k, [[354, y], [1024, y]]], [n, [[1082, y], [1194, y]]], ['kAnn', [[BUS, y + 22], [1194, y + 22]]]);
+    w.push([f, risers[i] ? [[1274, y], [risers[i], y], [risers[i], pins[i]], [1577, pins[i]]] : [[1274, y], [1577, y]]]);
+  });
+  b.push(['or004', 'OR', '004', 1606, 249, [], {}, [58, 86]]);
+  c.push(['oA', 'out', 'A', 2096, 218, '', ['TCE472']]);
+  w.push(['kAnn', [[534, 538], [BUS, 538], [BUS, 240]]], ['or004', [[1635, 218], [2069, 218]]]);
+  t.push(
+    [435, 564, '(TCE050)', 0, 1.7],
+    [1790, 208, 'EHG DI P.S. ABNORMAL', 0, 2.05],
+    [232, 1526, 'CONTROLLER:'],
+    [395, 1526, 'EHG+MD'],
+    [619, 1500, 'TRIGGER  :'],
+    [619, 1526, 'CYCLE(ms):30']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE469',
+    title: 'EHG ALARM(DI PS ABNORMAL)',
+    page: 168,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [161, 87, 2214, 1550],
+    k: [['kAnn', 300, 538, 'ANN RESET', 'ref']],
+    c,
+    b,
+    w,
+    t
+  });
+})();
+
+/* ---- src/digital/tce/TCE470.js ---- */
+/* TCE470 EHG MINOR TROUBLE ANN(1) (331DM09784 page 169, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels
+   of the page rendered 2296 wide, the scan skew taken out. OR 003 of the twelve minor troubles (network, battery, simulation,
+   communication, the pressure abnormals of TCE101 to TCE104) is ALARM(1) (A, TCE472); OR 002 of the eight valve abnormals (MSV, CV,
+   ICV, RSV of TCE450 / TCE451, the spare inputs tied to OFF(0)) is ALARM(2) (B, TCE472). */
+(function () {
+  if (typeof window === 'undefined') return;
+  const c = [],
+    w = [],
+    t = [];
+  /* one input: connector, its name (one or two lines), the line to the OR pin by its riser */
+  const inp = (k, y, let, nm, ref, xr, pin, or) => {
+    const two = Array.isArray(nm);
+    c.push([k, 'in', let, 302, y, two ? '' : nm, [ref]]);
+    if (two) t.push([333, y - 33, nm[0], 0, 2.05], [333, y - 12, nm[1], 0, 2.05]);
+    w.push([k, xr ? [[329, y], [xr, y], [xr, pin], [1126, pin]] : [[329, y], [1126, y]]]);
+  };
+  [
+    ['A', 'NETWORK IF TROUBLE', 'TCE051', 0],
+    ['F', 'EHG BATTERY ERR', 'TCE051', 888],
+    ['A', 'DURING SIMULATION', 'TCE052', 910],
+    ['F', 'COMMUNICATION LOST', 'TCE052', 932],
+    ['D1', ['MSV INLET', 'STEAM PRESS. ABN.'], 'TCE101', 954],
+    ['D2', ['MOP(A) DISCHARGE', 'OIL PRESS. ABN.'], 'TCE102', 974],
+    ['D3', ['COP(A) DISCHARGE', 'OIL PRESS. ABN.'], 'TCE102', 996],
+    ['D4', ['HOT REHEAT', 'STEAM PRESS. ABN.'], 'TCE102', 1016],
+    ['D1', ['COORDINATE CONTROL', 'LOAD DEMAND ABN.'], 'TCE103', 1038],
+    ['D2', ['MOP(B) DISCHARGE', 'OIL PRESS. ABN.'], 'TCE104', 1060],
+    ['D3', ['COP(B) DISCHARGE', 'OIL PRESS. ABN.'], 'TCE104', 1080],
+    ['D4', ['HOT DISCHARGE', 'OIL PRESS. ABN.'], 'TCE104', 1102]
+  ].forEach(([let, nm, ref, xr], i) => inp('i' + i, 162 + 64 * i, let, nm, ref, xr, [162, 183, 204, 225, 246, 268, 289, 310, 331, 353, 374, 395][i]));
+  [
+    ['A', 'MSV(A) ABN.', 'TCE450', 0],
+    ['B', 'MSV(B) ABN.', 'TCE450', 932],
+    ['C', 'CV(A) ABN.', 'TCE450', 954],
+    ['D', 'CV(B) ABN.', 'TCE450', 975],
+    ['A', 'ICV(A) ABN.', 'TCE451', 996],
+    ['B', 'ICV(B) ABN.', 'TCE451', 1018],
+    ['C', 'RSV(A) ABN.', 'TCE451', 1040],
+    ['D', 'RSV(B) ABN.', 'TCE451', 1060]
+  ].forEach(([let, nm, ref, xr], i) => inp('j' + i, 928 + 64 * i, let, nm, ref, xr, [928, 949, 970, 991, 1013, 1034, 1055, 1077][i]));
+  c.push(['oA', 'out', 'A', 2080, 162, '', ['TCE472']], ['oB', 'out', 'B', 2080, 928, '', ['TCE472']]);
+  w.push(
+    ['kOff', [[490, 1440], [1102, 1440], [1102, 1119], [1126, 1119]]],
+    ['kOff', [[1082, 1440], [1082, 1098], [1126, 1098]]],
+    ['or003', [[1184, 162], [2053, 162]]],
+    ['or002', [[1184, 928], [2053, 928]]]
+  );
+  t.push(
+    [1795, 152, 'ALARM(1)', 0, 2.05],
+    [1795, 918, 'ALARM(2)', 0, 2.05],
+    [240, 1523, 'CONTROLLER:'],
+    [398, 1523, 'EHG+MD'],
+    [624, 1497, 'TRIGGER  :'],
+    [624, 1523, 'CYCLE(ms):30']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCE470',
+    title: 'EHG MINOR TROUBLE ANN(1)',
+    page: 169,
+    ctl: 'EHG+MD',
+    cycle: 30,
+    f: [170, 84, 2219, 1547],
+    k: [['kOff', 256, 1440, 'OFF(0)', 'sys.ref']],
+    c,
+    b: [
+      ['or003', 'OR', '003', 1155, 278, [], {}, [58, 256]],
+      ['or002', 'OR', '002', 1155, 1023, [], {}, [58, 214]]
+    ],
     w,
     t
   });
@@ -352149,7 +352537,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build cb53509'));
+    row('Version', E('span', 'scsver', ver + ' · build 4a0a64c'));
   }
   function openSet(near) {
     if (!set) {

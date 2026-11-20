@@ -668,6 +668,9 @@ const TCS_DESC = {
   TCE465: 'EHG alarm (DI error): DI slot and COM CPU / P.S. alarms held until ANN RESET, DI ERROR and ATS ALARM.',
   TCE466: 'EHG alarm (AI error): PI/O errors of the AI slot 5 and slot 6 cards held until ANN RESET, AI ERROR.',
   TCE467: 'EHG alarm (DO error): PI/O errors of the DO slot 2 and slot 3 cards held until ANN RESET, DO ERROR.',
+  TCE468: 'EHG alarm (AO error): PI/O errors of the AO slot 7 card held until ANN RESET, AO ERROR.',
+  TCE469: 'EHG alarm (DI P.S. abnormal): DI power supply normal signals inverted and held until ANN RESET, EHG DI P.S. ABNORMAL.',
+  TCE470: 'EHG minor trouble annunciation (1): ALARM(1) of the network, battery, simulation and pressure troubles, ALARM(2) of the valve abnormals.',
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
