@@ -691,5 +691,7 @@ const TCS_DESC = {
   TCA775:
     'GEN MONITOR: three pulse counters total the generator watt-hours, var-hours and excitation transformer watt-hours',
   TCA777:
-    'SIMULATOR: simulated CV inner and outer wall metal temperatures, HP-T inner casing temperature and MSV inlet steam temperature'
+    'SIMULATOR: simulated CV inner and outer wall metal temperatures, HP-T inner casing temperature and MSV inlet steam temperature',
+  TCA780:
+    'PLU TEST: the PLU / BUG test sequence on generator load and the PLU detector abnormal diagnosis'
 };
