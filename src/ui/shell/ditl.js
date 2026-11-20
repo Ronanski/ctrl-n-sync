@@ -916,8 +916,6 @@
       })
     ]);
     dp.append(hd, E('p', { cls: 'dp-note', txt: 'Run, then click an input to switch it. PB = press and hold. A dashed (auto) input follows the equipment or another sheet.' }), selBox);
-    if (s.tcs && window.LS_TCSD)
-      dp.append(E('div', { cls: 'dp-r dp-tpr' }, [E('div', { cls: 'dp-l' }, [E('div', { cls: 'dp-d', txt: 'The IBD drawing stays on this PC' })]), E('button', { cls: 'dp-tpe', txt: LS_TCSD.on() ? 'Remove IBD drawing' : 'Load IBD drawing', title: 'Show the TCS sheets with the lines and words of the IBD file on this PC', on: LS_TCSD.pick })]));
     if (pk && pk.s !== s) pk = null;
     buildSel();
     /* inputs */
