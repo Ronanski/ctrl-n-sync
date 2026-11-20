@@ -709,5 +709,7 @@ const TCS_DESC = {
   TCA800:
     'Comm alarm (hardware) 1: DI error of unit 0 slots 5 to A, each from two channels through an OR, to the CRT and TCA806.',
   TCA800A:
-    'Comm alarm (hardware) 2: DI error of unit 0 slot B from two channels through an OR, to the CRT and TCA806; five spare groups.'
+    'Comm alarm (hardware) 2: DI error of unit 0 slot B from two channels through an OR, to the CRT and TCA806; five spare groups.',
+  TCA801:
+    'Comm alarm (hardware) 3: the PI/O errors of unit 1 slots 6 and 7, eight each through an OR, as AI error to the CRT and TCA806.'
 };
