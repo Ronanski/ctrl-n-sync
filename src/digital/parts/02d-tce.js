@@ -55,6 +55,7 @@
      v: [[x, y], ...]                                                open outline with slanted pieces (a mark of the drawing that carries no signal)
      j: [[x, y], ...]                                                junction dot of the drawing (the net is the one of the wire through it) */
 const TCE_SHEETS = typeof window !== 'undefined' && window.TCE_SHEETS ? window.TCE_SHEETS : [];
+const tceDesc = q => (typeof TCS_DESC !== 'undefined' && TCS_DESC[q.ibd ? 'IBD-' + q.ibd : q.id]) || '';
 const tceCat = id => (/^TCA/.test(id) ? 'START-UP SOFT LOGIC (TCA)' : 'GOVERNOR SOFT LOGIC (TCE)');
 function tceSheet(q) {
   const K = 0.32,
@@ -724,6 +725,7 @@ function tceSheet(q) {
   return {
     name: 'TCS-' + q.id.replace(/^(TC[AE])0*/, '$1-'),
     title: q.title,
+    desc: tceDesc(q),
     tcs: q.id,
     tce: q,
     cat: tceCat(q.id),

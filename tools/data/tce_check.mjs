@@ -6,7 +6,8 @@
 //   - every key of a sheet is unique;
 //   - a wire is made of horizontal and vertical pieces only (no slanted line, no curve), and has at least two points;
 //   - the source of a wire is a connector, a constant, a PI/O box, a small block or an output pin of a macro block of the sheet;
-//   - every sheet is listed in src/digital/order.list before parts/02d-tce.js.
+//   - every sheet is listed in src/digital/order.list before parts/02d-tce.js;
+//   - every sheet has its short description in src/digital/tce/_desc.js (shown in the panel of the sheet).
 // A connector that names a sheet which is not typed yet is a note, not an error.
 import fs from 'fs';
 import path from 'path';
@@ -26,7 +27,9 @@ const
   /* the helpers of the sheets (tce/_lib.js) run before each sheet, as in the app */
   lib = fs.existsSync(path.join(dir, '_lib.js')) ? fs.readFileSync(path.join(dir, '_lib.js'), 'utf8') : '',
   order = fs.readFileSync(path.join(root, 'src/digital/order.list'), 'utf8').split(/\r?\n/).map(s => s.trim()),
-  at = order.indexOf('parts/02d-tce.js');
+  at = order.indexOf('parts/02d-tce.js'),
+  /* the description of every sheet (tce/_desc.js) */
+  DESC = fs.existsSync(path.join(dir, '_desc.js')) ? vm.runInNewContext(fs.readFileSync(path.join(dir, '_desc.js'), 'utf8') + ';TCS_DESC', {}) : {};
 const errs = [],
   ibds = new Set(),
   notes = [],
@@ -47,6 +50,7 @@ for (const f of files) {
     const E = m => errs.push(q.id + ': ' + m);
     all.push(q.id);
     if (q.id + '.js' !== f) E('the file is named ' + f);
+    if (!DESC[q.ibd ? 'IBD-' + q.ibd : q.id]) E('no description in src/digital/tce/_desc.js');
     for (const k of q.ibd ? ['id', 'title', 'page'] : ['id', 'title', 'page', 'ctl', 'cycle']) if (q[k] == null || q[k] === '') E('no ' + k);
     if (!Array.isArray(q.f) || q.f.length !== 4 || !(q.f[2] > q.f[0]) || !(q.f[3] > q.f[1])) E('the frame f is not [x0, y0, x1, y1]');
     const keys = new Set(),

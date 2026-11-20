@@ -755,6 +755,7 @@ body.app2 .sg{color:var(--c-dim)!important}
 #dp .dp-top b{flex:1;font:600 13px var(--mf);color:var(--c-hi)}
 #dp .dp-top button{min-width:30px;min-height:28px}
 #dp .dp-note{margin:6px 0;color:var(--c-dim);font-size:12px;line-height:1.4}
+#dp .dp-desc{margin:8px 0 4px;color:var(--c-tx2);font-size:13px;line-height:1.45}
 #dp .dp-h{margin:12px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--c-line);font:600 11.5px var(--uf);letter-spacing:.12em;text-transform:uppercase;color:var(--c-run)}
 #dp .dp-r{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--c-row)}
 #dp .dp-l{flex:1;min-width:0}

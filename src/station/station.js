@@ -744,6 +744,13 @@
     return o ? optName(o.textContent) + (optTitle(o.textContent) ? ' · ' + optTitle(o.textContent) : '') : '';
   };
 
+  /* the short description of a DITL / TCE / TCA / IBD sheet (src/digital/tce/_desc.js and the sheet data), shown under its name */
+  const curDesc = () => {
+    if (fam === 'an' || typeof S === 'undefined' || !S.sheets) return '';
+    const x = S.sheets[+curSheet()];
+    return (x && x.desc) || '';
+  };
+
   /* acknowledge: the Acknowledge all of the alarm list of the app (it also acknowledges the unit and logic rows); the list stays hidden */
   function ackAll() {
     call(() => lsShellC.openAl('alarms'));
@@ -2413,6 +2420,9 @@
     if (c) mem.set('page-' + stn, c);
     const ci = eng ? curSheet() : -1;
     title.textContent = eng ? curTitle() : P[c] || '';
+    const ds = eng ? curDesc() : '';
+    if (ds) title.append(E('small', 'st-desc', ds));
+    title.title = ds;
     tabs.hidden = eng || !!own;
     ownPg.hidden = eng || !own;
     for (const b of mode.children) {

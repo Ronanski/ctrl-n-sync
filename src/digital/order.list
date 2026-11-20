@@ -4,6 +4,7 @@ parts/02-netlist.js
 parts/02b-sand.js
 parts/02c-tcs.js
 tce/_lib.js
+tce/_desc.js
 tce/TCE022.js
 tce/TCE023.js
 tce/TCE040.js
