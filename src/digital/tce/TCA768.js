@@ -5,7 +5,9 @@
    Below: the HP and the IP surface thermal stress (CPL A013 / A018, HL 209.3 / LL 207.3) with turbine reset or MSV open (OR 019) and the
    load over 30 % (CMP 022, HL 45.0 / LL 43.0 MW) start TP A016 (12000.0 s, cleared by INITIAL), which sets FFR 017 = TH STRESS LIMITATION
    CHANGES TO NORMAL/STOP MODE; NOT 020 (turbine not reset) resets it.
-   The words are the ones of the drawing; the load line is printed MW, two unreadable signs, 30% and is typed so.
+   The words are the ones of the drawing. The load line is printed MW, an empty box, a dagger, 30%: the two signs are the two bytes 81 86 of
+   the Shift-JIS sign "greater than or equal" (U+2267) shown in a Latin font (86 = dagger, 81 = no glyph), so the line is MW ≧ 30%. It
+   agrees with the sheet: A1 of TCE070 is GEN. MW (range 0 to 240 MW), CMP 022 sets at HL 45.0 MW = 30 % of 150 MW.
    live: ATS AUTO and the load from the engine (tcs.js tcsLiveRead); the engine holds no state of the other signals. */
 (function () {
   if (typeof window === 'undefined') return;
@@ -56,7 +58,7 @@
     ['iF767', 'F', 'TCA767', 308, 1032, 'IP SURFACE TH STRESS (ABS)', 33, 0],
     ['iA533', 'A', 'TCA533', 308, 1127, 'CRI 1.20 TURBINE RESET', 33, 0],
     ['iB533', 'B', 'TCA533', 307, 1224, 'CRI 1.21 MSV OPEN', 33, 0],
-    ['iA1', 'A1', 'TCE070', 306, 1320, 'MW□†30%', 33, 1]
+    ['iA1', 'A1', 'TCE070', 306, 1320, 'MW≧30%', 33, 1]
   ].forEach(([key, l, sh, cx, y, name, dx, dbl]) => {
     c.push([key, 'in', l, cx, y, '', [sh], dbl]);
     t.push([cx + dx, y - 10, name]);
