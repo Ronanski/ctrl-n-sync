@@ -24589,6 +24589,51 @@ function tcsSim(s) {
     ]
   });
 })();
+/* TCA106 IP/HP START MODE (331DM09788 page 40, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. HP START SELECT and IP START SELECT of TCE057 given to the start-up sheets as the definitions HP START and IP START.
+   live: none; tcs.js tcsLiveRead holds no read of the start selection, so the sheet is shown without states. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCA106',
+  title: 'IP/HP START MODE',
+  page: 40,
+  ctl: 'COMM+MD',
+  cycle: 100,
+  f: [170, 82, 2218, 1546],
+  k: [
+    ['dHp', 1712, 291, 'HP START', 'def', 'def'],
+    ['dIp', 1712, 398, 'IP START', 'def', 'def']
+  ],
+  c: [
+    ['iHp', 'in', 'A', 412, 291, 'HP START SELECT', ['TCE057'], 1],
+    ['iIp', 'in', 'B', 412, 398, 'IP START SELECT', ['TCE057'], 1]
+  ],
+  b: [
+    ['btr001', 'o:BTR', '001', 1062, 291],
+    ['btr002', 'o:BTR', '002', 1062, 398]
+  ],
+  w: [
+    [
+      'iHp',
+      [
+        [439, 291],
+        [1712, 291]
+      ]
+    ],
+    [
+      'iIp',
+      [
+        [439, 398],
+        [1712, 398]
+      ]
+    ]
+  ],
+  t: [
+    [230, 1528, 'CONTROLLER:'],
+    [400, 1528, 'COMM+MD'],
+    [617, 1502, 'TRIGGER  :'],
+    [617, 1528, 'CYCLE(ms):100']
+  ]
+});
 /* TCA500 START-UP MODE SELECTION (331DM09788 page 78, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
    rendered 2296 wide. Two START-UP MODE blocks (LMA531) compare a metal temperature with the mode temperatures (SG: 150 / 170 / 230 / 420 / 999 degC):
    the IP start one takes the lower (LS 005) of the reheat bowl and the HP first stage inner wall metal temperature, the HP start one the HP first
@@ -112074,7 +112119,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 5fdf85b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build ded948a'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -157034,6 +157079,53 @@ function tcsSim(s) {
     ]
   });
 })();
+
+/* ---- src/digital/tce/TCA106.js ---- */
+/* TCA106 IP/HP START MODE (331DM09788 page 40, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. HP START SELECT and IP START SELECT of TCE057 given to the start-up sheets as the definitions HP START and IP START.
+   live: none; tcs.js tcsLiveRead holds no read of the start selection, so the sheet is shown without states. */
+(typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+  id: 'TCA106',
+  title: 'IP/HP START MODE',
+  page: 40,
+  ctl: 'COMM+MD',
+  cycle: 100,
+  f: [170, 82, 2218, 1546],
+  k: [
+    ['dHp', 1712, 291, 'HP START', 'def', 'def'],
+    ['dIp', 1712, 398, 'IP START', 'def', 'def']
+  ],
+  c: [
+    ['iHp', 'in', 'A', 412, 291, 'HP START SELECT', ['TCE057'], 1],
+    ['iIp', 'in', 'B', 412, 398, 'IP START SELECT', ['TCE057'], 1]
+  ],
+  b: [
+    ['btr001', 'o:BTR', '001', 1062, 291],
+    ['btr002', 'o:BTR', '002', 1062, 398]
+  ],
+  w: [
+    [
+      'iHp',
+      [
+        [439, 291],
+        [1712, 291]
+      ]
+    ],
+    [
+      'iIp',
+      [
+        [439, 398],
+        [1712, 398]
+      ]
+    ]
+  ],
+  t: [
+    [230, 1528, 'CONTROLLER:'],
+    [400, 1528, 'COMM+MD'],
+    [617, 1502, 'TRIGGER  :'],
+    [617, 1528, 'CYCLE(ms):100']
+  ]
+});
 
 /* ---- src/digital/tce/TCA500.js ---- */
 /* TCA500 START-UP MODE SELECTION (331DM09788 page 78, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page
@@ -265154,7 +265246,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 5fdf85b'));
+    row('Version', E('span', 'scsver', ver + ' · build ded948a'));
   }
   function openSet(near) {
     if (!set) {
