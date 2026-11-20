@@ -673,5 +673,7 @@ const TCS_DESC = {
   TCA765:
     'HP LIFE TIME COUNTER: HP LCFI summed at each summing timing into the HP life expenditure value, to the CRT',
   TCA766:
-    'IP LIFE TIME COUNTER: IP LCFI summed at each summing timing into the IP life expenditure value, to the CRT'
+    'IP LIFE TIME COUNTER: IP LCFI summed at each summing timing into the IP life expenditure value, to the CRT',
+  TCA767:
+    'THSC SPEED/LOAD HOLD: HP / IP surface stress against the mode limits; speed/load hold, stress high, the THSC surface limits and the present stress'
 };
