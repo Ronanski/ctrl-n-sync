@@ -759,5 +759,7 @@ const TCS_DESC = {
   TCA810:
     'Alarm: gland steam seal, generator voltage and field, and reheat bowl pressure abnormals through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(1) to TCA816.',
   TCA811:
-    'Alarm: generator field, voltage, VAR, power factor and frequency, aux system header and aux steam, and HP turbine expansion and eccentricity abnormals through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(2) to TCA816.'
+    'Alarm: generator field, voltage, VAR, power factor and frequency, aux system header and aux steam, and HP turbine expansion and eccentricity abnormals through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(2) to TCA816.',
+  TCA812:
+    'Alarm: steam seal feed, steam packing unloading, CV(B) secondary warming drain and HP turbine warming valve positions, and RTD abnormal, through three chained ORs (spare inputs on OFF), as SIGNAL ERROR(3) to TCA816.'
 };
