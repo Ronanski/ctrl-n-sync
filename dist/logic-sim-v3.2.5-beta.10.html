@@ -6278,6 +6278,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA901:
+    'COMM DI TABLE(2): digital input card unit 0 slot 6 LYD050A3 of the COMM controller (MSV(B), CV(B), CRV(B) secondary drains, AVR trouble, No.2 and No.5 extraction NRV, heater levels, oil purifier).',
   TCA902:
     'COMM DI TABLE(3): digital input card unit 0 slot 7 LYD050A3 of the COMM controller (CV(B) warming drain, HP warming valve, No.3 extraction primary NRV, generator, 52L and AVR status).',
   TCA903:
@@ -6646,7 +6648,9 @@ const TCS_DESC = {
   TCA820:
     'Alarm: trip PCM and Modbus CPU faults (each through a NOT) and Modbus power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT; grouped through two ORs as A and B to TCA822.',
   TCA821:
-    'Alarm: the AC / DC control, lighting and space heater, and AC / DC protection power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT and all through one OR to TCA822; both DC protection power supplies abnormal (AND) = PROTECTION P.S. LOST to TCE472.'
+    'Alarm: the AC / DC control, lighting and space heater, and AC / DC protection power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT and all through one OR to TCA822; both DC protection power supplies abnormal (AND) = PROTECTION P.S. LOST to TCE472.',
+  TCA822:
+    'Alarm: the COM error, simulation, network, power supply and HMI signals and the alarm groups of TCA818 to TCA821 into one OR as COM MINOR TROUBLE (to CRT); with the EHG, TPC and Modbus faults through a second OR as TCS MINOR TROUBLE to CRT and TCA532.'
 };
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
@@ -65512,6 +65516,88 @@ const TCS_DESC = {
     t
   });
 })();
+/* TCA822 ALARM (331DM09788 page 231, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - COM I/O HARD ERROR (B, TCA806), COM SIGNAL ERROR (A, TCA816), COM BATTERYERR (F, TCA101), DURING SIMULATION (A, TCA102),
+     NETWORK ABNORMAL (F, TCA102), DI P.S.ABNORMAL (A, TCA817), HMI NORECIVE (B, TCA100), ATS ALARM (B1, TCE465) and the alarm
+     groups A (TCA818), A / B / C (TCA819), A / B (TCA820), A (TCA821) into OR 003: COM MINOR TROUBLE, A (-), and through
+     BTR 002 to CRT TCA822_1.
+   - COM MINOR TROUBLE, EHG TROUBLE (A, TCE472), TPC(A) / (B) / (C) ABNORMAL (C1 / C2 / C3, TCE476) and Modbus I/F ABNORMAL
+     (D1, TCT052) into OR 004: TCS MINOR TROUBLE to CRT TCA822_2 and B (to TCA532).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    c = [],
+    d = [],
+    t = [],
+    j = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const Y = [260, 324, 388, 452, 516, 580, 633, 708, 772, 836, 900, 964, 1028, 1092, 1146],
+    L = ['B', 'A', 'F', 'A', 'F', 'A', 'B', 'B1', 'A', 'A', 'B', 'C', 'A', 'B', 'A'],
+    F = ['TCA806', 'TCA816', 'TCA101', 'TCA102', 'TCA102', 'TCA817', 'TCA100', 'TCE465', 'TCA818', 'TCA819', 'TCA819', 'TCA819', 'TCA820', 'TCA820', 'TCA821'],
+    T = ['COM I/O HARD ERROR', 'COM SIGNAL ERROR', 'COM BATTERYERR', 'DURING SIMULATION', 'NETWORK ABNORMAL', 'DI P.S.ABNORMAL', 'HMI NORECIVE', 'ATS ALARM'],
+    XB = [824, 845, 866, 887, 908, 929, 949, 970, 991, 1012, 1033, 1053, 1074, 1095];
+  Y.forEach((y, i) => {
+    const key = 'i' + (i + 1),
+      yo = 260 + 21 * i;
+    c.push([key, 'in', L[i], 350, y, '', [F[i]], 0, 1]);
+    if (T[i]) t.push([384, y - 8, T[i]]);
+    if (i === 0) W(key, [377, y], [1127, y]);
+    else W(key, [377, y], [XB[i - 1], y], [XB[i - 1], yo], [1127, yo]);
+  });
+  b.push(['or003', 'OR', '003', 1156, 408.5, [], {}, [58, 321]]);
+  W('or003', [1185, 260], [2081 - 27, 260]);
+  W('or003', [1633, 260], [1633, 431], [1666, 431]);
+  W('or003', [1633, 324], [2016 - 35, 324]);
+  j.push([1633, 260], [1633, 324]);
+  b.push(['btr002', 'o:BTR', '002', 1688, 324]);
+  d.push(['crt1', 2016, 324, 'out', 'TCA822_1', 'S', '#1C'], ['crt2', 2016, 431, 'out', 'TCA822_2', 'S', '#1C']);
+  c.push(['oA', 'out', 'A', 2081, 260, '', ['-'], 0, 1]);
+  /* OR 004 */
+  const R = [
+    ['iEhg', 'A', 868, 'EHG TROUBLE', 'TCE472', 1512, 452],
+    ['iTpcA', 'C1', 942, 'TPC(A) ABNORMAL', 'TCE476', 1547, 474],
+    ['iTpcB', 'C2', 1006, 'TPC(B) ABNORMAL', 'TCE476', 1578, 495],
+    ['iTpcC', 'C3', 1080, 'TPC(C) ABNORMAL', 'TCE476', 1620, 516],
+    ['iMod', 'D1', 1155, 'Modbus I/F ABNORMAL', 'TCT052', 1638, 537]
+  ];
+  R.forEach(([key, l, y, txt, ref, xb, yo]) => {
+    c.push([key, 'in', l, 1246, y, '', [ref], 0, 1]);
+    t.push([1278, y - 8, txt]);
+    W(key, [1273, y], [xb, y], [xb, yo], [1666, yo]);
+  });
+  b.push(['or004', 'OR', '004', 1695, 484, [], {}, [58, 128]]);
+  W('or004', [1724, 431], [2016 - 35, 431]);
+  W('or004', [1791, 431], [1791, 549], [2003 - 27, 549]);
+  j.push([1791, 431]);
+  c.push(['oB', 'out', 'B', 2003, 549, '', ['TCA532'], 0, 1]);
+  t.push(
+    [1265, 252, 'COM MINOR TROUBLE'],
+    [1745, 316, 'COM MINOR TROUBLE'],
+    [1806, 423, 'TCS MINOR TROUBLE'],
+    [228, 1516, 'CONTROLLER:'],
+    [388, 1516, 'COMM+MD'],
+    [613, 1495, 'TRIGGER  :'],
+    [613, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA822',
+    title: 'ALARM',
+    page: 231,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [160, 75, 2224, 1540],
+    c,
+    d,
+    b,
+    w,
+    j,
+    t
+  });
+})();
 /* TCA825 ALARM (331DM09788 page 232, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
    Three alarms to the operator station (CRT TCA825_1.._3) and the connectors A1 / A2 / A3, and TURBINE TRIP on to TCA826 / TCA831:
    MAIN STEAM TEMP. LOW: turbine not tripped, the MSV inlet steam temperature low (CPL 295.0 / 290.0 degC) and the generator load once over
@@ -66434,6 +66520,115 @@ const TCS_DESC = {
       [617, 1504, 'TRIGGER  :'],
       [617, 1530, 'CYCLE(ms):100']
     ]
+  });
+})();
+/* TCA901 COMM DI TABLE(2) (331DM09788 page 242, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital input card unit 0 slot 6 (LYD050A3) of the COMM controller, 32 channels (CH 0 ~ 1F): the MSV(B),
+   CV(B) and CRV(B) secondary drain valves, the gland steam line drain, the AVR trouble and PSS, the No.2 and No.5 extraction non return
+   valves, the heater levels, the HP/LP bypass and the oil purifier pump; the rest spare. Names are typed as drawn. */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) =>
+      l.push([
+        [x0, y],
+        [x1, y]
+      ]),
+    V = (x, y0, y1) =>
+      l.push([
+        [x, y0],
+        [x, y1]
+      ]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 277,
+    y0 = 141;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 696));
+  [0, 205, 495, 696].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 87, 130, 248, 290, 332, 376, 419, 537, 579, 621].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 350, y0 + 21, 'PI/O', 1], [x0 + 595, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [205, 'UNIT'],
+    [248, '0'],
+    [290, 'SLOT'],
+    [332, '6'],
+    [376, 'TYPE'],
+    [419, 'LYD050A3'],
+    [495, 'DVA'],
+    [579, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [274, 317, 361, 857, 936, 1017, 1157, 1331, 1462],
+    T = 200,
+    Y1 = 254,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 274, 1462);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 274, 1462);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DI Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['MSV(B) ABOVE SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    1: ['MSV(B) ABOVE SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    2: ['MSV(B) ABOVE SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    3: ['CV(B) ABOVE SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    4: ['CV(B) ABOVE SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    5: ['CV(B) ABOVE SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    6: ['CRV(B) BELOW SEAT SECONDARY  DRAIN VALVE OPENED', ''],
+    7: ['CRV(B) BELOW SEAT SECONDARY  DRAIN VALVE CLOSED', ''],
+    8: ['CRV(B) BELOW SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    9: ['TURBINE GLAND STEAM LINE DRAIN VALVE CLOSED', ''],
+    10: ['BACK UP AVR TROUBLE', ''],
+    11: ['PRIMARY AVR TROUBLE', ''],
+    12: ['PSS ON', ''],
+    13: ['CV(B) ABV SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    14: ['CRV(B) BEL SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    15: ['P.S.NORMAL', ''],
+    16: ['NO.2 EXTRACTION STEAM NON RETURN VALVE FULL CLOSE POSITION', 'ZSC-TSn700'],
+    17: ['NO.2 EXTRACTION STEAM NON RETURN VALVE FULL OPEN POSITION', 'ZSO-TSn700'],
+    18: ['NO.1 HP HEATER LEVEL VERY HIGH', ''],
+    19: ['NO.5 EXTRACTION STEAM NON RETURN VALVE FULL CLOSE POSITION', 'ZSC-TSn730'],
+    20: ['NO.5 EXTRACTION STEAM NON RETURN VALVE FULL OPEN POSITION', 'ZSO-TSn730'],
+    21: ['NO.2 LP HEATER LEVEL HIGH HIGH', ''],
+    23: ['HP/LP BYPASS CONTROL IN AUTO', ''],
+    24: ['OIL PURIFIER PUMP RUNNING', ''],
+    25: ['OIL PURIFIER PUMP MOTOR ELECTRICAL TROUBLE', ''],
+    27: ['MSV(B) ABV SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    28: ['MSV(B) ABV SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    29: ['CV(B) ABV SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    30: ['CRV(B) BEL SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    31: ['P.S.NORMAL', '']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([232, 1520, 'CONTROLLER:'], [392, 1520, 'COMM+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA901',
+    title: 'COMM DI TABLE(2)',
+    page: 242,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [176, 75, 2215, 1539],
+    l,
+    t
   });
 })();
 /* TCA902 COMM DI TABLE(3) (331DM09788 page 243, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
@@ -150287,7 +150482,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 04b926e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 530947e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -176677,6 +176872,8 @@ const TCS_DESC = {
   TCA832: 'Communication digital output (3): open and close commands of the secondary drain valves of MSV, CV and CRV.',
   TCA833:
     'Communication digital output (4): start commands of the oil purifier, space heaters, vapour extractor and gland steam exhauster, reactive power on / off, 41 close.',
+  TCA901:
+    'COMM DI TABLE(2): digital input card unit 0 slot 6 LYD050A3 of the COMM controller (MSV(B), CV(B), CRV(B) secondary drains, AVR trouble, No.2 and No.5 extraction NRV, heater levels, oil purifier).',
   TCA902:
     'COMM DI TABLE(3): digital input card unit 0 slot 7 LYD050A3 of the COMM controller (CV(B) warming drain, HP warming valve, No.3 extraction primary NRV, generator, 52L and AVR status).',
   TCA903:
@@ -177045,7 +177242,9 @@ const TCS_DESC = {
   TCA820:
     'Alarm: trip PCM and Modbus CPU faults (each through a NOT) and Modbus power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT; grouped through two ORs as A and B to TCA822.',
   TCA821:
-    'Alarm: the AC / DC control, lighting and space heater, and AC / DC protection power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT and all through one OR to TCA822; both DC protection power supplies abnormal (AND) = PROTECTION P.S. LOST to TCE472.'
+    'Alarm: the AC / DC control, lighting and space heater, and AC / DC protection power supply faults, each latched in its own flip-flop (ANN RESET resets them), each to its own CRT and all through one OR to TCA822; both DC protection power supplies abnormal (AND) = PROTECTION P.S. LOST to TCE472.',
+  TCA822:
+    'Alarm: the COM error, simulation, network, power supply and HMI signals and the alarm groups of TCA818 to TCA821 into one OR as COM MINOR TROUBLE (to CRT); with the EHG, TPC and Modbus faults through a second OR as TCS MINOR TROUBLE to CRT and TCA532.'
 };
 
 /* ---- src/digital/tce/TCE022.js ---- */
@@ -236630,6 +236829,90 @@ const TCS_DESC = {
   });
 })();
 
+/* ---- src/digital/tce/TCA822.js ---- */
+/* TCA822 ALARM (331DM09788 page 231, controller COMM+MD, cycle 100 ms). Typed from the drawing;
+   units = the pixels of the page rendered 2296 wide. As drawn:
+   - COM I/O HARD ERROR (B, TCA806), COM SIGNAL ERROR (A, TCA816), COM BATTERYERR (F, TCA101), DURING SIMULATION (A, TCA102),
+     NETWORK ABNORMAL (F, TCA102), DI P.S.ABNORMAL (A, TCA817), HMI NORECIVE (B, TCA100), ATS ALARM (B1, TCE465) and the alarm
+     groups A (TCA818), A / B / C (TCA819), A / B (TCA820), A (TCA821) into OR 003: COM MINOR TROUBLE, A (-), and through
+     BTR 002 to CRT TCA822_1.
+   - COM MINOR TROUBLE, EHG TROUBLE (A, TCE472), TPC(A) / (B) / (C) ABNORMAL (C1 / C2 / C3, TCE476) and Modbus I/F ABNORMAL
+     (D1, TCT052) into OR 004: TCS MINOR TROUBLE to CRT TCA822_2 and B (to TCA532).
+   live: none; the engine holds no state of these signals, so the sheet is shown without states. */
+(function () {
+  if (typeof window === 'undefined') return;
+  const w = [],
+    b = [],
+    c = [],
+    d = [],
+    t = [],
+    j = [];
+  const W = (key, ...pts) => w.push([key, pts]);
+  const Y = [260, 324, 388, 452, 516, 580, 633, 708, 772, 836, 900, 964, 1028, 1092, 1146],
+    L = ['B', 'A', 'F', 'A', 'F', 'A', 'B', 'B1', 'A', 'A', 'B', 'C', 'A', 'B', 'A'],
+    F = ['TCA806', 'TCA816', 'TCA101', 'TCA102', 'TCA102', 'TCA817', 'TCA100', 'TCE465', 'TCA818', 'TCA819', 'TCA819', 'TCA819', 'TCA820', 'TCA820', 'TCA821'],
+    T = ['COM I/O HARD ERROR', 'COM SIGNAL ERROR', 'COM BATTERYERR', 'DURING SIMULATION', 'NETWORK ABNORMAL', 'DI P.S.ABNORMAL', 'HMI NORECIVE', 'ATS ALARM'],
+    XB = [824, 845, 866, 887, 908, 929, 949, 970, 991, 1012, 1033, 1053, 1074, 1095];
+  Y.forEach((y, i) => {
+    const key = 'i' + (i + 1),
+      yo = 260 + 21 * i;
+    c.push([key, 'in', L[i], 350, y, '', [F[i]], 0, 1]);
+    if (T[i]) t.push([384, y - 8, T[i]]);
+    if (i === 0) W(key, [377, y], [1127, y]);
+    else W(key, [377, y], [XB[i - 1], y], [XB[i - 1], yo], [1127, yo]);
+  });
+  b.push(['or003', 'OR', '003', 1156, 408.5, [], {}, [58, 321]]);
+  W('or003', [1185, 260], [2081 - 27, 260]);
+  W('or003', [1633, 260], [1633, 431], [1666, 431]);
+  W('or003', [1633, 324], [2016 - 35, 324]);
+  j.push([1633, 260], [1633, 324]);
+  b.push(['btr002', 'o:BTR', '002', 1688, 324]);
+  d.push(['crt1', 2016, 324, 'out', 'TCA822_1', 'S', '#1C'], ['crt2', 2016, 431, 'out', 'TCA822_2', 'S', '#1C']);
+  c.push(['oA', 'out', 'A', 2081, 260, '', ['-'], 0, 1]);
+  /* OR 004 */
+  const R = [
+    ['iEhg', 'A', 868, 'EHG TROUBLE', 'TCE472', 1512, 452],
+    ['iTpcA', 'C1', 942, 'TPC(A) ABNORMAL', 'TCE476', 1547, 474],
+    ['iTpcB', 'C2', 1006, 'TPC(B) ABNORMAL', 'TCE476', 1578, 495],
+    ['iTpcC', 'C3', 1080, 'TPC(C) ABNORMAL', 'TCE476', 1620, 516],
+    ['iMod', 'D1', 1155, 'Modbus I/F ABNORMAL', 'TCT052', 1638, 537]
+  ];
+  R.forEach(([key, l, y, txt, ref, xb, yo]) => {
+    c.push([key, 'in', l, 1246, y, '', [ref], 0, 1]);
+    t.push([1278, y - 8, txt]);
+    W(key, [1273, y], [xb, y], [xb, yo], [1666, yo]);
+  });
+  b.push(['or004', 'OR', '004', 1695, 484, [], {}, [58, 128]]);
+  W('or004', [1724, 431], [2016 - 35, 431]);
+  W('or004', [1791, 431], [1791, 549], [2003 - 27, 549]);
+  j.push([1791, 431]);
+  c.push(['oB', 'out', 'B', 2003, 549, '', ['TCA532'], 0, 1]);
+  t.push(
+    [1265, 252, 'COM MINOR TROUBLE'],
+    [1745, 316, 'COM MINOR TROUBLE'],
+    [1806, 423, 'TCS MINOR TROUBLE'],
+    [228, 1516, 'CONTROLLER:'],
+    [388, 1516, 'COMM+MD'],
+    [613, 1495, 'TRIGGER  :'],
+    [613, 1522, 'CYCLE(ms):100']
+  );
+  window.TCE_SHEETS = window.TCE_SHEETS || [];
+  window.TCE_SHEETS.push({
+    id: 'TCA822',
+    title: 'ALARM',
+    page: 231,
+    ctl: 'COMM+MD',
+    cycle: 100,
+    f: [160, 75, 2224, 1540],
+    c,
+    d,
+    b,
+    w,
+    j,
+    t
+  });
+})();
+
 /* ---- src/digital/tce/TCA825.js ---- */
 /* TCA825 ALARM (331DM09788 page 232, controller COMM+MD, cycle 100 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide.
    Three alarms to the operator station (CRT TCA825_1.._3) and the connectors A1 / A2 / A3, and TURBINE TRIP on to TCA826 / TCA831:
@@ -237559,6 +237842,117 @@ const TCS_DESC = {
       [617, 1504, 'TRIGGER  :'],
       [617, 1530, 'CYCLE(ms):100']
     ]
+  });
+})();
+
+/* ---- src/digital/tce/TCA901.js ---- */
+/* TCA901 COMM DI TABLE(2) (331DM09788 page 242, controller COMM+MD). Typed from the drawing; units = the pixels of the page rendered
+   2296 wide. The PI/O table of the digital input card unit 0 slot 6 (LYD050A3) of the COMM controller, 32 channels (CH 0 ~ 1F): the MSV(B),
+   CV(B) and CRV(B) secondary drain valves, the gland steam line drain, the AVR trouble and PSS, the No.2 and No.5 extraction non return
+   valves, the heater levels, the HP/LP bypass and the oil purifier pump; the rest spare. Names are typed as drawn. */
+(function () {
+  const l = [],
+    t = [],
+    H = (y, x0, x1) =>
+      l.push([
+        [x0, y],
+        [x1, y]
+      ]),
+    V = (x, y0, y1) =>
+      l.push([
+        [x, y0],
+        [x, y1]
+      ]);
+  /* the card definition: SDIO/CE, PI/O, RTB */
+  const x0 = 277,
+    y0 = 141;
+  [0, 27, 54].forEach(d => H(y0 + d, x0, x0 + 696));
+  [0, 205, 495, 696].forEach(c => V(x0 + c, y0, y0 + 54));
+  [43, 87, 130, 248, 290, 332, 376, 419, 537, 579, 621].forEach(c => V(x0 + c, y0 + 27, y0 + 54));
+  t.push([x0 + 100, y0 + 21, 'SDIO/CE', 1], [x0 + 350, y0 + 21, 'PI/O', 1], [x0 + 595, y0 + 21, 'RTB', 1]);
+  [
+    [0, 'SLOT'],
+    [87, 'TYPE'],
+    [205, 'UNIT'],
+    [248, '0'],
+    [290, 'SLOT'],
+    [332, '6'],
+    [376, 'TYPE'],
+    [419, 'LYD050A3'],
+    [495, 'DVA'],
+    [579, 'TYPE']
+  ].forEach(([c, z]) => t.push([x0 + c + 3, y0 + 48, z]));
+  /* the table: head and 32 rows */
+  const X = [274, 317, 361, 857, 936, 1017, 1157, 1331, 1462],
+    T = 200,
+    Y1 = 254,
+    RH = 32;
+  X.forEach(x => V(x, T, Y1 + 32 * RH));
+  H(T, 274, 1462);
+  for (let i = 0; i <= 32; i++) H(Y1 + i * RH, 274, 1462);
+  const hc = i => (X[i] + X[i + 1]) / 2;
+  t.push(
+    [hc(0), T + 22, 'thr.', 1],
+    [hc(0), T + 48, 'No.', 1],
+    [hc(1), T + 22, 'CH', 1],
+    [hc(1), T + 48, 'No.', 1],
+    [hc(2), T + 37, 'DI Signal Name', 1],
+    [hc(3), T + 22, 'logic', 1],
+    [hc(3), T + 48, 'SH No.', 1],
+    [hc(4), T + 22, 'seq.', 1],
+    [hc(4), T + 48, 'SH No.', 1],
+    [hc(5), T + 37, 'connect', 1],
+    [hc(6), T + 37, 'instrument No.', 1],
+    [hc(7), T + 37, 'EDB idNo.', 1]
+  );
+  const R = {
+    0: ['MSV(B) ABOVE SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    1: ['MSV(B) ABOVE SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    2: ['MSV(B) ABOVE SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    3: ['CV(B) ABOVE SEAT SECONDARY DRAIN VALVE OPENED', ''],
+    4: ['CV(B) ABOVE SEAT SECONDARY DRAIN VALVE CLOSED', ''],
+    5: ['CV(B) ABOVE SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    6: ['CRV(B) BELOW SEAT SECONDARY  DRAIN VALVE OPENED', ''],
+    7: ['CRV(B) BELOW SEAT SECONDARY  DRAIN VALVE CLOSED', ''],
+    8: ['CRV(B) BELOW SEAT SECONDARY DRAIN VALVE ELECTRICAL TROUBLE', ''],
+    9: ['TURBINE GLAND STEAM LINE DRAIN VALVE CLOSED', ''],
+    10: ['BACK UP AVR TROUBLE', ''],
+    11: ['PRIMARY AVR TROUBLE', ''],
+    12: ['PSS ON', ''],
+    13: ['CV(B) ABV SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    14: ['CRV(B) BEL SEAT SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    15: ['P.S.NORMAL', ''],
+    16: ['NO.2 EXTRACTION STEAM NON RETURN VALVE FULL CLOSE POSITION', 'ZSC-TSn700'],
+    17: ['NO.2 EXTRACTION STEAM NON RETURN VALVE FULL OPEN POSITION', 'ZSO-TSn700'],
+    18: ['NO.1 HP HEATER LEVEL VERY HIGH', ''],
+    19: ['NO.5 EXTRACTION STEAM NON RETURN VALVE FULL CLOSE POSITION', 'ZSC-TSn730'],
+    20: ['NO.5 EXTRACTION STEAM NON RETURN VALVE FULL OPEN POSITION', 'ZSO-TSn730'],
+    21: ['NO.2 LP HEATER LEVEL HIGH HIGH', ''],
+    23: ['HP/LP BYPASS CONTROL IN AUTO', ''],
+    24: ['OIL PURIFIER PUMP RUNNING', ''],
+    25: ['OIL PURIFIER PUMP MOTOR ELECTRICAL TROUBLE', ''],
+    27: ['MSV(B) ABV SEC DRAIN VALVE TORQUE SW OPEN', ''],
+    28: ['MSV(B) ABV SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    29: ['CV(B) ABV SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    30: ['CRV(B) BEL SEAT SEC DRAIN VALVE TORQUE SW CLOSE', ''],
+    31: ['P.S.NORMAL', '']
+  };
+  for (let i = 0; i < 32; i++) {
+    const y = Y1 + (i + 1) * RH - 9,
+      [z, ins] = R[i] || ['(SPARE)', ''];
+    t.push([X[0] + 6, y, String(i + 1)], [X[1] + 8, y, i.toString(16).toUpperCase()], [X[2] + 9, y, z]);
+    if (ins) t.push([X[6] + 8, y, ins]);
+  }
+  t.push([232, 1520, 'CONTROLLER:'], [392, 1520, 'COMM+MD']);
+  (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
+    id: 'TCA901',
+    title: 'COMM DI TABLE(2)',
+    page: 242,
+    ctl: 'COMM+MD',
+    cycle: '-',
+    f: [176, 75, 2215, 1539],
+    l,
+    t
   });
 })();
 
@@ -342517,7 +342911,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 04b926e'));
+    row('Version', E('span', 'scsver', ver + ' · build 530947e'));
   }
   function openSet(near) {
     if (!set) {
