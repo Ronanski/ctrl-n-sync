@@ -200,6 +200,32 @@ const TCS_DESC = {
     'Analog input diagnostics (12): generator frequency through an AI DIAG.MD block to the generator sheets and the other controller; abnormal to the alarm sheets.',
   TCA322:
     'Analog input diagnostics (13): steam seal feed valve, steam packing unloading valve, CV (B) below seat warming drain valve and HP turbine warming valve positions; each simulation value comes from its valve sheet.',
+  TCA353:
+    'Analog input diagnostics (15), card TCA960: one spare RTD input through an AI DIAG.MD block; abnormal to the alarm sheet.',
+  TCA354:
+    'Analog input diagnostics (15), card TCA960: No.1 and No.2 turbine journal bearing and No.3 and No.4 bearing metal temperatures, each through an AI DIAG.MD block to the supervisory sheet and the other controller.',
+  TCA355:
+    'Analog input diagnostics (15), card TCA960: gland steam seal header and LP inlet temperatures, each through an AI DIAG.MD block to the other controller; abnormal to the alarm sheet.',
+  TCA356:
+    'Analog input diagnostics (15), card TCA960: hot reheat steam, MSV inlet (D), reheat bowl outer metal and LP extraction steam temperatures, each through an AI DIAG.MD block to its logic sheets and the other controller.',
+  TCA357:
+    'Analog input diagnostics (15), card TCA960: MSV inlet, HP exhaust and LP exhaust hood steam temperatures (A), each through an AI DIAG.MD block to the TCE controller; one spare RTD input.',
+  TCA358:
+    'Analog input diagnostics (15), card TCA961: reheat bowl inner wall (A), IP turbine 15th and 18th stage inner wall (upper) and thrust bearing front-end (A) metal temperatures through AI DIAG.MD blocks.',
+  TCA359:
+    'Analog input diagnostics (15), card TCA961: thrust bearing rear-end (A), MSV (B) and CV (B) inner wall and HP exhaust inner wall (upper) metal temperatures; the CV (B) simulation value comes from the TCE controller.',
+  TCA360:
+    'Analog input diagnostics (15), card TCA961: HP turbine first stage inner wall metal temperature (simulation value from TCA777) and IP turbine 21st stage inner wall (upper, lower) metal temperatures.',
+  TCA361:
+    'Analog input diagnostics (15), card TCA961: MSV inlet, HP exhaust and LP exhaust hood steam temperatures (B), each through an AI DIAG.MD block to the TCE controller; one spare RTD input.',
+  TCA362:
+    'Analog input diagnostics (15), card TCA961: reheat bowl inner wall (B), IP turbine 15th and 18th stage inner wall (lower) and thrust bearing front-end (B) metal temperatures through AI DIAG.MD blocks.',
+  TCA363:
+    'Analog input diagnostics (15), card TCA961: thrust bearing rear-end (B), MSV (B) and CV (B) outer wall and HP exhaust inner wall (lower) metal temperatures; the CV (B) simulation value comes from the TCE controller.',
+  TCA364:
+    'Analog input diagnostics (15), card TCA961: HP turbine first stage outer wall metal temperature and No.3 and No.4 bearing outlet oil temperatures through AI DIAG.MD blocks.',
+  TCA365:
+    'Analog input diagnostics (15), card TCA961: MSV inlet, HP exhaust and LP exhaust hood steam temperatures (C), each through an AI DIAG.MD block to the TCE controller; one spare RTD input.',
   TCA100: 'ATS controller condition (1): HMI2 no-receive (communication watch).',
   TCA101: 'ATS controller condition (2): EHG CPU A / B no-receive, network abnormal and the ATS battery error.',
   TCA102:
