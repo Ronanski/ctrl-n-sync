@@ -37,7 +37,7 @@
   /* an input from another sheet: column, key, number, sheet, words, line, the gate bar it runs to */
   const inp = (C, k, n, sh, z, y, x2) => {
     o.push([C.cx, y, 12]);
-    t.push([C.cx, y, n, 4], [C.tx, y - 8, z], [C.tx, y + 9, sh]);
+    t.push([C.cx, y, n, 4], [C.tx, y - 8, z], [C.tx, y + 12, sh]);
     s.push([k, C.cx - 12, y - 12, C.cx + 12, y + 12]);
     w.push([k, [[C.cx + 12, y], [x2, y]]]);
   };
