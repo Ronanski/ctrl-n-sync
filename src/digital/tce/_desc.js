@@ -509,5 +509,9 @@ const TCS_DESC = {
   TCA634:
     'HP turbine warming group control (TE-1, 2), sheet 5: warming complete when the HP first stage inner wall metal temperature stays over 150 degC for 230 min, or after the holding time.',
   TCA636:
-    'Turbine gland seal group control (TE-6, 7): start in progress from the group start command or the operator station, with the seal feed and unloading valves in AUTO, vacuum break complete and aux. steam temperature OK; reset and complete.'
+    'Turbine gland seal group control (TE-6, 7): start in progress from the group start command or the operator station, with the seal feed and unloading valves in AUTO, vacuum break complete and aux. steam temperature OK; reset and complete.',
+  TCA637:
+    'Turbine gland seal group control (TE-6, 7), start steps: drain valve full open and full close commands, open command of the steam seal feed inlet valve, start complete, and start trouble after 480 s.',
+  TCA638:
+    'Turbine gland seal group control (TE-6, 7), stop: stop in progress from the group stop command or the operator station with vacuum broken and the valves in AUTO, the stop permissive, the stop command to the exhauster, stop complete and stop trouble after 400 s.'
 };
