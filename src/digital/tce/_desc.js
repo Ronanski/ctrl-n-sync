@@ -811,5 +811,7 @@ const TCS_DESC = {
   TCA834:
     'COMM digital output (5): sixteen points of the PI/O table TCA982 (1 to 16): the cold reheat non return valve SV, the No.3 and No.2 extraction steam non return valve and the steam seal diverting valve solenoid valve energize commands; the other twelve points spare.',
   TCA835:
-    'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.'
+    'COMM digital output (6): sixteen points of the PI/O table TCA982 (17 to 32): the LP exhaust hood water spray solenoid valve and the No.5, No.3 primary and No.4 extraction steam non return valve energize commands; the other twelve points spare.',
+  TCE500:
+    'Turbine simulator: the CV and ICV positions drive the turbine simulators MT2 (IP START) and MT1 (HP START); IP START picks which one gives the simulated speeds (to TCE143), the HP first stage pressure (to TCE206) and the HP exhaust pressure; with 52G closed the generator load simulator gives the simulated MW (to TCE070 / 101 / 179); the CCS simulator gives the target MW demand (held by LOAD HOLD COMMAND, to TCE103); plus the IP extraction flow and MOP(A) discharge pressure simulators.'
 };
