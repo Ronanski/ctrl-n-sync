@@ -8,7 +8,9 @@ name: Release apk + exe
 # The apk and the exe carry the app inside (they open at once and work without internet). The page asks the site for a newer
 # version of its channel (Stable or Beta, the switch is in the version popup) and installs it inside the app when the user agrees,
 # so a new apk / exe is needed only when the shell itself changes.
-# apk signing: delivery/signing/logic-sim.jks (self-signed, alias logicsim, made once). Never regenerate it: a new key means a reinstall.
+# apk signing: the release key is in the GitHub secrets ANDROID_KEYSTORE_B64 (the PKCS12 keystore, base64) and ANDROID_KS_PASS,
+# alias lmypots. No key or password in the repo (Full Audit 3, Phase 0). The old key delivery/signing/logic-sim.jks is retired:
+# the first apk with the new key needs one reinstall on the tablet.
 on:
   workflow_dispatch:
     inputs:
@@ -41,7 +43,8 @@ jobs:
     needs: gate
     runs-on: ubuntu-latest
     env:
-      KS_PASS: logicsim-icms
+      KS_PASS: ${{ secrets.ANDROID_KS_PASS }}
+      KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,10 +70,12 @@ jobs:
       - name: Build + sign
         working-directory: delivery/android/android
         run: |
+          [ -n "$KS_PASS" ] && [ -n "$KS_B64" ] || { echo "secrets ANDROID_KEYSTORE_B64 / ANDROID_KS_PASS are not set"; exit 1; }
+          printf '%s' "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
           ./gradlew assembleRelease --no-daemon
           BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
           $BT/zipalign -p 4 app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
-          $BT/apksigner sign --ks ../../signing/logic-sim.jks --ks-pass env:KS_PASS --key-pass env:KS_PASS --ks-key-alias logicsim --out "../../app.apk" aligned.apk
+          $BT/apksigner sign --ks "$RUNNER_TEMP/release.jks" --ks-pass env:KS_PASS --key-pass env:KS_PASS --ks-key-alias lmypots --out "../../app.apk" aligned.apk
           $BT/apksigner verify "../../app.apk"
       - uses: actions/upload-artifact@v4
         with: { name: apk, path: delivery/app.apk }
