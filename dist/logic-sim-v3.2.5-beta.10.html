@@ -143940,7 +143940,17 @@ function anUnitStep0(dt) {
     const Prh0 = U.rhp.length && U.rhp[0].a0.length && U.rhp[0].a0[0] > 0 ? U.rhp[0].a0[0] : 34;
     U.Prh = U.rr * Prh0;
     U.qlp = (U.m0 * U.rr * U.lpb * olp) / 100;
+    /* Audit 3 (blank HMI values): PT-HR1011 (STN102 AI0531, "LP turbine bypass outlet pressure", 0 ~ 50 kg/cm2) sits after the LP
+       bypass desuperheater, ahead of the condenser energy damper (point 5 of PPE-14-0728 p2). The ten cases of that sheet give
+       P5 = 0.0538 ata per T/H of F5 (11.7 / 216.9, 3.2 / 59.9, 1.8 / 33.2, 13.3 / 247.2: a choked damper, pressure in line with flow),
+       and F5 = 1.263 x the steam F4 (spray from the CP outlet, 216949 / 171756). Gauge = ata - 1.033; shut, the line is at condenser
+       vacuum and the 0 ~ 50 transmitter reads 0 (snapshot 0.0 at 150 MW) */
+    U.Plpo = Math.max(0, 0.0538 * 1.263 * U.qlp - 1.033);
   }
+  /* PT-ST1002-1 / -2 / -3 (after reheat valve A, the IP turbine inlet): the IP turbine passes steam in line with its inlet pressure
+     (Stodola, the same law as qip above), so the absolute pressure = 150 MW value x qip / m0. 150 MW anchor: PIST10021 / 2 / 3 =
+     33.0 / 33.2 / 33.2 kg/cm2 g (OPERATING_POINTS), mean 33.13 g = 34.16 ata. ICV shut or the turbine off: 0 */
+  U.Pip = Math.max(0, (34.16 * qip) / Math.max(1, U.m0) - 1.033);
   /* 2.2.0-beta.17: not exactly 0 while the HP valves are shut: the SELECT CIRCUIT of ABC-052 (SI0181) reads 0 as a lost transmitter
      (SIG.AB) and would hold the 150 MW value, so the LP bypass REMOTE set point (LN12 of the first stage + 5.1) would stay at 30.9 */
   for (const L of U.pist) scaled(L, Math.max(1e-3, U.ms / U.m0));
@@ -155724,7 +155734,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 5e312a3'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build eea7e52'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -316366,7 +316376,17 @@ function anUnitStep0(dt) {
     const Prh0 = U.rhp.length && U.rhp[0].a0.length && U.rhp[0].a0[0] > 0 ? U.rhp[0].a0[0] : 34;
     U.Prh = U.rr * Prh0;
     U.qlp = (U.m0 * U.rr * U.lpb * olp) / 100;
+    /* Audit 3 (blank HMI values): PT-HR1011 (STN102 AI0531, "LP turbine bypass outlet pressure", 0 ~ 50 kg/cm2) sits after the LP
+       bypass desuperheater, ahead of the condenser energy damper (point 5 of PPE-14-0728 p2). The ten cases of that sheet give
+       P5 = 0.0538 ata per T/H of F5 (11.7 / 216.9, 3.2 / 59.9, 1.8 / 33.2, 13.3 / 247.2: a choked damper, pressure in line with flow),
+       and F5 = 1.263 x the steam F4 (spray from the CP outlet, 216949 / 171756). Gauge = ata - 1.033; shut, the line is at condenser
+       vacuum and the 0 ~ 50 transmitter reads 0 (snapshot 0.0 at 150 MW) */
+    U.Plpo = Math.max(0, 0.0538 * 1.263 * U.qlp - 1.033);
   }
+  /* PT-ST1002-1 / -2 / -3 (after reheat valve A, the IP turbine inlet): the IP turbine passes steam in line with its inlet pressure
+     (Stodola, the same law as qip above), so the absolute pressure = 150 MW value x qip / m0. 150 MW anchor: PIST10021 / 2 / 3 =
+     33.0 / 33.2 / 33.2 kg/cm2 g (OPERATING_POINTS), mean 33.13 g = 34.16 ata. ICV shut or the turbine off: 0 */
+  U.Pip = Math.max(0, (34.16 * qip) / Math.max(1, U.m0) - 1.033);
   /* 2.2.0-beta.17: not exactly 0 while the HP valves are shut: the SELECT CIRCUIT of ABC-052 (SI0181) reads 0 as a lost transmitter
      (SIG.AB) and would hold the 150 MW value, so the LP bypass REMOTE set point (LN12 of the first stage + 5.1) would stay at 30.9 */
   for (const L of U.pist) scaled(L, Math.max(1e-3, U.ms / U.m0));
@@ -353535,7 +353555,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 5e312a3'));
+    row('Version', E('span', 'scsver', ver + ' · build eea7e52'));
   }
   function openSet(near) {
     if (!set) {
