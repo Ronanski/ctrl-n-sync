@@ -3473,6 +3473,92 @@
      "perm": [],
      "why": ""
     }
+   },
+   "SBMV": {
+    "n": "MV-SB1001",
+    "t": "Sootblower steam supply motor valve",
+    "d": "DITL-80S",
+    "df": {
+     "st": 4,
+     "on": "OPEN",
+     "off": "NOT OPEN",
+     "pbs": [
+      [
+       "OPEN",
+       4,
+       "",
+       null,
+       null
+      ],
+      [
+       "STOP",
+       8,
+       "",
+       null,
+       null
+      ],
+      [
+       "CLOSE",
+       10,
+       "",
+       null,
+       null
+      ]
+     ],
+     "perm": [],
+     "why": "",
+     "free": 1
+    }
+   },
+   "SBSEQ": {
+    "n": "Sootblower sequence",
+    "t": "Sootblower program (30 blowers)",
+    "d": "DITL-80A",
+    "df": {
+     "st": 5,
+     "on": "PROGRAM ON",
+     "off": "PROGRAM OFF",
+     "pbs": [
+      [
+       "AUTO MODE",
+       9,
+       "",
+       "set",
+       1
+      ],
+      [
+       "MANUAL MODE",
+       9,
+       "",
+       "set",
+       0
+      ],
+      [
+       "SEQUENCE START",
+       10,
+       "",
+       null,
+       null
+      ],
+      [
+       "SEQUENCE STOP",
+       4,
+       "",
+       null,
+       null
+      ],
+      [
+       "EMERGENCY RETRACT",
+       5,
+       "",
+       null,
+       null
+      ]
+     ],
+     "perm": [],
+     "why": "",
+     "free": 1
+    }
    }
   }
  },

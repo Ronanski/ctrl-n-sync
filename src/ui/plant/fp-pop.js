@@ -924,10 +924,12 @@
     const lOn = lampEl(P.st.on),
       lOff = lampEl(P.st.off || 'STOPPED');
     F.bd.append(row('STATUS', lOn, lOff));
-    const B = P.pbs.map(([l, r, ad]) => {
+    /* [.., 5] = the drawing of that push button when it is not the status drawing (a sootblower: STATUS on DITL-80A, its REMOTE START /
+       REVERSE P.B. on DITL-80M or its own copy of DITL-80G) */
+    const B = P.pbs.map(([l, r, ad, , , pd]) => {
       const b = E('button', 'fpo-cmd', l);
       b.type = 'button';
-      b.title = P.d + ' row ' + (r + 1) + ' · ' + ad;
+      b.title = (pd || P.d) + ' row ' + (r + 1) + ' · ' + ad;
       return b;
     });
     /* live test 2026-11-05 (air dryers, DITL-45): P.sel = the REMOTE input row of the local panel (I.0099 / I.0085 ...): the field operator
@@ -1001,10 +1003,11 @@
     B.forEach((b, i) => {
       /* [label, row, address] = a push button (a pulse); [label, row, address, 'set', 1 / 0] = a maintained HMI switch of the drawing set
          or reset (DITL-LS212 ISOLATING VALVE A~H OPEN/CLOSE SW; WORLD.dset, an engine action) */
-      const [l, r, ad, k, v] = P.pbs[i];
+      const [l, r, ad, k, v, pd] = P.pbs[i],
+        d = pd || P.d;
       b.onclick = () =>
         !b.disabled &&
-        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(P.d, r, !!v) : dk.dpress(P.d, r), call(() => window.lsEventAdd(P.d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + P.d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
+        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
     });
     let k0 = '';
     function tick() {

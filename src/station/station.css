@@ -51,6 +51,10 @@ html body.st:not(#st0):not(#st1) #fpop:not(#st2) { width: 256px !important; back
 html body.st:not(#st0):not(#st1) #fpop:not(#st2) * { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif !important; font-size: 12px !important; letter-spacing: 0 !important; }
 html body.st:not(#st0):not(#st1) #fpop:not(#st2) .fpo-h { min-height: 32px !important; padding: 4px 4px 4px 12px !important; border-bottom: 1px solid #2b333b !important; background: none !important; cursor: move !important; user-select: none !important; touch-action: none !important; gap: 8px !important; }
 html body.st:not(#st0):not(#st1) #fpop:not(#st2) .fpo-tt > b { font-size: 0 !important; }
+/* live check 2026-11-21 (MV-SB1001 "Sootblower steam supply motor valve"): a long name next to the state, the close mark and Trend
+   broke one word per line; the head wraps instead: the name keeps at least 150 px, the state and buttons go to the next line */
+html body.st:not(#st0):not(#st1) #fpop:not(#st2) .fpo-h { flex-wrap: wrap !important; }
+html body.st:not(#st0):not(#st1) #fpop:not(#st2) .fpo-tt { flex: 1 1 150px !important; }
 html body.st:not(#st0):not(#st1) #fpop:not(#st2) .fpo-tt > b::after { content: var(--st-name) !important; font: 600 13px "IBM Plex Sans", "Segoe UI", system-ui, sans-serif !important; color: #e6eaed !important; }
 html body.st:not(#st0):not(#st1) #fpop:not(#st2) .fpo-tt > small { font-family: "IBM Plex Mono", Consolas, monospace !important; color: #9aa4ae !important; }
 html body.st:not(#st0):not(#st1) #fpop:not(#st2) :is(.fpo-k, .fpo-ln) { display: none !important; }

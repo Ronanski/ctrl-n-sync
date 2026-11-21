@@ -63,10 +63,10 @@
     SXB = 1222; /* superheater side */
   const tags = (rows, xa, xb, p) =>
     rows.flatMap((r, i) => [
-      at(B(r[1][0], op(r[1][1], r[1][2], r[1][0]), { plain: true, w: CW2 }), xa, py(r[0]) + lift(rows, i), {
+      at(B(r[1][0], op(r[1][1], r[1][2], r[1][0]), { plain: true, w: CW2, mach: r[1][0] }), xa, py(r[0]) + lift(rows, i), {
         id: p + i + 'a'
       }),
-      at(B(r[2][0], op(r[2][1], r[2][2], r[2][0]), { plain: true, w: CW2 }), xb, py(r[0]) + lift(rows, i), {
+      at(B(r[2][0], op(r[2][1], r[2][2], r[2][0]), { plain: true, w: CW2, mach: r[2][0] }), xb, py(r[0]) + lift(rows, i), {
         id: p + i + 'b'
       })
     ]);
@@ -109,7 +109,7 @@
         /* steam supply */
         at(L('drum-steam', 'Superheater panel 1 outlet', { back: true }), 170, 70, { id: 'sl' }),
         at(
-          B('Steam supply valve MV-SB1001', 'data-dy="DITL-80S|o|5|neg" data-on="OPEN" data-off="CLOSED"', { w: 230, plain: true }),
+          B('Steam supply valve MV-SB1001', 'data-dy="DITL-80S|o|5|neg" data-on="OPEN" data-off="CLOSED"', { w: 230, plain: true, mach: 'MV-SB1001' }),
           170,
           150,
           {
@@ -145,13 +145,22 @@
           880,
           { id: 'ah', sc: 1.2, lab: 'b' }
         ),
-        at(B('N-1040', op('DITL-80F', 25, 'N-1040') + ' data-n="40"', { plain: true, w: CW2 }), 300, 858, {
+        at(B('N-1040', op('DITL-80F', 25, 'N-1040') + ' data-n="40"', { plain: true, w: CW2, mach: 'N-1040' }), 300, 858, {
           id: 'a40'
         }),
-        at(B('N-1042', op('DITL-80F', 25, 'N-1042') + ' data-n="42"', { plain: true, w: CW2 }), 300, 902, {
+        at(B('N-1042', op('DITL-80F', 25, 'N-1042') + ' data-n="42"', { plain: true, w: CW2, mach: 'N-1042' }), 300, 902, {
           id: 'a42'
         }),
-        ...ST.map((s, i) => at(B(s[0], s[1], { w: SW2 }), SX, 110 + i * 46, { id: 'st' + i }))
+        ...ST.map((s, i) => at(B(s[0], s[1], { w: SW2 }), SX, 110 + i * 46, { id: 'st' + i })),
+        /* live test 2026-11-21 (Jennie): nothing on this page could be operated. The sequence faceplate (hmi-mock-pb.js SBSEQ, DITL-80A:
+           AUTO / MANUAL row 9, SEQUENCE START row 10, STOP row 4, EMERGENCY RETRACT row 5, state = output row 5 PROGRAM ON); the steam
+           valve opens SBMV (DITL-80S OPEN row 4, STOP row 8, CLOSE row 10) and each blower tag its own START / SKIP faceplate */
+        at(
+          B('Sootblower sequence', 'data-dy="DITL-80A|o|5" data-on="PROGRAM ON" data-off="PROGRAM OFF"', { w: SW2, mach: 'Sootblower sequence', show: true }),
+          SX,
+          110 + ST.length * 46 + 8,
+          { id: 'seq' }
+        )
       ],
       pipes: [
         { med: 'steam', w: 4, pts: ['sl.b', 'sv.t'], flow: FL, arrow: false },
@@ -243,7 +252,7 @@
         { x: 290, y: 420, side: 'b', label: 'Header', key: 'PT-SB1052', unit: K, dp: 1, tag: 'PT-SB1052' },
         { x: 340, y: 560, side: 't', label: 'Drain A', key: 'TT-SB1056', unit: '°C', dp: 0, tag: 'TT-SB1056' },
         { x: 340, y: 690, side: 't', label: 'Drain B', key: 'TT-SB1057', unit: '°C', dp: 0, tag: 'TT-SB1057' },
-        { x: SX - 60, y: 740, side: 'r', label: 'System current', key: 'IT-SB01', unit: 'A', dp: 1, tag: 'IT-SB01' }
+        { x: SX - 60, y: 820, side: 'r', label: 'System current', key: 'IT-SB01', unit: 'A', dp: 1, tag: 'IT-SB01' }
       ],
       texts: [
         { x: RXA - CW2 / 2, y: py(28) - 26, s: 'left wall', cls: 'hx-note' },

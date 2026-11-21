@@ -22,7 +22,7 @@
       on,
       off: off || 'STOPPED',
       get pbs() {
-        return pbs.map(([l, r, k, v]) => [l, r, adr(d, r), k, v]);
+        return pbs.map(([l, r, k, v, pd, pa]) => [l, r, pa ? pa() : adr(pd || d, r), k, v, pd]);
       },
       perm: [],
       why: ''
@@ -38,12 +38,35 @@
   /* SOOTBLOWERS (Mina beta.173: a click on the blower N-1011 opened the PLANT chip menu, no blower faceplate). Each blower label of the
      mockup ([data-dy="DITL-80x|o|row"][data-on="N-10xx"]) = its "N-10xx SOOTBLOWER OPERATING" output; on the same drawing row r is
      "N-10xx SOOTBLOWER START COMMAND" (M.4011 for N-1011 ...) and row r + 1 "N-10xx SOOTBLOWER SKIPPED" (M.4010 ...): read on all 30 rows of
-     DITL-80A ~ 80F */
+     DITL-80A ~ 80F.
+     Audit 3 (Jennie, live 2026-11-21: in MANUAL a START did nothing): row r is the step command of the AUTO program (FROM 80-59), no CRT
+     button, and row r + 1 is the SKIPPED lamp. The CRT push buttons are on DITL-80M: row 2 "N-1011 SOOTBLOWER REMOTE START P.B." M.4015
+     and row 7 "REMOTE REVERSE P.B." M.4014 (into DITL-80G rows 5 / 10 "REMOTE START / REVERSE COMMAND", F = 80M-303 / 80M-375), row 4
+     M.401D for N-1012; the other blowers are "AS ABOVE": their own copy of DITL-80G (world.js, its address map from memory list 102,
+     SB_B8 + 5 / + 4) takes the press on rows 5 / 10. The air preheater sootblower: DITL-80M rows 5 / 8 M.417D / M.417C. STATUS stays the
+     OPERATING row of DITL-80A ~ 80F */
   const sb = defOf('MK15');
+  const sbIns = n => {
+    const L = (window.WORLD && WORLD.inst) || [];
+    return L.find(x => x.name.endsWith('DITL-80G #' + n));
+  };
+  const sbAd = (n, a) => () => {
+    const x = sbIns(n),
+      m = x && x._inst && x._inst.amap;
+    return (m && m[a]) || '';
+  };
+  const sbPb = (n, d) =>
+    /80F/.test(d)
+      ? [['START', 5, null, null, 'DITL-80M'], ['RETRACT', 8, null, null, 'DITL-80M']]
+      : n === 'N-1011'
+        ? [['START', 2, null, null, 'DITL-80M'], ['RETRACT', 7, null, null, 'DITL-80M']]
+        : n === 'N-1012'
+          ? [['START', 4, null, null, 'DITL-80M'], ['RETRACT', 10, null, null, 'DITL-80G #N-1012', sbAd(n, 'M.4014')]]
+          : [['START', 5, null, null, 'DITL-80G #' + n, sbAd(n, 'M.4015')], ['RETRACT', 10, null, null, 'DITL-80G #' + n, sbAd(n, 'M.4014')]];
   if (sb)
     sb.art = sb.art.replace(/<text([^>]*?) data-dy="(DITL-80[A-F])\|o\|(\d+)" data-on="(N-10\d\d)"/g, (m, a, d, r, n) => {
       const id = 'SB' + n;
-      if (!sb.mach[id]) sb.mach[id] = pbf(n, /80F/.test(d) ? 'Air preheater sootblower' : 'Sootblower', d, +r, 'OPERATING', [['START', +r], ['SKIP', +r + 1]]);
+      if (!sb.mach[id]) sb.mach[id] = pbf(n, /80F/.test(d) ? 'Air preheater sootblower' : 'Sootblower', d, +r, 'OPERATING', sbPb(n, d));
       return `<text${a} data-hit="${id}" style="cursor:pointer" data-dy="${d}|o|${r}" data-on="${n}"`;
     });
   /* 3.2.4-beta.8 (live test 2026-11-17: the backpass fouled for 4.5 h at 150 MW and no press on this page could open the steam or start

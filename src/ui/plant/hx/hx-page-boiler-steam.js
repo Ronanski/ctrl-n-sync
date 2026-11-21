@@ -279,6 +279,10 @@
       ],
       texts: [
         { x: 196, y: 406, s: 'Position', key: 'ZT-FW1110-1', unit: '%' },
+        /* Jennie 2026-11-21: spray 1 is split range (ABC-011 TICBR1130 MV: LN46 to TCV-FW1110-2, the small valve, which is full open
+           first; LN47 to TCV-FW1110-1, the large valve). Spray valve 2 at 100 % with valve 1 part open is normal, not a stuck valve */
+        { x: 196, y: 424, s: 'split range: opens after valve 2', cls: 'hx-note' },
+        { x: 268, y: 488, s: 'split range: full open first', cls: 'hx-note' },
         { x: 1548, y: 766, s: 'Position', key: 'ZT-FW1120-1', unit: '%' },
         { x: DX, y: 262, s: 'Drum', cls: 'hx-name', anchor: 'middle' },
         { x: 474, y: 146, s: 'Pressure', key: 'PT-BR1001-1', unit: K, anchor: 'end' },
