@@ -9,6 +9,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      - name: Version raised and an update report (Full Audit 3 ranking 7)
+        run: |
+          for i in 1 2 3; do git fetch -q --depth=1 origin +refs/heads/main:refs/remotes/origin/main && break; sleep $((i*5)); done
+          node tools/version-check.js
       - name: The multi-file app folder (for the apk / exe) builds from the html
         run: |
           V=$(node tools/version.js)
