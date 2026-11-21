@@ -150,8 +150,13 @@ function anHxA(g) {
    MCR, FHI Tab 2), toward rInf (Kern-Seaton asymptotic fouling, R = rInf (1 - exp(-t / tau))); it stays when the coal stops.
    - rInf: CALC, the value that takes the air heater gas in from 298 to the design 322 C at 150 MW with every bank fully fouled
      (headless 2026-11-17: 321.2 C at 0.0042, 20 min after the deposit).
-   - tau 8 h: NO-SOURCE. Taken from the blowing interval of the plant: PR P3S3 "economizer once per shift, then once a day", air
-     heater every 4 - 8 h (L20 APH OMM); a bank that needs blowing every shift fouls in about that time.
+   - tau 56 h: CALC from the plant DCS trend (team-files/plant-trends, Scenario 1 Trend B, 60 s samples, PC only). Held loads, no load
+     change: 105 MW 1.33 - 2.67 h, 2nd spray TICBR1150.MV 10.5 -> 9.4 % (-0.83 %/h, the fastest creep of the trend); 4.0 - 4.67 h
+     13.6 % flat; full load 0 h and 10 h (BM 67.2, MST 542 / 541) 30.2 and 27.0 % (-0.3 %/h). With tau 8 h (the blowing interval
+     of PR P3S3 "economizer once per shift, then once a day" taken as the fouling time) the 150 MW start state crept -5.9 %/h
+     (headless 8 h, 2026-11-21: 15.1 -> 9.3 % in 1 h, the spray at 0 in 2.75 h, then MST 540 -> 531). Early on the creep goes as
+     rInf / tau, so tau = 8 h x 5.9 / 0.83 = 57 h: 56 h (7 shifts). Blowing once a shift then takes off what one shift lays down
+     (13 % of rInf), which is the plant's practice; it does not need a fully fouled bank.
    - Cleaning: the retractable lances of Diamond Power N11639 (L10-2 Sootblower, IK4M-EMD full / IK4M-EL half retract). Each pair
      (LSW / RSW) blows half the width; a lance cleans the banks it sits between (elevations FL+20982 to +42300 in the manual):
      N1011/12 above RH upper -> R-6; N1013/14 above SH upper -> F3; N1015/16 -> R-6, R-5; N1017/18 -> F3, F2; N1019/20 -> R-5, R-4;
@@ -159,7 +164,7 @@ function anHxA(g) {
      N1033/34 -> eco 3, eco 2 S; N1035 - 38 above eco 1 -> eco 1. Each traverse of a lance (in or out, s._lance.x in world.js)
      removes e = 0.8 (NO-SOURCE) of the deposit over its half: one full blow of a pair, in and out, leaves (1 - 0.4)^4 = 13 %.
    Every start state starts clean. */
-const AN_FOUL = { rInf: 0.0042 /* m2K/W, CALC (see above) */, tau: 8 * 3600 /* s, NO-SOURCE */, e: 0.8 /* NO-SOURCE */, mcr: 89 },
+const AN_FOUL = { rInf: 0.0042 /* m2K/W, CALC (see above) */, tau: 56 * 3600 /* s, CALC from the plant trend (see above) */, e: 0.8 /* NO-SOURCE */, mcr: 89 },
   AN_FOUL_MAP = (() => {
     const m = {},
       set = (a, b, k) => {
