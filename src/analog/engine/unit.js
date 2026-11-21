@@ -2213,10 +2213,23 @@ const AN_BB = {
   cpA: 1.005,
   cpS: 0.84,
   mRef: 204650,
-  ua0: 0.976 * 554,
-  /* beta.258: the furnace water walls alone (the in-furnace SH panels and the backpass are the heat transfer chain, hx.js): CALC from
-     the design heat balance, evaporator 157.2 MW at bed 850 C, drum 338.5 C, phi 1 (with uaL and the gas share uag) */
-  ua0w: 289.3,
+  /* 1.0.0-beta.256 (JENNIE): the upper furnace suspension (the bed balance, unit step). Was ua0w 289.3 kW/K, CALC with the bed AND the
+     furnace exit both at 850 C. CALC of the 150 MW anchor (phi 1, drum 145 kg/cm2 g = 338.5 C, IF97):
+     - tbA 937 C: the bed, the average of the eighteen lower layer thermocouples TT-FG1090 / 1091 A ~ I of the HMI snapshot at 150 MW
+       (the anchor the thermocouples are written from, anGasA0; trend scenario 1 TIFG1090 952 ~ 962 C);
+     - furnace exit 850 C: FHI design data / Fig 8 (the gas the backpass chain of hx.js is built on);
+     - evaporator 157.2 MW (design heat balance, as before): the lower refractory 17.96 kW/K x (937 - 338.5) = 10.75 MW, the upper
+       walls 146.45 MW;
+     - SH panels 62.5 MW: the panel heat of uaP 75 at the 150 MW state of the model (bed 856 C, metals p1 412.7 / p2 465.8 C, save
+       "150 MW bed AUTO 2 coolers" 2026-11-22), held: the panels now see Tu, uaP is CALC again in hx.js;
+     - Cs = (146.45 + 62.5) MW / (937 - 850) K = 2,402 kW/K; less the flue gas 237 kW/K (anHxCp, 188 kg/s): cSol 2,165 kW/K, that is
+       2,577 kg/s of solids at 0.84 kJ/kg K = 21.7 kg/m2 s over the 119 m2 grate (check: CFB circulation flux 10 ~ 100 kg/m2 s, Basu,
+       Circulating Fluidized Bed Boilers, ch. 2; the rate itself is not in the documents);
+     - the profile of the bed balance with these sinks gives Tu 892.3 C; Uw = 146.45 MW / (892.3 - 338.5) = 264.5 kW/K, of it the gas
+       radiation uag(892 C) 106.9 (WSGG, upper walls): uaS 157.6 kW/K by the solids. */
+  tbA: 937,
+  cSol: 2165,
+  uaS: 157.6,
   uaL: 18,
   uaBR: 30.8 /* kW/K, bed -> refractory centre (beta.263, see the bed balance) */,
   uaRW: 43.1 /* kW/K, refractory centre -> water */,
@@ -2233,6 +2246,73 @@ const AN_BB = {
   kW: 554,
   nU: 3.5 /* wall law exponent, plant trend scenario 1 (see above) */
 };
+/* gas radiation (WSGG) + convection of the upper furnace gas at tg to the walls at tw, kW/K (AN_BB above) */
+function anBbUag(tg, tw) {
+  const B = AN_BB;
+  if (!(tg > 200) || !(tg - tw > 1) || typeof anHxEps !== 'function') return B.uag;
+  const K1 = tg + 273.15, K2 = tw + 273.15;
+  return B.aUp * (B.hcUp + (B.fwUp * anHxEps(tg, B.lUp) * 5.67e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tw));
+}
+/* the upper furnace suspension of the bed balance (unit step): exit tgF and mean Tu of the gas + circulating solids that leave the bed
+   at Tb, with the walls (Uw, sink Tw) and the SH panels (Up, sink Tp) in parallel; uag at the mean of the last scan (tu0) */
+function anBbSus(Tb, Tw, gcp, phi, up, tu0) {
+  const B = AN_BB,
+    Uw = anBbUag(isFinite(tu0) ? tu0 : Tb, Tw) + phi * B.uaS,
+    Cs = gcp + phi * B.cSol,
+    Ut = Uw + up.U;
+  if (!(Cs > 0.01) || !(Ut > 0)) return { tgF: Tb, Tu: Tb, Uw, qW: 0, qP: 0 };
+  const Ts = (Uw * Tw + up.U * up.T) / Ut,
+    N = Ut / Cs,
+    e = Math.exp(-N),
+    Tu = Ts + ((Tb - Ts) * (1 - e)) / N;
+  return { tgF: Ts + (Tb - Ts) * e, Tu, Uw, qW: Uw * (Tu - Tw), qP: up.U * (Tu - up.T) };
+}
+/* 1.0.0-beta.256 (JENNIE; coordinator 2026-11-22: every save point must load and run without a trip): A SAVE POINT OF AN OLDER ENGINE.
+   Its bed was solved by the one-temperature model (the bed and the furnace exit both at Tb, walls ua0w 289.3 kW/K, panels uaP 75 at Tb).
+   Loaded as it is, the new balance takes less heat from that bed: the bed heats ~60 C in 10 min while the steam made falls, the boiler
+   master runs the coal to its top and the unit trips (headless, save "150 MW bed AUTO 2 coolers", 2026-11-22). The saved plant is a
+   steady heat balance, so the bed is moved to the temperature at which the NEW model takes the SAME heat out of the bed as the old one
+   did at the saved state: walls + lower refractory + SH panels + the gas that leaves the furnace (gcp x its exit change). Same fuel, same
+   total out: the loaded plant starts in balance. Gate: a state without U.Tu (saved before beta.256). One scan of arithmetic, no fit. */
+function anBedMigrate(U) {
+  if (!U || isFinite(U.Tu) || !isFinite(U.Tb) || !isFinite(U.Tw)) return;
+  const B = AN_BB,
+    Tb = U.Tb,
+    Tw = U.Tw,
+    gcp = isFinite(U.gcp) ? U.gcp : 0,
+    phi = isFinite(U.phi) ? U.phi : 0,
+    hm = U.hxM || {},
+    pm = [hm.p1, hm.p2].filter(isFinite),
+    Tp = pm.length ? pm.reduce((a, v) => a + v, 0) / pm.length : Tw,
+    Trf = isFinite(U.Trf) ? U.Trf : (B.uaBR * Tb + B.uaRW * Tw) / (B.uaBR + B.uaRW),
+    dW = Tb - Tw,
+    tg0 = isFinite(U.tgF) ? U.tgF : Tb /* the old exit gas */;
+  /* the old balance at the saved state (the code of 1.0.0-beta.254) */
+  const ug = anBbUag(Tb, Tw),
+    qG = gcp > 0.01 ? gcp * dW * (1 - Math.exp(-ug / gcp)) : 0,
+    qS = phi * (Math.sign(dW) * Math.max(0, Math.abs(289.3 * dW) - Math.abs(qG))),
+    qOld = qS + Math.min(1, phi) * qG + B.uaBR * (Tb - Trf) + 75 * phi * pm.reduce((a, p) => a + (Tb - p), 0);
+  /* the new balance at a bed T: phi moves with the gas velocity (Tb + 273) / (tbA + 273), the old one used Tb0 */
+  const out = T => {
+    const ph = phi * Math.pow((T + 273) / (B.tbA + 273) / ((Tb + 273) / (U.Tb0 + 273)), B.nU),
+      uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
+      s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * ph, T: Tp }, T);
+    return { q: s.qW + s.qP + B.uaBR * (T - Trf) + gcp * (s.tgF - tg0), s, ph };
+  };
+  let lo = Math.min(Tb, Tw) - 50,
+    hi = Math.max(Tb, Tw) + 400;
+  for (let i = 0; i < 60; i++) {
+    const m = (lo + hi) / 2;
+    if (out(m).q > qOld) hi = m;
+    else lo = m;
+  }
+  const T = (lo + hi) / 2,
+    r = out(T);
+  U.Tb = T;
+  U.Tu = r.s.Tu;
+  U.tgF = r.s.tgF;
+  U.phi = r.ph;
+}
 const AN_BED = {
   s: [0.43, 0.525, 0.626, 0.715, 0.86, 1],
   t: [798, 819, 840, 840, 840, 840],
@@ -4988,7 +5068,7 @@ function anHxRun(U, dt, tsat) {
     {
       Tg: tG,
       mG: isFinite(U.mG) ? U.mG : 0,
-      Tb: U.Tb,
+      Tb: isFinite(U.Tu) ? U.Tu : U.Tb /* beta.256: the panels see the upper furnace mean (AN_BB) */,
       phi: isFinite(U.phi) ? U.phi : 0,
       Tamb: U.Tamb,
       Tm0: U.hxT0,
@@ -5368,7 +5448,8 @@ function anUnitStep0(dt) {
       gcp = (mAir + fg) * anHxCp(U.Tb) /* kW/K, flue gas at the bed */,
       /* 3.2.4-beta.16 (user "Physics nga"): the gas that lifts the solids is the air AND the steam of a water wall tube leak, which boils in
          the bed: per kg 28.9 / 18 times the volume of air (ideal gas, same temperature and pressure) */
-      uRel = U.taf0 > 0 ? ((av[0] + av[1] + av[2] + ((U.tlW || 0) * 28.9) / 18) / U.taf0) * ((U.Tb + 273) / (U.Tb0 + 273)) : 0,
+      /* beta.256: the velocity share is to the gas of the 150 MW anchor, which leaves the bed at the anchor bed tbA (AN_BB), not Tb0 */
+      uRel = U.taf0 > 0 ? ((av[0] + av[1] + av[2] + ((U.tlW || 0) * 28.9) / 18) / U.taf0) * ((U.Tb + 273) / (B.tbA + 273)) : 0,
       phi = Math.min(1.2, Math.max(0, isFinite(U.bedI) ? U.bedI / AN_BI.t0 : 1)) * Math.pow(Math.min(1.2, uRel), AN_BB.nU),
       /* beta.263: the lower furnace refractory is its own lump. 25 mm castable k 1.5 W/m K over the tubes (13-thermal-masses), bed film
          300 W/m2 K (textbook), 359 m2: bed -> refractory centre 1 / (1/300 + 0.0125/1.5) = 85.7 W/m2 K = 30.8 kW/K, centre -> water
@@ -5387,16 +5468,28 @@ function anUnitStep0(dt) {
          length 3.6 V / A = 7.7 m (T2 15.507 x 7.684 m grate, 25.85 m upper walls) gives ~111 kW/K at 850 C and matches the plant
          cyclone out TIFG1095 (scenario 2: 867 C at ~140 MW, 726 C at 90 MW; model 869 / 742) and FHI Fig 10 spray 0 at 60 %, but the
          75 MW hold then swings into an MFT at ~107 min (also with 111 fixed): another low load lag of the model is missing first */
-      uag = (() => {
-        const tg = U.Tb, tw = U.Tw;
-        if (!(tg > 200) || !(tg - tw > 1) || typeof anHxEps !== 'function') return B.uag;
-        const K1 = tg + 273.15, K2 = tw + 273.15;
-        return B.aUp * (B.hcUp + (B.fwUp * anHxEps(tg, B.lUp) * 5.670e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tw));
-      })() /* kW/K, gas radiation (WSGG) + convection to the upper walls */,
-      qGas = gcp > 0.01 ? gcp * dW * (1 - Math.exp(-uag / gcp)) : 0 /* kW, from the gas over the upper walls */,
-      qSolW = phi * (Math.sign(dW) * Math.max(0, Math.abs(B.ua0w * dW) - Math.abs(qGas))) /* kW, the solids beyond the gas radiation */,
-      qSol = qSolW + qRW /* kW, to the furnace walls: the circulating solids + through the refractory */,
-      qPan = isFinite(U.hxQp) ? U.hxQp : 0 /* kW, to the in-furnace SH panels (hx.js, last scan) */,
+      /* 1.0.0-beta.256 (JENNIE, Full Audit 3, live 150 MW 2026-11-22: bed 856 C, plant TIFG1090 ~955 C): THE UPPER FURNACE SUSPENSION.
+         The bed (the dense lower furnace, U.Tb) and the furnace exit gas are two temperatures on the plant: the eighteen lower layer
+         thermocouples TT-FG1090 / 1091 A ~ I average 937 C at 150 MW (HMI snapshot, hmi-op.js; trend scenario 1 TIFG1090 952 ~ 962 C),
+         while the gas leaving the furnace is 850 C (FHI design data / Fig 8 "furnace", the gas the backpass UAs shUA / rhUA and the
+         chain of hx.js are built on; plant cyclone outlet TIFG1095 867 C at ~140 MW). Before, the model held the gas at the bed up to
+         the exit (share phi) and took all the solids' wall heat at the bed temperature: one 856 C for both, 80 C under the bed.
+         Now the gas and the circulating solids (heat capacity flow Cs = gas + phi x cSol) rise from the bed at Tb and give heat on
+         their way up to the upper walls (Uw = gas radiation uag + phi x uaS, sink the water Tw) and to the in-furnace SH panels
+         (Up = 2 x uaP x phi of hx.js, sink their metal): one stream, two sinks in parallel, so along the height
+           T(x) = Ts + (Tb - Ts) e^(-N x), Ts = (Uw Tw + Up Tp) / (Uw + Up), N = (Uw + Up) / Cs,
+         exit tgF = T(1), mean Tu = Ts + (Tb - Ts) (1 - e^-N) / N; walls qWu = Uw (Tu - Tw), panels Up (Tu - Tp) (hx.js, from Tu),
+         and Cs (Tb - tgF) = qWu + panels exactly. Anchor constants: AN_BB tbA / cSol / uaS (CALC there) */
+      up = (() => {
+        const hm = U.hxM || {},
+          uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
+          p = [hm.p1, hm.p2].filter(isFinite);
+        return { U: p.length ? p.length * uaP * phi : 0, T: p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw };
+      })() /* the SH panels: conductance and metal of the last scan */,
+      sus = anBbSus(U.Tb, U.Tw, gcp, phi, up, U.Tu) /* the suspension above (uag at the mean Tu of the last scan) */,
+      qWu = sus.qW /* kW, the suspension to the upper walls (both signs) */,
+      qSol = qWu + qRW /* kW, to the furnace walls: the upper walls + through the lower refractory */,
+      qPan = isFinite(U.hxQp) ? U.hxQp : 0 /* kW, to the in-furnace SH panels (hx.js, last scan, from Tu) */,
       qFuel = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) + oil * B.lhvO,
       qAirG =
         (mAir + fg) * (hFg(U.Tb) - hFg(U.Tamb)) -
@@ -5420,10 +5513,13 @@ function anUnitStep0(dt) {
     /* the water wall leak boils in the bed: saturated water at the drum (anHxHw) to steam at the bed (IF97, near the furnace pressure) */
     const qTl = U.tlW > 0 ? (U.tlW / 3.6) * Math.max(0, steamH(0, U.Tb) - anHxHw(ts)) : 0;
     U.qTl = qTl;
-    U.Tb = Math.max(U.Tamb, U.Tb + ((qFuel - qLm - qTl - qAirG - (qSolW + Math.min(1, phi) * qGas + qBR) - qPan) * dt) / Cb);
+    /* the suspension gives qWu + qPan = Cs (Tb - tgF) on its way up; of it the gas share gcp (Tb - tgF) is the gas cooling from the bed to
+       the exit, already in qAirG (the gas heated to Tb): the bed pays the solids share only, and the gas leaves at tgF (beta.256) */
+    U.Tb = Math.max(U.Tamb, U.Tb + ((qFuel - qLm - qTl - qAirG - (qWu + qPan - gcp * (U.Tb - sus.tgF)) - qBR) * dt) / Cb);
     U.Trf = Trf + ((qBR - qRW) * dt) / B.mRef;
-    /* the furnace exit gas: the bed less the upper walls, held at the bed by the circulating solids in the share phi */
-    U.tgF = gcp > 0.01 ? U.Tb - (1 - Math.min(1, phi)) * (qGas / gcp) : U.Tb;
+    /* the furnace exit gas and the mean of the upper furnace (the panels of hx.js take Tu): the suspension above */
+    U.tgF = sus.tgF;
+    U.Tu = sus.Tu;
     U.gcp = gcp;
     /* 1.0.0-beta.14 (JENNIE, live test F-t): only the water wall leak leaves the furnace with the gas. The economizer leak enters the
        gas at the No.1 economizer (hx.js, I.mL), after the superheaters and reheaters: adding it here sent its mass through the SH / RH
@@ -5432,7 +5528,7 @@ function anUnitStep0(dt) {
     U.phi = phi;
     /* water walls, T/H of steam-equivalent (the unit of Cw / C): both ways, a bed under the water cools it. The air cooling of the
        unfired boiler (kcool) is inside this balance now; the loss to the room (kamb) stays */
-    const qW = (qSol + qGas) / B.kW,
+    const qW = qSol / B.kW,
       qL = U.kamb * Math.max(0, (U.Tw - U.Tamb) / 300);
     U.qW = qW;
     /* beta.258: boiling, one T/H of steam made takes the heat from the water of the economizer outlet to saturated vapour (kWe kW per
@@ -5450,8 +5546,8 @@ function anUnitStep0(dt) {
       U.Tw = Math.max(U.Tamb, Math.min(ts, U.Tw + ((qW - qL) * dt) / U.Cw));
       U.Pd = Math.max(0, U.Pd - (mDr * dt) / AN_STORE.cs);
     } else {
-      U.Qs = Math.max(0, (qSol + qGas) / kWe); /* the steam made, T/H */
-      U.Pd = Math.max(0, U.Pd + (((qSol + qGas) / kWe - qL * r - mDr) * dt) / (AN_STORE.cs + U.Cw * r * steamDTsat(U.Pd)));
+      U.Qs = Math.max(0, qSol / kWe); /* the steam made, T/H */
+      U.Pd = Math.max(0, U.Pd + ((qSol / kWe - qL * r - mDr) * dt) / (AN_STORE.cs + U.Cw * r * steamDTsat(U.Pd)));
       U.Tw = tsatOf(U.Pd);
     }
   }
