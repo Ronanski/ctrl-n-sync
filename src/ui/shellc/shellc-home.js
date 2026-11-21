@@ -427,7 +427,7 @@
       pgm.remove();
       pgm = null;
       document.removeEventListener('pointerdown', pgOut, true);
-      document.removeEventListener('keydown', pgKey, true);
+      window.removeEventListener('keydown', pgKey, true);
     }
     const pgb = crumb && crumb.querySelector('.scpgb');
     if (pgb) pgb.setAttribute('aria-expanded', on ? 'true' : 'false');
@@ -475,7 +475,7 @@
     pgm.style.left = Math.round(Math.max(8, r.left)) + 'px';
     document.body.append(pgm);
     document.addEventListener('pointerdown', pgOut, true);
-    document.addEventListener('keydown', pgKey, true);
+    window.addEventListener('keydown', pgKey, true);
     const cur = pgm.querySelector('.scpgi.on') || pgm.querySelector('.scpgi');
     if (cur) cur.focus();
   }
