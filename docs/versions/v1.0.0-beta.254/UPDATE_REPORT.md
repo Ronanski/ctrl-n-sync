@@ -22,8 +22,8 @@ Nothing in the app, the logic, the plant model or the drawings changed.
 
 | # | Finding | Recommendation |
 |---|---|---|
-| F1 | 62 output connectors have no sheet list typed, while the drawing prints one. | Type the lists from the drawing when step 2 reads those sheets. It is a cross reference only: no link or logic depends on it. |
-| F2 | 27 typed output lists leave out a sheet that reads them (TCA500 17, TCA611 4, TCA631 2, TCA610 2, TCE180 1, TCA547 1). | Read each on the drawing in step 2. Where the drawing's list is itself short (common on long lists), keep it as printed and keep the row. |
+| F1 | For 62 links the output connector has no sheet list typed. The drawing was not read again at those places in this PR (not checked). | Type the lists from the drawing when step 2 reads those sheets. It is a cross reference only: no link or logic depends on it. |
+| F2 | For 27 links the typed output list leaves out the sheet that reads it (TCA500 17, TCA611 4, TCA631 2, TCA610 2, TCE180 1, TCA547 1). | Read each on the drawing in step 2. Where the drawing's list is itself short (common on long lists), keep it as printed and keep the row. |
 
 ## Tested
 
