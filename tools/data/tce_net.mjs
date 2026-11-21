@@ -150,18 +150,27 @@ function netOf(s) {
   return res;
 }
 const only = arg('--sheet');
-/* an input connector [letter, from sheets] is fed by the output connector of the same letter on a sheet it names, which names this sheet back */
+/* an input connector [letter, from sheets] is fed by the output connector of the same letter on the sheet it names: the in-connector names both
+   the sheet and the letter, so that is the link. The sheet list printed at the output connector is the drawing's cross reference only; where it
+   is empty (not typed) or leaves this sheet out, the link still holds and the gap is listed as "list" so the drawing can be read again there.
+   No output of that letter on the named sheet, or two of them, is "bad": the link cannot be made. */
 function join(all) {
   const by = Object.fromEntries(all.map(n => [n.id, n]));
-  let ok = 0, ext = 0, bad = [];
+  let ok = 0, ext = 0;
+  const bad = [], list = [];
   for (const n of all)
     for (const c of n.inputs) {
       const src = c.from.filter(f => by[f]);
       if (!src.length) { ext++; continue; }
-      const hit = src.map(f => [f, by[f].outc.find(o => o.letter === c.letter && o.sheets.includes(n.id))]).filter(h => h[1]);
-      if (hit.length) { c.src = hit[0][0] + ':' + hit[0][1].key; ok++; } else bad.push(n.id + ' ' + c.letter + ' <- ' + src.join(' '));
+      const hit = src.flatMap(f => by[f].outc.filter(o => o.letter === c.letter).map(o => [f, o]));
+      const back = hit.filter(h => h[1].sheets.includes(n.id));
+      const use = back.length ? back : hit;
+      if (use.length !== 1) { bad.push(n.id + ' ' + c.letter + ' <- ' + src.join(' ') + (hit.length ? ' (' + hit.length + ' outputs of that letter)' : ' (no output of that letter)')); continue; }
+      c.src = use[0][0] + ':' + use[0][1].key;
+      ok++;
+      if (!back.length) list.push(n.id + ' ' + c.letter + ' <- ' + use[0][0] + (use[0][1].sheets.length ? ' (its list: ' + use[0][1].sheets.join(' ') + ')' : ' (its list is not typed)'));
     }
-  return { ok, ext, bad };
+  return { ok, ext, bad, list };
 }
 const nets = sheets.filter(s => !only || s.id === only).map(netOf);
 const J = join(nets);
@@ -177,8 +186,9 @@ console.log(
   `TCS sheets ${nets.length}, wire pieces ${ends}: not named ${open}; blocks / macros with no input found ${noIn}` +
     ' (BTR / FTR / X marks sit on a wire and pass its signal; an SG signal generator has no input)'
 );
-console.log(`input connectors: ${J.ok} joined to the output of their sheet, ${J.ext} from a part that is not a TCE / TCA sheet (IBD, DCS, G), ${J.bad.length} with no matching output`);
+console.log(`input connectors: ${J.ok} joined to the output of their sheet (${J.list.length} of them not in that output's sheet list), ${J.ext} from a part that is not a TCE / TCA sheet (IBD, DCS, G), ${J.bad.length} with no output to join`);
 if (process.argv.includes('--list')) for (const b of J.bad) console.log('  join ' + b);
+if (process.argv.includes('--list')) for (const b of J.list) console.log('  list ' + b);
 if (process.argv.includes('--list'))
   for (const n of nets) for (const o of n.open) console.log('  ' + n.id + ' ' + o.net + ' at ' + o.at.join(','));
 const out = arg('--json');
