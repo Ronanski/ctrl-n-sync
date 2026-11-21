@@ -297,5 +297,7 @@ function anStateApply(kf) {
   anXsPut(M ? null : st.xs); /* the one-address groups follow the sheet order: rebuilt when it changed */
   AN._asc = null; /* the step sets kept while a starting state loads */
   AN._gen = (AN._gen || 0) + 1; /* new objects (engine/sync.js refs) */
+  /* 1.0.0-beta.256: a save of an older engine: its bed moved to the new upper furnace balance at the same heat out (unit.js anBedMigrate) */
+  if (AN.unit && typeof anBedMigrate === 'function') anBedMigrate(AN.unit);
   if (AN.unit && typeof anTagsNow === 'function') anTagsNow(AN.unit); /* beta.241: the display values of the loaded plant (unit.js) */
 }

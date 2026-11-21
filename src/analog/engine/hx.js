@@ -90,7 +90,11 @@ const AN_HX = {
      1.1 % at 70, 1.95 % at 85): with 59 the 150 MW steady of the model took no spray (541 C only by the outer loop tracking at 0) and
      every load change had no spray margin. CALC in the app at the 150 MW steady of the plant model (bed 830 C from its heat balance,
      460 T/H, both dampers as the logic sets them): uaP 59 -> 0 T/H, 70 -> 7.3, 75 -> 11.5 ~ 12.9 T/H; 75 = the FHI design spray */
-  uaP: 75 /* kW/K each SH panel, CALC above */,
+  /* 1.0.0-beta.256 (JENNIE): the panels sit in the upper furnace and now see its mean suspension temperature I.Tb = U.Tu (unit.js,
+     AN_BB tbA), not the bed. Their heat at the 150 MW state of the model is held (the design spray of the CALC above): there they took
+     75 x (856 - 412.7) + 75 x (856 - 465.8) = 62.5 MW from the 856 C bed; at the new anchor Tu 892.3 C the same heat needs
+     33.25 MW / (892.3 - 412.7) = 69.3 and 29.27 MW / (892.3 - 465.8) = 68.6 kW/K: 69 (CALC) */
+  uaP: 69 /* kW/K each SH panel, CALC above */,
   /* [metal kJ/K, design steam / water flow T/H] */
   wl: [17663, 447.6],
   p1: [70652, 447.6],
