@@ -174,11 +174,13 @@
     box = paint = null;
   }
   const anyOpen = () => Object.keys(BOX).length > 0;
+  /* the event log is the top window: an Escape it uses (or will use, if its listener comes later) is not for the faceplate */
+  const escTaken = e => { const ev = document.getElementById('evbox'); return !!e.lsEscUsed || !!(ev && ev.style.display === 'block'); };
   /* on the window (capture): a listener of the app stops the key there before the document */
   addEventListener(
     'keydown',
     e => {
-      if (e.key === 'Escape' && anyOpen()) close();
+      if (e.key === 'Escape' && anyOpen() && !escTaken(e)) close();
     },
     true
   );

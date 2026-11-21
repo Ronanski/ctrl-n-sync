@@ -1226,6 +1226,8 @@
     'keydown',
     e => {
       if (e.key !== 'Escape' || !fp || !fp.isConnected) return;
+      const ev = document.getElementById('evbox');
+      if (e.lsEscUsed || (ev && ev.style.display === 'block')) return; /* the event log on top takes this Escape */
       const pop = fp.querySelector('.fpop');
       if (pop && pop.style.display === 'block') pop.style.display = 'none';
       else fpClose();

@@ -852,7 +852,9 @@
     /* Mina 2026-11-08 (findings 11-08 #4 / #6): Escape closes the event log, as the other pop-ups */
     /* Rosé 2026-11-22 (live test finding 2): on the window in the capture phase, as fp-pop.js, because a listener of the
        app stops the key before it bubbles to the window */
-    addEventListener('keydown', e => e.key === 'Escape' && hide(), true);
+    /* Rosé 2026-11-22 (real-click test of beta.242): the log is the top window, so one Escape closes only the log; the mark
+       on the event tells the faceplate closers (fp-pop.js, plant.js) that this Escape is used */
+    addEventListener('keydown', e => e.key === 'Escape' && hide() && (e.lsEscUsed = 1), true);
     const st = $('st');
     foot.insertBefore(btn, st);
     document.body.append(box);
