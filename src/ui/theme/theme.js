@@ -1,7 +1,7 @@
 /* Diagram + UI theme selectors (colours only). Remembers the choice. */
 (function () {
   const DG = [
-      ['paper', 'Light paper'],
+      /* Audit 3 #6: the Light paper drawing colours are gone; a choice kept from before falls back to Dark (applyDg) */
       ['std', 'Dark'],
       ['calm', 'Dark calm'],
       ['clarity', 'Dark clarity']
