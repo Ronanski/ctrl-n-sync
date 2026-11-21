@@ -2606,7 +2606,7 @@
       setTimeout(() => dispatchEvent(new Event('resize')), 200);
     }, 300);
   }
-  /* the two starting points of the spec (docs/SPEC.md S5, S6): full load and cold start; Warm and Hot are not in the spec */
+  /* the two starting points of the spec (docs/archive/rules-2026-11-22/SPEC.md S5, S6): full load and cold start; Warm and Hot are not in the spec */
   const STATES = [
     ['150 MW', 'Normal operation at full load'],
     ['Cold', 'Start-up from zero: drum 0 kg/cm², bed and water 30 °C']

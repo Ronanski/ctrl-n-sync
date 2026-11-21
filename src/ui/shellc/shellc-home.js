@@ -522,7 +522,7 @@
     if (!defs.length) return [];
     PTAGS = defs.map(d => {
       const T = new Set();
-      for (const m of String(d.art || '').matchAll(/data-v="([^"|]+)"/g)) T.add(nz(m[1]));
+      for (const k of d.tags || []) T.add(nz(k));
       for (const k in d.mach || {}) {
         const m = d.mach[k];
         if (m.ctl) T.add(nz(m.ctl));
