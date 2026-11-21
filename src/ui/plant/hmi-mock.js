@@ -1,9 +1,9 @@
 /* 3.2.1 (user 2026-11-04 "Yan ang ilagay sa app, yan ang iloloop check"): the 19 temporary HMI pages of the approved mockups
    (JISOO : HMI MOCKUP, audited by HAEWON; sources in docs/hmi/mockups/temp/) in the app, drawn EXACTLY as the mockup: the SVG of the
    mockup is kept as it is and only gets live hooks (tools/hmi-mock/*.py). This file is the one runtime of those pages:
-   - [data-st=ID]   run state of a machine: RUNNING red / STOPPED green / TRIP red blinking (LS_DOCK.mst, the one world); with
+   - [data-st=ID]   run state of a machine: RUNNING red / STOPPED green / TRIP red blinking (LS_OP.mst, the one world); with
                     data-short (the mockup left room for 5 letters only): RUN / STOP / TRIP;
-   - [data-md=ID]   "Remote · Manual": REMOTE / LOCAL and AUTO / MAN of the machine (LS_DOCK.modeOf);
+   - [data-md=ID]   "Remote · Manual": REMOTE / LOCAL and AUTO / MAN of the machine (LS_OP.modeOf);
    - [data-vcb=ID]  "Breaker ON / OFF" (shown closed while the motor runs, as 030 SEAWATER);
    - [data-v=TAG]   a value: the logic transmitter when a sheet has it, else the plant model (UNIT.key of def.unit); '-----' = none;
                     "SHEET|ADDRESS" = that address of the sheet (page 00: ABC-001C|SI0230 = the compensated main steam flow);
@@ -36,7 +36,7 @@
     }
   };
   const fmt = (x, dp) => (x == null || !isFinite(x) ? '-----' : (+x).toFixed(dp).replace(/^-(0(?:\.0+)?)$/, '$1'));
-  const D = () => window.LS_DOCK;
+  const D = () => window.LS_OP;
   /* def = { id, title, num, name, w, h, art, mach: { ID: { n, t, ad, io, d, cur, band, fld, df, lcp, vcb } }, unit: { TAG: key }, after,
      tall, fz, fzAt } */
   /* Mina beta.175 (page 13 TURBINE START, 1600 x 1410: text about 6 px high at Fit with the dock open, 1366 x 768): a TALL page (def.tall)
@@ -579,8 +579,8 @@
       });
       /* machines */
       /* run state: field equipment of the model (fld), DITL input rows (sti: [sheet, running row, trip row], a local panel start),
-         a DITL output row (sto: [sheet, row]), else the motor of LS_DOCK */
-      /* mode of a motor: LS_DOCK.modeOf; a drawing with other names (DITL-76 / 77 "REMOTE SELECTED", "AUTO SELECTED"): its output rows */
+         a DITL output row (sto: [sheet, row]), else the motor of LS_OP */
+      /* mode of a motor: LS_OP.modeOf; a drawing with other names (DITL-76 / 77 "REMOTE SELECTED", "AUTO SELECTED"): its output rows */
       const outV = (ad, re) =>
         call(() => {
           const s = D().dOf(ad),
@@ -673,7 +673,7 @@
            the air preheater, O.029F): [data-dpo="SHEET|ADDRESS|on text|off text"], the same read as the old page 038 */
         qa('[data-dpo]').forEach(e => {
           const [ad, addr, on, off] = e.dataset.dpo.split('|'),
-            v = call(() => window.LS_DOCK.pout(ad, addr), null);
+            v = call(() => window.LS_OP.pout(ad, addr), null);
           e.textContent = v == null ? '-----' : v ? on : off;
           e.setAttribute('fill', v == null ? C.none : v ? C.run : C.stop);
         });
@@ -683,9 +683,15 @@
            = not (the approved mockup); data-on / data-off = other texts (page 11: ON / OFF, OPEN / CLOSED); [data-dyr] = its square. [data-dys="GROUP|SHEET|row|label"] = the summary of a group
            (data-g): OK or NOT OK (n of N missing), from the output row of the drawing; [data-dfo="SHEET|row|first-last"] = MFT ACTIVE
            and the first input row (drawing order) that is 1 at the scan the MFT came, latched until the MFT resets */
+        /* "A||B" = A or B (a sootblower: its OPERATING output, or its lance out of the retract limit, DITL-80G); a sheet is also
+           found by its copy name (WORLD.inst, "DITL-80G #N-1012"), the same read as the faceplate (fp-pop.js P.away) */
         const dyv = spec => {
+          if (spec.includes('||')) {
+            const V = spec.split('||').map(dyv);
+            return V.includes(1) ? 1 : V.includes(null) ? null : 0;
+          }
           const [ad, io, rows, neg] = spec.split('|'),
-            s = call(() => D().dOf(ad), null);
+            s = call(() => D().dOf(ad) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(ad)), null);
           if (!s) return null;
           let v = 1;
           for (const r of rows.split('+')) {

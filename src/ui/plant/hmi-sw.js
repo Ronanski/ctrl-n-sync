@@ -8,7 +8,7 @@
    - SWBP P-1503A / B / C (DITL-30) from the header -> debris filter S-1504 (backwash MV-SW1002) -> CCWHE H-1107A / B / C -> channel;
    - the closed aux cooling water loop of the CCWHE (PD-021): ACWP P-1108A / B (DITL-76 / 77), expansion tank T-1109, the users;
    - hypo-chlorinated dosing P-0761A / B, P-0762A / B (STN105 status DI only, no DCS command).
-   Run state = the motor drawing of the one world (LS_DOCK.mst, the same as the Training dock lamps): red = running, green = stopped,
+   Run state = the motor drawing of the one world (LS_OP.mst, the same as the Training dock lamps): red = running, green = stopped,
    red blinking = trip. Values = the logic (I/O list transmitters); a value with no transmitter on a logic sheet (condenser seawater T / P,
    forebay level, debris filter DP, motor currents) comes from the plant model (unit.js AN_SW, beta.59), never from this page. Click on a machine =
    its info card (I/O list, DITL places), like the 007 fans. Drawn in a 1760 x 900 space, scaled to the 1920 x 1000 frame of hmi2.js. */
@@ -47,7 +47,7 @@
   const OL = `stroke="${S.ol}" stroke-width="1"`;
   const T = (x, y, s, c, a) => `<text x="${x}" y="${y}" class="${c}"${a ? ' ' + a : ''}>${s}</text>`;
   const fmt = (x, dp) => (x == null || !isFinite(x) ? '-----' : (+x).toFixed(dp).replace(/^-(0(?:\.0+)?)$/, '$1'));
-  /* the machines: id, name, tag, run state address (LS_DOCK.mst), info card tag, kind of state text */
+  /* the machines: id, name, tag, run state address (LS_OP.mst), info card tag, kind of state text */
   const MACH = {
     SWA: { n: 'SWP-A', t: 'P-1501A', ad: 'M.3353', io: 'MIR-P1501A', d: 'DITL-29A' },
     SWB: { n: 'SWP-B', t: 'P-1501B', ad: 'M.3354', io: 'MIR-P1501B', d: 'DITL-29A #B' },
@@ -138,7 +138,7 @@
     };
     const vbox = (x, y, tag, u, est, k) =>
       `<g data-vb="${k || tag}" style="cursor:pointer">${T(x, y - 4, tag, 'sw9')}<rect x="${x}" y="${y}" width="58" height="17" rx="1.5" fill="${S.box}" stroke="${S.boxs}"/>${T(x + 54, y + 13, '-----', 'swv', `text-anchor="end" data-v="${k || tag}"`)}${T(x + 62, y + 13, u, 'sw9')}</g>`;
-    /* the mode line of a pump: REM / LOC (field selector) and AUTO / MAN (CRT selection), live from its drawing (LS_DOCK.modeOf) */
+    /* the mode line of a pump: REM / LOC (field selector) and AUTO / MAN (CRT selection), live from its drawing (LS_OP.modeOf) */
     const md = (x, y, id) =>
       `<g data-mdh="${id}" style="cursor:pointer">${T(x, y, `<tspan data-rem="${id}">---</tspan><tspan fill="${S.dim}"> · </tspan><tspan data-au="${id}">---</tspan>`, 'sw9b')}</g>`;
     const imp = (x, y, r, id) =>
@@ -820,7 +820,7 @@
     const mst = M => {
       try {
         if (M.fld) return window.AN && AN.fieldState ? (AN.fieldState()[M.fld] ? 'RUN' : 'STOP') : null;
-        return M.ad && window.LS_DOCK && LS_DOCK.mst ? LS_DOCK.mst(M.ad) : null;
+        return M.ad && window.LS_OP && LS_OP.mst ? LS_OP.mst(M.ad) : null;
       } catch (e) {
         return null;
       }
@@ -887,7 +887,7 @@
       for (const id of MDS) {
         let m = null;
         try {
-          m = window.LS_DOCK && LS_DOCK.modeOf ? LS_DOCK.modeOf(MACH[id].ad) : null;
+          m = window.LS_OP && LS_OP.modeOf ? LS_OP.modeOf(MACH[id].ad) : null;
         } catch (e) {}
         const k = m ? String(m.rem) + String(m.au) : '';
         if (k === MD[id]) continue;
@@ -929,7 +929,7 @@
         DF2: { pbs: [['AUTO START', 18, 'M.0792'], ['AUTO STOP', 20, 'M.0793']], st: 14, dp: 'DPISW1504', perm: [], why: '' }
       }[id];
       if (DF && window.LS_FPOP && LS_FPOP.pb) {
-        const s = window.LS_DOCK && LS_DOCK.dOf(M.d),
+        const s = window.LS_OP && LS_OP.dOf(M.d),
           perm = DF.perm.map(r => ({ row: r, l: String((s && window.DUI && DUI.rowInfo(s, r).svc) || 'row ' + r) }));
         if (LS_FPOP.pb({ n: M.n, t: M.t, d: M.d, io: M.io, st: { row: DF.st, on: M.on, off: 'STOPPED' }, pbs: DF.pbs, perm, permWhy: DF.why, vals: [[DF.dp, () => (LOG[DF.dp] != null ? LOG[DF.dp] : PM[DF.dp]), 'mmH2O']] })) return;
       }

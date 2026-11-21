@@ -77,7 +77,7 @@ HX.data = {
 Every entry of `HXREG.machines` carries `page` and `id` (for example `BFWP-A`: page `MK06`, id `PA`) and `bind` = the same fields the temporary page uses (`ad` DITL sheet or address, `mov`, `tcs`, `io`, `cur` ...). So the adapter can ask the runtime of the temporary pages (`src/ui/plant/hmi-mock.js`) for exactly the value it already shows:
 
 - value of a tag (`data-v`): the logic transmitter when a sheet has it, else the plant model key of `def.unit`.
-- machine state: `LS_DOCK.mst`, mode: `LS_DOCK.modeOf`.
+- machine state: `LS_OP.mst`, mode: `LS_OP.modeOf`.
 - controller PV / SV / MV / mode: `LS_LIVE.pvOf`, `svOf`, `mvOf`, `modeOf`.
 - MOV / XV position: the `data-mov` hook (`pct`, `oc`, `md`).
 - faceplates: `LS_FPOP.hit`, `LS_FPOP.motor`, `LS_FPOP.mov`, `LS_FPOP.valve`, `LS_FPOP.tcs`, the Y / N one `LS_FPOP.yn`; controllers: `fpOpen` of `src/ui/plant/plant.js`.
@@ -182,7 +182,7 @@ User 2026-11-17: "meron yan mini popup for operator control and permissives? may
 - Both stay **tethered**: a thin line joins a card to its equipment, also after it is dragged, so several cards can be open at once.
 - Y = red = complete, N = green; a logic row that is 1 is red, 0 is green.
 - Contract: `HX.data.card(kind, id)` gives everything a card shows, `HX.data.act(kind, id, command, value)` takes every press (the head comment of `hx-cards-ui.js` lists the fields). Without `card()` a click falls back to `HX.data.open()` = the faceplates the app already has.
-- The rows in the mockup are not typed: `tools/dump-logic-rows.js` and `tools/dump-faceplates.js` read them from the app (`DUI.rowInfo` / `rowVal` of the DITL sheet of each valve, `LS_DOCK.interlock` for the permissive rows of a motor valve, the app's own controller faceplate for name, range and mode buttons); `tools/make-cards.py` writes `hx-cards.js`. In the app the adapter calls the same functions live.
+- The rows in the mockup are not typed: `tools/dump-logic-rows.js` and `tools/dump-faceplates.js` read them from the app (`DUI.rowInfo` / `rowVal` of the DITL sheet of each valve, `LS_OP.interlock` for the permissive rows of a motor valve, the app's own controller faceplate for name, range and mode buttons); `tools/make-cards.py` writes `hx-cards.js`. In the app the adapter calls the same functions live.
 - Not in the data yet: the conditions that force a loop to manual (the card says so), the SOP line-up items of a machine, and the permissive list of the machines of the other pages (only the reheat page was dumped).
 
 ## 7. What is real and what is sample

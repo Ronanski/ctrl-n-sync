@@ -90,7 +90,7 @@ async function training(worker) {
     if (worker) await p.waitForFunction(() => window.ENG && (ENG.mode === 'mirror' || ENG.err), null, { timeout: 180000 });
     await p.evaluate(() => lsSetTab('training'));
     await p.waitForTimeout(4000);
-    const st = await p.evaluate(() => ({ tab: document.body.dataset.tab || '', eng: window.ENG ? ENG.mode : '-', err: window.ENG && ENG.err ? String(ENG.err) : '', bar: !!document.getElementById('engerr'), dock: !!window.LS_DOCK, press: !!(window.WORLD && WORLD.dpress) }));
+    const st = await p.evaluate(() => ({ tab: document.body.dataset.tab || '', eng: window.ENG ? ENG.mode : '-', err: window.ENG && ENG.err ? String(ENG.err) : '', bar: !!document.getElementById('engerr'), dock: !!window.LS_OP, press: !!(window.WORLD && WORLD.dpress) }));
     ok = !errs.length && !st.err && !st.bar && st.dock && st.press && (!worker || st.eng === 'mirror');
     why = 'tab ' + st.tab + ', engine ' + st.eng + (st.err ? ', engine error ' + st.err : '') + (st.bar ? ', error bar' : '') + (st.dock ? '' : ', no dock') + (st.press ? '' : ', no WORLD.dpress') + (errs.length ? ', page errors: ' + errs.slice(0, 3).join(' | ') : ', no page error');
   } catch (e) {

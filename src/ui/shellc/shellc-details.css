@@ -18,7 +18,7 @@ html body.sc #scdet .scdx:hover{background:var(--sc-band)!important;color:var(--
 #scdet :focus-visible{outline:2px solid var(--sc-steel)!important;outline-offset:-2px}
 #scdet .scdb{flex:1 1 auto;min-height:0;overflow:auto;padding:12px 16px}
 #scdet .scdsec{display:none}
-body.scdt-why #scdet .scdwhy,body.scdt-train #scdet .scdtrain,body.scdt-alm #scdet .scdalm,body.scdt-pan #scdet .scdins{display:grid;gap:8px}
+body.scdt-why #scdet .scdwhy,body.scdt-alm #scdet .scdalm,body.scdt-pan #scdet .scdins{display:grid;gap:8px}
 #scdet h4{margin:4px 0 0;font:600 12px var(--sc-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--sc-ink2)}
 #scdet p{margin:0}
 #scdet .scdnone,#scdet .scdnone p{color:var(--sc-ink2)}
@@ -41,12 +41,6 @@ body.scdet:not(.sceng) #scdet .scdwhy{display:none!important}
 html body.sc.scdet.sceng.scet-logic #mid{margin-bottom:0!important}
 html body.sc.scdet.sceng.scet-logic #zbar{bottom:calc(var(--footH,24px) + 12px)!important}
 
-/* ---- the training step card (shellc-ins.js) inside the Training section ---- */
-body.sc.scdet{--sccardh:0px!important}
-html body.sc #scdet #sccard:not(#scnone){position:static!important;left:auto!important;right:auto!important;bottom:auto!important;width:auto!important;display:grid!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important}
-html body.sc #scdet #sccard:not(#scnone)[hidden]{display:none!important}
-html body.sc #scdet #sccard:not(#scnone) .sccbar{position:static!important;height:4px;border-radius:2px}
-html body.sc #scdet #sccard:not(#scnone) .sccbs{margin-left:0;flex-wrap:wrap}
 
 /* ---- Engineer: the sheet's side panel (Inspector #anp, Faceplate #opp, DITL panel #dp) fills the body of the column ---- */
 html body.sc.scdet.sceng:is(.scdt-insp,.scdt-fp) :is(#anp,#opp,#dp),html body.sc.scdet.sceng:is(.scdt-insp,.scdt-fp) #mid :is(#anp,#opp,#dp){position:fixed!important;top:var(--scdbt)!important;right:0!important;bottom:var(--footH,24px)!important;left:auto!important;width:var(--scdw)!important;max-width:none!important;height:auto!important;max-height:none!important;z-index:97!important;box-sizing:border-box;border:0!important;border-left:1px solid var(--sc-line2)!important;box-shadow:none!important}

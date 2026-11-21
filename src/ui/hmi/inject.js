@@ -62,9 +62,6 @@ const block =
   /* 2026-11-01: 039 RH / SH BIASING DAMPER (approved mockup) */
   fs.readFileSync(__dirname + '/../plant/hmi-bias.js', 'utf8') +
   '\n' +
-  /* 2026-11-03 (user): TEMPORARY HMI pages for the live test until each new HMI page is built (hmi-temp.js) */
-  fs.readFileSync(__dirname + '/../plant/hmi-temp.js', 'utf8') +
-  '\n' +
   /* 3.2.1 (user 2026-11-04): the approved temporary HMI mockup pages drawn exactly as the mockup (tools/hmi-mock/*.py) */
   fs.readFileSync(__dirname + '/../plant/hmi-mock.js', 'utf8') +
   '\n' +

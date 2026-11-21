@@ -129,8 +129,8 @@ function tcsDitl(L) {
     const P =
       window.WORLD && WORLD.dpress
         ? (nm, r) => WORLD.dpress(nm, r)
-        : window.LS_DOCK && LS_DOCK.dpress
-          ? (nm, r) => LS_DOCK.dpress(nm, r)
+        : window.LS_OP && LS_OP.dpress
+          ? (nm, r) => LS_OP.dpress(nm, r)
           : null;
     if (P) for (const [nm, r] of L) P(nm, r - 1);
   } catch (e) {}

@@ -1,7 +1,7 @@
 /* ===== RE-SHELL LAYOUT C, step 5 of 7 (build plan approved by the user 2026-11-09): the Instructor console (Instructor button of the strip)
-   and the training step card (the Training panel folded). Only with ?shell=c (body.sc). Every control here presses the app's own control
-   (the starting-state, save point, fault, TCS and recorder buttons of the TCS / Field menu, the Practise buttons of the Training page,
-   the speed select) or calls the same function the Training dock calls (AN.turbine('trip')). Nothing here touches the engine. ===== */
+   Only with ?shell=c (body.sc). Every control here presses the app's own control (the starting-state, save point, fault, TCS and
+   recorder buttons of the TCS / Field menu, the speed select) or calls the engine command (AN.turbine('trip')). The training step card
+   was removed on 2026-11-21 (GO NO SOP). Nothing here touches the engine. ===== */
 (function () {
   let want = false;
   try {
@@ -94,7 +94,6 @@
       r.append(b);
     }
     body.append(r);
-    /* 3.2.3-beta.270: no practice sections (they were steps of the Training, which is off: guide.js LS_TRAINING_OFF) */
     /* save points */
     body.append(head('Save point'));
     /* Mina beta.210: SAVE asked the name with prompt(), which the built-in browser blocks: the name is asked here, and the save points
@@ -164,7 +163,7 @@
     /* trips */
     body.append(head('Trips'));
     r = row();
-    const tt = btn('Turbine trip', 'TURBINE TRIP (TA-1), the same command as the Training dock');
+    const tt = btn('Turbine trip', 'TURBINE TRIP (TA-1), the turbine trip command');
     arm(tt, 'Turbine trip', () => {
       call(() => AN.turbine('trip'), '');
       /* a trip not taken: the engine writes why (unit.js anTurbine) */
@@ -219,52 +218,6 @@
   }
   window.lsShellC = Object.assign(window.lsShellC || {}, { openCon });
 
-  /* ---------- training step card: the Training panel folded (dock.js ls-gdock-min) ---------- */
-  let card = null,
-    cSig = '';
-  const GD = () => window.LS_GUIDE;
-  const setMin = m => {
-    try {
-      localStorage.setItem('ls-gdock-min', JSON.stringify(!!m));
-    } catch (e) {}
-    call(() => LS_DOCK.layout());
-    if (!m) call(() => LS_DOCK.fill(true));
-  };
-  function tickCard() {
-    const g = GD(),
-      on = !!(g && g.on),
-      min = document.documentElement.classList.contains('gd-min');
-    card.hidden = !(on && min);
-    document.body.classList.toggle('sccard', !card.hidden);
-    if (card.hidden) return;
-    const L = call(() => g.steps(), []),
-      i = g.cur,
-      s = L[i];
-    if (!s) return;
-    const ok = call(() => g.stepOk(s), false),
-      rd = call(() => g.ready(), false);
-    const sig = i + '|' + ok + '|' + rd;
-    if (sig === cSig) return;
-    cSig = sig;
-    card.textContent = '';
-    const top = E('div', 'scctop');
-    top.append(E('span', '', 'Training · step ' + (i + 1) + ' of ' + L.length));
-    const open = btn('Open ▲', 'Show the whole Training panel', () => setMin(false), 'sclink');
-    top.append(open);
-    const bar = E('div', 'sccbar'),
-      fl = E('i');
-    fl.style.width = Math.round(((i + (ok ? 1 : 0)) / Math.max(1, L.length)) * 100) + '%';
-    bar.append(fl);
-    const yn = E('div', 'sccyn');
-    const sq = E('span', ok ? 'y' : 'n', ok ? 'Y' : 'N');
-    yn.append(sq, E('span', '', ok ? 'This step is done' : 'This step is not done yet'));
-    const bs = E('div', 'sccbs');
-    const nx = btn('Next step', rd ? 'Go to the next step' : 'The step must be done first', () => (call(() => g.next()), (cSig = ''), tickCard()));
-    nx.disabled = !rd;
-    bs.append(nx, btn('All steps', 'The whole Training panel with every step', () => setMin(false)));
-    card.append(top, bar, E('b', 'scct', s.t || ''), yn, bs);
-  }
-
   /* wait for the strip */
   let n = 0;
   const iv = setInterval(() => {
@@ -276,7 +229,7 @@
     clearInterval(iv);
     pill = E('button', 'pill ins', 'Instructor');
     pill.type = 'button';
-    pill.title = 'Instructor console: start state, practice sections, save point, speed, faults, trips';
+    pill.title = 'Instructor console: start state, save point, speed, faults, trips';
     pill.onclick = openCon;
     const sp = strip.querySelector('.spd');
     if (sp) sp.before(pill);
@@ -295,15 +248,8 @@
       },
       true
     );
-    card = E('div');
-    card.id = 'sccard';
-    card.setAttribute('role', 'region');
-    card.setAttribute('aria-label', 'Training step');
-    card.hidden = true;
-    document.body.append(card);
     setInterval(() => {
       pill.classList.toggle('on', !con.hidden);
-      tickCard();
     }, 1000);
   }, 250);
 })();

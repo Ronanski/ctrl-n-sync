@@ -716,7 +716,8 @@
       clearInterval(iv);
       clip.remove();
     }
-    clip.addEventListener('wheel', e => (e.preventDefault(), svg.dispatchEvent(new WheelEvent('wheel', e))), { passive: false });
+    /* Ctrl + wheel zooms the drawing (plant.js); the wheel alone scrolls the page */
+    clip.addEventListener('wheel', e => e.ctrlKey && (e.preventDefault(), svg.dispatchEvent(new WheelEvent('wheel', e))), { passive: false });
     sync();
     requestAnimationFrame(sync);
     return { root, sync };

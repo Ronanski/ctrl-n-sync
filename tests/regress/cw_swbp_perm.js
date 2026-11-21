@@ -1,6 +1,6 @@
 // Mina's live test 2026-11-04 (030 CIRCULATING WATER, beta.18 / beta.19), two findings:
 // 1. SWBP DCS START was blocked unless SWP-B ran: DITL-30 rows 17-19 (SWP A / B / C RUNNING) feed NOT -> AND -> NOT, so one running
-//    seawater pump is enough. The faceplate list (LS_DOCK.interlock) kept the row it first picked (SWP-B RUNNING, seen at a cold plant)
+//    seawater pump is enough. The faceplate list (LS_OP.interlock) kept the row it first picked (SWP-B RUNNING, seen at a cold plant)
 //    and showed it as missing while SWP-A and C ran. Check: interlock read first with all SWP stopped, then SWP-A and C started:
 //    no missing row, and the faceplate text names a missing row (no "(0 below)").
 // 2. After RELAY TRIP and RESET of SWP-A the first-out alarm stayed in the alarm band with the raw text "Output row 17 · SEAWATER
@@ -15,13 +15,13 @@ await page.evaluate(async()=>{const C=AN.sheets.find(s=>s.name==='ABC-001C');AN.
 await page.evaluate(()=>lsPlant(true));await page.waitForTimeout(2500);
 const wait=ms=>page.waitForTimeout(ms);
 // 1: the permissive of SWBP-A read at a cold plant first (all SWP stopped)
-const m0=await page.evaluate(()=>{LS_DOCK.dremote('DITL-30');const I=LS_DOCK.interlock('DITL-30','DITL-30');return I?I.miss.map(r=>r.svc):null});
+const m0=await page.evaluate(()=>{LS_OP.dremote('DITL-30');const I=LS_OP.interlock('DITL-30','DITL-30');return I?I.miss.map(r=>r.svc):null});
 ck(Array.isArray(m0)&&m0.length>0,'cold: SWBP-A start permissive missing (no seawater pump running): '+JSON.stringify(m0));
-await page.evaluate(()=>{for(const a of ['M.3353','M.3355']){LS_DOCK.dremote(a)}});await wait(1500);
-await page.evaluate(()=>{for(const a of ['M.3353','M.3355'])LS_DOCK.dmotor(a,true)});await wait(6000);
-const run=await page.evaluate(()=>['DITL-29A','DITL-29A #B','DITL-29A #C'].map(k=>{const d=LS_DOCK.dOf(k);const o=DUI.outs(d).find(o=>/RUNNING/.test(o.name));return DUI.outVal(d,o.row)}));
+await page.evaluate(()=>{for(const a of ['M.3353','M.3355']){LS_OP.dremote(a)}});await wait(1500);
+await page.evaluate(()=>{for(const a of ['M.3353','M.3355'])LS_OP.dmotor(a,true)});await wait(6000);
+const run=await page.evaluate(()=>['DITL-29A','DITL-29A #B','DITL-29A #C'].map(k=>{const d=LS_OP.dOf(k);const o=DUI.outs(d).find(o=>/RUNNING/.test(o.name));return DUI.outVal(d,o.row)}));
 ck(run[0]===1&&run[1]===0&&run[2]===1,'SWP-A and SWP-C running, SWP-B stopped: '+run.join(','));
-const m1=await page.evaluate(()=>{const I=LS_DOCK.interlock('DITL-30','DITL-30');return I?I.miss.map(r=>r.svc):null});
+const m1=await page.evaluate(()=>{const I=LS_OP.interlock('DITL-30','DITL-30');return I?I.miss.map(r=>r.svc):null});
 ck(Array.isArray(m1)&&m1.length===0,'SWBP-A start permissive complete with SWP-A and C running (missing: '+JSON.stringify(m1)+')');
 // the faceplate: DCS START enabled (REMOTE, MAN, stopped)
 const fp=await page.evaluate(async()=>{const reg=window.LS_FPREG||{};const k=Object.keys(reg).find(k=>/DITL-30$/.test(k)||k==='DITL-30');if(!k)return {err:'no faceplate key '+Object.keys(reg).filter(x=>/30/.test(x)).join(',')};reg[k].open();await new Promise(r=>setTimeout(r,1200));
@@ -29,12 +29,12 @@ const fp=await page.evaluate(async()=>{const reg=window.LS_FPREG||{};const k=Obj
 if(fp.err)console.log('INFO faceplate not checked: '+fp.err);else{ck(fp.dis===false,'SWBP-A faceplate: DCS START enabled ('+fp.why+')');ck(!/\(0 below\)/.test(fp.why),'faceplate text has no "(0 below)"')}
 await page.evaluate(()=>window.LS_FPOP&&LS_FPOP.close());
 // 2: RELAY TRIP of SWP-A, then RESET
-const usr=await page.evaluate(()=>{const s=LS_DOCK.dOf('DITL-29A');const u=(s.nl.usr||[]).find(x=>/ELECTRICAL/.test(x.txt||x.name||x.svc||''))||(s.nl.usr||[])[0];if(!u)return null;s.usw=s.usw||{};s.usw[u.key]=true;WORLD.busy=true;return u.key});
+const usr=await page.evaluate(()=>{const s=LS_OP.dOf('DITL-29A');const u=(s.nl.usr||[]).find(x=>/ELECTRICAL/.test(x.txt||x.name||x.svc||''))||(s.nl.usr||[])[0];if(!u)return null;s.usw=s.usw||{};s.usw[u.key]=true;WORLD.busy=true;return u.key});
 ck(!!usr,'SWP-A ELECTRICAL TROUBLE switch found ('+usr+')');await wait(4000);
 const a1=await page.evaluate(()=>lsActiveAlarms().list.filter(a=>/DITL-29A$/.test(String(a.sh).replace(/^\(\d+\)/,''))).map(a=>a.text));
 ck(a1.length===1,'after TRIP: exactly one SWP-A trip alarm (no duplicate): '+JSON.stringify(a1));
 ck(a1.every(t=>!/Output row|CRT \(ANN\)/.test(t)),'after TRIP: alarm text is clean (no "Output row", no "CRT (ANN)")');
-await page.evaluate(k=>{const s=LS_DOCK.dOf('DITL-29A');s.usw[k]=false;WORLD.busy=true},usr);await wait(4000);
+await page.evaluate(k=>{const s=LS_OP.dOf('DITL-29A');s.usw[k]=false;WORLD.busy=true},usr);await wait(4000);
 const a2=await page.evaluate(()=>lsActiveAlarms().list.filter(a=>/DITL-29A$/.test(String(a.sh).replace(/^\(\d+\)/,''))).map(a=>a.text));
 ck(a2.length===0,'after RESET: no SWP-A trip alarm left (active: '+JSON.stringify(a2)+')');
 // 3: hypochlorite dosing pump B and unloading pump: field START / STOP (they had "no plant model", no buttons)

@@ -445,7 +445,7 @@
             r
           });
         } else if (r.k === 'ditl') {
-          const ds = window.LS_DOCK && LS_DOCK.dOf ? LS_DOCK.dOf(r.d) : null,
+          const ds = window.LS_OP && LS_OP.dOf ? LS_OP.dOf(r.d) : null,
             m = ds && window.lsAlarms ? lsAlarms.motState(ds) : null;
           o.set(
             m
@@ -1486,7 +1486,7 @@
           liveTick();
         }
       }),
-      E('button', { cls: 'b', txt: 'Fit', on: () => (cur && cur.g ? draw(cur.g) : fit()) }),
+      E('button', { cls: 'b', txt: 'Fit', title: 'Show the whole page. Ctrl + mouse wheel zooms the drawing', on: () => (cur && cur.g ? draw(cur.g) : fit()) }),
       E('button', {
         cls: 'b plvb',
         txt: 'Values',
@@ -1603,6 +1603,9 @@
     svg.addEventListener(
       'wheel',
       e => {
+        /* audit beta.234 finding (c): the wheel scrolls the page; Ctrl + wheel (and a touchpad pinch, which comes with ctrlKey) zooms the
+           drawing. The zoom buttons and the readable-size zoom of the shell send their own wheel events (not from the mouse): they zoom */
+        if (e.isTrusted && !e.ctrlKey) return;
         e.preventDefault();
         if (!vb) return;
         const r = svg.getBoundingClientRect(),

@@ -88,7 +88,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     AN.plantCold();
     await run(30);
     o.cold = { ia: snap('ia'), pa: snap('pa') };
-    set('DITL-113', 5, true); /* the field operator starts IA compressor A at its local panel (guide.js LS_DOCK.fieldRow) */
+    set('DITL-113', 5, true); /* the field operator starts IA compressor A at its local panel (guide.js LS_OP.fieldRow) */
     await run(360);
     o.loc = snap('ia');
     return o;

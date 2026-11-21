@@ -17,7 +17,7 @@
     const A = window.AN || {},
       tb = document.body.dataset.tab;
     if (A._loadP || A._startPending) return;
-    if (!after && (tb === 'home' || tb === 'training' || A._askNo)) return;
+    if (!after && (tb === 'home' || A._askNo)) return;
     let d = document.getElementById('lsask');
     if (d) {
       d._after = after || d._after;
@@ -372,10 +372,6 @@
   }
   function setTab(t, keep) {
     if (t === 'tcs' || !TABS.some(x => x[0] === t)) t = 'logic';
-    /* user 2026-10-30: while the Training dock is on, the centre is the HMI (the Training list and Home are not shown) */
-    try {
-      if (window.LS_DOCK && LS_DOCK.tabFix) t = LS_DOCK.tabFix(t);
-    } catch (e) {}
     /* the PLANT VIEW is in its own window: bring that window to the front */
     if (t === 'operate' && pvW && !pvW.closed) {
       pvW.focus();
@@ -418,7 +414,7 @@
     /* retest #13 (R5: ABC-057 / DITL-29A of an earlier visit still loaded behind the Training page): on HOME and TRAINING the logic
        workspace is not shown, not read and not focusable (inert, aria-hidden; CSS visibility in app.css); the guided start opens the
        sheet of its step when it goes to the Logic page */
-    const away = t === 'home' || t === 'training';
+    const away = t === 'home';
     for (const id of ['cv', 'side', 'anp', 'tabs', 'anptab', 'meta', 'anmeta'])
       try {
         const x = $(id);
@@ -434,10 +430,6 @@
        TRAINING never hold a drawing, with or without the Gabay; the Gabay opens the sheet of its step when the Logic page opens */
     blankLogic(away);
     if (t !== 'logic') document.body.classList.remove('lsfield');
-    /* retest #2 #48: the Logic page opened while the Gabay runs (rail button, back from the Plant view): the centre shows the sheet of
-       the step ("Sundan ng gitna"), or says that the step is a field step */
-    if (t === 'logic' && from !== 'logic' && window.LS_GUIDE && LS_GUIDE.on && window.LS_DOCK && LS_DOCK.follow)
-      LS_DOCK.follow();
   }
   /* retest #13: Clear all ticks forgets the category the Logic page had (home.js) */
   window.lsLogicForget = () => {
@@ -475,8 +467,7 @@
     operate: 'PLANT VIEW: click a valve or controller = faceplate',
     library: 'LIBRARY: search an address, tag or description',
     tools: 'TOOLS: tests, drawing checks, simulation switches',
-    home: 'HOME: pick what to do · Ctrl+K = search',
-    training: 'TRAINING: tick each step as you do it'
+    home: 'HOME: pick what to do · Ctrl+K = search'
   };
   window.lsSetTab = setTab;
   function hint() {
@@ -920,7 +911,6 @@
       Logic: 'logic',
       TCS: 'wave',
       Library: 'book',
-      Training: 'learn',
       Tools: 'tool'
     };
     tabs.querySelectorAll('button').forEach(b => {
@@ -1818,7 +1808,7 @@
       const iv2 = setInterval(() => {
         if (
           t0 === 'tools' ||
-          ((t0 === 'home' || t0 === 'training') && window.lsHome) ||
+          (t0 === 'home' && window.lsHome) ||
           (t0 === 'operate' && window.lsPlant) ||
           (t0 === 'library' && window.lsLibrary) ||
           ++k > 40
@@ -1892,7 +1882,7 @@
     btn(
       'loadcold',
       'Cold (start-up from zero)',
-      'Reset, the 150 MW anchors, then the plant cold: drum 0 kg/cm2, water and bed 30 C, feeders and fans stopped, oil valves closed, every controller LOCAL + MANUAL 0 %. Training has the procedure.',
+      'Reset, the 150 MW anchors, then the plant cold: drum 0 kg/cm2, water and bed 30 C, feeders and fans stopped, oil valves closed, every controller LOCAL + MANUAL 0 %.',
       () => {
         AN._startP = AN.loadStart('cold', true).then(
           n => {
@@ -1930,7 +1920,7 @@
       'Hot restart: drum 100 kg/cm2, bed about 700 C, turbine HOT. Press Run, then start the utilities and fans; the logic decides the purge.'
     );
     /* 3.2.1 SAVE POINTS (user 2026-11-08 "approved lahat", testing plan 1): the whole plant at this moment (every ABC and DITL sheet, the
-       turbine, the plant models, the modes, the Training ticks and step) is kept in this browser (IndexedDB) under a name; LOAD puts it
+       turbine, the plant models, the modes) is kept in this browser (IndexedDB) under a name; LOAD puts it
        back and pauses, so a test goes on from the step before a fault instead of from Cold */
     d.head('Save points (whole plant)');
     const SVDB = () =>
@@ -1978,7 +1968,7 @@
     btn(
       'savenow',
       'SAVE the plant now',
-      'Keeps the whole plant at this moment (ABC, DITL, turbine, plant model, modes, Training) in this browser under a name. LOAD puts it back.',
+      'Keeps the whole plant at this moment (ABC, DITL, turbine, plant model, modes) in this browser under a name. LOAD puts it back.',
       () => {
         if (AN._loading) return msg('Wait: a starting state is still loading.');
         svAsk('Name of this save point:', svName()).then(nm => nm && svSave(nm));
@@ -1991,9 +1981,6 @@
       msg('Saving the whole plant...');
       return svCap()
         .then(sv => {
-          const G = window.LS_GUIDE,
-            L = window.LS_LIVE;
-          sv.tr = { lat: L && L.done ? JSON.parse(JSON.stringify(L.done())) : null, cur: G && G.on ? G.cur : null };
           sv.id = 'sv' + Date.now();
           sv.at = Date.now();
           sv.name = nm;
@@ -2046,13 +2033,9 @@
       if (AN.pauseOn && AN.run) AN.pauseOn();
       msg('Loading save point ' + e.name + '...');
       return Promise.resolve(DITL150.savePut({ kf: e.kf, kd: e.kd, ver: e.ver || '' })).then(() => {
-        const G = window.LS_GUIDE,
-          Lv = window.LS_LIVE;
         try {
           svFltPut(e.flt);
         } catch (er) {}
-        if (e.tr && e.tr.lat && Lv && Lv.load) Lv.load(e.tr.lat);
-        if (e.tr && e.tr.cur != null && G && G.on && G.open) G.open(e.tr.cur);
         if (AN.pauseOn && AN.run) AN.pauseOn();
         if (AN.paint) AN.paint();
         if (window.lsShellC && lsShellC.reset) lsShellC.reset();

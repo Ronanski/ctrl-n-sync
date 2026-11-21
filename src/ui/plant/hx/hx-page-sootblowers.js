@@ -18,7 +18,7 @@
    - N-1040 and N-1042 on the gas side of the rotary air heater (PT-SB1040 hot end, PT-SB1042 cold end);
    - drains A and B (TT-SB1056, TT-SB1057) with their bypass valves XV-SB1054 and XV-SB1059 to the blowdown tank.
    THE STATES are read from the logic: a blower is red while its "SOOTBLOWER OPERATING" output is on (DITL-80A ~ 80E, air
-   heater blowers DITL-80F), permissives and sequence DITL-80A, steam supply valve DITL-80S, drain valves DITL-80R, alarms
+   heater blowers DITL-80F) or its lance is out of the retract limit (DITL-80G row 12, a start by hand), permissives and sequence DITL-80A, steam supply valve DITL-80S, drain valves DITL-80R, alarms
    DITL-80S / 80Q.
    NO-SOURCE in the app: number of blowers blowing, forward / reverse and warm-up timers, MV-SB1001 position in %. */
 (function () {
@@ -26,7 +26,11 @@
   const B = HX.B;
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
-  const op = (sheet, row, tag) => 'data-dy="' + sheet + '|o|' + row + '" data-on="' + tag + '" data-off="' + tag + '"';
+  /* a blower blows while its OPERATING output is on (the AUTO program) or its lance is out of the retract limit (DITL-80G row 12, its
+     own copy for each blower: a start by hand in MANUAL leaves the OPERATING output off), the same rule as its faceplate (fp-pop.js) */
+  const away = tag => (tag === 'N-1011' ? 'DITL-80G' : 'DITL-80G #' + tag) + '|i|11|neg';
+  const op = (sheet, row, tag) =>
+    'data-dy="' + sheet + '|o|' + row + (/^N-10[1-3]\d$/.test(tag) ? '||' + away(tag) : '') + '" data-on="' + tag + '" data-off="' + tag + '"';
   /* the back pass: origin = top left corner of its casing (hx-real.js R.backpass, 216 wide, 512 high) */
   const BX = 700,
     BY = 120,

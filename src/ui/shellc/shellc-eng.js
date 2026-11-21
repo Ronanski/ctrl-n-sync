@@ -1,10 +1,10 @@
 /* ===== RE-SHELL LAYOUT C, step 4 of 7 (build plan approved by the user 2026-11-09 "G"; mockup C, artifact RNYt8ceyxutMvDyEt2UFnu,
    screens pc1366-09 and pc1366-17): the ENGINEER MODE. Only with ?shell=c (body.sc) and the Logic page (the Engineer button of the strip).
-   - a tool rail on the left: Logic side by side, Library, Curves, Loop check, Recent, Sheet tools;
+   - a tool rail on the left: Logic side by side, Library, Curves, Recent, Sheet tools;
    - Logic side by side: the Plant view page (left) and the logic sheet (right), both live from the one plant; under the sheet
      "Why is it X?" (AN.why, src/ui/shell/why.js) with Open analog sheet, Signal details (the info card, lsInfo) and Force a signal;
    - top right: Logic View | Run (the VIEW / RUN of the band) and Plant model On | Off (the Tools switch #pmbtn);
-   - Library (lsLibrary), Curves (lsFx), Loop check (LS_LOOP) open in the right-hand pane.
+   - Library (lsLibrary), Curves (lsFx) open in the right-hand pane.
    Nothing here runs logic of its own: it places the existing pages and presses the existing buttons. One plant, no reset. ===== */
 (function () {
   let want = false;
@@ -38,7 +38,6 @@
     ['logic', 'Logic side by side', 'The plant page and its logic sheet side by side, with Why is it?'],
     ['lib', 'Library', 'Input and output list, memory list, wiring, relay and sequence of events, calculations'],
     ['fx', 'Curves', 'The linear curves of the analog drawings (function of x): points, chart, what each one does'],
-    ['loop', 'Loop check', 'Check one loop step by step: a real press on the plant page against the logic'],
     ['recent', 'Recent', 'Sheets and faceplates you opened'],
     [
       'sheet',
@@ -51,7 +50,7 @@
     els = null;
 
   /* ---------- the existing pages that must stay beside each other (app.js setTab hides the Plant view on the Logic page, the Library
-     and the Plant view close each other): in the Engineer mode their "close" is held, the same way the loop check split does it ---------- */
+     and the Plant view close each other): in the Engineer mode their "close" is held, as the old split view did ---------- */
   const raw = {};
   function wrap() {
     for (const k of ['lsPlant', 'lsLibrary']) {
@@ -66,16 +65,6 @@
       for (const p in f) w[p] = f[p];
       window[k] = w;
     }
-    /* the loop check opens the plant page with lsSetTab('operate'); in the Engineer mode the plant page is already on the left */
-    const st = window.lsSetTab;
-    if (typeof st === 'function' && !st._sce) {
-      const w = function (t) {
-        if (on && tool === 'loop' && t === 'operate') return;
-        return st.apply(this, arguments);
-      };
-      w._sce = 1;
-      window.lsSetTab = w;
-    }
   }
   const rawCall = (k, v) => call(() => (raw[k] || window[k])(v));
 
@@ -88,7 +77,7 @@
       return s ? { k: 'an', name: s.name, title: s.title || '' } : null;
     }
     const D = call(() => S.sheets[S.cur], null);
-    return D ? { k: 'dig', name: base(call(() => LS_DOCK.dName(D), D.name)), title: D.title || '' } : null;
+    return D ? { k: 'dig', name: base(call(() => LS_OP.dName(D), D.name)), title: D.title || '' } : null;
   }
   /* the tags of an analog sheet (the names of its wires) against the tags of each page: its transmitter values (data-v) and its
      controllers (mach ctl / io); the page with the most is the page of that sheet. A digital sheet: the page whose machine is drawn on it */
@@ -134,7 +123,7 @@
           m.mov,
           m.sti && m.sti[0],
           m.sto && m.sto[0],
-          m.ad && !/@/.test(m.ad) ? call(() => LS_DOCK.dName(LS_DOCK.dOf(m.ad)), null) : null
+          m.ad && !/@/.test(m.ad) ? call(() => LS_OP.dName(LS_OP.dOf(m.ad)), null) : null
         ];
         if (L.some(x => x && base(x) === b)) return d.id;
       }
@@ -220,13 +209,11 @@
     tool = k;
     if (was === 'lib' && k !== 'lib') rawCall('lsLibrary', false);
     if (was === 'fx' && k !== 'fx') call(() => $('fxws').classList.contains('open') && $('fxclose').click());
-    if (was === 'loop' && k !== 'loop') call(() => LS_LOOP.toggle(false));
     if (k === 'lib') rawCall('lsLibrary', true);
     if (k === 'fx' && !call(() => window.lsFx && lsFx(), false)) {
       tool = 'logic';
       msg('The curves are not loaded yet: open an analog sheet first');
     }
-    if (k === 'loop') call(() => LS_LOOP.toggle(true));
     if (k === 'recent' || k === 'sheet') fillPane();
     paint();
     if (k === 'logic' && was !== 'logic') refit();
@@ -463,19 +450,16 @@
         if (t !== 'operate') rawCall('lsPlant', false);
         if (tool === 'lib' && t !== 'library') rawCall('lsLibrary', false);
         if (tool === 'fx') call(() => $('fxws').classList.contains('open') && $('fxclose').click());
-        if (tool === 'loop') call(() => LS_LOOP.toggle(false));
       }
       paint();
       refit();
     }
     if (!on) return;
-    /* a page closed by its own button (Curves ✕, Loop check ✕): back to the logic */
+    /* a page closed by its own button (Curves ✕): back to the logic */
     if (tool === 'fx' && !call(() => $('fxws').classList.contains('open'), false)) setTool('logic');
-    if (tool === 'loop' && call(() => $('lcdock').hidden, false)) setTool('logic');
     const pw = $('plantws');
     if (pw && pw.style.display !== 'grid' && !B.classList.contains('pvout')) rawCall('lsPlant', true);
-    /* Mina, live test of 276: at 1024 a Training Show left about 160 px for the sheet: below 1280 px the sheet of the step has the place of the plant page */
-    B.classList.toggle('scenopl', B.classList.contains('pvout') || (document.documentElement.classList.contains('gd-lv') && innerWidth < 1280));
+    B.classList.toggle('scenopl', B.classList.contains('pvout'));
     follow();
     /* where you are (Plant › page), kept at the start of the plant page bar */
     const pk = picker(),

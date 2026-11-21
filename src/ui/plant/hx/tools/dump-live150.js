@@ -27,7 +27,7 @@ for(const v of opts.filter(v=>/^MK|^CWN$/.test(v))){
 }
 /* controllers of the operator overview: tag, name, pv, sv, mv, mode, unit */
 res._ctl=await page.evaluate(()=>{const o=[];try{for(const s of AN.sheets){for(const c of (s.ctrls||s.controllers||[])){o.push({sheet:s.name,tag:c.tag||c.name,kind:c.kind||c.type})}}}catch(e){o.push({err:String(e)})}return o});
-res._keys=await page.evaluate(()=>({AN:Object.keys(window.AN||{}).slice(0,200),LS:Object.keys(window).filter(k=>/^LS_|^HMI|^DUI|^WORLD|^PLANT/.test(k)),live:window.LS_LIVE?Object.keys(LS_LIVE):[],dock:window.LS_DOCK?Object.keys(LS_DOCK):[],fpop:window.LS_FPOP?Object.keys(LS_FPOP):[],sheets:AN.sheets.map(s=>s.name+'|'+(s.title||''))}));
+res._keys=await page.evaluate(()=>({AN:Object.keys(window.AN||{}).slice(0,200),LS:Object.keys(window).filter(k=>/^LS_|^HMI|^DUI|^WORLD|^PLANT/.test(k)),live:window.LS_LIVE?Object.keys(LS_LIVE):[],dock:window.LS_OP?Object.keys(LS_OP):[],fpop:window.LS_FPOP?Object.keys(LS_FPOP):[],sheets:AN.sheets.map(s=>s.name+'|'+(s.title||''))}));
 res._strip=await page.evaluate(()=>[...document.querySelectorAll('#scstrip .sck')].map(c=>c.textContent.trim().replace(/\s+/g,' ')));
 res._alarms=await page.evaluate(()=>{try{return lsShellC.alarms().slice(0,40).map(a=>a.nm||a.tag||JSON.stringify(a).slice(0,80))}catch(e){return String(e)}});
 fs.writeFileSync(out,JSON.stringify(res,null,1));console.log('ok',Object.keys(res).length,Object.entries(res).filter(([k])=>!k.startsWith('_')).map(([k,v])=>k+':'+v.v.length+'/'+v.ctl.length+'/'+v.st.length).join(' '));await browser.close()})().catch(e=>{console.error(e);process.exit(1)});

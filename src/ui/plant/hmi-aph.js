@@ -4,7 +4,7 @@
    in an HTML layer over the plant svg that follows its pan and zoom (HSYM.layer). LIGHT (PENDING_HMI_BUILD rule 5): no CSS / SMIL
    animation on the drawing; the pipe flows and the streams in the rotor are in an overlay svg, and everything that moves (flows,
    rotor, top view, gears, fans, shafts) steps on the one 15 Hz clock of HSYM (the mockup ran ~30 fps at 6x CPU throttle).
-   Live: main drive motor M1 of DITL-43 (run state LS_DOCK.mst), back-up air motor of DITL-44 (its air valve SV-PA1052, DO O.029F), the
+   Live: main drive motor M1 of DITL-43 (run state LS_OP.mst), back-up air motor of DITL-44 (its air valve SV-PA1052, DO O.029F), the
    fans (memory list M.3302 PAF / M.3303 SAF / M.3304 IDF) move the air and gas flows, the values are the logic where a sheet reads
    the transmitter, else the plant estimate of the 007 page (PLANT_V2.EST, the same numbers on both pages). #59: click on a motor =
    the CONTROL faceplate, the Y / N square = PERMISSIVE · TREND · MONITOR (Y red = complete, N green). */
@@ -368,7 +368,7 @@
     /* the air valve: DITL-44 O.029F (SV-PA1052 open command), else its point of the I/O list */
     let svIO = null;
     live('', 'SVPA1052', v => (svIO = v == null ? null : v > 0.5 ? 1 : 0));
-    const Dk = () => window.LS_DOCK;
+    const Dk = () => window.LS_OP;
     const tick = () => {
       if (!pg.isConnected) return iv.stop();
       let s = null,

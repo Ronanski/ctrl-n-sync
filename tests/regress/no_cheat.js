@@ -54,7 +54,7 @@ const perms = p =>
       for (const a of s.a || [])
         if (a && a.stop && a.ad && !(a.ad in o))
           try {
-            const I = LS_DOCK.interlock(a.ad);
+            const I = LS_OP.interlock(a.ad);
             if (I && I.live) o[a.ad] = I.sheet + ': ' + I.miss.map(m => m.no).sort((x, y) => x - y).join(',');
           } catch (e) {}
     return o;

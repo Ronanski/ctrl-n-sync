@@ -1,6 +1,6 @@
 /* ===== RE-SHELL LAYOUT C, step 2 of 7 (build plan approved by the user 2026-11-09): the start screen, the overview of the unit (9 system
    tiles and the alarm tile) and the alarm list with its Events tab. Only with ?shell=c (body.sc, shellc.js). It READS the plant (LS_LIVE,
-   LS_DOCK.mst, lsAlarms, lsEvents) and drives only what the app already has: the starting-state buttons (load150 / loadcold / loadwarm /
+   LS_OP.mst, lsAlarms, lsEvents) and drives only what the app already has: the starting-state buttons (load150 / loadcold / loadwarm /
    loadhot), the save points (lsSaves), the Plant view page picker, ACK. Nothing here touches the engine. ===== */
 (function () {
   let want = false;
@@ -137,7 +137,7 @@
       const m = d.mach[id];
       if (m.ctl || !(m.ad || m.fld)) continue;
       const s = call(
-        () => (m.fld ? (AN.fieldState && AN.fieldState()[m.fld] ? 'RUN' : 'STOP') : LS_DOCK.mst(m.ad)),
+        () => (m.fld ? (AN.fieldState && AN.fieldState()[m.fld] ? 'RUN' : 'STOP') : LS_OP.mst(m.ad)),
         null
       );
       if (s == null) continue;
@@ -483,7 +483,7 @@
             m.mov,
             m.sti && m.sti[0],
             m.sto && m.sto[0],
-            m.ad && !/@/.test(m.ad) ? call(() => LS_DOCK.dName(LS_DOCK.dOf(m.ad)), null) : null
+            m.ad && !/@/.test(m.ad) ? call(() => LS_OP.dName(LS_OP.dOf(m.ad)), null) : null
           ];
         if (L.some(x => x && base(x) === b)) {
           pg = d.id;
@@ -864,8 +864,6 @@
       close();
       /* Mina beta.210: the old "No starting state picked" question showed behind the loading bar: the state is picked here */
       if (window.AN) AN._askNo = 1;
-      /* Mina, live test of 271: a Training left on from before does not follow this new plant */
-      call(() => LS_DOCK.quit());
       stale = true;
       /* Mina beta.264: Engineer from here was covered by the overview: it leaves the overview like the Engineer button of the bar */
       loadState(sel).then(() => {

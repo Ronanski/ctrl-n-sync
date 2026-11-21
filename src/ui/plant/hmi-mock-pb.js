@@ -1,12 +1,12 @@
 /* 3.2.1 (LISA): push button faceplates on two generated mockup pages (tools/hmi-mock/p12.py, p15.py: not edited by hand), added here at
    run time, before the page is drawn: [data-hit] on a label of the mockup + a mach entry with df = the push button faceplate of fp-pop.js
    (LS_FPOP.pb, the same as the debris filters): STATUS = an output row of the drawing, DCS buttons = input rows of the same drawing
-   (LS_DOCK.dpress). The drawing decides what a press does: nothing is forced here. */
+   (LS_OP.dpress). The drawing decides what a press does: nothing is forced here. */
 (function () {
   if (!window.LS_MOCK) return;
   const adr = (d, r) => {
     try {
-      const s = window.LS_DOCK && LS_DOCK.dOf(d),
+      const s = window.LS_OP && LS_OP.dOf(d),
         t = s && s.cells && s.cells[r + ':T'];
       return t && t.length ? String(t[0].t) : '';
     } catch (e) {

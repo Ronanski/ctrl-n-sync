@@ -98,7 +98,7 @@ const html =
     DITL150.apply();
     AN.startState = 'plantLoad150';
     await step(60);
-    const ok = LS_DOCK.dmotor('M.3350', false);
+    const ok = LS_OP.dmotor('M.3350', false);
     await step(10);
     await sleep(1500);
     return { ok, a: LS_LIVE.val('M.3350'), ev: lsEvents.slice(0, 4).map(e => e.kind + ' ' + e.text) };

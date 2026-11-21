@@ -35,10 +35,16 @@
     }
   })();
   /* user 2026-10-15: SV / MV / manual value in a faceplate are changed with the ▲ ▼ buttons only: no keyboard on any device */
+  /* audit beta.234 finding (b): the box looked like a typing box (a text cursor, a focus ring, Enter did nothing): it reads as a value
+     now, and says where the value is changed */
   const noKb = el => {
     if (el) {
       el.readOnly = true;
       el.setAttribute('inputmode', 'none');
+      el.tabIndex = -1;
+      el.classList.add('nokb');
+      el.title = 'Change it with the ▲ ▼ buttons';
+      el.addEventListener('mousedown', e => e.preventDefault());
     }
     return el;
   };

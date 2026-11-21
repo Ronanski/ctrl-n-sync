@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /* Operator text check (Mina B79-2, beta.84): no team or build name in any string the operator reads.
-   Reads every string literal of the Training sources, comments skipped. Names in comments are fine. */
+   Reads every string literal of the operator sources (live reader, operator API), comments skipped. Names in comments are fine. */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..', '..');
-const FILES = ['src/ui/training/live.js', 'src/ui/training/dock.js'];
+const FILES = ['src/ui/plant/live.js', 'src/ui/plant/op-api.js'];
 const BAD = /\b(Mina|Jennie|Chaewon|Lisa|Sakura|Yuna|Giselle|Karina|Ros[eé]|Winter|Ningning)\b|\bbeta\.\d+|\bB\d{2,3}-\d\b/;
 
 function strings(src) {

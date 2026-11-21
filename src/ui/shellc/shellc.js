@@ -264,7 +264,7 @@
       const st = document.getElementById('scstrip'),
         band = document.getElementById('crband'),
         br = band.getBoundingClientRect(),
-        /* Mina beta.220: the rail and the dock are position: fixed, whose offsetParent is always null: seen by their boxes instead */
+        /* Mina beta.220: the rail is position: fixed, whose offsetParent is always null: seen by their boxes instead */
         vis = el =>
           !!(
             el &&
@@ -272,8 +272,7 @@
             getComputedStyle(el).visibility !== 'hidden' &&
             getComputedStyle(el).display !== 'none'
           ),
-        rail = document.getElementById('crrail'),
-        dock = document.getElementById('gdock');
+        rail = document.getElementById('crrail');
       let ml = 0,
         mr = 0;
       let rl = 0;
@@ -281,10 +280,6 @@
         const r = rail.getBoundingClientRect();
         rl = Math.max(0, Math.ceil(r.right));
         if (r.top < br.bottom && r.right > br.left + 1) ml = Math.ceil(r.right - br.left) + 6;
-      }
-      if (vis(dock)) {
-        const d = dock.getBoundingClientRect();
-        if (d.top < br.bottom - 1 && d.left < br.right - 1 && d.left > br.left) mr = Math.ceil(br.right - d.left) + 6;
       }
       /* the whole bar (the strip and the app's own buttons beside it) keeps clear: padding of the bar, over the !important of shellc.css */
       const mls = Math.max(8, ml) + 'px',
