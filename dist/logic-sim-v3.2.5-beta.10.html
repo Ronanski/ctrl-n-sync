@@ -141409,6 +141409,18 @@ function anLphStep(U, dt) {
                   ash silos): the snapshot 4.56 / 3.65 / 3.89 m.
      MIA-CL1061-x1  coal feeder totalized coal (t): the feeder feedrate (ABC-004x AI0480 / 0512 / 0544, T/H) summed in time since
                   the start of the simulator. */
+/* beta.241 (Rosé, real-click test of beta.240: the Reheat page showed '-----' on first open while paused). The display transmitters that
+   only the model writes (U.tt: TT-MS1007, PICR19011 ~ 13 ...) are made by the tag steps at the end of anLphStep, so a starting state or
+   save point captured before a key existed had no value for it until the first step. A load runs the tag steps once with dt 0: they
+   read the plant as it stands and write the display values only (their lags and sums hold at dt 0). Called by anStateApply (state.js) */
+function anTagsNow(U) {
+  if (!U || !U.on) return;
+  const ld = Math.max(0, +U.ms || 0) / AN_LP.F0;
+  anCdTagStep(U, ld);
+  anFwTagStep(U);
+  anAsTagStep(U, 0);
+  anHxTagStep(U, 0);
+}
 function anHxTagStep(U, dt) {
   const C = U.hxtC || (U.hxtC = {}),
     ai = k => anUnitVal(C[k] || (C[k] = anUnitAIs(k))),
@@ -141599,7 +141611,7 @@ function anAsTagStep(U, dt) {
     Taux = anUnitVal(C.taux || []),
     t15 = gland ? (isFinite(Taux) ? Taux : Ta) + 21 * L : Ta,
     tgs = gland ? t15 + 107 * L : Ta,
-    lag = (k, x) => (U[k] = isFinite(U[k]) && dt > 0 ? U[k] + ((x - U[k]) * Math.min(dt, 300)) / 300 : x);
+    lag = (k, x) => (U[k] = !isFinite(U[k]) ? x : dt > 0 ? U[k] + ((x - U[k]) * Math.min(dt, 300)) / 300 : U[k]); /* beta.241: dt 0 (anTagsNow at a load) holds the lag */
   lag('asT15', t15);
   lag('asTgs', tgs);
   Object.assign(U.tt || (U.tt = {}), {
@@ -150417,6 +150429,7 @@ function anStateApply(kf) {
   anXsPut(M ? null : st.xs); /* the one-address groups follow the sheet order: rebuilt when it changed */
   AN._asc = null; /* the step sets kept while a starting state loads */
   AN._gen = (AN._gen || 0) + 1; /* new objects (engine/sync.js refs) */
+  if (AN.unit && typeof anTagsNow === 'function') anTagsNow(AN.unit); /* beta.241: the display values of the loaded plant (unit.js) */
 }
 /* ===== ENGINE SYNC (3.2.0 Web Worker, stage c): the engine of the worker and the mirror of the page hold the same state; after a start
    from one keyframe (engine/state.js + the DITL keyframe of src/digital/parts/03d-state.js) only what changed goes across.
@@ -155923,7 +155936,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build f6847b7'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 2c6f0db'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -160593,9 +160606,19 @@ AN.soeTrip = () => {
   const Z = AN_SOE,
     P = Z.pts || [],
     lit = kind => P.filter(p => p[3] === kind && Z.last[p[0].name + '|' + (p[2] + p[1])] === 1);
-  /* the DCS first out = the memory of DITL-05 / 06 that is lit; the time = its record */
-  const fo = lit('fo')[0],
-    foAt = fo ? (Z.log.filter(x => x.kind === 'fo' && x.name === fo[4] && x.on === 1).pop() || {}).t : null;
+  /* the DCS first out = the memory of DITL-05 / 06 that is lit FIRST; the time = its record. Beta.241 (Jennie, HOT save by real clicks
+     2026-11-22: after a turbine trip the first out read SAF STOPPED, which came minutes later): the memories of the drawing latch each
+     on its own until RESET FIRST OUT, so more than one stands after a trip; the first out is the one whose record is the oldest (one
+     scan = one time; in the same scan the order of the drawing), not the first lit row of the drawing */
+  const setAt = p => {
+      const r = Z.log.filter(x => x.kind === 'fo' && x.name === p[4] && x.on === 1).pop();
+      return r ? r.t : Infinity;
+    },
+    fo = lit('fo')
+      .map((p, i) => [p, setAt(p), i])
+      .sort((a, b) => a[1] - b[1] || a[2] - b[2])
+      .map(x => x[0])[0],
+    foAt = fo ? (isFinite(setAt(fo)) ? setAt(fo) : null) : null;
   const mftOn = lit('mft').length > 0;
   const U = AN.unit,
     c = U && (U.tc || U.tco),
@@ -313879,6 +313902,18 @@ function anLphStep(U, dt) {
                   ash silos): the snapshot 4.56 / 3.65 / 3.89 m.
      MIA-CL1061-x1  coal feeder totalized coal (t): the feeder feedrate (ABC-004x AI0480 / 0512 / 0544, T/H) summed in time since
                   the start of the simulator. */
+/* beta.241 (Rosé, real-click test of beta.240: the Reheat page showed '-----' on first open while paused). The display transmitters that
+   only the model writes (U.tt: TT-MS1007, PICR19011 ~ 13 ...) are made by the tag steps at the end of anLphStep, so a starting state or
+   save point captured before a key existed had no value for it until the first step. A load runs the tag steps once with dt 0: they
+   read the plant as it stands and write the display values only (their lags and sums hold at dt 0). Called by anStateApply (state.js) */
+function anTagsNow(U) {
+  if (!U || !U.on) return;
+  const ld = Math.max(0, +U.ms || 0) / AN_LP.F0;
+  anCdTagStep(U, ld);
+  anFwTagStep(U);
+  anAsTagStep(U, 0);
+  anHxTagStep(U, 0);
+}
 function anHxTagStep(U, dt) {
   const C = U.hxtC || (U.hxtC = {}),
     ai = k => anUnitVal(C[k] || (C[k] = anUnitAIs(k))),
@@ -314069,7 +314104,7 @@ function anAsTagStep(U, dt) {
     Taux = anUnitVal(C.taux || []),
     t15 = gland ? (isFinite(Taux) ? Taux : Ta) + 21 * L : Ta,
     tgs = gland ? t15 + 107 * L : Ta,
-    lag = (k, x) => (U[k] = isFinite(U[k]) && dt > 0 ? U[k] + ((x - U[k]) * Math.min(dt, 300)) / 300 : x);
+    lag = (k, x) => (U[k] = !isFinite(U[k]) ? x : dt > 0 ? U[k] + ((x - U[k]) * Math.min(dt, 300)) / 300 : U[k]); /* beta.241: dt 0 (anTagsNow at a load) holds the lag */
   lag('asT15', t15);
   lag('asTgs', tgs);
   Object.assign(U.tt || (U.tt = {}), {
@@ -322911,6 +322946,7 @@ function anStateApply(kf) {
   anXsPut(M ? null : st.xs); /* the one-address groups follow the sheet order: rebuilt when it changed */
   AN._asc = null; /* the step sets kept while a starting state loads */
   AN._gen = (AN._gen || 0) + 1; /* new objects (engine/sync.js refs) */
+  if (AN.unit && typeof anTagsNow === 'function') anTagsNow(AN.unit); /* beta.241: the display values of the loaded plant (unit.js) */
 }
 
 /* ---- engine/sync.js ---- */
@@ -324466,9 +324502,19 @@ AN.soeTrip = () => {
   const Z = AN_SOE,
     P = Z.pts || [],
     lit = kind => P.filter(p => p[3] === kind && Z.last[p[0].name + '|' + (p[2] + p[1])] === 1);
-  /* the DCS first out = the memory of DITL-05 / 06 that is lit; the time = its record */
-  const fo = lit('fo')[0],
-    foAt = fo ? (Z.log.filter(x => x.kind === 'fo' && x.name === fo[4] && x.on === 1).pop() || {}).t : null;
+  /* the DCS first out = the memory of DITL-05 / 06 that is lit FIRST; the time = its record. Beta.241 (Jennie, HOT save by real clicks
+     2026-11-22: after a turbine trip the first out read SAF STOPPED, which came minutes later): the memories of the drawing latch each
+     on its own until RESET FIRST OUT, so more than one stands after a trip; the first out is the one whose record is the oldest (one
+     scan = one time; in the same scan the order of the drawing), not the first lit row of the drawing */
+  const setAt = p => {
+      const r = Z.log.filter(x => x.kind === 'fo' && x.name === p[4] && x.on === 1).pop();
+      return r ? r.t : Infinity;
+    },
+    fo = lit('fo')
+      .map((p, i) => [p, setAt(p), i])
+      .sort((a, b) => a[1] - b[1] || a[2] - b[2])
+      .map(x => x[0])[0],
+    foAt = fo ? (isFinite(setAt(fo)) ? setAt(fo) : null) : null;
   const mftOn = lit('mft').length > 0;
   const U = AN.unit,
     c = U && (U.tc || U.tco),
@@ -345586,7 +345632,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build f6847b7'));
+    row('Version', E('span', 'scsver', ver + ' · build 2c6f0db'));
   }
   function openSet(near) {
     if (!set) {
