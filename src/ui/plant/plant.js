@@ -1263,9 +1263,15 @@
     if (!r) return false;
     fpClose();
     const sh = r.sheet;
+    /* one look with the small faceplate: the name the page gives the loop first, its tag under it (Audit 3 #8) */
+    let nm = '';
+    try {
+      const n = [...document.querySelectorAll('#plantws .hx-node[data-lv2]')].find(x => x.dataset.lv2 === tag);
+      nm = ((n && n.dataset.name) || '').replace(/s+/g, ' ').trim();
+    } catch (e) {}
     fp = E('div', { id: 'plfp', 'data-tag': tag }, [
       E('div', { cls: 'plfph' }, [
-        E('b', { txt: tag }),
+        nm && nm !== tag ? E('b', { title: nm + ' (' + tag + ')' }, [nm, E('small', { txt: tag })]) : E('b', { txt: tag }),
         E('button', {
           cls: 'b',
           txt: 'Logic',
