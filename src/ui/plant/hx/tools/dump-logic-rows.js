@@ -12,8 +12,8 @@ await page.evaluate(()=>{const C=AN.sheets.find(s=>s.name==='ABC-001C');for(let 
 await wait(1000);
 const res=await page.evaluate(()=>{const o={};const A={'MV-MS1391':'DITL-38 #MV-MS1391','MV-MS1392':'DITL-38 #MV-MS1392','XV-MS1011':'DITL-88','XV-CR1011':'DITL-73','MV-TS1001':'DITL-94','XV-HR1021':'DITL-80','XV-HR1022':'DITL-81','XV-FW1151':'DITL-35','XV-FW1061':'DITL-79','XV-CD1114':'DITL-66','MV-AS1394':'DITL-75'};
  const ser=x=>{try{return JSON.parse(JSON.stringify(x,(k,v)=>typeof v==='function'?undefined:(v&&v.nodeType?undefined:v)))}catch(e){return String(e)}};
- for(const [t,ad] of Object.entries(A)){let I=null,err=null;try{I=LS_DOCK.interlock(ad)}catch(e){err=String(e)}o[t]={ad,I:ser(I),err};
-  try{const s=LS_DOCK.dOf(ad);o[t].sheet=s&&(s.name||s.id);o[t].title=s&&(s.title||LS_DOCK.dName(s));
+ for(const [t,ad] of Object.entries(A)){let I=null,err=null;try{I=LS_OP.interlock(ad)}catch(e){err=String(e)}o[t]={ad,I:ser(I),err};
+  try{const s=LS_OP.dOf(ad);o[t].sheet=s&&(s.name||s.id);o[t].title=s&&(s.title||LS_OP.dName(s));
    /* every row of the sheet: service text + live value */
    if(s&&window.DUI){const rows=[];for(let r=0;r<60;r++){let inf=null;try{inf=DUI.rowInfo?DUI.rowInfo(s,r):null}catch(e){}if(inf&&(inf.svc||inf.tag))rows.push({r,svc:inf.svc,tag:inf.tag,io:inf.io,kind:inf.kind,v:(()=>{try{return DUI.rowVal?DUI.rowVal(s,r):null}catch(e){return null}})()})}o[t].rows=rows}}catch(e){o[t].e2=String(e)}}
  o._dui=window.DUI?Object.keys(DUI):[];o._live=Object.keys(LS_LIVE);

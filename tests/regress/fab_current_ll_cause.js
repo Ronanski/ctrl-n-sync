@@ -31,7 +31,7 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
       window.WORLD &&
       WORLD.idx &&
       window.DITL150 &&
-      window.LS_DOCK &&
+      window.LS_OP &&
       window.LS_GUIDE,
     null,
     { timeout: 120000 }
@@ -60,7 +60,7 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     LS_GUIDE.A.man('FICFA1055A', 25);
     await run(15);
     o.st = r1(AN.unit.fnFaQ);
-    LS_DOCK.dsel('DITL-28A #B', 1, 1, 'FAB B AUTO');
+    LS_OP.dsel('DITL-28A #B', 1, 1, 'FAB B AUTO');
     await run(5);
     o.r5 = AN.ditlRun('DITL-28A #B');
     LS_GUIDE.A.man('FICFA1055A', +mvA);

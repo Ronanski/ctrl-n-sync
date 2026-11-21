@@ -241,7 +241,7 @@
         /* a field item without a logic row: the lower ring header drains are a state of the plant model (hmi-mock-ms.js LHD) */
         FLD = name === 'V-BD1005 ~ V-BD1021' ? call(() => (AN.fieldState().lhd ? 1 : 0), null) : null,
         BD = R.machines[name] && R.machines[name].bind,
-        DFV = BD && BD.df && BD.d && BD.df.st != null ? call(() => window.LS_DOCK.dout(BD.d, BD.df.st), null) : null,
+        DFV = BD && BD.df && BD.d && BD.df.st != null ? call(() => window.LS_OP.dout(BD.d, BD.df.st), null) : null,
         md = (pq('[data-hxd="' + name + '"]') || {}).textContent || '',
         y = (pq('[data-hxy="' + name + '"]') || {}).textContent || '',
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-L): a state row that is not a running state (DITL-09 row 26 REMOTE of the
@@ -471,7 +471,7 @@
     MU: 'HX-makeup-cooling' /* MAKE-UP WATER */,
     CW: 'HX-makeup-cooling' /* 027 CLOSED COOLING WATER */,
     IA: 'HX-compressed-air' /* INSTRUMENT & PLANT AIR */,
-    /* the first temporary pages (hmi-temp.js, 2026-11-03), each followed since by a page 00 ~ 18 */
+    /* the first temporary pages (2026-11-03, removed on 2026-11-21 with the Training steps they read), each followed by a page 00 ~ 18 */
     TCF: 'HX-condensate',
     TDO: 'MK11',
     TFN: 'HX-combustion-air',

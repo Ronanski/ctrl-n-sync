@@ -2,7 +2,7 @@
    audit and mockup: team-files/reshell/uxaudit/ux.html, artifact DMAqPXBECUGeEShYRB2QX8). Slice 1: the header.
    - the values bar: the 11 values of the strip (shellc.js), one row of 60 px;
    - the context bar under it, 48 px: Operator | Engineer on the left; then, Operator: Plant › page, TCS / Field, Fit, Full screen,
-     ‹ › (the Plant view's own page bar); Engineer: the tools (Logic, Library, Curves, Loop check, More ▾ with Recent and Sheet
+     ‹ › (the Plant view's own page bar); Engineer: the tools (Logic, Library, Curves, More ▾ with Recent and Sheet
      tools, the buttons of shellc-eng.js) as tabs; on the right the status and the strip buttons (trip, alarms, Run, speed,
      Instructor, VIEW | RUN, PLANT, Search, Settings).
    - Engineer: the sheet tool bar (ABC | DITL | TCS, the sheet, Values, Wire values, Inputs, Inspector, Legend) is the header of the

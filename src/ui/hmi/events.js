@@ -271,7 +271,7 @@
   const grpT = {};
   const grpOn = g => {
     try {
-      return window.LS_DOCK && LS_DOCK.grpOn ? GRP[g][1].every(k => LS_DOCK.grpOn(k)) : false;
+      return window.LS_OP && LS_OP.grpOn ? GRP[g][1].every(k => LS_OP.grpOn(k)) : false;
     } catch (e) {
       return false;
     }
@@ -392,7 +392,7 @@
       /* S148-3: the cause the one world read at the scan of the stop (src/world/world.js s._stopWhy) */
       let ds = null;
       try {
-        ds = window.LS_DOCK && LS_DOCK.dOf ? LS_DOCK.dOf(a) : null;
+        ds = window.LS_OP && LS_OP.dOf ? LS_OP.dOf(a) : null;
       } catch (e) {}
       const w = stopWhy(ds);
       if (w) {
@@ -742,7 +742,7 @@
     /* the state of the motor of a memory address of the ABC sheets (M.3353) or of a DITL drawing name */
     motOf: a => {
       try {
-        const s = window.LS_DOCK && LS_DOCK.dOf(a);
+        const s = window.LS_OP && LS_OP.dOf(a);
         return s ? motState(s) : null;
       } catch (e) {
         return null;

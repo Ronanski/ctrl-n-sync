@@ -1,11 +1,11 @@
 /* ===== RE-SHELL LAYOUT C, slice 2 of the redesign (user approved "two bars, one Details column", 2026-11-09 "Gawin na"; artifact
    DMAqPXBECUGeEShYRB2QX8): ONE Details column on the right, with tabs, in place of the boxes that floated over the drawing.
    - Engineer: Why (the "Why is it …?" box of shellc-eng.js), Inspector and Faceplate (the sheet's own side panels #anp / #opp, the
-     DITL panel #dp), Training (the step card of shellc-ins.js), Alarms;
-   - Operator: Training and Alarms (the faceplates still open beside their equipment).
+     DITL panel #dp), Alarms;
+   - Operator: Alarms (the faceplates still open beside their equipment).
    The "Details" button of the context bar opens and closes the column; the vertical "Panel" tab, the panel's own Hide ✕ and Auto-hide
    and the Inspector / Panel buttons of the sheet bar give their place to it (one control per task). Nothing is rebuilt: the panels are
-   placed in the column (shellc-details.css) and pressed with their own buttons; the Why box and the step card are moved into it.
+   placed in the column (shellc-details.css) and pressed with their own buttons; the Why box is moved into it.
    No logic, HMI drawing, plant model, faceplate or engine change. Only with ?shell=c (body.sc). ===== */
 (function () {
   let want = false;
@@ -44,7 +44,7 @@
     fp: ['Faceplate', 'The controller faceplates of the open analog sheet'],
     alm: ['Alarms', 'The standing alarms and the last event']
   };
-  /* 3.2.3-beta.270: no Training section (the Training is off, guide.js LS_TRAINING_OFF) */
+  /* no Training section (GO NO SOP, 2026-11-21: no guided training) */
   const ENG = ['why', 'insp', 'fp'],
     OP = ['alm'];
   const wide = () => innerWidth >= 1280;
@@ -94,7 +94,6 @@
     body = E('div', 'scdb');
     body.setAttribute('role', 'tabpanel');
     sec.why = E('section', 'scdsec scdwhy');
-    sec.train = E('section', 'scdsec scdtrain');
     sec.alm = E('section', 'scdsec scdalm');
     sec.ins = E('section', 'scdsec scdins');
     /* Mina, live test of 270: Why, Inspector and Faceplate were empty on the Library, Curves, Loop check, Recent and Sheet tools tabs */
@@ -105,12 +104,9 @@
       b.onclick = () => call(() => lsShellC.engTool('logic'));
       sec.off.append(E('p', 'scdnone', 'This section reads the logic sheet.'), b);
     }
-    body.append(sec.why, sec.ins, sec.train, sec.alm, sec.off);
+    body.append(sec.why, sec.ins, sec.alm, sec.off);
     col.append(hd, body);
     document.body.append(col);
-    /* the training section: the step card (moved in), or what to do when there is none */
-    sec.trainNo = E('div', 'scdnone');
-    sec.train.append(sec.trainNo);
     /* the alarms section */
     sec.almEv = E('p', 'scdev');
     sec.almL = E('div', 'scdal');
@@ -124,16 +120,9 @@
     /* the Details button of the context bar */
     btn = E('button', 'pill scdetb', 'Details');
     btn.type = 'button';
-    btn.title = 'Show or hide the Details column: Why, Inspector, Faceplate, Training, Alarms';
+    btn.title = 'Show or hide the Details column: Why, Inspector, Faceplate, Alarms';
     btn.setAttribute('aria-controls', 'scdet');
-    /* Mina, live test of 269: with the Training panel open this press did nothing (the panel has the right side). The panel folds to its
-       step card, which is shown in the Training section of the column */
     btn.onclick = () => {
-      if (dockOpen()) {
-        ls('ls-gdock-min', 'true');
-        call(() => LS_DOCK.layout());
-        return setOpen(true);
-      }
       setOpen(!B.classList.contains('scdet'));
     };
     scp.append(btn);
@@ -195,21 +184,10 @@
     }
   }
 
-  function dockOpen() {
-    const dock = $('gdock');
-    return !!(
-      dock &&
-      vis(dock) &&
-      !document.documentElement.classList.contains('gd-min') &&
-      call(() => LS_GUIDE.on, false)
-    );
-  }
   function paint() {
     if (!col) return;
     const ok = B.classList.contains('sc') && (B.dataset.tab === 'operate' || eng());
-    /* the full Training panel (dock.js #gdock) is open: it has the right side; the column comes back when it is folded */
-    const dockOn = dockOpen();
-    const on = ok && !dockOn && eng() && (open == null ? wide() : open); /* step 7: the column is an Engineer tool */
+    const on = ok && eng() && (open == null ? wide() : open); /* step 7: the column is an Engineer tool */
     B.classList.toggle('scdet', on);
     /* Giselle beta.266 (Jennie, Mina's live check of 263: at 1024 the column lay over the overview cards, the plant drawing and the
        sheet buttons): the page gives the column its width at every size (no overlay). Below 1280 px the column still starts closed */
@@ -240,37 +218,6 @@
     /* the Why box of shellc-eng.js lives in the Why section */
     const why = $('scewhy');
     if (why && why.parentElement !== sec.why) sec.why.append(why);
-    /* the step card of shellc-ins.js lives in the Training section */
-    const card = $('sccard'),
-      /* Giselle beta.266 (Mina, live check of 263: "A training is running." on an empty plant, Open without a start state): a training
-         runs only with a plant loaded and its Training panel built (dock.js #gdock), not on a guide flag left from before */
-      gOn = call(() => !!(LS_GUIDE.on && AN.startState && $('gdock')), false);
-    if (card && card.parentElement !== sec.train) sec.train.append(card);
-    sec.trainNo.hidden = !!(card && !card.hidden);
-    /* a training that runs with no step card (the panel is not open yet, e.g. after a reload): one press opens its panel (the
-       "Open ▲" of the step card, shellc-ins.js setMin(false)) */
-    const tn = gOn
-      ? 'A training is running.'
-      : 'No training is running. The Instructor console starts one (start state, practice sections).';
-    if (sec.trainNo.dataset.t !== tn) {
-      sec.trainNo.dataset.t = tn;
-      sec.trainNo.textContent = '';
-      sec.trainNo.append(E('p', '', tn));
-      const b = E('button', 'scdlink', gOn ? 'Open the Training panel' : 'Open the Instructor console');
-      b.type = 'button';
-      b.onclick = gOn
-        ? () => {
-            /* Mina item 7: after the 150 MW load change practice the panel stayed in its practice / menu state and layout() + fill()
-               did nothing; the dock's own open() leaves that state and shows the panel (dock.js LS_DOCK.open) */
-            if (!call(() => (LS_DOCK.open(), true), false)) {
-              ls('ls-gdock-min', 'false');
-              call(() => LS_DOCK.layout());
-              call(() => LS_DOCK.fill(true));
-            }
-          }
-        : () => call(() => lsShellC.openCon());
-      sec.trainNo.append(b);
-    }
     /* the alarms: the same rows as the alarm pill (shellc-home.js lsShellC.alarms), newest first */
     const AL = call(() => lsShellC.alarms(), []) || [];
     const sig = AL.map(a => a.k + (a.ack ? 1 : 0)).join('|');

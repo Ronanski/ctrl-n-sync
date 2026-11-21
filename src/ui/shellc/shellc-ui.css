@@ -84,7 +84,6 @@ body.sc #gsbar #scstrip .scp #plchip *{font-size:12px!important}
   body.sc #scstrip .scsrp kbd{display:none}
 }
 /* the overview in a narrower page (Training dock open): 3 tiles a row, as the tablet */
-html.gd-side body.sc #scov .scgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
 /* the scale of the overview trend line (shellc-home.js, Mina step 2 note 11c) */
 #scov .scscale{margin-top:-4px;text-align:right;font:400 12px var(--sc-num);font-variant-numeric:tabular-nums;color:var(--sc-ink2);min-height:16px}
 

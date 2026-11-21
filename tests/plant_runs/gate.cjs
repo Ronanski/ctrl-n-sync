@@ -52,7 +52,7 @@ async function one(b, name) {
   const fail = why => ({ name, ok: false, why });
   try {
     await p.goto(HTML);
-    await p.waitForFunction(() => window.AN && AN.setCat && window.LS_GUIDE && window.LS_DOCK, null, { timeout: 240000 });
+    await p.waitForFunction(() => window.AN && AN.setCat && window.LS_GUIDE && window.LS_OP, null, { timeout: 240000 });
     await p.evaluate(() => {
       if (AN.cat !== 'an') AN.setCat('an');
     });
@@ -83,7 +83,7 @@ async function one(b, name) {
           for (const a of s.a || [])
             if (a.ad)
               try {
-                LS_DOCK.fieldSet(LS_DOCK.fieldOf(a.ad).field);
+                LS_OP.fieldSet(LS_OP.fieldOf(a.ad).field);
               } catch (e) {}
       });
     });

@@ -21,7 +21,7 @@ await page.evaluate(id=>lsShellC.openPage(id),'MK14');await page.waitForTimeout(
 const wait=ms=>page.waitForTimeout(ms);
 const clk=async sel=>{const b=await page.evaluate(sel=>{const e=[...document.querySelectorAll(sel)].find(x=>x.getBoundingClientRect().width>0);if(!e)return null;const r=e.getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2]},sel);if(b)await page.mouse.click(b[0],b[1]);return !!b};
 const btn=async (t,i)=>{const b=await page.evaluate(([t,i])=>{const p=document.getElementById('fpop');if(!p)return null;const e=[...p.querySelectorAll('button')].filter(x=>x.textContent.trim()===t&&x.offsetParent)[i||0];if(!e)return null;const r=e.getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,e.disabled]},[t,i]);if(b&&!b[2])await page.mouse.click(b[0],b[1]);return b?(b[2]?'disabled':'ok'):'none'};
-const es=()=>page.evaluate(()=>DUI.rowVal(LS_DOCK.dOf('DITL-21A'),17));
+const es=()=>page.evaluate(()=>DUI.rowVal(LS_OP.dOf('DITL-21A'),17));
 ck(await clk('[data-hit="BCA"]'),'ash cooler A on the page');await wait(700);
 // 3.2.3-beta.63: since 3.2.1-beta.264 (src/world/plantsw.js) the E-stop is a released N.C. contact at Cold, row 18 = 1 (it stood 0 only
 // because the tag matched no row, and that tripped the cooler); the order is now EMERGENCY STOP -> 0, then RELEASE -> 1.

@@ -48,9 +48,6 @@ const block =
   fs.readFileSync(__dirname + '/app.css', 'utf8') +
   fs.readFileSync(__dirname + '/../fx/fx.css', 'utf8') +
   fs.readFileSync(__dirname + '/home.css', 'utf8') +
-  fs.readFileSync(__dirname + '/../training/dock.css', 'utf8') +
-  fs.readFileSync(__dirname + '/../training/loopcheck.css', 'utf8') +
-  fs.readFileSync(__dirname + '/../training/split.css', 'utf8') +
   fs.readFileSync(__dirname + '/../ladder/ladder.css', 'utf8') +
   /* 3.2.1 re-shell layout C, step 1: the new status strip, only with ?shell=c */
   fs.readFileSync(__dirname + '/../shellc/shellc.css', 'utf8') +
@@ -100,28 +97,11 @@ const block =
   '\n' +
   fs.readFileSync(__dirname + '/../fx/fx.js', 'utf8') +
   '\n' +
-  /* 3.2.0-beta.8: HOME and TRAINING pages (Guided Workbench) */
-  fs.readFileSync(__dirname + '/../training/pr-ope-5002.js', 'utf8') +
+  /* the live reader of the plant (LS_LIVE) and the operator DITL API (LS_OP); GO NO SOP 2026-11-21: the SOP data, the Training dock,
+     the loop check and the split view are removed */
+  fs.readFileSync(__dirname + '/../plant/live.js', 'utf8') +
   '\n' +
-  /* 3.2.0 R9 #81: the Tag no. / Operating Limits / NOTE of each step (tools/training/extract_limits.py) */
-  fs.readFileSync(__dirname + '/../training/pr-ope-5002-lim.js', 'utf8') +
-  '\n' +
-  /* 3.2.0-beta.75 (live test #25): the reason of each SOP item of sections 1 ~ 7 */
-  fs.readFileSync(__dirname + '/../training/pr-ope-5002-why.js', 'utf8') +
-  '\n' +
-  /* 3.2.0-beta.10: Live Training (auto / field / TCS steps, the sync and load-up sections) */
-  fs.readFileSync(__dirname + '/../training/live.js', 'utf8') +
-  '\n' +
-  /* the guided Training (guide.js, window.LS_GUIDE) was removed 2026-11-19 (user: no guided start-up; live runs from the HMI and the
-     faceplates only). Its hooks in the shell and the dock all test window.LS_GUIDE first */
-  /* 3.2.0-beta.23: the Training dock (guided start-up beside the app) */
-  fs.readFileSync(__dirname + '/../training/dock.js', 'utf8') +
-  '\n' +
-  /* 3.2.1-beta.4: the loop check dock (one card per tag, the real press checked against the plant model, the address and the logic) */
-  fs.readFileSync(__dirname + '/../training/loopcheck.js', 'utf8') +
-  '\n' +
-  /* 3.2.1: the loop check split view (HMI | logic, tag table, controller tags, events) */
-  fs.readFileSync(__dirname + '/../training/split.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/op-api.js', 'utf8') +
   '\n' +
   fs.readFileSync(__dirname + '/home.js', 'utf8') +
   '\n' +
@@ -141,7 +121,7 @@ const block =
   '\n' +
   fs.readFileSync(__dirname + '/../shellc/shellc-pages.js', 'utf8') +
   '\n' +
-  /* step 5: Instructor console and the training step card */
+  /* step 5: Instructor console */
   fs.readFileSync(__dirname + '/../shellc/shellc-ins.js', 'utf8') +
   '\n' +
   fs.readFileSync(__dirname + '/../shellc/shellc-ui.js', 'utf8') +

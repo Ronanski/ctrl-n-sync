@@ -493,7 +493,7 @@
         return d;
       }
     };
-    const D = () => window.LS_DOCK;
+    const D = () => window.LS_OP;
     /* an input row of a drawing (the field contacts: RUNNING / TRIP of a compressor, REMOTE / ALARM of a dryer) */
     const rin = (nm, row) =>
       call(() => {

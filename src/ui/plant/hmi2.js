@@ -1098,21 +1098,16 @@
       for (const el of [imp, mot]) if (el) el.style.cursor = 'pointer';
       (window.LS_FPREG = window.LS_FPREG || {})[M.ad] = { open: () => LS_FPOP.hit(M, null), el: () => body };
     });
-    /* #18: the ESP purge air heater / fan (field equipment AN_SRC.field.esp) and its 6 h purge time (Training H1) */
+    /* #18: the ESP purge air heater / fan (field equipment AN_SRC.field.esp) */
     {
       const t = K('espst');
       const upd = () => {
         if (!t || !t.isConnected) return iv && iv.stop();
-        let on = false,
-          tx = '';
+        let on = false;
         try {
           on = !!(AN.fieldState && AN.fieldState().esp);
-          const G = window.LS_GUIDE,
-            s0 = G && G.on && G.steps()[0],
-            hd = s0 && s0.pre ? G.holdOf(s0) : null;
-          if (hd && on) tx = ' · purge ' + (Math.min(hd[0], hd[1]) / 3600).toFixed(1) + ' / ' + (hd[1] / 3600).toFixed(0) + ' h';
         } catch (e) {}
-        t.textContent = (on ? 'RUNNING' : 'STOPPED') + tx;
+        t.textContent = on ? 'RUNNING' : 'STOPPED';
         t.setAttribute('fill', on ? C.run : C.stop);
       };
       /* P2: the shared driver (hmi-sym.js), only while the page is on the screen */

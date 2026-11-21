@@ -68,7 +68,6 @@
   const OWN = {
     '@soe': 'First out and events',
     '@gen': 'Generator panel',
-    '@score': 'Trainee score',
     '@criteria': 'Start-up criteria',
     '@load': 'Speed and load',
     '@trip': 'Turbine trip',
@@ -1126,7 +1125,6 @@
       fillTrips();
       fillFaults();
       fillFrz();
-      fillScore();
     }
   }
   /* the freeze of the instructor: the plant time stops and Run is refused until the instructor takes it off (instructor.js AN.freeze) */
@@ -1160,41 +1158,6 @@
     }
     ins.frz.replaceChildren(...N);
   }
-  /* UI audit 2026-11-21 D7: steps the starting point already had (given) are not the trainee's; without a step of the trainee there
-     is no score to show (the 150 MW point showed 100 of 100 · 18 of 18 before any press) */
-  const ownSteps = Z => Z.steps.filter(x => !x.given && !Z.todo.some(y => y.id === x.id)).length;
-  const scoreText = Z =>
-    ownSteps(Z) || Z.deduct.length
-      ? fmt(Z.score, 1) + ' of 100 · ' + ownSteps(Z) + ' steps by the trainee'
-      : 'No step by the trainee yet · ' + (Z.of - Z.todo.length) + ' of ' + Z.of + ' done at the starting point';
-  function fillScore() {
-    const Z = call(() => AN.sopScore(), null),
-      N = [];
-    if (!Z || !Z.of) N.push(E('p', 'st-none', 'Not kept at this starting point.'));
-    else {
-      const op = E('button', 'st-b', 'Open the score'),
-        ag = E('button', 'st-b', 'Start again');
-      op.title = 'The steps of the start-up procedure and the points lost';
-      op.onclick = () => {
-        insPop.hidden = true;
-        go('@score');
-      };
-      ag.title = 'A new trainee: the score starts again from now';
-      arm(ag, 'Start again', () => {
-        call(() => AN.sopScore({ restart: true }));
-        setTimeout(() => {
-          fillScore();
-          tick();
-        }, 200);
-      });
-      N.push(
-        E('span', 'st-scv', scoreText(Z)),
-        op,
-        ag
-      );
-    }
-    ins.score.replaceChildren(...N);
-  }
   function buildIns() {
     const body = insPop._body;
     const head = t => body.append(E('h2', 'st-h', t));
@@ -1221,8 +1184,6 @@
     }
     head('Freeze');
     ins.frz = row();
-    head('Trainee score');
-    ins.score = row();
     head('Save points');
     r = row('st-save');
     const nm = E('input', 'st-find');
@@ -1769,88 +1730,6 @@
     h.lo.v.textContent = lk.length ? lk.join(' · ') : 'Reset';
     h.lo.v.classList.toggle('st-hot', !!lk.length);
     h.lo.m.textContent = L.why ? 'Cause: ' + L.why : 'No lockout relay is operated';
-  }
-  /* Trainee score (user "go all" 2026-11-19, item 6): the start-up of the trainee against the procedure PR-OPE-5002, as the engine
-     scores it (sop-score.js AN.sopScore: one share of 100 per milestone of the procedure; a share is lost for a milestone done out of
-     the order of the procedure and for one undone by a trip). Read only; the instructor starts it again from the Instructor popup */
-  const sc = {};
-  function scores() {
-    const Z = call(() => AN.sopScore(), null);
-    if (!Z || !Z.of) {
-      if (sc.key !== 'none') {
-        sc.key = 'none';
-        ownPg.replaceChildren(E('p', 'st-none', 'The score is not kept at this starting point.'));
-      }
-      return;
-    }
-    const tr = Z.trips || {},
-      key = [Z.score, Z.steps.length, Z.todo.length, Z.deduct.length, tr.mft, tr.tt, Z.from].join('|');
-    if (key === sc.key) return;
-    sc.key = key;
-    const head = E('div', 'st-ph');
-    for (const [k, v, hot] of [
-      ['Score', ownSteps(Z) || Z.deduct.length ? fmt(Z.score, 1) + ' of 100' : 'No step by the trainee yet', Z.deduct.length > 0],
-      ['Steps of the procedure done', Z.of - Z.todo.length + ' of ' + Z.of],
-      [
-        'Trips',
-        (tr.mft || 0) + ' master fuel trip · ' + (tr.tt || 0) + ' turbine trip',
-        (tr.mft || 0) + (tr.tt || 0) > 0
-      ]
-    ]) {
-      const d = E('div'),
-        b = E('b', hot ? 'st-hot' : '', v);
-      d.append(E('i', '', k), b);
-      head.append(d);
-    }
-    const ded = E('div', 'st-crit');
-    if (!Z.deduct.length) ded.append(E('p', 'st-none', 'No point lost.'));
-    for (const d of Z.deduct) {
-      const r = E('div', 'st-cr st-tr miss');
-      /* the engine writes the plant time in seconds: shown as the clock of the other lists */
-      const why = String(d.why).replace(/ at ([\d.]+) s$/, (m, t) => ' at ' + clock(+t));
-      r.append(E('i', 'st-mk new'), E('span', '', why), E('span', 'st-cs', '−' + fmt(d.pts, 1) + ' points'));
-      ded.append(r);
-    }
-    const lost = new Set((Z.lost || []).map(x => x.id)),
-      todo = new Set(Z.todo.map(x => x.id)),
-      /* one line per step of the procedure: a step undone by a trip stands as to do, not also as done */
-      all = Z.steps
-        .filter(x => !todo.has(x.id))
-        .map(x => Object.assign({ done: 1 }, x))
-        .concat(Z.todo.map(x => Object.assign({ done: 0 }, x)));
-    all.sort((p, q) => p.sec - q.sec);
-    const box = E('div', 'st-crit');
-    for (const x of all) {
-      const late = x.done && x.late && x.late.length,
-        undone = !x.done && lost.has(x.id),
-        r = E('div', 'st-cr st-sc' + (late || undone ? ' miss' : ''));
-      r.append(
-        E('i', 'st-mk' + (late || undone ? ' new' : x.done ? ' done' : ' ok')),
-        E('span', 'st-cn', 'Section ' + x.sec),
-        E('span', '', String(x.name)),
-        E(
-          'span',
-          'st-cs',
-          undone
-            ? 'Undone by a trip, to do again'
-            : !x.done
-              ? 'To do'
-              : late
-                ? 'Done out of order at ' + clock(x.at)
-                : x.given
-                  ? 'Done before the score started'
-                  : 'Done at ' + clock(x.at)
-        )
-      );
-      box.append(r);
-    }
-    ownPg.replaceChildren(
-      head,
-      E('h2', 'st-h', 'Points lost'),
-      ded,
-      E('h2', 'st-h', 'Start-up procedure PR-OPE-5002'),
-      box
-    );
   }
   const soe = {};
   const clock = t => {
@@ -2576,14 +2455,12 @@
       crit.key = trp.key = soe.key = '';
       gov.h = null;
       gp.h = null;
-      sc.key = '';
       ost.h = null;
       vt.key = '';
       if (ownPg) ownPg.replaceChildren();
     }
     if (own === '@soe' && !eng) soes();
     if (own === '@gen' && !eng) gens();
-    if (own === '@score' && !eng) scores();
     if (own === '@criteria' && !eng) criteria();
     if (own === '@trip' && !eng) trips();
     if (own === '@load' && !eng) loads();

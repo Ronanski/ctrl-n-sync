@@ -196,7 +196,7 @@
   addEventListener(
     'wheel',
     e => {
-      if (!mine(e) && e.target.closest && e.target.closest('#plsvg')) auto = false;
+      if (!mine(e) && e.ctrlKey && e.target.closest && e.target.closest('#plsvg')) auto = false;
     },
     true
   );

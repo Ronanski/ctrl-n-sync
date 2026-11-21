@@ -12,7 +12,7 @@
      PA fan oil cooler Z-1053, SA fan bearings F-1054, gas air heater H-1052, ID fan oil cooler Z-1056 and bearings F-1056,
      IA compressors C-0704A / B / C and dryers D-0704A / B / C, PA compressors C-0703A / B / C and dryers D-0703A / B / C; the
      cross-tie to unit 2.
-   Run state = the motor drawing of the one world (LS_DOCK.mst): red = running, green = stopped, red blinking = trip. REM / LOC and
+   Run state = the motor drawing of the one world (LS_OP.mst): red = running, green = stopped, red blinking = trip. REM / LOC and
    AUTO / MAN = the REMOTE SELECTED and AUTO SELECTED outputs of DITL-76 / 77 (rows 12 and 1). Values = the plant model (unit.js
    AN_ACW, the pressures and strainer DP written into DITL-76 / 77 by plantsw.js, so the logic reads the same number), TCV-CW1201 and
    the lube oil temperatures = ABC-053; never from this page. Drawn in a 1760 x 900 space, scaled to the 1920 x 1000 frame of hmi2.js. */
@@ -44,7 +44,7 @@
   const T = (x, y, s, c, a) => `<text x="${x}" y="${y}" class="${c}"${a ? ' ' + a : ''}>${s}</text>`;
   const OL = `stroke="${S.ol}" stroke-width="1"`;
   const fmt = (x, dp) => (x == null || !isFinite(x) ? '-----' : (+x).toFixed(dp).replace(/^-(0(?:\.0+)?)$/, '$1'));
-  /* the machines: name, tag, drawing (run state LS_DOCK.mst, REMOTE / AUTO outputs), info card tag, VCB DI of the I/O list */
+  /* the machines: name, tag, drawing (run state LS_OP.mst, REMOTE / AUTO outputs), info card tag, VCB DI of the I/O list */
   const MACH = {
     ACA: { n: 'ACWP-A', t: 'P-1108A', ad: 'DITL-76', io: 'MIR-P1108A', vcb: 'I.008A / I.008B' },
     ACB: { n: 'ACWP-B', t: 'P-1108B', ad: 'DITL-77', io: 'MIR-P1108B', vcb: 'I.040A / I.040B' }
@@ -580,15 +580,15 @@
     const ST = {},
       V = {},
       MD = {};
-    const mst = M => call(() => (M.ad && window.LS_DOCK && LS_DOCK.mst ? LS_DOCK.mst(M.ad) : null), null);
-    /* REMOTE SELECTED (row 12) and AUTO SELECTED (row 1) outputs of DITL-76 / 77, found by name on the drawing. LS_DOCK.modeOf looks for
+    const mst = M => call(() => (M.ad && window.LS_OP && LS_OP.mst ? LS_OP.mst(M.ad) : null), null);
+    /* REMOTE SELECTED (row 12) and AUTO SELECTED (row 1) outputs of DITL-76 / 77, found by name on the drawing. LS_OP.modeOf looks for
        "REMOTE MODE SELECTED" / "AUTO MODE SELECTED" (DITL-29A / 30) and finds nothing on these drawings */
     const ORow = {};
     const outRow = (ad, re) => {
       const k = ad + re;
       if (ORow[k] === undefined)
         ORow[k] = call(() => {
-          const s = LS_DOCK.dOf(ad),
+          const s = LS_OP.dOf(ad),
             o = s && DUI.outs(s).find(x => re.test(x.name));
           return o ? o.row : null;
         }, null);
@@ -596,12 +596,12 @@
     };
     const outV = (ad, re) => {
       const r = outRow(ad, re);
-      return r == null ? null : call(() => LS_DOCK.dout(ad, r), null);
+      return r == null ? null : call(() => LS_OP.dout(ad, r), null);
     };
     /* the AUTO SELECTED row that DITL-78 reads (row 3, M.1252) */
     const xvAuto = () =>
       call(() => {
-        const s = LS_DOCK.dOf('DITL-78');
+        const s = LS_OP.dOf('DITL-78');
         if (!s) return null;
         for (let r = 0; r < 20; r++) {
           const I = DUI.rowInfo(s, r) || {};

@@ -71,7 +71,7 @@ body.sc #gsbar #scstrip .scv{flex:1 1 100%!important;flex-wrap:wrap!important;ro
 body.sc #gsbar #scstrip .scp{margin-left:auto}
 body.sc #gsbar #scstrip .sck{min-width:88px}
 @media (max-width:1279px){body.sc #gsbar #scstrip .scv{flex:1 1 100%}}
-/* ===== step 5: Instructor console and the training step card ===== */
+/* ===== step 5: Instructor console ===== */
 body.sc #gsbar #scstrip .pill.ins{border-color:var(--sc-violet)!important;color:var(--sc-violet)!important}
 body.sc #gsbar #scstrip .pill.ins.on{background:var(--sc-violet)!important;color:var(--sc-white)!important}
 #scins{position:fixed;top:calc(var(--scb,var(--top)) + 4px);right:8px;z-index:131;width:min(544px,calc(100vw - 16px));max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 16px);display:flex;flex-direction:column;background:var(--sc-white);border:1px solid var(--sc-violet);border-radius:8px;box-shadow:0 12px 32px rgba(34,46,57,.22);font-family:var(--sc-ui);color:var(--sc-ink)}
@@ -88,20 +88,6 @@ body.sc #gsbar #scstrip .pill.ins.on{background:var(--sc-violet)!important;color
 #scins button.trip{border-color:var(--sc-run)!important;color:var(--sc-run)!important}
 #scins button[data-arm]{background:var(--sc-run)!important;border-color:var(--sc-run)!important;color:var(--sc-white)!important}
 #scins .scx{padding:0 12px!important}
-#sccard{position:fixed;right:12px;bottom:calc(var(--footH,var(--foot)) + 12px);z-index:95;width:min(352px,calc(100vw - 24px));display:grid;gap:8px;padding:12px 16px;background:var(--sc-white);border:1px solid var(--sc-line2);border-radius:8px;box-shadow:0 8px 24px rgba(34,46,57,.18);font-family:var(--sc-ui);color:var(--sc-ink)}
-#sccard[hidden]{display:none!important}
-#sccard .scctop{display:flex;align-items:center;justify-content:space-between;font:500 12px var(--sc-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--sc-ink2)}
-#sccard .sclink{min-height:32px!important;padding:0 4px!important;border:0!important;background:transparent!important;color:var(--sc-steel)!important;font:600 13px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer;text-transform:none;letter-spacing:0}
-#sccard .sccbar{height:4px;background:var(--sc-line);border-radius:2px;overflow:hidden}
-#sccard .sccbar i{display:block;height:100%;background:var(--sc-steel)}
-#sccard .scct{font:600 14px/1.3 var(--sc-ui)}
-#sccard .sccyn{display:flex;align-items:center;gap:8px;font-size:13px}
-#sccard .sccyn span:first-child{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;font:700 12px var(--sc-num);color:var(--sc-white);border-radius:2px}
-#sccard .sccyn .y{background:var(--sc-run)}#sccard .sccyn .n{background:var(--sc-stop)}
-#sccard .sccbs{display:flex;gap:8px}
-#sccard .sccbs button{min-height:36px!important;padding:0 16px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:600 13px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer}
-#sccard .sccbs button:disabled{opacity:.5;cursor:default}
-body.sc.sccard #gdtab{display:none!important}
 /* ===== Mina beta.210 fixes ===== */
 #scstrip .pill.run .dot{background:var(--sc-amber)}
 #scstrip .pill.run.on .dot{background:var(--sc-run)}
@@ -125,7 +111,6 @@ body.sc.plant[data-tab="operate"]:not(.scov) .sccrumb:not(:has(b:empty)){display
 #scins .scsvl{display:grid;gap:4px}
 #scins .scsvr{display:flex;align-items:center;gap:8px;font-size:13px}
 #scins .scsvr span{flex:1;min-width:0;overflow-wrap:anywhere}
-body.sc.sccard #scov .scgrid{padding-bottom:192px}
 /* ===== step 2: overview, breadcrumb, alarm list, start screen ===== */
 #scov{display:none;position:fixed;top:var(--scb,var(--top));left:var(--scl,var(--railW,0));right:0;bottom:var(--footH,var(--foot));z-index:89;overflow:auto;background:var(--sc-page);font-family:var(--sc-ui);color:var(--sc-ink)}
 body.sc.scov #scov{display:flex;flex-direction:column}
@@ -208,7 +193,7 @@ body.sc #gsbar #scstrip .seg button{font-size:13px!important}
 /* M07: tablet targets 40 px (Operator / Engineer, the strip pills, the speed menu) */
 @media (max-width:1279px),(pointer:coarse){
   body.sc #gsbar #scstrip :is(.pill,.seg button,.spdm button){min-height:40px!important}
-  #scins button,#scins .scinp,#scal :is(.sctabs button,.scx,.scack,.scrow button),#sccard .sccbs button,#sccard .sclink,#scstart:not(#scnone) .scchips button{min-height:40px!important}
+  #scins button,#scins .scinp,#scal :is(.sctabs button,.scx,.scack,.scrow button),#scstart:not(#scnone) .scchips button{min-height:40px!important}
 }
 /* M09: rail labels 12 px; M10 / M11: footer text 12 px and the faint clock / info colour from the shell set (5.70:1 on the band) */
 body.sc.cr #crrail .tabs button{font-size:12px!important;line-height:1.2!important}
@@ -235,20 +220,6 @@ body.sc #sfoot :is(#st,.shint,.smsg){flex:1 1 0!important}
 #scins,#scal{max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 12px)!important}
 #scins h4{font-size:12px!important}
 #scins:not(#scnone) button{font-size:13px!important}
-/* M31: training card text */
-#sccard:not(#scnone) .scctop{font-size:12px!important}
-#sccard:not(#scnone) .sccbs button,#sccard:not(#scnone) .sclink{font-size:13px!important}
-/* M30: on a tablet the training card is a bar under the page (mockup C), so it never covers the Why box or a faceplate.
-   --sccardh tells the other shell boxes (Why box, shellc-eng) how much of the bottom it takes */
-@media (max-width:1279px){
-  #sccard:not(#scnone){left:var(--scl,var(--railW,0px));right:0;bottom:var(--footH,var(--foot));width:auto;border-radius:0;border-width:1px 0 0;box-shadow:0 -4px 12px rgba(34,46,57,.12);display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:8px 16px}
-  #sccard:not(#scnone) .sccbar{position:absolute;left:0;right:0;top:0;height:4px;border-radius:0}
-  #sccard:not(#scnone) .scctop{gap:12px}
-  #sccard:not(#scnone) .scct{flex:1 1 240px;min-width:0}
-  #sccard:not(#scnone) .sccbs{margin-left:auto}
-  body.sc.sccard{--sccardh:64px}
-  body.sc.sccard #scov .scgrid{padding-bottom:80px}
-}
 /* design-auditor animation: the blinking trip lamp stops for people who turn motion off */
 @media (prefers-reduced-motion:reduce){.sclamp .dot.trip{animation:none}}
 /* User 2026-11-09 ("ano ba yang nasa gilid sa kaliwa? kala ko ba reshell"): the old dark page rail is not part of layout C (mockup C has

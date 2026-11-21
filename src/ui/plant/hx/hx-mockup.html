@@ -717,7 +717,7 @@ body { background: var(--hx-bg); color: var(--hx-ink); font-family: var(--hx-fon
 <p>Every entry of <code>HXREG.machines</code> carries <code>page</code> and <code>id</code> (for example <code>BFWP-A</code>: page <code>MK06</code>, id <code>PA</code>) and <code>bind</code> = the same fields the temporary page uses (<code>ad</code> DITL sheet or address, <code>mov</code>, <code>tcs</code>, <code>io</code>, <code>cur</code> ...). So the adapter can ask the runtime of the temporary pages (<code>src/ui/plant/hmi-mock.js</code>) for exactly the value it already shows:</p>
 <ul>
 <li>value of a tag (<code>data-v</code>): the logic transmitter when a sheet has it, else the plant model key of <code>def.unit</code>.</li>
-<li>machine state: <code>LS_DOCK.mst</code>, mode: <code>LS_DOCK.modeOf</code>.</li>
+<li>machine state: <code>LS_OP.mst</code>, mode: <code>LS_OP.modeOf</code>.</li>
 <li>controller PV / SV / MV / mode: <code>LS_LIVE.pvOf</code>, <code>svOf</code>, <code>mvOf</code>, <code>modeOf</code>.</li>
 <li>MOV / XV position: the <code>data-mov</code> hook (<code>pct</code>, <code>oc</code>, <code>md</code>).</li>
 <li>faceplates: <code>LS_FPOP.hit</code>, <code>LS_FPOP.motor</code>, <code>LS_FPOP.mov</code>, <code>LS_FPOP.valve</code>, <code>LS_FPOP.tcs</code>, the Y / N one <code>LS_FPOP.yn</code>; controllers: <code>fpOpen</code> of <code>src/ui/plant/plant.js</code>.</li>
@@ -811,7 +811,7 @@ body { background: var(--hx-bg); color: var(--hx-ink); font-family: var(--hx-fon
 <li>Both stay <b>tethered</b>: a thin line joins a card to its equipment, also after it is dragged, so several cards can be open at once.</li>
 <li>Y = red = complete, N = green; a logic row that is 1 is red, 0 is green.</li>
 <li>Contract: <code>HX.data.card(kind, id)</code> gives everything a card shows, <code>HX.data.act(kind, id, command, value)</code> takes every press (the head comment of <code>hx-cards-ui.js</code> lists the fields). Without <code>card()</code> a click falls back to <code>HX.data.open()</code> = the faceplates the app already has.</li>
-<li>The rows in the mockup are not typed: <code>tools/dump-logic-rows.js</code> and <code>tools/dump-faceplates.js</code> read them from the app (<code>DUI.rowInfo</code> / <code>rowVal</code> of the DITL sheet of each valve, <code>LS_DOCK.interlock</code> for the permissive rows of a motor valve, the app's own controller faceplate for name, range and mode buttons); <code>tools/make-cards.py</code> writes <code>hx-cards.js</code>. In the app the adapter calls the same functions live.</li>
+<li>The rows in the mockup are not typed: <code>tools/dump-logic-rows.js</code> and <code>tools/dump-faceplates.js</code> read them from the app (<code>DUI.rowInfo</code> / <code>rowVal</code> of the DITL sheet of each valve, <code>LS_OP.interlock</code> for the permissive rows of a motor valve, the app's own controller faceplate for name, range and mode buttons); <code>tools/make-cards.py</code> writes <code>hx-cards.js</code>. In the app the adapter calls the same functions live.</li>
 <li>Not in the data yet: the conditions that force a loop to manual (the card says so), the SOP line-up items of a machine, and the permissive list of the machines of the other pages (only the reheat page was dumped).</li>
 </ul>
 <h3>7. What is real and what is sample</h3>

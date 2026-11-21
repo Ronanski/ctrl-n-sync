@@ -83,7 +83,7 @@ const html =
     o.sbCut = { silB: DUI.outVal(sb, 1), fcd: fcd(), runB: AN.ditlRun('DITL-28A #B') };
     const sv2 = { kf: AN.engState.capture(), kd: ditlCapture() };
     const stopA = async () => {
-      if (window.LS_DOCK && LS_DOCK.dmotor) LS_DOCK.dmotor('M.3308', false);
+      if (window.LS_OP && LS_OP.dmotor) LS_OP.dmotor('M.3308', false);
       await run(60);
       return { runA: AN.ditlRun('DITL-28A'), runB: AN.ditlRun('DITL-28A #B'), fa: r1(U().fnFaQ), silB: DUI.outVal(sh('DITL-28C #B'), 1), outB: DUI.outVal(sh('DITL-28C #B'), 25) };
     };
@@ -96,7 +96,7 @@ const html =
     o.sbOldStop = await stopA();
     /* the swap: the low-low started B; A stopped by hand: the FAB step names B's damper */
     await run(30);
-    if (window.LS_DOCK && LS_DOCK.dmotor) LS_DOCK.dmotor('M.3308', false);
+    if (window.LS_OP && LS_OP.dmotor) LS_OP.dmotor('M.3308', false);
     else WORLD.dpress('DITL-28A', 1);
     await run(30);
     o.swap = st();

@@ -40,10 +40,10 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   const bit = a => ev(a => +LS_LIVE.val(a) || 0, a);
   /* START of a motor on its DITL drawing (the START push button the person presses), 5 s, the RUNNING memory, STOP again */
   const tryStart = async (a, nm, ref) => {
-    const pressed = await ev(a => !!LS_DOCK.dmotor(a, 1), a);
+    const pressed = await ev(a => !!LS_OP.dmotor(a, 1), a);
     await p.waitForTimeout(5000);
     const run = await bit(a);
-    await ev(a => LS_DOCK.dmotor(a, 0), a);
+    await ev(a => LS_OP.dmotor(a, 0), a);
     await p.waitForTimeout(1500);
     ck(pressed && run < 0.5, nm + ': START pressed' + (pressed ? '' : ' (NO START BUTTON FOUND)') + ', running = ' + run + ' (dapat 0). Ref: ' + ref);
   };
@@ -56,9 +56,9 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   await tryStart('M.3302', 'PAF bago ang IDF / SAF / lube oil', 'PR-OPE-5002 5144, DITL-26A row 8 PAF LUB. OIL');
   await tryStart('M.3400', 'Coal feeder A habang MFT (walang purge, bed malamig)', 'PR-OPE-5002 10021 (bed 400 ~ 450 C), DITL-19 / DITL-03');
   {
-    const pressed = await ev(() => !!LS_DOCK.dpress('DITL-09', 8));
+    const pressed = await ev(() => !!LS_OP.dpress('DITL-09', 8));
     await p.waitForTimeout(5000);
-    const svc = await ev(() => LS_DOCK.dout('DITL-12', 19));
+    const svc = await ev(() => LS_OP.dout('DITL-12', 19));
     ck(pressed && svc !== 1, 'Burner A ON nang walang purge (MFT): in service = ' + svc + ' (dapat 0). Ref: PR-OPE-5002 5271 (purge muna), DITL-02 / DITL-03A');
   }
 

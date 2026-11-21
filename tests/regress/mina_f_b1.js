@@ -37,7 +37,7 @@ ck(await btn('AUTO')==='off','AUTO is the selected one');
 ck(await btn('MANUAL')==='ok','MANUAL');await wait(300);await btn('EXECUTE');await wait(2500);t=await txt();
 ck(/REMOTE · MANUAL/.test(t),'mode MANUAL: '+(t.match(/MODE · [^·]*· \w+/)||[''])[0]);
 ck(await btn('CLOSE')==='ok','CLOSE');await wait(300);await btn('EXECUTE');await wait(5000);
-const p=await page.evaluate(()=>+MST[LS_DOCK.dOf('DITL-94').name][0].pos);ck(p<99,'the valve moves: '+p);
+const p=await page.evaluate(()=>+MST[LS_OP.dOf('DITL-94').name][0].pos);ck(p<99,'the valve moves: '+p);
 await btn('AUTO');await wait(300);await btn('EXECUTE');await wait(1500);t=await txt();ck(/REMOTE · AUTO/.test(t),'back to AUTO');
 await page.evaluate(()=>window.LS_FPOP&&LS_FPOP.close());
 // Cold: F18 and F21, a fresh page
@@ -60,9 +60,9 @@ const c=await page.evaluate(async()=>{const C=AN.sheets.find(s=>s.name==='ABC-00
   const rem=n=>{const s=sh(n);for(let r=0;r<40;r++){const I=DUI.rowInfo(s,r);if(/REMOTE MODE SELECTED/.test(I.svc||''))s.sig[r+':S']=true}};
   ['DITL-112','DITL-112 #B','DITL-112 #C'].forEach(rem);
   for(const k of ['V-MU0001','V-MU0002','V-MU0003','V-MU0004','V-MU0005','V-MU0007','V-MU0009','V-MU0011','V-MU0013','V-MU0015','V-MU0017'])AN.swValve(k,100);
-  run(2);const st=n=>LS_DOCK.mst(n);const o={};
+  run(2);const st=n=>LS_OP.mst(n);const o={};
   WORLD.dset('DITL-112',14,true);WORLD.dset('DITL-112 #B',14,true);run(3);o.p0=AN.unit.muP;
-  LS_DOCK.dmotor('DITL-112 #C',1);const L=[];for(let k=0;k<20;k++){run(.5);L.push([(k+1)/2,+AN.unit.muP.toFixed(2),st('DITL-112')[0],st('DITL-112 #B')[0],st('DITL-112 #C')[0]].join(' '))}
+  LS_OP.dmotor('DITL-112 #C',1);const L=[];for(let k=0;k<20;k++){run(.5);L.push([(k+1)/2,+AN.unit.muP.toFixed(2),st('DITL-112')[0],st('DITL-112 #B')[0],st('DITL-112 #C')[0]].join(' '))}
   o.L=L;o.A=st('DITL-112');o.B=st('DITL-112 #B');o.C=st('DITL-112 #C');o.P=AN.unit.muP;
   /* the header stays low with the discharge of the pump shut: the drawing's standby start after TR25 3 s */
   return o});

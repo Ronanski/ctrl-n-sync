@@ -61,11 +61,11 @@ const html =
        operator takes the MANUAL SEQUENCE MODE (DITL-21C row 16 M.2121, as 16.PNG shows MANUAL) and starts cooler A (DITL-21A START) */
     const sh = n => S.sheets.find(x => x.name.endsWith(')' + n));
     WORLD.live = true;
-    const okM = LS_DOCK.dpress(sh('DITL-21C').name, 15);
+    const okM = LS_OP.dpress(sh('DITL-21C').name, 15);
     WORLD.live = false;
     await run(3);
     WORLD.live = true;
-    const okS = LS_DOCK.dmotor('DITL-21A', true);
+    const okS = LS_OP.dmotor('DITL-21A', true);
     WORLD.live = false;
     await run(900);
     const k = 0,

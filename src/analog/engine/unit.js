@@ -4288,7 +4288,7 @@ function anAirStep(U, dt) {
       nd = dry.reduce((a, b) => a + b, 0);
     /* the compressors: the state of the scenario at the first step, then the START COMMAND of the logic (only a compressor whose
        local panel is in REMOTE), its TRIP contact, and a start / stop at the local panel (the field operator writes the RUNNING
-       contact: guide.js LS_DOCK.fieldRow, PR-OPE-5002 "Ensure the compressor is in Local Position ... Initiate RUN") */
+       contact: guide.js LS_OP.fieldRow, PR-OPE-5002 "Ensure the compressor is in Local Position ... Initiate RUN") */
     let run = U[k + 'Run'];
     if (!Array.isArray(run)) {
       if (!s) continue;

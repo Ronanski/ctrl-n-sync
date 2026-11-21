@@ -2,7 +2,7 @@
 """Makes hx-cards.js: what the two mini pop-ups of the HX pages show for each valve and loop of the reheat sample.
 Nothing is typed by hand: the rows are what the app itself reads from its logic (3.2.3-beta.272, Start at 150 MW):
   cards-rows.json        every row of the DITL sheet of a valve: service text, address, live value (DUI.rowInfo / rowVal)
-  cards-perm.json        the permissive rows of a motor valve as the app computes them (LS_DOCK.interlock: row, wanted state)
+  cards-perm.json        the permissive rows of a motor valve as the app computes them (LS_OP.interlock: row, wanted state)
   cards-faceplates.json  the text of the app's own faceplate of each controller: name, range, which mode buttons exist
 Usage: python3 make-cards.py cards-rows.json cards-perm.json cards-faceplates.json > ../hx-cards.js"""
 import json, re, sys

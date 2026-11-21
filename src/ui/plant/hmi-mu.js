@@ -11,7 +11,7 @@
    - common header MU-0-010 12" (PT-MU0709) -> MU-1-020 to unit 1 (FT-MU1001): sampling, boiler and deaerator initial fill, #1
      condenser (LCV-MU1110 of ABC-031 parallel to MV-MU1001 of DITL-60), expansion tank T-1109 (MU-1-021 3": V-MU1031, XV-MU1109 of
      DITL-78 with bypass V-MU1033, V-MU1032; LT-CW1109, LSLL-CW1109) -> ACWP suction; MU-2-020 to unit 2.
-   Run state = the motor drawing of the one world (LS_DOCK.mst, as the Training dock lamps): red = running, green = stopped, red
+   Run state = the motor drawing of the one world (LS_OP.mst, as the Training dock lamps): red = running, green = stopped, red
    blinking = trip; valves red = open, green = closed, amber blinking = travelling. Values = the plant model (unit.js AN_MU,
    written into the analog rows of DITL-112 / 76 / 77 / 78 by plantsw.js, so the logic reads the same number); never from this
    page. The flow animation speed follows FIMU1001 (the pumps share it); the recirculation moves while a pump runs.
@@ -23,7 +23,7 @@
   const H = HSYM,
     T = H.T;
   const fmt = (x, dp) => (x == null || !isFinite(x) ? '-----' : (+x).toFixed(dp).replace(/^-(0(?:\.0+)?)$/, '$1'));
-  /* the machines: name, tag, run state address (LS_DOCK.mst), info card tag, logic sheet */
+  /* the machines: name, tag, run state address (LS_OP.mst), info card tag, logic sheet */
   const MACH = {
     PA: { n: 'MWP-A', t: 'P-0709A', ad: 'DITL-112', io: 'MIR-P0709A', d: 'DITL-112' },
     PB: { n: 'MWP-B', t: 'P-0709B', ad: 'DITL-112 #B', io: 'MIR-P0709B', d: 'DITL-112 #B' },
@@ -495,7 +495,7 @@
       V = {};
     const mst = M => {
       try {
-        return M.ad && window.LS_DOCK && LS_DOCK.mst ? LS_DOCK.mst(M.ad) : null;
+        return M.ad && window.LS_OP && LS_OP.mst ? LS_OP.mst(M.ad) : null;
       } catch (e) {
         return null;
       }
@@ -508,7 +508,7 @@
         ST[id] = s;
         let m = null;
         try {
-          m = window.LS_DOCK && LS_DOCK.modeOf ? LS_DOCK.modeOf(MACH[id].ad) : null;
+          m = window.LS_OP && LS_OP.modeOf ? LS_OP.modeOf(MACH[id].ad) : null;
         } catch (e) {}
         const md = q(`[data-md="${id}"]`),
           mt = (!m || m.rem == null ? '---' : m.rem ? 'REM' : 'LOC') + ' · ' + (!m || m.au == null ? '---' : m.au ? 'AUTO' : 'MAN') + ' · MCC';

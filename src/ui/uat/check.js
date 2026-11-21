@@ -290,18 +290,6 @@
   const atsN = () => (AN.tcs && AN.tcs() && AN.tcs().ats) || { rate: 360, s1800: 0, s3600: 3, init: 5 };
   const atsAcc = () => 3600 / atsN().rate + atsN().s1800 + atsN().s3600;
   const atsInit = () => (atsN().init * 150) / 100;
-  /* 3.2.0-beta.78 (live_training: the chain ticked 79 of 137 AUTO steps of PR-OPE-5002, under the 70 %): the hand steps of the procedure
-     that the chain skipped are done with the buttons of the Training (src/ui/training/guide.js), the same operator actions: the actions of
-     the Gabay step whose title matches, one every dt s from t0 (a START / STOP of a motor and the ▲ / ▼ trims are left out: the chain
-     starts the machines itself) */
-  function gabQ(o, re, t0, dt, all) {
-    const G = window.LS_GUIDE,
-      s = G && G.steps().find(x => re.test(x.t));
-    if (!s) return;
-    /* all: a machine the chain does not start itself (the utilities): its START too, as many as the step runs (max) */
-    let m = 0;
-    (s.a || []).filter(a => !/[▲▼]/.test(a.l) && (!a.stop || (all && m++ < (s.max || 1)))).forEach((a, i) => (o.q = o.q || []).push([t0 + i * dt, () => (a.hide && a.hide()) || a.f()])); /* a hidden button (a running pump) is not pressed */
-  }
   function runQ(o, t) {
     for (const x of o.q || [])
       if (!x[2] && t >= x[0]) {
@@ -343,31 +331,9 @@
       each(h, o) {
         const t = o.t,
           U = h.U;
-        /* 3.2.0-beta.78: the hand steps of PR-OPE-5002 before the fans (gabQ): biasing dampers 100 %, ID fan prepared (PICFG108 M 0 %),
-           secondary / primary air dampers 100 % then 0 % (natural draft, then closed for the fan starts), condensate recirculation and
-           hotwell / deaerator level controls, diesel oil circulation (PCV-DO0002 / PCV-DO1009), oil purifier, TICLO1002 */
+        /* the secondary / primary air dampers 100 % then 0 % (natural draft, then closed for the fan starts) */
         if (t === 0.5) {
-          gabQ(o, /^Open the RH and SH biasing dampers to 100/, 1, 1);
-          gabQ(o, /^Prepare the ID fan/, 2, 1);
-          gabQ(o, /^Pre-start check of the turbine lube/, 3, 1);
-          gabQ(o, /^Start the oil purifier pump/, 3, 1);
-          gabQ(o, /^Hotwell level control LCV-MU1110/, 4, 1);
-          gabQ(o, /^Condensate recirculation FCV-CD1120: MANUAL/, 4, 1);
-          gabQ(o, /^Diesel oil pump and oil circulation/, 4, 3);
           (o.q = o.q || []).push([2, () => (h.man('ABC-007', 'FICFA1071', 100), h.man('ABC-007', 'FICFA1081', 100))], [6, () => (h.man('ABC-007', 'FICFA1071', 0), h.man('ABC-007', 'FICFA1081', 0))]);
-          gabQ(o, /^FCV-CD1120 in AUTO, SV 150/, 40, 1);
-          gabQ(o, /^Deaerator level LCV-CD1104 in AUTO/, 40, 1);
-          gabQ(o, /^Prepare the fluidizing air blower/, 40, 2);
-          /* after the purge (light-off at 320 s): RH 10 % / SH 90 % (PR-OPE-5002 section 26, user decision #71) */
-          gabQ(o, /^Biasing dampers: RH 10/, 315, 1);
-          /* the utilities of PR-OPE-5002 sections 3 ~ 9 the chain does not need for its plant (after the SWP start at t = 10): hypochlorite
-             pump, seawater pump debris filter, auxiliary cooling water pump, instrument air dryer. Not the standby SWP: its FIELD / AUTO
-             buttons scan DITL-29A at once (dock.js pscan) and the scan writes the running memories this chain sets on the ABC side by
-             address (setx M.3302 ~ M.3304, M.3354 / M.3355) back to the DITL value 0: no fans, no air (the Training starts them on the DITL) */
-          gabQ(o, /^Start the hypochlorite pump/, 24, 1, 1);
-          gabQ(o, /^Start the seawater pump outlet debris filter/, 26, 1, 1);
-          gabQ(o, /^Start the auxiliary cooling water pump/, 28, 2, 1);
-          gabQ(o, /^Start the instrument air dryer/, 36, 1, 1);
         }
         runQ(o, t);
         if (t === 10) {
@@ -382,7 +348,7 @@
              are M). Before, the chain never filled the drum and the level check read -296 mm */
           h.autoSv('ABC-010', 'LICBR1001B', 0);
           /* audit A1: diesel oil pump A from its DCS drawing (DITL-31): REMOTE, START */
-          if (window.LS_DOCK) (LS_DOCK.dremote('DITL-31', 'DOP A'), LS_DOCK.dmotor('DITL-31', 1));
+          if (window.LS_OP) (LS_OP.dremote('DITL-31', 'DOP A'), LS_OP.dmotor('DITL-31', 1));
           for (const l of ['M.3302', 'M.3303', 'M.3304']) h.setx(null, l, 1);
         }
         /* 3.2.0-beta.78: the dampers open once the fans run (PR-OPE-5002: closed for the start, then up) */
@@ -1017,12 +983,6 @@
           U = h.U,
           tb = U.tb;
         if (t === 40) for (const tg of ['FICCL1061A', 'FICCL1061B', 'FICCL1061C']) h.mode(tg, 'LOC');
-        /* 3.2.0-beta.38: the start-up biasing damper RH 10 % / SH 90 % (the Training step, PR-OPE-5002 after the purge): Start hot kept
-           the 150 MW damper and the reheat stayed at 432 C, under the 485 C of the ATS HOT mode (1.6) */
-        if (t === 20 && window.LS_GUIDE && LS_GUIDE.A) {
-          LS_GUIDE.A.man('HICHR1002A', 10);
-          LS_GUIDE.A.man('HICHR1002B', 90);
-        }
         /* 3.2.0-beta.78: the TCS auxiliaries still missing (tcsAux, started in the bypass stage) */
         if (o.roll == null) tcsAux(o, t);
         /* 3.2.0-beta.38: the ATS refuses the roll until its step-in condition is met (tcs.js): the operator tries again every 30 s */

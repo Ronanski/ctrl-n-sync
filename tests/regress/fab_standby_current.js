@@ -24,7 +24,7 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     console.log((ok ? 'PASS ' : 'FAIL ') + w);
     if (!ok) fail++;
   };
-  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.LS_DOCK && window.LS_GUIDE, null, { timeout: 120000 });
+  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.LS_OP && window.LS_GUIDE, null, { timeout: 120000 });
   await page.waitForTimeout(2000);
   const r = await page.evaluate(async sv => {
     const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
@@ -49,7 +49,7 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     LS_GUIDE.A.man('FICFA1055A', 25);
     await run(15);
     o.st = r1(AN.unit.fnFaQ);
-    LS_DOCK.dsel('DITL-28A #B', 1, 1, 'FAB B AUTO');
+    LS_OP.dsel('DITL-28A #B', 1, 1, 'FAB B AUTO');
     await run(5);
     o.r5 = AN.ditlRun('DITL-28A #B');
     LS_GUIDE.A.man('FICFA1055A', +mvA);

@@ -3,10 +3,10 @@
    https://claude.ai/artifact/9bXtfVRUnDvvMAY8K2LKuv v3). A click on a motor of an HMI page opens its faceplate beside the motor, over the
    graphic (the graphic stays whole): status lamps (RUN red, STOP green, TRIP red blinking), the FIELD selector REMOTE / LOCAL (the field
    operator, logged as such), MODE AUTO / MAN (AUTO closed while LOCAL), DCS START / STOP with EXECUTE / CANCEL, VCB, the current with
-   its SOP band and a 10 minute trend, "SOP bago i-START" (the line-up items of the open Training step, the same ticks as the dock) and
-   "Logic permissive" (the rows of the motor drawing, live 0 / 1, read from the netlist: LS_DOCK.interlock), one line on why a button is
+   its SOP band and a 10 minute trend, and
+   "Logic permissive" (the rows of the motor drawing, live 0 / 1, read from the netlist: LS_OP.interlock), one line on why a button is
    closed, and links (I/O wiring, logic sheet, events). Same pattern for the controllers (plant.js fpOpen: A / M, SV, MV, PV).
-   UI only: every action goes through the same calls as the dock (LS_DOCK.fieldRow / dsel / dmotor), the plant and the logic are the
+   UI only: every action goes through the same calls as the operator API (LS_OP.fieldRow / dsel / dmotor), the plant and the logic are the
    engine's. Nothing is pressed for the operator, nothing is forced. */
 (function () {
   const E = (t, c, x) => {
@@ -15,7 +15,7 @@
     if (x != null) e.textContent = x;
     return e;
   };
-  const D = () => window.LS_DOCK;
+  const D = () => window.LS_OP;
   const call = (f, d) => {
     try {
       const x = f();
@@ -60,24 +60,15 @@
     }
   }, 5000);
   const host = () => document.getElementById('plmid') || document.body;
-  /* Mina beta.175 (PA fan practice, 1366 x 768: "Open faceplate: Primary air fan" of the dock opened at x 881 ~ 1209, under the dock):
-     the Training dock is a fixed panel OVER the right (or bottom) part of the Plant view. The free area of a pop-out is the Plant view
-     minus the dock, for every pop-out (opened from the dock or from the graphic) */
+  /* the free area of a pop-out: the Plant view */
   const area = () => {
     const R = host().getBoundingClientRect(),
-      a = { left: R.left, top: R.top, right: R.right, bottom: R.bottom },
-      d = document.getElementById('gdock'),
-      D = d && d.offsetParent !== null ? d.getBoundingClientRect() : null;
-    if (D && D.width && D.height) {
-      if (document.documentElement.classList.contains('gd-bottom')) {
-        if (D.top < a.bottom && D.top > a.top + 120) a.bottom = D.top;
-      } else if (D.left < a.right && D.left > a.left + 200) a.right = D.left;
-    }
+      a = { left: R.left, top: R.top, right: R.right, bottom: R.bottom };
     a.width = a.right - a.left;
     a.height = a.bottom - a.top;
     return a;
   };
-  /* beside the clicked equipment: right of it, else left, else below; inside the HMI area; never over the step tag of the dock */
+  /* beside the clicked equipment: right of it, else left, else below; inside the HMI area */
   /* Mina F13: the faceplate of one equipment opens where it stood before, when it is opened from the same place */
   const POS = {};
   function place(el, r) {
@@ -104,19 +95,12 @@
       ht = el.offsetHeight,
       a0 = r || (last && (last.r || { left: last.x, right: last.x, top: last.y, bottom: last.y, width: 0, height: 0 })) || { left: H.left + H.width / 2, right: H.left + H.width / 2, top: H.top + 40, bottom: H.top + 40 },
       a = { left: a0.left, right: a0.right, top: a0.top, bottom: a0.bottom };
-    /* live test beta.74 #33: the step's box and its "HAKBANG n" tag around the equipment are part of the anchor, so the pop-out opens
-       beside all of them (from the dock it covered SWP-A and the tag) */
-    for (const g of document.querySelectorAll('#gdhl:not([hidden]) .gd-hlb, #gdhl:not([hidden]) .gd-hlt')) {
-      const G = g.getBoundingClientRect();
-      if (G.width && G.left < a.right + 24 && G.right > a.left - 24 && G.top < a.bottom + 60 && G.bottom > a.top - 60)
-        ((a.left = Math.min(a.left, G.left)), (a.right = Math.max(a.right, G.right)), (a.top = Math.min(a.top, G.top)), (a.bottom = Math.max(a.bottom, G.bottom)));
-    }
     let x,
       side = 'l';
     if (a.right + 14 + w <= H.right - 6) x = a.right + 14 - H.left;
     else if (a.left - 14 - w >= H.left + 6) ((x = a.left - 14 - w - H.left), (side = 'r'));
     else ((x = Math.max(6, Math.min(H.width - w - 6, a.left - H.left))), (side = 'n'));
-    /* the equipment itself under the dock (the graphic runs on under it): the pop-out stays in the free area, left of the dock */
+    /* the pop-out stays inside the Plant view */
     if (x > H.width - w - 6) ((x = Math.max(6, H.width - w - 6)), (side = 'n'));
     let y = Math.max(6, Math.min(H.height - ht - 6, (a.top + a.bottom) / 2 - H.top - 60));
     /* UI audit 2026-11-21 A4: no room left or right of the equipment, so the pop-out goes below it, else above it, never over it */
@@ -124,11 +108,6 @@
       if (a.bottom + 14 + ht <= H.bottom - 6) y = a.bottom + 14 - H.top;
       else if (a.top - 14 - ht >= H.top + 6) y = a.top - 14 - ht - H.top;
     }
-    /* the "HAKBANG n" tag of the step stays in view: the pop-out goes below (or above) it when it would cover it */
-    const tg = document.querySelector('#gdhl:not([hidden]) .gd-hlt'),
-      T = tg && tg.getBoundingClientRect();
-    if (T && T.width && x + H.left < T.right && x + H.left + w > T.left && y + H.top < T.bottom && y + H.top + ht > T.top)
-      y = T.bottom - H.top + 6 + ht <= H.height ? T.bottom - H.top + 6 : Math.max(0, T.top - H.top - ht - 6);
     el.style.left = Math.round(x) + 'px';
     el.style.top = Math.round(y) + 'px';
     el.dataset.side = side;
@@ -149,8 +128,7 @@
     if (Math.abs(ny - y) > 0.5) el.style.top = Math.round(ny) + 'px';
   }
   addEventListener('resize', () => document.querySelectorAll('.fpo-near, .fpo-box').forEach(el => el.offsetParent && keepIn(el)));
-  /* Mina beta.175: the Plant view gets narrower AFTER the pop-out was placed (the dock opens or its page changes at the click of a dock
-     link): the open pop-outs move back into the free area */
+  /* Mina beta.175: the Plant view gets narrower AFTER the pop-out was placed (a side panel opens or the page changes): the open pop-outs move back into the free area */
   try {
     let ro = null;
     const watch = () => {
@@ -438,20 +416,16 @@
       return [v, f];
     });
     if (M.cur) F.bd.append(trH, trend);
-    /* SOP line-up of the open step (only when this motor belongs to it) and the logic permissive */
-    const sopH = E('div', 'fpo-sh'),
-      sopL = E('ul', 'fpo-il');
+    /* the logic permissive */
     const ilH = E('div', 'fpo-sh', 'LOGIC PERMISSIVE' + (nm ? ' · ' + nm : '')),
       ilL = E('ul', 'fpo-il');
-    F.bd.append(sopH, sopL, ilH, ilL);
+    F.bd.append(ilH, ilL);
     /* the sections of the part: CONTROL without permissive / trend, INFO without the commands (moved to the top: permissive first) */
-    if (part === 'control') for (const el of [rCur, trH, trend, sopH, sopL, ilH, ilL]) el.hidden = true;
+    if (part === 'control') for (const el of [rCur, trH, trend, ilH, ilL]) el.hidden = true;
     if (part === 'info') {
       for (const el of [rSel, amR, rCmd, why, rVcb]) el.hidden = true;
       F.bd.insertBefore(ilL, rSt.nextSibling);
       F.bd.insertBefore(ilH, ilL);
-      F.bd.insertBefore(sopL, ilL.nextSibling);
-      F.bd.insertBefore(sopH, sopL);
     }
     /* live test 2026-11-05 (FEEDWATER: the BFWP start needs its auxiliary lube oil pump, DITL-22 / #B / #C / #D, PR-OPE-5002 19.5, and
        the page draws no symbol for it): M.aux = [[label, drawing]] = the auxiliary motors of this machine, each opens its own faceplate */
@@ -540,10 +514,7 @@
          the DCS START of the drawing is the one accepted only in MAN (DITL-112 OUT8 = PULSE(START P.B.) AND NOT AUTO), not an interlock */
       const sby = st === 'STOP' && md.rem === true && md.au === true;
       const miss = I && !sby ? I.miss.filter(r => !/REMOTE/.test(r.svc)) : [];
-      /* the SOP line-up of the open step first (PR-OPE-5002: line-up before the start), as the dock */
-      const sop = call(() => (dk.sopFor ? dk.sopFor(M.ad, M.d) : null), null),
-        sopLeft = sop ? sop.items.filter(x => !x.ok).length : 0;
-      bSt.disabled = loc || sby || st === 'RUN' || st === 'TRIP' || miss.length > 0 || sopLeft > 0;
+      bSt.disabled = loc || sby || st === 'RUN' || st === 'TRIP' || miss.length > 0;
       bSp.disabled = loc || st !== 'RUN';
       bSt.classList.toggle('lit-run', st === 'RUN');
       bSp.classList.toggle('lit-stop', st === 'STOP');
@@ -597,8 +568,6 @@
             ? 'Selector at LOCAL: AUTO, START and STOP from the DCS are blocked. Set the field selector to REMOTE first.'
             : sby
               ? 'STANDBY, ready: its drawing starts it by itself (auto cut-in' + (/^DITL-(29A|30)\b/.test(nm || '') ? ': when a running pump trips, not on a normal STOP' : '') + '). DCS START is in MAN only.'
-              : sopLeft && st !== 'RUN'
-              ? 'START blocked: finish the SOP line-up first (' + sopLeft + ' left, ✕ below; tick them in the guide).'
               : miss.length && st !== 'RUN'
               ? 'START blocked: ' + missTxt()
               : !run && st !== 'RUN'
@@ -607,8 +576,8 @@
                 ? 'Selector at REMOTE: the local panel START and STOP are blocked (' + (nm || 'its drawing') + ' rows ' + lcpRows + ' work only in LOCAL). Use DCS START / STOP.'
                 : '';
       why.hidden = part === 'info' || !why.textContent;
-      /* #59: the Y / N of the info faceplate (and of the page's button: M.onYN) = every logic permissive and SOP line-up item complete */
-      const yn = !loc && !miss.length && !sopLeft;
+      /* #59: the Y / N of the info faceplate (and of the page's button: M.onYN) = every logic permissive complete (the SOP line-up check went with the guided training, 2026-11-21 GO NO SOP) */
+      const yn = !loc && !miss.length;
       if (part === 'info') ilH.textContent = 'PERMISSIVE · ' + (yn ? 'Y (all complete)' : 'N (not complete)') + (nm ? ' · ' + nm : '');
       if (M.onYN) call(() => M.onYN(yn), null);
       for (const [v, f] of monV) {
@@ -633,31 +602,6 @@
           /* the newest value as a dot (a line needs two samples, 5 s apart) */
           (H.length ? `<circle cx="298" cy="${(47 - (H[H.length - 1][1] / mx) * 44).toFixed(1)}" r="2.5" fill="${st === 'RUN' ? '#e5484d' : '#93a2b2'}"/>` : '');
       }
-      /* SOP line-up of the open step */
-      sopH.hidden = sopL.hidden = part === 'control' || !(sop && sop.items.length);
-      if (sop && sop.items.length) {
-        sopH.textContent = 'SOP BEFORE START · PR-OPE-5002 section ' + sop.sec + ' · ' + sop.items.filter(x => x.ok).length + ' / ' + sop.items.length;
-        /* what is left only (✕), the done ones as one line (the full list with its ticks is in the dock) */
-        const k = JSON.stringify(sop.items.map(x => [x.t, x.ok]));
-        if (k !== sopL.dataset.k) {
-          sopL.dataset.k = k;
-          const left = sop.items.filter(x => !x.ok),
-            dn = sop.items.length - left.length;
-          sopL.replaceChildren(
-            ...left.slice(0, 5).map(x => {
-              const li = E('li', 'bad');
-              li.append(E('i', '', '✕'), E('span', '', x.t), x.by ? E('em', '', x.by) : '');
-              return li;
-            }),
-            ...(left.length > 5 ? [E('li', 'bad', '+ ' + (left.length - 5) + ' more (in the guide)')] : []),
-            ...(dn ? [(() => {
-              const li = E('li', 'ok');
-              li.append(E('i', '', '✓'), E('span', '', 'Done: ' + dn + ' items'));
-              return li;
-            })()] : [])
-          );
-        }
-      }
       /* logic permissive: the rows of the drawing, live */
       /* one line per signal: the rows of one address (DITL-29A rows 5, 18, 22 = SEAWATER PUMP C REMOTE MODE SELECTED) are one row */
       const rows = [];
@@ -671,8 +615,8 @@
       if (kk !== k0) {
         k0 = kk;
         /* tracker e1 (user 2026-11-10: a cold start without Training): the FIELD contact behind a missing row (the LOCAL / REMOTE selector,
-           a NOT TRIP contact, a limit switch ...) gets the same FIELD button as the Training dock interlock row (dock.js: LS_DOCK.fieldOf
-           finds the field input rows the row needs, LS_DOCK.fieldSet sets them, every row of the same address). A CRT selection (AUTO MODE
+           a NOT TRIP contact, a limit switch ...) gets the same FIELD button as the Training dock interlock row (dock.js: LS_OP.fieldOf
+           finds the field input rows the row needs, LS_OP.fieldSet sets them, every row of the same address). A CRT selection (AUTO MODE
            SELECTED) and a process value of the plant model get no button: no FORCE */
         const fo = rows.some(r => !r.ok) ? call(() => dk.fieldOf(M.ad), null) : null,
           used = new Set();
@@ -737,7 +681,7 @@
   /* ---------- the valve faceplate (live test beta.74, spec item 2: OPEN / CLOSE, AUTO / MAN, ZSO / ZSC) ----------
      V = { n, t, d (its DITL drawing), io, isOpen(), isAuto(), opRow, clRow (the OPEN / CLOSE P.B. rows, pulses in MAN), auSel(v) (the
      AUTO / MAN selection of the drawing), auto (what the logic does in AUTO), why() (a reason it cannot open: '' when none) }.
-     The same calls as the dock (LS_DOCK.dpress / dset / dsel); the operator presses, the faceplate never acts on its own */
+     The same calls as the operator API (LS_OP.dpress / dset / dsel); the operator presses, the faceplate never acts on its own */
   function valve(V) {
     const dk = D();
     if (!V || !dk || !V.d || !call(() => dk.dOf(V.d), null)) return false;
@@ -914,7 +858,7 @@
   }
   /* live test #45: a package run by push buttons of a DITL drawing (debris filter S-1502 / S-1504, DITL-39: REMOTE AUTO START / STOP P.B.
      to the local panel, IN OPERATION back). P = { n, t, d (drawing), io, st: { row, on, off }, pbs: [[label, row, address]],
-     perm: [{ row, l }] (any one = 1), vals: [[tag, fn, unit]] }. Same rows and calls as the dock (LS_DOCK.dout / dpress) */
+     perm: [{ row, l }] (any one = 1), vals: [[tag, fn, unit]] }. Same rows and calls as the dock (LS_OP.dout / dpress) */
   function pb(P) {
     const dk = D();
     if (!P || !dk || !P.d || !call(() => dk.dOf(P.d), null)) return false;
@@ -933,7 +877,7 @@
       return b;
     });
     /* live test 2026-11-05 (air dryers, DITL-45): P.sel = the REMOTE input row of the local panel (I.0099 / I.0085 ...): the field operator
-       turns it (LS_DOCK.fieldRow, every row of the same address); the DCS push buttons need REMOTE */
+       turns it (LS_OP.fieldRow, every row of the same address); the DCS push buttons need REMOTE */
     let bRem = null,
       bLoc = null;
     if (P.sel != null) {
@@ -1616,8 +1560,8 @@
   const valveOpen = tg =>
     call(() => (VALVES[tg] ? (VALVES[tg].isOpen() ? 1 : 0) : FIELDV[tg] ? (AN.fieldState && AN.fieldState()[FIELDV[tg].k] ? 1 : 0) : fvAll()[tg] != null ? (+fvAll()[tg] > 0 ? 1 : 0) : null), null);
   const valveTag = tg => (VALVES[tg] ? valve(VALVES[tg]) : FIELDV[tg] ? fieldValve(FIELDV[tg]) : fvAll()[tg] != null ? fieldPct(tg) : false);
-  /* #59: the Y / N of a motor for the button on its page (the same test as the info faceplate): true = every logic permissive and SOP
-     line-up item complete, false = not, null = no logic */
+  /* #59: the Y / N of a motor for the button on its page (the same test as the info faceplate): true = every logic permissive
+     complete, false = not, null = no logic */
   function yn(M) {
     const dk = D();
     if (!M || !dk || !M.ad) return null;
@@ -1626,9 +1570,8 @@
     const st = call(() => dk.mst(M.ad), null),
       md = call(() => (M.modeFn ? M.modeFn() : dk.modeOf(M.ad)), null) || {},
       sby = st === 'STOP' && md.rem === true && md.au === true,
-      miss = sby ? [] : I.miss.filter(r => !/REMOTE/.test(r.svc)),
-      sop = call(() => (dk.sopFor ? dk.sopFor(M.ad, M.d) : null), null);
-    return md.rem !== false && !miss.length && !(sop && sop.items.some(x => !x.ok));
+      miss = sby ? [] : I.miss.filter(r => !/REMOTE/.test(r.svc));
+    return md.rem !== false && !miss.length;
   }
   /* an HMI page's click on a machine: its faceplate when the motor is known to the logic, else the info card (as before) */
   function hit(M, fallback) {

@@ -158,7 +158,7 @@
   const condTarget = dy => {
     const p = String(dy || '').split('|');
     if (p.length < 3) return null;
-    const s = call(() => LS_DOCK.dOf(p[0]), null),
+    const s = call(() => LS_OP.dOf(p[0]), null),
       row = +p[2];
     if (!s || !isFinite(row)) return null;
     if (p[1] === 'o') return ofSheet(p[0]) || ofSheet(s.name);

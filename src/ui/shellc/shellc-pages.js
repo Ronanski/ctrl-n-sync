@@ -116,17 +116,10 @@
     true
   );
   const hitR = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-  /* the free area: the page minus the Training dock (fp-pop.js area(), the same rule) */
+  /* the free area: the page under its bars */
   function area() {
     const R = $('plmid').getBoundingClientRect(),
-      a = { left: R.left, top: R.top, right: R.right, bottom: R.bottom },
-      d = $('gdock'),
-      D = d && d.offsetParent !== null ? d.getBoundingClientRect() : null;
-    if (D && D.width && D.height) {
-      if (document.documentElement.classList.contains('gd-bottom')) {
-        if (D.top < a.bottom && D.top > a.top + 120) a.bottom = D.top;
-      } else if (D.left < a.right && D.left > a.left + 200) a.right = D.left;
-    }
+      a = { left: R.left, top: R.top, right: R.right, bottom: R.bottom };
     const pb = bar && bar.offsetParent ? bar.getBoundingClientRect() : null;
     if (pb && pb.bottom > a.top && pb.bottom < a.bottom) a.top = pb.bottom;
     const tp = tsp && !tsp.hidden ? tsp.getBoundingClientRect() : null;

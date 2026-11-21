@@ -130,7 +130,6 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-cr.st-se { grid-template-columns: 10px 76px 64px minmax(0, 1fr) 150px 130px; }
 .st-cr.st-sc { grid-template-columns: 10px 84px minmax(0, 1fr) 230px; }
 .st-cr.st-tr.miss { grid-template-columns: 10px minmax(0, 1fr) 110px; }
-.st-scv { align-self: center; flex: 1 1 100%; font-weight: 600; }
 .st-row > .st-cs { align-self: center; font-size: 12px; color: var(--st-dim); }
 .st-ph b.st-hot { color: var(--st-alm); }
 .st-gc .st-gv.st-hot { color: var(--st-alm); }
