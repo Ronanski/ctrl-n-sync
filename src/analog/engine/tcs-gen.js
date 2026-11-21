@@ -51,7 +51,7 @@ function tcsWrap(a) {
   return ((((a + 180) % 360) + 360) % 360) - 180;
 }
 /* the generator quantities that follow from the unit as it stands (the field state, the speed, the grid): a state made between two
-   scans (the panel read while the plant is paused, a save point of before beta.236) shows what the next scan starts from, not "--".
+   scans (the panel read while the plant is paused, a save point of before beta.235) shows what the next scan starts from, not "--".
    The same lines the scan runs (tcsGenStep): the flux is the voltage it has, the field holds that flux (steady state: efd = eq), the
    shaft frequency is the speed / 60 */
 function tcsGenFill(U, g) {
@@ -92,7 +92,7 @@ function tcsGenStep(U, dt) {
     tb = U.tb,
     g52 = tb.st === 'sync' || tb.st === 'load',
     c = U.tc;
-  /* a save point of before beta.236 has no field state: tcsGen filled it (tcsGenFill) */
+  /* a save point of before beta.235 has no field state: tcsGen filled it (tcsGenFill) */
   g.t = (g.t || 0) + dt;
   /* the grid frequency of the model (unit.js anGridHz: this drift plus a grid fault), the one the shaft turns with on the line */
   const fgr = isFinite(U.gridHz) ? U.gridHz : tcsGridHz(isFinite(U.t) ? U.t : g.t);
