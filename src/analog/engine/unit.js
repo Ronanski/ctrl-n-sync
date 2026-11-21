@@ -25,16 +25,22 @@ function anIdfN(m) {
      - superheater pressure drop: drum 134.2 - MSP 122.6 at 474.1 T/H, proportional to the flow squared;
      - storage C, firing lag, MW lag and the TCS speed: not in the repository; typical values of a 150 MW drum boiler (ASSUMED,
        written here so they can be changed) */
+/* 1.0.0-beta (JENNIE, heat balance study 2026-11-21): THE STEAM SPACE STORAGE of the drum pressure. Before, AN_UNIT.C was 1500
+   (T/H) x s per kg/cm2, ASSUMED from the tuning of the plant, added to the storage of the water and steel (Cw, T8 Tab 2 + B-0-001):
+   the flash of the boiler water when the pressure falls was counted twice (effective 2,800 at 75 MW). The steam itself only stores
+   its own mass: d(rho) / dP x volume (IAPWS-IF97 at 116 bar):
+   - drum steam space at the normal level: half of 1.676 m ID x 12.48 m tangent + heads (K1AU3-B-0-004) = 15 m3, saturated steam
+     0.88 kg/m3 per kg/cm2 = 13 kg;
+   - superheaters 75.8 m3 (T8 Tab 2 HYD less the water parts), superheated about 450 C, 0.42 kg/m3 per kg/cm2 = 32 kg;
+   - main steam line to the stop valves: NO-SOURCE, about 20 m3 (8 kg).
+   53 kg per kg/cm2 = 190 (T/H) x s per kg/cm2 (CALC). The old field C of a save is not read */
+const AN_STORE = { cs: 190 };
 const AN_UNIT = {
   on: false,
   /* sweep 34 (Mina beta.175: AN.unit.MW read NaN once right after a chip load): a load begins with the Reset (anStateInPlace back to
      this object), which had no MW, so MW was undefined until the starting state set it (MW0 / 0). The generator gives 0 MW until then */
   MW: 0,
-  /* storage and firing lag from the TUNING OF THE PLANT (PID summary: PIC-COBM Kp 3.0, Ti 165 s, Td 7 s): the pressure of a drum
-     whose steam flow the TCS holds is an integrator, and a PI on an integrator with a lag is stable only when the lag is well below
-     Ti. With 700 / 150 s the loop of the plant tuning oscillated (MSP 70 ~ 126 kg/cm2 at 85 MW, the PID at +-25 %); with
-     1500 / 60 s the cross-over of that PI is where its phase is best (about 0.01 rad/s). Not measured on the plant */
-  C: 1500 /* (T/H) x s per kg/cm2 of drum pressure */,
+
   tauMW: 10 /* s, steam flow -> MW (reheater, NO-SOURCE: the plant trends are 60 s averages, too slow to fit it) */,
   tcs: 20 /* s, TCS load loop (NO-SOURCE: the TCS soft logic is a PC-only scan) */,
   /* other steam outlets of the main steam line, flow at 100 % open and the anchor pressure, as a share of the anchor flow (the valve
@@ -5347,10 +5353,10 @@ function anUnitStep0(dt) {
     if (U.Tw < ts - 0.01) {
       U.Qs = 0;
       U.Tw = Math.max(U.Tamb, Math.min(ts, U.Tw + ((qW - qL) * dt) / U.Cw));
-      U.Pd = Math.max(0, U.Pd - (mDr * dt) / U.C);
+      U.Pd = Math.max(0, U.Pd - (mDr * dt) / AN_STORE.cs);
     } else {
       U.Qs = Math.max(0, (qSol + qGas) / kWe); /* the steam made, T/H */
-      U.Pd = Math.max(0, U.Pd + (((qSol + qGas) / kWe - qL * r - mDr) * dt) / (U.C + U.Cw * r * steamDTsat(U.Pd)));
+      U.Pd = Math.max(0, U.Pd + (((qSol + qGas) / kWe - qL * r - mDr) * dt) / (AN_STORE.cs + U.Cw * r * steamDTsat(U.Pd)));
       U.Tw = tsatOf(U.Pd);
     }
   }
