@@ -1815,7 +1815,7 @@ function anStep(S, dt) {
           hk = all.map((x, k) => {
             const sid = b.sgi && b.sgi[k];
             const q = sid != null && rt.st[sid];
-            return !(q && q.val > 0.5) && Math.abs(x) > 1e-9; /* zero = lost signal (user rule, SIG.AB) */
+            return !(q && q.val > 0.5) && (!(b.txi && b.txi[k]) || Math.abs(x) > 1e-9); /* transmitter zero = lost signal (user rule, SIG.AB) */
           }),
           ok = all.filter((_, k) => hk[k]);
         const md = P.mode || 'AVG',
