@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-22 PHT** (LEADER : JENNIE, beta.256: bed na naka-anchor sa thermocouple ng planta, may upper furnace balance; luma na save ay nililipat sa load).
+Huling update: **2026-11-22 PHT** (LEADER : JENNIE, beta.258: #4 step 2, ang kahulugan ng bawat block ng TCS mula sa macro list, may test sa Checks).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -14,7 +14,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.256**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.258**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
@@ -32,7 +32,7 @@ Tapos: #1 Android key (GitHub secret), #2 behaviour gate, #7 version at ulat baw
 
 Jennie, bahagi o bukas:
 - #3 init sa mahabang takbo: bed naka-anchor sa TT-FG1090 (256). Bukas pa: 150 → 90 MW ramp at RH spray sa 75 MW (ulat 256 F2, F3).
-- #4 TCE / TCA sheets bilang tumatakbong logic, kapalit ng `tcs.js`.
+- #4 TCE / TCA sheets bilang tumatakbong logic, kapalit ng `tcs.js`. Tapos: step 1 (netlist, 254), step 2 unang bahagi (block meanings, 258). Susunod: ang 9 na macro, ang FG points, step 3 I/O.
 - #5 NO-SOURCE sa engine (251).
 - #11 ayos ng code (modules, hatiin ang `unit.js`).
 - #12 Warm / Hot sa start screen (mula sa trip sa 150 MW, physics).
