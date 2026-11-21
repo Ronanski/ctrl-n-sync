@@ -862,6 +862,45 @@
     });
   }
 
+  /* audit 2026-11-21 A3: the click box of a valve, pump or controller (.hx-hit) covered its symbol only, so a click on its name or
+     its value fell on the drawing and opened nothing (MV-BD1001: 24 % of the item answered). Once the page is drawn, the box grows to
+     the whole item: symbol, name, tag and value (its own getBBox). It does not grow over the symbol of another item: a box that would
+     reach another item's symbol keeps its symbol size, so no item takes the click of its neighbour */
+  function fitHits(page) {
+    const svg = page.querySelector('.hx-process svg');
+    if (!svg) return;
+    const at = n => {
+      const t = n.transform && n.transform.baseVal.consolidate();
+      return t ? [t.matrix.e, t.matrix.f] : [0, 0];
+    };
+    const all = [...svg.querySelectorAll('.hx-node')].map(n => {
+      const h = n.querySelector(':scope > .hx-hit'),
+        [dx, dy] = at(n);
+      if (!h) return { n, h, dx, dy, sym: null };
+      const x = +h.getAttribute('x'),
+        y = +h.getAttribute('y');
+      return { n, h, dx, dy, sym: [x + dx, y + dy, x + dx + +h.getAttribute('width'), y + dy + +h.getAttribute('height')] };
+    });
+    const hits = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+    for (const o of all) {
+      if (!o.h || !(o.n.hasAttribute('data-open') || o.n.hasAttribute('data-hp'))) continue;
+      let b;
+      try {
+        b = o.n.getBBox();
+      } catch (e) {
+        continue;
+      }
+      if (!b || !b.width || !b.height) continue;
+      const r = [b.x - 2, b.y - 2, b.x + b.width + 2, b.y + b.height + 2],
+        R = [r[0] + o.dx, r[1] + o.dy, r[2] + o.dx, r[3] + o.dy];
+      if (all.some(q => q !== o && q.sym && !o.n.contains(q.n) && !q.n.contains(o.n) && hits(R, q.sym))) continue;
+      o.h.setAttribute('x', n1(r[0]));
+      o.h.setAttribute('y', n1(r[1]));
+      o.h.setAttribute('width', n1(r[2] - r[0]));
+      o.h.setAttribute('height', n1(r[3] - r[1]));
+    }
+  }
+
   /* the shading of equipment bodies (hx.css .hxo): one gradient for the whole document, its colours are theme tokens */
   function shading() {
     if (document.getElementById('hxg')) return;
@@ -890,6 +929,7 @@
       `<div class="hx-tabs" role="tablist">${['Process', 'Controls', 'Trends'].map((t, i) => `<button role="tab" data-view="${t.toLowerCase()}" aria-selected="${i === 0}">${t}</button>`).join('')}</div></header>` +
       `<section class="hx-view hx-process"><div class="hx-draw">${pr.svg}</div>${(def.lists || []).length ? `<div class="hx-lists">${def.lists.map(l => `<div><h3>${esc(l.title)}</h3><small>${esc(l.src || '')}</small>${l.rows.map(r => `<p><span class="hx-ynb" data-flag="${esc((l.key || '') + '|' + r)}">-</span>${esc(r)}</p>`).join('')}</div>`).join('')}</div>` : ''}<div class="hx-legend">${pr.legend}</div></section><section class="hx-view hx-controls" hidden>${drawControls(def, inv)}</section><section class="hx-view hx-trends" hidden>${drawTrends(def)}</section>`;
     host.append(page);
+    fitHits(page);
     let view = opts.view || 'process',
       span = 900;
     const show = v => {
