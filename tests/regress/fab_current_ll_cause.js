@@ -32,7 +32,7 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
       WORLD.idx &&
       window.DITL150 &&
       window.LS_OP &&
-      window.LS_GUIDE,
+      window.TOP,
     null,
     { timeout: 120000 }
   );
@@ -57,16 +57,16 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     /* B started by its logic with A running, as in Mina's run (the FA flow under the L.L. 20 T/H at the AUTO): A's damper down to
        25 % for the AUTO, then back */
     const mvA = LS_LIVE.mvOf(LS_LIVE.fp('FICFA1055A'));
-    LS_GUIDE.A.man('FICFA1055A', 25);
+    TOP.man('FICFA1055A', 25);
     await run(15);
     o.st = r1(AN.unit.fnFaQ);
     LS_OP.dsel('DITL-28A #B', 1, 1, 'FAB B AUTO');
     await run(5);
     o.r5 = AN.ditlRun('DITL-28A #B');
-    LS_GUIDE.A.man('FICFA1055A', +mvA);
+    TOP.man('FICFA1055A', +mvA);
     await run(20);
     o.both = AN.ditlRun('DITL-28A') + '/' + AN.ditlRun('DITL-28A #B');
-    LS_GUIDE.A.motor('M.3308', 0);
+    TOP.motor('M.3308', 0);
     await run(60, () => {
       if (AN.ditlRun('DITL-28A #B') !== 1) o.drop++;
       o.iMin = Math.min(o.iMin, AN.unit.fnIb);
@@ -75,7 +75,7 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     const n1 = lsEvents.length;
     o.trip = null;
     for (let i = 0; i < 120 && o.trip == null; i++) {
-      LS_GUIDE.A.man('FICFA1055B', 0);
+      TOP.man('FICFA1055B', 0);
       await run(0.5);
       if (AN.ditlRun('DITL-28A #B') !== 1) o.trip = i / 2;
     }

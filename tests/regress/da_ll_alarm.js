@@ -22,7 +22,7 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     console.log((ok ? 'PASS ' : 'FAIL ') + w);
     if (!ok) fail++;
   };
-  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.LS_GUIDE && window.lsEventsLoaded, null, { timeout: 120000 });
+  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.TOP && window.lsEventsLoaded, null, { timeout: 120000 });
   await page.waitForTimeout(2000);
   const r = await page.evaluate(async sv => {
     const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
@@ -41,7 +41,7 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     await run(2);
     await new Promise(r => setTimeout(r, 1200));
     const o = { bfp0: bfp() };
-    LS_GUIDE.A.man('LICCD1104', 0);
+    TOP.man('LICCD1104', 0);
     /* the alarm scan of the page runs each 500 ms of real time: 30 s steps to 12 min, then 1 s steps, so a line is not late by the test */
     for (let k = 0; k < 24; k++) {
       await run(30);

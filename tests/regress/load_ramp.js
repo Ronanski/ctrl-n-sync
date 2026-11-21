@@ -19,7 +19,7 @@ const run=sec=>page.evaluate(async sec=>{const R=window.__R,L=window.LS_LIVE;
   await new Promise(r=>setTimeout(r,0))}},sec);
 const snap=()=>page.evaluate(()=>{const L=window.LS_LIVE,U=AN.unit,pv=t=>{try{const f=L.fp(t);return f.kind==='ctl'?+f.S.rt.v[f.c.q.pv]:NaN}catch(e){return NaN}},sv=t=>{try{const f=L.fp(t);return +f.S.rt.v[f.c.q.sv]}catch(e){return NaN}};
  return{MW:U.MW,MSP:pv('PIC-COBM'),SV:sv('PIC-COBM'),lvl:pv('LICBR1001'),MST:pv('TICMS1004'),RHT:pv('TICHR1002'),tb:U.tb&&U.tb.st}});
-const act=(f,a)=>page.evaluate(([f,a])=>{const A=window.LS_GUIDE&&LS_GUIDE.A;return A?A[f](...a):'no guide'},[f,a]);
+const act=(f,a)=>page.evaluate(([f,a])=>{const A=window.TOP&&TOP;return A?A[f](...a):'no guide'},[f,a]);
 await run(300);const a=await snap();
 ck(Math.abs(a.MW-150)<3&&a.tb==='load','150 MW holds 5 min: MW '+a.MW.toFixed(1)+', MSP '+a.MSP.toFixed(1)+' (SV '+a.SV.toFixed(1)+')');
 console.log('     MWRL 1.2: '+await act('man',['HIC-MWRL',1.2])+' · ULD target 90: '+await act('target',['HIC-ULD',90]));

@@ -20,8 +20,7 @@ async function mode(worker) {
   }
   await page.evaluate(async spd => {
     /* as the real run (M32 on the site: x225 ~ 240 with the Training): the Training's own start (Cold, its sheets, the dock open) */
-    if (window.LS_GUIDE && LS_GUIDE.start) await new Promise(ok => LS_GUIDE.start(ok));
-    else await AN.loadStart('cold');
+    await AN.loadStart('cold');
     AN.spd = spd;
     AN.runOn();
     if (window.lsSetTab) lsSetTab('operate');

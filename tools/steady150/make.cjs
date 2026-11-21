@@ -26,7 +26,7 @@ async function chunk(sv, min, log) {
       document.getElementById('load150').click();
       await AN._startP;
       if (sv) { const o = JSON.parse(sv); await DITL150.savePut({ kf: o.kf, kd: o.kd, ver: 'st150' }); }
-      else for (const [t, v] of Object.entries(AUTO)) LS_GUIDE.A.auto(t, v);
+      else for (const [t, v] of Object.entries(AUTO)) TOP.auto(t, v);
       window.__h = { C: AN.sheets.find(s => s.name === 'ABC-001C') };
     }, [sv, AUTO]);
     for (let m = 0; m < min; m++) {

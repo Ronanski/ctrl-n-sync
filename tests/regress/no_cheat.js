@@ -37,22 +37,21 @@ async function cold(b, worker) {
     for (const e of await p.$$(sel)) if ((await e.textContent()).includes(txt) && (await e.isVisible())) return e.click().then(() => true);
     return false;
   };
-  await clickTxt('button', 'Training');
-  await p.waitForTimeout(800);
-  await clickTxt('#trainws button', 'Guide: Cold');
-  await p.waitForFunction(() => window.AN && !AN._loading && AN.startState === 'plantCold' && window.LS_GUIDE && LS_GUIDE.on, null, { timeout: 240000 }).catch(() => {});
+  /* GO NO SOP 2026-11-21: no Training > Guide any more; Cold is the engine start (AN.loadStart, as the start screen) and RUN */
+  await p.waitForFunction(() => window.AN && AN.loadStart && AN.sheets && AN.sheets.length >= 54, null, { timeout: 240000 });
+  await p.evaluate(() => AN.loadStart('cold'));
+  await p.waitForFunction(() => window.AN && !AN._loading && AN.startState === 'plantCold', null, { timeout: 240000 }).catch(() => {});
   await p.waitForTimeout(2000);
-  await p.click('#gdock .gd-pill');
-  await p.evaluate(() => (AN.spd = 60));
+  await p.evaluate(() => ((AN.spd = 60), AN.runOn()));
   return { p, errs };
 }
-/* the START permissive of every motor of the Training steps, as the dock shows it */
+/* the START permissive of every motor of the HMI pages (LS_MOCK machines with a DITL address), as the faceplate shows it */
 const perms = p =>
   p.evaluate(() => {
     const o = {};
-    for (const s of LS_GUIDE.steps())
-      for (const a of s.a || [])
-        if (a && a.stop && a.ad && !(a.ad in o))
+    for (const d of (window.LS_MOCK && LS_MOCK.defs) || [])
+      for (const a of Object.values(d.mach || {}))
+        if (a && a.ad && !(a.ad in o))
           try {
             const I = LS_OP.interlock(a.ad);
             if (I && I.live) o[a.ad] = I.sheet + ': ' + I.miss.map(m => m.no).sort((x, y) => x - y).join(',');
