@@ -36,7 +36,8 @@ const TCS = {
      81.6, hot 110 / 455 C, RH 485 C): criteria 1.3 ~ 1.6 MAIN / REHEAT STEAM PRESS. / TEMP. NOT LOW (set point "NOT LESS THAN", IBD).
      3.2.0-beta.38: the reheat pressure "NOT LOW" at 7.0: the procedure gives 7.5 kg/cm2 as the rolling condition and holds it with the
      LP bypass at SV 7.6 ("HP and LP bypass and RH BOV automatically open to maintain RHP SV = 7.6"); with 7.5 as the limit the step
-     criteria B dropped in and out on the 0.1 ~ 0.5 kg/cm2 swing of the LP bypass. The IBD set point is not readable here */
+     criteria B dropped in and out on the 0.1 ~ 0.5 kg/cm2 swing of the LP bypass. The criteria themselves now use the set
+     points of the TCS drawings (TCS.cri below); this table stays the rolling steam of the procedure, for the guide */
   steam: {
     amb: [60, 400, 7.0, 415],
     c1: [60, 400, 7.0, 415],
@@ -44,6 +45,12 @@ const TCS = {
     warm: [81.6, 400, 7.0, 415],
     hot: [110, 455, 7.0, 485]
   },
+  /* the set points of the ATS criteria 1.3 ~ 1.6 on the TCS drawings (331DM09788), which decide where they differ from the rolling steam
+     above (that one is the procedure target, for the guide): TCA536 CRI 1.3 MAIN STEAM PRESS. NOT LOW = CPL A003 against SG 037 / 038 / 041
+     K 105.3 / 76.5 / 57.0 barg by HOT MODE / WARM MODE (ASW 039 / 040), CRI 1.4 MAIN STEAM TEMP. NOT LOW = CPL A007 against SG 042 / 043 /
+     046 K 345 / 323 / 304 C (ASW 044 / 045); TCA532 CRI 1.5 REHEAT STEAM PRESS. NOT LOW = CPL A003 HL / LL 7.0 barg, CRI 1.6 REHEAT STEAM
+     TEMP. NOT LOW = CPL A007 HL / LL 201.0 C. barg in kg/cm2 g: x 1.01972 (1 bar = 1.01972 kg/cm2) */
+  cri: { cold: [58.12, 304, 7.14, 201], warm: [78.01, 323, 7.14, 201], hot: [107.38, 345, 7.14, 201] },
   /* Fig. 2 / 3 (776 page 21): allowable steam temperature against the metal temperature; the allowable band is upper limit to target (776 page 5) */
   fig2: {
     up: [
@@ -254,7 +261,7 @@ function tcsBandI(c, k, v, bad, ok) {
 function tcsCrit(U) {
   const c = U.tc,
     s = tcsSteam(U),
-    st = TCS.steam[c.mode] || TCS.steam.amb,
+    st = TCS.cri[c.mode === 'hot' || c.mode === 'warm' ? c.mode : 'cold'],
     tb = U.tb || {},
     f2u = tcsLin(TCS.fig2.up, c.Thp),
     f2l = tcsLin(TCS.fig2.tg, c.Thp),
@@ -316,36 +323,19 @@ function tcsCrit(U) {
     ),
     '1.20': f('1.20', 'TURBINE RESET', !tcsTripNow(U)),
     1.21: f('1.21', 'MSV OPEN', c.rst),
-    1.8: f('1.8', 'HP / LP BYPASS CONTROL IN AUTO', tcsByp(U)),
+    1.8: f('1.8', 'HP / LP BYPASS CONTROL IN AUTO', tcsBypDcs()),
+    /* CRI 1.9 (TCA532 B11 from TCE041, TCE900 ch 26 = DITL-115 row 15 ZSC-MS1020): shown on TCA526 / TCA532, not a step-in or hold criterion */
+    1.9: f('1.9', 'HP BYPASS VALVE FULL CLOSED', !!tcsDitlOut('DITL-115', /^HP BYPASS VALVE FULL CLOSE/)),
     1.48: f('1.48', '52G CLOSED', tb.st === 'sync' || tb.st === 'load'),
     2.4: f('2.4', 'TURBINE RATED SPEED (> 3550 rpm)', tb.rpm > 3550, tb.rpm),
     2.6: f('2.6', 'IP TO HP TRANSFER COMPLETE', !!tb.xfer)
   };
 }
-/* 1.8: HP bypass PICMS1006 and LP bypass PICHR1003 in AUTO (the A / M switch of the controller on its AUTO leg, as the faceplate) */
-function tcsCtl(tag) {
-  const c = TCS.ctl || (TCS.ctl = {});
-  if (!(tag in c)) {
-    c[tag] = null;
-    for (const sh of AN.sheets) {
-      if (!sh.S || /^ABC-000/.test(sh.name) || !AN.hmiCtrls) continue;
-      const q = (AN.hmiCtrls(sh.S) || []).find(x => x.tag === tag);
-      if (q) {
-        c[tag] = { S: sh.S, c: q };
-        break;
-      }
-    }
-  }
-  return c[tag];
-}
-function tcsByp(U) {
-  const auto = t => {
-    const o = tcsCtl(t);
-    if (!o || !o.c.amt) return true;
-    const st = o.S.rt.st[o.c.amt.id];
-    return !st || st.pk === o.c.autoLeg;
-  };
-  return auto('PICMS1006') && auto('PICHR1003');
+/* 1.8 HP / LP BYPASS CONTROL IN AUTO: what the TCS gets from the DCS, DITL-115 row 16 (FROM ABC-050 / 052 the manual modes of PICMS1006 /
+   PICHR1003) -> TCE900 / TCA043 DI 8 -> TCA532 A8 CRI 1.8. The TCS reads the DCS output, not the controllers: a row the DCS does not
+   send (DITL world not scanned yet) is not in AUTO */
+function tcsBypDcs() {
+  return !!tcsDitlOut('DITL-115', /^HP \/ LP BYPASS CONTROL IN AUTO/);
 }
 /* the criteria of a step (page 3, IP start mode): A = step-in, B = monitored during the step */
 const TCS_A = {
@@ -1702,6 +1692,8 @@ function tcsLiveRead(U) {
     trip: c.trip ? 1 : 0 /* TURBINE TRIP */,
     rst: c.rst ? 1 : 0 /* turbine reset (MSV / RSV open) */,
     g52: tb.st === 'sync' || tb.st === 'load' ? 1 : 0 /* 52G CLOSE */,
+    byp: tcsBypDcs() ? 1 : 0 /* HP / LP BYPASS CONTROL IN AUTO from the DCS (DITL-115 row 16, TCA043 DI 8, TCA532 A8) */,
+    hpbCl: tcsDitlOut('DITL-115', /^HP BYPASS VALVE FULL CLOSE/) ? 1 : 0 /* HP BYPASS VALVE FULL CLOSE (DITL-115 row 15 ZSC-MS1020, TCA532 B11) */,
     gov: g.gov ? 1 : 0 /* GOVERNING MODE as the overspeed test reads it (TCE176 / 177) */,
     or008: g.or008 ? 1 : 0 /* TURBINE TRIP or 52G CLOSE (TCE176 / 177 OR008) */,
     ostInh: g.inhibit ? 1 : 0 /* OVERSPEED TEST INHIBIT */,

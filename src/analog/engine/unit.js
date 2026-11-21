@@ -5128,7 +5128,11 @@ function anUnitStep0(dt) {
     const o = x.rh && qHp ? 100 : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))),
       q = (((x.f * U.m0 * o) / 100) * P1) / U.P0;
     U.mb += q;
-    if (x.rh) U.mhp += q;
+    if (x.rh) {
+      U.mhp += q;
+      /* the opening of PCV-MS1020 (%), read by its limit switch ZSC-MS1020 (plantsw.js, DITL-115 row 15 HP BYPASS VALVE FULL CLOSE) */
+      U.hpbO = o;
+    }
   }
   /* 3.2.4-beta.1: the safety valves of the drum (drum pressure) and of the SH outlet (main steam pressure P1), AN_SV */
   U.msv = anSvFlow(U, AN_SV.d, U.Pd) + anSvFlow(U, AN_SV.s, P1);

@@ -155,6 +155,8 @@
     cycle: 100,
     f: [160, 85, 2208, 1550],
     k: [['kOn', 262, 869, 'ON(1)', 'sys.ref']],
+    /* live: the engine state of the signals from the DCS (tcs.js tcsLiveRead): CRI 1.8 bypass in AUTO, CRI 1.9 HP bypass full closed */
+    live: { iA8: 'byp', iB11: 'hpbCl' },
     c,
     d,
     b,
