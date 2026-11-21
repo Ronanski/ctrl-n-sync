@@ -2978,6 +2978,18 @@ function anLphStep(U, dt) {
                   ash silos): the snapshot 4.56 / 3.65 / 3.89 m.
      MIA-CL1061-x1  coal feeder totalized coal (t): the feeder feedrate (ABC-004x AI0480 / 0512 / 0544, T/H) summed in time since
                   the start of the simulator. */
+/* beta.241 (Rosé, real-click test of beta.240: the Reheat page showed '-----' on first open while paused). The display transmitters that
+   only the model writes (U.tt: TT-MS1007, PICR19011 ~ 13 ...) are made by the tag steps at the end of anLphStep, so a starting state or
+   save point captured before a key existed had no value for it until the first step. A load runs the tag steps once with dt 0: they
+   read the plant as it stands and write the display values only (their lags and sums hold at dt 0). Called by anStateApply (state.js) */
+function anTagsNow(U) {
+  if (!U || !U.on) return;
+  const ld = Math.max(0, +U.ms || 0) / AN_LP.F0;
+  anCdTagStep(U, ld);
+  anFwTagStep(U);
+  anAsTagStep(U, 0);
+  anHxTagStep(U, 0);
+}
 function anHxTagStep(U, dt) {
   const C = U.hxtC || (U.hxtC = {}),
     ai = k => anUnitVal(C[k] || (C[k] = anUnitAIs(k))),
@@ -3168,7 +3180,7 @@ function anAsTagStep(U, dt) {
     Taux = anUnitVal(C.taux || []),
     t15 = gland ? (isFinite(Taux) ? Taux : Ta) + 21 * L : Ta,
     tgs = gland ? t15 + 107 * L : Ta,
-    lag = (k, x) => (U[k] = isFinite(U[k]) && dt > 0 ? U[k] + ((x - U[k]) * Math.min(dt, 300)) / 300 : x);
+    lag = (k, x) => (U[k] = !isFinite(U[k]) ? x : dt > 0 ? U[k] + ((x - U[k]) * Math.min(dt, 300)) / 300 : U[k]); /* beta.241: dt 0 (anTagsNow at a load) holds the lag */
   lag('asT15', t15);
   lag('asTgs', tgs);
   Object.assign(U.tt || (U.tt = {}), {

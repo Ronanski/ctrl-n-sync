@@ -122,9 +122,19 @@ AN.soeTrip = () => {
   const Z = AN_SOE,
     P = Z.pts || [],
     lit = kind => P.filter(p => p[3] === kind && Z.last[p[0].name + '|' + (p[2] + p[1])] === 1);
-  /* the DCS first out = the memory of DITL-05 / 06 that is lit; the time = its record */
-  const fo = lit('fo')[0],
-    foAt = fo ? (Z.log.filter(x => x.kind === 'fo' && x.name === fo[4] && x.on === 1).pop() || {}).t : null;
+  /* the DCS first out = the memory of DITL-05 / 06 that is lit FIRST; the time = its record. Beta.241 (Jennie, HOT save by real clicks
+     2026-11-22: after a turbine trip the first out read SAF STOPPED, which came minutes later): the memories of the drawing latch each
+     on its own until RESET FIRST OUT, so more than one stands after a trip; the first out is the one whose record is the oldest (one
+     scan = one time; in the same scan the order of the drawing), not the first lit row of the drawing */
+  const setAt = p => {
+      const r = Z.log.filter(x => x.kind === 'fo' && x.name === p[4] && x.on === 1).pop();
+      return r ? r.t : Infinity;
+    },
+    fo = lit('fo')
+      .map((p, i) => [p, setAt(p), i])
+      .sort((a, b) => a[1] - b[1] || a[2] - b[2])
+      .map(x => x[0])[0],
+    foAt = fo ? (isFinite(setAt(fo)) ? setAt(fo) : null) : null;
   const mftOn = lit('mft').length > 0;
   const U = AN.unit,
     c = U && (U.tc || U.tco),
