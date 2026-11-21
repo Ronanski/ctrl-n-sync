@@ -51,6 +51,7 @@
     svg = null,
     smilIv = 0,
     cur = null,
+    drawnKey = '',
     vb = null,
     btn = null;
   const list = () => {
@@ -1170,6 +1171,7 @@
     vb = bg ? [bg.x, bg.y, bg.w, bg.h] : [0, 0, w, h];
     box0 = vb.slice();
     fit();
+    drawnKey = sizeKey();
     index().then(() => {
       for (const o of LV) o.r = resolve(o.it);
       for (const o of LV) {
@@ -1653,9 +1655,22 @@
       } catch (e) {}
       place();
       lay();
-      setTimeout(() => (cur && cur.g ? draw(cur.g) : fit()), 30);
+      setTimeout(redraw, 30);
       if (!tmr) tmr = setInterval(liveTick, 1000);
     }
+  }
+  /* Rosé 2026-11-22 (profile of 2026-11-22: the HX page froze 3.7 s after Engineer -> Operator): the page was drawn twice per open,
+     lsPlant(true) and then lsPlantFit (the Fit of the bar, 250 and 900 ms later), each a full mount of the page. A page already drawn
+     at this size is only fitted now; it is drawn again when the page or the size of its area changed */
+  const sizeKey = () => {
+    if (!svg || !cur || !cur.g) return '';
+    const r = svg.getBoundingClientRect();
+    return [cur.id, Math.round(r.width), Math.round(r.height), cur.g.w || 0, cur.g.h || 0].join('|');
+  };
+  function redraw() {
+    if (!(cur && cur.g)) return fit();
+    if (svg && svg.childElementCount && drawnKey && drawnKey === sizeKey()) return fit();
+    draw(cur.g);
   }
   window.lsPlant = open;
   /* 2.4.0-beta.5: the PLANT VIEW window (PC) moves the workspace into its own document and back */
@@ -1677,7 +1692,7 @@
       cur && cur.g ? draw(cur.g) : fit();
     }, 30);
   };
-  window.lsPlantFit = () => (cur && cur.g ? draw(cur.g) : fit());
+  window.lsPlantFit = () => redraw();
   /* the Training dock (user 2026-10-30): pan the graphic sideways so that the screen part x0 .. x1 (px, the boxed equipment of the
      step) is in view; the zoom stays */
   window.lsPlantPanX = (x0, x1) => {

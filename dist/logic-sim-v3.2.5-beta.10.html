@@ -155958,7 +155958,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 1627dde'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 6d3f21d'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -345824,7 +345824,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 1627dde'));
+    row('Version', E('span', 'scsver', ver + ' · build 6d3f21d'));
   }
   function openSet(near) {
     if (!set) {
@@ -363557,14 +363557,15 @@ window.PLANT_SYS = [
       return { n, h, dx, dy, sym: [x + dx, y + dy, x + dx + +h.getAttribute('width'), y + dy + +h.getAttribute('height')] };
     });
     const hits = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+    /* Rosé 2026-11-22: every box measured first, then written (a write between two getBBox made the browser lay out again) */
     for (const o of all) {
       if (!o.h || !(o.n.hasAttribute('data-open') || o.n.hasAttribute('data-hp'))) continue;
-      let b;
       try {
-        b = o.n.getBBox();
-      } catch (e) {
-        continue;
-      }
+        o.b = o.n.getBBox();
+      } catch (e) {}
+    }
+    for (const o of all) {
+      const b = o.b;
       if (!b || !b.width || !b.height) continue;
       const r = [b.x - 2, b.y - 2, b.x + b.width + 2, b.y + b.height + 2],
         R = [r[0] + o.dx, r[1] + o.dy, r[2] + o.dx, r[3] + o.dy];
@@ -363585,8 +363586,14 @@ window.PLANT_SYS = [
      the screen, so a word of 10 user units read 5.7 px on the Unit overview. Each word smaller than 11 screen px gets the size that
      makes it 11 px at the scale it is drawn now; again when the screen size changes */
   const MINPX = 11;
+  /* Rosé 2026-11-22 (profile of 2026-11-22: minText took 2.1 s of the 3.7 s freeze after Engineer -> Operator): every word was read
+     (getClientRects, getScreenCTM) right after the size of the word before it was written, so the browser laid the page out again
+     for each word. Now the frame sizes are written first, then every word of the page is read in one pass, then the sizes are written */
   function minText(page) {
-    for (const svg of page.querySelectorAll('svg')) {
+    const SV = [...page.querySelectorAll('svg')].filter(svg => !(svg.closest('.hx-trends') || svg.getAttribute('preserveAspectRatio') === 'none'));
+    const W = [];
+    let MEAS = 0;
+    for (const svg of SV) {
       if (svg.closest('.hx-trends') || svg.getAttribute('preserveAspectRatio') === 'none') continue;
       /* drawn under 0.85 (a 1920 drawing on a 1280 screen, 1400 px minimum: 0.8) the words at 11 px crowd each other: the tag numbers step back
          (hx.css svg.hx-small .hx-tag; each faceplate shows its tag), the names and values stay */
@@ -363600,9 +363607,14 @@ window.PLANT_SYS = [
           w0 = Math.max(1400, w);
         if (w && Math.abs((parseFloat(svg.style.minWidth) || 1400) - w0) > 2) svg.style.minWidth = w0 > 1400 ? w0 + 'px' : '';
       }
-      const S0 = svg.getScreenCTM && svg.getScreenCTM(),
-        ks = S0 ? Math.hypot(S0.a, S0.b) : 1;
-      svg.classList.toggle('hx-small', ks > 0 && ks < 0.85);
+    }
+    /* the scale class of each drawing (it hides the tag numbers, so it comes before the words are read) */
+    const SK = SV.map(svg => {
+      const S0 = svg.getScreenCTM && svg.getScreenCTM();
+      return S0 ? Math.hypot(S0.a, S0.b) : 1;
+    });
+    SV.forEach((svg, i) => svg.classList.toggle('hx-small', SK[i] > 0 && SK[i] < 0.85));
+    for (const svg of SV) {
       /* a Y / N square grows whole (its letter would leave its 14-unit box), around its own centre */
       for (const g of svg.querySelectorAll('.hx-yn')) {
         const t = g.querySelector('text');
@@ -363611,22 +363623,27 @@ window.PLANT_SYS = [
         const M = t.getScreenCTM && t.getScreenCTM(),
           k = M ? Math.hypot(M.a, M.b) : 0,
           s = k ? MINPX / (9.5 * k) : 1;
-        g.setAttribute('transform', g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : ''));
+        W.push([g, 'tr', g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')]);
       }
       for (const t of svg.querySelectorAll('text, tspan')) {
         if (!t.getClientRects().length || t.closest('.hx-yn')) continue;
         const M = t.getScreenCTM && t.getScreenCTM(),
           k = M ? Math.hypot(M.a, M.b) : 0;
         if (!k) continue;
+        MEAS++;
         /* the size of its own CSS, read again whenever this rule has not set one (a size read while the page was still in another
            view or class was kept and the word never grew) */
         if (t.dataset.fs0 == null || !t.style.fontSize) t.dataset.fs0 = parseFloat(getComputedStyle(t).fontSize) || 0;
         const fs0 = +t.dataset.fs0,
           need = MINPX / k;
-        if (fs0 && fs0 < need - 0.05) t.style.fontSize = n1(need + 0.05) + 'px';
-        else if (t.style.fontSize) t.style.fontSize = '';
+        if (fs0 && fs0 < need - 0.05) W.push([t, 'fs', n1(need + 0.05) + 'px']);
+        else if (t.style.fontSize) W.push([t, 'fs', '']);
       }
     }
+    for (const [e, k, v] of W)
+      if (k === 'tr') e.getAttribute('transform') !== v && e.setAttribute('transform', v);
+      else if (e.style.fontSize !== v) e.style.fontSize = v;
+    return MEAS;
   }
   let BK = 0;
   function backHits(page) {
@@ -363634,17 +363651,19 @@ window.PLANT_SYS = [
       const L = [...svg.querySelectorAll('.hx-node')].filter(n => !n.dataset.fit && (n.hasAttribute('data-open') || n.hasAttribute('data-hp')));
       if (!L.length) continue;
       const SN = 'http://www.w3.org/2000/svg';
-      for (const n of L) {
+      /* Rosé 2026-11-22: all items measured before the first box is added */
+      const MS = L.map(n => {
         const par = n.parentNode;
-        if (!par || !par.getCTM) continue;
-        let b, M, P;
+        if (!par || !par.getCTM) return null;
         try {
-          b = n.getBBox();
-          M = n.getCTM();
-          P = par.getCTM();
+          return [n, par, n.getBBox(), n.getCTM(), par.getCTM()];
         } catch (e) {
-          continue;
+          return null;
         }
+      });
+      for (const m of MS) {
+        if (!m) continue;
+        const [n, par, b, M, P] = m;
         if (!b || !b.width || !b.height || !M || !P) continue;
         const T = P.inverse().multiply(M),
           pt = (x, y) => [T.a * x + T.c * y + T.e, T.b * x + T.d * y + T.f],
@@ -363701,7 +363720,8 @@ window.PLANT_SYS = [
       `<div class="hx-tabs" role="tablist">${['Process', 'Controls', 'Trends'].map((t, i) => `<button role="tab" data-view="${t.toLowerCase()}" aria-selected="${i === 0}">${t}</button>`).join('')}</div></header>` +
       `<section class="hx-view hx-process"><div class="hx-draw">${pr.svg}</div>${(def.lists || []).length ? `<div class="hx-lists">${def.lists.map(l => `<div><h3>${esc(l.title)}</h3><small>${esc(l.src || '')}</small>${l.rows.map(r => `<p><span class="hx-ynb" data-flag="${esc((l.key || '') + '|' + r)}">-</span>${esc(r)}</p>`).join('')}</div>`).join('')}</div>` : ''}<div class="hx-legend">${pr.legend}</div></section><section class="hx-view hx-controls" hidden>${drawControls(def, inv)}</section><section class="hx-view hx-trends" hidden>${drawTrends(def)}</section>`;
     host.append(page);
-    minText(page);
+    /* the words measured here are not measured again by the first tick of the Process view (1 s later at the earliest) */
+    const mt0 = minText(page) ? Date.now() : 0;
     fitHits(page);
     {
       let rz = 0;
@@ -363766,7 +363786,7 @@ window.PLANT_SYS = [
       const cur = e.getAttribute('class').replace(/\s*hx-(run|stop|trip|none)\b/g, '');
       e.setAttribute('class', cur + ' hx-' + c);
     };
-    let mtT = 0;
+    let mtT = mt0;
     function tick(force) {
       const D = HX.data;
       /* Audit 3: words that appear later (a Y / N mark, a state) get the 11 px floor too, checked every 2 s */
@@ -363973,21 +363993,26 @@ window.PLANT_SYS = [
           sv.insertBefore(g, sv.querySelector(':scope > text, :scope > .hx-node'));
         }
         const inv = root.inverse();
+        /* Rosé 2026-11-22 (profile of 2026-11-22: plates 1.4 s): every word measured first, then the plates written */
+        const MS = [];
         sv.querySelectorAll(PL).forEach(e => {
           const n = (e.textContent || '').length;
           if (e.__pn === n || /(^| )rx-/.test(e.getAttribute('class') || '')) return;
-          let r = e.__pl;
-          if (!r) {
-            r = e.__pl = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            r.setAttribute('class', 'hx-plate');
-            g.append(r);
-          }
           let b = null,
             m = null;
           try {
             b = e.getBBox();
             m = e.getScreenCTM();
           } catch (x) {}
+          MS.push([e, n, b, m]);
+        });
+        MS.forEach(([e, n, b, m]) => {
+          let r = e.__pl;
+          if (!r) {
+            r = e.__pl = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            r.setAttribute('class', 'hx-plate');
+            g.append(r);
+          }
           /* not laid out yet (page hidden): measured again at the next tick */
           if (!b || !b.width || !m) return void r.setAttribute('width', 0);
           e.__pn = n;
@@ -372269,6 +372294,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     svg = null,
     smilIv = 0,
     cur = null,
+    drawnKey = '',
     vb = null,
     btn = null;
   const list = () => {
@@ -373388,6 +373414,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     vb = bg ? [bg.x, bg.y, bg.w, bg.h] : [0, 0, w, h];
     box0 = vb.slice();
     fit();
+    drawnKey = sizeKey();
     index().then(() => {
       for (const o of LV) o.r = resolve(o.it);
       for (const o of LV) {
@@ -373871,9 +373898,22 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       } catch (e) {}
       place();
       lay();
-      setTimeout(() => (cur && cur.g ? draw(cur.g) : fit()), 30);
+      setTimeout(redraw, 30);
       if (!tmr) tmr = setInterval(liveTick, 1000);
     }
+  }
+  /* Rosé 2026-11-22 (profile of 2026-11-22: the HX page froze 3.7 s after Engineer -> Operator): the page was drawn twice per open,
+     lsPlant(true) and then lsPlantFit (the Fit of the bar, 250 and 900 ms later), each a full mount of the page. A page already drawn
+     at this size is only fitted now; it is drawn again when the page or the size of its area changed */
+  const sizeKey = () => {
+    if (!svg || !cur || !cur.g) return '';
+    const r = svg.getBoundingClientRect();
+    return [cur.id, Math.round(r.width), Math.round(r.height), cur.g.w || 0, cur.g.h || 0].join('|');
+  };
+  function redraw() {
+    if (!(cur && cur.g)) return fit();
+    if (svg && svg.childElementCount && drawnKey && drawnKey === sizeKey()) return fit();
+    draw(cur.g);
   }
   window.lsPlant = open;
   /* 2.4.0-beta.5: the PLANT VIEW window (PC) moves the workspace into its own document and back */
@@ -373895,7 +373935,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       cur && cur.g ? draw(cur.g) : fit();
     }, 30);
   };
-  window.lsPlantFit = () => (cur && cur.g ? draw(cur.g) : fit());
+  window.lsPlantFit = () => redraw();
   /* the Training dock (user 2026-10-30): pan the graphic sideways so that the screen part x0 .. x1 (px, the boxed equipment of the
      step) is in view; the zoom stays */
   window.lsPlantPanX = (x0, x1) => {
