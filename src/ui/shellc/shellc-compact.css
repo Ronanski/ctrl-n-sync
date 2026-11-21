@@ -168,6 +168,8 @@ html body.sc #scetools:not(#scnone) .scmore button:not(.scmoreb){height:24px!imp
 html body.sc #plfp.fpo-near:not(#scnone){width:236px!important;border-radius:3px!important;box-shadow:0 6px 18px rgba(0,0,0,.45)!important}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph{padding:3px 4px 3px 8px!important;border-radius:3px 3px 0 0!important;gap:4px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph b{font:600 13px/20px var(--sc-ui)!important}
+/* Audit 3 #8: name first, the tag under it in small grey numbers, as the small faceplate (.fpo-tt small) */
+html body.sc:not(.st) #plfp.fpo-near:not(#scnone) .plfph b > small{display:block!important;font:400 10.5px/14px var(--sc-num)!important;color:var(--sc-ink2)!important;overflow:hidden;text-overflow:ellipsis}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph button.b{height:20px!important;min-height:20px!important;min-width:20px!important;padding:0 6px!important;font-size:11.5px!important;border-radius:2px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph button.b:last-child{width:20px!important;padding:0!important;font-size:0!important}
 html body.sc #plfp.fpo-near:not(#scnone) .body{padding:2px 6px 6px!important}

@@ -156060,7 +156060,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 0c92532'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 1cc73d0'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -334052,6 +334052,8 @@ html body.sc #scetools:not(#scnone) .scmore button:not(.scmoreb){height:24px!imp
 html body.sc #plfp.fpo-near:not(#scnone){width:236px!important;border-radius:3px!important;box-shadow:0 6px 18px rgba(0,0,0,.45)!important}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph{padding:3px 4px 3px 8px!important;border-radius:3px 3px 0 0!important;gap:4px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph b{font:600 13px/20px var(--sc-ui)!important}
+/* Audit 3 #8: name first, the tag under it in small grey numbers, as the small faceplate (.fpo-tt small) */
+html body.sc:not(.st) #plfp.fpo-near:not(#scnone) .plfph b > small{display:block!important;font:400 10.5px/14px var(--sc-num)!important;color:var(--sc-ink2)!important;overflow:hidden;text-overflow:ellipsis}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph button.b{height:20px!important;min-height:20px!important;min-width:20px!important;padding:0 6px!important;font-size:11.5px!important;border-radius:2px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph button.b:last-child{width:20px!important;padding:0!important;font-size:0!important}
 html body.sc #plfp.fpo-near:not(#scnone) .body{padding:2px 6px 6px!important}
@@ -346029,7 +346031,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 0c92532'));
+    row('Version', E('span', 'scsver', ver + ' · build 1cc73d0'));
   }
   function openSet(near) {
     if (!set) {
@@ -373477,9 +373479,15 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     if (!r) return false;
     fpClose();
     const sh = r.sheet;
+    /* one look with the small faceplate: the name the page gives the loop first, its tag under it (Audit 3 #8) */
+    let nm = '';
+    try {
+      const n = [...document.querySelectorAll('#plantws .hx-node[data-lv2]')].find(x => x.dataset.lv2 === tag);
+      nm = ((n && n.dataset.name) || '').replace(/s+/g, ' ').trim();
+    } catch (e) {}
     fp = E('div', { id: 'plfp', 'data-tag': tag }, [
       E('div', { cls: 'plfph' }, [
-        E('b', { txt: tag }),
+        nm && nm !== tag ? E('b', { title: nm + ' (' + tag + ')' }, [nm, E('small', { txt: tag })]) : E('b', { txt: tag }),
         E('button', {
           cls: 'b',
           txt: 'Logic',
