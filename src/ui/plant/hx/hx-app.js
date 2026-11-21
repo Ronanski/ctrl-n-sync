@@ -224,6 +224,8 @@
   HX.data = {
     time: () => call(() => (window.AN && AN.unit && isFinite(AN.unit.t) ? AN.unit.t : null), Date.now() / 1000),
     value(key) {
+      /* Audit 3: a value with no row on the app pages reads its field of the unit model ('an:Pip' = AN.unit.Pip) */
+      if (/^an:/.test(key)) return call(() => { const v = AN.unit[key.slice(3)]; return v != null && isFinite(v) ? +v : null; }, null);
       needVal(key);
       const e = pq('[data-v="' + key + '"]'),
         t = e ? e.textContent : '';
@@ -245,7 +247,10 @@
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-L): a state row that is not a running state (DITL-09 row 26 REMOTE of the
            burner panels) showed as Running in red on the oil page, a burner without flame looked fired: the words of the row, grey */
         ON = DFV != null && BD.df.on ? String(BD.df.on) : '',
-        word = ON && !/^(OPERATING|RUNNING|SYSTEM ON|FILL CYCLE ON|OPEN)$/.test(ON) ? (DFV === 1 ? ON : BD.df.off || '') : null;
+        /* Audit 3: the tube cleaning panels (DITL-119) get only REMOTE AUTO START / STOP pulses (rows 7, 9, 18, 20); no running
+           feedback comes back to the DCS (hmi-sw.js 'STATUS AT LCP'), so the page says where the state is instead of '-----' */
+        LCP = /^CTCS-[AB]$/.test(name) ? 'STATUS AT LOCAL PANEL' : null,
+        word = LCP || (ON && !/^(OPERATING|RUNNING|SYSTEM ON|FILL CYCLE ON|OPEN)$/.test(ON) ? (DFV === 1 ? ON : BD.df.off || '') : null);
       return {
         word,
         st:

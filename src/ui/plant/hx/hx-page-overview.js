@@ -87,7 +87,7 @@
         at(M('pump', 'BFWP-A', 'Boiler feed pump A', []), 250, 930, { id: 'bfp', sc: 0.8, lab: 'b', mir: true }),
 
         /* ---- coordinated control ---- */
-        at(C('HIC-ULD', 'Unit load demand, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 24 }), 1560, 150, {
+        at(C('HIC-ULD', 'Unit load demand, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 16 }), 1560, 150, {
           id: 'uld',
           lab: 'r'
         }),

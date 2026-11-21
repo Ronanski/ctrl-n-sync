@@ -435,14 +435,18 @@
 /* the realistic drawing is wide (1760): its words are a little larger, so they stay readable when the page fits one screen */
 .hx-real .hx-name { font-size: 13.4px; }
 .hx-real .hx-tag { font-size: 10.4px; }
+/* Audit 3: a drawing shown under 0.75 of its size (hx-core.js minText) keeps names and values; the tag numbers are on the faceplates */
+svg.hx-small .hx-tag { display: none; }
 .hx-real .hx-lab { font-size: 12px; }
 .hx-real .hx-val { font-size: 13.2px; }
 .hx-real .hx-unit { font-size: 10.8px; }
 .hx-real .hx-st { font-size: 12px; }
 .hx-real .hx-end { font-size: 10.8px; }
 .hx-real .hx-zone { font-size: 11.4px; }
-/* audit 2026-11-21 C10: at 1280 the 1760-wide drawing was squeezed to 0.73 (tags 7-8 px). 1600 keeps every text 9.5 px or more; a narrower screen scrolls */
-.hx-process svg.hx-real { min-width: 1600px; }
+/* Audit 3: the realistic drawing stood cut at the right at 1280 (1600 px minimum); drawn whole at 1280 (scale 0.6) its 11 px words
+   crowded each other (40 overlaps on Feedwater as fitted). 1400 px minimum: at 1280 the drawing scrolls a little inside the page (scale
+   0.8, with svg.hx-small of hx-core.js: 0 overlaps); at 1920 it is whole */
+.hx-process svg.hx-real { min-width: 1400px; }
 /* audit 2026-11-21 C1: the plate under a word of the drawing (hx-core.js plates): the pipe breaks under the label, as on a P&ID */
 .hx-process svg .hx-plate { fill: var(--hx-panel); stroke: none; pointer-events: none; }
 /* words inside the equipment */
@@ -596,6 +600,9 @@
 .hx-hook.run .hx-hks { fill: var(--hx-run) !important; }
 .hx-hook.stop .hx-hks { fill: var(--hx-stop) !important; }
 .hx-hook.press { cursor: pointer; outline: none; }
+/* a state block that opens its faceplate (HX.B o.mach, the sootblowers): the hand and the same hover edge as a push button */
+.hx-hook[data-mach] { cursor: pointer; outline: none; }
+.hx-hook[data-mach]:hover rect, .hx-hook[data-mach]:focus-visible rect { stroke: var(--hx-accent); stroke-width: 1.6; }
 .hx-hook.press rect { stroke-width: 1.6; }
 .hx-hook.press:hover rect, .hx-hook.press:focus-visible rect { stroke: var(--hx-accent); }
 /* audit 2026-11-21 C7: the selected one of a pair of selection push buttons (HYDRAULIC / DAMPER CONTROL) was a solid blue block

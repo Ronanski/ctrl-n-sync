@@ -95,6 +95,10 @@
     if (!r && ar) POS[key] = { ax: ar.left, ay: ar.top, x: el.style.left, y: el.style.top, side: el.dataset.side };
   }
   function placeNew(el, r) {
+    /* Audit 3 (2026-11-21): a faceplate opened on a page item whose registered element is a whole group (the scene of the page, 1000 px
+       and more) had no room left, right, below or above it, and opened over the item clicked (42 items: the sea water valves, the
+       compressors, V-CD1026...). A big anchor that holds the point just clicked gives way to that point and its own item */
+    if (r && (r.width > 220 || r.height > 220) && last && last.x != null && last.x >= r.left && last.x <= r.right && last.y >= r.top && last.y <= r.bottom) r = null;
     const H = area(),
       w = el.offsetWidth,
       ht = el.offsetHeight,
@@ -920,10 +924,12 @@
     const lOn = lampEl(P.st.on),
       lOff = lampEl(P.st.off || 'STOPPED');
     F.bd.append(row('STATUS', lOn, lOff));
-    const B = P.pbs.map(([l, r, ad]) => {
+    /* [.., 5] = the drawing of that push button when it is not the status drawing (a sootblower: STATUS on DITL-80A, its REMOTE START /
+       REVERSE P.B. on DITL-80M or its own copy of DITL-80G) */
+    const B = P.pbs.map(([l, r, ad, , , pd]) => {
       const b = E('button', 'fpo-cmd', l);
       b.type = 'button';
-      b.title = P.d + ' row ' + (r + 1) + ' · ' + ad;
+      b.title = (pd || P.d) + ' row ' + (r + 1) + ' · ' + ad;
       return b;
     });
     /* live test 2026-11-05 (air dryers, DITL-45): P.sel = the REMOTE input row of the local panel (I.0099 / I.0085 ...): the field operator
@@ -997,15 +1003,20 @@
     B.forEach((b, i) => {
       /* [label, row, address] = a push button (a pulse); [label, row, address, 'set', 1 / 0] = a maintained HMI switch of the drawing set
          or reset (DITL-LS212 ISOLATING VALVE A~H OPEN/CLOSE SW; WORLD.dset, an engine action) */
-      const [l, r, ad, k, v] = P.pbs[i];
+      const [l, r, ad, k, v, pd] = P.pbs[i],
+        d = pd || P.d;
       b.onclick = () =>
         !b.disabled &&
-        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(P.d, r, !!v) : dk.dpress(P.d, r), call(() => window.lsEventAdd(P.d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + P.d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
+        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
     });
     let k0 = '';
     function tick() {
       if (!me.isConnected) return closeEl(me);
-      const on = call(() => dk.dout(P.d, P.st.row), null) === 1,
+      /* P.away = { d, row }: a retract limit switch of the drawing (a sootblower: DITL-80G row 12 ZSR-N1011, or its own copy of DITL-80G):
+         the machine is in operation while its lance is out of the retract position, also when it was started by hand (MANUAL mode), where
+         the OPERATING lamp of the AUTO program (DITL-80A) stays off */
+      const aw = P.away && call(() => dk.dOf(P.away.d) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(P.away.d)), null),
+        on = call(() => dk.dout(P.d, P.st.row), null) === 1 || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0),
         run = isRun(),
         pv = (P.perm || []).map(p => ({ ...p, v: call(() => window.DUI.rowVal(s, p.row), null) })),
         ok = !pv.length || pv.some(p => p.v === 1);
@@ -1629,7 +1640,9 @@
     const R = REG[ad],
       el = R && call(() => R.el(), null);
     if (!R || !el || !el.isConnected) return false;
-    last = { r: el.getBoundingClientRect() };
+    /* Audit 3: an element that is a whole group of the page (1000 px) is no anchor; the click that opened it stays the anchor */
+    const q0 = el.getBoundingClientRect();
+    if (q0.width <= 220 && q0.height <= 220) last = { r: q0 };
     R.open();
     /* the page may still be laying out after a step change: placed again on its symbol once drawn */
     const b = box,

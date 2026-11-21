@@ -320,15 +320,17 @@
           live(o.steam, `<path class="rx-coilf" d="${coil}"/>`) +
           '<circle class="rx" cx="-18" cy="260" r="8.6"/><circle class="rxm" cx="-18" cy="260" r="4.4"/><circle class="rx" cx="-18" cy="40" r="8.6"/><circle class="rxm" cx="-18" cy="40" r="4.4"/>');
     /* names inside (the core writes them, so they stay readable when the piece is mirrored) */
+    /* Audit 3: the titles "Reheater pass" / "Superheater pass" (8 units, 5.7 px on the Unit overview) are gone: at the 11 px floor
+       they ran into each other, and the pass dampers under them and the banks inside already name the two passes */
     const words = [
-      { x: 56, y: 24, s: 'Reheater pass', cls: 'rx-in', size: 8 },
-      { x: 160, y: 24, s: 'Superheater pass', cls: 'rx-in', size: 8 },
       { x: 56, y: 153.5, s: 'Reheater', cls: 'rx-in2', size: 8.8 },
-      { x: 56, y: 299, s: 'Economizer 2R', cls: 'rx-in2', size: 8.8 },
-      { x: 160, y: 87, s: 'Finishing', cls: 'rx-in2', size: 8.8 },
-      { x: 160, y: 97, s: 'superheater', cls: 'rx-in2', size: 8.8 },
+      { x: 56, y: 290, s: 'Economizer', cls: 'rx-in2', size: 8.8 },
+      { x: 56, y: 303, s: '2R', cls: 'rx-in2', size: 8.8 },
+      { x: 160, y: 82, s: 'Finishing', cls: 'rx-in2', size: 8.8 },
+      { x: 160, y: 98, s: 'superheater', cls: 'rx-in2', size: 8.8 },
       { x: 160, y: 230, s: 'Economizer 3', cls: 'rx-in2', size: 8.8 },
-      { x: 160, y: 299, s: 'Economizer 2S', cls: 'rx-in2', size: 8.8 },
+      { x: 160, y: 290, s: 'Economizer', cls: 'rx-in2', size: 8.8 },
+      { x: 160, y: 303, s: '2S', cls: 'rx-in2', size: 8.8 },
       { x: 108, y: 446, s: 'Economizer 1', cls: 'rx-in2', size: 8.8 }
     ];
     return {

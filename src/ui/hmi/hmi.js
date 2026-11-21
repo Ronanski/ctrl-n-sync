@@ -448,15 +448,15 @@
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', 'tr');
       const pvBox = E('div', { cls: 'fpb' }, [
-          E('div', { cls: 'fl' }, [E('span', { txt: 'PV' }), E('span', { txt: unit })]),
+          E('div', { cls: 'fl fl-pv' }, [E('span', { txt: 'PV' }), E('span', { txt: unit })]),
           E('div', { cls: 'fv pv' }, [pv])
         ]),
         svBox = E('div', { cls: 'fpb' }, [
-          E('div', { cls: 'fl' }, [E('span', { txt: 'SV' }), E('span', { txt: unit }), svSrc]),
+          E('div', { cls: 'fl fl-sv' }, [E('span', { txt: 'SV' }), E('span', { txt: unit }), svSrc]),
           svIn
         ]),
         mvBox = E('div', { cls: 'fpb' }, [
-          E('div', { cls: 'fl' }, [E('span', { txt: 'MV' }), E('span', { txt: '%' })]),
+          E('div', { cls: 'fl fl-mv' }, [E('span', { txt: 'MV' }), E('span', { txt: '%' })]),
           mvIn
         ]);
       svIn.classList.add('fv');
@@ -887,7 +887,7 @@
           E('div', { cls: 'mlr' }, [
             E('div', { cls: 'mlb', title: 'Output: ' + fmt(lo) + ' ~ ' + fmt(hi) + ' ' + u }, [bar]),
             E('div', { cls: 'mlc' }, [
-              E('div', { cls: 'fl' }, [E('span', { txt: 'MV' }), E('span', { txt: u })]),
+              E('div', { cls: 'fl fl-mv' }, [E('span', { txt: 'MV' }), E('span', { txt: u })]),
               inp,
               E('div', { cls: 'row mls' }, [
                 stepBtn('▲▲', '+' + sfmt(coarse) + ' ' + u + ' (hold = faster)', m => set(cur() + coarse * m)),

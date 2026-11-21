@@ -46,7 +46,8 @@
   HX.L = (to, text, o) => Object.assign({ k: 'link', to, name: text }, o || {});
   /* a push button or a state of the plant that is no machine, valve or controller: hook = the data attribute the page of
      hmi-mock.js has for it (data-tpb="trip", data-apb="ABC-010|M.054F|M.0222=0", data-dy=..., data-fv=...), so the press and
-     the state are the ones of that page. press: true = a push button (a click presses it), else a state only */
+     the state are the ones of that page. press: true = a push button (a click presses it), else a state only; mach: name = a click opens the faceplate of that
+     machine of the registry (hx-registry.js, the faceplate of its mock page), as a machine symbol does */
   HX.B = (text, hook, o) => Object.assign({ k: 'hook', name: text, hook }, o || {});
   /* a step card of the automatic turbine start-up: step = 0 .. 7, text = its title, items = the names of its three check
      items (310SC90-775). The card is lit while its step runs, its items show Y / N and the live value of the running step
@@ -315,7 +316,7 @@
         h = line ? 36 : it.plain ? 22 : 30;
       it._p = { l: [x - w / 2, y], r: [x + w / 2, y], t: [x, y - h / 2], b: [x, y + h / 2] };
       it._box = [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
-      return `<g class="hx-hook${it.press ? ' press' : ''}${it.plain ? ' plain' : ''}"${it.plain ? ' data-plain="1"' : ''} data-hook="${esc(it.hook)}" data-label="${esc(t)}"${it.press ? ' data-press="1" tabindex="0" role="button"' : ''} transform="translate(${n1(x)} ${n1(y)})"><rect x="${n1(-w / 2)}" y="${-h / 2}" width="${n1(w)}" height="${h}" rx="5"/><text class="hx-hkl" x="0" y="${line ? -3 : 4}" text-anchor="middle">${esc(t)}</text>${!line ? '' : '<text class="hx-hks" x="0" y="12" text-anchor="middle" data-hks="1">-----</text>'}</g>`;
+      return `<g class="hx-hook${it.press ? ' press' : ''}${it.plain ? ' plain' : ''}"${it.plain ? ' data-plain="1"' : ''}${it.show ? ' data-show="1"' : ''} data-hook="${esc(it.hook)}" data-label="${esc(t)}"${it.press ? ' data-press="1" tabindex="0" role="button"' : it.mach ? ' data-mach="' + esc(it.mach) + '" data-open="mach:' + esc(it.mach) + '" tabindex="0" role="button" aria-label="' + esc(t) + '"' : ''} transform="translate(${n1(x)} ${n1(y)})"><rect x="${n1(-w / 2)}" y="${-h / 2}" width="${n1(w)}" height="${h}" rx="5"/><text class="hx-hkl" x="0" y="${line ? -3 : 4}" text-anchor="middle">${esc(t)}</text>${!line ? '' : '<text class="hx-hks" x="0" y="12" text-anchor="middle" data-hks="1">-----</text>'}</g>`;
     }
     const sy = ((real && REAL[it.sym]) || SYM[it.sym])(Object.assign({ id: pageId + '-' + it._id }, it)),
       rot = it.rot || 0,
@@ -898,6 +899,103 @@
       o.h.setAttribute('y', n1(r[1]));
       o.h.setAttribute('width', n1(r[2] - r[0]));
       o.h.setAttribute('height', n1(r[3] - r[1]));
+      o.n.dataset.fit = '1';
+    }
+    backHits(page);
+  }
+  /* Audit 3 (2026-11-21): 22 items still did not answer a click in their middle (a damper whose name sits far from its symbol, the
+     values of the Generator panel): their box could not grow without covering a neighbour's symbol, or they had no box. Each such item
+     gets a second box of its whole size BEHIND every item of the drawing: it takes a click only where no item is drawn (the gap between
+     its symbol and its words) and hands it to its own item, so it never takes a neighbour's click */
+  /* Audit 3 (2026-11-21, ISA-101 reading distance): every word of a drawing is at least 11 px on the screen. The drawing is scaled to
+     the screen, so a word of 10 user units read 5.7 px on the Unit overview. Each word smaller than 11 screen px gets the size that
+     makes it 11 px at the scale it is drawn now; again when the screen size changes */
+  const MINPX = 11;
+  function minText(page) {
+    for (const svg of page.querySelectorAll('svg')) {
+      if (svg.closest('.hx-trends') || svg.getAttribute('preserveAspectRatio') === 'none') continue;
+      /* drawn under 0.85 (a 1920 drawing on a 1280 screen, 1400 px minimum: 0.8) the words at 11 px crowd each other: the tag numbers step back
+         (hx.css svg.hx-small .hx-tag; each faceplate shows its tag), the names and values stay */
+      /* the realistic drawing is never drawn under 0.8 on the screen (its 11 px words cross each other below it: 36 on Feedwater at
+         1280 with the page menu open, the station frame drawn at 0.86): its minimum width (hx.css 1400 px) grows to that, the page
+         scrolls. The size of the frame is read (its CSS px against its screen px), so a smaller window or an open menu are both met */
+      if (svg.classList.contains('hx-real') && svg.viewBox && svg.viewBox.baseVal && svg.clientWidth) {
+        const vb = svg.viewBox.baseVal.width,
+          fr = svg.getBoundingClientRect().width / svg.clientWidth,
+          w = fr > 0 ? Math.ceil((0.8 * vb) / fr) : 0,
+          w0 = Math.max(1400, w);
+        if (w && Math.abs((parseFloat(svg.style.minWidth) || 1400) - w0) > 2) svg.style.minWidth = w0 > 1400 ? w0 + 'px' : '';
+      }
+      const S0 = svg.getScreenCTM && svg.getScreenCTM(),
+        ks = S0 ? Math.hypot(S0.a, S0.b) : 1;
+      svg.classList.toggle('hx-small', ks > 0 && ks < 0.85);
+      /* a Y / N square grows whole (its letter would leave its 14-unit box), around its own centre */
+      for (const g of svg.querySelectorAll('.hx-yn')) {
+        const t = g.querySelector('text');
+        if (!t || !t.getClientRects().length) continue;
+        if (g.dataset.tr0 == null) g.dataset.tr0 = g.getAttribute('transform') || '';
+        const M = t.getScreenCTM && t.getScreenCTM(),
+          k = M ? Math.hypot(M.a, M.b) : 0,
+          s = k ? MINPX / (9.5 * k) : 1;
+        g.setAttribute('transform', g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : ''));
+      }
+      for (const t of svg.querySelectorAll('text, tspan')) {
+        if (!t.getClientRects().length || t.closest('.hx-yn')) continue;
+        const M = t.getScreenCTM && t.getScreenCTM(),
+          k = M ? Math.hypot(M.a, M.b) : 0;
+        if (!k) continue;
+        /* the size of its own CSS, read again whenever this rule has not set one (a size read while the page was still in another
+           view or class was kept and the word never grew) */
+        if (t.dataset.fs0 == null || !t.style.fontSize) t.dataset.fs0 = parseFloat(getComputedStyle(t).fontSize) || 0;
+        const fs0 = +t.dataset.fs0,
+          need = MINPX / k;
+        if (fs0 && fs0 < need - 0.05) t.style.fontSize = n1(need + 0.05) + 'px';
+        else if (t.style.fontSize) t.style.fontSize = '';
+      }
+    }
+  }
+  let BK = 0;
+  function backHits(page) {
+    for (const svg of page.querySelectorAll('svg')) {
+      const L = [...svg.querySelectorAll('.hx-node')].filter(n => !n.dataset.fit && (n.hasAttribute('data-open') || n.hasAttribute('data-hp')));
+      if (!L.length) continue;
+      const SN = 'http://www.w3.org/2000/svg';
+      for (const n of L) {
+        const par = n.parentNode;
+        if (!par || !par.getCTM) continue;
+        let b, M, P;
+        try {
+          b = n.getBBox();
+          M = n.getCTM();
+          P = par.getCTM();
+        } catch (e) {
+          continue;
+        }
+        if (!b || !b.width || !b.height || !M || !P) continue;
+        const T = P.inverse().multiply(M),
+          pt = (x, y) => [T.a * x + T.c * y + T.e, T.b * x + T.d * y + T.f],
+          c = [pt(b.x - 2, b.y - 2), pt(b.x + b.width + 2, b.y + b.height + 2)];
+        let lay = [...par.children].find(k => k.classList && k.classList.contains('hx-back'));
+        if (!lay) {
+          lay = document.createElementNS(SN, 'g');
+          lay.setAttribute('class', 'hx-back');
+          const first = [...par.children].find(k => k.classList && k.classList.contains('hx-node'));
+          par.insertBefore(lay, first || null);
+        }
+        const r = document.createElementNS(SN, 'rect');
+        r.setAttribute('x', n1(Math.min(c[0][0], c[1][0])));
+        r.setAttribute('y', n1(Math.min(c[0][1], c[1][1])));
+        r.setAttribute('width', n1(Math.abs(c[1][0] - c[0][0])));
+        r.setAttribute('height', n1(Math.abs(c[1][1] - c[0][1])));
+        r.setAttribute('fill', 'transparent');
+        r.style.cursor = 'pointer';
+        n.dataset.bk = r.dataset.bkfor = String(++BK);
+        r.addEventListener('click', e => {
+          e.stopPropagation();
+          n.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, clientX: e.clientX, clientY: e.clientY, view: window }));
+        });
+        lay.append(r);
+      }
     }
   }
 
@@ -929,7 +1027,17 @@
       `<div class="hx-tabs" role="tablist">${['Process', 'Controls', 'Trends'].map((t, i) => `<button role="tab" data-view="${t.toLowerCase()}" aria-selected="${i === 0}">${t}</button>`).join('')}</div></header>` +
       `<section class="hx-view hx-process"><div class="hx-draw">${pr.svg}</div>${(def.lists || []).length ? `<div class="hx-lists">${def.lists.map(l => `<div><h3>${esc(l.title)}</h3><small>${esc(l.src || '')}</small>${l.rows.map(r => `<p><span class="hx-ynb" data-flag="${esc((l.key || '') + '|' + r)}">-</span>${esc(r)}</p>`).join('')}</div>`).join('')}</div>` : ''}<div class="hx-legend">${pr.legend}</div></section><section class="hx-view hx-controls" hidden>${drawControls(def, inv)}</section><section class="hx-view hx-trends" hidden>${drawTrends(def)}</section>`;
     host.append(page);
+    minText(page);
     fitHits(page);
+    {
+      let rz = 0;
+      const onRz = () => {
+        if (!page.isConnected) return removeEventListener('resize', onRz);
+        clearTimeout(rz);
+        rz = setTimeout(() => minText(page), 250);
+      };
+      addEventListener('resize', onRz);
+    }
     let view = opts.view || 'process',
       span = 900;
     const show = v => {
@@ -967,7 +1075,7 @@
     page.addEventListener('keydown', e => {
       if (
         (e.key === 'Enter' || e.key === ' ') &&
-        e.target.matches('.hx-node[data-open],.hx-node[data-hp],.hx-link,.hx-hook.press')
+        e.target.matches('.hx-node[data-open],.hx-node[data-hp],.hx-link,.hx-hook.press,.hx-hook[data-mach]')
       ) {
         e.preventDefault();
         e.target.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -984,8 +1092,11 @@
       const cur = e.getAttribute('class').replace(/\s*hx-(run|stop|trip|none)\b/g, '');
       e.setAttribute('class', cur + ' hx-' + c);
     };
+    let mtT = 0;
     function tick(force) {
       const D = HX.data;
+      /* Audit 3: words that appear later (a Y / N mark, a state) get the 11 px floor too, checked every 2 s */
+      if (view === 'process' && Date.now() - mtT > 2000) ((mtT = Date.now()), minText(page));
       if (view === 'process') plates();
       REC.sample();
       /* status line */
@@ -1051,6 +1162,8 @@
             if (v.textContent !== tx) v.textContent = tx;
           }
         });
+        /* a state block that is also a machine (HX.B o.mach, the sootblowers of MK15): its faceplate is linked as a machine's is */
+        Q('.hx-hook[data-mach]').forEach(e => D.machine(e.dataset.mach));
         Q('[data-hook]').forEach(e => {
           const h = (D.hook && D.hook(e.dataset.hook, e.dataset.label)) || {},
             c =

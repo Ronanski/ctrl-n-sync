@@ -786,8 +786,14 @@
       const tickTT = () => {
         for (const [tag, k] of TT) {
           const U = window.AN && AN.unit,
-            [kp, kx] = k.slice(3).split('*'),
-            v = !U || !U.on ? null : k[0] === 't' ? (U.tt ? U.tt[kp] : null) : uPath(U, kp);
+            [kp, kx] = k.slice(3).split('*');
+          let v = !U || !U.on ? null : k[0] === 't' ? (U.tt ? U.tt[kp] : null) : uPath(U, kp);
+          /* Audit 3 (engine: the power factor is 0.00 while the generator is not synchronized, no field): '-----' at Cold became 0 while
+             the generator breaker 52G is open */
+          if (v == null && kp === 'gen.pf') {
+            const G = call(() => AN.genPanel(), null);
+            if (!G || !G.c52g) v = 0;
+          }
           /* page 13: 'ux:gv*100' = a fraction of the plant model shown in % */
           const nv = v != null && isFinite(v) ? +v * (kx ? +kx : 1) : null;
           if (PM[tag] !== nv) ((PM[tag] = nv), showV(tag));
@@ -1079,6 +1085,7 @@
               st: { row: m.df.st, on: m.df.on || 'IN OPERATION', off: m.df.off || 'STOPPED' },
               pbs: m.df.pbs,
               free: m.df.free,
+              away: m.df.away,
               perm,
               permWhy: m.df.why,
               vals: m.df.dp ? [[m.df.dp, () => cur(m.df.dp), 'mmH2O']] : []
