@@ -10,6 +10,29 @@
     if (x != null) e.textContent = x;
     return e;
   };
+  /* UI audit 2026-11-21: is the plant running? On the Analog sheets the ABC run (AN.run, not VIEW); on the Digital and Turbine sheets the
+     DITL simulation (SIM on, DPAUSE off: category-search.js setCat carries the run over, AN.run is false there). The button said
+     Paused on Engineer > Digital / Turbine while the plant ran on, and a press there could not pause it */
+  const running = () => {
+    const A = window.AN;
+    if (!A) return false;
+    if (A.cat && A.cat !== 'an') {
+      try {
+        return !!SIM && !DPAUSE;
+      } catch (e) {
+        return false;
+      }
+    }
+    return !!A.run && !A.view;
+  };
+  /* the pause of the plant: DITL Pause (Run on, time stopped, ditl.js) on the Digital / Turbine sheets, the ABC pause on the Analog ones */
+  const plantPause = () => {
+    if (window.AN && AN.cat && AN.cat !== 'an') {
+      try {
+        DPAUSE = true;
+      } catch (e) {}
+    } else call(() => AN.pauseOn());
+  };
   const call = (f, d) => {
     try {
       const r = f();
@@ -149,6 +172,7 @@
   function grpHead(box, key, name, n, dflt) {
     const b = E('button', 'st-grp');
     b.append(E('span', '', name));
+    b.title = name; /* UI audit 2026-11-21 D5: one line, full name on hover */
     if (n != null) b.append(E('i', '', String(n)));
     b._g = name;
     b.onclick = () => {
@@ -295,6 +319,20 @@
     almN = E('span', 'st-n');
     const open = E('button', 'st-t', 'Alarm list');
     alm.append(almM, almT, almX, almN, open);
+    /* UI audit 2026-11-21 D9: the alarm line itself opens the list too, and a press outside the list closes it */
+    almX.classList.add('st-go');
+    almX.title = 'Open the alarm list';
+    almX.onclick = () => open.click();
+    addEventListener(
+      'pointerdown',
+      e => {
+        if (!almPop || almPop.hidden) return;
+        const P = e.composedPath();
+        if (P.includes(almPop) || P.includes(open) || P.includes(almX)) return;
+        almPop.hidden = true;
+      },
+      true
+    );
     /* the tools of a logic sheet: the zoom controls the app already has, as one small bar */
     tools = E('div', 'st-tools');
     tools.hidden = true;
@@ -350,20 +388,28 @@
       },
       true
     );
-    const setRail = on => {
+    const setRail = (on, user) => {
       document.body.classList.toggle('st-norail', !on);
       root.classList.toggle('norail', !on);
       show.hidden = on;
-      mem.set('rail', on ? '1' : '0');
+      if (user) mem.set('side', on ? '1' : '0');
       setTimeout(() => dispatchEvent(new Event('resize')), 30);
     };
-    hide.onclick = () => setRail(false);
-    show.onclick = () => setRail(true);
-    setRail(mem.get('rail') !== '0');
+    hide.onclick = () => setRail(false, true);
+    show.onclick = () => setRail(true, true);
+    /* UI audit 2026-11-21 C10 (frame part): on a tablet (under 1400 px wide) the side list starts hidden, so the plant drawing gets the
+       176 px and its text is drawn larger; the choice of Hide / Show is kept (key 'side': the old key 'rail' was written at every start) */
+    const sd = mem.get('side');
+    setRail(sd ? sd !== '0' : innerWidth >= 1400);
     runB.onclick = () => {
-      const A = window.AN;
-      if (!A) return;
-      call(() => (A.run && !A.view ? A.pauseOn() : A.runOn()));
+      if (!window.AN) return;
+      if (running()) plantPause();
+      else if (AN.cat && AN.cat !== 'an') call(() => {
+        SIM = true;
+        DPAUSE = false;
+        TSP = AN.spd || 1;
+      });
+      else call(() => AN.runOn());
       setTimeout(tick, 100);
     };
     open.onclick = () => {
@@ -765,7 +811,12 @@
         g.hidden = !any;
       }
       foldApply(sheets, key, 1, q);
+      /* UI audit 2026-11-21 D3: a search that finds no sheet says so */
+      none.hidden = !q || [...sheets.querySelectorAll('.st-nav')].some(b => !b.hidden);
     };
+    const none = E('p', 'st-none st-nofind', 'No sheet found.');
+    none.hidden = true;
+    find.after(none);
     find.oninput();
   }
   /* the sheet the logic view shows: AN.i (set by AN.go) for the analog sheets, the entry of the sheet list of the app for the others */
@@ -983,7 +1034,8 @@
     if (!whyPop) {
       whyPop = popup('Signal', '', 340);
       whyPop.style.right = '12px';
-      whyPop.style.top = '56px';
+      /* UI audit 2026-11-21 D1: below the sheet tools (top 45, 36 high), so Back, zoom and Whole sheet stay free */
+      whyPop.style.top = '88px';
       const x = whyPop.querySelector('header .st-t');
       x.onclick = () => {
         whyPop.hidden = true;
@@ -1097,6 +1149,13 @@
     }
     ins.frz.replaceChildren(...N);
   }
+  /* UI audit 2026-11-21 D7: steps the starting point already had (given) are not the trainee's; without a step of the trainee there
+     is no score to show (the 150 MW point showed 100 of 100 · 18 of 18 before any press) */
+  const ownSteps = Z => Z.steps.filter(x => !x.given && !Z.todo.some(y => y.id === x.id)).length;
+  const scoreText = Z =>
+    ownSteps(Z) || Z.deduct.length
+      ? fmt(Z.score, 1) + ' of 100 · ' + ownSteps(Z) + ' steps by the trainee'
+      : 'No step by the trainee yet · ' + (Z.of - Z.todo.length) + ' of ' + Z.of + ' done at the starting point';
   function fillScore() {
     const Z = call(() => AN.sopScore(), null),
       N = [];
@@ -1118,7 +1177,7 @@
         }, 200);
       });
       N.push(
-        E('span', 'st-scv', fmt(Z.score, 1) + ' of 100 · ' + (Z.of - Z.todo.length) + ' of ' + Z.of + ' steps done'),
+        E('span', 'st-scv', scoreText(Z)),
         op,
         ag
       );
@@ -1142,7 +1201,7 @@
       const b = E('button', 'st-b', t);
       b.title = 'The running plant is replaced by the ' + t + ' starting point';
       arm(b, t, () => {
-        call(() => AN.run && !AN.view && AN.pauseOn());
+        if (running()) plantPause();
         pressId(id);
         insPop.hidden = true;
         setTimeout(tick, 1500);
@@ -1616,6 +1675,7 @@
       cl.title = 'Closes the generator breaker; possible only in manual with the synchronizing check 25 operated';
       arm(cl, 'Close 52G', () => say(call(() => AN.turbine('gen', { op: 'close52g' }), '')));
       sy.r.append(cl);
+      h.cl = cl;
       /* 7-90R: the voltage of the generator through the AVR */
       const vo = card('Voltage (7-90R)', 'Raise / lower of the generator voltage; the AVR in automatic or manual');
       h.vo = vo;
@@ -1634,6 +1694,7 @@
         b41.title = tip;
         arm(b41, t, () => say(call(() => AN.turbine('gen', { op }), '')));
         fb.r.append(b41);
+        h[op] = b41;
       }
       /* 7-65: the speed of the turbine through the governor */
       const sp = card(
@@ -1660,6 +1721,10 @@
       },
       L = G.lo86 || {},
       lk = [L.a && '86G-A', L.b && '86G-B', L.t && '86T'].filter(Boolean);
+    /* UI audit 2026-11-21 D8: a command for the state the breaker is already in is not offered */
+    h.cl.disabled = !!G.c52g;
+    h.close41.disabled = !!G.f41;
+    h.open41.disabled = !G.f41;
     h['Generator breaker 52G'].textContent = G.c52g ? 'Closed' : 'Open';
     h['Field breaker 41'].textContent = G.f41 ? 'Closed' : 'Open';
     h['Generator voltage'].textContent = fmt(G.kV, 2) + ' kV';
@@ -1713,7 +1778,7 @@
     sc.key = key;
     const head = E('div', 'st-ph');
     for (const [k, v, hot] of [
-      ['Score', fmt(Z.score, 1) + ' of 100', Z.deduct.length > 0],
+      ['Score', ownSteps(Z) || Z.deduct.length ? fmt(Z.score, 1) + ' of 100' : 'No step by the trainee yet', Z.deduct.length > 0],
       ['Steps of the procedure done', Z.of - Z.todo.length + ' of ' + Z.of],
       [
         'Trips',
@@ -2458,9 +2523,17 @@
     title.textContent = eng ? curTitle() : P[c] || '';
     const ds = eng ? curDesc() : '';
     if (ds) title.append(E('small', 'st-desc', ds));
-    title.title = ds;
+    title.title = title.textContent.replace(ds, ds ? ' · ' + ds : '');
     tabs.hidden = eng || !!own;
     ownPg.hidden = eng || !own;
+    /* UI audit 2026-11-21 D10: the plant page of the app under a page of the frame (First out, Generator panel, ...) takes no click and
+       is not drawn; it comes back as it was when a plant page opens again */
+    const ws = document.getElementById('plantws');
+    if (ws) {
+      const under = !eng && !!own;
+      ws.inert = under;
+      ws.style.visibility = under ? 'hidden' : '';
+    }
     for (const b of mode.children) {
       b.classList.toggle('on', b._e === eng);
       b.setAttribute('aria-pressed', String(b._e === eng));
@@ -2514,13 +2587,13 @@
       tick._ss = ss;
       tick._fresh = ss === 'plantLoad150';
     }
-    if (window.AN && AN.run && !AN.view) tick._fresh = true;
+    if (running()) tick._fresh = true;
     kv.title = tick._fresh ? '' : 'Press Paused to run the plant: the numbers are read on the first scan';
     for (const s of kv.children) {
       const v = tick._fresh ? call(() => +LS_LIVE.getV(s._n[1]), NaN) : NaN;
       s._b.textContent = fmt(isFinite(v) ? v : U[s._n[1]], s._n[3]);
     }
-    const on = !!(window.AN && AN.run && !AN.view);
+    const on = running();
     runB.textContent = on ? 'Running' : 'Paused';
     runB.classList.toggle('on', on);
     runB.setAttribute('aria-pressed', String(on));

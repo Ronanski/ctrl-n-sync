@@ -20,7 +20,7 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-unit { height: 44px; box-sizing: border-box; flex: none; display: flex; align-items: center; padding: 0 4px 0 12px; border-bottom: 1px solid var(--st-line); font-weight: 600; white-space: nowrap; }
 .st-unit .st-t { margin-left: auto; }
 .st-list { overflow-y: auto; min-height: 0; padding-bottom: 12px; scrollbar-width: thin; }
-.st-grp { font: 600 12px var(--st-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--st-dim); padding: 16px 12px 4px; white-space: nowrap; }
+.st-grp { font: 600 12px var(--st-ui); letter-spacing: 0; text-transform: none; color: var(--st-dim); padding: 16px 12px 4px; white-space: nowrap; }
 .st-nav { display: block; height: 32px; width: 100%; padding: 0 12px 0 10px; border: 0; border-left: 2px solid transparent; background: none; text-align: left; color: #b4bdc6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-nav:hover { color: #fff; }
 .st-nav.on { background: #1f252b; border-left-color: #fff; color: #fff; font-weight: 600; }
@@ -179,6 +179,7 @@ button.st-cond.st-go span { text-decoration: underline; text-decoration-color: #
 .st-grp { display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; border: 0; background: none; text-align: left; white-space: normal; cursor: pointer; padding: 14px 12px 6px; }
 .st-grp::before { content: ''; flex: none; width: 5px; height: 5px; margin-top: -3px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); }
 .st-grp.shut::before { margin-top: 0; transform: rotate(-45deg); }
+.st-grp span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-grp i { margin-left: auto; font: 500 11px var(--st-num); letter-spacing: 0; }
 .st-grp:hover { color: #fff; }
 .st-grp:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
@@ -201,3 +202,9 @@ button.st-cond.st-go span { text-decoration: underline; text-decoration-color: #
 @media (pointer: coarse) { .st-fl .st-b { min-height: 40px; padding: 2px 12px; } }
 /* a popup uses the height the screen has (a long list scrolls less) */
 .st-body { max-height: calc(100vh - 150px); }
+
+/* UI audit 2026-11-21 */
+.st-fl .st-b { white-space: normal; text-align: left; max-width: 100%; }
+.st-alm .st-x.st-go { cursor: pointer; }
+.st-alm .st-x.st-go:hover { color: #fff; }
+.st-nofind { padding: 12px; }

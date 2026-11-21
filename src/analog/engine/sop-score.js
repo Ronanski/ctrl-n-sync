@@ -105,7 +105,16 @@ function anSopStep() {
   if (typeof S === 'undefined' || !S.sheets || !window.DUI || !(window.WORLD && WORLD.on)) return;
   const Z = AN_SOP;
   if (Z.of !== S.sheets) anSopRestart();
-  const t = Math.round(anPlantT() * 10) / 10;
+  let t = Math.round(anPlantT() * 10) / 10;
+  /* UI audit 2026-11-21 D7: a starting point loaded into the same sheets (?state=150mw, a save point) keeps S.sheets but moves the plant
+     clock by its saved time; one engine step moves it by one scan only. A clock that goes back, or jumps more than 30 s in one step, is a
+     new plant: the score starts again, so what the starting point already had is "given", not the trainee's (it showed "2 steps by the
+     trainee" at 150 MW before any press: PLANT AIR DRYER and SOLID FIRING were first read after the clock of the state came in) */
+  if (Z.lt != null && (t < Z.lt || t - Z.lt > 30)) {
+    anSopRestart();
+    t = Math.round(anPlantT() * 10) / 10;
+  }
+  Z.lt = t;
   anSopPoints();
   /* the trips: the new records of the sequence of events (soe.js keeps its own record; it is emptied at a new plant, as this score) */
   const L = typeof AN_SOE !== 'undefined' ? AN_SOE.log : [];
