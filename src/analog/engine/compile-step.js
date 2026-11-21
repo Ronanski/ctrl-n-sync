@@ -2317,11 +2317,13 @@ function anInit(S) {
         }
       }
     for (const b of S.blk)
-      if (b.k === 'SEL')
-        b.sgi = b.i.map(n => {
-          const d = anSelAi(S, n, 0);
-          return d && d.sig ? d.sig.id : null;
-        });
+      if (b.k === 'SEL') {
+        const ds = b.i.map(n => anSelAi(S, n, 0));
+        b.sgi = ds.map(d => (d && d.sig ? d.sig.id : null));
+        /* audit 2026-11-21 (reheat drop after sync): only a field transmitter (AI, 4-20 mA) reads 0 when its loop is lost; a T/G Modbus
+           value (ABC-050 SI1812 ~ SI1817, no AI) is a number, so 0 % (CV shut during the IP start) is a good reading */
+        b.txi = ds.map(d => !!d);
+      }
     S.aoN = new Set(S.blk.filter(x => x.k === 'AO' && x.i && x.i[0] != null && x.i[0] >= 0).map(x => x.i[0]));
     {
       const fwd = st => {
