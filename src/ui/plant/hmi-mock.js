@@ -1085,6 +1085,7 @@
               st: { row: m.df.st, on: m.df.on || 'IN OPERATION', off: m.df.off || 'STOPPED' },
               pbs: m.df.pbs,
               free: m.df.free,
+              away: m.df.away,
               perm,
               permWhy: m.df.why,
               vals: m.df.dp ? [[m.df.dp, () => cur(m.df.dp), 'mmH2O']] : []

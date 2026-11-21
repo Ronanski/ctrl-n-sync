@@ -1012,7 +1012,11 @@
     let k0 = '';
     function tick() {
       if (!me.isConnected) return closeEl(me);
-      const on = call(() => dk.dout(P.d, P.st.row), null) === 1,
+      /* P.away = { d, row }: a retract limit switch of the drawing (a sootblower: DITL-80G row 12 ZSR-N1011, or its own copy of DITL-80G):
+         the machine is in operation while its lance is out of the retract position, also when it was started by hand (MANUAL mode), where
+         the OPERATING lamp of the AUTO program (DITL-80A) stays off */
+      const aw = P.away && call(() => dk.dOf(P.away.d) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(P.away.d)), null),
+        on = call(() => dk.dout(P.d, P.st.row), null) === 1 || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0),
         run = isRun(),
         pv = (P.perm || []).map(p => ({ ...p, v: call(() => window.DUI.rowVal(s, p.row), null) })),
         ok = !pv.length || pv.some(p => p.v === 1);

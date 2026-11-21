@@ -66,7 +66,12 @@
   if (sb)
     sb.art = sb.art.replace(/<text([^>]*?) data-dy="(DITL-80[A-F])\|o\|(\d+)" data-on="(N-10\d\d)"/g, (m, a, d, r, n) => {
       const id = 'SB' + n;
-      if (!sb.mach[id]) sb.mach[id] = pbf(n, /80F/.test(d) ? 'Air preheater sootblower' : 'Sootblower', d, +r, 'OPERATING', sbPb(n, d));
+      if (!sb.mach[id]) {
+        sb.mach[id] = pbf(n, /80F/.test(d) ? 'Air preheater sootblower' : 'Sootblower', d, +r, 'OPERATING', sbPb(n, d));
+        /* started by hand the AUTO program's OPERATING lamp stays off: the status also reads the blower's retract limit switch (DITL-80G
+           row 12 ZSR-N1011, input row 11; its own copy for N-1012 ~ N-1038) */
+        if (!/80F/.test(d)) sb.mach[id].df.away = { d: n === 'N-1011' ? 'DITL-80G' : 'DITL-80G #' + n, row: 11 };
+      }
       return `<text${a} data-hit="${id}" style="cursor:pointer" data-dy="${d}|o|${r}" data-on="${n}"`;
     });
   /* 3.2.4-beta.8 (live test 2026-11-17: the backpass fouled for 4.5 h at 150 MW and no press on this page could open the steam or start
