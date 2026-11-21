@@ -46,7 +46,6 @@ engine/soe.js
 engine/gen-panel.js
 engine/alarm-pri.js
 engine/instructor.js
-engine/sop-score.js
 ui/trace.js
 ui/panel.js
 ui/plant-window.js
