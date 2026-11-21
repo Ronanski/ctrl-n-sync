@@ -34,6 +34,11 @@
     /* boiler.js AN_DO (the transmitters that no logic sheet reads): tank level, strainer DP, pump currents, valve positions (U.doZ: a =
        PCV-DO0002, r = PCV-DO1009, b0 ~ b3 = FCV-DO1043-A3 ~ D3) */
     unit: {
+      /* audit 2026-11-21 B1: transmitters no logic sheet reads, from the plant model (AN.unit.tt, unit.js anHxTagStep / boiler.js) */
+      'BT-DO1043-A': 'tt:BT-DO1043-A',
+      'BT-DO1043-B': 'tt:BT-DO1043-B',
+      'BT-DO1043-C': 'tt:BT-DO1043-C',
+      'BT-DO1043-D': 'tt:BT-DO1043-D',
       'LT-DO0701': 'doLv',
       'DPT-DO0001': 'doDp',
       'IT-P0702A': 'ux:doI.0',

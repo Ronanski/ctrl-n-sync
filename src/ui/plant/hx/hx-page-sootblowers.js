@@ -109,7 +109,7 @@
         /* steam supply */
         at(L('drum-steam', 'Superheater panel 1 outlet', { back: true }), 170, 70, { id: 'sl' }),
         at(
-          B('Steam supply valve MV-SB1001', 'data-dy="DITL-80S|o|5|neg" data-on="OPEN" data-off="CLOSED"', { w: 230 }),
+          B('Steam supply valve MV-SB1001', 'data-dy="DITL-80S|o|5|neg" data-on="OPEN" data-off="CLOSED"', { w: 230, plain: true }),
           170,
           150,
           {
@@ -123,7 +123,7 @@
         }),
         /* drains */
         at(
-          B('Drain A bypass valve XV-SB1054', 'data-dy="DITL-80R|o|20" data-on="OPEN" data-off="CLOSED"', { w: 240 }),
+          B('Drain A bypass valve XV-SB1054', 'data-dy="DITL-80R|o|20" data-on="OPEN" data-off="CLOSED"', { w: 240, plain: true }),
           170,
           560,
           {
@@ -131,7 +131,7 @@
           }
         ),
         at(
-          B('Drain B bypass valve XV-SB1059', 'data-dy="DITL-80R|o|11" data-on="OPEN" data-off="CLOSED"', { w: 240 }),
+          B('Drain B bypass valve XV-SB1059', 'data-dy="DITL-80R|o|11" data-on="OPEN" data-off="CLOSED"', { w: 240, plain: true }),
           170,
           690,
           {
@@ -250,7 +250,7 @@
         { x: RXB - CW2 / 2, y: py(28) - 26, s: 'right wall', cls: 'hx-note' },
         { x: SXA - CW2 / 2, y: py(28) - 26, s: 'left wall', cls: 'hx-note' },
         { x: SXB - CW2 / 2, y: py(28) - 26, s: 'right wall', cls: 'hx-note' },
-        { x: SX - SW2 / 2, y: 70, s: 'SEQUENCE, PERMISSIVES, ALARMS', cls: 'hx-name' },
+        { x: SX - SW2 / 2, y: 70, s: 'SEQUENCE, PERMISSIVES, ALARMS', cls: 'hx-zone' },
         {
           x: 470,
           y: 985,

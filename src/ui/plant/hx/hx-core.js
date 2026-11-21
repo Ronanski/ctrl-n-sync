@@ -103,7 +103,9 @@
     if (it.tag != null && it.tag !== '') return it.tag;
     const R = window.HXREG || {},
       m = it.k === 'mach' && R.machines && R.machines[it.mach];
-    if (it.k === 'mach') return m && m.t && m.t.length < 14 ? it.mach + ' · ' + m.t : it.mach;
+    /* audit 2026-11-21 C7: a machine named as its own logic name (Burner A) printed the name twice */
+    const same = String(it.mach).toUpperCase() === String(it.name || '').toUpperCase();
+    if (it.k === 'mach') return m && m.t && m.t.length < 14 ? (same ? m.t : it.mach + ' · ' + m.t) : same ? '' : it.mach;
     return regName(it);
   };
 
@@ -194,7 +196,10 @@
         c = x;
       } else c = c ? c + ' ' + x : x;
     }
-    if (c) out.push(c);
+    /* audit 2026-11-21 C8: a letter or number alone on the last line ("Low pressure heater / 2", "Closed cooling pump / A") stays
+       with the words before it */
+    if (c && out.length && c.length <= 3) out[out.length - 1] += ' ' + c;
+    else if (c) out.push(c);
     return out.slice(0, 3);
   };
 
@@ -372,14 +377,14 @@
       ]);
     if (tg)
       head.push([
-        11.5,
+        13,
         (bx, by, an) => `<text class="hx-tag" x="${n1(bx)}" y="${n1(by - 1.5)}" text-anchor="${an}">${esc(tg)}</text>`
       ]);
     if (it.k === 'mach')
       body.push([
         14.5,
         (bx, by, an) =>
-          `<text class="hx-st none" data-st="${esc(it.mach)}" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">-----</text>`
+          `<text class="hx-st none" data-st="${esc(it.mach)}"${/valve|damper|louver|gate/.test(it.sym || '') ? ' data-vw="1"' : ''} x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">-----</text>`
       ]);
     if (it.k === 'valve')
       body.push([
@@ -387,11 +392,12 @@
         (bx, by, an) =>
           `<text class="hx-st none" data-vs="${esc(it.valve)}" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">-----</text>`
       ]);
+    /* audit 2026-11-21 B2: the output and its % are one line of text, so "100.0" pushes the % on instead of running into it */
     if (it.k === 'loop') {
       body.push([
         16.5,
         (bx, by, an) =>
-          `<g class="hx-mode" data-mode="${esc(it.loop)}" transform="translate(${n1(bx - (an === 'middle' ? 46 : an === 'end' ? 92 : 0))} ${n1(by - 11)})"><rect width="50" height="15" rx="7.5"/><text x="25" y="11" text-anchor="middle">-----</text><text class="hx-val" data-lp="${esc(it.loop)}|mv" x="56" y="11.5">-----</text><text class="hx-unit" x="86" y="11.5"> %</text></g>`
+          `<g class="hx-mode" data-mode="${esc(it.loop)}" transform="translate(${n1(bx - (an === 'middle' ? 52 : an === 'end' ? 104 : 0))} ${n1(by - 11)})"><rect width="50" height="15" rx="7.5"/><text x="25" y="11" text-anchor="middle">-----</text><text x="56" y="11.5"><tspan class="hx-val" data-lp="${esc(it.loop)}|mv">-----</tspan><tspan class="hx-unit"> %</tspan></text></g>`
       ]);
       if (it.pv) {
         const dp = it.pvdp == null ? 1 : it.pvdp;
@@ -444,7 +450,7 @@
     /* the Y / N square (second faceplate) of a machine or an on / off valve: on the side away from its words */
     const ynId = it.k === 'mach' ? 'mach:' + it.mach : it.k === 'valve' ? 'valve:' + it.valve : '',
       ynX = it.yn ? it.yn[0] : lab === 'r' ? box[0] - 18 : box[2] + 4,
-      ynY = it.yn ? it.yn[1] : lab === 'b' ? box[1] - 2 : side ? box[1] - 4 : box[1] - 2;
+      ynY = it.yn ? it.yn[1] : lab === 'b' ? box[1] - 16 : side ? box[1] - 4 : box[1] - 2;
     const yn = ynId
       ? `<g class="hx-yn" data-yn="${esc(ynId)}" transform="translate(${n1(ynX)} ${n1(ynY)})"><title>Permissive · trend · monitor</title><rect width="14" height="14" rx="3"/><text x="7" y="10.4" text-anchor="middle">-</text></g>`
       : '';
@@ -663,9 +669,15 @@
           tx0 = (v ? 0 : sd === 'r' ? 15 : -15) + ox,
           yl = sd === 't' ? -46 : sd === 'b' ? 24 : -12,
           yc = sd === 't' ? -42 : sd === 'b' ? 28 : -8,
-          yt = sd === 't' ? -17 : sd === 'b' ? 53 : 18;
+          yt = sd === 't' ? -17 : sd === 'b' ? 53 : 18,
+          /* audit 2026-11-21 A3: a click between the words of a transmitter fell on the drawing: one transparent box over its words */
+          lw = Math.max(cw, String(t.label || '').length * 6.6, String(t.tag || '').length * 5.8) + 8,
+          hx0 = v ? -lw / 2 + ox : sd === 'r' ? tx0 - 4 : tx0 + 4 - lw,
+          hy0 = Math.min(yl, yc) - 12,
+          hy1 = (t.tag ? yt : yc + 15) + 5,
+          hit = t.key ? `<rect class="hx-hit" x="${n1(hx0)}" y="${n1(hy0)}" width="${n1(lw)}" height="${n1(hy1 - hy0)}"/>` : '';
         taps +=
-          `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})"><path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>` +
+          `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})">${hit}<path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>` +
           `<text class="hx-lab" x="${tx0}" y="${yl}" text-anchor="${an}">${esc(t.label)}</text><rect class="rx-chip" x="${n1(x0)}" y="${yc}" width="${cw}" height="15" rx="3"/>` +
           `<text x="${n1(x0 + cw / 2)}" y="${yc + 11.2}" text-anchor="middle">${val}</text>${t.tag ? `<text class="hx-tag" x="${tx0}" y="${yt}" text-anchor="${an}">${esc(t.tag)}</text>` : ''}</g>`;
         continue;
@@ -684,7 +696,7 @@
       used.map(m => `<span><i style="background:var(--hx-m-${m})"></i>${MEDIA[m] || m}</span>`).join('') +
       `<em>Red = running / open · Green = stopped / closed · Grey = no signal in the app yet</em>`;
     return {
-      svg: `<svg viewBox="0 0 ${P.w || W} ${P.h}"${real ? ' class="hx-real"' : ''} role="img" aria-label="${esc(def.title)} process">${under}${tx}${ls}${sig}${ends}${nodes}${taps}</svg>`,
+      svg: `<svg viewBox="0 0 ${P.w || W} ${P.h}"${real ? ' class="hx-real"' : ''} role="img" aria-label="${esc(def.title)} process">${under}${ls}${sig}${tx}${ends}${nodes}${taps}</svg>`,
       legend
     };
   }
@@ -725,8 +737,9 @@
               ? 'Auto'
               : m;
   /* the state in words; a machine that is a valve or a set of valves (its name is its tag: XV-..., MV-...) is open / closed */
-  const stTxt = (s, name) =>
-    /^(XV|MV|V)-/.test(name || '')
+  /* audit 2026-11-21 C6: a valve or damper driven as a machine (steam seal feed, exhaust hood spray) said Running: vw = drawn as a valve */
+  const stTxt = (s, name, vw) =>
+    vw || /^(XV|MV|V)-/.test(name || '')
       ? s === 'run'
         ? 'Open'
         : s === 'stop'
@@ -902,7 +915,7 @@
         go = (kind, id, second) =>
           HX.card
             ? HX.card(kind, id, second, anchor, anchor.dataset && anchor.dataset.name)
-            : HX.data.open(kind, id, second);
+            : HX.data.open(kind, id, second, anchor, anchor.dataset && anchor.dataset.name);
       if (t.dataset.yn) {
         e.stopPropagation();
         const [yk, ...yr] = t.dataset.yn.split(':');
@@ -933,6 +946,7 @@
     };
     function tick(force) {
       const D = HX.data;
+      if (view === 'process') plates();
       REC.sample();
       /* status line */
       let run = 0,
@@ -1016,7 +1030,7 @@
         });
         Q('[data-st]').forEach(e => {
           const m = D.machine(e.dataset.st) || {},
-            t = (m.word ? wordTxt(m.word) : stTxt(m.st, e.dataset.st)) + (m.mode ? ' · ' + m.mode : '');
+            t = (m.word ? wordTxt(m.word) : stTxt(m.st, e.dataset.st, e.dataset.vw)) + (m.mode ? ' · ' + m.mode : '');
           if (e.textContent !== t) e.textContent = t;
           e.setAttribute('class', 'hx-st ' + (m.st || 'none'));
         });
@@ -1115,6 +1129,50 @@
         });
       }
       if (view === 'trends') paintTrends(page, def, span);
+    }
+    /* audit 2026-11-21 C1: words of the drawing were crossed by pipes. As on a P&ID, the line breaks under a label: every label, tag, state
+       and note of the drawing stands on a plate in the colour of the drawing. The plates are one layer over the pipes and under every
+       word and symbol, so a plate never hides a word of a neighbour. A plate follows its text when the length changes (live states and
+       values), so it is measured only then. */
+    const PL = '.hx-node > text, .hx-tap > text, svg > text';
+    function plates() {
+      page.querySelectorAll('.hx-draw svg').forEach(sv => {
+        const root = sv.getScreenCTM();
+        if (!root) return;
+        let g = sv.querySelector(':scope > g.hx-plates');
+        if (!g) {
+          g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.setAttribute('class', 'hx-plates');
+          sv.insertBefore(g, sv.querySelector(':scope > text, :scope > .hx-node'));
+        }
+        const inv = root.inverse();
+        sv.querySelectorAll(PL).forEach(e => {
+          const n = (e.textContent || '').length;
+          if (e.__pn === n || /(^| )rx-/.test(e.getAttribute('class') || '')) return;
+          let r = e.__pl;
+          if (!r) {
+            r = e.__pl = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            r.setAttribute('class', 'hx-plate');
+            g.append(r);
+          }
+          let b = null,
+            m = null;
+          try {
+            b = e.getBBox();
+            m = e.getScreenCTM();
+          } catch (x) {}
+          /* not laid out yet (page hidden): measured again at the next tick */
+          if (!b || !b.width || !m) return void r.setAttribute('width', 0);
+          e.__pn = n;
+          const t = inv.multiply(m),
+            p = new DOMPoint(b.x - 2, b.y).matrixTransform(t),
+            q = new DOMPoint(b.x + b.width + 2, b.y + b.height).matrixTransform(t);
+          r.setAttribute('x', n1(Math.min(p.x, q.x)));
+          r.setAttribute('y', n1(Math.min(p.y, q.y)));
+          r.setAttribute('width', n1(Math.abs(q.x - p.x)));
+          r.setAttribute('height', n1(Math.abs(q.y - p.y)));
+        });
+      });
     }
     (def.trends || []).forEach(g => g.pens.forEach(p => REC.watch(p[1])));
     show(view);

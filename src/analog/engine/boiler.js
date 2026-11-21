@@ -250,6 +250,11 @@ function anDieselOilStep(U, dt) {
   /* 3.2.3-beta.90: the oil each gun gets with its two valves open (ring pressure and FCV-DO1043-x3 opening), for the flame scanners
      (03b-sim.js fdStep) */
   U.doQg = xc.map(x => doBurnerQ(U.doP2, x));
+  /* audit 2026-11-21 B1: BT-DO1043-A ~ D flame detector (0 ~ 100 %): the oil the gun burns (U.doQb, its valves open) over its MAX 3072 kg/h (MB-022 8-x, AN_DO.Kb);
+     no oil at the gun = no flame. The scanner's own curve is not in the docs: taken as linear in the firing */
+  ['A', 'B', 'C', 'D'].forEach((n, i) => {
+    (U.tt || (U.tt = {}))['BT-DO1043-' + n] = Math.round(10 * Math.min(100, (100 * (qb[i] || 0)) / 3.072)) / 10;
+  });
   U.doDp = K.dp0 * (Qc / K.Qp) ** 2;
   /* the tank: the oil burnt leaves it (the recirculation, the ring return and the relief come back) */
   const burn = qb.reduce((s, q) => s + q, 0);
@@ -489,6 +494,20 @@ function anFanStep(U, dt) {
     idf = fnRun(K.run.idf);
   U.fnGi = K.ga.Pi.map((p, i) => lag('gi' + i, idf ? (p - AN_APL.dp * (U.aphPl || 0)) * rg : 0, 2));
   U.fnGo = lag('go', idf ? K.ga.Po * rg : 0, 2);
+  /* audit 2026-11-21 B1 (HX page values with no number): the gas path pressures no sheet reads. A pressure of the draft system is
+     a share of the flow squared (the same rg as the ID fan suction), anchored on the HMI snapshot (hmi-op.js): air heater gas inlet
+     PT-FG1121 -233, air heater outlet PT-FG1134 -372, air heater gas DP DPT-FG1052-5 113 mmH2O; a plugged air heater (AN_APL) adds
+     its DP across the air heater (outlet and DP), as at the ID fan suction. PA after the air heater PT-FA1078 = the PAF outlet on the
+     same system curve, 1444 / 1551 of it (snapshot / AN_FN.pa.P0) */
+  {
+    const pl = AN_APL.dp * (U.aphPl || 0);
+    Object.assign(U.tt || (U.tt = {}), {
+      'PT-FG1121': idf ? Math.round(-233 * rg) : 0,
+      'PT-FG1134': idf ? Math.round((-372 - pl) * rg) : 0,
+      'DPT-FG1052-5': idf ? Math.round((113 + pl) * rg) : 0,
+      'PT-FA1078': Math.round((U.fnPaP * 1444) / K.pa.P0)
+    });
+  }
   const dpg = U.fnGo - (U.fnGi[0] + U.fnGi[1]) / 2,
     dpg0 = K.ga.Po - (K.ga.Pi[0] + K.ga.Pi[1]) / 2;
   U.fnIdfI = lagI('ii', cur(K.I0.idf, idf, ((taf / K.ga.T0) * dpg) / dpg0), 2);
@@ -572,6 +591,42 @@ function anAphStep(U, dt) {
     const qN = ((v[0] + v[1] + v[2]) * K.gm * 1000) / AN_ESP.rhoN;
     U.dustIn = qN > 1000 ? ((U.flyA || 0) * 1e9) / qN : 0;
     U.espEta = qN > 1000 ? 1 - Math.exp(-AN_ESP.wA / qN) : 1;
+    /* audit 2026-11-21 B1: the transmitters of the air and gas path that no sheet reads (AN.unit.tt, the HX pages).
+       TT-FA1073 / 1074, TT-FA1083 / 1084  PAF / SAF outlet air = tpa / tsa above (FHI Tab 3: ambient 35, PA 45, SA 39 C at MCR).
+       AT-FG1131  O2 after the air heater: the furnace gas (U.o2v) with the seal leak air (lp + ls, 20.9 %) mixed in by mass. The
+                  snapshot 7.PNG reads 19.2 % there with 4.3 % ahead of the air heater: no leak of the OMM (sheet 16, about 8 % of
+                  the gas) gives that, so that reading is taken as an analyzer drawing air, not as the gas.
+       AT-FG1057-4  stack O2 = the same gas (no air enters after the air heater in the model).
+       AT-FG1057-2  NOx, fuel nitrogen (CALC): Tab 2 coal N 0.59 % = 0.000421 kmol per kg over 0.2551 kmol wet gas (AN_SOX note) =
+                  1651 ppm if all of it became NO; the snapshot 7.PNG stack 69 ppm gives the conversion 69 / 1651 = 4.2 %, held
+                  (the bed temperature effect is not in the docs: FHI says only that low temperature suppresses NOx). Diluted like
+                  the SOx (U.soxD: fuel per air, coal share of the fuel).
+       AT-FG1057-3  CO: the model burns the fuel fully while there is excess air, so 0. Short of air (U.airR = air needed / air
+                  given above 1, unit.js) the missing O2 share of the gas is 21 x (airR - 1) %; the carbon that finds no O2 for CO2
+                  burns to CO (C + 1/2 O2), half the O2 of CO2: CO = 2 x that share, 2 x 21 x (airR - 1) x 10,000 ppm.
+       AT-FG1057-5  dust = ESP inlet x (1 - Deutsch collection), the top of the transmitter 100 mg/m3 (I/O list AI0464).
+       AT-FG1057-6  opacity by Beer-Lambert, b from the one plant reading 12.5 % at 2.9 mg/m3 (7.PNG).
+       FT-FG1057-7  stack gas velocity: 21.5 m/s at the MCR wet gas 509,000 Nm3/h and 148 C (7.PNG, AN_SOX note), the actual volume
+                  flow over the same stack area (qN x T / T0). */
+    const o2f = isFinite(U.o2v) ? Math.max(0, Math.min(20.9, U.o2v)) : 20.9,
+      lk = lp + ls,
+      o2a = gg > 1 ? (gg * o2f + lk * 20.9) / (gg + lk) : 20.9,
+      dust = Math.min(100, (U.dustIn || 0) * (1 - (isFinite(U.espEta) ? U.espEta : 1))),
+      Tst = isFinite(U.idfGo) ? U.idfGo : U.aphGo,
+      r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null);
+    Object.assign(U.tt || (U.tt = {}), {
+      'TT-FA1073': r1(tpa),
+      'TT-FA1074': r1(tpa),
+      'TT-FA1083': r1(tsa),
+      'TT-FA1084': r1(tsa),
+      'AT-FG1131': r1(o2a),
+      'AT-FG1057-4': r1(o2a),
+      'AT-FG1057-2': Math.round(1651 * (69 / 1651) * (isFinite(U.soxD) ? U.soxD : 0)),
+      'AT-FG1057-3': gg > 1 && U.airR > 1 ? Math.round(2e4 * 21 * (U.airR - 1)) : 0,
+      'AT-FG1057-5': r1(dust),
+      'AT-FG1057-6': r1(100 * (1 - Math.exp((Math.log(1 - 0.125) / 2.9) * dust))),
+      'FT-FG1057-7': r1(qN > 1000 ? (21.5 * (qN / 509000) * (Tst + 273.15)) / (148 + 273.15) : 0)
+    });
   }
   /* 3.2.3-beta.212 (live Cold sweep F16: TT-FG1110 / 1113, TT-FG1124 / 1125, TT-FG1132 / 1133, TT-FG1152 '-----'): no sheet of the logic
      reads these transmitters, the page now reads the gas path here.

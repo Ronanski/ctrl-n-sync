@@ -287,6 +287,7 @@ function anUnitStop() {
   for (const z of U.spr || []) z.pr.uf = z.pr.hx = undefined;
   U.lpbSp = null; /* 3.2.1 anCdTagStep: the LP bypass spray controller is found again */
   U.fwC = null; /* 3.2.1 anFwTagStep: its controllers and F(X) are found again */
+  U.hxtC = null; /* audit 2026-11-21 anHxTagStep: its transmitters are found again */
   U.asC = null; /* 3.2.1 anAsTagStep: page 08 values */
   U.asT15 = U.asTgs = undefined;
   if (U.fwp && U.fwp.pr) U.fwp.pr.op = U.fwp.pr.hx = undefined; /* 3.2.4-beta.6: hx = the main valve flow (anMainFw) */
@@ -2933,6 +2934,84 @@ function anLphStep(U, dt) {
   anCdTagStep(U, ld);
   anFwTagStep(U);
   anAsTagStep(U, dt);
+  anHxTagStep(U, dt);
+}
+/* audit 2026-11-21 B1 (HX pages: transmitters that no logic sheet reads showed '-----'). Each value from the model, anchored on the
+   HMI snapshot of the plant at 150 MW (hmi-op.js AN_HMI_AI) where a share is needed:
+     TT-MS1007    turbine main steam = finishing S/H outlet TT-MS1004 (AI0612) less the heat the main steam line loses. A lagged pipe
+                  loses about the same heat at any flow, so the drop goes with 1 / flow: 542 - 538 = 4 C at MCR 472.7 T/H (snapshot),
+                  never below the ambient; under 5 % flow it is held at the 5 % drop (the line cools with no steam: not modelled).
+     PT-HR1001    reheat outlet header = hot reheat at the turbine PT-HR1003-1 (AI0421) + the line DP, flow squared: 35.0 - 34.3 =
+                  0.7 kg/cm2 at MCR (snapshot), the reheat flow = HP exhaust + HP bypass (U.ms + U.mhp).
+     TT-BR1020    No.1 economizer outlet water, TT-BR1030 No.2 (R + S), TT-BR1040 No.3 = the water into the drum: the heat transfer
+                  chain (hx.js); TT-BR1110 S/H No.1 inlet = the steam leaving the wall (hx.js wl).
+     TT-BR1120-1 / -2  S/H No.1 outlet header: the steam leaving panel 1 of the chain (hx.js p1o), both thermocouples.
+     PT-BR1130    No.2 S/H panel inlet and PT-BR1150 finishing S/H inlet = drum PT-BR1001-1 (AI0128) less the S/H DP to there, flow
+                  squared: 134.2 - 127.8 = 6.4 and 134.2 - 124.9 = 9.3 kg/cm2 at MCR, the same as the spray water DP of anFwTagStep.
+     PT-FG1009-A2 / B2  seal pot fluidizing pressure (2), the lower tap: tap (1) (AI0146 / AI0147) + the solids column between the
+                  taps, its weight a share of the bed inventory (U.bedI / AN_BI.t0): 533 + 82 = 615 and 308 + 84 = 392 mmH2O (snapshot).
+     LT-CL1008-A ~ C  coal bunker level: the bunkers stand (simulator scope 2026-11-07, the coal yard is outside the model, like the
+                  ash silos): the snapshot 4.56 / 3.65 / 3.89 m.
+     MIA-CL1061-x1  coal feeder totalized coal (t): the feeder feedrate (ABC-004x AI0480 / 0512 / 0544, T/H) summed in time since
+                  the start of the simulator. */
+function anHxTagStep(U, dt) {
+  const C = U.hxtC || (U.hxtC = {}),
+    ai = k => anUnitVal(C[k] || (C[k] = anUnitAIs(k))),
+    /* a transmitter on no sheet reads the snapshot value of the HMI (hmi-op.js), as its own page shows it */
+    aiH = k => {
+      const v = ai(k),
+        h = typeof AN_HMI_AI !== 'undefined' ? AN_HMI_AI[k] : null;
+      return isFinite(v) ? v : h ? +h[0] : NaN;
+    },
+    r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
+    ms0 = AN_FWT.ms0,
+    ms = Math.max(0, +U.ms || 0),
+    Ta = isFinite(U.Tamb) ? U.Tamb : 30,
+    H = U.hxO || {},
+    t1004 = ai('1|AI0612'),
+    pd = ai('1|AI0128'),
+    lf = (ms / ms0) * (ms / ms0),
+    mr = ms + Math.max(0, +U.mhp || 0),
+    fr = U.bedI > 0 ? U.bedI / AN_BI.t0 : 0,
+    T = U.tt || (U.tt = {});
+  Object.assign(T, {
+    'TT-MS1007': r1(isFinite(t1004) ? Math.max(Ta, t1004 - Math.min(t1004 - Ta, (4 * ms0) / Math.max(ms, 0.05 * ms0))) : NaN),
+    'PT-HR1001': r1(ai('2|AI0421') + 0.7 * (mr / ms0) * (mr / ms0)),
+    'TT-BR1020': r1(H.e1o),
+    'TT-BR1030': r1(H.e2o),
+    'TT-BR1040': r1(H.tEco),
+    'TT-BR1110': r1(H.wl),
+    'TT-BR1120-1': r1(H.p1o),
+    'TT-BR1120-2': r1(H.p1o),
+    'PT-BR1130': r1(pd - 6.4 * lf),
+    'PT-BR1150': r1(pd - 9.3 * lf),
+    'PT-FG1009-A2': Math.round(aiH('1|AI0146') + 615 * fr),
+    'PT-FG1009-B2': Math.round(aiH('1|AI0147') + 392 * fr),
+    'LT-CL1008-A': 4.56,
+    'LT-CL1008-B': 3.65,
+    'LT-CL1008-C': 3.89
+  });
+  /* IT-SB01 (I/O list STN2 AI0804 "#1 Sootblower system current", MCC --> DCS): the current of the Unit 1 460 V sootblower MCC SB-11.
+     Source: LV MCC drawing K1AU3-E1-0-107 (ABB/Xiamen LV, 1TNR003746D1007 SLD for UNIT 1 460V SYSTEM SB-11): incomer 3P MCCB with CT 75/5 A,
+     31 reversing DOL starters (RD1.x, MO325 + TA25DU), 29 with the overload relay TA25DU-2.4M (1.7-2.4 A) = the lance drives and 2 with
+     1.3-1.8 A = the air heater blowers. The relay is set at the motor full load current, so one running motor draws the middle of its band:
+     2.05 A per lance, 1.55 A per air heater blower. Check by engineering: a 1.1 kW 4-pole lance motor at 460 V, PF 0.78, eff 0.83 gives
+     I = P/(sqrt3*V*PF*eff) = 1100/(1.732*460*0.78*0.83) = 2.13 A, inside the 1.7-2.4 A band. A lance motor runs while it travels in or out
+     (world.js sbLance: _lance.dir != 0); an air heater blower while its phase runs (U.sbA.ph). Nothing running = 0 A (the 120 V control
+     supply is external UPS, not on the bus). */
+  {
+    const W = typeof window !== 'undefined' ? window.WORLD : null,
+      L = W && W.sbLances ? W.sbLances() : [];
+    let i = 0;
+    for (const s of L) if (s._lance && s._lance.dir) i += 2.05;
+    if (U.sbA && U.sbA.ph) i += 1.55;
+    T['IT-SB01'] = Math.round(i * 10) / 10;
+  }
+  (U.fuel || []).forEach((l, i) => {
+    const k = 'MIA-CL1061-' + 'ABC'[i] + '1',
+      q = Math.max(0, anUnitVal(l) || 0);
+    T[k] = (isFinite(T[k]) ? T[k] : 0) + (q * Math.max(0, dt || 0)) / 3600;
+  });
 }
 /* 3.2.1 (IRENE, page 05 CONDENSATE): the other condensate transmitters of the page that no sheet reads (AN.unit.tt).
    Sources: 28.png (151.3 MW, MSF 480.3 T/H): hotwell TT-CD1110-1 / -2 40, flash chamber TT-CD1110-4 42, TT-CD1118 40, ejector condenser
@@ -4512,7 +4591,14 @@ function anGenInt(dt) {
                AT-SP1010 economizer inlet: the carbohydrazide takes the oxygen (fed in excess: all of it, 0 ppb); without it the
                oxygen of the deaerator reaches the economizer. The scavenger in the tank fades with the same residence.
      make-up   AT-SP1006 pH 7.5 (alarm list normal) while a make-up water pump feeds (AN_MU muFeed).
-   NO-SOURCE (kept '-----' on the page): make-up conductivity / silica, saturated steam conductivity, the silica analyzers, the tank
+   audit 2026-11-21 B1 (was '-----' on the page):
+     make-up   AT-SP1007 specific conductivity: demineralized water at its pH 7.5: H+ 10^-7.5, OH- 10^-6.5 with Na+ for the balance
+               (lam above): 0.09 uS/cm.
+     steam     AT-SP1014 saturated steam specific conductivity: the amine is volatile and goes with the steam (only the phosphate
+               stays in the drum): NH4+ 73.5 (Kohlrausch, 25 C) + OH- 198.0 S cm2/mol x 10^(pH - 14) at the feedwater pH: 2.7 uS/cm at
+               pH 9.0 (snapshot 3.8 = pH 9.15).
+     silica    AT-SP1008 / 1013 / 1015 / 1017: 0, like the sodium: the model has no silica source (no demineralizer slip, no leak).
+   Not modelled (kept '-----' on the page): the tank
    levels (the tank height is not in PD-042: the level switches LSH / LSL / LSLL 0.48 / 0.12 / 0.09 m of the alarm list cannot be
    tied to the 200 L). Alarm AL2-SP01 (analyzer common alarm) = a modelled analyzer beyond its H / L of the alarm list; AL1-SP01, AL3-SP01,
    AL-Z1110 = 0 (no fault in the model). Only numbers on U (the save is JSON: no function on U, Chaewon beta.108). */
@@ -4778,6 +4864,13 @@ function anChemStep(U, dt) {
   U.sp1001 = U.sp1003 = U.sp1009 = U.sp1016 = r(pHfw, 100);
   U.sp1002 = U.sp1005 = U.sp1018 = U.sp1019 = U.sp1021 = r(cat, 1000);
   U.sp1020 = 0;
+  U.sp1008 = U.sp1013 = U.sp1015 = U.sp1017 = 0;
+  {
+    const h = Math.pow(10, -K.pHmu),
+      o = Math.pow(10, K.pHmu - 14);
+    U.sp1007 = r(1000 * (L.h * h + L.oh * o + L.na * Math.max(0, o - h)), 1000);
+    U.sp1014 = r(1000 * (73.5 + L.oh) * Math.pow(10, pHfw - 14), 100);
+  }
   U.sp1004 = r(Math.min(K.o2air, U.chO), 10);
   U.sp1010 = r(Math.min(K.o2air, U.chO * (1 - Math.max(0, Math.min(1, U.chS)))), 10);
   U.sp1011 = r(pHd, 100);
@@ -5501,6 +5594,8 @@ function anUnitStep0(dt) {
       nA = taf / 28.9,
       nL = ((U.tlW || 0) + (U.tlE || 0)) / 18,
       o2s = nA > 0 ? (o2a * nA) / (nA + nL) : o2a;
+    /* audit 2026-11-21 B1: the air needed over the air given (above 1 = short of air: the stack CO of boiler.js anAphStep) */
+    U.airR = taf > 1 ? ((Fe - Fb * (1 - (U.coalR || 1))) * U.afs) / taf : 0;
     U.o2v += ((o2s - U.o2v) * dt) / U.tauO2;
     for (const L of U.o2) anUnitWrite(L, U.o2v);
   }

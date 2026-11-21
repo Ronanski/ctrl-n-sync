@@ -137120,6 +137120,11 @@ function anDieselOilStep(U, dt) {
   /* 3.2.3-beta.90: the oil each gun gets with its two valves open (ring pressure and FCV-DO1043-x3 opening), for the flame scanners
      (03b-sim.js fdStep) */
   U.doQg = xc.map(x => doBurnerQ(U.doP2, x));
+  /* audit 2026-11-21 B1: BT-DO1043-A ~ D flame detector (0 ~ 100 %): the oil the gun burns (U.doQb, its valves open) over its MAX 3072 kg/h (MB-022 8-x, AN_DO.Kb);
+     no oil at the gun = no flame. The scanner's own curve is not in the docs: taken as linear in the firing */
+  ['A', 'B', 'C', 'D'].forEach((n, i) => {
+    (U.tt || (U.tt = {}))['BT-DO1043-' + n] = Math.round(10 * Math.min(100, (100 * (qb[i] || 0)) / 3.072)) / 10;
+  });
   U.doDp = K.dp0 * (Qc / K.Qp) ** 2;
   /* the tank: the oil burnt leaves it (the recirculation, the ring return and the relief come back) */
   const burn = qb.reduce((s, q) => s + q, 0);
@@ -137359,6 +137364,20 @@ function anFanStep(U, dt) {
     idf = fnRun(K.run.idf);
   U.fnGi = K.ga.Pi.map((p, i) => lag('gi' + i, idf ? (p - AN_APL.dp * (U.aphPl || 0)) * rg : 0, 2));
   U.fnGo = lag('go', idf ? K.ga.Po * rg : 0, 2);
+  /* audit 2026-11-21 B1 (HX page values with no number): the gas path pressures no sheet reads. A pressure of the draft system is
+     a share of the flow squared (the same rg as the ID fan suction), anchored on the HMI snapshot (hmi-op.js): air heater gas inlet
+     PT-FG1121 -233, air heater outlet PT-FG1134 -372, air heater gas DP DPT-FG1052-5 113 mmH2O; a plugged air heater (AN_APL) adds
+     its DP across the air heater (outlet and DP), as at the ID fan suction. PA after the air heater PT-FA1078 = the PAF outlet on the
+     same system curve, 1444 / 1551 of it (snapshot / AN_FN.pa.P0) */
+  {
+    const pl = AN_APL.dp * (U.aphPl || 0);
+    Object.assign(U.tt || (U.tt = {}), {
+      'PT-FG1121': idf ? Math.round(-233 * rg) : 0,
+      'PT-FG1134': idf ? Math.round((-372 - pl) * rg) : 0,
+      'DPT-FG1052-5': idf ? Math.round((113 + pl) * rg) : 0,
+      'PT-FA1078': Math.round((U.fnPaP * 1444) / K.pa.P0)
+    });
+  }
   const dpg = U.fnGo - (U.fnGi[0] + U.fnGi[1]) / 2,
     dpg0 = K.ga.Po - (K.ga.Pi[0] + K.ga.Pi[1]) / 2;
   U.fnIdfI = lagI('ii', cur(K.I0.idf, idf, ((taf / K.ga.T0) * dpg) / dpg0), 2);
@@ -137442,6 +137461,42 @@ function anAphStep(U, dt) {
     const qN = ((v[0] + v[1] + v[2]) * K.gm * 1000) / AN_ESP.rhoN;
     U.dustIn = qN > 1000 ? ((U.flyA || 0) * 1e9) / qN : 0;
     U.espEta = qN > 1000 ? 1 - Math.exp(-AN_ESP.wA / qN) : 1;
+    /* audit 2026-11-21 B1: the transmitters of the air and gas path that no sheet reads (AN.unit.tt, the HX pages).
+       TT-FA1073 / 1074, TT-FA1083 / 1084  PAF / SAF outlet air = tpa / tsa above (FHI Tab 3: ambient 35, PA 45, SA 39 C at MCR).
+       AT-FG1131  O2 after the air heater: the furnace gas (U.o2v) with the seal leak air (lp + ls, 20.9 %) mixed in by mass. The
+                  snapshot 7.PNG reads 19.2 % there with 4.3 % ahead of the air heater: no leak of the OMM (sheet 16, about 8 % of
+                  the gas) gives that, so that reading is taken as an analyzer drawing air, not as the gas.
+       AT-FG1057-4  stack O2 = the same gas (no air enters after the air heater in the model).
+       AT-FG1057-2  NOx, fuel nitrogen (CALC): Tab 2 coal N 0.59 % = 0.000421 kmol per kg over 0.2551 kmol wet gas (AN_SOX note) =
+                  1651 ppm if all of it became NO; the snapshot 7.PNG stack 69 ppm gives the conversion 69 / 1651 = 4.2 %, held
+                  (the bed temperature effect is not in the docs: FHI says only that low temperature suppresses NOx). Diluted like
+                  the SOx (U.soxD: fuel per air, coal share of the fuel).
+       AT-FG1057-3  CO: the model burns the fuel fully while there is excess air, so 0. Short of air (U.airR = air needed / air
+                  given above 1, unit.js) the missing O2 share of the gas is 21 x (airR - 1) %; the carbon that finds no O2 for CO2
+                  burns to CO (C + 1/2 O2), half the O2 of CO2: CO = 2 x that share, 2 x 21 x (airR - 1) x 10,000 ppm.
+       AT-FG1057-5  dust = ESP inlet x (1 - Deutsch collection), the top of the transmitter 100 mg/m3 (I/O list AI0464).
+       AT-FG1057-6  opacity by Beer-Lambert, b from the one plant reading 12.5 % at 2.9 mg/m3 (7.PNG).
+       FT-FG1057-7  stack gas velocity: 21.5 m/s at the MCR wet gas 509,000 Nm3/h and 148 C (7.PNG, AN_SOX note), the actual volume
+                  flow over the same stack area (qN x T / T0). */
+    const o2f = isFinite(U.o2v) ? Math.max(0, Math.min(20.9, U.o2v)) : 20.9,
+      lk = lp + ls,
+      o2a = gg > 1 ? (gg * o2f + lk * 20.9) / (gg + lk) : 20.9,
+      dust = Math.min(100, (U.dustIn || 0) * (1 - (isFinite(U.espEta) ? U.espEta : 1))),
+      Tst = isFinite(U.idfGo) ? U.idfGo : U.aphGo,
+      r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null);
+    Object.assign(U.tt || (U.tt = {}), {
+      'TT-FA1073': r1(tpa),
+      'TT-FA1074': r1(tpa),
+      'TT-FA1083': r1(tsa),
+      'TT-FA1084': r1(tsa),
+      'AT-FG1131': r1(o2a),
+      'AT-FG1057-4': r1(o2a),
+      'AT-FG1057-2': Math.round(1651 * (69 / 1651) * (isFinite(U.soxD) ? U.soxD : 0)),
+      'AT-FG1057-3': gg > 1 && U.airR > 1 ? Math.round(2e4 * 21 * (U.airR - 1)) : 0,
+      'AT-FG1057-5': r1(dust),
+      'AT-FG1057-6': r1(100 * (1 - Math.exp((Math.log(1 - 0.125) / 2.9) * dust))),
+      'FT-FG1057-7': r1(qN > 1000 ? (21.5 * (qN / 509000) * (Tst + 273.15)) / (148 + 273.15) : 0)
+    });
   }
   /* 3.2.3-beta.212 (live Cold sweep F16: TT-FG1110 / 1113, TT-FG1124 / 1125, TT-FG1132 / 1133, TT-FG1152 '-----'): no sheet of the logic
      reads these transmitters, the page now reads the gas path here.
@@ -138355,6 +138410,9 @@ function anHxStep(U, I, dt) {
     wl: sWl.T,
     hEco: T(hEco),
     tEco: mW > 0.5 ? anHxTw(hEco) : M.e3 /* water into the drum */,
+    p1o: sP1.T /* S/H No.1 (panel 1) outlet header, TT-BR1120-1 / -2 (audit 2026-11-21 B1) */,
+    e1o: sE1.T /* water leaving the No.1 economizer, TT-BR1020 (audit 2026-11-21 B1) */,
+    e2o: mW > 0.5 && isFinite(sE2r.T) && isFinite(sE2s.T) ? (sE2r.T + sE2s.T) / 2 : (M.e2r + M.e2s) / 2 /* No.2 R + S, TT-BR1030 */,
     gWl: gWl.Tg,
     gRo: gE2r.Tg /* gas leaving the No.2 eco R side (TT-FG1110) */,
     gSo: gE2s.Tg /* S side (TT-FG1113) */,
@@ -138654,6 +138712,7 @@ function anUnitStop() {
   for (const z of U.spr || []) z.pr.uf = z.pr.hx = undefined;
   U.lpbSp = null; /* 3.2.1 anCdTagStep: the LP bypass spray controller is found again */
   U.fwC = null; /* 3.2.1 anFwTagStep: its controllers and F(X) are found again */
+  U.hxtC = null; /* audit 2026-11-21 anHxTagStep: its transmitters are found again */
   U.asC = null; /* 3.2.1 anAsTagStep: page 08 values */
   U.asT15 = U.asTgs = undefined;
   if (U.fwp && U.fwp.pr) U.fwp.pr.op = U.fwp.pr.hx = undefined; /* 3.2.4-beta.6: hx = the main valve flow (anMainFw) */
@@ -141300,6 +141359,84 @@ function anLphStep(U, dt) {
   anCdTagStep(U, ld);
   anFwTagStep(U);
   anAsTagStep(U, dt);
+  anHxTagStep(U, dt);
+}
+/* audit 2026-11-21 B1 (HX pages: transmitters that no logic sheet reads showed '-----'). Each value from the model, anchored on the
+   HMI snapshot of the plant at 150 MW (hmi-op.js AN_HMI_AI) where a share is needed:
+     TT-MS1007    turbine main steam = finishing S/H outlet TT-MS1004 (AI0612) less the heat the main steam line loses. A lagged pipe
+                  loses about the same heat at any flow, so the drop goes with 1 / flow: 542 - 538 = 4 C at MCR 472.7 T/H (snapshot),
+                  never below the ambient; under 5 % flow it is held at the 5 % drop (the line cools with no steam: not modelled).
+     PT-HR1001    reheat outlet header = hot reheat at the turbine PT-HR1003-1 (AI0421) + the line DP, flow squared: 35.0 - 34.3 =
+                  0.7 kg/cm2 at MCR (snapshot), the reheat flow = HP exhaust + HP bypass (U.ms + U.mhp).
+     TT-BR1020    No.1 economizer outlet water, TT-BR1030 No.2 (R + S), TT-BR1040 No.3 = the water into the drum: the heat transfer
+                  chain (hx.js); TT-BR1110 S/H No.1 inlet = the steam leaving the wall (hx.js wl).
+     TT-BR1120-1 / -2  S/H No.1 outlet header: the steam leaving panel 1 of the chain (hx.js p1o), both thermocouples.
+     PT-BR1130    No.2 S/H panel inlet and PT-BR1150 finishing S/H inlet = drum PT-BR1001-1 (AI0128) less the S/H DP to there, flow
+                  squared: 134.2 - 127.8 = 6.4 and 134.2 - 124.9 = 9.3 kg/cm2 at MCR, the same as the spray water DP of anFwTagStep.
+     PT-FG1009-A2 / B2  seal pot fluidizing pressure (2), the lower tap: tap (1) (AI0146 / AI0147) + the solids column between the
+                  taps, its weight a share of the bed inventory (U.bedI / AN_BI.t0): 533 + 82 = 615 and 308 + 84 = 392 mmH2O (snapshot).
+     LT-CL1008-A ~ C  coal bunker level: the bunkers stand (simulator scope 2026-11-07, the coal yard is outside the model, like the
+                  ash silos): the snapshot 4.56 / 3.65 / 3.89 m.
+     MIA-CL1061-x1  coal feeder totalized coal (t): the feeder feedrate (ABC-004x AI0480 / 0512 / 0544, T/H) summed in time since
+                  the start of the simulator. */
+function anHxTagStep(U, dt) {
+  const C = U.hxtC || (U.hxtC = {}),
+    ai = k => anUnitVal(C[k] || (C[k] = anUnitAIs(k))),
+    /* a transmitter on no sheet reads the snapshot value of the HMI (hmi-op.js), as its own page shows it */
+    aiH = k => {
+      const v = ai(k),
+        h = typeof AN_HMI_AI !== 'undefined' ? AN_HMI_AI[k] : null;
+      return isFinite(v) ? v : h ? +h[0] : NaN;
+    },
+    r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
+    ms0 = AN_FWT.ms0,
+    ms = Math.max(0, +U.ms || 0),
+    Ta = isFinite(U.Tamb) ? U.Tamb : 30,
+    H = U.hxO || {},
+    t1004 = ai('1|AI0612'),
+    pd = ai('1|AI0128'),
+    lf = (ms / ms0) * (ms / ms0),
+    mr = ms + Math.max(0, +U.mhp || 0),
+    fr = U.bedI > 0 ? U.bedI / AN_BI.t0 : 0,
+    T = U.tt || (U.tt = {});
+  Object.assign(T, {
+    'TT-MS1007': r1(isFinite(t1004) ? Math.max(Ta, t1004 - Math.min(t1004 - Ta, (4 * ms0) / Math.max(ms, 0.05 * ms0))) : NaN),
+    'PT-HR1001': r1(ai('2|AI0421') + 0.7 * (mr / ms0) * (mr / ms0)),
+    'TT-BR1020': r1(H.e1o),
+    'TT-BR1030': r1(H.e2o),
+    'TT-BR1040': r1(H.tEco),
+    'TT-BR1110': r1(H.wl),
+    'TT-BR1120-1': r1(H.p1o),
+    'TT-BR1120-2': r1(H.p1o),
+    'PT-BR1130': r1(pd - 6.4 * lf),
+    'PT-BR1150': r1(pd - 9.3 * lf),
+    'PT-FG1009-A2': Math.round(aiH('1|AI0146') + 615 * fr),
+    'PT-FG1009-B2': Math.round(aiH('1|AI0147') + 392 * fr),
+    'LT-CL1008-A': 4.56,
+    'LT-CL1008-B': 3.65,
+    'LT-CL1008-C': 3.89
+  });
+  /* IT-SB01 (I/O list STN2 AI0804 "#1 Sootblower system current", MCC --> DCS): the current of the Unit 1 460 V sootblower MCC SB-11.
+     Source: LV MCC drawing K1AU3-E1-0-107 (ABB/Xiamen LV, 1TNR003746D1007 SLD for UNIT 1 460V SYSTEM SB-11): incomer 3P MCCB with CT 75/5 A,
+     31 reversing DOL starters (RD1.x, MO325 + TA25DU), 29 with the overload relay TA25DU-2.4M (1.7-2.4 A) = the lance drives and 2 with
+     1.3-1.8 A = the air heater blowers. The relay is set at the motor full load current, so one running motor draws the middle of its band:
+     2.05 A per lance, 1.55 A per air heater blower. Check by engineering: a 1.1 kW 4-pole lance motor at 460 V, PF 0.78, eff 0.83 gives
+     I = P/(sqrt3*V*PF*eff) = 1100/(1.732*460*0.78*0.83) = 2.13 A, inside the 1.7-2.4 A band. A lance motor runs while it travels in or out
+     (world.js sbLance: _lance.dir != 0); an air heater blower while its phase runs (U.sbA.ph). Nothing running = 0 A (the 120 V control
+     supply is external UPS, not on the bus). */
+  {
+    const W = typeof window !== 'undefined' ? window.WORLD : null,
+      L = W && W.sbLances ? W.sbLances() : [];
+    let i = 0;
+    for (const s of L) if (s._lance && s._lance.dir) i += 2.05;
+    if (U.sbA && U.sbA.ph) i += 1.55;
+    T['IT-SB01'] = Math.round(i * 10) / 10;
+  }
+  (U.fuel || []).forEach((l, i) => {
+    const k = 'MIA-CL1061-' + 'ABC'[i] + '1',
+      q = Math.max(0, anUnitVal(l) || 0);
+    T[k] = (isFinite(T[k]) ? T[k] : 0) + (q * Math.max(0, dt || 0)) / 3600;
+  });
 }
 /* 3.2.1 (IRENE, page 05 CONDENSATE): the other condensate transmitters of the page that no sheet reads (AN.unit.tt).
    Sources: 28.png (151.3 MW, MSF 480.3 T/H): hotwell TT-CD1110-1 / -2 40, flash chamber TT-CD1110-4 42, TT-CD1118 40, ejector condenser
@@ -142879,7 +143016,14 @@ function anGenInt(dt) {
                AT-SP1010 economizer inlet: the carbohydrazide takes the oxygen (fed in excess: all of it, 0 ppb); without it the
                oxygen of the deaerator reaches the economizer. The scavenger in the tank fades with the same residence.
      make-up   AT-SP1006 pH 7.5 (alarm list normal) while a make-up water pump feeds (AN_MU muFeed).
-   NO-SOURCE (kept '-----' on the page): make-up conductivity / silica, saturated steam conductivity, the silica analyzers, the tank
+   audit 2026-11-21 B1 (was '-----' on the page):
+     make-up   AT-SP1007 specific conductivity: demineralized water at its pH 7.5: H+ 10^-7.5, OH- 10^-6.5 with Na+ for the balance
+               (lam above): 0.09 uS/cm.
+     steam     AT-SP1014 saturated steam specific conductivity: the amine is volatile and goes with the steam (only the phosphate
+               stays in the drum): NH4+ 73.5 (Kohlrausch, 25 C) + OH- 198.0 S cm2/mol x 10^(pH - 14) at the feedwater pH: 2.7 uS/cm at
+               pH 9.0 (snapshot 3.8 = pH 9.15).
+     silica    AT-SP1008 / 1013 / 1015 / 1017: 0, like the sodium: the model has no silica source (no demineralizer slip, no leak).
+   Not modelled (kept '-----' on the page): the tank
    levels (the tank height is not in PD-042: the level switches LSH / LSL / LSLL 0.48 / 0.12 / 0.09 m of the alarm list cannot be
    tied to the 200 L). Alarm AL2-SP01 (analyzer common alarm) = a modelled analyzer beyond its H / L of the alarm list; AL1-SP01, AL3-SP01,
    AL-Z1110 = 0 (no fault in the model). Only numbers on U (the save is JSON: no function on U, Chaewon beta.108). */
@@ -143145,6 +143289,13 @@ function anChemStep(U, dt) {
   U.sp1001 = U.sp1003 = U.sp1009 = U.sp1016 = r(pHfw, 100);
   U.sp1002 = U.sp1005 = U.sp1018 = U.sp1019 = U.sp1021 = r(cat, 1000);
   U.sp1020 = 0;
+  U.sp1008 = U.sp1013 = U.sp1015 = U.sp1017 = 0;
+  {
+    const h = Math.pow(10, -K.pHmu),
+      o = Math.pow(10, K.pHmu - 14);
+    U.sp1007 = r(1000 * (L.h * h + L.oh * o + L.na * Math.max(0, o - h)), 1000);
+    U.sp1014 = r(1000 * (73.5 + L.oh) * Math.pow(10, pHfw - 14), 100);
+  }
   U.sp1004 = r(Math.min(K.o2air, U.chO), 10);
   U.sp1010 = r(Math.min(K.o2air, U.chO * (1 - Math.max(0, Math.min(1, U.chS)))), 10);
   U.sp1011 = r(pHd, 100);
@@ -143868,6 +144019,8 @@ function anUnitStep0(dt) {
       nA = taf / 28.9,
       nL = ((U.tlW || 0) + (U.tlE || 0)) / 18,
       o2s = nA > 0 ? (o2a * nA) / (nA + nL) : o2a;
+    /* audit 2026-11-21 B1: the air needed over the air given (above 1 = short of air: the stack CO of boiler.js anAphStep) */
+    U.airR = taf > 1 ? ((Fe - Fb * (1 - (U.coalR || 1))) * U.afs) / taf : 0;
     U.o2v += ((o2s - U.o2v) * dt) / U.tauO2;
     for (const L of U.o2) anUnitWrite(L, U.o2v);
   }
@@ -155551,7 +155704,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 3076c1d'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 7aa749e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -309343,6 +309496,11 @@ function anDieselOilStep(U, dt) {
   /* 3.2.3-beta.90: the oil each gun gets with its two valves open (ring pressure and FCV-DO1043-x3 opening), for the flame scanners
      (03b-sim.js fdStep) */
   U.doQg = xc.map(x => doBurnerQ(U.doP2, x));
+  /* audit 2026-11-21 B1: BT-DO1043-A ~ D flame detector (0 ~ 100 %): the oil the gun burns (U.doQb, its valves open) over its MAX 3072 kg/h (MB-022 8-x, AN_DO.Kb);
+     no oil at the gun = no flame. The scanner's own curve is not in the docs: taken as linear in the firing */
+  ['A', 'B', 'C', 'D'].forEach((n, i) => {
+    (U.tt || (U.tt = {}))['BT-DO1043-' + n] = Math.round(10 * Math.min(100, (100 * (qb[i] || 0)) / 3.072)) / 10;
+  });
   U.doDp = K.dp0 * (Qc / K.Qp) ** 2;
   /* the tank: the oil burnt leaves it (the recirculation, the ring return and the relief come back) */
   const burn = qb.reduce((s, q) => s + q, 0);
@@ -309582,6 +309740,20 @@ function anFanStep(U, dt) {
     idf = fnRun(K.run.idf);
   U.fnGi = K.ga.Pi.map((p, i) => lag('gi' + i, idf ? (p - AN_APL.dp * (U.aphPl || 0)) * rg : 0, 2));
   U.fnGo = lag('go', idf ? K.ga.Po * rg : 0, 2);
+  /* audit 2026-11-21 B1 (HX page values with no number): the gas path pressures no sheet reads. A pressure of the draft system is
+     a share of the flow squared (the same rg as the ID fan suction), anchored on the HMI snapshot (hmi-op.js): air heater gas inlet
+     PT-FG1121 -233, air heater outlet PT-FG1134 -372, air heater gas DP DPT-FG1052-5 113 mmH2O; a plugged air heater (AN_APL) adds
+     its DP across the air heater (outlet and DP), as at the ID fan suction. PA after the air heater PT-FA1078 = the PAF outlet on the
+     same system curve, 1444 / 1551 of it (snapshot / AN_FN.pa.P0) */
+  {
+    const pl = AN_APL.dp * (U.aphPl || 0);
+    Object.assign(U.tt || (U.tt = {}), {
+      'PT-FG1121': idf ? Math.round(-233 * rg) : 0,
+      'PT-FG1134': idf ? Math.round((-372 - pl) * rg) : 0,
+      'DPT-FG1052-5': idf ? Math.round((113 + pl) * rg) : 0,
+      'PT-FA1078': Math.round((U.fnPaP * 1444) / K.pa.P0)
+    });
+  }
   const dpg = U.fnGo - (U.fnGi[0] + U.fnGi[1]) / 2,
     dpg0 = K.ga.Po - (K.ga.Pi[0] + K.ga.Pi[1]) / 2;
   U.fnIdfI = lagI('ii', cur(K.I0.idf, idf, ((taf / K.ga.T0) * dpg) / dpg0), 2);
@@ -309665,6 +309837,42 @@ function anAphStep(U, dt) {
     const qN = ((v[0] + v[1] + v[2]) * K.gm * 1000) / AN_ESP.rhoN;
     U.dustIn = qN > 1000 ? ((U.flyA || 0) * 1e9) / qN : 0;
     U.espEta = qN > 1000 ? 1 - Math.exp(-AN_ESP.wA / qN) : 1;
+    /* audit 2026-11-21 B1: the transmitters of the air and gas path that no sheet reads (AN.unit.tt, the HX pages).
+       TT-FA1073 / 1074, TT-FA1083 / 1084  PAF / SAF outlet air = tpa / tsa above (FHI Tab 3: ambient 35, PA 45, SA 39 C at MCR).
+       AT-FG1131  O2 after the air heater: the furnace gas (U.o2v) with the seal leak air (lp + ls, 20.9 %) mixed in by mass. The
+                  snapshot 7.PNG reads 19.2 % there with 4.3 % ahead of the air heater: no leak of the OMM (sheet 16, about 8 % of
+                  the gas) gives that, so that reading is taken as an analyzer drawing air, not as the gas.
+       AT-FG1057-4  stack O2 = the same gas (no air enters after the air heater in the model).
+       AT-FG1057-2  NOx, fuel nitrogen (CALC): Tab 2 coal N 0.59 % = 0.000421 kmol per kg over 0.2551 kmol wet gas (AN_SOX note) =
+                  1651 ppm if all of it became NO; the snapshot 7.PNG stack 69 ppm gives the conversion 69 / 1651 = 4.2 %, held
+                  (the bed temperature effect is not in the docs: FHI says only that low temperature suppresses NOx). Diluted like
+                  the SOx (U.soxD: fuel per air, coal share of the fuel).
+       AT-FG1057-3  CO: the model burns the fuel fully while there is excess air, so 0. Short of air (U.airR = air needed / air
+                  given above 1, unit.js) the missing O2 share of the gas is 21 x (airR - 1) %; the carbon that finds no O2 for CO2
+                  burns to CO (C + 1/2 O2), half the O2 of CO2: CO = 2 x that share, 2 x 21 x (airR - 1) x 10,000 ppm.
+       AT-FG1057-5  dust = ESP inlet x (1 - Deutsch collection), the top of the transmitter 100 mg/m3 (I/O list AI0464).
+       AT-FG1057-6  opacity by Beer-Lambert, b from the one plant reading 12.5 % at 2.9 mg/m3 (7.PNG).
+       FT-FG1057-7  stack gas velocity: 21.5 m/s at the MCR wet gas 509,000 Nm3/h and 148 C (7.PNG, AN_SOX note), the actual volume
+                  flow over the same stack area (qN x T / T0). */
+    const o2f = isFinite(U.o2v) ? Math.max(0, Math.min(20.9, U.o2v)) : 20.9,
+      lk = lp + ls,
+      o2a = gg > 1 ? (gg * o2f + lk * 20.9) / (gg + lk) : 20.9,
+      dust = Math.min(100, (U.dustIn || 0) * (1 - (isFinite(U.espEta) ? U.espEta : 1))),
+      Tst = isFinite(U.idfGo) ? U.idfGo : U.aphGo,
+      r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null);
+    Object.assign(U.tt || (U.tt = {}), {
+      'TT-FA1073': r1(tpa),
+      'TT-FA1074': r1(tpa),
+      'TT-FA1083': r1(tsa),
+      'TT-FA1084': r1(tsa),
+      'AT-FG1131': r1(o2a),
+      'AT-FG1057-4': r1(o2a),
+      'AT-FG1057-2': Math.round(1651 * (69 / 1651) * (isFinite(U.soxD) ? U.soxD : 0)),
+      'AT-FG1057-3': gg > 1 && U.airR > 1 ? Math.round(2e4 * 21 * (U.airR - 1)) : 0,
+      'AT-FG1057-5': r1(dust),
+      'AT-FG1057-6': r1(100 * (1 - Math.exp((Math.log(1 - 0.125) / 2.9) * dust))),
+      'FT-FG1057-7': r1(qN > 1000 ? (21.5 * (qN / 509000) * (Tst + 273.15)) / (148 + 273.15) : 0)
+    });
   }
   /* 3.2.3-beta.212 (live Cold sweep F16: TT-FG1110 / 1113, TT-FG1124 / 1125, TT-FG1132 / 1133, TT-FG1152 '-----'): no sheet of the logic
      reads these transmitters, the page now reads the gas path here.
@@ -310580,6 +310788,9 @@ function anHxStep(U, I, dt) {
     wl: sWl.T,
     hEco: T(hEco),
     tEco: mW > 0.5 ? anHxTw(hEco) : M.e3 /* water into the drum */,
+    p1o: sP1.T /* S/H No.1 (panel 1) outlet header, TT-BR1120-1 / -2 (audit 2026-11-21 B1) */,
+    e1o: sE1.T /* water leaving the No.1 economizer, TT-BR1020 (audit 2026-11-21 B1) */,
+    e2o: mW > 0.5 && isFinite(sE2r.T) && isFinite(sE2s.T) ? (sE2r.T + sE2s.T) / 2 : (M.e2r + M.e2s) / 2 /* No.2 R + S, TT-BR1030 */,
     gWl: gWl.Tg,
     gRo: gE2r.Tg /* gas leaving the No.2 eco R side (TT-FG1110) */,
     gSo: gE2s.Tg /* S side (TT-FG1113) */,
@@ -310881,6 +311092,7 @@ function anUnitStop() {
   for (const z of U.spr || []) z.pr.uf = z.pr.hx = undefined;
   U.lpbSp = null; /* 3.2.1 anCdTagStep: the LP bypass spray controller is found again */
   U.fwC = null; /* 3.2.1 anFwTagStep: its controllers and F(X) are found again */
+  U.hxtC = null; /* audit 2026-11-21 anHxTagStep: its transmitters are found again */
   U.asC = null; /* 3.2.1 anAsTagStep: page 08 values */
   U.asT15 = U.asTgs = undefined;
   if (U.fwp && U.fwp.pr) U.fwp.pr.op = U.fwp.pr.hx = undefined; /* 3.2.4-beta.6: hx = the main valve flow (anMainFw) */
@@ -313527,6 +313739,84 @@ function anLphStep(U, dt) {
   anCdTagStep(U, ld);
   anFwTagStep(U);
   anAsTagStep(U, dt);
+  anHxTagStep(U, dt);
+}
+/* audit 2026-11-21 B1 (HX pages: transmitters that no logic sheet reads showed '-----'). Each value from the model, anchored on the
+   HMI snapshot of the plant at 150 MW (hmi-op.js AN_HMI_AI) where a share is needed:
+     TT-MS1007    turbine main steam = finishing S/H outlet TT-MS1004 (AI0612) less the heat the main steam line loses. A lagged pipe
+                  loses about the same heat at any flow, so the drop goes with 1 / flow: 542 - 538 = 4 C at MCR 472.7 T/H (snapshot),
+                  never below the ambient; under 5 % flow it is held at the 5 % drop (the line cools with no steam: not modelled).
+     PT-HR1001    reheat outlet header = hot reheat at the turbine PT-HR1003-1 (AI0421) + the line DP, flow squared: 35.0 - 34.3 =
+                  0.7 kg/cm2 at MCR (snapshot), the reheat flow = HP exhaust + HP bypass (U.ms + U.mhp).
+     TT-BR1020    No.1 economizer outlet water, TT-BR1030 No.2 (R + S), TT-BR1040 No.3 = the water into the drum: the heat transfer
+                  chain (hx.js); TT-BR1110 S/H No.1 inlet = the steam leaving the wall (hx.js wl).
+     TT-BR1120-1 / -2  S/H No.1 outlet header: the steam leaving panel 1 of the chain (hx.js p1o), both thermocouples.
+     PT-BR1130    No.2 S/H panel inlet and PT-BR1150 finishing S/H inlet = drum PT-BR1001-1 (AI0128) less the S/H DP to there, flow
+                  squared: 134.2 - 127.8 = 6.4 and 134.2 - 124.9 = 9.3 kg/cm2 at MCR, the same as the spray water DP of anFwTagStep.
+     PT-FG1009-A2 / B2  seal pot fluidizing pressure (2), the lower tap: tap (1) (AI0146 / AI0147) + the solids column between the
+                  taps, its weight a share of the bed inventory (U.bedI / AN_BI.t0): 533 + 82 = 615 and 308 + 84 = 392 mmH2O (snapshot).
+     LT-CL1008-A ~ C  coal bunker level: the bunkers stand (simulator scope 2026-11-07, the coal yard is outside the model, like the
+                  ash silos): the snapshot 4.56 / 3.65 / 3.89 m.
+     MIA-CL1061-x1  coal feeder totalized coal (t): the feeder feedrate (ABC-004x AI0480 / 0512 / 0544, T/H) summed in time since
+                  the start of the simulator. */
+function anHxTagStep(U, dt) {
+  const C = U.hxtC || (U.hxtC = {}),
+    ai = k => anUnitVal(C[k] || (C[k] = anUnitAIs(k))),
+    /* a transmitter on no sheet reads the snapshot value of the HMI (hmi-op.js), as its own page shows it */
+    aiH = k => {
+      const v = ai(k),
+        h = typeof AN_HMI_AI !== 'undefined' ? AN_HMI_AI[k] : null;
+      return isFinite(v) ? v : h ? +h[0] : NaN;
+    },
+    r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
+    ms0 = AN_FWT.ms0,
+    ms = Math.max(0, +U.ms || 0),
+    Ta = isFinite(U.Tamb) ? U.Tamb : 30,
+    H = U.hxO || {},
+    t1004 = ai('1|AI0612'),
+    pd = ai('1|AI0128'),
+    lf = (ms / ms0) * (ms / ms0),
+    mr = ms + Math.max(0, +U.mhp || 0),
+    fr = U.bedI > 0 ? U.bedI / AN_BI.t0 : 0,
+    T = U.tt || (U.tt = {});
+  Object.assign(T, {
+    'TT-MS1007': r1(isFinite(t1004) ? Math.max(Ta, t1004 - Math.min(t1004 - Ta, (4 * ms0) / Math.max(ms, 0.05 * ms0))) : NaN),
+    'PT-HR1001': r1(ai('2|AI0421') + 0.7 * (mr / ms0) * (mr / ms0)),
+    'TT-BR1020': r1(H.e1o),
+    'TT-BR1030': r1(H.e2o),
+    'TT-BR1040': r1(H.tEco),
+    'TT-BR1110': r1(H.wl),
+    'TT-BR1120-1': r1(H.p1o),
+    'TT-BR1120-2': r1(H.p1o),
+    'PT-BR1130': r1(pd - 6.4 * lf),
+    'PT-BR1150': r1(pd - 9.3 * lf),
+    'PT-FG1009-A2': Math.round(aiH('1|AI0146') + 615 * fr),
+    'PT-FG1009-B2': Math.round(aiH('1|AI0147') + 392 * fr),
+    'LT-CL1008-A': 4.56,
+    'LT-CL1008-B': 3.65,
+    'LT-CL1008-C': 3.89
+  });
+  /* IT-SB01 (I/O list STN2 AI0804 "#1 Sootblower system current", MCC --> DCS): the current of the Unit 1 460 V sootblower MCC SB-11.
+     Source: LV MCC drawing K1AU3-E1-0-107 (ABB/Xiamen LV, 1TNR003746D1007 SLD for UNIT 1 460V SYSTEM SB-11): incomer 3P MCCB with CT 75/5 A,
+     31 reversing DOL starters (RD1.x, MO325 + TA25DU), 29 with the overload relay TA25DU-2.4M (1.7-2.4 A) = the lance drives and 2 with
+     1.3-1.8 A = the air heater blowers. The relay is set at the motor full load current, so one running motor draws the middle of its band:
+     2.05 A per lance, 1.55 A per air heater blower. Check by engineering: a 1.1 kW 4-pole lance motor at 460 V, PF 0.78, eff 0.83 gives
+     I = P/(sqrt3*V*PF*eff) = 1100/(1.732*460*0.78*0.83) = 2.13 A, inside the 1.7-2.4 A band. A lance motor runs while it travels in or out
+     (world.js sbLance: _lance.dir != 0); an air heater blower while its phase runs (U.sbA.ph). Nothing running = 0 A (the 120 V control
+     supply is external UPS, not on the bus). */
+  {
+    const W = typeof window !== 'undefined' ? window.WORLD : null,
+      L = W && W.sbLances ? W.sbLances() : [];
+    let i = 0;
+    for (const s of L) if (s._lance && s._lance.dir) i += 2.05;
+    if (U.sbA && U.sbA.ph) i += 1.55;
+    T['IT-SB01'] = Math.round(i * 10) / 10;
+  }
+  (U.fuel || []).forEach((l, i) => {
+    const k = 'MIA-CL1061-' + 'ABC'[i] + '1',
+      q = Math.max(0, anUnitVal(l) || 0);
+    T[k] = (isFinite(T[k]) ? T[k] : 0) + (q * Math.max(0, dt || 0)) / 3600;
+  });
 }
 /* 3.2.1 (IRENE, page 05 CONDENSATE): the other condensate transmitters of the page that no sheet reads (AN.unit.tt).
    Sources: 28.png (151.3 MW, MSF 480.3 T/H): hotwell TT-CD1110-1 / -2 40, flash chamber TT-CD1110-4 42, TT-CD1118 40, ejector condenser
@@ -315106,7 +315396,14 @@ function anGenInt(dt) {
                AT-SP1010 economizer inlet: the carbohydrazide takes the oxygen (fed in excess: all of it, 0 ppb); without it the
                oxygen of the deaerator reaches the economizer. The scavenger in the tank fades with the same residence.
      make-up   AT-SP1006 pH 7.5 (alarm list normal) while a make-up water pump feeds (AN_MU muFeed).
-   NO-SOURCE (kept '-----' on the page): make-up conductivity / silica, saturated steam conductivity, the silica analyzers, the tank
+   audit 2026-11-21 B1 (was '-----' on the page):
+     make-up   AT-SP1007 specific conductivity: demineralized water at its pH 7.5: H+ 10^-7.5, OH- 10^-6.5 with Na+ for the balance
+               (lam above): 0.09 uS/cm.
+     steam     AT-SP1014 saturated steam specific conductivity: the amine is volatile and goes with the steam (only the phosphate
+               stays in the drum): NH4+ 73.5 (Kohlrausch, 25 C) + OH- 198.0 S cm2/mol x 10^(pH - 14) at the feedwater pH: 2.7 uS/cm at
+               pH 9.0 (snapshot 3.8 = pH 9.15).
+     silica    AT-SP1008 / 1013 / 1015 / 1017: 0, like the sodium: the model has no silica source (no demineralizer slip, no leak).
+   Not modelled (kept '-----' on the page): the tank
    levels (the tank height is not in PD-042: the level switches LSH / LSL / LSLL 0.48 / 0.12 / 0.09 m of the alarm list cannot be
    tied to the 200 L). Alarm AL2-SP01 (analyzer common alarm) = a modelled analyzer beyond its H / L of the alarm list; AL1-SP01, AL3-SP01,
    AL-Z1110 = 0 (no fault in the model). Only numbers on U (the save is JSON: no function on U, Chaewon beta.108). */
@@ -315372,6 +315669,13 @@ function anChemStep(U, dt) {
   U.sp1001 = U.sp1003 = U.sp1009 = U.sp1016 = r(pHfw, 100);
   U.sp1002 = U.sp1005 = U.sp1018 = U.sp1019 = U.sp1021 = r(cat, 1000);
   U.sp1020 = 0;
+  U.sp1008 = U.sp1013 = U.sp1015 = U.sp1017 = 0;
+  {
+    const h = Math.pow(10, -K.pHmu),
+      o = Math.pow(10, K.pHmu - 14);
+    U.sp1007 = r(1000 * (L.h * h + L.oh * o + L.na * Math.max(0, o - h)), 1000);
+    U.sp1014 = r(1000 * (73.5 + L.oh) * Math.pow(10, pHfw - 14), 100);
+  }
   U.sp1004 = r(Math.min(K.o2air, U.chO), 10);
   U.sp1010 = r(Math.min(K.o2air, U.chO * (1 - Math.max(0, Math.min(1, U.chS)))), 10);
   U.sp1011 = r(pHd, 100);
@@ -316095,6 +316399,8 @@ function anUnitStep0(dt) {
       nA = taf / 28.9,
       nL = ((U.tlW || 0) + (U.tlE || 0)) / 18,
       o2s = nA > 0 ? (o2a * nA) / (nA + nL) : o2a;
+    /* audit 2026-11-21 B1: the air needed over the air given (above 1 = short of air: the stack CO of boiler.js anAphStep) */
+    U.airR = taf > 1 ? ((Fe - Fb * (1 - (U.coalR || 1))) * U.afs) / taf : 0;
     U.o2v += ((o2s - U.o2v) * dt) / U.tauO2;
     for (const L of U.o2) anUnitWrite(L, U.o2v);
   }
@@ -353163,7 +353469,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 3076c1d'));
+    row('Version', E('span', 'scsver', ver + ' · build 7aa749e'));
   }
   function openSet(near) {
     if (!set) {
@@ -358059,15 +358365,18 @@ body.ophmi #anp{display:none!important}
 .hx-real .hx-st { font-size: 12px; }
 .hx-real .hx-end { font-size: 10.8px; }
 .hx-real .hx-zone { font-size: 11.4px; }
-.hx-process svg.hx-real { min-width: 1280px; }
+/* audit 2026-11-21 C10: at 1280 the 1760-wide drawing was squeezed to 0.73 (tags 7-8 px). 1600 keeps every text 9.5 px or more; a narrower screen scrolls */
+.hx-process svg.hx-real { min-width: 1600px; }
+/* audit 2026-11-21 C1: the plate under a word of the drawing (hx-core.js plates): the pipe breaks under the label, as on a P&ID */
+.hx-process svg .hx-plate { fill: var(--hx-panel); stroke: none; pointer-events: none; }
 /* words inside the equipment */
 .hx-process svg .hx-node text.rx-in, .hx-process svg .hx-node text.rx-pv, .hx-process svg .hx-node text.rx-sl, .hx-process svg .hx-node text.rx-sv { stroke: none; }
 .hx-process svg .hx-node text.rx-in2 { stroke: var(--rx-void); stroke-width: 3px; }
 .rx-in { font: 600 8px var(--hx-cond); letter-spacing: 0.09em; text-transform: uppercase; fill: var(--hx-mute) !important; }
 .rx-in2 { font: 600 8.8px var(--hx-cond); fill: var(--hx-ink2) !important; }
-.rx-pv { font: 600 15px var(--hx-mono); font-variant-numeric: tabular-nums; }
+.rx-pv { font: 600 14px var(--hx-mono); font-variant-numeric: tabular-nums; }
 .rx-sl { font: 600 8.4px var(--hx-cond); letter-spacing: 0.08em; text-transform: uppercase; fill: var(--hx-mute) !important; }
-.rx-sv { font: 600 11px var(--hx-mono); font-variant-numeric: tabular-nums; }
+.rx-sv { font: 600 10.4px var(--hx-mono); font-variant-numeric: tabular-nums; }
 .rx-su { font: 400 9px var(--hx-font); fill: var(--hx-mute) !important; }
 
 /* status lists (permissives, trips): Y = red = true, N = green */
@@ -358213,8 +358522,10 @@ body.ophmi #anp{display:none!important}
 .hx-hook.press { cursor: pointer; outline: none; }
 .hx-hook.press rect { stroke-width: 1.6; }
 .hx-hook.press:hover rect, .hx-hook.press:focus-visible rect { stroke: var(--hx-accent); }
-.hx-hook.press.on rect { fill: var(--hx-accent); stroke: var(--hx-accent); }
-.hx-hook.press.on .hx-hkl { fill: var(--hx-bg) !important; }
+/* audit 2026-11-21 C7: the selected one of a pair of selection push buttons (HYDRAULIC / DAMPER CONTROL) was a solid blue block
+   next to a dark one and read as another kind of button: the same button, its edge and words in the accent colour */
+.hx-hook.press.on rect { fill: var(--hx-panel2); stroke: var(--hx-accent); stroke-width: 2.6; }
+.hx-hook.press.on .hx-hkl { fill: var(--hx-accent) !important; font-weight: 700; }
 .hx-hook.run rect { stroke: var(--hx-run); }
 .hx-hook.plain .hx-hkl { font-size: 10.6px; font-weight: 500; }
 .hx-hook.plain.run rect { fill: var(--hx-run); }
@@ -368594,6 +368905,17 @@ window.PLANT_SYS = [
       }
     },
     unit: {
+      /* audit 2026-11-21 B1: transmitters no logic sheet reads, from the plant model (AN.unit.tt, unit.js anHxTagStep / boiler.js) */
+      'TT-MS1007': 'tt:TT-MS1007',
+      'PT-HR1001': 'tt:PT-HR1001',
+      'TT-BR1020': 'tt:TT-BR1020',
+      'TT-BR1030': 'tt:TT-BR1030',
+      'TT-BR1040': 'tt:TT-BR1040',
+      'TT-BR1110': 'tt:TT-BR1110',
+      'TT-BR1120-1': 'tt:TT-BR1120-1',
+      'TT-BR1120-2': 'tt:TT-BR1120-2',
+      'PT-BR1130': 'tt:PT-BR1130',
+      'PT-BR1150': 'tt:PT-BR1150',
       RPM: 'rpm',
       /* same model values as page 06 FEEDWATER (unit.js anFwTagStep, IRENE 3.2.1-beta.16): one tag, one value */
       'PT-FW1160': 'tt:PT-FW1160',
@@ -368707,6 +369029,35 @@ window.PLANT_SYS = [
       RHT: { n: 'TICHR1002A', t: 'Reheater outlet temperature', ctl: 'TICHR1002A', io: 'TICHR1002A' }
     },
     unit: {
+      /* audit 2026-11-21 B1: transmitters no logic sheet reads, from the plant model (AN.unit.tt, unit.js anHxTagStep / boiler.js) */
+      'PT-FG1009-A2': 'tt:PT-FG1009-A2',
+      'PT-FG1009-B2': 'tt:PT-FG1009-B2',
+      'PT-FG1121': 'tt:PT-FG1121',
+      'PT-FG1134': 'tt:PT-FG1134',
+      'DPT-FG1052-5': 'tt:DPT-FG1052-5',
+      'AT-FG1131': 'tt:AT-FG1131',
+      'AT-FG1057-2': 'tt:AT-FG1057-2',
+      'AT-FG1057-3': 'tt:AT-FG1057-3',
+      'AT-FG1057-4': 'tt:AT-FG1057-4',
+      'AT-FG1057-5': 'tt:AT-FG1057-5',
+      'AT-FG1057-6': 'tt:AT-FG1057-6',
+      'FT-FG1057-7': 'tt:FT-FG1057-7',
+      'TT-FA1073': 'tt:TT-FA1073',
+      'TT-FA1074': 'tt:TT-FA1074',
+      'PT-FA1078': 'tt:PT-FA1078',
+      'TT-FA1083': 'tt:TT-FA1083',
+      'TT-FA1084': 'tt:TT-FA1084',
+      'LT-CL1008-A': 'tt:LT-CL1008-A',
+      'LT-CL1008-B': 'tt:LT-CL1008-B',
+      'LT-CL1008-C': 'tt:LT-CL1008-C',
+      'MIA-CL1061-A1': 'tt:MIA-CL1061-A1',
+      'MIA-CL1061-B1': 'tt:MIA-CL1061-B1',
+      'MIA-CL1061-C1': 'tt:MIA-CL1061-C1',
+      /* the bed DP split of unit.js (U.dpLo plenum / lower, U.dpUp lower / upper; A and B) */
+      'DPT-FG1084': 'ux:dpLo.0',
+      'DPT-FG1184': 'ux:dpLo.1',
+      'DPT-FG1083': 'ux:dpUp.0',
+      'DPT-FG1183': 'ux:dpUp.1',
       'IT-F1053': 'fnPafI',
       'IT-F1054': 'fnSafI',
       'IT-F1056': 'fnIdfI',
@@ -368801,6 +369152,11 @@ window.PLANT_SYS = [
     /* boiler.js AN_DO (the transmitters that no logic sheet reads): tank level, strainer DP, pump currents, valve positions (U.doZ: a =
        PCV-DO0002, r = PCV-DO1009, b0 ~ b3 = FCV-DO1043-A3 ~ D3) */
     unit: {
+      /* audit 2026-11-21 B1: transmitters no logic sheet reads, from the plant model (AN.unit.tt, unit.js anHxTagStep / boiler.js) */
+      'BT-DO1043-A': 'tt:BT-DO1043-A',
+      'BT-DO1043-B': 'tt:BT-DO1043-B',
+      'BT-DO1043-C': 'tt:BT-DO1043-C',
+      'BT-DO1043-D': 'tt:BT-DO1043-D',
       'LT-DO0701': 'doLv',
       'DPT-DO0001': 'doDp',
       'IT-P0702A': 'ux:doI.0',
@@ -368979,7 +369335,7 @@ window.PLANT_SYS = [
     mach: {
       PIC: { n: 'PICSB1052', t: 'Sootblower steam pressure PCV-SB1053', ctl: 'PICSB1052', io: 'PICSB1052' }
     },
-    unit: { 'PT-SB1040': 'ux:sbA.p40', 'PT-SB1042': 'ux:sbA.p42', 'TT-SB1056': 'ux:sbTa', 'TT-SB1057': 'ux:sbTb' }
+    unit: { 'PT-SB1040': 'ux:sbA.p40', 'PT-SB1042': 'ux:sbA.p42', 'TT-SB1056': 'ux:sbTa', 'TT-SB1057': 'ux:sbTb', 'IT-SB01': 'tt:IT-SB01' }
   });
 })();
 
@@ -369131,6 +369487,8 @@ window.PLANT_SYS = [
       AGT: { n: 'Z-1101', t: 'Phosphate tank agitator', fld: 'agt', io: 'MIR-Z1101A', d: 'STN101 DI', fieldOp: true, why: W }
     },
     unit: {
+      /* audit 2026-11-21 B1: the water chemistry of unit.js (AN_CHEM) */
+      'AT-SP1007': 'sp1007', 'AT-SP1008': 'sp1008', 'AT-SP1013': 'sp1013', 'AT-SP1014': 'sp1014', 'AT-SP1015': 'sp1015', 'AT-SP1017': 'sp1017',
       'AT-SP1001': 'sp1001', 'AT-SP1002': 'sp1002', 'AT-SP1003': 'sp1003', 'AT-SP1004': 'sp1004', 'AT-SP1005': 'sp1005',
       'AT-SP1006': 'sp1006', 'AT-SP1009': 'sp1009', 'AT-SP1010': 'sp1010', 'AT-SP1011': 'sp1011', 'AT-SP1012': 'sp1012',
       'AT-SP1016': 'sp1016', 'AT-SP1018': 'sp1018', 'AT-SP1019': 'sp1019', 'AT-SP1020': 'sp1020', 'AT-SP1021': 'sp1021'
@@ -369422,12 +369780,14 @@ window.PLANT_SYS = [
     const t = o.loop || '',
       dp = o.pvdp == null ? 1 : o.pvdp;
     return {
-      box: [-49, -19, 49, 19],
-      ports: { l: [-48, 0], r: [48, 0], t: [0, -18], b: [0, 18] },
+      /* audit 2026-11-21 B3: a 4 / 5 digit measured value (1483, 122.3) ran into the set point words: the display is wider, the
+         measured value stands high on the left, the set point (SP, ISA-5.5 short form) low on the right */
+      box: [-61, -19, 61, 19],
+      ports: { l: [-60, 0], r: [60, 0], t: [0, -18], b: [0, 18] },
       svg:
-        '<rect class="rx" x="-48" y="-18" width="96" height="36" rx="5"/><rect class="rxscr" x="-44" y="-14" width="88" height="28" rx="3"/>' +
-        `<text class="rx-pv" x="-39" y="6" data-lp="${t}|pv|${dp}">-----</text><text class="rx-sl" x="40" y="-3" text-anchor="end">Set point</text>` +
-        `<text class="rx-sv" x="40" y="9.4" text-anchor="end"><tspan data-lp="${t}|sv|${dp}">-----</tspan><tspan class="rx-su"> ${o.unit || ''}</tspan></text>`
+        '<rect class="rx" x="-60" y="-18" width="120" height="36" rx="5"/><rect class="rxscr" x="-56" y="-14" width="112" height="28" rx="3"/>' +
+        `<text class="rx-pv" x="-52" y="3.5" data-lp="${t}|pv|${dp}">-----</text><text class="rx-sl" x="52" y="-4" text-anchor="end">SP</text>` +
+        `<text class="rx-sv" x="52" y="10.5" text-anchor="end"><tspan data-lp="${t}|sv|${dp}">-----</tspan><tspan class="rx-su"> ${o.unit || ''}</tspan></text>`
     };
   };
   /* louver damper across a gas pass that goes down: k blades, shut = flat. The page turns [data-blr] by the opening */
@@ -370345,7 +370705,9 @@ window.PLANT_SYS = [
     if (it.tag != null && it.tag !== '') return it.tag;
     const R = window.HXREG || {},
       m = it.k === 'mach' && R.machines && R.machines[it.mach];
-    if (it.k === 'mach') return m && m.t && m.t.length < 14 ? it.mach + ' · ' + m.t : it.mach;
+    /* audit 2026-11-21 C7: a machine named as its own logic name (Burner A) printed the name twice */
+    const same = String(it.mach).toUpperCase() === String(it.name || '').toUpperCase();
+    if (it.k === 'mach') return m && m.t && m.t.length < 14 ? (same ? m.t : it.mach + ' · ' + m.t) : same ? '' : it.mach;
     return regName(it);
   };
 
@@ -370436,7 +370798,10 @@ window.PLANT_SYS = [
         c = x;
       } else c = c ? c + ' ' + x : x;
     }
-    if (c) out.push(c);
+    /* audit 2026-11-21 C8: a letter or number alone on the last line ("Low pressure heater / 2", "Closed cooling pump / A") stays
+       with the words before it */
+    if (c && out.length && c.length <= 3) out[out.length - 1] += ' ' + c;
+    else if (c) out.push(c);
     return out.slice(0, 3);
   };
 
@@ -370614,14 +370979,14 @@ window.PLANT_SYS = [
       ]);
     if (tg)
       head.push([
-        11.5,
+        13,
         (bx, by, an) => `<text class="hx-tag" x="${n1(bx)}" y="${n1(by - 1.5)}" text-anchor="${an}">${esc(tg)}</text>`
       ]);
     if (it.k === 'mach')
       body.push([
         14.5,
         (bx, by, an) =>
-          `<text class="hx-st none" data-st="${esc(it.mach)}" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">-----</text>`
+          `<text class="hx-st none" data-st="${esc(it.mach)}"${/valve|damper|louver|gate/.test(it.sym || '') ? ' data-vw="1"' : ''} x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">-----</text>`
       ]);
     if (it.k === 'valve')
       body.push([
@@ -370629,11 +370994,12 @@ window.PLANT_SYS = [
         (bx, by, an) =>
           `<text class="hx-st none" data-vs="${esc(it.valve)}" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">-----</text>`
       ]);
+    /* audit 2026-11-21 B2: the output and its % are one line of text, so "100.0" pushes the % on instead of running into it */
     if (it.k === 'loop') {
       body.push([
         16.5,
         (bx, by, an) =>
-          `<g class="hx-mode" data-mode="${esc(it.loop)}" transform="translate(${n1(bx - (an === 'middle' ? 46 : an === 'end' ? 92 : 0))} ${n1(by - 11)})"><rect width="50" height="15" rx="7.5"/><text x="25" y="11" text-anchor="middle">-----</text><text class="hx-val" data-lp="${esc(it.loop)}|mv" x="56" y="11.5">-----</text><text class="hx-unit" x="86" y="11.5"> %</text></g>`
+          `<g class="hx-mode" data-mode="${esc(it.loop)}" transform="translate(${n1(bx - (an === 'middle' ? 52 : an === 'end' ? 104 : 0))} ${n1(by - 11)})"><rect width="50" height="15" rx="7.5"/><text x="25" y="11" text-anchor="middle">-----</text><text x="56" y="11.5"><tspan class="hx-val" data-lp="${esc(it.loop)}|mv">-----</tspan><tspan class="hx-unit"> %</tspan></text></g>`
       ]);
       if (it.pv) {
         const dp = it.pvdp == null ? 1 : it.pvdp;
@@ -370686,7 +371052,7 @@ window.PLANT_SYS = [
     /* the Y / N square (second faceplate) of a machine or an on / off valve: on the side away from its words */
     const ynId = it.k === 'mach' ? 'mach:' + it.mach : it.k === 'valve' ? 'valve:' + it.valve : '',
       ynX = it.yn ? it.yn[0] : lab === 'r' ? box[0] - 18 : box[2] + 4,
-      ynY = it.yn ? it.yn[1] : lab === 'b' ? box[1] - 2 : side ? box[1] - 4 : box[1] - 2;
+      ynY = it.yn ? it.yn[1] : lab === 'b' ? box[1] - 16 : side ? box[1] - 4 : box[1] - 2;
     const yn = ynId
       ? `<g class="hx-yn" data-yn="${esc(ynId)}" transform="translate(${n1(ynX)} ${n1(ynY)})"><title>Permissive · trend · monitor</title><rect width="14" height="14" rx="3"/><text x="7" y="10.4" text-anchor="middle">-</text></g>`
       : '';
@@ -370905,9 +371271,15 @@ window.PLANT_SYS = [
           tx0 = (v ? 0 : sd === 'r' ? 15 : -15) + ox,
           yl = sd === 't' ? -46 : sd === 'b' ? 24 : -12,
           yc = sd === 't' ? -42 : sd === 'b' ? 28 : -8,
-          yt = sd === 't' ? -17 : sd === 'b' ? 53 : 18;
+          yt = sd === 't' ? -17 : sd === 'b' ? 53 : 18,
+          /* audit 2026-11-21 A3: a click between the words of a transmitter fell on the drawing: one transparent box over its words */
+          lw = Math.max(cw, String(t.label || '').length * 6.6, String(t.tag || '').length * 5.8) + 8,
+          hx0 = v ? -lw / 2 + ox : sd === 'r' ? tx0 - 4 : tx0 + 4 - lw,
+          hy0 = Math.min(yl, yc) - 12,
+          hy1 = (t.tag ? yt : yc + 15) + 5,
+          hit = t.key ? `<rect class="hx-hit" x="${n1(hx0)}" y="${n1(hy0)}" width="${n1(lw)}" height="${n1(hy1 - hy0)}"/>` : '';
         taps +=
-          `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})"><path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>` +
+          `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})">${hit}<path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>` +
           `<text class="hx-lab" x="${tx0}" y="${yl}" text-anchor="${an}">${esc(t.label)}</text><rect class="rx-chip" x="${n1(x0)}" y="${yc}" width="${cw}" height="15" rx="3"/>` +
           `<text x="${n1(x0 + cw / 2)}" y="${yc + 11.2}" text-anchor="middle">${val}</text>${t.tag ? `<text class="hx-tag" x="${tx0}" y="${yt}" text-anchor="${an}">${esc(t.tag)}</text>` : ''}</g>`;
         continue;
@@ -370926,7 +371298,7 @@ window.PLANT_SYS = [
       used.map(m => `<span><i style="background:var(--hx-m-${m})"></i>${MEDIA[m] || m}</span>`).join('') +
       `<em>Red = running / open · Green = stopped / closed · Grey = no signal in the app yet</em>`;
     return {
-      svg: `<svg viewBox="0 0 ${P.w || W} ${P.h}"${real ? ' class="hx-real"' : ''} role="img" aria-label="${esc(def.title)} process">${under}${tx}${ls}${sig}${ends}${nodes}${taps}</svg>`,
+      svg: `<svg viewBox="0 0 ${P.w || W} ${P.h}"${real ? ' class="hx-real"' : ''} role="img" aria-label="${esc(def.title)} process">${under}${ls}${sig}${tx}${ends}${nodes}${taps}</svg>`,
       legend
     };
   }
@@ -370967,8 +371339,9 @@ window.PLANT_SYS = [
               ? 'Auto'
               : m;
   /* the state in words; a machine that is a valve or a set of valves (its name is its tag: XV-..., MV-...) is open / closed */
-  const stTxt = (s, name) =>
-    /^(XV|MV|V)-/.test(name || '')
+  /* audit 2026-11-21 C6: a valve or damper driven as a machine (steam seal feed, exhaust hood spray) said Running: vw = drawn as a valve */
+  const stTxt = (s, name, vw) =>
+    vw || /^(XV|MV|V)-/.test(name || '')
       ? s === 'run'
         ? 'Open'
         : s === 'stop'
@@ -371144,7 +371517,7 @@ window.PLANT_SYS = [
         go = (kind, id, second) =>
           HX.card
             ? HX.card(kind, id, second, anchor, anchor.dataset && anchor.dataset.name)
-            : HX.data.open(kind, id, second);
+            : HX.data.open(kind, id, second, anchor, anchor.dataset && anchor.dataset.name);
       if (t.dataset.yn) {
         e.stopPropagation();
         const [yk, ...yr] = t.dataset.yn.split(':');
@@ -371175,6 +371548,7 @@ window.PLANT_SYS = [
     };
     function tick(force) {
       const D = HX.data;
+      if (view === 'process') plates();
       REC.sample();
       /* status line */
       let run = 0,
@@ -371258,7 +371632,7 @@ window.PLANT_SYS = [
         });
         Q('[data-st]').forEach(e => {
           const m = D.machine(e.dataset.st) || {},
-            t = (m.word ? wordTxt(m.word) : stTxt(m.st, e.dataset.st)) + (m.mode ? ' · ' + m.mode : '');
+            t = (m.word ? wordTxt(m.word) : stTxt(m.st, e.dataset.st, e.dataset.vw)) + (m.mode ? ' · ' + m.mode : '');
           if (e.textContent !== t) e.textContent = t;
           e.setAttribute('class', 'hx-st ' + (m.st || 'none'));
         });
@@ -371357,6 +371731,50 @@ window.PLANT_SYS = [
         });
       }
       if (view === 'trends') paintTrends(page, def, span);
+    }
+    /* audit 2026-11-21 C1: words of the drawing were crossed by pipes. As on a P&ID, the line breaks under a label: every label, tag, state
+       and note of the drawing stands on a plate in the colour of the drawing. The plates are one layer over the pipes and under every
+       word and symbol, so a plate never hides a word of a neighbour. A plate follows its text when the length changes (live states and
+       values), so it is measured only then. */
+    const PL = '.hx-node > text, .hx-tap > text, svg > text';
+    function plates() {
+      page.querySelectorAll('.hx-draw svg').forEach(sv => {
+        const root = sv.getScreenCTM();
+        if (!root) return;
+        let g = sv.querySelector(':scope > g.hx-plates');
+        if (!g) {
+          g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.setAttribute('class', 'hx-plates');
+          sv.insertBefore(g, sv.querySelector(':scope > text, :scope > .hx-node'));
+        }
+        const inv = root.inverse();
+        sv.querySelectorAll(PL).forEach(e => {
+          const n = (e.textContent || '').length;
+          if (e.__pn === n || /(^| )rx-/.test(e.getAttribute('class') || '')) return;
+          let r = e.__pl;
+          if (!r) {
+            r = e.__pl = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            r.setAttribute('class', 'hx-plate');
+            g.append(r);
+          }
+          let b = null,
+            m = null;
+          try {
+            b = e.getBBox();
+            m = e.getScreenCTM();
+          } catch (x) {}
+          /* not laid out yet (page hidden): measured again at the next tick */
+          if (!b || !b.width || !m) return void r.setAttribute('width', 0);
+          e.__pn = n;
+          const t = inv.multiply(m),
+            p = new DOMPoint(b.x - 2, b.y).matrixTransform(t),
+            q = new DOMPoint(b.x + b.width + 2, b.y + b.height).matrixTransform(t);
+          r.setAttribute('x', n1(Math.min(p.x, q.x)));
+          r.setAttribute('y', n1(Math.min(p.y, q.y)));
+          r.setAttribute('width', n1(Math.abs(q.x - p.x)));
+          r.setAttribute('height', n1(Math.abs(q.y - p.y)));
+        });
+      });
     }
     (def.trends || []).forEach(g => g.pens.forEach(p => REC.watch(p[1])));
     show(view);
@@ -372753,7 +373171,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     RX = 1420 /* the condensate line down past the three heaters */,
     HX1 = 1610,
     HAY = 396,
-    HBY = 615,
+    HBY = 640,
     HCY = 822 /* heater No. 1 (on top), No. 2, No. 3 */,
     HS = 1.5,
     WX = HX1 - 53 * HS /* the water box nozzles of the heaters */,
@@ -373218,7 +373636,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 24, y: 150, s: 'FURNACE', cls: 'hx-zone' },
         { x: 24, y: 172, s: 'Pressure 1', key: 'PT-FG1085', unit: MM, dp: 0 },
         { x: 24, y: 188, s: 'Pressure 2', key: 'PT-FG1086', unit: MM, dp: 0 },
-        { x: 24, y: 204, s: 'Pressure 3', key: 'PT-FG1087', unit: MM, dp: 0 },
+        { x: 24, y: 204, s: 'Pressure 3', key: 'PT-FG1087-1', unit: MM, dp: 0 },
         { x: 24, y: 228, s: 'Upper average', key: 'TT-FG1091', unit: '°C', dp: 0 },
         { x: 24, y: 244, s: 'Lower average', key: 'TT-FG1090', unit: '°C', dp: 0 },
         { x: 24, y: 268, s: 'Bed pressure drop', key: 'DPT-FG1081', unit: MM, dp: 0 },
@@ -373352,8 +373770,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(L('coal', 'Cold primary air to the coal feeders'), 560, 780, { id: 'cfl' }),
         at(L('furnace-gas', 'Hot primary air to the furnace'), 330, 430, { id: 'pal' }),
         at(L('coal', 'To the coal pipes'), 330, 360, { id: 'cpl' }),
-        at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', []), 90, 930, { id: 'loa', sc: 0.8, lab: 'r' }),
-        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 330, 930, { id: 'lob', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', []), 90, 952, { id: 'loa', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 330, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
 
         /* ---- secondary air ---- */
         at(M('fan', 'SAF', 'Secondary air fan', [V('Current', 'IT-F1054', 'A')]), SFX, FY, {
@@ -373376,7 +373794,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           ]),
           BAX,
           BY,
-          { id: 'fa', sc: BS, lab: 'b' }
+          { id: 'fa', sc: BS, lab: 'b', yn: [77.5, -46] }
         ),
         at(
           M('fan', 'FA BLOWER-B', 'Fluidizing air blower B', [
@@ -373385,7 +373803,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           ]),
           BBX,
           BY,
-          { id: 'fb', sc: BS, lab: 'b' }
+          { id: 'fb', sc: BS, lab: 'b', yn: [77.5, -46] }
         ),
         at(C('FICFA1055A', 'Inlet damper A', { tag: 'FCV-FA1055-A1' }), 170, BY, { id: 'fad', lab: 'b' }),
         at(C('FICFA1055B', 'Inlet damper B', { tag: 'FCV-FA1055-B1' }), 600, BY, { id: 'fbd', lab: 'b' }),
@@ -373403,7 +373821,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         }),
         at(X('XV-FA1055-B3', 'Outlet valve B', { cname: 'Fluidizing air blower B outlet valve' }), 870, 110, {
           id: 'ovb',
-          lab: 'b'
+          lab: 't'
         }),
         at(L('furnace-gas', 'Fluidizing air to the seal pots'), 1300, HY, { id: 'fal' })
       ],
@@ -373439,7 +373857,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { med: 'air', w: W_S, pts: [[1000, HY], 'fal.l'], flow: FA + '|' + FB }
       ],
       taps: [
-        { x: 440, y: 700, side: 'b', label: 'Fan outlet', key: 'PT-FA1075', unit: MM, dp: 0, tag: 'PT-FA1075' },
+        { x: 440, y: 700, side: 'r', label: 'Fan outlet', key: 'PT-FA1075', unit: MM, dp: 0, tag: 'PT-FA1075' },
         {
           x: 680,
           y: 700,
@@ -374439,7 +374857,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(M('pump', 'BFWP-A', 'Boiler feed pump A', []), 250, 930, { id: 'bfp', sc: 0.8, lab: 'b', mir: true }),
 
         /* ---- coordinated control ---- */
-        at(C('HIC-ULD', 'Unit load demand, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 18 }), 1560, 150, {
+        at(C('HIC-ULD', 'Unit load demand, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 24 }), 1560, 150, {
           id: 'uld',
           lab: 'r'
         }),
@@ -374720,7 +375138,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
            NOT USE M.008D, TPs 2 s -> FF M.008F, which lets FICDO1043A ~ D go to AUTO under FIC-OM); lit = the selection of M.008F.
            No operator page had them: the burner oil valves stayed forced to MANUAL */
         at(HX.B('OIL MASTER USE', 'data-apb="ABC-003E|M.008C|M.008F=1"', { press: true }), 1100, 915, { id: 'omu' }),
-        at(HX.B('NOT USE', 'data-apb="ABC-003E|M.008D|M.008F=0"', { press: true }), 1100, 965, { id: 'omn' }),
+        at(HX.B('OIL MASTER NOT USE', 'data-apb="ABC-003E|M.008D|M.008F=0"', { press: true }), 1100, 965, { id: 'omn' }),
         ...B.flatMap(b => b.items),
         at(L('combustion-air', 'Hot secondary air', { back: true }), AIRX + 80, 90, { id: 'hsa' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-M): the atomizing air of the burners is plant air (DITL-07 row 11
@@ -375496,7 +375914,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    in the middle, the discharge to the sea on top; below on the right the three booster pumps, their debris filter and the
    three closed cooling water heat exchangers.
    THE CONNECTIONS, read from K1AU3-PD-020 Rev D (seawater system):
-   - sea water pumps P-1501A / B / C into the 96 inch header SW-1-004, debris filter S-1502 (backwash valve MV-SW1001 at the
+   - sea water pumps P-1501A / B / C (discharge pressure: the local gauge PG-SW1501A ~ C of the plant model, no DCS transmitter in the
+     I/O list; audit 2026-11-21 B5) into the 96 inch header SW-1-004, debris filter S-1502 (backwash valve MV-SW1001 at the
      local panel), two 66 inch lines (path A and path B) through the condenser H-1110: inlet PT / TT-SW1110-A1 / -B1, outlet
      PT / TT-SW1110-A2 / -B2; the 96 inch line SW-1-009 to the siphon pit and the sea water discharge channel;
    - the 24 inch line SW-1-055 from the header to the sea water booster pumps P-1503A / B / C, debris filter S-1504, the
@@ -375561,7 +375980,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ),
         ...N.map((n, i) =>
           at(
-            M('vpump', 'SWP-' + n, 'Sea water pump ' + n, [V('Current', 'IIP1501' + n, 'A', 1)], { tag: 'P-1501' + n }),
+            M('vpump', 'SWP-' + n, 'Sea water pump ' + n, [V('Current', 'IIP1501' + n, 'A', 1), V('Discharge', 'PGSW1501' + n, 'kg/cm²', 2)], { tag: 'P-1501' + n }),
             PX,
             PY[i],
             { id: 'p' + i, sc: PS, lab: 'b' }
@@ -376346,7 +376765,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: GX + 14, y: 34, s: 'to the grid', cls: 'hx-note' },
         { x: 20, y: 788, s: 'AUTOMATIC TURBINE START-UP', cls: 'hx-name' },
         { x: 1404, y: 60, s: 'TRIP FIRST OUT · red = came first', cls: 'hx-name' },
-        { x: 1250, y: PY + 4, s: 'push buttons work in RUN', cls: 'hx-note' },
+        { x: 1149, y: PY + 36, s: 'push buttons work in RUN', cls: 'hx-note' },
         { x: VX - 10, y: 220, s: 'AT THE TURBINE', cls: 'hx-name' }
       ]
     }
@@ -376447,7 +376866,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     group: 'Boiler',
     title: 'Purge and trip',
     about:
-      'The furnace purge on the plant: air from the fans through the furnace to the stack, each permissive at its equipment (DITL-01), the purge sequence (DITL-02) and the master fuel trip (DITL-03A). Y = true.',
+      'The furnace purge on the plant: air from the fans through the furnace to the stack, each permissive at its equipment (DITL-01), the purge sequence (DITL-02) and the master fuel trip (DITL-03A). Y = yes, N = no.',
     plan: {
       look: 'real',
       w: 1760,
@@ -376521,9 +376940,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(B('Purge ready', 'data-do="DITL-02|9|YES|NO"', { w: CW }), QX, QY + 8 * QD + 10, { id: 'pr' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-H): the FURNACE PURGE START push button (DITL-02 input row 6, M.0500) was on
            temporary page 10 only, so the HX page had no way to start the purge: the same machine of page 10 (its faceplate START) */
-        at(M('cubicle', 'Furnace purge', 'Furnace purge start', [], { tag: 'screen push button · DITL-02' }), QX - 100, QY + 9 * QD + 22, {
+        at(M('cubicle', 'Furnace purge', 'Furnace purge start', [], { tag: 'screen push button · DITL-02' }), QX - CW / 2 + 24, QY + 9 * QD + 22, {
           id: 'pbp',
-          lab: 'b'
+          lab: 'r'
         }),
 
         /* ---- master fuel trip (DITL-03A) ---- */
@@ -376533,11 +376952,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           })
         ),
         at(B('Master fuel trip', 'data-dfo="DITL-03A|16|1-18"', { w: 330 }), 1570, TY, { id: 'mfs' }),
-        at(L('combustion-air', 'Fans and air flow', { back: true }), 1485, TY + 50, { id: 'cal' }),
-        at(L('furnace-gas', 'Furnace and flue gas', { back: true }), 1655, TY + 50, { id: 'fgl' }),
-        at(L('oil-burners', 'Burners', { back: true }), 1485, TY + 92, { id: 'obl' }),
-        at(L('coal', 'Coal feeders', { back: true }), 1655, TY + 92, { id: 'col' }),
-        at(L('turbine', 'Turbine trip', { back: true }), 1485, TY + 128, { id: 'tbl' })
+        /* audit 2026-11-21 C9: the links to the pages of the trip causes stood beside the master fuel trip boxes, which the station shows
+           in the Conditions popup: alone at the far bottom right. One row under the drawing, in the order of the trip causes */
+        ...[['combustion-air', 'Fans and air flow', 'cal'], ['furnace-gas', 'Furnace and flue gas', 'fgl'], ['oil-burners', 'Burners', 'obl'], ['coal', 'Coal feeders', 'col'], ['turbine', 'Turbine trip', 'tbl']].map(
+          (k, i) => at(L(k[0], k[1], { back: true }), 560 + i * 175, 960, { id: k[2] })
+        )
       ],
       pipes: [
         /* air in */
@@ -376572,7 +376991,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1330, y: 250, s: 'Total air flow', key: 'ABC-002|SI0060', unit: 't/h' },
         { x: 1330, y: 266, s: 'Pressure 1', key: 'PT-FG1085', unit: MM, dp: 0 },
         { x: 1330, y: 282, s: 'Pressure 2', key: 'PT-FG1086', unit: MM, dp: 0 },
-        { x: 1330, y: 298, s: 'Pressure 3', key: 'PT-FG1087', unit: MM, dp: 0 },
+        { x: 1330, y: 298, s: 'Pressure 3', key: 'PT-FG1087-1', unit: MM, dp: 0 },
         { x: 1330, y: 314, s: 'Lower bed temperature', key: 'TT-FG1090', unit: '°C', dp: 0 },
         { x: 1330, y: 330, s: 'Cyclone outlet A', key: 'TT-FG1095-A', unit: '°C', dp: 0 },
         { x: 1330, y: 346, s: 'Cyclone outlet B', key: 'TT-FG1095-B', unit: '°C', dp: 0 },
@@ -376742,7 +377161,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       texts: [
         { x: LX + 14, y: 48, s: 'to the grid', cls: 'hx-note' },
         { x: 890, y: 60, s: 'GENERATOR VALUES AND MONITORING', cls: 'hx-name' },
-        { x: 866, y: 645, s: 'BREAKER STATUS AND PROTECTION · Y = true', cls: 'hx-name' },
+        { x: 866, y: 645, s: 'BREAKER STATUS AND PROTECTION', cls: 'hx-zone' },
         {
           x: 866,
           y: 890,
@@ -376866,7 +377285,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         /* steam supply */
         at(L('drum-steam', 'Superheater panel 1 outlet', { back: true }), 170, 70, { id: 'sl' }),
         at(
-          B('Steam supply valve MV-SB1001', 'data-dy="DITL-80S|o|5|neg" data-on="OPEN" data-off="CLOSED"', { w: 230 }),
+          B('Steam supply valve MV-SB1001', 'data-dy="DITL-80S|o|5|neg" data-on="OPEN" data-off="CLOSED"', { w: 230, plain: true }),
           170,
           150,
           {
@@ -376880,7 +377299,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         }),
         /* drains */
         at(
-          B('Drain A bypass valve XV-SB1054', 'data-dy="DITL-80R|o|20" data-on="OPEN" data-off="CLOSED"', { w: 240 }),
+          B('Drain A bypass valve XV-SB1054', 'data-dy="DITL-80R|o|20" data-on="OPEN" data-off="CLOSED"', { w: 240, plain: true }),
           170,
           560,
           {
@@ -376888,7 +377307,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           }
         ),
         at(
-          B('Drain B bypass valve XV-SB1059', 'data-dy="DITL-80R|o|11" data-on="OPEN" data-off="CLOSED"', { w: 240 }),
+          B('Drain B bypass valve XV-SB1059', 'data-dy="DITL-80R|o|11" data-on="OPEN" data-off="CLOSED"', { w: 240, plain: true }),
           170,
           690,
           {
@@ -377007,7 +377426,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: RXB - CW2 / 2, y: py(28) - 26, s: 'right wall', cls: 'hx-note' },
         { x: SXA - CW2 / 2, y: py(28) - 26, s: 'left wall', cls: 'hx-note' },
         { x: SXB - CW2 / 2, y: py(28) - 26, s: 'right wall', cls: 'hx-note' },
-        { x: SX - SW2 / 2, y: 70, s: 'SEQUENCE, PERMISSIVES, ALARMS', cls: 'hx-name' },
+        { x: SX - SW2 / 2, y: 70, s: 'SEQUENCE, PERMISSIVES, ALARMS', cls: 'hx-zone' },
         {
           x: 470,
           y: 985,
@@ -377560,6 +377979,39 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     el.dispatchEvent(
       new MouseEvent('click', { bubbles: true, cancelable: true, clientX: lastXY[0], clientY: lastXY[1] })
     );
+  /* audit 2026-11-21 A1: a click on a measured value (a transmitter on its line, a value beside its equipment) opened nothing. It opens
+     the PERMISSIVE · TREND · MONITOR faceplate of fp-pop.js (the house faceplate, one look): the value now and its trend. The trend
+     starts with what the trend recorder of the HX pages (HX.rec, simulation time) already holds for that value, so it is not empty. */
+  function valueCard(anchor, name, keys) {
+    if (!window.LS_FPOP || !LS_FPOP.info || !anchor) return false;
+    const vs = keys
+      ? [...anchor.querySelectorAll('[data-hv]')].filter(e => keys.includes(e.dataset.hv))
+      : [...anchor.querySelectorAll('[data-hv]')];
+    const rows = (vs.length ? vs : (keys || []).map(k => ({ dataset: { hv: k, dp: 1 } }))).map(e => {
+      const k = e.dataset.hv,
+        u = e.parentNode && e.parentNode.querySelector ? e.parentNode.querySelector('.hx-unit') : null,
+        lb = e.parentNode && e.parentNode.previousElementSibling && e.parentNode.previousElementSibling.classList.contains('hx-lab') ? e.parentNode.previousElementSibling.textContent : '';
+      return { k, dp: e.dataset.dp == null ? 1 : +e.dataset.dp, unit: u ? u.textContent.trim() : '', lb: lb || (e.parentNode && e.parentNode.firstChild && e.parentNode.firstChild.nodeType === 3 ? e.parentNode.firstChild.textContent.trim() : '') };
+    });
+    if (!rows.length) return false;
+    const title = name || anchor.getAttribute('aria-label') || rows[0].k,
+      tagEl = anchor.querySelector('.hx-tag'),
+      r0 = rows[0],
+      h = 'Trend · ' + (r0.lb || title) + ' · ' + r0.k,
+      H = (window.LS_FPHIST = window.LS_FPHIST || {}),
+      buf = HX.rec && HX.rec.watch ? HX.rec.watch(r0.k) : null /* recorded from now on as well, for the next time */,
+      now = Date.now(),
+      tNow = HX.data.time(),
+      spd = call(() => (AN.spd > 0 ? AN.spd : 1), 1);
+    if (buf && buf.length && !(H['trend:' + h] && H['trend:' + h].length))
+      H['trend:' + h] = buf.filter(p => p[1] != null && isFinite(p[1])).map(p => [now - ((tNow - p[0]) / spd) * 1000, p[1]]);
+    return LS_FPOP.info({
+      n: title,
+      t: tagEl ? tagEl.textContent : r0.k,
+      mon: rows.map(r => [(r.lb || title) + (rows.length > 1 && !r.lb ? ' · ' + r.k : ''), () => HX.data.value(r.k), r.unit, r.dp]),
+      trend: { h, fn: () => HX.data.value(r0.k) }
+    });
+  }
   const ALC = { t: 0, m: {} };
   HX.data = {
     time: () => call(() => (window.AN && AN.unit && isFinite(AN.unit.t) ? AN.unit.t : null), Date.now() / 1000),
@@ -377694,21 +378146,35 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           new MouseEvent('click', { bubbles: true, cancelable: true, clientX: lastXY[0], clientY: lastXY[1] })
         );
     },
-    open(kind, id, second) {
+    open(kind, id, second, anchor, name) {
+      if (kind === 'value') return void valueCard(anchor, name, [id]);
       if (kind === 'loop') return click(S && S.loops[id]);
-      click(pq(second ? '[data-yn="' + id + '"]' : '[data-hit="' + id + '"]'));
+      /* audit 2026-11-21 A1 / A2: a piece of plant with no faceplate of its own (strainer, tube cleaning, generator values) or a
+         Y square whose target is missing opened nothing under a hand cursor: the values it shows, with their trend */
+      if (!click(pq(second ? '[data-yn="' + id + '"]' : '[data-hit="' + id + '"]'))) valueCard(anchor, name, null);
     }
   };
   /* one HX page = one page of the Plant view: the HTML page of HX inside the 1920 x 1000 frame of the Plant view */
   const FW = 1920,
     FH = 1140;
+  /* audit 2026-11-21 C10: on a tablet (1280 x 800) the Plant view fitted the whole 1920 x 1140 frame into the area, so every word
+     of the drawing came out at 0.6 (6-7 px). Where the area is narrower than 1500 px the frame is the size of the area itself (1 : 1):
+     the page scrolls inside it and the drawing keeps its readable width (hx.css .hx-real min-width); a desktop keeps the whole page */
+  const frame = () => {
+    const e = document.getElementById('plsvg'),
+      r = e ? e.getBoundingClientRect() : null;
+    return r && r.width > 300 && r.width < 1500 && r.height > 300 ? [Math.round(r.width), Math.round(r.height)] : [FW, FH];
+  };
   function screen(def) {
     return function (g, api) {
       S = store(api, g);
       const fo = document.createElementNS(NS, 'foreignObject');
-      for (const [a, v] of Object.entries({ x: 0, y: 0, width: FW, height: FH })) fo.setAttribute(a, v);
+      const [fw, fh] = frame();
+      for (const [a, v] of Object.entries({ x: 0, y: 0, width: fw, height: fh })) fo.setAttribute(a, v);
       const host = document.createElement('div');
       host.className = 'hx-app';
+      /* C10: the 1 : 1 frame of a tablet scrolls (the page is taller than the area) */
+      if (fw < FW) host.style.overflow = 'auto';
       fo.append(host);
       g.append(fo);
       /* a link to another page: the page list of the Plant view opens it, as a link of an old page does (hmi-mock.js data-go).
@@ -377744,8 +378210,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       num: 'R' + String(i + 1).padStart(2, '0'),
       name: def.title.toUpperCase(),
       src: '',
-      w: FW,
-      h: FH,
+      get w() {
+        return frame()[0];
+      },
+      get h() {
+        return frame()[1];
+      },
       v2: true,
       screen: id,
       style: 'steel',

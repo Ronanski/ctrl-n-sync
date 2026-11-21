@@ -4,7 +4,8 @@
    in the middle, the discharge to the sea on top; below on the right the three booster pumps, their debris filter and the
    three closed cooling water heat exchangers.
    THE CONNECTIONS, read from K1AU3-PD-020 Rev D (seawater system):
-   - sea water pumps P-1501A / B / C into the 96 inch header SW-1-004, debris filter S-1502 (backwash valve MV-SW1001 at the
+   - sea water pumps P-1501A / B / C (discharge pressure: the local gauge PG-SW1501A ~ C of the plant model, no DCS transmitter in the
+     I/O list; audit 2026-11-21 B5) into the 96 inch header SW-1-004, debris filter S-1502 (backwash valve MV-SW1001 at the
      local panel), two 66 inch lines (path A and path B) through the condenser H-1110: inlet PT / TT-SW1110-A1 / -B1, outlet
      PT / TT-SW1110-A2 / -B2; the 96 inch line SW-1-009 to the siphon pit and the sea water discharge channel;
    - the 24 inch line SW-1-055 from the header to the sea water booster pumps P-1503A / B / C, debris filter S-1504, the
@@ -69,7 +70,7 @@
         ),
         ...N.map((n, i) =>
           at(
-            M('vpump', 'SWP-' + n, 'Sea water pump ' + n, [V('Current', 'IIP1501' + n, 'A', 1)], { tag: 'P-1501' + n }),
+            M('vpump', 'SWP-' + n, 'Sea water pump ' + n, [V('Current', 'IIP1501' + n, 'A', 1), V('Discharge', 'PGSW1501' + n, 'kg/cm²', 2)], { tag: 'P-1501' + n }),
             PX,
             PY[i],
             { id: 'p' + i, sc: PS, lab: 'b' }

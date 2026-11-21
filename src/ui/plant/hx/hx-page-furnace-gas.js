@@ -162,7 +162,7 @@
         { x: 24, y: 150, s: 'FURNACE', cls: 'hx-zone' },
         { x: 24, y: 172, s: 'Pressure 1', key: 'PT-FG1085', unit: MM, dp: 0 },
         { x: 24, y: 188, s: 'Pressure 2', key: 'PT-FG1086', unit: MM, dp: 0 },
-        { x: 24, y: 204, s: 'Pressure 3', key: 'PT-FG1087', unit: MM, dp: 0 },
+        { x: 24, y: 204, s: 'Pressure 3', key: 'PT-FG1087-1', unit: MM, dp: 0 },
         { x: 24, y: 228, s: 'Upper average', key: 'TT-FG1091', unit: '°C', dp: 0 },
         { x: 24, y: 244, s: 'Lower average', key: 'TT-FG1090', unit: '°C', dp: 0 },
         { x: 24, y: 268, s: 'Bed pressure drop', key: 'DPT-FG1081', unit: MM, dp: 0 },
