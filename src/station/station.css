@@ -40,8 +40,9 @@ body.st .hx-app, body.st .hx { border: 0 !important; box-shadow: none !important
 #station .st-nav { line-height: 32px; }
 #station .st-tabs button { display: flex; align-items: center; }
 body.st #plsvg, body.st #plmid { background: #1b1f27 !important; }
-/* the condition boxes of a page are shown in the Conditions popup of the station, not on the picture; push buttons stay */
-body.st .hx-process .hx-hook:not([data-press]) { display: none !important; }
+/* the condition boxes of a page are shown in the Conditions popup of the station, not on the picture; push buttons and plain drawing tags
+   (data-plain, e.g. the 26 blower tags of Sootblowers, bug C5) stay */
+body.st .hx-process .hx-hook:not([data-press]):not([data-plain]) { display: none !important; }
 
 /* the faceplate of a machine: the popup of the page itself, in the look of the station (same commands, same logic).
    The old frame styles it with !important, so every line here is !important too. */
