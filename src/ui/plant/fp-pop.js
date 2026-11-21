@@ -951,8 +951,13 @@
         d = pd || P.d;
       b.onclick = () =>
         !b.disabled &&
-        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
+        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), i === 0 && !P.free && (sent = Date.now()), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
     });
+    /* Rosé 2026-11-22 (live test finding 3): P.need = [{ d, row, l }] output rows of a drawing that the first command needs (the
+       sootblower BLOWING PERMISSIVE, DITL-80A out 20). The button stays a real press to the logic; while a row is 0 the faceplate says
+       "not permitted" and why, and a press that the logic did not take (no status after 3 s) says so instead of nothing */
+    let sent = 0;
+    const needMiss = () => (P.need || []).filter(x => call(() => dk.dout(x.d, x.row), null) === 0);
     let k0 = '';
     function tick() {
       if (!me.isConnected) return closeEl(me);
@@ -986,7 +991,19 @@
         B[1].classList.toggle('lit-stop', isStop && !on);
       }
       B[0].classList.toggle('lit-run', on && !P.free);
-      why.textContent = !run ? 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).' : !ok && !on ? P.pbs[0][0] + ' blocked: no ' + (P.permWhy || 'permissive') + '.' : '';
+      if (on) sent = 0;
+      const nm = on || P.free ? [] : needMiss(),
+        late = sent && Date.now() - sent > 3000;
+      if (sent && Date.now() - sent > 20000) sent = 0;
+      why.textContent = !run
+        ? 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).'
+        : !ok && !on
+          ? P.pbs[0][0] + ' blocked: no ' + (P.permWhy || 'permissive') + '.'
+          : nm.length
+            ? (late ? P.pbs[0][0] + ' sent, NOT PERMITTED by the logic: no ' : P.pbs[0][0] + ' not permitted: no ') + nm.map(x => x.l + ' [' + x.d + ' out row ' + (x.row + 1) + ']').join('; ') + '.'
+            : late
+              ? P.pbs[0][0] + ' sent, but the logic did not start it (no ' + P.st.on + ' status after 3 s). Open Logic ' + P.d + ' to see the missing input.'
+              : '';
       why.hidden = !why.textContent;
       for (const [v, f] of V) {
         const x = call(f, null);

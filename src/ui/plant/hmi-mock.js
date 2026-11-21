@@ -1092,6 +1092,7 @@
               pbs: m.df.pbs,
               free: m.df.free,
               away: m.df.away,
+              need: m.df.need,
               perm,
               permWhy: m.df.why,
               vals: m.df.dp ? [[m.df.dp, () => cur(m.df.dp), 'mmH2O']] : []

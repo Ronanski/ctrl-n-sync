@@ -320,6 +320,7 @@
   /* ---------- overview ---------- */
   let ov = null,
     crumb = null,
+    crT = null,
     tiles = [],
     almTile = null,
     ovEnd = null,
@@ -393,12 +394,102 @@
     almTile.onclick = () => openAl('alarms');
     ov.append(bar, grid, almTile);
     document.body.append(ov);
-    crumb = E('button', 'sccrumb');
-    crumb.type = 'button';
-    crumb.title = 'Back to the overview of the unit';
-    crumb.append(E('span', 'scbc', 'Plant'), E('span', 'scsep', '›'), E('b', '', ''));
-    crumb.onclick = showOv;
+    /* Rosé, live test of beta.240: in the Operator mode no click reached a page that is not the first page of a tile (Sootblowers,
+       oil burners, purge ...): the breadcrumb is two buttons, "Plant" back to the overview and the page name, which opens the list of
+       every page, grouped by the block of the overview that holds it */
+    crumb = E('div', 'sccrumb');
+    const back = E('button', 'scbc', 'Plant');
+    back.type = 'button';
+    back.title = 'Back to the overview of the unit';
+    back.onclick = () => {
+      pgMenu(false);
+      showOv();
+    };
+    crT = E('b', '', '');
+    const pgb = E('button', 'scpgb');
+    pgb.type = 'button';
+    pgb.title = 'The pages of the plant: open another page';
+    pgb.setAttribute('aria-haspopup', 'menu');
+    pgb.setAttribute('aria-expanded', 'false');
+    pgb.append(crT, E('span', 'scdd', '▾'));
+    pgb.onclick = e => {
+      e.stopPropagation();
+      pgMenu(!pgm);
+    };
+    crumb.append(back, E('span', 'scsep', '›'), pgb);
     document.body.append(crumb);
+  }
+  /* the page list of the breadcrumb: the pages of each block (TILES g, an old page replaced by its new page, LS_HX.gone), then the
+     other pages of the Plant view picker */
+  let pgm = null;
+  function pgMenu(on) {
+    if (pgm) {
+      pgm.remove();
+      pgm = null;
+      document.removeEventListener('pointerdown', pgOut, true);
+      document.removeEventListener('keydown', pgKey, true);
+    }
+    const pgb = crumb && crumb.querySelector('.scpgb');
+    if (pgb) pgb.setAttribute('aria-expanded', on ? 'true' : 'false');
+    if (!on || !pgb) return;
+    const pk = document.querySelector('#plantws .plpick');
+    if (!pk) return;
+    const opts = [...pk.options].filter(o => !o.hidden && o.value),
+      name = {},
+      gone = call(() => LS_HX.gone, {}) || {},
+      used = new Set();
+    opts.forEach(o => (name[o.value] = o.textContent.trim()));
+    const groups = TILES.map(T => {
+      const ids = [];
+      for (const g of T.g) {
+        const id = gone[g] || g;
+        if (name[id] && !used.has(id)) {
+          used.add(id);
+          ids.push(id);
+        }
+      }
+      return [T.t, ids];
+    }).filter(g => g[1].length);
+    const rest = opts.map(o => o.value).filter(id => !used.has(id));
+    if (rest.length) groups.push(['Other pages', rest]);
+    pgm = E('div', 'scpgm');
+    pgm.setAttribute('role', 'menu');
+    pgm.setAttribute('aria-label', 'Pages of the plant');
+    for (const [t, ids] of groups) {
+      const g = E('div', 'scpgg');
+      g.append(E('div', 'scpgh', t));
+      for (const id of ids) {
+        const it = E('button', 'scpgi' + (id === pk.value ? ' on' : ''), name[id]);
+        it.type = 'button';
+        it.setAttribute('role', 'menuitem');
+        it.onclick = () => {
+          pgMenu(false);
+          openPage(id);
+        };
+        g.append(it);
+      }
+      pgm.append(g);
+    }
+    const r = crumb.getBoundingClientRect();
+    pgm.style.top = Math.round(r.bottom + 4) + 'px';
+    pgm.style.left = Math.round(Math.max(8, r.left)) + 'px';
+    document.body.append(pgm);
+    document.addEventListener('pointerdown', pgOut, true);
+    document.addEventListener('keydown', pgKey, true);
+    const cur = pgm.querySelector('.scpgi.on') || pgm.querySelector('.scpgi');
+    if (cur) cur.focus();
+  }
+  function pgOut(e) {
+    if (pgm && !pgm.contains(e.target) && !(crumb && crumb.querySelector('.scpgb').contains(e.target))) pgMenu(false);
+  }
+  function pgKey(e) {
+    if (e.key === 'Escape' && pgm) {
+      e.stopPropagation();
+      e.preventDefault();
+      pgMenu(false);
+      const b = crumb && crumb.querySelector('.scpgb');
+      if (b) b.focus();
+    }
   }
   function showOv() {
     if (!ov) return;
@@ -665,6 +756,7 @@
       const r = E('div', 'scar' + (a.ack ? '' : ' new'));
       r.append(
         E('span', 'sct', a.t || ''),
+        priEl(a),
         E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')),
         E('span', 'scs', a.ack ? 'acknowledged' : '• new')
       );
@@ -677,13 +769,24 @@
     /* the breadcrumb of a system page: the page on screen (the picker of the Plant view) */
     const pk = document.querySelector('#plantws .plpick'),
       nm = pk && pk.selectedOptions[0] ? pk.selectedOptions[0].textContent.trim() : '';
-    if (crumb.lastChild.textContent !== nm) {
-      crumb.lastChild.textContent = nm;
-      crumb.lastChild.title = nm;
+    if (crT && crT.textContent !== nm) {
+      crT.textContent = nm;
+      crT.title = nm;
     }
   }
 
+  /* Rosé 2026-11-22 (coordinator: show and sort AN.almPri): the priority of an alarm row, ISA-18.2, from the set points of the plant
+     alarm list (src/analog/engine/alarm-pri.js): 1 EMERGENCY a trip, 2 HIGH the HH / LL point, 3 MEDIUM the H / L warning or a
+     deviation, 4 LOW a field status. Shown as a word in a badge (the colour is never the only sign) */
+  const priOf = a => call(() => AN.almPri(a), null) || { p: 4, name: 'LOW' };
+  function priEl(a) {
+    const P = priOf(a),
+      s = E('span', 'scpri p' + P.p, P.name);
+    s.title = 'Priority ' + P.p + ' of 4: ' + P.name;
+    return s;
+  }
   /* ---------- alarm list with the Events tab ---------- */
+  let alSort = 'time';
   let al = null,
     alSig = '',
     alTab = 'alarms';
@@ -717,6 +820,8 @@
     const sig =
       alTab +
       '|' +
+      alSort +
+      '|' +
       allAlarms()
         .map(a => a.k + (a.ack ? 1 : 0))
         .join() +
@@ -738,6 +843,8 @@
     };
     const AL = allAlarms().reverse(),
       un = AL.filter(a => !a.ack).length;
+    /* sort by priority: EMERGENCY first; the sort is stable, so the newest comes first inside one priority */
+    if (alSort === 'pri') AL.sort((a, b) => priOf(a).p - priOf(b).p);
     tb('alarms', 'Alarms ' + AL.length);
     tb('events', 'Events ' + call(() => lsEvents.length, 0));
     const x = E('button', 'scx', '✕');
@@ -753,11 +860,28 @@
       ackAll.type = 'button';
       ackAll.disabled = !un;
       ackAll.onclick = () => (ackAllU(), (alSig = ''), fillAl());
-      al.append(ackAll);
+      const tool = E('div', 'sctool'),
+        srt = E('div', 'scsort');
+      srt.setAttribute('role', 'group');
+      srt.setAttribute('aria-label', 'Sort the alarms');
+      srt.append(E('span', '', 'Sort'));
+      for (const [k, t] of [
+        ['time', 'Newest'],
+        ['pri', 'Priority']
+      ]) {
+        const b = E('button', alSort === k ? 'on' : '', t);
+        b.type = 'button';
+        b.setAttribute('aria-pressed', String(alSort === k));
+        b.title = k === 'pri' ? 'Emergency first, then high, medium, low (newest first inside each)' : 'The newest alarm first';
+        b.onclick = () => ((alSort = k), (alSig = ''), fillAl());
+        srt.append(b);
+      }
+      tool.append(ackAll, srt);
+      al.append(tool);
       if (!AL.length) body.append(E('p', 'scnone', 'No alarm'));
       for (const a of AL) {
         const r = E('div', 'scrow' + (a.ack ? '' : ' new') + (a.kind === 'TRIP' ? ' trip' : ''));
-        r.append(E('span', 'sct', a.t || ''), E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')));
+        r.append(E('span', 'sct', a.t || ''), priEl(a), E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')));
         if (!a.ack) {
           const b = E('button', '', 'Acknowledge');
           b.type = 'button';

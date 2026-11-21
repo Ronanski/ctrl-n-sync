@@ -155936,7 +155936,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 2c6f0db'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 390d35c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -330292,7 +330292,7 @@ body.sc.plant[data-tab="operate"]:not(.scov) .sccrumb:not(:has(b:empty)){display
    :not(#zbar *), outranked #scov .sctile): two ids here, left aligned as the mockup */
 #scov:not(#scnone) .sctile{text-align:left!important;align-items:stretch!important;justify-content:flex-start!important}
 #scov:not(#scnone) .sctile h3,#scov:not(#scnone) .sctile .sckv,#scov:not(#scnone) .sctile .sclamp,#scov:not(#scnone) .sctile .scar,#scov:not(#scnone) .sctile .scnone{text-align:left!important;justify-content:flex-start;width:100%}
-#scov:not(#scnone) .scar{display:grid!important;grid-template-columns:96px minmax(0,1fr) auto}
+#scov:not(#scnone) .scar{display:grid!important;grid-template-columns:96px 84px minmax(0,1fr) auto}
 #scov:not(#scnone) .sckv{display:grid!important;grid-template-columns:1fr auto}
 #scins .scinp{flex:1 1 192px;min-width:0;min-height:32px;padding:0 8px;border:1px solid var(--sc-line2);border-radius:4px;font:400 13px var(--sc-ui);color:var(--sc-ink);background:var(--sc-white)}
 #scins .scsvl{display:grid;gap:4px}
@@ -330318,7 +330318,7 @@ body.sc.scov #scov{display:flex;flex-direction:column}
 .sclamp .dot.run{background:var(--sc-run)}.sclamp .dot.stop{background:var(--sc-stop)}.sclamp .dot.trip{background:var(--sc-run);animation:scblink 1s steps(2,start) infinite}
 #scov .scalm{grid-column:span 2;background:var(--sc-ambg)!important;border-color:var(--sc-amber)!important}
 #scov .scalm:not(.on){background:var(--sc-paper)!important;border-color:var(--sc-line2)!important}
-#scov .scar{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:8px;font-size:13px}
+#scov .scar{display:grid;grid-template-columns:96px 84px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px}
 #scov .scar .sct{font-family:var(--sc-num);color:var(--sc-ink2)}
 #scov .scar .scn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #scov .scar .scs{font-weight:600;color:var(--sc-ink2)}
@@ -330327,15 +330327,32 @@ body.sc.scov #scov{display:flex;flex-direction:column}
 .sccrumb{display:none;position:fixed;top:calc(var(--scb,var(--top)) + 8px);left:calc(var(--scl,var(--railW,0px)) + 8px);z-index:79;align-items:center;gap:8px;min-height:32px!important;padding:0 12px!important;background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;border-radius:16px!important;color:var(--sc-ink)!important;font:500 13px var(--sc-ui)!important;box-shadow:0 2px 8px rgba(34,46,57,.12)!important;cursor:pointer}
 body.sc[data-tab="operate"]:not(.scov) .sccrumb{display:inline-flex}
 body.sc.pvout .sccrumb{display:none!important}
+/* Rosé beta.241: the breadcrumb is two buttons (Plant = overview; the page name opens the page list .scpgm) */
+html body.sc .sccrumb{cursor:default}
+html body.sc .sccrumb>button{display:inline-flex!important;align-items:center;gap:4px;min-height:0!important;height:auto!important;margin:0!important;padding:4px 0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:inherit!important;font:inherit!important;cursor:pointer}
+html body.sc .sccrumb>button.scbc{color:var(--sc-steel)!important;text-decoration:underline;text-underline-offset:2px}
+html body.sc .sccrumb>button:focus-visible{outline:2px solid var(--sc-steel);outline-offset:2px}
+html body.sc .sccrumb .scpgb b{text-transform:uppercase}
+html body.sc .sccrumb .scdd{font-size:11px;color:var(--sc-ink2)}
+.scpgm{position:fixed;z-index:120;display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:8px 16px;width:min(640px,calc(100vw - 16px));max-height:70vh;overflow:auto;padding:12px;background:var(--sc-white);border:1px solid var(--sc-line2);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.28);font:500 13px var(--sc-ui);color:var(--sc-ink)}
+.scpgm .scpgg{display:flex;flex-direction:column;gap:2px;min-width:0}
+.scpgm .scpgh{padding:0 8px 4px;font:600 11px var(--sc-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--sc-ink2)}
+.scpgm .scpgi{display:block!important;width:100%;min-height:28px!important;height:auto!important;padding:4px 8px!important;border:0!important;border-radius:4px!important;background:none!important;box-shadow:none!important;color:var(--sc-ink)!important;font:500 13px var(--sc-ui)!important;text-align:left;cursor:pointer;white-space:normal}
+.scpgm .scpgi:hover,.scpgm .scpgi:focus-visible{background:var(--sc-selbg)!important;outline:none}
+.scpgm .scpgi.on{font-weight:700!important;box-shadow:inset 3px 0 0 var(--sc-steel)!important}
 #scal{position:fixed;top:calc(var(--scb,var(--top)) + 4px);right:8px;z-index:130;width:min(576px,calc(100vw - 16px));max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 16px);display:flex;flex-direction:column;background:var(--sc-white);border:1px solid var(--sc-line2);border-radius:8px;box-shadow:0 12px 32px rgba(34,46,57,.22);font-family:var(--sc-ui);color:var(--sc-ink)}
 #scal[hidden]{display:none!important}
 #scal .schd{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--sc-line)}
 #scal .sctabs{display:flex;gap:4px;flex:1}
 #scal .sctabs button,#scal .scx,#scal .scack,#scal .scrow button{min-height:32px!important;padding:0 12px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:600 13px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer}
 #scal .sctabs button.on{background:var(--sc-steel)!important;border-color:var(--sc-steel)!important;color:var(--sc-white)!important}
-#scal .scack{margin:8px 8px 0;align-self:flex-start}
+#scal .sctool{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:8px 8px 0}
+#scal .scsort{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--sc-ink2)}#scal .scsort span{margin-right:4px}
+#scal .scsort button{min-height:32px!important;padding:0 10px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:600 12px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer}
+#scal .scsort button.on{background:var(--sc-steel)!important;border-color:var(--sc-steel)!important;color:var(--sc-white)!important}
+#scal .scsort button:focus-visible{outline:2px solid var(--sc-steel);outline-offset:2px}
 #scal .scbody{overflow:auto;padding:4px 8px 8px}
-#scal .scrow{display:grid;grid-template-columns:88px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--sc-line);font-size:13px}
+#scal .scrow{display:grid;grid-template-columns:88px 84px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--sc-line);font-size:13px}
 #scal .scrow.ev{grid-template-columns:88px 56px minmax(0,1fr)}
 #scal .scrow .sct{font-family:var(--sc-num);color:var(--sc-ink2)}
 #scal .scrow .sck2{font:600 12px var(--sc-num);color:var(--sc-ink2)}
@@ -330380,7 +330397,7 @@ body.sc #gsbar #scstrip .seg button{font-size:13px!important}
 /* M07: tablet targets 40 px (Operator / Engineer, the strip pills, the speed menu) */
 @media (max-width:1279px),(pointer:coarse){
   body.sc #gsbar #scstrip :is(.pill,.seg button,.spdm button){min-height:40px!important}
-  #scins button,#scins .scinp,#scal :is(.sctabs button,.scx,.scack,.scrow button),#scstart:not(#scnone) .scchips button{min-height:40px!important}
+  #scins button,#scins .scinp,#scal :is(.sctabs button,.scx,.scack,.scrow button,.scsort button),#scstart:not(#scnone) .scchips button{min-height:40px!important}
 }
 /* M09: rail labels 12 px; M10 / M11: footer text 12 px and the faint clock / info colour from the shell set (5.70:1 on the band) */
 body.sc.cr #crrail .tabs button{font-size:12px!important;line-height:1.2!important}
@@ -330475,6 +330492,11 @@ body.sc #sfoot:not(#scnone) :is(.sinfo,.ssel){flex:0 1 auto!important}
 body.sc #sfoot{overflow:hidden;max-width:100vw}
 /* Mina, live test of 271: at 1024 px the sheet counts took the status bar and the hint had 21 px: below 1280 px the hint has the bar */
 @media (max-width:1279px){body.sc #sfoot:not(#scnone) .sinfo{display:none!important}}
+/* Rosé 2026-11-22: alarm priority badge (AN.almPri, ISA-18.2): the word is the sign, the fill only helps; 1 EMERGENCY, 2 HIGH, 3 MEDIUM, 4 LOW */
+:is(#scal,#scov) .scpri{display:inline-flex;align-items:center;justify-content:center;min-height:20px;padding:0 6px;border:1px solid var(--sc-line2);border-radius:3px;font:700 11px var(--sc-ui);letter-spacing:.04em;white-space:nowrap;color:var(--sc-ink2);background:var(--sc-white)}
+:is(#scal,#scov) .scpri.p1{background:var(--sc-run);border-color:var(--sc-run);color:var(--sc-white)}
+:is(#scal,#scov) .scpri.p2{background:var(--sc-amber);border-color:var(--sc-amber);color:var(--sc-white)}
+:is(#scal,#scov) .scpri.p3{background:var(--sc-ambg);border-color:var(--sc-amber);color:var(--sc-amink)}
 /* ===== RE-SHELL LAYOUT C, step 3 (shellc-pages.js): the system page in the new frame, the two faceplates in the C look, the turbine
    start panel. Only with body.sc. Colours: the --sc-* tokens of shellc.css (the Leonardo set of mockup C). The HMI art of the pages keeps
    its temporary style (#86) until every loop check passes (COMMANDMENT 4). ===== */
@@ -343915,6 +343937,7 @@ window.LS_LIVE = (function () {
   /* ---------- overview ---------- */
   let ov = null,
     crumb = null,
+    crT = null,
     tiles = [],
     almTile = null,
     ovEnd = null,
@@ -343988,12 +344011,102 @@ window.LS_LIVE = (function () {
     almTile.onclick = () => openAl('alarms');
     ov.append(bar, grid, almTile);
     document.body.append(ov);
-    crumb = E('button', 'sccrumb');
-    crumb.type = 'button';
-    crumb.title = 'Back to the overview of the unit';
-    crumb.append(E('span', 'scbc', 'Plant'), E('span', 'scsep', '›'), E('b', '', ''));
-    crumb.onclick = showOv;
+    /* Rosé, live test of beta.240: in the Operator mode no click reached a page that is not the first page of a tile (Sootblowers,
+       oil burners, purge ...): the breadcrumb is two buttons, "Plant" back to the overview and the page name, which opens the list of
+       every page, grouped by the block of the overview that holds it */
+    crumb = E('div', 'sccrumb');
+    const back = E('button', 'scbc', 'Plant');
+    back.type = 'button';
+    back.title = 'Back to the overview of the unit';
+    back.onclick = () => {
+      pgMenu(false);
+      showOv();
+    };
+    crT = E('b', '', '');
+    const pgb = E('button', 'scpgb');
+    pgb.type = 'button';
+    pgb.title = 'The pages of the plant: open another page';
+    pgb.setAttribute('aria-haspopup', 'menu');
+    pgb.setAttribute('aria-expanded', 'false');
+    pgb.append(crT, E('span', 'scdd', '▾'));
+    pgb.onclick = e => {
+      e.stopPropagation();
+      pgMenu(!pgm);
+    };
+    crumb.append(back, E('span', 'scsep', '›'), pgb);
     document.body.append(crumb);
+  }
+  /* the page list of the breadcrumb: the pages of each block (TILES g, an old page replaced by its new page, LS_HX.gone), then the
+     other pages of the Plant view picker */
+  let pgm = null;
+  function pgMenu(on) {
+    if (pgm) {
+      pgm.remove();
+      pgm = null;
+      document.removeEventListener('pointerdown', pgOut, true);
+      document.removeEventListener('keydown', pgKey, true);
+    }
+    const pgb = crumb && crumb.querySelector('.scpgb');
+    if (pgb) pgb.setAttribute('aria-expanded', on ? 'true' : 'false');
+    if (!on || !pgb) return;
+    const pk = document.querySelector('#plantws .plpick');
+    if (!pk) return;
+    const opts = [...pk.options].filter(o => !o.hidden && o.value),
+      name = {},
+      gone = call(() => LS_HX.gone, {}) || {},
+      used = new Set();
+    opts.forEach(o => (name[o.value] = o.textContent.trim()));
+    const groups = TILES.map(T => {
+      const ids = [];
+      for (const g of T.g) {
+        const id = gone[g] || g;
+        if (name[id] && !used.has(id)) {
+          used.add(id);
+          ids.push(id);
+        }
+      }
+      return [T.t, ids];
+    }).filter(g => g[1].length);
+    const rest = opts.map(o => o.value).filter(id => !used.has(id));
+    if (rest.length) groups.push(['Other pages', rest]);
+    pgm = E('div', 'scpgm');
+    pgm.setAttribute('role', 'menu');
+    pgm.setAttribute('aria-label', 'Pages of the plant');
+    for (const [t, ids] of groups) {
+      const g = E('div', 'scpgg');
+      g.append(E('div', 'scpgh', t));
+      for (const id of ids) {
+        const it = E('button', 'scpgi' + (id === pk.value ? ' on' : ''), name[id]);
+        it.type = 'button';
+        it.setAttribute('role', 'menuitem');
+        it.onclick = () => {
+          pgMenu(false);
+          openPage(id);
+        };
+        g.append(it);
+      }
+      pgm.append(g);
+    }
+    const r = crumb.getBoundingClientRect();
+    pgm.style.top = Math.round(r.bottom + 4) + 'px';
+    pgm.style.left = Math.round(Math.max(8, r.left)) + 'px';
+    document.body.append(pgm);
+    document.addEventListener('pointerdown', pgOut, true);
+    document.addEventListener('keydown', pgKey, true);
+    const cur = pgm.querySelector('.scpgi.on') || pgm.querySelector('.scpgi');
+    if (cur) cur.focus();
+  }
+  function pgOut(e) {
+    if (pgm && !pgm.contains(e.target) && !(crumb && crumb.querySelector('.scpgb').contains(e.target))) pgMenu(false);
+  }
+  function pgKey(e) {
+    if (e.key === 'Escape' && pgm) {
+      e.stopPropagation();
+      e.preventDefault();
+      pgMenu(false);
+      const b = crumb && crumb.querySelector('.scpgb');
+      if (b) b.focus();
+    }
   }
   function showOv() {
     if (!ov) return;
@@ -344260,6 +344373,7 @@ window.LS_LIVE = (function () {
       const r = E('div', 'scar' + (a.ack ? '' : ' new'));
       r.append(
         E('span', 'sct', a.t || ''),
+        priEl(a),
         E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')),
         E('span', 'scs', a.ack ? 'acknowledged' : '• new')
       );
@@ -344272,13 +344386,24 @@ window.LS_LIVE = (function () {
     /* the breadcrumb of a system page: the page on screen (the picker of the Plant view) */
     const pk = document.querySelector('#plantws .plpick'),
       nm = pk && pk.selectedOptions[0] ? pk.selectedOptions[0].textContent.trim() : '';
-    if (crumb.lastChild.textContent !== nm) {
-      crumb.lastChild.textContent = nm;
-      crumb.lastChild.title = nm;
+    if (crT && crT.textContent !== nm) {
+      crT.textContent = nm;
+      crT.title = nm;
     }
   }
 
+  /* Rosé 2026-11-22 (coordinator: show and sort AN.almPri): the priority of an alarm row, ISA-18.2, from the set points of the plant
+     alarm list (src/analog/engine/alarm-pri.js): 1 EMERGENCY a trip, 2 HIGH the HH / LL point, 3 MEDIUM the H / L warning or a
+     deviation, 4 LOW a field status. Shown as a word in a badge (the colour is never the only sign) */
+  const priOf = a => call(() => AN.almPri(a), null) || { p: 4, name: 'LOW' };
+  function priEl(a) {
+    const P = priOf(a),
+      s = E('span', 'scpri p' + P.p, P.name);
+    s.title = 'Priority ' + P.p + ' of 4: ' + P.name;
+    return s;
+  }
   /* ---------- alarm list with the Events tab ---------- */
+  let alSort = 'time';
   let al = null,
     alSig = '',
     alTab = 'alarms';
@@ -344312,6 +344437,8 @@ window.LS_LIVE = (function () {
     const sig =
       alTab +
       '|' +
+      alSort +
+      '|' +
       allAlarms()
         .map(a => a.k + (a.ack ? 1 : 0))
         .join() +
@@ -344333,6 +344460,8 @@ window.LS_LIVE = (function () {
     };
     const AL = allAlarms().reverse(),
       un = AL.filter(a => !a.ack).length;
+    /* sort by priority: EMERGENCY first; the sort is stable, so the newest comes first inside one priority */
+    if (alSort === 'pri') AL.sort((a, b) => priOf(a).p - priOf(b).p);
     tb('alarms', 'Alarms ' + AL.length);
     tb('events', 'Events ' + call(() => lsEvents.length, 0));
     const x = E('button', 'scx', '✕');
@@ -344348,11 +344477,28 @@ window.LS_LIVE = (function () {
       ackAll.type = 'button';
       ackAll.disabled = !un;
       ackAll.onclick = () => (ackAllU(), (alSig = ''), fillAl());
-      al.append(ackAll);
+      const tool = E('div', 'sctool'),
+        srt = E('div', 'scsort');
+      srt.setAttribute('role', 'group');
+      srt.setAttribute('aria-label', 'Sort the alarms');
+      srt.append(E('span', '', 'Sort'));
+      for (const [k, t] of [
+        ['time', 'Newest'],
+        ['pri', 'Priority']
+      ]) {
+        const b = E('button', alSort === k ? 'on' : '', t);
+        b.type = 'button';
+        b.setAttribute('aria-pressed', String(alSort === k));
+        b.title = k === 'pri' ? 'Emergency first, then high, medium, low (newest first inside each)' : 'The newest alarm first';
+        b.onclick = () => ((alSort = k), (alSig = ''), fillAl());
+        srt.append(b);
+      }
+      tool.append(ackAll, srt);
+      al.append(tool);
       if (!AL.length) body.append(E('p', 'scnone', 'No alarm'));
       for (const a of AL) {
         const r = E('div', 'scrow' + (a.ack ? '' : ' new') + (a.kind === 'TRIP' ? ' trip' : ''));
-        r.append(E('span', 'sct', a.t || ''), E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')));
+        r.append(E('span', 'sct', a.t || ''), priEl(a), E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')));
         if (!a.ack) {
           const b = E('button', '', 'Acknowledge');
           b.type = 'button';
@@ -345632,7 +345778,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 2c6f0db'));
+    row('Version', E('span', 'scsver', ver + ' · build 390d35c'));
   }
   function openSet(near) {
     if (!set) {
@@ -349622,6 +349768,13 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
   };
   let btn = null,
     box = null;
+  function hide() {
+    if (!box || box.style.display !== 'block') return false;
+    box.style.display = 'none';
+    draw();
+    if (btn && btn.isConnected) btn.focus();
+    return true;
+  }
   function draw() {
     if (btn) {
       btn.textContent = 'Events' + (LOG.length ? ' ' + LOG.length : '');
@@ -349640,7 +349793,17 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
       unseen = 0;
       draw();
     };
-    hd.append(clr);
+    /* Rosé 2026-11-22 (live test finding 2): the log has its own Close, as the other pop-ups */
+    const cx = document.createElement('button');
+    cx.className = 'b evx';
+    cx.type = 'button';
+    cx.textContent = 'Close';
+    cx.title = 'Close the event log (Esc)';
+    cx.onclick = e => {
+      e.stopPropagation();
+      hide();
+    };
+    hd.append(clr, cx);
     box.append(hd);
     if (!(window.WORLD && WORLD.on)) {
       const n = document.createElement('div');
@@ -349704,7 +349867,9 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
       draw();
     };
     /* Mina 2026-11-08 (findings 11-08 #4 / #6): Escape closes the event log, as the other pop-ups */
-    addEventListener('keydown', e => e.key === 'Escape' && box.style.display === 'block' && (box.style.display = 'none'));
+    /* Rosé 2026-11-22 (live test finding 2): on the window in the capture phase, as fp-pop.js, because a listener of the
+       app stops the key before it bubbles to the window */
+    addEventListener('keydown', e => e.key === 'Escape' && hide(), true);
     const st = $('st');
     foot.insertBefore(btn, st);
     document.body.append(box);
@@ -359786,6 +359951,7 @@ window.PLANT_SYS = [
               pbs: m.df.pbs,
               free: m.df.free,
               away: m.df.away,
+              need: m.df.need,
               perm,
               permWhy: m.df.why,
               vals: m.df.dp ? [[m.df.dp, () => cur(m.df.dp), 'mmH2O']] : []
@@ -361236,6 +361402,10 @@ window.PLANT_SYS = [
         /* started by hand the AUTO program's OPERATING lamp stays off: the status also reads the blower's retract limit switch (DITL-80G
            row 12 ZSR-N1011, input row 11; its own copy for N-1012 ~ N-1038) */
         if (!/80F/.test(d)) sb.mach[id].df.away = { d: n === 'N-1011' ? 'DITL-80G' : 'DITL-80G #' + n, row: 11 };
+        /* Rosé 2026-11-22 (live test finding 3: a START without the permissive did nothing and said nothing): the BLOWING PERMISSIVE,
+           DITL-80A output row 20 (MV-SB1001 open 600 s and both drain temperatures above 220 °C, the panel of this page). The press
+           still goes to the drawing; the faceplate says why the logic does not take it */
+        if (!/80F/.test(d)) sb.mach[id].df.need = [{ d: 'DITL-80A', row: 20, l: 'blowing permissive (steam supply valve open 600 s, both drain temperatures above 220 °C)' }];
       }
       return `<text${a} data-hit="${id}" style="cursor:pointer" data-dy="${d}|o|${r}" data-on="${n}"`;
     });
@@ -371259,8 +371429,13 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         d = pd || P.d;
       b.onclick = () =>
         !b.disabled &&
-        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
+        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), i === 0 && !P.free && (sent = Date.now()), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
     });
+    /* Rosé 2026-11-22 (live test finding 3): P.need = [{ d, row, l }] output rows of a drawing that the first command needs (the
+       sootblower BLOWING PERMISSIVE, DITL-80A out 20). The button stays a real press to the logic; while a row is 0 the faceplate says
+       "not permitted" and why, and a press that the logic did not take (no status after 3 s) says so instead of nothing */
+    let sent = 0;
+    const needMiss = () => (P.need || []).filter(x => call(() => dk.dout(x.d, x.row), null) === 0);
     let k0 = '';
     function tick() {
       if (!me.isConnected) return closeEl(me);
@@ -371294,7 +371469,19 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         B[1].classList.toggle('lit-stop', isStop && !on);
       }
       B[0].classList.toggle('lit-run', on && !P.free);
-      why.textContent = !run ? 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).' : !ok && !on ? P.pbs[0][0] + ' blocked: no ' + (P.permWhy || 'permissive') + '.' : '';
+      if (on) sent = 0;
+      const nm = on || P.free ? [] : needMiss(),
+        late = sent && Date.now() - sent > 3000;
+      if (sent && Date.now() - sent > 20000) sent = 0;
+      why.textContent = !run
+        ? 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).'
+        : !ok && !on
+          ? P.pbs[0][0] + ' blocked: no ' + (P.permWhy || 'permissive') + '.'
+          : nm.length
+            ? (late ? P.pbs[0][0] + ' sent, NOT PERMITTED by the logic: no ' : P.pbs[0][0] + ' not permitted: no ') + nm.map(x => x.l + ' [' + x.d + ' out row ' + (x.row + 1) + ']').join('; ') + '.'
+            : late
+              ? P.pbs[0][0] + ' sent, but the logic did not start it (no ' + P.st.on + ' status after 3 s). Open Logic ' + P.d + ' to see the missing input.'
+              : '';
       why.hidden = !why.textContent;
       for (const [v, f] of V) {
         const x = call(f, null);
