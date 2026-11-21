@@ -23,13 +23,15 @@
   const US = 'µS/cm';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const di = (tag, on, off) => 'data-di="' + tag + '|' + on + '|' + off + '"';
-  /* places (the drawing is 1760 x 1000) */
+  /* places (the drawing is 1760 x 890) */
   const CX = i => 150 + i * 208,
     CY = 200,
     SX = [230, 790, 1330],
-    TY = 730,
-    PY = 790,
-    HY = 640; /* dosing discharge line */
+    TY = 620,
+    PY = 680,
+    HY = 530; /* dosing discharge line */
+  /* audit 2026-11-21 C9: the dosing skids sit 110 higher and the chiller unit sits under the rack it cools, on the left of the
+     rack, so the page has no empty middle band and no item floating at the right edge */
   const PH = (n, k) => V('pH', k, '', 1),
     CC = (n, k) => V(n || 'Cation conductivity', k, US, 3),
     SC = k => V('Conductivity', k, US, 1),
@@ -99,17 +101,17 @@
     plan: {
       look: 'real',
       w: 1760,
-      h: 1000,
+      h: 890,
       items: [
         /* ---- sampling rack: one cooler and its analyzers for every stream ---- */
         ...STREAMS.map((s, i) =>
           at(E('cooler', s[0], s[1], s[3], { wrap: 14 }), CX(i), CY, { id: 'c' + i, sc: 1.1, lab: 'b' })
         ),
-        at(E('cubicle', 'Chiller unit', 'Z-1110', []), 1700, 400, { id: 'chl', lab: 'l' }),
-        at(B('Power supply abnormal', di('AL1-SP01', 'ALARM', 'NORMAL'), { w: 210 }), 150, 410, { id: 'al1' }),
-        at(B('Analyzer common alarm', di('AL2-SP01', 'ALARM', 'NORMAL'), { w: 210 }), 380, 410, { id: 'al2' }),
-        at(B('Silica analyzer alarm', di('AL3-SP01', 'ALARM', 'NORMAL'), { w: 210 }), 610, 410, { id: 'al3' }),
-        at(B('Chiller unit alarm', di('AL-Z1110', 'ALARM', 'NORMAL'), { w: 210 }), 1400, 410, { id: 'al4' }),
+        at(E('cubicle', 'Chiller unit', 'Z-1110', []), 120, 375, { id: 'chl', lab: 'r' }),
+        at(B('Power supply abnormal', di('AL1-SP01', 'ALARM', 'NORMAL'), { w: 210 }), 420, 410, { id: 'al1' }),
+        at(B('Analyzer common alarm', di('AL2-SP01', 'ALARM', 'NORMAL'), { w: 210 }), 650, 410, { id: 'al2' }),
+        at(B('Silica analyzer alarm', di('AL3-SP01', 'ALARM', 'NORMAL'), { w: 210 }), 880, 410, { id: 'al3' }),
+        at(B('Chiller unit alarm', di('AL-Z1110', 'ALARM', 'NORMAL'), { w: 210 }), 1110, 410, { id: 'al4' }),
 
         /* ---- chemical dosing: tank, two pumps, where it goes ---- */
         ...SKIDS.flatMap((k, i) => {
@@ -136,9 +138,9 @@
               lab: 'b'
             }),
             at(L(k.to[0], k.to[1]), sx + 360, HY, { id: 'to' + i }),
-            at(B('Level high', di('LSH-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 900, { id: 'lh' + i }),
-            at(B('Level low', di('LSL-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 932, { id: 'll' + i }),
-            at(B('Level low-low', di('LSLL-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 964, { id: 'lll' + i })
+            at(B('Level high', di('LSH-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 790, { id: 'lh' + i }),
+            at(B('Level low', di('LSL-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 822, { id: 'll' + i }),
+            at(B('Level low-low', di('LSLL-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 854, { id: 'lll' + i })
           ];
         }),
         at(M('mixer', 'Z-1101', 'Agitator', []), SX[0] - 110, TY - 78, { id: 'agt', sc: 1.3, lab: 'l' })
@@ -160,7 +162,7 @@
             {
               med: 'water',
               w: 4,
-              pts: [[xs, PY], [xs, 880], [pb(sx) - 70, 880], [pb(sx) - 70, PY], 'pb' + i + '.s'],
+              pts: [[xs, PY], [xs, 770], [pb(sx) - 70, 770], [pb(sx) - 70, PY], 'pb' + i + '.s'],
               flow: Bp,
               arrow: false
             },
@@ -176,9 +178,9 @@
         { x: 24, y: 76, s: 'Each sample is cooled, then goes to its analyzers.', cls: 'hx-note' },
         { x: 24, y: 90, s: 'The silica analyzer takes streams 3, 5, 6 and 7.', cls: 'hx-note' },
         ...STREAMS.map((s, i) => ({ x: CX(i), y: 110, s: String(i + 1), cls: 'hx-name', anchor: 'middle' })),
-        { x: 24, y: 560, s: 'CHEMICAL DOSING', cls: 'hx-zone' },
-        { x: 24, y: 580, s: 'Field equipment: the pumps start at their local panel.', cls: 'hx-note' },
-        { x: 24, y: 594, s: 'One pump of each chemical runs, B stands by.', cls: 'hx-note' },
+        { x: 24, y: 450, s: 'CHEMICAL DOSING', cls: 'hx-zone' },
+        { x: 24, y: 470, s: 'Field equipment: the pumps start at their local panel.', cls: 'hx-note' },
+        { x: 24, y: 484, s: 'One pump of each chemical runs, B stands by.', cls: 'hx-note' },
         ...SKIDS.map((k, i) => ({ x: pa(SX[i]) - 40, y: HY - 34, s: k.name, cls: 'hx-name' })),
         ...SKIDS.map((k, i) => ({ x: pa(SX[i]) - 40, y: HY - 18, s: k.duty, cls: 'hx-note' }))
       ]
