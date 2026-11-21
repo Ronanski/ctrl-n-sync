@@ -39,7 +39,7 @@ const html =
     DITL150.apply();
   });
   await run(60);
-  console.log('man: ' + (await page.evaluate(() => LS_GUIDE.A.man('FICCL1061A', 4))));
+  console.log('man: ' + (await page.evaluate(() => TOP.man('FICCL1061A', 4))));
   await run(180);
   await page.evaluate(() => lsPlant(true));
   await page.waitForTimeout(1000);

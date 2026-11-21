@@ -100,14 +100,10 @@ const html =
     else WORLD.dpress('DITL-28A', 1);
     await run(30);
     o.swap = st();
-    const stp = LS_GUIDE.steps().find(x => /^Start the fluidizing air blower/.test(x.t));
-    o.fps = stp ? stp.fps.join(',') : 'no step';
-    o.btn = stp ? stp.a.map(b => b.l).join(' | ') : '';
-    /* the damper button sets the damper of the blower that runs: B */
-    const db = stp ? stp.a.find(b => /running blower/.test(b.l)) : null;
-    if (db) db.f();
+    /* the damper of the blower that runs (B) by its faceplate, MAN 41 % (GO NO SOP: the Training step button is gone) */
+    TOP.man('FICFA1055B', 41);
     await run(2);
-    o.pressB = Math.round(LS_GUIDE.h().ctl ? +((() => { const k = 'ABC-014', S2 = AN.sheets.find(s => s.name === k).S, c = AN.hmiCtrls(S2).find(q => q.tag === 'FICFA1055B'); return S2.rt.v[c.out]; })()) : NaN);
+    o.pressB = Math.round(TOP.h().ctl ? +((() => { const k = 'ABC-014', S2 = AN.sheets.find(s => s.name === k).S, c = AN.hmiCtrls(S2).find(q => q.tag === 'FICFA1055B'); return S2.rt.v[c.out]; })()) : NaN);
     /* the Air and flue gas page: the damper faceplates and B's current */
     const m = (window.LS_MOCK && LS_MOCK.defs.find(d => d.id === 'MK09')) || null;
     o.page = m ? { mach: Object.keys(m.mach || {}).join(','), ib: (m.unit || {})['IT-F1055B'] || '', art: /data-ctl="FICFA1055B\|mv/.test(m.art || '') } : null;
@@ -121,7 +117,7 @@ const html =
      AUTO before A's surge valve shuts; both blowers then feed the header. A save made at rest (the b142 save of Mina) keeps 25.6 T/H on A */
   ck(old.runA === 1 && old.silA === 0 && old.outA === 1 && old.fa > 20 && r.oldEv === 1, `old save (no version) loaded: A's surge valve closed, outlet open, FA ${old.fa} T/H (blower B ${old.runB ? 'started by the low-low' : 'standby'}), header ${old.P} mmH2O, one Event log line (${r.oldEv})`);
   ck(cur.silA === 1 && cur.fa < 20 && r.curEv === 0, `a save with a version loads as saved: surge valve open, FA ${cur.fa} T/H, no line`);
-  ck(swap.runB === 1 && swap.runA === 0 && r.fps === 'FICFA1055B' && /running blower \(FICFA1055A \/ B\) M 41/.test(r.btn) && r.pressB === 41, `after the swap (B alone, ${swap.Ib} A) the FAB step names FICFA1055B: ${r.fps} · ${r.btn}`);
+  ck(swap.runB === 1 && swap.runA === 0 && r.pressB === 41, `after the swap (B alone, ${swap.Ib} A) the damper of the running blower FICFA1055B takes MAN 41 %: ${r.pressB}`);
   ck(r.sbCut.silB === 0 && r.sbCut.fcd === 0 && r.sbCut.runB === 0, `S154-3 state: standby B with its surge valve closed, FCD READY ${r.sbCut.fcd}`);
   ck(r.sbCur.fcd === 0 && r.sbCur.runB === 0 && r.sbCur.fa < 5, `a save with a version as saved: A stopped, B does not start (FCD READY missing), FA ${r.sbCur.fa} T/H (Mina's S154-3, by the drawing)`);
   ck(r.sbOld.silB === 1 && r.sbOld.fcd === 1 && r.sbOld.dB === 25 && r.sbOldStop.runB === 1 && r.sbOldStop.silB === 0 && r.sbOldStop.outB === 1 && r.sbOldStop.fa > 10, `old save: standby B lined up (surge open, damper ${r.sbOld.dB} %, FCD READY ${r.sbOld.fcd}); A stopped: B starts, surge shut, outlet open, FA ${r.sbOldStop.fa} T/H`);

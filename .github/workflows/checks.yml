@@ -41,7 +41,7 @@ jobs:
       - name: TCS soft logic sheets (straight wires only, keys, sources)
         run: node tools/data/tce_check.mjs
       - name: No team or build name in the operator step texts (Mina B79-2)
-        run: node tools/training/operator-text-check.js
+        run: node tools/ui-audit/operator-text-check.js
       - name: Scripts of the html parse (every script, also the ones with an id; the old check read only the 4 without one)
         run: |
           node -e "

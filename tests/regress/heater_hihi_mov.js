@@ -17,7 +17,7 @@ const html =
     console.log((ok ? 'PASS ' : 'FAIL ') + w);
     if (!ok) fail++;
   };
-  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.LS_GUIDE, null, { timeout: 120000 });
+  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.TOP, null, { timeout: 120000 });
   await page.waitForTimeout(2000);
   const r = await page.evaluate(async () => {
     const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
@@ -43,7 +43,7 @@ const html =
     AN.loadN = (AN.loadN || 0) + 1;
     await run(30);
     o.p150 = pos();
-    for (const t of ['LICHD11011', 'LICHD11021', 'LICHD11031', 'LICHD11051', 'LICHD11061']) LS_GUIDE.A.man(t, 0);
+    for (const t of ['LICHD11011', 'LICHD11021', 'LICHD11031', 'LICHD11051', 'LICHD11061']) TOP.man(t, 0);
     await run(600);
     o.pHH = pos();
     o.lines = ev(/SHUT-OFF MOV MV-TS100\d CLOSE by its logic/);o.all = ev(/by its logic|DITL-96/).filter(l => /DITL-96|TS1003/.test(l));

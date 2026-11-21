@@ -4,7 +4,7 @@
 // M.2549 FAB B CURRENT L.L.); the FA flow L.L. (< 20 T/H) started it again. The FA blower is a constant speed centrifugal blower with an
 // inlet damper (equipment list K1AU3-L1-0-002 item 46.1): its power follows its own flow at the head of the snapshot.
 // Checks, from Mina's b142 save (150 MW): B AUTO, B running with A (its START if its logic did not start it), A stopped the way Mina did
-// (LS_GUIDE.A.motor): B runs at every scan for 60 s, its current stays over 24.6 A, no "STOPPED" line of B.
+// (TOP.motor): B runs at every scan for 60 s, its current stays over 24.6 A, no "STOPPED" line of B.
 // Usage: node tests/regress/fab_standby_current.js [html] [save json]
 const { open } = require('./lib.js');
 const fs = require('fs');
@@ -24,7 +24,7 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     console.log((ok ? 'PASS ' : 'FAIL ') + w);
     if (!ok) fail++;
   };
-  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.LS_OP && window.LS_GUIDE, null, { timeout: 120000 });
+  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.LS_OP && window.TOP, null, { timeout: 120000 });
   await page.waitForTimeout(2000);
   const r = await page.evaluate(async sv => {
     const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
@@ -46,16 +46,16 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     /* B started by its logic with A running, as in Mina's run (the FA flow under the L.L. 20 T/H at the AUTO): A's damper down to
        25 % for the AUTO, then back */
     const mvA = LS_LIVE.mvOf(LS_LIVE.fp('FICFA1055A'));
-    LS_GUIDE.A.man('FICFA1055A', 25);
+    TOP.man('FICFA1055A', 25);
     await run(15);
     o.st = r1(AN.unit.fnFaQ);
     LS_OP.dsel('DITL-28A #B', 1, 1, 'FAB B AUTO');
     await run(5);
     o.r5 = AN.ditlRun('DITL-28A #B');
-    LS_GUIDE.A.man('FICFA1055A', +mvA);
+    TOP.man('FICFA1055A', +mvA);
     await run(20);
     o.both = AN.ditlRun('DITL-28A') + '/' + AN.ditlRun('DITL-28A #B');
-    LS_GUIDE.A.motor('M.3308', 0);
+    TOP.motor('M.3308', 0);
     await run(60, () => {
       if (AN.ditlRun('DITL-28A #B') !== 1) o.drop++;
       o.iMin = Math.min(o.iMin, AN.unit.fnIb);

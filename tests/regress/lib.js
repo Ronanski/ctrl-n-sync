@@ -3,6 +3,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/opt/node22/lib/node_mo
 async function open(html){
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM||'/opt/pw-browsers/chromium',args:(process.env.CHROME_ARGS||'').split(' ').filter(Boolean)});
   const page=await browser.newPage();const errs=[];
+  await page.addInitScript({path:require('path').join(__dirname,'top.js')});
   page.on('pageerror',e=>errs.push(String(e.message)));
   await page.goto('file://'+require('path').resolve(html));
   await page.waitForTimeout(1500);

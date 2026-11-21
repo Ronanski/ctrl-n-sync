@@ -23,14 +23,14 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     console.log((ok ? 'PASS ' : 'FAIL ') + w);
     if (!ok) fail++;
   };
-  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.LS_GUIDE, null, { timeout: 120000 });
+  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150 && window.TOP, null, { timeout: 120000 });
   await page.waitForTimeout(2000);
   const r = await page.evaluate(async sv => {
     const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
     const r1 = x => Math.round(x * 10) / 10;
     const mv = t => { const f = LS_LIVE.fp(t); return f ? +LS_LIVE.mvOf(f) : NaN; };
     const md = t => { const f = LS_LIVE.fp(t); return f ? LS_LIVE.modeOf(f) : '?'; };
-    const H = () => LS_GUIDE.h();
+    const H = () => TOP.h();
     const run = async (sec, f) => {
       for (let i = 0; i < sec * 2; i++) {
         WORLD.live = true;
@@ -48,20 +48,22 @@ const sv = JSON.parse(fs.readFileSync(svp, 'utf8'));
     const tm0 = mv('EIC-TM'), bm0 = mv('HIC-BM');
     for (let k = 1; k <= 8; k++) {
       const f = Math.max(45 / 73.5, 1 - (k * (1 - 45 / 73.5)) / 6);
-      LS_GUIDE.A.man('EIC-TM', tm0 * f);
-      LS_GUIDE.A.man('HIC-BM', bm0 * f);
+      TOP.man('EIC-TM', tm0 * f);
+      TOP.man('HIC-BM', bm0 * f);
       await run(60);
     }
     /* the "Bed 750 C" step: PA and SA air flow to MANUAL; FIC-CM follows to MANUAL */
-    LS_GUIDE.A.man('FICFA1071', mv('FICFA1071'));
-    LS_GUIDE.A.man('FICFA1081', mv('FICFA1081'));
+    TOP.man('FICFA1071', mv('FICFA1071'));
+    TOP.man('FICFA1081', mv('FICFA1081'));
     await run(30);
     /* Mina's run: coal 26.8 T/H at 33 MW (with the start-up burners in): the fire is more than the 30 MW turbine needs */
-    LS_GUIDE.A.man('FIC-CM', 24);
+    TOP.man('FIC-CM', 24);
     await run(60);
     const o = { at45: st(), mdCM: md('FIC-CM') };
-    const stp = LS_GUIDE.steps().find(x => /^By hand: EIC-TM to 30 MW/.test(x.t));
-    o.title = stp ? stp.t : 'none';
+    /* by hand, EIC-TM to 30 MW as an operator does on the faceplate (GO NO SOP: the Training step's seek is gone): 0.05 % a half second
+       down while the MW is over 30.5 */
+    const stp = { seek: () => H().MW() > 30.5 && TOP.man('EIC-TM', mv('EIC-TM') - 0.05) };
+    o.title = 'By hand: EIC-TM to 30 MW';
     let pmax = 0, bmax = 0, hmin = 1e9;
     for (let k = 0; k < 40 && stp; k++) {
       await run(60, () => stp.seek && stp.seek());

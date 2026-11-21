@@ -57,9 +57,9 @@ const html =
   await run(60);
   console.log(
     await page.evaluate(() => {
-      LS_GUIDE.A.loc('FIC-CM');
-      LS_GUIDE.A.man('FIC-CM', 75);
-      ['A', 'B', 'C'].forEach(x => LS_GUIDE.A.man('FICCL1061' + x, 30));
+      TOP.loc('FIC-CM');
+      TOP.man('FIC-CM', 75);
+      ['A', 'B', 'C'].forEach(x => TOP.man('FICCL1061' + x, 30));
       /* beta.247: the FIC-CF mode status as in the Cold start (MANUAL, never REMOTE); at 150 MW it is already REM */
       AN.latchMode('FIC-CF', 'MAN');
       /* the FIC-CF set point in LOCAL (the SV switch after FIC-CM) is 0, as in the Cold start */
@@ -76,7 +76,7 @@ const html =
   console.log('feeders MANUAL: ' + JSON.stringify(a));
   ck(a.m133 === 1, 'BU-CMD M.0133 = 1 with all feeders MANUAL');
   ck(Math.abs(a.cmMv - a.si143) < 1, 'FIC-CM MV ' + a.cmMv.toFixed(1) + ' follows SI0143 ' + a.si143.toFixed(1));
-  await page.evaluate(() => LS_GUIDE.A.auto('FICCL1061A'));
+  await page.evaluate(() => TOP.auto('FICCL1061A'));
   await run(30);
   const b = await rd();
   console.log('feeder A AUTO: ' + JSON.stringify(b));
