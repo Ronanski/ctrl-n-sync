@@ -5086,7 +5086,7 @@ function anUnitStep0(dt) {
   if (U.tc && !trip) tcsStep(U, dt);
   else if (U.tc) {
     tcsTripHold(U, dt);
-    tcsMetal(U, U.tc, tcsSteam(U), dt); /* beta.240: the metal cools while the trip is held */
+    tcsAux(U, dt); /* beta.240 metal, beta.243 all the auxiliaries (tcs.js tcsAux): the plant goes on while the trip is held */
   }
   /* Start at 150 MW: no ATS program, the trip logic of the IBD runs all the same (tcs-trip.js) */
   else if (!trip) tcsTripScan(U, dt);
