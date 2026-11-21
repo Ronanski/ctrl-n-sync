@@ -5,7 +5,8 @@
    three low pressure heaters one above the other on the right, cut open, the condensate coming down past them (No. 1 on
    top), and on to the deaerator.
    THE CONNECTIONS: K1AU3-PD-016 Rev D, condensate system: condenser H-1110 with the hotwell; make-up into the condenser by
-   MV-MU1001 and by the level valve LCV-MU1110; the two condensate pumps P-1116A / B (strainer with DPT-CD1001 / 1002) on one
+   the level valve LCV-MU1110 driven by the ABC-031 hotwell level controller LICCD1110A, and
+   MV-MU1001 on the 8-inch line as the operator bypass (PD-016 zone A-7); the two condensate pumps P-1116A / B (strainer with DPT-CD1001 / 1002) on one
    suction line; the common discharge line (PT-CD1117, TT-CD1118); the curtain spray XV-CD1006 and the flash chamber sprays
    XV-CD1004 / 1005; the condensate polisher branch (MV-CD1007 in, MV-CD1008 back) with the bypass valve FCV-CD1121 in the
    line; flow element FE-CD1120 and the minimum flow valve FCV-CD1120 back to the condenser; the dump valve LCV-CD1110; the
@@ -136,11 +137,11 @@
         /* ---- condenser with its make-up ---- */
         at(E('condenser', '', '', [], { id: 'cd', steam: 'v:SI-TB>50' }), CX, CY, { id: 'cd', under: true, sc: CS }),
         at(L('makeup-cooling', 'Make-up water', { back: true }), 80, 250, { id: 'mul' }),
-        at(X('MV-MU1001', 'Make-up valve', { cname: 'Make-up to the hotwell valve' }), 130, 352, {
+        at(X('MV-MU1001', 'Make-up bypass valve', { cname: 'Make-up to the hotwell, 8-inch operator bypass valve (PD-016 zone A-7)', wrap: 12 }), 130, 352, {
           id: 'mu1',
           lab: 't'
         }),
-        at(C('LICCD1110A', 'Hotwell level make-up valve', { tag: 'LCV-MU1110', wrap: 16 }), 130, 450, {
+        at(C('LICCD1110A', 'Hotwell level valve, ABC-031', { tag: 'LCV-MU1110', wrap: 16 }), 130, 450, {
           id: 'mu2',
           lab: 'b'
         }),

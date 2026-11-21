@@ -155948,7 +155948,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 432e861'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 7fda39e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -344068,7 +344068,7 @@ window.LS_LIVE = (function () {
       pgm.remove();
       pgm = null;
       document.removeEventListener('pointerdown', pgOut, true);
-      document.removeEventListener('keydown', pgKey, true);
+      window.removeEventListener('keydown', pgKey, true);
     }
     const pgb = crumb && crumb.querySelector('.scpgb');
     if (pgb) pgb.setAttribute('aria-expanded', on ? 'true' : 'false');
@@ -344116,7 +344116,7 @@ window.LS_LIVE = (function () {
     pgm.style.left = Math.round(Math.max(8, r.left)) + 'px';
     document.body.append(pgm);
     document.addEventListener('pointerdown', pgOut, true);
-    document.addEventListener('keydown', pgKey, true);
+    window.addEventListener('keydown', pgKey, true);
     const cur = pgm.querySelector('.scpgi.on') || pgm.querySelector('.scpgi');
     if (cur) cur.focus();
   }
@@ -345802,7 +345802,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 432e861'));
+    row('Version', E('span', 'scsver', ver + ' · build 7fda39e'));
   }
   function openSet(near) {
     if (!set) {
@@ -360732,12 +360732,12 @@ window.PLANT_SYS = [
     mach: {
       CA: { n: 'CEP-A', t: 'P-1116A', ad: 'M.3350', d: 'DITL-61A', io: 'MIR-P1116A' },
       CB: { n: 'CEP-B', t: 'P-1116B', ad: 'M.3351', d: 'DITL-61A #B', io: 'MIR-P1116B' },
-      LA: { n: 'LICCD1110A', t: 'Hotwell make-up LCV-MU1110', ctl: 'LICCD1110A', io: 'LICCD1110A' },
+      LA: { n: 'LICCD1110A', t: 'Hotwell level valve LCV-MU1110 (ABC-031)', ctl: 'LICCD1110A', io: 'LICCD1110A' },
       LB: { n: 'LICCD1110B', t: 'Hotwell dump LCV-CD1110', ctl: 'LICCD1110B', io: 'LICCD1110B' },
       LD: { n: 'LICCD1104', t: 'Deaerator level LCV-CD1104', ctl: 'LICCD1104', io: 'LICCD1104' },
       FR: { n: 'FICCD1120', t: 'Minimum flow FCV-CD1120', ctl: 'FICCD1120', io: 'FICCD1120' },
       FP: { n: 'FICCD1121', t: 'Polisher bypass FCV-CD1121', ctl: 'FICCD1121', io: 'FICCD1121' },
-      V60: { n: 'MV-MU1001', t: 'Make-up to the hotwell', mov: 'DITL-60', tg: 'MV-MU1001' },
+      V60: { n: 'MV-MU1001', t: 'Make-up bypass, 8-inch (operator)', mov: 'DITL-60', tg: 'MV-MU1001' },
       V63A: { n: 'XV-CD1004', t: 'Flash chamber spray (normal)', mov: 'DITL-63', tg: 'XV-CD1004' },
       V63B: { n: 'XV-CD1005', t: 'Flash chamber spray', mov: 'DITL-63', tg: 'XV-CD1005' },
       V64: { n: 'MV-CD1007', t: 'Polisher inlet', mov: 'DITL-64', tg: 'MV-CD1007' },
@@ -365335,7 +365335,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    three low pressure heaters one above the other on the right, cut open, the condensate coming down past them (No. 1 on
    top), and on to the deaerator.
    THE CONNECTIONS: K1AU3-PD-016 Rev D, condensate system: condenser H-1110 with the hotwell; make-up into the condenser by
-   MV-MU1001 and by the level valve LCV-MU1110; the two condensate pumps P-1116A / B (strainer with DPT-CD1001 / 1002) on one
+   the level valve LCV-MU1110 driven by the ABC-031 hotwell level controller LICCD1110A, and
+   MV-MU1001 on the 8-inch line as the operator bypass (PD-016 zone A-7); the two condensate pumps P-1116A / B (strainer with DPT-CD1001 / 1002) on one
    suction line; the common discharge line (PT-CD1117, TT-CD1118); the curtain spray XV-CD1006 and the flash chamber sprays
    XV-CD1004 / 1005; the condensate polisher branch (MV-CD1007 in, MV-CD1008 back) with the bypass valve FCV-CD1121 in the
    line; flow element FE-CD1120 and the minimum flow valve FCV-CD1120 back to the condenser; the dump valve LCV-CD1110; the
@@ -365466,11 +365467,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         /* ---- condenser with its make-up ---- */
         at(E('condenser', '', '', [], { id: 'cd', steam: 'v:SI-TB>50' }), CX, CY, { id: 'cd', under: true, sc: CS }),
         at(L('makeup-cooling', 'Make-up water', { back: true }), 80, 250, { id: 'mul' }),
-        at(X('MV-MU1001', 'Make-up valve', { cname: 'Make-up to the hotwell valve' }), 130, 352, {
+        at(X('MV-MU1001', 'Make-up bypass valve', { cname: 'Make-up to the hotwell, 8-inch operator bypass valve (PD-016 zone A-7)', wrap: 12 }), 130, 352, {
           id: 'mu1',
           lab: 't'
         }),
-        at(C('LICCD1110A', 'Hotwell level make-up valve', { tag: 'LCV-MU1110', wrap: 16 }), 130, 450, {
+        at(C('LICCD1110A', 'Hotwell level valve, ABC-031', { tag: 'LCV-MU1110', wrap: 16 }), 130, 450, {
           id: 'mu2',
           lab: 'b'
         }),
