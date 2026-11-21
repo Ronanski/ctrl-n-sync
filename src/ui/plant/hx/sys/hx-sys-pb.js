@@ -1,3 +1,5 @@
+/* Audit 3 #6 (2026-11-22): moved here from hmi-mock-pb.js. The push button machines of the HX pages; the marks it added to the old
+   drawings are gone with those drawings. */
 /* 3.2.1 (LISA): push button faceplates on two generated mockup pages (tools/hmi-mock/p12.py, p15.py: not edited by hand), added here at
    run time, before the page is drawn: [data-hit] on a label of the mockup + a mach entry with df = the push button faceplate of fp-pop.js
    (LS_FPOP.pb, the same as the debris filters): STATUS = an output row of the drawing, DCS buttons = input rows of the same drawing
@@ -64,7 +66,8 @@
           ? [['START', 4, null, null, 'DITL-80M'], ['RETRACT', 10, null, null, 'DITL-80G #N-1012', sbAd(n, 'M.4014')]]
           : [['START', 5, null, null, 'DITL-80G #' + n, sbAd(n, 'M.4015')], ['RETRACT', 10, null, null, 'DITL-80G #' + n, sbAd(n, 'M.4014')]];
   if (sb)
-    sb.art = sb.art.replace(/<text([^>]*?) data-dy="(DITL-80[A-F])\|o\|(\d+)" data-on="(N-10\d\d)"/g, (m, a, d, r, n) => {
+    /* Audit 3 #6: the 30 blower labels the old drawing had ([data-dy="DITL-80x|o|row"][data-on="N-10xx"]): [blower, sheet, row] */
+    [["N-1011","DITL-80A",25],["N-1012","DITL-80B",1],["N-1014","DITL-80B",9],["N-1013","DITL-80B",5],["N-1015","DITL-80B",13],["N-1016","DITL-80B",17],["N-1018","DITL-80B",25],["N-1017","DITL-80B",21],["N-1019","DITL-80C",1],["N-1020","DITL-80C",5],["N-1022","DITL-80C",13],["N-1021","DITL-80C",9],["N-1023","DITL-80C",17],["N-1024","DITL-80C",21],["N-1026","DITL-80D",1],["N-1025","DITL-80C",25],["N-1027","DITL-80D",5],["N-1028","DITL-80D",9],["N-1030","DITL-80D",17],["N-1029","DITL-80D",13],["N-1031","DITL-80D",21],["N-1032","DITL-80D",25],["N-1034","DITL-80E",5],["N-1033","DITL-80E",1],["N-1035","DITL-80E",9],["N-1036","DITL-80E",13],["N-1038","DITL-80E",21],["N-1037","DITL-80E",17],["N-1040","DITL-80F",25],["N-1042","DITL-80F",25]].forEach(([n, d, r]) => {
       const id = 'SB' + n;
       if (!sb.mach[id]) {
         sb.mach[id] = pbf(n, /80F/.test(d) ? 'Air preheater sootblower' : 'Sootblower', d, +r, 'OPERATING', sbPb(n, d));
@@ -76,7 +79,6 @@
            still goes to the drawing; the faceplate says why the logic does not take it */
         if (!/80F/.test(d)) sb.mach[id].df.need = [{ d: 'DITL-80A', row: 20, l: 'blowing permissive (steam supply valve open 600 s, both drain temperatures above 220 °C)' }];
       }
-      return `<text${a} data-hit="${id}" style="cursor:pointer" data-dy="${d}|o|${r}" data-on="${n}"`;
     });
   /* 3.2.4-beta.8 (live test 2026-11-17: the backpass fouled for 4.5 h at 150 MW and no press on this page could open the steam or start
      the blowing: a blower START does nothing without the BLOWING PERMISSIVE, which needs MV-SB1001 open 600 s). The CRT push buttons of
@@ -93,9 +95,6 @@
     sb.mach.SBMV.df.free = 1;
     sb.mach.SBSEQ = pbf('Sootblower sequence', 'Sootblower program (30 blowers)', 'DITL-80A', 5, 'PROGRAM ON', [['AUTO MODE', 9, 'set', 1], ['MANUAL MODE', 9, 'set', 0], ['SEQUENCE START', 10], ['SEQUENCE STOP', 4], ['EMERGENCY RETRACT', 5]], 'PROGRAM OFF');
     sb.mach.SBSEQ.df.free = 1;
-    sb.art = sb.art
-      .replace(/<text([^>]*?)>MV-SB1001<\/text>/, '<text$1 data-hit="SBMV" style="cursor:pointer;text-decoration:underline">MV-SB1001</text>')
-      .replace(/<text([^>]*?)>Sootblower sequence<\/text>/, '<text$1 data-hit="SBSEQ" style="cursor:pointer;text-decoration:underline">Sootblower sequence</text>');
   }
   /* COAL, LIMESTONE AND SAND (Jennie OK 2026-11-08: the sand start buttons of 20.PNG). The order of the drawings (MINA_NEXT "PR 310 retest"):
      ISOLATING VALVE OPEN first (DITL-776 row 3 M.0870 "SAND ISO. VALVE OPEN (CRT)", memory list 103): valves -1 / -2 open, ROUTE OK
@@ -109,17 +108,9 @@
     /* ISO. VALVE OPEN/CLOSE M.0870 is a MAINTAINED selection (Jennie 2026-11-18; regress sand.js holds the row with WORLD.dset): a pulse
        lets the valves close again before the 3 s stroke reaches FULLY OPEN (rows 7 / 8), so ROUTE OK never came from the faceplate */
     cl.mach.SDISO = pbf('XV-SD1802A / B', 'Sand isolating valves', 'DITL-776', 13, 'ROUTE OK', [['OPEN', 2, 'set', 1], ['CLOSE', 2, 'set', 0]], 'ROUTE NOT OK');
-    cl.art = cl.art
-      .replace(/<text([^>]*?)>Sand<\/text>/, '<text$1 data-hit="SDSYS" style="cursor:pointer">Sand</text>')
-      .replace(/<text([^>]*?)>(XV-SD1802[AB])<\/text>/g, '<text$1 data-hit="SDISO" style="cursor:pointer">$2</text>')
-      /* LIMESTONE (sweep item 8, Mina item 8a beta.73: no start path). The order of the drawings DITL-LS10 / LS212 / LS110: FILL CYCLE
-         START PB (LS10 row 3 M.1800, STOP row 5 M.1801) -> FILLING CYCLE ENABLED FLAG (out 3 M.180F) -> VALVE STATE CHANGE PERMIT (LS212
-         M.182D) -> the maintained HMI switch ISOLATING VALVE A~H OPEN/CLOSE SW (LS212 row 10 M.184C; ISOLATING VALVE O/C FLAG out 19
-         M.1810) -> FEEDER START COMMAND PB (LS110 row 8 M.1847, STOP row 9 M.1848; ROTOFEED START/STOP COMMAND out 6 O.024C MOR-M1311).
-         The model (boiler.js AN_LM) answers these commands. Labels: Limestone = the system, XV-LM1811A ~ H, the rotary feeder L-1311 */
-      .replace(/<text([^>]*?)>Limestone<\/text>/, '<text$1 data-hit="LMSYS" style="cursor:pointer">Limestone</text>')
-      .replace(/<text([^>]*?)>(XV-LM1811[A-H])<\/text>/g, '<text$1 data-hit="LMISO" style="cursor:pointer">$2</text>')
-      .replace(/<text([^>]*?)>rotary feeder L-1311<\/text>/, '<text$1 data-hit="LMFD" style="cursor:pointer">rotary feeder L-1311</text>');
+    /* LIMESTONE (sweep item 8, Mina item 8a beta.73: no start path): FILL CYCLE START PB (LS10 row 3 M.1800, STOP row 5 M.1801) ->
+       FILLING CYCLE ENABLED FLAG -> VALVE STATE CHANGE PERMIT (LS212 M.182D) -> ISOLATING VALVE A~H OPEN/CLOSE SW (LS212 row 10 M.184C)
+       -> FEEDER START COMMAND PB (LS110 row 8 M.1847, STOP row 9 M.1848). The model (boiler.js AN_LM) answers these commands */
     cl.mach.LMSYS = pbf('Limestone system', 'Limestone injection, filling cycle', 'DITL-LS10', 3, 'FILL CYCLE ON', [['START', 2], ['STOP', 4]], 'FILL CYCLE OFF');
     cl.mach.LMISO = pbf('XV-LM1811A ~ H', 'Limestone isolating valves', 'DITL-LS212', 19, 'OPEN', [['OPEN', 9, 'set', 1], ['CLOSE', 9, 'set', 0]], 'CLOSED');
     cl.mach.LMFD = pbf('L-1311', 'Limestone rotary feeder', 'DITL-LS110', 6, 'RUNNING', [['START', 7], ['STOP', 8]]);
@@ -130,9 +121,6 @@
   const pt = defOf('MK10');
   if (pt) {
     pt.mach.PURGE = pbf('Furnace purge', 'Furnace purge start (screen push button)', 'DITL-02', 5, 'PURGE IN PROGRESS', [['PURGE START', 5]], 'NOT IN PROGRESS');
-    pt.art = pt.art
-      .replace(/<text([^>]*?)>Press FURNACE PURGE START<\/text>/, '<text$1 data-hit="PURGE" style="cursor:pointer;text-decoration:underline">Press FURNACE PURGE START</text>')
-      .replace(/<text([^>]*?)>M\.0500 \(screen push button\)<\/text>/, '<text$1 data-hit="PURGE" style="cursor:pointer">M.0500 (screen push button)</text>');
   }
   /* DIESEL AND BURNERS (live Cold start 2026-11-13, finding F10: the igniter and burner ON / OFF push buttons were on no page). DITL-09 /
      #B / #C / #D input rows 5 / 7 / 9 / 11 = IGNITER x "ON" / "OFF" P.B., BURNER x "ON" / "OFF" P.B. (M.0110 / 0111 / 0118 / 0119 for A),
@@ -143,7 +131,6 @@
       const d = x === 'A' ? 'DITL-09' : 'DITL-09 #' + x;
       db.mach['BN' + x] = pbf('Burner ' + x, 'Igniter and burner ' + x + ' push buttons', d, 26, 'REMOTE', [['IGNITER ON', 4], ['IGNITER OFF', 6], ['BURNER ON', 8], ['BURNER OFF', 10]], 'NOT REMOTE');
       db.mach['BN' + x].df.free = 1; /* F10b: four separate presses, REMOTE does not lock IGNITER ON */
-      db.art = db.art.replace(new RegExp('<text([^>]*?)>Burner ' + x + '</text>'), `<text$1 data-hit="BN${x}" style="cursor:pointer;text-decoration:underline">Burner ${x}</text>`);
     }
   }
 })();

@@ -105,7 +105,7 @@
       pg.setAttribute('font-family', "'IBM Plex Sans',system-ui,sans-serif");
       pg.innerHTML =
         `<style>.mk .m{font-family:'IBM Plex Mono',ui-monospace,monospace}.mk .s{font-family:'IBM Plex Sans',system-ui,sans-serif}.mk .h2blink{animation:h2blink 1s steps(2,start) infinite}</style>` +
-        def.art;
+        (def.art || '') /* Audit 3 #6: a system of hx/sys has no drawing of its own */;
       if (def.fz) {
         const at = def.fzAt || {};
         pg.querySelectorAll('text[font-size]').forEach(t => {
