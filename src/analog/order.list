@@ -44,6 +44,7 @@ engine/sched.js
 engine/hist.js
 engine/soe.js
 engine/gen-panel.js
+engine/alarm-pri.js
 engine/instructor.js
 engine/sop-score.js
 ui/trace.js
