@@ -857,11 +857,11 @@
         noline: true,
         label: 'Around the main line',
         items: [
-          C('LICCD1110A', 'Hotwell make-up valve', { tag: 'LCV-MU1110' }),
+          C('LICCD1110A', 'Hotwell level valve, ABC-031', { tag: 'LCV-MU1110' }),
           C('LICCD1110B', 'Hotwell dump valve', { tag: 'LCV-CD1110' }),
           C('FICCD1120', 'Pump minimum flow valve', { tag: 'FCV-CD1120' }),
           C('FICCD1121', 'Polisher bypass valve', { tag: 'FCV-CD1121' }),
-          X('MV-MU1001', 'Make-up to hotwell'),
+          X('MV-MU1001', 'Make-up bypass valve'),
           X('MV-CD1003', 'Heater bypass valve')
         ]
       }

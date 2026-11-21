@@ -130,7 +130,9 @@ html body.sc .fpo-box:not(#scnone) .fpo-ln{padding-top:4px!important;gap:2px 10p
 html body.sc .fpo-box:not(#scnone) button.fpo-a{height:18px!important;min-height:18px!important;padding:0!important;font:500 11px/18px var(--sc-ui)!important;border:0!important;background:transparent!important}
 /* the long explanation: one line, the whole text on a press */
 html body.sc .fpo-box:not(#scnone) .fpo-why{font-size:11px!important;line-height:15px!important;padding:2px 6px!important;border-left-width:2px!important;cursor:pointer}
-html body.sc:not(.sc-fpwhy) .fpo-box:not(#scnone) .fpo-why{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Rosé 2026-11-22 (real-click test of beta.242): one line cut the reason ("START not permitted: no blowing permis..."); up to
+   three lines now, the rest still opens with a click */
+html body.sc:not(.sc-fpwhy) .fpo-box:not(#scnone) .fpo-why:not([hidden]){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;white-space:normal}
 /* the field panel (local panel, emergency stop, protection relay, breaker): one line that opens */
 html body.sc .fpo-box:not(#scnone) .fpo-sh{font:600 10px/16px var(--sc-ui)!important;letter-spacing:.05em!important;margin-top:0!important}
 html body.sc .fpo-box:not(#scnone) .fpo-sh.fld{cursor:pointer;border-top:1px solid var(--sc-line);padding-top:3px}
