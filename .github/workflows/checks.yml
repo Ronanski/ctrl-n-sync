@@ -40,6 +40,8 @@ jobs:
         run: node tools/build/build.js --check
       - name: TCS soft logic sheets (straight wires only, keys, sources)
         run: node tools/data/tce_check.mjs
+      - name: TCS block meanings from the HIACS macro list, every kind on the sheets known (Audit 3 #4 step 2)
+        run: node tests/tce/run.cjs
       - name: No team or build name in the operator step texts (Mina B79-2)
         run: node tools/ui-audit/operator-text-check.js
       - name: Scripts of the html parse (every script, also the ones with an id; the old check read only the 4 without one)
