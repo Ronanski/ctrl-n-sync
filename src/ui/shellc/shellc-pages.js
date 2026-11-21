@@ -98,7 +98,11 @@
         m = $('plmid');
       if (!t || !m || !m.contains(t) || t.closest('.fpo-box,#plfp,#sctsp,.plbar')) return;
       /* a realistic plant page: the whole equipment with its name is the anchor, so the faceplate does not cover the name */
+      /* Audit 3: a click on a back hit area (hx-core.js backHits, g.hx-back) stands for its own node; without this the whole
+         g.hx-back layer became the anchor and the faceplate opened over the item */
+      const bk = t.dataset && t.dataset.bkfor ? m.querySelector('.hx-node[data-bk="' + CSS.escape(t.dataset.bkfor) + '"]') : null;
       const a =
+        bk ||
         t.closest('.hx-node') ||
         t.closest('[data-yn],[data-hit],[data-mdh],[data-fan],[data-dmp],[data-eqb],[data-vth],[data-fvh]') ||
         t.closest('g') ||
@@ -231,6 +235,20 @@
           if (n.nodeType === 1 && (n.classList.contains('fpo-box') || n.id === 'plfp')) {
             words(n);
             requestAnimationFrame(() => requestAnimationFrame(() => placeC(n)));
+            /* Audit 3: the faceplate grows after it is placed (rows filled by the first scan), so a box set above its item slid down
+               over it; while it grows in the first 2 s it is placed again, unless the operator already took it */
+            if (window.ResizeObserver) {
+              let h0 = 0,
+                took = false;
+              const ro = new ResizeObserver(() => {
+                const h = n.offsetHeight;
+                if (!took && h && h0 && Math.abs(h - h0) > 2) placeC(n);
+                h0 = h;
+              });
+              n.addEventListener('pointerdown', () => (took = true), { once: true });
+              ro.observe(n);
+              setTimeout(() => ro.disconnect(), 2000);
+            }
           }
     }).observe(m, { childList: true });
     return true;

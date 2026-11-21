@@ -535,7 +535,7 @@
           tag: 'PT-HR1003-1 / -2'
         },
         { x: 860, y: HY, side: 't', label: 'Temperature', key: 'TT-HR1004', unit: '°C', dp: 0, tag: 'TT-HR1004' },
-        { x: XR, y: 474, side: 'r', label: 'After reheat valve A', unit: K, tag: 'PT-ST1002-1 / -2 / -3' },
+        { x: XR, y: 474, side: 'r', label: 'After reheat valve A', key: 'an:Pip', unit: K, tag: 'PT-ST1002-1 / -2 / -3' },
         {
           x: 1548,
           y: ty(4.5),
@@ -547,7 +547,7 @@
           digits: 4.4,
           tag: 'one shaft'
         },
-        { x: LX, y: 350, side: 'l', label: 'After bypass', unit: K, tag: 'PT-HR1011' },
+        { x: LX, y: 350, side: 'l', label: 'LP bypass outlet', key: 'an:Plpo', unit: K, tag: 'PT-HR1011' },
         {
           x: LX,
           y: 440,

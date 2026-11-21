@@ -106,8 +106,8 @@
            the hydraulic coupling selected the damper station tracks F(X) of the coupling (100 %), so the operator could not close the
            inlet damper for the ID fan START permissive (DITL-25A M.3117 IDF INLET VANE CLOSED) nor follow PR-OPE-5004 "change the
            furnace pressure control to DAMPER CONTROL" */
-        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1400, 700, { id: 'pbh' }),
-        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1610, 700, { id: 'pbd' }),
+        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1405, 520, { id: 'pbh' }) /* Audit 3: above the controller, clear of Fan outlet */,
+        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1600, 520, { id: 'pbd' }),
         at(C('AICFG112', 'Oxygen control', { sym: 'ctl', unit: '%', pvdp: 1, wrap: 30 }), 1050, 400, {
           id: 'o2c',
           lab: 't'

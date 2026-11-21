@@ -41,8 +41,9 @@ body.st .hx-app, body.st .hx { border: 0 !important; box-shadow: none !important
 #station .st-tabs button { display: flex; align-items: center; }
 body.st #plsvg, body.st #plmid { background: #1b1f27 !important; }
 /* the condition boxes of a page are shown in the Conditions popup of the station, not on the picture; push buttons and plain drawing tags
-   (data-plain, e.g. the 26 blower tags of Sootblowers, bug C5) stay */
-body.st .hx-process .hx-hook:not([data-press]):not([data-plain]) { display: none !important; }
+   (data-plain, e.g. the 26 blower tags of Sootblowers, bug C5) stay; so do the boxes that are the subject of their page (data-show:
+   the purge sequence and the master fuel trip inputs of Purge and trip, Audit 3: half of that page stood empty) */
+body.st .hx-process .hx-hook:not([data-press]):not([data-plain]):not([data-show]) { display: none !important; }
 
 /* the faceplate of a machine: the popup of the page itself, in the look of the station (same commands, same logic).
    The old frame styles it with !important, so every line here is !important too. */
@@ -79,6 +80,10 @@ html body.st:not(#st0):not(#st1) #plfp:not(#st2) .plfph > b::after { content: va
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .plfph > .b:not([data-g="x"]), html body.st:not(#st0):not(#st1) #plfp:not(#st2) .body > .hdr, html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fpt { display: none !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .plfph > .b[data-g="x"] { width: 32px !important; height: 32px !important; min-width: 0 !important; padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; color: #9aa4ae !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .plfph > .b[data-g="x"]:hover { color: #fff !important; }
+/* Audit 3: one close mark (app.css draws the icon of every button[data-g]; the ✕ letter beside it made two), and the name wraps
+   instead of being cut ("Boiler pressure, kg/cm" lost its ²) */
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .plfph > .b[data-g="x"] { font-size: 0 !important; justify-content: center !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .plfph > b { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; line-height: 1.25 !important; padding: 4px 0 !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .body { padding: 8px 12px 12px !important; background: none !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .sub { color: #9aa4ae !important; font-size: 12px !important; text-transform: none !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fp { background: none !important; border: 0 !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important; }
@@ -96,7 +101,13 @@ html body.st:not(#st0):not(#st1) #plfp:not(#st2) .tg > span { font: 400 12px "IB
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) :is(button, input):focus-visible { outline: 2px solid #e6eaed !important; outline-offset: 1px !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .body > .sub { display: none !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl > span:first-child { font-size: 0 !important; }
+/* Audit 3: each row says what it is in full words (it said "Output" on all three); the SV source line wraps under its row */
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl > span:first-child::after { content: "Output"; font-size: 12px; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl.fl-pv > span:first-child::after { content: "Process value"; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl.fl-sv > span:first-child::after { content: "Set value"; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl.fl-mv > span:first-child::after { content: "Output"; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl { flex-wrap: wrap !important; column-gap: 8px !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl > .sub { flex-basis: 100% !important; margin: 2px 0 0 !important; font-size: 11px !important; line-height: 1.3 !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .tg { flex-wrap: wrap !important; gap: 4px 8px !important; }
 
 /* Engineer: the logic drawing of the app inside the station, as an engineering drawing: one ink on dark grey paper, no fill.

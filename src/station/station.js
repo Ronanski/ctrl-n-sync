@@ -477,6 +477,14 @@
       call(() => lsSetTab('logic'));
       if (!sheets.firstChild) fillSheets();
       setTimeout(() => zoom('fit'), 500);
+      /* Audit 3: the first visit opened on ABC-057, the last sheet of the list. With no sheet of the last time, the first sheet of the
+         list opens */
+      const had = mem.get('sheet-' + fam);
+      setTimeout(() => {
+        if (restoring || !eng || had) return;
+        const b = sheets.querySelector('.st-nav');
+        if (b && !b.classList.contains('on')) b.click();
+      }, 800);
     } else {
       call(() => lsSetTab('operate'));
       call(() => lsPlant(true));
@@ -793,6 +801,8 @@
       b._i = x.i;
       b._name = x.name;
       b._q = (x.name + ' ' + x.title).toLowerCase();
+      /* Audit 3: 'TCA532' finds TCS-TCA-532 (a search without the dashes, spaces or the TCS- of the name) */
+      b._c = b._q.replace(/[^a-z0-9]/g, '');
       b.onclick = () => {
         call(x.open);
         setTimeout(tick, 150);
@@ -802,7 +812,8 @@
     }
     find.oninput = () => {
       const q = find.value.trim().toLowerCase();
-      for (const b of sheets.querySelectorAll('.st-nav')) b.hidden = !!q && !b._q.includes(q);
+      const cq = q.replace(/[^a-z0-9]/g, '');
+      for (const b of sheets.querySelectorAll('.st-nav')) b.hidden = !!q && !b._q.includes(q) && !(cq && b._c.includes(cq));
       /* a group title with no sheet left under it is not shown */
       for (const g of sheets.querySelectorAll('.st-grp')) {
         let e = g.nextElementSibling,

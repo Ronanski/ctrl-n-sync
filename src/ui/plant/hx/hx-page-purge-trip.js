@@ -117,7 +117,9 @@
           C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 78, tag: 'TCV-FG1117A-D', wrap: 14 }),
           BPX + 160 * BS,
           BPY + 350 * BS,
-          { id: 'dmb', lab: 'b' }
+          /* Audit 3: its name and "Auto 47.7 %" stood under it, 88 units from the reheater pass damper, and its value ran into the
+             "Auto" of that one: written to its right, in the free room under the furnace readings */
+          { id: 'dmb', lab: 'r' }
         ),
         at(M('fan', 'IDF', 'Induced draft fan', [V('Current', 'IT-F1056', 'A')]), IX, IY, {
           id: 'idf',
@@ -160,10 +162,10 @@
         pp('pp12', 'No boiler trip command', 'DITL-01|i|14', 1475, 500, 290),
 
         /* ---- purge sequence (DITL-02) ---- */
-        at(B('Purge permissive', 'data-dys="PP|DITL-01|9|PURGE PERMISSIVE"', { w: CW }), QX, QY, { id: 'pps' }),
-        ...SEQ.map((p, i) => at(B(p[0], dy(p[1]), { w: CW }), QX, QY + (i + 1) * QD, { id: 'sq' + i })),
-        at(B('Furnace purge', 'data-do="DITL-02|15|OK|NOT OK"', { w: CW }), QX, QY + 7 * QD + 10, { id: 'fp' }),
-        at(B('Purge ready', 'data-do="DITL-02|9|YES|NO"', { w: CW }), QX, QY + 8 * QD + 10, { id: 'pr' }),
+        at(B('Purge permissive', 'data-dys="PP|DITL-01|9|PURGE PERMISSIVE"', { w: CW, show: true }), QX, QY, { id: 'pps' }),
+        ...SEQ.map((p, i) => at(B(p[0], dy(p[1]), { w: CW, show: true }), QX, QY + (i + 1) * QD, { id: 'sq' + i })),
+        at(B('Furnace purge', 'data-do="DITL-02|15|OK|NOT OK"', { w: CW, show: true }), QX, QY + 7 * QD + 10, { id: 'fp' }),
+        at(B('Purge ready', 'data-do="DITL-02|9|YES|NO"', { w: CW, show: true }), QX, QY + 8 * QD + 10, { id: 'pr' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-H): the FURNACE PURGE START push button (DITL-02 input row 6, M.0500) was on
            temporary page 10 only, so the HX page had no way to start the purge: the same machine of page 10 (its faceplate START) */
         at(M('cubicle', 'Furnace purge', 'Furnace purge start', [], { tag: 'screen push button · DITL-02' }), QX - CW / 2 + 24, QY + 9 * QD + 22, {
@@ -173,15 +175,16 @@
 
         /* ---- master fuel trip (DITL-03A) ---- */
         ...MFT.map((t, i) =>
-          at(B(t, dy('DITL-03A|i|' + (i + 1)), { w: TW }), 240 + Math.floor(i / 6) * 460, TY + (i % 6) * TD, {
+          at(B(t, dy('DITL-03A|i|' + (i + 1)), { w: TW, show: true }), 240 + Math.floor(i / 6) * 460, TY + (i % 6) * TD, {
             id: 'mf' + i
           })
         ),
-        at(B('Master fuel trip', 'data-dfo="DITL-03A|16|1-18"', { w: 330 }), 1570, TY, { id: 'mfs' }),
+        at(B('Master fuel trip', 'data-dfo="DITL-03A|16|1-18"', { w: 330, show: true }), 1570, TY, { id: 'mfs' }),
         /* audit 2026-11-21 C9: the links to the pages of the trip causes stood beside the master fuel trip boxes, which the station shows
            in the Conditions popup: alone at the far bottom right. One row under the drawing, in the order of the trip causes */
         ...[['combustion-air', 'Fans and air flow', 'cal'], ['furnace-gas', 'Furnace and flue gas', 'fgl'], ['oil-burners', 'Burners', 'obl'], ['coal', 'Coal feeders', 'col'], ['turbine', 'Turbine trip', 'tbl']].map(
-          (k, i) => at(L(k[0], k[1], { back: true }), 560 + i * 175, 960, { id: k[2] })
+          /* Audit 3: the trip inputs are on the picture again (data-show), so the links stand in a column under the master fuel trip */
+          (k, i) => at(L(k[0], k[1], { back: true }), 1570, TY + 46 + i * 32, { id: k[2] })
         )
       ],
       pipes: [

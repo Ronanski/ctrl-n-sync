@@ -95,6 +95,10 @@
     if (!r && ar) POS[key] = { ax: ar.left, ay: ar.top, x: el.style.left, y: el.style.top, side: el.dataset.side };
   }
   function placeNew(el, r) {
+    /* Audit 3 (2026-11-21): a faceplate opened on a page item whose registered element is a whole group (the scene of the page, 1000 px
+       and more) had no room left, right, below or above it, and opened over the item clicked (42 items: the sea water valves, the
+       compressors, V-CD1026...). A big anchor that holds the point just clicked gives way to that point and its own item */
+    if (r && (r.width > 220 || r.height > 220) && last && last.x != null && last.x >= r.left && last.x <= r.right && last.y >= r.top && last.y <= r.bottom) r = null;
     const H = area(),
       w = el.offsetWidth,
       ht = el.offsetHeight,
@@ -1629,7 +1633,9 @@
     const R = REG[ad],
       el = R && call(() => R.el(), null);
     if (!R || !el || !el.isConnected) return false;
-    last = { r: el.getBoundingClientRect() };
+    /* Audit 3: an element that is a whole group of the page (1000 px) is no anchor; the click that opened it stays the anchor */
+    const q0 = el.getBoundingClientRect();
+    if (q0.width <= 220 && q0.height <= 220) last = { r: q0 };
     R.open();
     /* the page may still be laying out after a step change: placed again on its symbol once drawn */
     const b = box,
