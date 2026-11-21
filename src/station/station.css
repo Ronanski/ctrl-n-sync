@@ -113,6 +113,18 @@ html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl.fl-mv > span:first-child::a
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl { flex-wrap: wrap !important; column-gap: 8px !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl > .sub { flex-basis: 100% !important; margin: 2px 0 0 !important; font-size: 11px !important; line-height: 1.3 !important; }
 html body.st:not(#st0):not(#st1) #plfp:not(#st2) .tg { flex-wrap: wrap !important; gap: 4px 8px !important; }
+/* Audit 3 #8, one faceplate look: the controller faceplate wears the frame of the small faceplate of the measurements and
+   motors (shellc-compact.css .fpo-box: 236 px, steel edge, 3 px corners, blue title band, 13 px title, 20 px close, 22 px buttons) */
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) { width: 236px !important; background: var(--sc-white, #181d24) !important; border: 1px solid var(--sc-steel, #5b9bd9) !important; border-radius: 3px !important; box-shadow: 0 6px 18px rgba(0, 0, 0, .45) !important; color: var(--sc-ink, #d5dbe3) !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .plfph { min-height: 26px !important; padding: 3px 4px 3px 8px !important; background: var(--sc-selbg, #1f2b3a) !important; border-bottom: 1px solid var(--sc-line, #2e3742) !important; border-radius: 3px 3px 0 0 !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .plfph > b::after { font: 600 13px/18px "IBM Plex Sans", "Segoe UI", system-ui, sans-serif !important; color: var(--sc-ink, #d5dbe3) !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .plfph > .b[data-g="x"] { width: 20px !important; height: 20px !important; color: var(--sc-ink2, #8792a1) !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .body { padding: 6px 8px 7px !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .body .b { height: 22px !important; padding: 0 8px !important; font: 600 11.5px/20px "IBM Plex Sans", "Segoe UI", system-ui, sans-serif !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) :is(.fl span, .tg > b, .tg > span) { font-size: 11px !important; color: var(--sc-ink2, #8792a1) !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) .fl > span:first-child::after { font: 500 11px/13px "IBM Plex Sans", "Segoe UI", system-ui, sans-serif !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) :is(.mlb, input.n) { background: var(--sc-paper, #12161c) !important; border-color: var(--sc-line2, #3a4552) !important; }
+html body.st:not(#st0):not(#st1) #plfp:not(#st2) input.n { height: 26px !important; font-size: 13px !important; }
 
 /* Engineer: the logic drawing of the app inside the station, as an engineering drawing: one ink on dark grey paper, no fill.
    Amber stays for alarm blocks; the live colours of a traced or forced signal are left as the app sets them. */
