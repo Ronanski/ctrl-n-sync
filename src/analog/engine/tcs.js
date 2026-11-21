@@ -616,6 +616,36 @@ function tcsDone(U, k) {
 }
 /* one step of dt s: auxiliaries, metal, ATS program. Called by anUnitStep before the turbine black box; tb.rpm / tb.st / tb.icv are set
    here while the ATS controls the speed */
+/* the turbine metal (HP first stage inner wall, RH bowl, valve chests) and the HP shell expansion. Beta.240 (Jennie, HOT / WARM saves by
+   real clicks 2026-11-22): it ran only inside tcsStep, which the unit skips while a trip is held (unit.js: MFT M.3200 or I.0400 ->
+   tcsTripHold), so after a turbine trip with the boiler bottled up the metal stood still for hours (HP 487 C after 1.7 h; the tauCool law
+   gives 476 C). Metal cools by physics whatever the trip latch says: tcsStep and the trip hold both call this. Returns the ambient */
+/* steam flows through the turbine: the stop valves not off and an intercept or a governor valve open */
+function tcsSteamOn(U) {
+  const tb = U.tb || {};
+  return tb.st !== 'off' && (tb.icv > 0.001 || U.gv > 0.001);
+}
+function tcsMetal(U, c, s, dt) {
+  const steam = tcsSteamOn(U);
+  /* metal: toward the steam while steam flows (TCA rotor model), else cooling to the ambient (FHI SECT_7 / STIE-14811 CALC), see the head */
+  const Ta = U.Tamb || 30;
+  if (steam) {
+    c.Thp += ((s.mst - c.Thp) * dt) / TCS.tauMetal;
+    c.Trh += ((s.rht - c.Trh) * dt) / TCS.tauMetalIp;
+  } else if (c.cur === 0 && c.ph === 'warm') {
+    const Tw = typeof anTsatA === 'function' ? anTsatA(TCS.pWarm + 1.033) : 157.8;
+    c.Thp += ((Math.min(s.mst, Tw) - c.Thp) * dt) / TCS.tauWarm;
+  } else {
+    c.Thp += ((Ta - c.Thp) * dt) / TCS.tauCool;
+    c.Trh += ((Ta - c.Trh) * dt) / TCS.tauCool;
+  }
+  if ((c.cur === 1 && c.ph === 'chest') || c.rst) c.Tcvi += ((s.mst - c.Tcvi) * dt) / TCS.tauChest;
+  else c.Tcvi += ((Ta - c.Tcvi) * dt) / TCS.tauCool;
+  c.Tcvo += ((c.Tcvi - c.Tcvo) * dt) / TCS.tauChestO;
+  /* shell expansion (HP side), mm: 3 mm at about 180 C (page 20 question 2 > 3 mm after the 1800 rpm soak; IBD TD-4 3 mm ON / 2.5 OFF; the linear law is NO-SOURCE) */
+  c.sexp = Math.max(0, (c.Thp - Ta) * 0.02);
+  return Ta;
+}
 function tcsStep(U, dt) {
   tcsGenStep(U, dt);
   const c = U.tc;
@@ -641,24 +671,8 @@ function tcsStep(U, dt) {
   if (isFinite(U.gsP)) c.gland = !!c.gsOn && c.gsOk;
   if (!c.brgOk) c.tg = false;
   /* turning gear: about 3 rpm (PR-OPE-5002 7955); disengages above 4 rpm and engages again at zero speed */
-  const steam = tb.st !== 'off' && (tb.icv > 0.001 || U.gv > 0.001);
-  /* metal: toward the steam while steam flows (TCA rotor model), else cooling to the ambient (FHI SECT_7 / STIE-14811 CALC), see the head */
-  const Ta = U.Tamb || 30;
-  if (steam) {
-    c.Thp += ((s.mst - c.Thp) * dt) / TCS.tauMetal;
-    c.Trh += ((s.rht - c.Trh) * dt) / TCS.tauMetalIp;
-  } else if (c.cur === 0 && c.ph === 'warm') {
-    const Tw = typeof anTsatA === 'function' ? anTsatA(TCS.pWarm + 1.033) : 157.8;
-    c.Thp += ((Math.min(s.mst, Tw) - c.Thp) * dt) / TCS.tauWarm;
-  } else {
-    c.Thp += ((Ta - c.Thp) * dt) / TCS.tauCool;
-    c.Trh += ((Ta - c.Trh) * dt) / TCS.tauCool;
-  }
-  if ((c.cur === 1 && c.ph === 'chest') || c.rst) c.Tcvi += ((s.mst - c.Tcvi) * dt) / TCS.tauChest;
-  else c.Tcvi += ((Ta - c.Tcvi) * dt) / TCS.tauCool;
-  c.Tcvo += ((c.Tcvi - c.Tcvo) * dt) / TCS.tauChestO;
-  /* shell expansion (HP side), mm: 3 mm at about 180 C (page 20 question 2 > 3 mm after the 1800 rpm soak; IBD TD-4 3 mm ON / 2.5 OFF; the linear law is NO-SOURCE) */
-  c.sexp = Math.max(0, (c.Thp - Ta) * 0.02);
+  const Ta = tcsMetal(U, c, s, dt);
+  const steam = tcsSteamOn(U);
   /* 2.1 SHELL EXPANSION OK, TCA535 CMP A003 HL 3.0 mm / LL 2.5 mm: on at 3.0, off below 2.5 (IBD TD-4 net 6) */
   c.sexOk = tcsBandI(c, '2.1', c.sexp, 2.5, 3);
   /* 1.16 BEARING OIL TEMP. OK, TCA539 OR 003 (IBD TD-1 net 14): T = the higher lube oil cooler outlet (HS 033, U.loTout);
