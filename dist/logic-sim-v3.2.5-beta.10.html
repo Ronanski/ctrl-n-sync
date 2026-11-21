@@ -140632,7 +140632,16 @@ const AN_BB = {
   uaL: 18,
   uaBR: 30.8 /* kW/K, bed -> refractory centre (beta.263, see the bed balance) */,
   uaRW: 43.1 /* kW/K, refractory centre -> water */,
-  uag: 32 /* kW/K, upper furnace gas to the bare upper walls, NO-SOURCE (see the bed balance, beta.24) */,
+  /* 1.0.0-beta (JENNIE, heat balance study 2026-11-21): the upper furnace gas to the bare upper walls is gas radiation + convection,
+     no longer the fixed 32 kW/K (NO-SOURCE). Radiation: WSGG emissivity of the CO2 + H2O gas (hx.js anHxEps, the same model as the
+     backpass) at the beam length 3.6 V / A of the upper furnace (T2: 15.507 x 7.684 m grate, 25.85 m upper walls) = 7.7 m, gray wall
+     factor (1 + 0.8) / 2 = 0.9 (Hottel, oxidised steel 0.8, textbook), area 46.38 x 25.85 = 1,199 m2 (T2), convection 10 W/m2 K
+     (textbook). At bed 830 C, drum 322 C: eps 0.51, h 70 + 10 W/m2 K = 96 kW/K. uag stays the fallback for a cold gas */
+  uag: 32 /* kW/K, fallback below 200 C gas */,
+  aUp: 1199 /* m2, upper furnace walls (T2) */,
+  lUp: 7.7 /* m, beam length 3.6 V / A */,
+  fwUp: 0.9 /* gray wall factor */,
+  hcUp: 0.01 /* kW/m2 K, convection (textbook) */,
   kW: 554,
   nU: 3.5 /* wall law exponent, plant trend scenario 1 (see above) */
 };
@@ -143702,7 +143711,12 @@ function anUnitStep0(dt) {
          length 3.6 V / A = 7.7 m (T2 15.507 x 7.684 m grate, 25.85 m upper walls) gives ~111 kW/K at 850 C and matches the plant
          cyclone out TIFG1095 (scenario 2: 867 C at ~140 MW, 726 C at 90 MW; model 869 / 742) and FHI Fig 10 spray 0 at 60 %, but the
          75 MW hold then swings into an MFT at ~107 min (also with 111 fixed): another low load lag of the model is missing first */
-      uag = B.uag /* kW/K */,
+      uag = (() => {
+        const tg = U.Tb, tw = U.Tw;
+        if (!(tg > 200) || !(tg - tw > 1) || typeof anHxEps !== 'function') return B.uag;
+        const K1 = tg + 273.15, K2 = tw + 273.15;
+        return B.aUp * (B.hcUp + (B.fwUp * anHxEps(tg, B.lUp) * 5.670e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tw));
+      })() /* kW/K, gas radiation (WSGG) + convection to the upper walls */,
       qGas = gcp > 0.01 ? gcp * dW * (1 - Math.exp(-uag / gcp)) : 0 /* kW, from the gas over the upper walls */,
       qSolW = phi * (Math.sign(dW) * Math.max(0, Math.abs(B.ua0w * dW) - Math.abs(qGas))) /* kW, the solids beyond the gas radiation */,
       qSol = qSolW + qRW /* kW, to the furnace walls: the circulating solids + through the refractory */,
@@ -155704,7 +155718,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 7aa749e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 3035d3e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -313012,7 +313026,16 @@ const AN_BB = {
   uaL: 18,
   uaBR: 30.8 /* kW/K, bed -> refractory centre (beta.263, see the bed balance) */,
   uaRW: 43.1 /* kW/K, refractory centre -> water */,
-  uag: 32 /* kW/K, upper furnace gas to the bare upper walls, NO-SOURCE (see the bed balance, beta.24) */,
+  /* 1.0.0-beta (JENNIE, heat balance study 2026-11-21): the upper furnace gas to the bare upper walls is gas radiation + convection,
+     no longer the fixed 32 kW/K (NO-SOURCE). Radiation: WSGG emissivity of the CO2 + H2O gas (hx.js anHxEps, the same model as the
+     backpass) at the beam length 3.6 V / A of the upper furnace (T2: 15.507 x 7.684 m grate, 25.85 m upper walls) = 7.7 m, gray wall
+     factor (1 + 0.8) / 2 = 0.9 (Hottel, oxidised steel 0.8, textbook), area 46.38 x 25.85 = 1,199 m2 (T2), convection 10 W/m2 K
+     (textbook). At bed 830 C, drum 322 C: eps 0.51, h 70 + 10 W/m2 K = 96 kW/K. uag stays the fallback for a cold gas */
+  uag: 32 /* kW/K, fallback below 200 C gas */,
+  aUp: 1199 /* m2, upper furnace walls (T2) */,
+  lUp: 7.7 /* m, beam length 3.6 V / A */,
+  fwUp: 0.9 /* gray wall factor */,
+  hcUp: 0.01 /* kW/m2 K, convection (textbook) */,
   kW: 554,
   nU: 3.5 /* wall law exponent, plant trend scenario 1 (see above) */
 };
@@ -316082,7 +316105,12 @@ function anUnitStep0(dt) {
          length 3.6 V / A = 7.7 m (T2 15.507 x 7.684 m grate, 25.85 m upper walls) gives ~111 kW/K at 850 C and matches the plant
          cyclone out TIFG1095 (scenario 2: 867 C at ~140 MW, 726 C at 90 MW; model 869 / 742) and FHI Fig 10 spray 0 at 60 %, but the
          75 MW hold then swings into an MFT at ~107 min (also with 111 fixed): another low load lag of the model is missing first */
-      uag = B.uag /* kW/K */,
+      uag = (() => {
+        const tg = U.Tb, tw = U.Tw;
+        if (!(tg > 200) || !(tg - tw > 1) || typeof anHxEps !== 'function') return B.uag;
+        const K1 = tg + 273.15, K2 = tw + 273.15;
+        return B.aUp * (B.hcUp + (B.fwUp * anHxEps(tg, B.lUp) * 5.670e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tw));
+      })() /* kW/K, gas radiation (WSGG) + convection to the upper walls */,
       qGas = gcp > 0.01 ? gcp * dW * (1 - Math.exp(-uag / gcp)) : 0 /* kW, from the gas over the upper walls */,
       qSolW = phi * (Math.sign(dW) * Math.max(0, Math.abs(B.ua0w * dW) - Math.abs(qGas))) /* kW, the solids beyond the gas radiation */,
       qSol = qSolW + qRW /* kW, to the furnace walls: the circulating solids + through the refractory */,
@@ -353469,7 +353497,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 7aa749e'));
+    row('Version', E('span', 'scsver', ver + ' · build 3035d3e'));
   }
   function openSet(near) {
     if (!set) {
