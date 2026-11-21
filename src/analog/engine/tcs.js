@@ -9,7 +9,7 @@
      (6512: aux > 10, gland done, vacuum breaker MV-AV1391 closed, ejectors), ROLLING (8254: cold MS 60 kg/cm2 / 400 C, RH 7.5 / 415 C),
      heat soak table (8437), LP exhaust hood < 80 C before sync (8673) and < 52 C before load up (9123)
    Table of the criteria against the app: docs/tcs/ATS_CRITERIA.md. The numbers that the drawings give as "REFER TO IBD" (graphic, not
-   readable here) are taken from PR-OPE-5002 and marked so; the time constants of the metal are NO-SOURCE (marked; searched 2026-11-11: IBD, ATS 775 / 776, TCS Elementary, PR-OPE-5002, plant-study 12-assumptions.md; the TG OEM scans on the PC are asked of Jennie).
+   readable here) are taken from PR-OPE-5002 and marked so; the HP / IP metal time constants are CALC from the TCS thermal stress rotor model (TCA752 ~ 757) and the start-up modes by the time since shutdown (FHI SECT_7, STIE-14811 p147), see tauMetal / tauCool.
    The state is AN_UNIT.tc; the operator acts on the TCS panel with AN.turbine(cmd) (unit.js anTurbine). */
 const TCS = {
   /* start-up mode judgement on the lower of the reheat bowl and the HP first stage inner wall metal temperatures (page 12). The
@@ -81,10 +81,16 @@ const TCS = {
   },
   rub: 200 /* rpm, PR-OPE-5002 8325 "target speed 200 rpm for rub check"; complete below 100 rpm (criteria page 14 Fig. 1) */,
   crit: [1372, 1723] /* rpm, critical zone, no hold (PR-OPE-5002 8561) */,
-  /* time constants (NO-SOURCE: the turbine heat capacity and the rotor data are not in the docs searched, see the head). Bounds only:
-     TG operator manual STIE-14811 (Davao sister unit) p147 Fig. 1.1 holding chart 3.8 h at 0 C metal down to 0 h at 150 C, and Fig. 1.4
-     heat soaks; the steam temperature at the metal during the hold is not printed there, so no time constant can be calculated */
-  tauMetal: 2400 /* s, HP first stage / reheat bowl inner wall toward the steam while steam flows */,
+  /* 1.0.0-beta.238 CALC from the TCS thermal stress logic (TCA752 / TCA753 HP, TCA756 / TCA757 IP, 331DM09788 pages 182 ~ 183 and
+     186 ~ 187): the vendor's rotor model is five rings, surface ring 1 to centre ring 5, DISTRIBUTION blocks LMA627 with the heat
+     capacities HA1 ~ HA5 (HP 638.306 / 496.208 / 354.435 / 212.667 / 70.8869 = 70.887 x 9 / 7 / 5 / 3 / 1, the ring areas of a
+     cylinder) and the conductances HB1 ~ HB5 (HP 2.61251 / 1.1 / 0.825 / 0.55 / 0.275 = 0.275 x the ring radius; HB1 the steam side).
+     dT(i)/dt = (HB(i) (T(i-1) - T(i)) - HB(i+1) (T(i) - T(i+1))) / HA(i), T(0) = the steam. HA / HB = 257.8 s = dr^2 / 2 alpha, so with
+     the steel diffusivity 7e-6 m2/s a ring is 60 mm and the rotor 0.30 m in radius (a physical HP rotor, so the time unit is the second).
+     A step of the steam takes the heat-capacity mean of the five rings to 63 % in 1528 s (HP) and 2332 s (IP, HA 676.918 ... 75.2132,
+     HB 1.37501 ... 0.275), integrated at 1 s (scratchpad rotor.cjs). These replace the NO-SOURCE 2400 s of before */
+  tauMetal: 1528 /* s, HP first stage inner wall metal toward the main steam while steam flows (TCA752 / TCA753 rotor mean, above) */,
+  tauMetalIp: 2332 /* s, reheat bowl inner wall metal toward the reheat steam while steam flows (TCA756 / TCA757 rotor mean, above) */,
   /* 3.2.3-beta.67 CALC: HP prewarming (step 0). STIE-14747 p35 ~ 36: prewarm with the HP shell at 4.0 ~ 5.0 kg/cm2 g; condensing steam,
      so the metal goes toward the saturation (steam table, anTsatA: 157.8 C at 5.0 kg/cm2 g). STIE-14811 p147 Fig. 1.1 prewarming hold
      3.8 h from 0 C, about 2.5 h from 95 C, about 1.75 h from 125 C, 0 h at 150 C (the end, IBD TE-1 comparator 150 C). First order:
@@ -636,11 +642,11 @@ function tcsStep(U, dt) {
   if (!c.brgOk) c.tg = false;
   /* turning gear: about 3 rpm (PR-OPE-5002 7955); disengages above 4 rpm and engages again at zero speed */
   const steam = tb.st !== 'off' && (tb.icv > 0.001 || U.gv > 0.001);
-  /* metal: toward the steam while steam flows, else cooling to the ambient (NO-SOURCE time constants, see the head) */
+  /* metal: toward the steam while steam flows (TCA rotor model), else cooling to the ambient (FHI SECT_7 / STIE-14811 CALC), see the head */
   const Ta = U.Tamb || 30;
   if (steam) {
     c.Thp += ((s.mst - c.Thp) * dt) / TCS.tauMetal;
-    c.Trh += ((s.rht - c.Trh) * dt) / TCS.tauMetal;
+    c.Trh += ((s.rht - c.Trh) * dt) / TCS.tauMetalIp;
   } else if (c.cur === 0 && c.ph === 'warm') {
     const Tw = typeof anTsatA === 'function' ? anTsatA(TCS.pWarm + 1.033) : 157.8;
     c.Thp += ((Math.min(s.mst, Tw) - c.Thp) * dt) / TCS.tauWarm;
