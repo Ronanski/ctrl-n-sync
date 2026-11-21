@@ -38,6 +38,59 @@ function anStateRefs() {
   if (typeof ditlAll === 'function') for (const d of ditlAll()) ref.set(d, { $D: d.name });
   return ref;
 }
+/* ===== SAVE POINT VERSION (Full Audit 3, ranking 10). A keyframe writes a sheet, a block or a net as its index. A save point kept
+   for days (S1 to S107) broke when the order of the sheets changed (a new or imported sheet) or a drawing changed its blocks.
+   Format 2 writes a map with the keyframe: the name of each sheet and a signature of its drawing (count and kind of every block,
+   count of nets) and the key of each block (kind, tag, n-th of that kind and tag). On load each index is taken to the sheet of the
+   same name today. On a sheet whose signature differs a block is taken by its key; its sheet values (rt, kept by net and pin index)
+   and its nets are not taken (they keep what they hold now), a block or net with no match keeps the object of today, and the sheet is listed in AN.stWarn. A save without a map (format 1, every save made
+   before this) was written with the sheet order of AN_STATE_V1 (state-v1.js, the order of 3.2.5-beta.10). ===== */
+const AN_STATE_FMT = 2;
+function anSheetSig(S) {
+  let h = 2166136261;
+  const add = t => {
+    for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
+  };
+  for (const b of S.blk) add(String(b.k) + ',');
+  add('|' + S.blk.length + '|' + S.nets.length);
+  return h.toString(36);
+}
+const anBlkKeys = S => {
+  const n = {};
+  return S.blk.map(b => {
+    const k = b.k + ':' + (b.tag || '');
+    n[k] = (n[k] || 0) + 1;
+    return k + '#' + n[k];
+  });
+};
+const anStateMap = () => ({
+  v: AN_STATE_FMT,
+  sh: AN.sheets.map(s => s.name),
+  sg: AN.sheets.map(s => (s.S ? anSheetSig(s.S) : null)),
+  bk: AN.sheets.map(s => (s.S ? anBlkKeys(s.S).join(' ') : null))
+});
+let AN_SM = null; /* while a keyframe of another sheet order is decoded: s[old index] = index today (-1 none), ok[old] = same drawing,
+   b[old] = for a changed drawing, old block index -> block index today (-1 none; null when the save has no block keys) */
+function anStateRemap(m) {
+  const by = new Map(AN.sheets.map((s, i) => [s.name, i])),
+    s = m.sh.map(n => (by.has(n) ? by.get(n) : -1)),
+    ok = s.map((j, i) => j >= 0 && (m.sg[i] == null || anSheetSig(ensure(AN.sheets[j])) === m.sg[i])),
+    same = s.length === AN.sheets.length && s.every((j, i) => j === i) && ok.every(Boolean),
+    warn = [],
+    b = s.map((j, i) => {
+      if (j < 0 || ok[i] || !m.bk || !m.bk[i]) return null;
+      const now = new Map(anBlkKeys(AN.sheets[j].S).map((k, x) => [k, x]));
+      return m.bk[i].split(' ').map(k => (now.has(k) ? now.get(k) : -1));
+    });
+  m.sh.forEach((n, i) => {
+    if (s[i] < 0) warn.push(n + ': sheet not in this version, its state is left out');
+    else if (!ok[i]) {
+      const lost = b[i] ? b[i].filter(x => x < 0).length : '?';
+      warn.push(n + ': drawing changed, blocks taken by tag (' + lost + ' not found), sheet values not taken from the save');
+    }
+  });
+  return same ? null : { s, ok, b, warn };
+}
 const AN_TA = { Float64Array, Float32Array, Int32Array, Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array };
 /* a value -> plain JSON (refs by index, cycles by $id / $ref, typed arrays, Map / Set, NaN / Infinity) */
 function anStateEnc(x, ref) {
@@ -78,28 +131,35 @@ function anStateEnc(x, ref) {
 function anStateDec(x, keep) {
   const ids = new Map();
   const num = v => (v && typeof v === 'object' && '$num' in v ? Number(v.$num) : v);
+  const M = AN_SM,
+    si = i => (M ? (M.s[i] >= 0 ? M.s[i] : null) : i),
+    sh = i => (si(i) == null ? null : AN.sheets[si(i)]),
+    SS = i => (sh(i) ? ensure(sh(i)) : null),
+    SB = i => (M && !M.ok[i] ? null : SS(i)), /* a net or sheet value of a changed drawing is not taken */
+    BJ = (i, j) => (!M || M.ok[i] ? j : M.b[i] && M.b[i][j] >= 0 ? M.b[i][j] : null), /* block index today */
+    BK = (i, j) => (SS(i) && BJ(i, j) != null ? SS(i).blk[BJ(i, j)] : null),
+    or = (x, old) => (x == null ? (old === undefined ? null : old) : x); /* no match: the object of today stays */
   const dec = (v, old) => {
     if (v === null || typeof v !== 'object') return v;
     if (v.$u) return undefined;
     if (v.$fn) return old;
     if ('$num' in v) return Number(v.$num);
     if (v.$all) return AN.sheets;
-    if (v.$sh != null) return AN.sheets[v.$sh];
-    if (v.$S != null) return ensure(AN.sheets[v.$S]);
-    if (v.$B) return ensure(AN.sheets[v.$B[0]]).blk[v.$B[1]];
-    if (v.$N) return ensure(AN.sheets[v.$N[0]]).nets[v.$N[1]];
-    if (v.$T) return ensure(AN.sheets[v.$T[0]]).rt.st[v.$T[1]];
+    if (v.$sh != null) return or(sh(v.$sh), old);
+    if (v.$S != null) return or(SS(v.$S), old);
+    if (v.$B) return or(BK(v.$B[0], v.$B[1]), old);
+    if (v.$N) return or(SB(v.$N[0]) && SB(v.$N[0]).nets[v.$N[1]], old);
+    if (v.$T) return or(SB(v.$T[0]) && SB(v.$T[0]).rt.st[v.$T[1]], old);
     if (v.$Q) {
-      const S = ensure(AN.sheets[v.$Q[0]]),
-        b = S.blk[v.$Q[1]];
-      return b._pins || anPins(S, b);
+      const b = BK(v.$Q[0], v.$Q[1]);
+      return or(b && (b._pins || anPins(SS(v.$Q[0]), b)), old);
     }
-    if (v.$R) return ensure(AN.sheets[v.$R[0]]).blk[v.$R[1]].proc.remote;
+    if (v.$R) return or(BK(v.$R[0], v.$R[1]) && BK(v.$R[0], v.$R[1]).proc.remote, old);
     if (v.$H) return anStateTabs()[v.$H[0]][v.$H[1]];
     if (v.$F) return WORLD.fakeFrom(ditlAll().find(x => x.name === v.$F));
-    if (v.$K) return linksOf(AN.sheets[v.$K[0]])[v.$K[1]];
+    if (v.$K) return or(sh(v.$K[0]) && linksOf(sh(v.$K[0]))[v.$K[1]], old);
     if (v.$D) return (typeof ditlAll === 'function' && ditlAll().find(x => x.name === v.$D)) || null;
-    if (v.$P) return ensure(AN.sheets[v.$P[0]]).blk[v.$P[1]].proc; /* engine/sync.js: a plant model by its block */
+    if (v.$P) return or(BK(v.$P[0], v.$P[1]) && BK(v.$P[0], v.$P[1]).proc, old); /* engine/sync.js: a plant model by its block */
     if (v.$ref != null) return ids.get(v.$ref);
     if (v.$ta) {
       const a = new AN_TA[v.$ta](v.a.length);
@@ -190,14 +250,31 @@ function anStateCapture() {
   const sets = {};
   for (const k of AN_STATE_SETS) sets[k] = AN[k];
   /* AN.unit: the unit model once started (unit.js anUnitStart); AN.hmiDI / hmiComp: set by the first 150 MW load (hmi-op.js) */
-  return anStateEnc({ sh, obj: AN_STATE_OBJ(), flags, sets, u: AN.unit === AN_UNIT ? 1 : 0, h: AN.hmiDI === AN_HMI_DI ? 1 : 0, xs: anXsGet() }, ref);
+  return anStateEnc({ map: anStateMap(), sh, obj: AN_STATE_OBJ(), flags, sets, u: AN.unit === AN_UNIT ? 1 : 0, h: AN.hmiDI === AN_HMI_DI ? 1 : 0, xs: anXsGet() }, ref);
 }
 function anStateApply(kf) {
   const objs = AN_STATE_OBJ(),
+    m0 = kf && kf.$o && kf.$o.map ? anStateDec(kf.$o.map) : AN_STATE_V1.length ? { v: 1, sh: AN_STATE_V1.map(x => x[0]), sg: AN_STATE_V1.map(x => x[1]) } : null;
+  AN_SM = m0 ? anStateRemap(m0) : null;
+  AN.stWarn = AN_SM ? AN_SM.warn : [];
+  AN.stFmt = m0 ? m0.v : 1;
+  let st;
+  try {
     st = anStateDec(kf, { obj: objs });
+  } finally {
+    var M = AN_SM;
+    AN_SM = null;
+  }
   st.sh.forEach((r, i) => {
-    if (!r) return;
-    const S = ensure(AN.sheets[i]);
+    if (!r || (M && M.s[i] < 0)) return;
+    const S = ensure(AN.sheets[M ? M.s[i] : i]);
+    if (M && !M.ok[i]) {
+      /* a changed drawing: the plant model and mode nets of each block found by its key, the sheet values are not taken */
+      const J = j => (M.b[i] && M.b[i][j] >= 0 ? M.b[i][j] : -1);
+      for (const [j, p] of r.procs) if (J(j) >= 0) S.blk[J(j)].proc = p;
+      for (const [j, m] of r.mn) if (J(j) >= 0) S.blk[J(j)]._mn = m;
+      return;
+    }
     S.rt = r.rt;
     S.look = r.look;
     S.xlk = r.xlk;
@@ -217,7 +294,7 @@ function anStateApply(kf) {
   else delete AN.unit;
   if (st.h) (AN.hmiDI = AN_HMI_DI), (AN.hmiComp = hmiComp);
   else delete AN.hmiDI, delete AN.hmiComp;
-  anXsPut(st.xs);
+  anXsPut(M ? null : st.xs); /* the one-address groups follow the sheet order: rebuilt when it changed */
   AN._asc = null; /* the step sets kept while a starting state loads */
   AN._gen = (AN._gen || 0) + 1; /* new objects (engine/sync.js refs) */
 }

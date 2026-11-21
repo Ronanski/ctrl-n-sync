@@ -120409,7 +120409,8 @@ function ditlApply(k) {
     if (!q.nl) continue;
     if (!s.nl) s.nl = netlist(s);
     put(s.nl, DITL_NL, q.nl);
-    (s.nl.gates || []).forEach((g, i) => q.nl.g[i] && put(g, DITL_G, q.nl.g[i]));
+    /* gates are kept by place in the netlist: a save of another drawing of this sheet (other gate count) keeps the gates of today */
+    if ((s.nl.gates || []).length === q.nl.g.length) s.nl.gates.forEach((g, i) => q.nl.g[i] && put(g, DITL_G, q.nl.g[i]));
   }
   MST = ditlDec(k.MST);
   MS = ditlDec(k.MS);
@@ -150015,6 +150016,65 @@ function dsIdx(sh) {
   }
   return (sh._ds = { from, to, toDig, lost });
 }
+/* ===== SAVE POINT FORMAT 1 (engine/state.js): the sheet order and drawing signature (anSheetSig) of 3.2.5-beta.10, the last version
+   whose saves carry no map. Every save made before format 2 (S1 to S107 among them) was written with this order. Made by a headless
+   run of the station page (AN.sheets after the 150 MW start, every sheet built). Never edit: it is the order of the old saves ===== */
+const AN_STATE_V1 = [
+  ["ABC-000A","1glvyjb"],
+  ["ABC-003B","1yxboi8"],
+  ["ABC-003C","2w27uc"],
+  ["ABC-003D","1m7monw"],
+  ["ABC-003E","6pd17w"],
+  ["ABC-004A","fz6tfv"],
+  ["ABC-004B","14fdc7f"],
+  ["ABC-004C","1l1ucg9"],
+  ["ABC-005","1tcm9bn"],
+  ["ABC-006","1mvsok5"],
+  ["ABC-007","78uur1"],
+  ["ABC-000B","1frx5ge"],
+  ["ABC-008","13bfl7i"],
+  ["ABC-009A","qwexg0"],
+  ["ABC-009B","59x0x0"],
+  ["ABC-010","1nqfy8t"],
+  ["ABC-011","11vj7qx"],
+  ["ABC-012","6kntqa"],
+  ["ABC-013","l2syhk"],
+  ["ABC-014","tvn1jy"],
+  ["ABC-015","1of3hjk"],
+  ["ABC-016","1m3x1oa"],
+  ["ABC-000","1qpfb6o"],
+  ["ABC-017","1raam1o"],
+  ["ABC-019","1elw9vi"],
+  ["ABC-020","158y0u"],
+  ["ABC-026","txldmv"],
+  ["ABC-027","or34t2"],
+  ["ABC-028","1evih79"],
+  ["ABC-029","hkyiix"],
+  ["ABC-030","q47ekj"],
+  ["ABC-031","7tk4d"],
+  ["ABC-032","rfcr54"],
+  ["ABC-001A","1hqkk6j"],
+  ["ABC-033","11twnl0"],
+  ["ABC-034","1srvk8z"],
+  ["ABC-035","1sid0ls"],
+  ["ABC-036","v506se"],
+  ["ABC-037","v506se"],
+  ["ABC-038","v506se"],
+  ["ABC-039","v506se"],
+  ["ABC-050","fzsq1u"],
+  ["ABC-051","1qp5ed3"],
+  ["ABC-052","4kplm3"],
+  ["ABC-001B","192u5mi"],
+  ["ABC-053","i5ontx"],
+  ["ABC-054","1ujsnn1"],
+  ["ABC-055","128yo2y"],
+  ["ABC-056","1knodrb"],
+  ["ABC-057","1tf0nj8"],
+  ["ABC-001C","4zh5pl"],
+  ["ABC-001D","1gx2a0z"],
+  ["ABC-002","805jua"],
+  ["ABC-003A","12z4x1y"]
+];
 /* ===== ENGINE STATE: the whole running state of the analog engine as one plain value (a KEYFRAME) and back. No page access.
    3.2.0 Web Worker (user 2026-11-02 "Worker n. Lhat n", stage a): the engine of a worker and the mirror of the page must hold the
    same state; a keyframe carries it from one to the other (start, a starting state, an operator action that the engine runs).
@@ -150054,6 +150114,59 @@ function anStateRefs() {
      was read instead of the sheet) */
   if (typeof ditlAll === 'function') for (const d of ditlAll()) ref.set(d, { $D: d.name });
   return ref;
+}
+/* ===== SAVE POINT VERSION (Full Audit 3, ranking 10). A keyframe writes a sheet, a block or a net as its index. A save point kept
+   for days (S1 to S107) broke when the order of the sheets changed (a new or imported sheet) or a drawing changed its blocks.
+   Format 2 writes a map with the keyframe: the name of each sheet and a signature of its drawing (count and kind of every block,
+   count of nets) and the key of each block (kind, tag, n-th of that kind and tag). On load each index is taken to the sheet of the
+   same name today. On a sheet whose signature differs a block is taken by its key; its sheet values (rt, kept by net and pin index)
+   and its nets are not taken (they keep what they hold now), a block or net with no match keeps the object of today, and the sheet is listed in AN.stWarn. A save without a map (format 1, every save made
+   before this) was written with the sheet order of AN_STATE_V1 (state-v1.js, the order of 3.2.5-beta.10). ===== */
+const AN_STATE_FMT = 2;
+function anSheetSig(S) {
+  let h = 2166136261;
+  const add = t => {
+    for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
+  };
+  for (const b of S.blk) add(String(b.k) + ',');
+  add('|' + S.blk.length + '|' + S.nets.length);
+  return h.toString(36);
+}
+const anBlkKeys = S => {
+  const n = {};
+  return S.blk.map(b => {
+    const k = b.k + ':' + (b.tag || '');
+    n[k] = (n[k] || 0) + 1;
+    return k + '#' + n[k];
+  });
+};
+const anStateMap = () => ({
+  v: AN_STATE_FMT,
+  sh: AN.sheets.map(s => s.name),
+  sg: AN.sheets.map(s => (s.S ? anSheetSig(s.S) : null)),
+  bk: AN.sheets.map(s => (s.S ? anBlkKeys(s.S).join(' ') : null))
+});
+let AN_SM = null; /* while a keyframe of another sheet order is decoded: s[old index] = index today (-1 none), ok[old] = same drawing,
+   b[old] = for a changed drawing, old block index -> block index today (-1 none; null when the save has no block keys) */
+function anStateRemap(m) {
+  const by = new Map(AN.sheets.map((s, i) => [s.name, i])),
+    s = m.sh.map(n => (by.has(n) ? by.get(n) : -1)),
+    ok = s.map((j, i) => j >= 0 && (m.sg[i] == null || anSheetSig(ensure(AN.sheets[j])) === m.sg[i])),
+    same = s.length === AN.sheets.length && s.every((j, i) => j === i) && ok.every(Boolean),
+    warn = [],
+    b = s.map((j, i) => {
+      if (j < 0 || ok[i] || !m.bk || !m.bk[i]) return null;
+      const now = new Map(anBlkKeys(AN.sheets[j].S).map((k, x) => [k, x]));
+      return m.bk[i].split(' ').map(k => (now.has(k) ? now.get(k) : -1));
+    });
+  m.sh.forEach((n, i) => {
+    if (s[i] < 0) warn.push(n + ': sheet not in this version, its state is left out');
+    else if (!ok[i]) {
+      const lost = b[i] ? b[i].filter(x => x < 0).length : '?';
+      warn.push(n + ': drawing changed, blocks taken by tag (' + lost + ' not found), sheet values not taken from the save');
+    }
+  });
+  return same ? null : { s, ok, b, warn };
 }
 const AN_TA = { Float64Array, Float32Array, Int32Array, Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array };
 /* a value -> plain JSON (refs by index, cycles by $id / $ref, typed arrays, Map / Set, NaN / Infinity) */
@@ -150095,28 +150208,35 @@ function anStateEnc(x, ref) {
 function anStateDec(x, keep) {
   const ids = new Map();
   const num = v => (v && typeof v === 'object' && '$num' in v ? Number(v.$num) : v);
+  const M = AN_SM,
+    si = i => (M ? (M.s[i] >= 0 ? M.s[i] : null) : i),
+    sh = i => (si(i) == null ? null : AN.sheets[si(i)]),
+    SS = i => (sh(i) ? ensure(sh(i)) : null),
+    SB = i => (M && !M.ok[i] ? null : SS(i)), /* a net or sheet value of a changed drawing is not taken */
+    BJ = (i, j) => (!M || M.ok[i] ? j : M.b[i] && M.b[i][j] >= 0 ? M.b[i][j] : null), /* block index today */
+    BK = (i, j) => (SS(i) && BJ(i, j) != null ? SS(i).blk[BJ(i, j)] : null),
+    or = (x, old) => (x == null ? (old === undefined ? null : old) : x); /* no match: the object of today stays */
   const dec = (v, old) => {
     if (v === null || typeof v !== 'object') return v;
     if (v.$u) return undefined;
     if (v.$fn) return old;
     if ('$num' in v) return Number(v.$num);
     if (v.$all) return AN.sheets;
-    if (v.$sh != null) return AN.sheets[v.$sh];
-    if (v.$S != null) return ensure(AN.sheets[v.$S]);
-    if (v.$B) return ensure(AN.sheets[v.$B[0]]).blk[v.$B[1]];
-    if (v.$N) return ensure(AN.sheets[v.$N[0]]).nets[v.$N[1]];
-    if (v.$T) return ensure(AN.sheets[v.$T[0]]).rt.st[v.$T[1]];
+    if (v.$sh != null) return or(sh(v.$sh), old);
+    if (v.$S != null) return or(SS(v.$S), old);
+    if (v.$B) return or(BK(v.$B[0], v.$B[1]), old);
+    if (v.$N) return or(SB(v.$N[0]) && SB(v.$N[0]).nets[v.$N[1]], old);
+    if (v.$T) return or(SB(v.$T[0]) && SB(v.$T[0]).rt.st[v.$T[1]], old);
     if (v.$Q) {
-      const S = ensure(AN.sheets[v.$Q[0]]),
-        b = S.blk[v.$Q[1]];
-      return b._pins || anPins(S, b);
+      const b = BK(v.$Q[0], v.$Q[1]);
+      return or(b && (b._pins || anPins(SS(v.$Q[0]), b)), old);
     }
-    if (v.$R) return ensure(AN.sheets[v.$R[0]]).blk[v.$R[1]].proc.remote;
+    if (v.$R) return or(BK(v.$R[0], v.$R[1]) && BK(v.$R[0], v.$R[1]).proc.remote, old);
     if (v.$H) return anStateTabs()[v.$H[0]][v.$H[1]];
     if (v.$F) return WORLD.fakeFrom(ditlAll().find(x => x.name === v.$F));
-    if (v.$K) return linksOf(AN.sheets[v.$K[0]])[v.$K[1]];
+    if (v.$K) return or(sh(v.$K[0]) && linksOf(sh(v.$K[0]))[v.$K[1]], old);
     if (v.$D) return (typeof ditlAll === 'function' && ditlAll().find(x => x.name === v.$D)) || null;
-    if (v.$P) return ensure(AN.sheets[v.$P[0]]).blk[v.$P[1]].proc; /* engine/sync.js: a plant model by its block */
+    if (v.$P) return or(BK(v.$P[0], v.$P[1]) && BK(v.$P[0], v.$P[1]).proc, old); /* engine/sync.js: a plant model by its block */
     if (v.$ref != null) return ids.get(v.$ref);
     if (v.$ta) {
       const a = new AN_TA[v.$ta](v.a.length);
@@ -150207,14 +150327,31 @@ function anStateCapture() {
   const sets = {};
   for (const k of AN_STATE_SETS) sets[k] = AN[k];
   /* AN.unit: the unit model once started (unit.js anUnitStart); AN.hmiDI / hmiComp: set by the first 150 MW load (hmi-op.js) */
-  return anStateEnc({ sh, obj: AN_STATE_OBJ(), flags, sets, u: AN.unit === AN_UNIT ? 1 : 0, h: AN.hmiDI === AN_HMI_DI ? 1 : 0, xs: anXsGet() }, ref);
+  return anStateEnc({ map: anStateMap(), sh, obj: AN_STATE_OBJ(), flags, sets, u: AN.unit === AN_UNIT ? 1 : 0, h: AN.hmiDI === AN_HMI_DI ? 1 : 0, xs: anXsGet() }, ref);
 }
 function anStateApply(kf) {
   const objs = AN_STATE_OBJ(),
+    m0 = kf && kf.$o && kf.$o.map ? anStateDec(kf.$o.map) : AN_STATE_V1.length ? { v: 1, sh: AN_STATE_V1.map(x => x[0]), sg: AN_STATE_V1.map(x => x[1]) } : null;
+  AN_SM = m0 ? anStateRemap(m0) : null;
+  AN.stWarn = AN_SM ? AN_SM.warn : [];
+  AN.stFmt = m0 ? m0.v : 1;
+  let st;
+  try {
     st = anStateDec(kf, { obj: objs });
+  } finally {
+    var M = AN_SM;
+    AN_SM = null;
+  }
   st.sh.forEach((r, i) => {
-    if (!r) return;
-    const S = ensure(AN.sheets[i]);
+    if (!r || (M && M.s[i] < 0)) return;
+    const S = ensure(AN.sheets[M ? M.s[i] : i]);
+    if (M && !M.ok[i]) {
+      /* a changed drawing: the plant model and mode nets of each block found by its key, the sheet values are not taken */
+      const J = j => (M.b[i] && M.b[i][j] >= 0 ? M.b[i][j] : -1);
+      for (const [j, p] of r.procs) if (J(j) >= 0) S.blk[J(j)].proc = p;
+      for (const [j, m] of r.mn) if (J(j) >= 0) S.blk[J(j)]._mn = m;
+      return;
+    }
     S.rt = r.rt;
     S.look = r.look;
     S.xlk = r.xlk;
@@ -150234,7 +150371,7 @@ function anStateApply(kf) {
   else delete AN.unit;
   if (st.h) (AN.hmiDI = AN_HMI_DI), (AN.hmiComp = hmiComp);
   else delete AN.hmiDI, delete AN.hmiComp;
-  anXsPut(st.xs);
+  anXsPut(M ? null : st.xs); /* the one-address groups follow the sheet order: rebuilt when it changed */
   AN._asc = null; /* the step sets kept while a starting state loads */
   AN._gen = (AN._gen || 0) + 1; /* new objects (engine/sync.js refs) */
 }
@@ -155744,7 +155881,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 7daba5b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 402bb0e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -297319,7 +297456,8 @@ function ditlApply(k) {
     if (!q.nl) continue;
     if (!s.nl) s.nl = netlist(s);
     put(s.nl, DITL_NL, q.nl);
-    (s.nl.gates || []).forEach((g, i) => q.nl.g[i] && put(g, DITL_G, q.nl.g[i]));
+    /* gates are kept by place in the netlist: a save of another drawing of this sheet (other gate count) keeps the gates of today */
+    if ((s.nl.gates || []).length === q.nl.g.length) s.nl.gates.forEach((g, i) => q.nl.g[i] && put(g, DITL_G, q.nl.g[i]));
   }
   MST = ditlDec(k.MST);
   MS = ditlDec(k.MS);
@@ -322486,6 +322624,67 @@ function dsIdx(sh) {
   return (sh._ds = { from, to, toDig, lost });
 }
 
+/* ---- engine/state-v1.js ---- */
+/* ===== SAVE POINT FORMAT 1 (engine/state.js): the sheet order and drawing signature (anSheetSig) of 3.2.5-beta.10, the last version
+   whose saves carry no map. Every save made before format 2 (S1 to S107 among them) was written with this order. Made by a headless
+   run of the station page (AN.sheets after the 150 MW start, every sheet built). Never edit: it is the order of the old saves ===== */
+const AN_STATE_V1 = [
+  ["ABC-000A","1glvyjb"],
+  ["ABC-003B","1yxboi8"],
+  ["ABC-003C","2w27uc"],
+  ["ABC-003D","1m7monw"],
+  ["ABC-003E","6pd17w"],
+  ["ABC-004A","fz6tfv"],
+  ["ABC-004B","14fdc7f"],
+  ["ABC-004C","1l1ucg9"],
+  ["ABC-005","1tcm9bn"],
+  ["ABC-006","1mvsok5"],
+  ["ABC-007","78uur1"],
+  ["ABC-000B","1frx5ge"],
+  ["ABC-008","13bfl7i"],
+  ["ABC-009A","qwexg0"],
+  ["ABC-009B","59x0x0"],
+  ["ABC-010","1nqfy8t"],
+  ["ABC-011","11vj7qx"],
+  ["ABC-012","6kntqa"],
+  ["ABC-013","l2syhk"],
+  ["ABC-014","tvn1jy"],
+  ["ABC-015","1of3hjk"],
+  ["ABC-016","1m3x1oa"],
+  ["ABC-000","1qpfb6o"],
+  ["ABC-017","1raam1o"],
+  ["ABC-019","1elw9vi"],
+  ["ABC-020","158y0u"],
+  ["ABC-026","txldmv"],
+  ["ABC-027","or34t2"],
+  ["ABC-028","1evih79"],
+  ["ABC-029","hkyiix"],
+  ["ABC-030","q47ekj"],
+  ["ABC-031","7tk4d"],
+  ["ABC-032","rfcr54"],
+  ["ABC-001A","1hqkk6j"],
+  ["ABC-033","11twnl0"],
+  ["ABC-034","1srvk8z"],
+  ["ABC-035","1sid0ls"],
+  ["ABC-036","v506se"],
+  ["ABC-037","v506se"],
+  ["ABC-038","v506se"],
+  ["ABC-039","v506se"],
+  ["ABC-050","fzsq1u"],
+  ["ABC-051","1qp5ed3"],
+  ["ABC-052","4kplm3"],
+  ["ABC-001B","192u5mi"],
+  ["ABC-053","i5ontx"],
+  ["ABC-054","1ujsnn1"],
+  ["ABC-055","128yo2y"],
+  ["ABC-056","1knodrb"],
+  ["ABC-057","1tf0nj8"],
+  ["ABC-001C","4zh5pl"],
+  ["ABC-001D","1gx2a0z"],
+  ["ABC-002","805jua"],
+  ["ABC-003A","12z4x1y"]
+];
+
 /* ---- engine/state.js ---- */
 /* ===== ENGINE STATE: the whole running state of the analog engine as one plain value (a KEYFRAME) and back. No page access.
    3.2.0 Web Worker (user 2026-11-02 "Worker n. Lhat n", stage a): the engine of a worker and the mirror of the page must hold the
@@ -322527,6 +322726,59 @@ function anStateRefs() {
   if (typeof ditlAll === 'function') for (const d of ditlAll()) ref.set(d, { $D: d.name });
   return ref;
 }
+/* ===== SAVE POINT VERSION (Full Audit 3, ranking 10). A keyframe writes a sheet, a block or a net as its index. A save point kept
+   for days (S1 to S107) broke when the order of the sheets changed (a new or imported sheet) or a drawing changed its blocks.
+   Format 2 writes a map with the keyframe: the name of each sheet and a signature of its drawing (count and kind of every block,
+   count of nets) and the key of each block (kind, tag, n-th of that kind and tag). On load each index is taken to the sheet of the
+   same name today. On a sheet whose signature differs a block is taken by its key; its sheet values (rt, kept by net and pin index)
+   and its nets are not taken (they keep what they hold now), a block or net with no match keeps the object of today, and the sheet is listed in AN.stWarn. A save without a map (format 1, every save made
+   before this) was written with the sheet order of AN_STATE_V1 (state-v1.js, the order of 3.2.5-beta.10). ===== */
+const AN_STATE_FMT = 2;
+function anSheetSig(S) {
+  let h = 2166136261;
+  const add = t => {
+    for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
+  };
+  for (const b of S.blk) add(String(b.k) + ',');
+  add('|' + S.blk.length + '|' + S.nets.length);
+  return h.toString(36);
+}
+const anBlkKeys = S => {
+  const n = {};
+  return S.blk.map(b => {
+    const k = b.k + ':' + (b.tag || '');
+    n[k] = (n[k] || 0) + 1;
+    return k + '#' + n[k];
+  });
+};
+const anStateMap = () => ({
+  v: AN_STATE_FMT,
+  sh: AN.sheets.map(s => s.name),
+  sg: AN.sheets.map(s => (s.S ? anSheetSig(s.S) : null)),
+  bk: AN.sheets.map(s => (s.S ? anBlkKeys(s.S).join(' ') : null))
+});
+let AN_SM = null; /* while a keyframe of another sheet order is decoded: s[old index] = index today (-1 none), ok[old] = same drawing,
+   b[old] = for a changed drawing, old block index -> block index today (-1 none; null when the save has no block keys) */
+function anStateRemap(m) {
+  const by = new Map(AN.sheets.map((s, i) => [s.name, i])),
+    s = m.sh.map(n => (by.has(n) ? by.get(n) : -1)),
+    ok = s.map((j, i) => j >= 0 && (m.sg[i] == null || anSheetSig(ensure(AN.sheets[j])) === m.sg[i])),
+    same = s.length === AN.sheets.length && s.every((j, i) => j === i) && ok.every(Boolean),
+    warn = [],
+    b = s.map((j, i) => {
+      if (j < 0 || ok[i] || !m.bk || !m.bk[i]) return null;
+      const now = new Map(anBlkKeys(AN.sheets[j].S).map((k, x) => [k, x]));
+      return m.bk[i].split(' ').map(k => (now.has(k) ? now.get(k) : -1));
+    });
+  m.sh.forEach((n, i) => {
+    if (s[i] < 0) warn.push(n + ': sheet not in this version, its state is left out');
+    else if (!ok[i]) {
+      const lost = b[i] ? b[i].filter(x => x < 0).length : '?';
+      warn.push(n + ': drawing changed, blocks taken by tag (' + lost + ' not found), sheet values not taken from the save');
+    }
+  });
+  return same ? null : { s, ok, b, warn };
+}
 const AN_TA = { Float64Array, Float32Array, Int32Array, Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array };
 /* a value -> plain JSON (refs by index, cycles by $id / $ref, typed arrays, Map / Set, NaN / Infinity) */
 function anStateEnc(x, ref) {
@@ -322567,28 +322819,35 @@ function anStateEnc(x, ref) {
 function anStateDec(x, keep) {
   const ids = new Map();
   const num = v => (v && typeof v === 'object' && '$num' in v ? Number(v.$num) : v);
+  const M = AN_SM,
+    si = i => (M ? (M.s[i] >= 0 ? M.s[i] : null) : i),
+    sh = i => (si(i) == null ? null : AN.sheets[si(i)]),
+    SS = i => (sh(i) ? ensure(sh(i)) : null),
+    SB = i => (M && !M.ok[i] ? null : SS(i)), /* a net or sheet value of a changed drawing is not taken */
+    BJ = (i, j) => (!M || M.ok[i] ? j : M.b[i] && M.b[i][j] >= 0 ? M.b[i][j] : null), /* block index today */
+    BK = (i, j) => (SS(i) && BJ(i, j) != null ? SS(i).blk[BJ(i, j)] : null),
+    or = (x, old) => (x == null ? (old === undefined ? null : old) : x); /* no match: the object of today stays */
   const dec = (v, old) => {
     if (v === null || typeof v !== 'object') return v;
     if (v.$u) return undefined;
     if (v.$fn) return old;
     if ('$num' in v) return Number(v.$num);
     if (v.$all) return AN.sheets;
-    if (v.$sh != null) return AN.sheets[v.$sh];
-    if (v.$S != null) return ensure(AN.sheets[v.$S]);
-    if (v.$B) return ensure(AN.sheets[v.$B[0]]).blk[v.$B[1]];
-    if (v.$N) return ensure(AN.sheets[v.$N[0]]).nets[v.$N[1]];
-    if (v.$T) return ensure(AN.sheets[v.$T[0]]).rt.st[v.$T[1]];
+    if (v.$sh != null) return or(sh(v.$sh), old);
+    if (v.$S != null) return or(SS(v.$S), old);
+    if (v.$B) return or(BK(v.$B[0], v.$B[1]), old);
+    if (v.$N) return or(SB(v.$N[0]) && SB(v.$N[0]).nets[v.$N[1]], old);
+    if (v.$T) return or(SB(v.$T[0]) && SB(v.$T[0]).rt.st[v.$T[1]], old);
     if (v.$Q) {
-      const S = ensure(AN.sheets[v.$Q[0]]),
-        b = S.blk[v.$Q[1]];
-      return b._pins || anPins(S, b);
+      const b = BK(v.$Q[0], v.$Q[1]);
+      return or(b && (b._pins || anPins(SS(v.$Q[0]), b)), old);
     }
-    if (v.$R) return ensure(AN.sheets[v.$R[0]]).blk[v.$R[1]].proc.remote;
+    if (v.$R) return or(BK(v.$R[0], v.$R[1]) && BK(v.$R[0], v.$R[1]).proc.remote, old);
     if (v.$H) return anStateTabs()[v.$H[0]][v.$H[1]];
     if (v.$F) return WORLD.fakeFrom(ditlAll().find(x => x.name === v.$F));
-    if (v.$K) return linksOf(AN.sheets[v.$K[0]])[v.$K[1]];
+    if (v.$K) return or(sh(v.$K[0]) && linksOf(sh(v.$K[0]))[v.$K[1]], old);
     if (v.$D) return (typeof ditlAll === 'function' && ditlAll().find(x => x.name === v.$D)) || null;
-    if (v.$P) return ensure(AN.sheets[v.$P[0]]).blk[v.$P[1]].proc; /* engine/sync.js: a plant model by its block */
+    if (v.$P) return or(BK(v.$P[0], v.$P[1]) && BK(v.$P[0], v.$P[1]).proc, old); /* engine/sync.js: a plant model by its block */
     if (v.$ref != null) return ids.get(v.$ref);
     if (v.$ta) {
       const a = new AN_TA[v.$ta](v.a.length);
@@ -322679,14 +322938,31 @@ function anStateCapture() {
   const sets = {};
   for (const k of AN_STATE_SETS) sets[k] = AN[k];
   /* AN.unit: the unit model once started (unit.js anUnitStart); AN.hmiDI / hmiComp: set by the first 150 MW load (hmi-op.js) */
-  return anStateEnc({ sh, obj: AN_STATE_OBJ(), flags, sets, u: AN.unit === AN_UNIT ? 1 : 0, h: AN.hmiDI === AN_HMI_DI ? 1 : 0, xs: anXsGet() }, ref);
+  return anStateEnc({ map: anStateMap(), sh, obj: AN_STATE_OBJ(), flags, sets, u: AN.unit === AN_UNIT ? 1 : 0, h: AN.hmiDI === AN_HMI_DI ? 1 : 0, xs: anXsGet() }, ref);
 }
 function anStateApply(kf) {
   const objs = AN_STATE_OBJ(),
+    m0 = kf && kf.$o && kf.$o.map ? anStateDec(kf.$o.map) : AN_STATE_V1.length ? { v: 1, sh: AN_STATE_V1.map(x => x[0]), sg: AN_STATE_V1.map(x => x[1]) } : null;
+  AN_SM = m0 ? anStateRemap(m0) : null;
+  AN.stWarn = AN_SM ? AN_SM.warn : [];
+  AN.stFmt = m0 ? m0.v : 1;
+  let st;
+  try {
     st = anStateDec(kf, { obj: objs });
+  } finally {
+    var M = AN_SM;
+    AN_SM = null;
+  }
   st.sh.forEach((r, i) => {
-    if (!r) return;
-    const S = ensure(AN.sheets[i]);
+    if (!r || (M && M.s[i] < 0)) return;
+    const S = ensure(AN.sheets[M ? M.s[i] : i]);
+    if (M && !M.ok[i]) {
+      /* a changed drawing: the plant model and mode nets of each block found by its key, the sheet values are not taken */
+      const J = j => (M.b[i] && M.b[i][j] >= 0 ? M.b[i][j] : -1);
+      for (const [j, p] of r.procs) if (J(j) >= 0) S.blk[J(j)].proc = p;
+      for (const [j, m] of r.mn) if (J(j) >= 0) S.blk[J(j)]._mn = m;
+      return;
+    }
     S.rt = r.rt;
     S.look = r.look;
     S.xlk = r.xlk;
@@ -322706,7 +322982,7 @@ function anStateApply(kf) {
   else delete AN.unit;
   if (st.h) (AN.hmiDI = AN_HMI_DI), (AN.hmiComp = hmiComp);
   else delete AN.hmiDI, delete AN.hmiComp;
-  anXsPut(st.xs);
+  anXsPut(M ? null : st.xs); /* the one-address groups follow the sheet order: rebuilt when it changed */
   AN._asc = null; /* the step sets kept while a starting state loads */
   AN._gen = (AN._gen || 0) + 1; /* new objects (engine/sync.js refs) */
 }
@@ -353583,7 +353859,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 7daba5b'));
+    row('Version', E('span', 'scsver', ver + ' · build 402bb0e'));
   }
   function openSet(near) {
     if (!set) {

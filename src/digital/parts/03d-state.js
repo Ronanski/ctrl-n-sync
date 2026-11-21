@@ -70,7 +70,8 @@ function ditlApply(k) {
     if (!q.nl) continue;
     if (!s.nl) s.nl = netlist(s);
     put(s.nl, DITL_NL, q.nl);
-    (s.nl.gates || []).forEach((g, i) => q.nl.g[i] && put(g, DITL_G, q.nl.g[i]));
+    /* gates are kept by place in the netlist: a save of another drawing of this sheet (other gate count) keeps the gates of today */
+    if ((s.nl.gates || []).length === q.nl.g.length) s.nl.gates.forEach((g, i) => q.nl.g[i] && put(g, DITL_G, q.nl.g[i]));
   }
   MST = ditlDec(k.MST);
   MS = ditlDec(k.MS);
