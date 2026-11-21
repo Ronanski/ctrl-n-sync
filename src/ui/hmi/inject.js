@@ -62,48 +62,48 @@ const block =
   /* 2026-11-01: 039 RH / SH BIASING DAMPER (approved mockup) */
   fs.readFileSync(__dirname + '/../plant/hmi-bias.js', 'utf8') +
   '\n' +
-  /* 3.2.1 (user 2026-11-04): the approved temporary HMI mockup pages drawn exactly as the mockup (tools/hmi-mock/*.py) */
+  /* the resolver of the faceplates (hmi-mock.js) and the data of each system (hx/sys, Audit 3 #6: moved from the old page files) */
   fs.readFileSync(__dirname + '/../plant/hmi-mock.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-cw.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-cw.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-mu.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-mu.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-ia.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-ia.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-to.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-to.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-cd.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-cd.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-fw.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-fw.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-ms.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-ms.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-as.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-as.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-fg.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-fg.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-pt.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-pt.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-db.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-db.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-cls.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-cls.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-ts.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-ts.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-ea.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-ea.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-sb.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-sb.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-pb.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-pb.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-sp.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-sp.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-gn.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-gn.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-ex.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-ex.js', 'utf8') +
   '\n' +
-  fs.readFileSync(__dirname + '/../plant/hmi-mock-ov.js', 'utf8') +
+  fs.readFileSync(__dirname + '/../plant/hx/sys/hx-sys-ov.js', 'utf8') +
   '\n' +
   /* 3.2.4 (user 2026-11-17): HX, the realistic HMI pages (src/ui/plant/hx/README.md): symbols, engine, registry, pages, adapter */
   ['hx-real.js', 'hx-core.js', 'hx-registry.js', 'hx-page-reheat.js', 'hx-page-boiler-steam.js', 'hx-page-feedwater.js', 'hx-page-condensate.js', 'hx-page-furnace-gas.js', 'hx-page-combustion-air.js', 'hx-page-coal.js', 'hx-page-limestone-sand.js', 'hx-page-ash.js', 'hx-page-sampling.js', 'hx-page-overview.js', 'hx-page-oil-burners.js', 'hx-page-aux-steam.js', 'hx-page-extraction.js', 'hx-page-turbine-oil.js', 'hx-page-sea-water.js', 'hx-page-makeup-cooling.js', 'hx-page-turbine.js', 'hx-page-purge-trip.js', 'hx-page-generator.js', 'hx-page-sootblowers.js', 'hx-page-compressed-air.js', 'hx-cond.js', 'hx-app.js'].map(x => fs.readFileSync(__dirname + '/../plant/hx/' + x, 'utf8')).join('\n') +
