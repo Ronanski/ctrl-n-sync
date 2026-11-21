@@ -1225,10 +1225,13 @@ function anTurbine0(cmd, arg) {
   return 'Unknown command: ' + cmd;
 }
 /* 3.2.0 roadmap 3: the position (0 ~ 100 %) of a valve of the DITL valve model (MOV / solenoid) by sheet ("DITL-32", an instance "DITL-32 #B",
-   a template valve "DITL-38 MV-MS1391"), while the one world runs; null without it (the engine alone, the DITL state is the operator's) */
+   a template valve "DITL-38 MV-MS1391"), while the one world is built (beta.245: also paused); null without it (the engine alone, the
+   DITL state is the operator's) */
 function anDitlPos(name, j) {
   try {
-    if (typeof S === 'undefined' || !window.WORLD || !WORLD.live || typeof MST === 'undefined') return null;
+    /* beta.245: the world built (WORLD.on + idx), as anDitlRun; before: only while it scans (WORLD.live), so a paused plant read no
+       valve: the spray flows FT-FW1109 / 1119 / 1149 / 1059 were empty at a load until the plant ran. The positions (MST) are the state */
+    if (typeof S === 'undefined' || !window.WORLD || !WORLD.on || !WORLD.idx || typeof MST === 'undefined') return null;
     const C = AN_UNIT._dv || (AN_UNIT._dv = {});
     let s = C[name];
     if (!s) {
@@ -2988,6 +2991,7 @@ function anTagsNow(U) {
   anCdTagStep(U, ld);
   anFwTagStep(U);
   anAsTagStep(U, 0);
+  if (U.hxM && isFinite(U.hxM.wl) && typeof steamTsat === 'function') anHxRun(U, 0, steamTsat(U.Pd)); /* beta.245: the chain outputs of the loaded plant (no settle: a loaded metal only) */
   anHxTagStep(U, 0);
 }
 function anHxTagStep(U, dt) {
@@ -4952,6 +4956,74 @@ function anGasA0() {
     sp: [one('TIFG1009A'), one('TIFG1009B')]
   });
 }
+/* the cyclone refractory, the heat transfer chain (hx.js anHxStep) and the reheat outlet pipe, one scan; U.hxO = its outputs.
+   Beta.245 (Jennie, Rosé real-click test at 150 MW: values "-----" while paused): it ran only inside the unit step, so a state saved
+   by an older engine (src/data/st150.txt, 11-19: U.hxO without p1o / e1o / e2o of audit 2026-11-21 B1) showed TT-BR1020 / 1030 /
+   1120-1 / -2 empty until the plant ran. A load runs it at dt 0 (anTagsNow): every metal, lining and pipe temperature stays (each
+   moves by x dt), the outputs are those of the loaded plant */
+function anHxRun(U, dt, tsat) {
+  /* the cyclone refractory (AN_FG): the gas touches only the hot face (U.Tcy) through the film hA (effectiveness 1 - exp(-hA / gas
+     cp)); the hot face conducts into the back of the lining (U.TcyB) */
+  const K = AN_FG,
+    gcp = isFinite(U.gcp) ? U.gcp : 0;
+  if (!isFinite(U.tgF)) U.tgF = U.Tb;
+  if (!isFinite(U.Tcy)) U.Tcy = U.tgF;
+  if (!isFinite(U.TcyB)) U.TcyB = U.Tcy;
+  const eCy = gcp > 0.01 ? 1 - Math.exp(-K.hA / gcp) : 1,
+    qCy = gcp * eCy * (U.tgF - U.Tcy) /* kW, gas to the hot face */,
+    qCyB = K.kAB * (U.Tcy - U.TcyB); /* kW, hot face to the back */
+  U.Tcy += ((qCy - qCyB) * dt) / K.mF;
+  U.TcyB += (qCyB * dt) / K.mB;
+  const tG = gcp > 0.01 ? U.tgF - qCy / gcp : U.Tcy; /* gas into the backpass */
+  U.tgB = tG;
+  /* the cyclone outlet thermocouples TT-FG1095-A / B read the gas leaving the cyclones */
+  U.gCy = [tG, tG];
+  const tcr = U.xt && U.xt.T && isFinite(U.xt.T.cr) ? U.xt.T.cr : tsat,
+    /* the reheater steam: the HP turbine exhaust less the No.2 HP heater extraction (U.hpF2, its drain) and the HP gland leak-off
+       (2.7 % of the HP steam: HEAT_BALANCE.md 458.7 T/H to the turbine, 401 T/H to the reheater, 45.15 T/H No.2 HPH), plus the HP
+       bypass */
+    mRh = Math.max(0, (U.mhp || 0) + Math.max(0, U.ms * 0.973 - (isFinite(U.hpF2) ? U.hpF2 : 0)));
+  const H = anHxStep(
+    U,
+    {
+      Tg: tG,
+      mG: isFinite(U.mG) ? U.mG : 0,
+      Tb: U.Tb,
+      phi: isFinite(U.phi) ? U.phi : 0,
+      Tamb: U.Tamb,
+      Tm0: U.hxT0,
+      Pd: U.Pd,
+      Pms: U.Pms,
+      mOut: U.ms + U.mb + (U.msb || 0) + (U.msv || 0),
+      w1: U.w1s,
+      w2: U.w2s,
+      wrh: U.wrhs,
+      Tsp: U.tSp,
+      Prh: U.Prh,
+      mRh,
+      Tcr: tcr,
+      mEco: U.mEco,
+      mL: (U.tlE || 0) / 3.6 /* an economizer tube leak, kg/s (hx.js) */,
+      Tfw: U.hpT2,
+      dR: isFinite(U.dmpR) ? U.dmpR : 1 /* no position read: open */,
+      dS: isFinite(U.dmpS) ? U.dmpS : 1
+    },
+    dt
+  );
+  U.hxT0 = NaN;
+  U.hxQp = H.qP;
+  U.hxHe = H.hEco;
+  U.hxO = H;
+  /* TT-HR1002 is on the reheater outlet pipe, outside the gas path (live Cold start 2026-11-14): heated by the steam that flows out of
+     the last reheater bank, losing to the room through its lagging (rhPipeUA). No steam: the pipe cools */
+  const wR = mRh + Math.max(0, U.wrhs || 0);
+  if (!isFinite(U.TpR)) U.TpR = H.rh;
+  U.TpR +=
+    (((wR / 3.6) * 2.2 * (H.rh - U.TpR) - (U.rhPipeUA || 0.02) * (U.TpR - U.Tamb)) * dt) / (U.rhPipeM || 10000);
+  U.TpR = Math.max(U.Tamb, U.TpR);
+  U.wR = wR;
+  return H;
+}
 function anUnitStep0(dt) {
   const U = AN_UNIT;
   if (!U.on || !(dt > 0)) return;
@@ -5558,69 +5630,7 @@ function anUnitStep0(dt) {
      the curves of the old load path (sprayCurve, natSH / natRH, suCurve, slopeSH / RH, the lag tauQ and the firing ratio), which were
      design and trend curves, and the two-lump SH / RH metal of the Cold path */
   const tsat = tsatOf(U.Pd);
-  let H;
-  {
-    /* the cyclone refractory (AN_FG): the gas touches only the hot face (U.Tcy) through the film hA (effectiveness 1 - exp(-hA / gas
-       cp)); the hot face conducts into the back of the lining (U.TcyB) */
-    const K = AN_FG,
-      gcp = isFinite(U.gcp) ? U.gcp : 0;
-    if (!isFinite(U.tgF)) U.tgF = U.Tb;
-    if (!isFinite(U.Tcy)) U.Tcy = U.tgF;
-    if (!isFinite(U.TcyB)) U.TcyB = U.Tcy;
-    const eCy = gcp > 0.01 ? 1 - Math.exp(-K.hA / gcp) : 1,
-      qCy = gcp * eCy * (U.tgF - U.Tcy) /* kW, gas to the hot face */,
-      qCyB = K.kAB * (U.Tcy - U.TcyB); /* kW, hot face to the back */
-    U.Tcy += ((qCy - qCyB) * dt) / K.mF;
-    U.TcyB += (qCyB * dt) / K.mB;
-    const tG = gcp > 0.01 ? U.tgF - qCy / gcp : U.Tcy; /* gas into the backpass */
-    U.tgB = tG;
-    /* the cyclone outlet thermocouples TT-FG1095-A / B read the gas leaving the cyclones */
-    U.gCy = [tG, tG];
-    const tcr = U.xt && U.xt.T && isFinite(U.xt.T.cr) ? U.xt.T.cr : tsat,
-      /* the reheater steam: the HP turbine exhaust less the No.2 HP heater extraction (U.hpF2, its drain) and the HP gland leak-off
-         (2.7 % of the HP steam: HEAT_BALANCE.md 458.7 T/H to the turbine, 401 T/H to the reheater, 45.15 T/H No.2 HPH), plus the HP
-         bypass */
-      mRh = Math.max(0, (U.mhp || 0) + Math.max(0, U.ms * 0.973 - (isFinite(U.hpF2) ? U.hpF2 : 0)));
-    H = anHxStep(
-      U,
-      {
-        Tg: tG,
-        mG: isFinite(U.mG) ? U.mG : 0,
-        Tb: U.Tb,
-        phi: isFinite(U.phi) ? U.phi : 0,
-        Tamb: U.Tamb,
-        Tm0: U.hxT0,
-        Pd: U.Pd,
-        Pms: U.Pms,
-        mOut: U.ms + U.mb + (U.msb || 0) + (U.msv || 0),
-        w1: U.w1s,
-        w2: U.w2s,
-        wrh: U.wrhs,
-        Tsp: U.tSp,
-        Prh: U.Prh,
-        mRh,
-        Tcr: tcr,
-        mEco: U.mEco,
-        mL: (U.tlE || 0) / 3.6 /* an economizer tube leak, kg/s (hx.js) */,
-        Tfw: U.hpT2,
-        dR: isFinite(U.dmpR) ? U.dmpR : 1 /* no position read: open */,
-        dS: isFinite(U.dmpS) ? U.dmpS : 1
-      },
-      dt
-    );
-    U.hxT0 = NaN;
-    U.hxQp = H.qP;
-    U.hxHe = H.hEco;
-    U.hxO = H;
-    /* TT-HR1002 is on the reheater outlet pipe, outside the gas path (live Cold start 2026-11-14): heated by the steam that flows out of
-       the last reheater bank, losing to the room through its lagging (rhPipeUA). No steam: the pipe cools */
-    const wR = mRh + Math.max(0, U.wrhs || 0);
-    if (!isFinite(U.TpR)) U.TpR = H.rh;
-    U.TpR +=
-      (((wR / 3.6) * 2.2 * (H.rh - U.TpR) - (U.rhPipeUA || 0.02) * (U.TpR - U.Tamb)) * dt) / (U.rhPipeM || 10000);
-    U.TpR = Math.max(U.Tamb, U.TpR);
-    U.wR = wR;
-  }
+  const H = anHxRun(U, dt, tsat);
   for (const e of U.ld) {
     const pr = e.pr;
     pr.ld = 0;
