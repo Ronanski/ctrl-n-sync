@@ -5,6 +5,8 @@
         MW, main steam pressure, drum level and main steam temperature stay inside the bands below (ISA-77.20: no drift at steady state).
      2. the same run again in a fresh page gives the same numbers (determinism).
      3. SAVE then LOAD of a save point at the end of run 1 gives back the same plant (U fields, sheet times).
+     4. the save point has its map (format 2, engine/state.js) and its keyframe loaded into a page whose sheets are in another order
+        gives back the same plant (a save point is read by sheet name, not by place).
    Usage: node tests/gate/behaviour.cjs <station.html> [--mins 20]. Exit 0 = pass. PLAYWRIGHT_MODULE / CHROMIUM env as the other tools. */
 const fs = require('fs'),
   url = require('url');
@@ -79,7 +81,18 @@ async function run(b, mins, withSave) {
       await new Promise(r => setTimeout(r, 3000));
       AN.extClock = true;
       AN.run = true;
-      return { same: pick() === before, before, after: pick() };
+      const same = pick() === before;
+      /* 4: another sheet order */
+      const byName = () => JSON.stringify([AN.unit.MW, AN.unit.Pd, AN.unit.Tb, AN.unit.Tw, AN.unit.bedI, AN.sheets.map(s => [s.name, s.S && s.S.rt ? s.S.rt.t : null]).sort()]);
+      const kf = AN.engState.capture(),
+        b2 = byName(),
+        fmt = kf.$o && kf.$o.map ? 2 : 1;
+      AN.sheets.reverse();
+      AN.unit.Pd += 5;
+      AN.engState.apply(JSON.parse(JSON.stringify(kf)));
+      const order = { fmt, same: byName() === b2, warn: AN.stWarn };
+      AN.sheets.reverse();
+      return { same, before, after: pick(), order };
     }).catch(e => ({ same: false, err: String(e) }));
   }
   await p.close();
@@ -99,6 +112,8 @@ async function run(b, mins, withSave) {
     ok(!a.errs.length, 'no page error' + (a.errs.length ? ': ' + a.errs.slice(0, 3).join(' | ') : ''));
     for (const q of Object.keys(BAND)) ok(isFinite(a.s0[q]) && a.mx[q] <= BAND[q], `${q} start ${f(a.s0[q])} end ${f(a.last[q])} max move ${f(a.mx[q])} (band ${BAND[q]})`);
     ok(a.save && a.save.same, 'SAVE then LOAD gives back the same plant' + (a.save && !a.save.same ? ' ' + JSON.stringify(a.save).slice(0, 300) : ''));
+    const o = a.save && a.save.order;
+    ok(o && o.fmt === 2 && o.same && !(o.warn || []).length, 'save point read by sheet name: another sheet order gives the same plant' + (o && !(o.fmt === 2 && o.same) ? ' ' + JSON.stringify(o).slice(0, 300) : ''));
     const c = await run(b, MINS, false);
     const keys = ['t', 'MW', 'Pms', 'Pd', 'Tb', 'coal', 'mst'];
     const same = keys.every(k => (isNaN(a.last[k]) && isNaN(c.last[k])) || a.last[k] === c.last[k]);
