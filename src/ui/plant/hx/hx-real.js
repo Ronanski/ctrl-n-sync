@@ -144,12 +144,14 @@
     const t = o.loop || '',
       dp = o.pvdp == null ? 1 : o.pvdp;
     return {
-      box: [-49, -19, 49, 19],
-      ports: { l: [-48, 0], r: [48, 0], t: [0, -18], b: [0, 18] },
+      /* audit 2026-11-21 B3: a 4 / 5 digit measured value (1483, 122.3) ran into the set point words: the display is wider, the
+         measured value stands high on the left, the set point (SP, ISA-5.5 short form) low on the right */
+      box: [-61, -19, 61, 19],
+      ports: { l: [-60, 0], r: [60, 0], t: [0, -18], b: [0, 18] },
       svg:
-        '<rect class="rx" x="-48" y="-18" width="96" height="36" rx="5"/><rect class="rxscr" x="-44" y="-14" width="88" height="28" rx="3"/>' +
-        `<text class="rx-pv" x="-39" y="6" data-lp="${t}|pv|${dp}">-----</text><text class="rx-sl" x="40" y="-3" text-anchor="end">Set point</text>` +
-        `<text class="rx-sv" x="40" y="9.4" text-anchor="end"><tspan data-lp="${t}|sv|${dp}">-----</tspan><tspan class="rx-su"> ${o.unit || ''}</tspan></text>`
+        '<rect class="rx" x="-60" y="-18" width="120" height="36" rx="5"/><rect class="rxscr" x="-56" y="-14" width="112" height="28" rx="3"/>' +
+        `<text class="rx-pv" x="-52" y="3.5" data-lp="${t}|pv|${dp}">-----</text><text class="rx-sl" x="52" y="-4" text-anchor="end">SP</text>` +
+        `<text class="rx-sv" x="52" y="10.5" text-anchor="end"><tspan data-lp="${t}|sv|${dp}">-----</tspan><tspan class="rx-su"> ${o.unit || ''}</tspan></text>`
     };
   };
   /* louver damper across a gas pass that goes down: k blades, shut = flat. The page turns [data-blr] by the opening */

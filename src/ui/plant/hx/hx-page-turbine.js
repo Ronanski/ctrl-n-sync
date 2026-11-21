@@ -256,7 +256,7 @@
         { x: GX + 14, y: 34, s: 'to the grid', cls: 'hx-note' },
         { x: 20, y: 788, s: 'AUTOMATIC TURBINE START-UP', cls: 'hx-name' },
         { x: 1404, y: 60, s: 'TRIP FIRST OUT · red = came first', cls: 'hx-name' },
-        { x: 1250, y: PY + 4, s: 'push buttons work in RUN', cls: 'hx-note' },
+        { x: 1149, y: PY + 36, s: 'push buttons work in RUN', cls: 'hx-note' },
         { x: VX - 10, y: 220, s: 'AT THE TURBINE', cls: 'hx-name' }
       ]
     }

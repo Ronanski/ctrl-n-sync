@@ -187,6 +187,39 @@
     el.dispatchEvent(
       new MouseEvent('click', { bubbles: true, cancelable: true, clientX: lastXY[0], clientY: lastXY[1] })
     );
+  /* audit 2026-11-21 A1: a click on a measured value (a transmitter on its line, a value beside its equipment) opened nothing. It opens
+     the PERMISSIVE · TREND · MONITOR faceplate of fp-pop.js (the house faceplate, one look): the value now and its trend. The trend
+     starts with what the trend recorder of the HX pages (HX.rec, simulation time) already holds for that value, so it is not empty. */
+  function valueCard(anchor, name, keys) {
+    if (!window.LS_FPOP || !LS_FPOP.info || !anchor) return false;
+    const vs = keys
+      ? [...anchor.querySelectorAll('[data-hv]')].filter(e => keys.includes(e.dataset.hv))
+      : [...anchor.querySelectorAll('[data-hv]')];
+    const rows = (vs.length ? vs : (keys || []).map(k => ({ dataset: { hv: k, dp: 1 } }))).map(e => {
+      const k = e.dataset.hv,
+        u = e.parentNode && e.parentNode.querySelector ? e.parentNode.querySelector('.hx-unit') : null,
+        lb = e.parentNode && e.parentNode.previousElementSibling && e.parentNode.previousElementSibling.classList.contains('hx-lab') ? e.parentNode.previousElementSibling.textContent : '';
+      return { k, dp: e.dataset.dp == null ? 1 : +e.dataset.dp, unit: u ? u.textContent.trim() : '', lb: lb || (e.parentNode && e.parentNode.firstChild && e.parentNode.firstChild.nodeType === 3 ? e.parentNode.firstChild.textContent.trim() : '') };
+    });
+    if (!rows.length) return false;
+    const title = name || anchor.getAttribute('aria-label') || rows[0].k,
+      tagEl = anchor.querySelector('.hx-tag'),
+      r0 = rows[0],
+      h = 'Trend · ' + (r0.lb || title) + ' · ' + r0.k,
+      H = (window.LS_FPHIST = window.LS_FPHIST || {}),
+      buf = HX.rec && HX.rec.watch ? HX.rec.watch(r0.k) : null /* recorded from now on as well, for the next time */,
+      now = Date.now(),
+      tNow = HX.data.time(),
+      spd = call(() => (AN.spd > 0 ? AN.spd : 1), 1);
+    if (buf && buf.length && !(H['trend:' + h] && H['trend:' + h].length))
+      H['trend:' + h] = buf.filter(p => p[1] != null && isFinite(p[1])).map(p => [now - ((tNow - p[0]) / spd) * 1000, p[1]]);
+    return LS_FPOP.info({
+      n: title,
+      t: tagEl ? tagEl.textContent : r0.k,
+      mon: rows.map(r => [(r.lb || title) + (rows.length > 1 && !r.lb ? ' · ' + r.k : ''), () => HX.data.value(r.k), r.unit, r.dp]),
+      trend: { h, fn: () => HX.data.value(r0.k) }
+    });
+  }
   const ALC = { t: 0, m: {} };
   HX.data = {
     time: () => call(() => (window.AN && AN.unit && isFinite(AN.unit.t) ? AN.unit.t : null), Date.now() / 1000),
@@ -321,21 +354,35 @@
           new MouseEvent('click', { bubbles: true, cancelable: true, clientX: lastXY[0], clientY: lastXY[1] })
         );
     },
-    open(kind, id, second) {
+    open(kind, id, second, anchor, name) {
+      if (kind === 'value') return void valueCard(anchor, name, [id]);
       if (kind === 'loop') return click(S && S.loops[id]);
-      click(pq(second ? '[data-yn="' + id + '"]' : '[data-hit="' + id + '"]'));
+      /* audit 2026-11-21 A1 / A2: a piece of plant with no faceplate of its own (strainer, tube cleaning, generator values) or a
+         Y square whose target is missing opened nothing under a hand cursor: the values it shows, with their trend */
+      if (!click(pq(second ? '[data-yn="' + id + '"]' : '[data-hit="' + id + '"]'))) valueCard(anchor, name, null);
     }
   };
   /* one HX page = one page of the Plant view: the HTML page of HX inside the 1920 x 1000 frame of the Plant view */
   const FW = 1920,
     FH = 1140;
+  /* audit 2026-11-21 C10: on a tablet (1280 x 800) the Plant view fitted the whole 1920 x 1140 frame into the area, so every word
+     of the drawing came out at 0.6 (6-7 px). Where the area is narrower than 1500 px the frame is the size of the area itself (1 : 1):
+     the page scrolls inside it and the drawing keeps its readable width (hx.css .hx-real min-width); a desktop keeps the whole page */
+  const frame = () => {
+    const e = document.getElementById('plsvg'),
+      r = e ? e.getBoundingClientRect() : null;
+    return r && r.width > 300 && r.width < 1500 && r.height > 300 ? [Math.round(r.width), Math.round(r.height)] : [FW, FH];
+  };
   function screen(def) {
     return function (g, api) {
       S = store(api, g);
       const fo = document.createElementNS(NS, 'foreignObject');
-      for (const [a, v] of Object.entries({ x: 0, y: 0, width: FW, height: FH })) fo.setAttribute(a, v);
+      const [fw, fh] = frame();
+      for (const [a, v] of Object.entries({ x: 0, y: 0, width: fw, height: fh })) fo.setAttribute(a, v);
       const host = document.createElement('div');
       host.className = 'hx-app';
+      /* C10: the 1 : 1 frame of a tablet scrolls (the page is taller than the area) */
+      if (fw < FW) host.style.overflow = 'auto';
       fo.append(host);
       g.append(fo);
       /* a link to another page: the page list of the Plant view opens it, as a link of an old page does (hmi-mock.js data-go).
@@ -371,8 +418,12 @@
       num: 'R' + String(i + 1).padStart(2, '0'),
       name: def.title.toUpperCase(),
       src: '',
-      w: FW,
-      h: FH,
+      get w() {
+        return frame()[0];
+      },
+      get h() {
+        return frame()[1];
+      },
       v2: true,
       screen: id,
       style: 'steel',

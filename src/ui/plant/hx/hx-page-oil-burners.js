@@ -175,7 +175,7 @@
            NOT USE M.008D, TPs 2 s -> FF M.008F, which lets FICDO1043A ~ D go to AUTO under FIC-OM); lit = the selection of M.008F.
            No operator page had them: the burner oil valves stayed forced to MANUAL */
         at(HX.B('OIL MASTER USE', 'data-apb="ABC-003E|M.008C|M.008F=1"', { press: true }), 1100, 915, { id: 'omu' }),
-        at(HX.B('NOT USE', 'data-apb="ABC-003E|M.008D|M.008F=0"', { press: true }), 1100, 965, { id: 'omn' }),
+        at(HX.B('OIL MASTER NOT USE', 'data-apb="ABC-003E|M.008D|M.008F=0"', { press: true }), 1100, 965, { id: 'omn' }),
         ...B.flatMap(b => b.items),
         at(L('combustion-air', 'Hot secondary air', { back: true }), AIRX + 80, 90, { id: 'hsa' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-M): the atomizing air of the burners is plant air (DITL-07 row 11

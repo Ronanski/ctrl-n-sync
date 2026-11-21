@@ -28,6 +28,8 @@
       AGT: { n: 'Z-1101', t: 'Phosphate tank agitator', fld: 'agt', io: 'MIR-Z1101A', d: 'STN101 DI', fieldOp: true, why: W }
     },
     unit: {
+      /* audit 2026-11-21 B1: the water chemistry of unit.js (AN_CHEM) */
+      'AT-SP1007': 'sp1007', 'AT-SP1008': 'sp1008', 'AT-SP1013': 'sp1013', 'AT-SP1014': 'sp1014', 'AT-SP1015': 'sp1015', 'AT-SP1017': 'sp1017',
       'AT-SP1001': 'sp1001', 'AT-SP1002': 'sp1002', 'AT-SP1003': 'sp1003', 'AT-SP1004': 'sp1004', 'AT-SP1005': 'sp1005',
       'AT-SP1006': 'sp1006', 'AT-SP1009': 'sp1009', 'AT-SP1010': 'sp1010', 'AT-SP1011': 'sp1011', 'AT-SP1012': 'sp1012',
       'AT-SP1016': 'sp1016', 'AT-SP1018': 'sp1018', 'AT-SP1019': 'sp1019', 'AT-SP1020': 'sp1020', 'AT-SP1021': 'sp1021'

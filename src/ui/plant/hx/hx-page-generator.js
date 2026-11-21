@@ -155,7 +155,7 @@
       texts: [
         { x: LX + 14, y: 48, s: 'to the grid', cls: 'hx-note' },
         { x: 890, y: 60, s: 'GENERATOR VALUES AND MONITORING', cls: 'hx-name' },
-        { x: 866, y: 645, s: 'BREAKER STATUS AND PROTECTION · Y = true', cls: 'hx-name' },
+        { x: 866, y: 645, s: 'BREAKER STATUS AND PROTECTION', cls: 'hx-zone' },
         {
           x: 866,
           y: 890,

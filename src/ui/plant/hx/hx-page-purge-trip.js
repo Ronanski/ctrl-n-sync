@@ -92,7 +92,7 @@
     group: 'Boiler',
     title: 'Purge and trip',
     about:
-      'The furnace purge on the plant: air from the fans through the furnace to the stack, each permissive at its equipment (DITL-01), the purge sequence (DITL-02) and the master fuel trip (DITL-03A). Y = true.',
+      'The furnace purge on the plant: air from the fans through the furnace to the stack, each permissive at its equipment (DITL-01), the purge sequence (DITL-02) and the master fuel trip (DITL-03A). Y = yes, N = no.',
     plan: {
       look: 'real',
       w: 1760,
@@ -166,9 +166,9 @@
         at(B('Purge ready', 'data-do="DITL-02|9|YES|NO"', { w: CW }), QX, QY + 8 * QD + 10, { id: 'pr' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-H): the FURNACE PURGE START push button (DITL-02 input row 6, M.0500) was on
            temporary page 10 only, so the HX page had no way to start the purge: the same machine of page 10 (its faceplate START) */
-        at(M('cubicle', 'Furnace purge', 'Furnace purge start', [], { tag: 'screen push button · DITL-02' }), QX - 100, QY + 9 * QD + 22, {
+        at(M('cubicle', 'Furnace purge', 'Furnace purge start', [], { tag: 'screen push button · DITL-02' }), QX - CW / 2 + 24, QY + 9 * QD + 22, {
           id: 'pbp',
-          lab: 'b'
+          lab: 'r'
         }),
 
         /* ---- master fuel trip (DITL-03A) ---- */
@@ -178,11 +178,11 @@
           })
         ),
         at(B('Master fuel trip', 'data-dfo="DITL-03A|16|1-18"', { w: 330 }), 1570, TY, { id: 'mfs' }),
-        at(L('combustion-air', 'Fans and air flow', { back: true }), 1485, TY + 50, { id: 'cal' }),
-        at(L('furnace-gas', 'Furnace and flue gas', { back: true }), 1655, TY + 50, { id: 'fgl' }),
-        at(L('oil-burners', 'Burners', { back: true }), 1485, TY + 92, { id: 'obl' }),
-        at(L('coal', 'Coal feeders', { back: true }), 1655, TY + 92, { id: 'col' }),
-        at(L('turbine', 'Turbine trip', { back: true }), 1485, TY + 128, { id: 'tbl' })
+        /* audit 2026-11-21 C9: the links to the pages of the trip causes stood beside the master fuel trip boxes, which the station shows
+           in the Conditions popup: alone at the far bottom right. One row under the drawing, in the order of the trip causes */
+        ...[['combustion-air', 'Fans and air flow', 'cal'], ['furnace-gas', 'Furnace and flue gas', 'fgl'], ['oil-burners', 'Burners', 'obl'], ['coal', 'Coal feeders', 'col'], ['turbine', 'Turbine trip', 'tbl']].map(
+          (k, i) => at(L(k[0], k[1], { back: true }), 560 + i * 175, 960, { id: k[2] })
+        )
       ],
       pipes: [
         /* air in */
@@ -217,7 +217,7 @@
         { x: 1330, y: 250, s: 'Total air flow', key: 'ABC-002|SI0060', unit: 't/h' },
         { x: 1330, y: 266, s: 'Pressure 1', key: 'PT-FG1085', unit: MM, dp: 0 },
         { x: 1330, y: 282, s: 'Pressure 2', key: 'PT-FG1086', unit: MM, dp: 0 },
-        { x: 1330, y: 298, s: 'Pressure 3', key: 'PT-FG1087', unit: MM, dp: 0 },
+        { x: 1330, y: 298, s: 'Pressure 3', key: 'PT-FG1087-1', unit: MM, dp: 0 },
         { x: 1330, y: 314, s: 'Lower bed temperature', key: 'TT-FG1090', unit: '°C', dp: 0 },
         { x: 1330, y: 330, s: 'Cyclone outlet A', key: 'TT-FG1095-A', unit: '°C', dp: 0 },
         { x: 1330, y: 346, s: 'Cyclone outlet B', key: 'TT-FG1095-B', unit: '°C', dp: 0 },

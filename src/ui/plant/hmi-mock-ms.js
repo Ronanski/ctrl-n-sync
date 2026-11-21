@@ -61,6 +61,17 @@
       }
     },
     unit: {
+      /* audit 2026-11-21 B1: transmitters no logic sheet reads, from the plant model (AN.unit.tt, unit.js anHxTagStep / boiler.js) */
+      'TT-MS1007': 'tt:TT-MS1007',
+      'PT-HR1001': 'tt:PT-HR1001',
+      'TT-BR1020': 'tt:TT-BR1020',
+      'TT-BR1030': 'tt:TT-BR1030',
+      'TT-BR1040': 'tt:TT-BR1040',
+      'TT-BR1110': 'tt:TT-BR1110',
+      'TT-BR1120-1': 'tt:TT-BR1120-1',
+      'TT-BR1120-2': 'tt:TT-BR1120-2',
+      'PT-BR1130': 'tt:PT-BR1130',
+      'PT-BR1150': 'tt:PT-BR1150',
       RPM: 'rpm',
       /* same model values as page 06 FEEDWATER (unit.js anFwTagStep, IRENE 3.2.1-beta.16): one tag, one value */
       'PT-FW1160': 'tt:PT-FW1160',

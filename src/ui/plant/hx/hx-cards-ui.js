@@ -324,7 +324,7 @@
   }, 1000);
   /* the pages call this for every click on an equipment or on its Y / N square */
   HX.card = function (kind, id, second, anchor, name) {
-    if (!HX.data.card || !HX.data.card(kind, id)) return HX.data.open(kind, id, second);
+    if (!HX.data.card || !HX.data.card(kind, id)) return HX.data.open(kind, id, second, anchor, name);
     const c = show(kind, id, second, anchor);
     if (name && c.name !== name) {
       c.name = name;

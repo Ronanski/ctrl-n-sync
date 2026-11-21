@@ -46,7 +46,7 @@
     RX = 1420 /* the condensate line down past the three heaters */,
     HX1 = 1610,
     HAY = 396,
-    HBY = 615,
+    HBY = 640,
     HCY = 822 /* heater No. 1 (on top), No. 2, No. 3 */,
     HS = 1.5,
     WX = HX1 - 53 * HS /* the water box nozzles of the heaters */,

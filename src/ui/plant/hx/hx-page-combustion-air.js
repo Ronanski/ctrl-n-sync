@@ -89,8 +89,8 @@
         at(L('coal', 'Cold primary air to the coal feeders'), 560, 780, { id: 'cfl' }),
         at(L('furnace-gas', 'Hot primary air to the furnace'), 330, 430, { id: 'pal' }),
         at(L('coal', 'To the coal pipes'), 330, 360, { id: 'cpl' }),
-        at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', []), 90, 930, { id: 'loa', sc: 0.8, lab: 'r' }),
-        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 330, 930, { id: 'lob', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', []), 90, 952, { id: 'loa', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 330, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
 
         /* ---- secondary air ---- */
         at(M('fan', 'SAF', 'Secondary air fan', [V('Current', 'IT-F1054', 'A')]), SFX, FY, {
@@ -113,7 +113,7 @@
           ]),
           BAX,
           BY,
-          { id: 'fa', sc: BS, lab: 'b' }
+          { id: 'fa', sc: BS, lab: 'b', yn: [77.5, -46] }
         ),
         at(
           M('fan', 'FA BLOWER-B', 'Fluidizing air blower B', [
@@ -122,7 +122,7 @@
           ]),
           BBX,
           BY,
-          { id: 'fb', sc: BS, lab: 'b' }
+          { id: 'fb', sc: BS, lab: 'b', yn: [77.5, -46] }
         ),
         at(C('FICFA1055A', 'Inlet damper A', { tag: 'FCV-FA1055-A1' }), 170, BY, { id: 'fad', lab: 'b' }),
         at(C('FICFA1055B', 'Inlet damper B', { tag: 'FCV-FA1055-B1' }), 600, BY, { id: 'fbd', lab: 'b' }),
@@ -140,7 +140,7 @@
         }),
         at(X('XV-FA1055-B3', 'Outlet valve B', { cname: 'Fluidizing air blower B outlet valve' }), 870, 110, {
           id: 'ovb',
-          lab: 'b'
+          lab: 't'
         }),
         at(L('furnace-gas', 'Fluidizing air to the seal pots'), 1300, HY, { id: 'fal' })
       ],
@@ -176,7 +176,7 @@
         { med: 'air', w: W_S, pts: [[1000, HY], 'fal.l'], flow: FA + '|' + FB }
       ],
       taps: [
-        { x: 440, y: 700, side: 'b', label: 'Fan outlet', key: 'PT-FA1075', unit: MM, dp: 0, tag: 'PT-FA1075' },
+        { x: 440, y: 700, side: 'r', label: 'Fan outlet', key: 'PT-FA1075', unit: MM, dp: 0, tag: 'PT-FA1075' },
         {
           x: 680,
           y: 700,

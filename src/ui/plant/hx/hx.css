@@ -441,15 +441,18 @@
 .hx-real .hx-st { font-size: 12px; }
 .hx-real .hx-end { font-size: 10.8px; }
 .hx-real .hx-zone { font-size: 11.4px; }
-.hx-process svg.hx-real { min-width: 1280px; }
+/* audit 2026-11-21 C10: at 1280 the 1760-wide drawing was squeezed to 0.73 (tags 7-8 px). 1600 keeps every text 9.5 px or more; a narrower screen scrolls */
+.hx-process svg.hx-real { min-width: 1600px; }
+/* audit 2026-11-21 C1: the plate under a word of the drawing (hx-core.js plates): the pipe breaks under the label, as on a P&ID */
+.hx-process svg .hx-plate { fill: var(--hx-panel); stroke: none; pointer-events: none; }
 /* words inside the equipment */
 .hx-process svg .hx-node text.rx-in, .hx-process svg .hx-node text.rx-pv, .hx-process svg .hx-node text.rx-sl, .hx-process svg .hx-node text.rx-sv { stroke: none; }
 .hx-process svg .hx-node text.rx-in2 { stroke: var(--rx-void); stroke-width: 3px; }
 .rx-in { font: 600 8px var(--hx-cond); letter-spacing: 0.09em; text-transform: uppercase; fill: var(--hx-mute) !important; }
 .rx-in2 { font: 600 8.8px var(--hx-cond); fill: var(--hx-ink2) !important; }
-.rx-pv { font: 600 15px var(--hx-mono); font-variant-numeric: tabular-nums; }
+.rx-pv { font: 600 14px var(--hx-mono); font-variant-numeric: tabular-nums; }
 .rx-sl { font: 600 8.4px var(--hx-cond); letter-spacing: 0.08em; text-transform: uppercase; fill: var(--hx-mute) !important; }
-.rx-sv { font: 600 11px var(--hx-mono); font-variant-numeric: tabular-nums; }
+.rx-sv { font: 600 10.4px var(--hx-mono); font-variant-numeric: tabular-nums; }
 .rx-su { font: 400 9px var(--hx-font); fill: var(--hx-mute) !important; }
 
 /* status lists (permissives, trips): Y = red = true, N = green */
@@ -595,8 +598,10 @@
 .hx-hook.press { cursor: pointer; outline: none; }
 .hx-hook.press rect { stroke-width: 1.6; }
 .hx-hook.press:hover rect, .hx-hook.press:focus-visible rect { stroke: var(--hx-accent); }
-.hx-hook.press.on rect { fill: var(--hx-accent); stroke: var(--hx-accent); }
-.hx-hook.press.on .hx-hkl { fill: var(--hx-bg) !important; }
+/* audit 2026-11-21 C7: the selected one of a pair of selection push buttons (HYDRAULIC / DAMPER CONTROL) was a solid blue block
+   next to a dark one and read as another kind of button: the same button, its edge and words in the accent colour */
+.hx-hook.press.on rect { fill: var(--hx-panel2); stroke: var(--hx-accent); stroke-width: 2.6; }
+.hx-hook.press.on .hx-hkl { fill: var(--hx-accent) !important; font-weight: 700; }
 .hx-hook.run rect { stroke: var(--hx-run); }
 .hx-hook.plain .hx-hkl { font-size: 10.6px; font-weight: 500; }
 .hx-hook.plain.run rect { fill: var(--hx-run); }
