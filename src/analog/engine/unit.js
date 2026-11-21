@@ -4910,7 +4910,6 @@ function anUnitStep(dt) {
     anGenInt(dt);
     anHistStep(dt); /* hist.js: the faceplate trend history, one sample a simulated second */
     anSoeStep(); /* soe.js: the sequence of events of the MFT and the turbine trip, one look per step */
-    anSopStep(); /* sop-score.js: the PR-OPE-5002 milestones and trips of the trainee, one look per step (FURNACE PURGE COMPLETED is short) */
   } finally {
     if (M) M.on = 0;
   }
