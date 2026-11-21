@@ -50,10 +50,27 @@ function tcsGridHz(t) {
 function tcsWrap(a) {
   return ((((a + 180) % 360) + 360) % 360) - 180;
 }
+/* the generator quantities that follow from the unit as it stands (the field state, the speed, the grid): a state made between two
+   scans (the panel read while the plant is paused, a save point of before beta.236) shows what the next scan starts from, not "--".
+   The same lines the scan runs (tcsGenStep): the flux is the voltage it has, the field holds that flux (steady state: efd = eq), the
+   shaft frequency is the speed / 60 */
+function tcsGenFill(U, g) {
+  if (!isFinite(g.eq)) g.eq = g.f41 ? g.V || 0 : 0;
+  if (!isFinite(g.efd)) g.efd = g.eq;
+  if (!isFinite(g.ai)) g.ai = g.eq;
+  if (!isFinite(g.vr)) g.vr = 1;
+  if (!isFinite(g.th)) g.th = 120;
+  const g52 = !!U.tb && (U.tb.st === 'sync' || U.tb.st === 'load');
+  if (!isFinite(g.fgr)) g.fgr = isFinite(U.gridHz) ? U.gridHz : tcsGridHz(isFinite(U.t) ? U.t : g.t || 0);
+  if (!isFinite(g.fg)) g.fg = ((U.tb && U.tb.rpm) || 0) / 60;
+  if (!isFinite(g.slip)) g.slip = g.fg - g.fgr;
+  if (!isFinite(g.dv)) g.dv = (g52 ? 1 : g.V || 0) - 1;
+  return g;
+}
 function tcsGen(U) {
-  if (U.gen) return U.gen;
+  if (U.gen) return tcsGenFill(U, U.gen);
   const on = !!U.tb && (U.tb.st === 'sync' || U.tb.st === 'load');
-  return (U.gen = {
+  return tcsGenFill(U, (U.gen = {
     f41: on,
     V: on ? 1 : 0,
     rated: on,
@@ -67,7 +84,7 @@ function tcsGen(U) {
     last: '',
     syn: 'AUTO' /* SYN selector of the panel: AUTO (ASD1) or MANUAL */,
     avr: 'AUTO' /* AVR AUTO (voltage regulator) or MANUAL (field set point) */
-  });
+  }));
 }
 function tcsGenStep(U, dt) {
   const g = tcsGen(U),
@@ -75,12 +92,7 @@ function tcsGenStep(U, dt) {
     tb = U.tb,
     g52 = tb.st === 'sync' || tb.st === 'load',
     c = U.tc;
-  /* a save point of before beta.236 has no field state: the flux is the voltage it had */
-  if (!isFinite(g.eq)) g.eq = g.f41 ? g.V || 0 : 0;
-  if (!isFinite(g.efd)) g.efd = g.eq;
-  if (!isFinite(g.ai)) g.ai = g.eq;
-  if (!isFinite(g.vr)) g.vr = 1;
-  if (!isFinite(g.th)) g.th = 120;
+  /* a save point of before beta.236 has no field state: tcsGen filled it (tcsGenFill) */
   g.t = (g.t || 0) + dt;
   /* the grid frequency of the model (unit.js anGridHz: this drift plus a grid fault), the one the shaft turns with on the line */
   const fgr = isFinite(U.gridHz) ? U.gridHz : tcsGridHz(isFinite(U.t) ? U.t : g.t);
