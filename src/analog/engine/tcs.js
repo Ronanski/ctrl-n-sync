@@ -620,9 +620,13 @@ function tcsDone(U, k) {
    real clicks 2026-11-22): it ran only inside tcsStep, which the unit skips while a trip is held (unit.js: MFT M.3200 or I.0400 ->
    tcsTripHold), so after a turbine trip with the boiler bottled up the metal stood still for hours (HP 487 C after 1.7 h; the tauCool law
    gives 476 C). Metal cools by physics whatever the trip latch says: tcsStep and the trip hold both call this. Returns the ambient */
-function tcsMetal(U, c, s, dt) {
+/* steam flows through the turbine: the stop valves not off and an intercept or a governor valve open */
+function tcsSteamOn(U) {
   const tb = U.tb || {};
-  const steam = tb.st !== 'off' && (tb.icv > 0.001 || U.gv > 0.001);
+  return tb.st !== 'off' && (tb.icv > 0.001 || U.gv > 0.001);
+}
+function tcsMetal(U, c, s, dt) {
+  const steam = tcsSteamOn(U);
   /* metal: toward the steam while steam flows (TCA rotor model), else cooling to the ambient (FHI SECT_7 / STIE-14811 CALC), see the head */
   const Ta = U.Tamb || 30;
   if (steam) {
@@ -668,6 +672,7 @@ function tcsStep(U, dt) {
   if (!c.brgOk) c.tg = false;
   /* turning gear: about 3 rpm (PR-OPE-5002 7955); disengages above 4 rpm and engages again at zero speed */
   const Ta = tcsMetal(U, c, s, dt);
+  const steam = tcsSteamOn(U);
   /* 2.1 SHELL EXPANSION OK, TCA535 CMP A003 HL 3.0 mm / LL 2.5 mm: on at 3.0, off below 2.5 (IBD TD-4 net 6) */
   c.sexOk = tcsBandI(c, '2.1', c.sexp, 2.5, 3);
   /* 1.16 BEARING OIL TEMP. OK, TCA539 OR 003 (IBD TD-1 net 14): T = the higher lube oil cooler outlet (HS 033, U.loTout);
