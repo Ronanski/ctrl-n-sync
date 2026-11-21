@@ -45,3 +45,16 @@ jobs:
           const m=[...s.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/g)].filter(x=>!/type=.(?!text\/javascript|module)/.test(x[1]||''));let bad=0;
           for(const x of m){try{new Function(x[2])}catch(e){bad++;console.log((x[1]||'').trim(),e.message)}}
           if(bad||!m.length)process.exit(1);console.log('scripts ok',m.length)"
+      - name: Playwright and the browser for the behaviour gate (no apt step, as sim-tests.yml)
+        run: |
+          for i in 1 2 3; do npm install --no-save --no-package-lock playwright@1.64.1 && break; sleep $((i*5)); done
+          echo "PLAYWRIGHT_MODULE=$PWD/node_modules/playwright" >> "$GITHUB_ENV"
+          B="$(command -v google-chrome || command -v google-chrome-stable || true)"
+          if [ -z "$B" ]; then npx playwright install chromium; B="$(node -e "console.log(require('playwright').chromium.executablePath())")"; fi
+          echo "CHROMIUM=$B" >> "$GITHUB_ENV"
+      - name: BEHAVIOUR GATE (Full Audit 3 Phase 0) - steady 150 MW at a fixed 0.5 s step, no drift, same numbers twice, SAVE / LOAD
+        timeout-minutes: 30
+        run: |
+          V=$(node tools/version.js)
+          node tools/station/build.js "dist/logic-sim-v$V.html" /tmp/gate/index.html
+          node tests/gate/behaviour.cjs /tmp/gate/index.html --mins 20

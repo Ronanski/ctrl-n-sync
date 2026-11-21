@@ -138,8 +138,34 @@ function worldWithPlant() {
 }
 AN.worldWithPlant = worldWithPlant;
 AN.suFw = anSuFw; /* the start-up feedwater valve formula (unit.js), read by tests/regress/sufw_p1.js */
+/* Full Audit 3, Phase 0 (ISA-77.20 repeatability): the FIXED CLOCK. With AN.extClock set, the timer below does not step the plant; the
+   caller steps it with AN.runFixed(seconds): steps of exactly dt (0.5 s, as the scheduler at x10), the DITL world between them (the same
+   worldWithPlant and chunks as the timer), the Training coach after each step, the trend once a call. AN.run stays as it is, so the
+   world scans and the plant runs exactly as on the Run of the operator, only the clock of the PC is out: the same build gives the same
+   numbers on every PC (tests/gate/behaviour.cjs, the merge gate of checks.yml) */
+AN.runFixed = (sec, dt) => {
+  const sh = cs();
+  if (!sh || !sh.S || !AN.run || AN._loading || anMirror()) return false;
+  const h = dt > 0 ? dt : 0.5,
+    n = Math.max(1, Math.round(sec / h));
+  histRec(sh, 1);
+  let wAcc = 0;
+  for (let i = 0; i < n; i++) {
+    stepSet(sh, h);
+    if (AN.onStep)
+      try {
+        AN.onStep(h);
+      } catch (e) {}
+    wAcc += h;
+    if (i === n - 1 || wAcc >= worldChunk()) {
+      worldWithPlant();
+      wAcc = 0;
+    }
+  }
+  return true;
+};
 setInterval(() => {
-  if (!live() || !AN.run || AN._loading || anMirror()) return void (anLastT = 0);
+  if (!live() || !AN.run || AN._loading || anMirror() || AN.extClock) return void (anLastT = 0);
   const sh = cs();
   if (!sh || !sh.S) return;
   /* Jennie beta.188 (headless Normal shutdown at x300, step 132): one world = one time. The plant does not run more than 60 s ahead of the
@@ -195,7 +221,7 @@ setInterval(() => {
    While the plant model runs, group 1 scans the world between its steps (worldWithPlant) and this group stands */
 setInterval(() => {
   const W = window.WORLD;
-  if (!W || !W.scanJob || anMirror()) return;
+  if (!W || !W.scanJob || anMirror() || AN.extClock) return; /* the fixed clock: the world scans only inside AN.runFixed */
   if (W._drvT && performance.now() - W._drvT < 400) return;
   const g = W.scanJob();
   if (!g) return;
