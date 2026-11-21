@@ -156060,7 +156060,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build ee6f5f9'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 0c92532'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -334049,7 +334049,7 @@ html body.sc #fxws:not(#scnone) :is(button.fxbtn,select#fxpick,button.fxchip,inp
 html body.sc #fxws:not(#scnone) .fxhead{padding-top:4px!important;padding-bottom:4px!important}
 html body.sc #scetools:not(#scnone) .scmore button:not(.scmoreb){height:24px!important;min-height:24px!important;font-size:12px!important;padding:0 10px!important;border-radius:2px!important}
 /* ---------- step 6: the controller faceplate beside its valve in the same compact sizes (was 360 x 521) ---------- */
-html body.sc #plfp.fpo-near:not(#scnone){width:268px!important;border-radius:3px!important;box-shadow:0 6px 18px rgba(0,0,0,.45)!important}
+html body.sc #plfp.fpo-near:not(#scnone){width:236px!important;border-radius:3px!important;box-shadow:0 6px 18px rgba(0,0,0,.45)!important}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph{padding:3px 4px 3px 8px!important;border-radius:3px 3px 0 0!important;gap:4px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph b{font:600 13px/20px var(--sc-ui)!important}
 html body.sc #plfp.fpo-near:not(#scnone) .plfph button.b{height:20px!important;min-height:20px!important;min-width:20px!important;padding:0 6px!important;font-size:11.5px!important;border-radius:2px!important}
@@ -334062,7 +334062,7 @@ html body.sc #plfp.fpo-near:not(#scnone) .fpm{gap:7px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .fpg{width:50px!important;padding:12px 3px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .fpg :is(.hi,.lo){font-size:10px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .fpg .gb{width:12px!important}
-html body.sc #plfp.fpo-near:not(#scnone) .fl{font-size:10px!important}
+html body.sc #plfp.fpo-near:not(#scnone) .fl{font-size:11px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .fv{height:22px!important;min-height:22px!important;font-size:15px!important;line-height:20px!important;padding:0 5px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .fv b{font-size:15px!important;line-height:20px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .fps{height:auto!important;min-height:0!important;padding:4px 0!important}
@@ -334080,6 +334080,11 @@ html body.sc #plfp.fpo-near:not(#scnone) :is(.fpm,.fpg){min-height:0!important}
 html body.sc #plfp.fpo-near:not(#scnone) .fpc{gap:4px!important}
 html body.sc #plfp.fpo-near:not(#scnone) .whyx:empty{display:none!important}
 html body.sc #plfp.fpo-near:not(#scnone) .fp.fpx{gap:4px!important}
+/* Audit 3 #8 in the Operator view: the controller faceplate keeps the frame of the small faceplate (.fpo-box above: 236 px,
+   11 px row labels) and its tag strip is a plain line of grey text, as the small faceplate, not a green band */
+html body.sc #plfp.fpo-near:not(#scnone) .fpx .tg{background:none!important;border-top:1px solid var(--sc-line)!important;border-radius:0!important;margin:6px 0 0!important;padding:4px 0 0!important}
+html body.sc #plfp.fpo-near:not(#scnone) .fpx .tg b{font:500 11px var(--sc-num)!important;color:var(--sc-ink2)!important}
+html body.sc #plfp.fpo-near:not(#scnone) .fpx .tg span{font-size:11px!important;color:var(--sc-ink2)!important}
 /* ---------- step 7 (user 2026-11-17: "Ang daming unnecessary, mga lumang features ... diba sabi ko reshell"): what the Operator does
    not need is gone from the Operator view; the functions stay where they belong (Instructor console, Engineer view) ---------- */
 /* developer and view tools: CHECK, Reset, the TCS / Field menu (the Instructor console has its buttons), previous / next screen */
@@ -346024,7 +346029,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build ee6f5f9'));
+    row('Version', E('span', 'scsver', ver + ' · build 0c92532'));
   }
   function openSet(near) {
     if (!set) {
