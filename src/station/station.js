@@ -2274,7 +2274,7 @@
       n: 0
     }));
     const out = [];
-    for (const h of pg.querySelectorAll('.hx-hook:not([data-press])')) {
+    for (const h of pg.querySelectorAll('.hx-hook:not([data-press]):not([data-plain])')) {
       const p = xy(h),
         st = h.querySelector('.hx-hks');
       let g = null;
