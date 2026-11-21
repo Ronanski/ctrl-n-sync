@@ -402,6 +402,10 @@ function anUnitStart() {
     P0,
     Pd0,
     MW0,
+    /* S/H pressure drop, drum to S/H outlet, from the plant 150 MW data (about 12 kg/cm2). Design beside it (Audit 3 ranking 5): FHI
+       P2S7 Tab 3 "Superheater Pressure Drop 16 kg/cm2" at MCR 460 T/H. A vendor DP at MCR is a design / guarantee maximum with margin,
+       not the clean operating value: it is the upper bound, and the anchor stays on the plant (user Q4: close to the DCS 150 MW data,
+       small tolerance; moving the drum ~4 kg/cm2 off the plant would break it) */
     kdp: (Pd0 - P0) / (m0 * m0),
     kln: isFinite(Ptin) && Ptin <= P0 ? (P0 - Ptin) / (m0 * m0) : 0 /* main steam line drop to the turbine inlet */,
     Kt: m0 / P0 /* valve opening 1 = the opening at the anchor */,
@@ -2956,8 +2960,13 @@ function anLphStep(U, dt) {
      TT-MS1007    turbine main steam = finishing S/H outlet TT-MS1004 (AI0612) less the heat the main steam line loses. A lagged pipe
                   loses about the same heat at any flow, so the drop goes with 1 / flow: 542 - 538 = 4 C at MCR 472.7 T/H (snapshot),
                   never below the ambient; under 5 % flow it is held at the 5 % drop (the line cools with no steam: not modelled).
+                  Design beside it (Audit 3 ranking 5, user Q4 "close to the DCS 150 MW data, tuned from design, small tolerance"):
+                  FHI P2S7 Tab 3 S/H outlet 541 C less the heat balance 150 MW turbine inlet 538.0 C (Hitachi 310SD07-485, 458.3 T/H)
+                  = 3 C. The plant reads 4 C: inside the tolerance, so the plant value stays.
      PT-HR1001    reheat outlet header = hot reheat at the turbine PT-HR1003-1 (AI0421) + the line DP, flow squared: 35.0 - 34.3 =
-                  0.7 kg/cm2 at MCR (snapshot), the reheat flow = HP exhaust + HP bypass (U.ms + U.mhp).
+                  0.7 kg/cm2 at MCR (snapshot), the reheat flow = HP exhaust + HP bypass (U.ms + U.mhp). Design beside it: FHI Tab 3
+                  R/H outlet 35.1 kg/cm2 g = 36.1 ata less the heat balance IP inlet 34.77 ata = 1.3 kg/cm2 at 400.9 T/H, a design
+                  upper bound (piping margin); the plant reads 0.7 and stays (Q4).
      TT-BR1020    No.1 economizer outlet water, TT-BR1030 No.2 (R + S), TT-BR1040 No.3 = the water into the drum: the heat transfer
                   chain (hx.js); TT-BR1110 S/H No.1 inlet = the steam leaving the wall (hx.js wl).
      TT-BR1120-1 / -2  S/H No.1 outlet header: the steam leaving panel 1 of the chain (hx.js p1o), both thermocouples.
