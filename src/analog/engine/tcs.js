@@ -646,7 +646,12 @@ function tcsMetal(U, c, s, dt) {
   c.sexp = Math.max(0, (c.Thp - Ta) * 0.02);
   return Ta;
 }
-function tcsStep(U, dt) {
+/* the turbine auxiliaries and the plant values the ATS criteria read (aux steam, gland, metal, shell expansion, bearing oil temperature,
+   LP exhaust hood). Beta.243 (Jennie, F4 of the HOT / WARM saves by real clicks 2026-11-22): they ran only inside tcsStep, which the unit
+   skips while a trip is held (unit.js tcsTripHold), so after a turbine trip the gland, the bearing oil criterion and the hood temperature
+   stood still for hours. The plant goes on whatever the trip latch says: tcsStep and the trip hold both call this; only the ATS program
+   (steps, ramps, holds) waits for the reset */
+function tcsAux(U, dt) {
   tcsGenStep(U, dt);
   const c = U.tc;
   if (!c) return;
@@ -712,6 +717,18 @@ function tcsStep(U, dt) {
     fL = Math.max(0, Math.min(1, ((U.MW || 0) - 7.5) / 15)),
     XS = isFinite(Tsc) && fL > 0 ? XSS + (Tsc + 120 * Math.max(0, 0.9 - (U.vac || 0)) * sp - XSS) * fL : XSS;
   c.Tx += ((XS - c.Tx) * dt) / TCS.tauX;
+  /* the turning gear holds the shaft at about 3 rpm when no steam turns it (beta.243: also while a trip is held, the
+     trip hold calls tcsAux) */
+  if (!steam && tb.rpm < 4) {
+    const tg = c.tg && c.brgOk;
+    tb.rpm = tg ? Math.min(3, tb.rpm + dt) : Math.max(0, tb.rpm - dt);
+  }
+}
+function tcsStep(U, dt) {
+  tcsAux(U, dt);
+  const c = U.tc;
+  if (!c) return;
+  const tb = U.tb;
   /* holds (PR-OPE-5002 8570 ~ 8576, ATS page 19 *1): vacuum low, exhaust hood temp. high, bearing oil press. low, thermal stress
      high (the steam outside Fig. 2 / 3); not inside the critical zone (8561) */
   const C = tcsCrit(U);
@@ -902,11 +919,6 @@ function tcsStep(U, dt) {
     case 7:
       tcsDone(U, 7);
       break;
-  }
-  /* the turning gear holds the shaft at about 3 rpm when no steam turns it */
-  if (!steam && tb.rpm < 4) {
-    const tg = c.tg && c.brgOk;
-    tb.rpm = tg ? Math.min(3, tb.rpm + dt) : Math.max(0, tb.rpm - dt);
   }
   /* the trips of IBD TA-9 (tcs-trip.js), bearing oil among them */
   tcsTripScan(U, dt);
