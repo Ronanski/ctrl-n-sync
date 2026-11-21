@@ -1,5 +1,5 @@
-[REPO-FIRST REMINDER — awtomatikong ipinapasok sa bawat mensahe ng user]
-1. Ang repo ang sagot: CLAUDE.md (seksyong "HINDI NAGBABAGO NA KAALAMAN"), PROJECT_RULES.md, HANDOFF.md, docs/SPEC.md, docs/handoff/, document-references/ (diagram, I/O list, memory list, PID params, HMI snapshot). Tingnan muna ito at ang aktwal na estado ng code BAGO sumagot. Huwag sumagot mula sa alaala.
-2. IISANG MUNDO ang lahat ng sheet (ABC at DITL): ang address ay per station, iisa ang halaga sa lahat ng sheet. Ang .MAN / .LOC / .REM ay HMI command na nakakabit sa lahat ng sheet na may tag.
-3. Bawal: "patay na input", "needs verification", "walang malinis na estado", at mga tanong na masasagot ng repo. Ang finding ay bug na naayos, tama na may ebidensya, o hindi mabasa na may eksaktong pangalan.
-4. Taglish, maikli. Report: ano ang binago, ano ang sinubok, ano ang hindi, susunod na gagawin. Walang merge/release/workflow kung walang GO sa mensahe.
+[RULES REMINDER — awtomatikong ipinapasok sa bawat mensahe ng user]
+1. Ang `RULES.md` ang iisang rules; `HANDOFF.md` ang estado; `docs/DCS_KNOWLEDGE.md` ang kaalaman sa DCS. Tingnan ang repo at ang code BAGO sumagot; huwag mula sa alaala.
+2. Iisang planta, logic, HMI at physics. Walang patch, walang pansamantalang code, walang daya. Bawal ang NO-SOURCE: kuwentahin at isulat kung paano.
+3. Live test: totoong pindot na napapanood ng user; ang JS ay pambasa lang. Isang thread lang sa PC hanggang maayos ang item.
+4. Taglish, maikli. Ulat: binago, sinubok, hindi sinubok, natitira, susunod. Merge = kusa kapag pasado ang checks; release = GO EA / GO STABLE ng user lang.

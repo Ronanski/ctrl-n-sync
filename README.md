@@ -6,8 +6,8 @@ The app is the station frame (`src/station`) over the DCS logic simulator (analo
 
 ## Start here
 
-1. `CLAUDE.md`: the standing rules of the user.
-2. `HANDOFF.md`, `PROJECT_RULES.md`, `docs/SPEC.md`: the state, the rules and the spec of the simulator the frame stands on.
+1. `RULES.md`: the standing rules of the user (`CLAUDE.md` points to it).
+2. `HANDOFF.md`: the state of the work; `docs/DCS_KNOWLEDGE.md`: facts about the DCS of the plant.
 3. `src/station/` and `tools/station/`: the frame of this app and its build.
 
 ## Build
@@ -40,7 +40,7 @@ The app has its own version in `delivery/app/app.json`: `1.0.0-beta.1`, `1.0.0-b
 | `tests/` | headless checks |
 | `delivery/app` | everything that names the app: `app.json` (name, version, id, site), `icon.svg` and the icon files made from it, `pwa/` (web manifest, icons, service worker) |
 | `delivery/android`, `delivery/desktop`, `delivery/signing` | the shells of the apk and of the portable exe, the apk shells; the apk key is a GitHub secret (ANDROID_KEYSTORE_B64 / ANDROID_KS_PASS), never in the repo |
-| `docs/` | `SPEC.md`, `OPERATOR_GUIDE.md`, `DOCUMENT_INDEX.md`, `handoff/` (rules and findings), `hmi/`, `tcs/`, audits. The reports of the old versions, the turnovers and the Plant Tools stayed in `Ronanski/icms-master-tool` |
+| `docs/` | `DCS_KNOWLEDGE.md`, `OPERATOR_GUIDE.md`, `DOCUMENT_INDEX.md`, `archive/` (old rules, handoff and spec), `hmi/`, `tcs/`, audits. The reports of the old versions, the turnovers and the Plant Tools stayed in `Ronanski/icms-master-tool` |
 | `document-references/` | plant documents: on the PC only, never committed (`INDEX.md` lists them) |
 
 ## Release
