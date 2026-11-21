@@ -139,6 +139,13 @@
     L.push(['ZSC-' + id, v, 2, 'lo', 0, 1], ['ZSO-' + id, v, 98, 'ge', 0, 0], [cl, v, 2, 'lo', 0, 1, /\bVANE CLOSED\b/]);
     if (op) L.push([op, v, 98, 'ge', 0, 0, /\bVANE OPENED\b/]);
   }
+  /* TCS functional test (JENNIE 2026-11-21): DITL-115 row 15 ZSC-MS1020 (LOCAL) "HP TURBINE BYPASS STEAM PRESSURE CONTROL VALVE CLOSE" ->
+     RS "HP BYPASS VALVE FULL CLOSE" to the TCS (TCE900 ch 26 -> TCE041 B11 -> TCA532 CRI 1.9). No model drove it: the row kept the field
+     bit of the 150 MW load (1) even with the bypass open. The switch is the closed limit of PCV-MS1020: its opening in the plant model
+     (unit.js U.hpbO, the positioner or the quick-open solenoid O.0842), made at the closed end of travel <= 2 %, the same end band as the
+     fan vane switches above (the name says FULL CLOSE) */
+  const hpbO = () => (window.AN && AN.unit && isFinite(AN.unit.hpbO) ? AN.unit.hpbO : NaN);
+  L.push(['ZSC-MS1020', hpbO, 2, 'lo', 0, 1, /\bBYPASS\b/]);
   /* 3.2.1 (IRENE: HEATER LEVELS): the level switches H.H. of the heaters (DITL-41 rows 15 ~ 27, STN102 I.029B ~ I.029F) on the
      shell level of the plant model (unit.js AN_HD); alarm list LS-HD110x: 140 mm (No.1 HPH, No.3 LPH), 150 mm (the others) */
   const hdOf = k => () => (window.AN && AN.unit && AN.unit.hdLvl && isFinite(AN.unit.hdLvl[k]) ? AN.unit.hdLvl[k] : NaN);
