@@ -264,6 +264,10 @@
       for (const s of S.sheets.concat((window.WORLD && WORLD.inst) || [])) delete s._mvc;
     } catch (e) {}
     if (!sv.ver) D.faLineup();
+    /* Full Audit 3 (the clock read 9:40 at a fresh 150 MW start): the 150 MW starting state is a save made after its model settled
+       (app.js st150, ver "st150 ..."), and its sheets keep the time of that settling. A starting state begins at 0:00
+       (trace-step.js anClock0, the same as the Cold load of hmi-op.js anLoadStart); a save point of the operator keeps its time */
+    if (String(sv.ver || '').startsWith('st150 ') && window.AN && AN.clock0) AN.clock0();
     return 1;
   };
   /* 3.2.3 SOHEE (Mina F151-1): a save point made before beta.154 (no version in it; every save before that one had none). Before

@@ -1282,6 +1282,11 @@ function anLoadStart(kind, on) {
         anUnitRestart(rs);
         anRestartDrum();
       }
+      /* Full Audit 3 (the clock read 10:38 at a fresh start state): the settling steps of the load (anPlantColdG / anPlantLoad150G,
+         0.5 s each) are not plant time, but every sheet counted them in its rt.t. The plant clock starts at 0:00, as the Training
+         start does (trace-step.js anClock0: rt.t = 0, and the dead-time, rate and trend histories of the settling emptied, so none
+         holds a time ahead of the new clock) */
+      anClock0();
       AN.startState = cold ? 'plantCold' : 'plantLoad150';
       AN.restartKind = rs;
       /* the drum pressure of the restart (unit.js AN_RESTART, FHI Fig. 3 / 4): the Training reads it for the MS blow-off hold (guide.js holdP) */
