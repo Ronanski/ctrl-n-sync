@@ -105,7 +105,7 @@ body.sc.plant[data-tab="operate"]:not(.scov) .sccrumb:not(:has(b:empty)){display
    :not(#zbar *), outranked #scov .sctile): two ids here, left aligned as the mockup */
 #scov:not(#scnone) .sctile{text-align:left!important;align-items:stretch!important;justify-content:flex-start!important}
 #scov:not(#scnone) .sctile h3,#scov:not(#scnone) .sctile .sckv,#scov:not(#scnone) .sctile .sclamp,#scov:not(#scnone) .sctile .scar,#scov:not(#scnone) .sctile .scnone{text-align:left!important;justify-content:flex-start;width:100%}
-#scov:not(#scnone) .scar{display:grid!important;grid-template-columns:96px minmax(0,1fr) auto}
+#scov:not(#scnone) .scar{display:grid!important;grid-template-columns:96px 84px minmax(0,1fr) auto}
 #scov:not(#scnone) .sckv{display:grid!important;grid-template-columns:1fr auto}
 #scins .scinp{flex:1 1 192px;min-width:0;min-height:32px;padding:0 8px;border:1px solid var(--sc-line2);border-radius:4px;font:400 13px var(--sc-ui);color:var(--sc-ink);background:var(--sc-white)}
 #scins .scsvl{display:grid;gap:4px}
@@ -131,7 +131,7 @@ body.sc.scov #scov{display:flex;flex-direction:column}
 .sclamp .dot.run{background:var(--sc-run)}.sclamp .dot.stop{background:var(--sc-stop)}.sclamp .dot.trip{background:var(--sc-run);animation:scblink 1s steps(2,start) infinite}
 #scov .scalm{grid-column:span 2;background:var(--sc-ambg)!important;border-color:var(--sc-amber)!important}
 #scov .scalm:not(.on){background:var(--sc-paper)!important;border-color:var(--sc-line2)!important}
-#scov .scar{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:8px;font-size:13px}
+#scov .scar{display:grid;grid-template-columns:96px 84px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px}
 #scov .scar .sct{font-family:var(--sc-num);color:var(--sc-ink2)}
 #scov .scar .scn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #scov .scar .scs{font-weight:600;color:var(--sc-ink2)}
@@ -140,15 +140,32 @@ body.sc.scov #scov{display:flex;flex-direction:column}
 .sccrumb{display:none;position:fixed;top:calc(var(--scb,var(--top)) + 8px);left:calc(var(--scl,var(--railW,0px)) + 8px);z-index:79;align-items:center;gap:8px;min-height:32px!important;padding:0 12px!important;background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;border-radius:16px!important;color:var(--sc-ink)!important;font:500 13px var(--sc-ui)!important;box-shadow:0 2px 8px rgba(34,46,57,.12)!important;cursor:pointer}
 body.sc[data-tab="operate"]:not(.scov) .sccrumb{display:inline-flex}
 body.sc.pvout .sccrumb{display:none!important}
+/* Rosé beta.241: the breadcrumb is two buttons (Plant = overview; the page name opens the page list .scpgm) */
+html body.sc .sccrumb{cursor:default}
+html body.sc .sccrumb>button{display:inline-flex!important;align-items:center;gap:4px;min-height:0!important;height:auto!important;margin:0!important;padding:4px 0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:inherit!important;font:inherit!important;cursor:pointer}
+html body.sc .sccrumb>button.scbc{color:var(--sc-steel)!important;text-decoration:underline;text-underline-offset:2px}
+html body.sc .sccrumb>button:focus-visible{outline:2px solid var(--sc-steel);outline-offset:2px}
+html body.sc .sccrumb .scpgb b{text-transform:uppercase}
+html body.sc .sccrumb .scdd{font-size:11px;color:var(--sc-ink2)}
+.scpgm{position:fixed;z-index:120;display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:8px 16px;width:min(640px,calc(100vw - 16px));max-height:70vh;overflow:auto;padding:12px;background:var(--sc-white);border:1px solid var(--sc-line2);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.28);font:500 13px var(--sc-ui);color:var(--sc-ink)}
+.scpgm .scpgg{display:flex;flex-direction:column;gap:2px;min-width:0}
+.scpgm .scpgh{padding:0 8px 4px;font:600 11px var(--sc-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--sc-ink2)}
+.scpgm .scpgi{display:block!important;width:100%;min-height:28px!important;height:auto!important;padding:4px 8px!important;border:0!important;border-radius:4px!important;background:none!important;box-shadow:none!important;color:var(--sc-ink)!important;font:500 13px var(--sc-ui)!important;text-align:left;cursor:pointer;white-space:normal}
+.scpgm .scpgi:hover,.scpgm .scpgi:focus-visible{background:var(--sc-selbg)!important;outline:none}
+.scpgm .scpgi.on{font-weight:700!important;box-shadow:inset 3px 0 0 var(--sc-steel)!important}
 #scal{position:fixed;top:calc(var(--scb,var(--top)) + 4px);right:8px;z-index:130;width:min(576px,calc(100vw - 16px));max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 16px);display:flex;flex-direction:column;background:var(--sc-white);border:1px solid var(--sc-line2);border-radius:8px;box-shadow:0 12px 32px rgba(34,46,57,.22);font-family:var(--sc-ui);color:var(--sc-ink)}
 #scal[hidden]{display:none!important}
 #scal .schd{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--sc-line)}
 #scal .sctabs{display:flex;gap:4px;flex:1}
 #scal .sctabs button,#scal .scx,#scal .scack,#scal .scrow button{min-height:32px!important;padding:0 12px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:600 13px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer}
 #scal .sctabs button.on{background:var(--sc-steel)!important;border-color:var(--sc-steel)!important;color:var(--sc-white)!important}
-#scal .scack{margin:8px 8px 0;align-self:flex-start}
+#scal .sctool{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:8px 8px 0}
+#scal .scsort{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--sc-ink2)}#scal .scsort span{margin-right:4px}
+#scal .scsort button{min-height:32px!important;padding:0 10px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:600 12px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer}
+#scal .scsort button.on{background:var(--sc-steel)!important;border-color:var(--sc-steel)!important;color:var(--sc-white)!important}
+#scal .scsort button:focus-visible{outline:2px solid var(--sc-steel);outline-offset:2px}
 #scal .scbody{overflow:auto;padding:4px 8px 8px}
-#scal .scrow{display:grid;grid-template-columns:88px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--sc-line);font-size:13px}
+#scal .scrow{display:grid;grid-template-columns:88px 84px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--sc-line);font-size:13px}
 #scal .scrow.ev{grid-template-columns:88px 56px minmax(0,1fr)}
 #scal .scrow .sct{font-family:var(--sc-num);color:var(--sc-ink2)}
 #scal .scrow .sck2{font:600 12px var(--sc-num);color:var(--sc-ink2)}
@@ -193,7 +210,7 @@ body.sc #gsbar #scstrip .seg button{font-size:13px!important}
 /* M07: tablet targets 40 px (Operator / Engineer, the strip pills, the speed menu) */
 @media (max-width:1279px),(pointer:coarse){
   body.sc #gsbar #scstrip :is(.pill,.seg button,.spdm button){min-height:40px!important}
-  #scins button,#scins .scinp,#scal :is(.sctabs button,.scx,.scack,.scrow button),#scstart:not(#scnone) .scchips button{min-height:40px!important}
+  #scins button,#scins .scinp,#scal :is(.sctabs button,.scx,.scack,.scrow button,.scsort button),#scstart:not(#scnone) .scchips button{min-height:40px!important}
 }
 /* M09: rail labels 12 px; M10 / M11: footer text 12 px and the faint clock / info colour from the shell set (5.70:1 on the band) */
 body.sc.cr #crrail .tabs button{font-size:12px!important;line-height:1.2!important}
@@ -288,3 +305,8 @@ body.sc #sfoot:not(#scnone) :is(.sinfo,.ssel){flex:0 1 auto!important}
 body.sc #sfoot{overflow:hidden;max-width:100vw}
 /* Mina, live test of 271: at 1024 px the sheet counts took the status bar and the hint had 21 px: below 1280 px the hint has the bar */
 @media (max-width:1279px){body.sc #sfoot:not(#scnone) .sinfo{display:none!important}}
+/* Rosé 2026-11-22: alarm priority badge (AN.almPri, ISA-18.2): the word is the sign, the fill only helps; 1 EMERGENCY, 2 HIGH, 3 MEDIUM, 4 LOW */
+:is(#scal,#scov) .scpri{display:inline-flex;align-items:center;justify-content:center;min-height:20px;padding:0 6px;border:1px solid var(--sc-line2);border-radius:3px;font:700 11px var(--sc-ui);letter-spacing:.04em;white-space:nowrap;color:var(--sc-ink2);background:var(--sc-white)}
+:is(#scal,#scov) .scpri.p1{background:var(--sc-run);border-color:var(--sc-run);color:var(--sc-white)}
+:is(#scal,#scov) .scpri.p2{background:var(--sc-amber);border-color:var(--sc-amber);color:var(--sc-white)}
+:is(#scal,#scov) .scpri.p3{background:var(--sc-ambg);border-color:var(--sc-amber);color:var(--sc-amink)}

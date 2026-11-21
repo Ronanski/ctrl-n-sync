@@ -36,7 +36,7 @@ try{
  for(let i=0;i<T.length;i++){
   const ok1=await click(page,'#scov .sctile:not(.scalm)',T[i]);await wait(1500);
   const a=await page.evaluate(()=>({tab:document.body.dataset.tab,ov:document.body.classList.contains('scov'),pg:(document.querySelector('#plantws .plpick')||{}).value,ws:!!(document.getElementById('plantws')&&document.getElementById('plantws').offsetHeight),cr:(document.querySelector('.sccrumb')||{}).offsetHeight||0}));
-  const ok2=a.cr>0&&await click(page,'.sccrumb');await wait(700);
+  const ok2=a.cr>0&&await click(page,'.sccrumb .scbc');await wait(700);
   const b=await page.evaluate(()=>document.body.classList.contains('scov'));
   ck(ok1&&a.tab==='operate'&&!a.ov&&a.ws&&ok2&&b,'tile "'+T[i]+'" -> page '+a.pg+' (tab '+a.tab+', page shown '+a.ws+'), breadcrumb back to the overview '+b);
  }

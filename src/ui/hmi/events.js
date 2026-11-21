@@ -751,6 +751,13 @@
   };
   let btn = null,
     box = null;
+  function hide() {
+    if (!box || box.style.display !== 'block') return false;
+    box.style.display = 'none';
+    draw();
+    if (btn && btn.isConnected) btn.focus();
+    return true;
+  }
   function draw() {
     if (btn) {
       btn.textContent = 'Events' + (LOG.length ? ' ' + LOG.length : '');
@@ -769,7 +776,17 @@
       unseen = 0;
       draw();
     };
-    hd.append(clr);
+    /* Rosé 2026-11-22 (live test finding 2): the log has its own Close, as the other pop-ups */
+    const cx = document.createElement('button');
+    cx.className = 'b evx';
+    cx.type = 'button';
+    cx.textContent = 'Close';
+    cx.title = 'Close the event log (Esc)';
+    cx.onclick = e => {
+      e.stopPropagation();
+      hide();
+    };
+    hd.append(clr, cx);
     box.append(hd);
     if (!(window.WORLD && WORLD.on)) {
       const n = document.createElement('div');
@@ -833,7 +850,9 @@
       draw();
     };
     /* Mina 2026-11-08 (findings 11-08 #4 / #6): Escape closes the event log, as the other pop-ups */
-    addEventListener('keydown', e => e.key === 'Escape' && box.style.display === 'block' && (box.style.display = 'none'));
+    /* Rosé 2026-11-22 (live test finding 2): on the window in the capture phase, as fp-pop.js, because a listener of the
+       app stops the key before it bubbles to the window */
+    addEventListener('keydown', e => e.key === 'Escape' && hide(), true);
     const st = $('st');
     foot.insertBefore(btn, st);
     document.body.append(box);

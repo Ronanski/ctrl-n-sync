@@ -71,6 +71,10 @@
         /* started by hand the AUTO program's OPERATING lamp stays off: the status also reads the blower's retract limit switch (DITL-80G
            row 12 ZSR-N1011, input row 11; its own copy for N-1012 ~ N-1038) */
         if (!/80F/.test(d)) sb.mach[id].df.away = { d: n === 'N-1011' ? 'DITL-80G' : 'DITL-80G #' + n, row: 11 };
+        /* Rosé 2026-11-22 (live test finding 3: a START without the permissive did nothing and said nothing): the BLOWING PERMISSIVE,
+           DITL-80A output row 20 (MV-SB1001 open 600 s and both drain temperatures above 220 °C, the panel of this page). The press
+           still goes to the drawing; the faceplate says why the logic does not take it */
+        if (!/80F/.test(d)) sb.mach[id].df.need = [{ d: 'DITL-80A', row: 20, l: 'blowing permissive (steam supply valve open 600 s, both drain temperatures above 220 °C)' }];
       }
       return `<text${a} data-hit="${id}" style="cursor:pointer" data-dy="${d}|o|${r}" data-on="${n}"`;
     });
