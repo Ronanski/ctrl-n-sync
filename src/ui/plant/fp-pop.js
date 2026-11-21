@@ -36,7 +36,7 @@
       /* live test beta.74 #33: the equipment's own hit area first; a big group (the whole scene of a page) is not the anchor, the
          click point is (the pop-out opened at the top left over the pump and the HAKBANG tag) */
       const c = e.target && e.target.closest ? e.target : null,
-        t = c ? c.closest('[data-hit],[data-mdh],[data-fan],[data-dmp]') || c.closest('g,rect,text,div') : null;
+        t = c ? c.closest('[data-hit],[data-mdh],[data-fan],[data-dmp],.hx-node') || c.closest('g,rect,text,div') : null;
       let r = t && !t.closest('#fpop') ? t.getBoundingClientRect() : null;
       if (r && (r.width > 220 || r.height > 220)) r = null;
       last = { x: e.clientX, y: e.clientY, r };
@@ -115,6 +115,11 @@
     /* the equipment itself under the dock (the graphic runs on under it): the pop-out stays in the free area, left of the dock */
     if (x > H.width - w - 6) ((x = Math.max(6, H.width - w - 6)), (side = 'n'));
     let y = Math.max(6, Math.min(H.height - ht - 6, (a.top + a.bottom) / 2 - H.top - 60));
+    /* UI audit 2026-11-21 A4: no room left or right of the equipment, so the pop-out goes below it, else above it, never over it */
+    if (side === 'n') {
+      if (a.bottom + 14 + ht <= H.bottom - 6) y = a.bottom + 14 - H.top;
+      else if (a.top - 14 - ht >= H.top + 6) y = a.top - 14 - ht - H.top;
+    }
     /* the "HAKBANG n" tag of the step stays in view: the pop-out goes below (or above) it when it would cover it */
     const tg = document.querySelector('#gdhl:not([hidden]) .gd-hlt'),
       T = tg && tg.getBoundingClientRect();
