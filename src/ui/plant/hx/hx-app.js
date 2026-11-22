@@ -52,6 +52,9 @@
     /* hidden holder of the click targets of the controllers and of the page of hmi-mock.js that resolves the valves */
     st.px = document.createElementNS(NS, 'g');
     st.px.setAttribute('opacity', '0');
+    /* 2026-11-22: not painted and never under the pointer (its targets are clicked by code only) */
+    st.px.setAttribute('visibility', 'hidden');
+    st.px.setAttribute('pointer-events', 'none');
     st.px.setAttribute('aria-hidden', 'true');
     g.append(st.px);
     return st;
@@ -162,6 +165,7 @@
     call(() =>
       LS_MOCK.page({
         id: 'HXP',
+        bare: true,
         title: '',
         w: 10,
         h: 10,

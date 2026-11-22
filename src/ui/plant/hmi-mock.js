@@ -91,14 +91,20 @@
     return function (g, api) {
       const F = frameOf(def),
         W = F.w,
-        top = 54,
+        /* 2026-11-22: def.bare = the hidden holder of an HX page (hx-app.js): no backdrop and scale 1. Its 10 x 10 page was scaled 91 x
+           behind the HX view (a Y letter about 1500 px tall, a 1920 x 914 backdrop): work for the browser on every page, nothing shown.
+           It sits a little inside the frame (8, 24): its text at y 0 reached 13 px above the page, so the outline of the page
+           (shellc-zoom.js extent) was never whole and the locator map stood over the drawing at the lower right */
+        top = def.bare ? 24 : 54,
         bot = F.h - 32,
-        k = Math.min(W / def.w, (bot - top) / def.h),
-        x0 = (W - def.w * k) / 2;
-      const bg = document.createElementNS(NS, 'rect');
-      for (const [a, v] of Object.entries({ x: 0, y: top, width: W, height: bot - top, fill: C.bg }))
-        bg.setAttribute(a, v);
-      g.append(bg);
+        k = def.bare ? 1 : Math.min(W / def.w, (bot - top) / def.h),
+        x0 = def.bare ? 8 : (W - def.w * k) / 2;
+      if (!def.bare) {
+        const bg = document.createElementNS(NS, 'rect');
+        for (const [a, v] of Object.entries({ x: 0, y: top, width: W, height: bot - top, fill: C.bg }))
+          bg.setAttribute(a, v);
+        g.append(bg);
+      }
       const pg = document.createElementNS(NS, 'g');
       pg.setAttribute('transform', `translate(${x0.toFixed(1)} ${top}) scale(${k.toFixed(4)})`);
       pg.setAttribute('class', 'mk');

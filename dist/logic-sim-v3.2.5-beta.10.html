@@ -156060,7 +156060,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 814e1be'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build bc4787c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -346036,7 +346036,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 814e1be'));
+    row('Version', E('span', 'scsver', ver + ' · build bc4787c'));
   }
   function openSet(near) {
     if (!set) {
@@ -359210,14 +359210,20 @@ window.PLANT_SYS = [
     return function (g, api) {
       const F = frameOf(def),
         W = F.w,
-        top = 54,
+        /* 2026-11-22: def.bare = the hidden holder of an HX page (hx-app.js): no backdrop and scale 1. Its 10 x 10 page was scaled 91 x
+           behind the HX view (a Y letter about 1500 px tall, a 1920 x 914 backdrop): work for the browser on every page, nothing shown.
+           It sits a little inside the frame (8, 24): its text at y 0 reached 13 px above the page, so the outline of the page
+           (shellc-zoom.js extent) was never whole and the locator map stood over the drawing at the lower right */
+        top = def.bare ? 24 : 54,
         bot = F.h - 32,
-        k = Math.min(W / def.w, (bot - top) / def.h),
-        x0 = (W - def.w * k) / 2;
-      const bg = document.createElementNS(NS, 'rect');
-      for (const [a, v] of Object.entries({ x: 0, y: top, width: W, height: bot - top, fill: C.bg }))
-        bg.setAttribute(a, v);
-      g.append(bg);
+        k = def.bare ? 1 : Math.min(W / def.w, (bot - top) / def.h),
+        x0 = def.bare ? 8 : (W - def.w * k) / 2;
+      if (!def.bare) {
+        const bg = document.createElementNS(NS, 'rect');
+        for (const [a, v] of Object.entries({ x: 0, y: top, width: W, height: bot - top, fill: C.bg }))
+          bg.setAttribute(a, v);
+        g.append(bg);
+      }
       const pg = document.createElementNS(NS, 'g');
       pg.setAttribute('transform', `translate(${x0.toFixed(1)} ${top}) scale(${k.toFixed(4)})`);
       pg.setAttribute('class', 'mk');
@@ -370098,6 +370104,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     /* hidden holder of the click targets of the controllers and of the page of hmi-mock.js that resolves the valves */
     st.px = document.createElementNS(NS, 'g');
     st.px.setAttribute('opacity', '0');
+    /* 2026-11-22: not painted and never under the pointer (its targets are clicked by code only) */
+    st.px.setAttribute('visibility', 'hidden');
+    st.px.setAttribute('pointer-events', 'none');
     st.px.setAttribute('aria-hidden', 'true');
     g.append(st.px);
     return st;
@@ -370208,6 +370217,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     call(() =>
       LS_MOCK.page({
         id: 'HXP',
+        bare: true,
         title: '',
         w: 10,
         h: 10,
