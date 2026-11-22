@@ -1086,10 +1086,14 @@
     try {
       if (!opp) return;
       /* 3.2.0-beta.1: not the Panel button of the DITL bar (it is in the ribbon too, hidden on ABC) */
-      const pb = [...document.querySelectorAll('button')].find(x => /^(Panel|Inspector)$/.test(x.textContent.trim()) && !x.closest('.hmitabs,.g-ditl,#dp'));
+      /* F6 2026-11-22 (Q6): the button found is kept while it is in the page and still says Panel / Inspector (the whole page was searched 4 times a second) */
+      const pbOk = x => x && x.isConnected && /^(Panel|Inspector)$/.test(x.textContent.trim()) && !x.closest('.hmitabs,.g-ditl,#dp');
+      if (!pbOk(tick.pb)) tick.pb = [...document.querySelectorAll('button')].find(pbOk);
+      const pb = tick.pb;
       const on = !!(pb && pb.classList.contains('on'));
       const op = document.body.classList.contains('ophmi');
-      opp.style.display = on && op ? 'flex' : 'none';
+      const dsp = on && op ? 'flex' : 'none';
+      if (opp.style.display !== dsp) opp.style.display = dsp;
       if (!(on && op)) return;
       const sh = sheet();
       if (!sh || !sh.S) return;
