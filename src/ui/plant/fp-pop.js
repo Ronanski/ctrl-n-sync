@@ -9,10 +9,15 @@
    UI only: every action goes through the same calls as the operator API (LS_OP.fieldRow / dsel / dmotor), the plant and the logic are the
    engine's. Nothing is pressed for the operator, nothing is forced. */
 (function () {
+  /* F6 2026-11-22 (Q6): a text is written only when it changed (a same-value write makes the page lay out again; the faceplates tick at 2 Hz) */
+  const setTx = (e, v) => {
+    const t = v == null ? '' : String(v);
+    if (e && e.textContent !== t) e.textContent = t;
+  };
   const E = (t, c, x) => {
     const e = document.createElement(t);
     if (c) e.className = c;
-    if (x != null) e.textContent = x;
+    if (x != null) setTx(e, x);
     return e;
   };
   const D = () => window.LS_OP;
@@ -394,7 +399,7 @@
     /* a field action asks in an amber bar inside the FIELD block (the mockup); a DCS one in the blue bar below the reason line */
     const ask = (t, f, fld) => {
       pend = f;
-      exT.textContent = t;
+      setTx(exT, t);
       ex.classList.toggle('fld', !!fld);
       /* Mina F13: above the reason line, whose length no longer moves the EXECUTE button */
       F.bd.insertBefore(ex, why);
@@ -518,7 +523,7 @@
       lS.className = 'fpo-lp' + (st === 'STOP' ? ' stop' : '');
       lT.className = 'fpo-lp' + (st === 'TRIP' ? ' trip' : '');
       vcb.className = 'fpo-lp' + (st === 'RUN' ? ' run' : st ? ' stop' : '');
-      vcb.lastChild.textContent = st === 'RUN' ? 'ON' : st ? 'OFF' : '---';
+      setTx(vcb.lastChild, st === 'RUN' ? 'ON' : st ? 'OFF' : '---');
       vcb.title = 'VCB ON / OFF of the I/O list: shown closed while the motor runs (no logic sheet reads it)';
       bRem.classList.toggle('on', md.rem === true);
       bLoc.classList.toggle('on', md.rem === false);
@@ -594,21 +599,21 @@
       why.hidden = part === 'info' || !why.textContent;
       /* #59: the Y / N of the info faceplate (and of the page's button: M.onYN) = every logic permissive complete (the SOP line-up check went with the guided training, 2026-11-21 GO NO SOP) */
       const yn = !loc && !miss.length;
-      if (part === 'info') ilH.textContent = 'PERMISSIVE · ' + (yn ? 'Y (all complete)' : 'N (not complete)') + (nm ? ' · ' + nm : '');
+      if (part === 'info') setTx(ilH, 'PERMISSIVE · ' + (yn ? 'Y (all complete)' : 'N (not complete)') + (nm ? ' · ' + nm : ''));
       if (M.onYN) call(() => M.onYN(yn), null);
       for (const [v, f] of monV) {
         const x = call(f, null);
-        v.textContent = x == null || !isFinite(+x) ? '-----' : (+x).toFixed(1);
+        setTx(v, x == null || !isFinite(+x) ? '-----' : (+x).toFixed(1));
       }
-      chip.textContent = st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' ? 'READY' : '';
+      setTx(chip, st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' ? 'READY' : '');
       chip.className = 'fpo-chip ' + (st === 'TRIP' ? 'trip' : miss.length && st !== 'RUN' ? 'ilk' : '');
       /* current */
       if (M.cur) {
         const v = call(() => M.cur(), null);
         const out = v != null && M.band && st === 'RUN' && (v < M.band[0] || v > M.band[1]);
-        cur.textContent = v == null ? '-----' : (+v).toFixed(1) + ' A';
+        setTx(cur, v == null ? '-----' : (+v).toFixed(1) + ' A');
         cur.classList.toggle('hi', !!out);
-        F.val.textContent = v == null ? '' : (+v).toFixed(1) + ' A';
+        setTx(F.val, v == null ? '' : (+v).toFixed(1) + ' A');
         const now = Date.now();
         sample(H, v, now);
         const mx = Math.max(10, ...H.map(p => p[1]), M.band ? M.band[1] * 1.3 : 0);
@@ -758,7 +763,7 @@
         run = isRun(),
         w = call(() => (V.why ? V.why() : ''), '');
       F.lamp.className = 'fpo-lamp ' + (op ? 'run' : 'stop');
-      F.val.textContent = op ? 'OPEN' : 'CLOSED';
+      setTx(F.val, op ? 'OPEN' : 'CLOSED');
       lO.className = 'fpo-lp' + (op ? ' run' : '');
       lC.className = 'fpo-lp' + (!op ? ' stop' : '');
       bAu.classList.toggle('on', au);
@@ -775,7 +780,7 @@
           ? 'In AUTO the logic opens and closes it. Select MAN for OPEN / CLOSE.'
           : w || '';
       why.hidden = !why.textContent;
-      chip.textContent = au ? 'AUTO' : 'MAN';
+      setTx(chip, au ? 'AUTO' : 'MAN');
       chip.className = 'fpo-chip';
     }
     paint = tick;
@@ -856,14 +861,14 @@
       const op = st(),
         run = isRun();
       F.lamp.className = 'fpo-lamp ' + (op ? 'run' : 'stop');
-      F.val.textContent = op ? 'OPEN' : 'CLOSED';
+      setTx(F.val, op ? 'OPEN' : 'CLOSED');
       lO.className = 'fpo-lp' + (op ? ' run' : '');
       lC.className = 'fpo-lp' + (!op ? ' stop' : '');
       bOp.disabled = op || !run;
       bCl.disabled = !op || !run;
       bOp.classList.toggle('lit-run', op);
       bCl.classList.toggle('lit-stop', !op);
-      why.textContent = run ? '' : 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).';
+      setTx(why, run ? '' : 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).');
       why.hidden = !why.textContent;
     }
     paint = tick;
@@ -986,7 +991,7 @@
         pv = (P.perm || []).map(p => ({ ...p, v: call(() => window.DUI.rowVal(s, p.row), null) })),
         ok = !pv.length || pv.some(p => p.v === 1);
       F.lamp.className = 'fpo-lamp ' + (on ? 'run' : 'stop');
-      F.val.textContent = on ? P.st.on : P.st.off || 'STOPPED';
+      setTx(F.val, on ? P.st.on : P.st.off || 'STOPPED');
       lOn.className = 'fpo-lp' + (on ? ' run' : '');
       lOff.className = 'fpo-lp' + (!on ? ' stop' : '');
       const rem = P.sel == null ? true : call(() => window.DUI.rowVal(s, P.sel), null) === 1;
@@ -1023,7 +1028,7 @@
       why.hidden = !why.textContent;
       for (const [v, f] of V) {
         const x = call(f, null);
-        v.textContent = x == null || !isFinite(+x) ? '-----' : (+x).toFixed(0);
+        setTx(v, x == null || !isFinite(+x) ? '-----' : (+x).toFixed(0));
       }
       const k = pv.map(p => p.v).join();
       if (k !== k0) {
@@ -1084,7 +1089,7 @@
       b.onclick = () => {
         if (b.disabled) return;
         pend = () => (a[1](), call(() => window.lsEventAdd(P.d || 'FIELD', 'FIELD', 'Field operator: ' + P.n + ' ' + a[0] + ' (faceplate)')));
-        exT.textContent = a[3] || 'FIELD: ' + P.n + ' ' + a[0] + '?';
+        setTx(exT, a[3] || 'FIELD: ' + P.n + ' ' + a[0] + '?');
         ex.hidden = false;
         exGo.focus();
       };
@@ -1108,7 +1113,7 @@
       const st = call(P.st, null),
         run = isRun();
       F.lamp.className = 'fpo-lamp ' + (st === true ? 'run' : st === false ? 'stop' : '');
-      F.val.textContent = call(P.val, null) || (st === true ? L[0] : st === false ? L[1] : '-----');
+      setTx(F.val, call(P.val, null) || (st === true ? L[0] : st === false ? L[1] : '-----'));
       lO.className = 'fpo-lp' + (st === true ? ' run' : '');
       lC.className = 'fpo-lp' + (st === false ? ' stop' : '');
       for (const [a, b] of B) {
@@ -1116,7 +1121,7 @@
         b.disabled = !run || cur;
         b.classList.toggle(a[4] === 'stop' ? 'lit-stop' : 'lit-run', cur);
       }
-      msg.textContent = run ? '' : 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).';
+      setTx(msg, run ? '' : 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).');
       msg.hidden = !msg.textContent;
     }
     paint = tick;
@@ -1197,7 +1202,7 @@
       const st = call(P.st, null),
         run = isRun();
       F.lamp.className = 'fpo-lamp ' + (st === 'RUN' ? 'run' : st === 'STOP' ? 'stop' : st === 'TRIP' ? 'trip' : '');
-      F.val.textContent = st === 'RUN' ? 'RUNNING' : st === 'STOP' ? 'STOPPED' : st === 'TRIP' ? 'TRIP' : '-----';
+      setTx(F.val, st === 'RUN' ? 'RUNNING' : st === 'STOP' ? 'STOPPED' : st === 'TRIP' ? 'TRIP' : '-----');
       lR.className = 'fpo-lp' + (st === 'RUN' ? ' run' : '');
       lS.className = 'fpo-lp' + (st === 'STOP' ? ' stop' : '');
       lT.className = 'fpo-lp' + (st === 'TRIP' ? ' trip' : '');
@@ -1260,7 +1265,7 @@
       ex.hidden = true;
       if (!op) return;
       const r = call(() => P.cmd(op), 'no plant model') || '';
-      msg.textContent = r ? '⚠ ' + r : P.n + ' ' + L[op] + ': EXECUTED';
+      setTx(msg, r ? '⚠ ' + r : P.n + ' ' + L[op] + ': EXECUTED');
       if (!r) call(() => window.lsEventAdd('TCS', 'DCS', 'Operator (TCS): ' + P.n + ' ' + (P.t || '') + ' ' + L[op]));
       setTimeout(tick, 150);
     };
@@ -1279,7 +1284,7 @@
         au = P.au ? call(P.au, null) : null,
         run = isRun();
       F.lamp.className = 'fpo-lamp ' + (st === 'RUN' ? 'run' : st === 'STOP' ? 'stop' : '');
-      F.val.textContent = st === 'RUN' ? 'RUNNING' : st === 'STOP' ? 'STOPPED' : '-----';
+      setTx(F.val, st === 'RUN' ? 'RUNNING' : st === 'STOP' ? 'STOPPED' : '-----');
       lR.className = 'fpo-lp' + (st === 'RUN' ? ' run' : '');
       lS.className = 'fpo-lp' + (st === 'STOP' ? ' stop' : '');
       bSt.disabled = st == null || st === 'RUN' || !run;
@@ -1348,7 +1353,7 @@
     let pend = null;
     function ask(p) {
       pend = p;
-      exT.textContent = p.q || p.l + ' ' + P.n + '?';
+      setTx(exT, p.q || p.l + ' ' + P.n + '?');
       ex.hidden = false;
       exGo.focus();
     }
@@ -1361,13 +1366,13 @@
       /* the AUTO / MANUAL selection: a maintained bit of the drawing */
       if (p.sel != null) {
         call(() => P.mode(p.row, p.sel));
-        msg.textContent = P.n + ' ' + p.l + ': EXECUTED';
+        setTx(msg, P.n + ' ' + p.l + ': EXECUTED');
         setTimeout(tick, 150);
         return;
       }
       if (p.fn) {
         call(p.fn);
-        msg.textContent = P.n + ' ' + p.l + ': done (field operator)';
+        setTx(msg, P.n + ' ' + p.l + ': done (field operator)');
         call(() => window.lsEventAdd('FIELD', 'FIELD', 'Field operator: ' + P.n + ' ' + p.l));
         setTimeout(tick, 150);
         return;
@@ -1380,7 +1385,7 @@
          moves its valve only after the bypass: 14 s */
       const hard = typeof r === 'string' && r,
         wait = /^(OPEN|CLOSE)$/.test(p.l) ? 3000 : /^(ISOLATE|REINSTATE)$/.test(p.l) ? 14000 : 0;
-      msg.textContent = hard ? '⚠ ' + r : wait ? P.n + ' ' + p.l + ': sent' : P.n + ' ' + p.l + ': EXECUTED';
+      setTx(msg, hard ? '⚠ ' + r : wait ? P.n + ' ' + p.l + ': sent' : P.n + ' ' + p.l + ': EXECUTED');
       if (!hard && wait) {
         const mine = (mov.seq = (mov.seq || 0) + 1);
         setTimeout(() => {
@@ -1411,12 +1416,12 @@
         pos = I.pos,
         run = isRun(),
         st = pos == null ? null : pos >= 99.5 ? 'OPEN' : pos <= 0.5 ? 'CLOSED' : 'TRAVEL';
-      pv.textContent = pos == null ? '-----' : (+pos).toFixed(1) + ' %';
+      setTx(pv, pos == null ? '-----' : (+pos).toFixed(1) + ' %');
       F.lamp.className = 'fpo-lamp ' + (pos == null ? '' : pos > 0.5 ? 'run' : 'stop');
-      F.val.textContent = st || '-----';
+      setTx(F.val, st || '-----');
       lO.className = 'fpo-lp' + (pos != null && pos > 0.5 ? ' run' : '');
       lC.className = 'fpo-lp' + (pos != null && pos <= 0.5 ? ' stop' : '');
-      md.textContent = [I.rem == null ? '' : I.rem ? 'REMOTE' : 'LOCAL', I.au == null ? '' : I.au ? 'AUTO' : 'MANUAL'].filter(Boolean).join(' · ') || '-----';
+      setTx(md, [I.rem == null ? '' : I.rem ? 'REMOTE' : 'LOCAL', I.au == null ? '' : I.au ? 'AUTO' : 'MANUAL'].filter(Boolean).join(' · ') || '-----');
       const rem = I.rem == null ? null : !!I.rem /* the drawing gives 0 / 1 */,
         loc = rem === false;
       btns.forEach(b => (b.disabled = !run || (loc && !!P.sel) || (b._pb.sel != null && !!b._pb.sel === !!I.au)));
@@ -1426,8 +1431,8 @@
         bLoc.disabled = !run || rem === false;
         bRem.classList.toggle('on', rem === true);
         bLoc.classList.toggle('on', rem === false);
-        if (loc && !pend && !/EXECUTED|done/.test(msg.textContent)) msg.textContent = 'Selector at LOCAL: the DCS push buttons work only in REMOTE. Turn the field selector to REMOTE first.';
-        else if (!loc && /^Selector at LOCAL/.test(msg.textContent)) msg.textContent = 'Push buttons of the DCS screen (CRT), read from the DITL sheet ' + (P.d || '') + '.';
+        if (loc && !pend && !/EXECUTED|done/.test(msg.textContent)) setTx(msg, 'Selector at LOCAL: the DCS push buttons work only in REMOTE. Turn the field selector to REMOTE first.');
+        else if (!loc && /^Selector at LOCAL/.test(msg.textContent)) setTx(msg, 'Push buttons of the DCS screen (CRT), read from the DITL sheet ' + (P.d || '') + '.');
       }
     }
     paint = tick;
@@ -1529,7 +1534,7 @@
         run = isRun(),
         op = p > 0;
       F.lamp.className = 'fpo-lamp ' + (op ? 'run' : 'stop');
-      F.val.textContent = op ? Math.round(p) + ' % OPEN' : 'CLOSED';
+      setTx(F.val, op ? Math.round(p) + ' % OPEN' : 'CLOSED');
       lO.className = 'fpo-lp' + (op ? ' run' : '');
       lC.className = 'fpo-lp' + (!op ? ' stop' : '');
       B.forEach(([v, b]) => {
@@ -1537,7 +1542,7 @@
         b.classList.toggle('lit-run', v > 0 && Math.round(p) === v);
         b.classList.toggle('lit-stop', v === 0 && !op);
       });
-      why.textContent = run ? '' : 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).';
+      setTx(why, run ? '' : 'Simulation PAUSED: press ▶ RUN first (nothing moves while paused).');
       why.hidden = !why.textContent;
     }
     tick();
@@ -1678,7 +1683,7 @@
       }
       for (const [v, f, dp] of monV) {
         const x = call(f, null);
-        v.textContent = x == null || !isFinite(+x) ? '-----' : (+x).toFixed(dp);
+        setTx(v, x == null || !isFinite(+x) ? '-----' : (+x).toFixed(dp));
       }
       if (Hs) {
         const now = Date.now(),
