@@ -38,7 +38,7 @@
     CS = 1.6 /* condenser */,
     TOP = 110 /* discharge to the sea */,
     PATH = 26 /* the two paths of the condenser: path A above, path B below the centre line */,
-    BX = [1230, 1410, 1590],
+    BX = [1140, 1370, 1600] /* 230 apart: the status line of each pump ("Running · Remote · Manual") stays clear of the next at 11 px on a 1280 tablet */,
     BY = 850 /* booster pumps */,
     EX = [1360, 1500, 1640],
     EY = 470; /* heat exchangers */
@@ -86,8 +86,8 @@
           sc: CS,
           lab: 't'
         }),
-        at(M('pump', 'CTCS-A', 'Condenser tube cleaning A', [], { tag: 'P-1113' }), 820, 800, { id: 'ta', lab: 'b' }),
-        at(M('pump', 'CTCS-B', 'Condenser tube cleaning B', [], { tag: 'P-1114' }), 1000, 800, { id: 'tb', lab: 'b' }),
+        at(M('pump', 'CTCS-A', 'Condenser tube cleaning A', [], { tag: 'P-1113' }), 700, 800, { id: 'ta', lab: 'b' }),
+        at(M('pump', 'CTCS-B', 'Condenser tube cleaning B', [], { tag: 'P-1114' }), 900, 800, { id: 'tb', lab: 'b' }),
         ...N.map((n, i) =>
           at(
             M('pump', 'SWBP-' + n, 'Booster pump ' + n, [V('Current', 'IIP1503' + n, 'A', 1)], { tag: 'P-1503' + n }),
@@ -189,7 +189,7 @@
             [1112, MY],
             [1240, MY],
             [1240, TOP],
-            [1560, TOP]
+            [1440, TOP]
           ],
           to: 'sea water discharge channel',
           flow: SW
@@ -285,8 +285,8 @@
         { x: 1250, y: TOP - 14, s: 'siphon pit', cls: 'hx-note' },
         { x: 530, y: 965, s: 'to the booster pumps', cls: 'hx-note' },
         {
-          x: 910,
-          y: 900,
+          x: 800,
+          y: 735,
           s: 'Cleaning balls go with the sea water through the condenser tubes.',
           cls: 'hx-note',
           anchor: 'middle'
