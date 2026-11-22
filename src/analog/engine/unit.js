@@ -2270,9 +2270,14 @@ const AN_BB = {
      gas 106.9 of 264.5 kW/K (CALC above, Tu 892.3 C) = fgP 0.404. Panel factor = fgP x uag(Tu, metal) / uag(892.3, metal) +
      (1 - fgP) x phi^0.5 (anBbPanF): 1 at the anchor, the gas part follows the WSGG radiation of the gas temperature. Why the same split:
      the panels hang in the same suspension at the same temperatures as the upper walls, so they take the same coefficient per m2; their
-     area is not in the documents (C series drawings), so it is read from the anchor: 2 x uaP 65 = 130 kW/K / (264.5 / 1,199 m2) = 589 m2
+     area is read from the anchor: 2 x uaP 65 = 130 kW/K / (264.5 / 1,199 m2) = 589 m2
      of wall-equivalent surface, of it gas 589 x 106.9 / 1,199 = 52.5 kW/K = 40.4 % (CALC). Check at start-up air (save S12, bed 500 C):
-     WSGG gas at Tu 434 ~ 499 C to metal ~200 C gives 6.3 ~ 7.2 MW, a gray-gas hand check 0.3 x 5.67e-8 x (773^4 - 473^4) x 589 m2 = 3 MW, the same order (eps 0.3 assumed for the check only) */
+     WSGG gas at Tu 434 ~ 499 C to metal ~200 C gives 6.3 ~ 7.2 MW, a gray-gas hand check 0.3 x 5.67e-8 x (773^4 - 473^4) x 589 m2 = 3 MW, the same order (eps 0.3 assumed for the check only).
+     Check against the drawing (FHI K1AU3C-201 "Vert. superheater arrangement", in K1AU3-B-0-003 as built): 14 rows across the furnace
+     at 622.3 mm pitch, each row one #1 and one #2 panel, 609.6 mm deep, straight from FL 27,774 to FL 42,527 (14.75 m) = 28 x 2 sides
+     x 0.6096 x 14.75 = 503 m2, plus the lower bent legs: the 589 m2 of the anchor (CALC). The lanes between the panels (gap 622.3 -
+     50.8 = 571 mm, 1.8 x gap = 1.03 m beam, Hottel) take the gas share down by the same 0.83 at 700 ~ 892 C (view factor to the next
+     panel 0.43, WSGG 0.31 vs 0.50 at 7.7 m), so the shading changes the size of fgP, already set by the anchor, not its part-load slope */
   fgP: 106.9 / 264.5,
   tuA: 892.3
 };
