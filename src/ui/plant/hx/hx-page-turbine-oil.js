@@ -209,7 +209,7 @@
         {
           med: 'lube',
           w: W_S,
-          pts: ['qb.d', [QX - 3, BY - 60], [HX2, BY - 60], [HX2, AY - 60]],
+          pts: ['qb.d', [QX - 3, BY - 60], [QX - 62, BY - 60], [QX - 62, AY - 60], [QX - 3, AY - 60]] /* beta.305: up on the left of pump A, clear of its words */,
           flow: 'm:COP-B',
           arrow: false
         },
@@ -291,7 +291,7 @@
       ],
       texts: [
         { x: 700, y: 978, s: 'control oil from the main oil tank', cls: 'hx-note' },
-        { x: 990, y: 700, s: 'straight to the bearing oil header', cls: 'hx-note' }
+        { x: 1022, y: 440, s: 'straight to the bearing oil header', cls: 'hx-note' }
       ]
     }
   });

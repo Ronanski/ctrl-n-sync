@@ -119,9 +119,9 @@
       { med: 'condensate', w: W_DR, pts: [id + '.r', [x, 744]], to, flow: 'x:' + valve }
     ]
   });
-  const cs = spray('cs', 'XV-CD1006', 'Curtain spray', 'Curtain spray valve', 790, 'curtain spray'),
-    f1 = spray('fs1', 'XV-CD1004', 'Flash spray 1', 'Flash chamber spray valve 1', 925, 'flash chamber'),
-    f2 = spray('fs2', 'XV-CD1005', 'Flash spray 2', 'Flash chamber spray valve 2', 1060, 'flash chamber');
+  const cs = spray('cs', 'XV-CD1006', 'Curtain spray', 'Curtain spray valve', 830, 'curtain spray'),
+    f1 = spray('fs1', 'XV-CD1004', 'Flash spray 1', 'Flash chamber spray valve 1', 955, 'flash chamber'),
+    f2 = spray('fs2', 'XV-CD1005', 'Flash spray 2', 'Flash chamber spray valve 2', 1080, 'flash chamber');
 
   page({
     id: 'condensate',
@@ -198,8 +198,8 @@
         ...H2.items,
         ...H3.items,
 
-        /* ---- to the deaerator ---- */
-        at(C('LICCD1104', 'Deaerator level valve', { tag: 'LCV-CD1104', wrap: 14 }), 1692, TY, { id: 'dlv', lab: 't' }),
+        /* ---- to the deaerator (beta.305: the level valve on the riser, where its name and mode have room on every screen) ---- */
+        at(C('LICCD1104', 'Deaerator level valve', { tag: 'LCV-CD1104', wrap: 14, lx: -14 }), 1736, 250, { id: 'dlv', rot: 90, lab: 'l' }),
         at(L('feedwater', 'To the deaerator'), 1660, 150, { id: 'dal' })
       ],
       pipes: [
@@ -208,10 +208,11 @@
         { med: 'condensate', w: W_SM, pts: ['mu1.r', 'cd.mu'], flow: 'x:MV-MU1001|l:LICCD1110A' },
         { med: 'condensate', w: W_SM, pts: [[80, 352], [80, 450], 'mu2.l'], flow: 'l:LICCD1110A', arrow: false },
         { med: 'condensate', w: W_SM, pts: ['mu2.r', [180, 450], [180, 352]], flow: 'l:LICCD1110A', arrow: false },
-        /* suction: hotwell to the two pumps, into the bottom of each can */
-        { med: 'condensate', w: W_CD, pts: ['cd.hw', [CX, SUY], [PAX, SUY]], flow: CD },
-        { med: 'condensate', w: W_CD, pts: [[PAX, SUY], 'pa.b'], flow: A, arrow: false },
-        { med: 'condensate', w: W_CD, pts: [[PAX, SUY], [PBX, SUY], 'pb.b'], flow: B, arrow: false },
+        /* suction: hotwell to the two pumps, into the side of each can */
+        /* beta.305: the suction comes in at the side of each pump (port s), so it no longer runs up through the words under the pump */
+        { med: 'condensate', w: W_CD, pts: ['cd.hw', [CX, SUY], [PAX - 110, SUY]], flow: CD },
+        { med: 'condensate', w: W_CD, pts: [[PAX - 110, SUY], [PAX - 110, PY + 12 * PS], 'pa.s'], flow: A, arrow: false },
+        { med: 'condensate', w: W_CD, pts: [[PAX - 110, SUY], [PBX - 110, SUY], [PBX - 110, PY + 12 * PS], 'pb.s'], flow: B, arrow: false },
         /* discharge */
         { med: 'condensate', w: W_CD, pts: ['pa.d', [PAX + 22 * PS, HY]], flow: A, arrow: false },
         { med: 'condensate', w: W_CD, pts: ['pb.d', [PBX + 22 * PS, HY]], flow: B, arrow: false },
@@ -229,7 +230,7 @@
         ...f2.pipes,
         /* polisher branch and its bypass valve in the line */
         { med: 'condensate', w: W_SM, pts: [[800, HY], 'pin.l'], flow: 'x:MV-CD1007', arrow: false },
-        { med: 'condensate', w: W_SM, pts: ['pin.r', [800, 440]], to: 'to polisher', flow: 'x:MV-CD1007' },
+        { med: 'condensate', w: W_SM, pts: ['pin.r', [800, 440]], to: 'to polisher', tox: 26, flow: 'x:MV-CD1007' },
         { med: 'condensate', w: W_CD, pts: [[800, HY], 'pby.l'], flow: 'l:FICCD1121', arrow: false },
         { med: 'condensate', w: W_CD, pts: ['pby.r', [1000, HY]], flow: 'l:FICCD1121', arrow: false },
         { med: 'condensate', w: W_SM, pts: [[1000, 440], 'pout.l'], flow: 'x:MV-CD1008', arrow: false },
@@ -285,8 +286,8 @@
         },
         ...H3.pipes,
         /* to the deaerator */
-        { med: 'condensate', w: W_CD, pts: [[RX, HCY + BO2], [RX, TY], 'dlv.l'], flow: CD },
-        { med: 'condensate', w: W_CD, pts: ['dlv.r', [1736, TY], [1736, 150], 'dal.r'], flow: 'l:LICCD1104' }
+        { med: 'condensate', w: W_CD, pts: [[RX, HCY + BO2], [RX, TY], [1736, TY], 'dlv.r'], flow: CD },
+        { med: 'condensate', w: W_CD, pts: ['dlv.l', [1736, 150], 'dal.r'], flow: 'l:LICCD1104' }
       ],
       taps: [
         { x: 470, y: HY, side: 't', label: 'Temperature', key: 'TTCD1118', unit: '°C', dp: 0, tag: 'TT-CD1118' },
@@ -326,7 +327,7 @@
           tag: 'TT-CD1103-2'
         },
         { x: 1555, y: TY, side: 't', label: 'Flow', key: 'FTCD1122', unit: 't/h', tag: 'FT-CD1122' },
-        { x: 1655, y: TY, side: 't', label: 'Pressure', key: 'PTCD1122', unit: K, tag: 'PT-CD1122' },
+        { x: 1650, y: TY, side: 't', label: 'Pressure', key: 'PTCD1122', unit: K, tag: 'PT-CD1122' },
         { x: 1580, y: TY, side: 'b', label: 'Temperature', key: 'TT-CD1122', unit: '°C', dp: 0, tag: 'TT-CD1122' }
       ],
       texts: [

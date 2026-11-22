@@ -97,9 +97,9 @@
         at(M('rotary', 'L-1311', 'Limestone feeder', []), LX, 812, { id: 'lfd', sc: 1.5, lab: 'l' }),
         /* the SOx control sets the feeder speed (ABC-005 AICFG10571, PV = stack SOx AT-FG1057-1 0 ~ 500 ppm, I/O list STN101 AI0466;
            HMI snapshot 19.PNG SV 200 ppm): the operator puts it in AUTO here (F-AM, Jennie live run 2026-11-18) */
-        at(C('AICFG10571', 'Limestone feed, stack SOx control', { sym: 'ctl', unit: 'ppm', pvdp: 0, wrap: 26 }), LX + 190, 790, {
+        at(C('AICFG10571', 'Limestone feed, stack SOx control', { sym: 'ctl', unit: 'ppm', pvdp: 0, wrap: 16 }), LX + 320, 760, {
           id: 'sox',
-          lab: 'r'
+          lab: 't' /* beta.305: right of the feed line (its box sat on it) */
         }),
         at(M('valve', 'XV-LM1811A ~ H', 'Isolating valves A to H', [], { kind: 'shutoff', wrap: 12 }), 370, 890, {
           id: 'liso',
@@ -110,7 +110,7 @@
           rot: -90,
           lab: 'r'
         }),
-        at(xv('Equalising air valve', 'XV-PA1814C', 'DITL-LS200|o|1'), 110, 890, { id: 'lv5', lab: 'b' }),
+        at(xv('Equalising air valve', 'XV-PA1814C', 'DITL-LS200|o|1'), 110, 890, { id: 'lv5', lab: 'r' } /* beta.305: beside the valve, its air line comes up under it */),
         at(L('compressed-air', 'Plant air', { back: true }), 40, 960, { id: 'pal' }),
         at(B('Bypass air valves', dy('DITL-LS212|o|9+10'), { w: 170 }), 640, 940, { id: 'lby' }),
         ...INJ.map((n, i) =>

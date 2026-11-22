@@ -156253,10 +156253,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build b3185e5'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 4b4e750'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build b3185e5';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 4b4e750';
     } catch (e) {}
   };
   upd();
@@ -346534,7 +346534,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b3185e5'));
+    row('Version', E('span', 'scsver', ver + ' · build 4b4e750'));
   }
   function openSet(near) {
     if (!set) {
@@ -351262,7 +351262,7 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 /* ---- process drawing (SVG) ---- */
 .hx svg text { font-family: var(--hx-font); fill: var(--hx-ink); }
 /* words stay readable where a line passes behind them */
-.hx-process svg .hx-node text, .hx-process svg .hx-lane { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 3.2px; stroke-linejoin: round; }
+.hx-process svg .hx-node text, .hx-process svg .hx-lane { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 4.4px; stroke-linejoin: round; }
 .hx-yn text, .hx-mode text { stroke: none !important; }
 .hx-yn:not(.y):not(.n) { display: none; }
 .hxo { fill: var(--hx-fill); fill: url(#hxg); stroke: var(--hx-ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
@@ -351317,7 +351317,7 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .hx-end { font: 500 10.4px var(--hx-font); fill: var(--hx-mute) !important; paint-order: stroke; stroke: var(--hx-panel); stroke-width: 3px; }
 .hx-tap[data-open] { cursor: pointer; }
 .hx-nov { fill: var(--hx-none) !important; }
-.hx-process svg .hx-live { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 3.2px; stroke-linejoin: round; }
+.hx-process svg .hx-live { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 4.4px; stroke-linejoin: round; }
 .hx-tap:hover .hx-dot, .hx-tap:focus-visible .hx-dot { fill: var(--hx-accent); }
 .hx-zone { font: 600 10.5px var(--hx-cond); letter-spacing: 0.1em; text-transform: uppercase; fill: var(--hx-mute) !important; }
 .hx-node { cursor: default; outline: none; }
@@ -362637,7 +362637,8 @@ window.PLANT_SYS = [
       { x: 160, y: 230, s: 'Economizer 3', cls: 'rx-in2', size: 8.8 },
       { x: 160, y: 290, s: 'Economizer', cls: 'rx-in2', size: 8.8 },
       { x: 160, y: 303, s: '2S', cls: 'rx-in2', size: 8.8 },
-      { x: 108, y: 446, s: 'Economizer 1', cls: 'rx-in2', size: 8.8 }
+      /* beta.305 e1y: under its bank, clear of the pass damper words above it (Furnace and flue gas) */
+      { x: 108, y: o.e1y || 446, s: 'Economizer 1', cls: 'rx-in2', size: 8.8 }
         ];
     return {
       box: sh ? [-1, -50, 244, 512] : [-28, -50, 217, 512],
@@ -363317,6 +363318,18 @@ window.PLANT_SYS = [
   };
 
   /* ---------- what a page is made of ---------- */
+  /* beta.305 (user 2026-11-22: "dpat kasi scalable lahat pra kht anong screen size"): the page is fitted whole on every screen of the
+     Operator Station where the whole page can be drawn at 0.55 or more (a 1280 x 800 tablet or desktop and up; the words keep 11 px and
+     were placed for that size), touch or mouse alike. A smaller screen (a phone) cannot hold the whole page at 11 px: there the drawing
+     keeps its readable size (0.68) and moves under the finger. The body class st-fit tells station.css which of the two it is */
+  HX.fitWhole = () => {
+    if (!window.LS_STATION) return false;
+    const e = document.getElementById('plsvg'),
+      r = e ? e.getBoundingClientRect() : null,
+      ok = r && r.width > 0 ? Math.min(r.width / 1920, r.height / 1140) >= 0.55 : matchMedia('(pointer: coarse)').matches;
+    if (document.body) document.body.classList.toggle('st-fit', ok);
+    return ok;
+  };
   HX.V = (label, key, unit, dp) => ({ label, key, unit: unit || '', dp: dp == null ? 1 : dp });
   HX.E = (sym, name, tag, vals, o) => Object.assign({ k: 'eq', sym, name, tag: tag || '', vals: vals || [] }, o || {});
   HX.M = (sym, mach, name, vals, o) => Object.assign({ k: 'mach', sym, mach, name, vals: vals || [] }, o || {});
@@ -363680,7 +363693,20 @@ window.PLANT_SYS = [
           `<text class="hx-st none" data-vs="${esc(it.valve)}" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">-----</text>`
       ]);
     /* audit 2026-11-21 B2: the output and its % are one line of text, so "100.0" pushes the % on instead of running into it */
+    /* beta.305: mvb, the output on its own line under the mode pill, for two loops side by side (their pills grow on a small screen) */
     if (it.k === 'loop') {
+      if (it.mvb) {
+      body.push([
+        16.5,
+        (bx, by, an) =>
+          `<g class="hx-mode" data-mode="${esc(it.loop)}" transform="translate(${n1(bx - (an === 'middle' ? 25 : an === 'end' ? 50 : 0))} ${n1(by - 11)})"><rect width="50" height="15" rx="7.5"/><text x="25" y="11" text-anchor="middle">-----</text></g>`
+      ]);
+      body.push([
+        14.5,
+        (bx, by, an) =>
+          `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}"><tspan class="hx-val" data-lp="${esc(it.loop)}|mv">-----</tspan><tspan class="hx-unit"> %</tspan></text>`
+      ]);
+      } else
       body.push([
         16.5,
         (bx, by, an) =>
@@ -363725,7 +363751,7 @@ window.PLANT_SYS = [
     if (side) {
       const all = head.concat(body),
         tot = all.reduce((q, r) => q + r[0], 0),
-        bx = lab === 'r' ? box[2] + 7 : box[0] - 7,
+        bx = (lab === 'r' ? box[2] + 7 : box[0] - 7) + (it.lx || 0) /* beta.305: lx moves a side label */,
         b0 = -tot / 2 + 10 + (it.ly || 0),
         ey = b0 + (tot - all[all.length - 1][0]) / 2 - 4;
       let by = b0;
@@ -364247,15 +364273,16 @@ window.PLANT_SYS = [
          scrolls. The size of the frame is read (its CSS px against its screen px), so a smaller window or an open menu are both met */
       /* apk test of the user 2026-11-22: on a touch screen of the Operator Station the page is fitted whole (station.css), so the
          drawing gets no minimum width there */
-      if (window.LS_STATION && matchMedia('(pointer: coarse)').matches) {
+      if (HX.fitWhole()) {
         if (svg.style.minWidth) svg.style.minWidth = '';
       } else if (svg.classList.contains('hx-real') && svg.viewBox && svg.viewBox.baseVal && svg.clientWidth) {
         const vb = svg.viewBox.baseVal.width,
           fr = svg.getBoundingClientRect().width / svg.clientWidth,
-          w = fr > 0 ? Math.ceil((0.8 * vb) / fr) : 0,
-          w0 = Math.max(1400, w);
+          st = !!window.LS_STATION,
+          w = fr > 0 ? Math.ceil(((st ? 0.68 : 0.8) * vb) / fr) : 0,
+          w0 = st ? w : Math.max(1400, w);
         if (w && Math.abs((parseFloat(svg.style.minWidth) || 1400) - w0) > 2)
-          svg.style.minWidth = w0 > 1400 ? w0 + 'px' : '';
+          svg.style.minWidth = st || w0 > 1400 ? w0 + 'px' : '';
       }
     }
     /* the scale class of each drawing (it hides the tag numbers, so it comes before the words are read) */
@@ -364282,6 +364309,29 @@ window.PLANT_SYS = [
           g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')
         ]);
       }
+      /* screen sizes 2026-11-23: the mode pill grows with its word (the word grew to 11 px, the 50 x 15 pill did not); it grows from its centre and the output value beside it moves on by half */
+      for (const g of svg.querySelectorAll('.hx-mode')) {
+        const host = g.parentNode,
+          rc = g.querySelector('rect'),
+          T = g.querySelectorAll(':scope > text');
+        if (!host || !host.getScreenCTM || !rc || !T.length) continue;
+        const M = host.getScreenCTM(),
+          k = M ? Math.hypot(M.a, M.b) : 0,
+          s = k ? Math.max(1, MINPX / (10.4 * k)) : 1,
+          on = s > 1.01,
+          A = (e, a, grown, base) => {
+            const v = on ? n1(grown) : base;
+            if (e.getAttribute(a) !== v) W.push([e, 'at', [a, v]]);
+          };
+        A(rc, 'x', 25 - 25 * s, '0');
+        A(rc, 'width', 50 * s, '50');
+        A(rc, 'height', 15 * s, '15');
+        A(rc, 'y', 7.5 - 7.5 * s, '0');
+        A(rc, 'rx', 7.5 * s, '7.5');
+        A(T[0], 'x', 25, '25');
+        A(T[0], 'y', 11 + 3.5 * (s - 1), '11');
+        if (T[1]) A(T[1], 'x', 56 + 25 * (s - 1), '56');
+      }
       for (const t of svg.querySelectorAll('text, tspan')) {
         if (quick && MTK.get(t) === SK[SV.indexOf(svg)]) continue;
         if (!t.getClientRects().length || t.closest('.hx-yn')) continue;
@@ -364301,6 +364351,7 @@ window.PLANT_SYS = [
     }
     for (const [e, k, v] of W)
       if (k === 'tr') e.getAttribute('transform') !== v && e.setAttribute('transform', v);
+      else if (k === 'at') e.setAttribute(v[0], v[1]);
       else if (e.style.fontSize !== v) e.style.fontSize = v;
     if (!quick || W.length) spread(SV);
     return MEAS;
@@ -364309,7 +364360,7 @@ window.PLANT_SYS = [
      to 11 screen px needs 14 x (11 / k) / 12.6. Only on a touch screen of the Operator Station, where the page is fitted whole; a mouse
      screen keeps the drawing as it was planned (never under 0.8 there) */
   function spread(SV) {
-    const on = window.LS_STATION && matchMedia('(pointer: coarse)').matches,
+    const on = !!window.LS_STATION /* screen sizes 2026-11-23: every station screen, the phone too (its drawing is 0.68) */,
       R = [];
     for (const svg of SV)
       for (const r of svg.querySelectorAll('.hx-row')) {
@@ -365177,7 +365228,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(L('condensate', 'Condensate', { back: true }), 1320, 50, { id: 'cdl' }),
 
         /* ---- reheat temperature: the controller and the two gas dampers of the back pass ---- */
-        at(C('TICHR1002A', 'Reheat temperature control', { sym: 'ctl', unit: '°C', pvdp: 0, wrap: 30 }), 100, 64, {
+        at(C('TICHR1002A', 'Reheat temperature control', { sym: 'ctl', unit: '°C', pvdp: 0, wrap: 18 }), 100, 64, {
           id: 'tic',
           lab: 't'
         }),
@@ -365378,7 +365429,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           unit: K,
           tag: 'PT-HR1003-1 / -2'
         },
-        { x: 860, y: HY, side: 't', label: 'Temperature', key: 'TT-HR1004', unit: '°C', dp: 0, tag: 'TT-HR1004' },
+        { x: 905, y: HY, side: 't', label: 'Temperature', key: 'TT-HR1004', unit: '°C', dp: 0, tag: 'TT-HR1004' },
         { x: XR, y: 474, side: 'r', label: 'After reheat valve A', key: 'an:Pip', unit: K, tag: 'PT-ST1002-1 / -2 / -3' },
         {
           x: 1548,
@@ -365955,14 +366006,14 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(X('MV-TS1002', 'Extraction 2 valve'), 1460, 580, { id: 'ts2', lab: 'b' }),
         at(L('extraction', 'Extraction steam', { back: true }), 1620, 580, { id: 'exl2' }),
         at(X('MV-TS1001', 'Extraction 1 valve'), 1330, 338, { id: 'ts1', lab: 'b' }),
-        at(L('reheat-steam', 'Cold reheat steam', { back: true }), 1580, 338, { id: 'exl1' }),
+        at(L('reheat-steam', 'Cold reheat steam', { back: true }), 1615, 338, { id: 'exl1' }),
         at(C('LICHD11061', 'Heater 2 drain valve', { tag: 'LCV-HD1106-1' }), DRX, 530, { id: 'd2', rot: 90, lab: 'r' }),
         at(C('LICHD11051', 'Heater 1 drain valve', { tag: 'LCV-HD1105-1' }), DRX, 790, { id: 'd1', rot: 90, lab: 'r' }),
 
         /* ---- feedwater control valves, to the economizers ---- */
         at(C('FICFW1007', 'Main feedwater valve', { tag: 'FCV-FW1130-1' }), 1450, 170, { id: 'fcm', lab: 't' }),
         at(C('LICBR1001B', 'Start-up feedwater valve', { tag: 'FCV-FW1130-2' }), 1450, 250, { id: 'fcs', lab: 'b' }),
-        at(L('drum-steam', 'To the economizers and the drum'), 1640, 110, { id: 'ecl' }),
+        at(L('drum-steam', 'To the economizers and the drum'), 1600, 70, { id: 'ecl' }),
         at(C('LICBR1001', 'Drum level, three element', { sym: 'ctl', unit: 'mm', pvdp: 0, wrap: 30 }), 1060, 70, {
           id: 'lc3',
           lab: 't'
@@ -365983,7 +366034,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         /* suction: one line from the deaerator, a branch to each pump */
         { med: 'water', w: W_FW, pts: ['da.out', [DAX + 48 * DAS, 300], [SUX, 300], [SUX, SUY], [250, SUY]], flow: FW },
         { med: 'water', w: W_FW, pts: [[250, SUY], [250, PY], 'pa.s'], flow: A, arrow: false },
-        { med: 'water', w: W_FW, pts: [[250, SUY], [620, SUY], [620, PY], 'pb.s'], flow: B, arrow: false },
+        { med: 'water', w: W_FW, pts: [[250, SUY], [560, SUY], [560, PY], 'pb.s'] /* beta.305: clear of the words under pump B */, flow: B, arrow: false },
         /* discharge of pump A: valve and its bypass, recirculation */
         { med: 'water', w: W_FW, pts: ['pa.d', 'dva.l'], flow: A, arrow: false },
         { med: 'water', w: W_FW, pts: ['dva.r', [PAX - 3, DHY]], flow: 'x:MV-FW1001' },
@@ -366065,7 +366116,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { med: 'water', w: W_FW, pts: ['fcm.r', [1530, 170], [1530, FY]], flow: 'l:FICFW1007', arrow: false },
         { med: 'water', w: W_SM, pts: [[1370, FY], [1370, 250], 'fcs.l'], flow: 'l:LICBR1001B', arrow: false },
         { med: 'water', w: W_SM, pts: ['fcs.r', [1530, 250], [1530, FY]], flow: 'l:LICBR1001B', arrow: false },
-        { med: 'water', w: W_FW, pts: [[1530, FY], [1730, FY], [1730, 110], 'ecl.r'], flow: FW },
+        { med: 'water', w: W_FW, pts: [[1530, FY], [1730, FY], [1730, 70], 'ecl.r'], flow: FW },
         /* extraction steam into the heaters */
         { med: 'steam', w: W_ST, pts: ['exl2.l', 'ts2.r'], flow: 'x:MV-TS1002', arrow: false },
         { med: 'steam', w: W_ST, pts: ['ts2.l', [STX, 580], 'h1.st'], flow: 'x:MV-TS1002' },
@@ -366080,7 +366131,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       taps: [
         { x: 405, y: DAY - 12 * DAS, side: 't', label: 'Pressure', key: 'PT-TS1017', unit: K, tag: 'PT-TS1017' },
         { x: 250, y: 935, side: 'l', label: 'Suction', key: 'PT-FW1115-A', unit: K, tag: 'PT-FW1115-A' },
-        { x: 600, y: 935, side: 'l', label: 'Suction', key: 'PT-FW1115-B', unit: K, tag: 'PT-FW1115-B' },
+        { x: 550, y: 935, side: 'l', label: 'Suction', key: 'PT-FW1115-B', unit: K, tag: 'PT-FW1115-B' },
         { x: 410, y: DHY, side: 't', label: 'Pressure', key: 'PT-FW1011', unit: K, tag: 'PT-FW1011' },
         { x: 610, y: DHY, side: 't', label: 'Temperature', key: 'TT-FW1011', unit: '°C', dp: 0, tag: 'TT-FW1011' },
         {
@@ -366248,9 +366299,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       { med: 'condensate', w: W_DR, pts: [id + '.r', [x, 744]], to, flow: 'x:' + valve }
     ]
   });
-  const cs = spray('cs', 'XV-CD1006', 'Curtain spray', 'Curtain spray valve', 790, 'curtain spray'),
-    f1 = spray('fs1', 'XV-CD1004', 'Flash spray 1', 'Flash chamber spray valve 1', 925, 'flash chamber'),
-    f2 = spray('fs2', 'XV-CD1005', 'Flash spray 2', 'Flash chamber spray valve 2', 1060, 'flash chamber');
+  const cs = spray('cs', 'XV-CD1006', 'Curtain spray', 'Curtain spray valve', 830, 'curtain spray'),
+    f1 = spray('fs1', 'XV-CD1004', 'Flash spray 1', 'Flash chamber spray valve 1', 955, 'flash chamber'),
+    f2 = spray('fs2', 'XV-CD1005', 'Flash spray 2', 'Flash chamber spray valve 2', 1080, 'flash chamber');
 
   page({
     id: 'condensate',
@@ -366327,8 +366378,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ...H2.items,
         ...H3.items,
 
-        /* ---- to the deaerator ---- */
-        at(C('LICCD1104', 'Deaerator level valve', { tag: 'LCV-CD1104', wrap: 14 }), 1692, TY, { id: 'dlv', lab: 't' }),
+        /* ---- to the deaerator (beta.305: the level valve on the riser, where its name and mode have room on every screen) ---- */
+        at(C('LICCD1104', 'Deaerator level valve', { tag: 'LCV-CD1104', wrap: 14, lx: -14 }), 1736, 250, { id: 'dlv', rot: 90, lab: 'l' }),
         at(L('feedwater', 'To the deaerator'), 1660, 150, { id: 'dal' })
       ],
       pipes: [
@@ -366337,10 +366388,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { med: 'condensate', w: W_SM, pts: ['mu1.r', 'cd.mu'], flow: 'x:MV-MU1001|l:LICCD1110A' },
         { med: 'condensate', w: W_SM, pts: [[80, 352], [80, 450], 'mu2.l'], flow: 'l:LICCD1110A', arrow: false },
         { med: 'condensate', w: W_SM, pts: ['mu2.r', [180, 450], [180, 352]], flow: 'l:LICCD1110A', arrow: false },
-        /* suction: hotwell to the two pumps, into the bottom of each can */
-        { med: 'condensate', w: W_CD, pts: ['cd.hw', [CX, SUY], [PAX, SUY]], flow: CD },
-        { med: 'condensate', w: W_CD, pts: [[PAX, SUY], 'pa.b'], flow: A, arrow: false },
-        { med: 'condensate', w: W_CD, pts: [[PAX, SUY], [PBX, SUY], 'pb.b'], flow: B, arrow: false },
+        /* suction: hotwell to the two pumps, into the side of each can */
+        /* beta.305: the suction comes in at the side of each pump (port s), so it no longer runs up through the words under the pump */
+        { med: 'condensate', w: W_CD, pts: ['cd.hw', [CX, SUY], [PAX - 110, SUY]], flow: CD },
+        { med: 'condensate', w: W_CD, pts: [[PAX - 110, SUY], [PAX - 110, PY + 12 * PS], 'pa.s'], flow: A, arrow: false },
+        { med: 'condensate', w: W_CD, pts: [[PAX - 110, SUY], [PBX - 110, SUY], [PBX - 110, PY + 12 * PS], 'pb.s'], flow: B, arrow: false },
         /* discharge */
         { med: 'condensate', w: W_CD, pts: ['pa.d', [PAX + 22 * PS, HY]], flow: A, arrow: false },
         { med: 'condensate', w: W_CD, pts: ['pb.d', [PBX + 22 * PS, HY]], flow: B, arrow: false },
@@ -366358,7 +366410,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ...f2.pipes,
         /* polisher branch and its bypass valve in the line */
         { med: 'condensate', w: W_SM, pts: [[800, HY], 'pin.l'], flow: 'x:MV-CD1007', arrow: false },
-        { med: 'condensate', w: W_SM, pts: ['pin.r', [800, 440]], to: 'to polisher', flow: 'x:MV-CD1007' },
+        { med: 'condensate', w: W_SM, pts: ['pin.r', [800, 440]], to: 'to polisher', tox: 26, flow: 'x:MV-CD1007' },
         { med: 'condensate', w: W_CD, pts: [[800, HY], 'pby.l'], flow: 'l:FICCD1121', arrow: false },
         { med: 'condensate', w: W_CD, pts: ['pby.r', [1000, HY]], flow: 'l:FICCD1121', arrow: false },
         { med: 'condensate', w: W_SM, pts: [[1000, 440], 'pout.l'], flow: 'x:MV-CD1008', arrow: false },
@@ -366414,8 +366466,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         },
         ...H3.pipes,
         /* to the deaerator */
-        { med: 'condensate', w: W_CD, pts: [[RX, HCY + BO2], [RX, TY], 'dlv.l'], flow: CD },
-        { med: 'condensate', w: W_CD, pts: ['dlv.r', [1736, TY], [1736, 150], 'dal.r'], flow: 'l:LICCD1104' }
+        { med: 'condensate', w: W_CD, pts: [[RX, HCY + BO2], [RX, TY], [1736, TY], 'dlv.r'], flow: CD },
+        { med: 'condensate', w: W_CD, pts: ['dlv.l', [1736, 150], 'dal.r'], flow: 'l:LICCD1104' }
       ],
       taps: [
         { x: 470, y: HY, side: 't', label: 'Temperature', key: 'TTCD1118', unit: '°C', dp: 0, tag: 'TT-CD1118' },
@@ -366455,7 +366507,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           tag: 'TT-CD1103-2'
         },
         { x: 1555, y: TY, side: 't', label: 'Flow', key: 'FTCD1122', unit: 't/h', tag: 'FT-CD1122' },
-        { x: 1655, y: TY, side: 't', label: 'Pressure', key: 'PTCD1122', unit: K, tag: 'PT-CD1122' },
+        { x: 1650, y: TY, side: 't', label: 'Pressure', key: 'PTCD1122', unit: K, tag: 'PT-CD1122' },
         { x: 1580, y: TY, side: 'b', label: 'Temperature', key: 'TT-CD1122', unit: '°C', dp: 0, tag: 'TT-CD1122' }
       ],
       texts: [
@@ -366542,7 +366594,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(E('furnace', '', '', [], { fire: 'v:TT-FG1090>300' }), FX, FY, { id: 'fu', under: true, sc: FS }),
         at(E('cyclone', '', '', [], { flow: GAS }), CX, CY, { id: 'cy', under: true, sc: CS }),
         at(E('sealpot', '', '', [], { flow: GAS }), CX, CY + 196 * CS, { id: 'sp', under: true, sc: CS, mir: true }),
-        at(E('backpass', '', '', [], { gasA: 'l:HICHR1002A', gasB: 'l:HICHR1002B' }), BPX, BPY, {
+        at(E('backpass', '', '', [], { gasA: 'l:HICHR1002A', gasB: 'l:HICHR1002B', e1y: 478 }), BPX, BPY, {
           id: 'bp',
           under: true,
           sc: BS
@@ -366558,7 +366610,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
 
         /* ---- dampers and controllers ---- */
         at(
-          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1116A-D', wrap: 14 }),
+          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1116A-D', wrap: 14, mvb: true }),
           BPX + 56 * BS,
           BPY + 350 * BS,
           {
@@ -366567,7 +366619,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           }
         ),
         at(
-          C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1117A-D', wrap: 14 }),
+          C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1117A-D', wrap: 14, mvb: true }),
           BPX + 160 * BS,
           BPY + 350 * BS,
           { id: 'dmb', lab: 'b' }
@@ -366585,8 +366637,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
            the hydraulic coupling selected the damper station tracks F(X) of the coupling (100 %), so the operator could not close the
            inlet damper for the ID fan START permissive (DITL-25A M.3117 IDF INLET VANE CLOSED) nor follow PR-OPE-5004 "change the
            furnace pressure control to DAMPER CONTROL" */
-        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1405, 520, { id: 'pbh' }) /* Audit 3: above the controller, clear of Fan outlet */,
-        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1600, 520, { id: 'pbd' }),
+        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1405, 470, { id: 'pbh' }) /* Audit 3: above the controller, clear of Fan outlet */,
+        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1600, 470, { id: 'pbd' }),
         at(C('AICFG112', 'Oxygen control', { sym: 'ctl', unit: '%', pvdp: 1, wrap: 30 }), 1050, 400, {
           id: 'o2c',
           lab: 't'
@@ -367208,9 +367260,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(M('rotary', 'L-1311', 'Limestone feeder', []), LX, 812, { id: 'lfd', sc: 1.5, lab: 'l' }),
         /* the SOx control sets the feeder speed (ABC-005 AICFG10571, PV = stack SOx AT-FG1057-1 0 ~ 500 ppm, I/O list STN101 AI0466;
            HMI snapshot 19.PNG SV 200 ppm): the operator puts it in AUTO here (F-AM, Jennie live run 2026-11-18) */
-        at(C('AICFG10571', 'Limestone feed, stack SOx control', { sym: 'ctl', unit: 'ppm', pvdp: 0, wrap: 26 }), LX + 190, 790, {
+        at(C('AICFG10571', 'Limestone feed, stack SOx control', { sym: 'ctl', unit: 'ppm', pvdp: 0, wrap: 16 }), LX + 320, 760, {
           id: 'sox',
-          lab: 'r'
+          lab: 't' /* beta.305: right of the feed line (its box sat on it) */
         }),
         at(M('valve', 'XV-LM1811A ~ H', 'Isolating valves A to H', [], { kind: 'shutoff', wrap: 12 }), 370, 890, {
           id: 'liso',
@@ -367221,7 +367273,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           rot: -90,
           lab: 'r'
         }),
-        at(xv('Equalising air valve', 'XV-PA1814C', 'DITL-LS200|o|1'), 110, 890, { id: 'lv5', lab: 'b' }),
+        at(xv('Equalising air valve', 'XV-PA1814C', 'DITL-LS200|o|1'), 110, 890, { id: 'lv5', lab: 'r' } /* beta.305: beside the valve, its air line comes up under it */),
         at(L('compressed-air', 'Plant air', { back: true }), 40, 960, { id: 'pal' }),
         at(B('Bypass air valves', dy('DITL-LS212|o|9+10'), { w: 170 }), 640, 940, { id: 'lby' }),
         ...INJ.map((n, i) =>
@@ -367752,7 +367804,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
             {
               med: 'water',
               w: 4,
-              pts: [[xs, PY], [xs, 840], [pb(sx) - 70, 840], [pb(sx) - 70, PY], 'pb' + i + '.s'],
+              pts: [[xs, PY], [xs, 872], [pb(sx) - 70, 872], [pb(sx) - 70, PY], 'pb' + i + '.s'],
               flow: Bp,
               arrow: false
             },
@@ -367867,23 +367919,23 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(M('pump', 'BFWP-A', 'Boiler feed pump A', []), 250, 930, { id: 'bfp', sc: 0.8, lab: 'b', mir: true }),
 
         /* ---- coordinated control ---- */
-        at(C('HIC-ULD', 'Unit load demand, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 16 }), 1560, 150, {
+        at(C('HIC-ULD', 'Unit load demand, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 16 }), 1530, 150, {
           id: 'uld',
           lab: 'r'
         }),
-        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 10 }), 1560, 250, {
+        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 10 }), 1530, 250, {
           id: 'tm',
           lab: 'r'
         }),
-        at(C('PIC-COBM', 'Boiler pressure, kg/cm²', { sym: 'ctl', unit: '', pvdp: 0, wrap: 18 }), 1560, 350, {
+        at(C('PIC-COBM', 'Boiler pressure, kg/cm²', { sym: 'ctl', unit: '', pvdp: 0, wrap: 18 }), 1530, 350, {
           id: 'bpc',
           lab: 'r'
         }),
-        at(C('HIC-BM', 'Boiler master', { sym: 'ctl', unit: '', pvdp: 1, wrap: 18 }), 1560, 450, {
+        at(C('HIC-BM', 'Boiler master', { sym: 'ctl', unit: '', pvdp: 1, wrap: 18 }), 1530, 450, {
           id: 'bm',
           lab: 'r'
         }),
-        at(C('FIC-CM', 'Coal master, t/h', { sym: 'ctl', unit: '', pvdp: 1, wrap: 18 }), 1560, 550, {
+        at(C('FIC-CM', 'Coal master, t/h', { sym: 'ctl', unit: '', pvdp: 1, wrap: 18 }), 1530, 550, {
           id: 'cm',
           lab: 'r'
         }),
@@ -367966,7 +368018,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: TX - 50, y: TY + 152, s: 'Turbine and condenser', cls: 'hx-name' },
         { x: TX + 60, y: TY - 60, s: 'Speed', key: 'SI-TB', unit: 'rpm', dp: 0 },
         { x: TX - 50, y: TY + 170, s: 'Condenser pressure', key: 'PT-CD1110', unit: K + ' abs', dp: 3 },
-        { x: 1490, y: 100, s: 'COORDINATED CONTROL', cls: 'hx-zone' },
+        { x: 1460, y: 100, s: 'COORDINATED CONTROL', cls: 'hx-zone' },
         { x: 1490, y: 720, s: 'PAGES', cls: 'hx-zone' }
       ]
     }
@@ -368832,7 +368884,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         {
           med: 'lube',
           w: W_S,
-          pts: ['qb.d', [QX - 3, BY - 60], [HX2, BY - 60], [HX2, AY - 60]],
+          pts: ['qb.d', [QX - 3, BY - 60], [QX - 62, BY - 60], [QX - 62, AY - 60], [QX - 3, AY - 60]] /* beta.305: up on the left of pump A, clear of its words */,
           flow: 'm:COP-B',
           arrow: false
         },
@@ -368914,7 +368966,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       ],
       texts: [
         { x: 700, y: 978, s: 'control oil from the main oil tank', cls: 'hx-note' },
-        { x: 990, y: 700, s: 'straight to the bearing oil header', cls: 'hx-note' }
+        { x: 1022, y: 440, s: 'straight to the bearing oil header', cls: 'hx-note' }
       ]
     }
   });
@@ -370516,7 +370568,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(M('dryer', dry(n), 'Air dryer ' + n, [V('Flow', o.flow + n, '', 1)], { tag: o.dtag + n }), 700, y - 20, {
           id: p + 'd' + i,
           sc: 1.5,
-          lab: 'r'
+          lab: 'r',
+          ly: -12 /* beta.305: the flow line clear of the outlet line under it */
         })
       );
       pipes.push(
@@ -370566,7 +370619,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         w: W,
         pts: [
           [1360, rows[1]],
-          [1640, rows[1]]
+          [1520, rows[1]]
         ],
         to: o.to,
         flow: ANY
@@ -370584,7 +370637,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         lab: 'b'
       })
     );
-    taps.push({ x: 1500, y: rows[1], side: 't', label: 'To Unit 1', key: o.pu, unit: K, dp: 1, tag: o.put });
+    taps.push({ x: 1440, y: rows[1], side: 't', label: 'To Unit 1', key: o.pu, unit: K, dp: 1, tag: o.put });
     return { items, pipes, taps };
   };
   const IA = train('i', 40, {
@@ -370642,7 +370695,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       texts: [
         { x: 20, y: 40, s: 'INSTRUMENT AIR', cls: 'hx-name' },
         { x: 20, y: 510, s: 'PLANT AIR', cls: 'hx-name' },
-        { x: 1380, y: 300, s: 'also to Unit 2, the utility area and the compressor control air', cls: 'hx-note' },
+        { x: 1380, y: 300, s: 'also to Unit 2, the utility area', cls: 'hx-note' },
+        { x: 1380, y: 318, s: 'and the compressor control air', cls: 'hx-note' },
         { x: 1380, y: 770, s: 'also to Unit 2 and the utility area', cls: 'hx-note' },
         {
           x: 20,
@@ -371211,7 +371265,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     /* beta.295 (user, apk test 2026-11-22: "Draggable p rin ang hmi at hndi fit ang scale ng display nya sa screen"): on a touch screen
        of the Operator Station (the apk) the page is fitted whole into the area and nothing moves under a finger; the words keep their
        11 px minimum (hx-core.js minText) and the tag numbers step back at that scale. A mouse screen keeps the C10 frame below */
-    if (window.LS_STATION && matchMedia('(pointer: coarse)').matches) return [FW, FH];
+    /* beta.305: every screen big enough to hold the whole page (HX.fitWhole), touch or mouse */
+    if (window.HX && HX.fitWhole && HX.fitWhole()) return [FW, FH];
     return r && r.width > 300 && r.width < 1500 && r.height > 300 ? [Math.round(r.width), Math.round(r.height)] : [FW, FH];
   };
   function screen(def) {

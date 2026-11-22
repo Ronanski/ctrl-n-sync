@@ -333,7 +333,7 @@
         at(L('condensate', 'Condensate', { back: true }), 1320, 50, { id: 'cdl' }),
 
         /* ---- reheat temperature: the controller and the two gas dampers of the back pass ---- */
-        at(C('TICHR1002A', 'Reheat temperature control', { sym: 'ctl', unit: '°C', pvdp: 0, wrap: 30 }), 100, 64, {
+        at(C('TICHR1002A', 'Reheat temperature control', { sym: 'ctl', unit: '°C', pvdp: 0, wrap: 18 }), 100, 64, {
           id: 'tic',
           lab: 't'
         }),
@@ -534,7 +534,7 @@
           unit: K,
           tag: 'PT-HR1003-1 / -2'
         },
-        { x: 860, y: HY, side: 't', label: 'Temperature', key: 'TT-HR1004', unit: '°C', dp: 0, tag: 'TT-HR1004' },
+        { x: 905, y: HY, side: 't', label: 'Temperature', key: 'TT-HR1004', unit: '°C', dp: 0, tag: 'TT-HR1004' },
         { x: XR, y: 474, side: 'r', label: 'After reheat valve A', key: 'an:Pip', unit: K, tag: 'PT-ST1002-1 / -2 / -3' },
         {
           x: 1548,

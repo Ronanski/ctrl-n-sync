@@ -383,7 +383,8 @@
     /* beta.295 (user, apk test 2026-11-22: "Draggable p rin ang hmi at hndi fit ang scale ng display nya sa screen"): on a touch screen
        of the Operator Station (the apk) the page is fitted whole into the area and nothing moves under a finger; the words keep their
        11 px minimum (hx-core.js minText) and the tag numbers step back at that scale. A mouse screen keeps the C10 frame below */
-    if (window.LS_STATION && matchMedia('(pointer: coarse)').matches) return [FW, FH];
+    /* beta.305: every screen big enough to hold the whole page (HX.fitWhole), touch or mouse */
+    if (window.HX && HX.fitWhole && HX.fitWhole()) return [FW, FH];
     return r && r.width > 300 && r.width < 1500 && r.height > 300 ? [Math.round(r.width), Math.round(r.height)] : [FW, FH];
   };
   function screen(def) {
