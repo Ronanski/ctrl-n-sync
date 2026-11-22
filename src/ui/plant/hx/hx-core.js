@@ -1174,6 +1174,9 @@
     function clock() {
       if (!page.isConnected) return void (clearInterval(clk), (clk = 0), CLK.clear());
       if (document.hidden || view !== 'process') return;
+      /* F6 2026-11-22: not while the overview or a logic / library tab covers the plant page (it still moved its parts 10 times a second) */
+      const B = document.body;
+      if (B.classList.contains('scov') || (B.dataset.tab && B.dataset.tab !== 'operate')) return;
       const t = Math.floor(performance.now() / 100) * 100;
       for (const an of CLK) {
         const el = an.effect && an.effect.target;

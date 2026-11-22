@@ -3160,7 +3160,9 @@ function anCdTagStep(U, ld) {
   const mv = U.lpbSp.n != null ? Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0)) : NaN,
     sp = (U.spr || []).find(z => z.v[0] === 'DITL-66'),
     uf = sp && sp.pr.uf != null ? sp.pr.uf : NaN;
-  Object.assign(U.tt, {
+  /* F6 2026-11-22: U.tt may not exist yet (the Web Worker engine runs this first at 'go', before any other tag step made it): the same
+     guard as the other tag steps; without it the Worker stopped at start and the page ran the engine on its own thread */
+  Object.assign(U.tt || (U.tt = {}), {
     'TT-CD1119': r1(hw + (AN_LP.rise * L) / 2),
     'TT-CD1110-4': r1(hw + 2 * L),
     'FT-CD1122': f ? r1(f.fda) : null,
