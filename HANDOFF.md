@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-22 14:00 PHT** (LEADER : JENNIE, beta.276: ang behaviour gate ay tumatakbo na sa Worker, ang engine na gamit ng app).
+Huling update: **2026-11-22 14:55 PHT** (LEADER : JENNIE, beta.278: ang pause sa Worker ay umaabot na sa page, W.live).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -14,7 +14,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.276**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.278**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
@@ -39,7 +39,7 @@ Jennie, bahagi o bukas:
 - #13 116 na alarm tag na wala sa app, at alarm priority.
 - #19 sootblower 80H ~ 80L.
 - Part load: furnace exit gas mga +55 °C sa FHI Fig 8 sa 105–127.5 MW; MST at bed sa 90 MW laban sa plant. Ang coal swing sa 75 MW ay galing sa probe na walang operator (ulat 276 F4): ang O2 trim ay inilalagay ng operator sa neutral 50 % habang pinipilit ng drawing na MANUAL.
-- Worker = page mirror: `W.live` pagka-pause at `$id` ng `AN_UNIT.asF` (ulat 276 F1, F2); Reset ≠ bagong page sa parehong engine (F3).
+- Worker = page mirror: `$id` ng `AN_UNIT.asF` (ulat 276 F2, Rosé beta.277); Reset ≠ bagong page sa parehong engine (ulat 276 F3, Jennie).
 
 Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engineer).
 
