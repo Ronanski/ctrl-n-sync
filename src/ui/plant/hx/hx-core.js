@@ -427,14 +427,22 @@
             ? `<text class="hx-lab" x="${n1(bx - 4)}" y="${n1(by)}" text-anchor="end">${esc(v.label)}</text><text x="${n1(bx + 3)}" y="${n1(by)}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
             : `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">${esc(v.label)} <tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
       ]);
+    /* apk test of the user 2026-11-22 ("kala ko naayos na mga text nito?"): the rows of words were placed 14 units apart, the room of a
+       12.6-unit word. Drawn small (a page fitted whole on a 1280 x 800 tablet, about 0.6) a word is 11 screen px = about 18 units, so
+       the lines of one label ran into each other ("Condensate" over "pump A", "Current" over "Strainer"). Each row sits in its own
+       g.hx-row with the edge it is stacked from (data-ey, the symbol side) and its place (data-y0); spread() moves the rows apart by the
+       real size of their words, away from the symbol, so a label stays a stack of whole lines at 11 px */
+    const row = (str, y0, ey) => `<g class="hx-row" data-y0="${n1(y0)}" data-ey="${n1(ey)}">${str}</g>`;
     let words = '';
     if (side) {
       const all = head.concat(body),
         tot = all.reduce((q, r) => q + r[0], 0),
-        bx = lab === 'r' ? box[2] + 7 : box[0] - 7;
-      let by = -tot / 2 + 10 + (it.ly || 0);
+        bx = lab === 'r' ? box[2] + 7 : box[0] - 7,
+        b0 = -tot / 2 + 10 + (it.ly || 0),
+        ey = b0 + (tot - all[all.length - 1][0]) / 2 - 4;
+      let by = b0;
       for (const r of all) {
-        words += r[1](bx, by, lab === 'r' ? 'start' : 'end');
+        words += row(r[1](bx, by, lab === 'r' ? 'start' : 'end'), by, ey);
         by += r[0];
       }
     } else {
@@ -442,18 +450,18 @@
       if (lab === 'b') {
         by = box[3] + 13;
         for (const r of head.concat(body)) {
-          words += r[1](0, by, 'middle');
+          words += row(r[1](0, by, 'middle'), by, box[3] + 4);
           by += r[0];
         }
       } else {
         by = box[1] - 6;
         for (let i = head.length - 1; i >= 0; i--) {
-          words += head[i][1](0, by, 'middle');
+          words += row(head[i][1](0, by, 'middle'), by, box[1] - 6);
           by -= head[i][0];
         }
         by = box[3] + 15;
         for (const r of body) {
-          words += r[1](0, by, 'middle');
+          words += row(r[1](0, by, 'middle'), by, box[3] + 6);
           by += r[0];
         }
       }
@@ -1006,7 +1014,28 @@
     for (const [e, k, v] of W)
       if (k === 'tr') e.getAttribute('transform') !== v && e.setAttribute('transform', v);
       else if (e.style.fontSize !== v) e.style.fontSize = v;
+    if (!quick || W.length) spread(SV);
     return MEAS;
+  }
+  /* the rows of a label apart by the size their words have now (see row() of the item): 14 units hold a 12.6-unit word; a word grown
+     to 11 screen px needs 14 x (11 / k) / 12.6. Only on a touch screen of the Operator Station, where the page is fitted whole; a mouse
+     screen keeps the drawing as it was planned (never under 0.8 there) */
+  function spread(SV) {
+    const on = window.LS_STATION && matchMedia('(pointer: coarse)').matches,
+      R = [];
+    for (const svg of SV)
+      for (const r of svg.querySelectorAll('.hx-row')) {
+        let g = 1;
+        if (on) {
+          const M = r.parentNode && r.parentNode.getScreenCTM && r.parentNode.getScreenCTM(),
+            k = M ? Math.hypot(M.a, M.b) : 0;
+          if (k) g = Math.max(1, MINPX / k / 12.6);
+        }
+        const d = g > 1.01 ? (+r.dataset.y0 - +r.dataset.ey) * (g - 1) : 0;
+        R.push([r, Math.abs(d) > 0.3 ? `translate(0 ${n1(d)})` : '']);
+      }
+    for (const [r, v] of R)
+      if ((r.getAttribute('transform') || '') !== v) v ? r.setAttribute('transform', v) : r.removeAttribute('transform');
   }
   let BK = 0;
   function backHits(page) {

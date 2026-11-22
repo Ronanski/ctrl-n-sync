@@ -156171,10 +156171,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build f8fb95a'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build d540de2'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build f8fb95a';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build d540de2';
     } catch (e) {}
   };
   upd();
@@ -346370,7 +346370,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build f8fb95a'));
+    row('Version', E('span', 'scsver', ver + ' · build d540de2'));
   }
   function openSet(near) {
     if (!set) {
@@ -363525,14 +363525,22 @@ window.PLANT_SYS = [
             ? `<text class="hx-lab" x="${n1(bx - 4)}" y="${n1(by)}" text-anchor="end">${esc(v.label)}</text><text x="${n1(bx + 3)}" y="${n1(by)}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
             : `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">${esc(v.label)} <tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
       ]);
+    /* apk test of the user 2026-11-22 ("kala ko naayos na mga text nito?"): the rows of words were placed 14 units apart, the room of a
+       12.6-unit word. Drawn small (a page fitted whole on a 1280 x 800 tablet, about 0.6) a word is 11 screen px = about 18 units, so
+       the lines of one label ran into each other ("Condensate" over "pump A", "Current" over "Strainer"). Each row sits in its own
+       g.hx-row with the edge it is stacked from (data-ey, the symbol side) and its place (data-y0); spread() moves the rows apart by the
+       real size of their words, away from the symbol, so a label stays a stack of whole lines at 11 px */
+    const row = (str, y0, ey) => `<g class="hx-row" data-y0="${n1(y0)}" data-ey="${n1(ey)}">${str}</g>`;
     let words = '';
     if (side) {
       const all = head.concat(body),
         tot = all.reduce((q, r) => q + r[0], 0),
-        bx = lab === 'r' ? box[2] + 7 : box[0] - 7;
-      let by = -tot / 2 + 10 + (it.ly || 0);
+        bx = lab === 'r' ? box[2] + 7 : box[0] - 7,
+        b0 = -tot / 2 + 10 + (it.ly || 0),
+        ey = b0 + (tot - all[all.length - 1][0]) / 2 - 4;
+      let by = b0;
       for (const r of all) {
-        words += r[1](bx, by, lab === 'r' ? 'start' : 'end');
+        words += row(r[1](bx, by, lab === 'r' ? 'start' : 'end'), by, ey);
         by += r[0];
       }
     } else {
@@ -363540,18 +363548,18 @@ window.PLANT_SYS = [
       if (lab === 'b') {
         by = box[3] + 13;
         for (const r of head.concat(body)) {
-          words += r[1](0, by, 'middle');
+          words += row(r[1](0, by, 'middle'), by, box[3] + 4);
           by += r[0];
         }
       } else {
         by = box[1] - 6;
         for (let i = head.length - 1; i >= 0; i--) {
-          words += head[i][1](0, by, 'middle');
+          words += row(head[i][1](0, by, 'middle'), by, box[1] - 6);
           by -= head[i][0];
         }
         by = box[3] + 15;
         for (const r of body) {
-          words += r[1](0, by, 'middle');
+          words += row(r[1](0, by, 'middle'), by, box[3] + 6);
           by += r[0];
         }
       }
@@ -364104,7 +364112,28 @@ window.PLANT_SYS = [
     for (const [e, k, v] of W)
       if (k === 'tr') e.getAttribute('transform') !== v && e.setAttribute('transform', v);
       else if (e.style.fontSize !== v) e.style.fontSize = v;
+    if (!quick || W.length) spread(SV);
     return MEAS;
+  }
+  /* the rows of a label apart by the size their words have now (see row() of the item): 14 units hold a 12.6-unit word; a word grown
+     to 11 screen px needs 14 x (11 / k) / 12.6. Only on a touch screen of the Operator Station, where the page is fitted whole; a mouse
+     screen keeps the drawing as it was planned (never under 0.8 there) */
+  function spread(SV) {
+    const on = window.LS_STATION && matchMedia('(pointer: coarse)').matches,
+      R = [];
+    for (const svg of SV)
+      for (const r of svg.querySelectorAll('.hx-row')) {
+        let g = 1;
+        if (on) {
+          const M = r.parentNode && r.parentNode.getScreenCTM && r.parentNode.getScreenCTM(),
+            k = M ? Math.hypot(M.a, M.b) : 0;
+          if (k) g = Math.max(1, MINPX / k / 12.6);
+        }
+        const d = g > 1.01 ? (+r.dataset.y0 - +r.dataset.ey) * (g - 1) : 0;
+        R.push([r, Math.abs(d) > 0.3 ? `translate(0 ${n1(d)})` : '']);
+      }
+    for (const [r, v] of R)
+      if ((r.getAttribute('transform') || '') !== v) v ? r.setAttribute('transform', v) : r.removeAttribute('transform');
   }
   let BK = 0;
   function backHits(page) {
@@ -366060,7 +366089,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           }),
           PAX,
           PY,
-          { id: 'pa', sc: PS, lab: 'l' }
+          { id: 'pa', sc: PS, lab: 'b' }
         ),
         at(
           M('vpump', 'CEP-B', 'Condensate pump B', [V('Current', 'ITP1116B', 'A'), V('Strainer', 'DPCEPB', K, 2)], {
@@ -366068,16 +366097,16 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           }),
           PBX,
           PY,
-          { id: 'pb', sc: PS, lab: 'l' }
+          { id: 'pb', sc: PS, lab: 'b' }
         ),
 
         /* ---- on the discharge line: sprays, polisher branch, minimum flow, dump ---- */
         cs.item,
         f1.item,
         f2.item,
-        at(X('MV-CD1007', 'Polisher inlet valve', { wrap: 12 }), 800, 540, { id: 'pin', rot: -90, lab: 'l' }),
+        at(X('MV-CD1007', 'Polisher inlet valve', { wrap: 12 }), 800, 505, { id: 'pin', rot: -90, lab: 'l', ly: -25 }),
         at(C('FICCD1121', 'Polisher bypass valve', { tag: 'FCV-CD1121', wrap: 14 }), 900, HY, { id: 'pby', lab: 't' }),
-        at(X('MV-CD1008', 'Polisher outlet valve', { wrap: 12 }), 1000, 540, { id: 'pout', rot: 90, lab: 'r' }),
+        at(X('MV-CD1008', 'Polisher outlet valve', { wrap: 12 }), 1000, 505, { id: 'pout', rot: 90, lab: 'l', ly: -31 }),
         at(C('FICCD1120', 'Minimum flow valve', { tag: 'FCV-CD1120' }), 700, RY, { id: 'mf', lab: 't' }),
         at(
           C('LICCD1110B', 'Level dump valve', { tag: 'LCV-CD1110', wrap: 10, cname: 'Hotwell level dump valve' }),
@@ -366136,10 +366165,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ...f2.pipes,
         /* polisher branch and its bypass valve in the line */
         { med: 'condensate', w: W_SM, pts: [[800, HY], 'pin.l'], flow: 'x:MV-CD1007', arrow: false },
-        { med: 'condensate', w: W_SM, pts: ['pin.r', [800, 486]], to: 'to polisher', flow: 'x:MV-CD1007' },
+        { med: 'condensate', w: W_SM, pts: ['pin.r', [800, 440]], to: 'to polisher', flow: 'x:MV-CD1007' },
         { med: 'condensate', w: W_CD, pts: [[800, HY], 'pby.l'], flow: 'l:FICCD1121', arrow: false },
         { med: 'condensate', w: W_CD, pts: ['pby.r', [1000, HY]], flow: 'l:FICCD1121', arrow: false },
-        { med: 'condensate', w: W_SM, pts: [[1000, 486], 'pout.l'], flow: 'x:MV-CD1008', arrow: false },
+        { med: 'condensate', w: W_SM, pts: [[1000, 440], 'pout.l'], flow: 'x:MV-CD1008', arrow: false },
         { med: 'condensate', w: W_SM, pts: ['pout.r', [1000, HY]], flow: 'x:MV-CD1008' },
         {
           med: 'condensate',
@@ -366196,8 +366225,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { med: 'condensate', w: W_CD, pts: ['dlv.r', [1736, TY], [1736, 150], 'dal.r'], flow: 'l:LICCD1104' }
       ],
       taps: [
-        { x: 560, y: HY, side: 't', label: 'Temperature', key: 'TTCD1118', unit: '°C', dp: 0, tag: 'TT-CD1118' },
-        { x: 640, y: HY, side: 't', label: 'Pump outlet', key: 'PTCD1117', unit: K, tag: 'PT-CD1117' },
+        { x: 470, y: HY, side: 't', label: 'Temperature', key: 'TTCD1118', unit: '°C', dp: 0, tag: 'TT-CD1118' },
+        { x: 600, y: HY, side: 't', label: 'Pump outlet', key: 'PTCD1117', unit: K, tag: 'PT-CD1117' },
         { x: 1158, y: HY, side: 't', label: 'Flow', key: 'FTCD1120', unit: 't/h', tag: 'FT-CD1120' },
         { x: UX, y: 466, side: 'l', label: 'Temperature', key: 'TTCD1119', unit: '°C', dp: 0, tag: 'TT-CD1119' },
         { x: UX, y: 360, side: 'l', label: 'Temperature', key: 'TTCD1120', unit: '°C', dp: 0, tag: 'TT-CD1120' },
@@ -366232,8 +366261,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           dp: 0,
           tag: 'TT-CD1103-2'
         },
-        { x: 1545, y: TY, side: 't', label: 'Flow', key: 'FTCD1122', unit: 't/h', tag: 'FT-CD1122' },
-        { x: 1615, y: TY, side: 't', label: 'Pressure', key: 'PTCD1122', unit: K, tag: 'PT-CD1122' },
+        { x: 1555, y: TY, side: 't', label: 'Flow', key: 'FTCD1122', unit: 't/h', tag: 'FT-CD1122' },
+        { x: 1655, y: TY, side: 't', label: 'Pressure', key: 'PTCD1122', unit: K, tag: 'PT-CD1122' },
         { x: 1580, y: TY, side: 'b', label: 'Temperature', key: 'TT-CD1122', unit: '°C', dp: 0, tag: 'TT-CD1122' }
       ],
       texts: [
@@ -366248,8 +366277,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: HX1 + 14, y: HAY - 46, s: 'Low pressure heater 1', cls: 'hx-name', anchor: 'middle' },
         { x: HX1 + 14, y: HBY - 46, s: 'Low pressure heater 2', cls: 'hx-name', anchor: 'middle' },
         { x: HX1 + 14, y: HCY - 46, s: 'Low pressure heater 3', cls: 'hx-name', anchor: 'middle' },
-        { x: 1000, y: 478, s: 'from polisher', cls: 'hx-end', anchor: 'middle' },
-        { x: 900, y: 508, s: 'Polisher flow', key: 'FTCD1121', unit: 't/h', anchor: 'middle' }
+        { x: 1000, y: 432, s: 'from polisher', cls: 'hx-end', anchor: 'middle' },
+        { x: 900, y: 385, s: 'Polisher flow', key: 'FTCD1121', unit: 't/h', anchor: 'middle' }
       ]
     }
   });
@@ -368733,7 +368762,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     CS = 1.6 /* condenser */,
     TOP = 110 /* discharge to the sea */,
     PATH = 26 /* the two paths of the condenser: path A above, path B below the centre line */,
-    BX = [1230, 1410, 1590],
+    BX = [1140, 1370, 1600] /* 230 apart: the status line of each pump ("Running · Remote · Manual") stays clear of the next at 11 px on a 1280 tablet */,
     BY = 850 /* booster pumps */,
     EX = [1360, 1500, 1640],
     EY = 470; /* heat exchangers */
@@ -368781,8 +368810,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           sc: CS,
           lab: 't'
         }),
-        at(M('pump', 'CTCS-A', 'Condenser tube cleaning A', [], { tag: 'P-1113' }), 820, 800, { id: 'ta', lab: 'b' }),
-        at(M('pump', 'CTCS-B', 'Condenser tube cleaning B', [], { tag: 'P-1114' }), 1000, 800, { id: 'tb', lab: 'b' }),
+        at(M('pump', 'CTCS-A', 'Condenser tube cleaning A', [], { tag: 'P-1113' }), 700, 800, { id: 'ta', lab: 'b' }),
+        at(M('pump', 'CTCS-B', 'Condenser tube cleaning B', [], { tag: 'P-1114' }), 900, 800, { id: 'tb', lab: 'b' }),
         ...N.map((n, i) =>
           at(
             M('pump', 'SWBP-' + n, 'Booster pump ' + n, [V('Current', 'IIP1503' + n, 'A', 1)], { tag: 'P-1503' + n }),
@@ -368884,7 +368913,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
             [1112, MY],
             [1240, MY],
             [1240, TOP],
-            [1560, TOP]
+            [1440, TOP]
           ],
           to: 'sea water discharge channel',
           flow: SW
@@ -368980,8 +369009,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1250, y: TOP - 14, s: 'siphon pit', cls: 'hx-note' },
         { x: 530, y: 965, s: 'to the booster pumps', cls: 'hx-note' },
         {
-          x: 910,
-          y: 900,
+          x: 800,
+          y: 735,
           s: 'Cleaning balls go with the sea water through the condenser tubes.',
           cls: 'hx-note',
           anchor: 'middle'

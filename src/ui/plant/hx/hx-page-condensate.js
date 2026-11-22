@@ -153,7 +153,7 @@
           }),
           PAX,
           PY,
-          { id: 'pa', sc: PS, lab: 'l' }
+          { id: 'pa', sc: PS, lab: 'b' }
         ),
         at(
           M('vpump', 'CEP-B', 'Condensate pump B', [V('Current', 'ITP1116B', 'A'), V('Strainer', 'DPCEPB', K, 2)], {
@@ -161,16 +161,16 @@
           }),
           PBX,
           PY,
-          { id: 'pb', sc: PS, lab: 'l' }
+          { id: 'pb', sc: PS, lab: 'b' }
         ),
 
         /* ---- on the discharge line: sprays, polisher branch, minimum flow, dump ---- */
         cs.item,
         f1.item,
         f2.item,
-        at(X('MV-CD1007', 'Polisher inlet valve', { wrap: 12 }), 800, 540, { id: 'pin', rot: -90, lab: 'l' }),
+        at(X('MV-CD1007', 'Polisher inlet valve', { wrap: 12 }), 800, 505, { id: 'pin', rot: -90, lab: 'l', ly: -25 }),
         at(C('FICCD1121', 'Polisher bypass valve', { tag: 'FCV-CD1121', wrap: 14 }), 900, HY, { id: 'pby', lab: 't' }),
-        at(X('MV-CD1008', 'Polisher outlet valve', { wrap: 12 }), 1000, 540, { id: 'pout', rot: 90, lab: 'r' }),
+        at(X('MV-CD1008', 'Polisher outlet valve', { wrap: 12 }), 1000, 505, { id: 'pout', rot: 90, lab: 'l', ly: -31 }),
         at(C('FICCD1120', 'Minimum flow valve', { tag: 'FCV-CD1120' }), 700, RY, { id: 'mf', lab: 't' }),
         at(
           C('LICCD1110B', 'Level dump valve', { tag: 'LCV-CD1110', wrap: 10, cname: 'Hotwell level dump valve' }),
@@ -229,10 +229,10 @@
         ...f2.pipes,
         /* polisher branch and its bypass valve in the line */
         { med: 'condensate', w: W_SM, pts: [[800, HY], 'pin.l'], flow: 'x:MV-CD1007', arrow: false },
-        { med: 'condensate', w: W_SM, pts: ['pin.r', [800, 486]], to: 'to polisher', flow: 'x:MV-CD1007' },
+        { med: 'condensate', w: W_SM, pts: ['pin.r', [800, 440]], to: 'to polisher', flow: 'x:MV-CD1007' },
         { med: 'condensate', w: W_CD, pts: [[800, HY], 'pby.l'], flow: 'l:FICCD1121', arrow: false },
         { med: 'condensate', w: W_CD, pts: ['pby.r', [1000, HY]], flow: 'l:FICCD1121', arrow: false },
-        { med: 'condensate', w: W_SM, pts: [[1000, 486], 'pout.l'], flow: 'x:MV-CD1008', arrow: false },
+        { med: 'condensate', w: W_SM, pts: [[1000, 440], 'pout.l'], flow: 'x:MV-CD1008', arrow: false },
         { med: 'condensate', w: W_SM, pts: ['pout.r', [1000, HY]], flow: 'x:MV-CD1008' },
         {
           med: 'condensate',
@@ -289,8 +289,8 @@
         { med: 'condensate', w: W_CD, pts: ['dlv.r', [1736, TY], [1736, 150], 'dal.r'], flow: 'l:LICCD1104' }
       ],
       taps: [
-        { x: 560, y: HY, side: 't', label: 'Temperature', key: 'TTCD1118', unit: '°C', dp: 0, tag: 'TT-CD1118' },
-        { x: 640, y: HY, side: 't', label: 'Pump outlet', key: 'PTCD1117', unit: K, tag: 'PT-CD1117' },
+        { x: 470, y: HY, side: 't', label: 'Temperature', key: 'TTCD1118', unit: '°C', dp: 0, tag: 'TT-CD1118' },
+        { x: 600, y: HY, side: 't', label: 'Pump outlet', key: 'PTCD1117', unit: K, tag: 'PT-CD1117' },
         { x: 1158, y: HY, side: 't', label: 'Flow', key: 'FTCD1120', unit: 't/h', tag: 'FT-CD1120' },
         { x: UX, y: 466, side: 'l', label: 'Temperature', key: 'TTCD1119', unit: '°C', dp: 0, tag: 'TT-CD1119' },
         { x: UX, y: 360, side: 'l', label: 'Temperature', key: 'TTCD1120', unit: '°C', dp: 0, tag: 'TT-CD1120' },
@@ -325,8 +325,8 @@
           dp: 0,
           tag: 'TT-CD1103-2'
         },
-        { x: 1545, y: TY, side: 't', label: 'Flow', key: 'FTCD1122', unit: 't/h', tag: 'FT-CD1122' },
-        { x: 1615, y: TY, side: 't', label: 'Pressure', key: 'PTCD1122', unit: K, tag: 'PT-CD1122' },
+        { x: 1555, y: TY, side: 't', label: 'Flow', key: 'FTCD1122', unit: 't/h', tag: 'FT-CD1122' },
+        { x: 1655, y: TY, side: 't', label: 'Pressure', key: 'PTCD1122', unit: K, tag: 'PT-CD1122' },
         { x: 1580, y: TY, side: 'b', label: 'Temperature', key: 'TT-CD1122', unit: '°C', dp: 0, tag: 'TT-CD1122' }
       ],
       texts: [
@@ -341,8 +341,8 @@
         { x: HX1 + 14, y: HAY - 46, s: 'Low pressure heater 1', cls: 'hx-name', anchor: 'middle' },
         { x: HX1 + 14, y: HBY - 46, s: 'Low pressure heater 2', cls: 'hx-name', anchor: 'middle' },
         { x: HX1 + 14, y: HCY - 46, s: 'Low pressure heater 3', cls: 'hx-name', anchor: 'middle' },
-        { x: 1000, y: 478, s: 'from polisher', cls: 'hx-end', anchor: 'middle' },
-        { x: 900, y: 508, s: 'Polisher flow', key: 'FTCD1121', unit: 't/h', anchor: 'middle' }
+        { x: 1000, y: 432, s: 'from polisher', cls: 'hx-end', anchor: 'middle' },
+        { x: 900, y: 385, s: 'Polisher flow', key: 'FTCD1121', unit: 't/h', anchor: 'middle' }
       ]
     }
   });
