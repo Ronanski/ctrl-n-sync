@@ -281,7 +281,25 @@
     spdB = E('button', 'st-b');
     spdB.title = 'Simulation speed';
     spdB.onclick = speeds;
-    sim.append(runB, spdB);
+    /* beta.295 (user, apk test 2026-11-22: "Hnd ko rin msabe kung 60 fps pataas ito"): the screen frames of the last second, counted
+       from the frames the browser draws, so the frame rate can be read on the device itself; amber under 60 */
+    const fpsS = E('span', 'st-fps', '-- fps');
+    fpsS.title = 'Screen frames drawn in the last second';
+    let fN = 0,
+      fT = performance.now();
+    const fpsF = t => {
+      fN++;
+      if (t - fT >= 1000) {
+        const f = Math.round((fN * 1000) / (t - fT));
+        fpsS.textContent = f + ' fps';
+        fpsS.classList.toggle('st-low', f < 60);
+        fN = 0;
+        fT = t;
+      }
+      requestAnimationFrame(fpsF);
+    };
+    requestAnimationFrame(fpsF);
+    sim.append(fpsS, runB, spdB);
     for (const [name, v] of [
       ['Process', 0],
       ['Trends', 2]

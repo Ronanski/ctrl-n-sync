@@ -1576,7 +1576,10 @@
     let drag = null,
       dragged = false;
     svg.addEventListener('pointerdown', e => {
-      if (!vb) return;
+      /* beta.295 (user, apk test 2026-11-22: the HMI could still be dragged): in the Operator Station a realistic page (hx) is not
+         dragged: it fills its area (fitted whole on a touch screen, hx-app.js frame) or scrolls inside it, so a drag only slid the
+         page away from its place */
+      if (!vb || (window.LS_STATION && cur && cur.g && cur.g.hx)) return;
       drag = { x: e.clientX, y: e.clientY, v: vb.slice(), id: e.pointerId, moved: false };
       dragged = false;
     });
