@@ -156171,10 +156171,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build b1e7a6b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build f8fb95a'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build b1e7a6b';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build f8fb95a';
     } catch (e) {}
   };
   upd();
@@ -346370,7 +346370,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b1e7a6b'));
+    row('Version', E('span', 'scsver', ver + ' · build f8fb95a'));
   }
   function openSet(near) {
     if (!set) {
@@ -351380,9 +351380,11 @@ svg.hx-small .hx-tag { display: none; }
   .hx-nav { display: none; }
   .hx-pick { display: block; }
 }
+/* The Operator Station (apk) sets body.st-move: a tablet with battery saver or "Remove animations" reports reduced motion, and the user
+   could not see flow or a running fan at all (apk test 2026-11-22). There the movement is plant information, so it stays. */
 @media (prefers-reduced-motion: reduce) {
-  .hx-run .hxr, .hx-on > .hx-lnf, .hx-trip .hxs, .hx-st.trip, .hx-real .hx-on > .hx-lnf, .hx-run .rx-blade, .hx-run .rx-jet, .hx-run .rx-rip, .hx-run .rxrot, .hx-run .rx-lift, .hx-on > .rx-tubef, .hx-on > .rx-fall, .hx-on > .rx-rise, .hx-on > .rx-swirl, .hx-on > .rx-bub circle, .hx-run .rx-elem, .hx-run .rx-belt, .hx-run .rx-flight, .hx-run .rxflame, .hx-on > .rx-gas, .hx-on > .rx-coilf, .hx-on > .rx-mist, .hx-trip .rxs { animation: none; }
-  .hx-on > .rx-plume circle { animation: none; opacity: 0.5; }
+  body:not(.st-move) .hx-run .hxr, body:not(.st-move) .hx-on > .hx-lnf, body:not(.st-move) .hx-trip .hxs, body:not(.st-move) .hx-st.trip, body:not(.st-move) .hx-real .hx-on > .hx-lnf, body:not(.st-move) .hx-run .rx-blade, body:not(.st-move) .hx-run .rx-jet, body:not(.st-move) .hx-run .rx-rip, body:not(.st-move) .hx-run .rxrot, body:not(.st-move) .hx-run .rx-lift, body:not(.st-move) .hx-on > .rx-tubef, body:not(.st-move) .hx-on > .rx-fall, body:not(.st-move) .hx-on > .rx-rise, body:not(.st-move) .hx-on > .rx-swirl, body:not(.st-move) .hx-on > .rx-bub circle, body:not(.st-move) .hx-run .rx-elem, body:not(.st-move) .hx-run .rx-belt, body:not(.st-move) .hx-run .rx-flight, body:not(.st-move) .hx-run .rxflame, body:not(.st-move) .hx-on > .rx-gas, body:not(.st-move) .hx-on > .rx-coilf, body:not(.st-move) .hx-on > .rx-mist, body:not(.st-move) .hx-trip .rxs { animation: none; }
+  body:not(.st-move) .hx-on > .rx-plume circle { animation: none; opacity: 0.5; }
   .rxix, .rxbl { transition: none; }
 }
 

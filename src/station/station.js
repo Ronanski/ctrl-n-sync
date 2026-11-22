@@ -2605,7 +2605,7 @@
         return;
       }
       clearInterval(t);
-      document.body.classList.add('st');
+      document.body.classList.add('st', 'st-move');
       wait.remove();
       build();
       const P = pages(),
