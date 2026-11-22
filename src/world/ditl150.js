@@ -387,6 +387,8 @@
       x.av150 = null;
       x._win = null;
       x.avw = null;
+      /* beta.278 (JENNIE, reset_worker): the cause of a MOV moved by its logic (world.js, for the Event log) goes too: a fresh page has none */
+      delete x._mvWhy;
       if (x.nl) {
         x.nl._v = null;
         x.nl.fx = [];
