@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-22 14:50 PHT** (LEADER : JENNIE, beta.280: Reset pagkatapos ng run = Reset sa bagong page, sa Worker).
+Huling update: **2026-11-22 15:45 PHT** (LEADER : JENNIE, beta.282: part load, exit gas, spray at MST papunta sa FHI; bed kasing init ng plant).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -14,7 +14,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.280**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.282**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
@@ -38,7 +38,7 @@ Jennie, bahagi o bukas:
 - #12 Warm / Hot sa start screen (mula sa trip sa 150 MW, physics).
 - #13 116 na alarm tag na wala sa app, at alarm priority.
 - #19 sootblower 80H ~ 80L.
-- Part load: furnace exit gas mga +55 °C sa FHI Fig 8 sa 105–127.5 MW; MST at bed sa 90 MW laban sa plant. Ang coal swing sa 75 MW ay galing sa probe na walang operator (ulat 276 F4): ang O2 trim ay inilalagay ng operator sa neutral 50 % habang pinipilit ng drawing na MANUAL.
+- Part load (ulat 282): exit gas +15..+25 °C sa FHI Fig 8 sa 75–105 MW, +47 sa 127.5 MW kung saan bed 991 (F1); MST 543 laban sa plant 522 sa 90 MW (F2); Cold start hindi pa nasubok sa bagong decay (F3). Jennie.
 - Worker = page mirror: `$id` ng `AN_UNIT.asF` (ulat 276 F2, Rosé beta.277). Reset sa page engine lang (fallback): may natitirang nets `_v` at plant switch list (ulat 280 F1, Jennie).
 
 Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engineer).
