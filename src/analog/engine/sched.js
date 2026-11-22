@@ -143,6 +143,10 @@ AN.suFw = anSuFw; /* the start-up feedwater valve formula (unit.js), read by tes
    worldWithPlant and chunks as the timer), the Training coach after each step, the trend once a call. AN.run stays as it is, so the
    world scans and the plant runs exactly as on the Run of the operator, only the clock of the PC is out: the same build gives the same
    numbers on every PC (tests/gate/behaviour.cjs, the merge gate of checks.yml) */
+/* beta.276 (JENNIE, the gate on the Worker): the fixed clock on and off by an action, so that it reaches the engine where it runs (the
+   Worker: src/world/eng-host.js has the same two). A plain flag on AN would not go to the Worker, and a flag in the saved state would come
+   back with a LOAD */
+AN.clockFixed = on => (AN.extClock = !!on);
 AN.runFixed = (sec, dt) => {
   const sh = cs();
   if (!sh || !sh.S || !AN.run || AN._loading || anMirror()) return false;
