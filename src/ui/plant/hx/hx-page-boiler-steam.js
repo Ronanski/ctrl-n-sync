@@ -99,15 +99,15 @@
 
         /* ---- spray 1: between superheater panel No. 1 and No. 2, two parallel water lines ---- */
         at(E('spray', '', '', [], { flow: SP1 + '|' + SP1B }), P1X, 440, { id: 'ds1', rot: 90 }),
-        at(X('XV-FW1111-1', 'Block valve 1', { cname: 'Superheater spray 1 block valve (1)' }), 140, 356, {
+        at(X('XV-FW1111-1', 'Block valve 1', { cname: 'Superheater spray 1 block valve (1)' }), 110, 356, {
           id: 'x11a',
           lab: 't'
         }),
-        at(C('TICBR1130', 'Spray valve 1', { tag: 'TCV-FW1110-1', cname: 'Superheater spray 1 valves' }), 232, 356, {
+        at(C('TICBR1130', 'Spray valve 1', { tag: 'TCV-FW1110-1', cname: 'Superheater spray 1 valves' }), 250, 356, {
           id: 't11a',
           lab: 't'
         }),
-        at(X('XV-FW1111-2', 'Block valve 2', { cname: 'Superheater spray 1 block valve (2)' }), 140, 500, {
+        at(X('XV-FW1111-2', 'Block valve 2', { cname: 'Superheater spray 1 block valve (2)' }), 110, 500, {
           id: 'x11b',
           lab: 'b'
         }),
@@ -116,11 +116,11 @@
             kind: 'control',
             on: SP1B
           }),
-          232,
+          250,
           500,
           { id: 't11b', lab: 'b' }
         ),
-        at(L('feedwater', 'Feedwater', { back: true }), 62, 250, { id: 'fw1' }),
+        at(L('feedwater', 'Feedwater', { back: true }), 62, 212, { id: 'fw1' }),
         at(M('valve', 'V-BD1005 ~ V-BD1021', 'Lower ring header drains', [], { kind: 'manual', wrap: 14 }), 240, 930, {
           id: 'lhd',
           lab: 't'
@@ -133,11 +133,11 @@
 
         /* ---- spray 2: before the finishing superheater ---- */
         at(E('spray', '', '', [], { flow: SP2 + '|' + SP2B }), UPX, 770, { id: 'ds2', rot: -90 }),
-        at(C('TICBR1150', 'Spray valve 1', { tag: 'TCV-FW1120-1', cname: 'Superheater spray 2 valves' }), 1590, 716, {
+        at(C('TICBR1150', 'Spray valve 1', { tag: 'TCV-FW1120-1', cname: 'Superheater spray 2 valves' }), 1575, 716, {
           id: 't21a',
           lab: 't'
         }),
-        at(X('XV-FW1121-1', 'Block valve 1', { cname: 'Superheater spray 2 block valve (1)' }), 1680, 716, {
+        at(X('XV-FW1121-1', 'Block valve 1', { cname: 'Superheater spray 2 block valve (1)' }), 1700, 716, {
           id: 'x21a',
           lab: 't'
         }),
@@ -146,11 +146,11 @@
             kind: 'control',
             on: SP2B
           }),
-          1590,
+          1575,
           840,
           { id: 't21b', lab: 'b' }
         ),
-        at(X('XV-FW1121-2', 'Block valve 2', { cname: 'Superheater spray 2 block valve (2)' }), 1680, 840, {
+        at(X('XV-FW1121-2', 'Block valve 2', { cname: 'Superheater spray 2 block valve (2)' }), 1700, 840, {
           id: 'x21b',
           lab: 'b'
         }),
@@ -164,7 +164,7 @@
         at(C('PICMS1002', 'Main steam blow-off valve', { tag: 'PCV-MS1001', wrap: 16 }), 1500, 300, {
           id: 'bov',
           rot: 90,
-          lab: 'r'
+          lab: 'l'
         }),
         at(E('vent', '', '', [], { flow: 'l:PICMS1002' }), 1500, 258, { id: 'sil' }),
         at(E('valve', 'Safety valve', 'ZV-MS1001', [], { kind: 'safety' }), 1684, MSY - 4, { id: 'msv', lab: 't' }),
@@ -238,7 +238,7 @@
           tag: 'TT-BR1120-1 / -2'
         },
         {
-          x: 390,
+          x: 360,
           y: fy(104),
           side: 'b',
           label: 'Panel 2 inlet',
@@ -248,7 +248,7 @@
           dp: 0,
           tag: 'TT-BR1130-1 / -2'
         },
-        { x: 474, y: fy(104), side: 'b', label: 'Pressure', key: 'PT-BR1130', unit: K, tag: 'PT-BR1130' },
+        { x: 480, y: fy(104), side: 'b', label: 'Pressure', key: 'PT-BR1130', unit: K, tag: 'PT-BR1130' },
         {
           x: 420,
           y: fy(150),
@@ -260,7 +260,7 @@
           dp: 0,
           tag: 'TT-BR1140-1 / -2'
         },
-        { x: 62, y: 430, side: 'r', label: 'Spray water', key: 'FT-FW1109', unit: 't/h', tag: 'FT-FW1109' },
+        { x: 62, y: 268, side: 'r', label: 'Spray water', key: 'FT-FW1109', unit: 't/h', tag: 'FT-FW1109' },
         {
           x: UPX,
           y: 600,
@@ -278,11 +278,14 @@
         { x: 1600, y: MSY, side: 'b', label: 'Pressure', key: 'PT-MS1002', unit: K, tag: 'PT-MS1002' }
       ],
       texts: [
-        { x: 196, y: 406, s: 'Position', key: 'ZT-FW1110-1', unit: '%' },
+        { x: 110, y: 404, s: 'Position', key: 'ZT-FW1110-1', unit: '%' },
         /* Jennie 2026-11-21: spray 1 is split range (ABC-011 TICBR1130 MV: LN46 to TCV-FW1110-2, the small valve, which is full open
            first; LN47 to TCV-FW1110-1, the large valve). Spray valve 2 at 100 % with valve 1 part open is normal, not a stuck valve */
-        { x: 196, y: 424, s: 'split range: opens after valve 2', cls: 'hx-note' },
-        { x: 268, y: 488, s: 'split range: full open first', cls: 'hx-note' },
+        /* apk test 2026-11-22: two short lines each, so they stay inside the spray lines at 11 px on a 1280 tablet */
+        { x: 110, y: 421, s: 'split range, opens', cls: 'hx-note' },
+        { x: 110, y: 437, s: 'after valve 2', cls: 'hx-note' },
+        { x: 110, y: 455, s: 'split range,', cls: 'hx-note' },
+        { x: 110, y: 471, s: 'full open first', cls: 'hx-note' },
         { x: 1548, y: 766, s: 'Position', key: 'ZT-FW1120-1', unit: '%' },
         { x: DX, y: 262, s: 'Drum', cls: 'hx-name', anchor: 'middle' },
         { x: 474, y: 146, s: 'Pressure', key: 'PT-BR1001-1', unit: K, anchor: 'end' },

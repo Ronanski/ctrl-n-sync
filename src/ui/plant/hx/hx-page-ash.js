@@ -59,10 +59,10 @@
       h: 1000,
       items: [
         /* ---- precipitator and fly ash ---- */
-        at(L('furnace-gas', 'Flue gas from the air heater', { back: true }), 130, EY, { id: 'gin' }),
+        at(L('furnace-gas', 'From the air heater', { back: true }), 140, EY, { id: 'gin' }),
         at(E('esp', '', '', [], { on: 'm:ESP' }), EX, EY, { id: 'esp', under: true, sc: ES }),
         at(M('cubicle', 'ESP', 'Precipitator panel', []), 150, 320, { id: 'espp', lab: 'r' }),
-        at(L('furnace-gas', 'To the induced draft fan'), 900, EY, { id: 'gout' }),
+        at(L('furnace-gas', 'To the induced draft fan'), 930, EY, { id: 'gout' }),
         at(E('silo', 'Fly ash silo', 'T-1251', [], { id: 'fa', h: 100 }), 1160, 250, { id: 'fa', sc: 1.7, lab: 'r' }),
 
         /* ---- furnace differential pressure and screw speed ---- */
@@ -199,16 +199,18 @@
       texts: [
         { x: 24, y: 60, s: 'PRECIPITATOR AND FLY ASH', cls: 'hx-zone' },
         { x: EX, y: 86, s: 'Precipitator', cls: 'hx-name', anchor: 'middle' },
-        { x: 24, y: 80, s: 'The precipitator runs from its own panel.', cls: 'hx-note' },
-        { x: 24, y: 94, s: 'Field voltages and currents have no signal in the app.', cls: 'hx-note' },
+        { x: 24, y: 78, s: 'The precipitator runs from its own panel.', cls: 'hx-note' },
+        { x: 24, y: 95, s: 'Field voltages and currents have no signal in the app.', cls: 'hx-note' },
         { x: 24, y: 440, s: 'BOTTOM ASH', cls: 'hx-zone' },
         { x: 24, y: 462, s: 'from the furnace grate floor', cls: 'hx-note' },
-        { x: 300, y: 440, s: 'Bed pressure drop 1', key: 'DPT-FG1081', unit: MM, dp: 0 },
-        { x: 520, y: 440, s: 'Bed pressure drop 2', key: 'DPT-FG1082', unit: MM, dp: 0 },
-        { x: 760, y: 440, s: 'Cooling water', key: 'PT-CW1156', unit: 'kg/cm²' },
-        { x: 930, y: 440, s: 'Temperature', key: 'TT-CW1156', unit: '°C', dp: 0 },
-        { x: 1420, y: 250, s: 'Furnace differential pressure low stops the coolers.', cls: 'hx-note' },
-        { x: 1420, y: 266, s: 'Cycle mode timer 15 minutes (DITL-21E).', cls: 'hx-note' }
+        /* apk test 2026-11-22: the four values stood in one row and ran into each other at 11 px on a 1280 tablet: two by two */
+        { x: 300, y: 428, s: 'Bed pressure drop 1', key: 'DPT-FG1081', unit: MM, dp: 0 },
+        { x: 300, y: 446, s: 'Bed pressure drop 2', key: 'DPT-FG1082', unit: MM, dp: 0 },
+        { x: 620, y: 428, s: 'Cooling water', key: 'PT-CW1156', unit: 'kg/cm²' },
+        { x: 620, y: 446, s: 'Cooling water temperature', key: 'TT-CW1156', unit: '°C', dp: 0 },
+        { x: 1390, y: 250, s: 'Furnace differential pressure low', cls: 'hx-note' },
+        { x: 1390, y: 267, s: 'stops the coolers. Cycle mode', cls: 'hx-note' },
+        { x: 1390, y: 284, s: 'timer 15 minutes (DITL-21E).', cls: 'hx-note' }
       ]
     }
   });

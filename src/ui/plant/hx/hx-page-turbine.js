@@ -40,12 +40,12 @@
     VX = 1010; /* the values at the turbine */
   const STEP = [
     ['1 HP turbine warming', ['Warming start', 'Metal above 150 °C', 'Criteria D0']],
-    ['2 Turbine preparation', ['Chest warming', 'Turbine reset', 'Main stop valves open']],
+    ['2 Turbine preparation', ['Chest warming', 'Turbine reset', 'Stop valves open']],
     ['3 Rub check', ['Speed 200 rpm', 'Valves close', 'Below 100 rpm']],
     ['4 Acceleration', ['Soak 1800 rpm', 'Speed 3600 rpm', 'Soak 3600 rpm']],
     ['5 Excitation', ['Excitation on', 'Rated voltage', 'Criteria D4']],
     ['6 Synch. and initial load', ['Auto sync', '52G closed', 'Initial load hold']],
-    ['7 Load up', ['Intercept to control valves', 'Load to target', 'Criteria D6']],
+    ['7 Load up', ['Intercept to control', 'Load to target', 'Criteria D6']],
     ['8 Normal operation', ['No hold', 'Rate limit', 'Criteria D7']]
   ];
   const TRIP = [
@@ -150,20 +150,23 @@
           lab: 'r'
         }),
         at(L('generator', 'Generator page'), GX, 470, { id: 'gnl' }),
-        at(L('turbine-oil', 'Turbine oil'), VX + 200, 640, { id: 'tol' }),
+        at(L('turbine-oil', 'Turbine oil'), 1290, 690, { id: 'tol' }),
         /* the operator's load target and load rate (Jennie live run 2026-11-18, finding Target MW): the unit load demand station
            HIC-ULD (ABC-001A, MW) and the load change rate station HIC-MWRL (ABC-001B, 0 ~ 10 MW/min). In CCS the turbine master and
            the boiler master follow the demand at this rate (PR-OPE-5002 load up / load change); before, no plant page had them */
-        at(C('HIC-ULD', 'Unit load demand (target)', { sym: 'ctl', unit: 'MW', pvdp: 1, wrap: 16 }), 1240, 724, {
+        /* apk test 2026-11-22: under the trip list the three stations stood in a row above the step cards; at 11 px on a 1280 tablet
+           their numbers ran into each other and their mode row went under step 7. Now one column in the free room between the
+           values at the turbine and the trip list, the unit (MW) in the name as on the Unit overview */
+        at(C('HIC-ULD', 'Unit load demand, MW (target)', { sym: 'ctl', unit: '', pvdp: 0, wrap: 16 }), 1290, 290, {
           id: 'uld',
           lab: 'b'
         }),
-        at(C('HIC-MWRL', 'Load change rate', { sym: 'ctl', unit: 'MW/min', pvdp: 1, wrap: 16 }), 1420, 724, {
+        at(C('HIC-MWRL', 'Load change rate, MW/min', { sym: 'ctl', unit: '', pvdp: 1, wrap: 16 }), 1290, 425, {
           id: 'mwrl',
           lab: 'b'
         }),
         /* the turbine master EIC-TM (ABC-001C): in AUTO it moves the control valves to the load demand (CCS / turbine follow) */
-        at(C('EIC-TM', 'Turbine master', { sym: 'ctl', unit: 'MW', pvdp: 1, wrap: 16 }), 1600, 724, {
+        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 16 }), 1290, 560, {
           id: 'tm',
           lab: 'b'
         }),

@@ -215,6 +215,8 @@
   };
 
   /* ---------- layout: lanes -> positions ---------- */
+  /* vstack: a value name longer than this goes on its own line (see the rows of words in itemSvg) */
+  const VSTACK = 12;
   /* room of one item above and below its centre: symbol + the words the core writes around it */
   function measure(it) {
     if (it.k === 'link') return { up: 15, dn: 15 };
@@ -225,7 +227,7 @@
       lines = it.name ? wrap(it.name, it.wrap || (side ? 22 : 19)).length : 0,
       tg = tagOf(it) ? 1 : 0,
       rows =
-        (it.k === 'mach' || it.k === 'valve' ? 1 : 0) + (it.k === 'loop' ? 1 + (it.pv ? 1 : 0) : 0) + it.vals.length;
+        (it.k === 'mach' || it.k === 'valve' ? 1 : 0) + (it.k === 'loop' ? 1 + (it.pv ? 1 : 0) : 0) + it.vals.length + (it.vstack ? it.vals.filter(v => v.label.length > VSTACK).length : 0);
     if (side) {
       const hh = ((lines + tg + rows) * 14) / 2 + 4;
       return { up: Math.max(-box[1] + 2, hh), dn: Math.max(box[3] + 2, hh) };
@@ -419,7 +421,18 @@
         ]);
       }
     }
-    for (const v of it.vals)
+    for (const v of it.vals) {
+      /* vstack (apk test 2026-11-22, Sampling): items in narrow columns write a long name on its own line and the value under it,
+         so "Cation conductivity 0.055 µS/cm" does not run into the next column at 11 px on a 1280 tablet */
+      if (it.vstack && v.label.length > VSTACK) {
+        body.push([13, (bx, by, an) => `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">${esc(v.label)}</text>`]);
+        body.push([
+          14,
+          (bx, by, an) =>
+            `<text x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
+        ]);
+        continue;
+      }
       body.push([
         14,
         (bx, by, an) =>
@@ -427,6 +440,7 @@
             ? `<text class="hx-lab" x="${n1(bx - 4)}" y="${n1(by)}" text-anchor="end">${esc(v.label)}</text><text x="${n1(bx + 3)}" y="${n1(by)}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
             : `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">${esc(v.label)} <tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
       ]);
+    }
     /* apk test of the user 2026-11-22 ("kala ko naayos na mga text nito?"): the rows of words were placed 14 units apart, the room of a
        12.6-unit word. Drawn small (a page fitted whole on a 1280 x 800 tablet, about 0.6) a word is 11 screen px = about 18 units, so
        the lines of one label ran into each other ("Condensate" over "pump A", "Current" over "Strainer"). Each row sits in its own

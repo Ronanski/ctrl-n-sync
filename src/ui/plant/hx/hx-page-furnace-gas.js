@@ -97,7 +97,7 @@
           id: 'idd',
           lab: 'l'
         }),
-        at(C('PICFG108', 'Furnace pressure, fan coupling', { sym: 'ctl', unit: MM, pvdp: 0, wrap: 32 }), 1500, 600, {
+        at(C('PICFG108', 'Furnace pressure, fan coupling, ' + MM, { sym: 'ctl', unit: '', pvdp: 0, wrap: 32 }), 1500, 600, {
           id: 'pic',
           lab: 't'
         }),

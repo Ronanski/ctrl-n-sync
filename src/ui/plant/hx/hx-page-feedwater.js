@@ -37,7 +37,7 @@
     DAY = 190,
     DAS = 1.6 /* deaerator */,
     PAX = 330,
-    PBX = 700,
+    PBX = 680 /* apk test 2026-11-22: 20 left, so the bypass state of pump B clears V-FW1011 at 11 px */,
     PY = 800,
     PS = 1.6 /* the two pumps */,
     SUX = 110,
@@ -157,7 +157,7 @@
         at(X('MV-TS1002', 'Extraction 2 valve'), 1460, 580, { id: 'ts2', lab: 'b' }),
         at(L('extraction', 'Extraction steam', { back: true }), 1620, 580, { id: 'exl2' }),
         at(X('MV-TS1001', 'Extraction 1 valve'), 1330, 338, { id: 'ts1', lab: 'b' }),
-        at(L('reheat-steam', 'Cold reheat steam', { back: true }), 1460, 338, { id: 'exl1' }),
+        at(L('reheat-steam', 'Cold reheat steam', { back: true }), 1580, 338, { id: 'exl1' }),
         at(C('LICHD11061', 'Heater 2 drain valve', { tag: 'LCV-HD1106-1' }), DRX, 530, { id: 'd2', rot: 90, lab: 'r' }),
         at(C('LICHD11051', 'Heater 1 drain valve', { tag: 'LCV-HD1105-1' }), DRX, 790, { id: 'd1', rot: 90, lab: 'r' }),
 
@@ -281,8 +281,8 @@
       ],
       taps: [
         { x: 405, y: DAY - 12 * DAS, side: 't', label: 'Pressure', key: 'PT-TS1017', unit: K, tag: 'PT-TS1017' },
-        { x: 250, y: 880, side: 'l', label: 'Suction', key: 'PT-FW1115-A', unit: K, tag: 'PT-FW1115-A' },
-        { x: 620, y: 880, side: 'l', label: 'Suction', key: 'PT-FW1115-B', unit: K, tag: 'PT-FW1115-B' },
+        { x: 250, y: 935, side: 'l', label: 'Suction', key: 'PT-FW1115-A', unit: K, tag: 'PT-FW1115-A' },
+        { x: 600, y: 935, side: 'l', label: 'Suction', key: 'PT-FW1115-B', unit: K, tag: 'PT-FW1115-B' },
         { x: 410, y: DHY, side: 't', label: 'Pressure', key: 'PT-FW1011', unit: K, tag: 'PT-FW1011' },
         { x: 610, y: DHY, side: 't', label: 'Temperature', key: 'TT-FW1011', unit: '°C', dp: 0, tag: 'TT-FW1011' },
         {
@@ -308,7 +308,7 @@
         },
         { x: 1590, y: FY, side: 'b', label: 'Pressure', key: 'PT-FW1160', unit: K, tag: 'PT-FW1160' },
         { x: 1680, y: FY, side: 'b', label: 'Temperature', key: 'TT-FW1160', unit: '°C', dp: 0, tag: 'TT-FW1160' },
-        { x: 1400, y: 580, side: 't', label: 'Pressure', key: 'PT-TS1013', unit: K, tag: 'PT-TS1013' },
+        { x: 1530, y: 580, side: 't', label: 'Pressure', key: 'PT-TS1013', unit: K, tag: 'PT-TS1013' },
         { x: 1270, y: 338, side: 't', label: 'Temperature', key: 'TT-TS1011', unit: '°C', dp: 0, tag: 'TT-TS1011' }
       ],
       texts: [

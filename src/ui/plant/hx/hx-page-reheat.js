@@ -227,12 +227,12 @@
         }),
         at(E('spray', '', '', [], { flow: 'l:TICMS1022', noz: 'b' }), BX, 505, { id: 'hps', rot: 90 }),
         at(
-          C('TICMS1022', 'Bypass spray valve', { tag: 'TCV-FW1060', cname: 'High pressure bypass spray valve' }),
-          695,
+          C('TICMS1022', 'Bypass spray valve', { tag: 'TCV-FW1060', cname: 'High pressure bypass spray valve', wrap: 12 }),
+          700,
           498,
           { id: 'tcms', lab: 'b' }
         ),
-        at(X('XV-FW1061', 'Block valve', { cname: 'High pressure bypass spray block valve' }), 590, 498, {
+        at(X('XV-FW1061', 'Block valve', { cname: 'High pressure bypass spray block valve' }), 580, 498, {
           id: 'xfw61',
           lab: 'b',
           yn: [22, -40]
@@ -273,8 +273,8 @@
         at(X('MV-TS1001', 'Extraction 1 valve'), 470, 858, { id: 'ext', rot: -90, lab: 'l', yn: [-36, -34] }),
         at(L('extraction', 'High pressure heater 2'), 470, 918, { id: 'hph' }),
         at(E('spray', '', '', [], { flow: 'l:TICHR1002', noz: 'b' }), RX, 690, { id: 'dsh', rot: -90 }),
-        at(C('TICHR1002', 'Reheater spray valve', { tag: 'TCV-FW1150' }), 492, 697, { id: 'tfw50', lab: 'b' }),
-        at(X('XV-FW1151', 'Block valve', { cname: 'Reheater spray block valve' }), 580, 697, {
+        at(C('TICHR1002', 'Reheater spray valve', { tag: 'TCV-FW1150', wrap: 12 }), 492, 697, { id: 'tfw50', lab: 'b' }),
+        at(X('XV-FW1151', 'Block valve', { cname: 'Reheater spray block valve' }), 600, 697, {
           id: 'xfw51',
           lab: 'b',
           yn: [-38, -40]
@@ -308,7 +308,7 @@
         ...dHR2.items,
 
         /* ---- low pressure bypass to the condenser ---- */
-        at(E('valve', 'Bypass isolating valve', 'V-HR1001 · manual', [], { kind: 'manual', wrap: 24 }), 1430, HY, {
+        at(E('valve', 'Bypass isolating valve', 'V-HR1001 · manual', [], { kind: 'manual', wrap: 12 }), 1380, HY, {
           id: 'vhr',
           lab: 't'
         }),
@@ -472,8 +472,8 @@
       ],
       signals: [{ pts: ['tic.l', [20, 64], [20, by(350) - 16], 'dmb.a'] }, { pts: ['dmb.a', 'dma.a'] }],
       taps: [
-        { x: 546, y: MY, side: 't', label: 'Pressure', key: 'PT-MS1006-1', unit: K, tag: 'PT-MS1006-1' },
-        { x: 620, y: MY, side: 't', label: 'Temperature', key: 'TT-MS1007', unit: '°C', dp: 0, tag: 'TT-MS1007' },
+        { x: 475, y: MY, side: 't', label: 'Pressure', key: 'PT-MS1006-1', unit: K, tag: 'PT-MS1006-1' },
+        { x: 585, y: MY, side: 't', label: 'Temperature', key: 'TT-MS1007', unit: '°C', dp: 0, tag: 'TT-MS1007' },
         { x: 540, y: 498, side: 't', label: 'Spray water', key: 'FT-FW1059', unit: 't/h', tag: 'FT-FW1059' },
         { x: BX, y: 560, side: 'r', label: 'After bypass', key: 'PT-MS1021', unit: K, tag: 'PT-MS1021' },
         {
@@ -558,7 +558,7 @@
           dp: 0,
           tag: 'TT-HR1012-1 / -2'
         },
-        { x: 1410, y: 50, side: 'b', label: 'Spray water', key: 'FTCD1115', unit: 't/h', tag: 'FT-CD1115' },
+        { x: 1420, y: 50, side: 't', label: 'Spray water', key: 'FTCD1115', unit: 't/h', tag: 'FT-CD1115' },
         {
           x: tx(-236),
           y: ty(170),
@@ -608,7 +608,7 @@
         { x: 1534, y: 525, s: 'pressure turbine', cls: 'hx-name', anchor: 'start' },
         { x: tx(-156), y: ty(268), s: 'Condenser', cls: 'hx-name', anchor: 'middle' },
         { x: 1160, y: HY - 14, s: 'Hot reheat', cls: 'hx-zone', anchor: 'middle' },
-        { x: 560, y: CY - 14, s: 'Cold reheat', cls: 'hx-zone', anchor: 'middle' }
+        { x: 710, y: CY - 14, s: 'Cold reheat', cls: 'hx-zone', anchor: 'middle' }
       ]
     },
     trends: [
