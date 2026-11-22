@@ -94,7 +94,13 @@ const AN_HX = {
      AN_BB tbA), not the bed. Their heat at the 150 MW state of the model is held (the design spray of the CALC above): there they took
      75 x (856 - 412.7) + 75 x (856 - 465.8) = 62.5 MW from the 856 C bed; at the new anchor Tu 892.3 C the same heat needs
      33.25 MW / (892.3 - 412.7) = 69.3 and 29.27 MW / (892.3 - 465.8) = 68.6 kW/K: 69 (CALC) */
-  uaP: 69 /* kW/K each SH panel, CALC above */,
+  /* beta.284 (JENNIE): the same rule (hold the design heat of the panels, 62.5 MW at 150 MW) after beta.282 (the suspension heat by
+     the square root of its density, unit.js AN_BB kKL): at the 150 MW steady of beta.282 (save 150MW-bed-AUTO-2-coolers, operator
+     probe) the two panels took 65.4 MW and the SH sprays 15.2 + 2.2 = 17.4 T/H, FHI Fig 10 12.4 T/H. The 5 T/H more spray carried
+     1.39 kg/s x (3150 - 1085) kJ/kg (spray water to the steam at the spray, IF97 near 133 bar 450 C) = 2.9 MW: 65.4 - 2.9 = 62.5 MW,
+     the design heat. 69 x 62.5 / 65.4 = 65.9; with 66 the same probe gave 63.2 MW (the panel metal follows): 66 x 62.5 / 63.2 = 65.3:
+     65 (CALC) */
+  uaP: 65 /* kW/K each SH panel, CALC above */,
   /* [metal kJ/K, design steam / water flow T/H] */
   wl: [17663, 447.6],
   p1: [70652, 447.6],
