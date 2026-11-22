@@ -55,3 +55,4 @@ Smallest word 11 px on every screen. Words over a pipe line: 23 → 8 at 1280 to
 - build `--check` SAME, `operator-text-check` ok.
 - Overlap probe, all 22 HX pages, 5 screen sizes: 0 overlaps.
 - Screenshots of the changed pages checked by eye at 1280.
+- Proof script pf2 at 1920 and 1280: 11 / 11 PASS each.
