@@ -254,8 +254,8 @@
 .hx-stop .hxs2 { stroke: var(--hx-stop); }
 .hx-trip .hxs { fill: var(--hx-run); animation: hx-blink 1s steps(2) infinite; }
 .hxr { transform-box: fill-box; transform-origin: center; }
-.hx-run .hxr { animation: hx-spin 1.6s linear infinite; }
-.hx-run .hxr.hxslow { animation-duration: 9s; }
+.hx-run .hxr { animation: hx-spin 1.6s steps(16) infinite; }
+.hx-run .hxr.hxslow { animation-duration: 9s; animation-timing-function: steps(90); }
 @keyframes hx-spin { to { transform: rotate(360deg); } }
 @keyframes hx-blink { 50% { opacity: 0.25; } }
 @keyframes hx-flow { to { stroke-dashoffset: -32; } }
@@ -264,7 +264,7 @@
 .hx-idle > .hx-lne { opacity: 0.4; }
 .hx-idle > .hx-lnh { opacity: 0.2; }
 .hx-lnf { fill: none; stroke: var(--hx-panel); stroke-width: 1.4; stroke-dasharray: 3 13; stroke-linecap: round; opacity: 0; }
-.hx-on > .hx-lnf { opacity: 0.95; animation: hx-flow 1.1s linear infinite; }
+.hx-on > .hx-lnf { opacity: 0.95; animation: hx-flow 1.1s steps(11) infinite; }
 .hx-idle > .hx-ln { opacity: 0.42; }
 .hx-name { font-size: 12.6px; font-weight: 600; }
 .hx-tag { font: 500 9.6px var(--hx-mono); fill: var(--hx-mute) !important; }
@@ -348,8 +348,8 @@
 .rx-belt { fill: none; stroke: var(--rx-st1); stroke-width: 2; stroke-dasharray: 5 4; }
 .rx-flight { fill: none; stroke: var(--rx-st1); stroke-width: 8; stroke-dasharray: 1.6 5.4; }
 .rxflame { fill: var(--rx-hot); stroke: none; opacity: 0; transform-box: fill-box; transform-origin: left center; }
-.hx-run .rx-belt, .hx-run .rx-flight { animation: rx-belt 0.9s steps(18) infinite; }
-.hx-run .rxflame { opacity: 0.95; animation: rx-flame 0.5s steps(4) infinite alternate; }
+.hx-run .rx-belt, .hx-run .rx-flight { animation: rx-belt 0.9s steps(9) infinite; }
+.hx-run .rxflame { opacity: 0.95; animation: rx-flame 0.5s steps(5) infinite alternate; }
 @keyframes rx-belt { to { stroke-dashoffset: -9; } }
 @keyframes rx-flame { to { transform: scaleX(0.82); } }
 .rxconc { fill: var(--rx-conc); stroke: var(--rx-edge); stroke-width: 0.6; }
@@ -372,7 +372,10 @@
 .hx-idle > .rx-pb { stroke: color-mix(in srgb, var(--m) 32%, var(--rx-st2)); }
 .hx-idle > .rx-ph { opacity: 0.2; }
 .hx-real .hx-lnf { stroke: #fff; stroke-width: 1.5; stroke-dasharray: 5 15; stroke-linecap: butt; }
-.hx-real .hx-on > .hx-lnf { opacity: 0.92; animation: rx-flow 1s steps(20) infinite; }
+/* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): every moving part of a page steps 10 times a second (duration / steps = 0.1 s, the
+   blink 0.5 s, the ripple 0.2 s), and hx-core.js lines all of them up on the same clock, so the page is redrawn on the same 10 frames a
+   second. Before, 23 flows on the Furnace page stepped 14 to 20 times a second each, out of step, so some part was redrawn on every frame */
+.hx-real .hx-on > .hx-lnf { opacity: 0.92; animation: rx-flow 1s steps(10) infinite; }
 .rx-chev { fill: none; stroke: #fff; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
 .hx-idle > .rx-chev { opacity: 0.45; }
 /* inside the equipment */
@@ -402,28 +405,28 @@
 .rx-tint { fill: var(--m); stroke: none; opacity: 0.16; }
 .rx-elem { fill: none; stroke: var(--rx-st2); stroke-width: 4.4; stroke-dasharray: 1.5 4.5; }
 .rx-plate { fill: none; stroke: var(--rx-st2); stroke-width: 1.3; }
-.hx-on > .rx-rise { opacity: 0.85; animation: rx-flow 1.2s steps(20) infinite; }
+.hx-on > .rx-rise { opacity: 0.85; animation: rx-flow 1.2s steps(12) infinite; }
 /* stepped (2026-11-18): a plume that moves every frame repaints the whole drawing 60 times a second; alone at 6x CPU the gas page went from 59 ~ 73 to 113 ~ 123 frames a second */
-.hx-on > .rx-bub circle { animation: rx-plume 1.8s steps(14) infinite; }
+.hx-on > .rx-bub circle { animation: rx-plume 1.8s steps(18) infinite; }
 .hx-on > .rx-bub circle:nth-child(2) { animation-delay: 0.6s; }
 .hx-on > .rx-bub circle:nth-child(3) { animation-delay: 1.2s; }
-.hx-on > .rx-swirl { opacity: 0.9; animation: rx-jet 0.8s steps(14) infinite; }
+.hx-on > .rx-swirl { opacity: 0.9; animation: rx-jet 0.8s steps(8) infinite; }
 .hx-run .rx-elem { animation: rx-elem 2.4s steps(24) infinite; }
 @keyframes rx-elem { to { stroke-dashoffset: -6; } }
 .rxtray { fill: none; stroke: var(--rx-st2); stroke-width: 1.5; stroke-dasharray: 2.6 1.6; }
 .rx-fall { fill: none; stroke: var(--m); stroke-width: 1.4; stroke-dasharray: 2 3.4; stroke-linecap: round; opacity: 0; }
-.hx-run .rxrot { animation: hx-spin 1.3s steps(26) infinite; }
-.hx-run .rx-lift { opacity: 1; animation: rx-jet 0.7s steps(14) infinite; }
-.hx-on > .rx-tubef { opacity: 0.9; animation: rx-jet 0.9s steps(18) infinite; }
-.hx-on > .rx-fall { opacity: 1; animation: rx-mist 0.6s steps(9) infinite; }
+.hx-run .rxrot { animation: hx-spin 1.3s steps(13) infinite; }
+.hx-run .rx-lift { opacity: 1; animation: rx-jet 0.7s steps(7) infinite; }
+.hx-on > .rx-tubef { opacity: 0.9; animation: rx-jet 0.9s steps(9) infinite; }
+.hx-on > .rx-fall { opacity: 1; animation: rx-mist 0.6s steps(6) infinite; }
 .hx-run .rx-steam { opacity: 0.26; }
-.hx-run .rx-blade { animation: rx-blade 0.3s steps(6) infinite; }
-.hx-run .rx-jet { opacity: 0.95; animation: rx-jet 0.7s steps(14) infinite; }
+.hx-run .rx-blade { animation: rx-blade 0.3s steps(3) infinite; }
+.hx-run .rx-jet { opacity: 0.95; animation: rx-jet 0.7s steps(7) infinite; }
 .hx-run .rx-rip { animation: rx-rip 2.6s steps(13) infinite; }
-.hx-on > .rx-gas { opacity: 0.85; animation: rx-flow 1.6s steps(20) infinite; }
-.hx-on > .rx-coilf { opacity: 0.9; animation: hx-flow 1.6s steps(32) infinite; }
-.hx-on > .rx-mist { opacity: 1; animation: rx-mist 0.5s steps(8) infinite; }
-.hx-on > .rx-plume circle { animation: rx-plume 2.4s steps(18) infinite; }
+.hx-on > .rx-gas { opacity: 0.85; animation: rx-flow 1.6s steps(16) infinite; }
+.hx-on > .rx-coilf { opacity: 0.9; animation: hx-flow 1.6s steps(16) infinite; }
+.hx-on > .rx-mist { opacity: 1; animation: rx-mist 0.5s steps(5) infinite; }
+.hx-on > .rx-plume circle { animation: rx-plume 2.4s steps(24) infinite; }
 .hx-on > .rx-plume circle:nth-child(2) { animation-delay: 0.8s; }
 .hx-on > .rx-plume circle:nth-child(3) { animation-delay: 1.6s; }
 @keyframes rx-flow { to { stroke-dashoffset: -20; } }

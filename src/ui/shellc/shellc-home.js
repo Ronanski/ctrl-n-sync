@@ -749,18 +749,23 @@
     drawLines();
     /* the alarm tile: the newest six */
     const AL = allAlarms().slice(-6).reverse();
-    almTile.textContent = '';
-    almTile.append(E('h3', '', 'Alarms · newest first'));
-    if (!AL.length) almTile.append(E('p', 'scnone', 'No alarm'));
-    for (const a of AL) {
-      const r = E('div', 'scar' + (a.ack ? '' : ' new'));
-      r.append(
-        E('span', 'sct', a.t || ''),
-        priEl(a),
-        E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')),
-        E('span', 'scs', a.ack ? 'acknowledged' : '• new')
-      );
-      almTile.append(r);
+    /* F6 2026-11-22: the tile is drawn again only when its six alarms changed (it was rebuilt 4 times a second, also under an HMI page) */
+    const alK = JSON.stringify(AL.map(a => [a.t, a.ack, a.nm, a.lv, priOf(a).p]));
+    if (almTile._k !== alK) {
+      almTile._k = alK;
+      almTile.textContent = '';
+      almTile.append(E('h3', '', 'Alarms · newest first'));
+      if (!AL.length) almTile.append(E('p', 'scnone', 'No alarm'));
+      for (const a of AL) {
+        const r = E('div', 'scar' + (a.ack ? '' : ' new'));
+        r.append(
+          E('span', 'sct', a.t || ''),
+          priEl(a),
+          E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')),
+          E('span', 'scs', a.ack ? 'acknowledged' : '• new')
+        );
+        almTile.append(r);
+      }
     }
     almTile.classList.toggle(
       'on',
@@ -872,7 +877,8 @@
         const b = E('button', alSort === k ? 'on' : '', t);
         b.type = 'button';
         b.setAttribute('aria-pressed', String(alSort === k));
-        b.title = k === 'pri' ? 'Emergency first, then high, medium, low (newest first inside each)' : 'The newest alarm first';
+        b.title =
+          k === 'pri' ? 'Emergency first, then high, medium, low (newest first inside each)' : 'The newest alarm first';
         b.onclick = () => ((alSort = k), (alSig = ''), fillAl());
         srt.append(b);
       }
@@ -1078,6 +1084,39 @@
   if (document.body) putCover();
   else document.addEventListener('DOMContentLoaded', putCover);
   setTimeout(() => cover.remove(), 30000);
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): three classes on the body instead of body:has(#scstart), body:has(#scboot) and
+     body:has(#plsvg .hx-app) (shellc.css, shellc-ui.css, shellc-compact.css). With those rules every text written anywhere in the page
+     (the values, twice a second) made the browser restyle the bars, the menus and the buttons: in a Chrome trace of the Drum page at 6 x
+     the style took 38 % of the CPU. The same way as side-open / dp-open (cr.js) */
+  const hasCls = () => {
+    const b = document.body;
+    if (!b) return;
+    const ps = document.getElementById('plsvg');
+    b.classList.toggle('scstarton', !!document.getElementById('scstart'));
+    b.classList.toggle('scbooton', !!document.getElementById('scboot'));
+    b.classList.toggle('schx', !!(ps && ps.querySelector('.hx-app')));
+  };
+  /* a page drawn or removed in the plant view: only elements count (a value written is a text node) */
+  const elOnly = L => {
+    for (const m of L) for (const n of [...m.addedNodes, ...m.removedNodes]) if (n.nodeType === 1) return void hasCls();
+  };
+  let hcPs = null;
+  const hcWatch = () => {
+    if (!document.body) return;
+    if (!hcWatch.b) {
+      hcWatch.b = 1;
+      new MutationObserver(hasCls).observe(document.body, { childList: true });
+    }
+    const ps = document.getElementById('plsvg');
+    if (ps && ps !== hcPs) {
+      hcPs = ps;
+      new MutationObserver(elOnly).observe(ps, { childList: true, subtree: true });
+    }
+    hasCls();
+  };
+  setInterval(hcWatch, 1000);
+  if (document.body) hcWatch();
+  else document.addEventListener('DOMContentLoaded', hcWatch);
   /* wait for the new strip (shellc.js) and the app */
   let n = 0;
   const iv = setInterval(() => {

@@ -37,7 +37,10 @@ function setCat(c) {
   let runWas = false;
   try {
     /* Mina #M26: a paused DITL page (SIM on, DPAUSE) is not running: the ABC page it opens stays paused too */
-    runWas = AN.cat === 'an' ? !!AN.run && !AN.view : typeof SIM !== 'undefined' && !!SIM && !(typeof DPAUSE !== 'undefined' && DPAUSE);
+    runWas =
+      AN.cat === 'an'
+        ? !!AN.run && !AN.view
+        : typeof SIM !== 'undefined' && !!SIM && !(typeof DPAUSE !== 'undefined' && DPAUSE);
   } catch (e) {}
   if (c !== 'an') {
     const f = $('sidefl');
@@ -592,8 +595,12 @@ AN.gsc = (() => {
   ansb.addEventListener('focus', () => {
     if (!pre) {
       pre = true;
-      Promise.resolve().then(() => adesLoad()).catch(() => {});
-      Promise.resolve().then(() => loadData()).catch(() => {});
+      Promise.resolve()
+        .then(() => adesLoad())
+        .catch(() => {});
+      Promise.resolve()
+        .then(() => loadData())
+        .catch(() => {});
     }
     const q = ansb.value.trim().toLowerCase();
     if (q.length < 2 || anfind.style.display === 'block') return;
@@ -758,17 +765,27 @@ document.head.appendChild(
           am.style.color = '#ffd479';
         }
       } else {
-        m = SIM ? (DPAUSE ? 'PAUSED' : 'RUN') : window.WORLD && WORLD.live ? 'RUN (ABC)' : 'VIEW / TRACE'; /* 2.5.0-beta.13: the DITL bar is VIEW | ▶ Run as the ABC */
+        m = SIM
+          ? DPAUSE
+            ? 'PAUSED'
+            : 'RUN'
+          : window.WORLD && WORLD.live
+            ? 'RUN (ABC)'
+            : 'VIEW / TRACE'; /* 2.5.0-beta.13: the DITL bar is VIEW | ▶ Run as the ABC */
         k = SIM && !DPAUSE ? 'run' : SIM ? '' : 'view';
       }
       /* the engine runs in the Web Worker: a clear mark (Mina, beta.82: ?worker=1 showed nothing) */
       if (window.ENG && ENG.mode === 'mirror') m += ' · WORKER';
-      c1.textContent = m;
-      c1.className = k;
-      const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
-      c2.textContent = sh && sh.name ? sh.name : '';
-      c3.textContent = 'v@@VERSION@@';
-      c3.textContent += ' · build @@BUILD@@'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      /* F6 2026-11-22 (Q6): each text is written only when it changed (the version was written twice every 0.4 s, so the page laid out again) */
+      if (c1.textContent !== m) c1.textContent = m;
+      if (c1.className !== k) c1.className = k;
+      const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
+        t2 = sh && sh.name ? sh.name : '',
+        t3 =
+          'v@@VERSION@@' + ' · build @@BUILD@@'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      if (c2.textContent !== t2) c2.textContent = t2;
+      /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
+      if (c3.textContent !== t3) c3.textContent = 'v@@VERSION@@' + ' · build @@BUILD@@';
     } catch (e) {}
   };
   upd();
@@ -803,7 +820,10 @@ function anSide() {
     });
     (AN.sm === 'order' ? ['ALL'] : FAMS.concat(Object.keys(G).filter(k => !FAMS.includes(k)))).forEach(fm => {
       if (!G[fm]) return;
-      const box = AN.sm !== 'order' ? sideGrp(anlist, 'an.cc', fm, G[fm].length, G[fm].includes(AN.i), !!f) : anlist; /* 2.5.0-beta.16 */
+      const box =
+        AN.sm !== 'order'
+          ? sideGrp(anlist, 'an.cc', fm, G[fm].length, G[fm].includes(AN.i), !!f)
+          : anlist; /* 2.5.0-beta.16 */
       G[fm].forEach(i => {
         const s = AN.sheets[i],
           b = h$('button', { 'data-i': i, title: s.name + (s.title ? ' - ' + s.title : '') }, [

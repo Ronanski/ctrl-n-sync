@@ -33,7 +33,9 @@
   const on = () =>
     B.classList.contains('sc') &&
     !B.classList.contains('pvout') &&
-    (eng() ? B.classList.contains('scet-logic') && !B.classList.contains('scenopl') : B.dataset.tab === 'operate' && !B.classList.contains('scov'));
+    (eng()
+      ? B.classList.contains('scet-logic') && !B.classList.contains('scenopl')
+      : B.dataset.tab === 'operate' && !B.classList.contains('scov'));
   const svg = () => $('plsvg');
   function view() {
     const s = svg();
@@ -85,11 +87,15 @@
       x = Math.min(v.r.right - 2, Math.max(v.r.left + 2, v.r.left + (b.x - v.vb.x) * v.k)),
       y = Math.min(v.r.bottom - 2, Math.max(v.r.top + 2, v.r.top + (b.y - v.vb.y) * v.k)),
       n = Math.min(12, Math.ceil(Math.log(need(v) / v.k) / Math.log(1.15)));
-    for (let i = 0; i < n; i++) v.s.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+    for (let i = 0; i < n; i++)
+      v.s.dispatchEvent(
+        new WheelEvent('wheel', { deltaY: -100, clientX: x, clientY: y, bubbles: true, cancelable: true })
+      );
     /* the view starts at the drawing's top left (the fit of the page can leave an empty band above it) */
     const w = view(),
       e = w && extent(w.s);
-    if (w && e) pan((inside(w.vb.x, w.w, e.x, e.width) - w.vb.x) * w.k, (inside(w.vb.y, w.h, e.y, e.height) - w.vb.y) * w.k);
+    if (w && e)
+      pan((inside(w.vb.x, w.w, e.x, e.width) - w.vb.x) * w.k, (inside(w.vb.y, w.h, e.y, e.height) - w.vb.y) * w.k);
   }
   /* the start of a view of length w that stays inside lo .. lo + len (centred when the page is smaller than the view) */
   const inside = (x, w, lo, len) => (w >= len ? lo + (len - w) / 2 : Math.min(Math.max(x, lo), lo + len - w));
@@ -116,13 +122,18 @@
     box = E('div');
     box.id = 'sczoom';
     box.setAttribute('aria-label', 'Where you are on the page');
-    map = S('svg', { class: 'sczmap', role: 'img', 'aria-label': 'Locator: the blue box is the part of the page in view. Click or drag to move.' });
+    map = S('svg', {
+      class: 'sczmap',
+      role: 'img',
+      'aria-label': 'Locator: the blue box is the part of the page in view. Click or drag to move.'
+    });
     pg = S('rect', { class: 'sczpg' });
     vr = S('rect', { class: 'sczvr' });
     map.append(pg, vr);
     rb = E('button', 'sczrb', 'Readable size');
     rb.type = 'button';
-    rb.title = 'Zoom in until the drawing text is readable (about 12 px), from the top left of the page; Fit shows the whole page again';
+    rb.title =
+      'Zoom in until the drawing text is readable (about 12 px), from the top left of the page; Fit shows the whole page again';
     rb.onclick = () => toReadable();
     box.append(E('span', 'sczcap', 'Position on the page'), map, rb);
     document.body.append(box);
@@ -150,6 +161,11 @@
     map.addEventListener('pointerup', () => (down = false));
     map.addEventListener('pointercancel', () => (down = false));
   }
+  /* F6 2026-11-22 (Q6): the locator is written only where it changed (it was written again 3 times a second) */
+  const at = (e, k, v) => {
+    v = String(v);
+    if (e.getAttribute(k) !== v) e.setAttribute(k, v);
+  };
   function paint() {
     const v = on() && view(),
       b = v && extent(v.s);
@@ -157,27 +173,31 @@
     B.classList.toggle('sczon', show);
     if (!show) return;
     const rd = readable(v),
-      whole = v.vb.x <= b.x + 1 && v.vb.y <= b.y + 1 && v.vb.x + v.w >= b.x + b.width - 1 && v.vb.y + v.h >= b.y + b.height - 1;
+      whole =
+        v.vb.x <= b.x + 1 &&
+        v.vb.y <= b.y + 1 &&
+        v.vb.x + v.w >= b.x + b.width - 1 &&
+        v.vb.y + v.h >= b.y + b.height - 1;
     box.classList.toggle('map', !whole);
-    rb.hidden = rd;
+    if (rb.hidden !== rd) rb.hidden = rd;
     /* the map: 168 px wide, the page's shape, at most 112 px high */
     const W = Math.min(168, (112 * b.width) / b.height),
       H = (W * b.height) / b.width;
-    map.setAttribute('width', Math.round(W));
-    map.setAttribute('height', Math.round(H));
-    map.setAttribute('viewBox', [b.x, b.y, b.width, b.height].join(' '));
-    pg.setAttribute('x', b.x);
-    pg.setAttribute('y', b.y);
-    pg.setAttribute('width', b.width);
-    pg.setAttribute('height', b.height);
+    at(map, 'width', Math.round(W));
+    at(map, 'height', Math.round(H));
+    at(map, 'viewBox', [b.x, b.y, b.width, b.height].join(' '));
+    at(pg, 'x', b.x);
+    at(pg, 'y', b.y);
+    at(pg, 'width', b.width);
+    at(pg, 'height', b.height);
     const x0 = Math.max(b.x, v.vb.x),
       y0 = Math.max(b.y, v.vb.y),
       x1 = Math.min(b.x + b.width, v.vb.x + v.w),
       y1 = Math.min(b.y + b.height, v.vb.y + v.h);
-    vr.setAttribute('x', x0);
-    vr.setAttribute('y', y0);
-    vr.setAttribute('width', Math.max(0, x1 - x0));
-    vr.setAttribute('height', Math.max(0, y1 - y0));
+    at(vr, 'x', x0);
+    at(vr, 'y', y0);
+    at(vr, 'width', Math.max(0, x1 - x0));
+    at(vr, 'height', Math.max(0, y1 - y0));
     /* at the lower right of the page, above the footer */
     const m = $('plmid'),
       R = m ? m.getBoundingClientRect() : v.r;

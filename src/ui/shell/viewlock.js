@@ -19,7 +19,11 @@
     if (c.closest(VIEWOK)) return null;
     if (c.tagName === 'BUTTON' && VIEWTXT.test(c.textContent.trim())) return null;
     /* the trend range and the look of a wire are view settings */
-    if (c.tagName === 'SELECT' && [...c.options].some(o => /^(30 s|1 min|Colour: default|Thick: default)$/.test(o.textContent.trim()))) return null;
+    if (
+      c.tagName === 'SELECT' &&
+      [...c.options].some(o => /^(30 s|1 min|Colour: default|Thick: default)$/.test(o.textContent.trim()))
+    )
+      return null;
     return c;
   };
   let said = 0;
@@ -62,18 +66,28 @@
     if (!d || docs.includes(d)) return;
     docs.push(d);
     listen(d);
-    mark();
+    mark(true);
   }
   /* the look: in VIEW the controls are dashed and dim (not hidden: the values stay readable) */
-  function mark() {
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): the controls are read again at once when VIEW | RUN changes, else once in 1.6 s (new
+     controls of a page opened since); every 0.4 s they took 8 % of the CPU of an HMI page at 6 x */
+  let mkV = null,
+    mkT = 0;
+  function mark(full) {
     const v = inView();
+    if (full !== true && v === mkV && Date.now() - mkT < 1600) return;
+    mkV = v;
+    mkT = Date.now();
     for (let i = docs.length - 1; i > 0; i--) if (!docs[i].defaultView || docs[i].defaultView.closed) docs.splice(i, 1);
     for (const d of docs) {
       if (!d.body) continue;
       d.body.classList.toggle('lsview', v);
-      for (const el of d.querySelectorAll('#anp :is(button,input,select),#opp :is(button,input,select),#plfp :is(button,input,select),#inlist :is(button,input)')) {
+      for (const el of d.querySelectorAll(
+        '#anp :is(button,input,select),#opp :is(button,input,select),#plfp :is(button,input,select),#inlist :is(button,input)'
+      )) {
         const c = v && isCtl(el) === el;
-        if (c !== el.hasAttribute('data-vlock')) c ? el.setAttribute('data-vlock', '') : el.removeAttribute('data-vlock');
+        if (c !== el.hasAttribute('data-vlock'))
+          c ? el.setAttribute('data-vlock', '') : el.removeAttribute('data-vlock');
       }
     }
   }

@@ -35,6 +35,17 @@
       return d;
     }
   };
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): a text is written only when it changed. The same text written again each tick made the browser
+     lay the whole drawing out again for the next measure (12 values of a page twice a second, also on the hidden holder of an HX page) */
+  /* and an attribute (a colour, a class) only when it changed: the same colour set again made the drawing style itself again */
+  const setAt = (e, k, v) => {
+    v = String(v);
+    if (e.getAttribute(k) !== v) e.setAttribute(k, v);
+  };
+  const setTx = (e, v) => {
+    v = v == null ? '' : String(v);
+    if (e.textContent !== v) e.textContent = v;
+  };
   const fmt = (x, dp) => (x == null || !isFinite(x) ? '-----' : (+x).toFixed(dp).replace(/^-(0(?:\.0+)?)$/, '$1'));
   const D = () => window.LS_OP;
   /* def = { id, title, num, name, w, h, art, mach: { ID: { n, t, ad, io, d, cur, band, fld, df, lcp, vcb } }, unit: { TAG: key }, after,
@@ -106,19 +117,19 @@
         g.append(bg);
       }
       const pg = document.createElementNS(NS, 'g');
-      pg.setAttribute('transform', `translate(${x0.toFixed(1)} ${top}) scale(${k.toFixed(4)})`);
-      pg.setAttribute('class', 'mk');
-      pg.setAttribute('font-family', "'IBM Plex Sans',system-ui,sans-serif");
+      setAt(pg, 'transform', `translate(${x0.toFixed(1)} ${top}) scale(${k.toFixed(4)})`);
+      setAt(pg, 'class', 'mk');
+      setAt(pg, 'font-family', "'IBM Plex Sans',system-ui,sans-serif");
       pg.innerHTML =
         `<style>.mk .m{font-family:'IBM Plex Mono',ui-monospace,monospace}.mk .s{font-family:'IBM Plex Sans',system-ui,sans-serif}.mk .h2blink{animation:h2blink 1s steps(2,start) infinite}</style>` +
-        (def.art || '') /* Audit 3 #6: a system of hx/sys has no drawing of its own */;
+        (def.art || ''); /* Audit 3 #6: a system of hx/sys has no drawing of its own */
       if (def.fz) {
         const at = def.fzAt || {};
         pg.querySelectorAll('text[font-size]').forEach(t => {
           const x = t.getAttribute('x'),
             y = t.getAttribute('y'),
             f = at[x + ',' + y] != null ? at[x + ',' + y] : at[x + ',*'] != null ? at[x + ',*'] : def.fz;
-          if (f !== 1) t.setAttribute('font-size', String(Math.round(+t.getAttribute('font-size') * f * 10) / 10));
+          if (f !== 1) setAt(t, 'font-size', String(Math.round(+t.getAttribute('font-size') * f * 10) / 10));
         });
       }
       g.append(pg);
@@ -127,7 +138,7 @@
       const M = def.mach || {};
       const info = tag => call(() => window.lsInfo && window.lsInfo(tag));
       /* NO-SOURCE */
-      qa('[data-ns]').forEach(e => ((e.textContent = '-----'), e.setAttribute('fill', C.none)));
+      qa('[data-ns]').forEach(e => (setTx(e, '-----'), setAt(e, 'fill', C.none)));
       /* values: the logic first, the plant model when no logic sheet has the transmitter */
       const LOG = {},
         PM = {};
@@ -135,8 +146,8 @@
       const showV = tag =>
         qa(`[data-v="${tag}"]`).forEach(t => {
           const v = cur(tag);
-          t.textContent = v == null ? '-----' : fmt(v, +t.dataset.dp || 0) + (t.dataset.u || '');
-          t.setAttribute('fill', v == null ? C.none : C.val);
+          setTx(t, v == null ? '-----' : fmt(v, +t.dataset.dp || 0) + (t.dataset.u || ''));
+          setAt(t, 'fill', v == null ? C.none : C.val);
         });
       const tags = new Set([...qa('[data-v]')].map(e => e.dataset.v));
       for (const tag of tags) {
@@ -178,10 +189,10 @@
           const [tg, on, off, neg] = t.dataset.di.split('|'),
             x = v == null ? null : neg ? 1 - v : v;
           if (tg !== tag) return;
-          t.textContent = x == null ? '-----' : x ? on : off;
-          t.setAttribute('fill', x == null ? C.none : x ? C.run : C.stop);
+          setTx(t, x == null ? '-----' : x ? on : off);
+          setAt(t, 'fill', x == null ? C.none : x ? C.run : C.stop);
         });
-        qa(`[data-dir="${tag}"]`).forEach(r => r.setAttribute('stroke', v == null ? C.none : v ? C.run : C.stop));
+        qa(`[data-dir="${tag}"]`).forEach(r => setAt(r, 'stroke', v == null ? C.none : v ? C.run : C.stop));
       };
       new Set([...qa('[data-di]')].map(e => e.dataset.di.split('|')[0])).forEach(tag => {
         /* Mina beta.143 (pages 13 / 17: DS "-----"): a field contact of the I/O list that no sheet of the logic reads shows the field as the
@@ -301,8 +312,8 @@
           qa(`[data-ox^="${k}|"]`).forEach(e => {
             const [, on, off] = e.dataset.ox.split('|'),
               v = OX[k];
-            e.textContent = v == null ? '-----' : v ? on : off;
-            e.setAttribute('fill', v == null ? C.none : v ? C.run : C.stop);
+            setTx(e, v == null ? '-----' : v ? on : off);
+            setAt(e, 'fill', v == null ? C.none : v ? C.run : C.stop);
           });
         api.reg(
           { t: 'val', tag: 'UNIT.' + k, v: '' },
@@ -328,13 +339,13 @@
               X = CT[tag];
             if (what === 'mode') {
               const m = X ? X.m : '';
-              e.textContent = m === 'M' ? 'Manual' : m === 'A' ? 'Auto' : m === 'R' ? 'Remote' : '-----';
+              setTx(e, m === 'M' ? 'Manual' : m === 'A' ? 'Auto' : m === 'R' ? 'Remote' : '-----');
               if (dp === 'U') e.textContent = e.textContent.toUpperCase();
-              e.setAttribute('fill', X ? C.dim : C.none);
+              setAt(e, 'fill', X ? C.dim : C.none);
             } else {
               const v = X ? X[what] : null;
-              e.textContent = v == null || !isFinite(v) ? '-----' : fmt(v, +dp || 0) + (u || '');
-              e.setAttribute('fill', v == null || !isFinite(v) ? C.none : C.val);
+              setTx(e, v == null || !isFinite(v) ? '-----' : fmt(v, +dp || 0) + (u || ''));
+              setAt(e, 'fill', v == null || !isFinite(v) ? C.none : C.val);
             }
           });
         const hits = [...qa('[data-hit]')].filter(h => M[h.dataset.hit] && M[h.dataset.hit].ctl === tag),
@@ -381,14 +392,13 @@
                 sync: 'SYNCH. & INITIAL LOAD',
                 loadup: 'LOAD UP',
                 normal: 'NORMAL OPERATION'
-              }[cmd] ||
-              cmd;
+              }[cmd] || cmd;
           if (view) {
             /* VIEW: the label says why nothing happened, for 2 s */
             qa(`text[data-tpb="${cmd}"]`).forEach(t => {
               const o = t.textContent;
-              t.textContent = 'VIEW: press RUN';
-              setTimeout(() => (t.textContent = o), 2000);
+              setTx(t, 'VIEW: press RUN');
+              setTimeout(() => setTx(t, o), 2000);
             });
             return;
           }
@@ -397,7 +407,15 @@
              TCS with them. In DCS control mode (I.0082 = 1) the TCS follows the DCS: the answer is said first, no number is asked */
           const press = arg => {
             /* the press is logged first: a TURBINE TRIP brings its trip and MFT lines in the same scan (Mina: the press line was missing) */
-            call(() => window.lsEventAdd && lsEventAdd('TCS', 'TCS', 'Operator: ' + nm + (arg ? ' ' + arg.mw + ' MW at ' + arg.rate + ' %/min' : '') + ' (page 13)'));
+            call(
+              () =>
+                window.lsEventAdd &&
+                lsEventAdd(
+                  'TCS',
+                  'TCS',
+                  'Operator: ' + nm + (arg ? ' ' + arg.mw + ' MW at ' + arg.rate + ' %/min' : '') + ' (page 13)'
+                )
+            );
             /* a refused command: its reason is written by the engine (unit.js anTurbine, S149-3); here the status bar only */
             const r = call(() => AN.turbine(cmd, arg), '');
             if (typeof r === 'string' && r) call(() => typeof msg === 'function' && msg('TCS: ' + nm + ': ' + r));
@@ -435,7 +453,10 @@
             if (x == null) return;
             const mw = x.trim() ? +x : NaN;
             if (!(mw >= 4.5 && mw <= 150)) return void say('Target not changed. Type a number from 4.5 to 150 MW.');
-            const y = await lsAskText('Load-up rate, %/min (0.5 ~ 5; 5 %/min = 7.5 MW/min):', String(Math.round(r0 * 10) / 10));
+            const y = await lsAskText(
+              'Load-up rate, %/min (0.5 ~ 5; 5 %/min = 7.5 MW/min):',
+              String(Math.round(r0 * 10) / 10)
+            );
             if (y == null) return;
             const rt = y.trim() ? +y : NaN;
             if (!(rt >= 0.5 && rt <= 5)) return void say('Target not changed. Type a rate from 0.5 to 5 %/min.');
@@ -474,8 +495,8 @@
               const T = sh(),
                 i = T ? T.lab.findIndex(x => x && String(x.t).trim() === la) : -1,
                 on = i >= 0 && Math.round(+T.rt.v[i]) === +lv;
-              fr.setAttribute('fill', on ? '#3a4a58' : 'none');
-              fr.setAttribute('stroke', on ? '#e6e6e6' : '#5a6168');
+              setAt(fr, 'fill', on ? '#3a4a58' : 'none');
+              setAt(fr, 'stroke', on ? '#e6e6e6' : '#5a6168');
             };
           show();
           const iv = setInterval(() => (e.isConnected ? show() : clearInterval(iv)), 500);
@@ -566,7 +587,7 @@
             stroke: 'none',
             'data-vth': tag
           }))
-            hb.setAttribute(k, v);
+            setAt(hb, k, v);
           hb.style.pointerEvents = 'all';
           pg.append(hb);
         }
@@ -622,18 +643,18 @@
                       : e.dataset.short
                         ? 'STOP'
                         : 'STOPPED';
-              e.setAttribute('fill', col);
+              setAt(e, 'fill', col);
               e.classList.toggle('h2blink', s === 'TRIP');
             });
             qa(`[data-vcb="${id}"]`).forEach(e => {
-              e.textContent = s == null ? 'Breaker -----' : s === 'RUN' ? 'Breaker ON' : 'Breaker OFF';
+              setTx(e, s == null ? 'Breaker -----' : s === 'RUN' ? 'Breaker ON' : 'Breaker OFF');
             });
           }
           if (m.remi) {
             const r = rin(m.remi[0], m.remi[1]);
             qa(`[data-md="${id}"]`).forEach(e => {
-              e.textContent = r == null ? '-----' : r ? 'Remote' : 'Local';
-              e.setAttribute('fill', r == null ? C.none : C.dim);
+              setTx(e, r == null ? '-----' : r ? 'Remote' : 'Local');
+              setAt(e, 'fill', r == null ? C.none : C.dim);
             });
           } else if (m.ad && !m.fld) {
             const md = call(() => (m.modeFn ? m.modeFn() : D().modeOf(m.ad)), null),
@@ -650,38 +671,36 @@
             }
             const ok = call(() => (window.LS_FPOP && LS_FPOP.yn ? LS_FPOP.yn(m) : null), null);
             const col = ok == null ? C.none : ok ? C.run : C.stop;
-            qa(`[data-ynr="${id}"]`).forEach(e => e.setAttribute('stroke', col));
-            qa(`[data-ynt="${id}"]`).forEach(
-              e => ((e.textContent = ok == null ? '-' : ok ? 'Y' : 'N'), e.setAttribute('fill', col))
-            );
+            qa(`[data-ynr="${id}"]`).forEach(e => setAt(e, 'stroke', col));
+            qa(`[data-ynt="${id}"]`).forEach(e => (setTx(e, ok == null ? '-' : ok ? 'Y' : 'N'), setAt(e, 'fill', col)));
           }
         }
         for (const v of VT)
           if (v.sym) {
             const o = call(() => LS_FPOP.valveOpen(v.tag), null);
-            v.sym.setAttribute('fill', o == null ? C.bg : o ? C.run : C.stop);
+            setAt(v.sym, 'fill', o == null ? C.bg : o ? C.run : C.stop);
           }
         qa('[data-dsvc]').forEach(e => {
           const [ad, re, on, off] = e.dataset.dsvc.split('|'),
             v = dsvc(ad, re);
-          e.textContent = v == null ? '-----' : v ? on : off;
-          e.setAttribute('fill', v == null ? C.none : C.dim);
+          setTx(e, v == null ? '-----' : v ? on : off);
+          setAt(e, 'fill', v == null ? C.none : C.dim);
         });
         /* DITL output rows (the debris filter IN OPERATION / COMMON FAIL of DITL-39) */
         qa('[data-do]').forEach(e => {
           const [ad, row, on, off, kind] = e.dataset.do.split('|'),
             s = call(() => D().dOf(ad), null),
             v = s ? call(() => DUI.outVal(s, +row), null) : null;
-          e.textContent = v == null ? '-----' : v ? on : off;
-          e.setAttribute('fill', v == null ? C.none : v ? C.run : kind === 'alarm' ? C.dim : C.stop);
+          setTx(e, v == null ? '-----' : v ? on : off);
+          setAt(e, 'fill', v == null ? C.none : v ? C.run : kind === 'alarm' ? C.dim : C.stop);
         });
         /* a DITL sheet that ends at an output ADDRESS without an output row (DITL-44: the air valve of the back-up air motor of
            the air preheater, O.029F): [data-dpo="SHEET|ADDRESS|on text|off text"], the same read as the old page 038 */
         qa('[data-dpo]').forEach(e => {
           const [ad, addr, on, off] = e.dataset.dpo.split('|'),
             v = call(() => window.LS_OP.pout(ad, addr), null);
-          e.textContent = v == null ? '-----' : v ? on : off;
-          e.setAttribute('fill', v == null ? C.none : v ? C.run : C.stop);
+          setTx(e, v == null ? '-----' : v ? on : off);
+          setAt(e, 'fill', v == null ? C.none : v ? C.run : C.stop);
         });
         /* 3.2.1 page 10 PURGE AND TRIP: the Y / N of a condition read from the drawing itself.
            [data-dy="SHEET|i or o|row+row|neg"] = input rows (DUI.rowVal) or output rows (DUI.outVal), all 1 (AND); neg = the
@@ -712,12 +731,12 @@
           const v = dyv(e.dataset.dy),
             col = v == null ? C.none : v ? C.run : C.stop;
           DY[e.dataset.dy] = v;
-          e.textContent = v == null ? (e.dataset.on ? '-----' : '-') : v ? e.dataset.on || 'Y' : e.dataset.off || 'N';
-          e.setAttribute('fill', col);
+          setTx(e, v == null ? (e.dataset.on ? '-----' : '-') : v ? e.dataset.on || 'Y' : e.dataset.off || 'N');
+          setAt(e, 'fill', col);
         });
         qa('[data-dyr]').forEach(e => {
           const v = DY[e.dataset.dyr];
-          e.setAttribute('stroke', v == null ? C.none : v ? C.run : C.stop);
+          setAt(e, 'stroke', v == null ? C.none : v ? C.run : C.stop);
         });
         qa('[data-dys]').forEach(e => {
           const [g, ad, row, lab] = e.dataset.dys.split('|'),
@@ -732,16 +751,16 @@
               : ok
                 ? lab + ': OK'
                 : lab + ': NOT OK (' + miss + ' of ' + ys.length + ' missing)';
-          e.setAttribute('fill', col);
-          qa(`[data-dysr="${g}"]`).forEach(r => r.setAttribute('stroke', col));
+          setAt(e, 'fill', col);
+          qa(`[data-dysr="${g}"]`).forEach(r => setAt(r, 'stroke', col));
         });
         qa('[data-dfo]').forEach(e => {
           const [ad, row, rg] = e.dataset.dfo.split('|'),
             s = call(() => D().dOf(ad), null),
             on = s ? call(() => DUI.outVal(s, +row), null) : null;
           if (on == null) {
-            e.textContent = '-----';
-            e.setAttribute('fill', C.none);
+            setTx(e, '-----');
+            setAt(e, 'fill', C.none);
             return;
           }
           if (!on) e._fo = null;
@@ -770,9 +789,9 @@
               }
             if (!e._fo) e._fo = '-----';
           }
-          e.textContent = on ? 'MFT ACTIVE · first out: ' + e._fo : 'NO MFT';
-          e.setAttribute('fill', on ? C.run : C.stop);
-          qa('[data-dfor]').forEach(r => r.setAttribute('stroke', on ? C.run : C.stop));
+          setTx(e, on ? 'MFT ACTIVE · first out: ' + e._fo : 'NO MFT');
+          setAt(e, 'fill', on ? C.run : C.stop);
+          qa('[data-dfor]').forEach(r => setAt(r, 'stroke', on ? C.run : C.stop));
         });
       };
       /* plant model values kept by tag (AN.unit.tt: the LP heater temperatures, ...): def.unit[TAG] = 'tt:IO-TAG'; an item of a list of
@@ -816,17 +835,17 @@
         qa('[data-ut]').forEach(e => {
           const U = window.AN && AN.unit,
             v = !U || !U.on ? null : uPath(U, e.dataset.ut);
-          e.textContent = v == null || v === '' ? '-----' : String(v);
+          setTx(e, v == null || v === '' ? '-----' : String(v));
         });
         qa('[data-uy]').forEach(e => {
           const [kp, n, on, off] = e.dataset.uy.split('|'),
             U = window.AN && AN.unit,
             v = !U || !U.on ? null : uPath(U, kp),
             ok = v == null ? null : +v >= +n;
-          e.textContent = ok == null ? '-----' : ok ? on : off;
-          e.setAttribute('fill', ok == null ? C.none : ok ? C.run : C.stop);
+          setTx(e, ok == null ? '-----' : ok ? on : off);
+          setAt(e, 'fill', ok == null ? C.none : ok ? C.run : C.stop);
           qa(`[data-uyr="${e.dataset.uy}"]`).forEach(r =>
-            r.setAttribute('stroke', ok == null ? C.none : ok ? C.run : C.stop)
+            setAt(r, 'stroke', ok == null ? C.none : ok ? C.run : C.stop)
           );
         });
         tickAts();
@@ -918,7 +937,7 @@
       let atsUi = null;
       const atsMk = (tag, at, par) => {
         const e = document.createElementNS(NS, tag);
-        for (const [a, v] of Object.entries(at)) e.setAttribute(a, v);
+        for (const [a, v] of Object.entries(at)) setAt(e, a, v);
         par.append(e);
         return e;
       };
@@ -935,7 +954,7 @@
             /* the two grey lines of the mockup under the card give their place to the checklist */
             [...qa('text')].forEach(e => {
               if (+e.getAttribute('x') === x + 12 && Math.abs(+e.getAttribute('y') - (y + h + 35)) <= 14)
-                e.setAttribute('display', 'none');
+                setAt(e, 'display', 'none');
             });
             const fill = atsMk(
               'rect',
@@ -974,19 +993,19 @@
           const done = step >= k && cur !== k,
             act = cur === k,
             next = !act && cur < 0 && k === step + 1;
-          ui.card.setAttribute('stroke', act || next ? C.run : done ? '#e6e6e6' : C.none);
-          ui.card.setAttribute('stroke-width', act ? 2.4 : 1.6);
-          ui.card.setAttribute('stroke-dasharray', next ? '6 4' : 'none');
-          ui.fill.setAttribute('fill-opacity', act ? 0.14 : 0);
+          setAt(ui.card, 'stroke', act || next ? C.run : done ? '#e6e6e6' : C.none);
+          setAt(ui.card, 'stroke-width', act ? 2.4 : 1.6);
+          setAt(ui.card, 'stroke-dasharray', next ? '6 4' : 'none');
+          setAt(ui.fill, 'fill-opacity', act ? 0.14 : 0);
           const it = t ? ATS_CK[k](t, U, g) : [['-----'], ['-----'], ['-----']];
           ui.rows.forEach((r, i) => {
             const [txt, ok0, val] = it[i] || [],
               ok = t ? ok0 || step >= k : null;
-            r.t.textContent = txt || '';
-            r.t.setAttribute('fill', act ? C.val : C.dim);
-            r.v.textContent = act && val ? val : '';
-            r.b.setAttribute('fill', ok == null ? 'none' : ok ? C.run : 'none');
-            r.b.setAttribute('stroke', ok == null ? C.none : ok ? C.run : C.stop);
+            setTx(r.t, txt || '');
+            setAt(r.t, 'fill', act ? C.val : C.dim);
+            setTx(r.v, act && val ? val : '');
+            setAt(r.b, 'fill', ok == null ? 'none' : ok ? C.run : 'none');
+            setAt(r.b, 'stroke', ok == null ? C.none : ok ? C.run : C.stop);
           });
         });
       }
@@ -996,8 +1015,8 @@
           const [nm, tg, how] = e.dataset.mov.split('|'),
             I = movInfo(nm, tg);
           if (!I || I.pos == null) {
-            e.textContent = '-----';
-            return e.setAttribute('fill', C.none);
+            setTx(e, '-----');
+            return setAt(e, 'fill', C.none);
           }
           if (how === 'am') {
             /* page 18: "AUTO · REMOTE" = both modes of the valve (its AUTO MODE input, its REMOTE output) */
@@ -1005,18 +1024,18 @@
               (I.au == null ? '-----' : I.au ? 'AUTO' : 'MANUAL') +
               ' · ' +
               (I.rem == null ? '-----' : I.rem ? 'REMOTE' : 'LOCAL');
-            e.setAttribute('fill', C.dim);
+            setAt(e, 'fill', C.dim);
           } else if (how === 'md') {
             /* the mode of the valve: REMOTE / LOCAL (its REMOTE output) else AUTO / MANUAL (its AUTO MODE input) */
             e.textContent =
               I.rem != null ? (I.rem ? 'REMOTE' : 'LOCAL') : I.au != null ? (I.au ? 'AUTO' : 'MANUAL') : '-----';
-            e.setAttribute('fill', C.dim);
+            setAt(e, 'fill', C.dim);
           } else if (how === 'pct') {
-            e.textContent = fmt(I.pos, 1) + ' %';
-            e.setAttribute('fill', C.val);
+            setTx(e, fmt(I.pos, 1) + ' %');
+            setAt(e, 'fill', C.val);
           } else {
-            e.textContent = I.pos >= 99.5 ? 'OPEN' : I.pos <= 0.5 ? 'CLOSED' : 'TRAVEL ' + fmt(I.pos, 0) + ' %';
-            e.setAttribute('fill', I.pos > 0.5 ? C.run : C.stop);
+            setTx(e, I.pos >= 99.5 ? 'OPEN' : I.pos <= 0.5 ? 'CLOSED' : 'TRAVEL ' + fmt(I.pos, 0) + ' %');
+            setAt(e, 'fill', I.pos > 0.5 ? C.run : C.stop);
           }
         });
       /* page 18: [data-movr="SHEET|TAG"] = the valve symbol of a MOV: red = open (not fully closed), green = closed, grey = no position */
@@ -1024,7 +1043,7 @@
         qa('[data-movr]').forEach(e => {
           const [nm, tg] = e.dataset.movr.split('|'),
             I = movInfo(nm, tg);
-          e.setAttribute('stroke', !I || I.pos == null ? C.none : I.pos > 0.5 ? C.run : C.stop);
+          setAt(e, 'stroke', !I || I.pos == null ? C.none : I.pos > 0.5 ? C.run : C.stop);
         });
       const tick0 = tick;
       /* e6: page 13 turbine protection: TRIPPED / RESET and the first out of TA-9 (tcs.js U.tc.trip, '' = reset) */
@@ -1044,16 +1063,15 @@
                   ? String(f0.first || f0.name || '')
                   : '';
         qa('[data-tt]').forEach(e => {
-          if (fo == null) return ((e.textContent = '-----'), e.setAttribute('fill', C.none));
-          if (e.dataset.tt === 'st')
-            ((e.textContent = fo ? 'TRIPPED' : 'RESET'), e.setAttribute('fill', fo ? C.run : C.stop));
+          if (fo == null) return (setTx(e, '-----'), setAt(e, 'fill', C.none));
+          if (e.dataset.tt === 'st') (setTx(e, fo ? 'TRIPPED' : 'RESET'), setAt(e, 'fill', fo ? C.run : C.stop));
           else e.textContent = 'First out: ' + (fo || 'none');
         });
-        qa('[data-ttr]').forEach(r => r.setAttribute('stroke', fo == null ? C.none : fo ? C.run : C.stop));
+        qa('[data-ttr]').forEach(r => setAt(r, 'stroke', fo == null ? C.none : fo ? C.run : C.stop));
         qa('[data-tfo]').forEach(c => {
           const on = !!fo && fo.toUpperCase() === c.dataset.tfo;
-          c.setAttribute('fill', on ? C.run : 'none');
-          c.setAttribute('stroke', on ? C.run : C.dim);
+          setAt(c, 'fill', on ? C.run : 'none');
+          setAt(c, 'stroke', on ? C.run : C.dim);
         });
       };
       const tickAll = () => (tick0(), tickTT(), tickMov(), tickMovR(), tickTP());
@@ -1277,11 +1295,15 @@
     for (const id in def.mach || {}) {
       const m = def.mach[id],
         uk = m.cur && def.unit && def.unit[m.cur] && !/^(tt|ux):/.test(def.unit[m.cur]) ? def.unit[m.cur] : null;
-      (window.LS_HISTQ = window.LS_HISTQ || []).push([[m.t, m.n], 'mach', {
+      (window.LS_HISTQ = window.LS_HISTQ || []).push([
+        [m.t, m.n],
+        'mach',
+        {
           st: () => mst(m),
           cur: uk ? () => (AN.unit && AN.unit.on && isFinite(AN.unit[uk]) ? +AN.unit[uk] : null) : null,
           unit: m.cur ? 'A' : ''
-        }]);
+        }
+      ]);
     }
     PLANT_V2.screens[def.id] = page(def);
     const L = (window.PLANT_SYS = window.PLANT_SYS || []),

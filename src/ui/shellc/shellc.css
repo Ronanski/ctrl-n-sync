@@ -267,11 +267,11 @@ html body.sc,html[data-theme=dark] body.sc{
   --c-status:#e6e9eb;--c-statustx:#4d5b6a;--c-statusdim:#4d5b6a;--c-desk:#e6e9eb;
   color-scheme:light;
 }
-body.sc:has(#scstart) #lsask{display:none!important}
+body.sc.scstarton:not(#scnone) #lsask{display:none!important}
 /* the app's short names are set on html from the dark values: they are set again here so the frame reads the shell colours */
 html body.sc,html[data-theme] body.sc{--bg:var(--c-bg);--panel:var(--c-pane);--line:var(--c-line);--tx:var(--c-tx);--dim:var(--c-dim);--panel2:var(--c-ribbon);--in:var(--c-well);--bd:var(--c-line2);--hv:var(--c-ctlh);--hv2:var(--c-ctlh);--rowl:var(--c-ribbon);--sel2:var(--c-acc);--sbg:var(--c-strip);--acc:var(--c-run);--c-bg2:var(--c-well);--c-fp:var(--c-plate);--c-hi:var(--c-tx);--c-hovbd:var(--c-lineh);--c-pop:var(--c-pane);--c-row:var(--c-line)}
 /* live check beta.233 (Jennie): the old question showed for 6 ~ 10 s while the app boots under the cover, before the start screen is built */
-body.sc:has(#scboot) #lsask{display:none!important}
+body.sc.scbooton:not(#scnone) #lsask{display:none!important}
 /* live check beta.233: the zoom bar of the logic sheet was the old dark floating pill; it takes the shell colours (same buttons, same place) */
 body.sc #zbar{background:var(--sc-white);border:1px solid var(--sc-line);box-shadow:0 4px 12px rgba(34,46,57,.14);padding:4px;gap:4px;border-radius:8px}
 body.sc #zbar button{height:32px;min-width:32px;padding:0 8px;color:var(--sc-ink)!important;font-size:13px!important;border-radius:6px!important}

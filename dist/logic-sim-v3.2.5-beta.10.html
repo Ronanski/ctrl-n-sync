@@ -155329,7 +155329,10 @@ function setCat(c) {
   let runWas = false;
   try {
     /* Mina #M26: a paused DITL page (SIM on, DPAUSE) is not running: the ABC page it opens stays paused too */
-    runWas = AN.cat === 'an' ? !!AN.run && !AN.view : typeof SIM !== 'undefined' && !!SIM && !(typeof DPAUSE !== 'undefined' && DPAUSE);
+    runWas =
+      AN.cat === 'an'
+        ? !!AN.run && !AN.view
+        : typeof SIM !== 'undefined' && !!SIM && !(typeof DPAUSE !== 'undefined' && DPAUSE);
   } catch (e) {}
   if (c !== 'an') {
     const f = $('sidefl');
@@ -155884,8 +155887,12 @@ AN.gsc = (() => {
   ansb.addEventListener('focus', () => {
     if (!pre) {
       pre = true;
-      Promise.resolve().then(() => adesLoad()).catch(() => {});
-      Promise.resolve().then(() => loadData()).catch(() => {});
+      Promise.resolve()
+        .then(() => adesLoad())
+        .catch(() => {});
+      Promise.resolve()
+        .then(() => loadData())
+        .catch(() => {});
     }
     const q = ansb.value.trim().toLowerCase();
     if (q.length < 2 || anfind.style.display === 'block') return;
@@ -156050,17 +156057,27 @@ document.head.appendChild(
           am.style.color = '#ffd479';
         }
       } else {
-        m = SIM ? (DPAUSE ? 'PAUSED' : 'RUN') : window.WORLD && WORLD.live ? 'RUN (ABC)' : 'VIEW / TRACE'; /* 2.5.0-beta.13: the DITL bar is VIEW | ▶ Run as the ABC */
+        m = SIM
+          ? DPAUSE
+            ? 'PAUSED'
+            : 'RUN'
+          : window.WORLD && WORLD.live
+            ? 'RUN (ABC)'
+            : 'VIEW / TRACE'; /* 2.5.0-beta.13: the DITL bar is VIEW | ▶ Run as the ABC */
         k = SIM && !DPAUSE ? 'run' : SIM ? '' : 'view';
       }
       /* the engine runs in the Web Worker: a clear mark (Mina, beta.82: ?worker=1 showed nothing) */
       if (window.ENG && ENG.mode === 'mirror') m += ' · WORKER';
-      c1.textContent = m;
-      c1.className = k;
-      const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
-      c2.textContent = sh && sh.name ? sh.name : '';
-      c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build bc4787c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      /* F6 2026-11-22 (Q6): each text is written only when it changed (the version was written twice every 0.4 s, so the page laid out again) */
+      if (c1.textContent !== m) c1.textContent = m;
+      if (c1.className !== k) c1.className = k;
+      const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
+        t2 = sh && sh.name ? sh.name : '',
+        t3 =
+          'v3.2.5-beta.10' + ' · build 3caf153'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      if (c2.textContent !== t2) c2.textContent = t2;
+      /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 3caf153';
     } catch (e) {}
   };
   upd();
@@ -156095,7 +156112,10 @@ function anSide() {
     });
     (AN.sm === 'order' ? ['ALL'] : FAMS.concat(Object.keys(G).filter(k => !FAMS.includes(k)))).forEach(fm => {
       if (!G[fm]) return;
-      const box = AN.sm !== 'order' ? sideGrp(anlist, 'an.cc', fm, G[fm].length, G[fm].includes(AN.i), !!f) : anlist; /* 2.5.0-beta.16 */
+      const box =
+        AN.sm !== 'order'
+          ? sideGrp(anlist, 'an.cc', fm, G[fm].length, G[fm].includes(AN.i), !!f)
+          : anlist; /* 2.5.0-beta.16 */
       G[fm].forEach(i => {
         const s = AN.sheets[i],
           b = h$('button', { 'data-i': i, title: s.name + (s.title ? ' - ' + s.title : '') }, [
@@ -330698,11 +330718,11 @@ html body.sc,html[data-theme=dark] body.sc{
   --c-status:#e6e9eb;--c-statustx:#4d5b6a;--c-statusdim:#4d5b6a;--c-desk:#e6e9eb;
   color-scheme:light;
 }
-body.sc:has(#scstart) #lsask{display:none!important}
+body.sc.scstarton:not(#scnone) #lsask{display:none!important}
 /* the app's short names are set on html from the dark values: they are set again here so the frame reads the shell colours */
 html body.sc,html[data-theme] body.sc{--bg:var(--c-bg);--panel:var(--c-pane);--line:var(--c-line);--tx:var(--c-tx);--dim:var(--c-dim);--panel2:var(--c-ribbon);--in:var(--c-well);--bd:var(--c-line2);--hv:var(--c-ctlh);--hv2:var(--c-ctlh);--rowl:var(--c-ribbon);--sel2:var(--c-acc);--sbg:var(--c-strip);--acc:var(--c-run);--c-bg2:var(--c-well);--c-fp:var(--c-plate);--c-hi:var(--c-tx);--c-hovbd:var(--c-lineh);--c-pop:var(--c-pane);--c-row:var(--c-line)}
 /* live check beta.233 (Jennie): the old question showed for 6 ~ 10 s while the app boots under the cover, before the start screen is built */
-body.sc:has(#scboot) #lsask{display:none!important}
+body.sc.scbooton:not(#scnone) #lsask{display:none!important}
 /* live check beta.233: the zoom bar of the logic sheet was the old dark floating pill; it takes the shell colours (same buttons, same place) */
 body.sc #zbar{background:var(--sc-white);border:1px solid var(--sc-line);box-shadow:0 4px 12px rgba(34,46,57,.14);padding:4px;gap:4px;border-radius:8px}
 body.sc #zbar button{height:32px;min-width:32px;padding:0 8px;color:var(--sc-ink)!important;font-size:13px!important;border-radius:6px!important}
@@ -331032,7 +331052,7 @@ body.sc #plpop .plnote{color:var(--sc-amber)}
 /* Mina, live test of 272: the update banner began at "· installed": its first words (the new version) were not shown */
 html body.sc #updask:not(#scnone) span > b{display:inline!important;visibility:visible!important;opacity:1!important;width:auto!important;height:auto!important;font-size:inherit!important;color:var(--sc-ink)!important}
 /* Mina, live test of 273: Update now was behind the start screen and could not be pressed */
-html body.sc:has(#scstart) #updask:not(#scnone){position:fixed!important;top:0!important;left:0;right:0;width:auto!important;margin:0!important;z-index:100001!important}
+html body.sc.scstarton:not(#scnone) #updask:not(#scnone){position:fixed!important;top:0!important;left:0;right:0;width:auto!important;margin:0!important;z-index:100001!important}
 /* RE-SHELL LAYOUT C, step 4 (user approved the build plan 2026-11-09 "G"; mockup C screens pc1366-09 and pc1366-17): the Engineer mode.
    Only with body.sceng (body.sc + the Logic page, shellc-eng.js). Without ?shell=c nothing here applies.
    Panes: tool rail (--scetw) | plant page (--scepw) | logic sheet or the tool of the rail. Colours: the shell set of shellc.css.
@@ -333912,7 +333932,7 @@ html body.sc,html[data-theme=dark] body.sc,html[data-theme] body.sc{
    stood in a white field in the Engineer view) */
 html body.sc:not(.sc-dgdark) #plmid{background:var(--sc-page)!important}
 /* a realistic plant page is drawn inside the plant svg: the svg takes the dark ground too, so no white field stands around it */
-html body.sc #plsvg:has(.hx-app){background:var(--sc-page)!important}
+html body.sc.schx #plsvg{background:var(--sc-page)!important}
 
 /* ===== Step 2: two thin bars, one control size, one corner (approved mockup: 22 px controls, 12 px text, 2 px corners) ===== */
 /* the values on top: one line, name then value then unit (was a 48 px band with the name above the value) */
@@ -333971,7 +333991,7 @@ html body.sc #gsbar:not(#scnone) #scstrip .sck.scgrp{border-left:0!important;pad
 html body.sc #gsbar:not(#scnone) #scstrip .sck.scgrp i{display:none!important}
 /* a realistic plant page fills the pane by itself (Fit): no locator and no "Readable size" over the picture */
 /* on a narrower screen (a tablet, 1280 wide) the fitted page has 9 px words: there the locator and "Readable size" stay */
-@media (min-width:1500px){html body.sc:has(#plsvg .hx-app) #sczoom{display:none!important}}
+@media (min-width:1500px){html body.sc.schx:not(#scnone) #sczoom{display:none!important}}
 /* its own header gives its place: the title is in the tool bar, the views are the selector #scview */
 html body.sc #plsvg .hx-app .hx-head{display:none!important}
 html body.sc .plbar:not(#scnone) #scview{min-height:22px!important;height:22px!important;border-radius:2px!important;font:500 12px var(--sc-ui)!important;padding:0 6px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;border:1px solid var(--sc-line2)!important;margin-left:6px}
@@ -334092,7 +334112,7 @@ html body.sc #plfp.fpo-near:not(#scnone) .fpx .tg span{font-size:11px!important;
 /* developer and view tools: CHECK, Reset, the TCS / Field menu (the Instructor console has its buttons), previous / next screen */
 html body.sc:not(.sceng) :is(#chkb,.crop .tb.g-run,.crop .tb.g-op .ddw,.plbar .plnav){display:none!important}
 /* a realistic plant page fits by itself: no Fit and no Full screen */
-html body.sc:not(.sceng):has(#plsvg .hx-app) .plbar > :is(button.b,button.scfs){display:none!important}
+html body.sc.schx:not(.sceng):not(#scnone) .plbar > :is(button.b,button.scfs){display:none!important}
 /* the alarm line at the bottom shows the alarms: no second alarm button on top (both views) */
 html body.sc #scctx .scp > button.pill.alm{display:none!important}
 /* the Details column is an Engineer tool */
@@ -342807,7 +342827,11 @@ window.LS_LIVE = (function () {
     if (c.closest(VIEWOK)) return null;
     if (c.tagName === 'BUTTON' && VIEWTXT.test(c.textContent.trim())) return null;
     /* the trend range and the look of a wire are view settings */
-    if (c.tagName === 'SELECT' && [...c.options].some(o => /^(30 s|1 min|Colour: default|Thick: default)$/.test(o.textContent.trim()))) return null;
+    if (
+      c.tagName === 'SELECT' &&
+      [...c.options].some(o => /^(30 s|1 min|Colour: default|Thick: default)$/.test(o.textContent.trim()))
+    )
+      return null;
     return c;
   };
   let said = 0;
@@ -342850,18 +342874,28 @@ window.LS_LIVE = (function () {
     if (!d || docs.includes(d)) return;
     docs.push(d);
     listen(d);
-    mark();
+    mark(true);
   }
   /* the look: in VIEW the controls are dashed and dim (not hidden: the values stay readable) */
-  function mark() {
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): the controls are read again at once when VIEW | RUN changes, else once in 1.6 s (new
+     controls of a page opened since); every 0.4 s they took 8 % of the CPU of an HMI page at 6 x */
+  let mkV = null,
+    mkT = 0;
+  function mark(full) {
     const v = inView();
+    if (full !== true && v === mkV && Date.now() - mkT < 1600) return;
+    mkV = v;
+    mkT = Date.now();
     for (let i = docs.length - 1; i > 0; i--) if (!docs[i].defaultView || docs[i].defaultView.closed) docs.splice(i, 1);
     for (const d of docs) {
       if (!d.body) continue;
       d.body.classList.toggle('lsview', v);
-      for (const el of d.querySelectorAll('#anp :is(button,input,select),#opp :is(button,input,select),#plfp :is(button,input,select),#inlist :is(button,input)')) {
+      for (const el of d.querySelectorAll(
+        '#anp :is(button,input,select),#opp :is(button,input,select),#plfp :is(button,input,select),#inlist :is(button,input)'
+      )) {
         const c = v && isCtl(el) === el;
-        if (c !== el.hasAttribute('data-vlock')) c ? el.setAttribute('data-vlock', '') : el.removeAttribute('data-vlock');
+        if (c !== el.hasAttribute('data-vlock'))
+          c ? el.setAttribute('data-vlock', '') : el.removeAttribute('data-vlock');
       }
     }
   }
@@ -343697,7 +343731,14 @@ window.LS_LIVE = (function () {
     } catch (e) {}
     const eqT = AL.filter(a => a.kind === 'TRIP');
     S.trip.classList.toggle('trip', !!(tt || mft || eqT.length));
-    S.tripT.textContent =
+    /* F6 2026-11-22 (Q6): the texts and tooltips below are written only when they changed; written again each second they made the
+       measures of the strip further down lay the page out again */
+    const put = (e, k, v) => {
+      if (e[k] !== v) e[k] = v;
+    };
+    put(
+      S.tripT,
+      'textContent',
       tt && mft
         ? 'Turbine trip · MFT'
         : tt
@@ -343706,23 +343747,27 @@ window.LS_LIVE = (function () {
             ? 'Boiler trip (MFT)'
             : eqT.length
               ? eqT.length + (eqT.length === 1 ? ' equipment trip' : ' equipment trips')
-              : 'No trip';
-    S.trip.title =
+              : 'No trip'
+    );
+    put(
+      S.trip,
+      'title',
       (tt || mft ? 'Unit trip: turbine trip ABC-050 I.0400, master fuel trip I.000F. ' : '') +
-      (eqT.length ? 'Equipment trips: ' + eqT.map(a => a.nm).join(', ') + '. ' : '') +
-      'Click: the alarm list';
+        (eqT.length ? 'Equipment trips: ' + eqT.map(a => a.nm).join(', ') + '. ' : '') +
+        'Click: the alarm list'
+    );
     const un = AL.filter(a => !a.ack).length;
     const n = AL.length;
     S.alm.classList.toggle('alm', n > 0);
     S.alm.classList.toggle('new', un > 0);
-    S.almT.textContent = n ? n + (n === 1 ? ' alarm' : ' alarms') + (un ? ' · ' + un + ' new' : '') : 'No alarm';
+    put(S.almT, 'textContent', n ? n + (n === 1 ? ' alarm' : ' alarms') + (un ? ' · ' + un + ' new' : '') : 'No alarm');
     /* the user's forces: S.rt.force minus what the plant model owns (S.rt.pf), the rule of cr.js userForces and the Inspector */
     let nf = 0;
     for (const sh of (window.AN && AN.sheets) || []) {
       const R = sh.S && sh.S.rt;
       if (R && R.force) for (const k in R.force) if (!(R.pf && R.pf[k])) nf++;
     }
-    S.frc.hidden = !nf;
+    put(S.frc, 'hidden', !nf);
     const ft = nf + ' FORCED';
     if (S.frcT.textContent !== ft) S.frcT.textContent = ft;
     /* Mina beta.213: at 1366 the strip (two-line labels, value, unit) was taller than the top bar and the page under it covered the
@@ -343828,7 +343873,7 @@ window.LS_LIVE = (function () {
     S.runB.classList.toggle('on', on);
     const rt = on ? 'Running' : 'Paused';
     if (S.runT.textContent !== rt) S.runT.textContent = rt;
-    S.runB.title = on ? 'The simulation runs. Click: pause' : 'The simulation is paused. Click: run';
+    put(S.runB, 'title', on ? 'The simulation runs. Click: pause' : 'The simulation is paused. Click: run');
     const sel = speedSel();
     /* the speed sits on the Run pill (one control, shellc-bars.css): the number only, "Simulation speed" in its tooltip */
     /* 3.2.4-beta.9 (live test 2026-11-17): a LOAD of a save point brings the engine speed with the state (AN.spd, state.js flags:
@@ -344619,18 +344664,23 @@ window.LS_LIVE = (function () {
     drawLines();
     /* the alarm tile: the newest six */
     const AL = allAlarms().slice(-6).reverse();
-    almTile.textContent = '';
-    almTile.append(E('h3', '', 'Alarms · newest first'));
-    if (!AL.length) almTile.append(E('p', 'scnone', 'No alarm'));
-    for (const a of AL) {
-      const r = E('div', 'scar' + (a.ack ? '' : ' new'));
-      r.append(
-        E('span', 'sct', a.t || ''),
-        priEl(a),
-        E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')),
-        E('span', 'scs', a.ack ? 'acknowledged' : '• new')
-      );
-      almTile.append(r);
+    /* F6 2026-11-22: the tile is drawn again only when its six alarms changed (it was rebuilt 4 times a second, also under an HMI page) */
+    const alK = JSON.stringify(AL.map(a => [a.t, a.ack, a.nm, a.lv, priOf(a).p]));
+    if (almTile._k !== alK) {
+      almTile._k = alK;
+      almTile.textContent = '';
+      almTile.append(E('h3', '', 'Alarms · newest first'));
+      if (!AL.length) almTile.append(E('p', 'scnone', 'No alarm'));
+      for (const a of AL) {
+        const r = E('div', 'scar' + (a.ack ? '' : ' new'));
+        r.append(
+          E('span', 'sct', a.t || ''),
+          priEl(a),
+          E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')),
+          E('span', 'scs', a.ack ? 'acknowledged' : '• new')
+        );
+        almTile.append(r);
+      }
     }
     almTile.classList.toggle(
       'on',
@@ -344742,7 +344792,8 @@ window.LS_LIVE = (function () {
         const b = E('button', alSort === k ? 'on' : '', t);
         b.type = 'button';
         b.setAttribute('aria-pressed', String(alSort === k));
-        b.title = k === 'pri' ? 'Emergency first, then high, medium, low (newest first inside each)' : 'The newest alarm first';
+        b.title =
+          k === 'pri' ? 'Emergency first, then high, medium, low (newest first inside each)' : 'The newest alarm first';
         b.onclick = () => ((alSort = k), (alSig = ''), fillAl());
         srt.append(b);
       }
@@ -344948,6 +344999,39 @@ window.LS_LIVE = (function () {
   if (document.body) putCover();
   else document.addEventListener('DOMContentLoaded', putCover);
   setTimeout(() => cover.remove(), 30000);
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): three classes on the body instead of body:has(#scstart), body:has(#scboot) and
+     body:has(#plsvg .hx-app) (shellc.css, shellc-ui.css, shellc-compact.css). With those rules every text written anywhere in the page
+     (the values, twice a second) made the browser restyle the bars, the menus and the buttons: in a Chrome trace of the Drum page at 6 x
+     the style took 38 % of the CPU. The same way as side-open / dp-open (cr.js) */
+  const hasCls = () => {
+    const b = document.body;
+    if (!b) return;
+    const ps = document.getElementById('plsvg');
+    b.classList.toggle('scstarton', !!document.getElementById('scstart'));
+    b.classList.toggle('scbooton', !!document.getElementById('scboot'));
+    b.classList.toggle('schx', !!(ps && ps.querySelector('.hx-app')));
+  };
+  /* a page drawn or removed in the plant view: only elements count (a value written is a text node) */
+  const elOnly = L => {
+    for (const m of L) for (const n of [...m.addedNodes, ...m.removedNodes]) if (n.nodeType === 1) return void hasCls();
+  };
+  let hcPs = null;
+  const hcWatch = () => {
+    if (!document.body) return;
+    if (!hcWatch.b) {
+      hcWatch.b = 1;
+      new MutationObserver(hasCls).observe(document.body, { childList: true });
+    }
+    const ps = document.getElementById('plsvg');
+    if (ps && ps !== hcPs) {
+      hcPs = ps;
+      new MutationObserver(elOnly).observe(ps, { childList: true, subtree: true });
+    }
+    hasCls();
+  };
+  setInterval(hcWatch, 1000);
+  if (document.body) hcWatch();
+  else document.addEventListener('DOMContentLoaded', hcWatch);
   /* wait for the new strip (shellc.js) and the app */
   let n = 0;
   const iv = setInterval(() => {
@@ -346036,7 +346120,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build bc4787c'));
+    row('Version', E('span', 'scsver', ver + ' · build 3caf153'));
   }
   function openSet(near) {
     if (!set) {
@@ -346835,7 +346919,8 @@ window.LS_LIVE = (function () {
     if (!n || !more) return;
     const sq2 = B.classList.contains('scsq2'),
       cnt = main.length + 1;
-    if (!sq2) full = [...main, more].reduce((a, e) => a + e.offsetWidth + 4, 0) + (B.classList.contains('scsq') ? 8 * cnt : 0);
+    if (!sq2)
+      full = [...main, more].reduce((a, e) => a + e.offsetWidth + 4, 0) + (B.classList.contains('scsq') ? 8 * cnt : 0);
     if (!full) return;
     /* the level that fits with 2 px to spare (the measure is the same at every level, so it does not swing) */
     const tight = full - 8 * cnt,
@@ -346936,7 +347021,8 @@ window.LS_LIVE = (function () {
     if (vMore.parentElement !== scv) scv.append(vMore);
     if (cMore.parentElement !== scp) scp.append(cMore);
     /* the values: the last 3 cells in the More popover on a tablet, back in the bar on a PC (shellc.js keeps writing their numbers) */
-    if (on && scv.querySelectorAll(':scope > .sck').length > 8) for (const c of [...scv.querySelectorAll(':scope > .sck')].slice(8)) vPop.append(c);
+    if (on && scv.querySelectorAll(':scope > .sck').length > 8)
+      for (const c of [...scv.querySelectorAll(':scope > .sck')].slice(8)) vPop.append(c);
     if (!on && vPop.children.length) {
       for (const c of [...vPop.children]) scv.insertBefore(c, vMore);
       vPop.hidden = true;
@@ -347015,7 +347101,8 @@ window.LS_LIVE = (function () {
       /* the context bar: its buttons that do not fit take a second row instead of running under the dock */
       const narrow = !!ctx && ctx.scrollWidth > ctx.clientWidth + 1;
       if (narrow && !B.classList.contains('scctxwrap')) B.classList.add('scctxwrap');
-      else if (!narrow && B.classList.contains('scctxwrap') && ctx.clientWidth > (ctx._w || 0) + 40) B.classList.remove('scctxwrap');
+      else if (!narrow && B.classList.contains('scctxwrap') && ctx.clientWidth > (ctx._w || 0) + 40)
+        B.classList.remove('scctxwrap');
       if (narrow) ctx._w = ctx.clientWidth;
     }
     const o = origin(),
@@ -347060,8 +347147,15 @@ window.LS_LIVE = (function () {
     else {
       B.classList.remove('scsq2');
       const pb = document.querySelector('#plantws .plbar');
-      const k = pb && B.dataset.tab === 'operate' && !B.classList.contains('scov') ? [...pb.children].filter(e => e.offsetWidth && !e.classList.contains('scpev') && !e.classList.contains('scecr')) : [];
-      const need = k.length ? (c && c.offsetWidth ? c.offsetWidth + 8 : 0) + k.reduce((a, e) => a + e.offsetWidth + 4, 0) : 0;
+      const k =
+        pb && B.dataset.tab === 'operate' && !B.classList.contains('scov')
+          ? [...pb.children].filter(
+              e => e.offsetWidth && !e.classList.contains('scpev') && !e.classList.contains('scecr')
+            )
+          : [];
+      const need = k.length
+        ? (c && c.offsetWidth ? c.offsetWidth + 8 : 0) + k.reduce((a, e) => a + e.offsetWidth + 4, 0)
+        : 0;
       const sq = B.classList.contains('scsq');
       if (!sq && need > r.width) B.classList.add('scsq');
       else if (sq && need + 2 <= r.width) B.classList.remove('scsq');
@@ -347083,11 +347177,56 @@ window.LS_LIVE = (function () {
     const p = probe.getBoundingClientRect();
     return { x: p.left, y: p.top };
   }
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): this measure took 50 ms 4 times a second at 6 x, the most of any timer. It runs again only
+     when something outside the drawings changed (a class, a text, a bar opened: a MutationObserver), on a resize, and once in 2 s
+     anyway. The values and colours that move inside the plant and sheet drawings (svg) do not change the bars, so they do not count;
+     the writes of the measure itself are dropped after it */
+  let dirty = true,
+    last = 0,
+    mo = null;
+  function run() {
+    if (!dirty && Date.now() - last < 2000) return;
+    dirty = false;
+    last = Date.now();
+    tick();
+    if (mo) mo.takeRecords();
+  }
+  function watch() {
+    if (!window.MutationObserver) return;
+    mo = new MutationObserver(L => {
+      if (dirty) return;
+      for (const m of L) {
+        const t = m.target.nodeType === 1 ? m.target : m.target.parentNode;
+        if (!t || !t.closest || t.closest('svg')) continue;
+        /* a write of the same value (a class, hidden, a title or a text set again to what it was) changes nothing */
+        if (m.type === 'attributes' && m.oldValue === t.getAttribute(m.attributeName)) continue;
+        if (m.type === 'characterData' && m.oldValue === m.target.data) continue;
+        if (
+          m.type === 'childList' &&
+          m.addedNodes.length === 1 &&
+          m.removedNodes.length === 1 &&
+          m.addedNodes[0].nodeType === 3 &&
+          m.removedNodes[0].textContent === m.addedNodes[0].textContent
+        )
+          continue;
+        return void (dirty = true);
+      }
+    });
+    mo.observe(B, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+      attributeOldValue: true,
+      characterDataOldValue: true
+    });
+  }
   const iv = setInterval(() => {
     if (!B.classList.contains('sc')) return;
     if (build()) {
       clearInterval(iv);
-      setInterval(tick, 250);
+      watch();
+      setInterval(run, 250);
       addEventListener('resize', tick);
       tick();
       dispatchEvent(new Event('resize'));
@@ -347414,7 +347553,9 @@ window.LS_LIVE = (function () {
   const on = () =>
     B.classList.contains('sc') &&
     !B.classList.contains('pvout') &&
-    (eng() ? B.classList.contains('scet-logic') && !B.classList.contains('scenopl') : B.dataset.tab === 'operate' && !B.classList.contains('scov'));
+    (eng()
+      ? B.classList.contains('scet-logic') && !B.classList.contains('scenopl')
+      : B.dataset.tab === 'operate' && !B.classList.contains('scov'));
   const svg = () => $('plsvg');
   function view() {
     const s = svg();
@@ -347466,11 +347607,15 @@ window.LS_LIVE = (function () {
       x = Math.min(v.r.right - 2, Math.max(v.r.left + 2, v.r.left + (b.x - v.vb.x) * v.k)),
       y = Math.min(v.r.bottom - 2, Math.max(v.r.top + 2, v.r.top + (b.y - v.vb.y) * v.k)),
       n = Math.min(12, Math.ceil(Math.log(need(v) / v.k) / Math.log(1.15)));
-    for (let i = 0; i < n; i++) v.s.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+    for (let i = 0; i < n; i++)
+      v.s.dispatchEvent(
+        new WheelEvent('wheel', { deltaY: -100, clientX: x, clientY: y, bubbles: true, cancelable: true })
+      );
     /* the view starts at the drawing's top left (the fit of the page can leave an empty band above it) */
     const w = view(),
       e = w && extent(w.s);
-    if (w && e) pan((inside(w.vb.x, w.w, e.x, e.width) - w.vb.x) * w.k, (inside(w.vb.y, w.h, e.y, e.height) - w.vb.y) * w.k);
+    if (w && e)
+      pan((inside(w.vb.x, w.w, e.x, e.width) - w.vb.x) * w.k, (inside(w.vb.y, w.h, e.y, e.height) - w.vb.y) * w.k);
   }
   /* the start of a view of length w that stays inside lo .. lo + len (centred when the page is smaller than the view) */
   const inside = (x, w, lo, len) => (w >= len ? lo + (len - w) / 2 : Math.min(Math.max(x, lo), lo + len - w));
@@ -347497,13 +347642,18 @@ window.LS_LIVE = (function () {
     box = E('div');
     box.id = 'sczoom';
     box.setAttribute('aria-label', 'Where you are on the page');
-    map = S('svg', { class: 'sczmap', role: 'img', 'aria-label': 'Locator: the blue box is the part of the page in view. Click or drag to move.' });
+    map = S('svg', {
+      class: 'sczmap',
+      role: 'img',
+      'aria-label': 'Locator: the blue box is the part of the page in view. Click or drag to move.'
+    });
     pg = S('rect', { class: 'sczpg' });
     vr = S('rect', { class: 'sczvr' });
     map.append(pg, vr);
     rb = E('button', 'sczrb', 'Readable size');
     rb.type = 'button';
-    rb.title = 'Zoom in until the drawing text is readable (about 12 px), from the top left of the page; Fit shows the whole page again';
+    rb.title =
+      'Zoom in until the drawing text is readable (about 12 px), from the top left of the page; Fit shows the whole page again';
     rb.onclick = () => toReadable();
     box.append(E('span', 'sczcap', 'Position on the page'), map, rb);
     document.body.append(box);
@@ -347531,6 +347681,11 @@ window.LS_LIVE = (function () {
     map.addEventListener('pointerup', () => (down = false));
     map.addEventListener('pointercancel', () => (down = false));
   }
+  /* F6 2026-11-22 (Q6): the locator is written only where it changed (it was written again 3 times a second) */
+  const at = (e, k, v) => {
+    v = String(v);
+    if (e.getAttribute(k) !== v) e.setAttribute(k, v);
+  };
   function paint() {
     const v = on() && view(),
       b = v && extent(v.s);
@@ -347538,27 +347693,31 @@ window.LS_LIVE = (function () {
     B.classList.toggle('sczon', show);
     if (!show) return;
     const rd = readable(v),
-      whole = v.vb.x <= b.x + 1 && v.vb.y <= b.y + 1 && v.vb.x + v.w >= b.x + b.width - 1 && v.vb.y + v.h >= b.y + b.height - 1;
+      whole =
+        v.vb.x <= b.x + 1 &&
+        v.vb.y <= b.y + 1 &&
+        v.vb.x + v.w >= b.x + b.width - 1 &&
+        v.vb.y + v.h >= b.y + b.height - 1;
     box.classList.toggle('map', !whole);
-    rb.hidden = rd;
+    if (rb.hidden !== rd) rb.hidden = rd;
     /* the map: 168 px wide, the page's shape, at most 112 px high */
     const W = Math.min(168, (112 * b.width) / b.height),
       H = (W * b.height) / b.width;
-    map.setAttribute('width', Math.round(W));
-    map.setAttribute('height', Math.round(H));
-    map.setAttribute('viewBox', [b.x, b.y, b.width, b.height].join(' '));
-    pg.setAttribute('x', b.x);
-    pg.setAttribute('y', b.y);
-    pg.setAttribute('width', b.width);
-    pg.setAttribute('height', b.height);
+    at(map, 'width', Math.round(W));
+    at(map, 'height', Math.round(H));
+    at(map, 'viewBox', [b.x, b.y, b.width, b.height].join(' '));
+    at(pg, 'x', b.x);
+    at(pg, 'y', b.y);
+    at(pg, 'width', b.width);
+    at(pg, 'height', b.height);
     const x0 = Math.max(b.x, v.vb.x),
       y0 = Math.max(b.y, v.vb.y),
       x1 = Math.min(b.x + b.width, v.vb.x + v.w),
       y1 = Math.min(b.y + b.height, v.vb.y + v.h);
-    vr.setAttribute('x', x0);
-    vr.setAttribute('y', y0);
-    vr.setAttribute('width', Math.max(0, x1 - x0));
-    vr.setAttribute('height', Math.max(0, y1 - y0));
+    at(vr, 'x', x0);
+    at(vr, 'y', y0);
+    at(vr, 'width', Math.max(0, x1 - x0));
+    at(vr, 'height', Math.max(0, y1 - y0));
     /* at the lower right of the page, above the footer */
     const m = $('plmid'),
       R = m ? m.getBoundingClientRect() : v.r;
@@ -350705,8 +350864,8 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .hx-stop .hxs2 { stroke: var(--hx-stop); }
 .hx-trip .hxs { fill: var(--hx-run); animation: hx-blink 1s steps(2) infinite; }
 .hxr { transform-box: fill-box; transform-origin: center; }
-.hx-run .hxr { animation: hx-spin 1.6s linear infinite; }
-.hx-run .hxr.hxslow { animation-duration: 9s; }
+.hx-run .hxr { animation: hx-spin 1.6s steps(16) infinite; }
+.hx-run .hxr.hxslow { animation-duration: 9s; animation-timing-function: steps(90); }
 @keyframes hx-spin { to { transform: rotate(360deg); } }
 @keyframes hx-blink { 50% { opacity: 0.25; } }
 @keyframes hx-flow { to { stroke-dashoffset: -32; } }
@@ -350715,7 +350874,7 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .hx-idle > .hx-lne { opacity: 0.4; }
 .hx-idle > .hx-lnh { opacity: 0.2; }
 .hx-lnf { fill: none; stroke: var(--hx-panel); stroke-width: 1.4; stroke-dasharray: 3 13; stroke-linecap: round; opacity: 0; }
-.hx-on > .hx-lnf { opacity: 0.95; animation: hx-flow 1.1s linear infinite; }
+.hx-on > .hx-lnf { opacity: 0.95; animation: hx-flow 1.1s steps(11) infinite; }
 .hx-idle > .hx-ln { opacity: 0.42; }
 .hx-name { font-size: 12.6px; font-weight: 600; }
 .hx-tag { font: 500 9.6px var(--hx-mono); fill: var(--hx-mute) !important; }
@@ -350799,8 +350958,8 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .rx-belt { fill: none; stroke: var(--rx-st1); stroke-width: 2; stroke-dasharray: 5 4; }
 .rx-flight { fill: none; stroke: var(--rx-st1); stroke-width: 8; stroke-dasharray: 1.6 5.4; }
 .rxflame { fill: var(--rx-hot); stroke: none; opacity: 0; transform-box: fill-box; transform-origin: left center; }
-.hx-run .rx-belt, .hx-run .rx-flight { animation: rx-belt 0.9s steps(18) infinite; }
-.hx-run .rxflame { opacity: 0.95; animation: rx-flame 0.5s steps(4) infinite alternate; }
+.hx-run .rx-belt, .hx-run .rx-flight { animation: rx-belt 0.9s steps(9) infinite; }
+.hx-run .rxflame { opacity: 0.95; animation: rx-flame 0.5s steps(5) infinite alternate; }
 @keyframes rx-belt { to { stroke-dashoffset: -9; } }
 @keyframes rx-flame { to { transform: scaleX(0.82); } }
 .rxconc { fill: var(--rx-conc); stroke: var(--rx-edge); stroke-width: 0.6; }
@@ -350823,7 +350982,10 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .hx-idle > .rx-pb { stroke: color-mix(in srgb, var(--m) 32%, var(--rx-st2)); }
 .hx-idle > .rx-ph { opacity: 0.2; }
 .hx-real .hx-lnf { stroke: #fff; stroke-width: 1.5; stroke-dasharray: 5 15; stroke-linecap: butt; }
-.hx-real .hx-on > .hx-lnf { opacity: 0.92; animation: rx-flow 1s steps(20) infinite; }
+/* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): every moving part of a page steps 10 times a second (duration / steps = 0.1 s, the
+   blink 0.5 s, the ripple 0.2 s), and hx-core.js lines all of them up on the same clock, so the page is redrawn on the same 10 frames a
+   second. Before, 23 flows on the Furnace page stepped 14 to 20 times a second each, out of step, so some part was redrawn on every frame */
+.hx-real .hx-on > .hx-lnf { opacity: 0.92; animation: rx-flow 1s steps(10) infinite; }
 .rx-chev { fill: none; stroke: #fff; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
 .hx-idle > .rx-chev { opacity: 0.45; }
 /* inside the equipment */
@@ -350853,28 +351015,28 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .rx-tint { fill: var(--m); stroke: none; opacity: 0.16; }
 .rx-elem { fill: none; stroke: var(--rx-st2); stroke-width: 4.4; stroke-dasharray: 1.5 4.5; }
 .rx-plate { fill: none; stroke: var(--rx-st2); stroke-width: 1.3; }
-.hx-on > .rx-rise { opacity: 0.85; animation: rx-flow 1.2s steps(20) infinite; }
+.hx-on > .rx-rise { opacity: 0.85; animation: rx-flow 1.2s steps(12) infinite; }
 /* stepped (2026-11-18): a plume that moves every frame repaints the whole drawing 60 times a second; alone at 6x CPU the gas page went from 59 ~ 73 to 113 ~ 123 frames a second */
-.hx-on > .rx-bub circle { animation: rx-plume 1.8s steps(14) infinite; }
+.hx-on > .rx-bub circle { animation: rx-plume 1.8s steps(18) infinite; }
 .hx-on > .rx-bub circle:nth-child(2) { animation-delay: 0.6s; }
 .hx-on > .rx-bub circle:nth-child(3) { animation-delay: 1.2s; }
-.hx-on > .rx-swirl { opacity: 0.9; animation: rx-jet 0.8s steps(14) infinite; }
+.hx-on > .rx-swirl { opacity: 0.9; animation: rx-jet 0.8s steps(8) infinite; }
 .hx-run .rx-elem { animation: rx-elem 2.4s steps(24) infinite; }
 @keyframes rx-elem { to { stroke-dashoffset: -6; } }
 .rxtray { fill: none; stroke: var(--rx-st2); stroke-width: 1.5; stroke-dasharray: 2.6 1.6; }
 .rx-fall { fill: none; stroke: var(--m); stroke-width: 1.4; stroke-dasharray: 2 3.4; stroke-linecap: round; opacity: 0; }
-.hx-run .rxrot { animation: hx-spin 1.3s steps(26) infinite; }
-.hx-run .rx-lift { opacity: 1; animation: rx-jet 0.7s steps(14) infinite; }
-.hx-on > .rx-tubef { opacity: 0.9; animation: rx-jet 0.9s steps(18) infinite; }
-.hx-on > .rx-fall { opacity: 1; animation: rx-mist 0.6s steps(9) infinite; }
+.hx-run .rxrot { animation: hx-spin 1.3s steps(13) infinite; }
+.hx-run .rx-lift { opacity: 1; animation: rx-jet 0.7s steps(7) infinite; }
+.hx-on > .rx-tubef { opacity: 0.9; animation: rx-jet 0.9s steps(9) infinite; }
+.hx-on > .rx-fall { opacity: 1; animation: rx-mist 0.6s steps(6) infinite; }
 .hx-run .rx-steam { opacity: 0.26; }
-.hx-run .rx-blade { animation: rx-blade 0.3s steps(6) infinite; }
-.hx-run .rx-jet { opacity: 0.95; animation: rx-jet 0.7s steps(14) infinite; }
+.hx-run .rx-blade { animation: rx-blade 0.3s steps(3) infinite; }
+.hx-run .rx-jet { opacity: 0.95; animation: rx-jet 0.7s steps(7) infinite; }
 .hx-run .rx-rip { animation: rx-rip 2.6s steps(13) infinite; }
-.hx-on > .rx-gas { opacity: 0.85; animation: rx-flow 1.6s steps(20) infinite; }
-.hx-on > .rx-coilf { opacity: 0.9; animation: hx-flow 1.6s steps(32) infinite; }
-.hx-on > .rx-mist { opacity: 1; animation: rx-mist 0.5s steps(8) infinite; }
-.hx-on > .rx-plume circle { animation: rx-plume 2.4s steps(18) infinite; }
+.hx-on > .rx-gas { opacity: 0.85; animation: rx-flow 1.6s steps(16) infinite; }
+.hx-on > .rx-coilf { opacity: 0.9; animation: hx-flow 1.6s steps(16) infinite; }
+.hx-on > .rx-mist { opacity: 1; animation: rx-mist 0.5s steps(5) infinite; }
+.hx-on > .rx-plume circle { animation: rx-plume 2.4s steps(24) infinite; }
 .hx-on > .rx-plume circle:nth-child(2) { animation-delay: 0.8s; }
 .hx-on > .rx-plume circle:nth-child(3) { animation-delay: 1.6s; }
 @keyframes rx-flow { to { stroke-dashoffset: -20; } }
@@ -359154,6 +359316,17 @@ window.PLANT_SYS = [
       return d;
     }
   };
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): a text is written only when it changed. The same text written again each tick made the browser
+     lay the whole drawing out again for the next measure (12 values of a page twice a second, also on the hidden holder of an HX page) */
+  /* and an attribute (a colour, a class) only when it changed: the same colour set again made the drawing style itself again */
+  const setAt = (e, k, v) => {
+    v = String(v);
+    if (e.getAttribute(k) !== v) e.setAttribute(k, v);
+  };
+  const setTx = (e, v) => {
+    v = v == null ? '' : String(v);
+    if (e.textContent !== v) e.textContent = v;
+  };
   const fmt = (x, dp) => (x == null || !isFinite(x) ? '-----' : (+x).toFixed(dp).replace(/^-(0(?:\.0+)?)$/, '$1'));
   const D = () => window.LS_OP;
   /* def = { id, title, num, name, w, h, art, mach: { ID: { n, t, ad, io, d, cur, band, fld, df, lcp, vcb } }, unit: { TAG: key }, after,
@@ -359225,19 +359398,19 @@ window.PLANT_SYS = [
         g.append(bg);
       }
       const pg = document.createElementNS(NS, 'g');
-      pg.setAttribute('transform', `translate(${x0.toFixed(1)} ${top}) scale(${k.toFixed(4)})`);
-      pg.setAttribute('class', 'mk');
-      pg.setAttribute('font-family', "'IBM Plex Sans',system-ui,sans-serif");
+      setAt(pg, 'transform', `translate(${x0.toFixed(1)} ${top}) scale(${k.toFixed(4)})`);
+      setAt(pg, 'class', 'mk');
+      setAt(pg, 'font-family', "'IBM Plex Sans',system-ui,sans-serif");
       pg.innerHTML =
         `<style>.mk .m{font-family:'IBM Plex Mono',ui-monospace,monospace}.mk .s{font-family:'IBM Plex Sans',system-ui,sans-serif}.mk .h2blink{animation:h2blink 1s steps(2,start) infinite}</style>` +
-        (def.art || '') /* Audit 3 #6: a system of hx/sys has no drawing of its own */;
+        (def.art || ''); /* Audit 3 #6: a system of hx/sys has no drawing of its own */
       if (def.fz) {
         const at = def.fzAt || {};
         pg.querySelectorAll('text[font-size]').forEach(t => {
           const x = t.getAttribute('x'),
             y = t.getAttribute('y'),
             f = at[x + ',' + y] != null ? at[x + ',' + y] : at[x + ',*'] != null ? at[x + ',*'] : def.fz;
-          if (f !== 1) t.setAttribute('font-size', String(Math.round(+t.getAttribute('font-size') * f * 10) / 10));
+          if (f !== 1) setAt(t, 'font-size', String(Math.round(+t.getAttribute('font-size') * f * 10) / 10));
         });
       }
       g.append(pg);
@@ -359246,7 +359419,7 @@ window.PLANT_SYS = [
       const M = def.mach || {};
       const info = tag => call(() => window.lsInfo && window.lsInfo(tag));
       /* NO-SOURCE */
-      qa('[data-ns]').forEach(e => ((e.textContent = '-----'), e.setAttribute('fill', C.none)));
+      qa('[data-ns]').forEach(e => (setTx(e, '-----'), setAt(e, 'fill', C.none)));
       /* values: the logic first, the plant model when no logic sheet has the transmitter */
       const LOG = {},
         PM = {};
@@ -359254,8 +359427,8 @@ window.PLANT_SYS = [
       const showV = tag =>
         qa(`[data-v="${tag}"]`).forEach(t => {
           const v = cur(tag);
-          t.textContent = v == null ? '-----' : fmt(v, +t.dataset.dp || 0) + (t.dataset.u || '');
-          t.setAttribute('fill', v == null ? C.none : C.val);
+          setTx(t, v == null ? '-----' : fmt(v, +t.dataset.dp || 0) + (t.dataset.u || ''));
+          setAt(t, 'fill', v == null ? C.none : C.val);
         });
       const tags = new Set([...qa('[data-v]')].map(e => e.dataset.v));
       for (const tag of tags) {
@@ -359297,10 +359470,10 @@ window.PLANT_SYS = [
           const [tg, on, off, neg] = t.dataset.di.split('|'),
             x = v == null ? null : neg ? 1 - v : v;
           if (tg !== tag) return;
-          t.textContent = x == null ? '-----' : x ? on : off;
-          t.setAttribute('fill', x == null ? C.none : x ? C.run : C.stop);
+          setTx(t, x == null ? '-----' : x ? on : off);
+          setAt(t, 'fill', x == null ? C.none : x ? C.run : C.stop);
         });
-        qa(`[data-dir="${tag}"]`).forEach(r => r.setAttribute('stroke', v == null ? C.none : v ? C.run : C.stop));
+        qa(`[data-dir="${tag}"]`).forEach(r => setAt(r, 'stroke', v == null ? C.none : v ? C.run : C.stop));
       };
       new Set([...qa('[data-di]')].map(e => e.dataset.di.split('|')[0])).forEach(tag => {
         /* Mina beta.143 (pages 13 / 17: DS "-----"): a field contact of the I/O list that no sheet of the logic reads shows the field as the
@@ -359420,8 +359593,8 @@ window.PLANT_SYS = [
           qa(`[data-ox^="${k}|"]`).forEach(e => {
             const [, on, off] = e.dataset.ox.split('|'),
               v = OX[k];
-            e.textContent = v == null ? '-----' : v ? on : off;
-            e.setAttribute('fill', v == null ? C.none : v ? C.run : C.stop);
+            setTx(e, v == null ? '-----' : v ? on : off);
+            setAt(e, 'fill', v == null ? C.none : v ? C.run : C.stop);
           });
         api.reg(
           { t: 'val', tag: 'UNIT.' + k, v: '' },
@@ -359447,13 +359620,13 @@ window.PLANT_SYS = [
               X = CT[tag];
             if (what === 'mode') {
               const m = X ? X.m : '';
-              e.textContent = m === 'M' ? 'Manual' : m === 'A' ? 'Auto' : m === 'R' ? 'Remote' : '-----';
+              setTx(e, m === 'M' ? 'Manual' : m === 'A' ? 'Auto' : m === 'R' ? 'Remote' : '-----');
               if (dp === 'U') e.textContent = e.textContent.toUpperCase();
-              e.setAttribute('fill', X ? C.dim : C.none);
+              setAt(e, 'fill', X ? C.dim : C.none);
             } else {
               const v = X ? X[what] : null;
-              e.textContent = v == null || !isFinite(v) ? '-----' : fmt(v, +dp || 0) + (u || '');
-              e.setAttribute('fill', v == null || !isFinite(v) ? C.none : C.val);
+              setTx(e, v == null || !isFinite(v) ? '-----' : fmt(v, +dp || 0) + (u || ''));
+              setAt(e, 'fill', v == null || !isFinite(v) ? C.none : C.val);
             }
           });
         const hits = [...qa('[data-hit]')].filter(h => M[h.dataset.hit] && M[h.dataset.hit].ctl === tag),
@@ -359500,14 +359673,13 @@ window.PLANT_SYS = [
                 sync: 'SYNCH. & INITIAL LOAD',
                 loadup: 'LOAD UP',
                 normal: 'NORMAL OPERATION'
-              }[cmd] ||
-              cmd;
+              }[cmd] || cmd;
           if (view) {
             /* VIEW: the label says why nothing happened, for 2 s */
             qa(`text[data-tpb="${cmd}"]`).forEach(t => {
               const o = t.textContent;
-              t.textContent = 'VIEW: press RUN';
-              setTimeout(() => (t.textContent = o), 2000);
+              setTx(t, 'VIEW: press RUN');
+              setTimeout(() => setTx(t, o), 2000);
             });
             return;
           }
@@ -359516,7 +359688,15 @@ window.PLANT_SYS = [
              TCS with them. In DCS control mode (I.0082 = 1) the TCS follows the DCS: the answer is said first, no number is asked */
           const press = arg => {
             /* the press is logged first: a TURBINE TRIP brings its trip and MFT lines in the same scan (Mina: the press line was missing) */
-            call(() => window.lsEventAdd && lsEventAdd('TCS', 'TCS', 'Operator: ' + nm + (arg ? ' ' + arg.mw + ' MW at ' + arg.rate + ' %/min' : '') + ' (page 13)'));
+            call(
+              () =>
+                window.lsEventAdd &&
+                lsEventAdd(
+                  'TCS',
+                  'TCS',
+                  'Operator: ' + nm + (arg ? ' ' + arg.mw + ' MW at ' + arg.rate + ' %/min' : '') + ' (page 13)'
+                )
+            );
             /* a refused command: its reason is written by the engine (unit.js anTurbine, S149-3); here the status bar only */
             const r = call(() => AN.turbine(cmd, arg), '');
             if (typeof r === 'string' && r) call(() => typeof msg === 'function' && msg('TCS: ' + nm + ': ' + r));
@@ -359554,7 +359734,10 @@ window.PLANT_SYS = [
             if (x == null) return;
             const mw = x.trim() ? +x : NaN;
             if (!(mw >= 4.5 && mw <= 150)) return void say('Target not changed. Type a number from 4.5 to 150 MW.');
-            const y = await lsAskText('Load-up rate, %/min (0.5 ~ 5; 5 %/min = 7.5 MW/min):', String(Math.round(r0 * 10) / 10));
+            const y = await lsAskText(
+              'Load-up rate, %/min (0.5 ~ 5; 5 %/min = 7.5 MW/min):',
+              String(Math.round(r0 * 10) / 10)
+            );
             if (y == null) return;
             const rt = y.trim() ? +y : NaN;
             if (!(rt >= 0.5 && rt <= 5)) return void say('Target not changed. Type a rate from 0.5 to 5 %/min.');
@@ -359593,8 +359776,8 @@ window.PLANT_SYS = [
               const T = sh(),
                 i = T ? T.lab.findIndex(x => x && String(x.t).trim() === la) : -1,
                 on = i >= 0 && Math.round(+T.rt.v[i]) === +lv;
-              fr.setAttribute('fill', on ? '#3a4a58' : 'none');
-              fr.setAttribute('stroke', on ? '#e6e6e6' : '#5a6168');
+              setAt(fr, 'fill', on ? '#3a4a58' : 'none');
+              setAt(fr, 'stroke', on ? '#e6e6e6' : '#5a6168');
             };
           show();
           const iv = setInterval(() => (e.isConnected ? show() : clearInterval(iv)), 500);
@@ -359685,7 +359868,7 @@ window.PLANT_SYS = [
             stroke: 'none',
             'data-vth': tag
           }))
-            hb.setAttribute(k, v);
+            setAt(hb, k, v);
           hb.style.pointerEvents = 'all';
           pg.append(hb);
         }
@@ -359741,18 +359924,18 @@ window.PLANT_SYS = [
                       : e.dataset.short
                         ? 'STOP'
                         : 'STOPPED';
-              e.setAttribute('fill', col);
+              setAt(e, 'fill', col);
               e.classList.toggle('h2blink', s === 'TRIP');
             });
             qa(`[data-vcb="${id}"]`).forEach(e => {
-              e.textContent = s == null ? 'Breaker -----' : s === 'RUN' ? 'Breaker ON' : 'Breaker OFF';
+              setTx(e, s == null ? 'Breaker -----' : s === 'RUN' ? 'Breaker ON' : 'Breaker OFF');
             });
           }
           if (m.remi) {
             const r = rin(m.remi[0], m.remi[1]);
             qa(`[data-md="${id}"]`).forEach(e => {
-              e.textContent = r == null ? '-----' : r ? 'Remote' : 'Local';
-              e.setAttribute('fill', r == null ? C.none : C.dim);
+              setTx(e, r == null ? '-----' : r ? 'Remote' : 'Local');
+              setAt(e, 'fill', r == null ? C.none : C.dim);
             });
           } else if (m.ad && !m.fld) {
             const md = call(() => (m.modeFn ? m.modeFn() : D().modeOf(m.ad)), null),
@@ -359769,38 +359952,36 @@ window.PLANT_SYS = [
             }
             const ok = call(() => (window.LS_FPOP && LS_FPOP.yn ? LS_FPOP.yn(m) : null), null);
             const col = ok == null ? C.none : ok ? C.run : C.stop;
-            qa(`[data-ynr="${id}"]`).forEach(e => e.setAttribute('stroke', col));
-            qa(`[data-ynt="${id}"]`).forEach(
-              e => ((e.textContent = ok == null ? '-' : ok ? 'Y' : 'N'), e.setAttribute('fill', col))
-            );
+            qa(`[data-ynr="${id}"]`).forEach(e => setAt(e, 'stroke', col));
+            qa(`[data-ynt="${id}"]`).forEach(e => (setTx(e, ok == null ? '-' : ok ? 'Y' : 'N'), setAt(e, 'fill', col)));
           }
         }
         for (const v of VT)
           if (v.sym) {
             const o = call(() => LS_FPOP.valveOpen(v.tag), null);
-            v.sym.setAttribute('fill', o == null ? C.bg : o ? C.run : C.stop);
+            setAt(v.sym, 'fill', o == null ? C.bg : o ? C.run : C.stop);
           }
         qa('[data-dsvc]').forEach(e => {
           const [ad, re, on, off] = e.dataset.dsvc.split('|'),
             v = dsvc(ad, re);
-          e.textContent = v == null ? '-----' : v ? on : off;
-          e.setAttribute('fill', v == null ? C.none : C.dim);
+          setTx(e, v == null ? '-----' : v ? on : off);
+          setAt(e, 'fill', v == null ? C.none : C.dim);
         });
         /* DITL output rows (the debris filter IN OPERATION / COMMON FAIL of DITL-39) */
         qa('[data-do]').forEach(e => {
           const [ad, row, on, off, kind] = e.dataset.do.split('|'),
             s = call(() => D().dOf(ad), null),
             v = s ? call(() => DUI.outVal(s, +row), null) : null;
-          e.textContent = v == null ? '-----' : v ? on : off;
-          e.setAttribute('fill', v == null ? C.none : v ? C.run : kind === 'alarm' ? C.dim : C.stop);
+          setTx(e, v == null ? '-----' : v ? on : off);
+          setAt(e, 'fill', v == null ? C.none : v ? C.run : kind === 'alarm' ? C.dim : C.stop);
         });
         /* a DITL sheet that ends at an output ADDRESS without an output row (DITL-44: the air valve of the back-up air motor of
            the air preheater, O.029F): [data-dpo="SHEET|ADDRESS|on text|off text"], the same read as the old page 038 */
         qa('[data-dpo]').forEach(e => {
           const [ad, addr, on, off] = e.dataset.dpo.split('|'),
             v = call(() => window.LS_OP.pout(ad, addr), null);
-          e.textContent = v == null ? '-----' : v ? on : off;
-          e.setAttribute('fill', v == null ? C.none : v ? C.run : C.stop);
+          setTx(e, v == null ? '-----' : v ? on : off);
+          setAt(e, 'fill', v == null ? C.none : v ? C.run : C.stop);
         });
         /* 3.2.1 page 10 PURGE AND TRIP: the Y / N of a condition read from the drawing itself.
            [data-dy="SHEET|i or o|row+row|neg"] = input rows (DUI.rowVal) or output rows (DUI.outVal), all 1 (AND); neg = the
@@ -359831,12 +360012,12 @@ window.PLANT_SYS = [
           const v = dyv(e.dataset.dy),
             col = v == null ? C.none : v ? C.run : C.stop;
           DY[e.dataset.dy] = v;
-          e.textContent = v == null ? (e.dataset.on ? '-----' : '-') : v ? e.dataset.on || 'Y' : e.dataset.off || 'N';
-          e.setAttribute('fill', col);
+          setTx(e, v == null ? (e.dataset.on ? '-----' : '-') : v ? e.dataset.on || 'Y' : e.dataset.off || 'N');
+          setAt(e, 'fill', col);
         });
         qa('[data-dyr]').forEach(e => {
           const v = DY[e.dataset.dyr];
-          e.setAttribute('stroke', v == null ? C.none : v ? C.run : C.stop);
+          setAt(e, 'stroke', v == null ? C.none : v ? C.run : C.stop);
         });
         qa('[data-dys]').forEach(e => {
           const [g, ad, row, lab] = e.dataset.dys.split('|'),
@@ -359851,16 +360032,16 @@ window.PLANT_SYS = [
               : ok
                 ? lab + ': OK'
                 : lab + ': NOT OK (' + miss + ' of ' + ys.length + ' missing)';
-          e.setAttribute('fill', col);
-          qa(`[data-dysr="${g}"]`).forEach(r => r.setAttribute('stroke', col));
+          setAt(e, 'fill', col);
+          qa(`[data-dysr="${g}"]`).forEach(r => setAt(r, 'stroke', col));
         });
         qa('[data-dfo]').forEach(e => {
           const [ad, row, rg] = e.dataset.dfo.split('|'),
             s = call(() => D().dOf(ad), null),
             on = s ? call(() => DUI.outVal(s, +row), null) : null;
           if (on == null) {
-            e.textContent = '-----';
-            e.setAttribute('fill', C.none);
+            setTx(e, '-----');
+            setAt(e, 'fill', C.none);
             return;
           }
           if (!on) e._fo = null;
@@ -359889,9 +360070,9 @@ window.PLANT_SYS = [
               }
             if (!e._fo) e._fo = '-----';
           }
-          e.textContent = on ? 'MFT ACTIVE · first out: ' + e._fo : 'NO MFT';
-          e.setAttribute('fill', on ? C.run : C.stop);
-          qa('[data-dfor]').forEach(r => r.setAttribute('stroke', on ? C.run : C.stop));
+          setTx(e, on ? 'MFT ACTIVE · first out: ' + e._fo : 'NO MFT');
+          setAt(e, 'fill', on ? C.run : C.stop);
+          qa('[data-dfor]').forEach(r => setAt(r, 'stroke', on ? C.run : C.stop));
         });
       };
       /* plant model values kept by tag (AN.unit.tt: the LP heater temperatures, ...): def.unit[TAG] = 'tt:IO-TAG'; an item of a list of
@@ -359935,17 +360116,17 @@ window.PLANT_SYS = [
         qa('[data-ut]').forEach(e => {
           const U = window.AN && AN.unit,
             v = !U || !U.on ? null : uPath(U, e.dataset.ut);
-          e.textContent = v == null || v === '' ? '-----' : String(v);
+          setTx(e, v == null || v === '' ? '-----' : String(v));
         });
         qa('[data-uy]').forEach(e => {
           const [kp, n, on, off] = e.dataset.uy.split('|'),
             U = window.AN && AN.unit,
             v = !U || !U.on ? null : uPath(U, kp),
             ok = v == null ? null : +v >= +n;
-          e.textContent = ok == null ? '-----' : ok ? on : off;
-          e.setAttribute('fill', ok == null ? C.none : ok ? C.run : C.stop);
+          setTx(e, ok == null ? '-----' : ok ? on : off);
+          setAt(e, 'fill', ok == null ? C.none : ok ? C.run : C.stop);
           qa(`[data-uyr="${e.dataset.uy}"]`).forEach(r =>
-            r.setAttribute('stroke', ok == null ? C.none : ok ? C.run : C.stop)
+            setAt(r, 'stroke', ok == null ? C.none : ok ? C.run : C.stop)
           );
         });
         tickAts();
@@ -360037,7 +360218,7 @@ window.PLANT_SYS = [
       let atsUi = null;
       const atsMk = (tag, at, par) => {
         const e = document.createElementNS(NS, tag);
-        for (const [a, v] of Object.entries(at)) e.setAttribute(a, v);
+        for (const [a, v] of Object.entries(at)) setAt(e, a, v);
         par.append(e);
         return e;
       };
@@ -360054,7 +360235,7 @@ window.PLANT_SYS = [
             /* the two grey lines of the mockup under the card give their place to the checklist */
             [...qa('text')].forEach(e => {
               if (+e.getAttribute('x') === x + 12 && Math.abs(+e.getAttribute('y') - (y + h + 35)) <= 14)
-                e.setAttribute('display', 'none');
+                setAt(e, 'display', 'none');
             });
             const fill = atsMk(
               'rect',
@@ -360093,19 +360274,19 @@ window.PLANT_SYS = [
           const done = step >= k && cur !== k,
             act = cur === k,
             next = !act && cur < 0 && k === step + 1;
-          ui.card.setAttribute('stroke', act || next ? C.run : done ? '#e6e6e6' : C.none);
-          ui.card.setAttribute('stroke-width', act ? 2.4 : 1.6);
-          ui.card.setAttribute('stroke-dasharray', next ? '6 4' : 'none');
-          ui.fill.setAttribute('fill-opacity', act ? 0.14 : 0);
+          setAt(ui.card, 'stroke', act || next ? C.run : done ? '#e6e6e6' : C.none);
+          setAt(ui.card, 'stroke-width', act ? 2.4 : 1.6);
+          setAt(ui.card, 'stroke-dasharray', next ? '6 4' : 'none');
+          setAt(ui.fill, 'fill-opacity', act ? 0.14 : 0);
           const it = t ? ATS_CK[k](t, U, g) : [['-----'], ['-----'], ['-----']];
           ui.rows.forEach((r, i) => {
             const [txt, ok0, val] = it[i] || [],
               ok = t ? ok0 || step >= k : null;
-            r.t.textContent = txt || '';
-            r.t.setAttribute('fill', act ? C.val : C.dim);
-            r.v.textContent = act && val ? val : '';
-            r.b.setAttribute('fill', ok == null ? 'none' : ok ? C.run : 'none');
-            r.b.setAttribute('stroke', ok == null ? C.none : ok ? C.run : C.stop);
+            setTx(r.t, txt || '');
+            setAt(r.t, 'fill', act ? C.val : C.dim);
+            setTx(r.v, act && val ? val : '');
+            setAt(r.b, 'fill', ok == null ? 'none' : ok ? C.run : 'none');
+            setAt(r.b, 'stroke', ok == null ? C.none : ok ? C.run : C.stop);
           });
         });
       }
@@ -360115,8 +360296,8 @@ window.PLANT_SYS = [
           const [nm, tg, how] = e.dataset.mov.split('|'),
             I = movInfo(nm, tg);
           if (!I || I.pos == null) {
-            e.textContent = '-----';
-            return e.setAttribute('fill', C.none);
+            setTx(e, '-----');
+            return setAt(e, 'fill', C.none);
           }
           if (how === 'am') {
             /* page 18: "AUTO · REMOTE" = both modes of the valve (its AUTO MODE input, its REMOTE output) */
@@ -360124,18 +360305,18 @@ window.PLANT_SYS = [
               (I.au == null ? '-----' : I.au ? 'AUTO' : 'MANUAL') +
               ' · ' +
               (I.rem == null ? '-----' : I.rem ? 'REMOTE' : 'LOCAL');
-            e.setAttribute('fill', C.dim);
+            setAt(e, 'fill', C.dim);
           } else if (how === 'md') {
             /* the mode of the valve: REMOTE / LOCAL (its REMOTE output) else AUTO / MANUAL (its AUTO MODE input) */
             e.textContent =
               I.rem != null ? (I.rem ? 'REMOTE' : 'LOCAL') : I.au != null ? (I.au ? 'AUTO' : 'MANUAL') : '-----';
-            e.setAttribute('fill', C.dim);
+            setAt(e, 'fill', C.dim);
           } else if (how === 'pct') {
-            e.textContent = fmt(I.pos, 1) + ' %';
-            e.setAttribute('fill', C.val);
+            setTx(e, fmt(I.pos, 1) + ' %');
+            setAt(e, 'fill', C.val);
           } else {
-            e.textContent = I.pos >= 99.5 ? 'OPEN' : I.pos <= 0.5 ? 'CLOSED' : 'TRAVEL ' + fmt(I.pos, 0) + ' %';
-            e.setAttribute('fill', I.pos > 0.5 ? C.run : C.stop);
+            setTx(e, I.pos >= 99.5 ? 'OPEN' : I.pos <= 0.5 ? 'CLOSED' : 'TRAVEL ' + fmt(I.pos, 0) + ' %');
+            setAt(e, 'fill', I.pos > 0.5 ? C.run : C.stop);
           }
         });
       /* page 18: [data-movr="SHEET|TAG"] = the valve symbol of a MOV: red = open (not fully closed), green = closed, grey = no position */
@@ -360143,7 +360324,7 @@ window.PLANT_SYS = [
         qa('[data-movr]').forEach(e => {
           const [nm, tg] = e.dataset.movr.split('|'),
             I = movInfo(nm, tg);
-          e.setAttribute('stroke', !I || I.pos == null ? C.none : I.pos > 0.5 ? C.run : C.stop);
+          setAt(e, 'stroke', !I || I.pos == null ? C.none : I.pos > 0.5 ? C.run : C.stop);
         });
       const tick0 = tick;
       /* e6: page 13 turbine protection: TRIPPED / RESET and the first out of TA-9 (tcs.js U.tc.trip, '' = reset) */
@@ -360163,16 +360344,15 @@ window.PLANT_SYS = [
                   ? String(f0.first || f0.name || '')
                   : '';
         qa('[data-tt]').forEach(e => {
-          if (fo == null) return ((e.textContent = '-----'), e.setAttribute('fill', C.none));
-          if (e.dataset.tt === 'st')
-            ((e.textContent = fo ? 'TRIPPED' : 'RESET'), e.setAttribute('fill', fo ? C.run : C.stop));
+          if (fo == null) return (setTx(e, '-----'), setAt(e, 'fill', C.none));
+          if (e.dataset.tt === 'st') (setTx(e, fo ? 'TRIPPED' : 'RESET'), setAt(e, 'fill', fo ? C.run : C.stop));
           else e.textContent = 'First out: ' + (fo || 'none');
         });
-        qa('[data-ttr]').forEach(r => r.setAttribute('stroke', fo == null ? C.none : fo ? C.run : C.stop));
+        qa('[data-ttr]').forEach(r => setAt(r, 'stroke', fo == null ? C.none : fo ? C.run : C.stop));
         qa('[data-tfo]').forEach(c => {
           const on = !!fo && fo.toUpperCase() === c.dataset.tfo;
-          c.setAttribute('fill', on ? C.run : 'none');
-          c.setAttribute('stroke', on ? C.run : C.dim);
+          setAt(c, 'fill', on ? C.run : 'none');
+          setAt(c, 'stroke', on ? C.run : C.dim);
         });
       };
       const tickAll = () => (tick0(), tickTT(), tickMov(), tickMovR(), tickTP());
@@ -360396,11 +360576,15 @@ window.PLANT_SYS = [
     for (const id in def.mach || {}) {
       const m = def.mach[id],
         uk = m.cur && def.unit && def.unit[m.cur] && !/^(tt|ux):/.test(def.unit[m.cur]) ? def.unit[m.cur] : null;
-      (window.LS_HISTQ = window.LS_HISTQ || []).push([[m.t, m.n], 'mach', {
+      (window.LS_HISTQ = window.LS_HISTQ || []).push([
+        [m.t, m.n],
+        'mach',
+        {
           st: () => mst(m),
           cur: uk ? () => (AN.unit && AN.unit.on && isFinite(AN.unit[uk]) ? +AN.unit[uk] : null) : null,
           unit: m.cur ? 'A' : ''
-        }]);
+        }
+      ]);
     }
     PLANT_V2.screens[def.id] = page(def);
     const L = (window.PLANT_SYS = window.PLANT_SYS || []),
@@ -362678,6 +362862,15 @@ window.PLANT_SYS = [
     H = 640,
     SYM = window.HXSYM || {},
     REAL = window.HXREAL || {};
+  /* F6 2026-11-22 (Q6): a text of the tick is written only when it changed (the same text written again made the next measure lay out the page) */
+  const setAt = (e, k, v) => {
+    v = String(v);
+    if (e.getAttribute(k) !== v) e.setAttribute(k, v);
+  };
+  const setTx = (e, v) => {
+    v = v == null ? '' : String(v);
+    if (e.textContent !== v) e.textContent = v;
+  };
   const HX = (window.HX = { pages: [], byId: {}, W, H, data: null });
   const esc = s =>
     String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -362764,7 +362957,8 @@ window.PLANT_SYS = [
       m = it.k === 'mach' && R.machines && R.machines[it.mach];
     /* audit 2026-11-21 C7: a machine named as its own logic name (Burner A) printed the name twice */
     const same = String(it.mach).toUpperCase() === String(it.name || '').toUpperCase();
-    if (it.k === 'mach') return m && m.t && m.t.length < 14 ? (same ? m.t : it.mach + ' · ' + m.t) : same ? '' : it.mach;
+    if (it.k === 'mach')
+      return m && m.t && m.t.length < 14 ? (same ? m.t : it.mach + ' · ' + m.t) : same ? '' : it.mach;
     return regName(it);
   };
 
@@ -363334,7 +363528,9 @@ window.PLANT_SYS = [
           hx0 = v ? -lw / 2 + ox : sd === 'r' ? tx0 - 4 : tx0 + 4 - lw,
           hy0 = Math.min(yl, yc) - 12,
           hy1 = (t.tag ? yt : yc + 15) + 5,
-          hit = t.key ? `<rect class="hx-hit" x="${n1(hx0)}" y="${n1(hy0)}" width="${n1(lw)}" height="${n1(hy1 - hy0)}"/>` : '';
+          hit = t.key
+            ? `<rect class="hx-hit" x="${n1(hx0)}" y="${n1(hy0)}" width="${n1(lw)}" height="${n1(hy1 - hy0)}"/>`
+            : '';
         taps +=
           `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})">${hit}<path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>` +
           `<text class="hx-lab" x="${tx0}" y="${yl}" text-anchor="${an}">${esc(t.label)}</text><rect class="rx-chip" x="${n1(x0)}" y="${yc}" width="${cw}" height="15" rx="3"/>` +
@@ -363503,7 +363699,7 @@ window.PLANT_SYS = [
           hi = z + pad;
         }
         const rg = box.querySelector(`[data-rng="${i}"]`);
-        if (rg) rg.textContent = fmt(lo, p[3] == null ? 1 : p[3]) + ' to ' + fmt(hi, p[3] == null ? 1 : p[3]);
+        if (rg) setTx(rg, fmt(lo, p[3] == null ? 1 : p[3]) + ' to ' + fmt(hi, p[3] == null ? 1 : p[3]));
         let d = '';
         for (const [t, v] of b) {
           if (now - t > span || v == null) continue;
@@ -363515,7 +363711,7 @@ window.PLANT_SYS = [
           s += `<path d="${d}" fill="none" style="stroke:var(--hx-pen${(i % 6) + 1})" stroke-width="1.8" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
         const cur = penVal(p[1]),
           o = box.querySelector(`[data-pen="${i}"]`);
-        if (o) o.textContent = fmt(cur, p[3] == null ? 1 : p[3]) + ' ' + p[2];
+        if (o) setTx(o, fmt(cur, p[3] == null ? 1 : p[3]) + ' ' + p[2]);
       });
       svg.innerHTML = s;
     });
@@ -363538,7 +363734,13 @@ window.PLANT_SYS = [
       if (!h) return { n, h, dx, dy, sym: null };
       const x = +h.getAttribute('x'),
         y = +h.getAttribute('y');
-      return { n, h, dx, dy, sym: [x + dx, y + dy, x + dx + +h.getAttribute('width'), y + dy + +h.getAttribute('height')] };
+      return {
+        n,
+        h,
+        dx,
+        dy,
+        sym: [x + dx, y + dy, x + dx + +h.getAttribute('width'), y + dy + +h.getAttribute('height')]
+      };
     });
     const hits = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
     /* Rosé 2026-11-22: every box measured first, then written (a write between two getBBox made the browser lay out again) */
@@ -363573,8 +363775,13 @@ window.PLANT_SYS = [
   /* Rosé 2026-11-22 (profile of 2026-11-22: minText took 2.1 s of the 3.7 s freeze after Engineer -> Operator): every word was read
      (getClientRects, getScreenCTM) right after the size of the word before it was written, so the browser laid the page out again
      for each word. Now the frame sizes are written first, then every word of the page is read in one pass, then the sizes are written */
-  function minText(page) {
-    const SV = [...page.querySelectorAll('svg')].filter(svg => !(svg.closest('.hx-trends') || svg.getAttribute('preserveAspectRatio') === 'none'));
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU: this pass took 30 ms of every 2 s at 6 x): a word already sized at the scale its drawing has now
+     is not read again by the 2 s check (quick); only new or newly shown words are. A resize, a new view or a new scale reads all of them */
+  const MTK = new WeakMap();
+  function minText(page, quick) {
+    const SV = [...page.querySelectorAll('svg')].filter(
+      svg => !(svg.closest('.hx-trends') || svg.getAttribute('preserveAspectRatio') === 'none')
+    );
     const W = [];
     let MEAS = 0;
     for (const svg of SV) {
@@ -363589,7 +363796,8 @@ window.PLANT_SYS = [
           fr = svg.getBoundingClientRect().width / svg.clientWidth,
           w = fr > 0 ? Math.ceil((0.8 * vb) / fr) : 0,
           w0 = Math.max(1400, w);
-        if (w && Math.abs((parseFloat(svg.style.minWidth) || 1400) - w0) > 2) svg.style.minWidth = w0 > 1400 ? w0 + 'px' : '';
+        if (w && Math.abs((parseFloat(svg.style.minWidth) || 1400) - w0) > 2)
+          svg.style.minWidth = w0 > 1400 ? w0 + 'px' : '';
       }
     }
     /* the scale class of each drawing (it hides the tag numbers, so it comes before the words are read) */
@@ -363610,10 +363818,16 @@ window.PLANT_SYS = [
         const M = host.getScreenCTM(),
           k = M ? Math.hypot(M.a, M.b) : 0,
           s = k ? MINPX / (9.5 * k) : 1;
-        W.push([g, 'tr', g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')]);
+        W.push([
+          g,
+          'tr',
+          g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')
+        ]);
       }
       for (const t of svg.querySelectorAll('text, tspan')) {
+        if (quick && MTK.get(t) === SK[SV.indexOf(svg)]) continue;
         if (!t.getClientRects().length || t.closest('.hx-yn')) continue;
+        MTK.set(t, SK[SV.indexOf(svg)]);
         const M = t.getScreenCTM && t.getScreenCTM(),
           k = M ? Math.hypot(M.a, M.b) : 0;
         if (!k) continue;
@@ -363635,7 +363849,9 @@ window.PLANT_SYS = [
   let BK = 0;
   function backHits(page) {
     for (const svg of page.querySelectorAll('svg')) {
-      const L = [...svg.querySelectorAll('.hx-node')].filter(n => !n.dataset.fit && (n.hasAttribute('data-open') || n.hasAttribute('data-hp')));
+      const L = [...svg.querySelectorAll('.hx-node')].filter(
+        n => !n.dataset.fit && (n.hasAttribute('data-open') || n.hasAttribute('data-hp'))
+      );
       if (!L.length) continue;
       const SN = 'http://www.w3.org/2000/svg';
       /* Rosé 2026-11-22: all items measured before the first box is added */
@@ -363672,7 +363888,15 @@ window.PLANT_SYS = [
         n.dataset.bk = r.dataset.bkfor = String(++BK);
         r.addEventListener('click', e => {
           e.stopPropagation();
-          n.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, clientX: e.clientX, clientY: e.clientY, view: window }));
+          n.dispatchEvent(
+            new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              clientX: e.clientX,
+              clientY: e.clientY,
+              view: window
+            })
+          );
         });
         lay.append(r);
       }
@@ -363771,13 +363995,54 @@ window.PLANT_SYS = [
     };
     const setCls = (e, c) => {
       const cur = e.getAttribute('class').replace(/\s*hx-(run|stop|trip|none)\b/g, '');
-      e.setAttribute('class', cur + ' hx-' + c);
+      setAt(e, 'class', cur + ' hx-' + c);
     };
     let mtT = mt0;
+    /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): the moving parts of the page (hx.css, 10 steps a second each) run on ONE clock of 10 steps
+       a second (the user's rule of 2026-11-01: all flow animation on one shared clock). A running CSS animation made the browser
+       restyle it on every frame, also between two steps (Chrome trace of the Drum page: 55 restyles a second, a third of the CPU at
+       6 x). Each animation of the page is held (pause) and the clock sets its time 10 times a second, so the page is restyled and
+       redrawn 10 times a second. The keyframes stay those of hx.css; a part that starts later (a pump started) joins the clock at its
+       animationstart; a part that stops (its class) leaves it. The clock stands while the page is hidden or not on the process view */
+    const CLK = new Set();
+    const join = L => {
+      for (const an of L)
+        if (!CLK.has(an)) {
+          CLK.add(an);
+          an.pause();
+        }
+    };
+    let clk = 0;
+    function clock() {
+      if (!page.isConnected) return void (clearInterval(clk), (clk = 0), CLK.clear());
+      if (document.hidden || view !== 'process') return;
+      const t = Math.floor(performance.now() / 100) * 100;
+      for (const an of CLK) {
+        const el = an.effect && an.effect.target;
+        if (an.playState === 'idle' || !el || !el.isConnected) {
+          CLK.delete(an);
+          continue;
+        }
+        if (an.currentTime !== t) an.currentTime = t;
+      }
+    }
+    let synced = false;
+    function sync() {
+      if (synced || !page.getAnimations) return;
+      synced = true;
+      join(page.getAnimations({ subtree: true }));
+      clock();
+      clk = setInterval(clock, 100);
+    }
+    page.addEventListener('animationstart', e => {
+      const t = e.target;
+      if (t && t.getAnimations) join(t.getAnimations());
+    });
     function tick(force) {
       const D = HX.data;
+      if (view === 'process') sync();
       /* Audit 3: words that appear later (a Y / N mark, a state) get the 11 px floor too, checked every 2 s */
-      if (view === 'process' && Date.now() - mtT > 2000) ((mtT = Date.now()), minText(page));
+      if (view === 'process' && Date.now() - mtT > 2000) ((mtT = Date.now()), minText(page, true));
       if (view === 'process') plates();
       REC.sample();
       /* status line */
@@ -363832,14 +364097,14 @@ window.PLANT_SYS = [
                       : '',
             c = 'hx-ats' + st,
             R = AT && AT.rows ? AT.rows[k] : null;
-          if (e.getAttribute('class') !== c) e.setAttribute('class', c);
+          if (e.getAttribute('class') !== c) setAt(e, 'class', c);
           for (let i = 0; i < 3; i++) {
             const b = e.querySelector('[data-atb="' + i + '"]'),
               v = e.querySelector('[data-atv="' + i + '"]'),
               ok = R ? !!(R[i] && R[i][1]) : AT && AT.on ? AT.step >= k : null,
               bc = 'hx-atb' + (ok == null ? '' : ok ? ' y' : ' n'),
               tx = (R && R[i] && R[i][2]) || '';
-            if (b.getAttribute('class') !== bc) b.setAttribute('class', bc);
+            if (b.getAttribute('class') !== bc) setAt(b, 'class', bc);
             if (v.textContent !== tx) v.textContent = tx;
           }
         });
@@ -363852,7 +364117,7 @@ window.PLANT_SYS = [
               (e.dataset.press ? ' press' : '') +
               (e.dataset.plain ? ' plain' : '') +
               (h.tone ? ' ' + h.tone : '');
-          if (e.getAttribute('class') !== c) e.setAttribute('class', c);
+          if (e.getAttribute('class') !== c) setAt(e, 'class', c);
           const st = e.querySelector('[data-hks]'),
             tx = h.text || '-----';
           if (st && st.textContent !== tx) st.textContent = tx;
@@ -363860,13 +364125,13 @@ window.PLANT_SYS = [
         Q('[data-flag]').forEach(e => {
           const f = D.flag ? D.flag(e.dataset.flag) : null;
           e.className = 'hx-ynb ' + (f == null ? '' : f ? 'y' : 'n');
-          e.textContent = f == null ? '-' : f ? 'Y' : 'N';
+          setTx(e, f == null ? '-' : f ? 'Y' : 'N');
         });
         Q('[data-st]').forEach(e => {
           const m = D.machine(e.dataset.st) || {},
             t = (m.word ? wordTxt(m.word) : stTxt(m.st, e.dataset.st, e.dataset.vw)) + (m.mode ? ' · ' + m.mode : '');
           if (e.textContent !== t) e.textContent = t;
-          e.setAttribute('class', 'hx-st ' + (m.st || 'none'));
+          setAt(e, 'class', 'hx-st ' + (m.st || 'none'));
         });
         Q('.hx-node[data-ms]').forEach(e => setCls(e, (D.machine(e.dataset.ms) || {}).st || 'none'));
         Q('.hx-node[data-on]').forEach(e => {
@@ -363885,7 +364150,7 @@ window.PLANT_SYS = [
           setCls(e, mv == null ? 'none' : mv > 1 ? 'run' : 'stop');
           travel(e, mv);
           e.querySelectorAll('[data-bl]').forEach(b =>
-            b.setAttribute('transform', `rotate(${n1(90 * Math.max(0, Math.min(1, (mv || 0) / 100)))})`)
+            setAt(b, 'transform', `rotate(${n1(90 * Math.max(0, Math.min(1, (mv || 0) / 100)))})`)
           );
         });
         Q('[data-vs]').forEach(e => {
@@ -363893,11 +364158,11 @@ window.PLANT_SYS = [
             o = v.open != null ? v.open : v.pct != null ? v.pct > 1 : null,
             t = o == null ? '-----' : (o ? 'Open' : 'Closed') + (v.pct != null ? ' ' + fmt(v.pct, 0) + ' %' : '');
           if (e.textContent !== t) e.textContent = t;
-          e.setAttribute('class', 'hx-st ' + (o == null ? 'none' : o ? 'run' : 'stop'));
+          setAt(e, 'class', 'hx-st ' + (o == null ? 'none' : o ? 'run' : 'stop'));
         });
         Q('[data-mode]').forEach(e => {
           const l = D.loop(e.dataset.mode) || {};
-          e.setAttribute('class', 'hx-mode ' + modeCls(l.mode));
+          setAt(e, 'class', 'hx-mode ' + modeCls(l.mode));
           const t = e.querySelector('text');
           if (t.textContent !== modeTxt(l.mode)) t.textContent = modeTxt(l.mode);
         });
@@ -363910,8 +364175,8 @@ window.PLANT_SYS = [
         Q('.hx-yn[data-yn]').forEach(e => {
           const [yk, ...yr] = e.dataset.yn.split(':'),
             p = ((yk === 'valve' ? D.valve(yr.join(':')) : D.machine(yr.join(':'))) || {}).perm;
-          e.setAttribute('class', 'hx-yn ' + (p == null ? '' : p ? 'y' : 'n'));
-          e.querySelector('text').textContent = p == null ? '-' : p ? 'Y' : 'N';
+          setAt(e, 'class', 'hx-yn ' + (p == null ? '' : p ? 'y' : 'n'));
+          setTx(e.querySelector('text'), p == null ? '-' : p ? 'Y' : 'N');
         });
         Q('[data-level]').forEach(e => {
           const [key, lo, hi] = e.dataset.level.split('|'),
@@ -363920,12 +364185,12 @@ window.PLANT_SYS = [
           if (!r) return;
           const [y0, y1] = r.dataset.lv.split(',').map(Number),
             f = v == null ? 0.5 : Math.max(0.04, Math.min(1, (v - lo) / (hi - lo)));
-          r.setAttribute('y', n1(y1 - (y1 - y0) * f));
-          r.setAttribute('height', n1((y1 - y0) * f));
+          setAt(r, 'y', n1(y1 - (y1 - y0) * f));
+          setAt(r, 'height', n1((y1 - y0) * f));
         });
         Q('g[data-flow]').forEach(e => {
           const f = e.dataset.flow ? flowing(e.dataset.flow) : null;
-          e.setAttribute('class', f == null ? '' : f ? 'hx-on' : 'hx-idle');
+          setAt(e, 'class', f == null ? '' : f ? 'hx-on' : 'hx-idle');
         });
       }
       if (view === 'controls') {
@@ -363933,11 +364198,11 @@ window.PLANT_SYS = [
           const l = D.loop(c.dataset.cardLoop) || {},
             F = f => c.querySelector(`[data-f="${f}"]`),
             u = l.unit ? ' ' + l.unit : '';
-          F('mode').textContent = modeTxt(l.mode);
+          setTx(F('mode'), modeTxt(l.mode));
           F('mode').className = 'hx-pill ' + modeCls(l.mode);
-          F('pv').textContent = fmt(l.pv, 1) + (l.pv == null ? '' : u);
-          F('sv').textContent = fmt(l.sv, 1) + (l.sv == null ? '' : u);
-          F('mv').textContent = fmt(l.mv, 1) + (l.mv == null ? '' : ' %');
+          setTx(F('pv'), fmt(l.pv, 1) + (l.pv == null ? '' : u));
+          setTx(F('sv'), fmt(l.sv, 1) + (l.sv == null ? '' : u));
+          setTx(F('mv'), fmt(l.mv, 1) + (l.mv == null ? '' : ' %'));
           F('mvb').style.width = Math.max(0, Math.min(100, l.mv || 0)) + '%';
           F('pvb').style.width =
             l.pv == null || !l.sv ? '0%' : Math.max(0, Math.min(100, (l.pv / (l.sv * 2)) * 100)) + '%';
@@ -363945,21 +364210,21 @@ window.PLANT_SYS = [
         Q('[data-card-mach]').forEach(c => {
           const m = D.machine(c.dataset.cardMach) || {},
             F = f => c.querySelector(`[data-f="${f}"]`);
-          F('st').textContent = m.word ? wordTxt(m.word) : stTxt(m.st, c.dataset.cardMach);
+          setTx(F('st'), m.word ? wordTxt(m.word) : stTxt(m.st, c.dataset.cardMach));
           F('st').className = 'hx-pill ' + (m.st || '');
-          F('mode').textContent = m.mode || '';
+          setTx(F('mode'), m.mode || '');
           const y = c.querySelector('.hx-ynb');
           y.className = 'hx-ynb ' + (m.perm == null ? '' : m.perm ? 'y' : 'n');
-          y.textContent = m.perm == null ? '-' : m.perm ? 'Y' : 'N';
+          setTx(y, m.perm == null ? '-' : m.perm ? 'Y' : 'N');
         });
         Q('[data-card-valve]').forEach(c => {
           const v = D.valve(c.dataset.cardValve) || {},
             o = v.open != null ? v.open : v.pct != null ? v.pct > 1 : null,
             F = f => c.querySelector(`[data-f="${f}"]`);
-          F('st').textContent = o == null ? '-----' : o ? 'Open' : 'Closed';
+          setTx(F('st'), o == null ? '-----' : o ? 'Open' : 'Closed');
           F('st').className = 'hx-pill ' + (o == null ? '' : o ? 'run' : 'stop');
-          F('mode').textContent = v.mode || '';
-          F('pct').textContent = v.pct == null ? '' : fmt(v.pct, 0) + ' %';
+          setTx(F('mode'), v.mode || '');
+          setTx(F('pct'), v.pct == null ? '' : fmt(v.pct, 0) + ' %');
         });
       }
       if (view === 'trends') paintTrends(page, def, span);
@@ -364001,15 +364266,15 @@ window.PLANT_SYS = [
             g.append(r);
           }
           /* not laid out yet (page hidden): measured again at the next tick */
-          if (!b || !b.width || !m) return void r.setAttribute('width', 0);
+          if (!b || !b.width || !m) return void setAt(r, 'width', 0);
           e.__pn = n;
           const t = inv.multiply(m),
             p = new DOMPoint(b.x - 2, b.y).matrixTransform(t),
             q = new DOMPoint(b.x + b.width + 2, b.y + b.height).matrixTransform(t);
-          r.setAttribute('x', n1(Math.min(p.x, q.x)));
-          r.setAttribute('y', n1(Math.min(p.y, q.y)));
-          r.setAttribute('width', n1(Math.abs(q.x - p.x)));
-          r.setAttribute('height', n1(Math.abs(q.y - p.y)));
+          setAt(r, 'x', n1(Math.min(p.x, q.x)));
+          setAt(r, 'y', n1(Math.min(p.y, q.y)));
+          setAt(r, 'width', n1(Math.abs(q.x - p.x)));
+          setAt(r, 'height', n1(Math.abs(q.y - p.y)));
         });
       });
     }
