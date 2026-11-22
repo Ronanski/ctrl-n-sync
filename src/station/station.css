@@ -179,6 +179,15 @@ html body.st.st-eng:not(#st0):not(#st1) #svg:not(#st2) text[fill="#e6edf3"] { fi
 @media (pointer: coarse) {
 html body.st:not(#st0):not(#st1) #plantws:not(#st2) { bottom: 40px !important; }
 html body.st.st-eng:not(#st0):not(#st1) #cv:not(#st2) { bottom: 40px !important; }
+/* beta.295 (user, apk test 2026-11-22: "hndi fit ang scale ng display nya sa screen"): the process view of a plant page is fitted whole
+   into its frame (hx-app.js frame: the whole 1920 x 1140 page on a touch screen); the drawing takes the room the lists and the legend
+   leave and keeps its shape; nothing scrolls. The Controls and Trends views keep their own scroll */
+body.st #plantws .hx-app:has(> .hx-page > .hx-process:not([hidden])) { height: 100%; overflow: hidden !important; }
+body.st #plantws .hx-app > .hx-page:has(> .hx-process:not([hidden])) { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+body.st #plantws .hx-page > .hx-process:not([hidden]) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+body.st #plantws .hx-process > .hx-draw { flex: 1 1 auto; min-height: 0; overflow: hidden !important; }
+body.st #plantws .hx-process > .hx-draw > svg { min-width: 0 !important; width: 100% !important; height: 100% !important; }
+body.st #plantws .hx-process > .hx-lists, body.st #plantws .hx-process > .hx-legend { flex: none; }
 }
 /* the short notes of the update check of the app (src/boot/update-question.js) stay visible over the station; its question is shown by the station itself (station.js updAsk) */
 html body.st:not(#st0):not(#st1) > #updtoast:not(#st2) { visibility: visible !important; pointer-events: auto !important; z-index: 2147483000 !important; }

@@ -36,6 +36,8 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-kv span { color: var(--st-dim); font-size: 12px; }
 .st-kv b { font: 600 15px var(--st-num); color: var(--st-tx); margin: 0 4px 0 8px; font-variant-numeric: tabular-nums; }
 .st-sim { display: flex; align-items: center; gap: 8px; padding-left: 16px; border-left: 1px solid var(--st-line); flex: none; }
+.st-fps { font: 500 12px var(--st-num); color: var(--st-dim); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 48px; text-align: right; }
+.st-fps.st-low { color: var(--st-alm); }
 .st-kv i { font-style: normal; }
 @media (max-width: 1500px) { .st-kv { gap: 12px; align-items: center; } .st-kv span { display: inline-grid; grid-template-columns: auto 1fr; align-items: baseline; } .st-kv i { grid-column: 1 / -1; line-height: 14px; } .st-kv b { margin: 0 4px 0 0; line-height: 18px; } }
 

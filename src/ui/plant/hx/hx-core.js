@@ -949,7 +949,11 @@
       /* the realistic drawing is never drawn under 0.8 on the screen (its 11 px words cross each other below it: 36 on Feedwater at
          1280 with the page menu open, the station frame drawn at 0.86): its minimum width (hx.css 1400 px) grows to that, the page
          scrolls. The size of the frame is read (its CSS px against its screen px), so a smaller window or an open menu are both met */
-      if (svg.classList.contains('hx-real') && svg.viewBox && svg.viewBox.baseVal && svg.clientWidth) {
+      /* apk test of the user 2026-11-22: on a touch screen of the Operator Station the page is fitted whole (station.css), so the
+         drawing gets no minimum width there */
+      if (window.LS_STATION && matchMedia('(pointer: coarse)').matches) {
+        if (svg.style.minWidth) svg.style.minWidth = '';
+      } else if (svg.classList.contains('hx-real') && svg.viewBox && svg.viewBox.baseVal && svg.clientWidth) {
         const vb = svg.viewBox.baseVal.width,
           fr = svg.getBoundingClientRect().width / svg.clientWidth,
           w = fr > 0 ? Math.ceil((0.8 * vb) / fr) : 0,

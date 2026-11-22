@@ -156171,10 +156171,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 432f600'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build b2b4fc7'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 432f600';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build b2b4fc7';
     } catch (e) {}
   };
   upd();
@@ -346366,7 +346366,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 432f600'));
+    row('Version', E('span', 'scsver', ver + ' · build b2b4fc7'));
   }
   function openSet(near) {
     if (!set) {
@@ -364041,7 +364041,11 @@ window.PLANT_SYS = [
       /* the realistic drawing is never drawn under 0.8 on the screen (its 11 px words cross each other below it: 36 on Feedwater at
          1280 with the page menu open, the station frame drawn at 0.86): its minimum width (hx.css 1400 px) grows to that, the page
          scrolls. The size of the frame is read (its CSS px against its screen px), so a smaller window or an open menu are both met */
-      if (svg.classList.contains('hx-real') && svg.viewBox && svg.viewBox.baseVal && svg.clientWidth) {
+      /* apk test of the user 2026-11-22: on a touch screen of the Operator Station the page is fitted whole (station.css), so the
+         drawing gets no minimum width there */
+      if (window.LS_STATION && matchMedia('(pointer: coarse)').matches) {
+        if (svg.style.minWidth) svg.style.minWidth = '';
+      } else if (svg.classList.contains('hx-real') && svg.viewBox && svg.viewBox.baseVal && svg.clientWidth) {
         const vb = svg.viewBox.baseVal.width,
           fr = svg.getBoundingClientRect().width / svg.clientWidth,
           w = fr > 0 ? Math.ceil((0.8 * vb) / fr) : 0,
@@ -370963,6 +370967,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
   const frame = () => {
     const e = document.getElementById('plsvg'),
       r = e ? e.getBoundingClientRect() : null;
+    /* beta.295 (user, apk test 2026-11-22: "Draggable p rin ang hmi at hndi fit ang scale ng display nya sa screen"): on a touch screen
+       of the Operator Station (the apk) the page is fitted whole into the area and nothing moves under a finger; the words keep their
+       11 px minimum (hx-core.js minText) and the tag numbers step back at that scale. A mouse screen keeps the C10 frame below */
+    if (window.LS_STATION && matchMedia('(pointer: coarse)').matches) return [FW, FH];
     return r && r.width > 300 && r.width < 1500 && r.height > 300 ? [Math.round(r.width), Math.round(r.height)] : [FW, FH];
   };
   function screen(def) {
@@ -374360,7 +374368,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     let drag = null,
       dragged = false;
     svg.addEventListener('pointerdown', e => {
-      if (!vb) return;
+      /* beta.295 (user, apk test 2026-11-22: the HMI could still be dragged): in the Operator Station a realistic page (hx) is not
+         dragged: it fills its area (fitted whole on a touch screen, hx-app.js frame) or scrolls inside it, so a drag only slid the
+         page away from its place */
+      if (!vb || (window.LS_STATION && cur && cur.g && cur.g.hx)) return;
       drag = { x: e.clientX, y: e.clientY, v: vb.slice(), id: e.pointerId, moved: false };
       dragged = false;
     });
