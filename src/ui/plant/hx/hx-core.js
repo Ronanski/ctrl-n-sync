@@ -943,10 +943,13 @@
     for (const svg of SV) {
       /* a Y / N square grows whole (its letter would leave its 14-unit box), around its own centre */
       for (const g of svg.querySelectorAll('.hx-yn')) {
-        const t = g.querySelector('text');
-        if (!t || !t.getClientRects().length) continue;
+        /* real-click test 2026-11-22: a square still hidden when this ran (no Y / N yet) was skipped, and a paused plant runs no tick,
+           so its letter stayed 7.6 px at 1280. The scale is read from the drawing around the square, which is shown even while it is hidden */
+        const t = g.querySelector('text'),
+          host = g.parentNode;
+        if (!t || !host || !host.getScreenCTM) continue;
         if (g.dataset.tr0 == null) g.dataset.tr0 = g.getAttribute('transform') || '';
-        const M = t.getScreenCTM && t.getScreenCTM(),
+        const M = host.getScreenCTM(),
           k = M ? Math.hypot(M.a, M.b) : 0,
           s = k ? MINPX / (9.5 * k) : 1;
         W.push([g, 'tr', g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')]);

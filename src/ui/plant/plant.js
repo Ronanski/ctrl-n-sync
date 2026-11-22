@@ -1267,7 +1267,7 @@
     let nm = '';
     try {
       const n = [...document.querySelectorAll('#plantws .hx-node[data-lv2]')].find(x => x.dataset.lv2 === tag);
-      nm = ((n && n.dataset.name) || '').replace(/s+/g, ' ').trim();
+      nm = ((n && n.dataset.name) || '').replace(/\s+/g, ' ').trim();
     } catch (e) {}
     fp = E('div', { id: 'plfp', 'data-tag': tag }, [
       E('div', { cls: 'plfph' }, [
