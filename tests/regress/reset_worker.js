@@ -58,6 +58,15 @@ async function mode(worker) {
     await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54, null, { timeout: 120000 });
     await page.waitForFunction(() => window.ENG && (ENG.mode === 'mirror' || ENG.err), null, { timeout: 180000 });
     await page.waitForFunction(() => ENG.got > 0 || ENG.err, null, { timeout: 60000 }).catch(() => {});
+  } else {
+    /* beta.288 (JENNIE): the Worker is on by default since beta.275 (src/world/eng-page.js), so the page that lib.js opens is local only
+       until the Worker is up: Reset A ran on the page and Reset B in the Worker, and "local" compared the two (the DITL netlists and the
+       plant switch list differed). The local mode is the page with the Worker off (?worker=0) */
+    await page.goto(url.pathToFileURL(path.resolve(html)).href + '?worker=0');
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => AN.setCat('an'));
+    await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54, null, { timeout: 120000 });
+    await page.waitForTimeout(500);
   }
   await page.evaluate(() => { AN.i = AN.sheets.findIndex(s => s.name === 'ABC-001C'); });
   const A = await resetAndRead(page, worker);

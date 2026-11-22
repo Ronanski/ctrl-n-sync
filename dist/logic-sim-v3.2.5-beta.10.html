@@ -120437,7 +120437,13 @@ function ditlApply(k) {
 function simRead(s) {
   if (s.tcs) return simSheet(s);
   const W = window.WORLD;
-  if (!(window.ENG && ENG.mode === 'mirror' && W && W.on && W.idx)) return simSheet(s);
+  /* beta.288 (JENNIE, reset_worker local mode): with the one world on, the page also reads the last scan and does not solve the sheet
+     here. A read is not a scan: simSheet writes the sheet's net values (nl._v, read by the other sheets through their FROM connectors)
+     and makes its motor memory (MST). The operator panel (src/ui/plant/op-api.js needNet / dRead) read the sheets it showed, so after a
+     Reset the DITL state depended on what the panel had open: on a fresh page it solved DITL-35 / 38 / 66 / 73 / 75 / 79 / 80 / 81 / 88 / 94
+     and wrote their values, after a run it did not. The Worker mirror already read this way (Mina F62), so the page without the Worker
+     now gives the same DITL state as the Worker. Without the world (the DITL page alone) a read still solves the sheet */
+  if (!(W && W.on && W.idx)) return simSheet(s);
   const lv = W.live;
   W.live = true;
   try {
@@ -156137,10 +156143,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build dbfc0b3'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 44ee8a9'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build dbfc0b3';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 44ee8a9';
     } catch (e) {}
   };
   upd();
@@ -297614,7 +297620,13 @@ function ditlApply(k) {
 function simRead(s) {
   if (s.tcs) return simSheet(s);
   const W = window.WORLD;
-  if (!(window.ENG && ENG.mode === 'mirror' && W && W.on && W.idx)) return simSheet(s);
+  /* beta.288 (JENNIE, reset_worker local mode): with the one world on, the page also reads the last scan and does not solve the sheet
+     here. A read is not a scan: simSheet writes the sheet's net values (nl._v, read by the other sheets through their FROM connectors)
+     and makes its motor memory (MST). The operator panel (src/ui/plant/op-api.js needNet / dRead) read the sheets it showed, so after a
+     Reset the DITL state depended on what the panel had open: on a fresh page it solved DITL-35 / 38 / 66 / 73 / 75 / 79 / 80 / 81 / 88 / 94
+     and wrote their values, after a run it did not. The Worker mirror already read this way (Mina F62), so the page without the Worker
+     now gives the same DITL state as the Worker. Without the world (the DITL page alone) a read still solves the sheet */
+  if (!(W && W.on && W.idx)) return simSheet(s);
   const lv = W.live;
   W.live = true;
   try {
@@ -346298,7 +346310,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build dbfc0b3'));
+    row('Version', E('span', 'scsver', ver + ' · build 44ee8a9'));
   }
   function openSet(near) {
     if (!set) {
