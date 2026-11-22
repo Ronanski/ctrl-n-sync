@@ -1032,6 +1032,10 @@ function drawSheet(sh) {
       e.textContent = l;
     });
     el('line', { x1: X0, y1: -(top - 1.6), x2: X0 + 62, y2: -(top - 1.6), stroke: '#d5dde3', 'stroke-width': 0.3 }, gd);
+    /* beta.285 (UI audit D2): the table is part of the sheet, so Fit / Whole sheet shows it too (ABC-001A: it sat above the view) */
+    const b = sh.bb || (sh.bb = bbox(sh.R)),
+      wx = Math.max(...DB.map(l => l.length)) * 3.9 * 0.6;
+    sh.bb = [Math.min(b[0], X0), Math.min(b[1], top - dy * DB.length), Math.max(b[2], X0 + wx), Math.max(b[3], top + 4)];
   }
   /* live overlay: every net as one path */
   const go_ = el('g', { fill: 'none', 'stroke-linecap': 'round', 'pointer-events': 'none' }, svg);
