@@ -1349,9 +1349,17 @@ const AN_SW = {
   dPci: 1.05,
   dPdc: 0.4,
   dPbd: 2.35,
-  hv100: 0.3 /* m, NO-SOURCE: loss of the open discharge / check valve at 18,900 m3/h */,
-  ki100: 0.02 /* kg/cm2, NO-SOURCE: loss of the open condenser inlet valve at the design path flow */,
-  hb100: 0.3 /* m, NO-SOURCE: loss of the open SWBP discharge valve at 1,000 m3/h */,
+  /* beta.312 (JENNIE, Audit #5, the three valve losses were NO-SOURCE): loss = K x v^2 / 2g, K of the open valve from the Crane TP-410
+     table (K = n x fT, fT = the fully rough friction factor 1 / (2 log10(3.7 D / e))^2, e = 0.046 mm), v from the line size of the docs.
+     hv100: SWP discharge DN1350 (D1-0-064 p4 "DISCHARGE 1350 mm"), 18,900 m3/h -> v 3.67 m/s, v^2/2g 0.686 m, fT 0.0099;
+       butterfly 25 fT + swing check 50 fT = 0.74 -> 0.51 m (check valve type not in the docs: swing, the larger Crane K).
+     ki100: condenser inlet nozzle 66" (D1-0-039 p7 nozzle chart N1a/b, ID 1628.4 mm), design path flow 17,686 m3/h -> v 2.36 m/s,
+       v^2/2g 0.284 m, fT 0.0096; butterfly 25 fT = 0.24 -> 0.068 m = 0.0069 kg/cm2.
+     hb100: SWBP discharge 12" (D1-0-034 p5 "Discharge size: 12 inches", ID 304.8 mm), 1,000 m3/h -> v 3.81 m/s, v^2/2g 0.739 m;
+       butterfly 10 ~ 14" 35 fT, fT 0.013 (Crane 12") = 0.455 -> 0.34 m. */
+  hv100: 0.51 /* m, open SWP check + discharge valve at 18,900 m3/h (above) */,
+  ki100: 0.0069 /* kg/cm2, open condenser inlet valve at the design path flow (above) */,
+  hb100: 0.34 /* m, open SWBP discharge valve at 1,000 m3/h (above) */,
   oDes: 40 /* condenser outlet opening of the design point (SOP 2.31) */,
   Tin: [28.5, 28.6],
   rise0: 5.6,
