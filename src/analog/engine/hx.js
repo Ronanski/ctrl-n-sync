@@ -48,7 +48,9 @@
      the curve (15 deg 275 mmAq ... 50 deg 3 mmAq; zeta = dP 2g / (V^2 gamma)); under 15 deg the curve is extended on the same log
      slope (CALC). Blade 0 - 90 deg = MV 0 - 100 % (4 - 20 mA positioner, linear: NO-SOURCE for any other characteristic).
      Check: both dampers full open -> RH pass 48.6 % of the gas; the vendor design flows give 49.1 % (p8 / p11).
-   - Tube metal: GA p6 K1AU3A-201 (SH 353.26 t, RH 243.1 t, steel 0.5 kJ/kg K); economizer metal 120 MJ/K (NO-SOURCE). */
+   - Tube metal: GA p6 K1AU3A-201 (SH 353.26 t, RH 243.1 t, steel 0.5 kJ/kg K); economizer metal 112.2 MJ/K:
+     the economizer of the same GA table (team-files/plant-study/13-thermal-masses: loop 189.00 t + common link 15.83 t + headers
+     19.59 t = 224.42 t) x 0.5 kJ/kg K (beta.292, JENNIE, was 120 MJ/K NO-SOURCE; the bank split below kept, each x 112.21 / 120). */
 const AN_HX = {
   /* damper zeta vs blade angle (deg open), K1AU3-D1-0-015 p15 / p10 */
   dz: [
@@ -116,10 +118,10 @@ const AN_HX = {
     [21009, 401],
     [16264, 401]
   ],
-  e1: [36800, 447.6],
-  e2r: [25920, 223.8],
-  e2s: [9600, 223.8],
-  e3: [47680, 447.6],
+  e1: [34411, 447.6],
+  e2r: [24237, 223.8],
+  e2s: [8977, 223.8],
+  e3: [44585, 447.6],
   /* design metal temperatures (geometry check above), the start of "Start at 150 MW" before the settle below */
   m0: {
     wl: 360,
