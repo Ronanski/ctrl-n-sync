@@ -30,7 +30,7 @@
      limits   alarm list "Alarm List _20160912": PT-DO0005 H 19.5 / normal 15 / L 5 / LL 3; LT-DO0701 H 7.5 / L 3, 2 / LL 0.2 m;
               DPT-DO0001 H 0.1 / HH 0.2; PT-DO1043-x2 HH 6.0 / H 5.5 / L 0.8. DITL-31 (drawing): tank < 0.2 m and strainer > 0.8
               kg/cm2 = pump trip, outlet < 5 kg/cm2 = standby AUTO start, < 7 = LOW alarm (world/plantsw.js rows r15 / r17 / r28).
-     tank area A from the inventory table (below); NO-SOURCE: oil density 0.85, pump current split (45 % at no load), current and
+     tank area A from the inventory table (below); oil density 0.87 from the pump data (below); NO-SOURCE: pump current split (45 % at no load), current and
               pressure lags (1 s), the unit 2 branch closed. */
 const AN_DO = {
   Qp: 25 /* T/H per pump, MB-022 item 2-1 / 2-2 */,
@@ -63,7 +63,10 @@ const AN_DO = {
      area is the slope: (300.0 - 43.0) / (7.7 - 0.5) = 35.69 m2 (CALC; inside the bound 300 m3 / 7.5 m = 40 m2 of the Equipment List
      K1AU3-L1-0-002 p 29 and the LT-DO0701 H alarm) */
   A: (300.0 - 43.0) / (7.7 - 0.5),
-  rho: 0.85 /* t/m3, NO-SOURCE */,
+  /* beta.294 (JENNIE, Full Audit 3 #5, was 0.85 NO-SOURCE): the diesel oil of the pump data, ALLWEILER characteristic curves SN 660 / 40
+     (offer XZ-EPPA31 2014-02-21, K1AU3-D1-0-060 R0 Engineering Data of Diesel Oil Pump p 7, PC only): "Liquid pumped Diesel Oil,
+     Density 0,87 kg/dm3", 40 C. Used only for the tank level (the volume of the oil burnt) */
+  rho: 0.87 /* t/m3 */,
   L0: 4.978 /* m, 6.PNG */,
   /* the field valves of the diesel oil line-up (SOP 20, PD-022 1/5 Rev D): tank outlet V-DO0003, strainer inlet V-DO0004, pump A
      suction V-DO0015 / discharge V-DO0007, pump B suction V-DO0016 / discharge V-DO0009 (SOP 20 names the discharge "V-DO0017": not

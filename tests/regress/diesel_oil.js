@@ -191,7 +191,7 @@ const html =
   ck(
     r.b4.qb.every(q => q > 0.6) &&
       r.b4.qb.reduce((a, b) => a + b, 0) <= 12.5 &&
-      Math.abs(r.dLv - r.b4.qb.reduce((a, b) => a + b, 0) / 0.85 / ((300.0 - 43.0) / (7.7 - 0.5)) / 6 /* AN_DO.A, beta.292: the tank inventory table */) < 0.005,
+      Math.abs(r.dLv - r.b4.qb.reduce((a, b) => a + b, 0) / 0.87 /* AN_DO.rho, beta.294: the pump data */ / ((300.0 - 43.0) / (7.7 - 0.5)) / 6 /* AN_DO.A, beta.292: the tank inventory table */) < 0.005,
     'four burners: flows ' +
       JSON.stringify(r.b4.qb) +
       ' ring ' +
