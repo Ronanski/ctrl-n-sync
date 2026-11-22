@@ -57,7 +57,12 @@ const AN_DO = {
     ) /* FCV-DO1043-x3 full open: MAX 3072 kg/h at 5 bar with 10.5 kg/cm2 ring (MB-022 8-x) */,
   dp0: 0.029 /* kg/cm2 strainer at 25 T/H, 6.PNG */,
   I0: 25.4 /* A, P-0702A at 25 T/H x 12.8 kg/cm2, 6.PNG */,
-  fI: 0.45 /* NO-SOURCE: share of the current at no load */,
+  /* beta.306 (JENNIE, was 0.45 NO-SOURCE): share of the current at no load, from K1AU3-D1-0-060 R0 (PC only). Pump (ALLWEILER SNH 660,
+     p7 curve): shaft 2.6 kW at 0 bar + 1.09 kW/bar (19.5 kW at 15.5 bar, p8). Motor (TECO 40 HP 460 V, p9): eff 92.5 %. Active current
+     Ia = P / (eff x sqrt3 x 460 V): 22.5 A at 12.8 bar, 3.5 A at 0 bar. The magnetizing current Im is not on the sheet; from the snapshot
+     25.4 A = sqrt(Im^2 + 22.5^2): Im = 11.9 A (0.26 x FLA 46 A, under the full-load reactive 46 x sin(acos 0.88) = 21.8 A). No load:
+     sqrt(11.9^2 + 3.5^2) = 12.4 A = 0.49 x 25.4 A. */
+  fI: 0.49,
   /* beta.292 (JENNIE, Full Audit 3 #5, was 23.8 m2 NO-SOURCE): "Limay Project Diesel Oil Tank Inventory Table" 2016-08-16 (O&M V28,
      PC only): DCS level 0.5 m = 43.0 m3 ... 7.7 m = 300.0 m3, linear in between (7.1 m 279.8, 6.9 m 272.6: 36 m3 per m). The tank
      area is the slope: (300.0 - 43.0) / (7.7 - 0.5) = 35.69 m2 (CALC; inside the bound 300 m3 / 7.5 m = 40 m2 of the Equipment List
