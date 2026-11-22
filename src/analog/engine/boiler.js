@@ -418,12 +418,13 @@ function anFanStart(U) {
 }
 /* 3.2.4 (JENNIE): air heater plugged on the gas side (trainer fault aph.plug, world.js). FHI T6 p7 / P5S2: fouling shows as a rising
    draft loss; the APH is blown every 4 - 8 h (T9 p11) and washed when plugged. The gas side loss of the APH at MCR is not readable
-   (APH s18 table scrambled): dp 110 mmH2O NO-SOURCE, inside the -442 / -450 mmH2O ID fan suction of the fan manual (AN_FN.ga.Pi).
+   (APH s18 table scrambled): dp 113 mmH2O (beta.310, was 110 NO-SOURCE: the air heater gas DP transmitter DPT-FG1052-5,
+   DPIFG10525 STN AI0768, reads 113.0 mmH2O at 150 MW on the HMI snapshot, hmi-op.js; the same value the gas path page draws), inside the -442 / -450 mmH2O ID fan suction of the fan manual (AN_FN.ga.Pi).
    The plugging adds to that loss: +1 x dp every 30 min (NO-SOURCE trainer rate), up to +3 x. The same gas then needs a deeper ID
    fan suction (U.fnGi, the fan current follows), and the fan at the same opening moves less gas: the share of the fan command that
    reaches the furnace pressure is the square root of the old over the new system loss (fan law at one speed, unit.js pr.uf).
    U.aphPl = the added loss in units of dp; clearing the fault (water wash) puts it back to 0 */
-const AN_APL = { dp: 110, t: 1800, max: 3 };
+const AN_APL = { dp: 113, t: 1800, max: 3 };
 /* 3.2.4 (JENNIE, list item: air heater leak): the radial / axial seals of the tri-sector air heater wear and pass more air to the gas side
    (trainer fault aph.leak, world.js). L20 Howden APH OMM sheet 16, duty 1 (performance coal): PA to gas 33,993 kg/h, SA to gas 19,036
    kg/h, total air to gas 7.82 % of the gas inlet. Check of the mixing rule: the same sheet gives the gas out 132.8 C undiluted and
@@ -675,7 +676,9 @@ function anAphStep(U, dt) {
               MCR check: (322 - 0.358 x 245.4) / 0.642 = 365 C (snapshot TIFG1110 / 1113 359 / 369). Never under the gas leaving.
      U.idfGo  ID fan outlet to the stack (TT-FG1152): the gas leaving the air heater plus the heat of the fan, dT = dp / (rho cp eta),
               dp = the fan pressure rise of the fan model (U.fnGo - U.fnGi, mmH2O), flue gas rho 0.85 kg/m3 at about 140 C and
-              cp 1.05 kJ/kg K (Tab 3 gas), eta 0.8 (NO-SOURCE: the ID fan efficiency is not in the fan manual pages read): about 10 C at
+              cp 1.05 kJ/kg K (Tab 3 gas), eta 0.87 (beta.310, was 0.8 NO-SOURCE: ID fan specification sheet RF2-0582-DOC-6-0 sheet 2,
+              K1AU3-D1-0-003 R0 (PC only): design 17,621 m3/min at 150 C, 858 mmH2O, TE / SE 87 / 84 %; the total efficiency, since all
+              the shaft work that is not pressure ends up as heat in the gas): about 9 C at
               MCR (snapshot 148 - 146 = 2 C after the precipitator losses, which are not modelled). */
   {
     const tf = isFinite(U.hpT2) ? U.hpT2 : amb;
@@ -685,7 +688,7 @@ function anAphStep(U, dt) {
         : Math.max(z.gi, (z.gi - K.eco * tf) / (1 - K.eco));
     const gi = Array.isArray(U.fnGi) ? (U.fnGi[0] + U.fnGi[1]) / 2 : 0,
       dp = Math.max(0, (isFinite(U.fnGo) ? U.fnGo : 0) - (isFinite(gi) ? gi : 0));
-    U.idfGo = U.aphGo + (dp * 9.80665) / (0.85 * 1050 * 0.8);
+    U.idfGo = U.aphGo + (dp * 9.80665) / (0.85 * 1050 * 0.87);
   }
   anUnitWrite(U.aphL.pa, pa);
   anUnitWrite(U.aphL.sa, sa);
