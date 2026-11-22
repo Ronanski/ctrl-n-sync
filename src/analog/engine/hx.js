@@ -425,7 +425,8 @@ function anHxStep(U, I, dt) {
     M.tg = t.map(x => (isFinite(x) ? x : I.Tg));
   }
   /* panels in the furnace: radiation / solids from the bed */
-  const phi = Math.max(0, I.phi || 0),
+  /* beta.282 (JENNIE): the suspension coefficient grows with the square root of its density (Basu & Nag, unit.js AN_BB kKL) */
+  const phi = Math.sqrt(Math.max(0, I.phi || 0)),
     qP1 = K.uaP * phi * (I.Tb - M.p1),
     qP2 = K.uaP * phi * (I.Tb - M.p2);
   /* ---- steam side ---- */

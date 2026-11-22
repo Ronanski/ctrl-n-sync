@@ -2244,7 +2244,25 @@ const AN_BB = {
   fwUp: 0.9 /* gray wall factor */,
   hcUp: 0.01 /* kW/m2 K, convection (textbook) */,
   kW: 554,
-  nU: 3.5 /* wall law exponent, plant trend scenario 1 (see above) */
+  nU: 3.5 /* the law before 1.0.0-beta.282 (phi = velocity share ^ 3.5): only to read a save point of an older engine (anBedMigrate) */,
+  /* 1.0.0-beta.282 (JENNIE, part load: furnace exit gas +30 ~ +55 C over FHI P2S7 Tab 4 Fig 8 and SH spray 3x Fig 10 at 70 ~ 50 %
+     load, with the operator, while the bed held). THE CIRCULATING SOLIDS AT PART LOAD, two textbook laws instead of one power law:
+     (1) the solids flux that the gas carries to the top of the furnace decays with the height as Kunii & Levenspiel (Fluidization
+         Engineering, 2nd ed., ch. 7, the freeboard): flux(H) = flux(0) e^(-a H) with a U = c (constant for a bed material). Against the
+         150 MW anchor: phi = e^(-c H / U0 (1 / uRel - 1)) = e^(-kKL (1 / uRel - 1)), uRel = the gas velocity share (unit step).
+     (2) the heat transfer coefficient of the suspension to the walls and the panels grows with the square root of its density
+         (Basu & Nag, h = 40 rho^0.5 W/m2 K; Basu, Circulating Fluidized Bed Boilers, ch. 6), while the heat it carries up grows with
+         the flux: walls uaS x phi^0.5, panels uaP x phi^0.5 (hx.js), solids cSol x phi. At phi 1 (the anchor) nothing changes.
+     kKL, CALC from the plant at 90 MW: scenario 1 of the plant DCS trend (14-plant-trends: coal 55.4 T/H, PA 318 + SA 187 T/H,
+     bed TIFG1090 955 C; anchor PA + SA 610 T/H) and the furnace exit of FHI Fig 8 at 60 % MCR (755 C):
+       coal 55.4 T/H x lhvC 4,259 kW per T/H x (1 - fUC 0.032) = 228 MW, less the gas heated to the bed (qAirG) ~138 MW, less the
+       lower refractory and the limestone ~14 MW (the bed balance below at those flows) = 76 MW that the solids carry up;
+       solids heat capacity flow = 76,000 / (955 - 755) = 380 kW/K = phi x cSol 2,165 -> phi 0.175;
+       uRel = 505 / 610 x (955 + 273) / (937 + 273) = 0.840; kKL = -ln 0.175 / (1 / 0.840 - 1) = 9.2.
+     Check against (1): U0 = the flue gas at 150 MW (188 kg/s, density 0.29 kg/m3 at 937 C) over the 119 m2 grate = 5.4 m/s, furnace
+     height 7.75 + 25.85 = 33.6 m (T2): c = 9.2 x 5.4 / 33.6 = 1.5 s^-1, inside the range Kunii & Levenspiel give for a U (0.5 ~ 10
+     s^-1, larger for coarser solids; the sand of P2S7 Tab 3 d50 0.15 ~ 0.30 mm). The circulation rate itself is not in the documents */
+  kKL: 9.2
 };
 /* gas radiation (WSGG) + convection of the upper furnace gas at tg to the walls at tw, kW/K (AN_BB above) */
 function anBbUag(tg, tw) {
@@ -2253,11 +2271,15 @@ function anBbUag(tg, tw) {
   const K1 = tg + 273.15, K2 = tw + 273.15;
   return B.aUp * (B.hcUp + (B.fwUp * anHxEps(tg, B.lUp) * 5.67e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tw));
 }
+/* 1.0.0-beta.282: the circulating solids share phi at the gas velocity share u (AN_BB kKL above; u capped 1.2 as before) */
+function anBbPhiV(u) {
+  return u > 0.05 ? Math.exp(-AN_BB.kKL * (1 / Math.min(1.2, u) - 1)) : 0;
+}
 /* the upper furnace suspension of the bed balance (unit step): exit tgF and mean Tu of the gas + circulating solids that leave the bed
    at Tb, with the walls (Uw, sink Tw) and the SH panels (Up, sink Tp) in parallel; uag at the mean of the last scan (tu0) */
 function anBbSus(Tb, Tw, gcp, phi, up, tu0) {
   const B = AN_BB,
-    Uw = anBbUag(isFinite(tu0) ? tu0 : Tb, Tw) + phi * B.uaS,
+    Uw = anBbUag(isFinite(tu0) ? tu0 : Tb, Tw) + Math.sqrt(Math.max(0, phi)) * B.uaS /* beta.282: h ~ rho^0.5 (AN_BB) */,
     Cs = gcp + phi * B.cSol,
     Ut = Uw + up.U;
   if (!(Cs > 0.01) || !(Ut > 0)) return { tgF: Tb, Tu: Tb, Uw, qW: 0, qP: 0 };
@@ -2292,11 +2314,13 @@ function anBedMigrate(U) {
     qG = gcp > 0.01 ? gcp * dW * (1 - Math.exp(-ug / gcp)) : 0,
     qS = phi * (Math.sign(dW) * Math.max(0, Math.abs(289.3 * dW) - Math.abs(qG))),
     qOld = qS + Math.min(1, phi) * qG + B.uaBR * (Tb - Trf) + 75 * phi * pm.reduce((a, p) => a + (Tb - p), 0);
-  /* the new balance at a bed T: phi moves with the gas velocity (Tb + 273) / (tbA + 273), the old one used Tb0 */
-  const out = T => {
-    const ph = phi * Math.pow((T + 273) / (B.tbA + 273) / ((Tb + 273) / (U.Tb0 + 273)), B.nU),
+  /* the new balance at a bed T: phi moves with the gas velocity (Tb + 273) / (tbA + 273), the old one used Tb0. beta.282: the saved phi is
+     of the old law (velocity share ^ nU on the Tb0 basis): its velocity share is read back from it, then the law of today (anBbPhiV) */
+  const u0 = Math.pow(Math.max(1e-9, phi), 1 / B.nU) * ((U.Tb0 + 273) / (B.tbA + 273)),
+    out = T => {
+    const ph = anBbPhiV((u0 * (T + 273)) / (Tb + 273)),
       uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
-      s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * ph, T: Tp }, T);
+      s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * Math.sqrt(ph), T: Tp }, T);
     return { q: s.qW + s.qP + B.uaBR * (T - Trf) + gcp * (s.tgF - tg0), s, ph };
   };
   let lo = Math.min(Tb, Tw) - 50,
@@ -5452,7 +5476,7 @@ function anUnitStep0(dt) {
          the bed: per kg 28.9 / 18 times the volume of air (ideal gas, same temperature and pressure) */
       /* beta.256: the velocity share is to the gas of the 150 MW anchor, which leaves the bed at the anchor bed tbA (AN_BB), not Tb0 */
       uRel = U.taf0 > 0 ? ((av[0] + av[1] + av[2] + ((U.tlW || 0) * 28.9) / 18) / U.taf0) * ((U.Tb + 273) / (B.tbA + 273)) : 0,
-      phi = Math.min(1.2, Math.max(0, isFinite(U.bedI) ? U.bedI / AN_BI.t0 : 1)) * Math.pow(Math.min(1.2, uRel), AN_BB.nU),
+      phi = Math.min(1.2, Math.max(0, isFinite(U.bedI) ? U.bedI / AN_BI.t0 : 1)) * anBbPhiV(uRel) /* beta.282: Kunii & Levenspiel (AN_BB kKL) */,
       /* beta.263: the lower furnace refractory is its own lump. 25 mm castable k 1.5 W/m K over the tubes (13-thermal-masses), bed film
          300 W/m2 K (textbook), 359 m2: bed -> refractory centre 1 / (1/300 + 0.0125/1.5) = 85.7 W/m2 K = 30.8 kW/K, centre -> water
          1.5 / 0.0125 = 120 W/m2 K = 43.1 kW/K (in series 17.9 = uaL). Its time constant L2 / alpha (alpha = 1.5 / (2300 x 1000)) is
@@ -5486,7 +5510,7 @@ function anUnitStep0(dt) {
         const hm = U.hxM || {},
           uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
           p = [hm.p1, hm.p2].filter(isFinite);
-        return { U: p.length ? p.length * uaP * phi : 0, T: p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw };
+        return { U: p.length ? p.length * uaP * Math.sqrt(phi) : 0 /* beta.282: h ~ rho^0.5 (AN_BB) */, T: p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw };
       })() /* the SH panels: conductance and metal of the last scan */,
       sus = anBbSus(U.Tb, U.Tw, gcp, phi, up, U.Tu) /* the suspension above (uag at the mean Tu of the last scan) */,
       qWu = sus.qW /* kW, the suspension to the upper walls (both signs) */,
