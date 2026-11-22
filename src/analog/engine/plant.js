@@ -1213,7 +1213,11 @@ function anFeederStep(S) {
     st = rt.st[f.ai];
   if (!a || !st || a.pins.some(p => p.role === 'out' && rt.force[p.n] !== undefined)) return;
   const r = a.rng || { lo: 0, hi: 40 },
-    y = rt.v[f.run] > 0.5 ? +rt.v[f.mv] || 0 : r.lo;
+    /* beta.304 (JENNIE): the coal that really falls = the demand x the belt load of the coal lot over the speed trim (unit.js
+       anCoalLots, U.clF of feeder A / B / C); the load cells read it */
+    k = 'ABC'.indexOf(S.name.slice(-1)),
+    cl = typeof AN_UNIT !== 'undefined' && AN_UNIT.on && AN_UNIT.clF && isFinite(AN_UNIT.clF[k]) ? AN_UNIT.clF[k] : 1,
+    y = rt.v[f.run] > 0.5 ? (+rt.v[f.mv] || 0) * cl : r.lo;
   st.val = Math.max(r.lo, Math.min(r.hi, y));
   const T = S.plantT || (S.plantT = { ai: new Map(), ext: new Map() });
   T.ai.set(f.ai, f.tag);
