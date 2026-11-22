@@ -2268,7 +2268,11 @@ const AN_BB = {
      outlet steam 156 C after 30 min, was 176) and the bed rose 40 C faster. The gas in the upper furnace radiates to the panels as it
      does to the walls (Uw = gas uag + solids uaS x phi^0.5 above). The panels take the same split: at the 150 MW anchor the walls have
      gas 106.9 of 264.5 kW/K (CALC above, Tu 892.3 C) = fgP 0.404. Panel factor = fgP x uag(Tu, metal) / uag(892.3, metal) +
-     (1 - fgP) x phi^0.5 (anBbPanF): 1 at the anchor, the gas part follows the WSGG radiation of the gas temperature */
+     (1 - fgP) x phi^0.5 (anBbPanF): 1 at the anchor, the gas part follows the WSGG radiation of the gas temperature. Why the same split:
+     the panels hang in the same suspension at the same temperatures as the upper walls, so they take the same coefficient per m2; their
+     area is not in the documents (C series drawings), so it is read from the anchor: 2 x uaP 65 = 130 kW/K / (264.5 / 1,199 m2) = 589 m2
+     of wall-equivalent surface, of it gas 589 x 106.9 / 1,199 = 52.5 kW/K = 40.4 % (CALC). Check at start-up air (save S12, bed 500 C):
+     WSGG gas at Tu 434 ~ 499 C to metal ~200 C gives 6.3 ~ 7.2 MW, a gray-gas hand check 0.3 x 5.67e-8 x (773^4 - 473^4) x 589 m2 = 3 MW, the same order (eps 0.3 assumed for the check only) */
   fgP: 106.9 / 264.5,
   tuA: 892.3
 };
