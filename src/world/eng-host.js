@@ -35,6 +35,35 @@
   /* an event of the engine (world.js FIRST-OUT: a TRIP and its cause) goes to the Event log of the page with the patch of its scan
      (the page takes the state first, so the event has the plant time of its scan) */
   G.lsEventAdd = (...a) => ((N.ev = (N.ev || 0) + 1), (G.ENG.evq = G.ENG.evq || []).push(a));
+  /* beta.276 (JENNIE, the merge gate on the Worker, the engine the app ships since beta.275): THE FIXED CLOCK of sched.js here too, the
+     same rules: AN.clockFixed(on) stops the clock of the PC (the ticks above), AN.runFixed(seconds, dt) steps the current set in steps of
+     exactly dt (0.5 s) and scans the DITL world between them every worldChunk (1 s while a timer counts or a device moves, 3 s when quiet,
+     sched.js) and after the last step. The page sends it as a long action (eng.js HEAVY) and gets the answer once the whole state is in */
+  function fixedClock() {
+    const { AN, WORLD } = G;
+    AN.clockFixed = on => (AN.extClock = !!on);
+    AN.runFixed = (sec, dt) => {
+      const sh = AN.sheets[AN.i] || AN.sheets.find(x => /057/.test(x.name));
+      if (!sh || !sh.S || !AN.run || AN._loading) return false;
+      const h = dt > 0 ? dt : 0.5,
+        n = Math.max(1, Math.round(sec / h));
+      let wAcc = 0;
+      for (let i = 0; i < n; i++) {
+        G.ENGINE.E.stepSet(sh, h);
+        wAcc += h;
+        if (i === n - 1 || wAcc >= (WORLD && WORLD.busy ? 1 : 3)) {
+          wAcc = 0;
+          if (!WORLD || !WORLD.on || !WORLD.scanJob || AN.cat !== 'an') continue;
+          const g = WORLD.scanJob();
+          WORLD._drvT = performance.now();
+          if (g)
+            for (const _ of g);
+        }
+      }
+      return true;
+    };
+  }
+  fixedClock();
   async function init(m) {
     const { AN, DITL, WORLD, ENG } = G;
     AN.sheets = lines(await gunz(m.apre));
@@ -81,7 +110,8 @@
         N.t = (N.t || 0) + 1;
         N.lr = AN.run;
         N.same = AN === G.AN;
-        if (!AN.run || AN._loading) {
+        /* beta.276: the fixed clock (AN.clockFixed): only AN.runFixed steps the plant, not the clock of the PC */
+        if (!AN.run || AN._loading || AN.extClock) {
           if (!AN.run) N.norun = (N.norun || 0) + 1;
           else N.load = (N.load || 0) + 1;
           acc = 0;
@@ -145,7 +175,7 @@
     );
     timers.push(
       setInterval(() => {
-        if (busy || !WORLD.scanJob) return;
+        if (busy || !WORLD.scanJob || AN.extClock) return; /* beta.276: the fixed clock scans the world inside AN.runFixed only */
         /* while the plant runs, its tick scans the world between its steps (above) */
         if (WORLD._drvT && performance.now() - WORLD._drvT < 400) return;
         const g = WORLD.scanJob();

@@ -39,9 +39,11 @@ async function run(b, mins, withSave) {
   await p.addInitScript(() => {
     window.open = () => null;
   });
-  /* beta.275: the Worker is the default now; this gate runs the plant fast with AN.runFixed, which only the page engine does, so it
-     asks for the page engine as before (the Worker has its own checks: tests/regress/eng_worker.js and the others) */
-  await p.goto(url.pathToFileURL(html).href + '?worker=0');
+  /* beta.276 (JENNIE): the gate runs the engine the app ships, the Worker (the default since beta.275). AN.runFixed is sent to the
+     Worker as a long action (src/world/eng.js HEAVY) and steps there with the same fixed clock (src/world/eng-host.js); the page is its
+     mirror, as for the operator. GATE_WORKER=0 runs the page engine (the fallback) for a comparison */
+  const W = process.env.GATE_WORKER !== '0';
+  await p.goto(url.pathToFileURL(html).href + (W ? '?worker=1' : '?worker=0'));
   await p.waitForFunction(() => window.AN && window.lsSaves, null, { timeout: 240000 });
   await p.waitForTimeout(3000);
   await p.getByRole('button', { name: 'Later' }).click({ timeout: 5000 }).catch(() => {});
@@ -49,10 +51,11 @@ async function run(b, mins, withSave) {
   await p.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && AN.unit && isFinite(AN.unit.MW) && AN.unit.MW > 140 && !AN._loading, null, { timeout: 240000 });
   /* the starting state pauses the plant once it is settled: wait until Run sticks (the operator's Run, then the fixed clock) */
   await p.waitForTimeout(15000);
-  await p.waitForFunction(() => { AN.extClock = true; AN.run = true; return AN.run; }, null, { timeout: 60000, polling: 1000 });
+  await p.waitForFunction(() => { AN.clockFixed(true); AN.run = true; return AN.run; }, null, { timeout: 60000, polling: 1000 });
+  if (W) await p.waitForFunction(() => window.ENG && ENG.mode === 'mirror', null, { timeout: 120000, polling: 1000 }).catch(() => { throw new Error('the Worker did not start (ENG.mode ' + 'not mirror)'); });
   await p.waitForTimeout(3000);
   await p.evaluate(() => {
-    AN.extClock = true; /* the test steps the plant (AN.runFixed, sched.js), not the clock of the PC; AN.run stays on so the DITL world scans */
+    AN.clockFixed(true); /* the test steps the plant (AN.runFixed), not the clock of the PC; AN.run stays on so the DITL world scans */
     AN.run = true;
   });
   await p.waitForTimeout(500);
@@ -62,8 +65,8 @@ async function run(b, mins, withSave) {
     trip = 0;
   for (let k = 0; k < mins * 2; k++) {
     /* 30 plant s per call: 60 steps of 0.5 s, the world every 6 steps (3 s) */
-    last = await p.evaluate(read_ => {
-      if (!AN.runFixed(30, 0.5)) throw new Error('AN.runFixed refused (no set, loading or mirror)');
+    last = await p.evaluate(async read_ => {
+      if (!(await AN.runFixed(30, 0.5))) throw new Error('AN.runFixed refused (no set, or loading)');
       return new Function('return (' + read_ + ')()')();
     }, read.toString());
     for (const q of Object.keys(mx)) if (isFinite(last[q]) && isFinite(s0[q])) mx[q] = Math.max(mx[q], Math.abs(last[q] - s0[q]));
@@ -81,7 +84,7 @@ async function run(b, mins, withSave) {
       AN.unit.Pd += 5; /* move the plant, then load the save point back */
       await lsSaves.load(await lsSaves.imp(lsSaves.exp(e))); /* through the file text, as the menu's file save does */
       await new Promise(r => setTimeout(r, 3000));
-      AN.extClock = true;
+      AN.clockFixed(true);
       AN.run = true;
       const same = pick() === before;
       /* 4: another sheet order */

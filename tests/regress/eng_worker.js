@@ -61,14 +61,28 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   const r = await page.evaluate(async () => {
     AN.run = false;
     ENG.flush();
+    /* beta.276 (JENNIE): the pause reaches the worker, then its last patch (at most 2 a second, after the ack of the one before) comes
+       back: the two states must meet once the plant is paused, so the check waits until nothing is owed or in flight (at most 5 s) */
     await new Promise(r => setTimeout(r, 800));
+    for (let k = 0; k < 8 && (ENG.owed || ENG.wait || ENG.heavy); k++) await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 1000));
     const w = await ENG.peek();
     await new Promise(r => setTimeout(r, 300));
     const a = JSON.stringify(w.kf), b = JSON.stringify(AN.engState.capture()), c = JSON.stringify(w.kd), d = JSON.stringify(ditlCapture());
     const at = (x, y) => { let i = 0; while (i < x.length && x[i] === y[i]) i++; return i; };
     const ia = at(a, b), id = at(c, d);
-    return { abc: a === b, ditl: c === d, la: a.length, ld: c.length, ea: a === b ? '' : a.slice(Math.max(0, ia - 60), ia + 260) + ' <> ' + b.slice(Math.max(0, ia - 60), ia + 260), ed: c === d ? '' : c.slice(Math.max(0, id - 120), id + 60) + ' <> ' + d.slice(Math.max(0, id - 120), id + 60), sent: ENG.sent, got: ENG.got };
+    /* beta.276 (JENNIE): every path that differs, not only the first (the keys for the engine / mirror fix), at most 40 each */
+    const dif = (x, y, p, out) => {
+      if (out.length >= 40) return out;
+      if (x === y) return out;
+      if (typeof x !== typeof y || x === null || y === null || typeof x !== 'object') return out.push(p + ': ' + String(JSON.stringify(x)).slice(0, 60) + ' <> ' + String(JSON.stringify(y)).slice(0, 60)), out;
+      for (const k of new Set([...Object.keys(x), ...Object.keys(y)])) if (k !== '$id' && JSON.stringify(x[k]) !== JSON.stringify(y[k])) dif(x[k], y[k], p + '.' + k, out);
+      return out;
+    };
+    const ka = a === b ? [] : dif(JSON.parse(a), JSON.parse(b), 'kf', []), kd = c === d ? [] : dif(JSON.parse(c), JSON.parse(d), 'kd', []);
+    return { ka, kd, abc: a === b, ditl: c === d, la: a.length, ld: c.length, ea: a === b ? '' : a.slice(Math.max(0, ia - 60), ia + 260) + ' <> ' + b.slice(Math.max(0, ia - 60), ia + 260), ed: c === d ? '' : c.slice(Math.max(0, id - 120), id + 60) + ' <> ' + d.slice(Math.max(0, id - 120), id + 60), sent: ENG.sent, got: ENG.got };
   });
+  if (r.ka.length || r.kd.length) console.log('   differing paths (worker <> page):\n     ' + [...r.ka, ...r.kd].join('\n     '));
   ck(r.abc, 'ABC state: worker = page mirror (' + (r.la >> 10) + ' kB)' + (r.abc ? '' : '\n   ' + r.ea));
   ck(r.ditl, 'DITL state: worker = page mirror (' + (r.ld >> 10) + ' kB)' + (r.ditl ? '' : '\n   ' + r.ed));
   console.log('   messages: page sent ' + r.sent + ', got ' + r.got);
