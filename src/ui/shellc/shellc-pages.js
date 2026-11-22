@@ -124,6 +124,11 @@
     if (pb && pb.bottom > a.top && pb.bottom < a.bottom) a.top = pb.bottom;
     const tp = tsp && !tsp.hidden ? tsp.getBoundingClientRect() : null;
     if (tp && tp.height && tp.bottom > a.top && tp.bottom < a.bottom) a.top = tp.bottom;
+    /* F3 (real-click test 2026-11-22): only the part of the page the window shows */
+    a.left = Math.max(a.left, 0);
+    a.top = Math.max(a.top, 0);
+    a.right = Math.min(a.right, innerWidth);
+    a.bottom = Math.min(a.bottom, innerHeight);
     return { R, a };
   }
   /* points along every line of the drawing that touches the equipment (pipes, ducts, signal lines), in screen pixels */

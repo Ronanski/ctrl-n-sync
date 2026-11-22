@@ -156060,7 +156060,7 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur];
       c2.textContent = sh && sh.name ? sh.name : '';
       c3.textContent = 'v3.2.5-beta.10';
-      c3.textContent += ' · build 1cc73d0'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+      c3.textContent += ' · build 814e1be'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
     } catch (e) {}
   };
   upd();
@@ -345094,6 +345094,11 @@ window.LS_LIVE = (function () {
     if (pb && pb.bottom > a.top && pb.bottom < a.bottom) a.top = pb.bottom;
     const tp = tsp && !tsp.hidden ? tsp.getBoundingClientRect() : null;
     if (tp && tp.height && tp.bottom > a.top && tp.bottom < a.bottom) a.top = tp.bottom;
+    /* F3 (real-click test 2026-11-22): only the part of the page the window shows */
+    a.left = Math.max(a.left, 0);
+    a.top = Math.max(a.top, 0);
+    a.right = Math.min(a.right, innerWidth);
+    a.bottom = Math.min(a.bottom, innerHeight);
     return { R, a };
   }
   /* points along every line of the drawing that touches the equipment (pipes, ducts, signal lines), in screen pixels */
@@ -346031,7 +346036,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 1cc73d0'));
+    row('Version', E('span', 'scsver', ver + ' · build 814e1be'));
   }
   function openSet(near) {
     if (!set) {
@@ -350933,7 +350938,7 @@ svg.hx-small .hx-tag { display: none; }
 .hx-bar i { position: absolute; inset: 0 auto 0 0; background: var(--hx-ink2); border-radius: 3px; }
 .hx-bar.pv i { background: var(--hx-accent); }
 .hx-foot { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--hx-mute); }
-.hx-ynb { font: 700 10.5px var(--hx-font); width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--hx-ink); color: #fff; display: inline-grid; place-items: center; }
+.hx-ynb { font: 700 11px var(--hx-font); width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--hx-ink); color: #fff; display: inline-grid; place-items: center; }
 .hx .hx-ynb { color: #fff; }
 .hx .hx-ynb:not(.y):not(.n) { background: var(--hx-none); }
 .hx-ynb.y { background: var(--hx-run); }
@@ -363590,10 +363595,13 @@ window.PLANT_SYS = [
     for (const svg of SV) {
       /* a Y / N square grows whole (its letter would leave its 14-unit box), around its own centre */
       for (const g of svg.querySelectorAll('.hx-yn')) {
-        const t = g.querySelector('text');
-        if (!t || !t.getClientRects().length) continue;
+        /* real-click test 2026-11-22: a square still hidden when this ran (no Y / N yet) was skipped, and a paused plant runs no tick,
+           so its letter stayed 7.6 px at 1280. The scale is read from the drawing around the square, which is shown even while it is hidden */
+        const t = g.querySelector('text'),
+          host = g.parentNode;
+        if (!t || !host || !host.getScreenCTM) continue;
         if (g.dataset.tr0 == null) g.dataset.tr0 = g.getAttribute('transform') || '';
-        const M = t.getScreenCTM && t.getScreenCTM(),
+        const M = host.getScreenCTM(),
           k = M ? Math.hypot(M.a, M.b) : 0,
           s = k ? MINPX / (9.5 * k) : 1;
         W.push([g, 'tr', g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')]);
@@ -370589,6 +370597,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
   const area = () => {
     const R = host().getBoundingClientRect(),
       a = { left: R.left, top: R.top, right: R.right, bottom: R.bottom };
+    /* F3 (real-click test 2026-11-22, 1280 x 800, page scrolled): the page frame reaches past the window, and a faceplate placed in
+       the frame reached 69 px below the screen. The free area is the part of the frame the window shows */
+    a.left = Math.max(a.left, 0);
+    a.top = Math.max(a.top, 0);
+    a.right = Math.min(a.right, innerWidth);
+    a.bottom = Math.min(a.bottom, innerHeight);
     a.width = a.right - a.left;
     a.height = a.bottom - a.top;
     return a;
@@ -370633,8 +370647,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       if (a.bottom + 14 + ht <= H.bottom - 6) y = a.bottom + 14 - H.top;
       else if (a.top - 14 - ht >= H.top + 6) y = a.top - 14 - ht - H.top;
     }
-    el.style.left = Math.round(x) + 'px';
-    el.style.top = Math.round(y) + 'px';
+    /* x, y are counted from the shown part of the page (F3); the box sits in the page frame */
+    const R0 = host().getBoundingClientRect();
+    el.style.left = Math.round(x + H.left - R0.left) + 'px';
+    el.style.top = Math.round(y + H.top - R0.top) + 'px';
     el.dataset.side = side;
     const ay = Math.max(14, Math.min(ht - 14, (a.top + a.bottom) / 2 - H.top - y));
     el.style.setProperty('--ay', Math.round(ay) + 'px');
@@ -370643,12 +370659,18 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
      stood off the screen at the right and the whole page scrolled sideways: 867 px wide at 390 px) */
   function keepIn(el) {
     const H = area(),
-      w = el.offsetWidth,
+      R = host().getBoundingClientRect(),
+      /* a faceplate taller than the part of the page the window shows scrolls inside itself (F3) */
+      mh = Math.max(120, Math.floor(H.height - 12));
+    if (el.offsetHeight > mh) el.style.maxHeight = mh + 'px';
+    const w = el.offsetWidth,
       ht = el.offsetHeight,
       x = parseFloat(el.style.left) || 0,
       y = parseFloat(el.style.top) || 0,
-      nx = Math.max(6, Math.min(H.width - w - 6, x)),
-      ny = Math.max(6, Math.min(H.height - ht - 6, y));
+      ox = H.left - R.left,
+      oy = H.top - R.top,
+      nx = Math.max(ox + 6, Math.min(ox + H.width - w - 6, x)),
+      ny = Math.max(oy + 6, Math.min(oy + H.height - ht - 6, y));
     if (Math.abs(nx - x) > 0.5) ((el.style.left = Math.round(nx) + 'px'), (el.dataset.side = 'n'));
     if (Math.abs(ny - y) > 0.5) el.style.top = Math.round(ny) + 'px';
   }
@@ -373483,7 +373505,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     let nm = '';
     try {
       const n = [...document.querySelectorAll('#plantws .hx-node[data-lv2]')].find(x => x.dataset.lv2 === tag);
-      nm = ((n && n.dataset.name) || '').replace(/s+/g, ' ').trim();
+      nm = ((n && n.dataset.name) || '').replace(/\s+/g, ' ').trim();
     } catch (e) {}
     fp = E('div', { id: 'plfp', 'data-tag': tag }, [
       E('div', { cls: 'plfph' }, [

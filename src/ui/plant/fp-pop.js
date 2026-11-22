@@ -64,6 +64,12 @@
   const area = () => {
     const R = host().getBoundingClientRect(),
       a = { left: R.left, top: R.top, right: R.right, bottom: R.bottom };
+    /* F3 (real-click test 2026-11-22, 1280 x 800, page scrolled): the page frame reaches past the window, and a faceplate placed in
+       the frame reached 69 px below the screen. The free area is the part of the frame the window shows */
+    a.left = Math.max(a.left, 0);
+    a.top = Math.max(a.top, 0);
+    a.right = Math.min(a.right, innerWidth);
+    a.bottom = Math.min(a.bottom, innerHeight);
     a.width = a.right - a.left;
     a.height = a.bottom - a.top;
     return a;
@@ -108,8 +114,10 @@
       if (a.bottom + 14 + ht <= H.bottom - 6) y = a.bottom + 14 - H.top;
       else if (a.top - 14 - ht >= H.top + 6) y = a.top - 14 - ht - H.top;
     }
-    el.style.left = Math.round(x) + 'px';
-    el.style.top = Math.round(y) + 'px';
+    /* x, y are counted from the shown part of the page (F3); the box sits in the page frame */
+    const R0 = host().getBoundingClientRect();
+    el.style.left = Math.round(x + H.left - R0.left) + 'px';
+    el.style.top = Math.round(y + H.top - R0.top) + 'px';
     el.dataset.side = side;
     const ay = Math.max(14, Math.min(ht - 14, (a.top + a.bottom) / 2 - H.top - y));
     el.style.setProperty('--ay', Math.round(ay) + 'px');
@@ -118,12 +126,18 @@
      stood off the screen at the right and the whole page scrolled sideways: 867 px wide at 390 px) */
   function keepIn(el) {
     const H = area(),
-      w = el.offsetWidth,
+      R = host().getBoundingClientRect(),
+      /* a faceplate taller than the part of the page the window shows scrolls inside itself (F3) */
+      mh = Math.max(120, Math.floor(H.height - 12));
+    if (el.offsetHeight > mh) el.style.maxHeight = mh + 'px';
+    const w = el.offsetWidth,
       ht = el.offsetHeight,
       x = parseFloat(el.style.left) || 0,
       y = parseFloat(el.style.top) || 0,
-      nx = Math.max(6, Math.min(H.width - w - 6, x)),
-      ny = Math.max(6, Math.min(H.height - ht - 6, y));
+      ox = H.left - R.left,
+      oy = H.top - R.top,
+      nx = Math.max(ox + 6, Math.min(ox + H.width - w - 6, x)),
+      ny = Math.max(oy + 6, Math.min(oy + H.height - ht - 6, y));
     if (Math.abs(nx - x) > 0.5) ((el.style.left = Math.round(nx) + 'px'), (el.dataset.side = 'n'));
     if (Math.abs(ny - y) > 0.5) el.style.top = Math.round(ny) + 'px';
   }
