@@ -39,7 +39,9 @@ async function run(b, mins, withSave) {
   await p.addInitScript(() => {
     window.open = () => null;
   });
-  await p.goto(url.pathToFileURL(html).href);
+  /* beta.275: the Worker is the default now; this gate runs the plant fast with AN.runFixed, which only the page engine does, so it
+     asks for the page engine as before (the Worker has its own checks: tests/regress/eng_worker.js and the others) */
+  await p.goto(url.pathToFileURL(html).href + '?worker=0');
   await p.waitForFunction(() => window.AN && window.lsSaves, null, { timeout: 240000 });
   await p.waitForTimeout(3000);
   await p.getByRole('button', { name: 'Later' }).click({ timeout: 5000 }).catch(() => {});

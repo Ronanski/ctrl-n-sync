@@ -1,6 +1,6 @@
 /* ENG PAGE (3.2.0 Web Worker, stage d): the page side. The engine starts in a Web Worker made from the inline text #engsrc (the engine
    bundle + src/world/eng-host.js, put in by tools/build/build.js; a blob, so it runs from file://, the apk and the exe); the page keeps
-   its objects as the mirror (src/world/eng.js). Off unless asked (?worker=1 or localStorage ls-worker = 1) until it is proved; ENG.boot()
+   its objects as the mirror (src/world/eng.js). On by default since beta.275 (off with ?worker=0 or localStorage ls-worker = 0); ENG.boot()
    starts it by hand. A worker that fails shows a clear message on the screen (not a silent stop) and the page goes on by itself. */
 (function () {
   const E = window.ENG;
@@ -14,7 +14,11 @@
       /* user 2026-11-03 ("Ediba my worker na!!!!"): the Worker is the default on the Beta web site (/beta/ over https); the page
          engine (plain) stays as the automatic fallback when the worker fails. The apk / exe copy and file:// stay plain (GO STABLE) */
       /* Mina, Stable 3.2.1 check 2026-11-10: every full live test ran with the Worker, so the Stable page takes it too (github.io only: the apk and the exe stay plain until tested on a device) */
-      return location.protocol === 'https:' && (/\/beta\/(index\.html)?$/.test(location.pathname) || /\.github\.io$/.test(location.hostname));
+      /* F6 2026-11-22 (60 fps rule Q6): the Worker is the default everywhere, also the apk, the exe and file:// (with the plant in RUN
+         at 6 x CPU the page engine held the Operator overview at 12 to 41 fps, the Worker 68 to 84). Same engine, one path: the page
+         engine stays only as the fallback when the Worker fails, and ?worker=0 / ls-worker 0 still turn it off. A release of the apk /
+         exe still waits for GO STABLE */
+      return true;
     } catch (e) {
       return false;
     }
