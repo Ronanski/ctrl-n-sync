@@ -141595,7 +141595,9 @@ function anCdTagStep(U, ld) {
   const mv = U.lpbSp.n != null ? Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0)) : NaN,
     sp = (U.spr || []).find(z => z.v[0] === 'DITL-66'),
     uf = sp && sp.pr.uf != null ? sp.pr.uf : NaN;
-  Object.assign(U.tt, {
+  /* F6 2026-11-22: U.tt may not exist yet (the Web Worker engine runs this first at 'go', before any other tag step made it): the same
+     guard as the other tag steps; without it the Worker stopped at start and the page ran the engine on its own thread */
+  Object.assign(U.tt || (U.tt = {}), {
     'TT-CD1119': r1(hw + (AN_LP.rise * L) / 2),
     'TT-CD1110-4': r1(hw + 2 * L),
     'FT-CD1122': f ? r1(f.fda) : null,
@@ -156074,10 +156076,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 86cdb1c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 2115c63'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 86cdb1c';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 2115c63';
     } catch (e) {}
   };
   upd();
@@ -314232,7 +314234,9 @@ function anCdTagStep(U, ld) {
   const mv = U.lpbSp.n != null ? Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0)) : NaN,
     sp = (U.spr || []).find(z => z.v[0] === 'DITL-66'),
     uf = sp && sp.pr.uf != null ? sp.pr.uf : NaN;
-  Object.assign(U.tt, {
+  /* F6 2026-11-22: U.tt may not exist yet (the Web Worker engine runs this first at 'go', before any other tag step made it): the same
+     guard as the other tag steps; without it the Worker stopped at start and the page ran the engine on its own thread */
+  Object.assign(U.tt || (U.tt = {}), {
     'TT-CD1119': r1(hw + (AN_LP.rise * L) / 2),
     'TT-CD1110-4': r1(hw + 2 * L),
     'FT-CD1122': f ? r1(f.fda) : null,
@@ -346120,7 +346124,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 86cdb1c'));
+    row('Version', E('span', 'scsver', ver + ' · build 2115c63'));
   }
   function openSet(near) {
     if (!set) {
@@ -364020,6 +364024,9 @@ window.PLANT_SYS = [
     function clock() {
       if (!page.isConnected) return void (clearInterval(clk), (clk = 0), CLK.clear());
       if (document.hidden || view !== 'process') return;
+      /* F6 2026-11-22: not while the overview or a logic / library tab covers the plant page (it still moved its parts 10 times a second) */
+      const B = document.body;
+      if (B.classList.contains('scov') || (B.dataset.tab && B.dataset.tab !== 'operate')) return;
       const t = Math.floor(performance.now() / 100) * 100;
       for (const an of CLK) {
         const el = an.effect && an.effect.target;
