@@ -156171,10 +156171,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build b2b4fc7'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build b1e7a6b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build b2b4fc7';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build b1e7a6b';
     } catch (e) {}
   };
   upd();
@@ -345444,7 +345444,9 @@ window.LS_LIVE = (function () {
         M = call(() => el.getScreenCTM(), null);
       if (!len || !M) continue;
       const k = Math.hypot(M.a, M.b) || 1,
-        n = Math.min(400, Math.max(2, Math.ceil((len * k) / 6)));
+        /* apk test 2026-11-22 (a press answered late): a point every 12 screen px, at most 150 per line (was 6 px, 400: getPointAtLength took
+           most of the 0.3-0.4 s freeze after a faceplate opened on a tablet) */
+        n = Math.min(150, Math.max(2, Math.ceil((len * k) / 12)));
       let touch = false;
       const pts = [];
       for (let i = 0; i <= n; i++) {
@@ -345477,7 +345479,9 @@ window.LS_LIVE = (function () {
             }
           : r0;
     if (!w || !h) return;
-    const P = pipePts(r),
+    /* apk test 2026-11-22: the lines around the same equipment are read once per opening (the faceplate is placed again while it grows) */
+    const pk = [r.left, r.top, r.right, r.bottom].map(Math.round).join(),
+      P = el._pp && el._pp.k === pk ? el._pp.P : (el._pp = { k: pk, P: pipePts(r) }).P,
       other = [...document.querySelectorAll('.fpo-box,#plfp.fpo-near')]
         .filter(x => x !== el && x.offsetParent)
         .map(x => x.getBoundingClientRect()),
@@ -345512,7 +345516,7 @@ window.LS_LIVE = (function () {
          (capped), the far corners of the page are the last choice (the big faceplate always landed at the top right) */
       let np = 0;
       for (const [px, py] of P) if (px > q.left && px < q.right && py > q.top && py < q.bottom) np++;
-      s += Math.min(60, np * 2);
+      s += Math.min(60, np * 4); /* a point per 12 px: twice the weight of the old point per 6 px */
       if (i >= C.length - 2) s += 500;
       s += i; /* the earlier side wins a tie */
       if (s < bs) ((bs = s), (best = [x, y]));
@@ -346366,7 +346370,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b2b4fc7'));
+    row('Version', E('span', 'scsver', ver + ' · build b1e7a6b'));
   }
   function openSet(near) {
     if (!set) {

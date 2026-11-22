@@ -144,7 +144,9 @@
         M = call(() => el.getScreenCTM(), null);
       if (!len || !M) continue;
       const k = Math.hypot(M.a, M.b) || 1,
-        n = Math.min(400, Math.max(2, Math.ceil((len * k) / 6)));
+        /* apk test 2026-11-22 (a press answered late): a point every 12 screen px, at most 150 per line (was 6 px, 400: getPointAtLength took
+           most of the 0.3-0.4 s freeze after a faceplate opened on a tablet) */
+        n = Math.min(150, Math.max(2, Math.ceil((len * k) / 12)));
       let touch = false;
       const pts = [];
       for (let i = 0; i <= n; i++) {
@@ -177,7 +179,9 @@
             }
           : r0;
     if (!w || !h) return;
-    const P = pipePts(r),
+    /* apk test 2026-11-22: the lines around the same equipment are read once per opening (the faceplate is placed again while it grows) */
+    const pk = [r.left, r.top, r.right, r.bottom].map(Math.round).join(),
+      P = el._pp && el._pp.k === pk ? el._pp.P : (el._pp = { k: pk, P: pipePts(r) }).P,
       other = [...document.querySelectorAll('.fpo-box,#plfp.fpo-near')]
         .filter(x => x !== el && x.offsetParent)
         .map(x => x.getBoundingClientRect()),
@@ -212,7 +216,7 @@
          (capped), the far corners of the page are the last choice (the big faceplate always landed at the top right) */
       let np = 0;
       for (const [px, py] of P) if (px > q.left && px < q.right && py > q.top && py < q.bottom) np++;
-      s += Math.min(60, np * 2);
+      s += Math.min(60, np * 4); /* a point per 12 px: twice the weight of the old point per 6 px */
       if (i >= C.length - 2) s += 500;
       s += i; /* the earlier side wins a tie */
       if (s < bs) ((bs = s), (best = [x, y]));
