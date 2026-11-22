@@ -38,7 +38,7 @@ Jennie, bahagi o bukas:
 - #12 Warm / Hot sa start screen (mula sa trip sa 150 MW, physics).
 - #13 116 na alarm tag na wala sa app, at alarm priority.
 - #19 sootblower 80H ~ 80L.
-- Part load (ulat 284): 127.5 MW bed 991 kapag AUTO ang O2 trim (LN16 SV 3.5 vs plant 7.7-8.5), 936 kapag trim 50 % (F1); MST 546 sa 90-105 MW vs FHI 541, plant 522 = fouling (F2); Cold run ng user (F3). Jennie.
+- Part load (ulat 284): 127.5 MW bed 991 kapag AUTO ang O2 trim sa LN16 (drawing = FHI 20 % excess air), 936 kapag hawak ang trim gaya ng plant: walang babaguhin (F1); MST 546 sa 90-105 MW vs FHI 541, plant 522 = fouling (F2); Cold run ng user (F3). Jennie.
 - Worker = page mirror: `$id` ng `AN_UNIT.asF` (ulat 276 F2, Rosé beta.277). Reset sa page engine lang (fallback): may natitirang nets `_v` at plant switch list (ulat 280 F1, Jennie).
 
 Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engineer).
