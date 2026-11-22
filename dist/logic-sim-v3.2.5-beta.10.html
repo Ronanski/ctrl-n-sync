@@ -156171,10 +156171,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build d540de2'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build d8a269d'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build d540de2';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build d8a269d';
     } catch (e) {}
   };
   upd();
@@ -346370,7 +346370,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build d540de2'));
+    row('Version', E('span', 'scsver', ver + ' · build d8a269d'));
   }
   function openSet(near) {
     if (!set) {
@@ -360282,12 +360282,14 @@ window.PLANT_SYS = [
             s = call(() => D().dOf(ad), null),
             ok = s ? call(() => DUI.outVal(s, +row), null) : null,
             col = ok == null ? C.none : ok ? C.run : C.stop;
+          /* an empty label: the state alone (the HX purge box has its name above it; apk test 2026-11-22, it ran out of its box) */
+          const pre = lab ? lab + ': ' : '';
           e.textContent =
             ok == null
-              ? lab + ': -----'
+              ? pre + '-----'
               : ok
-                ? lab + ': OK'
-                : lab + ': NOT OK (' + miss + ' of ' + ys.length + ' missing)';
+                ? pre + 'OK'
+                : pre + 'NOT OK (' + miss + ' of ' + ys.length + ' missing)';
           setAt(e, 'fill', col);
           qa(`[data-dysr="${g}"]`).forEach(r => setAt(r, 'stroke', col));
         });
@@ -362452,7 +362454,17 @@ window.PLANT_SYS = [
     /* names inside (the core writes them, so they stay readable when the piece is mirrored) */
     /* Audit 3: the titles "Reheater pass" / "Superheater pass" (8 units, 5.7 px on the Unit overview) are gone: at the 11 px floor
        they ran into each other, and the pass dampers under them and the banks inside already name the two passes */
-    const words = [
+    /* few: a small back pass (Unit overview, Purge and trip, drawn at 0.75 / 0.85). apk test 2026-11-22: there the 9 bank names at
+       11 px ran into each other (a column is about 40 px wide on a 1280 tablet), so it names only the three kinds of bank, one per
+       place; the Drum and superheaters page keeps every bank by its name */
+    const words = o.few
+      ? [
+          { x: 56, y: 153.5, s: 'Reheater', cls: 'rx-in2', size: 8.8 },
+          { x: 160, y: 82, s: 'Finishing', cls: 'rx-in2', size: 8.8 },
+          { x: 160, y: 106, s: 'superheater', cls: 'rx-in2', size: 8.8 },
+          { x: 108, y: 290, s: 'Economizers', cls: 'rx-in2', size: 8.8 }
+        ]
+      : [
       { x: 56, y: 153.5, s: 'Reheater', cls: 'rx-in2', size: 8.8 },
       { x: 56, y: 290, s: 'Economizer', cls: 'rx-in2', size: 8.8 },
       { x: 56, y: 303, s: '2R', cls: 'rx-in2', size: 8.8 },
@@ -362462,7 +362474,7 @@ window.PLANT_SYS = [
       { x: 160, y: 290, s: 'Economizer', cls: 'rx-in2', size: 8.8 },
       { x: 160, y: 303, s: '2S', cls: 'rx-in2', size: 8.8 },
       { x: 108, y: 446, s: 'Economizer 1', cls: 'rx-in2', size: 8.8 }
-    ];
+        ];
     return {
       box: sh ? [-1, -50, 244, 512] : [-28, -50, 217, 512],
       ports: sh
@@ -363313,6 +363325,8 @@ window.PLANT_SYS = [
   };
 
   /* ---------- layout: lanes -> positions ---------- */
+  /* vstack: a value name longer than this goes on its own line (see the rows of words in itemSvg) */
+  const VSTACK = 12;
   /* room of one item above and below its centre: symbol + the words the core writes around it */
   function measure(it) {
     if (it.k === 'link') return { up: 15, dn: 15 };
@@ -363323,7 +363337,7 @@ window.PLANT_SYS = [
       lines = it.name ? wrap(it.name, it.wrap || (side ? 22 : 19)).length : 0,
       tg = tagOf(it) ? 1 : 0,
       rows =
-        (it.k === 'mach' || it.k === 'valve' ? 1 : 0) + (it.k === 'loop' ? 1 + (it.pv ? 1 : 0) : 0) + it.vals.length;
+        (it.k === 'mach' || it.k === 'valve' ? 1 : 0) + (it.k === 'loop' ? 1 + (it.pv ? 1 : 0) : 0) + it.vals.length + (it.vstack ? it.vals.filter(v => v.label.length > VSTACK).length : 0);
     if (side) {
       const hh = ((lines + tg + rows) * 14) / 2 + 4;
       return { up: Math.max(-box[1] + 2, hh), dn: Math.max(box[3] + 2, hh) };
@@ -363517,7 +363531,18 @@ window.PLANT_SYS = [
         ]);
       }
     }
-    for (const v of it.vals)
+    for (const v of it.vals) {
+      /* vstack (apk test 2026-11-22, Sampling): items in narrow columns write a long name on its own line and the value under it,
+         so "Cation conductivity 0.055 µS/cm" does not run into the next column at 11 px on a 1280 tablet */
+      if (it.vstack && v.label.length > VSTACK) {
+        body.push([13, (bx, by, an) => `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">${esc(v.label)}</text>`]);
+        body.push([
+          14,
+          (bx, by, an) =>
+            `<text x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
+        ]);
+        continue;
+      }
       body.push([
         14,
         (bx, by, an) =>
@@ -363525,6 +363550,7 @@ window.PLANT_SYS = [
             ? `<text class="hx-lab" x="${n1(bx - 4)}" y="${n1(by)}" text-anchor="end">${esc(v.label)}</text><text x="${n1(bx + 3)}" y="${n1(by)}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
             : `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">${esc(v.label)} <tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
       ]);
+    }
     /* apk test of the user 2026-11-22 ("kala ko naayos na mga text nito?"): the rows of words were placed 14 units apart, the room of a
        12.6-unit word. Drawn small (a page fitted whole on a 1280 x 800 tablet, about 0.6) a word is 11 screen px = about 18 units, so
        the lines of one label ran into each other ("Condensate" over "pump A", "Current" over "Strainer"). Each row sits in its own
@@ -364881,12 +364907,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         }),
         at(E('spray', '', '', [], { flow: 'l:TICMS1022', noz: 'b' }), BX, 505, { id: 'hps', rot: 90 }),
         at(
-          C('TICMS1022', 'Bypass spray valve', { tag: 'TCV-FW1060', cname: 'High pressure bypass spray valve' }),
-          695,
+          C('TICMS1022', 'Bypass spray valve', { tag: 'TCV-FW1060', cname: 'High pressure bypass spray valve', wrap: 12 }),
+          700,
           498,
           { id: 'tcms', lab: 'b' }
         ),
-        at(X('XV-FW1061', 'Block valve', { cname: 'High pressure bypass spray block valve' }), 590, 498, {
+        at(X('XV-FW1061', 'Block valve', { cname: 'High pressure bypass spray block valve' }), 580, 498, {
           id: 'xfw61',
           lab: 'b',
           yn: [22, -40]
@@ -364927,8 +364953,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(X('MV-TS1001', 'Extraction 1 valve'), 470, 858, { id: 'ext', rot: -90, lab: 'l', yn: [-36, -34] }),
         at(L('extraction', 'High pressure heater 2'), 470, 918, { id: 'hph' }),
         at(E('spray', '', '', [], { flow: 'l:TICHR1002', noz: 'b' }), RX, 690, { id: 'dsh', rot: -90 }),
-        at(C('TICHR1002', 'Reheater spray valve', { tag: 'TCV-FW1150' }), 492, 697, { id: 'tfw50', lab: 'b' }),
-        at(X('XV-FW1151', 'Block valve', { cname: 'Reheater spray block valve' }), 580, 697, {
+        at(C('TICHR1002', 'Reheater spray valve', { tag: 'TCV-FW1150', wrap: 12 }), 492, 697, { id: 'tfw50', lab: 'b' }),
+        at(X('XV-FW1151', 'Block valve', { cname: 'Reheater spray block valve' }), 600, 697, {
           id: 'xfw51',
           lab: 'b',
           yn: [-38, -40]
@@ -364962,7 +364988,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ...dHR2.items,
 
         /* ---- low pressure bypass to the condenser ---- */
-        at(E('valve', 'Bypass isolating valve', 'V-HR1001 · manual', [], { kind: 'manual', wrap: 24 }), 1430, HY, {
+        at(E('valve', 'Bypass isolating valve', 'V-HR1001 · manual', [], { kind: 'manual', wrap: 12 }), 1380, HY, {
           id: 'vhr',
           lab: 't'
         }),
@@ -365126,8 +365152,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       ],
       signals: [{ pts: ['tic.l', [20, 64], [20, by(350) - 16], 'dmb.a'] }, { pts: ['dmb.a', 'dma.a'] }],
       taps: [
-        { x: 546, y: MY, side: 't', label: 'Pressure', key: 'PT-MS1006-1', unit: K, tag: 'PT-MS1006-1' },
-        { x: 620, y: MY, side: 't', label: 'Temperature', key: 'TT-MS1007', unit: '°C', dp: 0, tag: 'TT-MS1007' },
+        { x: 475, y: MY, side: 't', label: 'Pressure', key: 'PT-MS1006-1', unit: K, tag: 'PT-MS1006-1' },
+        { x: 585, y: MY, side: 't', label: 'Temperature', key: 'TT-MS1007', unit: '°C', dp: 0, tag: 'TT-MS1007' },
         { x: 540, y: 498, side: 't', label: 'Spray water', key: 'FT-FW1059', unit: 't/h', tag: 'FT-FW1059' },
         { x: BX, y: 560, side: 'r', label: 'After bypass', key: 'PT-MS1021', unit: K, tag: 'PT-MS1021' },
         {
@@ -365212,7 +365238,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           dp: 0,
           tag: 'TT-HR1012-1 / -2'
         },
-        { x: 1410, y: 50, side: 'b', label: 'Spray water', key: 'FTCD1115', unit: 't/h', tag: 'FT-CD1115' },
+        { x: 1420, y: 50, side: 't', label: 'Spray water', key: 'FTCD1115', unit: 't/h', tag: 'FT-CD1115' },
         {
           x: tx(-236),
           y: ty(170),
@@ -365262,7 +365288,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1534, y: 525, s: 'pressure turbine', cls: 'hx-name', anchor: 'start' },
         { x: tx(-156), y: ty(268), s: 'Condenser', cls: 'hx-name', anchor: 'middle' },
         { x: 1160, y: HY - 14, s: 'Hot reheat', cls: 'hx-zone', anchor: 'middle' },
-        { x: 560, y: CY - 14, s: 'Cold reheat', cls: 'hx-zone', anchor: 'middle' }
+        { x: 710, y: CY - 14, s: 'Cold reheat', cls: 'hx-zone', anchor: 'middle' }
       ]
     },
     trends: [
@@ -365398,15 +365424,15 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
 
         /* ---- spray 1: between superheater panel No. 1 and No. 2, two parallel water lines ---- */
         at(E('spray', '', '', [], { flow: SP1 + '|' + SP1B }), P1X, 440, { id: 'ds1', rot: 90 }),
-        at(X('XV-FW1111-1', 'Block valve 1', { cname: 'Superheater spray 1 block valve (1)' }), 140, 356, {
+        at(X('XV-FW1111-1', 'Block valve 1', { cname: 'Superheater spray 1 block valve (1)' }), 110, 356, {
           id: 'x11a',
           lab: 't'
         }),
-        at(C('TICBR1130', 'Spray valve 1', { tag: 'TCV-FW1110-1', cname: 'Superheater spray 1 valves' }), 232, 356, {
+        at(C('TICBR1130', 'Spray valve 1', { tag: 'TCV-FW1110-1', cname: 'Superheater spray 1 valves' }), 250, 356, {
           id: 't11a',
           lab: 't'
         }),
-        at(X('XV-FW1111-2', 'Block valve 2', { cname: 'Superheater spray 1 block valve (2)' }), 140, 500, {
+        at(X('XV-FW1111-2', 'Block valve 2', { cname: 'Superheater spray 1 block valve (2)' }), 110, 500, {
           id: 'x11b',
           lab: 'b'
         }),
@@ -365415,11 +365441,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
             kind: 'control',
             on: SP1B
           }),
-          232,
+          250,
           500,
           { id: 't11b', lab: 'b' }
         ),
-        at(L('feedwater', 'Feedwater', { back: true }), 62, 250, { id: 'fw1' }),
+        at(L('feedwater', 'Feedwater', { back: true }), 62, 212, { id: 'fw1' }),
         at(M('valve', 'V-BD1005 ~ V-BD1021', 'Lower ring header drains', [], { kind: 'manual', wrap: 14 }), 240, 930, {
           id: 'lhd',
           lab: 't'
@@ -365432,11 +365458,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
 
         /* ---- spray 2: before the finishing superheater ---- */
         at(E('spray', '', '', [], { flow: SP2 + '|' + SP2B }), UPX, 770, { id: 'ds2', rot: -90 }),
-        at(C('TICBR1150', 'Spray valve 1', { tag: 'TCV-FW1120-1', cname: 'Superheater spray 2 valves' }), 1590, 716, {
+        at(C('TICBR1150', 'Spray valve 1', { tag: 'TCV-FW1120-1', cname: 'Superheater spray 2 valves' }), 1575, 716, {
           id: 't21a',
           lab: 't'
         }),
-        at(X('XV-FW1121-1', 'Block valve 1', { cname: 'Superheater spray 2 block valve (1)' }), 1680, 716, {
+        at(X('XV-FW1121-1', 'Block valve 1', { cname: 'Superheater spray 2 block valve (1)' }), 1700, 716, {
           id: 'x21a',
           lab: 't'
         }),
@@ -365445,11 +365471,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
             kind: 'control',
             on: SP2B
           }),
-          1590,
+          1575,
           840,
           { id: 't21b', lab: 'b' }
         ),
-        at(X('XV-FW1121-2', 'Block valve 2', { cname: 'Superheater spray 2 block valve (2)' }), 1680, 840, {
+        at(X('XV-FW1121-2', 'Block valve 2', { cname: 'Superheater spray 2 block valve (2)' }), 1700, 840, {
           id: 'x21b',
           lab: 'b'
         }),
@@ -365463,7 +365489,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(C('PICMS1002', 'Main steam blow-off valve', { tag: 'PCV-MS1001', wrap: 16 }), 1500, 300, {
           id: 'bov',
           rot: 90,
-          lab: 'r'
+          lab: 'l'
         }),
         at(E('vent', '', '', [], { flow: 'l:PICMS1002' }), 1500, 258, { id: 'sil' }),
         at(E('valve', 'Safety valve', 'ZV-MS1001', [], { kind: 'safety' }), 1684, MSY - 4, { id: 'msv', lab: 't' }),
@@ -365537,7 +365563,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           tag: 'TT-BR1120-1 / -2'
         },
         {
-          x: 390,
+          x: 360,
           y: fy(104),
           side: 'b',
           label: 'Panel 2 inlet',
@@ -365547,7 +365573,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           dp: 0,
           tag: 'TT-BR1130-1 / -2'
         },
-        { x: 474, y: fy(104), side: 'b', label: 'Pressure', key: 'PT-BR1130', unit: K, tag: 'PT-BR1130' },
+        { x: 480, y: fy(104), side: 'b', label: 'Pressure', key: 'PT-BR1130', unit: K, tag: 'PT-BR1130' },
         {
           x: 420,
           y: fy(150),
@@ -365559,7 +365585,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           dp: 0,
           tag: 'TT-BR1140-1 / -2'
         },
-        { x: 62, y: 430, side: 'r', label: 'Spray water', key: 'FT-FW1109', unit: 't/h', tag: 'FT-FW1109' },
+        { x: 62, y: 268, side: 'r', label: 'Spray water', key: 'FT-FW1109', unit: 't/h', tag: 'FT-FW1109' },
         {
           x: UPX,
           y: 600,
@@ -365577,11 +365603,14 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1600, y: MSY, side: 'b', label: 'Pressure', key: 'PT-MS1002', unit: K, tag: 'PT-MS1002' }
       ],
       texts: [
-        { x: 196, y: 406, s: 'Position', key: 'ZT-FW1110-1', unit: '%' },
+        { x: 110, y: 404, s: 'Position', key: 'ZT-FW1110-1', unit: '%' },
         /* Jennie 2026-11-21: spray 1 is split range (ABC-011 TICBR1130 MV: LN46 to TCV-FW1110-2, the small valve, which is full open
            first; LN47 to TCV-FW1110-1, the large valve). Spray valve 2 at 100 % with valve 1 part open is normal, not a stuck valve */
-        { x: 196, y: 424, s: 'split range: opens after valve 2', cls: 'hx-note' },
-        { x: 268, y: 488, s: 'split range: full open first', cls: 'hx-note' },
+        /* apk test 2026-11-22: two short lines each, so they stay inside the spray lines at 11 px on a 1280 tablet */
+        { x: 110, y: 421, s: 'split range, opens', cls: 'hx-note' },
+        { x: 110, y: 437, s: 'after valve 2', cls: 'hx-note' },
+        { x: 110, y: 455, s: 'split range,', cls: 'hx-note' },
+        { x: 110, y: 471, s: 'full open first', cls: 'hx-note' },
         { x: 1548, y: 766, s: 'Position', key: 'ZT-FW1120-1', unit: '%' },
         { x: DX, y: 262, s: 'Drum', cls: 'hx-name', anchor: 'middle' },
         { x: 474, y: 146, s: 'Pressure', key: 'PT-BR1001-1', unit: K, anchor: 'end' },
@@ -365642,7 +365671,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     DAY = 190,
     DAS = 1.6 /* deaerator */,
     PAX = 330,
-    PBX = 700,
+    PBX = 680 /* apk test 2026-11-22: 20 left, so the bypass state of pump B clears V-FW1011 at 11 px */,
     PY = 800,
     PS = 1.6 /* the two pumps */,
     SUX = 110,
@@ -365762,7 +365791,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(X('MV-TS1002', 'Extraction 2 valve'), 1460, 580, { id: 'ts2', lab: 'b' }),
         at(L('extraction', 'Extraction steam', { back: true }), 1620, 580, { id: 'exl2' }),
         at(X('MV-TS1001', 'Extraction 1 valve'), 1330, 338, { id: 'ts1', lab: 'b' }),
-        at(L('reheat-steam', 'Cold reheat steam', { back: true }), 1460, 338, { id: 'exl1' }),
+        at(L('reheat-steam', 'Cold reheat steam', { back: true }), 1580, 338, { id: 'exl1' }),
         at(C('LICHD11061', 'Heater 2 drain valve', { tag: 'LCV-HD1106-1' }), DRX, 530, { id: 'd2', rot: 90, lab: 'r' }),
         at(C('LICHD11051', 'Heater 1 drain valve', { tag: 'LCV-HD1105-1' }), DRX, 790, { id: 'd1', rot: 90, lab: 'r' }),
 
@@ -365886,8 +365915,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       ],
       taps: [
         { x: 405, y: DAY - 12 * DAS, side: 't', label: 'Pressure', key: 'PT-TS1017', unit: K, tag: 'PT-TS1017' },
-        { x: 250, y: 880, side: 'l', label: 'Suction', key: 'PT-FW1115-A', unit: K, tag: 'PT-FW1115-A' },
-        { x: 620, y: 880, side: 'l', label: 'Suction', key: 'PT-FW1115-B', unit: K, tag: 'PT-FW1115-B' },
+        { x: 250, y: 935, side: 'l', label: 'Suction', key: 'PT-FW1115-A', unit: K, tag: 'PT-FW1115-A' },
+        { x: 600, y: 935, side: 'l', label: 'Suction', key: 'PT-FW1115-B', unit: K, tag: 'PT-FW1115-B' },
         { x: 410, y: DHY, side: 't', label: 'Pressure', key: 'PT-FW1011', unit: K, tag: 'PT-FW1011' },
         { x: 610, y: DHY, side: 't', label: 'Temperature', key: 'TT-FW1011', unit: '°C', dp: 0, tag: 'TT-FW1011' },
         {
@@ -365913,7 +365942,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         },
         { x: 1590, y: FY, side: 'b', label: 'Pressure', key: 'PT-FW1160', unit: K, tag: 'PT-FW1160' },
         { x: 1680, y: FY, side: 'b', label: 'Temperature', key: 'TT-FW1160', unit: '°C', dp: 0, tag: 'TT-FW1160' },
-        { x: 1400, y: 580, side: 't', label: 'Pressure', key: 'PT-TS1013', unit: K, tag: 'PT-TS1013' },
+        { x: 1530, y: 580, side: 't', label: 'Pressure', key: 'PT-TS1013', unit: K, tag: 'PT-TS1013' },
         { x: 1270, y: 338, side: 't', label: 'Temperature', key: 'TT-TS1011', unit: '°C', dp: 0, tag: 'TT-TS1011' }
       ],
       texts: [
@@ -366383,7 +366412,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           id: 'idd',
           lab: 'l'
         }),
-        at(C('PICFG108', 'Furnace pressure, fan coupling', { sym: 'ctl', unit: MM, pvdp: 0, wrap: 32 }), 1500, 600, {
+        at(C('PICFG108', 'Furnace pressure, fan coupling, ' + MM, { sym: 'ctl', unit: '', pvdp: 0, wrap: 32 }), 1500, 600, {
           id: 'pic',
           lab: 't'
         }),
@@ -366575,7 +366604,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           sc: FS,
           lab: 'b'
         }),
-        at(C('FICFA1071', 'Primary air fan inlet vane', { tag: 'MCV-FA1053-1', wrap: 16 }), 130, FY, {
+        at(C('FICFA1071', 'Primary air fan inlet vane', { tag: 'MCV-FA1053-1', wrap: 16 }), 95, FY, {
           id: 'pad',
           lab: 't'
         }),
@@ -366583,7 +366612,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(L('furnace-gas', 'Hot primary air to the furnace'), 330, 430, { id: 'pal' }),
         at(L('coal', 'To the coal pipes'), 330, 360, { id: 'cpl' }),
         at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', []), 90, 952, { id: 'loa', sc: 0.8, lab: 'r' }),
-        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 330, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 380, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
 
         /* ---- secondary air ---- */
         at(M('fan', 'SAF', 'Secondary air fan', [V('Current', 'IT-F1054', 'A')]), SFX, FY, {
@@ -366759,7 +366788,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     W_A = 8,
     W_S = 5;
   /* places (the drawing is 1760 x 1000) */
-  const BX = [230, 540, 850],
+  const BX = [200, 540, 880] /* apk test 2026-11-22: 340 apart (was 310), so a feeder's name and state clear the motor of the one before at 11 px */,
     BY = 290,
     BS = 2 /* bunkers */,
     FDY = 500,
@@ -366858,7 +366887,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         /* the boiler side of the coordinated control (ABC-001C, Jennie live run 2026-11-18): the boiler pressure controller PIC-COBM
            and the boiler master HIC-BM give the fuel demand to the coal master; before, no plant page had them and CCS could not be
            put in AUTO from the plant pages (PR-OPE-5002 "Put Boiler Master to Auto") */
-        at(C('PIC-COBM', 'Boiler pressure control', { sym: 'ctl', unit: 'kg/cm²', pvdp: 1, wrap: 20 }), 900, 90, { id: 'cobm', lab: 't' }),
+        at(C('PIC-COBM', 'Boiler pressure control, kg/cm²', { sym: 'ctl', unit: '', pvdp: 1, wrap: 20 }), 900, 90, { id: 'cobm', lab: 't' }),
         at(C('HIC-BM', 'Boiler master', { sym: 'ctl', unit: '%', pvdp: 1 }), 1100, 90, { id: 'bm', lab: 't' }),
         /* the coal feeder master FIC-CF (ABC-004A): PV = average of the three feeder MVs, its MV is the feeders' AUTO demand; the coal
            master AUTO needs FIC-CF.REM = 1 (force manual on ABC-004A), and no plant page had it (Jennie live run 2026-11-18) */
@@ -367237,10 +367266,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       h: 1000,
       items: [
         /* ---- precipitator and fly ash ---- */
-        at(L('furnace-gas', 'Flue gas from the air heater', { back: true }), 130, EY, { id: 'gin' }),
+        at(L('furnace-gas', 'From the air heater', { back: true }), 140, EY, { id: 'gin' }),
         at(E('esp', '', '', [], { on: 'm:ESP' }), EX, EY, { id: 'esp', under: true, sc: ES }),
         at(M('cubicle', 'ESP', 'Precipitator panel', []), 150, 320, { id: 'espp', lab: 'r' }),
-        at(L('furnace-gas', 'To the induced draft fan'), 900, EY, { id: 'gout' }),
+        at(L('furnace-gas', 'To the induced draft fan'), 930, EY, { id: 'gout' }),
         at(E('silo', 'Fly ash silo', 'T-1251', [], { id: 'fa', h: 100 }), 1160, 250, { id: 'fa', sc: 1.7, lab: 'r' }),
 
         /* ---- furnace differential pressure and screw speed ---- */
@@ -367377,16 +367406,18 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       texts: [
         { x: 24, y: 60, s: 'PRECIPITATOR AND FLY ASH', cls: 'hx-zone' },
         { x: EX, y: 86, s: 'Precipitator', cls: 'hx-name', anchor: 'middle' },
-        { x: 24, y: 80, s: 'The precipitator runs from its own panel.', cls: 'hx-note' },
-        { x: 24, y: 94, s: 'Field voltages and currents have no signal in the app.', cls: 'hx-note' },
+        { x: 24, y: 78, s: 'The precipitator runs from its own panel.', cls: 'hx-note' },
+        { x: 24, y: 95, s: 'Field voltages and currents have no signal in the app.', cls: 'hx-note' },
         { x: 24, y: 440, s: 'BOTTOM ASH', cls: 'hx-zone' },
         { x: 24, y: 462, s: 'from the furnace grate floor', cls: 'hx-note' },
-        { x: 300, y: 440, s: 'Bed pressure drop 1', key: 'DPT-FG1081', unit: MM, dp: 0 },
-        { x: 520, y: 440, s: 'Bed pressure drop 2', key: 'DPT-FG1082', unit: MM, dp: 0 },
-        { x: 760, y: 440, s: 'Cooling water', key: 'PT-CW1156', unit: 'kg/cm²' },
-        { x: 930, y: 440, s: 'Temperature', key: 'TT-CW1156', unit: '°C', dp: 0 },
-        { x: 1420, y: 250, s: 'Furnace differential pressure low stops the coolers.', cls: 'hx-note' },
-        { x: 1420, y: 266, s: 'Cycle mode timer 15 minutes (DITL-21E).', cls: 'hx-note' }
+        /* apk test 2026-11-22: the four values stood in one row and ran into each other at 11 px on a 1280 tablet: two by two */
+        { x: 300, y: 428, s: 'Bed pressure drop 1', key: 'DPT-FG1081', unit: MM, dp: 0 },
+        { x: 300, y: 446, s: 'Bed pressure drop 2', key: 'DPT-FG1082', unit: MM, dp: 0 },
+        { x: 620, y: 428, s: 'Cooling water', key: 'PT-CW1156', unit: 'kg/cm²' },
+        { x: 620, y: 446, s: 'Cooling water temperature', key: 'TT-CW1156', unit: '°C', dp: 0 },
+        { x: 1390, y: 250, s: 'Furnace differential pressure low', cls: 'hx-note' },
+        { x: 1390, y: 267, s: 'stops the coolers. Cycle mode', cls: 'hx-note' },
+        { x: 1390, y: 284, s: 'timer 15 minutes (DITL-21E).', cls: 'hx-note' }
       ]
     }
   });
@@ -367417,13 +367448,14 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
   const US = 'µS/cm';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const di = (tag, on, off) => 'data-di="' + tag + '|' + on + '|' + off + '"';
-  /* places (the drawing is 1760 x 890) */
+  /* places (the drawing is 1760 x 1000; apk test 2026-11-22: the dosing skids 70 lower, so the analyzer values have room for
+     their long names on a line of their own) */
   const CX = i => 150 + i * 208,
     CY = 200,
     SX = [230, 790, 1330],
-    TY = 620,
-    PY = 680,
-    HY = 530; /* dosing discharge line */
+    TY = 690,
+    PY = 750,
+    HY = 600; /* dosing discharge line */
   /* audit 2026-11-21 C9: the dosing skids sit 110 higher and the chiller unit sits under the rack it cools, on the left of the
      rack, so the page has no empty middle band and no item floating at the right edge */
   const PH = (n, k) => V('pH', k, '', 1),
@@ -367495,11 +367527,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     plan: {
       look: 'real',
       w: 1760,
-      h: 890,
+      h: 1000,
       items: [
         /* ---- sampling rack: one cooler and its analyzers for every stream ---- */
         ...STREAMS.map((s, i) =>
-          at(E('cooler', s[0], s[1], s[3], { wrap: 14 }), CX(i), CY, { id: 'c' + i, sc: 1.1, lab: 'b' })
+          at(E('cooler', s[0], s[1], s[3], { wrap: 14, vstack: true }), CX(i), CY, { id: 'c' + i, sc: 1.1, lab: 'b' })
         ),
         at(E('cubicle', 'Chiller unit', 'Z-1110', []), 120, 375, { id: 'chl', lab: 'r' }),
         at(B('Power supply abnormal', di('AL1-SP01', 'ALARM', 'NORMAL'), { w: 210 }), 420, 410, { id: 'al1' }),
@@ -367532,9 +367564,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
               lab: 'b'
             }),
             at(L(k.to[0], k.to[1]), sx + 360, HY, { id: 'to' + i }),
-            at(B('Level high', di('LSH-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 790, { id: 'lh' + i }),
-            at(B('Level low', di('LSL-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 822, { id: 'll' + i }),
-            at(B('Level low-low', di('LSLL-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 854, { id: 'lll' + i })
+            at(B('Level high', di('LSH-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 860, { id: 'lh' + i }),
+            at(B('Level low', di('LSL-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 892, { id: 'll' + i }),
+            at(B('Level low-low', di('LSLL-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 924, { id: 'lll' + i })
           ];
         }),
         at(M('mixer', 'Z-1101', 'Agitator', []), SX[0] - 110, TY - 78, { id: 'agt', sc: 1.3, lab: 'l' })
@@ -367556,7 +367588,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
             {
               med: 'water',
               w: 4,
-              pts: [[xs, PY], [xs, 770], [pb(sx) - 70, 770], [pb(sx) - 70, PY], 'pb' + i + '.s'],
+              pts: [[xs, PY], [xs, 840], [pb(sx) - 70, 840], [pb(sx) - 70, PY], 'pb' + i + '.s'],
               flow: Bp,
               arrow: false
             },
@@ -367569,12 +367601,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       taps: [],
       texts: [
         { x: 24, y: 56, s: 'SAMPLING RACK', cls: 'hx-zone' },
-        { x: 24, y: 76, s: 'Each sample is cooled, then goes to its analyzers.', cls: 'hx-note' },
-        { x: 24, y: 90, s: 'The silica analyzer takes streams 3, 5, 6 and 7.', cls: 'hx-note' },
+        { x: 24, y: 74, s: 'Each sample is cooled, then goes to its analyzers.', cls: 'hx-note' },
+        { x: 24, y: 91, s: 'The silica analyzer takes streams 3, 5, 6 and 7.', cls: 'hx-note' },
         ...STREAMS.map((s, i) => ({ x: CX(i), y: 110, s: String(i + 1), cls: 'hx-name', anchor: 'middle' })),
-        { x: 24, y: 450, s: 'CHEMICAL DOSING', cls: 'hx-zone' },
-        { x: 24, y: 470, s: 'Field equipment: the pumps start at their local panel.', cls: 'hx-note' },
-        { x: 24, y: 484, s: 'One pump of each chemical runs, B stands by.', cls: 'hx-note' },
+        { x: 24, y: 470, s: 'CHEMICAL DOSING', cls: 'hx-zone' },
+        { x: 24, y: 490, s: 'Field equipment: the pumps start at their local panel.', cls: 'hx-note' },
+        { x: 24, y: 507, s: 'One pump of each chemical runs, B stands by.', cls: 'hx-note' },
         ...SKIDS.map((k, i) => ({ x: pa(SX[i]) - 40, y: HY - 34, s: k.name, cls: 'hx-name' })),
         ...SKIDS.map((k, i) => ({ x: pa(SX[i]) - 40, y: HY - 18, s: k.duty, cls: 'hx-note' }))
       ]
@@ -367645,7 +367677,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(E('furnace', '', '', [], { fire: GAS }), FX, FY, { id: 'fu', under: true }),
         at(E('drum', '', '', [], { id: 'ovdr' }), FX, 100, { id: 'dr', under: true, sc: 0.6 }),
         at(E('cyclone', '', '', [], { flow: GAS }), CYX, CYY, { id: 'cy', under: true }),
-        at(E('backpass', '', '', [], { gasA: GAS, gasB: GAS, steam: STM }), BX, BY, { id: 'bp', under: true, sc: BS }),
+        at(E('backpass', '', '', [], { gasA: GAS, gasB: GAS, steam: STM, few: true }), BX, BY, { id: 'bp', under: true, sc: BS }),
         at(M('airheater', 'AIR PREHEATER', 'Air heater', []), AX, AY, { id: 'ah', lab: 'l' }),
         at(E('esp', '', '', [], { on: GAS }), EX, EY, { id: 'esp', under: true }),
         at(M('fan', 'IDF', 'Induced draft fan', []), IX, IY, { id: 'idf', lab: 'b' }),
@@ -367675,7 +367707,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           id: 'uld',
           lab: 'r'
         }),
-        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 18 }), 1560, 250, {
+        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 10 }), 1560, 250, {
           id: 'tm',
           lab: 'r'
         }),
@@ -367693,12 +367725,14 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         }),
 
         /* ---- the page of every part ---- */
-        at(L('coal', 'Coal'), 70, 430, { id: 'l1' }),
-        at(L('limestone-sand', 'Limestone and sand'), 70, 462, { id: 'l2' }),
-        at(L('oil-burners', 'Oil burners'), 70, 494, { id: 'l3' }),
-        at(L('combustion-air', 'Combustion air'), 70, 526, { id: 'l4' }),
-        at(L('purge-trip', 'Purge and trip'), 70, 558, { id: 'l5' }),
-        at(L('ash', 'Ash and precipitator'), 70, 590, { id: 'l6' }),
+        /* apk test 2026-11-22: the boiler pages stood at x 70 and the longer names were cut by the left edge on a 1280 tablet (no room
+           beside the feedwater line): now a second column next to the gas pages, in the free room left of the stack */
+        at(L('coal', 'Coal'), 1130, 250, { id: 'l1' }),
+        at(L('limestone-sand', 'Limestone and sand'), 1130, 282, { id: 'l2' }),
+        at(L('oil-burners', 'Oil burners'), 1130, 314, { id: 'l3' }),
+        at(L('combustion-air', 'Combustion air'), 1130, 346, { id: 'l4' }),
+        at(L('purge-trip', 'Purge and trip'), 1130, 378, { id: 'l5' }),
+        at(L('ash', 'Ash and precipitator'), 1130, 410, { id: 'l6' }),
         at(L('furnace-gas', 'Furnace and flue gas'), 850, 250, { id: 'l7' }),
         at(L('sootblowers', 'Sootblowers'), 850, 282, { id: 'l8' }),
         at(L('drum-steam', 'Boiler steam'), 850, 314, { id: 'l9' }),
@@ -367751,7 +367785,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 900, y: 60, side: 'b', label: 'Main steam pressure', key: 'PT-MS1002', unit: K, tag: 'PT-MS1002' },
         { x: 1100, y: 60, side: 'b', label: 'Temperature', key: 'pv:TICMS1004', unit: '°C', dp: 0, tag: 'TICMS1004' },
         { x: 1300, y: 60, side: 'b', label: 'Flow', key: 'ABC-001C|SI0230', unit: 't/h', tag: 'FT-MS1031' },
-        { x: 150, y: 700, side: 'r', label: 'Feedwater flow', key: 'pv:FICFW1007', unit: 't/h', tag: 'FICFW1007' }
+        { x: 150, y: 760, side: 'r', label: 'Feedwater flow', key: 'pv:FICFW1007', unit: 't/h', tag: 'FICFW1007' }
       ],
       texts: [
         { x: 24, y: 40, s: 'BOILER', cls: 'hx-zone' },
@@ -367807,10 +367841,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
   const TX = 215,
     TY = 330,
     TS = 2.4 /* tank */,
-    PAX = 400,
-    PBX = 590,
+    PAX = 385 /* apk test 2026-11-22: the pumps 235 apart (was 190), so their state rows clear each other at 11 px */,
+    PBX = 620,
     SAX = 320,
-    SBX = 510 /* suction risers */,
+    SBX = 540 /* suction risers */,
     SUY = 940 /* suction header */,
     PY = 760,
     PS = 1.6 /* pumps */,
@@ -367942,7 +367976,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           rot: -90,
           lab: 'r'
         }),
-        at(C('HICDO1012', 'Supply valve to the burners', { tag: 'FCV-DO1012', wrap: 16 }), 690, DY, {
+        at(C('HICDO1012', 'Supply valve to the burners', { tag: 'FCV-DO1012', wrap: 16 }), 705, DY, {
           id: 'sup',
           lab: 'b'
         }),
@@ -367951,10 +367985,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-N): the two CRT push buttons of ABC-003E (OIL MASTER USE M.008C, OIL MASTER
            NOT USE M.008D, TPs 2 s -> FF M.008F, which lets FICDO1043A ~ D go to AUTO under FIC-OM); lit = the selection of M.008F.
            No operator page had them: the burner oil valves stayed forced to MANUAL */
-        at(HX.B('OIL MASTER USE', 'data-apb="ABC-003E|M.008C|M.008F=1"', { press: true }), 1100, 915, { id: 'omu' }),
-        at(HX.B('OIL MASTER NOT USE', 'data-apb="ABC-003E|M.008D|M.008F=0"', { press: true }), 1100, 965, { id: 'omn' }),
+        at(HX.B('OIL MASTER USE', 'data-apb="ABC-003E|M.008C|M.008F=1"', { press: true, w: 200 }), 1100, 915, { id: 'omu' }),
+        at(HX.B('OIL MASTER NOT USE', 'data-apb="ABC-003E|M.008D|M.008F=0"', { press: true, w: 200 }), 1100, 965, { id: 'omn' }),
         ...B.flatMap(b => b.items),
-        at(L('combustion-air', 'Hot secondary air', { back: true }), AIRX + 80, 90, { id: 'hsa' }),
+        at(L('combustion-air', 'Hot secondary air', { back: true }), AIRX + 60, 90, { id: 'hsa' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-M): the atomizing air of the burners is plant air (DITL-07 row 11
            PSL-PA1043-x1): the burners stayed not ready with no plant air compressor running, and no page of the burners led to it */
         at(L('compressed-air', 'Plant air (atomizing air)'), 1350, 960, { id: 'pal' })
@@ -368196,12 +368230,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { med: 'air', w: W_SM, pts: [[1460, 620], 'vb.l'], flow: 'x:MV-AV1391', arrow: false },
         { med: 'air', w: W_SM, pts: ['vb.r', [1660, 620]], to: 'condenser', flow: 'x:MV-AV1391' },
         { med: 'condensate', w: W_WT, pts: [[1460, 800], 'hs.l'], flow: 'm:LP EXHAUST HOOD SPRAY', arrow: false },
-        { med: 'condensate', w: W_WT, pts: ['hs.r', [1660, 800]], to: 'exhaust hood', flow: 'm:LP EXHAUST HOOD SPRAY' }
+        { med: 'condensate', w: W_WT, pts: ['hs.r', [1620, 800]], to: 'exhaust hood', flow: 'm:LP EXHAUST HOOD SPRAY' }
       ],
       taps: [
         { x: 630, y: MSY, side: 't', label: 'After spray', key: 'TT-AS1001', unit: '°C', dp: 0, tag: 'TT-AS1001' },
-        { x: 820, y: HY, side: 't', label: 'Header pressure', key: 'PT-AS1004', unit: K, tag: 'PT-AS1004' },
-        { x: 910, y: HY, side: 't', label: 'Temperature', key: 'TT-AS1003', unit: '°C', dp: 0, tag: 'TT-AS1003' },
+        { x: 790, y: HY, side: 't', label: 'Header pressure', key: 'PT-AS1004', unit: K, tag: 'PT-AS1004' },
+        { x: 935, y: HY, side: 't', label: 'Temperature', key: 'TT-AS1003', unit: '°C', dp: 0, tag: 'TT-AS1003' },
         { x: 1180, y: GSY, side: 't', label: 'After spray', key: 'TT-AS1015', unit: '°C', dp: 0, tag: 'TT-AS1015' },
         {
           x: 1500,
@@ -368358,16 +368392,16 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       ],
       taps: [
         {
-          x: 740,
+          x: 720,
           y,
           side: 't',
-          label: n === 1 ? 'Turbine exhaust pressure' : 'Pressure',
+          label: n === 1 ? 'Exhaust pressure' : 'Pressure' /* apk test 2026-11-22: shorter, clear of the valve name at 11 px */,
           key: e.p,
           unit: K,
           dp: 2,
           tag: e.p
         },
-        { x: 740, y, side: 'b', label: 'Temperature', key: e.t, unit: '°C', dp: 0, tag: e.t }
+        { x: 720, y, side: 'b', label: 'Temperature', key: e.t, unit: '°C', dp: 0, tag: e.t }
       ]
     };
   };
@@ -368416,7 +368450,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       texts: [
         { x: 960, y: 975, s: 'All drain valves open to the flash chamber.', cls: 'hx-note' },
         { x: 40, y: 100, s: 'extraction 6, no valve', cls: 'hx-note' },
-        { x: 372, y: 944, s: 'flash pipe', cls: 'hx-note', anchor: 'end' },
+        { x: 372, y: 928, s: 'flash pipe', cls: 'hx-note', anchor: 'end' } /* above its line, clear of the condenser pressure */,
         { x: 170, y: 780, s: 'in the condenser neck', cls: 'hx-note', anchor: 'middle' }
       ]
     }
@@ -368649,7 +368683,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           x: TX - 375,
           y: BH,
           side: 't',
-          label: 'Generator bearing 3',
+          label: 'Bearing 3' /* apk test 2026-11-22: 'Generator bearing 3' and '4' ran into each other at 11 px; they sit on the generator */,
           key: 'TEGE1007',
           unit: '°C',
           dp: 0,
@@ -368659,7 +368693,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           x: TX - 245,
           y: BH,
           side: 't',
-          label: 'Generator bearing 4',
+          label: 'Bearing 4',
           key: 'TEGE1008',
           unit: '°C',
           dp: 0,
@@ -368715,8 +368749,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1730, y: 440, side: 'l', label: 'Third transmitter', key: 'PTLO10073', unit: K, dp: 1, tag: 'PTLO10073' }
       ],
       texts: [
-        { x: 560, y: 978, s: 'control oil from the main oil tank', cls: 'hx-note' },
-        { x: 1020, y: 700, s: 'straight to the bearing oil header', cls: 'hx-note' }
+        { x: 700, y: 978, s: 'control oil from the main oil tank', cls: 'hx-note' },
+        { x: 990, y: 700, s: 'straight to the bearing oil header', cls: 'hx-note' }
       ]
     }
   });
@@ -369107,7 +369141,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
               'MWP-' + n,
               'Make-up pump ' + n,
               [V('Current', 'IIP0709' + n, 'A', 1), V('Strainer', 'DPIMU0709' + n, K, 3)],
-              { tag: 'P-0709' + n }
+              /* apk test 2026-11-22: the name in two lines, so its end clears the outlet valve box at 11 px on a 1280 tablet */
+              { tag: 'P-0709' + n, wrap: 8 }
             ),
             MX,
             MY[i],
@@ -369311,10 +369346,13 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       texts: [
         { x: 20, y: 40, s: 'MAKE-UP WATER', cls: 'hx-name' },
         { x: 20, y: 500, s: 'CLOSED COOLING WATER', cls: 'hx-name' },
-        { x: 160, y: 800, s: 'Users: turbine oil coolers, generator air coolers,', cls: 'hx-note' },
-        { x: 160, y: 820, s: 'boiler feed pump coolers, fans and gas air heater,', cls: 'hx-note' },
-        { x: 160, y: 840, s: 'bottom ash screw conveyors, air compressors', cls: 'hx-note' },
-        { x: 160, y: 860, s: 'and dryers, sampling rack.', cls: 'hx-note' },
+        /* apk test 2026-11-22: shorter lines, clear of the cooler outlet valves at 11 px on a 1280 tablet */
+        { x: 160, y: 800, s: 'Users: turbine oil coolers,', cls: 'hx-note' },
+        { x: 160, y: 818, s: 'generator air coolers, boiler feed', cls: 'hx-note' },
+        { x: 160, y: 836, s: 'pump coolers, fans and gas air', cls: 'hx-note' },
+        { x: 160, y: 854, s: 'heater, bottom ash screw conveyors,', cls: 'hx-note' },
+        { x: 160, y: 872, s: 'air compressors and dryers,', cls: 'hx-note' },
+        { x: 160, y: 890, s: 'sampling rack.', cls: 'hx-note' },
         { x: 620, y: 965, s: 'return to the pumps', cls: 'hx-note' }
       ]
     }
@@ -369363,12 +369401,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     VX = 1010; /* the values at the turbine */
   const STEP = [
     ['1 HP turbine warming', ['Warming start', 'Metal above 150 °C', 'Criteria D0']],
-    ['2 Turbine preparation', ['Chest warming', 'Turbine reset', 'Main stop valves open']],
+    ['2 Turbine preparation', ['Chest warming', 'Turbine reset', 'Stop valves open']],
     ['3 Rub check', ['Speed 200 rpm', 'Valves close', 'Below 100 rpm']],
     ['4 Acceleration', ['Soak 1800 rpm', 'Speed 3600 rpm', 'Soak 3600 rpm']],
     ['5 Excitation', ['Excitation on', 'Rated voltage', 'Criteria D4']],
     ['6 Synch. and initial load', ['Auto sync', '52G closed', 'Initial load hold']],
-    ['7 Load up', ['Intercept to control valves', 'Load to target', 'Criteria D6']],
+    ['7 Load up', ['Intercept to control', 'Load to target', 'Criteria D6']],
     ['8 Normal operation', ['No hold', 'Rate limit', 'Criteria D7']]
   ];
   const TRIP = [
@@ -369473,20 +369511,23 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           lab: 'r'
         }),
         at(L('generator', 'Generator page'), GX, 470, { id: 'gnl' }),
-        at(L('turbine-oil', 'Turbine oil'), VX + 200, 640, { id: 'tol' }),
+        at(L('turbine-oil', 'Turbine oil'), 1290, 690, { id: 'tol' }),
         /* the operator's load target and load rate (Jennie live run 2026-11-18, finding Target MW): the unit load demand station
            HIC-ULD (ABC-001A, MW) and the load change rate station HIC-MWRL (ABC-001B, 0 ~ 10 MW/min). In CCS the turbine master and
            the boiler master follow the demand at this rate (PR-OPE-5002 load up / load change); before, no plant page had them */
-        at(C('HIC-ULD', 'Unit load demand (target)', { sym: 'ctl', unit: 'MW', pvdp: 1, wrap: 16 }), 1240, 724, {
+        /* apk test 2026-11-22: under the trip list the three stations stood in a row above the step cards; at 11 px on a 1280 tablet
+           their numbers ran into each other and their mode row went under step 7. Now one column in the free room between the
+           values at the turbine and the trip list, the unit (MW) in the name as on the Unit overview */
+        at(C('HIC-ULD', 'Unit load demand, MW (target)', { sym: 'ctl', unit: '', pvdp: 0, wrap: 16 }), 1290, 290, {
           id: 'uld',
           lab: 'b'
         }),
-        at(C('HIC-MWRL', 'Load change rate', { sym: 'ctl', unit: 'MW/min', pvdp: 1, wrap: 16 }), 1420, 724, {
+        at(C('HIC-MWRL', 'Load change rate, MW/min', { sym: 'ctl', unit: '', pvdp: 1, wrap: 16 }), 1290, 425, {
           id: 'mwrl',
           lab: 'b'
         }),
         /* the turbine master EIC-TM (ABC-001C): in AUTO it moves the control valves to the load demand (CCS / turbine follow) */
-        at(C('EIC-TM', 'Turbine master', { sym: 'ctl', unit: 'MW', pvdp: 1, wrap: 16 }), 1600, 724, {
+        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 16 }), 1290, 560, {
           id: 'tm',
           lab: 'b'
         }),
@@ -369646,8 +369687,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     BUR = 'm:Burner A|m:Burner B|m:Burner C|m:Burner D';
   const SEQ = [
     ['1 Permissive OK', 'DITL-02|i|14'],
-    ['2 Burner air dampers at purge position 25 %', 'DITL-02|i|1+2+3+4'],
-    ['3 FURNACE PURGE START pressed', 'DITL-02|i|5'],
+    /* apk test 2026-11-22: short enough for the box at 11 px on a 1280 tablet (the purge position of the dampers is 25 %) */
+    ['2 Burner air dampers at 25 %', 'DITL-02|i|1+2+3+4'],
+    ['3 Furnace purge start pressed', 'DITL-02|i|5'],
     ['4 Purge in progress, 5 minutes', 'DITL-02|o|5'],
     ['5 Furnace purge completed', 'DITL-02|o|14'],
     ['6 Master fuel trip reset', 'DITL-03A|o|16|neg']
@@ -369690,7 +369732,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(E('furnace', '', '', [], { fire: 'v:TT-FG1090>300' }), FX, FY, { id: 'fu', under: true, sc: FS }),
         at(E('cyclone', '', '', [], { flow: IDF }), CX, CY, { id: 'cy', under: true, sc: CS }),
         at(E('sealpot', '', '', [], { flow: FAB }), CX, CY + 196 * CS, { id: 'sp', under: true, sc: CS, mir: true }),
-        at(E('backpass', '', '', [], { gasA: 'l:HICHR1002A', gasB: 'l:HICHR1002B' }), BPX, BPY, {
+        at(E('backpass', '', '', [], { gasA: 'l:HICHR1002A', gasB: 'l:HICHR1002B', few: true }), BPX, BPY, {
           id: 'bp',
           under: true,
           sc: BS
@@ -369750,7 +369792,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         pp('pp12', 'No boiler trip command', 'DITL-01|i|14', 1475, 500, 290),
 
         /* ---- purge sequence (DITL-02) ---- */
-        at(B('Purge permissive', 'data-dys="PP|DITL-01|9|PURGE PERMISSIVE"', { w: CW, show: true }), QX, QY, { id: 'pps' }),
+        at(B('Purge permissive', 'data-dys="PP|DITL-01|9|"', { w: CW, show: true }), QX, QY, { id: 'pps' }),
         ...SEQ.map((p, i) => at(B(p[0], dy(p[1]), { w: CW, show: true }), QX, QY + (i + 1) * QD, { id: 'sq' + i })),
         at(B('Furnace purge', 'data-do="DITL-02|15|OK|NOT OK"', { w: CW, show: true }), QX, QY + 7 * QD + 10, { id: 'fp' }),
         at(B('Purge ready', 'data-do="DITL-02|9|YES|NO"', { w: CW, show: true }), QX, QY + 8 * QD + 10, { id: 'pr' }),
@@ -369796,7 +369838,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { med: 'coal', w: W_C, pts: ['fd.out', [490.4, 345], [620, 345], [620, FY + 276 * FS], 'fu.coal'], flow: COAL }
       ],
       taps: [
-        { x: 740, y: 640, side: 'b', label: 'Primary air', key: 'pv:FICFA1071', unit: 't/h', tag: 'FT-FA1071' },
+        { x: 780, y: 640, side: 'b', label: 'Primary air', key: 'pv:FICFA1071', unit: 't/h', tag: 'FT-FA1071' },
         { x: 400, y: 40, side: 'b', label: 'Secondary air', key: 'pv:FICFA1081', unit: 't/h', tag: 'FT-FA1081' }
       ],
       texts: [
@@ -369813,9 +369855,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1330, y: 330, s: 'Cyclone outlet A', key: 'TT-FG1095-A', unit: '°C', dp: 0 },
         { x: 1330, y: 346, s: 'Cyclone outlet B', key: 'TT-FG1095-B', unit: '°C', dp: 0 },
         { x: 20, y: TY - 34, s: 'MASTER FUEL TRIP · any one trips', cls: 'hx-zone' },
-        { x: 292, y: 624, s: 'Hot restart: bed above 700 °C counts', cls: 'hx-note' },
-        { x: 292, y: 638, s: 'the purge complete 7 s after the trip.', cls: 'hx-note' },
-        { x: 292, y: 652, s: 'Reset: purge completed, no trip input left.', cls: 'hx-note' }
+        { x: 292, y: 596, s: 'Hot restart: bed above 700 °C counts', cls: 'hx-note' },
+        { x: 292, y: 613, s: 'the purge complete 7 s after the trip.', cls: 'hx-note' },
+        { x: 292, y: 630, s: 'Reset: purge completed, no trip input left.', cls: 'hx-note' }
       ]
     }
   });

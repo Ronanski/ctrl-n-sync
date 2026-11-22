@@ -188,12 +188,12 @@
         { med: 'air', w: W_SM, pts: [[1460, 620], 'vb.l'], flow: 'x:MV-AV1391', arrow: false },
         { med: 'air', w: W_SM, pts: ['vb.r', [1660, 620]], to: 'condenser', flow: 'x:MV-AV1391' },
         { med: 'condensate', w: W_WT, pts: [[1460, 800], 'hs.l'], flow: 'm:LP EXHAUST HOOD SPRAY', arrow: false },
-        { med: 'condensate', w: W_WT, pts: ['hs.r', [1660, 800]], to: 'exhaust hood', flow: 'm:LP EXHAUST HOOD SPRAY' }
+        { med: 'condensate', w: W_WT, pts: ['hs.r', [1620, 800]], to: 'exhaust hood', flow: 'm:LP EXHAUST HOOD SPRAY' }
       ],
       taps: [
         { x: 630, y: MSY, side: 't', label: 'After spray', key: 'TT-AS1001', unit: '°C', dp: 0, tag: 'TT-AS1001' },
-        { x: 820, y: HY, side: 't', label: 'Header pressure', key: 'PT-AS1004', unit: K, tag: 'PT-AS1004' },
-        { x: 910, y: HY, side: 't', label: 'Temperature', key: 'TT-AS1003', unit: '°C', dp: 0, tag: 'TT-AS1003' },
+        { x: 790, y: HY, side: 't', label: 'Header pressure', key: 'PT-AS1004', unit: K, tag: 'PT-AS1004' },
+        { x: 935, y: HY, side: 't', label: 'Temperature', key: 'TT-AS1003', unit: '°C', dp: 0, tag: 'TT-AS1003' },
         { x: 1180, y: GSY, side: 't', label: 'After spray', key: 'TT-AS1015', unit: '°C', dp: 0, tag: 'TT-AS1015' },
         {
           x: 1500,

@@ -30,10 +30,10 @@
   const TX = 215,
     TY = 330,
     TS = 2.4 /* tank */,
-    PAX = 400,
-    PBX = 590,
+    PAX = 385 /* apk test 2026-11-22: the pumps 235 apart (was 190), so their state rows clear each other at 11 px */,
+    PBX = 620,
     SAX = 320,
-    SBX = 510 /* suction risers */,
+    SBX = 540 /* suction risers */,
     SUY = 940 /* suction header */,
     PY = 760,
     PS = 1.6 /* pumps */,
@@ -165,7 +165,7 @@
           rot: -90,
           lab: 'r'
         }),
-        at(C('HICDO1012', 'Supply valve to the burners', { tag: 'FCV-DO1012', wrap: 16 }), 690, DY, {
+        at(C('HICDO1012', 'Supply valve to the burners', { tag: 'FCV-DO1012', wrap: 16 }), 705, DY, {
           id: 'sup',
           lab: 'b'
         }),
@@ -174,10 +174,10 @@
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-N): the two CRT push buttons of ABC-003E (OIL MASTER USE M.008C, OIL MASTER
            NOT USE M.008D, TPs 2 s -> FF M.008F, which lets FICDO1043A ~ D go to AUTO under FIC-OM); lit = the selection of M.008F.
            No operator page had them: the burner oil valves stayed forced to MANUAL */
-        at(HX.B('OIL MASTER USE', 'data-apb="ABC-003E|M.008C|M.008F=1"', { press: true }), 1100, 915, { id: 'omu' }),
-        at(HX.B('OIL MASTER NOT USE', 'data-apb="ABC-003E|M.008D|M.008F=0"', { press: true }), 1100, 965, { id: 'omn' }),
+        at(HX.B('OIL MASTER USE', 'data-apb="ABC-003E|M.008C|M.008F=1"', { press: true, w: 200 }), 1100, 915, { id: 'omu' }),
+        at(HX.B('OIL MASTER NOT USE', 'data-apb="ABC-003E|M.008D|M.008F=0"', { press: true, w: 200 }), 1100, 965, { id: 'omn' }),
         ...B.flatMap(b => b.items),
-        at(L('combustion-air', 'Hot secondary air', { back: true }), AIRX + 80, 90, { id: 'hsa' }),
+        at(L('combustion-air', 'Hot secondary air', { back: true }), AIRX + 60, 90, { id: 'hsa' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-M): the atomizing air of the burners is plant air (DITL-07 row 11
            PSL-PA1043-x1): the burners stayed not ready with no plant air compressor running, and no page of the burners led to it */
         at(L('compressed-air', 'Plant air (atomizing air)'), 1350, 960, { id: 'pal' })

@@ -61,7 +61,7 @@
         at(E('furnace', '', '', [], { fire: GAS }), FX, FY, { id: 'fu', under: true }),
         at(E('drum', '', '', [], { id: 'ovdr' }), FX, 100, { id: 'dr', under: true, sc: 0.6 }),
         at(E('cyclone', '', '', [], { flow: GAS }), CYX, CYY, { id: 'cy', under: true }),
-        at(E('backpass', '', '', [], { gasA: GAS, gasB: GAS, steam: STM }), BX, BY, { id: 'bp', under: true, sc: BS }),
+        at(E('backpass', '', '', [], { gasA: GAS, gasB: GAS, steam: STM, few: true }), BX, BY, { id: 'bp', under: true, sc: BS }),
         at(M('airheater', 'AIR PREHEATER', 'Air heater', []), AX, AY, { id: 'ah', lab: 'l' }),
         at(E('esp', '', '', [], { on: GAS }), EX, EY, { id: 'esp', under: true }),
         at(M('fan', 'IDF', 'Induced draft fan', []), IX, IY, { id: 'idf', lab: 'b' }),
@@ -91,7 +91,7 @@
           id: 'uld',
           lab: 'r'
         }),
-        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 18 }), 1560, 250, {
+        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 10 }), 1560, 250, {
           id: 'tm',
           lab: 'r'
         }),
@@ -109,12 +109,14 @@
         }),
 
         /* ---- the page of every part ---- */
-        at(L('coal', 'Coal'), 70, 430, { id: 'l1' }),
-        at(L('limestone-sand', 'Limestone and sand'), 70, 462, { id: 'l2' }),
-        at(L('oil-burners', 'Oil burners'), 70, 494, { id: 'l3' }),
-        at(L('combustion-air', 'Combustion air'), 70, 526, { id: 'l4' }),
-        at(L('purge-trip', 'Purge and trip'), 70, 558, { id: 'l5' }),
-        at(L('ash', 'Ash and precipitator'), 70, 590, { id: 'l6' }),
+        /* apk test 2026-11-22: the boiler pages stood at x 70 and the longer names were cut by the left edge on a 1280 tablet (no room
+           beside the feedwater line): now a second column next to the gas pages, in the free room left of the stack */
+        at(L('coal', 'Coal'), 1130, 250, { id: 'l1' }),
+        at(L('limestone-sand', 'Limestone and sand'), 1130, 282, { id: 'l2' }),
+        at(L('oil-burners', 'Oil burners'), 1130, 314, { id: 'l3' }),
+        at(L('combustion-air', 'Combustion air'), 1130, 346, { id: 'l4' }),
+        at(L('purge-trip', 'Purge and trip'), 1130, 378, { id: 'l5' }),
+        at(L('ash', 'Ash and precipitator'), 1130, 410, { id: 'l6' }),
         at(L('furnace-gas', 'Furnace and flue gas'), 850, 250, { id: 'l7' }),
         at(L('sootblowers', 'Sootblowers'), 850, 282, { id: 'l8' }),
         at(L('drum-steam', 'Boiler steam'), 850, 314, { id: 'l9' }),
@@ -167,7 +169,7 @@
         { x: 900, y: 60, side: 'b', label: 'Main steam pressure', key: 'PT-MS1002', unit: K, tag: 'PT-MS1002' },
         { x: 1100, y: 60, side: 'b', label: 'Temperature', key: 'pv:TICMS1004', unit: '°C', dp: 0, tag: 'TICMS1004' },
         { x: 1300, y: 60, side: 'b', label: 'Flow', key: 'ABC-001C|SI0230', unit: 't/h', tag: 'FT-MS1031' },
-        { x: 150, y: 700, side: 'r', label: 'Feedwater flow', key: 'pv:FICFW1007', unit: 't/h', tag: 'FICFW1007' }
+        { x: 150, y: 760, side: 'r', label: 'Feedwater flow', key: 'pv:FICFW1007', unit: 't/h', tag: 'FICFW1007' }
       ],
       texts: [
         { x: 24, y: 40, s: 'BOILER', cls: 'hx-zone' },

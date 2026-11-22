@@ -745,12 +745,14 @@
             s = call(() => D().dOf(ad), null),
             ok = s ? call(() => DUI.outVal(s, +row), null) : null,
             col = ok == null ? C.none : ok ? C.run : C.stop;
+          /* an empty label: the state alone (the HX purge box has its name above it; apk test 2026-11-22, it ran out of its box) */
+          const pre = lab ? lab + ': ' : '';
           e.textContent =
             ok == null
-              ? lab + ': -----'
+              ? pre + '-----'
               : ok
-                ? lab + ': OK'
-                : lab + ': NOT OK (' + miss + ' of ' + ys.length + ' missing)';
+                ? pre + 'OK'
+                : pre + 'NOT OK (' + miss + ' of ' + ys.length + ' missing)';
           setAt(e, 'fill', col);
           qa(`[data-dysr="${g}"]`).forEach(r => setAt(r, 'stroke', col));
         });

@@ -25,7 +25,7 @@
     W_A = 8,
     W_S = 5;
   /* places (the drawing is 1760 x 1000) */
-  const BX = [230, 540, 850],
+  const BX = [200, 540, 880] /* apk test 2026-11-22: 340 apart (was 310), so a feeder's name and state clear the motor of the one before at 11 px */,
     BY = 290,
     BS = 2 /* bunkers */,
     FDY = 500,
@@ -124,7 +124,7 @@
         /* the boiler side of the coordinated control (ABC-001C, Jennie live run 2026-11-18): the boiler pressure controller PIC-COBM
            and the boiler master HIC-BM give the fuel demand to the coal master; before, no plant page had them and CCS could not be
            put in AUTO from the plant pages (PR-OPE-5002 "Put Boiler Master to Auto") */
-        at(C('PIC-COBM', 'Boiler pressure control', { sym: 'ctl', unit: 'kg/cm²', pvdp: 1, wrap: 20 }), 900, 90, { id: 'cobm', lab: 't' }),
+        at(C('PIC-COBM', 'Boiler pressure control, kg/cm²', { sym: 'ctl', unit: '', pvdp: 1, wrap: 20 }), 900, 90, { id: 'cobm', lab: 't' }),
         at(C('HIC-BM', 'Boiler master', { sym: 'ctl', unit: '%', pvdp: 1 }), 1100, 90, { id: 'bm', lab: 't' }),
         /* the coal feeder master FIC-CF (ABC-004A): PV = average of the three feeder MVs, its MV is the feeders' AUTO demand; the coal
            master AUTO needs FIC-CF.REM = 1 (force manual on ABC-004A), and no plant page had it (Jennie live run 2026-11-18) */

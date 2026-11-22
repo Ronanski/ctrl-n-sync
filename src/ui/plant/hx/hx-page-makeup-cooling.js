@@ -84,7 +84,8 @@
               'MWP-' + n,
               'Make-up pump ' + n,
               [V('Current', 'IIP0709' + n, 'A', 1), V('Strainer', 'DPIMU0709' + n, K, 3)],
-              { tag: 'P-0709' + n }
+              /* apk test 2026-11-22: the name in two lines, so its end clears the outlet valve box at 11 px on a 1280 tablet */
+              { tag: 'P-0709' + n, wrap: 8 }
             ),
             MX,
             MY[i],
@@ -288,10 +289,13 @@
       texts: [
         { x: 20, y: 40, s: 'MAKE-UP WATER', cls: 'hx-name' },
         { x: 20, y: 500, s: 'CLOSED COOLING WATER', cls: 'hx-name' },
-        { x: 160, y: 800, s: 'Users: turbine oil coolers, generator air coolers,', cls: 'hx-note' },
-        { x: 160, y: 820, s: 'boiler feed pump coolers, fans and gas air heater,', cls: 'hx-note' },
-        { x: 160, y: 840, s: 'bottom ash screw conveyors, air compressors', cls: 'hx-note' },
-        { x: 160, y: 860, s: 'and dryers, sampling rack.', cls: 'hx-note' },
+        /* apk test 2026-11-22: shorter lines, clear of the cooler outlet valves at 11 px on a 1280 tablet */
+        { x: 160, y: 800, s: 'Users: turbine oil coolers,', cls: 'hx-note' },
+        { x: 160, y: 818, s: 'generator air coolers, boiler feed', cls: 'hx-note' },
+        { x: 160, y: 836, s: 'pump coolers, fans and gas air', cls: 'hx-note' },
+        { x: 160, y: 854, s: 'heater, bottom ash screw conveyors,', cls: 'hx-note' },
+        { x: 160, y: 872, s: 'air compressors and dryers,', cls: 'hx-note' },
+        { x: 160, y: 890, s: 'sampling rack.', cls: 'hx-note' },
         { x: 620, y: 965, s: 'return to the pumps', cls: 'hx-note' }
       ]
     }

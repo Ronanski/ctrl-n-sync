@@ -82,7 +82,7 @@
           sc: FS,
           lab: 'b'
         }),
-        at(C('FICFA1071', 'Primary air fan inlet vane', { tag: 'MCV-FA1053-1', wrap: 16 }), 130, FY, {
+        at(C('FICFA1071', 'Primary air fan inlet vane', { tag: 'MCV-FA1053-1', wrap: 16 }), 95, FY, {
           id: 'pad',
           lab: 't'
         }),
@@ -90,7 +90,7 @@
         at(L('furnace-gas', 'Hot primary air to the furnace'), 330, 430, { id: 'pal' }),
         at(L('coal', 'To the coal pipes'), 330, 360, { id: 'cpl' }),
         at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', []), 90, 952, { id: 'loa', sc: 0.8, lab: 'r' }),
-        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 330, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 380, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
 
         /* ---- secondary air ---- */
         at(M('fan', 'SAF', 'Secondary air fan', [V('Current', 'IT-F1054', 'A')]), SFX, FY, {
