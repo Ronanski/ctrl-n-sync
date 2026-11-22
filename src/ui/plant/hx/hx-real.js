@@ -341,7 +341,8 @@
       { x: 160, y: 230, s: 'Economizer 3', cls: 'rx-in2', size: 8.8 },
       { x: 160, y: 290, s: 'Economizer', cls: 'rx-in2', size: 8.8 },
       { x: 160, y: 303, s: '2S', cls: 'rx-in2', size: 8.8 },
-      { x: 108, y: 446, s: 'Economizer 1', cls: 'rx-in2', size: 8.8 }
+      /* beta.305 e1y: under its bank, clear of the pass damper words above it (Furnace and flue gas) */
+      { x: 108, y: o.e1y || 446, s: 'Economizer 1', cls: 'rx-in2', size: 8.8 }
         ];
     return {
       box: sh ? [-1, -50, 244, 512] : [-28, -50, 217, 512],

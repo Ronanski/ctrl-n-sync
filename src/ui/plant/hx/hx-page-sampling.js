@@ -163,7 +163,7 @@
             {
               med: 'water',
               w: 4,
-              pts: [[xs, PY], [xs, 840], [pb(sx) - 70, 840], [pb(sx) - 70, PY], 'pb' + i + '.s'],
+              pts: [[xs, PY], [xs, 872], [pb(sx) - 70, 872], [pb(sx) - 70, PY], 'pb' + i + '.s'],
               flow: Bp,
               arrow: false
             },

@@ -87,23 +87,23 @@
         at(M('pump', 'BFWP-A', 'Boiler feed pump A', []), 250, 930, { id: 'bfp', sc: 0.8, lab: 'b', mir: true }),
 
         /* ---- coordinated control ---- */
-        at(C('HIC-ULD', 'Unit load demand, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 16 }), 1560, 150, {
+        at(C('HIC-ULD', 'Unit load demand, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 16 }), 1530, 150, {
           id: 'uld',
           lab: 'r'
         }),
-        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 10 }), 1560, 250, {
+        at(C('EIC-TM', 'Turbine master, MW', { sym: 'ctl', unit: '', pvdp: 0, wrap: 10 }), 1530, 250, {
           id: 'tm',
           lab: 'r'
         }),
-        at(C('PIC-COBM', 'Boiler pressure, kg/cm²', { sym: 'ctl', unit: '', pvdp: 0, wrap: 18 }), 1560, 350, {
+        at(C('PIC-COBM', 'Boiler pressure, kg/cm²', { sym: 'ctl', unit: '', pvdp: 0, wrap: 18 }), 1530, 350, {
           id: 'bpc',
           lab: 'r'
         }),
-        at(C('HIC-BM', 'Boiler master', { sym: 'ctl', unit: '', pvdp: 1, wrap: 18 }), 1560, 450, {
+        at(C('HIC-BM', 'Boiler master', { sym: 'ctl', unit: '', pvdp: 1, wrap: 18 }), 1530, 450, {
           id: 'bm',
           lab: 'r'
         }),
-        at(C('FIC-CM', 'Coal master, t/h', { sym: 'ctl', unit: '', pvdp: 1, wrap: 18 }), 1560, 550, {
+        at(C('FIC-CM', 'Coal master, t/h', { sym: 'ctl', unit: '', pvdp: 1, wrap: 18 }), 1530, 550, {
           id: 'cm',
           lab: 'r'
         }),
@@ -186,7 +186,7 @@
         { x: TX - 50, y: TY + 152, s: 'Turbine and condenser', cls: 'hx-name' },
         { x: TX + 60, y: TY - 60, s: 'Speed', key: 'SI-TB', unit: 'rpm', dp: 0 },
         { x: TX - 50, y: TY + 170, s: 'Condenser pressure', key: 'PT-CD1110', unit: K + ' abs', dp: 3 },
-        { x: 1490, y: 100, s: 'COORDINATED CONTROL', cls: 'hx-zone' },
+        { x: 1460, y: 100, s: 'COORDINATED CONTROL', cls: 'hx-zone' },
         { x: 1490, y: 720, s: 'PAGES', cls: 'hx-zone' }
       ]
     }

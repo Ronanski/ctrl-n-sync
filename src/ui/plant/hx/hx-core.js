@@ -43,6 +43,18 @@
   };
 
   /* ---------- what a page is made of ---------- */
+  /* beta.305 (user 2026-11-22: "dpat kasi scalable lahat pra kht anong screen size"): the page is fitted whole on every screen of the
+     Operator Station where the whole page can be drawn at 0.55 or more (a 1280 x 800 tablet or desktop and up; the words keep 11 px and
+     were placed for that size), touch or mouse alike. A smaller screen (a phone) cannot hold the whole page at 11 px: there the drawing
+     keeps its readable size (0.68) and moves under the finger. The body class st-fit tells station.css which of the two it is */
+  HX.fitWhole = () => {
+    if (!window.LS_STATION) return false;
+    const e = document.getElementById('plsvg'),
+      r = e ? e.getBoundingClientRect() : null,
+      ok = r && r.width > 0 ? Math.min(r.width / 1920, r.height / 1140) >= 0.55 : matchMedia('(pointer: coarse)').matches;
+    if (document.body) document.body.classList.toggle('st-fit', ok);
+    return ok;
+  };
   HX.V = (label, key, unit, dp) => ({ label, key, unit: unit || '', dp: dp == null ? 1 : dp });
   HX.E = (sym, name, tag, vals, o) => Object.assign({ k: 'eq', sym, name, tag: tag || '', vals: vals || [] }, o || {});
   HX.M = (sym, mach, name, vals, o) => Object.assign({ k: 'mach', sym, mach, name, vals: vals || [] }, o || {});
@@ -406,7 +418,20 @@
           `<text class="hx-st none" data-vs="${esc(it.valve)}" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">-----</text>`
       ]);
     /* audit 2026-11-21 B2: the output and its % are one line of text, so "100.0" pushes the % on instead of running into it */
+    /* beta.305: mvb, the output on its own line under the mode pill, for two loops side by side (their pills grow on a small screen) */
     if (it.k === 'loop') {
+      if (it.mvb) {
+      body.push([
+        16.5,
+        (bx, by, an) =>
+          `<g class="hx-mode" data-mode="${esc(it.loop)}" transform="translate(${n1(bx - (an === 'middle' ? 25 : an === 'end' ? 50 : 0))} ${n1(by - 11)})"><rect width="50" height="15" rx="7.5"/><text x="25" y="11" text-anchor="middle">-----</text></g>`
+      ]);
+      body.push([
+        14.5,
+        (bx, by, an) =>
+          `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}"><tspan class="hx-val" data-lp="${esc(it.loop)}|mv">-----</tspan><tspan class="hx-unit"> %</tspan></text>`
+      ]);
+      } else
       body.push([
         16.5,
         (bx, by, an) =>
@@ -451,7 +476,7 @@
     if (side) {
       const all = head.concat(body),
         tot = all.reduce((q, r) => q + r[0], 0),
-        bx = lab === 'r' ? box[2] + 7 : box[0] - 7,
+        bx = (lab === 'r' ? box[2] + 7 : box[0] - 7) + (it.lx || 0) /* beta.305: lx moves a side label */,
         b0 = -tot / 2 + 10 + (it.ly || 0),
         ey = b0 + (tot - all[all.length - 1][0]) / 2 - 4;
       let by = b0;
@@ -973,15 +998,16 @@
          scrolls. The size of the frame is read (its CSS px against its screen px), so a smaller window or an open menu are both met */
       /* apk test of the user 2026-11-22: on a touch screen of the Operator Station the page is fitted whole (station.css), so the
          drawing gets no minimum width there */
-      if (window.LS_STATION && matchMedia('(pointer: coarse)').matches) {
+      if (HX.fitWhole()) {
         if (svg.style.minWidth) svg.style.minWidth = '';
       } else if (svg.classList.contains('hx-real') && svg.viewBox && svg.viewBox.baseVal && svg.clientWidth) {
         const vb = svg.viewBox.baseVal.width,
           fr = svg.getBoundingClientRect().width / svg.clientWidth,
-          w = fr > 0 ? Math.ceil((0.8 * vb) / fr) : 0,
-          w0 = Math.max(1400, w);
+          st = !!window.LS_STATION,
+          w = fr > 0 ? Math.ceil(((st ? 0.68 : 0.8) * vb) / fr) : 0,
+          w0 = st ? w : Math.max(1400, w);
         if (w && Math.abs((parseFloat(svg.style.minWidth) || 1400) - w0) > 2)
-          svg.style.minWidth = w0 > 1400 ? w0 + 'px' : '';
+          svg.style.minWidth = st || w0 > 1400 ? w0 + 'px' : '';
       }
     }
     /* the scale class of each drawing (it hides the tag numbers, so it comes before the words are read) */
@@ -1008,6 +1034,29 @@
           g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')
         ]);
       }
+      /* screen sizes 2026-11-23: the mode pill grows with its word (the word grew to 11 px, the 50 x 15 pill did not); it grows from its centre and the output value beside it moves on by half */
+      for (const g of svg.querySelectorAll('.hx-mode')) {
+        const host = g.parentNode,
+          rc = g.querySelector('rect'),
+          T = g.querySelectorAll(':scope > text');
+        if (!host || !host.getScreenCTM || !rc || !T.length) continue;
+        const M = host.getScreenCTM(),
+          k = M ? Math.hypot(M.a, M.b) : 0,
+          s = k ? Math.max(1, MINPX / (10.4 * k)) : 1,
+          on = s > 1.01,
+          A = (e, a, grown, base) => {
+            const v = on ? n1(grown) : base;
+            if (e.getAttribute(a) !== v) W.push([e, 'at', [a, v]]);
+          };
+        A(rc, 'x', 25 - 25 * s, '0');
+        A(rc, 'width', 50 * s, '50');
+        A(rc, 'height', 15 * s, '15');
+        A(rc, 'y', 7.5 - 7.5 * s, '0');
+        A(rc, 'rx', 7.5 * s, '7.5');
+        A(T[0], 'x', 25, '25');
+        A(T[0], 'y', 11 + 3.5 * (s - 1), '11');
+        if (T[1]) A(T[1], 'x', 56 + 25 * (s - 1), '56');
+      }
       for (const t of svg.querySelectorAll('text, tspan')) {
         if (quick && MTK.get(t) === SK[SV.indexOf(svg)]) continue;
         if (!t.getClientRects().length || t.closest('.hx-yn')) continue;
@@ -1027,6 +1076,7 @@
     }
     for (const [e, k, v] of W)
       if (k === 'tr') e.getAttribute('transform') !== v && e.setAttribute('transform', v);
+      else if (k === 'at') e.setAttribute(v[0], v[1]);
       else if (e.style.fontSize !== v) e.style.fontSize = v;
     if (!quick || W.length) spread(SV);
     return MEAS;
@@ -1035,7 +1085,7 @@
      to 11 screen px needs 14 x (11 / k) / 12.6. Only on a touch screen of the Operator Station, where the page is fitted whole; a mouse
      screen keeps the drawing as it was planned (never under 0.8 there) */
   function spread(SV) {
-    const on = window.LS_STATION && matchMedia('(pointer: coarse)').matches,
+    const on = !!window.LS_STATION /* screen sizes 2026-11-23: every station screen, the phone too (its drawing is 0.68) */,
       R = [];
     for (const svg of SV)
       for (const r of svg.querySelectorAll('.hx-row')) {
