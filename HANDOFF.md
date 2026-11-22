@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-22 16:10 PHT** (LEADER : JENNIE, beta.284: SH panels sa FHI design heat, spray sumusunod sa FHI Fig 10).
+Huling update: **2026-11-22 17:40 PHT** (LEADER : JENNIE, beta.286: SH panels may init ulit mula sa gas sa start-up).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -14,7 +14,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.284**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.286**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
@@ -38,7 +38,7 @@ Jennie, bahagi o bukas:
 - #12 Warm / Hot sa start screen (mula sa trip sa 150 MW, physics).
 - #13 116 na alarm tag na wala sa app, at alarm priority.
 - #19 sootblower 80H ~ 80L.
-- Part load (ulat 284): 127.5 MW bed 991 kapag AUTO ang O2 trim sa LN16 (drawing = FHI 20 % excess air), 936 kapag hawak ang trim gaya ng plant: walang babaguhin (F1); MST 546 sa 90-105 MW vs FHI 541, plant 522 = fouling (F2); Cold run ng user (F3). Jennie.
+- Part load (ulat 286): exit gas sa FHI 75-90 MW; SH spray 12 t/h sa 90 MW laban sa FHI 0, nasa backpass SH ang sobra (F1). Start-up bed 35-90 °C mas mainit kaysa 280 (F2). Cold run ng user (F3). O2 trim sa 127.5 MW: walang babaguhin (ulat 284). Jennie.
 - Worker = page mirror: `$id` ng `AN_UNIT.asF` (ulat 276 F2, Rosé beta.277). Reset sa page engine lang (fallback): may natitirang nets `_v` at plant switch list (ulat 280 F1, Jennie).
 
 Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engineer).
