@@ -784,7 +784,8 @@ document.head.appendChild(
         t3 =
           'v@@VERSION@@' + ' · build @@BUILD@@'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
-      if (c3.textContent !== t3) c3.textContent = t3;
+      /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
+      if (c3.textContent !== t3) c3.textContent = 'v@@VERSION@@' + ' · build @@BUILD@@';
     } catch (e) {}
   };
   upd();

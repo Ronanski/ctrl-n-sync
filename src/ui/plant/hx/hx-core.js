@@ -1156,23 +1156,45 @@
       setAt(e, 'class', cur + ' hx-' + c);
     };
     let mtT = mt0;
-    /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): the moving parts of the page (hx.css, 10 steps a second each) on one clock, so their steps
-       fall on the same frames and the page is redrawn 10 times a second, not on every frame. A part that starts later (a pump started)
-       is lined up when it starts (its animationstart: reading every animation of the page each tick cost more than the lining up) */
-    const align = L => {
+    /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): the moving parts of the page (hx.css, 10 steps a second each) run on ONE clock of 10 steps
+       a second (the user's rule of 2026-11-01: all flow animation on one shared clock). A running CSS animation made the browser
+       restyle it on every frame, also between two steps (Chrome trace of the Drum page: 55 restyles a second, a third of the CPU at
+       6 x). Each animation of the page is held (pause) and the clock sets its time 10 times a second, so the page is restyled and
+       redrawn 10 times a second. The keyframes stay those of hx.css; a part that starts later (a pump started) joins the clock at its
+       animationstart; a part that stops (its class) leaves it. The clock stands while the page is hidden or not on the process view */
+    const CLK = new Set();
+    const join = L => {
       for (const an of L)
-        if (an.playState === 'running' && an.startTime != null && an.startTime % 100)
-          an.startTime = Math.floor(an.startTime / 100) * 100;
+        if (!CLK.has(an)) {
+          CLK.add(an);
+          an.pause();
+        }
     };
+    let clk = 0;
+    function clock() {
+      if (!page.isConnected) return void (clearInterval(clk), (clk = 0), CLK.clear());
+      if (document.hidden || view !== 'process') return;
+      const t = Math.floor(performance.now() / 100) * 100;
+      for (const an of CLK) {
+        const el = an.effect && an.effect.target;
+        if (an.playState === 'idle' || !el || !el.isConnected) {
+          CLK.delete(an);
+          continue;
+        }
+        if (an.currentTime !== t) an.currentTime = t;
+      }
+    }
     let synced = false;
     function sync() {
       if (synced || !page.getAnimations) return;
       synced = true;
-      align(page.getAnimations({ subtree: true }));
+      join(page.getAnimations({ subtree: true }));
+      clock();
+      clk = setInterval(clock, 100);
     }
     page.addEventListener('animationstart', e => {
       const t = e.target;
-      if (t && t.getAnimations) requestAnimationFrame(() => align(t.getAnimations()));
+      if (t && t.getAnimations) join(t.getAnimations());
     });
     function tick(force) {
       const D = HX.data;
