@@ -171,6 +171,10 @@
         busy = false;
         N.abc++;
         N.sent += ENG.send() ? 1 : 0;
+        /* beta.278 (JENNIE, eng_worker W.live): this patch (sent now, or owed and sent after the ack) carries WORLD.live as it is now. While
+           the plant runs this tick scans the world and the timer below returns early (WORLD._drvT), so the timer never saw live true:
+           its lastLive stayed false from before RUN, and at the pause (live true -> false) it found no change and sent nothing */
+        lastLive = WORLD.live;
       }, 100)
     );
     timers.push(
