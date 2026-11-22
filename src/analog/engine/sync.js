@@ -182,9 +182,9 @@ function anSyncSlots() {
           s.nl = netlist(s);
         } catch (e) {}
       if (!s.nl) continue;
-      add('dn' + n, () => ({ v: (s.nl._v || []).map(x => (x ? 1 : 0)).join(''), g: (s.nl.gates || []).map(g => ditlPick(g, DITL_G)) }), d => {
+      add('dn' + n, () => ({ v: s.nl._v ? s.nl._v.map(x => (x ? 1 : 0)).join('') : null /* beta.277: null and an empty array differ (the mirror kept null for []) */, g: (s.nl.gates || []).map(g => ditlPick(g, DITL_G)) }), d => {
         const nl = s.nl;
-        nl._v = d.v ? Array.from(d.v, c => +c) : null;
+        nl._v = d.v == null ? null : Array.from(d.v, c => +c);
         (nl.gates || []).forEach((g, i) => { if (d.g[i]) for (const x of DITL_G) if (x in d.g[i]) g[x] = ditlDec(d.g[i][x]); else delete g[x]; });
       }, { raw: 1 });
       add('dx' + n, () => ditlPick(s.nl, ['fx', 'ufx']), d => { for (const x of ['fx', 'ufx']) if (x in d) s.nl[x] = ditlDec(d[x]); else delete s.nl[x]; }, { w: 1, raw: 1 });

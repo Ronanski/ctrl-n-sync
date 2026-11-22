@@ -44,7 +44,8 @@ const AN_EL = {
 function anElec(U) {
   U = U || AN_UNIT;
   if (!U || !U.on) return null;
-  const e = U.el || (U.el = { l52: true }),
+  /* beta.277: a read only; the panels call it on the page mirror, where it made U.el the Worker does not have (the step makes it) */
+  const e = U.el || { l52: true },
     tb = U.tb || {},
     g52 = tb.st === 'sync' || tb.st === 'load',
     G = typeof anGenEl === 'function' ? anGenEl() : null,
