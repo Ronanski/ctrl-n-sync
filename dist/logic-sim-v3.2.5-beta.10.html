@@ -156076,10 +156076,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 2115c63'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 089f958'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 2115c63';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 089f958';
     } catch (e) {}
   };
   upd();
@@ -346124,7 +346124,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 2115c63'));
+    row('Version', E('span', 'scsver', ver + ' · build 089f958'));
   }
   function openSet(near) {
     if (!set) {
@@ -364012,12 +364012,19 @@ window.PLANT_SYS = [
        6 x). Each animation of the page is held (pause) and the clock sets its time 10 times a second, so the page is restyled and
        redrawn 10 times a second. The keyframes stay those of hx.css; a part that starts later (a pump started) joins the clock at its
        animationstart; a part that stops (its class) leaves it. The clock stands while the page is hidden or not on the process view */
-    const CLK = new Set();
+    /* the clock reads nothing of an animation on a step: a read of playState or currentTime of a CSS animation makes the browser work
+       out the styles first, and after the first write each read did it again (a profile of the Drum page in RUN, 42 moving parts:
+       about 15 ms a step at 6 x). The target of each part is kept when it joins; a part whose element left the page leaves at once,
+       one that stopped (idle) leaves at the next check every 2 s */
+    const CLK = new Map();
+    let clkT = -1,
+      clkChk = 0;
     const join = L => {
       for (const an of L)
         if (!CLK.has(an)) {
-          CLK.add(an);
+          CLK.set(an, an.effect && an.effect.target);
           an.pause();
+          if (clkT >= 0) an.currentTime = clkT;
         }
     };
     let clk = 0;
@@ -364027,14 +364034,20 @@ window.PLANT_SYS = [
       /* F6 2026-11-22: not while the overview or a logic / library tab covers the plant page (it still moved its parts 10 times a second) */
       const B = document.body;
       if (B.classList.contains('scov') || (B.dataset.tab && B.dataset.tab !== 'operate')) return;
-      const t = Math.floor(performance.now() / 100) * 100;
-      for (const an of CLK) {
-        const el = an.effect && an.effect.target;
-        if (an.playState === 'idle' || !el || !el.isConnected) {
+      const now = performance.now(),
+        t = Math.floor(now / 100) * 100;
+      if (now - clkChk > 2000) {
+        clkChk = now;
+        for (const [an, el] of CLK) if (!el || !el.isConnected || an.playState === 'idle') CLK.delete(an);
+      }
+      if (t === clkT) return;
+      clkT = t;
+      for (const [an, el] of CLK) {
+        if (!el || !el.isConnected) {
           CLK.delete(an);
           continue;
         }
-        if (an.currentTime !== t) an.currentTime = t;
+        an.currentTime = t;
       }
     }
     let synced = false;

@@ -1162,12 +1162,19 @@
        6 x). Each animation of the page is held (pause) and the clock sets its time 10 times a second, so the page is restyled and
        redrawn 10 times a second. The keyframes stay those of hx.css; a part that starts later (a pump started) joins the clock at its
        animationstart; a part that stops (its class) leaves it. The clock stands while the page is hidden or not on the process view */
-    const CLK = new Set();
+    /* the clock reads nothing of an animation on a step: a read of playState or currentTime of a CSS animation makes the browser work
+       out the styles first, and after the first write each read did it again (a profile of the Drum page in RUN, 42 moving parts:
+       about 15 ms a step at 6 x). The target of each part is kept when it joins; a part whose element left the page leaves at once,
+       one that stopped (idle) leaves at the next check every 2 s */
+    const CLK = new Map();
+    let clkT = -1,
+      clkChk = 0;
     const join = L => {
       for (const an of L)
         if (!CLK.has(an)) {
-          CLK.add(an);
+          CLK.set(an, an.effect && an.effect.target);
           an.pause();
+          if (clkT >= 0) an.currentTime = clkT;
         }
     };
     let clk = 0;
@@ -1177,14 +1184,20 @@
       /* F6 2026-11-22: not while the overview or a logic / library tab covers the plant page (it still moved its parts 10 times a second) */
       const B = document.body;
       if (B.classList.contains('scov') || (B.dataset.tab && B.dataset.tab !== 'operate')) return;
-      const t = Math.floor(performance.now() / 100) * 100;
-      for (const an of CLK) {
-        const el = an.effect && an.effect.target;
-        if (an.playState === 'idle' || !el || !el.isConnected) {
+      const now = performance.now(),
+        t = Math.floor(now / 100) * 100;
+      if (now - clkChk > 2000) {
+        clkChk = now;
+        for (const [an, el] of CLK) if (!el || !el.isConnected || an.playState === 'idle') CLK.delete(an);
+      }
+      if (t === clkT) return;
+      clkT = t;
+      for (const [an, el] of CLK) {
+        if (!el || !el.isConnected) {
           CLK.delete(an);
           continue;
         }
-        if (an.currentTime !== t) an.currentTime = t;
+        an.currentTime = t;
       }
     }
     let synced = false;
