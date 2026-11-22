@@ -2262,7 +2262,15 @@ const AN_BB = {
      Check against (1): U0 = the flue gas at 150 MW (188 kg/s, density 0.29 kg/m3 at 937 C) over the 119 m2 grate = 5.4 m/s, furnace
      height 7.75 + 25.85 = 33.6 m (T2): c = 9.2 x 5.4 / 33.6 = 1.5 s^-1, inside the range Kunii & Levenspiel give for a U (0.5 ~ 10
      s^-1, larger for coarser solids; the sand of P2S7 Tab 3 d50 0.15 ~ 0.30 mm). The circulation rate itself is not in the documents */
-  kKL: 9.2
+  kKL: 9.2,
+  /* 1.0.0-beta.286 (JENNIE, F3 of report 282: start-up save points S10 / S12 / S29): beta.282 gave the SH panels only the solids part
+     (uaP x phi^0.5), so at the low air of a start-up (phi ~ 1e-4) they took no heat at all (S12: 0.0 ~ 0.4 MW, was 1.3 ~ 2.0; the panel
+     outlet steam 156 C after 30 min, was 176) and the bed rose 40 C faster. The gas in the upper furnace radiates to the panels as it
+     does to the walls (Uw = gas uag + solids uaS x phi^0.5 above). The panels take the same split: at the 150 MW anchor the walls have
+     gas 106.9 of 264.5 kW/K (CALC above, Tu 892.3 C) = fgP 0.404. Panel factor = fgP x uag(Tu, metal) / uag(892.3, metal) +
+     (1 - fgP) x phi^0.5 (anBbPanF): 1 at the anchor, the gas part follows the WSGG radiation of the gas temperature */
+  fgP: 106.9 / 264.5,
+  tuA: 892.3
 };
 /* gas radiation (WSGG) + convection of the upper furnace gas at tg to the walls at tw, kW/K (AN_BB above) */
 function anBbUag(tg, tw) {
@@ -2274,6 +2282,12 @@ function anBbUag(tg, tw) {
 /* 1.0.0-beta.282: the circulating solids share phi at the gas velocity share u (AN_BB kKL above; u capped 1.2 as before) */
 function anBbPhiV(u) {
   return u > 0.05 ? Math.exp(-AN_BB.kKL * (1 / Math.min(1.2, u) - 1)) : 0;
+}
+/* beta.286: the share of the anchor conductance of an SH panel at the suspension tu, panel metal tm, solids share phi (AN_BB fgP) */
+function anBbPanF(tu, tm, phi) {
+  const B = AN_BB,
+    gA = anBbUag(B.tuA, tm);
+  return B.fgP * (gA > 0 && isFinite(tu) ? anBbUag(tu, tm) / gA : 0) + (1 - B.fgP) * Math.sqrt(Math.max(0, phi));
 }
 /* the upper furnace suspension of the bed balance (unit step): exit tgF and mean Tu of the gas + circulating solids that leave the bed
    at Tb, with the walls (Uw, sink Tw) and the SH panels (Up, sink Tp) in parallel; uag at the mean of the last scan (tu0) */
@@ -2320,7 +2334,7 @@ function anBedMigrate(U) {
     out = T => {
     const ph = anBbPhiV((u0 * (T + 273)) / (Tb + 273)),
       uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
-      s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * Math.sqrt(ph), T: Tp }, T);
+      s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * anBbPanF(T, Tp, ph), T: Tp }, T);
     return { q: s.qW + s.qP + B.uaBR * (T - Trf) + gcp * (s.tgF - tg0), s, ph };
   };
   let lo = Math.min(Tb, Tw) - 50,
@@ -5510,7 +5524,8 @@ function anUnitStep0(dt) {
         const hm = U.hxM || {},
           uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
           p = [hm.p1, hm.p2].filter(isFinite);
-        return { U: p.length ? p.length * uaP * Math.sqrt(phi) : 0 /* beta.282: h ~ rho^0.5 (AN_BB) */, T: p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw };
+        const Tp = p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw;
+        return { U: p.length ? p.length * uaP * anBbPanF(isFinite(U.Tu) ? U.Tu : U.Tb, Tp, phi) : 0 /* beta.286: gas + solids (AN_BB fgP) */, T: Tp };
       })() /* the SH panels: conductance and metal of the last scan */,
       sus = anBbSus(U.Tb, U.Tw, gcp, phi, up, U.Tu) /* the suspension above (uag at the mean Tu of the last scan) */,
       qWu = sus.qW /* kW, the suspension to the upper walls (both signs) */,
