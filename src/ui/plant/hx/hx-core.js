@@ -20,6 +20,15 @@
     H = 640,
     SYM = window.HXSYM || {},
     REAL = window.HXREAL || {};
+  /* F6 2026-11-22 (Q6): a text of the tick is written only when it changed (the same text written again made the next measure lay out the page) */
+  const setAt = (e, k, v) => {
+    v = String(v);
+    if (e.getAttribute(k) !== v) e.setAttribute(k, v);
+  };
+  const setTx = (e, v) => {
+    v = v == null ? '' : String(v);
+    if (e.textContent !== v) e.textContent = v;
+  };
   const HX = (window.HX = { pages: [], byId: {}, W, H, data: null });
   const esc = s =>
     String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -106,7 +115,8 @@
       m = it.k === 'mach' && R.machines && R.machines[it.mach];
     /* audit 2026-11-21 C7: a machine named as its own logic name (Burner A) printed the name twice */
     const same = String(it.mach).toUpperCase() === String(it.name || '').toUpperCase();
-    if (it.k === 'mach') return m && m.t && m.t.length < 14 ? (same ? m.t : it.mach + ' · ' + m.t) : same ? '' : it.mach;
+    if (it.k === 'mach')
+      return m && m.t && m.t.length < 14 ? (same ? m.t : it.mach + ' · ' + m.t) : same ? '' : it.mach;
     return regName(it);
   };
 
@@ -676,7 +686,9 @@
           hx0 = v ? -lw / 2 + ox : sd === 'r' ? tx0 - 4 : tx0 + 4 - lw,
           hy0 = Math.min(yl, yc) - 12,
           hy1 = (t.tag ? yt : yc + 15) + 5,
-          hit = t.key ? `<rect class="hx-hit" x="${n1(hx0)}" y="${n1(hy0)}" width="${n1(lw)}" height="${n1(hy1 - hy0)}"/>` : '';
+          hit = t.key
+            ? `<rect class="hx-hit" x="${n1(hx0)}" y="${n1(hy0)}" width="${n1(lw)}" height="${n1(hy1 - hy0)}"/>`
+            : '';
         taps +=
           `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})">${hit}<path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>` +
           `<text class="hx-lab" x="${tx0}" y="${yl}" text-anchor="${an}">${esc(t.label)}</text><rect class="rx-chip" x="${n1(x0)}" y="${yc}" width="${cw}" height="15" rx="3"/>` +
@@ -845,7 +857,7 @@
           hi = z + pad;
         }
         const rg = box.querySelector(`[data-rng="${i}"]`);
-        if (rg) rg.textContent = fmt(lo, p[3] == null ? 1 : p[3]) + ' to ' + fmt(hi, p[3] == null ? 1 : p[3]);
+        if (rg) setTx(rg, fmt(lo, p[3] == null ? 1 : p[3]) + ' to ' + fmt(hi, p[3] == null ? 1 : p[3]));
         let d = '';
         for (const [t, v] of b) {
           if (now - t > span || v == null) continue;
@@ -857,7 +869,7 @@
           s += `<path d="${d}" fill="none" style="stroke:var(--hx-pen${(i % 6) + 1})" stroke-width="1.8" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
         const cur = penVal(p[1]),
           o = box.querySelector(`[data-pen="${i}"]`);
-        if (o) o.textContent = fmt(cur, p[3] == null ? 1 : p[3]) + ' ' + p[2];
+        if (o) setTx(o, fmt(cur, p[3] == null ? 1 : p[3]) + ' ' + p[2]);
       });
       svg.innerHTML = s;
     });
@@ -880,7 +892,13 @@
       if (!h) return { n, h, dx, dy, sym: null };
       const x = +h.getAttribute('x'),
         y = +h.getAttribute('y');
-      return { n, h, dx, dy, sym: [x + dx, y + dy, x + dx + +h.getAttribute('width'), y + dy + +h.getAttribute('height')] };
+      return {
+        n,
+        h,
+        dx,
+        dy,
+        sym: [x + dx, y + dy, x + dx + +h.getAttribute('width'), y + dy + +h.getAttribute('height')]
+      };
     });
     const hits = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
     /* Rosé 2026-11-22: every box measured first, then written (a write between two getBBox made the browser lay out again) */
@@ -915,8 +933,13 @@
   /* Rosé 2026-11-22 (profile of 2026-11-22: minText took 2.1 s of the 3.7 s freeze after Engineer -> Operator): every word was read
      (getClientRects, getScreenCTM) right after the size of the word before it was written, so the browser laid the page out again
      for each word. Now the frame sizes are written first, then every word of the page is read in one pass, then the sizes are written */
-  function minText(page) {
-    const SV = [...page.querySelectorAll('svg')].filter(svg => !(svg.closest('.hx-trends') || svg.getAttribute('preserveAspectRatio') === 'none'));
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU: this pass took 30 ms of every 2 s at 6 x): a word already sized at the scale its drawing has now
+     is not read again by the 2 s check (quick); only new or newly shown words are. A resize, a new view or a new scale reads all of them */
+  const MTK = new WeakMap();
+  function minText(page, quick) {
+    const SV = [...page.querySelectorAll('svg')].filter(
+      svg => !(svg.closest('.hx-trends') || svg.getAttribute('preserveAspectRatio') === 'none')
+    );
     const W = [];
     let MEAS = 0;
     for (const svg of SV) {
@@ -931,7 +954,8 @@
           fr = svg.getBoundingClientRect().width / svg.clientWidth,
           w = fr > 0 ? Math.ceil((0.8 * vb) / fr) : 0,
           w0 = Math.max(1400, w);
-        if (w && Math.abs((parseFloat(svg.style.minWidth) || 1400) - w0) > 2) svg.style.minWidth = w0 > 1400 ? w0 + 'px' : '';
+        if (w && Math.abs((parseFloat(svg.style.minWidth) || 1400) - w0) > 2)
+          svg.style.minWidth = w0 > 1400 ? w0 + 'px' : '';
       }
     }
     /* the scale class of each drawing (it hides the tag numbers, so it comes before the words are read) */
@@ -952,10 +976,16 @@
         const M = host.getScreenCTM(),
           k = M ? Math.hypot(M.a, M.b) : 0,
           s = k ? MINPX / (9.5 * k) : 1;
-        W.push([g, 'tr', g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')]);
+        W.push([
+          g,
+          'tr',
+          g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')
+        ]);
       }
       for (const t of svg.querySelectorAll('text, tspan')) {
+        if (quick && MTK.get(t) === SK[SV.indexOf(svg)]) continue;
         if (!t.getClientRects().length || t.closest('.hx-yn')) continue;
+        MTK.set(t, SK[SV.indexOf(svg)]);
         const M = t.getScreenCTM && t.getScreenCTM(),
           k = M ? Math.hypot(M.a, M.b) : 0;
         if (!k) continue;
@@ -977,7 +1007,9 @@
   let BK = 0;
   function backHits(page) {
     for (const svg of page.querySelectorAll('svg')) {
-      const L = [...svg.querySelectorAll('.hx-node')].filter(n => !n.dataset.fit && (n.hasAttribute('data-open') || n.hasAttribute('data-hp')));
+      const L = [...svg.querySelectorAll('.hx-node')].filter(
+        n => !n.dataset.fit && (n.hasAttribute('data-open') || n.hasAttribute('data-hp'))
+      );
       if (!L.length) continue;
       const SN = 'http://www.w3.org/2000/svg';
       /* Rosé 2026-11-22: all items measured before the first box is added */
@@ -1014,7 +1046,15 @@
         n.dataset.bk = r.dataset.bkfor = String(++BK);
         r.addEventListener('click', e => {
           e.stopPropagation();
-          n.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, clientX: e.clientX, clientY: e.clientY, view: window }));
+          n.dispatchEvent(
+            new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              clientX: e.clientX,
+              clientY: e.clientY,
+              view: window
+            })
+          );
         });
         lay.append(r);
       }
@@ -1113,13 +1153,32 @@
     };
     const setCls = (e, c) => {
       const cur = e.getAttribute('class').replace(/\s*hx-(run|stop|trip|none)\b/g, '');
-      e.setAttribute('class', cur + ' hx-' + c);
+      setAt(e, 'class', cur + ' hx-' + c);
     };
     let mtT = mt0;
+    /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): the moving parts of the page (hx.css, 10 steps a second each) on one clock, so their steps
+       fall on the same frames and the page is redrawn 10 times a second, not on every frame. A part that starts later (a pump started)
+       is lined up when it starts (its animationstart: reading every animation of the page each tick cost more than the lining up) */
+    const align = L => {
+      for (const an of L)
+        if (an.playState === 'running' && an.startTime != null && an.startTime % 100)
+          an.startTime = Math.floor(an.startTime / 100) * 100;
+    };
+    let synced = false;
+    function sync() {
+      if (synced || !page.getAnimations) return;
+      synced = true;
+      align(page.getAnimations({ subtree: true }));
+    }
+    page.addEventListener('animationstart', e => {
+      const t = e.target;
+      if (t && t.getAnimations) requestAnimationFrame(() => align(t.getAnimations()));
+    });
     function tick(force) {
       const D = HX.data;
+      if (view === 'process') sync();
       /* Audit 3: words that appear later (a Y / N mark, a state) get the 11 px floor too, checked every 2 s */
-      if (view === 'process' && Date.now() - mtT > 2000) ((mtT = Date.now()), minText(page));
+      if (view === 'process' && Date.now() - mtT > 2000) ((mtT = Date.now()), minText(page, true));
       if (view === 'process') plates();
       REC.sample();
       /* status line */
@@ -1174,14 +1233,14 @@
                       : '',
             c = 'hx-ats' + st,
             R = AT && AT.rows ? AT.rows[k] : null;
-          if (e.getAttribute('class') !== c) e.setAttribute('class', c);
+          if (e.getAttribute('class') !== c) setAt(e, 'class', c);
           for (let i = 0; i < 3; i++) {
             const b = e.querySelector('[data-atb="' + i + '"]'),
               v = e.querySelector('[data-atv="' + i + '"]'),
               ok = R ? !!(R[i] && R[i][1]) : AT && AT.on ? AT.step >= k : null,
               bc = 'hx-atb' + (ok == null ? '' : ok ? ' y' : ' n'),
               tx = (R && R[i] && R[i][2]) || '';
-            if (b.getAttribute('class') !== bc) b.setAttribute('class', bc);
+            if (b.getAttribute('class') !== bc) setAt(b, 'class', bc);
             if (v.textContent !== tx) v.textContent = tx;
           }
         });
@@ -1194,7 +1253,7 @@
               (e.dataset.press ? ' press' : '') +
               (e.dataset.plain ? ' plain' : '') +
               (h.tone ? ' ' + h.tone : '');
-          if (e.getAttribute('class') !== c) e.setAttribute('class', c);
+          if (e.getAttribute('class') !== c) setAt(e, 'class', c);
           const st = e.querySelector('[data-hks]'),
             tx = h.text || '-----';
           if (st && st.textContent !== tx) st.textContent = tx;
@@ -1202,13 +1261,13 @@
         Q('[data-flag]').forEach(e => {
           const f = D.flag ? D.flag(e.dataset.flag) : null;
           e.className = 'hx-ynb ' + (f == null ? '' : f ? 'y' : 'n');
-          e.textContent = f == null ? '-' : f ? 'Y' : 'N';
+          setTx(e, f == null ? '-' : f ? 'Y' : 'N');
         });
         Q('[data-st]').forEach(e => {
           const m = D.machine(e.dataset.st) || {},
             t = (m.word ? wordTxt(m.word) : stTxt(m.st, e.dataset.st, e.dataset.vw)) + (m.mode ? ' · ' + m.mode : '');
           if (e.textContent !== t) e.textContent = t;
-          e.setAttribute('class', 'hx-st ' + (m.st || 'none'));
+          setAt(e, 'class', 'hx-st ' + (m.st || 'none'));
         });
         Q('.hx-node[data-ms]').forEach(e => setCls(e, (D.machine(e.dataset.ms) || {}).st || 'none'));
         Q('.hx-node[data-on]').forEach(e => {
@@ -1227,7 +1286,7 @@
           setCls(e, mv == null ? 'none' : mv > 1 ? 'run' : 'stop');
           travel(e, mv);
           e.querySelectorAll('[data-bl]').forEach(b =>
-            b.setAttribute('transform', `rotate(${n1(90 * Math.max(0, Math.min(1, (mv || 0) / 100)))})`)
+            setAt(b, 'transform', `rotate(${n1(90 * Math.max(0, Math.min(1, (mv || 0) / 100)))})`)
           );
         });
         Q('[data-vs]').forEach(e => {
@@ -1235,11 +1294,11 @@
             o = v.open != null ? v.open : v.pct != null ? v.pct > 1 : null,
             t = o == null ? '-----' : (o ? 'Open' : 'Closed') + (v.pct != null ? ' ' + fmt(v.pct, 0) + ' %' : '');
           if (e.textContent !== t) e.textContent = t;
-          e.setAttribute('class', 'hx-st ' + (o == null ? 'none' : o ? 'run' : 'stop'));
+          setAt(e, 'class', 'hx-st ' + (o == null ? 'none' : o ? 'run' : 'stop'));
         });
         Q('[data-mode]').forEach(e => {
           const l = D.loop(e.dataset.mode) || {};
-          e.setAttribute('class', 'hx-mode ' + modeCls(l.mode));
+          setAt(e, 'class', 'hx-mode ' + modeCls(l.mode));
           const t = e.querySelector('text');
           if (t.textContent !== modeTxt(l.mode)) t.textContent = modeTxt(l.mode);
         });
@@ -1252,8 +1311,8 @@
         Q('.hx-yn[data-yn]').forEach(e => {
           const [yk, ...yr] = e.dataset.yn.split(':'),
             p = ((yk === 'valve' ? D.valve(yr.join(':')) : D.machine(yr.join(':'))) || {}).perm;
-          e.setAttribute('class', 'hx-yn ' + (p == null ? '' : p ? 'y' : 'n'));
-          e.querySelector('text').textContent = p == null ? '-' : p ? 'Y' : 'N';
+          setAt(e, 'class', 'hx-yn ' + (p == null ? '' : p ? 'y' : 'n'));
+          setTx(e.querySelector('text'), p == null ? '-' : p ? 'Y' : 'N');
         });
         Q('[data-level]').forEach(e => {
           const [key, lo, hi] = e.dataset.level.split('|'),
@@ -1262,12 +1321,12 @@
           if (!r) return;
           const [y0, y1] = r.dataset.lv.split(',').map(Number),
             f = v == null ? 0.5 : Math.max(0.04, Math.min(1, (v - lo) / (hi - lo)));
-          r.setAttribute('y', n1(y1 - (y1 - y0) * f));
-          r.setAttribute('height', n1((y1 - y0) * f));
+          setAt(r, 'y', n1(y1 - (y1 - y0) * f));
+          setAt(r, 'height', n1((y1 - y0) * f));
         });
         Q('g[data-flow]').forEach(e => {
           const f = e.dataset.flow ? flowing(e.dataset.flow) : null;
-          e.setAttribute('class', f == null ? '' : f ? 'hx-on' : 'hx-idle');
+          setAt(e, 'class', f == null ? '' : f ? 'hx-on' : 'hx-idle');
         });
       }
       if (view === 'controls') {
@@ -1275,11 +1334,11 @@
           const l = D.loop(c.dataset.cardLoop) || {},
             F = f => c.querySelector(`[data-f="${f}"]`),
             u = l.unit ? ' ' + l.unit : '';
-          F('mode').textContent = modeTxt(l.mode);
+          setTx(F('mode'), modeTxt(l.mode));
           F('mode').className = 'hx-pill ' + modeCls(l.mode);
-          F('pv').textContent = fmt(l.pv, 1) + (l.pv == null ? '' : u);
-          F('sv').textContent = fmt(l.sv, 1) + (l.sv == null ? '' : u);
-          F('mv').textContent = fmt(l.mv, 1) + (l.mv == null ? '' : ' %');
+          setTx(F('pv'), fmt(l.pv, 1) + (l.pv == null ? '' : u));
+          setTx(F('sv'), fmt(l.sv, 1) + (l.sv == null ? '' : u));
+          setTx(F('mv'), fmt(l.mv, 1) + (l.mv == null ? '' : ' %'));
           F('mvb').style.width = Math.max(0, Math.min(100, l.mv || 0)) + '%';
           F('pvb').style.width =
             l.pv == null || !l.sv ? '0%' : Math.max(0, Math.min(100, (l.pv / (l.sv * 2)) * 100)) + '%';
@@ -1287,21 +1346,21 @@
         Q('[data-card-mach]').forEach(c => {
           const m = D.machine(c.dataset.cardMach) || {},
             F = f => c.querySelector(`[data-f="${f}"]`);
-          F('st').textContent = m.word ? wordTxt(m.word) : stTxt(m.st, c.dataset.cardMach);
+          setTx(F('st'), m.word ? wordTxt(m.word) : stTxt(m.st, c.dataset.cardMach));
           F('st').className = 'hx-pill ' + (m.st || '');
-          F('mode').textContent = m.mode || '';
+          setTx(F('mode'), m.mode || '');
           const y = c.querySelector('.hx-ynb');
           y.className = 'hx-ynb ' + (m.perm == null ? '' : m.perm ? 'y' : 'n');
-          y.textContent = m.perm == null ? '-' : m.perm ? 'Y' : 'N';
+          setTx(y, m.perm == null ? '-' : m.perm ? 'Y' : 'N');
         });
         Q('[data-card-valve]').forEach(c => {
           const v = D.valve(c.dataset.cardValve) || {},
             o = v.open != null ? v.open : v.pct != null ? v.pct > 1 : null,
             F = f => c.querySelector(`[data-f="${f}"]`);
-          F('st').textContent = o == null ? '-----' : o ? 'Open' : 'Closed';
+          setTx(F('st'), o == null ? '-----' : o ? 'Open' : 'Closed');
           F('st').className = 'hx-pill ' + (o == null ? '' : o ? 'run' : 'stop');
-          F('mode').textContent = v.mode || '';
-          F('pct').textContent = v.pct == null ? '' : fmt(v.pct, 0) + ' %';
+          setTx(F('mode'), v.mode || '');
+          setTx(F('pct'), v.pct == null ? '' : fmt(v.pct, 0) + ' %');
         });
       }
       if (view === 'trends') paintTrends(page, def, span);
@@ -1343,15 +1402,15 @@
             g.append(r);
           }
           /* not laid out yet (page hidden): measured again at the next tick */
-          if (!b || !b.width || !m) return void r.setAttribute('width', 0);
+          if (!b || !b.width || !m) return void setAt(r, 'width', 0);
           e.__pn = n;
           const t = inv.multiply(m),
             p = new DOMPoint(b.x - 2, b.y).matrixTransform(t),
             q = new DOMPoint(b.x + b.width + 2, b.y + b.height).matrixTransform(t);
-          r.setAttribute('x', n1(Math.min(p.x, q.x)));
-          r.setAttribute('y', n1(Math.min(p.y, q.y)));
-          r.setAttribute('width', n1(Math.abs(q.x - p.x)));
-          r.setAttribute('height', n1(Math.abs(q.y - p.y)));
+          setAt(r, 'x', n1(Math.min(p.x, q.x)));
+          setAt(r, 'y', n1(Math.min(p.y, q.y)));
+          setAt(r, 'width', n1(Math.abs(q.x - p.x)));
+          setAt(r, 'height', n1(Math.abs(q.y - p.y)));
         });
       });
     }

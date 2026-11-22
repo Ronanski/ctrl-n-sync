@@ -749,18 +749,23 @@
     drawLines();
     /* the alarm tile: the newest six */
     const AL = allAlarms().slice(-6).reverse();
-    almTile.textContent = '';
-    almTile.append(E('h3', '', 'Alarms · newest first'));
-    if (!AL.length) almTile.append(E('p', 'scnone', 'No alarm'));
-    for (const a of AL) {
-      const r = E('div', 'scar' + (a.ack ? '' : ' new'));
-      r.append(
-        E('span', 'sct', a.t || ''),
-        priEl(a),
-        E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')),
-        E('span', 'scs', a.ack ? 'acknowledged' : '• new')
-      );
-      almTile.append(r);
+    /* F6 2026-11-22: the tile is drawn again only when its six alarms changed (it was rebuilt 4 times a second, also under an HMI page) */
+    const alK = JSON.stringify(AL.map(a => [a.t, a.ack, a.nm, a.lv, priOf(a).p]));
+    if (almTile._k !== alK) {
+      almTile._k = alK;
+      almTile.textContent = '';
+      almTile.append(E('h3', '', 'Alarms · newest first'));
+      if (!AL.length) almTile.append(E('p', 'scnone', 'No alarm'));
+      for (const a of AL) {
+        const r = E('div', 'scar' + (a.ack ? '' : ' new'));
+        r.append(
+          E('span', 'sct', a.t || ''),
+          priEl(a),
+          E('span', 'scn', (a.nm || '') + ' ' + (a.lv || '')),
+          E('span', 'scs', a.ack ? 'acknowledged' : '• new')
+        );
+        almTile.append(r);
+      }
     }
     almTile.classList.toggle(
       'on',
@@ -872,7 +877,8 @@
         const b = E('button', alSort === k ? 'on' : '', t);
         b.type = 'button';
         b.setAttribute('aria-pressed', String(alSort === k));
-        b.title = k === 'pri' ? 'Emergency first, then high, medium, low (newest first inside each)' : 'The newest alarm first';
+        b.title =
+          k === 'pri' ? 'Emergency first, then high, medium, low (newest first inside each)' : 'The newest alarm first';
         b.onclick = () => ((alSort = k), (alSig = ''), fillAl());
         srt.append(b);
       }

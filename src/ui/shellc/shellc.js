@@ -211,7 +211,14 @@
     } catch (e) {}
     const eqT = AL.filter(a => a.kind === 'TRIP');
     S.trip.classList.toggle('trip', !!(tt || mft || eqT.length));
-    S.tripT.textContent =
+    /* F6 2026-11-22 (Q6): the texts and tooltips below are written only when they changed; written again each second they made the
+       measures of the strip further down lay the page out again */
+    const put = (e, k, v) => {
+      if (e[k] !== v) e[k] = v;
+    };
+    put(
+      S.tripT,
+      'textContent',
       tt && mft
         ? 'Turbine trip · MFT'
         : tt
@@ -220,23 +227,27 @@
             ? 'Boiler trip (MFT)'
             : eqT.length
               ? eqT.length + (eqT.length === 1 ? ' equipment trip' : ' equipment trips')
-              : 'No trip';
-    S.trip.title =
+              : 'No trip'
+    );
+    put(
+      S.trip,
+      'title',
       (tt || mft ? 'Unit trip: turbine trip ABC-050 I.0400, master fuel trip I.000F. ' : '') +
-      (eqT.length ? 'Equipment trips: ' + eqT.map(a => a.nm).join(', ') + '. ' : '') +
-      'Click: the alarm list';
+        (eqT.length ? 'Equipment trips: ' + eqT.map(a => a.nm).join(', ') + '. ' : '') +
+        'Click: the alarm list'
+    );
     const un = AL.filter(a => !a.ack).length;
     const n = AL.length;
     S.alm.classList.toggle('alm', n > 0);
     S.alm.classList.toggle('new', un > 0);
-    S.almT.textContent = n ? n + (n === 1 ? ' alarm' : ' alarms') + (un ? ' · ' + un + ' new' : '') : 'No alarm';
+    put(S.almT, 'textContent', n ? n + (n === 1 ? ' alarm' : ' alarms') + (un ? ' · ' + un + ' new' : '') : 'No alarm');
     /* the user's forces: S.rt.force minus what the plant model owns (S.rt.pf), the rule of cr.js userForces and the Inspector */
     let nf = 0;
     for (const sh of (window.AN && AN.sheets) || []) {
       const R = sh.S && sh.S.rt;
       if (R && R.force) for (const k in R.force) if (!(R.pf && R.pf[k])) nf++;
     }
-    S.frc.hidden = !nf;
+    put(S.frc, 'hidden', !nf);
     const ft = nf + ' FORCED';
     if (S.frcT.textContent !== ft) S.frcT.textContent = ft;
     /* Mina beta.213: at 1366 the strip (two-line labels, value, unit) was taller than the top bar and the page under it covered the
@@ -342,7 +353,7 @@
     S.runB.classList.toggle('on', on);
     const rt = on ? 'Running' : 'Paused';
     if (S.runT.textContent !== rt) S.runT.textContent = rt;
-    S.runB.title = on ? 'The simulation runs. Click: pause' : 'The simulation is paused. Click: run';
+    put(S.runB, 'title', on ? 'The simulation runs. Click: pause' : 'The simulation is paused. Click: run');
     const sel = speedSel();
     /* the speed sits on the Run pill (one control, shellc-bars.css): the number only, "Simulation speed" in its tooltip */
     /* 3.2.4-beta.9 (live test 2026-11-17): a LOAD of a save point brings the engine speed with the state (AN.spd, state.js flags:

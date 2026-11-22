@@ -105,7 +105,8 @@
     if (!n || !more) return;
     const sq2 = B.classList.contains('scsq2'),
       cnt = main.length + 1;
-    if (!sq2) full = [...main, more].reduce((a, e) => a + e.offsetWidth + 4, 0) + (B.classList.contains('scsq') ? 8 * cnt : 0);
+    if (!sq2)
+      full = [...main, more].reduce((a, e) => a + e.offsetWidth + 4, 0) + (B.classList.contains('scsq') ? 8 * cnt : 0);
     if (!full) return;
     /* the level that fits with 2 px to spare (the measure is the same at every level, so it does not swing) */
     const tight = full - 8 * cnt,
@@ -206,7 +207,8 @@
     if (vMore.parentElement !== scv) scv.append(vMore);
     if (cMore.parentElement !== scp) scp.append(cMore);
     /* the values: the last 3 cells in the More popover on a tablet, back in the bar on a PC (shellc.js keeps writing their numbers) */
-    if (on && scv.querySelectorAll(':scope > .sck').length > 8) for (const c of [...scv.querySelectorAll(':scope > .sck')].slice(8)) vPop.append(c);
+    if (on && scv.querySelectorAll(':scope > .sck').length > 8)
+      for (const c of [...scv.querySelectorAll(':scope > .sck')].slice(8)) vPop.append(c);
     if (!on && vPop.children.length) {
       for (const c of [...vPop.children]) scv.insertBefore(c, vMore);
       vPop.hidden = true;
@@ -285,7 +287,8 @@
       /* the context bar: its buttons that do not fit take a second row instead of running under the dock */
       const narrow = !!ctx && ctx.scrollWidth > ctx.clientWidth + 1;
       if (narrow && !B.classList.contains('scctxwrap')) B.classList.add('scctxwrap');
-      else if (!narrow && B.classList.contains('scctxwrap') && ctx.clientWidth > (ctx._w || 0) + 40) B.classList.remove('scctxwrap');
+      else if (!narrow && B.classList.contains('scctxwrap') && ctx.clientWidth > (ctx._w || 0) + 40)
+        B.classList.remove('scctxwrap');
       if (narrow) ctx._w = ctx.clientWidth;
     }
     const o = origin(),
@@ -330,8 +333,15 @@
     else {
       B.classList.remove('scsq2');
       const pb = document.querySelector('#plantws .plbar');
-      const k = pb && B.dataset.tab === 'operate' && !B.classList.contains('scov') ? [...pb.children].filter(e => e.offsetWidth && !e.classList.contains('scpev') && !e.classList.contains('scecr')) : [];
-      const need = k.length ? (c && c.offsetWidth ? c.offsetWidth + 8 : 0) + k.reduce((a, e) => a + e.offsetWidth + 4, 0) : 0;
+      const k =
+        pb && B.dataset.tab === 'operate' && !B.classList.contains('scov')
+          ? [...pb.children].filter(
+              e => e.offsetWidth && !e.classList.contains('scpev') && !e.classList.contains('scecr')
+            )
+          : [];
+      const need = k.length
+        ? (c && c.offsetWidth ? c.offsetWidth + 8 : 0) + k.reduce((a, e) => a + e.offsetWidth + 4, 0)
+        : 0;
       const sq = B.classList.contains('scsq');
       if (!sq && need > r.width) B.classList.add('scsq');
       else if (sq && need + 2 <= r.width) B.classList.remove('scsq');
@@ -353,11 +363,56 @@
     const p = probe.getBoundingClientRect();
     return { x: p.left, y: p.top };
   }
+  /* F6 2026-11-22 (Q6, 60 fps at 6 x CPU): this measure took 50 ms 4 times a second at 6 x, the most of any timer. It runs again only
+     when something outside the drawings changed (a class, a text, a bar opened: a MutationObserver), on a resize, and once in 2 s
+     anyway. The values and colours that move inside the plant and sheet drawings (svg) do not change the bars, so they do not count;
+     the writes of the measure itself are dropped after it */
+  let dirty = true,
+    last = 0,
+    mo = null;
+  function run() {
+    if (!dirty && Date.now() - last < 2000) return;
+    dirty = false;
+    last = Date.now();
+    tick();
+    if (mo) mo.takeRecords();
+  }
+  function watch() {
+    if (!window.MutationObserver) return;
+    mo = new MutationObserver(L => {
+      if (dirty) return;
+      for (const m of L) {
+        const t = m.target.nodeType === 1 ? m.target : m.target.parentNode;
+        if (!t || !t.closest || t.closest('svg')) continue;
+        /* a write of the same value (a class, hidden, a title or a text set again to what it was) changes nothing */
+        if (m.type === 'attributes' && m.oldValue === t.getAttribute(m.attributeName)) continue;
+        if (m.type === 'characterData' && m.oldValue === m.target.data) continue;
+        if (
+          m.type === 'childList' &&
+          m.addedNodes.length === 1 &&
+          m.removedNodes.length === 1 &&
+          m.addedNodes[0].nodeType === 3 &&
+          m.removedNodes[0].textContent === m.addedNodes[0].textContent
+        )
+          continue;
+        return void (dirty = true);
+      }
+    });
+    mo.observe(B, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+      attributeOldValue: true,
+      characterDataOldValue: true
+    });
+  }
   const iv = setInterval(() => {
     if (!B.classList.contains('sc')) return;
     if (build()) {
       clearInterval(iv);
-      setInterval(tick, 250);
+      watch();
+      setInterval(run, 250);
       addEventListener('resize', tick);
       tick();
       dispatchEvent(new Event('resize'));
