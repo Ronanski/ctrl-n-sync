@@ -30,7 +30,7 @@
      limits   alarm list "Alarm List _20160912": PT-DO0005 H 19.5 / normal 15 / L 5 / LL 3; LT-DO0701 H 7.5 / L 3, 2 / LL 0.2 m;
               DPT-DO0001 H 0.1 / HH 0.2; PT-DO1043-x2 HH 6.0 / H 5.5 / L 0.8. DITL-31 (drawing): tank < 0.2 m and strainer > 0.8
               kg/cm2 = pump trip, outlet < 5 kg/cm2 = standby AUTO start, < 7 = LOW alarm (world/plantsw.js rows r15 / r17 / r28).
-     NO-SOURCE: tank diameter (A = 23.8 m2, 5.5 m), oil density 0.85, pump current split (45 % at no load), current and
+     tank area A from the inventory table (below); NO-SOURCE: oil density 0.85, pump current split (45 % at no load), current and
               pressure lags (1 s), the unit 2 branch closed. */
 const AN_DO = {
   Qp: 25 /* T/H per pump, MB-022 item 2-1 / 2-2 */,
@@ -58,8 +58,11 @@ const AN_DO = {
   dp0: 0.029 /* kg/cm2 strainer at 25 T/H, 6.PNG */,
   I0: 25.4 /* A, P-0702A at 25 T/H x 12.8 kg/cm2, 6.PNG */,
   fI: 0.45 /* NO-SOURCE: share of the current at no load */,
-  A: 23.8 /* m2, NO-SOURCE; bounded: T-0701 300 m3 (Equipment List K1AU3-L1-0-002 p 29) with the LT-DO0701 H alarm at 7.5 m (alarm list
-              2016-09-12) gives A <= 300 / 7.5 = 40 m2; the tank height is not in the docs */,
+  /* beta.292 (JENNIE, Full Audit 3 #5, was 23.8 m2 NO-SOURCE): "Limay Project Diesel Oil Tank Inventory Table" 2016-08-16 (O&M V28,
+     PC only): DCS level 0.5 m = 43.0 m3 ... 7.7 m = 300.0 m3, linear in between (7.1 m 279.8, 6.9 m 272.6: 36 m3 per m). The tank
+     area is the slope: (300.0 - 43.0) / (7.7 - 0.5) = 35.69 m2 (CALC; inside the bound 300 m3 / 7.5 m = 40 m2 of the Equipment List
+     K1AU3-L1-0-002 p 29 and the LT-DO0701 H alarm) */
+  A: (300.0 - 43.0) / (7.7 - 0.5),
   rho: 0.85 /* t/m3, NO-SOURCE */,
   L0: 4.978 /* m, 6.PNG */,
   /* the field valves of the diesel oil line-up (SOP 20, PD-022 1/5 Rev D): tank outlet V-DO0003, strainer inlet V-DO0004, pump A

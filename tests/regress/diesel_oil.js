@@ -9,13 +9,17 @@
 //  Cold: no pump, no pressure; pump A started with every valve open (SOP 20) = low header, PCV-DO0002 throttled in MANUAL = the
 //    header rises (SOP: 12.5 kg/cm2); the strainer inlet V-DO0004 closed = no flow.
 // Usage: node tests/regress/diesel_oil.js [html]
-const fs = require('fs');
+const fs = require('fs'), url = require('url'), path = require('path');
 const { open } = require('./lib.js');
 const html =
   process.argv.find(a => /\.html$/.test(a)) ||
   'dist/' + fs.readdirSync('dist').find(x => /^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
 (async () => {
   const { browser, page, errs } = await open(html);
+  /* beta.292 (JENNIE): the Worker is on by default since beta.275 (src/world/eng-page.js); this test reads the plant model on the page
+     (AN.unit), so it runs the page with the Worker off, as tests/regress/reset_worker.js local mode */
+  await page.goto(url.pathToFileURL(path.resolve(html)).href + '?worker=0');
+  await page.waitForTimeout(1500);
   let fail = 0;
   const ck = (ok, w) => {
     console.log((ok ? 'PASS ' : 'FAIL ') + w);
@@ -94,6 +98,9 @@ const html =
       valves(' #' + x, true);
       H.man('ABC-003' + x, 'FICDO1043' + x, 100);
     }
+    /* beta.292 (JENNIE): since 3.2.3-beta.233 the tank never falls below its starting level AN_DO.L0 (the unlimited oil supply,
+       boiler.js anDieselOilStep), and the 150 MW state starts at L0, so the level could not fall here: start 1 m above L0 */
+    U().doLv += 1; /* the 150 MW state is at L0 (snapshot 6.PNG 4.978 m) */
     const lv0 = U().doLv;
     await run(600);
     o.b4 = snap();
@@ -184,7 +191,7 @@ const html =
   ck(
     r.b4.qb.every(q => q > 0.6) &&
       r.b4.qb.reduce((a, b) => a + b, 0) <= 12.5 &&
-      Math.abs(r.dLv - r.b4.qb.reduce((a, b) => a + b, 0) / 0.85 / 23.8 / 6) < 0.005,
+      Math.abs(r.dLv - r.b4.qb.reduce((a, b) => a + b, 0) / 0.85 / ((300.0 - 43.0) / (7.7 - 0.5)) / 6 /* AN_DO.A, beta.292: the tank inventory table */) < 0.005,
     'four burners: flows ' +
       JSON.stringify(r.b4.qb) +
       ' ring ' +
@@ -196,10 +203,13 @@ const html =
       ' m in 10 min'
   );
   ck(
-    r.lo < 5 && r.trip.run[1] === 1 && Math.abs(r.trip.P1 - 12.8) < 1.5,
+    /* beta.292 (JENNIE): DITL-31 #B row 8 (TR2/12, MIR-P0702A) starts the standby pump when pump A stops running, so B is up one
+       scan after the trip, before the header reaches the L.L. 5 kg/cm2 of row 28 (probe: 13.49 > 8.43 > 13.6 in 2 s). The check is a
+       header dip and B running, not the L.L. */
+    r.lo < r.pre.P1 - 3 && r.trip.run[1] === 1 && Math.abs(r.trip.P1 - 12.8) < 1.5,
     'pump A trip: header ' +
       r.lo +
-      ' kg/cm2 (< 5 = L.L.), standby B started ' +
+      ' kg/cm2 (dip from ' + r.pre.P1 + '), standby B started ' +
       JSON.stringify(r.trip.run) +
       ', header back ' +
       r.trip.P1
