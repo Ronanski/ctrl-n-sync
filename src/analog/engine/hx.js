@@ -432,7 +432,7 @@ function anHxStep(U, I, dt) {
   }
   /* panels in the furnace: radiation / solids from the bed */
   /* beta.282 (JENNIE): the suspension coefficient grows with the square root of its density (Basu & Nag, unit.js AN_BB kKL) */
-  /* beta.286: plus the gas radiation, the same split as the walls (unit.js AN_BB fgP, anBbPanF) */
+  /* beta.286: plus the gas radiation (unit.js AN_BB fgP, anBbPanF; beta.290: the gas of the lane between the panels) */
   const pf = Tm => (typeof anBbPanF === 'function' ? anBbPanF(I.Tb, Tm, I.phi || 0) : Math.sqrt(Math.max(0, I.phi || 0))),
     qP1 = K.uaP * pf(M.p1) * (I.Tb - M.p1),
     qP2 = K.uaP * pf(M.p2) * (I.Tb - M.p2);
