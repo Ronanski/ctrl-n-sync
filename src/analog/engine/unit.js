@@ -2278,7 +2278,21 @@ const AN_BB = {
      x 0.6096 x 14.75 = 503 m2, plus the lower bent legs: the 589 m2 of the anchor (CALC). The lanes between the panels (gap 622.3 -
      50.8 = 571 mm, 1.8 x gap = 1.03 m beam, Hottel) take the gas share down by the same 0.83 at 700 ~ 892 C (view factor to the next
      panel 0.43, WSGG 0.31 vs 0.50 at 7.7 m), so the shading changes the size of fgP, already set by the anchor, not its part-load slope */
-  fgP: 106.9 / 264.5,
+  /* 1.0.0-beta.290 (JENNIE, report 288 F1: at 90 MW MST 543 / RHT 540 held with sprays 6.6 + 6.5 T/H, plant 522 / 521 with the 2nd
+     spray at 0; backpass deposits clean or full give MST 544 both: the extra heat is in these panels, upstream of the 1st spray).
+     The gas share of the panels is no longer the wall split above. The gas between two panels is a lane, not the furnace: the lane
+     beam is 1.8 x gap 571 mm = 1.03 m (Hottel, K1AU3C-201: 622.3 mm pitch, 50.8 mm tubes), and the WSGG emissivity there is 0.305
+     against 0.504 at the furnace beam 7.7 m (hx.js anHxEps, 892 C). Panel faces from the drawing: 28 panels x 2 sides x 0.6096 m x
+     (14.75 m straight + 3.126 m lower legs) = 610 m2 (CALC). Gas to the panels at the anchor (Tu 892.3 C, panel metal ~440 C, save
+     "150 MW bed AUTO 2 coolers"): 610 m2 x (WSGG lane radiation 54.5 W/m2 K, gray wall factor 0.9 in it, + convection 10) = 39.4
+     kW/K, of the anchor panel conductance 2 x uaP 65 = 130 kW/K: fgP 0.303 (CALC). The solids take the rest (0.697 x phi^0.5), so the
+     panels lose heat faster at part load than the walls do; at the anchor (phi 1) the panel heat is the same as before. Hand check at
+     90 MW (Tu 850, phi 0.2): panel factor 0.65 -> 0.60, about 3 MW less to the SH. Was fgP 106.9 / 264.5 = 0.404 (beta.286, the wall
+     split; the 17:35 note of report 286 said the lane changes only the size of fgP, not its part-load slope: wrong, the size IS the
+     slope, because the solids part falls with phi^0.5 and the gas part does not) */
+  fgP: (610 * (0.0545 + 0.01)) / 130,
+  aPan: 610 /* m2, panel faces (K1AU3C-201, CALC above) */,
+  lPan: 1.03 /* m, lane beam between two panels */,
   tuA: 892.3
 };
 /* gas radiation (WSGG) + convection of the upper furnace gas at tg to the walls at tw, kW/K (AN_BB above) */
@@ -2295,8 +2309,14 @@ function anBbPhiV(u) {
 /* beta.286: the share of the anchor conductance of an SH panel at the suspension tu, panel metal tm, solids share phi (AN_BB fgP) */
 function anBbPanF(tu, tm, phi) {
   const B = AN_BB,
-    gA = anBbUag(B.tuA, tm);
-  return B.fgP * (gA > 0 && isFinite(tu) ? anBbUag(tu, tm) / gA : 0) + (1 - B.fgP) * Math.sqrt(Math.max(0, phi));
+    /* beta.290: the gas of the lane between two panels (beam lPan), per m2 of panel face, kW/m2 K */
+    hL = tg => {
+      if (!(tg > 200) || !(tg - tm > 1) || typeof anHxEps !== 'function') return 0;
+      const K1 = tg + 273.15, K2 = tm + 273.15;
+      return B.hcUp + (B.fwUp * anHxEps(tg, B.lPan) * 5.67e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tm);
+    },
+    gA = hL(B.tuA);
+  return B.fgP * (gA > 0 && isFinite(tu) ? hL(tu) / gA : 0) + (1 - B.fgP) * Math.sqrt(Math.max(0, phi));
 }
 /* the upper furnace suspension of the bed balance (unit step): exit tgF and mean Tu of the gas + circulating solids that leave the bed
    at Tb, with the walls (Uw, sink Tw) and the SH panels (Up, sink Tp) in parallel; uag at the mean of the last scan (tu0) */
