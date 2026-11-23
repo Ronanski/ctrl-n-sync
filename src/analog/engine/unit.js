@@ -2420,7 +2420,7 @@ function anBedMigrate(U) {
   const u0 = Math.pow(Math.max(1e-9, phi), 1 / B.nU) * ((U.Tb0 + 273) / (B.tbA + 273)),
     out = T => {
     const ph = anBbPhiV((u0 * (T + 273)) / (Tb + 273)),
-      uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
+      uaP = typeof AN_HX !== 'undefined' ? (AN_HX.uaP1 + AN_HX.uaP2) / 2 : 0 /* beta.342: mean of the two panels (F13) */,
       s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * anBbPanF(T, Tp, ph), T: Tp }, T);
     return { q: s.qW + s.qP + B.uaBR * (T - Trf) + gcp * (s.tgF - tg0), s, ph };
   };
@@ -5687,9 +5687,10 @@ function anUnitStep0(dt) {
          and Cs (Tb - tgF) = qWu + panels exactly. Anchor constants: AN_BB tbA / cSol / uaS (CALC there) */
       up = (() => {
         const hm = U.hxM || {},
-          uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
+          uaP = typeof AN_HX !== 'undefined' ? (AN_HX.uaP1 + AN_HX.uaP2) / 2 : 0 /* beta.342: the mean of the two panels (F13) */,
           p = [hm.p1, hm.p2].filter(isFinite);
-        const Tp = p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw;
+        /* beta.342: the metal is weighted by each panel conductance (uaP1 / uaP2 of hx.js) */
+        const Tp = p.length === 2 && typeof AN_HX !== 'undefined' ? (AN_HX.uaP1 * p[0] + AN_HX.uaP2 * p[1]) / (AN_HX.uaP1 + AN_HX.uaP2) : p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw;
         return { U: p.length ? p.length * uaP * anBbPanF(isFinite(U.Tu) ? U.Tu : U.Tb, Tp, phi) : 0 /* beta.286: gas + solids (AN_BB fgP) */, T: Tp };
       })() /* the SH panels: conductance and metal of the last scan */,
       sus = anBbSus(U.Tb, U.Tw, gcp, phi, up, U.Tu) /* the suspension above (uag at the mean Tu of the last scan) */,
