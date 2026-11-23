@@ -59,7 +59,8 @@
       h: 1000,
       items: [
         /* ---- air heater ---- */
-        at(M('airheater', 'AIR PREHEATER', 'Air heater', []), AX, AY, { id: 'ah', sc: AS, lab: 'b' }),
+        /* UI check 2026-11-24 C1: name at the left side; below it the air ducts and the rotor shaft leave */
+        at(M('airheater', 'AIR PREHEATER', 'Air heater', []), AX, AY, { id: 'ah', sc: AS, lab: 'l' }),
         /* the back-up drive of the air heater: an air motor, its air valve SV-PA1052 is the output O.029F of DITL-44 (old page 038) */
         at(
           HX.HV('SVPA1052', 'Back-up air motor valve', {
@@ -176,7 +177,7 @@
         { med: 'air', w: W_S, pts: [[1000, HY], 'fal.l'], flow: FA + '|' + FB }
       ],
       taps: [
-        { x: 440, y: 700, side: 'r', label: 'Fan outlet', key: 'PT-FA1075', unit: MM, dp: 0, tag: 'PT-FA1075' },
+        { x: 440, y: 700, side: 't', label: 'Fan outlet', key: 'PT-FA1075', unit: MM, dp: 0, tag: 'PT-FA1075' },
         {
           x: 680,
           y: 700,

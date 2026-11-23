@@ -2716,7 +2716,7 @@ function anTbW(k, m) {
   while (X[i] < m) i++;
   return Y[i - 1] + ((Y[i] - Y[i - 1]) * (m - X[i - 1])) / (X[i] - X[i - 1]);
 }
-/* 1.0.0-beta.344 (JENNIE, T1, user 2026-11-24 "GO DESIGN"): each heat balance case is at its own design steam temperature, the MST /
+/* 1.0.0-beta.346 (JENNIE, T1, user 2026-11-24 "GO DESIGN"): each heat balance case is at its own design steam temperature, the MST /
    RHT characteristic of the turbine (PPE-14-0725, read per sheet): 30 % 505 / 505 C (98.9 ata, sliding), 40 % 520 / 520, 50 % 529 / 529
    (Rev. 4, "MST RST corrected according to MST / RST characteristics"), 60 % and up 538 / 538 at 126 ata. So wh / wi of AN_TBW hold only
    at that temperature. The work per kg of a turbine section at a fixed pressure ratio goes with its inlet temperature (isentropic drop

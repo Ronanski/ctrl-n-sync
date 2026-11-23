@@ -1,4 +1,4 @@
-# LMYP OTS 1.0.0-beta.344 (LEADER : JENNIE, 2026-11-24)
+# LMYP OTS 1.0.0-beta.346 (LEADER : JENNIE, 2026-11-24)
 
 Unang beta sa ilalim ng "GO DESIGN" ng user. Design documents na ang target: FHI P2S7 curves, Tab 3, heat balance PPE-14-0725. Ang plant snapshots at trends ay sanity check na lang.
 

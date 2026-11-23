@@ -230,6 +230,9 @@
     value(key) {
       /* Audit 3: a value with no row on the app pages reads its field of the unit model ('an:Pip' = AN.unit.Pip) */
       if (/^an:/.test(key)) return call(() => { const v = AN.unit[key.slice(3)]; return v != null && isFinite(v) ? +v : null; }, null);
+      /* a value of the TCS model ('tcs:aux.hso' = AN.tcs().aux.hso); an open / closed flag reads 100 / 0 % */
+      if (/^tcs:/.test(key))
+        return call(() => { const v = key.slice(4).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.tcs()); return typeof v === 'boolean' ? (v ? 100 : 0) : v != null && isFinite(v) ? +v : null; }, null);
       needVal(key);
       const e = pq('[data-v="' + key + '"]'),
         t = e ? e.textContent : '';

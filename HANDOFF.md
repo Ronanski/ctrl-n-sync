@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-24 02:33 PHT** (LEADER : JENNIE, beta.344, GO DESIGN: SH panels back to the design CALC, turbine MW per T/H vs each HB case design MST / RHT, tests on design targets, st150 rebuilt. Next: D9 bed 860 C + B4 + PIST10013, then D3 / D4 / D5; derivations in plant-study 15.)
+Huling update: **2026-11-24 02:33 PHT** (LEADER : JENNIE, beta.346 (was 344; 345 merged first), GO DESIGN: SH panels back to the design CALC, turbine MW per T/H vs each HB case design MST / RHT, tests on design targets, st150 rebuilt. Next: D9 bed 860 C + B4 + PIST10013, then D3 / D4 / D5; derivations in plant-study 15.)
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -14,7 +14,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.344**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.346**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
@@ -40,6 +40,8 @@ Jennie, bahagi o bukas:
 - #19 sootblower 80H ~ 80L.
 - Part load (ulat 290, plant trend 90 MW, O2 trim naka-hold gaya sa plant): bed 959 laban sa 955 at exit gas 760 laban sa FHI 755 (tama). MST 543 laban sa 522: may spray pa rin 3.6 + 5.7 t/h (plant 2nd spray 0), RHT 539 laban sa 521 (F1). Hindi fouling ang sanhi (ulat 290). Start-up bed 35-90 °C mas mainit kaysa 280 (F2). Cold run ng user (F3). Jennie.
 - Worker = page mirror: `$id` ng `AN_UNIT.asF` (ulat 276 F2, Rosé beta.277). Reset sa page = Reset sa Worker (ulat 288, ayos na).
+
+AUDIT FIX : LISA (2026-11-24): #5 listahan `docs/audit/no-source-list.md` (217 bukas), #11 plano `docs/audit/unit-split-plan.md` (hintay ng window mula sa coordinator), #3 mungkahi `docs/audit/drift-test-proposal.md`. GO DESIGN (user 2026-11-24 00:35 PHT): design docs lang ang target ng model; snapshot at trend = pang-check lang. Listahan ng value na nakasandal sa snapshot: `docs/audit/snapshot-values-list.md`. #6: pinili ng user (2026-11-24 00:21 PHT) na gawing "Plant" menu ang Instructor button at alisin ang Freeze.
 
 Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engineer).
 

@@ -38,7 +38,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     const U = () => AN.unit;
     const g = () => ({ q: U().fwQp, Pd: f(U().fwPd), I: [U().fwI0, U().fwI1], dp: [U().fwDp0, U().fwDp1], run: U().fwRun, ffw: f(AN_CYC.ffw), d25: (sh('DITL-23B').avw || {}).r25, d26: (sh('DITL-23B').avw || {}).r26 });
     const o = {};
-    /* beta.344 (JENNIE, T1): the one start path "At 150 MW" (the st150 steady save, PR 480), as unit_load and cd_page_values. The bare
+    /* beta.346 (JENNIE, T1): the one start path "At 150 MW" (the st150 steady save, PR 480), as unit_load and cd_page_values. The bare
        AN.plantLoad150 starts the heat chain at its design metal (MST 459 C at t = 0), and the turbine MW now follows the steam temperature */
     await AN.ades();
     WORLD.set(true);
@@ -89,7 +89,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     ePd = r.da - 0.4 * (Q / 549) * (Q / 549) + (0.9093 / 10) * lin(qQ, qH, Q),
     eI = (289.4 * lin(pQ, pP, Q)) / lin(pQ, pP, 549),
     eDp = 0.29 * (Q / 549) * (Q / 549);
-  /* 1.0.0-beta.344 (JENNIE, user 2026-11-24 "GO DESIGN"): the target is the design: the drum feed = the main steam of the heat balance PPE-14-0725 case 1
+  /* 1.0.0-beta.346 (JENNIE, user 2026-11-24 "GO DESIGN"): the target is the design: the drum feed = the main steam of the heat balance PPE-14-0725 case 1
      (458.3 T/H; its boiler box has no blowdown, cycle loss 0) + the continuous blowdown in service, design 15 T/H (mass balance
      K1AU3-MB-019 item 22) = 473.3 T/H, +-3 %. The 03.png 499.1 T/H is a plant snapshot, sanity only */
   ck(Math.abs(b.ffw / 473.3 - 1) < 0.03, `150 MW feedwater ${b.ffw} T/H: design HB case 1 main steam 458.3 + CBD 15 (MB-019) = 473.3 T/H (+-3 %)`);

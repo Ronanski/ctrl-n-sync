@@ -112,11 +112,12 @@
           id: 'o2c',
           lab: 't'
         }),
-        at(L('combustion-air', 'Combustion air'), 540, 810, { id: 'cal' }),
+        at(L('combustion-air', 'Combustion air'), 480, 810, { id: 'cal' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-G): no page linked to Purge and trip, the operator could not reach the purge */
-        at(L('purge-trip', 'Purge and trip'), 760, 810, { id: 'ptl' }),
+        /* UI check 2026-11-24 C1: the three page links left of the gas duct down to the air heater */
+        at(L('purge-trip', 'Purge and trip'), 650, 810, { id: 'ptl' }),
         /* 3.2.5-beta.1 (F-M): the diesel oil and burners page was reached only through Purge and trip */
-        at(L('oil-burners', 'Burners'), 320, 810, { id: 'obl' })
+        at(L('oil-burners', 'Burners'), 300, 810, { id: 'obl' })
       ],
       pipes: [
         { med: 'gas', w: W_G, pts: ['fu.out', 'cy.in'], flow: GAS, arrow: false },
@@ -183,7 +184,9 @@
         { x: 834, y: 862, s: 'Temperature 1', key: 'TT-FG1124', unit: '°C', dp: 0 },
         { x: 834, y: 878, s: 'Temperature 2', key: 'TT-FG1125', unit: '°C', dp: 0 },
         { x: 834, y: 894, s: 'Pressure', key: 'PT-FG1121', unit: MM, dp: 0 },
-        { x: 834, y: 916, s: 'Air heater pressure drop', key: 'DPT-FG1052-5', unit: MM, dp: 0 },
+        /* UI check 2026-11-24 C1: in two lines, clear of the gas duct from the air heater */
+        { x: 834, y: 912, s: 'Across the air heater', cls: 'hx-note' },
+        { x: 834, y: 928, s: 'Pressure drop', key: 'DPT-FG1052-5', unit: MM, dp: 0 },
         { x: 600, y: 944, s: 'AFTER THE AIR HEATER', cls: 'hx-zone', anchor: 'end' },
         { x: 600, y: 962, s: 'Oxygen', key: 'AT-FG1131', unit: '%', dp: 1, anchor: 'end' },
         { x: 600, y: 978, s: 'Temperature 1', key: 'TT-FG1132', unit: '°C', dp: 0, anchor: 'end' },

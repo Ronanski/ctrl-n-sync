@@ -3,7 +3,7 @@
 // of the boiler master sheet (ABC-001C) per 0.5 s (its 36 linked sheets step once each).
 // The operator (PR-OPE-5003: "Maintain MS pressure 123-126 ksc"): below 220 T/H of main steam the drawing puts the boiler master in
 // MANUAL (ABC-001C M.2013 = NOT M.0101, M.0101 = MSF > 220 T/H); the operator moves HIC-BM to hold the pressure and presses A again
-// above 220 T/H. Pass (1.0.0-beta.344, user 2026-11-24 'GO DESIGN': the design documents are the targets, no plant snapshot): at 60 MW
+// above 220 T/H. Pass (1.0.0-beta.346, user 2026-11-24 'GO DESIGN': the design documents are the targets, no plant snapshot): at 60 MW
 // and 150 MW within 5 % of the Hitachi heat balance PPE-14-0725 (40 % case MS 190.769 T/H, 100 % 458.327 T/H) and of the FHI curves at
 // the steam flow (Fig 6 SH / RH temperature, Fig 13 coal, Tab 3 RH outlet 35.1 kg/cm2 at MCR, the HRH pressure going with the HP exhaust
 // of the HB, 16.35 / 38.64 ata), MSP within 5 % of its set point, drum level inside +-100 mm, no low-low pressure, no page error.

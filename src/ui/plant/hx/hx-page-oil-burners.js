@@ -32,7 +32,7 @@
     TS = 2.4 /* tank */,
     PAX = 385 /* apk test 2026-11-22: the pumps 235 apart (was 190), so their state rows clear each other at 11 px */,
     PBX = 620,
-    SAX = 320,
+    SAX = 295 /* UI check 2026-11-24 C1: pump A suction riser clear of its state row */,
     SBX = 540 /* suction risers */,
     SUY = 940 /* suction header */,
     PY = 760,

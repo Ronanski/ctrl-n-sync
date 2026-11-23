@@ -798,8 +798,16 @@
               : m;
   /* the state in words; a machine that is a valve or a set of valves (its name is its tag: XV-..., MV-...) is open / closed */
   /* audit 2026-11-21 C6: a valve or damper driven as a machine (steam seal feed, exhaust hood spray) said Running: vw = drawn as a valve */
+  /* UI check 2026-11-24 C6: a TCS system drawn as its valve (gland steam seal, hood spray: a name without a tag number) is in or
+     out of service; its valve opening is a value of its own (PV-GS1031 position, FV-CD1904 open) */
   const stTxt = (s, name, vw) =>
-    vw || /^(XV|MV|V)-/.test(name || '')
+    vw && name && !/d/.test(name)
+      ? s === 'run'
+        ? 'In service'
+        : s === 'stop'
+          ? 'Out of service'
+          : '-----'
+      : vw || /^(XV|MV|V)-/.test(name || '')
       ? s === 'run'
         ? 'Open'
         : s === 'stop'
