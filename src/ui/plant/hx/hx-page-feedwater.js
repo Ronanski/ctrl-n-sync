@@ -281,8 +281,8 @@
       ],
       taps: [
         { x: 405, y: DAY - 12 * DAS, side: 't', label: 'Pressure', key: 'PT-TS1017', unit: K, tag: 'PT-TS1017' },
-        { x: 250, y: 935, side: 'l', label: 'Suction', key: 'PT-FW1115-A', unit: K, tag: 'PT-FW1115-A' },
-        { x: 550, y: 935, side: 'l', label: 'Suction', key: 'PT-FW1115-B', unit: K, tag: 'PT-FW1115-B' },
+        { x: 250, y: 860, side: 'l', label: 'Suction', key: 'PT-FW1115-A', unit: K, tag: 'PT-FW1115-A' },
+        { x: 550, y: 860, side: 'l', label: 'Suction', key: 'PT-FW1115-B', unit: K, tag: 'PT-FW1115-B' },
         { x: 410, y: DHY, side: 't', label: 'Pressure', key: 'PT-FW1011', unit: K, tag: 'PT-FW1011' },
         { x: 610, y: DHY, side: 't', label: 'Temperature', key: 'TT-FW1011', unit: '°C', dp: 0, tag: 'TT-FW1011' },
         {

@@ -127,8 +127,8 @@
         ),
         at(L('sea-water', 'Sea water side'), EXX, 510, { id: 'swl' }),
         /* hand valves of the plant model (temporary page 02; K1AU3-PD-021 for the V-CW valves) */
-        at(HX.H('V-MU0001'), 120, 380, { id: 'hm1' }),
-        at(HX.H('V-MU0002'), 330, 380, { id: 'hm2' }),
+        at(HX.H('V-MU0001'), 195, 380, { id: 'hm1' }),
+        at(HX.H('V-MU0002'), 405, 380, { id: 'hm2' }),
         ...['V-MU0003', 'V-MU0004', 'V-MU0005'].map((t, i) => at(HX.H(t, t, { w: 80 }), 542, MY[i], { id: 'hs' + i })),
         ...['V-MU0007', 'V-MU0009', 'V-MU0011'].map((t, i) =>
           at(HX.H(t, t, { w: 78 }), 818, MY[i] - 45, { id: 'hd' + i })
@@ -145,8 +145,8 @@
       ],
       pipes: [
         /* tanks to the make-up pumps, the pumps into the header */
-        { med: 'water', w: W_M, pts: ['ta.b', [120, 420], [MSX, 420], [MSX, MY[0]]], flow: MU, arrow: false },
-        { med: 'water', w: W_M, pts: ['tb.b', [330, 420]], flow: MU, arrow: false },
+        { med: 'water', w: W_M, pts: ['ta.r', [195, 266], [195, 420] /* UI check 2026-11-24 C1: outlet low at the side, the level under the tank stays clear */, [MSX, 420], [MSX, MY[0]]], flow: MU, arrow: false },
+        { med: 'water', w: W_M, pts: ['tb.r', [405, 266], [405, 420]], flow: MU, arrow: false },
         ...N.flatMap((n, i) => [
           { med: 'water', w: W_M, pts: [[MSX, MY[i]], 'm' + i + '.s'], flow: 'm:MWP-' + n, arrow: false },
           {
