@@ -1763,7 +1763,11 @@ const AN_MU = {
   mI: [18.6, 32.8, 44.7, 58.0, 70.1],
   mkW: 37.3 /* 50 HP */,
   Ist: 451,
-  ramp: 2 /* s, direct on line (NO-SOURCE time) */,
+  /* beta.316 (JENNIE, Audit #5, was 2 s NO-SOURCE): direct on line run-up time from the TECO sheet (D1-0-032 p8, 50 HP 2P,
+     3555 rpm, GD2 0.905 kg m2, LRT 160 %, BDT 270 %): J = GD2 / 4 = 0.226 kg m2, w = 372.3 rad/s, rated torque 37.3 kW / w = 100 N m;
+     mean motor torque (LRT + BDT) / 2 = 215 N m, less the pump on its recirculation (about 30 N m at full speed, square law: mean
+     1 / 3 = 10 N m) = 205 N m; t = J w / T = 0.41 s (motor rotor only: the impeller inertia is not in the docs) -> 0.5 s */
+  ramp: 0.5,
   kP: 0.1,
   z: 11.3,
   dp: 0.03,
@@ -1898,14 +1902,19 @@ const AN_ACW = {
   eff: 0.95,
   pf: 0.86,
   Ist: 240,
-  ramp: 10 /* s, soft starter (NO-SOURCE time, as the SWP) */,
+  ramp: 10 /* s, soft starter: the ACWP starter is a Solcon HRVS-DN 140 A 6.6 kV (E1-0-131 p4, S-1A2 "M-1108A Aux. CW PUMP A 300KW"),
+     the same type as the SWP: ACC. TIME 10 s, the vendor set value (O&M L23-3 manual 7.8; the plant setting sheet is not in the docs) */,
   dQ: 1500,
   dP1: 6.4,
   dP2: 5.2,
   dLv: 0.8,
   dp: 0.27,
   hxN: 2,
-  kd100: 0.05 /* kg/cm2, NO-SOURCE: loss of the open ACWP discharge valve at 1500 m3/h (inside the 27.PNG calibration) */,
+  /* beta.316 (JENNIE, Audit #5, was NO-SOURCE): the open ACWP discharge valve V-CW1007 / 1009 at 1500 m3/h, the Crane TP-410 method
+     of AN_SW (beta.312): discharge DN350 (D1-0-033 p6 KP14153 "DISCHARGE FLANGE DN 350"), 14" ID 336.5 mm, v 4.69 m/s, v^2/2g 1.12 m;
+     fT 0.0127; the SOP throttles it (5 % at start), a butterfly 10 ~ 14" 35 fT = 0.445 -> 0.50 m x 0.0991 = 0.049 kg/cm2. The check
+     valve V-CW1006 / 1008 is not modelled (its type is not in the docs) */
+  kd100: 0.05,
   heat: 3480,
   UA: 174.8 /* kW/K per CCWHE in service, CALIBRATED (see above): NTU 0.2025 at 27.PNG with 2 SWBP (2,450 m3/h of the CW model) */,
   M: 180000,
