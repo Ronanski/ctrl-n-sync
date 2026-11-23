@@ -1,13 +1,11 @@
-/* ===== INSTRUCTOR TOOLS (user "go all" 2026-11-19, item 6: grouped malfunctions, freeze) =====
+/* ===== FAULT GROUPS (user "go all" 2026-11-19, item 6: grouped malfunctions; audit #6 2026-11-24: the instructor hold is gone, Pause
+   holds the plant, and the Instructor button is now the Plant menu of the station)
    Nothing here makes a fault or a result. The faults stay those of engine/faults.js (AN.fault) and world.js (WORLD.ftrip); this file only
-   sorts them by the plant system they belong to, so the instructor finds them by system, and gives the instructor a FREEZE.
+   sorts them by the plant system they belong to, so the Plant menu lists them by system.
    AN.faultGroups() -> [{ g: 'Air and flue gas', items: [{ id, t, on, src: 'an' | 'world' }] }, ...], the groups in the order of the plant
                        (fuel, air and gas, water and steam, turbine side, electrical, then instruments and valves); every fault of the two
                        lists is in exactly one group ('Other' only for a fault added later without a group here).
-                       A fault is put on / cleared as before: src 'an' -> AN.fault(id, on), src 'world' -> WORLD.ftrip(id, on).
-   AN.freeze(on, why) -> the plant time stops (the Pause of the app) and Run is refused until the instructor takes the freeze off
-                       (trace.js Run checks AN.frz). '' or the reason it was refused. AN.freeze() -> { on, at (plant s), why }.
-                       The freeze of a training simulator: the instructor holds the plant to explain, the trainee cannot run it on. */
+                       A fault is put on / cleared as before: src 'an' -> AN.fault(id, on), src 'world' -> WORLD.ftrip(id, on). */
 const AN_FG_ORDER = [
   'Coal and limestone',
   'Air and flue gas',
@@ -53,25 +51,4 @@ AN.faultGroups = () => {
     (M[k] = M[k] || []).push({ id: f.id, t: f.t, on: !!f.on, src: f.src });
   }
   return AN_FG_ORDER.filter(k => M[k]).map(k => ({ g: k, items: M[k] }));
-};
-AN.frz = null;
-AN.freeze = (on, why) => {
-  if (on === undefined) return AN.frz ? Object.assign({}, AN.frz) : { on: false, at: null, why: '' };
-  const ev = m => {
-    try {
-      if (window.lsEventAdd) lsEventAdd('INSTRUCTOR', 'INSTRUCTOR', m);
-    } catch (e) {}
-  };
-  if (on) {
-    if (AN.frz) return '';
-    if (!(AN.unit && AN.unit.on)) return 'FREEZE: no plant is running (pick a starting point first)';
-    AN.frz = { on: true, at: Math.round(anPlantT() * 10) / 10, why: String(why || '') };
-    if (AN.pauseOn) AN.pauseOn();
-    ev('Instructor: FREEZE' + (why ? ' (' + why + ')' : '') + ': the plant is held');
-    return '';
-  }
-  if (!AN.frz) return '';
-  AN.frz = null;
-  ev('Instructor: FREEZE off: press Run to go on');
-  return '';
 };
