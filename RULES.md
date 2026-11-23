@@ -36,6 +36,8 @@ Pinagmulan: ang project instructions ng user, ang Full Audit 3 rules draft (2026
 7. Simula: Cold, Warm, Hot at 150 MW. Ang Warm at Hot ay galing sa trip sa 150 MW na pinalamig ng physics (Q3), sinusukat sa ATS criteria.
 8. TCS (Hitachi HIACS) at DCS: magkahiwalay na sistema at HMI, Modbus lang ang kabit, iisang planta. TCE / TCA ang nananaig sa IBD; ang trip logic ay mula sa IBD; hindi ginagamit ang Feb 2017.
 9. Bawal mag-alis ng link para lang gumana; hanapin ang tamang source (`docs/DCS_KNOWLEDGE.md` 9).
+10. Design ang masusunod (user 2026-11-24 "GO DESIGN"): ang design documents lang ang target ng plant model; ang snapshot at trend ng planta ay pang-check lang. Bawat response ng process ay nasa plant model, at sinusunod ang lahat ng kaugnay na logic.
+11. Ang "tapos" ay ang `docs/ACCEPTANCE.md` lang (user 2026-11-24 "GO LIST"): tapos ang app kapag pasado ang lahat ng item nito; ang wala roon ay hindi hinahabol; ang user lang ang nagdadagdag o nagbabawas ng item.
 
 ## 4. HMI at itsura
 
