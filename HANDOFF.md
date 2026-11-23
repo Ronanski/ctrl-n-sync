@@ -26,7 +26,10 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 - Isang clone bawat thread; huwag magpalit ng branch sa folder ng iba. Sa Windows: `git clone -c core.autocrlf=false`, kung hindi ay DIFFERENT ang `npm run check`.
 - Mabigat na takbo: isa-isa, `team-files/TEST_LOCK`.
 
-## 4. Bukas na gawain (Full Audit 3, bilang 2026-11-22)
+## 4. Bukas na gawain
+
+**Finish line: `docs/ACCEPTANCE.md`** (user GO LIST 2026-11-24 06:06 PHT). Ito lang ang saklaw ng "tapos". Bilang ngayon: 1 pasado, 45 natitira. Bawat merge na nagbabago ng estado ng item: i-update ang "Bilang" doon.
+ (Full Audit 3, bilang 2026-11-22)
 
 Tapos: #1 Android key (GitHub secret), #2 behaviour gate, #7 version at ulat bawat merge, #10 save point ayon sa pangalan ng sheet, #15, #17 orasan ng planta mula 0:00, #18 rules (ito).
 
