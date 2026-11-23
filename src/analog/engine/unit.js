@@ -1250,7 +1250,7 @@ function anDitlPos(name, j) {
 /* 3.2.0-beta.59 (#116, user 2026-10-29 "DAPAT S PLANT MODEL GALING"): the run state of a DITL motor drawing (1 RUN, 0 STOP / TRIP), or
    of one output row of a drawing of two machines ("DITL-39@3" = DEBRIS FILTER S-1502 IN OPERATION); null while the one world is not
    built. The same reading as the lamps of the Training dock and the HMI (DUI.motState of src/digital/parts/03c-read.js, dock.js mst) */
-function anDitlRun(addr) {
+function anDitlRun(addr, last) {
   try {
     if (typeof S === 'undefined' || !S.sheets || !window.WORLD || !WORLD.on || !WORLD.idx || !window.DUI) return null;
     const m = /^(.*?)(?:@(\d+))?$/.exec(String(addr)),
@@ -1263,6 +1263,11 @@ function anDitlRun(addr) {
     if (!s) return null;
     if (!s.nl) s.nl = netlist(s);
     if (m[2] != null) {
+      /* beta.314 (JENNIE): last = the output rows of the world's last scan (what the HMI shows). DUI.outVal reads the net values
+         (nl._v), which miss a row driven by a field panel input (DITL-39 IN OPERATION rows 3 / 14 read 0 while the world had them 1:
+         the debris filters never flushed). Only the filters ask for it: the other readers keep their timing */
+      const wo = last && WORLD.out && WORLD.out[s.name];
+      if (wo instanceof Set) return wo.has(+m[2]) ? 1 : 0;
       const v = DUI.outVal(s, +m[2]);
       return v == null ? null : v === 1 ? 1 : 0;
     }
@@ -1342,7 +1347,15 @@ const AN_SW = {
   dpBw: 800,
   bwT: 180,
   dirtBw: 0.6 /* (800 / 500) - 1 */,
-  dirtT: 4 * 3600 /* NO-SOURCE: 4 h at the normal flow from clean to the backwash point */,
+  /* beta.314 (JENNIE, Audit #5): the filter PLC timers, O&M L18-4 (DN2400) p36 section 7.4 "TIMER SETTING" and p47 section 4.3, the
+     same in L18-5 (DN600): flushing 3 min, SYSTEM CYCLE TIMER 4 h (a flush every 4 h from the end of the last one), DP HIGH SEQUENCE
+     LEAD TIMER 30 s (DP above 80 mbar for 30 s starts a flush and resets the cycle timer). The vendor data (p15, DP at normal flow) gives:
+     clean 500, partly (50 %) choked 1,200 mmH2O. The fouling rate of the seawater is not in the docs and no plant DP trend has the
+     S-1502 / S-1504 tags: dirtT keeps the clean -> 800 mmH2O time equal to the vendor cycle timer (4 h), so in normal water the
+     timer flush comes first and the DP flush is the back-up, as the control philosophy describes. */
+  cycT: 4 * 3600,
+  hiT: 30,
+  dirtT: 4 * 3600 /* = cycT (above): clean -> 800 mmH2O at the normal flow */,
   /* design point (calibration) */
   dQ: 18900,
   dL: -4,
@@ -1366,7 +1379,7 @@ const AN_SW = {
   cTH: 31500,
   cSt: 316.024,
   mcr: 460,
-  ramp: 10 /* s, NO-SOURCE: soft starter ramp of the SWP */,
+  ramp: 10 /* s, SWP soft starter ramp: ACC. TIME of the installed Solcon HRVS-DN, O&M L23-3 manual 7.8 (its set value; the plant setting sheet is not in the docs) */,
   bRamp: 5 /* s, NO-SOURCE: Y / delta change-over of the SWBP */,
   tauP: 2,
   tauT: 60,
@@ -1577,7 +1590,7 @@ function anSeawaterStep(U, dt) {
     sw = K.swp.map(a => srcBit([a])),
     bp = K.swbp.map(a => anDitlRun(a) || 0),
     df = K.df.map(a => {
-      const r = anDitlRun(a);
+      const r = anDitlRun(a, true);
       return r == null ? 1 : r;
     });
   /* the speed of each pump: a start ramps it (soft starter / Y-delta), a stop drops it at once (coast-down not modelled); the first
@@ -1660,12 +1673,21 @@ function anSeawaterStep(U, dt) {
   ].forEach(([i, q, op]) => {
     const d = 'swDirt' + i,
       b = 'swBw' + i;
+    const cy = 'swCyc' + i,
+      hi = 'swHi' + i;
     if (U[b] > 0) {
       U[b] = Math.max(0, U[b] - dt);
       U[d] = Math.max(0, U[d] - (K.dirtBw * dt) / K.bwT);
     } else U[d] += (K.dirtBw * q * q * dt) / K.dirtT;
     const dp = K.dp0 * q * q * (1 + U[d]);
-    if (op && dp >= K.dpBw && !(U[b] > 0)) U[b] = K.bwT;
+    /* the filter PLC (beta.314): DP high for 30 s or the 4 h cycle timer starts a 3 min flush; the cycle timer counts from its end */
+    U[hi] = op && dp >= K.dpBw && !(U[b] > 0) ? (U[hi] || 0) + dt : 0;
+    U[cy] = op && !(U[b] > 0) ? (U[cy] || 0) + dt : 0;
+    if (op && !(U[b] > 0) && (U[hi] >= K.hiT || U[cy] >= K.cycT)) {
+      U[b] = K.bwT;
+      U[hi] = 0;
+      U[cy] = 0;
+    }
     lag('swDp' + i, dp, K.tauP);
   });
   /* SWP motor current: 500 A while the soft starter ramps, then the load of the shaft power (motor table) */

@@ -249,6 +249,10 @@
         } else if (v === 0) rep.zero++;
         else rep.none.push(s.name + ' #' + i + ' ' + textOf(s, i, 'S'));
       }
+      /* beta.314 (JENNIE): the debris filter panels of DITL-39 IN OPERATION at 150 MW (vendor O&M L18-4 p40 "System must be in operation
+         when main cooling water is running"): their panel state (03b-sim.js FD) starts at "in operation"; the panel still drops it
+         without a seawater pump running (row 1 permissive) */
+      if (/DITL-39$/.test(((s._inst && s._inst.base) || s).name)) s._fd = { 0: { pos: 1, init: 0 }, 1: { pos: 1, init: 0 } };
     }
     return rep;
   };
