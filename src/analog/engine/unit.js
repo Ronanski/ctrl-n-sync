@@ -2266,9 +2266,19 @@ const AN_BB = {
        Circulating Fluidized Bed Boilers, ch. 2; the rate itself is not in the documents);
      - the profile of the bed balance with these sinks gives Tu 892.3 C; Uw = 146.45 MW / (892.3 - 338.5) = 264.5 kW/K, of it the gas
        radiation uag(892 C) 106.9 (WSGG, upper walls): uaS 157.6 kW/K by the solids. */
-  tbA: 937,
-  cSol: 2165,
-  uaS: 157.6,
+  /* 1.0.0-beta.348 (JENNIE, D9 of user 2026-11-24 "GO DESIGN"): THE ANCHOR IS THE DESIGN, NOT THE PLANT. tbA 937 above was the HMI
+     snapshot thermocouples (plant trend 952 ~ 962 C). The design bed: P2S4 p2-4-8 850 ~ 900 C normal (above 900 C call FHI), the
+     procedure holds 850 ~ 870 C (SU:10198); FHI P2S7 Fig 8 furnace average 840 C at 100 %. tbA = 860 C (the middle of the held band),
+     furnace exit 840 C (Fig 8 at 100 %, was 850 FHI design data). Same CALC as beta.256, same sinks (upper walls 146.45 MW, SH panels
+     62.5 MW, drum 338.5 C, flue gas 237 kW/K):
+     - Cs = (146.45 + 62.5) MW / (860 - 840) K = 10,448 kW/K, less the gas 237: cSol 10,211 kW/K (12,156 kg/s of solids at 0.84 kJ/kg K =
+       102 kg/m2 s over the 119 m2 grate: the top of the CFB range 10 ~ 100 kg/m2 s, Basu ch. 2; an isothermal furnace at MCR is what
+       the design curve says, bed 860 and exit 840);
+     - the profile (anBbSus) at these: Tu 849.9 C, Uw = 146.45 MW / (849.9 - 338.5) = 286.4 kW/K, gas radiation uag(849.9) 100.6 (WSGG):
+       uaS 185.8 kW/K. Checked by anBbSus itself: tgF 840.0, walls 146.47, panels 62.51 MW (scratchpad d3solve.cjs, the app's laws) */
+  tbA: 860,
+  cSol: 10211,
+  uaS: 185.8,
   uaL: 18,
   uaBR: 30.8 /* kW/K, bed -> refractory centre (beta.263, see the bed balance) */,
   uaRW: 43.1 /* kW/K, refractory centre -> water */,
@@ -2301,6 +2311,13 @@ const AN_BB = {
      Check against (1): U0 = the flue gas at 150 MW (188 kg/s, density 0.29 kg/m3 at 937 C) over the 119 m2 grate = 5.4 m/s, furnace
      height 7.75 + 25.85 = 33.6 m (T2): c = 9.2 x 5.4 / 33.6 = 1.5 s^-1, inside the range Kunii & Levenspiel give for a U (0.5 ~ 10
      s^-1, larger for coarser solids; the sand of P2S7 Tab 3 d50 0.15 ~ 0.30 mm). The circulation rate itself is not in the documents */
+  /* 1.0.0-beta.350 (JENNIE, D3 of "GO DESIGN", held): the FHI 60 % point (air 371 T/H Fig 12, coal 56.0 Fig 13, furnace 755 C Fig 8,
+     bed 860 held) asks for kKL 3.80 (CALC, scratchpad d3solve.cjs). Measured 2026-11-24 (team-files/plant-study/
+     15-boiler-balance-2026-11-24-damping.md points 7 - 9): kKL 3.8 takes most of the fast answer of the steam to the coal away (gas
+     velocity -> solids circulation, the lead of the PIC-COBM loop) and the 150 MW pressure loop swings into DRUM LEVEL H.H. (with the
+     plant anchor and with the design anchor). With 9.2 the design anchor (tbA 860 below) is damped at 150 MW. So 9.2 stays until the
+     part-load bed is solved in the physics (the FHI 60 % point says the solids profile at part load is not the 150 MW one with a
+     lower velocity only); 9.2 itself is the plant trend value of beta.282 (finding D3 stays open) */
   kKL: 9.2,
   /* 1.0.0-beta.286 (JENNIE, F3 of report 282: start-up save points S10 / S12 / S29): beta.282 gave the SH panels only the solids part
      (uaP x phi^0.5), so at the low air of a start-up (phi ~ 1e-4) they took no heat at all (S12: 0.0 ~ 0.4 MW, was 1.3 ~ 2.0; the panel
@@ -2324,15 +2341,16 @@ const AN_BB = {
      against 0.504 at the furnace beam 7.7 m (hx.js anHxEps, 892 C). Panel faces from the drawing: 28 panels x 2 sides x 0.6096 m x
      (14.75 m straight + 3.126 m lower legs) = 610 m2 (CALC). Gas to the panels at the anchor (Tu 892.3 C, panel metal ~440 C, save
      "150 MW bed AUTO 2 coolers"): 610 m2 x (WSGG lane radiation 54.5 W/m2 K, gray wall factor 0.9 in it, + convection 10) = 39.4
-     kW/K, of the anchor panel conductance 2 x uaP 65 = 130 kW/K: fgP 0.303 (CALC). The solids take the rest (0.697 x phi^0.5), so the
+     kW/K, of the anchor panel conductance 2 x uaP 65 = 130 kW/K: fgP 0.303 (CALC). beta.348 (D9): at the design anchor Tu 849.9 C the
+     lane radiation is 51.4 W/m2 K and the panels 2 x 76.1 kW/K (hx.js uaP): fgP = 610 x (0.0514 + 0.01) / 152.2 = 0.246 (CALC). The solids take the rest (0.697 x phi^0.5), so the
      panels lose heat faster at part load than the walls do; at the anchor (phi 1) the panel heat is the same as before. Hand check at
      90 MW (Tu 850, phi 0.2): panel factor 0.65 -> 0.60, about 3 MW less to the SH. Was fgP 106.9 / 264.5 = 0.404 (beta.286, the wall
      split; the 17:35 note of report 286 said the lane changes only the size of fgP, not its part-load slope: wrong, the size IS the
      slope, because the solids part falls with phi^0.5 and the gas part does not) */
-  fgP: (610 * (0.0545 + 0.01)) / 130,
+  fgP: (610 * (0.0514 + 0.01)) / 152.2,
   aPan: 610 /* m2, panel faces (K1AU3C-201, CALC above) */,
   lPan: 1.03 /* m, lane beam between two panels */,
-  tuA: 892.3,
+  tuA: 849.9 /* beta.348: the design anchor (D9 above) */,
   /* 1.0.0-beta.334 (JENNIE, whole boiler balance 2026-11-23, plant-study/15-boiler-balance-2026-11-23.md): THE SOLIDS DENSITY ALONG
      THE HEIGHT. The law of beta.282 (Kunii & Levenspiel) makes the density fall with the height as e^(-a h), a = c / U, and phi is its
      share at the furnace top. The walls and the panels gave both phi (the top), but they do not sit at the top: the upper walls run

@@ -18,21 +18,27 @@ const MAX = +process.argv[2] || 120, CHUNK = +process.argv[3] || 10;
    P2S7 Fig 9 normal overall furnace pressure drop at 100 % load, 1630 mmH2O (hmi-op.js AN_HMI_CTL) */
 const AUTO = { AICFG112: 3.5, DPICFG108: 1630, SICL1060A: undefined, SICL1060B: undefined, SICL1060C: undefined, SICL1060D: undefined };
 /* 3.2.4-beta.8: the drum level too (the feedwater valve law of beta.6 swings the three-element loop ~10 min; a start taken mid-swing dipped to -34 mm) */
+/* the design bed anchor AN_BB.tbA of the engine source (the engine constants are not globals of the page) */
+const TBA = +(/\btbA:\s*([\d.]+)/.exec(fs.readFileSync('src/analog/engine/unit.js', 'utf8')) || [])[1];
 const LIM = { MW: 0.3, Tb: 1, Pd: 0.3, msT: 1, rh: 1, F: 0.5, lvl: 1 };
 async function chunk(sv, min, log) {
   const { browser, page } = await open(html);
   try {
     await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && S.sheets.length >= PRE_N, null, { timeout: 120000 });
     await page.waitForTimeout(1500);
-    await page.evaluate(async ([sv, AUTO]) => {
+    await page.evaluate(async ([sv, AUTO, TBA]) => {
       await AN.ades();
       WORLD.set(true);
       document.getElementById('load150').click();
       await AN._startP;
       if (sv) { const o = JSON.parse(sv); await DITL150.savePut({ kf: o.kf, kd: o.kd, ver: 'st150' }); }
       else for (const [t, v] of Object.entries(AUTO)) TOP.auto(t, v);
+      /* 1.0.0-beta.350 (user 2026-11-24 "GO DESIGN"): the first chunk starts the bed at the design anchor of the model (AN_BB.tbA, 860 C,
+         FHI SU:10198 hold 850 - 870 C), not at the bed of the start state made by an older model: a 60 - 80 C step of the bed swings the
+         boiler master to the feeder limit and the drum level out (a start transient, not the plant at 150 MW) */
+      if (!sv && isFinite(TBA)) AN.unit.Tb = TBA;
       window.__h = { C: AN.sheets.find(s => s.name === 'ABC-001C') };
-    }, [sv, AUTO]);
+    }, [sv, AUTO, TBA]);
     for (let m = 0; m < min; m++) {
       const e = await page.evaluate(() => {
         const h = window.__h, U = AN.unit;

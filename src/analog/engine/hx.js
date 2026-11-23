@@ -107,12 +107,14 @@ const AN_HX = {
      1.39 kg/s x (3150 - 1085) kJ/kg (spray water to the steam at the spray, IF97 near 133 bar 450 C) = 2.9 MW: 65.4 - 2.9 = 62.5 MW,
      the design heat. 69 x 62.5 / 65.4 = 65.9; with 66 the same probe gave 63.2 MW (the panel metal follows): 66 x 62.5 / 63.2 = 65.3:
      65 (CALC) */
-  uaP: 65 /* kW/K each SH panel, CALC above (the design panel heat 62.5 MW and the FHI Fig 10 spray 12.4 T/H at 150 MW) */,
+  uaP: 76.1 /* kW/K each SH panel (beta.348 design anchor, uaP1 / uaP2 below); was 65, CALC above (the design panel heat 62.5 MW and the FHI Fig 10 spray 12.4 T/H at 150 MW) */,
   /* 1.0.0-beta.346 (JENNIE, user 2026-11-24 "GO DESIGN": the design documents are the only targets). beta.342 had scaled the two panels
      to the plant 150 MW readings (117 / 63 kW/K, spray 1 34.9 T/H); that was a fit to one plant day, not the design. Back to the design
      CALC above for both panels. The two keys stay so a panel can be taken alone (unit.js reads both) */
-  uaP1: 65 /* kW/K SH panel #1 = uaP */,
-  uaP2: 65 /* kW/K SH panel #2 = uaP */,
+  /* 1.0.0-beta.348 (JENNIE, D9): the same rule again (hold the design panel heat 62.5 MW at 150 MW) at the design anchor of unit.js
+     AN_BB (bed 860, Tu 849.9 C): 33.25 MW / (849.9 - 412.7) = 76.0 and 29.27 MW / (849.9 - 465.8) = 76.2 kW/K: 76.1 each (CALC) */
+  uaP1: 76.1 /* kW/K SH panel #1 */,
+  uaP2: 76.1 /* kW/K SH panel #2 */,
   /* [metal kJ/K, design steam / water flow T/H] */
   wl: [17663, 447.6],
   p1: [70652, 447.6],
