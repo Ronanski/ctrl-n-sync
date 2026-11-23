@@ -119739,7 +119739,11 @@ const MV_CLOSE_S = [
   [/MS[12]391$/, 60], [/MS[12]392$/, 6], [/HR[12]391$/, 5], [/TS[12]001$/, 31], [/TS[12]002$/, 41], [/TS[12]003$/, 54],
   [/TS[12]004$/, 75], [/TS[12]005$/, 88], [/TS[12]3(89|9[0-9])$/, 10], [/AS[12]391$/, 23], [/AS[12]39[23]$/, 10], [/AV[12]391$/, 10],
   [/SB[12]001$/, 18], [/CD[12]00[12]$/, 51], [/CD[12]003$/, 27], [/CD[12]00[78]$/, 24], [/MU[12]001$/, 41], [/FW[12]00[12]$/, 48],
-  [/FW[12]39[12]$/, 7], [/BD[12]001$/, 8], [/BD[12]002$/, 11], [/BR[12]391$/, 5]
+  [/FW[12]39[12]$/, 7], [/BD[12]001$/, 8], [/BD[12]002$/, 11], [/BR[12]391$/, 5],
+  /* beta.318 (JENNIE, Audit #5): the four later sheets of the same drawing, PDF pages 72 ~ 75 (NIPPON GEAR 2014-10-27, orders L34028A ~ D):
+     MV-IW0391 150# 6" gate 32 s, MV-AS1394 / 2394 800# 2" globe 10 s, MV-AS1395 / 2395 300# 3" gate 20 s, MV-AS1396 / 2396 800# 2" gate
+     13 s. MV-AS1397 and MV-TS1400 are not in the valve list of the drawing (PDF p 3, 33 items): they keep 10 s (NO-SOURCE) */
+  [/IW0391$/, 32], [/AS[12]394$/, 10], [/AS[12]395$/, 20], [/AS[12]396$/, 13]
 ];
 function mvCloseTime(tag) {
   const t = String(tag).replace(/^MV-?/i, '').replace(/[-\s].*$/, '');
@@ -156328,10 +156332,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 52046ec'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build aa90192'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 52046ec';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build aa90192';
     } catch (e) {}
   };
   upd();
@@ -297105,7 +297109,11 @@ const MV_CLOSE_S = [
   [/MS[12]391$/, 60], [/MS[12]392$/, 6], [/HR[12]391$/, 5], [/TS[12]001$/, 31], [/TS[12]002$/, 41], [/TS[12]003$/, 54],
   [/TS[12]004$/, 75], [/TS[12]005$/, 88], [/TS[12]3(89|9[0-9])$/, 10], [/AS[12]391$/, 23], [/AS[12]39[23]$/, 10], [/AV[12]391$/, 10],
   [/SB[12]001$/, 18], [/CD[12]00[12]$/, 51], [/CD[12]003$/, 27], [/CD[12]00[78]$/, 24], [/MU[12]001$/, 41], [/FW[12]00[12]$/, 48],
-  [/FW[12]39[12]$/, 7], [/BD[12]001$/, 8], [/BD[12]002$/, 11], [/BR[12]391$/, 5]
+  [/FW[12]39[12]$/, 7], [/BD[12]001$/, 8], [/BD[12]002$/, 11], [/BR[12]391$/, 5],
+  /* beta.318 (JENNIE, Audit #5): the four later sheets of the same drawing, PDF pages 72 ~ 75 (NIPPON GEAR 2014-10-27, orders L34028A ~ D):
+     MV-IW0391 150# 6" gate 32 s, MV-AS1394 / 2394 800# 2" globe 10 s, MV-AS1395 / 2395 300# 3" gate 20 s, MV-AS1396 / 2396 800# 2" gate
+     13 s. MV-AS1397 and MV-TS1400 are not in the valve list of the drawing (PDF p 3, 33 items): they keep 10 s (NO-SOURCE) */
+  [/IW0391$/, 32], [/AS[12]394$/, 10], [/AS[12]395$/, 20], [/AS[12]396$/, 13]
 ];
 function mvCloseTime(tag) {
   const t = String(tag).replace(/^MV-?/i, '').replace(/[-\s].*$/, '');
@@ -346692,7 +346700,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 52046ec'));
+    row('Version', E('span', 'scsver', ver + ' · build aa90192'));
   }
   function openSet(near) {
     if (!set) {
