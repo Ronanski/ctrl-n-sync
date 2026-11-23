@@ -253,7 +253,9 @@
           866,
           { id: 'was', rot: 90, lab: 'l' }
         ),
-        at(X('MV-AS1394', '', { tag: 'MV-AS1394 · line drain', cname: 'Warming line drain valve' }), 896, 928, {
+        /* UI check 2026-11-24 C1: name and tag on two short lines between the drain and the warming line; the drain goes down to its own
+           flash chamber line end, clear of the cold reheat drain beside it */
+        at(X('MV-AS1394', 'Line drain', { tag: 'MV-AS1394', cname: 'Warming line drain valve' }), 896, 928, {
           id: 'wad',
           lab: 'b'
         }),
@@ -405,7 +407,7 @@
         { med: 'steam', w: W_SM, pts: ['aux1.l', [948, 946], 'was.r'], flow: 'v:ZT-AS1011>1', arrow: false },
         { med: 'steam', w: W_SM, pts: ['was.l', [948, CY]], flow: 'v:ZT-AS1011>1', arrow: false },
         { med: 'drain', w: W_DR, pts: [[948, 928], 'wad.r'], flow: 'x:MV-AS1394', arrow: false },
-        { med: 'drain', w: W_DR, pts: ['wad.l', [864, 928]], to: 'flash chamber', flow: 'x:MV-AS1394', arrow: false },
+        { med: 'drain', w: W_DR, pts: ['wad.l', [790, 928], [790, 968]], to: 'flash chamber', flow: 'x:MV-AS1394', arrow: false },
         ...dCR2.pipes,
         { med: 'reheat', w: W_SM, pts: [[630, CY], 'pas.r'], flow: 'l:PICAS1005', arrow: false },
         { med: 'reheat', w: W_SM, pts: ['pas.l', 'aux2.t'], flow: 'l:PICAS1005', arrow: false },
@@ -608,7 +610,7 @@
         { x: 1534, y: 525, s: 'pressure turbine', cls: 'hx-name', anchor: 'start' },
         { x: tx(-156), y: ty(268), s: 'Condenser', cls: 'hx-name', anchor: 'middle' },
         { x: 1160, y: HY - 14, s: 'Hot reheat', cls: 'hx-zone', anchor: 'middle' },
-        { x: 710, y: CY - 14, s: 'Cold reheat', cls: 'hx-zone', anchor: 'middle' }
+        { x: 645, y: CY - 14, s: 'Cold reheat', cls: 'hx-zone', anchor: 'middle' }
       ]
     },
     trends: [

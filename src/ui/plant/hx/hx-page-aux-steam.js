@@ -49,7 +49,7 @@
   const dr = user('dr', X('MV-AS1392', 'Header drain valve', { wrap: 12 }), 610),
     pg = user('pg', C('PICCD1104', 'Deaerator pegging steam valve', { tag: 'PCV-AS1030', wrap: 13 }), 740),
     se = user('se', X('MV-AS1395', 'Start-up ejector steam valve', { wrap: 12 }), 920),
-    ae = user('ae', X('MV-AS1396', 'Air ejector steam valve', { wrap: 12 }), 1140);
+    ae = user('ae', X('MV-AS1396', 'Air ejector steam valve', { wrap: 12 }), 1180) /* UI check 2026-11-24 C1: clear of the start-up ejector line end */;
 
   page({
     id: 'aux-steam',
@@ -131,7 +131,7 @@
         /* ---- condenser: vacuum breaker and exhaust hood spray ---- */
         at(X('MV-AV1391', 'Condenser vacuum breaker', { wrap: 14 }), 1560, 620, { id: 'vb', lab: 'b' }),
         at(
-          M('valve', 'LP EXHAUST HOOD SPRAY', 'Exhaust hood spray valve', [], {
+          M('valve', 'LP EXHAUST HOOD SPRAY', 'Exhaust hood spray valve', [V('Opening', 'tcs:aux.hso', '%', 0)], {
             kind: 'control',
             tag: 'FV-CD1904',
             wrap: 14
@@ -173,7 +173,7 @@
         { med: 'steam', w: W_SM, pts: ['se.r', [920, 700], 'ej1.l'], flow: 'x:MV-AS1395' },
         { med: 'air', w: W_SM, pts: ['ej1.r', [1110, 700]], to: 'outdoor', flow: 'x:MV-AS1395' },
         ae.up,
-        { med: 'steam', w: W_SM, pts: ['ae.r', [1140, 840], 'ej2.l'], flow: 'x:MV-AS1396' },
+        { med: 'steam', w: W_SM, pts: ['ae.r', [1180, 840], 'ej2.l'], flow: 'x:MV-AS1396' },
         { med: 'air', w: W_SM, pts: ['ej2.r', 'ecl.l'], flow: 'x:MV-AS1396' },
         /* gland steam */
         { med: 'steam', w: W_SM, pts: [[1000, HY], [1000, GSY], 'ds2.l'], flow: HDR },
@@ -207,7 +207,7 @@
         }
       ],
       texts: [
-        { x: 820, y: HY + 30, s: 'AUXILIARY STEAM HEADER', cls: 'hx-zone', anchor: 'middle' },
+        { x: 1035, y: HY + 30, s: 'AUXILIARY STEAM HEADER', cls: 'hx-zone', anchor: 'middle' },
         { x: 230, y: CRY - 60, s: 'Valve 1', key: 'ZT-AS1020-1', unit: '%', dp: 1 },
         { x: 230, y: CRY - 44, s: 'Valve 2', key: 'ZT-AS1020-2', unit: '%', dp: 1 },
         { x: 1460, y: 330, s: 'Gland steam temperature 1', key: 'TEGS1002', unit: '°C', dp: 0 },
@@ -219,9 +219,9 @@
         { x: 1440, y: 536, s: 'Vacuum 1', key: 'PTST11101', unit: '', dp: 1 },
         { x: 1440, y: 552, s: 'Vacuum 2', key: 'PTST11102', unit: '', dp: 1 },
         { x: 1440, y: 568, s: 'Vacuum 3', key: 'PTST11103', unit: '', dp: 1 },
-        { x: 1440, y: 900, s: 'Exhaust hood 1', key: 'TEST11101', unit: '°C', dp: 0 },
-        { x: 1440, y: 916, s: 'Exhaust hood 2', key: 'TEST11102', unit: '°C', dp: 0 },
-        { x: 1440, y: 932, s: 'Exhaust hood 3', key: 'TEST11103', unit: '°C', dp: 0 }
+        { x: 1440, y: 944 /* UI check 2026-11-24: under the spray valve and its opening */, s: 'Exhaust hood 1', key: 'TEST11101', unit: '°C', dp: 0 },
+        { x: 1440, y: 960, s: 'Exhaust hood 2', key: 'TEST11102', unit: '°C', dp: 0 },
+        { x: 1440, y: 976, s: 'Exhaust hood 3', key: 'TEST11103', unit: '°C', dp: 0 }
       ]
     }
   });
