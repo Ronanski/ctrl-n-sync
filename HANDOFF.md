@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-24 02:33 PHT** (LEADER : JENNIE, beta.346 (was 344; 345 merged first), GO DESIGN: SH panels back to the design CALC, turbine MW per T/H vs each HB case design MST / RHT, tests on design targets, st150 rebuilt. Next: D9 bed 860 C + B4 + PIST10013, then D3 / D4 / D5; derivations in plant-study 15.)
+Huling update: **2026-11-24 03:25 PHT** (LEADER : JENNIE, beta.348: B4 furnace dP DPICFG108 AUTO SV 1630 (FHI Fig 9) + ash coolers AUTO (ABC-009A / B), st150 rebuilt. D9 / D3 design anchor NOT shipped: a 12-min mode grows to a drum level trip at min 105; patch + data in plant-study 15. Next: damping study on the design anchor, then D4 / D5.)
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -14,7 +14,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.346**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.348**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
