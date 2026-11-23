@@ -147644,8 +147644,14 @@ function tcsGenTrip(U) {
    C M-xxxx from Bus 1AM to the motor bus): M-1004 PAF 3.919 / 1.545, M-1115A BFP 3.761 / 1.485, M-1220 IDF 3.498 / 1.385 (pf 0.930);
    M-1005 SAF 1.967 / 0.793, M-1501A / B seawater 1.702 / 0.690 (0.927); M-1007A / B FA blower 0.514 / 0.216, M-0703A plant air
    compressor 0.559 / 0.234 (0.922); M-1108A aux cooling water 0.237 / 0.102, M-1116A condensate 0.269 / 0.115 (0.919). A standby
-   motor (B / C, no load in the study) has the pf of its running twin. The 460 V
-   loads (IA compressors, SWBP, make-up water pumps, lighting, etc.) are NOT counted: NO-SOURCE for their sum.
+   motor (B / C, no load in the study) has the pf of its running twin.
+   1.0.0-beta.332 (JENNIE, Audit 3 #5, was "460 V loads NOT counted, NO-SOURCE for their sum"): the 460 V load of the unit is the
+   load flow through its two 6.6 kV / 460 V transformers in the same ETAP study (LOAD FLOW REPORT p A.14, Bus 1AM): TR-1B1 (Bus21)
+   0.413 MW / 0.263 Mvar and TR-1B2 (Bus49) 1.218 MW / 0.257 Mvar. Bus49 carries the precipitator (C EP11-2 to Bus51, 0.910 MW /
+   0.024 Mvar, pf 1.00, the T/R sets), counted only while the field state says the ESP is in service (AN_SRC.field.esp); the rest,
+   0.721 MW / 0.496 Mvar (MCCs, compressors, lighting, UPS), is counted while the unit is on. The coal yard (CY-M), coal unloading
+   (CSU), conveyor (CNVR) and water treatment (WT-M) buses hang on Bus 1AM too (7.9 MW in the study) but are common plant loads
+   not modelled here.
    Before 52G1 closes the house load comes back from the 230 kV grid through the main transformer and TR-1A1 (back-feed, 52L1 closed).
    House load operation (52L1 open while 52G1 is closed, the ABC-050 input I.0937 "52L1 OPEN FOR HOUSE OPERATION"): the turbine
    carries the house load only (the TCS speed control keeps 3600 rpm; the load swing itself is NO-SOURCE, the model goes to the house
@@ -147658,6 +147664,9 @@ const AN_EL = {
   mt: 180 /* MVA, TR 2310 ONAN */,
   uat: 34 /* MVA, TR-1A1 ONAN */,
   bus: 4000 /* A, BUS 1AM */,
+  /* 460 V load of the unit through TR-1B1 + TR-1B2 (K1AU3-E1-0-307 p A.14): MW, Mvar; ESP T/R sets separately */
+  lv: [0.721, 0.496],
+  esp: [0.91, 0.024],
   /* plant model currents of the 6.6 kV motors of K1AU3E1-0008, with the pf of each (K1AU3-E1-0-307, see above) */
   mot: [
     ['swIa0', 'Seawater pump A', 0.927],
@@ -147687,8 +147696,15 @@ function anElec(U) {
     g52 = tb.st === 'sync' || tb.st === 'load',
     G = typeof anGenEl === 'function' ? anGenEl() : null,
     I = AN_EL.mot.reduce((a, [k]) => a + Math.max(0, +U[k] || 0), 0),
-    Pa = AN_EL.mot.reduce((a, [k, , pf]) => a + (Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000, 0),
-    Qa = AN_EL.mot.reduce((a, [k, , pf]) => a + ((Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000) * Math.tan(Math.acos(pf)), 0),
+    /* the 460 V buses are dead with BUS 1AM in a black-out (U.el.bo; EMP-11 on DG1 is not the unit transformer) */
+    LV = e.bo ? 0 : 1,
+    ESP = LV && typeof AN_SRC !== 'undefined' && AN_SRC.field && AN_SRC.field.esp ? 1 : 0,
+    Pa =
+      AN_EL.mot.reduce((a, [k, , pf]) => a + (Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000, 0) + LV * AN_EL.lv[0] + ESP * AN_EL.esp[0],
+    Qa =
+      AN_EL.mot.reduce((a, [k, , pf]) => a + ((Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000) * Math.tan(Math.acos(pf)), 0) +
+      LV * AN_EL.lv[1] +
+      ESP * AN_EL.esp[1],
     Pg = g52 && G ? +U.MW || 0 : 0 /* beta.240: negative = reverse power from the grid */,
     Qg = g52 && G ? G.MVAr || 0 : 0,
     /* the main transformer carries the generator minus the house load (export), or the house load from the grid (back-feed) */
@@ -147700,8 +147716,9 @@ function anElec(U) {
     l52: e.l52 ? 1 : 0,
     g52: g52 ? 1 : 0,
     house: !e.l52 && g52 ? 1 : 0,
-    busA: I,
-    busPct: (100 * I) / AN_EL.bus,
+    /* the 6.6 kV side current of the 460 V transformers (beta.332) adds to the motor currents */
+    busA: I + (1000 * Math.hypot(LV * AN_EL.lv[0] + ESP * AN_EL.esp[0], LV * AN_EL.lv[1] + ESP * AN_EL.esp[1])) / (Math.sqrt(3) * AN_EL.kV),
+    busPct: (100 * (I + (1000 * Math.hypot(LV * AN_EL.lv[0] + ESP * AN_EL.esp[0], LV * AN_EL.lv[1] + ESP * AN_EL.esp[1])) / (Math.sqrt(3) * AN_EL.kV))) / AN_EL.bus,
     aux: Pa,
     auxMVAr: Qa,
     gen: Pg,
@@ -156410,10 +156427,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 8844bd0'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build e4b73f7'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 8844bd0';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build e4b73f7';
     } catch (e) {}
   };
   upd();
@@ -320646,8 +320663,14 @@ function tcsGenTrip(U) {
    C M-xxxx from Bus 1AM to the motor bus): M-1004 PAF 3.919 / 1.545, M-1115A BFP 3.761 / 1.485, M-1220 IDF 3.498 / 1.385 (pf 0.930);
    M-1005 SAF 1.967 / 0.793, M-1501A / B seawater 1.702 / 0.690 (0.927); M-1007A / B FA blower 0.514 / 0.216, M-0703A plant air
    compressor 0.559 / 0.234 (0.922); M-1108A aux cooling water 0.237 / 0.102, M-1116A condensate 0.269 / 0.115 (0.919). A standby
-   motor (B / C, no load in the study) has the pf of its running twin. The 460 V
-   loads (IA compressors, SWBP, make-up water pumps, lighting, etc.) are NOT counted: NO-SOURCE for their sum.
+   motor (B / C, no load in the study) has the pf of its running twin.
+   1.0.0-beta.332 (JENNIE, Audit 3 #5, was "460 V loads NOT counted, NO-SOURCE for their sum"): the 460 V load of the unit is the
+   load flow through its two 6.6 kV / 460 V transformers in the same ETAP study (LOAD FLOW REPORT p A.14, Bus 1AM): TR-1B1 (Bus21)
+   0.413 MW / 0.263 Mvar and TR-1B2 (Bus49) 1.218 MW / 0.257 Mvar. Bus49 carries the precipitator (C EP11-2 to Bus51, 0.910 MW /
+   0.024 Mvar, pf 1.00, the T/R sets), counted only while the field state says the ESP is in service (AN_SRC.field.esp); the rest,
+   0.721 MW / 0.496 Mvar (MCCs, compressors, lighting, UPS), is counted while the unit is on. The coal yard (CY-M), coal unloading
+   (CSU), conveyor (CNVR) and water treatment (WT-M) buses hang on Bus 1AM too (7.9 MW in the study) but are common plant loads
+   not modelled here.
    Before 52G1 closes the house load comes back from the 230 kV grid through the main transformer and TR-1A1 (back-feed, 52L1 closed).
    House load operation (52L1 open while 52G1 is closed, the ABC-050 input I.0937 "52L1 OPEN FOR HOUSE OPERATION"): the turbine
    carries the house load only (the TCS speed control keeps 3600 rpm; the load swing itself is NO-SOURCE, the model goes to the house
@@ -320660,6 +320683,9 @@ const AN_EL = {
   mt: 180 /* MVA, TR 2310 ONAN */,
   uat: 34 /* MVA, TR-1A1 ONAN */,
   bus: 4000 /* A, BUS 1AM */,
+  /* 460 V load of the unit through TR-1B1 + TR-1B2 (K1AU3-E1-0-307 p A.14): MW, Mvar; ESP T/R sets separately */
+  lv: [0.721, 0.496],
+  esp: [0.91, 0.024],
   /* plant model currents of the 6.6 kV motors of K1AU3E1-0008, with the pf of each (K1AU3-E1-0-307, see above) */
   mot: [
     ['swIa0', 'Seawater pump A', 0.927],
@@ -320689,8 +320715,15 @@ function anElec(U) {
     g52 = tb.st === 'sync' || tb.st === 'load',
     G = typeof anGenEl === 'function' ? anGenEl() : null,
     I = AN_EL.mot.reduce((a, [k]) => a + Math.max(0, +U[k] || 0), 0),
-    Pa = AN_EL.mot.reduce((a, [k, , pf]) => a + (Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000, 0),
-    Qa = AN_EL.mot.reduce((a, [k, , pf]) => a + ((Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000) * Math.tan(Math.acos(pf)), 0),
+    /* the 460 V buses are dead with BUS 1AM in a black-out (U.el.bo; EMP-11 on DG1 is not the unit transformer) */
+    LV = e.bo ? 0 : 1,
+    ESP = LV && typeof AN_SRC !== 'undefined' && AN_SRC.field && AN_SRC.field.esp ? 1 : 0,
+    Pa =
+      AN_EL.mot.reduce((a, [k, , pf]) => a + (Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000, 0) + LV * AN_EL.lv[0] + ESP * AN_EL.esp[0],
+    Qa =
+      AN_EL.mot.reduce((a, [k, , pf]) => a + ((Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000) * Math.tan(Math.acos(pf)), 0) +
+      LV * AN_EL.lv[1] +
+      ESP * AN_EL.esp[1],
     Pg = g52 && G ? +U.MW || 0 : 0 /* beta.240: negative = reverse power from the grid */,
     Qg = g52 && G ? G.MVAr || 0 : 0,
     /* the main transformer carries the generator minus the house load (export), or the house load from the grid (back-feed) */
@@ -320702,8 +320735,9 @@ function anElec(U) {
     l52: e.l52 ? 1 : 0,
     g52: g52 ? 1 : 0,
     house: !e.l52 && g52 ? 1 : 0,
-    busA: I,
-    busPct: (100 * I) / AN_EL.bus,
+    /* the 6.6 kV side current of the 460 V transformers (beta.332) adds to the motor currents */
+    busA: I + (1000 * Math.hypot(LV * AN_EL.lv[0] + ESP * AN_EL.esp[0], LV * AN_EL.lv[1] + ESP * AN_EL.esp[1])) / (Math.sqrt(3) * AN_EL.kV),
+    busPct: (100 * (I + (1000 * Math.hypot(LV * AN_EL.lv[0] + ESP * AN_EL.esp[0], LV * AN_EL.lv[1] + ESP * AN_EL.esp[1])) / (Math.sqrt(3) * AN_EL.kV))) / AN_EL.bus,
     aux: Pa,
     auxMVAr: Qa,
     gen: Pg,
@@ -346856,7 +346890,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 8844bd0'));
+    row('Version', E('span', 'scsver', ver + ' · build e4b73f7'));
   }
   function openSet(near) {
     if (!set) {
