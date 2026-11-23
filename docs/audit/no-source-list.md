@@ -11,6 +11,8 @@ Count: `grep -rn NO-SOURCE src --include=*.js` = 264 marks.
 
 Some open marks are two lines of one comment, so the number of values is a little lower than 217.
 
+**User rule 2026-11-24 00:35 PHT (GO DESIGN):** the route of every mark is a design document or a physics derivation, never a plant snapshot (NN.PNG) or trend; those are a sanity check only. Where an open comment below cites a snapshot (for example "CALIBRATED on 6.PNG"), the snapshot is what must be replaced, not kept. The values that stand on a snapshot without the NO-SOURCE word are listed in `docs/audit/snapshot-values-list.md`.
+
 ## Open, by file
 
 - `src/analog/engine/unit.js`: 146
