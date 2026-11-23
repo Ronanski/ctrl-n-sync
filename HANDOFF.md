@@ -41,6 +41,8 @@ Jennie, bahagi o bukas:
 - Part load (ulat 290, plant trend 90 MW, O2 trim naka-hold gaya sa plant): bed 959 laban sa 955 at exit gas 760 laban sa FHI 755 (tama). MST 543 laban sa 522: may spray pa rin 3.6 + 5.7 t/h (plant 2nd spray 0), RHT 539 laban sa 521 (F1). Hindi fouling ang sanhi (ulat 290). Start-up bed 35-90 °C mas mainit kaysa 280 (F2). Cold run ng user (F3). Jennie.
 - Worker = page mirror: `$id` ng `AN_UNIT.asF` (ulat 276 F2, Rosé beta.277). Reset sa page = Reset sa Worker (ulat 288, ayos na).
 
+AUDIT FIX : LISA (2026-11-24): #5 listahan `docs/audit/no-source-list.md` (217 bukas), #11 plano `docs/audit/unit-split-plan.md` (hintay ng window mula sa coordinator), #3 mungkahi `docs/audit/drift-test-proposal.md`. #6: pinili ng user (2026-11-24 00:21 PHT) na gawing "Plant" menu ang Instructor button at alisin ang Freeze.
+
 Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engineer).
 
 ## 5. Saan ang mga bagay
