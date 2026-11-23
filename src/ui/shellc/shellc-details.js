@@ -141,7 +141,7 @@
         e.key === 'Escape' &&
         B.classList.contains('scdet') &&
         !wide() &&
-        !document.querySelector('.fpo-box,#scal:not([hidden]),#scins:not([hidden]),#scask:not([hidden])')
+        !document.querySelector('.fpo-box,#scal:not([hidden]),#scask:not([hidden])')
       )
         setOpen(false);
     });

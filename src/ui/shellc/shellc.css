@@ -71,23 +71,6 @@ body.sc #gsbar #scstrip .scv{flex:1 1 100%!important;flex-wrap:wrap!important;ro
 body.sc #gsbar #scstrip .scp{margin-left:auto}
 body.sc #gsbar #scstrip .sck{min-width:88px}
 @media (max-width:1279px){body.sc #gsbar #scstrip .scv{flex:1 1 100%}}
-/* ===== step 5: Instructor console ===== */
-body.sc #gsbar #scstrip .pill.ins{border-color:var(--sc-violet)!important;color:var(--sc-violet)!important}
-body.sc #gsbar #scstrip .pill.ins.on{background:var(--sc-violet)!important;color:var(--sc-white)!important}
-#scins{position:fixed;top:calc(var(--scb,var(--top)) + 4px);right:8px;z-index:131;width:min(544px,calc(100vw - 16px));max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 16px);display:flex;flex-direction:column;background:var(--sc-white);border:1px solid var(--sc-violet);border-radius:8px;box-shadow:0 12px 32px rgba(34,46,57,.22);font-family:var(--sc-ui);color:var(--sc-ink)}
-#scins[hidden]{display:none!important}
-#scins .scihd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--sc-line)}
-#scins .scihd b{font:600 14px var(--sc-ui);color:var(--sc-violet)}
-#scins .scibody{overflow:auto;padding:4px 12px 12px;display:grid;gap:8px}
-#scins h4{margin:8px 0 0;font:600 12px var(--sc-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--sc-ink2)}
-#scins .scirow{display:flex;flex-wrap:wrap;gap:8px}
-#scins button{min-height:32px!important;height:auto!important;padding:4px 12px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:500 13px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer;white-space:normal;text-align:left}
-#scins button:hover{border-color:var(--sc-violet)!important}
-#scins button.on{background:var(--sc-violet)!important;border-color:var(--sc-violet)!important;color:var(--sc-white)!important}
-#scins button.flt.on{background:var(--sc-ambg)!important;border-color:var(--sc-amber)!important;color:var(--sc-amink)!important}
-#scins button.trip{border-color:var(--sc-run)!important;color:var(--sc-run)!important}
-#scins button[data-arm]{background:var(--sc-run)!important;border-color:var(--sc-run)!important;color:var(--sc-white)!important}
-#scins .scx{padding:0 12px!important}
 /* ===== Mina beta.210 fixes ===== */
 #scstrip .pill.run .dot{background:var(--sc-amber)}
 #scstrip .pill.run.on .dot{background:var(--sc-run)}
@@ -107,10 +90,6 @@ body.sc.plant[data-tab="operate"]:not(.scov) .sccrumb:not(:has(b:empty)){display
 #scov:not(#scnone) .sctile h3,#scov:not(#scnone) .sctile .sckv,#scov:not(#scnone) .sctile .sclamp,#scov:not(#scnone) .sctile .scar,#scov:not(#scnone) .sctile .scnone{text-align:left!important;justify-content:flex-start;width:100%}
 #scov:not(#scnone) .scar{display:grid!important;grid-template-columns:96px 84px minmax(0,1fr) auto}
 #scov:not(#scnone) .sckv{display:grid!important;grid-template-columns:1fr auto}
-#scins .scinp{flex:1 1 192px;min-width:0;min-height:32px;padding:0 8px;border:1px solid var(--sc-line2);border-radius:4px;font:400 13px var(--sc-ui);color:var(--sc-ink);background:var(--sc-white)}
-#scins .scsvl{display:grid;gap:4px}
-#scins .scsvr{display:flex;align-items:center;gap:8px;font-size:13px}
-#scins .scsvr span{flex:1;min-width:0;overflow-wrap:anywhere}
 /* ===== step 2: overview, breadcrumb, alarm list, start screen ===== */
 #scov{display:none;position:fixed;top:var(--scb,var(--top));left:var(--scl,var(--railW,0));right:0;bottom:var(--footH,var(--foot));z-index:89;overflow:auto;background:var(--sc-page);font-family:var(--sc-ui);color:var(--sc-ink)}
 body.sc.scov #scov{display:flex;flex-direction:column}
@@ -210,7 +189,7 @@ body.sc #gsbar #scstrip .seg button{font-size:13px!important}
 /* M07: tablet targets 40 px (Operator / Engineer, the strip pills, the speed menu) */
 @media (max-width:1279px),(pointer:coarse){
   body.sc #gsbar #scstrip :is(.pill,.seg button,.spdm button){min-height:40px!important}
-  #scins button,#scins .scinp,#scal :is(.sctabs button,.scx,.scack,.scrow button,.scsort button),#scstart:not(#scnone) .scchips button{min-height:40px!important}
+  #scal :is(.sctabs button,.scx,.scack,.scrow button,.scsort button),#scstart:not(#scnone) .scchips button{min-height:40px!important}
 }
 /* M09: rail labels 12 px; M10 / M11: footer text 12 px and the faint clock / info colour from the shell set (5.70:1 on the band) */
 body.sc.cr #crrail .tabs button{font-size:12px!important;line-height:1.2!important}
@@ -233,10 +212,8 @@ body.sc #sfoot :is(#st,.shint,.smsg){flex:1 1 0!important}
 /* M27: alarm list text 13 px, the Events kind 12 px */
 #scal:not(#scnone) .scrow{font-size:13px!important}
 #scal:not(#scnone) .scrow :is(.sck2,.scs){font-size:12px!important}
-/* M28 / M29: the Instructor console and the alarm list end above the footer (their last buttons scroll inside, never under the footer) */
-#scins,#scal{max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 12px)!important}
-#scins h4{font-size:12px!important}
-#scins:not(#scnone) button{font-size:13px!important}
+/* M28 / M29: the alarm list ends above the footer (its last buttons scroll inside, never under the footer) */
+#scal{max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 12px)!important}
 /* design-auditor animation: the blinking trip lamp stops for people who turn motion off */
 @media (prefers-reduced-motion:reduce){.sclamp .dot.trip{animation:none}}
 /* User 2026-11-09 ("ano ba yang nasa gilid sa kaliwa? kala ko ba reshell"): the old dark page rail is not part of layout C (mockup C has
@@ -295,7 +272,7 @@ body.sc #gsbar #scstrip .sck small{grid-column:2;align-self:end;padding-bottom:1
 /* user 2026-11-09: the old page header (values) and the alarm line at the top of an HMI page repeat the strip and its alarm pill; hidden in layout C (frame, not drawing) */
 body.sc #plsvg [data-schd]{display:none}
 /* Mina, live test of 269: the close button of a console showed its icon and its text mark (the text stays for the tests and for readers) */
-body.sc :is(#scins,#scal) .scx[data-g],body.sc .scsx[data-g],body.sc .scdx[data-g]{font-size:0!important}
+body.sc #scal .scx[data-g],body.sc .scsx[data-g],body.sc .scdx[data-g]{font-size:0!important}
 /* the old Home page never shows in layout C: it flashed for about 3 s while a start state loaded (Mina, 269) */
 body.sc #homews{visibility:hidden!important}
 /* the status bar beside the Training panel: its texts stay on one line (they wrapped into 2-letter rows) */

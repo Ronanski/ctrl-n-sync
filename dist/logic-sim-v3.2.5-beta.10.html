@@ -139742,7 +139742,7 @@ function anTurbine0(cmd, arg) {
     if (cmd === 'sync') {
       if (tb.st === 'sync' || tb.st === 'load') return 'Already synchronised';
       /* plan c5: G-1B closes 52G1 only with 52L1 closed (elec.js): an open 52L1 timed the synchronizing out after 5 min with no word */
-      if (U.el && U.el.l52 === false) return 'Line breaker 52L1 is open: close 52L1 first (Instructor console, Grid)';
+      if (U.el && U.el.l52 === false) return 'Line breaker 52L1 is open: close 52L1 first (Plant menu, Trips)';
       if (c.step >= 1 && c.step < 3 && tb.rpm > 3550) c.step = 3;
       if (c.step < 3)
         return c.step < 1
@@ -156478,10 +156478,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 37928e2'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 9ae0d2c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 37928e2';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 9ae0d2c';
     } catch (e) {}
   };
   upd();
@@ -312773,7 +312773,7 @@ function anTurbine0(cmd, arg) {
     if (cmd === 'sync') {
       if (tb.st === 'sync' || tb.st === 'load') return 'Already synchronised';
       /* plan c5: G-1B closes 52G1 only with 52L1 closed (elec.js): an open 52L1 timed the synchronizing out after 5 min with no word */
-      if (U.el && U.el.l52 === false) return 'Line breaker 52L1 is open: close 52L1 first (Instructor console, Grid)';
+      if (U.el && U.el.l52 === false) return 'Line breaker 52L1 is open: close 52L1 first (Plant menu, Trips)';
       if (c.step >= 1 && c.step < 3 && tb.rpm > 3550) c.step = 3;
       if (c.step < 3)
         return c.step < 1
@@ -331338,23 +331338,6 @@ body.sc #gsbar #scstrip .scv{flex:1 1 100%!important;flex-wrap:wrap!important;ro
 body.sc #gsbar #scstrip .scp{margin-left:auto}
 body.sc #gsbar #scstrip .sck{min-width:88px}
 @media (max-width:1279px){body.sc #gsbar #scstrip .scv{flex:1 1 100%}}
-/* ===== step 5: Instructor console ===== */
-body.sc #gsbar #scstrip .pill.ins{border-color:var(--sc-violet)!important;color:var(--sc-violet)!important}
-body.sc #gsbar #scstrip .pill.ins.on{background:var(--sc-violet)!important;color:var(--sc-white)!important}
-#scins{position:fixed;top:calc(var(--scb,var(--top)) + 4px);right:8px;z-index:131;width:min(544px,calc(100vw - 16px));max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 16px);display:flex;flex-direction:column;background:var(--sc-white);border:1px solid var(--sc-violet);border-radius:8px;box-shadow:0 12px 32px rgba(34,46,57,.22);font-family:var(--sc-ui);color:var(--sc-ink)}
-#scins[hidden]{display:none!important}
-#scins .scihd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--sc-line)}
-#scins .scihd b{font:600 14px var(--sc-ui);color:var(--sc-violet)}
-#scins .scibody{overflow:auto;padding:4px 12px 12px;display:grid;gap:8px}
-#scins h4{margin:8px 0 0;font:600 12px var(--sc-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--sc-ink2)}
-#scins .scirow{display:flex;flex-wrap:wrap;gap:8px}
-#scins button{min-height:32px!important;height:auto!important;padding:4px 12px!important;border:1px solid var(--sc-line2)!important;border-radius:4px!important;background:var(--sc-white)!important;color:var(--sc-ink)!important;font:500 13px var(--sc-ui)!important;box-shadow:none!important;cursor:pointer;white-space:normal;text-align:left}
-#scins button:hover{border-color:var(--sc-violet)!important}
-#scins button.on{background:var(--sc-violet)!important;border-color:var(--sc-violet)!important;color:var(--sc-white)!important}
-#scins button.flt.on{background:var(--sc-ambg)!important;border-color:var(--sc-amber)!important;color:var(--sc-amink)!important}
-#scins button.trip{border-color:var(--sc-run)!important;color:var(--sc-run)!important}
-#scins button[data-arm]{background:var(--sc-run)!important;border-color:var(--sc-run)!important;color:var(--sc-white)!important}
-#scins .scx{padding:0 12px!important}
 /* ===== Mina beta.210 fixes ===== */
 #scstrip .pill.run .dot{background:var(--sc-amber)}
 #scstrip .pill.run.on .dot{background:var(--sc-run)}
@@ -331374,10 +331357,6 @@ body.sc.plant[data-tab="operate"]:not(.scov) .sccrumb:not(:has(b:empty)){display
 #scov:not(#scnone) .sctile h3,#scov:not(#scnone) .sctile .sckv,#scov:not(#scnone) .sctile .sclamp,#scov:not(#scnone) .sctile .scar,#scov:not(#scnone) .sctile .scnone{text-align:left!important;justify-content:flex-start;width:100%}
 #scov:not(#scnone) .scar{display:grid!important;grid-template-columns:96px 84px minmax(0,1fr) auto}
 #scov:not(#scnone) .sckv{display:grid!important;grid-template-columns:1fr auto}
-#scins .scinp{flex:1 1 192px;min-width:0;min-height:32px;padding:0 8px;border:1px solid var(--sc-line2);border-radius:4px;font:400 13px var(--sc-ui);color:var(--sc-ink);background:var(--sc-white)}
-#scins .scsvl{display:grid;gap:4px}
-#scins .scsvr{display:flex;align-items:center;gap:8px;font-size:13px}
-#scins .scsvr span{flex:1;min-width:0;overflow-wrap:anywhere}
 /* ===== step 2: overview, breadcrumb, alarm list, start screen ===== */
 #scov{display:none;position:fixed;top:var(--scb,var(--top));left:var(--scl,var(--railW,0));right:0;bottom:var(--footH,var(--foot));z-index:89;overflow:auto;background:var(--sc-page);font-family:var(--sc-ui);color:var(--sc-ink)}
 body.sc.scov #scov{display:flex;flex-direction:column}
@@ -331477,7 +331456,7 @@ body.sc #gsbar #scstrip .seg button{font-size:13px!important}
 /* M07: tablet targets 40 px (Operator / Engineer, the strip pills, the speed menu) */
 @media (max-width:1279px),(pointer:coarse){
   body.sc #gsbar #scstrip :is(.pill,.seg button,.spdm button){min-height:40px!important}
-  #scins button,#scins .scinp,#scal :is(.sctabs button,.scx,.scack,.scrow button,.scsort button),#scstart:not(#scnone) .scchips button{min-height:40px!important}
+  #scal :is(.sctabs button,.scx,.scack,.scrow button,.scsort button),#scstart:not(#scnone) .scchips button{min-height:40px!important}
 }
 /* M09: rail labels 12 px; M10 / M11: footer text 12 px and the faint clock / info colour from the shell set (5.70:1 on the band) */
 body.sc.cr #crrail .tabs button{font-size:12px!important;line-height:1.2!important}
@@ -331500,10 +331479,8 @@ body.sc #sfoot :is(#st,.shint,.smsg){flex:1 1 0!important}
 /* M27: alarm list text 13 px, the Events kind 12 px */
 #scal:not(#scnone) .scrow{font-size:13px!important}
 #scal:not(#scnone) .scrow :is(.sck2,.scs){font-size:12px!important}
-/* M28 / M29: the Instructor console and the alarm list end above the footer (their last buttons scroll inside, never under the footer) */
-#scins,#scal{max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 12px)!important}
-#scins h4{font-size:12px!important}
-#scins:not(#scnone) button{font-size:13px!important}
+/* M28 / M29: the alarm list ends above the footer (its last buttons scroll inside, never under the footer) */
+#scal{max-height:calc(100vh - var(--scb,var(--top)) - var(--footH,var(--foot)) - 12px)!important}
 /* design-auditor animation: the blinking trip lamp stops for people who turn motion off */
 @media (prefers-reduced-motion:reduce){.sclamp .dot.trip{animation:none}}
 /* User 2026-11-09 ("ano ba yang nasa gilid sa kaliwa? kala ko ba reshell"): the old dark page rail is not part of layout C (mockup C has
@@ -331562,7 +331539,7 @@ body.sc #gsbar #scstrip .sck small{grid-column:2;align-self:end;padding-bottom:1
 /* user 2026-11-09: the old page header (values) and the alarm line at the top of an HMI page repeat the strip and its alarm pill; hidden in layout C (frame, not drawing) */
 body.sc #plsvg [data-schd]{display:none}
 /* Mina, live test of 269: the close button of a console showed its icon and its text mark (the text stays for the tests and for readers) */
-body.sc :is(#scins,#scal) .scx[data-g],body.sc .scsx[data-g],body.sc .scdx[data-g]{font-size:0!important}
+body.sc #scal .scx[data-g],body.sc .scsx[data-g],body.sc .scdx[data-g]{font-size:0!important}
 /* the old Home page never shows in layout C: it flashed for about 3 s while a start state loaded (Mina, 269) */
 body.sc #homews{visibility:hidden!important}
 /* the status bar beside the Training panel: its texts stay on one line (they wrapped into 2-letter rows) */
@@ -331916,7 +331893,7 @@ html body.sc.sceng.scet-logic #zbar{top:auto!important;bottom:calc(var(--scewhyb
 body.sceng:not(.scet-logic) #mid{visibility:hidden!important}
 body.sceng:not(.scet-logic) #zbar{display:none!important}
 
-/* ---- Why is it X? under the sheet. M30: its bottom (--scewhyb) is the footer (--footH, app.js) + the training card bar (--sccardh, shellc-ins) + 8 px ---- */
+/* ---- Why is it X? under the sheet. M30: its bottom (--scewhyb) is the footer (--footH, app.js) + the training card bar (--sccardh) + 8 px ---- */
 body:not(.sceng.scet-logic) #scewhy{display:none!important}
 body.sceng.scet-logic #scewhy{position:fixed;left:calc(var(--scex) + 16px);right:16px;bottom:var(--scewhyb);z-index:var(--z-float,95);display:grid;gap:4px;max-height:34vh;overflow:auto;padding:8px 12px;box-sizing:border-box;background:var(--sc-white);border:1px solid #89a4ca;border-radius:4px;box-shadow:0 4px 16px rgba(34,46,57,.14);font:400 13px/1.4 var(--sc-ui);color:var(--sc-ink)}
 #scewhy .scesec{font:600 12px var(--sc-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--sc-ink2)}
@@ -332018,11 +331995,10 @@ body.sc.scbars #gsbar #scstrip .sck{flex:1 1 0!important;min-width:0!important;m
 body.sc.scbars #gsbar #scstrip #scctx > .scp{flex:none!important;flex-wrap:nowrap!important;margin-left:0!important;gap:6px!important;row-gap:0}
 body.sc.scbars #gsbar #scstrip #scctx .scp > .pill{padding:0 10px!important}
 /* the order of the right side: status (trip, alarms, Run with its speed, Instructor), then VIEW | RUN and PLANT, then Search and Settings */
-#scctx .scp > .pill:not(.run):not(.ins):not(.scsrp):not(.scgearb){order:1}
+#scctx .scp > .pill:not(.run):not(.scsrp):not(.scgearb){order:1}
 #scctx .scp > .pill.alm{order:2}
 #scctx .scp > .pill.run{order:3}
 #scctx .scp > .spd{order:4}
-#scctx .scp > .pill.ins{order:5}
 #scctx .scp > .seg{order:6;margin-left:8px}
 #scctx .scp > #plchip{order:7}
 #scctx .scp > .scsrp{order:8;margin-left:8px}
@@ -346406,262 +346382,6 @@ window.LS_LIVE = (function () {
   }, 300);
 })();
 
-/* ===== RE-SHELL LAYOUT C, step 5 of 7 (build plan approved by the user 2026-11-09): the Instructor console (Instructor button of the strip)
-   Only with ?shell=c (body.sc). Every control here presses the app's own control (the starting-state, save point, fault, TCS and
-   recorder buttons of the TCS / Field menu, the speed select) or calls the engine command (AN.turbine('trip')). The training step card
-   was removed on 2026-11-21 (GO NO SOP). Nothing here touches the engine. ===== */
-(function () {
-  let want = false;
-  try {
-    want = localStorage.getItem('ls-shell') === 'c';
-  } catch (e) {}
-  if (!want) return;
-  const E = (t, cls, txt) => {
-    const e = document.createElement(t);
-    if (cls) e.className = cls;
-    if (txt != null) e.textContent = txt;
-    return e;
-  };
-  const call = (f, d) => {
-    try {
-      return f();
-    } catch (e) {
-      return d;
-    }
-  };
-  const $ = id => document.getElementById(id);
-  /* a press that cannot be undone asks for a second press within 5 s (the same rule as the Training dock, Yuna's design review 2026-11-08) */
-  /* user 2026-11-09: a real confirmation dialog (shellc-ask.js) says what happens; the second press stays only if the dialog is missing */
-  function arm(b, label, fn, o) {
-    b.onclick = () => {
-      if (window.lsAsk) {
-        o = o || {};
-        lsAsk({ q: o.q || label + '?', t: o.t || b.title, ok: o.ok || label, danger: !!o.danger }).then(ok => ok && fn());
-        return;
-      }
-      if (!b.dataset.arm) {
-        b.dataset.arm = '1';
-        b.textContent = 'Press again: ' + label;
-        b._t = setTimeout(() => {
-          delete b.dataset.arm;
-          b.textContent = label;
-        }, 5000);
-        return;
-      }
-      clearTimeout(b._t);
-      delete b.dataset.arm;
-      b.textContent = label;
-      fn();
-    };
-  }
-  const press = id => {
-    const b = $(id);
-    if (b) b.click();
-    return !!b;
-  };
-  /* ---------- Instructor console ---------- */
-  let con = null,
-    pill = null;
-  function head(t) {
-    return E('h4', '', t);
-  }
-  function row() {
-    return E('div', 'scirow');
-  }
-  function btn(t, title, fn, cls) {
-    const b = E('button', cls || '', t);
-    b.type = 'button';
-    if (title) b.title = title;
-    if (fn) b.onclick = fn;
-    return b;
-  }
-  function fill() {
-    if (!con || con.hidden) return;
-    /* 3.2.4-beta.8: a fault, speed or save press redraws the console: keep where it was scrolled (it jumped back to the top) */
-    const ob = con.querySelector('.scibody'),
-      top = ob ? ob.scrollTop : 0;
-    con.textContent = '';
-    const hd = E('div', 'scihd');
-    hd.append(E('b', '', 'Instructor console'));
-    const x = btn('✕', 'Close (Esc)', () => (con.hidden = true), 'scx');
-    x.setAttribute('aria-label', 'Close');
-    x._gt = '✕'; /* its text mark only: the app's icon pass (app.js) drew a second one beside it (Mina, 270) */
-    hd.append(x);
-    con.append(hd);
-    const body = E('div', 'scibody');
-    /* start state */
-    body.append(head('Start state'));
-    let r = row();
-    for (const [t, id] of [['Cold', 'loadcold'], ['Warm', 'loadwarm'], ['Hot', 'loadhot'], ['150 MW', 'load150']]) {
-      const b = btn(t, 'Loads the ' + t + ' starting state (the running plant is replaced)');
-      arm(b, t, () => {
-        if (window.AN && AN.run && !AN.view && AN.pauseOn) AN.pauseOn();
-        press(id);
-        con.hidden = true;
-      }, { q: 'Load the ' + t + ' start state?', t: 'The running plant is replaced by the ' + t + ' starting state. What is not kept in a save point is lost.', ok: 'Load ' + t });
-      r.append(b);
-    }
-    body.append(r);
-    /* save points */
-    body.append(head('Save point'));
-    /* Mina beta.210: SAVE asked the name with prompt(), which the built-in browser blocks: the name is asked here, and the save points
-       are listed with Load and Delete (lsSaves of app.js, the same save, load and delete as the old menu) */
-    r = row();
-    const nm = E('input', 'scinp');
-    nm.type = 'text';
-    nm.id = 'scsvname';
-    nm.setAttribute('aria-label', 'Name of the save point');
-    nm.value = call(() => lsSaves.name(), '');
-    const sv = btn('Save now', 'Keeps the whole plant at this moment in this browser under this name', () => {
-      const t = nm.value.trim();
-      if (!t) return nm.focus();
-      sv.disabled = true;
-      Promise.resolve(call(() => lsSaves.save(t))).then(() => fill(), () => fill());
-    });
-    r.append(nm, sv);
-    body.append(r);
-    const svl = E('div', 'scsvl');
-    body.append(svl);
-    call(() =>
-      lsSaves.list().then(L => {
-        svl.textContent = '';
-        if (!L.length) return svl.append(E('p', 'scnone', 'No save point yet.'));
-        for (const e of L.slice().reverse()) {
-          const rr = E('div', 'scsvr');
-          const ld = btn('Load', 'Puts the whole plant back as it was saved, then pauses');
-          arm(ld, 'Load', () => ((con.hidden = true), call(() => lsSaves.load(e))), { q: 'Load the save point “' + e.name + '”?', t: 'The whole plant goes back to how it was saved, then pauses. The running plant is replaced.', ok: 'Load' });
-          const dl = btn('Delete', 'Removes this save point from this browser; it cannot be undone');
-          arm(dl, 'Delete', () => Promise.resolve(call(() => lsSaves.del(e))).then(fill), { q: 'Delete the save point “' + e.name + '”?', t: 'It is removed from this browser. This cannot be undone.', ok: 'Delete', danger: true });
-          rr.append(E('span', '', e.name), ld, dl);
-          svl.append(rr);
-        }
-        body.scrollTop = top;
-      })
-    );
-    /* speed */
-    body.append(head('Speed'));
-    r = row();
-    const sel = [...document.querySelectorAll('select')].find(q => q.title === 'Simulation speed');
-    if (sel)
-      for (const o of sel.options) {
-        const b = btn('×' + o.value, 'Simulation speed ×' + o.value, () => {
-          sel.value = o.value;
-          sel.dispatchEvent(new Event('change', { bubbles: true }));
-          fill();
-        }, o.value === sel.value ? 'on' : '');
-        r.append(b);
-      }
-    body.append(r);
-    /* faults: the trainer faults of engine/faults.js and the motor trips of WORLD.ftrip, through their buttons (flt-*) */
-    body.append(head('Faults (field)'));
-    r = row();
-    const FL0 = [...call(() => AN.fault(), []), ...call(() => WORLD.ftrip(), [])],
-      FL = FL0.filter(f => f.g !== 'ib'),
-      IBL = FL0.filter(f => f.g === 'ib');
-    if (!FL.length) r.append(E('p', 'scnone', 'Load a start state first.'));
-    for (const f of FL) {
-      const id = 'flt-' + f.id.replace(/\W/g, '-'),
-        b = btn(f.t, f.on ? 'On: press to clear it' : 'Puts the fault on (asks first)', null, f.on ? 'flt on' : 'flt');
-      if (f.on) b.onclick = () => (press(id), setTimeout(fill, 100));
-      else arm(b, f.t, () => (press(id), setTimeout(fill, 100)), { q: 'Put this fault on: ' + f.t + '?', t: 'The fault acts on the running plant until you clear it.', ok: 'Put fault on', danger: true });
-      r.append(b);
-    }
-    if (FL.length) r.append(btn('Clear all faults', 'Every fault that is on is cleared', () => (press('flt-clear'), setTimeout(fill, 100))));
-    body.append(r);
-    /* trips */
-    body.append(head('Trips'));
-    r = row();
-    const tt = btn('Turbine trip', 'TURBINE TRIP (TA-1), the turbine trip command');
-    arm(tt, 'Turbine trip', () => {
-      call(() => AN.turbine('trip'), '');
-      /* a trip not taken: the engine writes why (unit.js anTurbine) */
-      call(() => lsEventAdd('TCS', 'TCS', 'Instructor: TURBINE TRIP (TA-1)'));
-    }, { q: 'Trip the turbine?', t: 'TURBINE TRIP (TA-1): the turbine trips now and the plant reacts to it.', ok: 'Trip turbine', danger: true });
-    tt.classList.add('trip');
-    const mft = btn('Boiler trip (MFT): Purge and trip page', 'The master fuel trip push button is the operator’s control: it is on the Purge and trip page', () => {
-      con.hidden = true;
-      if (window.lsShellC && lsShellC.openPage) lsShellC.openPage('MK10');
-    });
-    /* plan c4: the line breaker 52L1 (src/analog/engine/elec.js): open = house load operation */
-    const el = call(() => (AN.elec ? AN.elec() : null), null);
-    let l52 = null;
-    if (el) {
-      const t = el.l52 ? 'Open 52L1 (house load)' : 'Close 52L1';
-      l52 = btn(t, el.l52 ? 'The 230 kV line breaker opens: house load operation' : 'The 230 kV line breaker closes: the unit is on the grid again');
-      const go = () => {
-        const x = call(() => AN.turbine('52l', el.l52 ? 0 : 1), '');
-        call(() => lsEventAdd('TCS', 'TCS', 'Instructor: ' + (el.l52 ? 'open' : 'close') + ' 52L1' + (x ? ': ' + x : '')));
-        setTimeout(fill, 300);
-      };
-      /* Mina B66-5: Close 52L1 acted at once while Open asked first: both ask (closing onto the grid is a synchronizing step too) */
-      if (el.l52) arm(l52, t, go, { q: 'Open the line breaker 52L1?', t: 'House load operation: the unit leaves the 230 kV grid and the generator carries the house load only.', ok: 'Open 52L1', danger: true });
-      else arm(l52, t, go, { q: 'Close the line breaker 52L1?', t: 'The unit goes back on the 230 kV grid and the generator carries its load again.', ok: 'Close 52L1' });
-    }
-    r.append(tt, mft);
-    if (l52) r.append(l52);
-    /* F-au (PR-OPE-5003): the IRP bypass of the turbine trip into the MFT, a field action of the I&C (world.js W.IB) */
-    for (const f of IBL) {
-      const id = 'flt-' + f.id.replace(/\W/g, '-'),
-        b = btn(f.on ? f.t + ': ON' : f.t, f.on ? 'Jumper in: press to remove it' : 'Puts the jumper in (asks first)', null, f.on ? 'flt on' : 'flt');
-      if (f.on) b.onclick = () => (press(id), setTimeout(fill, 100));
-      else arm(b, f.t, () => (press(id), setTimeout(fill, 100)), { q: 'Bypass the turbine trip into the MFT?', t: 'I&C puts a jumper on the interlock relay panel (PR-OPE-5003 normal shutdown): a turbine trip no longer trips the boiler. Open the HP bypass at the trip, or the cyclone gas trip (no reheater steam) still trips it.', ok: 'Bypass', danger: true });
-      r.append(b);
-    }
-    body.append(r);
-    /* turbine panel extras and the recorder */
-    body.append(head('Turbine and recorder'));
-    r = row();
-    r.append(
-      btn('Criteria bypass…', 'TCS panel: take one unsatisfied ATS criterion out of the step check, or put it back', () => press('tcsbyp')),
-      btn('Recorder CSV', 'The plant values recorded each minute of plant time since the last starting state', () => press('recdl'))
-    );
-    body.append(r);
-    con.append(body);
-    body.scrollTop = top;
-  }
-  function openCon() {
-    if (!con) return;
-    con.hidden = !con.hidden;
-    fill();
-  }
-  window.lsShellC = Object.assign(window.lsShellC || {}, { openCon });
-
-  /* wait for the strip */
-  let n = 0;
-  const iv = setInterval(() => {
-    const strip = document.getElementById('scstrip');
-    if (!strip || !window.LS_LIVE) {
-      ++n; /* no time limit: the strip can come later (live check beta.241) */
-      return;
-    }
-    clearInterval(iv);
-    pill = E('button', 'pill ins', 'Instructor');
-    pill.type = 'button';
-    pill.title = 'Instructor console: start state, save point, speed, faults, trips';
-    pill.onclick = openCon;
-    const sp = strip.querySelector('.spd');
-    if (sp) sp.before(pill);
-    else strip.querySelector('.scp').append(pill);
-    con = E('div');
-    con.id = 'scins';
-    con.setAttribute('role', 'dialog');
-    con.setAttribute('aria-label', 'Instructor console');
-    con.hidden = true;
-    document.body.append(con);
-    /* Mina beta.210: Esc did not close the lists (a handler of the app stops the key first): caught in the capture phase */
-    window.addEventListener(
-      'keydown',
-      e => {
-        if ((e.key === 'Escape' || e.key === 'Esc') && !con.hidden) con.hidden = true;
-      },
-      true
-    );
-    setInterval(() => {
-      pill.classList.toggle('on', !con.hidden);
-    }, 1000);
-  }, 250);
-})();
-
 /* ===== RE-SHELL LAYOUT C, step 6 of 7 (build plan approved by the user 2026-11-09, mockup C screens 12 search, 14 settings, 15 update
    banner, 16 error banner, 18 full screen, tablet4x3-*): the search pill, the banners under the strip, one message line, the Settings
    panel and the tablet / Training dock layout of the strip. Only with ?shell=c (body.sc). It drives only what the app already has: the
@@ -346940,7 +346660,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 37928e2'));
+    row('Version', E('span', 'scsver', ver + ' · build 9ae0d2c'));
   }
   function openSet(near) {
     if (!set) {
@@ -347825,7 +347545,7 @@ window.LS_LIVE = (function () {
       cMore = E('div', 'scmore2');
       const b = E('button', 'scmore2b', 'More ▾');
       b.type = 'button';
-      b.title = 'Instructor console, Search, Details, Settings';
+      b.title = 'Search, Details, Settings';
       b.setAttribute('aria-haspopup', 'true');
       b.setAttribute('aria-expanded', 'false');
       cMenu = E('div', 'scmore2m');
@@ -347849,7 +347569,7 @@ window.LS_LIVE = (function () {
     }
     /* the rare buttons: Instructor, Search, Details, Settings (View | RUN must already be in the bar: shellc-ui.js puts it before Settings) */
     const q = sel => scp.querySelector(':scope > ' + sel) || cMenu.querySelector(':scope > ' + sel),
-      rare = [q('.pill.ins'), q('.scdetb'), q('.scsrp'), q('.scgearb')].filter(Boolean);
+      rare = [q('.scdetb'), q('.scsrp'), q('.scgearb')].filter(Boolean);
     /* the gear has no name of its own (an icon): a "Settings" label, shown only in the menu (shellc-bars.css .scmlbl) */
     const gear = q('.scgearb');
     if (gear && !gear.querySelector('.scmlbl')) gear.append(E('span', 'scmlbl', 'Settings'));
@@ -348197,7 +347917,7 @@ window.LS_LIVE = (function () {
         e.key === 'Escape' &&
         B.classList.contains('scdet') &&
         !wide() &&
-        !document.querySelector('.fpo-box,#scal:not([hidden]),#scins:not([hidden]),#scask:not([hidden])')
+        !document.querySelector('.fpo-box,#scal:not([hidden]),#scask:not([hidden])')
       )
         setOpen(false);
     });
