@@ -104,9 +104,12 @@ const html =
     TOP.man('FICFA1055B', 41);
     await run(2);
     o.pressB = Math.round(TOP.h().ctl ? +((() => { const k = 'ABC-014', S2 = AN.sheets.find(s => s.name === k).S, c = AN.hmiCtrls(S2).find(q => q.tag === 'FICFA1055B'); return S2.rt.v[c.out]; })()) : NaN);
-    /* the Air and flue gas page: the damper faceplates and B's current */
-    const m = (window.LS_MOCK && LS_MOCK.defs.find(d => d.id === 'MK09')) || null;
-    o.page = m ? { mach: Object.keys(m.mach || {}).join(','), ib: (m.unit || {})['IT-F1055B'] || '', art: /data-ctl="FICFA1055B\|mv/.test(m.art || '') } : null;
+    /* the Air and flue gas page: the damper faceplates and B's current. beta.253 removed the old drawing (MK09 art); the blowers are
+       drawn on the HX Combustion air page, so its plan must hold both inlet dampers and IT-F1055B */
+    const m = (window.LS_MOCK && LS_MOCK.defs.find(d => d.id === 'MK09')) || null,
+      hx = window.HX && HX.byId && HX.byId['combustion-air'],
+      plan = hx ? JSON.stringify(hx.plan || hx) : '';
+    o.page = m ? { mach: Object.keys(m.mach || {}).join(','), ib: (m.unit || {})['IT-F1055B'] || '', art: /FICFA1055A/.test(plan) && /FICFA1055B/.test(plan) && /IT-F1055B/.test(plan) } : null;
     return o;
   });
   console.log(JSON.stringify(r));
