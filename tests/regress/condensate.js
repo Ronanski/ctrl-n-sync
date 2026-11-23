@@ -23,6 +23,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
     const run = async sec => {
       for (let i = 0; i < sec * 2; i++) {
+        WORLD.live = true;
         AN.stepSet(C1, 0.5);
         WORLD.tick(0.5);
         if (i % 100 === 99) await new Promise(r => setTimeout(r, 0));
@@ -40,12 +41,13 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     const g = () => ({ P: f(U().cdP), T: f(U().cdT), Q: U().cdQ, W: U().swQc, q: U().cdQp, Pd: f(U().cdPd), I: [U().cdI0, U().cdI1], dp: [U().cdDp0, U().cdDp1], d61: (sh('DITL-61B').avw || {}).r20, d55: f(window.WORLD && WORLD.condP ? WORLD.condP() : NaN), hw: f(U().cdHw), run: U().cdRun, tb: U().tb && U().tb.st, trip: !!(U().vtrip && U().vtrip.S.rt.ext[U().vtrip.n] === 1) });
     const V = (t, p) => AN.swValve(t, p);
     const o = {};
+    /* beta.320 (JENNIE): the app's own "At 150 MW" (index #load150: the reset, the save point st150 and the unit start, AN._startP);
+       the old AN.reset + AN.plantLoad150 + DITL150.apply left no unit model (AN.unit is made by the unit start only) */
+    await AN.ades();
     const start = async () => {
-      AN.run = false;
-      AN.reset();
-      ditlStates();
-      AN.plantLoad150();
-      DITL150.apply();
+      WORLD.set(true);
+      document.getElementById('load150').click();
+      await AN._startP;
       await run(60);
     };
     await start();
