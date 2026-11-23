@@ -2716,11 +2716,25 @@ function anTbW(k, m) {
   while (X[i] < m) i++;
   return Y[i - 1] + ((Y[i] - Y[i - 1]) * (m - X[i - 1])) / (X[i] - X[i - 1]);
 }
-/* ms = HP turbine steam, qip = IP / LP steam (main steam equivalent), T/H; returns the generator MW (negative = motoring) */
-function anTbGen(ms, qip) {
+/* 1.0.0-beta.344 (JENNIE, T1, user 2026-11-24 "GO DESIGN"): each heat balance case is at its own design steam temperature, the MST /
+   RHT characteristic of the turbine (PPE-14-0725, read per sheet): 30 % 505 / 505 C (98.9 ata, sliding), 40 % 520 / 520, 50 % 529 / 529
+   (Rev. 4, "MST RST corrected according to MST / RST characteristics"), 60 % and up 538 / 538 at 126 ata. So wh / wi of AN_TBW hold only
+   at that temperature. The work per kg of a turbine section at a fixed pressure ratio goes with its inlet temperature (isentropic drop
+   dh = cp T1 (1 - (p2 / p1)^((k - 1) / k)), ideal gas form of the superheated steam expansion): wh x (MST + 273.15) / (Tc + 273.15) and
+   wi x (RHT + 273.15) / (Tc + 273.15), Tc = the case temperature at the same flow (AN_TBW.T, linear in flow like wh / wi). At the design
+   temperature the factor is 1 and the HB MW comes back exactly; hotter or colder steam than the design gives more or less MW per T/H.
+   CALC, no fit. U.hxO.ms / .rh = the SH / RH outlet (hx.js) */
+AN_TBW.T = [505, 520, 529, 538, 538, 538, 538, 538];
+function anTbT(T, m) {
+  const Tc = anTbW("T", Math.max(0, +m || 0)) + 273.15;
+  return isFinite(T) && T > 200 ? Math.max(0.6, Math.min(1.1, (T + 273.15) / Tc)) : 1;
+}
+/* ms = HP turbine steam, qip = IP / LP steam (main steam equivalent), T/H; kh / ki = anTbT of the main / reheat steam; returns the
+   generator MW (negative = motoring) */
+function anTbGen(ms, qip, kh, ki) {
   const m = Math.max(0, +ms || 0),
     q = Math.max(0, +qip || 0),
-    sh = (m * anTbW('wh', m) + q * anTbW('wi', q)) / 1000;
+    sh = (m * anTbW('wh', m) * (kh || 1) + q * anTbW('wi', q) * (ki || 1)) / 1000;
   return sh - AN_TBW.lo - AN_TBW.kq * sh * sh;
 }
 const AN_HB = {
@@ -5811,13 +5825,15 @@ function anUnitStep0(dt) {
      takes power from the grid to keep the shaft at 3600 rpm (motoring): the losses of anTbGen stay when the steam is gone. The 32 relay
      (anRp32) sees the negative power */
   const qip = U.m0 * U.rr * tb.icv * tcsVtIcvF(U) /* the CRV test of tcs.js (TCE226 / 227): one RSV / ICV side shut */,
-    MWss = onGrid ? anTbGen(U.ms, qip) - anVacMW(U) + (U.dMWx || 0) : 0;
+    kTh = anTbT(U.hxO && U.hxO.ms, U.ms),
+    kTi = anTbT(U.hxO && U.hxO.rh, qip),
+    MWss = onGrid ? anTbGen(U.ms, qip, kTh, kTi) - anVacMW(U) + (U.dMWx || 0) : 0;
   /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of anTbGen, each behind its steam volume (tSc,
      tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft. Before, Pm fell
      with the valves at once and a load rejection from 150 MW peaked at 102.2 % (TG manual STIE-14752: about 106 % within about 1 s) */
   {
-    const hp = onGrid ? (Math.max(0, U.ms) * anTbW('wh', U.ms)) / 1000 : 0,
-      ip = onGrid ? (Math.max(0, qip) * anTbW('wi', qip)) / 1000 : 0,
+    const hp = onGrid ? (Math.max(0, U.ms) * anTbW('wh', U.ms) * kTh) / 1000 : 0,
+      ip = onGrid ? (Math.max(0, qip) * anTbW('wi', qip) * kTi) / 1000 : 0,
       f = T => 1 - Math.exp(-dt / Math.max(0.01, T));
     tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(U.tSc || 0.3) : hp;
     tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(U.tXo || 0.5) : ip;
