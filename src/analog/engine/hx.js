@@ -107,16 +107,12 @@ const AN_HX = {
      1.39 kg/s x (3150 - 1085) kJ/kg (spray water to the steam at the spray, IF97 near 133 bar 450 C) = 2.9 MW: 65.4 - 2.9 = 62.5 MW,
      the design heat. 69 x 62.5 / 65.4 = 65.9; with 66 the same probe gave 63.2 MW (the panel metal follows): 66 x 62.5 / 63.2 = 65.3:
      65 (CALC) */
-  uaP: 65 /* kW/K each SH panel, CALC above (kept for the record; beta.342 splits it) */,
-  /* beta.342 (JENNIE, F13): one conductance per panel, anchored on the plant at 150 MW (03.png and the HMI snapshot). The whole boiler closes
-     with the plant meters at 91.5 % (382 MW coal LHV, 349.6 MW to the steam, sprays 37.5 / 28.2 T/H), and the only reading that breaks the
-     backpass balance is TT-BR1110 (~30 C high, study 15 F5). So the plant panel duties are (IF97 of this file at Pd 133.4):
-       panel #1: drum steam 458.3 - 65.7 = 392.6 T/H, wall outlet 341 C -> TT-BR1120 456 C = 51.7 MW (the app at uaP 65: 33.1 MW)
-       panel #2: 392.6 + 37.5 = 431.5 T/H, TIBR1130 394 C -> TIBR1140 462 C = 27.0 MW (the app at uaP 65: 29.4 MW)
-     Each UA scaled by plant / app duty and run again (the metal follows): 65 -> 110 -> 117 and 65 -> 61 -> 63 (CALC). Result at the 150 MW
-     steady: 50.8 / 27.0 MW, spray 1 34.9 T/H (plant 37.5). The spray 2 gap (app 0, plant 28.2) is the finishing SH / pass split (F14). */
-  uaP1: 117 /* kW/K SH panel #1, CALC above */,
-  uaP2: 63 /* kW/K SH panel #2, CALC above */,
+  uaP: 65 /* kW/K each SH panel, CALC above (the design panel heat 62.5 MW and the FHI Fig 10 spray 12.4 T/H at 150 MW) */,
+  /* 1.0.0-beta.346 (JENNIE, user 2026-11-24 "GO DESIGN": the design documents are the only targets). beta.342 had scaled the two panels
+     to the plant 150 MW readings (117 / 63 kW/K, spray 1 34.9 T/H); that was a fit to one plant day, not the design. Back to the design
+     CALC above for both panels. The two keys stay so a panel can be taken alone (unit.js reads both) */
+  uaP1: 65 /* kW/K SH panel #1 = uaP */,
+  uaP2: 65 /* kW/K SH panel #2 = uaP */,
   /* [metal kJ/K, design steam / water flow T/H] */
   wl: [17663, 447.6],
   p1: [70652, 447.6],
