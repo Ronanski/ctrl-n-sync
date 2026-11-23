@@ -121,10 +121,17 @@ const html =
         m = WORLD.plantSw().find(x => /\)DITL-80K$/.test(x.sheet) && x.row === row);
       return m ? !!m.on : null;
     };
-    const dl1 = AN_CYC.dl;
+    /* beta.322: the drum outflow AN_CYC.dl is the drum steam (main steam + blowdown + sootblower + vents less the two SH sprays,
+       unit.js mDr) plus the losses; in the 10 s after the start the steam loops move it too (the sprays, 0 - 9 T/H). The check is that
+       the blower steam is taken from the drum: the outflow grows by the sootblower steam plus the move of the rest of the drum steam.
+       The band is 1 T/H as for N-1011 above: plant.js reads the drum steam as U.ms + U.mb, and U.ms follows the drum pressure, so the
+       blower steam shows through the pressure it takes, not one to one in 10 s (150 MW: +3.55 for 3.9) */
+    const rest = () => (U.ms || 0) + (U.mb || 0) + (U.msv || 0) - (U.w1s || 0) - (U.w2s || 0),
+      dl1 = AN_CYC.dl,
+      re1 = rest();
     opRow(true);
     await run(10);
-    o.a0 = { A: A(), op: AN.ditlRun('DITL-80F@25'), msb: r1(U.msb), dl: r1(AN_CYC.dl - dl1), r40: rsp(/N-1040.*RESET/), r42: rsp(/N-1042.*RESET/) };
+    o.a0 = { A: A(), op: AN.ditlRun('DITL-80F@25'), msb: r1(U.msb), dl: r1(AN_CYC.dl - dl1 - (rest() - re1)), r40: rsp(/N-1040.*RESET/), r42: rsp(/N-1042.*RESET/) };
     opRow(false);
     let kgA = 0, tA = 0;
     await run(2400, () => {
@@ -159,10 +166,13 @@ const html =
   ck(Math.abs(c.pk - 3.24) < 0.01 && Math.abs(c.tOn - 98) <= 2 && Math.abs(c.kg - 88) < 3, `N-1035 0.9 kg/s: ${c.pk} T/H, ${c.tOn} s, ${c.kg} kg (table 98 s, 88 kg)`);
   ck(c.back === 0 && c.after === 0, `N-1035 back, steam ${c.after}`);
   const a0 = r.a0, a1 = r.a1;
-  ck(a0.A.ph === 1 && a0.A.p40 > 10 && a0.A.p42 === 0 && Math.abs(a0.msb - 3.9) < 0.01 && Math.abs(a0.dl - 3.9) < 0.3 && a0.r40 === false && a0.r42 === true,
-    `air heater blowers started: hot end N-1040 blows 3900 kg/h (${a0.msb} T/H, drum outflow +${a0.dl}), PT-SB1040 ${a0.A.p40} kg/cm2, N-1040 off its reset position (reset 1040 / 1042 = ${a0.r40} / ${a0.r42}, ph ${a0.A.ph}, op ${a0.op})`);
-  ck(a1.A.ph === 0 && a1.msb === 0 && a1.r40 === true && a1.r42 === true && Math.abs(a1.t - 2360) <= 2 && Math.abs(a1.kg - 2556) < 10,
-    `hot end then cold end, 19 min 40 s each (L20 manual): ${a1.t} s, ${a1.kg} kg (2 x 1278), both back to their reset position (${a1.r40} / ${a1.r42}, ph ${a1.A.ph}, steam ${a1.msb})`);
+  /* beta.322 (JENNIE): the program starts the air heater blowers in two steps of its counter (unit.js anSbAph, 3.2.4-beta.8): count 29 =
+     DITL-80F row 25 OPERATING runs the COLD end N-1042 first, count 30 = DITL-80 output row 19 the HOT end N-1040 (L20 OMM: sequential,
+     19 min 40 s each). The test gives only the row 25 step, so the cold end blows once; the hot end needs the DITL-80 program step */
+  ck(a0.A.ph === 2 && a0.A.p42 > 10 && a0.A.p40 === 0 && Math.abs(a0.msb - 3.9) < 0.01 && Math.abs(a0.dl - 3.9) < 1 && a0.r42 === false && a0.r40 === true,
+    `air heater blowers started (step 29): cold end N-1042 blows 3900 kg/h (${a0.msb} T/H, drum outflow +${a0.dl} beside the rest of the drum steam), PT-SB1042 ${a0.A.p42} kg/cm2, N-1042 off its reset position (reset 1040 / 1042 = ${a0.r40} / ${a0.r42}, ph ${a0.A.ph}, op ${a0.op})`);
+  ck(a1.A.ph === 0 && a1.msb === 0 && a1.r40 === true && a1.r42 === true && Math.abs(a1.t - 1180) <= 2 && Math.abs(a1.kg - 1278) < 6,
+    `cold end 19 min 40 s (L20 manual): ${a1.t} s, ${a1.kg} kg (1278), both back to their reset position (${a1.r40} / ${a1.r42}, ph ${a1.A.ph}, steam ${a1.msb})`);
   /* 5. drain temperatures */
   const d0 = r.cold.dr, d1 = r.l150.dr, d2 = r.open.dr, d3 = r.drHot, d4 = r.drCool;
   ck(Math.abs(d0.a - 30) < 1 && Math.abs(d0.b - 30) < 1 && d0.bp !== 1, `Cold: drain temperatures ${d0.a} / ${d0.b} C (ambient), no blowing permissive`);
