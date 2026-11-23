@@ -3,8 +3,10 @@
 // of the boiler master sheet (ABC-001C) per 0.5 s (its 36 linked sheets step once each).
 // The operator (PR-OPE-5003: "Maintain MS pressure 123-126 ksc"): below 220 T/H of main steam the drawing puts the boiler master in
 // MANUAL (ABC-001C M.2013 = NOT M.0101, M.0101 = MSF > 220 T/H); the operator moves HIC-BM to hold the pressure and presses A again
-// above 220 T/H. Pass: at 60 MW and at 150 MW the plant is within 5 % of the snapshots (02.png 60.3 MW: MSF 203.7 T/H, coal 41.8 T/H;
-// 4.PNG / 03.png 150 MW: MSF 474 T/H), MSP within 5 % of its set point, drum level inside +-100 mm, no low-low pressure, no page error.
+// above 220 T/H. Pass (1.0.0-beta.346, user 2026-11-24 'GO DESIGN': the design documents are the targets, no plant snapshot): at 60 MW
+// and 150 MW within 5 % of the Hitachi heat balance PPE-14-0725 (40 % case MS 190.769 T/H, 100 % 458.327 T/H) and of the FHI curves at
+// the steam flow (Fig 6 SH / RH temperature, Fig 13 coal, Tab 3 RH outlet 35.1 kg/cm2 at MCR, the HRH pressure going with the HP exhaust
+// of the HB, 16.35 / 38.64 ata), MSP within 5 % of its set point, drum level inside +-100 mm, no low-low pressure, no page error.
 // Usage: node tests/regress/unit_load.js [html]
 const {open}=require('./lib.js');const fs=require('fs');
 const html=process.argv.find(a=>/\.html$/.test(a))||'dist/'+fs.readdirSync('dist').find(x=>/^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
@@ -69,9 +71,12 @@ const run=(sec,rec)=>page.evaluate(async([sec,rec])=>{const u=window.__u,U=AN.un
 const st=()=>page.evaluate(()=>{const u=window.__u,U=AN.unit,v=u.v,S=u.S;return{dem:+u.SU.rt.v[u.lab(u.SU,'SI0226')],D:+v[u.lab(S,'SI0236')],MW:U.MW,MSP:+v[u.lab(S,'AI0131')],SV:+v[u.cobm.q.sv],MSF:+v[U.cn],coal:U.fuel.reduce((a,l)=>a+(+l[0][0].rt.st[l[0][1].id].val),0),FW:+u.S10.rt.v[u.lab(u.S10,'AI0256')],lvl:+u.S10.rt.v[u.lv.q.pv],bm:u.S.rt.st[u.bm.id].pk,RHP:+u.S52.rt.v[u.rhp.q.pv],MST:+u.S12.rt.v[u.mst.q.pv],RHT:+u.S19.rt.v[u.rht.q.pv],O2:+u.S2.rt.v[u.o2.q.pv],Pd:U.Pd,mb:U.mb||0,dcs:+v[u.lab(S,'I.0082')]>0.5,aim:U.tb?+U.tb.aim:NaN}});
 const say=(w,x)=>console.log('     '+w+': MW '+x.MW.toFixed(1)+' (demand '+x.dem.toFixed(1)+'), MSP '+x.MSP.toFixed(1)+' (SV '+x.SV.toFixed(1)+'), MSF '+x.MSF.toFixed(1)+' T/H, coal '+x.coal.toFixed(1)+' T/H, FW '+x.FW.toFixed(1)+' T/H, drum level '+x.lvl.toFixed(0)+' mm, boiler master '+(x.bm==='A'?'AUTO':'MANUAL')+'\n       MST '+x.MST.toFixed(0)+' C, RHT '+x.RHT.toFixed(0)+' C, RHP '+x.RHP.toFixed(1)+' kg/cm2, O2 '+x.O2.toFixed(1)+' %, drum '+x.Pd.toFixed(1)+' kg/cm2, bypass / blow-off '+x.mb.toFixed(0)+' T/H');
 const near=(x,ref,p)=>Math.abs(x-ref)<=Math.abs(ref)*p/100;
+/* FHI P2S7 design curves at the boiler load % MCR = MSF / 460 T/H (02-fhi-curves.md): Fig 6 SH and RH temperature, Fig 13 coal */
+const lin=(X,Y,x)=>{if(x<=X[0])return Y[0];for(let i=1;i<X.length;i++)if(x<=X[i])return Y[i-1]+(Y[i]-Y[i-1])*(x-X[i-1])/(X[i]-X[i-1]);return Y[Y.length-1]};
+const fig6=m=>lin([40,50,60,100],[524,534,541,541],m/4.6),fig13=m=>lin([40,50],[38.5,47.0],m/4.6),rhpHB=35.1,rhp40=35.1*16.35/38.64;
 await run(300,1);const a=await st();say('150 MW, 5 min',a);
-ck(near(a.MW,150,3)&&near(a.MSF,474.1,5)&&near(a.MSP,a.SV,5),'Start at 150 MW stays: MW '+a.MW.toFixed(1)+', MSF '+a.MSF.toFixed(1)+', MSP '+a.MSP.toFixed(1));
-ck(near(a.MST,542,5)&&near(a.RHT,542,5)&&near(a.RHP,34.0,5),'150 MW: MST '+a.MST.toFixed(0)+', RHT '+a.RHT.toFixed(0)+', RHP '+a.RHP.toFixed(1)+' (4.PNG 542 / 542 / 34.0)');
+ck(near(a.MW,150,3)&&near(a.MSF,458.3,5)&&near(a.MSP,a.SV,5),'Start at 150 MW stays: MW '+a.MW.toFixed(1)+', MSF '+a.MSF.toFixed(1)+', MSP '+a.MSP.toFixed(1));
+ck(near(a.MST,541,5)&&near(a.RHT,541,5)&&near(a.RHP,rhpHB,5),'150 MW: MST '+a.MST.toFixed(0)+', RHT '+a.RHT.toFixed(0)+', RHP '+a.RHP.toFixed(1)+' (FHI Tab 3 541 / 541 / 35.1)');
 await page.evaluate(()=>{const u=window.__u;u.SU.rt.ext[u.tgt]=60});
 await run(600,1);const b=await st();say('TARGET 60, after 10 min',b);
 ck(b.dem<125&&b.dem>115&&near(b.MW,b.D,3),'load down at 3 MW/min: demand '+b.dem.toFixed(1)+' after 10 min; MW '+b.MW.toFixed(1)+' follows the turbine demand SI0236 '+b.D.toFixed(1)+' (LAG 150 s of ABC-001C)');
@@ -80,22 +85,22 @@ await run(1200+1200,1);const c=await st();say('60 MW, settled',c);
    (I.0082 = 0, turbine master MANUAL by the BU-CMD) the TCS target. SI0236 then carries the ABC-001C LN55 'MSP vs T/B Override MW'
    (+-2 MW outside +-3 kg/cm2 of the pressure error) that the TCS does not read: at 60 MW MSP 125.7 vs SV 122.3 gives 60 - 2 = 58 */
 const ref60=c.dcs?c.D:c.aim;
-ck(near(c.MW,60.3,5)&&near(c.MW,ref60,3),'60 MW: MW '+c.MW.toFixed(1)+' (02.png 60.3), follows the '+(c.dcs?'DCS demand SI0236 ':'TCS target ')+ref60.toFixed(1));
-ck(near(c.MSF,203.7,5),'60 MW: main steam flow '+c.MSF.toFixed(1)+' T/H (02.png 203.7)');
-ck(near(c.coal,41.8,5),'60 MW: coal '+c.coal.toFixed(1)+' T/H (02.png 41.8)');
+ck(near(c.MW,60,5)&&near(c.MW,ref60,3),'60 MW: MW '+c.MW.toFixed(1)+' (HB 40 % case 60 MW), follows the '+(c.dcs?'DCS demand SI0236 ':'TCS target ')+ref60.toFixed(1));
+ck(near(c.MSF,190.8,5),'60 MW: main steam flow '+c.MSF.toFixed(1)+' T/H (HB 40 % case 190.8)');
+ck(near(c.coal,fig13(c.MSF),5),'60 MW: coal '+c.coal.toFixed(1)+' T/H (FHI Fig 13 at '+(c.MSF/4.6).toFixed(1)+' % MCR: '+fig13(c.MSF).toFixed(1)+')');
 ck(near(c.MSP,c.SV,5),'60 MW: MSP '+c.MSP.toFixed(1)+' at its set point '+c.SV.toFixed(1)+' (PR-OPE-5003: maintain MS pressure)');
 ck(c.bm==='B','60 MW: boiler master MANUAL (MSF < 220 T/H, M.2013 = NOT M.0101)');
-ck(near(c.MST,517,5),'60 MW: main steam temperature '+c.MST.toFixed(0)+' C (02.png 517; SH spray closed below 60 % MCR, boiler manual Fig 6 / Fig 10)');
-ck(near(c.RHT,499,5),'60 MW: reheat steam temperature '+c.RHT.toFixed(0)+' C (02.png 499)');
-ck(near(c.RHP,15.0,5),'60 MW: hot reheat pressure '+c.RHP.toFixed(1)+' kg/cm2 (02.png 15.0: proportional to the steam flow)');
+ck(near(c.MST,fig6(c.MSF),5),'60 MW: main steam temperature '+c.MST.toFixed(0)+' C (FHI Fig 6 at '+(c.MSF/4.6).toFixed(1)+' % MCR: '+fig6(c.MSF).toFixed(0)+'; SH spray 0 below 60 % MCR, Fig 10)');
+ck(near(c.RHT,fig6(c.MSF),5),'60 MW: reheat steam temperature '+c.RHT.toFixed(0)+' C (FHI Fig 6: '+fig6(c.MSF).toFixed(0)+')');
+ck(near(c.RHP,rhp40,5),'60 MW: hot reheat pressure '+c.RHP.toFixed(1)+' kg/cm2 (HB 40 % case: 35.1 x 16.35 / 38.64 = '+rhp40.toFixed(1)+')');
 ck(c.O2>=5&&c.O2<=12,'60 MW: O2 '+c.O2.toFixed(1)+' % (boiler manual Fig 7: 4.6 % at 50 % MCR, 8.8 % at 40 %; the O2 trim is forced MANUAL below 220 T/H, ABC-002 M.0102)');
 await page.evaluate(()=>{const u=window.__u;u.up=1});
 await run(5400,1);const d=await st();say('back to 150, settled',d);
-ck(near(d.MW,150,3)&&near(d.MSF,474.1,5)&&near(d.MSP,d.SV,5),'back to 150 MW: MW '+d.MW.toFixed(1)+', MSF '+d.MSF.toFixed(1)+' (474.1), MSP '+d.MSP.toFixed(1));
+ck(near(d.MW,150,3)&&near(d.MSF,458.3,5)&&near(d.MSP,d.SV,5),'back to 150 MW: MW '+d.MW.toFixed(1)+', MSF '+d.MSF.toFixed(1)+' (HB 458.3), MSP '+d.MSP.toFixed(1));
 ck(d.bm==='A','150 MW: boiler master back in AUTO (operator turned MAN off above 230 T/H, PR-OPE-5002)');
 {const z3=await page.evaluate(()=>{const u=window.__u;const q=u.S2.rt.st[u.o2.amt.id];return{man:u.o2man||0,auto:u.o2auto||0,pk:q.pk+(q.fman?'F':''),mv:+u.S2.rt.v[u.o2.out]}});
  ck(z3.man>0&&z3.auto>0&&z3.pk==='A','O2 trim AICFG112: forced MANUAL by the cross limit on the way down (ABC-002 M.0103), operator neutral 50 % then AUTO again at 150 MW (now '+z3.pk+', MV '+z3.mv.toFixed(1)+')')}
-ck(near(d.MST,542,5)&&near(d.RHT,542,5)&&near(d.RHP,34.0,5)&&d.O2>2&&d.O2<7,'back to 150 MW: MST '+d.MST.toFixed(0)+', RHT '+d.RHT.toFixed(0)+', RHP '+d.RHP.toFixed(1)+', O2 '+d.O2.toFixed(1)+' (4.PNG 542 / 542 / 34.0; the spray and the O2 trim back)');
+ck(near(d.MST,541,5)&&near(d.RHT,541,5)&&near(d.RHP,rhpHB,5)&&d.O2>2&&d.O2<7,'back to 150 MW: MST '+d.MST.toFixed(0)+', RHT '+d.RHT.toFixed(0)+', RHP '+d.RHP.toFixed(1)+', O2 '+d.O2.toFixed(1)+' (FHI Tab 3 541 / 541 / 35.1; the spray and the O2 trim back)');
 {const z2=await page.evaluate(()=>{const u=window.__u;return{self:!!u.selfAuto,bm:u.bmA||0,tm:u.tmA2||0}});
  ck(!z2.self&&z2.bm>0,'BU-CMD latch: the boiler master stayed MANUAL after the BU-CMD went, until the operator selected AUTO ('+(z2.self?'went to AUTO BY ITSELF':'operator AUTO pressed')+')')}
 const z=await page.evaluate(()=>{const u=window.__u;return{minP:u.minP,maxL:u.maxL,ll:u.ll}});
