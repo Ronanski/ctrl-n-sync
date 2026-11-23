@@ -46,10 +46,13 @@ const html =
     await run(120);
     o.cold = st();
     AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
+    /* 1.0.0-beta.328 (JENNIE): the start the operator uses, "At 150 MW" (AN.loadStart + the DITL + the steady state st150); the
+       bare AN.plantLoad150 + DITL150.apply has no steady state: the CCS fell to MAN after 4 min and the drum level tripped the
+       boiler at about 20 min, then the LP bypass steam heated TT-HR1010 to 449 C */
+    await AN.ades();
+    WORLD.set(true);
+    document.getElementById('load150').click();
+    await AN._startP;
     await run(300);
     o.l150 = st();
     /* MV-TS1003 held shut in the field */
