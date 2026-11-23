@@ -76,10 +76,10 @@
             { id: 'p' + i, sc: PS, lab: 'b' }
           )
         ),
-        at(M('strainer', 'S-1502', 'Debris filter', [], { tag: 'S-1502', flow: SW }), 515, MY, {
+        at(M('strainer', 'S-1502', 'Debris filter', [], { tag: 'S-1502', flow: SW }), 500, MY, {
           id: 'df1',
           sc: 1.6,
-          lab: 'b'
+          lab: 't' /* UI check 2026-11-24 C1: above the header (its own header riser on the left, the booster branch below) */
         }),
         at(E('condenser', 'Condenser', 'H-1110', [], { id: 'cd', steam: 'v:SI-TB>50' }), CX, CY, {
           id: 'cd',
@@ -173,22 +173,22 @@
         },
         /* header, debris filter, condenser, discharge */
         { med: 'sea', w: W_M, pts: [[HX0, MY], 'df1.l'], flow: SW },
-        { med: 'sea', w: W_M, pts: ['df1.r', [680, MY]], flow: SW, arrow: false },
-        { med: 'sea', w: 6, pts: [[680, MY], [680, MY - PATH], 'hi1.l'], flow: SW, arrow: false },
-        { med: 'sea', w: 6, pts: [[680, MY], [680, MY + PATH], 'hi2.l'], flow: SW, arrow: false },
+        { med: 'sea', w: W_M, pts: ['df1.r', [712, MY]], flow: SW, arrow: false },
+        { med: 'sea', w: 6, pts: [[712, MY], [712, MY - PATH], 'hi1.l'], flow: SW, arrow: false },
+        { med: 'sea', w: 6, pts: [[712, MY], [712, MY + PATH], 'hi2.l'], flow: SW, arrow: false },
         { med: 'sea', w: 6, pts: ['hi1.r', [CX - 80 * CS, MY - PATH]], flow: SW + '&' + 'h:fv-V-SW1007' },
         { med: 'sea', w: 6, pts: ['hi2.r', [CX - 80 * CS, MY + PATH]], flow: SW + '&' + 'h:fv-V-SW1008' },
         { med: 'sea', w: 6, pts: [[CX + 80 * CS, MY - PATH], 'ho1.l'], flow: SW, arrow: false },
         { med: 'sea', w: 6, pts: [[CX + 80 * CS, MY + PATH], 'ho2.l'], flow: SW, arrow: false },
-        { med: 'sea', w: 6, pts: ['ho1.r', [1112, MY - PATH], [1112, MY]], flow: SW, arrow: false },
-        { med: 'sea', w: 6, pts: ['ho2.r', [1112, MY + PATH], [1112, MY]], flow: SW, arrow: false },
+        { med: 'sea', w: 6, pts: ['ho1.r', [1100, MY - PATH], [1100, MY]], flow: SW, arrow: false },
+        { med: 'sea', w: 6, pts: ['ho2.r', [1100, MY + PATH], [1100, MY]], flow: SW, arrow: false },
         {
           med: 'sea',
           w: W_M,
           pts: [
-            [1112, MY],
-            [1240, MY],
-            [1240, TOP],
+            [1100, MY],
+            [1260, MY],
+            [1260, TOP],
             [1440, TOP]
           ],
           to: 'sea water discharge channel',
@@ -199,7 +199,7 @@
           med: 'sea',
           w: W_B,
           pts: [
-            [520, MY],
+            [500, MY],
             [520, 975],
             [BX[2] - 90, 975]
           ],
@@ -233,11 +233,11 @@
           flow: BP
         },
         /* hypochlorite into the pool */
-        { med: 'drain', w: W_S, pts: ['ha.d', [78, 640], [120, 640], 'pl.b'], flow: 'm:P-0762A|m:P-0762B' }
+        { med: 'drain', w: W_S, pts: ['ha.d', [78, 640], [20, 640], [20, MY], 'pl.l'] /* into the pool from the side, clear of its level */, flow: 'm:P-0762A|m:P-0762B' }
       ],
       taps: [
         {
-          x: 628,
+          x: 640,
           y: MY,
           side: 't',
           label: 'Inlet pressure A / B',
@@ -248,7 +248,7 @@
           tag: 'PT-SW1110-A1 / -B1'
         },
         {
-          x: 628,
+          x: 640,
           y: MY,
           side: 'b',
           label: 'Inlet temperature A / B',
@@ -283,7 +283,7 @@
       ],
       texts: [
         { x: 1250, y: TOP - 14, s: 'siphon pit', cls: 'hx-note' },
-        { x: 530, y: 965, s: 'to the booster pumps', cls: 'hx-note' },
+        { x: 510, y: 965, s: 'to the booster pumps', cls: 'hx-note' },
         {
           x: 800,
           y: 735,

@@ -121,16 +121,16 @@
       ],
       taps: [
         {
-          x: 720,
+          x: 745 /* UI check 2026-11-24 C1: clear of the extraction 4 riser at 700 */,
           y,
           side: 't',
-          label: n === 1 ? 'Exhaust pressure' : 'Pressure' /* apk test 2026-11-22: shorter, clear of the valve name at 11 px */,
+          label: 'Pressure' /* UI check 2026-11-24: one short word on every row (the tag tells the exhaust), clear of the valve name at 11 px */,
           key: e.p,
           unit: K,
           dp: 2,
           tag: e.p
         },
-        { x: 720, y, side: 'b', label: 'Temperature', key: e.t, unit: '°C', dp: 0, tag: e.t }
+        { x: 745, y, side: 'b', label: 'Temperature', key: e.t, unit: '°C', dp: 0, tag: e.t }
       ]
     };
   };

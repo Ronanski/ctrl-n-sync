@@ -40,7 +40,7 @@
     TX = 1090,
     TY = 800,
     TS = 0.5 /* turbine set */,
-    GX = 900,
+    GX = 885 /* UI check 2026-11-24 C2: its load value clear of the turbine pedestal */,
     GS = 0.8 /* generator */,
     DX = 520,
     DY = 850,
@@ -151,7 +151,7 @@
         {
           med: 'steam',
           w: 6,
-          pts: ['dr.st', [FX, 60], [1480, 60], [1480, 720], [TX + 46 * TS, 720], 'tg.hpIn'],
+          pts: ['dr.st', [FX, 60], [1462, 60], [1462, 720], [TX + 46 * TS, 720], 'tg.hpIn'],
           flow: STM
         },
         /* condensate and feedwater */
@@ -182,12 +182,13 @@
         { x: BX - 12, y: 166, s: 'Back pass', cls: 'hx-name', anchor: 'end' },
         { x: EX, y: EY + 74, s: 'Precipitator', cls: 'hx-name', anchor: 'middle' },
         { x: SX, y: SY + 22, s: 'Stack', cls: 'hx-name', anchor: 'middle' },
-        { x: 24, y: 700, s: 'WATER AND STEAM', cls: 'hx-zone' },
+        { x: 170, y: 700, s: 'WATER AND STEAM' /* right of the feedwater riser at 150 */, cls: 'hx-zone' },
         { x: TX - 50, y: TY + 152, s: 'Turbine and condenser', cls: 'hx-name' },
         { x: TX + 60, y: TY - 60, s: 'Speed', key: 'SI-TB', unit: 'rpm', dp: 0 },
         { x: TX - 50, y: TY + 170, s: 'Condenser pressure', key: 'PT-CD1110', unit: K + ' abs', dp: 3 },
-        { x: 1460, y: 100, s: 'COORDINATED CONTROL', cls: 'hx-zone' },
-        { x: 1490, y: 720, s: 'PAGES', cls: 'hx-zone' }
+        /* UI check 2026-11-24 C1: the main steam line down at 1462, between the stack and the coordinated control column */
+        { x: 1505, y: 100, s: 'COORDINATED CONTROL', cls: 'hx-zone' },
+        { x: 1505, y: 720, s: 'PAGES', cls: 'hx-zone' }
       ]
     }
   });

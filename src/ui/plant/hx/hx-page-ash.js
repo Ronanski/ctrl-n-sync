@@ -127,15 +127,15 @@
           sc: 1.3,
           lab: 't'
         }),
-        at(E('screen', 'Vibrating screen A', 'S-1092A', [], { on: SCRA, wrap: 12 }), 1290, 640, {
+        at(E('screen', 'Vibrating screen A', 'S-1092A', [], { on: SCRA, wrap: 18 }), 1290, 640, {
           id: 'vsa',
           sc: 1.4,
-          lab: 'l'
+          lab: 'b' /* UI check 2026-11-24 C1: under the screen; at its left the feed line to screen B goes down */
         }),
-        at(E('screen', 'Vibrating screen B', 'S-1092B', [], { on: SCRB, wrap: 12 }), 1290, 760, {
+        at(E('screen', 'Vibrating screen B', 'S-1092B', [], { on: SCRB, wrap: 18 }), 1290, 760, {
           id: 'vsb',
           sc: 1.4,
-          lab: 'l'
+          lab: 'b'
         }),
         at(L('limestone-sand', 'Coarse ash to the sand silo'), 1300, 880, { id: 'rcl' }),
         at(
