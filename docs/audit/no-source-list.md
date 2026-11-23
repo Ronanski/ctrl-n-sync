@@ -324,3 +324,15 @@ Kind (first sort by the words of the comment; checked by hand when each batch is
 - `src/analog/engine/source.js:14`: Numbers marked NO-SOURCE are not in the documents searched (user 2026-11-11: no ASSUMED). */
 - `src/analog/engine/source.js:149`: /* loop 11, bypass desuperheaters: the outlet temperature needs steam through the bypass (full from 3 % of the MCR flow, NO-SOURCE; the L21 sheets give the mini
 - `src/analog/engine/boiler.js:3`: anUnitStep: one line each). Every number has its source here and in docs/versions/v3.2.1/DIESEL_OIL_PLANT_MODEL.md; NO-SOURCE =
+
+## Batch 1 result: `src/world/plantsw.js` and `src/digital/parts/03b-sim.js` (2026-11-24 00:35 PHT)
+
+Checked by hand. None of these is a value that physics gives: a switch dead band (reset differential), a package switch set point and a valve closing time are properties of the device, written on its data sheet. A number made up "so it behaves" would be a new ASSUMED, so **no code was changed**. Each one waits for one PC read (the coordinator batches them):
+
+1. `plantsw.js:11` dead band 10 mm / 10 mmH2O of the drum level, furnace pressure, deaerator and hotwell switches (LSL / LSH / LSHH / LSLL-BR1001, PSHHH / PSHH / PSLL-FG1085 ~ 1087, LSLL-CD1104-4, LSLL-CD1110). Read: `over-all-instrument-list.xlsx` (set / reset or differential column of these tags), then `alarm-list.zip` 20160912 sheets LS / PS (reset value), then the switch vendor data sheet if neither has it.
+2. `plantsw.js:30` (ASSUMED) and `:37` dead band 0.2 kg/cm2 of PSL-IA1706 and of PSH-DO1043-x1 / PSL-PA1043-x1. Read: the same two lists; for the burner switches the M&S BMS package (1612 13-4-105) instrument list.
+3. `plantsw.js:46` (ASSUMED) and `:56` dead band 2 C / 0.5 mm/s of the ACWP and SWP motor temperature and vibration rows. Read: alarm list 20160912 (TE-CW1108, TE-SW1501, VT-SW1501 reset); else the motor RTD / vibration monitor setting sheet of the pump vendor.
+4. `plantsw.js:64 ~ 65` LS-MU0708-A / B dead band 0.05 m, and FS-CW1060-x1 / x2 set point 150 m3/h with dead band 50. Read: alarm list for LS-MU0708; bottom ash screw cooler O&M (BAC E130122B) for the FS-CW1060 package flow switch set point.
+5. `plantsw.js:121` fan inlet vane end switches ZSC <= 2 % / ZSO >= 98 % (FG1056-1, FA1053-1, FA1054-1). Read: Cheng Chen fan instruction manual (`fan-instruction-manual-SAF-PAF-IDF.pdf`, actuator / limit switch section) and the actuator data sheet.
+6. `plantsw.js:266` delay of the vibrating screen S-1092-A / B running contact (none now). Read: bottom ash PLC logic (`bottomash-limestone-logic.zip`, DITL-BA59 / BA63) for a timer on the running feedback.
+7. `03b-sim.js:692` closing time of MV-AS1397 and MV-TS1400 (10 s kept): not in the valve list of K1AU3-E2-0-122 RA (33 items). Read: P&ID (`flow-diagram-K1AU3-A1-0-001.zip`, RB first) for their size and class; then the actuator sheet of the same size and class in K1AU3-E2-0-122, or the MOV vendor list.
