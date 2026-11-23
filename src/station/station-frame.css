@@ -87,7 +87,7 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-stn { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 12px 12px 0; }
 .st-fam { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; padding: 12px 12px 0; }
 .st-fam .st-b { padding: 0 2px; font-size: 12px; }
-.st-railfoot .st-ins { width: 100%; margin-top: 8px; }
+.st-railfoot .st-plantb { width: 100%; margin-top: 8px; }
 .st-h { margin: 12px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--st-dim); }
 .st-h:first-child { margin-top: 0; }
 .st-row { display: flex; flex-wrap: wrap; gap: 8px; }

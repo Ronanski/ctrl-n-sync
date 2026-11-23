@@ -32,7 +32,6 @@ function histRec(sh, auto) {
   while (H.length > cap) H.shift();
 }
 function setRun(on) {
-  if (on && AN.frz) return; /* the instructor FREEZE (engine/instructor.js) */
   AN.run = on;
   bRun.textContent = on ? '❚❚ Pause' : '▶ Run';
   bRun.classList.toggle('on', on);
@@ -173,11 +172,6 @@ const runGo = () => {
 };
 bRun.onclick = () => {
   if (AN._loadP) return;
-  /* the instructor's FREEZE (engine/instructor.js): Run is refused until the instructor takes it off */
-  if (AN.frz && !AN.run) {
-    if (window.lsEventAdd) lsEventAdd('INSTRUCTOR', 'INSTRUCTOR', 'Run refused: the instructor froze the plant');
-    return;
-  }
   /* retest #57: RUN with no starting state asks for it, then runs */
   if (!AN.run && coldIfNone(runGo)) return;
   runGo();

@@ -156478,10 +156478,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 7dec451'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 37928e2'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 7dec451';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 37928e2';
     } catch (e) {}
   };
   upd();
@@ -161391,16 +161391,14 @@ AN.almPri = a => {
   else if (/HIGH|LOW|DEVIATION/.test(lv)) p = 3;
   return { p, name: AN_ALM_PRI[p] };
 };
-/* ===== INSTRUCTOR TOOLS (user "go all" 2026-11-19, item 6: grouped malfunctions, freeze) =====
+/* ===== FAULT GROUPS (user "go all" 2026-11-19, item 6: grouped malfunctions; audit #6 2026-11-24: the instructor hold is gone, Pause
+   holds the plant, and the Instructor button is now the Plant menu of the station)
    Nothing here makes a fault or a result. The faults stay those of engine/faults.js (AN.fault) and world.js (WORLD.ftrip); this file only
-   sorts them by the plant system they belong to, so the instructor finds them by system, and gives the instructor a FREEZE.
+   sorts them by the plant system they belong to, so the Plant menu lists them by system.
    AN.faultGroups() -> [{ g: 'Air and flue gas', items: [{ id, t, on, src: 'an' | 'world' }] }, ...], the groups in the order of the plant
                        (fuel, air and gas, water and steam, turbine side, electrical, then instruments and valves); every fault of the two
                        lists is in exactly one group ('Other' only for a fault added later without a group here).
-                       A fault is put on / cleared as before: src 'an' -> AN.fault(id, on), src 'world' -> WORLD.ftrip(id, on).
-   AN.freeze(on, why) -> the plant time stops (the Pause of the app) and Run is refused until the instructor takes the freeze off
-                       (trace.js Run checks AN.frz). '' or the reason it was refused. AN.freeze() -> { on, at (plant s), why }.
-                       The freeze of a training simulator: the instructor holds the plant to explain, the trainee cannot run it on. */
+                       A fault is put on / cleared as before: src 'an' -> AN.fault(id, on), src 'world' -> WORLD.ftrip(id, on). */
 const AN_FG_ORDER = [
   'Coal and limestone',
   'Air and flue gas',
@@ -161447,27 +161445,6 @@ AN.faultGroups = () => {
   }
   return AN_FG_ORDER.filter(k => M[k]).map(k => ({ g: k, items: M[k] }));
 };
-AN.frz = null;
-AN.freeze = (on, why) => {
-  if (on === undefined) return AN.frz ? Object.assign({}, AN.frz) : { on: false, at: null, why: '' };
-  const ev = m => {
-    try {
-      if (window.lsEventAdd) lsEventAdd('INSTRUCTOR', 'INSTRUCTOR', m);
-    } catch (e) {}
-  };
-  if (on) {
-    if (AN.frz) return '';
-    if (!(AN.unit && AN.unit.on)) return 'FREEZE: no plant is running (pick a starting point first)';
-    AN.frz = { on: true, at: Math.round(anPlantT() * 10) / 10, why: String(why || '') };
-    if (AN.pauseOn) AN.pauseOn();
-    ev('Instructor: FREEZE' + (why ? ' (' + why + ')' : '') + ': the plant is held');
-    return '';
-  }
-  if (!AN.frz) return '';
-  AN.frz = null;
-  ev('Instructor: FREEZE off: press Run to go on');
-  return '';
-};
 /* ---------- v1.13.0 F: step / view / trace / why ---------- */
 {
   const st = document.createElement('style');
@@ -161502,7 +161479,6 @@ function histRec(sh, auto) {
   while (H.length > cap) H.shift();
 }
 function setRun(on) {
-  if (on && AN.frz) return; /* the instructor FREEZE (engine/instructor.js) */
   AN.run = on;
   bRun.textContent = on ? '❚❚ Pause' : '▶ Run';
   bRun.classList.toggle('on', on);
@@ -161643,11 +161619,6 @@ const runGo = () => {
 };
 bRun.onclick = () => {
   if (AN._loadP) return;
-  /* the instructor's FREEZE (engine/instructor.js): Run is refused until the instructor takes it off */
-  if (AN.frz && !AN.run) {
-    if (window.lsEventAdd) lsEventAdd('INSTRUCTOR', 'INSTRUCTOR', 'Run refused: the instructor froze the plant');
-    return;
-  }
   /* retest #57: RUN with no starting state asks for it, then runs */
   if (!AN.run && coldIfNone(runGo)) return;
   runGo();
@@ -325831,17 +325802,15 @@ AN.almPri = a => {
   return { p, name: AN_ALM_PRI[p] };
 };
 
-/* ---- engine/instructor.js ---- */
-/* ===== INSTRUCTOR TOOLS (user "go all" 2026-11-19, item 6: grouped malfunctions, freeze) =====
+/* ---- engine/fault-groups.js ---- */
+/* ===== FAULT GROUPS (user "go all" 2026-11-19, item 6: grouped malfunctions; audit #6 2026-11-24: the instructor hold is gone, Pause
+   holds the plant, and the Instructor button is now the Plant menu of the station)
    Nothing here makes a fault or a result. The faults stay those of engine/faults.js (AN.fault) and world.js (WORLD.ftrip); this file only
-   sorts them by the plant system they belong to, so the instructor finds them by system, and gives the instructor a FREEZE.
+   sorts them by the plant system they belong to, so the Plant menu lists them by system.
    AN.faultGroups() -> [{ g: 'Air and flue gas', items: [{ id, t, on, src: 'an' | 'world' }] }, ...], the groups in the order of the plant
                        (fuel, air and gas, water and steam, turbine side, electrical, then instruments and valves); every fault of the two
                        lists is in exactly one group ('Other' only for a fault added later without a group here).
-                       A fault is put on / cleared as before: src 'an' -> AN.fault(id, on), src 'world' -> WORLD.ftrip(id, on).
-   AN.freeze(on, why) -> the plant time stops (the Pause of the app) and Run is refused until the instructor takes the freeze off
-                       (trace.js Run checks AN.frz). '' or the reason it was refused. AN.freeze() -> { on, at (plant s), why }.
-                       The freeze of a training simulator: the instructor holds the plant to explain, the trainee cannot run it on. */
+                       A fault is put on / cleared as before: src 'an' -> AN.fault(id, on), src 'world' -> WORLD.ftrip(id, on). */
 const AN_FG_ORDER = [
   'Coal and limestone',
   'Air and flue gas',
@@ -325887,27 +325856,6 @@ AN.faultGroups = () => {
     (M[k] = M[k] || []).push({ id: f.id, t: f.t, on: !!f.on, src: f.src });
   }
   return AN_FG_ORDER.filter(k => M[k]).map(k => ({ g: k, items: M[k] }));
-};
-AN.frz = null;
-AN.freeze = (on, why) => {
-  if (on === undefined) return AN.frz ? Object.assign({}, AN.frz) : { on: false, at: null, why: '' };
-  const ev = m => {
-    try {
-      if (window.lsEventAdd) lsEventAdd('INSTRUCTOR', 'INSTRUCTOR', m);
-    } catch (e) {}
-  };
-  if (on) {
-    if (AN.frz) return '';
-    if (!(AN.unit && AN.unit.on)) return 'FREEZE: no plant is running (pick a starting point first)';
-    AN.frz = { on: true, at: Math.round(anPlantT() * 10) / 10, why: String(why || '') };
-    if (AN.pauseOn) AN.pauseOn();
-    ev('Instructor: FREEZE' + (why ? ' (' + why + ')' : '') + ': the plant is held');
-    return '';
-  }
-  if (!AN.frz) return '';
-  AN.frz = null;
-  ev('Instructor: FREEZE off: press Run to go on');
-  return '';
 };
 
 ;
@@ -346992,7 +346940,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 7dec451'));
+    row('Version', E('span', 'scsver', ver + ' · build 37928e2'));
   }
   function openSet(near) {
     if (!set) {
