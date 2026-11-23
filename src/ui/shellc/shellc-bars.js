@@ -191,7 +191,7 @@
       cMore = E('div', 'scmore2');
       const b = E('button', 'scmore2b', 'More ▾');
       b.type = 'button';
-      b.title = 'Instructor console, Search, Details, Settings';
+      b.title = 'Search, Details, Settings';
       b.setAttribute('aria-haspopup', 'true');
       b.setAttribute('aria-expanded', 'false');
       cMenu = E('div', 'scmore2m');
@@ -215,7 +215,7 @@
     }
     /* the rare buttons: Instructor, Search, Details, Settings (View | RUN must already be in the bar: shellc-ui.js puts it before Settings) */
     const q = sel => scp.querySelector(':scope > ' + sel) || cMenu.querySelector(':scope > ' + sel),
-      rare = [q('.pill.ins'), q('.scdetb'), q('.scsrp'), q('.scgearb')].filter(Boolean);
+      rare = [q('.scdetb'), q('.scsrp'), q('.scgearb')].filter(Boolean);
     /* the gear has no name of its own (an icon): a "Settings" label, shown only in the menu (shellc-bars.css .scmlbl) */
     const gear = q('.scgearb');
     if (gear && !gear.querySelector('.scmlbl')) gear.append(E('span', 'scmlbl', 'Settings'));

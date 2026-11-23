@@ -1095,7 +1095,7 @@
     whyPop.hidden = false;
   }
   /* Plant menu: the starting point, the save points, the faults and the trips of the app, through its own controls and functions
-     (the same ones the Instructor console of the old shell presses: shellc-ins.js). A press that changes the plant asks for a second press within 5 s */
+     (the old shell's Instructor console was removed in audit #6 2026-11-24). A press that changes the plant asks for a second press within 5 s */
   let plantPop = null;
   const pressId = id => {
     const b = document.getElementById(id);

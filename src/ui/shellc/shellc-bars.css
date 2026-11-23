@@ -19,11 +19,10 @@ body.sc.scbars #gsbar #scstrip .sck{flex:1 1 0!important;min-width:0!important;m
 body.sc.scbars #gsbar #scstrip #scctx > .scp{flex:none!important;flex-wrap:nowrap!important;margin-left:0!important;gap:6px!important;row-gap:0}
 body.sc.scbars #gsbar #scstrip #scctx .scp > .pill{padding:0 10px!important}
 /* the order of the right side: status (trip, alarms, Run with its speed, Instructor), then VIEW | RUN and PLANT, then Search and Settings */
-#scctx .scp > .pill:not(.run):not(.ins):not(.scsrp):not(.scgearb){order:1}
+#scctx .scp > .pill:not(.run):not(.scsrp):not(.scgearb){order:1}
 #scctx .scp > .pill.alm{order:2}
 #scctx .scp > .pill.run{order:3}
 #scctx .scp > .spd{order:4}
-#scctx .scp > .pill.ins{order:5}
 #scctx .scp > .seg{order:6;margin-left:8px}
 #scctx .scp > #plchip{order:7}
 #scctx .scp > .scsrp{order:8;margin-left:8px}

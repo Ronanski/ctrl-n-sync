@@ -45,7 +45,7 @@ html body.sc.sceng.scet-logic #zbar{top:auto!important;bottom:calc(var(--scewhyb
 body.sceng:not(.scet-logic) #mid{visibility:hidden!important}
 body.sceng:not(.scet-logic) #zbar{display:none!important}
 
-/* ---- Why is it X? under the sheet. M30: its bottom (--scewhyb) is the footer (--footH, app.js) + the training card bar (--sccardh, shellc-ins) + 8 px ---- */
+/* ---- Why is it X? under the sheet. M30: its bottom (--scewhyb) is the footer (--footH, app.js) + the training card bar (--sccardh) + 8 px ---- */
 body:not(.sceng.scet-logic) #scewhy{display:none!important}
 body.sceng.scet-logic #scewhy{position:fixed;left:calc(var(--scex) + 16px);right:16px;bottom:var(--scewhyb);z-index:var(--z-float,95);display:grid;gap:4px;max-height:34vh;overflow:auto;padding:8px 12px;box-sizing:border-box;background:var(--sc-white);border:1px solid #89a4ca;border-radius:4px;box-shadow:0 4px 16px rgba(34,46,57,.14);font:400 13px/1.4 var(--sc-ui);color:var(--sc-ink)}
 #scewhy .scesec{font:600 12px var(--sc-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--sc-ink2)}

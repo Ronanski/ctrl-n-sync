@@ -121,9 +121,6 @@ const block =
   '\n' +
   fs.readFileSync(__dirname + '/../shellc/shellc-pages.js', 'utf8') +
   '\n' +
-  /* step 5: Instructor console */
-  fs.readFileSync(__dirname + '/../shellc/shellc-ins.js', 'utf8') +
-  '\n' +
   fs.readFileSync(__dirname + '/../shellc/shellc-ui.js', 'utf8') +
   '\n' +
   fs.readFileSync(__dirname + '/../shellc/shellc-eng.js', 'utf8') /* step 4: Engineer mode */ +
