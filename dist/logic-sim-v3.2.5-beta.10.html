@@ -156410,10 +156410,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 9083106'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 8844bd0'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 9083106';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 8844bd0';
     } catch (e) {}
   };
   upd();
@@ -346856,7 +346856,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 9083106'));
+    row('Version', E('span', 'scsver', ver + ' · build 8844bd0'));
   }
   function openSet(near) {
     if (!set) {
@@ -378468,6 +378468,15 @@ window.UATS = (function () {
       );
     return { sh, S, rt, net, ctl, fp, stn: ctl && ctl.amt ? rt.st[ctl.amt.id] : null };
   }
+  /* UAT start 2026-11-23 (Jennie finding F1): the plant at 150 MW by the "At 150 MW" start (#load150, AN._startP), the steady state of the
+     model with the DITL line-up. The bare AN.plantLoad150() has no steady state: the CCS falls to MAN and the drum level trips at about 20 min.
+     One path only: no #load150 is an error, never a fall-back to the bare start */
+  const start150 = async () => {
+    const b = document.getElementById('load150');
+    if (!b) throw new Error('No "At 150 MW" start (#load150) in this build');
+    b.click();
+    await AN._startP;
+  };
   const stepSim = async (sh, secs) => {
     const n = Math.round(secs * 2);
     for (let i = 0; i < n; i++) {
@@ -378569,7 +378578,7 @@ window.UATS = (function () {
           else if (st.do === 'load150') {
             /* 2.2.0-beta.8: the plant in service (Start at 150 MW, hmi-op.js): every sheet at the operating point of the plant */
             AN.reset();
-            AN.plantLoad150();
+            await start150();
             AN.go(idx);
           } else if (st.do === 'reset') {
             AN.reset();
@@ -379135,7 +379144,7 @@ window.UATS = (function () {
       if (!base) {
         const loadSvc = async () => {
           AN.reset();
-          AN.plantLoad150();
+          await start150();
           AN.go(idx);
           await stepSim(sh, 5);
           const c = AN.hmiCtrls(S).find(c => c.tag === tag),
@@ -379178,7 +379187,7 @@ window.UATS = (function () {
         /* in service: the plant is loaded once; each input of the force-manual cone is turned over for 3 s and back (an input that
            does not force the station leaves the plant as it was); the first one that forces the station is the trip */
         AN.reset();
-        AN.plantLoad150();
+        await start150();
         AN.go(idx);
         await stepSim(sh, 5);
         for (const n of cd) {
@@ -383415,6 +383424,15 @@ window.UATS = (function () {
     if (busy) return;
     return UATR.onPage(() => runSc0(sc, ui));
   }
+  /* UAT start 2026-11-23 (Jennie finding F1): the plant at 150 MW by the "At 150 MW" start (#load150, AN._startP), the steady state of the
+     model with the DITL line-up. The bare AN.plantLoad150() has no steady state: the CCS falls to MAN and the drum level trips at about 20 min.
+     One path only: no #load150 is an error, never a fall-back to the bare start */
+  const start150 = async () => {
+    const b = document.getElementById('load150');
+    if (!b) throw new Error('No "At 150 MW" start (#load150) in this build');
+    b.click();
+    await AN._startP;
+  };
   async function runSc0(sc, ui) {
     if (busy) return;
     busy = true;
@@ -383426,7 +383444,7 @@ window.UATS = (function () {
       AN.reset();
       if (sc.cold) AN.plantCold();
       else if (sc.live) AN.plantLive(); /* 2.2.0-beta.21 (M5): 150 MW with the shutdown physics on */
-      else AN.plantLoad150();
+      else await start150();
       const h = H();
       /* 2.2.0-beta.20: a scenario may be a CHAIN of stages run one after the other on the same plant (the full start-up: cold → coal →
          bypass → roll → 150 MW); each stage keeps its own o, starts from the plant as the stage before left it (o.chain), and its
