@@ -9,7 +9,7 @@ Jennie, finding F1 of beta.328: the practice scenarios and the Training check st
 | Training check: every scenario that starts at 150 MW | Starts the plant the same way as **At 150 MW** in the menu: the plant's own steady state, every loop in AUTO, with the equipment line-up. |
 | Practice scenarios of a control loop: "Plant in service: Start at 150 MW" | Same start (three places: the scenario step, the clean in-service state, the interlock search). |
 
-If the **At 150 MW** start is not in the build, the old start is used as before.
+One way only: if the **At 150 MW** start is missing from the build, the scenario stops with an error instead of using the old start.
 
 ## Tested
 

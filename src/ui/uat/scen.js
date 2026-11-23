@@ -55,13 +55,13 @@ window.UATS = (function () {
     return { sh, S, rt, net, ctl, fp, stn: ctl && ctl.amt ? rt.st[ctl.amt.id] : null };
   }
   /* UAT start 2026-11-23 (Jennie finding F1): the plant at 150 MW by the "At 150 MW" start (#load150, AN._startP), the steady state of the
-     model with the DITL line-up. The bare AN.plantLoad150() has no steady state: the CCS falls to MAN and the drum level trips at about 20 min */
+     model with the DITL line-up. The bare AN.plantLoad150() has no steady state: the CCS falls to MAN and the drum level trips at about 20 min.
+     One path only: no #load150 is an error, never a fall-back to the bare start */
   const start150 = async () => {
     const b = document.getElementById('load150');
-    if (b) {
-      b.click();
-      await AN._startP;
-    } else AN.plantLoad150();
+    if (!b) throw new Error('No "At 150 MW" start (#load150) in this build');
+    b.click();
+    await AN._startP;
   };
   const stepSim = async (sh, secs) => {
     const n = Math.round(secs * 2);
