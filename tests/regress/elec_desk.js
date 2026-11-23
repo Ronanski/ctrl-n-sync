@@ -2,7 +2,7 @@
 const fs = require('fs'),
   vm = require('vm');
 const G = { MVAr: 33.1 };
-const ctx = { Math, isFinite, Object, AN_UNIT: null, anGenEl: () => G };
+const ctx = { Math, isFinite, Object, AN_UNIT: null, anGenEl: () => G, AN_SRC: { field: { esp: false } } };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('src/analog/engine/elec.js', 'utf8') + ';this.API={anElec,anElecStep,anElecL52}', ctx);
 const { anElec, anElecStep, anElecL52 } = ctx.API;
@@ -16,10 +16,17 @@ const ck = (ok, w, x) => {
 };
 let U = mk(),
   e = anElec(U);
-ck(Math.abs(e.busA - 1482.6) < 0.1, '6.6 kV bus current = sum of the 6.6 kV motors (460 V IA compressor not counted)', e.busA);
-ck(Math.abs(e.aux - 14.41) < 0.05, 'house load 1.732 x 6.6 x 1482.6 A x 0.85 = 14.4 MW', +e.aux.toFixed(2));
+/* 1.0.0-beta.332: + the 6.6 kV side of TR-1B1 + TR-1B2, 0.721 MW / 0.496 Mvar without the ESP (K1AU3-E1-0-307 p A.14) = 76.6 A */
+ck(Math.abs(e.busA - 1559.2) < 0.1, '6.6 kV bus current = the 6.6 kV motors 1482.6 A + the 460 V transformers 76.6 A (ESP off)', +e.busA.toFixed(1));
+/* 1.0.0-beta.330: the pf of each motor from the ETAP load flow of K1AU3-E1-0-307 RA (0.930 PAF / IDF / BFP, 0.927 SAF / seawater,
+   0.922 FA blower / PA compressor, 0.919 CEP / ACWP); was one pf 0.85 (NO-SOURCE, 14.41 MW) */
+ck(Math.abs(e.aux - 16.448) < 0.005 && Math.abs(e.auxMVAr - 6.811) < 0.005, 'house load: 1.732 x 6.6 kV x I x pf of each motor (15.73 MW, 6.32 MVAr) + 460 V 0.721 MW / 0.496 Mvar = 16.45 MW, 6.81 MVAr', [+e.aux.toFixed(3), +e.auxMVAr.toFixed(3)]);
+ctx.AN_SRC.field.esp = true;
+const eE = anElec(mk());
+ctx.AN_SRC.field.esp = false;
+ck(Math.abs(eE.aux - e.aux - 0.91) < 1e-9 && Math.abs(eE.auxMVAr - e.auxMVAr - 0.024) < 1e-9, 'ESP in service: + its T/R sets 0.910 MW / 0.024 Mvar (Bus51)', +eE.aux.toFixed(3));
 ck(Math.abs(e.exp - (150 - e.aux)) < 1e-9 && e.mtPct > 70 && e.mtPct < 80, 'export = 150 - house load, main transformer % of 180 MVA', [+e.exp.toFixed(1), +e.mtPct.toFixed(1)]);
-ck(Math.abs(e.uatPct - (100 * e.aux) / 0.85 / 34) < 1e-6, 'unit auxiliary transformer % of 34 MVA', +e.uatPct.toFixed(1));
+ck(Math.abs(e.uatPct - (100 * Math.hypot(e.aux, e.auxMVAr)) / 34) < 1e-6 && Math.abs(e.uatPct - 52.36) < 0.01, 'unit auxiliary transformer % of 34 MVA', +e.uatPct.toFixed(2));
 anElecStep(U);
 ck(U.di.l52.S.rt.ext[5] === 0, '52L1 closed: I.0937 = 0');
 U.tb.st = 'off';

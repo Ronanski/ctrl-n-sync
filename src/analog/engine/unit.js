@@ -2332,8 +2332,27 @@ const AN_BB = {
   fgP: (610 * (0.0545 + 0.01)) / 130,
   aPan: 610 /* m2, panel faces (K1AU3C-201, CALC above) */,
   lPan: 1.03 /* m, lane beam between two panels */,
-  tuA: 892.3
+  tuA: 892.3,
+  /* 1.0.0-beta.334 (JENNIE, whole boiler balance 2026-11-23, plant-study/15-boiler-balance-2026-11-23.md): THE SOLIDS DENSITY ALONG
+     THE HEIGHT. The law of beta.282 (Kunii & Levenspiel) makes the density fall with the height as e^(-a h), a = c / U, and phi is its
+     share at the furnace top. The walls and the panels gave both phi (the top), but they do not sit at the top: the upper walls run
+     from the refractory top to the roof and the SH panels hang in the upper part only. Each now takes the mean density over its own
+     height (anBbMeanH): at the anchor (phi 1) every mean is 1, nothing changes at 150 MW; at part load the walls keep more solids
+     than the panels. Heights (sourced): grate FL +6,400 and refractory top FL +14,264.6 (thermal masses 01.01), SH panels FL 27,774 to
+     42,527 = the furnace top (K1AU3C-201): H = 36.13 m, upper walls from x = 7.865 / 36.13 = 0.218, panels from 21.374 / 36.13 =
+     0.592 (CALC). The solids that carry the heat up (Cs = gas + phi x cSol) stay the top flux.
+     Check against the plant (scenario 2 trend A, the load-up day, coal only, cyclone out TIFG1095 median by load): 40 / 50 / 60 / 70
+     / 90 / 150 MW = 556 / 596 / 634 / 661 / 711 / 875 C. App before: 45 MW 600, 72 MW 702, 90 MW 769, 150 MW 865; now 557, 667, 720,
+     864. Scenario 1 at 90 MW (MST 522, 2nd spray 0): before MST 541 with sprays 3 + 5 T/H, now 525 with no spray. */
+  xW: 0.218 /* upper walls start, share of the furnace height (CALC above) */,
+  xP: 0.592 /* SH panels start (CALC above) */
 };
+/* 1.0.0-beta.334: the mean of the solids density share between the heights a and b (shares of H), phi = the share at the top:
+   the density at x is phi^x of the anchor (e^(-k x), k = -ln phi) */
+function anBbMeanH(phi, a, b) {
+  const k = -Math.log(Math.max(1e-12, phi));
+  return Math.abs(k) < 1e-6 ? 1 : (Math.exp(-k * a) - Math.exp(-k * b)) / (k * (b - a));
+}
 /* gas radiation (WSGG) + convection of the upper furnace gas at tg to the walls at tw, kW/K (AN_BB above) */
 function anBbUag(tg, tw) {
   const B = AN_BB;
@@ -2355,13 +2374,13 @@ function anBbPanF(tu, tm, phi) {
       return B.hcUp + (B.fwUp * anHxEps(tg, B.lPan) * 5.67e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tm);
     },
     gA = hL(B.tuA);
-  return B.fgP * (gA > 0 && isFinite(tu) ? hL(tu) / gA : 0) + (1 - B.fgP) * Math.sqrt(Math.max(0, phi));
+  return B.fgP * (gA > 0 && isFinite(tu) ? hL(tu) / gA : 0) + (1 - B.fgP) * Math.sqrt(anBbMeanH(phi, B.xP, 1)) /* beta.334: the panels' own height */;
 }
 /* the upper furnace suspension of the bed balance (unit step): exit tgF and mean Tu of the gas + circulating solids that leave the bed
    at Tb, with the walls (Uw, sink Tw) and the SH panels (Up, sink Tp) in parallel; uag at the mean of the last scan (tu0) */
 function anBbSus(Tb, Tw, gcp, phi, up, tu0) {
   const B = AN_BB,
-    Uw = anBbUag(isFinite(tu0) ? tu0 : Tb, Tw) + Math.sqrt(Math.max(0, phi)) * B.uaS /* beta.282: h ~ rho^0.5 (AN_BB) */,
+    Uw = anBbUag(isFinite(tu0) ? tu0 : Tb, Tw) + Math.sqrt(anBbMeanH(phi, B.xW, 1)) * B.uaS /* beta.282: h ~ rho^0.5 (AN_BB); beta.334: over the walls' height */,
     Cs = gcp + phi * B.cSol,
     Ut = Uw + up.U;
   if (!(Cs > 0.01) || !(Ut > 0)) return { tgF: Tb, Tu: Tb, Uw, qW: 0, qP: 0 };
@@ -2401,7 +2420,7 @@ function anBedMigrate(U) {
   const u0 = Math.pow(Math.max(1e-9, phi), 1 / B.nU) * ((U.Tb0 + 273) / (B.tbA + 273)),
     out = T => {
     const ph = anBbPhiV((u0 * (T + 273)) / (Tb + 273)),
-      uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
+      uaP = typeof AN_HX !== 'undefined' ? (AN_HX.uaP1 + AN_HX.uaP2) / 2 : 0 /* beta.342: mean of the two panels (F13) */,
       s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * anBbPanF(T, Tp, ph), T: Tp }, T);
     return { q: s.qW + s.qP + B.uaBR * (T - Trf) + gcp * (s.tgF - tg0), s, ph };
   };
@@ -5668,9 +5687,10 @@ function anUnitStep0(dt) {
          and Cs (Tb - tgF) = qWu + panels exactly. Anchor constants: AN_BB tbA / cSol / uaS (CALC there) */
       up = (() => {
         const hm = U.hxM || {},
-          uaP = typeof AN_HX !== 'undefined' ? AN_HX.uaP : 0,
+          uaP = typeof AN_HX !== 'undefined' ? (AN_HX.uaP1 + AN_HX.uaP2) / 2 : 0 /* beta.342: the mean of the two panels (F13) */,
           p = [hm.p1, hm.p2].filter(isFinite);
-        const Tp = p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw;
+        /* beta.342: the metal is weighted by each panel conductance (uaP1 / uaP2 of hx.js) */
+        const Tp = p.length === 2 && typeof AN_HX !== 'undefined' ? (AN_HX.uaP1 * p[0] + AN_HX.uaP2 * p[1]) / (AN_HX.uaP1 + AN_HX.uaP2) : p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw;
         return { U: p.length ? p.length * uaP * anBbPanF(isFinite(U.Tu) ? U.Tu : U.Tb, Tp, phi) : 0 /* beta.286: gas + solids (AN_BB fgP) */, T: Tp };
       })() /* the SH panels: conductance and metal of the last scan */,
       sus = anBbSus(U.Tb, U.Tw, gcp, phi, up, U.Tu) /* the suspension above (uag at the mean Tu of the last scan) */,

@@ -3046,6 +3046,15 @@
     if (busy) return;
     return UATR.onPage(() => runSc0(sc, ui));
   }
+  /* UAT start 2026-11-23 (Jennie finding F1): the plant at 150 MW by the "At 150 MW" start (#load150, AN._startP), the steady state of the
+     model with the DITL line-up. The bare AN.plantLoad150() has no steady state: the CCS falls to MAN and the drum level trips at about 20 min.
+     One path only: no #load150 is an error, never a fall-back to the bare start */
+  const start150 = async () => {
+    const b = document.getElementById('load150');
+    if (!b) throw new Error('No "At 150 MW" start (#load150) in this build');
+    b.click();
+    await AN._startP;
+  };
   async function runSc0(sc, ui) {
     if (busy) return;
     busy = true;
@@ -3057,7 +3066,7 @@
       AN.reset();
       if (sc.cold) AN.plantCold();
       else if (sc.live) AN.plantLive(); /* 2.2.0-beta.21 (M5): 150 MW with the shutdown physics on */
-      else AN.plantLoad150();
+      else await start150();
       const h = H();
       /* 2.2.0-beta.20: a scenario may be a CHAIN of stages run one after the other on the same plant (the full start-up: cold → coal →
          bypass → roll → 150 MW); each stage keeps its own o, starts from the plant as the stage before left it (o.chain), and its

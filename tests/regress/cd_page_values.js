@@ -33,23 +33,37 @@ const html =
       }
       WORLD.live = true;
     }, sec);
-  await page.evaluate(() => {
-    AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
+  /* 1.0.0-beta.328 (JENNIE): the start the operator uses, "At 150 MW" (AN.loadStart + the DITL + the steady state st150); the bare
+     AN.plantLoad150 + DITL150.apply has no steady state and drifts */
+  await page.evaluate(async () => {
+    await AN.ades();
+    WORLD.set(true);
+    document.getElementById('load150').click();
+    await AN._startP;
   });
   await run(300);
+  /* 1.0.0-beta.328 (JENNIE): the old page 05 (hmi-mock-cd.js) is gone (Audit 3 #6); the six values are on the HX pages now:
+     Condensate (flash chamber, ejector condenser, deaerator inlet), Reheat steam (LP bypass spray FT-CD1115) and Feedwater
+     (deaerator storage water TT-CD1104). read() opens each page as the operator does and reads the value it shows */
+  const PG = {
+    'HX-condensate': ['TTCD11104', 'TTCD1119', 'FTCD1122', 'PTCD1122'],
+    'HX-reheat-steam': ['FTCD1115'],
+    'HX-feedwater': ['TTCD1104']
+  };
   await page.evaluate(() => lsPlant(true));
   await page.waitForTimeout(1000);
-  await page.evaluate(() => document.querySelector('#pllist button[data-id="MK05"]').click());
-  await page.waitForTimeout(2500);
-  const read = () =>
-    page.evaluate(
-      K => Object.fromEntries(K.map(k => [k, (document.querySelector(`[data-v="${k}"]`) || {}).textContent || null])),
-      K
-    );
+  const read = async () => {
+    const o = {};
+    for (const p in PG) {
+      await page.evaluate(p => document.querySelector(`#pllist button[data-id="${p}"]`).click(), p);
+      await page.waitForTimeout(2500);
+      Object.assign(
+        o,
+        await page.evaluate(K => Object.fromEntries(K.map(k => [k, HX.data.value(k) == null ? null : String(HX.data.value(k))])), PG[p])
+      );
+    }
+    return o;
+  };
   const a = await read();
   const m = await page.evaluate(() => ({ tt: Object.assign({ hw: Math.round(AN.unit.cdT * 10) / 10 }, AN.unit.tt) }));
   console.log(JSON.stringify(a));

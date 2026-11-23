@@ -9,7 +9,11 @@
 const {open}=require('./lib.js');const fs=require('fs');
 const html=process.argv.find(a=>/\.html$/.test(a))||'dist/'+fs.readdirSync('dist').find(x=>/^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
 (async()=>{const {browser,page,errs}=await open(html);if(process.env.UDBG)await page.evaluate(()=>{window.__dbg=1});let fail=0;const ck=(ok,w)=>{console.log((ok?'PASS ':'FAIL ')+w);if(!ok)fail++};
-await page.evaluate(()=>{AN.reset();AN.plantLoad150();
+/* 1.0.0-beta.336 (JENNIE): the start the operator uses, "At 150 MW" (AN.loadStart + the DITL + the steady state st150); the bare
+   AN.plantLoad150 has no steady state and drifts (cd_page_values / extraction_warming moved the same way in beta.328) */
+await page.waitForFunction(()=>AN.sheets&&AN.sheets.length>=54&&window.WORLD&&WORLD.idx&&window.DITL150,null,{timeout:120000});await page.waitForTimeout(2000);
+await page.evaluate(async()=>{await AN.ades();WORLD.set(true);document.getElementById("load150").click();await AN._startP;});
+await page.evaluate(()=>{
  const L=AN.sheets.filter(s=>s.S&&!/ABC-000/.test(s.name)),C1=AN.sheets.find(s=>s.name==='ABC-001C'),S=C1.S,v=S.rt.v;
  const lab=(S,l)=>S.lab.findIndex(x=>x&&String(x.t).trim()===l);
  let SU,bu;for(const sh of L){const z=sh.S.blk.find(z=>z.k==='MAN'&&(z.tag==='HIC-ULD'||(z.txt||[]).includes('HIC-ULD')));if(z){SU=sh.S;bu=z;break}}
@@ -21,7 +25,7 @@ await page.evaluate(()=>{AN.reset();AN.plantLoad150();
  window.__u={log:[],dbg:!!window.__dbg,C1,S,v,SU,tgt,bm,hbm,htm,tmA,goal:60,S10,lv,cobm,lab,S52,rhp,S12,mst,S19,rht,S2,o2,man:0,minP:1e9,maxL:0,ll:0};
 });
 const run=(sec,rec)=>page.evaluate(async([sec,rec])=>{const u=window.__u,U=AN.unit,S=u.S,v=u.v;
- for(let t=0;t<sec;t+=10){for(let k=0;k<20;k++)AN.stepSet(u.C1,.5);
+ for(let t=0;t<sec;t+=10){for(let k=0;k<20;k++){WORLD.live=true;AN.stepSet(u.C1,.5);WORLD.tick(.5);}
   const st=S.rt.st[u.bm.id],P=+v[u.lab(S,'AI0131')],sv=+v[u.cobm.q.sv],lvl=+u.S10.rt.v[u.lv.q.pv];
   const dP=u.pP==null?0:P-u.pP;u.pP=P;
   if(rec){u.minP=Math.min(u.minP,P);u.maxL=Math.max(u.maxL,Math.abs(lvl));if(+v[u.lab(S,'M.310D')]>0.5)u.ll=1}
@@ -33,6 +37,15 @@ const run=(sec,rec)=>page.evaluate(async([sec,rec])=>{const u=window.__u,U=AN.un
      EIC-TM (MAN station, its MV is the MW to the TCS), 1.2 MW/min down; up: the firing first (HIC-BM), the turbine follows the
      pressure. Both stations go back to AUTO by themselves above 220 T/H (no latch on the drawing); then TARGET MW 150 */
   const tmS=S.rt.st[u.tmA.id],tm=S.rt.st[u.htm.id];
+  /* 1.0.0-beta.338 (JENNIE): in TURBINE MASTER MANUAL by the BU-CMD the drawing also drops DCS CONTROL MODE (I.0082 = 0, TCE180 p.127:
+     the TCS holds its own target) and ABC-001C AMT M.2017 = NOT I.0082 makes EIC-TM track the TCS target AI0420 (interlock tracking):
+     the EIC-TM value of the operator does nothing then (before, the load stayed at 71.7 MW and the firing on the way up had no turbine
+     to take it: bypass open, trip). The operator moves the load on the TCS panel target (AN.turbine('loadup', { mw, rate }), the
+     TCS CRT TARGET LOAD): down 1.2 MW/min (0.8 %/min) to the goal; up: the firing first (HIC-BM), the TCS target follows the pressure */
+  const dcsOn=+v[u.lab(S,'I.0082')]>0.5;
+  if(!dcsOn&&st.pk==='B'&&AN.unit.tb){const mw=AN.unit.MW;
+   if(!u.up){if(!u.tcsDn){AN.turbine('loadup',{mw:u.goal,rate:0.8});u.tcsDn=1}}
+   else{const tg=P-sv>1?Math.min(150,mw+2):P-sv<-1?Math.max(u.goal,mw-1):mw;AN.turbine('loadup',{mw:tg,rate:0.8});u.tcsUp=(u.tcsUp||0)+1}}
   if(st.pk==='B'){u.man=1;const m=S.rt.st[u.hbm.id];
    if(u.up){m.val=Math.min(100,m.val+0.05);if(tmS.pk==='B')tm.val=Math.max(0,Math.min(200,tm.val+Math.max(-0.2,Math.min(0.2,0.1*(P-sv)))));}
    else{m.val=Math.max(0,Math.min(100,m.val+Math.max(-1,Math.min(1,0.0011*(sv-P)-0.2*dP))));if(tmS.pk==='B')tm.val=Math.max(u.goal,tm.val-0.2);}}
@@ -51,9 +64,9 @@ const run=(sec,rec)=>page.evaluate(async([sec,rec])=>{const u=window.__u,U=AN.un
   /* while the BU-CMD is still there, the station stays MANUAL; it must NOT go to AUTO by itself when the BU-CMD goes */
   if(u.up&&u.man&&!u.bmA&&st.pk==='A')u.selfAuto=1;
   if(u.auto&&st.pk==='A'&&tmS.pk==='A')u.SU.rt.ext[u.tgt]=150;
-  if(u.dbg&&t%60===50)u.log.push('t+'+(t+10)+' dem='+(+u.SU.rt.v[u.lab(u.SU,'SI0226')]).toFixed(1)+' tgt='+(+u.SU.rt.ext[u.tgt]).toFixed(1)+' D='+(+v[u.lab(S,'SI0236')]).toFixed(1)+' MW='+U.MW.toFixed(1)+' P='+P.toFixed(1)+' Pd='+U.Pd.toFixed(1)+' ms='+U.ms.toFixed(0)+' Qs='+U.Qs.toFixed(0)+' BM='+(+v[u.lab(S,'HIC-BM.MV')]).toFixed(1)+' pk='+st.pk+' COBM='+(+v[u.lab(S,'PIC-COBM.MV')]).toFixed(1)+' FF='+(+v[u.lab(S,'SI0201')]).toFixed(1)+' M2013='+v[u.lab(S,'M.2013')]+' mb='+(U.mb||0).toFixed(0)+' bpv='+(U.vlv||[]).map(x=>(+x.S.rt.v[x.n]).toFixed(1)).join('/')+' CM='+(()=>{const S4=AN.sheets.find(x=>x.name==='ABC-004A').S;const c=AN.hmiCtrls(S4).find(c=>c.tag==='FIC-CM');const q=S4.rt.st[c.amt.id];const f=AN.hmiCtrls(S4).find(c=>c.tag==='HS-COAL');return 'pv'+(+S4.rt.v[c.q.pv]).toFixed(0)+'/sv'+(+S4.rt.v[c.q.sv]).toFixed(0)+'/mv'+(+S4.rt.v[c.out]).toFixed(0)+'/'+q.pk+(q.fman?'F':'')+' HS'+S4.rt.st[f.amt.id].pk+(S4.rt.st[f.amt.id].fman?'F':'')+' SI0010='+(+S4.rt.v[u.lab(S4,'SI0010')]).toFixed(0)})()+' TM='+tmS.pk+(+tm.val).toFixed(1)+' coal='+U.fuel.reduce((a,l)=>a+(+l[0][0].rt.st[l[0][1].id].val),0).toFixed(1)+' MST='+(+u.S12.rt.v[u.mst.q.pv]).toFixed(0)+' RHT='+(+u.S19.rt.v[u.rht.q.pv]).toFixed(0)+' RHP='+(+u.S52.rt.v[u.rhp.q.pv]).toFixed(1)+' O2='+(+u.S2.rt.v[u.o2.q.pv]).toFixed(1)+' MSFc='+(+v[U.cn]).toFixed(0)+' O2trim='+u.S2.rt.st[u.o2.amt.id].pk+(u.S2.rt.st[u.o2.amt.id].fman?'F':'')+(+u.S2.rt.v[u.o2.out]).toFixed(1));
+  if(u.dbg&&t%60===50)u.log.push('t+'+(t+10)+' dem='+(+u.SU.rt.v[u.lab(u.SU,'SI0226')]).toFixed(1)+' tgt='+(+u.SU.rt.ext[u.tgt]).toFixed(1)+' D='+(+v[u.lab(S,'SI0236')]).toFixed(1)+' MW='+U.MW.toFixed(1)+' P='+P.toFixed(1)+' Pd='+U.Pd.toFixed(1)+' ms='+U.ms.toFixed(0)+' Qs='+U.Qs.toFixed(0)+' BM='+(+v[u.lab(S,'HIC-BM.MV')]).toFixed(1)+' pk='+st.pk+' COBM='+(+v[u.lab(S,'PIC-COBM.MV')]).toFixed(1)+' FF='+(+v[u.lab(S,'SI0201')]).toFixed(1)+' M2013='+v[u.lab(S,'M.2013')]+' mb='+(U.mb||0).toFixed(0)+' bpv='+(U.vlv||[]).map(x=>(+x.S.rt.v[x.n]).toFixed(1)).join('/')+' CM='+(()=>{const S4=AN.sheets.find(x=>x.name==='ABC-004A').S;const c=AN.hmiCtrls(S4).find(c=>c.tag==='FIC-CM');const q=S4.rt.st[c.amt.id];const f=AN.hmiCtrls(S4).find(c=>c.tag==='HS-COAL');return 'pv'+(+S4.rt.v[c.q.pv]).toFixed(0)+'/sv'+(+S4.rt.v[c.q.sv]).toFixed(0)+'/mv'+(+S4.rt.v[c.out]).toFixed(0)+'/'+q.pk+(q.fman?'F':'')+' HS'+S4.rt.st[f.amt.id].pk+(S4.rt.st[f.amt.id].fman?'F':'')+' SI0010='+(+S4.rt.v[u.lab(S4,'SI0010')]).toFixed(0)})()+' TM='+tmS.pk+(+tm.val).toFixed(1)+' DCS='+v[u.lab(S,'I.0082')]+' aim='+(AN.unit.tb?(+AN.unit.tb.aim).toFixed(1):'')+' coal='+U.fuel.reduce((a,l)=>a+(+l[0][0].rt.st[l[0][1].id].val),0).toFixed(1)+' MST='+(+u.S12.rt.v[u.mst.q.pv]).toFixed(0)+' RHT='+(+u.S19.rt.v[u.rht.q.pv]).toFixed(0)+' RHP='+(+u.S52.rt.v[u.rhp.q.pv]).toFixed(1)+' O2='+(+u.S2.rt.v[u.o2.q.pv]).toFixed(1)+' MSFc='+(+v[U.cn]).toFixed(0)+' O2trim='+u.S2.rt.st[u.o2.amt.id].pk+(u.S2.rt.st[u.o2.amt.id].fman?'F':'')+(+u.S2.rt.v[u.o2.out]).toFixed(1));
   if(t%300===290)await new Promise(r=>setTimeout(r,0))}},[sec,rec]);
-const st=()=>page.evaluate(()=>{const u=window.__u,U=AN.unit,v=u.v,S=u.S;return{dem:+u.SU.rt.v[u.lab(u.SU,'SI0226')],D:+v[u.lab(S,'SI0236')],MW:U.MW,MSP:+v[u.lab(S,'AI0131')],SV:+v[u.cobm.q.sv],MSF:+v[U.cn],coal:U.fuel.reduce((a,l)=>a+(+l[0][0].rt.st[l[0][1].id].val),0),FW:+u.S10.rt.v[u.lab(u.S10,'AI0256')],lvl:+u.S10.rt.v[u.lv.q.pv],bm:u.S.rt.st[u.bm.id].pk,RHP:+u.S52.rt.v[u.rhp.q.pv],MST:+u.S12.rt.v[u.mst.q.pv],RHT:+u.S19.rt.v[u.rht.q.pv],O2:+u.S2.rt.v[u.o2.q.pv],Pd:U.Pd,mb:U.mb||0}});
+const st=()=>page.evaluate(()=>{const u=window.__u,U=AN.unit,v=u.v,S=u.S;return{dem:+u.SU.rt.v[u.lab(u.SU,'SI0226')],D:+v[u.lab(S,'SI0236')],MW:U.MW,MSP:+v[u.lab(S,'AI0131')],SV:+v[u.cobm.q.sv],MSF:+v[U.cn],coal:U.fuel.reduce((a,l)=>a+(+l[0][0].rt.st[l[0][1].id].val),0),FW:+u.S10.rt.v[u.lab(u.S10,'AI0256')],lvl:+u.S10.rt.v[u.lv.q.pv],bm:u.S.rt.st[u.bm.id].pk,RHP:+u.S52.rt.v[u.rhp.q.pv],MST:+u.S12.rt.v[u.mst.q.pv],RHT:+u.S19.rt.v[u.rht.q.pv],O2:+u.S2.rt.v[u.o2.q.pv],Pd:U.Pd,mb:U.mb||0,dcs:+v[u.lab(S,'I.0082')]>0.5,aim:U.tb?+U.tb.aim:NaN}});
 const say=(w,x)=>console.log('     '+w+': MW '+x.MW.toFixed(1)+' (demand '+x.dem.toFixed(1)+'), MSP '+x.MSP.toFixed(1)+' (SV '+x.SV.toFixed(1)+'), MSF '+x.MSF.toFixed(1)+' T/H, coal '+x.coal.toFixed(1)+' T/H, FW '+x.FW.toFixed(1)+' T/H, drum level '+x.lvl.toFixed(0)+' mm, boiler master '+(x.bm==='A'?'AUTO':'MANUAL')+'\n       MST '+x.MST.toFixed(0)+' C, RHT '+x.RHT.toFixed(0)+' C, RHP '+x.RHP.toFixed(1)+' kg/cm2, O2 '+x.O2.toFixed(1)+' %, drum '+x.Pd.toFixed(1)+' kg/cm2, bypass / blow-off '+x.mb.toFixed(0)+' T/H');
 const near=(x,ref,p)=>Math.abs(x-ref)<=Math.abs(ref)*p/100;
 await run(300,1);const a=await st();say('150 MW, 5 min',a);
@@ -63,7 +76,11 @@ await page.evaluate(()=>{const u=window.__u;u.SU.rt.ext[u.tgt]=60});
 await run(600,1);const b=await st();say('TARGET 60, after 10 min',b);
 ck(b.dem<125&&b.dem>115&&near(b.MW,b.D,3),'load down at 3 MW/min: demand '+b.dem.toFixed(1)+' after 10 min; MW '+b.MW.toFixed(1)+' follows the turbine demand SI0236 '+b.D.toFixed(1)+' (LAG 150 s of ABC-001C)');
 await run(1200+1200,1);const c=await st();say('60 MW, settled',c);
-ck(near(c.MW,60.3,5)&&near(c.MW,c.D,3),'60 MW: MW '+c.MW.toFixed(1)+' (02.png 60.3)');
+/* 1.0.0-beta.340 (JENNIE): the MW follows the demand the turbine obeys: SI0236 in DCS CONTROL MODE (I.0082 = 1); in TCS local
+   (I.0082 = 0, turbine master MANUAL by the BU-CMD) the TCS target. SI0236 then carries the ABC-001C LN55 'MSP vs T/B Override MW'
+   (+-2 MW outside +-3 kg/cm2 of the pressure error) that the TCS does not read: at 60 MW MSP 125.7 vs SV 122.3 gives 60 - 2 = 58 */
+const ref60=c.dcs?c.D:c.aim;
+ck(near(c.MW,60.3,5)&&near(c.MW,ref60,3),'60 MW: MW '+c.MW.toFixed(1)+' (02.png 60.3), follows the '+(c.dcs?'DCS demand SI0236 ':'TCS target ')+ref60.toFixed(1));
 ck(near(c.MSF,203.7,5),'60 MW: main steam flow '+c.MSF.toFixed(1)+' T/H (02.png 203.7)');
 ck(near(c.coal,41.8,5),'60 MW: coal '+c.coal.toFixed(1)+' T/H (02.png 41.8)');
 ck(near(c.MSP,c.SV,5),'60 MW: MSP '+c.MSP.toFixed(1)+' at its set point '+c.SV.toFixed(1)+' (PR-OPE-5003: maintain MS pressure)');
