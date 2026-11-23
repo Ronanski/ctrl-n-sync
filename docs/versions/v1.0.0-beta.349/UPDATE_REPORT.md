@@ -1,4 +1,4 @@
-# v1.0.0-beta.347 (ROSÉ, 2026-11-24)
+# v1.0.0-beta.349 (ROSÉ, 2026-11-24)
 
 Audit #6: the bottom-left Instructor button of the station becomes the Plant menu, and the instructor freeze is removed because Pause already holds the plant.
 

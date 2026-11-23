@@ -12,7 +12,11 @@ const { open } = require(path.join(root, 'tests/regress/lib.js'));
 const html = 'dist/' + fs.readdirSync('dist').find(x => /^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
 const MAX = +process.argv[2] || 120, CHUNK = +process.argv[3] || 10;
 /* 3.2.3-beta.272: loops the snapshot line-up leaves in MANUAL that the logic runs in AUTO at full load: the O2 trim (ABC-002 M.0103 / M.0102 = 0 at 150 MW, SV 3.5 = LN16) */
-const AUTO = { AICFG112: 3.5 };
+/* 1.0.0-beta.348 (JENNIE, B4 of user 2026-11-24 "GO DESIGN"): the bed ash. The snapshot line-up held the furnace differential pressure
+   controller DPICFG108 in MANUAL 0 % and the four bottom ash screw coolers SICL1060A ~ D in MANUAL, so the coolers stood still at full
+   load. ABC-009A / B: DPICFG108 in AUTO drives the cooler master PIC-BASC and the four cooler stations in AUTO; its set point is the FHI
+   P2S7 Fig 9 normal overall furnace pressure drop at 100 % load, 1630 mmH2O (hmi-op.js AN_HMI_CTL) */
+const AUTO = { AICFG112: 3.5, DPICFG108: 1630, SICL1060A: undefined, SICL1060B: undefined, SICL1060C: undefined, SICL1060D: undefined };
 /* 3.2.4-beta.8: the drum level too (the feedwater valve law of beta.6 swings the three-element loop ~10 min; a start taken mid-swing dipped to -34 mm) */
 const LIM = { MW: 0.3, Tb: 1, Pd: 0.3, msT: 1, rh: 1, F: 0.5, lvl: 1 };
 async function chunk(sv, min, log) {
