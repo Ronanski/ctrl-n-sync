@@ -9,7 +9,11 @@
 const {open}=require('./lib.js');const fs=require('fs');
 const html=process.argv.find(a=>/\.html$/.test(a))||'dist/'+fs.readdirSync('dist').find(x=>/^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
 (async()=>{const {browser,page,errs}=await open(html);if(process.env.UDBG)await page.evaluate(()=>{window.__dbg=1});let fail=0;const ck=(ok,w)=>{console.log((ok?'PASS ':'FAIL ')+w);if(!ok)fail++};
-await page.evaluate(()=>{AN.reset();AN.plantLoad150();
+/* 1.0.0-beta.336 (JENNIE): the start the operator uses, "At 150 MW" (AN.loadStart + the DITL + the steady state st150); the bare
+   AN.plantLoad150 has no steady state and drifts (cd_page_values / extraction_warming moved the same way in beta.328) */
+await page.waitForFunction(()=>AN.sheets&&AN.sheets.length>=54&&window.WORLD&&WORLD.idx&&window.DITL150,null,{timeout:120000});await page.waitForTimeout(2000);
+await page.evaluate(async()=>{await AN.ades();WORLD.set(true);document.getElementById("load150").click();await AN._startP;});
+await page.evaluate(()=>{
  const L=AN.sheets.filter(s=>s.S&&!/ABC-000/.test(s.name)),C1=AN.sheets.find(s=>s.name==='ABC-001C'),S=C1.S,v=S.rt.v;
  const lab=(S,l)=>S.lab.findIndex(x=>x&&String(x.t).trim()===l);
  let SU,bu;for(const sh of L){const z=sh.S.blk.find(z=>z.k==='MAN'&&(z.tag==='HIC-ULD'||(z.txt||[]).includes('HIC-ULD')));if(z){SU=sh.S;bu=z;break}}
@@ -21,7 +25,7 @@ await page.evaluate(()=>{AN.reset();AN.plantLoad150();
  window.__u={log:[],dbg:!!window.__dbg,C1,S,v,SU,tgt,bm,hbm,htm,tmA,goal:60,S10,lv,cobm,lab,S52,rhp,S12,mst,S19,rht,S2,o2,man:0,minP:1e9,maxL:0,ll:0};
 });
 const run=(sec,rec)=>page.evaluate(async([sec,rec])=>{const u=window.__u,U=AN.unit,S=u.S,v=u.v;
- for(let t=0;t<sec;t+=10){for(let k=0;k<20;k++)AN.stepSet(u.C1,.5);
+ for(let t=0;t<sec;t+=10){for(let k=0;k<20;k++){WORLD.live=true;AN.stepSet(u.C1,.5);WORLD.tick(.5);}
   const st=S.rt.st[u.bm.id],P=+v[u.lab(S,'AI0131')],sv=+v[u.cobm.q.sv],lvl=+u.S10.rt.v[u.lv.q.pv];
   const dP=u.pP==null?0:P-u.pP;u.pP=P;
   if(rec){u.minP=Math.min(u.minP,P);u.maxL=Math.max(u.maxL,Math.abs(lvl));if(+v[u.lab(S,'M.310D')]>0.5)u.ll=1}

@@ -46,13 +46,18 @@
      duct 12,185 x 3,343 mm, SH pass 12,185 x 3,000 mm, 624,680 / 648,000 m3/h at 376 C, resistance coefficient 0.4 full open
      (calculation sheet p10), "Pressure loss vs blade position (RH pass)" p15 Normal condition V 4.2 m/s, gamma 0.53: zeta read from
      the curve (15 deg 275 mmAq ... 50 deg 3 mmAq; zeta = dP 2g / (V^2 gamma)); under 15 deg the curve is extended on the same log
-     slope (CALC). Blade 0 - 90 deg = MV 0 - 100 % (4 - 20 mA positioner, linear: NO-SOURCE for any other characteristic).
+     slope (CALC). Blade travel: MV 0 - 100 % (4 - 20 mA positioner, linear) = 15 - 90 deg open (th0 below; beta.336).
+     Source of the 15 deg: both vendor curves (p15 RH pass, p16 SH pass) are drawn from 15 deg; their four design cases (Normal, BMCR,
+     70 % gas to RH, 60 % gas to SH) give the control range the damper pair was sized for: RH share 40 - 70 %. With 0 - 90 deg the
+     chain gave 13 - 88 % at 150 MW (RH 0 % / SH 100 % and back), far past it; with 15 - 90 deg it gives 28 - 73 %. Check against
+     the plant at 150 MW (scenario 1: RH 11 % / SH 89 %): RH share 37 % (heat balance CALC of the plant: 40 %); 0 - 90 deg gave 22 %.
      Check: both dampers full open -> RH pass 48.6 % of the gas; the vendor design flows give 49.1 % (p8 / p11).
    - Tube metal: GA p6 K1AU3A-201 (SH 353.26 t, RH 243.1 t, steel 0.5 kJ/kg K); economizer metal 112.2 MJ/K:
      the economizer of the same GA table (team-files/plant-study/13-thermal-masses: loop 189.00 t + common link 15.83 t + headers
      19.59 t = 224.42 t) x 0.5 kJ/kg K (beta.292, JENNIE, was 120 MJ/K NO-SOURCE; the bank split below kept, each x 112.21 / 120). */
 const AN_HX = {
   /* damper zeta vs blade angle (deg open), K1AU3-D1-0-015 p15 / p10 */
+  th0: 15 /* deg open at MV 0 % (see the note above) */,
   dz: [
     [0, 4350],
     [15, 577],
@@ -248,7 +253,7 @@ function anHxDp(g, m, T) {
 /* damper zeta at an opening x (0 - 1): log interpolation of the vendor curve */
 function anHxZeta(x) {
   const L = AN_HX.dz,
-    a = 90 * Math.max(0, Math.min(1, isFinite(x) ? x : 1));
+    a = AN_HX.th0 + (90 - AN_HX.th0) * Math.max(0, Math.min(1, isFinite(x) ? x : 1));
   for (let i = 1; i < L.length; i++)
     if (a <= L[i][0]) return Math.exp(Math.log(L[i - 1][1]) + ((Math.log(L[i][1]) - Math.log(L[i - 1][1])) * (a - L[i - 1][0])) / (L[i][0] - L[i - 1][0]));
   return L[L.length - 1][1];
