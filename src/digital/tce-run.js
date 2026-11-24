@@ -440,8 +440,11 @@
       if (!key) continue;
       const z = words(x, y, x + w, y + h).map(t => String(t[2]));
       if (z[0] === 'DI') {
-        const m = /^([\d.]+)\s*(s|min)$/i.exec(z[1] || '');
-        blocks.push({ key, type: m ? 'TP' : 'TP?', no: '', notes: m ? ['TP:' + +m[1] * (/min/i.test(m[2]) ? 60 : 1)] : ['time "' + (z[1] || '') + '" not printed'], pins: {}, ex: x, ys: [y, y + h], ins: [] });
+        /* the time printed in the box; a box that prints only "t" takes the relay's as-set time from the sheet's `set` (with its source) */
+        const m = /^([\d.]+)\s*(s|min)$/i.exec(z[1] || ''),
+          st = (s.set || {})[key];
+        const notes = m ? ['TP:' + +m[1] * (/min/i.test(m[2]) ? 60 : 1)] : st ? st : ['time "' + (z[1] || '') + '" not printed'];
+        blocks.push({ key, type: m || st ? 'TP' : 'TP?', no: '', notes, pins: {}, ex: x, ys: [y, y + h], ins: [] });
       } else res.ports[key] = 'PLANT:' + s.id + '.' + key + ' ' + (text || z.join(' ') || '').trim();
     }
     for (const x of s.s || []) {

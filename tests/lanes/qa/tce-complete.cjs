@@ -131,5 +131,7 @@ for (const p of P.plan) {
 console.log('controller: sheets / run / run without a found defect', JSON.stringify(ctl));
 
 const complete = run.size - bad.size;
+const empty = P.plan.filter(p => run.has(p.id) && !bad.has(p.id) && !p.blocks && !p.macros).length;
+console.log('of the complete: real logic ' + (complete - empty) + ', tables with no block ' + empty);
 console.log('\nCOMPLETE ' + complete + ' of ' + P.plan.length + ' (floor ' + FLOOR + ')');
 process.exit(complete >= FLOOR ? 0 : 1);

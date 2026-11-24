@@ -13,6 +13,8 @@ function assemble(){let t=rd('index.template.html');
  t=t.replace(/@@LIST:([\w\/.-]+)@@/g,(m,l)=>fileList(l).map(rd).join(''));
  t=t.replace(/@@FILE:([\w\/.-]+)@@/g,(m,f)=>rd(f));
  /* 3.2.0 Web Worker: the engine for the worker, inline (src/world/eng-page.js makes a blob of it): the engine bundle + the host */
+ /* PR 0: the lane-owned data (engine-bundle.js laneData) in the page too, before the engine */
+ t=t.replace('@@LANEDATA@@',()=>require('./engine-bundle.js').laneData().split('</script').join('<\/script'));
  t=t.replace('@@ENGSRC@@',()=>(rd('world/eng-worker-head.js')+require('./engine-bundle.js').worldBundle()+'\n'+rd('world/eng-host.js')).split('</script').join('<\/script'));
  return t.split('@@VERSION@@').join(ver)}
 function build(dir){const file=path.join(dir,'logic-sim-v'+ver+'.html');fs.writeFileSync(file,assemble());
