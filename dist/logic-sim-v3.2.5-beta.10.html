@@ -138627,6 +138627,22 @@ function anHxStep(U, I, dt) {
     gRo: gE2r.Tg /* gas leaving the No.2 eco R side (TT-FG1110) */,
     gSo: gE2s.Tg /* S side (TT-FG1113) */,
     gEo: gE1.Tg /* gas to the air heater */,
+    /* beta.420 (lane 3 KIRARA, P&ID PD-051 TT-FG1100 ~ 1111 at the bank boundaries): the gas leaving each backpass bank, an export of
+       the same chain (no change to the run). Gas path: furnace -> wall (cyclone outlet / roof) -> R pass: RH bank 3, 2, 1, 0 -> No.2 eco
+       R; S pass: finishing SH bank 2, 1, 0 -> No.3 eco -> No.2 eco S; the two passes mix (mix; e1In = after an economizer tube leak, if
+       any) -> No.1 eco (e1) -> air heater. On U as U.hxO.gBank. The gas
+       into a bank is the gas leaving the bank before it (into RH 3 and FSH 2: wl). */
+    gBank: {
+      wl: gWl.Tg,
+      rh: gR4.map(g => g.Tg),
+      e2r: gE2r.Tg,
+      fsh: gF.map(g => g.Tg),
+      e3: gE3.Tg,
+      e2s: gE2s.Tg,
+      mix: tMix,
+      e1In: tE1,
+      e1: gE1.Tg
+    },
     gRh: tR,
     gFs: tS,
     mGR,
@@ -156636,10 +156652,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 780d2a6'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build bbbba7c'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 780d2a6';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build bbbba7c';
     } catch (e) {}
   };
   upd();
@@ -311944,6 +311960,22 @@ function anHxStep(U, I, dt) {
     gRo: gE2r.Tg /* gas leaving the No.2 eco R side (TT-FG1110) */,
     gSo: gE2s.Tg /* S side (TT-FG1113) */,
     gEo: gE1.Tg /* gas to the air heater */,
+    /* beta.420 (lane 3 KIRARA, P&ID PD-051 TT-FG1100 ~ 1111 at the bank boundaries): the gas leaving each backpass bank, an export of
+       the same chain (no change to the run). Gas path: furnace -> wall (cyclone outlet / roof) -> R pass: RH bank 3, 2, 1, 0 -> No.2 eco
+       R; S pass: finishing SH bank 2, 1, 0 -> No.3 eco -> No.2 eco S; the two passes mix (mix; e1In = after an economizer tube leak, if
+       any) -> No.1 eco (e1) -> air heater. On U as U.hxO.gBank. The gas
+       into a bank is the gas leaving the bank before it (into RH 3 and FSH 2: wl). */
+    gBank: {
+      wl: gWl.Tg,
+      rh: gR4.map(g => g.Tg),
+      e2r: gE2r.Tg,
+      fsh: gF.map(g => g.Tg),
+      e3: gE3.Tg,
+      e2s: gE2s.Tg,
+      mix: tMix,
+      e1In: tE1,
+      e1: gE1.Tg
+    },
     gRh: tR,
     gFs: tS,
     mGR,
@@ -347190,7 +347222,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 780d2a6'));
+    row('Version', E('span', 'scsver', ver + ' · build bbbba7c'));
   }
   function openSet(near) {
     if (!set) {
