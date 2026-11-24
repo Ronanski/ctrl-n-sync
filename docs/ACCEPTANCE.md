@@ -8,12 +8,13 @@ Inaprubahan ng user: **GO LIST, 2026-11-24 06:06 PHT** (GO FINISH LINE 2026-11-2
 3. Iisang model para sa lahat ng load; walang constant na para lang sa isang load; walang patch.
 4. Bawat merge na nagbabago ng estado ng isang item ay nag-a-update ng seksyon "Bilang" dito at ng tracker.
 
-## Bilang (2026-11-24 08:46 PHT, beta.354)
+## Bilang (2026-11-24 11:33 PHT, beta.356)
 
-- Part 1 (process): 24 na item × bawat load. Sukat ng beta.354 (tools/accept/part1.cjs, results/part1-beta354.md, totoong 45 MW na): 46 PASS / 40 FAIL na cell. Pasado sa lahat ng tatlong load: 3 (final feedwater, RH spray, coal flow). Natitira: 21.
+- Part 1 (process): 24 na item × bawat load. Sukat ng beta.356 (tools/accept/part1.cjs, results/part1-beta356.md; 45 MW sa HB sliding pressure 98.9): 50 PASS / 36 FAIL na cell. Pasado sa lahat ng tatlong load: 6 (main steam flow, SH outlet temperature, final feedwater, RH spray, turbine heat rate, coal flow). Natitira: 18. (Pagtatama sa bilang ng beta.354: 4 dapat iyon, hindi 3; pasado na rin noon ang main steam flow sa tatlong load.)
 - Part 2 (kumpleto): 21 na item. Pasado (TAMA): 1. Natitira: 20 (MAY = nasa app, hindi pa nasusuri: 18; KULANG: 2).
 - Part 3 (live run): 1 item. Natitira: 1 (ang user ang nagpapasya kung kailan).
-- **Kabuuan: 4 pasado, 42 natitira.**
+- **Kabuuan: 7 pasado, 39 natitira.**
+
 ## Part 1 · Process bawat load
 
 Steady na takbo, 30 min na walang ginagalaw, naka-AUTO ang lahat ng loop. 45 / 90 / 150 MW = HB cases 7 / 4 / 1 (32.7 / 59.6 / 100 %).
