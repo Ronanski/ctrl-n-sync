@@ -30,7 +30,9 @@ const { laneData } = require('../../../tools/build/engine-bundle.js');
     sw = [];
   AN.fieldRead = k => (k in fld ? fld[k] : null);
   win.WORLD = { plantSw: () => sw };
-  const run = now => AN.laneAlm(now || new Map()).map(x => x[0]);
+  /* only the points under test: other points of the loaded plant have their own sources (model writes, field rows) and may stand in alarm */
+  const OWN = /^L\|(PT-MS1002|PT-DO1043-A2|LSLL-CH1103|SS-BH1060-B)\|/;
+  const run = now => AN.laneAlm(now || new Map()).map(x => x[0]).filter(k => OWN.test(k));
   if (!ms || !oil) bad.push('AI0131 / AI0293 not found on ABC-001C / ABC-003A');
   else {
     ms.S.rt.v[ms.n] = 141;
