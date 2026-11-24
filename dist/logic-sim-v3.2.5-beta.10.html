@@ -4567,7 +4567,7 @@ function tcsSim(s) {
     const EX = o.extra || {};
     const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
     const S = {
-      id: o.id,
+      id: o.id, pr: o.pr,
       title: o.title,
       page: o.page,
       ctl: 'EHG+MD',
@@ -4596,8 +4596,9 @@ function tcsSim(s) {
         ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
       ],
       r: [
-        ['td2', Z(1481), 136, 235, 128, ''],
-        ['v2o3', Z(1564), Y2(445), 86, 107, '']
+        /* 'fn': a function box (TRIPLE DETECTOR2, 2OO3), not a PI/O box */
+        ['td2', Z(1481), 136, 235, 128, '', 'fn'],
+        ['v2o3', Z(1564), Y2(445), 86, 107, '', 'fn']
       ],
       m,
       b: [
@@ -5268,7 +5269,7 @@ function tcsSim(s) {
         [t, 't']
       ])
         A.push(...(o.extra[n] || []));
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
   };
   /* TCE_LIB.aid(o): a sheet INPUT SIGNAL DIAGNOSTICS of single pressure inputs (TCE102, TCE104): on each line a transmitter (the crossed circle),
      the analog input card (the mA/V box, the filled triangle of the PI/O connection, the PI/O error box) and one AI DIAG.MD block with its
@@ -5416,7 +5417,7 @@ function tcsSim(s) {
       two(1773, y + q.dyD, an[0], an[1]);
     });
     t.push(...o.foot);
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
   };
   /* the parameters printed under a VALVE DIAGNOSIS block: [distance from the left edge of the block, words], left and right column;
      vdNotes gives the words of the block (x of the block, its top, the y of its pins, the two distances of (LME123) and of the lists, o.dev =
@@ -5540,7 +5541,7 @@ function tcsSim(s) {
     w.push(['kF', [[KT, yF], [950, yF], [950, a(7)], [BX, a(7)]]], ['kF', [[950, z(7)], [BX, z(7)]]]);
     mark('BTR', o.mk.e, 781, yE);
     t.push(...o.foot);
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, c, k, s, p, l, tri, m, b, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, c, k, s, p, l, tri, m, b, w, t };
   };
   /* The second sheet of a valve (VALVE CONTROL DIAGNOSTICS, TCE121, TCE123, TCE125 ...; POSITION DIAGNOSTICS, TCE133): the VALVE DIAGNOSIS
      block of the third position signal, the TMR LVDT DIAGNOSIS block that takes the three position signals, the comparators of the valve
@@ -5689,7 +5690,7 @@ function tcsSim(s) {
     /* the third abnormal signal: ABN.A of this sheet (ABN.O on the sheet of a valve with no servo amplifier) */
     const TH = RSV ? 2 : 5;
     return {
-      id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, k, s, p,
+      id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, k, s, p,
       l: [[[235, a(0) - 22], [235, a(0) - 13]]],
       tri,
       c: [
@@ -5849,7 +5850,7 @@ function tcsSim(s) {
     mark('BTR', '001', 1405, 134);
     r.push(['', 1951, 122, 125, 24, 'PTI SW.input']);
     t.push([625, 145, 'PTI'], [1968, 117, '(TCE980-' + o.io[0] + ')'], ...o.foot);
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: [165, 78, 2224, 1541], c, r, s, p, l, a, tri, b, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: [165, 78, 2224, 1541], c, r, s, p, l, a, tri, b, w, t };
   };
   if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid, vd2, vd3, pti };
 })();
@@ -6723,6 +6724,8 @@ const TCS_DESC = {
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE022',
+  /* the symbols drawn as examples ("(TCS400-1)" is the example of a PI/O name): not logic, left out of the program */
+  legend: 1,
   title: 'LOGIC EXPLANATION SHEET',
   page: 17,
   ctl: 'EHG+MD',
@@ -6853,6 +6856,8 @@ const TCS_DESC = {
   ].forEach(x => t.push(x));
   (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
     id: 'TCE023',
+    /* the symbols drawn as examples ("(TCS400-1)" is the example of a PI/O name): not logic, left out of the program */
+    legend: 1,
     title: 'PI/O TABLE EXPLANATION SHEET',
     page: 18,
     ctl: 'EHG+MD',
@@ -7665,6 +7670,11 @@ const TCS_DESC = {
 /* TCE053 CONTROLLER CONDITION(4) (331DM09784 page 26, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE053',
+  /* pr: printed on page 26 beside each block; the drawing above keeps them as text */
+  pr: {
+    td054: ['TD:4.0s'],
+    td055: ['TD:1.5s']
+  },
   title: 'CONTROLLER CONDITION(4)',
   page: 26,
   ctl: 'EHG+MD',
@@ -8264,6 +8274,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.tmr({
       id: 'TCE068',
+      /* pr: printed on page 36 beside each block; the drawing above keeps them as text */
+      pr: {
+        cmp047: ['HL:400.0degc', 'LL:395.0degc']
+      },
       title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(9)',
       page: 36,
       f: [167, 81, 2228, 1545],
@@ -10633,6 +10647,13 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE121',
+      /* pr: printed on page 86 beside each block; the drawing above keeps them as text */
+      pr: {
+        c025: ['HL:11.0', 'LL:10.0'],
+        c026: ['HL:2.0', 'LL:1.5'],
+        c027: ['HL:98', 'LL:97'],
+        c028: ['HL:98', 'LL:97']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(2)',
       page: 86,
       v: 'MSV(A)',
@@ -10702,6 +10723,13 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE123',
+      /* pr: printed on page 88 beside each block; the drawing above keeps them as text */
+      pr: {
+        c025: ['HL:11.0', 'LL:10.0'],
+        c026: ['HL:2.0', 'LL:1.5'],
+        c027: ['HL:98', 'LL:97'],
+        c028: ['HL:98', 'LL:97']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(4)',
       page: 88,
       v: 'MSV(B)',
@@ -10770,6 +10798,12 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE125',
+      /* pr: printed on page 90 beside each block; the drawing above keeps them as text */
+      pr: {
+        c025: ['HL:11.0', 'LL:10.0'],
+        c026: ['HL:7', 'LL:5'],
+        c027: ['HL:7', 'LL:5']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(6)',
       page: 90,
       v: 'CV(A)',
@@ -10845,6 +10879,12 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE127',
+      /* pr: printed on page 92 beside each block; the drawing above keeps them as text */
+      pr: {
+        c025: ['HL:11.0', 'LL:10.0'],
+        c026: ['HL:7', 'LL:5'],
+        c027: ['HL:7', 'LL:5']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(8)',
       page: 92,
       v: 'CV(B)',
@@ -10922,6 +10962,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE129',
+      /* pr: printed on page 94 beside each block; the drawing above keeps them as text */
+      pr: {
+        c020: ['HL:3', 'LL:2']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(10)',
       page: 94,
       v: 'ICV(A)',
@@ -10996,6 +11040,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE131',
+      /* pr: printed on page 96 beside each block; the drawing above keeps them as text */
+      pr: {
+        c020: ['HL:3', 'LL:2']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(12)',
       page: 96,
       v: 'ICV(B)',
@@ -11070,6 +11118,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE133',
+      /* pr: printed on page 98 beside each block; the drawing above keeps them as text */
+      pr: {
+        c018: ['HL:98', 'LL:97']
+      },
       title: 'POSITION DIAGNOSTICS(2)',
       page: 98,
       v: 'RSV(A)',
@@ -11143,6 +11195,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE135',
+      /* pr: printed on page 100 beside each block; the drawing above keeps them as text */
+      pr: {
+        c018: ['HL:98', 'LL:97']
+      },
       title: 'POSITION DIAGNOSTICS(4)',
       page: 100,
       v: 'RSV(B)',
@@ -11966,6 +12022,12 @@ const TCS_DESC = {
   two(1902, 1288, 'EHG SOFT', 'MAJOR TROUBLE');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'TCE143', live: { kTS: ['rpm', 'rpm'], i1A: ['rpm', 'rpm'], i1B: ['rpm', 'rpm'], i1C: ['rpm', 'rpm'] },
+    /* pr: printed on page 104 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl: ['HL:2450.0rpm', 'LL:2400.0rpm'],
+      lck: ['K:100.0rpm'],
+      cmp: ['HL:2950.0rpm', 'LL:2000.0rpm']
+    },
     title: 'TURBINE SPEED DIAGNOSTICS(4)',
     page: 104,
     ctl: 'EHG+MD',
@@ -12622,10 +12684,17 @@ const TCS_DESC = {
         [895, 222]
       ]
     ],
+    /* page 107: the line ends at the connector C (TCE151); typed from the connector end it was not read as reaching it */
     [
       'dIYS',
       [
-        [1124, 191],
+        [895, 191],
+        [1124, 191]
+      ]
+    ],
+    [
+      'dIYS',
+      [
         [895, 191],
         [895, 425],
         [916, 425]
@@ -14113,8 +14182,12 @@ const TCS_DESC = {
     [1601, 305],
     [2053, 305]
   ]);
+  /* page 109: the line ends at the connector Z1 (TCA541); typed from the connector end it was not read as reaching it */
   W('ffr5', [
-    [2054, 223],
+    [1601, 223],
+    [2054, 223]
+  ]);
+  W('ffr5', [
     [1601, 223],
     [1601, 542],
     [918, 542],
@@ -16099,6 +16172,15 @@ const TCS_DESC = {
   two(1784, 1296, 'CV(B) CRACK OPEN', 'SEQUENCE COMPLETE');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'TCE155',
+    /* pr: printed on page 112 beside each block; the drawing above keeps them as text */
+    pr: {
+      sg5: ['K:6.67%'],
+      sg6: ['K:100.0%'],
+      sg7: ['K:-5.0%'],
+      sg14: ['K:6.67%'],
+      sg15: ['K:100.0%'],
+      sg16: ['K:-5.0%']
+    },
     title: 'CV WARMING CONTROL(5)',
     page: 112,
     ctl: 'EHG+MD',
@@ -17100,6 +17182,13 @@ const TCS_DESC = {
 /* TCE166 ACCELERATION RELAY (331DM09784 page 116, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE166',
+  /* pr: printed on page 116 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgA003: ['K:55.7rpm/S'],
+    sgA004: ['K:3672.0rpm'],
+    sgA005: ['K:3780.0rpm'],
+    sgA006: ['K:3600.0rpm']
+  },
   title: 'ACCELERATION RELAY',
   page: 116,
   ctl: 'EHG+MD',
@@ -18399,6 +18488,11 @@ const TCS_DESC = {
    = the simulator generator load in simulation use, else the measured load. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE179',
+  /* pr: printed on page 126 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgC012: ['K:3595.0rpm'],
+    sgC015: ['K:3600.0rpm']
+  },
   title: 'RATED SPEED ADJUST',
   page: 126,
   ctl: 'EHG+MD',
@@ -19701,6 +19795,13 @@ const TCS_DESC = {
    the MW demand, CCS ACTUAL SET = GOV.SET. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE195',
+  /* pr: printed on page 135 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgC005: ['K:0.06'],
+    sgC008: ['K:-0.06'],
+    sgB017: ['K:-0.01%'],
+    sgB019: ['K:0.01%']
+  },
   title: 'GOVERNOR CONTROL(1)',
   page: 135,
   ctl: 'EHG+MD',
@@ -20245,6 +20346,10 @@ const TCS_DESC = {
    0.0), LIM A005 (0 .. 120 %), ADD 006 + 25.3 %. HLD 011 holds the flow demand when IP LIMITING comes on. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE202',
+  /* pr: printed on page 138 beside each block, FG *1 table; the drawing above keeps them as text */
+  pr: {
+    fgC001: ['X1:0.0', 'Y1:0', 'X2:10.0', 'Y2:0', 'X3:50.0', 'Y3:0', 'X4:80.0', 'Y4:0', 'X5:97.9', 'Y5:0', 'X6:112.5', 'Y6:100', 'X7:120.0', 'Y7:100', 'X8:125.0', 'Y8:100']
+  },
   title: 'IP UNLOADER',
   page: 138,
   ctl: 'EHG+MD',
@@ -20536,6 +20641,12 @@ const TCS_DESC = {
    GOV LIMITING = A044 (the demand below the governor demand, LLM CONTROL held 10 s (TP A043), not CHANGE OVER). */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE206',
+  /* pr: printed on page 140 beside each block, FG *1 table; the drawing above keeps them as text */
+  pr: {
+    sgA011: ['K:3600.0rpm'],
+    fgC003: ['X1:-648.0', 'Y1:-261.9', 'X2:-432.0', 'Y2:-174.6', 'X3:-216.0', 'Y3:-87.3', 'X4:-7.2', 'Y4:0', 'X5:0.0', 'Y5:0', 'X6:7.2', 'Y6:0', 'X7:216.0', 'Y7:87.3', 'X8:432.0', 'Y8:174.6'],
+    sg029: ['K:3600.0rpm']
+  },
   title: 'FLOW CONTROL(1)',
   page: 140,
   ctl: 'EHG+MD',
@@ -21514,6 +21625,13 @@ const TCS_DESC = {
    (AEH006A) and out as the POSITION DEMAND; the servo cards are drawn as on the drawing, they are no logic of the sheet. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE212',
+  /* pr: printed on page 144 beside each block; the drawing above keeps them as text */
+  pr: {
+    twA071: ['TW:3.0s'],
+    sg048: ['K:-5.0%'],
+    sgC022: ['K:0.56%/S'],
+    sgC025: ['K:0.56%/S']
+  },
   title: 'CV(A),(B) CONTROL',
   page: 144,
   ctl: 'EHG+MD',
@@ -21984,6 +22102,13 @@ const TCS_DESC = {
    sheet. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE214',
+  /* pr: printed on page 145 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgA006: ['K:-5.0%'],
+    sgC007: ['K:10.0%/S'],
+    sgC016: ['K:10.0%/S'],
+    sgC018: ['K:10.0%/S']
+  },
   title: 'ICV(A),(B) CONTROL',
   page: 145,
   ctl: 'EHG+MD',
@@ -24209,6 +24334,10 @@ const TCS_DESC = {
    simulated values (DSW 016, 021, 026); they go to the next sheets, the indications (TCE603) and the operator station lamps (CRT). */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE350',
+  /* pr: printed on page 157 beside each block; the drawing above keeps them as text */
+  pr: {
+    cmp029: ['HL:1.02kg/cm2g', 'LL:0.71kg/cm2g']
+  },
   title: 'TURNING GEAR(1)(TB-9)',
   page: 157,
   ctl: 'EHG+MD',
@@ -26227,6 +26356,12 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCE500',
+    /* pr: printed on page 173 beside each block, FG *1 ~ *3 tables (C040, C041 carry no mark and no table); the drawing above keeps them as text */
+    pr: {
+      fgA003: ['X1:0', 'Y1:0', 'X2:10', 'Y2:10', 'X3:15', 'Y3:15', 'X4:20', 'Y4:20', 'X5:30', 'Y5:30', 'X6:40', 'Y6:40', 'X7:50', 'Y7:50', 'X8:100', 'Y8:100'],
+      fgA011: ['X1:0', 'Y1:0', 'X2:10', 'Y2:14', 'X3:20', 'Y3:24', 'X4:30', 'Y4:34', 'X5:40', 'Y5:44', 'X6:50', 'Y6:54', 'X7:60', 'Y7:64', 'X8:140', 'Y8:140'],
+      fgA007: ['X1:0', 'Y1:0', 'X2:11', 'Y2:6', 'X3:15.6', 'Y3:9.9', 'X4:19.19', 'Y4:12', 'X5:30', 'Y5:16', 'X6:110', 'Y6:22', 'X7:130', 'Y7:24', 'X8:140', 'Y8:25']
+    },
     title: 'SIMULATOR(1)',
     page: 173,
     ctl: 'EHG+MD',
@@ -26734,7 +26869,9 @@ const TCS_DESC = {
   W('tpB014', [1215, 149], [1215, 820], [1267, 820], [1267, 894 - TOP]);
   W('tpB014', [1215, 437], [1267, 437], [1267, 490 - TOP]);
   W('tpB014', [1588, 149], [1588, 1139]);
-  W('tpB014', [1345, 1201 - TOP], [1345, 1139], [1633, 1139], [1633, 1201 - TOP]);
+  /* the SW of RL B038 and LG B016 (page 176: the wire drops to the top of both); each piece starts at the line so the reader ends it on the SW */
+  W('tpB014', [1345, 1139], [1345, 1201 - TOP]);
+  W('tpB014', [1345, 1139], [1633, 1139], [1633, 1201 - TOP]);
   [[449, 1641, 490], [641, 1639, 681], [841, 1637, 894]].forEach(([y, x, cy]) => W('tpB014', [1588, y], [x, y], [x, cy - TOP]));
   j.push([862, 149], [xAM, 149], [1215, 149], [1588, 149], [862, 617], [862, 1010], [795, 1265], [962, 1361], [1215, 437]);
   j.push([1588, 449], [1588, 641], [1588, 841], [1588, 1139]);
@@ -38561,6 +38698,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA500',
+    /* pr: printed on page 78 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl050: ['HL:155.0degC', 'LL:150.0degC']
+    },
     title: 'START-UP MODE SELECTION',
     page: 78,
     ctl: 'COMM+MD',
@@ -48156,6 +48297,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA531',
+    /* pr: printed on page 101 beside each block, FG *1 / *2 tables; the drawing above keeps them as text */
+    pr: {
+      fgA001: ['X1:0.00', 'Y1:184', 'X2:100.00', 'Y2:172', 'X3:200.00', 'Y3:161', 'X4:250.00', 'Y4:155', 'X5:300.00', 'Y5:149.50', 'X6:400.00', 'Y6:138.50', 'X7:500.00', 'Y7:127', 'X8:600.00', 'Y8:116'],
+      fgA009: ['X1:0.00', 'Y1:184', 'X2:100.00', 'Y2:172', 'X3:200.00', 'Y3:161', 'X4:250.00', 'Y4:155', 'X5:300.00', 'Y5:149.50', 'X6:400.00', 'Y6:138.50', 'X7:500.00', 'Y7:127', 'X8:600.00', 'Y8:116']
+    },
     title: 'CRITERIA CONDITION',
     page: 101,
     ctl: 'COMM+MD',
@@ -49598,6 +49744,18 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA536',
+    /* pr: printed on page 106 beside each block; the drawing above keeps them as text */
+    /* pa: PA2 003 / PA2 007 print no names at their two inputs; both inputs are one wire (ASW 039 / ASW 044, page 106), so they give
+       HL and LL of CPL A003 / A007 the same value, as the HL = LL printed under each CPL */
+    pa: { pa2003: ['HL', 'LL'], pa2007: ['HL', 'LL'] },
+    pr: {
+      sg037: ['K:105.3'],
+      sg038: ['K:76.5'],
+      sg041: ['K:57.0'],
+      sg042: ['K:345'],
+      sg043: ['K:323'],
+      sg046: ['K:304']
+    },
     title: 'CRITERIA CONDITION',
     page: 106,
     ctl: 'COMM+MD',
@@ -51805,6 +51963,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA548',
+    /* pr: printed on page 118 beside each block, FG *1 ~ *4 tables (A040, A042 carry no mark and no table); the drawing above keeps them as text */
+    pr: {
+      fgA005: ['X1:0.00', 'Y1:400', 'X2:111.40', 'Y2:400', 'X3:288.10', 'Y3:538', 'X4:538.00', 'Y4:538', 'X5:540.00', 'Y5:538', 'X6:550.00', 'Y6:538', 'X7:560.00', 'Y7:538', 'X8:600.00', 'Y8:538'],
+      fgA024: ['X1:0.00', 'Y1:330', 'X2:150.60', 'Y2:330', 'X3:365.70', 'Y3:538', 'X4:538.00', 'Y4:538', 'X5:540.00', 'Y5:538', 'X6:550.00', 'Y6:538', 'X7:560.00', 'Y7:538', 'X8:600.00', 'Y8:538'],
+      fgA012: ['X1:0.00', 'Y1:345', 'X2:293.20', 'Y2:345', 'X3:323.20', 'Y3:345', 'X4:355.00', 'Y4:370', 'X5:483.00', 'Y5:470', 'X6:531.90', 'Y6:508', 'X7:538.00', 'Y7:512.80', 'X8:538.01', 'Y8:538'],
+      fgA031: ['X1:0.00', 'Y1:290', 'X2:302.60', 'Y2:290', 'X3:352.60', 'Y3:290', 'X4:445.60', 'Y4:380', 'X5:538.00', 'Y5:469.20', 'X6:588.40', 'Y6:518', 'X7:588.41', 'Y7:538', 'X8:600.00', 'Y8:538']
+    },
     title: 'CRITERIA CONDITION',
     page: 118,
     ctl: 'COMM+MD',
@@ -56140,6 +56305,11 @@ const TCS_DESC = {
    (rub check, then the 1800 / 2700 / 3600 rpm heat soaks); the TW blocks hold each ATS command 3 s and are cleared by INITIAL. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCA582',
+  /* pr: printed on page 140 beside each block; the drawing above keeps them as text */
+  pr: {
+    twA008: ['TW:3.0s'],
+    twA009: ['TW:3.0s']
+  },
   title: 'RUB CHECK/ACC.CONTROL',
   page: 140,
   ctl: 'COMM+MD',
@@ -57284,6 +57454,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA585',
+    /* pr: printed on page 144 beside each block, FG *1 ~ *4 tables; the drawing above keeps them as text */
+    pr: {
+      fgA017: ['X1:0', 'Y1:88', 'X2:140', 'Y2:88', 'X3:150', 'Y3:58', 'X4:160', 'Y4:58', 'X5:170', 'Y5:30', 'X6:230', 'Y6:30', 'X7:240', 'Y7:0', 'X8:600', 'Y8:0'],
+      fgA019: ['X1:0', 'Y1:86', 'X2:140', 'Y2:86', 'X3:150', 'Y3:56', 'X4:170', 'Y4:27', 'X5:230', 'Y5:23', 'X6:410', 'Y6:23', 'X7:420', 'Y7:3', 'X8:600', 'Y8:3'],
+      fgA021: ['X1:0', 'Y1:86', 'X2:140', 'Y2:86', 'X3:150', 'Y3:56', 'X4:170', 'Y4:27', 'X5:230', 'Y5:23', 'X6:410', 'Y6:23', 'X7:420', 'Y7:3', 'X8:600', 'Y8:3'],
+      fgA023: ['X1:0', 'Y1:40', 'X2:220', 'Y2:40', 'X3:230', 'Y3:15', 'X4:410', 'Y4:15', 'X5:420', 'Y5:0', 'X6:500', 'Y6:0', 'X7:550', 'Y7:0', 'X8:600', 'Y8:0']
+    },
     title: 'HEAT SOAK TIME',
     page: 144,
     ctl: 'COMM+MD',
@@ -57963,6 +58140,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA586',
+    /* pr: printed on page 145 beside each block, FG *1 ~ *4 tables; the drawing above keeps them as text */
+    pr: {
+      fgA015: ['X1:0', 'Y1:155', 'X2:150', 'Y2:155', 'X3:160', 'Y3:95', 'X4:190', 'Y4:95', 'X5:200', 'Y5:35', 'X6:280', 'Y6:35', 'X7:290', 'Y7:0', 'X8:600', 'Y8:0'],
+      fgA017: ['X1:0', 'Y1:50', 'X2:150', 'Y2:50', 'X3:160', 'Y3:30', 'X4:190', 'Y4:30', 'X5:200', 'Y5:10', 'X6:280', 'Y6:10', 'X7:290', 'Y7:0', 'X8:600', 'Y8:0'],
+      fgA019: ['X1:0', 'Y1:100', 'X2:150', 'Y2:100', 'X3:160', 'Y3:65', 'X4:190', 'Y4:65', 'X5:200', 'Y5:25', 'X6:280', 'Y6:25', 'X7:290', 'Y7:0', 'X8:600', 'Y8:0'],
+      fgA021: ['X1:0', 'Y1:50', 'X2:280', 'Y2:50', 'X3:290', 'Y3:20', 'X4:395', 'Y4:20', 'X5:405', 'Y5:0', 'X6:500', 'Y6:0', 'X7:550', 'Y7:0', 'X8:600', 'Y8:0']
+    },
     title: 'HEAT SOAK TIME',
     page: 145,
     ctl: 'COMM+MD',
@@ -60660,6 +60844,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA634',
+    /* pr: printed on page 159 beside each block, FG *1 table; the drawing above keeps them as text */
+    pr: {
+      tpA005: ['TP:13800s'],
+      fgA007: ['X1:0.0', 'Y1:228', 'X2:95.0', 'Y2:150', 'X3:110.0', 'Y3:132', 'X4:125.0', 'Y4:105', 'X5:135.0', 'Y5:75', 'X6:140.0', 'Y6:57', 'X7:145.0', 'Y7:33', 'X8:150.0', 'Y8:0.1']
+    },
     title: 'HP TURBINE WARMING GROUP CONTROL (TE-1,2)',
     page: 159,
     ctl: 'COMM+MD',
@@ -61338,6 +61527,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA639',
+    /* pr: printed on page 163 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl007: ['HL:275.0degC', 'LL:270.0degC'],
+      cmp010: ['HL:200.0degC', 'LL:195.0degC']
+    },
     title: 'TURBINE GLAND SEAL GROUP CONTROL (TE-6,7)',
     page: 163,
     ctl: 'COMM+MD',
@@ -61809,6 +62003,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA685',
+    /* pr: printed on page 167 beside each block; the drawing above keeps them as text */
+    pr: {
+      cmp033: ['HL:7.0kg/cm2g', 'LL:6.0kg/cm2g']
+    },
     title: 'HP TURBINE WARMING VALVE (TC-20)',
     page: 167,
     ctl: 'COMM+MD',
@@ -61964,6 +62162,15 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA686',
+    /* pr: printed on page 168 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl007: ['HL:5.0barg', 'LL:4.0barg'],
+      flk009: ['T1:1.0s', 'T2:15.0s'],
+      cpl010: ['HL:41.0%', 'LL:40.0%'],
+      cmp013: ['HL:5.0barg', 'LL:4.0barg'],
+      flk015: ['T1:1.0s', 'T2:15.0s'],
+      cmp019: ['HL:5.0%', 'LL:4.0%']
+    },
     title: 'HP TURBINE WARMING VALVE (TC-20)',
     page: 168,
     ctl: 'COMM+MD',
@@ -62109,6 +62316,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA690',
+    /* pr: printed on page 169 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0s'],
+      tp012: ['TP:30.0s']
+    },
     title: 'COLD R/H STM NON-RETURN VLV(TC-19)',
     page: 169,
     ctl: 'COMM+MD',
@@ -62368,6 +62580,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA711',
+    /* pr: printed on page 171 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0s']
+    },
     title: 'NO.2 EXTRUCTION STEAM NON RETURN VALVE(TC-41)',
     page: 171,
     ctl: 'COMM+MD',
@@ -62533,6 +62749,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA712',
+    /* pr: printed on page 172 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0']
+    },
     title: 'NO.3 EXTRUCTION STEAM PRIMARY NON RETURN VALVE(TC-42)',
     page: 172,
     ctl: 'COMM+MD',
@@ -62696,6 +62916,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA713',
+    /* pr: printed on page 173 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0']
+    },
     title: 'NO.4 EXTRUCTION STEAM NON RETURN VALVE(TC-41)',
     page: 173,
     ctl: 'COMM+MD',
@@ -62860,6 +63084,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA714',
+    /* pr: printed on page 174 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0']
+    },
     title: 'NO.3 EXTRUCTION STEAM SECONDARY NON RETURN VALVE(TC-43)',
     page: 174,
     ctl: 'COMM+MD',
@@ -63023,6 +63251,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA715',
+    /* pr: printed on page 175 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0']
+    },
     title: 'NO.5 EXTRUCTION STEAM NON RETURN VALVE(TC-45)',
     page: 175,
     ctl: 'COMM+MD',
@@ -63302,6 +63534,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA738',
+    /* pr: printed on page 177 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp041: ['TP:3.0s'],
+      tp049: ['TP:1.0s']
+    },
     title: 'LP EXHAUST HOOD WATER SPLAY VALVE(TC-35)',
     page: 177,
     ctl: 'COMM+MD',
@@ -64652,6 +64889,14 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA754',
+    /* pr: printed on page 184 beside each block; the drawing above keeps them as text */
+    pr: {
+      sgA002: ['K:886.536'],
+      sgA003: ['K:689.178'],
+      sgA004: ['K:492.27'],
+      sgA005: ['K:295.362'],
+      sgA006: ['K:98.454']
+    },
     title: 'THERMAL STRESS(HP)',
     page: 184,
     ctl: 'COMM+MD',
@@ -65123,6 +65368,14 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA758',
+    /* pr: printed on page 188 beside each block; the drawing above keeps them as text */
+    pr: {
+      sgA002: ['K:940.164'],
+      sgA003: ['K:731.239'],
+      sgA004: ['K:522.314'],
+      sgA005: ['K:313.388'],
+      sgA006: ['K:104.463']
+    },
     title: 'THERMAL STRESS(IP)',
     page: 188,
     ctl: 'COMM+MD',
@@ -65230,6 +65483,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA760',
+    /* pr: printed on page 189 beside each block, the one FG table (BORE / LIMIT) of the sheet, for both FG; the drawing above keeps them as text */
+    pr: {
+      fgA009: ['X1:0.0', 'Y1:377', 'X2:20.0', 'Y2:377', 'X3:60.0', 'Y3:484', 'X4:550.0', 'Y4:340', 'X5:600.0', 'Y5:340', 'X6:610.0', 'Y6:340', 'X7:620.0', 'Y7:340', 'X8:630.0', 'Y8:340'],
+      fgA012: ['X1:0.0', 'Y1:377', 'X2:20.0', 'Y2:377', 'X3:60.0', 'Y3:484', 'X4:550.0', 'Y4:340', 'X5:600.0', 'Y5:340', 'X6:610.0', 'Y6:340', 'X7:620.0', 'Y7:340', 'X8:630.0', 'Y8:340']
+    },
     title: 'IP/HP THSC CHANGE(4)',
     page: 189,
     ctl: 'COMM+MD',
@@ -65922,6 +66180,21 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA767',
+    /* pr: printed on page 194 beside each block; the drawing above keeps them as text */
+    pr: {
+      cmpA002: ['HL:430.0', 'LL:428.0'],
+      cmpA007: ['HL:405.0', 'LL:403.0'],
+      cmpA011: ['HL:430.0', 'LL:428.0'],
+      cmpA017: ['HL:331.0', 'LL:329.0'],
+      cmpA020: ['HL:430.0', 'LL:428.0'],
+      cmpA024: ['HL:371.6', 'LL:369.6'],
+      cmpA026: ['HL:396.0', 'LL:394.0'],
+      cmpA030: ['HL:423.3', 'LL:421.3'],
+      cmpA034: ['HL:208.0', 'LL:206.0'],
+      cmpA036: ['HL:182.9', 'LL:180.9'],
+      cmpA040: ['HL:209.3', 'LL:207.3'],
+      cmpA043: ['HL:209.3', 'LL:207.3']
+    },
     title: 'THSC SPEED/LOAD HOLD',
     page: 194,
     ctl: 'COMM+MD',
@@ -66582,6 +66855,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA769',
+    /* pr: printed on page 197 beside each block, FG *1-4 table; the drawing above keeps them as text */
+    pr: {
+      fgA002: ['X1:0.0', 'Y1:1', 'X2:0.5', 'Y2:1', 'X3:0.95', 'Y3:1', 'X4:1.0', 'Y4:0', 'X5:2.0', 'Y5:0', 'X6:3.0', 'Y6:0', 'X7:4.0', 'Y7:0', 'X8:5.0', 'Y8:0'],
+      fgA008: ['X1:0.0', 'Y1:1', 'X2:0.5', 'Y2:1', 'X3:0.95', 'Y3:1', 'X4:1.0', 'Y4:0', 'X5:2.0', 'Y5:0', 'X6:3.0', 'Y6:0', 'X7:4.0', 'Y7:0', 'X8:5.0', 'Y8:0'],
+      fgA012: ['X1:0.0', 'Y1:1', 'X2:0.5', 'Y2:1', 'X3:0.95', 'Y3:1', 'X4:1.0', 'Y4:0', 'X5:2.0', 'Y5:0', 'X6:3.0', 'Y6:0', 'X7:4.0', 'Y7:0', 'X8:5.0', 'Y8:0'],
+      fgA015: ['X1:0.0', 'Y1:1', 'X2:0.5', 'Y2:1', 'X3:0.95', 'Y3:1', 'X4:1.0', 'Y4:0', 'X5:2.0', 'Y5:0', 'X6:3.0', 'Y6:0', 'X7:4.0', 'Y7:0', 'X8:5.0', 'Y8:0']
+    },
     title: 'THSC LIMIT',
     page: 197,
     ctl: 'COMM+MD',
@@ -66666,6 +66946,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA770',
+    /* pr: printed on page 198 beside each block, FG *1 ~ *4 tables; the drawing above keeps them as text */
+    pr: {
+      fgB003: ['X1:0', 'Y1:466', 'X2:8', 'Y2:454', 'X3:16', 'Y3:410', 'X4:22', 'Y4:406', 'X5:26', 'Y5:390', 'X6:50', 'Y6:446', 'X7:75', 'Y7:482', 'X8:102', 'Y8:502'],
+      fgB005: ['X1:0', 'Y1:466', 'X2:8', 'Y2:466', 'X3:16', 'Y3:466', 'X4:22', 'Y4:466', 'X5:26', 'Y5:466', 'X6:50', 'Y6:466', 'X7:75', 'Y7:466', 'X8:102', 'Y8:466'],
+      fgB009: ['X1:0', 'Y1:503', 'X2:8', 'Y2:497', 'X3:16', 'Y3:460', 'X4:22', 'Y4:458', 'X5:26', 'Y5:450', 'X6:37', 'Y6:462', 'X7:63', 'Y7:512', 'X8:109', 'Y8:563'],
+      fgB010: ['X1:0', 'Y1:503', 'X2:8', 'Y2:503', 'X3:16', 'Y3:503', 'X4:22', 'Y4:503', 'X5:26', 'Y5:503', 'X6:37', 'Y6:503', 'X7:63', 'Y7:503', 'X8:109', 'Y8:503']
+    },
     title: 'THSC SIMULATION',
     page: 198,
     ctl: 'COMM+MD',
@@ -66841,7 +67128,9 @@ const TCS_DESC = {
   W('tpB014', [1213, 147], [1213, 842], [1265, 842], [1265, 892 - TOP]);
   W('tpB014', [1213, 433], [1265, 433], [1265, 488 - TOP]);
   W('tpB014', [1585, 147], [1585, 1137]);
-  W('tpB014', [1347, 1202 - TOP], [1347, 1137], [xLG, 1137], [xLG, 1202 - TOP]);
+  /* the SW of RL B038 and LG B016 (page 200: the wire drops to the top of both); each piece starts at the line so the reader ends it on the SW */
+  W('tpB014', [1347, 1137], [1347, 1202 - TOP]);
+  W('tpB014', [1347, 1137], [xLG, 1137], [xLG, 1202 - TOP]);
   [443, 637, 838].forEach((y, i) => W('tpB014', [1585, y], [xLG, y], [xLG, [488, 680, 892][i] - TOP]));
   j.push([860, 147], [xAM, 147], [1213, 147], [1585, 147], [860, 616], [860, 1010], [796, 1265], [963, 1362], [1213, 433]);
   j.push([1585, 443], [1585, 637], [1585, 838], [1585, 1137]);
@@ -156636,10 +156925,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 7ab619e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 258a546'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 7ab619e';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 258a546';
     } catch (e) {}
   };
   upd();
@@ -181336,7 +181625,7 @@ function tcsSim(s) {
     const EX = o.extra || {};
     const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
     const S = {
-      id: o.id,
+      id: o.id, pr: o.pr,
       title: o.title,
       page: o.page,
       ctl: 'EHG+MD',
@@ -181365,8 +181654,9 @@ function tcsSim(s) {
         ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
       ],
       r: [
-        ['td2', Z(1481), 136, 235, 128, ''],
-        ['v2o3', Z(1564), Y2(445), 86, 107, '']
+        /* 'fn': a function box (TRIPLE DETECTOR2, 2OO3), not a PI/O box */
+        ['td2', Z(1481), 136, 235, 128, '', 'fn'],
+        ['v2o3', Z(1564), Y2(445), 86, 107, '', 'fn']
       ],
       m,
       b: [
@@ -182037,7 +182327,7 @@ function tcsSim(s) {
         [t, 't']
       ])
         A.push(...(o.extra[n] || []));
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
   };
   /* TCE_LIB.aid(o): a sheet INPUT SIGNAL DIAGNOSTICS of single pressure inputs (TCE102, TCE104): on each line a transmitter (the crossed circle),
      the analog input card (the mA/V box, the filled triangle of the PI/O connection, the PI/O error box) and one AI DIAG.MD block with its
@@ -182185,7 +182475,7 @@ function tcsSim(s) {
       two(1773, y + q.dyD, an[0], an[1]);
     });
     t.push(...o.foot);
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
   };
   /* the parameters printed under a VALVE DIAGNOSIS block: [distance from the left edge of the block, words], left and right column;
      vdNotes gives the words of the block (x of the block, its top, the y of its pins, the two distances of (LME123) and of the lists, o.dev =
@@ -182309,7 +182599,7 @@ function tcsSim(s) {
     w.push(['kF', [[KT, yF], [950, yF], [950, a(7)], [BX, a(7)]]], ['kF', [[950, z(7)], [BX, z(7)]]]);
     mark('BTR', o.mk.e, 781, yE);
     t.push(...o.foot);
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, c, k, s, p, l, tri, m, b, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, c, k, s, p, l, tri, m, b, w, t };
   };
   /* The second sheet of a valve (VALVE CONTROL DIAGNOSTICS, TCE121, TCE123, TCE125 ...; POSITION DIAGNOSTICS, TCE133): the VALVE DIAGNOSIS
      block of the third position signal, the TMR LVDT DIAGNOSIS block that takes the three position signals, the comparators of the valve
@@ -182458,7 +182748,7 @@ function tcsSim(s) {
     /* the third abnormal signal: ABN.A of this sheet (ABN.O on the sheet of a valve with no servo amplifier) */
     const TH = RSV ? 2 : 5;
     return {
-      id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, k, s, p,
+      id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, k, s, p,
       l: [[[235, a(0) - 22], [235, a(0) - 13]]],
       tri,
       c: [
@@ -182618,7 +182908,7 @@ function tcsSim(s) {
     mark('BTR', '001', 1405, 134);
     r.push(['', 1951, 122, 125, 24, 'PTI SW.input']);
     t.push([625, 145, 'PTI'], [1968, 117, '(TCE980-' + o.io[0] + ')'], ...o.foot);
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: [165, 78, 2224, 1541], c, r, s, p, l, a, tri, b, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: [165, 78, 2224, 1541], c, r, s, p, l, a, tri, b, w, t };
   };
   if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid, vd2, vd3, pti };
 })();
@@ -183496,6 +183786,8 @@ const TCS_DESC = {
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE022',
+  /* the symbols drawn as examples ("(TCS400-1)" is the example of a PI/O name): not logic, left out of the program */
+  legend: 1,
   title: 'LOGIC EXPLANATION SHEET',
   page: 17,
   ctl: 'EHG+MD',
@@ -183628,6 +183920,8 @@ const TCS_DESC = {
   ].forEach(x => t.push(x));
   (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
     id: 'TCE023',
+    /* the symbols drawn as examples ("(TCS400-1)" is the example of a PI/O name): not logic, left out of the program */
+    legend: 1,
     title: 'PI/O TABLE EXPLANATION SHEET',
     page: 18,
     ctl: 'EHG+MD',
@@ -184456,6 +184750,11 @@ const TCS_DESC = {
 /* TCE053 CONTROLLER CONDITION(4) (331DM09784 page 26, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE053',
+  /* pr: printed on page 26 beside each block; the drawing above keeps them as text */
+  pr: {
+    td054: ['TD:4.0s'],
+    td055: ['TD:1.5s']
+  },
   title: 'CONTROLLER CONDITION(4)',
   page: 26,
   ctl: 'EHG+MD',
@@ -185075,6 +185374,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.tmr({
       id: 'TCE068',
+      /* pr: printed on page 36 beside each block; the drawing above keeps them as text */
+      pr: {
+        cmp047: ['HL:400.0degc', 'LL:395.0degc']
+      },
       title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(9)',
       page: 36,
       f: [167, 81, 2228, 1545],
@@ -187544,6 +187847,13 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE121',
+      /* pr: printed on page 86 beside each block; the drawing above keeps them as text */
+      pr: {
+        c025: ['HL:11.0', 'LL:10.0'],
+        c026: ['HL:2.0', 'LL:1.5'],
+        c027: ['HL:98', 'LL:97'],
+        c028: ['HL:98', 'LL:97']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(2)',
       page: 86,
       v: 'MSV(A)',
@@ -187617,6 +187927,13 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE123',
+      /* pr: printed on page 88 beside each block; the drawing above keeps them as text */
+      pr: {
+        c025: ['HL:11.0', 'LL:10.0'],
+        c026: ['HL:2.0', 'LL:1.5'],
+        c027: ['HL:98', 'LL:97'],
+        c028: ['HL:98', 'LL:97']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(4)',
       page: 88,
       v: 'MSV(B)',
@@ -187689,6 +188006,12 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE125',
+      /* pr: printed on page 90 beside each block; the drawing above keeps them as text */
+      pr: {
+        c025: ['HL:11.0', 'LL:10.0'],
+        c026: ['HL:7', 'LL:5'],
+        c027: ['HL:7', 'LL:5']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(6)',
       page: 90,
       v: 'CV(A)',
@@ -187768,6 +188091,12 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE127',
+      /* pr: printed on page 92 beside each block; the drawing above keeps them as text */
+      pr: {
+        c025: ['HL:11.0', 'LL:10.0'],
+        c026: ['HL:7', 'LL:5'],
+        c027: ['HL:7', 'LL:5']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(8)',
       page: 92,
       v: 'CV(B)',
@@ -187849,6 +188178,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE129',
+      /* pr: printed on page 94 beside each block; the drawing above keeps them as text */
+      pr: {
+        c020: ['HL:3', 'LL:2']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(10)',
       page: 94,
       v: 'ICV(A)',
@@ -187927,6 +188260,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE131',
+      /* pr: printed on page 96 beside each block; the drawing above keeps them as text */
+      pr: {
+        c020: ['HL:3', 'LL:2']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(12)',
       page: 96,
       v: 'ICV(B)',
@@ -188005,6 +188342,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE133',
+      /* pr: printed on page 98 beside each block; the drawing above keeps them as text */
+      pr: {
+        c018: ['HL:98', 'LL:97']
+      },
       title: 'POSITION DIAGNOSTICS(2)',
       page: 98,
       v: 'RSV(A)',
@@ -188082,6 +188423,10 @@ const TCS_DESC = {
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE135',
+      /* pr: printed on page 100 beside each block; the drawing above keeps them as text */
+      pr: {
+        c018: ['HL:98', 'LL:97']
+      },
       title: 'POSITION DIAGNOSTICS(4)',
       page: 100,
       v: 'RSV(B)',
@@ -188913,6 +189258,12 @@ const TCS_DESC = {
   two(1902, 1288, 'EHG SOFT', 'MAJOR TROUBLE');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'TCE143', live: { kTS: ['rpm', 'rpm'], i1A: ['rpm', 'rpm'], i1B: ['rpm', 'rpm'], i1C: ['rpm', 'rpm'] },
+    /* pr: printed on page 104 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl: ['HL:2450.0rpm', 'LL:2400.0rpm'],
+      lck: ['K:100.0rpm'],
+      cmp: ['HL:2950.0rpm', 'LL:2000.0rpm']
+    },
     title: 'TURBINE SPEED DIAGNOSTICS(4)',
     page: 104,
     ctl: 'EHG+MD',
@@ -189575,10 +189926,17 @@ const TCS_DESC = {
         [895, 222]
       ]
     ],
+    /* page 107: the line ends at the connector C (TCE151); typed from the connector end it was not read as reaching it */
     [
       'dIYS',
       [
-        [1124, 191],
+        [895, 191],
+        [1124, 191]
+      ]
+    ],
+    [
+      'dIYS',
+      [
         [895, 191],
         [895, 425],
         [916, 425]
@@ -191070,8 +191428,12 @@ const TCS_DESC = {
     [1601, 305],
     [2053, 305]
   ]);
+  /* page 109: the line ends at the connector Z1 (TCA541); typed from the connector end it was not read as reaching it */
   W('ffr5', [
-    [2054, 223],
+    [1601, 223],
+    [2054, 223]
+  ]);
+  W('ffr5', [
     [1601, 223],
     [1601, 542],
     [918, 542],
@@ -193062,6 +193424,15 @@ const TCS_DESC = {
   two(1784, 1296, 'CV(B) CRACK OPEN', 'SEQUENCE COMPLETE');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'TCE155',
+    /* pr: printed on page 112 beside each block; the drawing above keeps them as text */
+    pr: {
+      sg5: ['K:6.67%'],
+      sg6: ['K:100.0%'],
+      sg7: ['K:-5.0%'],
+      sg14: ['K:6.67%'],
+      sg15: ['K:100.0%'],
+      sg16: ['K:-5.0%']
+    },
     title: 'CV WARMING CONTROL(5)',
     page: 112,
     ctl: 'EHG+MD',
@@ -194075,6 +194446,13 @@ const TCS_DESC = {
 /* TCE166 ACCELERATION RELAY (331DM09784 page 116, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE166',
+  /* pr: printed on page 116 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgA003: ['K:55.7rpm/S'],
+    sgA004: ['K:3672.0rpm'],
+    sgA005: ['K:3780.0rpm'],
+    sgA006: ['K:3600.0rpm']
+  },
   title: 'ACCELERATION RELAY',
   page: 116,
   ctl: 'EHG+MD',
@@ -195392,6 +195770,11 @@ const TCS_DESC = {
    = the simulator generator load in simulation use, else the measured load. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE179',
+  /* pr: printed on page 126 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgC012: ['K:3595.0rpm'],
+    sgC015: ['K:3600.0rpm']
+  },
   title: 'RATED SPEED ADJUST',
   page: 126,
   ctl: 'EHG+MD',
@@ -196712,6 +197095,13 @@ const TCS_DESC = {
    the MW demand, CCS ACTUAL SET = GOV.SET. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE195',
+  /* pr: printed on page 135 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgC005: ['K:0.06'],
+    sgC008: ['K:-0.06'],
+    sgB017: ['K:-0.01%'],
+    sgB019: ['K:0.01%']
+  },
   title: 'GOVERNOR CONTROL(1)',
   page: 135,
   ctl: 'EHG+MD',
@@ -197262,6 +197652,10 @@ const TCS_DESC = {
    0.0), LIM A005 (0 .. 120 %), ADD 006 + 25.3 %. HLD 011 holds the flow demand when IP LIMITING comes on. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE202',
+  /* pr: printed on page 138 beside each block, FG *1 table; the drawing above keeps them as text */
+  pr: {
+    fgC001: ['X1:0.0', 'Y1:0', 'X2:10.0', 'Y2:0', 'X3:50.0', 'Y3:0', 'X4:80.0', 'Y4:0', 'X5:97.9', 'Y5:0', 'X6:112.5', 'Y6:100', 'X7:120.0', 'Y7:100', 'X8:125.0', 'Y8:100']
+  },
   title: 'IP UNLOADER',
   page: 138,
   ctl: 'EHG+MD',
@@ -197557,6 +197951,12 @@ const TCS_DESC = {
    GOV LIMITING = A044 (the demand below the governor demand, LLM CONTROL held 10 s (TP A043), not CHANGE OVER). */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE206',
+  /* pr: printed on page 140 beside each block, FG *1 table; the drawing above keeps them as text */
+  pr: {
+    sgA011: ['K:3600.0rpm'],
+    fgC003: ['X1:-648.0', 'Y1:-261.9', 'X2:-432.0', 'Y2:-174.6', 'X3:-216.0', 'Y3:-87.3', 'X4:-7.2', 'Y4:0', 'X5:0.0', 'Y5:0', 'X6:7.2', 'Y6:0', 'X7:216.0', 'Y7:87.3', 'X8:432.0', 'Y8:174.6'],
+    sg029: ['K:3600.0rpm']
+  },
   title: 'FLOW CONTROL(1)',
   page: 140,
   ctl: 'EHG+MD',
@@ -198543,6 +198943,13 @@ const TCS_DESC = {
    (AEH006A) and out as the POSITION DEMAND; the servo cards are drawn as on the drawing, they are no logic of the sheet. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE212',
+  /* pr: printed on page 144 beside each block; the drawing above keeps them as text */
+  pr: {
+    twA071: ['TW:3.0s'],
+    sg048: ['K:-5.0%'],
+    sgC022: ['K:0.56%/S'],
+    sgC025: ['K:0.56%/S']
+  },
   title: 'CV(A),(B) CONTROL',
   page: 144,
   ctl: 'EHG+MD',
@@ -199015,6 +199422,13 @@ const TCS_DESC = {
    sheet. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE214',
+  /* pr: printed on page 145 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgA006: ['K:-5.0%'],
+    sgC007: ['K:10.0%/S'],
+    sgC016: ['K:10.0%/S'],
+    sgC018: ['K:10.0%/S']
+  },
   title: 'ICV(A),(B) CONTROL',
   page: 145,
   ctl: 'EHG+MD',
@@ -201266,6 +201680,10 @@ const TCS_DESC = {
    simulated values (DSW 016, 021, 026); they go to the next sheets, the indications (TCE603) and the operator station lamps (CRT). */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE350',
+  /* pr: printed on page 157 beside each block; the drawing above keeps them as text */
+  pr: {
+    cmp029: ['HL:1.02kg/cm2g', 'LL:0.71kg/cm2g']
+  },
   title: 'TURNING GEAR(1)(TB-9)',
   page: 157,
   ctl: 'EHG+MD',
@@ -203316,6 +203734,12 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCE500',
+    /* pr: printed on page 173 beside each block, FG *1 ~ *3 tables (C040, C041 carry no mark and no table); the drawing above keeps them as text */
+    pr: {
+      fgA003: ['X1:0', 'Y1:0', 'X2:10', 'Y2:10', 'X3:15', 'Y3:15', 'X4:20', 'Y4:20', 'X5:30', 'Y5:30', 'X6:40', 'Y6:40', 'X7:50', 'Y7:50', 'X8:100', 'Y8:100'],
+      fgA011: ['X1:0', 'Y1:0', 'X2:10', 'Y2:14', 'X3:20', 'Y3:24', 'X4:30', 'Y4:34', 'X5:40', 'Y5:44', 'X6:50', 'Y6:54', 'X7:60', 'Y7:64', 'X8:140', 'Y8:140'],
+      fgA007: ['X1:0', 'Y1:0', 'X2:11', 'Y2:6', 'X3:15.6', 'Y3:9.9', 'X4:19.19', 'Y4:12', 'X5:30', 'Y5:16', 'X6:110', 'Y6:22', 'X7:130', 'Y7:24', 'X8:140', 'Y8:25']
+    },
     title: 'SIMULATOR(1)',
     page: 173,
     ctl: 'EHG+MD',
@@ -203829,7 +204253,9 @@ const TCS_DESC = {
   W('tpB014', [1215, 149], [1215, 820], [1267, 820], [1267, 894 - TOP]);
   W('tpB014', [1215, 437], [1267, 437], [1267, 490 - TOP]);
   W('tpB014', [1588, 149], [1588, 1139]);
-  W('tpB014', [1345, 1201 - TOP], [1345, 1139], [1633, 1139], [1633, 1201 - TOP]);
+  /* the SW of RL B038 and LG B016 (page 176: the wire drops to the top of both); each piece starts at the line so the reader ends it on the SW */
+  W('tpB014', [1345, 1139], [1345, 1201 - TOP]);
+  W('tpB014', [1345, 1139], [1633, 1139], [1633, 1201 - TOP]);
   [[449, 1641, 490], [641, 1639, 681], [841, 1637, 894]].forEach(([y, x, cy]) => W('tpB014', [1588, y], [x, y], [x, cy - TOP]));
   j.push([862, 149], [xAM, 149], [1215, 149], [1588, 149], [862, 617], [862, 1010], [795, 1265], [962, 1361], [1215, 437]);
   j.push([1588, 449], [1588, 641], [1588, 841], [1588, 1139]);
@@ -215818,6 +216244,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA500',
+    /* pr: printed on page 78 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl050: ['HL:155.0degC', 'LL:150.0degC']
+    },
     title: 'START-UP MODE SELECTION',
     page: 78,
     ctl: 'COMM+MD',
@@ -225459,6 +225889,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA531',
+    /* pr: printed on page 101 beside each block, FG *1 / *2 tables; the drawing above keeps them as text */
+    pr: {
+      fgA001: ['X1:0.00', 'Y1:184', 'X2:100.00', 'Y2:172', 'X3:200.00', 'Y3:161', 'X4:250.00', 'Y4:155', 'X5:300.00', 'Y5:149.50', 'X6:400.00', 'Y6:138.50', 'X7:500.00', 'Y7:127', 'X8:600.00', 'Y8:116'],
+      fgA009: ['X1:0.00', 'Y1:184', 'X2:100.00', 'Y2:172', 'X3:200.00', 'Y3:161', 'X4:250.00', 'Y4:155', 'X5:300.00', 'Y5:149.50', 'X6:400.00', 'Y6:138.50', 'X7:500.00', 'Y7:127', 'X8:600.00', 'Y8:116']
+    },
     title: 'CRITERIA CONDITION',
     page: 101,
     ctl: 'COMM+MD',
@@ -226911,6 +227346,18 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA536',
+    /* pr: printed on page 106 beside each block; the drawing above keeps them as text */
+    /* pa: PA2 003 / PA2 007 print no names at their two inputs; both inputs are one wire (ASW 039 / ASW 044, page 106), so they give
+       HL and LL of CPL A003 / A007 the same value, as the HL = LL printed under each CPL */
+    pa: { pa2003: ['HL', 'LL'], pa2007: ['HL', 'LL'] },
+    pr: {
+      sg037: ['K:105.3'],
+      sg038: ['K:76.5'],
+      sg041: ['K:57.0'],
+      sg042: ['K:345'],
+      sg043: ['K:323'],
+      sg046: ['K:304']
+    },
     title: 'CRITERIA CONDITION',
     page: 106,
     ctl: 'COMM+MD',
@@ -229138,6 +229585,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA548',
+    /* pr: printed on page 118 beside each block, FG *1 ~ *4 tables (A040, A042 carry no mark and no table); the drawing above keeps them as text */
+    pr: {
+      fgA005: ['X1:0.00', 'Y1:400', 'X2:111.40', 'Y2:400', 'X3:288.10', 'Y3:538', 'X4:538.00', 'Y4:538', 'X5:540.00', 'Y5:538', 'X6:550.00', 'Y6:538', 'X7:560.00', 'Y7:538', 'X8:600.00', 'Y8:538'],
+      fgA024: ['X1:0.00', 'Y1:330', 'X2:150.60', 'Y2:330', 'X3:365.70', 'Y3:538', 'X4:538.00', 'Y4:538', 'X5:540.00', 'Y5:538', 'X6:550.00', 'Y6:538', 'X7:560.00', 'Y7:538', 'X8:600.00', 'Y8:538'],
+      fgA012: ['X1:0.00', 'Y1:345', 'X2:293.20', 'Y2:345', 'X3:323.20', 'Y3:345', 'X4:355.00', 'Y4:370', 'X5:483.00', 'Y5:470', 'X6:531.90', 'Y6:508', 'X7:538.00', 'Y7:512.80', 'X8:538.01', 'Y8:538'],
+      fgA031: ['X1:0.00', 'Y1:290', 'X2:302.60', 'Y2:290', 'X3:352.60', 'Y3:290', 'X4:445.60', 'Y4:380', 'X5:538.00', 'Y5:469.20', 'X6:588.40', 'Y6:518', 'X7:588.41', 'Y7:538', 'X8:600.00', 'Y8:538']
+    },
     title: 'CRITERIA CONDITION',
     page: 118,
     ctl: 'COMM+MD',
@@ -233517,6 +233971,11 @@ const TCS_DESC = {
    (rub check, then the 1800 / 2700 / 3600 rpm heat soaks); the TW blocks hold each ATS command 3 s and are cleared by INITIAL. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCA582',
+  /* pr: printed on page 140 beside each block; the drawing above keeps them as text */
+  pr: {
+    twA008: ['TW:3.0s'],
+    twA009: ['TW:3.0s']
+  },
   title: 'RUB CHECK/ACC.CONTROL',
   page: 140,
   ctl: 'COMM+MD',
@@ -234669,6 +235128,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA585',
+    /* pr: printed on page 144 beside each block, FG *1 ~ *4 tables; the drawing above keeps them as text */
+    pr: {
+      fgA017: ['X1:0', 'Y1:88', 'X2:140', 'Y2:88', 'X3:150', 'Y3:58', 'X4:160', 'Y4:58', 'X5:170', 'Y5:30', 'X6:230', 'Y6:30', 'X7:240', 'Y7:0', 'X8:600', 'Y8:0'],
+      fgA019: ['X1:0', 'Y1:86', 'X2:140', 'Y2:86', 'X3:150', 'Y3:56', 'X4:170', 'Y4:27', 'X5:230', 'Y5:23', 'X6:410', 'Y6:23', 'X7:420', 'Y7:3', 'X8:600', 'Y8:3'],
+      fgA021: ['X1:0', 'Y1:86', 'X2:140', 'Y2:86', 'X3:150', 'Y3:56', 'X4:170', 'Y4:27', 'X5:230', 'Y5:23', 'X6:410', 'Y6:23', 'X7:420', 'Y7:3', 'X8:600', 'Y8:3'],
+      fgA023: ['X1:0', 'Y1:40', 'X2:220', 'Y2:40', 'X3:230', 'Y3:15', 'X4:410', 'Y4:15', 'X5:420', 'Y5:0', 'X6:500', 'Y6:0', 'X7:550', 'Y7:0', 'X8:600', 'Y8:0']
+    },
     title: 'HEAT SOAK TIME',
     page: 144,
     ctl: 'COMM+MD',
@@ -235350,6 +235816,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA586',
+    /* pr: printed on page 145 beside each block, FG *1 ~ *4 tables; the drawing above keeps them as text */
+    pr: {
+      fgA015: ['X1:0', 'Y1:155', 'X2:150', 'Y2:155', 'X3:160', 'Y3:95', 'X4:190', 'Y4:95', 'X5:200', 'Y5:35', 'X6:280', 'Y6:35', 'X7:290', 'Y7:0', 'X8:600', 'Y8:0'],
+      fgA017: ['X1:0', 'Y1:50', 'X2:150', 'Y2:50', 'X3:160', 'Y3:30', 'X4:190', 'Y4:30', 'X5:200', 'Y5:10', 'X6:280', 'Y6:10', 'X7:290', 'Y7:0', 'X8:600', 'Y8:0'],
+      fgA019: ['X1:0', 'Y1:100', 'X2:150', 'Y2:100', 'X3:160', 'Y3:65', 'X4:190', 'Y4:65', 'X5:200', 'Y5:25', 'X6:280', 'Y6:25', 'X7:290', 'Y7:0', 'X8:600', 'Y8:0'],
+      fgA021: ['X1:0', 'Y1:50', 'X2:280', 'Y2:50', 'X3:290', 'Y3:20', 'X4:395', 'Y4:20', 'X5:405', 'Y5:0', 'X6:500', 'Y6:0', 'X7:550', 'Y7:0', 'X8:600', 'Y8:0']
+    },
     title: 'HEAT SOAK TIME',
     page: 145,
     ctl: 'COMM+MD',
@@ -238075,6 +238548,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA634',
+    /* pr: printed on page 159 beside each block, FG *1 table; the drawing above keeps them as text */
+    pr: {
+      tpA005: ['TP:13800s'],
+      fgA007: ['X1:0.0', 'Y1:228', 'X2:95.0', 'Y2:150', 'X3:110.0', 'Y3:132', 'X4:125.0', 'Y4:105', 'X5:135.0', 'Y5:75', 'X6:140.0', 'Y6:57', 'X7:145.0', 'Y7:33', 'X8:150.0', 'Y8:0.1']
+    },
     title: 'HP TURBINE WARMING GROUP CONTROL (TE-1,2)',
     page: 159,
     ctl: 'COMM+MD',
@@ -238761,6 +239239,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA639',
+    /* pr: printed on page 163 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl007: ['HL:275.0degC', 'LL:270.0degC'],
+      cmp010: ['HL:200.0degC', 'LL:195.0degC']
+    },
     title: 'TURBINE GLAND SEAL GROUP CONTROL (TE-6,7)',
     page: 163,
     ctl: 'COMM+MD',
@@ -239240,6 +239723,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA685',
+    /* pr: printed on page 167 beside each block; the drawing above keeps them as text */
+    pr: {
+      cmp033: ['HL:7.0kg/cm2g', 'LL:6.0kg/cm2g']
+    },
     title: 'HP TURBINE WARMING VALVE (TC-20)',
     page: 167,
     ctl: 'COMM+MD',
@@ -239397,6 +239884,15 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA686',
+    /* pr: printed on page 168 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl007: ['HL:5.0barg', 'LL:4.0barg'],
+      flk009: ['T1:1.0s', 'T2:15.0s'],
+      cpl010: ['HL:41.0%', 'LL:40.0%'],
+      cmp013: ['HL:5.0barg', 'LL:4.0barg'],
+      flk015: ['T1:1.0s', 'T2:15.0s'],
+      cmp019: ['HL:5.0%', 'LL:4.0%']
+    },
     title: 'HP TURBINE WARMING VALVE (TC-20)',
     page: 168,
     ctl: 'COMM+MD',
@@ -239544,6 +240040,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA690',
+    /* pr: printed on page 169 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0s'],
+      tp012: ['TP:30.0s']
+    },
     title: 'COLD R/H STM NON-RETURN VLV(TC-19)',
     page: 169,
     ctl: 'COMM+MD',
@@ -239807,6 +240308,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA711',
+    /* pr: printed on page 171 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0s']
+    },
     title: 'NO.2 EXTRUCTION STEAM NON RETURN VALVE(TC-41)',
     page: 171,
     ctl: 'COMM+MD',
@@ -239974,6 +240479,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA712',
+    /* pr: printed on page 172 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0']
+    },
     title: 'NO.3 EXTRUCTION STEAM PRIMARY NON RETURN VALVE(TC-42)',
     page: 172,
     ctl: 'COMM+MD',
@@ -240139,6 +240648,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA713',
+    /* pr: printed on page 173 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0']
+    },
     title: 'NO.4 EXTRUCTION STEAM NON RETURN VALVE(TC-41)',
     page: 173,
     ctl: 'COMM+MD',
@@ -240305,6 +240818,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA714',
+    /* pr: printed on page 174 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0']
+    },
     title: 'NO.3 EXTRUCTION STEAM SECONDARY NON RETURN VALVE(TC-43)',
     page: 174,
     ctl: 'COMM+MD',
@@ -240470,6 +240987,10 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA715',
+    /* pr: printed on page 175 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0']
+    },
     title: 'NO.5 EXTRUCTION STEAM NON RETURN VALVE(TC-45)',
     page: 175,
     ctl: 'COMM+MD',
@@ -240753,6 +241274,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA738',
+    /* pr: printed on page 177 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp041: ['TP:3.0s'],
+      tp049: ['TP:1.0s']
+    },
     title: 'LP EXHAUST HOOD WATER SPLAY VALVE(TC-35)',
     page: 177,
     ctl: 'COMM+MD',
@@ -242119,6 +242645,14 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA754',
+    /* pr: printed on page 184 beside each block; the drawing above keeps them as text */
+    pr: {
+      sgA002: ['K:886.536'],
+      sgA003: ['K:689.178'],
+      sgA004: ['K:492.27'],
+      sgA005: ['K:295.362'],
+      sgA006: ['K:98.454']
+    },
     title: 'THERMAL STRESS(HP)',
     page: 184,
     ctl: 'COMM+MD',
@@ -242598,6 +243132,14 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA758',
+    /* pr: printed on page 188 beside each block; the drawing above keeps them as text */
+    pr: {
+      sgA002: ['K:940.164'],
+      sgA003: ['K:731.239'],
+      sgA004: ['K:522.314'],
+      sgA005: ['K:313.388'],
+      sgA006: ['K:104.463']
+    },
     title: 'THERMAL STRESS(IP)',
     page: 188,
     ctl: 'COMM+MD',
@@ -242707,6 +243249,11 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA760',
+    /* pr: printed on page 189 beside each block, the one FG table (BORE / LIMIT) of the sheet, for both FG; the drawing above keeps them as text */
+    pr: {
+      fgA009: ['X1:0.0', 'Y1:377', 'X2:20.0', 'Y2:377', 'X3:60.0', 'Y3:484', 'X4:550.0', 'Y4:340', 'X5:600.0', 'Y5:340', 'X6:610.0', 'Y6:340', 'X7:620.0', 'Y7:340', 'X8:630.0', 'Y8:340'],
+      fgA012: ['X1:0.0', 'Y1:377', 'X2:20.0', 'Y2:377', 'X3:60.0', 'Y3:484', 'X4:550.0', 'Y4:340', 'X5:600.0', 'Y5:340', 'X6:610.0', 'Y6:340', 'X7:620.0', 'Y7:340', 'X8:630.0', 'Y8:340']
+    },
     title: 'IP/HP THSC CHANGE(4)',
     page: 189,
     ctl: 'COMM+MD',
@@ -243409,6 +243956,21 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA767',
+    /* pr: printed on page 194 beside each block; the drawing above keeps them as text */
+    pr: {
+      cmpA002: ['HL:430.0', 'LL:428.0'],
+      cmpA007: ['HL:405.0', 'LL:403.0'],
+      cmpA011: ['HL:430.0', 'LL:428.0'],
+      cmpA017: ['HL:331.0', 'LL:329.0'],
+      cmpA020: ['HL:430.0', 'LL:428.0'],
+      cmpA024: ['HL:371.6', 'LL:369.6'],
+      cmpA026: ['HL:396.0', 'LL:394.0'],
+      cmpA030: ['HL:423.3', 'LL:421.3'],
+      cmpA034: ['HL:208.0', 'LL:206.0'],
+      cmpA036: ['HL:182.9', 'LL:180.9'],
+      cmpA040: ['HL:209.3', 'LL:207.3'],
+      cmpA043: ['HL:209.3', 'LL:207.3']
+    },
     title: 'THSC SPEED/LOAD HOLD',
     page: 194,
     ctl: 'COMM+MD',
@@ -244075,6 +244637,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA769',
+    /* pr: printed on page 197 beside each block, FG *1-4 table; the drawing above keeps them as text */
+    pr: {
+      fgA002: ['X1:0.0', 'Y1:1', 'X2:0.5', 'Y2:1', 'X3:0.95', 'Y3:1', 'X4:1.0', 'Y4:0', 'X5:2.0', 'Y5:0', 'X6:3.0', 'Y6:0', 'X7:4.0', 'Y7:0', 'X8:5.0', 'Y8:0'],
+      fgA008: ['X1:0.0', 'Y1:1', 'X2:0.5', 'Y2:1', 'X3:0.95', 'Y3:1', 'X4:1.0', 'Y4:0', 'X5:2.0', 'Y5:0', 'X6:3.0', 'Y6:0', 'X7:4.0', 'Y7:0', 'X8:5.0', 'Y8:0'],
+      fgA012: ['X1:0.0', 'Y1:1', 'X2:0.5', 'Y2:1', 'X3:0.95', 'Y3:1', 'X4:1.0', 'Y4:0', 'X5:2.0', 'Y5:0', 'X6:3.0', 'Y6:0', 'X7:4.0', 'Y7:0', 'X8:5.0', 'Y8:0'],
+      fgA015: ['X1:0.0', 'Y1:1', 'X2:0.5', 'Y2:1', 'X3:0.95', 'Y3:1', 'X4:1.0', 'Y4:0', 'X5:2.0', 'Y5:0', 'X6:3.0', 'Y6:0', 'X7:4.0', 'Y7:0', 'X8:5.0', 'Y8:0']
+    },
     title: 'THSC LIMIT',
     page: 197,
     ctl: 'COMM+MD',
@@ -244161,6 +244730,13 @@ const TCS_DESC = {
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA770',
+    /* pr: printed on page 198 beside each block, FG *1 ~ *4 tables; the drawing above keeps them as text */
+    pr: {
+      fgB003: ['X1:0', 'Y1:466', 'X2:8', 'Y2:454', 'X3:16', 'Y3:410', 'X4:22', 'Y4:406', 'X5:26', 'Y5:390', 'X6:50', 'Y6:446', 'X7:75', 'Y7:482', 'X8:102', 'Y8:502'],
+      fgB005: ['X1:0', 'Y1:466', 'X2:8', 'Y2:466', 'X3:16', 'Y3:466', 'X4:22', 'Y4:466', 'X5:26', 'Y5:466', 'X6:50', 'Y6:466', 'X7:75', 'Y7:466', 'X8:102', 'Y8:466'],
+      fgB009: ['X1:0', 'Y1:503', 'X2:8', 'Y2:497', 'X3:16', 'Y3:460', 'X4:22', 'Y4:458', 'X5:26', 'Y5:450', 'X6:37', 'Y6:462', 'X7:63', 'Y7:512', 'X8:109', 'Y8:563'],
+      fgB010: ['X1:0', 'Y1:503', 'X2:8', 'Y2:503', 'X3:16', 'Y3:503', 'X4:22', 'Y4:503', 'X5:26', 'Y5:503', 'X6:37', 'Y6:503', 'X7:63', 'Y7:503', 'X8:109', 'Y8:503']
+    },
     title: 'THSC SIMULATION',
     page: 198,
     ctl: 'COMM+MD',
@@ -244340,7 +244916,9 @@ const TCS_DESC = {
   W('tpB014', [1213, 147], [1213, 842], [1265, 842], [1265, 892 - TOP]);
   W('tpB014', [1213, 433], [1265, 433], [1265, 488 - TOP]);
   W('tpB014', [1585, 147], [1585, 1137]);
-  W('tpB014', [1347, 1202 - TOP], [1347, 1137], [xLG, 1137], [xLG, 1202 - TOP]);
+  /* the SW of RL B038 and LG B016 (page 200: the wire drops to the top of both); each piece starts at the line so the reader ends it on the SW */
+  W('tpB014', [1347, 1137], [1347, 1202 - TOP]);
+  W('tpB014', [1347, 1137], [xLG, 1137], [xLG, 1202 - TOP]);
   [443, 637, 838].forEach((y, i) => W('tpB014', [1585, y], [xLG, y], [xLG, [488, 680, 892][i] - TOP]));
   j.push([860, 147], [xAM, 147], [1213, 147], [1585, 147], [860, 616], [860, 1010], [796, 1265], [963, 1362], [1213, 433]);
   j.push([1585, 443], [1585, 637], [1585, 838], [1585, 1137]);
@@ -347190,7 +347768,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 7ab619e'));
+    row('Version', E('span', 'scsver', ver + ' · build 258a546'));
   }
   function openSet(near) {
     if (!set) {
@@ -369848,21 +370426,33 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ...['V-SW1016', 'V-SW1018', 'V-SW1020'].map((t, i) =>
           at(HX.HV(t), BX[i] - 2, 792, { id: 'hb' + i, rot: -90, lab: 'r' })
         ),
-        at(M('pump', 'P-0762A', 'Hypochlorite dosing pump A', [], { tag: 'P-0762A', wrap: 12 }), 80, 740, {
+        at(M('pump', 'P-0762A', 'Hypochlorite dosing pump A', [], { tag: 'P-0762A', wrap: 16 }), 80, 700, {
           id: 'ha',
           sc: 0.9,
           lab: 'r'
         }),
-        at(M('pump', 'P-0762B', 'Hypochlorite dosing pump B', [], { tag: 'P-0762B', wrap: 12 }), 80, 840, {
+        at(M('pump', 'P-0762B', 'Hypochlorite dosing pump B', [], { tag: 'P-0762B', wrap: 16 }), 80, 780, {
           id: 'hb',
           sc: 0.9,
           lab: 'r'
         }),
-        at(M('pump', 'P-0761A', 'Hypochlorite unloading pump', [], { tag: 'P-0761A', wrap: 12 }), 80, 940, {
+        at(M('pump', 'P-0761A', 'Hypochlorite unloading pump A', [], { tag: 'P-0761A', wrap: 16 }), 80, 860, {
           id: 'hu',
           sc: 0.9,
           lab: 'r'
-        })
+        }),
+        /* unloading pump B: STN105 running input MIR-P0761B (I/O list; local panel, no DCS command), not in hx-registry.js, so
+           its state is the input itself ('-----' until a link gives it a value) */
+        at(
+          E('pump', 'Hypochlorite unloading pump B', 'P-0761B', [], {
+            on: HX.hk('sw-hub', 'data-di="MIR-P0761B|RUNNING|STOPPED"'),
+            wrap: 16
+          }),
+          80,
+          940,
+          { id: 'hu2', sc: 0.9, lab: 'r' }
+        ),
+        at(HX.B('State', 'data-di="MIR-P0761B|RUNNING|STOPPED"', { w: 90 }), 300, 960, { id: 'hu2s' })
       ],
       pipes: [
         /* pool to the three pumps, the pumps into the header */
@@ -371612,6 +372202,297 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: XS[2] + 128, y: LPY + 26, s: 'Shell pressure', key: 'PT-HD1101', unit: K + ' abs', dp: 3 },
         { x: DAX, y: DAY + 74 * DAS - 18, s: 'Deaerator', cls: 'hx-name', anchor: 'middle' },
         { x: 880, y: 975, s: 'Primary valve: on to the next heater. Alternate valve: dump on high level.', cls: 'hx-note', anchor: 'middle' }
+      ]
+    }
+  });
+})();
+
+/* HX page in the REALISTIC look: industrial water, fire water tank and waste water pumps (lane 7, user 2026-11-25 "Kumpletuhin ang
+   HMI, nsa docs lahat ng system ... maliban sa wtp at coal handling at air compressors").
+   THE PICTURE: the two industrial and fire water tanks on the left, joined by the connecting motor valve; the two industrial water
+   pumps from tank A to the common header and its users; the fire fighting pumps on tank B; on the right the waste water sump with
+   its two pumps and the transformer area pit.
+   THE CONNECTIONS:
+   - K1AU3-PD-025 Rev D (industrial water system): tanks T-0714A / B, level LT-IW0714-A / -B and LS-IW0714-A / -B on the drawing;
+     the I/O list names them LT-IW0714 "industrial water tank level" (tank A), LT-IW0724 "fire water tank level" (tank B, the tank
+     of the fire fighting system, K1AU3-M0-159) and LS-IW0714 "industrial water tank level switch low"; connecting motor valve
+     MV-IW0391 (line IW-0-072, DITL-87: ZSO / ZSC / ZT-IW0391); pumps P-0715A / B with strainers STR-IW0001 / 0002 (DPT-IW0715-A /
+     -B), common header PT-IW0715 (DITL-111); users of the header (turbine building, boiler, ash, limestone, coal yard, sea water
+     pump station) as one line.
+   - Fire pumps P-0718 (diesel engine), P-0719 (motor), P-0720 (jockey): running states of the I/O list (DITL-87 reads P-0718 /
+     0719); the fire fighting system itself is not in the DCS.
+   - K1AU3-PD-040 Rev C (waste water collection): waste water sump T-0050 with pumps P-0058A / B (DITL-120) and level high high
+     LSHH-P0058, to the waste water buffer basin; transformer area pit with its submerge pump P-1127 and level high high
+     LSHH-P1127 (the I/O list has one pit, the drawing two pits per unit).
+   Left out: the filter, backwash and utility water pumps and the potable / plumbing water (water treatment, user exclusion);
+   hand valves, level gauges. Every state is a digital input of the I/O list (data-di): '-----' until a link gives it a value. */
+(function () {
+  const { V, E, L, page } = HX;
+  const B = HX.B;
+  const K = 'kg/cm²';
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  const di = (tag, on, off) => 'data-di="' + tag + '|' + on + '|' + off + '"';
+  const run = tag => HX.hk('iw-' + tag, di(tag, 'RUNNING', 'STOPPED'));
+  const W_M = 6,
+    W_S = 4;
+  /* places (the drawing is 1760 x 1000) */
+  const TX = 210,
+    TAY = 250,
+    TBY = 690 /* the two tanks */,
+    SX = 520 /* pump suction header */,
+    PX = 660,
+    PY = [250, 450] /* industrial water pumps */,
+    HX_ = 870 /* their common header */,
+    FX = [520, 720, 920],
+    FY = 860 /* fire pumps */,
+    WX = 1450,
+    WY = 570 /* waste water sump */,
+    WPY = 430 /* its pumps */,
+    PTX = 1330,
+    PTY = 880; /* transformer area pit */
+  const IW = 'h:iw-MIR-P0715A|h:iw-MIR-P0715B',
+    FR = ['iw-MIR-P0718', 'iw-MIR-P0719', 'iw-MIR-P0720'],
+    FIRE = FR.map(k => 'h:' + k).join('|');
+  const pump = (n, i) =>
+    at(
+      E('pump', 'Industrial water pump ' + n, 'P-0715' + n, [V('Strainer', 'DPT-IW0715-' + n, K, 2)], {
+        on: run('MIR-P0715' + n),
+        wrap: 14
+      }),
+      PX,
+      PY[i],
+      { id: 'p' + i, lab: 'b' }
+    );
+  const fire = (tag, name, i) =>
+    at(E('pump', name, tag, [], { on: run('MIR-' + tag.replace('-', '')), wrap: 12 }), FX[i], FY, {
+      id: 'f' + i,
+      lab: 'b'
+    });
+
+  page({
+    id: 'industrial-water',
+    group: 'Cooling and utilities',
+    title: 'Industrial and waste water',
+    about:
+      'The industrial and fire water tanks, the industrial water pumps and their header, the fire pumps, the waste water sump pumps and the transformer area pit. Connections: flow diagrams K1AU3-PD-025 Rev D and K1AU3-PD-040 Rev C; logic DITL-87, 111, 120.',
+    plan: {
+      look: 'real',
+      w: 1760,
+      h: 1000,
+      items: [
+        /* tanks */
+        at(
+          E('tank', 'Industrial and fire water tank A', 'T-0714A', [V('Level', 'LT-IW0714', 'm', 2)], {
+            id: 'ta',
+            wrap: 16
+          }),
+          TX,
+          TAY,
+          { id: 'ta', sc: 2, lab: 't' }
+        ),
+        at(B('Level low', di('LS-IW0714', 'LOW', 'NORMAL'), { w: 120 }), TX, TAY + 128, { id: 'tal' }),
+        at(
+          E('tank', 'Industrial and fire water tank B', 'T-0714B', [V('Level', 'LT-IW0724', 'm', 2)], {
+            id: 'tb',
+            wrap: 16
+          }),
+          TX,
+          TBY,
+          { id: 'tb', sc: 2, lab: 't' }
+        ),
+        at(B('Fire water level low', di('LS-IW0724', 'LOW', 'NORMAL'), { w: 160 }), TX, TBY + 128, { id: 'tbl' }),
+        /* the connecting motor valve between the tanks */
+        at(
+          E('valve', 'Tank connecting valve', 'MV-IW0391', [V('Position', 'ZT-IW0391', '%', 0)], {
+            kind: 'motor',
+            on: HX.hk('iw-mv0391', di('ZSO-IW0391', 'OPEN', 'NOT OPEN')),
+            wrap: 12
+          }),
+          360,
+          470,
+          { id: 'mv', rot: 90, lab: 'r' }
+        ),
+        at(B('Open', di('ZSO-IW0391', 'OPEN', 'NOT OPEN'), { w: 100 }), 290, 420, { id: 'mvo' }),
+        at(B('Closed', di('ZSC-IW0391', 'CLOSED', 'NOT CLOSED'), { w: 100 }), 290, 520, { id: 'mvc' }),
+        /* industrial water pumps */
+        pump('A', 0),
+        pump('B', 1),
+        ...['A', 'B'].flatMap((n, i) => [
+          at(B('Remote', di('MIL-P0715' + n, 'REMOTE', 'LOCAL'), { w: 130 }), PX + 135, PY[i] - 16, { id: 'pr' + i }),
+          at(B('Electric trouble', di('MIT-P0715' + n, 'TROUBLE', 'NORMAL'), { w: 130 }), PX + 135, PY[i] + 30, {
+            id: 'pt' + i
+          })
+        ]),
+        /* fire pumps on tank B */
+        fire('P-0718', 'Fire pump, diesel engine', 0),
+        fire('P-0719', 'Fire pump, motor', 1),
+        fire('P-0720', 'Jockey pump', 2),
+        /* waste water sump and pumps */
+        at(E('tank', 'Waste water sump', 'T-0050', [], { id: 'ws', w: 150, h: 70 }), WX, WY, {
+          id: 'ws',
+          sc: 1.5,
+          lab: 'b'
+        }),
+        at(B('Sump level high high', di('LSHH-P0058', 'HIGH HIGH', 'NORMAL'), { w: 180 }), WX + 210, WY, { id: 'wsh' }),
+        ...['A', 'B'].map((n, i) =>
+          at(
+            E('vpump', 'Waste water pump ' + n, 'P-0058' + n, [], { on: run('MIR-P0058' + n), wrap: 12 }),
+            WX - 70 + 140 * i,
+            WPY,
+            {
+              id: 'w' + i,
+              lab: 'b'
+            }
+          )
+        ),
+        ...['A', 'B'].map((n, i) =>
+          at(
+            B('Electric trouble', di('MIT-P0058' + n, 'TROUBLE', 'NORMAL'), { w: 130 }),
+            i ? WX + 210 : WX - 210,
+            WPY,
+            { id: 'wt' + i }
+          )
+        ),
+        /* transformer area pit */
+        at(E('tank', 'Transformer area pit', 'T-1127', [], { id: 'tp', w: 100, h: 70 }), PTX, PTY, {
+          id: 'tp',
+          sc: 1.3,
+          lab: 'l'
+        }),
+        at(E('vpump', 'Pit submerge pump', 'P-1127', [], { on: run('MIR-P1127'), wrap: 12 }), PTX + 200, PTY - 50, {
+          id: 'tpp',
+          lab: 'b'
+        }),
+        at(B('Pit level high high', di('LSHH-P1127', 'HIGH HIGH', 'NORMAL'), { w: 170 }), PTX, PTY + 80, { id: 'tph' }),
+        at(B('Electric trouble', di('MIT-P1127', 'TROUBLE', 'NORMAL'), { w: 140 }), PTX + 340, PTY - 50, { id: 'tpt' }),
+        at(L('makeup-cooling', 'Make-up and cooling water'), 1600, 60, { id: 'mul' }),
+        at(L('sea-water', 'Sea water'), 1600, 100, { id: 'swl' })
+      ],
+      pipes: [
+        /* tank A to the pump suction header, the pumps into the common header, the header to its users */
+        { med: 'water', w: W_M, pts: ['ta.r', [SX, TAY + 66]], flow: IW, arrow: false },
+        {
+          med: 'water',
+          w: W_M,
+          pts: [
+            [SX, PY[0]],
+            [SX, PY[1]]
+          ],
+          flow: IW,
+          arrow: false
+        },
+        ...['A', 'B'].flatMap((n, i) => [
+          { med: 'water', w: W_M, pts: [[SX, PY[i]], 'p' + i + '.s'], flow: 'h:iw-MIR-P0715' + n, arrow: false },
+          {
+            med: 'water',
+            w: W_M,
+            pts: ['p' + i + '.d', [PX - 2, PY[i] - 60], [HX_, PY[i] - 60]],
+            flow: 'h:iw-MIR-P0715' + n,
+            arrow: false
+          }
+        ]),
+        {
+          med: 'water',
+          w: W_M,
+          pts: [
+            [HX_, PY[0] - 60],
+            [HX_, PY[1] - 60]
+          ],
+          flow: IW,
+          arrow: false
+        },
+        {
+          med: 'water',
+          w: W_M,
+          pts: [
+            [HX_, 300],
+            [1080, 300]
+          ],
+          flow: IW,
+          to: 'plant users'
+        },
+        /* tank A to tank B through the connecting valve */
+        { med: 'water', w: W_S, pts: [[360, TAY + 66], 'mv.l'], flow: 'h:iw-mv0391', arrow: false },
+        { med: 'water', w: W_S, pts: ['mv.r', [360, TBY + 66], 'tb.r'], flow: 'h:iw-mv0391' },
+        /* tank B to the fire pumps (suction header under them), their discharge header to the fire fighting system */
+        {
+          med: 'water',
+          w: W_M,
+          pts: ['tb.l', [100, TBY + 66], [100, 970], [FX[2] - 60, 970]],
+          flow: FIRE,
+          arrow: false
+        },
+        ...[0, 1, 2].map(i => ({
+          med: 'water',
+          w: W_S,
+          pts: [[FX[i] - 60, 970], [FX[i] - 60, FY], 'f' + i + '.s'],
+          flow: 'h:' + FR[i],
+          arrow: false
+        })),
+        ...[0, 1, 2].map(i => ({
+          med: 'water',
+          w: W_S,
+          pts: ['f' + i + '.d', [FX[i] - 2, 790]],
+          flow: 'h:' + FR[i],
+          arrow: false
+        })),
+        {
+          med: 'water',
+          w: W_M,
+          pts: [
+            [FX[0] - 2, 790],
+            [1100, 790]
+          ],
+          to: 'fire fighting system',
+          flow: FIRE
+        },
+        /* waste water: sump pumps (suction legs in the sump) to the buffer basin, pit pump to the ditch */
+        ...[0, 1].map(i => ({
+          med: 'drain',
+          w: W_S,
+          pts: [[WX - 92 + 140 * i, WY + 10], 'w' + i + '.s'],
+          flow: 'h:iw-MIR-P0058' + 'AB'[i],
+          arrow: false
+        })),
+        ...[0, 1].map(i => ({
+          med: 'drain',
+          w: W_S,
+          pts: ['w' + i + '.d', [WX - 30 + 140 * i, WPY - 11], [WX - 30 + 140 * i, 360]],
+          flow: 'h:iw-MIR-P0058' + 'AB'[i],
+          arrow: false
+        })),
+        {
+          med: 'drain',
+          w: W_S,
+          pts: [
+            [WX - 30, 360],
+            [1680, 360]
+          ],
+          to: 'buffer basin',
+          flow: 'h:iw-MIR-P0058A|h:iw-MIR-P0058B'
+        },
+        {
+          med: 'drain',
+          w: W_S,
+          pts: [[PTX + 30, PTY + 10], [PTX + 30, PTY - 38], 'tpp.s'],
+          flow: 'h:iw-MIR-P1127',
+          arrow: false
+        },
+        {
+          med: 'drain',
+          w: W_S,
+          pts: ['tpp.d', [PTX + 222, PTY - 110], [1680, PTY - 110]],
+          to: 'ditch',
+          flow: 'h:iw-MIR-P1127'
+        }
+      ],
+      taps: [
+        { x: HX_, y: 240, side: 'r', label: 'Header pressure', key: 'PT-IW0715', unit: K, dp: 2, tag: 'PT-IW0715' }
+      ],
+      texts: [
+        { x: WX, y: WY + 120, s: 'In: turbine and boiler house drains' },
+        { x: 760, y: 760, s: 'Fire pumps: running states only (fire fighting system K1AU3-M0-159)' },
+        { x: 1180, y: 330, s: 'Turbine building, boiler, ash, limestone, coal yard, sea water pumps' }
       ]
     }
   });
