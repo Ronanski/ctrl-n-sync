@@ -4,6 +4,8 @@
 //  - Cold: the turbine cannot be rolled without the condenser vacuum (no seawater / condensate pump); after SWP + CEP start and
 //    the vacuum is up (15 min) the roll is accepted
 //  - At 150 MW: all seawater pumps stopped -> LOW VACUUM -> TCS turbine trip (ABC-050 I.0400 = 1), the MW goes to 0
+//  - 1.0.0-beta.358: both cases start from the app starting points (Cold / Load 150 MW buttons) in the one world, with the real presses
+//    (field REMOTE selectors, CRT START / STOP / OPEN push buttons, TCS buttons)
 // Usage: node tests/regress/plant_utilities.js [html]
 const fs = require('fs');
 const { open } = require('./lib.js');
@@ -59,7 +61,12 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     };
     await wrun(10);
     const r0 = AN.turbine('roll');
-    const st = [LS_OP.dmotor('M.3354', true), LS_OP.dmotor('M.3350', true)];
+    /* the field operator: SWP-B and CEP-A LOCAL / REMOTE selectors to REMOTE (DITL-29A #B, DITL-61A), then START from the CRT */
+    const st = [LS_OP.dremote('M.3354'), LS_OP.dremote('M.3350')];
+    await wrun(2);
+    st.push(LS_OP.dmotor('M.3354', true), LS_OP.dmotor('M.3350', true));
+    await wrun(30);
+    st.push(LS_OP.mst('M.3354') === 'RUN', LS_OP.mst('M.3350') === 'RUN');
     await wrun(60);
     const r1 = AN.turbine('roll');
     await wrun(1200);
@@ -70,11 +77,14 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     AN.unit.Pd = 20;
     AN.unit.Pms = 20;
     const rr = ['lop', 'eh', 'vex', 'tg', 'aux'].map(c => AN.turbine(c));
-    /* MV-AS1391 OPEN from the CRT: REMOTE at the field (DITL-51 row 12 I.0203), then the OPEN P.B. row (row 5, M.0360) */
+    /* MV-AS1391 OPEN from the CRT: REMOTE at the field (DITL-51 row 12 I.0203, LS_OP.fieldRow), then the OPEN P.B. row (row 5, M.0360) */
     const s51 = S.sheets.find(x => x.name.endsWith('DITL-51'));
     let open51 = -1;
     for (let r = 0; r < 30 && s51 && open51 < 0; r++) if (/MOV OPEN PB$/.test(String((DUI.rowInfo(s51, r) || {}).svc || ''))) open51 = r;
-    LS_OP.dremote('DITL-51');
+    let rem51 = -1;
+    for (let r = 0; r < 30 && s51 && rem51 < 0; r++) if (/MOV REMOTE$/.test(String((DUI.rowInfo(s51, r) || {}).svc || ''))) rem51 = r;
+    /* the field operator: the LOCAL / REMOTE selector of the MOV to REMOTE (the field panel row) */
+    if (!(rem51 >= 0 && LS_OP.fieldRow('DITL-51', rem51, true, 'MV-AS1391 REMOTE'))) rr.push('MV-AS1391 REMOTE refused (row ' + rem51 + ')');
     await wrun(2);
     const p51 = open51 >= 0 && WORLD.dpress(s51.name, open51);
     if (!p51) rr.push('MV-AS1391 OPEN press refused (row ' + open51 + ')');
@@ -82,13 +92,34 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     if (pa) rr.push('PIC-AS1004 AUTO: ' + pa);
     await wrun(600); /* aux header 10.5 kg/cm2, 2 min time constant: > 10 after about 6 min */
     const as0 = [+AN.unit.asP, +AN.unit.Pms];
-    rr.push(AN.turbine('gland'), AN.turbine('vacuum'));
+    rr.push(AN.turbine('gland'));
+    await wrun(120); /* the gland seal is in service once its header holds >= 0.10 kg/cm2 G (ATS 1.10, tcs.js) */
+    /* the field operator puts the vacuum breaker and ejector steam MOVs (DITL-54 / 55 / 56) in REMOTE before the vacuum up from the CRT */
+    for (const d of ['DITL-54', 'DITL-55', 'DITL-56']) {
+      const sd = S.sheets.find(x => x.name.endsWith(d));
+      let rm = -1;
+      for (let r = 0; r < 30 && sd && rm < 0; r++) if (/ REMOTE( SELECTED)?$/.test(String((DUI.rowInfo(sd, r) || {}).svc || ''))) rm = r;
+      if (!(rm >= 0 && LS_OP.fieldRow(d, rm, true, d + ' MOV REMOTE'))) rr.push(d + ' REMOTE refused (row ' + rm + ')');
+    }
+    await wrun(2);
+    rr.push(AN.turbine('vacuum'));
+    /* the start-up ejector MOV (DITL-54) opens only with the vacuum breaker FULLY CLOSED (row 6 I.0216); the breaker strokes after the
+       vacuum up press, so the operator presses the start-up ejector OPEN (row 5, M.0440) again once the breaker is closed */
+    await wrun(60);
+    {
+      const s54 = S.sheets.find(x => x.name.endsWith('DITL-54'));
+      let o54 = -1;
+      for (let r = 0; r < 30 && s54 && o54 < 0; r++) if (/MOV OPEN PB$/.test(String((DUI.rowInfo(s54, r) || {}).svc || ''))) o54 = r;
+      if (!(o54 >= 0 && WORLD.dpress(s54.name, o54))) rr.push('start-up ejector OPEN press refused (row ' + o54 + ')');
+    }
     await wrun(1200);
     const r2 = AN.turbine('roll');
-    return { r0, r1, r2, st, rr: rr.filter(Boolean), cur: AN.tcs().cur, vac: AN.unit.vac, vNoAux, as0 };
+    const rv = (d, r) => { const sd = S.sheets.find(x => x.name.endsWith(d)); return sd ? DUI.rowVal(sd, r) : '-'; };
+    const dg = 'SWP-B ' + LS_OP.mst('M.3354') + ', CEP-A ' + LS_OP.mst('M.3350') + ', VB closed ' + rv('DITL-54', 5) + ', SU ej open ' + rv('DITL-54', 7) + ', SJAE open ' + rv('DITL-55', 7) + ', cdP ' + (+AN.unit.cdP).toFixed(3) + ' kg/cm2 a';
+    return { dg, r0, r1, r2, st, rr: rr.filter(Boolean), cur: AN.tcs().cur, vac: AN.unit.vac, vNoAux, as0 };
   });
   ck(/VACUUM/i.test(a.r0) && /VACUUM/i.test(a.r1) && a.vNoAux < 0.1 && a.st.every(Boolean) && !a.rr.length && a.r2 === '' && a.cur === 0,
-    'Cold: roll with no SWP / CEP refused ("' + a.r0.slice(0, 60) + '"), SWP + CEP with no aux steam: vacuum ' + Math.round(100 * a.vNoAux) + ' % after 20 min; with aux steam (drum 20 kg/cm2), lube oil, turning gear, gland and vacuum up' + (a.rr.length ? ' (REFUSED: ' + a.rr.join(' | ') + ')' : '') + ' [aux header ' + a.as0.map(x => x.toFixed(1)).join(' kg/cm2, main steam ') + ' kg/cm2]: vacuum ' + Math.round(100 * a.vac) + ' %, roll "' + (a.r2 || 'accepted') + '", ATS step ' + a.cur + ' (0 = HP TURBINE WARMING)');
+    'Cold: roll with no SWP / CEP refused ("' + a.r0.slice(0, 60) + '") {' + a.dg + '}, SWP + CEP with no aux steam: vacuum ' + Math.round(100 * a.vNoAux) + ' % after 20 min (remote / start / running ' + a.st.join(' ') + '); with aux steam (drum 20 kg/cm2), lube oil, turning gear, gland and vacuum up' + (a.rr.length ? ' (REFUSED: ' + a.rr.join(' | ') + ')' : '') + ' [aux header ' + a.as0.map(x => x.toFixed(1)).join(' kg/cm2, main steam ') + ' kg/cm2]: vacuum ' + Math.round(100 * a.vac) + ' %, roll "' + (a.r2 || 'accepted') + '", ATS step ' + a.cur + ' (0 = HP TURBINE WARMING)');
   const b = await page.evaluate(async () => {
     /* 1.0.0-beta.358 (JENNIE, Lisa Part 2 W4 / T1): the 150 MW start of the app (st150, the Load 150 MW button), not the old
        snapshot path AN.plantLoad150 (it read 39 MW after 30 s) */
