@@ -27,6 +27,7 @@ Pinagmulan: ang project instructions ng user, ang Full Audit 3 rules draft (2026
 
 ## 3. Ang app
 
+0A. **Ayos ng trabaho: content muna (user 2026-11-25, "Kumpletuhin muna lahat yan", permanente).** Una, kumpletuhin ang lahat ng logic. Ikalawa, ikonek ang bawat address sa bawat signal. Ikatlo, kumpletuhin ang HMI: bawat sistema at equipment na nasa docs, may controls kung saan dapat, at naka-link sa permissive, logic at interlock sa parehong address para iisang galaw ang logic at HMI. Hindi kasama ang WTP, coal handling at air compressors, dahil walang hanggan ang supply ng demin, coal, compressed air, sand at limestone. Pagkatapos lang nito ang plant model. Lahat ay 100 % tama ayon sa plant documents. Walang tuning ng model habang may kulang pang content. Ang hati ng trabaho ay nasa `docs/audit/lane-plan-content-first-2026-11-25.md`.
 1. Iisang planta, logic, HMI, control system, physics model, operator at disenyo. Walang dobleng daan, walang script na pumapalit sa kontrol, walang patch o pansamantalang code, walang daya.
 2. Walang training, walang guided start-up, walang Instructor, walang scoring. Planta at operator lang.
 3. Gumagana sa physics at thermodynamics. Ang SOP ay gabay lang ng team; wala ito sa app at hindi ito panukat.

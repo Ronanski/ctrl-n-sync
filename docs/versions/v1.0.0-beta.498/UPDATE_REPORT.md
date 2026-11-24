@@ -1,6 +1,6 @@
-# LMYP OTS 1.0.0-beta.478 (QA : SAORI, lane 8, 2026-11-25)
+# LMYP OTS 1.0.0-beta.498 (QA : SAORI, lane 8, 2026-11-25)
 
-Sumunod sa beta.476. Test lang; walang binago sa app, sa plant model, sa logic o sa HMI.
+Sumunod sa beta.494. Test lang; walang binago sa app, sa plant model, sa logic o sa HMI.
 
 ## Ano ang bago
 

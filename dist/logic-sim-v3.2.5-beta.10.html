@@ -502,8 +502,302 @@ input[type=file]{display:none}
 <div id="mid"><div id="side"><div id="sidehd"><button id="sidetg" title="Hide / show the sheet list">◀</button><b id="sidect">Sheets</b></div><div id="sidevt"></div><div id="sidebody"><input id="sidefl" placeholder="Search sheet or content (56, MOV, PUMP...)" autocomplete="off"><div id="sidelist"></div></div></div><div id="cv"><svg id="svg"></svg></div></div>
 <div id="st">View: the drawing as read from the DXF · Run: click an input (switch icon) to turn it ON / OFF, PB = press and hold · Wheel = zoom · Drag = pan</div>
 <div id="ed" hidden><div id="edt"></div><textarea id="eta" rows="3"></textarea><small>Enter = save · Shift+Enter = new line · Esc = cancel</small></div><div id="wp" hidden><b>Wire fix</b> &nbsp;<label><input type="checkbox" id="wnc" checked> Net colors</label><div id="wsum"></div><div id="wlist"></div><div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap"><button id="wsave">Save fixes</button><label class="b">Load fixes<input id="wload" type="file" accept=".json"></label><button id="bfix">Clear all</button></div><div style="color:var(--dim);margin-top:6px">Same color = same net. White dot = junction. Click wire, then wire = join. Click gate, then wire = attach pin. Click a cyan × marker (or ✕ above) = delete that fix.</div></div><div id="tp" hidden></div><div id="toast" hidden></div>
-<script id="lanedatajs">/* ---- lane data (src/world/bind, src/world/inst, src/data/alarms) ---- */
+<script id="lanedatajs">/* ---- lane data (src/world/bind, src/world/inst, src/data/alarms, src/world/field) ---- */
 window.LANE_BIND=[];window.LANE_INST=[];window.LANE_ALARMS=[];
+window.FIELD={rows:[],add:function(lane,rows){for(const r of rows||[])this.rows.push(Object.assign({lane:lane},r))}};
+/* ---- src/world/field/boiler.js ---- */
+(function (lane, FIELD) {
+/* Lane 3 DCS LINKS BOILER (KIRARA), field signals of the boiler side (src/world/field/README.md). Each row reads engine state only and
+   writes the I/O point of the I/O list (src/data/ades.txt, station / address / tag). rel = how the value follows from the state,
+   src = the drawing or list row. Worklist and the paper derivation: lane 3 worklist 2026-11-25 sections 7 and 10, field signals paper rev 1.
+   End-of-travel rule of the app's motor valves (src/digital/parts/03b-sim.js mvForced / fld: ZSO = position >= 100 %, ZSC = position
+   <= 0 %): the same rule for every limit switch below, no new threshold. */
+const num = v => (v == null || !isFinite(+v) ? NaN : +v);
+const closed = v => (isFinite(v) ? v <= 0 : NaN);
+const opened = v => (isFinite(v) ? v >= 100 : NaN);
+const rows = [];
+
+/* 1. Sootblower steam supply motor valve MV-SB1001 (DITL-80S, STN102). DITL-80S rows 6 / 22 read the full open contact ZSO I.024A from
+   the valve; the full closed contact and the position transmitter are on no logic row (HMI only) and are the same valve state. */
+rows.push(
+  { stn: 2, di: 1, tag: 'ZSC-SB1001', v: (U, X) => closed(num(X.ditlPos('DITL-80S', 0))), rel: 'MV-SB1001 at 0 % travel (closed limit)',
+    src: 'IO list STN102 I.024B ZSC-SB1001; DITL-80S MV-SB1001; MOV rule 03b-sim.js' },
+  { stn: 2, ai: 'AI0770', tag: 'ZT-SB1001', v: (U, X) => num(X.ditlPos('DITL-80S', 0)), rel: 'MV-SB1001 position 0 ~ 100 %',
+    src: 'IO list STN102 AI0770 ZT-SB1001; DITL-80S MV-SB1001' }
+);
+
+/* 2. Furnace temperature control dampers FA1005 ~ FA1018 (STN103): the open / closed limit switches of each motor damper. The damper
+   position is its own position transmitter ZT-FA10xx (AI0544 ~ AI0566, on ABC-015 / 016 following MCV-FA10xx). */
+[
+  [1005, 'I.0330', 'I.0331', 'AI0544'], [1006, 'I.0335', 'I.0336', 'AI0545'], [1007, 'I.033A', 'I.033B', 'AI0546'],
+  [1008, 'I.0720', 'I.0721', 'AI0547'], [1009, 'I.0725', 'I.0726', 'AI0548'], [1010, 'I.072A', 'I.072B', 'AI0549'],
+  [1011, 'I.0730', 'I.0731', 'AI0550'], [1012, 'I.0735', 'I.0736', 'AI0560'], [1013, 'I.073A', 'I.073B', 'AI0561'],
+  [1014, 'I.0800', 'I.0801', 'AI0562'], [1015, 'I.0805', 'I.0806', 'AI0563'], [1016, 'I.080A', 'I.080B', 'AI0564'],
+  [1017, 'I.0810', 'I.0811', 'AI0565'], [1018, 'I.0815', 'I.0816', 'AI0566']
+].forEach(([n, o, c, z]) => {
+  const zt = X => num(X.ai('3|' + z));
+  rows.push(
+    { stn: 3, di: 1, tag: 'ZSO-FA' + n, v: (U, X) => opened(zt(X)), rel: 'ZT-FA' + n + ' at 100 % (open limit)',
+      src: 'IO list STN103 ' + o + ' ZSO-FA' + n + '; ZT-FA' + n + ' STN103 ' + z + ' (ABC-015 / 016); MOV rule' },
+    { stn: 3, di: 1, tag: 'ZSC-FA' + n, v: (U, X) => closed(zt(X)), rel: 'ZT-FA' + n + ' at 0 % (closed limit)',
+      src: 'IO list STN103 ' + c + ' ZSC-FA' + n + '; ZT-FA' + n + ' STN103 ' + z + ' (ABC-015 / 016); MOV rule' }
+  );
+});
+
+/* 3. Burner hot secondary air dampers FA1043-A ~ D: the closed limit (STN104) of the damper whose position transmitter is on STN101
+   (ABC-003A ~ D). The open limit ZSO-FA1043-x is linked already (DITL-16). */
+[['A', 'I.0017', 'AI0291'], ['B', 'I.0337', 'AI0437'], ['C', 'I.0657', 'AI0582'], ['D', 'I.0977', 'AI0629']].forEach(([x, c, z]) =>
+  rows.push({ stn: 4, di: 1, tag: 'ZSC-FA1043-' + x, v: (U, X) => closed(num(X.ai('1|' + z))), rel: 'ZT-FA1043-' + x + ' at 0 % (closed limit)',
+    src: 'IO list STN104 ' + c + ' ZSC-FA1043-' + x + '; ZT-FA1043-' + x + ' STN101 ' + z + '; MOV rule' })
+);
+
+/* 4. Biasing damper air buffer tanks PT-IA1064-A / B (STN104): on P&ID PD-023 sheet 6/6 (over-all instrument list), filled from the
+   instrument air to unit 1 (IA1706, unit.js AN_AIR U.iaPU). The tank only fills the damper actuators: no flow through its inlet = no
+   friction drop, so the tank is at the header pressure. */
+rows.push(
+  { stn: 4, ai: 'AI0438', tag: 'PT-IA1064-A', v: U => num(U.iaPU), rel: 'no flow out of the tank: tank pressure = unit 1 instrument air header',
+    src: 'IO list STN104 AI0438 PT-IA1064-A; P&ID PD-023 6/6; unit.js AN_AIR iaPU' },
+  { stn: 4, ai: 'AI0470', tag: 'PT-IA1064-B', v: U => num(U.iaPU), rel: 'no flow out of the tank: tank pressure = unit 1 instrument air header',
+    src: 'IO list STN104 AI0470 PT-IA1064-B; P&ID PD-023 6/6; unit.js AN_AIR iaPU' }
+);
+
+/* 5. Cyclone-A inlet gas TT-FG1092-A (STN101): the cyclone inlet duct is the furnace outlet (P&ID PD-051), so the gas is the furnace exit
+   gas of the bed model (unit.js U.tgF), which already takes the duct refractory into account. */
+rows.push({ stn: 1, ai: 'AI0659', tag: 'TT-FG1092-A', v: U => num(U.tgF), rel: 'furnace exit gas = gas into cyclone A',
+  src: 'IO list STN101 AI0659 TT-FG1092-A; P&ID PD-051; unit.js U.tgF' });
+
+/* 6. Backpass gas thermocouples (STN104), P&ID K1AU3-PD-051 "Combustion air / flue gas system" (RA page 42), on the gas leaving each bank
+   of the heat exchanger chain (hx.js U.hxO.gBank). The gas meets the LAST index first: RH pass rh[3] -> rh[0] -> No.2 eco R; SH pass
+   fsh[2] -> fsh[0] -> No.3 eco -> No.2 eco S. A thermocouple between two banks reads the gas leaving the bank before it. TT-FG1109
+   (between ECO #3 upper and lower; hx.js runs ECO #3 as one bank) = gBank.e3m, the same bank solution at half its surface. */
+const gb = (U, k, i) => {
+  const g = U.hxO && U.hxO.gBank;
+  return num(g && (i == null ? g[k] : g[k] && g[k][i]));
+};
+[
+  ['TT-FG1100', 'AI0448', 'wl', null, 'above RH bank 1: gas leaving the backpass walls'],
+  ['TT-FG1102', 'AI0449', 'rh', 3, 'between RH banks 1 and 2: gas leaving RH bank 1'],
+  ['TT-FG1104', 'AI0464', 'rh', 2, 'between RH banks 2 and 3: gas leaving RH bank 2'],
+  ['TT-FG1106', 'AI0465', 'rh', 1, 'between RH banks 3 and 4: gas leaving RH bank 3'],
+  ['TT-FG1108', 'AI0450', 'rh', 0, 'between the last RH bank and ECO #2R: gas leaving RH bank 4'],
+  ['TT-FG1110', 'AI0466', 'e2r', null, 'ECO #2R outlet'],
+  ['TT-FG1101', 'AI0453', 'wl', null, 'above finishing S/H 1: gas leaving the backpass walls'],
+  ['TT-FG1103', 'AI0454', 'fsh', 2, 'between finishing S/H 1 and 2: gas leaving S/H 1'],
+  ['TT-FG1105', 'AI0469', 'fsh', 1, 'between finishing S/H 2 and 3: gas leaving S/H 2'],
+  ['TT-FG1107', 'AI0452', 'fsh', 0, 'between finishing S/H 3 and ECO #3 upper: gas leaving S/H 3'],
+  ['TT-FG1109', 'AI0468', 'e3m', null, 'between ECO #3 upper and lower: gas leaving the upper half of ECO #3'],
+  ['TT-FG1111', 'AI0451', 'e3', null, 'between ECO #3 lower and ECO #2S: gas leaving ECO #3'],
+  ['TT-FG1113', 'AI0467', 'e2s', null, 'ECO #2S outlet']
+].forEach(([t, a, k, i, w]) =>
+  rows.push({ stn: 4, ai: a, tag: t, v: U => gb(U, k, i), rel: w, src: 'IO list STN104 ' + a + ' ' + t + '; P&ID PD-051 (RA p 42); hx.js gBank.' + k + (i == null ? '' : '[' + i + ']') })
+);
+
+FIELD.add(lane, rows);
+
+})("boiler", window.FIELD);
+/* ---- src/world/field/bop.js ---- */
+(function (lane, FIELD) {
+/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.494. Field signals of the balance of plant (src/world/field/README.md).
+   Each row reads engine state that already exists (read only) and names its physical source. No constant stands for a process value,
+   no fitted number (RULES 3.12). Paper with the physical source of every value (QA : SAORI pass 2026-11-25):
+   lanes/bop/lane4-field-values-paper-2026-11-25.md. A value that is not a number writes nothing (the point keeps its last value).
+   Open, not filled here (needs model or a PC document): CEP motor temperatures, chemical tank levels, pit / leak switches, PAF oil panel,
+   industrial water strainer DP. */
+const G = typeof window !== 'undefined' ? window : globalThis;
+const fin = x => (typeof x === 'number' && isFinite(x) ? x : NaN);
+/* the controller MV on its ABC sheet (the valve command), read the way unit.js reads it (anFwTagStep ctl / mvOf: AN.hmiCtrls out net) */
+const C = {};
+const mv = (sheet, tag) => {
+  const A = G.AN;
+  if (!A || !A.sheets) return NaN;
+  let c = C[tag];
+  if (!c) {
+    const x = A.sheets.find(y => y.name === sheet),
+      q = x && x.S && A.hmiCtrls ? (A.hmiCtrls(x.S) || []).find(k => k.tag === tag) : null;
+    if (!q || q.out == null) return NaN;
+    c = C[tag] = { S: x.S, n: q.out };
+  }
+  return Math.max(0, Math.min(100, +c.S.rt.v[c.n] || 0));
+};
+/* the opening that reaches the process: the positioner drives the stem to the command, the airlock holds it when the instrument air is
+   lost (X.av = unit.js anAv, valve package K1AU3-E2-0-123 R1). A valve outside the airlock list follows its command */
+const open = (X, sheet, tag) => {
+  const m = mv(sheet, tag);
+  return isFinite(m) ? fin(X.av(tag, m)) : NaN;
+};
+/* the heater drain valves as the drain model drives them (unit.js AN_HD): primary = the split-range F(X) of the drawing (ABC-035 ~ 039,
+   LN38 ...) on the primary MV, alternate = its own station MV; both through the airlock */
+const hdv = (U, X, k, j) => {
+  const h = (U.hd || []).find(x => x.k === k);
+  if (!h) return NaN;
+  const o = j === 1 ? h.v1 : h.v2;
+  if (!o || !o.S) return NaN;
+  let x = +o.S.rt.v[o.n] || 0;
+  if (j === 1 && h.fx && h.fx.p) {
+    const pin = (h.fx.p.pins || []).find(p => p.role === 'out');
+    if (pin && pin.n != null) x = +o.S.rt.v[pin.n] || 0;
+  }
+  return fin(X.av(j === 1 ? h.c1 : h.c2, Math.max(0, Math.min(100, x))));
+};
+const R = [];
+const io = s => 'I/O list STN10' + s;
+/* 1. control valve position ZT = the opening that reaches the process */
+for (const [stn, ai, tag, sheet, ctl, why] of [
+  [1, 'AI0180', 'ZT-FW1130-1', 'ABC-010', 'FICFW1007', 'FCV-FW1130-1, valve package item 27'],
+  [1, 'AI0195', 'ZT-FW1130-2', 'ABC-010', 'LICBR1001B', 'FCV-FW1130-2 start-up valve, item 28'],
+  [2, 'AI0694', 'ZT-FW1060', 'ABC-051', 'TICMS1022', 'TCV-FW1060 HP bypass spray'],
+  [2, 'AI0704', 'ZT-FW1150', 'ABC-019', 'TICHR1002', 'TCV-FW1150 reheater spray'],
+  [2, 'AI0390', 'ZT-CD1115', 'ABC-052', 'TICHR1012', 'TCV-CD1115 LP bypass spray (the same opening as the flow FT-CD1115 of unit.js)'],
+  [2, 'AI0688', 'ZT-CD1124', 'ABC-033', 'TICAS1001', 'TCV-CD1124 aux steam spray'],
+  [2, 'AI0689', 'ZT-CD1126', 'ABC-034', 'TICAS1017', 'TCV-CD1126 gland steam spray'],
+  [2, 'AI0389', 'ZT-CD1121', 'ABC-032', 'FICCD1121', 'FCV-CD1121, item 11'],
+  [2, 'AI0690', 'ZT-CD1120', 'ABC-032', 'FICCD1120', 'FCV-CD1120 minimum flow, item 18'],
+  [2, 'AI0691', 'ZT-CD1110', 'ABC-031', 'LICCD1110B', 'LCV-CD1110 dump to raw pit, item 15'],
+  [2, 'AI0692', 'ZT-CD1104', 'ABC-031', 'LICCD1104', 'LCV-CD1104 deaerator level, item 14'],
+  [2, 'AI0693', 'ZT-MU1110', 'ABC-031', 'LICCD1110A', 'LCV-MU1110 condenser make-up, item 17'],
+  [1, 'AI0179', 'ZT-MS1001', 'ABC-013', 'PICMS1002', 'PCV-MS1001 blow off, item 1'],
+  [2, 'AI0705', 'ZT-CW1201', 'ABC-053', 'TICLO1002', 'TCV-CW1201 lube oil temperature, item 40']
+])
+  R.push({ stn, ai, tag, v: (U, X) => open(X, sheet, ctl), rel: 'opening = anAv(' + ctl + ', MV of ' + ctl + ')', src: io(stn) + ' ' + ai + '; ' + sheet + ' ' + ctl + '; ' + why });
+for (const [n, k, sh, a1, a2] of [
+  ['1101', 'H1', 'ABC-037', 'AI0707', 'AI0721'],
+  ['1102', 'H2', 'ABC-038', 'AI0708', 'AI0722'],
+  ['1103', 'H3', 'ABC-039', 'AI0709', 'AI0723'],
+  ['1105', 'H5', 'ABC-035', 'AI0710', 'AI0725'],
+  ['1106', 'H6', 'ABC-036', 'AI0724', 'AI0726']
+]) {
+  R.push({ stn: 2, ai: a1, tag: 'ZT-HD' + n + '-1', v: (U, X) => hdv(U, X, k, 1), rel: 'primary drain valve = anAv(LICHD' + n + '1, split-range F(X) of the primary MV), as AN_HD', src: io(2) + ' ' + a1 + '; ' + sh + ' LICHD' + n + '1; LCV-HD' + n + '-1' });
+  R.push({ stn: 2, ai: a2, tag: 'ZT-HD' + n + '-2', v: (U, X) => hdv(U, X, k, 2), rel: 'alternate drain valve = anAv(LICHD' + n + '2, its MV), as AN_HD', src: io(2) + ' ' + a2 + '; ' + sh + ' LICHD' + n + '2; LCV-HD' + n + '-2' });
+}
+/* 2. limit switches: end of travel (K1AU3-E2-0-123 R1 "Limit Switches: OMRON D4A-2502N (1 Open & 1 Closed)"), the app's end of travel:
+   open = position >= 100 %, closed = position <= 0 % (QA review 2026-11-25) */
+const zt = t => {
+  const r = R.find(x => x.tag === t);
+  return r ? r.v : () => NaN;
+};
+for (const [addr, tag, z, o] of [
+  ['I.0898', 'ZSO-FW1060', 'ZT-FW1060', 1],
+  ['I.0899', 'ZSC-FW1060', 'ZT-FW1060', 0],
+  ['I.089A', 'ZSO-FW1150', 'ZT-FW1150', 1],
+  ['I.089B', 'ZSC-FW1150', 'ZT-FW1150', 0],
+  ['I.0893', 'ZSC-CD1115', 'ZT-CD1115', 0],
+  ['I.0894', 'ZSO-CD1124', 'ZT-CD1124', 1],
+  ['I.0895', 'ZSC-CD1124', 'ZT-CD1124', 0],
+  ['I.0896', 'ZSO-CD1126', 'ZT-CD1126', 1],
+  ['I.0897', 'ZSC-CD1126', 'ZT-CD1126', 0]
+]) {
+  const f = zt(z);
+  R.push({
+    stn: 2,
+    di: 1,
+    tag,
+    v: (U, X) => {
+      const p = f(U, X);
+      return isFinite(p) ? (o ? p >= 100 : p <= 0) : NaN;
+    },
+    rel: (o ? 'open limit: ' : 'closed limit: ') + z + (o ? ' >= 100 %' : ' <= 0 %'),
+    src: io(2) + ' ' + addr + '; K1AU3-E2-0-123 R1 OMRON D4A-2502N end of travel'
+  });
+}
+/* 3. motor valve positions: the DITL-38 MOTOR CONTROL VALVE copy of each valve (stroke = the TIMER SETTING of the drawing) */
+for (const [stn, ai, tag, sh] of [
+  [1, 'AI0177', 'ZT-BD1001', 'DITL-38'],
+  [1, 'AI0178', 'ZT-BD1002', 'DITL-38 #MV-BD1002'],
+  [2, 'AI0768', 'ZT-FW1001', 'DITL-38 #MV-FW1001'],
+  [2, 'AI0784', 'ZT-FW1002', 'DITL-38 #MV-FW1002'],
+  [2, 'AI0785', 'ZT-FW1392', 'DITL-38 #MV-FW1392'],
+  [2, 'AI0736', 'ZT-MS1391', 'DITL-38 #MV-MS1391']
+])
+  R.push({ stn, ai, tag, v: (U, X) => fin(X.ditlPos(sh, 0)), rel: 'position of ' + sh, src: io(stn) + ' ' + ai + '; ' + sh + ' (DITL-38 MOTOR CONTROL VALVE)' });
+/* 4. model values that exist (bind) */
+const mt = t => U => fin((U.mt || {})[t]);
+['1', '2', '3', '4', 'W'].forEach((e, i) => {
+  const ai = ['AI0662', 'AI0661', 'AI0659', 'AI0660', 'AI0658'][i];
+  R.push({ stn: 3, ai, tag: 'TT-FW1115-B' + e, v: mt('TT-FW1115-B' + e), rel: 'U.mt (AN_MT BFWP-B)', src: io(3) + ' ' + ai + '; unit.js AN_MT BFWP-B' });
+});
+['11', '12', '21', '22', '41', '42', '31', '32'].forEach((e, i) => {
+  const ai = 'AI' + (1008 + i);
+  R.push({ stn: 3, ai, tag: 'VT-FW1115-B' + e, v: mt('VT-FW1115-B' + e), rel: 'U.mt (AN_MT BFWP-B)', src: io(3) + ' ' + ai + '; unit.js AN_MT BFWP-B' });
+});
+R.push({ stn: 3, ai: 'AI0736', tag: 'TT-SW1501-BU', v: mt('TT-SW1501-BU'), rel: 'U.mt (AN_MT SWP-B)', src: io(3) + ' AI0736; unit.js AN_MT SWP-B' });
+R.push({ stn: 3, ai: 'AI0758', tag: 'VT-SW1501-C2', v: mt('VT-SW1501-C2'), rel: 'U.mt (AN_MT SWP-C)', src: io(3) + ' AI0758; unit.js AN_MT SWP-C' });
+for (const [ai, tag, k] of [
+  ['AI0800', 'PT-SW1110-B1', 'swPiB'],
+  ['AI0801', 'PT-SW1110-B2', 'swPoB'],
+  ['AI0933', 'TT-SW1110-B1', 'swTiB'],
+  ['AI0934', 'TT-SW1110-B2', 'swToB']
+])
+  R.push({ stn: 2, ai, tag, v: U => fin(U[k]), rel: 'U.' + k + ' (condenser sea water side B)', src: io(2) + ' ' + ai + '; unit.js sea water model' });
+R.push({ stn: 3, ai: 'AI0434', tag: 'IT-P1503B', v: U => fin(U.swIb1), rel: 'U.swIb1 booster pump B current', src: io(3) + ' AI0434; unit.js sea water booster model' });
+R.push({ stn: 3, ai: 'AI0435', tag: 'IT-P1503C', v: U => fin(U.swIb2), rel: 'U.swIb2 booster pump C current', src: io(3) + ' AI0435; unit.js sea water booster model' });
+R.push({ stn: 3, ai: 'AI0465', tag: 'IT-P1116B', v: U => fin(U.cdI1), rel: 'U.cdI1 CEP-B current', src: io(3) + ' AI0465; unit.js condensate pump model' });
+R.push({ stn: 2, ai: 'AI0854', tag: 'TT-CD1110-2', v: U => fin(U.cdT), rel: 'hotwell water = condenser saturation U.cdT', src: io(2) + ' AI0854; unit.js condenser model' });
+R.push({ stn: 2, ai: 'AI0869', tag: 'TT-CD1110-3', v: U => fin(U.cdT), rel: 'condenser neck = exhaust saturation U.cdT', src: io(2) + ' AI0869; unit.js condenser model' });
+R.push({ stn: 2, ai: 'AI0901', tag: 'TT-FW1010', v: U => fin(U.tSr), rel: 'storage tank water = deaerator saturation U.tSr (steam table)', src: io(2) + ' AI0901; unit.js deaerator model' });
+R.push({ stn: 2, ai: 'AI0929', tag: 'TT-HD1102', v: U => fin((U.tt || {})['TT-HD1102']), rel: "U.tt['TT-HD1102'] drain out of No.2 LPH", src: io(2) + ' AI0929; unit.js anLphStep, PPE-14-0725 DCA' });
+R.push({ stn: 2, ai: 'AI0930', tag: 'TT-HD1103', v: U => fin((U.tt || {})['TT-HD1103']), rel: "U.tt['TT-HD1103'] drain out of No.3 LPH", src: io(2) + ' AI0930; unit.js anLphStep, PPE-14-0725 DCA' });
+R.push({
+  stn: 2,
+  ai: 'AI0419',
+  tag: 'PT-HD1101',
+  v: U => fin(((U.lpHt || {}).H1 || {}).Ps - 1.0332),
+  rel: 'No.1 LPH shell U.lpHt.H1.Ps (kgf/cm2 A) - 1.0332 = gauge',
+  src: io(2) + ' AI0419 "NO.1 LPH steam pressure"; unit.js AN_LP (design 0.354 kgf/cm2A x anHb x1)'
+});
+const hdw = k => U => fin(((U.hd || []).find(h => h.k === k) || {}).w1);
+R.push({ stn: 2, ai: 'AI0432', tag: 'FT-HD1102', v: hdw('H2'), rel: 'AN_HD H2 w1, the normal (cascade) drain flow', src: io(2) + ' AI0432 "NO.2 LPH drain water flow"; unit.js AN_HD mass balance' });
+R.push({ stn: 2, ai: 'AI0433', tag: 'FT-HD1103', v: hdw('H3'), rel: 'AN_HD H3 w1, the normal (cascade) drain flow', src: io(2) + ' AI0433 "NO.3 LPH drain water flow"; unit.js AN_HD mass balance' });
+R.push({
+  stn: 5,
+  ai: 'AI0064',
+  tag: 'FT-MU0001',
+  v: U => (Array.isArray(U.muQ) ? U.muQ.reduce((a, b) => a + (+b || 0), 0) : NaN),
+  rel: 'sum of the make-up water pump flows U.muQ (AN_MU pump curves)',
+  src: io(5) + ' AI0064 tag FT-MU0001 (the description column of this row repeats the fire pump text of AI0065); replaces the snapshot 28.6 of hmi-op.js'
+});
+/* 5. switches from model state */
+let hh = false;
+R.push({
+  stn: 2,
+  di: 1,
+  tag: 'LSHH-CD1110',
+  v: (U, X) => {
+    const L = X.ai('2|AI0640');
+    if (!isFinite(L)) return NaN;
+    hh = hh ? L > 300 - 10 : L >= 300;
+    return hh;
+  },
+  rel: 'hotwell level LT-CD1110 >= +300 mm (HHL 900 mm, normal 600 mm from the bottom), resets 10 mm below (the dead band DB0 of the plantsw level switches)',
+  src: io(2) + ' I.0291; condenser outline K1AU3-D1-0-039 R1 p 4 (as plantsw LSLL-CD1110)'
+});
+/* sea water pump 6.6 kV VCB (K1AU3E1-0008, bus 1AM): ON = the DITL-29A copy runs (the soft starter closes the VCB to run, the protection
+   relay opens it on a trip, so the run output is 0 on a trip), OFF = NOT ON (QA review 2026-11-25). The copy rows read the tag of their
+   own pump (W.showText), so the tag holds each row to its pump */
+for (const [L, on, off, sh] of [
+  ['A', 'I.032E', 'I.032F', 'DITL-29A'],
+  ['B', 'I.052A', 'I.052B', 'DITL-29A #B'],
+  ['C', 'I.081E', 'I.081F', 'DITL-29A #C']
+]) {
+  const vcb = X => {
+    const r = X.ditlRun(sh);
+    return r == null ? NaN : r === 1 ? 1 : 0;
+  };
+  R.push({ stn: 3, di: 1, tag: 'MIV-P1501' + L + '1', v: (U, X) => vcb(X), rel: 'VCB ON = ' + sh + ' running', src: io(3) + ' ' + on + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008' });
+  R.push({
+    stn: 3,
+    di: 1,
+    tag: 'MIV-P1501' + L + '2',
+    v: (U, X) => {
+      const x = vcb(X);
+      return isFinite(x) ? 1 - x : NaN;
+    },
+    rel: 'VCB OFF = NOT ON',
+    src: io(3) + ' ' + off + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008'
+  });
+}
+FIELD.add(lane, R);
+
+})("bop", window.FIELD);
 </script><script>/* DITL (digital logic) - Constants, state, text decoding, DXF parse and build of the sheets. Part of ONE script (joined by src/digital/order.list, in this order). */
 const NS = 'http://www.w3.org/2000/svg',
   $ = id => document.getElementById(id);
@@ -138916,6 +139210,26 @@ function anHxStep(U, I, dt) {
     gRo: gE2r.Tg /* gas leaving the No.2 eco R side (TT-FG1110) */,
     gSo: gE2s.Tg /* S side (TT-FG1113) */,
     gEo: gE1.Tg /* gas to the air heater */,
+    /* beta.490 (lane 3 KIRARA, P&ID PD-051 TT-FG1100 ~ 1111 at the bank boundaries): the gas leaving each backpass bank, an export of
+       the same chain (no change to the run). Gas path: furnace -> wall (cyclone outlet / roof) -> R pass: RH bank 3, 2, 1, 0 -> No.2 eco
+       R; S pass: finishing SH bank 2, 1, 0 -> No.3 eco -> No.2 eco S; the two passes mix (mix; e1In = after an economizer tube leak, if
+       any) -> No.1 eco (e1) -> air heater. On U as U.hxO.gBank. The gas
+       into a bank is the gas leaving the bank before it (into RH 3 and FSH 2: wl). */
+    gBank: {
+      wl: gWl.Tg,
+      rh: gR4.map(g => g.Tg),
+      e2r: gE2r.Tg,
+      fsh: gF.map(g => g.Tg),
+      e3: gE3.Tg,
+      /* TT-FG1109, No.3 eco lower inlet (between its upper and lower half): the gas of the same bank solution at half the surface. One
+         metal temperature M.e3 per bank, so the gas falls as (Tg - Tm) = (Tin - Tm) e^-n and the half point is the geometric mean of the
+         two ends above the metal. Two halves of equal surface (the split is not in the documents found so far) */
+      e3m: (tS - M.e3) * (gE3.Tg - M.e3) > 0 ? M.e3 + Math.sign(tS - M.e3) * Math.sqrt((tS - M.e3) * (gE3.Tg - M.e3)) : (tS + gE3.Tg) / 2,
+      e2s: gE2s.Tg,
+      mix: tMix,
+      e1In: tE1,
+      e1: gE1.Tg
+    },
     gRh: tR,
     gFs: tS,
     mGR,
@@ -144170,11 +144484,110 @@ function anChemStep(U, dt) {
   U.spAL2 = al;
   U.spAL1 = U.spAL3 = U.spALZ = 0;
 }
+/* beta.470 (lane plan 2026-11-25): the field signals of the lanes (src/world/field/<lane>.js, FIELD.add): a row { stn, ai: "AI0128", tag,
+   src, rel, v(U, X) } writes v(AN_UNIT, X) on the AI blocks of that address once a scan, after the unit model step, as the unit model writes
+   its own transmitters (anUnitWrite: a forced output is left alone, the range clamps). v reads the engine state only (X: anFieldX below). A row whose
+   value is not a number writes nothing. The block lists are made again when the sheets with a running engine change. */
+let AN_FLD = null;
+/* the reader a field row gets as its second argument (v(U, X)): the engine readers that live inside the engine closure, read only.
+   av(tag, x)    the opening that reaches the process for the command x of control valve tag (anAv: air lock, stuck fault); the hold
+                 memory anAv keeps is put back after the call, so a field row never moves it
+   ditlPos(n, j) the position 0 ~ 100 % of valve j of DITL drawing n ("DITL-32", "DITL-32 #B"), null while the world is not built
+   ditlRun(a)    1 RUN / 0 STOP of DITL drawing a ("DITL-23A", "DITL-39@3" = output row 3), null while the world is not built
+   ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it */
+const anFieldKey = () => AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0);
+function anFieldX() {
+  let C = {},
+    ck = -1;
+  return Object.freeze({
+    av: (tag, x) => {
+      const H = AN_UNIT.avH,
+        had = !!H && tag in H,
+        h = had ? H[tag] : undefined,
+        fs = typeof AN_FAULT_STUCK !== 'undefined' && tag in AN_FAULT_STUCK,
+        f = fs ? AN_FAULT_STUCK[tag] : undefined;
+      try {
+        return anAv(tag, x);
+      } finally {
+        if (AN_UNIT.avH) {
+          if (had) AN_UNIT.avH[tag] = h;
+          else delete AN_UNIT.avH[tag];
+          if (!H) delete AN_UNIT.avH;
+        }
+        if (fs) AN_FAULT_STUCK[tag] = f;
+      }
+    },
+    ditlPos: (n, j) => anDitlPos(n, j),
+    ditlRun: (a, last) => anDitlRun(a, last),
+    ai: key => {
+      const k = anFieldKey();
+      if (k !== ck) (C = {}), (ck = k); /* the block lists again when the sheets with a running engine change */
+      return anUnitVal(C[key] || (C[key] = anUnitAIs(String(key))));
+    }
+  });
+}
+const anFieldN = t => String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const AN_FLD_X = anFieldX();
+const anFieldRows = () => (((typeof window !== 'undefined' ? window : globalThis).FIELD || {}).rows || []).filter(r => typeof (r.v || r.get) === 'function');
+/* the values of all rows now: [row, number] (a row whose value is not a number, or that fails, is left out) */
+function anFieldVals() {
+  const out = [];
+  for (const r of anFieldRows()) {
+    let v;
+    try {
+      v = (r.v || r.get)(AN_UNIT, AN_FLD_X);
+    } catch (e) {
+      continue;
+    }
+    v = v === true ? 1 : v === false ? 0 : v == null ? NaN : +v;
+    if (isFinite(v)) out.push([r, v]);
+  }
+  return out;
+}
+function anFieldMap(L) {
+  const V = {};
+  for (const [r, v] of L) {
+    if (r.ai) V[String(r.stn) + '|' + r.ai] = v;
+    if (r.tag) V[anFieldN(r.tag)] = v;
+  }
+  return V;
+}
+/* the value of a field row for the HMI, by "stn|AI0128" or by the tag without signs (PTIA1064A). AN.unit.fld is the map of the last scan
+   (in the keyframe: the mirror page of the Worker has it). A plant that is loaded and not yet run has none (the state just loaded takes
+   the key away): then the rows are read now, at most twice a second of the PC clock */
+let AN_FLD_NOW = null;
+const anFieldRead = key => {
+  let V = AN_UNIT.fld;
+  if (!V) {
+    const t = Date.now();
+    if (!AN_FLD_NOW || t - AN_FLD_NOW.t > 500 || t < AN_FLD_NOW.t) AN_FLD_NOW = { t, V: anFieldMap(anFieldVals()) };
+    V = AN_FLD_NOW.V;
+  }
+  const v = V[key];
+  return v === undefined ? null : v;
+};
+function anFieldStep() {
+  const F = anFieldRows();
+  if (!F.length) return;
+  const key = anFieldKey() + '/' + F.length;
+  if (!AN_FLD || AN_FLD.key !== key) {
+    AN_FLD = { key, L: new Map(F.filter(r => r.ai).map(r => [r, anUnitAIs(String(r.stn) + '|' + r.ai)])) };
+    /* for the lanes and QA: each AI row and the number of blocks it writes (0 = the address is on no running sheet) */
+    AN.fieldStat = [...AN_FLD.L].map(([r, l]) => ({ lane: r.lane, stn: r.stn, ai: r.ai, tag: r.tag, blocks: l.length }));
+  }
+  const L = anFieldVals();
+  for (const [r, v] of L) {
+    const l = AN_FLD.L.get(r);
+    if (l && l.length) anUnitWrite(l, v);
+  }
+  AN_UNIT.fld = anFieldMap(L);
+}
 function anUnitStep(dt) {
   const M = (typeof globalThis !== 'undefined' ? globalThis : window).LS_SIMM;
   if (M) M.on = ++M.n;
   try {
     anUnitStep0(dt);
+    anFieldStep();
     anGenInt(dt);
     anHistStep(dt); /* hist.js: the faceplate trend history, one sample a simulated second */
     anSoeStep(); /* soe.js: the sequence of events of the MFT and the turbine trip, one look per step */
@@ -148685,8 +149098,6 @@ const AN_HMI_AI = {
   '2|AI0677': [-4.0, 'LIHD11061'],
   '2|AI0678': [40.0, 'TICD11101'],
   '2|AI0773': [5.0, 'MVMU1001 POSITION DEMAND HIGH LIMIT'],
-  '2|AI0800': [1.0, 'PISW1110B1'],
-  '2|AI0801': [0.5, 'PISW1110B2'],
   '2|AI0802': [0.0, 'DPICD1002'],
   '2|AI0803': [0.0, 'DPIFW1115B'],
   '2|AI0805': [28.5, 'TISW1110A1'],
@@ -148701,13 +149112,11 @@ const AN_HMI_AI = {
   '2|AI0838': [41.0, 'TICD1119'],
   '2|AI0852': [0.0, 'LIHD11052'],
   '2|AI0853': [3.0, 'LIHD11062'],
-  '2|AI0854': [40.0, 'TICD11102'],
   '2|AI0864': [137.0, 'TIHR10121'],
   '2|AI0865': [359.0, 'TIMS10221'],
   '2|AI0866': [331.0, 'TICR10051'],
   '2|AI0867': [540.0, 'TIHR10021'],
   '2|AI0868': [540.0, 'TIHR1004'],
-  '2|AI0869': [40.0, 'TICD11103'],
   '2|AI0870': [228.0, 'TIHR1010'],
   '2|AI0896': [135.0, 'TIHR10122'],
   '2|AI0897': [356.0, 'TIMS10222'],
@@ -148722,8 +149131,6 @@ const AN_HMI_AI = {
   '2|AI0916': [107.0, 'TISB1056'],
   '2|AI0917': [105.0, 'TISB1057'],
   '2|AI0918': [538.0, 'TIMS1007'],
-  '2|AI0933': [28.6, 'TISW1110B1'],
-  '2|AI0934': [35.1, 'TISW1110B2'],
   '3|AI0384': [5.3, 'PICW1156'],
   '3|AI0385': [37.0, 'TICW1156'],
   '3|AI0386': [15.8, 'LIBH1750'],
@@ -148816,7 +149223,6 @@ const AN_HMI_AI = {
   '4|AI0468': [426.0, 'TIFG1109'],
   '4|AI0469': [584.0, 'TIFG1105'],
   '4|AI0470': [7.0, 'PIIA1064B'],
-  '5|AI0064': [28.6, 'FIMU0001'],
   '5|AI0160': [13.8, 'LIMU0708A'],
   '5|AI0178': [0.029, 'DPIMU0709A'],
   '5|AI0181': [12.8, 'PIDO0005'],
@@ -152628,6 +153034,8 @@ function anEngAPI() {
     doValve: anDoValve,
     /* 3.2.1 SEULGI (boiler.js AN_BA): the numbers of the bottom ash model (set points of its field switches) */
     baK: AN_BA,
+    fieldX: AN_FLD_X, /* the readers and the values of the lane field rows (unit.js, src/world/field) */
+    fieldRead: anFieldRead,
     engState: { capture: anStateCapture, apply: anStateApply },
     /* engine/sync.js: what changed, both ways (worker -> page, page -> worker) */
     sync: {
@@ -156925,10 +157333,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 258a546'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build ce8e75f'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 258a546';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build ce8e75f';
     } catch (e) {}
   };
   upd();
@@ -175985,6 +176393,27 @@ jV1eHpSLHlIJuUKcZC50d65hZRirjTo8uYFaEuMHYZh93x7z7vT58xHtJk75Y7HQrrsSLQX2BdoSnYyU
       fn = () => (window.AN && AN.ditlRun ? (AN.ditlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1 ? 1 : 0) : NaN);
     for (const t of i ? ['SS-BH1060-' + x, 'SS-BH1060-A'] : ['SS-BH1060-A']) L.push([t, fn, 0.5, 'hi', 0, 0, /SPEED NOT LOW/, sh]);
   });
+  /* beta.470 (lane plan 2026-11-25): a field signal row of a lane with di (src/world/field/<lane>.js: { tag, di: 1, sheet, src, rel,
+     v(U, X) }) is a switch row of the plant model like the rows above: the DITL input row whose text starts with the tag is 1 while
+     v(AN.unit, AN.fieldX) is true (above 0.5). sheet (optional): the code of the sheet, "DITL-23A", when the tag is on more than one sheet */
+  for (const r of (window.FIELD && FIELD.rows) || []) {
+    const fn = r.v || r.get;
+    if (!r.di || !r.tag || typeof fn !== 'function') continue;
+    /* a tag the plant model already switches above keeps that one source (one signal, one source); the row is listed in FIELD.dup */
+    if (L.some(x => x[0] === String(r.tag).toUpperCase())) {
+      (FIELD.dup = FIELD.dup || []).push(r.lane + ' ' + r.tag);
+      continue;
+    }
+    const f = () => {
+      try {
+        const v = fn((window.AN && AN.unit) || {}, (window.AN && AN.fieldX) || {});
+        return v === true ? 1 : v === false ? 0 : +v;
+      } catch (e) {
+        return NaN;
+      }
+    };
+    L.push([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, r.sheet ? new RegExp(String(r.sheet).replace(/[^A-Z0-9-]/gi, '') + '$') : null]);
+  }
   const DB0 = 10;
   let map = null,
     mapK = '';
@@ -312522,6 +312951,26 @@ function anHxStep(U, I, dt) {
     gRo: gE2r.Tg /* gas leaving the No.2 eco R side (TT-FG1110) */,
     gSo: gE2s.Tg /* S side (TT-FG1113) */,
     gEo: gE1.Tg /* gas to the air heater */,
+    /* beta.490 (lane 3 KIRARA, P&ID PD-051 TT-FG1100 ~ 1111 at the bank boundaries): the gas leaving each backpass bank, an export of
+       the same chain (no change to the run). Gas path: furnace -> wall (cyclone outlet / roof) -> R pass: RH bank 3, 2, 1, 0 -> No.2 eco
+       R; S pass: finishing SH bank 2, 1, 0 -> No.3 eco -> No.2 eco S; the two passes mix (mix; e1In = after an economizer tube leak, if
+       any) -> No.1 eco (e1) -> air heater. On U as U.hxO.gBank. The gas
+       into a bank is the gas leaving the bank before it (into RH 3 and FSH 2: wl). */
+    gBank: {
+      wl: gWl.Tg,
+      rh: gR4.map(g => g.Tg),
+      e2r: gE2r.Tg,
+      fsh: gF.map(g => g.Tg),
+      e3: gE3.Tg,
+      /* TT-FG1109, No.3 eco lower inlet (between its upper and lower half): the gas of the same bank solution at half the surface. One
+         metal temperature M.e3 per bank, so the gas falls as (Tg - Tm) = (Tin - Tm) e^-n and the half point is the geometric mean of the
+         two ends above the metal. Two halves of equal surface (the split is not in the documents found so far) */
+      e3m: (tS - M.e3) * (gE3.Tg - M.e3) > 0 ? M.e3 + Math.sign(tS - M.e3) * Math.sqrt((tS - M.e3) * (gE3.Tg - M.e3)) : (tS + gE3.Tg) / 2,
+      e2s: gE2s.Tg,
+      mix: tMix,
+      e1In: tE1,
+      e1: gE1.Tg
+    },
     gRh: tR,
     gFs: tS,
     mGR,
@@ -317778,11 +318227,110 @@ function anChemStep(U, dt) {
   U.spAL2 = al;
   U.spAL1 = U.spAL3 = U.spALZ = 0;
 }
+/* beta.470 (lane plan 2026-11-25): the field signals of the lanes (src/world/field/<lane>.js, FIELD.add): a row { stn, ai: "AI0128", tag,
+   src, rel, v(U, X) } writes v(AN_UNIT, X) on the AI blocks of that address once a scan, after the unit model step, as the unit model writes
+   its own transmitters (anUnitWrite: a forced output is left alone, the range clamps). v reads the engine state only (X: anFieldX below). A row whose
+   value is not a number writes nothing. The block lists are made again when the sheets with a running engine change. */
+let AN_FLD = null;
+/* the reader a field row gets as its second argument (v(U, X)): the engine readers that live inside the engine closure, read only.
+   av(tag, x)    the opening that reaches the process for the command x of control valve tag (anAv: air lock, stuck fault); the hold
+                 memory anAv keeps is put back after the call, so a field row never moves it
+   ditlPos(n, j) the position 0 ~ 100 % of valve j of DITL drawing n ("DITL-32", "DITL-32 #B"), null while the world is not built
+   ditlRun(a)    1 RUN / 0 STOP of DITL drawing a ("DITL-23A", "DITL-39@3" = output row 3), null while the world is not built
+   ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it */
+const anFieldKey = () => AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0);
+function anFieldX() {
+  let C = {},
+    ck = -1;
+  return Object.freeze({
+    av: (tag, x) => {
+      const H = AN_UNIT.avH,
+        had = !!H && tag in H,
+        h = had ? H[tag] : undefined,
+        fs = typeof AN_FAULT_STUCK !== 'undefined' && tag in AN_FAULT_STUCK,
+        f = fs ? AN_FAULT_STUCK[tag] : undefined;
+      try {
+        return anAv(tag, x);
+      } finally {
+        if (AN_UNIT.avH) {
+          if (had) AN_UNIT.avH[tag] = h;
+          else delete AN_UNIT.avH[tag];
+          if (!H) delete AN_UNIT.avH;
+        }
+        if (fs) AN_FAULT_STUCK[tag] = f;
+      }
+    },
+    ditlPos: (n, j) => anDitlPos(n, j),
+    ditlRun: (a, last) => anDitlRun(a, last),
+    ai: key => {
+      const k = anFieldKey();
+      if (k !== ck) (C = {}), (ck = k); /* the block lists again when the sheets with a running engine change */
+      return anUnitVal(C[key] || (C[key] = anUnitAIs(String(key))));
+    }
+  });
+}
+const anFieldN = t => String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const AN_FLD_X = anFieldX();
+const anFieldRows = () => (((typeof window !== 'undefined' ? window : globalThis).FIELD || {}).rows || []).filter(r => typeof (r.v || r.get) === 'function');
+/* the values of all rows now: [row, number] (a row whose value is not a number, or that fails, is left out) */
+function anFieldVals() {
+  const out = [];
+  for (const r of anFieldRows()) {
+    let v;
+    try {
+      v = (r.v || r.get)(AN_UNIT, AN_FLD_X);
+    } catch (e) {
+      continue;
+    }
+    v = v === true ? 1 : v === false ? 0 : v == null ? NaN : +v;
+    if (isFinite(v)) out.push([r, v]);
+  }
+  return out;
+}
+function anFieldMap(L) {
+  const V = {};
+  for (const [r, v] of L) {
+    if (r.ai) V[String(r.stn) + '|' + r.ai] = v;
+    if (r.tag) V[anFieldN(r.tag)] = v;
+  }
+  return V;
+}
+/* the value of a field row for the HMI, by "stn|AI0128" or by the tag without signs (PTIA1064A). AN.unit.fld is the map of the last scan
+   (in the keyframe: the mirror page of the Worker has it). A plant that is loaded and not yet run has none (the state just loaded takes
+   the key away): then the rows are read now, at most twice a second of the PC clock */
+let AN_FLD_NOW = null;
+const anFieldRead = key => {
+  let V = AN_UNIT.fld;
+  if (!V) {
+    const t = Date.now();
+    if (!AN_FLD_NOW || t - AN_FLD_NOW.t > 500 || t < AN_FLD_NOW.t) AN_FLD_NOW = { t, V: anFieldMap(anFieldVals()) };
+    V = AN_FLD_NOW.V;
+  }
+  const v = V[key];
+  return v === undefined ? null : v;
+};
+function anFieldStep() {
+  const F = anFieldRows();
+  if (!F.length) return;
+  const key = anFieldKey() + '/' + F.length;
+  if (!AN_FLD || AN_FLD.key !== key) {
+    AN_FLD = { key, L: new Map(F.filter(r => r.ai).map(r => [r, anUnitAIs(String(r.stn) + '|' + r.ai)])) };
+    /* for the lanes and QA: each AI row and the number of blocks it writes (0 = the address is on no running sheet) */
+    AN.fieldStat = [...AN_FLD.L].map(([r, l]) => ({ lane: r.lane, stn: r.stn, ai: r.ai, tag: r.tag, blocks: l.length }));
+  }
+  const L = anFieldVals();
+  for (const [r, v] of L) {
+    const l = AN_FLD.L.get(r);
+    if (l && l.length) anUnitWrite(l, v);
+  }
+  AN_UNIT.fld = anFieldMap(L);
+}
 function anUnitStep(dt) {
   const M = (typeof globalThis !== 'undefined' ? globalThis : window).LS_SIMM;
   if (M) M.on = ++M.n;
   try {
     anUnitStep0(dt);
+    anFieldStep();
     anGenInt(dt);
     anHistStep(dt); /* hist.js: the faceplate trend history, one sample a simulated second */
     anSoeStep(); /* soe.js: the sequence of events of the MFT and the turbine trip, one look per step */
@@ -322307,8 +322855,6 @@ const AN_HMI_AI = {
   '2|AI0677': [-4.0, 'LIHD11061'],
   '2|AI0678': [40.0, 'TICD11101'],
   '2|AI0773': [5.0, 'MVMU1001 POSITION DEMAND HIGH LIMIT'],
-  '2|AI0800': [1.0, 'PISW1110B1'],
-  '2|AI0801': [0.5, 'PISW1110B2'],
   '2|AI0802': [0.0, 'DPICD1002'],
   '2|AI0803': [0.0, 'DPIFW1115B'],
   '2|AI0805': [28.5, 'TISW1110A1'],
@@ -322323,13 +322869,11 @@ const AN_HMI_AI = {
   '2|AI0838': [41.0, 'TICD1119'],
   '2|AI0852': [0.0, 'LIHD11052'],
   '2|AI0853': [3.0, 'LIHD11062'],
-  '2|AI0854': [40.0, 'TICD11102'],
   '2|AI0864': [137.0, 'TIHR10121'],
   '2|AI0865': [359.0, 'TIMS10221'],
   '2|AI0866': [331.0, 'TICR10051'],
   '2|AI0867': [540.0, 'TIHR10021'],
   '2|AI0868': [540.0, 'TIHR1004'],
-  '2|AI0869': [40.0, 'TICD11103'],
   '2|AI0870': [228.0, 'TIHR1010'],
   '2|AI0896': [135.0, 'TIHR10122'],
   '2|AI0897': [356.0, 'TIMS10222'],
@@ -322344,8 +322888,6 @@ const AN_HMI_AI = {
   '2|AI0916': [107.0, 'TISB1056'],
   '2|AI0917': [105.0, 'TISB1057'],
   '2|AI0918': [538.0, 'TIMS1007'],
-  '2|AI0933': [28.6, 'TISW1110B1'],
-  '2|AI0934': [35.1, 'TISW1110B2'],
   '3|AI0384': [5.3, 'PICW1156'],
   '3|AI0385': [37.0, 'TICW1156'],
   '3|AI0386': [15.8, 'LIBH1750'],
@@ -322438,7 +322980,6 @@ const AN_HMI_AI = {
   '4|AI0468': [426.0, 'TIFG1109'],
   '4|AI0469': [584.0, 'TIFG1105'],
   '4|AI0470': [7.0, 'PIIA1064B'],
-  '5|AI0064': [28.6, 'FIMU0001'],
   '5|AI0160': [13.8, 'LIMU0708A'],
   '5|AI0178': [0.029, 'DPIMU0709A'],
   '5|AI0181': [12.8, 'PIDO0005'],
@@ -326272,6 +326813,8 @@ function anEngAPI() {
     doValve: anDoValve,
     /* 3.2.1 SEULGI (boiler.js AN_BA): the numbers of the bottom ash model (set points of its field switches) */
     baK: AN_BA,
+    fieldX: AN_FLD_X, /* the readers and the values of the lane field rows (unit.js, src/world/field) */
+    fieldRead: anFieldRead,
     engState: { capture: anStateCapture, apply: anStateApply },
     /* engine/sync.js: what changed, both ways (worker -> page, page -> worker) */
     sync: {
@@ -326912,8 +327455,302 @@ globalThis.AN=AN;globalThis.ENGINE={AN,E:{ensure,stepSet,anResetAll,anPlantLoad1
 })();
 /* ---- src/ui/plant/wiring.js (slim: I/O rows, station, address, tag) ---- */
 window.WIRING=[["DI","1","I.0000","ZSO-BD1002"],["DI","1","I.0001","ZSC-BD1002"],["DI","1","I.0002","MIT-BD1002"],["DI","1","I.0003","MIL-BD1002"],["DI","1","I.0004","TS-BD1002"],["DI","1","I.0005","ZSO-BD1001"],["DI","1","I.0006","ZSC-BD1001"],["DI","1","I.0007","MIT-BD1001"],["DI","1","I.0008","MIL-BD1001"],["DI","1","I.0009","TS-BD1001"],["DI","1","I.000A","ZSO-BR1391"],["DI","1","I.000B","ZSC-BR1391"],["DI","1","I.000C","MIT-BR1391"],["DI","1","I.000D","MIL-BR1391"],["DI","1","I.000E","TS-BR1391"],["DI","1","I.000F","MFT-IRP"],["DI","1","I.0010","ZSO-FW1111-1"],["DI","1","I.0011","ZSC-FW1111-1"],["DI","1","I.0012","ZSO-FW1121-1"],["DI","1","I.0013","ZSC-FW1121-1"],["DI","1","I.001F","LI1-FG1057"],["DI","1","I.0040","ZSO-FA1055-A1"],["DI","1","I.0041","ZSC-FA1055-A1"],["DI","1","I.0042","ZSO-FA1055-A2"],["DI","1","I.0043","ZSC-FA1055-A2"],["DI","1","I.0044","ZSO-FA1055-A3"],["DI","1","I.0045","ZSC-FA1055-A3"],["DI","1","I.0046","ZSO-FA1053-1"],["DI","1","I.0047","ZSC-FA1053-1"],["DI","1","I.0048","MIT-FA1053-1"],["DI","1","I.0049","MIL-FA1053-1"],["DI","1","I.004A","TS-FA1053-1"],["DI","1","I.004B","ZSO-FG1056-1"],["DI","1","I.004C","ZSC-FG1056-1"],["DI","1","I.0056","ZSO-FA1054-1"],["DI","1","I.0057","ZSC-FA1054-1"],["DI","1","I.0058","MIT-FA1054-1"],["DI","1","I.0059","MIL-FA1054-1"],["DI","1","I.005A","TS-FA1054-1"],["DI","1","I.005B","ARP1-SYSERR"],["DI","1","I.005C","IRP1-POWALM"],["DI","1","I.005D","1021-SYSERR"],["DI","1","I.005E","1022-SYSERR"],["DI","1","I.005F","1023-SYSERR"],["DI","1","I.0081","TCS-DI1046"],["DI","1","I.0082","TCS-DI1047"],["DI","1","I.0083","ZSO-LO1756"],["DI","1","I.0084","ZSC-LO1756"],["DI","1","I.008A","ZSO-FA1055-B1"],["DI","1","I.008B","ZSC-FA1055-B1"],["DI","1","I.008C","ZSO-FA1055-B2"],["DI","1","I.008D","ZSC-FA1055-B2"],["DI","1","I.008E","ZSO-FA1055-B3"],["DI","1","I.008F","ZSC-FA1055-B3"],["DI","1","I.0090","ZSO-FW1111-2"],["DI","1","I.0091","ZSC-FW1111-2"],["DI","1","I.0092","ZSO-FW1121-2"],["DI","1","I.0093","ZSC-FW1121-2"],["DI","1","I.0120","MIR-Z1107A"],["DI","1","I.0121","MIT-Z1107A"],["DI","1","I.0122","MIR-Z1107B"],["DI","1","I.0123","MIT-Z1107B"],["DI","1","I.0124","MIR-Z1108A"],["DI","1","I.0125","MIT-Z1108A"],["DI","1","I.0126","MIR-Z1108B"],["DI","1","I.0127","MIT-Z1108B"],["DI","1","I.0128","MIR-Z1109A"],["DI","1","I.0129","MIT-Z1109A"],["DI","1","I.012A","MIR-Z1109B"],["DI","1","I.012B","MIT-Z1109B"],["DI","1","I.012C","MIR-Z1101A"],["DI","1","I.012D","MIT-Z1101A"],["DI","1","I.012E","SIA-CDS01"],["DI","1","I.0130","LSLL-CH1101"],["DI","1","I.0131","LSL-CH1101"],["DI","1","I.0132","LSH-CH1101"],["DI","1","I.0133","LSLL-CH1103"],["DI","1","I.0134","LSL-CH1103"],["DI","1","I.0135","LSH-CH1103"],["DI","1","I.0136","LSLL-CH1105"],["DI","1","I.0137","LSL-CH1105"],["DI","1","I.0138","LSH-CH1105"],["DI","2","I.0000","ZSO-FW1001"],["DI","2","I.0001","ZSC-FW1001"],["DI","2","I.0002","MIT-FW1001"],["DI","2","I.0003","MIL-FW1001"],["DI","2","I.0004","TS-FW1001"],["DI","2","I.0005","ZSO-FW1391"],["DI","2","I.0006","ZSC-FW1391"],["DI","2","I.0007","MIT-FW1391"],["DI","2","I.0008","MIL-FW1391"],["DI","2","I.0009","TS-FW1391"],["DI","2","I.000A","ZSO-HR1391"],["DI","2","I.000B","ZSC-HR1391"],["DI","2","I.000C","MIT-HR1391"],["DI","2","I.000D","MIL-HR1391"],["DI","2","I.000E","TS-HR1391"],["DI","2","I.000F","MFTT-IRP"],["DI","2","I.0010","ZSO-TS1001"],["DI","2","I.0011","ZSC-TS1001"],["DI","2","I.0012","MIT-TS1001"],["DI","2","I.0013","MIL-TS1001"],["DI","2","I.0014","TS-TS1001"],["DI","2","I.0015","ZSO-TS1002"],["DI","2","I.0016","ZSC-TS1002"],["DI","2","I.0017","MIT-TS1002"],["DI","2","I.0018","MIL-TS1002"],["DI","2","I.0019","TS-TS1002"],["DI","2","I.001A","ZSO-TS1003"],["DI","2","I.001B","ZSC-TS1003"],["DI","2","I.001C","MIT-TS1003"],["DI","2","I.001D","MIL-TS1003"],["DI","2","I.001E","TS-TS1003"],["DI","2","I.0040","ZSO-HR1010-1"],["DI","2","I.0041","ZSC-HR1010-1"],["DI","2","I.0042","ZSO-AS1010"],["DI","2","I.0043","ZSC-AS1010"],["DI","2","I.0044","ZSO-SB1059"],["DI","2","I.0045","ZSC-SB1059"],["DI","2","I.0046","ZSO-SB1054"],["DI","2","I.0047","ZSC-SB1054"],["DI","2","I.0049","PS-CD1117"],["DI","2","I.004A","LS-CR1001-1"],["DI","2","I.004B","LS-CR1001-2"],["DI","2","I.004C","LSLL-CD1104-4"],["DI","2","I.004D","PS-CD1110-1"],["DI","2","I.004E","PS-CD1110-2"],["DI","2","I.004F","PS-CD1110-3"],["DI","2","I.0050","ZSO-FW1002"],["DI","2","I.0051","ZSC-FW1002"],["DI","2","I.0052","MIT-FW1002"],["DI","2","I.0053","MIL-FW1002"],["DI","2","I.0054","TS-FW1002"],["DI","2","I.0055","ZSO-FW1392"],["DI","2","I.0056","ZSC-FW1392"],["DI","2","I.0057","MIT-FW1392"],["DI","2","I.0058","MIL-FW1392"],["DI","2","I.0059","TS-FW1392"],["DI","2","I.005A","ZSO-TS1004"],["DI","2","I.005B","ZSC-TS1004"],["DI","2","I.005C","MIT-TS1004"],["DI","2","I.005D","MIL-TS1004"],["DI","2","I.005E","TS-TS1004"],["DI","2","I.0080","ZSO-MS1020"],["DI","2","I.0081","ZSC-MS1020"],["DI","2","I.0082","ZSO-HR1010"],["DI","2","I.0083","ZSC-HR1010"],["DI","2","I.0084","ZSO-MS1011"],["DI","2","I.0085","ZSC-MS1011"],["DI","2","I.0086","ZSO-MS1023"],["DI","2","I.0087","ZSC-MS1023"],["DI","2","I.0088","ZSO-CR1011"],["DI","2","I.0089","ZSC-CR1011"],["DI","2","I.008A","ZSO-CR1012"],["DI","2","I.008B","ZSC-CR1012"],["DI","2","I.008C","ZSO-HR1021"],["DI","2","I.008D","ZSC-HR1021"],["DI","2","I.008E","ZSO-HR1022"],["DI","2","I.008F","ZSC-HR1022"],["DI","2","I.0090","ZSO-TS1391"],["DI","2","I.0091","ZSC-TS1391"],["DI","2","I.0092","MIT-TS1391"],["DI","2","I.0093","MIL-TS1391"],["DI","2","I.0094","TS-TS1391"],["DI","2","I.0095","ZSO-TS1392"],["DI","2","I.0096","ZSC-TS1392"],["DI","2","I.0097","MIT-TS1392"],["DI","2","I.0098","MIL-TS1392"],["DI","2","I.0099","TS-TS1392"],["DI","2","I.009A","ZSO-TS1393"],["DI","2","I.009B","ZSC-TS1393"],["DI","2","I.009C","MIT-TS1393"],["DI","2","I.009D","MIL-TS1393"],["DI","2","I.009E","TS-TS1393"],["DI","2","I.0200","ZSO-AS1391"],["DI","2","I.0201","ZSC-AS1391"],["DI","2","I.0202","MIT-AS1391"],["DI","2","I.0203","MIL-AS1391"],["DI","2","I.0204","TS-AS1391"],["DI","2","I.0205","ZSO-AS1392"],["DI","2","I.0206","ZSC-AS1392"],["DI","2","I.0207","MIT-AS1392"],["DI","2","I.0208","MIL-AS1392"],["DI","2","I.0209","TS-AS1392"],["DI","2","I.020A","ZSO-AS1393"],["DI","2","I.020B","ZSC-AS1393"],["DI","2","I.020C","MIT-AS1393"],["DI","2","I.020D","MIL-AS1393"],["DI","2","I.020E","TS-AS1393"],["DI","2","I.0210","ZSO-AS1395"],["DI","2","I.0211","ZSC-AS1395"],["DI","2","I.0212","MIT-AS1395"],["DI","2","I.0213","MIL-AS1395"],["DI","2","I.0214","TS-AS1395"],["DI","2","I.0215","ZSO-AV1391"],["DI","2","I.0216","ZSC-AV1391"],["DI","2","I.0217","MIT-AV1391"],["DI","2","I.0218","MIL-AV1391"],["DI","2","I.0219","TS-AV1391"],["DI","2","I.021A","ZSO-TS1400"],["DI","2","I.021B","ZSC-TS1400"],["DI","2","I.021C","MIT-TS1400"],["DI","2","I.021D","MIL-TS1400"],["DI","2","I.021E","TS-TS1400"],["DI","2","I.0240","ZSO-AS1396"],["DI","2","I.0241","ZSC-AS1396"],["DI","2","I.0242","MIT-AS1396"],["DI","2","I.0243","MIL-AS1396"],["DI","2","I.0244","TS-AS1396"],["DI","2","I.0245","ZSO-AS1394"],["DI","2","I.0246","ZSC-AS1394"],["DI","2","I.0247","MIT-AS1394"],["DI","2","I.0248","MIL-AS1394"],["DI","2","I.0249","TS-AS1394"],["DI","2","I.024A","ZSO-SB1001"],["DI","2","I.024B","ZSC-SB1001"],["DI","2","I.024C","MIT-SB1001"],["DI","2","I.024D","MIL-SB1001"],["DI","2","I.024E","TS-SB1001"],["DI","2","I.0250","ZSO-AS1397"],["DI","2","I.0251","ZSC-AS1397"],["DI","2","I.0252","MIT-AS1397"],["DI","2","I.0253","MIL-AS1397"],["DI","2","I.0254","TS-AS1397"],["DI","2","I.0255","ZSO-CD1007"],["DI","2","I.0256","ZSC-CD1007"],["DI","2","I.0257","MIT-CD1007"],["DI","2","I.0258","MIL-CD1007"],["DI","2","I.0259","TS-CD1007"],["DI","2","I.025A","ZSO-CD1008"],["DI","2","I.025B","ZSC-CD1008"],["DI","2","I.025C","MIT-CD1008"],["DI","2","I.025D","MIL-CD1008"],["DI","2","I.025E","TS-CD1008"],["DI","2","I.025F","RY-CD01"],["DI","2","I.0280","ZSO-CD1001"],["DI","2","I.0281","ZSC-CD1001"],["DI","2","I.0282","MIT-CD1001"],["DI","2","I.0283","MIL-CD1001"],["DI","2","I.0284","TS-CD1001"],["DI","2","I.0285","ZSO-CD1002"],["DI","2","I.0286","ZSC-CD1002"],["DI","2","I.0287","MIT-CD1002"],["DI","2","I.0288","MIL-CD1002"],["DI","2","I.0289","TS-CD1002"],["DI","2","I.028A","ZSO-CD1003"],["DI","2","I.028B","ZSC-CD1003"],["DI","2","I.028C","MIT-CD1003"],["DI","2","I.028D","MIL-CD1003"],["DI","2","I.028E","TS-CD1003"],["DI","2","I.028F","ZSO-FW1031"],["DI","2","I.0290","LSLL-CD1110"],["DI","2","I.0291","LSHH-CD1110"],["DI","2","I.0292","LS-CR1003-1"],["DI","2","I.0293","LS-CR1003-2"],["DI","2","I.0299","LS-FW1115-A"],["DI","2","I.029A","LS-FW1115-B"],["DI","2","I.029B","LS-HD1101"],["DI","2","I.029C","LS-HD1102"],["DI","2","I.029D","LS-HD1103"],["DI","2","I.029E","LS-HD1105"],["DI","2","I.029F","LS-HD1106"],["DI","2","I.0320","ZSO-TS1394"],["DI","2","I.0321","ZSC-TS1394"],["DI","2","I.0322","MIT-TS1394"],["DI","2","I.0323","MIL-TS1394"],["DI","2","I.0324","TS-TS1394"],["DI","2","I.0325","ZSO-TS1395"],["DI","2","I.0326","ZSC-TS1395"],["DI","2","I.0327","MIT-TS1395"],["DI","2","I.0328","MIL-TS1395"],["DI","2","I.0329","TS-TS1395"],["DI","2","I.032A","ZSO-MS1391"],["DI","2","I.032B","ZSC-MS1391"],["DI","2","I.032C","MIT-MS1391"],["DI","2","I.032D","MIL-MS1391"],["DI","2","I.032E","TS-MS1391"],["DI","2","I.032F","ZSO-FW1032"],["DI","2","I.0330","ZSO-MS1392"],["DI","2","I.0331","ZSC-MS1392"],["DI","2","I.0332","MIT-MS1392"],["DI","2","I.0333","MIL-MS1392"],["DI","2","I.0334","TS-MS1392"],["DI","2","I.0335","ZSO-TS1005"],["DI","2","I.0336","ZSC-TS1005"],["DI","2","I.0337","MIT-TS1005"],["DI","2","I.0338","MIL-TS1005"],["DI","2","I.0339","TS-TS1005"],["DI","2","I.033A","ZSO-MU1001"],["DI","2","I.033B","ZSC-MU1001"],["DI","2","I.033C","MIT-MU1001"],["DI","2","I.033D","MIL-MU1001"],["DI","2","I.033E","TS-MU1001"],["DI","2","I.0360","ZSO-TS1397"],["DI","2","I.0361","ZSC-TS1397"],["DI","2","I.0362","MIT-TS1397"],["DI","2","I.0363","MIL-TS1397"],["DI","2","I.0364","TS-TS1397"],["DI","2","I.0365","ZSO-TS1396"],["DI","2","I.0366","ZSC-TS1396"],["DI","2","I.0367","MIT-TS1396"],["DI","2","I.0368","MIL-TS1396"],["DI","2","I.0369","TS-TS1396"],["DI","2","I.036A","ZSO-TS1399"],["DI","2","I.036B","ZSC-TS1399"],["DI","2","I.036C","MIT-TS1399"],["DI","2","I.036D","MIL-TS1399"],["DI","2","I.036E","TS-TS1399"],["DI","2","I.0370","ZSO-TS1398"],["DI","2","I.0371","ZSC-TS1398"],["DI","2","I.0372","MIT-TS1398"],["DI","2","I.0373","MIL-TS1398"],["DI","2","I.0374","TS-TS1398"],["DI","2","I.0375","ZSO-TS1390"],["DI","2","I.0376","ZSC-TS1390"],["DI","2","I.0377","MIT-TS1390"],["DI","2","I.0378","MIL-TS1390"],["DI","2","I.0379","TS-TS1390"],["DI","2","I.037A","ZSO-TS1389"],["DI","2","I.037B","ZSC-TS1389"],["DI","2","I.037C","MIT-TS1389"],["DI","2","I.037D","MIL-TS1389"],["DI","2","I.037E","TS-TS1389"],["DI","2","I.0400","TCS-DI1003"],["DI","2","I.0401","TCS-DI1024"],["DI","2","I.0402","TCS-DI1025"],["DI","2","I.0403","TCS-DI1026"],["DI","2","I.0404","TCS-DI1027"],["DI","2","I.0405","TCS-DI1028"],["DI","2","I.0406","TCS-DI1029"],["DI","2","I.0407","TCS-DI1033"],["DI","2","I.0408","TCS-DI1034"],["DI","2","I.040B","TCS-DI1037"],["DI","2","I.040C","TCS-DI1038"],["DI","2","I.040D","TCS-DI1048"],["DI","2","I.040E","TCS-DI1049"],["DI","2","I.0410","TCS-DI1039"],["DI","2","I.0411","TCS-DI1040"],["DI","2","I.0412","TCS-DI1041"],["DI","2","I.0413","TCS-DI1042"],["DI","2","I.0414","TCS-DI1043"],["DI","2","I.0415","TCS-DI1044"],["DI","2","I.0416","TCS-DI1055"],["DI","2","I.0417","TCS-DI1030"],["DI","2","I.0418","TCS-DI1031"],["DI","2","I.0419","TCS-DI1032"],["DI","2","I.041A","MIT-GEN"],["DI","2","I.041B","RY-52G"],["DI","2","I.041C","RY-52L"],["DI","2","I.041D","TCS-DI1050"],["DI","2","I.041E","TCS-DI1051-1"],["DI","2","I.041F","TCS-DI1051-2"],["DI","2","I.0560","ZSE-N1011"],["DI","2","I.0561","ZSR-N1011"],["DI","2","I.0562","MIF-N1011"],["DI","2","I.0563","MIR-N1011"],["DI","2","I.0564","MIT-N1011"],["DI","2","I.0565","ZSE-N1012"],["DI","2","I.0566","ZSR-N1012"],["DI","2","I.0567","MIF-N1012"],["DI","2","I.0568","MIR-N1012"],["DI","2","I.0569","MIT-N1012"],["DI","2","I.056A","ZSE-N1013"],["DI","2","I.056B","ZSR-N1013"],["DI","2","I.056C","MIF-N1013"],["DI","2","I.056D","MIR-N1013"],["DI","2","I.056E","MIT-N1013"],["DI","2","I.0570","ZSE-N1014"],["DI","2","I.0571","ZSR-N1014"],["DI","2","I.0572","MIF-N1014"],["DI","2","I.0573","MIR-N1014"],["DI","2","I.0574","MIT-N1014"],["DI","2","I.0575","ZSE-N1015"],["DI","2","I.0576","ZSR-N1015"],["DI","2","I.0577","MIF-N1015"],["DI","2","I.0578","MIR-N1015"],["DI","2","I.0579","MIT-N1015"],["DI","2","I.057A","ZSE-N1016"],["DI","2","I.057B","ZSR-N1016"],["DI","2","I.057C","MIF-N1016"],["DI","2","I.057D","MIR-N1016"],["DI","2","I.057E","MIT-N1016"],["DI","2","I.0600","ZSE-N1017"],["DI","2","I.0601","ZSR-N1017"],["DI","2","I.0602","MIF-N1017"],["DI","2","I.0603","MIR-N1017"],["DI","2","I.0604","MIT-N1017"],["DI","2","I.0605","ZSE-N1018"],["DI","2","I.0606","ZSR-N1018"],["DI","2","I.0607","MIF-N1018"],["DI","2","I.0608","MIR-N1018"],["DI","2","I.0609","MIT-N1018"],["DI","2","I.060A","ZSE-N1019"],["DI","2","I.060B","ZSR-N1019"],["DI","2","I.060C","MIF-N1019"],["DI","2","I.060D","MIR-N1019"],["DI","2","I.060E","MIT-N1019"],["DI","2","I.0610","ZSE-N1020"],["DI","2","I.0611","ZSR-N1020"],["DI","2","I.0612","MIF-N1020"],["DI","2","I.0613","MIR-N1020"],["DI","2","I.0614","MIT-N1020"],["DI","2","I.0615","ZSE-N1021"],["DI","2","I.0616","ZSR-N1021"],["DI","2","I.0617","MIF-N1021"],["DI","2","I.0618","MIR-N1021"],["DI","2","I.0619","MIT-N1021"],["DI","2","I.061A","ZSE-N1022"],["DI","2","I.061B","ZSR-N1022"],["DI","2","I.061C","MIF-N1022"],["DI","2","I.061D","MIR-N1022"],["DI","2","I.061E","MIT-N1022"],["DI","2","I.0640","ZSE-N1023"],["DI","2","I.0641","ZSR-N1023"],["DI","2","I.0642","MIF-N1023"],["DI","2","I.0643","MIR-N1023"],["DI","2","I.0644","MIT-N1023"],["DI","2","I.0645","ZSE-N1024"],["DI","2","I.0646","ZSR-N1024"],["DI","2","I.0647","MIF-N1024"],["DI","2","I.0648","MIR-N1024"],["DI","2","I.0649","MIT-N1024"],["DI","2","I.064A","ZSE-N1025"],["DI","2","I.064B","ZSR-N1025"],["DI","2","I.064C","MIF-N1025"],["DI","2","I.064D","MIR-N1025"],["DI","2","I.064E","MIT-N1025"],["DI","2","I.0650","ZSE-N1026"],["DI","2","I.0651","ZSR-N1026"],["DI","2","I.0652","MIF-N1026"],["DI","2","I.0653","MIR-N1026"],["DI","2","I.0654","MIT-N1026"],["DI","2","I.0655","ZSE-N1027"],["DI","2","I.0656","ZSR-N1027"],["DI","2","I.0657","MIF-N1027"],["DI","2","I.0658","MIR-N1027"],["DI","2","I.0659","MIT-N1027"],["DI","2","I.065A","ZSE-N1028"],["DI","2","I.065B","ZSR-N1028"],["DI","2","I.065C","MIF-N1028"],["DI","2","I.065D","MIR-N1028"],["DI","2","I.065E","MIT-N1028"],["DI","2","I.0680","ZSE-N1029"],["DI","2","I.0681","ZSR-N1029"],["DI","2","I.0682","MIF-N1029"],["DI","2","I.0683","MIR-N1029"],["DI","2","I.0684","MIT-N1029"],["DI","2","I.0685","ZSE-N1030"],["DI","2","I.0686","ZSR-N1030"],["DI","2","I.0687","MIF-N1030"],["DI","2","I.0688","MIR-N1030"],["DI","2","I.0689","MIT-N1030"],["DI","2","I.068A","ZSE-N1031"],["DI","2","I.068B","ZSR-N1031"],["DI","2","I.068C","MIF-N1031"],["DI","2","I.068D","MIR-N1031"],["DI","2","I.068E","MIT-N1031"],["DI","2","I.0690","ZSE-N1032"],["DI","2","I.0691","ZSR-N1032"],["DI","2","I.0692","MIF-N1032"],["DI","2","I.0693","MIR-N1032"],["DI","2","I.0694","MIT-N1032"],["DI","2","I.0695","ZSE-N1033"],["DI","2","I.0696","ZSR-N1033"],["DI","2","I.0697","MIF-N1033"],["DI","2","I.0698","MIR-N1033"],["DI","2","I.0699","MIT-N1033"],["DI","2","I.069A","ZSE-N1034"],["DI","2","I.069B","ZSR-N1034"],["DI","2","I.069C","MIF-N1034"],["DI","2","I.069D","MIR-N1034"],["DI","2","I.069E","MIT-N1034"],["DI","2","I.0720","ZSE-N1035"],["DI","2","I.0721","ZSR-N1035"],["DI","2","I.0722","MIF-N1035"],["DI","2","I.0723","MIR-N1035"],["DI","2","I.0724","MIT-N1035"],["DI","2","I.0725","ZSE-N1036"],["DI","2","I.0726","ZSR-N1036"],["DI","2","I.0727","MIF-N1036"],["DI","2","I.0728","MIR-N1036"],["DI","2","I.0729","MIT-N1036"],["DI","2","I.072A","ZSE-N1037"],["DI","2","I.072B","ZSR-N1037"],["DI","2","I.072C","MIF-N1037"],["DI","2","I.072D","MIR-N1037"],["DI","2","I.072E","MIT-N1037"],["DI","2","I.0730","ZSE-N1038"],["DI","2","I.0731","ZSR-N1038"],["DI","2","I.0732","MIF-N1038"],["DI","2","I.0733","MIR-N1038"],["DI","2","I.0734","MIT-N1038"],["DI","2","I.0735","ZSE-N1040"],["DI","2","I.0736","ZSR-N1040"],["DI","2","I.0737","MOF-N1040"],["DI","2","I.0738","MOR-N1040"],["DI","2","I.0739","ZSE-N1042"],["DI","2","I.073A","ZSR-N1042"],["DI","2","I.073B","MOF-N1042"],["DI","2","I.073C","MOR-N1042"],["DI","2","I.073D","MIT-SB-APH01"],["DI","2","I.073E","MIL-SB-APH01"],["DI","2","I.073F","MIL-SB01"],["DI","2","I.0880","ZSO-CD1006"],["DI","2","I.0881","ZSC-CD1006"],["DI","2","I.0882","ZSO-CD1005"],["DI","2","I.0883","ZSC-CD1005"],["DI","2","I.0884","ZSO-CD1114"],["DI","2","I.0885","ZSC-CD1114"],["DI","2","I.0886","ZSO-CD1123"],["DI","2","I.0887","ZSC-CD1123"],["DI","2","I.0888","ZSO-CD1125"],["DI","2","I.0889","ZSC-CD1125"],["DI","2","I.088A","ZSO-CD1104-2"],["DI","2","I.088B","ZSC-CD1104-2"],["DI","2","I.088C","ZSO-FW1061"],["DI","2","I.088D","ZSC-FW1061"],["DI","2","I.088E","ZSO-FW1151"],["DI","2","I.088F","ZSC-FW1151"],["DI","2","I.0890","ZSO-CD1004"],["DI","2","I.0891","ZSC-CD1004"],["DI","2","I.0892","ZSO-CD1115"],["DI","2","I.0893","ZSC-CD1115"],["DI","2","I.0894","ZSO-CD1124"],["DI","2","I.0895","ZSC-CD1124"],["DI","2","I.0896","ZSO-CD1126"],["DI","2","I.0897","ZSC-CD1126"],["DI","2","I.0898","ZSO-FW1060"],["DI","2","I.0899","ZSC-FW1060"],["DI","2","I.089A","ZSO-FW1150"],["DI","2","I.089B","ZSC-FW1150"],["DI","2","I.089C","TCS-DI1057"],["DI","2","I.089D","TCS-DI1058"],["DI","2","I.089E","ZSO-CR1013"],["DI","2","I.089F","ZSC-CR1013"],["DI","2","I.0930","MIL-52G1"],["DI","2","I.0931","MIG-52G1-1"],["DI","2","I.0932","MIG-52G1-2"],["DI","2","I.0933","MIG-52G1-3"],["DI","2","I.0934","MIG-52G1-4"],["DI","2","I.0935","MIG-52G1-5"],["DI","2","I.0936","MIG-52G1-6"],["DI","2","I.0937","MIG-52L1"],["DI","2","I.0939","TCS-DI1052"],["DI","2","I.093A","TCS-DI1053"],["DI","2","I.093B","TCS-DI1054"],["DI","2","I.093C","SER1-SYSERR"],["DI","2","I.093D","1031-SYSERR"],["DI","2","I.093E","1032-SYSERR"],["DI","2","I.093F","1033-SYSERR"],["DI","3","I.0000","ZSO-FA1019"],["DI","3","I.0001","ZSC-FA1019"],["DI","3","I.0002","MIT-FA1019"],["DI","3","I.0003","MIL-FA1019"],["DI","3","I.0004","TS-FA1019"],["DI","3","I.0005","ZSO-FA1020"],["DI","3","I.0006","ZSC-FA1020"],["DI","3","I.0007","MIT-FA1020"],["DI","3","I.0008","MIL-FA1020"],["DI","3","I.0009","TS-FA1020"],["DI","3","I.000A","ZSO-FA1021"],["DI","3","I.000B","ZSC-FA1021"],["DI","3","I.000C","MIT-FA1021"],["DI","3","I.000D","MIL-FA1021"],["DI","3","I.000E","TS-FA1021"],["DI","3","I.000F","MFTTT-IRP"],["DI","3","I.0010","ZSO-FA1022"],["DI","3","I.0011","ZSC-FA1022"],["DI","3","I.0012","MIT-FA1022"],["DI","3","I.0013","MIL-FA1022"],["DI","3","I.0014","TS-FA1022"],["DI","3","I.0015","ZSO-FA1023"],["DI","3","I.0016","ZSC-FA1023"],["DI","3","I.0017","MIT-FA1023"],["DI","3","I.0018","MIL-FA1023"],["DI","3","I.0019","TS-FA1023"],["DI","3","I.001A","ZSO-FA1024"],["DI","3","I.001B","ZSC-FA1024"],["DI","3","I.001C","MIT-FA1024"],["DI","3","I.001D","MIL-FA1024"],["DI","3","I.001E","TS-FA1024"],["DI","3","I.0040","MIR-F1056"],["DI","3","I.0041","MIT-F1056"],["DI","3","I.0042","MIL-F1056"],["DI","3","I.0043","MIS-F1056"],["DI","3","I.0044","MIV-F1056-1"],["DI","3","I.0045","MIV-F1056-2"],["DI","3","I.0046","MIR-F1055A"],["DI","3","I.0047","MIT-F1055A"],["DI","3","I.0048","MIL-F1055A"],["DI","3","I.0049","MIS-F1055A"],["DI","3","I.004A","MIV-F1055A1"],["DI","3","I.004B","MIV-F1055A2"],["DI","3","I.004C","MIR-P1503A"],["DI","3","I.004D","MIT-P1503A"],["DI","3","I.004E","MIL-P1503A"],["DI","3","I.0050","MIR-P1115A1"],["DI","3","I.0051","MIT-P1115A1"],["DI","3","I.0052","MIL-P1115A1"],["DI","3","I.0053","MIR-P1115B1"],["DI","3","I.0054","MIT-P1115B1"],["DI","3","I.0055","MIL-P1115B1"],["DI","3","I.0056","MIR-P1115A"],["DI","3","I.0057","MIT-P1115A"],["DI","3","I.0058","MIL-P1115A"],["DI","3","I.0059","MIS-P1115A"],["DI","3","I.005A","MIV-P1115A1"],["DI","3","I.005B","MIV-P1115A2"],["DI","3","I.005C","MIR-LO1753-A"],["DI","3","I.005D","MIT-LO1753-A"],["DI","3","I.005E","MIL-LO1753-A"],["DI","3","I.0080","MIR-P1116A"],["DI","3","I.0081","MIT-P1116A"],["DI","3","I.0082","MIL-P1116A"],["DI","3","I.0083","MIS-P1116A"],["DI","3","I.0084","MIV-P1116A1"],["DI","3","I.0085","MIV-P1116A2"],["DI","3","I.0086","MIR-P1108A"],["DI","3","I.0087","MIT-P1108A"],["DI","3","I.0088","MIL-P1108A"],["DI","3","I.0089","MIS-P1108A"],["DI","3","I.008A","MIV-P1108A1"],["DI","3","I.008B","MIV-P1108A2"],["DI","3","I.0090","PS-LO1115-A1"],["DI","3","I.0091","PS-LO1115-A2"],["DI","3","I.0092","PS-LO1115-A3"],["DI","3","I.0093","LS-LO1115-A"],["DI","3","I.0094","DPSH-FA1055-A"],["DI","3","I.0095","DIR-DF1001"],["DI","3","I.009A","DIT-DF1001"],["DI","3","I.0163","MIR-L1090"],["DI","3","I.0164","MIT-L1090"],["DI","3","I.0165","MIL-L1090"],["DI","3","I.0166","MIR-L1091"],["DI","3","I.0167","MIT-L1091"],["DI","3","I.0168","MIL-L1091"],["DI","3","I.0169","MIR-L1092"],["DI","3","I.016A","MIT-L1092"],["DI","3","I.016B","MIL-L1092"],["DI","3","I.016C","MIR-F1091"],["DI","3","I.016D","MIT-F1091"],["DI","3","I.016E","MIL-F1091"],["DI","3","I.0170","MIR-S1092-A"],["DI","3","I.0171","MIT-S1092-A"],["DI","3","I.0172","MIL-S1092-A"],["DI","3","I.0173","ZSO-BH1754"],["DI","3","I.0174","ZSC-BH1754"],["DI","3","I.0175","LI1-L-1093"],["DI","3","I.0178","ES-L1090"],["DI","3","I.0179","ES-L1091"],["DI","3","I.017A","ES-L1092"],["DI","3","I.017D","MIR-P1127"],["DI","3","I.017E","MIT-P1127"],["DI","3","I.017F","LSHH-P1127"],["DI","3","I.0240","SS-BH1750"],["DI","3","I.0241","SS-BH1751"],["DI","3","I.0242","SS-BH1752"],["DI","3","I.0243","ZS-BH1750"],["DI","3","I.0244","ZS-BH1751"],["DI","3","I.0245","ZS-BH1752"],["DI","3","I.0246","PDS_H-BH1750"],["DI","3","I.0247","PDS_L-BH1750"],["DI","3","I.0248","LS-BH1754"],["DI","3","I.0249","LS-BH1753"],["DI","3","I.0250","MIF-L1060A"],["DI","3","I.0251","MIR-L1060A"],["DI","3","I.0252","MIT-L1060A"],["DI","3","I.0253","MIL-L1060A"],["DI","3","I.0254","LIS1-L1060A"],["DI","3","I.0255","LIS2-L1060A"],["DI","3","I.0256","LIS3-L1060A"],["DI","3","I.0257","LIS4-L1060A"],["DI","3","I.0258","SS-BH1060-A"],["DI","3","I.0259","FS-CW1060-A1"],["DI","3","I.025A","FS-CW1060-A2"],["DI","3","I.025B","ZSO-BH1060-A"],["DI","3","I.025C","ZSC-BH1060-A"],["DI","3","I.025D","MIR-P1503C"],["DI","3","I.025E","MIT-P1503C"],["DI","3","I.025F","MIL-P1503C"],["DI","3","I.0320","ZSO-FA1025"],["DI","3","I.0321","ZSC-FA1025"],["DI","3","I.0322","MIT-FA1025"],["DI","3","I.0323","MIL-FA1025"],["DI","3","I.0324","TS-FA1025"],["DI","3","I.0325","ZSO-FA1026"],["DI","3","I.0326","ZSC-FA1026"],["DI","3","I.0327","MIT-FA1026"],["DI","3","I.0328","MIL-FA1026"],["DI","3","I.0329","TS-FA1026"],["DI","3","I.032A","MIR-P1501A"],["DI","3","I.032B","MIT-P1501A"],["DI","3","I.032C","MIL-P1501A"],["DI","3","I.032D","MIS-P1501A"],["DI","3","I.032E","MIV-P1501A1"],["DI","3","I.032F","MIV-P1501A2"],["DI","3","I.0330","ZSO-FA1005"],["DI","3","I.0331","ZSC-FA1005"],["DI","3","I.0332","MIT-FA1005"],["DI","3","I.0333","MIL-FA1005"],["DI","3","I.0334","TS-FA1005"],["DI","3","I.0335","ZSO-FA1006"],["DI","3","I.0336","ZSC-FA1006"],["DI","3","I.0337","MIT-FA1006"],["DI","3","I.0338","MIL-FA1006"],["DI","3","I.0339","TS-FA1006"],["DI","3","I.033A","ZSO-FA1007"],["DI","3","I.033B","ZSC-FA1007"],["DI","3","I.033C","MIT-FA1007"],["DI","3","I.033D","MIL-FA1007"],["DI","3","I.033E","TS-FA1007"],["DI","3","I.0360","MIR-F1053"],["DI","3","I.0361","MIT-F1053"],["DI","3","I.0362","MIL-F1053"],["DI","3","I.0363","MIS-F1053"],["DI","3","I.0364","MIV-F1053-1"],["DI","3","I.0365","MIV-F1053-2"],["DI","3","I.0366","MIR-F1055B"],["DI","3","I.0367","MIT-F1055B"],["DI","3","I.0368","MIL-F1055B"],["DI","3","I.0369","MIS-F1055B"],["DI","3","I.036A","MIV-F1055B1"],["DI","3","I.036B","MIV-F1055B2"],["DI","3","I.036C","MIR-P1503B"],["DI","3","I.036D","MIT-P1503B"],["DI","3","I.036E","MIL-P1503B"],["DI","3","I.0370","MIR-P1115A2"],["DI","3","I.0371","MIT-P1115A2"],["DI","3","I.0372","MIL-P1115A2"],["DI","3","I.0373","MIR-P1115B2"],["DI","3","I.0374","MIT-P1115B2"],["DI","3","I.0375","MIL-P1115B2"],["DI","3","I.0376","MIR-P1115B"],["DI","3","I.0377","MIT-P1115B"],["DI","3","I.0378","MIL-P1115B"],["DI","3","I.0379","MIS-P1115B"],["DI","3","I.037A","MIV-P1115B1"],["DI","3","I.037B","MIV-P1115B2"],["DI","3","I.037C","MIR-LO1753-B"],["DI","3","I.037D","MIT-LO1753-B"],["DI","3","I.037E","MIL-LO1753-B"],["DI","3","I.0400","MIR-P1116B"],["DI","3","I.0401","MIT-P1116B"],["DI","3","I.0402","MIL-P1116B"],["DI","3","I.0403","MIS-P1116B"],["DI","3","I.0404","MIV-P1116B1"],["DI","3","I.0405","MIV-P1116B2"],["DI","3","I.0406","MIR-P1108B"],["DI","3","I.0407","MIT-P1108B"],["DI","3","I.0408","MIL-P1108B"],["DI","3","I.0409","MIS-P1108B"],["DI","3","I.040A","MIV-P1108B1"],["DI","3","I.040B","MIV-P1108B2"],["DI","3","I.0410","PS-LO1115-B1"],["DI","3","I.0411","PS-LO1115-B2"],["DI","3","I.0412","PS-LO1115-B3"],["DI","3","I.0413","LS-LO1115-B"],["DI","3","I.0414","DPSH-FA1055-B"],["DI","3","I.0415","DIR-DF1002"],["DI","3","I.041A","DIT-DF1002"],["DI","3","I.0482","ZSO-BH1759"],["DI","3","I.0483","ZSC-BH1759"],["DI","3","I.0484","ZSO-BH1752"],["DI","3","I.0485","ZSC-BH1752"],["DI","3","I.0486","ZSO-BH1753"],["DI","3","I.0487","ZSC-BH1753"],["DI","3","I.0488","ZSO-BH1750"],["DI","3","I.0489","ZSC-BH1750"],["DI","3","I.048A","PSH-BH1750"],["DI","3","I.048B","PSL-BH1750"],["DI","3","I.048D","PS-BH1750"],["DI","3","I.048E","LS-BH1751"],["DI","3","I.048F","LS-BH1750"],["DI","3","I.0490","LI1-S-1090"],["DI","3","I.0491","LI2-S-1090"],["DI","3","I.0492","LI3-S-1090"],["DI","3","I.0493","LI4-S-1090"],["DI","3","I.0494","LI5-S-1090"],["DI","3","I.0495","LI7-S-1090"],["DI","3","I.0496","LI6-S-1090"],["DI","3","I.0497","LI8-S-1090"],["DI","3","I.0498","LS-BH1752"],["DI","3","I.0499","MIR-S1092-B"],["DI","3","I.049A","MIT-S1092-B"],["DI","3","I.049B","MIL-S1092-B"],["DI","3","I.0520","MIR-F1054"],["DI","3","I.0521","MIT-F1054"],["DI","3","I.0522","MIL-F1054"],["DI","3","I.0523","MIS-F1054"],["DI","3","I.0524","MIV-F1054-1"],["DI","3","I.0525","MIV-F1054-2"],["DI","3","I.0526","MIR-P1501B"],["DI","3","I.0527","MIT-P1501B"],["DI","3","I.0528","MIL-P1501B"],["DI","3","I.0529","MIS-P1501B"],["DI","3","I.052A","MIV-P1501B1"],["DI","3","I.052B","MIV-P1501B2"],["DI","3","I.0530","MIF-L1060B"],["DI","3","I.0531","MIR-L1060B"],["DI","3","I.0532","MIT-L1060B"],["DI","3","I.0533","MIL-L1060B"],["DI","3","I.0534","LIS1-L1060B"],["DI","3","I.0535","LIS2-L1060B"],["DI","3","I.0536","LIS3-L1060B"],["DI","3","I.0537","LIS4-L1060B"],["DI","3","I.0538","SS-BH1060-B"],["DI","3","I.0539","FS-CW1060-B1"],["DI","3","I.053A","FS-CW1060-B2"],["DI","3","I.053B","ZSO-BH1060-B"],["DI","3","I.053C","ZSC-BH1060-B"],["DI","3","I.053D","LS-FS1410"],["DI","3","I.053E","LS-FS1411"],["DI","3","I.053F","LSLL-CW1109"],["DI","3","I.0560","ZSO-SD1804"],["DI","3","I.0561","ZSC-SD1804"],["DI","3","I.0562","ZSO-SD1801"],["DI","3","I.0563","ZSC-SD1801"],["DI","3","I.0564","ZSO-SD1802A"],["DI","3","I.0565","ZSC-SD1802A"],["DI","3","I.0566","ZSO-SD1802B"],["DI","3","I.0567","ZSC-SD1802B"],["DI","3","I.0568","ZSO-PA1800"],["DI","3","I.0569","ZSC-PA1800"],["DI","3","I.056A","ZSO-AV1803"],["DI","3","I.056B","ZSC-AV1803"],["DI","3","I.056C","DPS-SD1800"],["DI","3","I.0570","MIR-M1301"],["DI","3","I.0571","MIT-M1301"],["DI","3","I.0572","MIL-M1301"],["DI","3","I.0573","PS-SD1804"],["DI","3","I.0574","PS-PA1800"],["DI","3","I.0575","PS-SD1800"],["DI","3","I.0577","LSH-SD1800"],["DI","3","I.0578","LSL-SD1800"],["DI","3","I.0579","LSH-SD1801"],["DI","3","I.057A","SIL-SD1300"],["DI","3","I.057B","XA-FH1701"],["DI","3","I.057C","XA-FH1702"],["DI","3","I.057D","XA-FH1703"],["DI","3","I.057E","XA-FH1704"],["DI","3","I.0640","MIF-L1060C"],["DI","3","I.0641","MIR-L1060C"],["DI","3","I.0642","MIT-L1060C"],["DI","3","I.0643","MIL-L1060C"],["DI","3","I.0644","LIS1-L1060C"],["DI","3","I.0645","LIS2-L1060C"],["DI","3","I.0646","LIS3-L1060C"],["DI","3","I.0647","LIS4-L1060C"],["DI","3","I.0648","SS-BH1060-C"],["DI","3","I.0649","FS-CW1060-C1"],["DI","3","I.064A","FS-CW1060-C2"],["DI","3","I.064B","ZSO-BH1060-C"],["DI","3","I.064C","ZSC-BH1060-C"],["DI","3","I.0650","YS-FA1052M1"],["DI","3","I.0651","XA-FA1052M1"],["DI","3","I.0652","YSR-FA1052M1"],["DI","3","I.0653","SAL-FA1052-6"],["DI","3","I.0654","SALL-FA1052-5"],["DI","3","I.0655","XA-FA1052-1"],["DI","3","I.0656","XA-FA1052-2"],["DI","3","I.0657","XA-FA1052-3"],["DI","3","I.0658","XA-FA1052-4"],["DI","3","I.0659","XA-FA1052-5"],["DI","3","I.065A","XA-FA1052-6"],["DI","3","I.065B","MIA-LO1753-1"],["DI","3","I.065C","MIA-LO1753-2"],["DI","3","I.065D","MIA-LO1753-3"],["DI","3","I.065E","ES-FA1052"],["DI","3","I.0680","MIF-L1060D"],["DI","3","I.0681","MIR-L1060D"],["DI","3","I.0682","MIT-L1060D"],["DI","3","I.0683","MIL-L1060D"],["DI","3","I.0684","LIS1-L1060D"],["DI","3","I.0685","LIS2-L1060D"],["DI","3","I.0686","LIS3-L1060D"],["DI","3","I.0687","LIS4-L1060D"],["DI","3","I.0688","SS-BH1060-D"],["DI","3","I.0689","FS-CW1060-D1"],["DI","3","I.068A","FS-CW1060-D2"],["DI","3","I.068B","ZSO-BH1060-D"],["DI","3","I.068C","ZSC-BH1060-D"],["DI","3","I.0690","PSL-LO1756"],["DI","3","I.0691","PSLL-LO1756"],["DI","3","I.0692","DPS-LO1756"],["DI","3","I.0693","TS-LO1756-1"],["DI","3","I.0694","TS-LO1756-2"],["DI","3","I.0695","PSL-LO1753"],["DI","3","I.0696","PSLL-LO1753"],["DI","3","I.0697","DPS-LO1753"],["DI","3","I.0698","LSL-LO1753"],["DI","3","I.0699","LSLL-LO1753"],["DI","3","I.069A","TS-LO1753"],["DI","3","I.069D","1041-SYSERR"],["DI","3","I.069E","1042-SYSERR"],["DI","3","I.069F","PDP-PLOSS"],["DI","3","I.0720","ZSO-FA1008"],["DI","3","I.0721","ZSC-FA1008"],["DI","3","I.0722","MIT-FA1008"],["DI","3","I.0723","MIL-FA1008"],["DI","3","I.0724","TS-FA1008"],["DI","3","I.0725","ZSO-FA1009"],["DI","3","I.0726","ZSC-FA1009"],["DI","3","I.0727","MIT-FA1009"],["DI","3","I.0728","MIL-FA1009"],["DI","3","I.0729","TS-FA1009"],["DI","3","I.072A","ZSO-FA1010"],["DI","3","I.072B","ZSC-FA1010"],["DI","3","I.072C","MIT-FA1010"],["DI","3","I.072D","MIL-FA1010"],["DI","3","I.072E","TS-FA1010"],["DI","3","I.0730","ZSO-FA1011"],["DI","3","I.0731","ZSC-FA1011"],["DI","3","I.0732","MIT-FA1011"],["DI","3","I.0733","MIL-FA1011"],["DI","3","I.0734","TS-FA1011"],["DI","3","I.0735","ZSO-FA1012"],["DI","3","I.0736","ZSC-FA1012"],["DI","3","I.0737","MIT-FA1012"],["DI","3","I.0738","MIL-FA1012"],["DI","3","I.0739","TS-FA1012"],["DI","3","I.073A","ZSO-FA1013"],["DI","3","I.073B","ZSC-FA1013"],["DI","3","I.073C","MIT-FA1013"],["DI","3","I.073D","MIL-FA1013"],["DI","3","I.073E","TS-FA1013"],["DI","3","I.0800","ZSO-FA1014"],["DI","3","I.0801","ZSC-FA1014"],["DI","3","I.0802","MIT-FA1014"],["DI","3","I.0803","MIL-FA1014"],["DI","3","I.0804","TS-FA1014"],["DI","3","I.0805","ZSO-FA1015"],["DI","3","I.0806","ZSC-FA1015"],["DI","3","I.0807","MIT-FA1015"],["DI","3","I.0808","MIL-FA1015"],["DI","3","I.0809","TS-FA1015"],["DI","3","I.080A","ZSO-FA1016"],["DI","3","I.080B","ZSC-FA1016"],["DI","3","I.080C","MIT-FA1016"],["DI","3","I.080D","MIL-FA1016"],["DI","3","I.080E","TS-FA1016"],["DI","3","I.0810","ZSO-FA1017"],["DI","3","I.0811","ZSC-FA1017"],["DI","3","I.0812","MIT-FA1017"],["DI","3","I.0813","MIL-FA1017"],["DI","3","I.0814","TS-FA1017"],["DI","3","I.0815","ZSO-FA1018"],["DI","3","I.0816","ZSC-FA1018"],["DI","3","I.0817","MIT-FA1018"],["DI","3","I.0818","MIL-FA1018"],["DI","3","I.0819","TS-FA1018"],["DI","3","I.081A","MIR-P1501C"],["DI","3","I.081B","MIT-P1501C"],["DI","3","I.081C","MIL-P1501C"],["DI","3","I.081D","MIS-P1501C"],["DI","3","I.081E","MIV-P1501C1"],["DI","3","I.081F","MIV-P1501C2"],["DI","3","I.0840","ZSO-MU1109"],["DI","3","I.0841","ZSC-MU1109"],["DI","3","I.0842","ZSO-FS1005"],["DI","3","I.0843","ZSC-FS1005"],["DI","4","I.0000","ZSO-DO1043-A1"],["DI","4","I.0001","ZSC-DO1043-A1"],["DI","4","I.0002","ZSO-DO1043-A2"],["DI","4","I.0003","ZSC-DO1043-A2"],["DI","4","I.0008","ZSO-PA1043-A2"],["DI","4","I.0009","ZSC-PA1043-A2"],["DI","4","I.000C","ZSO-PA1043-A3"],["DI","4","I.000D","ZSC-PA1043-A3"],["DI","4","I.0010","ZSE-DO1043-A5"],["DI","4","I.0011","ZSR-DO1043-A5"],["DI","4","I.0012","ZSE-DO1043-A4"],["DI","4","I.0013","ZSR-DO1043-A4"],["DI","4","I.0016","ZSO-FA1043-A"],["DI","4","I.0017","ZSC-FA1043-A"],["DI","4","I.0018","MIT-FA1043-A"],["DI","4","I.0019","MIL-FA1043-A"],["DI","4","I.001A","TS-FA1043-A"],["DI","4","I.0041","BI7-DO1043-A"],["DI","4","I.0042","BI6-DO1043-A"],["DI","4","I.0043","BI3-DO1043-A"],["DI","4","I.0044","BI2-DO1043-A"],["DI","4","I.0045","BI1-DO1043-A"],["DI","4","I.0046","BI5-DO1043-A"],["DI","4","I.0047","BI4-DO1043-A"],["DI","4","I.0048","BI8-DO1043-A"],["DI","4","I.0049","BI10-DO1043-A"],["DI","4","I.004A","BI9-DO1043-A"],["DI","4","I.004C","PSH-DO1043-A1"],["DI","4","I.004D","PSL-PA1043-A1"],["DI","4","I.0120","ZSO-CL1061-A1"],["DI","4","I.0121","ZSC-CL1061-A1"],["DI","4","I.0122","ZSO-CL1061-A2"],["DI","4","I.0123","ZSC-CL1061-A2"],["DI","4","I.0124","ZSO-CL1061-A7"],["DI","4","I.0125","ZSC-CL1061-A7"],["DI","4","I.0126","LSH-CL1008-A"],["DI","4","I.0127","LSL-CL1008-A"],["DI","4","I.0128","MIA-CL1061-A2"],["DI","4","I.0129","MIA-CL1061-A3"],["DI","4","I.012A","MIA-CL1061-A4"],["DI","4","I.012B","MIA-CL1061-A5"],["DI","4","I.012C","MIA-CL1061-A6"],["DI","4","I.012D","MIA-CL1061-A7"],["DI","4","I.012E","MIA-CL1061-A8"],["DI","4","I.0130","MIR-CL1061-A"],["DI","4","I.0131","MIT-CL1061-A"],["DI","4","I.0132","MIL-CL1061-A"],["DI","4","I.0133","MIR-CL1061-A1"],["DI","4","I.0134","MIT-CL1061-A1"],["DI","4","I.0135","YSR-CL1061-A7"],["DI","4","I.013E","PS-IA1061-A1"],["DI","4","I.013F","PS-IA1061-A2"],["DI","4","I.0166","LSH-LM1811"],["DI","4","I.0167","LSL-LM1811"],["DI","4","I.0168","LSH-LM1812"],["DI","4","I.0169","LSL-LM1815"],["DI","4","I.016A","PS-PA1811"],["DI","4","I.016B","PS-LM1814A"],["DI","4","I.016C","PS-LM1814B"],["DI","4","I.016D","PS-LM1812"],["DI","4","I.016E","PS-LM1815"],["DI","4","I.016F","DPS-LM1811"],["DI","4","I.0170","MIR-M1311"],["DI","4","I.0171","MIT-M1311"],["DI","4","I.0172","MIL-M1311"],["DI","4","I.0173","MIR-LM1313"],["DI","4","I.0174","MIT-LM1313"],["DI","4","I.0175","MIL-LM1313"],["DI","4","I.0176","SIL-LM1311"],["DI","4","I.0177","ZSO-LM1812"],["DI","4","I.0178","ZSC-LM1812"],["DI","4","I.0179","ZSO-LM1815"],["DI","4","I.017A","ZSC-LM1815"],["DI","4","I.017B","ZSO-LM1814A"],["DI","4","I.017C","ZSC-LM1814A"],["DI","4","I.017D","ZSO-LM1814B"],["DI","4","I.017E","ZSC-LM1814B"],["DI","4","I.0200","ZSO-LM1811A"],["DI","4","I.0201","ZSC-LM1811A"],["DI","4","I.0202","ZSO-LM1811B"],["DI","4","I.0203","ZSC-LM1811B"],["DI","4","I.0204","ZSO-LM1811C"],["DI","4","I.0205","ZSC-LM1811C"],["DI","4","I.0206","ZSO-LM1811D"],["DI","4","I.0207","ZSC-LM1811D"],["DI","4","I.0208","ZSO-LM1811E"],["DI","4","I.0209","ZSC-LM1811E"],["DI","4","I.020A","ZSO-LM1811F"],["DI","4","I.020B","ZSC-LM1811F"],["DI","4","I.020C","ZSO-LM1811G"],["DI","4","I.020D","ZSC-LM1811G"],["DI","4","I.020E","ZSO-LM1811H"],["DI","4","I.020F","ZSC-LM1811H"],["DI","4","I.0210","PSHHH-FG1085-NC"],["DI","4","I.0211","PSHH-FG1085-NC"],["DI","4","I.0212","PSLL-FG1085-NC"],["DI","4","I.0213","PSHHH-FG1086-NC"],["DI","4","I.0214","PSHH-FG1086-NC"],["DI","4","I.0215","PSLL-FG1086-NC"],["DI","4","I.0216","PSHHH-FG1087-NC"],["DI","4","I.0217","PSHH-FG1087-NC"],["DI","4","I.0218","PSLL-FG1087-NC"],["DI","4","I.0219","LSLL-BR1001-1-NC"],["DI","4","I.021A","LSLL-BR1001-2-NC"],["DI","4","I.021B","PSL-IA1706-NC"],["DI","4","I.0320","ZSO-DO1043-B1"],["DI","4","I.0321","ZSC-DO1043-B1"],["DI","4","I.0322","ZSO-DO1043-B2"],["DI","4","I.0323","ZSC-DO1043-B2"],["DI","4","I.0328","ZSO-PA1043-B2"],["DI","4","I.0329","ZSC-PA1043-B2"],["DI","4","I.032C","ZSO-PA1043-B3"],["DI","4","I.032D","ZSC-PA1043-B3"],["DI","4","I.0330","ZSE-DO1043-B5"],["DI","4","I.0331","ZSR-DO1043-B5"],["DI","4","I.0332","ZSE-DO1043-B4"],["DI","4","I.0333","ZSR-DO1043-B4"],["DI","4","I.0336","ZSO-FA1043-B"],["DI","4","I.0337","ZSC-FA1043-B"],["DI","4","I.0338","MIT-FA1043-B"],["DI","4","I.0339","MIL-FA1043-B"],["DI","4","I.033A","TS-FA1043-B"],["DI","4","I.0361","BI7-DO1043-B"],["DI","4","I.0362","BI6-DO1043-B"],["DI","4","I.0363","BI3-DO1043-B"],["DI","4","I.0364","BI2-DO1043-B"],["DI","4","I.0365","BI1-DO1043-B"],["DI","4","I.0366","BI5-DO1043-B"],["DI","4","I.0367","BI4-DO1043-B"],["DI","4","I.0368","BI8-DO1043-B"],["DI","4","I.0369","BI10-DO1043-B"],["DI","4","I.036A","BI9-DO1043-B"],["DI","4","I.036C","PSH-DO1043-B1"],["DI","4","I.036D","PSL-PA1043-B1"],["DI","4","I.0440","ZSO-CL1061-B1"],["DI","4","I.0441","ZSC-CL1061-B1"],["DI","4","I.0442","ZSO-CL1061-B2"],["DI","4","I.0443","ZSC-CL1061-B2"],["DI","4","I.0444","ZSO-CL1061-B7"],["DI","4","I.0445","ZSC-CL1061-B7"],["DI","4","I.0446","LSH-CL1008-B"],["DI","4","I.0447","LSL-CL1008-B"],["DI","4","I.0448","MIA-CL1061-B2"],["DI","4","I.0449","MIA-CL1061-B3"],["DI","4","I.044A","MIA-CL1061-B4"],["DI","4","I.044B","MIA-CL1061-B5"],["DI","4","I.044C","MIA-CL1061-B6"],["DI","4","I.044D","MIA-CL1061-B7"],["DI","4","I.044E","MIA-CL1061-B8"],["DI","4","I.0450","MIR-CL1061-B"],["DI","4","I.0451","MIT-CL1061-B"],["DI","4","I.0452","MIL-CL1061-B"],["DI","4","I.0453","MIR-CL1061-B1"],["DI","4","I.0454","MIT-CL1061-B1"],["DI","4","I.0455","YSR-CL1061-B7"],["DI","4","I.045E","PS-IA1061-B1"],["DI","4","I.045F","PS-IA1061-B2"],["DI","4","I.0480","ZSO-CL1061-C1"],["DI","4","I.0481","ZSC-CL1061-C1"],["DI","4","I.0482","ZSO-CL1061-C2"],["DI","4","I.0483","ZSC-CL1061-C2"],["DI","4","I.0484","ZSO-CL1061-C7"],["DI","4","I.0485","ZSC-CL1061-C7"],["DI","4","I.0486","LSH-CL1008-C"],["DI","4","I.0487","LSL-CL1008-C"],["DI","4","I.0488","MIA-CL1061-C2"],["DI","4","I.0489","MIA-CL1061-C3"],["DI","4","I.048A","MIA-CL1061-C4"],["DI","4","I.048B","MIA-CL1061-C5"],["DI","4","I.048C","MIA-CL1061-C6"],["DI","4","I.048D","MIA-CL1061-C7"],["DI","4","I.048E","MIA-CL1061-C8"],["DI","4","I.0490","MIR-CL1061-C"],["DI","4","I.0491","MIT-CL1061-C"],["DI","4","I.0492","MIL-CL1061-C"],["DI","4","I.0493","MIR-CL1061-C1"],["DI","4","I.0494","MIT-CL1061-C1"],["DI","4","I.0495","YSR-CL1061-C7"],["DI","4","I.049E","PS-IA1061-C1"],["DI","4","I.049F","PS-IA1061-C2"],["DI","4","I.0520","PSHHH-FG1085"],["DI","4","I.0521","PSHH-FG1085"],["DI","4","I.0522","PSLL-FG1085"],["DI","4","I.0523","PSHHH-FG1086"],["DI","4","I.0524","PSHH-FG1086"],["DI","4","I.0525","PSLL-FG1086"],["DI","4","I.0526","PSHHH-FG1087"],["DI","4","I.0527","PSHH-FG1087"],["DI","4","I.0528","PSLL-FG1087"],["DI","4","I.0529","PSL-IA1706"],["DI","4","I.052A","PSL-PA1705"],["DI","4","I.0530","LSHH-BR1001-1"],["DI","4","I.0531","LSH-BR1001-1"],["DI","4","I.0532","LSL-BR1001-1"],["DI","4","I.0533","LSLL-BR1001-1"],["DI","4","I.0534","LSHH-BR1001-2"],["DI","4","I.0535","LSH-BR1001-2"],["DI","4","I.0536","LSL-BR1001-2"],["DI","4","I.0537","LSLL-BR1001-2"],["DI","4","I.053C","AL1-SP01"],["DI","4","I.053D","AL2-SP01"],["DI","4","I.053E","AL3-SP01"],["DI","4","I.053F","AL-Z1110"],["DI","4","I.0560","MFTS-IRP"],["DI","4","I.0561","NOT-MFTCP"],["DI","4","I.0562","BOILER-TRIP-OPC"],["DI","4","I.0563","DRUM-LVL-HH"],["DI","4","I.0564","DRUM-LVL-LL"],["DI","4","I.0565","INS-PRESS-LL"],["DI","4","I.0566","FURNACE-HHH"],["DI","4","I.0567","FURNACE-HH"],["DI","4","I.0568","FURNACE-LL"],["DI","4","I.0569","ALL-FAB-STOP"],["DI","4","I.056A","IDF-STOP-CMD"],["DI","4","I.056B","FAB-STOP-CMD"],["DI","4","I.056C","SAF-STOP-CMD"],["DI","4","I.056D","PAF-STOP-CMD"],["DI","4","I.057A","GCS10DE-SYSERR"],["DI","4","I.057B","GCS10F-SYSERR"],["DI","4","I.057C","1051-SYSERR"],["DI","4","I.057D","1011-SYSERR"],["DI","4","I.057E","1012-SYSERR"],["DI","4","I.057F","1013-SYSERR"],["DI","4","I.0640","ZSO-DO1043-C1"],["DI","4","I.0641","ZSC-DO1043-C1"],["DI","4","I.0642","ZSO-DO1043-C2"],["DI","4","I.0643","ZSC-DO1043-C2"],["DI","4","I.0648","ZSO-PA1043-C2"],["DI","4","I.0649","ZSC-PA1043-C2"],["DI","4","I.064C","ZSO-PA1043-C3"],["DI","4","I.064D","ZSC-PA1043-C3"],["DI","4","I.0650","ZSE-DO1043-C5"],["DI","4","I.0651","ZSR-DO1043-C5"],["DI","4","I.0652","ZSE-DO1043-C4"],["DI","4","I.0653","ZSR-DO1043-C4"],["DI","4","I.0656","ZSO-FA1043-C"],["DI","4","I.0657","ZSC-FA1043-C"],["DI","4","I.0658","MIT-FA1043-C"],["DI","4","I.0659","MIL-FA1043-C"],["DI","4","I.065A","TS-FA1043-C"],["DI","4","I.0681","BI7-DO1043-C"],["DI","4","I.0682","BI6-DO1043-C"],["DI","4","I.0683","BI3-DO1043-C"],["DI","4","I.0684","BI2-DO1043-C"],["DI","4","I.0685","BI1-DO1043-C"],["DI","4","I.0686","BI5-DO1043-C"],["DI","4","I.0687","BI4-DO1043-C"],["DI","4","I.0688","BI8-DO1043-C"],["DI","4","I.0689","BI10-DO1043-C"],["DI","4","I.068A","BI9-DO1043-C"],["DI","4","I.068C","PSH-DO1043-C1"],["DI","4","I.068D","PSL-PA1043-C1"],["DI","4","I.0960","ZSO-DO1043-D1"],["DI","4","I.0961","ZSC-DO1043-D1"],["DI","4","I.0962","ZSO-DO1043-D2"],["DI","4","I.0963","ZSC-DO1043-D2"],["DI","4","I.0968","ZSO-PA1043-D2"],["DI","4","I.0969","ZSC-PA1043-D2"],["DI","4","I.096C","ZSO-PA1043-D3"],["DI","4","I.096D","ZSC-PA1043-D3"],["DI","4","I.0970","ZSE-DO1043-D5"],["DI","4","I.0971","ZSR-DO1043-D5"],["DI","4","I.0972","ZSE-DO1043-D4"],["DI","4","I.0973","ZSR-DO1043-D4"],["DI","4","I.0976","ZSO-FA1043-D"],["DI","4","I.0977","ZSC-FA1043-D"],["DI","4","I.0978","MIT-FA1043-D"],["DI","4","I.0979","MIL-FA1043-D"],["DI","4","I.097A","TS-FA1043-D"],["DI","4","I.1001","BI7-DO1043-D"],["DI","4","I.1002","BI6-DO1043-D"],["DI","4","I.1003","BI3-DO1043-D"],["DI","4","I.1004","BI2-DO1043-D"],["DI","4","I.1005","BI1-DO1043-D"],["DI","4","I.1006","BI5-DO1043-D"],["DI","4","I.1007","BI4-DO1043-D"],["DI","4","I.1008","BI8-DO1043-D"],["DI","4","I.1009","BI10-DO1043-D"],["DI","4","I.100A","BI9-DO1043-D"],["DI","4","I.100C","PSH-DO1043-D1"],["DI","4","I.100D","PSL-PA1043-D1"],["DI","4","I.1280","TBN-TRIP-OPC"],["DI","4","I.1281","ANN-TEST"],["DI","4","I.1282","ANN-ACK"],["DI","4","I.1283","ANN-RESET"],["DI","5","I.0000","MIR-P0709A"],["DI","5","I.0001","MIT-P0709A"],["DI","5","I.0002","MIL-P0709A"],["DI","5","I.0003","MIR-P0702A"],["DI","5","I.0004","MIT-P0702A"],["DI","5","I.0005","MIL-P0702A"],["DI","5","I.0006","MIR-P0715A"],["DI","5","I.0007","MIT-P0715A"],["DI","5","I.0008","MIL-P0715A"],["DI","5","I.0009","MIR-P0058A"],["DI","5","I.000A","MIT-P0058A"],["DI","5","I.000B","ZSO-IW0391"],["DI","5","I.000C","ZSC-IW0391"],["DI","5","I.000D","MIT-IW0391"],["DI","5","I.000E","MIL-IW0391"],["DI","5","I.000F","TS-IW0391"],["DI","5","I.0010","MIR-C0703A"],["DI","5","I.0011","MIT-C0703A"],["DI","5","I.0013","MIV-C0703A1"],["DI","5","I.0014","MIV-C0703A2"],["DI","5","I.0015","MIR-C0704A"],["DI","5","I.0016","MIT-C0704A"],["DI","5","I.0018","LS-IW0724"],["DI","5","I.001A","LSHH-P0058"],["DI","5","I.001C","MIR-P0058B"],["DI","5","I.001D","MIT-P0058B"],["DI","5","I.001E","LS-MU0708-A"],["DI","5","I.001F","LS-IW0714"],["DI","5","I.0080","MIR-P0709B"],["DI","5","I.0081","MIT-P0709B"],["DI","5","I.0082","MIL-P0709B"],["DI","5","I.0083","MIR-D0703A"],["DI","5","I.0084","MIT-D0703A"],["DI","5","I.0085","MIL-D0703A"],["DI","5","I.0086","MIR-D0703B"],["DI","5","I.0087","MIT-D0703B"],["DI","5","I.0088","MIL-D0703B"],["DI","5","I.0089","MIR-D0703C"],["DI","5","I.008A","MIT-D0703C"],["DI","5","I.008B","MIL-D0703C"],["DI","5","I.0090","MIR-C0703B"],["DI","5","I.0091","MIT-C0703B"],["DI","5","I.0093","MIV-C0703B1"],["DI","5","I.0094","MIV-C0703B2"],["DI","5","I.0095","MIR-C0704B"],["DI","5","I.0096","MIT-C0704B"],["DI","5","I.0097","MIR-D0704A"],["DI","5","I.0098","MIT-D0704A"],["DI","5","I.0099","MIL-D0704A"],["DI","5","I.009A","MIR-D0704B"],["DI","5","I.009B","MIT-D0704B"],["DI","5","I.009C","MIL-D0704B"],["DI","5","I.009D","MIR-D0704C"],["DI","5","I.009E","MIT-D0704C"],["DI","5","I.009F","MIL-D0704C"],["DI","5","I.0320","MIR-P0709C"],["DI","5","I.0321","MIT-P0709C"],["DI","5","I.0322","MIL-P0709C"],["DI","5","I.0323","MIR-P0702B"],["DI","5","I.0324","MIT-P0702B"],["DI","5","I.0325","MIL-P0702B"],["DI","5","I.0326","MIR-P0715B"],["DI","5","I.0327","MIT-P0715B"],["DI","5","I.0328","MIL-P0715B"],["DI","5","I.0329","MIR-P0762A"],["DI","5","I.032A","MIT-P0762A"],["DI","5","I.032B","MIR-P0762B"],["DI","5","I.032C","MIT-P0762B"],["DI","5","I.032D","MIR-P0761A"],["DI","5","I.032E","MIT-P0761A"],["DI","5","I.032F","MIA-HC0001"],["DI","5","I.0330","MIR-C0703C"],["DI","5","I.0331","MIT-C0703C"],["DI","5","I.0333","MIV-C0703C1"],["DI","5","I.0334","MIV-C0703C2"],["DI","5","I.0335","MIR-C0704C"],["DI","5","I.0336","MIT-C0704C"],["DI","5","I.0338","MIR-P0719"],["DI","5","I.033A","MIR-P0718"],["DI","5","I.033C","MIR-P0720"],["DI","5","I.033E","LS-MU0708-B"],["DI","5","I.0120","MIR-P0761B"],["DI","5","I.0121","MIT-P0761B"],["DO","1","O.0160","XV-FW1111-1"],["DO","1","O.0161","XV-FW1121-1"],["DO","1","O.0168","XV-FA1055-A2"],["DO","1","O.0169","XV-FA1055-A3"],["DO","1","O.0170","TAF-LOW"],["DO","1","O.0171","LALL-BR1001-1"],["DO","1","O.0172","LALL-BR1001-3"],["DO","1","O.0173","LAHH-BR1001-1"],["DO","1","O.0174","LAHH-BR1001-3"],["DO","1","O.0175","CYCLONE-HH"],["DO","1","O.0177","S-MSPHH"],["DO","1","O.0178","TCS-DO1002"],["DO","1","O.0179","TCS-DO1003"],["DO","1","O.0200","XV-FW1111-2"],["DO","1","O.0201","XV-FW1121-2"],["DO","1","O.0208","XV-FA1055-B2"],["DO","1","O.0209","XV-FA1055-B3"],["DO","1","O.0210","MOR-BD1001"],["DO","1","O.0211","MOS-BD1001"],["DO","1","O.0212","MOR-BD1002"],["DO","1","O.0213","MOS-BD1002"],["DO","1","O.021E","LALL-BR1001-2"],["DO","1","O.021F","LAHH-BR1001-2"],["DO","2","O.0120","XV-CD1006"],["DO","2","O.0121","XV-CD1005"],["DO","2","O.0122","XV-SB1059"],["DO","2","O.0123","XV-SB1054"],["DO","2","O.0124","XV-MS1011"],["DO","2","O.0125","XV-MS1023"],["DO","2","O.0126","XV-CR1011"],["DO","2","O.0127","XV-CR1012"],["DO","2","O.0128","XV-HR1021"],["DO","2","O.0129","XV-HR1022"],["DO","2","O.012A","XV-CD1114"],["DO","2","O.012B","XV-CD1123"],["DO","2","O.012C","XV-CD1125"],["DO","2","O.012D","XV-CD1104-2"],["DO","2","O.012E","XV-FW1061"],["DO","2","O.012F","XV-CR1013"],["DO","2","O.0130","MOR-FW1001"],["DO","2","O.0131","MOS-FW1001"],["DO","2","O.0132","MOR-FW1391"],["DO","2","O.0133","MOS-FW1391"],["DO","2","O.0134","MOR-TS1001"],["DO","2","O.0135","MOS-TS1001"],["DO","2","O.0136","MOR-TS1002"],["DO","2","O.0137","MOS-TS1002"],["DO","2","O.0138","MOR-TS1003"],["DO","2","O.0139","MOS-TS1003"],["DO","2","O.013A","MOR-TS1004"],["DO","2","O.013B","MOS-TS1004"],["DO","2","O.013C","MOR-TS1005"],["DO","2","O.013D","MOS-TS1005"],["DO","2","O.0160","MOR-AS1391"],["DO","2","O.0161","MOS-AS1391"],["DO","2","O.0162","MOR-AS1392"],["DO","2","O.0163","MOS-AS1392"],["DO","2","O.0164","MOR-AS1393"],["DO","2","O.0165","MOS-AS1393"],["DO","2","O.0166","MOR-AS1395"],["DO","2","O.0167","MOS-AS1395"],["DO","2","O.0168","MOR-AS1396"],["DO","2","O.0169","MOS-AS1396"],["DO","2","O.016A","MOR-AS1397"],["DO","2","O.016B","MOS-AS1397"],["DO","2","O.016C","MOR-MS1392"],["DO","2","O.016D","MOS-MS1392"],["DO","2","O.016E","MOR-SB1001"],["DO","2","O.016F","MOS-SB1001"],["DO","2","O.0170","MOR-CD1007"],["DO","2","O.0171","MOS-CD1007"],["DO","2","O.0172","MOR-CD1008"],["DO","2","O.0173","MOS-CD1008"],["DO","2","O.0174","MOR-CD1001"],["DO","2","O.0175","MOS-CD1001"],["DO","2","O.0176","MOR-CD1002"],["DO","2","O.0177","MOS-CD1002"],["DO","2","O.0178","MOR-CD1003"],["DO","2","O.0179","MOS-CD1003"],["DO","2","O.017A","MOR-MU1001"],["DO","2","O.017B","MOS-MU1001"],["DO","2","O.017C","MOR-AV1391"],["DO","2","O.017D","MOS-AV1391"],["DO","2","O.0440","MOR-TS1391"],["DO","2","O.0441","MOS-TS1391"],["DO","2","O.0442","MOR-TS1392"],["DO","2","O.0443","MOS-TS1392"],["DO","2","O.0444","MOR-TS1393"],["DO","2","O.0445","MOS-TS1393"],["DO","2","O.0446","MOR-TS1394"],["DO","2","O.0447","MOS-TS1394"],["DO","2","O.0448","MOR-TS1395"],["DO","2","O.0449","MOS-TS1395"],["DO","2","O.044A","MOR-MS1391"],["DO","2","O.044B","MOS-MS1391"],["DO","2","O.044C","MOR-FW1002"],["DO","2","O.044D","MOS-FW1002"],["DO","2","O.044E","MOR-FW1392"],["DO","2","O.044F","MOS-FW1392"],["DO","2","O.0450","DOR-CD1007"],["DO","2","O.0451","DOR-CD1008"],["DO","2","O.045F","MIT-GENS"],["DO","2","O.0481","LBHH-HD1101"],["DO","2","O.0482","LBHH-HD1105"],["DO","2","O.0483","LBHH-CD1104"],["DO","2","O.0484","LBHH-HD1103"],["DO","2","O.0485","LBHH-HD1102"],["DO","2","O.0486","AUTO-AS1394"],["DO","2","O.0488","DOZSO-AS1394"],["DO","2","O.0489","DOZSC-AS1394"],["DO","2","O.048A","DOZSO-CR1011"],["DO","2","O.048B","DOZSC-CR1011"],["DO","2","O.048C","DOZSO-AV1391"],["DO","2","O.048D","DOZSO-AS1392"],["DO","2","O.048E","DOZSC-AS1392"],["DO","2","O.048F","TCS-DO1001"],["DO","2","O.0490","DOZSC-MS1020"],["DO","2","O.0491","AUTO-MS1020/AUTO-HR1010"],["DO","2","O.0492","TCS-DO1006"],["DO","2","O.0520","TAHH-HR1002"],["DO","2","O.0760","MOR-N1011"],["DO","2","O.0761","MOS-N1011"],["DO","2","O.0762","MOR-N1012"],["DO","2","O.0763","MOS-N1012"],["DO","2","O.0764","MOR-N1013"],["DO","2","O.0765","MOS-N1013"],["DO","2","O.0766","MOR-N1014"],["DO","2","O.0767","MOS-N1014"],["DO","2","O.0768","MOR-N1015"],["DO","2","O.0769","MOS-N1015"],["DO","2","O.076A","MOR-N1016"],["DO","2","O.076B","MOS-N1016"],["DO","2","O.076C","MOR-N1017"],["DO","2","O.076D","MOS-N1017"],["DO","2","O.076E","MOR-N1018"],["DO","2","O.076F","MOS-N1018"],["DO","2","O.0770","MOR-N1019"],["DO","2","O.0771","MOS-N1019"],["DO","2","O.0772","MOR-N1020"],["DO","2","O.0773","MOS-N1020"],["DO","2","O.0774","MOR-N1021"],["DO","2","O.0775","MOS-N1021"],["DO","2","O.0776","MOR-N1022"],["DO","2","O.0777","MOS-N1022"],["DO","2","O.0778","MOR-N1023"],["DO","2","O.0779","MOS-N1023"],["DO","2","O.077A","MOR-N1024"],["DO","2","O.077B","MOS-N1024"],["DO","2","O.077C","MOR-SB-APH01"],["DO","2","O.077D","MOS-SB-APH01"],["DO","2","O.077E","MOP-SB-APH01"],["DO","2","O.0800","MOR-N1025"],["DO","2","O.0801","MOS-N1025"],["DO","2","O.0802","MOR-N1026"],["DO","2","O.0803","MOS-N1026"],["DO","2","O.0804","MOR-N1027"],["DO","2","O.0805","MOS-N1027"],["DO","2","O.0806","MOR-N1028"],["DO","2","O.0807","MOS-N1028"],["DO","2","O.0808","MOR-N1029"],["DO","2","O.0809","MOS-N1029"],["DO","2","O.080A","MOR-N1030"],["DO","2","O.080B","MOS-N1030"],["DO","2","O.080C","MOR-N1031"],["DO","2","O.080D","MOS-N1031"],["DO","2","O.080E","MOR-N1032"],["DO","2","O.080F","MOS-N1032"],["DO","2","O.0810","MOR-N1033"],["DO","2","O.0811","MOS-N1033"],["DO","2","O.0812","MOR-N1034"],["DO","2","O.0813","MOS-N1034"],["DO","2","O.0814","MOR-N1035"],["DO","2","O.0815","MOS-N1035"],["DO","2","O.0816","MOR-N1036"],["DO","2","O.0817","MOS-N1036"],["DO","2","O.0818","MOR-N1037"],["DO","2","O.0819","MOS-N1037"],["DO","2","O.081A","MOR-N1038"],["DO","2","O.081B","MOS-N1038"],["DO","2","O.0840","XV-FW1151"],["DO","2","O.0841","XV-CD1004"],["DO","2","O.0842","SV-MS1020"],["DO","2","O.0843","SV-HR1010"],["DO","2","O.0844","SV-FW1060"],["DO","2","O.0845","SV-CD1115"],["DO","2","O.0846","XV-HR1010-1"],["DO","2","O.0850","MOR-TS1397"],["DO","2","O.0851","MOS-TS1397"],["DO","2","O.0852","MOR-TS1396"],["DO","2","O.0853","MOS-TS1396"],["DO","2","O.0854","MOR-TS1399"],["DO","2","O.0855","MOS-TS1399"],["DO","2","O.0856","MOR-TS1398"],["DO","2","O.0857","MOS-TS1398"],["DO","2","O.0858","MOR-TS1390"],["DO","2","O.0859","MOS-TS1390"],["DO","2","O.085A","MOR-TS1389"],["DO","2","O.085B","MOS-TS1389"],["DO","2","O.085C","MOR-AS1394"],["DO","2","O.085D","MOS-AS1394"],["DO","2","O.085E","MOR-TS1400"],["DO","2","O.085F","MOS-TS1400"],["DO","3","O.0120","MOR-P1115A"],["DO","3","O.0121","MOS-P1115A"],["DO","3","O.0122","MOR-F1053"],["DO","3","O.0123","MOS-F1053-1"],["DO","3","O.0124","MOR-F1055A"],["DO","3","O.0125","MOS-F1055A-1"],["DO","3","O.0126","MOR-P1115A1"],["DO","3","O.0127","MOR-P1115B1"],["DO","3","O.0128","MOR-P1116A"],["DO","3","O.0129","MOS-P1116A"],["DO","3","O.012A","MOR-P1108A"],["DO","3","O.012B","MOS-P1108A"],["DO","3","O.012C","MOR-P1501A"],["DO","3","O.012D","MOS-P1501A"],["DO","3","O.012E","MOR-P1503A"],["DO","3","O.012F","MOR-LO1753-A"],["DO","3","O.0130","MOP-P1115A"],["DO","3","O.0132","MOP-F1055A"],["DO","3","O.0133","MOT-F1055A"],["DO","3","O.0134","MOP-F1053"],["DO","3","O.0135","MOT-F1053-1"],["DO","3","O.0136","MOP-P1116A"],["DO","3","O.0137","MOT-P1116A"],["DO","3","O.0138","MOP-P1108A"],["DO","3","O.0139","MOT-P1108A"],["DO","3","O.013A","MOP-P1501A"],["DO","3","O.013B","MOT-P1501A"],["DO","3","O.013C","MOT-P1115A"],["DO","3","O.013D","MOP-P1503A"],["DO","3","O.013E","MOR-L1060A"],["DO","3","O.013F","MOS-L1060A"],["DO","3","O.0201","MOR-L1090"],["DO","3","O.0202","MOR-L1091"],["DO","3","O.0203","MOR-L1092"],["DO","3","O.0204","MOR-F1091"],["DO","3","O.0205","MOR-S1092-A"],["DO","3","O.0206","CSC-FA1052M1-1"],["DO","3","O.0207","CSO-FA1052M1-1"],["DO","3","O.0208","CSC-FA1052M1-2"],["DO","3","O.020E","MOR-L1060B"],["DO","3","O.020F","MOS-L1060B"],["DO","3","O.0210","SVO-BH1754"],["DO","3","O.0211","SVC-BH1754"],["DO","3","O.0213","SV-BH1759"],["DO","3","O.0214","SV-BH1753"],["DO","3","O.0215","SV-BH1752"],["DO","3","O.0216","SV-BH1751"],["DO","3","O.0217","SVO-BH1060-A"],["DO","3","O.0218","SVC-BH1060-A"],["DO","3","O.0219","SVO-BH1750"],["DO","3","O.021A","SVC-BH1750"],["DO","3","O.021C","LOR-L1060A"],["DO","3","O.021D","LOS-L1060A"],["DO","3","O.021E","SV-BH1758"],["DO","3","O.0280","DOP-DF1001"],["DO","3","O.0281","DOR-DF1001"],["DO","3","O.0282","DOS-DF1001"],["DO","3","O.0283","DOP-DF1002"],["DO","3","O.0284","DOR-DF1002"],["DO","3","O.0285","DOS-DF1002"],["DO","3","O.0286","DOP-CTCS1001"],["DO","3","O.0287","MOR-CTCS1001"],["DO","3","O.0288","MOS-CTCS1001"],["DO","3","O.0289","DOP-CTCS1002"],["DO","3","O.028A","MOR-CTCS1002"],["DO","3","O.028B","MOS-CTCS1002"],["DO","3","O.028E","MOR-L1060C"],["DO","3","O.028F","MOS-L1060C"],["DO","3","O.0290","LO1-S-1090"],["DO","3","O.0291","LO2-S-1090"],["DO","3","O.0292","LO3-S-1090"],["DO","3","O.0293","LO4-S-1090"],["DO","3","O.0294","LO5-S-1090"],["DO","3","O.0296","LOR-L1060B"],["DO","3","O.0297","LOS-L1060B"],["DO","3","O.0298","SVO-BH1060-B"],["DO","3","O.0299","SVC-BH1060-B"],["DO","3","O.029D","SVO-BH1060-D"],["DO","3","O.029E","SVC-BH1060-D"],["DO","3","O.029F","SV-PA1052"],["DO","3","O.0440","MOR-P1115B"],["DO","3","O.0441","MOS-P1115B"],["DO","3","O.0442","MOR-F1054"],["DO","3","O.0443","MOS-F1054-1"],["DO","3","O.0444","MOR-F1055B"],["DO","3","O.0445","MOS-F1055B-1"],["DO","3","O.0446","MOR-P1115A2"],["DO","3","O.0447","MOR-P1115B2"],["DO","3","O.0448","MOR-P1116B"],["DO","3","O.0449","MOS-P1116B"],["DO","3","O.044A","MOR-P1108B"],["DO","3","O.044B","MOS-P1108B"],["DO","3","O.044C","MOR-P1501B"],["DO","3","O.044D","MOS-P1501B"],["DO","3","O.044E","MOR-P1503B"],["DO","3","O.044F","MOR-LO1753-B"],["DO","3","O.0450","MOP-P1115B"],["DO","3","O.0452","MOP-F1055B"],["DO","3","O.0453","MOT-F1055B"],["DO","3","O.0454","MOP-F1054"],["DO","3","O.0455","MOT-F1054"],["DO","3","O.0456","MOP-P1116B"],["DO","3","O.0457","MOT-P1116B"],["DO","3","O.0458","MOP-P1108B"],["DO","3","O.0459","MOT-P1108B"],["DO","3","O.045A","MOP-P1501B"],["DO","3","O.045B","MOT-P1501B"],["DO","3","O.045C","MOT-P1115B"],["DO","3","O.045D","MOP-P1503B"],["DO","3","O.0600","SV-SD1804A"],["DO","3","O.0601","SV-SD1801"],["DO","3","O.0602","SV-PA1806A"],["DO","3","O.0603","SV-PA1806B"],["DO","3","O.0604","SV-PA1800"],["DO","3","O.0605","SV-PA1805A"],["DO","3","O.0606","SV-PA1805B"],["DO","3","O.0607","SV-AV1803"],["DO","3","O.0608","SOR-SD1300B"],["DO","3","O.0609","SOR-SD1300A"],["DO","3","O.060A","MOR-M1301"],["DO","3","O.060E","MOR-L1060D"],["DO","3","O.060F","MOS-L1060D"],["DO","3","O.0610","SV-SD1802A"],["DO","3","O.0611","SV-SD1802B"],["DO","3","O.0612","SV-PA1807"],["DO","3","O.0614","LOR-L1060C"],["DO","3","O.0615","LOS-L1060C"],["DO","3","O.0616","LOR-L1060D"],["DO","3","O.0617","LOS-L1060D"],["DO","3","O.0618","SVO-BH1060-C"],["DO","3","O.0619","SVC-BH1060-C"],["DO","3","O.061E","XV-MU1109"],["DO","3","O.061F","XV-FS1005"],["DO","3","O.0760","MOR-F1056"],["DO","3","O.0761","MOS-F1056-1"],["DO","3","O.0762","MOR-P1501C"],["DO","3","O.0763","MOS-P1501C"],["DO","3","O.076E","MOR-S1092-B"],["DO","3","O.076F","MOR-P1503C"],["DO","3","O.0770","MOP-F1056"],["DO","3","O.0771","MOT-F1056-1"],["DO","3","O.0772","MOP-P1501C"],["DO","3","O.0773","MOT-P1501C"],["DO","3","O.0774","MOP-P1503C"],["DO","3","O.077E","S-FBTHH"],["DO","3","O.077F","S-APAFLOPS"],["DO","4","O.0080","SV-DO1043-A1"],["DO","4","O.0081","SV-DO1043-A2"],["DO","4","O.0084","SV-PA1043-A2"],["DO","4","O.0086","SV-PA1043-A3"],["DO","4","O.0087","SVE-DO1043-A5"],["DO","4","O.0088","SVR-DO1043-A5"],["DO","4","O.0089","SVE-DO1043-A4"],["DO","4","O.0090","BO6-DO1043-A"],["DO","4","O.0091","BO4-DO1043-A"],["DO","4","O.0092","BO5-DO1043-A"],["DO","4","O.0093","BO1-DO1043-A"],["DO","4","O.0094","BO2-DO1043-A"],["DO","4","O.0095","BO3-DO1043-A"],["DO","4","O.0240","MOR-CL1061-A"],["DO","4","O.0241","MFT-CL1061-A"],["DO","4","O.0242","XV-CL1061-A"],["DO","4","O.0243","SV-LM1812"],["DO","4","O.0244","SV-LM1815"],["DO","4","O.0245","SV-PA1813A"],["DO","4","O.0246","SV-PA1813B"],["DO","4","O.0247","SV-PA1814"],["DO","4","O.0248","SV-PA1814C"],["DO","4","O.0249","SV-LM1814A"],["DO","4","O.024A","SV-LM1814B"],["DO","4","O.024B","SOR-LM1311"],["DO","4","O.024C","MOR-M1311"],["DO","4","O.024D","POR-LM1313"],["DO","4","O.024E","MOR-M1313"],["DO","4","O.0250","SV-PA1812A"],["DO","4","O.0251","SV-PA1812B"],["DO","4","O.0252","SV-LM1811A"],["DO","4","O.0253","SV-LM1811B"],["DO","4","O.0254","SV-LM1811C"],["DO","4","O.0255","SV-LM1811D"],["DO","4","O.0256","SV-LM1811E"],["DO","4","O.0257","SV-LM1811F"],["DO","4","O.0258","SV-LM1811G"],["DO","4","O.0259","SV-LM1811H"],["DO","4","O.0400","SV-DO1043-B1"],["DO","4","O.0401","SV-DO1043-B2"],["DO","4","O.0404","SV-PA1043-B2"],["DO","4","O.0406","SV-PA1043-B3"],["DO","4","O.0407","SVE-DO1043-B5"],["DO","4","O.0408","SVR-DO1043-B5"],["DO","4","O.0409","SVE-DO1043-B4"],["DO","4","O.0410","BO6-DO1043-B"],["DO","4","O.0411","BO4-DO1043-B"],["DO","4","O.0412","BO5-DO1043-B"],["DO","4","O.0413","BO1-DO1043-B"],["DO","4","O.0414","BO2-DO1043-B"],["DO","4","O.0415","BO3-DO1043-B"],["DO","4","O.0600","FP-CPL"],["DO","4","O.0601","MFT-PB"],["DO","4","O.0602","XA-AFL"],["DO","4","O.0603","PALL-IA1706"],["DO","4","O.0604","DR-LVL-LL"],["DO","4","O.0605","PAF-LL"],["DO","4","O.0606","TEMP-INDQUATE"],["DO","4","O.060D","XV-CL1061-B"],["DO","4","O.060E","MOR-CL1061-B"],["DO","4","O.060F","MFT-CL1061-B"],["DO","4","O.0720","SV-DO1043-C1"],["DO","4","O.0721","SV-DO1043-C2"],["DO","4","O.0724","SV-PA1043-C2"],["DO","4","O.0726","SV-PA1043-C3"],["DO","4","O.0727","SVE-DO1043-C5"],["DO","4","O.0728","SVR-DO1043-C5"],["DO","4","O.0729","SVE-DO1043-C4"],["DO","4","O.0730","BO6-DO1043-C"],["DO","4","O.0731","BO4-DO1043-C"],["DO","4","O.0732","BO5-DO1043-C"],["DO","4","O.0733","BO1-DO1043-C"],["DO","4","O.0734","BO2-DO1043-C"],["DO","4","O.0735","BO3-DO1043-C"],["DO","4","O.0760","MOR-CL1061-C"],["DO","4","O.0761","MFT-CL1061-C"],["DO","4","O.0762","XV-CL1061-C"],["DO","4","O.0770","LAH-CL1008-A"],["DO","4","O.0772","LAH-CL1008-B"],["DO","4","O.0774","LAH-CL1008-C"],["DO","4","O.0776","DOR-CL1061-A"],["DO","4","O.0777","DOR-CL1061-B"],["DO","4","O.0778","DOR-CL1061-C"],["DO","4","O.1040","SV-DO1043-D1"],["DO","4","O.1041","SV-DO1043-D2"],["DO","4","O.1044","SV-PA1043-D2"],["DO","4","O.1046","SV-PA1043-D3"],["DO","4","O.1047","SVE-DO1043-D5"],["DO","4","O.1048","SVR-DO1043-D5"],["DO","4","O.1049","SVE-DO1043-D4"],["DO","4","O.1050","BO6-DO1043-D"],["DO","4","O.1051","BO4-DO1043-D"],["DO","4","O.1052","BO5-DO1043-D"],["DO","4","O.1053","BO1-DO1043-D"],["DO","4","O.1054","BO2-DO1043-D"],["DO","4","O.1055","BO3-DO1043-D"],["DO","4","O.1320","OPC-ANN-A1"],["DO","4","O.1321","OPC-ANN-A2"],["DO","4","O.1322","OPC-ANN-A3"],["DO","4","O.1323","OPC-ANN-A4"],["DO","4","O.1324","OPC-ANN-A5"],["DO","4","O.1325","OPC-ANN-A6"],["DO","4","O.1326","OPC-ANN-A7"],["DO","4","O.1327","OPC-ANN-A8"],["DO","4","O.1328","OPC-ANN-A9"],["DO","4","O.1329","OPC-ANN-A10"],["DO","4","O.132A","OPC-ANN-B1"],["DO","4","O.132B","OPC-ANN-B2"],["DO","4","O.132C","OPC-ANN-B3"],["DO","4","O.132D","OPC-ANN-B4"],["DO","4","O.132E","OPC-ANN-B5"],["DO","4","O.132F","OPC-ANN-B6"],["DO","4","O.1330","OPC-ANN-B7"],["DO","4","O.1331","OPC-ANN-B8"],["DO","4","O.1332","OPC-ANN-B9"],["DO","4","O.1333","OPC-ANN-B10"],["DO","4","O.1334","OPC-ANN-C1"],["DO","4","O.1335","OPC-ANN-C2"],["DO","4","O.1336","OPC-ANN-C3"],["DO","4","O.1337","OPC-ANN-C4"],["DO","4","O.1338","OPC-ANN-C5"],["DO","4","O.1339","OPC-ANN-C6"],["DO","4","O.133A","OPC-ANN-C7"],["DO","4","O.133B","OPC-ANN-C8"],["DO","4","O.133C","OPC-ANN-C9"],["DO","4","O.133D","OPC-ANN-C10"],["DO","4","O.133E","OPC-ANN-D1"],["DO","4","O.133F","OPC-ANN-D2"],["DO","4","O.1360","OPC-ANN-D3"],["DO","4","O.1361","OPC-ANN-D4"],["DO","4","O.1362","OPC-ANN-D5"],["DO","4","O.1363","OPC-ANN-D6"],["DO","4","O.1364","OPC-ANN-D7"],["DO","4","O.1365","OPC-ANN-D8"],["DO","4","O.1366","OPC-ANN-D9"],["DO","4","O.1367","OPC-ANN-D10"],["DO","4","O.1368","OPC-ANN-E1"],["DO","4","O.1369","OPC-ANN-E2"],["DO","4","O.136A","OPC-ANN-E3"],["DO","4","O.136B","OPC-ANN-E4"],["DO","4","O.136C","OPC-ANN-E5"],["DO","4","O.136D","OPC-ANN-E6"],["DO","4","O.136E","OPC-ANN-E7"],["DO","4","O.136F","OPC-ANN-E8"],["DO","4","O.1370","OPC-ANN-E9"],["DO","4","O.1371","OPC-ANN-E10"],["DO","4","O.1372","OPC-ANN-F1"],["DO","4","O.1373","OPC-ANN-F2"],["DO","4","O.1374","OPC-ANN-F3"],["DO","4","O.1375","OPC-ANN-F4"],["DO","4","O.1376","OPC-ANN-F5"],["DO","4","O.1377","OPC-ANN-F6"],["DO","4","O.1378","OPC-ANN-F7"],["DO","4","O.1379","OPC-ANN-F8"],["DO","4","O.137A","OPC-ANN-F9"],["DO","4","O.137B","OPC-ANN-F10"],["DO","4","O.137C","OPC-ANN-G1"],["DO","4","O.137D","OPC-ANN-G2"],["DO","4","O.137E","OPC-ANN-G3"],["DO","4","O.137F","OPC-ANN-G4"],["DO","4","O.1400","OPC-ANN-G5"],["DO","4","O.1401","OPC-ANN-G6"],["DO","4","O.1402","OPC-ANN-G7"],["DO","4","O.1403","OPC-ANN-G8"],["DO","4","O.1404","OPC-ANN-G9"],["DO","4","O.1405","OPC-ANN-G10"],["DO","4","O.1406","OPC-ANN-H1"],["DO","4","O.1407","OPC-ANN-H2"],["DO","4","O.1408","OPC-ANN-H3"],["DO","4","O.1409","OPC-ANN-H4"],["DO","4","O.140A","OPC-ANN-H5"],["DO","4","O.140B","OPC-ANN-H6"],["DO","4","O.140C","OPC-ANN-H7"],["DO","4","O.140D","OPC-ANN-H8"],["DO","4","O.140E","OPC-ANN-H9"],["DO","4","O.140F","OPC-ANN-H10"],["DO","4","O.1410","OPC-ANN-I1"],["DO","4","O.1411","OPC-ANN-I2"],["DO","4","O.1412","OPC-ANN-I3"],["DO","4","O.1413","OPC-ANN-I4"],["DO","4","O.1414","OPC-ANN-I5"],["DO","4","O.1415","OPC-ANN-I6"],["DO","4","O.1416","OPC-ANN-I7"],["DO","4","O.1417","OPC-ANN-I8"],["DO","4","O.1418","OPC-ANN-I9"],["DO","4","O.1419","OPC-ANN-I10"],["DO","4","O.141A","OPC-ANN-J1"],["DO","4","O.141B","OPC-ANN-J2"],["DO","4","O.141C","OPC-ANN-J3"],["DO","4","O.141D","OPC-ANN-J4"],["DO","4","O.141E","OPC-ANN-J5"],["DO","4","O.141F","OPC-ANN-J6"],["DO","4","O.1440","OPC-ANN-J7"],["DO","4","O.1441","OPC-ANN-J8"],["DO","4","O.1442","OPC-ANN-J9"],["DO","4","O.1443","OPC-ANN-J10"],["DO","4","O.145F","BUZZER-OUT"],["DO","5","O.0040","MOR-P0702A"],["DO","5","O.0041","MOR-P0709A"],["DO","5","O.0042","MOR-P0715A"],["DO","5","O.0043","MOP-P0058A"],["DO","5","O.0044","MOP-P0709A"],["DO","5","O.0045","MOP-P0702A"],["DO","5","O.0046","MOP-P0715A"],["DO","5","O.0047","MOR-C0703A"],["DO","5","O.0048","MOR-C0703B"],["DO","5","O.0049","MOR-C0703C"],["DO","5","O.004A","MOR-D0703A"],["DO","5","O.004B","MOS-D0703A"],["DO","5","O.004C","MOR-D0703B"],["DO","5","O.004D","MOS-D0703B"],["DO","5","O.004E","MOR-D0703C"],["DO","5","O.004F","MOS-D0703C"],["DO","5","O.0050","SV-IW0113"],["DO","5","O.0051","SV-PW0114"],["DO","5","O.0052","SV-IW0721"],["DO","5","O.0360","MOR-P0702B"],["DO","5","O.0361","MOR-P0709B"],["DO","5","O.0362","MOR-P0715B"],["DO","5","O.0363","MOR-P0709C"],["DO","5","O.0364","MOP-P0058B"],["DO","5","O.0365","MOP-P0702B"],["DO","5","O.0366","MOP-P0715B"],["DO","5","O.0367","MOR-C0704A"],["DO","5","O.0368","MOR-C0704B"],["DO","5","O.0369","MOR-C0704C"],["DO","5","O.036A","MOR-D0704A"],["DO","5","O.036B","MOS-D0704A"],["DO","5","O.036C","MOR-D0704B"],["DO","5","O.036D","MOS-D0704B"],["DO","5","O.036E","MOR-D0704C"],["DO","5","O.036F","MOS-D0704C"],["DO","5","O.0370","MOR-IW0391"],["DO","5","O.0371","MOS-IW0391"],["DO","5","O.037E","MOP-P0709B"],["DO","5","O.037F","MOP-P0709C"]];
-/* ---- lane data (src/world/bind, src/world/inst, src/data/alarms) ---- */
+/* ---- lane data (src/world/bind, src/world/inst, src/data/alarms, src/world/field) ---- */
 window.LANE_BIND=[];window.LANE_INST=[];window.LANE_ALARMS=[];
+window.FIELD={rows:[],add:function(lane,rows){for(const r of rows||[])this.rows.push(Object.assign({lane:lane},r))}};
+/* ---- src/world/field/boiler.js ---- */
+(function (lane, FIELD) {
+/* Lane 3 DCS LINKS BOILER (KIRARA), field signals of the boiler side (src/world/field/README.md). Each row reads engine state only and
+   writes the I/O point of the I/O list (src/data/ades.txt, station / address / tag). rel = how the value follows from the state,
+   src = the drawing or list row. Worklist and the paper derivation: lane 3 worklist 2026-11-25 sections 7 and 10, field signals paper rev 1.
+   End-of-travel rule of the app's motor valves (src/digital/parts/03b-sim.js mvForced / fld: ZSO = position >= 100 %, ZSC = position
+   <= 0 %): the same rule for every limit switch below, no new threshold. */
+const num = v => (v == null || !isFinite(+v) ? NaN : +v);
+const closed = v => (isFinite(v) ? v <= 0 : NaN);
+const opened = v => (isFinite(v) ? v >= 100 : NaN);
+const rows = [];
+
+/* 1. Sootblower steam supply motor valve MV-SB1001 (DITL-80S, STN102). DITL-80S rows 6 / 22 read the full open contact ZSO I.024A from
+   the valve; the full closed contact and the position transmitter are on no logic row (HMI only) and are the same valve state. */
+rows.push(
+  { stn: 2, di: 1, tag: 'ZSC-SB1001', v: (U, X) => closed(num(X.ditlPos('DITL-80S', 0))), rel: 'MV-SB1001 at 0 % travel (closed limit)',
+    src: 'IO list STN102 I.024B ZSC-SB1001; DITL-80S MV-SB1001; MOV rule 03b-sim.js' },
+  { stn: 2, ai: 'AI0770', tag: 'ZT-SB1001', v: (U, X) => num(X.ditlPos('DITL-80S', 0)), rel: 'MV-SB1001 position 0 ~ 100 %',
+    src: 'IO list STN102 AI0770 ZT-SB1001; DITL-80S MV-SB1001' }
+);
+
+/* 2. Furnace temperature control dampers FA1005 ~ FA1018 (STN103): the open / closed limit switches of each motor damper. The damper
+   position is its own position transmitter ZT-FA10xx (AI0544 ~ AI0566, on ABC-015 / 016 following MCV-FA10xx). */
+[
+  [1005, 'I.0330', 'I.0331', 'AI0544'], [1006, 'I.0335', 'I.0336', 'AI0545'], [1007, 'I.033A', 'I.033B', 'AI0546'],
+  [1008, 'I.0720', 'I.0721', 'AI0547'], [1009, 'I.0725', 'I.0726', 'AI0548'], [1010, 'I.072A', 'I.072B', 'AI0549'],
+  [1011, 'I.0730', 'I.0731', 'AI0550'], [1012, 'I.0735', 'I.0736', 'AI0560'], [1013, 'I.073A', 'I.073B', 'AI0561'],
+  [1014, 'I.0800', 'I.0801', 'AI0562'], [1015, 'I.0805', 'I.0806', 'AI0563'], [1016, 'I.080A', 'I.080B', 'AI0564'],
+  [1017, 'I.0810', 'I.0811', 'AI0565'], [1018, 'I.0815', 'I.0816', 'AI0566']
+].forEach(([n, o, c, z]) => {
+  const zt = X => num(X.ai('3|' + z));
+  rows.push(
+    { stn: 3, di: 1, tag: 'ZSO-FA' + n, v: (U, X) => opened(zt(X)), rel: 'ZT-FA' + n + ' at 100 % (open limit)',
+      src: 'IO list STN103 ' + o + ' ZSO-FA' + n + '; ZT-FA' + n + ' STN103 ' + z + ' (ABC-015 / 016); MOV rule' },
+    { stn: 3, di: 1, tag: 'ZSC-FA' + n, v: (U, X) => closed(zt(X)), rel: 'ZT-FA' + n + ' at 0 % (closed limit)',
+      src: 'IO list STN103 ' + c + ' ZSC-FA' + n + '; ZT-FA' + n + ' STN103 ' + z + ' (ABC-015 / 016); MOV rule' }
+  );
+});
+
+/* 3. Burner hot secondary air dampers FA1043-A ~ D: the closed limit (STN104) of the damper whose position transmitter is on STN101
+   (ABC-003A ~ D). The open limit ZSO-FA1043-x is linked already (DITL-16). */
+[['A', 'I.0017', 'AI0291'], ['B', 'I.0337', 'AI0437'], ['C', 'I.0657', 'AI0582'], ['D', 'I.0977', 'AI0629']].forEach(([x, c, z]) =>
+  rows.push({ stn: 4, di: 1, tag: 'ZSC-FA1043-' + x, v: (U, X) => closed(num(X.ai('1|' + z))), rel: 'ZT-FA1043-' + x + ' at 0 % (closed limit)',
+    src: 'IO list STN104 ' + c + ' ZSC-FA1043-' + x + '; ZT-FA1043-' + x + ' STN101 ' + z + '; MOV rule' })
+);
+
+/* 4. Biasing damper air buffer tanks PT-IA1064-A / B (STN104): on P&ID PD-023 sheet 6/6 (over-all instrument list), filled from the
+   instrument air to unit 1 (IA1706, unit.js AN_AIR U.iaPU). The tank only fills the damper actuators: no flow through its inlet = no
+   friction drop, so the tank is at the header pressure. */
+rows.push(
+  { stn: 4, ai: 'AI0438', tag: 'PT-IA1064-A', v: U => num(U.iaPU), rel: 'no flow out of the tank: tank pressure = unit 1 instrument air header',
+    src: 'IO list STN104 AI0438 PT-IA1064-A; P&ID PD-023 6/6; unit.js AN_AIR iaPU' },
+  { stn: 4, ai: 'AI0470', tag: 'PT-IA1064-B', v: U => num(U.iaPU), rel: 'no flow out of the tank: tank pressure = unit 1 instrument air header',
+    src: 'IO list STN104 AI0470 PT-IA1064-B; P&ID PD-023 6/6; unit.js AN_AIR iaPU' }
+);
+
+/* 5. Cyclone-A inlet gas TT-FG1092-A (STN101): the cyclone inlet duct is the furnace outlet (P&ID PD-051), so the gas is the furnace exit
+   gas of the bed model (unit.js U.tgF), which already takes the duct refractory into account. */
+rows.push({ stn: 1, ai: 'AI0659', tag: 'TT-FG1092-A', v: U => num(U.tgF), rel: 'furnace exit gas = gas into cyclone A',
+  src: 'IO list STN101 AI0659 TT-FG1092-A; P&ID PD-051; unit.js U.tgF' });
+
+/* 6. Backpass gas thermocouples (STN104), P&ID K1AU3-PD-051 "Combustion air / flue gas system" (RA page 42), on the gas leaving each bank
+   of the heat exchanger chain (hx.js U.hxO.gBank). The gas meets the LAST index first: RH pass rh[3] -> rh[0] -> No.2 eco R; SH pass
+   fsh[2] -> fsh[0] -> No.3 eco -> No.2 eco S. A thermocouple between two banks reads the gas leaving the bank before it. TT-FG1109
+   (between ECO #3 upper and lower; hx.js runs ECO #3 as one bank) = gBank.e3m, the same bank solution at half its surface. */
+const gb = (U, k, i) => {
+  const g = U.hxO && U.hxO.gBank;
+  return num(g && (i == null ? g[k] : g[k] && g[k][i]));
+};
+[
+  ['TT-FG1100', 'AI0448', 'wl', null, 'above RH bank 1: gas leaving the backpass walls'],
+  ['TT-FG1102', 'AI0449', 'rh', 3, 'between RH banks 1 and 2: gas leaving RH bank 1'],
+  ['TT-FG1104', 'AI0464', 'rh', 2, 'between RH banks 2 and 3: gas leaving RH bank 2'],
+  ['TT-FG1106', 'AI0465', 'rh', 1, 'between RH banks 3 and 4: gas leaving RH bank 3'],
+  ['TT-FG1108', 'AI0450', 'rh', 0, 'between the last RH bank and ECO #2R: gas leaving RH bank 4'],
+  ['TT-FG1110', 'AI0466', 'e2r', null, 'ECO #2R outlet'],
+  ['TT-FG1101', 'AI0453', 'wl', null, 'above finishing S/H 1: gas leaving the backpass walls'],
+  ['TT-FG1103', 'AI0454', 'fsh', 2, 'between finishing S/H 1 and 2: gas leaving S/H 1'],
+  ['TT-FG1105', 'AI0469', 'fsh', 1, 'between finishing S/H 2 and 3: gas leaving S/H 2'],
+  ['TT-FG1107', 'AI0452', 'fsh', 0, 'between finishing S/H 3 and ECO #3 upper: gas leaving S/H 3'],
+  ['TT-FG1109', 'AI0468', 'e3m', null, 'between ECO #3 upper and lower: gas leaving the upper half of ECO #3'],
+  ['TT-FG1111', 'AI0451', 'e3', null, 'between ECO #3 lower and ECO #2S: gas leaving ECO #3'],
+  ['TT-FG1113', 'AI0467', 'e2s', null, 'ECO #2S outlet']
+].forEach(([t, a, k, i, w]) =>
+  rows.push({ stn: 4, ai: a, tag: t, v: U => gb(U, k, i), rel: w, src: 'IO list STN104 ' + a + ' ' + t + '; P&ID PD-051 (RA p 42); hx.js gBank.' + k + (i == null ? '' : '[' + i + ']') })
+);
+
+FIELD.add(lane, rows);
+
+})("boiler", window.FIELD);
+/* ---- src/world/field/bop.js ---- */
+(function (lane, FIELD) {
+/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.494. Field signals of the balance of plant (src/world/field/README.md).
+   Each row reads engine state that already exists (read only) and names its physical source. No constant stands for a process value,
+   no fitted number (RULES 3.12). Paper with the physical source of every value (QA : SAORI pass 2026-11-25):
+   lanes/bop/lane4-field-values-paper-2026-11-25.md. A value that is not a number writes nothing (the point keeps its last value).
+   Open, not filled here (needs model or a PC document): CEP motor temperatures, chemical tank levels, pit / leak switches, PAF oil panel,
+   industrial water strainer DP. */
+const G = typeof window !== 'undefined' ? window : globalThis;
+const fin = x => (typeof x === 'number' && isFinite(x) ? x : NaN);
+/* the controller MV on its ABC sheet (the valve command), read the way unit.js reads it (anFwTagStep ctl / mvOf: AN.hmiCtrls out net) */
+const C = {};
+const mv = (sheet, tag) => {
+  const A = G.AN;
+  if (!A || !A.sheets) return NaN;
+  let c = C[tag];
+  if (!c) {
+    const x = A.sheets.find(y => y.name === sheet),
+      q = x && x.S && A.hmiCtrls ? (A.hmiCtrls(x.S) || []).find(k => k.tag === tag) : null;
+    if (!q || q.out == null) return NaN;
+    c = C[tag] = { S: x.S, n: q.out };
+  }
+  return Math.max(0, Math.min(100, +c.S.rt.v[c.n] || 0));
+};
+/* the opening that reaches the process: the positioner drives the stem to the command, the airlock holds it when the instrument air is
+   lost (X.av = unit.js anAv, valve package K1AU3-E2-0-123 R1). A valve outside the airlock list follows its command */
+const open = (X, sheet, tag) => {
+  const m = mv(sheet, tag);
+  return isFinite(m) ? fin(X.av(tag, m)) : NaN;
+};
+/* the heater drain valves as the drain model drives them (unit.js AN_HD): primary = the split-range F(X) of the drawing (ABC-035 ~ 039,
+   LN38 ...) on the primary MV, alternate = its own station MV; both through the airlock */
+const hdv = (U, X, k, j) => {
+  const h = (U.hd || []).find(x => x.k === k);
+  if (!h) return NaN;
+  const o = j === 1 ? h.v1 : h.v2;
+  if (!o || !o.S) return NaN;
+  let x = +o.S.rt.v[o.n] || 0;
+  if (j === 1 && h.fx && h.fx.p) {
+    const pin = (h.fx.p.pins || []).find(p => p.role === 'out');
+    if (pin && pin.n != null) x = +o.S.rt.v[pin.n] || 0;
+  }
+  return fin(X.av(j === 1 ? h.c1 : h.c2, Math.max(0, Math.min(100, x))));
+};
+const R = [];
+const io = s => 'I/O list STN10' + s;
+/* 1. control valve position ZT = the opening that reaches the process */
+for (const [stn, ai, tag, sheet, ctl, why] of [
+  [1, 'AI0180', 'ZT-FW1130-1', 'ABC-010', 'FICFW1007', 'FCV-FW1130-1, valve package item 27'],
+  [1, 'AI0195', 'ZT-FW1130-2', 'ABC-010', 'LICBR1001B', 'FCV-FW1130-2 start-up valve, item 28'],
+  [2, 'AI0694', 'ZT-FW1060', 'ABC-051', 'TICMS1022', 'TCV-FW1060 HP bypass spray'],
+  [2, 'AI0704', 'ZT-FW1150', 'ABC-019', 'TICHR1002', 'TCV-FW1150 reheater spray'],
+  [2, 'AI0390', 'ZT-CD1115', 'ABC-052', 'TICHR1012', 'TCV-CD1115 LP bypass spray (the same opening as the flow FT-CD1115 of unit.js)'],
+  [2, 'AI0688', 'ZT-CD1124', 'ABC-033', 'TICAS1001', 'TCV-CD1124 aux steam spray'],
+  [2, 'AI0689', 'ZT-CD1126', 'ABC-034', 'TICAS1017', 'TCV-CD1126 gland steam spray'],
+  [2, 'AI0389', 'ZT-CD1121', 'ABC-032', 'FICCD1121', 'FCV-CD1121, item 11'],
+  [2, 'AI0690', 'ZT-CD1120', 'ABC-032', 'FICCD1120', 'FCV-CD1120 minimum flow, item 18'],
+  [2, 'AI0691', 'ZT-CD1110', 'ABC-031', 'LICCD1110B', 'LCV-CD1110 dump to raw pit, item 15'],
+  [2, 'AI0692', 'ZT-CD1104', 'ABC-031', 'LICCD1104', 'LCV-CD1104 deaerator level, item 14'],
+  [2, 'AI0693', 'ZT-MU1110', 'ABC-031', 'LICCD1110A', 'LCV-MU1110 condenser make-up, item 17'],
+  [1, 'AI0179', 'ZT-MS1001', 'ABC-013', 'PICMS1002', 'PCV-MS1001 blow off, item 1'],
+  [2, 'AI0705', 'ZT-CW1201', 'ABC-053', 'TICLO1002', 'TCV-CW1201 lube oil temperature, item 40']
+])
+  R.push({ stn, ai, tag, v: (U, X) => open(X, sheet, ctl), rel: 'opening = anAv(' + ctl + ', MV of ' + ctl + ')', src: io(stn) + ' ' + ai + '; ' + sheet + ' ' + ctl + '; ' + why });
+for (const [n, k, sh, a1, a2] of [
+  ['1101', 'H1', 'ABC-037', 'AI0707', 'AI0721'],
+  ['1102', 'H2', 'ABC-038', 'AI0708', 'AI0722'],
+  ['1103', 'H3', 'ABC-039', 'AI0709', 'AI0723'],
+  ['1105', 'H5', 'ABC-035', 'AI0710', 'AI0725'],
+  ['1106', 'H6', 'ABC-036', 'AI0724', 'AI0726']
+]) {
+  R.push({ stn: 2, ai: a1, tag: 'ZT-HD' + n + '-1', v: (U, X) => hdv(U, X, k, 1), rel: 'primary drain valve = anAv(LICHD' + n + '1, split-range F(X) of the primary MV), as AN_HD', src: io(2) + ' ' + a1 + '; ' + sh + ' LICHD' + n + '1; LCV-HD' + n + '-1' });
+  R.push({ stn: 2, ai: a2, tag: 'ZT-HD' + n + '-2', v: (U, X) => hdv(U, X, k, 2), rel: 'alternate drain valve = anAv(LICHD' + n + '2, its MV), as AN_HD', src: io(2) + ' ' + a2 + '; ' + sh + ' LICHD' + n + '2; LCV-HD' + n + '-2' });
+}
+/* 2. limit switches: end of travel (K1AU3-E2-0-123 R1 "Limit Switches: OMRON D4A-2502N (1 Open & 1 Closed)"), the app's end of travel:
+   open = position >= 100 %, closed = position <= 0 % (QA review 2026-11-25) */
+const zt = t => {
+  const r = R.find(x => x.tag === t);
+  return r ? r.v : () => NaN;
+};
+for (const [addr, tag, z, o] of [
+  ['I.0898', 'ZSO-FW1060', 'ZT-FW1060', 1],
+  ['I.0899', 'ZSC-FW1060', 'ZT-FW1060', 0],
+  ['I.089A', 'ZSO-FW1150', 'ZT-FW1150', 1],
+  ['I.089B', 'ZSC-FW1150', 'ZT-FW1150', 0],
+  ['I.0893', 'ZSC-CD1115', 'ZT-CD1115', 0],
+  ['I.0894', 'ZSO-CD1124', 'ZT-CD1124', 1],
+  ['I.0895', 'ZSC-CD1124', 'ZT-CD1124', 0],
+  ['I.0896', 'ZSO-CD1126', 'ZT-CD1126', 1],
+  ['I.0897', 'ZSC-CD1126', 'ZT-CD1126', 0]
+]) {
+  const f = zt(z);
+  R.push({
+    stn: 2,
+    di: 1,
+    tag,
+    v: (U, X) => {
+      const p = f(U, X);
+      return isFinite(p) ? (o ? p >= 100 : p <= 0) : NaN;
+    },
+    rel: (o ? 'open limit: ' : 'closed limit: ') + z + (o ? ' >= 100 %' : ' <= 0 %'),
+    src: io(2) + ' ' + addr + '; K1AU3-E2-0-123 R1 OMRON D4A-2502N end of travel'
+  });
+}
+/* 3. motor valve positions: the DITL-38 MOTOR CONTROL VALVE copy of each valve (stroke = the TIMER SETTING of the drawing) */
+for (const [stn, ai, tag, sh] of [
+  [1, 'AI0177', 'ZT-BD1001', 'DITL-38'],
+  [1, 'AI0178', 'ZT-BD1002', 'DITL-38 #MV-BD1002'],
+  [2, 'AI0768', 'ZT-FW1001', 'DITL-38 #MV-FW1001'],
+  [2, 'AI0784', 'ZT-FW1002', 'DITL-38 #MV-FW1002'],
+  [2, 'AI0785', 'ZT-FW1392', 'DITL-38 #MV-FW1392'],
+  [2, 'AI0736', 'ZT-MS1391', 'DITL-38 #MV-MS1391']
+])
+  R.push({ stn, ai, tag, v: (U, X) => fin(X.ditlPos(sh, 0)), rel: 'position of ' + sh, src: io(stn) + ' ' + ai + '; ' + sh + ' (DITL-38 MOTOR CONTROL VALVE)' });
+/* 4. model values that exist (bind) */
+const mt = t => U => fin((U.mt || {})[t]);
+['1', '2', '3', '4', 'W'].forEach((e, i) => {
+  const ai = ['AI0662', 'AI0661', 'AI0659', 'AI0660', 'AI0658'][i];
+  R.push({ stn: 3, ai, tag: 'TT-FW1115-B' + e, v: mt('TT-FW1115-B' + e), rel: 'U.mt (AN_MT BFWP-B)', src: io(3) + ' ' + ai + '; unit.js AN_MT BFWP-B' });
+});
+['11', '12', '21', '22', '41', '42', '31', '32'].forEach((e, i) => {
+  const ai = 'AI' + (1008 + i);
+  R.push({ stn: 3, ai, tag: 'VT-FW1115-B' + e, v: mt('VT-FW1115-B' + e), rel: 'U.mt (AN_MT BFWP-B)', src: io(3) + ' ' + ai + '; unit.js AN_MT BFWP-B' });
+});
+R.push({ stn: 3, ai: 'AI0736', tag: 'TT-SW1501-BU', v: mt('TT-SW1501-BU'), rel: 'U.mt (AN_MT SWP-B)', src: io(3) + ' AI0736; unit.js AN_MT SWP-B' });
+R.push({ stn: 3, ai: 'AI0758', tag: 'VT-SW1501-C2', v: mt('VT-SW1501-C2'), rel: 'U.mt (AN_MT SWP-C)', src: io(3) + ' AI0758; unit.js AN_MT SWP-C' });
+for (const [ai, tag, k] of [
+  ['AI0800', 'PT-SW1110-B1', 'swPiB'],
+  ['AI0801', 'PT-SW1110-B2', 'swPoB'],
+  ['AI0933', 'TT-SW1110-B1', 'swTiB'],
+  ['AI0934', 'TT-SW1110-B2', 'swToB']
+])
+  R.push({ stn: 2, ai, tag, v: U => fin(U[k]), rel: 'U.' + k + ' (condenser sea water side B)', src: io(2) + ' ' + ai + '; unit.js sea water model' });
+R.push({ stn: 3, ai: 'AI0434', tag: 'IT-P1503B', v: U => fin(U.swIb1), rel: 'U.swIb1 booster pump B current', src: io(3) + ' AI0434; unit.js sea water booster model' });
+R.push({ stn: 3, ai: 'AI0435', tag: 'IT-P1503C', v: U => fin(U.swIb2), rel: 'U.swIb2 booster pump C current', src: io(3) + ' AI0435; unit.js sea water booster model' });
+R.push({ stn: 3, ai: 'AI0465', tag: 'IT-P1116B', v: U => fin(U.cdI1), rel: 'U.cdI1 CEP-B current', src: io(3) + ' AI0465; unit.js condensate pump model' });
+R.push({ stn: 2, ai: 'AI0854', tag: 'TT-CD1110-2', v: U => fin(U.cdT), rel: 'hotwell water = condenser saturation U.cdT', src: io(2) + ' AI0854; unit.js condenser model' });
+R.push({ stn: 2, ai: 'AI0869', tag: 'TT-CD1110-3', v: U => fin(U.cdT), rel: 'condenser neck = exhaust saturation U.cdT', src: io(2) + ' AI0869; unit.js condenser model' });
+R.push({ stn: 2, ai: 'AI0901', tag: 'TT-FW1010', v: U => fin(U.tSr), rel: 'storage tank water = deaerator saturation U.tSr (steam table)', src: io(2) + ' AI0901; unit.js deaerator model' });
+R.push({ stn: 2, ai: 'AI0929', tag: 'TT-HD1102', v: U => fin((U.tt || {})['TT-HD1102']), rel: "U.tt['TT-HD1102'] drain out of No.2 LPH", src: io(2) + ' AI0929; unit.js anLphStep, PPE-14-0725 DCA' });
+R.push({ stn: 2, ai: 'AI0930', tag: 'TT-HD1103', v: U => fin((U.tt || {})['TT-HD1103']), rel: "U.tt['TT-HD1103'] drain out of No.3 LPH", src: io(2) + ' AI0930; unit.js anLphStep, PPE-14-0725 DCA' });
+R.push({
+  stn: 2,
+  ai: 'AI0419',
+  tag: 'PT-HD1101',
+  v: U => fin(((U.lpHt || {}).H1 || {}).Ps - 1.0332),
+  rel: 'No.1 LPH shell U.lpHt.H1.Ps (kgf/cm2 A) - 1.0332 = gauge',
+  src: io(2) + ' AI0419 "NO.1 LPH steam pressure"; unit.js AN_LP (design 0.354 kgf/cm2A x anHb x1)'
+});
+const hdw = k => U => fin(((U.hd || []).find(h => h.k === k) || {}).w1);
+R.push({ stn: 2, ai: 'AI0432', tag: 'FT-HD1102', v: hdw('H2'), rel: 'AN_HD H2 w1, the normal (cascade) drain flow', src: io(2) + ' AI0432 "NO.2 LPH drain water flow"; unit.js AN_HD mass balance' });
+R.push({ stn: 2, ai: 'AI0433', tag: 'FT-HD1103', v: hdw('H3'), rel: 'AN_HD H3 w1, the normal (cascade) drain flow', src: io(2) + ' AI0433 "NO.3 LPH drain water flow"; unit.js AN_HD mass balance' });
+R.push({
+  stn: 5,
+  ai: 'AI0064',
+  tag: 'FT-MU0001',
+  v: U => (Array.isArray(U.muQ) ? U.muQ.reduce((a, b) => a + (+b || 0), 0) : NaN),
+  rel: 'sum of the make-up water pump flows U.muQ (AN_MU pump curves)',
+  src: io(5) + ' AI0064 tag FT-MU0001 (the description column of this row repeats the fire pump text of AI0065); replaces the snapshot 28.6 of hmi-op.js'
+});
+/* 5. switches from model state */
+let hh = false;
+R.push({
+  stn: 2,
+  di: 1,
+  tag: 'LSHH-CD1110',
+  v: (U, X) => {
+    const L = X.ai('2|AI0640');
+    if (!isFinite(L)) return NaN;
+    hh = hh ? L > 300 - 10 : L >= 300;
+    return hh;
+  },
+  rel: 'hotwell level LT-CD1110 >= +300 mm (HHL 900 mm, normal 600 mm from the bottom), resets 10 mm below (the dead band DB0 of the plantsw level switches)',
+  src: io(2) + ' I.0291; condenser outline K1AU3-D1-0-039 R1 p 4 (as plantsw LSLL-CD1110)'
+});
+/* sea water pump 6.6 kV VCB (K1AU3E1-0008, bus 1AM): ON = the DITL-29A copy runs (the soft starter closes the VCB to run, the protection
+   relay opens it on a trip, so the run output is 0 on a trip), OFF = NOT ON (QA review 2026-11-25). The copy rows read the tag of their
+   own pump (W.showText), so the tag holds each row to its pump */
+for (const [L, on, off, sh] of [
+  ['A', 'I.032E', 'I.032F', 'DITL-29A'],
+  ['B', 'I.052A', 'I.052B', 'DITL-29A #B'],
+  ['C', 'I.081E', 'I.081F', 'DITL-29A #C']
+]) {
+  const vcb = X => {
+    const r = X.ditlRun(sh);
+    return r == null ? NaN : r === 1 ? 1 : 0;
+  };
+  R.push({ stn: 3, di: 1, tag: 'MIV-P1501' + L + '1', v: (U, X) => vcb(X), rel: 'VCB ON = ' + sh + ' running', src: io(3) + ' ' + on + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008' });
+  R.push({
+    stn: 3,
+    di: 1,
+    tag: 'MIV-P1501' + L + '2',
+    v: (U, X) => {
+      const x = vcb(X);
+      return isFinite(x) ? 1 - x : NaN;
+    },
+    rel: 'VCB OFF = NOT ON',
+    src: io(3) + ' ' + off + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008'
+  });
+}
+FIELD.add(lane, R);
+
+})("bop", window.FIELD);
 /* ---- src/world/world.js ---- */
 /* WORLD (1.22.0): IISANG MUNDO ng ABC at DITL (CHECKLIST #25, CLAUDE.md "HINDI NAGBABAGO NA KAALAMAN" 1).
    Ang mga sheet ay nag-uusap ayon sa reference na nakasulat sa drawing (walang hula):
@@ -329172,6 +330009,27 @@ window.LANE_BIND=[];window.LANE_INST=[];window.LANE_ALARMS=[];
       fn = () => (window.AN && AN.ditlRun ? (AN.ditlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1 ? 1 : 0) : NaN);
     for (const t of i ? ['SS-BH1060-' + x, 'SS-BH1060-A'] : ['SS-BH1060-A']) L.push([t, fn, 0.5, 'hi', 0, 0, /SPEED NOT LOW/, sh]);
   });
+  /* beta.470 (lane plan 2026-11-25): a field signal row of a lane with di (src/world/field/<lane>.js: { tag, di: 1, sheet, src, rel,
+     v(U, X) }) is a switch row of the plant model like the rows above: the DITL input row whose text starts with the tag is 1 while
+     v(AN.unit, AN.fieldX) is true (above 0.5). sheet (optional): the code of the sheet, "DITL-23A", when the tag is on more than one sheet */
+  for (const r of (window.FIELD && FIELD.rows) || []) {
+    const fn = r.v || r.get;
+    if (!r.di || !r.tag || typeof fn !== 'function') continue;
+    /* a tag the plant model already switches above keeps that one source (one signal, one source); the row is listed in FIELD.dup */
+    if (L.some(x => x[0] === String(r.tag).toUpperCase())) {
+      (FIELD.dup = FIELD.dup || []).push(r.lane + ' ' + r.tag);
+      continue;
+    }
+    const f = () => {
+      try {
+        const v = fn((window.AN && AN.unit) || {}, (window.AN && AN.fieldX) || {});
+        return v === true ? 1 : v === false ? 0 : +v;
+      } catch (e) {
+        return NaN;
+      }
+    };
+    L.push([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, r.sheet ? new RegExp(String(r.sheet).replace(/[^A-Z0-9-]/gi, '') + '$') : null]);
+  }
   const DB0 = 10;
   let map = null,
     mapK = '';
@@ -335929,7 +336787,8 @@ html body.sc .fpo-box:not(#scnone) .fpo-sh.fld::before{content:'\25B8';display:i
 html body.sc.sc-fpfld .fpo-box:not(#scnone) .fpo-sh.fld::before{content:'\25BE'}
 html body.sc .fpo-box:not(#scnone) .fpo-sh.fld:hover{color:var(--sc-ink)!important}
 html body.sc .fpo-box:not(#scnone) .fpo-sh.fld:focus-visible{outline:2px solid var(--sc-steel);outline-offset:1px}
-html body.sc:not(.sc-fpfld) .fpo-box:not(#scnone) .fpo-sh.fld ~ .fpo-r{display:none!important}
+/* beta.486: only the rows of the FIELD block (.fld) fold, not the VCB, CURRENT and monitor rows after it */
+html body.sc:not(.sc-fpfld) .fpo-box:not(#scnone) .fpo-sh.fld ~ .fpo-r.fld{display:none!important}
 /* the selector row stays one line (REMOTE | LOCAL and the FIELD mark) */
 html body.sc .fpo-box:not(#scnone) .fpo-r:has(.fpo-seg){flex-wrap:nowrap!important;gap:4px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-r:has(.fpo-seg) .fpo-seg button{padding:0 5px!important;font-size:11px!important}
@@ -347768,7 +348627,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 258a546'));
+    row('Version', E('span', 'scsver', ver + ' · build ce8e75f'));
   }
   function openSet(near) {
     if (!set) {
@@ -364618,8 +365477,13 @@ window.PLANT_SYS = [
     if (document.body) document.body.classList.toggle('st-fit', ok);
     return ok;
   };
-  HX.V = (label, key, unit, dp) => ({ label, key, unit: unit || '', dp: dp == null ? 1 : dp });
+  /* o.words = [word at 1, word at 0] for an on / off point (a VCB, a heater): the row shows the word, not 1.0 / 0.0 */
+  HX.V = (label, key, unit, dp, o) => Object.assign({ label, key, unit: unit || '', dp: dp == null ? 1 : dp }, o || {});
   HX.E = (sym, name, tag, vals, o) => Object.assign({ k: 'eq', sym, name, tag: tag || '', vals: vals || [] }, o || {});
+  /* beta.486 (EIMI): o.mon = [HX.V(...)] monitor rows of the machine (bearing, winding, vibration, heater ...): shown on its
+     PERMISSIVE · TREND · MONITOR faceplate (README section 4 rule 6, user 2026-10-31: two faceplates, the monitor rows on the second),
+     not on the drawing. o.vcb = the value key of its VCB ON / OFF point of the I/O list (1 = ON): the VCB lamp of the CONTROL
+     faceplate reads it instead of following the motor state */
   HX.M = (sym, mach, name, vals, o) => Object.assign({ k: 'mach', sym, mach, name, vals: vals || [] }, o || {});
   HX.C = (loop, name, o) => Object.assign({ k: 'loop', sym: 'valve', kind: 'control', loop, name, vals: [] }, o || {});
   HX.X = (valve, name, o) =>
@@ -372753,9 +373617,27 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
   };
   const needMach = name => S && !(name in S.machs) && (S.machs[name] = machDef(name));
   /* after the first pass of the page (every key it asks is known): the hidden page of hmi-mock.js for its valves */
+  /* beta.486 (EIMI): the monitor rows (o.mon) and the VCB point (o.vcb) that the page gives a machine (HX.M), by machine name */
+  function machExtra() {
+    const X = {},
+      d = S && S.def;
+    if (!d) return X;
+    const all = d.plan ? d.plan.items : (d.lanes || []).flatMap(L => L.items.flatMap(c => (Array.isArray(c) ? c : [c])));
+    for (const it of all) {
+      if (!it || it.k !== 'mach' || !(it.mon || it.vcb)) continue;
+      const x = (X[it.mach] = X[it.mach] || { mon: [], vcb: null });
+      for (const r of it.mon || []) if (!x.mon.some(q => q.key === r.key && q.label === r.label)) x.mon.push(r);
+      if (it.vcb) x.vcb = it.vcb;
+    }
+    return X;
+  }
+  const plainKey = k => !/^(an|tcs):/.test(k);
   function proxy() {
     const mach = {},
-      unit = {};
+      unit = {},
+      EX = machExtra();
+    /* the keys of the monitor rows are values of the page as well (linked before the hidden page is built) */
+    for (const n in EX) for (const k of EX[n].mon.map(r => r.key).concat(EX[n].vcb || [])) if (plainKey(k)) needVal(k);
     let art = '';
     /* values: [data-v] of hmi-mock.js (the logic transmitter, else the plant model key, 'tt:' and 'ux:' keys of the temporary pages) */
     for (const key of S.vals) {
@@ -372807,7 +373689,15 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     }
     for (const name in S.machs) {
       if (!S.machs[name]) continue;
-      mach[name] = S.machs[name];
+      const ex = EX[name];
+      /* a copy: the description of the temporary page (LS_MOCK.defs) is shared and stays as it is */
+      mach[name] = !ex
+        ? S.machs[name]
+        : Object.assign({}, S.machs[name], {
+            mon: (S.machs[name].mon || []).concat(ex.mon.map(r => [r.label, () => HX.data.value(r.key), r.unit, plainKey(r.key) ? r.key : '', r.dp, r.words])),
+            vcb: ex.vcb ? () => HX.data.value(ex.vcb) : S.machs[name].vcb,
+            vcbTag: ex.vcb && plainKey(ex.vcb) ? ex.vcb : ''
+          });
       art +=
         '<text data-st="' +
         name +
@@ -372895,12 +373785,32 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       trend: { h, fn: () => HX.data.value(r0.k) }
     });
   }
+  /* beta.486 (EIMI): the TCS operator buttons and lamps (the CRT ports of the TCS soft logic, lanes/tcs-crt-ports.json). HX.B hooks:
+       'crt:<port>'          a push button, e.g. HX.B('RESET', 'crt:CRT:TCE114.<tag>', { press: true }): a press holds the port
+                             CRT.HOLD ms (the TCS program reads a CRT press as a held contact);
+       'crtl:<sheet>|<key>'  a lamp, e.g. HX.B('TRIP', 'crtl:TCE114|<lamp tag>'): ON (lit) at 1, OFF at 0.
+     While the TCS program is not running (no API, or a read gives no value) the lamp shows '-----' and a press does nothing.
+     CRT.press / CRT.read are the ONE place that names the live API of the TCS program (lane 9); nothing else calls it. */
+  const CRT = {
+    HOLD: 3000,
+    api: () => (window.TCE && typeof TCE.press === 'function' && typeof TCE.read === 'function' ? TCE : null),
+    press: (port, ms) => call(() => CRT.api().press(port, ms), null),
+    read: (sheet, key) => call(() => CRT.api().read(sheet, key), null)
+  };
+  const crtLamp = h => {
+    const i = h.indexOf('|'),
+      v = CRT.api() ? CRT.read(h.slice(5, i), h.slice(i + 1)) : null,
+      x = typeof v === 'boolean' ? (v ? 1 : 0) : v != null && isFinite(v) ? +v : null;
+    return { text: x == null ? '-----' : x >= 0.5 ? 'ON' : 'OFF', tone: x == null ? '' : x >= 0.5 ? 'on' : '' };
+  };
   const ALC = { t: 0, m: {} };
   HX.data = {
     time: () => call(() => (window.AN && AN.unit && isFinite(AN.unit.t) ? AN.unit.t : null), Date.now() / 1000),
     value(key) {
       /* Audit 3: a value with no row on the app pages reads its field of the unit model ('an:Pip' = AN.unit.Pip) */
-      if (/^an:/.test(key)) return call(() => { const v = AN.unit[key.slice(3)]; return v != null && isFinite(v) ? +v : null; }, null);
+      /* beta.486 (EIMI): a dotted path reads a field inside the unit model ('an:lpHt.H2.dr' = AN.unit.lpHt.H2.dr); a flag reads 1 / 0 */
+      if (/^an:/.test(key))
+        return call(() => { const v = key.slice(3).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.unit); return typeof v === 'boolean' ? (v ? 1 : 0) : v != null && isFinite(v) ? +v : null; }, null);
       /* a value of the TCS model ('tcs:aux.hso' = AN.tcs().aux.hso); an open / closed flag reads 100 / 0 % */
       if (/^tcs:/.test(key))
         return call(() => { const v = key.slice(4).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.tcs()); return typeof v === 'boolean' ? (v ? 100 : 0) : v != null && isFinite(v) ? +v : null; }, null);
@@ -373015,6 +373925,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         const o = call(() => LS_FPOP.valveOpen(h.slice(3)), null);
         return { text: o == null ? '' : o ? 'OPEN' : 'CLOSED', tone: o == null ? '' : o ? 'run' : 'stop' };
       }
+      if (h.slice(0, 5) === 'crtl:') return crtLamp(h);
+      if (h.slice(0, 4) === 'crt:') return { text: CRT.api() ? '' : '-----', tone: '' };
       needHook(h, label);
       const e = S && S.hooks[h] && pq('[data-hxk="' + S.hooks[h].i + '"]');
       if (!e) return null;
@@ -373031,6 +373943,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     },
     press(h) {
       if (h.slice(0, 3) === 'fv:') return void call(() => LS_FPOP.valveTag(h.slice(3)));
+      if (h.slice(0, 4) === 'crt:') {
+        if (!CRT.api()) return;
+        CRT.press(h.slice(4), CRT.HOLD);
+        return void call(() => window.lsEventAdd('TCS', 'DCS', 'Operator: ' + h.slice(4) + ' pressed (HMI)'));
+      }
+      if (h.slice(0, 5) === 'crtl:') return;
       const e = S && S.hooks[h] && pq('[data-hxk="' + S.hooks[h].i + '"]');
       if (e)
         e.dispatchEvent(
@@ -373064,6 +373982,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
   function screen(def) {
     return function (g, api) {
       S = store(api, g);
+      S.def = def;
       const fo = document.createElementNS(NS, 'foreignObject');
       const [fw, fh] = frame();
       for (const [a, v] of Object.entries({ x: 0, y: 0, width: fw, height: fh })) fo.setAttribute(a, v);
@@ -373521,6 +374440,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     const rLcp = row('LCP', bLs, bLp),
       rEs = row('E-STOP', bEs, ...(esN != null ? [bEr] : esR == null ? [E('span', 'fpo-nd', 'not on ' + (nm || 'its drawing'))] : [])),
       rRly = row('RELAY', bTr, bRs);
+    /* beta.486 (EIMI): the rows of the FIELD block carry 'fld': the compact shell folds only them (shellc-compact.css). The fold took every
+       later row (VCB, CURRENT and the monitor rows of the PERMISSIVE · TREND · MONITOR faceplate), so a pump's monitor rows never showed */
+    for (const r of [rLcp, rEs, rRly]) r.classList.add('fld');
     if (hasFld) F.bd.append(fSh, rLcp, rEs, rRly);
     /* live test 2026-11-05 (ACWP-A, DITL-76 row 24 LOCAL STOP P.B. = a FALLING pulse into the reset of the run flip-flop): with the Worker
        the release written once could be overwritten by the Worker's copy of the row (still 1), the button stayed "pressed" and the pump
@@ -373601,10 +374523,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     if (M.cur) F.bd.append(rCur);
     /* monitoring values of the info faceplate: M.mon = [[label, fn, unit, tag]] (bearing, winding, vibration, ...) */
     const mon = (part === 'info' && M.mon) || [];
-    const monV = mon.map(([l, f, u, tg]) => {
+    /* beta.486: the monitor rows under their own heading, apart from the permissive rows above them */
+    if (mon.length) F.bd.append(E('div', 'fpo-sh', 'MONITOR'));
+    const monV = mon.map(([l, f, u, tg, dp, words]) => {
       const v = E('span', 'fpo-vb');
-      F.bd.append(row(l, v, E('small', 'fpo-dim', (u || '') + (tg ? ' · ' + tg : ''))));
-      return [v, f];
+      F.bd.append(row(l, v, E('small', 'fpo-dim', [u, tg].filter(Boolean).join(' · '))));
+      return [v, f, dp, words];
     });
     if (M.cur) F.bd.append(trH, trend);
     /* the logic permissive */
@@ -373692,9 +374616,16 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       lR.className = 'fpo-lp' + (st === 'RUN' ? ' run' : '');
       lS.className = 'fpo-lp' + (st === 'STOP' ? ' stop' : '');
       lT.className = 'fpo-lp' + (st === 'TRIP' ? ' trip' : '');
-      vcb.className = 'fpo-lp' + (st === 'RUN' ? ' run' : st ? ' stop' : '');
-      setTx(vcb.lastChild, st === 'RUN' ? 'ON' : st ? 'OFF' : '---');
-      vcb.title = 'VCB ON / OFF of the I/O list: shown closed while the motor runs (no logic sheet reads it)';
+      /* beta.486 (EIMI): M.vcb = the VCB ON / OFF point of the I/O list (an HX page gives it: HX.M o.vcb); without it the lamp follows
+         the motor state */
+      const vb = typeof M.vcb === 'function' ? call(M.vcb, null) : undefined,
+        vOn = vb === undefined ? (st === 'RUN' ? true : st ? false : null) : vb == null || !isFinite(+vb) ? null : +vb >= 0.5;
+      vcb.className = 'fpo-lp' + (vOn === true ? ' run' : vOn === false ? ' stop' : '');
+      setTx(vcb.lastChild, vOn === true ? 'ON' : vOn === false ? 'OFF' : '---');
+      vcb.title =
+        vb === undefined
+          ? 'VCB ON / OFF of the I/O list: shown closed while the motor runs (no logic sheet reads it)'
+          : 'VCB ON / OFF of the I/O list' + (M.vcbTag ? ' · ' + M.vcbTag : '');
       bRem.classList.toggle('on', md.rem === true);
       bLoc.classList.toggle('on', md.rem === false);
       bRem.disabled = bLoc.disabled = md.rem == null;
@@ -373771,9 +374702,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       const yn = !loc && !miss.length;
       if (part === 'info') setTx(ilH, 'PERMISSIVE · ' + (yn ? 'Y (all complete)' : 'N (not complete)') + (nm ? ' · ' + nm : ''));
       if (M.onYN) call(() => M.onYN(yn), null);
-      for (const [v, f] of monV) {
+      for (const [v, f, dp, words] of monV) {
         const x = call(f, null);
-        setTx(v, x == null || !isFinite(+x) ? '-----' : (+x).toFixed(1));
+        /* an on / off point shows its word (words = [at 1, at 0]); a value its decimals (dp, 1 when not given) */
+        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp == null ? 1 : dp));
       }
       setTx(chip, st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' ? 'READY' : '');
       chip.className = 'fpo-chip ' + (st === 'TRIP' ? 'trip' : miss.length && st !== 'RUN' ? 'ilk' : '');
@@ -375346,6 +376278,14 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
             IX.lab.get(r.st + '|' + r.a)
           );
       }
+      /* beta.470 (lane plan 2026-11-25): no logic sheet has it: the field row of a lane (src/world/field/<lane>.js) by its I/O address,
+         else by its tag; the value is AN.unit.fld (unit.js anFieldStep). One source per tag: the field row replaces the page fallback */
+      const FR = (window.FIELD && FIELD.rows) || [];
+      for (const c of [k].concat(tx(k))) {
+        const r = IX.io.get(c),
+          fr = FR.find(x => (r && x.ai && +x.stn === r.st && x.ai === r.a) || N(x.tag) === c);
+        if (fr) return { k: 'fld', f: fr.ai ? fr.stn + '|' + fr.ai : N(fr.tag), how: 'field row ' + fr.lane + ' (' + (fr.tag || fr.ai) + ')' };
+      }
       return null;
     }
     if (it.t === 'pump' || it.t === 'fan' || it.t === 'motor') {
@@ -375474,6 +376414,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
                 }
               : null
           );
+        } else if (r.k === 'fld') {
+          const U = window.AN && AN.unit,
+            v = U && U.on && AN.fieldRead ? AN.fieldRead(r.f) : null;
+          o.set(v != null && isFinite(v) ? { v: +v, r } : null);
         } else if (r.k === 'unit') {
           const U = window.AN && AN.unit;
           o.set(U && U.on && isFinite(U[r.f]) ? { v: +U[r.f], r } : null);
