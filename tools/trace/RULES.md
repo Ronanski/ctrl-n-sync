@@ -53,3 +53,8 @@ run and the existing source rule applies. New column "value" (CSV) and summary l
 - main fa7eb69 (no field rows yet): value 1,524 (field only 0); statuses as the 06:40 baseline.
 - lane 3 branch beta.493 (boiler.js, 50 rows): value 1,524 -> 1,574 (field only 50); MODEL / HMI ONLY 224 -> 268, UNLINKED 527 -> 483, B2 443 -> 399.
 - lane 4 branch (bop.js, 77 rows): value 1,524 -> 1,601 (field only 77); MODEL / HMI ONLY 224 -> 284, UNLINKED 527 -> 467, B2 443 -> 383.
+
+## Row-unit copies (2026-11-25 07:00 PHT, lane 0 PR 549)
+A copy with `s._inst.only` (Set of row indexes) holds only those rows of its base drawing: its other rows and the drawing's free text are not
+counted on it. Old tool -> new tool on PR 549 a086e24: no change (LINKED 1,601, value 1,713; the 3 copies DITL-21D #B/#C/#D have no other
+row with an address).

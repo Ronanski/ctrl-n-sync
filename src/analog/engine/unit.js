@@ -260,6 +260,7 @@ function anUnitWrite(list, x) {
     const r = b.rng,
       y = r ? Math.max(r.lo, Math.min(r.hi, xi)) : xi;
     s.val = s.act = y;
+    s.src = 1; /* beta.530 (AKIHO): the model writes this point: it is live (the 150 MW snapshot seed sets s.snap only) */
   });
 }
 /* the value of every block of the list now (anchor of "Start at 150 MW"), kept on the list */
@@ -4032,7 +4033,11 @@ const AN_MT = {
        >= 90 C, DITL-23B > 100 C), winding U / V / W from the closed cooling water (AN_MT.cw below), vibration x1 / x2 (NO-SOURCE 1.8 mm/s;
        TECO data sheet: below 2.5 mm/s 0-P at no load) */
     ['BFWP-A', 'DITL-23A', 'FW1115-A', ['1', '2', '3', '4'], ['11', '12', '21', '22', '31', '32', '41', '42'], 1.8],
-    ['BFWP-B', 'DITL-23A #B', 'FW1115-B', ['1', '2', '3', '4'], ['11', '12', '21', '22', '31', '32', '41', '42'], 1.8]
+    ['BFWP-B', 'DITL-23A #B', 'FW1115-B', ['1', '2', '3', '4'], ['11', '12', '21', '22', '31', '32', '41', '42'], 1.8],
+    /* beta.530 (RARA): the condensate pumps P-1116A / B (DITL-61A and its #B; DITL-61B rows 12 ~ 14): the three windings only. The coupling
+       (A1), the grease lubricated motor bearings (A3 / A4) and the vibration (VT-CD1116) have no running value in the documents: no row */
+    ['CEP-A', 'DITL-61A', 'CD1116-A', [], [], 0],
+    ['CEP-B', 'DITL-61A #B', 'CD1116-B', [], [], 0]
   ],
   Tb: 55,
   Tw: 85,
@@ -4053,9 +4058,12 @@ const AN_MT = {
                       14.7 min (CALC).
        fan bearing    the fan manual gives only the limit (4.9 / 5.4.3: ambient + 40 C; vibration 6 mm/s): the running value Tb stays
                       NO-SOURCE. */
-  mot: { PAF: [373, 'fnPafI'], SAF: [192, 'fnSafI'], IDF: [350, 'fnIdfI'] },
+  mot: { PAF: [373, 'fnPafI'], SAF: [192, 'fnSafI'], IDF: [350, 'fnIdfI'], 'CEP-A': [35.2, 'cdI0', 80, 1], 'CEP-B': [35.2, 'cdI1', 80, 1] },
   sf: 1.15,
   rise: 90,
+  /* beta.530 (RARA): CEP motor TECO AEJG-WT 325 kW 4 P 6600 V 35.2 A, IC411 fan cooled, Ins. Class F, "Temp. Rise Limit (Res.) Stator
+     80 C at S.F. 1.0" (data sheet 3A057H186-74341 REV.05, KSB contract document K1AU3-D1-0-044 R0 p 24): the same form with its own rise and S.F. (the 3rd and 4th
+     number of mot): T = ambient + 80 x (I / 35.2)^2, I = U.cdI0 / cdI1 */
   rB: 25.3,
   tauMB: 882,
   /* 3.2.3-beta.178 (SOHEE): MOTOR WINDING ON THE CLOSED COOLING WATER. The BFWP motor (TECO AEZW-S2, 3550 kW 2 P 6600 V, data sheet
@@ -4131,7 +4139,7 @@ function anMotorStep(U, dt) {
       wT = cw
         ? Math.min(K.cwMax, Tc + K.cwRise * x2 + K.cwLoss * x2 * (1 / (K.cwC * fq) - 1 / K.cwC))
         : mo && isFinite(I)
-          ? T0 + K.rise * Math.pow(Math.max(0, I) / (mo[0] * K.sf), 2)
+          ? T0 + (mo[2] || K.rise) * Math.pow(Math.max(0, I) / (mo[0] * (mo[3] || K.sf)), 2)
           : K.Tw;
     brg.forEach((e, i) =>
       K.los[id]
@@ -5256,7 +5264,12 @@ let AN_FLD = null;
                  memory anAv keeps is put back after the call, so a field row never moves it
    ditlPos(n, j) the position 0 ~ 100 % of valve j of DITL drawing n ("DITL-32", "DITL-32 #B"), null while the world is not built
    ditlRun(a)    1 RUN / 0 STOP of DITL drawing a ("DITL-23A", "DITL-39@3" = output row 3), null while the world is not built
-   ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it */
+   ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it
+   ftrip(n)      1 while drawing n ("DITL-19 #B") stands on a field trip (the protection relay or the undervoltage relay opened its
+                 breaker: s._ftrip of WORLD.ftrip / the black-out), else 0; null while the world is not built
+   fault(id)     1 while the trainer fault id stands (AN.fault or WORLD.ftrip list, 'cf.jamA', 'cv.fw'), else 0; null when the id is in no list
+   state(id)     the value 1 / 0 of a field state (FIELD.state, faults.js): its documented normal, the other one while the instructor
+                 holds it out of normal; null = no such id */
 const anFieldKey = () => AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0);
 function anFieldX() {
   let C = {},
@@ -5281,6 +5294,16 @@ function anFieldX() {
     },
     ditlPos: (n, j) => anDitlPos(n, j),
     ditlRun: (a, last) => anDitlRun(a, last),
+    ftrip: n => {
+      const s = anDitlSheet(')' + n);
+      return s ? (s._ftrip ? 1 : 0) : null;
+    },
+    fault: id => {
+      const L = anFault().concat(typeof window !== 'undefined' && window.WORLD && WORLD.ftrip ? WORLD.ftrip() : []),
+        f = L.find(q => q.id === id);
+      return f ? (f.on ? 1 : 0) : null;
+    },
+    state: id => anFieldStateVal(String(id)),
     ai: key => {
       const k = anFieldKey();
       if (k !== ck) (C = {}), (ck = k); /* the block lists again when the sheets with a running engine change */

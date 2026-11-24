@@ -71,7 +71,7 @@ function laneData() {
     : '';
   return (
     '/* ---- lane data (src/world/bind, src/world/inst, src/data/alarms, src/world/field) ---- */\nwindow.LANE_BIND=' + JSON.stringify(bind) + ';window.LANE_INST=' + JSON.stringify(inst) + ';window.LANE_ALARMS=' + JSON.stringify(alarms) + ';\n' +
-    'window.FIELD={rows:[],add:function(lane,rows){for(const r of rows||[])this.rows.push(Object.assign({lane:lane},r))}};\n' +
+    'window.FIELD={rows:[],states:[],add:function(lane,rows){for(const r of rows||[])this.rows.push(Object.assign({lane:lane},r))},state:function(lane,rows){for(const r of rows||[])this.states.push(Object.assign({lane:lane},r,{id:"fs."+r.id}))}};\n' +
     field
   );
 }

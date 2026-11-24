@@ -271,6 +271,9 @@ const has = (txt, tag) => {
       for (const k of ['mir', 'mor', 'mos', 'mit']) if (m[k] >= 0) own.add(m[k]);
     /* the addresses written as free text on the drawing (the right column of the outputs, the short machine lists): to the row of
        the same height, else to the sheet (row 0, "on the drawing, not on a row") */
+    /* a row-unit copy (YUA PR 549: s._inst.only = Set of row indexes) holds only those rows of the base drawing; its other rows are
+       not part of it and are not counted on it */
+    const only = s._inst && s._inst.only instanceof Set ? s._inst.only : null;
     const txA = new Map();
     /* a drawing for machines A / B / C / D has a copy per machine (W.inst): the drawing itself is machine A, its short list gives A only */
     const multi = !s._inst && ((WORLD.instOf && WORLD.instOf.get(s)) || []).length > 1;
@@ -294,6 +297,8 @@ const has = (txt, tag) => {
           ri = i;
         }
       });
+      if (only && !only.has(ri))
+        continue; /* a row-unit copy holds only its rows; the drawing's own text belongs to the base */
       const k = ri + ':' + (x.x >= rs0 ? 'R' : 'L');
       txA.set(k, (txA.get(k) || []).concat(la));
     }
@@ -319,6 +324,7 @@ const has = (txt, tag) => {
         }
       }
     b.rows.forEach((r, i) => {
+      if (only && !only.has(i)) return;
       const T = cellT(s, i, 'T'),
         Sx = cellT(s, i, 'S'),
         F = cellT(s, i, 'F'),
