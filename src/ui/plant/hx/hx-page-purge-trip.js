@@ -109,10 +109,11 @@
           sc: BS
         }),
         at(
-          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 78, tag: 'TCV-FG1116A-D', wrap: 14 }),
+          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 78, tag: 'TCV-FG1116A-D', wrap: 14, mvb: true }),
           BPX + 56 * BS,
           BPY + 350 * BS,
-          { id: 'dma', lab: 'b' }
+          /* beta.373: the mode and output on one line ran onto the back-pass outline; mvb stacks them and they sit outside the back pass, left / right */
+          { id: 'dma', lab: 'l' }
         ),
         at(
           C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 78, tag: 'TCV-FG1117A-D', wrap: 14 }),

@@ -40,6 +40,7 @@
     x: 980 + (i % 3) * 285,
     y: 128 + Math.floor(i / 3) * 78,
     side: 't',
+    free: true,
     label,
     key,
     key2,

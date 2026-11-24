@@ -156581,10 +156581,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 15e7734'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build a5c2686'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 15e7734';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build a5c2686';
     } catch (e) {}
   };
   upd();
@@ -346946,7 +346946,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 15e7734'));
+    row('Version', E('span', 'scsver', ver + ' · build a5c2686'));
   }
   function openSet(near) {
     if (!set) {
@@ -364478,8 +364478,9 @@ window.PLANT_SYS = [
           hit = t.key
             ? `<rect class="hx-hit" x="${n1(hx0)}" y="${n1(hy0)}" width="${n1(lw)}" height="${n1(hy1 - hy0)}"/>`
             : '';
+        /* free: a value in a table, not on a line, so no transmitter stalk pointing at nothing (approval page, generator) */
         taps +=
-          `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})">${hit}<path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>` +
+          `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})">${hit}${t.free ? "" : `<path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>`}` +
           `<text class="hx-lab" x="${tx0}" y="${yl}" text-anchor="${an}">${esc(t.label)}</text><rect class="rx-chip" x="${n1(x0)}" y="${yc}" width="${cw}" height="15" rx="3"/>` +
           `<text x="${n1(x0 + cw / 2)}" y="${yc + 11.2}" text-anchor="middle">${val}</text>${t.tag ? `<text class="hx-tag" x="${tx0}" y="${yt}" text-anchor="${an}">${esc(t.tag)}</text>` : ''}</g>`;
         continue;
@@ -367636,7 +367637,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       texts: [
         { x: FX + 6, y: FY + 200 * FS, s: 'Furnace', cls: 'hx-name', anchor: 'middle' },
         { x: 1130, y: CY + 30, s: 'six fuel ports, front wall', cls: 'hx-note', anchor: 'middle' },
-        { x: 1532, y: 660, s: 'rear side', cls: 'hx-note' }
+        /* beta.373: at x 1532 the sand silo covered it ("rea"): under the sand line, between the furnace and the silo */
+        { x: 1456, y: FY + 290 * FS + 22, s: 'rear side', cls: 'hx-note', anchor: 'middle' }
       ]
     }
   });
@@ -368674,9 +368676,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           rot: -90,
           lab: 'r'
         }),
-        at(C('HICDO1012', 'Supply valve to the burners', { tag: 'FCV-DO1012', wrap: 16 }), 705, DY, {
+        at(C('HICDO1012', 'Supply valve to the burners', { tag: 'FCV-DO1012', wrap: 16, mvb: true /* beta.373: one-line Manual 100.0 % reached the burner header */ }), 705, DY, {
           id: 'sup',
-          lab: 'b'
+          lab: 't' /* beta.373: room above the pump outlet line; below it sat on pump B's Y */
         }),
         at(C('PICDO1008', 'Oil return valve', { tag: 'PCV-DO1009' }), 430, 90, { id: 'ret', lab: 'b' }),
         at(C('FIC-OM', 'Oil master', { sym: 'ctl', unit: 't/h', pvdp: 2 }), 900, 940, { id: 'om', lab: 't' }),
@@ -368815,7 +368817,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           id: 'xb1',
           lab: 'b'
         }),
-        at(C('TICAS1001', 'Spray valve', { tag: 'TCV-CD1124', cname: 'Auxiliary steam spray valve' }), 460, 80, {
+        at(C('TICAS1001', 'Spray valve', { tag: 'TCV-CD1124', cname: 'Auxiliary steam spray valve', mvb: true /* beta.373: one-line chip touched the block valve state */ }), 460, 80, {
           id: 'sp1',
           lab: 'b'
         }),
@@ -368852,7 +368854,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           id: 'xb2',
           lab: 'b'
         }),
-        at(C('TICAS1017', 'Spray valve', { tag: 'TCV-CD1126', cname: 'Gland steam spray valve' }), 1030, 110, {
+        at(C('TICAS1017', 'Spray valve', { tag: 'TCV-CD1126', cname: 'Gland steam spray valve', mvb: true }), 1030, 110, {
           id: 'sp2',
           lab: 'b'
         }),
@@ -369894,7 +369896,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(HX.H('V-MU0002'), 405, 380, { id: 'hm2' }),
         ...['V-MU0003', 'V-MU0004', 'V-MU0005'].map((t, i) => at(HX.H(t, t, { w: 80 }), 542, MY[i], { id: 'hs' + i })),
         ...['V-MU0007', 'V-MU0009', 'V-MU0011'].map((t, i) =>
-          at(HX.H(t, t, { w: 78 }), 818, MY[i] - 45, { id: 'hd' + i })
+          at(HX.H(t, t, { w: 78 }), 818, MY[i] - 58 /* beta.373: outlet line up 13, off the pump names */, { id: 'hd' + i })
         ),
         at(HX.H('V-MU1031'), UX, 380, { id: 'hf1' }),
         at(HX.H('V-MU1032'), ETX, 524, { id: 'hf2' }),
@@ -369915,7 +369917,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           {
             med: 'water',
             w: W_M,
-            pts: ['m' + i + '.d', [MX - 2, MY[i] - 45], [MHX, MY[i] - 45]],
+            pts: ['m' + i + '.d', [MX - 2, MY[i] - 58], [MHX, MY[i] - 58]],
             flow: 'm:MWP-' + n,
             arrow: false
           }
@@ -370444,10 +370446,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           sc: BS
         }),
         at(
-          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 78, tag: 'TCV-FG1116A-D', wrap: 14 }),
+          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 78, tag: 'TCV-FG1116A-D', wrap: 14, mvb: true }),
           BPX + 56 * BS,
           BPY + 350 * BS,
-          { id: 'dma', lab: 'b' }
+          /* beta.373: the mode and output on one line ran onto the back-pass outline; mvb stacks them and they sit outside the back pass, left / right */
+          { id: 'dma', lab: 'l' }
         ),
         at(
           C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 78, tag: 'TCV-FG1117A-D', wrap: 14 }),
@@ -370611,6 +370614,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     x: 980 + (i % 3) * 285,
     y: 128 + Math.floor(i / 3) * 78,
     side: 't',
+    free: true,
     label,
     key,
     key2,

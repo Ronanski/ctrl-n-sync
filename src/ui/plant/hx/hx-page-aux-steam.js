@@ -75,7 +75,7 @@
           id: 'xb1',
           lab: 'b'
         }),
-        at(C('TICAS1001', 'Spray valve', { tag: 'TCV-CD1124', cname: 'Auxiliary steam spray valve' }), 460, 80, {
+        at(C('TICAS1001', 'Spray valve', { tag: 'TCV-CD1124', cname: 'Auxiliary steam spray valve', mvb: true /* beta.373: one-line chip touched the block valve state */ }), 460, 80, {
           id: 'sp1',
           lab: 'b'
         }),
@@ -112,7 +112,7 @@
           id: 'xb2',
           lab: 'b'
         }),
-        at(C('TICAS1017', 'Spray valve', { tag: 'TCV-CD1126', cname: 'Gland steam spray valve' }), 1030, 110, {
+        at(C('TICAS1017', 'Spray valve', { tag: 'TCV-CD1126', cname: 'Gland steam spray valve', mvb: true }), 1030, 110, {
           id: 'sp2',
           lab: 'b'
         }),

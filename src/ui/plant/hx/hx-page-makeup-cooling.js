@@ -131,7 +131,7 @@
         at(HX.H('V-MU0002'), 405, 380, { id: 'hm2' }),
         ...['V-MU0003', 'V-MU0004', 'V-MU0005'].map((t, i) => at(HX.H(t, t, { w: 80 }), 542, MY[i], { id: 'hs' + i })),
         ...['V-MU0007', 'V-MU0009', 'V-MU0011'].map((t, i) =>
-          at(HX.H(t, t, { w: 78 }), 818, MY[i] - 45, { id: 'hd' + i })
+          at(HX.H(t, t, { w: 78 }), 818, MY[i] - 58 /* beta.373: outlet line up 13, off the pump names */, { id: 'hd' + i })
         ),
         at(HX.H('V-MU1031'), UX, 380, { id: 'hf1' }),
         at(HX.H('V-MU1032'), ETX, 524, { id: 'hf2' }),
@@ -152,7 +152,7 @@
           {
             med: 'water',
             w: W_M,
-            pts: ['m' + i + '.d', [MX - 2, MY[i] - 45], [MHX, MY[i] - 45]],
+            pts: ['m' + i + '.d', [MX - 2, MY[i] - 58], [MHX, MY[i] - 58]],
             flow: 'm:MWP-' + n,
             arrow: false
           }
