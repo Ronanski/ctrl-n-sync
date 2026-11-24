@@ -156925,10 +156925,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 4ab16ae'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build ccd204b'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 4ab16ae';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build ccd204b';
     } catch (e) {}
   };
   upd();
@@ -347900,7 +347900,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 4ab16ae'));
+    row('Version', E('span', 'scsver', ver + ' · build ccd204b'));
   }
   function openSet(near) {
     if (!set) {
@@ -370560,21 +370560,33 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ...['V-SW1016', 'V-SW1018', 'V-SW1020'].map((t, i) =>
           at(HX.HV(t), BX[i] - 2, 792, { id: 'hb' + i, rot: -90, lab: 'r' })
         ),
-        at(M('pump', 'P-0762A', 'Hypochlorite dosing pump A', [], { tag: 'P-0762A', wrap: 12 }), 80, 740, {
+        at(M('pump', 'P-0762A', 'Hypochlorite dosing pump A', [], { tag: 'P-0762A', wrap: 16 }), 80, 700, {
           id: 'ha',
           sc: 0.9,
           lab: 'r'
         }),
-        at(M('pump', 'P-0762B', 'Hypochlorite dosing pump B', [], { tag: 'P-0762B', wrap: 12 }), 80, 840, {
+        at(M('pump', 'P-0762B', 'Hypochlorite dosing pump B', [], { tag: 'P-0762B', wrap: 16 }), 80, 780, {
           id: 'hb',
           sc: 0.9,
           lab: 'r'
         }),
-        at(M('pump', 'P-0761A', 'Hypochlorite unloading pump', [], { tag: 'P-0761A', wrap: 12 }), 80, 940, {
+        at(M('pump', 'P-0761A', 'Hypochlorite unloading pump A', [], { tag: 'P-0761A', wrap: 16 }), 80, 860, {
           id: 'hu',
           sc: 0.9,
           lab: 'r'
-        })
+        }),
+        /* unloading pump B: STN105 running input MIR-P0761B (I/O list; local panel, no DCS command), not in hx-registry.js, so
+           its state is the input itself ('-----' until a link gives it a value) */
+        at(
+          E('pump', 'Hypochlorite unloading pump B', 'P-0761B', [], {
+            on: HX.hk('sw-hub', 'data-di="MIR-P0761B|RUNNING|STOPPED"'),
+            wrap: 16
+          }),
+          80,
+          940,
+          { id: 'hu2', sc: 0.9, lab: 'r' }
+        ),
+        at(HX.B('State', 'data-di="MIR-P0761B|RUNNING|STOPPED"', { w: 90 }), 300, 960, { id: 'hu2s' })
       ],
       pipes: [
         /* pool to the three pumps, the pumps into the header */
