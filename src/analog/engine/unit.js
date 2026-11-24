@@ -1014,33 +1014,6 @@ function anUnitCold() {
   tcsInit(U, 'cold');
   return true;
 }
-/* plan (user 2026-11-08, proposal of the leader): WARM and HOT restart states. The equipment is as Cold (all stopped: the trainee starts
-   the utilities, fans and burners again), the boiler and the turbine keep their heat. FHI SECT_7 Fig 3 WARM STARTUP (after 8 ~ 56 h):
-   at the restart furnace 360 C, SH / RH 315 C, SH pressure 40 kg/cm2; Fig 4 HOT STARTUP (under 8 h): furnace 700 C, SH / RH 430 C,
-   100 kg/cm2. The bed of the model is the furnace curve scaled to the anchor (850 C model at the Fig 8 840 C). Turbine metal: inside
-   the TCS mode band (tcs.js modes: warm 230 ~ 420 C, hot above 420 C), 350 / 460 C (exact metal NO-SOURCE; the steam of Fig 3 / 4 at
-   the restart is 315 / 430 C). Warm needs the furnace purge (bed below 700 C, PR-OPE-5002 SU:129); hot is the logic's to decide */
-const AN_RESTART = { warm: { Pd: 40, Tf: 360, Tm: 350, Tsh: 315 }, hot: { Pd: 100, Tf: 700, Tm: 460, Tsh: 430 } };
-function anUnitRestart(kind) {
-  const U = AN_UNIT,
-    K = AN_RESTART[kind];
-  if (!U.on || !K) return false;
-  U.Pd = K.Pd;
-  U.Tw = steamTsat(U.Pd);
-  U.Tb = U.Tamb + ((K.Tf - U.Tamb) * (U.Tb0 - U.Tamb)) / (840 - U.Tamb);
-  U.Trf = undefined; /* beta.263: the refractory starts at its steady share between the bed and the water */
-  /* beta.258: the SH / RH banks at the SH / RH temperature of Fig 3 / 4 at the restart (the economizer at the water, hx.js) */
-  U.hxM = null;
-  U.hxT0 = K.Tsh;
-  U.TpR = K.Tsh;
-  if (U.tc) {
-    const c = U.tc;
-    c.Thp = c.Trh = c.Tcvi = c.Tcvo = K.Tm;
-    tcsMode(U);
-  }
-  U.restart = kind;
-  return true;
-}
 /* 2.2.0-beta.21 (M5 shutdown): the plant at 150 MW WITH the start-up / shutdown physics on (U.cold: the water heat storage of the
    drum, the steam temperature capped by the gas, the oil of the start-up burners, the bed temperature, a turbine trip = machine off
    and GCB open, the TCS inputs of the DCS written by the model). The anchors of "Start at 150 MW" stay as they are: the plant is at
@@ -5502,6 +5475,7 @@ function anUnitStep0(dt) {
   else if (U.tc) {
     tcsTripHold(U, dt);
     tcsAux(U, dt); /* beta.240 metal, beta.243 all the auxiliaries (tcs.js tcsAux): the plant goes on while the trip is held */
+    if (U.tc.cur < 0) tcsMode(U); /* beta.370 (JENNIE): the start-up mode band follows the metal while the trip is held (tcs.js tcsStep) */
   }
   /* Start at 150 MW: no ATS program, the trip logic of the IBD runs all the same (tcs-trip.js) */
   else if (!trip) tcsTripScan(U, dt);
@@ -5780,6 +5754,8 @@ function anUnitStep0(dt) {
     U.qTl = qTl;
     /* the suspension gives qWu + qPan = Cs (Tb - tgF) on its way up; of it the gas share gcp (Tb - tgF) is the gas cooling from the bed to
        the exit, already in qAirG (the gas heated to Tb): the bed pays the solids share only, and the gas leaves at tgF (beta.256) */
+    /* 1.0.0-beta.366 (JENNIE, D31): the terms of this balance, kW and kJ/K, for the energy check of tests/regress/bed_heatup.js */
+    U.bbQ = { fuel: qFuel, lm: qLm, tl: qTl, airG: qAirG, sus: qWu + qPan - gcp * (U.Tb - sus.tgF), br: qBR, Cb };
     U.Tb = Math.max(U.Tamb, U.Tb + ((qFuel - qLm - qTl - qAirG - (qWu + qPan - gcp * (U.Tb - sus.tgF)) - qBR) * dt) / Cb);
     U.Trf = Trf + ((qBR - qRW) * dt) / B.mRef;
     /* the furnace exit gas and the mean of the upper furnace (the panels of hx.js take Tu): the suspension above */
@@ -5934,7 +5910,9 @@ function anUnitStep0(dt) {
      122.0 kg/cm2 on the HP bypass PV with the main steam at 0. A live transmitter at 0 kg/cm2 is a healthy 4 mA signal: not exactly 0 */
   for (const l of U.tin) anUnitWrite(l, Math.max(1e-3, Pms - U.kln * U.ms * U.ms));
   anUnitWrite(U.drum, U.Pd);
-  for (const l of U.mw) anUnitWrite(l, U.MW);
+  /* 1.0.0-beta.370 (JENNIE, Rosé: Warm / Hot saves, EIC-TM PV 151 MW at 0 MW): the generator MW transmitters GCPAI1001 / 1002 at 0 MW are a live
+     4 mA signal, written a hair above 0 as the turbine inlet pressure above; exactly 0 made the AVERAGE SELECT of ABC-001C hold the 151 MW of the trip */
+  for (const l of U.mw) anUnitWrite(l, Math.max(1e-3, U.MW));
   anUnitWrite(U.tgt, U.tcsT);
   /* main steam flow: the RAW transmitter, so that the compensation of the drawing (SQRT(LN31(p) x LN32(T) x raw)) gives U.ms: the
      compensated flow is proportional to the raw value at a given pressure and temperature (SQRT block: out = in, in units of

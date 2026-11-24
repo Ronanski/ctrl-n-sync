@@ -1248,12 +1248,12 @@ function anLoadStart(kind, on) {
     const q = document.getElementById('lsask');
     if (q) q.remove();
   } catch (e) {}
-  /* WARM / HOT restart (unit.js anUnitRestart): the Cold load, then the heat the boiler and the turbine keep */
-  const rs = kind === 'warm' || kind === 'hot' ? kind : null;
-  const cold = kind === 'cold' || !!rs,
+  /* 1.0.0-beta.370 (JENNIE, RULES Q3 / 3.12): WARM / HOT are the physics-trip save points of the start screen (src/ui/shell/app.js #stwarm /
+     #sthot, tools/startsaves/make.cjs). The fixed FHI Fig 3 / 4 restart (unit.js AN_RESTART, anUnitRestart, anRestartDrum) is removed */
+  const cold = kind === 'cold',
     B = window.lsBusy,
     est = (cold ? 46 : 40) * Math.max(1, AN.sheets.length - 1);
-  if (B) B.show(rs ? 'Loading the ' + rs.toUpperCase() + ' restart…' : cold ? 'Loading the Cold plant…' : 'Loading 150 MW…');
+  if (B) B.show(cold ? 'Loading the Cold plant…' : 'Loading 150 MW…');
   /* retest #69 (R8 second pass: Hakbang 2 never showed ✓ TAPOS with 2 SWP running): a sheet is built only when something opens it
      (ensure). A starting state loaded before ABC-001C was built left the unit model OFF (anUnitStart needs that sheet) and the other
      unbuilt sheets out of the load: the Gabay conditions never came true. Every sheet is built first, one per slice (no freeze) */
@@ -1282,19 +1282,14 @@ function anLoadStart(kind, on) {
       return (cold ? anPlantColdAsync : anPlantLoad150Async)(k => B && B.prog(k / est));
     })
     .then(n => {
-      if (rs) {
-        anUnitRestart(rs);
-        anRestartDrum();
-      }
       /* Full Audit 3 (the clock read 10:38 at a fresh start state): the settling steps of the load (anPlantColdG / anPlantLoad150G,
          0.5 s each) are not plant time, but every sheet counted them in its rt.t. The plant clock starts at 0:00, as the Training
          start does (trace-step.js anClock0: rt.t = 0, and the dead-time, rate and trend histories of the settling emptied, so none
          holds a time ahead of the new clock) */
       anClock0();
       AN.startState = cold ? 'plantCold' : 'plantLoad150';
-      AN.restartKind = rs;
-      /* the drum pressure of the restart (unit.js AN_RESTART, FHI Fig. 3 / 4): the Training reads it for the MS blow-off hold (guide.js holdP) */
-      AN.restartPd = rs && AN_RESTART[rs] ? +AN_RESTART[rs].Pd : 0;
+      AN.restartKind = null;
+      AN.restartPd = 0;
       /* Mina beta.92 B92-3: a count of the loads, so a Cold loaded over a Cold is seen as new (guide.js: the Training back to step 1) */
       AN.startN = (AN.startN || 0) + 1;
       return n;
@@ -1307,25 +1302,6 @@ function anLoadStart(kind, on) {
   };
   p.then(end, end);
   return p;
-}
-/* WARM / HOT restart (Mina beta.170: the header read -296 mm, the empty drum of Cold): the unit was bottled up with the drum filled to
-   +200 mm (PR-OPE-5004-01 bottle-up step 4 "Fill steam drum to +200 mm"). The three transmitters are set for that level at the restart
-   drum pressure (the density compensation of ABC-010 changes with it), and the level model of ABC-010 starts again from that PV
-   (plant.js: a new model state takes q.y = PV). The level the drum loses while it stands (cooling, blowdown) is not in the docs: NO-SOURCE */
-const AN_BU_DRUM = 200;
-function anRestartDrum() {
-  try {
-    const sh = AN.sheets.find(x => x.name === 'ABC-010'),
-      S = sh && sh.S;
-    if (!S) return;
-    /* the drum pressure transmitters read the restart pressure first (one step of the sheets that carry them) */
-    const c = AN.sheets.find(x => x.name === 'ABC-001C');
-    if (c && c.S) stepSet(c, 0);
-    stepSet(sh, 0);
-    hmiComp(ai => /^AI0(130|258|386)$/.test(ai), (ai, w) => AN_BU_DRUM + w);
-    for (const b of S.procs || []) if (b.proc && b.proc.integ) delete S.rt.pm[b.id];
-    stepSet(sh, 0);
-  } catch (e) {}
 }
 /* the drum level of a cold plant before the STEAM DRUM FILLING of PR-OPE-5002 (mm, ASSUMED: low, under the -150 mm fill target) */
 const AN_COLD_DRUM = -300;
