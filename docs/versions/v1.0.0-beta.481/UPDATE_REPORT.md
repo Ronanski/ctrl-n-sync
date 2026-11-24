@@ -1,4 +1,4 @@
-# v1.0.0-beta.471: TCS MOTOR STANDARD mula sa drawing (TCS LOGIC : MARIA, 2026-11-25 PHT)
+# v1.0.0-beta.481: TCS MOTOR STANDARD mula sa drawing (TCS LOGIC : MARIA, 2026-11-25 PHT)
 
 ## Binago
 - `src/digital/tce-run.js`: ang macro **MOTOR STANDARD** (LMA580A ~ D, 8 block: TCA655 vapour extractor, TCA680, TCA700, TCE300 main oil pump A / B, TCE305 control oil pump A / B, TCE310 DC emergency oil pump) ay may kahulugan na mula sa **drawing**: MHPS TYPICAL LOGIC FOR MOTOR, IBD 310SC90-794 Rev 2 sheet 14 ("Turbine Control System (book)" p 30).
