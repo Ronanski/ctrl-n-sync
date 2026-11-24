@@ -324,7 +324,11 @@ const AN_HMI_CTL = {
   'LICBR1001B': { pv: null, sv: null, mv: 0.6, mode: 'M' } /* start-up drum level valve FCVFW11302 0.6 % M (03.png) */,
   'AICFG10571': { pv: 41.0, sv: 200.0, mv: 11.0, mode: 'M' },
   'AICFG112': { pv: null, sv: 3.5, mv: 72.5, mode: 'A' } /* 3.2.3-beta.272: AUTO as the logic at full load (M.0103 / M.0102 = 0): healthy analyzers, the trim on LN16 SV 3.5 (plant-study 14: simulator keeps the drawing; a held trim is an analyzer fault scenario) */ /* 3.2.1 b6: plant trends 2026-11-08: the O2 sensors fail often (user), the trim is held: SA = (LN5 air - PA - FA) x 1.09 at 150 and 90 MW = S1-LN15(72.5 %) */ /* 2.2.0-beta.7: MV from the drawing: SA demand 211.5 T/H x O2 trim = SAF FLOW CTL R-SV 215.3 (7.PNG) -> trim 1.0 = S1-LN15(50 %), the MH of AICFG112 (PID summary). Before: the O2 model was anchored at the manual 100 % of the cold start and went to 2.4 % */,
-  'DPICFG108': { pv: 1434.0, sv: 1475.0, mv: 0.0, mode: 'M' },
+  /* 1.0.0-beta.348 (JENNIE, B4 of "GO DESIGN"): the full-load start state is the design, not the plant day of the snapshot (pv 1434,
+     sv 1475, MANUAL 0 %, so the four bottom ash screw coolers stood still and the bed filled). ABC-009A: the furnace differential
+     pressure controller in AUTO drives the cooler master PIC-BASC and the four cooler stations in AUTO (A/M, BU-CMD); its set point is
+     the FHI P2S7 Fig 9 normal overall furnace pressure drop at 100 % load, 1630 mmH2O (low limit 1450, high 2100). MV from the logic */
+  'DPICFG108': { pv: null, sv: 1630.0, mv: null, mode: 'A' },
   'EIC-TM': { pv: 148.6, sv: 150.0, mv: 75.0, mode: 'A' },
   'FIC-CF': { pv: 72.8, sv: 73.0, mv: 72.8, mode: 'R' } /* 2.2.0-beta.1: not on a screen; from the drawing: PV = average of the 3 feeder MVs (72.8 %), MV = feeder AUTO-MV (bias 0.0), SV = FIC-CM.MV 73.0 % */,
   'FIC-CM': { pv: 87.0, sv: 87.4, mv: 73.0, mode: 'R' },
@@ -399,10 +403,10 @@ const AN_HMI_CTL = {
   'PICHR1391': { pv: 34.4, sv: 35.5, mv: null, mode: 'A' },
   'PICMS1002': { pv: 122.1, sv: 128.0, mv: 0.0, mode: 'A' },
   'PICMS1006': { pv: 121.1, sv: 123.1, mv: 0.0, mode: 'R' },
-  'SICL1060A': { pv: 0.0, sv: 0.6, mv: null, mode: 'M' },
-  'SICL1060B': { pv: 0.0, sv: 0.6, mv: null, mode: 'M' },
-  'SICL1060C': { pv: 0.0, sv: 0.6, mv: null, mode: 'M' },
-  'SICL1060D': { pv: 0.0, sv: 0.6, mv: null, mode: 'M' },
+  'SICL1060A': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,
+  'SICL1060B': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,
+  'SICL1060C': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,
+  'SICL1060D': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,
   'TICAS1017': { pv: 185.0, sv: 259.0, mv: 0.0, mode: 'A' },
   'TICBR1130': { pv: 394.0, sv: 394.0, mv: 57.6, mode: 'R' },
   'TICBR1140': { pv: 462.0, sv: 462.0, mv: 65.6, mode: 'A' },

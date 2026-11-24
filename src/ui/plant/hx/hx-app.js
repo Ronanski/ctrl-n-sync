@@ -230,6 +230,9 @@
     value(key) {
       /* Audit 3: a value with no row on the app pages reads its field of the unit model ('an:Pip' = AN.unit.Pip) */
       if (/^an:/.test(key)) return call(() => { const v = AN.unit[key.slice(3)]; return v != null && isFinite(v) ? +v : null; }, null);
+      /* a value of the TCS model ('tcs:aux.hso' = AN.tcs().aux.hso); an open / closed flag reads 100 / 0 % */
+      if (/^tcs:/.test(key))
+        return call(() => { const v = key.slice(4).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.tcs()); return typeof v === 'boolean' ? (v ? 100 : 0) : v != null && isFinite(v) ? +v : null; }, null);
       needVal(key);
       const e = pq('[data-v="' + key + '"]'),
         t = e ? e.textContent : '';
@@ -380,6 +383,11 @@
   const frame = () => {
     const e = document.getElementById('plsvg'),
       r = e ? e.getBoundingClientRect() : null;
+    /* beta.295 (user, apk test 2026-11-22: "Draggable p rin ang hmi at hndi fit ang scale ng display nya sa screen"): on a touch screen
+       of the Operator Station (the apk) the page is fitted whole into the area and nothing moves under a finger; the words keep their
+       11 px minimum (hx-core.js minText) and the tag numbers step back at that scale. A mouse screen keeps the C10 frame below */
+    /* beta.305: every screen big enough to hold the whole page (HX.fitWhole), touch or mouse */
+    if (window.HX && HX.fitWhole && HX.fitWhole()) return [FW, FH];
     return r && r.width > 300 && r.width < 1500 && r.height > 300 ? [Math.round(r.width), Math.round(r.height)] : [FW, FH];
   };
   function screen(def) {

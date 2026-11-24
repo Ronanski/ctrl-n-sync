@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-22 PHT** (LEADER : JENNIE, beta.258: #4 step 2, ang kahulugan ng bawat block ng TCS mula sa macro list, may test sa Checks).
+Huling update: **2026-11-24 08:46 PHT** (LEADER : JENNIE, beta.354: D10 is plant logic (M.2013 / M.2016 MAN below 220 T/H, PR-OPE-5002); tools/accept/part1.cjs now operates by hand below 220 T/H (TCS LOAD UP, HIC-BM on pressure, 1 ELEMENT, O2 trim 50 %, TADBS 0) and reaches a real 45 MW. D11: limestone started in st150 (LS212 / LS110 / LS10, SOx AUTO 200), capped 4.9 T/H by AICFG10571 MH 35 %. Part 1: 46 PASS / 40 FAIL. Next: D14 bed 765 C at 45 MW (air minimum 446 vs FHI 365), D11 MH, D3.)
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -14,7 +14,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.258**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.354**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
@@ -26,7 +26,10 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 - Isang clone bawat thread; huwag magpalit ng branch sa folder ng iba. Sa Windows: `git clone -c core.autocrlf=false`, kung hindi ay DIFFERENT ang `npm run check`.
 - Mabigat na takbo: isa-isa, `team-files/TEST_LOCK`.
 
-## 4. Bukas na gawain (Full Audit 3, bilang 2026-11-22)
+## 4. Bukas na gawain
+
+**Finish line: `docs/ACCEPTANCE.md`** (user GO LIST 2026-11-24 06:06 PHT). Ito lang ang saklaw ng "tapos". Bilang ngayon: 1 pasado, 45 natitira. Bawat merge na nagbabago ng estado ng item: i-update ang "Bilang" doon.
+ (Full Audit 3, bilang 2026-11-22)
 
 Tapos: #1 Android key (GitHub secret), #2 behaviour gate, #7 version at ulat bawat merge, #10 save point ayon sa pangalan ng sheet, #15, #17 orasan ng planta mula 0:00, #18 rules (ito).
 
@@ -38,7 +41,10 @@ Jennie, bahagi o bukas:
 - #12 Warm / Hot sa start screen (mula sa trip sa 150 MW, physics).
 - #13 116 na alarm tag na wala sa app, at alarm priority.
 - #19 sootblower 80H ~ 80L.
-- Coal swing sa 75 MW.
+- Part load (ulat 290, plant trend 90 MW, O2 trim naka-hold gaya sa plant): bed 959 laban sa 955 at exit gas 760 laban sa FHI 755 (tama). MST 543 laban sa 522: may spray pa rin 3.6 + 5.7 t/h (plant 2nd spray 0), RHT 539 laban sa 521 (F1). Hindi fouling ang sanhi (ulat 290). Start-up bed 35-90 °C mas mainit kaysa 280 (F2). Cold run ng user (F3). Jennie.
+- Worker = page mirror: `$id` ng `AN_UNIT.asF` (ulat 276 F2, Rosé beta.277). Reset sa page = Reset sa Worker (ulat 288, ayos na).
+
+AUDIT FIX : LISA (2026-11-24): #5 listahan `docs/audit/no-source-list.md` (217 bukas), #11 plano `docs/audit/unit-split-plan.md` (hintay ng window mula sa coordinator), #3 mungkahi `docs/audit/drift-test-proposal.md`. GO DESIGN (user 2026-11-24 00:35 PHT): design docs lang ang target ng model; snapshot at trend = pang-check lang. Listahan ng value na nakasandal sa snapshot: `docs/audit/snapshot-values-list.md`. #6: pinili ng user (2026-11-24 00:21 PHT) na gawing "Plant" menu ang Instructor button at alisin ang Freeze.
 
 Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engineer).
 

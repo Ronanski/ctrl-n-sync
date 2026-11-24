@@ -121,16 +121,16 @@
       ],
       taps: [
         {
-          x: 740,
+          x: 745 /* UI check 2026-11-24 C1: clear of the extraction 4 riser at 700 */,
           y,
           side: 't',
-          label: n === 1 ? 'Turbine exhaust pressure' : 'Pressure',
+          label: 'Pressure' /* UI check 2026-11-24: one short word on every row (the tag tells the exhaust), clear of the valve name at 11 px */,
           key: e.p,
           unit: K,
           dp: 2,
           tag: e.p
         },
-        { x: 740, y, side: 'b', label: 'Temperature', key: e.t, unit: '°C', dp: 0, tag: e.t }
+        { x: 745, y, side: 'b', label: 'Temperature', key: e.t, unit: '°C', dp: 0, tag: e.t }
       ]
     };
   };
@@ -179,7 +179,7 @@
       texts: [
         { x: 960, y: 975, s: 'All drain valves open to the flash chamber.', cls: 'hx-note' },
         { x: 40, y: 100, s: 'extraction 6, no valve', cls: 'hx-note' },
-        { x: 372, y: 944, s: 'flash pipe', cls: 'hx-note', anchor: 'end' },
+        { x: 372, y: 928, s: 'flash pipe', cls: 'hx-note', anchor: 'end' } /* above its line, clear of the condenser pressure */,
         { x: 170, y: 780, s: 'in the condenser neck', cls: 'hx-note', anchor: 'middle' }
       ]
     }

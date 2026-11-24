@@ -234,7 +234,7 @@
 /* ---- process drawing (SVG) ---- */
 .hx svg text { font-family: var(--hx-font); fill: var(--hx-ink); }
 /* words stay readable where a line passes behind them */
-.hx-process svg .hx-node text, .hx-process svg .hx-lane { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 3.2px; stroke-linejoin: round; }
+.hx-process svg .hx-node text, .hx-process svg .hx-lane { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 4.4px; stroke-linejoin: round; }
 .hx-yn text, .hx-mode text { stroke: none !important; }
 .hx-yn:not(.y):not(.n) { display: none; }
 .hxo { fill: var(--hx-fill); fill: url(#hxg); stroke: var(--hx-ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
@@ -289,7 +289,7 @@
 .hx-end { font: 500 10.4px var(--hx-font); fill: var(--hx-mute) !important; paint-order: stroke; stroke: var(--hx-panel); stroke-width: 3px; }
 .hx-tap[data-open] { cursor: pointer; }
 .hx-nov { fill: var(--hx-none) !important; }
-.hx-process svg .hx-live { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 3.2px; stroke-linejoin: round; }
+.hx-process svg .hx-live { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 4.4px; stroke-linejoin: round; }
 .hx-tap:hover .hx-dot, .hx-tap:focus-visible .hx-dot { fill: var(--hx-accent); }
 .hx-zone { font: 600 10.5px var(--hx-cond); letter-spacing: 0.1em; text-transform: uppercase; fill: var(--hx-mute) !important; }
 .hx-node { cursor: default; outline: none; }
@@ -516,9 +516,11 @@ svg.hx-small .hx-tag { display: none; }
   .hx-nav { display: none; }
   .hx-pick { display: block; }
 }
+/* The Operator Station (apk) sets body.st-move: a tablet with battery saver or "Remove animations" reports reduced motion, and the user
+   could not see flow or a running fan at all (apk test 2026-11-22). There the movement is plant information, so it stays. */
 @media (prefers-reduced-motion: reduce) {
-  .hx-run .hxr, .hx-on > .hx-lnf, .hx-trip .hxs, .hx-st.trip, .hx-real .hx-on > .hx-lnf, .hx-run .rx-blade, .hx-run .rx-jet, .hx-run .rx-rip, .hx-run .rxrot, .hx-run .rx-lift, .hx-on > .rx-tubef, .hx-on > .rx-fall, .hx-on > .rx-rise, .hx-on > .rx-swirl, .hx-on > .rx-bub circle, .hx-run .rx-elem, .hx-run .rx-belt, .hx-run .rx-flight, .hx-run .rxflame, .hx-on > .rx-gas, .hx-on > .rx-coilf, .hx-on > .rx-mist, .hx-trip .rxs { animation: none; }
-  .hx-on > .rx-plume circle { animation: none; opacity: 0.5; }
+  body:not(.st-move) .hx-run .hxr, body:not(.st-move) .hx-on > .hx-lnf, body:not(.st-move) .hx-trip .hxs, body:not(.st-move) .hx-st.trip, body:not(.st-move) .hx-real .hx-on > .hx-lnf, body:not(.st-move) .hx-run .rx-blade, body:not(.st-move) .hx-run .rx-jet, body:not(.st-move) .hx-run .rx-rip, body:not(.st-move) .hx-run .rxrot, body:not(.st-move) .hx-run .rx-lift, body:not(.st-move) .hx-on > .rx-tubef, body:not(.st-move) .hx-on > .rx-fall, body:not(.st-move) .hx-on > .rx-rise, body:not(.st-move) .hx-on > .rx-swirl, body:not(.st-move) .hx-on > .rx-bub circle, body:not(.st-move) .hx-run .rx-elem, body:not(.st-move) .hx-run .rx-belt, body:not(.st-move) .hx-run .rx-flight, body:not(.st-move) .hx-run .rxflame, body:not(.st-move) .hx-on > .rx-gas, body:not(.st-move) .hx-on > .rx-coilf, body:not(.st-move) .hx-on > .rx-mist, body:not(.st-move) .hx-trip .rxs { animation: none; }
+  body:not(.st-move) .hx-on > .rx-plume circle { animation: none; opacity: 0.5; }
   .rxix, .rxbl { transition: none; }
 }
 

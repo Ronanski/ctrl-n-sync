@@ -58,8 +58,9 @@
     BUR = 'm:Burner A|m:Burner B|m:Burner C|m:Burner D';
   const SEQ = [
     ['1 Permissive OK', 'DITL-02|i|14'],
-    ['2 Burner air dampers at purge position 25 %', 'DITL-02|i|1+2+3+4'],
-    ['3 FURNACE PURGE START pressed', 'DITL-02|i|5'],
+    /* apk test 2026-11-22: short enough for the box at 11 px on a 1280 tablet (the purge position of the dampers is 25 %) */
+    ['2 Burner air dampers at 25 %', 'DITL-02|i|1+2+3+4'],
+    ['3 Furnace purge start pressed', 'DITL-02|i|5'],
     ['4 Purge in progress, 5 minutes', 'DITL-02|o|5'],
     ['5 Furnace purge completed', 'DITL-02|o|14'],
     ['6 Master fuel trip reset', 'DITL-03A|o|16|neg']
@@ -102,7 +103,7 @@
         at(E('furnace', '', '', [], { fire: 'v:TT-FG1090>300' }), FX, FY, { id: 'fu', under: true, sc: FS }),
         at(E('cyclone', '', '', [], { flow: IDF }), CX, CY, { id: 'cy', under: true, sc: CS }),
         at(E('sealpot', '', '', [], { flow: FAB }), CX, CY + 196 * CS, { id: 'sp', under: true, sc: CS, mir: true }),
-        at(E('backpass', '', '', [], { gasA: 'l:HICHR1002A', gasB: 'l:HICHR1002B' }), BPX, BPY, {
+        at(E('backpass', '', '', [], { gasA: 'l:HICHR1002A', gasB: 'l:HICHR1002B', few: true }), BPX, BPY, {
           id: 'bp',
           under: true,
           sc: BS
@@ -162,7 +163,7 @@
         pp('pp12', 'No boiler trip command', 'DITL-01|i|14', 1475, 500, 290),
 
         /* ---- purge sequence (DITL-02) ---- */
-        at(B('Purge permissive', 'data-dys="PP|DITL-01|9|PURGE PERMISSIVE"', { w: CW, show: true }), QX, QY, { id: 'pps' }),
+        at(B('Purge permissive', 'data-dys="PP|DITL-01|9|"', { w: CW, show: true }), QX, QY, { id: 'pps' }),
         ...SEQ.map((p, i) => at(B(p[0], dy(p[1]), { w: CW, show: true }), QX, QY + (i + 1) * QD, { id: 'sq' + i })),
         at(B('Furnace purge', 'data-do="DITL-02|15|OK|NOT OK"', { w: CW, show: true }), QX, QY + 7 * QD + 10, { id: 'fp' }),
         at(B('Purge ready', 'data-do="DITL-02|9|YES|NO"', { w: CW, show: true }), QX, QY + 8 * QD + 10, { id: 'pr' }),
@@ -208,7 +209,7 @@
         { med: 'coal', w: W_C, pts: ['fd.out', [490.4, 345], [620, 345], [620, FY + 276 * FS], 'fu.coal'], flow: COAL }
       ],
       taps: [
-        { x: 740, y: 640, side: 'b', label: 'Primary air', key: 'pv:FICFA1071', unit: 't/h', tag: 'FT-FA1071' },
+        { x: 780, y: 640, side: 'b', label: 'Primary air', key: 'pv:FICFA1071', unit: 't/h', tag: 'FT-FA1071' },
         { x: 400, y: 40, side: 'b', label: 'Secondary air', key: 'pv:FICFA1081', unit: 't/h', tag: 'FT-FA1081' }
       ],
       texts: [
@@ -225,9 +226,9 @@
         { x: 1330, y: 330, s: 'Cyclone outlet A', key: 'TT-FG1095-A', unit: '°C', dp: 0 },
         { x: 1330, y: 346, s: 'Cyclone outlet B', key: 'TT-FG1095-B', unit: '°C', dp: 0 },
         { x: 20, y: TY - 34, s: 'MASTER FUEL TRIP · any one trips', cls: 'hx-zone' },
-        { x: 292, y: 624, s: 'Hot restart: bed above 700 °C counts', cls: 'hx-note' },
-        { x: 292, y: 638, s: 'the purge complete 7 s after the trip.', cls: 'hx-note' },
-        { x: 292, y: 652, s: 'Reset: purge completed, no trip input left.', cls: 'hx-note' }
+        { x: 292, y: 596, s: 'Hot restart: bed above 700 °C counts', cls: 'hx-note' },
+        { x: 292, y: 613, s: 'the purge complete 7 s after the trip.', cls: 'hx-note' },
+        { x: 292, y: 630, s: 'Reset: purge completed, no trip input left.', cls: 'hx-note' }
       ]
     }
   });

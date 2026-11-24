@@ -40,7 +40,8 @@
         at(M('dryer', dry(n), 'Air dryer ' + n, [V('Flow', o.flow + n, '', 1)], { tag: o.dtag + n }), 700, y - 20, {
           id: p + 'd' + i,
           sc: 1.5,
-          lab: 'r'
+          lab: 'r',
+          ly: -12 /* beta.305: the flow line clear of the outlet line under it */
         })
       );
       pipes.push(
@@ -90,7 +91,7 @@
         w: W,
         pts: [
           [1360, rows[1]],
-          [1640, rows[1]]
+          [1520, rows[1]]
         ],
         to: o.to,
         flow: ANY
@@ -108,7 +109,7 @@
         lab: 'b'
       })
     );
-    taps.push({ x: 1500, y: rows[1], side: 't', label: 'To Unit 1', key: o.pu, unit: K, dp: 1, tag: o.put });
+    taps.push({ x: 1440, y: rows[1], side: 't', label: 'To Unit 1', key: o.pu, unit: K, dp: 1, tag: o.put });
     return { items, pipes, taps };
   };
   const IA = train('i', 40, {
@@ -166,7 +167,8 @@
       texts: [
         { x: 20, y: 40, s: 'INSTRUMENT AIR', cls: 'hx-name' },
         { x: 20, y: 510, s: 'PLANT AIR', cls: 'hx-name' },
-        { x: 1380, y: 300, s: 'also to Unit 2, the utility area and the compressor control air', cls: 'hx-note' },
+        { x: 1380, y: 300, s: 'also to Unit 2, the utility area', cls: 'hx-note' },
+        { x: 1380, y: 318, s: 'and the compressor control air', cls: 'hx-note' },
         { x: 1380, y: 770, s: 'also to Unit 2 and the utility area', cls: 'hx-note' },
         {
           x: 20,

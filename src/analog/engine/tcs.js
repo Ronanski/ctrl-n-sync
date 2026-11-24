@@ -704,7 +704,7 @@ function tcsAux(U, dt) {
   const sp = Math.min(1, (tb.rpm || 0) / 3600),
     /* 3.2.0-beta.38: the hood spray FVCD1904 in AUTO (PR-OPE-5002 6307, put in AUTO at the vacuum up) sprays below 15 % load (22.5
        MW, 9195) and takes 70 % of the windage heat (NO-SOURCE share; the spray itself is sourced: FV-CD1904 full open below 15 % load, IBD TC-28, 5226 kg/h, TG maintenance manual p104 and p2520 ~ 2521). Without it: 82 C at 3600 rpm with no load, over the 80 C of 1.12 (hold) */
-    hs = c.hsp && (U.MW || 0) < 22.5 ? 0.3 : 1,
+    hs = (c.hso = !!(c.hsp && (U.MW || 0) < 22.5)) ? 0.3 : 1 /* c.hso: FV-CD1904 open (the page reads it) */,
     XSS =
       Ta +
       15 * sp +
@@ -1269,6 +1269,7 @@ function tcsState() {
       vb: c.vb,
       ej: c.ej,
       hsp: c.hsp,
+      hso: !!c.hso,
       auto: c.auto
     },
     crit: C,

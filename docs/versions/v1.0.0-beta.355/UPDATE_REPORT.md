@@ -1,4 +1,4 @@
-# v1.0.0-beta.277 (Rosé): the page mirror holds the same state as the Worker engine
+# v1.0.0-beta.355 (ROSÉ, 2026-11-22, brought onto main 2026-11-24; first made as beta.277)
 
 ## What was wrong
 `tests/regress/eng_worker.js` compares the whole state of the Worker engine with the page mirror after a pause. Two differences were found:

@@ -322,7 +322,17 @@
     /* names inside (the core writes them, so they stay readable when the piece is mirrored) */
     /* Audit 3: the titles "Reheater pass" / "Superheater pass" (8 units, 5.7 px on the Unit overview) are gone: at the 11 px floor
        they ran into each other, and the pass dampers under them and the banks inside already name the two passes */
-    const words = [
+    /* few: a small back pass (Unit overview, Purge and trip, drawn at 0.75 / 0.85). apk test 2026-11-22: there the 9 bank names at
+       11 px ran into each other (a column is about 40 px wide on a 1280 tablet), so it names only the three kinds of bank, one per
+       place; the Drum and superheaters page keeps every bank by its name */
+    const words = o.few
+      ? [
+          { x: 56, y: 153.5, s: 'Reheater', cls: 'rx-in2', size: 8.8 },
+          { x: 160, y: 82, s: 'Finishing', cls: 'rx-in2', size: 8.8 },
+          { x: 160, y: 106, s: 'superheater', cls: 'rx-in2', size: 8.8 },
+          { x: 108, y: 290, s: 'Economizers', cls: 'rx-in2', size: 8.8 }
+        ]
+      : [
       { x: 56, y: 153.5, s: 'Reheater', cls: 'rx-in2', size: 8.8 },
       { x: 56, y: 290, s: 'Economizer', cls: 'rx-in2', size: 8.8 },
       { x: 56, y: 303, s: '2R', cls: 'rx-in2', size: 8.8 },
@@ -331,8 +341,9 @@
       { x: 160, y: 230, s: 'Economizer 3', cls: 'rx-in2', size: 8.8 },
       { x: 160, y: 290, s: 'Economizer', cls: 'rx-in2', size: 8.8 },
       { x: 160, y: 303, s: '2S', cls: 'rx-in2', size: 8.8 },
-      { x: 108, y: 446, s: 'Economizer 1', cls: 'rx-in2', size: 8.8 }
-    ];
+      /* beta.305 e1y: under its bank, clear of the pass damper words above it (Furnace and flue gas) */
+      { x: 108, y: o.e1y || 446, s: 'Economizer 1', cls: 'rx-in2', size: 8.8 }
+        ];
     return {
       box: sh ? [-1, -50, 244, 512] : [-28, -50, 217, 512],
       ports: sh

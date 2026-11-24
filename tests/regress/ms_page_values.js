@@ -3,6 +3,7 @@
 //     SAME value on page 07 (one tag, one value; before: '-----' on page 07, a number on page 06);
 // (2) the drum, main steam and reheat transmitters of the logic show a number; turbine speed 3600 rpm;
 // (3) no page error. NO-SOURCE tags (data-ns, no sheet and no plant model) stay '-----' and are listed, not failed.
+// 1.0.0-beta.336: ported to the HX pages (pages 06 / 07 are gone); start = "At 150 MW".
 // Usage: node tests/regress/ms_page_values.js [html]
 const fs = require('fs');
 const { open } = require('./lib.js');
@@ -21,15 +22,18 @@ const html =
     timeout: 120000
   });
   await page.waitForTimeout(2000);
-  await page.evaluate(() => {
-    AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
+  /* 1.0.0-beta.336 (JENNIE): the start the operator uses, "At 150 MW" (AN.loadStart + the DITL + the steady state st150); the bare
+     AN.plantLoad150 + DITL150.apply has no steady state and drifts. The old pages 06 / 07 (hmi-mock) are gone: the same tags are on
+     the HX pages now (Drum and steam, Feedwater, Reheat steam, Overview, Turbine). read() opens each page as the operator does and
+     reads the value it shows (HX.data.value, the same call the page draws with) */
+  await page.evaluate(async () => {
+    await AN.ades();
+    WORLD.set(true);
+    document.getElementById("load150").click();
+    await AN._startP;
   });
   await page.evaluate(async () => {
-    const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
+    const C1 = AN.sheets.find(s => s.name === "ABC-001C");
     for (let i = 0; i < 600; i++) {
       WORLD.live = true;
       AN.stepSet(C1, 0.5);
@@ -40,32 +44,31 @@ const html =
   });
   await page.evaluate(() => lsPlant(true));
   await page.waitForTimeout(1000);
-  const SH = ['PT-FW1160', 'FT-FW1109', 'FT-FW1119', 'FT-FW1149', 'FT-FW1059', 'ZT-FW1110-1', 'ZT-FW1110-2', 'ZT-FW1120-1', 'ZT-FW1120-2'];
-  const all = () =>
-    page.evaluate(() => {
-      const o = {};
-      document.querySelectorAll('#plantpane [data-v], [data-v]').forEach(e => {
-        if (e.closest('[data-ns]') || e.hasAttribute('data-ns')) return;
-        o[e.dataset.v] = e.textContent;
-      });
-      return o;
-    });
-  /* both pages read the same plant instant: no stepping between the two reads */
+  const PG = {
+    "HX-drum-steam": ["PT-BR1001-1", "ABC-010|LIBR10011.PV", "PT-MS1002", "FT-MS1031", "FT-FW1109", "FT-FW1119", "ZT-FW1110-1", "ZT-FW1120-1"],
+    "HX-feedwater": ["PT-FW1160"],
+    "HX-reheat-steam": ["FT-FW1149", "FT-FW1059", "PT-MS1006-1", "TT-MS1022-1", "PT-HR1003-1", "TT-HR1004"],
+    "HX-overview": ["PT-MS1002"],
+    "HX-turbine": ["PT-MS1006-1"]
+  };
+  /* all pages read the same plant instant: no stepping between the reads */
   await page.evaluate(() => (AN.run = false));
-  await page.evaluate(() => document.querySelector('#pllist button[data-id="MK06"]').click());
-  await page.waitForTimeout(2500);
-  const p6 = await all();
-  await page.evaluate(() => document.querySelector('#pllist button[data-id="MK07"]').click());
-  await page.waitForTimeout(2500);
-  const p7 = await all();
-  console.log('page 06', JSON.stringify(Object.fromEntries(SH.map(k => [k, p6[k]]))));
-  console.log('page 07', JSON.stringify(p7));
-  ck(SH.every(k => p7[k] && !/-----/.test(p7[k]) && p7[k] === p6[k]), 'feedwater / spray tags: page 07 = page 06, a number');
-  const logic = ['PT-BR1001-1', 'LT-BR1001-1', 'PT-MS1002', 'FT-MS1031', 'PT-MS1006-1', 'TT-MS1022-1', 'PT-HR1003-1', 'TT-HR1004'];
-  ck(logic.every(k => p7[k] && !/-----/.test(p7[k])), 'drum / main steam / reheat transmitters show a number');
-  ck(/^3[56]\d\d/.test(p7.RPM || ''), 'turbine speed ' + p7.RPM);
-  const dash = Object.keys(p7).filter(k => /-----/.test(p7[k]));
-  console.log('still ----- (not NO-SOURCE marked): ' + (dash.join(', ') || 'none'));
+  const v = {};
+  for (const p in PG) {
+    await page.evaluate(p => document.querySelector(`#pllist button[data-id="${p}"]`).click(), p);
+    await page.waitForTimeout(2500);
+    v[p] = await page.evaluate(K => Object.fromEntries(K.map(k => [k, HX.data.value(k) == null ? null : String(HX.data.value(k))])), PG[p]);
+  }
+  console.log(JSON.stringify(v));
+  const num = x => x != null && isFinite(parseFloat(x));
+  const all = Object.values(v).flatMap(o => Object.entries(o));
+  ck(all.every(([, x]) => num(x)), "every drum / main steam / feedwater / spray / reheat transmitter shows a number: " + all.filter(([, x]) => !num(x)).map(([k]) => k).join(", "));
+  ck(v["HX-overview"]["PT-MS1002"] === v["HX-drum-steam"]["PT-MS1002"], `one tag, one value: PT-MS1002 ${v["HX-overview"]["PT-MS1002"]} (Overview) = ${v["HX-drum-steam"]["PT-MS1002"]} (Drum and steam)`);
+  ck(v["HX-turbine"]["PT-MS1006-1"] === v["HX-reheat-steam"]["PT-MS1006-1"], `one tag, one value: PT-MS1006-1 ${v["HX-turbine"]["PT-MS1006-1"]} (Turbine) = ${v["HX-reheat-steam"]["PT-MS1006-1"]} (Reheat steam)`);
+  const d = v["HX-drum-steam"];
+  ck(parseFloat(d["PT-MS1002"]) > 115 && parseFloat(d["PT-MS1002"]) < 135 && parseFloat(d["FT-MS1031"]) > 400, `150 MW: main steam ${d["PT-MS1002"]} kg/cm2, ${d["FT-MS1031"]} T/H`);
+  const rpm = await page.evaluate(() => Math.round(AN.srcSt().rpm));
+  ck(rpm > 3500 && rpm < 3700, "turbine speed " + rpm + " rpm");
   ck(errs.length === 0, 'no page error' + (errs.length ? ': ' + errs.join(' | ') : ''));
   console.log(fail ? 'FAILED ' + fail : 'ALL PASS');
   await browser.close();

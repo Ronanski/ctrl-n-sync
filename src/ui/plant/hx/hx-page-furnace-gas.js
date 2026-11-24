@@ -63,7 +63,7 @@
         at(E('furnace', '', '', [], { fire: 'v:TT-FG1090>300' }), FX, FY, { id: 'fu', under: true, sc: FS }),
         at(E('cyclone', '', '', [], { flow: GAS }), CX, CY, { id: 'cy', under: true, sc: CS }),
         at(E('sealpot', '', '', [], { flow: GAS }), CX, CY + 196 * CS, { id: 'sp', under: true, sc: CS, mir: true }),
-        at(E('backpass', '', '', [], { gasA: 'l:HICHR1002A', gasB: 'l:HICHR1002B' }), BPX, BPY, {
+        at(E('backpass', '', '', [], { gasA: 'l:HICHR1002A', gasB: 'l:HICHR1002B', e1y: 478 }), BPX, BPY, {
           id: 'bp',
           under: true,
           sc: BS
@@ -79,7 +79,7 @@
 
         /* ---- dampers and controllers ---- */
         at(
-          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1116A-D', wrap: 14 }),
+          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1116A-D', wrap: 14, mvb: true }),
           BPX + 56 * BS,
           BPY + 350 * BS,
           {
@@ -88,7 +88,7 @@
           }
         ),
         at(
-          C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1117A-D', wrap: 14 }),
+          C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1117A-D', wrap: 14, mvb: true }),
           BPX + 160 * BS,
           BPY + 350 * BS,
           { id: 'dmb', lab: 'b' }
@@ -97,7 +97,7 @@
           id: 'idd',
           lab: 'l'
         }),
-        at(C('PICFG108', 'Furnace pressure, fan coupling', { sym: 'ctl', unit: MM, pvdp: 0, wrap: 32 }), 1500, 600, {
+        at(C('PICFG108', 'Furnace pressure, fan coupling, ' + MM, { sym: 'ctl', unit: '', pvdp: 0, wrap: 32 }), 1500, 600, {
           id: 'pic',
           lab: 't'
         }),
@@ -106,17 +106,18 @@
            the hydraulic coupling selected the damper station tracks F(X) of the coupling (100 %), so the operator could not close the
            inlet damper for the ID fan START permissive (DITL-25A M.3117 IDF INLET VANE CLOSED) nor follow PR-OPE-5004 "change the
            furnace pressure control to DAMPER CONTROL" */
-        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1405, 520, { id: 'pbh' }) /* Audit 3: above the controller, clear of Fan outlet */,
-        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1600, 520, { id: 'pbd' }),
+        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1405, 470, { id: 'pbh' }) /* Audit 3: above the controller, clear of Fan outlet */,
+        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1600, 470, { id: 'pbd' }),
         at(C('AICFG112', 'Oxygen control', { sym: 'ctl', unit: '%', pvdp: 1, wrap: 30 }), 1050, 400, {
           id: 'o2c',
           lab: 't'
         }),
-        at(L('combustion-air', 'Combustion air'), 540, 810, { id: 'cal' }),
+        at(L('combustion-air', 'Combustion air'), 480, 810, { id: 'cal' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-G): no page linked to Purge and trip, the operator could not reach the purge */
-        at(L('purge-trip', 'Purge and trip'), 760, 810, { id: 'ptl' }),
+        /* UI check 2026-11-24 C1: the three page links left of the gas duct down to the air heater */
+        at(L('purge-trip', 'Purge and trip'), 650, 810, { id: 'ptl' }),
         /* 3.2.5-beta.1 (F-M): the diesel oil and burners page was reached only through Purge and trip */
-        at(L('oil-burners', 'Burners'), 320, 810, { id: 'obl' })
+        at(L('oil-burners', 'Burners'), 300, 810, { id: 'obl' })
       ],
       pipes: [
         { med: 'gas', w: W_G, pts: ['fu.out', 'cy.in'], flow: GAS, arrow: false },
@@ -183,7 +184,9 @@
         { x: 834, y: 862, s: 'Temperature 1', key: 'TT-FG1124', unit: '°C', dp: 0 },
         { x: 834, y: 878, s: 'Temperature 2', key: 'TT-FG1125', unit: '°C', dp: 0 },
         { x: 834, y: 894, s: 'Pressure', key: 'PT-FG1121', unit: MM, dp: 0 },
-        { x: 834, y: 916, s: 'Air heater pressure drop', key: 'DPT-FG1052-5', unit: MM, dp: 0 },
+        /* UI check 2026-11-24 C1: in two lines, clear of the gas duct from the air heater */
+        { x: 834, y: 912, s: 'Across the air heater', cls: 'hx-note' },
+        { x: 834, y: 928, s: 'Pressure drop', key: 'DPT-FG1052-5', unit: MM, dp: 0 },
         { x: 600, y: 944, s: 'AFTER THE AIR HEATER', cls: 'hx-zone', anchor: 'end' },
         { x: 600, y: 962, s: 'Oxygen', key: 'AT-FG1131', unit: '%', dp: 1, anchor: 'end' },
         { x: 600, y: 978, s: 'Temperature 1', key: 'TT-FG1132', unit: '°C', dp: 0, anchor: 'end' },

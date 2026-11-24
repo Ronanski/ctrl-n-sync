@@ -30,7 +30,7 @@
      limits   alarm list "Alarm List _20160912": PT-DO0005 H 19.5 / normal 15 / L 5 / LL 3; LT-DO0701 H 7.5 / L 3, 2 / LL 0.2 m;
               DPT-DO0001 H 0.1 / HH 0.2; PT-DO1043-x2 HH 6.0 / H 5.5 / L 0.8. DITL-31 (drawing): tank < 0.2 m and strainer > 0.8
               kg/cm2 = pump trip, outlet < 5 kg/cm2 = standby AUTO start, < 7 = LOW alarm (world/plantsw.js rows r15 / r17 / r28).
-     NO-SOURCE: tank diameter (A = 23.8 m2, 5.5 m), oil density 0.85, pump current split (45 % at no load), current and
+     tank area A from the inventory table (below); oil density 0.87 from the pump data (below); pump current split (49 % at no load, beta.306 from the pump and motor data), current and
               pressure lags (1 s), the unit 2 branch closed. */
 const AN_DO = {
   Qp: 25 /* T/H per pump, MB-022 item 2-1 / 2-2 */,
@@ -57,10 +57,21 @@ const AN_DO = {
     ) /* FCV-DO1043-x3 full open: MAX 3072 kg/h at 5 bar with 10.5 kg/cm2 ring (MB-022 8-x) */,
   dp0: 0.029 /* kg/cm2 strainer at 25 T/H, 6.PNG */,
   I0: 25.4 /* A, P-0702A at 25 T/H x 12.8 kg/cm2, 6.PNG */,
-  fI: 0.45 /* NO-SOURCE: share of the current at no load */,
-  A: 23.8 /* m2, NO-SOURCE; bounded: T-0701 300 m3 (Equipment List K1AU3-L1-0-002 p 29) with the LT-DO0701 H alarm at 7.5 m (alarm list
-              2016-09-12) gives A <= 300 / 7.5 = 40 m2; the tank height is not in the docs */,
-  rho: 0.85 /* t/m3, NO-SOURCE */,
+  /* beta.306 (JENNIE, was 0.45 NO-SOURCE): share of the current at no load, from K1AU3-D1-0-060 R0 (PC only). Pump (ALLWEILER SNH 660,
+     p7 curve): shaft 2.6 kW at 0 bar + 1.09 kW/bar (19.5 kW at 15.5 bar, p8). Motor (TECO 40 HP 460 V, p9): eff 92.5 %. Active current
+     Ia = P / (eff x sqrt3 x 460 V): 22.5 A at 12.8 bar, 3.5 A at 0 bar. The magnetizing current Im is not on the sheet; from the snapshot
+     25.4 A = sqrt(Im^2 + 22.5^2): Im = 11.9 A (0.26 x FLA 46 A, under the full-load reactive 46 x sin(acos 0.88) = 21.8 A). No load:
+     sqrt(11.9^2 + 3.5^2) = 12.4 A = 0.49 x 25.4 A. */
+  fI: 0.49,
+  /* beta.292 (JENNIE, Full Audit 3 #5, was 23.8 m2 NO-SOURCE): "Limay Project Diesel Oil Tank Inventory Table" 2016-08-16 (O&M V28,
+     PC only): DCS level 0.5 m = 43.0 m3 ... 7.7 m = 300.0 m3, linear in between (7.1 m 279.8, 6.9 m 272.6: 36 m3 per m). The tank
+     area is the slope: (300.0 - 43.0) / (7.7 - 0.5) = 35.69 m2 (CALC; inside the bound 300 m3 / 7.5 m = 40 m2 of the Equipment List
+     K1AU3-L1-0-002 p 29 and the LT-DO0701 H alarm) */
+  A: (300.0 - 43.0) / (7.7 - 0.5),
+  /* beta.294 (JENNIE, Full Audit 3 #5, was 0.85 NO-SOURCE): the diesel oil of the pump data, ALLWEILER characteristic curves SN 660 / 40
+     (offer XZ-EPPA31 2014-02-21, K1AU3-D1-0-060 R0 Engineering Data of Diesel Oil Pump p 7, PC only): "Liquid pumped Diesel Oil,
+     Density 0,87 kg/dm3", 40 C. Used only for the tank level (the volume of the oil burnt) */
+  rho: 0.87 /* t/m3 */,
   L0: 4.978 /* m, 6.PNG */,
   /* the field valves of the diesel oil line-up (SOP 20, PD-022 1/5 Rev D): tank outlet V-DO0003, strainer inlet V-DO0004, pump A
      suction V-DO0015 / discharge V-DO0007, pump B suction V-DO0016 / discharge V-DO0009 (SOP 20 names the discharge "V-DO0017": not
@@ -295,7 +306,7 @@ function anDieselOilStep(U, dt) {
      PAF / SAF field trip: their air stops (unit.js U.mul with the motor drawings DITL-26A / 27A).
    - motor currents IT-F1053 PAF / IT-F1054 SAF / IT-F1056 IDF / IT-F1055A / B (STN103 AI0454 / 0469 / 0453 / 0452 / 0468): the current
      of the snapshot times (no-load share fI + the rest x air power / air power of the snapshot), air power = flow x pressure rise
-     (fan law; fI NO-SOURCE). IT-F1055A / B also feed DITL-28B row 12 "FAB A CURRENT" < 24.6 A (L.L.).
+     (fan law; no-load share fI per fan: PAF / SAF / IDF from their curves and motor data, beta.308; FA blower from its own curve, beta.324). IT-F1055A / B also feed DITL-28B row 12 "FAB A CURRENT" < 24.6 A (L.L.).
    - pressures: PAF outlet PT-FA1075 (AI0160) and FA header PT-FA1055-A / B (AI0294 / 0417) with the square of their flow (system
      curve); ESP outlet / IDF inlet PT-FG1141-A / B (AI0416 / 0772) and IDF outlet PT-FG1151 (AI0432) with the square of the total air.
    Anchors: 7.PNG (151 MW) PAF 253.6 A, SAF 134.0 A, IDF 199.6 A, PIFA1075 1551 at FIFA1071 354.0, PIFA1085 1427 at FIFA1081 213.0,
@@ -304,7 +315,28 @@ function anDieselOilStep(U, dt) {
    snapshot). */
 const AN_FN = {
   I0: { paf: 253.6, saf: 134.0, idf: 199.6, fa: 37.3 },
-  fI: 0.45,
+  /* beta.308 (JENNIE, Audit #5, PAF / SAF / IDF were fI 0.45 NO-SOURCE): the current at no air power, as a share of the snapshot current
+     (PC-only vendor data). Motor current = sqrt(magnetizing^2 + active^2); magnetizing = the reactive current of the motor's own
+     Eff & PF vs load curve at 10 - 20 % load; active = machine power at no flow / motor efficiency / (sqrt3 x 6.6 kV).
+     PAF / SAF / IDF: K1AU3-D1-0-003 R0 (archive, Engineering Data of Boiler Fan): RF2-0580-DOC-1-0 TECO motor data, fan spec sheets.
+     PAF: TECO AEZK 3700 kW 4 P (3A057H186-72076: 373 A, eff 95.8 %, PF 0.905). Curve FE14A701B1-E-P-L: 10 % load eff 0.80, PF 0.475
+       -> 85.6 A, reactive 75 A. Fan D2118A TLT/1027 DWDI at 1780 rpm: power at no flow 480 on the chart (/2 = BkW) = 960 kW
+       (26 % load, eff about 0.92) -> active 91 A. sqrt(75^2 + 91^2) = 118 A = 0.47 x 253.6 A.
+     SAF: TECO AECK 1850 kW 4 P (FD14A202B1). Curve E-P-L: 10 % load eff 0.80, PF 0.39 -> reactive 48 A (20 %: 49 A). Fan D2118A
+       TLT/935 DWDI at 1780 rpm: no flow 260 (/2) = 520 kW (28 % load, eff about 0.925) -> active 49 A. sqrt(48^2 + 49^2) = 69 A
+       = 0.51 x 134.0 A.
+     IDF: TECO AEZK 3300 kW 6 P (3A057H186-72068: 350 A, eff 96.0 %, PF 0.86). Curve FE14A702B1-E-P-L: 10 % load eff 0.80, PF 0.31
+       -> reactive 112 A (20 %: 109 A). Fan D1902/10600 DWDI with Voith hydraulic coupling, speed 350 ~ 1145 rpm: at no air power it
+       runs at the bottom speed; no-flow power 25 x 3 = 75 kW at 456 rpm -> x (350/456)^3 = 34 kW, and a fluid coupling takes the
+       same torque at motor speed: 34 x 1193 / 350 = 116 kW, plus about 70 kW motor losses (10 % point) -> active 16 A.
+       sqrt(112^2 + 16^2) = 113 A = 0.57 x 199.6 A. Check at the snapshot: 199.6 A -> active 165 A = 1.89 MW in; the fan curves at
+       about 13,500 m3/min (151 MW gas) and 443 mmH2O give 1.25 MW fan power at about 755 rpm -> 1.97 MW at the motor (4 % apart).
+     PAF / SAF limit: the chart is the inlet-vane fully open line; with the vanes shut the no-flow power is lower (no vane curve in
+     the docs), so these two shares are the upper bound.
+     FA blower: beta.324 (JENNIE, Audit #5 / user finding "FA blower A trips on low current when running with B"): no share; its
+     current comes from its own curve (anFabKw / anFabI below). The 0.45 share and the straight line from 232 kW at 10,000 kg/h were
+     both wrong: the power curve bends, and an inlet-throttled blower makes less power at the same mass flow. */
+  fI: { paf: 0.47, saf: 0.51, idf: 0.57 },
   pa: { Q0: 354.0, P0: 1551 },
   sa: { Q0: 213.0, P0: 1427 },
   ga: { T0: 592.1, Pi: [-442, -450], Po: -7 },
@@ -317,8 +349,75 @@ const AN_FN = {
     sov: ['DITL-28C', 'DITL-28C #B']
   }
 };
-/* motor current: no-load share + the rest x air power over the snapshot one. Same law on the HMI (api.js fanI) */
-const anFanI = (I0, on, x) => (on ? I0 * (AN_FN.fI + (1 - AN_FN.fI) * Math.max(0, x)) : 0);
+/* beta.324 (JENNIE): FA blower F-1055A / B power and current from the vendor data (PC-only plant documents).
+   Blower: Continental 500.04 multistage centrifugal, 3,570 rpm constant speed, inlet damper FCV-FA1055-A1 / B1. Performance curve
+   CIC-01-13005 (K1AU3-D1-0-004 R0 Engineering Data of Fluidizing Blower p.7), the middle air case (t1 40 C, 1.097 kg/m3,
+   barometer 10,332.3 mmH2O abs), read every 2,500 ~ 5,000 kg/h: outlet gauge pressure H (mmH2O, inlet at the barometer) and
+   machine power P (kW) vs mass flow (kg/h). The chart starts at 10,000 kg/h; under it H stays flat (the curve is flat there) and
+   P goes on the line of 10,000 ~ 15,000 kg/h to no flow (56 kW, the shaft losses of a closed blower). Past the end (37,700) H falls
+   to 0 at 38,400 and P is held.
+   Flow element FE-FA1055 (K1AU3-E2-0-007 RA Orifice p.4, sheet 2 of 8): averaging pitot, 20", 0 ~ 35 T/H, normal 23 T/H, max 28 T/H
+   at 5,230 mmAq and 91 C: the same 5,230 mmH2O at 27,500 kg/h as the middle curve, so FIFA1055 is the flow of this curve.
+   Inlet damper (constant speed): the damper lowers the inlet pressure p1, so the inlet air is thinner (rho1 = rho_c x p1 / pb, same
+   temperature). The blower moves the same volume as on the chart and keeps the pressure ratio of the chart at that volume:
+   equivalent chart flow mc = m x pb / p1, and (pb + H(mc)) / pb = (pb + p2) / p1, p2 = header gauge pressure; one p1 meets it
+   (left side falls and right side rises as p1 falls), found by halving. Power = P(mc) x p1 / pb (fan law for density).
+   Check, 9.png (150 MW, blower A alone, B stopped): 26.3 T/H at PIFA1055A 3,257 -> p1 9,269 mmH2O abs, mc 29,317 kg/h, 400 kW.
+   Motor TECO AFJH 480 kW 2 P 6.6 kV (O&M V10-5 FC149602B1): FLA 49.4 A, eff 95.5 %, PF 0.89 -> active 44.0 A, reactive 22.5 A at
+   full load; magnetizing (reactive at 10 % load) 12.7 A. Active = power / 0.955 / (sqrt3 x 6.6 kV); reactive = 12.7 + (22.5 -
+   12.7) x (active / 44.0)^2 (the leakage part grows with the square of the load current); current = sqrt(active^2 + reactive^2).
+   At the snapshot this gives 41.5 A against 37.3 A read: the chart read and the motor curve are about 10 % high together, so the
+   current is anchored to the snapshot: I = 37.3 x I(m, p2) / I(26.3 T/H, 3,257).
+   Results (header 3,257): one blower 26.3 T/H 37.3 A; 20 T/H 33.2 A; 16 T/H 29.5 A; 13.2 T/H (two sharing 26.3) 26.5 A; 10 T/H
+   22.5 A; no flow 12.1 A. DITL-28B row 12 L.L. 24.6 A sits at about 11.5 T/H on one blower. */
+const AN_FAB = {
+  pb: 10332.3,
+  H: [[0, 6600], [10000, 6600], [15000, 6560], [20000, 6340], [22700, 6080], [25000, 5740], [27500, 5257], [30000, 4650], [33300, 3340], [35000, 2450], [37600, 800], [38400, 0]],
+  P: [[0, 56], [10000, 232], [15000, 320], [20000, 382], [23000, 412], [25000, 432], [27500, 441], [30000, 447], [32000, 447], [33500, 443], [35000, 430], [37700, 405]]
+};
+const anFabLin = (t, x) => {
+  if (x <= t[0][0]) return t[0][1];
+  for (let i = 1; i < t.length; i++)
+    if (x <= t[i][0]) {
+      const [a, b] = t[i - 1],
+        [c, d] = t[i];
+      return b + ((d - b) * (x - a)) / (c - a);
+    }
+  return t[t.length - 1][1];
+};
+/* machine power (kW) of one blower at m kg/h into p2 mmH2O gauge */
+const anFabKw = (m, p2) => {
+  const pb = AN_FAB.pb,
+    po = pb + Math.max(0, p2);
+  let lo = 100,
+    hi = po;
+  for (let k = 0; k < 40; k++) {
+    const p1 = (lo + hi) / 2;
+    if ((pb + anFabLin(AN_FAB.H, (Math.max(0, m) * pb) / p1)) / pb > po / p1) hi = p1;
+    else lo = p1;
+  }
+  const p1 = (lo + hi) / 2;
+  return (anFabLin(AN_FAB.P, (Math.max(0, m) * pb) / p1) * p1) / pb;
+};
+const anFabAmp = kw => {
+  const ia = kw / 0.955 / (Math.sqrt(3) * 6.6),
+    ir = 12.7 + (49.4 * Math.sqrt(1 - 0.89 * 0.89) - 12.7) * Math.pow(ia / (49.4 * 0.89), 2);
+  return Math.hypot(ia, ir);
+};
+AN_FAB.a0 = anFabAmp(anFabKw(26300, 3257));
+/* current of one FA blower: running, its flow (T/H), the header gauge pressure (mmH2O) */
+const anFabI = (on, q, p2) => (on ? (AN_FN.I0.fa * anFabAmp(anFabKw(q * 1000, p2))) / AN_FAB.a0 : 0);
+/* motor current: no-load share + the rest x air power over the snapshot one. Same law on the HMI (api.js fanI); the HMI fallback
+   passes only the snapshot current, so the share is found by it */
+/* beta.324: the FA blower has no share; the HMI fallback passes x = (flow ratio)^3, so it is read back as its flow and the header
+   pressure on the square of the flow, and the blower curve gives the current */
+const anFanI = (I0, on, x, f = AN_FN.fI[Object.keys(AN_FN.I0).find(k => AN_FN.I0[k] === I0)]) => {
+  if (f == null && I0 === AN_FN.I0.fa) {
+    const r = Math.cbrt(Math.max(0, x));
+    return anFabI(on, AN_FN.fa.Q0 * r, AN_FN.fa.P0[0] * r * r);
+  }
+  return on ? I0 * (f + (1 - f) * Math.max(0, x)) : 0;
+};
 /* speed (F37): a DITL sheet by its name, kept: these two run many times a step and made a new list of all sheets each time */
 const fnShC = new Map();
 let fnShK = -1;
@@ -379,12 +478,13 @@ function anFanStart(U) {
 }
 /* 3.2.4 (JENNIE): air heater plugged on the gas side (trainer fault aph.plug, world.js). FHI T6 p7 / P5S2: fouling shows as a rising
    draft loss; the APH is blown every 4 - 8 h (T9 p11) and washed when plugged. The gas side loss of the APH at MCR is not readable
-   (APH s18 table scrambled): dp 110 mmH2O NO-SOURCE, inside the -442 / -450 mmH2O ID fan suction of the fan manual (AN_FN.ga.Pi).
+   (APH s18 table scrambled): dp 113 mmH2O (beta.310, was 110 NO-SOURCE: the air heater gas DP transmitter DPT-FG1052-5,
+   DPIFG10525 STN AI0768, reads 113.0 mmH2O at 150 MW on the HMI snapshot, hmi-op.js; the same value the gas path page draws), inside the -442 / -450 mmH2O ID fan suction of the fan manual (AN_FN.ga.Pi).
    The plugging adds to that loss: +1 x dp every 30 min (NO-SOURCE trainer rate), up to +3 x. The same gas then needs a deeper ID
    fan suction (U.fnGi, the fan current follows), and the fan at the same opening moves less gas: the share of the fan command that
    reaches the furnace pressure is the square root of the old over the new system loss (fan law at one speed, unit.js pr.uf).
    U.aphPl = the added loss in units of dp; clearing the fault (water wash) puts it back to 0 */
-const AN_APL = { dp: 110, t: 1800, max: 3 };
+const AN_APL = { dp: 113, t: 1800, max: 3 };
 /* 3.2.4 (JENNIE, list item: air heater leak): the radial / axial seals of the tri-sector air heater wear and pass more air to the gas side
    (trainer fault aph.leak, world.js). L20 Howden APH OMM sheet 16, duty 1 (performance coal): PA to gas 33,993 kg/h, SA to gas 19,036
    kg/h, total air to gas 7.82 % of the gas inlet. Check of the mixing rule: the same sheet gives the gas out 132.8 C undiluted and
@@ -460,8 +560,15 @@ function anFanStep(U, dt) {
   U.fnFaQ = qfa;
   /* a blower blowing through its open silencer: its current as if its damper flow went into the header (the blower curve to the
      atmosphere is NO-SOURCE; a centrifugal blower takes more flow there, not less, so no current drop is made up) */
+  /* beta.324 (JENNIE, user finding "FA blower A trips on low current when running with B"): the flow of each blower was the
+     FIFA1055 reading split by the damper shares. FIFA1055 follows the loop with its own lag (plant.js, air flow up to 5 s), so in
+     the seconds after B started, B already took half of the share while the reading had not risen: blower A was given half of the
+     old flow (9 T/H at 25 % / 24.9 %), its current fell to 22 A, under the L.L. 24.6 A, and DITL-28A row 17 stopped it, although
+     its damper never moved. A blower's flow is set by its own damper and its own curve: each blower now follows its own target
+     (snapshot flow at the snapshot damper, linear as the loop target above) with the 5 s of an air flow; the blower that just
+     started rises from 0, the running one keeps its flow */
   const qi = g.map((x, i) =>
-    sil[i] && g0[i] > 0 ? (K.fa.Q0 * g0[i]) / K.fa.z0 : g[0] + g[1] > 0 ? (qfa * x) / (g[0] + g[1]) : 0
+    lag('fq' + i, fr[i] ? (K.fa.Q0 * (sil[i] && g0[i] > 0 ? g0[i] : x)) / K.fa.z0 : 0, 5)
   );
   const cur = anFanI;
   U.fnI = U.fnI || [0, 0, 0, 0, 0];
@@ -470,15 +577,16 @@ function anFanStep(U, dt) {
      and the drawing tripped it (DITL-28A #B row 17 M.2549 FAB B CURRENT L.L.). The FA blower is a constant speed multistage centrifugal
      blower with an inlet damper (equipment list K1AU3-L1-0-002 R0 item 46.1: Continental 500.04, 1 x A211 + 3 x A202, 3,570 rpm,
      BHP 440.4 kW, motor 480 kW 2P; FCV-FA1055-A1 / B1): throttled at its inlet it still makes the head of its curve, the damper takes
-     the rest, so its air power follows its own flow at the head of the snapshot (9.png 37.3 A at 26.3 T/H). The blower curve is not in
-     the docs (NO-SOURCE: head kept constant). The drawing itself bounds it: a running blower at the PR-OPE-5002 line-up damper (23 ~ 27 %,
+     the rest, so its air power follows its own flow at the head of the snapshot (9.png 37.3 A at 26.3 T/H). (beta.324: the blower
+     curve was found, K1AU3-D1-0-004 p.7; the current is now anFabI.) The drawing itself bounds it: a running blower at the PR-OPE-5002 line-up damper (23 ~ 27 %,
      ABC-014 M.3115 / M.3116) is not tripped by its own current L.L. (now about 28 A at 14 T/H) */
   /* 3.2.3-beta.183 (SOHEE): the blower on its open silencer follows the same rule (own flow at the head of the snapshot). The cube of
      the flow ratio (fan law) was for a change of speed, not of a damper at constant speed: after instrument air loss the inlet damper
      springs open (100 %, P&ID 500-0ds) and the cube gave 278 A, over the 0 ~ 98 A range of IT-F1055A (I/O list); now about 65 A */
-  const pw = i => qi[i] / K.fa.Q0;
-  U.fnIa = lagI('ia', cur(K.I0.fa, fr[0], pw(0)), 2);
-  U.fnIb = lagI('ib', cur(K.I0.fa, fr[1], pw(1)), 2);
+  /* beta.324: each blower on its own curve (anFabI): its flow qi into the header pressure, or into the open silencer (about 0) */
+  const p2 = i => (sil[i] ? 0 : pfa);
+  U.fnIa = lagI('ia', anFabI(fr[0], qi[0], p2(0)), 2);
+  U.fnIb = lagI('ib', anFabI(fr[1], qi[1], p2(1)), 2);
   /* PAF / SAF: flow of the loop model, outlet pressure on the system curve */
   const qpa = Math.max(0, val(F.qpa)) || 0,
     qsa = Math.max(0, val(F.qsa)) || 0,
@@ -486,8 +594,8 @@ function anFanStep(U, dt) {
     psa = K.sa.P0 * Math.pow(qsa / K.sa.Q0, 2);
   U.fnPaP = lag('pp', ppa, 2);
   if (F.ai.pa.length) anUnitWrite(F.ai.pa, U.fnPaP);
-  U.fnPafI = lagI('ip', cur(K.I0.paf, fnRun(K.run.paf), (qpa * ppa) / (K.pa.Q0 * K.pa.P0)), 2);
-  U.fnSafI = lagI('is', cur(K.I0.saf, fnRun(K.run.saf), (qsa * psa) / (K.sa.Q0 * K.sa.P0)), 2);
+  U.fnPafI = lagI('ip', cur(K.I0.paf, fnRun(K.run.paf), (qpa * ppa) / (K.pa.Q0 * K.pa.P0), K.fI.paf), 2);
+  U.fnSafI = lagI('is', cur(K.I0.saf, fnRun(K.run.saf), (qsa * psa) / (K.sa.Q0 * K.sa.P0), K.fI.saf), 2);
   /* IDF: the flue gas is the total air (unit.js U.taf); inlet suction and outlet with its square */
   const taf = U.taf && U.tafS ? U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0) : 0,
     rg = Math.pow(taf / K.ga.T0, 2),
@@ -510,7 +618,7 @@ function anFanStep(U, dt) {
   }
   const dpg = U.fnGo - (U.fnGi[0] + U.fnGi[1]) / 2,
     dpg0 = K.ga.Po - (K.ga.Pi[0] + K.ga.Pi[1]) / 2;
-  U.fnIdfI = lagI('ii', cur(K.I0.idf, idf, ((taf / K.ga.T0) * dpg) / dpg0), 2);
+  U.fnIdfI = lagI('ii', cur(K.I0.idf, idf, ((taf / K.ga.T0) * dpg) / dpg0, K.fI.idf), 2);
   U.fnI = [U.fnPafI, U.fnSafI, U.fnIdfI, U.fnIa, U.fnIb];
 }
 /* AIR PREHEATER AND FLUE GAS (FHI Tab 3, Figures 7, 12, 13; docs/versions/v3.2.1/GAS_PATH.md).
@@ -636,7 +744,9 @@ function anAphStep(U, dt) {
               MCR check: (322 - 0.358 x 245.4) / 0.642 = 365 C (snapshot TIFG1110 / 1113 359 / 369). Never under the gas leaving.
      U.idfGo  ID fan outlet to the stack (TT-FG1152): the gas leaving the air heater plus the heat of the fan, dT = dp / (rho cp eta),
               dp = the fan pressure rise of the fan model (U.fnGo - U.fnGi, mmH2O), flue gas rho 0.85 kg/m3 at about 140 C and
-              cp 1.05 kJ/kg K (Tab 3 gas), eta 0.8 (NO-SOURCE: the ID fan efficiency is not in the fan manual pages read): about 10 C at
+              cp 1.05 kJ/kg K (Tab 3 gas), eta 0.87 (beta.310, was 0.8 NO-SOURCE: ID fan specification sheet RF2-0582-DOC-6-0 sheet 2,
+              K1AU3-D1-0-003 R0 (PC only): design 17,621 m3/min at 150 C, 858 mmH2O, TE / SE 87 / 84 %; the total efficiency, since all
+              the shaft work that is not pressure ends up as heat in the gas): about 9 C at
               MCR (snapshot 148 - 146 = 2 C after the precipitator losses, which are not modelled). */
   {
     const tf = isFinite(U.hpT2) ? U.hpT2 : amb;
@@ -646,7 +756,7 @@ function anAphStep(U, dt) {
         : Math.max(z.gi, (z.gi - K.eco * tf) / (1 - K.eco));
     const gi = Array.isArray(U.fnGi) ? (U.fnGi[0] + U.fnGi[1]) / 2 : 0,
       dp = Math.max(0, (isFinite(U.fnGo) ? U.fnGo : 0) - (isFinite(gi) ? gi : 0));
-    U.idfGo = U.aphGo + (dp * 9.80665) / (0.85 * 1050 * 0.8);
+    U.idfGo = U.aphGo + (dp * 9.80665) / (0.85 * 1050 * 0.87);
   }
   anUnitWrite(U.aphL.pa, pa);
   anUnitWrite(U.aphL.sa, sa);

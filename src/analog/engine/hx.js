@@ -46,11 +46,18 @@
      duct 12,185 x 3,343 mm, SH pass 12,185 x 3,000 mm, 624,680 / 648,000 m3/h at 376 C, resistance coefficient 0.4 full open
      (calculation sheet p10), "Pressure loss vs blade position (RH pass)" p15 Normal condition V 4.2 m/s, gamma 0.53: zeta read from
      the curve (15 deg 275 mmAq ... 50 deg 3 mmAq; zeta = dP 2g / (V^2 gamma)); under 15 deg the curve is extended on the same log
-     slope (CALC). Blade 0 - 90 deg = MV 0 - 100 % (4 - 20 mA positioner, linear: NO-SOURCE for any other characteristic).
+     slope (CALC). Blade travel: MV 0 - 100 % (4 - 20 mA positioner, linear) = 15 - 90 deg open (th0 below; beta.336).
+     Source of the 15 deg: both vendor curves (p15 RH pass, p16 SH pass) are drawn from 15 deg; their four design cases (Normal, BMCR,
+     70 % gas to RH, 60 % gas to SH) give the control range the damper pair was sized for: RH share 40 - 70 %. With 0 - 90 deg the
+     chain gave 13 - 88 % at 150 MW (RH 0 % / SH 100 % and back), far past it; with 15 - 90 deg it gives 28 - 73 %. Check against
+     the plant at 150 MW (scenario 1: RH 11 % / SH 89 %): RH share 37 % (heat balance CALC of the plant: 40 %); 0 - 90 deg gave 22 %.
      Check: both dampers full open -> RH pass 48.6 % of the gas; the vendor design flows give 49.1 % (p8 / p11).
-   - Tube metal: GA p6 K1AU3A-201 (SH 353.26 t, RH 243.1 t, steel 0.5 kJ/kg K); economizer metal 120 MJ/K (NO-SOURCE). */
+   - Tube metal: GA p6 K1AU3A-201 (SH 353.26 t, RH 243.1 t, steel 0.5 kJ/kg K); economizer metal 112.2 MJ/K:
+     the economizer of the same GA table (team-files/plant-study/13-thermal-masses: loop 189.00 t + common link 15.83 t + headers
+     19.59 t = 224.42 t) x 0.5 kJ/kg K (beta.292, JENNIE, was 120 MJ/K NO-SOURCE; the bank split below kept, each x 112.21 / 120). */
 const AN_HX = {
   /* damper zeta vs blade angle (deg open), K1AU3-D1-0-015 p15 / p10 */
+  th0: 15 /* deg open at MV 0 % (see the note above) */,
   dz: [
     [0, 4350],
     [15, 577],
@@ -94,7 +101,20 @@ const AN_HX = {
      AN_BB tbA), not the bed. Their heat at the 150 MW state of the model is held (the design spray of the CALC above): there they took
      75 x (856 - 412.7) + 75 x (856 - 465.8) = 62.5 MW from the 856 C bed; at the new anchor Tu 892.3 C the same heat needs
      33.25 MW / (892.3 - 412.7) = 69.3 and 29.27 MW / (892.3 - 465.8) = 68.6 kW/K: 69 (CALC) */
-  uaP: 69 /* kW/K each SH panel, CALC above */,
+  /* beta.284 (JENNIE): the same rule (hold the design heat of the panels, 62.5 MW at 150 MW) after beta.282 (the suspension heat by
+     the square root of its density, unit.js AN_BB kKL): at the 150 MW steady of beta.282 (save 150MW-bed-AUTO-2-coolers, operator
+     probe) the two panels took 65.4 MW and the SH sprays 15.2 + 2.2 = 17.4 T/H, FHI Fig 10 12.4 T/H. The 5 T/H more spray carried
+     1.39 kg/s x (3150 - 1085) kJ/kg (spray water to the steam at the spray, IF97 near 133 bar 450 C) = 2.9 MW: 65.4 - 2.9 = 62.5 MW,
+     the design heat. 69 x 62.5 / 65.4 = 65.9; with 66 the same probe gave 63.2 MW (the panel metal follows): 66 x 62.5 / 63.2 = 65.3:
+     65 (CALC) */
+  uaP: 76.1 /* kW/K each SH panel (beta.348 design anchor, uaP1 / uaP2 below); was 65, CALC above (the design panel heat 62.5 MW and the FHI Fig 10 spray 12.4 T/H at 150 MW) */,
+  /* 1.0.0-beta.346 (JENNIE, user 2026-11-24 "GO DESIGN": the design documents are the only targets). beta.342 had scaled the two panels
+     to the plant 150 MW readings (117 / 63 kW/K, spray 1 34.9 T/H); that was a fit to one plant day, not the design. Back to the design
+     CALC above for both panels. The two keys stay so a panel can be taken alone (unit.js reads both) */
+  /* 1.0.0-beta.348 (JENNIE, D9): the same rule again (hold the design panel heat 62.5 MW at 150 MW) at the design anchor of unit.js
+     AN_BB (bed 860, Tu 849.9 C): 33.25 MW / (849.9 - 412.7) = 76.0 and 29.27 MW / (849.9 - 465.8) = 76.2 kW/K: 76.1 each (CALC) */
+  uaP1: 76.1 /* kW/K SH panel #1 */,
+  uaP2: 76.1 /* kW/K SH panel #2 */,
   /* [metal kJ/K, design steam / water flow T/H] */
   wl: [17663, 447.6],
   p1: [70652, 447.6],
@@ -110,10 +130,10 @@ const AN_HX = {
     [21009, 401],
     [16264, 401]
   ],
-  e1: [36800, 447.6],
-  e2r: [25920, 223.8],
-  e2s: [9600, 223.8],
-  e3: [47680, 447.6],
+  e1: [34411, 447.6],
+  e2r: [24237, 223.8],
+  e2s: [8977, 223.8],
+  e3: [44585, 447.6],
   /* design metal temperatures (geometry check above), the start of "Start at 150 MW" before the settle below */
   m0: {
     wl: 360,
@@ -240,7 +260,7 @@ function anHxDp(g, m, T) {
 /* damper zeta at an opening x (0 - 1): log interpolation of the vendor curve */
 function anHxZeta(x) {
   const L = AN_HX.dz,
-    a = 90 * Math.max(0, Math.min(1, isFinite(x) ? x : 1));
+    a = AN_HX.th0 + (90 - AN_HX.th0) * Math.max(0, Math.min(1, isFinite(x) ? x : 1));
   for (let i = 1; i < L.length; i++)
     if (a <= L[i][0]) return Math.exp(Math.log(L[i - 1][1]) + ((Math.log(L[i][1]) - Math.log(L[i - 1][1])) * (a - L[i - 1][0])) / (L[i][0] - L[i - 1][0]));
   return L[L.length - 1][1];
@@ -425,9 +445,11 @@ function anHxStep(U, I, dt) {
     M.tg = t.map(x => (isFinite(x) ? x : I.Tg));
   }
   /* panels in the furnace: radiation / solids from the bed */
-  const phi = Math.max(0, I.phi || 0),
-    qP1 = K.uaP * phi * (I.Tb - M.p1),
-    qP2 = K.uaP * phi * (I.Tb - M.p2);
+  /* beta.282 (JENNIE): the suspension coefficient grows with the square root of its density (Basu & Nag, unit.js AN_BB kKL) */
+  /* beta.286: plus the gas radiation (unit.js AN_BB fgP, anBbPanF; beta.290: the gas of the lane between the panels) */
+  const pf = Tm => (typeof anBbPanF === 'function' ? anBbPanF(I.Tb, Tm, I.phi || 0) : Math.sqrt(Math.max(0, I.phi || 0))),
+    qP1 = K.uaP1 * pf(M.p1) * (I.Tb - M.p1),
+    qP2 = K.uaP2 * pf(M.p2) * (I.Tb - M.p2);
   /* ---- steam side ---- */
   const Pd = Math.max(0, I.Pd),
     Pm = Math.max(0, isFinite(I.Pms) ? I.Pms : Pd),

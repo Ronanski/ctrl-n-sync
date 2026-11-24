@@ -54,6 +54,15 @@ window.UATS = (function () {
       );
     return { sh, S, rt, net, ctl, fp, stn: ctl && ctl.amt ? rt.st[ctl.amt.id] : null };
   }
+  /* UAT start 2026-11-23 (Jennie finding F1): the plant at 150 MW by the "At 150 MW" start (#load150, AN._startP), the steady state of the
+     model with the DITL line-up. The bare AN.plantLoad150() has no steady state: the CCS falls to MAN and the drum level trips at about 20 min.
+     One path only: no #load150 is an error, never a fall-back to the bare start */
+  const start150 = async () => {
+    const b = document.getElementById('load150');
+    if (!b) throw new Error('No "At 150 MW" start (#load150) in this build');
+    b.click();
+    await AN._startP;
+  };
   const stepSim = async (sh, secs) => {
     const n = Math.round(secs * 2);
     for (let i = 0; i < n; i++) {
@@ -155,7 +164,7 @@ window.UATS = (function () {
           else if (st.do === 'load150') {
             /* 2.2.0-beta.8: the plant in service (Start at 150 MW, hmi-op.js): every sheet at the operating point of the plant */
             AN.reset();
-            AN.plantLoad150();
+            await start150();
             AN.go(idx);
           } else if (st.do === 'reset') {
             AN.reset();
@@ -721,7 +730,7 @@ window.UATS = (function () {
       if (!base) {
         const loadSvc = async () => {
           AN.reset();
-          AN.plantLoad150();
+          await start150();
           AN.go(idx);
           await stepSim(sh, 5);
           const c = AN.hmiCtrls(S).find(c => c.tag === tag),
@@ -764,7 +773,7 @@ window.UATS = (function () {
         /* in service: the plant is loaded once; each input of the force-manual cone is turned over for 3 s and back (an input that
            does not force the station leaves the plant as it was); the first one that forces the station is the trip */
         AN.reset();
-        AN.plantLoad150();
+        await start150();
         AN.go(idx);
         await stepSim(sh, 5);
         for (const n of cd) {

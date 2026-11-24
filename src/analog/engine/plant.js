@@ -263,7 +263,10 @@ function anProcList(S) {
 /* 3.2.0: the fields of a plant model that a run writes (plant.js step, unit.js, hmi-op.js, plant-window.js): Reset takes them back. Not
    hop / Ka: the HMI snapshot anchor of a loop is made once at the first scan (ABC-019 TICHR1002: 39.PNG 541 C; made again after a run it
    was null, the reheat steam stayed at 185 C and the turbine roll held, CHECK full); Reset takes away the 150 MW one only (hop.dyn, sheets.js) */
-const AN_PROC_RUN = ['integ', 'y0', 'ld', 'uf', 'smul', 'sbase', 'tcap', 'fr', 'tsat', 'src', 'shold', 'scap', 'sflo', 'op', 'hopReq', 'fell', 'dn', 'cyc', 'mul', 'integLoss', 'integLoss0'];
+/* beta.278 (JENNIE, reset_worker): hx (unit.js: the heat / main valve flow of a spray, a superheater stage, the feedwater) and nsat (unit.js
+   natRH: the part of the spray range below saturation) are written by the unit model during a run: a Reset after a run kept them (hx as
+   undefined, nsat 0) where a fresh page has neither, on both engines */
+const AN_PROC_RUN = ['integ', 'y0', 'ld', 'uf', 'smul', 'sbase', 'tcap', 'fr', 'tsat', 'src', 'shold', 'scap', 'sflo', 'op', 'hopReq', 'fell', 'dn', 'cyc', 'mul', 'integLoss', 'integLoss0', 'hx', 'nsat'];
 const AN_SERIES = { PICFG108: 1, PICFG108A: 1 };
 /* 3.2.0-beta.40: controller -> the hand station whose output is the real actuator of the process (ABC-020, see xman below) */
 const AN_XACT = { TICHR1002A: 'HICHR1002A' };
@@ -1210,7 +1213,11 @@ function anFeederStep(S) {
     st = rt.st[f.ai];
   if (!a || !st || a.pins.some(p => p.role === 'out' && rt.force[p.n] !== undefined)) return;
   const r = a.rng || { lo: 0, hi: 40 },
-    y = rt.v[f.run] > 0.5 ? +rt.v[f.mv] || 0 : r.lo;
+    /* beta.304 (JENNIE): the coal that really falls = the demand x the belt load of the coal lot over the speed trim (unit.js
+       anCoalLots, U.clF of feeder A / B / C); the load cells read it */
+    k = 'ABC'.indexOf(S.name.slice(-1)),
+    cl = typeof AN_UNIT !== 'undefined' && AN_UNIT.on && AN_UNIT.clF && isFinite(AN_UNIT.clF[k]) ? AN_UNIT.clF[k] : 1,
+    y = rt.v[f.run] > 0.5 ? (+rt.v[f.mv] || 0) * cl : r.lo;
   st.val = Math.max(r.lo, Math.min(r.hi, y));
   const T = S.plantT || (S.plantT = { ai: new Map(), ext: new Map() });
   T.ai.set(f.ai, f.tag);

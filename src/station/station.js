@@ -265,10 +265,12 @@
       b.onclick = () => setEng(e);
       mode.append(b);
     }
-    const insB = E('button', 'st-b st-ins', 'Instructor');
-    insB.title = 'Starting point, save points, faults and trips';
-    insB.onclick = instructor;
-    foot.append(mode, insB);
+    /* audit #6 2026-11-24: the old Instructor button is the Plant menu (the starting point, the save points, the faults and the trips);
+       its hold of the plant is gone, Pause holds the plant */
+    const plantB = E('button', 'st-b st-plantb', 'Plant menu');
+    plantB.title = 'Starting point, save points, faults and trips';
+    plantB.onclick = plantMenu;
+    foot.append(mode, plantB);
     rail.append(unit, stnSeg, list, sheets, foot);
     const top = E('header', 'st-top'),
       show = E('button', 'st-b', 'Pages ›');
@@ -281,7 +283,25 @@
     spdB = E('button', 'st-b');
     spdB.title = 'Simulation speed';
     spdB.onclick = speeds;
-    sim.append(runB, spdB);
+    /* beta.295 (user, apk test 2026-11-22: "Hnd ko rin msabe kung 60 fps pataas ito"): the screen frames of the last second, counted
+       from the frames the browser draws, so the frame rate can be read on the device itself; amber under 60 */
+    const fpsS = E('span', 'st-fps', '-- fps');
+    fpsS.title = 'Screen frames drawn in the last second';
+    let fN = 0,
+      fT = performance.now();
+    const fpsF = t => {
+      fN++;
+      if (t - fT >= 1000) {
+        const f = Math.round((fN * 1000) / (t - fT));
+        fpsS.textContent = f + ' fps';
+        fpsS.classList.toggle('st-low', f < 60);
+        fN = 0;
+        fT = t;
+      }
+      requestAnimationFrame(fpsF);
+    };
+    requestAnimationFrame(fpsF);
+    sim.append(fpsS, runB, spdB);
     for (const [name, v] of [
       ['Process', 0],
       ['Trends', 2]
@@ -1001,7 +1021,7 @@
         'st-none',
         'Installed: ' +
           (VER || 'not known') +
-          '. Update now reloads the app and the running plant is lost. To keep it, save a save point in Instructor first.'
+          '. Update now reloads the app and the running plant is lost. To keep it, save a save point in the Plant menu first.'
       )
     );
     const r = E('div', 'st-row');
@@ -1074,9 +1094,9 @@
     }
     whyPop.hidden = false;
   }
-  /* Instructor: the starting point, the save points, the faults and the trips of the app, through its own controls and functions
-     (the same ones its Instructor console presses: shellc-ins.js). A press that changes the plant asks for a second press within 5 s */
-  let insPop = null;
+  /* Plant menu: the starting point, the save points, the faults and the trips of the app, through its own controls and functions
+     (the old shell's Instructor console was removed in audit #6 2026-11-24). A press that changes the plant asks for a second press within 5 s */
+  let plantPop = null;
   const pressId = id => {
     const b = document.getElementById(id);
     if (b) b.click();
@@ -1109,57 +1129,25 @@
      step. Before (live test, Jennie, 2026-11-19): every press rebuilt the whole popup, and the save points came back a moment
      later (their list is read from storage), so with save points kept the fault rows first moved up and then down again, and the
      next press landed on another fault. */
-  const ins = {};
-  function instructor() {
-    if (!insPop) {
-      insPop = popup('Instructor', '', 360);
-      insPop.style.left = 'calc(var(--st-rail) + 12px)';
-      insPop.style.top = '56px';
-      insPop.hidden = true;
-      buildIns();
+  const plm = {};
+  function plantMenu() {
+    if (!plantPop) {
+      plantPop = popup('Plant menu', '', 360);
+      plantPop.style.left = 'calc(var(--st-rail) + 12px)';
+      plantPop.style.top = '56px';
+      plantPop.hidden = true;
+      buildPlant();
     }
-    insPop.hidden = !insPop.hidden;
-    if (!insPop.hidden) {
-      ins.name.value = call(() => lsSaves.name(), '') || '';
+    plantPop.hidden = !plantPop.hidden;
+    if (!plantPop.hidden) {
+      plm.name.value = call(() => lsSaves.name(), '') || '';
       fillSaves();
       fillTrips();
       fillFaults();
-      fillFrz();
     }
   }
-  /* the freeze of the instructor: the plant time stops and Run is refused until the instructor takes it off (instructor.js AN.freeze) */
-  function fillFrz() {
-    const F = call(() => AN.freeze(), null),
-      N = [],
-      again = () =>
-        setTimeout(() => {
-          fillFrz();
-          tick();
-        }, 200);
-    if (!F) N.push(E('p', 'st-none', 'Not available at this starting point.'));
-    else if (F.on) {
-      const b = E('button', 'st-b on', 'Take the freeze off');
-      b.title = 'The trainee can press Run again';
-      b.onclick = () => {
-        call(() => AN.freeze(false));
-        again();
-      };
-      N.push(b, E('span', 'st-cs', 'The plant is held since ' + clock(F.at) + '. Run is refused.'));
-    } else {
-      const b = E('button', 'st-b', 'Freeze the plant'),
-        m = E('span', 'st-pm');
-      b.title = 'The plant time stops and the trainee cannot run it on until the freeze is taken off';
-      b.onclick = () => {
-        const x = call(() => AN.freeze(true, 'Instructor'), '');
-        if (x) m.textContent = String(x);
-        else again();
-      };
-      N.push(b, m);
-    }
-    ins.frz.replaceChildren(...N);
-  }
-  function buildIns() {
-    const body = insPop._body;
+  function buildPlant() {
+    const body = plantPop._body;
     const head = t => body.append(E('h2', 'st-h', t));
     const row = cls => {
       const r = E('div', 'st-row' + (cls ? ' ' + cls : ''));
@@ -1177,13 +1165,11 @@
       arm(b, t, () => {
         if (running()) plantPause();
         pressId(id);
-        insPop.hidden = true;
+        plantPop.hidden = true;
         setTimeout(tick, 1500);
       });
       r.append(b);
     }
-    head('Freeze');
-    ins.frz = row();
     head('Save points');
     r = row('st-save');
     const nm = E('input', 'st-find');
@@ -1219,13 +1205,13 @@
     op.title = 'Adds a save point from a file kept on this computer';
     op.onclick = () => fi.click();
     r.append(nm, sv, op, fi);
-    ins.name = nm;
-    ins.saves = E('div', 'st-svl');
-    body.append(ins.saves);
+    plm.name = nm;
+    plm.saves = E('div', 'st-svl');
+    body.append(plm.saves);
     head('Trips');
-    ins.trips = row();
+    plm.trips = row();
     head('Faults');
-    ins.faults = row('st-col');
+    plm.faults = row('st-col');
   }
   /* the save points: the rows on screen stay until the new list is read, then they are swapped in one step */
   function fillSaves() {
@@ -1240,7 +1226,7 @@
           ld.title = 'Puts the whole plant back as it was saved, then pauses';
           dl.title = 'Removes this save point; it cannot be undone';
           arm(ld, 'Load', () => {
-            insPop.hidden = true;
+            plantPop.hidden = true;
             call(() => lsSaves.load(e));
             setTimeout(tick, 1500);
           });
@@ -1257,7 +1243,7 @@
           rr.append(E('span', '', e.name), ld, fb, dl);
           N.push(rr);
         }
-      ins.saves.replaceChildren(...N);
+      plm.saves.replaceChildren(...N);
     };
     Promise.resolve(call(() => lsSaves.list(), [])).then(show, () => show([]));
   }
@@ -1268,7 +1254,7 @@
     tt.title = 'The turbine trips now and the plant reacts to it';
     arm(tt, 'Turbine trip', () => {
       call(() => AN.turbine('trip'));
-      call(() => lsEventAdd('TCS', 'TCS', 'Instructor: TURBINE TRIP (TA-1)'));
+      call(() => lsEventAdd('TCS', 'TCS', 'Plant menu: TURBINE TRIP (TA-1)'));
       again();
     });
     N.push(tt);
@@ -1282,13 +1268,13 @@
       arm(lb, t, () => {
         const x = call(() => AN.turbine('52l', el.l52 ? 0 : 1), '');
         call(() =>
-          lsEventAdd('TCS', 'TCS', 'Instructor: ' + (el.l52 ? 'open' : 'close') + ' 52L1' + (x ? ': ' + x : ''))
+          lsEventAdd('TCS', 'TCS', 'Plant menu: ' + (el.l52 ? 'open' : 'close') + ' 52L1' + (x ? ': ' + x : ''))
         );
         again();
       });
       N.push(lb);
     }
-    ins.trips.replaceChildren(...N);
+    plm.trips.replaceChildren(...N);
   }
   /* the faults: always the same rows in the same order; "Clear all faults" is the last row, so nothing above it ever moves */
   function fillFaults() {
@@ -1367,7 +1353,7 @@
       };
       N.push(c);
     }
-    ins.faults.replaceChildren(...N);
+    plm.faults.replaceChildren(...N);
   }
   function speeds() {
     const sel = speedSel();
@@ -2587,7 +2573,7 @@
         return;
       }
       clearInterval(t);
-      document.body.classList.add('st');
+      document.body.classList.add('st', 'st-move');
       wait.remove();
       build();
       const P = pages(),

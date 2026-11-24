@@ -45,7 +45,7 @@ engine/hist.js
 engine/soe.js
 engine/gen-panel.js
 engine/alarm-pri.js
-engine/instructor.js
+engine/fault-groups.js
 ui/trace.js
 ui/panel.js
 ui/plant-window.js

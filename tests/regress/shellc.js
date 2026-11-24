@@ -1,8 +1,8 @@
 // 3.2.1 re-shell layout C (user approved mockup C and the build plan 2026-11-09): smoke test of the new layout behind ls-shell = c.
 // Report only (PASS / FAIL lines). The page opens with localStorage ls-shell = c set before the load, at 1366 x 768. Checks: the start
 // screen, 150 MW + Operator -> the overview, the 11 strip values (finite and drawn), each overview tile opens its page and the breadcrumb
-// brings the overview back, the alarm list opens and Esc closes it, the Instructor console lists the practice sections, the Engineer
-// button shows the tool rail and Library / Curves / Loop check open, a turbine trip from the Instructor gives the "Turbine trip · MFT"
+// brings the overview back, the alarm list opens and Esc closes it, the Engineer
+// button shows the tool rail and Library / Curves / Loop check open, a turbine trip (AN.turbine) gives the "Turbine trip · MFT"
 // pill and the 2 unit rows of the alarm list, and without ls-shell there is no #scstrip. The plant steps as the app does: one
 // AN.stepSet of ABC-001C (it steps every active sheet) and one WORLD.tick per 0.5 s. Usage: node tests/regress/shellc.js [html]
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/opt/node22/lib/node_modules/playwright');const fs=require('fs'),path=require('path');
@@ -46,11 +46,6 @@ try{
  await page.keyboard.press('Escape');await wait(400);
  const al2=await page.evaluate(()=>{const a=document.getElementById('scal');return !!a&&a.hidden});
  ck(al1&&al2,'alarm list opens from the strip ('+al1+') and Esc closes it ('+al2+')');
- /* 5. Instructor console with the practice sections */
- await click(page,'#scstrip .pill.ins');await wait(600);
- const ins=await page.evaluate(()=>{const c=document.getElementById('scins');if(!c||c.hidden)return{open:false};const h=[...c.querySelectorAll('*')].find(e=>e.children.length===0&&e.textContent.trim()==='Practice sections');const r=h&&(h.nextElementSibling||h.parentElement.nextElementSibling);return{open:c.offsetHeight>0,n:r?r.querySelectorAll('button').length:0,names:r?[...r.querySelectorAll('button')].map(b=>b.textContent).slice(0,3):[]}});
- ck(ins.open&&ins.n>0,'Instructor console opens and lists '+(ins.n||0)+' practice sections ('+(ins.names||[]).join(' | ')+')');
- await page.keyboard.press('Escape');await wait(300);
  /* 6. Engineer: the tool rail; Library, Curves, Loop check open */
  await click(page,'#scstrip .seg button','Engineer');await wait(2500);
  const e0=await page.evaluate(()=>({sceng:document.body.classList.contains('sceng'),rail:(document.getElementById('scetools')||{}).offsetHeight||0,tools:[...document.querySelectorAll('#scetools button')].map(b=>b.textContent)}));
@@ -61,17 +56,13 @@ try{
  ck(await tool('Curves',()=>{const w=document.getElementById('fxws');return document.body.classList.contains('scet-fx')&&!!w&&w.classList.contains('open')&&w.offsetWidth>0}),'Engineer: Curves opens in the right pane');
  ck(await tool('Loop check',()=>{const w=document.getElementById('lcdock');return document.body.classList.contains('scet-loop')&&!!w&&!w.hidden&&w.offsetWidth>0&&document.body.dataset.tab==='logic'}),'Engineer: Loop check opens in the right pane (stays in Engineer)');
  ck(await tool(/^\s*Logic\s*$/,()=>document.body.classList.contains('scet-logic')&&(document.getElementById('plantws')||{}).offsetWidth>0&&(document.getElementById('mid')||{}).offsetWidth>0),'Engineer: Logic side by side, plant page and sheet both shown');
- /* 7. turbine trip from the Instructor: the pill and the 2 unit rows */
- await click(page,'#scstrip .pill.ins');await wait(500);
- /* exact text: the practice section "Turbine trip and hot restart" is a button of the same console */
- await click(page,'#scins button',/^\s*Turbine trip\s*$/);await wait(200);/* user 2026-11-09: a confirmation dialog (shellc-ask.js) asks first; the second press stays only when the dialog is missing */
- if(!await click(page,'.scask .scok','Trip turbine'))await click(page,'#scins button',/^\s*Press again: Turbine trip\s*$/);await wait(300);
- await page.keyboard.press('Escape');
+ /* 7. turbine trip by the engine command (the old Instructor console was removed in audit #6 2026-11-24; the station Plant menu calls the same AN.turbine('trip')): the pill and the 2 unit rows */
+ await page.evaluate(()=>AN.turbine('trip'));await wait(300);
  await step(page,30);await wait(1600);
  const tr=await page.evaluate(()=>({pill:(document.querySelector('#scstrip .pill.trip')||{}).textContent||'',st:AN.unit&&AN.unit.tb&&AN.unit.tb.st,rows:window.lsShellC&&lsShellC.alarms?lsShellC.alarms().filter(a=>a.unit).map(a=>a.nm):[]}));
  await click(page,'#scstrip .pill',/Turbine trip/);await wait(700);
  const shown=await page.evaluate(()=>[...document.querySelectorAll('#scal .scrow')].map(r=>r.textContent).filter(t=>/TURBINE TRIP \(ABC-050|MASTER FUEL TRIP \(MFT/.test(t)).length);
- ck(/Turbine trip · MFT/.test(tr.pill)&&tr.rows.length===2&&shown===2,'turbine trip from the Instructor: pill "'+tr.pill.trim()+'" (turbine '+tr.st+'), unit rows '+tr.rows.length+' ('+tr.rows.join(' | ')+'), in the alarm list '+shown);
+ ck(/Turbine trip · MFT/.test(tr.pill)&&tr.rows.length===2&&shown===2,'turbine trip: pill "'+tr.pill.trim()+'" (turbine '+tr.st+'), unit rows '+tr.rows.length+' ('+tr.rows.join(' | ')+'), in the alarm list '+shown);
  ck(!errs.length,'no page error (ls-shell = c) '+errs.slice(0,3).join(' | '));
  await ctx.close();
  /* 8. ls-shell = old (layout C is the default: shellc-ask.js; the start screen Old layout sets old): the old layout, no #scstrip */

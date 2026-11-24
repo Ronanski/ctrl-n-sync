@@ -209,7 +209,7 @@
         {
           med: 'lube',
           w: W_S,
-          pts: ['qb.d', [QX - 3, BY - 60], [HX2, BY - 60], [HX2, AY - 60]],
+          pts: ['qb.d', [QX - 3, BY - 60], [QX - 62, BY - 60], [QX - 62, AY - 60], [QX - 3, AY - 60]] /* beta.305: up on the left of pump A, clear of its words */,
           flow: 'm:COP-B',
           arrow: false
         },
@@ -224,7 +224,7 @@
           x: TX - 375,
           y: BH,
           side: 't',
-          label: 'Generator bearing 3',
+          label: 'Bearing 3' /* apk test 2026-11-22: 'Generator bearing 3' and '4' ran into each other at 11 px; they sit on the generator */,
           key: 'TEGE1007',
           unit: '°C',
           dp: 0,
@@ -234,7 +234,7 @@
           x: TX - 245,
           y: BH,
           side: 't',
-          label: 'Generator bearing 4',
+          label: 'Bearing 4',
           key: 'TEGE1008',
           unit: '°C',
           dp: 0,
@@ -290,8 +290,8 @@
         { x: 1730, y: 440, side: 'l', label: 'Third transmitter', key: 'PTLO10073', unit: K, dp: 1, tag: 'PTLO10073' }
       ],
       texts: [
-        { x: 560, y: 978, s: 'control oil from the main oil tank', cls: 'hx-note' },
-        { x: 1020, y: 700, s: 'straight to the bearing oil header', cls: 'hx-note' }
+        { x: 700, y: 978, s: 'control oil from the main oil tank', cls: 'hx-note' },
+        { x: 1022, y: 440, s: 'straight to the bearing oil header', cls: 'hx-note' }
       ]
     }
   });

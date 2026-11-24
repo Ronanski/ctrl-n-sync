@@ -227,12 +227,12 @@
         }),
         at(E('spray', '', '', [], { flow: 'l:TICMS1022', noz: 'b' }), BX, 505, { id: 'hps', rot: 90 }),
         at(
-          C('TICMS1022', 'Bypass spray valve', { tag: 'TCV-FW1060', cname: 'High pressure bypass spray valve' }),
-          695,
+          C('TICMS1022', 'Bypass spray valve', { tag: 'TCV-FW1060', cname: 'High pressure bypass spray valve', wrap: 12 }),
+          700,
           498,
           { id: 'tcms', lab: 'b' }
         ),
-        at(X('XV-FW1061', 'Block valve', { cname: 'High pressure bypass spray block valve' }), 590, 498, {
+        at(X('XV-FW1061', 'Block valve', { cname: 'High pressure bypass spray block valve' }), 580, 498, {
           id: 'xfw61',
           lab: 'b',
           yn: [22, -40]
@@ -253,7 +253,9 @@
           866,
           { id: 'was', rot: 90, lab: 'l' }
         ),
-        at(X('MV-AS1394', '', { tag: 'MV-AS1394 · line drain', cname: 'Warming line drain valve' }), 896, 928, {
+        /* UI check 2026-11-24 C1: name and tag on two short lines between the drain and the warming line; the drain goes down to its own
+           flash chamber line end, clear of the cold reheat drain beside it */
+        at(X('MV-AS1394', 'Line drain', { tag: 'MV-AS1394', cname: 'Warming line drain valve' }), 896, 928, {
           id: 'wad',
           lab: 'b'
         }),
@@ -273,8 +275,8 @@
         at(X('MV-TS1001', 'Extraction 1 valve'), 470, 858, { id: 'ext', rot: -90, lab: 'l', yn: [-36, -34] }),
         at(L('extraction', 'High pressure heater 2'), 470, 918, { id: 'hph' }),
         at(E('spray', '', '', [], { flow: 'l:TICHR1002', noz: 'b' }), RX, 690, { id: 'dsh', rot: -90 }),
-        at(C('TICHR1002', 'Reheater spray valve', { tag: 'TCV-FW1150' }), 492, 697, { id: 'tfw50', lab: 'b' }),
-        at(X('XV-FW1151', 'Block valve', { cname: 'Reheater spray block valve' }), 580, 697, {
+        at(C('TICHR1002', 'Reheater spray valve', { tag: 'TCV-FW1150', wrap: 12 }), 492, 697, { id: 'tfw50', lab: 'b' }),
+        at(X('XV-FW1151', 'Block valve', { cname: 'Reheater spray block valve' }), 600, 697, {
           id: 'xfw51',
           lab: 'b',
           yn: [-38, -40]
@@ -308,7 +310,7 @@
         ...dHR2.items,
 
         /* ---- low pressure bypass to the condenser ---- */
-        at(E('valve', 'Bypass isolating valve', 'V-HR1001 · manual', [], { kind: 'manual', wrap: 24 }), 1430, HY, {
+        at(E('valve', 'Bypass isolating valve', 'V-HR1001 · manual', [], { kind: 'manual', wrap: 12 }), 1380, HY, {
           id: 'vhr',
           lab: 't'
         }),
@@ -333,7 +335,7 @@
         at(L('condensate', 'Condensate', { back: true }), 1320, 50, { id: 'cdl' }),
 
         /* ---- reheat temperature: the controller and the two gas dampers of the back pass ---- */
-        at(C('TICHR1002A', 'Reheat temperature control', { sym: 'ctl', unit: '°C', pvdp: 0, wrap: 30 }), 100, 64, {
+        at(C('TICHR1002A', 'Reheat temperature control', { sym: 'ctl', unit: '°C', pvdp: 0, wrap: 18 }), 100, 64, {
           id: 'tic',
           lab: 't'
         }),
@@ -405,7 +407,7 @@
         { med: 'steam', w: W_SM, pts: ['aux1.l', [948, 946], 'was.r'], flow: 'v:ZT-AS1011>1', arrow: false },
         { med: 'steam', w: W_SM, pts: ['was.l', [948, CY]], flow: 'v:ZT-AS1011>1', arrow: false },
         { med: 'drain', w: W_DR, pts: [[948, 928], 'wad.r'], flow: 'x:MV-AS1394', arrow: false },
-        { med: 'drain', w: W_DR, pts: ['wad.l', [864, 928]], to: 'flash chamber', flow: 'x:MV-AS1394', arrow: false },
+        { med: 'drain', w: W_DR, pts: ['wad.l', [790, 928], [790, 968]], to: 'flash chamber', flow: 'x:MV-AS1394', arrow: false },
         ...dCR2.pipes,
         { med: 'reheat', w: W_SM, pts: [[630, CY], 'pas.r'], flow: 'l:PICAS1005', arrow: false },
         { med: 'reheat', w: W_SM, pts: ['pas.l', 'aux2.t'], flow: 'l:PICAS1005', arrow: false },
@@ -472,8 +474,8 @@
       ],
       signals: [{ pts: ['tic.l', [20, 64], [20, by(350) - 16], 'dmb.a'] }, { pts: ['dmb.a', 'dma.a'] }],
       taps: [
-        { x: 546, y: MY, side: 't', label: 'Pressure', key: 'PT-MS1006-1', unit: K, tag: 'PT-MS1006-1' },
-        { x: 620, y: MY, side: 't', label: 'Temperature', key: 'TT-MS1007', unit: '°C', dp: 0, tag: 'TT-MS1007' },
+        { x: 475, y: MY, side: 't', label: 'Pressure', key: 'PT-MS1006-1', unit: K, tag: 'PT-MS1006-1' },
+        { x: 585, y: MY, side: 't', label: 'Temperature', key: 'TT-MS1007', unit: '°C', dp: 0, tag: 'TT-MS1007' },
         { x: 540, y: 498, side: 't', label: 'Spray water', key: 'FT-FW1059', unit: 't/h', tag: 'FT-FW1059' },
         { x: BX, y: 560, side: 'r', label: 'After bypass', key: 'PT-MS1021', unit: K, tag: 'PT-MS1021' },
         {
@@ -534,7 +536,7 @@
           unit: K,
           tag: 'PT-HR1003-1 / -2'
         },
-        { x: 860, y: HY, side: 't', label: 'Temperature', key: 'TT-HR1004', unit: '°C', dp: 0, tag: 'TT-HR1004' },
+        { x: 905, y: HY, side: 't', label: 'Temperature', key: 'TT-HR1004', unit: '°C', dp: 0, tag: 'TT-HR1004' },
         { x: XR, y: 474, side: 'r', label: 'After reheat valve A', key: 'an:Pip', unit: K, tag: 'PT-ST1002-1 / -2 / -3' },
         {
           x: 1548,
@@ -558,7 +560,7 @@
           dp: 0,
           tag: 'TT-HR1012-1 / -2'
         },
-        { x: 1410, y: 50, side: 'b', label: 'Spray water', key: 'FTCD1115', unit: 't/h', tag: 'FT-CD1115' },
+        { x: 1420, y: 50, side: 't', label: 'Spray water', key: 'FTCD1115', unit: 't/h', tag: 'FT-CD1115' },
         {
           x: tx(-236),
           y: ty(170),
@@ -608,7 +610,7 @@
         { x: 1534, y: 525, s: 'pressure turbine', cls: 'hx-name', anchor: 'start' },
         { x: tx(-156), y: ty(268), s: 'Condenser', cls: 'hx-name', anchor: 'middle' },
         { x: 1160, y: HY - 14, s: 'Hot reheat', cls: 'hx-zone', anchor: 'middle' },
-        { x: 560, y: CY - 14, s: 'Cold reheat', cls: 'hx-zone', anchor: 'middle' }
+        { x: 645, y: CY - 14, s: 'Cold reheat', cls: 'hx-zone', anchor: 'middle' }
       ]
     },
     trends: [

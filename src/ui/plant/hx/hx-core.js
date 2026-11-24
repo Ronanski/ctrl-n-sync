@@ -43,6 +43,18 @@
   };
 
   /* ---------- what a page is made of ---------- */
+  /* beta.305 (user 2026-11-22: "dpat kasi scalable lahat pra kht anong screen size"): the page is fitted whole on every screen of the
+     Operator Station where the whole page can be drawn at 0.55 or more (a 1280 x 800 tablet or desktop and up; the words keep 11 px and
+     were placed for that size), touch or mouse alike. A smaller screen (a phone) cannot hold the whole page at 11 px: there the drawing
+     keeps its readable size (0.68) and moves under the finger. The body class st-fit tells station.css which of the two it is */
+  HX.fitWhole = () => {
+    if (!window.LS_STATION) return false;
+    const e = document.getElementById('plsvg'),
+      r = e ? e.getBoundingClientRect() : null,
+      ok = r && r.width > 0 ? Math.min(r.width / 1920, r.height / 1140) >= 0.55 : matchMedia('(pointer: coarse)').matches;
+    if (document.body) document.body.classList.toggle('st-fit', ok);
+    return ok;
+  };
   HX.V = (label, key, unit, dp) => ({ label, key, unit: unit || '', dp: dp == null ? 1 : dp });
   HX.E = (sym, name, tag, vals, o) => Object.assign({ k: 'eq', sym, name, tag: tag || '', vals: vals || [] }, o || {});
   HX.M = (sym, mach, name, vals, o) => Object.assign({ k: 'mach', sym, mach, name, vals: vals || [] }, o || {});
@@ -215,6 +227,8 @@
   };
 
   /* ---------- layout: lanes -> positions ---------- */
+  /* vstack: a value name longer than this goes on its own line (see the rows of words in itemSvg) */
+  const VSTACK = 12;
   /* room of one item above and below its centre: symbol + the words the core writes around it */
   function measure(it) {
     if (it.k === 'link') return { up: 15, dn: 15 };
@@ -225,7 +239,7 @@
       lines = it.name ? wrap(it.name, it.wrap || (side ? 22 : 19)).length : 0,
       tg = tagOf(it) ? 1 : 0,
       rows =
-        (it.k === 'mach' || it.k === 'valve' ? 1 : 0) + (it.k === 'loop' ? 1 + (it.pv ? 1 : 0) : 0) + it.vals.length;
+        (it.k === 'mach' || it.k === 'valve' ? 1 : 0) + (it.k === 'loop' ? 1 + (it.pv ? 1 : 0) : 0) + it.vals.length + (it.vstack ? it.vals.filter(v => v.label.length > VSTACK).length : 0);
     if (side) {
       const hh = ((lines + tg + rows) * 14) / 2 + 4;
       return { up: Math.max(-box[1] + 2, hh), dn: Math.max(box[3] + 2, hh) };
@@ -404,7 +418,20 @@
           `<text class="hx-st none" data-vs="${esc(it.valve)}" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">-----</text>`
       ]);
     /* audit 2026-11-21 B2: the output and its % are one line of text, so "100.0" pushes the % on instead of running into it */
+    /* beta.305: mvb, the output on its own line under the mode pill, for two loops side by side (their pills grow on a small screen) */
     if (it.k === 'loop') {
+      if (it.mvb) {
+      body.push([
+        16.5,
+        (bx, by, an) =>
+          `<g class="hx-mode" data-mode="${esc(it.loop)}" transform="translate(${n1(bx - (an === 'middle' ? 25 : an === 'end' ? 50 : 0))} ${n1(by - 11)})"><rect width="50" height="15" rx="7.5"/><text x="25" y="11" text-anchor="middle">-----</text></g>`
+      ]);
+      body.push([
+        14.5,
+        (bx, by, an) =>
+          `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}"><tspan class="hx-val" data-lp="${esc(it.loop)}|mv">-----</tspan><tspan class="hx-unit"> %</tspan></text>`
+      ]);
+      } else
       body.push([
         16.5,
         (bx, by, an) =>
@@ -419,7 +446,18 @@
         ]);
       }
     }
-    for (const v of it.vals)
+    for (const v of it.vals) {
+      /* vstack (apk test 2026-11-22, Sampling): items in narrow columns write a long name on its own line and the value under it,
+         so "Cation conductivity 0.055 µS/cm" does not run into the next column at 11 px on a 1280 tablet */
+      if (it.vstack && v.label.length > VSTACK) {
+        body.push([13, (bx, by, an) => `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">${esc(v.label)}</text>`]);
+        body.push([
+          14,
+          (bx, by, an) =>
+            `<text x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
+        ]);
+        continue;
+      }
       body.push([
         14,
         (bx, by, an) =>
@@ -427,14 +465,23 @@
             ? `<text class="hx-lab" x="${n1(bx - 4)}" y="${n1(by)}" text-anchor="end">${esc(v.label)}</text><text x="${n1(bx + 3)}" y="${n1(by)}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
             : `<text class="hx-lab" x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}">${esc(v.label)} <tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}">-----</tspan><tspan class="hx-unit"> ${esc(v.unit)}</tspan></text>`
       ]);
+    }
+    /* apk test of the user 2026-11-22 ("kala ko naayos na mga text nito?"): the rows of words were placed 14 units apart, the room of a
+       12.6-unit word. Drawn small (a page fitted whole on a 1280 x 800 tablet, about 0.6) a word is 11 screen px = about 18 units, so
+       the lines of one label ran into each other ("Condensate" over "pump A", "Current" over "Strainer"). Each row sits in its own
+       g.hx-row with the edge it is stacked from (data-ey, the symbol side) and its place (data-y0); spread() moves the rows apart by the
+       real size of their words, away from the symbol, so a label stays a stack of whole lines at 11 px */
+    const row = (str, y0, ey) => `<g class="hx-row" data-y0="${n1(y0)}" data-ey="${n1(ey)}">${str}</g>`;
     let words = '';
     if (side) {
       const all = head.concat(body),
         tot = all.reduce((q, r) => q + r[0], 0),
-        bx = lab === 'r' ? box[2] + 7 : box[0] - 7;
-      let by = -tot / 2 + 10 + (it.ly || 0);
+        bx = (lab === 'r' ? box[2] + 7 : box[0] - 7) + (it.lx || 0) /* beta.305: lx moves a side label */,
+        b0 = -tot / 2 + 10 + (it.ly || 0),
+        ey = b0 + (tot - all[all.length - 1][0]) / 2 - 4;
+      let by = b0;
       for (const r of all) {
-        words += r[1](bx, by, lab === 'r' ? 'start' : 'end');
+        words += row(r[1](bx, by, lab === 'r' ? 'start' : 'end'), by, ey);
         by += r[0];
       }
     } else {
@@ -442,18 +489,18 @@
       if (lab === 'b') {
         by = box[3] + 13;
         for (const r of head.concat(body)) {
-          words += r[1](0, by, 'middle');
+          words += row(r[1](0, by, 'middle'), by, box[3] + 4);
           by += r[0];
         }
       } else {
         by = box[1] - 6;
         for (let i = head.length - 1; i >= 0; i--) {
-          words += head[i][1](0, by, 'middle');
+          words += row(head[i][1](0, by, 'middle'), by, box[1] - 6);
           by -= head[i][0];
         }
         by = box[3] + 15;
         for (const r of body) {
-          words += r[1](0, by, 'middle');
+          words += row(r[1](0, by, 'middle'), by, box[3] + 6);
           by += r[0];
         }
       }
@@ -751,8 +798,16 @@
               : m;
   /* the state in words; a machine that is a valve or a set of valves (its name is its tag: XV-..., MV-...) is open / closed */
   /* audit 2026-11-21 C6: a valve or damper driven as a machine (steam seal feed, exhaust hood spray) said Running: vw = drawn as a valve */
+  /* UI check 2026-11-24 C6: a TCS system drawn as its valve (gland steam seal, hood spray: a name without a tag number) is in or
+     out of service; its valve opening is a value of its own (PV-GS1031 position, FV-CD1904 open) */
   const stTxt = (s, name, vw) =>
-    vw || /^(XV|MV|V)-/.test(name || '')
+    vw && name && !/d/.test(name)
+      ? s === 'run'
+        ? 'In service'
+        : s === 'stop'
+          ? 'Out of service'
+          : '-----'
+      : vw || /^(XV|MV|V)-/.test(name || '')
       ? s === 'run'
         ? 'Open'
         : s === 'stop'
@@ -949,13 +1004,18 @@
       /* the realistic drawing is never drawn under 0.8 on the screen (its 11 px words cross each other below it: 36 on Feedwater at
          1280 with the page menu open, the station frame drawn at 0.86): its minimum width (hx.css 1400 px) grows to that, the page
          scrolls. The size of the frame is read (its CSS px against its screen px), so a smaller window or an open menu are both met */
-      if (svg.classList.contains('hx-real') && svg.viewBox && svg.viewBox.baseVal && svg.clientWidth) {
+      /* apk test of the user 2026-11-22: on a touch screen of the Operator Station the page is fitted whole (station.css), so the
+         drawing gets no minimum width there */
+      if (HX.fitWhole()) {
+        if (svg.style.minWidth) svg.style.minWidth = '';
+      } else if (svg.classList.contains('hx-real') && svg.viewBox && svg.viewBox.baseVal && svg.clientWidth) {
         const vb = svg.viewBox.baseVal.width,
           fr = svg.getBoundingClientRect().width / svg.clientWidth,
-          w = fr > 0 ? Math.ceil((0.8 * vb) / fr) : 0,
-          w0 = Math.max(1400, w);
+          st = !!window.LS_STATION,
+          w = fr > 0 ? Math.ceil(((st ? 0.68 : 0.8) * vb) / fr) : 0,
+          w0 = st ? w : Math.max(1400, w);
         if (w && Math.abs((parseFloat(svg.style.minWidth) || 1400) - w0) > 2)
-          svg.style.minWidth = w0 > 1400 ? w0 + 'px' : '';
+          svg.style.minWidth = st || w0 > 1400 ? w0 + 'px' : '';
       }
     }
     /* the scale class of each drawing (it hides the tag numbers, so it comes before the words are read) */
@@ -982,6 +1042,29 @@
           g.dataset.tr0 + (s > 1.01 ? ` translate(7 7) scale(${(s * 1.01).toFixed(3)}) translate(-7 -7)` : '')
         ]);
       }
+      /* screen sizes 2026-11-23: the mode pill grows with its word (the word grew to 11 px, the 50 x 15 pill did not); it grows from its centre and the output value beside it moves on by half */
+      for (const g of svg.querySelectorAll('.hx-mode')) {
+        const host = g.parentNode,
+          rc = g.querySelector('rect'),
+          T = g.querySelectorAll(':scope > text');
+        if (!host || !host.getScreenCTM || !rc || !T.length) continue;
+        const M = host.getScreenCTM(),
+          k = M ? Math.hypot(M.a, M.b) : 0,
+          s = k ? Math.max(1, MINPX / (10.4 * k)) : 1,
+          on = s > 1.01,
+          A = (e, a, grown, base) => {
+            const v = on ? n1(grown) : base;
+            if (e.getAttribute(a) !== v) W.push([e, 'at', [a, v]]);
+          };
+        A(rc, 'x', 25 - 25 * s, '0');
+        A(rc, 'width', 50 * s, '50');
+        A(rc, 'height', 15 * s, '15');
+        A(rc, 'y', 7.5 - 7.5 * s, '0');
+        A(rc, 'rx', 7.5 * s, '7.5');
+        A(T[0], 'x', 25, '25');
+        A(T[0], 'y', 11 + 3.5 * (s - 1), '11');
+        if (T[1]) A(T[1], 'x', 56 + 25 * (s - 1), '56');
+      }
       for (const t of svg.querySelectorAll('text, tspan')) {
         if (quick && MTK.get(t) === SK[SV.indexOf(svg)]) continue;
         if (!t.getClientRects().length || t.closest('.hx-yn')) continue;
@@ -1001,8 +1084,30 @@
     }
     for (const [e, k, v] of W)
       if (k === 'tr') e.getAttribute('transform') !== v && e.setAttribute('transform', v);
+      else if (k === 'at') e.setAttribute(v[0], v[1]);
       else if (e.style.fontSize !== v) e.style.fontSize = v;
+    if (!quick || W.length) spread(SV);
     return MEAS;
+  }
+  /* the rows of a label apart by the size their words have now (see row() of the item): 14 units hold a 12.6-unit word; a word grown
+     to 11 screen px needs 14 x (11 / k) / 12.6. Only on a touch screen of the Operator Station, where the page is fitted whole; a mouse
+     screen keeps the drawing as it was planned (never under 0.8 there) */
+  function spread(SV) {
+    const on = !!window.LS_STATION /* screen sizes 2026-11-23: every station screen, the phone too (its drawing is 0.68) */,
+      R = [];
+    for (const svg of SV)
+      for (const r of svg.querySelectorAll('.hx-row')) {
+        let g = 1;
+        if (on) {
+          const M = r.parentNode && r.parentNode.getScreenCTM && r.parentNode.getScreenCTM(),
+            k = M ? Math.hypot(M.a, M.b) : 0;
+          if (k) g = Math.max(1, MINPX / k / 12.6);
+        }
+        const d = g > 1.01 ? (+r.dataset.y0 - +r.dataset.ey) * (g - 1) : 0;
+        R.push([r, Math.abs(d) > 0.3 ? `translate(0 ${n1(d)})` : '']);
+      }
+    for (const [r, v] of R)
+      if ((r.getAttribute('transform') || '') !== v) v ? r.setAttribute('transform', v) : r.removeAttribute('transform');
   }
   let BK = 0;
   function backHits(page) {

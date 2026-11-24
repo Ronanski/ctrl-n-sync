@@ -43,7 +43,9 @@ function ditlCapture() {
     sh: ditlAll().map(s => ({
       name: s.name,
       s: ditlPick(s, DITL_SH),
-      nl: s.nl ? { ...ditlPick(s.nl, DITL_NL), g: (s.nl.gates || []).map(g => ditlPick(g, DITL_G)) } : null
+      /* beta.276 (JENNIE, eng_worker key list): a netlist with no nets (TCS sheets with n 0) has _v [] where it was scanned and none where
+         it was not (the page mirror never scans): the same state, so an empty _v is null on both sides */
+      nl: s.nl ? (o => (Array.isArray(o._v) && !o._v.length && (o._v = null), o))({ ...ditlPick(s.nl, DITL_NL), g: (s.nl.gates || []).map(g => ditlPick(g, DITL_G)) }) : null
     })),
     MST: ditlEnc(MST),
     MS: ditlEnc(MS),
