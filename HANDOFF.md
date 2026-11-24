@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 07:40 PHT** (LEADER : YUA, lane 0, beta.540: sariling I/O address ng 8 valve ng DITL-38. Bago nito YUA, beta.530: field state, X.ftrip / X.fault / X.state, s.src, DITL-80L; SAORI, lane 8, beta.528).
+Huling update: **2026-11-25 07:40 PHT** (LEADER : YUA, lane 0, beta.540: sariling I/O address ng 8 valve ng DITL-38. Bago nito RARA, lane 4, beta.534: field state ng BOP, VCB; YUA, beta.530: field state, X.ftrip / X.fault / X.state, s.src, DITL-80L; SAORI, lane 8, beta.528).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
