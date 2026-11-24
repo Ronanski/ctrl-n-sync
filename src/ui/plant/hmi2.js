@@ -243,8 +243,8 @@
     return isFinite(v) ? v : null;
   };
   const EST = {
+    /* TIFG1092A and the backpass banks TIFG1100 ~ 1113 are field rows of lane 3 (src/world/field/boiler.js), no estimates (beta.500) */
     /* gas temperatures: ambient + (snapshot - ambient) x kb; after a heat exchanger also a little lower at low gas flow */
-    TIFG1092A: E => E.T(905, 0),
     TIFG1092B: E => E.T(900, 0),
     TIFG1095A: E => E.T(882, 0),
     TIFG1096A: E => E.T(855, 0),
@@ -252,19 +252,6 @@
     TIFG1096B: E => E.T(846, 0),
     TIFG1009A: E => E.T(870, 0),
     TIFG1009B: E => E.T(870, 0),
-    TIFG1100: E => E.T(861, 1),
-    TIFG1101: E => E.T(850, 1),
-    TIFG1102: E => E.T(657, 1),
-    TIFG1103: E => E.T(691, 1),
-    TIFG1104: E => E.T(504, 1),
-    TIFG1105: E => E.T(583, 1),
-    TIFG1106: E => E.T(443, 1),
-    TIFG1107: E => E.T(501, 1),
-    TIFG1108: E => E.T(388, 1),
-    TIFG1109: E => E.T(425, 1),
-    TIFG1110: E => E.T(359, 1),
-    TIFG1111: E => E.T(383, 1),
-    TIFG1113: E => E.T(369, 1),
     /* the air preheater: Tab 3, boiler.js AN_GAS; the two sides of the snapshot differ by a few degrees */
     TIFG1124: E => E.gi - 2,
     TIFG1125: E => E.gi + 2,

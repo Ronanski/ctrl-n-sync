@@ -6,6 +6,7 @@
 - **DITL-38 at iba pang drawing na walang address** (RARA): puwede nang bigyan ng bind row ang isang text ng isang kopya (`to` "DITL-38 #MV-FW1002", `text` "MCV OPEN COMMAND"). Puwede ring sa isang kopya lang ang dagdag na FROM.
 - **DITL-21D row 22** (STATION 103): may kopya na ang "BOTTOM ASH SCREW COOLER A STOPPED" para sa B, C at D (O.0297 / O.0615 / O.0617, OPC-ANN-G2~G4 O.137D/E/F). Bawat isa ay binabasa ang sariling DITL-21A. Dati, A lang ang may hilera.
 - **Field contact sa wire ng output** (KIRARA, "side R", DITL-19 MIA-CL1061-A2): ang ordinaryong DI row ng lane ang nagpapatakbo nito.
+- **Lumang fallback na tinanggal**: 14 gas temperature sa hmi2.js (TIFG1092A at TIFG1100 hanggang 1113, tantiya mula sa 150 MW snapshot) at PT-IA1064-A/B sa hmi-bias.js. Field row na ng lane 3 ang tanging pinagmulan.
 - README ng bind, inst at field; bagong test `tests/lanes/integrator/copy-tags.cjs`.
 
 ## Sinuri

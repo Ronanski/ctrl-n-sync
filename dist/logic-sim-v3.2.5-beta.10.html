@@ -157333,10 +157333,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build c54440d'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 8caef90'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build c54440d';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 8caef90';
     } catch (e) {}
   };
   upd();
@@ -348887,7 +348887,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build c54440d'));
+    row('Version', E('span', 'scsver', ver + ' · build 8caef90'));
   }
   function openSet(near) {
     if (!set) {
@@ -354390,8 +354390,8 @@ window.PLANT_SYS = [
     return isFinite(v) ? v : null;
   };
   const EST = {
+    /* TIFG1092A and the backpass banks TIFG1100 ~ 1113 are field rows of lane 3 (src/world/field/boiler.js), no estimates (beta.500) */
     /* gas temperatures: ambient + (snapshot - ambient) x kb; after a heat exchanger also a little lower at low gas flow */
-    TIFG1092A: E => E.T(905, 0),
     TIFG1092B: E => E.T(900, 0),
     TIFG1095A: E => E.T(882, 0),
     TIFG1096A: E => E.T(855, 0),
@@ -354399,19 +354399,6 @@ window.PLANT_SYS = [
     TIFG1096B: E => E.T(846, 0),
     TIFG1009A: E => E.T(870, 0),
     TIFG1009B: E => E.T(870, 0),
-    TIFG1100: E => E.T(861, 1),
-    TIFG1101: E => E.T(850, 1),
-    TIFG1102: E => E.T(657, 1),
-    TIFG1103: E => E.T(691, 1),
-    TIFG1104: E => E.T(504, 1),
-    TIFG1105: E => E.T(583, 1),
-    TIFG1106: E => E.T(443, 1),
-    TIFG1107: E => E.T(501, 1),
-    TIFG1108: E => E.T(388, 1),
-    TIFG1109: E => E.T(425, 1),
-    TIFG1110: E => E.T(359, 1),
-    TIFG1111: E => E.T(383, 1),
-    TIFG1113: E => E.T(369, 1),
     /* the air preheater: Tab 3, boiler.js AN_GAS; the two sides of the snapshot differ by a few degrees */
     TIFG1124: E => E.gi - 2,
     TIFG1125: E => E.gi + 2,
@@ -361943,24 +361930,15 @@ window.PLANT_SYS = [
       vTx.textContent = spray == null ? '-----' : o ? 'OPEN ' + fmt(spray, 1) + ' %' : 'CLOSED';
       vTx.setAttribute('fill', spray == null ? '#6b7480' : o ? '#e5484d' : '#2fa56a');
     });
-    /* the buffer tanks: PT-IA1064-A / B (I/O list AI0438 / AI0470, PICT 39) are on no logic sheet. The over-all instrument list puts
-       them on P&ID PD-023 sheet 6/6, the instrument air drawing (with IA1706 instrument air to unit 1 and IA1128 the turning gear
-       buffer tank): the tank is filled from the instrument air header, so without a logic value it shows the instrument air
-       pressure of the plant model (unit.js AN_AIR, U.iaP; 7.0 kg/cm2 at 150 MW = these two gauges on 39.PNG). ASSUMED: no drop
-       across the tank inlet (no data) */
-    const PII = {},
-      PIL = {},
-      PIM = { v: null };
-    const piShow = () => {
-      for (const [id, tg] of [['gRH', 'PIIA1064A'], ['gSH', 'PIIA1064B']]) {
-        const v = PIL[tg] != null ? PIL[tg] : PIM.v;
-        PII[tg] = v;
-        DR[id].tv.textContent = fmt(v, 1);
-        DR[id].tv.setAttribute('fill', v == null ? '#6b7480' : '#f4f7f9');
-      }
+    /* the buffer tanks: PT-IA1064-A / B (I/O list AI0438 / AI0470, PICT 39), P&ID PD-023 sheet 6/6: the field rows of lane 3
+       (src/world/field/boiler.js), on no logic sheet */
+    const PII = {};
+    const piShow = (id, tg, v) => {
+      PII[tg] = v;
+      DR[id].tv.textContent = fmt(v, 1);
+      DR[id].tv.setAttribute('fill', v == null ? '#6b7480' : '#f4f7f9');
     };
-    for (const tg of ['PIIA1064A', 'PIIA1064B']) val(tg, '', v => ((PIL[tg] = v), piShow()));
-    val('UNIT.iaP', '', v => ((PIM.v = v), piShow()));
+    for (const [id, tg] of [['gRH', 'PIIA1064A'], ['gSH', 'PIIA1064B']]) val(tg, '', v => piShow(id, tg, v));
     /* the interlock memories of ABC-020: purge (reheater >= 30 % M.0506, superheater >= 60 % M.0507), ID fan start (> 95 %
        M.3440 / M.3441) */
     const MEM = {};
