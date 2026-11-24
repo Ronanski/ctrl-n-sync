@@ -260,7 +260,7 @@ function anUnitWrite(list, x) {
     const r = b.rng,
       y = r ? Math.max(r.lo, Math.min(r.hi, xi)) : xi;
     s.val = s.act = y;
-    s.src = 1; /* beta.520 (AKIHO): the model writes this point: it is live (the 150 MW snapshot seed sets s.snap only) */
+    s.src = 1; /* beta.530 (AKIHO): the model writes this point: it is live (the 150 MW snapshot seed sets s.snap only) */
   });
 }
 /* the value of every block of the list now (anchor of "Start at 150 MW"), kept on the list */

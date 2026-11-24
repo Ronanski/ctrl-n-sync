@@ -7,7 +7,7 @@ const bad = [];
 const A = /^[IMO]\.[0-9A-F]{4}$/;
 for (const r of w.LANE_BIND) {
   if (!r.src) bad.push('bind ' + r.lane + ': no src ' + JSON.stringify(r));
-  if (r.to && r.text ? !(/ #S/.test(r.to) && (r.tag || r.addr) && (!r.addr || A.test(r.addr) || /^AId{4}$/.test(r.addr))) : r.to ? !(+r.row > 0 && (r.from || r.addr)) : !(r.stn && A.test(r.addr || '') && r.tag)) bad.push('bind ' + r.lane + ': row format ' + JSON.stringify(r));
+  if (r.to && r.text ? !(/ #\S/.test(r.to) && (r.tag || r.addr) && (!r.addr || A.test(r.addr) || /^AI\d{4}$/.test(r.addr))) : r.to ? !(+r.row > 0 && (r.from || r.addr)) : !(r.stn && A.test(r.addr || '') && r.tag)) bad.push('bind ' + r.lane + ': row format ' + JSON.stringify(r));
 }
 for (const e of w.LANE_INST) {
   if (!e.sheet || !Array.isArray(e.units) || !e.units.length) bad.push('inst ' + e.set + ': sheet / units');

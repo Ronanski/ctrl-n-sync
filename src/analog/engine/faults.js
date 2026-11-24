@@ -74,7 +74,7 @@ function anFaultPut(f, on) {
   }
   return n;
 }
-/* beta.520 (lane plan): the field states of the lanes (src/world/field/<lane>.js, FIELD.state): a field device the plant model has no physics
+/* beta.530 (lane plan): the field states of the lanes (src/world/field/<lane>.js, FIELD.state): a field device the plant model has no physics
    for (a knife gate, a belt tracking switch, a pit switch). It stands in its documented normal state; only the instructor changes it
    (group fs). AN_UNIT.fst = the ids out of their normal state (in the keyframe, so the save and the mirror page have it; none = all normal) */
 const anFieldStates = () => ((typeof window !== 'undefined' ? window : globalThis).FIELD || {}).states || [];
