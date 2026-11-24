@@ -920,8 +920,8 @@
   /* ---------- start screen ---------- */
   const STATES = [
     ['Cold', 'loadcold', 'Start-up from zero: drum 0 kg/cm², bed and water 30 °C'],
-    ['Warm', 'loadwarm', 'Warm restart: drum 40 kg/cm², bed about 360 °C'],
-    ['Hot', 'loadhot', 'Hot restart: drum 100 kg/cm², bed about 700 °C'],
+    ['Warm', 'loadwarm', 'Warm restart: about 13 h after a trip at 150 MW, bottled up, HP turbine metal 404 °C'],
+    ['Hot', 'loadhot', 'Hot restart: shortly after a turbine trip at 150 MW, bottled up, HP turbine metal 487 °C'],
     ['150 MW', 'load150', 'The unit at 150 MW (control-room snapshot)']
   ];
   function loadState(id) {
