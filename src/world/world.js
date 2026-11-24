@@ -557,6 +557,23 @@
         const b = (s._inst && s._inst.base) || s;
         s._inst.tadd = W.xText.get(bare(b.name) + ' #' + (s._inst.lbl || LET[s._inst.k])) || null;
       }
+    /* beta.540 (SAORI): DITL-38 is drawn once for its eight valves and names no device: the field contacts beside the wires (MIL, MIT, ZSO, ZSC,
+       TSC) and the two commands. Each copy takes the I/O point of its own valve from the I/O list by type + device (ZSO-FW1001 STN102 I.0000,
+       MOR-FW1001 O.0130); the torque switch is TS-FW1001 there. A bind row of a lane on the same text stays. The one typical drawing of
+       the DITL set: the other valve drawings name their own tags */
+    {
+      const mcv = S.sheets.find(x => x.name.endsWith(')DITL-38')),
+        TY = { MIL: 'MIL', MIT: 'MIT', ZSO: 'ZSO', ZSC: 'ZSC', TSC: 'TS', 'MCV OPEN COMMAND': 'MOR', 'MCV CLOSE COMMAND': 'MOS' };
+      for (const s of (mcv && W.instOf.get(mcv)) || []) {
+        const dev = String(s._inst.lbl || '').replace(/^MV-/, ''),
+          m = new Map(s._inst.tadd || []);
+        for (const t in TY) {
+          const w = !m.has(t) && (window.WIRING || []).find(q => q[3] === TY[t] + '-' + dev);
+          if (w) m.set(t, w[3] + ' ' + w[2]);
+        }
+        s._inst.tadd = m.size ? m : null;
+      }
+    }
     /* 3.2.1 d2: the row of a sootblower sheet that names one sootblower (output RS text without its addresses), for the copies of DITL-80G */
     const sbN = t => String(t || '').replace(/\b[IMOB]\.[0-9A-F]{4}\b/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
     let sbIdx = null;
