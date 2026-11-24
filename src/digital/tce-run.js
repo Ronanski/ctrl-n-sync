@@ -398,6 +398,115 @@
     }
     return res;
   }
+  /* ---------- a sheet of the Generator Protection / Breaker Logic Diagram 310SD03-743 (SH-G-1A ~ SH-G-9, typed in the IBD form, `dwg`):
+     the same netlist shape as net(), read from the parts these sheets use:
+       - gate G:OR / G:A: its input edge is the bar (size[2], or the plain vertical line drawn beside its left side); a wire ending on that
+         edge is an input; NC = the NOT circle on a line;
+       - r box with a key and "DI" + time printed in it: a pick-up delay (ML 47 TP; the relay drawing's DI = delayed in); a box with a key
+         and no DI is a signal of the equipment (selector, switch position: a port); a box with no key is a panel the signal goes to;
+       - s source with a continuation circle in it: an input from the sheet printed beside it ("SH-G-1B"), joined by the circle number to the
+         circle of the same number on that sheet; an s source with no circle: a contact of the equipment or a relay (a port, named by
+         the words in it);
+       - a wire ending at a continuation circle: an output to the sheet printed beside the circle ("SH-G-*" = to the sheets that read it).
+     ---------- */
+  function gnet(s) {
+    const u = (s.f[2] - s.f[0]) / 1000,
+      tol = 2.2 * u,
+      T = s.t || [],
+      L = (s.l || []).filter(l => l[0][0] === l[1][0]);
+    const words = (x0, y0, x1, y1) => T.filter(t => t[0] >= x0 && t[0] <= x1 && t[1] >= y0 && t[1] <= y1);
+    const circles = (s.o || []).map(([x, y, r]) => {
+      const n = T.find(t => Math.abs(t[0] - x) < 2 && Math.abs(t[1] - y) < 2),
+        sh = T.filter(t => /^SH-G-/.test(t[2]) && t[0] > x && t[0] < x + 60 && t[1] - y > -10 && t[1] - y < 25).sort((a, b) => Math.abs(a[1] - y - 5) - Math.abs(b[1] - y - 5))[0];
+      return { x, y, r, n: n ? String(n[2]) : '', sh: sh ? sh[2].replace(/^SH-/, '') : '' };
+    });
+    const blocks = [],
+      marks = [],
+      res = { id: s.id, inputs: [], outc: [], blocks, macros: [], marks: [], outputs: [], open: [], ports: {} };
+    for (const b of s.b || []) {
+      const [key, type, no, x, y, notes, pins, size] = b;
+      if (type === 'NC') {
+        marks.push({ key, type, x, y, r: size ? size[0] : 11 });
+        continue;
+      }
+      const [w, h, bar] = size || [20, 20, 0],
+        ex = x - w / 2,
+        bl = L.find(l => Math.abs(l[0][0] - ex) <= tol && Math.min(l[0][1], l[1][1]) <= y && Math.max(l[0][1], l[1][1]) >= y),
+        ys = bar ? [y - bar / 2, y + bar / 2] : bl ? [Math.min(bl[0][1], bl[1][1]), Math.max(bl[0][1], bl[1][1])] : [y - h / 2, y + h / 2];
+      blocks.push({ key, type, no, notes: notes || [], pins: pins || {}, ex, ys, ins: [] });
+    }
+    for (const r of s.r || []) {
+      const [key, x, y, w, h, text] = r;
+      if (!key) continue;
+      const z = words(x, y, x + w, y + h).map(t => String(t[2]));
+      if (z[0] === 'DI') {
+        const m = /^([\d.]+)\s*(s|min)$/i.exec(z[1] || '');
+        blocks.push({ key, type: m ? 'TP' : 'TP?', no: '', notes: m ? ['TP:' + +m[1] * (/min/i.test(m[2]) ? 60 : 1)] : ['time "' + (z[1] || '') + '" not printed'], pins: {}, ex: x, ys: [y, y + h], ins: [] });
+      } else res.ports[key] = 'PLANT:' + s.id + '.' + key + ' ' + (text || z.join(' ') || '').trim();
+    }
+    for (const x of s.s || []) {
+      const [key, x0, y0, x1, y1] = x,
+        c = circles.find(c => c.x >= x0 - 1 && c.x <= x1 + 1 && c.y >= y0 - 1 && c.y <= y1 + 1);
+      const shw = T.find(t => /^SH-G-/.test(t[2]) && t[0] >= x0 && t[0] <= x1 + 60 && t[1] >= y0 && t[1] <= y1 + 30);
+      if (c && (c.sh || shw)) res.inputs.push({ key, letter: c.n, name: '', from: [(c.sh || shw[2]).replace(/^SH-/, '')] });
+      else {
+        /* named by its words and the words of its row to the left (the relay or switch it is a contact of) */
+        const z = words(x0 - 400, y0 - 12, x0 - 2, y1 + 2)
+          .concat(words(x0 - 2, y0 - 2, x1 + 2, y1 + 2))
+          .map(t => String(t[2]));
+        res.ports[key] = 'PLANT:' + s.id + '.' + key + (z.length ? ' ' + z.join(' ') : '');
+      }
+    }
+    res.marks = marks.map(m => ({ key: m.key, type: m.type, in: null }));
+    const mk = Object.fromEntries(res.marks.map(m => [m.key, m]));
+    const W = s.w || [];
+    const onSeg = (p, v) =>
+      v[1].some((a, i) => {
+        if (!i) return false;
+        const b = v[1][i - 1];
+        return (
+          (a[0] === b[0] && near(a[0], p[0], 0.6) && p[1] >= Math.min(a[1], b[1]) - 0.6 && p[1] <= Math.max(a[1], b[1]) + 0.6) ||
+          (a[1] === b[1] && near(a[1], p[1], 0.6) && p[0] >= Math.min(a[0], b[0]) - 0.6 && p[0] <= Math.max(a[0], b[0]) + 0.6)
+        );
+      });
+    const outSeen = new Set();
+    for (const w of W) {
+      const nt = w[0],
+        p = w[1][w[1].length - 1];
+      const b = blocks.find(b => near(p[0], b.ex, tol) && p[1] >= b.ys[0] - tol && p[1] <= b.ys[1] + tol);
+      if (b) {
+        b.ins.push({ net: nt, y: p[1], side: 'l' });
+        continue;
+      }
+      const m = marks.find(m => Math.hypot(m.x - p[0], m.y - p[1]) <= m.r + tol);
+      if (m) {
+        mk[m.key].in = nt;
+        continue;
+      }
+      const c = circles.find(c => Math.hypot(c.x - p[0], c.y - p[1]) <= c.r + tol);
+      if (c) {
+        const k = 'o:' + c.x + ',' + c.y;
+        if (!outSeen.has(k)) {
+          outSeen.add(k);
+          res.outc.push({ key: k, letter: c.n, sheets: c.sh ? [c.sh] : [] });
+          res.outputs.push({ net: nt, to: 'circle ' + c.n + ' to ' + (c.sh || '(this sheet)'), key: k, kind: 'c', letter: c.n, sheets: c.sh ? [c.sh] : [] });
+        }
+        continue;
+      }
+      const r = (s.r || []).find(r => p[0] >= r[1] - tol && p[0] <= r[1] + r[3] + tol && p[1] >= r[2] - tol && p[1] <= r[2] + r[4] + tol);
+      if (r) {
+        res.outputs.push({ net: nt, to: 'panel ' + (r[5] || r[0]), key: r[0] || 'panel', kind: 'r' });
+        continue;
+      }
+      if (W.some(v => v !== w && v[0] === nt && (Math.hypot(v[1][0][0] - p[0], v[1][0][1] - p[1]) <= 20 * u || onSeg(p, v)))) continue;
+      res.open.push({ net: nt, at: p });
+    }
+    for (const b of blocks) {
+      b.ins.sort((a, c) => a.y - c.y);
+      delete b.ex, delete b.ys;
+    }
+    return res;
+  }
   /* an input connector [letter, from sheets] is fed by the output connector of the same letter on the sheet it names: the in-connector names
      both the sheet and the letter, so that is the link. The sheet list printed at the output connector is the drawing's cross reference only;
      where it is empty (not typed) or leaves this sheet out, the link still holds and the gap is listed as "list". No output of that letter on the
@@ -416,7 +525,7 @@
           continue;
         }
         const hit = src.flatMap(f => by[f].outc.filter(o => o.letter === c.letter).map(o => [f, o]));
-        const back = hit.filter(h => h[1].sheets.includes(n.id));
+        const back = hit.filter(h => h[1].sheets.includes(n.id) || h[1].sheets.includes('G-*'));
         const use = back.length ? back : hit;
         if (use.length !== 1) {
           bad.push(n.id + ' ' + c.letter + ' <- ' + src.join(' ') + (hit.length ? ' (' + hit.length + ' outputs of that letter)' : ' (no output of that letter)'));
@@ -451,7 +560,11 @@
     return m ? +m[1] : null;
   };
   function compile(sheets) {
-    const nets = sheets.map(net);
+    const nets = sheets.map(s => (s.dwg ? gnet(s) : net(s)));
+    /* SH-G-*: a circle "to SH-G-*" goes to every sheet that reads that number "from SH-G-*" */
+    for (const n of nets)
+      for (const c of n.inputs)
+        if (c.from.length === 1 && c.from[0] === 'G-*') c.from = nets.filter(m => m.outc.some(o => o.letter === c.letter && o.sheets.includes('G-*'))).map(m => m.id);
     const J = join(nets);
     const sh = Object.fromEntries(sheets.map(s => [s.id, s])),
       nb = Object.fromEntries(nets.map(n => [n.id, n]));
@@ -483,7 +596,7 @@
       for (const k of S.k || []) P.set(k[0], ['k', k]);
       for (const r of S.r || []) P.set(r[0], ['r', r]);
       for (const d of S.d || []) if (d[3] === 'in') P.set(d[0], ['d', d]);
-      for (const x of S.s || []) P.set(x[0], ['s', x]);
+      for (const x of S.s || []) if (!P.has(x[0])) P.set(x[0], ['s', x]); /* a G sheet's s source with a circle is its input connector */
     }
     const memo = new Map();
     /* the slot that holds the value of net `key` of sheet `sid` */
@@ -501,7 +614,8 @@
         else if (t === 'M') r = slot(sid + ':' + x.key + '.' + (key.includes('.') ? key.slice(base.length + 1) : x.R.find(Boolean) || 'OUT'));
         else if (t === 'c') {
           if (x.src) {
-            const [T, ok] = x.src.split(':'),
+            const T = x.src.slice(0, x.src.indexOf(':')),
+              ok = x.src.slice(T.length + 1),
               o = nb[T].outputs.find(o => o.key === ok);
             r = o ? res(T, o.net, depth + 1) : port('CON:' + sid + '.' + x.letter);
           } else {
@@ -516,7 +630,8 @@
             r = d && d.length ? res(d[0][0], d[0][1], depth + 1) : port('REF:' + text);
           } else if (v !== null) r = slot('CONST:' + v, v);
           else r = port('SYS:' + text);
-        } else if (t === 'r' || t === 's') {
+        } else if ((t === 'r' || t === 's') && nb[sid].ports && nb[sid].ports[x[0]]) r = port(nb[sid].ports[x[0]]);
+        else if (t === 'r' || t === 's') {
           /* a PI/O box (r) or a source drawn by its lines (s): named by the table and order printed in it, "(TCA900-1)" = table TCA900
              row 1 (unique in the set); a source that prints ON(1) / OFF(0) is that constant */
           const [x0, y0, x1, y1] = t === 'r' ? [x[1], x[2], x[1] + x[3], x[2] + x[4]] : [Math.min(x[1], x[3]), Math.min(x[2], x[4]), Math.max(x[1], x[3]), Math.max(x[2], x[4])],
@@ -659,5 +774,5 @@
     }
     return { sheets: prog.plan.length, run, notRun, blocks, bOk, macros, mOk, ports: prog.ports.length, portKinds: kinds };
   }
-  root.TCE_RUN = { K, par, KINDS, ALIAS, MARK, kind, net, join, compile, step, scan, set, get, stats, MACRO };
+  root.TCE_RUN = { K, par, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO };
 })(typeof window !== 'undefined' ? window : globalThis);
