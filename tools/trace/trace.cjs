@@ -262,12 +262,22 @@ const has = (txt, tag) => {
       srcRows = new Set((s.nl && s.nl.src ? s.nl.src : []).map(q => q.row)),
       outRows = new Set((s.nl && s.nl.outs ? s.nl.outs : []).map(q => q.row)),
       dm = din.get(s);
+    /* the rows the sheet's own MOV / motor model answers (ZSO / ZSC / MIT / MIL of a motor valve, MIR of a motor: 03b-sim.js mvForced, nl.mot) */
+    const own = new Set();
+    for (const v of (s.nl && s.nl.mv) || []) for (const f of v.fb || []) own.add(f.row);
+    for (const m of (s.nl && s.nl.mot) || [])
+      for (const k of ['mir', 'mor', 'mos', 'mit']) if (m[k] >= 0) own.add(m[k]);
     /* the addresses written as free text on the drawing (the right column of the outputs, the short machine lists): to the row of
        the same height, else to the sheet (row 0, "on the drawing, not on a row") */
     const txA = new Map();
     /* a drawing for machines A / B / C / D has a copy per machine (W.inst): the drawing itself is machine A, its short list gives A only */
     const multi = !s._inst && ((WORLD.instOf && WORLD.instOf.get(s)) || []).length > 1;
-    const rs0 = b.rng && b.rng.RS ? b.rng.RS[0] : Infinity;
+    const rs0 =
+      b.rng && b.rng.S
+        ? b.rng.S[1] + 2
+        : b.rng && b.rng.RS
+          ? b.rng.RS[0]
+          : Infinity; /* right of the input columns = the logic and its outputs (a command address written beside the motor in the middle, DITL-31 O.0040/360) */
     for (const x of b.tx || []) {
       const tt = s._inst && WORLD.showText ? WORLD.showText(s, x.t) : x.t;
       const la = adrList(tt, multi);
@@ -319,12 +329,39 @@ const has = (txt, tag) => {
       } catch (e) {}
       const adrs = new Set();
       if (ad) adrs.add(ad);
-      for (const t of [T, Sx, RT, RS, F]) for (const a of adrList(t, multi)) adrs.add(a);
-      for (const a of (txA.get(i + ':L') || []).concat(txA.get(i + ':R') || [])) adrs.add(a);
+      /* the left side (input row: T, S, F) and the right side (output: RT, RS, the text right of the logic) are two different signals
+         at the same height: an output address is never read as the input row next to it (RARA: DITL-31 #B O.0360 MOR-P0702B) */
+      for (const t of [T, Sx, F]) for (const a of adrList(t, multi)) adrs.add(a);
+      for (const a of txA.get(i + ':L') || []) adrs.add(a);
+      const adrsR = new Set();
+      for (const t of [RT, RS]) for (const a of adrList(t, multi)) adrsR.add(a);
+      for (const a of txA.get(i + ':R') || []) adrsR.add(a);
+      for (const a of adrsR) adrs.delete(a);
+      if (adrsR.size) {
+        const ro = {
+          sh: s.name,
+          stn,
+          row: r.n,
+          io: 'out',
+          adr: [...adrsR].join(' '),
+          tags: '',
+          loc: cellT(s, i, 'RL').trim(),
+          from: '',
+          text: RS.replace(/\s+/g, ' ').trim(),
+          src: '-',
+          moving: false
+        };
+        ditl.push(ro);
+        for (const a of adrsR) {
+          const k = (stn || '?') + ':' + a;
+          (dByKey.get(k) || dByKey.set(k, []).get(k)).push(ro);
+        }
+      }
       const tags = String(T + ' ' + RT).match(/\b[A-Z]{1,6}\d?-[A-Z]{1,3}\d{3,4}[A-Z0-9-]*\b/g) || [];
       const isIn = srcRows.has(r.n),
-        isOut = outRows.has(r.n) || (txA.has(i + ':R') && !srcRows.has(r.n));
+        isOut = outRows.has(r.n);
       if (!isIn && !isOut && !adrs.size && !tags.length) return;
+      if (!isIn && !adrs.size && !tags.length && adrsR.size) return;
       const mv = mm.get(r.n);
       let src = '-';
       if (isIn) {
@@ -341,11 +378,13 @@ const has = (txt, tag) => {
                   ? 'operator'
                   : /^(LOP|LCP|LP|LCS|MCC|SWGR|VCB|LOCAL)/i.test(L.trim())
                     ? 'local panel'
-                    : mv && mv[1] !== mv[0]
-                      ? 'moves (own model)'
-                      : F.trim()
-                        ? 'NONE (FROM not linked)'
-                        : 'NONE';
+                    : own.has(r.n)
+                      ? 'valve / motor model'
+                      : mv && mv[1] !== mv[0]
+                        ? 'moves (own model)'
+                        : F.trim()
+                          ? 'NONE (FROM not linked)'
+                          : 'NONE';
       }
       const row = {
         sh: s.name,
@@ -369,6 +408,15 @@ const has = (txt, tag) => {
         (dByKey.get('T:' + t) || dByKey.set('T:' + t, []).get('T:' + t)).push(row);
     });
   }
+  /* the feedback tags the DITL valve / motor models answer by name (03b-sim.js: ZSO / ZSC / MIT / MIL of each motor valve, MIR of a motor) */
+  const fbTag = new Map();
+  for (const sx of allD())
+    if (sx.nl) {
+      for (const v of sx.nl.mv || [])
+        for (const f of v.fb || []) if (f.tag) fbTag.set(WORLD.showText ? WORLD.showText(sx, f.tag) : f.tag, sx.name);
+      for (const m of sx.nl.mot || [])
+        if (m.tag) for (const k of ['MIR', 'MIT', 'MIL', 'MOR', 'MOS']) fbTag.set(k + '-' + m.tag, sx.name);
+    }
   /* every word written on any sheet (ABC text, DITL text and cells), and the devices of the typical-drawing copies (W.inst "#MV-BD1002") */
   const sheetTxt = new Set();
   const words = t => {
@@ -448,7 +496,11 @@ const has = (txt, tag) => {
         const model = has(engTxt, tag),
           hmi = has(hmiTxt, tag);
         const srcOk =
-          aOn.some(x => x.src !== 'NONE') || dOk.some(x => x.row > 0 && (x.io !== 'in' || !/^NONE/.test(x.src)));
+          aOn.some(x => x.src !== 'NONE') ||
+          /* an input point (DI / AI / PI) counts on its input row with a source; an output point (DO / AO / PO) on any row the logic writes */
+          dOk.some(
+            x => x.row > 0 && (input ? x.io === 'in' && !/^NONE/.test(x.src) : x.io !== 'in' || !/^NONE/.test(x.src))
+          );
         /* on the drawing but not on a net or a row: the tag written on a sheet, or the device of a typical-drawing table copy
            (DITL-38 "#MV-BD1002": the valve runs from DITL-50 by its tag, its I/O addresses are not on any row) */
         const dev = tag.replace(/^[A-Z0-9]{1,6}-/, '').replace(/-\d$/, '');
@@ -456,8 +508,10 @@ const has = (txt, tag) => {
           !onLogic && (sheetTxt.has(tag) || devInst.has(dev) || devInst.has(dev.replace(/^([A-Z]+)(\d)/, '$1-$2')));
         const live = aOn.some(x => x.moving) || dOn.some(x => x.moving);
         const ex = EXCL.test(o.d || '') || EXCL.test(tag);
-        let st8 =
-          onLogic && !srcOk && clashed
+        const byModel = fbTag.get(tag);
+        let st8 = byModel
+          ? 'LINKED'
+          : onLogic && !srcOk && clashed
             ? 'COPY ADDRESS CLASH'
             : onLogic
               ? srcOk
