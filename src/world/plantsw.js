@@ -102,7 +102,9 @@
     return a || b ? 2.0 : a === false && b === false ? 0 : NaN;
   };
   /* DITL-23A / DITL-22 write the rows by address: matched by the address and the word LUB (the 7th field; other stations reuse it) */
-  for (const [k, a1, a2, a3] of [['A', 'I.0090', 'I.0091', 'I.0092'], ['B', 'I.0410', 'I.0411', 'I.0412']]) L.push([a2, lopP(k), 2.0, 'ge', 0, 0, /\bLUB/], [a1, lopP(k), 1.5, 'lo', 0, 0 /* no dead band: the pressure steps 0 / 2.0 */, /\bLUB/], [a3, lopP(k), 1.0, 'lo', 0, 0, /\bLUB/]);
+  for (const [k, a1, a2, a3] of [['A', 'I.0090', 'I.0091', 'I.0092'], ['B', 'I.0410', 'I.0411', 'I.0412']]) L.push([a2, lopP(k), 2.0, 'ge', 0, 0, /\bLUB/], [a1, lopP(k), 1.5, 'lo', 0, 0 /* no dead band: the pressure steps 0 / 2.0 */, /\bLUB/], [a3, lopP(k), 1.0, 'lo', 0, 0, /\bLUB/],
+    /* beta.530 (AKIHO): the rows of DITL-23B and its #B that name the switches (PS-LO1115-A3 / A2 / A1, B3 / B2 / B1), not the address */
+    ['PS-LO1115-' + k + '2', lopP(k), 2.0, 'ge', 0, 0], ['PS-LO1115-' + k + '1', lopP(k), 1.5, 'lo', 0, 0], ['PS-LO1115-' + k + '3', lopP(k), 1.0, 'lo', 0, 0]);
   /* 3.2.1 (IRENE: FEEDWATER): DITL-23A row 11 (machine instance #B for pump B) "ZSO-FW1031 BFWP A / B SUCTION MANUAL VALVE OPEN"
      (IO list STN102 I.028F ZSO-FW1031 / I.032F ZSO-FW1032), a START permissive of the HV soft starter (with the lube oil > 2.0 and the
      suction pressure > 1.5): the limit switch of the field valve V-FW1001 / 1002 of the plant model (unit.js AN_FV0), touched at fully
@@ -405,7 +407,7 @@
           /* 3.2.1 (IRENE): the fan / blower bearing and winding temperatures and vibration of the plant model (unit.js AN_MT, U.mt);
              the drawing of FA blower A serves B (DITL-28B #B): its own blower */
           let g = MTR.exec(t)[1];
-          if (/#\s*B$/.test(s.name)) g = g.replace('FA1055-A', 'FA1055-B').replace('FW1115-A', 'FW1115-B');
+          if (/#\s*B$/.test(s.name)) g = g.replace('FA1055-A', 'FA1055-B').replace('FW1115-A', 'FW1115-B').replace('CD1116-A', 'CD1116-B');
           mtr.push({ s, key: a.key, g });
         }
         else {
@@ -421,9 +423,9 @@
   }
   /* P2 #13 (INSTRUMENT_VALVE_COVERAGE.md): the condenser pressure follows the vacuum of the unit model (unit.js U.vac, 0 = no vacuum,
      1 = in service): 1.033 kg/cm2A (atmosphere) to 0.057 kg/cm2A (4.PNG PICD1110 at 150 MW) */
-  /* 3.2.1 (IRENE): DITL-25B / 26B / 27B / 28B analog rows TT- / VT- of the IDF, PAF, SAF and FA blowers; 3.2.3-beta.178 (SOHEE): DITL-23B
+  /* 3.2.1 (IRENE): DITL-25B / 26B / 27B / 28B (beta.530: 61B) analog rows TT- / VT- of the IDF, PAF, SAF and FA blowers; 3.2.3-beta.178 (SOHEE): DITL-23B
      rows 9 ~ 23 of the BFWP (TT-FW1115-A1 ~ A4 / AU / AV / AW, VT-FW1115-A11 ~ A42; machine instance #B = pump B) */
-  const MTR = /(?:^|[^A-Z])([TV]T-(?:FG1056-|FA1053-|FA1054-|FA1055-[AB]|FW1115-[AB])(?:[1-4][12]?|[UVW]))\b/,
+  const MTR = /(?:^|[^A-Z])([TV]T-(?:FG1056-|FA1053-|FA1054-|FA1055-[AB]|FW1115-[AB]|CD1116-[AB])(?:[1-4][12]?|[UVW]))\b/,
     mtr = [];
   const ana = [],
     suc = [],

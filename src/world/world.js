@@ -220,10 +220,22 @@
   };
   /* a row names the machine of THIS drawing family (its letter turns with the instance) or an absolute one (BURNER B on the coal
      feeder drawing DITL-19 is burner B for every feeder) */
+  /* beta.530 (RARA): a row and a title that both spell the pump out ("INDUSTRIAL WATER PUMP A" on DITL-120 WASTE WATER PUMP A) name two
+     pumps: the letter of the row is absolute (I/O list I.0006 IWP A, I.0326 IWP B on both copies). The words before the last PUMP */
+  const pumpOf = t => {
+    const all = [...String(t || '').toUpperCase().matchAll(/((?:\b[A-Z][A-Z-]+\s+)+)PUMP\s*-?\(?[A-D]\b/g)];
+    return all.length ? all[all.length - 1][1].trim() : '';
+  };
   const relative = (sb, rowT) => {
     const w = machWord(rowT),
       f = famOf(sb);
     if (!w || !f) return false;
+    if (w === 'PUMP') {
+      const a = pumpOf(rowT),
+        b = pumpOf(sb.title);
+      /* SEAWATER PUMP and SEAWATER BOOSTER PUMP (DITL-30) share the machine letter: no word in common at the front = two pumps */
+      if (a && b && !a.split(/ +/).includes(b.split(' ')[0]) && !b.split(/ +/).includes(a.split(' ')[0])) return false;
+    }
     return GROUP(w) === f;
   };
   const machOfDesc = t => {
@@ -271,8 +283,8 @@
       const sw = L => ({ A: 'B', B: 'A' })[L.toUpperCase()] || L;
       return String(t || '').replace(/\b(BFWP|LOP)(\s*-?\(?)([A-D])(?![A-Z0-9])/gi, (m, w, sp, L) => w + sp + (/BFWP/i.test(w) ? (I.k >= 2 ? sw(L) : L) : I.k & 1 ? sw(L) : L));
     }
-    return String(t || '').replace(MRX, (m, L) => {
-      if (!relative(I.base, m)) return m;
+    return String(t || '').replace(MRX, (m, L, at, all) => {
+      if (!relative(I.base, all.slice(0, at + m.length))) return m;
       const u = L.toUpperCase(),
         to = LET[(LET.indexOf(u) + I.k) % Math.max(I.n, LET.indexOf(u) + 1)];
       return m.replace(/([A-D])(\)?)$/i, to + '$2');

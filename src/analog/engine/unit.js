@@ -1221,15 +1221,6 @@ function anDitlPos(name, j) {
     return null;
   }
 }
-/* the drawing of a code ("DITL-19", a copy "DITL-19 #B"); null while the world is not built */
-function anDitlSheet(code) {
-  try {
-    if (typeof S === 'undefined' || !S.sheets || !window.WORLD || !WORLD.on || !WORLD.idx) return null;
-    return S.sheets.concat(WORLD.inst || []).find(x => x.name.endsWith(')' + code)) || null;
-  } catch (e) {
-    return null;
-  }
-}
 /* 3.2.0-beta.59 (#116, user 2026-10-29 "DAPAT S PLANT MODEL GALING"): the run state of a DITL motor drawing (1 RUN, 0 STOP / TRIP), or
    of one output row of a drawing of two machines ("DITL-39@3" = DEBRIS FILTER S-1502 IN OPERATION); null while the one world is not
    built. The same reading as the lamps of the Training dock and the HMI (DUI.motState of src/digital/parts/03c-read.js, dock.js mst) */
@@ -4042,7 +4033,11 @@ const AN_MT = {
        >= 90 C, DITL-23B > 100 C), winding U / V / W from the closed cooling water (AN_MT.cw below), vibration x1 / x2 (NO-SOURCE 1.8 mm/s;
        TECO data sheet: below 2.5 mm/s 0-P at no load) */
     ['BFWP-A', 'DITL-23A', 'FW1115-A', ['1', '2', '3', '4'], ['11', '12', '21', '22', '31', '32', '41', '42'], 1.8],
-    ['BFWP-B', 'DITL-23A #B', 'FW1115-B', ['1', '2', '3', '4'], ['11', '12', '21', '22', '31', '32', '41', '42'], 1.8]
+    ['BFWP-B', 'DITL-23A #B', 'FW1115-B', ['1', '2', '3', '4'], ['11', '12', '21', '22', '31', '32', '41', '42'], 1.8],
+    /* beta.530 (RARA): the condensate pumps P-1116A / B (DITL-61A and its #B; DITL-61B rows 12 ~ 14): the three windings only. The coupling
+       (A1), the grease lubricated motor bearings (A3 / A4) and the vibration (VT-CD1116) have no running value in the documents: no row */
+    ['CEP-A', 'DITL-61A', 'CD1116-A', [], [], 0],
+    ['CEP-B', 'DITL-61A #B', 'CD1116-B', [], [], 0]
   ],
   Tb: 55,
   Tw: 85,
@@ -4063,9 +4058,12 @@ const AN_MT = {
                       14.7 min (CALC).
        fan bearing    the fan manual gives only the limit (4.9 / 5.4.3: ambient + 40 C; vibration 6 mm/s): the running value Tb stays
                       NO-SOURCE. */
-  mot: { PAF: [373, 'fnPafI'], SAF: [192, 'fnSafI'], IDF: [350, 'fnIdfI'] },
+  mot: { PAF: [373, 'fnPafI'], SAF: [192, 'fnSafI'], IDF: [350, 'fnIdfI'], 'CEP-A': [35.2, 'cdI0', 80, 1], 'CEP-B': [35.2, 'cdI1', 80, 1] },
   sf: 1.15,
   rise: 90,
+  /* beta.530 (RARA): CEP motor TECO AEJG-WT 325 kW 4 P 6600 V 35.2 A, IC411 fan cooled, Ins. Class F, "Temp. Rise Limit (Res.) Stator
+     80 C at S.F. 1.0" (data sheet 3A057H186-74341 REV.05, KSB contract document K1AU3-D1-0-044 R0 p 24): the same form with its own rise and S.F. (the 3rd and 4th
+     number of mot): T = ambient + 80 x (I / 35.2)^2, I = U.cdI0 / cdI1 */
   rB: 25.3,
   tauMB: 882,
   /* 3.2.3-beta.178 (SOHEE): MOTOR WINDING ON THE CLOSED COOLING WATER. The BFWP motor (TECO AEZW-S2, 3550 kW 2 P 6600 V, data sheet
@@ -4141,7 +4139,7 @@ function anMotorStep(U, dt) {
       wT = cw
         ? Math.min(K.cwMax, Tc + K.cwRise * x2 + K.cwLoss * x2 * (1 / (K.cwC * fq) - 1 / K.cwC))
         : mo && isFinite(I)
-          ? T0 + K.rise * Math.pow(Math.max(0, I) / (mo[0] * K.sf), 2)
+          ? T0 + (mo[2] || K.rise) * Math.pow(Math.max(0, I) / (mo[0] * (mo[3] || K.sf)), 2)
           : K.Tw;
     brg.forEach((e, i) =>
       K.los[id]
@@ -5297,7 +5295,7 @@ function anFieldX() {
     ditlPos: (n, j) => anDitlPos(n, j),
     ditlRun: (a, last) => anDitlRun(a, last),
     ftrip: n => {
-      const s = anDitlSheet(n);
+      const s = anDitlSheet(')' + n);
       return s ? (s._ftrip ? 1 : 0) : null;
     },
     fault: id => {
