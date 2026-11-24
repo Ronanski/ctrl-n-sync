@@ -337,7 +337,9 @@
     almX = E('span', 'st-x');
     almN = E('span', 'st-n');
     const open = E('button', 'st-t', 'Alarm list');
-    alm.append(almM, almT, almX, almN, open);
+    annB = E('button', 'st-t st-annb', 'Annunciator');
+    annB.onclick = () => annOpen();
+    alm.append(almM, almT, almX, almN, annB, open);
     /* UI audit 2026-11-21 D9: the alarm line itself opens the list too, and a press outside the list closes it */
     almX.classList.add('st-go');
     almX.title = 'Open the alarm list';
@@ -875,6 +877,205 @@
       b = al && $('.scack', al);
     if (b && !b.disabled) b.click();
     if (al) al.hidden = true;
+  }
+  /* The operator console annunciator (ROSÉ, unlinked I/O map 2026-11-24 "Operator console annunciator": the 100 windows had no panel).
+     Source: the ANP drawing set of LMYP #1, K1AU3-E2-0-113 (FHI, as-built 2017-10-03).
+     - Windows A1 ~ J10: ANP1PB-03 layout and legend, rows A ~ J from the top, columns 1 ~ 10. The text of each window and its DCS output
+       (station 4, DO O.1320 ~ O.1443, drawings OPC1ANN-02 ~ 05) come from the DCS I/O list in the app (wiring.js, tags OPC-ANN-xx). A window
+       with no text in the I/O list is a spare; it is blank on the legend too.
+     - Lamp colour: R (red) on rows A ~ C, Y (yellow) on rows D ~ J (ANP1PB-03 legend: "Y: Lamp Yellow, R: Lamp Red").
+     - Signal: the DITL output that the drawing sends to "OPC (ANN)" with the address of the window ("S4 O.xxxx" in the output cell or
+       beside the output arrow). "O.1330/133A" is machine A / B of a shared drawing (instance #B takes the second address); one address
+       for all the machines is the OR of all. A window whose output is on no drawing of the app stays dark and says "no signal".
+     - Push buttons TEST / ACK / RESET (ANP1PB-04 / 07, momentary; DCS inputs I.1281 / I.1282 / I.1283) and the buzzer (relay RY1 on
+       O.145F, OPC1ANN-05). The DCS makes the lamp sequence and no drawing of it is in the docs, so the sequence is the one these three
+       buttons give: ISA-18.1 sequence M (manual reset). A new alarm flashes and sounds the horn; ACK makes it steady and stops the horn;
+       the window stays lit after its alarm clears until RESET; RESET turns off only the windows whose alarm has cleared; an alarm that
+       comes back before the RESET flashes again. TEST lights every lamp while it is held. Windows already lit when a start state loads
+       are taken as acknowledged (a standing alarm of that state, not a new one). */
+  const ANN = { w: null, src: null, ss: undefined, test: false, nf: 0 };
+  let annPop = null,
+    annB = null;
+  function annWins() {
+    if (ANN.w) return ANN.w;
+    const L = [];
+    for (const x of window.WIRING || []) {
+      const m = /^OPC-ANN-([A-J])(\d{1,2})$/.exec(x[3] || '');
+      if (m) L.push({ id: m[1] + m[2], r: m[1], c: +m[2], a: x[2], t: String(x[4] || '').trim(), red: m[1] <= 'C', st: 0, on: 0, sig: false, from: '' });
+    }
+    L.sort((p, q) => (p.r !== q.r ? (p.r < q.r ? -1 : 1) : p.c - q.c));
+    if (L.length) ANN.w = L;
+    return L;
+  }
+  /* "S4 O.1326/1327" -> ['O.1326', 'O.1327'] */
+  const annAdr = t => {
+    const m = /\bO\.([0-9A-F]{4})((?:\/[0-9A-F]{3,4})*)/.exec(t || '');
+    return m ? [m[1]].concat(m[2].split('/').filter(Boolean).map(x => m[1].slice(0, 4 - x.length) + x)).map(x => 'O.' + x) : null;
+  };
+  /* the addresses of the output rows of a drawing: the address texts beside the output arrows, each given to the row line nearest to it
+     (within half a row), else the output cells of the row */
+  function annRows(b) {
+    if (b._annR) return b._annR;
+    const R = {},
+      rows = b.rows || [],
+      g = b.rng && b.rng.RS;
+    for (const t of b.tx || []) {
+      const A = annAdr(t.t);
+      if (!A || !g || t.x < g[0] - 60 || t.x > g[1]) continue;
+      let k = -1,
+        d = 5.5;
+      rows.forEach((r, i) => {
+        if (r && Math.abs(t.y - r.y) <= d) (d = Math.abs(t.y - r.y)), (k = i);
+      });
+      if (k >= 0) R[k] = (R[k] || []).concat(A);
+    }
+    const C = {};
+    for (const k in b.cells || {}) {
+      const m = /^(\d+):R[STL]$/.exec(k);
+      if (!m) continue;
+      for (const c of b.cells[k]) {
+        const A = annAdr(c.t);
+        if (A) C[m[1]] = (C[m[1]] || []).concat(A);
+      }
+    }
+    for (const k in C) if (!R[k]) R[k] = C[k];
+    return (b._annR = R);
+  }
+  function annSrc() {
+    if (ANN.src) return ANN.src;
+    if (typeof S === 'undefined' || !S.sheets || !window.DUI) return null;
+    const M = {};
+    let n = 0;
+    for (const s of S.sheets.concat((window.WORLD && WORLD.inst) || [])) {
+      const b = (s._inst && s._inst.base) || s;
+      /* only the drawings with an "(ANN)" output cell build their output list here */
+      if (!Object.keys(b.cells || {}).some(k => /:R[STL]$/.test(k) && b.cells[k].some(c => /\(ANN\)/.test(c.t)))) continue;
+      const O = call(() => DUI.outs(s), []) || [],
+        ki = Math.max(0, 'ABCD'.indexOf((/ #([A-D])$/.exec(s.name) || [])[1] || 'A'));
+      for (const o of O) {
+        if (!/·\s*OPC\s*\(ANN\)\s*$/.test(o.name || '')) continue;
+        const L = annRows(b)[o.row];
+        if (!L) continue;
+        const a = L.length > 1 ? L[ki] : L[0];
+        if (!a) continue;
+        (M[a] = M[a] || []).push([s, o.row]);
+        n++;
+      }
+    }
+    if (n) ANN.src = M;
+    return n ? M : null;
+  }
+  function annTick() {
+    const W = annWins(),
+      M = annSrc();
+    if (!W.length || !annB) return;
+    const ss = window.AN ? AN.startState : null,
+      fresh = ss !== ANN.ss;
+    if (fresh) ANN.ss = ss;
+    let nf = 0,
+      lit = 0;
+    for (const w of W) {
+      const src = (M && M[w.a]) || [];
+      w.sig = src.length > 0;
+      if (w.sig && !w.from) w.from = src.map(([s, r]) => String(s.name).replace(/^\(\w+\)/, '') + ' output row ' + (r + 1)).join(', ');
+      const on = w.sig && src.some(([s, r]) => call(() => DUI.outVal(s, r), 0) === 1) ? 1 : 0;
+      if (fresh) w.st = on ? 2 : 0;
+      else if (on && !w.on) w.st = 1;
+      w.on = on;
+      if (w.st === 1) nf++;
+      if (w.st) lit++;
+    }
+    ANN.nf = nf;
+    annB.textContent = nf ? 'Annunciator · ' + nf : 'Annunciator';
+    annB.classList.toggle('new', !!nf);
+    annB.title = nf ? nf + ' new alarm window' + (nf > 1 ? 's' : '') + ' on the annunciator: open it to acknowledge' : 'Open the console annunciator';
+    if (annPop && !annPop.hidden) annPaint(lit);
+  }
+  function annPress(k) {
+    for (const w of annWins()) {
+      if (k === 'ack' && w.st === 1) w.st = 2;
+      if (k === 'reset' && w.st === 2 && !w.on) w.st = 0;
+    }
+    annTick();
+  }
+  function annOpen() {
+    if (!annPop) {
+      annPop = popup('Annunciator', 'OPC panel · Unit 1', 940);
+      annPop.classList.add('st-ann');
+      annPop.style.left = 'calc(var(--st-rail) + 12px)';
+      annPop.style.top = '56px';
+      const g = E('div', 'st-ag');
+      g.append(E('span'));
+      for (let c = 1; c <= 10; c++) g.append(E('span', 'st-ah', String(c)));
+      let r = '';
+      for (const w of annWins()) {
+        if (w.r !== r) g.append(E('span', 'st-ah', (r = w.r)));
+        const d = E('div', 'st-aw' + (w.red ? ' r' : ' y') + (w.t ? '' : ' sp'));
+        d.setAttribute('role', 'img');
+        d.append(E('i', '', w.id), E('span', '', w.t));
+        w.el = d;
+        g.append(d);
+      }
+      annPop._body.append(g);
+      const ft = E('footer', 'st-foot st-afoot'),
+        test = E('button', 'st-b', 'Test'),
+        ack = E('button', 'st-b', 'Acknowledge'),
+        rst = E('button', 'st-b', 'Reset');
+      test.title = 'Lamp test: every lamp is lit while the button is held';
+      ack.title = 'Stops the horn; the flashing windows turn steady';
+      rst.title = 'Turns off the steady windows whose alarm has cleared';
+      const hold = on => () => {
+        ANN.test = on;
+        annTick();
+      };
+      test.addEventListener('pointerdown', hold(true));
+      for (const e of ['pointerup', 'pointerleave', 'pointercancel']) test.addEventListener(e, hold(false));
+      test.addEventListener('keydown', e => (e.key === ' ' || e.key === 'Enter') && hold(true)());
+      test.addEventListener('keyup', hold(false));
+      ack.onclick = () => annPress('ack');
+      rst.onclick = () => annPress('reset');
+      annPop._horn = E('span', 'st-horn', 'Horn quiet');
+      annPop._ack = ack;
+      annPop._rst = rst;
+      ft.append(annPop._horn, test, ack, rst);
+      annPop.append(ft);
+    }
+    annPop.hidden = false;
+    annTick();
+  }
+  function annPaint(lit) {
+    let ns = 0,
+      wait = 0;
+    for (const w of annWins()) {
+      if (!w.el) continue;
+      const on = ANN.test || w.st > 0;
+      w.el.classList.toggle('lit', on && !!w.t);
+      w.el.classList.toggle('fl', !ANN.test && w.st === 1);
+      w.el.classList.toggle('ns', !!w.t && !w.sig);
+      if (w.t && !w.sig) ns++;
+      if (w.st === 2 && !w.on) wait++;
+      const s = !w.t
+        ? 'spare'
+        : !w.sig
+          ? 'no signal: no drawing of the app sends this window'
+          : w.st === 1
+            ? 'new alarm, not acknowledged'
+            : w.st === 2
+              ? w.on
+                ? 'in alarm, acknowledged'
+                : 'cleared, waiting for Reset'
+              : 'normal';
+      const tt = w.id + (w.t ? ' · ' + w.t : '') + ' · ' + s + ' · ' + w.a + (w.from ? ' from ' + w.from : '');
+      if (w.el.title !== tt) {
+        w.el.title = tt;
+        w.el.setAttribute('aria-label', tt);
+      }
+    }
+    annPop._sub.textContent = lit + ' lit · ' + ANN.nf + ' new' + (ns ? ' · ' + ns + ' without signal' : '');
+    annPop._horn.classList.toggle('on', ANN.nf > 0);
+    annPop._horn.textContent = ANN.nf ? 'Horn sounding' : 'Horn quiet';
+    annPop._ack.disabled = !ANN.nf;
+    annPop._rst.disabled = !wait;
   }
   /* speed: the Simulation speed control of the app, its own choices */
   const speedSel = () => [...document.querySelectorAll('select')].find(x => x.title === 'Simulation speed') || null;
@@ -2433,6 +2634,7 @@
       .trim();
   function tick() {
     updAsk();
+    annTick();
     why();
     trendDraw();
     if (own !== ownWas) {
