@@ -1,4 +1,4 @@
-// beta.496 (EIMI, asked by MINAMI for the Industrial and waste water page): three things of the shared HX core.
+// beta.506 (EIMI, asked by MINAMI for the Industrial and waste water page): three things of the shared HX core.
 //  1. a machine or valve of a system file that hx-registry.js does not have yet joins the registry at load: the faceplate of
 //     P-0715A / B (DITL-111 and its instance #B), P-0058A / B (DITL-120 and #B), MV-IW0391 (DITL-87) and MV-AS1397 (DITL-116) opens with
 //     its own commands, and a command moves its own drawing (A never moves B)

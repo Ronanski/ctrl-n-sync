@@ -1,4 +1,4 @@
-# LMYP OTS 1.0.0-beta.496 (EIMI, lane 6, 2026-11-25)
+# LMYP OTS 1.0.0-beta.506 (EIMI, lane 6, 2026-11-25)
 
 Shared HMI core, hiling ni MINAMI para sa Industrial and waste water page, at ang listahan ng kulang sa HMI (dating PR 523).
 

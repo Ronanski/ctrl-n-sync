@@ -547,7 +547,7 @@
          the DCS START of the drawing is the one accepted only in MAN (DITL-112 OUT8 = PULSE(START P.B.) AND NOT AUTO), not an interlock */
       const sby = st === 'STOP' && md.rem === true && md.au === true;
       const miss = I && !sby ? I.miss.filter(r => !/REMOTE/.test(r.svc)) : [];
-      /* beta.496: a drawing with no DCS START / STOP push button (DITL-120, waste water pumps): the button is closed and the line says so,
+      /* beta.506: a drawing with no DCS START / STOP push button (DITL-120, waste water pumps): the button is closed and the line says so,
          it looked open and a press did nothing */
       const noSt = call(() => dk.hasPb(M.ad, 1), null) === false,
         noSp = call(() => dk.hasPb(M.ad, 0), null) === false;

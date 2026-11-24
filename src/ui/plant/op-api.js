@@ -444,7 +444,7 @@
       return null;
     }
   }
-  /* beta.496 (EIMI): has the drawing a DCS START / STOP push button at all (null = no drawing)? DITL-120 (waste water pumps) has none */
+  /* beta.506 (EIMI): has the drawing a DCS START / STOP push button at all (null = no drawing)? DITL-120 (waste water pumps) has none */
   const hasPb = (addr, on) => {
     const s = dOf(addr);
     return s ? pbRow(s, on ? /\bSTART\b|\bST$/ : /\bSTOP\b/) >= 0 : null;

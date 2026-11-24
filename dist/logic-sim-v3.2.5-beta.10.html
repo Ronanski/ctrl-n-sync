@@ -157333,10 +157333,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 37b8919'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 17b214e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 37b8919';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 17b214e';
     } catch (e) {}
   };
   upd();
@@ -345041,7 +345041,7 @@ window.LS_LIVE = (function () {
       return null;
     }
   }
-  /* beta.496 (EIMI): has the drawing a DCS START / STOP push button at all (null = no drawing)? DITL-120 (waste water pumps) has none */
+  /* beta.506 (EIMI): has the drawing a DCS START / STOP push button at all (null = no drawing)? DITL-120 (waste water pumps) has none */
   const hasPb = (addr, on) => {
     const s = dOf(addr);
     return s ? pbRow(s, on ? /\bSTART\b|\bST$/ : /\bSTOP\b/) >= 0 : null;
@@ -348632,7 +348632,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 37b8919'));
+    row('Version', E('span', 'scsver', ver + ' · build 17b214e'));
   }
   function openSet(near) {
     if (!set) {
@@ -374701,7 +374701,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
          the DCS START of the drawing is the one accepted only in MAN (DITL-112 OUT8 = PULSE(START P.B.) AND NOT AUTO), not an interlock */
       const sby = st === 'STOP' && md.rem === true && md.au === true;
       const miss = I && !sby ? I.miss.filter(r => !/REMOTE/.test(r.svc)) : [];
-      /* beta.496: a drawing with no DCS START / STOP push button (DITL-120, waste water pumps): the button is closed and the line says so,
+      /* beta.506: a drawing with no DCS START / STOP push button (DITL-120, waste water pumps): the button is closed and the line says so,
          it looked open and a press did nothing */
       const noSt = call(() => dk.hasPb(M.ad, 1), null) === false,
         noSp = call(() => dk.hasPb(M.ad, 0), null) === false;
