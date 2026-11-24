@@ -9,7 +9,7 @@ Sumunod sa beta.410. Tool at test lang; walang binago sa app, sa plant model, sa
 
 ## Unang bilang (main 2083cd1, 5 plant min sa 150 MW)
 
-- DCS I/O na may tag: 2,702. Nakakabit 1,500; nasa drawing pero hindi nakakabit 364 (kasama ang 15 na nasa kopya lang ng ibang makina); model / page lang 214; wala kahit saan 535; hindi kasama (WTP, coal handling, air compressor) 89.
+- DCS I/O na may tag: 2,702. Nakakabit 1,482; nasa drawing pero hindi nakakabit 380; model / page lang 214; wala kahit saan 537; hindi kasama (WTP, coal handling, air compressor) 89.
 - TCE / TCA kumpleto: 184 sa 407; G 10 sa 14.
 
 ## Sinubok
@@ -20,3 +20,4 @@ Sumunod sa beta.410. Tool at test lang; walang binago sa app, sa plant model, sa
 
 Hindi pa sa Checks (ang `tests/lanes/` ay papasok sa Checks sa PR 0 ng integrator). Ang "nakakabit" ay patunay na may kabit at may source; hindi pa patunay na tama ang value laban sa drawing (iyon ang review bawat lane).
 - B5 (bago): kopya ng makina na nagbabasa ng address ng ibang makina (hal. DITL-18 #C / #D na O.0413 ng burner B): 161 point sa 282 row, hinala na susuriin sa drawing.
+- Ayos (RARA): ang output address na nakasulat sa gitna ng logic (DITL-31 O.0040/360) ay output, hindi ang input row sa tabi nito; ang input point ay binibilang lang sa sariling input row na may pinagmumulan; ang ZSO / ZSC / MIR na sinasagot ng valve / motor model ng DITL ay nakakabit.
