@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 01:22 PHT** (LEADER : YUA, beta.410: PR 0, hiwalay na folder ng bawat lane: src/world/bind, src/world/inst, src/data/alarms, hx-page glob, tests/lanes).
+Huling update: **2026-11-25 01:45 PHT** (QA : SAORI, beta.418: QA trace tool `tools/trace/trace.cjs` at `tests/lanes/qa/tce-complete.cjs`). Dati: **2026-11-25 01:22 PHT** (LEADER : YUA, beta.410: PR 0, hiwalay na folder ng bawat lane: src/world/bind, src/world/inst, src/data/alarms, hx-page glob, tests/lanes).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -55,6 +55,7 @@ Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engi
 - Plant docs: `document-references/INDEX.md` (ang mga dokumento ay nasa PC ng user at sa private repo na `Ronanski/icms-plant-documents`, hindi kailanman sa repo na ito).
 - Frame ng app: `src/station/`; build ng page: `tools/station/build.js`; pangalan, version at site: `delivery/app/app.json`.
 - Simulator: HX pages `src/ui/plant/hx/`; plant model `src/analog/engine/` (`unit.js`, `boiler.js`, `tcs.js`, `tcs-trip.js`); mundo ABC + DITL `src/world/world.js`; DITL `src/digital/`; 150 MW na simula `src/data/st150.txt` (gawa ng `tools/steady150/make.cjs`; gawin ulit kapag may bagong value ang model).
+- QA trace (bilang ng kabit, lane 8): `node tools/trace/trace.cjs [--start 150|cold] [--mins 10] [--tag <tag>]`; TCE / TCA kumpleto: `node tests/lanes/qa/tce-complete.cjs`.
 - Build at test: `npm run build`, `npm run check` (dapat SAME), `node tests/gate/behaviour.cjs <page> --mins 20`, `tests/regress/`.
 - Workflows: `checks.yml` (bawat PR), `sim-tests.yml` (sa `main`), `site.yml` (kusa pagkatapos ng Checks), `release.yml` (GO ng user lang).
 - Lumang rules, handoff, spec at live test findings: `docs/archive/rules-2026-11-22/`.
