@@ -27,6 +27,10 @@
 - Bagong test: lahat ng 2141 joined link ay umaabot sa output ng pinanggalingan (0 nawawala; sa lumang reader 290 ang nawawala), at TCE169 input C ay sumusunod sa TCE168 C kapag pinilit.
 - Checker ng QA (tests/lanes/qa/tce-complete.cjs): COMPLETE 195 ng 419 (logic 140, tables 55), 0 depekto.
 
+## Dagdag: parameter mula sa PA (ML 62 PARAMETER MODIFY, TCA019)
+- Ang PA<n> na may numerong N ay nagbibigay ng parameter sa block N ng sheet (hal. TCE196 PA3 005 -> I 005: TI / HL / LL; TCA533 PA2 010 -> CMP 010 HL / LL; TCE195 PA2 027 -> LMS 027 HL / LL; TCE190 PA2 013 -> RL C013 RI / RD; TCA634 PA1 005 -> TP A005). Ang pangalan ng parameter ay ang nakasulat sa input o sa wire nito. Kung walang nakasulat, bukas pa rin (TCA740 PA4 009 -> PIF 009, TCE202 PA2 004 -> LIN 004), maliban sa TCA536 PA2 003 / 007: iisang wire ang dalawang input kaya pareho ang HL at LL.
+- Bilang: 195 -> 196 ng 419 (checker ng QA: COMPLETE 196).
+
 ## Natitirang bukas (`node tests/tce/sheets.cjs --list`)
 - FG curve not on the sheet: TCA530 TCA548 TCA777 TCA825 TCE101 TCE214 TCE500 TCE503
 - CMP SW not wired (HIACS default not in the macro list): TCA530A TCA534 TCE145 TCE206 TCE226 TCE227 TCE228

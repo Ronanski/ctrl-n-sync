@@ -709,6 +709,7 @@
         nodes.push({
           t: 'b',
           f,
+          key: b.key,
           type: b.type,
           notes,
           out: slot(n.id + ':' + b.key),
@@ -719,6 +720,46 @@
           open: need(b.type, notes, !!side || !!S.dwg),
           st: {}
         });
+      }
+      /* ML 62 PA (parameter modify, TCA019): PA<n> number N gives on line the parameters of the block N of the sheet (drawn beside
+         it: TCE196 PA3 005 -> I 005, TCA533 PA2 010 -> CMP 010). Which parameter each input gives is the name printed at the input
+         ("(TI)", "HL"), or, where none is printed, the sheet's own pa list (with its reason); an input with no name stays open. */
+      for (const b of n.blocks) {
+        if (!/^PA\d$/.test(b.type)) continue;
+        const sb = (S.b || []).find(x => x[0] === b.key),
+          dg = z => (/\d+$/.exec(String(z)) || [''])[0],
+          /* the block of the same number (the drawing may print the PA without the letter: PA2 013 -> RL C013), the nearest one */
+          tb =
+            sb &&
+            (S.b || [])
+              .filter(x => x[0] !== b.key && !/^PA/.test(x[1]) && (x[2] === sb[2] || (dg(x[2]) && dg(x[2]) === dg(sb[2]))))
+              .sort((a, c) => Math.hypot(a[3] - sb[3], a[4] - sb[4]) - Math.hypot(c[3] - sb[3], c[4] - sb[4]))[0],
+          tn = tb && nodes.find(x => x.key === tb[0]);
+        if (!tn) continue;
+        const L = sb[3] - ((sb[7] && sb[7][0]) || 59) / 2,
+          given = (S.pa && S.pa[b.key]) || [];
+        tn.pa = tn.pa || {};
+        b.ins
+          .filter(i => i.side === 'l')
+          .sort((a, c) => a.y - c.y)
+          .forEach((i, k) => {
+            /* the name is printed at the pin or along the wire of that input ("(LL)" of TCE195 sits on the riser of G 029) */
+            const segs = (S.w || []).filter(x => x[0] === i.net).flatMap(x => x[1].slice(1).map((q, j) => [x[1][j], q])),
+              dseg = (P0, [A, B]) => {
+                const dx = B[0] - A[0],
+                  dy = B[1] - A[1],
+                  t = dx || dy ? Math.max(0, Math.min(1, ((P0[0] - A[0]) * dx + (P0[1] - A[1]) * dy) / (dx * dx + dy * dy))) : 0;
+                return Math.hypot(P0[0] - A[0] - t * dx, P0[1] - A[1] - t * dy);
+              },
+              near = w => (w[0] > L - 90 && w[0] < L + 5 && Math.abs(w[1] - i.y) < 14) || segs.some(g => dseg(w, g) < 22),
+              lab = (S.t || [])
+                .filter(w => /^\(?[A-Z][A-Z0-9]{0,3}\)?$/.test(String(w[2]).trim()) && near(w))
+                .sort((a, c) => Math.abs(a[1] - i.y) - Math.abs(c[1] - i.y))[0],
+              name = lab ? /[A-Z][A-Z0-9]*/.exec(lab[2])[0] : given[k];
+            if (name) tn.pa[name] = res(n.id, i.net);
+          });
+        const has = Object.keys(tn.pa).map(k => k + ':0');
+        tn.open = need(tn.type, has.concat(tn.notes || []), tn.sw >= 0 || !!S.dwg);
       }
       /* a function box drawn as a plain box ('fn': TRIPLE DETECTOR2, 2OO3): a block with no meaning yet, so its sheet does not run */
       for (const x of S.r || [])
@@ -773,7 +814,8 @@
         const xs = x.ins.map((s, i) => (x.inv[i] ? b01(!v[s]) : v[s]));
         let sw;
         if (x.sw >= 0) sw = b01(v[x.sw]);
-        v[x.out] = x.f(xs, x.notes, x.st, dt, sw)[0];
+        const nt = x.pa ? Object.keys(x.pa).map(k => k + ':' + v[x.pa[k]]).concat(x.notes || []) : x.notes;
+        v[x.out] = x.f(xs, nt, x.st, dt, sw)[0];
       } else {
         if (!x.f) {
           for (const k in x.outs) v[x.outs[k]] = NaN;

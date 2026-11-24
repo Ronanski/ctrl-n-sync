@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 195; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 196; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -92,6 +92,13 @@ console.log('without a meaning yet: ' + um.map(([k, n]) => k + ' x' + n).join(',
   A.v[s] = 1;
   if (R.get(A, 'TCE169', 'iHsm') !== 1) fail('TCE169 HEAT SOAK MODE does not follow TCE168 C');
   A.v[s] = old;
+}
+/* ML 62 PA gives the parameters of the block of its number, by the names printed at its inputs (TCE196 PA3 005 -> I 005 TI / HL / LL) */
+{
+  const x = A.plan.find(p => p.id === 'TCE196').nodes.find(x => x.key === 'i005');
+  if (!x || !x.pa || ['TI', 'HL', 'LL'].some(k => !(k in x.pa))) fail('TCE196 I 005 does not take TI / HL / LL from PA3 005');
+  const y = A.plan.find(p => p.id === 'TCE195').nodes.find(x => x.key === 'lms027');
+  if (!y || !y.pa || A.names[y.pa.LL] !== 'TCE195:g029') fail('TCE195 LMS 027 LL is not G 029 (the "(LL)" on its riser)');
 }
 /* the open-item rule: a missing parameter, a parameter the macro list does not define, or an unwired SW keeps the block open */
 if (!R.need('SG', [], true).length) fail('SG with no K must be open');

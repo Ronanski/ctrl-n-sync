@@ -49745,6 +49745,9 @@ const TCS_DESC = {
   window.TCE_SHEETS.push({
     id: 'TCA536',
     /* pr: printed on page 106 beside each block; the drawing above keeps them as text */
+    /* pa: PA2 003 / PA2 007 print no names at their two inputs; both inputs are one wire (ASW 039 / ASW 044, page 106), so they give
+       HL and LL of CPL A003 / A007 the same value, as the HL = LL printed under each CPL */
+    pa: { pa2003: ['HL', 'LL'], pa2007: ['HL', 'LL'] },
     pr: {
       sg037: ['K:105.3'],
       sg038: ['K:76.5'],
@@ -156922,10 +156925,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 45bdd96'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 54295fb'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 45bdd96';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 54295fb';
     } catch (e) {}
   };
   upd();
@@ -227344,6 +227347,9 @@ const TCS_DESC = {
   window.TCE_SHEETS.push({
     id: 'TCA536',
     /* pr: printed on page 106 beside each block; the drawing above keeps them as text */
+    /* pa: PA2 003 / PA2 007 print no names at their two inputs; both inputs are one wire (ASW 039 / ASW 044, page 106), so they give
+       HL and LL of CPL A003 / A007 the same value, as the HL = LL printed under each CPL */
+    pa: { pa2003: ['HL', 'LL'], pa2007: ['HL', 'LL'] },
     pr: {
       sg037: ['K:105.3'],
       sg038: ['K:76.5'],
@@ -347762,7 +347768,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 45bdd96'));
+    row('Version', E('span', 'scsver', ver + ' · build 54295fb'));
   }
   function openSet(near) {
     if (!set) {
