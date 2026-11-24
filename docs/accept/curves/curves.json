@@ -1,0 +1,48 @@
+{
+  "note": "Design target curves for the curve-sweep check (Part 1). Rule 0: design documents only, no plant trend or snapshot. x = load. FHI curves use boiler load % MCR = main steam flow / 460 T/H; HB cases use generator load % = MW / 150. 'repo' = the points are written in this repository (file given); 'pc' = the curve exists in the document but its points are not in the repository yet and must be read on the PC. Points between two printed points: straight line. No extrapolation outside the printed range: below the first point the curve is NOT a target.",
+  "fhi": {
+    "fig6_sh_rh_temp_C": { "src": "FHI P2S7 Fig 6 SH & RH steam temperature versus load", "x": "%MCR", "pts": [[40, 524], [50, 534], [60, 541], [100, 541]], "same_for": "SH outlet and RH outlet", "from": "icms-master-tool docs/versions/v2.2.0/DRAWING_TRACE.md line 186; tests/regress/unit_load.js line 76", "status": "repo" },
+    "fig7_o2_pct": { "src": "FHI P2S7 Fig 7 O2 versus load", "x": "%MCR", "pts": [[40, 8.8], [50, 4.6], [60, 3.6], [70, 3.6], [100, 3.6]], "from": "icms-master-tool docs/versions/v3.2.1/GAS_PATH.md; tests/regress/gas_path.js line 16", "status": "repo" },
+    "fig8_furnace_avg_C": { "src": "FHI P2S7 Fig 8 furnace average temperature versus load", "x": "%MCR", "pts": [[40, 660], [60, 755], [100, 840]], "from": "unit.js lines 2186, 2309, 2274; boiler.js line 649 (rise ratio 0.778 / 0.895 / 1 over 35 C ambient gives 661 / 755 / 840)", "missing": "50, 70, 85 % points", "status": "repo (3 points), pc (rest)" },
+    "fig9_furnace_dp_mmH2O": { "src": "FHI P2S7 Fig 9 overall furnace pressure drop versus load (normal; low / high limits)", "x": "%MCR", "pts": [[40, 1380], [60, 1380], [70, 1440], [85, 1550], [100, 1630]], "low": [[40, 1150], [60, 1150], [100, 1450]], "high": 2100, "from": "docs/ACCEPTANCE.md Part 1 row 'Bed inventory'; hmi-op.js line 330", "missing": "low limit between 60 and 100 %", "status": "repo" },
+    "fig10_sh_spray_pct_of_MSF": { "src": "FHI P2S7 Fig 10 SH spray versus load", "x": "%MCR", "pts": [[60, 0], [70, 1.1], [85, 1.95], [100, 2.7]], "below_60": "not printed (0 at 60 %)", "from": "unit.js lines 57-58; hx.js line 96", "status": "repo" },
+    "fig11_sh_outlet_pressure_kgcm2g": { "src": "FHI P2S7 Fig 11 SH outlet pressure versus load", "x": "%MCR", "pts": [[100, 129]], "acceptance_points": "100.0 at 45 MW, 126.5 at 90 MW (docs/ACCEPTANCE.md, from Jennie's design table on the PC)", "missing": "the printed curve points", "status": "pc" },
+    "fig12_air_TH": { "src": "FHI P2S7 Fig 12 air flow versus load", "x": "%MCR", "total": [[40, 365], [50, 332], [60, 371], [70, 427], [80, 485], [100, 596]], "pa": [[40, 245], [60, 236], [100, 354]], "sa": [[40, 96], [60, 111], [100, 218]], "note": "100 % total 596 = PA 354 + SA 218 + fluidizing air about 24 (GAS_PATH.md). DRAWING_TRACE reads 595 / 425 / 370 / 330 (within 2 T/H). 80 % = 'about 485'.", "from": "GAS_PATH.md; DRAWING_TRACE.md line 186; docs/ACCEPTANCE.md", "missing": "PA / SA at 50, 70, 80, 85 %; total at 85 / 90 %", "status": "repo (part), pc (rest)" },
+    "fig13_coal_TH": { "src": "FHI P2S7 Tab 4 Fig 13 solid fuel and sorbent versus load", "x": "%MCR", "pts": [[40, 38.5], [50, 47.0], [60, 56.0], [70, 64.0], [85, 77.0], [100, 89.5]], "note": "Tab 3 prints 89.0 T/H at MCR", "from": "unit.js line 2184; boiler.js line 1124", "status": "repo" },
+    "fig13_limestone_TH": { "src": "FHI P2S7 Tab 4 Fig 13", "x": "%MCR", "pts": [[40, 5.0], [50, 6.0], [60, 7.1], [70, 8.0], [85, 9.6], [100, 12.0]], "logic_cap": "4.9 T/H (AICFG10571 MH 35 % x 14 T/H, ABC-005): logic, not changed", "from": "boiler.js line 1124; docs/ACCEPTANCE.md", "status": "repo" },
+    "tab3_mcr": { "src": "FHI P2S7 Tab 3 page 2-7-TAB_3-1 (100 % MCR)", "vals": { "steam_TH": 460, "sh_out_kgcm2g": 129, "sh_out_C": 541, "sh_dp_kgcm2": 16, "rh_TH": 401, "rh_in_kgcm2_C": [36.6, 370], "rh_out_kgcm2_C": [35.1, 541], "fw_in_C": 245.4, "eco_out_water_C": 303, "aph_gas_in_C": 322, "aph_gas_out_C": 135, "pa_air_C": [45, 285.8], "sa_air_C": [39, 301.6], "ambient_C": 35, "coal_TH": 89.0, "excess_air_pct": 20, "eff_lhv_pct": 90.9 }, "from": "boiler.js lines 624-660; hx.js line 35; docs/ACCEPTANCE.md", "status": "repo" },
+    "l20_aph_gas_in_C": { "src": "Howden APH OMM (L20) duties", "x": "%MCR", "pts": [[40, 272], [60, 285], [100, 322]], "from": "boiler.js line 649", "status": "repo" },
+    "fig1_rates": { "src": "FHI P2S7 Fig 1", "vals": { "sat_temp_rise_max_C_per_h": 110, "at_high_pressure_C_per_h": 83 }, "status": "repo" },
+    "fig2_cold_start": { "src": "FHI P2S7 Fig 2 cold start-up", "vals": { "turbine_roll_h": 6.0, "sync_h": 7.0, "full_load_h": 12.5, "furnace_C_at_45MW_point": 610, "sh_out_C_9p2h": 507, "rh_out_C_table": 507 }, "from": "docs/ACCEPTANCE.md", "missing": "the full time table (pressure, temperatures, firing per hour)", "status": "repo (part), pc (rest)" },
+    "fig3_fig4_restart": { "src": "FHI P2S7 Fig 3 warm (8-56 h) / Fig 4 hot (< 8 h)", "vals": { "warm": { "furnace_C": 360, "sh_rh_C": 315, "sh_kgcm2": 40 }, "hot": { "furnace_C": 700, "sh_rh_C": 430, "sh_kgcm2": 100 } }, "from": "unit.js lines 1018-1020", "missing": "the time tables", "status": "repo (part), pc (rest)" },
+    "fig5_cold_shutdown": { "src": "FHI P2S7 Fig 5", "status": "pc" }
+  },
+  "hb": {
+    "src": "Hitachi / MHPS PPE-14-0725 R1 Heat Balance Diagram, pages 6 ~ 12 (same numbers as PPE-13-0106 R2 pages 5 ~ 11); VWO sheet 310SD09-061 R3",
+    "cases": ["30 %", "40 %", "50 %", "60 %", "70 %", "85 %", "100 %"],
+    "mw": [45, 60, 75, 90, 105, 127.5, 150],
+    "ms_TH": [149.954, 190.769, 231.94, 273.36, 318.817, 387.587, 458.327],
+    "mst_rht_C": [505, 520, 529, 538, 538, 538, 538],
+    "ms_press_ata": { "pts": [[30, 98.9], [60, 126.0], [100, 126.0]], "note": "sliding below 60 %; 40 / 50 % values not in repo", "status": "repo (part), pc (rest)" },
+    "crh_ata_x6": [12.79, 16.35, 19.9, 23.48, 27.25, 32.89, 38.64],
+    "x5_ata": [5.0, 6.38, 7.75, 9.13, 10.56, 12.7, 14.87],
+    "deaerator_ata": [2.173, 2.769, 3.355, 3.943, 4.553, 5.457, 6.369],
+    "x3_ata": [0.658, 0.837, 1.014, 1.19, 1.373, 1.643, 1.914],
+    "x2_ata": [0.286, 0.364, 0.44, 0.516, 0.594, 0.71, 0.826],
+    "x1_ata": [0.133, 0.167, 0.201, 0.234, 0.269, 0.321, 0.373],
+    "lph3_ext_kgh": [4251, 5603, 6963, 8422, 10009, 12531, 15246],
+    "lph2_ext_kgh": [3426, 4525, 5685, 6871, 8190, 10192, 12270],
+    "lph1_ext_kgh": [2243, 4184, 6060, 7935, 10093, 13357, 16834],
+    "three_cases_only": {
+      "cases": ["30 %", "60 %", "100 %"],
+      "crh_TH": [145.0, 265.4, 446.1], "crh_C": [328.8, 358.1, 370.2],
+      "hrh_TH": [134.8, 243.1, 400.9], "hrh_ata": [11.51, 21.13, 34.77],
+      "fw_C": [188.6, 218.0, 245.4], "fw_TH": [150.3, 273.7, 458.7],
+      "heat_rate_kcal_kWh": [2331, 2079, 1989],
+      "missing": "the same rows for 40 / 50 / 70 / 85 %",
+      "status": "repo (3 cases), pc (4 cases)"
+    },
+    "from": "src/analog/engine/unit.js AN_TBW / AN_HB (lines 2713-2790); tools/accept/part1.cjs; docs/ACCEPTANCE.md. MW per case checked: shaft (wh + wi) less losses gives 45.00 / 59.99 / 74.99 / 89.99 / 104.97 / 127.46 / 150.00",
+    "bypass_sheet": { "src": "PPE-14-0728 R1 (bypass cases, ten cases)", "status": "pc (only LP bypass point 5 ratio in unit.js line 5967)" }
+  }
+}
