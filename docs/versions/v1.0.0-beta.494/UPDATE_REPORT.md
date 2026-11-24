@@ -1,4 +1,4 @@
-# v1.0.0-beta.464 — Field signals ng BOP (lane 4, DCS LINKS BOP : RARA)
+# v1.0.0-beta.494 — Field signals ng BOP (lane 4, DCS LINKS BOP : RARA)
 
 ## Ano ang bago
 - Bagong file `src/world/field/bop.js`: 77 field signal ng balance of plant na dati ay walang value sa app. Bawat isa ay binabasa lang ang engine state na mayroon na, at may nakasulat na source.
@@ -16,7 +16,7 @@
 
 ## Test
 - `tests/lanes/bop/field.cjs`: hugis ng row, may src at rel, isang row bawat address at tag, tugma sa I/O list, walang natitirang fixed value sa hmi-op.js.
-- Headless sa 150 MW (Run): 138 value sa `AN.unit.fld`, walang page error. Mga value: FW1130-1 61 %, HD drains 52 ~ 78 %, BFWP inlet 160.8 °C, hotwell 36.5 °C, make-up 34.9 t/h, SWP B / C VCB ON at A OFF (A naka-standby).
+- Headless sa 150 MW (Run): 138 value sa `AN.unit.fld` at sa `AN.fieldRead`, walang page error. Bago ang unang Run, null ang mga value na hindi pa nagagawa ng model (U.tSr, U.muQ, heater drains); lumalabas sila sa unang scan. Mga value: FW1130-1 61 %, HD drains 52 ~ 78 %, BFWP inlet 160.8 °C, hotwell 36.5 °C, make-up 34.9 t/h, SWP B / C VCB ON at A OFF (A naka-standby).
 
 ## Hindi pa / bukas
 - Ang mga address na ito ay wala sa anumang tumatakbong sheet (CRT / HMI point lang), kaya ang value ay nasa `AN.unit.fld` para sa HMI; walang AI block na sinusulatan.

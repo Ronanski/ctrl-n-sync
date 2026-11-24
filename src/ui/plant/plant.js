@@ -329,7 +329,7 @@
             IX.lab.get(r.st + '|' + r.a)
           );
       }
-      /* beta.450 (lane plan 2026-11-25): no logic sheet has it: the field row of a lane (src/world/field/<lane>.js) by its I/O address,
+      /* beta.470 (lane plan 2026-11-25): no logic sheet has it: the field row of a lane (src/world/field/<lane>.js) by its I/O address,
          else by its tag; the value is AN.unit.fld (unit.js anFieldStep). One source per tag: the field row replaces the page fallback */
       const FR = (window.FIELD && FIELD.rows) || [];
       for (const c of [k].concat(tx(k))) {
@@ -467,7 +467,7 @@
           );
         } else if (r.k === 'fld') {
           const U = window.AN && AN.unit,
-            v = U && U.on && U.fld ? U.fld[r.f] : undefined;
+            v = U && U.on && AN.fieldRead ? AN.fieldRead(r.f) : null;
           o.set(v != null && isFinite(v) ? { v: +v, r } : null);
         } else if (r.k === 'unit') {
           const U = window.AN && AN.unit;

@@ -506,8 +506,8 @@ input[type=file]{display:none}
 window.LANE_BIND=[];window.LANE_INST=[];window.LANE_ALARMS=[];
 window.FIELD={rows:[],add:function(lane,rows){for(const r of rows||[])this.rows.push(Object.assign({lane:lane},r))}};
 /* ---- src/world/field/bop.js ---- */
-(function (lane) {
-/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.464. Field signals of the balance of plant (src/world/field/README.md).
+(function (lane, FIELD) {
+/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.494. Field signals of the balance of plant (src/world/field/README.md).
    Each row reads engine state that already exists (read only) and names its physical source. No constant stands for a process value,
    no fitted number (RULES 3.12). Paper with the physical source of every value (QA : SAORI pass 2026-11-25):
    lanes/bop/lane4-field-values-paper-2026-11-25.md. A value that is not a number writes nothing (the point keeps its last value).
@@ -705,9 +705,9 @@ for (const [L, on, off, sh] of [
     src: io(3) + ' ' + off + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008'
   });
 }
-G.FIELD.add(lane, R);
+FIELD.add(lane, R);
 
-})("bop");
+})("bop", window.FIELD);
 </script><script>/* DITL (digital logic) - Constants, state, text decoding, DXF parse and build of the sheets. Part of ONE script (joined by src/digital/order.list, in this order). */
 const NS = 'http://www.w3.org/2000/svg',
   $ = id => document.getElementById(id);
@@ -139120,6 +139120,26 @@ function anHxStep(U, I, dt) {
     gRo: gE2r.Tg /* gas leaving the No.2 eco R side (TT-FG1110) */,
     gSo: gE2s.Tg /* S side (TT-FG1113) */,
     gEo: gE1.Tg /* gas to the air heater */,
+    /* beta.490 (lane 3 KIRARA, P&ID PD-051 TT-FG1100 ~ 1111 at the bank boundaries): the gas leaving each backpass bank, an export of
+       the same chain (no change to the run). Gas path: furnace -> wall (cyclone outlet / roof) -> R pass: RH bank 3, 2, 1, 0 -> No.2 eco
+       R; S pass: finishing SH bank 2, 1, 0 -> No.3 eco -> No.2 eco S; the two passes mix (mix; e1In = after an economizer tube leak, if
+       any) -> No.1 eco (e1) -> air heater. On U as U.hxO.gBank. The gas
+       into a bank is the gas leaving the bank before it (into RH 3 and FSH 2: wl). */
+    gBank: {
+      wl: gWl.Tg,
+      rh: gR4.map(g => g.Tg),
+      e2r: gE2r.Tg,
+      fsh: gF.map(g => g.Tg),
+      e3: gE3.Tg,
+      /* TT-FG1109, No.3 eco lower inlet (between its upper and lower half): the gas of the same bank solution at half the surface. One
+         metal temperature M.e3 per bank, so the gas falls as (Tg - Tm) = (Tin - Tm) e^-n and the half point is the geometric mean of the
+         two ends above the metal. Two halves of equal surface (the split is not in the documents found so far) */
+      e3m: (tS - M.e3) * (gE3.Tg - M.e3) > 0 ? M.e3 + Math.sign(tS - M.e3) * Math.sqrt((tS - M.e3) * (gE3.Tg - M.e3)) : (tS + gE3.Tg) / 2,
+      e2s: gE2s.Tg,
+      mix: tMix,
+      e1In: tE1,
+      e1: gE1.Tg
+    },
     gRh: tR,
     gFs: tS,
     mGR,
@@ -144374,7 +144394,7 @@ function anChemStep(U, dt) {
   U.spAL2 = al;
   U.spAL1 = U.spAL3 = U.spALZ = 0;
 }
-/* beta.450 (lane plan 2026-11-25): the field signals of the lanes (src/world/field/<lane>.js, FIELD.add): a row { stn, ai: "AI0128", tag,
+/* beta.470 (lane plan 2026-11-25): the field signals of the lanes (src/world/field/<lane>.js, FIELD.add): a row { stn, ai: "AI0128", tag,
    src, rel, v(U, X) } writes v(AN_UNIT, X) on the AI blocks of that address once a scan, after the unit model step, as the unit model writes
    its own transmitters (anUnitWrite: a forced output is left alone, the range clamps). v reads the engine state only (X: anFieldX below). A row whose
    value is not a number writes nothing. The block lists are made again when the sheets with a running engine change. */
@@ -144385,8 +144405,10 @@ let AN_FLD = null;
    ditlPos(n, j) the position 0 ~ 100 % of valve j of DITL drawing n ("DITL-32", "DITL-32 #B"), null while the world is not built
    ditlRun(a)    1 RUN / 0 STOP of DITL drawing a ("DITL-23A", "DITL-39@3" = output row 3), null while the world is not built
    ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it */
+const anFieldKey = () => AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0);
 function anFieldX() {
-  const C = {};
+  let C = {},
+    ck = -1;
   return Object.freeze({
     av: (tag, x) => {
       const H = AN_UNIT.avH,
@@ -144407,42 +144429,68 @@ function anFieldX() {
     },
     ditlPos: (n, j) => anDitlPos(n, j),
     ditlRun: (a, last) => anDitlRun(a, last),
-    ai: key => anUnitVal(C[key] || (C[key] = anUnitAIs(String(key))))
+    ai: key => {
+      const k = anFieldKey();
+      if (k !== ck) (C = {}), (ck = k); /* the block lists again when the sheets with a running engine change */
+      return anUnitVal(C[key] || (C[key] = anUnitAIs(String(key))));
+    }
   });
 }
 const anFieldN = t => String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-function anFieldStep() {
-  const G = typeof window !== 'undefined' ? window : globalThis,
-    F = (G.FIELD && G.FIELD.rows) || [];
-  if (!F.length) return;
-  const key = AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0) + '/' + F.length;
-  if (!AN_FLD || AN_FLD.key !== key) {
-    AN_FLD = {
-      key,
-      X: anFieldX(),
-      L: F.filter(r => typeof (r.v || r.get) === 'function').map(r => [r, r.ai ? anUnitAIs(String(r.stn) + '|' + r.ai) : []])
-    };
-    AN.fieldX = AN_FLD.X;
-    /* for the lanes and QA: each AI row and the number of blocks it writes (0 = the address is on no running sheet) */
-    AN.fieldStat = AN_FLD.L.filter(([r]) => r.ai).map(([r, l]) => ({ lane: r.lane, stn: r.stn, ai: r.ai, tag: r.tag, blocks: l.length }));
-  }
-  /* AN.unit.fld: the value of every row by "stn|AI0128" (AI rows) and by the tag without signs (PTIA1064A): the HMI reads it
-     (src/ui/plant/plant.js, a value with no logic transmitter), in Worker mode too (AN.unit is in the keyframe) */
-  const V = {};
-  for (const [r, l] of AN_FLD.L) {
+const AN_FLD_X = anFieldX();
+const anFieldRows = () => (((typeof window !== 'undefined' ? window : globalThis).FIELD || {}).rows || []).filter(r => typeof (r.v || r.get) === 'function');
+/* the values of all rows now: [row, number] (a row whose value is not a number, or that fails, is left out) */
+function anFieldVals() {
+  const out = [];
+  for (const r of anFieldRows()) {
     let v;
     try {
-      v = (r.v || r.get)(AN_UNIT, AN_FLD.X);
+      v = (r.v || r.get)(AN_UNIT, AN_FLD_X);
     } catch (e) {
       continue;
     }
     v = v === true ? 1 : v === false ? 0 : v == null ? NaN : +v;
-    if (!isFinite(v)) continue;
+    if (isFinite(v)) out.push([r, v]);
+  }
+  return out;
+}
+function anFieldMap(L) {
+  const V = {};
+  for (const [r, v] of L) {
     if (r.ai) V[String(r.stn) + '|' + r.ai] = v;
     if (r.tag) V[anFieldN(r.tag)] = v;
-    if (r.ai && l.length) anUnitWrite(l, v);
   }
-  AN_UNIT.fld = V;
+  return V;
+}
+/* the value of a field row for the HMI, by "stn|AI0128" or by the tag without signs (PTIA1064A). AN.unit.fld is the map of the last scan
+   (in the keyframe: the mirror page of the Worker has it). A plant that is loaded and not yet run has none (the state just loaded takes
+   the key away): then the rows are read now, at most twice a second of the PC clock */
+let AN_FLD_NOW = null;
+const anFieldRead = key => {
+  let V = AN_UNIT.fld;
+  if (!V) {
+    const t = Date.now();
+    if (!AN_FLD_NOW || t - AN_FLD_NOW.t > 500 || t < AN_FLD_NOW.t) AN_FLD_NOW = { t, V: anFieldMap(anFieldVals()) };
+    V = AN_FLD_NOW.V;
+  }
+  const v = V[key];
+  return v === undefined ? null : v;
+};
+function anFieldStep() {
+  const F = anFieldRows();
+  if (!F.length) return;
+  const key = anFieldKey() + '/' + F.length;
+  if (!AN_FLD || AN_FLD.key !== key) {
+    AN_FLD = { key, L: new Map(F.filter(r => r.ai).map(r => [r, anUnitAIs(String(r.stn) + '|' + r.ai)])) };
+    /* for the lanes and QA: each AI row and the number of blocks it writes (0 = the address is on no running sheet) */
+    AN.fieldStat = [...AN_FLD.L].map(([r, l]) => ({ lane: r.lane, stn: r.stn, ai: r.ai, tag: r.tag, blocks: l.length }));
+  }
+  const L = anFieldVals();
+  for (const [r, v] of L) {
+    const l = AN_FLD.L.get(r);
+    if (l && l.length) anUnitWrite(l, v);
+  }
+  AN_UNIT.fld = anFieldMap(L);
 }
 function anUnitStep(dt) {
   const M = (typeof globalThis !== 'undefined' ? globalThis : window).LS_SIMM;
@@ -152896,6 +152944,8 @@ function anEngAPI() {
     doValve: anDoValve,
     /* 3.2.1 SEULGI (boiler.js AN_BA): the numbers of the bottom ash model (set points of its field switches) */
     baK: AN_BA,
+    fieldX: AN_FLD_X, /* the readers and the values of the lane field rows (unit.js, src/world/field) */
+    fieldRead: anFieldRead,
     engState: { capture: anStateCapture, apply: anStateApply },
     /* engine/sync.js: what changed, both ways (worker -> page, page -> worker) */
     sync: {
@@ -157193,10 +157243,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 03bdda7'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 492c946'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 03bdda7';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 492c946';
     } catch (e) {}
   };
   upd();
@@ -176253,7 +176303,7 @@ jV1eHpSLHlIJuUKcZC50d65hZRirjTo8uYFaEuMHYZh93x7z7vT58xHtJk75Y7HQrrsSLQX2BdoSnYyU
       fn = () => (window.AN && AN.ditlRun ? (AN.ditlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1 ? 1 : 0) : NaN);
     for (const t of i ? ['SS-BH1060-' + x, 'SS-BH1060-A'] : ['SS-BH1060-A']) L.push([t, fn, 0.5, 'hi', 0, 0, /SPEED NOT LOW/, sh]);
   });
-  /* beta.450 (lane plan 2026-11-25): a field signal row of a lane with di (src/world/field/<lane>.js: { tag, di: 1, sheet, src, rel,
+  /* beta.470 (lane plan 2026-11-25): a field signal row of a lane with di (src/world/field/<lane>.js: { tag, di: 1, sheet, src, rel,
      v(U, X) }) is a switch row of the plant model like the rows above: the DITL input row whose text starts with the tag is 1 while
      v(AN.unit, AN.fieldX) is true (above 0.5). sheet (optional): the code of the sheet, "DITL-23A", when the tag is on more than one sheet */
   for (const r of (window.FIELD && FIELD.rows) || []) {
@@ -312811,6 +312861,26 @@ function anHxStep(U, I, dt) {
     gRo: gE2r.Tg /* gas leaving the No.2 eco R side (TT-FG1110) */,
     gSo: gE2s.Tg /* S side (TT-FG1113) */,
     gEo: gE1.Tg /* gas to the air heater */,
+    /* beta.490 (lane 3 KIRARA, P&ID PD-051 TT-FG1100 ~ 1111 at the bank boundaries): the gas leaving each backpass bank, an export of
+       the same chain (no change to the run). Gas path: furnace -> wall (cyclone outlet / roof) -> R pass: RH bank 3, 2, 1, 0 -> No.2 eco
+       R; S pass: finishing SH bank 2, 1, 0 -> No.3 eco -> No.2 eco S; the two passes mix (mix; e1In = after an economizer tube leak, if
+       any) -> No.1 eco (e1) -> air heater. On U as U.hxO.gBank. The gas
+       into a bank is the gas leaving the bank before it (into RH 3 and FSH 2: wl). */
+    gBank: {
+      wl: gWl.Tg,
+      rh: gR4.map(g => g.Tg),
+      e2r: gE2r.Tg,
+      fsh: gF.map(g => g.Tg),
+      e3: gE3.Tg,
+      /* TT-FG1109, No.3 eco lower inlet (between its upper and lower half): the gas of the same bank solution at half the surface. One
+         metal temperature M.e3 per bank, so the gas falls as (Tg - Tm) = (Tin - Tm) e^-n and the half point is the geometric mean of the
+         two ends above the metal. Two halves of equal surface (the split is not in the documents found so far) */
+      e3m: (tS - M.e3) * (gE3.Tg - M.e3) > 0 ? M.e3 + Math.sign(tS - M.e3) * Math.sqrt((tS - M.e3) * (gE3.Tg - M.e3)) : (tS + gE3.Tg) / 2,
+      e2s: gE2s.Tg,
+      mix: tMix,
+      e1In: tE1,
+      e1: gE1.Tg
+    },
     gRh: tR,
     gFs: tS,
     mGR,
@@ -318067,7 +318137,7 @@ function anChemStep(U, dt) {
   U.spAL2 = al;
   U.spAL1 = U.spAL3 = U.spALZ = 0;
 }
-/* beta.450 (lane plan 2026-11-25): the field signals of the lanes (src/world/field/<lane>.js, FIELD.add): a row { stn, ai: "AI0128", tag,
+/* beta.470 (lane plan 2026-11-25): the field signals of the lanes (src/world/field/<lane>.js, FIELD.add): a row { stn, ai: "AI0128", tag,
    src, rel, v(U, X) } writes v(AN_UNIT, X) on the AI blocks of that address once a scan, after the unit model step, as the unit model writes
    its own transmitters (anUnitWrite: a forced output is left alone, the range clamps). v reads the engine state only (X: anFieldX below). A row whose
    value is not a number writes nothing. The block lists are made again when the sheets with a running engine change. */
@@ -318078,8 +318148,10 @@ let AN_FLD = null;
    ditlPos(n, j) the position 0 ~ 100 % of valve j of DITL drawing n ("DITL-32", "DITL-32 #B"), null while the world is not built
    ditlRun(a)    1 RUN / 0 STOP of DITL drawing a ("DITL-23A", "DITL-39@3" = output row 3), null while the world is not built
    ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it */
+const anFieldKey = () => AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0);
 function anFieldX() {
-  const C = {};
+  let C = {},
+    ck = -1;
   return Object.freeze({
     av: (tag, x) => {
       const H = AN_UNIT.avH,
@@ -318100,42 +318172,68 @@ function anFieldX() {
     },
     ditlPos: (n, j) => anDitlPos(n, j),
     ditlRun: (a, last) => anDitlRun(a, last),
-    ai: key => anUnitVal(C[key] || (C[key] = anUnitAIs(String(key))))
+    ai: key => {
+      const k = anFieldKey();
+      if (k !== ck) (C = {}), (ck = k); /* the block lists again when the sheets with a running engine change */
+      return anUnitVal(C[key] || (C[key] = anUnitAIs(String(key))));
+    }
   });
 }
 const anFieldN = t => String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-function anFieldStep() {
-  const G = typeof window !== 'undefined' ? window : globalThis,
-    F = (G.FIELD && G.FIELD.rows) || [];
-  if (!F.length) return;
-  const key = AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0) + '/' + F.length;
-  if (!AN_FLD || AN_FLD.key !== key) {
-    AN_FLD = {
-      key,
-      X: anFieldX(),
-      L: F.filter(r => typeof (r.v || r.get) === 'function').map(r => [r, r.ai ? anUnitAIs(String(r.stn) + '|' + r.ai) : []])
-    };
-    AN.fieldX = AN_FLD.X;
-    /* for the lanes and QA: each AI row and the number of blocks it writes (0 = the address is on no running sheet) */
-    AN.fieldStat = AN_FLD.L.filter(([r]) => r.ai).map(([r, l]) => ({ lane: r.lane, stn: r.stn, ai: r.ai, tag: r.tag, blocks: l.length }));
-  }
-  /* AN.unit.fld: the value of every row by "stn|AI0128" (AI rows) and by the tag without signs (PTIA1064A): the HMI reads it
-     (src/ui/plant/plant.js, a value with no logic transmitter), in Worker mode too (AN.unit is in the keyframe) */
-  const V = {};
-  for (const [r, l] of AN_FLD.L) {
+const AN_FLD_X = anFieldX();
+const anFieldRows = () => (((typeof window !== 'undefined' ? window : globalThis).FIELD || {}).rows || []).filter(r => typeof (r.v || r.get) === 'function');
+/* the values of all rows now: [row, number] (a row whose value is not a number, or that fails, is left out) */
+function anFieldVals() {
+  const out = [];
+  for (const r of anFieldRows()) {
     let v;
     try {
-      v = (r.v || r.get)(AN_UNIT, AN_FLD.X);
+      v = (r.v || r.get)(AN_UNIT, AN_FLD_X);
     } catch (e) {
       continue;
     }
     v = v === true ? 1 : v === false ? 0 : v == null ? NaN : +v;
-    if (!isFinite(v)) continue;
+    if (isFinite(v)) out.push([r, v]);
+  }
+  return out;
+}
+function anFieldMap(L) {
+  const V = {};
+  for (const [r, v] of L) {
     if (r.ai) V[String(r.stn) + '|' + r.ai] = v;
     if (r.tag) V[anFieldN(r.tag)] = v;
-    if (r.ai && l.length) anUnitWrite(l, v);
   }
-  AN_UNIT.fld = V;
+  return V;
+}
+/* the value of a field row for the HMI, by "stn|AI0128" or by the tag without signs (PTIA1064A). AN.unit.fld is the map of the last scan
+   (in the keyframe: the mirror page of the Worker has it). A plant that is loaded and not yet run has none (the state just loaded takes
+   the key away): then the rows are read now, at most twice a second of the PC clock */
+let AN_FLD_NOW = null;
+const anFieldRead = key => {
+  let V = AN_UNIT.fld;
+  if (!V) {
+    const t = Date.now();
+    if (!AN_FLD_NOW || t - AN_FLD_NOW.t > 500 || t < AN_FLD_NOW.t) AN_FLD_NOW = { t, V: anFieldMap(anFieldVals()) };
+    V = AN_FLD_NOW.V;
+  }
+  const v = V[key];
+  return v === undefined ? null : v;
+};
+function anFieldStep() {
+  const F = anFieldRows();
+  if (!F.length) return;
+  const key = anFieldKey() + '/' + F.length;
+  if (!AN_FLD || AN_FLD.key !== key) {
+    AN_FLD = { key, L: new Map(F.filter(r => r.ai).map(r => [r, anUnitAIs(String(r.stn) + '|' + r.ai)])) };
+    /* for the lanes and QA: each AI row and the number of blocks it writes (0 = the address is on no running sheet) */
+    AN.fieldStat = [...AN_FLD.L].map(([r, l]) => ({ lane: r.lane, stn: r.stn, ai: r.ai, tag: r.tag, blocks: l.length }));
+  }
+  const L = anFieldVals();
+  for (const [r, v] of L) {
+    const l = AN_FLD.L.get(r);
+    if (l && l.length) anUnitWrite(l, v);
+  }
+  AN_UNIT.fld = anFieldMap(L);
 }
 function anUnitStep(dt) {
   const M = (typeof globalThis !== 'undefined' ? globalThis : window).LS_SIMM;
@@ -326625,6 +326723,8 @@ function anEngAPI() {
     doValve: anDoValve,
     /* 3.2.1 SEULGI (boiler.js AN_BA): the numbers of the bottom ash model (set points of its field switches) */
     baK: AN_BA,
+    fieldX: AN_FLD_X, /* the readers and the values of the lane field rows (unit.js, src/world/field) */
+    fieldRead: anFieldRead,
     engState: { capture: anStateCapture, apply: anStateApply },
     /* engine/sync.js: what changed, both ways (worker -> page, page -> worker) */
     sync: {
@@ -327269,8 +327369,8 @@ window.WIRING=[["DI","1","I.0000","ZSO-BD1002"],["DI","1","I.0001","ZSC-BD1002"]
 window.LANE_BIND=[];window.LANE_INST=[];window.LANE_ALARMS=[];
 window.FIELD={rows:[],add:function(lane,rows){for(const r of rows||[])this.rows.push(Object.assign({lane:lane},r))}};
 /* ---- src/world/field/bop.js ---- */
-(function (lane) {
-/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.464. Field signals of the balance of plant (src/world/field/README.md).
+(function (lane, FIELD) {
+/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.494. Field signals of the balance of plant (src/world/field/README.md).
    Each row reads engine state that already exists (read only) and names its physical source. No constant stands for a process value,
    no fitted number (RULES 3.12). Paper with the physical source of every value (QA : SAORI pass 2026-11-25):
    lanes/bop/lane4-field-values-paper-2026-11-25.md. A value that is not a number writes nothing (the point keeps its last value).
@@ -327468,9 +327568,9 @@ for (const [L, on, off, sh] of [
     src: io(3) + ' ' + off + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008'
   });
 }
-G.FIELD.add(lane, R);
+FIELD.add(lane, R);
 
-})("bop");
+})("bop", window.FIELD);
 /* ---- src/world/world.js ---- */
 /* WORLD (1.22.0): IISANG MUNDO ng ABC at DITL (CHECKLIST #25, CLAUDE.md "HINDI NAGBABAGO NA KAALAMAN" 1).
    Ang mga sheet ay nag-uusap ayon sa reference na nakasulat sa drawing (walang hula):
@@ -329729,7 +329829,7 @@ G.FIELD.add(lane, R);
       fn = () => (window.AN && AN.ditlRun ? (AN.ditlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1 ? 1 : 0) : NaN);
     for (const t of i ? ['SS-BH1060-' + x, 'SS-BH1060-A'] : ['SS-BH1060-A']) L.push([t, fn, 0.5, 'hi', 0, 0, /SPEED NOT LOW/, sh]);
   });
-  /* beta.450 (lane plan 2026-11-25): a field signal row of a lane with di (src/world/field/<lane>.js: { tag, di: 1, sheet, src, rel,
+  /* beta.470 (lane plan 2026-11-25): a field signal row of a lane with di (src/world/field/<lane>.js: { tag, di: 1, sheet, src, rel,
      v(U, X) }) is a switch row of the plant model like the rows above: the DITL input row whose text starts with the tag is 1 while
      v(AN.unit, AN.fieldX) is true (above 0.5). sheet (optional): the code of the sheet, "DITL-23A", when the tag is on more than one sheet */
   for (const r of (window.FIELD && FIELD.rows) || []) {
@@ -336507,7 +336607,8 @@ html body.sc .fpo-box:not(#scnone) .fpo-sh.fld::before{content:'\25B8';display:i
 html body.sc.sc-fpfld .fpo-box:not(#scnone) .fpo-sh.fld::before{content:'\25BE'}
 html body.sc .fpo-box:not(#scnone) .fpo-sh.fld:hover{color:var(--sc-ink)!important}
 html body.sc .fpo-box:not(#scnone) .fpo-sh.fld:focus-visible{outline:2px solid var(--sc-steel);outline-offset:1px}
-html body.sc:not(.sc-fpfld) .fpo-box:not(#scnone) .fpo-sh.fld ~ .fpo-r{display:none!important}
+/* beta.486: only the rows of the FIELD block (.fld) fold, not the VCB, CURRENT and monitor rows after it */
+html body.sc:not(.sc-fpfld) .fpo-box:not(#scnone) .fpo-sh.fld ~ .fpo-r.fld{display:none!important}
 /* the selector row stays one line (REMOTE | LOCAL and the FIELD mark) */
 html body.sc .fpo-box:not(#scnone) .fpo-r:has(.fpo-seg){flex-wrap:nowrap!important;gap:4px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-r:has(.fpo-seg) .fpo-seg button{padding:0 5px!important;font-size:11px!important}
@@ -348346,7 +348447,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 03bdda7'));
+    row('Version', E('span', 'scsver', ver + ' · build 492c946'));
   }
   function openSet(near) {
     if (!set) {
@@ -365196,8 +365297,13 @@ window.PLANT_SYS = [
     if (document.body) document.body.classList.toggle('st-fit', ok);
     return ok;
   };
-  HX.V = (label, key, unit, dp) => ({ label, key, unit: unit || '', dp: dp == null ? 1 : dp });
+  /* o.words = [word at 1, word at 0] for an on / off point (a VCB, a heater): the row shows the word, not 1.0 / 0.0 */
+  HX.V = (label, key, unit, dp, o) => Object.assign({ label, key, unit: unit || '', dp: dp == null ? 1 : dp }, o || {});
   HX.E = (sym, name, tag, vals, o) => Object.assign({ k: 'eq', sym, name, tag: tag || '', vals: vals || [] }, o || {});
+  /* beta.486 (EIMI): o.mon = [HX.V(...)] monitor rows of the machine (bearing, winding, vibration, heater ...): shown on its
+     PERMISSIVE · TREND · MONITOR faceplate (README section 4 rule 6, user 2026-10-31: two faceplates, the monitor rows on the second),
+     not on the drawing. o.vcb = the value key of its VCB ON / OFF point of the I/O list (1 = ON): the VCB lamp of the CONTROL
+     faceplate reads it instead of following the motor state */
   HX.M = (sym, mach, name, vals, o) => Object.assign({ k: 'mach', sym, mach, name, vals: vals || [] }, o || {});
   HX.C = (loop, name, o) => Object.assign({ k: 'loop', sym: 'valve', kind: 'control', loop, name, vals: [] }, o || {});
   HX.X = (valve, name, o) =>
@@ -373331,9 +373437,27 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
   };
   const needMach = name => S && !(name in S.machs) && (S.machs[name] = machDef(name));
   /* after the first pass of the page (every key it asks is known): the hidden page of hmi-mock.js for its valves */
+  /* beta.486 (EIMI): the monitor rows (o.mon) and the VCB point (o.vcb) that the page gives a machine (HX.M), by machine name */
+  function machExtra() {
+    const X = {},
+      d = S && S.def;
+    if (!d) return X;
+    const all = d.plan ? d.plan.items : (d.lanes || []).flatMap(L => L.items.flatMap(c => (Array.isArray(c) ? c : [c])));
+    for (const it of all) {
+      if (!it || it.k !== 'mach' || !(it.mon || it.vcb)) continue;
+      const x = (X[it.mach] = X[it.mach] || { mon: [], vcb: null });
+      for (const r of it.mon || []) if (!x.mon.some(q => q.key === r.key && q.label === r.label)) x.mon.push(r);
+      if (it.vcb) x.vcb = it.vcb;
+    }
+    return X;
+  }
+  const plainKey = k => !/^(an|tcs):/.test(k);
   function proxy() {
     const mach = {},
-      unit = {};
+      unit = {},
+      EX = machExtra();
+    /* the keys of the monitor rows are values of the page as well (linked before the hidden page is built) */
+    for (const n in EX) for (const k of EX[n].mon.map(r => r.key).concat(EX[n].vcb || [])) if (plainKey(k)) needVal(k);
     let art = '';
     /* values: [data-v] of hmi-mock.js (the logic transmitter, else the plant model key, 'tt:' and 'ux:' keys of the temporary pages) */
     for (const key of S.vals) {
@@ -373385,7 +373509,15 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     }
     for (const name in S.machs) {
       if (!S.machs[name]) continue;
-      mach[name] = S.machs[name];
+      const ex = EX[name];
+      /* a copy: the description of the temporary page (LS_MOCK.defs) is shared and stays as it is */
+      mach[name] = !ex
+        ? S.machs[name]
+        : Object.assign({}, S.machs[name], {
+            mon: (S.machs[name].mon || []).concat(ex.mon.map(r => [r.label, () => HX.data.value(r.key), r.unit, plainKey(r.key) ? r.key : '', r.dp, r.words])),
+            vcb: ex.vcb ? () => HX.data.value(ex.vcb) : S.machs[name].vcb,
+            vcbTag: ex.vcb && plainKey(ex.vcb) ? ex.vcb : ''
+          });
       art +=
         '<text data-st="' +
         name +
@@ -373473,12 +373605,32 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       trend: { h, fn: () => HX.data.value(r0.k) }
     });
   }
+  /* beta.486 (EIMI): the TCS operator buttons and lamps (the CRT ports of the TCS soft logic, lanes/tcs-crt-ports.json). HX.B hooks:
+       'crt:<port>'          a push button, e.g. HX.B('RESET', 'crt:CRT:TCE114.<tag>', { press: true }): a press holds the port
+                             CRT.HOLD ms (the TCS program reads a CRT press as a held contact);
+       'crtl:<sheet>|<key>'  a lamp, e.g. HX.B('TRIP', 'crtl:TCE114|<lamp tag>'): ON (lit) at 1, OFF at 0.
+     While the TCS program is not running (no API, or a read gives no value) the lamp shows '-----' and a press does nothing.
+     CRT.press / CRT.read are the ONE place that names the live API of the TCS program (lane 9); nothing else calls it. */
+  const CRT = {
+    HOLD: 3000,
+    api: () => (window.TCE && typeof TCE.press === 'function' && typeof TCE.read === 'function' ? TCE : null),
+    press: (port, ms) => call(() => CRT.api().press(port, ms), null),
+    read: (sheet, key) => call(() => CRT.api().read(sheet, key), null)
+  };
+  const crtLamp = h => {
+    const i = h.indexOf('|'),
+      v = CRT.api() ? CRT.read(h.slice(5, i), h.slice(i + 1)) : null,
+      x = typeof v === 'boolean' ? (v ? 1 : 0) : v != null && isFinite(v) ? +v : null;
+    return { text: x == null ? '-----' : x >= 0.5 ? 'ON' : 'OFF', tone: x == null ? '' : x >= 0.5 ? 'on' : '' };
+  };
   const ALC = { t: 0, m: {} };
   HX.data = {
     time: () => call(() => (window.AN && AN.unit && isFinite(AN.unit.t) ? AN.unit.t : null), Date.now() / 1000),
     value(key) {
       /* Audit 3: a value with no row on the app pages reads its field of the unit model ('an:Pip' = AN.unit.Pip) */
-      if (/^an:/.test(key)) return call(() => { const v = AN.unit[key.slice(3)]; return v != null && isFinite(v) ? +v : null; }, null);
+      /* beta.486 (EIMI): a dotted path reads a field inside the unit model ('an:lpHt.H2.dr' = AN.unit.lpHt.H2.dr); a flag reads 1 / 0 */
+      if (/^an:/.test(key))
+        return call(() => { const v = key.slice(3).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.unit); return typeof v === 'boolean' ? (v ? 1 : 0) : v != null && isFinite(v) ? +v : null; }, null);
       /* a value of the TCS model ('tcs:aux.hso' = AN.tcs().aux.hso); an open / closed flag reads 100 / 0 % */
       if (/^tcs:/.test(key))
         return call(() => { const v = key.slice(4).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.tcs()); return typeof v === 'boolean' ? (v ? 100 : 0) : v != null && isFinite(v) ? +v : null; }, null);
@@ -373593,6 +373745,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         const o = call(() => LS_FPOP.valveOpen(h.slice(3)), null);
         return { text: o == null ? '' : o ? 'OPEN' : 'CLOSED', tone: o == null ? '' : o ? 'run' : 'stop' };
       }
+      if (h.slice(0, 5) === 'crtl:') return crtLamp(h);
+      if (h.slice(0, 4) === 'crt:') return { text: CRT.api() ? '' : '-----', tone: '' };
       needHook(h, label);
       const e = S && S.hooks[h] && pq('[data-hxk="' + S.hooks[h].i + '"]');
       if (!e) return null;
@@ -373609,6 +373763,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     },
     press(h) {
       if (h.slice(0, 3) === 'fv:') return void call(() => LS_FPOP.valveTag(h.slice(3)));
+      if (h.slice(0, 4) === 'crt:') {
+        if (!CRT.api()) return;
+        CRT.press(h.slice(4), CRT.HOLD);
+        return void call(() => window.lsEventAdd('TCS', 'DCS', 'Operator: ' + h.slice(4) + ' pressed (HMI)'));
+      }
+      if (h.slice(0, 5) === 'crtl:') return;
       const e = S && S.hooks[h] && pq('[data-hxk="' + S.hooks[h].i + '"]');
       if (e)
         e.dispatchEvent(
@@ -373642,6 +373802,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
   function screen(def) {
     return function (g, api) {
       S = store(api, g);
+      S.def = def;
       const fo = document.createElementNS(NS, 'foreignObject');
       const [fw, fh] = frame();
       for (const [a, v] of Object.entries({ x: 0, y: 0, width: fw, height: fh })) fo.setAttribute(a, v);
@@ -374099,6 +374260,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     const rLcp = row('LCP', bLs, bLp),
       rEs = row('E-STOP', bEs, ...(esN != null ? [bEr] : esR == null ? [E('span', 'fpo-nd', 'not on ' + (nm || 'its drawing'))] : [])),
       rRly = row('RELAY', bTr, bRs);
+    /* beta.486 (EIMI): the rows of the FIELD block carry 'fld': the compact shell folds only them (shellc-compact.css). The fold took every
+       later row (VCB, CURRENT and the monitor rows of the PERMISSIVE · TREND · MONITOR faceplate), so a pump's monitor rows never showed */
+    for (const r of [rLcp, rEs, rRly]) r.classList.add('fld');
     if (hasFld) F.bd.append(fSh, rLcp, rEs, rRly);
     /* live test 2026-11-05 (ACWP-A, DITL-76 row 24 LOCAL STOP P.B. = a FALLING pulse into the reset of the run flip-flop): with the Worker
        the release written once could be overwritten by the Worker's copy of the row (still 1), the button stayed "pressed" and the pump
@@ -374179,10 +374343,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     if (M.cur) F.bd.append(rCur);
     /* monitoring values of the info faceplate: M.mon = [[label, fn, unit, tag]] (bearing, winding, vibration, ...) */
     const mon = (part === 'info' && M.mon) || [];
-    const monV = mon.map(([l, f, u, tg]) => {
+    /* beta.486: the monitor rows under their own heading, apart from the permissive rows above them */
+    if (mon.length) F.bd.append(E('div', 'fpo-sh', 'MONITOR'));
+    const monV = mon.map(([l, f, u, tg, dp, words]) => {
       const v = E('span', 'fpo-vb');
-      F.bd.append(row(l, v, E('small', 'fpo-dim', (u || '') + (tg ? ' · ' + tg : ''))));
-      return [v, f];
+      F.bd.append(row(l, v, E('small', 'fpo-dim', [u, tg].filter(Boolean).join(' · '))));
+      return [v, f, dp, words];
     });
     if (M.cur) F.bd.append(trH, trend);
     /* the logic permissive */
@@ -374270,9 +374436,16 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       lR.className = 'fpo-lp' + (st === 'RUN' ? ' run' : '');
       lS.className = 'fpo-lp' + (st === 'STOP' ? ' stop' : '');
       lT.className = 'fpo-lp' + (st === 'TRIP' ? ' trip' : '');
-      vcb.className = 'fpo-lp' + (st === 'RUN' ? ' run' : st ? ' stop' : '');
-      setTx(vcb.lastChild, st === 'RUN' ? 'ON' : st ? 'OFF' : '---');
-      vcb.title = 'VCB ON / OFF of the I/O list: shown closed while the motor runs (no logic sheet reads it)';
+      /* beta.486 (EIMI): M.vcb = the VCB ON / OFF point of the I/O list (an HX page gives it: HX.M o.vcb); without it the lamp follows
+         the motor state */
+      const vb = typeof M.vcb === 'function' ? call(M.vcb, null) : undefined,
+        vOn = vb === undefined ? (st === 'RUN' ? true : st ? false : null) : vb == null || !isFinite(+vb) ? null : +vb >= 0.5;
+      vcb.className = 'fpo-lp' + (vOn === true ? ' run' : vOn === false ? ' stop' : '');
+      setTx(vcb.lastChild, vOn === true ? 'ON' : vOn === false ? 'OFF' : '---');
+      vcb.title =
+        vb === undefined
+          ? 'VCB ON / OFF of the I/O list: shown closed while the motor runs (no logic sheet reads it)'
+          : 'VCB ON / OFF of the I/O list' + (M.vcbTag ? ' · ' + M.vcbTag : '');
       bRem.classList.toggle('on', md.rem === true);
       bLoc.classList.toggle('on', md.rem === false);
       bRem.disabled = bLoc.disabled = md.rem == null;
@@ -374349,9 +374522,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       const yn = !loc && !miss.length;
       if (part === 'info') setTx(ilH, 'PERMISSIVE · ' + (yn ? 'Y (all complete)' : 'N (not complete)') + (nm ? ' · ' + nm : ''));
       if (M.onYN) call(() => M.onYN(yn), null);
-      for (const [v, f] of monV) {
+      for (const [v, f, dp, words] of monV) {
         const x = call(f, null);
-        setTx(v, x == null || !isFinite(+x) ? '-----' : (+x).toFixed(1));
+        /* an on / off point shows its word (words = [at 1, at 0]); a value its decimals (dp, 1 when not given) */
+        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp == null ? 1 : dp));
       }
       setTx(chip, st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' ? 'READY' : '');
       chip.className = 'fpo-chip ' + (st === 'TRIP' ? 'trip' : miss.length && st !== 'RUN' ? 'ilk' : '');
@@ -375924,7 +376098,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
             IX.lab.get(r.st + '|' + r.a)
           );
       }
-      /* beta.450 (lane plan 2026-11-25): no logic sheet has it: the field row of a lane (src/world/field/<lane>.js) by its I/O address,
+      /* beta.470 (lane plan 2026-11-25): no logic sheet has it: the field row of a lane (src/world/field/<lane>.js) by its I/O address,
          else by its tag; the value is AN.unit.fld (unit.js anFieldStep). One source per tag: the field row replaces the page fallback */
       const FR = (window.FIELD && FIELD.rows) || [];
       for (const c of [k].concat(tx(k))) {
@@ -376062,7 +376236,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           );
         } else if (r.k === 'fld') {
           const U = window.AN && AN.unit,
-            v = U && U.on && U.fld ? U.fld[r.f] : undefined;
+            v = U && U.on && AN.fieldRead ? AN.fieldRead(r.f) : null;
           o.set(v != null && isFinite(v) ? { v: +v, r } : null);
         } else if (r.k === 'unit') {
           const U = window.AN && AN.unit;

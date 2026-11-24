@@ -64,10 +64,10 @@ function laneData() {
   const bind = [].concat(...rdDir('src/world/bind', (lane, j) => (Array.isArray(j) ? j : j.rows || []).map(r => Object.assign({ lane }, r))));
   const inst = [].concat(...rdDir('src/world/inst', (set, j) => (Array.isArray(j) ? j : [j]).map(r => Object.assign({ set }, r))));
   const alarms = [].concat(...rdDir('src/data/alarms', (group, j) => (Array.isArray(j) ? j : j.rows || []).map(r => Object.assign({ group }, r))));
-  /* beta.450: the field signal modules, src/world/field/<lane>.js (read-only getters of the engine state, src/world/field/README.md) */
+  /* beta.470: the field signal modules, src/world/field/<lane>.js (read-only getters of the engine state, src/world/field/README.md) */
   const FD = path.join(root, 'src', 'world', 'field');
   const field = fs.existsSync(FD)
-    ? fs.readdirSync(FD).filter(x => /\.js$/.test(x)).sort().map(x => '/* ---- src/world/field/' + x + ' ---- */\n(function (lane) {\n' + fs.readFileSync(path.join(FD, x), 'utf8') + '\n})(' + JSON.stringify(x.replace(/\.js$/, '')) + ');\n').join('')
+    ? fs.readdirSync(FD).filter(x => /\.js$/.test(x)).sort().map(x => '/* ---- src/world/field/' + x + ' ---- */\n(function (lane, FIELD) {\n' + fs.readFileSync(path.join(FD, x), 'utf8') + '\n})(' + JSON.stringify(x.replace(/\.js$/, '')) + ', window.FIELD);\n').join('')
     : '';
   return (
     '/* ---- lane data (src/world/bind, src/world/inst, src/data/alarms, src/world/field) ---- */\nwindow.LANE_BIND=' + JSON.stringify(bind) + ';window.LANE_INST=' + JSON.stringify(inst) + ';window.LANE_ALARMS=' + JSON.stringify(alarms) + ';\n' +

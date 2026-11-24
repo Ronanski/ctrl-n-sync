@@ -1,7 +1,7 @@
-# src/world/field: field signals of the lanes (beta.450, lane plan 2026-11-25)
+# src/world/field: field signals of the lanes (beta.470, lane plan 2026-11-25)
 
 There is one JS file per lane, such as `boiler.js` (lane 3) or `bop.js` (lane 4). A lane edits only its own file. The build
-(`tools/build/engine-bundle.js` laneData) wraps each file as `(function (lane) { ... })("<file name>")` and puts it in the page and in the
+(`tools/build/engine-bundle.js` laneData) wraps each file as `(function (lane, FIELD) { ... })("<file name>", FIELD)` and puts it in the page and in the
 engine worker. The file calls `FIELD.add(lane, rows)`.
 
     FIELD.add(lane, [
@@ -28,7 +28,8 @@ The row shape is `{ stn, ai | di: 1, tag, v(U, X), rel, src, sheet? }`. (`get` i
 - **DI row** (`di: 1`): the DITL input row whose text starts with `tag` is 1 while `v` is true (above 0.5). It works like a switch row
   of the plant model (src/world/plantsw.js). `sheet` is optional; it is the sheet code when the tag is on more than one sheet. A tag the
   plant model already switches keeps that one source, and the row is listed in `FIELD.dup`.
-- **The HMI** reads every row on `AN.unit.fld`, by `"stn|AI0128"` and by the tag without signs (`PTIA1064A`). This works in Worker mode
+- **The HMI** reads a row with `AN.fieldRead(key)` (a plant loaded and not yet run is read on the spot; `AN.unit.fld` is the map of the last
+  scan and is there only after RUN), by `"stn|AI0128"` and by the tag without signs (`PTIA1064A`). This works in Worker mode
   too. A page value with no logic transmitter (src/ui/plant/plant.js, `{ t: 'val', tag }`) takes the field row of the same I/O address
   or tag before any page fallback. So **one source per tag**: when a field row lands, the old fallback of that tag (a fixed number in
   hmi-op.js, a plant model key in a page map) is not shown any more and gets removed in the same or the next PR.
