@@ -110,7 +110,7 @@
      "O.0088/408 O.0728/1048" = burner A / B / C / D (I/O list STN104: SVR-DO1043-A5 / B5 / C5 / D5), "M.1150/1160 M.1170" = SWP A / B / C
      (memory list STN103). Before, only the first group was read: machine C / D took the address of machine A */
   /* a short end of 2 ~ 4 digits: "I.0085/88/8B" = I.0085 / I.0088 / I.008B (DITL-45 dryer A / B / C) */
-  /* beta.510 (RARA): "O.0044/0.037E/" (DITL-112 MOP-P0709A, the digit 0 drawn for the letter O after "/"): 0, a point and four hex digits */
+  /* beta.520 (RARA): "O.0044/0.037E/" (DITL-112 MOP-P0709A, the digit 0 drawn for the letter O after "/"): 0, a point and four hex digits */
   const LRXG = /\b([IMOB])\.([0-9A-F]{4})((?:\s*\/\s*(?:[IMOB]\.|0\.(?=[0-9A-F]{4}))?[0-9A-F]{2,4}(?![0-9A-F]))*)/gi;
   const addrList = t => complete(addrList0(t));
   /* a list written short on one row (DITL-13 row 28 "M.0143/243 BURNER A SHUTDOWN COMMAND") and in full on another (DITL-10 row 20
@@ -284,12 +284,12 @@
     const I = s && s._inst;
     /* live test #56: machine A (k 0) of a drawing for several machines keeps its own address of the list too */
     if (!I || !t) return t;
-    /* beta.510: a text of the drawing that a bind row of a lane gives an I/O point in this copy ("MCV OPEN COMMAND" of DITL-38) */
+    /* beta.520: a text of the drawing that a bind row of a lane gives an I/O point in this copy ("MCV OPEN COMMAND" of DITL-38) */
     if (I.tadd && I.tadd.has(String(t).trim())) t = t + ' ' + I.tadd.get(String(t).trim());
     if (!I.k && !(I.n > 1)) return t;
     let x = W.remap(s, t);
     if (I.data) {
-      /* beta.510: a list of the machines ("O.021D/297 O.0615/617") is the one address of this unit */
+      /* beta.520: a list of the machines ("O.021D/297 O.0615/617") is the one address of this unit */
       const l0 = addrList0(t);
       if (l0.length > 1 && I.amap[l0[0]] && l0.includes(I.amap[l0[0]])) {
         let first = true;
@@ -313,7 +313,7 @@
   };
   /* a tag that ends with the letter of machine A ("SS-BH1060-A", "MIL-L1060A"); ioAddr = its address in the I/O list */
   const TAGA = /\b([A-Z]{1,5}\d?-[A-Z]{0,3}\d{3,4}-?)A\b/g;
-  /* beta.510 (RARA; QA copy clash): the tag of machine A on a row or a symbol with no address list, in the copy of machine B / C / D. The
+  /* beta.520 (RARA; QA copy clash): the tag of machine A on a row or a symbol with no address list, in the copy of machine B / C / D. The
      drawing is for all the machines, so its tag is the tag of the copy's own machine: PS-LO1115-A3 on DITL-23B #B is PS-LO1115-B3,
      TT-SW1501-A3 on DITL-29B #C is TT-SW1501-C3, PSH-DO1043-A1 on DITL-07 #D is PSH-DO1043-D1. Only when the I/O list has the tag for
      EVERY machine of the drawing, and the drawing itself names none of the others (DITL-112 LS-MU0708-A and -B are the two demi tanks,
@@ -373,7 +373,7 @@
           const o = rowList(b, +r);
           if (o.length === 1) return o[0];
         }
-      /* beta.510: the row of a tag of machine A (no list): the I/O list address of the copy's own tag, when the row has no address or the
+      /* beta.520: the row of a tag of machine A (no list): the I/O list address of the copy's own tag, when the row has no address or the
          address of the tag drawn */
       const M = tagsK(s);
       if (M)
@@ -391,7 +391,7 @@
      "DITL-21A", "BA01", without the "(35)" prefix of the sheet list) and "row" (the drawn row number) adds "from" to the FROM text of
      that input row: a reference the same linker reads ("28A-77", "BA01-11", "SHEET 214 - LINE21", an address). src = the drawing or
      list row it comes from.
-     beta.510: "to" may name one copy, "DITL-38 #MV-FW1002" (the base sheet is its first machine: "DITL-38 #MV-BD1001", "DITL-21A #A"): the
+     beta.520: "to" may name one copy, "DITL-38 #MV-FW1002" (the base sheet is its first machine: "DITL-38 #MV-BD1001", "DITL-21A #A"): the
      row is for that copy only. A row with "to" a copy and "text" (a text of the drawing, as drawn) gives that text the I/O point addr /
      tag in this copy: the outputs of a valve drawn with no address (MOR / MOS of the DITL-38 copies), its field tags ZSO / ZSC / MIL. */
   const bare = n => String(n || '').replace(/^\([^)]*\)/, '');
@@ -494,7 +494,7 @@
           x._inst.amap = u.addrMap || {};
           x._inst.tmap = u.textMap || [];
           x._inst.src = u.src || e.src || '';
-          /* beta.510: a unit of some output rows only (DITL-21D row 22 "A STOPPED", drawn once with the addresses of the four) */
+          /* beta.520: a unit of some output rows only (DITL-21D row 22 "A STOPPED", drawn once with the addresses of the four) */
           const R = u.rows || e.rows;
           if (R && !x._inst.only) onlyRows(x, R);
           x._xn = null;
@@ -539,7 +539,7 @@
         L.push(x);
       }
     }
-    /* beta.510: the I/O points of a copy on texts of its drawing (bind rows with text) */
+    /* beta.520: the I/O points of a copy on texts of its drawing (bind rows with text) */
     if (W.xText.size)
       for (const s of S.sheets.concat(W.inst)) {
         const b = (s._inst && s._inst.base) || s;
@@ -628,7 +628,7 @@
       const nd = machinesOf(d),
         rowT = cellTxt(sb, i, 'S') + ' ' + cellTxt(sb, i, 'T'),
         n = machinesOf(sb);
-      /* beta.510: a unit from data (src/world/inst): its row as its textMap gives it names the machine (DITL-21D #C row 22
+      /* beta.520: a unit from data (src/world/inst): its row as its textMap gives it names the machine (DITL-21D #C row 22
          "BOTTOM ASH SCREW COOLER C STOPPED" 21A-70 = DITL-21A #C) */
       const sk = W.instOf.get(sb)[k];
       if (sk && sk._inst && sk._inst.data) {

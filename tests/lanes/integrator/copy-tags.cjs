@@ -1,4 +1,4 @@
-/* beta.510 (lane 0, RARA's linker items): the copy of a drawing for machine B / C / D shows and reads its own tag and address, with
+/* beta.520 (lane 0, RARA's linker items): the copy of a drawing for machine B / C / D shows and reads its own tag and address, with
    no row of a lane. The world of the app in Node (tools/trace/world.cjs), not run. */
 const { load } = require('../../../tools/trace/world.cjs');
 const E = load(),

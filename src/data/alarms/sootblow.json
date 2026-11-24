@@ -1,0 +1,9 @@
+[
+{"tag": "PT-SB1052", "lv": "HIGH", "p": 3, "sp": 25.0, "d": "#1 SOOTBLOWING HEADER STEAM PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0533", "src": "Alarm List _20160912 sheet PT, PD-015"},
+{"tag": "PT-SB1040", "lv": "HIGH", "p": 3, "sp": 11.0, "d": "#1 HOT END SOOTBLOWER STEAM PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0549", "src": "Alarm List _20160912 sheet PT, no PD page in the list"},
+{"tag": "PT-SB1040", "lv": "LOW", "p": 3, "sp": 9.0, "d": "#1 HOT END SOOTBLOWER STEAM PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0549", "src": "Alarm List _20160912 sheet PT, no PD page in the list"},
+{"tag": "PT-SB1042", "lv": "HIGH", "p": 3, "sp": 11.0, "d": "#1 COLD END SOOTBLOWER STEAM PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0550", "src": "Alarm List _20160912 sheet PT, no PD page in the list"},
+{"tag": "PT-SB1042", "lv": "LOW", "p": 3, "sp": 9.0, "d": "#1 COLD END SOOTBLOWER STEAM PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0550", "src": "Alarm List _20160912 sheet PT, no PD page in the list"},
+{"tag": "TE-SB1056", "lv": "HIGH-HIGH", "p": 2, "sp": 350.0, "d": "#1 SOOTBLOWING LINE A STEAM TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0916", "src": "Alarm List _20160912 sheet TE, PD-015", "io": "TT-SB1056"},
+{"tag": "TE-SB1057", "lv": "HIGH-HIGH", "p": 2, "sp": 350.0, "d": "#1 SOOTBLOWING LINE B STEAM TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0917", "src": "Alarm List _20160912 sheet TE, PD-015", "io": "TT-SB1057"}
+]

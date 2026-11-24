@@ -1,0 +1,9 @@
+[
+{"tag": "PT-MS1002", "lv": "HIGH-HIGH", "p": 2, "sp": 134.0, "d": "#1 BOILER FINISHING SUPERHEATER OUTLET HEADER PRESSURE TRANSMITTER", "stn": 101, "addr": "AI0131", "src": "Alarm List _20160912 sheet PT, PD-011"},
+{"tag": "PT-MS1002", "lv": "HIGH", "p": 3, "sp": 130.0, "d": "#1 BOILER FINISHING SUPERHEATER OUTLET HEADER PRESSURE TRANSMITTER", "stn": 101, "addr": "AI0131", "src": "Alarm List _20160912 sheet PT, PD-011"},
+{"tag": "PT-MS1002", "lv": "LOW", "p": 3, "sp": 100.0, "d": "#1 BOILER FINISHING SUPERHEATER OUTLET HEADER PRESSURE TRANSMITTER", "stn": 101, "addr": "AI0131", "src": "Alarm List _20160912 sheet PT, PD-011"},
+{"tag": "PT-MS1002", "lv": "LOW-LOW", "p": 2, "sp": 72.9, "d": "#1 BOILER FINISHING SUPERHEATER OUTLET HEADER PRESSURE TRANSMITTER", "stn": 101, "addr": "AI0131", "src": "Alarm List _20160912 sheet PT, PD-011"},
+{"tag": "FT-MS1031", "lv": "HIGH", "p": 3, "sp": 472.5, "d": "#1 BOILER FINISHING SUPERHEATER OUTLET HEADER FLOW TRANSMITTER", "stn": 101, "addr": "AI0129", "src": "Alarm List _20160912 sheet FT, PD-011"},
+{"tag": "FT-MS1031", "lv": "LOW", "p": 3, "sp": -2.5, "d": "#1 BOILER FINISHING SUPERHEATER OUTLET HEADER FLOW TRANSMITTER", "stn": 101, "addr": "AI0129", "src": "Alarm List _20160912 sheet FT, PD-011"},
+{"tag": "TE-MS1007", "lv": "HIGH-HIGH", "p": 2, "sp": 548.0, "d": "#1 MAIN STEAM TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0918", "src": "Alarm List _20160912 sheet TE, PD-011", "io": "TT-MS1007"}
+]
