@@ -58,3 +58,11 @@ run and the existing source rule applies. New column "value" (CSV) and summary l
 A copy with `s._inst.only` (Set of row indexes) holds only those rows of its base drawing: its other rows and the drawing's free text are not
 counted on it. Old tool -> new tool on PR 549 a086e24: no change (LINKED 1,601, value 1,713; the 3 copies DITL-21D #B/#C/#D have no other
 row with an address).
+
+## Field contacts, field states, multi-station headers (2026-11-25 08:00 PHT, KIRARA / RARA via the coordinator)
+- A field contact on the wire of an output row (WORLD.plantUsw) is drawn on that sheet and driven by the field: the point (station of the
+  sheet, tag) is LINKED. A field state tag (FIELD.states) is a value source like a field row (rule 4 when on no sheet).
+- "STATION 101 & 102" (DITL-38): each copy's station is the one its device's I/O tags vote for, among the header's stations.
+- Old -> new tool, 150 MW 5 plant min: main 736a935 LINKED 1,604 -> 1,616, on drawing not on a row 195 -> 186, model / page 306 -> 303,
+  value 1,726 -> 1,734. PR 555 195c397: LINKED 1,604 -> 1,640, drawing 195 -> 178, model / page 376 -> 357, value 1,809 -> 1,817.
+  Unchanged: no source 103, copy 14, station unsure 16, nowhere 375 (main) / 305 (555), B1 DITL 255, B2 293 / 223.
