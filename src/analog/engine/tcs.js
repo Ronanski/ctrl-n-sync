@@ -167,7 +167,13 @@ function tcsInit(U, how) {
     gland: svc /* gland steam seal in service (1.10) */,
     vb: !svc /* vacuum breaker MV-AV1391 open */,
     ej: svc /* ejectors (vacuum up) */,
-    hsp: svc /* LP exhaust hood spray FVCD1904 in AUTO (PR-OPE-5002 6307) */,
+    hspAu: svc /* LP exhaust hood spray FV-CD1904 in AUTO (IBD TC-35 FF 1) */,
+    hso: false /* FV-CD1904 open (IBD TC-35 FF 15) */,
+    tgAu: false /* turning gear motor AUTO (IBD TB-9 FF 17); MANUAL at a new state */,
+    ssfv: svc /* steam seal feed inlet valve open (IBD TC-31): PV-GS1031 in service */,
+    ssfvAu: false,
+    gse: svc /* gland steam exhauster running (IBD TC-28 FF 1) */,
+    gseAu: false,
     Thp: hot /* HP first stage inner wall metal, C */,
     Trh: hot /* reheat bowl inner wall metal, C */,
     Tcvi: hot,
@@ -459,55 +465,26 @@ function tcsCmd(U, cmd, arg) {
     else c0.byp[k] = true;
     return '';
   }
+  if (cmd === 'ibd') return tcsIbdPush(tcsOilState(U), arg);
   const c = U.tc || tcsInit(U, 'cold'),
     tb = U.tb;
   const on = arg !== 0 && arg !== false;
   switch (cmd) {
-    /* the Training buttons (guide.js): START = the A pump if none runs; STOP = both, to MANUAL (else the standby in AUTO starts) */
-    case 'lop':
-    case 'eh': {
-      const k = cmd === 'lop' ? 'mop' : 'cop';
-      tcsOilInit(c);
-      if (on) {
-        if (!c[k][0] && !c[k][1]) c[k][0] = true;
-      } else {
-        c[k] = [false, false];
-        c[k + 'Au'] = [false, false];
-      }
-      tcsOilSet(c);
-      return '';
-    }
+    /* 1.0.0-beta.362 D18 (JENNIE): no 'lop' / 'eh' commands (the Training buttons that started the A pump): each pump has its own
+       START / STOP / AUTO / MANUAL ('oil' below, IBD TB-1 / 2 / 21 / 22) */
     /* 3.2.0-beta.66: the TCS CRT operation of one pump (036 TURBINE OIL HMI, SOP 2620 "COP(B) > MANUAL > EXECUTE > STOP ... AUTO >
        EXECUTE"): arg = { p: 'mopA' | 'mopB' | 'copA' | 'copB' | 'eop', op: 'start' | 'stop' | 'auto' | 'man' } */
     case 'oil':
       return tcsOilCmd(c, arg || {});
-    case 'vex':
-      c.vex = on;
-      return '';
-    case 'tg':
-      if (on && !c.brgOk) return 'No bearing oil: start a lube oil pump first (ATS 1.15)';
-      c.tg = on;
-      return '';
+    /* 1.0.0-beta.362 D18 (JENNIE): no 'vex' / 'tg' / 'gland' / 'hood' commands. The vapour extractor (IBD TB-12), the turning gear motor
+       (TB-9), the gland steam exhauster (TC-28), the steam seal feed inlet valve (TC-31, it puts PV-GS1031 in service) and the LP exhaust
+       hood spray FV-CD1904 (TC-35) are run by the push buttons of their sheets: arg = { id: 'TB-9', pb: 'START' } (tcs-trip.js
+       TCS_IBD_PBN). The sheet gates give the permissives (TB-9: MSV / ICV closed, bearing oil normal) */
     /* 1.0.0-beta.360 (JENNIE): no 'aux' command. The aux steam valve MV-AS1391 is a DCS MOV (DITL-51, OPEN P.B. M.0360): c.asv follows
        its position (tcsStep). The old command set the flag with no TCS sheet behind it */
-    case 'gland':
-      /* 3.2.3: the command puts the gland steam controller (PV-GS1031 / PV-GS1034 PI on PT-GS1001) in or out of service; the seal is in
-         service when the header pressure comes up (unit.js anAuxStep) */
-      if (!on) {
-        c.gsOn = false;
-        c.gland = false;
-        return '';
-      }
-      if (!(tb && tb.rpm >= 1)) return 'Gland sealing: the turbine must turn on the turning gear (PR-OPE-5002 6219)';
-      if (!c.vb) return 'Gland sealing: the vacuum breaker MV-AV1391 must be open (PR-OPE-5002 6197)';
-      c.gsOn = true;
-      return '';
     /* 1.0.0-beta.360 (JENNIE): no 'vacuum' command. The vacuum breaker MV-AV1391 and the ejector steam MOVs are DCS MOVs (DITL-56 / 55 /
        54): the operator presses their CLOSE / OPEN push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6 I.0216). The
        state c.vb / c.ej follows the MOV positions (tcsStep). The old command pressed all three in one call with no TCS sheet behind it */
-    case 'hood' /* LP exhaust hood spray FVCD1904 AUTO (PR-OPE-5002 6307, with the vacuum up) */:
-      c.hsp = on;
-      return '';
     case 'auto':
       c.auto = on;
       return '';
@@ -658,7 +635,8 @@ function tcsAux(U, dt) {
   if (isFinite(U.gsP)) c.gsOk = U.gsP >= 0.1;
   c.tankOk = true;
   if (isFinite(U.gsP)) c.gland = !!c.gsOn && c.gsOk;
-  if (!c.brgOk) c.tg = false;
+  /* 1.0.0-beta.362 D18: the turning gear motor runs as IBD TB-9 says (the bearing oil is a start permissive there, net 3); the shaft turns
+     only with the bearing oil (below) */
   /* turning gear: about 3 rpm (PR-OPE-5002 7955); disengages above 4 rpm and engages again at zero speed */
   const Ta = tcsMetal(U, c, s, dt);
   const steam = tcsSteamOn(U);
@@ -688,7 +666,7 @@ function tcsAux(U, dt) {
   const sp = Math.min(1, (tb.rpm || 0) / 3600),
     /* 3.2.0-beta.38: the hood spray FVCD1904 in AUTO (PR-OPE-5002 6307, put in AUTO at the vacuum up) sprays below 15 % load (22.5
        MW, 9195) and takes 70 % of the windage heat (NO-SOURCE share; the spray itself is sourced: FV-CD1904 full open below 15 % load, IBD TC-28, 5226 kg/h, TG maintenance manual p104 and p2520 ~ 2521). Without it: 82 C at 3600 rpm with no load, over the 80 C of 1.12 (hold) */
-    hs = (c.hso = !!(c.hsp && (U.MW || 0) < 22.5)) ? 0.3 : 1 /* c.hso: FV-CD1904 open (the page reads it) */,
+    hs = c.hso ? 0.3 : 1 /* c.hso: FV-CD1904 open, IBD TC-35 (AUTO: GSE started 3 s and GEN. LOAD < 15 %; beta.362 D18) */,
     XSS =
       Ta +
       15 * sp +
@@ -1052,7 +1030,7 @@ function tcsFromOil(U) {
 function tcsOilState(U) {
   if (U.tc) return U.tc;
   if (!U.tco) {
-    U.tco = { lop: true, eh: true, vex: true };
+    U.tco = { lop: true, eh: true, vex: true, ssfv: true, gse: true, hspAu: true, hso: false, tgAu: false } /* beta.362 D18: the gland seal and the hood spray AUTO in service on load */;
     tcsOilInit(U.tco);
     U.tco.mopAu = [false, true];
     U.tco.copAu = [false, true];
@@ -1098,6 +1076,8 @@ function tcsOil(U, dt) {
       c.vex = false;
     }
   }
+  /* beta.362 D18: MCC-EMP11 dead = MOTOR ELECTRICAL TROUBLE of the vapour extractor (IBD TB-12 net 10) */
+  c.empOff = !!(bo.dead && !bo.emp);
   /* the automatic starts are in the sheets TB-1, TB-2, TB-21, TB-22 (tcs-trip.js) */
   tcsOilSet(c);
   lag('loPa', c.mop[0] ? K.mop : 0);
@@ -1252,8 +1232,11 @@ function tcsState() {
       gland: c.gland,
       vb: c.vb,
       ej: c.ej,
-      hsp: c.hsp,
+      hsp: !!c.hspAu /* FV-CD1904 in AUTO */,
       hso: !!c.hso,
+      tgAu: !!c.tgAu,
+      ssfv: !!c.ssfv,
+      gse: !!c.gse,
       auto: c.auto
     },
     crit: C,

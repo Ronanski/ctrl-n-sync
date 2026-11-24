@@ -76,7 +76,12 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
        ABC-030). The boiler is not fired in this test: the drum and main steam pressure are set to 20 kg/cm2 as the start-up steam */
     AN.unit.Pd = 20;
     AN.unit.Pms = 20;
-    const rr = ['lop', 'eh', 'vex', 'tg'].map(c => AN.turbine(c));
+    /* 1.0.0-beta.362 D18: the push buttons of the sheets: MOP-A / COP-A START (IBD TB-1 / TB-21), the vapour extractor START (TB-12), the
+       turning gear START (TB-9, after the bearing oil is up: a start permissive of the sheet) */
+    const rr = [AN.turbine('oil', { p: 'mopA', op: 'start' }), AN.turbine('oil', { p: 'copA', op: 'start' }), AN.turbine('ibd', { id: 'TB-12', pb: 'START' })];
+    await wrun(10);
+    rr.push(AN.turbine('ibd', { id: 'TB-9', pb: 'START' }));
+    await wrun(10);
     /* MV-AS1391 OPEN from the CRT: REMOTE at the field (DITL-51 row 12 I.0203, LS_OP.fieldRow), then the OPEN P.B. row (row 5, M.0360) */
     const s51 = S.sheets.find(x => x.name.endsWith('DITL-51'));
     let open51 = -1;
@@ -92,7 +97,8 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     if (pa) rr.push('PIC-AS1004 AUTO: ' + pa);
     await wrun(600); /* aux header 10.5 kg/cm2, 2 min time constant: > 10 after about 6 min */
     const as0 = [+AN.unit.asP, +AN.unit.Pms];
-    rr.push(AN.turbine('gland'));
+    /* the steam seal feed inlet valve OPEN (IBD TC-31: PV-GS1031 in service) and the gland steam exhauster START (TC-28) */
+    rr.push(AN.turbine('ibd', { id: 'TC-31', pb: 'OPEN' }), AN.turbine('ibd', { id: 'TC-28', pb: 'START' }));
     await wrun(120); /* the gland seal is in service once its header holds >= 0.10 kg/cm2 G (ATS 1.10, tcs.js) */
     /* the field operator puts the vacuum breaker and ejector steam MOVs (DITL-54 / 55 / 56) in REMOTE before the vacuum up from the CRT */
     for (const d of ['DITL-54', 'DITL-55', 'DITL-56']) {

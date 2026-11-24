@@ -1312,6 +1312,10 @@ function anDitlRun(addr, last) {
                       (condenser design specification, K1AU3-D1-0-039 R0 p7: tube side 30 -> 35.6 C at 31,500 T/H, shell 316.024 T/H);
                       condenser steam = main steam x 316 / 460 (FHI MCR 460 T/H) + LP bypass.
    The forebay is the SOP normal level -4 m (live test beta.74 #36). UNUSUAL (in the report): the alarm list H of LT-SW1501 is -6.0 m. */
+/* C, condenser seawater inlet design, K1AU3-D1-0-039 R1 sheet K2MC3A-100 (in / out 30 / 35.6 C). beta.362 D21: was AN_SW.Tin 28.5 / 28.6
+   (no source, the 30.PNG snapshot); kept outside AN_SW because a save carries AN_SW (state.js AN_STATE_OBJ) and the starting states of
+   the app (Cold / 150 MW) had 28.5 / 28.6 in it */
+const AN_SW_TIN = [30, 30];
 const AN_SW = {
   swp: ['M.3353', 'M.3354', 'M.3355'],
   swbp: ['DITL-30', 'DITL-30 #B', 'DITL-30 #C'],
@@ -1374,7 +1378,6 @@ const AN_SW = {
   ki100: 0.0069 /* kg/cm2, open condenser inlet valve at the design path flow (above) */,
   hb100: 0.34 /* m, open SWBP discharge valve at 1,000 m3/h (above) */,
   oDes: 40 /* condenser outlet opening of the design point (SOP 2.31) */,
-  Tin: [28.5, 28.6],
   rise0: 5.6,
   cTH: 31500,
   cSt: 316.024,
@@ -1652,14 +1655,14 @@ function anSeawaterStep(U, dt) {
   lag('swPoA', pout[0], K.tauP);
   lag('swPoB', pout[1], K.tauP);
   /* condenser seawater temperatures */
-  U.swTiA = K.Tin[0];
-  U.swTiB = K.Tin[1];
+  U.swTiA = AN_SW_TIN[0];
+  U.swTiB = AN_SW_TIN[1];
   const ws = Math.max(0, ((U.ms || 0) * K.cSt) / K.mcr + (U.qlp || 0) + (U.xtra || 0));
   const thC = (r.Qc[0] + r.Qc[1]) * 1.02; /* T/H through the condenser: the design rise is per condenser */
   [0, 1].forEach(j => {
     /* one box shut: its share of the heat goes to the other box (heat = water x rise) */
     const rise = r.Qc[j] * 1.02 > 100 ? K.rise0 * (ws / K.cSt) * (K.cTH / thC) : 0;
-    lag(j ? 'swToB' : 'swToA', K.Tin[j] + Math.min(rise, 40), K.tauT);
+    lag(j ? 'swToB' : 'swToA', AN_SW_TIN[j] + Math.min(rise, 40), K.tauT);
   });
   /* PG-SW1501A / B / C: the pump side of the check valve (a stopped pump: the water column of the pit, below the gauge = 0) */
   r.q.forEach((q, i) => lag('swPd' + i, U.swSpd[i] > 0 ? Math.max(0, K.kP * (r.H[i] - K.zD + U.swLvl)) : 0, K.tauP));
@@ -2564,6 +2567,19 @@ function anVacMW(U) {
   U.dMWv = (6 * dT * 0.7 * U.ms) / 3600;
   return U.dMWv;
 }
+/* beta.362 (JENNIE, D21, design K2MC3A-100: 0.07 kg/cm2 A with the steam side at 38.65 C, Psat(38.65) = 0.0700): the air in the condenser
+   collects in the air cooling zone at the ejector suction, where the air-steam mixture is cooled below the steam side. HEI Standards for
+   Steam Surface Condensers (air removal): the suction mixture is 7.5 F = 4.17 K below the saturation of the condensing steam. The
+   condenser pressure is the higher of the steam side saturation and the suction mixture (steam saturated at Ts - 4.17 plus the air):
+   at the design air in-leakage the air does not raise the neck pressure (it read 0.0736 = steam 0.0617 + air 0.0115 before); with more
+   air (leak, ejector short) the suction mixture lifts it, as before. ED 066 p6 design point 25.5 kg/h air + 61.3 steam at 0.055 abs is
+   the ejector rating (a lower suction), it gives the air partial 0.0113, the same as the model air at 150 MW */
+const AN_CD_SUB = 4.17;
+function anCdP(Ts, pA) {
+  const P1 = Math.min(1.033, anPsat(Ts)),
+    P2 = Math.min(1.033, anPsat(Ts - AN_CD_SUB)) + Math.max(0, pA || 0);
+  return Math.min(1.033, Math.max(P1, P2));
+}
 const anPsat = T =>
   (Math.pow(10, 8.07131 - 1730.63 / (233.426 + T)) * 1.33322) / 980.665; /* kg/cm2A, Antoine (water) */
 function anCondStep(U, dt) {
@@ -2571,7 +2587,7 @@ function anCondStep(U, dt) {
     sw = AN_SW,
     ws = Math.max(0, ((U.ms || 0) * sw.cSt) / sw.mcr + (U.qlp || 0) + (U.xtra || 0)),
     Q = (K.Qd * ws) / K.Wd,
-    Tin = isFinite(U.swTiA) ? (U.swTiA + U.swTiB) / 2 : sw.Tin[0],
+    Tin = isFinite(U.swTiA) ? (U.swTiA + U.swTiB) / 2 : AN_SW_TIN[0],
     W = Math.max(0, (U.swQc || 0) * 1.02),
     C = (W / 3.6) * K.cp,
     UA = K.UA * Math.sqrt(W / K.Cd);
@@ -2587,7 +2603,7 @@ function anCondStep(U, dt) {
   /* 3.2.3 live Cold start: the air in the condenser is its own mass balance (anAuxStep U.cdAirP); the vacuum share is what is left of the
      room between the saturation and the atmosphere (the screens and the hood model read it) */
   if (isFinite(U.cdAirP)) {
-    U.cdP = Ps + U.cdAirP;
+    U.cdP = anCdP(U.cdTs, U.cdAirP);
     U.vac = Math.max(0, Math.min(1, (1.033 - U.cdP) / Math.max(1e-3, 1.033 - Ps)));
   } else U.cdP = Ps + (1.033 - Ps) * (1 - vac);
   /* the condensate pumps */
@@ -3675,7 +3691,7 @@ function anAuxStep(U, dt) {
       oU = Math.max(0, -yP) / 100,
       wGf = anStmW(K.cvGf * oF, Pa, Pg, K.Tg),
       Pga = Pg + 1.0332,
-      Pc = Psc + U.cdAirP,
+      Pc = anCdP(Tc, U.cdAirP),
       wSeal = Pga > Pc ? K.Kseal * Math.sqrt(Pga * Pga - Pc * Pc) : 0,
       Pcra = Pcr + 1.0332,
       wHp =

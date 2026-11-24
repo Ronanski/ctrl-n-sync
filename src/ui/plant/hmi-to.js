@@ -793,7 +793,9 @@
       try {
         if (!(window.AN && AN.unit && AN.unit.on)) r = 'no plant model: choose Cold or 150 MW (Plant model ON)';
         else if (M.field) r = AN.field && AN.field('pur', op === 'start') ? '' : 'oil purifier: no plant model';
-        else if (M.k === 'vex' || M.k === 'tg') r = AN.turbine(M.k, op === 'start' ? 1 : 0) || '';
+        /* 1.0.0-beta.362 D18 (JENNIE): the vapour extractor and the turning gear are the START / STOP push buttons of IBD TB-12 / TB-9 */
+        else if (M.k === 'vex' || M.k === 'tg')
+          r = AN.turbine('ibd', { id: M.k === 'vex' ? 'TB-12' : 'TB-9', pb: op === 'start' ? 'START' : 'STOP' }) || '';
         else r = AN.turbine('oil', { p: M.k, op }) || '';
       } catch (e) {
         r = String(e && e.message ? e.message : e);

@@ -355,6 +355,90 @@ const TCS_IBD_OUT = {
   'TD-4': { 6: c => c.sexOk } /* 2.1 shell expansion OK (TCA535) */
 };
 const TCS_IBD_DROP = { 'TD-2': [3, 4, 5, 14, 15, 16] };
+/* 1.0.0-beta.362 D18 (JENNIE, user 2026-11-24 "Go ayos"): the turning gear, the vapour extractor, the gland steam exhauster, the steam seal
+   feed inlet valve and the LP exhaust hood spray are run by their own IBD sheets (TCS soft logic 331DM09784, typed from the drawing), as the
+   oil pumps TB-1 / 2 / 21 / 22. Before: one screen command each set a flag (tcs.js 'tg', 'vex', 'gland', 'hood') with no sheet behind it.
+   TCS_IBD_PBN: the push buttons of the TCS HMI by sheet and net (a 1.5 s pulse, AN.turbine('ibd', { id, pb })):
+     TB-9  TURNING GEAR MOTOR (page 58; TCE350 ~ 352): START 20, AUTO 16, MANUAL 18, STOP 22, (LOCAL) JOG 9
+     TB-12 MAIN OIL TANK VAPOUR EXTRACTOR (TCA655): START 7, STOP 11
+     TC-28 GLAND STEAM EXHAUSTER (TCA680): START 7, AUTO 3, MANUAL 5, STOP 9
+     TC-31 STEAM SEAL FEED INLET VALVE (TCA650): OPEN 4, AUTO 0, MANUAL 2, CLOSE 6
+     TC-35 LP EXHAUST HOOD WATER SPRAY VALVE FV-CD1904: OPEN 10, AUTO 0, MANUAL 9 (the reader found no CLOSE push button: finding D18-2)
+   TCS_IBD_DEV: what each sheet reads from the plant before its gates (pre) and what its outputs do to the plant after them (post). The flip-flops
+   keep their own memory in ib.v; a new memory (Cold / 150 MW / an old save) starts from the state flags (init). The output names that the
+   reader left undriven (TB-9 55, TB-12 13, TC-28 17, TC-31 14 / 16, TC-35 17 / 19) are the outputs of their gates, so the off-page links work.
+   The group sheets TE-6 / TE-7 (gland seal start / stop group) are not bound: their netlists have reader errors (finding D18-1) */
+const TCS_IBD_PBN = {
+  'TB-9': { START: 20, AUTO: 16, MANUAL: 18, STOP: 22, JOG: 9 },
+  'TB-12': { START: 7, STOP: 11 },
+  'TC-28': { START: 7, AUTO: 3, MANUAL: 5, STOP: 9 },
+  'TC-31': { OPEN: 4, AUTO: 0, MANUAL: 2, CLOSE: 6 },
+  'TC-35': { OPEN: 10, AUTO: 0, MANUAL: 9 }
+};
+const tcsRpm = U => (U.tb && U.tb.rpm) || 0;
+const TCS_IBD_DEV = {
+  'TB-9': {
+    init: (v, c) => ((v[11] = c.tg ? 1 : 0), (v[17] = c.tgAu ? 1 : 0)),
+    pre: (v, c, U) => {
+      v[43] = c.tg ? 1 : 0; /* TURNING GEAR MOTOR RUNNING */
+      v[30] = c.tg && tcsRpm(U) <= 4 ? 1 : 0; /* TURNING GEAR ENGAGED (TB-10 solenoid; disengages above 4 rpm, PR-OPE-5002 7955) */
+      v[36] = tcsRpm(U) < 1 ? 1 : 0; /* TURBINE ZERO SPEED */
+      v[53] = 0; /* ZS-LO1003 HAND TURNING INTERLOCK: the hand turning bar is not modelled (stowed) */
+    },
+    post: (v, c) => {
+      v[55] = v[12];
+      c.tg = v[12] > 0.5;
+      c.tgAu = v[17] > 0.5;
+    }
+  },
+  'TB-12': {
+    init: (v, c) => (v[8] = c.vex ? 1 : 0),
+    pre: (v, c) => {
+      v[4] = c.vex ? 0 : 1; /* VAPOUR EXTRACTOR STOPPED */
+      v[10] = c.empOff ? 1 : 0; /* MOTOR ELECTRICAL TROUBLE: MCC-EMP11 dead (unit black-out, tcs.js) */
+    },
+    post: (v, c) => {
+      v[13] = v[8];
+      c.vex = v[8] > 0.5 && !c.empOff;
+    }
+  },
+  'TC-28': {
+    init: (v, c) => ((v[1] = c.gse ? 1 : 0), (v[4] = c.gseAu ? 1 : 0)),
+    post: (v, c) => {
+      v[17] = v[1];
+      c.gse = v[1] > 0.5;
+      c.gseAu = v[4] > 0.5;
+    }
+  },
+  'TC-31': {
+    init: (v, c) => (v[1] = c.ssfvAu ? 1 : 0),
+    post: (v, c) => {
+      v[14] = v[13];
+      v[16] = v[10];
+      /* the valve: OPEN / CLOSE command of the sheet (a seal-in MOV); it puts the gland steam controller PV-GS1031 in service (unit.js anAuxStep) */
+      if (v[13] > 0.5) c.ssfv = true;
+      else if (v[10] > 0.5) c.ssfv = false;
+      c.ssfvAu = v[1] > 0.5;
+      c.gsOn = !!c.ssfv;
+    }
+  },
+  'TC-35': {
+    init: (v, c) => ((v[1] = c.hspAu ? 1 : 0), (v[15] = c.hso ? 1 : 0)),
+    post: (v, c) => {
+      v[17] = v[15];
+      v[19] = v[15] > 0.5 ? 0 : 1;
+      c.hso = v[15] > 0.5; /* FV-CD1904 open */
+      c.hspAu = v[1] > 0.5;
+    }
+  }
+};
+/* the state flags of a model made before these sheets (an old save, the 150 MW oil state) */
+function tcsDevInit(c) {
+  if (c.ssfv == null) c.ssfv = c.gsOn != null ? !!c.gsOn : !!c.gland || !!c.fromLoad;
+  if (c.gse == null) c.gse = !!c.ssfv;
+  if (c.hspAu == null) c.hspAu = !!c.hsp || !!c.fromLoad;
+  if (c.hso == null) c.hso = false;
+}
 const TCS_IBD = {
   by: {},
   bind: null
@@ -410,6 +494,7 @@ const tcsIb = c =>
     cmp: {},
     fx: {},
     pb: {},
+    pbn: {},
     r1: false,
     t0: 0,
     first: '',
@@ -430,7 +515,14 @@ function tcsIbdStep(U, c, dt) {
   for (const r of B) {
     const s = r.s,
       id = s.id,
+      dv = TCS_IBD_DEV[id],
       v = ib.v[id] || (ib.v[id] = new Array(s.n).fill(0));
+    /* a memory not bound yet (new, or a save made before beta.362): from the state flags */
+    if (dv && !(ib.dv && ib.dv[id])) {
+      tcsDevInit(c);
+      dv.init(v, c);
+      (ib.dv = ib.dv || {})[id] = 1;
+    }
     for (const [net, sh, n] of r.link) v[net] = (ib.v[sh] && ib.v[sh][n]) || 0;
     for (const [net, f] of r.pv) v[net] = +f(U, c);
     if (r.mft.length) for (const net of r.mft) v[net] = ib.mft0 && tcsMft() ? 1 : 0;
@@ -454,6 +546,9 @@ function tcsIbdStep(U, c, dt) {
       v[pu.auto] = c[pu.k + 'Au'][pu.i] ? 1 : 0;
       v[pu.run] = v[pu.fb] = c[pu.k][pu.i] ? 1 : 0;
     }
+    if (dv && dv.pre) dv.pre(v, c, U);
+    /* the push buttons of the TCS HMI (TCS_IBD_PBN), held 1.5 s */
+    for (const k in ib.pbn) if (ib.pbn[k] > 0 && k.startsWith(id + ':')) v[+k.split(':')[1]] = 1;
     for (const k in ib.fx) if (k.startsWith(id + ':')) v[+k.split(':')[1]] = ib.fx[k];
     if (id === 'TA-9' && ib.pb.sd > 0) {
       const r = s.i.find(i => /TURBINE SHUTDOWN COMMAND/.test(i[1]));
@@ -512,7 +607,17 @@ function tcsIbdStep(U, c, dt) {
         const m = so && so[out] ? so[out](U.tc) : undefined;
         v[out] = m !== undefined ? (m ? 1 : 0) : o;
       });
+    if (dv) dv.post(v, c, U);
     for (const k in ib.fx) if (k.startsWith(id + ':')) v[+k.split(':')[1]] = ib.fx[k];
+  }
+  for (const k in ib.pbn) {
+    ib.pbn[k] -= dt;
+    if (!(ib.pbn[k] > 0)) {
+      /* the end of the pulse: the button net goes back to 0 */
+      const [sid, net] = k.split(':');
+      if (ib.v[sid]) ib.v[sid][+net] = 0;
+      delete ib.pbn[k];
+    }
   }
   /* what the sheets did to the pumps; TB-1 and TB-2 note: TCS MAJOR TROUBLE starts the main oil pumps */
   if (c.mop) {
@@ -540,6 +645,18 @@ function tcsIbdStep(U, c, dt) {
   ib.pb.rst = Math.max(0, (ib.pb.rst || 0) - dt);
   ib.pb.sd = Math.max(0, (ib.pb.sd || 0) - dt);
   ib.pb.auto = Math.max(0, (ib.pb.auto || 0) - dt);
+}
+/* a push button of an IBD sheet (TCS_IBD_PBN): '' or the reason it is refused */
+function tcsIbdPush(c, a) {
+  const id = a && a.id,
+    pb = String((a && a.pb) || '').toUpperCase(),
+    m = TCS_IBD_PBN[id];
+  if (!m) return 'No TCS push button sheet ' + id;
+  if (!(pb in m)) return id + ' has no ' + pb + ' push button (' + Object.keys(m).join(' / ') + ')';
+  const ib = tcsIb(c);
+  ib.pbn = ib.pbn || {};
+  ib.pbn[id + ':' + m[pb]] = 1.5;
+  return '';
 }
 /* the event of the engine only: a mirror page gets it from the worker */
 const tcsTripLog = n => {
