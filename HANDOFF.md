@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 06:30 PHT** (DCS LINKS BOP : RARA, lane 4, beta.494: 77 BOP field signal sa `src/world/field/bop.js`. Bago nito LEADER : YUA, lane 0, beta.490: Rule 0A content muna sa RULES 3.0A at dito; lanes at version scheme; U.hxO.gBank gas ng bawat backpass bank, kasama ang e3m para sa TT-FG1109).
+Huling update: **2026-11-25 06:35 PHT** (DCS LINKS BOP : RARA, lane 4, beta.494: 77 BOP field signal sa `src/world/field/bop.js`. Bago nito DCS LINKS BOILER : KIRARA, lane 3, beta.493: unang field file ng boiler, `src/world/field/boiler.js`, 50 I/O point na may halaga mula sa engine state).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
