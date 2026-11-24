@@ -560,6 +560,15 @@
   two(1784, 1296, 'CV(B) CRACK OPEN', 'SEQUENCE COMPLETE');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'TCE155',
+    /* pr: printed on page 112 beside each block; the drawing above keeps them as text */
+    pr: {
+      sg5: ['K:6.67%'],
+      sg6: ['K:100.0%'],
+      sg7: ['K:-5.0%'],
+      sg14: ['K:6.67%'],
+      sg15: ['K:100.0%'],
+      sg16: ['K:-5.0%']
+    },
     title: 'CV WARMING CONTROL(5)',
     page: 112,
     ctl: 'EHG+MD',

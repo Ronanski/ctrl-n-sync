@@ -4,6 +4,11 @@
    = the simulator generator load in simulation use, else the measured load. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE179',
+  /* pr: printed on page 126 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgC012: ['K:3595.0rpm'],
+    sgC015: ['K:3600.0rpm']
+  },
   title: 'RATED SPEED ADJUST',
   page: 126,
   ctl: 'EHG+MD',

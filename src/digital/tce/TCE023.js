@@ -53,6 +53,8 @@
   ].forEach(x => t.push(x));
   (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
     id: 'TCE023',
+    /* the symbols drawn as examples ("(TCS400-1)" is the example of a PI/O name): not logic, left out of the program */
+    legend: 1,
     title: 'PI/O TABLE EXPLANATION SHEET',
     page: 18,
     ctl: 'EHG+MD',

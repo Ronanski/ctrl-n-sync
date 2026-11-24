@@ -103,6 +103,14 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA758',
+    /* pr: printed on page 188 beside each block; the drawing above keeps them as text */
+    pr: {
+      sgA002: ['K:940.164'],
+      sgA003: ['K:731.239'],
+      sgA004: ['K:522.314'],
+      sgA005: ['K:313.388'],
+      sgA006: ['K:104.463']
+    },
     title: 'THERMAL STRESS(IP)',
     page: 188,
     ctl: 'COMM+MD',

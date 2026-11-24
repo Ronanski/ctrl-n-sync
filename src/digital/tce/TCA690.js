@@ -94,6 +94,11 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA690',
+    /* pr: printed on page 169 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0s'],
+      tp012: ['TP:30.0s']
+    },
     title: 'COLD R/H STM NON-RETURN VLV(TC-19)',
     page: 169,
     ctl: 'COMM+MD',

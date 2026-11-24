@@ -80,6 +80,11 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA760',
+    /* pr: printed on page 189 beside each block, the one FG table (BORE / LIMIT) of the sheet, for both FG; the drawing above keeps them as text */
+    pr: {
+      fgA009: ['X1:0.0', 'Y1:377', 'X2:20.0', 'Y2:377', 'X3:60.0', 'Y3:484', 'X4:550.0', 'Y4:340', 'X5:600.0', 'Y5:340', 'X6:610.0', 'Y6:340', 'X7:620.0', 'Y7:340', 'X8:630.0', 'Y8:340'],
+      fgA012: ['X1:0.0', 'Y1:377', 'X2:20.0', 'Y2:377', 'X3:60.0', 'Y3:484', 'X4:550.0', 'Y4:340', 'X5:600.0', 'Y5:340', 'X6:610.0', 'Y6:340', 'X7:620.0', 'Y7:340', 'X8:630.0', 'Y8:340']
+    },
     title: 'IP/HP THSC CHANGE(4)',
     page: 189,
     ctl: 'COMM+MD',

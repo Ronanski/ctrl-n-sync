@@ -116,6 +116,12 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCE500',
+    /* pr: printed on page 173 beside each block, FG *1 ~ *3 tables (C040, C041 carry no mark and no table); the drawing above keeps them as text */
+    pr: {
+      fgA003: ['X1:0', 'Y1:0', 'X2:10', 'Y2:10', 'X3:15', 'Y3:15', 'X4:20', 'Y4:20', 'X5:30', 'Y5:30', 'X6:40', 'Y6:40', 'X7:50', 'Y7:50', 'X8:100', 'Y8:100'],
+      fgA011: ['X1:0', 'Y1:0', 'X2:10', 'Y2:14', 'X3:20', 'Y3:24', 'X4:30', 'Y4:34', 'X5:40', 'Y5:44', 'X6:50', 'Y6:54', 'X7:60', 'Y7:64', 'X8:140', 'Y8:140'],
+      fgA007: ['X1:0', 'Y1:0', 'X2:11', 'Y2:6', 'X3:15.6', 'Y3:9.9', 'X4:19.19', 'Y4:12', 'X5:30', 'Y5:16', 'X6:110', 'Y6:22', 'X7:130', 'Y7:24', 'X8:140', 'Y8:25']
+    },
     title: 'SIMULATOR(1)',
     page: 173,
     ctl: 'EHG+MD',

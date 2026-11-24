@@ -102,6 +102,11 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA738',
+    /* pr: printed on page 177 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp041: ['TP:3.0s'],
+      tp049: ['TP:1.0s']
+    },
     title: 'LP EXHAUST HOOD WATER SPLAY VALVE(TC-35)',
     page: 177,
     ctl: 'COMM+MD',
