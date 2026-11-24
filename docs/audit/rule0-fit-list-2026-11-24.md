@@ -174,3 +174,59 @@ Items 1, 2, 4, 5, 7 need no PC page: the design numbers are already in the repos
 
 ## Suggested order for Jennie
 Item 18 first (15 tags, no risk). Then 5 (dead code), 2 (bed inventory 1630), 4 (PA bias neutral), 7 (st150 required). Then the big one, 1 (kKL 3.8 with the missing storage physics), then 3 (fouling with the sootblowing schedule). The rest as the PC pages come.
+
+## Fix order and work packages (user 2026-11-25 00:21 PHT: order, split for other threads, fast tests)
+
+### What decides the order
+- **st150 is the shared baseline.** Any change that moves the 150 MW steady state (items 2, 3, 4, 12) needs `src/data/st150.txt` rebuilt (`tools/steady150/make.cjs`), and then the start saves (`tools/startsaves/make.cjs`). Two threads rebuilding it in parallel conflict and each one's tests run on the other's plant. **Rule: only Jennie rebuilds st150, once per batch, after every 150 MW change of that batch has landed.**
+- **kKL (item 1) changes part load only** (phi = 1 at the 150 MW anchor), so it does not move st150, but its proof is the part-load sweep, which needs the 150 MW batch settled first.
+- **The 8 h behaviour gate** judges the whole plant, so the coal lot spread (item 6) goes after the boiler batch, or the two cannot be told apart.
+- **The guard baseline** (`tools/check/no-fit-baseline.json`) is one file for all. A removed line only shows as "removed" and never fails the Checks, so no package edits it; the last PR of all runs `node tools/check/no-fit.cjs --update` once.
+- **unit.js is one file**, but the items sit far apart (lines 44 ~ 5382). Different regions merge cleanly; the only rule is that each package stays in its own lines below.
+
+### Order with dependencies
+1. **P0 cleanup** (no behaviour change) first: it touches comment lines all over unit.js / hx.js / hmi-op.js, so landing it first avoids conflicts with everyone.
+2. Then in parallel: **P1 boiler core** (Jennie) and **P2 auxiliaries** (second engine thread). P2 item 12 must land **before** Jennie's st150 rebuild (it moves the 150 MW MW by a little), or it waits for the next rebuild.
+3. **P1 step 4 (kKL)** after P1 steps 1 ~ 3 and the st150 rebuild.
+4. **P3 start state** any time after P0; its app.js part is Rosé's (src/ui).
+5. **P4 coal lots** last, after P1.
+6. Last PR of all: baseline `--update`.
+
+### P0 · Cleanup: tags and dead code (anyone, first) · size S (~1 h)
+- Lines: the 15 of item 18 (tag `NO-FIT-OK:` / `LOGIC-SRC:`) and item 5 (delete AN_BED, anBedSS, kBedSU, tauBc, uaW: unit.js 204 ~ 218, 2154 ~ 2160, 2435 ~ 2456; api.js 125).
+- Files: src/analog/engine/unit.js, hx.js, hmi-op.js, api.js; tests/regress/bed_fig8.js retired (Jennie's tests/**: so P0 is done by Jennie or with her OK).
+- Source: none needed (comments and unread code).
+- Proof: `node tools/check/no-fit.cjs` shows 19 removed, 0 new; `npm run check` green; grep shows no reader of the deleted names; hold150 unchanged (the physics did not move). No long run.
+
+### P1 · Boiler core: JENNIE keeps it · size L (1 ~ 2 days)
+Order inside, one PR each:
+1. **Item 4, PA bias to neutral** (hmi-op.js 433). S. Proof: 150 MW start, PA = logic S1-LN12 at the coal, bias 0; part1 PA / SA rows.
+2. **Item 2, bed inventory to Fig 9** (unit.js 540, 2458). M. Proof: bed_inv rewritten to 1630 mmH2O / 194.2 t; the furnace DP controller (SV 1630) holds with the coolers in AUTO 30 plant min; part1 "Bed inventory" row at 45 / 90 / 150 (1380 / 1380 / 1630).
+3. **Item 3, fouling** (hx.js 173 ~ 191): fouled start states, tau 8 h from the sootblowing interval, rInf per bank. M ~ L. Needs PC: FHI P3S3 / P5S2 (blowing per bank), per-bank fouling if any. Proof: gas_path (APH gas in 322 at design fouling), RH 541 not 530, 8 h hold at 150 MW with the sootblowers on schedule (fast forward, see below): spray and MST stay in band, no creep.
+4. **st150 rebuild + start saves** (after 1 ~ 3 and P2 item 12). M (mostly machine time).
+5. **Item 1, kKL 3.80 + the missing storage physics** (unit.js 2281 ~ 2297, AN_BB). L. Proof: the part-load sweep against `docs/accept/curves` (Fig 7 O2, Fig 8 furnace, Fig 10 spray, Fig 12 air, Fig 13 coal at 40 ~ 100 %); the 150 MW pressure loop with a 5 MW step: no drum level HH; part1 all three loads.
+
+### P2 · Auxiliaries: SECOND ENGINE THREAD · size M (~1 day, most of it waiting for PC pages)
+Each item its own small PR; none moves the boiler; only item 12 moves st150.
+- **Item 12** MS line drop 3 C, RH line DP 1.36 (unit.js 3198 ~ 3210). S. Proof: hold150 TT-MS1007 = MST - 3; part1 MSTt / Prh rows. **Land before P1 step 4.** Needs PC: Tab 3 RH pressure gauge or absolute.
+- **Item 8** CCW HX from the Hisaka sheet, heat load as the sum of the users (unit.js 1840 ~ 2000). M. Needs PC: D1-0-041 fouling line, CCW user list. Proof: mu_ccw_model, bfwp_motor_ccw, lube_oil; CCW supply / return at 45 / 90 / 150 MW from the user duties.
+- **Item 9** gland / aux steam on pressure from the HB (unit.js 3395 ~ 3410, 3620 ~ 3660). M. Needs PC: PPE-14-0725 gland rows. Proof: as_page_values, plant_utilities, tcs_ibd_devices; gland values at the three HB cases.
+- **Item 10** tauMW: delete and use U.Pm off the grid, or derive (unit.js 44, 5877). S. Proof: unit_trip, gcb (house load).
+- **Item 11** SOx k from the FHI guarantee (boiler.js 1120 ~ 1128). S. Needs PC: FHI guarantee. Proof: limestone.
+- **Items 13 ~ 17** oil header and pump, BFWP and CEP current, CEP and make-up elevations (boiler.js 20 ~ 65, unit.js 1705 ~ 1715, 2125 ~ 2130, 2610 ~ 2620). S each. Needs PC: piping iso, motor data sheets, elevations. Proof: diesel_oil, feedwater, condensate, cep_auto, mu_ccw_model, field_valves.
+- P2 does not touch AN_BB, AN_FOUL, the bed, st150 or the start saves.
+- PC rule: only one thread on the PC at a time, so P2 reads all its pages in one sitting when Jennie hands the PC over.
+
+### P3 · Start state from st150 only · size S (~1 h)
+- Item 7: hmi-op.js 724 ~ 830 (engine: seed the loops from st150, drop AN_HMI_AI as a start source; second engine thread) + src/ui/shell/app.js 1836 ~ 1840 (Rosé: no "snapshot alone" fallback) + tools/build (fail without st150).
+- Proof: build fails with no st150; "Start at 150 MW" equals st150 at 0:00 (reset_clean, hold150).
+
+### P4 · Coal lot spread from the feeder accuracy · size S + one 8 h run
+- Item 6: unit.js 4341 ~ 4400 (AN_CLOT). After P1. Needs PC: Tab 2 range coal, Yamato CFC-201 accuracy. Proof: the 8 h behaviour gate at 150 MW (MW +/- 2, MSP +/- 2, drum +/- 60 mm, MST +/- 6, bed 850 ~ 870) with the design spread.
+
+### Fast tests (time matters)
+- **Headless runs are already fast forward:** the regress tests and `tools/accept/part1.cjs` step the plant (AN.stepSet + WORLD.tick, 0.5 s scans) as fast as the CPU goes, not in real time. Run only the tests listed for the package, not the whole suite (PROJECT lean test policy).
+- **part1 while working:** `node tools/accept/part1.cjs <html> 20 10` (settle 20, window 10 plant min) to see the direction; the full `60 30` only once for the PR that changes an item's state.
+- **8 h holds:** headless in chunks with a save point between chunks (as tools/steady150 does), never in the live app.
+- **Live app checks** (Rule: real clicks, screenshot before and after): maximize the app window and use the x10 speed of the app (world.js runs the DITL timers at x10 without skipping them, 3.2.1) for the settling parts; real time only for the step the operator does.
+- **One st150 rebuild per batch**, not per PR.
