@@ -140,7 +140,7 @@ html body.sc .fpo-box:not(#scnone) .fpo-sh.fld::before{content:'\25B8';display:i
 html body.sc.sc-fpfld .fpo-box:not(#scnone) .fpo-sh.fld::before{content:'\25BE'}
 html body.sc .fpo-box:not(#scnone) .fpo-sh.fld:hover{color:var(--sc-ink)!important}
 html body.sc .fpo-box:not(#scnone) .fpo-sh.fld:focus-visible{outline:2px solid var(--sc-steel);outline-offset:1px}
-/* beta.446: only the rows of the FIELD block (.fld) fold, not the VCB, CURRENT and monitor rows after it */
+/* beta.486: only the rows of the FIELD block (.fld) fold, not the VCB, CURRENT and monitor rows after it */
 html body.sc:not(.sc-fpfld) .fpo-box:not(#scnone) .fpo-sh.fld ~ .fpo-r.fld{display:none!important}
 /* the selector row stays one line (REMOTE | LOCAL and the FIELD mark) */
 html body.sc .fpo-box:not(#scnone) .fpo-r:has(.fpo-seg){flex-wrap:nowrap!important;gap:4px!important}

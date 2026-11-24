@@ -67,10 +67,17 @@
         [895, 222]
       ]
     ],
+    /* page 107: the line ends at the connector C (TCE151); typed from the connector end it was not read as reaching it */
     [
       'dIYS',
       [
-        [1124, 191],
+        [895, 191],
+        [1124, 191]
+      ]
+    ],
+    [
+      'dIYS',
+      [
         [895, 191],
         [895, 425],
         [916, 425]

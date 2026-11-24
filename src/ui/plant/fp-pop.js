@@ -351,7 +351,7 @@
     const rLcp = row('LCP', bLs, bLp),
       rEs = row('E-STOP', bEs, ...(esN != null ? [bEr] : esR == null ? [E('span', 'fpo-nd', 'not on ' + (nm || 'its drawing'))] : [])),
       rRly = row('RELAY', bTr, bRs);
-    /* beta.446 (EIMI): the rows of the FIELD block carry 'fld': the compact shell folds only them (shellc-compact.css). The fold took every
+    /* beta.486 (EIMI): the rows of the FIELD block carry 'fld': the compact shell folds only them (shellc-compact.css). The fold took every
        later row (VCB, CURRENT and the monitor rows of the PERMISSIVE · TREND · MONITOR faceplate), so a pump's monitor rows never showed */
     for (const r of [rLcp, rEs, rRly]) r.classList.add('fld');
     if (hasFld) F.bd.append(fSh, rLcp, rEs, rRly);
@@ -434,7 +434,7 @@
     if (M.cur) F.bd.append(rCur);
     /* monitoring values of the info faceplate: M.mon = [[label, fn, unit, tag]] (bearing, winding, vibration, ...) */
     const mon = (part === 'info' && M.mon) || [];
-    /* beta.446: the monitor rows under their own heading, apart from the permissive rows above them */
+    /* beta.486: the monitor rows under their own heading, apart from the permissive rows above them */
     if (mon.length) F.bd.append(E('div', 'fpo-sh', 'MONITOR'));
     const monV = mon.map(([l, f, u, tg, dp, words]) => {
       const v = E('span', 'fpo-vb');
@@ -527,7 +527,7 @@
       lR.className = 'fpo-lp' + (st === 'RUN' ? ' run' : '');
       lS.className = 'fpo-lp' + (st === 'STOP' ? ' stop' : '');
       lT.className = 'fpo-lp' + (st === 'TRIP' ? ' trip' : '');
-      /* beta.446 (EIMI): M.vcb = the VCB ON / OFF point of the I/O list (an HX page gives it: HX.M o.vcb); without it the lamp follows
+      /* beta.486 (EIMI): M.vcb = the VCB ON / OFF point of the I/O list (an HX page gives it: HX.M o.vcb); without it the lamp follows
          the motor state */
       const vb = typeof M.vcb === 'function' ? call(M.vcb, null) : undefined,
         vOn = vb === undefined ? (st === 'RUN' ? true : st ? false : null) : vb == null || !isFinite(+vb) ? null : +vb >= 0.5;

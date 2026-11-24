@@ -18,8 +18,8 @@
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
   /* each kind: f(inputs [ordered as on the drawing: left edge top first, then the side inputs], notes, st, dt) -> outputs [Y, Y1, Y2 ...].
-     sw = the SW side input where the block has one; a block drawn without a SW wire runs as SW=1 (the macro list: SW selects the
-     normal mode; with no wire the HIACS default is the normal mode). */
+     sw = the SW side input where the block has one. A block drawn without a SW wire runs as SW=1, but the macro list (TCA013 ~ TCA020)
+     does not say what HIACS does with an unwired SW: such a block is an OPEN item (need()) until TC-14-116 says it. */
   const K = {
     /* ML 1 ADD Y = X1 + X2 + .. + Xn */
     ADD: x => [x.reduce((a, v) => a + v, 0)],
@@ -27,12 +27,13 @@
     SUB: x => [x.slice(1).reduce((a, v) => a - v, x[0] || 0)],
     /* ML 3 MLT Y = X1 * X2 */
     MLT: x => [(x[0] || 0) * (x[1] || 0)],
-    /* ML 4 DIV Y = X1 / X2 (a zero divisor holds the last value: the macro list gives no rule, HIACS keeps Y(j-1)) */
+    /* ML 4 DIV Y = X1 / X2. The macro list (TCA013 p 8) gives no rule for a zero divisor: the app holds the last value (OPEN item,
+       listed in OPEN_RULES until TC-14-116 says what HIACS does) */
     DIV: (x, n, st) => [(st.y = x[1] ? x[0] / x[1] : st.y || 0)],
     /* ML 9 I integral: SW=1 Y = (1/TI) * integral X dt + F; SW=0 Y = Z; LL <= Y <= HL */
     I: (x, n, st, dt, sw = 1) => {
       const [X = 0, F = 0, Z = 0] = x,
-        TI = par(n, 'TI', 1),
+        TI = par(n, 'TI'),
         HL = par(n, 'HL', Infinity),
         LL = par(n, 'LL', -Infinity);
       if (!sw) st.i = Z - F;
@@ -43,15 +44,15 @@
     },
     /* ML 11 LG first order lag: SW=1 Y = X / (1 + T s); SW=0 Y = X */
     LG: (x, n, st, dt, sw = 1) => {
-      const T = par(n, 'T', 0);
+      const T = par(n, 'T');
       st.y = !sw || st.y === undefined || !T ? x[0] : st.y + ((x[0] - st.y) * dt) / Math.max(T, dt);
       return [st.y];
     },
     /* ML 12 PIF PI with feedforward: SW=1 Y = G X + (1/TI) integral X dt + F; SW=0 (tie-back) Y = Z; LL <= Y <= HL */
     PIF: (x, n, st, dt, sw = 1) => {
       const [X = 0, F = 0, Z = 0] = x,
-        G = par(n, 'G', 1),
-        TI = par(n, 'TI', 1),
+        G = par(n, 'G'),
+        TI = par(n, 'TI'),
         HL = par(n, 'HL', Infinity),
         LL = par(n, 'LL', -Infinity);
       if (!sw) st.i = Z - G * X - F;
@@ -60,12 +61,13 @@
       st.i = y - G * X - F;
       return [y];
     },
-    /* ML 13 PIV velocity PI: SW=1 Y = G1 (X(j) - X(j-1)) + G2 (TS/TI) X(j) + F (incremental: added to Y(j-1)); SW=0 Y = 0 */
+    /* ML 13 PIV velocity PI (TCA014 p 9): SW=1 Y = G1 (X(j) - X(j-1)) + G2 (TS/TI) X(j) + F; SW=0 Y = 0. Y is the increment itself (the
+       macro list adds no Y(j-1)); it gives no output limit, so HL / LL / ML printed under a PIV are an OPEN item (see need()) */
     PIV: (x, n, st, dt, sw = 1) => {
       const [X = 0, F = 0] = x,
-        G1 = par(n, 'G1', 1),
-        G2 = par(n, 'G2', 1),
-        TI = par(n, 'TI', 1);
+        G1 = par(n, 'G1'),
+        G2 = par(n, 'G2'),
+        TI = par(n, 'TI');
       if (!sw) {
         st.x = X;
         return [0];
@@ -84,12 +86,12 @@
       return [y, ...x.map(v => b01(v === y))];
     },
     /* ML 17 SG / ML 18 SGW Y = K */
-    SG: (x, n) => [par(n, 'K', 0)],
-    SGW: (x, n) => [par(n, 'K', 0)],
+    SG: (x, n) => [par(n, 'K')],
+    SGW: (x, n) => [par(n, 'K')],
     /* ML 21 AM analog memory: SW=0 Y = Z (tracking); SW=1 Y up / down by the binary I / D at the rate R, LL <= Y <= HL */
     AM: (x, n, st, dt, sw = 1) => {
       const [I = 0, D = 0, Z = 0] = x,
-        R = par(n, 'R', 0),
+        R = par(n, 'R'),
         HL = par(n, 'HL', Infinity),
         LL = par(n, 'LL', -Infinity);
       if (!sw || st.y === undefined) st.y = Z;
@@ -115,7 +117,7 @@
     ASW: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
     DSW: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
     /* ML 27 G Y = K X */
-    G: (x, n) => [par(n, 'K', 1) * x[0]],
+    G: (x, n) => [par(n, 'K') * x[0]],
     /* ML 28 MR monitor relay: Y = 1 when X1 - X2 > HL or < LL */
     MR: (x, n) => {
       const d = x[0] - (x[1] || 0);
@@ -132,7 +134,7 @@
     },
     /* ML 33 FLT mean of the last N samples (2 <= N <= 10); SW=0 Y = X */
     FLT: (x, n, st, dt, sw = 1) => {
-      const N = par(n, 'N', 2);
+      const N = par(n, 'N');
       st.h = sw ? (st.h || []).concat(x[0]).slice(-N) : [x[0]];
       return [st.h.reduce((a, v) => a + v, 0) / st.h.length];
     },
@@ -141,16 +143,16 @@
       st.h = (st.h || []).concat(x[0]).slice(-5);
       if (!sw || st.h.length < 5) return [0];
       const h = st.h;
-      return [((2 * h[4] + h[3] - h[1] - 2 * h[0]) * par(n, 'K', 1)) / (10 * dt)];
+      return [((2 * h[4] + h[3] - h[1] - 2 * h[0]) * par(n, 'K')) / (10 * dt)];
     },
     /* ML 37 PD pure delay: SW=1 the input of N K cycles before; SW=0 Y = X */
     PD: (x, n, st, dt, sw = 1) => {
-      const L = Math.max(1, par(n, 'N', 1) * par(n, 'K', 1));
+      const L = Math.max(1, par(n, 'N') * par(n, 'K'));
       st.h = sw ? (st.h || []).concat(x[0]).slice(-(L + 1)) : [x[0]];
       return [st.h[0]];
     },
     /* ML 39 LIN Y = K X + B */
-    LIN: (x, n) => [par(n, 'K', 1) * x[0] + par(n, 'B', 0)],
+    LIN: (x, n) => [par(n, 'K') * x[0] + par(n, 'B')],
     /* ML 41 LMS limiter LL <= Y <= HL */
     LMS: (x, n) => [clamp(x[0], par(n, 'LL', -Infinity), par(n, 'HL', Infinity))],
     /* ML 42 HSG / ML 43 LSG the maximum / minimum of the inputs */
@@ -165,19 +167,19 @@
     /* ML 47 TP pick-up delay: X 0 -> 1, Y = 1 after TP; X 1 -> 0, Y = 0 at once; SW=0 Y = 0 */
     TP: (x, n, st, dt, sw = 1) => {
       st.t = sw && x[0] ? (st.t || 0) + dt : 0;
-      return [b01(sw && x[0] && st.t >= par(n, 'TP', 0) - 1e-9)];
+      return [b01(sw && x[0] && st.t >= par(n, 'TP') - 1e-9)];
     },
     /* ML 48 TD drop-out delay: X 0 -> 1, Y = 1 at once; X 1 -> 0, Y = 0 after TD; SW=0 Y = 0 */
     TD: (x, n, st, dt, sw = 1) => {
       if (!sw) return [(st.t = 0)];
-      if (x[0]) st.t = par(n, 'TD', 0) + 1e-9;
+      if (x[0]) st.t = par(n, 'TD') + 1e-9;
       else st.t = Math.max(0, (st.t || 0) - dt);
       return [b01(x[0] || st.t > 0)];
     },
     /* ML 49 TW wipe-out: X 0 -> 1, Y = 1 for TW, then 0 until X goes 0 -> 1 again; SW=0 Y = 0 */
     TW: (x, n, st, dt, sw = 1) => {
       if (!sw) return [(st.t = 0)];
-      if (x[0] && !st.x) st.t = par(n, 'TW', 0);
+      if (x[0] && !st.x) st.t = par(n, 'TW');
       else st.t = Math.max(0, (st.t || 0) - dt);
       st.x = x[0];
       return [b01(st.t > 0)];
@@ -187,14 +189,14 @@
     FFS: (x, n, st) => [(st.y = x[0] ? 1 : x[1] ? 0 : st.y || 0)],
     /* ML 51 CMP comparator with hysteresis: from 1 it drops at X <= LL, from 0 it picks up at X >= HL; SW=0 Y = (X >= HL) */
     CMP: (x, n, st, dt, sw = 1) => {
-      const HL = par(n, 'HL', 0),
+      const HL = par(n, 'HL'),
         LL = par(n, 'LL', HL);
       st.y = !sw ? b01(x[0] >= HL) : st.y ? b01(x[0] > LL) : b01(x[0] >= HL);
       return [st.y];
     },
     /* ML 52 CPL comparator for a low value: from 1 it drops at X >= HL, from 0 it picks up at X <= LL */
     CPL: (x, n, st) => {
-      const HL = par(n, 'HL', 0),
+      const HL = par(n, 'HL'),
         LL = par(n, 'LL', HL);
       st.y = st.y ? b01(x[0] < HL) : b01(x[0] <= LL);
       return [st.y];
@@ -204,13 +206,13 @@
       if (!sw) st.c = 0;
       else if (x[0] && !st.x) st.c = (st.c || 0) + 1;
       st.x = x[0];
-      return [b01(sw && (st.c || 0) >= par(n, 'N', 1))];
+      return [b01(sw && (st.c || 0) >= par(n, 'N'))];
     },
     /* ML 56 FLK flicker: while X = 1, Y = 1 for T1 then 0 for T2, repeated; SW=0 Y = 0 */
     FLK: (x, n, st, dt, sw = 1) => {
       if (!sw || !x[0]) return [(st.t = 0)];
-      const T1 = par(n, 'T1', 0.5),
-        T2 = par(n, 'T2', 0.5);
+      const T1 = par(n, 'T1'),
+        T2 = par(n, 'T2');
       st.t = ((st.t || 0) + dt) % (T1 + T2);
       return [b01(st.t < T1)];
     },
@@ -225,8 +227,8 @@
       return [st.y];
     },
     /* ML 66 LCK Y = (X < K); ML 67 UCK Y = (X > K) */
-    LCK: (x, n) => [b01(x[0] < par(n, 'K', 0))],
-    UCK: (x, n) => [b01(x[0] > par(n, 'K', 0))],
+    LCK: (x, n) => [b01(x[0] < par(n, 'K'))],
+    UCK: (x, n) => [b01(x[0] > par(n, 'K'))],
     /* ML 68 TWF 2 out of 4 (more than one input = 1); ML 69 THF 3 out of 4 (more than two) */
     TWF: x => [b01(x.filter(Boolean).length > 1)],
     THF: x => [b01(x.filter(Boolean).length > 2)],
@@ -265,6 +267,34 @@
   };
   /* the drawing's other names for the same kinds: a gate box typed "G:OR" / "G:A" is the OR / AND of ML 45 / 44; PA1 ~ PA4 are
      ML 62 with 1 ~ 4 inputs; the circles on a wire ("o:BTR", "o:FTR") are ML 58 / 57 (TCA018: 008 / 005). */
+  /* the parameters a block cannot run without (macro list TCA013 ~ TCA020: each is named in the definition of its ML). A block that
+     misses one, prints one the definition does not have, or has a SW input with no wire is OPEN: its sheet does not count as running
+     (QA : SAORI review 2026-11-25: a missing parameter is an open item, never a default). */
+  const REQ = {
+    I: ['TI'], LG: ['T'], PIF: ['G', 'TI'], PIV: ['G1', 'G2', 'TI'], SG: ['K'], SGW: ['K'], AM: ['R'], G: ['K'], FLT: ['N'], GRD: ['K'],
+    PD: ['N', 'K'], LIN: ['K', 'B'], TP: ['TP'], TD: ['TD'], TW: ['TW'], CMP: ['HL'], CPL: ['HL'], CNT: ['N'], FLK: ['T1', 'T2'],
+    LCK: ['K'], UCK: ['K']
+  };
+  /* printed parameters that the definition of the ML does not have: their meaning is open until a document gives it */
+  const EXTRA = { PIV: ['HL', 'LL', 'ML'], AM: ['M'], G: ['KA'] };
+  const keysOf = n => new Set((n || []).map(q => (/^\s*([A-Z][A-Z0-9]*)\s*:/.exec(q) || [])[1]).filter(Boolean));
+  function need(type, notes, swWired) {
+    const t = K[type] ? type : ALIAS[type] || type,
+      f = K[t],
+      k = keysOf(notes),
+      out = [];
+    if (!f) return out;
+    for (const p of REQ[t] || []) if (!k.has(p)) out.push(t + ' ' + p + ' not on the sheet');
+    for (const p of EXTRA[t] || []) if (k.has(p)) out.push(t + ' ' + p + ' printed, not in the macro list definition');
+    if (t === 'FG') {
+      let c = 0;
+      for (let i = 1; i <= 8; i++) if (k.has('X' + i) && k.has('Y' + i)) c++;
+      if (c < 2) out.push('FG curve not on the sheet');
+    }
+    /* ML 62 PA (parameter modify) has no SW in its symbol: its side input is the condition of the parameter, drawn or not */
+    if (!swWired && t !== 'PA' && /\bsw\s*=/.test(String(f))) out.push(t + ' SW not wired (HIACS default not in the macro list)');
+    return out;
+  }
   const ALIAS = { 'G:OR': 'OR', 'G:A': 'A', PA1: 'PA', PA2: 'PA', PA3: 'PA', PA4: 'PA', 'o:BTR': 'BTR', 'o:FTR': 'FTR' };
   /* marks that are not blocks: X inverts the wire it sits on (the netlist sets inv), NC is a pin drawn not connected */
   const MARK = { X: 1, NC: 1 };
@@ -368,7 +398,13 @@
         M.ins.push({ net: nt, y: p[1], pin, name: pin != null ? M.L[pin] : null });
         continue;
       }
-      const o = outs.find(o => Math.hypot(o.x - p[0], o.y - p[1]) <= o.d);
+      /* the NEAREST output connector within its radius (two connectors ~60 px apart both reach a wire end: TCE168 C1 / C) */
+      let o = null,
+        od = Infinity;
+      for (const c of outs) {
+        const dd = Math.hypot(c.x - p[0], c.y - p[1]);
+        if (dd <= c.d && dd < od) (o = c), (od = dd);
+      }
       if (o) {
         res.outputs.push({ net: nt, to: o.what, key: o.key, kind: o.kind, text: o.text, letter: o.letter, sheets: o.sheets });
         continue;
@@ -558,11 +594,115 @@
      after; it feeds the top of the timers and comparators of every sheet, which therefore hold their SW = 0 output (Y = 0) for those
      10 s: "INITIAL clears every timer". */
   const MACRO = {}; /* macro meanings, by name ('TRIPPLE INPUT DIAGNOSTICS' ...): f(inputs by pin name, notes, st, dt) -> outputs by pin name */
+  /* ---------- macro (MD) meanings FROM THE MANUAL TEXT: the inside of these macros is NOT drawn in any document we have (lane 2 spec
+     /mnt/project-files/lanes/tcs-macros/01, 02, 04: the TCE / TCA sets, TCA.pdf / TCE.pdf and TC-14-116 were searched page by page; the
+     inside lives in the EWS project, "Logic Monitor", TC-14-116 p 1359). What IS drawn: the pins, the macro number, the parameters printed
+     beside each block and the wiring. Each meaning below is the reading of those plus what TC-14-116 writes about the function; every
+     such function carries src = TEXT, and stats() counts the sheets that run only with them apart (QA column "from manual text, not
+     drawing-complete") until the user decides. A Logic Monitor print, if found, replaces the reading. */
+  const TEXT = 'from manual text, inside not drawn';
+  /* a printed parameter of a macro, "LABEL:value" (value without its unit: "306.0degC", "0.18S"); undefined if not printed */
+  const mpar = (notes, label) => {
+    for (const n of notes || []) {
+      const z = String(Array.isArray(n) ? n[2] : n).trim();
+      if (z.startsWith(label + ':')) return parseFloat(z.slice(label.length + 1));
+    }
+  };
+  /* on-delay: 1 once cond has held T seconds */
+  const onDelay = (st, k, cond, T, dt) => ((st[k] = cond ? (st[k] || 0) + dt : 0), st[k] >= T - 1e-9 ? 1 : 0);
+  /* need(notes): the printed parameters the reading uses that are missing (a missing one keeps the block open, never a default) */
+  const textMacro = (need, f) => ((f.src = TEXT), (f.need = typeof need === 'function' ? need : notes => need.filter(k => mpar(notes, k) === undefined)), f);
+  /* 01 TRIPPLE INPUT DIAGNOSTICS (LME105, 146 blocks on TCE075 ~ TCE119A, TCE145; pins IN1 IN2 IN3 / OUT, DEV E; printed TP:3.0).
+     TC-14-116 p 85: "2/3 : contact 2 out of 3 combination logic"; p 1298 No. 9 "Input Channel Error": "deviations between signals when
+     inputs such as field sensors are multiplexed". Reading: OUT = 2 out of 3 of IN1..IN3; DEV E = the three not all equal for TP s. */
+  MACRO['TRIPPLE INPUT DIAGNOSTICS'] = textMacro(['TP'], (I, notes, st, dt) => {
+    const a = b01(I.IN1),
+      b = b01(I.IN2),
+      c = b01(I.IN3);
+    return { OUT: a + b + c >= 2 ? 1 : 0, 'DEV E': onDelay(st, 'd', !(a === b && b === c), mpar(notes, 'TP'), dt) };
+  });
+  /* 02 AI DIAG.MD (LMA510 / LME510, 96 blocks on TCA310 ~ TCA443, TCE102 ~ TCE104; pins IN ERR SIM / OUT ABN). Printed in two groups:
+     left "DEF N, K, H/L HL, LL, DEF TP" (HL / LL = about 102 % and -2 ~ -15 % of the AI range: the range check), right "DEV HL, LL,
+     DEF TP, DEF N, K" (the rate check). TC-14-116 p 1298 No. 4 "Analog Input Signal Abnormal": "a deviation from the upper or lower
+     limit or an excessively large rate of signal change) or an abnormal input module function". Reading: each group samples IN every
+     DEF TP (at least once a scan); a sample is bad when IN is outside [LL, HL] (range) or its change from the last sample is outside
+     [DEV LL, DEV HL] (rate); ABN = ERR, or DEF N bad samples in a row in either group. OUT = IN, and SIM on ABN (SIM is the drawn
+     substitute: an SG or the value of another sheet, e.g. TCA322 valve positions from TCA740 / TCA741). K (printed 1) is not read:
+     the manual does not say what it is. */
+  const aiGroups = notes => {
+    const h = (notes || []).find(n => /^H\/L HL:/.test(n[2])),
+      d = (notes || []).find(n => /^DEV HL:/.test(n[2]));
+    if (!h || !d) return null;
+    const g = { hl: parseFloat(h[2].split(':')[1]) },
+      e = { hl: parseFloat(d[2].split(':')[1]) };
+    /* each label stands under the HL of its group ("LL:" 20 px in): it belongs to the nearer HL */
+    const near = (n, x0, x1) => Math.abs(n[0] - x0) < Math.abs(n[0] - x1);
+    for (const [o, x0, x1] of [[g, h[0], d[0]], [e, d[0], h[0]]])
+      for (const [k, re] of [['LL', /^LL:/], ['TP', /^DEF TP:/], ['N', /^DEF N:/]]) {
+        const n = (notes || []).filter(n => re.test(n[2]) && near(n, x0 + (k === 'LL' ? 20 : 0), x1 + (k === 'LL' ? 20 : 0)))[0];
+        o[k] = n ? parseFloat(String(n[2]).split(':')[1]) : undefined;
+      }
+    return { g, e };
+  };
+  const aiNeed = notes => {
+    const G = aiGroups(notes);
+    if (!G) return ['H/L HL', 'DEV HL'].filter(k => mpar(notes, k) === undefined);
+    const miss = [];
+    for (const [o, w] of [[G.g, 'H/L'], [G.e, 'DEV']]) for (const k of ['LL', 'TP', 'N']) if (!Number.isFinite(o[k])) miss.push(w + ' ' + k);
+    return miss;
+  };
+  MACRO['AI DIAG.MD'] = textMacro(aiNeed, (I, notes, st, dt) => {
+    const G = st.G || (st.G = aiGroups(notes)),
+      x = I.IN;
+    if (!G) return {};
+    const chk = (o, k, bad) => {
+      st[k + 't'] = (st[k + 't'] || 0) + dt;
+      if (st[k + 't'] >= Math.max(o.TP, dt) - 1e-9) {
+        st[k + 't'] = 0;
+        st[k + 'n'] = bad() ? (st[k + 'n'] || 0) + 1 : 0;
+      }
+      return (st[k + 'n'] || 0) >= o.N;
+    };
+    const range = chk(G.g, 'r', () => x > G.g.hl || x < G.g.LL);
+    const rate = chk(G.e, 'v', () => {
+      const d = st.last === undefined ? 0 : x - st.last;
+      st.last = x;
+      return d > G.e.hl || d < G.e.LL;
+    });
+    const abn = b01(I.ERR) || range || rate ? 1 : 0;
+    return { OUT: abn ? I.SIM : x, ABN: abn };
+  });
+  /* 04 TMR AI DIAGNOSTICS (LME111 + LME111A, 42 blocks on TCE060 ~ TCE073, TCA372; pins SIG1 ERR1 SIG2 ERR2 SIG3 ERR3 HL LL DEV SIM /
+     OUT ABN DEV E ERR; printed TP:1.0 three times and DELAY TP:3.0s three times: one of each per channel). TC-14-116 p 1308 No. 6
+     "Discrepancy Error": "when ... TPC(A) data only has deviated greatly from TPC(B) and (C) data"; p 1298 No. 4 and No. 9 as for 01 / 02.
+     Reading: channel i is bad when ERRi, or SIGi outside [LL, HL], for TP s; it deviates when it differs from the middle of the three by
+     more than DEV for DELAY TP s. OUT = the middle of the three good channels (two good: their mean); ABN = fewer than two good channels
+     (the 2 out of 3 is lost), then OUT = SIM; DEV E = a channel deviates; ERR = a channel is bad. */
+  const mid3 = (a, b, c) => Math.max(Math.min(a, b), Math.min(Math.max(a, b), c));
+  MACRO['TMR AI DIAGNOSTICS'] = textMacro(['TP', 'DELAY TP'], (I, notes, st, dt) => {
+    const T = mpar(notes, 'TP'),
+      D = mpar(notes, 'DELAY TP'),
+      S = [I.SIG1, I.SIG2, I.SIG3],
+      m = mid3(...S),
+      good = [],
+      bad = [];
+    let dev = 0;
+    for (let i = 0; i < 3; i++) {
+      const e = b01(I['ERR' + (i + 1)]) || S[i] > I.HL || S[i] < I.LL;
+      (onDelay(st, 'b' + i, e, T, dt) ? bad : good).push(S[i]);
+      dev |= onDelay(st, 'd' + i, Math.abs(S[i] - m) > I.DEV, D, dt);
+    }
+    const abn = good.length < 2 ? 1 : 0,
+      out = abn ? I.SIM : good.length === 3 ? mid3(...good) : (good[0] + good[1]) / 2;
+    return { OUT: out, ABN: abn, 'DEV E': dev, ERR: bad.length ? 1 : 0 };
+  });
   const numConst = t => {
     const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
     return m ? +m[1] : null;
   };
   function compile(sheets) {
+    /* an explanation sheet (TCE022 LOGIC EXPLANATION, TCE023 PI/O TABLE EXPLANATION) draws examples of the symbols, not logic */
+    sheets = sheets.filter(s => !s.legend);
     const nets = sheets.map(s => (s.dwg ? gnet(s) : net(s)));
     /* SH-G-*: a circle "to SH-G-*" goes to every sheet that reads that number "from SH-G-*" */
     for (const n of nets)
@@ -597,7 +737,7 @@
       for (const M of n.macros) P.set(M.key, ['M', M]);
       for (const c of n.inputs) P.set(c.key, ['c', c]);
       for (const k of S.k || []) P.set(k[0], ['k', k]);
-      for (const r of S.r || []) P.set(r[0], ['r', r]);
+      for (const r of S.r || []) if (!P.has(r[0])) P.set(r[0], ['r', r]); /* a box that is also a block / macro (G "DI" time relay, TRIPLE DETECTOR) is the block */
       for (const d of S.d || []) if (d[3] === 'in') P.set(d[0], ['d', d]);
       for (const x of S.s || []) if (!P.has(x[0])) P.set(x[0], ['s', x]); /* a G sheet's s source with a circle is its input connector */
     }
@@ -633,7 +773,8 @@
             r = d && d.length ? res(d[0][0], d[0][1], depth + 1) : port('REF:' + text);
           } else if (v !== null) r = slot('CONST:' + v, v);
           else r = port('SYS:' + text);
-        } else if ((t === 'r' || t === 's') && nb[sid].ports && nb[sid].ports[x[0]]) r = port(nb[sid].ports[x[0]]);
+        } else if (t === 'r' && x[6] === 'fn') r = slot(mk); /* a function box: its node (no meaning yet) holds the value */
+        else if ((t === 'r' || t === 's') && nb[sid].ports && nb[sid].ports[x[0]]) r = port(nb[sid].ports[x[0]]);
         else if (t === 'r' || t === 's') {
           /* a PI/O box (r) or a source drawn by its lines (s): named by the table and order printed in it, "(TCA900-1)" = table TCA900
              row 1 (unique in the set); a source that prints ON(1) / OFF(0) is that constant */
@@ -645,8 +786,11 @@
               .filter(w => w[0] >= x0 - m && w[0] <= x1 + 120 && w[1] >= y0 - 16 && w[1] <= y1 + m && /\(T[A-Z]{2}\d+[A-Z]?-\d+\)/.test(w[2]))
               .sort((a, b) => Math.hypot(a[0] - x1, a[1] - y0) - Math.hypot(b[0] - x1, b[1] - y0))
               .map(w => /\((T[A-Z]{2}\d+[A-Z]?-\d+)\)/.exec(w[2]))[0],
-            on = tx.find(w => /^(ON\(1\)|OFF\(0\))$/.test(w));
-          r = io ? port('PIO:' + io[1]) : on ? slot('CONST:' + +/\((\d)\)/.exec(on)[1], +/\((\d)\)/.exec(on)[1]) : port('PIO:' + sid + '.' + x[0] + (tx.length ? ' ' + tx.join(' ') : ''));
+            on = tx.find(w => /^(ON\(1\)|OFF\(0\))$/.test(w)),
+            /* a PI/O error box prints the table / order of its card or channel, the same words as the value of that row ("(TCA900-1)" on
+               TCA040 is DI 1 and the card error; "(TCA932-3)" on TCA322 is the AI and its error): the error is its own signal, "<row> ERR" */
+            err = t === 'r' && x[5] === 'PI/O error' ? ' ERR' : '';
+          r = io ? port('PIO:' + io[1] + err) : on ? slot('CONST:' + +/\((\d)\)/.exec(on)[1], +/\((\d)\)/.exec(on)[1]) : port('PIO:' + sid + '.' + x[0] + (tx.length ? ' ' + tx.join(' ') : ''));
         } else if (t === 'd') r = port('CRT:' + sid + '.' + (x[4] || x[0]));
         else r = port('SRC:' + mk);
       }
@@ -661,22 +805,75 @@
       for (const m of n.marks)
         nodes.push({ t: 'm', out: slot(n.id + ':' + m.key), ins: m.in ? [res(n.id, m.in)] : [], inv: m.type === 'X' || m.type === 'NC' });
       for (const b of n.blocks) {
-        const f = kind(b.type),
+        /* pr: the parameters printed on the page beside the block (or in its FG table) that the typed drawing keeps as text only */
+        const notes = S.pr && S.pr[b.key] ? (b.notes || []).concat(S.pr[b.key]) : b.notes,
+          f = kind(b.type),
           L = b.ins.filter(i => i.side === 'l'),
           side = b.ins.find(i => i.side !== 'l');
         if (!f) unknown[b.type] = (unknown[b.type] || 0) + 1;
         nodes.push({
           t: 'b',
           f,
+          key: b.key,
           type: b.type,
-          notes: b.notes,
+          notes,
           out: slot(n.id + ':' + b.key),
           ins: L.map(i => res(n.id, i.net)),
           inv: L.map(i => !!i.inv),
           sw: side ? res(n.id, side.net) : -1,
+          /* a G sheet (310SD03-743) is a relay diagram, not a HIACS macro: its time relays have no SW input */
+          open: need(b.type, notes, !!side || !!S.dwg),
           st: {}
         });
       }
+      /* ML 62 PA (parameter modify, TCA019): PA<n> number N gives on line the parameters of the block N of the sheet (drawn beside
+         it: TCE196 PA3 005 -> I 005, TCA533 PA2 010 -> CMP 010). Which parameter each input gives is the name printed at the input
+         ("(TI)", "HL"), or, where none is printed, the sheet's own pa list (with its reason); an input with no name stays open. */
+      for (const b of n.blocks) {
+        if (!/^PA\d$/.test(b.type)) continue;
+        const sb = (S.b || []).find(x => x[0] === b.key),
+          dg = z => (/\d+$/.exec(String(z)) || [''])[0],
+          /* the block of the same number (the drawing may print the PA without the letter: PA2 013 -> RL C013), the nearest one */
+          tb =
+            sb &&
+            (S.b || [])
+              .filter(x => x[0] !== b.key && !/^PA/.test(x[1]) && (x[2] === sb[2] || (dg(x[2]) && dg(x[2]) === dg(sb[2]))))
+              .sort((a, c) => Math.hypot(a[3] - sb[3], a[4] - sb[4]) - Math.hypot(c[3] - sb[3], c[4] - sb[4]))[0],
+          tn = tb && nodes.find(x => x.key === tb[0]);
+        if (!tn) continue;
+        const L = sb[3] - ((sb[7] && sb[7][0]) || 59) / 2,
+          given = (S.pa && S.pa[b.key]) || [];
+        tn.pa = tn.pa || {};
+        b.ins
+          .filter(i => i.side === 'l')
+          .sort((a, c) => a.y - c.y)
+          .forEach((i, k) => {
+            /* the name is printed at the pin or along the wire of that input ("(LL)" of TCE195 sits on the riser of G 029) */
+            const segs = (S.w || []).filter(x => x[0] === i.net).flatMap(x => x[1].slice(1).map((q, j) => [x[1][j], q])),
+              dseg = (P0, [A, B]) => {
+                const dx = B[0] - A[0],
+                  dy = B[1] - A[1],
+                  t = dx || dy ? Math.max(0, Math.min(1, ((P0[0] - A[0]) * dx + (P0[1] - A[1]) * dy) / (dx * dx + dy * dy))) : 0;
+                return Math.hypot(P0[0] - A[0] - t * dx, P0[1] - A[1] - t * dy);
+              },
+              near = w => (w[0] > L - 90 && w[0] < L + 5 && Math.abs(w[1] - i.y) < 14) || segs.some(g => dseg(w, g) < 22),
+              lab = (S.t || [])
+                .filter(w => /^\(?[A-Z][A-Z0-9]{0,3}\)?$/.test(String(w[2]).trim()) && near(w))
+                .sort((a, c) => Math.abs(a[1] - i.y) - Math.abs(c[1] - i.y))[0],
+              name = lab ? /[A-Z][A-Z0-9]*/.exec(lab[2])[0] : given[k];
+            if (name) tn.pa[name] = res(n.id, i.net);
+          });
+        const has = Object.keys(tn.pa).map(k => k + ':0');
+        tn.open = need(tn.type, has.concat(tn.notes || []), tn.sw >= 0 || !!S.dwg);
+      }
+      /* a function box drawn as a plain box ('fn': TRIPLE DETECTOR2, 2OO3): a block with no meaning yet, so its sheet does not run */
+      for (const x of S.r || [])
+        if (x[6] === 'fn') {
+          const [x0, y0] = [x[1], x[2]],
+            name = (S.t || []).filter(w => w[0] >= x0 && w[0] <= x0 + x[3] && w[1] >= y0 && w[1] <= y0 + 30).map(w => String(w[2]).trim())[0] || x[0];
+          unknown['BOX ' + name] = (unknown['BOX ' + name] || 0) + 1;
+          nodes.push({ t: 'b', f: null, type: 'BOX ' + name, notes: [], out: slot(n.id + ':' + x[0]), ins: [], inv: [], sw: -1, open: [], st: {} });
+        }
       for (const M of n.macros) {
         const name = M.type.slice(2),
           f = MACRO[name] || null;
@@ -685,7 +882,8 @@
         M.R.forEach(p => p && (outs[p] = slot(n.id + ':' + M.key + '.' + p)));
         const ins = {};
         for (const i of M.ins) if (i.name) ins[i.name] = res(n.id, i.net);
-        nodes.push({ t: 'M', f, name, notes: M.notes, ins, outs, st: {} });
+        const open = f && f.need ? f.need(M.notes).map(k => name + ' needs ' + k) : [];
+        nodes.push({ t: 'M', f, name, notes: M.notes, ins, outs, st: {}, open, src: f && f.src });
       }
       /* order: a node after the nodes of this sheet that feed it (depth first; a loop keeps the last scan's value) */
       const by = new Map();
@@ -706,7 +904,7 @@
       plan.push({ id: n.id, ctl: S.ctl, cyc: (S.cycle || 100) / 1000, acc: 0, nodes: order, blocks: n.blocks.length, macros: n.macros.length });
     }
     const v = Float64Array.from(init);
-    const prog = { names, idx, v, ports: [...ports].sort(), plan, nets, join: J, unknown, res, t: 0 };
+    const prog = { names, idx, v, ports: [...ports].sort(), plan, nets, parts: part, join: J, unknown, res, t: 0 };
     return prog;
   }
   /* one scan of one sheet at its cycle dt */
@@ -722,7 +920,8 @@
         const xs = x.ins.map((s, i) => (x.inv[i] ? b01(!v[s]) : v[s]));
         let sw;
         if (x.sw >= 0) sw = b01(v[x.sw]);
-        v[x.out] = x.f(xs, x.notes, x.st, dt, sw)[0];
+        const nt = x.pa ? Object.keys(x.pa).map(k => k + ':' + v[x.pa[k]]).concat(x.notes || []) : x.notes;
+        v[x.out] = x.f(xs, nt, x.st, dt, sw)[0];
       } else {
         if (!x.f) {
           for (const k in x.outs) v[x.outs[k]] = NaN;
@@ -754,28 +953,78 @@
   };
   /* the value of the net `key` of sheet `sid` (the live reads of a sheet name these keys) */
   const get = (prog, sid, key) => prog.v[prog.res(sid, key)];
+  /* the operator station side (HMI, lane 9): every CRT push button (a port to force) and every CRT lamp (an output to read) */
+  function crt(prog) {
+    const buttons = prog.ports.filter(n => /^CRT:/.test(n)).map(port => {
+        const r = port.slice(4),
+          i = r.indexOf('.');
+        return { port, sheet: r.slice(0, i), tag: r.slice(i + 1) };
+      }),
+      lamps = [];
+    for (const n of prog.nets) for (const o of n.outputs) if (o.kind === 'd') lamps.push({ sheet: n.id, key: o.key, tag: o.text });
+    return { buttons, lamps };
+  }
+  /* what the program WRITES (every prog.ports entry is an input it only reads): each output of a sheet with where it goes. kind 'crt' = a
+     CRT lamp, 'pio' = a PI/O output box (to the field / DCS), 'con' = a connector to a sheet outside the TCE / TCA set, 'spare' = a connector printed "(-)" */
+  function outs(prog) {
+    const ids = new Set(prog.nets.map(n => n.id)),
+      L = [];
+    for (const n of prog.nets)
+      for (const o of n.outputs) {
+        const inside = (o.sheets || []).some(x => ids.has(x)) || /^circle .* to (G-|\(this sheet\))/.test(o.to || ''),
+          kind = o.kind === 'd' ? 'crt' : o.kind === 'r' ? 'pio' : o.kind === 'c' && !inside ? ((o.sheets || []).every(x => x === '-') ? 'spare' : 'con') : null;
+        if (kind) L.push({ sheet: n.id, key: o.key, kind, to: o.to, slot: prog.res(n.id, o.net) });
+      }
+    return L;
+  }
+  /* read with no side effect: a net or part key of the sheet, a CRT lamp by key or tag, a CRT button by tag; undefined if unknown */
+  function read(prog, sid, key) {
+    const n = prog.nets.find(x => x.id === sid);
+    if (!n) return undefined;
+    const lamp = n.outputs.find(o => o.kind === 'd' && (o.key === key || o.text === key));
+    if (lamp) return prog.v[prog.res(sid, lamp.net)];
+    const btn = prog.idx.get('CRT:' + sid + '.' + key);
+    if (btn !== undefined) return prog.v[btn];
+    const known = prog.names.indexOf(sid + ':' + key);
+    if (known >= 0) return prog.v[known];
+    const P = prog.parts && prog.parts[sid];
+    return P && (P.has(key) || P.has(key.split('.')[0])) ? prog.v[prog.res(sid, key)] : undefined;
+  }
   /* what runs: per sheet, every block and macro with a meaning = the sheet runs as its logic */
   function stats(prog) {
     let run = 0,
       blocks = 0,
       bOk = 0,
       macros = 0,
-      mOk = 0;
-    const notRun = [];
+      mOk = 0,
+      mText = 0;
+    const notRun = [],
+      runText = [] /* sheets that run with a macro meaning from the manual text (inside not drawn): QA counts them apart */,
+      open = {};
     for (const p of prog.plan) {
-      let ok = true;
+      let ok = true,
+        text = false;
       for (const x of p.nodes) {
         if (x.t === 'b') (blocks++, x.f ? bOk++ : (ok = false));
-        if (x.t === 'M') (macros++, x.f ? mOk++ : (ok = false));
+        if (x.t === 'b' && x.open && x.open.length) {
+          ok = false;
+          for (const w of x.open) (open[w] = open[w] || new Set()).add(p.id);
+        }
+        if (x.t === 'M') (macros++, x.f ? mOk++ : (ok = false), x.src && (mText++, (text = true)));
+        if (x.t === 'M' && x.open && x.open.length) {
+          ok = false;
+          for (const w of x.open) (open[w] = open[w] || new Set()).add(p.id);
+        }
       }
-      ok ? run++ : notRun.push(p.id);
+      ok ? (run++, text && runText.push(p.id)) : notRun.push(p.id);
     }
     const kinds = {};
     for (const n of prog.ports) {
       const k = n.split(':')[0];
       kinds[k] = (kinds[k] || 0) + 1;
     }
-    return { sheets: prog.plan.length, run, notRun, blocks, bOk, macros, mOk, ports: prog.ports.length, portKinds: kinds };
+    for (const w in open) open[w] = [...open[w]].sort();
+    return { sheets: prog.plan.length, run, runText, notRun, open, blocks, bOk, macros, mOk, mText, ports: prog.ports.length, portKinds: kinds };
   }
-  root.TCE_RUN = { K, par, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO };
+  root.TCE_RUN = { crt, read, outs, K, par, REQ, EXTRA, need, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO, TEXT };
 })(typeof window !== 'undefined' ? window : globalThis);

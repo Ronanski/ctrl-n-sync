@@ -112,6 +112,15 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA686',
+    /* pr: printed on page 168 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl007: ['HL:5.0barg', 'LL:4.0barg'],
+      flk009: ['T1:1.0s', 'T2:15.0s'],
+      cpl010: ['HL:41.0%', 'LL:40.0%'],
+      cmp013: ['HL:5.0barg', 'LL:4.0barg'],
+      flk015: ['T1:1.0s', 'T2:15.0s'],
+      cmp019: ['HL:5.0%', 'LL:4.0%']
+    },
     title: 'HP TURBINE WARMING VALVE (TC-20)',
     page: 168,
     ctl: 'COMM+MD',

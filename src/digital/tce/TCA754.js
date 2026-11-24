@@ -116,6 +116,14 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA754',
+    /* pr: printed on page 184 beside each block; the drawing above keeps them as text */
+    pr: {
+      sgA002: ['K:886.536'],
+      sgA003: ['K:689.178'],
+      sgA004: ['K:492.27'],
+      sgA005: ['K:295.362'],
+      sgA006: ['K:98.454']
+    },
     title: 'THERMAL STRESS(HP)',
     page: 184,
     ctl: 'COMM+MD',

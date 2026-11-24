@@ -1,4 +1,4 @@
-# LMYP OTS 1.0.0-beta.446 (EIMI, lane 6, 2026-11-25)
+# LMYP OTS 1.0.0-beta.486 (EIMI, lane 6, 2026-11-25)
 
 Shared HMI core para sa dalawang HMI lane (boiler at turbine). Hiningi ng MINAMI at ng TCS lane.
 

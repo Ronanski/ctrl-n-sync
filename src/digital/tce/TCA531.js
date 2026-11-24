@@ -282,6 +282,11 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA531',
+    /* pr: printed on page 101 beside each block, FG *1 / *2 tables; the drawing above keeps them as text */
+    pr: {
+      fgA001: ['X1:0.00', 'Y1:184', 'X2:100.00', 'Y2:172', 'X3:200.00', 'Y3:161', 'X4:250.00', 'Y4:155', 'X5:300.00', 'Y5:149.50', 'X6:400.00', 'Y6:138.50', 'X7:500.00', 'Y7:127', 'X8:600.00', 'Y8:116'],
+      fgA009: ['X1:0.00', 'Y1:184', 'X2:100.00', 'Y2:172', 'X3:200.00', 'Y3:161', 'X4:250.00', 'Y4:155', 'X5:300.00', 'Y5:149.50', 'X6:400.00', 'Y6:138.50', 'X7:500.00', 'Y7:127', 'X8:600.00', 'Y8:116']
+    },
     title: 'CRITERIA CONDITION',
     page: 101,
     ctl: 'COMM+MD',

@@ -1,6 +1,13 @@
 /* TCE166 ACCELERATION RELAY (331DM09784 page 116, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE166',
+  /* pr: printed on page 116 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgA003: ['K:55.7rpm/S'],
+    sgA004: ['K:3672.0rpm'],
+    sgA005: ['K:3780.0rpm'],
+    sgA006: ['K:3600.0rpm']
+  },
   title: 'ACCELERATION RELAY',
   page: 116,
   ctl: 'EHG+MD',

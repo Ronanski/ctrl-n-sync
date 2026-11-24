@@ -14,6 +14,13 @@
    (AEH006A) and out as the POSITION DEMAND; the servo cards are drawn as on the drawing, they are no logic of the sheet. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE212',
+  /* pr: printed on page 144 beside each block; the drawing above keeps them as text */
+  pr: {
+    twA071: ['TW:3.0s'],
+    sg048: ['K:-5.0%'],
+    sgC022: ['K:0.56%/S'],
+    sgC025: ['K:0.56%/S']
+  },
   title: 'CV(A),(B) CONTROL',
   page: 144,
   ctl: 'EHG+MD',

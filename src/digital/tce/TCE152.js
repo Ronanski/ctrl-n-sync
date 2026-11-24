@@ -210,8 +210,12 @@
     [1601, 305],
     [2053, 305]
   ]);
+  /* page 109: the line ends at the connector Z1 (TCA541); typed from the connector end it was not read as reaching it */
   W('ffr5', [
-    [2054, 223],
+    [1601, 223],
+    [2054, 223]
+  ]);
+  W('ffr5', [
     [1601, 223],
     [1601, 542],
     [918, 542],

@@ -9,6 +9,10 @@
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE135',
+      /* pr: printed on page 100 beside each block; the drawing above keeps them as text */
+      pr: {
+        c018: ['HL:98', 'LL:97']
+      },
       title: 'POSITION DIAGNOSTICS(4)',
       page: 100,
       v: 'RSV(B)',

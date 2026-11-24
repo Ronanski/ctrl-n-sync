@@ -1,6 +1,11 @@
 /* TCE053 CONTROLLER CONDITION(4) (331DM09784 page 26, controller EHG+MD, cycle 30 ms). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE053',
+  /* pr: printed on page 26 beside each block; the drawing above keeps them as text */
+  pr: {
+    td054: ['TD:4.0s'],
+    td055: ['TD:1.5s']
+  },
   title: 'CONTROLLER CONDITION(4)',
   page: 26,
   ctl: 'EHG+MD',
