@@ -123,6 +123,14 @@ page({
 - New kind of equipment: add one function to `hx-sym.js` (drawn around 0, 0; returns `svg`, `ports`, `box`).
 - New machine or tag in the app: run `tools/dump-live150.js` on the built app, then `tools/make-registry.py`.
 
+## 6a. Monitor rows, VCB point, unit-model paths, TCS buttons and lamps (beta.446, both HMI lanes)
+
+- **Monitor rows of a machine** (bearing, winding, vibration, heater): `M('pump', 'CEP-A', 'Condensate pump A', [...], { mon: [V('Bearing DE', 'TT-CD1116-A3', '°C'), V('Winding U', '<tag>', '°C', 0), V('Space heater', '<tag>', '', 0, { words: ['ON', 'OFF'] })] })`. They show on the PERMISSIVE · TREND · MONITOR faceplate (the Y / N square, rule 6), under the heading MONITOR, not on the drawing and not on the CONTROL faceplate. `words` = [word at 1, word at 0] for an on / off point.
+- **VCB ON / OFF point**: `{ vcb: '<value key>' }` on the same HX.M. The VCB lamp of the CONTROL faceplate reads it (1 = ON); without it the lamp follows the motor state.
+- **Unit-model path**: a value key `'an:a.b.c'` reads AN.unit.a.b.c (`'an:lpHt.H2.dr'`); a flag reads 1 / 0; a missing path shows -----.
+- **TCS operator button**: `B('RESET', 'crt:CRT:TCE114.<tag>', { press: true })`, a press holds the port 3000 ms. **TCS lamp**: `B('TRIP', 'crtl:TCE114|<lamp tag>')` shows ON (lit) / OFF. Both show ----- and do nothing while the TCS program is not running. The names of the TCS program API are in one place, hx-app.js `CRT`.
+- Test: tests/regress/hx_fp_mon.js (CI step HX SHARED CORE).
+
 ## 6b. A page as a plan (the full operator drawing)
 
 The user did not accept the first 23 pages as operator graphics (2026-11-17): only the main line had pipes; spray valves, drains and vents stood in a row with no line. `hx-page-reheat.js` is the sample of the answer: a page drawn as a **plan**, where every valve, spray, drain pot and transmitter sits on its own line. New pages should be made this way; the lane pages are a summary level only.
