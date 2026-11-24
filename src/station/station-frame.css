@@ -211,3 +211,26 @@ button.st-cond.st-go span { text-decoration: underline; text-decoration-color: #
 .st-alm .st-x.st-go { cursor: pointer; }
 .st-alm .st-x.st-go:hover { color: #fff; }
 .st-nofind { padding: 12px; }
+
+/* the console annunciator (ANP1PB-03): 10 x 10 windows, red lamps on rows A ~ C, yellow on D ~ J; a new alarm flashes, an acknowledged
+   one is steady, a dark window is normal; a spare is blank; "no signal" = no drawing of the app sends that window */
+.st-alm .st-annb.new { color: #fff; background: #8f2a2e; text-decoration: none; }
+.st-ann .st-body { max-height: none; overflow-x: auto; }
+.st-ag { display: grid; grid-template-columns: 16px repeat(10, minmax(76px, 1fr)); gap: 3px; min-width: 800px; }
+.st-ah { font: 600 12px var(--st-num); color: var(--st-dim); display: grid; place-items: center; }
+.st-aw { position: relative; min-height: 46px; box-sizing: border-box; padding: 12px 3px 3px; border: 1px solid #3b4651; background: #262c32; color: #8d97a1; display: grid; place-items: center; text-align: center; font: 500 11px/1.15 var(--st-ui); text-transform: uppercase; }
+.st-aw > i { position: absolute; left: 3px; top: 1px; font: 500 11px var(--st-num); font-style: normal; color: #6d7882; text-transform: none; }
+.st-aw > span { overflow-wrap: anywhere; }
+.st-aw.sp { background: #1d2227; border-color: #2b333b; }
+.st-aw.ns { border-style: dashed; color: #6d7882; }
+.st-aw.r.lit { background: #b8323a; border-color: #ff9a9f; color: #fff; }
+.st-aw.y.lit { background: #f0c53c; border-color: #fff0b0; color: #1a1a1a; }
+.st-aw.lit > i { color: inherit; opacity: .75; }
+.st-aw.fl { animation: st-fl 1s steps(1) infinite; }
+@keyframes st-fl { 50% { background: #262c32; border-color: #3b4651; color: #8d97a1; } }
+@media (prefers-reduced-motion: reduce) { .st-aw.fl { animation: none; outline: 3px solid #fff; outline-offset: -3px; } }
+.st-afoot { gap: 8px; align-items: center; }
+.st-horn { margin-right: auto; display: flex; align-items: center; gap: 8px; color: var(--st-dim); font-size: 12px; }
+.st-horn::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--st-line2); box-sizing: border-box; }
+.st-horn.on { color: var(--st-tx); font-weight: 600; }
+.st-horn.on::before { background: #d4434a; border-color: #d4434a; }
