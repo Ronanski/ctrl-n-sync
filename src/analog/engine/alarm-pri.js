@@ -52,7 +52,8 @@ AN.almPri = a => {
      whose address is on no running sheet gives its own value.
    - switch row: the switch of the tag driven by the plant model or a DI field row (WORLD.plantSw, src/world/plantsw.js); its on is the
      switch in its state (level low, pressure high, ...). The row's on is the state that is the alarm: 1, or 0 for a switch whose made
-     state is the normal one (speed switch on while the machine turns, "> 2.0 kg/cm2" oil pressure established). A row that the operator sets by hand has no source and raises nothing.
+     state is the normal one ("> 2.0 kg/cm2" oil pressure established).
+   - switch row with ditl / out: the plant's own alarm output of a DITL drawing (the ash cooler SPEED LOW of DITL-21A #B ~ #D). A row that the operator sets by hand has no source and raises nothing.
    A point already alarmed on the same side (HIGH / HIGH-HIGH or LOW / LOW-LOW) by another alarm of the scan with the tag in its name
    (an ALM block, the comparator alarms of a drawing) adds no second line. Set points are the list's own (row sp); none is changed here. */
 const anLaneN = t => String(t || '').replace(/[^A-Z0-9]/gi, '').toUpperCase();
@@ -60,6 +61,20 @@ const anLaneK = { s0: null, k: new Map() };
 const anLaneFld = key => {
   const v = typeof AN.fieldRead === 'function' ? AN.fieldRead(key) : null;
   return v != null && isFinite(v) ? +v : null;
+};
+/* the value of output "r.out" of DITL drawing r.ditl ("DITL-21A #B": machine instance B), 1 / 0, or null when the world is not built */
+const anLaneOut = r => {
+  try {
+    if (typeof S === 'undefined' || !S.sheets || typeof DUI === 'undefined' || !DUI.outs) return null;
+    const W = (typeof window !== 'undefined' && window.WORLD) || {},
+      L = S.sheets.concat(W.inst || []),
+      sh = L.find(z => String(z.name || '').replace(/^\(\w+\)/, '') === r.ditl);
+    if (!sh) return null;
+    const o = (DUI.outs(sh) || []).find(x => String(x.name || '').replace(/^Output row \d+ · /, '').indexOf(r.out) >= 0 && !/\bNOT\b/.test(x.name));
+    return o ? DUI.outVal(sh, o.row) : null;
+  } catch (e) {
+    return null;
+  }
 };
 AN.laneAlm = now => {
   const L = (typeof window !== 'undefined' && window.LANE_ALARMS) || globalThis.LANE_ALARMS || [],
@@ -87,7 +102,13 @@ AN.laneAlm = now => {
       anLaneK.k.set(key, e);
     }
     let hit = false;
-    if (r.on === 0 || r.on === 1) {
+    if (r.ditl) {
+      /* the plant's own alarm of the switch: an output of its DITL drawing (CRT, ANN), e.g. DITL-21A "SPEED LOW" = FORWARD RUNNING
+         (on delay) AND NOT the speed switch (off delay): a stopped machine gives no line */
+      const v = anLaneOut(r);
+      if (v == null) continue;
+      hit = v === r.on;
+    } else if (r.on === 0 || r.on === 1) {
       let v = swOn.get(anLaneN(r.tag));
       if (v === undefined && r.io) v = swOn.get(anLaneN(r.io));
       if (v === undefined) continue;
