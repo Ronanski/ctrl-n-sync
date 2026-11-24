@@ -19,7 +19,7 @@ const unz = f => {
   }
 };
 /* [file name, page id]: the lane 7 pages that pass this check; a page joins the list when its elements are bound */
-const PAGES = [['heater-drains', 'heater-drains']];
+const PAGES = [['heater-drains', 'heater-drains'], ['industrial-water', 'industrial-water']];
 const abc = unz('src/data/apre.txt'),
   ditl = unz('src/data/pre.txt'),
   unit = rd('src/analog/engine/unit.js');
