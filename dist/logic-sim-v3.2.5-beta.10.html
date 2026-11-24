@@ -147758,7 +147758,8 @@ const AN_EL = {
 function anElec(U) {
   U = U || AN_UNIT;
   if (!U || !U.on) return null;
-  const e = U.el || (U.el = { l52: true }),
+  /* beta.277: a read only; the panels call it on the page mirror, where it made U.el the Worker does not have (the step makes it) */
+  const e = U.el || { l52: true },
     tb = U.tb || {},
     g52 = tb.st === 'sync' || tb.st === 'load',
     G = typeof anGenEl === 'function' ? anGenEl() : null,
@@ -151163,9 +151164,9 @@ function anSyncSlots() {
           s.nl = netlist(s);
         } catch (e) {}
       if (!s.nl) continue;
-      add('dn' + n, () => ({ v: (s.nl._v || []).map(x => (x ? 1 : 0)).join(''), g: (s.nl.gates || []).map(g => ditlPick(g, DITL_G)) }), d => {
+      add('dn' + n, () => ({ v: s.nl._v ? s.nl._v.map(x => (x ? 1 : 0)).join('') : null /* beta.277: null and an empty array differ (the mirror kept null for []) */, g: (s.nl.gates || []).map(g => ditlPick(g, DITL_G)) }), d => {
         const nl = s.nl;
-        nl._v = d.v ? Array.from(d.v, c => +c) : null;
+        nl._v = d.v == null ? null : Array.from(d.v, c => +c);
         (nl.gates || []).forEach((g, i) => { if (d.g[i]) for (const x of DITL_G) if (x in d.g[i]) g[x] = ditlDec(d.g[i][x]); else delete g[x]; });
       }, { raw: 1 });
       add('dx' + n, () => ditlPick(s.nl, ['fx', 'ufx']), d => { for (const x of ['fx', 'ufx']) if (x in d) s.nl[x] = ditlDec(d[x]); else delete s.nl[x]; }, { w: 1, raw: 1 });
@@ -156498,10 +156499,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build b83618d'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 911c14f'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build b83618d';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 911c14f';
     } catch (e) {}
   };
   upd();
@@ -320819,7 +320820,8 @@ const AN_EL = {
 function anElec(U) {
   U = U || AN_UNIT;
   if (!U || !U.on) return null;
-  const e = U.el || (U.el = { l52: true }),
+  /* beta.277: a read only; the panels call it on the page mirror, where it made U.el the Worker does not have (the step makes it) */
+  const e = U.el || { l52: true },
     tb = U.tb || {},
     g52 = tb.st === 'sync' || tb.st === 'load',
     G = typeof anGenEl === 'function' ? anGenEl() : null,
@@ -324240,9 +324242,9 @@ function anSyncSlots() {
           s.nl = netlist(s);
         } catch (e) {}
       if (!s.nl) continue;
-      add('dn' + n, () => ({ v: (s.nl._v || []).map(x => (x ? 1 : 0)).join(''), g: (s.nl.gates || []).map(g => ditlPick(g, DITL_G)) }), d => {
+      add('dn' + n, () => ({ v: s.nl._v ? s.nl._v.map(x => (x ? 1 : 0)).join('') : null /* beta.277: null and an empty array differ (the mirror kept null for []) */, g: (s.nl.gates || []).map(g => ditlPick(g, DITL_G)) }), d => {
         const nl = s.nl;
-        nl._v = d.v ? Array.from(d.v, c => +c) : null;
+        nl._v = d.v == null ? null : Array.from(d.v, c => +c);
         (nl.gates || []).forEach((g, i) => { if (d.g[i]) for (const x of DITL_G) if (x in d.g[i]) g[x] = ditlDec(d.g[i][x]); else delete g[x]; });
       }, { raw: 1 });
       add('dx' + n, () => ditlPick(s.nl, ['fx', 'ufx']), d => { for (const x of ['fx', 'ufx']) if (x in d) s.nl[x] = ditlDec(d[x]); else delete s.nl[x]; }, { w: 1, raw: 1 });
@@ -346700,7 +346702,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build b83618d'));
+    row('Version', E('span', 'scsver', ver + ' · build 911c14f'));
   }
   function openSet(near) {
     if (!set) {
