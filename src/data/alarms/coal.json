@@ -1,0 +1,18 @@
+[
+{"tag": "LT-CL1008-A", "lv": "HIGH-HIGH", "p": 2, "sp": 7.5, "d": "#1 COAL SILO (A) T-1008A LEVEL TRANSMITTER", "stn": 101, "addr": "AI0144", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-A", "lv": "HIGH", "p": 3, "sp": 7.0, "d": "#1 COAL SILO (A) T-1008A LEVEL TRANSMITTER", "stn": 101, "addr": "AI0144", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-A", "lv": "LOW", "p": 3, "sp": 2.0, "d": "#1 COAL SILO (A) T-1008A LEVEL TRANSMITTER", "stn": 101, "addr": "AI0144", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-A", "lv": "LOW-LOW", "p": 2, "sp": 1.0, "d": "#1 COAL SILO (A) T-1008A LEVEL TRANSMITTER", "stn": 101, "addr": "AI0144", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-B", "lv": "HIGH-HIGH", "p": 2, "sp": 7.5, "d": "#1 COAL SILO (B) T-1008B LEVEL TRANSMITTER", "stn": 101, "addr": "AI0272", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-B", "lv": "HIGH", "p": 3, "sp": 7.0, "d": "#1 COAL SILO (B) T-1008B LEVEL TRANSMITTER", "stn": 101, "addr": "AI0272", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-B", "lv": "LOW", "p": 3, "sp": 2.0, "d": "#1 COAL SILO (B) T-1008B LEVEL TRANSMITTER", "stn": 101, "addr": "AI0272", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-B", "lv": "LOW-LOW", "p": 2, "sp": 1.0, "d": "#1 COAL SILO (B) T-1008B LEVEL TRANSMITTER", "stn": 101, "addr": "AI0272", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-C", "lv": "HIGH-HIGH", "p": 2, "sp": 7.5, "d": "#1 COAL SILO (C) T-1008C LEVEL TRANSMITTER", "stn": 101, "addr": "AI0400", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-C", "lv": "HIGH", "p": 3, "sp": 7.0, "d": "#1 COAL SILO (C) T-1008C LEVEL TRANSMITTER", "stn": 101, "addr": "AI0400", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-C", "lv": "LOW", "p": 3, "sp": 2.0, "d": "#1 COAL SILO (C) T-1008C LEVEL TRANSMITTER", "stn": 101, "addr": "AI0400", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LT-CL1008-C", "lv": "LOW-LOW", "p": 2, "sp": 1.0, "d": "#1 COAL SILO (C) T-1008C LEVEL TRANSMITTER", "stn": 101, "addr": "AI0400", "src": "Alarm List _20160912 sheet LT, PD-061"},
+{"tag": "LSL-CL1008-A", "lv": "LOW", "p": 3, "on": 1, "d": "#1 COAL SILO (A) T-1008A LEVEL LOW SWITCH", "stn": 104, "addr": "I.0127", "src": "Alarm List _20160912 sheet LS, PD-061"},
+{"tag": "LSH-CL1008-A", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 COAL SILO (A) T-1008A LEVEL HIGH SWITCH", "stn": 104, "addr": "I.0126", "src": "Alarm List _20160912 sheet LS, PD-061"},
+{"tag": "LSL-CL1008-B", "lv": "LOW", "p": 3, "on": 1, "d": "#1 COAL SILO (B) T-1008B LEVEL LOW SWITCH", "stn": 104, "addr": "I.0447", "src": "Alarm List _20160912 sheet LS, PD-061"},
+{"tag": "LSH-CL1008-B", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 COAL SILO (B) T-1008B LEVEL HIGH SWITCH", "stn": 104, "addr": "I.0446", "src": "Alarm List _20160912 sheet LS, PD-061"}
+]

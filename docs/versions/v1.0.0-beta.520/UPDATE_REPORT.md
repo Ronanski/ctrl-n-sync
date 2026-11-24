@@ -1,4 +1,4 @@
-# v1.0.0-beta.510 (LEADER : YUA, lane 0): linker ng mga kopya ng makina (hiling ng lane 3 at 4)
+# v1.0.0-beta.520 (LEADER : YUA, lane 0): linker ng mga kopya ng makina (hiling ng lane 3 at 4)
 
 ## Ano ang nagbago
 - **Tag ng sariling makina sa kopya** (RARA): ang kopya ng drawing para sa pump B, C o D ay tag at address na ng sariling pump ang ipinapakita at binabasa, kapag nasa I/O list ang tag ng lahat ng makina at hindi pinangalanan ng drawing ang iba. Hal. DITL-23B #B row 5 PS-LO1115-B3 I.0412, DITL-29B #C TT-SW1501-CU AI0752, DITL-21A #D TT-BH1060-D1 AI0896. Dati, tag ng makina A ang nasa 346 na row at text ng mga kopya.

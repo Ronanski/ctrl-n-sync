@@ -243,7 +243,7 @@
     return isFinite(v) ? v : null;
   };
   const EST = {
-    /* TIFG1092A and the backpass banks TIFG1100 ~ 1113 are field rows of lane 3 (src/world/field/boiler.js), no estimates (beta.510) */
+    /* TIFG1092A and the backpass banks TIFG1100 ~ 1113 are field rows of lane 3 (src/world/field/boiler.js), no estimates (beta.520) */
     /* gas temperatures: ambient + (snapshot - ambient) x kb; after a heat exchanger also a little lower at low gas flow */
     TIFG1092B: E => E.T(900, 0),
     TIFG1095A: E => E.T(882, 0),
