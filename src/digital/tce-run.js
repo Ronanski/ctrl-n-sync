@@ -696,6 +696,103 @@
       out = abn ? I.SIM : good.length === 3 ? mid3(...good) : (good[0] + good[1]) / 2;
     return { OUT: out, ABN: abn, 'DEV E': dev, ERR: bad.length ? 1 : 0 };
   });
+  /* DUAL INPUT DIAGNOSTICS (LMA110 / LME110, TCA370, TCA371, TCE101) and DUP AI DIAGNOSTICS (LME114, TCE070): two values of one quantity
+     (each already through AI DIAG.MD), their abnormal (I-ERR1 / 2 or ERR1 / 2), HL / LL / DEV from SG, S / M, SIM; printed TP:3.0,
+     DELAY TP:3.0s x2, K:-0.01, K:2. TC-14-116 p 1298 No. 9 "deviations between signals when inputs ... are multiplexed", No. 4 (range).
+     Reading: a value is bad when its abnormal is set, or it is outside [LL, HL] for TP s; DEV E = the two differ by more than DEV for
+     DELAY TP s; OUT = the mean of the good values (one good: that one), ABN = none good, then OUT = SIM; ERR1 / ERR2 = each bad, ERR =
+     either, I-ERR = either abnormal in, QT1 / QT2 = each good. S, M and the two K are not read (the manual does not say what they do). */
+  const dualDiag = (e1, e2) => (I, notes, st, dt) => {
+    const T = mpar(notes, 'TP'),
+      D = mpar(notes, 'DELAY TP'),
+      S = [I.SIG1, I.SIG2],
+      ie = [b01(I[e1]), b01(I[e2])],
+      bad = S.map((x, i) => (ie[i] ? 1 : onDelay(st, 'b' + i, x > I.HL || x < I.LL, T, dt))),
+      good = S.filter((x, i) => !bad[i]),
+      dev = onDelay(st, 'd', Math.abs(S[0] - S[1]) > I.DEV, D, dt),
+      abn = good.length ? 0 : 1;
+    return {
+      OUT: abn ? I.SIM : good.reduce((a, b) => a + b, 0) / good.length,
+      ABN: abn,
+      ERR1: bad[0],
+      ERR2: bad[1],
+      QT1: 1 - bad[0],
+      QT2: 1 - bad[1],
+      ERR: bad[0] || bad[1] ? 1 : 0,
+      'DEV E': dev,
+      'I-ERR': ie[0] || ie[1] ? 1 : 0
+    };
+  };
+  MACRO['DUAL INPUT DIAGNOSTICS'] = textMacro(['TP', 'DELAY TP'], dualDiag('I-ERR1', 'I-ERR2'));
+  MACRO['DUP AI DIAGNOSTICS'] = textMacro(['TP', 'DELAY TP'], dualDiag('ERR1', 'ERR2'));
+  /* TMR LVDT DIAGNOSIS (LME124, 8 blocks on TCE121 ~ TCE135): the three LVDT positions of one valve, DEV, ANN SW (ANN ENABLE); printed
+     HL:1.0, LL:-1.0, DELAY TP:3.0s once per channel. TC-14-116 p 1298 No. 9. Reading: channel i is in error when SIGi minus the middle
+     of the three is outside [LL, HL] (its own group) for DELAY TP s, and the alarm is enabled (ANN SW); OUT = the middle of the good
+     channels (two: their mean; none or one good: the middle of the three); ERR = a channel in error, QUAi = channel i good. The DEV pin
+     is not read: the limits printed per channel are. */
+  MACRO['TMR LVDT DIAGNOSIS'] = textMacro(
+    notes => ((notes || []).filter(n => /^HL:/.test(n[2])).length < 3 || (notes || []).filter(n => /^DELAY TP:/.test(n[2])).length < 3 ? ['HL / LL / DELAY TP x3'] : []),
+    (I, notes, st, dt) => {
+      const nt = (notes || []).slice().sort((a, b) => a[1] - b[1]),
+        HL = nt.filter(n => /^HL:/.test(n[2])).map(n => parseFloat(n[2].slice(3))),
+        LL = nt.filter(n => /^LL:/.test(n[2])).map(n => parseFloat(n[2].slice(3))),
+        DT = nt.filter(n => /^DELAY TP:/.test(n[2])).map(n => parseFloat(n[2].slice(9))),
+        S = [I.SIG1, I.SIG2, I.SIG3],
+        m = mid3(...S),
+        en = I['ANN SW'] === undefined ? 1 : b01(I['ANN SW']),
+        e = S.map((x, i) => (en ? onDelay(st, 'e' + i, x - m > HL[i] || x - m < LL[i], DT[i], dt) : ((st['e' + i] = 0), 0))),
+        good = S.filter((x, i) => !e[i]);
+      return {
+        OUT: good.length === 3 ? mid3(...good) : good.length === 2 ? (good[0] + good[1]) / 2 : m,
+        ERR: e.some(Boolean) ? 1 : 0,
+        ERR1: e[0],
+        ERR2: e[1],
+        ERR3: e[2],
+        QUA1: 1 - e[0],
+        QUA2: 1 - e[1],
+        QUA3: 1 - e[2]
+      };
+    }
+  );
+  /* VALVE DIAGNOSIS (LME122 + LME123, 24 blocks on TCE120 ~ TCE135): POS. (LVDT position), AMP (servo amplifier output), DEMAND (position
+     demand), S.POS., ANN SW, POS.OT, ANN.EN; printed in two columns, left (LME122): RATE HL / LL, DEF N, K, H/L HL / LL, DEF TP, HL / LL,
+     DEV HL / LL; right (LME123): DEF TP, DEF HL / LL (three times), DEF TP, K. TC-14-116 p 1298 No. 4 (range, rate of change) and the
+     servo follow-up. Reading: ABN.O = POS. outside H/L [LL, HL], or its change in one DEF TP outside [RATE LL, RATE HL], DEF N samples
+     in a row; ABN.M = POS. - DEMAND outside [DEV LL, DEV HL] for the right DEF TP (5 s), with the alarm enabled (ANN.EN, else ANN SW);
+     ABN.A = AMP outside the first right DEF HL / LL (102.4 %); POS. out = POS.; QUA = not ABN.O. The left HL / LL (100 / -5 %), the
+     other two right DEF HL / LL pairs, K and S.POS. / POS.OT are not read: which check they belong to is not written. */
+  const valveCols = notes => {
+    const a = (notes || []).find(n => /^\(LME123\)/.test(n[2]));
+    if (!a) return null;
+    const by = right =>
+      (notes || [])
+        .filter(n => /:/.test(n[2]) && (n[0] >= a[0] - 40) === right)
+        .sort((p, q) => p[1] - q[1])
+        .map(n => [String(n[2]).split(':')[0].trim(), parseFloat(String(n[2]).split(':')[1])]);
+    return { L: by(false), R: by(true) };
+  };
+  const vNeed = notes => {
+    const c = valveCols(notes);
+    return c && c.L.length >= 11 && c.R.length >= 3 && c.L.every(x => Number.isFinite(x[1])) ? [] : ['the two columns of settings'];
+  };
+  MACRO['VALVE DIAGNOSIS'] = textMacro(vNeed, (I, notes, st, dt) => {
+    const c = st.c || (st.c = valveCols(notes)),
+      L = c.L.map(x => x[1]),
+      R = c.R.map(x => x[1]),
+      x = I['POS.'],
+      en = I['ANN.EN'] !== undefined ? b01(I['ANN.EN']) : I['ANN SW'] !== undefined ? b01(I['ANN SW']) : 1;
+    st.t = (st.t || 0) + dt;
+    if (st.t >= Math.max(L[6], dt) - 1e-9) {
+      st.t = 0;
+      const d = st.last === undefined ? 0 : x - st.last;
+      st.last = x;
+      st.n = x > L[4] || x < L[5] || d > L[0] || d < L[1] ? (st.n || 0) + 1 : 0;
+    }
+    const o = (st.n || 0) >= L[2] ? 1 : 0,
+      m = I.DEMAND === undefined ? 0 : onDelay(st, 'm', en && (x - I.DEMAND > L[9] || x - I.DEMAND < L[10]), R[0], dt),
+      amp = I.AMP > R[1] || I.AMP < R[2] ? 1 : 0;
+    return { 'POS.': x, 'ABN.O': o, 'ABN.A': amp, 'ABN.M': m, QUA: 1 - o };
+  });
   /* ---------- macro (MD) meanings FROM A DRAWING ---------- */
   /* MOTOR STANDARD (LMA580A ~ D, 8 blocks on TCA655, TCA680, TCA700, TCE300 ~ TCE310; pins ASRT ASTP TRP EF RUN / STS, OUT or SPS, RUN,
      STP, AUTO, ABN; printed TD:1.0s, TP:3.0s, TP:3.0s, TP:0.5s). Drawn: MHPS TYPICAL LOGIC FOR MOTOR, Interlock Block Diagram 310SC90-794
