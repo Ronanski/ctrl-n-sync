@@ -23944,8 +23944,8 @@ const TCS_DESC = {
     ['crtA', 2027, 755, 'out', 'nPT-LOn922A_XA', 'S', '#1C']
   ],
   m: [
-    ['b007', 'MOTOR STANDARD', 'nP-n922A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B007', []],
-    ['b021', 'MOTOR STANDARD', 'nP-n922B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+    ['b007', 'MOTOR STANDARD', 'nP-n922A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B007', [[1170, 550, '(LME580A)'], [1285, 550, '(LME580B)'], [1072, 575, 'TD:1.0s'], [1072, 597, 'TP:3.0s'], [1220, 575, 'TP:3.0s'], [1220, 597, 'TP:0.5s']]],
+    ['b021', 'MOTOR STANDARD', 'nP-n922B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', [[1170, 1104, '(LME580A)'], [1285, 1104, '(LME580B)'], [1072, 1129, 'TD:1.0s'], [1072, 1151, 'TP:3.0s'], [1220, 1129, 'TP:3.0s'], [1220, 1151, 'TP:0.5s']]]
   ],
   b: [
     ['x000', 'X', '', 915, 199.5],
@@ -24093,8 +24093,8 @@ const TCS_DESC = {
     ['crtB', 2027, 755, 'out', 'nPT-LOn931B_XA', 'S', '#1C']
   ],
   m: [
-    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', []],
-    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', [[1170, 550, '(LME580A)'], [1285, 550, '(LME580B)'], [1072, 575, 'TD:1.0s'], [1072, 597, 'TP:3.0s'], [1220, 575, 'TP:3.0s'], [1220, 597, 'TP:0.5s']]],
+    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', [[1170, 1104, '(LME580A)'], [1285, 1104, '(LME580B)'], [1072, 1129, 'TD:1.0s'], [1072, 1151, 'TP:3.0s'], [1220, 1129, 'TP:3.0s'], [1220, 1151, 'TP:0.5s']]]
   ],
   b: [
     ['x000', 'X', '', 1059, 199.5],
@@ -24244,7 +24244,7 @@ const TCS_DESC = {
     ['crtPr', 2025, 1219.5, 'out', 'TCE310_2', 'S', '#1C']
   ],
   m: [
-    ['b006', 'MOTOR STANDARD', 'nP-n923', 1063, 458.076, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', 'SPS', 'RUN', 'STP', 'ABN'], 'B006', []]
+    ['b006', 'MOTOR STANDARD', 'nP-n923', 1063, 458.076, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', 'SPS', 'RUN', 'STP', 'ABN'], 'B006', [[1165, 700.1, '(LME580C)'], [1285, 700.1, '(LME580D)'], [1070, 722.1, 'TD:1.0s'], [1070, 744.1, 'TP:3.0s'], [1070, 766.1, 'TP:3.0s'], [1070, 788.1, 'TP:0.5s']]]
   ],
   b: [
     ['a009', 'A', '009', 658.5, 536.5],
@@ -156925,10 +156925,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 258a546'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 4b430aa'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 258a546';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 4b430aa';
     } catch (e) {}
   };
   upd();
@@ -201284,8 +201284,8 @@ const TCS_DESC = {
     ['crtA', 2027, 755, 'out', 'nPT-LOn922A_XA', 'S', '#1C']
   ],
   m: [
-    ['b007', 'MOTOR STANDARD', 'nP-n922A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B007', []],
-    ['b021', 'MOTOR STANDARD', 'nP-n922B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+    ['b007', 'MOTOR STANDARD', 'nP-n922A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B007', [[1170, 550, '(LME580A)'], [1285, 550, '(LME580B)'], [1072, 575, 'TD:1.0s'], [1072, 597, 'TP:3.0s'], [1220, 575, 'TP:3.0s'], [1220, 597, 'TP:0.5s']]],
+    ['b021', 'MOTOR STANDARD', 'nP-n922B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', [[1170, 1104, '(LME580A)'], [1285, 1104, '(LME580B)'], [1072, 1129, 'TD:1.0s'], [1072, 1151, 'TP:3.0s'], [1220, 1129, 'TP:3.0s'], [1220, 1151, 'TP:0.5s']]]
   ],
   b: [
     ['x000', 'X', '', 915, 199.5],
@@ -201435,8 +201435,8 @@ const TCS_DESC = {
     ['crtB', 2027, 755, 'out', 'nPT-LOn931B_XA', 'S', '#1C']
   ],
   m: [
-    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', []],
-    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', [[1170, 550, '(LME580A)'], [1285, 550, '(LME580B)'], [1072, 575, 'TD:1.0s'], [1072, 597, 'TP:3.0s'], [1220, 575, 'TP:3.0s'], [1220, 597, 'TP:0.5s']]],
+    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', [[1170, 1104, '(LME580A)'], [1285, 1104, '(LME580B)'], [1072, 1129, 'TD:1.0s'], [1072, 1151, 'TP:3.0s'], [1220, 1129, 'TP:3.0s'], [1220, 1151, 'TP:0.5s']]]
   ],
   b: [
     ['x000', 'X', '', 1059, 199.5],
@@ -201588,7 +201588,7 @@ const TCS_DESC = {
     ['crtPr', 2025, 1219.5, 'out', 'TCE310_2', 'S', '#1C']
   ],
   m: [
-    ['b006', 'MOTOR STANDARD', 'nP-n923', 1063, 458.076, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', 'SPS', 'RUN', 'STP', 'ABN'], 'B006', []]
+    ['b006', 'MOTOR STANDARD', 'nP-n923', 1063, 458.076, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', 'SPS', 'RUN', 'STP', 'ABN'], 'B006', [[1165, 700.1, '(LME580C)'], [1285, 700.1, '(LME580D)'], [1070, 722.1, 'TD:1.0s'], [1070, 744.1, 'TP:3.0s'], [1070, 766.1, 'TP:3.0s'], [1070, 788.1, 'TP:0.5s']]]
   ],
   b: [
     ['a009', 'A', '009', 658.5, 536.5],
@@ -347768,7 +347768,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 258a546'));
+    row('Version', E('span', 'scsver', ver + ' · build 4b430aa'));
   }
   function openSet(near) {
     if (!set) {
