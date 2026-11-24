@@ -87,7 +87,7 @@ function anFieldStateSet(f, on) {
 }
 /* the value of a field state: its normal value (1 / 0), the other one while the instructor holds it out of normal; null = no such id */
 function anFieldStateVal(id) {
-  const k = /^fs./.test(id) ? id : 'fs.' + id,
+  const k = /^fs[.]/.test(id) ? id : 'fs.' + id,
     f = anFieldStates().find(q => q.id === k);
   if (!f) return null;
   const n = f.normal ? 1 : 0;
