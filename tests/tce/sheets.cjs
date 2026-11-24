@@ -73,6 +73,26 @@ console.log(
 console.log(`ports (the I/O binding): ${S.ports} = ` + Object.entries(S.portKinds).map(([k, n]) => k + ' ' + n).join(', '));
 const um = Object.entries(A.unknown).sort((a, b) => b[1] - a[1]);
 console.log('without a meaning yet: ' + um.map(([k, n]) => k + ' x' + n).join(', '));
+/* sheet-to-sheet links (QA : SAORI 2026-11-25: the first connector within the radius took the wire of its neighbour, 292 links read 0):
+   every input joined to an output of another sheet resolves to that output's net, never to an unbound connector port */
+{
+  let joined = 0;
+  const lost = [];
+  for (const n of A.nets)
+    for (const c of n.inputs)
+      if (c.src) {
+        joined++;
+        const nm = A.names[A.res(n.id, c.key)];
+        if (nm === 'CON:' + n.id + '.' + c.letter || /^UNK:/.test(nm)) lost.push(n.id + '.' + c.letter + ' <- ' + c.src);
+      }
+  if (lost.length) fail(lost.length + ' of ' + joined + ' sheet-to-sheet links lost: ' + lost.slice(0, 5).join(', '));
+  /* driven: TCE168 output C (HEAT SOAK MODE) set to 1 is what TCE169 reads at its input C */
+  const s = A.res('TCE168', A.nets.find(n => n.id === 'TCE168').outputs.find(o => o.key === 'oC').net),
+    old = A.v[s];
+  A.v[s] = 1;
+  if (R.get(A, 'TCE169', 'iHsm') !== 1) fail('TCE169 HEAT SOAK MODE does not follow TCE168 C');
+  A.v[s] = old;
+}
 /* the open-item rule: a missing parameter, a parameter the macro list does not define, or an unwired SW keeps the block open */
 if (!R.need('SG', [], true).length) fail('SG with no K must be open');
 if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1'], true).length) fail('PIV with G1 G2 TI must not be open');

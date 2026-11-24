@@ -21,6 +21,12 @@
 ## Hindi sinubok
 - Walang nakikitang pagbabago sa app para sa operator (hindi pa naka-load ang tce-run.js sa app). Ang dist ay binuo ulit dahil kasama ang sheet files.
 
+## Dagdag (QA : SAORI, Aug 2017 PDF check)
+- Ang sheet-to-sheet link: pinipili na ng reader ang PINAKAMALAPIT na output connector, hindi ang una na abot ng radius. 290 link na dati ay laging 0 ay bumalik (hal. TCE169 HEAT SOAK MODE mula sa TCE168 C). Ang 2 natitira (TCE151.C mula TCE150, TCA541.Z1 mula TCE152) ay umaabot sa connector sa page 107 / 109; ang linya ay na-type mula sa connector kaya hindi nabasa: inayos ang data.
+- INITIAL: dati ay galing sa TCE022 (explanation sheet). Ngayon: EHG = TCE050 TP 002, COMM = TCA100 TP A001, ayon sa "(TCE050)" / "(TCA100)" na nakasulat sa ilalim ng ref. 5 TCA ref ang may "(TCA050)" na wala sa set: COMM INITIAL ay TCA100 lang.
+- Bagong test: lahat ng 2141 joined link ay umaabot sa output ng pinanggalingan (0 nawawala; sa lumang reader 290 ang nawawala), at TCE169 input C ay sumusunod sa TCE168 C kapag pinilit.
+- Checker ng QA (tests/lanes/qa/tce-complete.cjs): COMPLETE 195 ng 419 (logic 140, tables 55), 0 depekto.
+
 ## Natitirang bukas (`node tests/tce/sheets.cjs --list`)
 - FG curve not on the sheet: TCA530 TCA548 TCA777 TCA825 TCE101 TCE214 TCE500 TCE503
 - CMP SW not wired (HIACS default not in the macro list): TCA530A TCA534 TCE145 TCE206 TCE226 TCE227 TCE228

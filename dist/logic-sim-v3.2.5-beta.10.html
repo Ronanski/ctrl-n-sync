@@ -12684,10 +12684,17 @@ const TCS_DESC = {
         [895, 222]
       ]
     ],
+    /* page 107: the line ends at the connector C (TCE151); typed from the connector end it was not read as reaching it */
     [
       'dIYS',
       [
-        [1124, 191],
+        [895, 191],
+        [1124, 191]
+      ]
+    ],
+    [
+      'dIYS',
+      [
         [895, 191],
         [895, 425],
         [916, 425]
@@ -14175,8 +14182,12 @@ const TCS_DESC = {
     [1601, 305],
     [2053, 305]
   ]);
+  /* page 109: the line ends at the connector Z1 (TCA541); typed from the connector end it was not read as reaching it */
   W('ffr5', [
-    [2054, 223],
+    [1601, 223],
+    [2054, 223]
+  ]);
+  W('ffr5', [
     [1601, 223],
     [1601, 542],
     [918, 542],
@@ -156911,10 +156922,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 9fc6dce'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 45bdd96'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 9fc6dce';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 45bdd96';
     } catch (e) {}
   };
   upd();
@@ -189912,10 +189923,17 @@ const TCS_DESC = {
         [895, 222]
       ]
     ],
+    /* page 107: the line ends at the connector C (TCE151); typed from the connector end it was not read as reaching it */
     [
       'dIYS',
       [
-        [1124, 191],
+        [895, 191],
+        [1124, 191]
+      ]
+    ],
+    [
+      'dIYS',
+      [
         [895, 191],
         [895, 425],
         [916, 425]
@@ -191407,8 +191425,12 @@ const TCS_DESC = {
     [1601, 305],
     [2053, 305]
   ]);
+  /* page 109: the line ends at the connector Z1 (TCA541); typed from the connector end it was not read as reaching it */
   W('ffr5', [
-    [2054, 223],
+    [1601, 223],
+    [2054, 223]
+  ]);
+  W('ffr5', [
     [1601, 223],
     [1601, 542],
     [918, 542],
@@ -347740,7 +347762,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 9fc6dce'));
+    row('Version', E('span', 'scsver', ver + ' · build 45bdd96'));
   }
   function openSet(near) {
     if (!set) {

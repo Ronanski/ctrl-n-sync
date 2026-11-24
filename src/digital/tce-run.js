@@ -398,7 +398,13 @@
         M.ins.push({ net: nt, y: p[1], pin, name: pin != null ? M.L[pin] : null });
         continue;
       }
-      const o = outs.find(o => Math.hypot(o.x - p[0], o.y - p[1]) <= o.d);
+      /* the NEAREST output connector within its radius (two connectors ~60 px apart both reach a wire end: TCE168 C1 / C) */
+      let o = null,
+        od = Infinity;
+      for (const c of outs) {
+        const dd = Math.hypot(c.x - p[0], c.y - p[1]);
+        if (dd <= c.d && dd < od) (o = c), (od = dd);
+      }
       if (o) {
         res.outputs.push({ net: nt, to: o.what, key: o.key, kind: o.kind, text: o.text, letter: o.letter, sheets: o.sheets });
         continue;
