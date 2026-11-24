@@ -708,6 +708,12 @@
   two(1902, 1288, 'EHG SOFT', 'MAJOR TROUBLE');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'TCE143', live: { kTS: ['rpm', 'rpm'], i1A: ['rpm', 'rpm'], i1B: ['rpm', 'rpm'], i1C: ['rpm', 'rpm'] },
+    /* pr: printed on page 104 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl: ['HL:2450.0rpm', 'LL:2400.0rpm'],
+      lck: ['K:100.0rpm'],
+      cmp: ['HL:2950.0rpm', 'LL:2000.0rpm']
+    },
     title: 'TURBINE SPEED DIAGNOSTICS(4)',
     page: 104,
     ctl: 'EHG+MD',

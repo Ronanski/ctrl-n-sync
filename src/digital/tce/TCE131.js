@@ -8,6 +8,10 @@
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE131',
+      /* pr: printed on page 96 beside each block; the drawing above keeps them as text */
+      pr: {
+        c020: ['HL:3', 'LL:2']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(12)',
       page: 96,
       v: 'ICV(B)',

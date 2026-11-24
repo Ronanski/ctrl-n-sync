@@ -138,6 +138,11 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA634',
+    /* pr: printed on page 159 beside each block, FG *1 table; the drawing above keeps them as text */
+    pr: {
+      tpA005: ['TP:13800s'],
+      fgA007: ['X1:0.0', 'Y1:228', 'X2:95.0', 'Y2:150', 'X3:110.0', 'Y3:132', 'X4:125.0', 'Y4:105', 'X5:135.0', 'Y5:75', 'X6:140.0', 'Y6:57', 'X7:145.0', 'Y7:33', 'X8:150.0', 'Y8:0.1']
+    },
     title: 'HP TURBINE WARMING GROUP CONTROL (TE-1,2)',
     page: 159,
     ctl: 'COMM+MD',

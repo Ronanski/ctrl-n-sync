@@ -70,6 +70,11 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA639',
+    /* pr: printed on page 163 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl007: ['HL:275.0degC', 'LL:270.0degC'],
+      cmp010: ['HL:200.0degC', 'LL:195.0degC']
+    },
     title: 'TURBINE GLAND SEAL GROUP CONTROL (TE-6,7)',
     page: 163,
     ctl: 'COMM+MD',
