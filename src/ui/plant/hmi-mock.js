@@ -82,7 +82,8 @@
         if (m.tcs === 'hood' && noTc) return U.tb && U.tb.st !== 'off' ? 'RUN' : 'STOP';
         if (m.tcs === 'gland') return U && U.on && U.tc ? (U.tc.gland ? 'RUN' : 'STOP') : null;
         /* live Cold start 2026-11-14 (3.2.3-beta.234): the LP exhaust hood spray FV-CD1904 of the TCS (tcs.js 'hood', PR-OPE-5002 6307), in AUTO = RUN */
-        if (m.tcs === 'hood') return U && U.on && U.tc ? (U.tc.hsp ? 'RUN' : 'STOP') : null;
+        /* beta.362 D18: RUN = FV-CD1904 open (IBD TC-35 FF 15) */
+        if (m.tcs === 'hood') return U && U.on && U.tc ? (U.tc.hso ? 'RUN' : 'STOP') : null;
         /* live Cold run 2026-11-18 F-W: the turning gear of the TCS (tcs.js 'tg', ATS 1.19): selected with the shaft turning = RUN; the
            realistic pages had no way to select it, so gland sealing (needs the shaft turning, PR-OPE-5002 6219) could not start */
         if (m.tcs === 'tg') return U && U.on && U.tc ? (U.tc.tg && U.tb && U.tb.rpm >= 1 ? 'RUN' : 'STOP') : null;
@@ -1172,6 +1173,14 @@
                 : null;
             })()
           });
+        /* 1.0.0-beta.362 D18 (JENNIE): the TCS machines with no screen macro any more: each button is the push button of its IBD sheet
+           (tcs-trip.js TCS_IBD_PBN). TC-35 has no CLOSE push button in the netlist (finding D18-2) */
+        const TCS_PB = {
+          gland: { id: 'TC-31', start: 'OPEN', stop: 'CLOSE', auto: 'AUTO', man: 'MANUAL' },
+          hood: { id: 'TC-35', start: 'OPEN', auto: 'AUTO', man: 'MANUAL' },
+          vex: { id: 'TB-12', start: 'START', stop: 'STOP' },
+          tg: { id: 'TB-9', start: 'START', stop: 'STOP', auto: 'AUTO', man: 'MANUAL' }
+        };
         if (m.tcs && window.LS_FPOP && LS_FPOP.tcs) {
           const x = /^(mop|cop)([AB])$/.exec(m.tcs);
           return void LS_FPOP.tcs({
@@ -1191,15 +1200,11 @@
             cmd: op =>
               !(AN.unit && AN.unit.on)
                 ? 'no plant model: choose Cold or 150 MW (Plant model ON)'
-                : m.tcs === 'gland' || m.tcs === 'hood'
-                  ? op === 'start' || op === 'stop'
-                    ? AN.turbine(m.tcs, op === 'start' ? 1 : 0)
-                    : 'no AUTO / MANUAL'
-                  : m.tcs === 'vex' || m.tcs === 'tg'
-                    ? op === 'start' || op === 'stop'
-                      ? AN.turbine(m.tcs, op === 'start' ? 1 : 0)
-                      : 'no AUTO / MANUAL'
-                    : AN.turbine('oil', { p: m.tcs, op })
+                : TCS_PB[m.tcs]
+                  ? TCS_PB[m.tcs][op]
+                    ? AN.turbine('ibd', { id: TCS_PB[m.tcs].id, pb: TCS_PB[m.tcs][op] })
+                    : TCS_PB[m.tcs].id + ' has no ' + op.toUpperCase() + ' push button'
+                  : AN.turbine('oil', { p: m.tcs, op })
           });
         }
         /* live test 2026-11-05 (INSTRUMENT AND PLANT AIR): a machine started at its local panel (sti: [sheet, RUNNING row, TRIP row]) had

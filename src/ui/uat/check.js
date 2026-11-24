@@ -302,7 +302,18 @@
   function tcsAux(o, t) {
     if (t % 10 !== 0 || !AN.tcs) return;
     const x = AN.tcs().aux || {},
-      on = { lop: x.lop, eh: x.eh, vex: x.vex, tg: x.tg, aux: x.asv, gland: x.gland, vacuum: x.ej, hood: x.hsp };
+      on = { lop: x.lop, eh: x.eh, vex: x.vex, tg: x.tg, aux: x.asv, gland: x.ssfv && x.gse, vacuum: x.ej, hood: x.hsp };
+    /* 1.0.0-beta.362 D18 (JENNIE): no 'lop' / 'eh' / 'vex' / 'tg' / 'gland' / 'hood' macro. Each is the push button of its own sheet: the
+       MOP-A / COP-A START (IBD TB-1 / TB-21), the vapour extractor START (TB-12), the turning gear START (TB-9), the steam seal feed inlet
+       valve OPEN (TC-31) and the gland steam exhauster START (TC-28), the LP exhaust hood spray AUTO (TC-35) */
+    const P = {
+      lop: () => AN.turbine('oil', { p: 'mopA', op: 'start' }),
+      eh: () => AN.turbine('oil', { p: 'copA', op: 'start' }),
+      vex: () => AN.turbine('ibd', { id: 'TB-12', pb: 'START' }),
+      tg: () => AN.turbine('ibd', { id: 'TB-9', pb: 'START' }),
+      gland: () => (!x.ssfv ? AN.turbine('ibd', { id: 'TC-31', pb: 'OPEN' }) : AN.turbine('ibd', { id: 'TC-28', pb: 'START' })),
+      hood: () => AN.turbine('ibd', { id: 'TC-35', pb: 'AUTO' })
+    };
     /* 1.0.0-beta.360 (JENNIE): no TCS 'aux' / 'vacuum' macro. MV-AS1391 (DITL-51) and the vacuum breaker / ejector MOVs (DITL-56 / 55 / 54)
        are pressed on their DCS drawings: field REMOTE, then the CRT push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6),
        so it is pressed again on the next pass */
@@ -327,7 +338,7 @@
           pb('DITL-54', /MOV OPEN PB$/, true);
           return;
         }
-        const r = AN.turbine(k, 1);
+        const r = P[k]();
         if (r) o.tcsWait = k + ': ' + r;
         return;
       }
