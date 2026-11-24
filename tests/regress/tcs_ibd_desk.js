@@ -4,7 +4,9 @@ const ctx={window:{},console,AN_CD:{Ptrip:.26},AN_UNIT:{},TCS:{},Math,isFinite,A
  tcsOilState:U=>U.tc||U.tco,tcsOilSet:c=>{c.lop=!!(c.mop[0]||c.mop[1]);c.eh=!!(c.cop[0]||c.cop[1])},tcsLin:(p,x)=>{for(let i=1;i<p.length;i++)if(x<=p[i][0]){const[a,b]=p[i-1],[c,d]=p[i];return b+(d-b)*(x-a)/(c-a)}return p[p.length-1][1]},
  tcsSteam:U=>({mst:U.mst}),anUnitVal:L=>L.v};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync('src/analog/engine/tcs-ibd-data.js','utf8')+fs.readFileSync('src/analog/engine/tcs-trip.js','utf8')+';this.API={tcsTripScan,tcsTripHold,tcsTripManual,tcsTripReset,tcsTripFault,tcsIbdMissing,major:TCS_IBD_SHEETS.find(s=>s.id==="TA-9").i.find(i=>/TCS MAJOR/.test(i[1]))[0]}',ctx);
+/* 1.0.0-beta.358: the valve test sides of tcs.js (tcsVtMsv / Rsv / Cv / Icv ...) that tcs-trip.js reads since the LMYP OTS valve tests, taken from the source (no copy) */
+const VT=(fs.readFileSync('src/analog/engine/tcs.js','utf8').match(/^function tcsVt\w+\([\s\S]*?^}/gm)||[]).join('\n')+'\n';
+vm.runInContext(VT+fs.readFileSync('src/analog/engine/tcs-ibd-data.js','utf8')+fs.readFileSync('src/analog/engine/tcs-trip.js','utf8')+';this.API={tcsTripScan,tcsTripHold,tcsTripManual,tcsTripReset,tcsTripFault,tcsIbdMissing,major:TCS_IBD_SHEETS.find(s=>s.id==="TA-9").i.find(i=>/TCS MAJOR/.test(i[1]))[0]}',ctx);
 const {tcsTripScan,tcsTripHold,tcsTripManual,tcsTripReset,tcsIbdMissing,tcsTripFault}=ctx.API;
 const oil=()=>({lop:true,eh:true,mop:[true,false],mopAu:[false,true],cop:[true,false],copAu:[false,true]});
 const mk=()=>({loPa:6.1,loPb:0,loCa:163,loCb:0,MW:150,cdP:.056,mst:540,pist:[{v:96}],rhp:[{v:35},{v:35},{v:35}],loCtl:162.6,loBrg:3.3,loTrip:162.6,tb:{st:'load',rpm:3600},t:0,vtrip:null,tc:{rst:true,Tx:40,trip:'',...oil()}});
