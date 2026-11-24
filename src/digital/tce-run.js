@@ -793,6 +793,22 @@
       amp = I.AMP > R[1] || I.AMP < R[2] ? 1 : 0;
     return { 'POS.': x, 'ABN.O': o, 'ABN.A': amp, 'ABN.M': m, QUA: 1 - o };
   });
+  /* TRIPLE DETECTOR2 (LME113, TCE060 ~ TCE069): the values of three transmitters of one quantity (each from its TMR AI DIAGNOSTICS) and
+     DEV from SG; printed TP:1.0 three times. 2OO3 (LME120): the three abnormal signals. TC-14-116 p 85 "2/3 : contact 2 out of 3
+     combination logic"; p 1308 No. 6 (one of three deviates). Reading: TRIPLE DETECTOR2 OUT = the middle of the three, DEV = one of
+     them differs from the middle by more than DEV for TP s (its own TP); 2OO3 OUT = two or three of IN1 ~ IN3. */
+  MACRO['TRIPLE DETECTOR2'] = textMacro(
+    notes => ((notes || []).filter(n => /^TP:/.test(n[2])).length < 3 ? ['TP x3'] : []),
+    (I, notes, st, dt) => {
+      const T = (notes || []).filter(n => /^TP:/.test(n[2])).map(n => parseFloat(n[2].slice(3))),
+        S = [I['IN A'], I['IN B'], I['IN C']],
+        m = mid3(...S);
+      let d = 0;
+      S.forEach((x, i) => (d |= onDelay(st, 'd' + i, Math.abs(x - m) > I.DEV, T[i], dt)));
+      return { OUT: m, DEV: d };
+    }
+  );
+  MACRO['2OO3'] = textMacro([], I => ({ OUT: b01(I.IN1) + b01(I.IN2) + b01(I.IN3) >= 2 ? 1 : 0 }));
   /* ---------- macro (MD) meanings FROM A DRAWING ---------- */
   /* MOTOR STANDARD (LMA580A ~ D, 8 blocks on TCA655, TCA680, TCA700, TCE300 ~ TCE310; pins ASRT ASTP TRP EF RUN / STS, OUT or SPS, RUN,
      STP, AUTO, ABN; printed TD:1.0s, TP:3.0s, TP:3.0s, TP:0.5s). Drawn: MHPS TYPICAL LOGIC FOR MOTOR, Interlock Block Diagram 310SC90-794
