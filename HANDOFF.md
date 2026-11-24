@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-24 21:06 PHT** (LEADER : JENNIE, beta.372: bed heat-up napatunayan sa energy balance (D31 sarado, test ang mali); Warm / Hot fixed AN_RESTART tinanggal, physics-trip saves na lang; TCS mode sumusunod sa metal habang naka-trip; GEN MW transmitter sa 0 MW live 4 mA, EIC-TM PV 0 na; burner out sa 1 h = DRUM LEVEL H.H. MFT (swell, operator ang mag-blowdown)).
+Huling update: **2026-11-24 23:29 PHT** (LEADER : JENNIE, beta.374: SH spray mula sa final feedwater pagkatapos ng FE-FW1007 at bago ang FCV-FW1130 (PD-017); drum at economizer hindi na nagbabayad ng spray; SH spray sa HPH #2 outlet temp, RH / HP bypass spray sa deaerator temp; part1 49 / 51 ng main, mga gilid ng tolerance).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -16,7 +16,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.372**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.374**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).

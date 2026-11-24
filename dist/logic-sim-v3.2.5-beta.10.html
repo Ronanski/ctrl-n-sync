@@ -134983,7 +134983,7 @@ function anCompNet(S, ai) {
    also gets 25 % of the main steam on load (extractions and heater drains: 380 + 118.5 = feedwater 499 T/H). Recirculation
    2.5 T/H per % (SOP: 60 % open about 150 T/H minimum flow). Level rates: AN_CYC.kgmm below. The recirculation goes back to the condenser, so the hotwell loses only the deaerator flow; the deaerator
    loses the feedwater of the drum balance (AN_CYC.ffw) */
-const AN_CYC = { u: {}, ffw: 0 };
+const AN_CYC = { u: {}, ffw: 0, fdr: 0 };
 if (typeof window !== 'undefined') window.AN_CYC = AN_CYC; /* read by the world (plantsw.js BFWP suction pressure) */
 const AN_CYC_TAG = { LICCD1104: 'da', LICCD1110A: 'hw', FICCD1120: 'cf' };
 /* 3.2.3-beta.25 (Mina beta.24 B24-1, beta.19 B19-2, beta.20 B20-2: after the trip LCV-CD1104 at 3.7 % passed 80 T/H against 25 T/H of
@@ -135514,7 +135514,12 @@ function anProcStep(S, dt) {
            The steam that leaves the drum is the plant (as for the failed transmitter above): the turbine plus the bypass and the
            blow-off of the unit model (unit.js U.ms + U.mb, the flow FT-MS1031 is written from). The drawing still reads the
            transmitter, so the 3-element feedwater sees the capped reading as in the plant */
-        if (typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.ms) && isFinite(AN_UNIT.mb)) fst = Math.max(0, AN_UNIT.ms + AN_UNIT.mb);
+        /* 1.0.0-beta.374 (JENNIE, D30, flow diagram K1AU3-PD-017 Feedwater): the SH desuperheater water (FW-1-011 / FW-1-012, U.w1s +
+           U.w2s) is tapped from the final feedwater after the No.2 HP heater and the flow element FE-FW1007, before the main feedwater
+           valve FCV-FW1130: it joins the steam after the drum and never passes the economizer or the drum. The drum gives the main
+           steam less that spray (the same mDr as the heat chain, hx.js) */
+        if (typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.ms) && isFinite(AN_UNIT.mb))
+          fst = Math.max(0, AN_UNIT.ms + AN_UNIT.mb - (AN_UNIT.w1s || 0) - (AN_UNIT.w2s || 0));
       }
       let ffw = +v[pr.integ.fw] || 0;
       const fwp = pr.integ.fwp,
@@ -135526,7 +135531,10 @@ function anProcStep(S, dt) {
       /* 3.2.4-beta.6: the PV of FICFW1007 stops at the top of its range (FT-FW1007, 550 T/H); the water through the main valve
          (unit.js anMainFw, fwp.hx) does not: with the unit model on the drum gets the flow of the valves (main + start-up) of now */
       const hx = fwp && fwp.hx != null && isFinite(fwp.hx) && typeof AN_UNIT !== 'undefined' && AN_UNIT.on ? fwp.hx : null;
-      if (hx != null) ffw = hx; /* the main + start-up valve flow of now; the transmitter lag (T 75 s) is only in the PV */
+      /* beta.374 (PD-017): FE-FW1007 is before the SH spray tap, so the transmitter (fwp.hx) reads the valves plus the SH spray; the
+         drum gets the valves only */
+      const fwSp = hx != null ? (AN_UNIT.w1s || 0) + (AN_UNIT.w2s || 0) : 0;
+      if (hx != null) ffw = Math.max(0, hx - fwSp); /* the main + start-up valve flow of now; the transmitter lag (T 75 s) is only in the PV */
       else if (opE != null) {
         const T = fwp.T > 0 ? fwp.T : 75;
         pr.integ.opL = pr.integ.opL == null || AN.steady ? opE : pr.integ.opL + (opE - pr.integ.opL) * Math.min(1, dt / T);
@@ -135625,7 +135633,9 @@ function anProcStep(S, dt) {
       }
       AN_CYC.y.dr = q.y;
       AN_CYC.dl = fst + loss + lhdQ + tlQ; /* water and steam that leave the drum (and the cycle, a tube leak) */
-      AN_CYC.ffw = ffw; /* the deaerator gives this water (condensate cycle balance) */
+      AN_CYC.fdr = ffw; /* beta.374: the water into the economizer and the drum */
+      AN_CYC.ffw = ffw + fwSp; /* the deaerator gives this water (condensate cycle balance), the BFWPs and the HP heaters pass it: the
+         drum feed plus the SH spray (beta.374, PD-017) */
       /* 2.2.0-beta.12 (M3): SHRINK / SWELL. A fast change of the drum pressure moves the level the other way for a while (the steam
          bubbles in the water collapse when the pressure rises after a turbine trip, grow when it falls after an MFT): the level
          read is the water level minus ks x (pressure - its lag of tauS), so a pressure step gives a transient of ks mm per
@@ -138511,7 +138521,8 @@ function anHxStep(U, I, dt) {
     w2 = Math.max(0, I.w2 || 0),
     mOut = Math.max(0, I.mOut || 0) /* steam leaving the boiler (FT-MS1031) */,
     mDr = Math.max(0, mOut - w1 - w2),
-    hsp = anHxHw(isFinite(I.Tsp) ? I.Tsp : 170);
+    hsp = anHxHw(isFinite(I.Tsp) ? I.Tsp : 170),
+    hsr = anHxHw(isFinite(I.Tsr) ? I.Tsr : isFinite(I.Tsp) ? I.Tsp : 170) /* beta.374: RH spray, BFWP discharge (PD-017 FW-1-016) */;
   const sWl = anHxSide(M.wl, mDr, K.wl[1], Pd, hg, false),
     sP1 = anHxSide(M.p1, mDr, K.p1[1], Pd, sWl.h, false);
   const mix = (m, h, w) => (m + w > 0.5 && isFinite(h) ? (m * h + w * hsp) / (m + w) : h);
@@ -138532,7 +138543,7 @@ function anHxStep(U, I, dt) {
     hcr = anHxHs(Prh, isFinite(I.Tcr) ? I.Tcr : steamTsat(Prh)),
     mR = mcr + wrh,
     sR = [];
-  let hR = mR > 0.5 ? (mcr * hcr + wrh * hsp) / mR : hcr;
+  let hR = mR > 0.5 ? (mcr * hcr + wrh * hsr) / mR : hcr;
   for (let i = 0; i < 4; i++) {
     sR[i] = anHxSide(M.rh[i], mR, K.rh[i][1], Prh, hR, false);
     if (isFinite(sR[i].h)) hR = sR[i].h;
@@ -142496,8 +142507,12 @@ function anFwTagStep(U) {
   U.w2s = isFinite(w2) ? Math.max(0, w2) : 0;
   U.wrhs = isFinite(wrh) ? Math.max(0, wrh) : 0;
   U.whps = isFinite(whp) ? Math.max(0, whp) : 0; /* 3.2.4: HP bypass spray water, T/H (TT-MS1022 below, anUnitStepX) */
-  U.mEco = ffw;
-  U.tSp = isFinite(Pda) && Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30;
+  /* beta.374 (D30, flow diagram K1AU3-PD-017): the economizer gets the drum feed (AN_CYC.fdr), not the SH spray; the SH spray water is
+     the final feedwater after the No.2 HP heater (U.hpT2, FW-1-011 tapped after FE-FW1007), the RH and HP bypass spray water
+     (FW-1-016) comes from the BFWP discharge before the HP heaters (deaerator water, U.tSr) */
+  U.mEco = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.fdr) ? Math.max(0, AN_CYC.fdr) : ffw;
+  U.tSr = isFinite(Pda) && Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30;
+  U.tSp = isFinite(U.hpT2) && U.hpT2 > U.tSr ? U.hpT2 : U.tSr;
   const dA = mvOf('ABC-020', 'HICHR1002A'),
     dB = mvOf('ABC-020', 'HICHR1002B');
   U.dmpR = isFinite(dA) ? dA / 100 : NaN;
@@ -143900,6 +143915,7 @@ function anHxRun(U, dt, tsat) {
       w2: U.w2s,
       wrh: U.wrhs,
       Tsp: U.tSp,
+      Tsr: U.tSr,
       Prh: U.Prh,
       mRh,
       Tcr: tcr,
@@ -144642,13 +144658,14 @@ function anUnitStep0(dt) {
     /* the pump and the valve on one flow: the BFWP discharge falls along the KSB curve as the flow rises, so the flow is where the
        valve law and the pump curve meet (anFwPdAt, bisection) and not the valve at the head of the last step */
     const su = pr.op || 0,
-      g = w => anMainFw(o, U.Pd, anFwPdAt(U, w + su)) - w;
+      sp = (U.w1s || 0) + (U.w2s || 0) /* beta.374: the pumps also give the SH spray (PD-017) */,
+      g = w => anMainFw(o, U.Pd, anFwPdAt(U, w + su + sp)) - w;
     let lo = 0,
       hi = 1500;
     if (g(0) <= 0) hi = 0;
     else for (let i = 0; i < 40; i++) g((lo + hi) / 2) > 0 ? (lo = (lo + hi) / 2) : (hi = (lo + hi) / 2);
     U.fwMain = (lo + hi) / 2;
-    pr.hx = m * (U.fwMain + (pr.op || 0));
+    pr.hx = m * (U.fwMain + (pr.op || 0) + sp); /* FE-FW1007: the valves plus the SH spray tapped after it (beta.374) */
   }
   /* ---- 2.2.0-beta.12 (M3): machines stopped, furnace pressure ---- */
   for (const m of U.mul || []) {
@@ -144766,7 +144783,7 @@ function anUnitStepX(dt, mso) {
     let tby = val(X.byo);
     if (mhp > 0.05 && isFinite(Pms) && isFinite(mst)) {
       const hs = steamH(Pms, mst),
-        hw = 4.19 * (isFinite(U.tSp) ? U.tSp : U.Tamb),
+        hw = 4.19 * (isFinite(U.tSr) ? U.tSr : U.Tamb),
         h = (mhp * hs + whp * hw) / (mhp + whp);
       tby = steamTph(Prh, h);
     }
@@ -156581,10 +156598,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build a5c2686'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 11836ef'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build a5c2686';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 11836ef';
     } catch (e) {}
   };
   upd();
@@ -308174,7 +308191,7 @@ function anCompNet(S, ai) {
    also gets 25 % of the main steam on load (extractions and heater drains: 380 + 118.5 = feedwater 499 T/H). Recirculation
    2.5 T/H per % (SOP: 60 % open about 150 T/H minimum flow). Level rates: AN_CYC.kgmm below. The recirculation goes back to the condenser, so the hotwell loses only the deaerator flow; the deaerator
    loses the feedwater of the drum balance (AN_CYC.ffw) */
-const AN_CYC = { u: {}, ffw: 0 };
+const AN_CYC = { u: {}, ffw: 0, fdr: 0 };
 if (typeof window !== 'undefined') window.AN_CYC = AN_CYC; /* read by the world (plantsw.js BFWP suction pressure) */
 const AN_CYC_TAG = { LICCD1104: 'da', LICCD1110A: 'hw', FICCD1120: 'cf' };
 /* 3.2.3-beta.25 (Mina beta.24 B24-1, beta.19 B19-2, beta.20 B20-2: after the trip LCV-CD1104 at 3.7 % passed 80 T/H against 25 T/H of
@@ -308705,7 +308722,12 @@ function anProcStep(S, dt) {
            The steam that leaves the drum is the plant (as for the failed transmitter above): the turbine plus the bypass and the
            blow-off of the unit model (unit.js U.ms + U.mb, the flow FT-MS1031 is written from). The drawing still reads the
            transmitter, so the 3-element feedwater sees the capped reading as in the plant */
-        if (typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.ms) && isFinite(AN_UNIT.mb)) fst = Math.max(0, AN_UNIT.ms + AN_UNIT.mb);
+        /* 1.0.0-beta.374 (JENNIE, D30, flow diagram K1AU3-PD-017 Feedwater): the SH desuperheater water (FW-1-011 / FW-1-012, U.w1s +
+           U.w2s) is tapped from the final feedwater after the No.2 HP heater and the flow element FE-FW1007, before the main feedwater
+           valve FCV-FW1130: it joins the steam after the drum and never passes the economizer or the drum. The drum gives the main
+           steam less that spray (the same mDr as the heat chain, hx.js) */
+        if (typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.ms) && isFinite(AN_UNIT.mb))
+          fst = Math.max(0, AN_UNIT.ms + AN_UNIT.mb - (AN_UNIT.w1s || 0) - (AN_UNIT.w2s || 0));
       }
       let ffw = +v[pr.integ.fw] || 0;
       const fwp = pr.integ.fwp,
@@ -308717,7 +308739,10 @@ function anProcStep(S, dt) {
       /* 3.2.4-beta.6: the PV of FICFW1007 stops at the top of its range (FT-FW1007, 550 T/H); the water through the main valve
          (unit.js anMainFw, fwp.hx) does not: with the unit model on the drum gets the flow of the valves (main + start-up) of now */
       const hx = fwp && fwp.hx != null && isFinite(fwp.hx) && typeof AN_UNIT !== 'undefined' && AN_UNIT.on ? fwp.hx : null;
-      if (hx != null) ffw = hx; /* the main + start-up valve flow of now; the transmitter lag (T 75 s) is only in the PV */
+      /* beta.374 (PD-017): FE-FW1007 is before the SH spray tap, so the transmitter (fwp.hx) reads the valves plus the SH spray; the
+         drum gets the valves only */
+      const fwSp = hx != null ? (AN_UNIT.w1s || 0) + (AN_UNIT.w2s || 0) : 0;
+      if (hx != null) ffw = Math.max(0, hx - fwSp); /* the main + start-up valve flow of now; the transmitter lag (T 75 s) is only in the PV */
       else if (opE != null) {
         const T = fwp.T > 0 ? fwp.T : 75;
         pr.integ.opL = pr.integ.opL == null || AN.steady ? opE : pr.integ.opL + (opE - pr.integ.opL) * Math.min(1, dt / T);
@@ -308816,7 +308841,9 @@ function anProcStep(S, dt) {
       }
       AN_CYC.y.dr = q.y;
       AN_CYC.dl = fst + loss + lhdQ + tlQ; /* water and steam that leave the drum (and the cycle, a tube leak) */
-      AN_CYC.ffw = ffw; /* the deaerator gives this water (condensate cycle balance) */
+      AN_CYC.fdr = ffw; /* beta.374: the water into the economizer and the drum */
+      AN_CYC.ffw = ffw + fwSp; /* the deaerator gives this water (condensate cycle balance), the BFWPs and the HP heaters pass it: the
+         drum feed plus the SH spray (beta.374, PD-017) */
       /* 2.2.0-beta.12 (M3): SHRINK / SWELL. A fast change of the drum pressure moves the level the other way for a while (the steam
          bubbles in the water collapse when the pressure rises after a turbine trip, grow when it falls after an MFT): the level
          read is the water level minus ks x (pressure - its lag of tauS), so a pressure step gives a transient of ks mm per
@@ -311708,7 +311735,8 @@ function anHxStep(U, I, dt) {
     w2 = Math.max(0, I.w2 || 0),
     mOut = Math.max(0, I.mOut || 0) /* steam leaving the boiler (FT-MS1031) */,
     mDr = Math.max(0, mOut - w1 - w2),
-    hsp = anHxHw(isFinite(I.Tsp) ? I.Tsp : 170);
+    hsp = anHxHw(isFinite(I.Tsp) ? I.Tsp : 170),
+    hsr = anHxHw(isFinite(I.Tsr) ? I.Tsr : isFinite(I.Tsp) ? I.Tsp : 170) /* beta.374: RH spray, BFWP discharge (PD-017 FW-1-016) */;
   const sWl = anHxSide(M.wl, mDr, K.wl[1], Pd, hg, false),
     sP1 = anHxSide(M.p1, mDr, K.p1[1], Pd, sWl.h, false);
   const mix = (m, h, w) => (m + w > 0.5 && isFinite(h) ? (m * h + w * hsp) / (m + w) : h);
@@ -311729,7 +311757,7 @@ function anHxStep(U, I, dt) {
     hcr = anHxHs(Prh, isFinite(I.Tcr) ? I.Tcr : steamTsat(Prh)),
     mR = mcr + wrh,
     sR = [];
-  let hR = mR > 0.5 ? (mcr * hcr + wrh * hsp) / mR : hcr;
+  let hR = mR > 0.5 ? (mcr * hcr + wrh * hsr) / mR : hcr;
   for (let i = 0; i < 4; i++) {
     sR[i] = anHxSide(M.rh[i], mR, K.rh[i][1], Prh, hR, false);
     if (isFinite(sR[i].h)) hR = sR[i].h;
@@ -315695,8 +315723,12 @@ function anFwTagStep(U) {
   U.w2s = isFinite(w2) ? Math.max(0, w2) : 0;
   U.wrhs = isFinite(wrh) ? Math.max(0, wrh) : 0;
   U.whps = isFinite(whp) ? Math.max(0, whp) : 0; /* 3.2.4: HP bypass spray water, T/H (TT-MS1022 below, anUnitStepX) */
-  U.mEco = ffw;
-  U.tSp = isFinite(Pda) && Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30;
+  /* beta.374 (D30, flow diagram K1AU3-PD-017): the economizer gets the drum feed (AN_CYC.fdr), not the SH spray; the SH spray water is
+     the final feedwater after the No.2 HP heater (U.hpT2, FW-1-011 tapped after FE-FW1007), the RH and HP bypass spray water
+     (FW-1-016) comes from the BFWP discharge before the HP heaters (deaerator water, U.tSr) */
+  U.mEco = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.fdr) ? Math.max(0, AN_CYC.fdr) : ffw;
+  U.tSr = isFinite(Pda) && Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30;
+  U.tSp = isFinite(U.hpT2) && U.hpT2 > U.tSr ? U.hpT2 : U.tSr;
   const dA = mvOf('ABC-020', 'HICHR1002A'),
     dB = mvOf('ABC-020', 'HICHR1002B');
   U.dmpR = isFinite(dA) ? dA / 100 : NaN;
@@ -317099,6 +317131,7 @@ function anHxRun(U, dt, tsat) {
       w2: U.w2s,
       wrh: U.wrhs,
       Tsp: U.tSp,
+      Tsr: U.tSr,
       Prh: U.Prh,
       mRh,
       Tcr: tcr,
@@ -317841,13 +317874,14 @@ function anUnitStep0(dt) {
     /* the pump and the valve on one flow: the BFWP discharge falls along the KSB curve as the flow rises, so the flow is where the
        valve law and the pump curve meet (anFwPdAt, bisection) and not the valve at the head of the last step */
     const su = pr.op || 0,
-      g = w => anMainFw(o, U.Pd, anFwPdAt(U, w + su)) - w;
+      sp = (U.w1s || 0) + (U.w2s || 0) /* beta.374: the pumps also give the SH spray (PD-017) */,
+      g = w => anMainFw(o, U.Pd, anFwPdAt(U, w + su + sp)) - w;
     let lo = 0,
       hi = 1500;
     if (g(0) <= 0) hi = 0;
     else for (let i = 0; i < 40; i++) g((lo + hi) / 2) > 0 ? (lo = (lo + hi) / 2) : (hi = (lo + hi) / 2);
     U.fwMain = (lo + hi) / 2;
-    pr.hx = m * (U.fwMain + (pr.op || 0));
+    pr.hx = m * (U.fwMain + (pr.op || 0) + sp); /* FE-FW1007: the valves plus the SH spray tapped after it (beta.374) */
   }
   /* ---- 2.2.0-beta.12 (M3): machines stopped, furnace pressure ---- */
   for (const m of U.mul || []) {
@@ -317965,7 +317999,7 @@ function anUnitStepX(dt, mso) {
     let tby = val(X.byo);
     if (mhp > 0.05 && isFinite(Pms) && isFinite(mst)) {
       const hs = steamH(Pms, mst),
-        hw = 4.19 * (isFinite(U.tSp) ? U.tSp : U.Tamb),
+        hw = 4.19 * (isFinite(U.tSr) ? U.tSr : U.Tamb),
         h = (mhp * hs + whp * hw) / (mhp + whp);
       tby = steamTph(Prh, h);
     }
@@ -346946,7 +346980,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build a5c2686'));
+    row('Version', E('span', 'scsver', ver + ' · build 11836ef'));
   }
   function openSet(near) {
     if (!set) {

@@ -3910,8 +3910,12 @@ function anFwTagStep(U) {
   U.w2s = isFinite(w2) ? Math.max(0, w2) : 0;
   U.wrhs = isFinite(wrh) ? Math.max(0, wrh) : 0;
   U.whps = isFinite(whp) ? Math.max(0, whp) : 0; /* 3.2.4: HP bypass spray water, T/H (TT-MS1022 below, anUnitStepX) */
-  U.mEco = ffw;
-  U.tSp = isFinite(Pda) && Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30;
+  /* beta.374 (D30, flow diagram K1AU3-PD-017): the economizer gets the drum feed (AN_CYC.fdr), not the SH spray; the SH spray water is
+     the final feedwater after the No.2 HP heater (U.hpT2, FW-1-011 tapped after FE-FW1007), the RH and HP bypass spray water
+     (FW-1-016) comes from the BFWP discharge before the HP heaters (deaerator water, U.tSr) */
+  U.mEco = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.fdr) ? Math.max(0, AN_CYC.fdr) : ffw;
+  U.tSr = isFinite(Pda) && Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30;
+  U.tSp = isFinite(U.hpT2) && U.hpT2 > U.tSr ? U.hpT2 : U.tSr;
   const dA = mvOf('ABC-020', 'HICHR1002A'),
     dB = mvOf('ABC-020', 'HICHR1002B');
   U.dmpR = isFinite(dA) ? dA / 100 : NaN;
@@ -5314,6 +5318,7 @@ function anHxRun(U, dt, tsat) {
       w2: U.w2s,
       wrh: U.wrhs,
       Tsp: U.tSp,
+      Tsr: U.tSr,
       Prh: U.Prh,
       mRh,
       Tcr: tcr,
@@ -6056,13 +6061,14 @@ function anUnitStep0(dt) {
     /* the pump and the valve on one flow: the BFWP discharge falls along the KSB curve as the flow rises, so the flow is where the
        valve law and the pump curve meet (anFwPdAt, bisection) and not the valve at the head of the last step */
     const su = pr.op || 0,
-      g = w => anMainFw(o, U.Pd, anFwPdAt(U, w + su)) - w;
+      sp = (U.w1s || 0) + (U.w2s || 0) /* beta.374: the pumps also give the SH spray (PD-017) */,
+      g = w => anMainFw(o, U.Pd, anFwPdAt(U, w + su + sp)) - w;
     let lo = 0,
       hi = 1500;
     if (g(0) <= 0) hi = 0;
     else for (let i = 0; i < 40; i++) g((lo + hi) / 2) > 0 ? (lo = (lo + hi) / 2) : (hi = (lo + hi) / 2);
     U.fwMain = (lo + hi) / 2;
-    pr.hx = m * (U.fwMain + (pr.op || 0));
+    pr.hx = m * (U.fwMain + (pr.op || 0) + sp); /* FE-FW1007: the valves plus the SH spray tapped after it (beta.374) */
   }
   /* ---- 2.2.0-beta.12 (M3): machines stopped, furnace pressure ---- */
   for (const m of U.mul || []) {
@@ -6180,7 +6186,7 @@ function anUnitStepX(dt, mso) {
     let tby = val(X.byo);
     if (mhp > 0.05 && isFinite(Pms) && isFinite(mst)) {
       const hs = steamH(Pms, mst),
-        hw = 4.19 * (isFinite(U.tSp) ? U.tSp : U.Tamb),
+        hw = 4.19 * (isFinite(U.tSr) ? U.tSr : U.Tamb),
         h = (mhp * hs + whp * hw) / (mhp + whp);
       tby = steamTph(Prh, h);
     }

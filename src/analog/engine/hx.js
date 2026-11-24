@@ -459,7 +459,8 @@ function anHxStep(U, I, dt) {
     w2 = Math.max(0, I.w2 || 0),
     mOut = Math.max(0, I.mOut || 0) /* steam leaving the boiler (FT-MS1031) */,
     mDr = Math.max(0, mOut - w1 - w2),
-    hsp = anHxHw(isFinite(I.Tsp) ? I.Tsp : 170);
+    hsp = anHxHw(isFinite(I.Tsp) ? I.Tsp : 170),
+    hsr = anHxHw(isFinite(I.Tsr) ? I.Tsr : isFinite(I.Tsp) ? I.Tsp : 170) /* beta.374: RH spray, BFWP discharge (PD-017 FW-1-016) */;
   const sWl = anHxSide(M.wl, mDr, K.wl[1], Pd, hg, false),
     sP1 = anHxSide(M.p1, mDr, K.p1[1], Pd, sWl.h, false);
   const mix = (m, h, w) => (m + w > 0.5 && isFinite(h) ? (m * h + w * hsp) / (m + w) : h);
@@ -480,7 +481,7 @@ function anHxStep(U, I, dt) {
     hcr = anHxHs(Prh, isFinite(I.Tcr) ? I.Tcr : steamTsat(Prh)),
     mR = mcr + wrh,
     sR = [];
-  let hR = mR > 0.5 ? (mcr * hcr + wrh * hsp) / mR : hcr;
+  let hR = mR > 0.5 ? (mcr * hcr + wrh * hsr) / mR : hcr;
   for (let i = 0; i < 4; i++) {
     sR[i] = anHxSide(M.rh[i], mR, K.rh[i][1], Prh, hR, false);
     if (isFinite(sR[i].h)) hR = sR[i].h;
