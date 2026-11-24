@@ -1,4 +1,4 @@
-# v1.0.0-beta.431: TCS sheets: ang mga value na nakasulat sa drawing pero hindi na-type, nabasa na sa buong PDF (TCS LOGIC : MARIA, 2026-11-25 PHT)
+# v1.0.0-beta.441: TCS sheets: ang mga value na nakasulat sa drawing pero hindi na-type, nabasa na sa buong PDF (TCS LOGIC : MARIA, 2026-11-25 PHT)
 
 ## Binago
 - Binasa ang 173 bukas na block sa buong "TCA / TCE - SOFT LOGIC DIAGRAM OF TCS.pdf" (331DM09788 / 331DM09784, 2014-04-18; nasa PC lang, team-files\tcs-docs). Marami ang may nakasulat na value sa tabi ng block (HL / LL, K, TP / TD / TW, T1 / T2) o FG table (*1 ~ *4) sa ibaba ng page, na naka-type lang bilang text. Ngayon nasa `pr` ng bawat sheet (45 sheets), may pahina.

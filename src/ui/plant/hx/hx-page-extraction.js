@@ -159,6 +159,9 @@
           { id: 'h6', sc: 1.3, lab: 'b' }
         ),
         at(X('XV-FS1005', 'Flash pipe drain valve', { wrap: 12 }), 470, 940, { id: 'fs', lab: 't' }),
+        /* lane 7 (MINAMI): the flash pipe level switches of the I/O list (station 3 I.053D / I.053E), read by DITL-57 */
+        at(HX.B('Flash pipe level high', 'data-di="LS-FS1410|HIGH|NORMAL"', { w: 150 }), 700, 930, { id: 'fsh' }),
+        at(HX.B('Flash pipe level low', 'data-di="LS-FS1411|LOW|NORMAL"', { w: 150 }), 860, 930, { id: 'fsl' }),
         at(L('reheat-steam', 'Cold reheat steam', { back: true }), 590, 700, { id: 'crl' }),
         at(L('feedwater', 'Feedwater heaters'), 1660, 60, { id: 'fwl' }),
         at(L('condensate', 'Condensate heaters'), 1480, 60, { id: 'cdl' })
