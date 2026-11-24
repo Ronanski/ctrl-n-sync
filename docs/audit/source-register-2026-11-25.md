@@ -77,3 +77,13 @@ Made by AUDIT FIX : SORA for the lane plan (docs/audit/lane-plan-content-first-2
 - **F(X): 220 named patterns in the memory list, 91 wired.** Source: linear-curves-fx.xls (PC sitting item 3). For each pattern, write the sheet that uses it, or "not on any sheet" with the sheet search as proof.
 - **Subsystem sheet gaps** (BA-30, 31, 32, 35, 57, 58, 70; DITL-80H, 80I, 80J, 80L; sand 770). Source: index of sand-sootblower-logic.zip and bottomash-limestone-logic.zip (PC sitting item 4). Import if the drawing exists. Otherwise record "not in the drawing set".
 - **SCADA Modbus** (199 of 371 in the app). Source: Subsystem PLC IO lists (PC sitting item 7). Count the spares first.
+
+## 1 TCS LOGIC : MARIA: macro (MD) meanings and their source
+
+| Macro | Source | Status |
+|---|---|---|
+| TRIPPLE INPUT DIAGNOSTICS (LME105) | TC-14-116 p 85, p 1298 No. 9; printed TP:3.0 | from manual text, inside not drawn (beta.461) |
+| AI DIAG.MD (LMA510 / LME510) | TC-14-116 p 1298 No. 4; printed H/L HL, LL, DEV HL, LL, DEF TP, DEF N, K | from manual text, inside not drawn (beta.461) |
+| TMR AI DIAGNOSTICS (LME111 / LME111A) | TC-14-116 p 1308 No. 6, p 1298 No. 4 / 9; printed TP:1.0, DELAY TP:3.0s | from manual text, inside not drawn (beta.461) |
+
+Specs: /mnt/project-files/lanes/tcs-macros/01, 02, 04 (lane 2). QA counts the sheets that run with these apart (`TCE_RUN.stats().runText`) until the user decides; a Logic Monitor print replaces the reading.
