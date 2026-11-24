@@ -301,7 +301,7 @@
     const EX = o.extra || {};
     const straight = P => P.filter((q, i) => !i || q[0] !== P[i - 1][0] || q[1] !== P[i - 1][1]);
     const S = {
-      id: o.id,
+      id: o.id, pr: o.pr,
       title: o.title,
       page: o.page,
       ctl: 'EHG+MD',
@@ -330,8 +330,9 @@
         ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
       ],
       r: [
-        ['td2', Z(1481), 136, 235, 128, ''],
-        ['v2o3', Z(1564), Y2(445), 86, 107, '']
+        /* 'fn': a function box (TRIPLE DETECTOR2, 2OO3), not a PI/O box */
+        ['td2', Z(1481), 136, 235, 128, '', 'fn'],
+        ['v2o3', Z(1564), Y2(445), 86, 107, '', 'fn']
       ],
       m,
       b: [
@@ -1002,7 +1003,7 @@
         [t, 't']
       ])
         A.push(...(o.extra[n] || []));
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, c, d, b, m, w, t };
   };
   /* TCE_LIB.aid(o): a sheet INPUT SIGNAL DIAGNOSTICS of single pressure inputs (TCE102, TCE104): on each line a transmitter (the crossed circle),
      the analog input card (the mA/V box, the filled triangle of the PI/O connection, the PI/O error box) and one AI DIAG.MD block with its
@@ -1150,7 +1151,7 @@
       two(1773, y + q.dyD, an[0], an[1]);
     });
     t.push(...o.foot);
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: o.f, r, l, tri, c, m, b, w, t };
   };
   /* the parameters printed under a VALVE DIAGNOSIS block: [distance from the left edge of the block, words], left and right column;
      vdNotes gives the words of the block (x of the block, its top, the y of its pins, the two distances of (LME123) and of the lists, o.dev =
@@ -1274,7 +1275,7 @@
     w.push(['kF', [[KT, yF], [950, yF], [950, a(7)], [BX, a(7)]]], ['kF', [[950, z(7)], [BX, z(7)]]]);
     mark('BTR', o.mk.e, 781, yE);
     t.push(...o.foot);
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, c, k, s, p, l, tri, m, b, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, c, k, s, p, l, tri, m, b, w, t };
   };
   /* The second sheet of a valve (VALVE CONTROL DIAGNOSTICS, TCE121, TCE123, TCE125 ...; POSITION DIAGNOSTICS, TCE133): the VALVE DIAGNOSIS
      block of the third position signal, the TMR LVDT DIAGNOSIS block that takes the three position signals, the comparators of the valve
@@ -1423,7 +1424,7 @@
     /* the third abnormal signal: ABN.A of this sheet (ABN.O on the sheet of a valve with no servo amplifier) */
     const TH = RSV ? 2 : 5;
     return {
-      id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, k, s, p,
+      id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: F, k, s, p,
       l: [[[235, a(0) - 22], [235, a(0) - 13]]],
       tri,
       c: [
@@ -1583,7 +1584,7 @@
     mark('BTR', '001', 1405, 134);
     r.push(['', 1951, 122, 125, 24, 'PTI SW.input']);
     t.push([625, 145, 'PTI'], [1968, 117, '(TCE980-' + o.io[0] + ')'], ...o.foot);
-    return { id: o.id, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: [165, 78, 2224, 1541], c, r, s, p, l, a, tri, b, w, t };
+    return { id: o.id, pr: o.pr, title: o.title, page: o.page, ctl: 'EHG+MD', cycle: 30, f: [165, 78, 2224, 1541], c, r, s, p, l, a, tri, b, w, t };
   };
   if (typeof window !== 'undefined') window.TCE_LIB = { di, tmr, did, aid, vd2, vd3, pti };
 })();

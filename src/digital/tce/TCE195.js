@@ -7,6 +7,13 @@
    the MW demand, CCS ACTUAL SET = GOV.SET. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE195',
+  /* pr: printed on page 135 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgC005: ['K:0.06'],
+    sgC008: ['K:-0.06'],
+    sgB017: ['K:-0.01%'],
+    sgB019: ['K:0.01%']
+  },
   title: 'GOVERNOR CONTROL(1)',
   page: 135,
   ctl: 'EHG+MD',

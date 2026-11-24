@@ -6,6 +6,10 @@
    simulated values (DSW 016, 021, 026); they go to the next sheets, the indications (TCE603) and the operator station lamps (CRT). */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE350',
+  /* pr: printed on page 157 beside each block; the drawing above keeps them as text */
+  pr: {
+    cmp029: ['HL:1.02kg/cm2g', 'LL:0.71kg/cm2g']
+  },
   title: 'TURNING GEAR(1)(TB-9)',
   page: 157,
   ctl: 'EHG+MD',

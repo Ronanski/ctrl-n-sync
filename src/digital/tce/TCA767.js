@@ -243,6 +243,21 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA767',
+    /* pr: printed on page 194 beside each block; the drawing above keeps them as text */
+    pr: {
+      cmpA002: ['HL:430.0', 'LL:428.0'],
+      cmpA007: ['HL:405.0', 'LL:403.0'],
+      cmpA011: ['HL:430.0', 'LL:428.0'],
+      cmpA017: ['HL:331.0', 'LL:329.0'],
+      cmpA020: ['HL:430.0', 'LL:428.0'],
+      cmpA024: ['HL:371.6', 'LL:369.6'],
+      cmpA026: ['HL:396.0', 'LL:394.0'],
+      cmpA030: ['HL:423.3', 'LL:421.3'],
+      cmpA034: ['HL:208.0', 'LL:206.0'],
+      cmpA036: ['HL:182.9', 'LL:180.9'],
+      cmpA040: ['HL:209.3', 'LL:207.3'],
+      cmpA043: ['HL:209.3', 'LL:207.3']
+    },
     title: 'THSC SPEED/LOAD HOLD',
     page: 194,
     ctl: 'COMM+MD',
