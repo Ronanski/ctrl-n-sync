@@ -260,6 +260,7 @@ function anUnitWrite(list, x) {
     const r = b.rng,
       y = r ? Math.max(r.lo, Math.min(r.hi, xi)) : xi;
     s.val = s.act = y;
+    s.src = 1; /* beta.520 (AKIHO): the model writes this point: it is live (the 150 MW snapshot seed sets s.snap only) */
   });
 }
 /* the value of every block of the list now (anchor of "Start at 150 MW"), kept on the list */
@@ -1216,6 +1217,15 @@ function anDitlPos(name, j) {
     const r = MST[s.name];
     if (!r || !r[j || 0]) return s.nl.mv[j || 0].sv && s.nl.mv[j || 0].dir === 'close' ? 100 : 0;
     return Math.max(0, Math.min(100, +r[j || 0].pos || 0));
+  } catch (e) {
+    return null;
+  }
+}
+/* the drawing of a code ("DITL-19", a copy "DITL-19 #B"); null while the world is not built */
+function anDitlSheet(code) {
+  try {
+    if (typeof S === 'undefined' || !S.sheets || !window.WORLD || !WORLD.on || !WORLD.idx) return null;
+    return S.sheets.concat(WORLD.inst || []).find(x => x.name.endsWith(')' + code)) || null;
   } catch (e) {
     return null;
   }
@@ -5256,7 +5266,12 @@ let AN_FLD = null;
                  memory anAv keeps is put back after the call, so a field row never moves it
    ditlPos(n, j) the position 0 ~ 100 % of valve j of DITL drawing n ("DITL-32", "DITL-32 #B"), null while the world is not built
    ditlRun(a)    1 RUN / 0 STOP of DITL drawing a ("DITL-23A", "DITL-39@3" = output row 3), null while the world is not built
-   ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it */
+   ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it
+   ftrip(n)      1 while drawing n ("DITL-19 #B") stands on a field trip (the protection relay or the undervoltage relay opened its
+                 breaker: s._ftrip of WORLD.ftrip / the black-out), else 0; null while the world is not built
+   fault(id)     1 while the trainer fault id stands (AN.fault or WORLD.ftrip list, 'cf.jamA', 'cv.fw'), else 0; null when the id is in no list
+   state(id)     the value 1 / 0 of a field state (FIELD.state, faults.js): its documented normal, the other one while the instructor
+                 holds it out of normal; null = no such id */
 const anFieldKey = () => AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0);
 function anFieldX() {
   let C = {},
@@ -5281,6 +5296,16 @@ function anFieldX() {
     },
     ditlPos: (n, j) => anDitlPos(n, j),
     ditlRun: (a, last) => anDitlRun(a, last),
+    ftrip: n => {
+      const s = anDitlSheet(n);
+      return s ? (s._ftrip ? 1 : 0) : null;
+    },
+    fault: id => {
+      const L = anFault().concat(typeof window !== 'undefined' && window.WORLD && WORLD.ftrip ? WORLD.ftrip() : []),
+        f = L.find(q => q.id === id);
+      return f ? (f.on ? 1 : 0) : null;
+    },
+    state: id => anFieldStateVal(String(id)),
     ai: key => {
       const k = anFieldKey();
       if (k !== ck) (C = {}), (ck = k); /* the block lists again when the sheets with a running engine change */

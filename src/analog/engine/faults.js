@@ -74,9 +74,33 @@ function anFaultPut(f, on) {
   }
   return n;
 }
+/* beta.520 (lane plan): the field states of the lanes (src/world/field/<lane>.js, FIELD.state): a field device the plant model has no physics
+   for (a knife gate, a belt tracking switch, a pit switch). It stands in its documented normal state; only the instructor changes it
+   (group fs). AN_UNIT.fst = the ids out of their normal state (in the keyframe, so the save and the mirror page have it; none = all normal) */
+const anFieldStates = () => ((typeof window !== 'undefined' ? window : globalThis).FIELD || {}).states || [];
+function anFieldStateSet(f, on) {
+  const s = Object.assign({}, AN_UNIT.fst);
+  if (on) s[f.id] = 1;
+  else delete s[f.id];
+  AN_UNIT.fst = s;
+  return on ? f.t : 'cleared: ' + f.t + ' (normal again)';
+}
+/* the value of a field state: its normal value (1 / 0), the other one while the instructor holds it out of normal; null = no such id */
+function anFieldStateVal(id) {
+  const k = /^fs./.test(id) ? id : 'fs.' + id,
+    f = anFieldStates().find(q => q.id === k);
+  if (!f) return null;
+  const n = f.normal ? 1 : 0;
+  return AN_UNIT.fst && AN_UNIT.fst[k] ? 1 - n : n;
+}
 /* AN.fault(): the list with the state; AN.fault(id, true / false): a fault on / cleared; returns the text for the event log, or '' */
 function anFault(id, on) {
-  if (id == null) return AN_FAULT_LIST.map(f => ({ id: f.id, g: f.g, t: f.t, on: !!AN_FAULT_ON[f.id] }));
+  if (id == null)
+    return AN_FAULT_LIST.map(f => ({ id: f.id, g: f.g, t: f.t, on: !!AN_FAULT_ON[f.id] })).concat(
+      anFieldStates().map(f => ({ id: f.id, g: 'fs', fg: f.g, t: f.t, on: !!(AN_UNIT.fst && AN_UNIT.fst[f.id]) }))
+    );
+  const fs = anFieldStates().find(q => q.id === id);
+  if (fs) return anFieldStateSet(fs, !!on);
   const f = AN_FAULT_LIST.find(q => q.id === id);
   if (!f) return '';
   /* one end at a time: the other end of the same transmitter goes off first */
@@ -99,4 +123,5 @@ function anFault(id, on) {
 function anFaultClearAll() {
   for (const k in AN_FAULT_ON) delete AN_FAULT_ON[k];
   for (const k in AN_FAULT_STUCK) delete AN_FAULT_STUCK[k];
+  delete AN_UNIT.fst;
 }
