@@ -1,8 +1,10 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 01:42 PHT** (TCS IO : TSUBASA, lane 2, beta.422: TCS I/O list sa app (784 channel ng 27 PI/O table, 507 gamit, bawat isa may sheet pin at dulo), 68 DCS point na TCS / GCP nakatali, Modbus TCS <-> DCS 252 row nakatali; hindi pa naka-load sa tumatakbong app).
+Huling update: **2026-11-25 06:40 PHT** (LEADER : YUA, lane 0, beta.490: Rule 0A content muna sa RULES 3.0A at dito; lanes at version scheme; U.hxO.gBank gas ng bawat backpass bank, kasama ang e3m para sa TT-FG1109).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
+
+**UNANG BASAHIN (user 2026-11-25, RULES.md 3.0A): content muna.** Una ang lahat ng logic, sunod ang bawat address sa bawat signal, sunod ang HMI (hindi kasama ang WTP, coal handling at air compressors), at saka pa lang ang plant model. Lahat ay 100 % tama ayon sa plant documents, at walang tuning ng model habang may kulang pang content.
 
 **UNANG BASAHIN (user 2026-11-24, permanente): walang per-load na ayos.** Walang per-load na table, interpolation o constant na ikinabit sa trend o snapshot ng planta sa physics. Physics mula sa first principles at design geometry; set point mula lang sa logic curve ng planta. Sinusukat sa buong FHI / HB curve. RULES.md 3.12, bantay sa Checks: `tools/check/no-fit.cjs`.
 
@@ -16,15 +18,15 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.422**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.490**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
-- Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
+- Version: ang beta number ay nagtatapos sa digit ng lane (lane 0 YUA = 0, lane 1 MARIA = 1, ... lane 9 SORA = 9). Kapag may conflict sa app.json, kunin ang susunod na number na may sariling digit. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
 
 ## 3. Team
 
-- **LEADER : JENNIE** — engine, plant model, logic, physics, TCS (TCE / TCA), build, CI, tools, tests, `src/digital`, `src/world`.
-- **ROSÉ** — `src/ui/**`, `src/station/**`, `src/analog/ui/**`, `delivery/`, site.
+- Mga lane (user 2026-11-25, `docs/audit/lane-plan-content-first-2026-11-25.md`): 0 LEADER : YUA (integrator: world.js, links.js, engine core, tcs*.js, build, CI, st150 / sthot / stwarm), 1 TCS LOGIC : MARIA, 2 TCS IO : TSUBASA, 3 DCS LINKS BOILER : KIRARA, 4 DCS LINKS BOP : RARA, 5 ALARMS AND CURVES : AKIHO, 6 HMI : EIMI, 7 HMI TURBINE : MINAMI, 8 QA : SAORI, 9 AUDIT FIX : SORA.
+- Lane files (PR 0, beta.410): `src/world/bind/<lane>.json`, `src/world/inst/<set>.json`, `src/data/alarms/<group>.json`, `src/ui/plant/hx/hx-page-*.js`, `tests/lanes/<lane>/*.cjs`. May README sa bawat folder.
 - Isang clone bawat thread; huwag magpalit ng branch sa folder ng iba. Sa Windows: `git clone -c core.autocrlf=false`, kung hindi ay DIFFERENT ang `npm run check`.
 - Mabigat na takbo: isa-isa, `team-files/TEST_LOCK`.
 
