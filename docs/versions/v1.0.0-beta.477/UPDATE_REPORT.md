@@ -1,4 +1,4 @@
-# v1.0.0-beta.467 — Turbine control interface page (lane 7, HMI turbine)
+# v1.0.0-beta.477 — Turbine control interface page (lane 7, HMI turbine)
 
 ## Ano ang bago (nakikita ng operator)
 - Bagong page sa Plant > Turbine and generator: **Turbine control interface**. Lahat ng hard-wired na signal sa pagitan ng turbine control system, generator panel at DCS, nakaayos sa limang hanay:
