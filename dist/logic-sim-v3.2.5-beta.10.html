@@ -145352,11 +145352,8 @@ function tcsCmd(U, cmd, arg) {
       if (on && !c.brgOk) return 'No bearing oil: start a lube oil pump first (ATS 1.15)';
       c.tg = on;
       return '';
-    case 'aux':
-      if (on && !(U.Pd > 12))
-        return 'Aux steam needs main steam > 12 kg/cm2 (PR-OPE-5002 5727), drum ' + U.Pd.toFixed(1);
-      c.asv = on;
-      return '';
+    /* 1.0.0-beta.360 (JENNIE): no 'aux' command. The aux steam valve MV-AS1391 is a DCS MOV (DITL-51, OPEN P.B. M.0360): c.asv follows
+       its position (tcsStep). The old command set the flag with no TCS sheet behind it */
     case 'gland':
       /* 3.2.3: the command puts the gland steam controller (PV-GS1031 / PV-GS1034 PI on PT-GS1001) in or out of service; the seal is in
          service when the header pressure comes up (unit.js anAuxStep) */
@@ -145369,28 +145366,9 @@ function tcsCmd(U, cmd, arg) {
       if (!c.vb) return 'Gland sealing: the vacuum breaker MV-AV1391 must be open (PR-OPE-5002 6197)';
       c.gsOn = true;
       return '';
-    case 'vacuum':
-      if (!on) {
-        c.ej = false;
-        c.vb = true;
-        tcsDitl([
-          ['DITL-55', 14],
-          ['DITL-54', 14],
-          ['DITL-56', 4]
-        ]);
-        return '';
-      }
-      if (!(c.Pa > 10)) return 'vacuum up: aux steam > 10 kg/cm2 (PR-OPE-5002 6545), ngayon ' + c.Pa.toFixed(1);
-      if (!c.gland) return 'Vacuum up: put the gland sealing in service first (PR-OPE-5002 6545)';
-      c.vb = false;
-      c.ej = true;
-      /* P2 #13: the vacuum breaker MOV CLOSE, then the ejector steam MOVs OPEN (DITL-56 / 55 / 54 push buttons, rows of the drawing) */
-      tcsDitl([
-        ['DITL-56', 14],
-        ['DITL-55', 5],
-        ['DITL-54', 5]
-      ]);
-      return '';
+    /* 1.0.0-beta.360 (JENNIE): no 'vacuum' command. The vacuum breaker MV-AV1391 and the ejector steam MOVs are DCS MOVs (DITL-56 / 55 /
+       54): the operator presses their CLOSE / OPEN push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6 I.0216). The
+       state c.vb / c.ej follows the MOV positions (tcsStep). The old command pressed all three in one call with no TCS sheet behind it */
     case 'hood' /* LP exhaust hood spray FVCD1904 AUTO (PR-OPE-5002 6307, with the vacuum up) */:
       c.hsp = on;
       return '';
@@ -145526,6 +145504,12 @@ function tcsAux(U, dt) {
   {
     const p51 = typeof anDitlPos === 'function' ? anDitlPos('DITL-51', 0) : null;
     if (p51 != null) c.asv = p51 > 0;
+    /* 1.0.0-beta.360: the vacuum breaker MV-AV1391 (DITL-56) and the ejector steam MOVs (DITL-55 SJAE, DITL-54 start-up ejector) */
+    const p56 = typeof anDitlPos === 'function' ? anDitlPos('DITL-56', 0) : null,
+      p55 = typeof anDitlPos === 'function' ? anDitlPos('DITL-55', 0) : null,
+      p54 = typeof anDitlPos === 'function' ? anDitlPos('DITL-54', 0) : null;
+    if (p56 != null) c.vb = p56 > 0;
+    if (p55 != null || p54 != null) c.ej = (p55 || 0) > 0 || (p54 || 0) > 0;
   }
   /* 3.2.3 live Cold start (user 2026-11-14 "Code ang gawin"): the aux steam header and the gland header are mass balances (unit.js
      AN_AS anAuxStep): Pa = PT-AS1004, the gland seal is in service while its header holds >= 0.10 kg/cm2 G (ATS 1.10, IBD TD-3 LOW).
@@ -156499,10 +156483,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build d1872eb'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 7167594'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build d1872eb';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 7167594';
     } catch (e) {}
   };
   upd();
@@ -318406,11 +318390,8 @@ function tcsCmd(U, cmd, arg) {
       if (on && !c.brgOk) return 'No bearing oil: start a lube oil pump first (ATS 1.15)';
       c.tg = on;
       return '';
-    case 'aux':
-      if (on && !(U.Pd > 12))
-        return 'Aux steam needs main steam > 12 kg/cm2 (PR-OPE-5002 5727), drum ' + U.Pd.toFixed(1);
-      c.asv = on;
-      return '';
+    /* 1.0.0-beta.360 (JENNIE): no 'aux' command. The aux steam valve MV-AS1391 is a DCS MOV (DITL-51, OPEN P.B. M.0360): c.asv follows
+       its position (tcsStep). The old command set the flag with no TCS sheet behind it */
     case 'gland':
       /* 3.2.3: the command puts the gland steam controller (PV-GS1031 / PV-GS1034 PI on PT-GS1001) in or out of service; the seal is in
          service when the header pressure comes up (unit.js anAuxStep) */
@@ -318423,28 +318404,9 @@ function tcsCmd(U, cmd, arg) {
       if (!c.vb) return 'Gland sealing: the vacuum breaker MV-AV1391 must be open (PR-OPE-5002 6197)';
       c.gsOn = true;
       return '';
-    case 'vacuum':
-      if (!on) {
-        c.ej = false;
-        c.vb = true;
-        tcsDitl([
-          ['DITL-55', 14],
-          ['DITL-54', 14],
-          ['DITL-56', 4]
-        ]);
-        return '';
-      }
-      if (!(c.Pa > 10)) return 'vacuum up: aux steam > 10 kg/cm2 (PR-OPE-5002 6545), ngayon ' + c.Pa.toFixed(1);
-      if (!c.gland) return 'Vacuum up: put the gland sealing in service first (PR-OPE-5002 6545)';
-      c.vb = false;
-      c.ej = true;
-      /* P2 #13: the vacuum breaker MOV CLOSE, then the ejector steam MOVs OPEN (DITL-56 / 55 / 54 push buttons, rows of the drawing) */
-      tcsDitl([
-        ['DITL-56', 14],
-        ['DITL-55', 5],
-        ['DITL-54', 5]
-      ]);
-      return '';
+    /* 1.0.0-beta.360 (JENNIE): no 'vacuum' command. The vacuum breaker MV-AV1391 and the ejector steam MOVs are DCS MOVs (DITL-56 / 55 /
+       54): the operator presses their CLOSE / OPEN push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6 I.0216). The
+       state c.vb / c.ej follows the MOV positions (tcsStep). The old command pressed all three in one call with no TCS sheet behind it */
     case 'hood' /* LP exhaust hood spray FVCD1904 AUTO (PR-OPE-5002 6307, with the vacuum up) */:
       c.hsp = on;
       return '';
@@ -318580,6 +318542,12 @@ function tcsAux(U, dt) {
   {
     const p51 = typeof anDitlPos === 'function' ? anDitlPos('DITL-51', 0) : null;
     if (p51 != null) c.asv = p51 > 0;
+    /* 1.0.0-beta.360: the vacuum breaker MV-AV1391 (DITL-56) and the ejector steam MOVs (DITL-55 SJAE, DITL-54 start-up ejector) */
+    const p56 = typeof anDitlPos === 'function' ? anDitlPos('DITL-56', 0) : null,
+      p55 = typeof anDitlPos === 'function' ? anDitlPos('DITL-55', 0) : null,
+      p54 = typeof anDitlPos === 'function' ? anDitlPos('DITL-54', 0) : null;
+    if (p56 != null) c.vb = p56 > 0;
+    if (p55 != null || p54 != null) c.ej = (p55 || 0) > 0 || (p54 || 0) > 0;
   }
   /* 3.2.3 live Cold start (user 2026-11-14 "Code ang gawin"): the aux steam header and the gland header are mass balances (unit.js
      AN_AS anAuxStep): Pa = PT-AS1004, the gland seal is in service while its header holds >= 0.10 kg/cm2 G (ATS 1.10, IBD TD-3 LOW).
@@ -346702,7 +346670,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build d1872eb'));
+    row('Version', E('span', 'scsver', ver + ' · build 7167594'));
   }
   function openSet(near) {
     if (!set) {
@@ -380555,8 +380523,30 @@ window.UATS = (function () {
     if (t % 10 !== 0 || !AN.tcs) return;
     const x = AN.tcs().aux || {},
       on = { lop: x.lop, eh: x.eh, vex: x.vex, tg: x.tg, aux: x.asv, gland: x.gland, vacuum: x.ej, hood: x.hsp };
+    /* 1.0.0-beta.360 (JENNIE): no TCS 'aux' / 'vacuum' macro. MV-AS1391 (DITL-51) and the vacuum breaker / ejector MOVs (DITL-56 / 55 / 54)
+       are pressed on their DCS drawings: field REMOTE, then the CRT push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6),
+       so it is pressed again on the next pass */
+    const pb = (d, re, rem) => {
+      if (!window.WORLD || !WORLD.dpress || !window.DUI || typeof S === 'undefined') return false;
+      const sd = S.sheets.find(z => z.name.endsWith(d));
+      if (!sd) return false;
+      for (let r = 0; r < 30; r++) {
+        const v = String((DUI.rowInfo(sd, r) || {}).svc || '');
+        if (rem && / REMOTE( SELECTED)?$/.test(v) && window.LS_OP) LS_OP.fieldRow(sd.name, r, true, d + ' REMOTE');
+        if (re.test(v)) return WORLD.dpress(sd.name, r);
+      }
+      return false;
+    };
     for (const k of ['lop', 'eh', 'vex', 'tg', 'aux', 'gland', 'vacuum', 'hood'])
       if (!on[k]) {
+        if (k === 'aux') return void pb('DITL-51', /MOV OPEN PB$/, true);
+        if (k === 'vacuum') {
+          if (!((AN.tcs() || {}).Pa > 10) || !x.gland) return void (o.tcsWait = 'vacuum: aux steam > 10 kg/cm2 and the gland seal first');
+          pb('DITL-56', /BREAKER CLOSE PB$/, true);
+          pb('DITL-55', /MOV OPEN PB$/, true);
+          pb('DITL-54', /MOV OPEN PB$/, true);
+          return;
+        }
         const r = AN.turbine(k, 1);
         if (r) o.tcsWait = k + ': ' + r;
         return;

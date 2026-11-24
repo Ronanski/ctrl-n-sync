@@ -303,7 +303,7 @@
     if (t % 10 !== 0 || !AN.tcs) return;
     const x = AN.tcs().aux || {},
       on = { lop: x.lop, eh: x.eh, vex: x.vex, tg: x.tg, aux: x.asv, gland: x.gland, vacuum: x.ej, hood: x.hsp };
-    /* 1.0.0-beta.358 (JENNIE): no TCS 'aux' / 'vacuum' macro. MV-AS1391 (DITL-51) and the vacuum breaker / ejector MOVs (DITL-56 / 55 / 54)
+    /* 1.0.0-beta.360 (JENNIE): no TCS 'aux' / 'vacuum' macro. MV-AS1391 (DITL-51) and the vacuum breaker / ejector MOVs (DITL-56 / 55 / 54)
        are pressed on their DCS drawings: field REMOTE, then the CRT push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6),
        so it is pressed again on the next pass */
     const pb = (d, re, rem) => {

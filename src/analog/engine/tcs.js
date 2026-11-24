@@ -488,7 +488,7 @@ function tcsCmd(U, cmd, arg) {
       if (on && !c.brgOk) return 'No bearing oil: start a lube oil pump first (ATS 1.15)';
       c.tg = on;
       return '';
-    /* 1.0.0-beta.358 (JENNIE): no 'aux' command. The aux steam valve MV-AS1391 is a DCS MOV (DITL-51, OPEN P.B. M.0360): c.asv follows
+    /* 1.0.0-beta.360 (JENNIE): no 'aux' command. The aux steam valve MV-AS1391 is a DCS MOV (DITL-51, OPEN P.B. M.0360): c.asv follows
        its position (tcsStep). The old command set the flag with no TCS sheet behind it */
     case 'gland':
       /* 3.2.3: the command puts the gland steam controller (PV-GS1031 / PV-GS1034 PI on PT-GS1001) in or out of service; the seal is in
@@ -502,7 +502,7 @@ function tcsCmd(U, cmd, arg) {
       if (!c.vb) return 'Gland sealing: the vacuum breaker MV-AV1391 must be open (PR-OPE-5002 6197)';
       c.gsOn = true;
       return '';
-    /* 1.0.0-beta.358 (JENNIE): no 'vacuum' command. The vacuum breaker MV-AV1391 and the ejector steam MOVs are DCS MOVs (DITL-56 / 55 /
+    /* 1.0.0-beta.360 (JENNIE): no 'vacuum' command. The vacuum breaker MV-AV1391 and the ejector steam MOVs are DCS MOVs (DITL-56 / 55 /
        54): the operator presses their CLOSE / OPEN push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6 I.0216). The
        state c.vb / c.ej follows the MOV positions (tcsStep). The old command pressed all three in one call with no TCS sheet behind it */
     case 'hood' /* LP exhaust hood spray FVCD1904 AUTO (PR-OPE-5002 6307, with the vacuum up) */:
@@ -640,7 +640,7 @@ function tcsAux(U, dt) {
   {
     const p51 = typeof anDitlPos === 'function' ? anDitlPos('DITL-51', 0) : null;
     if (p51 != null) c.asv = p51 > 0;
-    /* 1.0.0-beta.358: the vacuum breaker MV-AV1391 (DITL-56) and the ejector steam MOVs (DITL-55 SJAE, DITL-54 start-up ejector) */
+    /* 1.0.0-beta.360: the vacuum breaker MV-AV1391 (DITL-56) and the ejector steam MOVs (DITL-55 SJAE, DITL-54 start-up ejector) */
     const p56 = typeof anDitlPos === 'function' ? anDitlPos('DITL-56', 0) : null,
       p55 = typeof anDitlPos === 'function' ? anDitlPos('DITL-55', 0) : null,
       p54 = typeof anDitlPos === 'function' ? anDitlPos('DITL-54', 0) : null;

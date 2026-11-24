@@ -9,7 +9,7 @@ Inaprubahan ng user: **GO LIST, 2026-11-24 06:06 PHT** (GO FINISH LINE 2026-11-2
 4. Bawat merge na nagbabago ng estado ng isang item ay nag-a-update ng seksyon "Bilang" dito at ng tracker.
 5. Logic ang masusunod sa setpoint, limit at FX (ABC sheets, parameter workbook); design (FHI / HB) ang masusunod sa physics. Kapag logic input ang dahilan ng agwat sa FHI, ang target ay kinukuwenta sa design physics gamit ang logic input, at nakasulat ang sheet at ang FHI value (user 2026-11-24 ~15:14 PHT, "Ok").
 
-## Bilang (2026-11-24 15:18 PHT, beta.356 na sukat, Batas 5)
+## Bilang (2026-11-24 15:18 PHT, beta.360; sukat ng beta.356, Batas 5)
 
 - Part 1 (process): 24 na item × bawat load. Sukat ng beta.356 (tools/accept/part1.cjs, results/part1-beta356.md; 45 MW sa HB sliding pressure 98.9): 56 PASS / 30 FAIL na cell (dati 50 / 36; +6 dahil sa Batas 5: RH outlet 45, bed 45, limestone 90 at 150, total air 45, O2 45). Pasado sa lahat ng tatlong load: 7 (main steam flow, SH outlet temperature, RH outlet temperature, final feedwater, RH spray, turbine heat rate, coal flow). Natitira: 17. (Pagtatama sa bilang ng beta.354: 4 dapat iyon, hindi 3; pasado na rin noon ang main steam flow sa tatlong load.)
 - Part 2 (kumpleto): 21 na item. Pasado (TAMA): 1. Natitira: 20 (KULANG: 17; hindi nasuri sa cloud: 3). Detalye: docs/audit/part2-check-2026-11-24.md.

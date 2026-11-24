@@ -4,7 +4,7 @@
 //  - Cold: the turbine cannot be rolled without the condenser vacuum (no seawater / condensate pump); after SWP + CEP start and
 //    the vacuum is up (15 min) the roll is accepted
 //  - At 150 MW: all seawater pumps stopped -> LOW VACUUM -> TCS turbine trip (ABC-050 I.0400 = 1), the MW goes to 0
-//  - 1.0.0-beta.358: both cases start from the app starting points (Cold / Load 150 MW buttons) in the one world, with the real presses
+//  - 1.0.0-beta.360: both cases start from the app starting points (Cold / Load 150 MW buttons) in the one world, with the real presses
 //    (field REMOTE selectors, CRT START / STOP / OPEN push buttons, TCS buttons)
 // Usage: node tests/regress/plant_utilities.js [html]
 const fs = require('fs');
@@ -43,7 +43,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     'steam table: Tsat at 0 / 10 / 60 / 130 kg/cm2 = ' + ts.join(' / ') + ' C (IF97: 100.0 / 183.3 / 275.4 / 330.0)'
   );
   const a = await page.evaluate(async () => {
-    /* 1.0.0-beta.358 (JENNIE, Lisa Part 2 stale tests): the Cold start of the app (the Cold button) in the one world, with the real
+    /* 1.0.0-beta.360 (JENNIE, Lisa Part 2 stale tests): the Cold start of the app (the Cold button) in the one world, with the real
        presses of the operator (pump STOP / START push buttons LS_OP.dmotor, MOV OPEN rows WORLD.dpress, the TCS buttons AN.turbine); the
        old direct input writes (__setx) are overwritten by the drawings in the one world */
     await AN.ades();
@@ -102,7 +102,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
       if (!(rm >= 0 && LS_OP.fieldRow(d, rm, true, d + ' MOV REMOTE'))) rr.push(d + ' REMOTE refused (row ' + rm + ')');
     }
     await wrun(2);
-    /* vacuum up from the CRT (1.0.0-beta.358: no TCS macro): vacuum breaker MV-AV1391 CLOSE (DITL-56 CLOSE P.B. M.0379), SJAE steam MOV
+    /* vacuum up from the CRT (1.0.0-beta.360: no TCS macro): vacuum breaker MV-AV1391 CLOSE (DITL-56 CLOSE P.B. M.0379), SJAE steam MOV
        OPEN (DITL-55 OPEN P.B. M.0450); the start-up ejector MOV OPEN (DITL-54 OPEN P.B. M.0440) needs the breaker FULLY CLOSED (DITL-54
        row 6 I.0216), so it is pressed once the breaker has stroked */
     const pb = (d, re) => {
@@ -124,7 +124,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   ck(/VACUUM/i.test(a.r0) && /VACUUM/i.test(a.r1) && a.vNoAux < 0.1 && a.st.every(Boolean) && !a.rr.length && a.r2 === '' && a.cur === 0,
     'Cold: roll with no SWP / CEP refused ("' + a.r0.slice(0, 60) + '") {' + a.dg + '}, SWP + CEP with no aux steam: vacuum ' + Math.round(100 * a.vNoAux) + ' % after 20 min (remote / start / running ' + a.st.join(' ') + '); with aux steam (drum 20 kg/cm2), lube oil, turning gear, gland and vacuum up' + (a.rr.length ? ' (REFUSED: ' + a.rr.join(' | ') + ')' : '') + ' [aux header ' + a.as0.map(x => x.toFixed(1)).join(' kg/cm2, main steam ') + ' kg/cm2]: vacuum ' + Math.round(100 * a.vac) + ' %, roll "' + (a.r2 || 'accepted') + '", ATS step ' + a.cur + ' (0 = HP TURBINE WARMING)');
   const b = await page.evaluate(async () => {
-    /* 1.0.0-beta.358 (JENNIE, Lisa Part 2 W4 / T1): the 150 MW start of the app (st150, the Load 150 MW button), not the old
+    /* 1.0.0-beta.360 (JENNIE, Lisa Part 2 W4 / T1): the 150 MW start of the app (st150, the Load 150 MW button), not the old
        snapshot path AN.plantLoad150 (it read 39 MW after 30 s) */
     await AN.ades();
     WORLD.set(true);

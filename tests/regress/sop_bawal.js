@@ -31,7 +31,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   await p.goto('file://' + require('path').resolve(html));
   await p.waitForTimeout(4000);
   /* Cold start of the one world (the Training tab was removed in beta.237; same start as plant_utilities) */
-  await p.evaluate(async () => { await AN.ades(); WORLD.set(true); document.getElementById('loadcold').click(); await AN._startP; });
+  await p.evaluate(async () => { await AN.ades(); WORLD.set(true); document.getElementById('loadcold').click(); await AN._startP; if (!AN.run) document.getElementById('bRun') ? document.getElementById('bRun').click() : (AN.run = true); });
   await p.waitForTimeout(6000);
   await p.waitForFunction(() => window.WORLD && WORLD.on && WORLD.live, null, { timeout: 20000 }).catch(() => {});
   const ev = (f, a) => p.evaluate(f, a);
@@ -45,8 +45,8 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     await p.waitForTimeout(1500);
     ck(pressed && run < 0.5, nm + ': START pressed' + (pressed ? '' : ' (NO START BUTTON FOUND)') + ', running = ' + run + ' (dapat 0). Ref: ' + ref);
   };
-  const w = await ev(() => ({ on: !!(window.WORLD && WORLD.on && WORLD.live), Pd: AN.unit.Pd, tb: AN.unit.tb && AN.unit.tb.st }));
-  ck(w.on && w.Pd < 1 && w.tb === 'off', 'Gabay: Cold: one world ON (' + w.on + '), drum ' + w.Pd + ' kg/cm2, turbine ' + w.tb);
+  const w = await ev(() => ({ on: !!(window.WORLD && WORLD.on && WORLD.live), Pd: AN.unit.Pd, tb: AN.unit.tb && AN.unit.tb.st, run: AN.run, cat: AN.cat }));
+  ck(w.on && w.Pd < 1 && w.tb === 'off', 'Gabay: Cold: one world ON (' + w.on + ', run ' + w.run + ', cat ' + w.cat + '), drum ' + w.Pd + ' kg/cm2, turbine ' + w.tb);
 
   /* ---- boiler side: the DCS interlocks (the DITL drawings) ---- */
   await tryStart('M.3343', 'BFWP-A bago mapuno ang deaerator', 'PR-OPE-5002 3949 "Ensure all permissive are satisfied prior start of BFP"');
@@ -71,7 +71,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   ck(/i-sync muna/.test(await turb('loadup', 45)), 'LOAD UP bago ang sync: tinanggihan. Ref: ATS 1.48 52G CLOSED (A6)');
   const r2 = await turb('tg');
   ck(/1\.15/.test(r2), 'TURNING GEAR nang walang lube oil: "' + r2 + '". Ref: ATS 1.15, PR-OPE-5002 (lube oil bago ang turning gear)');
-  /* 1.0.0-beta.358: no TCS 'aux' / 'vacuum' macro (no TCE / TCA / IBD sheet behind them): MV-AS1391 (DITL-51), the vacuum breaker and the
+  /* 1.0.0-beta.360: no TCS 'aux' / 'vacuum' macro (no TCE / TCA / IBD sheet behind them): MV-AS1391 (DITL-51), the vacuum breaker and the
      ejector MOVs (DITL-56 / 55 / 54) are pressed on their DCS drawings; their interlocks are the DITL logic (tests/regress/plant_utilities.js) */
   const r4 = await turb('gland');
   ck(/gland/.test(r4) && r4 !== '', 'GLAND SEALING nang walang aux steam: "' + r4 + '". Ref: PR-OPE-5002 6164 (aux > 7 kg/cm2)');
