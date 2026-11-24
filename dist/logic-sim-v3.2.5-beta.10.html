@@ -157333,10 +157333,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build ce8e75f'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 17b214e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build ce8e75f';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 17b214e';
     } catch (e) {}
   };
   upd();
@@ -345041,6 +345041,11 @@ window.LS_LIVE = (function () {
       return null;
     }
   }
+  /* beta.506 (EIMI): has the drawing a DCS START / STOP push button at all (null = no drawing)? DITL-120 (waste water pumps) has none */
+  const hasPb = (addr, on) => {
+    const s = dOf(addr);
+    return s ? pbRow(s, on ? /\bSTART\b|\bST$/ : /\bSTOP\b/) >= 0 : null;
+  };
   function dmotor(addr, on) {
     const s = dOf(addr);
     if (!s || !(window.WORLD && WORLD.on && WORLD.live)) return false;
@@ -345338,7 +345343,7 @@ window.LS_LIVE = (function () {
     const L = LAMPS.find(x => x[0] === k);
     return !!L && any(L[1]);
   };
-  window.LS_OP = { dOf, dName, dout, pout, runOut, dpress, dset, dsel, dmotor, dremote, mst, tripNew, tripAck, grpOn, modeOf, amRow, fieldRow, fieldSet, fieldOf, interlock, needNet, leaves, permOf, pbBlock, openD };
+  window.LS_OP = { dOf, dName, dout, pout, runOut, dpress, dset, dsel, dmotor, hasPb, dremote, mst, tripNew, tripAck, grpOn, modeOf, amRow, fieldRow, fieldSet, fieldOf, interlock, needNet, leaves, permOf, pbBlock, openD };
 })();
 
 /* ===== 3.2.0-beta.8 GUIDED WORKBENCH (user pick 2026-10-23: "B + C"): two pages of the shell.
@@ -348627,7 +348632,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build ce8e75f'));
+    row('Version', E('span', 'scsver', ver + ' · build 17b214e'));
   }
   function openSet(near) {
     if (!set) {
@@ -353367,6 +353372,8 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .hxblade { stroke: var(--hx-ink); stroke-width: 2.4; stroke-linecap: round; fill: none; }
 .hxbed { fill: var(--hx-m-solid); }
 .hxlv { fill: var(--hx-level); }
+/* beta.456: a vessel whose level the page does not know: grey, full, faint (never a level that looks real) */
+.hxlv.hx-lvna, .rxwt.hx-lvna { fill: var(--hx-none) !important; opacity: 0.22; }
 .hxflame { opacity: 0; }
 .hx-run .hxs { fill: var(--hx-run); }
 .hx-run .hxs2 { stroke: var(--hx-run); }
@@ -363268,6 +363275,12 @@ window.PLANT_SYS = [
       PA: { n: 'MWP-A', t: 'P-0709A', ad: 'DITL-112', io: 'MIR-P0709A', d: 'DITL-112', cur: 'IIP0709A' },
       PB: { n: 'MWP-B', t: 'P-0709B', ad: 'DITL-112 #B', io: 'MIR-P0709B', d: 'DITL-112 #B', cur: 'IIP0709B' },
       PC: { n: 'MWP-C', t: 'P-0709C', ad: 'DITL-112 #C', io: 'MIR-P0709C', d: 'DITL-112 #C', cur: 'IIP0709C' },
+      /* beta.456 (EIMI): industrial and waste water (DITL-87 MV-IW0391; DITL-111 IW pump A, "same for pump B"; DITL-120 waste water pump A) */
+      IWV: { n: 'MV-IW0391', t: 'Industrial water to fire water tank', mov: 'DITL-87', tg: 'MV-IW0391' },
+      IWA: { n: 'P-0715A', t: 'Industrial water pump A', ad: 'DITL-111', io: 'MIR-P0715A', d: 'DITL-111' },
+      IWB: { n: 'P-0715B', t: 'Industrial water pump B', ad: 'DITL-111 #B', io: 'MIR-P0715B', d: 'DITL-111 #B' },
+      WWA: { n: 'P-0058A', t: 'Waste water pump A', ad: 'DITL-120', io: 'MIR-P0058A', d: 'DITL-120' },
+      WWB: { n: 'P-0058B', t: 'Waste water pump B', ad: 'DITL-120 #B', io: 'MIR-P0058B', d: 'DITL-120 #B' },
       ACA: { n: 'ACWP-A', t: 'P-1108A', ad: 'DITL-76', io: 'MIR-P1108A', d: 'DITL-76', cur: 'IIP1108A', outMode: 1, remRows: [19], auRow: 0 },
       ACB: { n: 'ACWP-B', t: 'P-1108B', ad: 'DITL-77', io: 'MIR-P1108B', d: 'DITL-77', cur: 'IIP1108B', outMode: 1, remRows: [19], auRow: 0 },
       TIC: { n: 'TICLO1002', t: 'Lube oil temperature (TCV-CW1201)', ctl: 'TICLO1002', io: 'TICLO1002', d: 'ABC-053' }
@@ -363696,7 +363709,9 @@ window.PLANT_SYS = [
       GS: { n: 'GLAND STEAM SEAL', t: 'PV-GS1031', d: 'STEAM SEAL FEED · TCS', tcs: 'gland', why: '' } /* beta.365 D18: IBD TC-31 steam seal feed inlet valve (OPEN puts PV-GS1031 in service), faceplate LS_FPOP.ibd */,
       GSE: { n: 'GLAND STEAM EXHAUSTER', t: 'TC-28', d: 'GLAND STEAM EXHAUSTER · TCS', tcs: 'gse', why: '' } /* beta.365 D18: IBD TC-28 (TCA680) */,
       HSP: { n: 'LP EXHAUST HOOD SPRAY', t: 'FV-CD1904', d: 'HOOD SPRAY · TCS', tcs: 'hood', why: '' } /* beta.365 D18: IBD TC-35, faceplate LS_FPOP.ibd */,
-      M75: { n: 'MV-AS1394', t: 'Turbine warming line drain', mov: 'DITL-75', tg: 'MV-AS1394' }
+      M75: { n: 'MV-AS1394', t: 'Turbine warming line drain', mov: 'DITL-75', tg: 'MV-AS1394' },
+      /* beta.456 (EIMI): DITL-116 TURBINE GLAND STM LINE DRAIN MOV MV-AS1397 (IO list station 2: ZSO I.0250, ZSC I.0251, MOR O.016A) */
+      M116: { n: 'MV-AS1397', t: 'Turbine gland steam line drain', mov: 'DITL-116', tg: 'MV-AS1397' }
     },
     unit: {
       'PT-CD1110': 'cdP',
@@ -365586,6 +365601,32 @@ window.PLANT_SYS = [
       );
   };
 
+  /* beta.456 (EIMI, MINAMI 2026-11-25): is any part of the spec known? A part is unknown when its source gives no value (a machine
+     with no state, a valve with no position, a loop with no output, a value of -----, a named state with no word and no colour).
+     A spec that is not flowing and has no known part is UNKNOWN: its machine is grey, never green (green = stopped) */
+  const knownFlow = spec => {
+    if (!spec) return false;
+    const D = HX.data;
+    return String(spec)
+      .split(/[&|]/)
+      .some(s => {
+        const k = s.slice(0, 2),
+          a = s.slice(2);
+        if (k === 'm:') return (D.machine(a) || {}).st != null;
+        if (k === 'x:') {
+          const v = D.valve(a) || {};
+          return v.open != null || v.pct != null;
+        }
+        if (k === 'l:') return (D.loop(a) || {}).mv != null;
+        if (k === 'h:') {
+          const h = (D.hook && HX.HK[a] && D.hook(HX.HK[a], a)) || {};
+          return !!h.tone || (!!h.text && h.text !== '-----');
+        }
+        if (k === 'v:') return D.value(a.split('>')[0]) != null;
+        return false;
+      });
+  };
+
   /* a pipe as a tube: a darker edge, the body in the colour of its medium, a light line along its top, the moving dashes */
   const tube = (d, med, w, dash) =>
     `<path class="hx-lne" d="${d}" style="stroke:color-mix(in srgb, var(--hx-m-${med}) 55%, var(--hx-ink));stroke-width:${w + 1.8}${dash ? ';stroke-dasharray:6 5' : ''}"/>` +
@@ -366844,7 +366885,7 @@ window.PLANT_SYS = [
         Q('.hx-node[data-ms]').forEach(e => setCls(e, (D.machine(e.dataset.ms) || {}).st || 'none'));
         Q('.hx-node[data-on]').forEach(e => {
           const f = flowing(e.dataset.on);
-          setCls(e, f ? 'run' : 'stop');
+          setCls(e, f ? 'run' : knownFlow(e.dataset.on) ? 'stop' : 'none');
           if (e.querySelector('[data-stem]')) travel(e, f ? 100 : 0);
         });
         Q('.hx-node[data-vv]').forEach(e => {
@@ -366891,10 +366932,22 @@ window.PLANT_SYS = [
             v = D.value(key),
             r = e.querySelector('[data-lv]');
           if (!r) return;
+          /* beta.456: no value = the vessel grey and full (unknown), not a level at half */
           const [y0, y1] = r.dataset.lv.split(',').map(Number),
-            f = v == null ? 0.5 : Math.max(0.04, Math.min(1, (v - lo) / (hi - lo)));
+            f = v == null ? 1 : Math.max(0.04, Math.min(1, (v - lo) / (hi - lo)));
           setAt(r, 'y', n1(y1 - (y1 - y0) * f));
           setAt(r, 'height', n1((y1 - y0) * f));
+          r.classList.toggle('hx-lvna', v == null);
+        });
+        /* beta.456 (EIMI, MINAMI 2026-11-25): a vessel with no level key showed the level it was drawn with (40 ~ 70 %), read as a real
+           level. With no key it is grey and full: the page does not know its level */
+        Q('[data-lv]').forEach(r => {
+          if (r.closest('[data-level]') || r.dataset.lvna) return;
+          r.dataset.lvna = '1';
+          const [y0, y1] = r.dataset.lv.split(',').map(Number);
+          setAt(r, 'y', n1(y0));
+          setAt(r, 'height', n1(y1 - y0));
+          r.classList.add('hx-lvna');
         });
         Q('g[data-flow]').forEach(e => {
           const f = e.dataset.flow ? flowing(e.dataset.flow) : null;
@@ -373554,6 +373607,18 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       return d;
     }
   };
+  /* beta.456 (EIMI): a machine or valve written into a system file (LS_MOCK.add mach) after hx-registry.js was last generated joins the
+     registry here, in the shape the generator writes ({t, page, id, bind}), so its page gets the start / stop or open / close faceplate
+     without running the generator. An entry the registry already has is never changed; a controller (ctl) is a loop, not a machine. */
+  if (R.machines)
+    for (const d of LS_MOCK.defs)
+      for (const k in d.mach || {}) {
+        const m = d.mach[k];
+        if (!m || !m.n || m.ctl || R.machines[m.n]) continue;
+        const bind = {};
+        for (const f in m) if (f !== 'n' && f !== 't') bind[f] = m[f];
+        R.machines[m.n] = { t: m.t || m.n, page: d.id, id: k, bind };
+      }
   const fin = x => (x != null && isFinite(x) ? +x : null);
   const unitKey = tag => {
     for (const d of LS_MOCK.defs) if (d.unit && d.unit[tag]) return d.unit[tag];
@@ -374636,8 +374701,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
          the DCS START of the drawing is the one accepted only in MAN (DITL-112 OUT8 = PULSE(START P.B.) AND NOT AUTO), not an interlock */
       const sby = st === 'STOP' && md.rem === true && md.au === true;
       const miss = I && !sby ? I.miss.filter(r => !/REMOTE/.test(r.svc)) : [];
-      bSt.disabled = loc || sby || st === 'RUN' || st === 'TRIP' || miss.length > 0;
-      bSp.disabled = loc || st !== 'RUN';
+      /* beta.506: a drawing with no DCS START / STOP push button (DITL-120, waste water pumps): the button is closed and the line says so,
+         it looked open and a press did nothing */
+      const noSt = call(() => dk.hasPb(M.ad, 1), null) === false,
+        noSp = call(() => dk.hasPb(M.ad, 0), null) === false;
+      bSt.disabled = noSt || loc || sby || st === 'RUN' || st === 'TRIP' || miss.length > 0;
+      bSp.disabled = noSp || loc || st !== 'RUN';
       bSt.classList.toggle('lit-run', st === 'RUN');
       bSp.classList.toggle('lit-stop', st === 'STOP');
       if (hasFld) {
@@ -374672,7 +374741,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       const lsNo = lsAt && st === 'STOP' && now0 - lsAt > 4000,
         lpNo = lpAt && st === 'RUN' && now0 - lpAt > 4000;
       why.textContent =
-        lsNo
+        noSt && noSp && st !== 'TRIP'
+          ? (nm || 'Its drawing') + ' has no DCS START or STOP button: this motor is not started or stopped from the DCS.'
+          : lsNo
           ? 'LCP START not taken: ' + (miss.length ? missTxt() : 'the drawing did not start it. See ' + (nm || 'its drawing') + '.')
           : lpNo
           ? 'LCP STOP not taken: the drawing did not stop it. See ' + (nm || 'its drawing') + '.'
@@ -374707,7 +374778,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         /* an on / off point shows its word (words = [at 1, at 0]); a value its decimals (dp, 1 when not given) */
         setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp == null ? 1 : dp));
       }
-      setTx(chip, st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' ? 'READY' : '');
+      setTx(chip, st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' && !noSt ? 'READY' : '');
       chip.className = 'fpo-chip ' + (st === 'TRIP' ? 'trip' : miss.length && st !== 'RUN' ? 'ilk' : '');
       /* current */
       if (M.cur) {

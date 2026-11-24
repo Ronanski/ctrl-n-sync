@@ -246,6 +246,8 @@
 .hxblade { stroke: var(--hx-ink); stroke-width: 2.4; stroke-linecap: round; fill: none; }
 .hxbed { fill: var(--hx-m-solid); }
 .hxlv { fill: var(--hx-level); }
+/* beta.456: a vessel whose level the page does not know: grey, full, faint (never a level that looks real) */
+.hxlv.hx-lvna, .rxwt.hx-lvna { fill: var(--hx-none) !important; opacity: 0.22; }
 .hxflame { opacity: 0; }
 .hx-run .hxs { fill: var(--hx-run); }
 .hx-run .hxs2 { stroke: var(--hx-run); }
