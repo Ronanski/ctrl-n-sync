@@ -156925,10 +156925,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 2b6d0f3'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 7819264'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 2b6d0f3';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 7819264';
     } catch (e) {}
   };
   upd();
@@ -347768,7 +347768,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 2b6d0f3'));
+    row('Version', E('span', 'scsver', ver + ' · build 7819264'));
   }
   function openSet(near) {
     if (!set) {
@@ -372190,6 +372190,297 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: XS[2] + 128, y: LPY + 26, s: 'Shell pressure', key: 'PT-HD1101', unit: K + ' abs', dp: 3 },
         { x: DAX, y: DAY + 74 * DAS - 18, s: 'Deaerator', cls: 'hx-name', anchor: 'middle' },
         { x: 880, y: 975, s: 'Primary valve: on to the next heater. Alternate valve: dump on high level.', cls: 'hx-note', anchor: 'middle' }
+      ]
+    }
+  });
+})();
+
+/* HX page in the REALISTIC look: industrial water, fire water tank and waste water pumps (lane 7, user 2026-11-25 "Kumpletuhin ang
+   HMI, nsa docs lahat ng system ... maliban sa wtp at coal handling at air compressors").
+   THE PICTURE: the two industrial and fire water tanks on the left, joined by the connecting motor valve; the two industrial water
+   pumps from tank A to the common header and its users; the fire fighting pumps on tank B; on the right the waste water sump with
+   its two pumps and the transformer area pit.
+   THE CONNECTIONS:
+   - K1AU3-PD-025 Rev D (industrial water system): tanks T-0714A / B, level LT-IW0714-A / -B and LS-IW0714-A / -B on the drawing;
+     the I/O list names them LT-IW0714 "industrial water tank level" (tank A), LT-IW0724 "fire water tank level" (tank B, the tank
+     of the fire fighting system, K1AU3-M0-159) and LS-IW0714 "industrial water tank level switch low"; connecting motor valve
+     MV-IW0391 (line IW-0-072, DITL-87: ZSO / ZSC / ZT-IW0391); pumps P-0715A / B with strainers STR-IW0001 / 0002 (DPT-IW0715-A /
+     -B), common header PT-IW0715 (DITL-111); users of the header (turbine building, boiler, ash, limestone, coal yard, sea water
+     pump station) as one line.
+   - Fire pumps P-0718 (diesel engine), P-0719 (motor), P-0720 (jockey): running states of the I/O list (DITL-87 reads P-0718 /
+     0719); the fire fighting system itself is not in the DCS.
+   - K1AU3-PD-040 Rev C (waste water collection): waste water sump T-0050 with pumps P-0058A / B (DITL-120) and level high high
+     LSHH-P0058, to the waste water buffer basin; transformer area pit with its submerge pump P-1127 and level high high
+     LSHH-P1127 (the I/O list has one pit, the drawing two pits per unit).
+   Left out: the filter, backwash and utility water pumps and the potable / plumbing water (water treatment, user exclusion);
+   hand valves, level gauges. Every state is a digital input of the I/O list (data-di): '-----' until a link gives it a value. */
+(function () {
+  const { V, E, L, page } = HX;
+  const B = HX.B;
+  const K = 'kg/cm²';
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  const di = (tag, on, off) => 'data-di="' + tag + '|' + on + '|' + off + '"';
+  const run = tag => HX.hk('iw-' + tag, di(tag, 'RUNNING', 'STOPPED'));
+  const W_M = 6,
+    W_S = 4;
+  /* places (the drawing is 1760 x 1000) */
+  const TX = 210,
+    TAY = 250,
+    TBY = 690 /* the two tanks */,
+    SX = 520 /* pump suction header */,
+    PX = 660,
+    PY = [250, 450] /* industrial water pumps */,
+    HX_ = 870 /* their common header */,
+    FX = [520, 720, 920],
+    FY = 860 /* fire pumps */,
+    WX = 1450,
+    WY = 570 /* waste water sump */,
+    WPY = 430 /* its pumps */,
+    PTX = 1330,
+    PTY = 880; /* transformer area pit */
+  const IW = 'h:iw-MIR-P0715A|h:iw-MIR-P0715B',
+    FR = ['iw-MIR-P0718', 'iw-MIR-P0719', 'iw-MIR-P0720'],
+    FIRE = FR.map(k => 'h:' + k).join('|');
+  const pump = (n, i) =>
+    at(
+      E('pump', 'Industrial water pump ' + n, 'P-0715' + n, [V('Strainer', 'DPT-IW0715-' + n, K, 2)], {
+        on: run('MIR-P0715' + n),
+        wrap: 14
+      }),
+      PX,
+      PY[i],
+      { id: 'p' + i, lab: 'b' }
+    );
+  const fire = (tag, name, i) =>
+    at(E('pump', name, tag, [], { on: run('MIR-' + tag.replace('-', '')), wrap: 12 }), FX[i], FY, {
+      id: 'f' + i,
+      lab: 'b'
+    });
+
+  page({
+    id: 'industrial-water',
+    group: 'Cooling and utilities',
+    title: 'Industrial and waste water',
+    about:
+      'The industrial and fire water tanks, the industrial water pumps and their header, the fire pumps, the waste water sump pumps and the transformer area pit. Connections: flow diagrams K1AU3-PD-025 Rev D and K1AU3-PD-040 Rev C; logic DITL-87, 111, 120.',
+    plan: {
+      look: 'real',
+      w: 1760,
+      h: 1000,
+      items: [
+        /* tanks */
+        at(
+          E('tank', 'Industrial and fire water tank A', 'T-0714A', [V('Level', 'LT-IW0714', 'm', 2)], {
+            id: 'ta',
+            wrap: 16
+          }),
+          TX,
+          TAY,
+          { id: 'ta', sc: 2, lab: 't' }
+        ),
+        at(B('Level low', di('LS-IW0714', 'LOW', 'NORMAL'), { w: 120 }), TX, TAY + 128, { id: 'tal' }),
+        at(
+          E('tank', 'Industrial and fire water tank B', 'T-0714B', [V('Level', 'LT-IW0724', 'm', 2)], {
+            id: 'tb',
+            wrap: 16
+          }),
+          TX,
+          TBY,
+          { id: 'tb', sc: 2, lab: 't' }
+        ),
+        at(B('Fire water level low', di('LS-IW0724', 'LOW', 'NORMAL'), { w: 160 }), TX, TBY + 128, { id: 'tbl' }),
+        /* the connecting motor valve between the tanks */
+        at(
+          E('valve', 'Tank connecting valve', 'MV-IW0391', [V('Position', 'ZT-IW0391', '%', 0)], {
+            kind: 'motor',
+            on: HX.hk('iw-mv0391', di('ZSO-IW0391', 'OPEN', 'NOT OPEN')),
+            wrap: 12
+          }),
+          360,
+          470,
+          { id: 'mv', rot: 90, lab: 'r' }
+        ),
+        at(B('Open', di('ZSO-IW0391', 'OPEN', 'NOT OPEN'), { w: 100 }), 290, 420, { id: 'mvo' }),
+        at(B('Closed', di('ZSC-IW0391', 'CLOSED', 'NOT CLOSED'), { w: 100 }), 290, 520, { id: 'mvc' }),
+        /* industrial water pumps */
+        pump('A', 0),
+        pump('B', 1),
+        ...['A', 'B'].flatMap((n, i) => [
+          at(B('Remote', di('MIL-P0715' + n, 'REMOTE', 'LOCAL'), { w: 130 }), PX + 135, PY[i] - 16, { id: 'pr' + i }),
+          at(B('Electric trouble', di('MIT-P0715' + n, 'TROUBLE', 'NORMAL'), { w: 130 }), PX + 135, PY[i] + 30, {
+            id: 'pt' + i
+          })
+        ]),
+        /* fire pumps on tank B */
+        fire('P-0718', 'Fire pump, diesel engine', 0),
+        fire('P-0719', 'Fire pump, motor', 1),
+        fire('P-0720', 'Jockey pump', 2),
+        /* waste water sump and pumps */
+        at(E('tank', 'Waste water sump', 'T-0050', [], { id: 'ws', w: 150, h: 70 }), WX, WY, {
+          id: 'ws',
+          sc: 1.5,
+          lab: 'b'
+        }),
+        at(B('Sump level high high', di('LSHH-P0058', 'HIGH HIGH', 'NORMAL'), { w: 180 }), WX + 210, WY, { id: 'wsh' }),
+        ...['A', 'B'].map((n, i) =>
+          at(
+            E('vpump', 'Waste water pump ' + n, 'P-0058' + n, [], { on: run('MIR-P0058' + n), wrap: 12 }),
+            WX - 70 + 140 * i,
+            WPY,
+            {
+              id: 'w' + i,
+              lab: 'b'
+            }
+          )
+        ),
+        ...['A', 'B'].map((n, i) =>
+          at(
+            B('Electric trouble', di('MIT-P0058' + n, 'TROUBLE', 'NORMAL'), { w: 130 }),
+            i ? WX + 210 : WX - 210,
+            WPY,
+            { id: 'wt' + i }
+          )
+        ),
+        /* transformer area pit */
+        at(E('tank', 'Transformer area pit', 'T-1127', [], { id: 'tp', w: 100, h: 70 }), PTX, PTY, {
+          id: 'tp',
+          sc: 1.3,
+          lab: 'l'
+        }),
+        at(E('vpump', 'Pit submerge pump', 'P-1127', [], { on: run('MIR-P1127'), wrap: 12 }), PTX + 200, PTY - 50, {
+          id: 'tpp',
+          lab: 'b'
+        }),
+        at(B('Pit level high high', di('LSHH-P1127', 'HIGH HIGH', 'NORMAL'), { w: 170 }), PTX, PTY + 80, { id: 'tph' }),
+        at(B('Electric trouble', di('MIT-P1127', 'TROUBLE', 'NORMAL'), { w: 140 }), PTX + 340, PTY - 50, { id: 'tpt' }),
+        at(L('makeup-cooling', 'Make-up and cooling water'), 1600, 60, { id: 'mul' }),
+        at(L('sea-water', 'Sea water'), 1600, 100, { id: 'swl' })
+      ],
+      pipes: [
+        /* tank A to the pump suction header, the pumps into the common header, the header to its users */
+        { med: 'water', w: W_M, pts: ['ta.r', [SX, TAY + 66]], flow: IW, arrow: false },
+        {
+          med: 'water',
+          w: W_M,
+          pts: [
+            [SX, PY[0]],
+            [SX, PY[1]]
+          ],
+          flow: IW,
+          arrow: false
+        },
+        ...['A', 'B'].flatMap((n, i) => [
+          { med: 'water', w: W_M, pts: [[SX, PY[i]], 'p' + i + '.s'], flow: 'h:iw-MIR-P0715' + n, arrow: false },
+          {
+            med: 'water',
+            w: W_M,
+            pts: ['p' + i + '.d', [PX - 2, PY[i] - 60], [HX_, PY[i] - 60]],
+            flow: 'h:iw-MIR-P0715' + n,
+            arrow: false
+          }
+        ]),
+        {
+          med: 'water',
+          w: W_M,
+          pts: [
+            [HX_, PY[0] - 60],
+            [HX_, PY[1] - 60]
+          ],
+          flow: IW,
+          arrow: false
+        },
+        {
+          med: 'water',
+          w: W_M,
+          pts: [
+            [HX_, 300],
+            [1080, 300]
+          ],
+          flow: IW,
+          to: 'plant users'
+        },
+        /* tank A to tank B through the connecting valve */
+        { med: 'water', w: W_S, pts: [[360, TAY + 66], 'mv.l'], flow: 'h:iw-mv0391', arrow: false },
+        { med: 'water', w: W_S, pts: ['mv.r', [360, TBY + 66], 'tb.r'], flow: 'h:iw-mv0391' },
+        /* tank B to the fire pumps (suction header under them), their discharge header to the fire fighting system */
+        {
+          med: 'water',
+          w: W_M,
+          pts: ['tb.l', [100, TBY + 66], [100, 970], [FX[2] - 60, 970]],
+          flow: FIRE,
+          arrow: false
+        },
+        ...[0, 1, 2].map(i => ({
+          med: 'water',
+          w: W_S,
+          pts: [[FX[i] - 60, 970], [FX[i] - 60, FY], 'f' + i + '.s'],
+          flow: 'h:' + FR[i],
+          arrow: false
+        })),
+        ...[0, 1, 2].map(i => ({
+          med: 'water',
+          w: W_S,
+          pts: ['f' + i + '.d', [FX[i] - 2, 790]],
+          flow: 'h:' + FR[i],
+          arrow: false
+        })),
+        {
+          med: 'water',
+          w: W_M,
+          pts: [
+            [FX[0] - 2, 790],
+            [1100, 790]
+          ],
+          to: 'fire fighting system',
+          flow: FIRE
+        },
+        /* waste water: sump pumps (suction legs in the sump) to the buffer basin, pit pump to the ditch */
+        ...[0, 1].map(i => ({
+          med: 'drain',
+          w: W_S,
+          pts: [[WX - 92 + 140 * i, WY + 10], 'w' + i + '.s'],
+          flow: 'h:iw-MIR-P0058' + 'AB'[i],
+          arrow: false
+        })),
+        ...[0, 1].map(i => ({
+          med: 'drain',
+          w: W_S,
+          pts: ['w' + i + '.d', [WX - 30 + 140 * i, WPY - 11], [WX - 30 + 140 * i, 360]],
+          flow: 'h:iw-MIR-P0058' + 'AB'[i],
+          arrow: false
+        })),
+        {
+          med: 'drain',
+          w: W_S,
+          pts: [
+            [WX - 30, 360],
+            [1680, 360]
+          ],
+          to: 'buffer basin',
+          flow: 'h:iw-MIR-P0058A|h:iw-MIR-P0058B'
+        },
+        {
+          med: 'drain',
+          w: W_S,
+          pts: [[PTX + 30, PTY + 10], [PTX + 30, PTY - 38], 'tpp.s'],
+          flow: 'h:iw-MIR-P1127',
+          arrow: false
+        },
+        {
+          med: 'drain',
+          w: W_S,
+          pts: ['tpp.d', [PTX + 222, PTY - 110], [1680, PTY - 110]],
+          to: 'ditch',
+          flow: 'h:iw-MIR-P1127'
+        }
+      ],
+      taps: [
+        { x: HX_, y: 240, side: 'r', label: 'Header pressure', key: 'PT-IW0715', unit: K, dp: 2, tag: 'PT-IW0715' }
+      ],
+      texts: [
+        { x: WX, y: WY + 120, s: 'In: turbine and boiler house drains' },
+        { x: 760, y: 760, s: 'Fire pumps: running states only (fire fighting system K1AU3-M0-159)' },
+        { x: 1180, y: 330, s: 'Turbine building, boiler, ash, limestone, coal yard, sea water pumps' }
       ]
     }
   });
