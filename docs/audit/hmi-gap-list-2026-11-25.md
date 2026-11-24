@@ -2,7 +2,7 @@
 
 Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page when its tag number is named in the page file, or in the registry bind of a machine the page names. Text match only, so a row can be on a page under another name: the page that takes it checks it in the running app. Left out by the user's order: water treatment (PW, HC, IW), coal handling (conveyors), air compressors and dryers (C, D).
 
-**Total: 1067 equipment, 791 on a page, 276 missing.**
+**Total: 1067 equipment, 814 on a page, 253 missing.**
 
 ## Summary by page
 
@@ -15,7 +15,7 @@ Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page wh
 | 6 | ash | S | 2 | 2 | 0 |
 | 6 | boiler-steam | BR | 20 | 20 | 0 |
 | 6 | boiler-steam | MS | 17 | 17 | 0 |
-| 6 | boiler-steam | FS | 3 | 1 | 2 |
+| 6 | boiler-steam | FS | 3 | 3 | 0 |
 | 6 | boiler-steam | BD | 2 | 2 | 0 |
 | 6 | coal | CL | 27 | 27 | 0 |
 | 6 | coal | IA | 16 | 7 | 9 |
@@ -28,7 +28,7 @@ Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page wh
 | 6 | limestone-sand | LM | 16 | 14 | 2 |
 | 6 | limestone-sand | M | 12 | 1 | 11 |
 | 6 | limestone-sand | SD | 9 | 6 | 3 |
-| 6 | purge-trip | ? | 69 | 12 | 57 |
+| 6 | purge-trip | ? | 69 | 13 | 56 |
 | 6 | sampling | SP | 21 | 21 | 0 |
 | 6 | sampling | Z | 8 | 8 | 0 |
 | 6 | sampling | CH | 3 | 3 | 0 |
@@ -39,13 +39,13 @@ Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page wh
 | 7 | aux-steam | GS | 1 | 1 | 0 |
 | 7 | condensate | CD | 46 | 34 | 12 |
 | 7 | extraction | TS | 26 | 26 | 0 |
-| 7 | extraction | HD | 15 | 6 | 9 |
-| 7 | feedwater | FW | 63 | 61 | 2 |
+| 7 | extraction | HD | 15 | 15 | 0 |
+| 7 | feedwater | FW | 63 | 63 | 0 |
 | 7 | generator | DO | 35 | 31 | 4 |
 | 7 | generator | DI | 33 | 0 | 33 |
 | 7 | generator | AI | 12 | 2 | 10 |
 | 7 | generator | AO | 9 | 0 | 9 |
-| 7 | makeup-cooling | P | 48 | 39 | 9 |
+| 7 | makeup-cooling | P | 48 | 48 | 0 |
 | 7 | makeup-cooling | CW | 25 | 25 | 0 |
 | 7 | makeup-cooling | MU | 10 | 10 | 0 |
 | 7 | reheat | HR | 15 | 15 | 0 |
@@ -78,15 +78,6 @@ Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page wh
 | FH1702 | Fly ash PLC fault | XA-FH1702 · S3 I.057C · DI |
 | FH1703 | Fly ash communication fault | XA-FH1703 · S3 I.057D · DI |
 | FH1704 | Fly ash main control panel no power | XA-FH1704 · S3 I.057E · DI |
-
-### boiler-steam (lane 6)
-
-**FS** (2)
-
-| Equipment | What | Signals (tag · address · type) |
-|---|---|---|
-| FS1410 | Flash pipe level switch | LS-FS1410 · S3 I.053D · DI |
-| FS1411 | Flash pipe level switch | LS-FS1411 · S3 I.053E · DI |
 
 ### coal (lane 6)
 
@@ -262,7 +253,7 @@ Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page wh
 
 ### purge-trip (lane 6)
 
-**?** (57)
+**?** (56)
 
 | Equipment | What | Signals (tag · address · type) |
 |---|---|---|
@@ -313,7 +304,6 @@ Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page wh
 | PAF-STOP-CMD | PAF stop command (From IRP) | PAF-STOP-CMD · S4 I.056D · DI |
 | PDS_H-BH1750 | Boiler bag filter of bottom ash silo diff. pressure switch | PDS_H-BH1750 · S3 I.0246 · DI |
 | PDS_L-BH1750 | Boiler bag filter of bottom ash silo diff. pressure switch | PDS_L-BH1750 · S3 I.0247 · DI |
-| RY-CD01 | Condensate polisher train ready | RY-CD01 · S2 I.025F · DI |
 | S-APAFLOPS | All P.A.F. lube oil pump | S-APAFLOPS · S3 O.077F · DO-Dry |
 | S-FBTHH | Furnace bed temperature H.H. | S-FBTHH · S3 O.077E · DO-Dry |
 | S-MSPHH | Main steam pressure H.H. | S-MSPHH · S1 O.0177 · DO-Dry |
@@ -350,31 +340,6 @@ Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page wh
 | CD1116-BU | Condensate pump-B motor winding temperature (U phase) | TT-CD1116-BU · S3 AI0976 · AI-Wet |
 | CD1116-BV | Condensate pump-B motor winding temperature (V phase) | TT-CD1116-BV · S3 AI0977 · AI-Wet |
 | CD1116-BW | Condensate pump-B motor winding temperature (W phase) | TT-CD1116-BW · S3 AI0978 · AI-Wet |
-
-### extraction (lane 7)
-
-**HD** (9)
-
-| Equipment | What | Signals (tag · address · type) |
-|---|---|---|
-| HD1101 | NO.1 LPH level switch | LS-HD1101 · S2 I.029B · DI<br>LBHH-HD1101 · S2 O.0481 · DO-Dry<br>PT-HD1101 · S2 AI0419 · AI-Wet |
-| HD1101-1 | NO.1 LPH primary drain level control valve | LCV-HD1101-1 · S2 AO0464 · AO<br>LT-HD1101-1 · S2 AI0673 · AI-Wet<br>ZT-HD1101-1 · S2 AI0707 · AI-Wet |
-| HD1101-2 | NO.1 LPH alternate drain level control valve | LCV-HD1101-2 · S2 AO0480 · AO<br>ZT-HD1101-2 · S2 AI0721 · AI-Wet<br>LT-HD1101-2 · S2 AI0849 · AI-Wet |
-| HD1102 | NO.2 LPH level switch | LS-HD1102 · S2 I.029C · DI<br>LBHH-HD1102 · S2 O.0485 · DO-Dry<br>FT-HD1102 · S2 AI0432 · AI-Wet<br>TT-HD1102 · S2 AI0929 · AI-Wet |
-| HD1102-1 | NO.2 LPH primary drain level control valve | LCV-HD1102-1 · S2 AO0465 · AO<br>LT-HD1102-1 · S2 AI0674 · AI-Wet<br>ZT-HD1102-1 · S2 AI0708 · AI-Wet |
-| HD1102-2 | NO.2 LPH alternate drain level control valve | LCV-HD1102-2 · S2 AO0481 · AO<br>ZT-HD1102-2 · S2 AI0722 · AI-Wet<br>LT-HD1102-2 · S2 AI0850 · AI-Wet |
-| HD1103 | NO.3 LPH level switch | LS-HD1103 · S2 I.029D · DI<br>LBHH-HD1103 · S2 O.0484 · DO-Dry<br>FT-HD1103 · S2 AI0433 · AI-Wet<br>TT-HD1103 · S2 AI0930 · AI-Wet |
-| HD1103-1 | NO.3 LPH primary drain level control valve | LCV-HD1103-1 · S2 AO0466 · AO<br>LT-HD1103-1 · S2 AI0675 · AI-Wet<br>ZT-HD1103-1 · S2 AI0709 · AI-Wet |
-| HD1103-2 | NO.3 LPH alternate drain level control valve | LCV-HD1103-2 · S2 AO0482 · AO<br>ZT-HD1103-2 · S2 AI0723 · AI-Wet<br>LT-HD1103-2 · S2 AI0851 · AI-Wet |
-
-### feedwater (lane 7)
-
-**FW** (2)
-
-| Equipment | What | Signals (tag · address · type) |
-|---|---|---|
-| FW1031 | BFWP-A suction manual valve | ZSO-FW1031 · S2 I.028F · DI |
-| FW1032 | BFWP-B suction manual valve | ZSO-FW1032 · S2 I.032F · DI |
 
 ### generator (lane 7)
 
@@ -454,22 +419,6 @@ Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page wh
 | AO1008 | Generator frequency | GCP-AO1008 · S3 AO0887 · AO |
 | AO1011 | Generator current (C) | TCS-AO1011 · S2 AO0407 · AO |
 
-### makeup-cooling (lane 7)
-
-**P** (9)
-
-| Equipment | What | Signals (tag · address · type) |
-|---|---|---|
-| P0058 | Waste water pit level switch | LSHH-P0058 · S5 I.001A · DI |
-| P0058A | Waste water pump-A | MIR-P0058A · S5 I.0009 · DI<br>MIT-P0058A · S5 I.000A · DI<br>MOP-P0058A · S5 O.0043 · DO-Dry |
-| P0058B | Waste water pump-B | MIR-P0058B · S5 I.001C · DI<br>MIT-P0058B · S5 I.001D · DI<br>MOP-P0058B · S5 O.0364 · DO-Dry |
-| P0715A | Industrial water pump-A | MIR-P0715A · S5 I.0006 · DI<br>MIT-P0715A · S5 I.0007 · DI<br>MIL-P0715A · S5 I.0008 · DI<br>MOR-P0715A · S5 O.0042 · DO-Dry<br>MOP-P0715A · S5 O.0046 · DO-Dry |
-| P0715B | Industrial water pump-B | MIR-P0715B · S5 I.0326 · DI<br>MIT-P0715B · S5 I.0327 · DI<br>MIL-P0715B · S5 I.0328 · DI<br>MOR-P0715B · S5 O.0362 · DO-Dry<br>MOP-P0715B · S5 O.0366 · DO-Dry |
-| P0718 | Fire fighting system fire pump(diesel engine driven) | MIR-P0718 · S5 I.033A · DI |
-| P0719 | Fire fighting system fire pump(high voltage) | MIR-P0719 · S5 I.0338 · DI |
-| P0720 | Fire fighting system fire motor driven jockey pump | MIR-P0720 · S5 I.033C · DI |
-| P1127 | Transformer area pit submerge pump | MIR-P1127 · S3 I.017D · DI<br>MIT-P1127 · S3 I.017E · DI<br>LSHH-P1127 · S3 I.017F · DI |
-
 ### reheat (lane 7)
 
 **CR** (1)
@@ -477,19 +426,3 @@ Made by `node tools/audit/hmi-gap.cjs --md`. An equipment counts as ON a page wh
 | Equipment | What | Signals (tag · address · type) |
 |---|---|---|
 | CR1013 | Cold reheat drain pot DP-CR03 drain valve close solenoid (not used) | XV-CR1013 · S2 O.012F · DO-Wet<br>ZSO-CR1013 · S2 I.089E · DI<br>ZSC-CR1013 · S2 I.089F · DI |
-
-## Split of the work (proposed by EIMI, lane 6)
-
-- **Lane 6 (HMI : EIMI)**, boiler pages: combustion-air, furnace-gas, coal, oil-burners, purge-trip, boiler-steam, ash, limestone-sand, sootblowers, sampling, overview; on the station: the annunciator (done, beta.375) and a new DCS diagnostics panel (DIAG rows: FCS / SER / ARP / IRP / GCS system errors, PDP power loss).
-- **Lane 7 (HMI TURBINE : MINAMI)**, water / steam / turbine pages: feedwater, condensate, extraction, aux-steam, reheat, turbine, turbine-oil, makeup-cooling, sea-water, generator.
-- One page = one `hx-page-<id>.js` file, owned by one lane. Two lanes never edit the same page file.
-- Rows with no system code (`?`, purge-trip) are IRP / OPC trip signals and console push buttons: lane 6.
-- The generator rows DI / DO / AI / AO are TCS and generator panel points: lane 7 with TCS IO (lane 2) for the address side.
-
-## Shared components (owned by lane 6; lane 7 uses them, does not edit them)
-
-- **Use as is:** `hx-core.js` (layout, drawing, live values, trends), `hx-real.js` (the realistic symbols: pumps, fans, valves with actuators, heaters, drums, tanks), `hx.css` (every colour and font as a token), `hx-app.js` (the adapter: binds a page element to its DITL / controller / tag and opens the two faceplates), `hx-registry.js` (GENERATED, never by hand).
-- **Quality reference:** `hx-page-reheat.js`. Its helpers `M()` (machine), `X()` (on / off valve), `C()` (controller and its valve), `at()` (placement) and the page plan shape are the pattern for every page.
-- **Need a new symbol, token or adapter feature?** Ask EIMI (lane 6) through the coordinator; lane 6 adds it in the shared file, so one look holds for every page.
-- **Rules (README section 4):** RUN / OPEN red, STOP / CLOSED green, TRIP blinking red, no signal grey `-----`; plain English name in bold with the tag small under it; units on every number; page 1760 x 1000, nothing to scroll; two faceplates per equipment (click = CONTROL, Y / N square = PERMISSIVE, TREND, MONITOR); no value typed into a page, every number from its tag; links between pages by page id.
-- **Binding by address:** each element names its tag (the I/O list tag in this file); the adapter finds the DITL output or controller that drives it, so the HMI and the logic move as one. A tag with no driving sheet stays `-----` and goes to the DCS links lanes (3 / 4), never a made-up value.
