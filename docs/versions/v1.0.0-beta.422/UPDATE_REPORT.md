@@ -1,6 +1,6 @@
-# LMYP OTS 1.0.0-beta.412 (TCS IO : TSUBASA, lane 2, 2026-11-25)
+# LMYP OTS 1.0.0-beta.422 (TCS IO : TSUBASA, lane 2, 2026-11-25)
 
-Sumunod sa beta.410. Data, binding at test lang (headless). Walang pagbabago sa plant model, sa HMI at sa tumatakbong app: ang mga bagong file ay hindi pa naka-load sa page (gagawin ng engine owner).
+Sumunod sa beta.418. Data, binding at test lang (headless). Walang pagbabago sa plant model, sa HMI at sa tumatakbong app: ang mga bagong file ay hindi pa naka-load sa page (gagawin ng engine owner).
 
 ## Ano ang bago
 
