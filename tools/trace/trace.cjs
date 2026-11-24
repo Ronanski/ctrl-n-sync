@@ -246,10 +246,12 @@ const has = (txt, tag) => {
     }
     return o;
   };
+  /* cells, nl.src / outs / mv / mot rows and the sampled inputs are keyed by the 0-based row INDEX i (app: world.js cellTxt, ditl.js);
+     r.n is the number drawn on the row (= i + 1 on 5,399 of 5,559 rows), printed only (fix 2026-11-25, found by YUA) */
   const cellT = (s, i, col) => {
     const b = (s._inst && s._inst.base) || s,
       r = b.rows[i];
-    const t = r ? (b.cells[r.n + ':' + col] || []).map(x => x.t).join(' ') : '';
+    const t = r ? (b.cells[i + ':' + col] || []).map(x => x.t).join(' ') : '';
     return s._inst && WORLD.showText ? WORLD.showText(s, t) : t;
   };
   const ditl = [],
@@ -358,19 +360,19 @@ const has = (txt, tag) => {
         }
       }
       const tags = String(T + ' ' + RT).match(/\b[A-Z]{1,6}\d?-[A-Z]{1,3}\d{3,4}[A-Z0-9-]*\b/g) || [];
-      const isIn = srcRows.has(r.n),
-        isOut = outRows.has(r.n);
+      const isIn = srcRows.has(i),
+        isOut = outRows.has(i);
       if (!isIn && !isOut && !adrs.size && !tags.length) return;
       if (!isIn && !adrs.size && !tags.length && adrsR.size) return;
-      const mv = mm.get(r.n);
+      const mv = mm.get(i);
       let src = '-';
       if (isIn) {
         const ln = dm && dm.get(i);
-        const an = s.nl && (s.nl.an || []).find(a => a.row === r.n || a.row === i);
+        const an = s.nl && (s.nl.an || []).find(a => a.row === i);
         src =
           ln && ln.length
             ? 'link'
-            : psw.has(s.name + '|' + r.n) || psw.has(s.name + '|' + (i + 1))
+            : psw.has(s.name + '|' + (i + 1))
               ? 'plant switch'
               : an && s.avw && s.avw[an.key] != null
                 ? 'plant value'
@@ -378,7 +380,7 @@ const has = (txt, tag) => {
                   ? 'operator'
                   : /^(LOP|LCP|LP|LCS|MCC|SWGR|VCB|LOCAL)/i.test(L.trim())
                     ? 'local panel'
-                    : own.has(r.n)
+                    : own.has(i)
                       ? 'valve / motor model'
                       : mv && mv[1] !== mv[0]
                         ? 'moves (own model)'

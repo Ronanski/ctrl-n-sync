@@ -23,3 +23,7 @@ Ang ayos sa `src/digital/tce-run.js` (lane 1): hindi ko ito binago. Sa kopya sa 
 
 - Naayos na ng lane 1 (PR 526, nasa main) ang dalawang mali: pinakamalapit na connector (0 nawalang kabit) at INITIAL mula TCE050. Sa main ea85219: COMPLETE 196 (real logic 141 + tables 55); floor 196.
 - Dalawang hanay (hiling ng lane 1, PR 539): ang sheet na tumatakbo lang dahil sa macro na mula sa manual text ("inside not drawn", `TCE_RUN.stats().runText`) ay hindi drawing-complete; hiwalay na linya. Sa branch ng PR 539: COMPLETE 196, manual-text 70.
+
+## Dagdag (6:40 AM PHT): ayos ng row sa trace (nakita ni YUA)
+
+Binabasa ng trace ang text, FROM at tags ng DITL row mula sa row sa ilalim nito (drawn number sa halip na index). Sa parehong main fa7eb69: nakakabit 1,482 -> 1,524; DITL input row na walang source 1,060 -> 255; B5 165 / 294 -> 141 / 226. Detalye: `tools/trace/RULES.md`.

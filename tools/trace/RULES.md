@@ -37,3 +37,10 @@ Run: `node tools/trace/trace.cjs --start 150 --mins 10` (the app's own engine, h
 - Two columns (2026-11-25, lane 1 PR 539): a sheet that runs only through a macro coded from the manual text (TCE_RUN.stats().runText, "inside not drawn") is NOT drawing-complete; it is printed on its own line and never in COMPLETE.
 
 ## Baseline (main 5d9c34d): I/O with a tag 2,702 = linked 1,482, on a drawing not wired 380, model / page only 214, nowhere 537, excluded 89.
+
+## Fix 2026-11-25 06:40 PHT (row index, found by YUA): same main fa7eb69, 150 MW 5 plant min, old tool -> new tool
+DITL cells, nl.src / outs rows and the sampled inputs are keyed by the 0-based row index; the tool read the text, FROM and tags of
+the row below (cells by the drawn number r.n). Counting rules unchanged; only the read is fixed.
+- LINKED 1,482 -> 1,524; on a sheet no source 142 -> 112; on the drawing not on a row 199 -> 195; only on another machine's copy 23 -> 15;
+  station unsure 16 -> 16; model / page only 224 -> 224; nowhere 527 -> 527; excluded 89.
+- B1 DITL input rows with no source 1,060 -> 255; B5 165 points on 294 rows -> 141 points on 226 rows; B1 ABC 102, B2 443, B3 16, B4 9 unchanged.
