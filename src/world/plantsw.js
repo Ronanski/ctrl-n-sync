@@ -381,7 +381,7 @@
         const d = L.find(x => words.slice(0, 3).includes(x[0]) && (!x[6] || x[6].test(t)) && (!x[7] || x[7].test(s.name)));
         if (d) map.push({ s, row: i, d, on: null });
       }
-      /* beta.500 (KIRARA): a field contact drawn on the wire of an output row (DITL-19 outputs 62 ~ 73: MIA-CL1061-A2 at the left end of
+      /* beta.510 (KIRARA): a field contact drawn on the wire of an output row (DITL-19 outputs 62 ~ 73: MIA-CL1061-A2 at the left end of
          the wire, the MCC / LCP side of the sheet): the DI row of a lane with that tag drives it; a copy has its own machine's tag */
       if (FD.size)
         for (const u of (s.nl && s.nl.usr) || []) {

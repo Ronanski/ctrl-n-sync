@@ -82,3 +82,4 @@ jobs:
         run: |
           V=$(node tools/version.js)
           node tests/regress/hx_fp_mon.js "dist/logic-sim-v$V.html"
+          node tests/regress/hx_unknown.js "dist/logic-sim-v$V.html"

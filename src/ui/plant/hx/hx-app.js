@@ -19,6 +19,18 @@
       return d;
     }
   };
+  /* beta.456 (EIMI): a machine or valve written into a system file (LS_MOCK.add mach) after hx-registry.js was last generated joins the
+     registry here, in the shape the generator writes ({t, page, id, bind}), so its page gets the start / stop or open / close faceplate
+     without running the generator. An entry the registry already has is never changed; a controller (ctl) is a loop, not a machine. */
+  if (R.machines)
+    for (const d of LS_MOCK.defs)
+      for (const k in d.mach || {}) {
+        const m = d.mach[k];
+        if (!m || !m.n || m.ctl || R.machines[m.n]) continue;
+        const bind = {};
+        for (const f in m) if (f !== 'n' && f !== 't') bind[f] = m[f];
+        R.machines[m.n] = { t: m.t || m.n, page: d.id, id: k, bind };
+      }
   const fin = x => (x != null && isFinite(x) ? +x : null);
   const unitKey = tag => {
     for (const d of LS_MOCK.defs) if (d.unit && d.unit[tag]) return d.unit[tag];
