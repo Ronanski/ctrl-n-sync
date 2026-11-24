@@ -102,7 +102,7 @@ const judge = (v, tg, tol, kind) => {
     });
     const win = async () => {
       const S = [];
-      for (let m = 0; m < WIN; m++) { await run(1); S.push(await snap()); }
+      for (let m = 0; m < WIN; m++) { await run(1); await operate(); S.push(await snap()); }
       const o = {};
       for (const k of Object.keys(S[0])) {
         const v = S.map(x => x[k]).filter(x => typeof x === 'number' && isFinite(x));
@@ -140,6 +140,83 @@ const judge = (v, tg, tol, kind) => {
       }
       return tgt();
     };
+    /* Below 220 T/H main steam flow the drawing forces HIC-BM and EIC-TM to MANUAL (ABC-001C BU-CMD M.2013 / M.2016, PR-OPE-5002
+       "At 230 T/H MSF put Boiler Master to Auto"; OPERATOR_GUIDE 7.2). From there the operator does the load by hand, on the faceplates:
+       EIC-TM ▼ toward the aim at no more than 3 MW a minute (guide 7.1), HIC-BM ▲ / ▼ 1 % a minute while the main steam pressure is
+       off the PIC-COBM SV by more than 1 kg/cm2 (guide 7.2), and at 230 T/H the 1 ELEMENT push button of the Feedwater page (ABC-010
+       M.054F, pressed for 2.5 s plant time like the page button; PR-OPE-5003 "put level control to 1 element", guide 7.3). */
+    const fpOpen = sheet => page.evaluate(sh => {
+      AN.go(AN.sheets.findIndex(s => s.name === sh));
+      [...document.querySelectorAll('button')].filter(b => b.textContent.trim() === 'Faceplate').forEach(b => b.click());
+    }, sheet);
+    const fpBtn = async (sheet, tag, lab) => {
+      const has = () => page.evaluate(t => !![...document.querySelectorAll('#opp .fpman')].find(x => x.dataset.tag === t), tag);
+      if (!(await has())) { await fpOpen(sheet); await page.waitForTimeout(400); }
+      const ok = await page.evaluate(([t, lab]) => {
+        const f = [...document.querySelectorAll('#opp .fpman')].find(x => x.dataset.tag === t);
+        const b = f && [...f.querySelectorAll('button')].find(e => e.textContent === lab);
+        if (!b) return false;
+        b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+        b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+        b.click();
+        return true;
+      }, [tag, lab]);
+      await page.waitForTimeout(150);
+      await run(2 / 120);
+      return ok;
+    };
+    const st = () => page.evaluate(() => {
+      const L = window.LS_LIVE, f = t => L.fp(t);
+      return { bm: L.modeOf(f('HIC-BM')), tm: L.modeOf(f('EIC-TM')), bmMv: +L.mvOf(f('HIC-BM')), tmMv: +L.mvOf(f('EIC-TM')),
+        P: AN.unit.Pms, sv: +L.svOf(f('PIC-COBM')), msf: AN.unit.ms, MW: AN.unit.MW };
+    });
+    const OP = { aim: null, e1: false, log: [] };
+    const operate = async () => {
+      if (OP.aim == null) return;
+      let s = await st();
+      if (!OP.e1 && s.msf <= 230) {
+        await page.evaluate(x => { const T = AN.sheets.find(q => q.name === 'ABC-010').S; for (const n of T.ext) { const t = T.lab[n] && String(T.lab[n].t).trim(); if (t === 'M.054F' && T.rt.force[n] === undefined) T.rt.ext[n] = x; } AN.settle(); }, 1);
+        await run(2.5 / 60);
+        await page.evaluate(x => { const T = AN.sheets.find(q => q.name === 'ABC-010').S; for (const n of T.ext) { const t = T.lab[n] && String(T.lab[n].t).trim(); if (t === 'M.054F' && T.rt.force[n] === undefined) T.rt.ext[n] = x; } AN.settle(); }, 0);
+        OP.e1 = true; OP.log.push('1 ELEMENT at MSF ' + s.msf.toFixed(0));
+      }
+      /* DCS CONTROL MODE OFF with the BU-CMD (ABC-001C M.0101 = 0, I.0082): EIC-TM in MANUAL tracks the TCS target (AMT T of M.2017,
+         AI0420), so the load is set on the TCS panel: LOAD UP, target MW and rate (Turbine page, AN.turbine loadup { mw, rate }, the
+         call of the page button). Rate 0.4 %/min = 0.6 MW/min, PR-OPE-5003 load down 90 to 45 MW (uat check M5). */
+      if (s.tm === 'MAN' && !OP.tcs) {
+        const r = await page.evaluate(a => AN.turbine('loadup', { mw: a, rate: 0.4 }), OP.aim);
+        OP.tcs = true;
+        OP.log.push('TCS LOAD UP ' + OP.aim + ' MW at 0.4 %/min at MSF ' + s.msf.toFixed(0) + (r ? ' (' + r + ')' : ''));
+      }
+      /* the firing by hand (guide 7.2): one HIC-BM press of 1 % a minute at most, on the pressure error and its trend (the operator
+         reads the MSP trend: a pressure already turning back toward the SV is left alone) */
+      if (s.bm === 'MAN') {
+        const dP = OP.pP == null ? 0 : s.P - OP.pP, d = 0.3 * (s.sv - s.P) - 1.5 * dP;
+        if (Math.abs(d) >= 0.5) await fpBtn('ABC-001C', 'HIC-BM', d > 0 ? '▲' : '▼');
+      }
+      /* the O2 trim AICFG112 (ABC-002) is forced MANUAL below 220 T/H (M.0102 / M.0103); the operator puts it at 50 % = neutral
+         (OPERATOR_GUIDE 5.4 / 7.7, uat check M5). Left at its last MV the trim holds the air off its demand, and the total air cross
+         limit of the coal demand (ABC-002 LN40: 414 T/H air = 0 coal, 446 T/H = 35 T/H) cuts the coal. */
+      const o2 = await page.evaluate(() => { const L = window.LS_LIVE, g = L.fp('AICFG112'); return { m: L.modeOf(g), mv: +L.mvOf(g) }; });
+      if (o2.m === 'MAN') {
+        if (!OP.o2) { OP.o2 = true; OP.log.push('O2 trim AICFG112 MAN ' + o2.mv.toFixed(1) + ' % to 50 % at MSF ' + s.msf.toFixed(0)); }
+        /* the PID faceplate of the trim is not a station (.fpman) of the page: TOP.man = the MANUAL MV entry of its faceplate */
+        if (Math.abs(o2.mv - 50) >= 0.5) await page.evaluate(() => TOP.man('AICFG112', 50));
+      }
+      /* the PA flow bias HIC-TADBS (ABC-002) at 0 near the minimum air (OPERATOR_GUIDE 5.3 / "Kung may mali": the -26.7 T/H trim of the
+         150 MW line-up takes the total air of the fuel cross limit LN40 from 446 to ~420 T/H, and LN40 cuts the coal demand). Its
+         faceplate ▲▲ +5 T/H, ▲ +1 T/H */
+      if (s.bm === 'MAN') {
+        let b = await page.evaluate(() => +LS_LIVE.mvOf(LS_LIVE.fp('HIC-TADBS')));
+        if (b < -0.5 && !OP.tad) { OP.tad = true; OP.log.push('HIC-TADBS ' + b.toFixed(1) + ' to 0 T/H at MSF ' + s.msf.toFixed(0)); }
+        for (let k = 0; k < 20 && b < -0.5; k++) {
+          await fpBtn('ABC-002', 'HIC-TADBS', b <= -5 ? '▲▲' : '▲');
+          b = await page.evaluate(() => +LS_LIVE.mvOf(LS_LIVE.fp('HIC-TADBS')));
+        }
+      }
+      OP.pP = s.P;
+    };
+    const runOp = async mins => { for (let m = 0; m < mins; m++) { await run(1); await operate(); } };
     const R = {};
     await run(5);
     R[150] = await win();
@@ -147,7 +224,10 @@ const judge = (v, tg, tol, kind) => {
     await run(SETTLE);
     R[90] = await win();
     R.t45 = await press(45);
-    await run(SETTLE);
+    OP.aim = 45;
+    /* the TCS ramp to the aim first (0.6 MW/min below 220 T/H), then the settle time */
+    for (let m = 0; m < 120 && Math.abs((await st()).MW - OP.aim) > 1; m++) await runOp(1);
+    await runOp(SETTLE);
     R[45] = await win();
     const f = x => (isFinite(x) ? (Math.abs(x) >= 100 ? x.toFixed(1) : x.toFixed(2)) : '-');
     const out = ['| Item | 45 MW app / design | 90 MW app / design | 150 MW app / design |', '|---|---|---|---|'];
@@ -162,7 +242,7 @@ const judge = (v, tg, tol, kind) => {
       });
       out.push(`| ${lab} | ${cells.join(' | ')} |`);
     }
-    out.push('', `Window ${WIN} min each, settle ${SETTLE} min after each load step. MW range 45 / 90 / 150: ${[45, 90, 150].map(L => f(R[L].MW.lo) + '-' + f(R[L].MW.hi)).join(' / ')}. Trip: ${[45, 90, 150].map(L => R[L].trip).join(' / ')}. Target MW set by the presses: ${f(R.t90)} / ${f(R.t45)}. Limestone and FW from the model fields U.lm.q and U.fwMain less the blowdown. PASS ${pass}, FAIL ${fail}. Page errors: ${errs.length}`);
+    out.push('', `Window ${WIN} min each, settle ${SETTLE} min after each load step. MW range 45 / 90 / 150: ${[45, 90, 150].map(L => f(R[L].MW.lo) + '-' + f(R[L].MW.hi)).join(' / ')}. Trip: ${[45, 90, 150].map(L => R[L].trip).join(' / ')}. Target MW set by the presses: ${f(R.t90)} / ${f(R.t45)}. Operator by hand below 220 T/H: ${OP.log.join(", ") || "-"}. Limestone and FW from the model fields U.lm.q and U.fwMain less the blowdown. PASS ${pass}, FAIL ${fail}. Page errors: ${errs.length}`);
     console.log(out.join('\n'));
     fs.writeFileSync(process.env.OUT || 'part1.json', JSON.stringify(R));
   } finally {
