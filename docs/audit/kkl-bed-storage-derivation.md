@@ -1,9 +1,11 @@
 # P1 step 5: kKL 3.80 and the heat storage of the bed (derivation for JENNIE)
 
-Made 2026-11-25 ~00:40 PHT by AUDIT FIX : LISA, docs only (coordinator ask, Rule 0). Main 9834ee0+. Everything below is design data, textbook physics or plant logic; no plant trend, no snapshot. What is still open is said so.
+Made 2026-11-25 ~00:40 PHT by AUDIT FIX : LISA, docs only (coordinator ask, Rule 0). Main 9834ee0+. **Rev 1 (01:00 PHT):** coal size and SA port location read on the PC by LEADER : JENNIE (crusher spec K1AU3-D2-0-102 R0 2-4-4; FHI P2S4 rev1 p2-4-9): tauC and (B) redone, conclusion below changed. Everything below is design data, textbook physics or plant logic; no plant trend, no snapshot. What is still open is said so.
 
 ## 0. The problem in one paragraph
-With kKL 3.80 (the FHI 60 % point) the boiler loses the fast answer of the steam to the firing that 9.2 gave, and on the way 150 -> 90 MW (run j11) the boiler master PIC-COBM cut the coal on the high drum pressure, the bed fell to 688 C, and **ABC-027 "FURNACE LOWER LAYER UNDER TEMP. > 700 C ADEQUATE FOR COAL FIRING" (to DITL-03F row 16, MFT) dropped**: MFT. Two things are missing from the physics, not from kKL: (A) the fuel that is already in the bed (char) and keeps burning when the feeders slow, and (B) where the volatile part of the coal burns. Plus (C) the bed inventory must be the design Fig 9 one (P1 step 2) before kKL is solved, because phi carries the inventory share.
+With kKL 3.80 (the FHI 60 % point) the boiler loses the fast answer of the steam to the firing that 9.2 gave, and on the way 150 -> 90 MW (run j11) the boiler master PIC-COBM cut the coal on the high drum pressure, the bed fell to 688 C, and **ABC-027 "FURNACE LOWER LAYER UNDER TEMP. > 700 C ADEQUATE FOR COAL FIRING" (to DITL-03F row 16, MFT) dropped**: MFT. Two things were checked against the physics: (A) the fuel that is already in the bed (char) and keeps burning when the feeders slow, and (B) where the volatile part of the coal burns. Plus (C) the bed inventory must be the design Fig 9 one (P1 step 2) before kKL is solved, because phi carries the inventory share.
+
+**Rev 1 conclusion.** With the design coal size (d50 1.1 mm) the char store is short (tauC ~125 s) and holds the bed only ~18 C better than today in the j11 case (189 C fall instead of 207 C: 860 -> ~671 C, still under 700 C). The SA ports are inside the refractory zone, so (B) moves almost no heat out of the bed (about 3 %). **So the j11 MFT is not cured by the bed physics; the main cause is the coal cut on the way down (section 5): read the PIC-COBM set point path and the CCS feedforward first.** (A) is still right physics and goes in with kKL; (B) is not coded.
 
 ## 1. What the code does today (unit.js, beta.374)
 - Bed lump (line ~5764): `Cb dTb/dt = qFuel - qLm - qTl - qAirG - (qWu + qPan - gcp (Tb - tgF)) - qBR`, `Cb = bedI x 0.84 kJ/kg K` (bed solids only; the lower refractory is its own lump Trf, uaBR 30.8 / uaRW 43.1 kW/K, 204.65 t).
@@ -29,15 +31,16 @@ At steady Fb = F (all fed coal burns); the store at MCR is `U.cbed = 0.61 x 89 x
 - fV: coal crusher spec K1AU3-D2-0-102 R0 p4 (already cited in unit.js line 2168): VM 30.56 %, FC 28.67 % as received, char 61 % of the LHV -> **fV = 0.39**.
 - tauC, char burnout, diffusion controlled (shrinking particle, textbook: Basu, Combustion and Gasification in Fluidized Beds, ch. 4; Field et al.):
   `tauC = rho_c d0^2 / (4 Sh D C_O2 M_C)`, Sh = 2 (fine particle in a fast bed), D_O2 = 2.0e-5 x (T/298)^1.75 = 2.04e-4 m2/s at 850 C, C_O2 = p / (R T) x y = 10.85 mol/m3 x y, M_C 0.012 kg/mol, rho_c ~ 800 kg/m3 (char of a 34 % moisture sub-bituminous, textbook).
-  | d0 | y O2 3 % | 5 % | 8 % |
-  |---|---|---|---|
-  | 1 mm | 126 s | 75 s | 47 s |
-  | 2 mm | 502 s | 301 s | 188 s |
-  | 3 mm | 1130 s | 678 s | 424 s |
-  With the design O2 at the furnace (Fig 7 3.6 % at the exit, more in the lower furnace) and d50 ~ 2 mm: **tauC ~ 300 s**. Carbon in the bed at MCR then = 89 x 0.2867 / 3.6 x 300 = 2.1 t = 1.1 % of the 194 t bed (CFB textbook range 0.5 ~ 3 %: plausible).
-- **PC page needed:** the coal size of the design (crusher spec K1AU3-D2-0-102 PSD, or FHI P2S7 Tab 2 coal size) to fix d50. Until then 300 s is a CALC with d50 2 mm, written NO-SOURCE on d50 only.
+  Coal size, **design source** (Jennie, PC): crusher spec K1AU3-D2-0-102 R0 section 2-4-4, product 99 % passing the top size 6 ~ 9 mm, **d50 0.7 ~ 1.5 mm**; feed 95 % < 75 mm; max 0.5 % passing 0.45 mm; total moisture 34 % (surface max 14 %). tauC goes with d0^2:
+  | d0 | y O2 3 % | 3.6 % | 5 % | 8 % |
+  |---|---|---|---|---|
+  | 0.7 mm | 62 s | 51 s | 37 s | 23 s |
+  | **1.1 mm (mid)** | 152 s | **127 s** | 91 s | 57 s |
+  | 1.5 mm | 284 s | 236 s | 169 s | 106 s |
+  The lower furnace runs under-stoichiometric (PA / need 0.73 ~ 0.78, section 3), so the O2 the char sees there is low; the design exit O2 (Fig 7, 3.6 %) is the value to use, not more. **tauC = 125 s** (d50 1.1 mm, y 3.6 %, CALC from design size). This is the diffusion-only time: the chemical (kinetic) resistance of the char can only make it longer; it is not added because there is no design char reactivity (NO-SOURCE on the kinetic term only). Write it in code as `DESIGN-SRC: K1AU3-D2-0-102 R0 2-4-4 d50 0.7~1.5 mm; CALC diffusion burnout`.
+  Carbon in the bed at MCR then = 89 x 0.2867 x 125 / 3600 = 0.89 t = 0.46 % of the 194 t bed (CFB textbook 0.5 ~ 3 %: at the low end, as expected from a diffusion-only time).
 
-**Effect on the j11 case** (same 82.5 MW deficit, 10 min, CALC): bed drop 206 C without char; 184 C with tauC 150 s; **161 C with tauC 300 s (860 -> 699 C)**; 134 C with 600 s. Char helps but does not, alone, keep the bed above 700 C if the coal is held 20 T/H under the need for 10 min. So the coal cut itself must be checked too (section 5).
+**Effect on the j11 case** (same 82.5 MW deficit, 10 min, bed tau 480 s, volatiles 0.39 at once, char 0.61 through tauC, CALC): bed drop **207 C without char; 189 C with tauC 125 s (860 -> ~671 C)**; 182 C at the coarse end (169 s); 200 C at the fine end (57 s). The char store is right physics but small; it does not keep the bed above 700 C if the coal is held 20 T/H under the need for 10 min. **The coal cut itself is the thing to fix (section 5).**
 
 ## 3. (B) Where the volatiles burn: the fast answer of the steam
 The volatiles leave the coal in the dense bed but burn where the oxygen is. The dense lower furnace gets the PA only; the SA comes in above it. Oxygen in the PA against the demand of the fuel (design, FHI Fig 12 / 13, Tab 2 stoichiometric air 5.43 kg / kg):
@@ -48,18 +51,23 @@ The volatiles leave the coal in the dense bed but burn where the oxygen is. The 
 | 60 | 236 | 56.0 | 304 | 0.78 |
 | 40 | 245 | 38.5 | 209 | 1.17 |
 
-So at 60 ~ 100 % the zone under the SA ports burns only 73 ~ 78 % of the fuel; the rest burns above the SA ports. If the SA ports are above the lower-furnace lump of the model (the refractory zone, grate FL +6,400 to FL +14,264.6), that heat goes into the suspension (to the upper walls and the SH panels) at once, which is the fast steam answer the plant has, and the bed is not charged with it.
+So at 60 ~ 100 % the zone under the SA ports burns only 73 ~ 78 % of the fuel; the rest burns above the SA ports.
+
+**Where the SA ports are (Rev 1, design source).** FHI P2S4 rev1 p2-4-9 (read by Jennie on the PC): "Multiple ports are provided in the refractory-lined section for solids return from the cyclones, secondary air inlet ports, start-up burners and manholes"; the refractory runs to about 7,748 mm above the grate. So the SA enters **inside** the refractory zone, which is the bed lump of the model (bed + refractory Trf). The first version of (B) assumed SA above that zone: FHI does not support it, it is withdrawn.
+
+**What is still released above the lined zone.** With all the air in by ~7.7 m, the volatiles burn there: gas at U0 5.4 m/s crosses the 7.7 m in ~1.4 s, longer than the mixing-limited burnout of volatiles (order 1 s, textbook), so the volatile heat stays in the lined zone. Only char carried up with the circulating solids burns above it, so
 ```
-fUp = max(0, 1 - PA / (afs x Fb))    share of the burnt heat released above the SA ports (capped at fV: only volatiles and CO leave the bed)
-qBed = (1 - fUp) x qFuel ;  qSus = fUp x qFuel   (qSus adds to the suspension stream: Cs (Tb - tgF) = qWu + qPan - qSus)
+fUp = (1 - fV) x xUp     share of the burnt heat released above the refractory zone
+xUp = solids mass above the lined zone / total solids mass (time share of a char particle up there)
 ```
-- **PC page needed:** the SA port elevation (FHI furnace GA, K1AU3-B-0-001 or the SA nozzle drawing). If the SA ports are inside the refractory zone (below FL 14,264.6), (B) changes nothing in the model and only (A) applies. Do not code (B) before this is read.
-- Note: P2S4 of the FHI manual describes staged combustion (PA under-stoichiometric, SA above): the split above is that design, worked out with the design flows.
+xUp is small: the design furnace DP is 1,380 ~ 1,630 mmH2O (Fig 9), almost all of it dense bed; the dilute upper furnace carries some tens of mmH2O (order 3 ~ 6 %, CALC; no design DP profile in the cloud docs). The 1.1 mm char is also coarser than the bed sand (d50 0.15 ~ 0.30 mm, Tab 3), so it stays low even more. **fUp ~ 0.61 x 0.05 = ~3 %**, inside the accuracy of the anchor: **(B) is not coded.** The fast answer of the steam to the firing comes from the solids circulation (phi, kKL) and the steam storage, not from volatiles above the SA.
+- If later a design DP profile of the furnace is found (an upper furnace DP in the I/O list, or the FHI DP profile), xUp can be read from it and fUp put in as above. Until then: not coded, no constant.
+- Exact SA elevation: scanned drawing K1AU3-C-0-004 (no text layer); Jennie can render it, not needed for this conclusion.
 
 ## 4. (C) Solve the anchors again, then kKL
 Order, because each changes the next:
 1. **Bed inventory to Fig 9** (P1 step 2): t0 = 1630 x 119.1 m2 = **194.2 t** at 100 %; at 40 ~ 60 % the design DP is 1380 = 164.3 t, so the inventory share in phi is 1380 / 1630 = **0.847** at 60 %. (The DPICFG108 SV must follow Fig 9 with the load: logic / operator set point; check the ABC-009A SV source: if the drawing has no load curve, the operator sets it, per Fig 9, as a procedure step.)
-2. **Anchor at 150 MW** (tbA 860, tgF 840, walls 146.45 MW, panels 62.5 MW, drum 338.5 C), same CALC as beta.348 but with qBed = (1 - fUp) qFuel if (B) applies: `Cs = (qWu + qPan - qSus) / (tbA - tgF)`, `cSol = Cs - gcp`, `uaS` from the profile. With (A) only, the anchor does not move (steady Fb = F).
+2. **Anchor at 150 MW** (tbA 860, tgF 840, walls 146.45 MW, panels 62.5 MW, drum 338.5 C): (B) is not coded (Rev 1), and with (A) only the anchor does not move (steady Fb = F). Only the inventory share of step 1 changes it.
 3. **kKL at the FHI 60 % point** (Fig 12 air 371 T/H, Fig 13 coal 56.0, Fig 8 furnace 755 C, bed 860 held, inventory share 0.847):
    `phi60 = (solids heat flow needed) / cSol`, from the bed balance at those flows (Jennie's d3solve.cjs, the app's laws);
    `uRel60 = 371 / 596 = 0.6225` (same Tb); `kKL = -ln(phi60 / 0.847) / (1 / uRel60 - 1)`.
@@ -91,10 +99,10 @@ At 45 MW the margin to the 700 C coal-firing permissive is only ~45 C with the l
 1. `tests/regress/bed_heatup.js` (energy check U.bbQ, beta.366): must still close within 3 % with the char store.
 2. New, steady: at the 7 HB cases with the FHI air and coal, the bed, Fig 8 furnace and Fig 9 DP of the table above (`tools/accept/part1.cjs` rows + a sweep of `docs/accept/curves`).
 3. New, dynamic: 150 MW, a 5 MW step down and up: no drum level HH (the reason 3.8 was held); then the ramp 150 -> 90 -> 45 at the logic rate (section 5 pass test). Headless, settle 20 / window 10 while working; the full run once for the PR.
-4. Char store at MCR: U.cbed ~ 0.61 x 89 x tauC / 3600 = 4.5 t coal-eq at 300 s (2.1 t of carbon): check it reads that.
+4. Char store at MCR: U.cbed ~ 0.61 x 89 x 125 / 3600 = 1.9 t coal-eq (0.89 t of carbon): check it reads that.
 
 ## 8. PC pages (one sitting)
-1. Coal size: crusher spec K1AU3-D2-0-102 R0 (PSD) or FHI P2S7 Tab 2 coal size (tauC).
-2. SA port elevation: FHI furnace GA / SA nozzle drawing (decides if (B) applies).
+1. Coal size: DONE (Rev 1, crusher spec K1AU3-D2-0-102 R0 2-4-4, d50 0.7 ~ 1.5 mm).
+2. SA port location: DONE (Rev 1, FHI P2S4 rev1 p2-4-9, inside the refractory zone). Exact elevation K1AU3-C-0-004 (scan) only if a furnace DP profile is found later.
 3. ABC-001C PIC-COBM SV source and the MW -> pressure curve; ABC-004A feeder MV limits (already in the app sheets: read in the app, no PC needed).
 4. ABC-009A DPICFG108 SV: fixed or load curve (in the app sheets).
