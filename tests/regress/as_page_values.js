@@ -41,21 +41,30 @@ const html =
     DITL150.apply();
   });
   await run(300);
-  await page.evaluate(() => lsPlant(true));
-  await page.waitForTimeout(1000);
-  await page.evaluate(() => document.querySelector('#pllist button[data-id="MK08"]').click());
-  await page.waitForTimeout(2500);
-  const read = () =>
-    page.evaluate(K => Object.fromEntries(K.map(k => [k, (document.querySelector(`[data-v="${k}"]`) || {}).textContent || null])), K);
+  /* beta.359 (ROSÉ): the old page 08 is gone. The values are on the HX page Auxiliary steam and vacuum, MV-AS1011 on Reheat steam;
+     each page is opened the way the app opens it (lsShellC.openPage, the page picker of the Plant view) and read from what it shows */
+  const read = async () => {
+    const o = {};
+    for (const [pg, keys] of [['HX-aux-steam', K.filter(k => k !== 'ZT-AS1011')], ['HX-reheat-steam', ['ZT-AS1011']]]) {
+      await page.evaluate(pg => lsShellC.openPage(pg), pg);
+      await page.waitForFunction(pg => (document.querySelector('#plantws .plpick') || {}).value === pg, pg, { timeout: 20000 });
+      await page.waitForTimeout(2500);
+      Object.assign(o, await page.evaluate(keys => Object.fromEntries(keys.map(k => [k, (document.querySelector(`#plantws .hx-val[data-hv="${k}"]`) || {}).textContent || null])), keys));
+    }
+    return o;
+  };
   const a = await read();
-  const m = await page.evaluate(() => ({ cdP: AN.unit.cdP, MW: AN.unit.MW }));
+  const m = await page.evaluate(() => ({ cdP: AN.unit.cdP, MW: AN.unit.MW, Ts: anTsatA(AN.unit.cdP), f1: AN.unit.tt['ZT-AS1020-1'], f2: AN.unit.tt['ZT-AS1020-2'] }));
   console.log(JSON.stringify(a));
   const num = s => (s == null ? NaN : parseFloat(s));
   const near = (k, v, d) => Math.abs(num(a[k]) - v) <= d;
   ck(K.every(k => a[k] && !/-----/.test(a[k])), 'page 08: every value shows a number: ' + K.map(k => k + ' ' + a[k]).join(', '));
   ck(['PTST11101', 'PTST11102', 'PTST11103'].every(k => Math.abs(num(a[k]) - m.cdP) < 0.002) && near('PTST11101', 0.056, 0.012), `exhaust hood pressure ${a.PTST11101} = condenser ${m.cdP.toFixed(3)} kg/cm2A (29.PNG 0.056 / 0.053 / 0.053)`);
-  ck(near('TEST11101', 38, 3), `exhaust hood temperature ${a.TEST11101} C (29.PNG 38 / 38 / 37, the condenser saturation)`);
-  ck(near('ZT-AS1020-1', 0.1, 1) && near('ZT-AS1020-2', 32.2, 2), `PCV-AS1020-1 / -2 ${a['ZT-AS1020-1']} / ${a['ZT-AS1020-2']} % (29.PNG 0.1 / 32.2)`);
+  /* beta.359 (ROSÉ): a plant snapshot is no target (design is the model). On load the LP exhaust is wet steam: the hood temperature is the
+     saturation at the hood (= condenser) pressure (tcs.js tcsAux, 15 % load and up) */
+  ck(['TEST11101', 'TEST11102', 'TEST11103'].every(k => Math.abs(num(a[k]) - m.Ts) <= 1.5), `exhaust hood temperature ${a.TEST11101} / ${a.TEST11102} / ${a.TEST11103} C = saturation ${m.Ts.toFixed(1)} C at ${m.cdP.toFixed(3)} kg/cm2A`);
+  /* beta.359: the two cold reheat valves are the ABC-030 F(X) of the PIC-AS1005 output (unit.js): the page shows the logic value */
+  ck(near('ZT-AS1020-1', m.f1, 0.11) && near('ZT-AS1020-2', m.f2, 0.11), `PCV-AS1020-1 / -2 page ${a['ZT-AS1020-1']} / ${a['ZT-AS1020-2']} % = F(X) of PIC-AS1005 ${m.f1} / ${m.f2} %`);
   ck(near('PTGS10011', 0.32, 0.01) && near('TEGS1002', 364, 15) && near('TEGS1003', 362, 15) && near('TT-AS1015', 257, 15), `gland header ${a.PTGS10011} kg/cm2, ${a.TEGS1002} / ${a.TEGS1003} C, TT-AS1015 ${a['TT-AS1015']} C (29.PNG 0.32, 364 / 362, 257)`);
   ck(near('PV-GS1034', 42.6, 2) && num(a['ZT-AS1011']) === 0, `unloading valve PV-GS1034 ${a['PV-GS1034']} % (29.PNG 42.6), HP warming MV-AS1011 ${a['ZT-AS1011']} % (4.PNG 0.0)`);
   /* PIC-AS1005 MANUAL 50 %: the two cold reheat valves by their F(X) */

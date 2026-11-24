@@ -216,9 +216,11 @@
         { x: 1460, y: 378, s: 'Unloading valve', key: 'PV-GS1034', unit: '%', dp: 1 },
         { x: 1440, y: 500, s: 'CONDENSER', cls: 'hx-zone' },
         { x: 1440, y: 520, s: 'Pressure', key: 'PT-CD1110', unit: K + ' abs', dp: 3 },
-        { x: 1440, y: 536, s: 'Vacuum 1', key: 'PTST11101', unit: '', dp: 1 },
-        { x: 1440, y: 552, s: 'Vacuum 2', key: 'PTST11102', unit: '', dp: 1 },
-        { x: 1440, y: 568, s: 'Vacuum 3', key: 'PTST11103', unit: '', dp: 1 },
+        /* beta.359 (ROSÉ, test as_page_values): PT-ST1110-1 ~ 3 are the exhaust hood absolute pressures in kg/cm² A like the condenser
+           (29.PNG 0.056 / 0.053 / 0.053 at 151 MW): with no unit and 1 decimal they read 0.1; now unit and 3 decimals as PT-CD1110 */
+        { x: 1440, y: 536, s: 'Hood pressure 1', key: 'PTST11101', unit: K + ' abs', dp: 3 },
+        { x: 1440, y: 552, s: 'Hood pressure 2', key: 'PTST11102', unit: K + ' abs', dp: 3 },
+        { x: 1440, y: 568, s: 'Hood pressure 3', key: 'PTST11103', unit: K + ' abs', dp: 3 },
         { x: 1440, y: 944 /* UI check 2026-11-24: under the spray valve and its opening */, s: 'Exhaust hood 1', key: 'TEST11101', unit: '°C', dp: 0 },
         { x: 1440, y: 960, s: 'Exhaust hood 2', key: 'TEST11102', unit: '°C', dp: 0 },
         { x: 1440, y: 976, s: 'Exhaust hood 3', key: 'TEST11103', unit: '°C', dp: 0 }
