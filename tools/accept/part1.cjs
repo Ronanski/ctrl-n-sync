@@ -185,14 +185,16 @@ const judge = (v, tg, tol, kind) => {
          call of the page button). Rate 0.4 %/min = 0.6 MW/min, PR-OPE-5003 load down 90 to 45 MW (uat check M5). */
       if (s.tm === 'MAN' && !OP.tcs) {
         const r = await page.evaluate(a => AN.turbine('loadup', { mw: a, rate: 0.4 }), OP.aim);
-        OP.tcs = true;
+        /* refused while DCS CONTROL MODE is still ON (I.0082 drops 2 ~ 3 s after M.2016): press again next minute */
+        OP.tcs = !r;
         OP.log.push('TCS LOAD UP ' + OP.aim + ' MW at 0.4 %/min at MSF ' + s.msf.toFixed(0) + (r ? ' (' + r + ')' : ''));
       }
-      /* the firing by hand (guide 7.2): one HIC-BM press of 1 % a minute at most, on the pressure error and its trend (the operator
-         reads the MSP trend: a pressure already turning back toward the SV is left alone) */
+      /* the firing by hand (guide 7.2): one HIC-BM press of 1 %, then 3 min watching the 3-min MSP trend before the next (the bed
+         answers a firing change in ~10 min; a press every minute overshoots and swings the coal 23 <-> 41 T/H, D15 study 2026-11-24) */
       if (s.bm === 'MAN') {
-        const dP = OP.pP == null ? 0 : s.P - OP.pP, d = 0.3 * (s.sv - s.P) - 1.5 * dP;
-        if (Math.abs(d) >= 0.5) await fpBtn('ABC-001C', 'HIC-BM', d > 0 ? '▲' : '▼');
+        OP.h = OP.h || []; OP.h.push(s.P); OP.n = (OP.n || 0) + 1;
+        const dP3 = OP.h.length > 3 ? s.P - OP.h[OP.h.length - 4] : 0, d = 0.3 * (s.sv - s.P) - 1.0 * dP3;
+        if (OP.n - (OP.last || -9) >= 3 && Math.abs(d) >= 0.5 && (OP.last = OP.n)) await fpBtn('ABC-001C', 'HIC-BM', d > 0 ? '▲' : '▼');
       }
       /* the O2 trim AICFG112 (ABC-002) is forced MANUAL below 220 T/H (M.0102 / M.0103); the operator puts it at 50 % = neutral
          (OPERATOR_GUIDE 5.4 / 7.7, uat check M5). Left at its last MV the trim holds the air off its demand, and the total air cross
@@ -227,6 +229,15 @@ const judge = (v, tg, tol, kind) => {
     OP.aim = 45;
     /* the TCS ramp to the aim first (0.6 MW/min below 220 T/H), then the settle time */
     for (let m = 0; m < 120 && Math.abs((await st()).MW - OP.aim) > 1; m++) await runOp(1);
+    /* 1.0.0-beta.356 (D15, user 2026-11-24 "Ang design ang masusunod"): the design main steam pressure of the 45 MW point is the HB
+       case 7 sliding pressure (PPE-14-0725, 98.9, the Pms target of this column), not the 123 ~ 126 of PR-OPE-5003. The operator slides
+       the PIC-COBM SV down 0.5 kg/cm2 a minute on its faceplate (no step: a step to 98.9 cut the coal to 17 T/H and tripped on
+       FURNACE TEMP. INADEQUATE FOR COAL FIRING) */
+    for (let sv = (await st()).sv; sv > T.find(t => t[0] === "Pms")[2][0]; ) {
+      sv = Math.max(T.find(t => t[0] === "Pms")[2][0], sv - 0.5);
+      await page.evaluate(v => TOP.auto("PIC-COBM", v), sv);
+      await runOp(1);
+    }
     await runOp(SETTLE);
     R[45] = await win();
     const f = x => (isFinite(x) ? (Math.abs(x) >= 100 ? x.toFixed(1) : x.toFixed(2)) : '-');
