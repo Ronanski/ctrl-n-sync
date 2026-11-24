@@ -8,7 +8,7 @@ derived ISA-18.2 priority.
 
 `p`: 1 EMERGENCY, 2 HIGH, 3 MEDIUM, 4 LOW. Every row has `src`.
 
-## Lane 5 rows (2026-11-25, beta.435)
+## Lane 5 rows (2026-11-25, beta.445)
 
 The group files hold the points of "Alarm List _20160912-DCS temporary value updating.xls" (15 sheets, 717 tags) that have an I/O
 address in the app and a set point or a switch, and that no ABC alarm block alarms yet: 371 points, one row per level (705 rows).

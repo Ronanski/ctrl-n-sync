@@ -1,4 +1,4 @@
-# v1.0.0-beta.435 (ALARMS AND CURVES : AKIHO, lane 5): alarm list rows at DITL-80L
+# v1.0.0-beta.445 (ALARMS AND CURVES : AKIHO, lane 5): alarm list rows at DITL-80L
 
 ## Ano ang nagbago
 - **Alarm list sa app (src/data/alarms, 24 group file):** 371 points mula sa "Alarm List _20160912" na may I/O address at set point o switch, pero wala pang ABC alarm block: 705 row (isang row bawat level: HIGH-HIGH, HIGH, LOW, LOW-LOW, switch). Bawat row ay may sheet at PD page ng list, station at address ng I/O list.
