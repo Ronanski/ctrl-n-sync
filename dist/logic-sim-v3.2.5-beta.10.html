@@ -156636,10 +156636,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 3f4b951'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 7ab619e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 3f4b951';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 7ab619e';
     } catch (e) {}
   };
   upd();
@@ -347190,7 +347190,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 3f4b951'));
+    row('Version', E('span', 'scsver', ver + ' · build 7ab619e'));
   }
   function openSet(near) {
     if (!set) {
@@ -366671,6 +366671,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(E('deaerator', '', '', [], { id: 'dea' }), DAX, DAY, { id: 'da', under: true, sc: DAS }),
         at(L('condensate', 'Condensate', { back: true }), 110, DAY - 30 * DAS, { id: 'cdl' }),
         at(X('MV-TS1003', 'Extraction 3 valve'), 520, DAY - 12 * DAS, { id: 'ts3', lab: 't' }),
+        /* lane 7 (MINAMI): I/O list station 2: LSLL-CD1104-4 I.004C (read by DITL-23B, feed pump trip); the suction valve limit
+           switches ZSO-FW1031 I.028F (DITL-23A) / ZSO-FW1032 I.032F (V-FW1001 / 1002 of PD-017, hand valves with a limit switch) */
+        at(HX.B('Deaerator level low low', 'data-di="LSLL-CD1104-4|LOW LOW|NORMAL"', { w: 170 }), 600, 335, { id: 'dall' }),
+        at(HX.B('Pump A suction valve', 'data-di="ZSO-FW1031|OPEN|NOT OPEN"', { w: 160 }), 330, 978, { id: 'sva' }),
+        at(HX.B('Pump B suction valve', 'data-di="ZSO-FW1032|OPEN|NOT OPEN"', { w: 160 }), 680, 978, { id: 'svb' }),
         at(L('extraction', 'Extraction steam', { back: true }), 680, DAY - 12 * DAS, { id: 'exl3' }),
 
         /* ---- the two boiler feed pumps with their discharge valves ---- */
@@ -367073,6 +367078,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(X('MV-CD1007', 'Polisher inlet valve', { wrap: 12 }), 800, 505, { id: 'pin', rot: -90, lab: 'l', ly: -25 }),
         at(C('FICCD1121', 'Polisher bypass valve', { tag: 'FCV-CD1121', wrap: 14 }), 885, HY, { id: 'pby', lab: 't' }) /* UI check 2026-11-24 B2: its output clear of the flash spray 1 line */,
         at(X('MV-CD1008', 'Polisher outlet valve', { wrap: 12 }), 1000, 505, { id: 'pout', rot: 90, lab: 'l', ly: -31 }),
+        /* lane 7 (MINAMI): the ready signal of the polisher package (I/O list station 2 I.025F), read by DITL-64 (polisher inlet valve) */
+        at(HX.B('Polisher train ready', 'data-di="RY-CD01|READY|NOT READY"', { w: 150 }), 900, 330, { id: 'prdy' }),
         at(C('FICCD1120', 'Minimum flow valve', { tag: 'FCV-CD1120' }), 700, RY, { id: 'mf', lab: 't' }),
         at(
           C('LICCD1110B', 'Level dump valve', { tag: 'LCV-CD1110', wrap: 10, cname: 'Hotwell level dump valve' }),
@@ -369382,6 +369389,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           { id: 'h6', sc: 1.3, lab: 'b' }
         ),
         at(X('XV-FS1005', 'Flash pipe drain valve', { wrap: 12 }), 470, 940, { id: 'fs', lab: 't' }),
+        /* lane 7 (MINAMI): the flash pipe level switches of the I/O list (station 3 I.053D / I.053E), read by DITL-57 */
+        at(HX.B('Flash pipe level high', 'data-di="LS-FS1410|HIGH|NORMAL"', { w: 150 }), 700, 930, { id: 'fsh' }),
+        at(HX.B('Flash pipe level low', 'data-di="LS-FS1411|LOW|NORMAL"', { w: 150 }), 860, 930, { id: 'fsl' }),
         at(L('reheat-steam', 'Cold reheat steam', { back: true }), 590, 700, { id: 'crl' }),
         at(L('feedwater', 'Feedwater heaters'), 1660, 60, { id: 'fwl' }),
         at(L('condensate', 'Condensate heaters'), 1480, 60, { id: 'cdl' })

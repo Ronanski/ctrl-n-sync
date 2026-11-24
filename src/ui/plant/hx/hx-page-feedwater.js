@@ -100,6 +100,11 @@
         at(E('deaerator', '', '', [], { id: 'dea' }), DAX, DAY, { id: 'da', under: true, sc: DAS }),
         at(L('condensate', 'Condensate', { back: true }), 110, DAY - 30 * DAS, { id: 'cdl' }),
         at(X('MV-TS1003', 'Extraction 3 valve'), 520, DAY - 12 * DAS, { id: 'ts3', lab: 't' }),
+        /* lane 7 (MINAMI): I/O list station 2: LSLL-CD1104-4 I.004C (read by DITL-23B, feed pump trip); the suction valve limit
+           switches ZSO-FW1031 I.028F (DITL-23A) / ZSO-FW1032 I.032F (V-FW1001 / 1002 of PD-017, hand valves with a limit switch) */
+        at(HX.B('Deaerator level low low', 'data-di="LSLL-CD1104-4|LOW LOW|NORMAL"', { w: 170 }), 600, 335, { id: 'dall' }),
+        at(HX.B('Pump A suction valve', 'data-di="ZSO-FW1031|OPEN|NOT OPEN"', { w: 160 }), 330, 978, { id: 'sva' }),
+        at(HX.B('Pump B suction valve', 'data-di="ZSO-FW1032|OPEN|NOT OPEN"', { w: 160 }), 680, 978, { id: 'svb' }),
         at(L('extraction', 'Extraction steam', { back: true }), 680, DAY - 12 * DAS, { id: 'exl3' }),
 
         /* ---- the two boiler feed pumps with their discharge valves ---- */
