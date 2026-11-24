@@ -156625,10 +156625,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 6c0ba73'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 2ed6bb5'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 6c0ba73';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 2ed6bb5';
     } catch (e) {}
   };
   upd();
@@ -157327,7 +157327,16 @@ function vplace(R, S, L, bs) {
   for (const p of R.pl || []) {
     const xs = p.p.map(q => q[0]),
       ys = p.p.map(q => -q[1]);
-    SH.push([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]);
+    /* beta.363 (ROSÉ): a closed outline is an obstacle as its box only when it is a symbol (up to 15 units across); the box of a big
+       outline (a frame round a group) is mostly empty paper, and counted whole it put about 1200 on every place inside it */
+    const bx = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+    if (bx[2] - bx[0] <= 15 && bx[3] - bx[1] <= 15) SH.push(bx);
+    else
+      for (let i = 0; i < p.p.length; i++) {
+        const q = p.p[i],
+          r = p.p[(i + 1) % p.p.length];
+        SG.push([q[0], -q[1], r[0], -r[1]]);
+      }
   }
   const W0 = 6 * bs * 0.62,
     W = W0,
@@ -157450,17 +157459,31 @@ function vplace(R, S, L, bs) {
     let best = null;
     const cx = (T[0] + T[2]) / 2,
       cy = (T[1] + T[3]) / 2;
-    for (const g of GP)
-      for (const [al, r, ax, ay] of [
-        ['r', [T[2] + g, cy - H / 2, T[2] + g + W, cy + H / 2], T[2], cy],
-        ['b', [cx - W / 2, T[3] + g * 0.6, cx + W / 2, T[3] + g * 0.6 + H], cx, T[3]],
-        ['t', [cx - W / 2, T[1] - g * 0.6 - H, cx + W / 2, T[1] - g * 0.6], cx, T[1]],
-        ['l', [T[0] - g - W, cy - H / 2, T[0] - g, cy + H / 2], T[0], cy]
-      ]) {
-        const s = score(r, own) + g * 0.3 + pf[al];
-        if (!best || s < best.s) best = { s, r, al, ax, ay };
-        if (best.s < 0.9) break;
-      }
+    /* beta.363 (ROSÉ): when every place up to the last gap still lies on a wire (12 = one crossing), the search goes on further out
+       (ABC-003A: the FICFA1043A value had 9 units between its block and the next vertical wire and needs 11.6) */
+    const tryG = gs => {
+      for (const g of gs)
+        for (const [al, r, ax, ay] of [
+          ['r', [T[2] + g, cy - H / 2, T[2] + g + W, cy + H / 2], T[2], cy],
+          ['b', [cx - W / 2, T[3] + g * 0.6, cx + W / 2, T[3] + g * 0.6 + H], cx, T[3]],
+          ['t', [cx - W / 2, T[1] - g * 0.6 - H, cx + W / 2, T[1] - g * 0.6], cx, T[1]],
+          ['l', [T[0] - g - W, cy - H / 2, T[0] - g, cy + H / 2], T[0], cy],
+          /* beside a box more than two lines high: also level with its upper and its lower part (ABC-004A: the timer's output wire
+             leaves it in the middle, the value goes right of it above that wire) */
+          ...(T[3] - T[1] > 2 * H
+            ? [T[1] + H / 2, T[3] - H / 2].flatMap(y => [
+                ['r', [T[2] + g, y - H / 2, T[2] + g + W, y + H / 2], T[2], y],
+                ['l', [T[0] - g - W, y - H / 2, T[0] - g, y + H / 2], T[0], y]
+              ])
+            : [])
+        ]) {
+          const s = score(r, own) + g * 0.3 + pf[al];
+          if (!best || s < best.s) best = { s, r, al, ax, ay };
+          if (best.s < 0.9) break;
+        }
+    };
+    tryG(GP);
+    if (best && best.s >= 12) tryG([15, 18, 22]);
     if (best) {
       put(b, best.r, best.al, best.ax, best.ay);
       b.t.dataset.at = own ? own.t : '';
@@ -157469,8 +157492,11 @@ function vplace(R, S, L, bs) {
   };
   /* a point on a wire: along the wire, beside a vertical piece (level), above / below a horizontal one (centred) */
   const alongNet = b => {
-    const n = b.n,
-      segs = (S.nets[n].segs || []).map(i => S.seg[i]).filter(Boolean);
+    const n = b.n;
+    let segs = (S.nets[n].segs || []).map(i => S.seg[i]).filter(Boolean);
+    /* beta.363 (ROSÉ): a net with no wire of its own in the netlist (drawn only) is placed along the drawn wire that ends at its pin, like
+       any other net (ABC-001C: the value sat at the pin on a T of two wires, on the wire, as the four places round a point all cross one) */
+    if (!segs.length && b.pin) segs = R.seg.filter(q => [[q.x1, q.y1], [q.x2, q.y2]].some(([x, y]) => Math.hypot(x - b.pin[0], y - b.pin[1]) < 1.2));
     if (!segs.length) {
       if (b.pin) around(b, [b.pin[0] - 0.3, -b.pin[1] - 0.3, b.pin[0] + 0.3, -b.pin[1] + 0.3], null);
       return;
@@ -157542,6 +157568,39 @@ function vplace(R, S, L, bs) {
     }
   };
   for (const o of L.ov || []) if (o.t) o.t.dataset.eq = o.k;
+  /* beta.363 (ROSÉ): the value of an AO / ACT / PO / ALM box (centred under it) and of a timer (put earlier by place(), which sees a
+     slanted wire as its whole box) keeps its place when nothing is under it. Else it is placed round its box like an address value
+     (around(): below, right, left, above, at growing gaps), scored on the real wire lines, boxes and texts. ABC-054: the PO output wire
+     ran through "20.24 %"; ABC-003E: a timer value sat on the NOT box under the timer */
+  for (const o of L.ov || []) {
+    const tm = o.k === 'TMR';
+    if (!o.t || !(tm || (['AO', 'ACT', 'PO', 'ALM'].includes(o.k) && o.t.getAttribute('text-anchor') === 'middle'))) continue;
+    const B = o.b,
+      w = tm ? 10 * bs * 0.6 : o.k === 'ALM' ? 9 * bs * 0.62 : W /* an alarm shows up to 'HIGH-HIGH' */,
+      x = +o.t.getAttribute('x'),
+      y = +o.t.getAttribute('y'),
+      an = o.t.getAttribute('text-anchor'),
+      x0 = an === 'start' ? x : an === 'end' ? x - w : x - w / 2;
+    /* the height is the text's own (measured with a 6-digit number in it, the widest value it shows): the old box (0.85 H over the
+       base line) was 0.5 unit short at the top, and ABC-009A kept a timer value on the foot of 'TR36' */
+    const t0 = o.t.textContent;
+    o.t.textContent = '888.88';
+    const q = o.t.getBBox();
+    o.t.textContent = t0;
+    const s0 = score([x0, q.height ? q.y : y - H * 0.85, x0 + w, q.height ? q.y + q.height : y + H * 0.2]);
+    if (s0 < 1) continue;
+    /* it moves only to a place that is better than where it was (ABC-004A: round a small timer every place but the one on its own
+       output wire is taken; the old place touched less) */
+    const at0 = ['x', 'y', 'text-anchor', 'dominant-baseline'].map(k => [k, o.t.getAttribute(k)]),
+      ds0 = { ...o.t.dataset };
+    const sa = around({ t: o.t }, [B.x0, -B.y1, B.x1, -B.y0], null, { b: 0, r: 0.4, l: 0.8, t: 1.2 }, w);
+    if (sa >= s0) {
+      PB.pop();
+      for (const [k, v] of at0) v == null ? o.t.removeAttribute(k) : o.t.setAttribute(k, v);
+      for (const k of Object.keys(o.t.dataset)) if (!(k in ds0)) delete o.t.dataset[k];
+      Object.assign(o.t.dataset, ds0);
+    }
+  }
   /* the timer / valve / switch / AO values (placed before, with their own rule) are taken: no wire value on top of them */
   for (const o of L.ov || []) {
     if (!o.t) continue;
@@ -157554,7 +157613,7 @@ function vplace(R, S, L, bs) {
       continue;
     const x = +o.t.getAttribute('x'),
       y = +o.t.getAttribute('y'),
-      w = (o.k === 'TMR' ? 10 : o.k === 'VLV' || o.k === 'SW' ? 5 : 6) * bs * 0.62,
+      w = (o.k === 'TMR' ? 10 : o.k === 'ALM' ? 9 : o.k === 'VLV' || o.k === 'SW' ? 5 : 6) * bs * 0.62,
       md = o.t.getAttribute('text-anchor') === 'middle';
     if (isFinite(x) && isFinite(y)) PB.push([md ? x - w / 2 : x, y - H * 0.85, (md ? x - w / 2 : x) + w, y + H * 0.2]);
   }
@@ -157791,6 +157850,8 @@ function drawSheet(sh) {
       e.style.fontFamily = "Consolas,'Cascadia Mono',monospace";
       e.style.whiteSpace = 'pre';
       e.textContent = l;
+      /* beta.363 (ROSÉ): the table texts are obstacles for the values too (ABC-010: a value was put on 'TOTAL AIR FLOW')*/
+      TXE.set({ t: l, x: X0, y: top - k * dy, h: 3.9 }, e);
     });
     el('line', { x1: X0, y1: -(top - 1.6), x2: X0 + 62, y2: -(top - 1.6), stroke: '#d5dde3', 'stroke-width': 0.3 }, gd);
     /* beta.285 (UI audit D2): the table is part of the sheet, so Fit / Whole sheet shows it too (ABC-001A: it sat above the view) */
@@ -158272,7 +158333,7 @@ function drawSheet(sh) {
         L.ov.push({ b, k: 'TMR', tk, fl, t, w, last: null });
       } else if ((b.k === 'AO' || b.k === 'ACT' || b.k === 'PO') && b.sh && b.sh.p) {
         const e = el('path', { d: mkp(b.sh.p), fill: 'none', 'pointer-events': 'none' }, gb),
-          t = el('text', { x: b.cx, y: -b.y0 + bs * 1.1, class: 'bd', 'text-anchor': 'middle' }, gb);
+          t = el('text', { x: b.cx, y: -b.y0 + bs * 1.35, class: 'bd', 'text-anchor': 'middle' }, gb);
         L.ov.push({ b, k: b.k, e, t, n: inp(b), last: null });
       } else if (b.k === 'ALM') {
         const e = el(
@@ -158280,7 +158341,8 @@ function drawSheet(sh) {
             { x: b.x0, y: -b.y1, width: b.x1 - b.x0, height: b.y1 - b.y0, fill: 'none', 'pointer-events': 'none' },
             gb
           ),
-          t = el('text', { x: (b.x0 + b.x1) / 2, y: -b.y0 + bs * 1.1, class: 'bd', 'text-anchor': 'middle' }, gb);
+          /* beta.363 (ROSÉ): the value line sits 1.35 x the font size under the box (was 1.1: the top of the number touched the box line) */
+          t = el('text', { x: (b.x0 + b.x1) / 2, y: -b.y0 + bs * 1.35, class: 'bd', 'text-anchor': 'middle' }, gb);
         L.ov.push({ b, k: 'ALM', e, t, n: inp(b), last: null });
       } else if (b.k === 'AMT' || b.k === 'SW') {
         const t = el('text', { x: b.x1 + 0.8, y: -b.y0 - bs * 0.2, class: 'bd' }, gb);
@@ -158828,14 +158890,17 @@ function drawSheet(sh) {
     L.bd.push({ n, t, last: null, skip: false, wire: true, pin: [s0.x1, s0.y1] });
   }
   svg.append(g0, go_, gleg, gd, gfg, gf, gp, gt, gcj, L.selg, gb, gx);
+  /* beta.363 (ROSÉ): the sheet's own view is set BEFORE the values are placed. Chrome lays out these small texts (3-4 units) at the
+     size they have on the screen, so a text measured under the view of the sheet painted before was up to 1 unit off the text the
+     operator sees (ABC-017: PTN009001 measured 5.1 high, drawn 5.8; the value under its wire was put on its top edge) */
+  const av = AN.av[sh.name];
+  if (av) svg.setAttribute('viewBox', av.join(' '));
+  else fitView();
   try {
     vplace(R, S, L, bs);
   } catch (e) {
     console.error('vplace', e);
   }
-  const av = AN.av[sh.name];
-  if (av) svg.setAttribute('viewBox', av.join(' '));
-  else fitView();
 }
 /* ---------- paint (live values) ---------- */
 /* symbol colour code (wires keep their own simple colours) */
@@ -346954,7 +347019,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 6c0ba73'));
+    row('Version', E('span', 'scsver', ver + ' · build 2ed6bb5'));
   }
   function openSet(near) {
     if (!set) {

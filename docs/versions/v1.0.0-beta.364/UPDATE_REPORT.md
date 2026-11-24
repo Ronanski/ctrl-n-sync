@@ -36,3 +36,4 @@ Sumunod sa beta.363. Tatlong bahagi: ang bagong permanenteng rule at ang bantay 
 ## Susunod
 
 Boiler physics mula sa FHI geometry: solids vs load (D3 / kKL), bed temperature, bed inventory, fouling bawat bank, bed heat-up sa burners. Pagkatapos: items 6 ~ 10 ng audit, ang curve sweep, at bagong bilang.
+- Sumunod sa beta.363 (Rosé, ABC live values).
