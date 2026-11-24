@@ -1,4 +1,4 @@
-# v1.0.0-beta.470 — Field loader para sa mga lane (lane 0, integrator)
+# v1.0.0-beta.480 — Field loader para sa mga lane (lane 0, integrator)
 
 ## Ano ang bago
 - Bagong folder `src/world/field/`: may isang JS file ang bawat lane (halimbawa `boiler.js`, `bop.js`). Ang file ay tumatawag ng `FIELD.add(lane, rows)`.
