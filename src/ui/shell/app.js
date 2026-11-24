@@ -1851,6 +1851,7 @@
       'At 150 MW',
       'Reset, then the plant at 150 MW in the steady state of its own model (every loop in AUTO), from the line-up of the control-room HMI snapshots',
       () => {
+        window.lsRestartKind = null;
         /* roadmap 3 (SPEC S5 / S6): a starting state is for the plant model ON only: picking one turns the model ON */
         AN._startP = AN.loadStart('150', true).then(
           n => {
@@ -1884,6 +1885,7 @@
       'Cold (start-up from zero)',
       'Reset, the 150 MW anchors, then the plant cold: drum 0 kg/cm2, water and bed 30 C, feeders and fans stopped, oil valves closed, every controller LOCAL + MANUAL 0 %.',
       () => {
+        window.lsRestartKind = null;
         AN._startP = AN.loadStart('cold', true).then(
           n => {
             AN.paint();
@@ -1897,27 +1899,43 @@
         );
       }
     );
-    /* WARM / HOT restart (FHI SECT_7 Fig 3 / Fig 4): the Cold equipment line-up with the heat the boiler and the turbine keep */
-    const rst = (id, kind, label, title, done) =>
+    /* WARM / HOT restart (RULES Q3, user 2026-11-21: Warm and Hot come from a trip at 150 MW that the physics cooled, measured
+       against the ATS criteria; rule 0 2026-11-24: no fixed numbers). Before: the Cold load with the drum, bed and metal of FHI Fig 3 / 4
+       written in (unit.js AN_RESTART). Now: the Cold load (every sheet built, the plant model ON), then the save point of that trip made
+       by real clicks (#stwarm / #sthot of the build, tools/startsaves/make.cjs), as "At 150 MW" puts #st150 */
+    window.lsRestartKind = null;
+    const rst = (id, kind, label, title) =>
       btn(id, label, title, () => {
-        AN._startP = AN.loadStart(kind, true).then(
-          () => (AN.paint(), msg(done)),
-          e => msg('Could not load the ' + kind + ' restart: ' + e.message)
-        );
+        window.lsRestartKind = null;
+        AN._startP = AN.loadStart('cold', true)
+          .then(async () => {
+            const e = document.getElementById('st' + kind),
+              t = e && e.textContent.trim();
+            if (!t || !window.DITL150 || !DITL150.savePut) throw new Error('no ' + kind + ' start in this build');
+            const o = JSON.parse(await gunz(Uint8Array.from(atob(t), c => c.charCodeAt(0))));
+            await DITL150.savePut({ kf: o.kf, kd: o.kd, ver: o.ver || '' });
+            try {
+              svFltPut(o.flt);
+            } catch (er) {}
+            window.lsRestartKind = kind;
+            AN.paint();
+            if (window.lsShellC && lsShellC.reset) lsShellC.reset();
+            if (window.lsEventAdd) lsEventAdd('DCS', 'DCS', kind.toUpperCase() + ' restart loaded: ' + o.name);
+            msg(title + '. Press Run.');
+          })
+          .catch(e => msg('Could not load the ' + kind + ' restart: ' + e.message));
       });
     rst(
       'loadwarm',
       'warm',
-      'Warm restart (down 8 ~ 56 h)',
-      'FHI Fig 3: drum 40 kg/cm2, bed about 360 C, turbine metal in the WARM band; every machine stopped as in Cold. The furnace purge is needed (bed below 700 C)',
-      'Warm restart: drum 40 kg/cm2, bed about 360 C, turbine WARM. Press Run, then start the utilities, fans, purge and burners as in the cold start.'
+      'Warm restart',
+      'Warm restart: about 13 h after a trip at 150 MW, boiler bottled up, HP turbine metal 404 °C (ATS WARM band), bed 323 °C, drum 108 kg/cm²'
     );
     rst(
       'loadhot',
       'hot',
-      'Hot restart (down under 8 h)',
-      'FHI Fig 4: drum 100 kg/cm2, bed about 700 C, turbine metal in the HOT band; every machine stopped as in Cold',
-      'Hot restart: drum 100 kg/cm2, bed about 700 C, turbine HOT. Press Run, then start the utilities and fans; the logic decides the purge.'
+      'Hot restart',
+      'Hot restart: shortly after a turbine trip at 150 MW, boiler bottled up, HP turbine metal 487 °C (ATS HOT band)'
     );
     /* 3.2.1 SAVE POINTS (user 2026-11-08 "approved lahat", testing plan 1): the whole plant at this moment (every ABC and DITL sheet, the
        turbine, the plant models, the modes) is kept in this browser (IndexedDB) under a name; LOAD puts it
@@ -2030,6 +2048,7 @@
         if (!!q.on !== want.w.includes(q.id)) WORLD.ftrip(q.id, !q.on);
     };
     const svLoad = e => {
+      window.lsRestartKind = null;
       if (AN.pauseOn && AN.run) AN.pauseOn();
       msg('Loading save point ' + e.name + '...');
       return Promise.resolve(DITL150.savePut({ kf: e.kf, kd: e.kd, ver: e.ver || '' })).then(() => {
@@ -2344,11 +2363,7 @@
     /* Mina beta.154: Warm / Hot restart were only in the TCS / Field menu: they are starting states of the unit as Cold and 150 MW */
     const NAMES = { plantCold: 'Cold', plantLoad150: '150 MW', plantWarm: 'Warm restart', plantHot: 'Hot restart' };
     const stNow = () =>
-      AN.startState === 'plantCold' && AN.restartKind === 'warm'
-        ? 'plantWarm'
-        : AN.startState === 'plantCold' && AN.restartKind === 'hot'
-          ? 'plantHot'
-          : AN.startState;
+      window.lsRestartKind === 'warm' ? 'plantWarm' : window.lsRestartKind === 'hot' ? 'plantHot' : AN.startState;
     const model = () => (!(window.AN && AN.plantOn) ? 'off' : 'unit');
     let pick = null;
     const txt = () => {
