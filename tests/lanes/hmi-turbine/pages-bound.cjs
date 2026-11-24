@@ -22,7 +22,9 @@ const unz = f => {
 const PAGES = [
   ['heater-drains', 'heater-drains'],
   ['industrial-water', 'industrial-water'],
-  ['turbine-interface', 'turbine-interface']
+  ['turbine-interface', 'turbine-interface'],
+  ['turbine-operation', 'turbine-operation'],
+  ['turbine-valves', 'turbine-valves']
 ];
 const abc = unz('src/data/apre.txt'),
   ditl = unz('src/data/pre.txt'),
@@ -78,6 +80,22 @@ for (const [file, id] of PAGES) {
     n++;
     if (!ditl.includes('"' + m[1] + '"') && !io.has(m[1]))
       fail(id + ': state ' + m[1] + ' is read by no DITL sheet and is not an I/O row');
+  }
+  /* TCS operator buttons and lamps: a 'crt:CRT:<sheet>.<tag>' button names a port its TCE / TCA sheet draws; a 'crtl:<sheet>|<key>'
+     lamp names a CRT lamp key that sheet draws (src/digital/tce/<sheet>.js) */
+  const tce = sid => {
+    try {
+      return rd('src/digital/tce/' + sid + '.js');
+    } catch (e) {
+      return '';
+    }
+  };
+  for (const x of it.filter(x => x.k === 'hook' && /^crtl?:/.test(x.hook))) {
+    n++;
+    const b = /^crt:CRT:([A-Z0-9]+)\.(.+)$/.exec(x.hook),
+      l = /^crtl:([A-Z0-9]+)\|(.+)$/.exec(x.hook),
+      [sid, key] = b ? [b[1], b[2]] : l ? [l[1], l[2]] : [null, null];
+    if (!sid || !tce(sid).includes("'" + key + "'")) fail(id + ': TCS ' + (b ? 'button ' : 'lamp ') + x.hook + ' is not drawn on its sheet');
   }
   for (const k of keys) {
     n++;
