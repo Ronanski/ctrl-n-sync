@@ -411,6 +411,20 @@ const has = (txt, tag) => {
     });
   }
   /* the feedback tags the DITL valve / motor models answer by name (03b-sim.js: ZSO / ZSC / MIT / MIL of each motor valve, MIR of a motor) */
+  /* field signal rows of the lanes (src/world/field/<lane>.js, FIELD.rows, read by AN.fieldRead): a value source by I/O address
+     (stn|AIxxxx) or by tag. A point with a field row and no logic sheet is MODEL / HMI ONLY (frozen rule 4); "value" = the point carries
+     a live value in the running app (LINKED, or a field row) */
+  const fNorm = t =>
+    String(t || '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '');
+  const fKey = new Set(),
+    fTag = new Set();
+  const FROWS = (E.ctx.FIELD && E.ctx.FIELD.rows) || [];
+  for (const r of FROWS) {
+    if (r.stn && r.ai) fKey.add(r.stn + '|' + String(r.ai).toUpperCase());
+    if (r.tag) fTag.add(fNorm(r.tag));
+  }
   const fbTag = new Map();
   for (const sx of allD())
     if (sx.nl) {
@@ -511,6 +525,7 @@ const has = (txt, tag) => {
         const live = aOn.some(x => x.moving) || dOn.some(x => x.moving);
         const ex = EXCL.test(o.d || '') || EXCL.test(tag);
         const byModel = fbTag.get(tag);
+        const field = fKey.has(stn + '|' + String(key).toUpperCase()) || fTag.has(fNorm(tag));
         let st8 = byModel
           ? 'LINKED'
           : onLogic && !srcOk && clashed
@@ -523,7 +538,7 @@ const has = (txt, tag) => {
                 ? 'ON DRAWING, NOT ON A ROW'
                 : dAny.length
                   ? 'ON SHEET, STATION UNSURE'
-                  : model || hmi
+                  : model || hmi || field
                     ? 'MODEL / HMI ONLY'
                     : 'UNLINKED';
         IO.push({
@@ -539,6 +554,8 @@ const has = (txt, tag) => {
           model,
           hmi,
           live,
+          field,
+          value: st8 === 'LINKED' || field,
           input
         });
       } else {
@@ -660,7 +677,11 @@ const has = (txt, tag) => {
       clashRows,
       clashPoints: clashList.length,
       unlinked: byStatus('UNLINKED'),
-      moving: cnt(ioIn, x => x.live)
+      moving: cnt(ioIn, x => x.live),
+      fieldRows: FROWS.length,
+      field: cnt(ioIn, x => x.field),
+      value: cnt(ioIn, x => x.value),
+      valueFieldOnly: cnt(ioIn, x => x.value && x.status !== 'LINKED')
     },
     mem: {
       named: MEM.length,
@@ -711,7 +732,22 @@ const has = (txt, tag) => {
       .join('\n') + '\n';
   fs.writeFileSync(
     path.join(OUT, 'trace-io.csv'),
-    csv(IO, ['stn', 'key', 'tag', 'type', 'status', 'excluded', 'live', 'model', 'hmi', 'abc', 'ditl', 'desc'])
+    csv(IO, [
+      'stn',
+      'key',
+      'tag',
+      'type',
+      'status',
+      'excluded',
+      'value',
+      'field',
+      'live',
+      'model',
+      'hmi',
+      'abc',
+      'ditl',
+      'desc'
+    ])
   );
   fs.writeFileSync(path.join(OUT, 'trace-mem.csv'), csv(MEM, ['stn', 'key', 'status', 'abc', 'ditl', 'desc', 'rem']));
   fs.writeFileSync(
@@ -796,6 +832,16 @@ const has = (txt, tag) => {
       C.io.unlinked +
       '; moving in the run ' +
       C.io.moving
+  );
+  L.push(
+    '- I/O with a live value in the running app (LINKED, or a field row of a lane): ' +
+      C.io.value +
+      ' (of these by a field row only ' +
+      C.io.valueFieldOnly +
+      '); field rows loaded ' +
+      C.io.fieldRows +
+      ', I/O points they name ' +
+      C.io.field
   );
   L.push(
     '- Memory with a name: ' +

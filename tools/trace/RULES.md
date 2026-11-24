@@ -44,3 +44,12 @@ the row below (cells by the drawn number r.n). Counting rules unchanged; only th
 - LINKED 1,482 -> 1,524; on a sheet no source 142 -> 112; on the drawing not on a row 199 -> 195; only on another machine's copy 23 -> 15;
   station unsure 16 -> 16; model / page only 224 -> 224; nowhere 527 -> 527; excluded 89.
 - B1 DITL input rows with no source 1,060 -> 255; B5 165 points on 294 rows -> 141 points on 226 rows; B1 ABC 102, B2 443, B3 16, B4 9 unchanged.
+
+## Field rows (2026-11-25 06:50 PHT, asked by KIRARA via the coordinator)
+FIELD.rows of the lanes (src/world/field/<lane>.js) count as a value source by I/O address (stn|AIxxxx) or tag. Frozen statuses unchanged:
+a point with a field row and no logic sheet is MODEL / HMI ONLY (rule 4); on a sheet, the field row writes the AI block / DITL row in the
+run and the existing source rule applies. New column "value" (CSV) and summary line: the point carries a live value in the running app
+(LINKED, or a field row). Same tool, 150 MW 5 plant min:
+- main fa7eb69 (no field rows yet): value 1,524 (field only 0); statuses as the 06:40 baseline.
+- lane 3 branch beta.493 (boiler.js, 50 rows): value 1,524 -> 1,574 (field only 50); MODEL / HMI ONLY 224 -> 268, UNLINKED 527 -> 483, B2 443 -> 399.
+- lane 4 branch (bop.js, 77 rows): value 1,524 -> 1,601 (field only 77); MODEL / HMI ONLY 224 -> 284, UNLINKED 527 -> 467, B2 443 -> 383.
