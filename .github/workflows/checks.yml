@@ -38,6 +38,8 @@ jobs:
           grep -qE "c3\.textContent ?= ?'v$V'" "$F" || { echo "version label does not say v$V"; exit 1; }
       - name: The sources build exactly the committed html (src/ is the truth)
         run: node tools/build/build.js --check
+      - name: No per-load tables or plant trend / snapshot fits in the physics (RULES.md 3.12, user 2026-11-24)
+        run: node tools/check/no-fit.cjs
       - name: TCS soft logic sheets (straight wires only, keys, sources)
         run: node tools/data/tce_check.mjs
       - name: TCS block meanings from the HIACS macro list, every kind on the sheets known (Audit 3 #4 step 2)

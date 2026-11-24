@@ -71,7 +71,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     await AN._startP;
     await wrun(30);
     const t = AN.tcs().aux;
-    o.l = { hsp: t.hsp, hso: t.hso, gse: t.gse, ssfv: t.ssfv, vex: t.vex, gsP: +(+AN.unit.gsP).toFixed(2), MW: +(+AN.unit.MW).toFixed(1) };
+    o.l = { hsp: t.hsp, hso: t.hso, gse: t.gse, ssfv: t.ssfv, vex: t.vex, gsP: +(+AN.unit.gsP).toFixed(2), MW: +(+AN.unit.MW).toFixed(1), ibd: t.ibd };
     return o;
   });
   ck(!a.tg0[1], 'TB-9 START with no bearing oil: not running (sheet net 3 permissive) ' + JSON.stringify(a.tg0));
@@ -83,6 +83,9 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   ck(!a.tg2, 'TB-9 STOP: turning gear motor stopped');
   ck(/no CLOSE/.test(a.bad[0]) && /No TCS push button sheet/.test(a.bad[1]), 'push buttons the sheets do not have are refused ' + JSON.stringify(a.bad));
   ck(a.l.hsp && !a.l.hso && a.l.ssfv && a.l.gsP >= 0.1 && a.l.MW > 140, '150 MW: hood spray AUTO and closed (load > 15 %), gland seal in service ' + JSON.stringify(a.l));
+  /* beta.364: the sheet permissives for the faceplates (AN.tcs().aux.ibd); at 150 MW the turning gear is refused (the MSVs are open) */
+  const ib = a.l.ibd || {}, v01 = x => x === 0 || x === 1;
+  ck(ib['TB-9'] && ['perm', 'msvIcv', 'oil', 'hand', 'et', 'man'].every(k => v01(ib['TB-9'][k])) && ib['TB-9'].msvIcv === 0 && ib['TB-9'].perm === 0 && ib['TB-9'].oil === 1 && v01(ib['TB-12'].et) && v01(ib['TC-28'].et) && v01(ib['TC-28'].man) && v01(ib['TC-31'].man) && v01(ib['TC-35'].man) && ib['TC-35'].load15 === 0, 'aux.ibd permissives from the sheets at 150 MW ' + JSON.stringify(ib));
   ck(!errs.length, 'no page error ' + errs.slice(0, 2).join(' | '));
   console.log(fail ? 'FAIL ' + fail : 'ALL PASS');
   await browser.close();

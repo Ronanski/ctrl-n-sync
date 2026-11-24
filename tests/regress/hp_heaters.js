@@ -34,14 +34,15 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
       const st = b && S2.rt.st[b.id];
       return st && isFinite(st.val) ? Math.round(st.val * 10) / 10 : null;
     };
-    const g = () => ({ T1: U().hpT1, T2: U().hpT2, F1: U().hpF1, F2: U().hpF2, D1: U().hpD1, D2: U().hpD2, fw60: ai('ABC-010', 'AI0592') });
+    const g = () => ({ T1: U().hpT1, T2: U().hpT2, F1: U().hpF1, F2: U().hpF2, D1: U().hpD1, D2: U().hpD2, fw60: ai('ABC-010', 'AI0592'), ffw: Math.round(10 * AN_CYC.ffw) / 10 });
     const o = {};
-    AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
-    await run(300);
+    /* 1.0.0-beta.364 (JENNIE, Lisa queue): "Start at 150 MW" of the app (the old AN.reset / plantLoad150 path is gone), 10 min settle:
+       the drum level swell of the start moves the feedwater flow 474 ~ 520 t/h for the first minutes */
+    await AN.ades();
+    WORLD.set(true);
+    document.getElementById('load150').click();
+    await AN._startP;
+    await run(600);
     o.base = g();
     WORLD.live = true;
     /* 4.PNG: the MOV is AUTO (A R); the operator selects MANUAL first (row 1 M.0283 AUTO = 0, row 6 MANUAL MODE SELECTED), then
@@ -59,7 +60,9 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     c = r.cl;
   ck(Math.abs(b.T1 - 198) < 4 && Math.abs(b.T2 - 243) < 6, `150 MW: No.1 HPH outlet ${b.T1} C (03.png 198, design 195.7), No.2 HPH outlet ${b.T2} C (03.png 243, design 245.4)`);
   ck(b.fw60 != null && Math.abs(b.fw60 - b.T2) < 0.6, `economizer inlet TT-FW1160 (ABC-010) ${b.fw60} C = No.2 outlet (03.png 244)`);
-  ck(Math.abs(b.F2 - 45.1) < 6 && Math.abs(b.F1 - 69.35) < 9, `drains: No.2 ${b.F2} t/h (design 45.1), No.1 to the deaerator ${b.F1} t/h (design 69.35); drain temp ${b.D2} / ${b.D1} C (design 201.3 / 166.3)`);
+  /* the FHI drains are at the design feedwater 458.684 t/h (section 1.1.2): the extraction a heater condenses goes with the feedwater it heats */
+  const n = x => Math.round((10 * x * 458.684) / b.ffw) / 10;
+  ck(b.ffw > 300 && Math.abs(n(b.F2) - 45.147) < 3 && Math.abs(n(b.F1) - 69.35) < 4, `drains at the design feedwater 458.7 t/h: No.2 ${n(b.F2)} t/h (design 45.147), No.1 to the deaerator ${n(b.F1)} t/h (design 69.35, FHI p14; 45.147 + 25.33 = 70.48 in section 1.1.2); feedwater ${b.ffw} t/h, measured ${b.F2} / ${b.F1}; drain temp ${b.D2} / ${b.D1} C (design 201.3 / 166.3)`);
   ck(r.pr && c.T2 - c.T1 < 2 && c.F2 < 1 && c.fw60 < b.fw60 - 30, `MV-TS1001 closed by the operator: No.2 HPH no steam, outlet ${c.T2} C = No.1 outlet ${c.T1}, economizer inlet ${c.fw60} C, No.2 drain ${c.F2} t/h`);
   ck(!errs.length, 'no page error' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
   await browser.close();

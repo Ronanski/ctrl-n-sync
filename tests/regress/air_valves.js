@@ -92,6 +92,8 @@ const html =
     o.P2 = r1(U.iaPU);
     o.mu2 = pos('DITL-78');
     o.h6c = r1(U.hdLvl.H6);
+    o.ms2 = r1(U.ms || 0);
+    o.tt = U.tc ? U.tc.trip || null : null;
     o.heldHd2 = r1(U.avH.LICHD11061);
     return o;
   });
@@ -105,7 +107,13 @@ const html =
   ck(Math.abs(r.h6b - r.h6) < 40, `No.2 HP heater level ${r.h6b} mm (was ${r.h6}): the drain did not close`);
   ck(r.idfLk === 2.5 && r.idf0 === r.mvIdf && r.idf1 === r.idf0, `PCD-FG1056-1 ID fan damper in the airlock (lock ${r.idfLk} kg/cm2), held at ${r.idf1} % without air (MV ${r.mvIdf} %)`);
   ck(r.P2 > 6.5 && r.mu2 === 0, `air back ${r.P2} kg/cm2: XV-MU1109 closed again (${r.mu2} %)`);
-  ck(r.heldHd2 === 0 && r.h6c > r.h6b + 20, `air back: LCV-HD1106-1 follows its MV 0 % (${r.heldHd2}), level rises ${r.h6c} mm`);
+  /* 1.0.0-beta.364: with the air gone 5 min the unit trips (main steam 0, turbine first out in r.tt); then no extraction steam comes
+     (anHphStep: the condensate is the steam the turbine sends), so the shell neither fills nor drains. The level rises with the drain
+     closed only while the turbine still sends steam */
+  ck(
+    r.heldHd2 === 0 && (r.ms2 > 50 ? r.h6c > r.h6b + 20 : Math.abs(r.h6c - r.h6b) < 5),
+    `air back: LCV-HD1106-1 follows its MV 0 % (${r.heldHd2}), level ${r.h6c} mm (main steam ${r.ms2} t/h${r.ms2 > 50 ? ': rises' : ', unit tripped ' + JSON.stringify(r.tt) + ': no extraction, level holds'})`
+  );
   ck(errs.length === 0, 'no page error' + (errs.length ? ': ' + errs.join(' | ') : ''));
   console.log(fail ? 'FAILED ' + fail : 'ALL PASS');
   await browser.close();

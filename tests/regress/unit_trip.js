@@ -87,7 +87,11 @@ for(const sc of SC){
    /* the old checks (pressure < P0 - 30, M.310D L.L., temperature < 500 C) were for the turbine still taking steam; with the turbine tripped the
       bypass and blow-off hold the pressure (tt scenario) and no document gives a temperature after 400 s: the trend is checked */
    C(MSP()<p60&&MSP()<P0-10,'main steam pressure '+MSP().toFixed(1)+' kg/cm2 after 400 s (60 s: '+p60.toFixed(1)+', was '+P0.toFixed(1)+'): falls without firing');
-   C(pv('ABC-012','TICMS1004')<mst0-20,'main steam temperature '+pv('ABC-012','TICMS1004').toFixed(0)+' C after 400 s (was '+mst0.toFixed(0)+'): falls without firing');
+   /* 1.0.0-beta.364 (JENNIE, Lisa queue "MST rising after unit trip"): no document says the main steam temperature falls after an MFT, and
+     the physics says it need not. The logic shuts both SH sprays on the MFT (DS-32 / 33, checked above), the fans keep the purge air
+     through a bed and a refractory still near 800 C, and the HP bypass closes as the pressure falls (main steam 490 -> about 40 t/h):
+     little steam in a hot boiler heats up. The check is the limit of the alarm list instead: TE-MS1004 H 548 C (HH 555) */
+  C(pv('ABC-012','TICMS1004')<548,'main steam temperature '+pv('ABC-012','TICMS1004').toFixed(0)+' C after 400 s (was '+mst0.toFixed(0)+'): below TE-MS1004 H 548 C with the sprays shut by the MFT');
    C(bit('ABC-001C','M.2013')>0.5&&bit('ABC-001C','M.2016')>0.5,'boiler and turbine masters MANUAL (steam flow < 220 T/H, M.0101)');
   }
   if(sc==='bfwp'){

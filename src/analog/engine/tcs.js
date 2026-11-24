@@ -1237,7 +1237,23 @@ function tcsState() {
       tgAu: !!c.tgAu,
       ssfv: !!c.ssfv,
       gse: !!c.gse,
-      auto: c.auto
+      auto: c.auto,
+      /* 1.0.0-beta.364 (JENNIE, for ROSÉ D18 faceplates): the permissives as the IBD sheets compute them (c.ib.v, tcs-ibd-data.js gates),
+         0 / 1, null while the sheet has not run. TB-9: perm = net 6 (A of net 2 and net 5), msvIcv = net 2 (OR BOTH MSV / BOTH ICV
+         FULL CLOSE), oil = net 3 BEARING OIL PRESS. NORMAL, hand = net 4 (NOT ZS-LOn003 HAND TURNING INTERLOCK), et = net 24 MOTOR
+         ELECTRICAL TROUBLE, man = net 19 (NOT of the AUTO memory FF net 17). TB-12: et = net 10. TC-28: et = net 15, man = net 6 (NOT
+         of the FF net 4). TC-31: man = net 3 (NOT FF net 1). TC-35: man = net 11 (NOT FF net 1), load15 = net 7 GEN. LOAD <15% */
+      ibd: (() => {
+        const v = c.ib && c.ib.v ? c.ib.v : {},
+          g = (id, n) => (v[id] && v[id][n] != null ? (v[id][n] > 0.5 ? 1 : 0) : null);
+        return {
+          'TB-9': { perm: g('TB-9', 6), msvIcv: g('TB-9', 2), oil: g('TB-9', 3), hand: g('TB-9', 4), et: g('TB-9', 24), man: g('TB-9', 19) },
+          'TB-12': { et: g('TB-12', 10) },
+          'TC-28': { et: g('TC-28', 15), man: g('TC-28', 6) },
+          'TC-31': { man: g('TC-31', 3) },
+          'TC-35': { man: g('TC-35', 11), load15: g('TC-35', 7) }
+        };
+      })()
     },
     crit: C,
     byp: Object.keys(c.byp || {}),
