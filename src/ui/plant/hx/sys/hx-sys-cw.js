@@ -34,8 +34,12 @@
         df: { pbs: [['AUTO START', 7, 'M.0790'], ['AUTO STOP', 9, 'M.0791']], st: 3, dp: 'DPISW1502', perm: [1, 2, 3], why: 'running seawater pump' }
       },
       DF2: { n: 'S-1504', t: 'Debris filter', io: 'DIR-DF1002', d: 'DITL-39', df: { pbs: [['AUTO START', 18, 'M.0792'], ['AUTO STOP', 20, 'M.0793']], st: 14, dp: 'DPISW1504', perm: [], why: '' } },
-      CTA: { n: 'CTCS-A', t: 'P-1113', io: 'DOP-CTCS1001', d: 'DITL-119' },
-      CTB: { n: 'CTCS-B', t: 'P-1114', io: 'DOP-CTCS1002', d: 'DITL-119' },
+      /* Rosé 2026-11-24 (click check: a click on CTCS-A / B opened nothing in the Operator Station): the tube cleaning panels = the push
+         buttons of DITL-119 (rows 7 / 9 M.0794 / M.0795 for A, 18 / 20 M.0796 / M.0797 for B, REMOTE AUTO START / STOP P.B. to the local
+         panel), row 1 ANY SEAWATER PUMP RUNNING (M.079C) the one input of the drawing. No running status comes back to the DCS: st null,
+         the faceplate says the state is at the local panel */
+      CTA: { n: 'CTCS-A', t: 'P-1113', io: 'DOP-CTCS1001', d: 'DITL-119', df: { pbs: [['AUTO START', 7, 'M.0794'], ['AUTO STOP', 9, 'M.0795']], st: null, off: 'STATUS AT LOCAL PANEL', perm: [1], why: 'running seawater pump' } },
+      CTB: { n: 'CTCS-B', t: 'P-1114', io: 'DOP-CTCS1002', d: 'DITL-119', df: { pbs: [['AUTO START', 18, 'M.0796'], ['AUTO STOP', 20, 'M.0797']], st: null, off: 'STATUS AT LOCAL PANEL', perm: [1], why: 'running seawater pump' } },
       HUA: { n: 'P-0761A', t: 'Unloading', fld: 'hypoU', io: 'MIR-P0761A', d: 'STN105 DI', fieldOp: true, why: HYPO },
       HDA: { n: 'P-0762A', t: 'NaOCl dosing', fld: 'hypo', io: 'MIR-P0762A', d: 'STN105 DI', fieldOp: true, why: HYPO },
       HDB: { n: 'P-0762B', t: 'NaOCl dosing', fld: 'hypoB', io: 'MIR-P0762B', d: 'STN105 DI', fieldOp: true, why: HYPO }
