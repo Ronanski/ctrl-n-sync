@@ -332,7 +332,7 @@ function anCompNet(S, ai) {
    also gets 25 % of the main steam on load (extractions and heater drains: 380 + 118.5 = feedwater 499 T/H). Recirculation
    2.5 T/H per % (SOP: 60 % open about 150 T/H minimum flow). Level rates: AN_CYC.kgmm below. The recirculation goes back to the condenser, so the hotwell loses only the deaerator flow; the deaerator
    loses the feedwater of the drum balance (AN_CYC.ffw) */
-const AN_CYC = { u: {}, ffw: 0 };
+const AN_CYC = { u: {}, ffw: 0, fdr: 0 };
 if (typeof window !== 'undefined') window.AN_CYC = AN_CYC; /* read by the world (plantsw.js BFWP suction pressure) */
 const AN_CYC_TAG = { LICCD1104: 'da', LICCD1110A: 'hw', FICCD1120: 'cf' };
 /* 3.2.3-beta.25 (Mina beta.24 B24-1, beta.19 B19-2, beta.20 B20-2: after the trip LCV-CD1104 at 3.7 % passed 80 T/H against 25 T/H of
@@ -863,7 +863,12 @@ function anProcStep(S, dt) {
            The steam that leaves the drum is the plant (as for the failed transmitter above): the turbine plus the bypass and the
            blow-off of the unit model (unit.js U.ms + U.mb, the flow FT-MS1031 is written from). The drawing still reads the
            transmitter, so the 3-element feedwater sees the capped reading as in the plant */
-        if (typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.ms) && isFinite(AN_UNIT.mb)) fst = Math.max(0, AN_UNIT.ms + AN_UNIT.mb);
+        /* 1.0.0-beta.374 (JENNIE, D30, flow diagram K1AU3-PD-017 Feedwater): the SH desuperheater water (FW-1-011 / FW-1-012, U.w1s +
+           U.w2s) is tapped from the final feedwater after the No.2 HP heater and the flow element FE-FW1007, before the main feedwater
+           valve FCV-FW1130: it joins the steam after the drum and never passes the economizer or the drum. The drum gives the main
+           steam less that spray (the same mDr as the heat chain, hx.js) */
+        if (typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.ms) && isFinite(AN_UNIT.mb))
+          fst = Math.max(0, AN_UNIT.ms + AN_UNIT.mb - (AN_UNIT.w1s || 0) - (AN_UNIT.w2s || 0));
       }
       let ffw = +v[pr.integ.fw] || 0;
       const fwp = pr.integ.fwp,
@@ -875,7 +880,10 @@ function anProcStep(S, dt) {
       /* 3.2.4-beta.6: the PV of FICFW1007 stops at the top of its range (FT-FW1007, 550 T/H); the water through the main valve
          (unit.js anMainFw, fwp.hx) does not: with the unit model on the drum gets the flow of the valves (main + start-up) of now */
       const hx = fwp && fwp.hx != null && isFinite(fwp.hx) && typeof AN_UNIT !== 'undefined' && AN_UNIT.on ? fwp.hx : null;
-      if (hx != null) ffw = hx; /* the main + start-up valve flow of now; the transmitter lag (T 75 s) is only in the PV */
+      /* beta.374 (PD-017): FE-FW1007 is before the SH spray tap, so the transmitter (fwp.hx) reads the valves plus the SH spray; the
+         drum gets the valves only */
+      const fwSp = hx != null ? (AN_UNIT.w1s || 0) + (AN_UNIT.w2s || 0) : 0;
+      if (hx != null) ffw = Math.max(0, hx - fwSp); /* the main + start-up valve flow of now; the transmitter lag (T 75 s) is only in the PV */
       else if (opE != null) {
         const T = fwp.T > 0 ? fwp.T : 75;
         pr.integ.opL = pr.integ.opL == null || AN.steady ? opE : pr.integ.opL + (opE - pr.integ.opL) * Math.min(1, dt / T);
@@ -974,7 +982,9 @@ function anProcStep(S, dt) {
       }
       AN_CYC.y.dr = q.y;
       AN_CYC.dl = fst + loss + lhdQ + tlQ; /* water and steam that leave the drum (and the cycle, a tube leak) */
-      AN_CYC.ffw = ffw; /* the deaerator gives this water (condensate cycle balance) */
+      AN_CYC.fdr = ffw; /* beta.374: the water into the economizer and the drum */
+      AN_CYC.ffw = ffw + fwSp; /* the deaerator gives this water (condensate cycle balance), the BFWPs and the HP heaters pass it: the
+         drum feed plus the SH spray (beta.374, PD-017) */
       /* 2.2.0-beta.12 (M3): SHRINK / SWELL. A fast change of the drum pressure moves the level the other way for a while (the steam
          bubbles in the water collapse when the pressure rises after a turbine trip, grow when it falls after an MFT): the level
          read is the water level minus ks x (pressure - its lag of tauS), so a pressure step gives a transient of ks mm per

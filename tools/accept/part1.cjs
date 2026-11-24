@@ -95,7 +95,7 @@ const judge = (v, tg, tol, kind) => {
       const steam = MWq(U.mEco || 0, (H.hEco || 0) - hw(tfw)) + MWq(mDr, hg - (H.hEco || 0)) + MWq(mOut, hs(U.Pms, H.ms) - hg) + MWq(hrh, hs(U.Prh, H.rh) - hs(U.Prh + 1.5, tcr));
       return {
         MSF: U.ms, Pms: U.Pms, MSTt: H.ms, Psh: U.Pms, MST: H.ms, CRHf: crh, Pcr: U.Prh + 1.5, Tcr: tcr, HRHf: hrh, Prh: U.Prh, RHT: H.rh,
-        tEco: H.tEco, Tfw: tfw, FWf: U.fwMain - bd, sp: w1 + w2, rsp: U.rhSp || 0, MW: U.MW, HR: U.MW > 1 ? (qT * 3600) / 4.1868 / (U.MW * 1000) * 1000 / 1000 : NaN,
+        tEco: H.tEco, Tfw: tfw, FWf: U.fwMain + w1 + w2 - bd /* FE-FW1007 is before the SH spray tap (PD-017, beta.374) */, sp: w1 + w2, rsp: U.rhSp || 0, MW: U.MW, HR: U.MW > 1 ? (qT * 3600) / 4.1868 / (U.MW * 1000) * 1000 / 1000 : NaN,
         bed: U.Tb, Tu: U.Tu, dp: pv('DPICFG108'), ahGi: U.aphGi, ahGo: U.aphGo, coal: U.Fc, lime: U.lm ? U.lm.q : NaN, air: air.reduce((a, b) => a + (b || 0), 0), PA: air[0], SA: air[1],
         O2: U.o2v, eff: fuel > 0 ? (100 * steam) / fuel : NaN, trip: !!(AN.soeTrip && AN.soeTrip().mft.on)
       };
