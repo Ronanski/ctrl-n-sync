@@ -102,7 +102,9 @@
     return a || b ? 2.0 : a === false && b === false ? 0 : NaN;
   };
   /* DITL-23A / DITL-22 write the rows by address: matched by the address and the word LUB (the 7th field; other stations reuse it) */
-  for (const [k, a1, a2, a3] of [['A', 'I.0090', 'I.0091', 'I.0092'], ['B', 'I.0410', 'I.0411', 'I.0412']]) L.push([a2, lopP(k), 2.0, 'ge', 0, 0, /\bLUB/], [a1, lopP(k), 1.5, 'lo', 0, 0 /* no dead band: the pressure steps 0 / 2.0 */, /\bLUB/], [a3, lopP(k), 1.0, 'lo', 0, 0, /\bLUB/]);
+  for (const [k, a1, a2, a3] of [['A', 'I.0090', 'I.0091', 'I.0092'], ['B', 'I.0410', 'I.0411', 'I.0412']]) L.push([a2, lopP(k), 2.0, 'ge', 0, 0, /\bLUB/], [a1, lopP(k), 1.5, 'lo', 0, 0 /* no dead band: the pressure steps 0 / 2.0 */, /\bLUB/], [a3, lopP(k), 1.0, 'lo', 0, 0, /\bLUB/],
+    /* beta.530 (AKIHO): the rows of DITL-23B and its #B that name the switches (PS-LO1115-A3 / A2 / A1, B3 / B2 / B1), not the address */
+    ['PS-LO1115-' + k + '2', lopP(k), 2.0, 'ge', 0, 0], ['PS-LO1115-' + k + '1', lopP(k), 1.5, 'lo', 0, 0], ['PS-LO1115-' + k + '3', lopP(k), 1.0, 'lo', 0, 0]);
   /* 3.2.1 (IRENE: FEEDWATER): DITL-23A row 11 (machine instance #B for pump B) "ZSO-FW1031 BFWP A / B SUCTION MANUAL VALVE OPEN"
      (IO list STN102 I.028F ZSO-FW1031 / I.032F ZSO-FW1032), a START permissive of the HV soft starter (with the lube oil > 2.0 and the
      suction pressure > 1.5): the limit switch of the field valve V-FW1001 / 1002 of the plant model (unit.js AN_FV0), touched at fully
@@ -272,32 +274,27 @@
   L.push(['(SIL-SD1300)', baSw('rem'), 0.5, 'hi', 0, 0, null, /\)DITL-77\d$/]);
   /* 3.2.1 d1 (LISA): the sootblower positions from the lance travel of world.js (sbLance; Diamond Power N11639-SC1). 18.PNG (150 MW): all
      retracted, no blowing, the state they start from. The retract limit switch of each lance (DITL-80G row 12 ZSR-N1011 and its 27 copies),
-     ANY ON EXTEND (M.4232: a lance at its front end) and the ALL ON RETRACT memories that DITL-80L makes (M.4008 every lance and N-1040 /
-     N-1042; M.4246 N-1011 ~ 22, 25, 26; M.4240 N-1023, 24, 27 ~ 34; M.4242 N-1035 ~ 38; DITL-80L is not in the app, read on its PDF).
-     Mina beta.173: DITL-80A row 13 M.4008 (FROM DITL80L) too: it is the "All blowers on retract position" of page 18. The air
-     heater blowers N-1040 / N-1042 (DITL-80K) have no travel data in the table: their reset positions stand at rest (18.PNG) */
-  const sbL = () => (W.sbLances ? W.sbLances() : []),
-    sbIn = (a, b) => L0 => L0.n >= a && L0.n <= b,
-    sbGrp = {
-      'M.4008': () => true,
-      'M.4246': L0 => (L0.n >= 1011 && L0.n <= 1022) || L0.n === 1025 || L0.n === 1026,
-      'M.4240': L0 => L0.n === 1023 || L0.n === 1024 || sbIn(1027, 1034)(L0),
-      'M.4242': sbIn(1035, 1038)
-    };
+     Mina beta.173: the air heater blowers N-1040 / N-1042 (DITL-80K) have no travel data in the table: they stand at reset (18.PNG).
+     beta.530: ALL ON RETRACT / ANY ON EXTEND (M.4008, M.4232, M.4240 ~ 4243, M.4246, M.4247) and the reset positions of 80K are DITL-80L
+     itself now (AKIHO beta.515; links: src/world/bind/integrator.json); its 60 limit switches are the rows sd.hrow (build below) */
+  const sbL = () => (W.sbLances ? W.sbLances() : []);
   L.push(['SOOTBLOWER', m => (m && m.s._lance ? (m.s._lance.x <= 0 ? 1 : 0) : 1), 0.5, 'hi', 0, 0, /SOOTBLOWER RETRACT POSITION/, /\)DITL-80G( #N-\d+)?$/]);
-  L.push(['M.4232', () => (sbL().some(x => x._lance.x >= x._lance.len) ? 1 : 0), 0.5, 'hi', 0, 0, /ANY ON EXTEND/, /\)DITL-80G( #N-\d+)?$/]);
-  /* 3.2.4-beta.8 (sootblower sequence stopped at N-1023): DITL-80O rows 3 / 10 / 24 read the ANY ON EXTEND POSITION of each group from
-     DITL-80L (M.4247 N-1011 ~ 22, 25, 26; M.4241 N-1023, 24, 27 ~ 34; M.4243 N-1035 ~ 38). Without them the extend flip-flop of the group
-     was never reset at the front end: EXTEND OVER TIME -> ANY OPERATING OVER TIME (80Q) -> ANY TROUBLE PRESENT (80G row 13) at the start of
-     the next blower, which held it on its retract command */
-  for (const [k, f] of [['M.4247', sbGrp['M.4246']], ['M.4241', sbGrp['M.4240']], ['M.4243', sbGrp['M.4242']]])
-    L.push([k, () => (sbL().some(x => f(x._lance) && x._lance.x >= x._lance.len) ? 1 : 0), 0.5, 'hi', 0, 0, /ANY ON EXTEND/, /\)DITL-80O$/]);
   /* 3.2.3 SOHEE: the air heater blowers leave their reset position while they blow (unit.js AN_SB.aph: hot end N-1040, then cold end N-1042) */
   const aphPh = () => (window.AN && AN.unit && AN.unit.sbA ? AN.unit.sbA.ph : 0);
-  L.push(['AIR', () => (aphPh() === 1 ? 0 : 1), 0.5, 'hi', 0, 0, /N-1040.*S\/B RESET POSITION/, /\)DITL-80K$/]);
-  L.push(['AIR', () => (aphPh() === 2 ? 0 : 1), 0.5, 'hi', 0, 0, /N-1042.*S\/B RESET POSITION/, /\)DITL-80K$/]);
-  /* DITL-80S row 17 reads M.4008 too (S/B STEAM SUPPLY MOTOR VALVE CLOSE COMMAND; DITL-80L PDF sheet 15: "TO: 80-5, 80A-14, 80S-17, 80K-5") */
-  for (const k in sbGrp) L.push([k, () => (sbL().every(x => !sbGrp[k](x._lance) || x._lance.x <= 0) && (k !== 'M.4008' || !aphPh()) ? 1 : 0), 0.5, 'hi', 0, 0, /ALL ON RETRACT/, /\)DITL-80[AGKOS]?( #N-\d+)?$/]);
+  /* a limit switch row of DITL-80L by its tag: ZSR-N1014 on its retract limit, ZSE-N1014 at its front end (the lance of its DITL-80G copy; a
+     copy not scanned yet stands retracted). N-1040 / N-1042 are drawn "NOT ON": ZSR NOT ON while the blower is off its reset position;
+     ZSE (forward limit) NOT ON always: where in the 19 min 40 s the lance stands at its front end is not in the docs */
+  const sbZs = tag => {
+    const q = /^ZS([RE])-N(\d+)$/.exec(tag);
+    if (!q) return null;
+    const r = q[1] === 'R',
+      n = +q[2];
+    if (n >= 1040) return () => (r ? (aphPh() === (n === 1040 ? 1 : 2) ? 1 : 0) : 1);
+    return () => {
+      const z = sbL().find(y => y._lance.n === n);
+      return z ? (r ? (z._lance.x <= 0 ? 1 : 0) : z._lance.x >= z._lance.len ? 1 : 0) : r ? 1 : 0;
+    };
+  };
   const sdSilo = () => (window.AN && AN.unit && AN.unit.sd && isFinite(AN.unit.sd.silo) ? AN.unit.sd.silo : NaN);
   L.push(['LISD1800.PV', sdSilo, 60, 'lo', 0, 0, /< ?60 ?%/, /\)DITL-BA6[35]$/]);
   L.push(['LISD1800.PV', sdSilo, 80, 'hi', 0, 0, /> ?80 ?%/, /\)DITL-BA65$/]);
@@ -381,6 +378,10 @@
         const d = L.find(x => words.slice(0, 3).includes(x[0]) && (!x[6] || x[6].test(t)) && (!x[7] || x[7].test(s.name)));
         if (d) map.push({ s, row: i, d, on: null });
       }
+      for (const h of (s.sd && s.sd.hrow) || []) {
+        const z = sbZs(h.tag);
+        if (z) map.push({ s, row: h.row, d: [h.tag, z, 0.5, 'hi', 0, 0], on: null });
+      }
       /* beta.520 (KIRARA): a field contact drawn on the wire of an output row (DITL-19 outputs 62 ~ 73: MIA-CL1061-A2 at the left end of
          the wire, the MCC / LCP side of the sheet): the DI row of a lane with that tag drives it; a copy has its own machine's tag */
       if (FD.size)
@@ -406,7 +407,7 @@
           /* 3.2.1 (IRENE): the fan / blower bearing and winding temperatures and vibration of the plant model (unit.js AN_MT, U.mt);
              the drawing of FA blower A serves B (DITL-28B #B): its own blower */
           let g = MTR.exec(t)[1];
-          if (/#\s*B$/.test(s.name)) g = g.replace('FA1055-A', 'FA1055-B').replace('FW1115-A', 'FW1115-B');
+          if (/#\s*B$/.test(s.name)) g = g.replace('FA1055-A', 'FA1055-B').replace('FW1115-A', 'FW1115-B').replace('CD1116-A', 'CD1116-B');
           mtr.push({ s, key: a.key, g });
         }
         else {
@@ -422,9 +423,9 @@
   }
   /* P2 #13 (INSTRUMENT_VALVE_COVERAGE.md): the condenser pressure follows the vacuum of the unit model (unit.js U.vac, 0 = no vacuum,
      1 = in service): 1.033 kg/cm2A (atmosphere) to 0.057 kg/cm2A (4.PNG PICD1110 at 150 MW) */
-  /* 3.2.1 (IRENE): DITL-25B / 26B / 27B / 28B analog rows TT- / VT- of the IDF, PAF, SAF and FA blowers; 3.2.3-beta.178 (SOHEE): DITL-23B
+  /* 3.2.1 (IRENE): DITL-25B / 26B / 27B / 28B (beta.530: 61B) analog rows TT- / VT- of the IDF, PAF, SAF and FA blowers; 3.2.3-beta.178 (SOHEE): DITL-23B
      rows 9 ~ 23 of the BFWP (TT-FW1115-A1 ~ A4 / AU / AV / AW, VT-FW1115-A11 ~ A42; machine instance #B = pump B) */
-  const MTR = /(?:^|[^A-Z])([TV]T-(?:FG1056-|FA1053-|FA1054-|FA1055-[AB]|FW1115-[AB])(?:[1-4][12]?|[UVW]))\b/,
+  const MTR = /(?:^|[^A-Z])([TV]T-(?:FG1056-|FA1053-|FA1054-|FA1055-[AB]|FW1115-[AB]|CD1116-[AB])(?:[1-4][12]?|[UVW]))\b/,
     mtr = [];
   const ana = [],
     suc = [],
