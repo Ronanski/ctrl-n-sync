@@ -270,5 +270,512 @@
   const MARK = { X: 1, NC: 1 };
   const kind = t => K[t] || K[ALIAS[t]] || null;
   const KINDS = Object.keys(K);
-  root.TCE_RUN = { K, par, KINDS, ALIAS, MARK, kind };
+
+  /* ---------- step 1: a typed sheet (src/digital/tce/*.js, format: src/digital/parts/02d-tce.js) as a netlist, from the drawing itself.
+     One reader for the tool (tools/data/tce_net.mjs) and the app. The key of a wire piece is the part that gives its signal, so the key IS the
+     net. What the net feeds is read from the last point of each piece, as on the drawing:
+       - on the left edge of a small block: an input of that block (ordered by height, top first); on its top or bottom edge: the side input
+         the drawing gives there (its SW, below);
+       - on a mark on the wire (BTR / FTR transfer, X crossed circle = inverted, NC circle of a NOT): the input of that mark;
+       - on the left edge of a macro block: the input pin at that height (the pin heights the sheet gives, or the drawing's even spacing);
+       - on an output connector, a CRT lamp, a definition (constant of kind 'def') or a PI/O box: an output of the sheet;
+       - at the start of, or on, another piece of the same key: the same net goes on (a gap for a mark of the drawing, or a junction).
+     Anything else is "not named" (open), printed by the tool with its sheet, key and point. ---------- */
+  const MARKRE = /^(o:BTR|o:FTR|X|NC)$/;
+  const near = (a, b, d) => Math.abs(a - b) <= d;
+  function net(s) {
+    const u = (s.f[2] - s.f[0]) / 1000,
+      tol = 2.2 * u;
+    const blocks = [],
+      marks = [];
+    for (const b of s.b || []) {
+      const [key, type, no, x, y, notes, pins, size] = b;
+      if (MARKRE.test(type)) marks.push({ key, type, x, y, r: size ? size[0] : 5.25 * u });
+      else {
+        const w = size ? size[0] / 2 : 14 * u,
+          h = size ? size[1] / 2 : 10.5 * u;
+        blocks.push({ key, type, no, notes: notes || [], pins: pins || {}, x0: x - w, x1: x + w, y0: y - h, y1: y + h, ins: [] });
+      }
+    }
+    const macros = (s.m || []).map(([key, name, tag, x, y, w, h, L, R, foot, notes, plain]) => ({
+      key,
+      type: 'M:' + name,
+      tag,
+      notes: notes || [],
+      L: L || [],
+      R: R || [],
+      ly: plain ? plain[0] : null,
+      x0: x,
+      x1: x + w,
+      y0: y,
+      y1: y + h,
+      ins: []
+    }));
+    const outs = [
+      ...(s.c || []).filter(c => c[1] === 'out').map(c => ({ key: c[0], kind: 'c', letter: c[2], sheets: c[6] || [], what: 'connector ' + c[2] + ' to ' + (c[6] || []).join(' '), x: c[3], y: c[4], d: 40 * u })),
+      ...(s.d || []).filter(d => d[3] === 'out').map(d => ({ key: d[0], kind: 'd', text: d[4] || '', what: 'CRT lamp ' + (d[4] || ''), x: d[1], y: d[2], d: 40 * u })),
+      ...(s.k || []).filter(k => /def$/.test(k[5] || '')).map(k => ({ key: k[0], kind: 'def', text: k[3], what: 'definition ' + k[3], x: k[1], y: k[2], d: 12 * u }))
+    ];
+    const pio = (s.r || []).map(r => ({ key: r[0], x0: r[1], x1: r[1] + r[3], y0: r[2], y1: r[2] + r[4] }));
+    const W = s.w || [];
+    const inputs = (s.c || []).filter(c => c[1] === 'in').map(c => ({ key: c[0], letter: c[2], name: c[5], from: c[6] || [] }));
+    const outc = (s.c || []).filter(c => c[1] === 'out').map(c => ({ key: c[0], letter: c[2], sheets: c[6] || [] }));
+    const res = { id: s.id, inputs, outc, blocks, macros, marks: marks.map(m => ({ key: m.key, type: m.type, in: null })), outputs: [], open: [] };
+    const mk = Object.fromEntries(res.marks.map(m => [m.key, m]));
+    const onSeg = (p, v) =>
+      v[1].some((a, i) => {
+        if (!i) return false;
+        const b = v[1][i - 1];
+        return (
+          (a[0] === b[0] && near(a[0], p[0], 0.6) && p[1] >= Math.min(a[1], b[1]) - 0.6 && p[1] <= Math.max(a[1], b[1]) + 0.6) ||
+          (a[1] === b[1] && near(a[1], p[1], 0.6) && p[0] >= Math.min(a[0], b[0]) - 0.6 && p[0] <= Math.max(a[0], b[0]) + 0.6)
+        );
+      });
+    for (const w of W) {
+      const nt = w[0],
+        p = w[1][w[1].length - 1],
+        q = w[1][w[1].length - 2];
+      const left = q[0] < p[0],
+        down = q[1] < p[1];
+      let b = blocks.find(b => near(p[0], b.x0, tol) && p[1] >= b.y0 - tol && p[1] <= b.y1 + tol && left);
+      if (b) {
+        b.ins.push({ net: nt, y: p[1], side: 'l' });
+        continue;
+      }
+      b = blocks.find(b => p[0] >= b.x0 - tol && p[0] <= b.x1 + tol && ((down && near(p[1], b.y0, tol)) || (!down && near(p[1], b.y1, tol))));
+      if (b) {
+        b.ins.push({ net: nt, x: p[0], side: down ? 't' : 'b' });
+        continue;
+      }
+      const m = marks.find(m => Math.hypot(m.x - p[0], m.y - p[1]) <= m.r + tol);
+      if (m) {
+        mk[m.key].in = nt;
+        continue;
+      }
+      const M = macros.find(M => near(p[0], M.x0, tol) && p[1] >= M.y0 - tol && p[1] <= M.y1 + tol);
+      if (M) {
+        let pin = null;
+        if (M.ly) {
+          let best = 1e9;
+          M.ly.forEach((y, i) => {
+            if (Math.abs(y - p[1]) < best) (best = Math.abs(y - p[1])), (pin = i);
+          });
+        } else if (M.L.length) {
+          const n = M.L.length,
+            i = Math.floor(((p[1] - M.y0 - 15 * u) / (M.y1 - M.y0 - 30 * u)) * n);
+          pin = Math.max(0, Math.min(n - 1, i));
+        }
+        M.ins.push({ net: nt, y: p[1], pin, name: pin != null ? M.L[pin] : null });
+        continue;
+      }
+      const o = outs.find(o => Math.hypot(o.x - p[0], o.y - p[1]) <= o.d);
+      if (o) {
+        res.outputs.push({ net: nt, to: o.what, key: o.key, kind: o.kind, text: o.text, letter: o.letter, sheets: o.sheets });
+        continue;
+      }
+      const r = pio.find(r => p[0] >= r.x0 - tol && p[0] <= r.x1 + tol && p[1] >= r.y0 - tol && p[1] <= r.y1 + tol);
+      if (r) {
+        res.outputs.push({ net: nt, to: 'PI/O ' + r.key, key: r.key, kind: 'r' });
+        continue;
+      }
+      if (W.some(v => v !== w && v[0] === nt && (Math.hypot(v[1][0][0] - p[0], v[1][0][1] - p[1]) <= 20 * u || onSeg(p, v)))) continue;
+      res.open.push({ net: nt, at: p });
+    }
+    /* an X (crossed circle) on the last piece of a wire into a block: that input is taken inverted */
+    for (const w of W) {
+      const p = w[1][w[1].length - 1];
+      for (const m of marks)
+        if (m.type === 'X' && onSeg([m.x, m.y], w))
+          for (const b of blocks) for (const i of b.ins) if (i.net === w[0] && i.y === p[1] && near(p[0], b.x0, tol)) i.inv = true;
+    }
+    for (const b of blocks) {
+      b.ins.sort((a, c) => (a.side === c.side ? (a.y ?? a.x) - (c.y ?? c.x) : a.side < c.side ? -1 : 1));
+      delete b.x0, delete b.x1, delete b.y0, delete b.y1;
+    }
+    for (const M of macros) {
+      M.ins.sort((a, c) => a.y - c.y);
+      delete M.x0, delete M.x1, delete M.y0, delete M.y1, delete M.ly;
+    }
+    return res;
+  }
+  /* ---------- a sheet of the Generator Protection / Breaker Logic Diagram 310SD03-743 (SH-G-1A ~ SH-G-9, typed in the IBD form, `dwg`):
+     the same netlist shape as net(), read from the parts these sheets use:
+       - gate G:OR / G:A: its input edge is the bar (size[2], or the plain vertical line drawn beside its left side); a wire ending on that
+         edge is an input; NC = the NOT circle on a line;
+       - r box with a key and "DI" + time printed in it: a pick-up delay (ML 47 TP; the relay drawing's DI = delayed in); a box with a key
+         and no DI is a signal of the equipment (selector, switch position: a port); a box with no key is a panel the signal goes to;
+       - s source with a continuation circle in it: an input from the sheet printed beside it ("SH-G-1B"), joined by the circle number to the
+         circle of the same number on that sheet; an s source with no circle: a contact of the equipment or a relay (a port, named by
+         the words in it);
+       - a wire ending at a continuation circle: an output to the sheet printed beside the circle ("SH-G-*" = to the sheets that read it).
+     ---------- */
+  function gnet(s) {
+    const u = (s.f[2] - s.f[0]) / 1000,
+      tol = 2.2 * u,
+      T = s.t || [],
+      L = (s.l || []).filter(l => l[0][0] === l[1][0]);
+    const words = (x0, y0, x1, y1) => T.filter(t => t[0] >= x0 && t[0] <= x1 && t[1] >= y0 && t[1] <= y1);
+    const circles = (s.o || []).map(([x, y, r]) => {
+      const n = T.find(t => Math.abs(t[0] - x) < 2 && Math.abs(t[1] - y) < 2),
+        sh = T.filter(t => /^SH-G-/.test(t[2]) && t[0] > x && t[0] < x + 60 && t[1] - y > -10 && t[1] - y < 25).sort((a, b) => Math.abs(a[1] - y - 5) - Math.abs(b[1] - y - 5))[0];
+      return { x, y, r, n: n ? String(n[2]) : '', sh: sh ? sh[2].replace(/^SH-/, '') : '' };
+    });
+    const blocks = [],
+      marks = [],
+      res = { id: s.id, inputs: [], outc: [], blocks, macros: [], marks: [], outputs: [], open: [], ports: {} };
+    for (const b of s.b || []) {
+      const [key, type, no, x, y, notes, pins, size] = b;
+      if (type === 'NC') {
+        marks.push({ key, type, x, y, r: size ? size[0] : 11 });
+        continue;
+      }
+      const [w, h, bar] = size || [20, 20, 0],
+        ex = x - w / 2,
+        bl = L.find(l => Math.abs(l[0][0] - ex) <= tol && Math.min(l[0][1], l[1][1]) <= y && Math.max(l[0][1], l[1][1]) >= y),
+        ys = bar ? [y - bar / 2, y + bar / 2] : bl ? [Math.min(bl[0][1], bl[1][1]), Math.max(bl[0][1], bl[1][1])] : [y - h / 2, y + h / 2];
+      blocks.push({ key, type, no, notes: notes || [], pins: pins || {}, ex, ys, ins: [] });
+    }
+    for (const r of s.r || []) {
+      const [key, x, y, w, h, text] = r;
+      if (!key) continue;
+      const z = words(x, y, x + w, y + h).map(t => String(t[2]));
+      if (z[0] === 'DI') {
+        /* the time printed in the box; a box that prints only "t" takes the relay's as-set time from the sheet's `set` (with its source) */
+        const m = /^([\d.]+)\s*(s|min)$/i.exec(z[1] || ''),
+          st = (s.set || {})[key];
+        const notes = m ? ['TP:' + +m[1] * (/min/i.test(m[2]) ? 60 : 1)] : st ? st : ['time "' + (z[1] || '') + '" not printed'];
+        blocks.push({ key, type: m || st ? 'TP' : 'TP?', no: '', notes, pins: {}, ex: x, ys: [y, y + h], ins: [] });
+      } else res.ports[key] = 'PLANT:' + s.id + '.' + key + ' ' + (text || z.join(' ') || '').trim();
+    }
+    for (const x of s.s || []) {
+      const [key, x0, y0, x1, y1] = x,
+        c = circles.find(c => c.x >= x0 - 1 && c.x <= x1 + 1 && c.y >= y0 - 1 && c.y <= y1 + 1);
+      const shw = T.find(t => /^SH-G-/.test(t[2]) && t[0] >= x0 && t[0] <= x1 + 60 && t[1] >= y0 && t[1] <= y1 + 30);
+      if (c && (c.sh || shw)) res.inputs.push({ key, letter: c.n, name: '', from: [(c.sh || shw[2]).replace(/^SH-/, '')] });
+      else {
+        /* named by its words and the words of its row to the left (the relay or switch it is a contact of) */
+        const z = words(x0 - 400, y0 - 12, x0 - 2, y1 + 2)
+          .concat(words(x0 - 2, y0 - 2, x1 + 2, y1 + 2))
+          .map(t => String(t[2]));
+        res.ports[key] = 'PLANT:' + s.id + '.' + key + (z.length ? ' ' + z.join(' ') : '');
+      }
+    }
+    res.marks = marks.map(m => ({ key: m.key, type: m.type, in: null }));
+    const mk = Object.fromEntries(res.marks.map(m => [m.key, m]));
+    const W = s.w || [];
+    const onSeg = (p, v) =>
+      v[1].some((a, i) => {
+        if (!i) return false;
+        const b = v[1][i - 1];
+        return (
+          (a[0] === b[0] && near(a[0], p[0], 0.6) && p[1] >= Math.min(a[1], b[1]) - 0.6 && p[1] <= Math.max(a[1], b[1]) + 0.6) ||
+          (a[1] === b[1] && near(a[1], p[1], 0.6) && p[0] >= Math.min(a[0], b[0]) - 0.6 && p[0] <= Math.max(a[0], b[0]) + 0.6)
+        );
+      });
+    const outSeen = new Set();
+    for (const w of W) {
+      const nt = w[0],
+        p = w[1][w[1].length - 1];
+      const b = blocks.find(b => near(p[0], b.ex, tol) && p[1] >= b.ys[0] - tol && p[1] <= b.ys[1] + tol);
+      if (b) {
+        b.ins.push({ net: nt, y: p[1], side: 'l' });
+        continue;
+      }
+      const m = marks.find(m => Math.hypot(m.x - p[0], m.y - p[1]) <= m.r + tol);
+      if (m) {
+        mk[m.key].in = nt;
+        continue;
+      }
+      const c = circles.find(c => Math.hypot(c.x - p[0], c.y - p[1]) <= c.r + tol);
+      if (c) {
+        const k = 'o:' + c.x + ',' + c.y;
+        if (!outSeen.has(k)) {
+          outSeen.add(k);
+          res.outc.push({ key: k, letter: c.n, sheets: c.sh ? [c.sh] : [] });
+          res.outputs.push({ net: nt, to: 'circle ' + c.n + ' to ' + (c.sh || '(this sheet)'), key: k, kind: 'c', letter: c.n, sheets: c.sh ? [c.sh] : [] });
+        }
+        continue;
+      }
+      const r = (s.r || []).find(r => p[0] >= r[1] - tol && p[0] <= r[1] + r[3] + tol && p[1] >= r[2] - tol && p[1] <= r[2] + r[4] + tol);
+      if (r) {
+        res.outputs.push({ net: nt, to: 'panel ' + (r[5] || r[0]), key: r[0] || 'panel', kind: 'r' });
+        continue;
+      }
+      if (W.some(v => v !== w && v[0] === nt && (Math.hypot(v[1][0][0] - p[0], v[1][0][1] - p[1]) <= 20 * u || onSeg(p, v)))) continue;
+      res.open.push({ net: nt, at: p });
+    }
+    for (const b of blocks) {
+      b.ins.sort((a, c) => a.y - c.y);
+      delete b.ex, delete b.ys;
+    }
+    return res;
+  }
+  /* an input connector [letter, from sheets] is fed by the output connector of the same letter on the sheet it names: the in-connector names
+     both the sheet and the letter, so that is the link. The sheet list printed at the output connector is the drawing's cross reference only;
+     where it is empty (not typed) or leaves this sheet out, the link still holds and the gap is listed as "list". No output of that letter on the
+     named sheet, or two of them, is "bad": the link cannot be made. Sets c.src = 'SHEET:outkey' on each joined input. */
+  function join(all) {
+    const by = Object.fromEntries(all.map(n => [n.id, n]));
+    let ok = 0,
+      ext = 0;
+    const bad = [],
+      list = [];
+    for (const n of all)
+      for (const c of n.inputs) {
+        const src = c.from.filter(f => by[f]);
+        if (!src.length) {
+          ext++;
+          continue;
+        }
+        const hit = src.flatMap(f => by[f].outc.filter(o => o.letter === c.letter).map(o => [f, o]));
+        const back = hit.filter(h => h[1].sheets.includes(n.id) || h[1].sheets.includes('G-*'));
+        const use = back.length ? back : hit;
+        if (use.length !== 1) {
+          bad.push(n.id + ' ' + c.letter + ' <- ' + src.join(' ') + (hit.length ? ' (' + hit.length + ' outputs of that letter)' : ' (no output of that letter)'));
+          continue;
+        }
+        c.src = use[0][0] + ':' + use[0][1].key;
+        ok++;
+        if (!back.length) list.push(n.id + ' ' + c.letter + ' <- ' + use[0][0] + (use[0][1].sheets.length ? ' (its list: ' + use[0][1].sheets.join(' ') + ')' : ' (its list is not typed)'));
+      }
+    return { ok, ext, bad, list };
+  }
+
+  /* ---------- the sheets as ONE running program (plan step 2 / 4). Nothing here reads or writes the plant: everything that enters from
+     outside the TCE / TCA set is a PORT, named by what the drawing prints there, and the I/O binding (plan step 3, lane TCS I/O) sets the
+     ports; the outputs to the plant are read back by the same names. Ports:
+       PIO:<text of the PI/O box>        a PI/O table row (field input of the controller)
+       CON:<sheet>.<letter>              an input connector from a part that is not a TCE / TCA sheet (TCP = TPC tables, TCT = CRT tables,
+                                         IBD, DCS); several sheets reading the same connector share the port
+       CRT:<sheet>.<tag>                 an operator push button of the TCS HMI (CRT diamond 'in')
+       SYS:<text>                        a controller system reference (MYCTL-A, CPU_SIMU_ON, slot errors ...)
+       REF:<text>                        a reference to a definition that no typed sheet gives out
+     Constants: ON(1) = 1, OFF(0) = 0, a printed number = that number.
+     Order: every sheet runs at its own cycle (q.cycle, ms), in the order of the set (sheet number), as the controller scans its pages; inside a
+     sheet every block runs after the blocks that feed it (a loop of the drawing, a flip-flop seal-in, takes the value of the last scan). ---------- */
+  /* the side input of a block (top or bottom edge) is its SW of the macro list (SW = 1 the normal rule, SW = 0 the block's SW = 0 rule).
+     TCA100 / TCE050 show why: INITIAL is TP A001 of ON(1) with its own SW at ON(1), so it is 0 for the first 10 s of the controller and 1
+     after; it feeds the top of the timers and comparators of every sheet, which therefore hold their SW = 0 output (Y = 0) for those
+     10 s: "INITIAL clears every timer". */
+  const MACRO = {}; /* macro meanings, by name ('TRIPPLE INPUT DIAGNOSTICS' ...): f(inputs by pin name, notes, st, dt) -> outputs by pin name */
+  const numConst = t => {
+    const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
+    return m ? +m[1] : null;
+  };
+  function compile(sheets) {
+    const nets = sheets.map(s => (s.dwg ? gnet(s) : net(s)));
+    /* SH-G-*: a circle "to SH-G-*" goes to every sheet that reads that number "from SH-G-*" */
+    for (const n of nets)
+      for (const c of n.inputs)
+        if (c.from.length === 1 && c.from[0] === 'G-*') c.from = nets.filter(m => m.outc.some(o => o.letter === c.letter && o.sheets.includes('G-*'))).map(m => m.id);
+    const J = join(nets);
+    const sh = Object.fromEntries(sheets.map(s => [s.id, s])),
+      nb = Object.fromEntries(nets.map(n => [n.id, n]));
+    const names = [],
+      idx = new Map(),
+      init = [];
+    const slot = (k, v = 0) => {
+      if (!idx.has(k)) idx.set(k, names.length), names.push(k), init.push(v);
+      return idx.get(k);
+    };
+    const ports = new Set();
+    const port = k => (ports.add(k), slot(k));
+    /* definitions by name: the same controller first, then any (a definition is the drawing's name of a signal of the controller) */
+    const defs = {};
+    for (const n of nets)
+      for (const o of n.outputs)
+        if (o.kind === 'def') {
+          (defs[sh[n.id].ctl + '|' + o.text] = defs[sh[n.id].ctl + '|' + o.text] || []).push([n.id, o.net]);
+          (defs['|' + o.text] = defs['|' + o.text] || []).push([n.id, o.net]);
+        }
+    const part = {};
+    for (const n of nets) {
+      const S = sh[n.id],
+        P = (part[n.id] = new Map());
+      for (const b of n.blocks) P.set(b.key, ['b', b]);
+      for (const m of n.marks) P.set(m.key, ['m', m]);
+      for (const M of n.macros) P.set(M.key, ['M', M]);
+      for (const c of n.inputs) P.set(c.key, ['c', c]);
+      for (const k of S.k || []) P.set(k[0], ['k', k]);
+      for (const r of S.r || []) P.set(r[0], ['r', r]);
+      for (const d of S.d || []) if (d[3] === 'in') P.set(d[0], ['d', d]);
+      for (const x of S.s || []) if (!P.has(x[0])) P.set(x[0], ['s', x]); /* a G sheet's s source with a circle is its input connector */
+    }
+    const memo = new Map();
+    /* the slot that holds the value of net `key` of sheet `sid` */
+    function res(sid, key, depth) {
+      const mk = sid + ':' + key;
+      if (memo.has(mk)) return memo.get(mk);
+      depth = depth || 0;
+      const base = key.split('.')[0],
+        hit = part[sid].get(key) || part[sid].get(base);
+      let r;
+      if (!hit || depth > 40) r = port('UNK:' + mk);
+      else {
+        const [t, x] = hit;
+        if (t === 'b' || t === 'm') r = slot(mk);
+        else if (t === 'M') r = slot(sid + ':' + x.key + '.' + (key.includes('.') ? key.slice(base.length + 1) : x.R.find(Boolean) || 'OUT'));
+        else if (t === 'c') {
+          if (x.src) {
+            const T = x.src.slice(0, x.src.indexOf(':')),
+              ok = x.src.slice(T.length + 1),
+              o = nb[T].outputs.find(o => o.key === ok);
+            r = o ? res(T, o.net, depth + 1) : port('CON:' + sid + '.' + x.letter);
+          } else {
+            const f = x.from.filter(f => /^[A-Z]/.test(f));
+            r = port('CON:' + (f.length ? f.join('/') : sid) + '.' + x.letter);
+          }
+        } else if (t === 'k') {
+          const [, , , text, note] = x,
+            v = numConst(/^ON\(1\)$/.test(text) ? '1' : /^OFF\(0\)$/.test(text) ? '0' : text);
+          if (/ref$/.test(note) && note !== 'sys.ref') {
+            const d = defs[sh[sid].ctl + '|' + text] || defs['|' + text];
+            r = d && d.length ? res(d[0][0], d[0][1], depth + 1) : port('REF:' + text);
+          } else if (v !== null) r = slot('CONST:' + v, v);
+          else r = port('SYS:' + text);
+        } else if ((t === 'r' || t === 's') && nb[sid].ports && nb[sid].ports[x[0]]) r = port(nb[sid].ports[x[0]]);
+        else if (t === 'r' || t === 's') {
+          /* a PI/O box (r) or a source drawn by its lines (s): named by the table and order printed in it, "(TCA900-1)" = table TCA900
+             row 1 (unique in the set); a source that prints ON(1) / OFF(0) is that constant */
+          const [x0, y0, x1, y1] = t === 'r' ? [x[1], x[2], x[1] + x[3], x[2] + x[4]] : [Math.min(x[1], x[3]), Math.min(x[2], x[4]), Math.max(x[1], x[3]), Math.max(x[2], x[4])],
+            m = 6,
+            tx = (sh[sid].t || []).filter(w => w[0] >= x0 - m && w[0] <= x1 + m && w[1] >= y0 - m && w[1] <= y1 + m).map(w => String(w[2]).trim()),
+            /* the table / order is printed at the box or just right of it, on its top line (TCE_LIB.di: 350 right, 6 over the top) */
+            io = (sh[sid].t || [])
+              .filter(w => w[0] >= x0 - m && w[0] <= x1 + 120 && w[1] >= y0 - 16 && w[1] <= y1 + m && /\(T[A-Z]{2}\d+[A-Z]?-\d+\)/.test(w[2]))
+              .sort((a, b) => Math.hypot(a[0] - x1, a[1] - y0) - Math.hypot(b[0] - x1, b[1] - y0))
+              .map(w => /\((T[A-Z]{2}\d+[A-Z]?-\d+)\)/.exec(w[2]))[0],
+            on = tx.find(w => /^(ON\(1\)|OFF\(0\))$/.test(w));
+          r = io ? port('PIO:' + io[1]) : on ? slot('CONST:' + +/\((\d)\)/.exec(on)[1], +/\((\d)\)/.exec(on)[1]) : port('PIO:' + sid + '.' + x[0] + (tx.length ? ' ' + tx.join(' ') : ''));
+        } else if (t === 'd') r = port('CRT:' + sid + '.' + (x[4] || x[0]));
+        else r = port('SRC:' + mk);
+      }
+      memo.set(mk, r);
+      return r;
+    }
+    const plan = [],
+      unknown = {};
+    for (const n of nets) {
+      const S = sh[n.id],
+        nodes = [];
+      for (const m of n.marks)
+        nodes.push({ t: 'm', out: slot(n.id + ':' + m.key), ins: m.in ? [res(n.id, m.in)] : [], inv: m.type === 'X' || m.type === 'NC' });
+      for (const b of n.blocks) {
+        const f = kind(b.type),
+          L = b.ins.filter(i => i.side === 'l'),
+          side = b.ins.find(i => i.side !== 'l');
+        if (!f) unknown[b.type] = (unknown[b.type] || 0) + 1;
+        nodes.push({
+          t: 'b',
+          f,
+          type: b.type,
+          notes: b.notes,
+          out: slot(n.id + ':' + b.key),
+          ins: L.map(i => res(n.id, i.net)),
+          inv: L.map(i => !!i.inv),
+          sw: side ? res(n.id, side.net) : -1,
+          st: {}
+        });
+      }
+      for (const M of n.macros) {
+        const name = M.type.slice(2),
+          f = MACRO[name] || null;
+        if (!f) unknown[M.type] = (unknown[M.type] || 0) + 1;
+        const outs = {};
+        M.R.forEach(p => p && (outs[p] = slot(n.id + ':' + M.key + '.' + p)));
+        const ins = {};
+        for (const i of M.ins) if (i.name) ins[i.name] = res(n.id, i.net);
+        nodes.push({ t: 'M', f, name, notes: M.notes, ins, outs, st: {} });
+      }
+      /* order: a node after the nodes of this sheet that feed it (depth first; a loop keeps the last scan's value) */
+      const by = new Map();
+      nodes.forEach(x => (x.t === 'M' ? Object.values(x.outs) : [x.out]).forEach(o => by.set(o, x)));
+      const done = new Set(),
+        busy = new Set(),
+        order = [];
+      const visit = x => {
+        if (done.has(x) || busy.has(x)) return;
+        busy.add(x);
+        const deps = x.t === 'M' ? Object.values(x.ins) : x.ins.concat(x.sw >= 0 ? [x.sw] : []);
+        for (const d of deps) if (by.has(d)) visit(by.get(d));
+        busy.delete(x);
+        done.add(x);
+        order.push(x);
+      };
+      nodes.forEach(visit);
+      plan.push({ id: n.id, ctl: S.ctl, cyc: (S.cycle || 100) / 1000, acc: 0, nodes: order, blocks: n.blocks.length, macros: n.macros.length });
+    }
+    const v = Float64Array.from(init);
+    const prog = { names, idx, v, ports: [...ports].sort(), plan, nets, join: J, unknown, res, t: 0 };
+    return prog;
+  }
+  /* one scan of one sheet at its cycle dt */
+  function scan(prog, p, dt) {
+    const v = prog.v;
+    for (const x of p.nodes) {
+      if (x.t === 'm') v[x.out] = x.ins.length ? (x.inv ? b01(!v[x.ins[0]]) : v[x.ins[0]]) : NaN;
+      else if (x.t === 'b') {
+        if (!x.f) {
+          v[x.out] = NaN;
+          continue;
+        }
+        const xs = x.ins.map((s, i) => (x.inv[i] ? b01(!v[s]) : v[s]));
+        let sw;
+        if (x.sw >= 0) sw = b01(v[x.sw]);
+        v[x.out] = x.f(xs, x.notes, x.st, dt, sw)[0];
+      } else {
+        if (!x.f) {
+          for (const k in x.outs) v[x.outs[k]] = NaN;
+          continue;
+        }
+        const I = {};
+        for (const k in x.ins) I[k] = v[x.ins[k]];
+        const O = x.f(I, x.notes, x.st, dt) || {};
+        for (const k in x.outs) v[x.outs[k]] = k in O ? +O[k] : NaN;
+      }
+    }
+  }
+  /* advance the whole set by dt plant seconds: each sheet scans as many times as its cycle fits */
+  function step(prog, dt) {
+    for (const p of prog.plan) {
+      p.acc += dt;
+      while (p.acc >= p.cyc - 1e-9) {
+        scan(prog, p, p.cyc);
+        p.acc -= p.cyc;
+      }
+    }
+    prog.t += dt;
+  }
+  const set = (prog, name, val) => {
+    const i = prog.idx.get(name);
+    if (i === undefined || !prog.ports.includes(name)) return false;
+    prog.v[i] = +val;
+    return true;
+  };
+  /* the value of the net `key` of sheet `sid` (the live reads of a sheet name these keys) */
+  const get = (prog, sid, key) => prog.v[prog.res(sid, key)];
+  /* what runs: per sheet, every block and macro with a meaning = the sheet runs as its logic */
+  function stats(prog) {
+    let run = 0,
+      blocks = 0,
+      bOk = 0,
+      macros = 0,
+      mOk = 0;
+    const notRun = [];
+    for (const p of prog.plan) {
+      let ok = true;
+      for (const x of p.nodes) {
+        if (x.t === 'b') (blocks++, x.f ? bOk++ : (ok = false));
+        if (x.t === 'M') (macros++, x.f ? mOk++ : (ok = false));
+      }
+      ok ? run++ : notRun.push(p.id);
+    }
+    const kinds = {};
+    for (const n of prog.ports) {
+      const k = n.split(':')[0];
+      kinds[k] = (kinds[k] || 0) + 1;
+    }
+    return { sheets: prog.plan.length, run, notRun, blocks, bOk, macros, mOk, ports: prog.ports.length, portKinds: kinds };
+  }
+  root.TCE_RUN = { K, par, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO };
 })(typeof window !== 'undefined' ? window : globalThis);

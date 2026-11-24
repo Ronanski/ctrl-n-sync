@@ -47,6 +47,25 @@ function wiringSlim() {
   const rows = (w.WIRING || []).filter(x => /^[IO]\.[0-9A-F]{4}$/.test(x[2]) && x[3]).map(x => [x[0], x[1], x[2], x[3]]);
   return '/* ---- src/ui/plant/wiring.js (slim: I/O rows, station, address, tag) ---- */\nwindow.WIRING=' + JSON.stringify(rows) + ';\n';
 }
+/* PR 0 (lane plan 2026-11-25, docs/audit/lane-plan-content-first-2026-11-25.md): the lane-owned data, one JSON per lane or group, read
+   at build time in file-name order: src/world/bind/*.json (LANE_BIND: extra I/O rows and extra FROM references for the same linker),
+   src/world/inst/*.json (LANE_INST: unit instances of a sheet from data), src/data/alarms/*.json (LANE_ALARMS: alarm rows with
+   priority). An empty folder gives empty lists: the app runs as before. See the README.md in each folder for the row format. */
+function laneData() {
+  const rdDir = (d, f) => {
+    const D = path.join(root, ...d.split('/'));
+    if (!fs.existsSync(D)) return [];
+    return fs.readdirSync(D).filter(x => /\.json$/.test(x)).sort().map(x => {
+      let j;
+      try { j = JSON.parse(fs.readFileSync(path.join(D, x), 'utf8')); } catch (err) { throw new Error(d + '/' + x + ': ' + err.message); }
+      return f(x.replace(/\.json$/, ''), j);
+    });
+  };
+  const bind = [].concat(...rdDir('src/world/bind', (lane, j) => (Array.isArray(j) ? j : j.rows || []).map(r => Object.assign({ lane }, r))));
+  const inst = [].concat(...rdDir('src/world/inst', (set, j) => (Array.isArray(j) ? j : [j]).map(r => Object.assign({ set }, r))));
+  const alarms = [].concat(...rdDir('src/data/alarms', (group, j) => (Array.isArray(j) ? j : j.rows || []).map(r => Object.assign({ group }, r))));
+  return '/* ---- lane data (src/world/bind, src/world/inst, src/data/alarms) ---- */\nwindow.LANE_BIND=' + JSON.stringify(bind) + ';window.LANE_INST=' + JSON.stringify(inst) + ';window.LANE_ALARMS=' + JSON.stringify(alarms) + ';\n';
+}
 function worldBundle(o) {
   const rd = f => fs.readFileSync(f, 'utf8');
   const an = bundle(o).replace('globalThis.ENGINE=', 'globalThis.AN=AN;globalThis.ENGINE=');
@@ -59,8 +78,9 @@ function worldBundle(o) {
        DITL-03H row 18 MIG-52G1-2 = I.0932, the sootblower starters MOR / MOS). The page list (src/ui/plant/wiring.js, 0.9 MB) is not in the
        worker: a slim copy with the station, the address and the tag of the I/O rows (the only columns world.js reads) */
     wiringSlim() +
+    laneData() +
     ['world.js', 'plantsw.js', 'ditl150.js', 'eng.js', 'dock-eng.js'].map(f => '/* ---- src/world/' + f + ' ---- */\n' + rd(path.join(root, 'src', 'world', f))).join('\n')
   );
 }
-module.exports = { bundle, files, worldBundle };
+module.exports = { bundle, files, worldBundle, laneData };
 if (require.main === module) process.stdout.write(bundle());
