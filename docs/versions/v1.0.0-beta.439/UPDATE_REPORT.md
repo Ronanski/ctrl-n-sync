@@ -11,7 +11,7 @@ Sumunod sa beta.422. Annunciator lang (src/station/station.js). Walang pagbabago
 ## Sinubok (headless, station page sa 150 MW)
 
 - Windows na may signal: 74 sa 79 bago, **76 sa 79** pagkatapos. Pareho ang source ng ibang 74 (ikinumpara ang title ng bawat window bago at pagkatapos: A5 at A6 lang ang nagbago).
-- `node tests/lanes/docs-sora/ann_rows.cjs`: 4 PASS (bagong test).
+- `node tests/regress/ann_rows.cjs`: 4 PASS (bagong test).
 - `node tests/regress/station_annunciator.js`: ALL PASS (H1 sequence, Test 79 sa 79, walang page error).
 
 ## Hindi sinubok / natitira

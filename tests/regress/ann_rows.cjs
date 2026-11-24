@@ -1,7 +1,7 @@
 // Lane 9 (AUDIT FIX : SORA, beta.429): the console annunciator reads the address text of a drawing only for the output rows that send to
 // "OPC (ANN)". DITL-28A writes "S4 O.1324/1325" under output row 28 (FAB A STOPPED, 4.92 units) and closer to row 29 (2.35 units, no
 // annunciator output): windows A5 / A6 (FA blower A / B stopped) must be fed by DITL-28A / DITL-28A #B output row 28. Every other window
-// keeps its source (74 before). Headless, station page at 150 MW. Usage: node tests/lanes/docs-sora/ann_rows.cjs [html]
+// keeps its source (74 before). Headless, station page at 150 MW. Usage: node tests/regress/ann_rows.cjs [html]
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/opt/node22/lib/node_modules/playwright');
 const fs = require('fs'),
   path = require('path'),
