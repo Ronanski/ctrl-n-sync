@@ -1,0 +1,4854 @@
+[
+{
+"system": "Furnace temperature control dampers / air",
+"drawing": "P&ID K1AU3-A1-0-001 (furnace temperature control dampers) + DCS I/O list (PC)",
+"points": [
+{
+"st": "3",
+"ad": "I.0333",
+"t": "MIL-FA1005",
+"d": "#1 Furnace temp. front wall motor control damper FA1005 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0334",
+"t": "TS-FA1005",
+"d": "#1 Furnace temp. front wall motor control damper FA1005 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0720",
+"t": "ZSO-FA1008",
+"d": "#1 Furnace temp. front wall motor control damper FA1008 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0721",
+"t": "ZSC-FA1008",
+"d": "#1 Furnace temp. front wall motor control damper FA1008 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0722",
+"t": "MIT-FA1008",
+"d": "#1 Furnace temp. front wall motor control damper FA1008 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0723",
+"t": "MIL-FA1008",
+"d": "#1 Furnace temp. front wall motor control damper FA1008 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0724",
+"t": "TS-FA1008",
+"d": "#1 Furnace temp. front wall motor control damper FA1008 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0725",
+"t": "ZSO-FA1009",
+"d": "#1 Furnace temp. front wall motor control damper FA1009 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0726",
+"t": "ZSC-FA1009",
+"d": "#1 Furnace temp. front wall motor control damper FA1009 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0727",
+"t": "MIT-FA1009",
+"d": "#1 Furnace temp. front wall motor control damper FA1009 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0728",
+"t": "MIL-FA1009",
+"d": "#1 Furnace temp. front wall motor control damper FA1009 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0729",
+"t": "TS-FA1009",
+"d": "#1 Furnace temp. front wall motor control damper FA1009 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.072A",
+"t": "ZSO-FA1010",
+"d": "#1 Furnace temp. front wall motor control damper FA1010 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.072B",
+"t": "ZSC-FA1010",
+"d": "#1 Furnace temp. front wall motor control damper FA1010 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.072C",
+"t": "MIT-FA1010",
+"d": "#1 Furnace temp. front wall motor control damper FA1010 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.072D",
+"t": "MIL-FA1010",
+"d": "#1 Furnace temp. front wall motor control damper FA1010 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.072E",
+"t": "TS-FA1010",
+"d": "#1 Furnace temp. front wall motor control damper FA1010 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0730",
+"t": "ZSO-FA1011",
+"d": "#1 Furnace temp. front wall motor control damper FA1011 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0731",
+"t": "ZSC-FA1011",
+"d": "#1 Furnace temp. front wall motor control damper FA1011 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0732",
+"t": "MIT-FA1011",
+"d": "#1 Furnace temp. front wall motor control damper FA1011 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0733",
+"t": "MIL-FA1011",
+"d": "#1 Furnace temp. front wall motor control damper FA1011 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0735",
+"t": "ZSO-FA1012",
+"d": "#1 Furnace temp. front wall motor control damper FA1012 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0737",
+"t": "MIT-FA1012",
+"d": "#1 Furnace temp. front wall motor control damper FA1012 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0738",
+"t": "MIL-FA1012",
+"d": "#1 Furnace temp. front wall motor control damper FA1012 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0739",
+"t": "TS-FA1012",
+"d": "#1 Furnace temp. front wall motor control damper FA1012 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.073B",
+"t": "ZSC-FA1013",
+"d": "#1 Furnace temp. front wall motor control damper FA1013 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.073C",
+"t": "MIT-FA1013",
+"d": "#1 Furnace temp. front wall motor control damper FA1013 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0800",
+"t": "ZSO-FA1014",
+"d": "#1 Furnace temp. front wall motor control damper FA1014 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0801",
+"t": "ZSC-FA1014",
+"d": "#1 Furnace temp. front wall motor control damper FA1014 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0802",
+"t": "MIT-FA1014",
+"d": "#1 Furnace temp. front wall motor control damper FA1014 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0803",
+"t": "MIL-FA1014",
+"d": "#1 Furnace temp. front wall motor control damper FA1014 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0804",
+"t": "TS-FA1014",
+"d": "#1 Furnace temp. front wall motor control damper FA1014 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0805",
+"t": "ZSO-FA1015",
+"d": "#1 Furnace temp. front wall motor control damper FA1015 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0806",
+"t": "ZSC-FA1015",
+"d": "#1 Furnace temp. front wall motor control damper FA1015 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0807",
+"t": "MIT-FA1015",
+"d": "#1 Furnace temp. front wall motor control damper FA1015 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0808",
+"t": "MIL-FA1015",
+"d": "#1 Furnace temp. front wall motor control damper FA1015 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0809",
+"t": "TS-FA1015",
+"d": "#1 Furnace temp. front wall motor control damper FA1015 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.080A",
+"t": "ZSO-FA1016",
+"d": "#1 Furnace temp. front wall motor control damper FA1016 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.080B",
+"t": "ZSC-FA1016",
+"d": "#1 Furnace temp. front wall motor control damper FA1016 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.080C",
+"t": "MIT-FA1016",
+"d": "#1 Furnace temp. front wall motor control damper FA1016 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.080D",
+"t": "MIL-FA1016",
+"d": "#1 Furnace temp. front wall motor control damper FA1016 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.080E",
+"t": "TS-FA1016",
+"d": "#1 Furnace temp. front wall motor control damper FA1016 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0810",
+"t": "ZSO-FA1017",
+"d": "#1 Furnace temp. front wall motor control damper FA1017 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0811",
+"t": "ZSC-FA1017",
+"d": "#1 Furnace temp. front wall motor control damper FA1017 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0812",
+"t": "MIT-FA1017",
+"d": "#1 Furnace temp. front wall motor control damper FA1017 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0813",
+"t": "MIL-FA1017",
+"d": "#1 Furnace temp. front wall motor control damper FA1017 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0814",
+"t": "TS-FA1017",
+"d": "#1 Furnace temp. front wall motor control damper FA1017 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0815",
+"t": "ZSO-FA1018",
+"d": "#1 Furnace temp. front wall motor control damper FA1018 open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0816",
+"t": "ZSC-FA1018",
+"d": "#1 Furnace temp. front wall motor control damper FA1018 close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0817",
+"t": "MIT-FA1018",
+"d": "#1 Furnace temp. front wall motor control damper FA1018 trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0818",
+"t": "MIL-FA1018",
+"d": "#1 Furnace temp. front wall motor control damper FA1018 remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0819",
+"t": "TS-FA1018",
+"d": "#1 Furnace temp. front wall motor control damper FA1018 torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AI0400",
+"t": "TA-FA1052-6",
+"d": "#1 Air preheater hot end bearing oil temp.",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AI0401",
+"t": "TA-FA1052-7",
+"d": "#1 Air preheater cold end bearing oil temp.",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AI0402",
+"t": "TI-FA1052",
+"d": "#1 Air preheater average measured SA outlet gas temp.",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AI0532",
+"t": "VT-FA1055-B2",
+"d": "#1 FA blower-B drive end of bearing vibration",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 055-A2 twin is linked on DITL-28B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-FA1055-A2"
+},
+{
+"st": "3",
+"ad": "AI0704",
+"t": "TT-FA1055-BU",
+"d": "#1 FA blower-B motor winding temperature (U phase)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 055-AU twin is linked on DITL-28B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FA1055-AU"
+},
+{
+"st": "3",
+"ad": "AI0705",
+"t": "TT-FA1055-BV",
+"d": "#1 FA blower-B motor winding temperature (V phase)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 055-AV twin is linked on DITL-28B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FA1055-AV"
+},
+{
+"st": "3",
+"ad": "AI0706",
+"t": "TT-FA1055-BW",
+"d": "#1 FA blower-B motor winding temperature (W phase)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 055-AW twin is linked on DITL-28B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FA1055-AW"
+},
+{
+"st": "3",
+"ad": "AI0707",
+"t": "TT-FA1055-B3",
+"d": "#1 FA blower-B motor side drive end bearing temp.",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 055-A3 twin is linked on DITL-28B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FA1055-A3"
+},
+{
+"st": "3",
+"ad": "AI0708",
+"t": "TT-FA1055-B4",
+"d": "#1 FA blower-B motor side non drive end bearing temp.",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 055-A4 twin is linked on DITL-28B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FA1055-A4"
+},
+{
+"st": "3",
+"ad": "AI0709",
+"t": "TT-FA1055-B2",
+"d": "#1 FA blower-B drive end bearing temp.",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 055-A2 twin is linked on DITL-28B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FA1055-A2"
+},
+{
+"st": "3",
+"ad": "AI0710",
+"t": "TT-FA1055-B1",
+"d": "#1 FA blower-B non drive end bearing temp.",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 055-A1 twin is linked on DITL-28B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FA1055-A1"
+},
+{
+"st": "4",
+"ad": "I.0976",
+"t": "ZSO-FA1043-D",
+"d": "#1 Burner-D hot secondary air flow control damper open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-FA1043-A"
+},
+{
+"st": "4",
+"ad": "I.0977",
+"t": "ZSC-FA1043-D",
+"d": "#1 Burner-D hot secondary air flow control damper close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-FA1043-A"
+},
+{
+"st": "4",
+"ad": "I.0978",
+"t": "MIT-FA1043-D",
+"d": "#1 Burner-D hot secondary air flow control damper trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.0979",
+"t": "MIL-FA1043-D",
+"d": "#1 Burner-D hot secondary air flow control damper remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.097A",
+"t": "TS-FA1043-D",
+"d": "#1 Burner-D hot secondary air flow control damper torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Start-up burners B / C / D (oil, purge, atomizing, panel lamps and push buttons)",
+"drawing": "M&S BMS 1612 13-4-105; DITL-02 / 03 / 07 (burner A sheet is DITL-07)",
+"points": [
+{
+"st": "4",
+"ad": "I.0333",
+"t": "ZSR-DO1043-B4",
+"d": "#1 Boiler start up burner-B Igniter retract",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A4 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSR-DO1043-A4"
+},
+{
+"st": "4",
+"ad": "O.0400",
+"t": "SV-DO1043-B1",
+"d": "#1 Boiler start up burner-B oil supply line valve(1) open command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A1 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SV-DO1043-A1"
+},
+{
+"st": "4",
+"ad": "O.0401",
+"t": "SV-DO1043-B2",
+"d": "#1 Boiler start up burner-B oil supply line valve(2) open command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A2 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SV-DO1043-A2"
+},
+{
+"st": "4",
+"ad": "O.0404",
+"t": "SV-PA1043-B2",
+"d": "#1 Boiler start up burner-B atomizing air valve open command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A2 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SV-PA1043-A2"
+},
+{
+"st": "4",
+"ad": "O.0406",
+"t": "SV-PA1043-B3",
+"d": "#1 Boiler start up burner-B purge valve open command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A3 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SV-PA1043-A3"
+},
+{
+"st": "4",
+"ad": "O.0407",
+"t": "SVE-DO1043-B5",
+"d": "#1 Boiler start up burner-B oil gun cylinder insert command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A5 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SVE-DO1043-A5"
+},
+{
+"st": "4",
+"ad": "O.0408",
+"t": "SVR-DO1043-B5",
+"d": "#1 Boiler start up burner-B oil gun cylinder retract command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A5 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SVR-DO1043-A5"
+},
+{
+"st": "4",
+"ad": "O.0409",
+"t": "SVE-DO1043-B4",
+"d": "#1 Boiler start up burner-B Igniter cylinder insert command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A4 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SVE-DO1043-A4"
+},
+{
+"st": "4",
+"ad": "O.0410",
+"t": "BO6-DO1043-B",
+"d": "#1 Spark-B on command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO6-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.0411",
+"t": "BO4-DO1043-B",
+"d": "#1 Igniter-B off lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO4-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.0412",
+"t": "BO5-DO1043-B",
+"d": "#1 Igniter-B in operation lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO5-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.0413",
+"t": "BO1-DO1043-B",
+"d": "#1 Burner-B cleaning running lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO1-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.0414",
+"t": "BO2-DO1043-B",
+"d": "#1 Burner-B off lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO2-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.0415",
+"t": "BO3-DO1043-B",
+"d": "#1 Burner-B in operation lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO3-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.0641",
+"t": "ZSC-DO1043-C1",
+"d": "#1 Boiler start up burner-C oil supply line valve(1) close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A1 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-DO1043-A1"
+},
+{
+"st": "4",
+"ad": "I.064C",
+"t": "ZSO-PA1043-C3",
+"d": "#1 Boiler start up burner-C purge valve open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A3 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-PA1043-A3"
+},
+{
+"st": "4",
+"ad": "I.064D",
+"t": "ZSC-PA1043-C3",
+"d": "#1 Boiler start up burner-C purge valve close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A3 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-PA1043-A3"
+},
+{
+"st": "4",
+"ad": "I.0684",
+"t": "BI2-DO1043-C",
+"d": "#1 Burner-C oil gun not off/purge P.B. signal",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-09: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI2-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.0685",
+"t": "BI1-DO1043-C",
+"d": "#1 Burner-C cleaning on",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-09: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI1-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.0687",
+"t": "BI4-DO1043-C",
+"d": "#1 Igniter-C not off P.B. signal",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-09: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI4-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.068C",
+"t": "PSH-DO1043-C1",
+"d": "#1 Boiler start up burner-C supply oil pressure switch not high",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A1 twin is linked on DITL-07: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "PSH-DO1043-A1"
+},
+{
+"st": "4",
+"ad": "I.068D",
+"t": "PSL-PA1043-C1",
+"d": "#1 Boiler start up burner-C atomizing air pressure switch not low",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A1 twin is linked on DITL-07: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "PSL-PA1043-A1"
+},
+{
+"st": "4",
+"ad": "I.0960",
+"t": "ZSO-DO1043-D1",
+"d": "#1 Boiler start up burner-D oil supply line valve(1) open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A1 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-DO1043-A1"
+},
+{
+"st": "4",
+"ad": "I.0961",
+"t": "ZSC-DO1043-D1",
+"d": "#1 Boiler start up burner-D oil supply line valve(1) close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A1 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-DO1043-A1"
+},
+{
+"st": "4",
+"ad": "I.0962",
+"t": "ZSO-DO1043-D2",
+"d": "#1 Boiler start up burner-D oil supply line valve(2) open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A2 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-DO1043-A2"
+},
+{
+"st": "4",
+"ad": "I.0963",
+"t": "ZSC-DO1043-D2",
+"d": "#1 Boiler start up burner-D oil supply line valve(2) close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A2 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-DO1043-A2"
+},
+{
+"st": "4",
+"ad": "I.0968",
+"t": "ZSO-PA1043-D2",
+"d": "#1 Boiler start up burner-D atomizing air valve open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A2 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-PA1043-A2"
+},
+{
+"st": "4",
+"ad": "I.0969",
+"t": "ZSC-PA1043-D2",
+"d": "#1 Boiler start up burner-D atomizing air valve close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A2 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-PA1043-A2"
+},
+{
+"st": "4",
+"ad": "I.096C",
+"t": "ZSO-PA1043-D3",
+"d": "#1 Boiler start up burner-D purge valve open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A3 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-PA1043-A3"
+},
+{
+"st": "4",
+"ad": "I.096D",
+"t": "ZSC-PA1043-D3",
+"d": "#1 Boiler start up burner-D purge valve close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A3 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-PA1043-A3"
+},
+{
+"st": "4",
+"ad": "I.0970",
+"t": "ZSE-DO1043-D5",
+"d": "#1 Boiler start up burner-D oil gun extend",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A5 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSE-DO1043-A5"
+},
+{
+"st": "4",
+"ad": "I.0971",
+"t": "ZSR-DO1043-D5",
+"d": "#1 Boiler start up burner-D oil gun retract",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A5 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSR-DO1043-A5"
+},
+{
+"st": "4",
+"ad": "I.0973",
+"t": "ZSR-DO1043-D4",
+"d": "#1 Boiler start up burner-D Igniter retract",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A4 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSR-DO1043-A4"
+},
+{
+"st": "4",
+"ad": "I.1001",
+"t": "BI7-DO1043-D",
+"d": "#1 Burner-D lamp test",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI7-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.1002",
+"t": "BI6-DO1043-D",
+"d": "#1 Burner-D not remote",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-09: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI6-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.1003",
+"t": "BI3-DO1043-D",
+"d": "#1 Burner-D oil gun on P.B. signal",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-09: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI3-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.1004",
+"t": "BI2-DO1043-D",
+"d": "#1 Burner-D oil gun not off/purge P.B. signal",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-09: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI2-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.1005",
+"t": "BI1-DO1043-D",
+"d": "#1 Burner-D cleaning on",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-09: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI1-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.1006",
+"t": "BI5-DO1043-D",
+"d": "#1 Igniter-D on P.B. signal",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-09: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI5-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.1007",
+"t": "BI4-DO1043-D",
+"d": "#1 Igniter-D not off P.B. signal",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-09: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI4-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.1008",
+"t": "BI8-DO1043-D",
+"d": "#1 Spark Igniter-D flame on",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI8-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.100A",
+"t": "BI9-DO1043-D",
+"d": "#1 Start up burner-D flame detector on",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI9-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.100C",
+"t": "PSH-DO1043-D1",
+"d": "#1 Boiler start up burner-D supply oil pressure switch not high",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A1 twin is linked on DITL-07: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "PSH-DO1043-A1"
+},
+{
+"st": "4",
+"ad": "I.100D",
+"t": "PSL-PA1043-D1",
+"d": "#1 Boiler start up burner-D atomizing air pressure switch not low",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 043-A1 twin is linked on DITL-07: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "PSL-PA1043-A1"
+},
+{
+"st": "4",
+"ad": "O.1040",
+"t": "SV-DO1043-D1",
+"d": "#1 Boiler start up burner-D oil supply line valve(1) open command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A1 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SV-DO1043-A1"
+},
+{
+"st": "4",
+"ad": "O.1041",
+"t": "SV-DO1043-D2",
+"d": "#1 Boiler start up burner-D oil supply line valve(2) open command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A2 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SV-DO1043-A2"
+},
+{
+"st": "4",
+"ad": "O.1044",
+"t": "SV-PA1043-D2",
+"d": "#1 Boiler start up burner-D atomizing air valve open command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A2 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SV-PA1043-A2"
+},
+{
+"st": "4",
+"ad": "O.1046",
+"t": "SV-PA1043-D3",
+"d": "#1 Boiler start up burner-D purge valve open command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A3 twin is linked on DITL-17: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SV-PA1043-A3"
+},
+{
+"st": "4",
+"ad": "O.1047",
+"t": "SVE-DO1043-D5",
+"d": "#1 Boiler start up burner-D oil gun cylinder insert command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A5 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SVE-DO1043-A5"
+},
+{
+"st": "4",
+"ad": "O.1048",
+"t": "SVR-DO1043-D5",
+"d": "#1 Boiler start up burner-D oil gun cylinder retract command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A5 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SVR-DO1043-A5"
+},
+{
+"st": "4",
+"ad": "O.1049",
+"t": "SVE-DO1043-D4",
+"d": "#1 Boiler start up burner-D Igniter cylinder insert command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 043-A4 twin is linked on DITL-16: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "SVE-DO1043-A4"
+},
+{
+"st": "4",
+"ad": "O.1050",
+"t": "BO6-DO1043-D",
+"d": "#1 Spark-D on command",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO6-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.1051",
+"t": "BO4-DO1043-D",
+"d": "#1 Igniter-D off lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO4-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.1052",
+"t": "BO5-DO1043-D",
+"d": "#1 Igniter-D in operation lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO5-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.1053",
+"t": "BO1-DO1043-D",
+"d": "#1 Burner-D cleaning running lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO1-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.1054",
+"t": "BO2-DO1043-D",
+"d": "#1 Burner-D off lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO2-DO1043-A"
+},
+{
+"st": "4",
+"ad": "O.1055",
+"t": "BO3-DO1043-D",
+"d": "#1 Burner-D in operation lamp indicator",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BO3-DO1043-A"
+},
+{
+"st": "4",
+"ad": "I.1009",
+"t": "BI10-DO1043-D",
+"d": "#1 Start up burner-D flame detector ready",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1043-A twin is linked on DITL-18: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "BI10-DO1043-A"
+}
+]
+},
+{
+"system": "Pumps (VCB, remote, pits)",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "3",
+"ad": "I.017F",
+"t": "LSHH-P1127",
+"d": "#1 Transformer area pit level switch high high",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.032E",
+"t": "MIV-P1501A1",
+"d": "#1 Seawater pump-A VCB on",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.032F",
+"t": "MIV-P1501A2",
+"d": "#1 Seawater pump-A VCB off",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0402",
+"t": "MIL-P1116B",
+"d": "#1 Condensate pump-B remote",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the P1116A twin is linked on DITL-61A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIL-P1116A"
+},
+{
+"st": "3",
+"ad": "I.0404",
+"t": "MIV-P1116B1",
+"d": "#1 Condensate pump-B VCB on",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1116A1 twin is linked on DITL-61A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIV-P1116A1"
+},
+{
+"st": "3",
+"ad": "I.0405",
+"t": "MIV-P1116B2",
+"d": "#1 Condensate pump-B VCB off",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1116A2 twin is linked on DITL-61A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIV-P1116A2"
+},
+{
+"st": "3",
+"ad": "O.044C",
+"t": "MOR-P1501B",
+"d": "#1 Seawater pump-B start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1501A twin is linked on DITL-29A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-P1501A"
+},
+{
+"st": "3",
+"ad": "O.044D",
+"t": "MOS-P1501B",
+"d": "#1 Seawater pump-B stop command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1501A twin is linked on DITL-29A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOS-P1501A"
+},
+{
+"st": "3",
+"ad": "O.044E",
+"t": "MOR-P1503B",
+"d": "#1 Seawater booster pump-B start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1503A twin is linked on DITL-30: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-P1503A"
+},
+{
+"st": "3",
+"ad": "O.0456",
+"t": "MOP-P1116B",
+"d": "#1 Condensate pump-B start permission signal",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1116A twin is linked on DITL-61A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOP-P1116A"
+},
+{
+"st": "3",
+"ad": "O.0457",
+"t": "MOT-P1116B",
+"d": "#1 Condensate pump-B trip command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1116A twin is linked on DITL-61A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOT-P1116A"
+},
+{
+"st": "3",
+"ad": "O.045A",
+"t": "MOP-P1501B",
+"d": "#1 Seawater pump-B start permission signal",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1501A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOP-P1501A"
+},
+{
+"st": "3",
+"ad": "O.045B",
+"t": "MOT-P1501B",
+"d": "#1 Seawater pump-B trip command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1501A twin is linked on DITL-29A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOT-P1501A"
+},
+{
+"st": "3",
+"ad": "O.045D",
+"t": "MOP-P1503B",
+"d": "#1 Seawater booster pump-B start permission signal",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1503A twin is linked on DITL-30: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOP-P1503A"
+},
+{
+"st": "3",
+"ad": "I.052A",
+"t": "MIV-P1501B1",
+"d": "#1 Seawater pump-B VCB on",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.052B",
+"t": "MIV-P1501B2",
+"d": "#1 Seawater pump-B VCB off",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "O.0763",
+"t": "MOS-P1501C",
+"d": "#1 Seawater pump-C stop command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1501A twin is linked on DITL-29A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOS-P1501A"
+},
+{
+"st": "3",
+"ad": "O.076F",
+"t": "MOR-P1503C",
+"d": "#1 Seawater booster pump-C start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1503A twin is linked on DITL-30: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-P1503A"
+},
+{
+"st": "3",
+"ad": "O.0772",
+"t": "MOP-P1501C",
+"d": "#1 Seawater pump-C start permission signal",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1501A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOP-P1501A"
+},
+{
+"st": "3",
+"ad": "O.0773",
+"t": "MOT-P1501C",
+"d": "#1 Seawater pump-C trip command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1501A twin is linked on DITL-29A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOT-P1501A"
+},
+{
+"st": "3",
+"ad": "O.0774",
+"t": "MOP-P1503C",
+"d": "#1 Seawater booster pump-C start permission signal",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P1503A twin is linked on DITL-30: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOP-P1503A"
+},
+{
+"st": "3",
+"ad": "I.081C",
+"t": "MIL-P1501C",
+"d": "#1 Seawater pump-C remote",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the P1501A twin is linked on DITL-29A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIL-P1501A"
+},
+{
+"st": "3",
+"ad": "I.081E",
+"t": "MIV-P1501C1",
+"d": "#1 Seawater pump-C VCB on",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.081F",
+"t": "MIV-P1501C2",
+"d": "#1 Seawater pump-C VCB off",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AI0434",
+"t": "IT-P1503B",
+"d": "#1 Seawater booster pump-B current",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the P1503A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "IT-P1503A"
+},
+{
+"st": "3",
+"ad": "AI0435",
+"t": "IT-P1503C",
+"d": "#1 Seawater booster pump-C current",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the P1503A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "IT-P1503A"
+},
+{
+"st": "3",
+"ad": "AI0465",
+"t": "IT-P1116B",
+"d": "#1 Condensate pump-B current",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the P1116A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "IT-P1116A"
+},
+{
+"st": "5",
+"ad": "I.0121",
+"t": "MIT-P0761B",
+"d": "Hypo-chlorinated dosing system unloading pump-B overload",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "I.032E",
+"t": "MIT-P0761A",
+"d": "Hypo-chlorinated dosing system unloading pump-A overload",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "O.0360",
+"t": "MOR-P0702B",
+"d": "Diesel oil pump-B start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P0702A twin is linked on DITL-31: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-P0702A"
+},
+{
+"st": "5",
+"ad": "O.0361",
+"t": "MOR-P0709B",
+"d": "Make-up water pump-B start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P0709A twin is linked on DITL-112: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-P0709A"
+},
+{
+"st": "5",
+"ad": "O.0362",
+"t": "MOR-P0715B",
+"d": "Industrial water pump-B start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P0715A twin is linked on DITL-111: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-P0715A"
+},
+{
+"st": "5",
+"ad": "O.0363",
+"t": "MOR-P0709C",
+"d": "Make-up water pump-C start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P0709A twin is linked on DITL-112: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-P0709A"
+},
+{
+"st": "5",
+"ad": "O.0364",
+"t": "MOP-P0058B",
+"d": "Waste water pump-B start permission signal",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P0058A twin is linked on DITL-120: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOP-P0058A"
+},
+{
+"st": "5",
+"ad": "O.037E",
+"t": "MOP-P0709B",
+"d": "Make-up water pump-B start permission signal",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the P0709A twin is linked on DITL-112: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOP-P0709A"
+}
+]
+},
+{
+"system": "Operator console annunciator",
+"drawing": "DCS hardware wiring (dcs-hardware-wiring.zip, ARP / IRP) (PC)",
+"points": [
+{
+"st": "4",
+"ad": "O.1325",
+"t": "OPC-ANN-A6",
+"d": "#1 B-FA BLOWER STOPPED",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1327",
+"t": "OPC-ANN-A8",
+"d": "#1 B-COAL FEEDER STOPPED",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.133A",
+"t": "OPC-ANN-C7",
+"d": "#1 B-BFWP STOPPED",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.133B",
+"t": "OPC-ANN-C8",
+"d": "#1 B-FA BLOWER BEARING TEMPERATURE H.H.",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.133D",
+"t": "OPC-ANN-C10",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1364",
+"t": "OPC-ANN-D7",
+"d": "#1 B-FA BLOWER BEARING TEMPERATURE HIGH",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1366",
+"t": "OPC-ANN-D9",
+"d": "#1 B-COAL FEEDER OUTLET TEMPERATURE HIGH",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1367",
+"t": "OPC-ANN-D10",
+"d": "#1 C-COAL FEEDER OUTLET TEMPERATURE HIGH",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.137D",
+"t": "OPC-ANN-G2",
+"d": "#1 B-BOTTOM ASH SCREW COOLER STOPPED",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.137E",
+"t": "OPC-ANN-G3",
+"d": "#1 C-BOTTOM ASH SCREW COOLER STOPPED",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.137F",
+"t": "OPC-ANN-G4",
+"d": "#1 D-BOTTOM ASH SCREW COOLER STOPPED",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1403",
+"t": "OPC-ANN-G8",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1404",
+"t": "OPC-ANN-G9",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1405",
+"t": "OPC-ANN-G10",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1407",
+"t": "OPC-ANN-H2",
+"d": "B-MAKE UP PUMP STOPPED",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1408",
+"t": "OPC-ANN-H3",
+"d": "C-MAKE UP PUMP STOPPED",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1411",
+"t": "OPC-ANN-I2",
+"d": "B-DIESEL OIL PUMP STOPPED",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1413",
+"t": "OPC-ANN-I4",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1414",
+"t": "OPC-ANN-I5",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1415",
+"t": "OPC-ANN-I6",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1416",
+"t": "OPC-ANN-I7",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1417",
+"t": "OPC-ANN-I8",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1418",
+"t": "OPC-ANN-I9",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1419",
+"t": "OPC-ANN-I10",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.141A",
+"t": "OPC-ANN-J1",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.141B",
+"t": "OPC-ANN-J2",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.141C",
+"t": "OPC-ANN-J3",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.141D",
+"t": "OPC-ANN-J4",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.141E",
+"t": "OPC-ANN-J5",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.141F",
+"t": "OPC-ANN-J6",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1440",
+"t": "OPC-ANN-J7",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1441",
+"t": "OPC-ANN-J8",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1442",
+"t": "OPC-ANN-J9",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.1443",
+"t": "OPC-ANN-J10",
+"d": "",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+}
+]
+},
+{
+"system": "Feedwater / BFWP",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "1",
+"ad": "AI0180",
+"t": "ZT-FW1130-1",
+"d": "#1 Boiler drum level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "AI0195",
+"t": "ZT-FW1130-2",
+"d": "#1 Boiler feed water flow control valve position for start-up",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "O.0131",
+"t": "MOS-FW1001",
+"d": "#1 BFWP-A outlet motor valve close command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0299",
+"t": "LS-FW1115-A",
+"d": "#1 BFWP-A motor cooling water leakage detector",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.029A",
+"t": "LS-FW1115-B",
+"d": "#1 BFWP-B motor cooling water leakage detector",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "O.044C",
+"t": "MOR-FW1002",
+"d": "#1 BFWP-B outlet motor valve open command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "O.044D",
+"t": "MOS-FW1002",
+"d": "#1 BFWP-B outlet motor valve close command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "O.044E",
+"t": "MOR-FW1392",
+"d": "#1 BFWP-B outlet bypass motor valve open command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "O.044F",
+"t": "MOS-FW1392",
+"d": "#1 BFWP-B outlet bypass motor valve close command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0898",
+"t": "ZSO-FW1060",
+"d": "#1 HP turbine bypass desuperheater spray water control valve open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0899",
+"t": "ZSC-FW1060",
+"d": "#1 HP turbine bypass desuperheater spray water control valve close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.089A",
+"t": "ZSO-FW1150",
+"d": "#1 Reheater inlet desuperheater spray water control valve open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.089B",
+"t": "ZSC-FW1150",
+"d": "#1 Reheater inlet desuperheater spray water control valve close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0694",
+"t": "ZT-FW1060",
+"d": "#1 HP turbine bypass desuperheater spray water control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0704",
+"t": "ZT-FW1150",
+"d": "#1 Reheater inlet desuperheater spray water control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0768",
+"t": "ZT-FW1001",
+"d": "#1 BFWP-A outlet motor valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0784",
+"t": "ZT-FW1002",
+"d": "#1 BFWP-B outlet motor valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0785",
+"t": "ZT-FW1392",
+"d": "#1 BFWP-B outlet bypass motor valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0901",
+"t": "TT-FW1010",
+"d": "#1 BFWP inlet feed water temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AI0658",
+"t": "TT-FW1115-BW",
+"d": "#1 BFWP-B motor winding temperature (W phase)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 115-AW twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FW1115-AW"
+},
+{
+"st": "3",
+"ad": "AI0659",
+"t": "TT-FW1115-B3",
+"d": "#1 BFWP-B motor side drive end bearing temp.",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 115-A3 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FW1115-A3"
+},
+{
+"st": "3",
+"ad": "AI0660",
+"t": "TT-FW1115-B4",
+"d": "#1 BFWP-B motor side non drive end bearing temp.",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 115-A4 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FW1115-A4"
+},
+{
+"st": "3",
+"ad": "AI0661",
+"t": "TT-FW1115-B2",
+"d": "#1 BFWP-B pump side drive end bearing temp.",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 115-A2 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FW1115-A2"
+},
+{
+"st": "3",
+"ad": "AI0662",
+"t": "TT-FW1115-B1",
+"d": "#1 BFWP-B pump side non drive end bearing temp.",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 115-A1 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-FW1115-A1"
+},
+{
+"st": "3",
+"ad": "AI1008",
+"t": "VT-FW1115-B11",
+"d": "#1 BFWP-B pump non drive end of casing vibration (X)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 15-A11 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-FW1115-A11"
+},
+{
+"st": "3",
+"ad": "AI1009",
+"t": "VT-FW1115-B12",
+"d": "#1 BFWP-B pump non drive end of casing vibration (Y)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 15-A12 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-FW1115-A12"
+},
+{
+"st": "3",
+"ad": "AI1010",
+"t": "VT-FW1115-B21",
+"d": "#1 BFWP-B pump drive end of casing vibration (X)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 15-A21 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-FW1115-A21"
+},
+{
+"st": "3",
+"ad": "AI1011",
+"t": "VT-FW1115-B22",
+"d": "#1 BFWP-B pump drive end of casing vibration (Y)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 15-A22 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-FW1115-A22"
+},
+{
+"st": "3",
+"ad": "AI1012",
+"t": "VT-FW1115-B41",
+"d": "#1 BFWP-B motor non drive end of casing vibration (X)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 15-A41 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-FW1115-A41"
+},
+{
+"st": "3",
+"ad": "AI1013",
+"t": "VT-FW1115-B42",
+"d": "#1 BFWP-B motor non drive end of casing vibration (Y)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 15-A42 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-FW1115-A42"
+},
+{
+"st": "3",
+"ad": "AI1014",
+"t": "VT-FW1115-B31",
+"d": "#1 BFWP-B motor drive end of casing vibration (X)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 15-A31 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-FW1115-A31"
+},
+{
+"st": "3",
+"ad": "AI1015",
+"t": "VT-FW1115-B32",
+"d": "#1 BFWP-B motor drive end of casing vibration (Y)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 15-A32 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-FW1115-A32"
+}
+]
+},
+{
+"system": "Coal feeder clean-out conveyors and silo valves",
+"drawing": "coal feeder DITL (DITL-16 ~ 21A hold feeder A) and coal handling PLC (PC)",
+"points": [
+{
+"st": "4",
+"ad": "I.0133",
+"t": "MIR-CL1061-A1",
+"d": "#1 Coal feeder-A clean out conveyor running",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.0134",
+"t": "MIT-CL1061-A1",
+"d": "#1 Coal feeder-A clean out conveyor fault",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.0135",
+"t": "YSR-CL1061-A7",
+"d": "#1 Coal feeder-A outlet discharge isolation valve remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.0440",
+"t": "ZSO-CL1061-B1",
+"d": "#1 Coal silo outlet valve-1 of coal feeder-B open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A1 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-CL1061-A1"
+},
+{
+"st": "4",
+"ad": "I.0441",
+"t": "ZSC-CL1061-B1",
+"d": "#1 Coal silo outlet valve-1 of coal feeder-B close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A1 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-CL1061-A1"
+},
+{
+"st": "4",
+"ad": "I.0442",
+"t": "ZSO-CL1061-B2",
+"d": "#1 Coal silo outlet valve-2 of coal feeder-B open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A2 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-CL1061-A2"
+},
+{
+"st": "4",
+"ad": "I.0443",
+"t": "ZSC-CL1061-B2",
+"d": "#1 Coal silo outlet valve-2 of coal feeder-B close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A2 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-CL1061-A2"
+},
+{
+"st": "4",
+"ad": "I.0444",
+"t": "ZSO-CL1061-B7",
+"d": "#1 Coal feeder-B outlet discharge isolation valve open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A7 twin is linked on DITL-20: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-CL1061-A7"
+},
+{
+"st": "4",
+"ad": "I.0448",
+"t": "MIA-CL1061-B2",
+"d": "#1 Coal feeder-B volumertic signal",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A2 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIA-CL1061-A2"
+},
+{
+"st": "4",
+"ad": "I.0449",
+"t": "MIA-CL1061-B3",
+"d": "#1 Coal feeder-B inlet plugging",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A3 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIA-CL1061-A3"
+},
+{
+"st": "4",
+"ad": "I.044A",
+"t": "MIA-CL1061-B4",
+"d": "#1 Coal feeder-B discharge plugging",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A4 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIA-CL1061-A4"
+},
+{
+"st": "4",
+"ad": "I.044B",
+"t": "MIA-CL1061-B5",
+"d": "#1 Coal feeder-B no coal on belt",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A5 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIA-CL1061-A5"
+},
+{
+"st": "4",
+"ad": "I.044C",
+"t": "MIA-CL1061-B6",
+"d": "#1 Coal feeder-B outlet temperature high",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A6 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIA-CL1061-A6"
+},
+{
+"st": "4",
+"ad": "I.044D",
+"t": "MIA-CL1061-B7",
+"d": "#1 Coal feeder-B belt tracking",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A7 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIA-CL1061-A7"
+},
+{
+"st": "4",
+"ad": "I.044E",
+"t": "MIA-CL1061-B8",
+"d": "#1 Coal feeder-B clean out conveyor auto mode",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A8 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIA-CL1061-A8"
+},
+{
+"st": "4",
+"ad": "I.0451",
+"t": "MIT-CL1061-B",
+"d": "#1 Coal feeder-B fault",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 1061-A twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIT-CL1061-A"
+},
+{
+"st": "4",
+"ad": "I.0453",
+"t": "MIR-CL1061-B1",
+"d": "#1 Coal feeder-B clean out conveyor running",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.0454",
+"t": "MIT-CL1061-B1",
+"d": "#1 Coal feeder-B clean out conveyor fault",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.0455",
+"t": "YSR-CL1061-B7",
+"d": "#1 Coal feeder-B outlet discharge isolation valve remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.0480",
+"t": "ZSO-CL1061-C1",
+"d": "#1 Coal silo outlet valve-1 of coal feeder-C open",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A1 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSO-CL1061-A1"
+},
+{
+"st": "4",
+"ad": "I.0481",
+"t": "ZSC-CL1061-C1",
+"d": "#1 Coal silo outlet valve-1 of coal feeder-C close",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A1 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZSC-CL1061-A1"
+},
+{
+"st": "4",
+"ad": "I.048C",
+"t": "MIA-CL1061-C6",
+"d": "#1 Coal feeder-C outlet temperature high",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 061-A6 twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIA-CL1061-A6"
+},
+{
+"st": "4",
+"ad": "O.060E",
+"t": "MOR-CL1061-B",
+"d": "#1 Coal feeder-B start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the 1061-A twin is linked on DITL-19: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-CL1061-A"
+},
+{
+"st": "4",
+"ad": "O.060F",
+"t": "MFT-CL1061-B",
+"d": "#1 NO MFT to Coal feeder-B outlet discharge isolation valve",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the 1061-A twin is linked on DITL-20: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MFT-CL1061-A"
+},
+{
+"st": "4",
+"ad": "O.0772",
+"t": "LAH-CL1008-B",
+"d": "#1 Boiler coal silo-B level switch high",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.0774",
+"t": "LAH-CL1008-C",
+"d": "#1 Boiler coal silo-C level switch high",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.0776",
+"t": "DOR-CL1061-A",
+"d": "#1 Coal feeder-A running",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.0777",
+"t": "DOR-CL1061-B",
+"d": "#1 Coal feeder-B running",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.0778",
+"t": "DOR-CL1061-C",
+"d": "#1 Coal feeder-C running",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+}
+]
+},
+{
+"system": "Condensate and desuperheater spray valves",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "2",
+"ad": "I.0291",
+"t": "LSHH-CD1110",
+"d": "#1 Condenser hot well water level switch high high",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0893",
+"t": "ZSC-CD1115",
+"d": "#1 LP turbine bypass desuperheater spray water control valve close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0894",
+"t": "ZSO-CD1124",
+"d": "#1 Main steam to aux. steam desuperheater spray water control valve open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0895",
+"t": "ZSC-CD1124",
+"d": "#1 Main steam to aux. steam desuperheater spray water control valve close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0896",
+"t": "ZSO-CD1126",
+"d": "#1 Gland steam desuperheater spray water control valve open",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0897",
+"t": "ZSC-CD1126",
+"d": "#1 Gland steam desuperheater spray water control valve close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0389",
+"t": "ZT-CD1121",
+"d": "#1 Condensate polisher flow control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0390",
+"t": "ZT-CD1115",
+"d": "#1 LP turbine bypass desuperheater spray water control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0688",
+"t": "ZT-CD1124",
+"d": "#1 Main steam to aux. steam desuperheater spray water control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0689",
+"t": "ZT-CD1126",
+"d": "#1 Gland steam desuperheater spray water control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0690",
+"t": "ZT-CD1120",
+"d": "#1 Condensate system minimum flow recirculation control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0691",
+"t": "ZT-CD1110",
+"d": "#1 Condenser dumping to raw pit level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0692",
+"t": "ZT-CD1104",
+"d": "#1 Deaerator storage tank level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0854",
+"t": "TT-CD1110-2",
+"d": "#1 Condenser hot well water temperature (2)",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0869",
+"t": "TT-CD1110-3",
+"d": "#1 Condenser neck temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AI0869",
+"t": "VT-CD1116-B3",
+"d": "#1 Condensate pump-B motor drive end of bearing vibration",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 116-A3 twin is linked on DITL-61B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-CD1116-A3"
+},
+{
+"st": "3",
+"ad": "AI0870",
+"t": "VT-CD1116-B4",
+"d": "#1 Condensate pump-B motor non drive end of bearing vibration",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 116-A4 twin is linked on DITL-61B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-CD1116-A4"
+},
+{
+"st": "3",
+"ad": "AI0976",
+"t": "TT-CD1116-BU",
+"d": "#1 Condensate pump-B motor winding temperature (U phase)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 116-AU twin is linked on DITL-61B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-CD1116-AU"
+},
+{
+"st": "3",
+"ad": "AI0977",
+"t": "TT-CD1116-BV",
+"d": "#1 Condensate pump-B motor winding temperature (V phase)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 116-AV twin is linked on DITL-61B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-CD1116-AV"
+},
+{
+"st": "3",
+"ad": "AI0978",
+"t": "TT-CD1116-BW",
+"d": "#1 Condensate pump-B motor winding temperature (W phase)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 116-AW twin is linked on DITL-61B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-CD1116-AW"
+},
+{
+"st": "3",
+"ad": "AI0979",
+"t": "TT-CD1116-B3",
+"d": "#1 Condensate pump-B motor bearing temperature (1)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 116-A3 twin is linked on DITL-61B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-CD1116-A3"
+},
+{
+"st": "3",
+"ad": "AI0980",
+"t": "TT-CD1116-B4",
+"d": "#1 Condensate pump-B motor bearing temperature (2)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 116-A4 twin is linked on DITL-61B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-CD1116-A4"
+},
+{
+"st": "3",
+"ad": "AI0981",
+"t": "TT-CD1116-B1",
+"d": "#1 Condensate pump-B coupling temperature",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 116-A1 twin is linked on DITL-61B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-CD1116-A1"
+}
+]
+},
+{
+"system": "TCS digital inputs",
+"drawing": "TCE / TCA sheets and IBD (Hitachi TCS)",
+"points": [
+{
+"st": "2",
+"ad": "I.0402",
+"t": "TCS-DI1025",
+"d": "#1 RSV / ICV fully closed 2",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0403",
+"t": "TCS-DI1026",
+"d": "#1 MSV / HPCV fully closed and TCS major trouble 1",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0404",
+"t": "TCS-DI1027",
+"d": "#1 MSV / HPCV fully closed and TCS major trouble 2",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0405",
+"t": "TCS-DI1028",
+"d": "#1 CV & ICV full closed by PLU activation",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.040D",
+"t": "TCS-DI1048",
+"d": "#1 MODBUS line-A duty",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.040E",
+"t": "TCS-DI1049",
+"d": "#1 MODBUS line-B duty",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0410",
+"t": "TCS-DI1039",
+"d": "#1 Turbine start-up ambient cold mode",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0411",
+"t": "TCS-DI1040",
+"d": "#1 Turbine start-up cold 1 mode",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0412",
+"t": "TCS-DI1041",
+"d": "#1 Turbine start-up cold 2 mode",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0416",
+"t": "TCS-DI1055",
+"d": "#1 Turbine trip-2",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0419",
+"t": "TCS-DI1032",
+"d": "#1 Steam seal feed inlet valve closed",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.041D",
+"t": "TCS-DI1050",
+"d": "#1 HP-CV full close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.089C",
+"t": "TCS-DI1057",
+"d": "#1 AMB. Cold mode temp.",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.089D",
+"t": "TCS-DI1058",
+"d": "#1 Mode judgement instrument normal",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0939",
+"t": "TCS-DI1052",
+"d": "#1 41 CLOSE",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.093A",
+"t": "TCS-DI1053",
+"d": "#1 GEN. LOCK OUT RY86GA OPERATED",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.093B",
+"t": "TCS-DI1054",
+"d": "#1 GEN. LOCK OUT RY86GB OPERATED",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Bottom ash screw coolers",
+"drawing": "bottomash-limestone-logic.zip (HD600 BA-01 ~ 74) (PC)",
+"points": [
+{
+"st": "3",
+"ad": "O.020E",
+"t": "MOR-L1060B",
+"d": "#1 Bottom ash screw cooler-B start / forward command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-L1060A"
+},
+{
+"st": "3",
+"ad": "O.020F",
+"t": "MOS-L1060B",
+"d": "#1 Bottom ash screw cooler-B reverse command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOS-L1060A"
+},
+{
+"st": "3",
+"ad": "O.0296",
+"t": "LOR-L1060B",
+"d": "#1 Bottom ash screw cooler-B running (indicator lamp)",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "LOR-L1060A"
+},
+{
+"st": "3",
+"ad": "O.0297",
+"t": "LOS-L1060B",
+"d": "#1 Bottom ash screw cooler-B stop (indicator lamp)",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "LOS-L1060A"
+},
+{
+"st": "3",
+"ad": "O.060E",
+"t": "MOR-L1060D",
+"d": "#1 Bottom ash screw cooler-D start / forward command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-L1060A"
+},
+{
+"st": "3",
+"ad": "O.060F",
+"t": "MOS-L1060D",
+"d": "#1 Bottom ash screw cooler-D reverse command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOS-L1060A"
+},
+{
+"st": "3",
+"ad": "O.0616",
+"t": "LOR-L1060D",
+"d": "#1 Bottom ash screw cooler-D running (indicator lamp)",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "LOR-L1060A"
+},
+{
+"st": "3",
+"ad": "O.0617",
+"t": "LOS-L1060D",
+"d": "#1 Bottom ash screw cooler-D stop (indicator lamp)",
+"ty": "DO-Wet",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "LOS-L1060A"
+},
+{
+"st": "3",
+"ad": "I.0641",
+"t": "MIR-L1060C",
+"d": "#1 Bottom ash screw cooler-C reverse running",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIR-L1060A"
+},
+{
+"st": "3",
+"ad": "AI0804",
+"t": "IT-L1060C",
+"d": "#1 Bottom ash screw cooler-C current",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "IT-L1060A"
+},
+{
+"st": "3",
+"ad": "I.0684",
+"t": "LIS1-L1060D",
+"d": "#1 Bottom ash screw cooler-D local reverse command",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "LIS1-L1060A"
+},
+{
+"st": "3",
+"ad": "I.0685",
+"t": "LIS2-L1060D",
+"d": "#1 Bottom ash screw cooler-D not local stop command",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "LIS2-L1060A"
+},
+{
+"st": "3",
+"ad": "I.0646",
+"t": "LIS3-L1060C",
+"d": "#1 Bottom ash screw cooler-C not local emergency stop command",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "LIS3-L1060A"
+},
+{
+"st": "3",
+"ad": "I.0687",
+"t": "LIS4-L1060D",
+"d": "#1 Bottom ash screw cooler-D local forward command",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the L1060A twin is linked on DITL-21A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "LIS4-L1060A"
+}
+]
+},
+{
+"system": "DCS system diagnostics (FCS / SER / PDP alarms, buzzer)",
+"drawing": "DCS hardware wiring (dcs-hardware-wiring.zip) (PC)",
+"points": [
+{
+"st": "1",
+"ad": "I.005F",
+"t": "1023-SYSERR",
+"d": "#1 FCS1023 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.093C",
+"t": "SER1-SYSERR",
+"d": "#1 SER1-System alarm",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.093D",
+"t": "1031-SYSERR",
+"d": "#1 FCS1031 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.093E",
+"t": "1032-SYSERR",
+"d": "#1 FCS1032 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.093F",
+"t": "1033-SYSERR",
+"d": "#1 FCS1033 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.069D",
+"t": "1041-SYSERR",
+"d": "#1 FCS1041 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.069E",
+"t": "1042-SYSERR",
+"d": "#1 FCS1042 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.069F",
+"t": "PDP-PLOSS",
+"d": "#1 PDP power supply fault at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.057B",
+"t": "GCS10F-SYSERR",
+"d": "#1 GCS10F alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.057C",
+"t": "1051-SYSERR",
+"d": "FCS1051 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.057D",
+"t": "1011-SYSERR",
+"d": "#1 FCS1011 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.057E",
+"t": "1012-SYSERR",
+"d": "#1 FCS1012 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.057F",
+"t": "1013-SYSERR",
+"d": "#1 FCS1013 alarm at DCS",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "O.145F",
+"t": "BUZZER-OUT",
+"d": "#1 BUZZER OUTPUT",
+"ty": "DO-Dry",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+}
+]
+},
+{
+"system": "Air dryers",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "5",
+"ad": "O.004C",
+"t": "MOR-D0703B",
+"d": "Plant air dryer-B start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the D0703A twin is linked on DITL-45: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-D0703A"
+},
+{
+"st": "5",
+"ad": "O.004D",
+"t": "MOS-D0703B",
+"d": "Plant air dryer-B stop command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the D0703A twin is linked on DITL-45: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOS-D0703A"
+},
+{
+"st": "5",
+"ad": "O.004E",
+"t": "MOR-D0703C",
+"d": "Plant air dryer-C start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the D0703A twin is linked on DITL-45: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-D0703A"
+},
+{
+"st": "5",
+"ad": "O.004F",
+"t": "MOS-D0703C",
+"d": "Plant air dryer-C stop command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the D0703A twin is linked on DITL-45: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOS-D0703A"
+},
+{
+"st": "5",
+"ad": "I.009F",
+"t": "MIL-D0704C",
+"d": "Instrument air dryer-C remote",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the D0704A twin is linked on DITL-45: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MIL-D0704A"
+},
+{
+"st": "5",
+"ad": "AI0099",
+"t": "FI-D0703B",
+"d": "Plant air dryer-B outlet flow",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the D0703A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "FI-D0703A"
+},
+{
+"st": "5",
+"ad": "AI0100",
+"t": "FI-D0704B",
+"d": "Instrument air dryer-B outlet flow",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the D0704A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "FI-D0704A"
+},
+{
+"st": "5",
+"ad": "AI0115",
+"t": "FI-D0703C",
+"d": "Plant air dryer-C outlet flow",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the D0703A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "FI-D0703A"
+},
+{
+"st": "5",
+"ad": "AI0116",
+"t": "FI-D0704C",
+"d": "Instrument air dryer-C outlet flow",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the D0704A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "FI-D0704A"
+},
+{
+"st": "5",
+"ad": "O.036C",
+"t": "MOR-D0704B",
+"d": "Instrument air dryer-B start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the D0704A twin is linked on DITL-45: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-D0704A"
+},
+{
+"st": "5",
+"ad": "O.036D",
+"t": "MOS-D0704B",
+"d": "Instrument air dryer-B stop command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the D0704A twin is linked on DITL-45: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOS-D0704A"
+},
+{
+"st": "5",
+"ad": "O.036E",
+"t": "MOR-D0704C",
+"d": "Instrument air dryer-C start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the C0704C twin is linked on DITL-113: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-C0704C"
+},
+{
+"st": "5",
+"ad": "O.036F",
+"t": "MOS-D0704C",
+"d": "Instrument air dryer-C stop command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the D0704A twin is linked on DITL-45: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOS-D0704A"
+}
+]
+},
+{
+"system": "Flue gas / seal pots",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "1",
+"ad": "AI0146",
+"t": "PT-FG1009-A1",
+"d": "#1 Boiler cyclone-A seal pot fluidized pressure (1)",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "AI0147",
+"t": "PT-FG1009-B1",
+"d": "#1 Boiler cyclone-B seal pot fluidized pressure (1)",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "AI0659",
+"t": "TT-FG1092-A",
+"d": "#1 Boiler cyclone-A inlet flue gas temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "AI0449",
+"t": "TT-FG1102",
+"d": "#1 Reheater-2 inlet flue gas temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "AI0450",
+"t": "TT-FG1108",
+"d": "#1 ECO. #2R inlet flue gas temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "AI0451",
+"t": "TT-FG1111",
+"d": "#1 ECO. #2S inlet flue gas temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "AI0464",
+"t": "TT-FG1104",
+"d": "#1 Reheater-3 inlet flue gas temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "AI0465",
+"t": "TT-FG1106",
+"d": "#1 Reheater-4 inlet flue gas temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "AI0468",
+"t": "TT-FG1109",
+"d": "#1 ECO. #3 lower inlet flue gas temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "AI0469",
+"t": "TT-FG1105",
+"d": "#1 Finishing S/H-3 inlet flue gas temperature",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Heater drain valves",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "2",
+"ad": "AI0707",
+"t": "ZT-HD1101-1",
+"d": "#1 NO.1 LPH primary drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0708",
+"t": "ZT-HD1102-1",
+"d": "#1 NO.2 LPH primary drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0709",
+"t": "ZT-HD1103-1",
+"d": "#1 NO.3 LPH primary drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0710",
+"t": "ZT-HD1105-1",
+"d": "#1 NO.1 HPH primary drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0721",
+"t": "ZT-HD1101-2",
+"d": "#1 NO.1 LPH alternate drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0722",
+"t": "ZT-HD1102-2",
+"d": "#1 NO.2 LPH alternate drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0723",
+"t": "ZT-HD1103-2",
+"d": "#1 NO.3 LPH alternate drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0724",
+"t": "ZT-HD1106-1",
+"d": "#1 NO.2 HPH primary drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0725",
+"t": "ZT-HD1105-2",
+"d": "#1 NO.1 HPH alternate drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0726",
+"t": "ZT-HD1106-2",
+"d": "#1 NO.2 HPH alternate drain level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Generator panel / TCS analog inputs",
+"drawing": "generator panel GAE-2013-0136 / TCS I/O list (PC)",
+"points": [
+{
+"st": "1",
+"ad": "AI0694",
+"t": "GCP-AI1003",
+"d": "#1 Generator watt-hour",
+"ty": "PI",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "AI0696",
+"t": "GCP-AI1006",
+"d": "#1 Generator var-hour",
+"ty": "PI",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0791",
+"t": "TCS-AI1006",
+"d": "#1 GEN. current(A)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0807",
+"t": "GCP-AI1005",
+"d": "#1 GEN. voltage (A\\B)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0823",
+"t": "TCS-AI1009",
+"d": "#1 GEN. power factor",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0839",
+"t": "TCS-AI1010",
+"d": "#1 GEN. frequency",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0871",
+"t": "TCS-AI1008",
+"d": "#1 GEN. voltage (B-C)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0887",
+"t": "TCS-AI1011",
+"d": "#1 GEN. current(C)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0903",
+"t": "TCS-AI1012",
+"d": "#1 GEN. voltage (C-A)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Generator / TCS analog outputs",
+"drawing": "generator panel GAE-2013-0136 / TCS I/O list (PC)",
+"points": [
+{
+"st": "2",
+"ad": "AO0405",
+"t": "TCS-AO1006",
+"d": "#1 Generator current (A)",
+"ty": "AO",
+"side": "ENGINE",
+"why": "same point of the DO1006 twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TCS-DO1006"
+},
+{
+"st": "2",
+"ad": "AO0407",
+"t": "TCS-AO1011",
+"d": "#1 Generator current (C)",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AO0470",
+"t": "GCP-AO1003",
+"d": "#1 Generator MVAR",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AO0486",
+"t": "GCP-AO1004",
+"d": "#1 Generator voltage (A-B)",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AO0487",
+"t": "GCP-AO1002",
+"d": "#1 Generator MW (D)",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AO0582",
+"t": "GCP-AO1005",
+"d": "#1 Generator voltage (B-C)",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AO0583",
+"t": "GCP-AO1006",
+"d": "#1 Generator voltage (C-A)",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AO0886",
+"t": "GCP-AO1007",
+"d": "#1 Generator power factor",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "AO0887",
+"t": "GCP-AO1008",
+"d": "#1 Generator frequency",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+}
+]
+},
+{
+"system": "Compressor motor temperatures",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "5",
+"ad": "AI0085",
+"t": "TE-M0703-A1",
+"d": "Plant air compressor-A motor winding temperature (U phase)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0086",
+"t": "TE-M0703-A2",
+"d": "Plant air compressor-A motor winding temperature (V phase)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0087",
+"t": "TE-M0703-A3",
+"d": "Plant air compressor-A motor winding temperature (W phase)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0101",
+"t": "TE-M0703-B1",
+"d": "Plant air compressor-B motor winding temperature (U phase)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0102",
+"t": "TE-M0703-B2",
+"d": "Plant air compressor-B motor winding temperature (V phase)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0103",
+"t": "TE-M0703-B3",
+"d": "Plant air compressor-B motor winding temperature (W phase)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0117",
+"t": "TE-M0703-C1",
+"d": "Plant air compressor-C motor winding temperature (U phase)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0118",
+"t": "TE-M0703-C2",
+"d": "Plant air compressor-C motor winding temperature (V phase)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0119",
+"t": "TE-M0703-C3",
+"d": "Plant air compressor-C motor winding temperature (W phase)",
+"ty": "AI-Dry",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Main steam valves",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "1",
+"ad": "AI0179",
+"t": "ZT-MS1001",
+"d": "#1 Boiler main steam blow off pressure control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "O.016C",
+"t": "MOR-MS1392",
+"d": "#1 Main steam bypass motor valve open command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "O.016D",
+"t": "MOS-MS1392",
+"d": "#1 Main steam bypass motor valve close command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.032E",
+"t": "TS-MS1391",
+"d": "#1 Main steam line motor valve torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0333",
+"t": "MIL-MS1392",
+"d": "#1 Main steam bypass motor valve remote",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0334",
+"t": "TS-MS1392",
+"d": "#1 Main steam bypass motor valve torque",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0736",
+"t": "ZT-MS1391",
+"d": "#1 Main steam line motor valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Lube oil (BFWP-B, PAF)",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "3",
+"ad": "I.0410",
+"t": "PS-LO1115-B1",
+"d": "#1 Lube oil of BFWP-B pressure switch (1) ( < 1.5Kg/cm2 )",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 115-A1 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "PS-LO1115-A1"
+},
+{
+"st": "3",
+"ad": "I.0411",
+"t": "PS-LO1115-B2",
+"d": "#1 Lube oil of BFWP-B pressure switch (2) ( > 2.0Kg/cm2 )",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 115-A2 twin is linked on DITL-23B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "PS-LO1115-A2"
+},
+{
+"st": "3",
+"ad": "O.044F",
+"t": "MOR-LO1753-B",
+"d": "#1 LOP B of PAF start command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the 1753-A twin is linked on DITL-24: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-LO1753-A"
+},
+{
+"st": "3",
+"ad": "I.065B",
+"t": "MIA-LO1753-1",
+"d": "#1 PAF circulating oil system control power auxiliary switch off",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.065C",
+"t": "MIA-LO1753-2",
+"d": "#1 PAF circulating oil system NFB2 auxiliary switch not off",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.065D",
+"t": "MIA-LO1753-3",
+"d": "#1 PAF circulating oil system NFB1 auxiliary switch not off",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.0699",
+"t": "LSLL-LO1753",
+"d": "#1 PAF lube oil tank level low low",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Coal feeder air tanks",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "4",
+"ad": "I.013E",
+"t": "PS-IA1061-A1",
+"d": "#1 Coal feeder-A air tank pressure switch high",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.013F",
+"t": "PS-IA1061-A2",
+"d": "#1 Coal feeder-A air tank pressure switch low",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.045E",
+"t": "PS-IA1061-B1",
+"d": "#1 Coal feeder-B air tank pressure switch high",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.045F",
+"t": "PS-IA1061-B2",
+"d": "#1 Coal feeder-B air tank pressure switch low",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.049E",
+"t": "PS-IA1061-C1",
+"d": "#1 Coal feeder-C air tank pressure switch high",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.049F",
+"t": "PS-IA1061-C2",
+"d": "#1 Coal feeder-C air tank pressure switch low",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "AI0470",
+"t": "PT-IA1064-B",
+"d": "#1 Air buffer tank of biasing damper-B pressure",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 1064-A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "PT-IA1064-A"
+}
+]
+},
+{
+"system": "Dosing pumps",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "1",
+"ad": "I.0121",
+"t": "MIT-Z1107A",
+"d": "#1 Tri-sodium phosphate dosing pump-A trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.0123",
+"t": "MIT-Z1107B",
+"d": "#1 Tri-sodium phosphate dosing pump-B trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.0129",
+"t": "MIT-Z1109A",
+"d": "#1 Carbon hydraride dosing pump-A trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.012B",
+"t": "MIT-Z1109B",
+"d": "#1 Carbon hydraride dosing pump-B trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.012D",
+"t": "MIT-Z1101A",
+"d": "#1 Tri-sodium phosphate agitator trip",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.012E",
+"t": "SIA-CDS01",
+"d": "#1 Dosing system AC mian power normal",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "I.032F",
+"t": "MIA-HC0001",
+"d": "Hypo-chlorinated dosing system AC main power not fail",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Chemical tanks",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "1",
+"ad": "I.0133",
+"t": "LSLL-CH1103",
+"d": "#1 Neutral amine solution tank level switch low low",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.0134",
+"t": "LSL-CH1103",
+"d": "#1 Neutral amine solution tank level switch low",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.0135",
+"t": "LSH-CH1103",
+"d": "#1 Neutral amine solution tank level switch high",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.0136",
+"t": "LSLL-CH1105",
+"d": "#1 Carbon hydraride solution tank level switch low low",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.0137",
+"t": "LSL-CH1105",
+"d": "#1 Carbon hydraride solution tank level switch low",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "1",
+"ad": "I.0138",
+"t": "LSH-CH1105",
+"d": "#1 Carbon hydraride solution tank level switch high",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Sea water",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "2",
+"ad": "AI0800",
+"t": "PT-SW1110-B1",
+"d": "#1 Condenser inlet seawater pressure(B)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 110-A1 twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "PT-SW1110-A1"
+},
+{
+"st": "2",
+"ad": "AI0801",
+"t": "PT-SW1110-B2",
+"d": "#1 Condenser outlet seawater pressure(B)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 110-A2 twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "PT-SW1110-A2"
+},
+{
+"st": "2",
+"ad": "AI0933",
+"t": "TT-SW1110-B1",
+"d": "#1 Condenser inlet seawater temperature (B)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 110-A1 twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-SW1110-A1"
+},
+{
+"st": "2",
+"ad": "AI0934",
+"t": "TT-SW1110-B2",
+"d": "#1 Condenser outlet seawater temperature (B)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 110-A2 twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-SW1110-A2"
+},
+{
+"st": "3",
+"ad": "AI0736",
+"t": "TT-SW1501-BU",
+"d": "#1 Seawater pump-B motor winding temperature (U phase)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 501-AU twin is linked on DITL-29B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "TT-SW1501-AU"
+},
+{
+"st": "3",
+"ad": "AI0758",
+"t": "VT-SW1501-C2",
+"d": "#1 Seawater pump-C motor bearing vibration (2)",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 501-A2 twin is linked on DITL-29B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "VT-SW1501-A2"
+}
+]
+},
+{
+"system": "Bottom ash cooler inlet valves",
+"drawing": "bottomash-limestone-logic.zip (PC)",
+"points": [
+{
+"st": "3",
+"ad": "I.053B",
+"t": "ZSO-BH1060-B",
+"d": "#1 Bottom ash cooler (B) inlet valve open position switch",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.053C",
+"t": "ZSC-BH1060-B",
+"d": "#1 Bottom ash cooler (B) inlet valve close position switch",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.064B",
+"t": "ZSO-BH1060-C",
+"d": "#1 Bottom ash cooler (C) inlet valve open position switch",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.064C",
+"t": "ZSC-BH1060-C",
+"d": "#1 Bottom ash cooler (C) inlet valve close position switch",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.068B",
+"t": "ZSO-BH1060-D",
+"d": "#1 Bottom ash cooler (D) inlet valve open position switch",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.068C",
+"t": "ZSC-BH1060-D",
+"d": "#1 Bottom ash cooler (D) inlet valve close position switch",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Air compressors",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "5",
+"ad": "I.0333",
+"t": "MIV-C0703C1",
+"d": "Plant air compressor-C VCB on",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "I.0334",
+"t": "MIV-C0703C2",
+"d": "Plant air compressor-C VCB off",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0195",
+"t": "IT-C0703B",
+"d": "Plant air compressor-B current",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the C0703A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "IT-C0703A"
+},
+{
+"st": "5",
+"ad": "AI0211",
+"t": "IT-C0703C",
+"d": "Plant air compressor-C current",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the C0703A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "IT-C0703A"
+},
+{
+"st": "5",
+"ad": "AI0212",
+"t": "IT-C0704C",
+"d": "Instrument air compressor-C current",
+"ty": "AI-Dry",
+"side": "ENGINE",
+"why": "same point of the C0704A twin is linked: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "IT-C0704A"
+}
+]
+},
+{
+"system": "Fly ash PLC alarms",
+"drawing": "fly ash PLC: vendor panel, alarms only (PC)",
+"points": [
+{
+"st": "3",
+"ad": "I.057B",
+"t": "XA-FH1701",
+"d": "#1 Fly ash common alarm",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.057C",
+"t": "XA-FH1702",
+"d": "#1 Fly ash PLC fault alarm",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.057D",
+"t": "XA-FH1703",
+"d": "#1 Fly ash communication fault alarm",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.057E",
+"t": "XA-FH1704",
+"d": "#1 Fly ash main control panel no power alarm",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Blowdown valves",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "1",
+"ad": "O.0212",
+"t": "MOR-BD1002",
+"d": "#1 Continuous blow down motor valve open command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the CD1002 twin is linked on DITL-70: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOR-CD1002"
+},
+{
+"st": "1",
+"ad": "AI0177",
+"t": "ZT-BD1001",
+"d": "#1 Mass blow down motor valve position",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the CD1001 twin is linked on DITL-69: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZT-CD1001"
+},
+{
+"st": "1",
+"ad": "AI0178",
+"t": "ZT-BD1002",
+"d": "#1 Continuous blow down motor valve position",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the CD1002 twin is linked on DITL-70: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "ZT-CD1002"
+}
+]
+},
+{
+"system": "Cooling water switches",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "2",
+"ad": "AI0705",
+"t": "ZT-CW1201",
+"d": "#1 Turbine lube oil temperature control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "3",
+"ad": "I.053A",
+"t": "FS-CW1060-B2",
+"d": "#1 Boiler bottom ash cooler-B shaft outlet cooling water flow switch low",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 060-A2 twin is linked on DITL-21B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "FS-CW1060-A2"
+},
+{
+"st": "3",
+"ad": "I.064A",
+"t": "FS-CW1060-C2",
+"d": "#1 Boiler bottom ash cooler-C shaft outlet cooling water flow switch low",
+"ty": "DI",
+"side": "ENGINE",
+"why": "same point of the 060-A2 twin is linked on DITL-21B: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "FS-CW1060-A2"
+}
+]
+},
+{
+"system": "Annunciator",
+"drawing": "DCS hardware wiring (PC)",
+"points": [
+{
+"st": "4",
+"ad": "I.1281",
+"t": "ANN-TEST",
+"d": "#1 ANN-TEST",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.1282",
+"t": "ANN-ACK",
+"d": "#1 ANN-ACK",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+},
+{
+"st": "4",
+"ad": "I.1283",
+"t": "ANN-RESET",
+"d": "#1 Not ANN-RESET",
+"ty": "DI",
+"side": "UI",
+"why": "annunciator / DCS system point: show on the alarm panel (no plant physics)",
+"sib": ""
+}
+]
+},
+{
+"system": "Sootblower steam supply",
+"drawing": "sand-sootblower-logic.zip DITL-80x (PC)",
+"points": [
+{
+"st": "2",
+"ad": "I.024B",
+"t": "ZSC-SB1001",
+"d": "#1 Sootblower steam supply motor valve close",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AI0770",
+"t": "ZT-SB1001",
+"d": "#1 Sootblower steam supply motor valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Cold reheat drain pot",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "2",
+"ad": "I.0292",
+"t": "LS-CR1003-1",
+"d": "#1 Cold reheat drain pot DP-CR03 level switch high (not used)",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "I.0293",
+"t": "LS-CR1003-2",
+"d": "#1 Cold reheat drain pot DP-CR03 level switch high high (not used)",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Aux / gland steam",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "2",
+"ad": "AO0404",
+"t": "TCS-AS1004",
+"d": "#1 Aux. steam header pressure (lower)",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+},
+{
+"st": "2",
+"ad": "AO0471",
+"t": "TT-AS1017-1",
+"d": "#1 Gland steam turbine side temperature",
+"ty": "AO",
+"side": "ENGINE",
+"why": "DCS output with no driving sheet in the app: find the logic (drawing at right); the field device must answer it",
+"sib": ""
+}
+]
+},
+{
+"system": "Make-up water",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "2",
+"ad": "AI0693",
+"t": "ZT-MU1110",
+"d": "#1 Condenser make-up water level control valve position",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0064",
+"t": "FT-MU0001",
+"d": "Phase 1 make-up water flow",
+"ty": "AI-Wet",
+"side": "ENGINE + UI",
+"why": "field measurement: the plant model gives the value (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "FA blower",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "3",
+"ad": "O.0452",
+"t": "MOP-F1055B",
+"d": "#1 FA Blower-B start permission signal",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the F1055A twin is linked on DITL-28A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOP-F1055A"
+},
+{
+"st": "3",
+"ad": "O.0453",
+"t": "MOT-F1055B",
+"d": "#1 FA Blower-B trip command",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "same point of the F1055A twin is linked on DITL-28A: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "MOT-F1055A"
+}
+]
+},
+{
+"system": "Industrial water",
+"drawing": "P&ID K1AU3-A1-0-001 + DCS I/O list; motor DITL of the twin if any (PC)",
+"points": [
+{
+"st": "5",
+"ad": "I.001F",
+"t": "LS-IW0714",
+"d": "Industrial water tank level switch low",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+},
+{
+"st": "5",
+"ad": "AI0242",
+"t": "DPT-IW0715-B",
+"d": "Industrial water pump-B suction strainer diff. pressure",
+"ty": "AI-Wet",
+"side": "ENGINE",
+"why": "same point of the 0715-A twin is linked on DITL-111: add the copy for this unit (clone the sheet like the sootblowers, or import its own sheet if the drawing set has one)",
+"sib": "DPT-IW0715-A"
+}
+]
+},
+{
+"system": "Flue gas CEMS",
+"drawing": "CEMS vendor panel, alarm only (PC)",
+"points": [
+{
+"st": "1",
+"ad": "I.001F",
+"t": "LI1-FG1057",
+"d": "#1 CEMS common alarm",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "field status / switch: the plant model sets it (engine), the page shows it (UI)",
+"sib": ""
+}
+]
+},
+{
+"system": "Generator trip",
+"drawing": "Hitachi generator protection / breaker logic 310SD03-743 (PC)",
+"points": [
+{
+"st": "2",
+"ad": "O.045F",
+"t": "MIT-GENS",
+"d": "#1 Generator trip",
+"ty": "DO-Dry",
+"side": "ENGINE",
+"why": "generator trip output to the TCS: drive it from the generator protection (310SD03-743) in the engine",
+"sib": ""
+}
+]
+},
+{
+"system": "Turbine emergency trip push button",
+"drawing": "IBD trip sheets / TCE (TCS)",
+"points": [
+{
+"st": "4",
+"ad": "I.1280",
+"t": "TBN-TRIP-OPC",
+"d": "#1 Turbine emergency trip P.B. on (OPC)",
+"ty": "DI",
+"side": "ENGINE + UI",
+"why": "turbine emergency trip push button of the operator console: the TCS trip must take it (engine), the console shows it (UI)",
+"sib": ""
+}
+]
+}
+]
