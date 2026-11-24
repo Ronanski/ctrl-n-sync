@@ -4,10 +4,12 @@
 // Checks: modeOf(CEP-A / B).au is known; CEP-B REMOTE + AUTO is the standby: CEP-A trips -> CEP-B starts; DITL-60 at Cold: FULLY CLOSED
 // lamp 1, FULLY OPEN lamp 0.
 // Usage: node tests/regress/cep_auto.js [html]
-const {open}=require('./lib.js');const fs=require('fs');
+const {open,startAs,pressRun,openHx}=require('./lib.js');const fs=require('fs');
 const html=process.argv.find(a=>/\.html$/.test(a))||'dist/'+fs.readdirSync('dist').find(x=>/^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
 (async()=>{const {browser,page,errs}=await open(html);let fail=0;const ck=(ok,w)=>{console.log((ok?'PASS ':'FAIL ')+w);if(!ok)fail++};
-await page.evaluate(async()=>{const C=AN.sheets.find(s=>s.name==='ABC-001C');AN.i=AN.sheets.indexOf(C);await AN.plantCold();if(AN.view)AN.viewSet(false);AN.run=true});
+// beta.359 (ROSÉ): Cold by the start screen of the app, as the operator starts (START STATE Cold, Operator), then RUN
+await page.setViewportSize({width:1600,height:900});await startAs(page,'Cold');
+await pressRun(page);
 await page.waitForTimeout(2000);const wait=ms=>page.waitForTimeout(ms);
 const md=await page.evaluate(()=>[LS_OP.modeOf('M.3350'),LS_OP.modeOf('M.3351')]);
 ck(md[0]&&md[0].au!==null&&md[1]&&md[1].au!==null,'CEP-A / B AUTO mode is read ('+JSON.stringify(md)+')');
@@ -27,13 +29,11 @@ await wait(8000);
 const r1=await page.evaluate(()=>[LS_OP.mst('M.3350'),LS_OP.mst('M.3351')]);
 ck(r1[0]!=='RUN'&&r1[1]==='RUN','after CEP-A trip ('+tr+'): CEP-B started by itself ('+r1+')');
 // MV-MU1001 (DITL-60) on 028 CONDENSATE: LOCAL at Cold, the faceplate FIELD SELECTOR -> REMOTE, then OPEN (real clicks)
-await page.setViewportSize({width:1600,height:900});
-// 3.2.3-beta.152: the start screen of layout C (3.2.1) covers the app: close it the way the operator does, then open the page as the layout does
-await page.evaluate(()=>{const k=document.querySelector('#scstart .scskip');if(k&&k.offsetParent)k.click()});await wait(1000);
-await page.evaluate(()=>window.lsShellC&&lsShellC.openPage?lsShellC.openPage('MK05'):(lsPlant(true),document.querySelector('#pllist button[data-id="MK05"]').click()));await wait(2000);
+// beta.359 (ROSÉ): page 05 is gone; MV-MU1001 is on the HX page Condensate (data-open valve:MV-MU1001)
+await openHx(page,'HX-condensate');
 const clk=async sel=>{const b=await page.evaluate(sel=>{const e=[...document.querySelectorAll(sel)].find(x=>x.getBoundingClientRect().width>0);if(!e)return null;const r=e.getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2]},sel);if(b)await page.mouse.click(b[0],b[1]);return !!b};
 const btn=async t=>{const b=await page.evaluate(t=>{const p=document.getElementById('fpop');if(!p)return null;const e=[...p.querySelectorAll('button')].find(x=>x.textContent.trim()===t&&x.offsetParent);if(!e)return null;const r=e.getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,e.disabled]},t);if(b&&!b[2])await page.mouse.click(b[0],b[1]);return b?(b[2]?'disabled':'ok'):'none'};
-ck(await clk('[data-hit="V60"]'),'MV-MU1001 on the page');await wait(700);
+ck(await clk('#plantws [data-open="valve:MV-MU1001"]'),'MV-MU1001 on the page');await wait(700);
 {const r0=await btn('OPEN');const tx=await page.evaluate(()=>(document.getElementById('fpop')||{}).innerText);ck(r0==='disabled','LOCAL: OPEN disabled ('+r0+') '+String(tx).split(String.fromCharCode(10)).join(' · ').slice(0,300));}
 ck(await btn('REMOTE')==='ok','FIELD SELECTOR REMOTE');await wait(300);await btn('EXECUTE');await wait(2500);
 ck(await page.evaluate(()=>{const s=LS_OP.dOf('DITL-60');return DUI.rowVal(s,9)})===1,'DITL-60 row 10 REMOTE SELECTED = 1');

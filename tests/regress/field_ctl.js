@@ -12,7 +12,8 @@ let fail=0,n=0;const ck=(ok,w)=>{console.log((ok?'PASS ':'FAIL ')+w);if(!ok)fail
 const errs=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const step=(page,sec)=>page.evaluate(sec=>{const C=AN.sheets.find(s=>s.name==='ABC-001C');for(let k=0;k<sec*2;k++){WORLD.live=true;AN.stepSet(C,.5);WORLD.tick(.5)}},sec);
 const shot=async(page,t)=>{if(SH){fs.mkdirSync(SH,{recursive:true});await page.screenshot({path:path.join(SH,String(++n).padStart(2,'0')+'-'+t+'.png')})}};
-const go=async(page,id)=>{await page.evaluate(id=>lsShellC.openPage(id),id);await wait(2000)};
+/* beta.359 (ROSÉ): the old pages CWN / 07 / 14 are gone; the same equipment is on the HX pages Sea water, Drum and steam, Ash (lib.js openHx) */
+const {pressRun,openHx}=require('./lib.js');const go=openHx;
 const exec=async page=>{await page.locator('.fpo-box .fpo-ex:not([hidden]) .fpo-go').first().click({timeout:5000});await wait(400);await step(page,4);await wait(1200)};
 try{
  const ctx=await browser.newContext({viewport:{width:1366,height:768}});
@@ -22,14 +23,12 @@ try{
  await page.waitForSelector('#scstart',{state:'visible',timeout:60000});
  await page.locator('#scstart .scchips button',{hasText:/^\s*Cold/}).first().click();await page.locator('#scstart .sccard',{hasText:/^\s*Operator/}).first().click();
  await page.waitForFunction(()=>window.AN&&AN.startState&&!AN._loading&&document.body.classList.contains('scov'),null,{timeout:150000});
- await page.evaluate(()=>{if(window.lsSetRun)lsSetRun(true);else if(AN.setRun)AN.setRun(true)});
+ await pressRun(page);
  await step(page,4);
- const run=await page.evaluate(()=>{try{return !!(AN.run&&!AN.view)}catch(e){return false}});
- if(!run){const b=page.locator('#scstrip button',{hasText:/RUN/}).first();try{await b.click({timeout:3000})}catch(e){}}
  console.log('     state '+await page.evaluate(()=>AN.startState)+', RUN '+await page.evaluate(()=>!!(AN.run&&!AN.view)));
  /* 1. motor Y / N faceplate: FIELD button on a missing field contact */
- await go(page,'CWN');await shot(page,'cw-page');
- await page.locator('[data-yn="SWA"]').first().click();await wait(1500);
+ await go(page,'HX-sea-water');await shot(page,'cw-page');
+ await page.locator('#plantws [data-yn="mach:SWP-A"]').first().click();await wait(1500);
  const f0=await page.evaluate(()=>[...document.querySelectorAll('#fpop2 .fpo-il li')].map(l=>({t:l.textContent,bad:l.classList.contains('bad'),fix:[...l.querySelectorAll('.fpo-fix')].map(b=>b.textContent)})));
  const fx=f0.find(r=>r.fix.length);
  await shot(page,'swpa-permissive-before');
@@ -45,8 +44,8 @@ try{
  }
  await page.keyboard.press('Escape');await page.evaluate(()=>window.LS_FPOP&&LS_FPOP.close());await wait(400);
  /* 2. page 07 lower ring header drains */
- await go(page,'MK07');await shot(page,'drum-page');
- await page.locator('[data-hit="LHD"]').first().click({force:true});await wait(800);
+ await go(page,'HX-drum-steam');await shot(page,'drum-page');
+ await page.locator('#plantws [data-open="mach:V-BD1005 ~ V-BD1021"]').first().click();await wait(800);
  const t2=await page.evaluate(()=>(document.querySelector('#fpop .fpo-tt')||{}).textContent||'');
  ck(/V-BD1005/.test(t2),'page 07: the ring header drains label opens a FIELD pop-out ('+t2.trim()+')');
  await page.locator('#fpop .fpo-cmd',{hasText:/^25 %$/}).first().click();await wait(200);await shot(page,'lhd-ask');await exec(page);
@@ -59,9 +58,9 @@ try{
  const r1=await page.evaluate(()=>S.sheets.filter(x=>/^\(S\d+\)DITL-80/.test(x.name)).flatMap(x=>{const o=[];for(let r=0;r<40;r++)if(/ALL ON RETRACT POSITION/.test((DUI.rowInfo(x,r)||{}).svc||''))o.push(DUI.rowVal(x,r));return o}));
  ck(r1.length>0&&r1.every(v=>v===1),'M.4008 from the lance model at Cold with every lance home: ['+r1.join(',')+']');
  /* 4. page 14 ESP */
- await go(page,'MK14');
+ await go(page,'HX-ash');
  const e0=await page.evaluate(()=>AN.fieldState().esp);
- await page.locator('[data-hit="ESP"]').first().click({force:true});await wait(800);await shot(page,'esp-before');
+ await page.locator('#plantws [data-open="mach:ESP"]').first().click();await wait(800);await shot(page,'esp-before');
  await page.locator('#fpop .fpo-cmd',{hasText:/^START$/}).first().click();await wait(200);await exec(page);
  const e1=await page.evaluate(()=>AN.fieldState().esp);await shot(page,'esp-after');
  ck(e0===false&&e1===true,'ESP before '+e0+', after START '+e1);

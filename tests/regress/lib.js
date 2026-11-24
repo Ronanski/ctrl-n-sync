@@ -17,4 +17,23 @@ async function open(html){
 }
 /* 2.4.0-beta.2: on a screen up to 1280 px the global search is behind the magnifier icon: open it before typing */
 async function showSearch(page){await page.evaluate(()=>{const s=document.getElementById('ansb'),b=document.getElementById('srchbtn');if(s&&!s.offsetParent&&b&&b.offsetParent)b.click()});await page.waitForTimeout(100)}
-module.exports={open,showSearch};
+/* beta.359 (ROSÉ): the operator's way in, used by the click tests: the start screen of the app (START STATE chip, then the Operator card),
+   wait until that state is loaded and the overview shows; openHx then opens an HX page by the page picker of the Plant view (lsShellC.openPage) */
+async function startAs(page,state){
+  await page.waitForSelector('#scstart',{state:'visible',timeout:60000});
+  await page.locator('#scstart .scchips button',{hasText:new RegExp('^\\s*'+state)}).first().click();
+  await page.locator('#scstart .sccard',{hasText:/^\s*Operator/}).first().click();
+  await page.waitForFunction(()=>window.AN&&AN.startState&&!AN._loading&&document.body.classList.contains('scov'),null,{timeout:180000});
+  await page.waitForTimeout(1000);
+}
+/* the RUN button of the top bar (#scctx), as the operator presses it; the faceplates take commands only while the plant runs */
+async function pressRun(page){
+  await page.locator('#scctx button',{hasText:/^\s*RUN\s*$/}).first().click();
+  await page.waitForFunction(()=>AN.run&&!AN.view,null,{timeout:10000});
+}
+async function openHx(page,pg){
+  await page.evaluate(pg=>lsShellC.openPage(pg),pg);
+  await page.waitForFunction(pg=>(document.querySelector('#plantws .plpick')||{}).value===pg,pg,{timeout:20000});
+  await page.waitForTimeout(2000);
+}
+module.exports={open,showSearch,startAs,pressRun,openHx};
