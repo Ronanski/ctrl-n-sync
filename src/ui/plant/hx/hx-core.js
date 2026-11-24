@@ -159,6 +159,32 @@
       );
   };
 
+  /* beta.456 (EIMI, MINAMI 2026-11-25): is any part of the spec known? A part is unknown when its source gives no value (a machine
+     with no state, a valve with no position, a loop with no output, a value of -----, a named state with no word and no colour).
+     A spec that is not flowing and has no known part is UNKNOWN: its machine is grey, never green (green = stopped) */
+  const knownFlow = spec => {
+    if (!spec) return false;
+    const D = HX.data;
+    return String(spec)
+      .split(/[&|]/)
+      .some(s => {
+        const k = s.slice(0, 2),
+          a = s.slice(2);
+        if (k === 'm:') return (D.machine(a) || {}).st != null;
+        if (k === 'x:') {
+          const v = D.valve(a) || {};
+          return v.open != null || v.pct != null;
+        }
+        if (k === 'l:') return (D.loop(a) || {}).mv != null;
+        if (k === 'h:') {
+          const h = (D.hook && HX.HK[a] && D.hook(HX.HK[a], a)) || {};
+          return !!h.tone || (!!h.text && h.text !== '-----');
+        }
+        if (k === 'v:') return D.value(a.split('>')[0]) != null;
+        return false;
+      });
+  };
+
   /* a pipe as a tube: a darker edge, the body in the colour of its medium, a light line along its top, the moving dashes */
   const tube = (d, med, w, dash) =>
     `<path class="hx-lne" d="${d}" style="stroke:color-mix(in srgb, var(--hx-m-${med}) 55%, var(--hx-ink));stroke-width:${w + 1.8}${dash ? ';stroke-dasharray:6 5' : ''}"/>` +
@@ -1417,7 +1443,7 @@
         Q('.hx-node[data-ms]').forEach(e => setCls(e, (D.machine(e.dataset.ms) || {}).st || 'none'));
         Q('.hx-node[data-on]').forEach(e => {
           const f = flowing(e.dataset.on);
-          setCls(e, f ? 'run' : 'stop');
+          setCls(e, f ? 'run' : knownFlow(e.dataset.on) ? 'stop' : 'none');
           if (e.querySelector('[data-stem]')) travel(e, f ? 100 : 0);
         });
         Q('.hx-node[data-vv]').forEach(e => {
@@ -1464,10 +1490,22 @@
             v = D.value(key),
             r = e.querySelector('[data-lv]');
           if (!r) return;
+          /* beta.456: no value = the vessel grey and full (unknown), not a level at half */
           const [y0, y1] = r.dataset.lv.split(',').map(Number),
-            f = v == null ? 0.5 : Math.max(0.04, Math.min(1, (v - lo) / (hi - lo)));
+            f = v == null ? 1 : Math.max(0.04, Math.min(1, (v - lo) / (hi - lo)));
           setAt(r, 'y', n1(y1 - (y1 - y0) * f));
           setAt(r, 'height', n1((y1 - y0) * f));
+          r.classList.toggle('hx-lvna', v == null);
+        });
+        /* beta.456 (EIMI, MINAMI 2026-11-25): a vessel with no level key showed the level it was drawn with (40 ~ 70 %), read as a real
+           level. With no key it is grey and full: the page does not know its level */
+        Q('[data-lv]').forEach(r => {
+          if (r.closest('[data-level]') || r.dataset.lvna) return;
+          r.dataset.lvna = '1';
+          const [y0, y1] = r.dataset.lv.split(',').map(Number);
+          setAt(r, 'y', n1(y0));
+          setAt(r, 'height', n1(y1 - y0));
+          r.classList.add('hx-lvna');
         });
         Q('g[data-flow]').forEach(e => {
           const f = e.dataset.flow ? flowing(e.dataset.flow) : null;

@@ -22,6 +22,12 @@
       PA: { n: 'MWP-A', t: 'P-0709A', ad: 'DITL-112', io: 'MIR-P0709A', d: 'DITL-112', cur: 'IIP0709A' },
       PB: { n: 'MWP-B', t: 'P-0709B', ad: 'DITL-112 #B', io: 'MIR-P0709B', d: 'DITL-112 #B', cur: 'IIP0709B' },
       PC: { n: 'MWP-C', t: 'P-0709C', ad: 'DITL-112 #C', io: 'MIR-P0709C', d: 'DITL-112 #C', cur: 'IIP0709C' },
+      /* beta.456 (EIMI): industrial and waste water (DITL-87 MV-IW0391; DITL-111 IW pump A, "same for pump B"; DITL-120 waste water pump A) */
+      IWV: { n: 'MV-IW0391', t: 'Industrial water to fire water tank', mov: 'DITL-87', tg: 'MV-IW0391' },
+      IWA: { n: 'P-0715A', t: 'Industrial water pump A', ad: 'DITL-111', io: 'MIR-P0715A', d: 'DITL-111' },
+      IWB: { n: 'P-0715B', t: 'Industrial water pump B', ad: 'DITL-111 #B', io: 'MIR-P0715B', d: 'DITL-111 #B' },
+      WWA: { n: 'P-0058A', t: 'Waste water pump A', ad: 'DITL-120', io: 'MIR-P0058A', d: 'DITL-120' },
+      WWB: { n: 'P-0058B', t: 'Waste water pump B', ad: 'DITL-120 #B', io: 'MIR-P0058B', d: 'DITL-120 #B' },
       ACA: { n: 'ACWP-A', t: 'P-1108A', ad: 'DITL-76', io: 'MIR-P1108A', d: 'DITL-76', cur: 'IIP1108A', outMode: 1, remRows: [19], auRow: 0 },
       ACB: { n: 'ACWP-B', t: 'P-1108B', ad: 'DITL-77', io: 'MIR-P1108B', d: 'DITL-77', cur: 'IIP1108B', outMode: 1, remRows: [19], auRow: 0 },
       TIC: { n: 'TICLO1002', t: 'Lube oil temperature (TCV-CW1201)', ctl: 'TICLO1002', io: 'TICLO1002', d: 'ABC-053' }
