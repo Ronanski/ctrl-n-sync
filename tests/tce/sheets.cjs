@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 216;
+const FLOOR = 196; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -73,7 +73,43 @@ console.log(
 console.log(`ports (the I/O binding): ${S.ports} = ` + Object.entries(S.portKinds).map(([k, n]) => k + ' ' + n).join(', '));
 const um = Object.entries(A.unknown).sort((a, b) => b[1] - a[1]);
 console.log('without a meaning yet: ' + um.map(([k, n]) => k + ' x' + n).join(', '));
+/* sheet-to-sheet links (QA : SAORI 2026-11-25: the first connector within the radius took the wire of its neighbour, 292 links read 0):
+   every input joined to an output of another sheet resolves to that output's net, never to an unbound connector port */
+{
+  let joined = 0;
+  const lost = [];
+  for (const n of A.nets)
+    for (const c of n.inputs)
+      if (c.src) {
+        joined++;
+        const nm = A.names[A.res(n.id, c.key)];
+        if (nm === 'CON:' + n.id + '.' + c.letter || /^UNK:/.test(nm)) lost.push(n.id + '.' + c.letter + ' <- ' + c.src);
+      }
+  if (lost.length) fail(lost.length + ' of ' + joined + ' sheet-to-sheet links lost: ' + lost.slice(0, 5).join(', '));
+  /* driven: TCE168 output C (HEAT SOAK MODE) set to 1 is what TCE169 reads at its input C */
+  const s = A.res('TCE168', A.nets.find(n => n.id === 'TCE168').outputs.find(o => o.key === 'oC').net),
+    old = A.v[s];
+  A.v[s] = 1;
+  if (R.get(A, 'TCE169', 'iHsm') !== 1) fail('TCE169 HEAT SOAK MODE does not follow TCE168 C');
+  A.v[s] = old;
+}
+/* ML 62 PA gives the parameters of the block of its number, by the names printed at its inputs (TCE196 PA3 005 -> I 005 TI / HL / LL) */
+{
+  const x = A.plan.find(p => p.id === 'TCE196').nodes.find(x => x.key === 'i005');
+  if (!x || !x.pa || ['TI', 'HL', 'LL'].some(k => !(k in x.pa))) fail('TCE196 I 005 does not take TI / HL / LL from PA3 005');
+  const y = A.plan.find(p => p.id === 'TCE195').nodes.find(x => x.key === 'lms027');
+  if (!y || !y.pa || A.names[y.pa.LL] !== 'TCE195:g029') fail('TCE195 LMS 027 LL is not G 029 (the "(LL)" on its riser)');
+}
+/* the open-item rule: a missing parameter, a parameter the macro list does not define, or an unwired SW keeps the block open */
+if (!R.need('SG', [], true).length) fail('SG with no K must be open');
+if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1'], true).length) fail('PIV with G1 G2 TI must not be open');
+if (!R.need('PIV', ['G1:1', 'G2:1', 'TI:1', 'HL:100'], true).length) fail('PIV with HL printed must be open');
+if (!R.need('TP', ['TP:1'], false).length) fail('TP with no SW wire must be open');
+if (!R.need('FG', ['X1:0', 'Y1:0'], true).length) fail('FG with one point must be open');
+const nOpen = Object.values(S.open).reduce((a, v) => a + v.length, 0);
+console.log('open items (sheet, reason): ' + nOpen + ' in ' + Object.keys(S.open).length + ' reasons');
 if (process.argv.includes('--list')) {
+  for (const [w, ids] of Object.entries(S.open)) console.log('  open: ' + w + ': ' + ids.join(' '));
   console.log('not running: ' + S.notRun.join(' '));
   for (const p of A.ports) console.log('  port ' + p);
 }

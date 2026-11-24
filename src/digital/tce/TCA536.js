@@ -377,6 +377,18 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA536',
+    /* pr: printed on page 106 beside each block; the drawing above keeps them as text */
+    /* pa: PA2 003 / PA2 007 print no names at their two inputs; both inputs are one wire (ASW 039 / ASW 044, page 106), so they give
+       HL and LL of CPL A003 / A007 the same value, as the HL = LL printed under each CPL */
+    pa: { pa2003: ['HL', 'LL'], pa2007: ['HL', 'LL'] },
+    pr: {
+      sg037: ['K:105.3'],
+      sg038: ['K:76.5'],
+      sg041: ['K:57.0'],
+      sg042: ['K:345'],
+      sg043: ['K:323'],
+      sg046: ['K:304']
+    },
     title: 'CRITERIA CONDITION',
     page: 106,
     ctl: 'COMM+MD',

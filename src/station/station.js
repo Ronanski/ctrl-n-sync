@@ -912,9 +912,11 @@
     const m = /\bO\.([0-9A-F]{4})((?:\/[0-9A-F]{3,4})*)/.exec(t || '');
     return m ? [m[1]].concat(m[2].split('/').filter(Boolean).map(x => m[1].slice(0, 4 - x.length) + x)).map(x => 'O.' + x) : null;
   };
-  /* the addresses of the output rows of a drawing: the address texts beside the output arrows, each given to the row line nearest to it
-     (within half a row), else the output cells of the row */
-  function annRows(b) {
+  /* the addresses of the output rows of a drawing: the address texts beside the output arrows, each given to the nearest row line
+     (within half a row) among the rows that send to "OPC (ANN)" (`ann`, the output rows of the drawing), else the output cells of
+     the row. Lane 9 (beta.419): only those rows compete. DITL-28A writes "S4 O.1324/1325" under output row 28 (FAB A STOPPED,
+     4.92 units away) and closer to row 29 (2.35 units), which sends nothing to the annunciator: windows A5 / A6 were dark. */
+  function annRows(b, ann) {
     if (b._annR) return b._annR;
     const R = {},
       rows = b.rows || [],
@@ -925,7 +927,7 @@
       let k = -1,
         d = 5.5;
       rows.forEach((r, i) => {
-        if (r && Math.abs(t.y - r.y) <= d) (d = Math.abs(t.y - r.y)), (k = i);
+        if (r && (!ann || ann.has(i)) && Math.abs(t.y - r.y) <= d) (d = Math.abs(t.y - r.y)), (k = i);
       });
       if (k >= 0) R[k] = (R[k] || []).concat(A);
     }
@@ -952,9 +954,10 @@
       if (!Object.keys(b.cells || {}).some(k => /:R[STL]$/.test(k) && b.cells[k].some(c => /\(ANN\)/.test(c.t)))) continue;
       const O = call(() => DUI.outs(s), []) || [],
         ki = Math.max(0, 'ABCD'.indexOf((/ #([A-D])$/.exec(s.name) || [])[1] || 'A'));
+      const ann = new Set(O.filter(o => /·\s*OPC\s*\(ANN\)\s*$/.test(o.name || '')).map(o => o.row));
       for (const o of O) {
-        if (!/·\s*OPC\s*\(ANN\)\s*$/.test(o.name || '')) continue;
-        const L = annRows(b)[o.row];
+        if (!ann.has(o.row)) continue;
+        const L = annRows(b, ann)[o.row];
         if (!L) continue;
         const a = L.length > 1 ? L[ki] : L[0];
         if (!a) continue;

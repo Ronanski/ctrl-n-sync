@@ -8,6 +8,13 @@
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.vd3({
       id: 'TCE123',
+      /* pr: printed on page 88 beside each block; the drawing above keeps them as text */
+      pr: {
+        c025: ['HL:11.0', 'LL:10.0'],
+        c026: ['HL:2.0', 'LL:1.5'],
+        c027: ['HL:98', 'LL:97'],
+        c028: ['HL:98', 'LL:97']
+      },
       title: 'VALVE CONTROL DIAGNOSTICS(4)',
       page: 88,
       v: 'MSV(B)',

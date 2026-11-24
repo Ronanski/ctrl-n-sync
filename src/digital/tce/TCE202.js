@@ -6,6 +6,10 @@
    0.0), LIM A005 (0 .. 120 %), ADD 006 + 25.3 %. HLD 011 holds the flow demand when IP LIMITING comes on. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE202',
+  /* pr: printed on page 138 beside each block, FG *1 table; the drawing above keeps them as text */
+  pr: {
+    fgC001: ['X1:0.0', 'Y1:0', 'X2:10.0', 'Y2:0', 'X3:50.0', 'Y3:0', 'X4:80.0', 'Y4:0', 'X5:97.9', 'Y5:0', 'X6:112.5', 'Y6:100', 'X7:120.0', 'Y7:100', 'X8:125.0', 'Y8:100']
+  },
   title: 'IP UNLOADER',
   page: 138,
   ctl: 'EHG+MD',

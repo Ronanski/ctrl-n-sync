@@ -1,6 +1,6 @@
-# LMYP OTS 1.0.0-beta.438 (QA : SAORI, lane 8, 2026-11-25)
+# LMYP OTS 1.0.0-beta.468 (QA : SAORI, lane 8, 2026-11-25)
 
-Sumunod sa beta.430. Test lang; walang binago sa app, sa plant model, sa logic o sa HMI.
+Sumunod sa beta.459. Test lang; walang binago sa app, sa plant model, sa logic o sa HMI.
 
 ## Ano ang bago
 
@@ -18,3 +18,8 @@ Parehong code (main 502e57f): lumang rule 196 (real logic 140 + tables 56), bago
 ## Hindi sinubok
 
 Ang ayos sa `src/digital/tce-run.js` (lane 1): hindi ko ito binago. Sa kopya sa labas ng repo, ang "pinakamalapit na connector" sa halip na "unang connector sa radius" ay nagbabalik ng 290 sa 292 na nawalang kabit (bilang 192).
+
+## Dagdag (6:10 AM PHT)
+
+- Naayos na ng lane 1 (PR 526, nasa main) ang dalawang mali: pinakamalapit na connector (0 nawalang kabit) at INITIAL mula TCE050. Sa main ea85219: COMPLETE 196 (real logic 141 + tables 55); floor 196.
+- Dalawang hanay (hiling ng lane 1, PR 539): ang sheet na tumatakbo lang dahil sa macro na mula sa manual text ("inside not drawn", `TCE_RUN.stats().runText`) ay hindi drawing-complete; hiwalay na linya. Sa branch ng PR 539: COMPLETE 196, manual-text 70.

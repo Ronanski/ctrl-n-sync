@@ -57,7 +57,7 @@ Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engi
 - Plant docs: `document-references/INDEX.md` (ang mga dokumento ay nasa PC ng user at sa private repo na `Ronanski/icms-plant-documents`, hindi kailanman sa repo na ito).
 - Frame ng app: `src/station/`; build ng page: `tools/station/build.js`; pangalan, version at site: `delivery/app/app.json`.
 - Simulator: HX pages `src/ui/plant/hx/`; plant model `src/analog/engine/` (`unit.js`, `boiler.js`, `tcs.js`, `tcs-trip.js`); mundo ABC + DITL `src/world/world.js`; DITL `src/digital/`; 150 MW na simula `src/data/st150.txt` (gawa ng `tools/steady150/make.cjs`; gawin ulit kapag may bagong value ang model).
-- QA trace (bilang ng kabit, lane 8): `node tools/trace/trace.cjs [--start 150|cold] [--mins 10] [--tag <tag>]`; TCE / TCA kumpleto: `node tests/lanes/qa/tce-complete.cjs` (beta.438: explanation sheets at nawalang kabit sa compile ay hindi kumpleto; 141).
+- QA trace (bilang ng kabit, lane 8): `node tools/trace/trace.cjs [--start 150|cold] [--mins 10] [--tag <tag>]`; TCE / TCA kumpleto: `node tests/lanes/qa/tce-complete.cjs` (beta.468: hindi kumpleto ang explanation sheet, ang nawalang kabit sa compile at ang manual-text macro; 196).
 - Build at test: `npm run build`, `npm run check` (dapat SAME), `node tests/gate/behaviour.cjs <page> --mins 20`, `tests/regress/`.
 - Workflows: `checks.yml` (bawat PR), `sim-tests.yml` (sa `main`), `site.yml` (kusa pagkatapos ng Checks), `release.yml` (GO ng user lang).
 - Lumang rules, handoff, spec at live test findings: `docs/archive/rules-2026-11-22/`.

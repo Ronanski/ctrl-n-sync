@@ -33,6 +33,7 @@ Run: `node tools/trace/trace.cjs --start 150 --mins 10` (the app's own engine, h
 
 ## TCE / TCA / G (tests/lanes/qa/tce-complete.cjs)
 - COMPLETE = every block has its macro-list meaning AND every parameter that meaning needs is printed on the sheet (FG points, SG K, timer times, PIV limits, printed parameters read). Reported as real logic + tables with no block.
-- Rule change 2026-11-25 (review against the Aug 2017 PDFs): (a) LOGIC / PI/O EXPLANATION sheets (TCE022, TCE023) are legends and never count; (b) a sheet-to-sheet link that the drawing names (source sheet + letter, joined) but that the compiled program turns into a CON: port (= 0) is a broken wire of the reading sheet. Same code (main 502e57f): old rule 196 (real logic 140 + tables 56), new rule 141 (real logic 90 + tables 51). Floor 194 -> 141.
+- Rule change 2026-11-25 (review against the Aug 2017 PDFs): (a) LOGIC / PI/O EXPLANATION sheets (TCE022, TCE023) are legends and never count; (b) a sheet-to-sheet link that the drawing names (source sheet + letter, joined) but that the compiled program turns into a CON: port (= 0) is a broken wire of the reading sheet. Same code (main 502e57f): old rule 196 (real logic 140 + tables 56), new rule 141 (real logic 90 + tables 51). Floor 194 -> 141. After lane 1 PR 526 (both fixed): 196, floor 196.
+- Two columns (2026-11-25, lane 1 PR 539): a sheet that runs only through a macro coded from the manual text (TCE_RUN.stats().runText, "inside not drawn") is NOT drawing-complete; it is printed on its own line and never in COMPLETE.
 
 ## Baseline (main 5d9c34d): I/O with a tag 2,702 = linked 1,482, on a drawing not wired 380, model / page only 214, nowhere 537, excluded 89.

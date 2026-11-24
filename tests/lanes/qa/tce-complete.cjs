@@ -6,8 +6,9 @@ const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
 const root = path.resolve(__dirname, '..', '..', '..');
-/* floor 194 -> 141 (2026-11-25): rules (a) explanation sheets and (b) links lost at compile added; same code, old rule 196, new rule 141 */
-const FLOOR = +(process.env.TCE_FLOOR || 141);
+/* floor 194 -> 141 (2026-11-25, rules (a) explanation sheets and (b) links lost at compile: old rule 196, new rule 141 on main 502e57f);
+   141 -> 196 after lane 1 PR 526 fixed both (nearest connector, INITIAL from TCE050) */
+const FLOOR = +(process.env.TCE_FLOOR || 196);
 const dir = root + '/src/digital/tce';
 const src = fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8');
 const win = {};
@@ -149,8 +150,21 @@ for (const p of P.plan) {
 }
 console.log('controller: sheets / run / run without a found defect', JSON.stringify(ctl));
 
-const complete = run.size - bad.size;
-const empty = P.plan.filter(p => run.has(p.id) && !bad.has(p.id) && !p.blocks && !p.macros).length;
+/* two columns (2026-11-25, lane 1 PR 539): a sheet that runs only because a macro is coded from the manual text ("inside not drawn",
+   TCE_RUN.stats().runText) is not drawing-complete; it is counted on its own line and never in COMPLETE */
+const runText = new Set(S.runText || []);
+const ok = P.plan.filter(p => run.has(p.id) && !bad.has(p.id));
+const drawn = ok.filter(p => !runText.has(p.id)),
+  textOk = ok.filter(p => runText.has(p.id)).length;
+const complete = drawn.length;
+const empty = drawn.filter(p => !p.blocks && !p.macros).length;
 console.log('of the complete: real logic ' + (complete - empty) + ', tables with no block ' + empty);
+console.log(
+  'runs with a manual-text macro (not drawing-complete): ' +
+    runText.size +
+    ' (of these with no other defect ' +
+    textOk +
+    ')'
+);
 console.log('\nCOMPLETE ' + complete + ' of ' + P.plan.length + ' (floor ' + FLOOR + ')');
 process.exit(complete >= FLOOR ? 0 : 1);
