@@ -594,6 +594,108 @@
      after; it feeds the top of the timers and comparators of every sheet, which therefore hold their SW = 0 output (Y = 0) for those
      10 s: "INITIAL clears every timer". */
   const MACRO = {}; /* macro meanings, by name ('TRIPPLE INPUT DIAGNOSTICS' ...): f(inputs by pin name, notes, st, dt) -> outputs by pin name */
+  /* ---------- macro (MD) meanings FROM THE MANUAL TEXT: the inside of these macros is NOT drawn in any document we have (lane 2 spec
+     /mnt/project-files/lanes/tcs-macros/01, 02, 04: the TCE / TCA sets, TCA.pdf / TCE.pdf and TC-14-116 were searched page by page; the
+     inside lives in the EWS project, "Logic Monitor", TC-14-116 p 1359). What IS drawn: the pins, the macro number, the parameters printed
+     beside each block and the wiring. Each meaning below is the reading of those plus what TC-14-116 writes about the function; every
+     such function carries src = TEXT, and stats() counts the sheets that run only with them apart (QA column "from manual text, not
+     drawing-complete") until the user decides. A Logic Monitor print, if found, replaces the reading. */
+  const TEXT = 'from manual text, inside not drawn';
+  /* a printed parameter of a macro, "LABEL:value" (value without its unit: "306.0degC", "0.18S"); undefined if not printed */
+  const mpar = (notes, label) => {
+    for (const n of notes || []) {
+      const z = String(Array.isArray(n) ? n[2] : n).trim();
+      if (z.startsWith(label + ':')) return parseFloat(z.slice(label.length + 1));
+    }
+  };
+  /* on-delay: 1 once cond has held T seconds */
+  const onDelay = (st, k, cond, T, dt) => ((st[k] = cond ? (st[k] || 0) + dt : 0), st[k] >= T - 1e-9 ? 1 : 0);
+  /* need(notes): the printed parameters the reading uses that are missing (a missing one keeps the block open, never a default) */
+  const textMacro = (need, f) => ((f.src = TEXT), (f.need = typeof need === 'function' ? need : notes => need.filter(k => mpar(notes, k) === undefined)), f);
+  /* 01 TRIPPLE INPUT DIAGNOSTICS (LME105, 146 blocks on TCE075 ~ TCE119A, TCE145; pins IN1 IN2 IN3 / OUT, DEV E; printed TP:3.0).
+     TC-14-116 p 85: "2/3 : contact 2 out of 3 combination logic"; p 1298 No. 9 "Input Channel Error": "deviations between signals when
+     inputs such as field sensors are multiplexed". Reading: OUT = 2 out of 3 of IN1..IN3; DEV E = the three not all equal for TP s. */
+  MACRO['TRIPPLE INPUT DIAGNOSTICS'] = textMacro(['TP'], (I, notes, st, dt) => {
+    const a = b01(I.IN1),
+      b = b01(I.IN2),
+      c = b01(I.IN3);
+    return { OUT: a + b + c >= 2 ? 1 : 0, 'DEV E': onDelay(st, 'd', !(a === b && b === c), mpar(notes, 'TP'), dt) };
+  });
+  /* 02 AI DIAG.MD (LMA510 / LME510, 96 blocks on TCA310 ~ TCA443, TCE102 ~ TCE104; pins IN ERR SIM / OUT ABN). Printed in two groups:
+     left "DEF N, K, H/L HL, LL, DEF TP" (HL / LL = about 102 % and -2 ~ -15 % of the AI range: the range check), right "DEV HL, LL,
+     DEF TP, DEF N, K" (the rate check). TC-14-116 p 1298 No. 4 "Analog Input Signal Abnormal": "a deviation from the upper or lower
+     limit or an excessively large rate of signal change) or an abnormal input module function". Reading: each group samples IN every
+     DEF TP (at least once a scan); a sample is bad when IN is outside [LL, HL] (range) or its change from the last sample is outside
+     [DEV LL, DEV HL] (rate); ABN = ERR, or DEF N bad samples in a row in either group. OUT = IN, and SIM on ABN (SIM is the drawn
+     substitute: an SG or the value of another sheet, e.g. TCA322 valve positions from TCA740 / TCA741). K (printed 1) is not read:
+     the manual does not say what it is. */
+  const aiGroups = notes => {
+    const h = (notes || []).find(n => /^H\/L HL:/.test(n[2])),
+      d = (notes || []).find(n => /^DEV HL:/.test(n[2]));
+    if (!h || !d) return null;
+    const g = { hl: parseFloat(h[2].split(':')[1]) },
+      e = { hl: parseFloat(d[2].split(':')[1]) };
+    /* each label stands under the HL of its group ("LL:" 20 px in): it belongs to the nearer HL */
+    const near = (n, x0, x1) => Math.abs(n[0] - x0) < Math.abs(n[0] - x1);
+    for (const [o, x0, x1] of [[g, h[0], d[0]], [e, d[0], h[0]]])
+      for (const [k, re] of [['LL', /^LL:/], ['TP', /^DEF TP:/], ['N', /^DEF N:/]]) {
+        const n = (notes || []).filter(n => re.test(n[2]) && near(n, x0 + (k === 'LL' ? 20 : 0), x1 + (k === 'LL' ? 20 : 0)))[0];
+        o[k] = n ? parseFloat(String(n[2]).split(':')[1]) : undefined;
+      }
+    return { g, e };
+  };
+  const aiNeed = notes => {
+    const G = aiGroups(notes);
+    if (!G) return ['H/L HL', 'DEV HL'].filter(k => mpar(notes, k) === undefined);
+    const miss = [];
+    for (const [o, w] of [[G.g, 'H/L'], [G.e, 'DEV']]) for (const k of ['LL', 'TP', 'N']) if (!Number.isFinite(o[k])) miss.push(w + ' ' + k);
+    return miss;
+  };
+  MACRO['AI DIAG.MD'] = textMacro(aiNeed, (I, notes, st, dt) => {
+    const G = st.G || (st.G = aiGroups(notes)),
+      x = I.IN;
+    if (!G) return {};
+    const chk = (o, k, bad) => {
+      st[k + 't'] = (st[k + 't'] || 0) + dt;
+      if (st[k + 't'] >= Math.max(o.TP, dt) - 1e-9) {
+        st[k + 't'] = 0;
+        st[k + 'n'] = bad() ? (st[k + 'n'] || 0) + 1 : 0;
+      }
+      return (st[k + 'n'] || 0) >= o.N;
+    };
+    const range = chk(G.g, 'r', () => x > G.g.hl || x < G.g.LL);
+    const rate = chk(G.e, 'v', () => {
+      const d = st.last === undefined ? 0 : x - st.last;
+      st.last = x;
+      return d > G.e.hl || d < G.e.LL;
+    });
+    const abn = b01(I.ERR) || range || rate ? 1 : 0;
+    return { OUT: abn ? I.SIM : x, ABN: abn };
+  });
+  /* 04 TMR AI DIAGNOSTICS (LME111 + LME111A, 42 blocks on TCE060 ~ TCE073, TCA372; pins SIG1 ERR1 SIG2 ERR2 SIG3 ERR3 HL LL DEV SIM /
+     OUT ABN DEV E ERR; printed TP:1.0 three times and DELAY TP:3.0s three times: one of each per channel). TC-14-116 p 1308 No. 6
+     "Discrepancy Error": "when ... TPC(A) data only has deviated greatly from TPC(B) and (C) data"; p 1298 No. 4 and No. 9 as for 01 / 02.
+     Reading: channel i is bad when ERRi, or SIGi outside [LL, HL], for TP s; it deviates when it differs from the middle of the three by
+     more than DEV for DELAY TP s. OUT = the middle of the three good channels (two good: their mean); ABN = fewer than two good channels
+     (the 2 out of 3 is lost), then OUT = SIM; DEV E = a channel deviates; ERR = a channel is bad. */
+  const mid3 = (a, b, c) => Math.max(Math.min(a, b), Math.min(Math.max(a, b), c));
+  MACRO['TMR AI DIAGNOSTICS'] = textMacro(['TP', 'DELAY TP'], (I, notes, st, dt) => {
+    const T = mpar(notes, 'TP'),
+      D = mpar(notes, 'DELAY TP'),
+      S = [I.SIG1, I.SIG2, I.SIG3],
+      m = mid3(...S),
+      good = [],
+      bad = [];
+    let dev = 0;
+    for (let i = 0; i < 3; i++) {
+      const e = b01(I['ERR' + (i + 1)]) || S[i] > I.HL || S[i] < I.LL;
+      (onDelay(st, 'b' + i, e, T, dt) ? bad : good).push(S[i]);
+      dev |= onDelay(st, 'd' + i, Math.abs(S[i] - m) > I.DEV, D, dt);
+    }
+    const abn = good.length < 2 ? 1 : 0,
+      out = abn ? I.SIM : good.length === 3 ? mid3(...good) : (good[0] + good[1]) / 2;
+    return { OUT: out, ABN: abn, 'DEV E': dev, ERR: bad.length ? 1 : 0 };
+  });
   const numConst = t => {
     const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
     return m ? +m[1] : null;
@@ -684,8 +786,11 @@
               .filter(w => w[0] >= x0 - m && w[0] <= x1 + 120 && w[1] >= y0 - 16 && w[1] <= y1 + m && /\(T[A-Z]{2}\d+[A-Z]?-\d+\)/.test(w[2]))
               .sort((a, b) => Math.hypot(a[0] - x1, a[1] - y0) - Math.hypot(b[0] - x1, b[1] - y0))
               .map(w => /\((T[A-Z]{2}\d+[A-Z]?-\d+)\)/.exec(w[2]))[0],
-            on = tx.find(w => /^(ON\(1\)|OFF\(0\))$/.test(w));
-          r = io ? port('PIO:' + io[1]) : on ? slot('CONST:' + +/\((\d)\)/.exec(on)[1], +/\((\d)\)/.exec(on)[1]) : port('PIO:' + sid + '.' + x[0] + (tx.length ? ' ' + tx.join(' ') : ''));
+            on = tx.find(w => /^(ON\(1\)|OFF\(0\))$/.test(w)),
+            /* a PI/O error box prints the table / order of its card or channel, the same words as the value of that row ("(TCA900-1)" on
+               TCA040 is DI 1 and the card error; "(TCA932-3)" on TCA322 is the AI and its error): the error is its own signal, "<row> ERR" */
+            err = t === 'r' && x[5] === 'PI/O error' ? ' ERR' : '';
+          r = io ? port('PIO:' + io[1] + err) : on ? slot('CONST:' + +/\((\d)\)/.exec(on)[1], +/\((\d)\)/.exec(on)[1]) : port('PIO:' + sid + '.' + x[0] + (tx.length ? ' ' + tx.join(' ') : ''));
         } else if (t === 'd') r = port('CRT:' + sid + '.' + (x[4] || x[0]));
         else r = port('SRC:' + mk);
       }
@@ -777,7 +882,8 @@
         M.R.forEach(p => p && (outs[p] = slot(n.id + ':' + M.key + '.' + p)));
         const ins = {};
         for (const i of M.ins) if (i.name) ins[i.name] = res(n.id, i.net);
-        nodes.push({ t: 'M', f, name, notes: M.notes, ins, outs, st: {} });
+        const open = f && f.need ? f.need(M.notes).map(k => name + ' needs ' + k) : [];
+        nodes.push({ t: 'M', f, name, notes: M.notes, ins, outs, st: {}, open, src: f && f.src });
       }
       /* order: a node after the nodes of this sheet that feed it (depth first; a loop keeps the last scan's value) */
       const by = new Map();
@@ -798,7 +904,7 @@
       plan.push({ id: n.id, ctl: S.ctl, cyc: (S.cycle || 100) / 1000, acc: 0, nodes: order, blocks: n.blocks.length, macros: n.macros.length });
     }
     const v = Float64Array.from(init);
-    const prog = { names, idx, v, ports: [...ports].sort(), plan, nets, join: J, unknown, res, t: 0 };
+    const prog = { names, idx, v, ports: [...ports].sort(), plan, nets, parts: part, join: J, unknown, res, t: 0 };
     return prog;
   }
   /* one scan of one sheet at its cycle dt */
@@ -847,26 +953,70 @@
   };
   /* the value of the net `key` of sheet `sid` (the live reads of a sheet name these keys) */
   const get = (prog, sid, key) => prog.v[prog.res(sid, key)];
+  /* the operator station side (HMI, lane 9): every CRT push button (a port to force) and every CRT lamp (an output to read) */
+  function crt(prog) {
+    const buttons = prog.ports.filter(n => /^CRT:/.test(n)).map(port => {
+        const r = port.slice(4),
+          i = r.indexOf('.');
+        return { port, sheet: r.slice(0, i), tag: r.slice(i + 1) };
+      }),
+      lamps = [];
+    for (const n of prog.nets) for (const o of n.outputs) if (o.kind === 'd') lamps.push({ sheet: n.id, key: o.key, tag: o.text });
+    return { buttons, lamps };
+  }
+  /* what the program WRITES (every prog.ports entry is an input it only reads): each output of a sheet with where it goes. kind 'crt' = a
+     CRT lamp, 'pio' = a PI/O output box (to the field / DCS), 'con' = a connector to a sheet outside the TCE / TCA set, 'spare' = a connector printed "(-)" */
+  function outs(prog) {
+    const ids = new Set(prog.nets.map(n => n.id)),
+      L = [];
+    for (const n of prog.nets)
+      for (const o of n.outputs) {
+        const inside = (o.sheets || []).some(x => ids.has(x)) || /^circle .* to (G-|\(this sheet\))/.test(o.to || ''),
+          kind = o.kind === 'd' ? 'crt' : o.kind === 'r' ? 'pio' : o.kind === 'c' && !inside ? ((o.sheets || []).every(x => x === '-') ? 'spare' : 'con') : null;
+        if (kind) L.push({ sheet: n.id, key: o.key, kind, to: o.to, slot: prog.res(n.id, o.net) });
+      }
+    return L;
+  }
+  /* read with no side effect: a net or part key of the sheet, a CRT lamp by key or tag, a CRT button by tag; undefined if unknown */
+  function read(prog, sid, key) {
+    const n = prog.nets.find(x => x.id === sid);
+    if (!n) return undefined;
+    const lamp = n.outputs.find(o => o.kind === 'd' && (o.key === key || o.text === key));
+    if (lamp) return prog.v[prog.res(sid, lamp.net)];
+    const btn = prog.idx.get('CRT:' + sid + '.' + key);
+    if (btn !== undefined) return prog.v[btn];
+    const known = prog.names.indexOf(sid + ':' + key);
+    if (known >= 0) return prog.v[known];
+    const P = prog.parts && prog.parts[sid];
+    return P && (P.has(key) || P.has(key.split('.')[0])) ? prog.v[prog.res(sid, key)] : undefined;
+  }
   /* what runs: per sheet, every block and macro with a meaning = the sheet runs as its logic */
   function stats(prog) {
     let run = 0,
       blocks = 0,
       bOk = 0,
       macros = 0,
-      mOk = 0;
+      mOk = 0,
+      mText = 0;
     const notRun = [],
+      runText = [] /* sheets that run with a macro meaning from the manual text (inside not drawn): QA counts them apart */,
       open = {};
     for (const p of prog.plan) {
-      let ok = true;
+      let ok = true,
+        text = false;
       for (const x of p.nodes) {
         if (x.t === 'b') (blocks++, x.f ? bOk++ : (ok = false));
         if (x.t === 'b' && x.open && x.open.length) {
           ok = false;
           for (const w of x.open) (open[w] = open[w] || new Set()).add(p.id);
         }
-        if (x.t === 'M') (macros++, x.f ? mOk++ : (ok = false));
+        if (x.t === 'M') (macros++, x.f ? mOk++ : (ok = false), x.src && (mText++, (text = true)));
+        if (x.t === 'M' && x.open && x.open.length) {
+          ok = false;
+          for (const w of x.open) (open[w] = open[w] || new Set()).add(p.id);
+        }
       }
-      ok ? run++ : notRun.push(p.id);
+      ok ? (run++, text && runText.push(p.id)) : notRun.push(p.id);
     }
     const kinds = {};
     for (const n of prog.ports) {
@@ -874,7 +1024,7 @@
       kinds[k] = (kinds[k] || 0) + 1;
     }
     for (const w in open) open[w] = [...open[w]].sort();
-    return { sheets: prog.plan.length, run, notRun, open, blocks, bOk, macros, mOk, ports: prog.ports.length, portKinds: kinds };
+    return { sheets: prog.plan.length, run, runText, notRun, open, blocks, bOk, macros, mOk, mText, ports: prog.ports.length, portKinds: kinds };
   }
-  root.TCE_RUN = { K, par, REQ, EXTRA, need, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO };
+  root.TCE_RUN = { crt, read, outs, K, par, REQ, EXTRA, need, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO, TEXT };
 })(typeof window !== 'undefined' ? window : globalThis);
