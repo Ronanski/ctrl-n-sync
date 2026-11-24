@@ -139898,6 +139898,10 @@ function anDitlRun(addr, last) {
                       (condenser design specification, K1AU3-D1-0-039 R0 p7: tube side 30 -> 35.6 C at 31,500 T/H, shell 316.024 T/H);
                       condenser steam = main steam x 316 / 460 (FHI MCR 460 T/H) + LP bypass.
    The forebay is the SOP normal level -4 m (live test beta.74 #36). UNUSUAL (in the report): the alarm list H of LT-SW1501 is -6.0 m. */
+/* C, condenser seawater inlet design, K1AU3-D1-0-039 R1 sheet K2MC3A-100 (in / out 30 / 35.6 C). beta.362 D21: was AN_SW.Tin 28.5 / 28.6
+   (no source, the 30.PNG snapshot); kept outside AN_SW because a save carries AN_SW (state.js AN_STATE_OBJ) and the starting states of
+   the app (Cold / 150 MW) had 28.5 / 28.6 in it */
+const AN_SW_TIN = [30, 30];
 const AN_SW = {
   swp: ['M.3353', 'M.3354', 'M.3355'],
   swbp: ['DITL-30', 'DITL-30 #B', 'DITL-30 #C'],
@@ -139960,7 +139964,6 @@ const AN_SW = {
   ki100: 0.0069 /* kg/cm2, open condenser inlet valve at the design path flow (above) */,
   hb100: 0.34 /* m, open SWBP discharge valve at 1,000 m3/h (above) */,
   oDes: 40 /* condenser outlet opening of the design point (SOP 2.31) */,
-  Tin: [28.5, 28.6],
   rise0: 5.6,
   cTH: 31500,
   cSt: 316.024,
@@ -140238,14 +140241,14 @@ function anSeawaterStep(U, dt) {
   lag('swPoA', pout[0], K.tauP);
   lag('swPoB', pout[1], K.tauP);
   /* condenser seawater temperatures */
-  U.swTiA = K.Tin[0];
-  U.swTiB = K.Tin[1];
+  U.swTiA = AN_SW_TIN[0];
+  U.swTiB = AN_SW_TIN[1];
   const ws = Math.max(0, ((U.ms || 0) * K.cSt) / K.mcr + (U.qlp || 0) + (U.xtra || 0));
   const thC = (r.Qc[0] + r.Qc[1]) * 1.02; /* T/H through the condenser: the design rise is per condenser */
   [0, 1].forEach(j => {
     /* one box shut: its share of the heat goes to the other box (heat = water x rise) */
     const rise = r.Qc[j] * 1.02 > 100 ? K.rise0 * (ws / K.cSt) * (K.cTH / thC) : 0;
-    lag(j ? 'swToB' : 'swToA', K.Tin[j] + Math.min(rise, 40), K.tauT);
+    lag(j ? 'swToB' : 'swToA', AN_SW_TIN[j] + Math.min(rise, 40), K.tauT);
   });
   /* PG-SW1501A / B / C: the pump side of the check valve (a stopped pump: the water column of the pit, below the gauge = 0) */
   r.q.forEach((q, i) => lag('swPd' + i, U.swSpd[i] > 0 ? Math.max(0, K.kP * (r.H[i] - K.zD + U.swLvl)) : 0, K.tauP));
@@ -141150,6 +141153,19 @@ function anVacMW(U) {
   U.dMWv = (6 * dT * 0.7 * U.ms) / 3600;
   return U.dMWv;
 }
+/* beta.362 (JENNIE, D21, design K2MC3A-100: 0.07 kg/cm2 A with the steam side at 38.65 C, Psat(38.65) = 0.0700): the air in the condenser
+   collects in the air cooling zone at the ejector suction, where the air-steam mixture is cooled below the steam side. HEI Standards for
+   Steam Surface Condensers (air removal): the suction mixture is 7.5 F = 4.17 K below the saturation of the condensing steam. The
+   condenser pressure is the higher of the steam side saturation and the suction mixture (steam saturated at Ts - 4.17 plus the air):
+   at the design air in-leakage the air does not raise the neck pressure (it read 0.0736 = steam 0.0617 + air 0.0115 before); with more
+   air (leak, ejector short) the suction mixture lifts it, as before. ED 066 p6 design point 25.5 kg/h air + 61.3 steam at 0.055 abs is
+   the ejector rating (a lower suction), it gives the air partial 0.0113, the same as the model air at 150 MW */
+const AN_CD_SUB = 4.17;
+function anCdP(Ts, pA) {
+  const P1 = Math.min(1.033, anPsat(Ts)),
+    P2 = Math.min(1.033, anPsat(Ts - AN_CD_SUB)) + Math.max(0, pA || 0);
+  return Math.min(1.033, Math.max(P1, P2));
+}
 const anPsat = T =>
   (Math.pow(10, 8.07131 - 1730.63 / (233.426 + T)) * 1.33322) / 980.665; /* kg/cm2A, Antoine (water) */
 function anCondStep(U, dt) {
@@ -141157,7 +141173,7 @@ function anCondStep(U, dt) {
     sw = AN_SW,
     ws = Math.max(0, ((U.ms || 0) * sw.cSt) / sw.mcr + (U.qlp || 0) + (U.xtra || 0)),
     Q = (K.Qd * ws) / K.Wd,
-    Tin = isFinite(U.swTiA) ? (U.swTiA + U.swTiB) / 2 : sw.Tin[0],
+    Tin = isFinite(U.swTiA) ? (U.swTiA + U.swTiB) / 2 : AN_SW_TIN[0],
     W = Math.max(0, (U.swQc || 0) * 1.02),
     C = (W / 3.6) * K.cp,
     UA = K.UA * Math.sqrt(W / K.Cd);
@@ -141173,7 +141189,7 @@ function anCondStep(U, dt) {
   /* 3.2.3 live Cold start: the air in the condenser is its own mass balance (anAuxStep U.cdAirP); the vacuum share is what is left of the
      room between the saturation and the atmosphere (the screens and the hood model read it) */
   if (isFinite(U.cdAirP)) {
-    U.cdP = Ps + U.cdAirP;
+    U.cdP = anCdP(U.cdTs, U.cdAirP);
     U.vac = Math.max(0, Math.min(1, (1.033 - U.cdP) / Math.max(1e-3, 1.033 - Ps)));
   } else U.cdP = Ps + (1.033 - Ps) * (1 - vac);
   /* the condensate pumps */
@@ -142261,7 +142277,7 @@ function anAuxStep(U, dt) {
       oU = Math.max(0, -yP) / 100,
       wGf = anStmW(K.cvGf * oF, Pa, Pg, K.Tg),
       Pga = Pg + 1.0332,
-      Pc = Psc + U.cdAirP,
+      Pc = anCdP(Tc, U.cdAirP),
       wSeal = Pga > Pc ? K.Kseal * Math.sqrt(Pga * Pga - Pc * Pc) : 0,
       Pcra = Pcr + 1.0332,
       wHp =
@@ -145031,7 +145047,13 @@ function tcsInit(U, how) {
     gland: svc /* gland steam seal in service (1.10) */,
     vb: !svc /* vacuum breaker MV-AV1391 open */,
     ej: svc /* ejectors (vacuum up) */,
-    hsp: svc /* LP exhaust hood spray FVCD1904 in AUTO (PR-OPE-5002 6307) */,
+    hspAu: svc /* LP exhaust hood spray FV-CD1904 in AUTO (IBD TC-35 FF 1) */,
+    hso: false /* FV-CD1904 open (IBD TC-35 FF 15) */,
+    tgAu: false /* turning gear motor AUTO (IBD TB-9 FF 17); MANUAL at a new state */,
+    ssfv: svc /* steam seal feed inlet valve open (IBD TC-31): PV-GS1031 in service */,
+    ssfvAu: false,
+    gse: svc /* gland steam exhauster running (IBD TC-28 FF 1) */,
+    gseAu: false,
     Thp: hot /* HP first stage inner wall metal, C */,
     Trh: hot /* reheat bowl inner wall metal, C */,
     Tcvi: hot,
@@ -145323,55 +145345,26 @@ function tcsCmd(U, cmd, arg) {
     else c0.byp[k] = true;
     return '';
   }
+  if (cmd === 'ibd') return tcsIbdPush(tcsOilState(U), arg);
   const c = U.tc || tcsInit(U, 'cold'),
     tb = U.tb;
   const on = arg !== 0 && arg !== false;
   switch (cmd) {
-    /* the Training buttons (guide.js): START = the A pump if none runs; STOP = both, to MANUAL (else the standby in AUTO starts) */
-    case 'lop':
-    case 'eh': {
-      const k = cmd === 'lop' ? 'mop' : 'cop';
-      tcsOilInit(c);
-      if (on) {
-        if (!c[k][0] && !c[k][1]) c[k][0] = true;
-      } else {
-        c[k] = [false, false];
-        c[k + 'Au'] = [false, false];
-      }
-      tcsOilSet(c);
-      return '';
-    }
+    /* 1.0.0-beta.362 D18 (JENNIE): no 'lop' / 'eh' commands (the Training buttons that started the A pump): each pump has its own
+       START / STOP / AUTO / MANUAL ('oil' below, IBD TB-1 / 2 / 21 / 22) */
     /* 3.2.0-beta.66: the TCS CRT operation of one pump (036 TURBINE OIL HMI, SOP 2620 "COP(B) > MANUAL > EXECUTE > STOP ... AUTO >
        EXECUTE"): arg = { p: 'mopA' | 'mopB' | 'copA' | 'copB' | 'eop', op: 'start' | 'stop' | 'auto' | 'man' } */
     case 'oil':
       return tcsOilCmd(c, arg || {});
-    case 'vex':
-      c.vex = on;
-      return '';
-    case 'tg':
-      if (on && !c.brgOk) return 'No bearing oil: start a lube oil pump first (ATS 1.15)';
-      c.tg = on;
-      return '';
+    /* 1.0.0-beta.362 D18 (JENNIE): no 'vex' / 'tg' / 'gland' / 'hood' commands. The vapour extractor (IBD TB-12), the turning gear motor
+       (TB-9), the gland steam exhauster (TC-28), the steam seal feed inlet valve (TC-31, it puts PV-GS1031 in service) and the LP exhaust
+       hood spray FV-CD1904 (TC-35) are run by the push buttons of their sheets: arg = { id: 'TB-9', pb: 'START' } (tcs-trip.js
+       TCS_IBD_PBN). The sheet gates give the permissives (TB-9: MSV / ICV closed, bearing oil normal) */
     /* 1.0.0-beta.360 (JENNIE): no 'aux' command. The aux steam valve MV-AS1391 is a DCS MOV (DITL-51, OPEN P.B. M.0360): c.asv follows
        its position (tcsStep). The old command set the flag with no TCS sheet behind it */
-    case 'gland':
-      /* 3.2.3: the command puts the gland steam controller (PV-GS1031 / PV-GS1034 PI on PT-GS1001) in or out of service; the seal is in
-         service when the header pressure comes up (unit.js anAuxStep) */
-      if (!on) {
-        c.gsOn = false;
-        c.gland = false;
-        return '';
-      }
-      if (!(tb && tb.rpm >= 1)) return 'Gland sealing: the turbine must turn on the turning gear (PR-OPE-5002 6219)';
-      if (!c.vb) return 'Gland sealing: the vacuum breaker MV-AV1391 must be open (PR-OPE-5002 6197)';
-      c.gsOn = true;
-      return '';
     /* 1.0.0-beta.360 (JENNIE): no 'vacuum' command. The vacuum breaker MV-AV1391 and the ejector steam MOVs are DCS MOVs (DITL-56 / 55 /
        54): the operator presses their CLOSE / OPEN push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6 I.0216). The
        state c.vb / c.ej follows the MOV positions (tcsStep). The old command pressed all three in one call with no TCS sheet behind it */
-    case 'hood' /* LP exhaust hood spray FVCD1904 AUTO (PR-OPE-5002 6307, with the vacuum up) */:
-      c.hsp = on;
-      return '';
     case 'auto':
       c.auto = on;
       return '';
@@ -145522,7 +145515,8 @@ function tcsAux(U, dt) {
   if (isFinite(U.gsP)) c.gsOk = U.gsP >= 0.1;
   c.tankOk = true;
   if (isFinite(U.gsP)) c.gland = !!c.gsOn && c.gsOk;
-  if (!c.brgOk) c.tg = false;
+  /* 1.0.0-beta.362 D18: the turning gear motor runs as IBD TB-9 says (the bearing oil is a start permissive there, net 3); the shaft turns
+     only with the bearing oil (below) */
   /* turning gear: about 3 rpm (PR-OPE-5002 7955); disengages above 4 rpm and engages again at zero speed */
   const Ta = tcsMetal(U, c, s, dt);
   const steam = tcsSteamOn(U);
@@ -145552,7 +145546,7 @@ function tcsAux(U, dt) {
   const sp = Math.min(1, (tb.rpm || 0) / 3600),
     /* 3.2.0-beta.38: the hood spray FVCD1904 in AUTO (PR-OPE-5002 6307, put in AUTO at the vacuum up) sprays below 15 % load (22.5
        MW, 9195) and takes 70 % of the windage heat (NO-SOURCE share; the spray itself is sourced: FV-CD1904 full open below 15 % load, IBD TC-28, 5226 kg/h, TG maintenance manual p104 and p2520 ~ 2521). Without it: 82 C at 3600 rpm with no load, over the 80 C of 1.12 (hold) */
-    hs = (c.hso = !!(c.hsp && (U.MW || 0) < 22.5)) ? 0.3 : 1 /* c.hso: FV-CD1904 open (the page reads it) */,
+    hs = c.hso ? 0.3 : 1 /* c.hso: FV-CD1904 open, IBD TC-35 (AUTO: GSE started 3 s and GEN. LOAD < 15 %; beta.362 D18) */,
     XSS =
       Ta +
       15 * sp +
@@ -145916,7 +145910,7 @@ function tcsFromOil(U) {
 function tcsOilState(U) {
   if (U.tc) return U.tc;
   if (!U.tco) {
-    U.tco = { lop: true, eh: true, vex: true };
+    U.tco = { lop: true, eh: true, vex: true, ssfv: true, gse: true, hspAu: true, hso: false, tgAu: false } /* beta.362 D18: the gland seal and the hood spray AUTO in service on load */;
     tcsOilInit(U.tco);
     U.tco.mopAu = [false, true];
     U.tco.copAu = [false, true];
@@ -145962,6 +145956,8 @@ function tcsOil(U, dt) {
       c.vex = false;
     }
   }
+  /* beta.362 D18: MCC-EMP11 dead = MOTOR ELECTRICAL TROUBLE of the vapour extractor (IBD TB-12 net 10) */
+  c.empOff = !!(bo.dead && !bo.emp);
   /* the automatic starts are in the sheets TB-1, TB-2, TB-21, TB-22 (tcs-trip.js) */
   tcsOilSet(c);
   lag('loPa', c.mop[0] ? K.mop : 0);
@@ -146116,8 +146112,11 @@ function tcsState() {
       gland: c.gland,
       vb: c.vb,
       ej: c.ej,
-      hsp: c.hsp,
+      hsp: !!c.hspAu /* FV-CD1904 in AUTO */,
       hso: !!c.hso,
+      tgAu: !!c.tgAu,
+      ssfv: !!c.ssfv,
+      gse: !!c.gse,
       auto: c.auto
     },
     crit: C,
@@ -147078,6 +147077,90 @@ const TCS_IBD_OUT = {
   'TD-4': { 6: c => c.sexOk } /* 2.1 shell expansion OK (TCA535) */
 };
 const TCS_IBD_DROP = { 'TD-2': [3, 4, 5, 14, 15, 16] };
+/* 1.0.0-beta.362 D18 (JENNIE, user 2026-11-24 "Go ayos"): the turning gear, the vapour extractor, the gland steam exhauster, the steam seal
+   feed inlet valve and the LP exhaust hood spray are run by their own IBD sheets (TCS soft logic 331DM09784, typed from the drawing), as the
+   oil pumps TB-1 / 2 / 21 / 22. Before: one screen command each set a flag (tcs.js 'tg', 'vex', 'gland', 'hood') with no sheet behind it.
+   TCS_IBD_PBN: the push buttons of the TCS HMI by sheet and net (a 1.5 s pulse, AN.turbine('ibd', { id, pb })):
+     TB-9  TURNING GEAR MOTOR (page 58; TCE350 ~ 352): START 20, AUTO 16, MANUAL 18, STOP 22, (LOCAL) JOG 9
+     TB-12 MAIN OIL TANK VAPOUR EXTRACTOR (TCA655): START 7, STOP 11
+     TC-28 GLAND STEAM EXHAUSTER (TCA680): START 7, AUTO 3, MANUAL 5, STOP 9
+     TC-31 STEAM SEAL FEED INLET VALVE (TCA650): OPEN 4, AUTO 0, MANUAL 2, CLOSE 6
+     TC-35 LP EXHAUST HOOD WATER SPRAY VALVE FV-CD1904: OPEN 10, AUTO 0, MANUAL 9 (the reader found no CLOSE push button: finding D18-2)
+   TCS_IBD_DEV: what each sheet reads from the plant before its gates (pre) and what its outputs do to the plant after them (post). The flip-flops
+   keep their own memory in ib.v; a new memory (Cold / 150 MW / an old save) starts from the state flags (init). The output names that the
+   reader left undriven (TB-9 55, TB-12 13, TC-28 17, TC-31 14 / 16, TC-35 17 / 19) are the outputs of their gates, so the off-page links work.
+   The group sheets TE-6 / TE-7 (gland seal start / stop group) are not bound: their netlists have reader errors (finding D18-1) */
+const TCS_IBD_PBN = {
+  'TB-9': { START: 20, AUTO: 16, MANUAL: 18, STOP: 22, JOG: 9 },
+  'TB-12': { START: 7, STOP: 11 },
+  'TC-28': { START: 7, AUTO: 3, MANUAL: 5, STOP: 9 },
+  'TC-31': { OPEN: 4, AUTO: 0, MANUAL: 2, CLOSE: 6 },
+  'TC-35': { OPEN: 10, AUTO: 0, MANUAL: 9 }
+};
+const tcsRpm = U => (U.tb && U.tb.rpm) || 0;
+const TCS_IBD_DEV = {
+  'TB-9': {
+    init: (v, c) => ((v[11] = c.tg ? 1 : 0), (v[17] = c.tgAu ? 1 : 0)),
+    pre: (v, c, U) => {
+      v[43] = c.tg ? 1 : 0; /* TURNING GEAR MOTOR RUNNING */
+      v[30] = c.tg && tcsRpm(U) <= 4 ? 1 : 0; /* TURNING GEAR ENGAGED (TB-10 solenoid; disengages above 4 rpm, PR-OPE-5002 7955) */
+      v[36] = tcsRpm(U) < 1 ? 1 : 0; /* TURBINE ZERO SPEED */
+      v[53] = 0; /* ZS-LO1003 HAND TURNING INTERLOCK: the hand turning bar is not modelled (stowed) */
+    },
+    post: (v, c) => {
+      v[55] = v[12];
+      c.tg = v[12] > 0.5;
+      c.tgAu = v[17] > 0.5;
+    }
+  },
+  'TB-12': {
+    init: (v, c) => (v[8] = c.vex ? 1 : 0),
+    pre: (v, c) => {
+      v[4] = c.vex ? 0 : 1; /* VAPOUR EXTRACTOR STOPPED */
+      v[10] = c.empOff ? 1 : 0; /* MOTOR ELECTRICAL TROUBLE: MCC-EMP11 dead (unit black-out, tcs.js) */
+    },
+    post: (v, c) => {
+      v[13] = v[8];
+      c.vex = v[8] > 0.5 && !c.empOff;
+    }
+  },
+  'TC-28': {
+    init: (v, c) => ((v[1] = c.gse ? 1 : 0), (v[4] = c.gseAu ? 1 : 0)),
+    post: (v, c) => {
+      v[17] = v[1];
+      c.gse = v[1] > 0.5;
+      c.gseAu = v[4] > 0.5;
+    }
+  },
+  'TC-31': {
+    init: (v, c) => (v[1] = c.ssfvAu ? 1 : 0),
+    post: (v, c) => {
+      v[14] = v[13];
+      v[16] = v[10];
+      /* the valve: OPEN / CLOSE command of the sheet (a seal-in MOV); it puts the gland steam controller PV-GS1031 in service (unit.js anAuxStep) */
+      if (v[13] > 0.5) c.ssfv = true;
+      else if (v[10] > 0.5) c.ssfv = false;
+      c.ssfvAu = v[1] > 0.5;
+      c.gsOn = !!c.ssfv;
+    }
+  },
+  'TC-35': {
+    init: (v, c) => ((v[1] = c.hspAu ? 1 : 0), (v[15] = c.hso ? 1 : 0)),
+    post: (v, c) => {
+      v[17] = v[15];
+      v[19] = v[15] > 0.5 ? 0 : 1;
+      c.hso = v[15] > 0.5; /* FV-CD1904 open */
+      c.hspAu = v[1] > 0.5;
+    }
+  }
+};
+/* the state flags of a model made before these sheets (an old save, the 150 MW oil state) */
+function tcsDevInit(c) {
+  if (c.ssfv == null) c.ssfv = c.gsOn != null ? !!c.gsOn : !!c.gland || !!c.fromLoad;
+  if (c.gse == null) c.gse = !!c.ssfv;
+  if (c.hspAu == null) c.hspAu = !!c.hsp || !!c.fromLoad;
+  if (c.hso == null) c.hso = false;
+}
 const TCS_IBD = {
   by: {},
   bind: null
@@ -147133,6 +147216,7 @@ const tcsIb = c =>
     cmp: {},
     fx: {},
     pb: {},
+    pbn: {},
     r1: false,
     t0: 0,
     first: '',
@@ -147153,7 +147237,14 @@ function tcsIbdStep(U, c, dt) {
   for (const r of B) {
     const s = r.s,
       id = s.id,
+      dv = TCS_IBD_DEV[id],
       v = ib.v[id] || (ib.v[id] = new Array(s.n).fill(0));
+    /* a memory not bound yet (new, or a save made before beta.362): from the state flags */
+    if (dv && !(ib.dv && ib.dv[id])) {
+      tcsDevInit(c);
+      dv.init(v, c);
+      (ib.dv = ib.dv || {})[id] = 1;
+    }
     for (const [net, sh, n] of r.link) v[net] = (ib.v[sh] && ib.v[sh][n]) || 0;
     for (const [net, f] of r.pv) v[net] = +f(U, c);
     if (r.mft.length) for (const net of r.mft) v[net] = ib.mft0 && tcsMft() ? 1 : 0;
@@ -147177,6 +147268,9 @@ function tcsIbdStep(U, c, dt) {
       v[pu.auto] = c[pu.k + 'Au'][pu.i] ? 1 : 0;
       v[pu.run] = v[pu.fb] = c[pu.k][pu.i] ? 1 : 0;
     }
+    if (dv && dv.pre) dv.pre(v, c, U);
+    /* the push buttons of the TCS HMI (TCS_IBD_PBN), held 1.5 s */
+    for (const k in ib.pbn) if (ib.pbn[k] > 0 && k.startsWith(id + ':')) v[+k.split(':')[1]] = 1;
     for (const k in ib.fx) if (k.startsWith(id + ':')) v[+k.split(':')[1]] = ib.fx[k];
     if (id === 'TA-9' && ib.pb.sd > 0) {
       const r = s.i.find(i => /TURBINE SHUTDOWN COMMAND/.test(i[1]));
@@ -147235,7 +147329,17 @@ function tcsIbdStep(U, c, dt) {
         const m = so && so[out] ? so[out](U.tc) : undefined;
         v[out] = m !== undefined ? (m ? 1 : 0) : o;
       });
+    if (dv) dv.post(v, c, U);
     for (const k in ib.fx) if (k.startsWith(id + ':')) v[+k.split(':')[1]] = ib.fx[k];
+  }
+  for (const k in ib.pbn) {
+    ib.pbn[k] -= dt;
+    if (!(ib.pbn[k] > 0)) {
+      /* the end of the pulse: the button net goes back to 0 */
+      const [sid, net] = k.split(':');
+      if (ib.v[sid]) ib.v[sid][+net] = 0;
+      delete ib.pbn[k];
+    }
   }
   /* what the sheets did to the pumps; TB-1 and TB-2 note: TCS MAJOR TROUBLE starts the main oil pumps */
   if (c.mop) {
@@ -147263,6 +147367,18 @@ function tcsIbdStep(U, c, dt) {
   ib.pb.rst = Math.max(0, (ib.pb.rst || 0) - dt);
   ib.pb.sd = Math.max(0, (ib.pb.sd || 0) - dt);
   ib.pb.auto = Math.max(0, (ib.pb.auto || 0) - dt);
+}
+/* a push button of an IBD sheet (TCS_IBD_PBN): '' or the reason it is refused */
+function tcsIbdPush(c, a) {
+  const id = a && a.id,
+    pb = String((a && a.pb) || '').toUpperCase(),
+    m = TCS_IBD_PBN[id];
+  if (!m) return 'No TCS push button sheet ' + id;
+  if (!(pb in m)) return id + ' has no ' + pb + ' push button (' + Object.keys(m).join(' / ') + ')';
+  const ib = tcsIb(c);
+  ib.pbn = ib.pbn || {};
+  ib.pbn[id + ':' + m[pb]] = 1.5;
+  return '';
 }
 /* the event of the engine only: a mirror page gets it from the worker */
 const tcsTripLog = n => {
@@ -156483,10 +156599,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 7167594'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 806f52e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 7167594';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 806f52e';
     } catch (e) {}
   };
   upd();
@@ -312934,6 +313050,10 @@ function anDitlRun(addr, last) {
                       (condenser design specification, K1AU3-D1-0-039 R0 p7: tube side 30 -> 35.6 C at 31,500 T/H, shell 316.024 T/H);
                       condenser steam = main steam x 316 / 460 (FHI MCR 460 T/H) + LP bypass.
    The forebay is the SOP normal level -4 m (live test beta.74 #36). UNUSUAL (in the report): the alarm list H of LT-SW1501 is -6.0 m. */
+/* C, condenser seawater inlet design, K1AU3-D1-0-039 R1 sheet K2MC3A-100 (in / out 30 / 35.6 C). beta.362 D21: was AN_SW.Tin 28.5 / 28.6
+   (no source, the 30.PNG snapshot); kept outside AN_SW because a save carries AN_SW (state.js AN_STATE_OBJ) and the starting states of
+   the app (Cold / 150 MW) had 28.5 / 28.6 in it */
+const AN_SW_TIN = [30, 30];
 const AN_SW = {
   swp: ['M.3353', 'M.3354', 'M.3355'],
   swbp: ['DITL-30', 'DITL-30 #B', 'DITL-30 #C'],
@@ -312996,7 +313116,6 @@ const AN_SW = {
   ki100: 0.0069 /* kg/cm2, open condenser inlet valve at the design path flow (above) */,
   hb100: 0.34 /* m, open SWBP discharge valve at 1,000 m3/h (above) */,
   oDes: 40 /* condenser outlet opening of the design point (SOP 2.31) */,
-  Tin: [28.5, 28.6],
   rise0: 5.6,
   cTH: 31500,
   cSt: 316.024,
@@ -313274,14 +313393,14 @@ function anSeawaterStep(U, dt) {
   lag('swPoA', pout[0], K.tauP);
   lag('swPoB', pout[1], K.tauP);
   /* condenser seawater temperatures */
-  U.swTiA = K.Tin[0];
-  U.swTiB = K.Tin[1];
+  U.swTiA = AN_SW_TIN[0];
+  U.swTiB = AN_SW_TIN[1];
   const ws = Math.max(0, ((U.ms || 0) * K.cSt) / K.mcr + (U.qlp || 0) + (U.xtra || 0));
   const thC = (r.Qc[0] + r.Qc[1]) * 1.02; /* T/H through the condenser: the design rise is per condenser */
   [0, 1].forEach(j => {
     /* one box shut: its share of the heat goes to the other box (heat = water x rise) */
     const rise = r.Qc[j] * 1.02 > 100 ? K.rise0 * (ws / K.cSt) * (K.cTH / thC) : 0;
-    lag(j ? 'swToB' : 'swToA', K.Tin[j] + Math.min(rise, 40), K.tauT);
+    lag(j ? 'swToB' : 'swToA', AN_SW_TIN[j] + Math.min(rise, 40), K.tauT);
   });
   /* PG-SW1501A / B / C: the pump side of the check valve (a stopped pump: the water column of the pit, below the gauge = 0) */
   r.q.forEach((q, i) => lag('swPd' + i, U.swSpd[i] > 0 ? Math.max(0, K.kP * (r.H[i] - K.zD + U.swLvl)) : 0, K.tauP));
@@ -314186,6 +314305,19 @@ function anVacMW(U) {
   U.dMWv = (6 * dT * 0.7 * U.ms) / 3600;
   return U.dMWv;
 }
+/* beta.362 (JENNIE, D21, design K2MC3A-100: 0.07 kg/cm2 A with the steam side at 38.65 C, Psat(38.65) = 0.0700): the air in the condenser
+   collects in the air cooling zone at the ejector suction, where the air-steam mixture is cooled below the steam side. HEI Standards for
+   Steam Surface Condensers (air removal): the suction mixture is 7.5 F = 4.17 K below the saturation of the condensing steam. The
+   condenser pressure is the higher of the steam side saturation and the suction mixture (steam saturated at Ts - 4.17 plus the air):
+   at the design air in-leakage the air does not raise the neck pressure (it read 0.0736 = steam 0.0617 + air 0.0115 before); with more
+   air (leak, ejector short) the suction mixture lifts it, as before. ED 066 p6 design point 25.5 kg/h air + 61.3 steam at 0.055 abs is
+   the ejector rating (a lower suction), it gives the air partial 0.0113, the same as the model air at 150 MW */
+const AN_CD_SUB = 4.17;
+function anCdP(Ts, pA) {
+  const P1 = Math.min(1.033, anPsat(Ts)),
+    P2 = Math.min(1.033, anPsat(Ts - AN_CD_SUB)) + Math.max(0, pA || 0);
+  return Math.min(1.033, Math.max(P1, P2));
+}
 const anPsat = T =>
   (Math.pow(10, 8.07131 - 1730.63 / (233.426 + T)) * 1.33322) / 980.665; /* kg/cm2A, Antoine (water) */
 function anCondStep(U, dt) {
@@ -314193,7 +314325,7 @@ function anCondStep(U, dt) {
     sw = AN_SW,
     ws = Math.max(0, ((U.ms || 0) * sw.cSt) / sw.mcr + (U.qlp || 0) + (U.xtra || 0)),
     Q = (K.Qd * ws) / K.Wd,
-    Tin = isFinite(U.swTiA) ? (U.swTiA + U.swTiB) / 2 : sw.Tin[0],
+    Tin = isFinite(U.swTiA) ? (U.swTiA + U.swTiB) / 2 : AN_SW_TIN[0],
     W = Math.max(0, (U.swQc || 0) * 1.02),
     C = (W / 3.6) * K.cp,
     UA = K.UA * Math.sqrt(W / K.Cd);
@@ -314209,7 +314341,7 @@ function anCondStep(U, dt) {
   /* 3.2.3 live Cold start: the air in the condenser is its own mass balance (anAuxStep U.cdAirP); the vacuum share is what is left of the
      room between the saturation and the atmosphere (the screens and the hood model read it) */
   if (isFinite(U.cdAirP)) {
-    U.cdP = Ps + U.cdAirP;
+    U.cdP = anCdP(U.cdTs, U.cdAirP);
     U.vac = Math.max(0, Math.min(1, (1.033 - U.cdP) / Math.max(1e-3, 1.033 - Ps)));
   } else U.cdP = Ps + (1.033 - Ps) * (1 - vac);
   /* the condensate pumps */
@@ -315297,7 +315429,7 @@ function anAuxStep(U, dt) {
       oU = Math.max(0, -yP) / 100,
       wGf = anStmW(K.cvGf * oF, Pa, Pg, K.Tg),
       Pga = Pg + 1.0332,
-      Pc = Psc + U.cdAirP,
+      Pc = anCdP(Tc, U.cdAirP),
       wSeal = Pga > Pc ? K.Kseal * Math.sqrt(Pga * Pga - Pc * Pc) : 0,
       Pcra = Pcr + 1.0332,
       wHp =
@@ -318069,7 +318201,13 @@ function tcsInit(U, how) {
     gland: svc /* gland steam seal in service (1.10) */,
     vb: !svc /* vacuum breaker MV-AV1391 open */,
     ej: svc /* ejectors (vacuum up) */,
-    hsp: svc /* LP exhaust hood spray FVCD1904 in AUTO (PR-OPE-5002 6307) */,
+    hspAu: svc /* LP exhaust hood spray FV-CD1904 in AUTO (IBD TC-35 FF 1) */,
+    hso: false /* FV-CD1904 open (IBD TC-35 FF 15) */,
+    tgAu: false /* turning gear motor AUTO (IBD TB-9 FF 17); MANUAL at a new state */,
+    ssfv: svc /* steam seal feed inlet valve open (IBD TC-31): PV-GS1031 in service */,
+    ssfvAu: false,
+    gse: svc /* gland steam exhauster running (IBD TC-28 FF 1) */,
+    gseAu: false,
     Thp: hot /* HP first stage inner wall metal, C */,
     Trh: hot /* reheat bowl inner wall metal, C */,
     Tcvi: hot,
@@ -318361,55 +318499,26 @@ function tcsCmd(U, cmd, arg) {
     else c0.byp[k] = true;
     return '';
   }
+  if (cmd === 'ibd') return tcsIbdPush(tcsOilState(U), arg);
   const c = U.tc || tcsInit(U, 'cold'),
     tb = U.tb;
   const on = arg !== 0 && arg !== false;
   switch (cmd) {
-    /* the Training buttons (guide.js): START = the A pump if none runs; STOP = both, to MANUAL (else the standby in AUTO starts) */
-    case 'lop':
-    case 'eh': {
-      const k = cmd === 'lop' ? 'mop' : 'cop';
-      tcsOilInit(c);
-      if (on) {
-        if (!c[k][0] && !c[k][1]) c[k][0] = true;
-      } else {
-        c[k] = [false, false];
-        c[k + 'Au'] = [false, false];
-      }
-      tcsOilSet(c);
-      return '';
-    }
+    /* 1.0.0-beta.362 D18 (JENNIE): no 'lop' / 'eh' commands (the Training buttons that started the A pump): each pump has its own
+       START / STOP / AUTO / MANUAL ('oil' below, IBD TB-1 / 2 / 21 / 22) */
     /* 3.2.0-beta.66: the TCS CRT operation of one pump (036 TURBINE OIL HMI, SOP 2620 "COP(B) > MANUAL > EXECUTE > STOP ... AUTO >
        EXECUTE"): arg = { p: 'mopA' | 'mopB' | 'copA' | 'copB' | 'eop', op: 'start' | 'stop' | 'auto' | 'man' } */
     case 'oil':
       return tcsOilCmd(c, arg || {});
-    case 'vex':
-      c.vex = on;
-      return '';
-    case 'tg':
-      if (on && !c.brgOk) return 'No bearing oil: start a lube oil pump first (ATS 1.15)';
-      c.tg = on;
-      return '';
+    /* 1.0.0-beta.362 D18 (JENNIE): no 'vex' / 'tg' / 'gland' / 'hood' commands. The vapour extractor (IBD TB-12), the turning gear motor
+       (TB-9), the gland steam exhauster (TC-28), the steam seal feed inlet valve (TC-31, it puts PV-GS1031 in service) and the LP exhaust
+       hood spray FV-CD1904 (TC-35) are run by the push buttons of their sheets: arg = { id: 'TB-9', pb: 'START' } (tcs-trip.js
+       TCS_IBD_PBN). The sheet gates give the permissives (TB-9: MSV / ICV closed, bearing oil normal) */
     /* 1.0.0-beta.360 (JENNIE): no 'aux' command. The aux steam valve MV-AS1391 is a DCS MOV (DITL-51, OPEN P.B. M.0360): c.asv follows
        its position (tcsStep). The old command set the flag with no TCS sheet behind it */
-    case 'gland':
-      /* 3.2.3: the command puts the gland steam controller (PV-GS1031 / PV-GS1034 PI on PT-GS1001) in or out of service; the seal is in
-         service when the header pressure comes up (unit.js anAuxStep) */
-      if (!on) {
-        c.gsOn = false;
-        c.gland = false;
-        return '';
-      }
-      if (!(tb && tb.rpm >= 1)) return 'Gland sealing: the turbine must turn on the turning gear (PR-OPE-5002 6219)';
-      if (!c.vb) return 'Gland sealing: the vacuum breaker MV-AV1391 must be open (PR-OPE-5002 6197)';
-      c.gsOn = true;
-      return '';
     /* 1.0.0-beta.360 (JENNIE): no 'vacuum' command. The vacuum breaker MV-AV1391 and the ejector steam MOVs are DCS MOVs (DITL-56 / 55 /
        54): the operator presses their CLOSE / OPEN push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6 I.0216). The
        state c.vb / c.ej follows the MOV positions (tcsStep). The old command pressed all three in one call with no TCS sheet behind it */
-    case 'hood' /* LP exhaust hood spray FVCD1904 AUTO (PR-OPE-5002 6307, with the vacuum up) */:
-      c.hsp = on;
-      return '';
     case 'auto':
       c.auto = on;
       return '';
@@ -318560,7 +318669,8 @@ function tcsAux(U, dt) {
   if (isFinite(U.gsP)) c.gsOk = U.gsP >= 0.1;
   c.tankOk = true;
   if (isFinite(U.gsP)) c.gland = !!c.gsOn && c.gsOk;
-  if (!c.brgOk) c.tg = false;
+  /* 1.0.0-beta.362 D18: the turning gear motor runs as IBD TB-9 says (the bearing oil is a start permissive there, net 3); the shaft turns
+     only with the bearing oil (below) */
   /* turning gear: about 3 rpm (PR-OPE-5002 7955); disengages above 4 rpm and engages again at zero speed */
   const Ta = tcsMetal(U, c, s, dt);
   const steam = tcsSteamOn(U);
@@ -318590,7 +318700,7 @@ function tcsAux(U, dt) {
   const sp = Math.min(1, (tb.rpm || 0) / 3600),
     /* 3.2.0-beta.38: the hood spray FVCD1904 in AUTO (PR-OPE-5002 6307, put in AUTO at the vacuum up) sprays below 15 % load (22.5
        MW, 9195) and takes 70 % of the windage heat (NO-SOURCE share; the spray itself is sourced: FV-CD1904 full open below 15 % load, IBD TC-28, 5226 kg/h, TG maintenance manual p104 and p2520 ~ 2521). Without it: 82 C at 3600 rpm with no load, over the 80 C of 1.12 (hold) */
-    hs = (c.hso = !!(c.hsp && (U.MW || 0) < 22.5)) ? 0.3 : 1 /* c.hso: FV-CD1904 open (the page reads it) */,
+    hs = c.hso ? 0.3 : 1 /* c.hso: FV-CD1904 open, IBD TC-35 (AUTO: GSE started 3 s and GEN. LOAD < 15 %; beta.362 D18) */,
     XSS =
       Ta +
       15 * sp +
@@ -318954,7 +319064,7 @@ function tcsFromOil(U) {
 function tcsOilState(U) {
   if (U.tc) return U.tc;
   if (!U.tco) {
-    U.tco = { lop: true, eh: true, vex: true };
+    U.tco = { lop: true, eh: true, vex: true, ssfv: true, gse: true, hspAu: true, hso: false, tgAu: false } /* beta.362 D18: the gland seal and the hood spray AUTO in service on load */;
     tcsOilInit(U.tco);
     U.tco.mopAu = [false, true];
     U.tco.copAu = [false, true];
@@ -319000,6 +319110,8 @@ function tcsOil(U, dt) {
       c.vex = false;
     }
   }
+  /* beta.362 D18: MCC-EMP11 dead = MOTOR ELECTRICAL TROUBLE of the vapour extractor (IBD TB-12 net 10) */
+  c.empOff = !!(bo.dead && !bo.emp);
   /* the automatic starts are in the sheets TB-1, TB-2, TB-21, TB-22 (tcs-trip.js) */
   tcsOilSet(c);
   lag('loPa', c.mop[0] ? K.mop : 0);
@@ -319154,8 +319266,11 @@ function tcsState() {
       gland: c.gland,
       vb: c.vb,
       ej: c.ej,
-      hsp: c.hsp,
+      hsp: !!c.hspAu /* FV-CD1904 in AUTO */,
       hso: !!c.hso,
+      tgAu: !!c.tgAu,
+      ssfv: !!c.ssfv,
+      gse: !!c.gse,
       auto: c.auto
     },
     crit: C,
@@ -320120,6 +320235,90 @@ const TCS_IBD_OUT = {
   'TD-4': { 6: c => c.sexOk } /* 2.1 shell expansion OK (TCA535) */
 };
 const TCS_IBD_DROP = { 'TD-2': [3, 4, 5, 14, 15, 16] };
+/* 1.0.0-beta.362 D18 (JENNIE, user 2026-11-24 "Go ayos"): the turning gear, the vapour extractor, the gland steam exhauster, the steam seal
+   feed inlet valve and the LP exhaust hood spray are run by their own IBD sheets (TCS soft logic 331DM09784, typed from the drawing), as the
+   oil pumps TB-1 / 2 / 21 / 22. Before: one screen command each set a flag (tcs.js 'tg', 'vex', 'gland', 'hood') with no sheet behind it.
+   TCS_IBD_PBN: the push buttons of the TCS HMI by sheet and net (a 1.5 s pulse, AN.turbine('ibd', { id, pb })):
+     TB-9  TURNING GEAR MOTOR (page 58; TCE350 ~ 352): START 20, AUTO 16, MANUAL 18, STOP 22, (LOCAL) JOG 9
+     TB-12 MAIN OIL TANK VAPOUR EXTRACTOR (TCA655): START 7, STOP 11
+     TC-28 GLAND STEAM EXHAUSTER (TCA680): START 7, AUTO 3, MANUAL 5, STOP 9
+     TC-31 STEAM SEAL FEED INLET VALVE (TCA650): OPEN 4, AUTO 0, MANUAL 2, CLOSE 6
+     TC-35 LP EXHAUST HOOD WATER SPRAY VALVE FV-CD1904: OPEN 10, AUTO 0, MANUAL 9 (the reader found no CLOSE push button: finding D18-2)
+   TCS_IBD_DEV: what each sheet reads from the plant before its gates (pre) and what its outputs do to the plant after them (post). The flip-flops
+   keep their own memory in ib.v; a new memory (Cold / 150 MW / an old save) starts from the state flags (init). The output names that the
+   reader left undriven (TB-9 55, TB-12 13, TC-28 17, TC-31 14 / 16, TC-35 17 / 19) are the outputs of their gates, so the off-page links work.
+   The group sheets TE-6 / TE-7 (gland seal start / stop group) are not bound: their netlists have reader errors (finding D18-1) */
+const TCS_IBD_PBN = {
+  'TB-9': { START: 20, AUTO: 16, MANUAL: 18, STOP: 22, JOG: 9 },
+  'TB-12': { START: 7, STOP: 11 },
+  'TC-28': { START: 7, AUTO: 3, MANUAL: 5, STOP: 9 },
+  'TC-31': { OPEN: 4, AUTO: 0, MANUAL: 2, CLOSE: 6 },
+  'TC-35': { OPEN: 10, AUTO: 0, MANUAL: 9 }
+};
+const tcsRpm = U => (U.tb && U.tb.rpm) || 0;
+const TCS_IBD_DEV = {
+  'TB-9': {
+    init: (v, c) => ((v[11] = c.tg ? 1 : 0), (v[17] = c.tgAu ? 1 : 0)),
+    pre: (v, c, U) => {
+      v[43] = c.tg ? 1 : 0; /* TURNING GEAR MOTOR RUNNING */
+      v[30] = c.tg && tcsRpm(U) <= 4 ? 1 : 0; /* TURNING GEAR ENGAGED (TB-10 solenoid; disengages above 4 rpm, PR-OPE-5002 7955) */
+      v[36] = tcsRpm(U) < 1 ? 1 : 0; /* TURBINE ZERO SPEED */
+      v[53] = 0; /* ZS-LO1003 HAND TURNING INTERLOCK: the hand turning bar is not modelled (stowed) */
+    },
+    post: (v, c) => {
+      v[55] = v[12];
+      c.tg = v[12] > 0.5;
+      c.tgAu = v[17] > 0.5;
+    }
+  },
+  'TB-12': {
+    init: (v, c) => (v[8] = c.vex ? 1 : 0),
+    pre: (v, c) => {
+      v[4] = c.vex ? 0 : 1; /* VAPOUR EXTRACTOR STOPPED */
+      v[10] = c.empOff ? 1 : 0; /* MOTOR ELECTRICAL TROUBLE: MCC-EMP11 dead (unit black-out, tcs.js) */
+    },
+    post: (v, c) => {
+      v[13] = v[8];
+      c.vex = v[8] > 0.5 && !c.empOff;
+    }
+  },
+  'TC-28': {
+    init: (v, c) => ((v[1] = c.gse ? 1 : 0), (v[4] = c.gseAu ? 1 : 0)),
+    post: (v, c) => {
+      v[17] = v[1];
+      c.gse = v[1] > 0.5;
+      c.gseAu = v[4] > 0.5;
+    }
+  },
+  'TC-31': {
+    init: (v, c) => (v[1] = c.ssfvAu ? 1 : 0),
+    post: (v, c) => {
+      v[14] = v[13];
+      v[16] = v[10];
+      /* the valve: OPEN / CLOSE command of the sheet (a seal-in MOV); it puts the gland steam controller PV-GS1031 in service (unit.js anAuxStep) */
+      if (v[13] > 0.5) c.ssfv = true;
+      else if (v[10] > 0.5) c.ssfv = false;
+      c.ssfvAu = v[1] > 0.5;
+      c.gsOn = !!c.ssfv;
+    }
+  },
+  'TC-35': {
+    init: (v, c) => ((v[1] = c.hspAu ? 1 : 0), (v[15] = c.hso ? 1 : 0)),
+    post: (v, c) => {
+      v[17] = v[15];
+      v[19] = v[15] > 0.5 ? 0 : 1;
+      c.hso = v[15] > 0.5; /* FV-CD1904 open */
+      c.hspAu = v[1] > 0.5;
+    }
+  }
+};
+/* the state flags of a model made before these sheets (an old save, the 150 MW oil state) */
+function tcsDevInit(c) {
+  if (c.ssfv == null) c.ssfv = c.gsOn != null ? !!c.gsOn : !!c.gland || !!c.fromLoad;
+  if (c.gse == null) c.gse = !!c.ssfv;
+  if (c.hspAu == null) c.hspAu = !!c.hsp || !!c.fromLoad;
+  if (c.hso == null) c.hso = false;
+}
 const TCS_IBD = {
   by: {},
   bind: null
@@ -320175,6 +320374,7 @@ const tcsIb = c =>
     cmp: {},
     fx: {},
     pb: {},
+    pbn: {},
     r1: false,
     t0: 0,
     first: '',
@@ -320195,7 +320395,14 @@ function tcsIbdStep(U, c, dt) {
   for (const r of B) {
     const s = r.s,
       id = s.id,
+      dv = TCS_IBD_DEV[id],
       v = ib.v[id] || (ib.v[id] = new Array(s.n).fill(0));
+    /* a memory not bound yet (new, or a save made before beta.362): from the state flags */
+    if (dv && !(ib.dv && ib.dv[id])) {
+      tcsDevInit(c);
+      dv.init(v, c);
+      (ib.dv = ib.dv || {})[id] = 1;
+    }
     for (const [net, sh, n] of r.link) v[net] = (ib.v[sh] && ib.v[sh][n]) || 0;
     for (const [net, f] of r.pv) v[net] = +f(U, c);
     if (r.mft.length) for (const net of r.mft) v[net] = ib.mft0 && tcsMft() ? 1 : 0;
@@ -320219,6 +320426,9 @@ function tcsIbdStep(U, c, dt) {
       v[pu.auto] = c[pu.k + 'Au'][pu.i] ? 1 : 0;
       v[pu.run] = v[pu.fb] = c[pu.k][pu.i] ? 1 : 0;
     }
+    if (dv && dv.pre) dv.pre(v, c, U);
+    /* the push buttons of the TCS HMI (TCS_IBD_PBN), held 1.5 s */
+    for (const k in ib.pbn) if (ib.pbn[k] > 0 && k.startsWith(id + ':')) v[+k.split(':')[1]] = 1;
     for (const k in ib.fx) if (k.startsWith(id + ':')) v[+k.split(':')[1]] = ib.fx[k];
     if (id === 'TA-9' && ib.pb.sd > 0) {
       const r = s.i.find(i => /TURBINE SHUTDOWN COMMAND/.test(i[1]));
@@ -320277,7 +320487,17 @@ function tcsIbdStep(U, c, dt) {
         const m = so && so[out] ? so[out](U.tc) : undefined;
         v[out] = m !== undefined ? (m ? 1 : 0) : o;
       });
+    if (dv) dv.post(v, c, U);
     for (const k in ib.fx) if (k.startsWith(id + ':')) v[+k.split(':')[1]] = ib.fx[k];
+  }
+  for (const k in ib.pbn) {
+    ib.pbn[k] -= dt;
+    if (!(ib.pbn[k] > 0)) {
+      /* the end of the pulse: the button net goes back to 0 */
+      const [sid, net] = k.split(':');
+      if (ib.v[sid]) ib.v[sid][+net] = 0;
+      delete ib.pbn[k];
+    }
   }
   /* what the sheets did to the pumps; TB-1 and TB-2 note: TCS MAJOR TROUBLE starts the main oil pumps */
   if (c.mop) {
@@ -320305,6 +320525,18 @@ function tcsIbdStep(U, c, dt) {
   ib.pb.rst = Math.max(0, (ib.pb.rst || 0) - dt);
   ib.pb.sd = Math.max(0, (ib.pb.sd || 0) - dt);
   ib.pb.auto = Math.max(0, (ib.pb.auto || 0) - dt);
+}
+/* a push button of an IBD sheet (TCS_IBD_PBN): '' or the reason it is refused */
+function tcsIbdPush(c, a) {
+  const id = a && a.id,
+    pb = String((a && a.pb) || '').toUpperCase(),
+    m = TCS_IBD_PBN[id];
+  if (!m) return 'No TCS push button sheet ' + id;
+  if (!(pb in m)) return id + ' has no ' + pb + ' push button (' + Object.keys(m).join(' / ') + ')';
+  const ib = tcsIb(c);
+  ib.pbn = ib.pbn || {};
+  ib.pbn[id + ':' + m[pb]] = 1.5;
+  return '';
 }
 /* the event of the engine only: a mirror page gets it from the worker */
 const tcsTripLog = n => {
@@ -346670,7 +346902,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 7167594'));
+    row('Version', E('span', 'scsver', ver + ' · build 806f52e'));
   }
   function openSet(near) {
     if (!set) {
@@ -356754,7 +356986,9 @@ window.PLANT_SYS = [
       try {
         if (!(window.AN && AN.unit && AN.unit.on)) r = 'no plant model: choose Cold or 150 MW (Plant model ON)';
         else if (M.field) r = AN.field && AN.field('pur', op === 'start') ? '' : 'oil purifier: no plant model';
-        else if (M.k === 'vex' || M.k === 'tg') r = AN.turbine(M.k, op === 'start' ? 1 : 0) || '';
+        /* 1.0.0-beta.362 D18 (JENNIE): the vapour extractor and the turning gear are the START / STOP push buttons of IBD TB-12 / TB-9 */
+        else if (M.k === 'vex' || M.k === 'tg')
+          r = AN.turbine('ibd', { id: M.k === 'vex' ? 'TB-12' : 'TB-9', pb: op === 'start' ? 'START' : 'STOP' }) || '';
         else r = AN.turbine('oil', { p: M.k, op }) || '';
       } catch (e) {
         r = String(e && e.message ? e.message : e);
@@ -359919,7 +360153,8 @@ window.PLANT_SYS = [
         if (m.tcs === 'hood' && noTc) return U.tb && U.tb.st !== 'off' ? 'RUN' : 'STOP';
         if (m.tcs === 'gland') return U && U.on && U.tc ? (U.tc.gland ? 'RUN' : 'STOP') : null;
         /* live Cold start 2026-11-14 (3.2.3-beta.234): the LP exhaust hood spray FV-CD1904 of the TCS (tcs.js 'hood', PR-OPE-5002 6307), in AUTO = RUN */
-        if (m.tcs === 'hood') return U && U.on && U.tc ? (U.tc.hsp ? 'RUN' : 'STOP') : null;
+        /* beta.362 D18: RUN = FV-CD1904 open (IBD TC-35 FF 15) */
+        if (m.tcs === 'hood') return U && U.on && U.tc ? (U.tc.hso ? 'RUN' : 'STOP') : null;
         /* live Cold run 2026-11-18 F-W: the turning gear of the TCS (tcs.js 'tg', ATS 1.19): selected with the shaft turning = RUN; the
            realistic pages had no way to select it, so gland sealing (needs the shaft turning, PR-OPE-5002 6219) could not start */
         if (m.tcs === 'tg') return U && U.on && U.tc ? (U.tc.tg && U.tb && U.tb.rpm >= 1 ? 'RUN' : 'STOP') : null;
@@ -361009,6 +361244,14 @@ window.PLANT_SYS = [
                 : null;
             })()
           });
+        /* 1.0.0-beta.362 D18 (JENNIE): the TCS machines with no screen macro any more: each button is the push button of its IBD sheet
+           (tcs-trip.js TCS_IBD_PBN). TC-35 has no CLOSE push button in the netlist (finding D18-2) */
+        const TCS_PB = {
+          gland: { id: 'TC-31', start: 'OPEN', stop: 'CLOSE', auto: 'AUTO', man: 'MANUAL' },
+          hood: { id: 'TC-35', start: 'OPEN', auto: 'AUTO', man: 'MANUAL' },
+          vex: { id: 'TB-12', start: 'START', stop: 'STOP' },
+          tg: { id: 'TB-9', start: 'START', stop: 'STOP', auto: 'AUTO', man: 'MANUAL' }
+        };
         if (m.tcs && window.LS_FPOP && LS_FPOP.tcs) {
           const x = /^(mop|cop)([AB])$/.exec(m.tcs);
           return void LS_FPOP.tcs({
@@ -361028,15 +361271,11 @@ window.PLANT_SYS = [
             cmd: op =>
               !(AN.unit && AN.unit.on)
                 ? 'no plant model: choose Cold or 150 MW (Plant model ON)'
-                : m.tcs === 'gland' || m.tcs === 'hood'
-                  ? op === 'start' || op === 'stop'
-                    ? AN.turbine(m.tcs, op === 'start' ? 1 : 0)
-                    : 'no AUTO / MANUAL'
-                  : m.tcs === 'vex' || m.tcs === 'tg'
-                    ? op === 'start' || op === 'stop'
-                      ? AN.turbine(m.tcs, op === 'start' ? 1 : 0)
-                      : 'no AUTO / MANUAL'
-                    : AN.turbine('oil', { p: m.tcs, op })
+                : TCS_PB[m.tcs]
+                  ? TCS_PB[m.tcs][op]
+                    ? AN.turbine('ibd', { id: TCS_PB[m.tcs].id, pb: TCS_PB[m.tcs][op] })
+                    : TCS_PB[m.tcs].id + ' has no ' + op.toUpperCase() + ' push button'
+                  : AN.turbine('oil', { p: m.tcs, op })
           });
         }
         /* live test 2026-11-05 (INSTRUMENT AND PLANT AIR): a machine started at its local panel (sti: [sheet, RUNNING row, TRIP row]) had
@@ -380522,7 +380761,18 @@ window.UATS = (function () {
   function tcsAux(o, t) {
     if (t % 10 !== 0 || !AN.tcs) return;
     const x = AN.tcs().aux || {},
-      on = { lop: x.lop, eh: x.eh, vex: x.vex, tg: x.tg, aux: x.asv, gland: x.gland, vacuum: x.ej, hood: x.hsp };
+      on = { lop: x.lop, eh: x.eh, vex: x.vex, tg: x.tg, aux: x.asv, gland: x.ssfv && x.gse, vacuum: x.ej, hood: x.hsp };
+    /* 1.0.0-beta.362 D18 (JENNIE): no 'lop' / 'eh' / 'vex' / 'tg' / 'gland' / 'hood' macro. Each is the push button of its own sheet: the
+       MOP-A / COP-A START (IBD TB-1 / TB-21), the vapour extractor START (TB-12), the turning gear START (TB-9), the steam seal feed inlet
+       valve OPEN (TC-31) and the gland steam exhauster START (TC-28), the LP exhaust hood spray AUTO (TC-35) */
+    const P = {
+      lop: () => AN.turbine('oil', { p: 'mopA', op: 'start' }),
+      eh: () => AN.turbine('oil', { p: 'copA', op: 'start' }),
+      vex: () => AN.turbine('ibd', { id: 'TB-12', pb: 'START' }),
+      tg: () => AN.turbine('ibd', { id: 'TB-9', pb: 'START' }),
+      gland: () => (!x.ssfv ? AN.turbine('ibd', { id: 'TC-31', pb: 'OPEN' }) : AN.turbine('ibd', { id: 'TC-28', pb: 'START' })),
+      hood: () => AN.turbine('ibd', { id: 'TC-35', pb: 'AUTO' })
+    };
     /* 1.0.0-beta.360 (JENNIE): no TCS 'aux' / 'vacuum' macro. MV-AS1391 (DITL-51) and the vacuum breaker / ejector MOVs (DITL-56 / 55 / 54)
        are pressed on their DCS drawings: field REMOTE, then the CRT push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6),
        so it is pressed again on the next pass */
@@ -380547,7 +380797,7 @@ window.UATS = (function () {
           pb('DITL-54', /MOV OPEN PB$/, true);
           return;
         }
-        const r = AN.turbine(k, 1);
+        const r = P[k]();
         if (r) o.tcsWait = k + ': ' + r;
         return;
       }
