@@ -5246,11 +5246,82 @@ function anChemStep(U, dt) {
   U.spAL2 = al;
   U.spAL1 = U.spAL3 = U.spALZ = 0;
 }
+/* beta.450 (lane plan 2026-11-25): the field signals of the lanes (src/world/field/<lane>.js, FIELD.add): a row { stn, ai: "AI0128", tag,
+   src, rel, v(U, X) } writes v(AN_UNIT, X) on the AI blocks of that address once a scan, after the unit model step, as the unit model writes
+   its own transmitters (anUnitWrite: a forced output is left alone, the range clamps). v reads the engine state only (X: anFieldX below). A row whose
+   value is not a number writes nothing. The block lists are made again when the sheets with a running engine change. */
+let AN_FLD = null;
+/* the reader a field row gets as its second argument (v(U, X)): the engine readers that live inside the engine closure, read only.
+   av(tag, x)    the opening that reaches the process for the command x of control valve tag (anAv: air lock, stuck fault); the hold
+                 memory anAv keeps is put back after the call, so a field row never moves it
+   ditlPos(n, j) the position 0 ~ 100 % of valve j of DITL drawing n ("DITL-32", "DITL-32 #B"), null while the world is not built
+   ditlRun(a)    1 RUN / 0 STOP of DITL drawing a ("DITL-23A", "DITL-39@3" = output row 3), null while the world is not built
+   ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it */
+function anFieldX() {
+  const C = {};
+  return Object.freeze({
+    av: (tag, x) => {
+      const H = AN_UNIT.avH,
+        had = !!H && tag in H,
+        h = had ? H[tag] : undefined,
+        fs = typeof AN_FAULT_STUCK !== 'undefined' && tag in AN_FAULT_STUCK,
+        f = fs ? AN_FAULT_STUCK[tag] : undefined;
+      try {
+        return anAv(tag, x);
+      } finally {
+        if (AN_UNIT.avH) {
+          if (had) AN_UNIT.avH[tag] = h;
+          else delete AN_UNIT.avH[tag];
+          if (!H) delete AN_UNIT.avH;
+        }
+        if (fs) AN_FAULT_STUCK[tag] = f;
+      }
+    },
+    ditlPos: (n, j) => anDitlPos(n, j),
+    ditlRun: (a, last) => anDitlRun(a, last),
+    ai: key => anUnitVal(C[key] || (C[key] = anUnitAIs(String(key))))
+  });
+}
+const anFieldN = t => String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+function anFieldStep() {
+  const G = typeof window !== 'undefined' ? window : globalThis,
+    F = (G.FIELD && G.FIELD.rows) || [];
+  if (!F.length) return;
+  const key = AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0) + '/' + F.length;
+  if (!AN_FLD || AN_FLD.key !== key) {
+    AN_FLD = {
+      key,
+      X: anFieldX(),
+      L: F.filter(r => typeof (r.v || r.get) === 'function').map(r => [r, r.ai ? anUnitAIs(String(r.stn) + '|' + r.ai) : []])
+    };
+    AN.fieldX = AN_FLD.X;
+    /* for the lanes and QA: each AI row and the number of blocks it writes (0 = the address is on no running sheet) */
+    AN.fieldStat = AN_FLD.L.filter(([r]) => r.ai).map(([r, l]) => ({ lane: r.lane, stn: r.stn, ai: r.ai, tag: r.tag, blocks: l.length }));
+  }
+  /* AN.unit.fld: the value of every row by "stn|AI0128" (AI rows) and by the tag without signs (PTIA1064A): the HMI reads it
+     (src/ui/plant/plant.js, a value with no logic transmitter), in Worker mode too (AN.unit is in the keyframe) */
+  const V = {};
+  for (const [r, l] of AN_FLD.L) {
+    let v;
+    try {
+      v = (r.v || r.get)(AN_UNIT, AN_FLD.X);
+    } catch (e) {
+      continue;
+    }
+    v = v === true ? 1 : v === false ? 0 : v == null ? NaN : +v;
+    if (!isFinite(v)) continue;
+    if (r.ai) V[String(r.stn) + '|' + r.ai] = v;
+    if (r.tag) V[anFieldN(r.tag)] = v;
+    if (r.ai && l.length) anUnitWrite(l, v);
+  }
+  AN_UNIT.fld = V;
+}
 function anUnitStep(dt) {
   const M = (typeof globalThis !== 'undefined' ? globalThis : window).LS_SIMM;
   if (M) M.on = ++M.n;
   try {
     anUnitStep0(dt);
+    anFieldStep();
     anGenInt(dt);
     anHistStep(dt); /* hist.js: the faceplate trend history, one sample a simulated second */
     anSoeStep(); /* soe.js: the sequence of events of the MFT and the turbine trip, one look per step */

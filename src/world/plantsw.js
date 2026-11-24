@@ -327,6 +327,27 @@
       fn = () => (window.AN && AN.ditlRun ? (AN.ditlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1 ? 1 : 0) : NaN);
     for (const t of i ? ['SS-BH1060-' + x, 'SS-BH1060-A'] : ['SS-BH1060-A']) L.push([t, fn, 0.5, 'hi', 0, 0, /SPEED NOT LOW/, sh]);
   });
+  /* beta.450 (lane plan 2026-11-25): a field signal row of a lane with di (src/world/field/<lane>.js: { tag, di: 1, sheet, src, rel,
+     v(U, X) }) is a switch row of the plant model like the rows above: the DITL input row whose text starts with the tag is 1 while
+     v(AN.unit, AN.fieldX) is true (above 0.5). sheet (optional): the code of the sheet, "DITL-23A", when the tag is on more than one sheet */
+  for (const r of (window.FIELD && FIELD.rows) || []) {
+    const fn = r.v || r.get;
+    if (!r.di || !r.tag || typeof fn !== 'function') continue;
+    /* a tag the plant model already switches above keeps that one source (one signal, one source); the row is listed in FIELD.dup */
+    if (L.some(x => x[0] === String(r.tag).toUpperCase())) {
+      (FIELD.dup = FIELD.dup || []).push(r.lane + ' ' + r.tag);
+      continue;
+    }
+    const f = () => {
+      try {
+        const v = fn((window.AN && AN.unit) || {}, (window.AN && AN.fieldX) || {});
+        return v === true ? 1 : v === false ? 0 : +v;
+      } catch (e) {
+        return NaN;
+      }
+    };
+    L.push([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, r.sheet ? new RegExp(String(r.sheet).replace(/[^A-Z0-9-]/gi, '') + '$') : null]);
+  }
   const DB0 = 10;
   let map = null,
     mapK = '';
