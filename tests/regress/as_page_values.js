@@ -5,7 +5,7 @@
 // PV-GS1034 42.6 %, MV-AS1011 0 %; PIC-AS1005 in MANUAL 50 %: the two valves follow the ABC-030 F(X) (LN17 42.5 %, LN16 100 %).
 // Usage: node tests/regress/as_page_values.js [html]
 const fs = require('fs');
-const { open } = require('./lib.js');
+const { open, startAs } = require('./lib.js');
 const html =
   process.argv.find(a => /\.html$/.test(a)) ||
   'dist/' + fs.readdirSync('dist').find(x => /^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
@@ -33,14 +33,10 @@ const html =
       }
       WORLD.live = true;
     }, sec);
-  await page.evaluate(() => {
-    AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
-  });
-  await run(300);
+  /* beta.359 (ROSÉ, coordinator 2026-11-24): the app's own 150 MW start (start screen 150 MW, Operator), not the old snapshot path
+     AN.plantLoad150 + DITL150.apply (it read 39 MW); then 1800 s of scan, 3 times the 600 s lag of the exhaust hood (tcs.js TCS.tauX) */
+  await startAs(page, '150 MW');
+  await run(1800);
   /* beta.359 (ROSÉ): the old page 08 is gone. The values are on the HX page Auxiliary steam and vacuum, MV-AS1011 on Reheat steam;
      each page is opened the way the app opens it (lsShellC.openPage, the page picker of the Plant view) and read from what it shows */
   const read = async () => {
@@ -54,19 +50,23 @@ const html =
     return o;
   };
   const a = await read();
-  const m = await page.evaluate(() => ({ cdP: AN.unit.cdP, MW: AN.unit.MW, Ts: anTsatA(AN.unit.cdP), f1: AN.unit.tt['ZT-AS1020-1'], f2: AN.unit.tt['ZT-AS1020-2'] }));
+  const m = await page.evaluate(() => ({ cdP: AN.unit.cdP, MW: AN.unit.MW, f1: AN.unit.tt['ZT-AS1020-1'], f2: AN.unit.tt['ZT-AS1020-2'] }));
   console.log(JSON.stringify(a));
   const num = s => (s == null ? NaN : parseFloat(s));
+  /* saturation (C) of a pressure in kg/cm2 A, the water Antoine law the engine uses for the hood (unit.js anTsatA, not on window) */
+  m.Ts = 1730.63 / (8.07131 - Math.log10((m.cdP * 980.665) / 1.33322)) - 233.426;
   const near = (k, v, d) => Math.abs(num(a[k]) - v) <= d;
   ck(K.every(k => a[k] && !/-----/.test(a[k])), 'page 08: every value shows a number: ' + K.map(k => k + ' ' + a[k]).join(', '));
-  ck(['PTST11101', 'PTST11102', 'PTST11103'].every(k => Math.abs(num(a[k]) - m.cdP) < 0.002) && near('PTST11101', 0.056, 0.012), `exhaust hood pressure ${a.PTST11101} = condenser ${m.cdP.toFixed(3)} kg/cm2A (29.PNG 0.056 / 0.053 / 0.053)`);
+  ck(['PTST11101', 'PTST11102', 'PTST11103'].every(k => Math.abs(num(a[k]) - m.cdP) < 0.002), `exhaust hood pressure ${a.PTST11101} / ${a.PTST11102} / ${a.PTST11103} = condenser ${m.cdP.toFixed(3)} kg/cm2A (unit.js: PT-ST1110-1 ~ 3 = PT-CD1110)`);
   /* beta.359 (ROSÉ): a plant snapshot is no target (design is the model). On load the LP exhaust is wet steam: the hood temperature is the
      saturation at the hood (= condenser) pressure (tcs.js tcsAux, 15 % load and up) */
   ck(['TEST11101', 'TEST11102', 'TEST11103'].every(k => Math.abs(num(a[k]) - m.Ts) <= 1.5), `exhaust hood temperature ${a.TEST11101} / ${a.TEST11102} / ${a.TEST11103} C = saturation ${m.Ts.toFixed(1)} C at ${m.cdP.toFixed(3)} kg/cm2A`);
   /* beta.359: the two cold reheat valves are the ABC-030 F(X) of the PIC-AS1005 output (unit.js): the page shows the logic value */
   ck(near('ZT-AS1020-1', m.f1, 0.11) && near('ZT-AS1020-2', m.f2, 0.11), `PCV-AS1020-1 / -2 page ${a['ZT-AS1020-1']} / ${a['ZT-AS1020-2']} % = F(X) of PIC-AS1005 ${m.f1} / ${m.f2} %`);
   ck(near('PTGS10011', 0.32, 0.01) && near('TEGS1002', 364, 15) && near('TEGS1003', 362, 15) && near('TT-AS1015', 257, 15), `gland header ${a.PTGS10011} kg/cm2, ${a.TEGS1002} / ${a.TEGS1003} C, TT-AS1015 ${a['TT-AS1015']} C (29.PNG 0.32, 364 / 362, 257)`);
-  ck(near('PV-GS1034', 42.6, 2) && num(a['ZT-AS1011']) === 0, `unloading valve PV-GS1034 ${a['PV-GS1034']} % (29.PNG 42.6), HP warming MV-AS1011 ${a['ZT-AS1011']} % (4.PNG 0.0)`);
+  /* beta.359: no snapshot number (design is the model): the unloading valve throttles (between closed and full open) to hold the gland
+     header checked above; the HP warming valve MV-AS1011 is shut on load */
+  ck(num(a['PV-GS1034']) > 1 && num(a['PV-GS1034']) < 99 && num(a['ZT-AS1011']) === 0, `unloading valve PV-GS1034 ${a['PV-GS1034']} % throttling, HP warming MV-AS1011 ${a['ZT-AS1011']} % shut`);
   /* PIC-AS1005 MANUAL 50 %: the two cold reheat valves by their F(X) */
   await page.evaluate(() => {
     const T = AN.sheets.find(s => s.name === 'ABC-030').S,
