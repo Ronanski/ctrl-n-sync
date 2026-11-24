@@ -1,4 +1,4 @@
-/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.494. Field signals of the balance of plant (src/world/field/README.md).
+/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.534. Field signals of the balance of plant (src/world/field/README.md).
    Each row reads engine state that already exists (read only) and names its physical source. No constant stands for a process value,
    no fitted number (RULES 3.12). Paper with the physical source of every value (QA : SAORI pass 2026-11-25):
    lanes/bop/lane4-field-values-paper-2026-11-25.md. A value that is not a number writes nothing (the point keeps its last value).
@@ -145,9 +145,14 @@ R.push({
   rel: 'No.1 LPH shell U.lpHt.H1.Ps (kgf/cm2 A) - 1.0332 = gauge',
   src: io(2) + ' AI0419 "NO.1 LPH steam pressure"; unit.js AN_LP (design 0.354 kgf/cm2A x anHb x1)'
 });
-const hdw = k => U => fin(((U.hd || []).find(h => h.k === k) || {}).w1);
-R.push({ stn: 2, ai: 'AI0432', tag: 'FT-HD1102', v: hdw('H2'), rel: 'AN_HD H2 w1, the normal (cascade) drain flow', src: io(2) + ' AI0432 "NO.2 LPH drain water flow"; unit.js AN_HD mass balance' });
-R.push({ stn: 2, ai: 'AI0433', tag: 'FT-HD1103', v: hdw('H3'), rel: 'AN_HD H3 w1, the normal (cascade) drain flow', src: io(2) + ' AI0433 "NO.3 LPH drain water flow"; unit.js AN_HD mass balance' });
+/* the transmitter shows its own range at most (alarm list FT.csv rows 12-13: FT-HD1102 0-27.5, FT-HD1103 0-15 t/h); the AI is on no
+   sheet, so no AI block range clamps it */
+const hdw = (k, hi) => U => {
+  const w = fin(((U.hd || []).find(h => h.k === k) || {}).w1);
+  return isFinite(w) ? Math.max(0, Math.min(hi, w)) : NaN;
+};
+R.push({ stn: 2, ai: 'AI0432', tag: 'FT-HD1102', v: hdw('H2', 27.5), rel: 'AN_HD H2 w1, the normal drain flow, within the range 0-27.5', src: io(2) + ' AI0432 "NO.2 LPH drain water flow"; PD-018 rev D (RB p12) HD-1-031 normal drain before LCV-HD1102-1; unit.js AN_HD mass balance' });
+R.push({ stn: 2, ai: 'AI0433', tag: 'FT-HD1103', v: hdw('H3', 15), rel: 'AN_HD H3 w1, the normal drain flow, within the range 0-15', src: io(2) + ' AI0433 "NO.3 LPH drain water flow"; PD-018 rev D (RB p12) HD-1-021 normal drain before LCV-HD1103-1; unit.js AN_HD mass balance' });
 R.push({
   stn: 5,
   ai: 'AI0064',
@@ -179,11 +184,12 @@ for (const [L, on, off, sh] of [
   ['B', 'I.052A', 'I.052B', 'DITL-29A #B'],
   ['C', 'I.081E', 'I.081F', 'DITL-29A #C']
 ]) {
+  /* beta.530 readers: the breaker is open on a field trip of the pump (X.ftrip) and on the black-out of bus 1AM (X.fault 'el.1am') */
   const vcb = X => {
     const r = X.ditlRun(sh);
-    return r == null ? NaN : r === 1 ? 1 : 0;
+    return r == null ? NaN : r === 1 && !X.ftrip(sh) && !X.fault('el.1am') ? 1 : 0;
   };
-  R.push({ stn: 3, di: 1, tag: 'MIV-P1501' + L + '1', v: (U, X) => vcb(X), rel: 'VCB ON = ' + sh + ' running', src: io(3) + ' ' + on + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008' });
+  R.push({ stn: 3, di: 1, tag: 'MIV-P1501' + L + '1', v: (U, X) => vcb(X), rel: 'VCB ON = ' + sh + ' running AND no field trip AND bus 1AM alive', src: io(3) + ' ' + on + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008' });
   R.push({
     stn: 3,
     di: 1,
@@ -194,6 +200,65 @@ for (const [L, on, off, sh] of [
     },
     rel: 'VCB OFF = NOT ON',
     src: io(3) + ' ' + off + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008'
+  });
+}
+/* 6. field states (beta.530 FIELD.state): devices with no physics in the model. The instructor sets the abnormal state (Plant menu); the
+   normal state is the documented service state */
+const ST = [];
+for (const [L, addr] of [
+  ['A', 'I.0299'],
+  ['B', 'I.029A']
+])
+  ST.push({
+    id: 'FW1115-' + L + '.leak',
+    tag: 'LS-FW1115-' + L,
+    di: addr,
+    normal: 0,
+    t: 'BFWP-' + L + ' motor cooling water leakage',
+    g: 'Feedwater and condensate',
+    src: io(2) + ' ' + addr + ' "BFWP-' + L + ' motor cooling water leakage detector"; normal = no leak (no leak in the physics)'
+  });
+ST.push({ id: 'P1127.pit', tag: 'LSHH-P1127', di: 'I.017F', stn: 3, normal: 0, t: 'Transformer area pit level high high', g: 'Electrical and generator', src: io(3) + ' I.017F "Transformer area pit level switch high high"; normal = pit dry (no pit inflow model)' });
+ST.push({
+  id: 'LO1753.tank',
+  tag: 'LSLL-LO1753',
+  di: 'I.0699',
+  stn: 3,
+  normal: 0,
+  t: 'PAF lube oil tank level low low',
+  g: 'Air and flue gas',
+  src: io(3) + ' I.0699; alarm list LS.csv 52-53 (tank 270 L, LSL < 240 L, LSLL < 200 L); fan manual p205 A-RF2-0581-100 (low 145 / low-low 85 mm); normal = tank full, no oil loss in the physics'
+});
+/* the chemical solution tanks (K1AU3-D1-0-035 R0 p11 / p18: Z-1103 200 L 685 ID x 720 H, Z-1105 100 L 484 ID x 720 H; switch heights alarm
+   list LS.csv 34-42: CH1103 LL 0.09 / L 0.12 / H 0.48 m, CH1105 LL 0.10 / L 0.13 / H 0.53 m). No tank level model (parked): in service
+   the level stands between L and H; the instructor sets low, low low or high */
+for (const [n, what, LL, Lo, H, a] of [
+  ['CH1103', 'Neutral amine solution tank', 0.09, 0.12, 0.48, ['I.0133', 'I.0134', 'I.0135']],
+  ['CH1105', 'Carbon hydraride solution tank', 0.1, 0.13, 0.53, ['I.0136', 'I.0137', 'I.0138']]
+]) {
+  const doc = '; K1AU3-D1-0-035 R0 p11 / p18; alarm list LS.csv 34-42 (LL ' + LL + ' / L ' + Lo + ' / H ' + H + ' m)';
+  ST.push({ id: n + '.ll', tag: 'LSLL-' + n, di: a[0], stn: 1, normal: 0, t: what + ' level low low', g: 'Feedwater and condensate', src: io(1) + ' ' + a[0] + doc });
+  ST.push({ id: n + '.lo', tag: 'LSL-' + n, di: a[1], stn: 1, normal: 0, t: what + ' level low', g: 'Feedwater and condensate', src: io(1) + ' ' + a[1] + doc });
+  ST.push({ id: n + '.hi', tag: 'LSH-' + n, di: a[2], stn: 1, normal: 0, t: what + ' level high', g: 'Feedwater and condensate', src: io(1) + ' ' + a[2] + doc });
+}
+FIELD.state(
+  lane,
+  ST.map(({ id, tag, normal, t, g, src }) => ({ id, tag, normal, t, g, src }))
+);
+for (const x of ST) {
+  /* a level below low low is below low too: LSL follows the low low state as well */
+  const ll = /\.lo$/.test(x.id) ? x.id.replace(/\.lo$/, '.ll') : null;
+  R.push({
+    stn: x.stn || 2,
+    di: 1,
+    tag: x.tag,
+    v: (U, X) => {
+      const a = X.state(x.id),
+        b = ll ? X.state(ll) : 0;
+      return a == null ? NaN : a || b ? 1 : 0;
+    },
+    rel: 'field state ' + x.id + (ll ? ' OR ' + ll : '') + ' (normal ' + x.normal + ')',
+    src: x.src
   });
 }
 FIELD.add(lane, R);
