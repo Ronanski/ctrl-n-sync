@@ -129,7 +129,7 @@
         at(L('turbine', 'Gland steam to the turbine'), 1620, GSY, { id: 'tul' }),
         /* beta.365 D18: the gland steam exhauster of IBD TC-28 (TCA680): it draws the gland leak-off steam and air through the gland
            steam condenser H-1903 (Condensate page) and blows the air out; its faceplate is the one of its sheet */
-        at(L('condensate', 'Gland steam condenser H-1903', { back: true }), 1150, 90, { id: 'gcl' }),
+        at(L('condensate', 'Gland steam condenser H-1903', { back: true }), 1150, 66, { id: 'gcl' }),
         at(M('fan', 'GLAND STEAM EXHAUSTER', 'Gland steam exhauster', [], { tag: 'TC-28' }), 1450, 90, { id: 'gse', lab: 't' }),
 
         /* ---- condenser: vacuum breaker and exhaust hood spray ---- */

@@ -27,7 +27,8 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 
 /* top bar: where I am, the five numbers of the unit, the simulation */
 .st-top { position: absolute; left: var(--st-rail); right: 0; top: 0; height: 44px; box-sizing: border-box; background: var(--st-bar); border-bottom: 1px solid var(--st-line); display: flex; align-items: center; gap: 16px; padding: 0 12px; min-width: 0; }
-.st-top h1 { font: 600 15px var(--st-ui); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* beta.371: the page name keeps at least 10em and wraps to two lines before it is cut (it was cut to "Gen..." on 13 pages at 1600 px) */
+.st-top h1 { font: 600 15px/18px var(--st-ui); margin: 0; min-width: min(10em, 100%); flex: 0 1 auto; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .st-top h1 .st-desc { display: block; font: 400 12px var(--st-ui); color: var(--st-dim); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; }
 .st-tabs { display: flex; align-self: stretch; flex: none; }
 .st-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 0 12px; color: var(--st-dim); font-weight: 500; }
@@ -39,7 +40,8 @@ button:focus-visible { outline: 2px solid var(--st-tx); outline-offset: -2px; }
 .st-fps { font: 500 12px var(--st-num); color: var(--st-dim); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 48px; text-align: right; }
 .st-fps.st-low { color: var(--st-alm); }
 .st-kv i { font-style: normal; }
-@media (max-width: 1500px) { .st-kv { gap: 12px; align-items: center; } .st-kv span { display: inline-grid; grid-template-columns: auto 1fr; align-items: baseline; } .st-kv i { grid-column: 1 / -1; line-height: 14px; } .st-kv b { margin: 0 4px 0 0; line-height: 18px; } }
+/* beta.371: the five numbers stack (name over value) up to 1700 px so the page name has room */
+@media (max-width: 1700px) { .st-kv { gap: 12px; align-items: center; } .st-kv span { display: inline-grid; grid-template-columns: auto 1fr; align-items: baseline; } .st-kv i { grid-column: 1 / -1; line-height: 14px; } .st-kv b { margin: 0 4px 0 0; line-height: 18px; } }
 
 /* alarm line: the newest alarm is always in view */
 .st-alm { position: absolute; left: var(--st-rail); right: 0; bottom: 0; height: 32px; box-sizing: border-box; background: var(--st-bar); border-top: 1px solid var(--st-line); display: flex; align-items: center; gap: 12px; padding: 0 4px 0 12px; min-width: 0; }

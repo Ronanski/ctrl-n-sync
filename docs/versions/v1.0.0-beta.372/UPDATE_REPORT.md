@@ -1,6 +1,6 @@
-# LMYP OTS 1.0.0-beta.370 (JENNIE, 2026-11-24)
+# LMYP OTS 1.0.0-beta.372 (JENNIE, 2026-11-24)
 
-Sumunod sa beta.369 (Rosé, Warm / Hot sa start screen).
+Sumunod sa beta.371 (Rosé).
 
 ## Ano ang inayos
 
