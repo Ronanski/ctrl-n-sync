@@ -22,8 +22,8 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   vm.runInNewContext(lib + ';' + fs.readFileSync(path.join(dir, f), 'utf8'), { window: w });
   sheets.push(...(w.TCE_SHEETS || []));
 }
-/* the count that runs today (beta.381: 204 TCE / TCA + 10 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 214;
+/* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
+const FLOOR = 216;
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -56,6 +56,12 @@ for (const p of A.plan)
     if (R.get(P, 'G-1A', 'nc') !== 1 - o) fail('G-1A 52G CLOSED (NC of OPEN) = ' + R.get(P, 'G-1A', 'nc') + ' with OPEN ' + o);
     if (R.get(P, 'G-1B', 'i45') !== r) fail('G-1B circle 45 (52G REMOTE SELECTED) = ' + R.get(P, 'G-1B', 'i45') + ' with the selector at ' + r);
   }
+}
+/* the relay times of SH-G-5A / 5B / 6A / 6B from LM-GEE-2015-0059 R1: 59GNA 10 s, 59A 2nd step 20 s, 81 2 s; 24 2nd step (inverse) not yet */
+for (const [sid, key, tp] of [['G-5A', 'd59g', 10], ['G-5A', 'd59b', 20], ['G-6B', 'd4', 2], ['G-5A', 'd24b', null]]) {
+  const x = A.plan.find(p => p.id === sid).nodes.find(x => x.out === A.idx.get(sid + ':' + key));
+  const got = x && x.f ? +/TP:([\d.]+)/.exec(x.notes[0])[1] : null;
+  if (got !== tp) fail(sid + ' ' + key + ' time ' + got + ', want ' + tp);
 }
 const S = R.stats(A);
 const G = A.plan.filter(p => /^G-/.test(p.id)),
