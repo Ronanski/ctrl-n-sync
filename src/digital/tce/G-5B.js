@@ -153,6 +153,14 @@
   mark(1261, 752, 844, 'OTHERS', '(GPP)', [767, 828]);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-5B',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection A,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). */
+    set: {
+      d1: ['TP:2', 'p.41 81U #1 (Alarm) Time Delay 120 cycles (2.0 s)'],
+      d2: ['TP:2', 'p.41 81U #2 (Trip) 120 cycles (2.0 s)'],
+      d3: ['TP:2', 'p.41 81O #3 (Alarm) 120 cycles (2.0 s)'],
+      d4: ['TP:2', 'p.41 81O #4 (Trip) 120 cycles (2.0 s)']
+    },
     title: 'GENERATOR PROTECTION LOGIC "A" (2/2)',
     page: 14,
     dwg: '310SD03-743',

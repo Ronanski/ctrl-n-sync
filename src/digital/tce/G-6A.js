@@ -262,6 +262,16 @@
   mark(1579, 831, 862, '(TCS)', '(GPP)', [844], 1);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-6A',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection B,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). The time of the 24 2nd step (d24b) is the relay's inverse time curve (#1, time dial 2, pickup
+       107 %), not a constant: it stays to read from the M-3425A instruction book. */
+    set: {
+      d59g: ['TP:10', 'p.63 59GNB operating time 10.00 s'],
+      d24c: ['TP:2', 'p.49 24B Def. time #1 (Trip) 24-3rd 120 cycles (2.0 s)'],
+      d59a: ['TP:2', 'p.61 59B #1 (Alarm) operating time 2.000 s'],
+      d59b: ['TP:20', 'p.61 59B #2 (Trip) operating time 20.00 s'],
+      d27: ['TP:2', 'p.57 27B operating time 2.000 s']
+    },
     title: 'GENERATOR PROTECTION LOGIC "B" (1/2)',
     page: 15,
     dwg: '310SD03-743',

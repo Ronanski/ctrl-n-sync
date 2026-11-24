@@ -35280,6 +35280,16 @@ const TCS_DESC = {
   mark(1579, 831, 862, '(TCS)', '(GPP)', [844], 1);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-5A',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection A,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). The time of the 24 2nd step (d24b) is the relay's inverse time curve (#1, time dial 2, pickup
+       107 %), not a constant: it stays to read from the M-3425A instruction book. */
+    set: {
+      d59g: ['TP:10', 'p.35 59GNA #1 Time Delay 600 cycles (10.0 s)'],
+      d24c: ['TP:2', 'p.21 24A Def. time #1 (Trip) 24-3rd Time Delay 120 cycles (2.0 s)'],
+      d59a: ['TP:2', 'p.33 59A #1 (Alarm) Time Delay 120 cycles (2.0 s)'],
+      d59b: ['TP:20', 'p.33 59A #2 (Trip) Time Delay 1200 cycles (20.0 s)'],
+      d27: ['TP:2', 'p.29 27A Delay 120 cycles (2.0 s)']
+    },
     title: 'GENERATOR PROTECTION LOGIC "A" (1/2)',
     page: 13,
     dwg: '310SD03-743',
@@ -35453,6 +35463,14 @@ const TCS_DESC = {
   mark(1261, 752, 844, 'OTHERS', '(GPP)', [767, 828]);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-5B',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection A,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). */
+    set: {
+      d1: ['TP:2', 'p.41 81U #1 (Alarm) Time Delay 120 cycles (2.0 s)'],
+      d2: ['TP:2', 'p.41 81U #2 (Trip) 120 cycles (2.0 s)'],
+      d3: ['TP:2', 'p.41 81O #3 (Alarm) 120 cycles (2.0 s)'],
+      d4: ['TP:2', 'p.41 81O #4 (Trip) 120 cycles (2.0 s)']
+    },
     title: 'GENERATOR PROTECTION LOGIC "A" (2/2)',
     page: 14,
     dwg: '310SD03-743',
@@ -35735,6 +35753,16 @@ const TCS_DESC = {
   mark(1579, 831, 862, '(TCS)', '(GPP)', [844], 1);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-6A',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection B,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). The time of the 24 2nd step (d24b) is the relay's inverse time curve (#1, time dial 2, pickup
+       107 %), not a constant: it stays to read from the M-3425A instruction book. */
+    set: {
+      d59g: ['TP:10', 'p.63 59GNB operating time 10.00 s'],
+      d24c: ['TP:2', 'p.49 24B Def. time #1 (Trip) 24-3rd 120 cycles (2.0 s)'],
+      d59a: ['TP:2', 'p.61 59B #1 (Alarm) operating time 2.000 s'],
+      d59b: ['TP:20', 'p.61 59B #2 (Trip) operating time 20.00 s'],
+      d27: ['TP:2', 'p.57 27B operating time 2.000 s']
+    },
     title: 'GENERATOR PROTECTION LOGIC "B" (1/2)',
     page: 15,
     dwg: '310SD03-743',
@@ -35903,6 +35931,14 @@ const TCS_DESC = {
   mark(1261, 752, 844, 'OTHERS', '(GPP)', [767, 828]);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-6B',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection B,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). */
+    set: {
+      d1: ['TP:2', 'p.69 81U #1 (Alarm) operating time 2.000 s'],
+      d2: ['TP:2', 'p.69 81U #2 (Trip) 2.000 s'],
+      d3: ['TP:2', 'p.69 81O #3 (Alarm) 2.000 s'],
+      d4: ['TP:2', 'p.69 81O #4 (Trip) 2.000 s']
+    },
     title: 'GENERATOR PROTECTION LOGIC "B" (2/2)',
     page: 16,
     dwg: '310SD03-743',
@@ -156600,10 +156636,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build dca1adb'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 780d2a6'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build dca1adb';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 780d2a6';
     } catch (e) {}
   };
   upd();
@@ -212473,6 +212509,16 @@ const TCS_DESC = {
   mark(1579, 831, 862, '(TCS)', '(GPP)', [844], 1);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-5A',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection A,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). The time of the 24 2nd step (d24b) is the relay's inverse time curve (#1, time dial 2, pickup
+       107 %), not a constant: it stays to read from the M-3425A instruction book. */
+    set: {
+      d59g: ['TP:10', 'p.35 59GNA #1 Time Delay 600 cycles (10.0 s)'],
+      d24c: ['TP:2', 'p.21 24A Def. time #1 (Trip) 24-3rd Time Delay 120 cycles (2.0 s)'],
+      d59a: ['TP:2', 'p.33 59A #1 (Alarm) Time Delay 120 cycles (2.0 s)'],
+      d59b: ['TP:20', 'p.33 59A #2 (Trip) Time Delay 1200 cycles (20.0 s)'],
+      d27: ['TP:2', 'p.29 27A Delay 120 cycles (2.0 s)']
+    },
     title: 'GENERATOR PROTECTION LOGIC "A" (1/2)',
     page: 13,
     dwg: '310SD03-743',
@@ -212648,6 +212694,14 @@ const TCS_DESC = {
   mark(1261, 752, 844, 'OTHERS', '(GPP)', [767, 828]);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-5B',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection A,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). */
+    set: {
+      d1: ['TP:2', 'p.41 81U #1 (Alarm) Time Delay 120 cycles (2.0 s)'],
+      d2: ['TP:2', 'p.41 81U #2 (Trip) 120 cycles (2.0 s)'],
+      d3: ['TP:2', 'p.41 81O #3 (Alarm) 120 cycles (2.0 s)'],
+      d4: ['TP:2', 'p.41 81O #4 (Trip) 120 cycles (2.0 s)']
+    },
     title: 'GENERATOR PROTECTION LOGIC "A" (2/2)',
     page: 14,
     dwg: '310SD03-743',
@@ -212932,6 +212986,16 @@ const TCS_DESC = {
   mark(1579, 831, 862, '(TCS)', '(GPP)', [844], 1);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-6A',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection B,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). The time of the 24 2nd step (d24b) is the relay's inverse time curve (#1, time dial 2, pickup
+       107 %), not a constant: it stays to read from the M-3425A instruction book. */
+    set: {
+      d59g: ['TP:10', 'p.63 59GNB operating time 10.00 s'],
+      d24c: ['TP:2', 'p.49 24B Def. time #1 (Trip) 24-3rd 120 cycles (2.0 s)'],
+      d59a: ['TP:2', 'p.61 59B #1 (Alarm) operating time 2.000 s'],
+      d59b: ['TP:20', 'p.61 59B #2 (Trip) operating time 20.00 s'],
+      d27: ['TP:2', 'p.57 27B operating time 2.000 s']
+    },
     title: 'GENERATOR PROTECTION LOGIC "B" (1/2)',
     page: 15,
     dwg: '310SD03-743',
@@ -213102,6 +213166,14 @@ const TCS_DESC = {
   mark(1261, 752, 844, 'OTHERS', '(GPP)', [767, 828]);
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'G-6B',
+    /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection B,
+       from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). */
+    set: {
+      d1: ['TP:2', 'p.69 81U #1 (Alarm) operating time 2.000 s'],
+      d2: ['TP:2', 'p.69 81U #2 (Trip) 2.000 s'],
+      d3: ['TP:2', 'p.69 81O #3 (Alarm) 2.000 s'],
+      d4: ['TP:2', 'p.69 81O #4 (Trip) 2.000 s']
+    },
     title: 'GENERATOR PROTECTION LOGIC "B" (2/2)',
     page: 16,
     dwg: '310SD03-743',
@@ -347118,7 +347190,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build dca1adb'));
+    row('Version', E('span', 'scsver', ver + ' · build 780d2a6'));
   }
   function openSet(near) {
     if (!set) {

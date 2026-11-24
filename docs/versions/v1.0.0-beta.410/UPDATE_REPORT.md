@@ -1,4 +1,4 @@
-# v1.0.0-beta.390 (LEADER : YUA, lane 0 integrator): PR 0, hiwalay na folder ng bawat lane
+# v1.0.0-beta.410 (LEADER : YUA, lane 0 integrator): PR 0, hiwalay na folder ng bawat lane
 
 ## Ano ang nagbago
 - **src/world/bind/<lane>.json**: dito isusulat ng bawat lane ang mga dagdag na I/O row (stn, addr, tag) at dagdag na FROM reference (to, row, from). Binabasa ito ng world.js gamit ang parehong linker ng mga drawing. Walang bagong link code.
