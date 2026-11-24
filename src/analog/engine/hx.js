@@ -527,7 +527,7 @@ function anHxStep(U, I, dt) {
     gRo: gE2r.Tg /* gas leaving the No.2 eco R side (TT-FG1110) */,
     gSo: gE2s.Tg /* S side (TT-FG1113) */,
     gEo: gE1.Tg /* gas to the air heater */,
-    /* beta.420 (lane 3 KIRARA, P&ID PD-051 TT-FG1100 ~ 1111 at the bank boundaries): the gas leaving each backpass bank, an export of
+    /* beta.490 (lane 3 KIRARA, P&ID PD-051 TT-FG1100 ~ 1111 at the bank boundaries): the gas leaving each backpass bank, an export of
        the same chain (no change to the run). Gas path: furnace -> wall (cyclone outlet / roof) -> R pass: RH bank 3, 2, 1, 0 -> No.2 eco
        R; S pass: finishing SH bank 2, 1, 0 -> No.3 eco -> No.2 eco S; the two passes mix (mix; e1In = after an economizer tube leak, if
        any) -> No.1 eco (e1) -> air heater. On U as U.hxO.gBank. The gas
@@ -538,6 +538,10 @@ function anHxStep(U, I, dt) {
       e2r: gE2r.Tg,
       fsh: gF.map(g => g.Tg),
       e3: gE3.Tg,
+      /* TT-FG1109, No.3 eco lower inlet (between its upper and lower half): the gas of the same bank solution at half the surface. One
+         metal temperature M.e3 per bank, so the gas falls as (Tg - Tm) = (Tin - Tm) e^-n and the half point is the geometric mean of the
+         two ends above the metal. Two halves of equal surface (the split is not in the documents found so far) */
+      e3m: (tS - M.e3) * (gE3.Tg - M.e3) > 0 ? M.e3 + Math.sign(tS - M.e3) * Math.sqrt((tS - M.e3) * (gE3.Tg - M.e3)) : (tS + gE3.Tg) / 2,
       e2s: gE2s.Tg,
       mix: tMix,
       e1In: tE1,

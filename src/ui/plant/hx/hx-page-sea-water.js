@@ -128,21 +128,33 @@
         ...['V-SW1016', 'V-SW1018', 'V-SW1020'].map((t, i) =>
           at(HX.HV(t), BX[i] - 2, 792, { id: 'hb' + i, rot: -90, lab: 'r' })
         ),
-        at(M('pump', 'P-0762A', 'Hypochlorite dosing pump A', [], { tag: 'P-0762A', wrap: 12 }), 80, 740, {
+        at(M('pump', 'P-0762A', 'Hypochlorite dosing pump A', [], { tag: 'P-0762A', wrap: 16 }), 80, 700, {
           id: 'ha',
           sc: 0.9,
           lab: 'r'
         }),
-        at(M('pump', 'P-0762B', 'Hypochlorite dosing pump B', [], { tag: 'P-0762B', wrap: 12 }), 80, 840, {
+        at(M('pump', 'P-0762B', 'Hypochlorite dosing pump B', [], { tag: 'P-0762B', wrap: 16 }), 80, 780, {
           id: 'hb',
           sc: 0.9,
           lab: 'r'
         }),
-        at(M('pump', 'P-0761A', 'Hypochlorite unloading pump', [], { tag: 'P-0761A', wrap: 12 }), 80, 940, {
+        at(M('pump', 'P-0761A', 'Hypochlorite unloading pump A', [], { tag: 'P-0761A', wrap: 16 }), 80, 860, {
           id: 'hu',
           sc: 0.9,
           lab: 'r'
-        })
+        }),
+        /* unloading pump B: STN105 running input MIR-P0761B (I/O list; local panel, no DCS command), not in hx-registry.js, so
+           its state is the input itself ('-----' until a link gives it a value) */
+        at(
+          E('pump', 'Hypochlorite unloading pump B', 'P-0761B', [], {
+            on: HX.hk('sw-hub', 'data-di="MIR-P0761B|RUNNING|STOPPED"'),
+            wrap: 16
+          }),
+          80,
+          940,
+          { id: 'hu2', sc: 0.9, lab: 'r' }
+        ),
+        at(HX.B('State', 'data-di="MIR-P0761B|RUNNING|STOPPED"', { w: 90 }), 300, 960, { id: 'hu2s' })
       ],
       pipes: [
         /* pool to the three pumps, the pumps into the header */
