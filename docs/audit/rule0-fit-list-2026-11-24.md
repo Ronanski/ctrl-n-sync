@@ -157,6 +157,33 @@ These lines describe a fit that is already gone, or a value that comes from the 
 
 (boiler.js:1128 is also a history line; it is kept in item 11 because the k beside it still rests on a snapshot set point.)
 
+### 19. Found by QA : SAORI after the list: 10 lines the no-fit guard does not see (2026-11-25, list only, model on hold)
+
+Plant model work is on hold (lane plan 2026-11-25). These lines go in the model phase with the rest. Each one gives a value with a number taken from the HMI snapshot or fitted to it, which RULES 3.12 / 3.5 forbid. None of them is in `tools/check/no-fit-baseline.json`.
+
+| Where | Line | What is wrong | Design / physics source for the fix |
+|---|---|---|---|
+| unit.js 3237 | `aiH = k => ... AN_HMI_AI[k]` | A transmitter on no sheet falls back to the snapshot value (RULES 3.5: no snapshot fallback). Lane KIRARA found it on seal pot pressure (1). | Compute the point from the model it measures: for the seal pot, the FA blower head on its curve minus the distributor and nozzle loss. If no model exists, show "-----" (no signal) and put the point on the "needs model" list. |
+| unit.js 3264 / 3265 | `PT-FG1009-A2 = aiH(AI0146) + 615 x fr`, `B2 = aiH(AI0147) + 392 x fr` | The base is the snapshot (through aiH). The column gains 615 / 392 differ A to B and are fitted. | Tap (1) as above. The column is rho_bulk x g x h of the seal pot leg solids (K1AU3-C-0-002 seal pot drawing for h, bed sand bulk density from FHI Tab 3 sand data). It is the same law for A and B. |
+| unit.js 3266 ~ 3268 | `LT-CL1008-A/B/C = 4.56 / 3.65 / 3.89` | Fixed snapshot levels. | Coal is unlimited by design (user). The level is a boundary value: one design normal level for all three from the bunker drawing, tagged `NO-FIT-OK: boundary, unlimited coal (user 2026-11-24)`. It is not three snapshot numbers. |
+| unit.js 3262 / 3263 | `PT-BR1130 = pd - 6.4 x lf`, `PT-BR1150 = pd - 9.3 x lf` | The section pressure drops are fitted to the snapshot. lf = (ms / ms0)^2 is a load key. | FHI P2S7 Tab 3: SH pressure drop 16 kg/cm2 at MCR, drum to SH outlet. Split it across the sections by their flow resistance from the SH geometry (K1AU3-B-0-003, PC). It scales with flow^2 and specific volume. Same work as item 12. |
+| unit.js 3255 | `PT-HR1001 = AI0421 + 0.7 x (mr / ms0)^2` | The reheat line DP 0.7 is a snapshot fit. | FHI Tab 3: RH 36.6 to 35.1 kg/cm2 = 1.5 at 181.9 T/H, plus the HB cold / hot reheat pressures (PPE-14-0725). Same work as item 12. |
+| hmi-op.js 303 | `'5|AI0064': [28.6, 'FIMU0001']` | Make-up flow fixed at the snapshot value. | The make-up flow is the cycle loss (blowdown, sampling, vents, sootblowing steam) taken from the model, through the make-up pump on its curve. Same work as item 17. |
+
+**Why the guard missed them** (`tools/check/no-fit.cjs`):
+1. It looks for words (plant trend, fitted, calibrated, snapshot ratio, from the snapshot) and for MW / 150. These lines carry no such word. The comment at aiH says "the snapshot value of the HMI", which none of the patterns matches.
+2. The load key here is the steam flow (lf = (ms / ms0)^2, (mr / ms0)^2) or the bed share (fr), not MW / 150.
+3. The snapshot comes in through a function (aiH) and a data table (AN_HMI_AI in hmi-op.js). The guard reads text, so a value is never traced back to the snapshot.
+
+**Tightening for the model phase** (YUA owns tools/check):
+- Flag every read of `AN_HMI_AI` or `aiH(` in src/analog/engine and src/world, unless the line is display-only with the plant model OFF and is tagged.
+- Flag the word "snapshot" anywhere in engine physics without a source tag.
+- Flag a tag map entry whose value is a bare number (`'XX-NNNN': 4.56`).
+- Flag a bare numeric coefficient times a load proxy (`ms / ms0`, `mr / ms0`, `lf`, `fr`, `MW`) without a source tag.
+- Add these 10 lines to the baseline in the same PR, so the guard fails on any new one from day one.
+
+New total: 44 + 10 = **54 lines** to clear in the model phase.
+
 ## PC pages to read (one sitting, for Jennie)
 
 1. FHI P3S3 and P5S2: sootblowing schedule per bank (item 3).
