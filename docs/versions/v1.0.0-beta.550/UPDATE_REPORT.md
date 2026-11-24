@@ -1,4 +1,4 @@
-# v1.0.0-beta.540 (LEADER : YUA, lane 0): I/O address ng 8 valve ng DITL-38
+# v1.0.0-beta.550 (LEADER : YUA, lane 0): I/O address ng 8 valve ng DITL-38
 
 ## Ano ang nagbago
 - **DITL-38** (SAORI): iisang drawing ito para sa 8 motor valve (MV-BD1001, BD1002, FW1001, FW1391, FW1002, FW1392, MS1391, MS1392) at walang address sa drawing. Ngayon, nakalagay na sa kopya ng bawat valve ang sarili nitong 7 point mula sa I/O list: MIL, MIT, ZSO, ZSC, TSC (TS), open command (MOR) at close command (MOS). 56 point lahat. Halimbawa: MV-FW1001 ay ZSO-FW1001 I.0000, MOR-FW1001 O.0130.

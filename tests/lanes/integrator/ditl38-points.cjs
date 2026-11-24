@@ -1,4 +1,4 @@
-/* beta.540 (lane 0): DITL-38 is drawn once for eight valves: each copy shows the seven I/O points of its own valve, as the I/O list gives them. */
+/* beta.550 (lane 0): DITL-38 is drawn once for eight valves: each copy shows the seven I/O points of its own valve, as the I/O list gives them. */
 const { load } = require('../../../tools/trace/world.cjs');
 const bad = [];
 (async () => {
