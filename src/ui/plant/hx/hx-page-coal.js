@@ -176,7 +176,8 @@
       texts: [
         { x: FX + 6, y: FY + 200 * FS, s: 'Furnace', cls: 'hx-name', anchor: 'middle' },
         { x: 1130, y: CY + 30, s: 'six fuel ports, front wall', cls: 'hx-note', anchor: 'middle' },
-        { x: 1532, y: 660, s: 'rear side', cls: 'hx-note' }
+        /* beta.373: at x 1532 the sand silo covered it ("rea"): under the sand line, between the furnace and the silo */
+        { x: 1456, y: FY + 290 * FS + 22, s: 'rear side', cls: 'hx-note', anchor: 'middle' }
       ]
     }
   });

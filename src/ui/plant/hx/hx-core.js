@@ -737,8 +737,9 @@
           hit = t.key
             ? `<rect class="hx-hit" x="${n1(hx0)}" y="${n1(hy0)}" width="${n1(lw)}" height="${n1(hy1 - hy0)}"/>`
             : '';
+        /* free: a value in a table, not on a line, so no transmitter stalk pointing at nothing (approval page, generator) */
         taps +=
-          `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})">${hit}<path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>` +
+          `<g class="hx-node hx-tap"${open} aria-label="${esc(t.label)}" transform="translate(${n1(t.x)} ${n1(t.y)})">${hit}${t.free ? "" : `<path class="rxst" d="${stalk}"/><circle class="rxhd" cx="${hx}" cy="${hy}" r="3.3"/>`}` +
           `<text class="hx-lab" x="${tx0}" y="${yl}" text-anchor="${an}">${esc(t.label)}</text><rect class="rx-chip" x="${n1(x0)}" y="${yc}" width="${cw}" height="15" rx="3"/>` +
           `<text x="${n1(x0 + cw / 2)}" y="${yc + 11.2}" text-anchor="middle">${val}</text>${t.tag ? `<text class="hx-tag" x="${tx0}" y="${yt}" text-anchor="${an}">${esc(t.tag)}</text>` : ''}</g>`;
         continue;

@@ -165,9 +165,9 @@
           rot: -90,
           lab: 'r'
         }),
-        at(C('HICDO1012', 'Supply valve to the burners', { tag: 'FCV-DO1012', wrap: 16 }), 705, DY, {
+        at(C('HICDO1012', 'Supply valve to the burners', { tag: 'FCV-DO1012', wrap: 16, mvb: true /* beta.373: one-line Manual 100.0 % reached the burner header */ }), 705, DY, {
           id: 'sup',
-          lab: 'b'
+          lab: 't' /* beta.373: room above the pump outlet line; below it sat on pump B's Y */
         }),
         at(C('PICDO1008', 'Oil return valve', { tag: 'PCV-DO1009' }), 430, 90, { id: 'ret', lab: 'b' }),
         at(C('FIC-OM', 'Oil master', { sym: 'ctl', unit: 't/h', pvdp: 2 }), 900, 940, { id: 'om', lab: 't' }),
