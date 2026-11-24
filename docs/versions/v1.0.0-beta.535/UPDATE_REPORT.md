@@ -8,8 +8,9 @@
 - **4 switch row na `on: 0`** (alarm kapag OFF ang switch, dahil ang ON ay normal): SS-BH1060-B / C / D (speed switch ng ash cooler, ON habang umiikot, DITL-21A "SPEED NOT LOW"), PS-LO1115-B2 ("> 2.0 kg/cm2", ON kapag may lube oil pressure). Source: I/O list description at src/world/plantsw.js.
 
 ## Epekto sa app
-- Sa 150 MW (station page, Worker, 3 plant min, walang ginalaw): line mula sa alarm list: 1 (beta.515) -> 4:
-  - PT-SW1110-B1 LOW (field row ng lane 4; ang set point ng list ay 3.0, ang A1 / A2 / B2 ay 0.3).
+- Sa 150 MW (station page, Worker, 3 plant min, walang ginalaw), may `s.src` na ni YUA (beta.530): line mula sa alarm list: 1 (main beta.530) -> 10:
+  - FT-MS1031 HIGH (main steam flow 472.x > 472.5; ang snapshot ng planta ay 472.7), PT-SW1110-B1 LOW (list 3.0; ang A1 / A2 / B2 ay 0.3, tanong sa user).
+  - PT-DO1043-A2 / B2 / C2 / D2 LOW (gun oil pressure 0 < 0.8: nakapatay ang burners sa 150 MW), FT-CD1121 LOW (polisher inlet flow, bypass bukas).
   - SS-BH1060-B / C / D ALARM: nakatigil ang bottom ash cooler B ~ D sa 150 MW na save (pati A). Tunay na estado ng switch.
 - Lalabas ang alarm ng isang point sa sandaling idagdag ng isang lane ang field row nito; walang babaguhin sa src/data/alarms.
 
@@ -19,7 +20,6 @@
 - Station page 150 MW, 3 plant min: walang page error.
 
 ## Hindi pa nasubok
-- Ang mga point ng plant model (hal. FT-MS1031) ay tahimik hanggang pumasok ang `s.src` ni YUA.
 - Ang DITL-07 machine #B ~ #D ay may tag na "-A1" sa plantsw (hindi pinapalitan ang letra), kaya ang PSL-PA1043-C1 / D1 at PSL-DO1043-C1 / D1 ay walang source pa.
 
 AKIHO
