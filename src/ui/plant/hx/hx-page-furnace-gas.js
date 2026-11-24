@@ -178,7 +178,7 @@
         { x: 486, y: 686, s: 'Solids down B', key: 'TT-FG1009-B', unit: '°C', dp: 0 },
         { x: 486, y: 702, s: 'Pressure A', key: 'PT-FG1009-A2', unit: MM, dp: 0 },
         { x: 486, y: 718, s: 'Pressure B', key: 'PT-FG1009-B2', unit: MM, dp: 0 },
-        { x: 834, y: 812, s: 'BEFORE THE AIR HEATER', cls: 'hx-zone' },
+        { x: 834, y: 812, s: 'AIR HEATER INLET', cls: 'hx-zone' },
         { x: 834, y: 830, s: 'Oxygen 1', key: 'AT-FG1122', unit: '%', dp: 1 },
         { x: 834, y: 846, s: 'Oxygen 2', key: 'AT-FG1123', unit: '%', dp: 1 },
         { x: 834, y: 862, s: 'Temperature 1', key: 'TT-FG1124', unit: '°C', dp: 0 },
@@ -187,7 +187,7 @@
         /* UI check 2026-11-24 C1: in two lines, clear of the gas duct from the air heater */
         { x: 834, y: 912, s: 'Across the air heater', cls: 'hx-note' },
         { x: 834, y: 928, s: 'Pressure drop', key: 'DPT-FG1052-5', unit: MM, dp: 0 },
-        { x: 600, y: 944, s: 'AFTER THE AIR HEATER', cls: 'hx-zone', anchor: 'end' },
+        { x: 600, y: 944, s: 'AIR HEATER OUTLET', cls: 'hx-zone', anchor: 'end' },
         { x: 600, y: 962, s: 'Oxygen', key: 'AT-FG1131', unit: '%', dp: 1, anchor: 'end' },
         { x: 600, y: 978, s: 'Temperature 1', key: 'TT-FG1132', unit: '°C', dp: 0, anchor: 'end' },
         { x: 420, y: 962, s: 'Temperature 2', key: 'TT-FG1133', unit: '°C', dp: 0, anchor: 'end' },

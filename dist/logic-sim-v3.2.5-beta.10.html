@@ -156625,10 +156625,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 254e4c0'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build b841e09'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 254e4c0';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build b841e09';
     } catch (e) {}
   };
   upd();
@@ -347034,7 +347034,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 254e4c0'));
+    row('Version', E('span', 'scsver', ver + ' · build b841e09'));
   }
   function openSet(near) {
     if (!set) {
@@ -364164,7 +364164,8 @@ window.PLANT_SYS = [
     }
     if (it.k === 'hook') {
       const t = it.name,
-        w = it.w || Math.max(96, t.length * 6.3 + 24),
+        /* beta.371: an all-capitals label is wider per letter (HYDRAULIC CONTROL ran out of its box) */
+        w = it.w || Math.max(96, t.length * (t === t.toUpperCase() ? 7.6 : 6.3) + 24),
         line = !it.plain && (!it.press || it.state),
         h = line ? 36 : it.plain ? 22 : 30;
       it._p = { l: [x - w / 2, y], r: [x + w / 2, y], t: [x, y - h / 2], b: [x, y + h / 2] };
@@ -367273,7 +367274,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 486, y: 686, s: 'Solids down B', key: 'TT-FG1009-B', unit: '°C', dp: 0 },
         { x: 486, y: 702, s: 'Pressure A', key: 'PT-FG1009-A2', unit: MM, dp: 0 },
         { x: 486, y: 718, s: 'Pressure B', key: 'PT-FG1009-B2', unit: MM, dp: 0 },
-        { x: 834, y: 812, s: 'BEFORE THE AIR HEATER', cls: 'hx-zone' },
+        { x: 834, y: 812, s: 'AIR HEATER INLET', cls: 'hx-zone' },
         { x: 834, y: 830, s: 'Oxygen 1', key: 'AT-FG1122', unit: '%', dp: 1 },
         { x: 834, y: 846, s: 'Oxygen 2', key: 'AT-FG1123', unit: '%', dp: 1 },
         { x: 834, y: 862, s: 'Temperature 1', key: 'TT-FG1124', unit: '°C', dp: 0 },
@@ -367282,7 +367283,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         /* UI check 2026-11-24 C1: in two lines, clear of the gas duct from the air heater */
         { x: 834, y: 912, s: 'Across the air heater', cls: 'hx-note' },
         { x: 834, y: 928, s: 'Pressure drop', key: 'DPT-FG1052-5', unit: MM, dp: 0 },
-        { x: 600, y: 944, s: 'AFTER THE AIR HEATER', cls: 'hx-zone', anchor: 'end' },
+        { x: 600, y: 944, s: 'AIR HEATER OUTLET', cls: 'hx-zone', anchor: 'end' },
         { x: 600, y: 962, s: 'Oxygen', key: 'AT-FG1131', unit: '%', dp: 1, anchor: 'end' },
         { x: 600, y: 978, s: 'Temperature 1', key: 'TT-FG1132', unit: '°C', dp: 0, anchor: 'end' },
         { x: 420, y: 962, s: 'Temperature 2', key: 'TT-FG1133', unit: '°C', dp: 0, anchor: 'end' },
@@ -368956,7 +368957,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(L('turbine', 'Gland steam to the turbine'), 1620, GSY, { id: 'tul' }),
         /* beta.365 D18: the gland steam exhauster of IBD TC-28 (TCA680): it draws the gland leak-off steam and air through the gland
            steam condenser H-1903 (Condensate page) and blows the air out; its faceplate is the one of its sheet */
-        at(L('condensate', 'Gland steam condenser H-1903', { back: true }), 1150, 90, { id: 'gcl' }),
+        at(L('condensate', 'Gland steam condenser H-1903', { back: true }), 1150, 66, { id: 'gcl' }),
         at(M('fan', 'GLAND STEAM EXHAUSTER', 'Gland steam exhauster', [], { tag: 'TC-28' }), 1450, 90, { id: 'gse', lab: 't' }),
 
         /* ---- condenser: vacuum breaker and exhaust hood spray ---- */
