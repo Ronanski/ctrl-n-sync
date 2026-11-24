@@ -1,6 +1,8 @@
 /* TCE022 LOGIC EXPLANATION SHEET (331DM09784 page 17, controller EHG+MD). Typed from the drawing; units = the pixels of the page rendered 2296 wide. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE022',
+  /* the symbols drawn as examples ("(TCS400-1)" is the example of a PI/O name): not logic, left out of the program */
+  legend: 1,
   title: 'LOGIC EXPLANATION SHEET',
   page: 17,
   ctl: 'EHG+MD',

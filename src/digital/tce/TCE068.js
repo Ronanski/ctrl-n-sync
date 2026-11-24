@@ -7,6 +7,10 @@
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push(
     window.TCE_LIB.tmr({
       id: 'TCE068',
+      /* pr: printed on page 36 beside each block; the drawing above keeps them as text */
+      pr: {
+        cmp047: ['HL:400.0degc', 'LL:395.0degc']
+      },
       title: 'ANALOG INPUT SIGNAL DIAGNOSTICS(9)',
       page: 36,
       f: [167, 81, 2228, 1545],

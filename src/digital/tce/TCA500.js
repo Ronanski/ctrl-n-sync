@@ -292,6 +292,10 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA500',
+    /* pr: printed on page 78 beside each block; the drawing above keeps them as text */
+    pr: {
+      cpl050: ['HL:155.0degC', 'LL:150.0degC']
+    },
     title: 'START-UP MODE SELECTION',
     page: 78,
     ctl: 'COMM+MD',

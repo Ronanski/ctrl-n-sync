@@ -113,6 +113,10 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA685',
+    /* pr: printed on page 167 beside each block; the drawing above keeps them as text */
+    pr: {
+      cmp033: ['HL:7.0kg/cm2g', 'LL:6.0kg/cm2g']
+    },
     title: 'HP TURBINE WARMING VALVE (TC-20)',
     page: 167,
     ctl: 'COMM+MD',
