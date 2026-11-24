@@ -1,0 +1,16 @@
+[
+{"tag": "PT-BR1130", "lv": "HIGH", "p": 3, "sp": 138.0, "d": "#1 SUPERHEATER PANEL NO.2 INLET STEAM PRESSURE TRANSMITTER", "stn": 101, "addr": "AI0145", "src": "Alarm List _20160912 sheet PT, PD-019"},
+{"tag": "PT-BR1130", "lv": "LOW", "p": 3, "sp": 60.0, "d": "#1 SUPERHEATER PANEL NO.2 INLET STEAM PRESSURE TRANSMITTER", "stn": 101, "addr": "AI0145", "src": "Alarm List _20160912 sheet PT, PD-019"},
+{"tag": "PT-BR1150", "lv": "HIGH", "p": 3, "sp": 132.0, "d": "#1 FINAL SUPERHEATER INLET STEAM PRESSURE TRANSMITTER", "stn": 101, "addr": "AI0275", "src": "Alarm List _20160912 sheet PT, PD-019"},
+{"tag": "PT-BR1150", "lv": "LOW", "p": 3, "sp": 60.0, "d": "#1 FINAL SUPERHEATER INLET STEAM PRESSURE TRANSMITTER", "stn": 101, "addr": "AI0275", "src": "Alarm List _20160912 sheet PT, PD-019"},
+{"tag": "LSHH-BR1001-1", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 DRUM LEVEL SWITCH-1 (HIGH HIGH)", "stn": 104, "addr": "I.0530", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "HH 254mm"},
+{"tag": "LSHH-BR1001-2", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 DRUM LEVEL SWITCH-2 (HIGH HIGH)", "stn": 104, "addr": "I.0534", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "HH 254mm"},
+{"tag": "LSLL-BR1001-2", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 DRUM LEVEL SWITCH-2 (LOW LOW)", "stn": 104, "addr": "I.0537", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "L -178mm"},
+{"tag": "TE-BR1040", "lv": "HIGH", "p": 3, "sp": 340.0, "d": "#1 ECONOMIZER NO.3 OUTLET FEEDWATER TEMPERATURE ELEMENT", "stn": 101, "addr": "AI0645", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1040"},
+{"tag": "TE-BR1110", "lv": "HIGH-HIGH", "p": 2, "sp": 360.0, "d": "#1 SUPERHEATER PANEL NO.1 INLET STEAM TEMPERATURE ELEMENT", "stn": 101, "addr": "AI0646", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1110"},
+{"tag": "TE-BR1110", "lv": "HIGH", "p": 3, "sp": 350.0, "d": "#1 SUPERHEATER PANEL NO.1 INLET STEAM TEMPERATURE ELEMENT", "stn": 101, "addr": "AI0646", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1110"},
+{"tag": "TE-BR1120-1", "lv": "HIGH-HIGH", "p": 2, "sp": 440.0, "d": "#1 SUPERHEATER PANEL NO.1 OUTLET STEAM TEMPERATURE ELEMENT-1", "stn": 101, "addr": "AI0608", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1120-1"},
+{"tag": "TE-BR1120-1", "lv": "HIGH", "p": 3, "sp": 430.0, "d": "#1 SUPERHEATER PANEL NO.1 OUTLET STEAM TEMPERATURE ELEMENT-1", "stn": 101, "addr": "AI0608", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1120-1"},
+{"tag": "TE-BR1120-2", "lv": "HIGH-HIGH", "p": 2, "sp": 440.0, "d": "#1 SUPERHEATER PANEL NO.1 OUTLET STEAM TEMPERATURE ELEMENT-2", "stn": 101, "addr": "AI0640", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1120-2"},
+{"tag": "TE-BR1120-2", "lv": "HIGH", "p": 3, "sp": 430.0, "d": "#1 SUPERHEATER PANEL NO.1 OUTLET STEAM TEMPERATURE ELEMENT-2", "stn": 101, "addr": "AI0640", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1120-2"}
+]

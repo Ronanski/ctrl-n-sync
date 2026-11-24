@@ -1,0 +1,7 @@
+[
+{"tag": "PT-SD1800", "lv": "LOW", "p": 3, "sp": -0.1, "d": "#1 SAND VESSEL PRESSURE", "stn": 103, "addr": "AI0432", "src": "Alarm List _20160912 sheet PT, PD-063"},
+{"tag": "LT-SD1800", "lv": "HIGH-HIGH", "p": 2, "sp": 90.0, "d": "#1 SAND SILO LEVEL", "stn": 103, "addr": "AI0387", "src": "Alarm List _20160912 sheet LT, PD-063"},
+{"tag": "LT-SD1800", "lv": "HIGH", "p": 3, "sp": 85.0, "d": "#1 SAND SILO LEVEL", "stn": 103, "addr": "AI0387", "src": "Alarm List _20160912 sheet LT, PD-063"},
+{"tag": "LT-SD1800", "lv": "LOW", "p": 3, "sp": 30.0, "d": "#1 SAND SILO LEVEL", "stn": 103, "addr": "AI0387", "src": "Alarm List _20160912 sheet LT, PD-063"},
+{"tag": "LT-SD1800", "lv": "LOW-LOW", "p": 2, "sp": 20.0, "d": "#1 SAND SILO LEVEL", "stn": 103, "addr": "AI0387", "src": "Alarm List _20160912 sheet LT, PD-063"}
+]
