@@ -94,9 +94,27 @@
   };
   const needMach = name => S && !(name in S.machs) && (S.machs[name] = machDef(name));
   /* after the first pass of the page (every key it asks is known): the hidden page of hmi-mock.js for its valves */
+  /* beta.446 (EIMI): the monitor rows (o.mon) and the VCB point (o.vcb) that the page gives a machine (HX.M), by machine name */
+  function machExtra() {
+    const X = {},
+      d = S && S.def;
+    if (!d) return X;
+    const all = d.plan ? d.plan.items : (d.lanes || []).flatMap(L => L.items.flatMap(c => (Array.isArray(c) ? c : [c])));
+    for (const it of all) {
+      if (!it || it.k !== 'mach' || !(it.mon || it.vcb)) continue;
+      const x = (X[it.mach] = X[it.mach] || { mon: [], vcb: null });
+      for (const r of it.mon || []) if (!x.mon.some(q => q.key === r.key && q.label === r.label)) x.mon.push(r);
+      if (it.vcb) x.vcb = it.vcb;
+    }
+    return X;
+  }
+  const plainKey = k => !/^(an|tcs):/.test(k);
   function proxy() {
     const mach = {},
-      unit = {};
+      unit = {},
+      EX = machExtra();
+    /* the keys of the monitor rows are values of the page as well (linked before the hidden page is built) */
+    for (const n in EX) for (const k of EX[n].mon.map(r => r.key).concat(EX[n].vcb || [])) if (plainKey(k)) needVal(k);
     let art = '';
     /* values: [data-v] of hmi-mock.js (the logic transmitter, else the plant model key, 'tt:' and 'ux:' keys of the temporary pages) */
     for (const key of S.vals) {
@@ -148,7 +166,15 @@
     }
     for (const name in S.machs) {
       if (!S.machs[name]) continue;
-      mach[name] = S.machs[name];
+      const ex = EX[name];
+      /* a copy: the description of the temporary page (LS_MOCK.defs) is shared and stays as it is */
+      mach[name] = !ex
+        ? S.machs[name]
+        : Object.assign({}, S.machs[name], {
+            mon: (S.machs[name].mon || []).concat(ex.mon.map(r => [r.label, () => HX.data.value(r.key), r.unit, plainKey(r.key) ? r.key : '', r.dp, r.words])),
+            vcb: ex.vcb ? () => HX.data.value(ex.vcb) : S.machs[name].vcb,
+            vcbTag: ex.vcb && plainKey(ex.vcb) ? ex.vcb : ''
+          });
       art +=
         '<text data-st="' +
         name +
@@ -236,12 +262,32 @@
       trend: { h, fn: () => HX.data.value(r0.k) }
     });
   }
+  /* beta.446 (EIMI): the TCS operator buttons and lamps (the CRT ports of the TCS soft logic, lanes/tcs-crt-ports.json). HX.B hooks:
+       'crt:<port>'          a push button, e.g. HX.B('RESET', 'crt:CRT:TCE114.<tag>', { press: true }): a press holds the port
+                             CRT.HOLD ms (the TCS program reads a CRT press as a held contact);
+       'crtl:<sheet>|<key>'  a lamp, e.g. HX.B('TRIP', 'crtl:TCE114|<lamp tag>'): ON (lit) at 1, OFF at 0.
+     While the TCS program is not running (no API, or a read gives no value) the lamp shows '-----' and a press does nothing.
+     CRT.press / CRT.read are the ONE place that names the live API of the TCS program (lane 9); nothing else calls it. */
+  const CRT = {
+    HOLD: 3000,
+    api: () => (window.TCE && typeof TCE.press === 'function' && typeof TCE.read === 'function' ? TCE : null),
+    press: (port, ms) => call(() => CRT.api().press(port, ms), null),
+    read: (sheet, key) => call(() => CRT.api().read(sheet, key), null)
+  };
+  const crtLamp = h => {
+    const i = h.indexOf('|'),
+      v = CRT.api() ? CRT.read(h.slice(5, i), h.slice(i + 1)) : null,
+      x = typeof v === 'boolean' ? (v ? 1 : 0) : v != null && isFinite(v) ? +v : null;
+    return { text: x == null ? '-----' : x >= 0.5 ? 'ON' : 'OFF', tone: x == null ? '' : x >= 0.5 ? 'on' : '' };
+  };
   const ALC = { t: 0, m: {} };
   HX.data = {
     time: () => call(() => (window.AN && AN.unit && isFinite(AN.unit.t) ? AN.unit.t : null), Date.now() / 1000),
     value(key) {
       /* Audit 3: a value with no row on the app pages reads its field of the unit model ('an:Pip' = AN.unit.Pip) */
-      if (/^an:/.test(key)) return call(() => { const v = AN.unit[key.slice(3)]; return v != null && isFinite(v) ? +v : null; }, null);
+      /* beta.446 (EIMI): a dotted path reads a field inside the unit model ('an:lpHt.H2.dr' = AN.unit.lpHt.H2.dr); a flag reads 1 / 0 */
+      if (/^an:/.test(key))
+        return call(() => { const v = key.slice(3).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.unit); return typeof v === 'boolean' ? (v ? 1 : 0) : v != null && isFinite(v) ? +v : null; }, null);
       /* a value of the TCS model ('tcs:aux.hso' = AN.tcs().aux.hso); an open / closed flag reads 100 / 0 % */
       if (/^tcs:/.test(key))
         return call(() => { const v = key.slice(4).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.tcs()); return typeof v === 'boolean' ? (v ? 100 : 0) : v != null && isFinite(v) ? +v : null; }, null);
@@ -356,6 +402,8 @@
         const o = call(() => LS_FPOP.valveOpen(h.slice(3)), null);
         return { text: o == null ? '' : o ? 'OPEN' : 'CLOSED', tone: o == null ? '' : o ? 'run' : 'stop' };
       }
+      if (h.slice(0, 5) === 'crtl:') return crtLamp(h);
+      if (h.slice(0, 4) === 'crt:') return { text: CRT.api() ? '' : '-----', tone: '' };
       needHook(h, label);
       const e = S && S.hooks[h] && pq('[data-hxk="' + S.hooks[h].i + '"]');
       if (!e) return null;
@@ -372,6 +420,12 @@
     },
     press(h) {
       if (h.slice(0, 3) === 'fv:') return void call(() => LS_FPOP.valveTag(h.slice(3)));
+      if (h.slice(0, 4) === 'crt:') {
+        if (!CRT.api()) return;
+        CRT.press(h.slice(4), CRT.HOLD);
+        return void call(() => window.lsEventAdd('TCS', 'DCS', 'Operator: ' + h.slice(4) + ' pressed (HMI)'));
+      }
+      if (h.slice(0, 5) === 'crtl:') return;
       const e = S && S.hooks[h] && pq('[data-hxk="' + S.hooks[h].i + '"]');
       if (e)
         e.dispatchEvent(
@@ -405,6 +459,7 @@
   function screen(def) {
     return function (g, api) {
       S = store(api, g);
+      S.def = def;
       const fo = document.createElementNS(NS, 'foreignObject');
       const [fw, fh] = frame();
       for (const [a, v] of Object.entries({ x: 0, y: 0, width: fw, height: fh })) fo.setAttribute(a, v);
