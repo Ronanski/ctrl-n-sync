@@ -886,9 +886,13 @@
     const s = dk.dOf(P.d);
     const F = frame(P.n, (P.t || '') + ' · ' + P.d);
     const me = box;
-    const lOn = lampEl(P.st.on),
+    /* Rosé 2026-11-24 (click check, sea water page): st.row null = the drawing has no status input back from the panel (the condenser
+       tube cleaning, DITL-119: REMOTE AUTO START / STOP pulses out, nothing back). No STATUS lamps then: the header says where the
+       state is (st.off), START needs its permissive, STOP is its own press */
+    const noSt = P.st.row == null;
+    const lOn = lampEl(P.st.on || ''),
       lOff = lampEl(P.st.off || 'STOPPED');
-    F.bd.append(row('STATUS', lOn, lOff));
+    if (!noSt) F.bd.append(row('STATUS', lOn, lOff));
     /* [.., 5] = the drawing of that push button when it is not the status drawing (a sootblower: STATUS on DITL-80A, its REMOTE START /
        REVERSE P.B. on DITL-80M or its own copy of DITL-80G) */
     const B = P.pbs.map(([l, r, ad, , , pd]) => {
@@ -972,7 +976,7 @@
         d = pd || P.d;
       b.onclick = () =>
         !b.disabled &&
-        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), i === 0 && !P.free && (sent = Date.now()), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
+        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), i === 0 && !P.free && !noSt && (sent = Date.now()), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
     });
     /* Rosé 2026-11-22 (live test finding 3): P.need = [{ d, row, l }] output rows of a drawing that the first command needs (the
        sootblower BLOWING PERMISSIVE, DITL-80A out 20). The button stays a real press to the logic; while a row is 0 the faceplate says
@@ -986,11 +990,11 @@
          the machine is in operation while its lance is out of the retract position, also when it was started by hand (MANUAL mode), where
          the OPERATING lamp of the AUTO program (DITL-80A) stays off */
       const aw = P.away && call(() => dk.dOf(P.away.d) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(P.away.d)), null),
-        on = call(() => dk.dout(P.d, P.st.row), null) === 1 || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0),
+        on = !noSt && (call(() => dk.dout(P.d, P.st.row), null) === 1 || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0)),
         run = isRun(),
         pv = (P.perm || []).map(p => ({ ...p, v: call(() => window.DUI.rowVal(s, p.row), null) })),
         ok = !pv.length || pv.some(p => p.v === 1);
-      F.lamp.className = 'fpo-lamp ' + (on ? 'run' : 'stop');
+      F.lamp.className = 'fpo-lamp' + (noSt ? '' : on ? ' run' : ' stop');
       setTx(F.val, on ? P.st.on : P.st.off || 'STOPPED');
       lOn.className = 'fpo-lp' + (on ? ' run' : '');
       lOff.className = 'fpo-lp' + (!on ? ' stop' : '');
@@ -1003,11 +1007,11 @@
       }
       /* live Cold start F10b: P.free = every button is its own press (igniter / burner ON / OFF): the status (REMOTE) does not lock or
          light the first one */
-      B[0].disabled = P.free ? !run : on || !run || !ok;
+      B[0].disabled = P.free ? !run : noSt ? !run || !ok : on || !run || !ok;
       /* design review 2026-11-08 (Yuna): the second push button is the STOP of the first only when it says so (STOP / CLOSE / AUTO STOP).
          Another command (the SKIP of a sootblower, DITL-80x row r + 1) is its own press: enabled in RUN, not lit green as a "stopped" */
       if (B[1]) {
-        const isStop = !P.free && /\b(STOP|CLOSE)\b/.test(P.pbs[1][0]);
+        const isStop = !P.free && !noSt && /\b(STOP|CLOSE)\b/.test(P.pbs[1][0]);
         B[1].disabled = !run || (isStop && (!on || !rem));
         B[1].classList.toggle('lit-stop', isStop && !on);
       }
