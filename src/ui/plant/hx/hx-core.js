@@ -335,7 +335,8 @@
     }
     if (it.k === 'hook') {
       const t = it.name,
-        w = it.w || Math.max(96, t.length * 6.3 + 24),
+        /* beta.371: an all-capitals label is wider per letter (HYDRAULIC CONTROL ran out of its box) */
+        w = it.w || Math.max(96, t.length * (t === t.toUpperCase() ? 7.6 : 6.3) + 24),
         line = !it.plain && (!it.press || it.state),
         h = line ? 36 : it.plain ? 22 : 30;
       it._p = { l: [x - w / 2, y], r: [x + w / 2, y], t: [x, y - h / 2], b: [x, y + h / 2] };
