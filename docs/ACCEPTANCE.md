@@ -11,7 +11,7 @@ Inaprubahan ng user: **GO LIST, 2026-11-24 06:06 PHT** (GO FINISH LINE 2026-11-2
 ## Bilang (2026-11-24 11:33 PHT, beta.356)
 
 - Part 1 (process): 24 na item × bawat load. Sukat ng beta.356 (tools/accept/part1.cjs, results/part1-beta356.md; 45 MW sa HB sliding pressure 98.9): 50 PASS / 36 FAIL na cell. Pasado sa lahat ng tatlong load: 6 (main steam flow, SH outlet temperature, final feedwater, RH spray, turbine heat rate, coal flow). Natitira: 18. (Pagtatama sa bilang ng beta.354: 4 dapat iyon, hindi 3; pasado na rin noon ang main steam flow sa tatlong load.)
-- Part 2 (kumpleto): 21 na item. Pasado (TAMA): 1. Natitira: 20 (MAY = nasa app, hindi pa nasusuri: 18; KULANG: 2).
+- Part 2 (kumpleto): 21 na item. Pasado (TAMA): 1. Natitira: 20 (KULANG: 17; hindi nasuri sa cloud: 3). Detalye: docs/audit/part2-check-2026-11-24.md.
 - Part 3 (live run): 1 item. Natitira: 1 (ang user ang nagpapasya kung kailan).
 - **Kabuuan: 7 pasado, 39 natitira.**
 
@@ -58,31 +58,31 @@ TAMA = nasa app at may patunay; MAY = nasa app, hindi pa nasusuri ang galaw; KUL
 | Grupo | Source | Estado (2026-11-24) | Pasado kapag |
 |---|---|---|---|
 | **Boiler** | | | |
-| Furnace, bed, cyclone, backpass, sootblowers | P&ID K1AU3-A1-0-001, FHI P2 ~ P5, DITL-80x | MAY F14 ~ F18 bukas (spray 2, backpass) | Part 1 pasado at bawat page tugma sa P&ID |
-| Drum, SH, RH, sprays, drains, vents | P&ID, FHI P4, ABC-010 ~ 013 | MAY | Part 1 pasado; bawat valve gumagalaw ayon sa logic |
-| Coal, limestone, sand, bottom ash, fly ash | P&ID, PLC logic zips, DITL | MAY | Bawat feeder, cooler, conveyor sumusunod sa PLC / DITL sheet |
-| Fans, air, flue gas, air heater, ESP | Fan curves (Cheng Chen), FHI P5 | MAY ESP walang signal | Fan flow at current sa fan curve; ESP sa I/O list |
-| Diesel oil, burners, purge, MFT | M&S BMS 1612 13-4-105, DITL-02 / 03 / 07 | MAY | Bawat MFT input ng DITL-03A nagti-trip; purge 300 s |
+| Furnace, bed, cyclone, backpass, sootblowers | P&ID K1AU3-A1-0-001, FHI P2 ~ P5, DITL-80x | KULANG (Part 2 check 11-24: bed heat-up 747 °C/h vs 110; 80 tag walang kabit) | Part 1 pasado at bawat page tugma sa P&ID |
+| Drum, SH, RH, sprays, drains, vents | P&ID, FHI P4, ABC-010 ~ 013 | KULANG (MST tumataas pagka-trip; 12 tag walang kabit) | Part 1 pasado; bawat valve gumagalaw ayon sa logic |
+| Coal, limestone, sand, bottom ash, fly ash | P&ID, PLC logic zips, DITL | KULANG (ash cooler outlet; 49 tag walang kabit) | Bawat feeder, cooler, conveyor sumusunod sa PLC / DITL sheet |
+| Fans, air, flue gas, air heater, ESP | Fan curves (Cheng Chen), FHI P5 | KULANG (ESP walang signal; fan motor temp) | Fan flow at current sa fan curve; ESP sa I/O list |
+| Diesel oil, burners, purge, MFT | M&S BMS 1612 13-4-105, DITL-02 / 03 / 07 | KULANG (58 burner / purge signal walang kabit) | Bawat MFT input ng DITL-03A nagti-trip; purge 300 s |
 | **Tubig at steam cycle** | | | |
-| Feedwater, BFWPs, HP heaters | P&ID, heat balance, pump data | MAY | Part 1 FW temperature; pump curve |
-| Condensate, LP heaters, deaerator, hotwell | P&ID, K2MC3A-100, heat balance | MAY J6 hotwell bukas | Level stable sa load change |
-| Extraction, aux steam, gland, vacuum | Heat balance, P&ID | MAY | Extraction pressures sa heat balance ±3 % |
-| Sea water, make-up, closed cooling, air compressors, sampling | P&ID, vendor data | MAY B5 discharge pressure | Bawat pump at valve sa page, may value |
+| Feedwater, BFWPs, HP heaters | P&ID, heat balance, pump data | KULANG (HP heater No.2 drain; 42 tag) | Part 1 FW temperature; pump curve |
+| Condensate, LP heaters, deaerator, hotwell | P&ID, K2MC3A-100, heat balance | KULANG (J6 hotwell; CEP auto; 23 tag) | Level stable sa load change |
+| Extraction, aux steam, gland, vacuum | Heat balance, P&ID | KULANG (extraction ±3 % hindi pa sukat) | Extraction pressures sa heat balance ±3 % |
+| Sea water, make-up, closed cooling, air compressors, sampling | P&ID, vendor data | KULANG (lahat ng SWP patay sa 150 MW: walang turbine trip; 102 tag) | Bawat pump at valve sa page, may value |
 | **Turbine at generator (TCS)** | | | |
 | TCS logic: speed, load, ATS, thermal stress | TCE / TCA sheets (499) | KULANG tumatakbo pa ang tcs.js, hindi ang sheets (Audit 3 #4) | Ang TCE / TCA sheets mismo ang tumatakbong logic |
-| Turbine trips | IBD trip sheets | MAY (tcs-trip.js mula sa IBD netlist) | Bawat trip ng IBD nagti-trip sa tamang kondisyon |
-| Turbine oil, generator, excitation, electrical | MHPS / Hitachi manuals, GAE-2013-0136, UNITROL 6080, ETAP | MAY AVR gains walang source | Sync at load sa data sheet; NO-SOURCE = 0 |
+| Turbine trips | IBD trip sheets | KULANG (low vacuum trip hindi kumilos; 19 tag) | Bawat trip ng IBD nagti-trip sa tamang kondisyon |
+| Turbine oil, generator, excitation, electrical | MHPS / Hitachi manuals, GAE-2013-0136, UNITROL 6080, ETAP | KULANG (AVR gains walang source; 29 tag) | Sync at load sa data sheet; NO-SOURCE = 0 |
 | **Control system** | | | |
-| Control loops (PID / MAN / SUMA) | Parameter list, 65 na loop | MAY | Bawat loop: A / M / R, SV, MV, tracking at force manual ayon sa ABC sheet |
+| Control loops (PID / MAN / SUMA) | Parameter list, 65 na loop | KULANG (MAN station hold ramp; MOV travel) | Bawat loop: A / M / R, SV, MV, tracking at force manual ayon sa ABC sheet |
 | ABC at DITL sheets | 54 ABC, 134 DITL na drawing | TAMA live, 1:1 sa PDF | Walang sheet na hindi tumatakbo |
-| I/O tags na nakakabit | DCS I/O list 2,702 tag | MAY 279 walang kabit (Audit 1, hindi pa binilang ulit) | 0 tag na walang kabit (sheet, model o page) |
-| Equipment | Equipment list K1AU3-L1-0-002, 173 | MAY 61 kulang (Audit 1, hindi pa binilang ulit) | Lahat ng 173 nasa app |
-| Alarms at priority | Alarm list 20160912, 717 | MAY 116 tag wala pa (Audit 3 #13) | Lahat ng 717 nasa app, may priority; 0 nakatayong alarm sa steady 150 MW |
+| I/O tags na nakakabit | DCS I/O list 2,702 tag | KULANG hanggang 476 walang kabit (bilang 11-24, kumpirmahin sa takbo) | 0 tag na walang kabit (sheet, model o page) |
+| Equipment | Equipment list K1AU3-L1-0-002, 173 | HINDI NASURI SA CLOUD (equipment list nasa PC lang) | Lahat ng 173 nasa app |
+| Alarms at priority | Alarm list 20160912, 717 | KULANG 116 tag wala pa; 0 nakatayong alarm sa 150 MW | Lahat ng 717 nasa app, may priority; 0 nakatayong alarm sa steady 150 MW |
 | Values na walang design source | docs/audit/no-source-list.md, snapshot-values-list.md | KULANG 217 NO-SOURCE, 24 mula sa snapshot | 0 at 0 |
 | **Operator** | | | |
-| HMI pages at faceplates | 22 plant pages + turbine / generator | MAY 11 UI bug sa click check ni Rosé | Bawat page aprubado mo; bawat item sumasagot sa click |
-| Starting points | Cold, Warm, Hot, 150 MW (Q3) | MAY Warm / Hot nasa PC lang (Audit 3 #12) | Apat na simula sa start screen, gawa ng physics |
-| Bilis | Q6: 60 FPS pataas | MAY | ≥ 60 FPS sa PC at tablet sa bawat page |
+| HMI pages at faceplates | 22 plant pages + turbine / generator | HINDI NASURI SA CLOUD (kailangan ng totoong click) | Bawat page aprubado mo; bawat item sumasagot sa click |
+| Starting points | Cold, Warm, Hot, 150 MW (Q3) | KULANG Warm / Hot wala sa start screen | Apat na simula sa start screen, gawa ng physics |
+| Bilis | Q6: 60 FPS pataas | HINDI NASURI SA CLOUD | ≥ 60 FPS sa PC at tablet sa bawat page |
 
 ## Part 3 · Huling patunay: isang live run
 
