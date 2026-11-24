@@ -34,7 +34,6 @@ function anEngAPI() {
     tcsVt: () => tcsVtState(AN_UNIT),
     gen: () => anGenEl(),
     elec: () => anElec(),
-    unitRestart: k => anUnitRestart(k),
     tcsTrip: () => tcsTripState(AN_UNIT),
     tcsIbd: id => tcsIbdState(id),
     tceRead: () => tcsLiveRead(AN_UNIT) /* the TCE soft logic sheets (02d-tce.js q.live) */,

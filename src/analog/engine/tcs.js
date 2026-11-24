@@ -715,6 +715,9 @@ function tcsStep(U, dt) {
     if (!run || tb.rpm >= aim) return;
     tb.rpm = Math.min(aim, tb.rpm + (rate * dt) / 60);
   };
+  /* 1.0.0-beta.366 (JENNIE, Rosé: Warm save read HOT at HP 403 C): the start-up mode is the metal band (page 14: taken at TURBINE PREPARATION,
+     c.mode = tcsMode there). Before the preparation it follows the metal; before, it kept the band of the trip (tcsTrip) while the turbine cooled */
+  if (c.cur < 0 && c.step < 1) tcsMode(U);
   /* ATS AUTO: the next step by itself (the lines H of the sequence) */
   if (c.auto && c.cur < 0 && c.step < 7) {
     let nx = c.step + 1;

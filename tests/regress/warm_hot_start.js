@@ -18,7 +18,8 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
       page.evaluate(() => {
         const U = AN.unit || {},
           c = U.tc || U.tco || {};
-        return { Pd: U.Pd, Tb: U.Tb, Thp: c.Thp, mft: !!U.mft, chip: [...document.querySelectorAll('#plchip em, button')].map(b => b.textContent.trim()).find(t => /^Unit · /.test(t)) || '' };
+        const tmPv = () => { for (const sh of AN.sheets) { const S = sh.S; if (!S || !S.blk) continue; const b = S.blk.find(x => x.tag === 'EIC-TM'); if (b) { const n = (b.i || []).find(n => n >= 0 && /EIC-TM.PV/.test(AN.nm(S, n) || '')); return [n != null ? +S.rt.v[n] : NaN, +(S.rt.st[b.id] || {}).val]; } } return [NaN, NaN]; };
+        return { Pd: U.Pd, Tb: U.Tb, Thp: c.Thp, Trh: c.Trh, mode: c.mode, MW: +U.MW || 0, tm: tmPv(), mft: !!U.mft, chip: [...document.querySelectorAll('#plchip em, button')].map(b => b.textContent.trim()).find(t => /^Unit · /.test(t)) || '' };
       });
     const a = await rd();
     ck(a.Thp > lo && a.Thp <= hi, st + ': HP turbine metal ' + (a.Thp || 0).toFixed(1) + ' C in the ' + st.toUpperCase() + ' band ' + lo + ' ~ ' + hi + ' C');
@@ -28,6 +29,9 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     await page.waitForTimeout(60000);
     const b = await rd();
     ck([b.Pd, b.Tb, b.Thp].every(Number.isFinite), st + ': after 60 s RUN: drum ' + (b.Pd || 0).toFixed(1) + ', bed ' + (b.Tb || 0).toFixed(0) + ', HP metal ' + (b.Thp || 0).toFixed(1));
+    /* beta.370 (JENNIE, Rosé): the ATS mode follows the metal before the preparation (tcs.js), and the turbine master PV is the generator MW */
+    ck(b.mode === st.toLowerCase(), st + ': TCS start-up mode ' + b.mode + ' (HP ' + (b.Thp || 0).toFixed(1) + ', RH ' + (b.Trh || 0).toFixed(1) + ' C)');
+    ck(Math.abs(b.tm[0] - b.MW) < 2, st + ': turbine master EIC-TM PV ' + b.tm[0] + ' MW = generator ' + b.MW.toFixed(1) + ' MW (station out ' + b.tm[1] + ')');
     ck(errs.length === 0, st + ': no page error' + (errs.length ? ' (' + errs[0] + ')' : ''));
     await browser.close();
   }
