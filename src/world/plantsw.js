@@ -327,6 +327,28 @@
       fn = () => (window.AN && AN.ditlRun ? (AN.ditlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1 ? 1 : 0) : NaN);
     for (const t of i ? ['SS-BH1060-' + x, 'SS-BH1060-A'] : ['SS-BH1060-A']) L.push([t, fn, 0.5, 'hi', 0, 0, /SPEED NOT LOW/, sh]);
   });
+  /* beta.470 (lane plan 2026-11-25): a field signal row of a lane with di (src/world/field/<lane>.js: { tag, di: 1, sheet, src, rel,
+     v(U, X) }) is a switch row of the plant model like the rows above: the DITL input row whose text starts with the tag is 1 while
+     v(AN.unit, AN.fieldX) is true (above 0.5). sheet (optional): the code of the sheet, "DITL-23A", when the tag is on more than one sheet */
+  for (const r of (window.FIELD && FIELD.rows) || []) {
+    const fn = r.v || r.get;
+    if (!r.di || !r.tag || typeof fn !== 'function') continue;
+    /* a tag the plant model already switches above keeps that one source (one signal, one source); the row is listed in FIELD.dup */
+    if (L.some(x => x[0] === String(r.tag).toUpperCase())) {
+      (FIELD.dup = FIELD.dup || []).push(r.lane + ' ' + r.tag);
+      continue;
+    }
+    const f = () => {
+      try {
+        const v = fn((window.AN && AN.unit) || {}, (window.AN && AN.fieldX) || {});
+        return v === true ? 1 : v === false ? 0 : +v;
+      } catch (e) {
+        return NaN;
+      }
+    };
+    L.push([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, r.sheet ? new RegExp(String(r.sheet).replace(/[^A-Z0-9-]/gi, '') + '$') : null]);
+    L[L.length - 1].fld = 1;
+  }
   const DB0 = 10;
   let map = null,
     mapK = '';
@@ -340,6 +362,8 @@
     air.length = 0;
     bo.length = 0;
     mtr.length = 0;
+    usw.length = 0;
+    const FD = new Map(L.filter(x => x.fld).map(x => [x[0], x]));
     for (const s of ALL) {
       if (!s.nl && typeof netlist === 'function')
         try {
@@ -357,6 +381,15 @@
         const d = L.find(x => words.slice(0, 3).includes(x[0]) && (!x[6] || x[6].test(t)) && (!x[7] || x[7].test(s.name)));
         if (d) map.push({ s, row: i, d, on: null });
       }
+      /* beta.520 (KIRARA): a field contact drawn on the wire of an output row (DITL-19 outputs 62 ~ 73: MIA-CL1061-A2 at the left end of
+         the wire, the MCC / LCP side of the sheet): the DI row of a lane with that tag drives it; a copy has its own machine's tag */
+      if (FD.size)
+        for (const u of (s.nl && s.nl.usr) || []) {
+          if (!u.fin) continue;
+          const tg = String(s._inst && W.showText ? W.showText(s, u.label) : u.label).toUpperCase(),
+            d = FD.get(tg);
+          if (d && (!d[7] || d[7].test(s.name))) usw.push({ s, key: u.key, d });
+        }
       /* P2 #13: the DITL comparator rows on the condenser pressure transmitter (DITL-55 row 6, DITL-73 row 26 PT-CD1110) */
       for (const a of (s.nl && s.nl.an) || []) {
         const z = (s.nl.src || []).find(q => q.n === a.net);
@@ -396,7 +429,8 @@
   const ana = [],
     suc = [],
     mu = [],
-    air = [];
+    air = [],
+    usw = [];
   /* 3.2.0-beta.63 (MAKE-UP WATER HMI): the local transmitters of the make-up water system and of the expansion tank are analog rows of
      the logic only (DITL-112 trip < 0.2 m / >= 1 kg/cm2, DITL-76 / 77 ACWP trip < 0.3 m, DITL-78 XV-MU1109 AUTO 40 % / 85 %); their value
      is the plant model's (unit.js AN_MU), the same number as the HMI. [row text, unit model key] */
@@ -533,6 +567,10 @@
     for (const a of bo) if (isFinite(U[a.f])) (a.s.avw = a.s.avw || {})[a.key] = Math.round(U[a.f] * 1000) / 1000;
     const ps = suc.length ? W.sucP() : NaN;
     if (isFinite(ps)) for (const a of suc) (a.s.avw = a.s.avw || {})[a.key] = ps;
+    for (const u of usw) {
+      const x = val(u.d[1], u);
+      if (isFinite(x)) (u.s.usw = u.s.usw || {})[u.key] = x > 0.5;
+    }
     for (const m of map) {
       const [, src, sp, dir, nc, db] = m.d,
         DB = db != null ? db : DB0,
@@ -561,6 +599,8 @@
       if (nc ? !tr : tr) (m.s._win || (m.s._win = new Set())).add(m.row);
     }
   };
+  /* the field contacts of the lanes on the wire of an output row */
+  W.plantUsw = () => usw.map(u => ({ sheet: u.s.name, key: u.key, tag: u.d[0] }));
   W.plantSw = () => (map ? map.map(m => ({ sheet: m.s.name, row: m.row + 1, tag: m.d[0], on: m.on })) : pend || []);
   /* what a switch follows: the station tag of a vane, the ABC transmitter of a level / pressure ('LIBR10011' of LIBR10011.PV), or '' */
   W.plantSwSrc = () => (map ? map.map(m => ({ sheet: m.s.name, row: m.row, tag: m.d[0], src: swSrc(m.d[1]) })) : []);

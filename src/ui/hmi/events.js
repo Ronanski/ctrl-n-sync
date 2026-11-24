@@ -571,6 +571,8 @@
       }
       if (p.n >= 0 && +S.rt.v[p.n] > 0.5) now.set('B|' + p.bit, { sh: p.sh, kind: 'ALM', nm: p.tag + ' ' + p.d, lv: 'DEVIATION' });
     }
+    /* lane 5 (2026-11-25): the alarm list rows (src/data/alarms) from a live transmitter value, src/analog/engine/alarm-pri.js AN.laneAlm */
+    if (A.laneAlm) for (const [k, x] of A.laneAlm(now, t)) now.set(k, x);
     if (window.WORLD && WORLD.on && WORLD.idx)
       for (const s of dSheets()) {
         if (!s.nl) continue;

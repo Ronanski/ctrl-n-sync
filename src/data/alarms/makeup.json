@@ -1,0 +1,11 @@
+[
+{"tag": "PT-MU0709", "lv": "HIGH", "p": 3, "sp": 9.2, "d": "MAKE-UP PUMP COMMON HEADER PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0197", "src": "Alarm List _20160912 sheet PT, PD-024"},
+{"tag": "PT-MU0709", "lv": "LOW", "p": 3, "sp": 6.5, "d": "MAKE-UP PUMP COMMON HEADER PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0197", "src": "Alarm List _20160912 sheet PT, PD-024"},
+{"tag": "PT-MU0709", "lv": "LOW-LOW", "p": 2, "sp": 6.0, "d": "MAKE-UP PUMP COMMON HEADER PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0197", "src": "Alarm List _20160912 sheet PT, PD-024"},
+{"tag": "LT-MU0708-A", "lv": "HIGH", "p": 3, "sp": 13.8, "d": "DEMINERALIZED WATER TANK A LEVEL TRANSMITTER", "stn": 105, "addr": "AI0160", "src": "Alarm List _20160912 sheet LT, PD-024"},
+{"tag": "LT-MU0708-A", "lv": "LOW", "p": 3, "sp": 2.0, "d": "DEMINERALIZED WATER TANK A LEVEL TRANSMITTER", "stn": 105, "addr": "AI0160", "src": "Alarm List _20160912 sheet LT, PD-024"},
+{"tag": "LT-MU0708-A", "lv": "LOW-LOW", "p": 2, "sp": 0.2, "d": "DEMINERALIZED WATER TANK A LEVEL TRANSMITTER", "stn": 105, "addr": "AI0160", "src": "Alarm List _20160912 sheet LT, PD-024"},
+{"tag": "LT-MU0708-B", "lv": "HIGH", "p": 3, "sp": 13.8, "d": "DEMINERALIZED WATER TANK B LEVEL TRANSMITTER", "stn": 105, "addr": "AI0240", "src": "Alarm List _20160912 sheet LT, PD-024"},
+{"tag": "LT-MU0708-B", "lv": "LOW", "p": 3, "sp": 2.0, "d": "DEMINERALIZED WATER TANK B LEVEL TRANSMITTER", "stn": 105, "addr": "AI0240", "src": "Alarm List _20160912 sheet LT, PD-024"},
+{"tag": "LT-MU0708-B", "lv": "LOW-LOW", "p": 2, "sp": 0.2, "d": "DEMINERALIZED WATER TANK B LEVEL TRANSMITTER", "stn": 105, "addr": "AI0240", "src": "Alarm List _20160912 sheet LT, PD-024"}
+]

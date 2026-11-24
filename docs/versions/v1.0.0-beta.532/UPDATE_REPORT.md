@@ -1,4 +1,4 @@
-# LMYP OTS 1.0.0-beta.482 (TCS IO : TSUBASA, lane 2, 2026-11-25)
+# LMYP OTS 1.0.0-beta.532 (TCS IO : TSUBASA, lane 2, 2026-11-25)
 
 Sumunod sa beta.430. Ayos sa `src/digital/tce-io.js` lang. Walang pagbabago sa plant model at sa HMI.
 

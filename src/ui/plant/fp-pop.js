@@ -351,6 +351,9 @@
     const rLcp = row('LCP', bLs, bLp),
       rEs = row('E-STOP', bEs, ...(esN != null ? [bEr] : esR == null ? [E('span', 'fpo-nd', 'not on ' + (nm || 'its drawing'))] : [])),
       rRly = row('RELAY', bTr, bRs);
+    /* beta.486 (EIMI): the rows of the FIELD block carry 'fld': the compact shell folds only them (shellc-compact.css). The fold took every
+       later row (VCB, CURRENT and the monitor rows of the PERMISSIVE · TREND · MONITOR faceplate), so a pump's monitor rows never showed */
+    for (const r of [rLcp, rEs, rRly]) r.classList.add('fld');
     if (hasFld) F.bd.append(fSh, rLcp, rEs, rRly);
     /* live test 2026-11-05 (ACWP-A, DITL-76 row 24 LOCAL STOP P.B. = a FALLING pulse into the reset of the run flip-flop): with the Worker
        the release written once could be overwritten by the Worker's copy of the row (still 1), the button stayed "pressed" and the pump
@@ -431,10 +434,12 @@
     if (M.cur) F.bd.append(rCur);
     /* monitoring values of the info faceplate: M.mon = [[label, fn, unit, tag]] (bearing, winding, vibration, ...) */
     const mon = (part === 'info' && M.mon) || [];
-    const monV = mon.map(([l, f, u, tg]) => {
+    /* beta.486: the monitor rows under their own heading, apart from the permissive rows above them */
+    if (mon.length) F.bd.append(E('div', 'fpo-sh', 'MONITOR'));
+    const monV = mon.map(([l, f, u, tg, dp, words]) => {
       const v = E('span', 'fpo-vb');
-      F.bd.append(row(l, v, E('small', 'fpo-dim', (u || '') + (tg ? ' · ' + tg : ''))));
-      return [v, f];
+      F.bd.append(row(l, v, E('small', 'fpo-dim', [u, tg].filter(Boolean).join(' · '))));
+      return [v, f, dp, words];
     });
     if (M.cur) F.bd.append(trH, trend);
     /* the logic permissive */
@@ -522,9 +527,16 @@
       lR.className = 'fpo-lp' + (st === 'RUN' ? ' run' : '');
       lS.className = 'fpo-lp' + (st === 'STOP' ? ' stop' : '');
       lT.className = 'fpo-lp' + (st === 'TRIP' ? ' trip' : '');
-      vcb.className = 'fpo-lp' + (st === 'RUN' ? ' run' : st ? ' stop' : '');
-      setTx(vcb.lastChild, st === 'RUN' ? 'ON' : st ? 'OFF' : '---');
-      vcb.title = 'VCB ON / OFF of the I/O list: shown closed while the motor runs (no logic sheet reads it)';
+      /* beta.486 (EIMI): M.vcb = the VCB ON / OFF point of the I/O list (an HX page gives it: HX.M o.vcb); without it the lamp follows
+         the motor state */
+      const vb = typeof M.vcb === 'function' ? call(M.vcb, null) : undefined,
+        vOn = vb === undefined ? (st === 'RUN' ? true : st ? false : null) : vb == null || !isFinite(+vb) ? null : +vb >= 0.5;
+      vcb.className = 'fpo-lp' + (vOn === true ? ' run' : vOn === false ? ' stop' : '');
+      setTx(vcb.lastChild, vOn === true ? 'ON' : vOn === false ? 'OFF' : '---');
+      vcb.title =
+        vb === undefined
+          ? 'VCB ON / OFF of the I/O list: shown closed while the motor runs (no logic sheet reads it)'
+          : 'VCB ON / OFF of the I/O list' + (M.vcbTag ? ' · ' + M.vcbTag : '');
       bRem.classList.toggle('on', md.rem === true);
       bLoc.classList.toggle('on', md.rem === false);
       bRem.disabled = bLoc.disabled = md.rem == null;
@@ -535,8 +547,12 @@
          the DCS START of the drawing is the one accepted only in MAN (DITL-112 OUT8 = PULSE(START P.B.) AND NOT AUTO), not an interlock */
       const sby = st === 'STOP' && md.rem === true && md.au === true;
       const miss = I && !sby ? I.miss.filter(r => !/REMOTE/.test(r.svc)) : [];
-      bSt.disabled = loc || sby || st === 'RUN' || st === 'TRIP' || miss.length > 0;
-      bSp.disabled = loc || st !== 'RUN';
+      /* beta.506: a drawing with no DCS START / STOP push button (DITL-120, waste water pumps): the button is closed and the line says so,
+         it looked open and a press did nothing */
+      const noSt = call(() => dk.hasPb(M.ad, 1), null) === false,
+        noSp = call(() => dk.hasPb(M.ad, 0), null) === false;
+      bSt.disabled = noSt || loc || sby || st === 'RUN' || st === 'TRIP' || miss.length > 0;
+      bSp.disabled = noSp || loc || st !== 'RUN';
       bSt.classList.toggle('lit-run', st === 'RUN');
       bSp.classList.toggle('lit-stop', st === 'STOP');
       if (hasFld) {
@@ -571,7 +587,9 @@
       const lsNo = lsAt && st === 'STOP' && now0 - lsAt > 4000,
         lpNo = lpAt && st === 'RUN' && now0 - lpAt > 4000;
       why.textContent =
-        lsNo
+        noSt && noSp && st !== 'TRIP'
+          ? (nm || 'Its drawing') + ' has no DCS START or STOP button: this motor is not started or stopped from the DCS.'
+          : lsNo
           ? 'LCP START not taken: ' + (miss.length ? missTxt() : 'the drawing did not start it. See ' + (nm || 'its drawing') + '.')
           : lpNo
           ? 'LCP STOP not taken: the drawing did not stop it. See ' + (nm || 'its drawing') + '.'
@@ -601,11 +619,12 @@
       const yn = !loc && !miss.length;
       if (part === 'info') setTx(ilH, 'PERMISSIVE · ' + (yn ? 'Y (all complete)' : 'N (not complete)') + (nm ? ' · ' + nm : ''));
       if (M.onYN) call(() => M.onYN(yn), null);
-      for (const [v, f] of monV) {
+      for (const [v, f, dp, words] of monV) {
         const x = call(f, null);
-        setTx(v, x == null || !isFinite(+x) ? '-----' : (+x).toFixed(1));
+        /* an on / off point shows its word (words = [at 1, at 0]); a value its decimals (dp, 1 when not given) */
+        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp == null ? 1 : dp));
       }
-      setTx(chip, st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' ? 'READY' : '');
+      setTx(chip, st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' && !noSt ? 'READY' : '');
       chip.className = 'fpo-chip ' + (st === 'TRIP' ? 'trip' : miss.length && st !== 'RUN' ? 'ilk' : '');
       /* current */
       if (M.cur) {
