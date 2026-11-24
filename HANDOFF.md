@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 06:55 PHT** (DCS LINKS BOILER : KIRARA, lane 3, beta.493: unang field file ng boiler, `src/world/field/boiler.js`, 50 I/O point na may halaga mula sa engine state).
+Huling update: **2026-11-25 06:35 PHT** (DCS LINKS BOP : RARA, lane 4, beta.494: 77 BOP field signal sa `src/world/field/bop.js`. Bago nito DCS LINKS BOILER : KIRARA, lane 3, beta.493: unang field file ng boiler, `src/world/field/boiler.js`, 50 I/O point na may halaga mula sa engine state).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -18,7 +18,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.493**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.494**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: ang beta number ay nagtatapos sa digit ng lane (lane 0 YUA = 0, lane 1 MARIA = 1, ... lane 9 SORA = 9). Kapag may conflict sa app.json, kunin ang susunod na number na may sariling digit. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
