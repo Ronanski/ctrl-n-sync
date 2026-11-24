@@ -73,22 +73,15 @@
       }
       if (m.tcs) {
         const U = AN.unit;
-        /* F36 (live Cold start 2026-11-14): the gland steam seal of the TCS (tcs.js 'gland'), in service = RUN */
-        /* beta.34: Start at 150 MW has no ATS program (U.tc null, tcs-trip.js): the gland seal is the gland steam pressure of the model
-           (U.gsP >= 0.1, as unit.js aux steam), the hood spray is in AUTO with the turbine running (PR-OPE-5002 6307 is done before the roll) */
-        const noTc = U && U.on && !U.tc;
-        if (m.tcs === 'gland' && noTc)
-          return (isFinite(U.gsP) ? U.gsP >= 0.1 : !!(U.tb && U.tb.st !== 'off')) ? 'RUN' : 'STOP';
-        if (m.tcs === 'hood' && noTc) return U.tb && U.tb.st !== 'off' ? 'RUN' : 'STOP';
-        if (m.tcs === 'gland') return U && U.on && U.tc ? (U.tc.gland ? 'RUN' : 'STOP') : null;
-        /* live Cold start 2026-11-14 (3.2.3-beta.234): the LP exhaust hood spray FV-CD1904 of the TCS (tcs.js 'hood', PR-OPE-5002 6307), in AUTO = RUN */
-        /* beta.362 D18: RUN = FV-CD1904 open (IBD TC-35 FF 15) */
-        if (m.tcs === 'hood') return U && U.on && U.tc ? (U.tc.hso ? 'RUN' : 'STOP') : null;
-        /* live Cold run 2026-11-18 F-W: the turning gear of the TCS (tcs.js 'tg', ATS 1.19): selected with the shaft turning = RUN; the
-           realistic pages had no way to select it, so gland sealing (needs the shaft turning, PR-OPE-5002 6219) could not start */
-        if (m.tcs === 'tg') return U && U.on && U.tc ? (U.tc.tg && U.tb && U.tb.rpm >= 1 ? 'RUN' : 'STOP') : null;
+        /* 1.0.0-beta.365 D18 (Rosé): a machine or valve of an IBD sheet (hmi-mock TCS_IBD_FP) shows the flag its sheet writes (tcs-trip.js
+           TCS_IBD_DEV post), the same as its faceplate: U.tc, or U.tco at a start with no ATS program (150 MW). It replaces the old reads
+           (U.tc.gland, the gland steam pressure, the turbine state, the shaft rpm) that were not the sheet */
+        const IBD_ST = { tg: 'tg', vex: 'vex', gse: 'gse', gland: 'ssfv', hood: 'hso' };
+        if (IBD_ST[m.tcs]) {
+          const c = U && U.on ? U.tc || U.tco : null;
+          return c ? (c[IBD_ST[m.tcs]] ? 'RUN' : 'STOP') : null;
+        }
         if (!U || !U.on || !U.loMop) return null;
-        if (m.tcs === 'vex') return U.loVex ? 'RUN' : 'STOP';
         if (m.tcs === 'eop') return U.loEopR ? 'RUN' : 'STOP';
         const x = /^(mop|cop)([AB])$/.exec(m.tcs);
         return U['lo' + (x[1] === 'mop' ? 'Mop' : 'Cop')][x[2] === 'A' ? 0 : 1] ? 'RUN' : 'STOP';
@@ -1173,14 +1166,67 @@
                 : null;
             })()
           });
-        /* 1.0.0-beta.362 D18 (JENNIE): the TCS machines with no screen macro any more: each button is the push button of its IBD sheet
-           (tcs-trip.js TCS_IBD_PBN). TC-35 has no CLOSE push button in the netlist (finding D18-2) */
-        const TCS_PB = {
-          gland: { id: 'TC-31', start: 'OPEN', stop: 'CLOSE', auto: 'AUTO', man: 'MANUAL' },
-          hood: { id: 'TC-35', start: 'OPEN', auto: 'AUTO', man: 'MANUAL' },
-          vex: { id: 'TB-12', start: 'START', stop: 'STOP' },
-          tg: { id: 'TB-9', start: 'START', stop: 'STOP', auto: 'AUTO', man: 'MANUAL' }
+        /* 1.0.0-beta.365 D18 (Rosé): the TCS machines of an IBD sheet get the faceplate of that sheet (LS_FPOP.ibd): its own push buttons
+           (tcs-trip.js TCS_IBD_PBN), MODE, and the permissive nets read from its gates. TB-9: START / STOP need MANUAL (net 19), START and
+           JOG need net 6 = (BOTH MSV or BOTH ICV FULL CLOSE) and BEARING OIL PRESS NORMAL and no HAND TURNING INTERLOCK; JOG (9) is the
+           (LOCAL) push button, also MANUAL (net 10). TC-28 START / STOP need MANUAL (net 6), TC-31 OPEN / CLOSE need MANUAL (net 3). TC-35
+           has no CLOSE push button in the netlist (finding D18-2): it closes in AUTO only */
+        const TCS_IBD_FP = {
+          tg: {
+            sh: 'TB-9',
+            st: 'tg',
+            au: 'tgAu',
+            cmds: ['START', 'STOP', 'AUTO', 'MANUAL'],
+            field: ['JOG'],
+            need: {
+              START: [
+                [19, 'MANUAL mode'],
+                [2, 'BOTH MSV or BOTH ICV FULL CLOSE'],
+                [3, 'BEARING OIL PRESS. NORMAL'],
+                [4, 'No HAND TURNING INTERLOCK (ZS-LO1003)'],
+                [24, 'No motor ELECTRICAL TROUBLE', 0]
+              ],
+              STOP: [[19, 'MANUAL mode']],
+              JOG: [
+                [10, 'MANUAL mode'],
+                [6, 'MSV / ICV closed and bearing oil normal']
+              ]
+            }
+          },
+          vex: { sh: 'TB-12', st: 'vex', cmds: ['START', 'STOP'], need: { START: [[10, 'No motor ELECTRICAL TROUBLE (MCC-EMP11)', 0]] } },
+          gse: {
+            sh: 'TC-28',
+            st: 'gse',
+            au: 'gseAu',
+            cmds: ['START', 'STOP', 'AUTO', 'MANUAL'],
+            need: {
+              START: [
+                [6, 'MANUAL mode'],
+                [15, 'No motor ELECTRICAL TROUBLE', 0]
+              ],
+              STOP: [[6, 'MANUAL mode']]
+            }
+          },
+          gland: {
+            sh: 'TC-31',
+            st: 'ssfv',
+            au: 'ssfvAu',
+            valve: 1,
+            cmds: ['OPEN', 'CLOSE', 'AUTO', 'MANUAL'],
+            need: { OPEN: [[3, 'MANUAL mode']], CLOSE: [[3, 'MANUAL mode']] }
+          },
+          hood: {
+            sh: 'TC-35',
+            st: 'hso',
+            au: 'hspAu',
+            valve: 1,
+            cmds: ['OPEN', 'AUTO', 'MANUAL'],
+            why: 'IBD TC-35 has no CLOSE push button: in AUTO the valve opens 3 s after the gland steam exhauster starts with GEN. LOAD < 15 % and closes 1 s after that drops.'
+          }
         };
+        if (m.tcs && TCS_IBD_FP[m.tcs] && window.LS_FPOP && LS_FPOP.ibd)
+          return void LS_FPOP.ibd({ n: m.n, t: m.t, ...TCS_IBD_FP[m.tcs], why: TCS_IBD_FP[m.tcs].why || '' });
+        /* the oil pumps of the TCS (MOP A / B, COP A / B, EOP): tcs.js TCS_OIL */
         if (m.tcs && window.LS_FPOP && LS_FPOP.tcs) {
           const x = /^(mop|cop)([AB])$/.exec(m.tcs);
           return void LS_FPOP.tcs({
@@ -1200,11 +1246,7 @@
             cmd: op =>
               !(AN.unit && AN.unit.on)
                 ? 'no plant model: choose Cold or 150 MW (Plant model ON)'
-                : TCS_PB[m.tcs]
-                  ? TCS_PB[m.tcs][op]
-                    ? AN.turbine('ibd', { id: TCS_PB[m.tcs].id, pb: TCS_PB[m.tcs][op] })
-                    : TCS_PB[m.tcs].id + ' has no ' + op.toUpperCase() + ' push button'
-                  : AN.turbine('oil', { p: m.tcs, op })
+                : AN.turbine('oil', { p: m.tcs, op })
           });
         }
         /* live test 2026-11-05 (INSTRUMENT AND PLANT AIR): a machine started at its local panel (sti: [sheet, RUNNING row, TRIP row]) had

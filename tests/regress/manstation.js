@@ -5,7 +5,7 @@ const html=process.argv.find(a=>/\.html$/.test(a))||'dist/'+fs.readdirSync('dist
 (async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM||'/opt/pw-browsers/chromium'});let fail=0;const ck=(ok,w)=>{console.log((ok?'PASS ':'FAIL ')+w);if(!ok)fail++};
 for(const touch of [false,true]){
  const ctx=await b.newContext({viewport:{width:1280,height:900},isMobile:touch,hasTouch:touch});const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
- await p.goto('file://'+path.resolve(html));await p.waitForTimeout(1500);await p.evaluate(()=>AN.setCat('an'));await p.waitForFunction(()=>AN.sheets&&AN.sheets.length>=54,null,{timeout:60000});
+ await p.goto('file://'+path.resolve(html)+'?worker=0');await p.waitForSelector('#scstart',{state:'visible',timeout:60000});await p.locator('#scstart .sccard',{hasText:/Engineer/}).first().click();await p.waitForSelector('#scstart',{state:'detached',timeout:20000});await p.waitForFunction(()=>{const x=document.getElementById('lsbusy');return !document.getElementById('scboot')&&(!x||x.hidden)&&window.AN&&AN.startState&&!AN._loading},null,{timeout:180000});await p.waitForTimeout(800);await p.evaluate(()=>AN.setCat('an'));await p.waitForFunction(()=>AN.sheets&&AN.sheets.length>=54,null,{timeout:60000});
  await p.evaluate(()=>{AN.go(AN.sheets.findIndex(s=>s.name==='ABC-015'));[...document.querySelectorAll('button')].filter(b=>b.textContent.trim()==='Faceplate').forEach(b=>b.click());AN.run=true});
  await p.waitForSelector('#opp .fpman',{timeout:20000});await p.waitForTimeout(800);const W=touch?'touch: ':'desktop: ';
  const tags=await p.evaluate(()=>[...document.querySelectorAll('#opp .fpman .tg b')].map(x=>x.textContent));
@@ -16,8 +16,8 @@ for(const touch of [false,true]){
  const v0=await v();await btn('▲');await p.waitForTimeout(300);const v1=await v();await btn('▲▲');await p.waitForTimeout(300);const v2=await v();
  ck(Math.abs(v1-v0-1)<0.01,W+'▲ = +1 unit (range -1 ~ 101 %): '+v0.toFixed(3)+' → '+v1.toFixed(3));
  ck(Math.abs(v2-v1-5)<0.02,W+'▲▲ = +5 units: → '+v2.toFixed(3));
- const box=await p.$('#opp .fpman[data-tag=HICFA1005] button.stp');const bb=await box.boundingBox();
- await p.mouse.move(bb.x+bb.width/2,bb.y+bb.height/2);await p.mouse.down();await p.waitForTimeout(1500);await p.mouse.up();await p.waitForTimeout(300);const v3=await v();
+ const clear=await p.waitForFunction(()=>{const x=document.querySelector('#opp .fpman[data-tag=HICFA1005] button.stp'),q=x.getBoundingClientRect(),e=document.elementFromPoint(q.x+q.width/2,q.y+q.height/2);return x.contains(e)},null,{timeout:120000,polling:500}).then(()=>1,()=>0);ck(clear,W+'▲▲ is not covered by another layer before the hold');const box=await p.$('#opp .fpman[data-tag=HICFA1005] button.stp');const bb=await box.boundingBox();
+ const X=bb.x+bb.width/2,Y=bb.y+bb.height/2;if(touch){const c=await ctx.newCDPSession(p);await c.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:X,y:Y}]});await p.waitForTimeout(1500);await c.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]})}else{await p.mouse.move(X,Y);await p.mouse.down();await p.waitForTimeout(1500);await p.mouse.up()}await p.waitForTimeout(300);const v3=await v();
  ck(v3>=100.9||v3-v2>15,W+'holding ▲▲ for 1.5 s ramps (up to the high limit 101): → '+v3.toFixed(2));
  const ro=await p.evaluate(()=>{const i=document.querySelector('#opp .fpman[data-tag=HICFA1005] input');return i.readOnly&&i.getAttribute('inputmode')==='none'});
  ck(ro,W+'value box does not open a keyboard (▲ ▼ only)');

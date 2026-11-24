@@ -25,8 +25,8 @@
       EO: { n: 'EOP', t: 'P-1923', d: 'DC EMERGENCY OIL PUMP · TCS', tcs: 'eop', why: 'Starts by itself on low bearing oil header pressure (PSLO1004). ' + WHY },
       CA: { n: 'COP-A', t: 'P-1931A', d: 'CONTROL OIL PUMP (A) · TCS', tcs: 'copA', why: WHY },
       CB: { n: 'COP-B', t: 'P-1931B', d: 'CONTROL OIL PUMP (B) · TCS', tcs: 'copB', why: WHY },
-      VX: { n: 'VAPOUR EXTRACTOR', t: 'F-1937', d: 'MAIN OIL TANK VAPOUR EXTRACTOR · TCS', tcs: 'vex', why: WHY },
-      TG: { n: 'TURNING GEAR', t: 'ZS-LO1906', d: 'TURBINE TURNING GEAR · TCS', tcs: 'tg', why: 'The turning gear turns the shaft at about 3 rpm when no steam turns it (PR-OPE-5002 7955); it needs bearing oil (ATS 1.15) and is TCS step 1.19 TURBINE TURNING. START = select the turning gear, STOP = deselect. ' + WHY },
+      VX: { n: 'VAPOUR EXTRACTOR', t: 'F-1937', d: 'MAIN OIL TANK VAPOUR EXTRACTOR · TCS', tcs: 'vex', why: 'IBD TB-12 (TCA655): START / STOP push buttons of the TCS.' },
+      TG: { n: 'TURNING GEAR', t: 'ZS-LO1906', d: 'TURBINE TURNING GEAR · TCS', tcs: 'tg', why: 'IBD TB-9 (TCE350 ~ 352): turns the shaft at about 3 rpm when no steam turns it (PR-OPE-5002 7955). START / STOP in MANUAL, AUTO by the sheet, JOG at the local push button.' },
       PU: { n: 'OIL PURIFIER', t: 'P-1941', d: 'local panel', fld: 'pur', fieldOp: true, io: 'P-1941', why: 'Field equipment: the oil purifier is started at its local panel, no DCS command.' }
     },
     unit: {

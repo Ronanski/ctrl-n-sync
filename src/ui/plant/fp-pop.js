@@ -1308,6 +1308,139 @@
     me._iv = setInterval(tick, 500);
     return true;
   }
+  /* 1.0.0-beta.365 D18 (Rosé, user "Go ayos"): a machine or valve of an IBD sheet of the TCS soft logic 331DM09784 (tcs-trip.js
+     TCS_IBD_PBN). Each button is a push button of the sheet (AN.turbine('ibd', { id, pb }), a 1.5 s pulse on its net), nothing else.
+     STATUS / MODE are the flags the sheet writes (TCS_IBD_DEV post: U.tc, or U.tco with no ATS program), the PERMISSIVE rows are live
+     nets of the sheet (AN.tcsIbd). These sheets have no REMOTE / LOCAL selector; a "(LOCAL) PB" of the sheet (TB-9 JOG) is the field
+     operator's button at the machine. P = { n, t, sh, valve, why, st: flag, au: flag | null, cmds: [pb], field: [pb],
+     need: { pb: [[net, label, want]] } } */
+  function ibd(P) {
+    if (!P) return false;
+    const F = frame(P.n, (P.t && P.t !== P.sh ? P.t + ' · ' : '') + P.sh);
+    const me = box;
+    F.hd.querySelector('.fpo-tt').append(E('span', 'fpo-chip', 'TCS'));
+    const on = P.valve ? 'OPEN' : 'RUN',
+      off = P.valve ? 'CLOSED' : 'STOP';
+    const lOn = lampEl(on),
+      lOff = lampEl(off);
+    F.bd.append(row('STATUS', lOn, lOff));
+    const mk = t => {
+      const b = E('button', 'fpo-cmd', t);
+      b.type = 'button';
+      b.title = 'IBD ' + P.sh + ' push button ' + t;
+      return b;
+    };
+    const has = pb => (P.cmds || []).includes(pb);
+    const bA = has('AUTO') ? mk('AUTO') : null,
+      bM = has('MANUAL') ? mk('MANUAL') : null;
+    if (bA || bM) F.bd.append(row('MODE', ...[bA, bM].filter(Boolean)));
+    const C = (P.cmds || []).filter(pb => pb !== 'AUTO' && pb !== 'MANUAL').map(pb => [pb, mk(pb)]);
+    F.bd.append(row('TCS', ...C.map(x => x[1])));
+    const FL = (P.field || []).map(pb => [pb, mk(pb)]);
+    if (FL.length) F.bd.append(row('LOCAL', ...FL.map(x => x[1])));
+    const msg = E('div', 'fpo-why', P.why || '');
+    msg.hidden = !P.why;
+    F.bd.append(msg);
+    const ex = E('div', 'fpo-ex'),
+      exT = E('span'),
+      exGo = E('button', 'fpo-go', 'EXECUTE'),
+      exNo = E('button', '', 'CANCEL');
+    exGo.type = exNo.type = 'button';
+    ex.append(exT, exGo, exNo);
+    ex.hidden = true;
+    F.bd.insertBefore(ex, msg);
+    const first = C[0] && C[0][0];
+    const ilH = E('div', 'fpo-sh', 'PERMISSIVE · IBD ' + P.sh + ' ' + (first || '')),
+      ilL = E('ul', 'fpo-il');
+    const shown = (P.need && P.need[first]) || [];
+    if (shown.length) F.bd.append(ilH, ilL);
+    let pend = null;
+    const ask = (pb, loc) => (
+      (pend = [pb, loc]),
+      (exT.textContent = (loc ? 'FIELD: ' : 'TCS: ') + pb + ' ' + P.n + '?'),
+      (ex.hidden = false),
+      exGo.focus()
+    );
+    exNo.onclick = () => ((pend = null), (ex.hidden = true));
+    exGo.onclick = () => {
+      const p = pend;
+      pend = null;
+      ex.hidden = true;
+      if (!p) return;
+      const r = call(() => (AN.unit && AN.unit.on ? AN.turbine('ibd', { id: P.sh, pb: p[0] }) : 'no plant model: choose Cold or 150 MW (Plant model ON)'), 'no plant model') || '';
+      setTx(msg, r ? '⚠ ' + r : P.n + ' ' + p[0] + ': EXECUTED');
+      msg.hidden = false;
+      if (!r)
+        call(() =>
+          window.lsEventAdd('TCS ' + P.sh, 'DCS', (p[1] ? 'Field operator: ' : 'Operator (TCS): ') + P.n + ' ' + (P.t || '') + ' ' + p[0] + ' (IBD ' + P.sh + ' push button)')
+        );
+      setTimeout(tick, 150);
+    };
+    [...C, ...FL, ...(bA ? [['AUTO', bA]] : []), ...(bM ? [['MANUAL', bM]] : [])].forEach(([pb, b]) => {
+      b.onclick = () => !b.disabled && ask(pb, FL.some(x => x[1] === b));
+    });
+    const ln = E('div', 'fpo-ln');
+    const link = (t, f) => {
+      const a = E('button', 'fpo-a', t);
+      a.type = 'button';
+      a.onclick = f;
+      ln.append(a);
+    };
+    const dk = D();
+    if (dk) link('Logic IBD ' + P.sh, () => (close(), logicGo(dk, 'TCS-' + P.sh)));
+    link('Events', () => call(() => document.getElementById('evbtn').click()));
+    F.bd.append(ln);
+    const dev = () => call(() => (AN.unit && AN.unit.on ? AN.unit.tc || AN.unit.tco : null), null);
+    const nets = () => call(() => (AN.tcsIbd(P.sh) || {}).v || null, null);
+    const okOf = (v, n) => n.every(([k, , w]) => !!v && (v[k] > 0.5 ? 1 : 0) === (w == null ? 1 : w));
+    let k0 = '';
+    function tick() {
+      if (!me.isConnected) return closeEl(me);
+      const c = dev(),
+        v = nets(),
+        run = isRun(),
+        st = c ? !!c[P.st] : null,
+        au = c && P.au ? !!c[P.au] : null;
+      F.lamp.className = 'fpo-lamp ' + (st === true ? 'run' : st === false ? 'stop' : '');
+      setTx(F.val, st == null ? '-----' : P.valve ? (st ? 'OPEN' : 'CLOSED') : st ? 'RUNNING' : 'STOPPED');
+      lOn.className = 'fpo-lp' + (st === true ? ' run' : '');
+      lOff.className = 'fpo-lp' + (st === false ? ' stop' : '');
+      const live = st != null && run;
+      for (const [pb, b] of [...C, ...FL]) {
+        const isOn = /^(START|OPEN|JOG)$/.test(pb);
+        b.disabled = !live || (pb !== 'JOG' && (isOn ? st : !st)) || !okOf(v, (P.need && P.need[pb]) || []);
+        b.classList.toggle('lit-run', isOn && pb !== 'JOG' && st === true);
+        b.classList.toggle('lit-stop', !isOn && st === false);
+      }
+      if (bA) {
+        bA.disabled = !live || au === true;
+        bA.classList.toggle('lit-run', au === true);
+      }
+      if (bM) {
+        bM.disabled = !live || au === false;
+        bM.classList.toggle('lit-stop', au === false);
+      }
+      const k = shown.map(([n]) => (v ? v[n] : '-')).join();
+      if (k !== k0) {
+        k0 = k;
+        ilL.replaceChildren(
+          ...shown.map(([n, l, w]) => {
+            /* Y = the condition of the row holds (a "No ... TROUBLE" row: its net is 0), N = it does not */
+            const x = v ? (v[n] > 0.5 ? 1 : 0) : null,
+              y = x == null ? null : x === (w == null ? 1 : w),
+              li = E('li', y == null ? '' : y ? 'ok' : 'bad');
+            li.append(E('i', '', y == null ? '-' : y ? 'Y' : 'N'), E('span', '', l), E('em', '', 'net ' + n));
+            return li;
+          })
+        );
+      }
+    }
+    paint = tick;
+    tick();
+    place(me);
+    me._iv = setInterval(tick, 500);
+    return true;
+  }
   /* 3.2.1-beta.12: a MOV / XV of a DITL sheet (mockup pages): POSITION, OPEN / CLOSED, REMOTE / AUTO, and its CRT push buttons
      (the input rows of the sheet: OPEN, CLOSE, STOP, ISOLATE, REINSTATE ...); each press asks EXECUTE / CANCEL, then presses the row */
   function mov(P) {
@@ -1707,7 +1840,7 @@
     me._iv = setInterval(tick, 500);
     return true;
   }
-  window.LS_FPOP = { motor, valve, valveTag, valveKind, valveOpen, tcs, mov, fieldPct, pb, field, fset, yn, hit, openAd, place, close, info, get open() {
+  window.LS_FPOP = { motor, valve, valveTag, valveKind, valveOpen, tcs, ibd, mov, fieldPct, pb, field, fset, yn, hit, openAd, place, close, info, get open() {
     return anyOpen();
   } };
 })();
