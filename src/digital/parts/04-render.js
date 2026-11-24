@@ -48,7 +48,7 @@ let TXMAP = null;
 function render() {
   const svg = $('svg'),
     s = cur();
-  TXMAP = s && s._inst && s._inst.k && typeof WORLD !== 'undefined' && WORLD.showText ? x => WORLD.showText(s, x) : null;
+  TXMAP = s && s._inst && (s._inst.k || s._inst.tadd) && typeof WORLD !== 'undefined' && WORLD.showText ? x => WORLD.showText(s, x) : null;
   svg.innerHTML = '';
   $('meta').hidden = !s;
   if (s && (!s.nl || s.nl.v !== 10)) {

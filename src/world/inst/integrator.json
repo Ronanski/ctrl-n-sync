@@ -1,0 +1,10 @@
+{
+  "sheet": "DITL-21D",
+  "rows": [22],
+  "src": "DITL-21D row 22: O.021D/297 O.0615/617 (LOS-L1060A/B/C/D, DCS I/O list STN103), S4 O.137C/137D/137E/137F (OPC-ANN-G1~G4, DCS I/O list STN104), M.3319/331A/331B/331C",
+  "units": [
+    { "lbl": "B", "addrMap": { "O.021D": "O.0297", "O.137C": "O.137D", "M.3319": "M.331A" }, "textMap": [["SCREW COOLER A", "SCREW COOLER B"]] },
+    { "lbl": "C", "addrMap": { "O.021D": "O.0615", "O.137C": "O.137E", "M.3319": "M.331B" }, "textMap": [["SCREW COOLER A", "SCREW COOLER C"]] },
+    { "lbl": "D", "addrMap": { "O.021D": "O.0617", "O.137C": "O.137F", "M.3319": "M.331C" }, "textMap": [["SCREW COOLER A", "SCREW COOLER D"]] }
+  ]
+}

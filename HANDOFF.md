@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 07:25 PHT** (ALARMS AND CURVES : AKIHO, lane 5, beta.525: alarm line ng alarm list mula lang sa point na may nakarehistrong source (field row o plant model), kasama ang 68 switch row).
+Huling update: **2026-11-25 07:40 PHT** (ALARMS AND CURVES : AKIHO, lane 5, beta.535: alarm line ng alarm list mula lang sa point na may nakarehistrong source (field row o plant model), kasama ang 68 switch row).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -18,7 +18,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.525**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.535**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: ang beta number ay nagtatapos sa digit ng lane (lane 0 YUA = 0, lane 1 MARIA = 1, ... lane 9 SORA = 9). Kapag may conflict sa app.json, kunin ang susunod na number na may sariling digit. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
@@ -59,7 +59,7 @@ Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engi
 - Plant docs: `document-references/INDEX.md` (ang mga dokumento ay nasa PC ng user at sa private repo na `Ronanski/icms-plant-documents`, hindi kailanman sa repo na ito).
 - Frame ng app: `src/station/`; build ng page: `tools/station/build.js`; pangalan, version at site: `delivery/app/app.json`.
 - Simulator: HX pages `src/ui/plant/hx/`; plant model `src/analog/engine/` (`unit.js`, `boiler.js`, `tcs.js`, `tcs-trip.js`); mundo ABC + DITL `src/world/world.js`; DITL `src/digital/`; 150 MW na simula `src/data/st150.txt` (gawa ng `tools/steady150/make.cjs`; gawin ulit kapag may bagong value ang model).
-- QA trace (bilang ng kabit, lane 8): `node tools/trace/trace.cjs [--start 150|cold] [--mins 10] [--tag <tag>]`; TCE / TCA kumpleto: `node tests/lanes/qa/tce-complete.cjs` (beta.498: hindi kumpleto ang explanation sheet, ang nawalang kabit sa compile at ang manual-text macro; 196).
+- QA trace (bilang ng kabit, lane 8; beta.528: row-unit copy = ang mga row lang nito): `node tools/trace/trace.cjs [--start 150|cold] [--mins 10] [--tag <tag>]`; TCE / TCA kumpleto: `node tests/lanes/qa/tce-complete.cjs` (beta.498: hindi kumpleto ang explanation sheet, ang nawalang kabit sa compile at ang manual-text macro; 196).
 - Build at test: `npm run build`, `npm run check` (dapat SAME), `node tests/gate/behaviour.cjs <page> --mins 20`, `tests/regress/`.
 - Workflows: `checks.yml` (bawat PR), `sim-tests.yml` (sa `main`), `site.yml` (kusa pagkatapos ng Checks), `release.yml` (GO ng user lang).
 - Lumang rules, handoff, spec at live test findings: `docs/archive/rules-2026-11-22/`.
