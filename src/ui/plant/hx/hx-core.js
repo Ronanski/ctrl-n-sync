@@ -55,8 +55,13 @@
     if (document.body) document.body.classList.toggle('st-fit', ok);
     return ok;
   };
-  HX.V = (label, key, unit, dp) => ({ label, key, unit: unit || '', dp: dp == null ? 1 : dp });
+  /* o.words = [word at 1, word at 0] for an on / off point (a VCB, a heater): the row shows the word, not 1.0 / 0.0 */
+  HX.V = (label, key, unit, dp, o) => Object.assign({ label, key, unit: unit || '', dp: dp == null ? 1 : dp }, o || {});
   HX.E = (sym, name, tag, vals, o) => Object.assign({ k: 'eq', sym, name, tag: tag || '', vals: vals || [] }, o || {});
+  /* beta.486 (EIMI): o.mon = [HX.V(...)] monitor rows of the machine (bearing, winding, vibration, heater ...): shown on its
+     PERMISSIVE · TREND · MONITOR faceplate (README section 4 rule 6, user 2026-10-31: two faceplates, the monitor rows on the second),
+     not on the drawing. o.vcb = the value key of its VCB ON / OFF point of the I/O list (1 = ON): the VCB lamp of the CONTROL
+     faceplate reads it instead of following the motor state */
   HX.M = (sym, mach, name, vals, o) => Object.assign({ k: 'mach', sym, mach, name, vals: vals || [] }, o || {});
   HX.C = (loop, name, o) => Object.assign({ k: 'loop', sym: 'valve', kind: 'control', loop, name, vals: [] }, o || {});
   HX.X = (valve, name, o) =>

@@ -77,3 +77,8 @@ jobs:
         run: |
           V=$(node tools/version.js)
           node tests/regress/values_layout.js "dist/logic-sim-v$V.html"
+      - name: HX SHARED CORE - machine monitor rows and VCB point on the faceplates, dotted an keys, TCS CRT buttons and lamps
+        timeout-minutes: 10
+        run: |
+          V=$(node tools/version.js)
+          node tests/regress/hx_fp_mon.js "dist/logic-sim-v$V.html"
