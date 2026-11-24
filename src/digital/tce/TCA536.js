@@ -377,6 +377,15 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA536',
+    /* pr: printed on page 106 beside each block; the drawing above keeps them as text */
+    pr: {
+      sg037: ['K:105.3'],
+      sg038: ['K:76.5'],
+      sg041: ['K:57.0'],
+      sg042: ['K:345'],
+      sg043: ['K:323'],
+      sg046: ['K:304']
+    },
     title: 'CRITERIA CONDITION',
     page: 106,
     ctl: 'COMM+MD',

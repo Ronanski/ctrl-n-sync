@@ -8,6 +8,12 @@
    GOV LIMITING = A044 (the demand below the governor demand, LLM CONTROL held 10 s (TP A043), not CHANGE OVER). */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE206',
+  /* pr: printed on page 140 beside each block, FG *1 table; the drawing above keeps them as text */
+  pr: {
+    sgA011: ['K:3600.0rpm'],
+    fgC003: ['X1:-648.0', 'Y1:-261.9', 'X2:-432.0', 'Y2:-174.6', 'X3:-216.0', 'Y3:-87.3', 'X4:-7.2', 'Y4:0', 'X5:0.0', 'Y5:0', 'X6:7.2', 'Y6:0', 'X7:216.0', 'Y7:87.3', 'X8:432.0', 'Y8:174.6'],
+    sg029: ['K:3600.0rpm']
+  },
   title: 'FLOW CONTROL(1)',
   page: 140,
   ctl: 'EHG+MD',

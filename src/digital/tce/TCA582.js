@@ -3,6 +3,11 @@
    (rub check, then the 1800 / 2700 / 3600 rpm heat soaks); the TW blocks hold each ATS command 3 s and are cleared by INITIAL. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCA582',
+  /* pr: printed on page 140 beside each block; the drawing above keeps them as text */
+  pr: {
+    twA008: ['TW:3.0s'],
+    twA009: ['TW:3.0s']
+  },
   title: 'RUB CHECK/ACC.CONTROL',
   page: 140,
   ctl: 'COMM+MD',

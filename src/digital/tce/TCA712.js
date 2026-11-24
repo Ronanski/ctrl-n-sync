@@ -82,6 +82,10 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA712',
+    /* pr: printed on page 172 beside each block; the drawing above keeps them as text */
+    pr: {
+      tp040: ['TP:10.0']
+    },
     title: 'NO.3 EXTRUCTION STEAM PRIMARY NON RETURN VALVE(TC-42)',
     page: 172,
     ctl: 'COMM+MD',

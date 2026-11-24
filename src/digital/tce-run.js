@@ -291,7 +291,8 @@
       for (let i = 1; i <= 8; i++) if (k.has('X' + i) && k.has('Y' + i)) c++;
       if (c < 2) out.push('FG curve not on the sheet');
     }
-    if (!swWired && /\bsw\s*=/.test(String(f))) out.push(t + ' SW not wired (HIACS default not in the macro list)');
+    /* ML 62 PA (parameter modify) has no SW in its symbol: its side input is the condition of the parameter, drawn or not */
+    if (!swWired && t !== 'PA' && /\bsw\s*=/.test(String(f))) out.push(t + ' SW not wired (HIACS default not in the macro list)');
     return out;
   }
   const ALIAS = { 'G:OR': 'OR', 'G:A': 'A', PA1: 'PA', PA2: 'PA', PA3: 'PA', PA4: 'PA', 'o:BTR': 'BTR', 'o:FTR': 'FTR' };
@@ -592,6 +593,8 @@
     return m ? +m[1] : null;
   };
   function compile(sheets) {
+    /* an explanation sheet (TCE022 LOGIC EXPLANATION, TCE023 PI/O TABLE EXPLANATION) draws examples of the symbols, not logic */
+    sheets = sheets.filter(s => !s.legend);
     const nets = sheets.map(s => (s.dwg ? gnet(s) : net(s)));
     /* SH-G-*: a circle "to SH-G-*" goes to every sheet that reads that number "from SH-G-*" */
     for (const n of nets)
@@ -626,7 +629,7 @@
       for (const M of n.macros) P.set(M.key, ['M', M]);
       for (const c of n.inputs) P.set(c.key, ['c', c]);
       for (const k of S.k || []) P.set(k[0], ['k', k]);
-      for (const r of S.r || []) P.set(r[0], ['r', r]);
+      for (const r of S.r || []) if (!P.has(r[0])) P.set(r[0], ['r', r]); /* a box that is also a block / macro (G "DI" time relay, TRIPLE DETECTOR) is the block */
       for (const d of S.d || []) if (d[3] === 'in') P.set(d[0], ['d', d]);
       for (const x of S.s || []) if (!P.has(x[0])) P.set(x[0], ['s', x]); /* a G sheet's s source with a circle is its input connector */
     }
@@ -662,7 +665,8 @@
             r = d && d.length ? res(d[0][0], d[0][1], depth + 1) : port('REF:' + text);
           } else if (v !== null) r = slot('CONST:' + v, v);
           else r = port('SYS:' + text);
-        } else if ((t === 'r' || t === 's') && nb[sid].ports && nb[sid].ports[x[0]]) r = port(nb[sid].ports[x[0]]);
+        } else if (t === 'r' && x[6] === 'fn') r = slot(mk); /* a function box: its node (no meaning yet) holds the value */
+        else if ((t === 'r' || t === 's') && nb[sid].ports && nb[sid].ports[x[0]]) r = port(nb[sid].ports[x[0]]);
         else if (t === 'r' || t === 's') {
           /* a PI/O box (r) or a source drawn by its lines (s): named by the table and order printed in it, "(TCA900-1)" = table TCA900
              row 1 (unique in the set); a source that prints ON(1) / OFF(0) is that constant */
@@ -690,7 +694,9 @@
       for (const m of n.marks)
         nodes.push({ t: 'm', out: slot(n.id + ':' + m.key), ins: m.in ? [res(n.id, m.in)] : [], inv: m.type === 'X' || m.type === 'NC' });
       for (const b of n.blocks) {
-        const f = kind(b.type),
+        /* pr: the parameters printed on the page beside the block (or in its FG table) that the typed drawing keeps as text only */
+        const notes = S.pr && S.pr[b.key] ? (b.notes || []).concat(S.pr[b.key]) : b.notes,
+          f = kind(b.type),
           L = b.ins.filter(i => i.side === 'l'),
           side = b.ins.find(i => i.side !== 'l');
         if (!f) unknown[b.type] = (unknown[b.type] || 0) + 1;
@@ -698,16 +704,24 @@
           t: 'b',
           f,
           type: b.type,
-          notes: b.notes,
+          notes,
           out: slot(n.id + ':' + b.key),
           ins: L.map(i => res(n.id, i.net)),
           inv: L.map(i => !!i.inv),
           sw: side ? res(n.id, side.net) : -1,
           /* a G sheet (310SD03-743) is a relay diagram, not a HIACS macro: its time relays have no SW input */
-          open: need(b.type, b.notes, !!side || !!S.dwg),
+          open: need(b.type, notes, !!side || !!S.dwg),
           st: {}
         });
       }
+      /* a function box drawn as a plain box ('fn': TRIPLE DETECTOR2, 2OO3): a block with no meaning yet, so its sheet does not run */
+      for (const x of S.r || [])
+        if (x[6] === 'fn') {
+          const [x0, y0] = [x[1], x[2]],
+            name = (S.t || []).filter(w => w[0] >= x0 && w[0] <= x0 + x[3] && w[1] >= y0 && w[1] <= y0 + 30).map(w => String(w[2]).trim())[0] || x[0];
+          unknown['BOX ' + name] = (unknown['BOX ' + name] || 0) + 1;
+          nodes.push({ t: 'b', f: null, type: 'BOX ' + name, notes: [], out: slot(n.id + ':' + x[0]), ins: [], inv: [], sw: -1, open: [], st: {} });
+        }
       for (const M of n.macros) {
         const name = M.type.slice(2),
           f = MACRO[name] || null;

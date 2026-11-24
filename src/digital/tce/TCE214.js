@@ -8,6 +8,13 @@
    sheet. */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE214',
+  /* pr: printed on page 145 beside each block; the drawing above keeps them as text */
+  pr: {
+    sgA006: ['K:-5.0%'],
+    sgC007: ['K:10.0%/S'],
+    sgC016: ['K:10.0%/S'],
+    sgC018: ['K:10.0%/S']
+  },
   title: 'ICV(A),(B) CONTROL',
   page: 145,
   ctl: 'EHG+MD',

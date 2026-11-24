@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 185; /* 2026-11-25: a sheet runs only with every parameter of every block on the sheet (QA : SAORI) */
+const FLOOR = 195; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
