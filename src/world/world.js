@@ -110,7 +110,8 @@
      "O.0088/408 O.0728/1048" = burner A / B / C / D (I/O list STN104: SVR-DO1043-A5 / B5 / C5 / D5), "M.1150/1160 M.1170" = SWP A / B / C
      (memory list STN103). Before, only the first group was read: machine C / D took the address of machine A */
   /* a short end of 2 ~ 4 digits: "I.0085/88/8B" = I.0085 / I.0088 / I.008B (DITL-45 dryer A / B / C) */
-  const LRXG = /\b([IMOB])\.([0-9A-F]{4})((?:\s*\/\s*(?:[IMOB]\.)?[0-9A-F]{2,4}(?![0-9A-F]))*)/gi;
+  /* beta.500 (RARA): "O.0044/0.037E/" (DITL-112 MOP-P0709A, the digit 0 drawn for the letter O after "/"): 0, a point and four hex digits */
+  const LRXG = /\b([IMOB])\.([0-9A-F]{4})((?:\s*\/\s*(?:[IMOB]\.|0\.(?=[0-9A-F]{4}))?[0-9A-F]{2,4}(?![0-9A-F]))*)/gi;
   const addrList = t => complete(addrList0(t));
   /* a list written short on one row (DITL-13 row 28 "M.0143/243 BURNER A SHUTDOWN COMMAND") and in full on another (DITL-10 row 20
      "M.0143/243 M.1643/1743" for the same signal): the full one, from the drawings themselves (the longest list that starts the same) */
@@ -134,7 +135,7 @@
       const p = m[1].toUpperCase() + '.',
         b = m[2].toUpperCase();
       if (!o.includes(p + b)) o.push(p + b);
-      for (const q of (m[3] || '').split('/').map(x => x.replace(/[IMOB]\./i, '').trim().toUpperCase()).filter(Boolean)) {
+      for (const q of (m[3] || '').split('/').map(x => x.replace(/[IMOB0]\./i, '').trim().toUpperCase()).filter(Boolean)) {
         const a = p + (q.length >= 4 ? q : b.slice(0, 4 - q.length) + q);
         if (!o.includes(a)) o.push(a);
       }
@@ -282,8 +283,19 @@
   W.showText = (s, t) => {
     const I = s && s._inst;
     /* live test #56: machine A (k 0) of a drawing for several machines keeps its own address of the list too */
-    if (!I || !t || (!I.k && !(I.n > 1))) return t;
+    if (!I || !t) return t;
+    /* beta.500: a text of the drawing that a bind row of a lane gives an I/O point in this copy ("MCV OPEN COMMAND" of DITL-38) */
+    if (I.tadd && I.tadd.has(String(t).trim())) t = t + ' ' + I.tadd.get(String(t).trim());
+    if (!I.k && !(I.n > 1)) return t;
     let x = W.remap(s, t);
+    if (I.data) {
+      /* beta.500: a list of the machines ("O.021D/297 O.0615/617") is the one address of this unit */
+      const l0 = addrList0(t);
+      if (l0.length > 1 && I.amap[l0[0]] && l0.includes(I.amap[l0[0]])) {
+        let first = true;
+        return x.replace(LRXG, () => (first ? ((first = false), I.amap[l0[0]]) : '')).replace(/\s{2,}/g, ' ');
+      }
+    }
     if (I.sb || I.data) return x.replace(/\b[IMO]\.[0-9A-F]{4}\b/g, a => I.amap[a] || a);
     const la = addrList(t),
       ix = isLop4(I.base) ? lopIdx(I.k, la.length) : I.k;
@@ -296,10 +308,49 @@
          (DITL-112 LS-MU0708-A is demi tank A on every pump copy). Not the BFWP / lube oil drawings (their letters cross, isLop4) */
       if (I.k && !isLop4(I.base) && LET[I.k]) x = x.replace(TAGA, (m, p) => (ioAddr(p + LET[I.k]) === la[ix] ? p + LET[I.k] : m));
     }
-    return x;
+    const M = tagsK(s);
+    return M ? x.replace(TAGM, m => M.get(m) || m) : x;
   };
   /* a tag that ends with the letter of machine A ("SS-BH1060-A", "MIL-L1060A"); ioAddr = its address in the I/O list */
   const TAGA = /\b([A-Z]{1,5}\d?-[A-Z]{0,3}\d{3,4}-?)A\b/g;
+  /* beta.500 (RARA; QA copy clash): the tag of machine A on a row or a symbol with no address list, in the copy of machine B / C / D. The
+     drawing is for all the machines, so its tag is the tag of the copy's own machine: PS-LO1115-A3 on DITL-23B #B is PS-LO1115-B3,
+     TT-SW1501-A3 on DITL-29B #C is TT-SW1501-C3, PSH-DO1043-A1 on DITL-07 #D is PSH-DO1043-D1. Only when the I/O list has the tag for
+     EVERY machine of the drawing, and the drawing itself names none of the others (DITL-112 LS-MU0708-A and -B are the two demi tanks,
+     the same for every pump). Not the BFWP lube oil drawing (isLop4), the sootblowers and the data copies (their own maps) */
+  const TAGM = /\b[A-Z]{1,5}\d{0,2}-[A-Z]{0,3}\d{3,4}-?A[0-9UVW]{0,2}\b(?!-)/g;
+  let ioT = null; /* tag -> address: the I/O list (window.WIRING), and the DCS descriptions (AI / PI tags) when they are in */
+  W.ioPut = A => {
+    ioT = null;
+    W._ades = A || null;
+  };
+  const ioTag = t => {
+    if (!ioT) {
+      if (!(window.WIRING && window.WIRING.length)) return null;
+      ioT = new Map();
+      for (const st of Object.keys(W._ades || {}))
+        for (const [a, o] of Object.entries(W._ades[st])) if (o && o.k === 'io' && o.tag) ioT.set(String(o.tag).trim(), a);
+      for (const r of window.WIRING) ioT.set(r[3], r[2]);
+    }
+    return ioT.get(t) || null;
+  };
+  function tagsK(s) {
+    const I = s && s._inst;
+    if (!I || !I.k || !LET[I.k] || I.lbl || I.sb || I.data || I.blk || isLop4(I.base)) return null;
+    if (I.tk !== undefined && I.tkT === ioT && ioT) return I.tk;
+    const b = I.base,
+      M = new Map(),
+      all = new Set();
+    for (const m of txtOf(b).matchAll(/\b[A-Z]{1,5}\d{0,2}-[A-Z]{0,3}\d{3,4}-?[A-D][0-9UVW]{0,2}\b/g)) all.add(m[0]);
+    for (const m of txtOf(b).matchAll(TAGM)) {
+      const q = /^(.*\d-?)A([0-9UVW]{0,2})$/.exec(m[0]),
+        L = LET.slice(0, I.n).map(x => q[1] + x + q[2]);
+      if (L.length < 2 || L.slice(1).some(x => all.has(x)) || !L.every(x => ioTag(x))) continue;
+      M.set(m[0], L[I.k]);
+    }
+    I.tkT = ioT;
+    return (I.tk = M.size ? M : null);
+  }
   let ioA = null;
   const ioAddr = t => {
     if (!ioA) {
@@ -322,6 +373,14 @@
           const o = rowList(b, +r);
           if (o.length === 1) return o[0];
         }
+      /* beta.500: the row of a tag of machine A (no list): the I/O list address of the copy's own tag, when the row has no address or the
+         address of the tag drawn */
+      const M = tagsK(s);
+      if (M)
+        for (const m of (cellTxt(b, i, 'T') + ' ' + cellTxt(b, i, 'S')).matchAll(TAGM)) {
+          const a = M.has(m[0]) && ioTag(M.get(m[0]));
+          if (a && (!la.length || la[0] === ioTag(m[0]))) return a;
+        }
     }
     if (I && isLop4(b)) return la[lopIdx(I.k, la.length)] || la[0] || null;
     return la[I ? I.k : 0] || la[0] || null;
@@ -331,16 +390,28 @@
      I/O row (station, address, tag) for the tag links, as the I/O list (window.WIRING); a row with "to" (the sheet code as drawn,
      "DITL-21A", "BA01", without the "(35)" prefix of the sheet list) and "row" (the drawn row number) adds "from" to the FROM text of
      that input row: a reference the same linker reads ("28A-77", "BA01-11", "SHEET 214 - LINE21", an address). src = the drawing or
-     list row it comes from. */
+     list row it comes from.
+     beta.500: "to" may name one copy, "DITL-38 #MV-FW1002" (the base sheet is its first machine: "DITL-38 #MV-BD1001", "DITL-21A #A"): the
+     row is for that copy only. A row with "to" a copy and "text" (a text of the drawing, as drawn) gives that text the I/O point addr /
+     tag in this copy: the outputs of a valve drawn with no address (MOR / MOS of the DITL-38 copies), its field tags ZSO / ZSC / MIL. */
   const bare = n => String(n || '').replace(/^\([^)]*\)/, '');
   let laneDone = false;
   W.xFrom = new Map();
+  W.xText = new Map();
   function laneBind() {
     if (laneDone) return;
     laneDone = true;
     for (const r of window.LANE_BIND || []) {
       if (!r.to) {
         if (r.addr && r.tag && window.WIRING) window.WIRING.push(['LANE:' + (r.lane || ''), r.stn, r.addr, r.tag]);
+        continue;
+      }
+      if (r.text) {
+        const k = bare(r.to),
+          m = W.xText.get(k) || W.xText.set(k, new Map()).get(k),
+          x = String(r.text).trim();
+        m.set(x, ((m.get(x) || '') + ' ' + [r.tag, r.addr].filter(Boolean).join(' ')).trim());
+        if (r.addr && r.tag && window.WIRING && !window.WIRING.some(q => q[1] === String(r.stn) && q[3] === r.tag)) window.WIRING.push(['LANE:' + (r.lane || ''), String(r.stn), r.addr, r.tag]);
         continue;
       }
       const nm = bare(r.to) + '|' + +r.row;
@@ -423,6 +494,9 @@
           x._inst.amap = u.addrMap || {};
           x._inst.tmap = u.textMap || [];
           x._inst.src = u.src || e.src || '';
+          /* beta.500: a unit of some output rows only (DITL-21D row 22 "A STOPPED", drawn once with the addresses of the four) */
+          const R = u.rows || e.rows;
+          if (R && !x._inst.only) onlyRows(x, R);
           x._xn = null;
           W.inst.push(x);
           L.push(x);
@@ -465,6 +539,12 @@
         L.push(x);
       }
     }
+    /* beta.500: the I/O points of a copy on texts of its drawing (bind rows with text) */
+    if (W.xText.size)
+      for (const s of S.sheets.concat(W.inst)) {
+        const b = (s._inst && s._inst.base) || s;
+        s._inst.tadd = W.xText.get(bare(b.name) + ' #' + (s._inst.lbl || LET[s._inst.k])) || null;
+      }
     /* 3.2.1 d2: the row of a sootblower sheet that names one sootblower (output RS text without its addresses), for the copies of DITL-80G */
     const sbN = t => String(t || '').replace(/\b[IMOB]\.[0-9A-F]{4}\b/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
     let sbIdx = null;
@@ -503,6 +583,7 @@
       byBlk = [],
       noMach = [];
     const addIn = (s, row, src) => {
+      if (s._inst && s._inst.only && !s._inst.only.has(row)) return;
       if (!din.has(s)) din.set(s, new Map());
       const m = din.get(s);
       if (!m.has(row)) m.set(row, []);
@@ -547,6 +628,15 @@
       const nd = machinesOf(d),
         rowT = cellTxt(sb, i, 'S') + ' ' + cellTxt(sb, i, 'T'),
         n = machinesOf(sb);
+      /* beta.500: a unit from data (src/world/inst): its row as its textMap gives it names the machine (DITL-21D #C row 22
+         "BOTTOM ASH SCREW COOLER C STOPPED" 21A-70 = DITL-21A #C) */
+      const sk = W.instOf.get(sb)[k];
+      if (sk && sk._inst && sk._inst.data) {
+        const Ld = machOfDitl(W.showText(sk, cellTxt(sb, i, 'S'))),
+          j = Ld ? LET.indexOf(Ld) : -1;
+        if (j >= 0 && nd > 1 && inst(d, j)) return inst(d, j);
+        if (j > 0 && nd === 1 && sister(d, Ld)) return sister(d, Ld);
+      }
       if (nd > 1) {
         /* 1. the address of this machine on the row = the address of one machine on the output */
         const la = rowList(sb, i);
@@ -591,7 +681,7 @@
       W.instOf.get(sb).forEach((s, k) =>
         sb.rows.forEach((r, i) => {
           const c = sb.cells[i + ':F'],
-            xf = W.xFrom.size ? W.xFrom.get(bare(sb.name) + '|' + +r.n) : '';
+            xf = W.xFrom.size ? [W.xFrom.get(bare(sb.name) + '|' + +r.n), s._inst && W.xFrom.get(bare(sb.name) + ' #' + (s._inst.lbl || LET[s._inst.k]) + '|' + +r.n)].filter(Boolean).join(' ') : '';
           if (!c && !xf) return;
           /* 3.2.1 (SEULGI): a limestone FROM "LINE 3" with no sheet = the output LINE 3 of the same sheet (DITL-LS212 row 15 M.182D
              VALVE STATE CHANGE PERMIT <- out LINE 3 M.182D; DITL-LS60 row 4 M.1837 <- out LINE 13 M.1837: the same address) */
@@ -1781,6 +1871,26 @@
       W.live = lv;
     }
   };
+  /* the copy keeps the output rows R (drawn numbers) of the drawing and the gates and inputs behind them */
+  function onlyRows(x, R) {
+    const nl = x.nl,
+      ix = new Set(R.map(n => x.rows.findIndex(r => +r.n === +n)));
+    nl.outs = nl.outs.filter(o => ix.has(o.row));
+    const need = new Set(nl.outs.map(o => o.n));
+    let g = [];
+    for (let n = -1; n !== need.size; ) {
+      n = need.size;
+      g = nl.gates.filter(q => (q.out || []).some(o => need.has(o)));
+      for (const q of g) for (const j of [...(q.ins || []), ...(q.s || []), ...(q.r || [])].concat(q.spNet !== undefined ? [q.spNet] : [])) need.add(j);
+    }
+    nl.gates = g;
+    nl.src = nl.src.filter(q => need.has(q.n));
+    for (const k of ['mir', 'ind', 'usr', 'term', 'pout']) if (nl[k]) nl[k] = nl[k].filter(q => need.has(q.n));
+    nl.mv = [];
+    nl.mot = [];
+    nl.grp = [];
+    x._inst.only = new Set([...ix, ...nl.src.map(q => q.row)]);
+  }
   W.build = () => build();
   W.set = on => {
     W.on = !!on;
@@ -1788,7 +1898,8 @@
       /* the memory list descriptions (machine A / B of a shared drawing) come with the ABC data: build again when they are in */
       try {
         if (AN.ades)
-          AN.ades().then(() => {
+          AN.ades().then(A => {
+            W.ioPut(A);
             if (W.on) build();
           });
       } catch (e) {}

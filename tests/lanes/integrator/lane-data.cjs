@@ -7,10 +7,11 @@ const bad = [];
 const A = /^[IMO]\.[0-9A-F]{4}$/;
 for (const r of w.LANE_BIND) {
   if (!r.src) bad.push('bind ' + r.lane + ': no src ' + JSON.stringify(r));
-  if (r.to ? !(+r.row > 0 && (r.from || r.addr)) : !(r.stn && A.test(r.addr || '') && r.tag)) bad.push('bind ' + r.lane + ': row format ' + JSON.stringify(r));
+  if (r.to && r.text ? !(/ #S/.test(r.to) && (r.tag || r.addr) && (!r.addr || A.test(r.addr) || /^AId{4}$/.test(r.addr))) : r.to ? !(+r.row > 0 && (r.from || r.addr)) : !(r.stn && A.test(r.addr || '') && r.tag)) bad.push('bind ' + r.lane + ': row format ' + JSON.stringify(r));
 }
 for (const e of w.LANE_INST) {
   if (!e.sheet || !Array.isArray(e.units) || !e.units.length) bad.push('inst ' + e.set + ': sheet / units');
+  if (e.rows && !(Array.isArray(e.rows) && e.rows.length && e.rows.every(n => +n > 0))) bad.push('inst ' + e.set + ': rows');
   for (const u of e.units || []) {
     if (!u.lbl) bad.push('inst ' + e.set + ': unit without lbl');
     if (!(u.src || e.src)) bad.push('inst ' + e.set + ' ' + u.lbl + ': no src');

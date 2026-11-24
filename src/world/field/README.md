@@ -28,6 +28,8 @@ The row shape is `{ stn, ai | di: 1, tag, v(U, X), rel, src, sheet? }`. (`get` i
 - **DI row** (`di: 1`): the DITL input row whose text starts with `tag` is 1 while `v` is true (above 0.5). It works like a switch row
   of the plant model (src/world/plantsw.js). `sheet` is optional; it is the sheet code when the tag is on more than one sheet. A tag the
   plant model already switches keeps that one source, and the row is listed in `FIELD.dup`.
+- **Field contact on the wire of an output row** (the MCC / LCP side of a drawing, DITL-19 MIA-CL1061-A2): the same DI row with that tag
+  drives it. No bind row is needed. On a copy the tag is the copy's own (MIA-CL1061-B2 on DITL-19 #B). `WORLD.plantUsw()` lists them.
 - **The HMI** reads a row with `AN.fieldRead(key)` (a plant loaded and not yet run is read on the spot; `AN.unit.fld` is the map of the last
   scan and is there only after RUN), by `"stn|AI0128"` and by the tag without signs (`PTIA1064A`). This works in Worker mode
   too. A page value with no logic transmitter (src/ui/plant/plant.js, `{ t: 'val', tag }`) takes the field row of the same I/O address
