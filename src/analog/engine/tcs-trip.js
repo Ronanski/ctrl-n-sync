@@ -86,7 +86,7 @@ const TCS_IBD_PV = [
   [/SE-STn001-[123]\b/, U => (U.tb ? U.tb.rpm : 0) + (U.tc && U.tc.ost && U.tc.ost.bk ? TCS_OST.bias : 0)],
   [/SE-STn001/, U => (U.tb ? U.tb.rpm : 0)],
   [/PT-CRn901|HP TURBINE EXHAUST .*STEAM PRESS[.] [(][ABC]/, U => tcsCrp(U)],
-  [/GENERATOR LOAD/, U => ((+U.MW || 0) / 150) * 100],
+  [/GENERATOR LOAD/, U => ((+U.MW || 0) / 150) * 100] /* LOGIC-SRC: the GEN. LOAD % input of the IBD sheets, rated 150 MW (generator data sheet) */,
   /* the valves (IBD TA-6, TA-31 ~ 38) */
   /* LMYP OTS valve tests (tcs.js tcsVtMsv / tcsVtCv): side A and side B apart */
   [/^MSV\(A\) FULL CLOSE/, (U, c) => (tcsVp(U, c) * tcsVtMsv(U, 'A') <= 0 ? 1 : 0)],

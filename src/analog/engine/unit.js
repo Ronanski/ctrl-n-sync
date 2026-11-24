@@ -2843,8 +2843,18 @@ function anHphStep(U, dt) {
   U.hpT1 = Math.round(10 * lag('hpT1x', t1)) / 10;
   U.hpT2 = Math.round(10 * lag('hpT2x', t2)) / 10;
   const f = ffw / K.F0,
-    e1 = ffw > 1 ? (K.m1 * f * Math.max(0, U.hpT1 - Tin)) / K.dT1 : 0,
-    e2 = ffw > 1 ? (K.m2 * f * Math.max(0, U.hpT2 - U.hpT1)) / K.dT2 : 0;
+    e1h = ffw > 1 ? (K.m1 * f * Math.max(0, U.hpT1 - Tin)) / K.dT1 : 0,
+    e2h = ffw > 1 ? (K.m2 * f * Math.max(0, U.hpT2 - U.hpT1)) / K.dT2 : 0,
+    /* 1.0.0-beta.364 (JENNIE, Lisa air_valves: No.2 HPH level 83 mm after the unit trip). The condensate in the shell is the extraction
+       steam that condenses, so it is the smaller of the heat the feedwater takes (the lagged outlet, hpT1 / hpT2) and the steam the
+       turbine sends at the shell pressure of this step (t1 / t2: Ps1 / Ps2 = extraction x load x MOV). On a trip the extraction pressure
+       goes (anHb at 0 t/h, the NRVs / MOVs shut, DITL-94 / 95): the feedwater still cools the shell metal and water down (the lag), but
+       no new steam comes, so no new condensate. Before, e2 kept 38 T/H into the shell for minutes while the drain (sqrt of main steam)
+       was already 0, and the level rose 5 -> 136 mm with no steam. At a steady load the two are equal (lag = target) */
+    e1s = ffw > 1 ? (K.m1 * f * Math.max(0, t1 - Tin)) / K.dT1 : 0,
+    e2s = ffw > 1 ? (K.m2 * f * Math.max(0, t2 - t1)) / K.dT2 : 0,
+    e1 = Math.min(e1h, e1s),
+    e2 = Math.min(e2h, e2s);
   U.hpF2 = Math.round(10 * e2) / 10; /* FT-HD1106: No.2 HPH drain = its extraction */
   U.hpF1 = Math.round(10 * (e1 + e2)) / 10; /* FT-HD1105: No.1 HPH drain = its extraction + the No.2 drain (cascade) */
   U.hpD2 = Math.round(10 * (e2 > 0.5 ? U.hpT1 + K.dca2 : U.hpT2)) / 10; /* TT-HD1106 */

@@ -9,12 +9,12 @@ Inaprubahan ng user: **GO LIST, 2026-11-24 06:06 PHT** (GO FINISH LINE 2026-11-2
 4. Bawat merge na nagbabago ng estado ng isang item ay nag-a-update ng seksyon "Bilang" dito at ng tracker.
 5. Logic ang masusunod sa setpoint, limit at FX (ABC sheets, parameter workbook); design (FHI / HB) ang masusunod sa physics. Kapag logic input ang dahilan ng agwat sa FHI, ang target ay kinukuwenta sa design physics gamit ang logic input, at nakasulat ang sheet at ang FHI value (user 2026-11-24 ~15:14 PHT, "Ok").
 
-## Bilang (2026-11-24 15:18 PHT, beta.360; sukat ng beta.356, Batas 5)
+## Bilang (2026-11-24 18:15 PHT, beta.364; bagong paraan, RULES.md 3.12)
 
-- Part 1 (process): 24 na item × bawat load. Sukat ng beta.356 (tools/accept/part1.cjs, results/part1-beta356.md; 45 MW sa HB sliding pressure 98.9): 56 PASS / 30 FAIL na cell (dati 50 / 36; +6 dahil sa Batas 5: RH outlet 45, bed 45, limestone 90 at 150, total air 45, O2 45). Pasado sa lahat ng tatlong load: 7 (main steam flow, SH outlet temperature, RH outlet temperature, final feedwater, RH spray, turbine heat rate, coal flow). Natitira: 17. (Pagtatama sa bilang ng beta.354: 4 dapat iyon, hindi 3; pasado na rin noon ang main steam flow sa tatlong load.)
-- Part 2 (kumpleto): 21 na item. Pasado (TAMA): 1. Natitira: 20 (KULANG: 17; hindi nasuri sa cloud: 3). Detalye: docs/audit/part2-check-2026-11-24.md.
+- Part 1 (process): 24 na item. **0 pasado, 24 susukatin ulit sa buong kurba.** Ang dating 7 pasado ay sukat sa 3 load lang (45 / 90 / 150 MW) at nakatayo sa mga constant na ikinabit sa trend ng planta (bed solids kKL, bed temperature ratios, fouling): hindi na binibilang. Susunod na sukat: sweep 40 ~ 100 % laban sa bawat punto ng FHI Fig 2 / 6 / 8 / 9 / 12 / 13 at ng HB cases.
+- Part 2 (kumpleto): 21 na item. Pasado (TAMA): 2 (ABC at DITL sheets; Bilis 135 ~ 144 FPS, sukat ni Rosé). Natitira: 19. May usad: HMI (452 faceplates sumasagot sa totoong click, kulang pa ang approval mo bawat page); sea water (SWP trip naayos at may test, 102 tag walang kabit pa).
 - Part 3 (live run): 1 item. Natitira: 1 (ang user ang nagpapasya kung kailan).
-- **Kabuuan: 8 pasado, 38 natitira.**
+- **Kabuuan: 2 pasado, 44 natitira.**
 
 ## Part 1 · Process bawat load
 
@@ -81,9 +81,9 @@ TAMA = nasa app at may patunay; MAY = nasa app, hindi pa nasusuri ang galaw; KUL
 | Alarms at priority | Alarm list 20160912, 717 | KULANG 116 tag wala pa; 0 nakatayong alarm sa 150 MW | Lahat ng 717 nasa app, may priority; 0 nakatayong alarm sa steady 150 MW |
 | Values na walang design source | docs/audit/no-source-list.md, snapshot-values-list.md | KULANG 217 NO-SOURCE, 24 mula sa snapshot | 0 at 0 |
 | **Operator** | | | |
-| HMI pages at faceplates | 22 plant pages + turbine / generator | HINDI NASURI SA CLOUD (kailangan ng totoong click) | Bawat page aprubado mo; bawat item sumasagot sa click |
+| HMI pages at faceplates | 22 plant pages + turbine / generator | MAY: 452 faceplates sumasagot sa totoong click (Rosé); kulang ang approval mo bawat page | Bawat page aprubado mo; bawat item sumasagot sa click |
 | Starting points | Cold, Warm, Hot, 150 MW (Q3) | KULANG Warm / Hot wala sa start screen | Apat na simula sa start screen, gawa ng physics |
-| Bilis | Q6: 60 FPS pataas | HINDI NASURI SA CLOUD | ≥ 60 FPS sa PC at tablet sa bawat page |
+| Bilis | Q6: 60 FPS pataas | TAMA 135 ~ 144 FPS (Rosé, 2026-11-24) | ≥ 60 FPS sa PC at tablet sa bawat page |
 
 ## Part 3 · Huling patunay: isang live run
 

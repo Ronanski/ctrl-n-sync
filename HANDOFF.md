@@ -1,8 +1,10 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-24 17:30 PHT** (LEADER : JENNIE, beta.362: D18 turbine aux shortcuts tinanggal, pindot na sa IBD TB-9 / TB-12 / TC-28 / TC-31 / TC-35; D21 condenser seawater 30 C design at HEI suction, cdP 0.067 sa 150 MW).
+Huling update: **2026-11-24 18:15 PHT** (LEADER : JENNIE, beta.364: RULES 3.12 walang per-load na ayos + Checks guard tools/check/no-fit.cjs; HP heater condensate pagka-trip; stale tests; aux.ibd para kay Rosé; Bilang bago: 2 pasado, 44 natitira).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
+
+**UNANG BASAHIN (user 2026-11-24, permanente): walang per-load na ayos.** Walang per-load na table, interpolation o constant na ikinabit sa trend o snapshot ng planta sa physics. Physics mula sa first principles at design geometry; set point mula lang sa logic curve ng planta. Sinusukat sa buong FHI / HB curve. RULES.md 3.12, bantay sa Checks: `tools/check/no-fit.cjs`.
 
 ## 1. Basahin sa ganitong ayos
 
@@ -14,7 +16,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.362**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.364**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: Jennie = even na beta, Rosé = odd na beta. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
