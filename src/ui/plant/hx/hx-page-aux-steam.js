@@ -15,7 +15,7 @@
    The steam seal feed valve and the exhaust hood spray belong to the turbine control system: on the page they are the two
    machines "GLAND STEAM SEAL" and "LP EXHAUST HOOD SPRAY" of temporary page 08, with their faceplates.
    Drawn simpler than the sheet: the four air ejectors are one; the ejector condenser, the gland steam condenser and its
-   exhauster are on the Condensate page; the lines to the ESP hopper heating and to Unit 2 are not drawn; the turbine warming
+   exhauster: the condenser is on the Condensate page, the exhauster (IBD TC-28) here on the gland steam line; the lines to the ESP hopper heating and to Unit 2 are not drawn; the turbine warming
    steam valve MV-AS1011 and its drain are on the Reheat steam page.
    Left out on purpose, all without a signal in hx-registry.js: hand valves, traps, the ejector supplier's valves and gauges,
    the packing lines of the turbine and of the turbine valves. */
@@ -127,6 +127,10 @@
           { id: 'gs', lab: 'b' }
         ),
         at(L('turbine', 'Gland steam to the turbine'), 1620, GSY, { id: 'tul' }),
+        /* beta.365 D18: the gland steam exhauster of IBD TC-28 (TCA680): it draws the gland leak-off steam and air through the gland
+           steam condenser H-1903 (Condensate page) and blows the air out; its faceplate is the one of its sheet */
+        at(L('condensate', 'Gland steam condenser H-1903', { back: true }), 1150, 90, { id: 'gcl' }),
+        at(M('fan', 'GLAND STEAM EXHAUSTER', 'Gland steam exhauster', [], { tag: 'TC-28' }), 1450, 90, { id: 'gse', lab: 't' }),
 
         /* ---- condenser: vacuum breaker and exhaust hood spray ---- */
         at(X('MV-AV1391', 'Condenser vacuum breaker', { wrap: 14 }), 1560, 620, { id: 'vb', lab: 'b' }),
@@ -179,6 +183,8 @@
         { med: 'steam', w: W_SM, pts: [[1000, HY], [1000, GSY], 'ds2.l'], flow: HDR },
         { med: 'steam', w: W_SM, pts: ['ds2.r', 'gs.l'], flow: HDR },
         { med: 'steam', w: W_SM, pts: ['gs.r', 'tul.l'], flow: 'm:GLAND STEAM SEAL' },
+        { med: 'air', w: W_SM, pts: ['gcl.r', 'gse.in'], flow: 'm:GLAND STEAM EXHAUSTER', arrow: false },
+        { med: 'air', w: W_SM, pts: ['gse.out', [1640, 90]], to: 'outdoor', flow: 'm:GLAND STEAM EXHAUSTER' },
         { med: 'condensate', w: W_WT, pts: ['cd2.r', 'xb2.l'], flow: 'l:TICAS1017', arrow: false },
         { med: 'condensate', w: W_WT, pts: ['xb2.r', 'sp2.l'], flow: 'l:TICAS1017' },
         { med: 'condensate', w: W_WT, pts: ['sp2.r', [1093, 110], 'ds2.t'], flow: 'l:TICAS1017', arrow: false },
