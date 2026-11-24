@@ -264,6 +264,8 @@
     if (!I || !I.k) return t;
     /* 3.2.1 d2: a sootblower of DITL-80G: its tag for N-1011 */
     if (I.sb) return String(t || '').replace(SB1RX, m => (m[1] === '-' ? I.lbl : I.lbl.replace('-', '')));
+    /* PR 0: a unit instance from data (src/world/inst/*.json): its own text pairs [from, to] of the drawing ("FEEDER A" -> "FEEDER B") */
+    if (I.data) return (I.tmap || []).reduce((x, p) => x.split(p[0]).join(p[1]), String(t || ''));
     if (isLop4(I.base)) {
       const sw = L => ({ A: 'B', B: 'A' })[L.toUpperCase()] || L;
       return String(t || '').replace(/\b(BFWP|LOP)(\s*-?\(?)([A-D])(?![A-Z0-9])/gi, (m, w, sp, L) => w + sp + (/BFWP/i.test(w) ? (I.k >= 2 ? sw(L) : L) : I.k & 1 ? sw(L) : L));
@@ -282,7 +284,7 @@
     /* live test #56: machine A (k 0) of a drawing for several machines keeps its own address of the list too */
     if (!I || !t || (!I.k && !(I.n > 1))) return t;
     let x = W.remap(s, t);
-    if (I.sb) return x.replace(/\b[IMO]\.[0-9A-F]{4}\b/g, a => I.amap[a] || a);
+    if (I.sb || I.data) return x.replace(/\b[IMO]\.[0-9A-F]{4}\b/g, a => I.amap[a] || a);
     const la = addrList(t),
       ix = isLop4(I.base) ? lopIdx(I.k, la.length) : I.k;
     if (la.length > 1 && la[ix]) {
@@ -310,7 +312,7 @@
     const I = s && s._inst,
       b = I ? I.base : s,
       la = rowList(b, i);
-    if (I && I.sb) return la[0] ? I.amap[la[0]] || la[0] : null;
+    if (I && (I.sb || I.data)) return la[0] ? I.amap[la[0]] || la[0] : null;
     if (I && I.k && la.length < 2) {
       /* 3.2.0-beta.34: one address and a text that turns into ANOTHER row of the same drawing (DITL-24 PAF LOP A: row 25 "LOP A STOPPED"
          I.005C and row 26 "LOP B STOPPED" I.037C; for LOP B the two swap): the address of that row */
@@ -325,8 +327,29 @@
     return la[I ? I.k : 0] || la[0] || null;
   };
   /* index of every link, built once when the world is turned on */
+  /* PR 0 (lane plan 2026-11-25): src/world/bind/<lane>.json rows { stn, addr, tag, to, row, from, src }. A row with no "to" is one more
+     I/O row (station, address, tag) for the tag links, as the I/O list (window.WIRING); a row with "to" (the sheet code as drawn,
+     "DITL-21A", "BA01", without the "(35)" prefix of the sheet list) and "row" (the drawn row number) adds "from" to the FROM text of
+     that input row: a reference the same linker reads ("28A-77", "BA01-11", "SHEET 214 - LINE21", an address). src = the drawing or
+     list row it comes from. */
+  const bare = n => String(n || '').replace(/^\([^)]*\)/, '');
+  let laneDone = false;
+  W.xFrom = new Map();
+  function laneBind() {
+    if (laneDone) return;
+    laneDone = true;
+    for (const r of window.LANE_BIND || []) {
+      if (!r.to) {
+        if (r.addr && r.tag && window.WIRING) window.WIRING.push(['LANE:' + (r.lane || ''), r.stn, r.addr, r.tag]);
+        continue;
+      }
+      const nm = bare(r.to) + '|' + +r.row;
+      W.xFrom.set(nm, ((W.xFrom.get(nm) || '') + ' ' + (r.from || r.addr || '')).trim());
+    }
+  }
   function build() {
     const t0 = performance.now();
+    laneBind();
     W._byCode = {};
     for (const s of S.sheets) {
       const c = codeOf(s.name);
@@ -379,6 +402,31 @@
           x._xn = null;
           W.inst.push(x);
           L.push(x);
+        }
+      }
+    }
+    /* PR 0 (lane plan 2026-11-25): unit instances from data, the sootblower copy made generic. src/world/inst/<set>.json:
+       { sheet: "DITL-xx" (the code as drawn, without the "(35)" prefix of the sheet list), src, units: [ { lbl: "B", addrMap: { "M.1234": "M.1240", "I.0012": "I.0020" },
+       textMap: [["FEEDER A", "FEEDER B"]], src } ] }. Every address of the base sheet that the map names reads the instance's own address;
+       a text pair turns the row text of the drawing into the unit's text, so the FROM links find the unit's own sheets. */
+    W.laneInst = [];
+    for (const e of window.LANE_INST || []) {
+      const want = String(e.sheet || '');
+      for (const g of S.sheets.filter(x => x.name === want || bare(x.name) === bare(want))) {
+        const L = W.instOf.get(g);
+        if (!L) continue;
+        for (const u of e.units || []) {
+          const nm = g.name + ' #' + u.lbl;
+          if (L.some(x => x.name === nm)) continue;
+          const x = old.get(nm) || makeInst(g, L.length, u.lbl);
+          x._inst.data = 1;
+          x._inst.amap = u.addrMap || {};
+          x._inst.tmap = u.textMap || [];
+          x._inst.src = u.src || e.src || '';
+          x._xn = null;
+          W.inst.push(x);
+          L.push(x);
+          W.laneInst.push(nm);
         }
       }
     }
@@ -542,11 +590,12 @@
     for (const sb of S.sheets)
       W.instOf.get(sb).forEach((s, k) =>
         sb.rows.forEach((r, i) => {
-          const c = sb.cells[i + ':F'];
-          if (!c) return;
+          const c = sb.cells[i + ':F'],
+            xf = W.xFrom.size ? W.xFrom.get(bare(sb.name) + '|' + +r.n) : '';
+          if (!c && !xf) return;
           /* 3.2.1 (SEULGI): a limestone FROM "LINE 3" with no sheet = the output LINE 3 of the same sheet (DITL-LS212 row 15 M.182D
              VALVE STATE CHANGE PERMIT <- out LINE 3 M.182D; DITL-LS60 row 4 M.1837 <- out LINE 13 M.1837: the same address) */
-          let ft = c.map(x => x.t).join(' ');
+          let ft = (c || []).map(x => x.t).join(' ') + (xf ? ' ' + xf : '');
           const lsm = /\)DITL-LS(\d{2,3})$/.exec(sb.name),
             lln = /^\s*LINE\s*(\d{1,2})\s*$/i.exec(ft);
           if (lsm && lln) ft = 'SHEET ' + lsm[1] + ' - LINE ' + lln[1];
