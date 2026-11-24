@@ -2563,7 +2563,9 @@
       !AN._loading &&
       AN.startState &&
       (document.body.classList.contains('scov') || !state) &&
-      (state !== '150 MW' || (window.DITL150 && DITL150.on));
+      (state !== '150 MW' || (window.DITL150 && DITL150.on)) &&
+      /* Warm / Hot: the Cold load, then its save point (app.js rst sets lsRestartKind when the save is in) */
+      (!/^(Warm|Hot)$/.test(state) || window.lsRestartKind === state.toLowerCase());
     let asked = 0;
     const t = setInterval(() => {
       if (!loaded()) return;
@@ -2592,10 +2594,13 @@
       setTimeout(() => dispatchEvent(new Event('resize')), 200);
     }, 300);
   }
-  /* the two starting points of the spec (docs/archive/rules-2026-11-22/SPEC.md S5, S6): full load and cold start; Warm and Hot are not in the spec */
+  /* the starting points (RULES.md 7, user 2026-11-21 Q3: Cold, Warm, Hot and 150 MW; before only the two of the old SPEC S5 / S6). Warm and Hot
+     are the save points of a trip at 150 MW that the physics cooled (app.js rst, beta.367) */
   const STATES = [
     ['150 MW', 'Normal operation at full load'],
-    ['Cold', 'Start-up from zero: drum 0 kg/cm², bed and water 30 °C']
+    ['Cold', 'Start-up from zero: drum 0 kg/cm², bed and water 30 °C'],
+    ['Warm', 'About 13 h after a trip at 150 MW, bottled up: HP turbine metal 404 °C'],
+    ['Hot', 'Shortly after a turbine trip at 150 MW, bottled up: HP turbine metal 487 °C']
   ];
   const wait = E('div');
   wait.id = 'stationwait';
