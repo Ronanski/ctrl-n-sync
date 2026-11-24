@@ -54,9 +54,11 @@ const html =
     return o;
   };
   const a = await read();
-  const m = await page.evaluate(() => ({ cdP: AN.unit.cdP, MW: AN.unit.MW, Ts: anTsatA(AN.unit.cdP), f1: AN.unit.tt['ZT-AS1020-1'], f2: AN.unit.tt['ZT-AS1020-2'] }));
+  const m = await page.evaluate(() => ({ cdP: AN.unit.cdP, MW: AN.unit.MW, f1: AN.unit.tt['ZT-AS1020-1'], f2: AN.unit.tt['ZT-AS1020-2'] }));
   console.log(JSON.stringify(a));
   const num = s => (s == null ? NaN : parseFloat(s));
+  /* saturation (C) of a pressure in kg/cm2 A, the water Antoine law the engine uses for the hood (unit.js anTsatA, not on window) */
+  m.Ts = 1730.63 / (8.07131 - Math.log10((m.cdP * 980.665) / 1.33322)) - 233.426;
   const near = (k, v, d) => Math.abs(num(a[k]) - v) <= d;
   ck(K.every(k => a[k] && !/-----/.test(a[k])), 'page 08: every value shows a number: ' + K.map(k => k + ' ' + a[k]).join(', '));
   ck(['PTST11101', 'PTST11102', 'PTST11103'].every(k => Math.abs(num(a[k]) - m.cdP) < 0.002) && near('PTST11101', 0.056, 0.012), `exhaust hood pressure ${a.PTST11101} = condenser ${m.cdP.toFixed(3)} kg/cm2A (29.PNG 0.056 / 0.053 / 0.053)`);
