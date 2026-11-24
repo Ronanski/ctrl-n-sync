@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 216;
+const FLOOR = 185; /* 2026-11-25: a sheet runs only with every parameter of every block on the sheet (QA : SAORI) */
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -73,7 +73,16 @@ console.log(
 console.log(`ports (the I/O binding): ${S.ports} = ` + Object.entries(S.portKinds).map(([k, n]) => k + ' ' + n).join(', '));
 const um = Object.entries(A.unknown).sort((a, b) => b[1] - a[1]);
 console.log('without a meaning yet: ' + um.map(([k, n]) => k + ' x' + n).join(', '));
+/* the open-item rule: a missing parameter, a parameter the macro list does not define, or an unwired SW keeps the block open */
+if (!R.need('SG', [], true).length) fail('SG with no K must be open');
+if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1'], true).length) fail('PIV with G1 G2 TI must not be open');
+if (!R.need('PIV', ['G1:1', 'G2:1', 'TI:1', 'HL:100'], true).length) fail('PIV with HL printed must be open');
+if (!R.need('TP', ['TP:1'], false).length) fail('TP with no SW wire must be open');
+if (!R.need('FG', ['X1:0', 'Y1:0'], true).length) fail('FG with one point must be open');
+const nOpen = Object.values(S.open).reduce((a, v) => a + v.length, 0);
+console.log('open items (sheet, reason): ' + nOpen + ' in ' + Object.keys(S.open).length + ' reasons');
 if (process.argv.includes('--list')) {
+  for (const [w, ids] of Object.entries(S.open)) console.log('  open: ' + w + ': ' + ids.join(' '));
   console.log('not running: ' + S.notRun.join(' '));
   for (const p of A.ports) console.log('  port ' + p);
 }
