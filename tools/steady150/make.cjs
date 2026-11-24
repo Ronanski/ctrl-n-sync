@@ -20,7 +20,7 @@ const AUTO = { AICFG112: 3.5, DPICFG108: 1630, SICL1060A: undefined, SICL1060B: 
 /* 3.2.4-beta.8: the drum level too (the feedwater valve law of beta.6 swings the three-element loop ~10 min; a start taken mid-swing dipped to -34 mm) */
 /* the design bed anchor AN_BB.tbA of the engine source (the engine constants are not globals of the page) */
 const TBA = +(/\btbA:\s*([\d.]+)/.exec(fs.readFileSync('src/analog/engine/unit.js', 'utf8')) || [])[1];
-const LIM = { MW: 0.3, Tb: 1, Pd: 0.3, msT: 1, rh: 1, F: 0.5, lvl: 1 };
+const LIM = { lm: 0.3, MW: 0.3, Tb: 1, Pd: 0.3, msT: 1, rh: 1, F: 0.5, lvl: 1 };
 async function chunk(sv, min, log) {
   const { browser, page } = await open(html);
   try {
@@ -32,7 +32,19 @@ async function chunk(sv, min, log) {
       document.getElementById('load150').click();
       await AN._startP;
       if (sv) { const o = JSON.parse(sv); await DITL150.savePut({ kf: o.kf, kd: o.kd, ver: 'st150' }); }
-      else for (const [t, v] of Object.entries(AUTO)) TOP.auto(t, v);
+      else {
+        for (const [t, v] of Object.entries(AUTO)) TOP.auto(t, v);
+        /* 1.0.0-beta.354 (JENNIE, D11 of user 2026-11-24 "GO DESIGN"): the limestone in service at 150 MW. The snapshot line-up (19.PNG)
+           had the feeding STOPPED; the design runs the sorbent at full load (FHI P2S7 Tab 4 Fig 13: 12 T/H at 100 % MCR, Ca/S 2.71) with
+           the SOx control in AUTO at its set point 200 ppm (ABC-005 AICFG10571, 19.PNG SV). The operator start of the Limestone page, in
+           the order that latches (hx-page-limestone-sand.js): isolating valves XV-LM1811A ~ H OPEN (DITL-LS212 switch row 10), feeder
+           L-1311 START (DITL-LS110 row 8), system FILL CYCLE START (DITL-LS10 row 3); the presses of the faceplates (WORLD.dset / dpress, taken only while the one world runs: done in the first scans below) */
+        TOP.auto('AICFG10571', 200);
+        window.__lm = 1;
+        /* the lime of the bed at the design Ca/S (AN_SOX.z0 2.71, FHI Fig 13): the old start state had the feeding stopped for hours, so
+           its bed lime was spent (stack SOx at the 500 ppm top of AT-FG1057-1). NaN = anSoxStep starts it at z0 */
+        AN.unit.soxZ = NaN;
+      }
       /* 1.0.0-beta.350 (user 2026-11-24 "GO DESIGN"): the first chunk starts the bed at the design anchor of the model (AN_BB.tbA, 860 C,
          FHI SU:10198 hold 850 - 870 C), not at the bed of the start state made by an older model: a 60 - 80 C step of the bed swings the
          boiler master to the feeder limit and the drum level out (a start transient, not the plant at 150 MW) */
@@ -42,10 +54,20 @@ async function chunk(sv, min, log) {
     for (let m = 0; m < min; m++) {
       const e = await page.evaluate(() => {
         const h = window.__h, U = AN.unit;
-        for (let k = 0; k < 120; k++) { WORLD.live = true; AN.stepSet(h.C, 0.5); WORLD.tick(0.5); }
+        for (let k = 0; k < 120; k++) {
+          WORLD.live = true;
+          if (window.__lm) {
+            /* 10 s between the presses: the valves stroke (3 s), the feeder seals in on its running feedback */
+            if (k === 2) WORLD.dset('DITL-LS212', 9, true);
+            if (k === 22) WORLD.dpress('DITL-LS110', 7);
+            if (k === 42) { WORLD.dpress('DITL-LS10', 2); window.__lm = 0; }
+          }
+          AN.stepSet(h.C, 0.5);
+          WORLD.tick(0.5);
+        }
         const pv = (sh, t) => { const x = AN.sheets.find(y => y.name === sh); const b = x.S.procs.find(z => (z.txt || [])[1] === t); return b ? +x.S.rt.v[b.proc.pv] : NaN; };
         const f = x => (isFinite(x) ? +(+x).toFixed(2) : null);
-        return { MW: f(U.MW), F: f(U.Fc), Tb: f(U.Tb), Pd: f(U.Pd), ms: f(U.ms), msT: f(pv('ABC-012', 'TICMS1004')), rh: f(pv('ABC-019', 'TICHR1002')), lvl: f(pv('ABC-010', 'LICBR1001B')) };
+        return { lm: f(U.lmQ), MW: f(U.MW), F: f(U.Fc), Tb: f(U.Tb), Pd: f(U.Pd), ms: f(U.ms), msT: f(pv('ABC-012', 'TICMS1004')), rh: f(pv('ABC-019', 'TICHR1002')), lvl: f(pv('ABC-010', 'LICBR1001B')) };
       });
       log.push(e);
       console.log(log.length, JSON.stringify(e));
