@@ -21,7 +21,7 @@ address in the app and a set point or a switch, and that no ABC alarm block alar
 - `p` follows the rule of alarm-pri.js (HH / LL 2, H / L 3, a switch ALARM 4); the list has no priority column.
 - Not in the files: 94 points already alarmed by an ABC alarm block, 55 switches already on DITL logic, 146 points with no set point in
   the list, 34 excluded (compressor house, WTP, coal handling), 17 tags not in the DCS I/O list. Work list: lane 5, 2026-11-25.
-- The rows give the priority now. An alarm line from a row needs the point's value in the plant model (lanes 3 / 4 link the I/O
-  values); a row with no value stays silent.
+- Analog rows raise their alarm line (src/analog/engine/alarm-pri.js AN.laneAlm, one call in the alarm scan) only from a LIVE value:
+  it changes while the plant time runs. A point nothing writes stays silent. The switch rows give the priority only for now.
 
-Test: tests/lanes/lane5/alarm-rows.cjs.
+Tests: tests/lanes/lane5/alarm-rows.cjs, alarm-live.cjs.

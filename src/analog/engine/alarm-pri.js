@@ -42,3 +42,69 @@ AN.almPri = a => {
   else if (/HIGH|LOW|DEVIATION/.test(lv)) p = 3;
   return { p, name: AN_ALM_PRI[p] };
 };
+/* Lane 5 (2026-11-25): the alarm lines of the alarm list rows (src/data/alarms, window.LANE_ALARMS). One call of the alarm scan
+   (src/ui/hmi/events.js almScan) puts them in its table with the other alarms, so they get the same acknowledge, group suppression
+   and priority (the line names the ABC sheet of the transmitter, so the group suppression of that sheet applies). Analog rows only:
+   the point's value is the output of the AI blocks of its station and address (anUnitAIs, as "Start at 150 MW" writes them).
+   A row raises only from a LIVE value: the value has changed while the plant time runs since the load. An I/O point that nothing
+   writes stays at its first value (an unlinked transmitter reads 0, not "no value"; a 150 MW snapshot seed keeps its number) and
+   stays silent; a point the plant model or a link drives moves
+   and its rows come in. A point already alarmed on the same side (HIGH / HIGH-HIGH or LOW / LOW-LOW) by another alarm of the scan
+   with the tag in its name (an ALM block, the comparator alarms of a drawing) adds no second line. Set points are the list's own (row sp); none is changed here. */
+const anLaneLive = { base: null, k: new Map() };
+AN.laneAlm = (now, t) => {
+  const L = (typeof window !== 'undefined' && window.LANE_ALARMS) || globalThis.LANE_ALARMS || [],
+    out = [];
+  if (!L.length || !AN.sheets || typeof anUnitAIs !== 'function') return out;
+  /* a plant loaded again (another start, time back, sheets compiled again): the first values again */
+  const s0 = AN.sheets[0] && AN.sheets[0].S;
+  if (anLaneLive.base !== AN.startState || anLaneLive.s0 !== s0 || !(t >= anLaneLive.t)) {
+    anLaneLive.base = AN.startState;
+    anLaneLive.s0 = s0;
+    anLaneLive.k.clear();
+  }
+  anLaneLive.t = t;
+  const names = [...now.values()].map(x => [String(x.nm || '').toUpperCase(), String(x.lv || '').toUpperCase()]);
+  for (const r of L) {
+    if (r.on || typeof r.sp !== 'number' || !/^AI\d{4}$/.test(r.addr || '')) continue;
+    const key = r.stn - 100 + '|' + r.addr;
+    let e = anLaneLive.k.get(key);
+    if (!e) {
+      const list = anUnitAIs(key),
+        sh = list.length ? AN.sheets.find(z => z.S === list[0][0]) : null;
+      e = { list, sh: sh ? sh.name : 'ALARM LIST', v0: NaN, live: false };
+      anLaneLive.k.set(key, e);
+    }
+    let x = NaN;
+    for (const [S, b] of e.list) {
+      const v = S.rt && b.o && b.o.length ? +S.rt.v[b.o[0]] : NaN;
+      if (isFinite(v)) {
+        x = v;
+        break;
+      }
+    }
+    if (!isFinite(x)) continue;
+    /* the first value is the one of the loaded plant while its time stands (a paused plant, the patches of the load); live = it
+       changes once the plant time runs (a seed of the 150 MW snapshot that nothing writes keeps its number and stays silent) */
+    if (!isFinite(e.v0) || !(t > e.t0)) {
+      if (!isFinite(e.v0)) e.t0 = t;
+      e.v0 = x;
+    } else if (!e.live && Math.abs(x - e.v0) > 1e-9) e.live = true;
+    if (!e.live) continue;
+    const hit = r.lv === 'HIGH-HIGH' || r.lv === 'HIGH' ? x > r.sp : x < r.sp;
+    if (!hit) continue;
+    const T = String(r.tag).toUpperCase(),
+      I = String(r.io || '').toUpperCase();
+    const up = /HIGH/.test(r.lv);
+    if (names.some(([n, lv]) => /HIGH|LOW/.test(lv) && /HIGH/.test(lv) === up && (n.indexOf(T) >= 0 || (I && n.indexOf(I) >= 0)))) continue;
+    out.push(['L|' + r.tag + '|' + r.lv, { sh: e.sh, kind: 'ALM', nm: r.tag + ' ' + r.d, lv: r.lv }]);
+  }
+  /* a point with HIGH-HIGH and HIGH both over: one line, the higher level (as an ALM block gives one level) */
+  const top = new Map();
+  for (const [k, x] of out) {
+    const tg = k.split('|')[1],
+      o = top.get(tg);
+    if (!o || /-/.test(x.lv)) top.set(tg, [k, x]);
+  }
+  return [...top.values()];
+};
