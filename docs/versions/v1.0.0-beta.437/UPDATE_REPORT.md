@@ -1,4 +1,4 @@
-# v1.0.0-beta.427 (HMI TURBINE : MINAMI, lane 7): bagong page na Heater drains, at mga switch sa Feedwater, Condensate, Extraction
+# v1.0.0-beta.437 (HMI TURBINE : MINAMI, lane 7): bagong page na Heater drains, at mga switch sa Feedwater, Condensate, Extraction
 
 ## Ano ang nagbago
 - **Bagong page: Plant > Water and steam > Heater drains.** Ang drain ng limang heater bilang isang cascade: high pressure heater 2 at 1 papunta sa deaerator, low pressure heater 3, 2 at 1 papunta sa condenser. Sa ilalim ng bawat heater ang dalawang level control valve ng drawing: ang primary valve (papunta sa susunod na heater) at ang alternate valve (dump: sa condenser para sa HP, sa flash chamber para sa LP).
