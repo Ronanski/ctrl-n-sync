@@ -422,7 +422,9 @@
         const k = bare(r.to),
           m = W.xText.get(k) || W.xText.set(k, new Map()).get(k),
           x = String(r.text).trim();
-        m.set(x, ((m.get(x) || '') + ' ' + [r.tag, r.addr].filter(Boolean).join(' ')).trim());
+        /* beta.540: two lanes that name the same point give it once */
+        const pt = [r.tag, r.addr].filter(Boolean).join(' ');
+        if (!(' ' + (m.get(x) || '') + ' ').includes(' ' + pt + ' ')) m.set(x, ((m.get(x) || '') + ' ' + pt).trim());
         if (r.addr && r.tag && window.WIRING && !window.WIRING.some(q => q[1] === String(r.stn) && q[3] === r.tag)) window.WIRING.push(['LANE:' + (r.lane || ''), String(r.stn), r.addr, r.tag]);
         continue;
       }
