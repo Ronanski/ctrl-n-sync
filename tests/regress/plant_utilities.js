@@ -76,7 +76,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
        ABC-030). The boiler is not fired in this test: the drum and main steam pressure are set to 20 kg/cm2 as the start-up steam */
     AN.unit.Pd = 20;
     AN.unit.Pms = 20;
-    const rr = ['lop', 'eh', 'vex', 'tg', 'aux'].map(c => AN.turbine(c));
+    const rr = ['lop', 'eh', 'vex', 'tg'].map(c => AN.turbine(c));
     /* MV-AS1391 OPEN from the CRT: REMOTE at the field (DITL-51 row 12 I.0203, LS_OP.fieldRow), then the OPEN P.B. row (row 5, M.0360) */
     const s51 = S.sheets.find(x => x.name.endsWith('DITL-51'));
     let open51 = -1;
@@ -102,16 +102,19 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
       if (!(rm >= 0 && LS_OP.fieldRow(d, rm, true, d + ' MOV REMOTE'))) rr.push(d + ' REMOTE refused (row ' + rm + ')');
     }
     await wrun(2);
-    rr.push(AN.turbine('vacuum'));
-    /* the start-up ejector MOV (DITL-54) opens only with the vacuum breaker FULLY CLOSED (row 6 I.0216); the breaker strokes after the
-       vacuum up press, so the operator presses the start-up ejector OPEN (row 5, M.0440) again once the breaker is closed */
+    /* vacuum up from the CRT (1.0.0-beta.358: no TCS macro): vacuum breaker MV-AV1391 CLOSE (DITL-56 CLOSE P.B. M.0379), SJAE steam MOV
+       OPEN (DITL-55 OPEN P.B. M.0450); the start-up ejector MOV OPEN (DITL-54 OPEN P.B. M.0440) needs the breaker FULLY CLOSED (DITL-54
+       row 6 I.0216), so it is pressed once the breaker has stroked */
+    const pb = (d, re) => {
+      const sd = S.sheets.find(x => x.name.endsWith(d));
+      let r0 = -1;
+      for (let r = 0; r < 30 && sd && r0 < 0; r++) if (re.test(String((DUI.rowInfo(sd, r) || {}).svc || ''))) r0 = r;
+      if (!(r0 >= 0 && WORLD.dpress(sd.name, r0))) rr.push(d + ' ' + re + ' press refused (row ' + r0 + ')');
+    };
+    pb('DITL-56', /BREAKER CLOSE PB$/);
+    pb('DITL-55', /MOV OPEN PB$/);
     await wrun(60);
-    {
-      const s54 = S.sheets.find(x => x.name.endsWith('DITL-54'));
-      let o54 = -1;
-      for (let r = 0; r < 30 && s54 && o54 < 0; r++) if (/MOV OPEN PB$/.test(String((DUI.rowInfo(s54, r) || {}).svc || ''))) o54 = r;
-      if (!(o54 >= 0 && WORLD.dpress(s54.name, o54))) rr.push('start-up ejector OPEN press refused (row ' + o54 + ')');
-    }
+    pb('DITL-54', /MOV OPEN PB$/);
     await wrun(1200);
     const r2 = AN.turbine('roll');
     const rv = (d, r) => { const sd = S.sheets.find(x => x.name.endsWith(d)); return sd ? DUI.rowVal(sd, r) : '-'; };

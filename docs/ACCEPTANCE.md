@@ -7,13 +7,14 @@ Inaprubahan ng user: **GO LIST, 2026-11-24 06:06 PHT** (GO FINISH LINE 2026-11-2
 2. Bawat target ay galing sa design document (HB = Hitachi heat balance PPE-14-0725 R1; FHI = CFB boiler manual P2S7 curves at Tab 3; L20 = Howden APH OMM; L21 = TCV-FW1150 valve sheet; vendor data, I/O list, P&ID, logic). Walang curve = kuwenta ng physics, nakasulat sa tabi ng value ("kinuwenta"). Ang snapshot at trend ng planta ay pang-check lang.
 3. Iisang model para sa lahat ng load; walang constant na para lang sa isang load; walang patch.
 4. Bawat merge na nagbabago ng estado ng isang item ay nag-a-update ng seksyon "Bilang" dito at ng tracker.
+5. Logic ang masusunod sa setpoint, limit at FX (ABC sheets, parameter workbook); design (FHI / HB) ang masusunod sa physics. Kapag logic input ang dahilan ng agwat sa FHI, ang target ay kinukuwenta sa design physics gamit ang logic input, at nakasulat ang sheet at ang FHI value (user 2026-11-24 ~15:14 PHT, "Ok").
 
-## Bilang (2026-11-24 11:33 PHT, beta.356)
+## Bilang (2026-11-24 15:18 PHT, beta.356 na sukat, Batas 5)
 
-- Part 1 (process): 24 na item × bawat load. Sukat ng beta.356 (tools/accept/part1.cjs, results/part1-beta356.md; 45 MW sa HB sliding pressure 98.9): 50 PASS / 36 FAIL na cell. Pasado sa lahat ng tatlong load: 6 (main steam flow, SH outlet temperature, final feedwater, RH spray, turbine heat rate, coal flow). Natitira: 18. (Pagtatama sa bilang ng beta.354: 4 dapat iyon, hindi 3; pasado na rin noon ang main steam flow sa tatlong load.)
+- Part 1 (process): 24 na item × bawat load. Sukat ng beta.356 (tools/accept/part1.cjs, results/part1-beta356.md; 45 MW sa HB sliding pressure 98.9): 56 PASS / 30 FAIL na cell (dati 50 / 36; +6 dahil sa Batas 5: RH outlet 45, bed 45, limestone 90 at 150, total air 45, O2 45). Pasado sa lahat ng tatlong load: 7 (main steam flow, SH outlet temperature, RH outlet temperature, final feedwater, RH spray, turbine heat rate, coal flow). Natitira: 17. (Pagtatama sa bilang ng beta.354: 4 dapat iyon, hindi 3; pasado na rin noon ang main steam flow sa tatlong load.)
 - Part 2 (kumpleto): 21 na item. Pasado (TAMA): 1. Natitira: 20 (KULANG: 17; hindi nasuri sa cloud: 3). Detalye: docs/audit/part2-check-2026-11-24.md.
 - Part 3 (live run): 1 item. Natitira: 1 (ang user ang nagpapasya kung kailan).
-- **Kabuuan: 7 pasado, 39 natitira.**
+- **Kabuuan: 8 pasado, 38 natitira.**
 
 ## Part 1 · Process bawat load
 
@@ -28,7 +29,7 @@ Steady na takbo, 30 min na walang ginagalaw, naka-AUTO ang lahat ng loop. 45 / 9
 | SH outlet temperature, °C | 507 | 541 | 541 | ±5 °C | FHI Fig 6; 45 MW: Fig 2 cold start table (9.2 h point) | hindi pa nasusukat |
 | Cold reheat: flow T/H · ata · °C | 145.0 · 12.79 · 328.8 | 265.4 · 23.48 · 358.1 | 446.1 · 38.64 · 370.2 | ±3 % · ±1 · ±5 | HB PPE-14-0725 | hindi pa nasusukat |
 | Hot reheat: flow T/H · ata · °C | 134.8 · 11.51 · 505 | 243.1 · 21.13 · 538 | 400.9 · 34.77 · 538 | ±3 % · ±1 · ±5 | HB PPE-14-0725 | hindi pa nasusukat |
-| RH outlet temperature, °C | 507 | 541 | 541 | ±5 °C | FHI Fig 6, Tab 3 (RH in 370 °C / 36.6, out 541 °C / 35.1); 45 MW: Fig 2 table | hindi pa nasusukat |
+| RH outlet temperature, °C | 488 (logic) | 541 | 541 | ±5 °C | FHI Fig 6, Tab 3 (RH in 370 °C / 36.6, out 541 °C / 35.1); 45 MW: logic SV ABC-020 S2-LN6 (MW vs RH outlet) = 488 sa 45 MW (FHI Fig 2 table 507) | hindi pa nasusukat |
 | Economizer outlet water, °C | — kinuwenta (susunod) | — kinuwenta (susunod) | 303 | ±3 °C | FHI Tab 3 (245.4 pasok, 303 labas); part load: kukuwentahin mula sa HB feedwater at sa duty ng economizer | hindi pa nasusukat |
 | Final feedwater: °C · T/H | 188.6 · 150.3 | 218.0 · 273.7 | 245.4 · 458.7 | ±3 °C · ±3 % | HB PPE-14-0725, FHI Tab 3 | hindi pa nasusukat |
 | SH spray, T/H | 0 | 0 | 12.4 (2.70 %) | ±3 T/H | FHI Fig 10 (60 ~ 100 % lang; 0 sa 60 %) | hindi pa nasusukat |
@@ -36,15 +37,15 @@ Steady na takbo, 30 min na walang ginagalaw, naka-AUTO ang lahat ng loop. 45 / 9
 | Generator output, MW | 45 | 90 | 150 | ±1 MW | HB PPE-14-0725 | hindi pa nasusukat |
 | Turbine heat rate, kcal/kWh | 2331 (36.88 %) | 2079 (41.35 %) | 1989 (43.23 %) | ±1 % | HB PPE-14-0725 | hindi pa nasusukat |
 | **Gas, bed at hangin** | | | | | | |
-| Bed temperature, °C | 850 ~ 870 | 850 ~ 870 | 850 ~ 870 | sa band | SU:10198; normal 850 ~ 900, hanggang 950 sa mahabang takbo, lampas 900 tawag sa FHI (P2S4 p2-4-8) | hindi pa nasusukat |
+| Bed temperature, °C | 745 ±25 (kinuwenta, logic air) | 850 ~ 870 | 850 ~ 870 | sa band | SU:10198; normal 850 ~ 900, hanggang 950 sa mahabang takbo, lampas 900 tawag sa FHI (P2S4 p2-4-8); 45 MW kinuwenta: energy balance ng bed sa logic air 446 T/H (team-files/plant-study/16-part-load-bed-2026-11-24.md, D14), sa FHI air 365 nasa band | hindi pa nasusukat |
 | Furnace average temperature, °C | 610 | 755 | 840 | ±15 °C | FHI Fig 8 (average, hindi exit); 45 MW: Fig 2 table (halos pantay ang riser ng CFB) | hindi pa nasusukat |
 | Bed inventory (furnace DP), mmH2O | 1380 (low 1150) | 1380 (low 1150) | 1630 (low 1450) | low ~ 2100, basa ±20 | FHI Fig 9: 1380 sa 40 ~ 60 %, 1440 sa 70, 1550 sa 85, 1630 sa 100; high limit 2100 | hindi pa nasusukat |
 | Economizer outlet gas = air heater gas in, °C | 265 | 285 | 322 | ±10 °C | L20 Howden APH duties 322 / 285 / 272 sa 100 / 60 / 40 %; 45 MW kinuwenta: L20 line pinahaba | hindi pa nasusukat |
 | Air heater gas out, °C | — | — | 135 (128.4 corrected) | ±10 °C | FHI Tab 3, L20 | hindi pa nasusukat |
 | Coal flow, T/H | 32.3 | 56.0 | 89.5 | ±3 % | FHI Fig 13; 45 MW kinuwenta: slope ng Fig 13 pinahaba | hindi pa nasusukat |
-| Limestone flow, T/H | 4.3 | 7.1 | 12.0 | ±10 % | FHI Fig 13; 45 MW kinuwenta: pareho ang Ca/S | hindi pa nasusukat |
-| Total air · PA · SA, T/H | 365 · 245 · 96 | 371 · 236 · 111 | 596 · 354 · 218 | ±3 % | FHI Fig 12; 45 MW kinuwenta: hawak sa 40 % value (PA 245 = minimum fluidization) | hindi pa nasusukat |
-| O2, % | 10.9 (dry) | 3.6 | 3.6 | ±0.5 | FHI Fig 7; 45 MW kinuwenta: stoichiometric 5.43 kg air / kg coal (Tab 2) sa hangin ng 40 %; parehong paraan sa 40 % = 9.0 laban sa Fig 7 8.8 | hindi pa nasusukat |
+| Limestone flow, T/H | 4.3 | 4.9 (logic cap) | 4.9 (logic cap) | ±10 % | FHI Fig 13 (7.1 / 12.0); 90 / 150 MW: logic cap AICFG10571 MH 35 % × 14 T/H = 4.9 (ABC-005, DITL-LS240); 45 MW kinuwenta: pareho ang Ca/S, SO2 control pa ang susukatin | hindi pa nasusukat |
+| Total air · PA · SA, T/H | 446 (logic) · 245 · 96 | 371 · 236 · 111 | 596 · 354 · 218 | ±3 % | FHI Fig 12; 45 MW total air: logic minimum ABC-002 S1-LN5 floor 446 T/H (FHI Fig 12 365); PA / SA kinuwenta: hawak sa 40 % value (PA 245 = minimum fluidization) | hindi pa nasusukat |
+| O2, % | 12.7 (kinuwenta, logic air) | 3.6 | 3.6 | ±0.5 | FHI Fig 7; 45 MW kinuwenta: stoichiometric 5.43 kg air / kg coal (Tab 2) sa hangin ng 40 %; parehong paraan sa 40 % = 9.0 laban sa Fig 7 8.8; 45 MW sa logic air 446: coal 32.3 × 5.43 = 175.4 T/H stoich, EA 2.543, O2 ≈ 20.95 × 1.543 / 2.543 = 12.7 (sa FHI air 365: 10.9) | hindi pa nasusukat |
 | Boiler efficiency (LHV), % | 88.5 | 91 | 90.9 | ±1 | FHI Tab 3 sa 150 MW; 45 / 90 MW kinuwenta: parehong losses, iba ang excess air at exit gas | hindi pa nasusukat |
 | **Steady (lahat ng load)** | | | | | | |
 | Galaw sa 8 oras na walang ginagalaw | MW ±2 · MSP ±2 · drum level ±60 mm · MST ±6 °C · bed sa 850 ~ 870 °C | | | sa loob ng band | ISA-77.20; bands ng behaviour gate; bed SU:10198 | hindi pa nasusukat |

@@ -30,10 +30,8 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   });
   await p.goto('file://' + require('path').resolve(html));
   await p.waitForTimeout(4000);
-  /* the person: Training > Gabay: Cold (the plant is cold, the one world runs) */
-  await p.getByText('Training', { exact: true }).first().click();
-  await p.waitForTimeout(1500);
-  await p.getByRole('button', { name: /(Gabay|Guide): Cold/ }).first().click();
+  /* Cold start of the one world (the Training tab was removed in beta.237; same start as plant_utilities) */
+  await p.evaluate(async () => { await AN.ades(); WORLD.set(true); document.getElementById('loadcold').click(); await AN._startP; });
   await p.waitForTimeout(6000);
   await p.waitForFunction(() => window.WORLD && WORLD.on && WORLD.live, null, { timeout: 20000 }).catch(() => {});
   const ev = (f, a) => p.evaluate(f, a);
@@ -73,12 +71,10 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   ck(/i-sync muna/.test(await turb('loadup', 45)), 'LOAD UP bago ang sync: tinanggihan. Ref: ATS 1.48 52G CLOSED (A6)');
   const r2 = await turb('tg');
   ck(/1\.15/.test(r2), 'TURNING GEAR nang walang lube oil: "' + r2 + '". Ref: ATS 1.15, PR-OPE-5002 (lube oil bago ang turning gear)');
-  const r3 = await turb('aux');
-  ck(/12/.test(r3), 'AUX STEAM (MV-AS1391) nang malamig ang drum: "' + r3 + '". Ref: PR-OPE-5002 5727 (main steam > 12 kg/cm2)');
+  /* 1.0.0-beta.358: no TCS 'aux' / 'vacuum' macro (no TCE / TCA / IBD sheet behind them): MV-AS1391 (DITL-51), the vacuum breaker and the
+     ejector MOVs (DITL-56 / 55 / 54) are pressed on their DCS drawings; their interlocks are the DITL logic (tests/regress/plant_utilities.js) */
   const r4 = await turb('gland');
   ck(/gland/.test(r4) && r4 !== '', 'GLAND SEALING nang walang aux steam: "' + r4 + '". Ref: PR-OPE-5002 6164 (aux > 7 kg/cm2)');
-  const r5 = await turb('vacuum');
-  ck(/vacuum up/.test(r5), 'VACUUM UP nang walang aux / gland: "' + r5 + '". Ref: PR-OPE-5002 6545');
   /* the auxiliaries all made ready (lube oil, EH oil, vapour extractor, turning gear, aux 12, gland, ejector, condenser vacuum) and
      steps 0 / 1 marked complete, the boiler still COLD: the ATS must refuse the RUB CHECK / ACCELERATION on the steam criteria */
   const rr = await ev(() => {

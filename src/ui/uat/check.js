@@ -303,8 +303,30 @@
     if (t % 10 !== 0 || !AN.tcs) return;
     const x = AN.tcs().aux || {},
       on = { lop: x.lop, eh: x.eh, vex: x.vex, tg: x.tg, aux: x.asv, gland: x.gland, vacuum: x.ej, hood: x.hsp };
+    /* 1.0.0-beta.358 (JENNIE): no TCS 'aux' / 'vacuum' macro. MV-AS1391 (DITL-51) and the vacuum breaker / ejector MOVs (DITL-56 / 55 / 54)
+       are pressed on their DCS drawings: field REMOTE, then the CRT push buttons; DITL-54 OPEN needs the breaker FULLY CLOSED (row 6),
+       so it is pressed again on the next pass */
+    const pb = (d, re, rem) => {
+      if (!window.WORLD || !WORLD.dpress || !window.DUI || typeof S === 'undefined') return false;
+      const sd = S.sheets.find(z => z.name.endsWith(d));
+      if (!sd) return false;
+      for (let r = 0; r < 30; r++) {
+        const v = String((DUI.rowInfo(sd, r) || {}).svc || '');
+        if (rem && / REMOTE( SELECTED)?$/.test(v) && window.LS_OP) LS_OP.fieldRow(sd.name, r, true, d + ' REMOTE');
+        if (re.test(v)) return WORLD.dpress(sd.name, r);
+      }
+      return false;
+    };
     for (const k of ['lop', 'eh', 'vex', 'tg', 'aux', 'gland', 'vacuum', 'hood'])
       if (!on[k]) {
+        if (k === 'aux') return void pb('DITL-51', /MOV OPEN PB$/, true);
+        if (k === 'vacuum') {
+          if (!((AN.tcs() || {}).Pa > 10) || !x.gland) return void (o.tcsWait = 'vacuum: aux steam > 10 kg/cm2 and the gland seal first');
+          pb('DITL-56', /BREAKER CLOSE PB$/, true);
+          pb('DITL-55', /MOV OPEN PB$/, true);
+          pb('DITL-54', /MOV OPEN PB$/, true);
+          return;
+        }
         const r = AN.turbine(k, 1);
         if (r) o.tcsWait = k + ': ' + r;
         return;
