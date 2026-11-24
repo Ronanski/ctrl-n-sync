@@ -798,7 +798,7 @@
       plan.push({ id: n.id, ctl: S.ctl, cyc: (S.cycle || 100) / 1000, acc: 0, nodes: order, blocks: n.blocks.length, macros: n.macros.length });
     }
     const v = Float64Array.from(init);
-    const prog = { names, idx, v, ports: [...ports].sort(), plan, nets, join: J, unknown, res, t: 0 };
+    const prog = { names, idx, v, ports: [...ports].sort(), plan, nets, parts: part, join: J, unknown, res, t: 0 };
     return prog;
   }
   /* one scan of one sheet at its cycle dt */
@@ -847,6 +847,43 @@
   };
   /* the value of the net `key` of sheet `sid` (the live reads of a sheet name these keys) */
   const get = (prog, sid, key) => prog.v[prog.res(sid, key)];
+  /* the operator station side (HMI, lane 9): every CRT push button (a port to force) and every CRT lamp (an output to read) */
+  function crt(prog) {
+    const buttons = prog.ports.filter(n => /^CRT:/.test(n)).map(port => {
+        const r = port.slice(4),
+          i = r.indexOf('.');
+        return { port, sheet: r.slice(0, i), tag: r.slice(i + 1) };
+      }),
+      lamps = [];
+    for (const n of prog.nets) for (const o of n.outputs) if (o.kind === 'd') lamps.push({ sheet: n.id, key: o.key, tag: o.text });
+    return { buttons, lamps };
+  }
+  /* what the program WRITES (every prog.ports entry is an input it only reads): each output of a sheet with where it goes. kind 'crt' = a
+     CRT lamp, 'pio' = a PI/O output box (to the field / DCS), 'con' = a connector to a sheet outside the TCE / TCA set, 'spare' = a connector printed "(-)" */
+  function outs(prog) {
+    const ids = new Set(prog.nets.map(n => n.id)),
+      L = [];
+    for (const n of prog.nets)
+      for (const o of n.outputs) {
+        const inside = (o.sheets || []).some(x => ids.has(x)) || /^circle .* to (G-|\(this sheet\))/.test(o.to || ''),
+          kind = o.kind === 'd' ? 'crt' : o.kind === 'r' ? 'pio' : o.kind === 'c' && !inside ? ((o.sheets || []).every(x => x === '-') ? 'spare' : 'con') : null;
+        if (kind) L.push({ sheet: n.id, key: o.key, kind, to: o.to, slot: prog.res(n.id, o.net) });
+      }
+    return L;
+  }
+  /* read with no side effect: a net or part key of the sheet, a CRT lamp by key or tag, a CRT button by tag; undefined if unknown */
+  function read(prog, sid, key) {
+    const n = prog.nets.find(x => x.id === sid);
+    if (!n) return undefined;
+    const lamp = n.outputs.find(o => o.kind === 'd' && (o.key === key || o.text === key));
+    if (lamp) return prog.v[prog.res(sid, lamp.net)];
+    const btn = prog.idx.get('CRT:' + sid + '.' + key);
+    if (btn !== undefined) return prog.v[btn];
+    const known = prog.names.indexOf(sid + ':' + key);
+    if (known >= 0) return prog.v[known];
+    const P = prog.parts && prog.parts[sid];
+    return P && (P.has(key) || P.has(key.split('.')[0])) ? prog.v[prog.res(sid, key)] : undefined;
+  }
   /* what runs: per sheet, every block and macro with a meaning = the sheet runs as its logic */
   function stats(prog) {
     let run = 0,
@@ -876,5 +913,5 @@
     for (const w in open) open[w] = [...open[w]].sort();
     return { sheets: prog.plan.length, run, notRun, open, blocks, bOk, macros, mOk, ports: prog.ports.length, portKinds: kinds };
   }
-  root.TCE_RUN = { K, par, REQ, EXTRA, need, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO };
+  root.TCE_RUN = { crt, read, outs, K, par, REQ, EXTRA, need, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO };
 })(typeof window !== 'undefined' ? window : globalThis);

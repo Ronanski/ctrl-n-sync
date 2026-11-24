@@ -100,6 +100,16 @@ console.log('without a meaning yet: ' + um.map(([k, n]) => k + ' x' + n).join(',
   const y = A.plan.find(p => p.id === 'TCE195').nodes.find(x => x.key === 'lms027');
   if (!y || !y.pa || A.names[y.pa.LL] !== 'TCE195:g029') fail('TCE195 LMS 027 LL is not G 029 (the "(LL)" on its riser)');
 }
+/* the operator station API (lane 9 HMI): crt lists the buttons and lamps; read has no side effect and gives undefined for an unknown key */
+{
+  const C = R.crt(A),
+    n = A.v.length;
+  if (C.buttons.length < 100 || C.lamps.length < 500) fail('crt lists ' + C.buttons.length + ' buttons / ' + C.lamps.length + ' lamps');
+  if (R.read(A, 'TCE150', 'no such key') !== undefined || A.v.length !== n) fail('read of an unknown key made a value');
+  if (R.read(A, 'TCE150', 'TCE150_1_IIS') === undefined) fail('read of the CRT lamp TCE150_1_IIS by its tag');
+  const O = R.outs(A);
+  if (!O.some(o => o.kind === 'pio') || !O.some(o => o.kind === 'crt')) fail('outs lists no PI/O or CRT outputs');
+}
 /* the open-item rule: a missing parameter, a parameter the macro list does not define, or an unwired SW keeps the block open */
 if (!R.need('SG', [], true).length) fail('SG with no K must be open');
 if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1'], true).length) fail('PIV with G1 G2 TI must not be open');
