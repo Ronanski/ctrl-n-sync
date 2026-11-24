@@ -1,4 +1,4 @@
-// beta.446 (EIMI): the shared HX core gives a machine of an HX page its own monitor rows and VCB point (lanes 6 and 7: pump bearing,
+// beta.486 (EIMI): the shared HX core gives a machine of an HX page its own monitor rows and VCB point (lanes 6 and 7: pump bearing,
 // winding, vibration, VCB ON / OFF of the I/O list on the faceplate, not on the drawing), and an 'an:' key reads a dotted path of the
 // unit model. The test gives the feedwater page's boiler feed pump A (HX.M 'BFWP-A') three monitor rows and a VCB key, as a page would
 // (HX.M o.mon / o.vcb), starts at 150 MW like the operator (start screen, Operator card), opens the page and checks:

@@ -94,7 +94,7 @@
   };
   const needMach = name => S && !(name in S.machs) && (S.machs[name] = machDef(name));
   /* after the first pass of the page (every key it asks is known): the hidden page of hmi-mock.js for its valves */
-  /* beta.446 (EIMI): the monitor rows (o.mon) and the VCB point (o.vcb) that the page gives a machine (HX.M), by machine name */
+  /* beta.486 (EIMI): the monitor rows (o.mon) and the VCB point (o.vcb) that the page gives a machine (HX.M), by machine name */
   function machExtra() {
     const X = {},
       d = S && S.def;
@@ -262,7 +262,7 @@
       trend: { h, fn: () => HX.data.value(r0.k) }
     });
   }
-  /* beta.446 (EIMI): the TCS operator buttons and lamps (the CRT ports of the TCS soft logic, lanes/tcs-crt-ports.json). HX.B hooks:
+  /* beta.486 (EIMI): the TCS operator buttons and lamps (the CRT ports of the TCS soft logic, lanes/tcs-crt-ports.json). HX.B hooks:
        'crt:<port>'          a push button, e.g. HX.B('RESET', 'crt:CRT:TCE114.<tag>', { press: true }): a press holds the port
                              CRT.HOLD ms (the TCS program reads a CRT press as a held contact);
        'crtl:<sheet>|<key>'  a lamp, e.g. HX.B('TRIP', 'crtl:TCE114|<lamp tag>'): ON (lit) at 1, OFF at 0.
@@ -285,7 +285,7 @@
     time: () => call(() => (window.AN && AN.unit && isFinite(AN.unit.t) ? AN.unit.t : null), Date.now() / 1000),
     value(key) {
       /* Audit 3: a value with no row on the app pages reads its field of the unit model ('an:Pip' = AN.unit.Pip) */
-      /* beta.446 (EIMI): a dotted path reads a field inside the unit model ('an:lpHt.H2.dr' = AN.unit.lpHt.H2.dr); a flag reads 1 / 0 */
+      /* beta.486 (EIMI): a dotted path reads a field inside the unit model ('an:lpHt.H2.dr' = AN.unit.lpHt.H2.dr); a flag reads 1 / 0 */
       if (/^an:/.test(key))
         return call(() => { const v = key.slice(3).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.unit); return typeof v === 'boolean' ? (v ? 1 : 0) : v != null && isFinite(v) ? +v : null; }, null);
       /* a value of the TCS model ('tcs:aux.hso' = AN.tcs().aux.hso); an open / closed flag reads 100 / 0 % */

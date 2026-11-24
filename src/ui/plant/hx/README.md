@@ -123,7 +123,7 @@ page({
 - New kind of equipment: add one function to `hx-sym.js` (drawn around 0, 0; returns `svg`, `ports`, `box`).
 - New machine or tag in the app: run `tools/dump-live150.js` on the built app, then `tools/make-registry.py`.
 
-## 6a. Monitor rows, VCB point, unit-model paths, TCS buttons and lamps (beta.446, both HMI lanes)
+## 6a. Monitor rows, VCB point, unit-model paths, TCS buttons and lamps (beta.486, both HMI lanes)
 
 - **Monitor rows of a machine** (bearing, winding, vibration, heater): `M('pump', 'CEP-A', 'Condensate pump A', [...], { mon: [V('Bearing DE', 'TT-CD1116-A3', '°C'), V('Winding U', '<tag>', '°C', 0), V('Space heater', '<tag>', '', 0, { words: ['ON', 'OFF'] })] })`. They show on the PERMISSIVE · TREND · MONITOR faceplate (the Y / N square, rule 6), under the heading MONITOR, not on the drawing and not on the CONTROL faceplate. `words` = [word at 1, word at 0] for an on / off point.
 - **VCB ON / OFF point**: `{ vcb: '<value key>' }` on the same HX.M. The VCB lamp of the CONTROL faceplate reads it (1 = ON); without it the lamp follows the motor state.
