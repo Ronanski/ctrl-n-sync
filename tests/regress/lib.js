@@ -12,7 +12,7 @@ async function open(html){
   await page.waitForTimeout(1500);
   await page.evaluate(()=>AN.setCat('an'));
   await page.waitForFunction(()=>window.AN&&AN.sheets&&AN.sheets.length>=54,null,{timeout:60000});
-  /* beta.376 (EIMI): wait until the shell has finished its start. Right after the sheets load the shell is still being put on: the
+  /* beta.426 (EIMI): wait until the shell has finished its start. Right after the sheets load the shell is still being put on: the
      sheet values are Roboto until body gets the class 'sc' (then IBM Plex Mono, shellc-content.css) and the drawing pane is 27 px
      shorter until its message bar closes. A test that starts in that window measures another page than the operator sees, and the
      result changes with the speed of the machine (the 'ABC VALUES LAYOUT' check on CI: PR 512, 518 failed, the rerun passed) */

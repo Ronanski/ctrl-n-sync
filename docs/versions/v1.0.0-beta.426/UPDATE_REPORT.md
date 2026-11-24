@@ -1,4 +1,4 @@
-# LMYP OTS 1.0.0-beta.406 (EIMI, lane 6, 2026-11-25)
+# LMYP OTS 1.0.0-beta.426 (EIMI, lane 6, 2026-11-25)
 
 Test harness lang, walang app change.
 
