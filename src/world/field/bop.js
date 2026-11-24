@@ -1,4 +1,4 @@
-/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.494. Field signals of the balance of plant (src/world/field/README.md).
+/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.524. Field signals of the balance of plant (src/world/field/README.md).
    Each row reads engine state that already exists (read only) and names its physical source. No constant stands for a process value,
    no fitted number (RULES 3.12). Paper with the physical source of every value (QA : SAORI pass 2026-11-25):
    lanes/bop/lane4-field-values-paper-2026-11-25.md. A value that is not a number writes nothing (the point keeps its last value).
@@ -145,9 +145,14 @@ R.push({
   rel: 'No.1 LPH shell U.lpHt.H1.Ps (kgf/cm2 A) - 1.0332 = gauge',
   src: io(2) + ' AI0419 "NO.1 LPH steam pressure"; unit.js AN_LP (design 0.354 kgf/cm2A x anHb x1)'
 });
-const hdw = k => U => fin(((U.hd || []).find(h => h.k === k) || {}).w1);
-R.push({ stn: 2, ai: 'AI0432', tag: 'FT-HD1102', v: hdw('H2'), rel: 'AN_HD H2 w1, the normal (cascade) drain flow', src: io(2) + ' AI0432 "NO.2 LPH drain water flow"; unit.js AN_HD mass balance' });
-R.push({ stn: 2, ai: 'AI0433', tag: 'FT-HD1103', v: hdw('H3'), rel: 'AN_HD H3 w1, the normal (cascade) drain flow', src: io(2) + ' AI0433 "NO.3 LPH drain water flow"; unit.js AN_HD mass balance' });
+/* the transmitter shows its own range at most (alarm list FT.csv rows 12-13: FT-HD1102 0-27.5, FT-HD1103 0-15 t/h); the AI is on no
+   sheet, so no AI block range clamps it */
+const hdw = (k, hi) => U => {
+  const w = fin(((U.hd || []).find(h => h.k === k) || {}).w1);
+  return isFinite(w) ? Math.max(0, Math.min(hi, w)) : NaN;
+};
+R.push({ stn: 2, ai: 'AI0432', tag: 'FT-HD1102', v: hdw('H2', 27.5), rel: 'AN_HD H2 w1, the normal drain flow, within the range 0-27.5', src: io(2) + ' AI0432 "NO.2 LPH drain water flow"; PD-018 rev D (RB p12) HD-1-031 normal drain before LCV-HD1102-1; unit.js AN_HD mass balance' });
+R.push({ stn: 2, ai: 'AI0433', tag: 'FT-HD1103', v: hdw('H3', 15), rel: 'AN_HD H3 w1, the normal drain flow, within the range 0-15', src: io(2) + ' AI0433 "NO.3 LPH drain water flow"; PD-018 rev D (RB p12) HD-1-021 normal drain before LCV-HD1103-1; unit.js AN_HD mass balance' });
 R.push({
   stn: 5,
   ai: 'AI0064',
