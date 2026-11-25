@@ -19,7 +19,14 @@ const unz = f => {
   }
 };
 /* [file name, page id]: the lane 7 pages that pass this check; a page joins the list when its elements are bound */
-const PAGES = [['heater-drains', 'heater-drains'], ['industrial-water', 'industrial-water']];
+const PAGES = [
+  ['heater-drains', 'heater-drains'],
+  ['industrial-water', 'industrial-water'],
+  ['turbine-interface', 'turbine-interface'],
+  ['turbine-operation', 'turbine-operation'],
+  ['turbine-valves', 'turbine-valves'],
+  ['turbine-motors', 'turbine-motors']
+];
 const abc = unz('src/data/apre.txt'),
   ditl = unz('src/data/pre.txt'),
   unit = rd('src/analog/engine/unit.js');
@@ -47,7 +54,11 @@ for (const [file, id] of PAGES) {
     fail(id + ': page did not register');
     continue;
   }
-  if (!/K1AU3-PD-0\d\d/.test(src)) fail(id + ': no flow diagram named');
+  /* a process page names its flow diagram; a page of signals only (no process drawn: the TCS / DCS interface) names the I/O list or
+     the TCS drawing (IBD 310SC90-*, logic book 331DM*) */
+  const pipes = (p.plan && p.plan.pipes) || [];
+  if (pipes.length ? !/K1AU3-PD-0\d\d/.test(src) : !/K1AU3-PD-0\d\d|I\/O list|310SC90-\d+|331DM\d+/.test(src))
+    fail(id + ': no source drawing or list named');
   const it = [];
   const walk = x => {
     if (!x || typeof x !== 'object') return;
@@ -69,15 +80,45 @@ for (const [file, id] of PAGES) {
     const m = /data-di="([^|"]+)/.exec(x.hook);
     if (!m) continue;
     n++;
-    if (!ditl.includes('"' + m[1] + '"') && !io.has(m[1])) fail(id + ': state ' + m[1] + ' is read by no DITL sheet and is not an I/O row');
+    if (!ditl.includes('"' + m[1] + '"') && !io.has(m[1]))
+      fail(id + ': state ' + m[1] + ' is read by no DITL sheet and is not an I/O row');
+  }
+  /* TCS operator buttons and lamps: a 'crt:CRT:<sheet>.<tag>' button names a port its TCE / TCA sheet draws; a 'crtl:<sheet>|<key>'
+     lamp names a CRT lamp key that sheet draws (src/digital/tce/<sheet>.js) */
+  const tce = sid => {
+    try {
+      return rd('src/digital/tce/' + sid + '.js');
+    } catch (e) {
+      return '';
+    }
+  };
+  for (const x of it.filter(x => x.k === 'hook' && /^crtl?:/.test(x.hook))) {
+    n++;
+    const b = /^crt:CRT:([A-Z0-9]+)\.(.+)$/.exec(x.hook),
+      l = /^crtl:([A-Z0-9]+)\|(.+)$/.exec(x.hook),
+      [sid, key] = b ? [b[1], b[2]] : l ? [l[1], l[2]] : [null, null];
+    /* a push button or a lamp of a macro block: '<block>.<BUTTON>' = a push button the macro holds inside (MACRO[..].pb of
+       tce-run.js), '<block>.<PIN>' = an output pin the sheet draws on that block (its R list) */
+    const mk = /^([a-z][a-z0-9]*)\.([A-Z]+)$/.exec(key || '');
+    if (mk) {
+      const sh = tce(sid),
+        pb = /pb: \[([^\]]*)\]/.exec(rd('src/digital/tce-run.js')),
+        blk = new RegExp("\\[\\s*'" + mk[1] + "',\\s*'MOTOR STANDARD'").test(sh.replace(/\s+/g, ' ')),
+        ok = b ? pb && pb[1].includes("'" + mk[2] + "'") : sh.includes("'" + mk[2] + "'");
+      if (!blk || !ok) fail(id + ': TCS ' + (b ? 'button ' : 'lamp ') + x.hook + ' is no button / pin of a block on its sheet');
+      continue;
+    }
+    if (!sid || !tce(sid).includes("'" + key + "'")) fail(id + ': TCS ' + (b ? 'button ' : 'lamp ') + x.hook + ' is not drawn on its sheet');
   }
   for (const k of keys) {
     n++;
     if (/^an:/.test(k)) {
-      if (!new RegExp('U\\.' + k.slice(3) + '\\s*=').test(unit)) fail(id + ': plant model key ' + k + ' is written nowhere in unit.js');
+      if (!new RegExp('U\\.' + k.slice(3) + '\\s*=').test(unit))
+        fail(id + ': plant model key ' + k + ' is written nowhere in unit.js');
     } else if (!io.has(k) && !onAbc(k)) fail(id + ': value ' + k + ' is no I/O tag and on no sheet');
   }
-  for (const t of (p.plan.taps || []).filter(t => /^an:/.test(t.key))) if (!t.tag || !io.has(t.tag)) fail(id + ': model value ' + t.key + ' names no I/O tag');
+  for (const t of (p.plan.taps || []).filter(t => /^an:/.test(t.key)))
+    if (!t.tag || !io.has(t.tag)) fail(id + ': model value ' + t.key + ' names no I/O tag');
 }
 console.log('lane 7 pages: ' + PAGES.length + ', bound elements checked ' + n + ', problems ' + bad);
 process.exit(bad ? 1 : 0);

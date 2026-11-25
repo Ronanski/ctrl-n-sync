@@ -21,6 +21,14 @@
    and their faceplate are the ones of fp-pop.js. */
 (function () {
   const { V, E, M, L, page } = HX;
+  /* beta.557: monitor rows and VCB point of each closed cooling pump (DCS I/O list station 3: MIV-P1108x1, TT-CW1108-x*) */
+  const acwMon = n => [
+    V('Motor winding U', 'TT-CW1108-' + n + 'U', '°C', 0),
+    V('Motor winding V', 'TT-CW1108-' + n + 'V', '°C', 0),
+    V('Motor winding W', 'TT-CW1108-' + n + 'W', '°C', 0),
+    V('Motor drive end bearing', 'TT-CW1108-' + n + '3', '°C', 0),
+    V('Motor non drive end bearing', 'TT-CW1108-' + n + '4', '°C', 0)
+  ];
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_M = 6,
@@ -115,7 +123,7 @@
               'ACWP-' + n,
               'Closed cooling pump ' + n,
               [V('Current', 'IIP1108' + n, 'A', 1), V('Strainer', 'DPICW1108' + n, K, 3)],
-              { tag: 'P-1108' + n }
+              { tag: 'P-1108' + n, mon: acwMon(n), vcb: 'MIV-P1108' + n + '1' }
             ),
             CPX,
             CPY[i],
