@@ -37,16 +37,25 @@ const ok = (c, m) => c || bad.push(m);
   ok(own.join() === 'O.0126,O.0446,O.0127,O.0447', 'DITL-22 start command: ' + own);
   /* a row with no signal name */
   const at = (c, r) => W.addrK(all.find(s => s.name.endsWith(')' + c)), r - 1);
-  ok(at('DITL-61A #B', 27) === 'M.1193' && at('DITL-61A #B', 25) === null, 'DITL-61A #B rows 27 / 25: ' + [at('DITL-61A #B', 27), at('DITL-61A #B', 25)]);
+  /* row 25: the strainer of pump B, DPT-CD1002 = AI0802 (beta.580) */
+  ok(at('DITL-61A #B', 27) === 'M.1193' && at('DITL-61A #B', 25) === 'AI0802', 'DITL-61A #B rows 27 / 25: ' + [at('DITL-61A #B', 27), at('DITL-61A #B', 25)]);
   for (const k of 'BCD') ok(at('DITL-117 #' + k, 2) === 'M.0861' && at('DITL-117 #' + k, 4) === 'M.0862', 'DITL-117 #' + k + ' rows 2 / 4');
   ok(at('DITL-24 #B', 25) === 'I.037C' && at('DITL-24 #B', 26) === 'I.005C', 'DITL-24 #B rows 25 / 26');
-  /* DITL-BA01 / BA02 */
+  /* beta.580: tags that tell the machines apart by the number (I/O list: CD1001 / CD1002 = pump A / B; FW1031 / FW1032 = BFWP A / B) */
+  const cell = (c, r) => {
+    const s = all.find(q => q.name.endsWith(')' + c));
+    return W.showText(s, ((s._inst ? s._inst.base : s).cells[r - 1 + ':T'] || []).map(q => q.t).join(' '));
+  };
+  for (const [c, r, want] of [['DITL-61A', 25, 'DPT-CD1001'], ['DITL-61A', 28, 'DPT-CD1002'], ['DITL-61A #B', 25, 'DPT-CD1002'], ['DITL-61A #B', 28, 'DPT-CD1001'], ['DITL-23A', 11, 'ZSO-FW1031'], ['DITL-23A #B', 11, 'ZSO-FW1032']])
+    ok(cell(c, r).includes(want), c + ' row ' + r + ': ' + cell(c, r) + ', not ' + want);
   await E.start('150');
   E.step(10);
   const sw = W.plantSw().filter(q => /DITL-BA0[12]$/.test(q.sheet)),
     on = (c, r) => (sw.find(q => q.sheet.endsWith(c) && q.row === r) || {}).on;
   ok(sw.length === 12, 'DITL-BA01 / BA02 switch rows: ' + sw.length);
   ok(on('BA01', 11) === true && on('BA01', 10) === false && on('BA01', 14) === true, 'DITL-BA01 rows 11 / 10 / 14');
+  const fw = W.plantSw().find(q => /DITL-23A #B$/.test(q.sheet) && q.row === 11);
+  ok(fw && fw.tag === 'ZSO-FW1032' && fw.on === true, 'DITL-23A #B row 11: ' + JSON.stringify(fw));
   console.log('copy addresses: ' + n + ' texts, problems ' + bad.length);
   for (const x of bad.slice(0, 30)) console.log('  ' + x);
   process.exit(bad.length ? 1 : 0);

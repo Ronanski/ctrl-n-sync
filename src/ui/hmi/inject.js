@@ -132,6 +132,8 @@ const block =
   '\n' +
   fs.readFileSync(__dirname + '/../plant/dcslists.js', 'utf8') +
   '\n' +
+  fs.readFileSync(__dirname + '/../plant/modbus.js', 'utf8') +
+  '\n' +
   fs.readFileSync(__dirname + '/../plant/library.js', 'utf8') +
   '</script>' +
   B;

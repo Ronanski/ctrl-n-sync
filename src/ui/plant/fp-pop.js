@@ -1009,7 +1009,8 @@
          the machine is in operation while its lance is out of the retract position, also when it was started by hand (MANUAL mode), where
          the OPERATING lamp of the AUTO program (DITL-80A) stays off */
       const aw = P.away && call(() => dk.dOf(P.away.d) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(P.away.d)), null),
-        on = !noSt && (call(() => dk.dout(P.d, P.st.row), null) === 1 || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0)),
+        /* beta.556: st.d = the state row stands on another drawing than the push buttons; st.inv = the row is 1 while the machine waits */
+        on = !noSt && (call(() => dk.dout(P.st.d || P.d, P.st.row), null) === (P.st.inv ? 0 : 1) || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0)),
         run = isRun(),
         pv = (P.perm || []).map(p => ({ ...p, v: call(() => window.DUI.rowVal(s, p.row), null) })),
         ok = !pv.length || pv.some(p => p.v === 1);
@@ -1811,10 +1812,13 @@
       }));
       F.bd.append(E('div', 'fpo-sh', h), ul);
     }
-    const monV = (P.mon || []).map(([l, f, u, dp]) => {
+    /* beta.556: words = [word at 1, word at 0] of an on / off point, as in the machine faceplate */
+    const monV = (P.mon || []).map(([l, f, u, dp, words]) => {
       const v = E('span', 'fpo-vb');
-      F.bd.append(row(l, v, E('small', 'fpo-dim', u || '')));
-      return [v, f, dp == null ? 1 : dp];
+      const r = row(l, v, ...((P.mon || []).some(x => x[2]) ? [E('small', 'fpo-dim', u || '')] : []));
+      r.classList.add('mon');
+      F.bd.append(r);
+      return [v, f, dp == null ? 1 : dp, words];
     });
     const trend = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     trend.setAttribute('viewBox', '0 0 300 50');
@@ -1837,9 +1841,9 @@
           return li;
         }));
       }
-      for (const [v, f, dp] of monV) {
+      for (const [v, f, dp, words] of monV) {
         const x = call(f, null);
-        setTx(v, x == null || !isFinite(+x) ? '-----' : (+x).toFixed(dp));
+        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp));
       }
       if (Hs) {
         const now = Date.now(),

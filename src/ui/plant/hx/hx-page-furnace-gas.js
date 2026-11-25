@@ -14,11 +14,12 @@
    Drawn simpler than the sheet:
    - 2 cyclones and 2 seal pots: one of each is drawn (a section through the boiler), both temperatures are shown;
    - the air side of the air heater, the fans and blowers of the combustion air: the Combustion air page;
-   - the single bank temperatures of the back pass TT-FG1100 ~ 1109 and 1111 have no signal in hx-registry.js: not shown.
+   - beta.556: the single bank temperatures of the back pass TT-FG1101 ~ 1109 and 1111 (DCS I/O list) stand beside it; a temperature
+     the plant model does not give shows -----.
    Left out on purpose, all without a signal in hx-registry.js: hand valves, test points, the single bed thermocouples, the
    bearing, winding and vibration measurements of the fan, the fly ash transmitters under the hoppers. */
 (function () {
-  const { V, E, M, C, L, page } = HX;
+  const { V, D, E, M, C, L, page } = HX;
   const MM = 'mmH₂O';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_G = 14;
@@ -47,6 +48,21 @@
     SY = 870,
     SS = 3.4; /* stack */
   const GAS = 'm:IDF';
+  /* the oil of the hydraulic coupling of the induced draft fan: DITL-25B */
+  const HCO = [
+    V('Coupling speed', 'fld:ST-LO1756', 'rpm', 0, { tag: 'ST-LO1756' }),
+    V('Scoop tube position', 'ABC-008|AI0482', '%', 1, { tag: 'ZT-LO1756' }),
+    D('Scoop tube open limit', 'ZSO-LO1756', '', 'OPEN', 'NOT OPEN'),
+    D('Scoop tube closed limit', 'ZSC-LO1756', '', 'CLOSED', 'NOT CLOSED'),
+    D('Oil pressure low', 'PSL-LO1756', 'dl:DITL-25B|i|19', 'LOW', 'NORMAL'),
+    D('Oil pressure low low', 'PSLL-LO1756', 'dl:DITL-25B|i|21', 'LOW LOW', 'NORMAL'),
+    D('Filter differential pressure', 'DPS-LO1756', 'dl:DITL-25B|i|17', 'HIGH', 'NORMAL'),
+    D('Working oil temperature', 'TS-LO1756-1', 'dl:DITL-25B|i|14', 'HIGH', 'NORMAL'),
+    D('Working oil temperature high high', 'TS-LO1756-2', 'dl:DITL-25B|i|15', 'HIGH HIGH', 'NORMAL')
+  ];
+  const air = tag => [V('Air buffer tank pressure', 'fld:' + tag, 'kg/cm²', 1, { tag })];
+  /* a list of temperatures: [tag, words] */
+  const tlist = (x, y, l) => l.map(([t, s], i) => ({ x, y: y + i * 16, s, key: 'fld:' + t, unit: '°C', dp: 0 }));
 
   page({
     id: 'furnace-gas',
@@ -68,18 +84,19 @@
           under: true,
           sc: BS
         }),
-        at(M('airheater', 'AIR PREHEATER', 'Air heater', []), AHX, AHY, { id: 'ah', sc: AS, lab: 'l' }),
+        at(M('airheater', 'AIR PREHEATER', 'Air heater', [], { mon: HX.MON_AH }), AHX, AHY, { id: 'ah', sc: AS, lab: 'l', yn: [-79, -66] }),
         at(E('esp', 'Precipitator', 'Z-1010', []), EX, EY, { id: 'esp', sc: ES, lab: 't' }),
         at(M('fan', 'IDF', 'Induced draft fan', [V('Current', 'IT-F1056', 'A')]), IX, IY, {
           id: 'idf',
           sc: IS,
-          lab: 'b'
+          lab: 'b',
+          yn: [90, -20]
         }),
         at(E('stack', '', '', [], { flow: GAS }), SX, SY, { id: 'st', under: true, sc: SS }),
 
         /* ---- dampers and controllers ---- */
         at(
-          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1116A-D', wrap: 14, mvb: true }),
+          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1116A-D', wrap: 14, mvb: true, mon: air('PT-IA1064-A') }),
           BPX + 56 * BS,
           BPY + 350 * BS,
           {
@@ -88,16 +105,16 @@
           }
         ),
         at(
-          C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1117A-D', wrap: 14, mvb: true }),
+          C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1117A-D', wrap: 14, mvb: true, mon: air('PT-IA1064-B') }),
           BPX + 160 * BS,
           BPY + 350 * BS,
           { id: 'dmb', lab: 'b' }
         ),
-        at(C('PICFG108A', 'Fan inlet damper', { sym: 'louver', w: 56, tag: 'PCD-FG1056-1', wrap: 12 }), DX, 800, {
+        at(C('PICFG108A', 'Fan inlet damper', { sym: 'louver', w: 56, tag: 'PCD-FG1056-1', wrap: 12 }), DX, 822, {
           id: 'idd',
           lab: 'l'
         }),
-        at(C('PICFG108', 'Furnace pressure, fan coupling, ' + MM, { sym: 'ctl', unit: '', pvdp: 0, wrap: 32 }), 1500, 600, {
+        at(C('PICFG108', 'Furnace pressure, fan coupling, ' + MM, { sym: 'ctl', unit: '', pvdp: 0, wrap: 32, mon: HCO }), 1500, 600, {
           id: 'pic',
           lab: 't'
         }),
@@ -106,18 +123,18 @@
            the hydraulic coupling selected the damper station tracks F(X) of the coupling (100 %), so the operator could not close the
            inlet damper for the ID fan START permissive (DITL-25A M.3117 IDF INLET VANE CLOSED) nor follow PR-OPE-5004 "change the
            furnace pressure control to DAMPER CONTROL" */
-        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1405, 470, { id: 'pbh' }) /* Audit 3: above the controller, clear of Fan outlet */,
-        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1600, 470, { id: 'pbd' }),
+        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1385, 470, { id: 'pbh' }) /* Audit 3: above the controller, clear of Fan outlet */,
+        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1545, 470, { id: 'pbd' }),
         at(C('AICFG112', 'Oxygen control', { sym: 'ctl', unit: '%', pvdp: 1, wrap: 30 }), 1050, 400, {
           id: 'o2c',
           lab: 't'
         }),
-        at(L('combustion-air', 'Combustion air'), 480, 810, { id: 'cal' }),
+        at(L('combustion-air', 'Combustion air'), 480, 785, { id: 'cal' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-G): no page linked to Purge and trip, the operator could not reach the purge */
         /* UI check 2026-11-24 C1: the three page links left of the gas duct down to the air heater */
-        at(L('purge-trip', 'Purge and trip'), 650, 810, { id: 'ptl' }),
+        at(L('purge-trip', 'Purge and trip'), 650, 785, { id: 'ptl' }),
         /* 3.2.5-beta.1 (F-M): the diesel oil and burners page was reached only through Purge and trip */
-        at(L('oil-burners', 'Burners'), 300, 810, { id: 'obl' })
+        at(L('oil-burners', 'Burners'), 300, 785, { id: 'obl' })
       ],
       pipes: [
         { med: 'gas', w: W_G, pts: ['fu.out', 'cy.in'], flow: GAS, arrow: false },
@@ -173,6 +190,12 @@
         { x: 24, y: 332, s: 'Lower to upper 2', key: 'DPT-FG1183', unit: MM, dp: 0 },
         { x: FX, y: FY + 200 * FS, s: 'Furnace', cls: 'hx-name', anchor: 'middle' },
         { x: CX, y: CY + 58, s: 'Cyclone', cls: 'hx-name', anchor: 'middle' },
+        { x: 24, y: 372, s: 'CYCLONES', cls: 'hx-zone' },
+        ...tlist(24, 394, [['TT-FG1092-A', 'Inlet A'], ['TT-FG1092-B', 'Inlet B'], ['TT-FG1096-A', 'Outlet A (2)'], ['TT-FG1096-B', 'Outlet B (2)']]),
+        { x: 1010, y: 96, s: 'BACK PASS, REHEATER SIDE', cls: 'hx-zone' },
+        ...tlist(1010, 118, [['TT-FG1102', 'Reheater 2 inlet'], ['TT-FG1104', 'Reheater 3 inlet'], ['TT-FG1106', 'Reheater 4 inlet'], ['TT-FG1108', 'Economizer 2R inlet']]),
+        { x: 1010, y: 206, s: 'BACK PASS, SUPERHEATER SIDE', cls: 'hx-zone' },
+        ...tlist(1010, 228, [['TT-FG1101', 'Finishing superheater 1 inlet'], ['TT-FG1103', 'Finishing superheater 2 inlet'], ['TT-FG1105', 'Finishing superheater 3 inlet'], ['TT-FG1107', 'Economizer 3 upper inlet'], ['TT-FG1109', 'Economizer 3 lower inlet'], ['TT-FG1111', 'Economizer 2S inlet']]),
         { x: 486, y: 650, s: 'SEAL POT', cls: 'hx-zone' },
         { x: 486, y: 670, s: 'Solids down A', key: 'TT-FG1009-A', unit: '°C', dp: 0 },
         { x: 486, y: 686, s: 'Solids down B', key: 'TT-FG1009-B', unit: '°C', dp: 0 },
@@ -192,8 +215,8 @@
         { x: 600, y: 978, s: 'Temperature 1', key: 'TT-FG1132', unit: '°C', dp: 0, anchor: 'end' },
         { x: 420, y: 962, s: 'Temperature 2', key: 'TT-FG1133', unit: '°C', dp: 0, anchor: 'end' },
         { x: 420, y: 978, s: 'Pressure', key: 'PT-FG1134', unit: MM, dp: 0, anchor: 'end' },
-        { x: 1336, y: 850, s: 'Fan inlet A', key: 'PT-FG1141-A', unit: MM, dp: 0, anchor: 'end' },
-        { x: 1336, y: 866, s: 'Fan inlet B', key: 'PT-FG1141-B', unit: MM, dp: 0, anchor: 'end' },
+        { x: 1336, y: 872, s: 'Fan inlet A', key: 'PT-FG1141-A', unit: MM, dp: 0, anchor: 'end' },
+        { x: 1336, y: 888, s: 'Fan inlet B', key: 'PT-FG1141-B', unit: MM, dp: 0, anchor: 'end' },
         { x: 1610, y: 150, s: 'STACK', cls: 'hx-zone', anchor: 'end' },
         { x: 1610, y: 172, s: 'Oxygen', key: 'AT-FG1057-4', unit: '%', dp: 1, anchor: 'end' },
         { x: 1610, y: 188, s: 'Nitrogen oxides', key: 'AT-FG1057-2', unit: 'ppm', dp: 0, anchor: 'end' },

@@ -113,6 +113,10 @@ html body.sc .fpo-box:not(#scnone) :is(.fpo-chip,.fpo-k,.fpo-fld){font:600 10px/
 html body.sc .fpo-box:not(#scnone) button.fpo-x{width:20px!important;height:20px!important;min-height:20px!important;min-width:20px!important;padding:0!important;font-size:12px!important;line-height:18px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-b{padding:6px 8px 7px!important;gap:5px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-r{gap:5px!important}
+/* beta.556: the monitor rows of the second faceplate: the name takes the free width, the values stand in one column */
+html body.sc .fpo-box:not(#scnone) .fpo-r.mon{flex-wrap:nowrap}
+html body.sc .fpo-box:not(#scnone) .fpo-r.mon .fpo-l{flex:1 1 0;width:auto!important;min-width:0;white-space:normal!important}
+html body.sc .fpo-box:not(#scnone) .fpo-r.mon .fpo-dim{flex:0 0 52px}
 html body.sc .fpo-box:not(#scnone) .fpo-l{width:68px!important;font:500 11px/13px var(--sc-ui)!important;letter-spacing:0!important}
 html body.sc .fpo-box:not(#scnone) .fpo-lp{font:600 11px var(--sc-ui)!important;gap:4px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-lp i{width:9px!important;height:9px!important}

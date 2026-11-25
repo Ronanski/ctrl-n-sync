@@ -815,6 +815,21 @@
     ports: { l: [-20, 0], r: [12, 0], t: [0, -8], b: [0, 8] },
     svg: '<path class="rxflame" d="M10 0Q16 -7 28 0Q16 7 10 0Z"/><path class="rxd" d="M-20 -6h3v12h-3z"/><path class="rx" d="M-17 -4.5H2L10 -2.5V2.5L2 4.5H-17Z"/><rect class="rxs" x="-12" y="-7.5" width="9" height="15" rx="1.5"/>'
   });
+  /* one water wall of the furnace seen from outside: the wall tubes and the open air ports (holes = [[x, y], ...], from the top left
+     corner of the wall, w x h) */
+  R.furnwall = o => {
+    const w = o.w || 1600,
+      h = o.h || 330;
+    let t = '';
+    for (let x = 14; x < w - 6; x += 14) t += `M${n(x)} 6V${n(h - 6)}`;
+    return {
+      box: [0, 0, w, h],
+      ports: { l: [0, h / 2], r: [w, h / 2], t: [w / 2, 0], b: [w / 2, h] },
+      svg:
+        `<rect class="rxfw" x="0" y="0" width="${n(w)}" height="${n(h)}" rx="4"/><path class="rxe" opacity=".45" d="${t}"/>` +
+        (o.holes || []).map(p => `<ellipse class="rxvoid" cx="${n(p[0])}" cy="${n(p[1])}" rx="7" ry="15"/>`).join('')
+    };
+  };
   /* air compressor as a package: the motor and the air end inside the enclosure, cut open. Ports: in (air in, left), out
      (compressed air, right) */
   R.compressor = () => ({
@@ -965,6 +980,62 @@
     svg:
       '<path class="rxd" d="M-18 24h36v4h-36z"/><rect class="rx" x="-20" y="-28" width="40" height="52" rx="2.5"/>' +
       '<rect class="rxscr" x="-13" y="-21" width="26" height="14" rx="1.5"/><path class="rxe" d="M-13 0h26M-13 7h26M-13 14h18"/><path class="rxhi" d="M-16 -25.5h32"/>'
+  });
+
+  /* a control system cabinet with its door open (K1AU3-E2-0-109 cabinet layouts: power unit on top, alarm unit, then the two controllers
+     or the input / output nodes). o.type: mpu (controllers), io (input / output nodes), gateway, server, relay (relay rows), power
+     (breakers). The lamp of the alarm unit (rxal) follows the rule in "on": lit while 1 (o.inv: lit while 0). Ports: t / b / l / r */
+  R.rack = o => {
+    const row = (y, k, h) => {
+      const p = 44 / k;
+      let d = '';
+      for (let i = 0; i < k; i++) d += `M${n(-21 + i * p)} ${y}h${n(p - 2)}v${h}h${n(2 - p)}z`;
+      return `<path class="rxv" d="${d}"/>`;
+    };
+    const node = y => row(y, 8, 18) + `<path class="rxe" d="M-22 ${y + 21}H22"/>`;
+    const box = (x, y, w, h) =>
+      `<rect class="rx" x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5"/><path class="rxe" d="M${x + 3} ${y + 4}h${w - 6}M${x + 3} ${y + 7}h${w - 6}"/><circle class="rxk" cx="${x + w - 4}" cy="${y + h - 4}" r="1.5"/>`;
+    const body = {
+      mpu: () => box(-22, -27, 21, 28) + box(1, -27, 21, 28) + node(7) + node(33),
+      io: () => node(-26) + node(4) + node(34),
+      gateway: () => box(-22, -27, 44, 17) + box(-22, -7, 44, 17) + node(17) + '<path class="rxe" d="M-20 46h40M-20 52h40"/>',
+      server: () => box(-22, -27, 44, 14) + box(-22, -11, 44, 14) + box(-22, 5, 44, 14) + '<path class="rxe" d="M-20 28h40M-20 36h40M-20 44h40"/>',
+      relay: () => row(-26, 6, 13) + row(-8, 6, 13) + row(10, 6, 13) + row(28, 6, 13) + '<path class="rxe" d="M-22 47H22M-22 53H22"/>',
+      power: () => box(-22, -27, 21, 24) + box(1, -27, 21, 24) + row(4, 5, 20) + row(31, 5, 20)
+    }[o.type || 'io']();
+    return {
+      box: [-31, -69, 31, 69],
+      ports: { t: [0, -68], b: [0, 68], l: [-30, -8], r: [30, -8] },
+      svg:
+        '<path class="rxd" d="M-28 62h56v6h-56z"/><rect class="rx" x="-30" y="-68" width="60" height="130" rx="2.5"/><rect class="rxvoid" x="-25" y="-63" width="50" height="121" rx="1.5"/>' +
+        row(-59, 8, 14) +
+        '<rect class="rxd" x="-22" y="-42" width="44" height="11" rx="1"/><path class="rxe" d="M-18 -36.5h24"/><circle class="rxal' +
+        (o.inv ? ' inv' : '') +
+        '" cx="15" cy="-36.5" r="4.2"/>' +
+        body +
+        '<path class="rxhi" d="M-26 -65.5h52"/>'
+    };
+  };
+  /* operator station: a desk with two screens and a keyboard. Ports: b */
+  R.console = () => ({
+    box: [-34, -27, 34, 25],
+    ports: { t: [0, -26], b: [0, 24], l: [-33, 0], r: [33, 0] },
+    svg:
+      '<path class="rxd" d="M-28 14v10h5V14zM23 14v10h5V14z"/><rect class="rx" x="-33" y="8" width="66" height="7" rx="1.5"/>' +
+      '<path class="rxd" d="M-18 2h4v6h-4zM14 2h4v6h-4z"/><rect class="rx" x="-31" y="-26" width="30" height="28" rx="2"/><rect class="rx" x="1" y="-26" width="30" height="28" rx="2"/>' +
+      '<rect class="rxscr" x="-28" y="-23" width="24" height="20"/><rect class="rxscr" x="4" y="-23" width="24" height="20"/>' +
+      '<path class="rxe" d="M-25 -8l5 -6 5 3 6 -8M8 -18h16M8 -13h16M8 -8h10"/><rect class="rxd" x="-11" y="5" width="22" height="3" rx="1"/>'
+  });
+  /* server: two tower units side by side. Ports: b */
+  R.server = () => ({
+    box: [-27, -27, 27, 25],
+    ports: { t: [0, -26], b: [0, 24], l: [-26, 0], r: [26, 0] },
+    svg: [-25, 3]
+      .map(
+        x =>
+          `<rect class="rx" x="${x}" y="-26" width="22" height="50" rx="2"/><path class="rxv" d="M${x + 4} -21h14v5h-14zM${x + 4} -13h14v5h-14z"/><circle class="rxk" cx="${x + 11}" cy="0" r="2"/><path class="rxe" d="M${x + 4} 8h14M${x + 4} 13h14M${x + 4} 18h14"/>`
+      )
+      .join('')
   });
 
   /* ---------------- scenery ---------------- */
