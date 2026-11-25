@@ -412,6 +412,7 @@
     }
     const macros = (s.m || []).map(([key, name, tag, x, y, w, h, L, R, foot, notes, plain]) => ({
       key,
+      no: foot,
       type: 'M:' + name,
       tag,
       notes: notes || [],
@@ -1434,6 +1435,94 @@
     const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
     return m ? +m[1] : null;
   };
+  /* ---------- macro insides FROM THE HIACS BACKUP (2026-11-26). Source: the controller backup of the TCS (TCE station EHG + MD,
+     2018-07-14), decoded on the PC by lane 0 (team-files/tcs-decoded; table /mnt/project-files/tcs-macros.json, user 2026-11-26 7:00 AM
+     "Gamitin", values allowed in this repository). The drawings show only the outside of these macros; the backup holds the inside as
+     blocks of this same library (K) and their parameters in record order. Each entry: pi = input pins, po = output pin <- inside block,
+     b = [op, block number, inputs, values], at = the instances (sheet + macro number) with the values that differ from the first one.
+     Inputs: "pin X" = the macro pin X, "REF X" = the controller definition X (INITIAL, ANN RESET ...), "OP n" = inside block, "SW:" = side
+     input. Only macros whose every inside block and wire reads plainly are here; the others (DENSO receive pairs with no block number,
+     JOINT with no input, PA / SYSREF parameter words, pins the drawing does not draw) stay as they were: phase6-tcs-backup-slice-b.md.
+     Record order of the values (lane 0 table, tcs-backup-tables "Order of numbers"): TP / TD / TW seconds, LCK / UCK / G / GRD K, LG T,
+     FG x1 y1 x2 y2 ... */
+  const BK = 'from the HIACS backup (macro inside)';
+  const BKM = {
+    LME125: { name: "HMI INDI FOR VALVE", pi: ["POS", "POS1", "POS2", "POS3", "QUA1", "QUAA", "QUA2", "QUAB", "QUA3", "QUAC", "ABN1", "ABNA", "ABN2", "ABNB", "ABN3", "ABNC"], po: {"ABN.O": "OR 033"},
+      b: [["FTR", "001", ["pin POS"], []], ["DENSO", "", ["FTR 001"], [3]], ["FTR", "003", ["pin POS1"], []], ["DENSO", "", ["FTR 003"], [3]], ["FTR", "005", ["pin POS2"], []], ["DENSO", "", ["FTR 005"], [3]], ["FTR", "007", ["pin POS3"], []], ["DENSO", "", ["FTR 007"], [3]], ["OR", "009", ["pin QUA1", "pin QUAA"], []], ["BTR", "010", ["OR 009"], []], ["DENSO", "", ["BTR 010"], [3]], ["OR", "017", ["pin QUA2", "pin QUAB"], []], ["A", "011", ["OR 009", "OR 017"], []], ["OR", "021", ["pin QUA3", "pin QUAC"], []], ["A", "016", ["OR 021", "OR 017"], []], ["A", "019", ["OR 009", "OR 021"], []], ["OR", "012", ["A 011", "A 016", "A 019"], []], ["BTR", "013", ["OR 012"], []], ["DENSO", "", ["BTR 013"], [3]], ["BTR", "018", ["OR 017"], []], ["DENSO", "", ["BTR 018"], [3]], ["BTR", "022", ["OR 021"], []], ["DENSO", "", ["BTR 022"], [3]], ["OR", "024", ["pin ABN1", "pin ABNA"], []], ["BTR", "025", ["OR 024"], []], ["DENSO", "", ["BTR 025"], [3]], ["OR", "027", ["pin ABN2", "pin ABNB"], []], ["OR", "030", ["pin ABN3", "pin ABNC"], []], ["OR", "033", ["OR 024", "OR 027", "OR 030"], []], ["BTR", "034", ["OR 033"], []], ["DENSO", "", ["BTR 034"], [3]], ["BTR", "028", ["OR 027"], []], ["DENSO", "", ["BTR 028"], [3]], ["BTR", "031", ["OR 030"], []], ["DENSO", "", ["BTR 031"], [3]]],
+      at: {"TCE450 002": {}, "TCE450 004": {}, "TCE450 036": {}, "TCE450 038": {}, "TCE451 002": {}, "TCE451 004": {}, "TCE451 036": {}, "TCE451 038": {}} },
+    LME286: { name: "(not named on the drawing)", pi: ["SET"], po: {"OUT": "LG 013"},
+      b: [["LG", "013", ["pin SET", "SW:REF SIMULATIONUSE"], [5]]],
+      at: {"TCE500 016": {}, "TCE500 023": {"LG 013": [2.5]}, "TCE500 033": {}, "TCE500 036": {}, "TCE502 014": {}, "TCE502 017": {}, "TCE502 020": {}} },
+    LME010: { name: "UNT-FG", pi: ["X"], po: {"Y": "ASW 011"},
+      b: [["FG", "010", ["pin X"], [89, 46.2, 91, 48, 92, 49.7, 93, 52.2, 94, 55.5, 95, 60.6, 97, 79.618, 100, 105]], ["FG", "012", ["pin X"], [52, 27.88, 60, 29.896, 72, 37, 76, 39, 82, 42.5, 84, 44, 87, 45.2, 89, 46.2]], ["FG", "014", ["pin X"], [-5, -5, 0, 0, 20, 0, 24, 11.4, 25, 12.143, 29, 13.7, 42, 22.33, 52, 27.88]], ["UCK", "009", ["pin X"], [52]], ["ASW", "013", ["FG 012", "FG 014", "SW:UCK 009"], []], ["UCK", "008", ["pin X"], [89]], ["ASW", "011", ["FG 010", "ASW 013", "SW:UCK 008"], []]],
+      at: {"TCE212 003": {}, "TCE212 036": {"FG 010": [92, 45.3, 93, 48.07, 94, 51.8, 95, 57.35, 97, 78.9, 100, 105, 102, 105, 103, 105], "FG 012": [60, 25.3, 69, 29.5, 74, 32, 78, 34.35, 84, 38.8, 87, 40.2, 89, 41.35, 92, 45.3], "FG 014": [-5, -5, 0, 0, 20, 0, 29, 4.85, 31, 6.42, 43, 15.2, 51, 20.4, 60, 25.3], "UCK 009": [60], "UCK 008": [92]}} },
+    LME105: { name: "TRIPPLE INPUT DIAGNOSTICS", pi: ["IN1", "IN2", "IN3"], po: {"OUT": "OR 002", "DEVE": "FFS 008"},
+      b: [["A", "001", ["pin IN1", "pin IN2"], []], ["A", "003", ["pin IN2", "pin IN3"], []], ["A", "004", ["pin IN3", "pin IN1"], []], ["OR", "002", ["A 001", "A 003", "A 004"], []], ["OR", "014", ["pin IN1", "pin IN2", "pin IN3"], []], ["A", "010", ["pin IN1", "pin IN2", "pin IN3"], []], ["NOT", "016", ["A 010"], []], ["A", "015", ["OR 014", "NOT 016"], []], ["TP", "007", ["A 015", "SW:REF INITIAL"], [3]], ["FFS", "008", ["TP 007", "REF ANNRESET"], []]],
+      at: {"TCE145 005": {}} },
+    LME133: { name: "HEAT SOAK SELECT", pi: ["IP.ST", "SET", "RESET", "SPEED", "TB.T", "52G.C", "HP.ST", "200RPM", "ALL.VC"], po: {"CRT.P": "BTR 001", "SELECT": "FFR 005", "H.S.R": "NOT 010", "CONT": "FFR 013"},
+      b: [["BTR", "001", ["REF INITIAL"], []], ["A", "002", ["pin IP.ST", "pin SET"], []], ["NOT", "007", ["pin RESET"], []], ["A", "003", ["A 002", "NOT 007"], []], ["LCK", "018", ["pin SPEED"], [100]], ["A", "004", ["A 003", "LCK 018"], []], ["NOT", "006", ["A 002"], []], ["A", "008", ["pin RESET", "NOT 006"], []], ["TW", "011", ["pin TB.T", "SW:REF INITIAL"], [1]], ["OR", "009", ["A 008", "TW 011", "pin 52G.C", "pin HP.ST"], []], ["FFR", "005", ["A 004", "OR 009"], []], ["NOT", "010", ["FFR 005"], []], ["OR", "014", ["pin 200RPM", "pin ALL.VC"], []], ["NOT", "015", ["OR 014"], []], ["A", "012", ["FFR 005", "NOT 015"], []], ["NOT", "016", ["FFR 005"], []], ["OR", "017", ["NOT 016", "pin ALL.VC"], []], ["FFR", "013", ["A 012", "OR 017"], []]],
+      at: {"TCE163 001": {}} },
+    LME249: { name: "ACCELERATION RELAY", pi: ["SPEED", "ACC.S", "RATEDS", "OPE.S", "CLOSE", "HPMODE", "BACK.S"], po: {"OPE": "A 006"},
+      b: [["GRD", "001", ["pin SPEED", "SW:REF INITIAL"], [1]], ["SUB", "002", ["GRD 001", "pin ACC.S"], []], ["UCK", "003", ["SUB 002"], [0]], ["LCK", "014", ["GRD 001"], [0]], ["G", "018", ["pin RATEDS"], [1.005]], ["SUB", "016", ["pin SPEED", "G 018"], []], ["LCK", "017", ["SUB 016"], [0]], ["OR", "015", ["LCK 014", "LCK 017"], []], ["FFR", "005", ["UCK 003", "OR 015"], []], ["SUB", "008", ["pin SPEED", "pin OPE.S"], []], ["UCK", "009", ["SUB 008"], [0]], ["TP", "024", ["pin CLOSE", "SW:REF INITIAL"], [10]], ["NOT", "012", ["TP 024"], []], ["OR", "013", ["NOT 012", "pin HPMODE"], []], ["A", "010", ["UCK 009", "OR 013"], []], ["SUB", "019", ["pin SPEED", "pin BACK.S"], []], ["UCK", "020", ["SUB 019"], [0]], ["A", "021", ["UCK 020", "TP 024"], []], ["NOT", "023", ["pin HPMODE"], []], ["A", "022", ["A 021", "NOT 023"], []], ["OR", "011", ["A 010", "A 022"], []], ["A", "006", ["FFR 005", "OR 011"], []]],
+      at: {"TCE166 001": {}} }
+  };
+  const BKPAR = { TP: ['TP'], TD: ['TD'], TW: ['TW'], LCK: ['K'], UCK: ['K'], G: ['K'], GRD: ['K'], LG: ['T'], SG: ['K'] };
+  const BKAT = {};
+  for (const lme in BKM) for (const at in BKM[lme].at) BKAT[at] = lme;
+  /* the macro of the backup at this sheet + number ("TCE212", "A003" -> "TCE212 003"), or null */
+  function bkMacro(sheet, no) {
+    const d = /(\d+)\s*$/.exec(String(no || ''));
+    if (!d) return null;
+    const at = sheet + ' ' + d[1].padStart(3, '0'),
+      lme = BKAT[at] || BKAT[sheet + ' ' + d[1]];
+    if (!lme) return null;
+    const M = BKM[lme],
+      ov = M.at[at] || M.at[sheet + ' ' + d[1]] || {};
+    const bl = M.b
+      .filter(([op, el, ins, val]) => !(op === 'DENSO' && val[0] === 3)) /* DENSO 3 = sent to the operator screen only */
+      .map(([op, el, ins, val]) => {
+        const id = op + ' ' + el,
+          vals = ov[id] || val,
+          notes = op === 'FG' ? vals.map((v, i) => (i % 2 ? 'Y' : 'X') + (((i / 2) | 0) + 1) + ':' + v) : (BKPAR[op] || []).map((k, i) => k + ':' + vals[i]);
+        const L = ins.filter(s => !/^SW:/.test(s)),
+          S = ins.find(s => /^SW:/.test(s));
+        return { id, op, f: K[op], notes, L, S: S ? S.slice(3) : null };
+      });
+    if (bl.some(b => !b.f)) return null;
+    const refs = [...new Set(M.b.flatMap(b => b[2]).map(s => s.replace(/^SW:/, '')).filter(s => /^REF /.test(s)).map(s => s.slice(4)))];
+    /* order: a block after the inside blocks that feed it (a loop reads the last scan's value) */
+    const by = new Map(bl.map(b => [b.id, b])),
+      order = [],
+      seen = new Set();
+    const visit = b => {
+      if (seen.has(b.id)) return;
+      seen.add(b.id);
+      for (const s of b.L.concat(b.S ? [b.S] : [])) if (by.has(s)) visit(by.get(s));
+      order.push(b);
+    };
+    bl.forEach(visit);
+    const f = (I, notes, st, dt) => {
+      const v = (st.v = st.v || {});
+      const rd = s => (/^pin /.test(s) ? +I[s.slice(4).replace(/\s+/g, '')] || 0 : /^REF /.test(s) ? I['DEF ' + f.map[s.slice(4)]] : v[s] || 0);
+      for (const b of order) {
+        const bs = (st[b.id] = st[b.id] || {});
+        let sw;
+        if (b.S) sw = b01(rd(b.S));
+        else if (INTL_SW[b.op]) (sw = bs.intl ? 1 : 0), (bs.intl = 1);
+        v[b.id] = b.f(b.L.map(rd), b.notes, bs, dt, sw)[0];
+      }
+      const O = {};
+      for (const p in M.po) O[p.replace(/\s+/g, '')] = v[M.po[p]];
+      return O;
+    };
+    f.src = BK;
+    f.lme = lme;
+    f.pins = M.pi;
+    f.refs = refs;
+    f.map = {};
+    f.need = () => [];
+    return f;
+  }
   function compile(sheets) {
     /* an explanation sheet (TCE022 LOGIC EXPLANATION, TCE023 PI/O TABLE EXPLANATION) draws examples of the symbols, not logic */
     sheets = sheets.filter(s => !s.legend);
@@ -1559,6 +1648,15 @@
           open: need(b.type, notes, !!side || !!S.dwg),
           st: {}
         });
+        /* UNT-FG with no table on the page (TCE212 003 / 036): the inside of the backup macro (LME010, three FG and their selection) */
+        const ub = b.type === 'UNT-FG' && bkMacro(n.id, b.no);
+        if (ub && ub.pins.length === 1 && L.length === 1) {
+          const x = nodes[nodes.length - 1],
+            po = Object.keys(BKM[ub.lme].po)[0];
+          x.f = (xs, nt, st, dt) => [ub({ [ub.pins[0]]: xs[0] }, nt, st, dt)[po]];
+          x.open = [];
+          x.src = BK;
+        }
       }
       /* ML 62 PA (parameter modify, TCA019): PA<n> number N gives on line the parameters of the block N of the sheet (drawn beside
          it: TCE196 PA3 005 -> I 005, TCA533 PA2 010 -> CMP 010). Which parameter each input gives is the name printed at the input
@@ -1609,13 +1707,27 @@
           nodes.push({ t: 'b', f: null, type: 'BOX ' + name, notes: [], out: slot(n.id + ':' + x[0]), ins: [], inv: [], sw: -1, open: [], st: {} });
         }
       for (const M of n.macros) {
+        /* the inside from the HIACS backup comes first (it is the program itself); the manual-text reading stays for the others */
         const name = M.type.slice(2),
-          f = MACRO[name] || null;
+          bk = bkMacro(n.id, M.no),
+          f = bk || MACRO[name] || null;
         if (!f) unknown[M.type] = (unknown[M.type] || 0) + 1;
+        const nz = q => (bk ? String(q).replace(/\s+/g, '') : q);
         const outs = {};
-        M.R.forEach(p => p && (outs[p] = slot(n.id + ':' + M.key + '.' + p)));
+        M.R.forEach(p => p && (outs[nz(p)] = slot(n.id + ':' + M.key + '.' + p)));
         const ins = {};
-        for (const i of M.ins) if (i.name) ins[i.name] = res(n.id, i.net);
+        for (const i of M.ins) if (i.name) ins[nz(i.name)] = res(n.id, i.net);
+        if (bk) {
+          for (const r of bk.refs) {
+            const t = Object.keys(defs).filter(k => k[0] === '|' && k.slice(1).replace(/\s+/g, '') === r).map(k => k.slice(1))[0];
+            bk.map[r] = t || r;
+            const dd = t && (defs[S.ctl + '|' + t] || defs['|' + t]);
+            ins['DEF ' + (t || r)] = dd && dd.length ? res(dd[0][0], dd[0][1]) : port('REF:' + (t || r));
+          }
+          /* a pin of the backup macro that the drawing does not draw stays open (its value in HIACS is not known) */
+          const miss = bk.pins.filter(q => !(nz(q) in ins));
+          bk.need = () => miss.map(q => 'pin ' + q + ' not drawn');
+        }
         /* push buttons of the operator station that the macro holds inside (MOTOR STANDARD: START / STOP / AUTO / MANUAL / RESET of the
            typical, IBD 310SC90-794 sheet 14): a CRT port of the block, "CRT:<sheet>.<block>.<button>" */
         for (const k of (f && f.pb) || []) ins['PB ' + k] = port('CRT:' + n.id + '.' + M.key + '.' + k);
@@ -1744,7 +1856,8 @@
       bOk = 0,
       macros = 0,
       mOk = 0,
-      mText = 0;
+      mText = 0,
+      mBk = 0 /* macros and UNT-FG run from the inside of the HIACS backup */;
     const notRun = [],
       runText = [] /* sheets that run with a macro meaning from the manual text (inside not drawn): QA counts them apart */,
       open = {};
@@ -1758,6 +1871,7 @@
           for (const w of x.open) (open[w] = open[w] || new Set()).add(p.id);
         }
         if (x.t === 'M') (macros++, x.f ? mOk++ : (ok = false), x.src === TEXT && (mText++, (text = true)));
+        if (x.src === BK) mBk++;
         if (x.t === 'M' && x.open && x.open.length) {
           ok = false;
           for (const w of x.open) (open[w] = open[w] || new Set()).add(p.id);
@@ -1771,7 +1885,7 @@
       kinds[k] = (kinds[k] || 0) + 1;
     }
     for (const w in open) open[w] = [...open[w]].sort();
-    return { sheets: prog.plan.length, run, runText, notRun, open, blocks, bOk, macros, mOk, mText, ports: prog.ports.length, portKinds: kinds };
+    return { sheets: prog.plan.length, run, runText, notRun, open, blocks, bOk, macros, mOk, mText, mBk, ports: prog.ports.length, portKinds: kinds };
   }
-  root.TCE_RUN = { crt, read, outs, K, par, REQ, EXTRA, need, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO, TEXT };
+  root.TCE_RUN = { crt, read, outs, K, par, REQ, EXTRA, need, KINDS, ALIAS, MARK, kind, net, gnet, join, compile, step, scan, set, get, stats, MACRO, TEXT, BK, BKM, bkMacro };
 })(typeof window !== 'undefined' ? window : globalThis);

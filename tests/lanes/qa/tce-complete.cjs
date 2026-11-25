@@ -10,7 +10,8 @@ const root = path.resolve(__dirname, '..', '..', '..');
    141 -> 196 after lane 1 PR 526 fixed both (nearest connector, INITIAL from TCE050) */
 /* 256 -> 257 (Phase 6 TCS 2026-11-26: the FG curves and values of the HIACS backup, _lib.js TCE_BACKUP) */
 /* 196 -> 256 (Phase 7, user "Go 7" 2026-11-25 ~7:40 PM PHT): the floor follows main again (COMPLETE 256 of 419 on main ebdeea5) */
-const FLOOR = +(process.env.TCE_FLOOR || 257);
+/* 257 -> 261 (Phase 6 TCS slice B 2026-11-26: the macro insides of the HIACS backup, tce-run.js BKM: TCE163 TCE166 TCE450 TCE451) */
+const FLOOR = +(process.env.TCE_FLOOR || 261);
 const dir = root + '/src/digital/tce';
 const src = fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8');
 const win = {};

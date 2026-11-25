@@ -8,9 +8,12 @@ const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
 const dir = path.resolve(__dirname, '..', '..', '..', 'src', 'digital', 'tce');
-const FLOOR = 56;
-/* TCE212 003 / 036 UNT-FG (LMA010, CV flow demand to position): no table on page 144; the macro insides of the backup are the next slice */
-const OPEN = ['TCE212 003', 'TCE212 036'];
+const FLOOR = 58;
+/* none open: TCE212 003 / 036 UNT-FG (no table on page 144) run the inside of the backup macro LME010 (tce-run.js BKM, slice B) */
+const OPEN = [];
+const win = {};
+vm.runInNewContext(fs.readFileSync(path.join(dir, '..', 'tce-run.js'), 'utf8'), { window: win });
+const R = win.TCE_RUN;
 const lib = fs.readFileSync(path.join(dir, '_lib.js'), 'utf8');
 let n = 0,
   ok = 0,
@@ -28,7 +31,9 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f))) 
         all = (b[5] || []).concat((s.pr && s.pr[b[0]]) || []),
         pts = x => x.filter(q => /^\s*X\d+\s*:/.test(q)).length;
       if (pts(own) && all.some(q => /\(HIACS\)/.test(q))) mixed++;
-      if (pts(all) >= 2) {
+      const inside = b[1] === 'UNT-FG' && R.bkMacro(s.id, b[2]);
+      if (inside && inside.lme === 'LME010' && !pts(all)) (ok++, bk++);
+      else if (pts(all) >= 2) {
         ok++;
         if (all.some(q => /\(HIACS\)/.test(q))) bk++;
       } else miss.push(s.id + ' ' + b[2]);
