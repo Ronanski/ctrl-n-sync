@@ -56,6 +56,18 @@ rows.push(
     src: 'IO list STN102 I.000B ZSC-HR1391; ZT-HR1391 STN102 AI0737 (ABC-054); memory list 102 M.3223; MOV rule' }
 );
 
+/* 3c. HP / LP turbine bypass valves PCV-MS1020 / PCV-HR1010 (STN102, positions ZT-MS1020 AI0384 on ABC-050 / DITL-03H, ZT-HR1010
+   AI0385 on ABC-052 / DITL-03H): the limit switches that no sheet reads (YUA PDF read 2026-11-26 section C: the sheets use ZSC-MS1020
+   I.0081 on DITL-115-16 and the positions). Display only; same end-of-travel rule. */
+rows.push(
+  { stn: 2, di: 1, tag: 'ZSO-MS1020', v: (U, X) => opened(num(X.ai('2|AI0384'))), rel: 'ZT-MS1020 at 100 % (open limit)',
+    src: 'IO list STN102 I.0080 ZSO-MS1020; ZT-MS1020 STN102 AI0384 (ABC-050); MOV rule' },
+  { stn: 2, di: 1, tag: 'ZSO-HR1010', v: (U, X) => opened(num(X.ai('2|AI0385'))), rel: 'ZT-HR1010 at 100 % (open limit)',
+    src: 'IO list STN102 I.0082 ZSO-HR1010; ZT-HR1010 STN102 AI0385 (ABC-052); MOV rule' },
+  { stn: 2, di: 1, tag: 'ZSC-HR1010', v: (U, X) => closed(num(X.ai('2|AI0385'))), rel: 'ZT-HR1010 at 0 % (closed limit)',
+    src: 'IO list STN102 I.0083 ZSC-HR1010; ZT-HR1010 STN102 AI0385 (ABC-052); MOV rule' }
+);
+
 /* 4. Biasing damper air buffer tanks PT-IA1064-A / B (STN104): on P&ID PD-023 sheet 6/6 (over-all instrument list), filled from the
    instrument air to unit 1 (IA1706, unit.js AN_AIR U.iaPU). The tank only fills the damper actuators: no flow through its inlet = no
    friction drop, so the tank is at the header pressure. */
@@ -201,6 +213,16 @@ for (const x of 'ABC') {
     });
   }
 );
+/* 7c. MCC contacts of the PAF / SAF inlet flow control dampers (STN101; YUA PDF read section C: ABC-007, DITL-26A / 27A use only their
+   ZSC / ZSO). Monitor points in normal service, no interlock. */
+[[1, 'FA1053-1', 'MIT', 'I.0048', 0, 'PAF inlet damper tripped'], [1, 'FA1053-1', 'TS', 'I.004A', 0, 'PAF inlet damper torque switch made'],
+  [1, 'FA1054-1', 'MIT', 'I.0058', 0, 'SAF inlet damper tripped'], [1, 'FA1054-1', 'MIL', 'I.0059', 1, 'SAF inlet damper not in remote'],
+  [1, 'FA1054-1', 'TS', 'I.005A', 0, 'SAF inlet damper torque switch made']].forEach(([stn, d, p, a, nrm, t]) => {
+  const id = d + '.' + p.toLowerCase(),
+    src = 'IO list STN101 ' + a + ' ' + p + '-' + d + '; Phase 6 wiring read (ABC-007, DITL-26A / 27A do not read it: monitor point)';
+  states.push({ id, tag: p + '-' + d, normal: nrm, t, g: 'Air and flue gas', src });
+  fr.push({ stn, di: 1, tag: p + '-' + d, v: (U, X) => X.state(id), rel: 'MCC contact (field state)', src });
+});
 FIELD.state(lane, states);
 FIELD.add(lane, fr);
 

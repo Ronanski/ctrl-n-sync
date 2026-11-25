@@ -8,3 +8,8 @@ Source: YUA PDF read /mnt/project-files/phase6-mov-damper-wiring-2026-11-26.md (
 - QA trace: I/O unlinked 141 -> 133, I/O inputs nowhere (B2) 79 -> 71, I/O with a value 2,145 -> 2,153. baseline.json moved.
 - Not done (stopped at the timebox): the open / close commands AO0704 / 0705 / 0708 / 0709 (PO1 / PO2 of the PO block on ABC-054 / 055).
   The PO block keeps its pulses inside the block; making them addresses is an engine change, sized for its own slice.
+
+## Slice 4 (same branch, ~2:25 AM)
+- 3c: ZSO-MS1020 (I.0080) from ZT-MS1020 AI0384, ZSO / ZSC-HR1010 (I.0082 / I.0083) from ZT-HR1010 AI0385 (end-of-travel rule).
+- 7c: PAF inlet damper MIT / TS (I.0048 / I.004A), SAF inlet damper MIT / MIL / TS (I.0058 / 59 / 5A) as field states, no interlock.
+- QA trace: unlinked 133 -> 125, B2 71 -> 63, value 2,153 -> 2,161.
