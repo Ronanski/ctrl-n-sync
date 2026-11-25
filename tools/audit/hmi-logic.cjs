@@ -93,7 +93,8 @@ const onAbc = t => abc.includes('"' + t) || abc.includes(String(t).replace(/-/g,
               name,
               kind: 'machine',
               a: s ? 'OK' : 'sheet ' + m.d + ' not loaded',
-              b: s && ((m.df.perm || []).length || m.df.need) ? 'OK' : 'no permissive rows given',
+              /* an empty list counts when the page says why (the sheet has no permissive gate): finding (b), correct by the drawing */
+              b: s && ((m.df.perm || []).length || m.df.need || (Array.isArray(m.df.perm) && m.df.why)) ? 'OK' : 'no permissive rows given',
               c: s && m.df.st != null ? 'OK' : 'no state row'
             });
             continue;

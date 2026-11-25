@@ -16,3 +16,7 @@
 - Pinatakbo ang tool sa main (headless, 150 MW): ang buong report ay nasa project files `lanes/hmi-water-steam-turbine/hmi-logic-audit-2026-11-25.md`.
 
 Lane 7, HMI TURBINE : MINAMI
+
+## Dagdag: S-1504 debris filter
+- Binasa ang DITL-39 netlist: ang AUTO START / STOP (M.0792 / M.0793) ay diretso sa 2 s pulse (TR392 / TR393) at palabas, walang gate. Kaya walang permissive ang faceplate, at isinulat na ang dahilan (finding b, tama ayon sa drawing). Ang tool ay tumatanggap ng walang lamang listahan kapag may nakasulat na dahilan.
+- Para sa may-ari ng hx-sys-cw.js: ang S-1502 ay may permissive na rows 1 ~ 3 (SWP A / B / C running). Sa netlist, ang tatlong row na iyon ay OR papunta sa output row 0 (in operation), hindi gate ng AUTO START (M.0790). Suriin kung permissive nga ba o state lang.
