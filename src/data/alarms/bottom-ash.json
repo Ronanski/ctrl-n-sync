@@ -1,7 +1,7 @@
 [
 {"tag": "LT-BH1750", "lv": "HIGH", "p": 3, "sp": 90.0, "d": "#1 RADAR LEVEL TRANSMITTER (SILO ASH LEVEL)", "stn": 103, "addr": "AI0386", "src": "Alarm List _20160912 sheet LT, PD-071"},
 {"tag": "LT-BH1750", "lv": "LOW", "p": 3, "sp": 40.0, "d": "#1 RADAR LEVEL TRANSMITTER (SILO ASH LEVEL)", "stn": 103, "addr": "AI0386", "src": "Alarm List _20160912 sheet LT, PD-071"},
-{"tag": "SS-BH1060-B", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060B SPEED MONITOR", "stn": 103, "addr": "I.0538", "src": "Alarm List _20160912 sheet SS, PD-072"},
-{"tag": "SS-BH1060-C", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060C SPEED MONITOR", "stn": 103, "addr": "I.0648", "src": "Alarm List _20160912 sheet SS, PD-072"},
-{"tag": "SS-BH1060-D", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060D SPEED MONITOR", "stn": 103, "addr": "I.0688", "src": "Alarm List _20160912 sheet SS, PD-072"}
+{"tag": "SS-BH1060-B", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060B SPEED MONITOR", "stn": 103, "addr": "I.0538", "src": "Alarm List _20160912 sheet SS, PD-072", "ditl": "DITL-21A #B", "out": "SPEED LOW"},
+{"tag": "SS-BH1060-C", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060C SPEED MONITOR", "stn": 103, "addr": "I.0648", "src": "Alarm List _20160912 sheet SS, PD-072", "ditl": "DITL-21A #C", "out": "SPEED LOW"},
+{"tag": "SS-BH1060-D", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060D SPEED MONITOR", "stn": 103, "addr": "I.0688", "src": "Alarm List _20160912 sheet SS, PD-072", "ditl": "DITL-21A #D", "out": "SPEED LOW"}
 ]
