@@ -171,6 +171,16 @@ const S = R.stats(A);
   if (tqr({ LTCL: 0, ACL: 1 }, 4).CLS !== 1 || o.AUTO !== 1) fail('TORQUE (SEAL-IN): AUTO CLOSE in AUTO ' + JSON.stringify(o));
   if (tqr({ LTCL: 0, ACL: 1, TRCL: 1 }).CLS !== 0 || o.ABN !== 1) fail('TORQUE (SEAL-IN): close torque before full close must stop and alarm ' + JSON.stringify(o));
   if (tq.need([]).length !== 1) fail('TORQUE (SEAL-IN) with no t1 / t2 printed must be open');
+  /* every PI/O output box names its table row (QA : SORA 2026-11-25: the COMM / EHG output sheets print it over the PI/O mark, left of the
+     box): TCA831 = TCA980-17 .. 32, TCE610 holds TCE970-6 (speed AO) */
+  {
+    const O = R.outs(A).filter(o => o.kind === 'pio');
+    const r831 = O.filter(o => o.sheet === 'TCA831').map(o => o.row).sort();
+    if (r831.join() !== Array.from({ length: 16 }, (_, i) => 'TCA980-' + (17 + i)).sort().join()) fail('TCA831 outputs do not name TCA980-17 .. 32: ' + r831);
+    if (!O.some(o => o.sheet === 'TCE610' && o.row === 'TCE970-6')) fail('TCE610 has no output row TCE970-6');
+    const miss = O.filter(o => !o.row && !/^G-/.test(o.sheet));
+    if (miss.length) fail('PI/O outputs with no table row: ' + miss.map(o => o.sheet + '.' + o.key).join(' '));
+  }
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
   if (!v || v.ins.IN === v.ins.ERR) fail('TCA322 line 3: the AI value and its PI/O error are one net');
