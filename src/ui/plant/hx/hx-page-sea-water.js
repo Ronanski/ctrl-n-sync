@@ -21,6 +21,17 @@
    faceplate. */
 (function () {
   const { V, E, M, L, page } = HX;
+  /* beta.557: monitor rows and VCB point of each sea water pump (DCS I/O list station 3: MIV-P1501x1, TT-SW1501-x*, VT-SW1501-x1 / x2;
+     unit of the vibration points not in the I/O list) */
+  const swMon = n => [
+    V('Motor winding U', 'TT-SW1501-' + n + 'U', '°C', 0),
+    V('Motor winding V', 'TT-SW1501-' + n + 'V', '°C', 0),
+    V('Motor winding W', 'TT-SW1501-' + n + 'W', '°C', 0),
+    V('Motor drive end bearing', 'TT-SW1501-' + n + '3', '°C', 0),
+    V('Motor non drive end bearing', 'TT-SW1501-' + n + '4', '°C', 0),
+    V('Motor bearing vibration 1', 'VT-SW1501-' + n + '1', '', 1),
+    V('Motor bearing vibration 2', 'VT-SW1501-' + n + '2', '', 1)
+  ];
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_M = 9,
@@ -70,7 +81,7 @@
         ),
         ...N.map((n, i) =>
           at(
-            M('vpump', 'SWP-' + n, 'Sea water pump ' + n, [V('Current', 'IIP1501' + n, 'A', 1), V('Discharge', 'PGSW1501' + n, 'kg/cm²', 2)], { tag: 'P-1501' + n }),
+            M('vpump', 'SWP-' + n, 'Sea water pump ' + n, [V('Current', 'IIP1501' + n, 'A', 1), V('Discharge', 'PGSW1501' + n, 'kg/cm²', 2)], { tag: 'P-1501' + n, mon: swMon(n), vcb: 'MIV-P1501' + n + '1' }),
             PX,
             PY[i],
             { id: 'p' + i, sc: PS, lab: 'b' }
