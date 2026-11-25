@@ -51,6 +51,14 @@
     }
   };
   const num = v => (isFinite(v) ? +v : NaN);
+  /* the value of an engine label list ([sheet, block] pairs, as unit.js anUnitVal: the first block with a value) */
+  const lblVal = list => {
+    for (const [S, bk] of list || []) {
+      const st = S && S.rt && S.rt.st && S.rt.st[bk.id];
+      if (st && isFinite(st.val)) return +st.val;
+    }
+    return NaN;
+  };
   const b = v => (v ? 1 : 0);
   /* [row id, kind, text, read(U, L)] */
   const E = [];
@@ -176,7 +184,7 @@
   O('TCE960-2', 'main oil pump (A) start command -> MCC (c.mop[0])', (U, L) => L.mopA);
   O('TCE960-3', 'DC emergency oil pump start -> DC-MCC (c.eop)', (U, L) => L.eop);
   O('TCE960-4', 'DC emergency oil pump manual stop -> DC-MCC');
-  O('TCE960-6', 'turning gear motor start command -> MCC (TB-9)');
+  O('TCE960-6', 'turning gear motor start command -> MCC: IBD TB-9 net 12 (OR of the manual start and the auto start memory; its NOT is the stop)', ibd('TB-9', 12));
   O('TCE960-8', 'TURNING GEAR ENGAGED -> DCS STN102 I.0417 TCS-DI1030 (ABC-053)', U =>
     b(U.tc && U.tc.tg && U.tb && U.tb.rpm <= 4)
   );
@@ -240,15 +248,21 @@
   O('TCE961-16', 'EHG SOFT MAJOR TROUBLE or BACKUP OVER SPEED -> TCS MAJOR TROUBLE relay (IBD TA-6 / TA-9)');
   O('TCE961-17', 'SV-LO1906 turning gear engage solenoid valve -> field (TB-10)');
   O('TCE961-18', 'turning gear engage lamp -> local panel (TB-10)');
-  O('TCE961-19', 'turning gear motor start lamp -> local panel (TB-9)');
+  O('TCE961-19', 'turning gear motor start lamp -> local panel: IBD TB-9 net 12, the same start net', ibd('TB-9', 12));
   /* ---------- EHG AO TABLE(1) TCE970 ---------- */
   O('TCE970-1', 'TARGET MW SET POINT FEED BACK -> DCS STN101 AI0420 TCS-AI1001', U => num(U.tb && U.tb.tgt));
   O('TCE970-2', 'TURBINE LOAD UP RATE -> DCS STN101 AI0421 TCS-AI1005 (max turbine load up rate set point, 0 ~ 5 %/min): U.rateUp MW/min x 100 / 150', U =>
     U && isFinite(U.rateUp) ? (U.rateUp * 100) / 150 : NaN
   );
-  O('TCE970-3', 'HP turbine first stage steam pressure (A) -> DCS');
-  O('TCE970-4', 'HP turbine first stage steam pressure (B) -> DCS');
-  O('TCE970-5', 'HP turbine first stage steam pressure (C) -> DCS');
+  O('TCE970-3', 'HP turbine first stage steam pressure (A) -> DCS SI1122: PT-ST1001-1, the engine first stage pressure (unit.js U.pist[0], ABC-052 AI0883), kg/cm2g', U =>
+    lblVal(U && U.pist && U.pist[0])
+  );
+  O('TCE970-4', 'HP turbine first stage steam pressure (B) -> DCS SI1123: PT-ST1001-2, the engine first stage pressure (unit.js U.pist[1], ABC-052 AI0884), kg/cm2g', U =>
+    lblVal(U && U.pist && U.pist[1])
+  );
+  O('TCE970-5', 'HP turbine first stage steam pressure (C) -> DCS SI1124: PT-ST1001-3, the engine first stage pressure (unit.js U.pist[2], ABC-052 AI0885), kg/cm2g', U =>
+    lblVal(U && U.pist && U.pist[2])
+  );
   O('TCE970-6', 'TURBINE SPEED -> DCS STN102 AI0534 TCS-AI1004 (ABC-053)', (U, L) => num(L.rpm));
   /* ---------- EHG PTI TABLE(1) TCE980: the three speed pick-ups SE-ST1001-1 / 2 / 3, three channels each, and their low counters ---------- */
   for (const n of [1, 2, 3, 9, 10, 11, 17, 18, 19])
@@ -520,8 +534,8 @@
     'ZSC-GS1031 steam seal feed valve full close: the valve position is U.gsV31 but the limit switch setting is not in the docs read'
   );
   N('TCA904-24', 'ZSC-GS1032 SSFV bypass valve full close: the bypass valve is not in the gland model');
-  N('TCA905-7', 'space heater running (generator): not in the model');
-  N('TCA905-8', 'space heater running (AC exciter): not in the model');
+  E.push(['TCA905-7', 'ibd', 'SPACE HEATER RUNNING (GEN.): IBD GD-1 SPACE HEATER FOR GEN. net 1 (the flip-flop set by 52G OPEN, reset by 52G closed or its electrical trouble; tcs-trip.js)', ibd('GD-1', 1)]);
+  E.push(['TCA905-8', 'ibd', 'SPACE HEATER RUNNING (AC EXCITER): IBD GD-2 SPACE HEATER FOR AC EXCITER net 1 (the flip-flop set by 52G OPEN, reset by 52G closed or its electrical trouble; tcs-trip.js)', ibd('GD-2', 1)]);
   F('TCA905-9');
   F('TCA905-10');
   /* TSI contacts */
@@ -728,27 +742,29 @@
   };
 
   /* ---------- COMM DO TABLES TCA980 ~ TCA982 ---------- */
-  const drainCmd = 'command to the turbine drain MOV -> MCC: ' + drainNeeds;
+  /* the drain MOV commands to the MCC: the OPEN / CLOSE command nets of their IBD sheets (the same nets that move tcs-dev.js U.dev.mov;
+     net names from tcs-ibd-data.js, the sheet inputs "...OPEN" / "CLOSE" at the right edge) */
+  const drainCmd = (sh, n, w) => 'drain MOV ' + w + ' command -> MCC: IBD ' + sh + ' net ' + n + ' (the net that moves tcs-dev.js U.dev.mov)';
   [
-    'TCA980-1',
-    'TCA980-2',
-    'TCA980-3',
-    'TCA980-4',
-    'TCA980-5',
-    'TCA980-6',
-    'TCA980-7',
-    'TCA980-8',
-    'TCA981-1',
-    'TCA981-2',
-    'TCA981-6',
-    'TCA981-7',
-    'TCA981-10',
-    'TCA981-11',
-    'TCA981-12',
-    'TCA981-13'
-  ].forEach(id => O(id, drainCmd));
-  O('TCA980-9', 'steam seal feed inlet valve close command -> MOV (TC-31)');
-  O('TCA980-10', 'steam seal feed inlet valve open command -> MOV (TC-31)');
+    ['TCA980-1', 'TC-12', 18, 'CRV(A) below seat close'],
+    ['TCA980-2', 'TC-12', 16, 'CRV(A) below seat open'],
+    ['TCA980-3', 'TC-7', 30, 'CV(A) above seat open'],
+    ['TCA980-4', 'TC-7', 32, 'CV(A) above seat close'],
+    ['TCA980-5', 'TC-5', 22, 'CV(B) below seat warming close'],
+    ['TCA980-6', 'TC-5', 20, 'CV(B) below seat warming open'],
+    ['TCA980-7', 'TC-1', 23, 'MSV(A) above seat open'],
+    ['TCA980-8', 'TC-1', 25, 'MSV(A) above seat close'],
+    ['TCA981-1', 'TC-13', 16, 'CRV(B) below seat open'],
+    ['TCA981-2', 'TC-13', 18, 'CRV(B) below seat close'],
+    ['TCA981-6', 'TC-2', 17, 'MSV(B) above seat open'],
+    ['TCA981-7', 'TC-2', 19, 'MSV(B) above seat close'],
+    ['TCA981-10', 'TC-20', 48, 'HP turbine warming valve close'],
+    ['TCA981-11', 'TC-20', 45, 'HP turbine warming valve open'],
+    ['TCA981-12', 'TC-8', 22, 'CV(B) above seat open'],
+    ['TCA981-13', 'TC-8', 24, 'CV(B) above seat close']
+  ].forEach(([id, sh, n, w]) => O(id, drainCmd(sh, n, w), ibd(sh, n)));
+  O('TCA980-9', 'steam seal feed inlet valve close command -> MOV: IBD TC-31 net 16 (CLOSE)', ibd('TC-31', 16));
+  O('TCA980-10', 'steam seal feed inlet valve open command -> MOV: IBD TC-31 net 14 (INLET VALVE OPEN)', ibd('TC-31', 14));
   O('TCA980-11', 'TURBINE GLAND STEAM LINE DRAIN VALVE OPEN COMMAND -> DCS STN102 I.040B TCS-DI1037 (IBD TE-6)');
   O('TCA980-12', 'TURBINE GLAND STEAM LINE DRAIN VALVE CLOSE COMMAND -> DCS STN102 I.040C TCS-DI1038 (IBD TE-6)');
   O('TCA980-13', 'STEAM SEAL FEED INLET VALVE CLOSED -> DCS STN102 I.0419 TCS-DI1032 (tcs-dev.js U.dev.mov.ssfi CLOSED)', U => dev(U, 'mov', 'ssfi', 'c'));
@@ -795,8 +811,8 @@
     'HP TURBINE WARMING LINE DRAIN VALVE OPEN COMMAND -> DCS STN102 I.0407 TCS-DI1033 (DITL-75 row 8, IBD TE-1)'
   );
   O('TCA981-17', 'oil purifier pump start command -> MCC (TB-15)');
-  O('TCA981-18', 'space heater start command (AC exciter) -> MCC (GD-2)');
-  O('TCA981-19', 'space heater start command (generator) -> MCC (GD-1)');
+  O('TCA981-18', 'space heater start command (AC exciter) -> MCC: IBD GD-2 net 1, the start memory (set by 52G OPEN)', ibd('GD-2', 1));
+  O('TCA981-19', 'space heater start command (generator) -> MCC: IBD GD-1 net 1, the start memory (set by 52G OPEN)', ibd('GD-1', 1));
   O('TCA981-20', 'main oil tank vapour extractor start command -> MCC (TB-12, c.vex)', U => b(U.loVex));
   O('TCA981-21', 'gland steam exhauster start command -> MCC (TC-28, U.tco.gse)', U => b(U.tco && U.tco.gse));
   ['TCA981-27', 'TCA981-28', 'TCA981-29', 'TCA981-30', 'TCA981-31', 'TCA981-32'].forEach(id =>

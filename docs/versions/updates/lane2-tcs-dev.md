@@ -13,21 +13,25 @@ Bagong file na `src/analog/engine/tcs-dev.js` (U.dev, plain data), isang tawag n
 
 - **Hardwired TCS -> DCS na ends (para sa 33 ni MINAMI)**: IBD TA-6 net 15 (MSV / HPCV fully closed and TCS major trouble, I.0403 / 0404), IBD TA-1 input 10 (OPC turbine trip PB, I.1280), 86G-A / B operated at generator trip (U.lo86 ng gen-panel.js; I.093A / 093B / 041A), SSFI closed (I.0419), mode judgement instrument normal = 1 (I.089D), load up rate U.rateUp x 100 / 150 %/min (AI0421), gen voltage x3 (AI0807 / 0871 / 0903), generator MWh = integral ng MW (U.dev.mwh, AI0694).
 - **Modbus generator voltage A / B / C** (30134 ~ 30136): g.V x 13.8 kV.
+- **Space heater running (gen / AC exciter)** TCA905-7 / 8 at **start command** TCA981-19 / 18: IBD GD-1 / GD-2 net 1 (start memory, set ng 52G OPEN).
+- **Mga utos ng TCS papuntang MCC / MOV (25 output)**: 16 drain MOV open / close command (IBD TC-1, 2, 5, 7, 8, 12, 13, 20: ang parehong net na nagpapagalaw ng U.dev.mov), steam seal feed inlet valve open / close (IBD TC-31 net 14 / 16), turning gear start command at lamp (IBD TB-9 net 12).
+- **HP first stage pressure A / B / C papuntang DCS** (TCE970-3 ~ 5, SI1122 ~ 1124): PT-ST1001-1 / 2 / 3 ng engine (U.pist, ABC-052 AI0883 ~ 0885).
 
 ## Bilang
 
-- TCS channels na "needs": 152 → 64.
+- TCS channels na "needs": 152 → 62.
+- TCS ends na may value: 271 → 298 (outputs na may value 49 → 74).
 - 33 hardwired TCS -> DCS points: 12 → 24 na may value (natitira 9: gen current A / B / C, Mvar, pf, Mvarh, Modbus line A / B duty, AMB. COLD MODE TEMP.).
 - Modbus words na walang value: 3 generator voltage → 0 (natitira: Mvar, rotor position, metal temps ni YUA).
 
 ## Sinubok
 
 - `node tests/lanes/run-all.cjs`: 16 tests, 0 failed. `tools/check/no-fit.cjs`: 0 new.
-- Live headless sa tunay na page, 150 MW tapos turbine trip: 346 reads, 0 walang numero. Bago ang trip: lahat ng drain CLOSED, NRV FULL OPEN, hood spray CLOSED, gen voltage 13.8 kV. Pagka-trip: NRV sarado sa 5 s, hood spray bukas, gen voltage 0. 0 page error.
+- Live headless sa tunay na page, 150 MW tapos turbine trip: 346 reads, 0 walang numero. Pangalawang run (dagdag na 27 ends): sa 150 MW first stage 98.0 kg/cm2g x3, lahat ng utos 0; pagka-trip space heater start = 1 at running = 1, first stage 0.1. Bago ang trip: lahat ng drain CLOSED, NRV FULL OPEN, hood spray CLOSED, gen voltage 13.8 kV. Pagka-trip: NRV sarado sa 5 s, hood spray bukas, gen voltage 0. 0 page error.
 
 ## Hindi pa / natitira
 
 - Hindi bumubukas ang drains pagka-trip: walang OPEN command ang IBD TC-1 ~ 13 (hindi naka-AUTO ang memory ng sheet). Kay YUA / MARIA ito (IBD init).
-- 64 needs pa: 11 AVR selection / limiter, 7 generator current / Mvar / pf / field, 13 metal temps (YUA), servo coil current 18, TSI 2, EOS 3, THC RTD 4, gland diverting 2, SSFV bypass, SFV close limit, space heaters 2.
+- 62 needs pa: 11 AVR selection / limiter, 7 generator current / Mvar / pf / field, 13 metal temps (YUA), servo coil current 18, TSI 2, EOS 3, THC RTD 4, gland diverting 2, SSFV bypass, SFV close limit.
 
 Pirma: TCS IO : TSUBASA (lane 2).
