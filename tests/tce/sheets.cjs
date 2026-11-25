@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 249; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 250; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 99;
@@ -333,6 +333,9 @@ if (!R.need('SG', [], true).length) fail('SG with no K must be open');
 if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1'], true).length) fail('PIV with G1 G2 TI must not be open');
 /* PIV HL / LL = upper / lower limit of the position Z + Y (EIMI PC lookup 2026-11-25: macro list words for PIF / INTEGRAL / ANALOG
    MEMORY / LMS and TCA022 (7); the limit on Z + Y derived from TCE191 LL 0.00 % and TCE195): it runs; ML is read nowhere */
+/* G with only KA printed (TCE190 C014): KA is the gain (derived, EIMI PC read 2026-11-25); K wins where both are printed */
+if (R.need('G', ['KA:1.0'], true).length || R.K.G([3], ['KA:2.0'])[0] !== 6 || R.K.G([3], ['K:1.0', 'KA:2.0'])[0] !== 3) fail('G KA is not the gain where no K is printed');
+if (R.need('G', [], true).length !== 1) fail('G with no K and no KA must be open');
 if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1', 'HL:100', 'LL:0', 'ML:100'], true).length) fail('PIV with HL / LL / ML printed must run');
 {
   const pv = R.K.PIV,

@@ -126,8 +126,11 @@
     /* ML 25 ASW / ML 53 DSW: SW=1 Y = X1, SW=0 Y = X2 */
     ASW: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
     DSW: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
-    /* ML 27 G Y = K X */
-    G: (x, n) => [par(n, 'K') * x[0]],
+    /* ML 27 G Y = K X (TCA015 MACRO LIST(3) No. 27 GAIN: "Input signal is multiplied by gain. Y=K*X. K:Gain").
+       KA: TCE190 G C014 prints only "KA:1.0" (EIMI read the PC drawing 2026-11-25, 331DM09784 p 132 = PDF p 134, 2x crop: no other K
+       anywhere, not a misread); the macro list has no KA. DERIVED: GAIN has one parameter and the block prints one value, so KA is its
+       gain (at 1.0, Y = X). Taken only where no K is printed. */
+    G: (x, n) => [par(n, 'K', par(n, 'KA')) * x[0]],
     /* ML 28 MR monitor relay: Y = 1 when X1 - X2 > HL or < LL */
     MR: (x, n) => {
       const d = x[0] - (x[1] || 0);
@@ -286,7 +289,7 @@
     LCK: ['K'], UCK: ['K']
   };
   /* printed parameters that the definition of the ML does not have: their meaning is open until a document gives it */
-  const EXTRA = { AM: ['M'], G: ['KA'] };
+  const EXTRA = { AM: ['M'] };
   const keysOf = n => new Set((n || []).map(q => (/^\s*([A-Z][A-Z0-9]*)\s*:/.exec(q) || [])[1]).filter(Boolean));
   function need(type, notes, swWired) {
     const t = K[type] ? type : ALIAS[type] || type,
@@ -294,7 +297,7 @@
       k = keysOf(notes),
       out = [];
     if (!f) return out;
-    for (const p of REQ[t] || []) if (!k.has(p)) out.push(t + ' ' + p + ' not on the sheet');
+    for (const p of REQ[t] || []) if (!k.has(p) && !(t === 'G' && p === 'K' && k.has('KA'))) out.push(t + ' ' + p + ' not on the sheet');
     for (const p of EXTRA[t] || []) if (k.has(p)) out.push(t + ' ' + p + ' printed, not in the macro list definition');
     if (t === 'FG') {
       let c = 0;
