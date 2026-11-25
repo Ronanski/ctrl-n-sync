@@ -12,6 +12,8 @@
 - Memory sa sheet na walang source: 33 -> 16.
 - Block parameter: ABC B1 85 -> 77, memory na walang source 16 -> 12.
 - LCD / (CRT) sa DITL: DITL rows na walang source 239 -> 203.
+- Iisang address sa ilang ABC sheet (YUA): ABC B1 77 -> 70. Ang 30 na natitira ay sinusulat ng unit model nang direkta; hinihintay ang listahan ni YUA.
+- xref, TO side ng source (YUA): ibang sheet 54 -> 46; ang 46 ay 80G copy na nagbabasa ng row na "TO DITL80H".
 - Pareho ang ibang linya.
 
 ## Hindi nasubok

@@ -210,6 +210,17 @@ const has = (txt, tag) => {
         ).push(r);
     }
   }
+  /* one address, one signal (YUA 2026-11-25, RULES.md): an ABC input that nothing writes on its own sheet is written when a net of another
+     sheet with the same station and address is written (an output of logic, a link, the DITL, the engine, the operator) */
+  let sameAdr = 0;
+  for (const r of abc) {
+    if (r.role !== 'in' || r.src !== 'NONE' || !/^[A-Z]{1,2}\.?[0-9A-F]{4,}$/.test(r.name)) continue;
+    const o = (abcByKey.get(r.stn + ':' + r.name) || []).find(x => x !== r && x.sh !== r.sh && (x.role === 'out' || (x.src !== 'NONE' && x.src !== 'wire') || x.writes > 0));
+    if (o) {
+      r.src = 'same address (' + o.sh + ')';
+      sameAdr++;
+    }
+  }
   /* ---- DITL catalog: every row of every sheet and machine copy, its station (title block "STATION 10x"), address, tag, source */
   const din = (WORLD.idx && WORLD.idx.din) || new Map();
   const psw = new Map();

@@ -100,3 +100,14 @@ line unchanged.
 - A DITL input row with LOCATION "LCD", or whose address the memory list names "(CRT)", is an operator push button (as LOCATION CRT).
   Old -> new: B1 DITL input rows with no source 239 -> 203 (LCD 3: DITL-121 M.0650 ~ 0652; memory "(CRT)" 33: DITL-BA61 14, DITL-BA02
   M.1300 ~ 1303, DITL-80K M.4212, DITL-LS10 M.1800 ...). DITL operator rows 463 -> 499. Every other line unchanged.
+
+## One address, one signal; the TO side of the source (2026-11-25 12:05 PM PHT, YUA via the coordinator)
+- An ABC input that nothing writes on its own sheet is written when a net of another ABC sheet with the same station and address is
+  written (logic output, link, DITL, engine write, operator): the engine spreads one address to every sheet (links.js anXs). Old -> new
+  (same main as above): B1 ABC 77 -> 70 (7: the AND inputs of ABC-007 / 004A and others whose twin is fed by the DITL). Not closed by this
+  rule: 30 inputs whose every twin also reads 0 writes in the run (I.0400 / I.0418 / I.0931 / I.0932 / I.0413 / I.0414 on ABC-019 / 050 ~
+  053, M.3200 / M.3220 on ABC-001C / 010 / 013, M.0001 on ABC-001B / 029): their writer is the unit model (unit.js labOf, a direct value
+  write the trace hook does not see). Waiting for YUA's list of 59 addresses with their writer to read it from the engine.
+- xref.cjs: a DITL input fed from another sheet than its FROM names is WIRED when the source row's own TO side names the reader
+  ("TO DITL80G" on DITL-80B ~ 80F). Old -> new: other sheet 54 -> 46, wired 1,717 -> 1,725 (8). The 46 left: DITL-80G copies read 80B ~ 80F
+  rows whose TO side says DITL80H (80G #N-1016 <- 80B row 18 "N-1016 SOOTBLOWER OPERATING" -> DITL80H).
