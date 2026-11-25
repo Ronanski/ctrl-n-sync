@@ -22,7 +22,7 @@
                                                                      under it, note ('#1C') over it; an 'in' diamond is a wire source
      b: [key, type, no, x, y, [notes], {l: [...], r: [...]}, [w, h]] small block, x y = its centre; no = the block number printed in it; notes = the
                                                                      parameters printed under it ('^DEF' = over it); l / r = the marks of its pins;
-                                                                     type 'o:BTR' = a mark on the wire, type 'X' = the crossed circle (inverted input)
+                                                                     type 'o:BTR' = a mark on the wire, type 'X' = the crossed circle (loop mark: the value of the last scan)
      m: [key, name, tag, x, y, w, h, [left pins], [right pins], foot, [notes], plain]   macro block, x y = top left; plain = [[y of each left
                                                                      pin], [y of each right pin]]: a block printed without cells
      tri: [x, y, s]                                                  the filled triangle of an analog PI/O connection on a line
@@ -414,7 +414,7 @@ function tceSheet(q) {
   /* small blocks: the type over the block number */
   for (const [key, type, no, x, y, notes, pins, size] of q.b || []) {
     if (type === 'X') {
-      /* the crossed circle of the drawing on an input line (the signal taken inverted), type 'X': no name, no number; with a size [r] it is the
+      /* the crossed circle of the drawing on a line that comes back from a later block (loop mark), type 'X': no name, no number; with a size [r] it is the
          larger crossed circle of a field transmitter */
       const r = size ? size[0] : 3.4 * u,
         e = r * 0.7071;
