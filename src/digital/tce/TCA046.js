@@ -40,11 +40,12 @@
       xb = right ? 1781 : 790 /* the BTR mark */,
       xj = right ? 2022 : 1035 /* the junction to connector B */,
       xo = right ? 2088 : 1090; /* centre of the connectors */
+    const sig = (not ? 'not' : 'di') + no; /* B7 and the CRT of row 7 are drawn after NOT 018 */
     r.push(['di' + no, x0, y - 27, 300, 54, '']);
     t.push([x0 + 6, y - 4, name[0]], [x0 + 6, y + 18, name[1]], [x0, y + 41, 'DI'], [xa - 37, y - 33, '(TCA903-' + (pn || no + 0) + ')']);
     w.push(['di' + no, [[xe, y], [xa - 8, y]], 1], ...(not
         ? [['di' + no, [[xa + 8, y], [xa + 51, y]]], ['not' + not, [[xa + 109, y], [xo - 30, y]]]]
-        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : ['di' + no, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
+        : [['di' + no, [[xa + 8, y], [xo - 30, y]]]]), crt === 'b' ? ['di' + no, [[xj, y], [xj, y - 53], [xj + 30, y - 53]]] : [sig, [[xj, y], [xj, y - 53], [xo - 30, y - 53]]]);
     g.push([xa, y, 'l']);
     /* a NOT between the connection mark and the BTR */
     if (not) b.push(['not' + not, 'NOT', not, xa + 80, y + 4]);
@@ -61,7 +62,7 @@
     } else if (crt && crt !== "b") {
       /* to the operator station (CRT) */
       const xc = xj - (crt === 1 ? 168 : crt);
-      w.push(['di' + no, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
+      w.push([sig, [[xc, y], [xc, y - 57], [xc + 57, y - 57]]]);
       d.push(['crt' + no, xc + 85, y - 57, 'out', 'TCA046_' + no, 'S', '#1C']);
     }
   });

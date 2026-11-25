@@ -13,7 +13,7 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')) && !github.event.repository.private
     concurrency: { group: pages, cancel-in-progress: false }
     runs-on: ubuntu-latest
-    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
+    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url || steps.d2.outputs.page_url }}' }
     steps:
       - uses: actions/checkout@v4
         with: { ref: main, path: beta, fetch-depth: 0 }
@@ -45,5 +45,12 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }
+      # 2026-11-25: GitHub answered "Found 0 artifact(s)" seconds after the upload (the artifact was there): a second try
       - id: d
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - if: steps.d.outcome == 'failure'
+        run: sleep 45
+      - id: d2
+        if: steps.d.outcome == 'failure'
         uses: actions/deploy-pages@v4

@@ -469,6 +469,21 @@
           (a[1] === b[1] && near(a[1], p[1], 0.6) && p[0] >= Math.min(a[0], b[0]) - 0.6 && p[0] <= Math.max(a[0], b[0]) + 0.6)
         );
       });
+    /* the input pin of a macro at a height: the heights the sheet gives, or the drawing's even spacing */
+    const pinAt = (M, py) => {
+      let pin = null;
+      if (M.ly) {
+        let best = 1e9;
+        M.ly.forEach((y, i) => {
+          if (Math.abs(y - py) < best) (best = Math.abs(y - py)), (pin = i);
+        });
+      } else if (M.L.length) {
+        const n = M.L.length,
+          i = Math.floor(((py - M.y0 - 15 * u) / (M.y1 - M.y0 - 30 * u)) * n);
+        pin = Math.max(0, Math.min(n - 1, i));
+      }
+      return pin;
+    };
     for (const w of W) {
       const nt = w[0],
         p = w[1][w[1].length - 1],
@@ -492,26 +507,18 @@
       }
       const M = macros.find(M => near(p[0], M.x0, tol) && p[1] >= M.y0 - tol && p[1] <= M.y1 + tol);
       if (M) {
-        let pin = null;
-        if (M.ly) {
-          let best = 1e9;
-          M.ly.forEach((y, i) => {
-            if (Math.abs(y - p[1]) < best) (best = Math.abs(y - p[1])), (pin = i);
-          });
-        } else if (M.L.length) {
-          const n = M.L.length,
-            i = Math.floor(((p[1] - M.y0 - 15 * u) / (M.y1 - M.y0 - 30 * u)) * n);
-          pin = Math.max(0, Math.min(n - 1, i));
-        }
+        const pin = pinAt(M, p[1]);
         M.ins.push({ net: nt, y: p[1], pin, name: pin != null ? M.L[pin] : null });
         continue;
       }
       /* the NEAREST output connector within its radius (two connectors ~60 px apart both reach a wire end: TCE168 C1 / C) */
+      /* a connector on the wire's own line comes first (TCE180: the wire to C ends 79 px from it, 66 px from A2 one row up) */
       let o = null,
         od = Infinity;
       for (const c of outs) {
-        const dd = Math.hypot(c.x - p[0], c.y - p[1]);
-        if (dd <= c.d && dd < od) (o = c), (od = dd);
+        const dd = Math.hypot(c.x - p[0], c.y - p[1]),
+          dl = dd + (q[1] === p[1] && Math.abs(c.y - p[1]) > 8 * u ? 1e6 : 0);
+        if (dd <= c.d && dl < od) (o = c), (od = dl);
       }
       if (o) {
         res.outputs.push({ net: nt, to: o.what, key: o.key, kind: o.kind, text: o.text, letter: o.letter, sheets: o.sheets });
@@ -524,6 +531,33 @@
       }
       if (W.some(v => v !== w && v[0] === nt && (Math.hypot(v[1][0][0] - p[0], v[1][0][1] - p[1]) <= 20 * u || onSeg(p, v)))) continue;
       res.open.push({ net: nt, at: p });
+    }
+    /* a piece typed FROM an input pin (TCA510: i6 starts on OR 010 and goes back down to A 022): its first point feeds that pin too, when no
+       piece of the net ends there already (2026-11-25, YUA; found by EIMI) */
+    for (const w of W) {
+      const nt = w[0],
+        k0 = String(nt).split('.')[0],
+        p = w[1][0],
+        q = w[1][1];
+      if (!q) continue;
+      const b = blocks.find(b => b.key !== k0 && near(p[0], b.x0, tol) && p[1] >= b.y0 - tol && p[1] <= b.y1 + tol && q[0] < p[0]);
+      if (b) {
+        if (!b.ins.some(i => i.side === 'l' && near(i.y, p[1], tol))) b.ins.push({ net: nt, y: p[1], side: 'l' });
+        continue;
+      }
+      const c = blocks.find(
+        b => b.key !== k0 && p[0] >= b.x0 - tol && p[0] <= b.x1 + tol && ((near(p[1], b.y0, tol) && q[1] < p[1]) || (near(p[1], b.y1, tol) && q[1] > p[1]))
+      );
+      if (c) {
+        const side = near(p[1], c.y0, tol) && q[1] < p[1] ? 't' : 'b';
+        if (!c.ins.some(i => i.side === side || i.net === nt)) c.ins.push({ net: nt, x: p[0], side });
+        continue;
+      }
+      const M = macros.find(M => M.key !== k0 && near(p[0], M.x0, tol) && p[1] >= M.y0 - tol && p[1] <= M.y1 + tol && q[0] < p[0]);
+      if (M) {
+        const pin = pinAt(M, p[1]);
+        if (!M.ins.some(i => (pin != null ? i.pin === pin : near(i.y, p[1], tol)))) M.ins.push({ net: nt, y: p[1], pin, name: pin != null ? M.L[pin] : null });
+      }
     }
     /* an X (crossed circle) marks a line that comes back from a block scanned later (a loop: the value of the last scan); it does NOT
        invert it (2026-11-25, YUA; was read as inverted). On the drawings: TCE227 OR 005 -> X -> A 004 is the seal-in of the CRV(A) test;
