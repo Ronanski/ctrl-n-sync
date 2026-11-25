@@ -157,3 +157,10 @@ line unchanged.
 - An ABC source counts for an I/O point only when its chain has no NaN; a point whose only sources have NaN is "SOURCE CHAIN HAS NaN".
   trace-abc-inputs.csv has a nan column. Old -> new on main 22f6da9 (150 MW, 5 min): 0 of 5,129 ABC nets read NaN, so LINKED 1,787 -> 1,787,
   source chain has NaN 0. Not covered yet: DITL rows (0 / 1 only) and the TCS sheets.
+
+## Gate in Checks (Phase 7, user "Go 7" 2026-11-25 ~7:40 PM PHT)
+`tests/lanes/qa/trace-gate.cjs` runs this trace (150 MW, 2 plant min, same counts every run) in every Checks run and holds 22 counts
+against `tools/trace/baseline.json`: linked / value / memory on a sheet / sheets running may not go down; unlinked, no source, B1 ~ B5
+may not go up; NaN in a source chain, unresolved F(X), missing IBD and a trip must stay 0. The PR that improves a count moves its number
+in baseline.json; a PR that makes one worse writes the reason under "why" for that key. Baseline on main ebdeea5: linked 1,787, value
+2,139, unlinked 145, no source 30, B1 ABC 48, B1 DITL 109, B2 79, B3 16, B4 9, NaN 0. TCS: `tce-complete.cjs` floor 196 -> 256.
