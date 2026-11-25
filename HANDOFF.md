@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 08:56 PHT** (TCS IO : TSUBASA, lane 2, beta.572: 14 TCS channel na may value na sa model (generator temp, HP exhaust); needs 175 -> 161. Bago nito LEADER : YUA, lane 0, beta.570: I/O address ng sariling makina sa bawat kopya (QA B5, 90 naging 22), DITL-BA01 / BA02 tag rows, test na ashcool. Bago nito DCS LINKS BOILER : KIRARA, lane 3, beta.553: rear wall dampers FA1019 ~ FA1026 sa `src/world/field/boiler.js`: limit switch mula sa ZT, trip / torque / remote bilang field state; 40 I/O point).
+Huling update: **2026-11-25 11:10 PHT** (DCS LINKS BOILER : KIRARA, lane 3, beta.593: tumatakbo na sa 150 MW ang bottom ash chain, elevator, screw at venting fan sa sariling ON COMMAND; sumusunod ang chain sa utos; may posisyon at 2 s travel ang two-way separator; 7 I/O point (MIR-L1090/1091/1092, MIR-F1091, ZSO/ZSC-BH1754, XA-FA1052-5); ang lumang save ay may migration. Bago nito TCS IO : TSUBASA, lane 2, beta.572: 14 TCS channel na may value na sa model.)
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
