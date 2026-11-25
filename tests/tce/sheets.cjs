@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 254; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 255; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 106;
@@ -389,6 +389,15 @@ for (const id of ['TCA762', 'TCA763']) {
   if (!fg || fg.open && fg.open.length) fail(id + ' UNT-FG: no block or open ' + JSON.stringify(fg && fg.open));
   const y = v => f([v], fg.notes)[0];
   if (y(500) !== 0.5381 || !(y(175) > 0.0001 && y(175) < 0.0002) || y(600) !== 0.5381) fail(id + ' UNT-FG LCFI table: ' + [y(500), y(175), y(600)]);
+}
+/* MODE (TCA768A, LMA810): load up rate by load band from the printed tables; 5.0 %/min until the IP -> HP transfer is complete */
+{
+  const md = A.plan.find(p => p.id === 'TCA768A').nodes.filter(x => x.type === 'MODE'),
+    f = R.K.MODE;
+  if (md.length !== 5) fail('TCA768A: ' + md.length + ' MODE blocks, not 5');
+  const hot = md.find(x => x.notes.includes('R1:0.7'));
+  const r = (L, T) => f([L, T], hot.notes)[0];
+  if (!hot || r(100, 1) !== 0.7 || r(70, 1) !== 0.4 || r(25, 1) !== 1.0 || r(10, 1) !== 1.0 || r(100, 0) !== 5.0) fail('TCA768A HOT MODE rates: ' + [r(100, 1), r(70, 1), r(25, 1), r(10, 1), r(100, 0)]);
 }
 const G = A.plan.filter(p => /^G-/.test(p.id)),
   gRun = G.filter(p => !S.notRun.includes(p.id)).length;

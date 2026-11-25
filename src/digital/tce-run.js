@@ -271,6 +271,18 @@
         if (X <= P[i][0]) return [P[i - 1][1] + ((P[i][1] - P[i - 1][1]) * (X - P[i - 1][0])) / (P[i][0] - P[i - 1][0])];
       return [P[P.length - 1][1]];
     },
+    /* MODE (LMA810, TCA768A, one block per start-up mode): the load up rate (%/min) of the generator load L (MW). The tables printed
+       beside each block: four MW points (L1 .. L4 = 90 / 60 / 33 / 22.5) and six rates R1 .. R6. EIMI (PDF, 2026-11-25): PPE-14-0726 R1
+       p 3 / Att-2 / 3, 310SC90-775 p 26 *2, STIE-14811 p 147: until the IP -> HP transfer is complete (T = TCA535 E CRI 2.6 = 0) the
+       rate is 5.0 %/min (R6) in every mode; with T = 1 the band rate: L > 90 R1, > 60 R2, > 33 R3, > 22.5 R4, else R5 (bands from the
+       order printed; checked by EIMI against the FHI start-up curves PART-2 SECT 7). Derived: the 0 / 1 sense of T, and "> " at each
+       boundary (> or >= and any dead band are not printed). */
+    MODE: (x, n) => {
+      const L = x[0];
+      if (!b01(x[1])) return [par(n, 'R6', NaN)];
+      for (let i = 1; i <= 4; i++) if (L > par(n, 'L' + i, NaN)) return [par(n, 'R' + i, NaN)];
+      return [par(n, 'R5', NaN)];
+    },
     /* UNT-FG (unit function generator, LMA010 on TCA762 / TCA763 "FG-1(LCFI)"): Y = f(X) on the table printed beside it on the page
        (Xn / Yn No. 0 .. 19, read as "Xi:" / "Yi:"), straight between the points, held flat outside, as the ML 19 FG. Check of the printed
        table (EIMI, LM2-TEQ-17-240 R0 p 158, STIE-14852: log10 LCFI % = -11.658 + 0.69142 s - 1.7930E-2 s^2 + 2.4745E-4 s^3 - 1.7267E-6 s^4
@@ -303,6 +315,7 @@
      misses one, prints one the definition does not have, or has a SW input with no wire is OPEN: its sheet does not count as running
      (QA : SAORI review 2026-11-25: a missing parameter is an open item, never a default). */
   const REQ = {
+    MODE: ['L1', 'L2', 'L3', 'L4', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6'],
     I: ['TI'], LG: ['T'], PIF: ['G', 'TI'], PIV: ['G1', 'G2', 'TI'], SG: ['K'], SGW: ['K'], AM: ['R'], G: ['K'], FLT: ['N'], GRD: ['K'],
     PD: ['N', 'K'], LIN: ['K', 'B'], TP: ['TP'], TD: ['TD'], TW: ['TW'], CMP: ['HL'], CPL: ['HL'], CNT: ['N'], FLK: ['T1', 'T2'],
     LCK: ['K'], UCK: ['K']
