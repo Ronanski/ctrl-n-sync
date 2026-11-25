@@ -247,6 +247,23 @@ const has = (txt, tag) => {
           abcByKey.set('T:' + name.replace(/\.\w+$/, ''), []).get('T:' + name.replace(/\.\w+$/, ''))
         ).push(r);
     }
+    /* Phase 6 (2026-11-26): one net, several addresses. The drawing prints two or three address texts on one wire (ABC-050: M.012C, O.0842
+       and O.0844 on the HP bypass spray output; M.012D, O.0843, O.0845), the reader keeps one as the net's name (S.lab) and the others in
+       S.tagN. The engine's own link index (engine/links.js) takes every tagN text within 4 of the wire as a name of that net; the trace does
+       the same, so an address the app links is not counted unlinked. */
+    const own = new Map(abc.filter(r => r.sh === sh.name).map(r => [r.n, r]));
+    for (const q of S.tagN || []) {
+      if (!(q.d <= 4) || !/^(S\d\s*)?([MBIO]\.[0-9A-F]{4}|A[IO]\d{4})$/.test(String(q.t).trim())) continue;
+      const main = own.get(q.n),
+        name = strip(q.t);
+      if (!main || main.name === name) continue;
+      const rs = refStn(q.t) || stn,
+        key = rs + ':' + name;
+      if ((abcByKey.get(key) || []).some(x => x.sh === sh.name && x.n === q.n)) continue;
+      const r = Object.assign({}, main, { stn: rs, name, alias: main.name });
+      abc.push(r);
+      (abcByKey.get(key) || abcByKey.set(key, []).get(key)).push(r);
+    }
   }
   /* one address, one signal (YUA 2026-11-25, RULES.md): an ABC input that nothing writes on its own sheet is written when a net of another
      sheet with the same station and address is written (an output of logic, a link, the DITL, the engine, the operator) */
@@ -713,7 +730,7 @@ const has = (txt, tag) => {
     }
   }
   /* ---- breaks */
-  const B1abc = abc.filter(x => x.role === 'in' && x.src === 'NONE');
+  const B1abc = abc.filter(x => x.role === 'in' && x.src === 'NONE' && !x.alias);
   const B1ditl = ditl.filter(x => x.io === 'in' && /^NONE/.test(x.src));
   const B2 = IO.filter(
     x => x.input && !x.excluded && (x.status === 'UNLINKED' || x.status === 'ON SHEET, STATION UNSURE')
