@@ -1,4 +1,4 @@
-# v1.0.0-beta.535 (ALARMS AND CURVES : AKIHO, lane 5): alarm line mula lang sa point na may tunay na source, at ang switch alarms
+# v1.0.0-beta.552 (ALARMS AND CURVES : AKIHO, lane 5): alarm line mula lang sa point na may tunay na source, at ang switch alarms
 
 ## Ano ang nagbago
 - **Alarm line ng alarm list (src/analog/engine/alarm-pri.js AN.laneAlm):** lumalabas lang kapag may NAKAREHISTRONG SOURCE ang point (isang signal, isang source; src/world/field/README.md):
