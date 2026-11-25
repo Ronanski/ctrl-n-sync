@@ -323,6 +323,7 @@
   /* printed parameters that the definition of the ML does not have: their meaning is open until a document gives it */
   const EXTRA = { AM: ['M'] };
   const keysOf = n => new Set((n || []).map(q => (/^\s*([A-Z][A-Z0-9]*)\s*:/.exec(q) || [])[1]).filter(Boolean));
+  const INTL_SW = { TP: 1, TD: 1, TW: 1 };
   function need(type, notes, swWired) {
     const t = K[type] ? type : ALIAS[type] || type,
       f = K[t],
@@ -338,7 +339,11 @@
     }
     if (t === 'UNT-FG' && ![...k].filter(q => /^X\d+$/.test(q)).length) out.push('UNT-FG curve not on the sheet');
     /* ML 62 PA (parameter modify) has no SW in its symbol: its side input is the condition of the parameter, drawn or not */
-    if (!swWired && t !== 'PA' && /\bsw\s*=/.test(String(f))) out.push(t + ' SW not wired (HIACS default not in the macro list)');
+    /* SW not wired: the timer macros take INTL (SYSDEF No. 3, TCE p 16: "0 at initial start, and 1 after then. This condition is used for
+       the default of the switch input of the Timer macros"); a CMP with no hysteresis (LL not printed or LL = HL) gives the same Y with
+       SW = 1 or 0 (ML 51), so its SW does not matter */
+    const noHys = t === 'CMP' && (par(notes, 'LL') === undefined || par(notes, 'LL') === par(notes, 'HL'));
+    if (!swWired && t !== 'PA' && !INTL_SW[t] && !noHys && /\bsw\s*=/.test(String(f))) out.push(t + ' SW not wired (HIACS default not in the macro list)');
     return out;
   }
   const ALIAS = { 'G:OR': 'OR', 'G:A': 'A', PA1: 'PA', PA2: 'PA', PA3: 'PA', PA4: 'PA', 'o:BTR': 'BTR', 'o:FTR': 'FTR' };
@@ -1599,6 +1604,7 @@
         const xs = x.ins.map((s, i) => (x.inv[i] ? b01(!v[s]) : v[s]));
         let sw;
         if (x.sw >= 0) sw = b01(v[x.sw]);
+        else if (INTL_SW[x.type]) (sw = x.st.intl ? 1 : 0), (x.st.intl = 1);
         const nt = x.pa ? Object.keys(x.pa).map(k => k + ':' + v[x.pa[k]]).concat(x.notes || []) : x.notes;
         v[x.out] = x.f(xs, nt, x.st, dt, sw)[0];
       } else {

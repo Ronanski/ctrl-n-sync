@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 255; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 257; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 106;
@@ -463,7 +463,20 @@ if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1', 'HL:100', 'LL:0', 'ML:100'], true).le
   if (Math.abs(pv([100, 0, 95], pn, ps, 0.1)[0] - 5) > 1e-9) fail('PIV: Z + Y is not held at HL (Z 95, HL 100 -> Y 5)');
   if (Math.abs(pv([-100, 0, 3], pn, ps, 0.1)[0] + 3) > 1e-9) fail('PIV: Z + Y is not held at LL (Z 3, LL 0 -> Y -3)');
 }
-if (!R.need('TP', ['TP:1'], false).length) fail('TP with no SW wire must be open');
+/* SW not wired: a timer takes INTL (SYSDEF No. 3, TCE p 16: 0 at initial start, 1 after), so it is not open; a CMP with hysteresis is */
+if (R.need('TP', ['TP:1'], false).length) fail('TP with no SW wire is open (SYSDEF INTL is its default)');
+if (!R.need('CMP', ['HL:2', 'LL:1'], false).length) fail('CMP with hysteresis and no SW wire must be open');
+if (R.need('CMP', ['HL:2'], false).length) fail('CMP with no hysteresis and no SW wire is open (SW does not change Y)');
+{
+  const sub = sheets.filter(s => s.id === 'TCA633'),
+    T = R.compile(sub),
+    tp = T.plan[0].nodes.find(x => x.type === 'TP' && x.sw < 0);
+  if (!tp) fail('TCA633: no TP with its SW not wired');
+  else {
+    const st = {};
+    if (R.K.TP([1], ['TP:0'], st, 0.1, 0)[0] !== 0) fail('TP: SW 0 (INTL at the first scan) gives 1');
+  }
+}
 if (!R.need('FG', ['X1:0', 'Y1:0'], true).length) fail('FG with one point must be open');
 const nOpen = Object.values(S.open).reduce((a, v) => a + v.length, 0);
 console.log('open items (sheet, reason): ' + nOpen + ' in ' + Object.keys(S.open).length + ' reasons');
