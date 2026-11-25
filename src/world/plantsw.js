@@ -344,8 +344,16 @@
         return NaN;
       }
     };
-    L.push([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, r.sheet ? new RegExp(String(r.sheet).replace(/[^A-Z0-9-]/gi, '') + '$') : null]);
+    /* the sheet code of a copy keeps its " #B" (DITL-19 #B): the name of the copy ends with it */
+    const shRe = r.sheet ? new RegExp('\\)' + String(r.sheet).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') : null;
+    L.push([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, shRe]);
     L[L.length - 1].fld = 1;
+    /* a drawing that writes the row by its I/O address, not by the tag ("I.0132 COAL FEEDER A REMOTE SELECTED", DITL-19 row 6): the row
+       gives adr and sheet, and the same switch drives the row of that address on that sheet only (an address is reused on other stations) */
+    if (r.adr && shRe) {
+      L.push([String(r.adr).toUpperCase(), f, 0.5, 'hi', 0, 0, null, shRe]);
+      L[L.length - 1].fld = 1;
+    }
   }
   const DB0 = 10;
   let map = null,
@@ -389,7 +397,9 @@
         } catch (e) {}
         if (!t) continue;
         const words = t.split(/\s+/);
-        const d = L.find(x => words.slice(0, 3).includes(x[0]) && (!x[6] || x[6].test(t)) && (!x[7] || x[7].test(s.name))) || byTag(s, words.slice(0, 3));
+        const hit = (z, ws) => ws.includes(z[0]) && (!z[6] || z[6].test(t)) && (!z[7] || z[7].test(s.name));
+        /* the tag of a lane's field row may stand later in the text (DITL-87 rows 24 / 26 "FIRE FIGHTING PUMP P-0719 MIR-P0719 RUNNING") */
+        const d = L.find(z => hit(z, words.slice(0, 3))) || byTag(s, words.slice(0, 3)) || L.find(z => z.fld && hit(z, words));
         if (d) map.push({ s, row: i, d, on: null });
       }
       for (const h of (s.sd && s.sd.hrow) || []) {
@@ -570,7 +580,7 @@
       const old = map;
       build(ALL);
       mapK = key;
-      if (old) for (const m of map) { const o = old.find(q => q.s === m.s && q.row === m.row); if (o) m.on = o.on; }
+      if (old) for (const m of map) { const o = old.find(q => q.s === m.s && q.row === m.row); if (o) (m.on = o.on), (m.clr = o.clr); }
     }
     if (pend) put();
     const pc = W.condP();
@@ -633,10 +643,16 @@
     if (map) put();
   };
   let pend = null;
+  /* the list says which rows the model had taken over when the save was made (on is a value): their field bit is the operator's and stays.
+     A row that is not in it (the model got it after the save: a build's #st150) has its old field bit cleared at the first value */
   const put = () => {
+    if (pend) for (const m of map) m.clr = 0;
     for (const q of pend || []) {
       const m = map.find(x => x.s.name === q.sheet && x.row === q.row - 1 && x.d[0] === q.tag);
-      if (m) m.on = q.on;
+      if (m) {
+        m.on = q.on;
+        m.clr = q.on == null ? 0 : 1;
+      }
     }
     pend = null;
   };

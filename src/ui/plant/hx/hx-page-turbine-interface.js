@@ -4,7 +4,7 @@
    valves closed; where is the start-up; what the TCS asks of the drain valves; who has the load (DCS control mode, Modbus
    links, target MW); the generator protection and metering.
    THE SOURCE: the DCS I/O list (ades / wiring): TCS-DI1003 ~ 1058 (station 1 / 2 digital inputs from the TCS), TCS-AI1001 ~ 1012
-   and GCP-AI1001 ~ 1006 (analog inputs from the TCS and the generator control panel), TCS-AO1001 / 1006 / 1007 / 1011 and
+   and GCP-AI1001 ~ 1006 (analog inputs from the TCS and the generator control panel), TCS-AO1001 / 1006 / 1007 / 1011, TCS-DO1001 ~ 1003 / 1006 and
    GCP-AO1002 ~ 1008 (analog outputs of the DCS to the TCS and the generator panel); ranges and units from the DCS loop list.
    Every state is a digital input of the I/O list (data-di), every value its I/O tag: they read '-----' until the TCS I/O
    binding (lane 2) gives them a value. Nothing on this page presses a TCS button: the operator buttons of the TCS (CRT) are
@@ -59,7 +59,9 @@
         ['Warming line drain MV-AS1394 open', 'TCS-DI1033', 'OPEN', 'NO'],
         ['Warming line drain MV-AS1394 close', 'TCS-DI1034', 'CLOSE', 'NO'],
         ['Gland steam line drain MV-AS1397 open', 'TCS-DI1037', 'OPEN', 'NO'],
-        ['Gland steam line drain MV-AS1397 close', 'TCS-DI1038', 'CLOSE', 'NO']
+        ['Gland steam line drain MV-AS1397 close', 'TCS-DI1038', 'CLOSE', 'NO'],
+        /* DCS to TCS (I/O list S2 O.048F, TCA905-24) */
+        ['To turbine: gland steam line drain in auto', 'TCS-DO1001', 'AUTO', 'NO']
       ],
       links: [
         ['aux-steam', 'Auxiliary steam'],
@@ -72,7 +74,10 @@
         ['DCS control mode permissive', 'TCS-DI1046', 'YES', 'NO'],
         ['DCS control mode on', 'TCS-DI1047', 'ON', 'OFF'],
         ['Modbus line A duty', 'TCS-DI1048', 'DUTY', 'STANDBY'],
-        ['Modbus line B duty', 'TCS-DI1049', 'DUTY', 'STANDBY']
+        ['Modbus line B duty', 'TCS-DI1049', 'DUTY', 'STANDBY'],
+        /* DCS to TCS (I/O list S1 O.0178 / O.0179, TCE900-17 / 18) */
+        ['To turbine: DCS control mode on', 'TCS-DO1002', 'ON', 'NO'],
+        ['To turbine: DCS control mode off', 'TCS-DO1003', 'OFF', 'NO']
       ],
       val: [
         ['Target MW to the turbine', 'TCS-AO1001', 'MW', 1],
@@ -85,7 +90,9 @@
       di: [
         ['Field breaker 41 closed', 'TCS-DI1052', 'CLOSED', 'OPEN'],
         ['Generator lockout 86GA operated', 'TCS-DI1053', 'OPERATED', 'NORMAL'],
-        ['Generator lockout 86GB operated', 'TCS-DI1054', 'OPERATED', 'NORMAL']
+        ['Generator lockout 86GB operated', 'TCS-DI1054', 'OPERATED', 'NORMAL'],
+        /* DCS to TCS (I/O list S2 O.0492, TCE901-8; DITL-115) */
+        ['To turbine: auto synchronizing start', 'TCS-DO1006', 'START', 'NO']
       ],
       val: [
         ['Current A', 'TCS-AI1006', 'kA', 2],

@@ -76,3 +76,58 @@ row with an address).
 ABC-000 is the symbol legend of the analog set (its FX block is a drawn example, not a controller). The I/O / memory catalog already skipped
 it; the F(X) loop now skips it the same way. Old -> new tool, main 79c27fe (beta.553), 150 MW 5 plant min: FX blocks 112 -> 111,
 unresolved 1 -> 0 (the one was "ABC-000 FX (no LN)"). Every other line of the summary unchanged.
+
+## Cross-sheet references (2026-11-25 11:30 AM PHT, user "Interconnected din dapat ang mga logic: DITL ABC TCS", via the coordinator)
+New tool `tools/trace/xref.cjs` (no change to trace.cjs or its counts). An input row of a DITL drawing whose FROM names a logic sheet
+(DITL "25A-55", a code with no letter "12-70" = the set 12A / 12B / 12C; ABC-0xx; TCS) is WIRED when the running world feeds it from that
+sheet (or a machine copy of it, or the sootblower counter of DITL-80), OTHER when only from another sheet, MODEL when the plant / valve /
+switch model gives it, MISSING when nothing does. The ABC side comes from the world's own link table (WORLD.stat). DITL rows with LOCATION
+TCS are counted from the trace rows (their source). Main e7827ce, 150 MW: DITL reads DITL 1,717 / 1,888 (other 54, model 4, missing 113);
+DITL reads ABC 159 / 162 (missing 3); ABC reads DITL 131 / 131; DITL LOCATION TCS 37, none from a TCS sheet (the TCS sheets do not run in
+the world; the turbine model gives them).
+
+## ABC inputs named "(CRT)" are operator (2026-11-25 11:45 AM PHT, SORA via the coordinator)
+An ABC input whose memory-list name says "(CRT)" (OIL MASTER USE P.B.(CRT), DRUM LEVEL SELECT THREE ELEMENT (CRT) ...) is an operator push
+button / select of the CRT: its source is "operator", not B1 "nothing writes". Old -> new tool, main 0fa7dbc, 150 MW 5 plant min: B1 ABC
+inputs nothing writes 102 -> 85, ABC inputs by operator 144 -> 161, memory on a sheet with no source 33 -> 16 (the same 17: ABC-003A ~ 003E
+oil control select / oil master P.B., ABC-008 M.0200 / 0201, ABC-010 M.054E / 054F, ABC-020 M.017F, ABC-057 M.144A / 144B). Every other
+line unchanged.
+
+## Block parameters, LCD push buttons (2026-11-25 11:55 AM PHT, AKIHO and RARA via the coordinator)
+- An ABC input named PTNnnnnnn (a pattern slot of the block, "WAFER MOUNTING NO.61 ~ 64" in the memory list) or PSnnnn (the block's own
+  ramp / time parameter, ABC-003E PS0004 = 5 %/min) is "block parameter", not B1. Old -> new (main 0fa7dbc + the (CRT) rule): B1 ABC
+  85 -> 77 (ABC-003E PS0004 x 4, PTN004029 ~ 004032), memory on a sheet with no source 16 -> 12.
+- A DITL input row with LOCATION "LCD", or whose address the memory list names "(CRT)", is an operator push button (as LOCATION CRT).
+  Old -> new: B1 DITL input rows with no source 239 -> 203 (LCD 3: DITL-121 M.0650 ~ 0652; memory "(CRT)" 33: DITL-BA61 14, DITL-BA02
+  M.1300 ~ 1303, DITL-80K M.4212, DITL-LS10 M.1800 ...). DITL operator rows 463 -> 499. Every other line unchanged.
+
+## One address, one signal; the TO side of the source (2026-11-25 12:05 PM PHT, YUA via the coordinator)
+- An ABC input that nothing writes on its own sheet is written when a net of another ABC sheet with the same station and address is
+  written (logic output, link, DITL, engine write, operator): the engine spreads one address to every sheet (links.js anXs). Old -> new
+  (same main as above): B1 ABC 77 -> 70 (7: the AND inputs of ABC-007 / 004A and others whose twin is fed by the DITL). Not closed by this
+  rule: 30 inputs whose every twin also reads 0 writes in the run (I.0400 / I.0418 / I.0931 / I.0932 / I.0413 / I.0414 on ABC-019 / 050 ~
+  053, M.3200 / M.3220 on ABC-001C / 010 / 013, M.0001 on ABC-001B / 029): their writer is the unit model (unit.js labOf, a direct value
+  write the trace hook does not see). Waiting for YUA's list of 59 addresses with their writer to read it from the engine.
+- xref.cjs: a DITL input fed from another sheet than its FROM names is WIRED when the source row's own TO side names the reader
+  ("TO DITL80G" on DITL-80B ~ 80F). Old -> new: other sheet 54 -> 46, wired 1,717 -> 1,725 (8). The 46 left: DITL-80G copies read 80B ~ 80F
+  rows whose TO side says DITL80H (80G #N-1016 <- 80B row 18 "N-1016 SOOTBLOWER OPERATING" -> DITL80H).
+
+## Field I/O sheets, AO of a controller, instance block, DITL-80H/I/J (2026-11-25 12:15 PM PHT, KIRARA / YUA via the coordinator)
+- DITL-16 / 17 / 18 (field I/O sheets) compute their limit switch and flame detector rows themselves (03b-sim): an input point on an output
+  row of these sheets is sourced; their input rows are "own sheet (field I/O)". Old -> new: on a sheet no source 108 -> 84 (24 points:
+  ZSO-FA1043-A ~ D, ZSO-DO1043-A2 ~ D2, BI7 / BI8 / BI9 / BI10-DO1043-A ~ D; BI7 is on the same rows as BI8 ~ 10).
+- An AO whose device is the device of an ABC controller (MAN / PID block) of the same station is that controller's output
+  (SC-L1060A <- SICL1060A, MOF-CL1061-A <- FICCL1061A). Old -> new: on the drawing not on a row 138 -> 131 (SC-L1060A ~ D, MOF-CL1061-A ~ C),
+  UNLINKED 164 -> 163 (TCS-AS1004), model / HMI only 489 -> 488 (TT-AS1017-1); LINKED 1,693 -> 1,726 with the field I/O rule; value 1,942 -> 1,975.
+- DITL-50 (FB2-OT device overtime) is an instance block: its input rows are "caller pins". B1 DITL rows with no source 203 -> 194 (DITL-50 5,
+  DITL-16 / 17 / 18 input rows 4).
+- xref: DITL-80H / 80I / 80J hold only "(AS SHEET DITL80G BLOCK)" boxes: a TO DITL80H / 80I / 80J goes to that sootblower's DITL-80G copy.
+  Old -> new: other sheet 46 -> 0, wired by the TO side 8 -> 54.
+- audit-fix alias (KIRARA): an ABC input whose wire carries a second name in src/analog/engine/audit-fix.js (op alias, S.alias) that is
+  a mode status (.LOC / .MAN, written by the M / A / R of that tag) is "operator". Old -> new: B1 ABC 70 -> 68 (ABC-011 M.0230 =
+  TICBR1130.LOC, ABC-012 M.0240 = TICBR1150.LOC), memory on a sheet with no source 12 -> 10.
+- MCC / VCB status contact beside a driven output (RARA): an input point MIL- / MIS- / MIV- / MIR- / MIT- whose address the drawing prints
+  beside a driven OUTPUT row (DITL-76 row 7 "A-AUX. CW PUMP STOPPED I.0089", DITL-61A row 7 "CONDENSATE PUMP A STOPPED I.0083/403") is
+  that output net: LINKED. Other inputs printed beside an output (XA-FA1052 fire detect, IRP stop commands of DITL-03D) are NOT counted:
+  the general form moved 79 points, the motor-contact form 59. Old -> new: LINKED 1,726 -> 1,773, on a sheet no source 84 -> 41,
+  copy clash 5 -> 1 (DITL-45 12, 61A 6, 22 4, 21A 4, 120 4, 30 / 76 / 29A / 77 / 112 3 each, others under 3).

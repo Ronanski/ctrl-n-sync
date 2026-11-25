@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 202; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 250; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 99;
@@ -146,6 +146,137 @@ const S = R.stats(A);
   if (m({ ASRT: 1, RUN: 1 }, 20).STS !== 1 || o.AUTO !== 1 || o.ABN !== 0) fail('MOTOR STANDARD: AUTO START in AUTO ' + JSON.stringify(o));
   if (m({ RUN: 0 }).ABN !== 1) fail('MOTOR STANDARD: answer lost while running is not TRIPPED');
   if (mo.need([]).length !== 2) fail('MOTOR STANDARD with no TD / TP printed must be open');
+  /* TORQUE (SEAL-IN) from IBD 310SC90-794 sheet 16: PB OPEN in MANUAL seals in the open command until LIMIT FULL OPEN; no full open
+     in t1 (TP 35 s) = OPEN FAULT (ANN 2) until RESET; AUTO CLOSE works only in AUTO and stops on the close torque switch */
+  const tq = M['TORQUE (SEAL-IN)'],
+    tqn = [[0, 0, 'TD:5.0s'], [0, 0, 'TP:35.0s'], [0, 0, 'TP:35.0s'], [0, 0, 'TP:5.0s']],
+    tqs = {},
+    tqb = { AOP: 0, ACL: 0, EF: 0, LTOP: 0, TROP: 0, LTCL: 1, TRCL: 0, 'PB OPEN': 0, 'PB CLOSE': 0, 'PB AUTO': 0, 'PB MANUAL': 0, 'PB RESET': 0 },
+    tqr = (x, n = 1) => {
+      for (let i = 0; i < n; i++) o = tq({ ...tqb, ...x }, tqn, ts, 0.5);
+      return o;
+    };
+  if (tqr({ 'PB OPEN': 1 }).OPS !== 1) fail('TORQUE (SEAL-IN): PB OPEN in MANUAL gives no open command');
+  if (tqr({ LTCL: 0 }, 10).OPS !== 1) fail('TORQUE (SEAL-IN): the open command does not seal in after the PB is released');
+  if (tqr({ LTCL: 0, LTOP: 1 }).OPS !== 0 || o.ABN !== 0) fail('TORQUE (SEAL-IN): LIMIT FULL OPEN does not stop the open command ' + JSON.stringify(o));
+  tqr({ LTCL: 0, LTOP: 0, 'PB OPEN': 0 });
+  tqr({ LTCL: 0, 'PB OPEN': 1 });
+  tqr({ LTCL: 0 }, 68);
+  if (o.ABN !== 0 || o.OPS !== 1) fail('TORQUE (SEAL-IN): open fault before t1 ' + JSON.stringify(o));
+  tqr({ LTCL: 0 }, 2);
+  if (o.ABN !== 1 || o.OPS !== 0) fail('TORQUE (SEAL-IN): no full open in t1 is not an open fault ' + JSON.stringify(o));
+  if (tqr({ LTCL: 0, 'PB RESET': 1 }).ABN !== 0) fail('TORQUE (SEAL-IN): RESET does not clear the open fault');
+  if (tqr({ LTCL: 0, ACL: 1 }).CLS !== 0) fail('TORQUE (SEAL-IN): AUTO CLOSE works in MANUAL');
+  tqr({ LTCL: 0, 'PB AUTO': 1 });
+  if (tqr({ LTCL: 0, ACL: 1 }, 4).CLS !== 1 || o.AUTO !== 1) fail('TORQUE (SEAL-IN): AUTO CLOSE in AUTO ' + JSON.stringify(o));
+  if (tqr({ LTCL: 0, ACL: 1, TRCL: 1 }).CLS !== 0 || o.ABN !== 1) fail('TORQUE (SEAL-IN): close torque before full close must stop and alarm ' + JSON.stringify(o));
+  if (tq.need([]).length !== 1) fail('TORQUE (SEAL-IN) with no t1 / t2 printed must be open');
+  /* every PI/O output box names its table row (QA : SORA 2026-11-25: the COMM / EHG output sheets print it over the PI/O mark, left of the
+     box): TCA831 = TCA980-17 .. 32, TCE610 holds TCE970-6 (speed AO) */
+  {
+    const O = R.outs(A).filter(o => o.kind === 'pio');
+    const r831 = O.filter(o => o.sheet === 'TCA831').map(o => o.row).sort();
+    if (r831.join() !== Array.from({ length: 16 }, (_, i) => 'TCA980-' + (17 + i)).sort().join()) fail('TCA831 outputs do not name TCA980-17 .. 32: ' + r831);
+    if (!O.some(o => o.sheet === 'TCE610' && o.row === 'TCE970-6')) fail('TCE610 has no output row TCE970-6');
+    const miss = O.filter(o => !o.row && !/^G-/.test(o.sheet));
+    if (miss.length) fail('PI/O outputs with no table row: ' + miss.map(o => o.sheet + '.' + o.key).join(' '));
+  }
+  /* STEP CONTROL MD from ATS program 310SC90-795 sheets 8 ~ 11: STEP UP ORDER with the permissive selects; criteria Dn-1 and An execute (the
+     select drops); criteria Dn completes; an upper step executing resets; another step selected drops the select */
+  {
+    const sc = M['STEP CONTROL MD'],
+      ss = {},
+      sb = { TMG: 0, 'IN CR': 0, 'OUT CR': 0, BYPS: 0, PERM: 1, EXE: 0, FINISH: 0, EX1: 0, EX2: 0, ORDER: 0, FORCE: 0 },
+      sr = x => sc({ ...sb, ...x }, [], ss, 0.1);
+    let so = sr({ ORDER: 1 });
+    if (so.SEL !== 1 || so['STEP S'] !== 1 || so.ORDER !== 1) fail('STEP CONTROL MD: STEP UP ORDER does not select ' + JSON.stringify(so));
+    if (sr({ EX2: 1 }).SEL !== 0) fail('STEP CONTROL MD: another step selected does not drop the select');
+    sr({});
+    if (sr({ FORCE: 1, PERM: 0 }).SEL !== 0) fail('STEP CONTROL MD: selects with no permissive');
+    sr({});
+    if (sr({ FORCE: 1 })['PB ON'] !== 1) fail('STEP CONTROL MD: PB STEP n does not select');
+    so = sr({ TMG: 1, 'IN CR': 1 });
+    if (so.EXEC !== 1 || so.START !== 1 || so.SEL !== 0) fail('STEP CONTROL MD: criteria Dn-1 and An do not execute ' + JSON.stringify(so));
+    if (sr({ TMG: 1, 'IN CR': 1 }).START !== 0) fail('STEP CONTROL MD: START is not one scan');
+    if (sr({ 'OUT CR': 1 }).FINISH !== 1) fail('STEP CONTROL MD: criteria Dn does not complete');
+    so = sr({ EXE: 1, FINISH: 1 });
+    if (so.EXEC !== 0 || so.FINISH !== 0) fail('STEP CONTROL MD: the upper step does not reset ' + JSON.stringify(so));
+  }
+  /* CRI MONT.MD from ATS program 310SC90-795 sheets 10 ~ 11: TCA550 CRI 1.1 (IN K 001111100, EX K 011111110) is asked at step in of
+     steps 2 ~ 6 and in the execution of steps 1 ~ 7; the steps come by definition from TCA520 .. TCA528; PB BYPASS takes it as OK */
+  {
+    const cm = A.plan.find(p => p.id === 'TCA550').nodes.find(x => x.t === 'M' && x.name === 'CRI MONT.MD');
+    if (!cm || A.names[cm.ins['DEF STEP IN 2 ORDER']] !== 'TCA522:md.ORDER') fail('TCA550 CRI MONT.MD does not read STEP IN 2 ORDER of TCA522: ' + (cm && A.names[cm.ins['DEF STEP IN 2 ORDER']]));
+    const cf = M['CRI MONT.MD'],
+      cs = {},
+      cb = { IN: 0, 'PB BYPASS': 0 },
+      cr = x => cf({ ...cb, ...x }, cm.notes, cs, 0.1);
+    if (cr({ 'DEF STEP IN 1 ORDER': 1 }).STPIN !== 0) fail('CRI MONT.MD: CRI 1.1 is not asked at step in of step 1 (IN1 K:0)');
+    if (cr({ 'DEF STEP IN 2 ORDER': 1 }).STPIN !== 1) fail('CRI MONT.MD: CRI 1.1 not OK at step in of step 2 gives no STPIN');
+    if (cr({ 'DEF STEP IN 2 ORDER': 1, IN: 1 }).STPIN !== 0) fail('CRI MONT.MD: STPIN with the criterion OK');
+    if (cr({ 'DEF STEP 1 EXECUTING': 1 }).EX !== 1) fail('CRI MONT.MD: CRI 1.1 not OK in the execution of step 1 gives no EX');
+    const by = cr({ 'DEF STEP 1 EXECUTING': 1, 'PB BYPASS': 1 });
+    if (by.EX !== 0 || by.BYPASS !== 1) fail('CRI MONT.MD: PB BYPASS does not take the criterion as OK ' + JSON.stringify(by));
+    if (cr({ 'DEF STEP 1 EXECUTING': 1, IN: 1 }).BYPASS !== 0) fail('CRI MONT.MD: the bypass stays after the criterion is OK');
+    if (cf.need([]).length !== 2) fail('CRI MONT.MD with no K tables must be open');
+  }
+  /* POSITION (SEAL-IN) from IBD 310SC90-794 sheet 18: the close stops on LIMIT FULL CLOSE (not on the torque switch) */
+  {
+    const pq = M['POSITION (SEAL-IN)'],
+      ps = {},
+      pb0 = { AOP: 0, ACL: 0, EF: 0, LTOP: 1, TROP: 0, LTCL: 0, TRCL: 0, 'PB OPEN': 0, 'PB CLOSE': 0, 'PB AUTO': 0, 'PB MANUAL': 0, 'PB RESET': 0 },
+      pr = x => pq({ ...pb0, ...x }, [[0, 0, 'TP:35.0s'], [0, 0, 'TP:35.0s']], ps, 0.5);
+    if (pr({ 'PB CLOSE': 1 }).CLS !== 1) fail('POSITION (SEAL-IN): PB CLOSE gives no close command');
+    if (pr({ LTOP: 0 }).CLS !== 1) fail('POSITION (SEAL-IN): the close does not seal in');
+    let po = pr({ LTOP: 0, LTCL: 1 });
+    if (po.CLS !== 0 || po.ABN !== 0) fail('POSITION (SEAL-IN): LIMIT FULL CLOSE is not a normal stop ' + JSON.stringify(po));
+    pr({ LTOP: 1, 'PB CLOSE': 0 });
+    pr({ 'PB CLOSE': 1 });
+    po = pr({ LTOP: 0, TRCL: 1 });
+    if (po.CLS !== 0 || po.ABN !== 1) fail('POSITION (SEAL-IN): close torque before full close must stop and alarm ' + JSON.stringify(po));
+  }
+  /* AIR OPERAT VALVE from IBD 310SC90-794 sheet 22: SVE energizes and holds; no full open in t1 = OPEN FAULT (de-energize, ANN) until
+     RESET; SVD de-energizes; no full close in t2 = CLOSE FAULT */
+  {
+    const av = M['AIR OPERAT VALVE'],
+      as = {},
+      an = [[0, 0, 'TP:5.0s'], [0, 0, 'TP:10.0'], [0, 0, 'TP:20.0']],
+      ab = { FFP: 0, SVE: 0, SVD: 0, RESET: 0, LTOP: 0, LTCL: 1 },
+      ar = (x, n = 1) => {
+        let r;
+        for (let i = 0; i < n; i++) r = av({ ...ab, ...x }, an, as, 0.5);
+        return r;
+      };
+    if (ar({ SVE: 1 }).SVE !== 1 || ar({ LTCL: 0 }, 10).SVE !== 1) fail('AIR OPERAT VALVE: SVE does not energize and hold');
+    let ao = ar({ LTCL: 0 }, 12);
+    if (ao.SVE !== 0 || ao.ABN !== 1) fail('AIR OPERAT VALVE: no full open in t1 is not an open fault ' + JSON.stringify(ao));
+    if (ar({ LTCL: 1, RESET: 1 }).ABN !== 0) fail('AIR OPERAT VALVE: RESET does not clear the open fault');
+    ar({ SVE: 1, LTCL: 0, LTOP: 1 }, 4);
+    ao = ar({ SVD: 1, LTOP: 0, LTCL: 0 }, 41);
+    if (ao.SVE !== 0 || ao.ABN !== 1) fail('AIR OPERAT VALVE: no full close in t2 is not a close fault ' + JSON.stringify(ao));
+    if (av.need([[0, 0, 'TP:5.0s']]).length !== 1) fail('AIR OPERAT VALVE with no t1 / t2 printed must be open');
+  }
+  /* TCE250 MAIN STOP VALVE FULL CLOSE (TA-6), compiled alone with TCE601 / TCE041 (the inputs become ports): TURBINE TRIP (MSV, RSV,
+     ICV CLOSE) on DO TCE960-26 = MSV(A) and MSV(B) full close and (RSV(A) or ICV(A)) and (RSV(B) or ICV(B)) full close */
+  {
+    const sub = sheets.filter(s => ['TCE250', 'TCE601', 'TCE041'].includes(s.id)),
+      Q = R.compile(sub),
+      trip = R.outs(Q).find(o => o.row === 'TCE960-26'),
+      K = ['CON:TCE220.A3', 'CON:TCE220.B3', 'CON:TCE226.G1', 'CON:TCE227.A2', 'CON:TCE226.G2', 'CON:TCE228.A2'],
+      tr = on => {
+        K.forEach((k, i) => R.set(Q, k, on[i]));
+        for (let i = 0; i < 20; i++) R.step(Q, 0.01);
+        return Q.v[trip.slot];
+      };
+    for (const [on, e] of [
+      [[0, 0, 0, 0, 0, 0], 0],
+      [[1, 1, 0, 0, 0, 0], 0],
+      [[1, 1, 1, 0, 0, 1], 1],
+      [[1, 0, 1, 1, 1, 1], 0],
+      [[1, 1, 1, 1, 1, 1], 1]
+    ])
+      if (tr(on) !== e) fail('TCE250 TURBINE TRIP DO TCE960-26 with MSV A/B, RSV A, ICV A, RSV B, ICV B closed ' + on + ' is not ' + e);
+  }
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
   if (!v || v.ins.IN === v.ins.ERR) fail('TCA322 line 3: the AI value and its PI/O error are one net');
@@ -200,7 +331,20 @@ console.log('without a meaning yet: ' + um.map(([k, n]) => k + ' x' + n).join(',
 /* the open-item rule: a missing parameter, a parameter the macro list does not define, or an unwired SW keeps the block open */
 if (!R.need('SG', [], true).length) fail('SG with no K must be open');
 if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1'], true).length) fail('PIV with G1 G2 TI must not be open');
-if (!R.need('PIV', ['G1:1', 'G2:1', 'TI:1', 'HL:100'], true).length) fail('PIV with HL printed must be open');
+/* PIV HL / LL = upper / lower limit of the position Z + Y (EIMI PC lookup 2026-11-25: macro list words for PIF / INTEGRAL / ANALOG
+   MEMORY / LMS and TCA022 (7); the limit on Z + Y derived from TCE191 LL 0.00 % and TCE195): it runs; ML is read nowhere */
+/* G with only KA printed (TCE190 C014): KA is the gain (derived, EIMI PC read 2026-11-25); K wins where both are printed */
+if (R.need('G', ['KA:1.0'], true).length || R.K.G([3], ['KA:2.0'])[0] !== 6 || R.K.G([3], ['K:1.0', 'KA:2.0'])[0] !== 3) fail('G KA is not the gain where no K is printed');
+if (R.need('G', [], true).length !== 1) fail('G with no K and no KA must be open');
+if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1', 'HL:100', 'LL:0', 'ML:100'], true).length) fail('PIV with HL / LL / ML printed must run');
+{
+  const pv = R.K.PIV,
+    pn = ['G1:1', 'G2:1', 'TI:1', 'HL:100', 'LL:0'],
+    ps = {};
+  pv([0, 0, 50], pn, ps, 0.1);
+  if (Math.abs(pv([100, 0, 95], pn, ps, 0.1)[0] - 5) > 1e-9) fail('PIV: Z + Y is not held at HL (Z 95, HL 100 -> Y 5)');
+  if (Math.abs(pv([-100, 0, 3], pn, ps, 0.1)[0] + 3) > 1e-9) fail('PIV: Z + Y is not held at LL (Z 3, LL 0 -> Y -3)');
+}
 if (!R.need('TP', ['TP:1'], false).length) fail('TP with no SW wire must be open');
 if (!R.need('FG', ['X1:0', 'Y1:0'], true).length) fail('FG with one point must be open');
 const nOpen = Object.values(S.open).reduce((a, v) => a + v.length, 0);

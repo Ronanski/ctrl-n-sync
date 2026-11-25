@@ -2,7 +2,8 @@
    one logic. Static, no browser (runs in Checks before Playwright is installed):
    - a controller (HX.C) names a loop that is on an ABC sheet of the app (src/data/apre.txt);
    - a digital state (data-di="TAG|...") names a tag that a DITL sheet reads (src/data/pre.txt) or a row of the DCS I/O list;
-   - a value key is an I/O tag, a logic tag on a sheet, or 'an:KEY' = a field the plant model writes (src/analog/engine/unit.js);
+   - a value key is an I/O tag, a logic tag on a sheet, a TCS Modbus word (src/data/tcs-dcs.json), or 'an:KEY' = a field the plant
+     model writes (src/analog/engine/unit.js);
    - the page names its flow diagram (K1AU3-PD-0xx) in its header. */
 const fs = require('fs'),
   path = require('path'),
@@ -25,7 +26,9 @@ const PAGES = [
   ['turbine-interface', 'turbine-interface'],
   ['turbine-operation', 'turbine-operation'],
   ['turbine-valves', 'turbine-valves'],
-  ['turbine-motors', 'turbine-motors']
+  ['turbine-motors', 'turbine-motors'],
+  ['turbine-readings', 'turbine-readings'],
+  ['turbine-states', 'turbine-states']
 ];
 const abc = unz('src/data/apre.txt'),
   ditl = unz('src/data/pre.txt'),
@@ -36,6 +39,13 @@ const io = new Set();
   new Function('window', rd('src/ui/plant/wiring.js'))(w);
   for (const r of w.WIRING) if (r[3]) io.add(String(r[3]));
 }
+/* a word the TCS sends the DCS over Modbus (src/data/tcs-dcs.json, PLC to DCS): by its instrument tag or its word / bit ('SI1002.7') */
+const mbk = new Set();
+for (const r of JSON.parse(rd('src/data/tcs-dcs.json')).modbus)
+  if (r.sh === 'PLC to DCS' && r.to) {
+    if (r.tag && r.tag !== '-') mbk.add(r.tag);
+    mbk.add(r.word + (r.bit != null ? '.' + r.bit : ''));
+  }
 const N = s => String(s).replace(/-/g, '');
 const onAbc = t => abc.includes('"' + t) || abc.includes(N(t));
 const ctx = { window: {}, document: { addEventListener() {}, body: null, documentElement: { style: {} } }, console };
@@ -57,7 +67,7 @@ for (const [file, id] of PAGES) {
   /* a process page names its flow diagram; a page of signals only (no process drawn: the TCS / DCS interface) names the I/O list or
      the TCS drawing (IBD 310SC90-*, logic book 331DM*) */
   const pipes = (p.plan && p.plan.pipes) || [];
-  if (pipes.length ? !/K1AU3-PD-0\d\d/.test(src) : !/K1AU3-PD-0\d\d|I\/O list|310SC90-\d+|331DM\d+/.test(src))
+  if (pipes.length ? !/K1AU3-PD-0\d\d/.test(src) : !/K1AU3-PD-0\d\d|I\/O list|310SC90-\d+|331DM\d+|MODBUS Communication list/.test(src))
     fail(id + ': no source drawing or list named');
   const it = [];
   const walk = x => {
@@ -80,7 +90,7 @@ for (const [file, id] of PAGES) {
     const m = /data-di="([^|"]+)/.exec(x.hook);
     if (!m) continue;
     n++;
-    if (!ditl.includes('"' + m[1] + '"') && !io.has(m[1]))
+    if (!ditl.includes('"' + m[1] + '"') && !io.has(m[1]) && !mbk.has(m[1]))
       fail(id + ': state ' + m[1] + ' is read by no DITL sheet and is not an I/O row');
   }
   /* TCS operator buttons and lamps: a 'crt:CRT:<sheet>.<tag>' button names a port its TCE / TCA sheet draws; a 'crtl:<sheet>|<key>'
@@ -115,7 +125,7 @@ for (const [file, id] of PAGES) {
     if (/^an:/.test(k)) {
       if (!new RegExp('U\\.' + k.slice(3) + '\\s*=').test(unit))
         fail(id + ': plant model key ' + k + ' is written nowhere in unit.js');
-    } else if (!io.has(k) && !onAbc(k)) fail(id + ': value ' + k + ' is no I/O tag and on no sheet');
+    } else if (!io.has(k) && !onAbc(k) && !mbk.has(k)) fail(id + ': value ' + k + ' is no I/O tag and on no sheet');
   }
   for (const t of (p.plan.taps || []).filter(t => /^an:/.test(t.key)))
     if (!t.tag || !io.has(t.tag)) fail(id + ': model value ' + t.key + ' names no I/O tag');

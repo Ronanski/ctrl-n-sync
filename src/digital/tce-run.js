@@ -61,19 +61,29 @@
       st.i = y - G * X - F;
       return [y];
     },
-    /* ML 13 PIV velocity PI (TCA014 p 9): SW=1 Y = G1 (X(j) - X(j-1)) + G2 (TS/TI) X(j) + F; SW=0 Y = 0. Y is the increment itself (the
-       macro list adds no Y(j-1)); it gives no output limit, so HL / LL / ML printed under a PIV are an OPEN item (see need()) */
+    /* ML 13 PIV velocity PI (TCA014 p 9, "PI CONTROLLER (VELOCITY TYPE)", pins SW, X, F, Z -> Y): SW=1 Y = G1 (X(j) - X(j-1)) +
+       G2 (TS/TI) X(j) + F; SW=0 Y = 0. Y is the increment itself (the macro list adds no Y(j-1)).
+       HL / LL (printed under every PIV, not in the ML 13 text): HL = upper limit, LL = lower limit, as the macro list words them for
+       PIF No. 12, INTEGRAL No. 9, ANALOG MEMORY No. 21 ("with limitter LL<=Y<=HL") and LMS No. 41, and TCA022 (7) "Set Values ... the
+       upper limit, the lower limit". DERIVED from the sheets (not printed in a definition): the limit is on the position Z + Y, not on
+       the increment: Z = GOV.SET (I 005 of TCE196, which adds Y each cycle), so Y = clamp(Z + Y, LL, HL) - Z. Reason: TCE191 C022 / C027
+       print LL 0.00 % (a limit on Y would never let the load go down) and TCE195 prints -5.0 .. 110.0 against GOV.SET -67.7 .. 107.0;
+       the reading fits all PIVs (TCE168, TCE169, TCE191, TCE195). ML: printed equal to HL on every PIV, on no page of the macro list or
+       TC-14-116: its meaning is OPEN, not read (it does not block the sheet). Source lookup: EIMI on the PC, 2026-11-25. */
     PIV: (x, n, st, dt, sw = 1) => {
-      const [X = 0, F = 0] = x,
+      const [X = 0, F = 0, Z = 0] = x,
         G1 = par(n, 'G1'),
         G2 = par(n, 'G2'),
-        TI = par(n, 'TI');
+        TI = par(n, 'TI'),
+        HL = par(n, 'HL'),
+        LL = par(n, 'LL');
       if (!sw) {
         st.x = X;
         return [0];
       }
-      const y = G1 * (X - (st.x ?? X)) + (G2 * dt * X) / TI + F;
+      let y = G1 * (X - (st.x ?? X)) + (G2 * dt * X) / TI + F;
       st.x = X;
+      if (HL !== undefined && LL !== undefined) y = clamp(Z + y, LL, HL) - Z;
       return [y];
     },
     /* ML 15 HS Y = max(X1..X3), Yi = 1 at the maximum; ML 16 LS the minimum */
@@ -116,8 +126,11 @@
     /* ML 25 ASW / ML 53 DSW: SW=1 Y = X1, SW=0 Y = X2 */
     ASW: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
     DSW: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
-    /* ML 27 G Y = K X */
-    G: (x, n) => [par(n, 'K') * x[0]],
+    /* ML 27 G Y = K X (TCA015 MACRO LIST(3) No. 27 GAIN: "Input signal is multiplied by gain. Y=K*X. K:Gain").
+       KA: TCE190 G C014 prints only "KA:1.0" (EIMI read the PC drawing 2026-11-25, 331DM09784 p 132 = PDF p 134, 2x crop: no other K
+       anywhere, not a misread); the macro list has no KA. DERIVED: GAIN has one parameter and the block prints one value, so KA is its
+       gain (at 1.0, Y = X). Taken only where no K is printed. */
+    G: (x, n) => [par(n, 'K', par(n, 'KA')) * x[0]],
     /* ML 28 MR monitor relay: Y = 1 when X1 - X2 > HL or < LL */
     MR: (x, n) => {
       const d = x[0] - (x[1] || 0);
@@ -276,7 +289,7 @@
     LCK: ['K'], UCK: ['K']
   };
   /* printed parameters that the definition of the ML does not have: their meaning is open until a document gives it */
-  const EXTRA = { PIV: ['HL', 'LL', 'ML'], AM: ['M'], G: ['KA'] };
+  const EXTRA = { AM: ['M'] };
   const keysOf = n => new Set((n || []).map(q => (/^\s*([A-Z][A-Z0-9]*)\s*:/.exec(q) || [])[1]).filter(Boolean));
   function need(type, notes, swWired) {
     const t = K[type] ? type : ALIAS[type] || type,
@@ -284,7 +297,7 @@
       k = keysOf(notes),
       out = [];
     if (!f) return out;
-    for (const p of REQ[t] || []) if (!k.has(p)) out.push(t + ' ' + p + ' not on the sheet');
+    for (const p of REQ[t] || []) if (!k.has(p) && !(t === 'G' && p === 'K' && k.has('KA'))) out.push(t + ' ' + p + ' not on the sheet');
     for (const p of EXTRA[t] || []) if (k.has(p)) out.push(t + ' ' + p + ' printed, not in the macro list definition');
     if (t === 'FG') {
       let c = 0;
@@ -346,7 +359,17 @@
       ...(s.d || []).filter(d => d[3] === 'out').map(d => ({ key: d[0], kind: 'd', text: d[4] || '', what: 'CRT lamp ' + (d[4] || ''), x: d[1], y: d[2], d: 40 * u })),
       ...(s.k || []).filter(k => /def$/.test(k[5] || '')).map(k => ({ key: k[0], kind: 'def', text: k[3], what: 'definition ' + k[3], x: k[1], y: k[2], d: 12 * u }))
     ];
-    const pio = (s.r || []).map(r => ({ key: r[0], x0: r[1], x1: r[1] + r[3], y0: r[2], y1: r[2] + r[4] }));
+    /* the PI/O table row printed at the box or just right of it on its top line ("(TCA980-17)"), the same rule as the input boxes of compile */
+    /* an OUTPUT box of the COMM / EHG output sheets (TCA830 .. TCE610) prints its row over the PI/O mark, ~185 px left of the box: looked for
+       only when nothing is printed at the box itself */
+    const pioRow = (x0, y0, x1, y1) => pioAt(x0 - 6, y0, x1, y1) || pioAt(x0 - 200, y0, x1, y1);
+    const pioAt = (xa, y0, x1, y1) => {
+      const h = (s.t || [])
+        .filter(w => w[0] >= xa && w[0] <= x1 + 120 && w[1] >= y0 - 16 && w[1] <= y1 + 6 && /\(T[A-Z]{2}\d+[A-Z]?-\d+\)/.test(w[2]))
+        .sort((a, b) => Math.hypot(a[0] - x1, a[1] - y0) - Math.hypot(b[0] - x1, b[1] - y0))[0];
+      return h ? /\((T[A-Z]{2}\d+[A-Z]?-\d+)\)/.exec(h[2])[1] : undefined;
+    };
+    const pio = (s.r || []).map(r => ({ key: r[0], x0: r[1], x1: r[1] + r[3], y0: r[2], y1: r[2] + r[4], row: pioRow(r[1], r[2], r[1] + r[3], r[2] + r[4]) }));
     const W = s.w || [];
     const inputs = (s.c || []).filter(c => c[1] === 'in').map(c => ({ key: c[0], letter: c[2], name: c[5], from: c[6] || [] }));
     const outc = (s.c || []).filter(c => c[1] === 'out').map(c => ({ key: c[0], letter: c[2], sheets: c[6] || [] }));
@@ -411,7 +434,7 @@
       }
       const r = pio.find(r => p[0] >= r.x0 - tol && p[0] <= r.x1 + tol && p[1] >= r.y0 - tol && p[1] <= r.y1 + tol);
       if (r) {
-        res.outputs.push({ net: nt, to: 'PI/O ' + r.key, key: r.key, kind: 'r' });
+        res.outputs.push({ net: nt, to: 'PI/O ' + (r.row || r.key), key: r.key, kind: 'r', row: r.row });
         continue;
       }
       if (W.some(v => v !== w && v[0] === nt && (Math.hypot(v[1][0][0] - p[0], v[1][0][1] - p[1]) <= 20 * u || onSeg(p, v)))) continue;
@@ -873,6 +896,182 @@
       need: notes => (mpar(notes, 'TD') === undefined ? ['TD'] : []).concat((notes || []).filter(n => /^TP:/.test(String(n[2]))).length < 2 ? ['TP x2'] : [])
     }
   );
+  /* TORQUE (SEAL-IN), drawing: IBD 310SC90-794 Rev 2 sheet 16 "TORQUE SEAT (SEAL-IN)", typical logic for motor operated valve (torque
+       seating, seal-in type), book p 32. Pins of the TCA sheets (C021): AOP / ACL = AUTO OPEN / CLOSE CONDITION, EF = MOTOR ELECTRICAL
+       TROUBLE, LTOP / LTCL = LIMIT SWITCH OF FULL OPEN / CLOSE SIDE, TROP / TRCL = TORQUE SWITCH OF FULL OPEN / CLOSE SIDE.
+       AUTO / MANUAL: FF set by PB AUTO, reset by PB MANUAL (R circled = reset first).
+       open command = AUTO OPEN CONDITION and AUTO, or PB OPEN and MANUAL; close command the same with CLOSE.
+       open stop (OR into the S of the open-stop FF) = EF, OPEN FAULT (circle 6), LIMIT FULL OPEN, TORQUE FULL OPEN and not LIMIT FULL CLOSE;
+       the open FF is set by the open command and not the open stop (A with the NOT circle), and is reset by the open stop or by the close
+       command (seal-in: the FF holds the MCC OPEN until the stop). Close side the same with circle 7.
+       OPEN FAULT (ANN 2): open FF for DI t1 and not LIMIT FULL OPEN; CLOSE FAULT (ANN 3): close FF for DI t2 and not LIMIT FULL CLOSE
+       (NOTE t1 / t2 = VALVE OPENING TIME + 5 sec = the printed TP 35.0 s x2). Each fault is held until PB RESET, EF or the other command.
+       ANN 1 = EF; ANN 4 = TORQUE SWITCH OPEN = torque full open and not limit full close; ANN 5 = TORQUE SWITCH CLOSE = torque full close
+       and not limit full open and not limit full close (A with circle 2).
+       OPS / CLS = open / close FF (to MCC); LTOP / LTCL = the limit switches (R (OPEN) / G (CLOSE) lamps); ABN = any of ANN 1 ~ 5.
+     Not on sheet 16 (printed beside the TCA blocks, not read): TD 5.0 s x2, R, M, HL, LL, K, the third TP 5.0 s. */
+  /* POSITION (SEAL-IN), drawing: IBD 310SC90-794 Rev 2 sheet 18 "POSITION SEAT (SEAL-IN)" (book p 34): the same logic as sheet 16 but the
+       valve seats on its LIMIT switches at both ends: the close stops on LIMIT FULL CLOSE, and a TORQUE SWITCH OF FULL CLOSE SIDE before
+       LIMIT FULL OPEN is a torque trip (ANN 5) and a stop, like the open side. */
+  const sealIn = pos =>
+    (I, notes, st, dt) => {
+      const [T1, T2] = (notes || []).filter(n => /^TP:/.test(String(n[2]))).map(n => parseFloat(String(n[2]).slice(3))),
+        lo = b01(I.LTOP),
+        lc = b01(I.LTCL),
+        ef = b01(I.EF);
+      if (b01(I['PB MANUAL'])) st.auto = 0;
+      else if (b01(I['PB AUTO'])) st.auto = 1;
+      const auto = st.auto ? 1 : 0,
+        oCmd = (b01(I.AOP) && auto) || (pulseUp(st, 'pO', b01(I['PB OPEN'])) && !auto),
+        cCmd = (b01(I.ACL) && auto) || (pulseUp(st, 'pC', b01(I['PB CLOSE'])) && !auto),
+        tsO = b01(I.TROP) && !lc ? 1 : 0,
+        tsC = b01(I.TRCL) && !lo && (pos || !lc) ? 1 : 0;
+      if (b01(I['PB RESET']) || ef) (st.of = 0), (st.cf = 0);
+      if (cCmd) st.of = 0;
+      if (oCmd) st.cf = 0;
+      const oStop = ef || st.of || lo || tsO,
+        cStop = ef || st.cf || lc || (pos ? tsC : b01(I.TRCL));
+      if (oStop || cCmd) st.o = 0;
+      else if (oCmd) st.o = 1;
+      if (cStop || oCmd) st.c = 0;
+      else if (cCmd) st.c = 1;
+      if (onDelay(st, 'd1', !!st.o, T1, dt) && !lo) (st.of = 1), (st.o = 0);
+      if (onDelay(st, 'd2', !!st.c, T2, dt) && !lc) (st.cf = 1), (st.c = 0);
+      return {
+        OPS: st.o ? 1 : 0,
+        CLS: st.c ? 1 : 0,
+        LTOP: lo,
+        LTCL: lc,
+        AUTO: auto,
+        ABN: ef || st.of || st.cf || tsO || tsC ? 1 : 0
+      };
+    };
+  const sealOpt = sheet => ({
+      src: 'drawing: IBD 310SC90-794 Rev 2 sheet ' + sheet,
+      pb: ['OPEN', 'CLOSE', 'AUTO', 'MANUAL', 'RESET'],
+      need: notes => ((notes || []).filter(n => /^TP:/.test(String(n[2]))).length < 2 ? ['TP x2 (t1 / t2)'] : [])
+  });
+  MACRO['TORQUE (SEAL-IN)'] = Object.assign(sealIn(false), sealOpt(16));
+  MACRO['POSITION (SEAL-IN)'] = Object.assign(sealIn(true), sealOpt(18));
+  /* STEP CONTROL MD, drawing: ATS program 310SC90-795 Rev 2 sheet 8 "ATS CONTROL START UP STEP TRANSITION LOGIC" (book p 132), sheet 9
+       (shutdown step, p 133) and sheet 10 "CRITERIA CHECK LOGIC" (p 134: A = start, B = during, D = end criteria). The pins as the TCA520 ..
+       TCA528 sheets print them at the block: TMG = STEP n-1 COMPLETED (criteria Dn-1), IN CR = STEP n IN CONDITION OK (criteria An),
+       OUT CR = STEP n OUT CONDITION OK (criteria Dn), BYPS = STEP n BYPASS, PERM = STEP n SEL PERMISSIVE, EXE = upper STEP EXECUTING,
+       FINISH = upper STEP COMPLETED, EX1 / EX2 = ANOTHER STEP PB SELECT / ANOTHER STEP SELECT (OTHER STEP SELECTED), ORDER = STEP UP ORDER,
+       FORCE = STEP n SELECT (the CRT PB STEP n ON); APS A / APS S are wired to OFF(0) on every sheet.
+       SELECTED (S/R): set by (STEP UP ORDER or PB STEP n) and the permissive, not criteria Dn, not STEP n EXECUTED; reset (R first) by the
+         pulse (PO) of OTHER STEP SELECTED, STEP n EXECUTED, or an UPPER STEP EXECUTING.
+       EXECUTED (S/R): set by criteria Dn-1 and criteria An and STEP n SELECTED; reset by an UPPER STEP EXECUTING.
+       COMPLETED (S/R): set by criteria Dn with the step executed; reset by the upper step's criteria D (upper STEP COMPLETED).
+       BYPS (STEP n BYPASS, sheet 11 CRITERIA BYPASS: the criteria taken as ON) stands for criteria An and Dn.
+       Outs: SEL = STEP n SELECT(ED), STEP S = selected by STEP UP ORDER, PB ON = selected by the PB, ORDER = STEP IN n ORDER (selected: the
+       step whose A criteria are checked, sheet 10), EXEC = STEP n EXECUTING, FINISH = COMPLETED, START = the scan EXECUTED sets; ORDER1 / EXEC1 / FINI1 = the same to the DCS.
+       RESET (right pin) is wired on no sheet: not given.
+     Not on the transition logic (printed DEF timers beside the block, roles not drawn, not read): TD 3.0 s x3, TP 0.2 s, TP 1.0 s. */
+  MACRO['STEP CONTROL MD'] = Object.assign(
+    (I, notes, st) => {
+      const by = b01(I.BYPS),
+        an = b01(I['IN CR']) || by,
+        dn = b01(I['OUT CR']) || by,
+        up = b01(I.EXE),
+        other = pulseUp(st, 'pX', b01(I.EX1) || b01(I.EX2)),
+        ord = b01(I.ORDER),
+        pb = pulseUp(st, 'pF', b01(I.FORCE));
+      if (other || st.ex || up) (st.sel = 0), (st.how = '');
+      else if ((ord || pb) && b01(I.PERM) && !dn && !st.ex) (st.sel = 1), (st.how = pb ? 'pb' : 'order');
+      const was = st.ex;
+      if (up) st.ex = 0;
+      else if (b01(I.TMG) && an && st.sel) (st.ex = 1), (st.sel = 0);
+      if (b01(I.FINISH)) st.done = 0;
+      else if (dn && st.ex) st.done = 1;
+      const sel = st.sel ? 1 : 0,
+        ex = st.ex ? 1 : 0,
+        done = st.done ? 1 : 0;
+      return {
+        SEL: sel,
+        'STEP S': sel && st.how === 'order' ? 1 : 0,
+        'PB ON': sel && st.how === 'pb' ? 1 : 0,
+        ORDER: sel,
+        ORDER1: sel,
+        EXEC: ex,
+        EXEC1: ex,
+        FINISH: done,
+        FINI1: done,
+        START: ex && !was ? 1 : 0
+      };
+    },
+    { src: 'drawing: ATS program 310SC90-795 Rev 2 sheets 8 ~ 11' }
+  );
+  /* CRI MONT.MD, drawing: ATS program 310SC90-795 Rev 2 sheet 10 "CRITERIA CHECK LOGIC" (book p 134) and sheet 11 "CRITERIA BYPASS
+       LOGIC" (p 135), with the criteria table 310SC90-796 (p 159: A = step in, B = step execution, D = step end, per step 0 .. 8). One block
+       per criterion: IN = the criterion OK; the K tables printed in the block, IN0 .. IN8 (column A) and EX0 .. EX8 (column B), say in which
+       steps it is asked. The steps come by their definitions on the step sheets (TCA520 .. TCA528): STEP IN n ORDER and STEP n EXECUTING.
+       STPIN = criterion not OK while a step that asks it at step in is in order (sheet 10: CRITERIA An not satisfied with STEP n SELECTED);
+       EX = criterion not OK while a step that asks it in execution is executing (STEP n EXECUTED and CRITERIA Bn not satisfied).
+       BYPASS (sheet 11): the CRT PB CRITERIA BYPASS of this criterion while it is not satisfied = INDIVIDUAL CRITERIA ON: STPIN / EX are
+       taken as OK and BYPASS is 1, until the criterion is OK or no step asks it.
+     The right pins FAIL / USE and the left MB / MB2 / MODE are wired on no sheet: not given / not read. */
+  const STEPS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const criK = (notes, p) =>
+    STEPS.map(i => {
+      const n = (notes || []).find(n => new RegExp('^' + p + i + ' K:').test(String(n[2])));
+      return n ? +String(n[2]).split('K:')[1] : undefined;
+    });
+  MACRO['CRI MONT.MD'] = Object.assign(
+    (I, notes, st) => {
+      const kin = st.kin || (st.kin = criK(notes, 'IN')),
+        kex = st.kex || (st.kex = criK(notes, 'EX')),
+        ok = b01(I.IN),
+        askIn = STEPS.some(i => kin[i] && b01(I['DEF STEP IN ' + i + ' ORDER'])),
+        askEx = STEPS.some(i => kex[i] && b01(I['DEF STEP ' + i + ' EXECUTING'])),
+        bad = !ok && (askIn || askEx);
+      if (!bad) st.byp = 0;
+      else if (pulseUp(st, 'pB', b01(I['PB BYPASS']))) st.byp = 1;
+      if (!bad) st.pB = b01(I['PB BYPASS']);
+      return {
+        STPIN: !ok && askIn && !st.byp ? 1 : 0,
+        EX: !ok && askEx && !st.byp ? 1 : 0,
+        BYPASS: st.byp ? 1 : 0
+      };
+    },
+    {
+      src: 'drawing: ATS program 310SC90-795 Rev 2 sheets 10 ~ 11, criteria table 310SC90-796 sheet 3',
+      pb: ['BYPASS'],
+      inBox: true,
+      defs: STEPS.flatMap(i => ['STEP IN ' + i + ' ORDER', 'STEP ' + i + ' EXECUTING']),
+      need: notes => ['IN', 'EX'].filter(p => criK(notes, p).some(v => v === undefined)).map(p => p + '0 .. ' + p + '8 K')
+    }
+  );
+  /* AIR OPERAT VALVE, drawing: IBD 310SC90-794 Rev 2 sheet 22 "TYPICAL LOGIC FOR AIR OPERATED VALVE" (book p 38). The sheets (TCA605,
+       TCA690, TCA711 .. 715, TCA738, TCE365) draw the AUTO / MANUAL and command part outside the block and give it SVE (energize = open)
+       and SVD (de-energize = close); the block holds the solenoid FF and the faults of the typical:
+       SV FF (S/R, R first): set by SVE, reset by SVD or OPEN FAULT (circle 1 into the reset OR); SVE out = the FF (to the solenoid).
+       OPEN FAULT (ANN 1): the FF for DI t1 and not LIMIT FULL OPEN; CLOSE FAULT (ANN 2): not the FF for DI t2 and not LIMIT FULL CLOSE;
+       each held until PB RESET or the other command (NOTE t1 = valve opening time + 5 s, t2 = valve closing time + 5 s: the two TP printed
+       without a unit beside the block, TP:10.0 / TP:20.0 on TCA711). LTOP / LTCL = the limit switches (R (OPEN) / G (CLOSE) lamps);
+       ABN = OPEN or CLOSE FAULT.
+     FFP is OFF(0) on every sheet (its role is not drawn). Not on sheet 22 (printed beside the block, not read): R, M, HL, LL, K, TP 5.0 s. */
+  const aovT = notes => (notes || []).filter(n => /^TP:\s*[\d.]+$/.test(String(n[2]))).map(n => parseFloat(String(n[2]).slice(3)));
+  MACRO['AIR OPERAT VALVE'] = Object.assign(
+    (I, notes, st, dt) => {
+      const [T1, T2] = st.T || (st.T = aovT(notes)),
+        lo = b01(I.LTOP),
+        lc = b01(I.LTCL),
+        on = b01(I.SVE),
+        off = b01(I.SVD);
+      if (b01(I.RESET) || off) st.of = 0;
+      if (b01(I.RESET) || on) st.cf = 0;
+      if (off || st.of) st.sv = 0;
+      else if (on) st.sv = 1;
+      if (onDelay(st, 'd1', !!st.sv, T1, dt) && !lo) (st.of = 1), (st.sv = 0);
+      if (onDelay(st, 'd2', !st.sv, T2, dt) && !lc) st.cf = 1;
+      return { SVE: st.sv ? 1 : 0, LTOP: lo, LTCL: lc, ABN: st.of || st.cf ? 1 : 0 };
+    },
+    {
+      src: 'drawing: IBD 310SC90-794 Rev 2 sheet 22',
+      need: notes => (aovT(notes).length === 2 ? [] : ['t1 / t2 (two TP without a unit)'])
+    }
+  );
   const numConst = t => {
     const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
     return m ? +m[1] : null;
@@ -1062,8 +1261,17 @@
         /* push buttons of the operator station that the macro holds inside (MOTOR STANDARD: START / STOP / AUTO / MANUAL / RESET of the
            typical, IBD 310SC90-794 sheet 14): a CRT port of the block, "CRT:<sheet>.<block>.<button>" */
         for (const k of (f && f.pb) || []) ins['PB ' + k] = port('CRT:' + n.id + '.' + M.key + '.' + k);
-        const open = f && f.need ? f.need(M.notes).map(k => name + ' needs ' + k) : [];
-        nodes.push({ t: 'M', f, name, notes: M.notes, ins, outs, st: {}, open, src: f && f.src });
+        /* signals the macro reads by their definition name (CRI MONT.MD: "STEP IN n ORDER" / "STEP n EXECUTING" of the step sheets),
+           as "DEF <name>"; one no sheet gives stays a REF port */
+        for (const d of (f && f.defs) || []) {
+          const dd = defs[S.ctl + '|' + d] || defs['|' + d];
+          ins['DEF ' + d] = dd && dd.length ? res(dd[0][0], dd[0][1]) : port('REF:' + d);
+        }
+        /* parameters printed INSIDE the block (CRI MONT.MD: the K tables IN0 .. IN8 / EX0 .. EX8) are its notes too */
+        const box = f && f.inBox && (S.m || []).find(e => e[0] === M.key),
+          notes = box ? M.notes.concat((S.t || []).filter(w => w[0] >= box[3] && w[0] <= box[3] + box[5] && w[1] >= box[4] && w[1] <= box[4] + box[6])) : M.notes;
+        const open = f && f.need ? f.need(notes).map(k => name + ' needs ' + k) : [];
+        nodes.push({ t: 'M', f, name, notes, ins, outs, st: {}, open, src: f && f.src });
       }
       /* order: a node after the nodes of this sheet that feed it (depth first; a loop keeps the last scan's value) */
       const by = new Map();
@@ -1153,7 +1361,7 @@
       for (const o of n.outputs) {
         const inside = (o.sheets || []).some(x => ids.has(x)) || /^circle .* to (G-|\(this sheet\))/.test(o.to || ''),
           kind = o.kind === 'd' ? 'crt' : o.kind === 'r' ? 'pio' : o.kind === 'c' && !inside ? ((o.sheets || []).every(x => x === '-') ? 'spare' : 'con') : null;
-        if (kind) L.push({ sheet: n.id, key: o.key, kind, to: o.to, slot: prog.res(n.id, o.net) });
+        if (kind) L.push({ sheet: n.id, key: o.key, kind, to: o.to, row: o.row, slot: prog.res(n.id, o.net) });
       }
     return L;
   }
