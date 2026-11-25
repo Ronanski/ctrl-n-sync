@@ -88,6 +88,8 @@
   /* beta.556 (EIMI): a controller or a plain piece of plant with o.mon = [HX.V(...)] (and o.perm = [HX.V(...)], each 1 = made) gets the
      square of the second faceplate, PERMISSIVE · TREND · MONITOR: Y red / N green when its permissives are known, else a grey i */
   HX.MON = {};
+  /* lane 6: the devices of the package panels, by 'panel.device' of AN.pkgOp: what the faceplate LS_FPOP.pkg shows (keys, buttons, settings) */
+  HX.PKG = {};
   HX.hk = (name, hook) => ((HX.HK[name] = hook), 'h:' + name);
   /* a hand valve of the plant model as a valve SYMBOL on the line (hand wheel, red = open, the stem follows): a click opens
      its field faceplate. Use it where the valve stands on a drawn pipe; HX.H stays for a valve named beside the drawing */

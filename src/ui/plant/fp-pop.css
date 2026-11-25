@@ -86,3 +86,8 @@
 .fpo-box .fpo-cmd.lit-run{background:#5a1c1f!important;border-color:#e5484d!important;color:#ffd0d2!important}
 .fpo-box .fpo-cmd.lit-stop{background:#173826!important;border-color:#2fa56a!important;color:#bdf0d3!important}
 .fpo-box .fpo-cmd.es:not(:disabled){border-color:#8a3a3d!important;color:#ffb4b6!important}
+/* lane 6: the settings of a package panel (LS_FPOP.pkg): name on its own line, then the set value, the unit, the new value and SET */
+.fpo-box .fpo-r.set .fpo-l{flex:1 0 100%;width:auto}
+.fpo-box .fpo-r.set .fpo-dim{flex:0 0 30px}
+.fpo-box .fpo-inp{width:74px;min-height:32px;padding:2px 6px;background:#05090d;border:1px solid #3a4b5a;border-radius:3px;color:#eaf6ff;font:600 14px var(--mf,monospace);text-align:right}
+.fpo-box .fpo-inp:focus-visible{outline:2px solid #5fb3e6;outline-offset:1px}

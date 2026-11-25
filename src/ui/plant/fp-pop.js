@@ -1328,6 +1328,150 @@
     me._iv = setInterval(tick, 500);
     return true;
   }
+  /* lane 6 (EIMI): a device of a package panel (its own PLC, on the DCS by Modbus: precipitator, fly ash, tube cleaning). STATUS lamps,
+     the REMOTE / LOCAL selector at the panel (the field operator), AUTO / MAN, the buttons, the settings of the panel with their range, the
+     fault with its RESET. Every press is asked (EXECUTE / CANCEL) and goes to P.cmd(op, value): '' = done, else the reason it was refused.
+     P = { n: name, t: tag, d: panel, why, lamps: [on, off], st / flt / sel / au: () => 1 | 0 | null, fltWord, reset: true, free: no selector
+       needed, again: a lit button may be pressed again, cmds: [[label, op, lit word 'run' | 'stop' | '', () => lit, value]],
+       sets: [{ l, unit, max, dp, op, get: () => value }], cmd } */
+  function pkg(P) {
+    if (!P) return false;
+    const F = frame(P.n, (P.t ? P.t + ' · ' : '') + (P.d || ''));
+    const me = box;
+    F.hd.querySelector('.fpo-tt').append(E('span', 'fpo-chip', P.chip || 'PANEL'));
+    const W = P.lamps || ['RUN', 'STOP'],
+      lR = lampEl(W[0]),
+      lS = lampEl(W[1]),
+      lF = P.flt ? lampEl(P.fltWord || 'FAULT') : null;
+    if (P.st) F.bd.append(lF ? row('STATUS', lR, lS, lF) : row('STATUS', lR, lS));
+    const mk = t => {
+      const b = E('button', 'fpo-cmd', t);
+      b.type = 'button';
+      return b;
+    };
+    const [selS, [bRm, bLc]] = P.sel ? seg(['REMOTE', 'LOCAL']) : [null, []];
+    if (P.sel) F.bd.append(row('SELECTOR', selS, E('span', 'fpo-fld', 'FIELD')));
+    const bA = P.au ? mk('AUTO') : null,
+      bM = P.au ? mk('MAN') : null;
+    if (P.au) F.bd.append(row('MODE', bA, bM));
+    const C = (P.cmds || []).map(c => [c, mk(c[0])]);
+    for (let i = 0; i < C.length; i += 2) F.bd.append(row(i ? '' : 'CONTROL', ...C.slice(i, i + 2).map(x => x[1])));
+    const bR = P.reset ? mk('RESET') : null;
+    if (bR) F.bd.append(row('FAULT', bR));
+    const sets = (P.sets || []).map(s => {
+      const v = E('span', 'fpo-vb'),
+        inp = E('input', 'fpo-inp'),
+        b = E('button', '', 'SET');
+      inp.type = 'number';
+      inp.min = 0;
+      inp.max = s.max;
+      inp.step = 'any';
+      inp.setAttribute('aria-label', s.l + ', new value, ' + s.unit);
+      b.type = 'button';
+      const r = row(s.l, v, E('small', 'fpo-dim', s.unit), inp, b);
+      r.classList.add('set');
+      F.bd.append(r);
+      b.onclick = () => {
+        const x = inp.value.trim() === '' ? NaN : +inp.value;
+        if (!isFinite(x) || x < 0 || x > s.max) {
+          msg.hidden = false;
+          return setTx(msg, '⚠ ' + s.l + ': type a value from 0 to ' + s.max + ' ' + s.unit + '.');
+        }
+        ask(s.op, x, s.l + ' ' + x + ' ' + s.unit);
+      };
+      return [s, v];
+    });
+    const ex = E('div', 'fpo-ex'),
+      exT = E('span'),
+      exGo = E('button', 'fpo-go', 'EXECUTE'),
+      exNo = E('button', '', 'CANCEL');
+    exGo.type = exNo.type = 'button';
+    ex.append(exT, exGo, exNo);
+    ex.hidden = true;
+    const msg = E('div', 'fpo-why', P.why || '');
+    msg.hidden = !P.why;
+    F.bd.append(ex, msg);
+    let pend = null;
+    const ask = (op, v, word, fld) => {
+      pend = [op, v, word, fld];
+      setTx(exT, (fld ? 'FIELD: ' : '') + P.n + ': ' + word + '?');
+      ex.classList.toggle('fld', !!fld);
+      ex.hidden = false;
+      exGo.focus();
+    };
+    exNo.onclick = () => ((pend = null), (ex.hidden = true));
+    exGo.onclick = () => {
+      const q = pend;
+      pend = null;
+      ex.hidden = true;
+      if (!q) return;
+      const r = call(() => P.cmd(q[0], q[1]), 'no plant model') || '';
+      msg.hidden = false;
+      setTx(msg, r ? '⚠ Refused: ' + r + '.' : P.n + ': ' + q[2] + ' EXECUTED');
+      if (!r)
+        call(() =>
+          window.lsEventAdd(P.d || 'PANEL', q[3] ? 'FIELD' : 'DCS', (q[3] ? 'Field operator: ' : 'Operator: ') + P.n + (P.t ? ' ' + P.t : '') + ' ' + q[2] + ' (faceplate)')
+        );
+      setTimeout(tick, 150);
+    };
+    if (P.sel) {
+      bRm.onclick = () => ask('rem', 1, 'selector REMOTE', true);
+      bLc.onclick = () => ask('rem', 0, 'selector LOCAL', true);
+    }
+    if (bA) {
+      bA.onclick = () => ask('auto', 0, 'AUTO');
+      bM.onclick = () => ask('man', 0, 'MANUAL');
+    }
+    for (const [c, b] of C) b.onclick = () => ask(c[1], c[4], c[0]);
+    if (bR) bR.onclick = () => ask('reset', 0, 'RESET');
+    const ln = E('div', 'fpo-ln'),
+      ev = E('button', 'fpo-a', 'Events');
+    ev.type = 'button';
+    ev.onclick = () => call(() => document.getElementById('evbtn').click());
+    ln.append(ev);
+    F.bd.append(ln);
+    function tick() {
+      if (!me.isConnected) return closeEl(me);
+      const st = P.st ? call(P.st, null) : null,
+        fl = P.flt ? call(P.flt, null) : null,
+        sl = P.sel ? call(P.sel, null) : 1,
+        au = P.au ? call(P.au, null) : null,
+        go = isRun();
+      F.lamp.className = 'fpo-lamp ' + (fl ? 'trip' : st == null ? '' : st ? 'run' : 'stop');
+      setTx(F.val, P.st ? (fl ? P.fltWord || 'FAULT' : st == null ? '-----' : st ? W[0] : W[1]) : '');
+      lR.className = 'fpo-lp' + (st ? ' run' : '');
+      lS.className = 'fpo-lp' + (st != null && !st ? ' stop' : '');
+      if (lF) lF.className = 'fpo-lp' + (fl ? ' trip' : '');
+      if (P.sel) {
+        bRm.classList.toggle('on', !!sl);
+        bLc.classList.toggle('on', sl != null && !sl);
+        bRm.disabled = sl == null || !!sl || !go;
+        bLc.disabled = !sl || !go;
+      }
+      if (bA) {
+        bA.disabled = au == null || !!au || !sl || !go;
+        bM.disabled = !au || !sl || !go;
+        bA.classList.toggle('lit-run', !!au);
+        bM.classList.toggle('lit-stop', au != null && !au);
+      }
+      for (const [c, b] of C) {
+        const lit = c[3] ? !!call(c[3], null) : c[1] === 'start' ? !!st : c[1] === 'stop' ? st != null && !st : false;
+        b.classList.toggle('lit-run', lit && c[2] !== 'stop' && c[1] !== 'stop');
+        b.classList.toggle('lit-stop', lit && (c[2] === 'stop' || c[1] === 'stop'));
+        b.disabled = !go || (!P.free && !sl) || !!au || (lit && !P.again);
+      }
+      if (bR) bR.disabled = !go || !fl;
+      for (const [s, v] of sets) {
+        const x = call(s.get, null);
+        setTx(v, x == null || !isFinite(x) ? '-----' : (+x).toFixed(s.dp == null ? 1 : s.dp));
+      }
+    }
+    paint = tick;
+    tick();
+    place(me);
+    me._iv = setInterval(tick, 500);
+    return true;
+  }
   /* 1.0.0-beta.365 D18 (Rosé, user "Go ayos"): a machine or valve of an IBD sheet of the TCS soft logic 331DM09784 (tcs-trip.js
      TCS_IBD_PBN). Each button is a push button of the sheet (AN.turbine('ibd', { id, pb }), a 1.5 s pulse on its net), nothing else.
      STATUS / MODE are the flags the sheet writes (TCS_IBD_DEV post: U.tc, or U.tco with no ATS program), the PERMISSIVE rows are live
@@ -1863,7 +2007,7 @@
     me._iv = setInterval(tick, 500);
     return true;
   }
-  window.LS_FPOP = { motor, valve, valveTag, valveKind, valveOpen, tcs, ibd, mov, fieldPct, pb, field, fset, yn, hit, openAd, place, close, info, get open() {
+  window.LS_FPOP = { motor, valve, valveTag, valveKind, valveOpen, tcs, ibd, mov, fieldPct, pb, field, fset, pkg, yn, hit, openAd, place, close, info, get open() {
     return anyOpen();
   } };
 })();

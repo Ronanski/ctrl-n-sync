@@ -453,6 +453,25 @@
         return void call(() => window.lsEventAdd('TCS', 'DCS', 'Operator: ' + h.slice(4) + ' pressed (HMI)'));
       }
       if (h.slice(0, 5) === 'crtl:') return;
+      /* lane 6: a device of a package panel (HX.PKG['panel.device'], hx-page-precipitator.js): its faceplate, commands by AN.pkgOp */
+      if (h.slice(0, 4) === 'pkg:') {
+        const id = h.slice(4),
+          Q = HX.PKG[id];
+        if (!Q || !window.LS_FPOP || !LS_FPOP.pkg) return;
+        const rd = k => (k ? () => HX.data.value(k) : undefined),
+          [pn, dv] = id.split('.');
+        return void LS_FPOP.pkg(
+          Object.assign({}, Q, {
+            st: rd(Q.st),
+            flt: rd(Q.flt),
+            sel: rd(Q.sel),
+            au: rd(Q.au),
+            cmds: (Q.cmds || []).map(c => [c[0], c[1], c[2], rd(c[3]), c[4]]),
+            sets: (Q.sets || []).map(s => Object.assign({}, s, { get: rd(s.key) })),
+            cmd: (op, v) => AN.pkgOp(pn, dv, op, v)
+          })
+        );
+      }
       const e = S && S.hooks[h] && pq('[data-hxk="' + S.hooks[h].i + '"]');
       if (e)
         e.dispatchEvent(
