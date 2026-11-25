@@ -131,3 +131,10 @@ line unchanged.
   that output net: LINKED. Other inputs printed beside an output (XA-FA1052 fire detect, IRP stop commands of DITL-03D) are NOT counted:
   the general form moved 79 points, the motor-contact form 59. Old -> new: LINKED 1,726 -> 1,773, on a sheet no source 84 -> 41,
   copy clash 5 -> 1 (DITL-45 12, 61A 6, 22 4, 21A 4, 120 4, 30 / 76 / 29A / 77 / 112 3 each, others under 3).
+
+## Field contact (usr) writes a DITL input row (2026-11-25 1:00 PM PHT, YUA PR 590 / RARA via the coordinator)
+- A DITL input row whose address sits on the same net as a user contact (nl.usr, state in s.usw, e.g. the ELECTRICAL TROUBLE contact
+  that simIn sets) is "field contact (usr)": that contact writes the input. Old -> new on main 111ca23: B1 DITL rows with no source
+  131 -> 127 (DITL-22 #A ~ #D: I.0051 / I.0371 / I.0054 / I.0374).
+- Not moved: 12 TRIP rows whose net holds no usr contact in the netlist (DITL-24 x2, DITL-30 x3, DITL-31 x2, DITL-111 x2, DITL-112 x3).
+  These stay "no source" until the writer contact is named.
