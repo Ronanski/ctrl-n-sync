@@ -1,25 +1,20 @@
-# v1.0.0-beta.553 (ALARMS AND CURVES : AKIHO, lane 5): Modbus lists ng fly ash, ESP at CTCS
+# v1.0.0-beta.553 (DCS LINKS BOILER : KIRARA, lane 3): rear wall dampers FA1019 ~ FA1026
 
 ## Ano ang nagbago
-- **562 Modbus point na wala pa sa app ay nasa app na.** Dati, turbine system (237) at SCADA (199) lang ang Modbus list sa app. Idinagdag ang tatlong package PLC sa GCS10F / STN104:
-  - fly ash: 141 PLC → DCS, 25 DCS → PLC (picture PICT26);
-  - ESP (electrostatic precipitator): 225 PLC → DCS, 153 DCS → PLC (PICT23), kasama ang T/R set voltage at current at ang rapping timer settings;
-  - CTCS (condenser tube cleaning): 17 PLC → DCS, 1 DCS → PLC (PICT30).
-  - Hindi isinama ang coal handling, water treatment, air compressors at air dryers (user 2026-11-25 00:52 PHT).
-- Bawat point ay may DCS address (SI word at bit), user tag ng word (hal. 104-WB128) at operator picture, mula mismo sa listahan.
-- **Library (ALL SIGNALS) at signal tracer:** lumalabas ang mga ito sa ilalim ng STN104. May tatlong bagong pindutan ang tracer: Fly ash conveying PLC (166), Electrostatic precipitator PLC (378), Condenser tube cleaning PLC (18). Ang path: package PLC → fiber box at converter → SCADA LAN switch HUB-1H / 2H (fly ash cable 1H04 / 2H04, ESP 1H05 / 2H05, CTCS 1H03 lang) → gateway GCS10F (1H02 / 2H02) → FL-NET hub-2A / 2B (cables 2A10 / 2B10 / 2A11 / 2B11, 20 m) → FCS104 (cables 2A8 / 2B8, 2A9 / 2B9, 10 m) → STN104 address.
-- Bagong `tools/data/modbus.py` → `src/ui/plant/modbus.js` (lahat ng Modbus list); wala na ang Modbus sa `dcslists.py` / `dcslists.js` (loop at user tag list na lang). Pareho ang 436 row ng turbine at SCADA bago at pagkatapos.
-
-## Source
-- Subsystem PLC\<Fly Ash | ESP | CTCS>\IO List\LMYP-1 #1-MODBUS Communication list between DCS and <fly ash | ESP | CTCS>.xls (sheets PLC to DCS, DCS to PLC).
-- LMYP-1 #1-Communication list between DCS and package.xls, sheet #1 GCS10F: fly ash connection 3 / 4, ESP 5 / 6, CTCS 7 (iisang PLC), "RJ-45 <--> Fiber Optic".
-- K1AU3-E2-0-115 rev 1 GCS10F-05 "SCADA LAN Diagram" sheet GS01(5): hub port, cable, fiber box at converter ng bawat package (binasa ni YUA sa PC). Walang IP address sa repo.
-- K1AU3-E2-0-106 sh2 cable list: HUB-2A / 2B rows 8X / 9X (FCS104A / B, 10 m) at 10X / 11X (GCS10FA / B, 20 m).
+- **`src/world/field/boiler.js`**: ang 8 rear wall furnace temperature control damper (FA1019 ~ FA1026, ABC-016) ay kapareho na ng front wall (hiling ng lane 6 EIMI):
+  - ZSO / ZSC (open / closed limit): mula sa sariling ZT-FA1019 ~ 1026 (AI0416 ~ AI0423), sa end-of-travel rule ng app.
+  - MIT / TS / MIL: field state. Normal: walang trip, walang torque, REMOTE, dahil ang ABC-016 ang nagpo-posisyon sa damper mula sa DCS.
+  - 40 I/O point, 24 bagong field state.
 
 ## Sinuri
-- Ang turbine at SCADA rows ng bagong tool ay kapareho ng dati (436 = 436, bawat column).
-- Sa page: lumalabas ang 166 / 378 / 18 signal sa tracer; LSH-FH1710 → STN104 SI5000 bit 0; walang page error.
+- Headless sa 151 MW:
+  - Nasa gitna ang mga damper, kaya parehong 0 ang ZSO / ZSC. REMOTE = 1.
+  - "Damper FA1022 motor tripped" (`AN.fault`): MIT-FA1022 = 1.
+  - Walang duplicate, 0 page error.
+- `tests/lanes/run-all.cjs` 14 / 14.
 
-## Hindi pa / natitira
-- Ang sariling hub ng vendor bago ang fiber box ay walang port o cable number sa drawing; ganoon ang nakasulat sa path.
-- Walang value pa ang mga point (wala sa logic sheet ang SI5000 ~ / SI5400 ~ / SI5800 ~; HMI picture lang ang gumagamit). Ang value ay kasama ng HMI ng ESP / fly ash.
+## Hindi nasubok
+- Ang mga button sa Plant menu sa UI.
+- Ang HMI.
+
+KIRARA

@@ -16,7 +16,7 @@ The app is the station frame (`src/station`) over the DCS logic simulator (analo
 node tools/build/build.js
 ```
 
-writes `dist/logic-sim-v<version>.html`, the simulator page (the sources in `src/` are the truth; the Checks compare).
+writes `dist/logic-sim-v<version>.html`, the simulator page (not in git: the sources in `src/` are the truth, and the Checks, the site and the release build it).
 
 ```bash
 node tools/station/build.js dist/logic-sim-v<version>.html out
@@ -26,7 +26,7 @@ writes `out/LMYP-OTS-<version>.html`, the page of this app: the same html plus t
 
 ## Versions
 
-The app has its own version in `delivery/app/app.json`: `1.0.0-beta.1`, `1.0.0-beta.2`, ... are the EA builds (Beta), `1.0.0` is the Final (Stable), then `1.0.1-beta.1` and so on. Every change that reaches `main` raises it. The simulator inside keeps its own version in `src/version.txt` (a save point is checked against that one); it changes only when the simulator sources change.
+The app has its own version (`tools/app-version.js`): `delivery/app/app.json` says `1.0.0-beta`, and the Beta number is the commit count of `main`, so every merge raises it by itself and a PR carries no number. `1.0.0` is the Final (Stable), written in `app.json` only on GO STABLE. Every PR that changes the app adds `docs/versions/updates/<lane>-<topic>.md`. The simulator inside keeps its own version in `src/version.txt` (a save point is checked against that one); it changes only when the simulator sources change.
 
 ## Map
 

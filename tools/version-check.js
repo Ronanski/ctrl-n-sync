@@ -1,41 +1,36 @@
-// Full Audit 3 ranking 7: every merge raises the app version (delivery/app/app.json) and carries a short report,
-// docs/versions/v<version>/UPDATE_REPORT.md. Run on a branch with origin/main fetched: when the branch changes the app
-// (src, tools, tests, dist, delivery, .github), its version must be higher than the one on main and its report must be there.
-// On main itself (the merge is done) it only checks that the report of the version on main is there.
+// Lane plan 2026-11-25 (ten lanes merge in parallel): a PR carries no version number and no built html.
+//   1. the built html is not in git (dist/ is ignored; the Checks, the site and the release build it from the sources)
+//   2. delivery/app/app.json keeps "X.Y.Z-beta": the beta number is counted by git (tools/app-version.js); the Final X.Y.Z only on GO STABLE
+//   3. a branch that changes the app (src, tools, tests, delivery, .github) adds a short report of its own:
+//      docs/versions/updates/<lane>-<topic>.md (or, on a PR opened before, docs/versions/v<version>/UPDATE_REPORT.md)
+// Needs the history (checkout fetch-depth 0) and origin/main.
 const fs = require('fs'),
   { execSync } = require('child_process');
 const sh = c => execSync(c, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-const parse = v => {
-  const m = /^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$/.exec(v || '');
-  if (!m) throw new Error('not a version: ' + v);
-  /* a final (no -beta) is above every beta of the same X.Y.Z */
-  return [+m[1], +m[2], +m[3], m[4] === undefined ? Infinity : +m[4]];
-};
-const cmp = (a, b) => {
-  for (let i = 0; i < 4; i++) if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
-  return 0;
-};
-const V = JSON.parse(fs.readFileSync('delivery/app/app.json', 'utf8')).version;
-const rep = 'docs/versions/v' + V + '/UPDATE_REPORT.md';
 const bad = m => (console.error('VERSION CHECK: ' + m), process.exit(1));
-if (!fs.existsSync(rep) || !fs.readFileSync(rep, 'utf8').trim()) bad('no update report for v' + V + ' (' + rep + ')');
+const html = sh('git ls-files dist');
+if (html) bad('the built html is in git (' + html + '): git rm --cached it, the build makes it');
+const V = JSON.parse(fs.readFileSync('delivery/app/app.json', 'utf8')).version;
+if (!/^\d+\.\d+\.\d+(-beta)?$/.test(V)) bad('delivery/app/app.json version is ' + V + ': keep the one of main, "X.Y.Z-beta" (the number is counted by git)');
+const appV = require('./app-version.js')();
 const br = process.env.GITHUB_REF_NAME || sh('git rev-parse --abbrev-ref HEAD');
 if (br === 'main') {
-  console.log('version v' + V + ' on main, report ' + rep);
+  console.log('app version ' + appV);
   process.exit(0);
 }
-let mv;
+let ch;
 try {
-  mv = JSON.parse(sh('git show origin/main:delivery/app/app.json')).version;
+  ch = sh('git diff --name-only origin/main...HEAD').split('\n').filter(Boolean);
 } catch (e) {
-  bad('origin/main not fetched (git fetch origin main)');
+  bad('no common history with origin/main (checkout with fetch-depth 0, git fetch origin main)');
 }
-const ch = sh('git diff --name-only origin/main HEAD -- src tools tests dist delivery .github')
-  .split('\n')
-  .filter(Boolean);
-if (!ch.length) {
-  console.log('no app change against main: v' + V);
+const app = ch.filter(f => /^(src|tools|tests|delivery|\.github)\//.test(f));
+if (!app.length) {
+  console.log('no app change against main');
   process.exit(0);
 }
-if (cmp(parse(V), parse(mv)) <= 0) bad('the branch changes the app (' + ch.length + ' files) but its version v' + V + ' is not above main v' + mv + ': raise delivery/app/app.json and write ' + 'docs/versions/v<new>/UPDATE_REPORT.md');
-console.log('version v' + mv + ' (main) -> v' + V + ', report ' + rep);
+const rep = sh('git diff --name-only --diff-filter=AR origin/main...HEAD -- docs/versions')
+  .split('\n')
+  .filter(f => /^docs\/versions\/(updates\/(?!README)[^/]+\.md|v[^/]+\/UPDATE_REPORT\.md)$/.test(f) && fs.existsSync(f) && fs.readFileSync(f, 'utf8').trim());
+if (!rep.length) bad('the branch changes the app (' + app.length + ' files) and adds no report: write docs/versions/updates/<lane>-<topic>.md');
+console.log(app.length + ' app files changed, report ' + rep.join(', ') + '; this build is labelled ' + appV);

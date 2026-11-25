@@ -37,6 +37,8 @@ function anEngAPI() {
     tcsTrip: () => tcsTripState(AN_UNIT),
     tcsIbd: id => tcsIbdState(id),
     tceRead: () => tcsLiveRead(AN_UNIT) /* the TCE soft logic sheets (02d-tce.js q.live) */,
+    tceSteam: () => tcsSteam(AN_UNIT) /* MSV inlet / HRH / HP exhaust steam for the TCS I/O ends (src/digital/tce-io.js STEAM) */,
+    tceCrp: () => tcsCrp(AN_UNIT) /* cold reheat pressure for the TCS I/O ends (tce-io.js CRP) */,
     tcsIbdSheets: () => TCS_IBD_SHEETS,
     tcsIbdMissing: () => tcsIbdMissing(),
     tcsIO: () => (AN_UNIT.on ? tcsIO(AN_UNIT) : null),
