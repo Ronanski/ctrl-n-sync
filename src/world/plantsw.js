@@ -200,6 +200,8 @@
   L.push([
     'I.0406',
     () => {
+      const y = window.AN && AN.tcsHw ? AN.tcsHw('TCE960-18') : undefined;
+      if (y !== undefined) return y; /* lane 0 2026-11-25: the TCS output of TCE601 (engine/tcs-dcs.js) */
       const st = window.AN && AN.tcsIbd && AN.tcsIbd('TA-15');
       if (st && st.v && st.v.length) return st.v[15] > 0.5 ? 1 : 0;
       const r = uOf('rpm')();

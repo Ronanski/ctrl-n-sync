@@ -36,6 +36,8 @@ function anEngAPI() {
     elec: () => anElec(),
     tcsTrip: () => tcsTripState(AN_UNIT),
     tcsIbd: id => tcsIbdState(id),
+    tcsHw: id => tcsHw(AN_UNIT, id),
+    tcsHwList: () => TCS_HW,
     tce: () => tcsShProg() /* the TCS soft logic program: the nets of the engine (tcs-sheets.js); the page only reads */,
     tceRead: () => tcsLiveRead(AN_UNIT) /* the TCE soft logic sheets (02d-tce.js q.live) */,
     tceSteam: () => tcsSteam(AN_UNIT) /* MSV inlet / HRH / HP exhaust steam for the TCS I/O ends (src/digital/tce-io.js STEAM) */,

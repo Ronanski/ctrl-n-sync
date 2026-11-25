@@ -6,11 +6,11 @@
    Input sheets: TCE040 / 042 / TCA043 / 047 / 048 (PI/O), TCE102 / 104 (discharge pressures), TCE111 (TPC signals).
    The IBD sheets TB-1 / 2 / 12 / 21 / 22, TC-28 only show the state (tcs-trip.js). Inputs (TCS_SH_IN), one source each: RUNNING = the contactor;
    ELECTRICAL TROUBLE = the MCC dead (c.empOff EMP-11, c.copOff the COP bus; EOP is DC 0; exhauster and purifier no dead MCC in the model 0);
-   pressures U.loPa / loPb / loCa / loCb / loEop; TCP1120 ~ 3120 B5 ~ B8 = the trip logic of IBD TA-13 / TA-14; TCA636 / TCA638 B1 and INITIAL =
-   the nets of their own sheets.
+   pressures U.loPa / loPb / loCa / loCb / loEop; the signals of the protection controllers (TCPnnnn) = tcs-tpc.js; TCA636 / TCA638 B1 and
+   INITIAL = the nets of their own sheets.
    THE WHOLE PROGRAM (TCE / TCA / G sheets) runs here, once, for the engine and the page. The sheets of TCS_SH.ids drive their motor and scan
    at their own cycle; the others run beside tcs.js until their group drives, one scan every TCS_SH.slow s, their inputs from the TCS I/O list
-   (src/digital/tce-io.js; a (TCP) connector with no source, a hardware status or a panel contact of the G sheets keeps its start value).
+   (src/digital/tce-io.js; a (TCP) connector with no source (tcs-tpc.js), a hardware status or a panel contact of the G sheets keeps its start value).
    The page shows the nets of the engine (AN.tce, engine/sync.js slot tceV).
    Memory: c.sm in the TCS state = { n: steps, pb: port -> seconds left, pur, mot: motor -> memory }; AN_TCE = the nets and the memory of
    the blocks, by name in the keyframe (engine/state.js tce). A state with none of it (new start, old save) starts from the run / AUTO flags. */
@@ -53,12 +53,6 @@ const TCS_SH_IN = {
   'PIO:TCA903-24': (U, c) => c.empOff,
   'PIO:TCA904-12': (U, c) => c.gse
 };
-[
-  ['B5', 'TA-13', 3],
-  ['B6', 'TA-13', 11],
-  ['B7', 'TA-14', 17],
-  ['B8', 'TA-14', 8]
-].forEach(([b, sh, n]) => ['1', '2', '3'].forEach(p => (TCS_SH_IN['CON:TCP' + p + '120.' + b] = (U, c) => tcsIbNet(c, sh, n))));
 let tcsShP = null; /* the compiled program; null = no sheets in this build (yet) */
 /* sm / n: the c.sm the memory belongs to and its step count (a LOAD puts other values in the same object); ld: the memory of a keyframe */
 const AN_TCE = { sm: null, n: -1, ld: null };
@@ -73,6 +67,7 @@ function tcsShProg() {
   p.v0 = p.v.slice();
   p.drv = p.plan.filter(q => TCS_SH.ids.includes(q.id));
   p.rest = p.plan.filter(q => !TCS_SH.ids.includes(q.id) && q.cyc > 0);
+  p.tpc = tcsTpcPorts(p);
   p.crt = p.ports.filter(n => /^CRT:/.test(n)).map(n => [p.idx.get(n), n]);
   p.in = p.ports.filter(n => TCS_SH_IN[ch(n)]).map(n => [p.idx.get(n), TCS_SH_IN[ch(n)]]);
   /* the other PI/O inputs: the TCS I/O list. ERR = channel error: the app has no card fault (0) */
@@ -109,6 +104,7 @@ function tcsShFeed(p, U, c) {
     const x = +f(U, c);
     if (isFinite(x)) p.v[i] = x;
   }
+  tcsTpcFeed(p, U, c);
 }
 /* the value of a net now (tcs.js tcsIO, the page) */
 const tcsShNet = n => {
@@ -139,6 +135,7 @@ function tcsShBind(p, U, c) {
     }
   /* a new memory: the nets take the run states before any command goes to a motor (no time passes) */
   if (!own) {
+    tcsHwSeed(p, c); /* the start-up mode the plant holds (tcs-dcs.js) */
     /* the controllers are in service already: INITIAL (TCE050 tp002 / TCA100 tpA001, 10 s) is over */
     for (let i = 0; i < 48; i++) tcsShSlow(p, window.TCE_RUN, U, TCS_SH.slow);
     tcsShFeed(p, U, c);

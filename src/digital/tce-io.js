@@ -29,12 +29,12 @@
     if (typeof tcsVtMsv === 'function' && U && U.tb) {
       const ic = U.tb.icv || 0;
       return {
-        msvA: tcsVtMsv(U, 'A') * 100,
-        msvB: tcsVtMsv(U, 'B') * 100,
+        msvA: tcsStop(U, tcsVtMsv, 'A') * 100,
+        msvB: tcsStop(U, tcsVtMsv, 'B') * 100,
         cvA: tcsVtCv(U, 'A') * 100,
         cvB: tcsVtCv(U, 'B') * 100,
-        rsvA: tcsVtRsv(U, 'A') * 100,
-        rsvB: tcsVtRsv(U, 'B') * 100,
+        rsvA: tcsStop(U, tcsVtRsv, 'A') * 100,
+        rsvB: tcsStop(U, tcsVtRsv, 'B') * 100,
         icvA: ic * tcsVtIcvS(U, 'A') * 100,
         icvB: ic * tcsVtIcvS(U, 'B') * 100
       };
@@ -197,7 +197,8 @@
   O(
     'TCE960-13',
     'RSV ICV FULL CLOSE (1) -> DCS STN102 I.0401 TCS-DI1024 (XSMM RSV&CV FULLY CLOSE 1, IBD TA-6, boiler reheater protection)',
-    (U, L) => b(L.rsvAc && L.rsvBc && L.icvAc && L.icvBc)
+    /* TCE250 OR005 / OR008, A006: (RSV or ICV of side A full closed) and (RSV or ICV of side B) */
+    (U, L) => b((L.rsvAc || L.icvAc) && (L.rsvBc || L.icvBc))
   );
   O('TCE960-14', 'MSV ICV FULL CLOSE (1) -> boiler reheater protection relay (IBD TA-6, TCE250)', (U, L) =>
     b(L.msvAc && L.msvBc)
@@ -245,7 +246,7 @@
   O(
     'TCE961-13',
     'RSV ICV FULL CLOSE (2) -> DCS STN102 I.0402 TCS-DI1025 (XSMM RSV&ICV FULLY CLOSE 2, IBD TA-6)',
-    (U, L) => b(L.rsvAc && L.rsvBc && L.icvAc && L.icvBc)
+    (U, L) => b((L.rsvAc || L.icvAc) && (L.rsvBc || L.icvBc))
   );
   O('TCE961-14', 'MSV ICV FULL CLOSE (2) -> boiler reheater protection relay (IBD TA-6)', (U, L) =>
     b(L.msvAc && L.msvBc)
@@ -525,7 +526,7 @@
   F('TCA901-26');
   M('TCA903-23', 'main oil tank vapour extractor running (c.vex, U.loVex)', U => b(U.loVex));
   F('TCA903-24', 'vapour extractor electrical trouble: MCC-EMP11 dead (tcs.js c.empOff, IBD TB-12 net 10)');
-  E[E.length - 1][3] = U => b(U.tco && U.tco.empOff);
+  E[E.length - 1][3] = U => b((U.tc || U.tco || {}).empOff);
   F('TCA902-20', 'DPIS-LO1932 duplex oil filter dP HIGH: the oil model has no filter fouling, clean filter = 0');
   F('TCA904-7', 'LSH-GE1001 generator water and oil leakage level HIGH (778 GD-5 >= 800 ml): the model has no leak of the generator, healthy = 0');
   F('TCA904-8', 'DPIS-LO1942 lube oil conditioner coalescer filter dP HIGH: the oil model has no filter fouling, clean filter = 0');
@@ -537,7 +538,7 @@
   );
   F('TCA905-6', 'DPIS-LO1933-A control oil line filter (A) dP HIGH (778 TD-1 >= 7.04 kg/cm2): no filter fouling in the model, clean = 0');
   F('TCA905-22', 'DPIS-LO1933-B control oil line filter (B) dP HIGH (778 TD-1 >= 7.04 kg/cm2): no filter fouling in the model, clean = 0');
-  M('TCA904-12', 'gland steam exhauster running: the gland model (U.tco.gse, tcs.js)', U => b(U.tco && U.tco.gse));
+  M('TCA904-12', 'gland steam exhauster running: the gland model (gse, tcs.js)', U => b((U.tc || U.tco || {}).gse));
   F('TCA904-11');
   N(
     'TCA904-20',
@@ -824,7 +825,7 @@
   O('TCA981-18', 'space heater start command (AC exciter) -> MCC: IBD GD-2 net 1, the start memory (set by 52G OPEN)', ibd('GD-2', 1));
   O('TCA981-19', 'space heater start command (generator) -> MCC: IBD GD-1 net 1, the start memory (set by 52G OPEN)', ibd('GD-1', 1));
   O('TCA981-20', 'main oil tank vapour extractor start command -> MCC (TB-12, c.vex)', U => b(U.loVex));
-  O('TCA981-21', 'gland steam exhauster start command -> MCC (TC-28, U.tco.gse)', U => b(U.tco && U.tco.gse));
+  O('TCA981-21', 'gland steam exhauster start command -> MCC (TC-28, gse)', U => b((U.tc || U.tco || {}).gse));
   ['TCA981-27', 'TCA981-28', 'TCA981-29', 'TCA981-30', 'TCA981-31', 'TCA981-32'].forEach(id =>
     O(id, 'PLU / EOS channel test command -> the trip channel (IBD TA-15 / TA-33)')
   );
@@ -832,8 +833,8 @@
     O(id, 'non return valve solenoid energize -> field SV: ' + nrv)
   );
   O('TCA982-4', 'SV-GS1036 steam seal diverting valve solenoid -> field (TC-36)');
-  O('TCA982-17', 'SV-CD1904 LP exhaust hood water spray valve solenoid -> field (TC-35, U.tco.hso)', U =>
-    b(U.tco && U.tco.hso)
+  O('TCA982-17', 'SV-CD1904 LP exhaust hood water spray valve solenoid -> field (TC-35, hso)', U =>
+    b((U.tc || U.tco || {}).hso)
   );
 
   /* ---------- COMM AO TABLE TCA990 ---------- */
@@ -1128,7 +1129,9 @@
         return idx[to] ? end(idx[to]) : null;
       },
       mbRead(U, to) {
-        const e = api.mbEnd(to);
+        const e = api.mbEnd(to),
+          hw = typeof tcsHw === 'function' ? tcsHw(U, to) : AP(U) && AP(U).tcsHw ? AP(U).tcsHw(to) : undefined;
+        if (hw !== undefined) return hw; /* the TCS output of the program (engine/tcs-dcs.js) */
         if (!e || !e.read) return NaN;
         try {
           const v = e.read(U, L_(U));

@@ -58,6 +58,11 @@ const tcsCrp = U => (U.rhp && U.rhp.length > 2 ? anUnitVal(U.rhp[2]) : NaN); /* 
 /* the value of a field signal by its tag on the sheet; NaN = no value in the model */
 /* stop valve position 1 open, 0 full close: the master trip of TA-1 dumps the trip oil and the valves close (U.tauTrip); reset opens them */
 const tcsVp = (U, c) => (c.vp == null ? (c.vp = U.tb && U.tb.st !== 'off' ? 1 : 0) : c.vp);
+/* the lift of a stop valve (MSV, RSV) of side s, 0 ~ 1: what its LVDT reads = the trip oil position x the position the valve test leaves */
+function tcsStop(U, f, s) {
+  const c = U.tc || U.tco;
+  return (c ? tcsVp(U, c) : U.tb && U.tb.st !== 'off' ? 1 : 0) * f(U, s);
+}
 function tcsValves(U, c, ib, dt) {
   tcsVp(U, c);
   if (!ib.r1) return;
