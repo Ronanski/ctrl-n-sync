@@ -212,9 +212,20 @@ const has = (txt, tag) => {
   const tagStn = new Map();
   for (const st of Object.keys(ADES))
     for (const o of Object.values(ADES[st])) if (o.k === 'io' && o.tag) tagStn.set(String(o.tag).trim(), +st);
+  /* a typical drawing for several stations ("STATION 101 & 102", DITL-38): each copy is the station its own I/O tags vote for, among the
+     stations of the header (RARA 2026-11-25: MV-FW1001 / 1002 / 1392 and MV-MS1392 are station 102) */
+  const voteStn = (t, among) => {
+    const v = {};
+    for (const w of t.match(/[A-Z0-9][A-Z0-9-]{3,}[A-Z0-9]/g) || []) {
+      const k = tagStn.get(w);
+      if (k && (!among || among.includes(k))) v[k] = (v[k] || 0) + 1;
+    }
+    const e = Object.entries(v).sort((a, c) => c[1] - a[1]);
+    return e.length ? +e[0][0] : null;
+  };
   const stnOfD = s => {
+    if (s._qaStnOwn !== undefined) return s._qaStnOwn;
     const b = (s._inst && s._inst.base) || s;
-    if (b._qaStn !== undefined) return b._qaStn;
     const t =
       (b.tx || []).map(x => x.t).join(' ') +
       ' ' +
@@ -222,15 +233,25 @@ const has = (txt, tag) => {
         .flat()
         .map(x => x.t)
         .join(' ');
-    const m = /STATION\s*10([1-5])/.exec(t);
-    if (m) return (b._qaStn = +m[1]);
-    const v = {};
-    for (const w of t.match(/[A-Z0-9][A-Z0-9-]{3,}[A-Z0-9]/g) || []) {
-      const k = tagStn.get(w);
-      if (k) v[k] = (v[k] || 0) + 1;
+    const hm = /STATION\s*(10[1-5](?:\s*(?:&|,|AND|\/)\s*10[1-5])*)/.exec(t);
+    const among = hm ? [...hm[1].matchAll(/10([1-5])/g)].map(x => +x[1]) : null;
+    let st;
+    if (among && among.length === 1) st = among[0];
+    else {
+      /* a typical-drawing copy is named by its device ("DITL-38 #MV-FW1001"): the stations of the I/O tags of that device */
+      const dv = /#(?:[A-Z]{1,4}-)?([A-Z]{2}\d{3,4}[A-Z]?)\s*$/.exec(s.name || '');
+      let byDev = null;
+      if (dv) {
+        const v = {};
+        for (const [tg, k] of tagStn)
+          if (tg.endsWith('-' + dv[1]) && (!among || among.includes(k))) v[k] = (v[k] || 0) + 1;
+        const e = Object.entries(v).sort((a, c) => c[1] - a[1]);
+        byDev = e.length ? +e[0][0] : null;
+      }
+      const own = s._inst && WORLD.showText ? WORLD.showText(s, t) : t;
+      st = byDev || voteStn(own, among) || (among ? among[0] : null);
     }
-    const e = Object.entries(v).sort((a, c) => c[1] - a[1]);
-    return (b._qaStn = e.length ? +e[0][0] : null);
+    return (s._qaStnOwn = st);
   };
   /* an address list of machines A / B / C / D written short: "I.0047/367", "O.0080/400", "O.0088/408 O.0728/1048" */
   const ADL = /\b([IOMB])\.([0-9A-F]{4})((?:\s*\/\s*(?:[IOMB]\.)?[0-9A-F]{2,4}(?![0-9A-F]))*)/g;
@@ -431,11 +452,29 @@ const has = (txt, tag) => {
     if (r.stn && r.ai) fKey.add(r.stn + '|' + String(r.ai).toUpperCase());
     if (r.tag) fTag.add(fNorm(r.tag));
   }
+  /* field states (FIELD.states, beta.530): a device with no physics in the model, held in its documented normal; its tag is a value source
+     like a field row */
+  for (const f of (E.ctx.FIELD && E.ctx.FIELD.states) || []) if (f.tag) fTag.add(fNorm(f.tag));
+  /* field contacts on the wire of an output row (WORLD.plantUsw, PR 555: DITL-19 MIA-CL1061-A2, a copy's own tag): the contact is drawn on
+     that sheet and the field drives it, so the point is on its sheet with a source (LINKED), by station of the sheet and tag */
+  const uswKey = new Set();
+  for (const u of WORLD.plantUsw ? WORLD.plantUsw() : []) {
+    const sh = allD().find(x => x.name === u.sheet);
+    if (sh && u.tag) uswKey.add(stnOfD(sh) + '|' + fNorm(u.tag));
+  }
   const fbTag = new Map();
   for (const sx of allD())
     if (sx.nl) {
       for (const v of sx.nl.mv || [])
         for (const f of v.fb || []) if (f.tag) fbTag.set(WORLD.showText ? WORLD.showText(sx, f.tag) : f.tag, sx.name);
+      /* a typical drawing names no device (DITL-38: feedback "MIL", "ZSO", "TSC"): the copy's valve model answers the contacts of its own
+         device (#MV-FW1001 -> MIL-FW1001 ... TS-FW1001; world.js beta.550 binds them by type + device) */
+      const dvc = sx._inst && /^(?:[A-Z]{1,4}-)?([A-Z]{2}\d{3,4}[A-Z]?)$/.exec(String(sx._inst.lbl || ''));
+      if (dvc)
+        for (const v of sx.nl.mv || [])
+          for (const f of v.fb || [])
+            if (f.ty && /^[A-Z]{2,3}$/.test(f.tag || ''))
+              fbTag.set((f.ty === 'TS' ? 'TS' : f.ty) + '-' + dvc[1], sx.name);
       for (const m of sx.nl.mot || [])
         if (m.tag) for (const k of ['MIR', 'MIT', 'MIL', 'MOR', 'MOS']) fbTag.set(k + '-' + m.tag, sx.name);
     }
@@ -530,7 +569,7 @@ const has = (txt, tag) => {
           !onLogic && (sheetTxt.has(tag) || devInst.has(dev) || devInst.has(dev.replace(/^([A-Z]+)(\d)/, '$1-$2')));
         const live = aOn.some(x => x.moving) || dOn.some(x => x.moving);
         const ex = EXCL.test(o.d || '') || EXCL.test(tag);
-        const byModel = fbTag.get(tag);
+        const byModel = fbTag.get(tag) || uswKey.has(stn + '|' + fNorm(tag));
         const field = fKey.has(stn + '|' + String(key).toUpperCase()) || fTag.has(fNorm(tag));
         let st8 = byModel
           ? 'LINKED'
