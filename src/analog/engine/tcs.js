@@ -157,8 +157,7 @@ function tcsInit(U, how) {
     cop: [svc, false],
     copAu: [false, svc],
     eop: false,
-    eopArm:
-      svc /* the EOP auto start (bearing oil <= 1.05) is armed once the lube oil was in service (a model choice: not armed at a cold plant; the SOP gives the start at 1.05 only) */,
+    eopAu: svc /* the EOP in AUTO (TCE310 MOTOR STANDARD; it starts in MANUAL at a new controller) */,
     brgOk: svc,
     vex: svc /* main oil tank vapour extractor (1.18) */,
     tg: svc && how !== 'load' /* turning gear selected (1.19); the gear engages below 4 rpm */,
@@ -466,6 +465,8 @@ function tcsCmd(U, cmd, arg) {
     return '';
   }
   if (cmd === 'ibd') return tcsIbdPush(tcsOilState(U), arg);
+  /* a CRT push button of a TCE / TCA sheet that drives its motor (tcs-sheets.js): { port: 'CRT:TCE300.b007.START', ms } */
+  if (cmd === 'tce') return tcsShPress(tcsOilState(U), arg && arg.port, arg && arg.ms ? arg.ms / 1000 : 0);
   const c = U.tc || tcsInit(U, 'cold'),
     tb = U.tb;
   const on = arg !== 0 && arg !== false;
@@ -930,40 +931,22 @@ function tcsOilInit(c) {
   c.cop = [!!c.eh, false];
   c.copAu = [false, false];
   c.eop = false;
-  c.eopArm = !!c.lop;
+  c.eopAu = !!c.lop;
   c.brgOk = !!c.lop;
 }
 function tcsOilSet(c) {
   c.lop = !!(c.mop[0] || c.mop[1]);
   c.eh = !!(c.cop[0] || c.cop[1]);
-  if (c.lop) c.eopArm = true;
   /* a pump started now gives the bearing oil at once (the turning gear may follow in the same action, as before) */
   if (c.lop || c.eop) c.brgOk = true;
 }
 function tcsOilCmd(c, a) {
   tcsOilInit(c);
-  const m = /^(mop|cop)([AB])$/.exec(a.p || ''),
-    op = a.op;
-  if (a.p === 'eop') {
-    if (op !== 'start' && op !== 'stop') return 'EOP: START / STOP only (no AUTO / MANUAL in the TCS I/O list)';
-    c.eop = op === 'start';
-    return '';
-  }
-  if (!m) return 'Unknown pump: ' + a.p;
-  const k = m[1],
-    i = m[2] === 'A' ? 0 : 1;
-  if (op === 'start') c[k][i] = true;
-  else if (op === 'stop') {
-    /* SOP 2620: the standby to MANUAL first, then STOP; a pump in AUTO cannot be stopped */
-    if (c[k + 'Au'][i])
-      return (k === 'mop' ? 'MOP' : 'COP') + '-' + m[2] + ' is in AUTO: set MANUAL first, then STOP (SOP)';
-    c[k][i] = false;
-  } else if (op === 'auto') c[k + 'Au'][i] = true;
-  else if (op === 'man') c[k + 'Au'][i] = false;
-  else return 'Unknown command: ' + op;
+  if (!/^((mop|cop)[AB]|eop)$/.test(a.p || '')) return 'Unknown pump: ' + a.p;
+  const r = tcsShOp(c, a.p, a.op);
+  if (r) return r;
   /* live test #62: the last TCS command output of the pump (HMI_DO JYS START / JYP STOP / IKA AUTO / IKH MANUAL, HOLD 3000 ms) */
-  (c.do = c.do || {})[a.p] = { op, t: +AN_UNIT.t || 0 };
-  tcsOilSet(c);
+  (c.do = c.do || {})[a.p] = { op: a.op, t: +AN_UNIT.t || 0 };
   return '';
 }
 /* 3.2.0 live test #62: the TCS I/O list points of the control oil pumps P-1931A / B and the oil purifier pump P-1941 (iolist-tcs HMI_DI /
@@ -975,7 +958,8 @@ function tcsOilCmd(c, a) {
      AI  1PTLO1931A_PV / B_PV COP (A) / (B) DISCHARGE OIL PRESS. (FOR COP (B) / (A) AUTO START);
      alarm 1PTLO1931AA_XA "COP (B) DISCHARGE OIL PRESS. (FOR COP (A) AUTO START) LOW" / 1PTLO1931BA_XA = the other pump's discharge at or
          below the auto start of the SOP NOTE (<= 133 kg/cm2g) while that pump runs (NO-SOURCE: which contact drives the auto start is not in the docs; the LOW contact is taken).
-   The model has no fault of these pumps: ABN / IEP / IES / IET / YEE are 0 and IYP / IYS (CRT operation permitted / available) 1. */
+   ABN / IEP / IES / IET are the faults of the MOTOR STANDARD of the pump's sheet (tcs-sheets.js), YEE its dead MCC; IYP / IYS (CRT operation
+   permitted / available) 1. */
 function tcsIO(U) {
   U = U || AN_UNIT;
   const c = tcsOilState(U);
@@ -984,16 +968,18 @@ function tcsIO(U) {
   const o = {},
     now = +U.t || 0,
     held = (p, op) => !!(c.do && c.do[p] && c.do[p].op === op && now - c.do[p].t <= 3),
-    st = (pfx, run, au) => {
+    sh = (n, k) => (c.sm && c.sm.v && c.sm.v[n + '.' + k] > 0.5 ? 1 : 0),
+    sf = (n, k) => (c.sm && c.sm.st && c.sm.st[n] && c.sm.st[n][k] ? 1 : 0),
+    st = (pfx, run, au, mot) => {
       Object.assign(o, {
         [pfx + '_YIR']: run ? 1 : 0,
         [pfx + '_YIP']: run ? 0 : 1,
-        [pfx + '_ABN']: 0,
-        [pfx + '_IEP']: 0,
-        [pfx + '_IES']: 0,
-        [pfx + '_IET']: 0,
+        [pfx + '_ABN']: sh(mot.replace('.', ':'), 'ABN'),
+        [pfx + '_IEP']: sf(mot, 'stf'),
+        [pfx + '_IES']: sf(mot, 'sf'),
+        [pfx + '_IET']: sf(mot, 'tr'),
         [pfx + '_IYP']: 1,
-        [pfx + '_YEE']: 0,
+        [pfx + '_YEE']: mot !== TCS_SH.mot.pur[0] && c.copOff ? 1 : 0,
         [pfx + '_IYS']: 1
       });
       if (au != null) Object.assign(o, { [pfx + '_IIA']: au ? 1 : 0, [pfx + '_IIH']: au ? 0 : 1 });
@@ -1001,7 +987,7 @@ function tcsIO(U) {
   ['A', 'B'].forEach((L, i) => {
     const p = '1P1931' + L,
       k = 'cop' + L;
-    st(p, c.cop[i], c.copAu[i]);
+    st(p, c.cop[i], c.copAu[i], TCS_SH.mot[k][0]);
     Object.assign(o, {
       [p + '_JYS']: held(k, 'start') ? 1 : 0,
       [p + '_JYP']: held(k, 'stop') ? 1 : 0,
@@ -1016,7 +1002,7 @@ function tcsIO(U) {
   /* the transmitter ABNORMAL / QUALITY points (1PTLO1931A_XA / _PVQ): no transmitter fault in the model */
   Object.assign(o, { '1PTLO1931A_XA': 0, '1PTLO1931B_XA': 0, '1PTLO1931A_PVQ': 0, '1PTLO1931B_PVQ': 0 });
   const pur = !!AN_SRC.field.pur;
-  st('1P1941', pur, null);
+  st('1P1941', pur, null, TCS_SH.mot.pur[0]);
   Object.assign(o, { '1P1941_JYS': 0, '1P1941_JYP': 0, '1P1941_IKR': 0 });
   return o;
 }
@@ -1081,12 +1067,12 @@ function tcsOil(U, dt) {
   }
   /* beta.362 D18: MCC-EMP11 dead = MOTOR ELECTRICAL TROUBLE of the vapour extractor (IBD TB-12 net 10) */
   c.empOff = !!(bo.dead && !bo.emp);
-  /* the automatic starts are in the sheets TB-1, TB-2, TB-21, TB-22 (tcs-trip.js) */
+  c.copOff = !!bo.dead;
+  /* the automatic starts are in the TCE / TCA sheets (tcs-sheets.js, at the end of this step) */
   tcsOilSet(c);
   lag('loPa', c.mop[0] ? K.mop : 0);
   lag('loPb', c.mop[1] ? K.mop : 0);
   U.loLube = lube();
-  if (c.eopArm && !c.eop && isFinite(U.loBrg) && U.loBrg <= K.brgLo && !c.lop) c.eop = true;
   lag('loEop', c.eop ? K.eop : 0);
   lag('loBrg', c.lop ? K.brg : c.eop ? K.brgEop : 0);
   c.brgOk = U.loBrg > K.brgLo || c.lop || c.eop;
@@ -1138,6 +1124,8 @@ function tcsOil(U, dt) {
   });
   /* page 13 ATS criteria 1.24 "vibration high": the highest turbine shaft vibration (VIST1001x / 1002x) */
   U.loVt = Math.max(U.loVx1, U.loVy1, U.loVx2, U.loVy2);
+  /* the motors: their own sheets TCE300 / 305 / 310, TCA655 / 680 / 700 (tcs-sheets.js) */
+  tcsSheets(U, c, dt);
   /* the run states and modes for the 036 page (with or without the TCS model) */
   U.loMop = c.mop.slice();
   U.loMopAu = c.mopAu.slice();

@@ -6,7 +6,9 @@
      - before each step, every PI/O input port of the program ('PIO:...') takes the value of its TCS I/O list end (TCE_IO_LIVE.read):
        the model value of a field signal, a DCS address, the IBD net, or the healthy TCS hardware status; a row with no value yet stays NaN;
      - steps the program by the plant time that has passed (AN.unit.t), each sheet at its own cycle (TCE_RUN.step).
-   SIDE BY SIDE ONLY: nothing here writes the plant, tcs.js, the IBD or the DCS. Most sheets are not complete yet (tests/lanes/qa/tce-complete.cjs),
+   The sheets that drive their motor run in the engine (src/analog/engine/tcs-sheets.js, lane 0): c.sm.ids of the TCS state. Here they are
+   not scanned again: their nets take the engine values, and a press of one of their buttons goes to the engine (AN.turbine tce).
+   The rest is SIDE BY SIDE ONLY: nothing here writes the plant, tcs.js, the IBD or the DCS. Most sheets are not complete yet (tests/lanes/qa/tce-complete.cjs),
    so the outputs are only shown and compared (TCE.compare) against the engine's own value of the same signal (tce-io.js 'out' ends).
    Cost: the program is about 60 ms of CPU for each second of plant time (tests/tce/sheets.cjs: 30 s in ~1.9 s), so one tick steps at most
    MAXDT of plant time: at a fast forward the program runs behind the plant and TCE.status() says by how much (lag), it never slows the plant.
@@ -56,6 +58,29 @@
     S.fed = n;
     S.nan = nan;
   };
+  /* the memory of the sheets the engine runs (null: none yet) */
+  const engSm = U => {
+    const c = U && (U.tc || U.tco);
+    return (c && c.sm && c.sm.ids && c.sm) || null;
+  };
+  const own = (U, sheet) => {
+    const sm = engSm(U);
+    return !!(sm && sm.ids.includes(sheet));
+  };
+  const stepSide = (U, d) => {
+    const sm = engSm(U),
+      P = S.prog,
+      all = P.plan;
+    if (!sm) return void R().step(P, d);
+    for (const n in sm.v) if (P.idx.has(n)) P.v[P.idx.get(n)] = sm.v[n];
+    for (const n of P.ports) if (n.startsWith('CRT:') && sm.ids.includes(n.slice(4).split('.')[0])) P.v[P.idx.get(n)] = sm.pb && sm.pb[n] > 0 ? 1 : 0;
+    P.plan = all.filter(q => !sm.ids.includes(q.id));
+    try {
+      R().step(P, d);
+    } finally {
+      P.plan = all;
+    }
+  };
   const tick = () => {
     if (!S.on) return;
     if (typeof document !== 'undefined' && document.hidden) return;
@@ -70,7 +95,7 @@
     try {
       const d = Math.min(dt, MAXDT);
       feed(U);
-      R().step(S.prog, d);
+      stepSide(U, d);
       S.lag += dt - d;
       S.last = t;
       S.err = '';
@@ -107,6 +132,10 @@
     },
     press(port, ms) {
       if (!S.on || !S.prog) return false;
+      if (own(unit(), String(port).slice(4).split('.')[0])) {
+        if (S.prog.ports.includes(port)) return AN.turbine('tce', { port, ms: ms > 0 ? ms : HOLD_MS }) === '';
+        return false;
+      }
       if (!R().set(S.prog, port, 1)) return false;
       clearTimeout(S.holds[port]);
       S.holds[port] = setTimeout(() => {

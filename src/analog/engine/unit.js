@@ -1093,10 +1093,6 @@ function anTurbine0(cmd, arg) {
   if (!U.tc && (cmd === 'ostmain' || cmd === 'ostbk'))
     return 'OVERSPEED TEST not permitted: ' + (tb.st === 'sync' || tb.st === 'load' ? '52G CLOSE' : 'not in GOVERNING MODE at rated speed (TCE167)');
   if (!U.tc && cmd === 'oil') return tcsOilCmd(tcsOilState(U), arg || {});
-  if (!U.tc && cmd === 'vex') {
-    tcsOilState(U).vex = arg !== 0 && arg !== false;
-    return '';
-  }
   /* 3.2.0-beta.38 (CHECKLIST 0.6): the TCS / ATS model (tcs.js): the auxiliaries and the ATS step push buttons. 'roll' = ATS AUTO
      from the next step up to ACCELERATION (3600 rpm), 'sync' = EXCITATION + SYNCH. & INITIAL LOAD, 'loadup' = LOAD UP to the target */
   /* Mina 2026-11-09 (re-shell step 3): ROLL was accepted while the turbine was tripped and said "rolling" while the speed fell. A trip is
@@ -5637,7 +5633,7 @@ function anUnitStep0(dt) {
     for (const l of U.di.hot || []) w(l, m === 'hot' ? 1 : 0);
     w(U.di.tg, c && c.tg && tb.rpm < 4 ? 1 : 0);
     if (U.lpbSp && U.lpbSp.n != null)
-      w(U.di.lpbZso, anAv('TICHR1012', Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0))) >= 99 ? 1 : 0);
+      w(U.di.lpbZso, anAv('TICHR1012', Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0))) >= 98 ? 1 : 0); /* open limit switch: the one rule of plantsw.js, >= 98 % */
     for (const [l, k, sp] of U.di.hd || []) if (isFinite(H[k])) w(l, H[k] >= sp ? 1 : 0);
   }
   U.turb = tb.st !== 'off';

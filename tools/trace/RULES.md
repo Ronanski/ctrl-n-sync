@@ -131,3 +131,21 @@ line unchanged.
   that output net: LINKED. Other inputs printed beside an output (XA-FA1052 fire detect, IRP stop commands of DITL-03D) are NOT counted:
   the general form moved 79 points, the motor-contact form 59. Old -> new: LINKED 1,726 -> 1,773, on a sheet no source 84 -> 41,
   copy clash 5 -> 1 (DITL-45 12, 61A 6, 22 4, 21A 4, 120 4, 30 / 76 / 29A / 77 / 112 3 each, others under 3).
+
+## Field contact (usr) writes a DITL input row (2026-11-25 1:00 PM PHT, YUA PR 590 / RARA via the coordinator)
+- A DITL input row whose address sits on the same net as a user contact (nl.usr, state in s.usw, e.g. the ELECTRICAL TROUBLE contact
+  that simIn sets) is "field contact (usr)": that contact writes the input. Old -> new on main 111ca23: B1 DITL rows with no source
+  131 -> 127 (DITL-22 #A ~ #D: I.0051 / I.0371 / I.0054 / I.0374).
+- Not moved: 12 TRIP rows whose net holds no usr contact in the netlist (DITL-24 x2, DITL-30 x3, DITL-31 x2, DITL-111 x2, DITL-112 x3).
+  These stay "no source" until the writer contact is named.
+
+## Usr contact without a usw entry; unit model writers on a change (2026-11-25 1:10 PM PHT, YUA / RARA via the coordinator)
+- Field contact (usr): the usw entry of a user contact exists only once the contact is set, so the rule now needs only the contact on the
+  same net as the address row (nl.usr[].n === nl.ind[].n, ind.adr set; YUA PR 590). Old -> new on main 04a0db0: B1 DITL rows with no
+  source 125 -> 109 (the 12 motor TRIP rows DITL-24 / 30 / 31 / 111 / 112 and copies, ET272_ / ET274_ ELECTRICAL TROUBLE, plus 4 rows
+  of the same nets), LINKED 1,779 -> 1,782.
+- Unit model writers (AN.unit.di, unit.js): the unit model writes these ABC inputs only when the value changes, so one that stays at its
+  start value in the run shows no write. An ABC input named in AN.unit.di is "engine". Old -> new: B1 ABC inputs nothing writes 68 -> 48
+  (ZSO-CD1115 I.0892 ABC-052, I.0413 / I.0414 ABC-050 / 051, I.0418 / I.0931 / I.0932 ABC-050, I.0081 / I.0082 ABC-001C, I.0417 ABC-053,
+  I.029C / 029D / 029E ABC-035 / 038 / 039, M.0001 ABC-001B / 029; and by the same address I.0418 ABC-019 / 051, I.0931 ABC-053,
+  I.0932 ABC-052), LINKED 1,782 -> 1,787, on a sheet no source 35 -> 30.

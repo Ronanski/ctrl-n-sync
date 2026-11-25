@@ -398,21 +398,25 @@
   M('TCA900-25', 'AVR IN USE: the AVR excites the field while the field switch 41 is closed (tcs-gen.js g.f41, G-4)', U =>
     U && U.gen ? b(U.gen.f41) : NaN
   );
-  /* the AVR selections and limiters with no state in the model (no document read gives the plant line-up): channel 1 / 2, PSS, PF / Mvar
-     control, set point at max / min, over / under excitation limiter, local / remote, AUTO / MANUAL start ready */
+  /* the AVR selections and limiters with no state in the model (no document read gives the plant line-up): channel 1 / 2, set point at
+     max / min, over / under excitation limiter (no limiter in tcs-gen.js yet: lanes/tcs-io/gen-reactive-model.md), local / remote,
+     AUTO / MANUAL start ready */
   [
     'TCA900-11',
     'TCA900-12',
-    'TCA901-13',
     'TCA902-30',
     'TCA902-31',
     'TCA903-1',
     'TCA903-2',
     'TCA903-3',
-    'TCA903-4',
-    'TCA903-5',
-    'TCA903-6'
+    'TCA903-4'
   ].forEach(id => N(id, avrNeeds));
+  /* the AVR settings of the plant (UNITROL 6080 manual DBE-15-0021): AUTO voltage control is the normal mode (p3); the PF and the Mvar
+     control are superimposed modes the operator selects, only with the breaker closed (p24 ~ 26), and the app has no such selection, so
+     they read off; the power system stabilizer (IEEE 2B) is off by default (DBE-15-0021 setting list) */
+  M('TCA901-13', 'PSS ON: the power system stabilizer IEEE 2B is off by default (DBE-15-0021), the app has no PSS selection', () => 0);
+  M('TCA903-5', 'PF CONTROL ON: AUTO voltage control is the normal mode (DBE-15-0021 p3); PF control is a superimposed mode (p24 ~ 26) not selected', () => 0);
+  M('TCA903-6', 'REACTIVE POWER ON: as TCA903-5, the Mvar control is a superimposed mode (DBE-15-0021 p24 ~ 26) not selected', () => 0);
   M('TCA902-28', 'AVR IN AUTO: the AVR mode of tcs-gen.js (g.avr not MAN)', (U, L) => L.avrAuto);
   M('TCA902-29', 'AVR IN MANUAL (g.avr MAN)', (U, L) => L.avrMan);
   M('TCA902-23', 'GEN VOLTAGE OK (GCP 84): generator voltage >= TCS_GEN.v84 (tcs-gen.js, v84)', (U, L) => L.v84);

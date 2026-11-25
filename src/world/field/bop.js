@@ -57,7 +57,8 @@ for (const [stn, ai, tag, sheet, ctl, why] of [
   [2, 'AI0692', 'ZT-CD1104', 'ABC-031', 'LICCD1104', 'LCV-CD1104 deaerator level, item 14'],
   [2, 'AI0693', 'ZT-MU1110', 'ABC-031', 'LICCD1110A', 'LCV-MU1110 condenser make-up, item 17'],
   [1, 'AI0179', 'ZT-MS1001', 'ABC-013', 'PICMS1002', 'PCV-MS1001 blow off, item 1'],
-  [2, 'AI0705', 'ZT-CW1201', 'ABC-053', 'TICLO1002', 'TCV-CW1201 lube oil temperature, item 40']
+  [2, 'AI0705', 'ZT-CW1201', 'ABC-053', 'TICLO1002', 'TCV-CW1201 lube oil temperature, item 40'],
+  [2, 'AI0386', 'ZT-AS1030', 'ABC-056', 'PICCD1104', 'PCV-AS1030 deaerator pegging steam (AO0403 on ABC-056)']
 ])
   R.push({ stn, ai, tag, v: (U, X) => open(X, sheet, ctl), rel: 'opening = anAv(' + ctl + ', MV of ' + ctl + ')', src: io(stn) + ' ' + ai + '; ' + sheet + ' ' + ctl + '; ' + why });
 for (const [n, k, sh, a1, a2] of [
@@ -70,9 +71,13 @@ for (const [n, k, sh, a1, a2] of [
   R.push({ stn: 2, ai: a1, tag: 'ZT-HD' + n + '-1', v: (U, X) => hdv(U, X, k, 1), rel: 'primary drain valve = anAv(LICHD' + n + '1, split-range F(X) of the primary MV), as AN_HD', src: io(2) + ' ' + a1 + '; ' + sh + ' LICHD' + n + '1; LCV-HD' + n + '-1' });
   R.push({ stn: 2, ai: a2, tag: 'ZT-HD' + n + '-2', v: (U, X) => hdv(U, X, k, 2), rel: 'alternate drain valve = anAv(LICHD' + n + '2, its MV), as AN_HD', src: io(2) + ' ' + a2 + '; ' + sh + ' LICHD' + n + '2; LCV-HD' + n + '-2' });
 }
-/* 2. limit switches: end of travel (K1AU3-E2-0-123 R1 "Limit Switches: OMRON D4A-2502N (1 Open & 1 Closed)"), the app's end of travel:
-   open = position >= 100 %, closed = position <= 0 % (QA review 2026-11-25) */
+/* 2. limit switches: end of travel (K1AU3-E2-0-123 R1 "Limit Switches: OMRON D4A-2502N (1 Open & 1 Closed)"). All 11 are air-operated
+   valves with a positioner, so they use the one app rule of plantsw.js (WORLD.endBand: closed <= 2 %, open >= 98 %), not a copy */
+const END = () => (G.WORLD && G.WORLD.endBand) || null;
 const zt = t => {
+  /* PCV-AS1010 (main steam to aux steam, AO0580 on ABC-030 PICAS1004): its ZT-AS1010 (AI0387) is written on ABC-030 by the model, so the
+     switches read the same opening, not a second ZT row */
+  if (t === 'PCV-AS1010') return (U, X) => open(X, 'ABC-030', 'PICAS1004');
   const r = R.find(x => x.tag === t);
   return r ? r.v : () => NaN;
 };
@@ -85,7 +90,9 @@ for (const [addr, tag, z, o] of [
   ['I.0894', 'ZSO-CD1124', 'ZT-CD1124', 1],
   ['I.0895', 'ZSC-CD1124', 'ZT-CD1124', 0],
   ['I.0896', 'ZSO-CD1126', 'ZT-CD1126', 1],
-  ['I.0897', 'ZSC-CD1126', 'ZT-CD1126', 0]
+  ['I.0897', 'ZSC-CD1126', 'ZT-CD1126', 0],
+  ['I.0042', 'ZSO-AS1010', 'PCV-AS1010', 1],
+  ['I.0043', 'ZSC-AS1010', 'PCV-AS1010', 0]
 ]) {
   const f = zt(z);
   R.push({
@@ -93,10 +100,11 @@ for (const [addr, tag, z, o] of [
     di: 1,
     tag,
     v: (U, X) => {
-      const p = f(U, X);
-      return isFinite(p) ? (o ? p >= 100 : p <= 0) : NaN;
+      const p = f(U, X),
+        e = END();
+      return isFinite(p) && e ? (o ? p >= e.open : p <= e.closed) : NaN;
     },
-    rel: (o ? 'open limit: ' : 'closed limit: ') + z + (o ? ' >= 100 %' : ' <= 0 %'),
+    rel: (o ? 'open limit: ' : 'closed limit: ') + z + (o ? ' >= WORLD.endBand.open (98 %)' : ' <= WORLD.endBand.closed (2 %)'),
     src: io(2) + ' ' + addr + '; K1AU3-E2-0-123 R1 OMRON D4A-2502N end of travel'
   });
 }

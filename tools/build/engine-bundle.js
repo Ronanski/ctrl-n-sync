@@ -10,6 +10,14 @@ function files() {
   return fs.readFileSync(path.join(A, 'order.list'), 'utf8').split(/\r?\n/).map(s => s.trim())
     .filter(s => s && s[0] !== '#' && /^(reader|engine)\//.test(s) && s !== 'engine/sched.js');
 }
+/* the TCE / TCA sheets and their reader (the sheets that drive: engine/tcs-sheets.js). In the page they are in the digital script and the
+   template; the world bundle has the sheets in the digital files */
+const tceRun = () => '/* ---- src/digital/tce-run.js ---- */\n' + fs.readFileSync(path.join(root, 'src', 'digital', 'tce-run.js'), 'utf8') + '\n';
+function tceAlone() {
+  const D = path.join(root, 'src', 'digital');
+  return fs.readFileSync(path.join(D, 'order.list'), 'utf8').split(/\r?\n/).map(s => s.trim()).filter(s => /^tce\//.test(s))
+    .map(f => fs.readFileSync(path.join(D, f), 'utf8')).join('\n') + '\n' + tceRun();
+}
 function bundle(o) {
   o = o || {};
   const aln = o.aln != null ? o.aln : fs.readFileSync(path.join(root, 'src', 'data', 'aln.json'), 'utf8').trim();
@@ -31,7 +39,7 @@ function bundle(o) {
     'AN.settle=()=>{const c=anCur();if(c&&c.S)for(let i=0;i<6;i++)stepSet(c,0)};\n' +
     'AN.plantSwitch=on=>{AN.plantOn=!!on;for(const sh of AN.sheets){if(!sh.S)continue;for(const b of sh.S.procs||[])if(b.proc)b.proc.on=!!on;if(!on){sh.S.rt.pm={};sh.S.plantT=null;sh.S._rem=0}}};\n' +
     'globalThis.ENGINE={AN,E:{ensure,stepSet,anResetAll,anPlantLoad150,anPlantCold}};\n';
-  return '(function(){\n' + core + body + '\n;\n' + hooks + '})();\n';
+  return (o.world ? '' : tceAlone()) + '(function(){\n' + core + body + '\n;\n' + hooks + '})();\n';
 }
 /* 3.2.0 Web Worker, stage b: the whole engine, the one world: the DITL engine parts of src/digital/order.list (up to 03e-user.js:
    parse, netlist, models, simulation, reader, keyframe, panel settings; one global script as in the page), the analog engine above (its AN on globalThis, as
@@ -77,11 +85,12 @@ function laneData() {
 }
 function worldBundle(o) {
   const rd = f => fs.readFileSync(f, 'utf8');
-  const an = bundle(o).replace('globalThis.ENGINE=', 'globalThis.AN=AN;globalThis.ENGINE=');
+  const an = bundle(Object.assign({}, o, { world: 1 })).replace('globalThis.ENGINE=', 'globalThis.AN=AN;globalThis.ENGINE=');
   return (
     /* the file name with / on every OS (built on Windows it was src\digital\..., another html than the Linux build of the CI) */
     dFiles().map(f => '/* ---- ' + path.relative(root, f).split(path.sep).join('/') + ' ---- */\n' + rd(f)).join('\n') +
     '\n;globalThis.DITL={get S(){return S},set S(v){S=v},get SIM(){return SIM},set SIM(v){SIM=v},get MST(){return MST},get MS(){return MS},get DREG(){return DREG},ditlStates,ditlCapture,ditlApply,simSheet,netlist};\n' +
+    tceRun() +
     an +
     /* 3.2.1 (Mina beta.170: page 17 '52G1 off' stayed N in Worker mode): world.js links rows by the tag of the I/O list (window.WIRING:
        DITL-03H row 18 MIG-52G1-2 = I.0932, the sootblower starters MOR / MOS). The page list (src/ui/plant/wiring.js, 0.9 MB) is not in the
