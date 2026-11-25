@@ -149,6 +149,23 @@
           880,
           { id: 'ah', sc: 1.2, lab: 'b' }
         ),
+        /* beta.556: the panel of the air heater sootblower (I/O list station 2; DITL-80M, 80K) */
+        at(
+          E('cubicle', 'Sootblower panel', '', [], {
+            id: 'sbp',
+            mon: [
+              HX.D('Sootblowers selector', 'MIL-SB01', 'dl:DITL-80M|i|0', 'REMOTE', 'LOCAL'),
+              HX.D('Air heater sootblower selector', 'MIL-SB-APH01', 'dl:DITL-80M|i|1', 'LOCAL', 'REMOTE'),
+              HX.D('Air heater sootblower trip', 'MIT-SB-APH01', 'dl:DITL-80K|i|9', 'TRIP', 'NORMAL'),
+              HX.D('Air heater start command', 'MOR-SB-APH01', 'dl:DITL-80K|p|O.077C', 'ON', 'OFF'),
+              HX.D('Air heater stop command', 'MOS-SB-APH01', 'dl:DITL-80K|p|O.077D', 'ON', 'OFF'),
+              HX.D('Air heater cleaning device enable', 'MOP-SB-APH01', 'dl:DITL-80K|p|O.077E', 'ON', 'OFF')
+            ]
+          }),
+          1500,
+          900,
+          { id: 'sbp', lab: 'r' }
+        ),
         at(B('N-1040', op('DITL-80F', 25, 'N-1040') + ' data-n="40"', { plain: true, w: CW2, mach: 'N-1040' }), 300, 858, {
           id: 'a40'
         }),
