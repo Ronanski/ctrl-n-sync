@@ -57,6 +57,27 @@
     }
   };
   const num = v => (isFinite(v) ? +v : NaN);
+  /* Phase 9: a DCS output of a DITL sheet by the text of its output row (as tcs-trip.js tcsDitlOut, which is inside the engine): 1 / 0,
+     NaN when the sheet or the row is not found */
+  const DO_C = {};
+  const ditlOut = (sh, re) => {
+    try {
+      const S_ = typeof S !== 'undefined' ? S : root.S;
+      if (!S_ || !S_.sheets) return NaN;
+      const k = sh + '|' + re.source;
+      let r = DO_C[k];
+      if (!r || S_.sheets[r.i] !== r.s) {
+        const i = S_.sheets.findIndex(x => new RegExp('\\)' + sh + '$').test(x.name)),
+          s = S_.sheets[i];
+        if (s && !s.nl && typeof netlist === 'function') s.nl = netlist(s);
+        const o = s && s.nl ? s.nl.outs.find(q => re.test((s.cells[q.row + ':RS'] || []).map(t => t.t).join(' ').trim())) : null;
+        r = DO_C[k] = { i, s, n: o ? o.n : -1 };
+      }
+      return r.s && r.n >= 0 && r.s.nl && r.s.nl._v ? (r.s.nl._v[r.n] ? 1 : 0) : NaN;
+    } catch (e) {
+      return NaN;
+    }
+  };
   /* the value of an engine label list ([sheet, block] pairs, as unit.js anUnitVal: the first block with a value) */
   const lblVal = list => {
     for (const [S, bk] of list || []) {
@@ -146,7 +167,9 @@
     'AUTO SYN START PB from the DCS: STN102 O.0492 TCS-DO1006 (DITL-115 AUTO SYNCHRONIZE START COMMAND; XSMM AUTO SYN START PB, DCS I/O list sh 15)',
     2,
     'O.0492',
-    'TCS-DO1006'
+    'TCS-DO1006',
+    /* Phase 9: the DITL-115 output of that name (tcs-trip.js tcsDitlOut) */
+    () => ditlOut('DITL-115', /^AUTO SYNCHRONIZE START COMMAND/)
   );
   M(
     'TCE901-9',
@@ -488,7 +511,9 @@
     'TURBINE GLAND STEAM LINE DRAIN VALVE AUTO from the DCS: STN102 O.048F TCS-DO1001 (XSMM, DCS I/O list sh 13, IBD TE-8)',
     2,
     'O.048F',
-    'TCS-DO1001'
+    'TCS-DO1001',
+    /* Phase 9: the DITL-115 output of that name, the same one IBD TE-8 net 0 reads (tcs-trip.js TCS_IBD_NET) */
+    () => ditlOut('DITL-115', /^TURBINE GLAND STEAM LINE DRAIN VALVE AUTO/)
   );
   D(
     'TCA902-6',
