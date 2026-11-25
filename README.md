@@ -40,7 +40,7 @@ The app has its own version (`tools/app-version.js`): `delivery/app/app.json` sa
 | `tests/` | headless checks |
 | `delivery/app` | everything that names the app: `app.json` (name, version, id, site), `icon.svg` and the icon files made from it, `pwa/` (web manifest, icons, service worker) |
 | `delivery/android`, `delivery/desktop`, `delivery/signing` | the shells of the apk and of the portable exe, the apk shells; the apk key is a GitHub secret (ANDROID_KEYSTORE_B64 / ANDROID_KS_PASS), never in the repo |
-| `docs/` | `DCS_KNOWLEDGE.md`, `OPERATOR_GUIDE.md`, `DOCUMENT_INDEX.md`, `archive/` (old rules, handoff and spec), `hmi/`, `tcs/`, audits. The reports of the old versions, the turnovers and the Plant Tools stayed in `Ronanski/icms-master-tool` |
+| `docs/` | `DCS_KNOWLEDGE.md`, `OPERATOR_GUIDE.md`, `SCOPE.md` (saklaw, docs, revision, equipment), `PHASES.md`, `archive/` (old rules, handoff and spec), `hmi/`, `tcs/`, audits. The reports of the old versions, the turnovers and the Plant Tools stayed in `Ronanski/icms-master-tool` |
 | `document-references/` | plant documents: on the PC only, never committed (`INDEX.md` lists them) |
 
 ## Release
