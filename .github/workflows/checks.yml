@@ -7,12 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0, filter: 'blob:none' } # the beta number is the commit count of main (tools/app-version.js)
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - name: Version raised and an update report (Full Audit 3 ranking 7)
+      - name: No version number and no built html in the PR, and an update report (lane plan 2026-11-25)
         run: |
-          for i in 1 2 3; do git fetch -q --depth=1 origin +refs/heads/main:refs/remotes/origin/main && break; sleep $((i*5)); done
+          for i in 1 2 3; do git fetch -q origin +refs/heads/main:refs/remotes/origin/main && break; sleep $((i*5)); done
           node tools/version-check.js
+      - name: Build the html from the sources (it is not in git; src/ is the truth)
+        run: node tools/build/build.js
       - name: The multi-file app folder (for the apk / exe) builds from the html
         run: |
           V=$(node tools/version.js)
@@ -40,7 +43,7 @@ jobs:
           F=dist/logic-sim-v$V.html
           grep -q "<title>Logic Sim v$V</title>" "$F" || { echo "title does not say v$V"; exit 1; }
           grep -qE "c3\.textContent ?= ?'v$V'" "$F" || { echo "version label does not say v$V"; exit 1; }
-      - name: The sources build exactly the committed html (src/ is the truth)
+      - name: The same sources build exactly the same html again
         run: node tools/build/build.js --check
       - name: No per-load tables or plant trend / snapshot fits in the physics (RULES.md 3.12, user 2026-11-24)
         run: node tools/check/no-fit.cjs

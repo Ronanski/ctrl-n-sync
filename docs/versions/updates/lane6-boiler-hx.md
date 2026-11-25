@@ -1,4 +1,4 @@
-# v1.0.0-beta.596 (HMI : EIMI, lane 6): page ng control system, at lahat ng boiler point ng I/O list
+# Page ng control system, at lahat ng boiler point ng I/O list (HMI : EIMI, lane 6)
 
 # Bahagi 1: page ng mismong control system (DCS alarm)
 
