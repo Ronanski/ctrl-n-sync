@@ -148,7 +148,15 @@
     [
       'asw003',
       [
-        [BX, P(1)],
+        [716, P(1)],
+        [BX, P(1)]
+      ],
+      1
+    ],
+    /* the low counter also down to PTI ERROR DETECT (split at the riser: a wire that starts on a macro pin is not read as its input) */
+    [
+      'asw003',
+      [
         [716, P(1)],
         [716, 987],
         [PX, 987]
@@ -192,7 +200,15 @@
     [
       'asw008',
       [
-        [BX, P(4)],
+        [777, P(4)],
+        [BX, P(4)]
+      ],
+      1
+    ],
+    /* the low counter also down to PTI ERROR DETECT (split at the riser: a wire that starts on a macro pin is not read as its input) */
+    [
+      'asw008',
+      [
         [777, P(4)],
         [777, 1008],
         [PX, 1008]
@@ -238,7 +254,15 @@
     [
       'asw014',
       [
-        [BX, P(7)],
+        [840, P(7)],
+        [BX, P(7)]
+      ],
+      1
+    ],
+    /* the low counter also down to PTI ERROR DETECT (split at the riser: a wire that starts on a macro pin is not read as its input) */
+    [
+      'asw014',
+      [
         [840, P(7)],
         [840, 1030],
         [PX, 1030]

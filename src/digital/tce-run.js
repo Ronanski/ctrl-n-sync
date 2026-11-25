@@ -783,6 +783,67 @@
   };
   MACRO['DUAL INPUT DIAGNOSTICS'] = textMacro(['TP', 'DELAY TP'], dualDiag('I-ERR1', 'I-ERR2'));
   MACRO['DUP AI DIAGNOSTICS'] = textMacro(['TP', 'DELAY TP'], dualDiag('ERR1', 'ERR2'));
+  /* DUP AI DIAGNOSTICSV (LME100 / LME101, TCE143) and PTI ERROR DETECT (LME102, TCE143): the turbine speed of the three pickups.
+     TC-14-116 5.3.2.2 "Turbine Speed Input" (pdf pp 93-94, printed 5-58 / 5-59): "three speed pickups ... the Pulse Train Input (PTI)
+     modules ... directly count the number of pulses"; its figure: COUNTER(1) of the three cards -> MJL -> "Turbine Speed (2oo3) (For
+     Control)" (MJL = majority: the middle of three). The PTI card LYT000A (same manual, CHAPTER 1): "low-speed and high-speed counters".
+     DUP AI DIAGNOSTICSV, reading (as TMR AI DIAGNOSTICS):
+       speed i (SPA / SPB / SPC) is bad when its counter is abnormal (IOEA / B / C, COUNTER nX ABN) for DELAY-S K s (0.15 s printed), or it
+       differs from the middle of the three by more than the H-CNT ABN band (HL 500 / LL -500 rpm printed) for its DELAY TP (5.0 s);
+       Y = the middle of the good speeds (two good: their mean, one good: that one; none: the last Y), ABN = fewer than two good (the 2oo3
+       is lost); ERR A / B / C = speed bad, QT1 / 2 / 3 = speed good, ERR = any bad; DEV = a speed off the middle by more than the DEV band
+       (HL 10 / LL -10 rpm) for DELAY-L K s (5.0 s).
+       Not read (the manual does not say how the low counter is used): LCA / LCB / LCC, TCH (HIGH COUNTER EFFECTIVE), L-CNT ABN K 50 rpm.
+     PTI ERROR DETECT: out H-CNT MODE (line HIGH COUNTER EFFECTIVE to TCE140 ~ 142, TCE168, and back to TCH) = the turbine speed (in SPEED)
+       at or over the counter mode switch speed (in H-L CNT SW SPD, SG A016 "CNT MODE SW SPEED" 3000 rpm) for TD TD s (2.0 s printed); off
+       at once under it (derived: the SG name; the card has a low-speed and a high-speed counter). Out PTI SW (line PTI SWITCH, read by no
+       sheet) not given; DEV 1 ~ 3, LCK K, DELAY TP, L-CNT / H FLAG / ABN inputs not read (the PTI error check is not in the manual). */
+  const dupV = notes => {
+    const nt = (notes || []).map(n => String(Array.isArray(n) ? n[2] : n)),
+      num = re => nt.filter(z => re.test(z)).map(z => parseFloat(z.split(':').pop())),
+      tp = num(/^DELAY TP:/),
+      hl = num(/^H-CNT ABN HL:/),
+      dv = num(/^DEV HL:/);
+    return { tp, hl: hl[0], ll: -(hl[0] || 0), dev: dv[0], s: mpar(notes, 'DELAY-S K'), l: mpar(notes, 'DELAY-L K') };
+  };
+  MACRO['DUP AI DIAGNOSTICSV'] = textMacro(
+    notes => {
+      const c = dupV(notes);
+      return c.tp.length < 3 || !Number.isFinite(c.hl) || !Number.isFinite(c.dev) || c.s === undefined || c.l === undefined ? ['DELAY TP x3 / H-CNT ABN / DEV / DELAY-S / DELAY-L'] : [];
+    },
+    (I, notes, st, dt) => {
+      const c = st.c || (st.c = dupV(notes)),
+        S = [+I.SPA, +I.SPB, +I.SPC],
+        E = [I.IOEA, I.IOEB, I.IOEC],
+        m = mid3(...S),
+        bad = [],
+        good = [];
+      let dev = 0;
+      for (let i = 0; i < 3; i++) {
+        const e = onDelay(st, 'e' + i, !!b01(E[i]), c.s, dt) || onDelay(st, 'b' + i, !(S[i] - m <= c.hl && S[i] - m >= -c.hl), c.tp[i], dt);
+        bad.push(e ? 1 : 0);
+        if (!e) good.push(S[i]);
+        dev |= onDelay(st, 'd' + i, Math.abs(S[i] - m) > c.dev, c.l, dt);
+      }
+      if (good.length) st.y = good.length === 3 ? mid3(...good) : good.reduce((a, b) => a + b, 0) / good.length;
+      const y = st.y === undefined ? 0 : st.y;
+      return {
+        Y: y,
+        ABN: good.length < 2 ? 1 : 0,
+        'ERR A': bad[0],
+        'ERR B': bad[1],
+        'ERR C': bad[2],
+        QT1: 1 - bad[0],
+        QT2: 1 - bad[1],
+        QT3: 1 - bad[2],
+        ERR: bad.some(b => b) ? 1 : 0,
+        DEV: dev ? 1 : 0
+      };
+    }
+  );
+  MACRO['PTI ERROR DETECT'] = textMacro(['TD TD'], (I, notes, st, dt) => ({
+    'H-CNT MODE': onDelay(st, 'h', +I.SPEED >= +I['H-L CNT SW SPD'], mpar(notes, 'TD TD'), dt) ? 1 : 0
+  }));
   /* TMR LVDT DIAGNOSIS (LME124, 8 blocks on TCE121 ~ TCE135): the three LVDT positions of one valve, DEV, ANN SW (ANN ENABLE); printed
      HL:1.0, LL:-1.0, DELAY TP:3.0s once per channel. TC-14-116 p 1298 No. 9. Reading: channel i is in error when SIGi minus the middle
      of the three is outside [LL, HL] (its own group) for DELAY TP s, and the alarm is enabled (ANN SW); OUT = the middle of the good
