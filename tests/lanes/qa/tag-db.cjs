@@ -5,6 +5,7 @@
    - an alarm row (src/data/alarms), a bind row with an address (src/world/bind), a TCS-DCS row (src/data/tcs-dcs.json), a field row or a
      field state (src/world/field, as the app loads them), or a loop address (src/ui/plant/dcslists.js) names an address that is not in the
      table, or a tag that is not the tag of that address / not in the table / on another station;
+   - a row with io (the I/O list name, where its tag is the drawing's or the alarm list's spelling) is checked by io;
    - unless the difference is in tests/lanes/qa/tag-db-known.json with its reason. A known difference that is gone prints "remove". */
 const fs = require('fs'),
   path = require('path');
@@ -53,15 +54,15 @@ const byTag = (src, stn, tag) => {
   if (stn != null && at.split('|')[0] !== stnOf(stn)) diff(src + ' ' + stnOf(stn) + ' ' + t, src + ': tag ' + t + ' is on ' + at + ', the row says STN' + stnOf(stn));
 };
 for (const f of fs.readdirSync(path.join(root, 'src/data/alarms')))
-  if (f.endsWith('.json')) for (const r of JSON.parse(fs.readFileSync(path.join(root, 'src/data/alarms', f), 'utf8'))) if (r.addr) byAddr('alarm', r.stn, r.addr, r.tag);
+  if (f.endsWith('.json')) for (const r of JSON.parse(fs.readFileSync(path.join(root, 'src/data/alarms', f), 'utf8'))) if (r.addr) byAddr('alarm', r.stn, r.addr, r.io || r.tag);
 for (const f of fs.readdirSync(path.join(root, 'src/world/bind')))
   if (f.endsWith('.json')) for (const r of JSON.parse(fs.readFileSync(path.join(root, 'src/world/bind', f), 'utf8'))) if (r.addr) byAddr('bind', r.stn, r.addr, r.tag);
 for (const r of JSON.parse(fs.readFileSync(path.join(root, 'src/data/tcs-dcs.json'), 'utf8')).rows) byAddr('tcs-dcs', r.stn, r.addr, r.tag);
 const E = load();
 const F = E.ctx.FIELD || {};
 for (const r of F.rows || []) {
-  if (r.ai) byAddr('field', r.stn, r.ai, r.tag);
-  else if (r.tag) byTag('field', r.stn, r.tag);
+  if (r.ai) byAddr('field', r.stn, r.ai, r.io || r.tag);
+  else if (r.io || r.tag) byTag('field', r.stn, r.io || r.tag);
   if (r.adr) byAddr('field', r.stn, r.adr);
 }
 for (const s of F.states || []) if (s.tag) byTag('state', null, s.tag);
