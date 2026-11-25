@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 07:53 PHT** (LEADER : YUA, lane 0, beta.550: sariling I/O address ng 8 valve ng DITL-38. Bago nito beta.543; RARA, lane 4, beta.534: field state ng BOP, VCB; YUA, beta.530: field state, X.ftrip / X.fault / X.state, s.src, DITL-80L; SAORI, lane 8, beta.528).
+Huling update: **2026-11-25 08:15 PHT** (ALARMS AND CURVES : AKIHO, lane 5, beta.552: alarm line ng alarm list mula lang sa point na may nakarehistrong source (field row, plant model, o DITL alarm output), kasama ang 68 switch row. Bago nito YUA, lane 0, beta.550: sariling I/O address ng 8 valve ng DITL-38. Bago nito beta.543; RARA, lane 4, beta.534: field state ng BOP, VCB; YUA, beta.530: field state, X.ftrip / X.fault / X.state, s.src, DITL-80L; SAORI, lane 8, beta.528).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
@@ -18,7 +18,7 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.550**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.552**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
 - Version: ang beta number ay nagtatapos sa digit ng lane (lane 0 YUA = 0, lane 1 MARIA = 1, ... lane 9 SORA = 9). Kapag may conflict sa app.json, kunin ang susunod na number na may sariling digit. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
