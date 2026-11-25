@@ -17,7 +17,10 @@
   /* pr: printed on page 144 beside each block; the drawing above keeps them as text */
   pr: {
     twA071: ['TW:3.0s'],
-    sg048: ['K:-5.0%'],
+    /* Phase 6 TCS (2026-11-26): -5.0 % is the CLOSE POSITION SG A017 and 7.51 % the crack open demand SG 048 (the header above, as
+       printed on page 144); the two had been typed onto the wrong block. The HIACS backup gives the same pair (A017 -5, 048 7.51) */
+    sgA017: ['K:-5.0%'],
+    sg048: ['K:7.51%'],
     sgC022: ['K:0.56%/S'],
     sgC025: ['K:0.56%/S']
   },
