@@ -493,6 +493,16 @@
       }
     }
     for (const v of it.vals) {
+      /* beta.566: an on / off value in words on the drawing (v.words), v.warn = the value (0 / 1) that is an alarm */
+      const wd = v.words ? ` data-w="${esc(v.words.join('|'))}"${v.warn != null ? ` data-wn="${v.warn}"` : ''}` : '';
+      if (!v.label) {
+        body.push([
+          14,
+          (bx, by, an) =>
+            `<text x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}"${wd}>-----</tspan>${v.unit ? `<tspan class="hx-unit"> ${esc(v.unit)}</tspan>` : ''}</text>`
+        ]);
+        continue;
+      }
       /* vstack (apk test 2026-11-22, Sampling): items in narrow columns write a long name on its own line and the value under it,
          so "Cation conductivity 0.055 µS/cm" does not run into the next column at 11 px on a 1280 tablet */
       if (it.vstack && v.label.length > VSTACK) {
@@ -749,7 +759,10 @@
         : `<g class="hx-idle" data-flow="${esc(pp.flow || '')}">${tube(d, pp.med, w)}${ar}</g>`;
     }
     let sig = '';
-    for (const sg of P.signals || []) sig += `<path class="hx-sig" d="${rpath(path(sg), 4)}"/>`;
+    for (const sg of P.signals || [])
+      sig +=
+        `<path class="hx-sig" d="${rpath(path(sg), 4)}"/>` +
+        (sg.dot || []).map(q => `<circle class="hx-sgd" cx="${q[0]}" cy="${q[1]}" r="2.6"/>`).join('');
     /* a tap: the transmitter on its line, with its words on one side */
     let taps = '';
     for (const t of P.taps || []) {
@@ -1399,8 +1412,11 @@
            blinks until the alarm is acknowledged, then stays in the alarm colour while it stands */
         const AL = D.alarms ? D.alarms() : null;
         Q('[data-hv]').forEach(e => {
-          const t = fmt(penVal(e.dataset.hv), +e.dataset.dp);
+          const pv = penVal(e.dataset.hv),
+            w = e.dataset.w && pv != null && isFinite(+pv) ? e.dataset.w.split('|') : null,
+            t = w ? w[+pv > 0.5 ? 0 : 1] : fmt(pv, +e.dataset.dp);
           if (e.textContent !== t) e.textContent = t;
+          if (w && e.dataset.wn) e.classList.toggle('hx-wrn', (+pv > 0.5 ? 1 : 0) === +e.dataset.wn);
           if (AL) {
             const k = e.dataset.hv
                 .replace(/^(pv|sv|mv):/, '')

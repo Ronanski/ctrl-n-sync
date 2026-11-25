@@ -936,6 +936,80 @@ for (const x of ST) {
 FIELD.add(lane, R);
 
 })("bop", window.FIELD);
+/* ---- src/world/field/dcs.js ---- */
+(function (lane, FIELD) {
+/* Lane 6 HMI (EIMI), field signals of the station DCS itself (src/world/field/README.md): the system alarm contact of every control
+   cabinet and panel, wired to a digital input of another station. The app has no model of the cabinet hardware (power units, fans,
+   hubs), so each contact is a field state: normal in service, the instructor sets the fault (Plant menu).
+   THE CONTACTS, from the hardware drawings of the station (LMYP-1 DCS TCS, 04.FCS, 08.ANP, 10.GCS and the SER / PDP sheets):
+   - controller, input / output and gateway cabinets: the SYSTEM ALM output of the alarm unit HALMA-12 (terminal TB2 1, 2). Its inputs are
+     the main power unit, the network hubs, the fuse board, the fan unit and the temperature alarm: K1AU3-E2-0-109 sheets 6, 12, 18 ~,
+     K1AU3-E2-0-115 sheets 4, 10, K1AU3-E2-0-112 sheet 5. The drawing gives the name, not the rest position; it is read as made on alarm,
+     like the two relay panels below whose rest position is drawn.
+   - alarm relay panel ARP1 and interlock relay panel IRP1: b contacts (normally closed) of the power fail relays, energized in service,
+     so the contact is open in service and closes on a fault: K1AU3-E2-0-114 sheets 6, 7; DITL-42 input row 7 takes IRP1-POWALM as 1 =
+     power supply fault.
+   - power distribution panel PDP1: the healthy contacts of its two power supplies in series (TB5-3, 1-2 and 3-4 through the link 2-3):
+     K1AU3-E2-0-111 sheet 7. The same contact of this power unit is an input of the alarm units, whose unused inputs are bridged
+     (bridged = healthy), so it is closed while healthy: the input is 1 in service and 0 on a fault, although its name is "fault". */
+const NAME = 'Electrical and generator';
+const HW = 'K1AU3-E2-0-109 (control station cabinets), alarm unit HALMA-12 SYSTEM ALM, TB2 1, 2';
+const GW = 'K1AU3-E2-0-115 (gateway cabinets), alarm unit HALMA-12 SYSTEM ALM, TB2 1, 2';
+/* [station, address, tag, the fault in words, drawing, normal] */
+const P = [
+  [1, 'I.005B', 'ARP1-SYSERR', 'Alarm relay panel ARP1: power or fuse fault', 'K1AU3-E2-0-114 sheet 6, ALMTB1 1, 2'],
+  [1, 'I.005C', 'IRP1-POWALM', 'Interlock relay panel IRP1: power supply fault', 'K1AU3-E2-0-114 sheet 7, ALMTB2 1, 2; DITL-42 input row 7'],
+  [1, 'I.005D', '1021-SYSERR', 'Control cabinet FCS1021 system alarm', HW],
+  [1, 'I.005E', '1022-SYSERR', 'Control cabinet FCS1022 system alarm', HW],
+  [1, 'I.005F', '1023-SYSERR', 'Control cabinet FCS1023 system alarm', HW],
+  [2, 'I.093C', 'SER1-SYSERR', 'Sequence of events recorder SER1 system alarm', 'K1AU3-E2-0-112 sheet 5, TB2 1, 2'],
+  [2, 'I.093D', '1031-SYSERR', 'Control cabinet FCS1031 system alarm', HW],
+  [2, 'I.093E', '1032-SYSERR', 'Control cabinet FCS1032 system alarm', HW],
+  [2, 'I.093F', '1033-SYSERR', 'Control cabinet FCS1033 system alarm', HW],
+  [3, 'I.069D', '1041-SYSERR', 'Control cabinet FCS1041 system alarm', HW],
+  [3, 'I.069E', '1042-SYSERR', 'Control cabinet FCS1042 system alarm', HW],
+  [3, 'I.069F', 'PDP-PLOSS', 'Power distribution panel PDP1: power supply fault', 'K1AU3-E2-0-111 sheet 7, TB5-3', 1],
+  [4, 'I.057A', 'GCS10DE-SYSERR', 'Gateway cabinet GCS10D / 10E system alarm', GW],
+  [4, 'I.057B', 'GCS10F-SYSERR', 'Gateway cabinet GCS10F system alarm', GW],
+  [4, 'I.057C', '1051-SYSERR', 'Control cabinet FCS1051 system alarm', HW],
+  [4, 'I.057D', '1011-SYSERR', 'Control cabinet FCS1011 system alarm', HW],
+  [4, 'I.057E', '1012-SYSERR', 'Control cabinet FCS1012 system alarm', HW],
+  [4, 'I.057F', '1013-SYSERR', 'Control cabinet FCS1013 system alarm', HW]
+];
+FIELD.state(
+  lane,
+  P.map(([s, a, tag, t, src, n]) => ({ id: 'dcs.' + tag, tag, normal: n ? 1 : 0, t, g: NAME, src: 'IO list STN10' + s + ' ' + a + '; ' + src }))
+);
+FIELD.add(
+  lane,
+  P.map(([s, a, tag, t, src, n]) => ({
+    stn: s,
+    di: 1,
+    tag,
+    v: (U, X) => X.state('dcs.' + tag),
+    rel: n ? 'healthy contacts in series: 1 in service, 0 on a fault' : 'alarm contact: 0 in service, 1 on an alarm',
+    src: 'IO list STN10' + s + ' ' + a + '; ' + src
+  }))
+);
+/* the two relay panel inputs on DITL-42 (annunciator): its input rows 6 "ARP SYSTEM ALARM" and 7 "IRP POWER SUPPLY FAULT" carry no tag,
+   so the row is found by its first word on that sheet. 1 = alarm, the same contact as above */
+FIELD.add(
+  lane,
+  [
+    ['ARP', 'ARP1-SYSERR', 'input row 6 "ARP SYSTEM ALARM"'],
+    ['IRP', 'IRP1-POWALM', 'input row 7 "IRP POWER SUPPLY FAULT"']
+  ].map(([tag, id, row]) => ({
+    stn: 1,
+    di: 1,
+    tag,
+    sheet: 'DITL-42',
+    v: (U, X) => X.state('dcs.' + id),
+    rel: 'the contact ' + id,
+    src: 'DITL-42 ' + row + '; K1AU3-E2-0-114'
+  }))
+);
+
+})("dcs", window.FIELD);
 </script><script>/* DITL (digital logic) - Constants, state, text decoding, DXF parse and build of the sheets. Part of ONE script (joined by src/digital/order.list, in this order). */
 const NS = 'http://www.w3.org/2000/svg',
   $ = id => document.getElementById(id);
@@ -157526,10 +157600,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 1960371'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 298703e'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 1960371';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 298703e';
     } catch (e) {}
   };
   upd();
@@ -328513,6 +328587,80 @@ for (const x of ST) {
 FIELD.add(lane, R);
 
 })("bop", window.FIELD);
+/* ---- src/world/field/dcs.js ---- */
+(function (lane, FIELD) {
+/* Lane 6 HMI (EIMI), field signals of the station DCS itself (src/world/field/README.md): the system alarm contact of every control
+   cabinet and panel, wired to a digital input of another station. The app has no model of the cabinet hardware (power units, fans,
+   hubs), so each contact is a field state: normal in service, the instructor sets the fault (Plant menu).
+   THE CONTACTS, from the hardware drawings of the station (LMYP-1 DCS TCS, 04.FCS, 08.ANP, 10.GCS and the SER / PDP sheets):
+   - controller, input / output and gateway cabinets: the SYSTEM ALM output of the alarm unit HALMA-12 (terminal TB2 1, 2). Its inputs are
+     the main power unit, the network hubs, the fuse board, the fan unit and the temperature alarm: K1AU3-E2-0-109 sheets 6, 12, 18 ~,
+     K1AU3-E2-0-115 sheets 4, 10, K1AU3-E2-0-112 sheet 5. The drawing gives the name, not the rest position; it is read as made on alarm,
+     like the two relay panels below whose rest position is drawn.
+   - alarm relay panel ARP1 and interlock relay panel IRP1: b contacts (normally closed) of the power fail relays, energized in service,
+     so the contact is open in service and closes on a fault: K1AU3-E2-0-114 sheets 6, 7; DITL-42 input row 7 takes IRP1-POWALM as 1 =
+     power supply fault.
+   - power distribution panel PDP1: the healthy contacts of its two power supplies in series (TB5-3, 1-2 and 3-4 through the link 2-3):
+     K1AU3-E2-0-111 sheet 7. The same contact of this power unit is an input of the alarm units, whose unused inputs are bridged
+     (bridged = healthy), so it is closed while healthy: the input is 1 in service and 0 on a fault, although its name is "fault". */
+const NAME = 'Electrical and generator';
+const HW = 'K1AU3-E2-0-109 (control station cabinets), alarm unit HALMA-12 SYSTEM ALM, TB2 1, 2';
+const GW = 'K1AU3-E2-0-115 (gateway cabinets), alarm unit HALMA-12 SYSTEM ALM, TB2 1, 2';
+/* [station, address, tag, the fault in words, drawing, normal] */
+const P = [
+  [1, 'I.005B', 'ARP1-SYSERR', 'Alarm relay panel ARP1: power or fuse fault', 'K1AU3-E2-0-114 sheet 6, ALMTB1 1, 2'],
+  [1, 'I.005C', 'IRP1-POWALM', 'Interlock relay panel IRP1: power supply fault', 'K1AU3-E2-0-114 sheet 7, ALMTB2 1, 2; DITL-42 input row 7'],
+  [1, 'I.005D', '1021-SYSERR', 'Control cabinet FCS1021 system alarm', HW],
+  [1, 'I.005E', '1022-SYSERR', 'Control cabinet FCS1022 system alarm', HW],
+  [1, 'I.005F', '1023-SYSERR', 'Control cabinet FCS1023 system alarm', HW],
+  [2, 'I.093C', 'SER1-SYSERR', 'Sequence of events recorder SER1 system alarm', 'K1AU3-E2-0-112 sheet 5, TB2 1, 2'],
+  [2, 'I.093D', '1031-SYSERR', 'Control cabinet FCS1031 system alarm', HW],
+  [2, 'I.093E', '1032-SYSERR', 'Control cabinet FCS1032 system alarm', HW],
+  [2, 'I.093F', '1033-SYSERR', 'Control cabinet FCS1033 system alarm', HW],
+  [3, 'I.069D', '1041-SYSERR', 'Control cabinet FCS1041 system alarm', HW],
+  [3, 'I.069E', '1042-SYSERR', 'Control cabinet FCS1042 system alarm', HW],
+  [3, 'I.069F', 'PDP-PLOSS', 'Power distribution panel PDP1: power supply fault', 'K1AU3-E2-0-111 sheet 7, TB5-3', 1],
+  [4, 'I.057A', 'GCS10DE-SYSERR', 'Gateway cabinet GCS10D / 10E system alarm', GW],
+  [4, 'I.057B', 'GCS10F-SYSERR', 'Gateway cabinet GCS10F system alarm', GW],
+  [4, 'I.057C', '1051-SYSERR', 'Control cabinet FCS1051 system alarm', HW],
+  [4, 'I.057D', '1011-SYSERR', 'Control cabinet FCS1011 system alarm', HW],
+  [4, 'I.057E', '1012-SYSERR', 'Control cabinet FCS1012 system alarm', HW],
+  [4, 'I.057F', '1013-SYSERR', 'Control cabinet FCS1013 system alarm', HW]
+];
+FIELD.state(
+  lane,
+  P.map(([s, a, tag, t, src, n]) => ({ id: 'dcs.' + tag, tag, normal: n ? 1 : 0, t, g: NAME, src: 'IO list STN10' + s + ' ' + a + '; ' + src }))
+);
+FIELD.add(
+  lane,
+  P.map(([s, a, tag, t, src, n]) => ({
+    stn: s,
+    di: 1,
+    tag,
+    v: (U, X) => X.state('dcs.' + tag),
+    rel: n ? 'healthy contacts in series: 1 in service, 0 on a fault' : 'alarm contact: 0 in service, 1 on an alarm',
+    src: 'IO list STN10' + s + ' ' + a + '; ' + src
+  }))
+);
+/* the two relay panel inputs on DITL-42 (annunciator): its input rows 6 "ARP SYSTEM ALARM" and 7 "IRP POWER SUPPLY FAULT" carry no tag,
+   so the row is found by its first word on that sheet. 1 = alarm, the same contact as above */
+FIELD.add(
+  lane,
+  [
+    ['ARP', 'ARP1-SYSERR', 'input row 6 "ARP SYSTEM ALARM"'],
+    ['IRP', 'IRP1-POWALM', 'input row 7 "IRP POWER SUPPLY FAULT"']
+  ].map(([tag, id, row]) => ({
+    stn: 1,
+    di: 1,
+    tag,
+    sheet: 'DITL-42',
+    v: (U, X) => X.state('dcs.' + id),
+    rel: 'the contact ' + id,
+    src: 'DITL-42 ' + row + '; K1AU3-E2-0-114'
+  }))
+);
+
+})("dcs", window.FIELD);
 /* ---- src/world/world.js ---- */
 /* WORLD (1.22.0): IISANG MUNDO ng ABC at DITL (CHECKLIST #25, CLAUDE.md "HINDI NAGBABAGO NA KAALAMAN" 1).
    Ang mga sheet ay nag-uusap ayon sa reference na nakasulat sa drawing (walang hula):
@@ -349560,7 +349708,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 1960371'));
+    row('Version', E('span', 'scsver', ver + ' · build 298703e'));
   }
   function openSet(near) {
     if (!set) {
@@ -354388,6 +354536,12 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .rxfw { fill: var(--rx-st3); fill-opacity: 0.22; stroke: var(--rx-edge); stroke-width: 0.9; }
 .rxvoid { fill: var(--rx-void); stroke-width: 0.7; }
 .rxe { fill: none; stroke: var(--rx-edge); stroke-width: 1; stroke-linecap: round; opacity: 0.7; }
+/* the alarm lamp of a control cabinet: dark in service, amber and blinking while its alarm stands (inv: the contact opens on alarm) */
+.hx-sgd { fill: var(--hx-mute); }
+.hx-val.hx-wrn { fill: var(--hx-warn); color: var(--hx-warn); }
+.rxal { fill: var(--hx-none); stroke: var(--rx-edge); stroke-width: 0.8; }
+.hx-stop .rxal, .hx-run .rxal.inv { fill: var(--rx-st2); }
+.hx-run .rxal:not(.inv), .hx-stop .rxal.inv { fill: var(--hx-warn); animation: hx-blink 1s steps(2) infinite; }
 .rxst { fill: none; stroke: var(--rx-st2); stroke-width: 1.7; stroke-linecap: round; }
 .rxk { fill: var(--rx-edge); }
 .rxw { fill: none; stroke: var(--rx-st2); stroke-width: 1.9; }
@@ -366373,6 +366527,62 @@ window.PLANT_SYS = [
       '<rect class="rxscr" x="-13" y="-21" width="26" height="14" rx="1.5"/><path class="rxe" d="M-13 0h26M-13 7h26M-13 14h18"/><path class="rxhi" d="M-16 -25.5h32"/>'
   });
 
+  /* a control system cabinet with its door open (K1AU3-E2-0-109 cabinet layouts: power unit on top, alarm unit, then the two controllers
+     or the input / output nodes). o.type: mpu (controllers), io (input / output nodes), gateway, server, relay (relay rows), power
+     (breakers). The lamp of the alarm unit (rxal) follows the rule in "on": lit while 1 (o.inv: lit while 0). Ports: t / b / l / r */
+  R.rack = o => {
+    const row = (y, k, h) => {
+      const p = 44 / k;
+      let d = '';
+      for (let i = 0; i < k; i++) d += `M${n(-21 + i * p)} ${y}h${n(p - 2)}v${h}h${n(2 - p)}z`;
+      return `<path class="rxv" d="${d}"/>`;
+    };
+    const node = y => row(y, 8, 18) + `<path class="rxe" d="M-22 ${y + 21}H22"/>`;
+    const box = (x, y, w, h) =>
+      `<rect class="rx" x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5"/><path class="rxe" d="M${x + 3} ${y + 4}h${w - 6}M${x + 3} ${y + 7}h${w - 6}"/><circle class="rxk" cx="${x + w - 4}" cy="${y + h - 4}" r="1.5"/>`;
+    const body = {
+      mpu: () => box(-22, -27, 21, 28) + box(1, -27, 21, 28) + node(7) + node(33),
+      io: () => node(-26) + node(4) + node(34),
+      gateway: () => box(-22, -27, 44, 17) + box(-22, -7, 44, 17) + node(17) + '<path class="rxe" d="M-20 46h40M-20 52h40"/>',
+      server: () => box(-22, -27, 44, 14) + box(-22, -11, 44, 14) + box(-22, 5, 44, 14) + '<path class="rxe" d="M-20 28h40M-20 36h40M-20 44h40"/>',
+      relay: () => row(-26, 6, 13) + row(-8, 6, 13) + row(10, 6, 13) + row(28, 6, 13) + '<path class="rxe" d="M-22 47H22M-22 53H22"/>',
+      power: () => box(-22, -27, 21, 24) + box(1, -27, 21, 24) + row(4, 5, 20) + row(31, 5, 20)
+    }[o.type || 'io']();
+    return {
+      box: [-31, -69, 31, 69],
+      ports: { t: [0, -68], b: [0, 68], l: [-30, -8], r: [30, -8] },
+      svg:
+        '<path class="rxd" d="M-28 62h56v6h-56z"/><rect class="rx" x="-30" y="-68" width="60" height="130" rx="2.5"/><rect class="rxvoid" x="-25" y="-63" width="50" height="121" rx="1.5"/>' +
+        row(-59, 8, 14) +
+        '<rect class="rxd" x="-22" y="-42" width="44" height="11" rx="1"/><path class="rxe" d="M-18 -36.5h24"/><circle class="rxal' +
+        (o.inv ? ' inv' : '') +
+        '" cx="15" cy="-36.5" r="4.2"/>' +
+        body +
+        '<path class="rxhi" d="M-26 -65.5h52"/>'
+    };
+  };
+  /* operator station: a desk with two screens and a keyboard. Ports: b */
+  R.console = () => ({
+    box: [-34, -27, 34, 25],
+    ports: { t: [0, -26], b: [0, 24], l: [-33, 0], r: [33, 0] },
+    svg:
+      '<path class="rxd" d="M-28 14v10h5V14zM23 14v10h5V14z"/><rect class="rx" x="-33" y="8" width="66" height="7" rx="1.5"/>' +
+      '<path class="rxd" d="M-18 2h4v6h-4zM14 2h4v6h-4z"/><rect class="rx" x="-31" y="-26" width="30" height="28" rx="2"/><rect class="rx" x="1" y="-26" width="30" height="28" rx="2"/>' +
+      '<rect class="rxscr" x="-28" y="-23" width="24" height="20"/><rect class="rxscr" x="4" y="-23" width="24" height="20"/>' +
+      '<path class="rxe" d="M-25 -8l5 -6 5 3 6 -8M8 -18h16M8 -13h16M8 -8h10"/><rect class="rxd" x="-11" y="5" width="22" height="3" rx="1"/>'
+  });
+  /* server: two tower units side by side. Ports: b */
+  R.server = () => ({
+    box: [-27, -27, 27, 25],
+    ports: { t: [0, -26], b: [0, 24], l: [-26, 0], r: [26, 0] },
+    svg: [-25, 3]
+      .map(
+        x =>
+          `<rect class="rx" x="${x}" y="-26" width="22" height="50" rx="2"/><path class="rxv" d="M${x + 4} -21h14v5h-14zM${x + 4} -13h14v5h-14z"/><circle class="rxk" cx="${x + 11}" cy="0" r="2"/><path class="rxe" d="M${x + 4} 8h14M${x + 4} 13h14M${x + 4} 18h14"/>`
+      )
+      .join('')
+  });
+
   /* ---------------- scenery ---------------- */
   /* the basement floor: o.w wide from (0, 0) */
   R.floor = o => ({
@@ -366878,6 +367088,16 @@ window.PLANT_SYS = [
       }
     }
     for (const v of it.vals) {
+      /* beta.566: an on / off value in words on the drawing (v.words), v.warn = the value (0 / 1) that is an alarm */
+      const wd = v.words ? ` data-w="${esc(v.words.join('|'))}"${v.warn != null ? ` data-wn="${v.warn}"` : ''}` : '';
+      if (!v.label) {
+        body.push([
+          14,
+          (bx, by, an) =>
+            `<text x="${n1(bx)}" y="${n1(by)}" text-anchor="${an}"><tspan class="hx-val" data-hv="${esc(v.key)}" data-dp="${v.dp}"${wd}>-----</tspan>${v.unit ? `<tspan class="hx-unit"> ${esc(v.unit)}</tspan>` : ''}</text>`
+        ]);
+        continue;
+      }
       /* vstack (apk test 2026-11-22, Sampling): items in narrow columns write a long name on its own line and the value under it,
          so "Cation conductivity 0.055 µS/cm" does not run into the next column at 11 px on a 1280 tablet */
       if (it.vstack && v.label.length > VSTACK) {
@@ -367134,7 +367354,10 @@ window.PLANT_SYS = [
         : `<g class="hx-idle" data-flow="${esc(pp.flow || '')}">${tube(d, pp.med, w)}${ar}</g>`;
     }
     let sig = '';
-    for (const sg of P.signals || []) sig += `<path class="hx-sig" d="${rpath(path(sg), 4)}"/>`;
+    for (const sg of P.signals || [])
+      sig +=
+        `<path class="hx-sig" d="${rpath(path(sg), 4)}"/>` +
+        (sg.dot || []).map(q => `<circle class="hx-sgd" cx="${q[0]}" cy="${q[1]}" r="2.6"/>`).join('');
     /* a tap: the transmitter on its line, with its words on one side */
     let taps = '';
     for (const t of P.taps || []) {
@@ -367784,8 +368007,11 @@ window.PLANT_SYS = [
            blinks until the alarm is acknowledged, then stays in the alarm colour while it stands */
         const AL = D.alarms ? D.alarms() : null;
         Q('[data-hv]').forEach(e => {
-          const t = fmt(penVal(e.dataset.hv), +e.dataset.dp);
+          const pv = penVal(e.dataset.hv),
+            w = e.dataset.w && pv != null && isFinite(+pv) ? e.dataset.w.split('|') : null,
+            t = w ? w[+pv > 0.5 ? 0 : 1] : fmt(pv, +e.dataset.dp);
           if (e.textContent !== t) e.textContent = t;
+          if (w && e.dataset.wn) e.classList.toggle('hx-wrn', (+pv > 0.5 ? 1 : 0) === +e.dataset.wn);
           if (AL) {
             const k = e.dataset.hv
                 .replace(/^(pv|sv|mv):/, '')
@@ -374520,6 +374746,188 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 36, y: 640, s: 'CONVEYING AIR', cls: 'hx-zone' },
         { x: 1445, y: 100, s: 'CONTROLS', cls: 'hx-zone' }
       ]
+    }
+  });
+})();
+
+/* HX page in the REALISTIC look: the station control system itself (HMI gap list 2026-11-25: the system alarm contacts of the control
+   cabinets were on no page).
+   THE PICTURE: the operator stations in the control room, the two control networks, the cabinets of unit 1 with their doors open (power
+   unit and alarm unit on top, the two controllers in a controller cabinet, the input / output nodes below), and under them the panels
+   and gateways. The lamp of the alarm unit of a cabinet lights while its system alarm stands.
+   THE CONNECTIONS: K1AU3-E2-0-106 sheet 1 (system configuration: stations, networks, cabinets, what each group controls), sheet 2 (network
+   pairs), K1AU3-E2-0-109 (cabinet layouts), 111 (power distribution panel), 112 (sequence of events recorder), 114 (relay panels), 115
+   (gateways). THE THIN DASHED LINES are the alarm wiring of the I/O list: no cabinet reports its own alarm, each one is wired to a digital
+   input of another group: FCS101x -> station 4 (FCS1041), FCS102x and the relay panels -> station 1 (FCS1011), FCS103x and the events
+   recorder -> station 2 (FCS1022), FCS104x and the power panel -> station 3 (FCS1032), FCS1051 and the gateways -> station 4.
+   THE VALUES: the 18 digital inputs, field rows of src/world/field/dcs.js (the contact types are explained there). The power panel input
+   is 1 while healthy. The hardware of the cabinets is not modeled: an alarm set by the instructor shows here and stops nothing. The
+   alarm and interlock relay panel inputs are also input rows 6 and 7 of DITL-42 (annunciator).
+   Drawn simpler than the sheets: one engineering station; the network hubs are not drawn. */
+(function () {
+  const { V, D, E, L, page } = HX;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  const NA = 168,
+    NB = 184 /* the two networks */,
+    Y1 = 400 /* control cabinets */,
+    Y2 = 826 /* panels */,
+    DXC = 130;
+  const items = [],
+    pipes = [],
+    signals = [];
+  /* one cabinet with its alarm: di = the digital input, stn / adr = where it is wired */
+  const cab = (type, name, tag, di, stn, adr, x, y, o) => {
+    const inv = di === 'PDP-PLOSS',
+      w1 = inv ? 'NORMAL' : 'ALARM',
+      w0 = inv ? 'ALARM' : 'NORMAL';
+    items.push(
+      at(
+        E('rack', name, tag, [V('', 'fld:' + di, '', 0, { tag: di, words: [w1, w0], warn: inv ? 0 : 1 })], {
+          type,
+          inv,
+          on: 'v:fld:' + di + '>0',
+          wrap: 13,
+          cname: name,
+          mon: [D('System alarm, station ' + stn + ' ' + adr, di, 'fld:' + di, w1, w0)]
+        }),
+        x,
+        y,
+        Object.assign({ id: 'c' + di.split('-')[0], lab: 't' }, o || {})
+      )
+    );
+  };
+  const GROUPS = [
+    {
+      x: 110,
+      s: 'FCS101 · Boiler control',
+      stn: 4,
+      y: 560,
+      to: 1340,
+      c: [
+        ['1011', 'Boiler controller', 'I.057D'],
+        ['1012', 'Signal cabinet', 'I.057E'],
+        ['1013', 'Signal cabinet', 'I.057F']
+      ]
+    },
+    {
+      x: 520,
+      s: 'FCS102 · Water, steam and turbine',
+      stn: 1,
+      y: 584,
+      to: 110,
+      c: [
+        ['1021', 'Water and steam controller', 'I.005D'],
+        ['1022', 'Signal cabinet', 'I.005E'],
+        ['1023', 'Signal cabinet', 'I.005F']
+      ]
+    },
+    {
+      x: 930,
+      s: 'FCS103 · Sand and ash',
+      stn: 2,
+      y: 608,
+      to: 650,
+      c: [
+        ['1031', 'Sand and ash controller', 'I.093D'],
+        ['1032', 'Signal cabinet', 'I.093E'],
+        ['1033', 'Signal cabinet', 'I.093F']
+      ]
+    },
+    {
+      x: 1340,
+      s: 'FCS104 · Burners and trip',
+      stn: 3,
+      y: 632,
+      to: 1060,
+      c: [
+        ['1041', 'Burner and trip controller', 'I.069D'],
+        ['1042', 'Signal cabinet', 'I.069E']
+      ]
+    },
+    { x: 1620, s: 'FCS105 · Common', stn: 4, y: 560, c: [['1051', 'Common controller', 'I.057C']] }
+  ];
+  const texts = [
+    { x: 60, y: 34, s: 'CONTROL ROOM', cls: 'hx-zone' },
+    { x: 190, y: 160, s: 'Control network A', cls: 'hx-note' },
+    { x: 190, y: 202, s: 'Control network B', cls: 'hx-note' },
+    { x: 180, y: 700, s: 'PANELS AND GATEWAYS', cls: 'hx-zone' },
+    { x: 335, y: 552, s: 'Alarms read by station 4', cls: 'hx-note' },
+    { x: 190, y: 577, s: 'Alarms read by station 1', cls: 'hx-note' },
+    { x: 742, y: 601, s: 'Alarms read by station 2', cls: 'hx-note' },
+    { x: 1152, y: 625, s: 'Alarms read by station 3', cls: 'hx-note' }
+  ];
+  /* the panels below: [drawing, name, tag, digital input, station, address, x, y of the net that reads it, label side] */
+  const PAN = [
+    ['relay', 'Alarm relay panel', 'ARP1', 'ARP1-SYSERR', 1, 'I.005B', 150, 584, 'r'],
+    ['relay', 'Interlock relay panel', 'IRP1', 'IRP1-POWALM', 1, 'I.005C', 420, 584, 'r'],
+    ['server', 'Sequence of events recorder', 'SER1', 'SER1-SYSERR', 2, 'I.093C', 690, 608, 'r'],
+    ['power', 'Power distribution panel', 'PDP1', 'PDP-PLOSS', 3, 'I.069F', 1000, 632, 'r'],
+    ['gateway', 'Gateways, common', 'GCS10D / 10E', 'GCS10DE-SYSERR', 4, 'I.057A', 1360, 560, 'l'],
+    ['gateway', 'Gateway of unit 1', 'GCS10F', 'GCS10F-SYSERR', 4, 'I.057B', 1620, 560, 'l']
+  ];
+  for (const g of GROUPS) {
+    texts.push({ x: g.x - 46, y: 250, s: g.s, cls: 'hx-zone' });
+    g.c.forEach(([n, name, adr], i) => {
+      const x = g.x + i * DXC;
+      cab(i ? 'io' : 'mpu', name, 'FCS' + n, n + '-SYSERR', g.stn, adr, x, Y1);
+      if (i) pipes.push({ med: 'signal', w: 3, pts: ['c' + g.c[i - 1][0] + '.r', 'c' + n + '.l'], arrow: false });
+      else {
+        pipes.push({ med: 'signal', w: 2, pts: [[x - 64, NA], [x - 64, Y1 - 42], [x - 30, Y1 - 42]], arrow: false });
+        pipes.push({ med: 'signal', w: 2, pts: [[x - 54, NB], [x - 54, Y1 - 32], [x - 30, Y1 - 32]], arrow: false });
+      }
+      signals.push({ pts: [[x - 30, Y1 + 50], [x - 46, Y1 + 50], [x - 46, g.y]], dot: [[x - 46, g.y]] });
+    });
+    /* the net of the station that reads the group: from its first to its last cabinet, panel and reader */
+    if (g.to) {
+      const rx = g.to + 64,
+        all = [g.x - 46, g.x + (g.c.length - 1) * DXC - 46, rx].concat(
+          PAN.filter(p => p[7] === g.y).map(p => p[6]),
+          g.y === 560 ? [1574] : []
+        );
+      signals.push({ pts: [[Math.min(...all), g.y], [Math.max(...all), g.y]] });
+      signals.push({ pts: [[rx, g.y], [rx, Y1 + 50], [g.to + 30, Y1 + 50]], dot: [[rx, g.y]] });
+    }
+  }
+  /* operator stations and servers: on both networks */
+  for (const [t, x] of [['COS1', 120], ['COS2', 345], ['COS3', 570], ['COS4', 795], ['COS5', 1020], ['CES', 1245], ['CDS', 1480]]) {
+    const nm = t === 'CES' ? 'Engineering station' : t === 'CDS' ? 'Data servers' : 'Operator station ' + t.slice(3);
+    items.push(at(E(t === 'CDS' ? 'server' : 'console', nm, t === 'CDS' ? 'CDS-A / B' : t, [], { wrap: 12 }), x, 84, { id: t, lab: 'r' }));
+    pipes.push({ med: 'signal', w: 2, pts: [[x - 8, 108], [x - 8, NA]], arrow: false });
+    pipes.push({ med: 'signal', w: 2, pts: [[x + 8, 108], [x + 8, NB]], arrow: false });
+  }
+  pipes.unshift(
+    { med: 'signal', w: 3, pts: [[40, NA], [1724, NA], [1724, Y2 - 110], [1418, Y2 - 110]], arrow: false },
+    { med: 'signal', w: 3, pts: [[40, NB], [1712, NB], [1712, Y2 - 98], [1410, Y2 - 98]], arrow: false }
+  );
+  for (const [ty, name, tag, di, stn, adr, x, net, lab] of PAN) {
+    cab(ty, name, tag, di, stn, adr, x, Y2, { lab, yn: lab === 'l' ? [-52, -69] : null });
+    signals.push({ pts: [[x, Y2 - 68], [x, net]], dot: [[x, net]] });
+    if (ty === 'gateway') {
+      /* both networks come down at the right of the cabinet */
+      pipes.push({ med: 'signal', w: 2, pts: [[x + 58, Y2 - 110], [x + 58, Y2 - 40], [x + 30, Y2 - 40]], arrow: false });
+      pipes.push({ med: 'signal', w: 2, pts: [[x + 50, Y2 - 98], [x + 50, Y2 - 28], [x + 30, Y2 - 28]], arrow: false });
+    }
+  }
+  page({
+    id: 'control-system',
+    group: 'Unit',
+    title: 'Control system',
+    about:
+      'The control cabinets, panels and gateways of unit 1 and their system alarms (K1AU3-E2-0-106). The dashed lines show the station that reads each alarm.',
+    plan: {
+      look: 'real',
+      w: 1760,
+      h: 1000,
+      items: items.concat([at(L('purge-trip', 'Relay panel signals'), 480, 940, { id: 'lpt' })]),
+      pipes: pipes.concat([
+        { med: 'power', w: 4, pts: [[980, 958], [980, Y2 + 68]] },
+        { med: 'power', w: 4, pts: [[1020, 958], [1020, Y2 + 68]] }
+      ]),
+      signals,
+      texts: texts.concat([
+        { x: 830, y: 960, s: 'AC 110 V from UPS 1-1', cls: 'hx-note' },
+        { x: 1034, y: 960, s: 'AC 110 V from UPS 1-2', cls: 'hx-note' }
+      ])
     }
   });
 })();
