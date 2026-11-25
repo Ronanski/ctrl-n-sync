@@ -23,8 +23,9 @@
 
 ## Hindi pa
 - Ang mga punto na wala pang value sa engine ay `-----` (lube oil switches, winding / bearing / vibration ng mga pump, 52G1 contacts ay may value na). Ang unit ng vibration ay wala sa I/O list: numero lang ang ipinapakita.
-- Ang mga TCS button at lamp ay `-----` hanggang nasa main ang TCS live API (PR 543, SORA); hindi pa napindot sa app.
+- Ang utos na Start ng TCS ay hindi pa nagpapaandar ng pump sa plant model (walang sagot ng MCC, kaya START FAULT): engine side (lane 0).
 
 ## Sinubok
 - `tests/lanes/hmi-turbine/pages-bound.cjs`: 6 pages, 415 elemento (kasama ang check na ang bawat motor button / lamp ay button o pin ng MOTOR STANDARD block ng sheet nito), 0 problema.
 - Headless app 150 MW RUN: bukas ang industrial water, auxiliary steam, generator, feedwater, turbine oil; walang error; ang Y faceplate ng BFWP-A ay nagpapakita ng 25 monitor row; ang 52G1 on contact = Y, off = N.
+- Live sa app (150 MW RUN, page Turbine oil pumps and motors, main oil pump B): bago = Stopped ON, Fault OFF; Manual tapos Start: sa 1 s wala pa, sa 6 s Fault ON (start fault, walang sagot ng MCC sa 3 s); Reset: Fault OFF; Auto: nananatiling Stopped. Ang mga lamp ng ibang motor ay tugma sa plant (main oil pump A, control oil pump A, vapour extractor, oil purifier Running ON).
