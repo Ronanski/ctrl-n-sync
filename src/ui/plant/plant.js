@@ -349,6 +349,12 @@
       /* the same for a hard-wired TCS -> DCS point of the I/O list that no sheet reads (tcs-dcs.json rows, dir 'in': TCS-DI1055 <- TCE960-26) */
       const hr = (TDL.rows || []).find(x => x.dir === 'in' && x.to && N(x.tag) === k);
       if (hr) return { k: 'mb', to: hr.to, bit: hr.t === 'DI', how: 'TCS hard-wired ' + hr.to + ' (STN10' + hr.stn + ' ' + hr.addr + ')' };
+      /* Phase 9 (2026-11-26): a DCS analog output of the list that no sheet of the page index labels (tcs-dcs.json rows, dir 'out'): the
+         value its receiving end reads (TCE_IO_LIVE.mbRead of 'to'): a TCS table row (TCE930-5 TARGET MW DEMAND reads the DCS AO0359), or
+         a meter of the generator control panel ('GCP:<meter>', the DCS input of the same quantity). One source: the read the TCS is fed */
+      const or = (TDL.rows || []).find(x => x.dir === 'out' && /^A/.test(x.t || '') && x.to && N(x.tag) === k),
+        oe = or && window.TCE_IO_LIVE ? TCE_IO_LIVE.mbEnd(or.to) : null;
+      if (oe && oe.read) return { k: 'mb', to: or.to, bit: false, how: 'DCS out ' + or.to + ' (STN10' + or.stn + ' ' + or.addr + ')' };
       return null;
     }
     if (it.t === 'pump' || it.t === 'fan' || it.t === 'motor') {

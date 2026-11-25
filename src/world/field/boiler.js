@@ -102,13 +102,28 @@ rows.push(
   { stn: 4, ai: 'AI0438', tag: 'PT-IA1064-A', v: U => num(U.iaPU), rel: 'no flow out of the tank: tank pressure = unit 1 instrument air header',
     src: 'IO list STN104 AI0438 PT-IA1064-A; P&ID PD-023 6/6; unit.js AN_AIR iaPU' },
   { stn: 4, ai: 'AI0470', tag: 'PT-IA1064-B', v: U => num(U.iaPU), rel: 'no flow out of the tank: tank pressure = unit 1 instrument air header',
-    src: 'IO list STN104 AI0470 PT-IA1064-B; P&ID PD-023 6/6; unit.js AN_AIR iaPU' }
+    src: 'IO list STN104 AI0470 PT-IA1064-B; P&ID PD-023 6/6; unit.js AN_AIR iaPU' },
+  /* Phase 9 (2026-11-26): the instrument air buffer tank T-1128 of the turning gear (control room snapshot: "turning gear IA buffer
+     tank T-1128", docs/hmi/OPERATING_POINTS.md PIIA1128): the same physics as the two tanks above */
+  { stn: 4, ai: 'AI0437', tag: 'PT-IA1128', v: U => num(U.iaPU), rel: 'no flow out of the tank: tank pressure = unit 1 instrument air header',
+    src: 'IO list STN104 AI0437 PT-IA1128; OPERATING_POINTS PIIA1128 (IA buffer tank T-1128); unit.js AN_AIR iaPU' }
 );
 
 /* 5. Cyclone-A inlet gas TT-FG1092-A (STN101): the cyclone inlet duct is the furnace outlet (P&ID PD-051), so the gas is the furnace exit
    gas of the bed model (unit.js U.tgF), which already takes the duct refractory into account. */
 rows.push({ stn: 1, ai: 'AI0659', tag: 'TT-FG1092-A', v: U => num(U.tgF), rel: 'furnace exit gas = gas into cyclone A',
   src: 'IO list STN101 AI0659 TT-FG1092-A; P&ID PD-051; unit.js U.tgF' });
+/* Phase 9 (2026-11-26): the same for cyclone B (the two cyclones take the furnace outlet gas in parallel, P&ID PD-051, and the bed
+   model has one furnace exit gas), and the second outlet thermocouple of each cyclone, TT-FG1096-A / B ("(2)" in the I/O list beside
+   TT-FG1095-A / B "(1)"): the gas leaving that cyclone (unit.js U.gCy, the value TT-FG1095-A / B read). */
+rows.push(
+  { stn: 1, ai: 'AI0675', tag: 'TT-FG1092-B', v: U => num(U.tgF), rel: 'furnace exit gas = gas into cyclone B',
+    src: 'IO list STN101 AI0675 TT-FG1092-B; P&ID PD-051; unit.js U.tgF' },
+  { stn: 1, ai: 'AI0676', tag: 'TT-FG1096-A', v: U => num(U.gCy && U.gCy[0]), rel: 'gas leaving cyclone A (second thermocouple)',
+    src: 'IO list STN101 AI0676 TT-FG1096-A; unit.js U.gCy[0] (as TT-FG1095-A)' },
+  { stn: 1, ai: 'AI0677', tag: 'TT-FG1096-B', v: U => num(U.gCy && U.gCy[1]), rel: 'gas leaving cyclone B (second thermocouple)',
+    src: 'IO list STN101 AI0677 TT-FG1096-B; unit.js U.gCy[1] (as TT-FG1095-B)' }
+);
 
 /* 6. Backpass gas thermocouples (STN104), P&ID K1AU3-PD-051 "Combustion air / flue gas system" (RA page 42), on the gas leaving each bank
    of the heat exchanger chain (hx.js U.hxO.gBank). The gas meets the LAST index first: RH pass rh[3] -> rh[0] -> No.2 eco R; SH pass

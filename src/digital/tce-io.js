@@ -177,7 +177,8 @@
     'TARGET MW DEMAND from the DCS: STN101 AO0359 TCS-AO1001 (XSMM COORDINATION CONTROL LOAD DEMAND, DCS I/O list sh 18)',
     1,
     'AO0359',
-    'TCS-AO1001'
+    'TCS-AO1001',
+    U => num(U.aoTM) /* the EIC-TM output of the DCS (unit.js U.aoTM) */
   );
   M('TCE930-9', 'PT-MS1901-2 MSV inlet steam pressure (B) (tcsSteam msp: one main steam line pressure)', U =>
     stm(U, 'msp')
@@ -1054,6 +1055,18 @@
     U && U.lo86 ? b(U.lo86.a || U.lo86.b) : 0];
   MB['GCP:MWH'] = ['model', 'generator watt-hour, MWh: the integral of the generator MW since the counter started (tcs-dev.js U.dev.mwh)', U =>
     U && U.dev && isFinite(U.dev.mwh) ? U.dev.mwh : NaN];
+  MB['GCP:MVARH'] = ['model', 'generator var-hour, Mvarh: the integral of the generator Mvar since the counter started (tcs-dev.js U.dev.mvarh)', U =>
+    U && U.dev && isFinite(U.dev.mvarh) ? U.dev.mvarh : NaN];
+  /* Phase 9 (2026-11-26): the DCS analog outputs to the meters of the generator control panel (tcs-dcs.json rows 'out', GCP:<meter>,
+     drawing GAE-2013-0136). No ABC sheet of the app draws the logic that drives them, so each one repeats the DCS input of the same
+     generator quantity (the TCS COMM AO table TCA990 above, one source): current A / B / C, Mvar, voltage A-B / B-C / C-A, frequency.
+     The power factor stays without a value for the same reason as TCA990-14 (the transducer form) */
+  const gV = U => (U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN);
+  ['IA', 'IB', 'IC'].forEach(m => (MB['GCP:' + m] = ['model', 'DCS out to the GCP meter: generator current, kA (= TCA990-5 / 12 / 17, tcs-gen.js g.I x 7.384)', genI]));
+  MB['GCP:MW'] = ['model', 'DCS out to the GCP meter: generator MW (D) (= GCP-AI1002, the model MW U.MW)', U => num(U.MW)];
+  MB['GCP:MVAR'] = ['model', 'DCS out to the GCP meter: generator Mvar (= TCA990-11, tcs-gen.js g.Q x 176.5)', genQ];
+  ['VAB', 'VBC', 'VCA'].forEach(m => (MB['GCP:' + m] = ['model', 'DCS out to the GCP meter: generator voltage, kV (= TCA990-6 / 13 / 18, tcs-gen.js g.V x 13.8 kV)', gV]));
+  MB['GCP:HZ'] = ['model', 'DCS out to the GCP meter: frequency, Hz (= TCA990-15, tcs-gen.js g.fg)', U => num(U.gen && U.gen.fg)];
   /* DCS to PLC: the DCS commands that the COMM controller takes (STN102 WM0210 / WM0211 -> SI1900 / SI1901). In the app the same commands are
      the tcsCmd of tcs.js */
   mb('DO1', 'out', 'turbine gland seal group start command -> TCS (IBD TC-31 START, tcsCmd ibd TC-31)');
