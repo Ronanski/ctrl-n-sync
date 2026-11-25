@@ -9,3 +9,10 @@ nagpapatakbo ng valve at hindi ang lokal na panel) ay 1 na sa normal na serbisyo
 - Hindi ginawa (walang drawing na nagpapakita kung saan galing): LAH-CL1008-A / B / C (O.0770 / 0772 / 0774) at DOR-CL1061-A / B / C
   (O.0776 ~ 0778), mga output ng DCS papunta sa ibang panel. Kailangan ng basa ng wiring o ng coal handling drawing sa PC.
 - Hindi sinubok: sa browser (live app).
+
+## Dagdag: furnace pressure C-2 (slice 11)
+
+- PT-FG1087-2 (STN101 AI0773, pangalawang transmitter ng furnace pressure C) ay may value na: ang parehong furnace pressure na binabasa ng
+  C-1 (PT-FG1087-1 AI0388, ABC-008). Snapshot 150 MW: C-1 -15, C-2 -14 mmH2O. Hindi nakakabit 93 -> 92.
+- Hindi ginawa (walang source ng value): PT-FG1009-A1 / B1 (seal pot, snapshot lang ang mayroon), IT-L1060A ~ D (current ng ash cooler
+  kapag tumatakbo), TI-FA1052; plant air compressor at dryer (STN105): labas sa saklaw ng HMI (rule ng user).

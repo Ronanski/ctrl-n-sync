@@ -78,6 +78,12 @@ rows.push(
     src: 'IO list STN102 I.0083 ZSC-HR1010; ZT-HR1010 STN102 AI0385 (ABC-052); MOV rule' }
 );
 
+/* 3e. Furnace pressure C-2 PT-FG1087-2 (STN101 AI0773, Phase 6 slice 11, 2026-11-26): the second transmitter of furnace pressure C, on
+   no logic sheet (ABC-008 reads C-1 PT-FG1087-1 AI0388). Both measure the same furnace pressure (HMI snapshot 150 MW: PIFG10871 -15,
+   PIFG10872 -14 mmH2O, hmi-op.js), so C-2 reads the furnace pressure of the model that C-1 reads. */
+rows.push({ stn: 1, ai: 'AI0773', tag: 'PT-FG1087-2', v: (U, X) => num(X.ai('1|AI0388')), rel: 'furnace pressure C = PT-FG1087-1 (same furnace pressure)',
+  src: 'IO list STN101 AI0773 PT-FG1087-2 "Furnace pressure (C)-2"; PT-FG1087-1 STN101 AI0388 (ABC-008); HMI snapshot PIFG10871 / 10872' });
+
 /* 3d. FA blower inlet flow control dampers FCV-FA1055-A1 / B1 (STN101, positions ZT-FA1055-A1 AI0176 / ZT-FA1055-B1 AI0196, which
    follow the MV of FICFA1055A / B on ABC-014: unit.js ztMap): the full open / full close limit switches (Phase 6 slice 6, 2026-11-26).
    No logic sheet reads them (QA trace: on no parsed sheet); display only. Same end-of-travel rule. */
