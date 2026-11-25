@@ -7,6 +7,8 @@ Ano ang nakikita ng operator: dalawang bagong page sa Turbine and generator.
 
 Paano nababasa ang halaga: may bagong basa sa `src/ui/plant/plant.js` (resolve, `k: 'mb'`). Ang isang tag, o word/bit na nasa Modbus list (PLC to DCS) at wala pang ibang source, ay kumukuha ng halaga sa TCS I/O end ng row na iyon (`TCE_IO_LIVE.mbRead`). Iyon din ang halagang pinapakain sa TCS program, kaya iisa lang ang source. Ang tag na may sheet, I/O row o field row na ay hindi nagbabago. Si YUA ang magre-review ng bahaging ito bago i-merge.
 
+Ganoon din ang 33 hardwired na signal mula sa TCS papuntang DCS na walang ABC o DITL sheet na bumabasa (listahan ni TSUBASA `tcs-dcs-33-no-row.md`; `tcs-dcs.json` rows, dir in). Halimbawa ang TCS-DI1055 turbine trip-2, galing sa TCE960-26. Nasa Turbine control interface, Generator at Purge-trip page na ang lahat ng 33. Dati `-----` ang lahat. Ngayon, 12 ang may halaga sa 150 MW. Ang iba ay wala pang halaga sa TCS end (IBD TA-6, TCA990 generator, MOD line, GCP).
+
 Source:
 - "LMYP-1 #1 MODBUS Communication list between DCS and turbine system.xls", sheet PLC to DCS (`src/data/tcs-dcs.json`)
 - STN102 loop list (`src/ui/plant/dcslists.js`)

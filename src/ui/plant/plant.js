@@ -340,11 +340,15 @@
       /* lane 7 MINAMI 2026-11-25 (YUA reviews): no sheet, I/O row or field row: a word the TCS sends the DCS over Modbus (src/data/tcs-dcs.json
          modbus[], "PLC to DCS"), by its instrument tag or by its STN102 word ('SI1230', a bit 'SI1002.5'). The value is the TCS I/O end of
          that row (TCE_IO_LIVE.mbRead, lane 2), the same read the TCS program is fed with: one source, nothing new in the model */
-      const MBL = (window.TCS_DCS_LIST && TCS_DCS_LIST.modbus) || [],
+      const TDL = window.TCS_DCS_LIST || {},
+        MBL = TDL.modbus || [],
         raw = String(it.tag || '').toUpperCase(),
         mr = MBL.find(x => x.sh === 'PLC to DCS' && x.to && ((x.tag && x.tag !== '-' && N(x.tag) === k) || x.word + (x.bit != null ? '.' + x.bit : '') === raw));
       if (mr)
         return { k: 'mb', to: mr.to, bit: mr.ty === 'DI', how: 'TCS Modbus ' + mr.ma + ' (STN10' + mr.stn + ' ' + mr.word + (mr.bit != null ? ' bit ' + mr.bit : '') + ')' };
+      /* the same for a hard-wired TCS -> DCS point of the I/O list that no sheet reads (tcs-dcs.json rows, dir 'in': TCS-DI1055 <- TCE960-26) */
+      const hr = (TDL.rows || []).find(x => x.dir === 'in' && x.to && N(x.tag) === k);
+      if (hr) return { k: 'mb', to: hr.to, bit: hr.t === 'DI', how: 'TCS hard-wired ' + hr.to + ' (STN10' + hr.stn + ' ' + hr.addr + ')' };
       return null;
     }
     if (it.t === 'pump' || it.t === 'fan' || it.t === 'motor') {
