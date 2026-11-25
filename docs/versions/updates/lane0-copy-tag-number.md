@@ -1,4 +1,4 @@
-# v1.0.0-beta.580 (LEADER : YUA, lane 0): tag ng sariling makina sa kopya kapag numero ang pagkakaiba
+# Tag ng sariling makina sa kopya kapag numero ang pagkakaiba (lane 0, integrator)
 
 ## Ano ang nagbago
 - **DITL-61A #B (condensate pump B)**: ang row 25 ay ang strainer ng pump B mismo, DPT-CD1002 (AI0802). Dati ay DPT-CD1001 ng pump A ang nakasulat at walang address ang row. Ang row 28 ay ang strainer ng kabilang pump, DPT-CD1001 (AI0450).
