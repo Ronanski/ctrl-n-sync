@@ -613,7 +613,42 @@
     'LUBE OIL COOLER INLET OIL TEMP.': ['lube oil cooler inlet (U.loTin)', U => num(U.loTin)],
     'LUBE OIL COOLER OUTLET OIL TEMP.': ['lube oil cooler outlet (U.loTout = TICLO1002 PV)', U => num(U.loTout)]
   };
+  /* the generator temperatures of unit.js anGenTemp (U.genT: ts stator coil A ~ F, ta cooling gas A ~ D, ex AC exciter outlet air) and the
+     HP exhaust steam temperature (the cold reheat temperature X.T.cr), the same values the app feeds to IBD GD-5 and TA-20 (tcs-trip.js) */
+  const LET = x => 'ABCDEF'.indexOf(x);
+  const thcBy = r => {
+    let m = /^GEN\. STATOR COIL TEMP\.\s*\(([A-F])\s*\)$/.exec(r.name);
+    if (m)
+      return [
+        'model',
+        (r.ins || '') + ' generator stator coil (' + m[1] + ') (unit.js U.genT.ts, IBD GD-5), C',
+        U => num(U.genT && U.genT.ts[LET(m[1])])
+      ];
+    m = /^GEN\. COOLING GAS AIR COOLER OUTLET TEMP\.\s*\(([A-D])\)$/.exec(r.name);
+    if (m)
+      return [
+        'model',
+        (r.ins || '') + ' generator cooling gas after the air cooler (' + m[1] + ') (U.genT.ta, IBD GD-5), C',
+        U => num(U.genT && U.genT.ta[LET(m[1])])
+      ];
+    if (/^AC EXCITER OUTLET AIR TEMP\.$/.test(r.name))
+      return [
+        'model',
+        (r.ins || '') + ' AC exciter outlet air (U.genT.ex, IBD GD-5), C',
+        U => num(U.genT && U.genT.ex)
+      ];
+    if (/^HP TURBINE EXHAUST STEAM TEMP\./.test(r.name))
+      return [
+        'model',
+        (r.ins || '') +
+          ' HP exhaust steam = the cold reheat temperature of the model (unit.js X.T.cr, IBD TA-20 tcsHpx), C',
+        U => num(U.xt && U.xt.T && U.xt.T.cr)
+      ];
+    return null;
+  };
   const thc = r => {
+    const by = thcBy(r);
+    if (by) return by;
     const k = r.name
       .replace(/\s*\((A|B|C|D)\)\s*$/, '')
       .replace(/\s+/g, ' ')
