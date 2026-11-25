@@ -17,14 +17,18 @@ rows.push(
     src: 'IO list STN102 AI0770 ZT-SB1001; DITL-80S MV-SB1001' }
 );
 
-/* 2. Furnace temperature control dampers FA1005 ~ FA1018 (STN103): the open / closed limit switches of each motor damper. The damper
+/* 2. Furnace temperature control dampers FA1005 ~ FA1026 (STN103: front wall FA1005 ~ 1018 on ABC-015 / 016, rear wall FA1019 ~ 1026 on ABC-016): the open / closed limit switches of each motor damper. The damper
    position is its own position transmitter ZT-FA10xx (AI0544 ~ AI0566, on ABC-015 / 016 following MCV-FA10xx). */
 [
   [1005, 'I.0330', 'I.0331', 'AI0544'], [1006, 'I.0335', 'I.0336', 'AI0545'], [1007, 'I.033A', 'I.033B', 'AI0546'],
   [1008, 'I.0720', 'I.0721', 'AI0547'], [1009, 'I.0725', 'I.0726', 'AI0548'], [1010, 'I.072A', 'I.072B', 'AI0549'],
   [1011, 'I.0730', 'I.0731', 'AI0550'], [1012, 'I.0735', 'I.0736', 'AI0560'], [1013, 'I.073A', 'I.073B', 'AI0561'],
   [1014, 'I.0800', 'I.0801', 'AI0562'], [1015, 'I.0805', 'I.0806', 'AI0563'], [1016, 'I.080A', 'I.080B', 'AI0564'],
-  [1017, 'I.0810', 'I.0811', 'AI0565'], [1018, 'I.0815', 'I.0816', 'AI0566']
+  [1017, 'I.0810', 'I.0811', 'AI0565'], [1018, 'I.0815', 'I.0816', 'AI0566'],
+  /* rear wall dampers FA1019 ~ FA1026 (ABC-016, ZT-FA1019 ~ 1026 AI0416 ~ AI0423) */
+  [1019, 'I.0000', 'I.0001', 'AI0416'], [1020, 'I.0005', 'I.0006', 'AI0417'], [1021, 'I.000A', 'I.000B', 'AI0418'],
+  [1022, 'I.0010', 'I.0011', 'AI0419'], [1023, 'I.0015', 'I.0016', 'AI0420'], [1024, 'I.001A', 'I.001B', 'AI0421'],
+  [1025, 'I.0320', 'I.0321', 'AI0422'], [1026, 'I.0325', 'I.0326', 'AI0423']
 ].forEach(([n, o, c, z]) => {
   const zt = X => num(X.ai('3|' + z));
   rows.push(
@@ -126,15 +130,18 @@ for (const x of 'ABC') {
     src: YAM + ': clean-out conveyor motor fault contact' });
   fr.push({ stn: 4, di: 1, tag: 'MIT-CL1061-' + x + '1', v: (U, X) => X.state(ic), rel: 'clean-out conveyor motor tripped', src: 'IO list STN104 ' + mit1 + '; ' + YAM });
 }
-/* motor dampers positioned from the DCS: furnace temperature control FA1005 ~ FA1018 (ABC-015 / 016, MCV-FA10xx) and burner hot SA
+/* motor dampers positioned from the DCS: furnace temperature control FA1005 ~ FA1026 (ABC-015 / 016, MCV-FA10xx) and burner hot SA
    FA1043-A ~ D (ABC-003A ~ D). A damper the DCS positions is in REMOTE on its field panel, its motor not tripped, its torque switch
    not made (I/O list contacts "trip", "remote", "torque" of each damper). */
 [[1005, 'I.0332', 'I.0334', 'I.0333'], [1006, 'I.0337', 'I.0339', 'I.0338'], [1007, 'I.033C', 'I.033E', 'I.033D'],
   [1008, 'I.0722', 'I.0724', 'I.0723'], [1009, 'I.0727', 'I.0729', 'I.0728'], [1010, 'I.072C', 'I.072E', 'I.072D'],
   [1011, 'I.0732', 'I.0734', 'I.0733'], [1012, 'I.0737', 'I.0739', 'I.0738'], [1013, 'I.073C', 'I.073E', 'I.073D'],
   [1014, 'I.0802', 'I.0804', 'I.0803'], [1015, 'I.0807', 'I.0809', 'I.0808'], [1016, 'I.080C', 'I.080E', 'I.080D'],
-  [1017, 'I.0812', 'I.0814', 'I.0813'], [1018, 'I.0817', 'I.0819', 'I.0818']]
-  .map(([n, a, b, c]) => ['FA' + n, 3, a, b, c, 'ABC-015 / 016 MCV-FA' + n])
+  [1017, 'I.0812', 'I.0814', 'I.0813'], [1018, 'I.0817', 'I.0819', 'I.0818'],
+  [1019, 'I.0002', 'I.0004', 'I.0003'], [1020, 'I.0007', 'I.0009', 'I.0008'], [1021, 'I.000C', 'I.000E', 'I.000D'],
+  [1022, 'I.0012', 'I.0014', 'I.0013'], [1023, 'I.0017', 'I.0019', 'I.0018'], [1024, 'I.001C', 'I.001E', 'I.001D'],
+  [1025, 'I.0322', 'I.0324', 'I.0323'], [1026, 'I.0327', 'I.0329', 'I.0328']]
+  .map(([n, a, b, c]) => ['FA' + n, 3, a, b, c, (n > 1018 ? 'ABC-016' : 'ABC-015 / 016') + ' MCV-FA' + n])
   .concat([['FA1043-A', 4, 'I.0018', 'I.001A', 'I.0019', 'ABC-003A'], ['FA1043-B', 4, 'I.0338', 'I.033A', 'I.0339', 'ABC-003B'],
     ['FA1043-C', 4, 'I.0658', 'I.065A', 'I.0659', 'ABC-003C'], ['FA1043-D', 4, 'I.0978', 'I.097A', 'I.0979', 'ABC-003D']])
   .forEach(([d, stn, mit, ts, mil, abc]) => {
