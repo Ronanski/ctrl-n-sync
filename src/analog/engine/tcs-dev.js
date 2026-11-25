@@ -109,6 +109,12 @@ function tcsDev(U, dt) {
   /* the generator watt-hour meter of the generator control panel (GCP-AI1003, a pulse counter to the DCS): the integral of the MW,
      counted from 0 when this state is made (a meter reading of the plant is not a physics value) */
   d.mwh = (isFinite(d.mwh) ? d.mwh : 0) + (Math.max(0, +U.MW || 0) * dt) / 3600;
+  /* Phase 9 (2026-11-26): the var-hour meter of the same panel (GCP-AI1006): the integral of the generator Mvar (tcs-gen.js g.Q x
+     176.5 MVA), counted like the watt-hour (only the lagging, exported Mvar: INFERRED, the meter form is not in the drawing) */
+  {
+    const q = U.gen && isFinite(U.gen.Q) ? U.gen.Q * 176.5 : 0;
+    d.mvarh = (isFinite(d.mvarh) ? d.mvarh : 0) + (Math.max(0, q) * dt) / 3600;
+  }
   /* FV-CD1904 LP exhaust hood water spray valve (solenoid valve, AOV travel): the engine's c.hso (IBD TC-35) */
   {
     let v = d.hood;

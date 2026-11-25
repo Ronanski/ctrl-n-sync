@@ -5658,6 +5658,8 @@ function anUnitStep0(dt) {
   const on = U.dcs < 0 || +v[U.dcs] > 0.5,
     tmo = U.tm && U.tm.o && U.tm.o[0] != null ? +v[U.tm.o[0]] : NaN,
     ds = U.dem >= 0 ? +v[U.dem] : NaN;
+  /* Phase 9: the analog output itself (STN101 AO0359 TCS-AO1001, TARGET MW DEMAND to TCE930-5), whatever the DCS control mode */
+  U.aoTM = isFinite(tmo) ? tmo : NaN;
   if (on) {
     U.tcsT = isFinite(tmo) ? tmo : isFinite(ds) ? ds : U.MW;
     /* TCE p.134: while DCS CONTROL MODE is ON the TCS target load tracks GEN. MW */
