@@ -968,8 +968,8 @@ function tcsIO(U) {
   const o = {},
     now = +U.t || 0,
     held = (p, op) => !!(c.do && c.do[p] && c.do[p].op === op && now - c.do[p].t <= 3),
-    sh = (n, k) => (c.sm && c.sm.v && c.sm.v[n + '.' + k] > 0.5 ? 1 : 0),
-    sf = (n, k) => (c.sm && c.sm.st && c.sm.st[n] && c.sm.st[n][k] ? 1 : 0),
+    sh = (n, k) => (tcsShNet(n + '.' + k) > 0.5 ? 1 : 0),
+    sf = (n, k) => (c.sm && c.sm.mot && c.sm.mot[n] && c.sm.mot[n][k] ? 1 : 0),
     st = (pfx, run, au, mot) => {
       Object.assign(o, {
         [pfx + '_YIR']: run ? 1 : 0,

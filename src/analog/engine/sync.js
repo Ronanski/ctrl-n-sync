@@ -166,6 +166,11 @@ function anSyncSlots() {
       return Object.keys(o).map(k => k + ':' + (o[k] && o[k].length)).join('|');
     }
   });
+  /* the nets of the TCS soft logic program (tcs-sheets.js): engine -> page, the changed ones */
+  add('tceV', () => (tcsShProg() || {}).v, null, { ta: 'tce' });
+  /* its block memories (the changed ones) and its run time: a page that takes the engine over goes on from them */
+  add('tceS', tcsShMem, tcsShMemPut, { mp: 1 });
+  add('tceT', tcsShTime, tcsShTimePut, { raw: 1 });
   /* the one-address groups (links.js shareExt) */
   add('xs', anXsGet, anXsPut, { raw: 1 });
   /* the DITL world (src/digital/parts/03d-state.js keys), by sheet name */
@@ -319,6 +324,20 @@ function anSyncPatch(w, o) {
       if (ch.length) out.push([s.k, ch.map(x => (typeof x === 'number' && !isFinite(x) ? String(x) : x)), a.length]);
       continue;
     }
+    /* a list of texts: the changed entries only */
+    if (s.mp) {
+      const a = s.get();
+      if (!a) {
+        Y.last.set(s.k, []);
+        continue;
+      }
+      const b = Y.last.get(s.k) || [],
+        ch = [];
+      for (let i = 0; i < a.length; i++) if (a[i] !== (b[i] || '')) ch.push(i, a[i]);
+      Y.last.set(s.k, a);
+      if (ch.length) out.push([s.k, ch]);
+      continue;
+    }
     /* the operator's writes: a quick look first (a block state: its output only) */
     if (w && s.fast) {
       const f = s.fast();
@@ -368,6 +387,10 @@ function anSyncApply(p, skip) {
       if (!b || b.length !== a.length) Y2.last.set(k, (b = a.slice()));
       for (let i = 0; i < j.length; i += 2) a[j[i]] = b[j[i]] = Number(j[i + 1]);
       void n;
+      continue;
+    }
+    if (s.mp) {
+      s.put(j); /* engine -> page only: the page keeps no copy to compare with */
       continue;
     }
     /* the fields of a block state that the other side changed (anSyncPatch): into the state itself, the rest stays this side's */

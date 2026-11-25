@@ -19,9 +19,13 @@
      (src/analog/engine/api.js: AN.tceRead = tcsLiveRead, AN.tcsVt = tcsVtState, AN.tcsIbd; AN.tceSteam / AN.tceCrp asked of the engine
      owner, NaN until they exist). Tests give U._L / U._vt / U._steam / U._crp / U._ibd. */
   const AP = U => (typeof AN !== 'undefined' && AN && AN.unit === U ? AN : null);
-  const L_ = U =>
+  let memo = null; /* one batch of reads (api.batch): the plant values are read once */
+  const once = (k, U, f) => (memo && memo.U === U ? (k in memo ? memo[k] : (memo[k] = f(U))) : f(U));
+  const L_ = U => once('L', U, L0);
+  const L0 = U =>
     (typeof tcsLiveRead === 'function' ? tcsLiveRead(U) : AP(U) && AP(U).tceRead ? AP(U).tceRead() : U && U._L) || {};
-  const VT = U => {
+  const VT = U => once('VT', U, VT0);
+  const VT0 = U => {
     if (typeof tcsVtMsv === 'function' && U && U.tb) {
       const ic = U.tb.icv || 0;
       return {
@@ -37,11 +41,13 @@
     }
     return (AP(U) && AP(U).tcsVt ? AP(U).tcsVt() : U && U._vt) || {};
   };
-  const STEAM = U =>
+  const STEAM = U => once('ST', U, STEAM0);
+  const STEAM0 = U =>
     (typeof tcsSteam === 'function' ? tcsSteam(U) : AP(U) && AP(U).tceSteam ? AP(U).tceSteam() : U && U._steam) || {
       msp: U && isFinite(U.Pmsv) ? U.Pmsv : NaN
     };
-  const CRP = U => (typeof tcsCrp === 'function' ? tcsCrp(U) : AP(U) && AP(U).tceCrp ? AP(U).tceCrp() : U && U._crp);
+  const CRP = U => once('CR', U, CRP0);
+  const CRP0 = U => (typeof tcsCrp === 'function' ? tcsCrp(U) : AP(U) && AP(U).tceCrp ? AP(U).tceCrp() : U && U._crp);
   const ibd = (sh, n) => U => {
     try {
       const s = typeof AN !== 'undefined' && AN.tcsIbd ? AN.tcsIbd(sh) : U && U._ibd && U._ibd[sh];
@@ -1092,6 +1098,15 @@
           return v === true ? 1 : v === false ? 0 : v == null ? NaN : +v;
         } catch (x) {
           return NaN;
+        }
+      },
+      /* many reads at one moment: the plant values behind them are read once */
+      batch(U, f) {
+        memo = { U };
+        try {
+          return f();
+        } finally {
+          memo = null;
         }
       },
       stats() {

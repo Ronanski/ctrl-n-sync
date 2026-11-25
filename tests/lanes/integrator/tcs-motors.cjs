@@ -17,9 +17,18 @@ const { load } = require(path.join(__dirname, '../../../tools/trace/world.cjs'))
   let x = c();
   ok(x.mop + '' === 'true,false' && x.mopAu + '' === 'false,true' && x.cop + '' === 'true,false' && x.copAu + '' === 'false,true', 'line-up: A running, B in AUTO');
   ok(!x.eop && x.eopAu && x.vex && x.gse, 'EOP stopped in AUTO, extractor and exhauster running');
-  ok(x.sm.ids.length === 14 && x.sm.v['TCE300:b007.STS'] === 1 && x.sm.v['TCE305:b031.STS'] === 1, 'the nets of the sheets');
+  const P = () => E.AN.tce(),
+    net = n => P().v[P().idx.get(n)];
+  ok(P().drv.length === 14 && P().plan.length > 400 && net('TCE300:b007.STS') === 1 && net('TCE305:b031.STS') === 1, 'the nets of the sheets');
+  ok(net('TCE050:tp002') === 1 && net('TCA100:tpA001') === 1, 'INITIAL is over: the controllers are in service');
+  ok(P().fed > 200, 'the inputs of the TCS I/O list ' + P().fed);
   ok(/AUTO/.test(op('mopB', 'stop')) && /AUTO/.test(op('copB', 'start')), 'START / STOP in AUTO refused');
   ok(/^No TCS push button/.test(btn('CRT:TCE300.b007.TRIP')), 'an unknown button');
+  ok(btn('CRT:TCA501.TCA501_1_IYS') === '', 'a button of a sheet that does not drive yet');
+  sec(1);
+  ok(net('CRT:TCA501.TCA501_1_IYS') === 1, 'its port is on');
+  sec(5);
+  ok(net('CRT:TCA501.TCA501_1_IYS') === 0, 'and off after 3 s');
   /* the vapour extractor and the exhauster: the buttons of the IBD faceplates and of the TCE page are the same buttons */
   E.AN.turbine('ibd', { id: 'TB-12', pb: 'STOP' });
   sec(2);
@@ -43,7 +52,15 @@ const { load } = require(path.join(__dirname, '../../../tools/trace/world.cjs'))
   ok(!c().cop[1], 'COP-B STOP');
   /* the discharge of MOP-A falls under 5.6 while it runs: the standby in AUTO starts (TCE300, after the 10 s of A running) */
   const keep = JSON.parse(JSON.stringify(c().sm));
-  ok(keep.n > 20 && keep.st['TCE300.b021'].auto === 1 && keep.st['TCE300.b007'].on === 1, 'the memory is plain data');
+  ok(keep.n > 20 && keep.mot['TCE300.b021'].auto === 1 && keep.mot['TCE300.b007'].on === 1, 'the memory is plain data');
+  /* the keyframe carries the whole program: every net the same after it is put in */
+  const kf = JSON.stringify(E.AN.engState.capture()),
+    v1 = P().v.slice();
+  sec(3);
+  E.AN.engState.apply(JSON.parse(kf));
+  ok(P().v.every((q, i) => Object.is(q, v1[i])), 'keyframe: the nets come back');
+  E.step(1);
+  ok(c().mop[0] && c().sm.n === keep.n + 1, 'and the program goes on from it');
   const q = U();
   for (let i = 0; i < 8; i++) {
     q.loPa = 3;
