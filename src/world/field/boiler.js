@@ -247,6 +247,30 @@ for (const x of 'ABC') {
 FIELD.state(lane, states);
 FIELD.add(lane, fr);
 
+/* 7d. 6.6 kV VCB of the boiler fans (Phase 6 slice 8, 2026-11-26; STN103). The fans hang on BUS 1AM (elec.js: ETAP load flow, M-1004 PAF,
+   M-1220 IDF). As the BFWP / condensate pump VCBs of bop.js: VCB ON = the fan's motor sheet runs and its breaker is not opened by a field
+   trip or the black-out (X.ftrip covers both, field/README.md), VCB OFF = NOT ON. No logic row reads these (QA trace: on no parsed
+   sheet; the IDF VCB ON I.0044 is on DITL-80Q and stays with that sheet). */
+const vr = [];
+for (const [tg, on, off, sh, nm] of [
+  ['MIV-F1056-', null, 'I.0045', 'DITL-25A', 'IDF'],
+  ['MIV-F1053-', 'I.0364', 'I.0365', 'DITL-26A', 'PAF'],
+  ['MIV-F1054-', 'I.0524', 'I.0525', 'DITL-27A', 'SAF'],
+  ['MIV-F1055A', 'I.004A', 'I.004B', 'DITL-28A', 'FA blower-A'],
+  ['MIV-F1055B', 'I.036A', 'I.036B', 'DITL-28A #B', 'FA blower-B']
+]) {
+  const vcb = X => {
+    const r = X.ditlRun(sh);
+    return r == null ? NaN : r === 1 && !X.ftrip(sh) ? 1 : 0;
+  };
+  if (on)
+    vr.push({ stn: 3, di: 1, tag: tg + '1', v: (U, X) => vcb(X), rel: nm + ' VCB ON = ' + sh + ' running AND no field trip',
+      src: 'IO list STN103 ' + on + ' "' + nm + ' VCB on"; motor sheet ' + sh + '; elec.js BUS 1AM' });
+  vr.push({ stn: 3, di: 1, tag: tg + '2', v: (U, X) => { const x = vcb(X); return isFinite(x) ? 1 - x : NaN; }, rel: nm + ' VCB OFF = NOT ON',
+    src: 'IO list STN103 ' + off + ' "' + nm + ' VCB off"; motor sheet ' + sh + '; elec.js BUS 1AM' });
+}
+FIELD.add(lane, vr);
+
 /* 8. Air preheater secure power supply (DITL-43 output 12 AIR PREHEATER SECURE POWER SUPPLY NOT FAILURE, field contact XA-FA1052-5 on the
    output wire, IO list STN103 I.0659 "Air preheater secure power supply not failure"): a not-failure contact of the APH drive panel, made
    (1) while the secure supply is healthy. No supply model: a field state, normal 1. */
