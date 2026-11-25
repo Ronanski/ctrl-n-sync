@@ -227,3 +227,21 @@ FIELD.add(lane, [
   FIELD.state(lane, st);
   FIELD.add(lane, rw);
 }
+
+/* 11. Air preheater drive panel contacts on the output wires of DITL-43 (field contacts drawn at the left end of the output rows, the
+   APH panel side; IO list STN103). No fire detection, speed sensor or supply model: field states at the documented normal service state.
+   The "not fault" contacts are made (1) in service; the emergency push button is not operated (0). Same as XA-FA1052-5 (section 8). */
+{
+  const C = [
+    ['XA-FA1052-1', 'I.0655', 'fireSys', 1, 'Air preheater fire detection system fault', 'Air preheater fire detect system not fault', 8],
+    ['XA-FA1052-2', 'I.0656', 'fireSen', 1, 'Air preheater fire detection sensor open circuit', 'Air preheater fire detect sensor not open circuit', 9],
+    ['XA-FA1052-3', 'I.0657', 'fire', 1, 'Air preheater fire alarm', 'Air preheater not fire alarm', 10],
+    ['XA-FA1052-4', 'I.0658', 'spdSen', 1, 'Air preheater speed sensor fault', 'Air preheater speed sensor not fault', 11],
+    ['XA-FA1052-6', 'I.065A', 'normPwr', 1, 'Air preheater normal power supply failed', 'Air preheater normal power supply not failure', 13],
+    ['ES-FA1052', 'I.065E', 'emg', 0, 'Air preheater emergency push button operated', 'Air preheater emergency push button operated', 14]
+  ];
+  FIELD.state(lane, C.map(([tag, a, k, normal, t, d]) => ({ id: 'FA1052.' + k, tag, normal, t, g: 'Air and flue gas',
+    src: 'IO list STN103 ' + a + ' ' + tag + ' "' + d + '"; normal = ' + (normal ? 'contact made in service' : 'push button not operated') })));
+  FIELD.add(lane, C.map(([tag, a, k, normal, t, d, o]) => ({ stn: 3, di: 1, tag, sheet: 'DITL-43', v: (U, X) => X.state('FA1052.' + k),
+    rel: d.replace(/^Air preheater /, ''), src: 'IO list STN103 ' + a + '; DITL-43 output ' + o + ' (field contact on the output wire)' })));
+}
