@@ -41,8 +41,52 @@ const TCS_GEN = {
      above), so at rated speed 1 pu of field = 1 pu of voltage and frr = vrr (it follows vrr, no number of its own) */
   get frr() {
     return this.vrr;
-  }
+  },
+  /* Phase 8 (2026-11-26): on line, one EMF behind Xd, stiff 230 kV bus behind the main transformer (paper lanes/tcs-io/gen-reactive-model.md,
+     TSUBASA; checked against the V curves 310SD23-270 R1 within 1.5 %, no fitting). Xd = Xq 1.92 pu: the AVR setting (GEE-2015-0152 R1 p6);
+     Xd' 0.21 (GAE-2013-0136 R2); TR 2310 180 MVA Z 14 % -> Xt = 0.14 x 176.5 / 180 (K1AU3E1-0003 rev 2); base 176.5 MVA, 7384 A
+     (GAE-2013-0136 R2); exciter field 4.5 A at 1 pu field (no load, GEE-2015-0152 p6), its resistance 6.14 ohm at 100 C (GAE-2015-0004 R1).
+     NO-SOURCE: the bus voltage 1.0 pu (as before) */
+  xd: 1.92,
+  xdp: 0.21,
+  xt: (0.14 * 176.5) / 180,
+  sb: 176.5,
+  ib: 7.384 /* kA */,
+  ifo: 4.5 /* A exciter field per pu */,
+  rf: 6.14 /* ohm */
 };
+/* the on-line phasors from the field flux eq and the turbine load P (pu of 176.5 MVA): load angle from P = Eq Vs sin(d) / X (clamped below
+   90 deg: beyond it the machine is out of step, left to protection), stator current I = (Eq<d - Vs) / jX, terminal Vt = Vs + j Xt I,
+   S = Vt conj(I) */
+function tcsGenPh(eq, P) {
+  const K = TCS_GEN,
+    X = K.xd + K.xt,
+    E = Math.max(1e-6, eq),
+    sd = Math.max(-0.999, Math.min(0.999, (P * X) / E)),
+    d = Math.asin(sd),
+    er = E * Math.cos(d) - 1,
+    ei = E * sd,
+    /* I = (er + j ei) / (j X) = ei / X - j er / X */
+    ir = ei / X,
+    ii = -er / X,
+    vr = 1 - K.xt * ii,
+    vi = K.xt * ir,
+    p = vr * ir + vi * ii,
+    q = vi * ir - vr * ii;
+  return { d, I: Math.hypot(ir, ii), V: Math.hypot(vr, vi), P: p, Q: q };
+}
+/* the flux that holds the terminal voltage v at load P (steady state of the AVR: error 0), by bisection on |Vt| (it rises with eq) */
+function tcsGenEqFor(v, P) {
+  let lo = 0.3,
+    hi = TCS_GEN.ceil;
+  for (let i = 0; i < 50; i++) {
+    const m = (lo + hi) / 2;
+    if (tcsGenPh(m, P).V < v) lo = m;
+    else hi = m;
+  }
+  return (lo + hi) / 2;
+}
+const tcsGenP = U => Math.max(0, isFinite(U.MW) ? U.MW : 0) / TCS_GEN.sb;
 /* the grid frequency, Hz (NO-SOURCE: a slow drift, so the slip and the phase angle move as on a real grid) */
 function tcsGridHz(t) {
   return 60 + 0.03 * Math.sin((2 * Math.PI * t) / 420) + 0.012 * Math.sin((2 * Math.PI * t) / 97 + 1);
@@ -65,6 +109,10 @@ function tcsGenFill(U, g) {
   if (!isFinite(g.fg)) g.fg = ((U.tb && U.tb.rpm) || 0) / 60;
   if (!isFinite(g.slip)) g.slip = g.fg - g.fgr;
   if (!isFinite(g.dv)) g.dv = (g52 ? 1 : g.V || 0) - 1;
+  /* a state made before the on-line phasors (no g.Q): on the line its flux is the one that holds the AVR set at this load */
+  if (g52 && g.f41 && !isFinite(g.Q) && g.avr !== 'MAN') {
+    g.eq = g.efd = g.ai = tcsGenEqFor(isFinite(g.vr) ? g.vr : 1, tcsGenP(U));
+  }
   return g;
 }
 function tcsGen(U) {
@@ -127,14 +175,17 @@ function tcsGenStep(U, dt) {
   if (g.f41) {
     const m = Math.max(1, Math.ceil(dt / 0.05)),
       h = dt / m;
+    const P = tcsGenP(U),
+      /* on line the flux lags with the short circuit transient time T'd = T'do (Xd' + Xt) / (Xd + Xt) */
+      td = g52 ? (K.tdo * (K.xdp + K.xt)) / (K.xd + K.xt) : K.tdo;
     for (let i = 0; i < m; i++) {
-      const e = g.vr - (g52 ? 1 : g.eq * n);
+      const e = g.vr - (g52 ? tcsGenPh(g.eq, P).V : g.eq * n);
       g.ai = Math.max(0, Math.min(K.ceil, g.ai + K.ki * e * h));
       /* MANUAL: the exciter takes the field set point, no voltage loop; the integrator follows it, so AUTO takes over without a bump */
       const u = man ? Math.max(0, Math.min(K.ceil, g.fr)) : Math.max(0, Math.min(K.ceil, g.ai + K.kp * e));
       if (man) g.ai = u;
       g.efd += ((u - g.efd) * h) / K.te;
-      g.eq += ((g.efd - g.eq) * h) / K.tdo;
+      g.eq += ((g.efd - g.eq) * h) / td;
     }
   } else {
     g.ai = 0;
@@ -143,7 +194,22 @@ function tcsGenStep(U, dt) {
     if (g.eq < 1e-3) g.eq = 0;
     g.vr = 1;
   }
-  g.V = g52 ? 1 : g.eq * n;
+  /* on line: the terminal quantities of the phasors; off line no stator current */
+  if (g52 && g.f41) {
+    const ph = tcsGenPh(g.eq, tcsGenP(U));
+    g.V = ph.V;
+    g.I = ph.I;
+    g.Q = ph.Q;
+    g.dl = (ph.d * 180) / Math.PI;
+    const sm = Math.hypot(ph.P, ph.Q);
+    g.pf = sm > 1e-3 ? ph.P / sm : 1;
+  } else {
+    g.V = g52 ? 1 : g.eq * n;
+    g.I = 0;
+    g.Q = 0;
+    g.dl = 0;
+    g.pf = 1;
+  }
   /* the synchronizing quantities: slip, phase angle (the integral of the slip), voltage difference */
   g.fgr = fgr;
   g.fg = rpm / 60;
