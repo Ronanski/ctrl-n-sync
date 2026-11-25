@@ -27,6 +27,18 @@
    of the hotwell, the chemical dosing and sampling lines, the seal water lines. */
 (function () {
   const { V, E, M, C, X, L, page } = HX;
+  /* beta.557: monitor rows and VCB point of each condensate pump (DCS I/O list station 3: MIV-P1116x1, VT-CD1116-x3 / x4,
+     TT-CD1116-xU / xV / xW / x3 / x4 / x1; unit of the vibration points not in the I/O list) */
+  const cepMon = n => [
+    V('Motor winding U', 'TT-CD1116-' + n + 'U', '°C', 0),
+    V('Motor winding V', 'TT-CD1116-' + n + 'V', '°C', 0),
+    V('Motor winding W', 'TT-CD1116-' + n + 'W', '°C', 0),
+    V('Motor bearing 1', 'TT-CD1116-' + n + '3', '°C', 0),
+    V('Motor bearing 2', 'TT-CD1116-' + n + '4', '°C', 0),
+    V('Coupling', 'TT-CD1116-' + n + '1', '°C', 0),
+    V('Motor drive end vibration', 'VT-CD1116-' + n + '3', '', 1),
+    V('Motor non drive end vibration', 'VT-CD1116-' + n + '4', '', 1)
+  ];
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_CD = 6,
@@ -149,7 +161,9 @@
         /* ---- the two condensate pumps ---- */
         at(
           M('vpump', 'CEP-A', 'Condensate pump A', [V('Current', 'ITP1116A', 'A'), V('Strainer', 'DPCEPA', K, 2)], {
-            wrap: 12
+            wrap: 12,
+            mon: cepMon('A'),
+            vcb: 'MIV-P1116A1'
           }),
           PAX,
           PY,
@@ -157,7 +171,9 @@
         ),
         at(
           M('vpump', 'CEP-B', 'Condensate pump B', [V('Current', 'ITP1116B', 'A'), V('Strainer', 'DPCEPB', K, 2)], {
-            wrap: 12
+            wrap: 12,
+            mon: cepMon('B'),
+            vcb: 'MIV-P1116B1'
           }),
           PBX,
           PY,
