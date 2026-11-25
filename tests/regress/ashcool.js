@@ -6,7 +6,7 @@
 //    (ash out < 150 C at <= 2.5 rpm, water out < 60 C); the stopped ones stay as at rest.
 // Usage: node tests/regress/ashcool.js [html]
 const fs = require('fs');
-const { open } = require('./lib.js');
+const { open, startAs } = require('./lib.js');
 const html =
   process.argv.find(a => /\.html$/.test(a)) ||
   'dist/' + fs.readdirSync('dist').find(x => /^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
@@ -23,14 +23,19 @@ const html =
     { timeout: 120000 }
   );
   await page.waitForTimeout(2000);
+  /* beta.570 (YUA): the 150 MW start of the app (start screen, 150 MW), not AN.plantLoad150 alone: since beta.260 that is only the line-up
+     of the snapshot, the unit fell to 144 MW in 2 min and tripped before the checks, and the stopped coolers then lag the falling supply */
+  await startAs(page, '150 MW');
+  await page.evaluate(() => (AN._startP || Promise.resolve()).then(() => 1));
   const r = await page.evaluate(async () => {
-    const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
+    AN.clockFixed(true);
     const run = async sec => {
-      for (let i = 0; i < sec * 2; i++) {
-        AN.stepSet(C1, 0.5);
-        WORLD.tick(0.5);
-        if (i % 100 === 99) await new Promise(r => setTimeout(r, 0));
+      AN.run = true;
+      for (let s = 0; s < sec; s += 30) {
+        if (!(await AN.runFixed(Math.min(30, sec - s), 0.5))) throw new Error('AN.runFixed refused');
+        await new Promise(r => setTimeout(r, 0));
       }
+      AN.run = false;
     };
     const U = () => AN.unit;
     const snap = () => {
@@ -39,11 +44,6 @@ const html =
       for (const x of 'ABCD') o[x] = [u['bh' + x + '1'], u['bh' + x + '2'], u['bw' + x + '1'], u['bw' + x + '2']].map(v => Math.round(v * 10) / 10);
       return o;
     };
-    AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
     await run(120);
     const rest = snap();
     let pg = null;
@@ -81,6 +81,7 @@ const html =
   });
   console.log(JSON.stringify(r));
   const R = r.rest;
+  ck(R.MW > 140 && r.runA.MW > 140, 'the unit stays at 150 MW: ' + R.MW.toFixed(1) + ', 15 min later ' + r.runA.MW.toFixed(1));
   ck('ABCD'.split('').every(x => R[x].every(v => isFinite(v))), 'at rest: every ash / water temperature has a value');
   ck('ABCD'.split('').every(x => Math.abs(R[x][3] - R.sup) < 0.5 && Math.abs(R[x][2] - R.sup) < 0.5), 'at rest: water outlets = the supply ' + R.sup);
   ck(R.silo === 15.8, 'LT-BH1750 15.8 %');

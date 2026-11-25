@@ -493,7 +493,7 @@
       }
     }
     for (const v of it.vals) {
-      /* beta.566: an on / off value in words on the drawing (v.words), v.warn = the value (0 / 1) that is an alarm */
+      /* beta.576: an on / off value in words on the drawing (v.words), v.warn = the value (0 / 1) that is an alarm */
       const wd = v.words ? ` data-w="${esc(v.words.join('|'))}"${v.warn != null ? ` data-wn="${v.warn}"` : ''}` : '';
       if (!v.label) {
         body.push([

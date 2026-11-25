@@ -1,4 +1,4 @@
-/* beta.566 (EIMI): the system alarm of every control cabinet and panel on HX-control-system, one by one: the instructor sets it, only that
+/* beta.576 (EIMI): the system alarm of every control cabinet and panel on HX-control-system, one by one: the instructor sets it, only that
    cabinet says ALARM; the relay panel inputs reach rows 6 and 7 of DITL-42; the second faceplate opens. node tests/regress/hx_dcs_alarm.js [html] */
 const { open, startAs, pressRun, openHx } = require('./lib.js');
 const fs = require('fs');
