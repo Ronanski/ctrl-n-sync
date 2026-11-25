@@ -271,10 +271,12 @@
     if (m[3] === 'POSITION')
       return ['model', 'LVDT ' + (r.ins || '') + ' ' + k + ' position, %: the valve model of tcs.js (tcsVt*)', vlv[k]];
     if (r.kind === 'SERVO-AO')
+      /* the engine's own command of the same valve (lane 9 compare): tcs.js has no actuator lag, the valve sits at its demand, so the
+         command = the valve model position of tcsVtState (msvA ... icvB), % as the coil output range 0 ~ 100 % */
       return [
         'out',
-        k + ' servo valve coil drive -> the valve actuator (the model moves the valve from the flow demand, tcs.js)',
-        null
+        k + ' servo valve coil drive -> the valve actuator; read = the engine valve demand of tcs.js (tcsVt*, no actuator lag in the model), %',
+        vlv[k]
       ];
     return [
       'needs',
@@ -493,10 +495,23 @@
   F('TCA905-9');
   F('TCA905-10');
   /* TSI contacts */
-  const tsi =
-    'TSI shaft vibration HIGH contact (IBD TA-18): the vibration exists (U.loVx / loVy) but the TSI HIGH setting is not in the docs read';
-  ['TCA904-1', 'TCA904-2', 'TCA904-17', 'TCA904-18', 'TCA905-1', 'TCA905-2', 'TCA905-17', 'TCA905-18'].forEach(id =>
-    N(id, tsi)
+  /* TSI shaft vibration HIGH contacts: ON >= 0.125 mm (setpoint list 310SC90-778 R0 p 11-12 rows 17-24, ANN / ATS, IBD TA-18; the same
+     limit tcs-trip.js TA-18 uses). The vibration of bearing n, X / Y = U.loVx<n> / U.loVy<n> of the oil model (tcs.js), mm */
+  [
+    ['TCA904-1', 'x', 1],
+    ['TCA904-17', 'y', 1],
+    ['TCA905-1', 'x', 2],
+    ['TCA905-17', 'y', 2],
+    ['TCA904-18', 'x', 3],
+    ['TCA904-2', 'y', 3],
+    ['TCA905-18', 'x', 4],
+    ['TCA905-2', 'y', 4]
+  ].forEach(([id, a, n]) =>
+    M(
+      id,
+      'NO.' + n + ' shaft vibration (' + a.toUpperCase() + ') HIGH: U.loV' + a + n + ' >= 0.125 mm (setpoint list 778 TA-18, ON >= 0.125 mm)',
+      U => (isFinite(U['loV' + a + n]) ? b(U['loV' + a + n] >= 0.125) : NaN)
+    )
   );
   SY('TCA904-9', 0, 'turbine supervisory instrument trouble: the app has no TSI hardware fault');
   /* TCS cabinet / Modbus / power supply / PCM / EOS / PLU */
