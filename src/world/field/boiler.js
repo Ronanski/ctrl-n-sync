@@ -92,7 +92,7 @@ FIELD.add(lane, rows);
 /* 7. Field states (beta.530, FIELD.state): field devices with no physics in the plant model. Each starts in its documented normal service
    state; the trainer changes it from the Plant menu (t = the abnormal condition). Left out on purpose, one source per tag: MIA-CL1061-x4
    discharge plugging (trainer fault cf.jamA ~ C, world.js jamSet), MIA-CL1061-x6 and ZSO / ZSC-CL1061-x7 (linked on DITL-19 / 20),
-   MIA-CL1061-x1 (AI of unit.js), MIA-CL1061-x8 clean-out conveyor AUTO (its normal mode is not in the documents read: Yamato L12 to read). */
+   MIA-CL1061-x1 (AI of unit.js). */
 const states = [],
   fr = [];
 const YAM = 'Yamato GM-BSC22-36 Final Drawing for LMYP-1 (L12 Coal Feeder) P8 signal list';
@@ -101,6 +101,8 @@ const FD = {
   B: [' #B', 'I.0451', 'I.0454', ['I.0440', 'I.0441', 'I.0442', 'I.0443'], ['I.0448', 'I.0449', 'I.044B', 'I.044D']],
   C: [' #C', 'I.0491', 'I.0494', ['I.0480', 'I.0481', 'I.0482', 'I.0483'], ['I.0488', 'I.0489', 'I.048B', 'I.048D']]
 };
+/* clean-out conveyor contacts [MIA-CL1061-x8 auto mode, MIR-CL1061-x1 running] (IO list STN104) */
+const CO = { A: ['I.012E', 'I.0133'], B: ['I.044E', 'I.0453'], C: ['I.048E', 'I.0493'] };
 for (const x of 'ABC') {
   const [cp, mit, mit1, zs, mia] = FD[x],
     sh = 'DITL-19' + cp;
@@ -129,6 +131,26 @@ for (const x of 'ABC') {
   states.push({ id: ic, tag: 'MIT-CL1061-' + x + '1', normal: 0, t: 'Coal feeder ' + x + ' clean-out conveyor tripped', g: 'Coal and limestone',
     src: YAM + ': clean-out conveyor motor fault contact' });
   fr.push({ stn: 4, di: 1, tag: 'MIT-CL1061-' + x + '1', v: (U, X) => X.state(ic), rel: 'clean-out conveyor motor tripped', src: 'IO list STN104 ' + mit1 + '; ' + YAM });
+  /* clean-out conveyor of the feeder package (0.55 kW DOL), Yamato ladder 60GM4130690005 sheet E5 rev 5 (PDF p 21), no conveyor timer:
+     KM1 / R4 = NOT R5 AND [K3 AUTO: R2 | K3 MAN: (K4 OR KM1 seal) AND NOT K5]. R2 = feeder running (sheet E3) = the DITL-19 motor model,
+     R5 = thermal relay 49-1 = the clean-out trip state above, K3 = the local AUTO / MAN selector (2nd pole = DO13 = MIA-CL1061-x8),
+     R4 = DO05 = MIR-CL1061-x1. Normal line-up AUTO: the conveyor runs whenever the feeder runs (Yamato manual sec 7-8). The local push
+     buttons K4 / K5 are not in the trainer, so in MAN only the seal KM1 holds what ran when MAN was selected, and R5 drops it. The seal
+     is this row's own value of the last scan (U.fld, in the keyframe; none just after a load = the AUTO leg). */
+  const ia = 'CL1061-' + x + '.coAuto',
+    [mia8, mir1] = CO[x];
+  states.push({ id: ia, tag: 'MIA-CL1061-' + x + '8', normal: 1, t: 'Coal feeder ' + x + ' clean-out conveyor selector in MAN', g: 'Coal and limestone',
+    src: 'Yamato 60GM4130690005 sheet E5 rev 5 (PDF p 21) K3 AUTO / MAN, 2nd pole DO13; normal line-up AUTO (Yamato manual sec 7-8)' });
+  fr.push({ stn: 4, di: 1, tag: 'MIA-CL1061-' + x + '8', v: (U, X) => X.state(ia), rel: 'clean-out conveyor selector in AUTO', src: 'IO list STN104 ' + mia8 + '; Yamato 60GM4130690005 E5 (PDF p 21) DO13' });
+  const kn = 'MIRCL1061' + x + '1';
+  fr.push({ stn: 4, di: 1, tag: 'MIR-CL1061-' + x + '1', rel: 'clean-out conveyor running (KM1 / R4)',
+    src: 'IO list STN104 ' + mir1 + '; Yamato 60GM4130690005 E5 (PDF p 21) DO05 R4',
+    v: (U, X) => {
+      const r2 = X.ditlRun(sh), r5 = X.state(ic), auto = X.state(ia);
+      if (r2 == null || r5 == null || auto == null) return NaN;
+      const seal = U.fld && kn in U.fld ? U.fld[kn] === 1 : r2 === 1;
+      return r5 !== 1 && (auto === 1 ? r2 === 1 : seal) ? 1 : 0;
+    } });
 }
 /* motor dampers positioned from the DCS: furnace temperature control FA1005 ~ FA1026 (ABC-015 / 016, MCV-FA10xx) and burner hot SA
    FA1043-A ~ D (ABC-003A ~ D). A damper the DCS positions is in REMOTE on its field panel, its motor not tripped, its torque switch
