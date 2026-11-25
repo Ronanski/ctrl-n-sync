@@ -277,6 +277,7 @@ function anFaStep(U, a, e, dt) {
       if (t.m >= full - 0.01 || !t.on || !a.ready) anFaGo(t, t.m > 0.01 ? 1 : 0);
     }
     t.lsh = t.m >= full - 0.01 ? 1 : 0;
+    t.lv = (100 * t.m) / full;
   }
   a.q = q * 3.6 /* t/h */;
   /* the vent filter of the silo starts with a tank; the dry unloader is at its local box */
@@ -287,6 +288,12 @@ function anFaStep(U, a, e, dt) {
   a.g2 = a.unl;
   a.g1 = a.flu = a.unl && a.ut > 5 && a.silo > 0 ? 1 : 0;
   if (a.g1) a.silo = Math.max(0, a.silo - K.unl * dt);
+  a.lv = (100 * a.silo) / K.silo;
+  /* the conveying air has to leave by the vent filter: with its fan stopped the silo pressure rises (O&M 5.7) */
+  a.ph = q > 0 && !a.vf ? 1 : 0;
+  /* the hard-wired points XA-FH1701 / 1704 of the panel: common alarm, no power */
+  a.npw = pw ? 0 : 1;
+  a.ca = a.npw || a.pal || a.hh || a.vft || Object.values(a.t).some(t => t.pf || t.tf) ? 1 : 0;
 }
 function anFaGo(t, st) {
   t.st = st;

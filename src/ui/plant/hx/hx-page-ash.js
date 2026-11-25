@@ -12,14 +12,14 @@
    The coolers themselves (L-1060A ~ D, ash and cooling water temperatures, PT / TT-CW1156), the furnace differential pressure
    control DPIC-FG108 (ABC-009A) with the screw speed SIC-L1060A, and every RUNNING are as temporary page 14 binds them
    (DITL-21A instances, DITL-BA59 inputs 8 / 9 / 10 / 11 / 13 / 14). PD-072 and the fly ash sheets were NOT re-read.
-   The precipitator has no signal in the app (no snapshot; it runs from its own panel, PR-OPE-5002 1.1): it is drawn with its
-   field faceplate (machine "ESP" of page 14), without field voltages and currents. The fly ash silo T-1251 has no signal.
-   Drawn simpler: the five fields of the precipitator are one casing with three hoppers; the ash transmitters under the
-   hoppers and the cooler inlet valves XV-BH1060A ~ D (no signal) are not drawn. The buffer tank T-1091 and the ash transmitter
+   The precipitator and the fly ash transfer have their own pages (hx-page-precipitator.js, hx-page-fly-ash.js): here the precipitator is
+   one casing with three hoppers, and its panel and silo show the values of the panel model (src/analog/engine/pkg.js).
+   Drawn simpler: the cooler inlet valves XV-BH1060A ~ D (no signal) are not drawn. The buffer tank T-1091 and the ash transmitter
    S-1090 of the recycle line have their own page (Bottom ash recycle).
    beta.556 (EIMI): the conveyors, the screens, the two-way separator and the bag filter fan have their START / STOP (DITL-BA61),
    their permissives (the AND gate of the ON COMMAND, DITL-BA63 / BA66 ~ BA69) and their monitor rows (DITL-BA59, BA60). The fly
-   ash panel gives XA-FH1701 ~ XA-FH1704 to the DCS (I/O list): no drawing of the app reads them, they show -----. */
+   ash panel gives XA-FH1701 ~ XA-FH1704 to the DCS (I/O list): 1701 and 1704 come from the panel model; 1702 and 1703 (faults of the
+   panel computer) show -----. */
 (function () {
   const { V, D, E, M, C, L, page } = HX;
   const B = HX.B;
@@ -93,15 +93,19 @@
         at(E('esp', '', '', [], { on: 'm:ESP' }), EX, EY, { id: 'esp', under: true, sc: ES }),
         at(M('cubicle', 'ESP', 'Precipitator panel', []), 150, 320, { id: 'espp', lab: 'r' }),
         at(L('furnace-gas', 'To the induced draft fan'), 930, EY, { id: 'gout' }),
+        at(L('precipitator', 'Precipitator fields and hoppers'), 330, 92, { id: 'lesp' }),
+        at(L('fly-ash', 'Fly ash transfer'), 860, 345, { id: 'lfa' }),
         at(
-          E('silo', 'Fly ash silo', 'T-1251', [], {
+          E('silo', 'Fly ash silo', 'T-1251', [V('Level', 'an:pkg.fa.lv', '%', 1)], {
             id: 'fa',
             h: 100,
+            level: ['an:pkg.fa.lv', 0, 100],
             mon: [
-              D('Fly ash system common alarm', 'XA-FH1701', '', 'ALARM', 'NORMAL'),
+              V('Level', 'an:pkg.fa.lv', '%', 1),
+              D('Fly ash system common alarm', 'XA-FH1701', 'an:pkg.fa.ca', 'ALARM', 'NORMAL'),
               D('Fly ash panel controller fault', 'XA-FH1702', '', 'FAULT', 'NORMAL'),
               D('Fly ash panel communication fault', 'XA-FH1703', '', 'FAULT', 'NORMAL'),
-              D('Fly ash panel no power', 'XA-FH1704', '', 'NO POWER', 'NORMAL')
+              D('Fly ash panel no power', 'XA-FH1704', 'an:pkg.fa.npw', 'NO POWER', 'NORMAL')
             ]
           }),
           1160,
@@ -350,8 +354,6 @@
       texts: [
         { x: 24, y: 60, s: 'PRECIPITATOR AND FLY ASH', cls: 'hx-zone' },
         { x: EX, y: 86, s: 'Precipitator', cls: 'hx-name', anchor: 'middle' },
-        { x: 24, y: 78, s: 'The precipitator runs from its own panel.', cls: 'hx-note' },
-        { x: 24, y: 95, s: 'Field voltages and currents have no signal in the app.', cls: 'hx-note' },
         { x: 24, y: 440, s: 'BOTTOM ASH', cls: 'hx-zone' },
         { x: 24, y: 462, s: 'from the furnace grate floor', cls: 'hx-note' },
         /* apk test 2026-11-22: the four values stood in one row and ran into each other at 11 px on a 1280 tablet: two by two */

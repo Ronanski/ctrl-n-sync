@@ -225,7 +225,7 @@
           ),
           hx - 44,
           HY + 78,
-          { id: 'pk' + id(k), lab: 'b', yn: [-25, 0], cname: ORD[f] + ' field hopper vibrator ' + N }
+          { id: 'pk' + id(k), lab: 'b', yn: [-31, -8], cname: ORD[f] + ' field hopper vibrator ' + N }
         )
       );
       HX.CALC['espVib' + i] = v => {
