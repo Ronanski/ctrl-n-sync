@@ -55,7 +55,7 @@
   /* [row id, kind, text, read(U, L)] */
   const E = [];
   const M = (id, t, f) => E.push([id, 'model', t, f]);
-  const D = (id, t, stn, addr, tag) => E.push([id, 'dcs', t, null, { stn, addr, tag }]);
+  const D = (id, t, stn, addr, tag, read) => E.push([id, 'dcs', t, read || null, { stn, addr, tag }]);
   const SY = (id, v, t) =>
     E.push([id, 'sys', t || 'TCS hardware status, healthy: the app has no TCS hardware fault', () => v]);
   const F = (id, t) =>
@@ -569,14 +569,27 @@
   M('TCA931-21', 'GEN. FREQUENCY, Hz: the shaft frequency of the generator model (tcs-gen.js g.fg = rpm / 60)', U =>
     num(U.gen && U.gen.fg)
   );
+  /* the two DCS AO that the TCS COMM AI TABLE(2) reads (card LYA000A, CH 1 / CH 2). The DCS retransmits its own transmitter: AO0404
+     TCS-AS1004 is PT-AS1004 (STN102 AI0514, 0 ~ 15 kg/cm2, the TCS range of CH 1) and AO0471 TT-AS1017-1 is TT-AS1017 (STN102 AI0902,
+     0 ~ 300 C, the TCS range of CH 2). Proof: DCS I/O list STN102 AO0404 / AO0471 (tag numbers of the transmitters); WIRING.xls AO0404
+     junction TCS-AIO and AO0471 junction "DCS-->TCS" (src/ui/plant/wiring.js); XSMM_IO_List_R1 row 538 (CH 1 FROM DCS, IBD TC-20).
+     Value = the aux steam model of the DCS AI (unit.js AN_AS: U.asP = PT-AS1004, U.asT17 = TT-AS1017), as tcs-trip.js TC-20 net 43 */
   D(
     'TCA931-2',
-    'AUX STEAM HEADER PRESS. (LOWER) from the DCS: STN102 AO0404 TCS-AS1004 (XSMM, IBD TC-20)',
+    'AUX STEAM HEADER PRESS. (LOWER) from the DCS: STN102 AO0404 TCS-AS1004 = PT-AS1004 (AI0514) retransmitted, kg/cm2 (U.asP; XSMM, IBD TC-20)',
     2,
     'AO0404',
-    'TCS-AS1004'
+    'TCS-AS1004',
+    U => num(U.asP)
   );
-  N('TCA931-3', 'gland steam drain separator turbine side temperature: not in the gland model');
+  D(
+    'TCA931-3',
+    'GLAND STEAM DRAIN SEPARATOR TURBINE SIDE TEMP. from the DCS: STN102 AO0471 TT-AS1017-1 = TT-AS1017 (AI0902) retransmitted, degC (U.asT17)',
+    2,
+    'AO0471',
+    'TT-AS1017-1',
+    U => num(U.asT17)
+  );
   N('TCA931-9', 'ZE-ST1002 LP turbine differential expansion: not in the model');
   M('TCA931-10', 'ZE-ST1001 turbine shell expansion (HP turbine side), mm (tcs.js c.sexp)', U =>
     num(U.tc && U.tc.sexp)
