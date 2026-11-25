@@ -26,7 +26,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
 const FLOOR = 252; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
-const FLOOR_TEXT = 105;
+const FLOOR_TEXT = 106;
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -362,6 +362,25 @@ const S = R.stats(A);
   for (let i = 0; i < 20; i++) o = run(ht, { MODE1: 1, TIME1: 2 }, [], hs, 0.1);
   if (o.COMP1 !== 1 || o.TIME1 !== 0) fail('HEAT SOAK TIMER: not elapsed after 2 min ' + JSON.stringify(o));
   if (run(ht, { MODE1: 0, TIME1: 2 }, [], hs).COMP1) fail('HEAT SOAK TIMER: not cleared when the start goes off');
+}
+/* TCE143 turbine speed (TC-14-116 5.3.2.2: three pickups, 2oo3 for control): the three pickups at 3599 rpm give TURBINE SPEED 3599 and the
+   high counter mode; one pickup lost (0 rpm) is marked bad after its DELAY TP and the speed stays the middle of the other two */
+{
+  const sub = sheets.filter(s => ['TCE140', 'TCE141', 'TCE142', 'TCE143'].includes(s.id)),
+    T = R.compile(sub),
+    pk = ['A', 'B', 'C'].map(k => 'PIO:TCE140.pk' + k),
+    dup = T.plan.find(p => p.id === 'TCE143').nodes.find(x => x.name === 'DUP AI DIAGNOSTICSV'),
+    pti = T.plan.find(p => p.id === 'TCE143').nodes.find(x => x.name === 'PTI ERROR DETECT'),
+    ov = (x, k) => T.v[x.outs[k]];
+  if (['LCA', 'LCB', 'LCC'].some(k => dup.ins[k] === undefined)) fail('TCE143: the low counters are not wired to LCA / LCB / LCC');
+  for (const n of pk) R.set(T, n, 3599);
+  for (let i = 0; i < 100; i++) R.step(T, 0.03);
+  if (ov(dup, 'Y') !== 3599 || ov(dup, 'ABN') || ov(pti, 'H-CNT MODE') !== 1) fail('TCE143: 3 x 3599 rpm gives speed ' + ov(dup, 'Y') + ', ABN ' + ov(dup, 'ABN') + ', H-CNT ' + ov(pti, 'H-CNT MODE'));
+  R.set(T, pk[1], 0);
+  for (let i = 0; i < 100; i++) R.step(T, 0.03);
+  if (ov(dup, 'ERR B')) fail('TCE143: speed B bad before its DELAY TP 5 s');
+  for (let i = 0; i < 100; i++) R.step(T, 0.03);
+  if (ov(dup, 'ERR B') !== 1 || ov(dup, 'QT2') || ov(dup, 'Y') !== 3599 || ov(dup, 'ABN')) fail('TCE143: speed B lost: ERR B ' + ov(dup, 'ERR B') + ', Y ' + ov(dup, 'Y'));
 }
 const G = A.plan.filter(p => /^G-/.test(p.id)),
   gRun = G.filter(p => !S.notRun.includes(p.id)).length;
