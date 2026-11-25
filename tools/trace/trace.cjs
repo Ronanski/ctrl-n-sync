@@ -147,6 +147,15 @@ const has = (txt, tag) => {
     abcByKey = new Map(),
     abcTag = new Map();
   const ctrlTags = new Set();
+  /* the ABC inputs the unit model writes only on a change (unit.js U.di, AN.unit: ZSO-CD1115 I.0892, TCS mode I.0413 / I.0414, turning gear
+     I.0417, M.0001 ALWAYS 1, heater level H.H. ...): a value that stays at its start value in the run is never written, the writer is there (RARA) */
+  const uDi = new Map(); /* S -> Set(n) */
+  const walkDi = o => {
+    if (!o || typeof o !== 'object') return;
+    if (o.S && o.n != null && typeof o.n === 'number') return void (uDi.get(o.S) || uDi.set(o.S, new Set()).get(o.S)).add(o.n);
+    for (const v of Array.isArray(o) ? o : Object.values(o)) walkDi(v);
+  };
+  walkDi(AN.unit && AN.unit.di);
   for (const sh of AN.sheets) {
     if (/^ABC-000/.test(sh.name)) continue;
     const S = sh.S;
@@ -176,7 +185,7 @@ const has = (txt, tag) => {
             ? lk.ditl
               ? 'DITL'
               : 'link'
-            : w > 0
+            : w > 0 || (uDi.get(S) && uDi.get(S).has(n))
               ? 'engine'
               : /^(PTN|PS)\d+$/.test(name)
                 ? 'block parameter' /* a pattern slot (PTN) or a ramp / time parameter (PS) of the block itself (AKIHO 2026-11-25, RULES.md) */
@@ -320,9 +329,9 @@ const has = (txt, tag) => {
     /* a row-unit copy (YUA PR 549: s._inst.only = Set of row indexes) holds only those rows of the base drawing; its other rows are
        not part of it and are not counted on it */
     const only = s._inst && s._inst.only instanceof Set ? s._inst.only : null;
-    /* input rows whose net carries a user contact (nl.usr with a usw entry) on an address row (nl.ind): the contact writes the row */
+    /* input rows whose net carries a user contact (nl.usr, e.g. ELECTRICAL TROUBLE ET272_ / ET274_; its usw entry exists only once set) on an address row (nl.ind): the contact writes the row */
     const usrIn = new Set();
-    for (const u of (s.nl && s.nl.usr) || []) if (s.usw && u.key in s.usw) for (const m of (s.nl && s.nl.ind) || []) if (m.n === u.n && m.adr) usrIn.add(m.row);
+    for (const u of (s.nl && s.nl.usr) || []) for (const m of (s.nl && s.nl.ind) || []) if (m.n === u.n && m.adr) usrIn.add(m.row);
     const txA = new Map();
     /* a drawing for machines A / B / C / D has a copy per machine (W.inst): the drawing itself is machine A, its short list gives A only */
     const multi = !s._inst && ((WORLD.instOf && WORLD.instOf.get(s)) || []).length > 1;
