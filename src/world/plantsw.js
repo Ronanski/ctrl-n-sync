@@ -344,8 +344,16 @@
         return NaN;
       }
     };
-    L.push([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, r.sheet ? new RegExp(String(r.sheet).replace(/[^A-Z0-9-]/gi, '') + '$') : null]);
+    /* the sheet code of a copy keeps its " #B" (DITL-19 #B): the name of the copy ends with it */
+    const shRe = r.sheet ? new RegExp('\\)' + String(r.sheet).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') : null;
+    L.push([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, shRe]);
     L[L.length - 1].fld = 1;
+    /* a drawing that writes the row by its I/O address, not by the tag ("I.0132 COAL FEEDER A REMOTE SELECTED", DITL-19 row 6): the row
+       gives adr and sheet, and the same switch drives the row of that address on that sheet only (an address is reused on other stations) */
+    if (r.adr && shRe) {
+      L.push([String(r.adr).toUpperCase(), f, 0.5, 'hi', 0, 0, null, shRe]);
+      L[L.length - 1].fld = 1;
+    }
   }
   const DB0 = 10;
   let map = null,

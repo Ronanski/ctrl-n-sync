@@ -105,7 +105,7 @@ for (const x of 'ABC') {
   const [cp, mit, mit1, zs, mia] = FD[x],
     sh = 'DITL-19' + cp;
   /* feeder fault = the field trip of the feeder motor drawing (trainer fault mt.cfa, the unit black-out) */
-  fr.push({ stn: 4, di: 1, tag: 'MIT-CL1061-' + x, sheet: sh, v: (U, X) => X.ftrip(sh), rel: 'feeder motor tripped in the field (DITL-19' + cp + ' field trip)',
+  fr.push({ stn: 4, di: 1, tag: 'MIT-CL1061-' + x, adr: mit, sheet: sh, v: (U, X) => X.ftrip(sh), rel: 'feeder motor tripped in the field (DITL-19' + cp + ' field trip)',
     src: 'IO list STN104 ' + mit + ' MIT-CL1061-' + x + ' "Coal feeder-' + x + ' fault"; DITL-19' + cp + ' row 12; ' + YAM });
   /* silo outlet manual knife valves 1 / 2 between bunker T-1008x and feeder L-1061x: the feeder takes its coal only through them, so
      they stand open while the feeder is in service */
@@ -187,3 +187,43 @@ FIELD.add(lane, [
   ['ZSC-BH1754', 'twC', 'I.0174', 'LSC', 'two-way separator at its closed end (ash to the silo)']].map(([tag, k, a, ls, rel]) => ({
   stn: 3, di: 1, tag, sheet: 'DITL-BA60', v: U => (U.ba && U.ba.sw ? U.ba.sw[k] : NaN), rel,
   src: 'IO list STN103 ' + a + '; DITL-BA60 TWO-WAY ' + ls + ' input; position from DITL-BA71 outputs 5 / 6 = O.0210 / O.0211 (engine boiler.js anBaStep)' }))));
+
+/* 10. DITL input rows of the boiler drawings whose FROM column names an output of the same sheet (QA xref 2026-11-25 11:30 "missing":
+   DITL-18 r20, DITL-19 r6 / r12 / r23, DITL-43 r4 / r5). That number is the station channel of the field contact (the output repeats
+   it to the CRT, world.js selfDep), not its source: the source is the field. The drawing writes the row by its I/O address ("I.0132
+   COAL FEEDER A REMOTE SELECTED"), not by the tag, so each row gives adr (the I/O address on that sheet) and sheet (the copy).
+   - BI7-DO1043-x burner local panel LAMP TEST push button (DITL-18 row 20): pressed only to test the lamps, normal 0
+   - MIL-CL1061-x coal feeder REMOTE (DITL-19 rows 6 / 23): the feeder is started and its speed set from the DCS in service
+     (DITL-19 START / STOP, ABC feeder speed), so its selector stands at REMOTE, normal 1
+   - YSR-FA1052M1 air preheater LOCAL (DITL-43 row 4): the APH runs from the DCS in service, normal 0
+   Not given here: DITL-43 rows 10 / 12 / 13 RUNNING / SPEED NOT LOW / NOT L.L. (I.0650 / I.0653 / I.0654): the APH run state of the model
+   is DITL-43's own RUNNING output (DUI.motState), which is this row: the start / stop command O.0206 / O.0207 CSC / CSO-FA1052M1-1 is on
+   no parsed drawing, so a running contact from it would be the row reading itself. Left to lane 0 (drawing read). Row 5 NOT TRIP
+   (XA-FA1052M1 I.0651) too: the APH inverter of DITL-43 (s._fd.inv) reads it in the first scan after a load, before the plant switch
+   rows have a value, so without the 150 MW seed bit the APH trips at the start (MFT); lane 0 orders that scan first. */
+{
+  const BU = [['A', '', 'I.0041'], ['B', ' #B', 'I.0361'], ['C', ' #C', 'I.0681'], ['D', ' #D', 'I.1001']],
+    CF = [['A', '', 'I.0132'], ['B', ' #B', 'I.0452'], ['C', ' #C', 'I.0492']],
+    st = [],
+    rw = [];
+  for (const [x, cp, a] of BU) {
+    const id = 'DO1043-' + x + '.lampTest';
+    st.push({ id, tag: 'BI7-DO1043-' + x, normal: 0, t: 'Burner ' + x + ' local panel lamp test pressed', g: 'Boiler',
+      src: 'IO list STN104 ' + a + ' BI7-DO1043-' + x + ' "Burner-' + x + ' lamp test" (push button, pressed only for a lamp test)' });
+    rw.push({ stn: 4, di: 1, tag: 'BI7-DO1043-' + x, adr: a, sheet: 'DITL-18' + cp, v: (U, X) => X.state(id), rel: 'lamp test push button pressed',
+      src: 'IO list STN104 ' + a + '; DITL-18' + cp + ' row 20 BURNER ' + x + ' LCP LAMP TEST' });
+  }
+  for (const [x, cp, a] of CF) {
+    const id = 'CL1061-' + x + '.remote';
+    st.push({ id, tag: 'MIL-CL1061-' + x, normal: 1, t: 'Coal feeder ' + x + ' in LOCAL', g: 'Coal and limestone',
+      src: 'IO list STN104 ' + a + ' MIL-CL1061-' + x + ' "Coal feeder-' + x + ' remote"; DITL-19' + cp + ' starts / stops the feeder from the DCS in service; ' + YAM });
+    rw.push({ stn: 4, di: 1, tag: 'MIL-CL1061-' + x, adr: a, sheet: 'DITL-19' + cp, v: (U, X) => X.state(id), rel: 'REMOTE selected on the feeder panel',
+      src: 'IO list STN104 ' + a + '; DITL-19' + cp + ' rows 6 / 23 COAL FEEDER ' + x + ' REMOTE SELECTED' });
+  }
+  st.push({ id: 'FA1052.local', tag: 'YSR-FA1052M1', normal: 0, t: 'Air preheater in LOCAL', g: 'Air and flue gas',
+    src: 'IO list STN103 I.0652 YSR-FA1052M1 "Air preheater local"; DITL-43 runs the APH from the DCS (CRT START / STOP P.B.) in service' });
+  rw.push({ stn: 3, di: 1, tag: 'YSR-FA1052M1', adr: 'I.0652', sheet: 'DITL-43', v: (U, X) => X.state('FA1052.local'), rel: 'LOCAL selected on the APH panel',
+    src: 'IO list STN103 I.0652; DITL-43 row 4 AIR PREHEATER LOCAL' });
+  FIELD.state(lane, st);
+  FIELD.add(lane, rw);
+}
