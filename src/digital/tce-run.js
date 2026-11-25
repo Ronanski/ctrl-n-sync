@@ -346,7 +346,17 @@
       ...(s.d || []).filter(d => d[3] === 'out').map(d => ({ key: d[0], kind: 'd', text: d[4] || '', what: 'CRT lamp ' + (d[4] || ''), x: d[1], y: d[2], d: 40 * u })),
       ...(s.k || []).filter(k => /def$/.test(k[5] || '')).map(k => ({ key: k[0], kind: 'def', text: k[3], what: 'definition ' + k[3], x: k[1], y: k[2], d: 12 * u }))
     ];
-    const pio = (s.r || []).map(r => ({ key: r[0], x0: r[1], x1: r[1] + r[3], y0: r[2], y1: r[2] + r[4] }));
+    /* the PI/O table row printed at the box or just right of it on its top line ("(TCA980-17)"), the same rule as the input boxes of compile */
+    /* an OUTPUT box of the COMM / EHG output sheets (TCA830 .. TCE610) prints its row over the PI/O mark, ~185 px left of the box: looked for
+       only when nothing is printed at the box itself */
+    const pioRow = (x0, y0, x1, y1) => pioAt(x0 - 6, y0, x1, y1) || pioAt(x0 - 200, y0, x1, y1);
+    const pioAt = (xa, y0, x1, y1) => {
+      const h = (s.t || [])
+        .filter(w => w[0] >= xa && w[0] <= x1 + 120 && w[1] >= y0 - 16 && w[1] <= y1 + 6 && /\(T[A-Z]{2}\d+[A-Z]?-\d+\)/.test(w[2]))
+        .sort((a, b) => Math.hypot(a[0] - x1, a[1] - y0) - Math.hypot(b[0] - x1, b[1] - y0))[0];
+      return h ? /\((T[A-Z]{2}\d+[A-Z]?-\d+)\)/.exec(h[2])[1] : undefined;
+    };
+    const pio = (s.r || []).map(r => ({ key: r[0], x0: r[1], x1: r[1] + r[3], y0: r[2], y1: r[2] + r[4], row: pioRow(r[1], r[2], r[1] + r[3], r[2] + r[4]) }));
     const W = s.w || [];
     const inputs = (s.c || []).filter(c => c[1] === 'in').map(c => ({ key: c[0], letter: c[2], name: c[5], from: c[6] || [] }));
     const outc = (s.c || []).filter(c => c[1] === 'out').map(c => ({ key: c[0], letter: c[2], sheets: c[6] || [] }));
@@ -411,7 +421,7 @@
       }
       const r = pio.find(r => p[0] >= r.x0 - tol && p[0] <= r.x1 + tol && p[1] >= r.y0 - tol && p[1] <= r.y1 + tol);
       if (r) {
-        res.outputs.push({ net: nt, to: 'PI/O ' + r.key, key: r.key, kind: 'r' });
+        res.outputs.push({ net: nt, to: 'PI/O ' + (r.row || r.key), key: r.key, kind: 'r', row: r.row });
         continue;
       }
       if (W.some(v => v !== w && v[0] === nt && (Math.hypot(v[1][0][0] - p[0], v[1][0][1] - p[1]) <= 20 * u || onSeg(p, v)))) continue;
@@ -1206,7 +1216,7 @@
       for (const o of n.outputs) {
         const inside = (o.sheets || []).some(x => ids.has(x)) || /^circle .* to (G-|\(this sheet\))/.test(o.to || ''),
           kind = o.kind === 'd' ? 'crt' : o.kind === 'r' ? 'pio' : o.kind === 'c' && !inside ? ((o.sheets || []).every(x => x === '-') ? 'spare' : 'con') : null;
-        if (kind) L.push({ sheet: n.id, key: o.key, kind, to: o.to, slot: prog.res(n.id, o.net) });
+        if (kind) L.push({ sheet: n.id, key: o.key, kind, to: o.to, row: o.row, slot: prog.res(n.id, o.net) });
       }
     return L;
   }
