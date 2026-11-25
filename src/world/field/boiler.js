@@ -384,3 +384,22 @@ FIELD.add(lane, [
   FIELD.add(lane, C.map(([tag, a, k, normal, t, d, o]) => ({ stn: 3, di: 1, tag, sheet: 'DITL-43', v: (U, X) => X.state('FA1052.' + k),
     rel: d.replace(/^Air preheater /, ''), src: 'IO list STN103 ' + a + '; DITL-43 output ' + o + ' (field contact on the output wire)' })));
 }
+
+/* Phase 6 (2026-11-26, PC read of the limestone sheets 160 / 190 and the limestone O&M 2.10.3 / 2.10.4 / 2.10.7 / 2.10.8): the seal pressure
+   switches of the two silo dome valves, vent PS-LM1814A (I.016B) and balance PS-LM1814B (I.016C). The O&M: seal > 5 bar = the dome valve
+   is closed and sealed, < 5 bar while it is open. The as-built sheets take the close / open fault from ZSO / ZSC (I.017B ~ I.017E), not from
+   these switches, so they feed no logic: display only, the same closed position of the valve (U.lm.sw ventC / balC, AN_LM) */
+FIELD.add(
+  lane,
+  [
+    ['PS-LM1814A', 'I.016B', 'ventC', 'vent'],
+    ['PS-LM1814B', 'I.016C', 'balC', 'balance']
+  ].map(([tag, a, k, w]) => ({
+    stn: 4,
+    di: 1,
+    tag,
+    v: U => (U.lm && U.lm.sw && isFinite(U.lm.sw[k]) ? U.lm.sw[k] : NaN),
+    rel: 'silo ' + w + ' dome valve seal pressure > 5 bar (valve closed): 1 closed, 0 open',
+    src: 'IO list STN104 ' + a + ' ' + tag + '; limestone O&M 2.10 (seal > 5 bar = closed); limestone sheets 160 / 190 use ZSO / ZSC, not this switch'
+  }))
+);
