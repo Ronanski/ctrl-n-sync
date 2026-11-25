@@ -95,6 +95,7 @@ const has = (txt, tag) => {
   }
   /* ---- the run, sampled: ABC net values and DITL input rows */
   const allD = () => DITL.S.sheets.concat(WORLD.inst || []);
+  const abcNaN = new Map(); /* S -> Uint32Array: samples where the net read NaN / Infinity (YUA 2026-11-25) */
   const abcMM = new Map(),
     dMM = new Map();
   const sample = () => {
@@ -104,9 +105,14 @@ const has = (txt, tag) => {
       let a = abcMM.get(S);
       if (!a) abcMM.set(S, (a = S.nets.map(() => [Infinity, -Infinity])));
       const v = S.rt.v;
+      let z = abcNaN.get(S);
+      if (!z) abcNaN.set(S, (z = new Uint32Array(a.length)));
       for (let n = 0; n < a.length; n++) {
         const x = +v[n];
-        if (!isFinite(x)) continue;
+        if (!isFinite(x)) {
+          if (v[n] != null) z[n]++; /* a net that reads NaN / Infinity in a sample (an empty net, null, is not counted) */
+          continue;
+        }
         if (x < a[n][0]) a[n][0] = x;
         if (x > a[n][1]) a[n][1] = x;
       }
@@ -156,6 +162,28 @@ const has = (txt, tag) => {
     for (const v of Array.isArray(o) ? o : Object.values(o)) walkDi(v);
   };
   walkDi(AN.unit && AN.unit.di);
+  /* NaN in the source chain (YUA 2026-11-25): a NaN that enters a compare / switch block comes out as 0, so a "0" can be silently wrong.
+     A net has a NaN in its source chain when it, or any net upstream of it on the same sheet (the in pins of the blocks that drive it,
+     and so on), read NaN / Infinity in a sample of the run. A link from another sheet carries the NaN into this sheet's input net. */
+  const nanMemo = new Map();
+  const nanUp = (S, n0) => {
+    const z = abcNaN.get(S);
+    if (!z) return false;
+    let m = nanMemo.get(S);
+    if (!m) nanMemo.set(S, (m = new Map()));
+    if (m.has(n0)) return m.get(n0);
+    const seen = new Set([n0]),
+      q = [n0];
+    let bad = false;
+    while (q.length && !bad) {
+      const n = q.pop();
+      if (z[n] > 0) bad = true;
+      for (const d of S.drv[n] || [])
+        for (const p of (d && d.pins) || []) if (p.role === 'in' && p.n != null && !seen.has(p.n)) seen.add(p.n), q.push(p.n);
+    }
+    m.set(n0, bad);
+    return bad;
+  };
   for (const sh of AN.sheets) {
     if (/^ABC-000/.test(sh.name)) continue;
     const S = sh.S;
@@ -206,6 +234,7 @@ const has = (txt, tag) => {
         src,
         writes: w,
         moving: !!mv,
+        nan: nanUp(S, n),
         lo: mm[n] ? mm[n][0] : null,
         hi: mm[n] ? mm[n][1] : null
       };
@@ -599,8 +628,10 @@ const has = (txt, tag) => {
         const onLogic = aOn.length + dOk.length > 0;
         const model = has(engTxt, tag),
           hmi = has(hmiTxt, tag);
+        /* an ABC source counts only when its source chain has no NaN (YUA 2026-11-25) */
+        const aNaN = aOn.some(x => x.src !== 'NONE' && x.nan);
         const srcOk =
-          aOn.some(x => x.src !== 'NONE') ||
+          aOn.some(x => x.src !== 'NONE' && !x.nan) ||
           /* an input point (DI / AI / PI) counts on its input row with a source; an output point (DO / AO / PO) on any row the logic writes */
           dOk.some(
             x => x.row > 0 && (input ? x.io === 'in' && !/^NONE/.test(x.src) : x.io !== 'in' || !/^NONE/.test(x.src))
@@ -632,7 +663,9 @@ const has = (txt, tag) => {
             : onLogic
               ? srcOk
                 ? 'LINKED'
-                : 'ON SHEET, NO SOURCE'
+                : aNaN
+                  ? 'SOURCE CHAIN HAS NaN'
+                  : 'ON SHEET, NO SOURCE'
               : txtOn
                 ? 'ON DRAWING, NOT ON A ROW'
                 : dAny.length
@@ -769,6 +802,7 @@ const has = (txt, tag) => {
       excluded: IO.length - ioIn.length,
       linked: byStatus('LINKED'),
       noSource: byStatus('ON SHEET, NO SOURCE'),
+      nanSource: byStatus('SOURCE CHAIN HAS NaN'),
       modelHmiOnly: byStatus('MODEL / HMI ONLY'),
       stationUnsure: byStatus('ON SHEET, STATION UNSURE'),
       onDrawing: byStatus('ON DRAWING, NOT ON A ROW'),
@@ -853,7 +887,7 @@ const has = (txt, tag) => {
     path.join(OUT, 'trace-abc-inputs.csv'),
     csv(
       abc.filter(x => x.role === 'in'),
-      ['sh', 'stn', 'name', 'src', 'writes', 'moving', 'lo', 'hi']
+      ['sh', 'stn', 'name', 'src', 'writes', 'moving', 'nan', 'lo', 'hi']
     )
   );
   fs.writeFileSync(
@@ -914,6 +948,8 @@ const has = (txt, tag) => {
       C.io.linked +
       ', on a sheet but no source ' +
       C.io.noSource +
+      ', source chain has NaN ' +
+      C.io.nanSource +
       ', model / HMI only ' +
       C.io.modelHmiOnly +
       ', on the drawing but not on a row ' +

@@ -149,3 +149,11 @@ line unchanged.
   (ZSO-CD1115 I.0892 ABC-052, I.0413 / I.0414 ABC-050 / 051, I.0418 / I.0931 / I.0932 ABC-050, I.0081 / I.0082 ABC-001C, I.0417 ABC-053,
   I.029C / 029D / 029E ABC-035 / 038 / 039, M.0001 ABC-001B / 029; and by the same address I.0418 ABC-019 / 051, I.0931 ABC-053,
   I.0932 ABC-052), LINKED 1,782 -> 1,787, on a sheet no source 35 -> 30.
+
+## NaN in the source chain (2026-11-25 5:45 PM PHT, YUA via the coordinator)
+- A NaN that enters a compare / switch block comes out as 0, so a "0" can be silently wrong. Each ABC net now counts the samples where it
+  read NaN / Infinity. A net has a NaN in its source chain when it, or any net upstream of it on the same sheet (the in pins of the blocks
+  that drive it, and so on), read NaN in the run; a link carries the NaN of another sheet into this sheet's input net.
+- An ABC source counts for an I/O point only when its chain has no NaN; a point whose only sources have NaN is "SOURCE CHAIN HAS NaN".
+  trace-abc-inputs.csv has a nan column. Old -> new on main 22f6da9 (150 MW, 5 min): 0 of 5,129 ABC nets read NaN, so LINKED 1,787 -> 1,787,
+  source chain has NaN 0. Not covered yet: DITL rows (0 / 1 only) and the TCS sheets.
