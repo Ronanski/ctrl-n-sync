@@ -12,6 +12,9 @@
 (function (W) {
   /* [row tag at the start of the row text, sheet, value: label of the ABC net or AI address, set point, 'lo' | 'hi', NC] */
   const L = [];
+  /* the one end-of-travel rule of the app for an air-operated valve or damper with a positioner (lever limit switch, K1AU3-E2-0-123 R1
+     OMRON D4A-2502N): closed <= 2 %, opened >= 98 %. A motor valve uses its own 0 / 100 % stroke ends. Read by field/bop.js too */
+  const END = (W.endBand = { closed: 2, open: 98 });
   const drum = n => ['ABC-010', 'LIBR1001' + n + '.PV', n === 1 ? 'AI0130' : 'AI0258'];
   for (const n of [1, 2]) {
     L.push(['LSL-BR1001-' + n, drum(n), -100, 'lo'], ['LSH-BR1001-' + n, drum(n), 127, 'hi'], ['LSHH-BR1001-' + n, drum(n), 254, 'hi']);
@@ -139,8 +142,8 @@
     const v = mvOf(sh, tag);
     v.tag = tag; /* the station that moves it (W.plantSwSrc, AN.condTarget) */
     v.dev = (id === 'FG1056-1' ? 'PCD-' : 'MCV-') + id;
-    L.push(['ZSC-' + id, v, 2, 'lo', 0, 1], ['ZSO-' + id, v, 98, 'ge', 0, 0], [cl, v, 2, 'lo', 0, 1, /\bVANE CLOSED\b/]);
-    if (op) L.push([op, v, 98, 'ge', 0, 0, /\bVANE OPENED\b/]);
+    L.push(['ZSC-' + id, v, END.closed, 'lo', 0, 1], ['ZSO-' + id, v, END.open, 'ge', 0, 0], [cl, v, END.closed, 'lo', 0, 1, /\bVANE CLOSED\b/]);
+    if (op) L.push([op, v, END.open, 'ge', 0, 0, /\bVANE OPENED\b/]);
   }
   /* TCS functional test (JENNIE 2026-11-21): DITL-115 row 15 ZSC-MS1020 (LOCAL) "HP TURBINE BYPASS STEAM PRESSURE CONTROL VALVE CLOSE" ->
      RS "HP BYPASS VALVE FULL CLOSE" to the TCS (TCE900 ch 26 -> TCE041 B11 -> TCA532 CRI 1.9). No model drove it: the row kept the field
@@ -148,7 +151,7 @@
      (unit.js U.hpbO, the positioner or the quick-open solenoid O.0842), made at the closed end of travel <= 2 %, the same end band as the
      fan vane switches above (the name says FULL CLOSE) */
   const hpbO = () => (window.AN && AN.unit && isFinite(AN.unit.hpbO) ? AN.unit.hpbO : NaN);
-  L.push(['ZSC-MS1020', hpbO, 2, 'lo', 0, 1, /\bBYPASS\b/]);
+  L.push(['ZSC-MS1020', hpbO, END.closed, 'lo', 0, 1, /\bBYPASS\b/]);
   /* 3.2.1 (IRENE: HEATER LEVELS): the level switches H.H. of the heaters (DITL-41 rows 15 ~ 27, STN102 I.029B ~ I.029F) on the
      shell level of the plant model (unit.js AN_HD); alarm list LS-HD110x: 140 mm (No.1 HPH, No.3 LPH), 150 mm (the others) */
   const hdOf = k => () => (window.AN && AN.unit && AN.unit.hdLvl && isFinite(AN.unit.hdLvl[k]) ? AN.unit.hdLvl[k] : NaN);
