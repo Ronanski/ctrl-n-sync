@@ -6,6 +6,10 @@
   - **DITL-19 (A ~ C) row 6 / 23**, MIL-CL1061-x REMOTE ng coal feeder: field state, normal = REMOTE. Kapag inilagay sa LOCAL sa Plant menu, nagiging 0 ang "COAL FEEDER x REMOTE SELECTED".
   - **DITL-19 (A ~ C) row 12**, MIT-CL1061-x COAL FEEDER FAULT: ang field trip ng feeder. Dati, sa A lang ito nakakabit.
   - **DITL-43 row 4**, YSR-FA1052M1 AIR PREHEATER LOCAL: field state, normal = hindi LOCAL.
+- **DITL-43 field contact sa output wire (APH panel)**:
+  - XA-FA1052-1 / 2 / 3 / 4 / 6 (fire detection, sensor, fire alarm, speed sensor, normal power): normal = OK.
+  - ES-FA1052 (emergency push button): normal = hindi pinindot.
+  - Sa Plant menu: kapag "fire alarm", nawawala ang "NO FIRE ALARM"; kapag emergency P.B., lumalabas ang "EMERGENCY P.B. ON".
 - **`src/world/plantsw.js`** (para i-review ng lane 0):
   - Ang field row na may `adr` ay kinakabit din sa row na may nakasulat na I/O address nito, sa sheet na iyon lang.
   - Hindi na nasisira ang `sheet` ng isang copy ("DITL-19 #B"). Dati, nagiging "DITL-19B" ito, kaya hindi nakakabit ang field row sa #B at #C.
