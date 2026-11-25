@@ -361,6 +361,19 @@
     mtr.length = 0;
     usw.length = 0;
     const FD = new Map(L.filter(x => x.fld).map(x => [x[0], x]));
+    /* beta.570 (EIMI): DITL-BA01 names the field switches of the ash transmitter by their tag alone (ZSC-BH1759), BA03 / BA11 / BA25 by the
+       address (I.0483): the tag is the address of the I/O list (station 103, the station of the DITL-BA drawings), so it is that switch */
+    const BAT = new Map();
+    for (const r of window.WIRING || []) if (String(r[1]) === '3') BAT.set(String(r[3]).toUpperCase(), r[2]);
+    const byTag = (s, words) => {
+      if (!BAS.test(s.name)) return null;
+      for (const w of words) {
+        const a = BAT.get(w),
+          d = a && L.find(x => x[0] === a && x[7] === BAS);
+        if (d) return d;
+      }
+      return null;
+    };
     for (const s of ALL) {
       if (!s.nl && typeof netlist === 'function')
         try {
@@ -375,7 +388,7 @@
         } catch (e) {}
         if (!t) continue;
         const words = t.split(/\s+/);
-        const d = L.find(x => words.slice(0, 3).includes(x[0]) && (!x[6] || x[6].test(t)) && (!x[7] || x[7].test(s.name)));
+        const d = L.find(x => words.slice(0, 3).includes(x[0]) && (!x[6] || x[6].test(t)) && (!x[7] || x[7].test(s.name))) || byTag(s, words.slice(0, 3));
         if (d) map.push({ s, row: i, d, on: null });
       }
       for (const h of (s.sd && s.sd.hrow) || []) {

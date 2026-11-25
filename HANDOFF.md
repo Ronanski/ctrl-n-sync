@@ -1,8 +1,8 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 08:30 PHT** (DCS LINKS BOILER : KIRARA, lane 3, beta.553: rear wall dampers FA1019 ~ FA1026 sa `src/world/field/boiler.js`: limit switch mula sa ZT, trip / torque / remote bilang field state; 40 I/O point).
+Huling update: **2026-11-25 11:06 PHT** (LEADER : YUA, lane 0: wala nang version number at built html sa PR; ang beta number ay bilang ng commit sa `main`, user "Go version gate").
 
-Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
+Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/updates/` (mas luma: `docs/versions/v<ver>/UPDATE_REPORT.md`) at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
 **UNANG BASAHIN (user 2026-11-25, RULES.md 3.0A): content muna.** Una ang lahat ng logic, sunod ang bawat address sa bawat signal, sunod ang HMI (hindi kasama ang WTP, coal handling at air compressors), at saka pa lang ang plant model. Lahat ay 100 % tama ayon sa plant documents, at walang tuning ng model habang may kulang pang content.
 
@@ -18,9 +18,9 @@ Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay na
 
 ## 2. Estado (2026-11-22)
 
-- App **LMYP OTS 1.0.0-beta.553**, simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
+- App **LMYP OTS 1.0.0-beta.N** (N = bilang ng commit sa `main`, `node tools/station/build.js --version`), simulator 3.2.5-beta.10. Huling EA release: 1.0.0-beta.1 (2026-11-19). Stable: wala pa.
 - Merge: kusa kapag pasado ang Checks (auto-merge, user 2026-11-21 "Go auto"). Ang Checks (`.github/workflows/checks.yml`) ay may **behaviour gate** (`tests/gate/behaviour.cjs`): 20 plant min sa 150 MW sa fixed 0.5 s step, walang drift, parehong numero sa dalawang takbo, SAVE / LOAD, save point na binabasa ayon sa pangalan ng sheet.
-- Version: ang beta number ay nagtatapos sa digit ng lane (lane 0 YUA = 0, lane 1 MARIA = 1, ... lane 9 SORA = 9). Kapag may conflict sa app.json, kunin ang susunod na number na may sariling digit. Bawat merge ay may `docs/versions/v<ver>/UPDATE_REPORT.md` at bagong `dist`.
+- Version (user 2026-11-25 "Go version gate"): ang beta number ay bilang ng commit sa `main` (`tools/app-version.js`), kusang tumataas sa bawat merge. Ang PR ay hindi gumagalaw ng `dist/`, ng version sa `delivery/app/app.json` at ng `HANDOFF.md`; may isang `docs/versions/updates/<lane>-<paksa>.md` ito. Ang html ay binubuo ng CI (dalawang beses, dapat SAME). Sa lumang branch: i-merge ang main, `git rm --cached dist/*.html`, at kunin ang `app.json` ng main.
 - Simula: 150 MW at Cold sa start screen. HOT at WARM save points na ginawa sa tunay na pindot (turbine trip, bottle up) ay nasa `team-files/saves/` (PC lang).
 
 ## 3. Team
@@ -50,7 +50,7 @@ Jennie, bahagi o bukas:
 
 AUDIT FIX : LISA (2026-11-24): #5 listahan `docs/audit/no-source-list.md` (217 bukas), #11 plano `docs/audit/unit-split-plan.md` (hintay ng window mula sa coordinator), #3 mungkahi `docs/audit/drift-test-proposal.md`. GO DESIGN (user 2026-11-24 00:35 PHT): design docs lang ang target ng model; snapshot at trend = pang-check lang. Listahan ng value na nakasandal sa snapshot: `docs/audit/snapshot-values-list.md`. #6: pinili ng user (2026-11-24 00:21 PHT) na gawing "Plant" menu ang Instructor button at alisin ang Freeze.
 
-TCS IO : TSUBASA (lane 2, 2026-11-25): TCS I/O list `src/data/tcs-io.json` (gawa ng `tools/data/tcs_io.mjs`), dulo ng bawat channel `src/digital/tce-io.js`, DCS + Modbus binding `src/data/tcs-dcs.json`, test `tests/lanes/tcs-io/io.cjs`. Bukas: (a) i-load sa app ng engine owner (world.js, `AN.tceSteam` / `AN.tceCrp` sa api.js), (b) 175 channel na "needs" (walang model value pa: drain MOV, NRV, generator Mvar / current / pf, AVR, TSI setting, rotor position, diff expansion), (c) 38 kahon na maling basa ng reader ng lane 1 bilang PI/O (G sheet delay timer, TRIPLE DETECTOR, legend ng TCE022).
+TCS IO : TSUBASA (lane 2, 2026-11-25): TCS I/O list `src/data/tcs-io.json` (gawa ng `tools/data/tcs_io.mjs`), dulo ng bawat channel `src/digital/tce-io.js`, DCS + Modbus binding `src/data/tcs-dcs.json`, test `tests/lanes/tcs-io/io.cjs`. Bukas: (a) i-load sa app ng engine owner (world.js, `AN.tceSteam` / `AN.tceCrp` sa api.js), (b) 161 channel na "needs" (walang model value pa: drain MOV, NRV, generator Mvar / current / pf, AVR, TSI setting, rotor position, diff expansion), (c) 38 kahon na maling basa ng reader ng lane 1 bilang PI/O (G sheet delay timer, TRIPLE DETECTOR, legend ng TCE022).
 
 Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engineer).
 
@@ -64,9 +64,9 @@ Rosé, bahagi: #6, #8, #9, #14, #16, #20 (HMI, faceplate, text size, click, Engi
 - Workflows: `checks.yml` (bawat PR), `sim-tests.yml` (sa `main`), `site.yml` (kusa pagkatapos ng Checks), `release.yml` (GO ng user lang).
 - Lumang rules, handoff, spec at live test findings: `docs/archive/rules-2026-11-22/`.
 
-## 6. Paano i-update (bawat thread, sa katapusan ng gawain, sa parehong PR)
+## 6. Paano i-update (lane 0 lang; ang ibang lane ay sa `docs/versions/updates/` nagsusulat)
 
 1. "Huling update": oras sa PHT, pangalan ng thread, isang pangungusap.
-2. Seksyon 2: version ng app at simulator, release.
+2. Seksyon 2: version ng simulator, release.
 3. Seksyon 4: tanggalin ang tapos, idagdag ang bago.
 4. Bagong utos ng user: sa `RULES.md`, hindi dito.

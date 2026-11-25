@@ -26,6 +26,36 @@
    NOT on this page yet: the 1 ELEMENT / 3 ELEMENT push buttons of the drum level control (temporary page 06). */
 (function () {
   const { V, E, M, C, X, L, page } = HX;
+  /* beta.557: the monitor rows (PERMISSIVE · TREND · MONITOR faceplate) and the VCB point of each feed pump, from the DCS I/O list
+     (station 3: LOP A / B MIR / MIT / MIL-P1115x1 / x2, VCB MIV-P1115x1, lube oil PS-LO1115-x1 ~ x3 and LS-LO1115-x, winding / bearing
+     TT-FW1115-x*, casing vibration VT-FW1115-x**; unit of the vibration points not in the I/O list: shown as the number) */
+  const bfwpMon = n => [
+    V('Lube oil pump A running', 'MIR-P1115' + n + '1', '', 0, { words: ['RUNNING', 'STOPPED'] }),
+    V('Lube oil pump A trip', 'MIT-P1115' + n + '1', '', 0, { words: ['TRIP', 'NORMAL'] }),
+    V('Lube oil pump A remote', 'MIL-P1115' + n + '1', '', 0, { words: ['REMOTE', 'LOCAL'] }),
+    V('Lube oil pump B running', 'MIR-P1115' + n + '2', '', 0, { words: ['RUNNING', 'STOPPED'] }),
+    V('Lube oil pump B trip', 'MIT-P1115' + n + '2', '', 0, { words: ['TRIP', 'NORMAL'] }),
+    V('Lube oil pump B remote', 'MIL-P1115' + n + '2', '', 0, { words: ['REMOTE', 'LOCAL'] }),
+    V('Lube oil pressure under 1.5 kg/cm²', 'PS-LO1115-' + n + '1', '', 0, { words: ['YES', 'NO'] }),
+    V('Lube oil pressure over 2.0 kg/cm²', 'PS-LO1115-' + n + '2', '', 0, { words: ['YES', 'NO'] }),
+    V('Lube oil pressure under 1 kg/cm²', 'PS-LO1115-' + n + '3', '', 0, { words: ['YES', 'NO'] }),
+    V('Lube oil level low', 'LS-LO1115-' + n, '', 0, { words: ['LOW', 'NORMAL'] }),
+    V('Motor winding U', 'TT-FW1115-' + n + 'U', '°C', 0),
+    V('Motor winding V', 'TT-FW1115-' + n + 'V', '°C', 0),
+    V('Motor winding W', 'TT-FW1115-' + n + 'W', '°C', 0),
+    V('Motor drive end bearing', 'TT-FW1115-' + n + '3', '°C', 0),
+    V('Motor non drive end bearing', 'TT-FW1115-' + n + '4', '°C', 0),
+    V('Pump drive end bearing', 'TT-FW1115-' + n + '2', '°C', 0),
+    V('Pump non drive end bearing', 'TT-FW1115-' + n + '1', '°C', 0),
+    V('Pump non drive end vibration X', 'VT-FW1115-' + n + '11', '', 1),
+    V('Pump non drive end vibration Y', 'VT-FW1115-' + n + '12', '', 1),
+    V('Pump drive end vibration X', 'VT-FW1115-' + n + '21', '', 1),
+    V('Pump drive end vibration Y', 'VT-FW1115-' + n + '22', '', 1),
+    V('Motor non drive end vibration X', 'VT-FW1115-' + n + '41', '', 1),
+    V('Motor non drive end vibration Y', 'VT-FW1115-' + n + '42', '', 1),
+    V('Motor drive end vibration X', 'VT-FW1115-' + n + '31', '', 1),
+    V('Motor drive end vibration Y', 'VT-FW1115-' + n + '32', '', 1)
+  ];
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_FW = 6,
@@ -112,7 +142,7 @@
           M('pump', 'BFWP-A', 'Boiler feed pump A', [
             V('Current', 'IT-P1115A', 'A'),
             V('Strainer', 'DPT-FW1115-A', K, 2)
-          ]),
+          ], { mon: bfwpMon('A'), vcb: 'MIV-P1115A1' }),
           PAX,
           PY,
           {
@@ -125,7 +155,7 @@
           M('pump', 'BFWP-B', 'Boiler feed pump B', [
             V('Current', 'IT-P1115B', 'A'),
             V('Strainer', 'DPT-FW1115-B', K, 2)
-          ]),
+          ], { mon: bfwpMon('B'), vcb: 'MIV-P1115B1' }),
           PBX,
           PY,
           {

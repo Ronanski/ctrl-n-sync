@@ -18,7 +18,7 @@
    Left out: the filter, backwash and utility water pumps and the potable / plumbing water (water treatment, user exclusion);
    hand valves, level gauges. Every state is a digital input of the I/O list (data-di): '-----' until a link gives it a value. */
 (function () {
-  const { V, E, L, page } = HX;
+  const { V, E, L, M, X, page } = HX;
   const B = HX.B;
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
@@ -38,17 +38,19 @@
     FY = 860 /* fire pumps */,
     WX = 1450,
     WY = 570 /* waste water sump */,
-    WPY = 430 /* its pumps */,
+    WPY = 412 /* its pumps */,
     PTX = 1330,
     PTY = 880; /* transformer area pit */
-  const IW = 'h:iw-MIR-P0715A|h:iw-MIR-P0715B',
+  const IW = 'm:P-0715A|m:P-0715B',
     FR = ['iw-MIR-P0718', 'iw-MIR-P0719', 'iw-MIR-P0720'],
     FIRE = FR.map(k => 'h:' + k).join('|');
   const pump = (n, i) =>
     at(
-      E('pump', 'Industrial water pump ' + n, 'P-0715' + n, [V('Strainer', 'DPT-IW0715-' + n, K, 2)], {
-        on: run('MIR-P0715' + n),
-        wrap: 14
+      /* beta.557: the machine of the registry (EIMI hx-sys-mu IWA / IWB, DITL-111 and #B): a click opens its two faceplates */
+      M('pump', 'P-0715' + n, 'Industrial water pump ' + n, [V('Strainer', 'DPT-IW0715-' + n, K, 2)], {
+        wrap: 14,
+        /* the remote / local point of the I/O list (MIL-P0715x) on its monitor faceplate */
+        mon: [V('Remote', 'MIL-P0715' + n, '', 0, { words: ['REMOTE', 'LOCAL'] })]
       }),
       PX,
       PY[i],
@@ -94,26 +96,18 @@
         at(B('Fire water level low', di('LS-IW0724', 'LOW', 'NORMAL'), { w: 160 }), TX, TBY + 128, { id: 'tbl' }),
         /* the connecting motor valve between the tanks */
         at(
-          E('valve', 'Tank connecting valve', 'MV-IW0391', [V('Position', 'ZT-IW0391', '%', 0)], {
-            kind: 'motor',
-            on: HX.hk('iw-mv0391', di('ZSO-IW0391', 'OPEN', 'NOT OPEN')),
-            wrap: 12
-          }),
+          /* beta.557: the motor valve of the registry (hx-sys-mu IWV, DITL-87): its faceplate opens / closes it */
+          X('MV-IW0391', 'Tank connecting valve', { vals: [V('Position', 'ZT-IW0391', '%', 0)], wrap: 12 }),
           360,
           470,
           { id: 'mv', rot: 90, lab: 'r' }
         ),
-        at(B('Open', di('ZSO-IW0391', 'OPEN', 'NOT OPEN'), { w: 100 }), 290, 420, { id: 'mvo' }),
-        at(B('Closed', di('ZSC-IW0391', 'CLOSED', 'NOT CLOSED'), { w: 100 }), 290, 520, { id: 'mvc' }),
         /* industrial water pumps */
         pump('A', 0),
         pump('B', 1),
-        ...['A', 'B'].flatMap((n, i) => [
-          at(B('Remote', di('MIL-P0715' + n, 'REMOTE', 'LOCAL'), { w: 130 }), PX + 135, PY[i] - 16, { id: 'pr' + i }),
-          at(B('Electric trouble', di('MIT-P0715' + n, 'TROUBLE', 'NORMAL'), { w: 130 }), PX + 135, PY[i] + 30, {
-            id: 'pt' + i
-          })
-        ]),
+        ...['A', 'B'].map((n, i) =>
+          at(B('Electric trouble', di('MIT-P0715' + n, 'TROUBLE', 'NORMAL'), { w: 130 }), PX + 135, PY[i] + 6, { id: 'pt' + i })
+        ),
         /* fire pumps on tank B */
         fire('P-0718', 'Fire pump, diesel engine', 0),
         fire('P-0719', 'Fire pump, motor', 1),
@@ -127,7 +121,8 @@
         at(B('Sump level high high', di('LSHH-P0058', 'HIGH HIGH', 'NORMAL'), { w: 180 }), WX + 210, WY, { id: 'wsh' }),
         ...['A', 'B'].map((n, i) =>
           at(
-            E('vpump', 'Waste water pump ' + n, 'P-0058' + n, [], { on: run('MIR-P0058' + n), wrap: 12 }),
+            /* beta.557: hx-sys-mu WWA / WWB (DITL-120 and #B); no START / STOP on the sheet, the faceplate shows the state only */
+            M('vpump', 'P-0058' + n, 'Waste water pump ' + n, [], { wrap: 12 }),
             WX - 70 + 140 * i,
             WPY,
             {
@@ -173,12 +168,12 @@
           arrow: false
         },
         ...['A', 'B'].flatMap((n, i) => [
-          { med: 'water', w: W_M, pts: [[SX, PY[i]], 'p' + i + '.s'], flow: 'h:iw-MIR-P0715' + n, arrow: false },
+          { med: 'water', w: W_M, pts: [[SX, PY[i]], 'p' + i + '.s'], flow: 'm:P-0715' + n, arrow: false },
           {
             med: 'water',
             w: W_M,
             pts: ['p' + i + '.d', [PX - 2, PY[i] - 60], [HX_, PY[i] - 60]],
-            flow: 'h:iw-MIR-P0715' + n,
+            flow: 'm:P-0715' + n,
             arrow: false
           }
         ]),
@@ -203,8 +198,8 @@
           to: 'plant users'
         },
         /* tank A to tank B through the connecting valve */
-        { med: 'water', w: W_S, pts: [[360, TAY + 66], 'mv.l'], flow: 'h:iw-mv0391', arrow: false },
-        { med: 'water', w: W_S, pts: ['mv.r', [360, TBY + 66], 'tb.r'], flow: 'h:iw-mv0391' },
+        { med: 'water', w: W_S, pts: [[360, TAY + 66], 'mv.l'], flow: 'x:MV-IW0391', arrow: false },
+        { med: 'water', w: W_S, pts: ['mv.r', [360, TBY + 66], 'tb.r'], flow: 'x:MV-IW0391' },
         /* tank B to the fire pumps (suction header under them), their discharge header to the fire fighting system */
         {
           med: 'water',
@@ -242,14 +237,14 @@
           med: 'drain',
           w: W_S,
           pts: [[WX - 92 + 140 * i, WY + 10], 'w' + i + '.s'],
-          flow: 'h:iw-MIR-P0058' + 'AB'[i],
+          flow: 'm:P-0058' + 'AB'[i],
           arrow: false
         })),
         ...[0, 1].map(i => ({
           med: 'drain',
           w: W_S,
           pts: ['w' + i + '.d', [WX - 30 + 140 * i, WPY - 11], [WX - 30 + 140 * i, 360]],
-          flow: 'h:iw-MIR-P0058' + 'AB'[i],
+          flow: 'm:P-0058' + 'AB'[i],
           arrow: false
         })),
         {
@@ -260,7 +255,7 @@
             [1680, 360]
           ],
           to: 'buffer basin',
-          flow: 'h:iw-MIR-P0058A|h:iw-MIR-P0058B'
+          flow: 'm:P-0058A|m:P-0058B'
         },
         {
           med: 'drain',

@@ -7,5 +7,6 @@ document-references/*
 .claude/launch.json
 turnover-private/
 
-# build outputs of the app page and test pictures (never committed)
+# build outputs (never committed): the html (node tools/build/build.js), the app page, test pictures
+/dist/
 out/

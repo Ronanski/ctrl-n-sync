@@ -1,7 +1,7 @@
 name: Site (Stable + Beta)
 # The site of the app. Stable = the page of the latest Stable tag (vX.Y.Z, made only on GO STABLE) at /, Beta = the page of main at /beta/.
 # The page is the station frame over the simulator html (tools/station/build.js). The apk / exe ask this site for a newer version.
-# version.json carries the versions of the app (delivery/app/app.json), not those of the simulator inside.
+# version.json carries the versions of the app (tools/app-version.js), not those of the simulator inside.
 # Until the first Stable tag exists, / carries the page of main too (version.json then names no Stable, so nothing is offered as one).
 # Runs only while the repository is public: GitHub Pages of a private repository needs a paid plan.
 on:
@@ -22,12 +22,15 @@ jobs:
       - name: Assemble
         run: |
           mkdir -p site/beta
+          # the html is built here from the sources (it is not in git); an old tag that still carries its html keeps it
+          node beta/tools/build/build.js
           B=$(ls beta/dist/logic-sim-v*.html | head -1)
           bv=v$(node beta/tools/station/build.js --version)
           node beta/tools/station/build.js "$B" site/beta/index.html
           T=$(git -C beta tag -l 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
           if [ -n "$T" ]; then
             git -C beta worktree add -q ../stable "$T"; echo "Stable page: $T"
+            ls stable/dist/logic-sim-v*.html >/dev/null 2>&1 || node stable/tools/build/build.js
             S=$(ls stable/dist/logic-sim-v*.html | head -1)
             sv=v$(node stable/tools/station/build.js --version)
             node stable/tools/station/build.js "$S" site/index.html; P=stable
