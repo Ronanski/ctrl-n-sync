@@ -897,7 +897,10 @@
        and not limit full open and not limit full close (A with circle 2).
        OPS / CLS = open / close FF (to MCC); LTOP / LTCL = the limit switches (R (OPEN) / G (CLOSE) lamps); ABN = any of ANN 1 ~ 5.
      Not on sheet 16 (printed beside the TCA blocks, not read): TD 5.0 s x2, R, M, HL, LL, K, the third TP 5.0 s. */
-  MACRO['TORQUE (SEAL-IN)'] = Object.assign(
+  /* POSITION (SEAL-IN), drawing: IBD 310SC90-794 Rev 2 sheet 18 "POSITION SEAT (SEAL-IN)" (book p 34): the same logic as sheet 16 but the
+       valve seats on its LIMIT switches at both ends: the close stops on LIMIT FULL CLOSE, and a TORQUE SWITCH OF FULL CLOSE SIDE before
+       LIMIT FULL OPEN is a torque trip (ANN 5) and a stop, like the open side. */
+  const sealIn = pos =>
     (I, notes, st, dt) => {
       const [T1, T2] = (notes || []).filter(n => /^TP:/.test(String(n[2]))).map(n => parseFloat(String(n[2]).slice(3))),
         lo = b01(I.LTOP),
@@ -909,12 +912,12 @@
         oCmd = (b01(I.AOP) && auto) || (pulseUp(st, 'pO', b01(I['PB OPEN'])) && !auto),
         cCmd = (b01(I.ACL) && auto) || (pulseUp(st, 'pC', b01(I['PB CLOSE'])) && !auto),
         tsO = b01(I.TROP) && !lc ? 1 : 0,
-        tsC = b01(I.TRCL) && !lo && !lc ? 1 : 0;
+        tsC = b01(I.TRCL) && !lo && (pos || !lc) ? 1 : 0;
       if (b01(I['PB RESET']) || ef) (st.of = 0), (st.cf = 0);
       if (cCmd) st.of = 0;
       if (oCmd) st.cf = 0;
       const oStop = ef || st.of || lo || tsO,
-        cStop = ef || st.cf || lc || b01(I.TRCL);
+        cStop = ef || st.cf || lc || (pos ? tsC : b01(I.TRCL));
       if (oStop || cCmd) st.o = 0;
       else if (oCmd) st.o = 1;
       if (cStop || oCmd) st.c = 0;
@@ -929,13 +932,14 @@
         AUTO: auto,
         ABN: ef || st.of || st.cf || tsO || tsC ? 1 : 0
       };
-    },
-    {
-      src: 'drawing: IBD 310SC90-794 Rev 2 sheet 16',
+    };
+  const sealOpt = sheet => ({
+      src: 'drawing: IBD 310SC90-794 Rev 2 sheet ' + sheet,
       pb: ['OPEN', 'CLOSE', 'AUTO', 'MANUAL', 'RESET'],
       need: notes => ((notes || []).filter(n => /^TP:/.test(String(n[2]))).length < 2 ? ['TP x2 (t1 / t2)'] : [])
-    }
-  );
+  });
+  MACRO['TORQUE (SEAL-IN)'] = Object.assign(sealIn(false), sealOpt(16));
+  MACRO['POSITION (SEAL-IN)'] = Object.assign(sealIn(true), sealOpt(18));
   /* STEP CONTROL MD, drawing: ATS program 310SC90-795 Rev 2 sheet 8 "ATS CONTROL START UP STEP TRANSITION LOGIC" (book p 132), sheet 9
        (shutdown step, p 133) and sheet 10 "CRITERIA CHECK LOGIC" (p 134: A = start, B = during, D = end criteria). The pins as the TCA520 ..
        TCA528 sheets print them at the block: TMG = STEP n-1 COMPLETED (criteria Dn-1), IN CR = STEP n IN CONDITION OK (criteria An),
@@ -1023,6 +1027,36 @@
       inBox: true,
       defs: STEPS.flatMap(i => ['STEP IN ' + i + ' ORDER', 'STEP ' + i + ' EXECUTING']),
       need: notes => ['IN', 'EX'].filter(p => criK(notes, p).some(v => v === undefined)).map(p => p + '0 .. ' + p + '8 K')
+    }
+  );
+  /* AIR OPERAT VALVE, drawing: IBD 310SC90-794 Rev 2 sheet 22 "TYPICAL LOGIC FOR AIR OPERATED VALVE" (book p 38). The sheets (TCA605,
+       TCA690, TCA711 .. 715, TCA738, TCE365) draw the AUTO / MANUAL and command part outside the block and give it SVE (energize = open)
+       and SVD (de-energize = close); the block holds the solenoid FF and the faults of the typical:
+       SV FF (S/R, R first): set by SVE, reset by SVD or OPEN FAULT (circle 1 into the reset OR); SVE out = the FF (to the solenoid).
+       OPEN FAULT (ANN 1): the FF for DI t1 and not LIMIT FULL OPEN; CLOSE FAULT (ANN 2): not the FF for DI t2 and not LIMIT FULL CLOSE;
+       each held until PB RESET or the other command (NOTE t1 = valve opening time + 5 s, t2 = valve closing time + 5 s: the two TP printed
+       without a unit beside the block, TP:10.0 / TP:20.0 on TCA711). LTOP / LTCL = the limit switches (R (OPEN) / G (CLOSE) lamps);
+       ABN = OPEN or CLOSE FAULT.
+     FFP is OFF(0) on every sheet (its role is not drawn). Not on sheet 22 (printed beside the block, not read): R, M, HL, LL, K, TP 5.0 s. */
+  const aovT = notes => (notes || []).filter(n => /^TP:\s*[\d.]+$/.test(String(n[2]))).map(n => parseFloat(String(n[2]).slice(3)));
+  MACRO['AIR OPERAT VALVE'] = Object.assign(
+    (I, notes, st, dt) => {
+      const [T1, T2] = st.T || (st.T = aovT(notes)),
+        lo = b01(I.LTOP),
+        lc = b01(I.LTCL),
+        on = b01(I.SVE),
+        off = b01(I.SVD);
+      if (b01(I.RESET) || off) st.of = 0;
+      if (b01(I.RESET) || on) st.cf = 0;
+      if (off || st.of) st.sv = 0;
+      else if (on) st.sv = 1;
+      if (onDelay(st, 'd1', !!st.sv, T1, dt) && !lo) (st.of = 1), (st.sv = 0);
+      if (onDelay(st, 'd2', !st.sv, T2, dt) && !lc) st.cf = 1;
+      return { SVE: st.sv ? 1 : 0, LTOP: lo, LTCL: lc, ABN: st.of || st.cf ? 1 : 0 };
+    },
+    {
+      src: 'drawing: IBD 310SC90-794 Rev 2 sheet 22',
+      need: notes => (aovT(notes).length === 2 ? [] : ['t1 / t2 (two TP without a unit)'])
     }
   );
   const numConst = t => {
