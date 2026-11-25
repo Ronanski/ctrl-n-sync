@@ -178,7 +178,9 @@ const has = (txt, tag) => {
               : 'link'
             : w > 0
               ? 'engine'
-              : OPER.test(name) || crt(rs, name)
+              : /^(PTN|PS)\d+$/.test(name)
+                ? 'block parameter' /* a pattern slot (PTN) or a ramp / time parameter (PS) of the block itself (AKIHO 2026-11-25, RULES.md) */
+                : OPER.test(name) || crt(rs, name)
                 ? 'operator'
                 : 'NONE'
           : lk
@@ -408,7 +410,7 @@ const has = (txt, tag) => {
               ? 'plant switch'
               : an && s.avw && s.avw[an.key] != null
                 ? 'plant value'
-                : /^(CRT|OPS|OPC|HMI|CRT\s*\(.*\))$/i.test(L.trim())
+                : /^(CRT|OPS|OPC|HMI|LCD|CRT\s*\(.*\))$/i.test(L.trim()) || [...adrs].some(a => crt(stn, a)) /* LCD / (CRT) push button: RARA 2026-11-25 */
                   ? 'operator'
                   : /^(LOP|LCP|LP|LCS|MCC|SWGR|VCB|LOCAL)/i.test(L.trim())
                     ? 'local panel'

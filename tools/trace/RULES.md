@@ -92,3 +92,11 @@ button / select of the CRT: its source is "operator", not B1 "nothing writes". O
 inputs nothing writes 102 -> 85, ABC inputs by operator 144 -> 161, memory on a sheet with no source 33 -> 16 (the same 17: ABC-003A ~ 003E
 oil control select / oil master P.B., ABC-008 M.0200 / 0201, ABC-010 M.054E / 054F, ABC-020 M.017F, ABC-057 M.144A / 144B). Every other
 line unchanged.
+
+## Block parameters, LCD push buttons (2026-11-25 11:55 AM PHT, AKIHO and RARA via the coordinator)
+- An ABC input named PTNnnnnnn (a pattern slot of the block, "WAFER MOUNTING NO.61 ~ 64" in the memory list) or PSnnnn (the block's own
+  ramp / time parameter, ABC-003E PS0004 = 5 %/min) is "block parameter", not B1. Old -> new (main 0fa7dbc + the (CRT) rule): B1 ABC
+  85 -> 77 (ABC-003E PS0004 x 4, PTN004029 ~ 004032), memory on a sheet with no source 16 -> 12.
+- A DITL input row with LOCATION "LCD", or whose address the memory list names "(CRT)", is an operator push button (as LOCATION CRT).
+  Old -> new: B1 DITL input rows with no source 239 -> 203 (LCD 3: DITL-121 M.0650 ~ 0652; memory "(CRT)" 33: DITL-BA61 14, DITL-BA02
+  M.1300 ~ 1303, DITL-80K M.4212, DITL-LS10 M.1800 ...). DITL operator rows 463 -> 499. Every other line unchanged.
