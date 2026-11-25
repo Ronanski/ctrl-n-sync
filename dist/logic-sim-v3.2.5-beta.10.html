@@ -5027,12 +5027,49 @@ function tcsSim(s) {
         ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
         ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
       ],
-      r: [
-        /* 'fn': a function box (TRIPLE DETECTOR2, 2OO3), not a PI/O box */
-        ['td2', Z(1481), 136, 235, 128, '', 'fn'],
-        ['v2o3', Z(1564), Y2(445), 86, 107, '', 'fn']
+      /* the TRIPLE DETECTOR2 (LME113) of the three values and the 2OO3 (LME120) of the three abnormal signals: macro blocks of the sheet */
+      m: [
+        ...m,
+        [
+          'td2',
+          'TRIPLE DETECTOR2',
+          '',
+          Z(1481),
+          136,
+          235,
+          128,
+          ['IN A', 'IN B', 'IN C', 'DEV'],
+          ['OUT', 'DEV'],
+          'A003',
+          [
+            [Z(1561), 287, '(LME113)'],
+            [Z(1517), 327, 'TP:1.0'],
+            [Z(1517), 348, 'TP:1.0'],
+            [Z(1517), 370, 'TP:1.0']
+          ],
+          [
+            [170, 191, 212, 233],
+            [170, 191]
+          ]
+        ],
+        [
+          'v2o3',
+          '2OO3',
+          '',
+          Z(1564),
+          Y2(445),
+          86,
+          107,
+          ['IN1', 'IN2', 'IN3'],
+          ['OUT'],
+          '014',
+          [[Z(1569), Y2(576), '(LME120)']],
+          [
+            [Y2(477), Y2(499), Y2(520)],
+            [Y2(477)]
+          ]
+        ]
       ],
-      m,
       b: [
         ...b,
         ...(EX.b || []),
@@ -5306,7 +5343,7 @@ function tcsSim(s) {
           ]
         ],
         [
-          'td2',
+          'td2.OUT',
           [
             [Z(1716), 170],
             [Z(2050), 170]
@@ -5314,7 +5351,7 @@ function tcsSim(s) {
           1
         ],
         [
-          'td2',
+          'td2.OUT',
           [
             [Z(1778), 170],
             [Z(1778), 360],
@@ -5323,7 +5360,7 @@ function tcsSim(s) {
           1
         ],
         [
-          'td2',
+          'td2.OUT',
           [
             [Z(1778), 264],
             [Z(2049), 264]
@@ -5331,14 +5368,14 @@ function tcsSim(s) {
           1
         ],
         [
-          'v2o3',
+          'v2o3.OUT',
           [
             [Z(1650), Y2(477)],
             [Z(2048), Y2(477)]
           ]
         ],
         [
-          'v2o3',
+          'v2o3.OUT',
           [
             [Z(1775), Y2(477)],
             [Z(1775), Y2(679)],
@@ -5346,7 +5383,7 @@ function tcsSim(s) {
           ]
         ],
         [
-          'v2o3',
+          'v2o3.OUT',
           [
             [Z(1775), Y2(573)],
             [Z(2047), Y2(573)]
@@ -5355,25 +5392,6 @@ function tcsSim(s) {
       ],
       t: [
         ...t,
-        [Z(1487), 157, 'TRIPLE DETECTOR2'],
-        [Z(1487), 178, 'IN A'],
-        [Z(1487), 199, 'IN B'],
-        [Z(1487), 221, 'IN C'],
-        [Z(1487), 242, 'DEV'],
-        [Z(1678), 178, 'OUT'],
-        [Z(1678), 199, 'DEV'],
-        [Z(1578), 261, 'A003'],
-        [Z(1561), 287, '(LME113)'],
-        [Z(1517), 327, 'TP:1.0'],
-        [Z(1517), 348, 'TP:1.0'],
-        [Z(1517), 370, 'TP:1.0'],
-        [Z(1585), Y2(467), '2OO3'],
-        [Z(1569), Y2(488), 'IN1'],
-        [Z(1612), Y2(488), 'OUT'],
-        [Z(1569), Y2(510), 'IN2'],
-        [Z(1569), Y2(531), 'IN3'],
-        [Z(1595), Y2(550), '014'],
-        [Z(1569), Y2(576), '(LME120)'],
         [Z(1848), 143, o.out[0]],
         [Z(1848), 165, o.out[1]],
         [Z(1847), 239, o.out[0]],
@@ -5398,8 +5416,9 @@ function tcsSim(s) {
       S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
       S.d = [];
       S.r = [];
+      S.m = S.m.filter(x => !/^(td2|v2o3)$/.test(x[0]));
       S.b = S.b.filter(x => !/^(ftr03[89]|btr04[0136]|ftr04[245]|ftr00[468]|btr01[56]|btr021)$/.test(x[0]));
-      S.w = S.w.filter(x => !/^(td2|v2o3|tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
+      S.w = S.w.filter(x => !/^(td2|v2o3)(\.OUT)?$/.test(x[0]) && !/^(tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
       S.t = S.t.filter(x => x[0] < Z(1480));
       o.direct.forEach(([ch, r1, r2, nm, mk], g) => {
         const G = [g1, g2, g3][g],
@@ -157521,10 +157540,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 61e09ef'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 03eec21'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 61e09ef';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 03eec21';
     } catch (e) {}
   };
   upd();
@@ -182539,12 +182558,49 @@ function tcsSim(s) {
         ['crtPv', Z(2076), 360, 'out', o.tag + '_PV', 'S', '#1C'],
         ['crtAbn', Z(2073), Y2(679), 'out', o.tagAbn || o.tag + '_PVQ', 'S', '#1C']
       ],
-      r: [
-        /* 'fn': a function box (TRIPLE DETECTOR2, 2OO3), not a PI/O box */
-        ['td2', Z(1481), 136, 235, 128, '', 'fn'],
-        ['v2o3', Z(1564), Y2(445), 86, 107, '', 'fn']
+      /* the TRIPLE DETECTOR2 (LME113) of the three values and the 2OO3 (LME120) of the three abnormal signals: macro blocks of the sheet */
+      m: [
+        ...m,
+        [
+          'td2',
+          'TRIPLE DETECTOR2',
+          '',
+          Z(1481),
+          136,
+          235,
+          128,
+          ['IN A', 'IN B', 'IN C', 'DEV'],
+          ['OUT', 'DEV'],
+          'A003',
+          [
+            [Z(1561), 287, '(LME113)'],
+            [Z(1517), 327, 'TP:1.0'],
+            [Z(1517), 348, 'TP:1.0'],
+            [Z(1517), 370, 'TP:1.0']
+          ],
+          [
+            [170, 191, 212, 233],
+            [170, 191]
+          ]
+        ],
+        [
+          'v2o3',
+          '2OO3',
+          '',
+          Z(1564),
+          Y2(445),
+          86,
+          107,
+          ['IN1', 'IN2', 'IN3'],
+          ['OUT'],
+          '014',
+          [[Z(1569), Y2(576), '(LME120)']],
+          [
+            [Y2(477), Y2(499), Y2(520)],
+            [Y2(477)]
+          ]
+        ]
       ],
-      m,
       b: [
         ...b,
         ...(EX.b || []),
@@ -182818,7 +182874,7 @@ function tcsSim(s) {
           ]
         ],
         [
-          'td2',
+          'td2.OUT',
           [
             [Z(1716), 170],
             [Z(2050), 170]
@@ -182826,7 +182882,7 @@ function tcsSim(s) {
           1
         ],
         [
-          'td2',
+          'td2.OUT',
           [
             [Z(1778), 170],
             [Z(1778), 360],
@@ -182835,7 +182891,7 @@ function tcsSim(s) {
           1
         ],
         [
-          'td2',
+          'td2.OUT',
           [
             [Z(1778), 264],
             [Z(2049), 264]
@@ -182843,14 +182899,14 @@ function tcsSim(s) {
           1
         ],
         [
-          'v2o3',
+          'v2o3.OUT',
           [
             [Z(1650), Y2(477)],
             [Z(2048), Y2(477)]
           ]
         ],
         [
-          'v2o3',
+          'v2o3.OUT',
           [
             [Z(1775), Y2(477)],
             [Z(1775), Y2(679)],
@@ -182858,7 +182914,7 @@ function tcsSim(s) {
           ]
         ],
         [
-          'v2o3',
+          'v2o3.OUT',
           [
             [Z(1775), Y2(573)],
             [Z(2047), Y2(573)]
@@ -182867,25 +182923,6 @@ function tcsSim(s) {
       ],
       t: [
         ...t,
-        [Z(1487), 157, 'TRIPLE DETECTOR2'],
-        [Z(1487), 178, 'IN A'],
-        [Z(1487), 199, 'IN B'],
-        [Z(1487), 221, 'IN C'],
-        [Z(1487), 242, 'DEV'],
-        [Z(1678), 178, 'OUT'],
-        [Z(1678), 199, 'DEV'],
-        [Z(1578), 261, 'A003'],
-        [Z(1561), 287, '(LME113)'],
-        [Z(1517), 327, 'TP:1.0'],
-        [Z(1517), 348, 'TP:1.0'],
-        [Z(1517), 370, 'TP:1.0'],
-        [Z(1585), Y2(467), '2OO3'],
-        [Z(1569), Y2(488), 'IN1'],
-        [Z(1612), Y2(488), 'OUT'],
-        [Z(1569), Y2(510), 'IN2'],
-        [Z(1569), Y2(531), 'IN3'],
-        [Z(1595), Y2(550), '014'],
-        [Z(1569), Y2(576), '(LME120)'],
         [Z(1848), 143, o.out[0]],
         [Z(1848), 165, o.out[1]],
         [Z(1847), 239, o.out[0]],
@@ -182910,8 +182947,9 @@ function tcsSim(s) {
       S.c = S.c.filter(x => !/^o[AB]1?$/.test(x[0]));
       S.d = [];
       S.r = [];
+      S.m = S.m.filter(x => !/^(td2|v2o3)$/.test(x[0]));
       S.b = S.b.filter(x => !/^(ftr03[89]|btr04[0136]|ftr04[245]|ftr00[468]|btr01[56]|btr021)$/.test(x[0]));
-      S.w = S.w.filter(x => !/^(td2|v2o3|tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
+      S.w = S.w.filter(x => !/^(td2|v2o3)(\.OUT)?$/.test(x[0]) && !/^(tmr\d\.(OUT|ABN))$/.test(x[0]) && !(x[0] === 'sg027' && x[1].length === 4));
       S.t = S.t.filter(x => x[0] < Z(1480));
       o.direct.forEach(([ch, r1, r2, nm, mk], g) => {
         const G = [g1, g2, g3][g],
@@ -349546,7 +349584,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 61e09ef'));
+    row('Version', E('span', 'scsver', ver + ' · build 03eec21'));
   }
   function openSet(near) {
     if (!set) {
