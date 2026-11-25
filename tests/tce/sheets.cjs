@@ -256,6 +256,27 @@ const S = R.stats(A);
     if (ao.SVE !== 0 || ao.ABN !== 1) fail('AIR OPERAT VALVE: no full close in t2 is not a close fault ' + JSON.stringify(ao));
     if (av.need([[0, 0, 'TP:5.0s']]).length !== 1) fail('AIR OPERAT VALVE with no t1 / t2 printed must be open');
   }
+  /* TCE250 MAIN STOP VALVE FULL CLOSE (TA-6), compiled alone with TCE601 / TCE041 (the inputs become ports): TURBINE TRIP (MSV, RSV,
+     ICV CLOSE) on DO TCE960-26 = MSV(A) and MSV(B) full close and (RSV(A) or ICV(A)) and (RSV(B) or ICV(B)) full close */
+  {
+    const sub = sheets.filter(s => ['TCE250', 'TCE601', 'TCE041'].includes(s.id)),
+      Q = R.compile(sub),
+      trip = R.outs(Q).find(o => o.row === 'TCE960-26'),
+      K = ['CON:TCE220.A3', 'CON:TCE220.B3', 'CON:TCE226.G1', 'CON:TCE227.A2', 'CON:TCE226.G2', 'CON:TCE228.A2'],
+      tr = on => {
+        K.forEach((k, i) => R.set(Q, k, on[i]));
+        for (let i = 0; i < 20; i++) R.step(Q, 0.01);
+        return Q.v[trip.slot];
+      };
+    for (const [on, e] of [
+      [[0, 0, 0, 0, 0, 0], 0],
+      [[1, 1, 0, 0, 0, 0], 0],
+      [[1, 1, 1, 0, 0, 1], 1],
+      [[1, 0, 1, 1, 1, 1], 0],
+      [[1, 1, 1, 1, 1, 1], 1]
+    ])
+      if (tr(on) !== e) fail('TCE250 TURBINE TRIP DO TCE960-26 with MSV A/B, RSV A, ICV A, RSV B, ICV B closed ' + on + ' is not ' + e);
+  }
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
   if (!v || v.ins.IN === v.ins.ERR) fail('TCA322 line 3: the AI value and its PI/O error are one net');
