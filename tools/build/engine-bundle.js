@@ -16,7 +16,13 @@ const tceRun = () => '/* ---- src/digital/tce-run.js ---- */\n' + fs.readFileSyn
 function tceAlone() {
   const D = path.join(root, 'src', 'digital');
   return fs.readFileSync(path.join(D, 'order.list'), 'utf8').split(/\r?\n/).map(s => s.trim()).filter(s => /^tce\//.test(s))
-    .map(f => fs.readFileSync(path.join(D, f), 'utf8')).join('\n') + '\n' + tceRun();
+    .map(f => fs.readFileSync(path.join(D, f), 'utf8')).join('\n') + '\n' + tceRun() + tceIo();
+}
+/* the TCS I/O list and its ends: the inputs of the program */
+function tceIo() {
+  const j = JSON.parse(fs.readFileSync(path.join(root, 'src', 'data', 'tcs-io.json'), 'utf8'));
+  return '/* ---- src/digital/tce-io.js ---- */\n' + fs.readFileSync(path.join(root, 'src', 'digital', 'tce-io.js'), 'utf8') +
+    '\nwindow.TCE_IO_LIVE=TCE_IO.make(' + JSON.stringify({ rows: j.rows, spareBox: j.spareBox }) + ');\n';
 }
 function bundle(o) {
   o = o || {};
@@ -91,6 +97,7 @@ function worldBundle(o) {
     dFiles().map(f => '/* ---- ' + path.relative(root, f).split(path.sep).join('/') + ' ---- */\n' + rd(f)).join('\n') +
     '\n;globalThis.DITL={get S(){return S},set S(v){S=v},get SIM(){return SIM},set SIM(v){SIM=v},get MST(){return MST},get MS(){return MS},get DREG(){return DREG},ditlStates,ditlCapture,ditlApply,simSheet,netlist};\n' +
     tceRun() +
+    tceIo() +
     an +
     /* 3.2.1 (Mina beta.170: page 17 '52G1 off' stayed N in Worker mode): world.js links rows by the tag of the I/O list (window.WIRING:
        DITL-03H row 18 MIG-52G1-2 = I.0932, the sootblower starters MOR / MOS). The page list (src/ui/plant/wiring.js, 0.9 MB) is not in the

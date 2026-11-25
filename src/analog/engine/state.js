@@ -223,6 +223,7 @@ function anStateReset() {
   const objs = AN_STATE_OBJ(),
     st = anStateDec(AN_STATE_INIT, objs);
   for (const k in objs) anStateInPlace(objs[k], st[k]);
+  tcsShLoad(null); /* the TCS program: no memory */
 }
 /* the last values of the one-address groups (links.js shareExt); null = not built yet */
 const anXsGet = () => (AN._xs ? AN._xs.g.map(l => l.map(e => (e.v === undefined ? 'u' : e.v))) : null);
@@ -232,6 +233,33 @@ function anXsPut(xs) {
     return;
   }
   anXs().g.forEach((l, i) => l.forEach((e, j) => (e.v = xs[i] && xs[i][j] !== 'u' ? xs[i][j] : undefined)));
+}
+/* fn makes values in the loaded unit model U: a value that came with the keyframe stays as saved (the two sides of a keyframe must be the
+   same to the last digit: anTagsNow ran the heat transfer chain again at the pressures of the end of the scan, 66 values, SORA / SAORI 2026-11-25);
+   only a number that the save did not have is taken from fn. Not looked into: the drawings (blk / nets), the _ keys (made again by the scan) */
+function anStateFill(U, fn) {
+  const keep = [],
+    seen = new Set(),
+    walk = o => {
+      if (!o || typeof o !== 'object' || seen.has(o) || o instanceof Map || o instanceof Set || (o.blk && o.nets)) return;
+      seen.add(o);
+      for (const k of Object.keys(o)) {
+        const v = o[k];
+        if (k[0] === '_' || typeof v === 'function') continue;
+        if (v && typeof v === 'object') {
+          keep.push([o, k, v]);
+          walk(v);
+        } else if (v != null && !(typeof v === 'number' && isNaN(v))) keep.push([o, k, v]);
+      }
+    };
+  walk(U);
+  fn(U);
+  /* an object that fn made anew: its new keys stay, in the object that was loaded */
+  for (const [o, k, v] of keep) {
+    const n = o[k];
+    if (n !== v && v && typeof v === 'object' && n && typeof n === 'object') for (const q of Object.keys(n)) if (!(q in v)) v[q] = n[q];
+    o[k] = v;
+  }
 }
 function anStateCapture() {
   const ref = anStateRefs(),
@@ -251,7 +279,7 @@ function anStateCapture() {
   const sets = {};
   for (const k of AN_STATE_SETS) sets[k] = AN[k];
   /* AN.unit: the unit model once started (unit.js anUnitStart); AN.hmiDI / hmiComp: set by the first 150 MW load (hmi-op.js) */
-  return anStateEnc({ map: anStateMap(), sh, obj: AN_STATE_OBJ(), flags, sets, u: AN.unit === AN_UNIT ? 1 : 0, h: AN.hmiDI === AN_HMI_DI ? 1 : 0, xs: anXsGet() }, ref);
+  return anStateEnc({ map: anStateMap(), sh, obj: AN_STATE_OBJ(), flags, sets, u: AN.unit === AN_UNIT ? 1 : 0, h: AN.hmiDI === AN_HMI_DI ? 1 : 0, xs: anXsGet(), tce: tcsShSave() }, ref);
 }
 function anStateApply(kf) {
   const objs = AN_STATE_OBJ(),
@@ -295,10 +323,12 @@ function anStateApply(kf) {
   else delete AN.unit;
   if (st.h) (AN.hmiDI = AN_HMI_DI), (AN.hmiComp = hmiComp);
   else delete AN.hmiDI, delete AN.hmiComp;
+  tcsShLoad(st.tce); /* the TCS soft logic program (tcs-sheets.js) */
   anXsPut(M ? null : st.xs); /* the one-address groups follow the sheet order: rebuilt when it changed */
   AN._asc = null; /* the step sets kept while a starting state loads */
   AN._gen = (AN._gen || 0) + 1; /* new objects (engine/sync.js refs) */
   /* 1.0.0-beta.256: a save of an older engine: its bed moved to the new upper furnace balance at the same heat out (unit.js anBedMigrate) */
   if (AN.unit && typeof anBedMigrate === 'function') anBedMigrate(AN.unit);
-  if (AN.unit && typeof anTagsNow === 'function') anTagsNow(AN.unit); /* beta.241: the display values of the loaded plant (unit.js) */
+  /* beta.241: the display values of the loaded plant (unit.js): only what the save does not have (lane 0 2026-11-25) */
+  if (AN.unit && typeof anTagsNow === 'function') anStateFill(AN.unit, anTagsNow);
 }
