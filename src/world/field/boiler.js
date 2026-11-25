@@ -189,7 +189,7 @@ FIELD.add(lane, [{ stn: 3, di: 1, tag: 'XA-FA1052-5', sheet: 'DITL-43', v: (U, X
   src: 'IO list STN103 I.0659; DITL-43 output 12 (field contact on the output wire)' }]);
 
 /* 9. Bottom ash mechanical conveyors (bottom ash PLC logic DITL-BA59 ~ BA71, the I/O list station 103 B/A Handling points; the drawings
-   write the tags with one dash more, MIR-L-1091 for MIR-L1091). The motor starter of each machine runs while its start command is on
+   write the tags with one dash more, MIR-L-1091 for MIR-L1091: tag = the drawing's name that finds the row, io = the I/O list name). The motor starter of each machine runs while its start command is on
    (DITL-BA71 motor outputs = IO list O.0202 MOR-L1091 bucket elevator, O.0203 MOR-L1092 screw, O.0204 MOR-F1091 bag filter fan; output
    rows counted from 0: 8, 7, 10), and its running contact (DITL-BA59 RUNNING inputs) is made while it runs. The chain conveyor L-1090
    running contact (I.0163) is the plant model's U.baConv, as DITL-21A reads it (plantsw.js MIR-L1090): one source for the one signal.
@@ -198,12 +198,12 @@ FIELD.add(lane, [{ stn: 3, di: 1, tag: 'XA-FA1052-5', sheet: 'DITL-43', v: (U, X
    ash to the vibrating screens, CLOSE to the ash silo: DITL-BA66 lets the screw run with (VIBRATING SCREEN RUNNING and TWO WAY OPEN) or
    (NOT ASH SILO HIGH LEVEL and TWO WAY CLOSE). */
 FIELD.add(lane, [
-  { stn: 3, di: 1, tag: 'MIR-L-1090', sheet: 'DITL-BA59', v: U => U.baConv, rel: 'chain conveyor L-1090 running (plant model, on its ON COMMAND DITL-BA68)',
+  { stn: 3, di: 1, tag: 'MIR-L-1090', io: 'MIR-L1090', sheet: 'DITL-BA59', v: U => U.baConv, rel: 'chain conveyor L-1090 running (plant model, on its ON COMMAND DITL-BA68)',
     src: 'IO list STN103 I.0163 MIR-L1090; DITL-BA59 RUNNING input; engine boiler.js anBaStep U.baConv' }
 ].concat([
   ['MIR-L-1091', 8, 'I.0166', 'O.0202', 'bucket elevator L-1091 running'], ['MIR-L-1092', 7, 'I.0169', 'O.0203', 'screw conveyor L-1092 running'],
   ['MIR-F-1091', 10, 'I.016C', 'O.0204', 'bag filter venting fan F-1091 running']
-].map(([tag, r, a, o, rel]) => ({ stn: 3, di: 1, tag, sheet: 'DITL-BA59', v: (U, X) => X.ditlRun('DITL-BA71@' + r, 1), rel,
+].map(([tag, r, a, o, rel]) => ({ stn: 3, di: 1, tag, io: tag.replace(/^(MIR-[LF])-/, '$1'), sheet: 'DITL-BA59', v: (U, X) => X.ditlRun('DITL-BA71@' + r, 1), rel,
   src: 'IO list STN103 ' + a + '; DITL-BA59 RUNNING input; start command DITL-BA71 motor output ' + r + ' = ' + o }))
 ).concat([['ZSO-BH1754', 'twO', 'I.0173', 'LSO', 'two-way separator at its open end (ash to the vibrating screens)'],
   ['ZSC-BH1754', 'twC', 'I.0174', 'LSC', 'two-way separator at its closed end (ash to the silo)']].map(([tag, k, a, ls, rel]) => ({

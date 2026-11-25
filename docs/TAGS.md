@@ -27,8 +27,12 @@ TCS: ang sarili nitong I/O table ay `src/data/tcs-io.json` (TCS I/O list 310SC90
 
 Nakalista sa `tests/lanes/qa/tag-db-known.json`, bawat isa ay may dahilan at may-ari (lane). Ang lane na nag-ayos ang nag-aalis nito. Kapag may bagong pagkakaiba, bagsak ang Checks.
 
+Kapag ang `tag` ng isang row ay ang baybay ng drawing o ng alarm list (kailangan ito para mahanap ang row sa sheet), may `io` ang row = ang pangalan sa I/O list, at ang `io` ang sinusuri. Halimbawa: field MIR-L-1090 (drawing DITL-BA59) `io` MIR-L1090 (STN103 I.0163); ARP / IRP (DITL-42 row 6 / 7) `io` ARP1-SYSERR / IRP1-POWALM; alarm PSL-DO1043-A1 / C1 / D1 `io` PSH-DO1043-x1 (ang alarm list 20160912 ay sumulat ng PSL pero "PRESSURE HIGH SWITCH", set H 5.9: mali ng baybay sa alarm list, nasa listahan para sa user).
+
+Natitira (1, 2026-11-25 8:40 PM): loop STN102 FIQCD1121 SI9990. Ang memory list ng STN102 ay hanggang SI2099 lang; ang STN105 memory list ay nagsasabing ang SI9990 ay broadcast mula sa ibang station ("FROM #2 STN104"). Kailangan ang loop list at STN104 memory list sa PC.
+
 ## 4. Bukas na item (hindi pa tapos ang Phase 4)
 
-1. Ang 10 kilalang pagkakaiba (seksyon 3).
+1. Ang 1 natitirang pagkakaiba, SI9990 (seksyon 3, kailangan ang PC).
 2. Ang DITL / ABC sheets mismo ay may sariling text ng tag at address (pre.txt, apre.txt); ang pagtutugma nila ay binibilang ng QA trace (Phase 7: walang kabit 145, nasa drawing pero wala sa row 130), hindi pa 0.
 3. Ang HMI pages ay tumatawag ng tag sa code (`src/ui/plant/hx/`); hindi pa sinusuri ng test na ito (QA trace: I/O tags sa pages 824).

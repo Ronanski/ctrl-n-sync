@@ -52,7 +52,7 @@ FIELD.add(
   }))
 );
 /* the two relay panel inputs on DITL-42 (annunciator): its input rows 6 "ARP SYSTEM ALARM" and 7 "IRP POWER SUPPLY FAULT" carry no tag,
-   so the row is found by its first word on that sheet. 1 = alarm, the same contact as above */
+   so the row is found by its first word on that sheet (tag); io = the I/O list name. 1 = alarm, the same contact as above */
 FIELD.add(
   lane,
   [
@@ -62,6 +62,7 @@ FIELD.add(
     stn: 1,
     di: 1,
     tag,
+    io: id,
     sheet: 'DITL-42',
     v: (U, X) => X.state('dcs.' + id),
     rel: 'the contact ' + id,
