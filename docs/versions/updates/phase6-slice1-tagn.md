@@ -13,3 +13,8 @@ spray solenoids, TR236 3 s); M.012D -> O.0843 and O.0845 (LP bypass / desuperhea
   tools/trace/baseline.json moved in this PR.
 - No app code changed. Still open from the 8 drawn rows: ABC-054 / 055 PO1 / PO2 = AO0704 / 0705 / 0708 / 0709 (the pulse output of the
   PO block is not an address of a net yet) and DITL-22 O.0447 MOR-P1115B2 (#D copy).
+
+## Slice 2 (same PR, ~12:40 AM): machine copies by device
+- DITL-22 has four copies for the LOPs A1 / A2 / B1 / B2 (YUA, PDF): copy #D is LOP B of BFWP-B, not "machine D". The trace now treats a
+  copy whose own rows carry another I/O tag of the same device (#D: MIR-P1115B2 I.0373) as that device's copy.
+- O.0447 MOR-P1115B2 and O.0127 MOR-P1115B1 count as linked; wrong-copy rows (B5) 29 -> 19. I/O linked 1,791 -> 1,793, unlinked 142 -> 141.
