@@ -31,3 +31,11 @@ MIS-P1108x, MIS-P1501x, MIV-P1108x) and COPY ADDRESS CLASH (MIR / MIT-P1116A / B
   aux steam model keys).
 - CEP motor K1AU3-D1-0-044 p24-30 (read on the PC by lane 6): no running value and no limit of the bearings, coupling or vibration;
   they stay with no running value. TECO OM limits (bearing 90 / 95 C, winding 155 / 165 C) are a finding only: the alarm list rules.
+
+## AKIHO alarm switches (added in the same change)
+
+- PSL-PA1705 (STN104 I.052A): U.paPU < 2.8 kg/cm2 (alarm list PS). 150 MW: 6.8, switch 0.
+- LSLL-CW1109 (STN103 I.053F): U.etLvl <= 0.3 m (alarm list LS 300 mm). 150 MW: 0.8 m, switch 0.
+- Field states, normal = no alarm: PS-IA1061-A1 / A2 / B1 / B2 / C1 / C2 (coal feeder air tanks, instrument air unlimited), DPSH-FA1055-A / B
+  (FA blower inlet filters, on no sheet), LS-IW0714 (industrial water tank, fed by the excluded water treatment plant).
+- LSL-CH1101 and LS-LO1115-B: field states above.

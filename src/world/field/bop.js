@@ -137,6 +137,11 @@ for (const [ai, tag, k] of [
    pressure of the model (U.cdPd, the PT-CD1117 value). The I.0049 on DITL-03B is the station 103 address (MIS-F1055A FA blower A stopped) */
 R.push({ stn: 2, di: 1, tag: 'PS-CD1117', v: U => (isFinite(U.cdPd) ? (U.cdPd < 15.5 ? 1 : 0) : NaN), rel: 'U.cdPd < 15.5 kg/cm2 (condensate pump discharge pressure)',
   src: io(2) + ' I.0049 "#1 Condensate water pressure switch low"; Alarm List 20160912 sheet PS: PS-CD1117 stn 102 I.0049 set L 15.5; unit.js AN_CD cdPd' });
+/* plant air to unit 1 pressure low switch (STN104 I.052A; alarm list PS set L 2.8 kg/cm2): the unit header of the air model (U.paPU, the
+   PT-PA1705 value) */
+R.push({ stn: 4, di: 1, tag: 'PSL-PA1705', v: U => (isFinite(U.paPU) ? (U.paPU < 2.8 ? 1 : 0) : NaN), rel: 'U.paPU < 2.8 kg/cm2', src: io(4) + ' I.052A; alarm list PS (PD-023 3/6) set L 2.8; unit.js AN_AIR paPU' });
+/* expansion tank level low low switch (STN103 I.053F; alarm list LS LL 300 mm; DITL-76 / 77 row 26 "< 0.3 M"): U.etLvl (m) */
+R.push({ stn: 3, di: 1, tag: 'LSLL-CW1109', v: U => (isFinite(U.etLvl) ? (U.etLvl <= 0.3 ? 1 : 0) : NaN), rel: 'U.etLvl <= 0.3 m', src: io(3) + ' I.053F; alarm list LS (PD-021) LL 300 mm; unit.js AN_ACW etLvl' });
 R.push({ stn: 3, ai: 'AI0433', tag: 'IT-P1503A', v: U => fin(U.swIb0), rel: 'U.swIb0 booster pump A current', src: io(3) + ' AI0433; unit.js sea water booster model' });
 R.push({ stn: 3, ai: 'AI0434', tag: 'IT-P1503B', v: U => fin(U.swIb1), rel: 'U.swIb1 booster pump B current', src: io(3) + ' AI0434; unit.js sea water booster model' });
 R.push({ stn: 3, ai: 'AI0435', tag: 'IT-P1503C', v: U => fin(U.swIb2), rel: 'U.swIb2 booster pump C current', src: io(3) + ' AI0435; unit.js sea water booster model' });
@@ -325,6 +330,17 @@ for (const [stn, addr, tag, what] of [
 /* BFWP lube oil tank level switch low (KSB forced oil system of the pump; no oil inventory in the physics): normal = level above low */
 for (const [L, addr] of [['A', 'I.0093'], ['B', 'I.0413']])
   ST.push({ id: 'LO1115-' + L + '.lo', tag: 'LS-LO1115-' + L, di: addr, stn: 3, normal: 0, t: 'BFWP-' + L + ' lube oil level low', g: 'Feedwater and condensate', src: io(3) + ' ' + addr + ' "Lube oil of BFWP-' + L + ' level switch low"; normal = no oil loss' });
+/* AKIHO alarm switches (alarm list 20160912): devices with no physics in the model. Coal feeder air tank pressure switches high / low:
+   the instrument air supply is unlimited (user rule 2026-11-25), so normal = pressure in band (setpoints "BY VENDOR"); FA blower inlet
+   filter DP high: no filter fouling in the physics; industrial water tank level low: the tank is fed from the water treatment plant
+   (excluded, unlimited) */
+for (const [x, hi, lo] of [['A', 'I.013E', 'I.013F'], ['B', 'I.045E', 'I.045F'], ['C', 'I.049E', 'I.049F']]) {
+  ST.push({ id: 'IA1061-' + x + '.hi', tag: 'PS-IA1061-' + x + '1', di: hi, stn: 4, normal: 0, t: 'Coal feeder ' + x + ' air tank pressure high', g: 'Coal and limestone', src: io(4) + ' ' + hi + '; alarm list PS (PD-052, set by vendor); normal = in band' });
+  ST.push({ id: 'IA1061-' + x + '.lo', tag: 'PS-IA1061-' + x + '2', di: lo, stn: 4, normal: 0, t: 'Coal feeder ' + x + ' air tank pressure low', g: 'Coal and limestone', src: io(4) + ' ' + lo + '; alarm list PS (PD-052, set by vendor); normal = in band' });
+}
+for (const [x, addr] of [['A', 'I.0094'], ['B', 'I.0414']])
+  ST.push({ id: 'FA1055-' + x + '.filter', tag: 'DPSH-FA1055-' + x, di: addr, stn: 3, normal: 0, t: 'FA blower ' + x + ' inlet filter DP high', g: 'Air and flue gas', src: io(3) + ' ' + addr + '; alarm list DPS (PD-054); normal = clean filter' });
+ST.push({ id: 'IW0714.lo', tag: 'LS-IW0714', di: 'I.001F', stn: 5, normal: 0, t: 'Industrial water tank level low', g: 'Other', src: io(5) + ' I.001F; alarm list LS (PD-025, LL 1 m / 0.2 m); normal = tank filled by the water treatment plant (unlimited)' });
 /* breaker positions of the PAF circulating oil panel (a breaker does not open on a dead bus): normal = closed */
 ST.push({ id: 'LO1753.ctl', tag: 'MIA-LO1753-1', di: 'I.065B', stn: 3, normal: 0, t: 'PAF circulating oil system control power switch off', g: 'Air and flue gas', src: io(3) + ' I.065B "PAF circulating oil system control power auxiliary switch off"; normal = switch on' });
 ST.push({ id: 'LO1753.nfb2', tag: 'MIA-LO1753-2', di: 'I.065C', stn: 3, normal: 1, t: 'PAF circulating oil system NFB2 off', g: 'Air and flue gas', src: io(3) + ' I.065C "PAF circulating oil system NFB2 auxiliary switch not off"; normal = NFB closed (1)' });
