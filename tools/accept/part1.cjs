@@ -11,39 +11,13 @@ const { open } = require(path.join(root, 'tests/regress/lib.js'));
 const html = path.resolve(process.argv[2] || ''),
   SETTLE = +process.argv[3] || 60,
   WIN = +process.argv[4] || 30;
-/* [key, label, target 45 / 90 / 150, tol, kind] kind: 'a' absolute, 'p' percent, 'band' [lo, hi] */
-const T = [
-  ['MSF', 'Main steam flow T/H', [149.95, 273.36, 458.33], 3, 'p'],
-  ['Pms', 'Main steam pressure kg/cm2 (HB ata)', [98.9, 126.0, 126.0], 1.5, 'a'],
-  ['MSTt', 'Main steam temperature C (HB)', [505, 538, 538], 5, 'a'],
-  ['Psh', 'SH outlet pressure kg/cm2g (Fig 11)', [100.0, 126.5, 129], 1.5, 'a'],
-  ['MST', 'SH outlet temperature C (Fig 6)', [507, 541, 541], 5, 'a'],
-  ['CRHf', 'Cold reheat flow T/H', [145.0, 265.4, 446.1], 3, 'p'],
-  ['Pcr', 'Cold reheat pressure ata', [12.79, 23.48, 38.64], 1, 'a'],
-  ['Tcr', 'Cold reheat temperature C', [328.8, 358.1, 370.2], 5, 'a'],
-  ['HRHf', 'Hot reheat flow T/H', [134.8, 243.1, 400.9], 3, 'p'],
-  ['Prh', 'Hot reheat pressure ata', [11.51, 21.13, 34.77], 1, 'a'],
-  ['RHT', 'RH outlet temperature C', [507, 541, 541], 5, 'a'],
-  ['tEco', 'Economizer outlet water C', [null, null, 303], 3, 'a'],
-  ['Tfw', 'Final feedwater C', [188.6, 218.0, 245.4], 3, 'a'],
-  ['FWf', 'Final feedwater T/H', [150.3, 273.7, 458.7], 3, 'p'],
-  ['sp', 'SH spray T/H', [0, 0, 12.4], 3, 'a'],
-  ['rsp', 'RH spray T/H', [0, 0, 0], 1, 'a'],
-  ['MW', 'Generator MW', [45, 90, 150], 1, 'a'],
-  ['HR', 'Turbine heat rate kcal/kWh', [2331, 2079, 1989], 1, 'p'],
-  ['bed', 'Bed temperature C', [[850, 870], [850, 870], [850, 870]], 0, 'band'],
-  ['Tu', 'Furnace average temperature C', [610, 755, 840], 15, 'a'],
-  ['dp', 'Furnace DP mmH2O', [1380, 1380, 1630], 20, 'a'],
-  ['ahGi', 'Air heater gas in C', [265, 285, 322], 10, 'a'],
-  ['ahGo', 'Air heater gas out C', [null, null, 135], 10, 'a'],
-  ['coal', 'Coal T/H', [32.3, 56.0, 89.5], 3, 'p'],
-  ['lime', 'Limestone T/H', [4.3, 7.1, 12.0], 10, 'p'],
-  ['air', 'Total air T/H', [365, 371, 596], 3, 'p'],
-  ['PA', 'PA T/H', [245, 236, 354], 3, 'p'],
-  ['SA', 'SA T/H', [96, 111, 218], 3, 'p'],
-  ['O2', 'O2 %', [10.9, 3.6, 3.6], 0.5, 'a'],
-  ['eff', 'Boiler efficiency LHV %', [88.5, 91, 90.9], 1, 'a']
-];
+/* [key, label, target 45 / 90 / 150, tol, kind] kind: 'a' absolute, 'p' percent, 'band' [lo, hi]. The targets come from
+   docs/accept/part1-targets.json (Phase 2, 2026-11-25): the same numbers as the Part 1 table of docs/ACCEPTANCE.md, held equal by
+   tests/lanes/qa/acceptance.cjs. Rows with measured: false have no reading in this tool yet and are listed as not measured. */
+const PT = JSON.parse(fs.readFileSync(path.join(root, 'docs/accept/part1-targets.json'), 'utf8'));
+const T = PT.rows.filter(r => r.measured !== false).map(r => [r.key, r.label, r.t, r.tol, r.kind]);
+const NOT_MEASURED = PT.rows.filter(r => r.measured === false).map(r => r.label);
+if (NOT_MEASURED.length) console.log('not measured by this tool yet: ' + NOT_MEASURED.join(', '));
 const judge = (v, tg, tol, kind) => {
   if (tg == null || !isFinite(v)) return tg == null ? 'n/a' : 'FAIL';
   if (kind === 'band') return v >= tg[0] && v <= tg[1] ? 'PASS' : 'FAIL';
