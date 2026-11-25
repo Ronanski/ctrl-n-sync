@@ -13,6 +13,8 @@ Ginawa 2026-11-25 ~8:40 PM PHT (user "sunod sunod"). Bantay sa Checks: `tests/la
 
 TCS: ang sarili nitong I/O table ay `src/data/tcs-io.json` (TCS I/O list 310SC90-793 R2; test `tests/lanes/tcs-io/io.cjs`). Ang DCS points na papunta sa TCS ay nasa `src/data/tcs-dcs.json`, at bawat isa ay tugma sa table sa itaas.
 
+Spare: `src/data/io-spare.json` = mga I/O point na may address at pangalan ng channel pero walang serbisyo sa I/O list at sa wiring list, at walang drawing na nagbibigay ng gawain (21 annunciator window, 2026-11-26). Hindi sila binibilang na "walang kabit" at hindi binibigyan ng gawain; sinusuri ng test na walang serbisyo ang bawat isa.
+
 ## 2. Sino ang gumagamit (at sinusuri laban sa table)
 
 | File | Ano ang sinusuri |

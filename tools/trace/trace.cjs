@@ -26,6 +26,24 @@ const START = arg('start', '150'),
   TAGS = args('tag'),
   STN = arg('stn', null);
 /* excluded by the user 2026-11-25 00:52 PHT: WTP, coal handling, air compressors (and their dryers); unlimited supply at the boundary */
+/* I/O points the docs show as spare (src/data/io-spare.json, with its source): not a gap, never given a function */
+const SPARE = (() => {
+  try {
+    const j = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'src', 'data', 'io-spare.json'), 'utf8'));
+    return new Set(j.rows.map(r => r.stn + '|' + r.key));
+  } catch (e) {
+    return new Set();
+  }
+})();
+/* I/O points that serve only an excluded system although their service text does not say so (src/data/io-excluded.json, with source) */
+const EXCL_IO = (() => {
+  try {
+    const j = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'src', 'data', 'io-excluded.json'), 'utf8'));
+    return new Set(j.rows.map(r => r.stn + '|' + r.key));
+  } catch (e) {
+    return new Set();
+  }
+})();
 const EXCL = /compressor|air dryer|\bdryer\b|water treatment|\bWTP\b|coal handling|coal yard|stacker|reclaimer/i;
 const OPER = /^COS manual|\.(MAN|LOC|REM|AUT|CAS)$|manual SV|\bSV\b|setup|SET ?UP/i;
 const strip = t =>
@@ -144,6 +162,14 @@ const has = (txt, tag) => {
     [path.join(root, 'src', 'analog', 'engine'), path.join(root, 'src', 'world')],
     [/[\\/]data[\\/]/]
   );
+  const loopPV = new Set();
+  try {
+    const w = {};
+    new Function('window', fs.readFileSync(path.join(root, 'src', 'ui', 'plant', 'dcslists.js'), 'utf8'))(w);
+    const iS = w.DCS_LOOPS_F.indexOf('stn'),
+      iP = w.DCS_LOOPS_F.indexOf('pv');
+    for (const r of w.DCS_LOOPS) if (r[iP]) loopPV.add(+r[iS] + '|' + r[iP]);
+  } catch (e) {}
   const hmiTxt = codeText(
     [path.join(root, 'src', 'ui'), path.join(root, 'src', 'station'), path.join(root, 'src', 'analog', 'ui')],
     [/wiring\.js$/, /mock/i, /[\\/]uat[\\/]/, /[\\/]training[\\/]/]
@@ -629,8 +655,12 @@ const has = (txt, tag) => {
     return m ? m[1] : baseHasCopies.has(r.sh) ? 'A' : null;
   };
   const machOfIo = (tag, d) => {
+    /* an operator console annunciator window is named by its place on the panel (OPC-ANN-C1 = row C, window 1), not by a machine: only
+       its service text can name one ("#1 B-BFWP STOPPED") (Phase 6, 2026-11-26: C1 DEAERATOR TANK LEVEL L.L. on DITL-23B was taken for
+       machine C) */
+    const win = /^OPC-ANN-/.test(String(tag));
     const m =
-      /[- ]([A-D])\b(?![.-]?\d{3})/.exec(String(d || '')) || /-([A-D])\d?$/.exec(tag) || /\d([A-D])\d?$/.exec(tag);
+      /[- ]([A-D])\b(?![.-]?\d{3})/.exec(String(d || '')) || (!win && (/-([A-D])\d?$/.exec(tag) || /\d([A-D])\d?$/.exec(tag)));
     return m ? m[1] : null;
   };
   /* Phase 6 (2026-11-26, YUA PDF read): a machine copy whose own rows carry another I/O tag of the same device is that device's copy, whatever
@@ -697,7 +727,9 @@ const has = (txt, tag) => {
         }
         const onLogic = aOn.length + dOk.length > 0;
         const model = has(engTxt, tag),
-          hmi = has(hmiTxt, tag);
+          /* Phase 6 (2026-11-26, PC read of the 23 last points): the PV of an indicator loop of the DCS loop list (src/ui/plant/dcslists.js,
+             STN10x LOOP sheets; shown in the Library ALL SIGNALS tab) is a display use of the address: PIFG1009A1 <- AI0146 */
+          hmi = has(hmiTxt, tag) || loopPV.has(stn + '|' + key);
         /* an ABC source counts only when its source chain has no NaN (YUA 2026-11-25) */
         const aNaN = aOn.some(x => x.src !== 'NONE' && x.nan);
         const srcOk =
@@ -719,7 +751,7 @@ const has = (txt, tag) => {
         const txtOn =
           !onLogic && (sheetTxt.has(tag) || devInst.has(dev) || devInst.has(dev.replace(/^([A-Z]+)(\d)/, '$1-$2')));
         const live = aOn.some(x => x.moving) || dOn.some(x => x.moving);
-        const ex = EXCL.test(o.d || '') || EXCL.test(tag);
+        const ex = EXCL.test(o.d || '') || EXCL.test(tag) || EXCL_IO.has(stn + '|' + key);
         const byModel = fbTag.get(tag) || uswKey.has(stn + '|' + fNorm(tag));
         const field = fKey.has(stn + '|' + String(key).toUpperCase()) || fTag.has(fNorm(tag));
         /* an AO whose device is the device of an ABC controller of the same station (SC-L1060A <- SICL1060A MAN, MOF-CL1061-A <-
@@ -742,7 +774,9 @@ const has = (txt, tag) => {
                   ? 'ON SHEET, STATION UNSURE'
                   : model || hmi || field
                     ? 'MODEL / HMI ONLY'
-                    : 'UNLINKED';
+                    : SPARE.has(stn + '|' + key)
+                      ? 'SPARE'
+                      : 'UNLINKED';
         IO.push({
           stn,
           key,
@@ -880,6 +914,7 @@ const has = (txt, tag) => {
       clashRows,
       clashPoints: clashList.length,
       unlinked: byStatus('UNLINKED'),
+      spare: byStatus('SPARE'),
       moving: cnt(ioIn, x => x.live),
       fieldRows: FROWS.length,
       field: cnt(ioIn, x => x.field),

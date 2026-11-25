@@ -1,0 +1,123 @@
+{
+ "what": "I/O points that are SPARE: the I/O list has the address and a channel tag but no service, and no drawing or list gives them a function. They are not counted as unlinked (tools/trace/trace.cjs) and must stay without a function in the app. A point whose I/O list service says \"(not used)\" and that has no wire is spare too (its row carries why).",
+ "src": "DCS I/O list K1AU3-E2-0-118 (src/data/ades.txt: d empty); DCS hardware wiring list LMYP-1(#1) WIRING.xls (src/ui/plant/wiring.js: service column empty, card DN-37-A DN4-41 / DN4-43 / DN4-44); no DITL / ABC sheet, alarm list or memory list names these addresses (QA trace 2026-11-26). Phase 6, coordinator 2026-11-26 3:38 AM PHT: mark SPARE from the docs, never invent a function.",
+ "rows": [
+  {
+   "stn": 4,
+   "key": "O.133D",
+   "tag": "OPC-ANN-C10"
+  },
+  {
+   "stn": 4,
+   "key": "O.1403",
+   "tag": "OPC-ANN-G8"
+  },
+  {
+   "stn": 4,
+   "key": "O.1404",
+   "tag": "OPC-ANN-G9"
+  },
+  {
+   "stn": 4,
+   "key": "O.1405",
+   "tag": "OPC-ANN-G10"
+  },
+  {
+   "stn": 4,
+   "key": "O.1413",
+   "tag": "OPC-ANN-I4"
+  },
+  {
+   "stn": 4,
+   "key": "O.1414",
+   "tag": "OPC-ANN-I5"
+  },
+  {
+   "stn": 4,
+   "key": "O.1415",
+   "tag": "OPC-ANN-I6"
+  },
+  {
+   "stn": 4,
+   "key": "O.1416",
+   "tag": "OPC-ANN-I7"
+  },
+  {
+   "stn": 4,
+   "key": "O.1417",
+   "tag": "OPC-ANN-I8"
+  },
+  {
+   "stn": 4,
+   "key": "O.1418",
+   "tag": "OPC-ANN-I9"
+  },
+  {
+   "stn": 4,
+   "key": "O.1419",
+   "tag": "OPC-ANN-I10"
+  },
+  {
+   "stn": 4,
+   "key": "O.141A",
+   "tag": "OPC-ANN-J1"
+  },
+  {
+   "stn": 4,
+   "key": "O.141B",
+   "tag": "OPC-ANN-J2"
+  },
+  {
+   "stn": 4,
+   "key": "O.141C",
+   "tag": "OPC-ANN-J3"
+  },
+  {
+   "stn": 4,
+   "key": "O.141D",
+   "tag": "OPC-ANN-J4"
+  },
+  {
+   "stn": 4,
+   "key": "O.141E",
+   "tag": "OPC-ANN-J5"
+  },
+  {
+   "stn": 4,
+   "key": "O.141F",
+   "tag": "OPC-ANN-J6"
+  },
+  {
+   "stn": 4,
+   "key": "O.1440",
+   "tag": "OPC-ANN-J7"
+  },
+  {
+   "stn": 4,
+   "key": "O.1441",
+   "tag": "OPC-ANN-J8"
+  },
+  {
+   "stn": 4,
+   "key": "O.1442",
+   "tag": "OPC-ANN-J9"
+  },
+  {
+   "stn": 4,
+   "key": "O.1443",
+   "tag": "OPC-ANN-J10"
+  },
+  {
+   "stn": 2,
+   "key": "I.0292",
+   "tag": "LS-CR1003-1",
+   "why": "I/O list service ends with (not used); no wire in the wiring list and no row in the loop test report (PC read 2026-11-26)"
+  },
+  {
+   "stn": 2,
+   "key": "I.0293",
+   "tag": "LS-CR1003-2",
+   "why": "I/O list service ends with (not used); no wire in the wiring list and no row in the loop test report (PC read 2026-11-26)"
+  }
+ ]
+}

@@ -357,13 +357,18 @@ ST.push({ id: 'LO1753.nfb1', tag: 'MIA-LO1753-3', di: 'I.065D', stn: 3, normal: 
 /* fire fighting pumps (DITL-87 rows 24 / 26, LOCATION FFS = the fire fighting system panel; that system is not in the DCS and not in the
    model): the DCS only reads their running contacts. Normal = not running (no fire demand): DITL-87 out 27 "ANY FIRE PUMP RUNNING & FIRE
    TANK LEVEL < 50%" is an annunciator (CRT ANN), so a running fire pump is an abnormal state. The jockey pump P-0720 (I.033C) starts and
-   stops on the header pressure by itself, so it has no single normal state: not here (K1AU3-M0-159, the fire fighting system, not read) */
+   stops on the header pressure in its own controller (package, EE); the DCS only reads it. Its screen message (StsChange sheet of STN105,
+   "Fire sys jockey p. stop", process alarm on OFF; PC read 2026-11-26) makes running the normal state: normal 1, the instructor sets it off */
 [
   ['I.0338', 'MIR-P0719', 'Fire pump P-0719 (motor driven) running', 'DITL-87 row 24'],
   ['I.033A', 'MIR-P0718', 'Fire pump P-0718 (diesel engine driven) running', 'DITL-87 row 26']
 ].forEach(([addr, tag, what, row]) =>
   ST.push({ id: tag.slice(4) + '.run', tag, di: addr, stn: 5, normal: 0, t: what, g: 'Other', src: io(5) + ' ' + addr + ' "' + what + '"; ' + row + '; DITL-87 out 27 (ANN) = running is abnormal' })
 );
+ST.push({ id: 'P0720.run', tag: 'MIR-P0720', di: 'I.033C', stn: 5, normal: 1, t: 'Fire jockey pump P-0720 running', g: 'Other', src: io(5) + ' I.033C "Fire fighting system fire motor driven jockey pump running"; STN105 screen message: alarm on stop' });
+/* the CEMS common alarm (I.001F, STN101, CEMS panel contact): the screen raises a process alarm on ON (StsChange sheet of STN101), so 0 in
+   service; the CEMS own list of causes (K1AU3-E2-0-124) was not read: one state for the instructor */
+ST.push({ id: 'FG1057.cems', tag: 'LI1-FG1057', di: 'I.001F', stn: 1, normal: 0, t: 'CEMS common alarm', g: 'Air and flue gas', src: io(1) + ' I.001F "#1 CEMS common alarm"; STN101 screen message: alarm on ON' });
 FIELD.state(
   lane,
   ST.map(({ id, tag, normal, t, g, src }) => ({ id, tag, normal, t, g, src }))

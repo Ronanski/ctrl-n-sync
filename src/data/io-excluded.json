@@ -1,0 +1,12 @@
+{
+ "what": "I/O points that serve only an excluded system (user 2026-11-25: WTP, coal handling, air compressors and dryers are outside the simulator) although their I/O list service text does not name that system. Counted as excluded by the QA trace (tools/trace/trace.cjs), never given a function.",
+ "src": "DCS I/O list K1AU3-E2-0-118 remark column and the wiring list LMYP-1(#1) WIRING.xls (PC read 2026-11-26): these outputs go to the coal handling side. No DITL / ABC sheet draws the ladder that drives them; the input of the same name is LSH-CL1008-x (DITL-40) and MIR-CL1061-x (DITL-19), a name match only.",
+ "rows": [
+  { "stn": 4, "key": "O.0770", "tag": "LAH-CL1008-A", "why": "to coal handling (I/O list remark)" },
+  { "stn": 4, "key": "O.0772", "tag": "LAH-CL1008-B", "why": "to coal handling (I/O list remark)" },
+  { "stn": 4, "key": "O.0774", "tag": "LAH-CL1008-C", "why": "to coal handling (I/O list remark)" },
+  { "stn": 4, "key": "O.0776", "tag": "DOR-CL1061-A", "why": "to the coal silo air cannon (I/O list) / coal PLC (wiring list)" },
+  { "stn": 4, "key": "O.0777", "tag": "DOR-CL1061-B", "why": "to the coal silo air cannon (I/O list) / coal PLC (wiring list)" },
+  { "stn": 4, "key": "O.0778", "tag": "DOR-CL1061-C", "why": "to the coal silo air cannon (I/O list) / coal PLC (wiring list)" }
+ ]
+}
