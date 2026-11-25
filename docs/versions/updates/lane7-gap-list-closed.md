@@ -1,4 +1,4 @@
-# v1.0.0-beta.597 — Lane 7 gap list closed: VCB off points, gland steam temperature output (HMI turbine)
+# Lane 7: gap list closed - VCB off points, gland steam temperature output (HMI turbine)
 
 ## Ano ang bago (nakikita ng operator)
 - Monitor faceplate (Y button) ng BFWP-A / B, CEP-A / B, closed cooling pumps A / B at sea water pumps A / B / C: bagong row na **VCB off** (ang pangalawang contact ng VCB, MIV-Pxxxx2).
@@ -16,3 +16,5 @@
 
 ## Sinubok
 - `tests/lanes/hmi-turbine/pages-bound.cjs`; bilang ng gap list mula sa lahat ng HX page at registry (static).
+
+Lane 7, HMI TURBINE : MINAMI

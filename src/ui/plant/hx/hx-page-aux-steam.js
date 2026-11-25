@@ -225,7 +225,7 @@
         { x: 1290, y: 416, s: 'Gland steam temperature 2', key: 'TEGS1003', unit: '°C', dp: 0 },
         { x: 1290, y: 432, s: 'Turbine side', key: 'TT-AS1017', unit: '°C', dp: 0 },
         { x: 1290, y: 448, s: 'Unloading valve', key: 'PV-GS1034', unit: '%', dp: 1 },
-        /* beta.597: TT-AS1017-1 = the DCS output of the turbine side temperature (I/O list S2 AO0471) */
+        /* lane 7: TT-AS1017-1 = the DCS output of the turbine side temperature (I/O list S2 AO0471) */
         { x: 1290, y: 464, s: 'Turbine side, output', key: 'TT-AS1017-1', unit: '°C', dp: 0 },
         { x: 1440, y: 500, s: 'CONDENSER', cls: 'hx-zone' },
         { x: 1440, y: 520, s: 'Pressure', key: 'PT-CD1110', unit: K + ' abs', dp: 3 },

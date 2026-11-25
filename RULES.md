@@ -58,7 +58,7 @@ Pinagmulan: ang project instructions ng user, ang Full Audit 3 rules draft (2026
 1. Iisang repo: `Ronanski/ctrl-n-sync`. Ang `Ronanski/icms-master-tool` ay reference lang, hindi binubura.
 2. Isang PR bawat buong gawain. Kusang merge kapag pasado ang checks (auto-merge); burahin ang branch pagkatapos. Walang force push. Walang conflict marker sa commit.
 3. Ang checks ay may behaviour tests mula sa save points at fixed step, at humaharang ang mga ito sa merge.
-4. Bawat merge: taas ng version ng app (`delivery/app/app.json`) at isang maikling `docs/versions/v<ver>/UPDATE_REPORT.md`. Jennie = even na beta, Rosé = odd na beta. Iisang file ng estado: `HANDOFF.md`.
+4. Bawat merge: kusang tumataas ang version ng app (bilang ng commit sa `main`, `tools/app-version.js`) at may isang maikling report na `docs/versions/updates/<lane>-<paksa>.md`. Walang version number, `dist` o `app.json` sa PR. Iisang file ng estado: `HANDOFF.md` (lane 0 ang nag-a-update).
 5. Ang gumawa ay puwedeng sumubok ng sariling gawa, dahil ang checks ang humaharang sa sira.
 6. Automated test: headless, may TEST_LOCK, walang popup, save dialog o nakikitang browser sa PC.
 7. Live test: ang tunay na app, nakikitang pindot na parang tao (totoong pindot, hindi code), napapanood ng user nang live, hinuhusgahan ng physics. Ang JS ay pambasa lang. Mula sa save points; buong Cold run kapag ang user lang ang nagsabi.
