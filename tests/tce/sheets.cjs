@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 258; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 260; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 106;
@@ -396,6 +396,16 @@ for (const id of ['TCA762', 'TCA763']) {
   if (!fg || fg.open && fg.open.length) fail(id + ' UNT-FG: no block or open ' + JSON.stringify(fg && fg.open));
   const y = v => f([v], fg.notes)[0];
   if (y(500) !== 0.5381 || !(y(175) > 0.0001 && y(175) < 0.0002) || y(600) !== 0.5381) fail(id + ' UNT-FG LCFI table: ' + [y(500), y(175), y(600)]);
+}
+/* FG curves of the ATS criteria list 310SC90-796 Rev 2 sheets 21 / 22: TCA530 chest temperature difference limits (FIG. 4 / 5), TCA548
+   lower limits (FIG. 2 / 3) */
+{
+  const fgy = (id, key, v) => R.K.FG([v], A.plan.find(p => p.id === id).nodes.find(x => x.key === key).notes)[0],
+    near = (a, b) => Math.abs(a - b) < 0.01;
+  if (!near(fgy('TCA530', 'fgA005', 200), 127.8) || !near(fgy('TCA530', 'fgA005', 382.8), 103.35) || !near(fgy('TCA530', 'fgA022', 600), 112.2))
+    fail('TCA530 chest temp diff limit curves');
+  if (!near(fgy('TCA548', 'fgA040', 100), 305) || !near(fgy('TCA548', 'fgA040', 538), 471) || !near(fgy('TCA548', 'fgA042', 423.5), 317.5))
+    fail('TCA548 lower limit curves');
 }
 /* MODE (TCA768A, LMA810): load up rate by load band from the printed tables; 5.0 %/min until the IP -> HP transfer is complete */
 {
