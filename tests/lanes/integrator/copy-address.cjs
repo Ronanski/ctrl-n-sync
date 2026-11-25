@@ -1,4 +1,4 @@
-/* beta.560 (lane 0): the I/O address a machine copy shows and reads is the address of its own machine (QA trace B5), a copy row with no signal
+/* beta.570 (lane 0): the I/O address a machine copy shows and reads is the address of its own machine (QA trace B5), a copy row with no signal
    name takes no address of another row, and the DITL-BA rows that name a field switch by its tag alone read that switch. Node only. */
 const { load } = require('../../../tools/trace/world.cjs');
 const bad = [];

@@ -1,4 +1,4 @@
-# v1.0.0-beta.560 (LEADER : YUA, lane 0): I/O address ng sariling makina sa bawat kopya
+# v1.0.0-beta.570 (LEADER : YUA, lane 0): I/O address ng sariling makina sa bawat kopya
 
 ## Ano ang nagbago
 - **Address sa kopya ng drawing** (SAORI, QA trace B5): ang drawing para sa makina A hanggang D ay may dalawang address text sa tabi ng wire ("O.0093/413" at "O.0733/1053"). Ngayon, ang tag sa I/O list ang nagsasabi kung kanino ang address: ang kopya #C ay O.0733 lang. Saklaw ang DITL-13, 18, 19, 20, 21A, 22, 24, 28A, 29A, 117 at iba pa.

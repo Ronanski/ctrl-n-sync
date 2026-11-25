@@ -285,7 +285,7 @@
     }
     return String(t || '').replace(MRX, (m, L, at, all) => {
       if (!relative(I.base, all.slice(0, at + m.length))) return m;
-      /* beta.560: "COAL FEEDER A/B/C ALL IN REMOTE" names all of them on every copy */
+      /* beta.570: "COAL FEEDER A/B/C ALL IN REMOTE" names all of them on every copy */
       if (/^\s*[/~]\s*[B-D](?![A-Z0-9])/.test(all.slice(at + m.length))) return m;
       const u = L.toUpperCase(),
         to = LET[(LET.indexOf(u) + I.k) % Math.max(I.n, LET.indexOf(u) + 1)];
@@ -326,7 +326,7 @@
     }
     const M = tagsK(s);
     if (M) x = x.replace(TAGM, m => M.get(m) || m);
-    /* beta.560: a row of one address that reads another row of the drawing in this copy (W.addrK: DITL-24 rows 25 / 26, DITL-19 rows 23 ~ 28
+    /* beta.570: a row of one address that reads another row of the drawing in this copy (W.addrK: DITL-24 rows 25 / 26, DITL-19 rows 23 ~ 28
        name every feeder, each with its own address): the address goes with the name, as the engine reads it */
     if (I.k && la.length === 1) {
       const m = rowSwap(s).get(la[0]);
@@ -334,7 +334,7 @@
     }
     return x;
   };
-  /* beta.560 (QA trace B5): a drawing for machines A ~ D writes the addresses of a signal beside the wire as two texts, "O.0093/413" (burner
+  /* beta.570 (QA trace B5): a drawing for machines A ~ D writes the addresses of a signal beside the wire as two texts, "O.0093/413" (burner
      A / B) and "O.0733/1053" (C / D) below it, and DITL-22 "O.0126/446" (LOP A / B of BFWP A) and "O.0127/447" (of BFWP B). Which machine an
      address belongs to is in its tag in the I/O list (BO1-DO1043-C; MOR-P1115B1), not in its place in the text: a copy shows the address of
      its own machine, and nothing for a text that holds only the addresses of the others (when another text of the drawing has its own).

@@ -526,14 +526,18 @@ rows.push(
     src: 'IO list STN102 AI0770 ZT-SB1001; DITL-80S MV-SB1001' }
 );
 
-/* 2. Furnace temperature control dampers FA1005 ~ FA1018 (STN103): the open / closed limit switches of each motor damper. The damper
+/* 2. Furnace temperature control dampers FA1005 ~ FA1026 (STN103: front wall FA1005 ~ 1018 on ABC-015 / 016, rear wall FA1019 ~ 1026 on ABC-016): the open / closed limit switches of each motor damper. The damper
    position is its own position transmitter ZT-FA10xx (AI0544 ~ AI0566, on ABC-015 / 016 following MCV-FA10xx). */
 [
   [1005, 'I.0330', 'I.0331', 'AI0544'], [1006, 'I.0335', 'I.0336', 'AI0545'], [1007, 'I.033A', 'I.033B', 'AI0546'],
   [1008, 'I.0720', 'I.0721', 'AI0547'], [1009, 'I.0725', 'I.0726', 'AI0548'], [1010, 'I.072A', 'I.072B', 'AI0549'],
   [1011, 'I.0730', 'I.0731', 'AI0550'], [1012, 'I.0735', 'I.0736', 'AI0560'], [1013, 'I.073A', 'I.073B', 'AI0561'],
   [1014, 'I.0800', 'I.0801', 'AI0562'], [1015, 'I.0805', 'I.0806', 'AI0563'], [1016, 'I.080A', 'I.080B', 'AI0564'],
-  [1017, 'I.0810', 'I.0811', 'AI0565'], [1018, 'I.0815', 'I.0816', 'AI0566']
+  [1017, 'I.0810', 'I.0811', 'AI0565'], [1018, 'I.0815', 'I.0816', 'AI0566'],
+  /* rear wall dampers FA1019 ~ FA1026 (ABC-016, ZT-FA1019 ~ 1026 AI0416 ~ AI0423) */
+  [1019, 'I.0000', 'I.0001', 'AI0416'], [1020, 'I.0005', 'I.0006', 'AI0417'], [1021, 'I.000A', 'I.000B', 'AI0418'],
+  [1022, 'I.0010', 'I.0011', 'AI0419'], [1023, 'I.0015', 'I.0016', 'AI0420'], [1024, 'I.001A', 'I.001B', 'AI0421'],
+  [1025, 'I.0320', 'I.0321', 'AI0422'], [1026, 'I.0325', 'I.0326', 'AI0423']
 ].forEach(([n, o, c, z]) => {
   const zt = X => num(X.ai('3|' + z));
   rows.push(
@@ -635,15 +639,18 @@ for (const x of 'ABC') {
     src: YAM + ': clean-out conveyor motor fault contact' });
   fr.push({ stn: 4, di: 1, tag: 'MIT-CL1061-' + x + '1', v: (U, X) => X.state(ic), rel: 'clean-out conveyor motor tripped', src: 'IO list STN104 ' + mit1 + '; ' + YAM });
 }
-/* motor dampers positioned from the DCS: furnace temperature control FA1005 ~ FA1018 (ABC-015 / 016, MCV-FA10xx) and burner hot SA
+/* motor dampers positioned from the DCS: furnace temperature control FA1005 ~ FA1026 (ABC-015 / 016, MCV-FA10xx) and burner hot SA
    FA1043-A ~ D (ABC-003A ~ D). A damper the DCS positions is in REMOTE on its field panel, its motor not tripped, its torque switch
    not made (I/O list contacts "trip", "remote", "torque" of each damper). */
 [[1005, 'I.0332', 'I.0334', 'I.0333'], [1006, 'I.0337', 'I.0339', 'I.0338'], [1007, 'I.033C', 'I.033E', 'I.033D'],
   [1008, 'I.0722', 'I.0724', 'I.0723'], [1009, 'I.0727', 'I.0729', 'I.0728'], [1010, 'I.072C', 'I.072E', 'I.072D'],
   [1011, 'I.0732', 'I.0734', 'I.0733'], [1012, 'I.0737', 'I.0739', 'I.0738'], [1013, 'I.073C', 'I.073E', 'I.073D'],
   [1014, 'I.0802', 'I.0804', 'I.0803'], [1015, 'I.0807', 'I.0809', 'I.0808'], [1016, 'I.080C', 'I.080E', 'I.080D'],
-  [1017, 'I.0812', 'I.0814', 'I.0813'], [1018, 'I.0817', 'I.0819', 'I.0818']]
-  .map(([n, a, b, c]) => ['FA' + n, 3, a, b, c, 'ABC-015 / 016 MCV-FA' + n])
+  [1017, 'I.0812', 'I.0814', 'I.0813'], [1018, 'I.0817', 'I.0819', 'I.0818'],
+  [1019, 'I.0002', 'I.0004', 'I.0003'], [1020, 'I.0007', 'I.0009', 'I.0008'], [1021, 'I.000C', 'I.000E', 'I.000D'],
+  [1022, 'I.0012', 'I.0014', 'I.0013'], [1023, 'I.0017', 'I.0019', 'I.0018'], [1024, 'I.001C', 'I.001E', 'I.001D'],
+  [1025, 'I.0322', 'I.0324', 'I.0323'], [1026, 'I.0327', 'I.0329', 'I.0328']]
+  .map(([n, a, b, c]) => ['FA' + n, 3, a, b, c, (n > 1018 ? 'ABC-016' : 'ABC-015 / 016') + ' MCV-FA' + n])
   .concat([['FA1043-A', 4, 'I.0018', 'I.001A', 'I.0019', 'ABC-003A'], ['FA1043-B', 4, 'I.0338', 'I.033A', 'I.0339', 'ABC-003B'],
     ['FA1043-C', 4, 'I.0658', 'I.065A', 'I.0659', 'ABC-003C'], ['FA1043-D', 4, 'I.0978', 'I.097A', 'I.0979', 'ABC-003D']])
   .forEach(([d, stn, mit, ts, mil, abc]) => {
@@ -24369,8 +24376,8 @@ const TCS_DESC = {
     ['crtA', 2027, 755, 'out', 'nPT-LOn922A_XA', 'S', '#1C']
   ],
   m: [
-    ['b007', 'MOTOR STANDARD', 'nP-n922A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B007', []],
-    ['b021', 'MOTOR STANDARD', 'nP-n922B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+    ['b007', 'MOTOR STANDARD', 'nP-n922A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B007', [[1170, 550, '(LME580A)'], [1285, 550, '(LME580B)'], [1072, 575, 'TD:1.0s'], [1072, 597, 'TP:3.0s'], [1220, 575, 'TP:3.0s'], [1220, 597, 'TP:0.5s']]],
+    ['b021', 'MOTOR STANDARD', 'nP-n922B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', [[1170, 1104, '(LME580A)'], [1285, 1104, '(LME580B)'], [1072, 1129, 'TD:1.0s'], [1072, 1151, 'TP:3.0s'], [1220, 1129, 'TP:3.0s'], [1220, 1151, 'TP:0.5s']]]
   ],
   b: [
     ['x000', 'X', '', 915, 199.5],
@@ -24518,8 +24525,8 @@ const TCS_DESC = {
     ['crtB', 2027, 755, 'out', 'nPT-LOn931B_XA', 'S', '#1C']
   ],
   m: [
-    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', []],
-    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', [[1170, 550, '(LME580A)'], [1285, 550, '(LME580B)'], [1072, 575, 'TD:1.0s'], [1072, 597, 'TP:3.0s'], [1220, 575, 'TP:3.0s'], [1220, 597, 'TP:0.5s']]],
+    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', [[1170, 1104, '(LME580A)'], [1285, 1104, '(LME580B)'], [1072, 1129, 'TD:1.0s'], [1072, 1151, 'TP:3.0s'], [1220, 1129, 'TP:3.0s'], [1220, 1151, 'TP:0.5s']]]
   ],
   b: [
     ['x000', 'X', '', 1059, 199.5],
@@ -24669,7 +24676,7 @@ const TCS_DESC = {
     ['crtPr', 2025, 1219.5, 'out', 'TCE310_2', 'S', '#1C']
   ],
   m: [
-    ['b006', 'MOTOR STANDARD', 'nP-n923', 1063, 458.076, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', 'SPS', 'RUN', 'STP', 'ABN'], 'B006', []]
+    ['b006', 'MOTOR STANDARD', 'nP-n923', 1063, 458.076, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', 'SPS', 'RUN', 'STP', 'ABN'], 'B006', [[1165, 700.1, '(LME580C)'], [1285, 700.1, '(LME580D)'], [1070, 722.1, 'TD:1.0s'], [1070, 744.1, 'TP:3.0s'], [1070, 766.1, 'TP:3.0s'], [1070, 788.1, 'TP:0.5s']]]
   ],
   b: [
     ['a009', 'A', '009', 658.5, 536.5],
@@ -157514,10 +157521,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 97255eb'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 4c87350'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 97255eb';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 4c87350';
     } catch (e) {}
   };
   upd();
@@ -174713,7 +174720,7 @@ jV1eHpSLHlIJuUKcZC50d65hZRirjTo8uYFaEuMHYZh93x7z7vT58xHtJk75Y7HQrrsSLQX2BdoSnYyU
     }
     return String(t || '').replace(MRX, (m, L, at, all) => {
       if (!relative(I.base, all.slice(0, at + m.length))) return m;
-      /* beta.560: "COAL FEEDER A/B/C ALL IN REMOTE" names all of them on every copy */
+      /* beta.570: "COAL FEEDER A/B/C ALL IN REMOTE" names all of them on every copy */
       if (/^\s*[/~]\s*[B-D](?![A-Z0-9])/.test(all.slice(at + m.length))) return m;
       const u = L.toUpperCase(),
         to = LET[(LET.indexOf(u) + I.k) % Math.max(I.n, LET.indexOf(u) + 1)];
@@ -174754,7 +174761,7 @@ jV1eHpSLHlIJuUKcZC50d65hZRirjTo8uYFaEuMHYZh93x7z7vT58xHtJk75Y7HQrrsSLQX2BdoSnYyU
     }
     const M = tagsK(s);
     if (M) x = x.replace(TAGM, m => M.get(m) || m);
-    /* beta.560: a row of one address that reads another row of the drawing in this copy (W.addrK: DITL-24 rows 25 / 26, DITL-19 rows 23 ~ 28
+    /* beta.570: a row of one address that reads another row of the drawing in this copy (W.addrK: DITL-24 rows 25 / 26, DITL-19 rows 23 ~ 28
        name every feeder, each with its own address): the address goes with the name, as the engine reads it */
     if (I.k && la.length === 1) {
       const m = rowSwap(s).get(la[0]);
@@ -174762,7 +174769,7 @@ jV1eHpSLHlIJuUKcZC50d65hZRirjTo8uYFaEuMHYZh93x7z7vT58xHtJk75Y7HQrrsSLQX2BdoSnYyU
     }
     return x;
   };
-  /* beta.560 (QA trace B5): a drawing for machines A ~ D writes the addresses of a signal beside the wire as two texts, "O.0093/413" (burner
+  /* beta.570 (QA trace B5): a drawing for machines A ~ D writes the addresses of a signal beside the wire as two texts, "O.0093/413" (burner
      A / B) and "O.0733/1053" (C / D) below it, and DITL-22 "O.0126/446" (LOP A / B of BFWP A) and "O.0127/447" (of BFWP B). Which machine an
      address belongs to is in its tag in the I/O list (BO1-DO1043-C; MOR-P1115B1), not in its place in the text: a copy shows the address of
      its own machine, and nothing for a text that holds only the addresses of the others (when another text of the drawing has its own).
@@ -176938,7 +176945,7 @@ jV1eHpSLHlIJuUKcZC50d65hZRirjTo8uYFaEuMHYZh93x7z7vT58xHtJk75Y7HQrrsSLQX2BdoSnYyU
     mtr.length = 0;
     usw.length = 0;
     const FD = new Map(L.filter(x => x.fld).map(x => [x[0], x]));
-    /* beta.560 (EIMI): DITL-BA01 names the field switches of the ash transmitter by their tag alone (ZSC-BH1759), BA03 / BA11 / BA25 by the
+    /* beta.570 (EIMI): DITL-BA01 names the field switches of the ash transmitter by their tag alone (ZSC-BH1759), BA03 / BA11 / BA25 by the
        address (I.0483): the tag is the address of the I/O list (station 103, the station of the DITL-BA drawings), so it is that switch */
     const BAT = new Map();
     for (const r of window.WIRING || []) if (String(r[1]) === '3') BAT.set(String(r[3]).toUpperCase(), r[2]);
@@ -202257,8 +202264,8 @@ const TCS_DESC = {
     ['crtA', 2027, 755, 'out', 'nPT-LOn922A_XA', 'S', '#1C']
   ],
   m: [
-    ['b007', 'MOTOR STANDARD', 'nP-n922A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B007', []],
-    ['b021', 'MOTOR STANDARD', 'nP-n922B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+    ['b007', 'MOTOR STANDARD', 'nP-n922A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B007', [[1170, 550, '(LME580A)'], [1285, 550, '(LME580B)'], [1072, 575, 'TD:1.0s'], [1072, 597, 'TP:3.0s'], [1220, 575, 'TP:3.0s'], [1220, 597, 'TP:0.5s']]],
+    ['b021', 'MOTOR STANDARD', 'nP-n922B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', [[1170, 1104, '(LME580A)'], [1285, 1104, '(LME580B)'], [1072, 1129, 'TD:1.0s'], [1072, 1151, 'TP:3.0s'], [1220, 1129, 'TP:3.0s'], [1220, 1151, 'TP:0.5s']]]
   ],
   b: [
     ['x000', 'X', '', 915, 199.5],
@@ -202408,8 +202415,8 @@ const TCS_DESC = {
     ['crtB', 2027, 755, 'out', 'nPT-LOn931B_XA', 'S', '#1C']
   ],
   m: [
-    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', []],
-    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', []]
+    ['b031', 'MOTOR STANDARD', 'nP-n931A', 1063, 311, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B031', [[1170, 550, '(LME580A)'], [1285, 550, '(LME580B)'], [1072, 575, 'TD:1.0s'], [1072, 597, 'TP:3.0s'], [1220, 575, 'TP:3.0s'], [1220, 597, 'TP:0.5s']]],
+    ['b021', 'MOTOR STANDARD', 'nP-n931B', 1063, 865, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', '', 'RUN', 'STP', 'ABN'], 'B021', [[1170, 1104, '(LME580A)'], [1285, 1104, '(LME580B)'], [1072, 1129, 'TD:1.0s'], [1072, 1151, 'TP:3.0s'], [1220, 1129, 'TP:3.0s'], [1220, 1151, 'TP:0.5s']]]
   ],
   b: [
     ['x000', 'X', '', 1059, 199.5],
@@ -202561,7 +202568,7 @@ const TCS_DESC = {
     ['crtPr', 2025, 1219.5, 'out', 'TCE310_2', 'S', '#1C']
   ],
   m: [
-    ['b006', 'MOTOR STANDARD', 'nP-n923', 1063, 458.076, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', 'SPS', 'RUN', 'STP', 'ABN'], 'B006', []]
+    ['b006', 'MOTOR STANDARD', 'nP-n923', 1063, 458.076, 405, 223, ['ASRT', 'ASTP', 'TRP', 'EF', 'RUN'], ['STS', 'SPS', 'RUN', 'STP', 'ABN'], 'B006', [[1165, 700.1, '(LME580C)'], [1285, 700.1, '(LME580D)'], [1070, 722.1, 'TD:1.0s'], [1070, 744.1, 'TP:3.0s'], [1070, 766.1, 'TP:3.0s'], [1070, 788.1, 'TP:0.5s']]]
   ],
   b: [
     ['a009', 'A', '009', 658.5, 536.5],
@@ -328180,14 +328187,18 @@ rows.push(
     src: 'IO list STN102 AI0770 ZT-SB1001; DITL-80S MV-SB1001' }
 );
 
-/* 2. Furnace temperature control dampers FA1005 ~ FA1018 (STN103): the open / closed limit switches of each motor damper. The damper
+/* 2. Furnace temperature control dampers FA1005 ~ FA1026 (STN103: front wall FA1005 ~ 1018 on ABC-015 / 016, rear wall FA1019 ~ 1026 on ABC-016): the open / closed limit switches of each motor damper. The damper
    position is its own position transmitter ZT-FA10xx (AI0544 ~ AI0566, on ABC-015 / 016 following MCV-FA10xx). */
 [
   [1005, 'I.0330', 'I.0331', 'AI0544'], [1006, 'I.0335', 'I.0336', 'AI0545'], [1007, 'I.033A', 'I.033B', 'AI0546'],
   [1008, 'I.0720', 'I.0721', 'AI0547'], [1009, 'I.0725', 'I.0726', 'AI0548'], [1010, 'I.072A', 'I.072B', 'AI0549'],
   [1011, 'I.0730', 'I.0731', 'AI0550'], [1012, 'I.0735', 'I.0736', 'AI0560'], [1013, 'I.073A', 'I.073B', 'AI0561'],
   [1014, 'I.0800', 'I.0801', 'AI0562'], [1015, 'I.0805', 'I.0806', 'AI0563'], [1016, 'I.080A', 'I.080B', 'AI0564'],
-  [1017, 'I.0810', 'I.0811', 'AI0565'], [1018, 'I.0815', 'I.0816', 'AI0566']
+  [1017, 'I.0810', 'I.0811', 'AI0565'], [1018, 'I.0815', 'I.0816', 'AI0566'],
+  /* rear wall dampers FA1019 ~ FA1026 (ABC-016, ZT-FA1019 ~ 1026 AI0416 ~ AI0423) */
+  [1019, 'I.0000', 'I.0001', 'AI0416'], [1020, 'I.0005', 'I.0006', 'AI0417'], [1021, 'I.000A', 'I.000B', 'AI0418'],
+  [1022, 'I.0010', 'I.0011', 'AI0419'], [1023, 'I.0015', 'I.0016', 'AI0420'], [1024, 'I.001A', 'I.001B', 'AI0421'],
+  [1025, 'I.0320', 'I.0321', 'AI0422'], [1026, 'I.0325', 'I.0326', 'AI0423']
 ].forEach(([n, o, c, z]) => {
   const zt = X => num(X.ai('3|' + z));
   rows.push(
@@ -328289,15 +328300,18 @@ for (const x of 'ABC') {
     src: YAM + ': clean-out conveyor motor fault contact' });
   fr.push({ stn: 4, di: 1, tag: 'MIT-CL1061-' + x + '1', v: (U, X) => X.state(ic), rel: 'clean-out conveyor motor tripped', src: 'IO list STN104 ' + mit1 + '; ' + YAM });
 }
-/* motor dampers positioned from the DCS: furnace temperature control FA1005 ~ FA1018 (ABC-015 / 016, MCV-FA10xx) and burner hot SA
+/* motor dampers positioned from the DCS: furnace temperature control FA1005 ~ FA1026 (ABC-015 / 016, MCV-FA10xx) and burner hot SA
    FA1043-A ~ D (ABC-003A ~ D). A damper the DCS positions is in REMOTE on its field panel, its motor not tripped, its torque switch
    not made (I/O list contacts "trip", "remote", "torque" of each damper). */
 [[1005, 'I.0332', 'I.0334', 'I.0333'], [1006, 'I.0337', 'I.0339', 'I.0338'], [1007, 'I.033C', 'I.033E', 'I.033D'],
   [1008, 'I.0722', 'I.0724', 'I.0723'], [1009, 'I.0727', 'I.0729', 'I.0728'], [1010, 'I.072C', 'I.072E', 'I.072D'],
   [1011, 'I.0732', 'I.0734', 'I.0733'], [1012, 'I.0737', 'I.0739', 'I.0738'], [1013, 'I.073C', 'I.073E', 'I.073D'],
   [1014, 'I.0802', 'I.0804', 'I.0803'], [1015, 'I.0807', 'I.0809', 'I.0808'], [1016, 'I.080C', 'I.080E', 'I.080D'],
-  [1017, 'I.0812', 'I.0814', 'I.0813'], [1018, 'I.0817', 'I.0819', 'I.0818']]
-  .map(([n, a, b, c]) => ['FA' + n, 3, a, b, c, 'ABC-015 / 016 MCV-FA' + n])
+  [1017, 'I.0812', 'I.0814', 'I.0813'], [1018, 'I.0817', 'I.0819', 'I.0818'],
+  [1019, 'I.0002', 'I.0004', 'I.0003'], [1020, 'I.0007', 'I.0009', 'I.0008'], [1021, 'I.000C', 'I.000E', 'I.000D'],
+  [1022, 'I.0012', 'I.0014', 'I.0013'], [1023, 'I.0017', 'I.0019', 'I.0018'], [1024, 'I.001C', 'I.001E', 'I.001D'],
+  [1025, 'I.0322', 'I.0324', 'I.0323'], [1026, 'I.0327', 'I.0329', 'I.0328']]
+  .map(([n, a, b, c]) => ['FA' + n, 3, a, b, c, (n > 1018 ? 'ABC-016' : 'ABC-015 / 016') + ' MCV-FA' + n])
   .concat([['FA1043-A', 4, 'I.0018', 'I.001A', 'I.0019', 'ABC-003A'], ['FA1043-B', 4, 'I.0338', 'I.033A', 'I.0339', 'ABC-003B'],
     ['FA1043-C', 4, 'I.0658', 'I.065A', 'I.0659', 'ABC-003C'], ['FA1043-D', 4, 'I.0978', 'I.097A', 'I.0979', 'ABC-003D']])
   .forEach(([d, stn, mit, ts, mil, abc]) => {
@@ -328871,7 +328885,7 @@ FIELD.add(lane, R);
     }
     return String(t || '').replace(MRX, (m, L, at, all) => {
       if (!relative(I.base, all.slice(0, at + m.length))) return m;
-      /* beta.560: "COAL FEEDER A/B/C ALL IN REMOTE" names all of them on every copy */
+      /* beta.570: "COAL FEEDER A/B/C ALL IN REMOTE" names all of them on every copy */
       if (/^\s*[/~]\s*[B-D](?![A-Z0-9])/.test(all.slice(at + m.length))) return m;
       const u = L.toUpperCase(),
         to = LET[(LET.indexOf(u) + I.k) % Math.max(I.n, LET.indexOf(u) + 1)];
@@ -328912,7 +328926,7 @@ FIELD.add(lane, R);
     }
     const M = tagsK(s);
     if (M) x = x.replace(TAGM, m => M.get(m) || m);
-    /* beta.560: a row of one address that reads another row of the drawing in this copy (W.addrK: DITL-24 rows 25 / 26, DITL-19 rows 23 ~ 28
+    /* beta.570: a row of one address that reads another row of the drawing in this copy (W.addrK: DITL-24 rows 25 / 26, DITL-19 rows 23 ~ 28
        name every feeder, each with its own address): the address goes with the name, as the engine reads it */
     if (I.k && la.length === 1) {
       const m = rowSwap(s).get(la[0]);
@@ -328920,7 +328934,7 @@ FIELD.add(lane, R);
     }
     return x;
   };
-  /* beta.560 (QA trace B5): a drawing for machines A ~ D writes the addresses of a signal beside the wire as two texts, "O.0093/413" (burner
+  /* beta.570 (QA trace B5): a drawing for machines A ~ D writes the addresses of a signal beside the wire as two texts, "O.0093/413" (burner
      A / B) and "O.0733/1053" (C / D) below it, and DITL-22 "O.0126/446" (LOP A / B of BFWP A) and "O.0127/447" (of BFWP B). Which machine an
      address belongs to is in its tag in the I/O list (BO1-DO1043-C; MOR-P1115B1), not in its place in the text: a copy shows the address of
      its own machine, and nothing for a text that holds only the addresses of the others (when another text of the drawing has its own).
@@ -331098,7 +331112,7 @@ FIELD.add(lane, R);
     mtr.length = 0;
     usw.length = 0;
     const FD = new Map(L.filter(x => x.fld).map(x => [x[0], x]));
-    /* beta.560 (EIMI): DITL-BA01 names the field switches of the ash transmitter by their tag alone (ZSC-BH1759), BA03 / BA11 / BA25 by the
+    /* beta.570 (EIMI): DITL-BA01 names the field switches of the ash transmitter by their tag alone (ZSC-BH1759), BA03 / BA11 / BA25 by the
        address (I.0483): the tag is the address of the I/O list (station 103, the station of the DITL-BA drawings), so it is that switch */
     const BAT = new Map();
     for (const r of window.WIRING || []) if (String(r[1]) === '3') BAT.set(String(r[3]).toUpperCase(), r[2]);
@@ -349720,7 +349734,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 97255eb'));
+    row('Version', E('span', 'scsver', ver + ' · build 4c87350'));
   }
   function openSet(near) {
     if (!set) {

@@ -361,7 +361,7 @@
     mtr.length = 0;
     usw.length = 0;
     const FD = new Map(L.filter(x => x.fld).map(x => [x[0], x]));
-    /* beta.560 (EIMI): DITL-BA01 names the field switches of the ash transmitter by their tag alone (ZSC-BH1759), BA03 / BA11 / BA25 by the
+    /* beta.570 (EIMI): DITL-BA01 names the field switches of the ash transmitter by their tag alone (ZSC-BH1759), BA03 / BA11 / BA25 by the
        address (I.0483): the tag is the address of the I/O list (station 103, the station of the DITL-BA drawings), so it is that switch */
     const BAT = new Map();
     for (const r of window.WIRING || []) if (String(r[1]) === '3') BAT.set(String(r[3]).toUpperCase(), r[2]);

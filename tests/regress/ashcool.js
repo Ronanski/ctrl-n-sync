@@ -23,7 +23,7 @@ const html =
     { timeout: 120000 }
   );
   await page.waitForTimeout(2000);
-  /* beta.560 (YUA): the 150 MW start of the app (start screen, 150 MW), not AN.plantLoad150 alone: since beta.260 that is only the line-up
+  /* beta.570 (YUA): the 150 MW start of the app (start screen, 150 MW), not AN.plantLoad150 alone: since beta.260 that is only the line-up
      of the snapshot, the unit fell to 144 MW in 2 min and tripped before the checks, and the stopped coolers then lag the falling supply */
   await startAs(page, '150 MW');
   await page.evaluate(() => (AN._startP || Promise.resolve()).then(() => 1));
