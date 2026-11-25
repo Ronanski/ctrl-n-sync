@@ -6,14 +6,19 @@
    Input sheets: TCE040 / 042 / TCA043 / 047 / 048 (PI/O), TCE102 / 104 (discharge pressures), TCE111 (TPC signals).
    The IBD sheets TB-1 / 2 / 12 / 21 / 22, TC-28 only show the state (tcs-trip.js). Inputs (TCS_SH_IN), one source each: RUNNING = the contactor;
    ELECTRICAL TROUBLE = the MCC dead (c.empOff EMP-11, c.copOff the COP bus; EOP is DC 0; exhauster and purifier no dead MCC in the model 0);
-   pressures U.loPa / loPb / loCa / loCb / loEop; TCP1120 ~ 3120 B5 ~ B8 = the trip logic of IBD TA-13 / TA-14; TCA636 / TCA638 B1 = 0 until the
-   gland seal group sheets join (ATS work); INITIAL = 1.
-   Memory in the TCS state: c.sm = { v: name -> value, st: node -> memory, acc: sheet -> time, pb: port -> seconds left }, plain data, saved.
-   A state with no c.sm (new start, old save) starts from the run / AUTO flags. */
+   pressures U.loPa / loPb / loCa / loCb / loEop; TCP1120 ~ 3120 B5 ~ B8 = the trip logic of IBD TA-13 / TA-14; TCA636 / TCA638 B1 and INITIAL =
+   the nets of their own sheets.
+   THE WHOLE PROGRAM (TCE / TCA / G sheets) runs here, once, for the engine and the page. The sheets of TCS_SH.ids drive their motor and scan
+   at their own cycle; the others run beside tcs.js until their group drives, one scan every TCS_SH.slow s, their inputs from the TCS I/O list
+   (src/digital/tce-io.js; a (TCP) connector with no source, a hardware status or a panel contact of the G sheets keeps its start value).
+   The page shows the nets of the engine (AN.tce, engine/sync.js slot tceV).
+   Memory: c.sm in the TCS state = { n: steps, pb: port -> seconds left, pur, mot: motor -> memory }; AN_TCE = the nets and the memory of
+   the blocks, by name in the keyframe (engine/state.js tce). A state with none of it (new start, old save) starts from the run / AUTO flags. */
 const TCS_SH = {
   ids: 'TCE300 TCE305 TCE310 TCA655 TCA680 TCA700 TCE040 TCE042 TCE102 TCE104 TCE111 TCA043 TCA047 TCA048'.split(' '),
   hold: 3 /* s, HOLD 3000 ms of HMI_DO */,
   slice: 0.1 /* s, COMM+MD cycle */,
+  slow: 0.25 /* s, the sheets that do not drive yet */,
   mot: {
     mopA: ['TCE300.b007', c => c.mop[0], c => c.mopAu[0], 'TCE300', 'MOP-A'],
     mopB: ['TCE300.b021', c => c.mop[1], c => c.mopAu[1], 'TCE300', 'MOP-B'],
@@ -28,7 +33,6 @@ const TCS_SH = {
 const tcsPur = () => !!(typeof AN_SRC !== 'undefined' && AN_SRC.field && AN_SRC.field.pur);
 const tcsIbNet = (c, sh, n) => ((c.ib && c.ib.v && c.ib.v[sh] && c.ib.v[sh][n]) > 0.5 ? 1 : 0);
 const TCS_SH_IN = {
-  'REF:INITIAL': () => 1,
   'PIO:TCE040.di1': (U, c) => c.cop[0],
   'PIO:TCE040.di2': (U, c) => c.copOff,
   'PIO:TCE040.di3': (U, c) => c.mop[0],
@@ -55,37 +59,49 @@ const TCS_SH_IN = {
   ['B7', 'TA-14', 17],
   ['B8', 'TA-14', 8]
 ].forEach(([b, sh, n]) => ['1', '2', '3'].forEach(p => (TCS_SH_IN['CON:TCP' + p + '120.' + b] = (U, c) => tcsIbNet(c, sh, n))));
-let tcsShP = null /* compiled program; false = no sheets in this build */,
-  tcsShB = null /* the c.sm it is bound to */,
-  tcsShN = -1; /* and its step count: a LOAD puts other values in the same object */
+let tcsShP = null; /* the compiled program; null = no sheets in this build (yet) */
+/* sm / n: the c.sm the memory belongs to and its step count (a LOAD puts other values in the same object); ld: the memory of a keyframe */
+const AN_TCE = { sm: null, n: -1, ld: null };
 function tcsShProg() {
-  if (tcsShP !== null) return tcsShP;
+  if (tcsShP) return tcsShP;
   const R = window.TCE_RUN,
-    L = (window.TCE_SHEETS || []).filter(s => TCS_SH.ids.includes(s.id));
-  if (!R || L.length < TCS_SH.ids.length) return (tcsShP = false);
-  const p = R.compile(L);
-  p.in = p.ports.filter(n => !/^CRT:/.test(n)).map(n => [p.idx.get(n), (!/ ERR$/.test(n) && TCS_SH_IN[n.split(' ')[0]]) || (() => 0)]);
+    L = (window.TCE_SHEETS || []).filter(s => /^(TC[AE]|G-)/.test(s.id || ''));
+  if (!R || TCS_SH.ids.some(id => !L.some(s => s.id === id))) return null;
+  const p = R.compile(L),
+    io = window.TCE_IO_LIVE,
+    ch = n => (/ ERR$/.test(n) ? '' : n.split(' ')[0]);
+  p.v0 = p.v.slice();
+  p.drv = p.plan.filter(q => TCS_SH.ids.includes(q.id));
+  p.rest = p.plan.filter(q => !TCS_SH.ids.includes(q.id) && q.cyc > 0);
+  p.crt = p.ports.filter(n => /^CRT:/.test(n)).map(n => [p.idx.get(n), n]);
+  p.in = p.ports.filter(n => TCS_SH_IN[ch(n)]).map(n => [p.idx.get(n), TCS_SH_IN[ch(n)]]);
+  /* the other PI/O inputs: the TCS I/O list. ERR = channel error: the app has no card fault (0) */
+  p.io = io ? p.ports.filter(n => /^PIO:/.test(n) && ch(n) && !TCS_SH_IN[ch(n)]).map(n => [p.idx.get(n), ch(n)]) : [];
+  p.fed = p.tt = 0;
   p.keyed = [];
   for (const q of p.plan) for (const x of q.nodes) if (x.st) p.keyed.push([x.t === 'M' ? p.names[Object.values(x.outs)[0]] : p.names[x.out], x]);
-  return (tcsShP = p);
+  tcsShP = p;
+  if (AN_TCE.ld) tcsShLoad(AN_TCE.ld); /* a save loaded before the program was compiled */
+  return p;
 }
 function tcsSm(c) {
-  if (c.sm) return c.sm;
+  if (c.sm && c.sm.mot) return c.sm;
   tcsOilInit(c);
   tcsDevInit(c);
   if (c.eopAu == null) c.eopAu = !!c.eopArm;
-  c.sm = { ids: TCS_SH.ids, v: {}, st: {}, acc: {}, pb: {}, pur: tcsPur() };
+  c.sm = { n: 0, pb: {}, pur: tcsPur(), mot: {} };
+  AN_TCE.ld = null;
   for (const k in TCS_SH.mot) {
     const [m, run, au] = TCS_SH.mot[k],
       on = run(c) ? 1 : 0;
-    c.sm.st[m] = { auto: au(c) ? 1 : 0, on, seen: on };
+    c.sm.mot[m] = { auto: au(c) ? 1 : 0, on, seen: on };
   }
   return c.sm;
 }
 const tcsShMot = (c, k) => {
   const sm = tcsSm(c),
     m = TCS_SH.mot[k][0];
-  return (sm.st[m] = sm.st[m] || {});
+  return (sm.mot[m] = sm.mot[m] || {});
 };
 function tcsShFeed(p, U, c) {
   for (const [i, f] of p.in) {
@@ -93,31 +109,42 @@ function tcsShFeed(p, U, c) {
     if (isFinite(x)) p.v[i] = x;
   }
 }
+/* the value of a net now (tcs.js tcsIO, the page) */
+const tcsShNet = n => {
+  const p = tcsShProg();
+  return p && p.idx.has(n) ? p.v[p.idx.get(n)] : undefined;
+};
 function tcsShBind(p, U, c) {
   const sm = tcsSm(c);
-  if (tcsShB === sm && tcsShN === sm.n) return sm;
-  tcsShB = sm;
+  if (AN_TCE.sm === sm && AN_TCE.n === sm.n) return sm;
+  const ld = AN_TCE.ld && AN_TCE.ld.n === sm.n ? AN_TCE.ld : null;
+  AN_TCE.sm = sm;
+  AN_TCE.n = sm.n;
+  AN_TCE.ld = null;
   for (const [key, x] of p.keyed) {
     const k = x.t === 'M' && x.name === 'MOTOR STANDARD' ? key.replace(':', '.').replace(/\.[A-Z]+$/, '') : key;
-    x.st = sm.st[k] = sm.st[k] || {};
+    x.st = k in sm.mot ? sm.mot[k] : (ld && ld.st[key]) || {};
   }
-  p.v.fill(0);
-  for (const n in sm.v) if (p.idx.has(n)) p.v[p.idx.get(n)] = sm.v[n];
-  for (const q of p.plan) q.acc = +sm.acc[q.id] || 0;
+  p.v.set(p.v0);
+  if (ld) for (const n in ld.v) if (p.idx.has(n)) p.v[p.idx.get(n)] = ld.v[n];
+  for (const q of p.plan) q.acc = (ld && +ld.acc[q.id]) || 0;
+  p.tt = (ld && +ld.tt) || 0;
   /* a new memory: the nets take the run states before any command goes to a motor (no time passes) */
-  if (!('TCE300:b007.STS' in sm.v)) {
+  if (!ld) {
+    /* the controllers are in service already: INITIAL (TCE050 tp002 / TCA100 tpA001, 10 s) is over */
+    for (let i = 0; i < 48; i++) tcsShSlow(p, window.TCE_RUN, U, TCS_SH.slow);
     tcsShFeed(p, U, c);
-    for (let i = 0; i < 2; i++) for (const q of p.plan) window.TCE_RUN.scan(p, q, 0);
+    for (let i = 0; i < 2; i++) for (const q of p.drv) window.TCE_RUN.scan(p, q, 0);
   }
   return sm;
 }
-/* a CRT push button ('CRT:TCE300.b007.START'): '' or the reason */
+/* a CRT push button of the program ('CRT:TCE300.b007.START', 'CRT:TCA501.TCA501_1_IYS'): '' or the reason */
 function tcsShPress(c, port, sec) {
-  const m = /^(CRT:[^.]+\.[^.]+)\.(START|STOP|AUTO|MANUAL|RESET)$/.exec(String(port || '')),
-    k = m && Object.keys(TCS_SH.mot).find(x => 'CRT:' + TCS_SH.mot[x][0] === m[1]);
-  if (!k) return 'No TCS push button ' + port;
-  const pb = tcsSm(c).pb,
-    other = { START: 'STOP', STOP: 'START', AUTO: 'MANUAL', MANUAL: 'AUTO' }[m[2]];
+  const p = tcsShProg();
+  if (!p || !p.crt.some(x => x[1] === port)) return 'No TCS push button ' + port;
+  const m = /^(CRT:[^.]+\.[^.]+)\.(START|STOP|AUTO|MANUAL|RESET)$/.exec(port),
+    pb = tcsSm(c).pb,
+    other = m && { START: 'STOP', STOP: 'START', AUTO: 'MANUAL', MANUAL: 'AUTO' }[m[2]];
   if (other) delete pb[m[1] + '.' + other];
   pb[port] = sec > 0 ? +sec : TCS_SH.hold;
   return '';
@@ -146,8 +173,9 @@ function tcsSheets(U, c, dt) {
   if (tcsPur() !== !!sm.pur) tcsShMot(c, 'pur').on = tcsPur() ? 1 : 0;
   for (let n = Math.max(1, Math.ceil(dt / TCS_SH.slice - 1e-9)), h = dt / n; n > 0; n--) {
     tcsShFeed(p, U, c);
-    for (const q of p.ports) if (q.startsWith('CRT:')) v[p.idx.get(q)] = sm.pb[q] > 0 ? 1 : 0;
-    R.step(p, h);
+    for (const [i, q] of p.crt) v[i] = sm.pb[q] > 0 ? 1 : 0;
+    for (const q of p.drv) for (q.acc += h; q.acc >= q.cyc - 1e-9; q.acc -= q.cyc) R.scan(p, q, q.cyc);
+    tcsShSlow(p, R, U, h);
     for (const q in sm.pb) if (!((sm.pb[q] -= h) > 1e-9)) delete sm.pb[q];
     c.mop = [s('TCE300:b007.STS'), s('TCE300:b021.STS')];
     c.cop = [s('TCE305:b031.STS'), s('TCE305:b021.STS')];
@@ -164,11 +192,49 @@ function tcsSheets(U, c, dt) {
   c.eopAu = au('eop');
   c.gseAu = au('gse');
   tcsOilSet(c);
-  for (let i = 0; i < p.names.length; i++) {
-    const n = p.names[i],
-      x = v[i];
-    if (isFinite(x) && sm.v[n] !== x) sm.v[n] = x;
+  p.t += dt;
+  AN_TCE.n = sm.n = (+sm.n || 0) + 1;
+}
+/* the sheets that do not drive yet: one scan every TCS_SH.slow s (a sheet with a longer cycle at its cycle) */
+function tcsShSlow(p, R, U, h) {
+  p.tt += h;
+  if (p.tt < TCS_SH.slow - 1e-9) return;
+  const d = p.tt,
+    io = window.TCE_IO_LIVE;
+  p.tt = 0;
+  if (io) {
+    let n = 0;
+    io.batch(U, () => {
+      for (const [i, k] of p.io) {
+        const x = io.read(U, k);
+        if (isFinite(x)) (p.v[i] = x), n++;
+      }
+    });
+    p.fed = n;
   }
-  for (const q of p.plan) sm.acc[q.id] = q.acc;
-  tcsShN = sm.n = (+sm.n || 0) + 1;
+  for (const q of p.rest) {
+    q.acc += d;
+    if (q.acc < q.cyc - 1e-9) continue;
+    R.scan(p, q, Math.max(d, q.cyc));
+    q.acc = q.cyc > d ? q.acc - q.cyc : 0;
+  }
+}
+/* the keyframe (engine/state.js): the nets that left their start value by name and the block memories; the motors are in c.sm */
+function tcsShSave() {
+  const p = tcsShP;
+  if (!p || !AN_TCE.sm) return null;
+  const o = { n: AN_TCE.n, tt: p.tt, v: {}, st: {}, acc: {} };
+  for (let i = 0; i < p.names.length; i++) if (!Object.is(p.v[i], p.v0[i])) o.v[p.names[i]] = p.v[i];
+  for (const [key, x] of p.keyed) if (!(x.t === 'M' && x.name === 'MOTOR STANDARD') && Object.keys(x.st).length) o.st[key] = x.st;
+  for (const q of p.plan) if (q.acc) o.acc[q.id] = q.acc;
+  return o;
+}
+function tcsShLoad(o) {
+  AN_TCE.ld = o || null;
+  AN_TCE.sm = null;
+  const p = tcsShP;
+  if (!p) return;
+  /* the page (it does not scan): the nets at once */
+  p.v.set(p.v0);
+  if (o) for (const n in o.v) if (p.idx.has(n)) p.v[p.idx.get(n)] = o.v[n];
 }

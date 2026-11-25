@@ -166,6 +166,8 @@ function anSyncSlots() {
       return Object.keys(o).map(k => k + ':' + (o[k] && o[k].length)).join('|');
     }
   });
+  /* the nets of the TCS soft logic program (tcs-sheets.js): engine -> page, the changed ones */
+  add('tceV', () => (tcsShProg() || {}).v, null, { ta: 'tce' });
   /* the one-address groups (links.js shareExt) */
   add('xs', anXsGet, anXsPut, { raw: 1 });
   /* the DITL world (src/digital/parts/03d-state.js keys), by sheet name */
