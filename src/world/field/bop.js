@@ -350,6 +350,31 @@ for (const [x, hi, lo] of [['A', 'I.013E', 'I.013F'], ['B', 'I.045E', 'I.045F'],
 for (const [x, addr] of [['A', 'I.0094'], ['B', 'I.0414']])
   ST.push({ id: 'FA1055-' + x + '.filter', tag: 'DPSH-FA1055-' + x, di: addr, stn: 3, normal: 0, t: 'FA blower ' + x + ' inlet filter DP high', g: 'Air and flue gas', src: io(3) + ' ' + addr + '; alarm list DPS (PD-054); normal = clean filter' });
 ST.push({ id: 'IW0714.lo', tag: 'LS-IW0714', di: 'I.001F', stn: 5, normal: 0, t: 'Industrial water tank level low', g: 'Other', src: io(5) + ' I.001F; alarm list LS (PD-025, LL 1 m / 0.2 m); normal = tank filled by the water treatment plant (unlimited)' });
+/* Phase 9 (2026-11-26): the inputs shown on the HX pages that no sheet reads and no model drives. Electric trouble of the industrial water,
+   waste water and transformer pit pumps: no electrical fault in the physics, normal = no trouble */
+for (const [stn, addr, tag, what] of [
+  [5, 'I.0007', 'MIT-P0715A', 'Industrial water pump-A electric trouble'],
+  [5, 'I.0327', 'MIT-P0715B', 'Industrial water pump-B electric trouble'],
+  [5, 'I.000A', 'MIT-P0058A', 'Waste water pump-A electric trouble'],
+  [5, 'I.001D', 'MIT-P0058B', 'Waste water pump-B electric trouble'],
+  [3, 'I.017E', 'MIT-P1127', 'Transformer area pit submerge pump electric trouble']
+])
+  ST.push({ id: tag.slice(4) + '.trip', tag, di: addr, stn, normal: 0, t: what, g: 'Other', src: io(stn) + ' ' + addr + ' "' + what + '"; normal = no trouble' });
+/* fire water tank level low: the tank is filled from the water treatment plant (excluded, unlimited), as LS-IW0714 (INFERRED: same supply) */
+ST.push({ id: 'IW0724.lo', tag: 'LS-IW0724', di: 'I.0018', stn: 5, normal: 0, t: 'Fire water tank level low', g: 'Other', src: io(5) + ' I.0018 "Fire water tank level switch low"; normal = tank filled by the water treatment plant (INFERRED, as LS-IW0714)' });
+/* pits and the hypochlorite unloading: no rain, no leak and no truck in the model. Normal (INFERRED): the waste water pit below its high
+   high switch, the transformer area pit dry (its submerge pump stopped), the unloading pump B stopped (it runs only while a truck
+   unloads, from its local panel: hx-page-sea-water.js) */
+ST.push({ id: 'P0058.hh', tag: 'LSHH-P0058', di: 'I.001A', stn: 5, normal: 0, t: 'Waste water pit level high high', g: 'Other', src: io(5) + ' I.001A "Waste water pit level switch high high"; normal = no high high (INFERRED: no inflow model)' });
+ST.push({ id: 'P1127.run', tag: 'MIR-P1127', di: 'I.017D', stn: 3, normal: 0, t: 'Transformer area pit submerge pump running', g: 'Other', src: io(3) + ' I.017D "Transformer area pit submerge pump running"; normal = pit dry, pump stopped (INFERRED: no rain model)' });
+ST.push({ id: 'P0761B.run', tag: 'MIR-P0761B', di: 'I.0120', stn: 5, normal: 0, t: 'Hypochlorite unloading pump-B running', g: 'Other', src: io(5) + ' I.0120 (beside MIT-P0761B I.0121 overload); normal = no unloading (INFERRED: runs only while a truck unloads)' });
+/* BFWP suction manual valves: a running or stand-by boiler feed pump has its suction valve open (a pump cannot run on a shut suction), so
+   normal = open */
+for (const [L, addr] of [['A', 'I.028F'], ['B', 'I.032F']])
+  ST.push({ id: 'FW103' + (L === 'A' ? 1 : 2) + '.open', tag: 'ZSO-FW103' + (L === 'A' ? 1 : 2), di: addr, stn: 2, normal: 1, t: 'BFWP-' + L + ' suction manual valve open', g: 'Feedwater and condensate', src: io(2) + ' ' + addr + ' "#1 BFWP-' + L + ' suction manual valve open"; normal = open (pump in service or stand-by)' });
+/* generator breaker 52G1 in REMOTE: the DCS closes it through the auto synchronizing (DITL-115 AUTO SYNCHRONIZE START COMMAND, TCS-DO1006),
+   which works only with the breaker in REMOTE (INFERRED) */
+ST.push({ id: '52G1.rem', tag: 'MIL-52G1', di: 'I.0930', stn: 2, normal: 1, t: 'GCB 52G1 remote', g: 'Electrical and generator', src: io(2) + ' I.0930 "#1 GCB 52G1 remote"; normal = REMOTE (INFERRED: the auto synchronizing of the DCS closes it)' });
 /* breaker positions of the PAF circulating oil panel (a breaker does not open on a dead bus): normal = closed */
 ST.push({ id: 'LO1753.ctl', tag: 'MIA-LO1753-1', di: 'I.065B', stn: 3, normal: 0, t: 'PAF circulating oil system control power switch off', g: 'Air and flue gas', src: io(3) + ' I.065B "PAF circulating oil system control power auxiliary switch off"; normal = switch on' });
 ST.push({ id: 'LO1753.nfb2', tag: 'MIA-LO1753-2', di: 'I.065C', stn: 3, normal: 1, t: 'PAF circulating oil system NFB2 off', g: 'Air and flue gas', src: io(3) + ' I.065C "PAF circulating oil system NFB2 auxiliary switch not off"; normal = NFB closed (1)' });
