@@ -68,6 +68,11 @@ const has = (txt, tag) => {
   await E.start(START);
   const tLoad = Date.now() - t0;
   /* ---- hooks: every write into an ABC input (rt.ext) during the run is counted; the object stays the same (the compiled step keeps it) */
+  /* an ABC input the memory list names "(CRT)" is an operator push button / select of the CRT (SORA 2026-11-25, RULES.md): operator */
+  const crt = (st, key) => {
+    const o = ADES[st] && ADES[st][key];
+    return !!o && /\(CRT\)/i.test(String(o.d || '') + ' ' + String(o.r || '') + ' ' + String(o.n || ''));
+  };
   const W = new Map(); /* S -> Map(n -> writes) */
   for (const sh of AN.sheets) {
     const S = sh.S;
@@ -173,7 +178,7 @@ const has = (txt, tag) => {
               : 'link'
             : w > 0
               ? 'engine'
-              : OPER.test(name)
+              : OPER.test(name) || crt(rs, name)
                 ? 'operator'
                 : 'NONE'
           : lk
