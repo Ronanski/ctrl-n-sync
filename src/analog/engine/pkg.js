@@ -172,6 +172,33 @@ function pkgBit(ma) {
   if (!m) return null;
   return { w: +m[1], b: m[2] == null ? 0 : m[2].length === 1 ? +m[2] * 10 : +m[2] };
 }
+/* ---------- FLY ASH (FA-OM L5-1 section 4): eleven blow tanks AH-A ~ D, EP-1A, 1B, 2A, 2B, 3, 4, 5. The tank cycle (air valve, 2.5 bar,
+   discharge, level low and 0.4 bar + t, discharge close 5 s, inlet 3 s, filling until level high or the filling time) needs the filling
+   time, the pressurized / transported fail times and the delay t, which are not in the documents read (NO-SOURCE), and the silo level
+   needs the silo size and the unloading: the valves, levels, vibrators, purge valves, silo switches and unloaders have no value yet.
+   Given: no fault model yet, so the PRESSURIZED / TRANSPORTED FAIL of each tank and the fault / trip bits read 0; the DCS commands (start /
+   stop push buttons, alarm reset / ack): no screen sends one yet, 0; the plant air low switch from the plant air model. */
+const PKG_FA = {
+  zero: new Set(
+    [
+      // pressurized / transported fail of the 11 tanks
+      '40001.05 40001.06 40001.12 40001.13 40002.03 40002.04 40002.1 40002.11 40003.01 40003.02 40003.08 40003.09 40003.15 40004 40004.06',
+      '40004.07 40004.15 40005 40005.08 40005.09 40006.01 40006.02',
+      // silo pressure H, vent filter purge fault, fluidizing time out, dry unloader fault, unloading E-stop, vent filter trip, purge
+      // interrupt, wet unloader motor trips
+      '40006.03 40006.07 40006.15 40007.01 40007.02 40007.04 40009.03 40009.05 40009.08',
+      // DCS to PLC: start / stop PB of the 11 tanks, alarm reset, alarm acknowledge
+      '40051 40051.01 40051.02 40051.03 40051.04 40051.05 40051.06 40051.07 40051.08 40051.09 40051.1 40051.11 40051.12 40051.13 40051.14',
+      '40051.15 40052 40052.01 40052.02 40052.03 40052.04 40052.05 40052.06 40052.07'
+    ]
+      .join(' ')
+      .split(' ')
+      .map(x => {
+        const b = pkgBit(x);
+        return b.w + '.' + b.b;
+      })
+  )
+};
 /* the value a package puts on (PLC to DCS) or the DCS sends (DCS to PLC) at one address of its list; NaN = no value (not modelled) */
 const PKG_READ = {
   ctcs: (P, ma) => {
@@ -204,7 +231,16 @@ const PKG_READ = {
   },
   fa: (P, ma) => {
     const a = pkgBit(ma);
-    if (a && ((a.w === 40009 && a.b === 15) || (a.w === 40052 && a.b === 15))) return P.wd.fa;
+    if (!a) return NaN;
+    const k = a.w + '.' + a.b;
+    if (k === '40009.15' || k === '40052.15') return P.wd.fa;
+    if (PKG_FA.zero.has(k)) return 0;
+    /* PS-PA1700 plant air tank pressure low: below 4 bar (FA-OM 4) = 4.08 kg/cm2g, the unit 1 plant air header of the model (AN_AIR) */
+    if (k === '40006.8') {
+      const U = AN.unit,
+        p = U && isFinite(U.paPU) ? U.paPU : U ? U.paP : NaN;
+      return isFinite(p) ? (p < 4 / 0.980665 ? 1 : 0) : NaN;
+    }
     return NaN;
   },
   esp: (P, ma) => {
