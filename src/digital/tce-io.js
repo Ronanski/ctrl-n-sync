@@ -80,7 +80,7 @@
     'PS-LO1004 bearing oil pressure (for EOP auto start): the contact of the oil model, bearing oil <= TCS_OIL.brgLo (brgLow)',
     (U, L) => L.brgLow
   );
-  N('TCE900-8', 'ZS-LO1003 hand turning interlock position: the hand turning device has no state in the model');
+  M('TCE900-8', 'ZS-LO1003 HAND TURNING INTERLOCK: the hand turning bar is stowed, the same 0 the TB-9 sheet reads (tcs-trip.js TCS_IBD_DEV TB-9 net 53)', () => 0);
   M(
     'TCE900-9',
     'ZS-LO1906-1 turning gear engage position: tcs.js c.tg selected and the shaft at turning speed (<= 4 rpm, PR-OPE-5002 7955)',
@@ -89,7 +89,7 @@
   M('TCE900-10', 'ZS-LO1906-2 turning gear disengage position: not engaged (TCE900-9)', U =>
     b(!(U.tc && U.tc.tg && U.tb && U.tb.rpm <= 4))
   );
-  N('TCE900-11', 'turning gear motor engage push button of the local panel (TB-10): no local panel in the app');
+  M('TCE900-11', 'TURNING GEAR MOTOR ENGAGE PB of the local panel (TB-10): the app has no local panel, so the button is not pressed (0)', () => 0);
   SY('TCE900-16', 1);
   D(
     'TCE900-17',
@@ -105,10 +105,7 @@
     'O.0179',
     'TCS-DO1003'
   );
-  N(
-    'TCE900-19',
-    'DS CLOSED (generator disconnecting switch, GMCB): the switch has no state in the model (elec.js has 52G / 52L only)'
-  );
+  M('TCE900-19', 'DS CLOSED (GMCB disconnecting switch): the app has no DS operation; the unit line-up is closed (the model closes 52G, which needs the DS closed)', () => 1);
   M('TCE900-20', '52G CLOSED: the generator breaker of the model (tb.st sync / load, g52)', (U, L) => L.g52);
   M('TCE900-21', '52G OPENED: not 52G CLOSED', (U, L) => (L.g52 == null ? NaN : 1 - L.g52));
   M('TCE900-22', 'SPEED RAISE from the synchronizer ASD1 (15R pulse, tcs-gen.js g.pR)', (U, L) => L.p15r);
@@ -123,7 +120,7 @@
   F('TCE901-2');
   M('TCE901-3', 'main oil pump (B) running (c.mop[1], mopB)', (U, L) => L.mopB);
   F('TCE901-4');
-  N('TCE901-5', 'turning gear motor jog push button of the local panel (TB-9): no local panel in the app');
+  M('TCE901-5', 'TURNING GEAR MOTOR JOG PB of the local panel (TB-9 net 9 (LOCAL) JOG): the app has no local panel, so the button is not pressed (0)', () => 0);
   M(
     'TCE901-6',
     'turning gear motor running: the turning gear of the model turns the shaft (c.tg and 1 <= rpm <= 4, tcs.js TURBINE TURNING)',
@@ -296,45 +293,52 @@
   /* ---------- COMM DI TABLES TCA900 ~ TCA906 ---------- */
   /* secondary drain MOVs of MSV / CV / CRV, the HP turbine warming valve, the steam seal feed inlet valve: open / closed / torque switches */
   const drainNeeds =
-    'the MOV is not in the turbine model (no position, no torque switch): turbine drain valves and their MOVs (IBD TC-1 ~ TC-13, TC-20, TC-31)';
+    'turbine drain MOV (IBD TC-1 ~ TC-13, TC-20, TC-31): the valve itself is src/analog/engine/tcs-dev.js U.dev.mov, moved by the IBD command nets';
+  /* the drain MOVs and their switches: the positions of src/analog/engine/tcs-dev.js (U.dev.mov; travel and K 99 / 1 % from the macros
+     TORQUE (SEAL-IN) / (INCHING) / POSITION (SEAL-IN), IBD typical sheets 16 ~ 21), moved by the IBD TC-1 ~ TC-13 / TC-20 / TC-31 commands */
+  const dev = (U, g, k, f) => {
+    const G = U && U.dev && U.dev[g],
+      v = G && (k ? G[k] : G);
+    return v && isFinite(v[f]) ? +v[f] : NaN;
+  };
   [
-    'TCA900-1',
-    'TCA900-2',
-    'TCA900-4',
-    'TCA900-5',
-    'TCA900-7',
-    'TCA900-8',
-    'TCA900-13',
-    'TCA900-14',
-    'TCA900-15',
-    'TCA900-29',
-    'TCA900-30',
-    'TCA900-31',
-    'TCA901-1',
-    'TCA901-2',
-    'TCA901-4',
-    'TCA901-5',
-    'TCA901-7',
-    'TCA901-8',
-    'TCA901-14',
-    'TCA901-15',
-    'TCA901-28',
-    'TCA901-29',
-    'TCA901-30',
-    'TCA901-31',
-    'TCA902-1',
-    'TCA902-2',
-    'TCA902-4',
-    'TCA902-5',
-    'TCA902-12',
-    'TCA902-13',
-    'TCA902-14',
-    'TCA902-15',
-    'TCA904-21',
-    'TCA904-22',
-    'TCA904-28',
-    'TCA904-29'
-  ].forEach(id => N(id, drainNeeds));
+    ['TCA900-1', 'msvA', 'o', 'MSV(A) above seat secondary drain valve OPENED'],
+    ['TCA900-2', 'msvA', 'c', 'CLOSED'],
+    ['TCA900-4', 'cvA', 'o', 'CV(A) above seat OPENED'],
+    ['TCA900-5', 'cvA', 'c', 'CLOSED'],
+    ['TCA900-7', 'crvA', 'o', 'CRV(A) below seat OPENED'],
+    ['TCA900-8', 'crvA', 'c', 'CLOSED'],
+    ['TCA900-13', 'msvA', 'tqO', 'MSV(A) torque switch open'],
+    ['TCA900-14', 'crvA', 'tqO', 'CRV(A) torque switch open'],
+    ['TCA900-15', 'cvA', 'tqO', 'CV(A) torque switch open'],
+    ['TCA900-29', 'msvA', 'tqC', 'MSV(A) torque switch close'],
+    ['TCA900-30', 'crvA', 'tqC', 'CRV(A) torque switch close'],
+    ['TCA900-31', 'cvA', 'tqC', 'CV(A) torque switch close'],
+    ['TCA901-1', 'msvB', 'o', 'MSV(B) above seat OPENED'],
+    ['TCA901-2', 'msvB', 'c', 'CLOSED'],
+    ['TCA901-4', 'cvB', 'o', 'CV(B) above seat OPENED'],
+    ['TCA901-5', 'cvB', 'c', 'CLOSED'],
+    ['TCA901-7', 'crvB', 'o', 'CRV(B) below seat OPENED'],
+    ['TCA901-8', 'crvB', 'c', 'CLOSED'],
+    ['TCA901-14', 'cvB', 'tqO', 'CV(B) torque switch open'],
+    ['TCA901-15', 'crvB', 'tqO', 'CRV(B) torque switch open'],
+    ['TCA901-28', 'msvB', 'tqO', 'MSV(B) torque switch open'],
+    ['TCA901-29', 'msvB', 'tqC', 'MSV(B) torque switch close'],
+    ['TCA901-30', 'cvB', 'tqC', 'CV(B) torque switch close'],
+    ['TCA901-31', 'crvB', 'tqC', 'CRV(B) torque switch close'],
+    ['TCA902-1', 'cvBw', 'o', 'CV(B) below seat secondary warming drain valve OPENED'],
+    ['TCA902-2', 'cvBw', 'c', 'CLOSED'],
+    ['TCA902-4', 'wv', 'c', 'HP turbine warming valve FULL CLOSE'],
+    ['TCA902-5', 'wv', 'o', 'HP turbine warming valve FULL OPEN'],
+    ['TCA902-12', 'cvBw', 'tqO', 'CV(B) below seat warming drain torque switch open'],
+    ['TCA902-13', 'cvBw', 'tqC', 'torque switch close'],
+    ['TCA902-14', 'wv', 'tqO', 'HP turbine warming valve torque switch open'],
+    ['TCA902-15', 'wv', 'tqC', 'torque switch close'],
+    ['TCA904-21', 'ssfi', 'c', 'steam seal feed inlet valve FULL CLOSE'],
+    ['TCA904-22', 'ssfi', 'o', 'FULL OPEN'],
+    ['TCA904-28', 'ssfi', 'tqO', 'steam seal feed inlet valve torque switch open'],
+    ['TCA904-29', 'ssfi', 'tqC', 'torque switch close']
+  ].forEach(([id, k, f, t]) => M(id, t + ' (tcs-dev.js U.dev.mov.' + k + '.' + f + ')', U => dev(U, 'mov', k, f)));
   [
     'TCA900-3',
     'TCA900-6',
@@ -349,29 +353,19 @@
   /* generator, AVR and protection status contacts: the excitation / protection panels are not in the model beyond tcs-gen.js */
   const avrNeeds =
     'the AVR / generator protection panel has no such state in the model (tcs-gen.js has 41, AUTO / MANUAL, 86G lockout)';
+  /* the trouble / fault / protection operated / relay coil open contacts of the AVR and the generator protection panels: the model has
+     no fault of these panels (the rule of tcs.js tcsIO: ABN / YEE = 0), so each reads its healthy state; a fault scenario is the
+     instructor's (faults.js), not a default */
   [
     'TCA900-10',
-    'TCA900-11',
-    'TCA900-12',
     'TCA900-24',
-    'TCA900-25',
     'TCA900-26',
     'TCA900-27',
     'TCA901-11',
     'TCA901-12',
-    'TCA901-13',
     'TCA902-21',
     'TCA902-22',
     'TCA902-27',
-    'TCA902-30',
-    'TCA902-31',
-    'TCA903-1',
-    'TCA903-2',
-    'TCA903-3',
-    'TCA903-4',
-    'TCA903-5',
-    'TCA903-6',
-    'TCA903-7',
     'TCA904-19',
     'TCA904-25',
     'TCA904-26',
@@ -381,6 +375,27 @@
     'TCA905-19',
     'TCA905-20',
     'TCA905-25'
+  ].forEach(id =>
+    F(id, 'AVR / generator protection panel trouble or protection contact: the model has no fault of the panel (tcs.js tcsIO rule), healthy = 0')
+  );
+  SY('TCA903-7', 1, 'AVR VT FUSE NORMAL: the model has no fuse fault, healthy = 1');
+  M('TCA900-25', 'AVR IN USE: the AVR excites the field while the field switch 41 is closed (tcs-gen.js g.f41, G-4)', U =>
+    U && U.gen ? b(U.gen.f41) : NaN
+  );
+  /* the AVR selections and limiters with no state in the model (no document read gives the plant line-up): channel 1 / 2, PSS, PF / Mvar
+     control, set point at max / min, over / under excitation limiter, local / remote, AUTO / MANUAL start ready */
+  [
+    'TCA900-11',
+    'TCA900-12',
+    'TCA901-13',
+    'TCA902-30',
+    'TCA902-31',
+    'TCA903-1',
+    'TCA903-2',
+    'TCA903-3',
+    'TCA903-4',
+    'TCA903-5',
+    'TCA903-6'
   ].forEach(id => N(id, avrNeeds));
   M('TCA902-28', 'AVR IN AUTO: the AVR mode of tcs-gen.js (g.avr not MAN)', (U, L) => L.avrAuto);
   M('TCA902-29', 'AVR IN MANUAL (g.avr MAN)', (U, L) => L.avrMan);
@@ -392,26 +407,27 @@
   N('TCA900-17', 'ZSC-GS1017 steam seal diverting valve condenser side: the diverting valve is not in the gland model');
   N('TCA900-18', 'ZSO-GS1018 steam seal diverting valve heater side: as TCA900-17');
   const nrv =
-    'the extraction steam non return valve (AOV) has no position in the model: extraction NRV and its solenoid (IBD TC-41 ~ TC-45)';
+    'extraction steam non return valve (AOV) and its solenoid (IBD TC-41 ~ TC-45): the valve position is tcs-dev.js U.dev.nrv';
   [
-    'TCA900-21',
-    'TCA900-22',
-    'TCA901-17',
-    'TCA901-18',
-    'TCA901-20',
-    'TCA901-21',
-    'TCA902-17',
-    'TCA902-18',
-    'TCA903-17',
-    'TCA903-18'
-  ].forEach(id => N(id, nrv));
-  N('TCA904-5', 'ZSC-CR1901 cold reheat non return valve full close: no position in the model');
-  N('TCA904-6', 'ZSO-CR1901 cold reheat non return valve full open: no position in the model');
-  N(
-    'TCA904-3',
-    'ZSC-CD1904 LP exhaust hood water spray valve full close: the hood spray valve of the model has no limit switch yet (U.tco.hso is the spray on)'
+    ['TCA900-21', 'ex4', 'c', 'No.4'],
+    ['TCA900-22', 'ex4', 'o', 'No.4'],
+    ['TCA901-17', 'ex2', 'c', 'No.2'],
+    ['TCA901-18', 'ex2', 'o', 'No.2'],
+    ['TCA901-20', 'ex5', 'c', 'No.5'],
+    ['TCA901-21', 'ex5', 'o', 'No.5'],
+    ['TCA902-17', 'ex3p', 'c', 'No.3 primary'],
+    ['TCA902-18', 'ex3p', 'o', 'No.3 primary'],
+    ['TCA903-17', 'ex3s', 'c', 'No.3 secondary'],
+    ['TCA903-18', 'ex3s', 'o', 'No.3 secondary']
+  ].forEach(([id, k, f, t]) =>
+    M(id, t + ' extraction steam non return valve ' + (f === 'o' ? 'FULL OPEN' : 'FULL CLOSE') + ': tcs-dev.js U.dev.nrv.' + k + ' (open with the steam flow while the TCS solenoid holds, IBD TC-41 ~ TC-45; AOV travel R 20 %/s, K 99 / 1 %)', U =>
+      dev(U, 'nrv', k, f)
+    )
   );
-  N('TCA904-4', 'ZSO-CD1904 LP exhaust hood water spray valve full open: as TCA904-3');
+  M('TCA904-5', 'ZSC-CR1901 cold reheat non return valve FULL CLOSE: tcs-dev.js U.dev.nrv.crv (IBD TC-19)', U => dev(U, 'nrv', 'crv', 'c'));
+  M('TCA904-6', 'ZSO-CR1901 cold reheat non return valve FULL OPEN: tcs-dev.js U.dev.nrv.crv (IBD TC-19)', U => dev(U, 'nrv', 'crv', 'o'));
+  M('TCA904-3', 'ZSC-CD1904 LP exhaust hood water spray valve FULL CLOSE: tcs-dev.js U.dev.hood (c.hso, IBD TC-35; AOV travel)', U => dev(U, 'hood', '', 'c'));
+  M('TCA904-4', 'ZSO-CD1904 LP exhaust hood water spray valve FULL OPEN: tcs-dev.js U.dev.hood', U => dev(U, 'hood', '', 'o'));
   /* heater levels, deaerator, bypass, vacuum break, drains: hardwired from the DCS */
   D(
     'TCA900-19',
@@ -484,13 +500,17 @@
   M('TCA903-23', 'main oil tank vapour extractor running (c.vex, U.loVex)', U => b(U.loVex));
   F('TCA903-24', 'vapour extractor electrical trouble: MCC-EMP11 dead (tcs.js c.empOff, IBD TB-12 net 10)');
   E[E.length - 1][3] = U => b(U.tco && U.tco.empOff);
-  N('TCA902-20', 'DPIS-LO1932 duplex oil filter differential pressure: the filter is not in the oil model');
-  N('TCA904-7', 'LSH-GE1001 generator water and oil leakage level high: not in the model');
-  N('TCA904-8', 'DPIS-LO1942 lube oil conditioner coalescer filter dP high: not in the model');
-  N('TCA905-5', 'LSL-LO1920-1 main oil tank level low: the tank level is not in the oil model');
-  N('TCA905-21', 'LSH-LO1920-2 main oil tank level high: as TCA905-5');
-  N('TCA905-6', 'DPIS-LO1933-A control oil line filter (A) dP high: not in the model');
-  N('TCA905-22', 'DPIS-LO1933-B control oil line filter (B) dP high: not in the model');
+  F('TCA902-20', 'DPIS-LO1932 duplex oil filter dP HIGH: the oil model has no filter fouling, clean filter = 0');
+  F('TCA904-7', 'LSH-GE1001 generator water and oil leakage level HIGH (778 GD-5 >= 800 ml): the model has no leak of the generator, healthy = 0');
+  F('TCA904-8', 'DPIS-LO1942 lube oil conditioner coalescer filter dP HIGH: the oil model has no filter fouling, clean filter = 0');
+  M('TCA905-5', 'LSL-LO1920-1 main oil tank level LOW (778 TD-3 <= NOL - 100 mm): the oil model holds the tank at NOL (tcs.js c.tankOk, ATS 1.17)', U =>
+    U && U.tc ? (U.tc.tankOk ? 0 : NaN) : NaN
+  );
+  M('TCA905-21', 'LSH-LO1920-2 main oil tank level HIGH (778 TD-3 >= NOL + 100 mm): as TCA905-5 (c.tankOk)', U =>
+    U && U.tc ? (U.tc.tankOk ? 0 : NaN) : NaN
+  );
+  F('TCA905-6', 'DPIS-LO1933-A control oil line filter (A) dP HIGH (778 TD-1 >= 7.04 kg/cm2): no filter fouling in the model, clean = 0');
+  F('TCA905-22', 'DPIS-LO1933-B control oil line filter (B) dP HIGH (778 TD-1 >= 7.04 kg/cm2): no filter fouling in the model, clean = 0');
   M('TCA904-12', 'gland steam exhauster running: the gland model (U.tco.gse, tcs.js)', U => b(U.tco && U.tco.gse));
   F('TCA904-11');
   N(
@@ -577,18 +597,18 @@
   );
   const genNeeds =
     'generator electrical value: the generator model has MW and the voltage in per unit (tcs-gen.js g.V); current, Mvar, power factor and field values need the generator / AVR model';
+  ['TCA930-3', 'TCA930-11', 'TCA930-12', 'TCA930-13', 'TCA930-18', 'TCA931-17', 'TCA931-18'].forEach(id => N(id, genNeeds));
+  /* the line voltages: the terminal voltage of the generator model (tcs-gen.js g.V, per unit, balanced) x the rated 13.8 kV
+     (K1AU3E1-0003 rev 2 key one line diagram: G1 176.5 MVA 13.8 kV, elec.js); card range 0 ~ 18 kV */
   [
-    'TCA930-2',
-    'TCA930-3',
-    'TCA930-10',
-    'TCA930-11',
-    'TCA930-12',
-    'TCA930-13',
-    'TCA930-17',
-    'TCA930-18',
-    'TCA931-17',
-    'TCA931-18'
-  ].forEach(id => N(id, genNeeds));
+    ['TCA930-2', 'A-B'],
+    ['TCA930-10', 'B-C'],
+    ['TCA930-17', 'C-A']
+  ].forEach(([id, ph]) =>
+    M(id, 'GEN. VOLTAGE (' + ph + '), kV: tcs-gen.js g.V x 13.8 kV (K1AU3E1-0003 G1 13.8 kV)', U =>
+      U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN
+    )
+  );
   M('TCA931-21', 'GEN. FREQUENCY, Hz: the shaft frequency of the generator model (tcs-gen.js g.fg = rpm / 60)', U =>
     num(U.gen && U.gen.fg)
   );
@@ -620,8 +640,8 @@
   N('TCA931-11', 'ZE-ST1004 low speed eccentricity: not in the model');
   M('TCA932-1', 'ZT-GS1031 steam seal feed valve position, % (U.gsV31)', U => num(U.gsV31));
   M('TCA932-2', 'ZT-GS1034 steam packing unloading valve position, % (U.gsV34)', U => num(U.gsV34));
-  N('TCA932-3', 'ZT-ST1008 CV(B) below seat secondary warming drain valve position: ' + drainNeeds);
-  N('TCA932-4', 'ZT-AS1011 HP turbine warming valve position: ' + drainNeeds);
+  M('TCA932-3', 'ZT-ST1008 CV(B) below seat secondary warming drain valve position, %: tcs-dev.js U.dev.mov.cvBw (TORQUE (INCHING) TCA618, R 2.5 %/s)', U => dev(U, 'mov', 'cvBw', 'p'));
+  M('TCA932-4', 'ZT-AS1011 HP turbine warming valve position, %: the engine U.tt[ZT-AS1011] (unit.js anAsTagStep)', U => dev(U, 'mov', 'wv', 'p'));
 
   /* ---------- COMM THC / RTD TABLES TCA960, TCA961, TCA970 ---------- */
   const T = {
@@ -673,6 +693,11 @@
         (r.ins || '') + ' AC exciter outlet air (U.genT.ex, IBD GD-5), C',
         U => num(U.genT && U.genT.ex)
       ];
+    /* the gland steam seal header / LP inlet temperatures of the aux steam model (unit.js anAsTagStep, U.tt TEGS1002 / TEGS1003) */
+    if (/^GLAND STEAM SEAL HEADER TEMP\.$/.test(r.name))
+      return ['model', (r.ins || '') + ' gland steam seal header temperature (U.tt.TEGS1002, unit.js anAsTagStep), C', U => num(U.tt && U.tt.TEGS1002)];
+    if (/^GLAND STEAM SEAL LP INLET TEMP\.$/.test(r.name))
+      return ['model', (r.ins || '') + ' gland steam seal LP inlet temperature (U.tt.TEGS1003, unit.js anAsTagStep), C', U => num(U.tt && U.tt.TEGS1003)];
     if (/^HP TURBINE EXHAUST STEAM TEMP\./.test(r.name))
       return [
         'model',
