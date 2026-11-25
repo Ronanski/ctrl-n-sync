@@ -85,3 +85,10 @@ switch model gives it, MISSING when nothing does. The ABC side comes from the wo
 TCS are counted from the trace rows (their source). Main e7827ce, 150 MW: DITL reads DITL 1,717 / 1,888 (other 54, model 4, missing 113);
 DITL reads ABC 159 / 162 (missing 3); ABC reads DITL 131 / 131; DITL LOCATION TCS 37, none from a TCS sheet (the TCS sheets do not run in
 the world; the turbine model gives them).
+
+## ABC inputs named "(CRT)" are operator (2026-11-25 11:45 AM PHT, SORA via the coordinator)
+An ABC input whose memory-list name says "(CRT)" (OIL MASTER USE P.B.(CRT), DRUM LEVEL SELECT THREE ELEMENT (CRT) ...) is an operator push
+button / select of the CRT: its source is "operator", not B1 "nothing writes". Old -> new tool, main 0fa7dbc, 150 MW 5 plant min: B1 ABC
+inputs nothing writes 102 -> 85, ABC inputs by operator 144 -> 161, memory on a sheet with no source 33 -> 16 (the same 17: ABC-003A ~ 003E
+oil control select / oil master P.B., ABC-008 M.0200 / 0201, ABC-010 M.054E / 054F, ABC-020 M.017F, ABC-057 M.144A / 144B). Every other
+line unchanged.
