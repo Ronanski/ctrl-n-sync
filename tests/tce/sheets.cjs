@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 252; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 254; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 106;
@@ -381,6 +381,14 @@ const S = R.stats(A);
   if (ov(dup, 'ERR B')) fail('TCE143: speed B bad before its DELAY TP 5 s');
   for (let i = 0; i < 100; i++) R.step(T, 0.03);
   if (ov(dup, 'ERR B') !== 1 || ov(dup, 'QT2') || ov(dup, 'Y') !== 3599 || ov(dup, 'ABN')) fail('TCE143: speed B lost: ERR B ' + ov(dup, 'ERR B') + ', Y ' + ov(dup, 'Y'));
+}
+/* UNT-FG FG-1(LCFI) on TCA762 / TCA763 reads the table printed on the page (500 N/mm2 -> 0.5381 %, 175 -> between 0.0001 and 0.0002) */
+for (const id of ['TCA762', 'TCA763']) {
+  const fg = A.plan.find(p => p.id === id).nodes.find(x => x.type === 'UNT-FG'),
+    f = R.K['UNT-FG'];
+  if (!fg || fg.open && fg.open.length) fail(id + ' UNT-FG: no block or open ' + JSON.stringify(fg && fg.open));
+  const y = v => f([v], fg.notes)[0];
+  if (y(500) !== 0.5381 || !(y(175) > 0.0001 && y(175) < 0.0002) || y(600) !== 0.5381) fail(id + ' UNT-FG LCFI table: ' + [y(500), y(175), y(600)]);
 }
 const G = A.plan.filter(p => /^G-/.test(p.id)),
   gRun = G.filter(p => !S.notRun.includes(p.id)).length;

@@ -271,6 +271,25 @@
         if (X <= P[i][0]) return [P[i - 1][1] + ((P[i][1] - P[i - 1][1]) * (X - P[i - 1][0])) / (P[i][0] - P[i - 1][0])];
       return [P[P.length - 1][1]];
     },
+    /* UNT-FG (unit function generator, LMA010 on TCA762 / TCA763 "FG-1(LCFI)"): Y = f(X) on the table printed beside it on the page
+       (Xn / Yn No. 0 .. 19, read as "Xi:" / "Yi:"), straight between the points, held flat outside, as the ML 19 FG. Check of the printed
+       table (EIMI, LM2-TEQ-17-240 R0 p 158, STIE-14852: log10 LCFI % = -11.658 + 0.69142 s - 1.7930E-2 s^2 + 2.4745E-4 s^3 - 1.7267E-6 s^4
+       + 4.6895E-9 s^5, s in kg/mm2): 500 N/mm2 = 50.99 kg/mm2 gives 0.536 %, the table 0.5381 %. No table on the page (TCE212 003 / 036):
+       NaN, the curve is open. */
+    'UNT-FG': (x, n) => {
+      const P = [];
+      for (let i = 0; i < 50; i++) {
+        const a = par(n, 'X' + i), b = par(n, 'Y' + i);
+        if (a !== undefined && b !== undefined) P.push([a, b]);
+      }
+      if (P.length < 2) return [NaN];
+      P.sort((p, q) => p[0] - q[0]);
+      const X = x[0];
+      if (X <= P[0][0]) return [P[0][1]];
+      for (let i = 1; i < P.length; i++)
+        if (X <= P[i][0]) return [P[i - 1][1] + ((P[i][1] - P[i - 1][1]) * (X - P[i - 1][0])) / (P[i][0] - P[i - 1][0])];
+      return [P[P.length - 1][1]];
+    },
     /* ML 59 TB tie-back: primary flag (SW) = 1 Y = X, else Y = the tie-back value X2 */
     TB: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
     /* ML 62 PA* parameter modify: the new value X is taken while its condition (SW) is met, else the previous value is kept */
@@ -304,6 +323,7 @@
       for (let i = 1; i <= 8; i++) if (k.has('X' + i) && k.has('Y' + i)) c++;
       if (c < 2) out.push('FG curve not on the sheet');
     }
+    if (t === 'UNT-FG' && ![...k].filter(q => /^X\d+$/.test(q)).length) out.push('UNT-FG curve not on the sheet');
     /* ML 62 PA (parameter modify) has no SW in its symbol: its side input is the condition of the parameter, drawn or not */
     if (!swWired && t !== 'PA' && /\bsw\s*=/.test(String(f))) out.push(t + ' SW not wired (HIACS default not in the macro list)');
     return out;

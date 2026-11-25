@@ -125,7 +125,7 @@
       ['asw009', 'ASW', '009', xA9, 608],
       ['asw013', 'ASW', '013', xA9, 766],
       ['hsg010', 'HSG', '010', xHSG, 619, [], {}, [59, 64]],
-      ['fg011', 'UNT-FG', '011', xFG, Y, [], { l: ['X'], r: ['Y'] }, [85, 62]],
+      ['fg011', 'UNT-FG', '011', xFG, Y, XN.flatMap((x, i) => ['X' + i + ':' + x, 'Y' + i + ':' + YN[i]]) /* the FG-1(LCFI) table printed on the page, as the block's curve */, { l: ['X'], r: ['Y'] }, [85, 62]],
       ['asw012', 'ASW', '012', xA12, 608],
       ['x', 'X', '', 1306, 829]
     ],
