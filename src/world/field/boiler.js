@@ -78,6 +78,12 @@ rows.push(
     src: 'IO list STN102 I.0083 ZSC-HR1010; ZT-HR1010 STN102 AI0385 (ABC-052); MOV rule' }
 );
 
+/* 3e. Furnace pressure C-2 PT-FG1087-2 (STN101 AI0773, Phase 6 slice 11, 2026-11-26): the second transmitter of furnace pressure C, on
+   no logic sheet (ABC-008 reads C-1 PT-FG1087-1 AI0388). Both measure the same furnace pressure (HMI snapshot 150 MW: PIFG10871 -15,
+   PIFG10872 -14 mmH2O, hmi-op.js), so C-2 reads the furnace pressure of the model that C-1 reads. */
+rows.push({ stn: 1, ai: 'AI0773', tag: 'PT-FG1087-2', v: (U, X) => num(X.ai('1|AI0388')), rel: 'furnace pressure C = PT-FG1087-1 (same furnace pressure)',
+  src: 'IO list STN101 AI0773 PT-FG1087-2 "Furnace pressure (C)-2"; PT-FG1087-1 STN101 AI0388 (ABC-008); HMI snapshot PIFG10871 / 10872' });
+
 /* 3d. FA blower inlet flow control dampers FCV-FA1055-A1 / B1 (STN101, positions ZT-FA1055-A1 AI0176 / ZT-FA1055-B1 AI0196, which
    follow the MV of FICFA1055A / B on ABC-014: unit.js ztMap): the full open / full close limit switches (Phase 6 slice 6, 2026-11-26).
    No logic sheet reads them (QA trace: on no parsed sheet); display only. Same end-of-travel rule. */
@@ -133,9 +139,9 @@ const gb = (U, k, i) => {
 FIELD.add(lane, rows);
 
 /* 7. Field states (beta.530, FIELD.state): field devices with no physics in the plant model. Each starts in its documented normal service
-   state; the trainer changes it from the Plant menu (t = the abnormal condition). Left out on purpose, one source per tag: MIA-CL1061-x4
-   discharge plugging (trainer fault cf.jamA ~ C, world.js jamSet), MIA-CL1061-x6 and ZSO / ZSC-CL1061-x7 (linked on DITL-19 / 20),
-   MIA-CL1061-x1 (AI of unit.js). */
+   state; the trainer changes it from the Plant menu (t = the abnormal condition). Left out on purpose, one source per tag:
+   MIA-CL1061-x6 and ZSO / ZSC-CL1061-x7 (linked on DITL-19 / 20), MIA-CL1061-x1 (AI of unit.js). MIA-CL1061-x4 discharge plugging is
+   the trainer fault cf.jamA ~ C (world.js jamSet) read as a field row below (Phase 6 slice 9). */
 const states = [],
   fr = [];
 const YAM = 'Yamato GM-BSC22-36 Final Drawing for LMYP-1 (L12 Coal Feeder) P8 signal list';
@@ -149,6 +155,10 @@ const CO = { A: ['I.012E', 'I.0133'], B: ['I.044E', 'I.0453'], C: ['I.048E', 'I.
 for (const x of 'ABC') {
   const [cp, mit, mit1, zs, mia] = FD[x],
     sh = 'DITL-19' + cp;
+  /* discharge plugging (Yamato P8 signal 18, no-voltage contact from the chute plugging detector): made while the trainer fault
+     cf.jam<x> stands (world.js jamSet). DITL-19 takes it on the wire of output 65 COAL FEEDER DISCHARGE PLUGED (CRT, ANN) */
+  fr.push({ stn: 4, di: 1, tag: 'MIA-CL1061-' + x + '4', sheet: sh, v: (U, X) => X.fault('cf.jam' + x), rel: 'feeder discharge chute plugged (trainer fault cf.jam' + x + ')',
+    src: 'IO list STN104 ' + { A: 'I.012A', B: 'I.044A', C: 'I.048A' }[x] + ' MIA-CL1061-' + x + '4 "Coal feeder-' + x + ' discharge plugging"; DITL-19' + cp + ' output 65; ' + YAM + ' signal 18' });
   /* feeder fault = the field trip of the feeder motor drawing (trainer fault mt.cfa, the unit black-out) */
   fr.push({ stn: 4, di: 1, tag: 'MIT-CL1061-' + x, adr: mit, sheet: sh, v: (U, X) => X.ftrip(sh), rel: 'feeder motor tripped in the field (DITL-19' + cp + ' field trip)',
     src: 'IO list STN104 ' + mit + ' MIT-CL1061-' + x + ' "Coal feeder-' + x + ' fault"; DITL-19' + cp + ' row 12; ' + YAM });
@@ -247,6 +257,30 @@ for (const x of 'ABC') {
 FIELD.state(lane, states);
 FIELD.add(lane, fr);
 
+/* 7d. 6.6 kV VCB of the boiler fans (Phase 6 slice 8, 2026-11-26; STN103). The fans hang on BUS 1AM (elec.js: ETAP load flow, M-1004 PAF,
+   M-1220 IDF). As the BFWP / condensate pump VCBs of bop.js: VCB ON = the fan's motor sheet runs and its breaker is not opened by a field
+   trip or the black-out (X.ftrip covers both, field/README.md), VCB OFF = NOT ON. No logic row reads these (QA trace: on no parsed
+   sheet; the IDF VCB ON I.0044 is on DITL-80Q and stays with that sheet). */
+const vr = [];
+for (const [tg, on, off, sh, nm] of [
+  ['MIV-F1056-', null, 'I.0045', 'DITL-25A', 'IDF'],
+  ['MIV-F1053-', 'I.0364', 'I.0365', 'DITL-26A', 'PAF'],
+  ['MIV-F1054-', 'I.0524', 'I.0525', 'DITL-27A', 'SAF'],
+  ['MIV-F1055A', 'I.004A', 'I.004B', 'DITL-28A', 'FA blower-A'],
+  ['MIV-F1055B', 'I.036A', 'I.036B', 'DITL-28A #B', 'FA blower-B']
+]) {
+  const vcb = X => {
+    const r = X.ditlRun(sh);
+    return r == null ? NaN : r === 1 && !X.ftrip(sh) ? 1 : 0;
+  };
+  if (on)
+    vr.push({ stn: 3, di: 1, tag: tg + '1', v: (U, X) => vcb(X), rel: nm + ' VCB ON = ' + sh + ' running AND no field trip',
+      src: 'IO list STN103 ' + on + ' "' + nm + ' VCB on"; motor sheet ' + sh + '; elec.js BUS 1AM' });
+  vr.push({ stn: 3, di: 1, tag: tg + '2', v: (U, X) => { const x = vcb(X); return isFinite(x) ? 1 - x : NaN; }, rel: nm + ' VCB OFF = NOT ON',
+    src: 'IO list STN103 ' + off + ' "' + nm + ' VCB off"; motor sheet ' + sh + '; elec.js BUS 1AM' });
+}
+FIELD.add(lane, vr);
+
 /* 8. Air preheater secure power supply (DITL-43 output 12 AIR PREHEATER SECURE POWER SUPPLY NOT FAILURE, field contact XA-FA1052-5 on the
    output wire, IO list STN103 I.0659 "Air preheater secure power supply not failure"): a not-failure contact of the APH drive panel, made
    (1) while the secure supply is healthy. No supply model: a field state, normal 1. */
@@ -314,6 +348,15 @@ FIELD.add(lane, [
       src: 'IO list STN104 ' + a + ' MIL-CL1061-' + x + ' "Coal feeder-' + x + ' remote"; DITL-19' + cp + ' starts / stops the feeder from the DCS in service; ' + YAM });
     rw.push({ stn: 4, di: 1, tag: 'MIL-CL1061-' + x, adr: a, sheet: 'DITL-19' + cp, v: (U, X) => X.state(id), rel: 'REMOTE selected on the feeder panel',
       src: 'IO list STN104 ' + a + '; DITL-19' + cp + ' rows 6 / 23 COAL FEEDER ' + x + ' REMOTE SELECTED' });
+    /* Phase 6 slice 10 (2026-11-26): the REMOTE selector of the feeder outlet discharge isolation valve. The DCS opens that valve in
+       service (IO list STN104 XV-CL1061-x "outlet discharge isolation valve open command", DITL-20 with its ZSO / ZSC-CL1061-x7), so the
+       selector stands at REMOTE, normal 1. No logic row reads it (CRT) */
+    const vid = 'CL1061-' + x + '7.remote',
+      va = { A: 'I.0135', B: 'I.0455', C: 'I.0495' }[x];
+    st.push({ id: vid, tag: 'YSR-CL1061-' + x + '7', normal: 1, t: 'Coal feeder ' + x + ' outlet isolation valve in LOCAL', g: 'Coal and limestone',
+      src: 'IO list STN104 ' + va + ' YSR-CL1061-' + x + '7 "Coal feeder-' + x + ' outlet discharge isolation valve remote"; the DCS opens the valve in service (XV-CL1061-' + x + ', DITL-20' + cp + ')' });
+    rw.push({ stn: 4, di: 1, tag: 'YSR-CL1061-' + x + '7', v: (U, X) => X.state(vid), rel: 'REMOTE selected for the outlet isolation valve',
+      src: 'IO list STN104 ' + va + '; field state ' + vid });
   }
   st.push({ id: 'FA1052.local', tag: 'YSR-FA1052M1', normal: 0, t: 'Air preheater in LOCAL', g: 'Air and flue gas',
     src: 'IO list STN103 I.0652 YSR-FA1052M1 "Air preheater local"; DITL-43 runs the APH from the DCS (CRT START / STOP P.B.) in service' });
