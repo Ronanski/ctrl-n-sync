@@ -61,19 +61,29 @@
       st.i = y - G * X - F;
       return [y];
     },
-    /* ML 13 PIV velocity PI (TCA014 p 9): SW=1 Y = G1 (X(j) - X(j-1)) + G2 (TS/TI) X(j) + F; SW=0 Y = 0. Y is the increment itself (the
-       macro list adds no Y(j-1)); it gives no output limit, so HL / LL / ML printed under a PIV are an OPEN item (see need()) */
+    /* ML 13 PIV velocity PI (TCA014 p 9, "PI CONTROLLER (VELOCITY TYPE)", pins SW, X, F, Z -> Y): SW=1 Y = G1 (X(j) - X(j-1)) +
+       G2 (TS/TI) X(j) + F; SW=0 Y = 0. Y is the increment itself (the macro list adds no Y(j-1)).
+       HL / LL (printed under every PIV, not in the ML 13 text): HL = upper limit, LL = lower limit, as the macro list words them for
+       PIF No. 12, INTEGRAL No. 9, ANALOG MEMORY No. 21 ("with limitter LL<=Y<=HL") and LMS No. 41, and TCA022 (7) "Set Values ... the
+       upper limit, the lower limit". DERIVED from the sheets (not printed in a definition): the limit is on the position Z + Y, not on
+       the increment: Z = GOV.SET (I 005 of TCE196, which adds Y each cycle), so Y = clamp(Z + Y, LL, HL) - Z. Reason: TCE191 C022 / C027
+       print LL 0.00 % (a limit on Y would never let the load go down) and TCE195 prints -5.0 .. 110.0 against GOV.SET -67.7 .. 107.0;
+       the reading fits all PIVs (TCE168, TCE169, TCE191, TCE195). ML: printed equal to HL on every PIV, on no page of the macro list or
+       TC-14-116: its meaning is OPEN, not read (it does not block the sheet). Source lookup: EIMI on the PC, 2026-11-25. */
     PIV: (x, n, st, dt, sw = 1) => {
-      const [X = 0, F = 0] = x,
+      const [X = 0, F = 0, Z = 0] = x,
         G1 = par(n, 'G1'),
         G2 = par(n, 'G2'),
-        TI = par(n, 'TI');
+        TI = par(n, 'TI'),
+        HL = par(n, 'HL'),
+        LL = par(n, 'LL');
       if (!sw) {
         st.x = X;
         return [0];
       }
-      const y = G1 * (X - (st.x ?? X)) + (G2 * dt * X) / TI + F;
+      let y = G1 * (X - (st.x ?? X)) + (G2 * dt * X) / TI + F;
       st.x = X;
+      if (HL !== undefined && LL !== undefined) y = clamp(Z + y, LL, HL) - Z;
       return [y];
     },
     /* ML 15 HS Y = max(X1..X3), Yi = 1 at the maximum; ML 16 LS the minimum */
@@ -276,7 +286,7 @@
     LCK: ['K'], UCK: ['K']
   };
   /* printed parameters that the definition of the ML does not have: their meaning is open until a document gives it */
-  const EXTRA = { PIV: ['HL', 'LL', 'ML'], AM: ['M'], G: ['KA'] };
+  const EXTRA = { AM: ['M'], G: ['KA'] };
   const keysOf = n => new Set((n || []).map(q => (/^\s*([A-Z][A-Z0-9]*)\s*:/.exec(q) || [])[1]).filter(Boolean));
   function need(type, notes, swWired) {
     const t = K[type] ? type : ALIAS[type] || type,
