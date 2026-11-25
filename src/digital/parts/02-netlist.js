@@ -1839,6 +1839,11 @@ function netlistCore(sh, strict) {
           if (d < 14 && (!best || d < best.d)) best = { d, n: z.n };
         })
       );
+      /* beta.556 (EIMI): the address written on the middle of the wire (DITL-43 O.0206, O.0208; DITL-27A, 57, 78: 5 in all), no wire end near */
+      if (!best) {
+        const z = segs.find(q => q.h && q.n >= 0 && Math.abs(q.y1 - t.y) < 3 && Math.min(q.x1, q.x2) <= t.x && Math.max(q.x1, q.x2) >= t.x);
+        if (z) best = { d: 0, n: z.n };
+      }
       if (!best || NL.pout.some(o => o.n === best.n) || outs.some(o => o.n === best.n)) continue;
       const svc = all
         .filter(q => q !== t && Math.abs(q.x - t.x) < 14 && q.y < t.y && t.y - q.y < 9 && /[A-Z]{3,}\s+[A-Z]/.test(q.t))

@@ -45,6 +45,12 @@ cp.execFileSync(process.execPath, ['tools/station/build.js', html, out]);
   await p.evaluate(() => TCE.start());
   const s2 = await p.evaluate(() => TCE.status());
   ck(s2.on, 'start again');
+  const cmp = await p.evaluate(() => {
+    const c = TCE.compare();
+    return { ready: c.ready, pio: (c.kinds || {}).pio, n: (c.rows || []).length, count: c.count, o: (TCE.outs() || []).length };
+  });
+  ck(cmp.ready && cmp.pio > 0 && cmp.n === cmp.pio && Object.values(cmp.count).reduce((a, b) => a + b, 0) === cmp.pio, 'TCE.compare: every PI/O output has one state ' + JSON.stringify(cmp.count));
+  ck(cmp.o > cmp.pio, 'TCE.outs: ' + cmp.o + ' outputs of the program');
   ck(errs.length === 0, 'no page error' + (errs.length ? ' (' + errs[0] + ')' : ''));
   console.log('ms a tick ' + s2.ms.toFixed(1) + ', behind the plant ' + s2.lag.toFixed(1) + ' s');
   await b.close();

@@ -71,3 +71,17 @@ row with an address).
 - Old -> new tool on main 6683666 (beta.550, YUA's DITL-38 points): LINKED 1,607 -> 1,687; no source 115 -> 103; model / page 376 -> 357;
   on drawing not on a row 189 -> 138; nowhere 296 -> 298 (S1 MIT / MIL-FA1054-1 were matched to a DITL-38 copy of the wrong station);
   value 1,812 -> 1,864.
+
+## F(X) count skips the symbol legend (2026-11-25 08:50 PHT, AKIHO via the coordinator)
+ABC-000 is the symbol legend of the analog set (its FX block is a drawn example, not a controller). The I/O / memory catalog already skipped
+it; the F(X) loop now skips it the same way. Old -> new tool, main 79c27fe (beta.553), 150 MW 5 plant min: FX blocks 112 -> 111,
+unresolved 1 -> 0 (the one was "ABC-000 FX (no LN)"). Every other line of the summary unchanged.
+
+## Cross-sheet references (2026-11-25 11:30 AM PHT, user "Interconnected din dapat ang mga logic: DITL ABC TCS", via the coordinator)
+New tool `tools/trace/xref.cjs` (no change to trace.cjs or its counts). An input row of a DITL drawing whose FROM names a logic sheet
+(DITL "25A-55", a code with no letter "12-70" = the set 12A / 12B / 12C; ABC-0xx; TCS) is WIRED when the running world feeds it from that
+sheet (or a machine copy of it, or the sootblower counter of DITL-80), OTHER when only from another sheet, MODEL when the plant / valve /
+switch model gives it, MISSING when nothing does. The ABC side comes from the world's own link table (WORLD.stat). DITL rows with LOCATION
+TCS are counted from the trace rows (their source). Main e7827ce, 150 MW: DITL reads DITL 1,717 / 1,888 (other 54, model 4, missing 113);
+DITL reads ABC 159 / 162 (missing 3); ABC reads DITL 131 / 131; DITL LOCATION TCS 37, none from a TCS sheet (the TCS sheets do not run in
+the world; the turbine model gives them).

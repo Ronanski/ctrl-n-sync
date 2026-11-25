@@ -51,7 +51,13 @@
           lab: 'l'
         }),
         at(
-          M('feeder', 'COAL FEEDER ' + n, 'Coal feeder ' + n, [V('Total', 'MIA-CL1061-' + n + '1', 't', 0)]),
+          M('feeder', 'COAL FEEDER ' + n, 'Coal feeder ' + n, [V('Total', 'MIA-CL1061-' + n + '1', 't', 0)], {
+            /* beta.556: I/O list station 4, PS-IA1061-A1 / A2 / B1 / B2 / C1 / C2; no drawing of the app reads them: ----- */
+            mon: [
+              HX.D('Air tank pressure high', { A: 'PS-IA1061-A1', B: 'PS-IA1061-B1', C: 'PS-IA1061-C1' }[n], '', 'HIGH', 'NORMAL'),
+              HX.D('Air tank pressure low', { A: 'PS-IA1061-A2', B: 'PS-IA1061-B2', C: 'PS-IA1061-C2' }[n], '', 'LOW', 'NORMAL')
+            ]
+          }),
           fx,
           FDY,
           { id: 'f' + i, sc: FDS, lab: 'l' }

@@ -17,10 +17,12 @@
    PD-053 and PD-054 were read through the temporary page 09 (the tags, names and order it binds); PD-052 on the sheet.
    Drawn simpler than the sheets: the silencers at the fan inlets and the flow elements are not drawn (the flows are the
    measured values of the two flow controllers); the 4 furnace inlets and the 22 wall dampers end as a link to the Furnace page.
+   beta.556 (HMI gap list 2026-11-25): the monitor rows of the air heater (DITL-43), of the primary air fan oil unit (DITL-26B) and of
+   its two pumps (DITL-24), the air heater speed and air motor push buttons, the link to the wall dampers page.
    Left out on purpose, all without a signal in hx-registry.js: the bearing, winding and vibration measurements of the fans,
    hand dampers, expansion joints, test points. */
 (function () {
-  const { V, E, M, C, X, L, page } = HX;
+  const { V, D, E, M, C, X, L, B, page } = HX;
   const MM = 'mmH₂O';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_A = 12,
@@ -42,6 +44,46 @@
     BY = 200,
     BS = 1.5 /* the two blowers */,
     HY = 70; /* fluidizing air line */
+  /* the monitor faceplate of the air heater, the same on the Furnace and flue gas page */
+  HX.MON_AH = [
+    D('Running', 'YS-FA1052M1', 'dl:DITL-43|i|9', 'RUNNING', 'STOPPED'),
+    D('Drive trip', 'XA-FA1052M1', 'dl:DITL-43|i|4', 'NORMAL', 'TRIP'),
+    D('Selector', 'YSR-FA1052M1', 'dl:DITL-43|i|3', 'LOCAL', 'REMOTE'),
+    D('Low speed', 'SAL-FA1052-6', 'dl:DITL-43|i|11', 'NORMAL', 'LOW'),
+    D('Low low speed', 'SALL-FA1052-5', 'dl:DITL-43|i|12', 'NORMAL', 'LOW LOW'),
+    D('Fire detection system', 'XA-FA1052-1', 'dl:DITL-43|o|7', 'NORMAL', 'FAULT'),
+    D('Fire detection sensor', 'XA-FA1052-2', 'dl:DITL-43|o|8', 'NORMAL', 'OPEN CIRCUIT'),
+    D('Fire alarm', 'XA-FA1052-3', 'dl:DITL-43|o|9', 'NORMAL', 'FIRE'),
+    D('Speed sensor', 'XA-FA1052-4', 'dl:DITL-43|o|10', 'NORMAL', 'FAULT'),
+    D('Secure power supply', 'XA-FA1052-5', 'dl:DITL-43|o|11', 'NORMAL', 'NOT NORMAL'),
+    D('Normal power supply', 'XA-FA1052-6', 'dl:DITL-43|o|12', 'NORMAL', 'NOT NORMAL'),
+    D('Emergency push button', 'ES-FA1052', 'dl:DITL-43|o|13', 'OPERATED', 'NORMAL'),
+    V('Motor current', 'fld:IT-FA1052M1', 'A', 1, { tag: 'IT-FA1052M1' }),
+    D('Motor current high high', 'DITL-43 row 23', 'dl:DITL-43|o|22', 'HIGH HIGH', 'NORMAL'),
+    D('Hot end bearing oil temperature', 'TA-FA1052-6', '', 'HIGH', 'NORMAL'),
+    D('Cold end bearing oil temperature', 'TA-FA1052-7', '', 'HIGH', 'NORMAL'),
+    D('Low speed selected', 'CSC-FA1052M1-2', 'dl:DITL-43|p|O.0208'),
+    D('Start command', 'CSC-FA1052M1-1', 'dl:DITL-43|p|O.0206'),
+    D('Stop command', 'CSO-FA1052M1-1', 'dl:DITL-43|p|O.0207')
+  ];
+  /* a lube oil pump of the primary air fan: DITL-24 / DITL-24 #B */
+  const lop = (s, p) => [
+    D('Running', 'MIR-LO1753-' + p, 'dl:' + s + '|i|1', 'RUNNING', 'STOPPED'),
+    D('Motor trip', 'MIT-LO1753-' + p, 'dl:' + s + '|i|10', 'TRIP', 'NORMAL'),
+    D('Selector', 'MIL-LO1753-' + p, 'dl:' + s + '|i|18', 'REMOTE', 'LOCAL')
+  ];
+  const LOU = [
+    D('Oil pressure low', 'PSL-LO1753', 'dl:DITL-26B|i|19', 'LOW', 'NORMAL'),
+    D('Oil pressure low low', 'PSLL-LO1753', 'dl:DITL-26B|i|21', 'LOW LOW', 'NORMAL'),
+    D('Filter differential pressure', 'DPS-LO1753', 'dl:DITL-26B|i|16', 'HIGH', 'NORMAL'),
+    D('Tank level low', 'LSL-LO1753', 'dl:DITL-26B|i|17', 'LOW', 'NORMAL'),
+    D('Tank level low low', 'LSLL-LO1753', '', 'LOW LOW', 'NORMAL'),
+    D('Oil temperature', 'TS-LO1753', 'dl:DITL-26B|i|18', 'HIGH', 'NORMAL'),
+    D('All oil pumps stopped', 'S-APAFLOPS', 'dl:DITL-24|o|24'),
+    D('Control power', 'MIA-LO1753-1', '', 'ON', 'OFF'),
+    D('Breaker NFB2', 'MIA-LO1753-2', '', 'ON', 'OFF'),
+    D('Breaker NFB1', 'MIA-LO1753-3', '', 'ON', 'OFF')
+  ];
   const PA = 'm:PAF',
     SA = 'm:SAF',
     FA = 'm:FA BLOWER-A',
@@ -60,7 +102,8 @@
       items: [
         /* ---- air heater ---- */
         /* UI check 2026-11-24 C1: name at the left side; below it the air ducts and the rotor shaft leave */
-        at(M('airheater', 'AIR PREHEATER', 'Air heater', []), AX, AY, { id: 'ah', sc: AS, lab: 'l' }),
+        /* beta.556: its square at the top left corner of the casing (it stood far right, on the gas duct) */
+        at(M('airheater', 'AIR PREHEATER', 'Air heater', [], { mon: HX.MON_AH }), AX, AY, { id: 'ah', sc: AS, lab: 'l', yn: [-122, -88] }),
         /* the back-up drive of the air heater: an air motor, its air valve SV-PA1052 is the output O.029F of DITL-44 (old page 038) */
         at(
           HX.HV('SVPA1052', 'Back-up air motor valve', {
@@ -74,6 +117,8 @@
           AY + 30,
           { id: 'amv', lab: 'b' }
         ),
+        at(B('Air motor valve', 'data-dpo="DITL-44|O.029F|OPEN|CLOSED"', { mach: 'AIR PREHEATER AIR MOTOR', w: 210 }), 1480, 570, { id: 'amb' }),
+        at(B('Air heater speed', 'data-dpo="DITL-43|O.0208|LOW|NORMAL"', { mach: 'AIR PREHEATER SPEED', w: 210 }), 1480, 610, { id: 'asb' }),
         at(L('furnace-gas', 'Flue gas from the back pass', { back: true }), 1230, 440, { id: 'gin' }),
         at(L('furnace-gas', 'Flue gas to the precipitator'), 1230, 690, { id: 'gout' }),
 
@@ -90,8 +135,9 @@
         at(L('coal', 'Cold primary air to the coal feeders'), 560, 780, { id: 'cfl' }),
         at(L('furnace-gas', 'Hot primary air to the furnace'), 330, 430, { id: 'pal' }),
         at(L('coal', 'To the coal pipes'), 330, 360, { id: 'cpl' }),
-        at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', []), 90, 952, { id: 'loa', sc: 0.8, lab: 'r' }),
-        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 380, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', [], { mon: lop('DITL-24', 'A') }), 90, 952, { id: 'loa', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', [], { mon: lop('DITL-24 #B', 'B') }), 380, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
+        at(E('tank', 'Lube oil unit', 'LO1753', [], { w: 70, h: 50, mon: LOU }), 670, 950, { id: 'lou', lab: 'r' }),
 
         /* ---- secondary air ---- */
         at(M('fan', 'SAF', 'Secondary air fan', [V('Current', 'IT-F1054', 'A')]), SFX, FY, {
@@ -104,7 +150,7 @@
           id: 'sad',
           lab: 't'
         }),
-        at(L('furnace-gas', 'Hot secondary air to the furnace'), 1430, 350, { id: 'sal' }),
+        at(L('wall-dampers', 'Hot secondary air to the wall dampers'), 1430, 350, { id: 'sal' }),
 
         /* ---- fluidizing air ---- */
         at(

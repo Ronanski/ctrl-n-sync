@@ -157,3 +157,33 @@ for (const x of 'ABC') {
   });
 FIELD.state(lane, states);
 FIELD.add(lane, fr);
+
+/* 8. Air preheater secure power supply (DITL-43 output 12 AIR PREHEATER SECURE POWER SUPPLY NOT FAILURE, field contact XA-FA1052-5 on the
+   output wire, IO list STN103 I.0659 "Air preheater secure power supply not failure"): a not-failure contact of the APH drive panel, made
+   (1) while the secure supply is healthy. No supply model: a field state, normal 1. */
+FIELD.state(lane, [{ id: 'FA1052.securePwr', tag: 'XA-FA1052-5', normal: 1, t: 'Air preheater secure power supply failed', g: 'Air and flue gas',
+  src: 'IO list STN103 I.0659 XA-FA1052-5 "Air preheater secure power supply not failure" (not-failure contact, made in service); DITL-43 output 12' }]);
+FIELD.add(lane, [{ stn: 3, di: 1, tag: 'XA-FA1052-5', sheet: 'DITL-43', v: (U, X) => X.state('FA1052.securePwr'), rel: 'secure power supply not failed',
+  src: 'IO list STN103 I.0659; DITL-43 output 12 (field contact on the output wire)' }]);
+
+/* 9. Bottom ash mechanical conveyors (bottom ash PLC logic DITL-BA59 ~ BA71, the I/O list station 103 B/A Handling points; the drawings
+   write the tags with one dash more, MIR-L-1091 for MIR-L1091). The motor starter of each machine runs while its start command is on
+   (DITL-BA71 motor outputs = IO list O.0202 MOR-L1091 bucket elevator, O.0203 MOR-L1092 screw, O.0204 MOR-F1091 bag filter fan; output
+   rows counted from 0: 8, 7, 10), and its running contact (DITL-BA59 RUNNING inputs) is made while it runs. The chain conveyor L-1090
+   running contact (I.0163) is the plant model's U.baConv, as DITL-21A reads it (plantsw.js MIR-L1090): one source for the one signal.
+   The two-way separator L-1094 goes to the end its solenoid drives (DITL-BA71 outputs 5 / 6 = O.0210 SVO-BH1754 / O.0211 SVC-BH1754) and
+   stays there (engine boiler.js U.ba.tw); it makes that limit switch (DITL-BA60 TWO-WAY LSO / LSC = I.0173 / I.0174). OPEN sends the
+   ash to the vibrating screens, CLOSE to the ash silo: DITL-BA66 lets the screw run with (VIBRATING SCREEN RUNNING and TWO WAY OPEN) or
+   (NOT ASH SILO HIGH LEVEL and TWO WAY CLOSE). */
+FIELD.add(lane, [
+  { stn: 3, di: 1, tag: 'MIR-L-1090', sheet: 'DITL-BA59', v: U => U.baConv, rel: 'chain conveyor L-1090 running (plant model, on its ON COMMAND DITL-BA68)',
+    src: 'IO list STN103 I.0163 MIR-L1090; DITL-BA59 RUNNING input; engine boiler.js anBaStep U.baConv' }
+].concat([
+  ['MIR-L-1091', 8, 'I.0166', 'O.0202', 'bucket elevator L-1091 running'], ['MIR-L-1092', 7, 'I.0169', 'O.0203', 'screw conveyor L-1092 running'],
+  ['MIR-F-1091', 10, 'I.016C', 'O.0204', 'bag filter venting fan F-1091 running']
+].map(([tag, r, a, o, rel]) => ({ stn: 3, di: 1, tag, sheet: 'DITL-BA59', v: (U, X) => X.ditlRun('DITL-BA71@' + r, 1), rel,
+  src: 'IO list STN103 ' + a + '; DITL-BA59 RUNNING input; start command DITL-BA71 motor output ' + r + ' = ' + o }))
+).concat([['ZSO-BH1754', 'twO', 'I.0173', 'LSO', 'two-way separator at its open end (ash to the vibrating screens)'],
+  ['ZSC-BH1754', 'twC', 'I.0174', 'LSC', 'two-way separator at its closed end (ash to the silo)']].map(([tag, k, a, ls, rel]) => ({
+  stn: 3, di: 1, tag, sheet: 'DITL-BA60', v: U => (U.ba && U.ba.sw ? U.ba.sw[k] : NaN), rel,
+  src: 'IO list STN103 ' + a + '; DITL-BA60 TWO-WAY ' + ls + ' input; position from DITL-BA71 outputs 5 / 6 = O.0210 / O.0211 (engine boiler.js anBaStep)' }))));
