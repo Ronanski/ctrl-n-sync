@@ -332,6 +332,12 @@
 .rxfw { fill: var(--rx-st3); fill-opacity: 0.22; stroke: var(--rx-edge); stroke-width: 0.9; }
 .rxvoid { fill: var(--rx-void); stroke-width: 0.7; }
 .rxe { fill: none; stroke: var(--rx-edge); stroke-width: 1; stroke-linecap: round; opacity: 0.7; }
+/* the alarm lamp of a control cabinet: dark in service, amber and blinking while its alarm stands (inv: the contact opens on alarm) */
+.hx-sgd { fill: var(--hx-mute); }
+.hx-val.hx-wrn { fill: var(--hx-warn); color: var(--hx-warn); }
+.rxal { fill: var(--hx-none); stroke: var(--rx-edge); stroke-width: 0.8; }
+.hx-stop .rxal, .hx-run .rxal.inv { fill: var(--rx-st2); }
+.hx-run .rxal:not(.inv), .hx-stop .rxal.inv { fill: var(--hx-warn); animation: hx-blink 1s steps(2) infinite; }
 .rxst { fill: none; stroke: var(--rx-st2); stroke-width: 1.7; stroke-linecap: round; }
 .rxk { fill: var(--rx-edge); }
 .rxw { fill: none; stroke: var(--rx-st2); stroke-width: 1.9; }
