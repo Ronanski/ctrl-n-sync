@@ -342,6 +342,15 @@ FIELD.add(lane, [
       src: 'IO list STN104 ' + a + ' MIL-CL1061-' + x + ' "Coal feeder-' + x + ' remote"; DITL-19' + cp + ' starts / stops the feeder from the DCS in service; ' + YAM });
     rw.push({ stn: 4, di: 1, tag: 'MIL-CL1061-' + x, adr: a, sheet: 'DITL-19' + cp, v: (U, X) => X.state(id), rel: 'REMOTE selected on the feeder panel',
       src: 'IO list STN104 ' + a + '; DITL-19' + cp + ' rows 6 / 23 COAL FEEDER ' + x + ' REMOTE SELECTED' });
+    /* Phase 6 slice 10 (2026-11-26): the REMOTE selector of the feeder outlet discharge isolation valve. The DCS opens that valve in
+       service (IO list STN104 XV-CL1061-x "outlet discharge isolation valve open command", DITL-20 with its ZSO / ZSC-CL1061-x7), so the
+       selector stands at REMOTE, normal 1. No logic row reads it (CRT) */
+    const vid = 'CL1061-' + x + '7.remote',
+      va = { A: 'I.0135', B: 'I.0455', C: 'I.0495' }[x];
+    st.push({ id: vid, tag: 'YSR-CL1061-' + x + '7', normal: 1, t: 'Coal feeder ' + x + ' outlet isolation valve in LOCAL', g: 'Coal and limestone',
+      src: 'IO list STN104 ' + va + ' YSR-CL1061-' + x + '7 "Coal feeder-' + x + ' outlet discharge isolation valve remote"; the DCS opens the valve in service (XV-CL1061-' + x + ', DITL-20' + cp + ')' });
+    rw.push({ stn: 4, di: 1, tag: 'YSR-CL1061-' + x + '7', v: (U, X) => X.state(vid), rel: 'REMOTE selected for the outlet isolation valve',
+      src: 'IO list STN104 ' + va + '; field state ' + vid });
   }
   st.push({ id: 'FA1052.local', tag: 'YSR-FA1052M1', normal: 0, t: 'Air preheater in LOCAL', g: 'Air and flue gas',
     src: 'IO list STN103 I.0652 YSR-FA1052M1 "Air preheater local"; DITL-43 runs the APH from the DCS (CRT START / STOP P.B.) in service' });
