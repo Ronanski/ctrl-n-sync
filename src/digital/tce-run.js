@@ -994,13 +994,15 @@
        OUT CR = STEP n OUT CONDITION OK (criteria Dn), BYPS = STEP n BYPASS, PERM = STEP n SEL PERMISSIVE, EXE = upper STEP EXECUTING,
        FINISH = upper STEP COMPLETED, EX1 / EX2 = ANOTHER STEP PB SELECT / ANOTHER STEP SELECT (OTHER STEP SELECTED), ORDER = STEP UP ORDER,
        FORCE = STEP n SELECT (the CRT PB STEP n ON); APS A / APS S are wired to OFF(0) on every sheet.
-       SELECTED (S/R): set by (STEP UP ORDER or PB STEP n) and the permissive, not criteria Dn, not STEP n EXECUTED; reset (R first) by the
+       SELECTED (S/R): set by PB STEP n and the permissive (ATS AUTO MODE), not criteria Dn, not STEP n EXECUTED; reset (R first) by the
          pulse (PO) of OTHER STEP SELECTED, STEP n EXECUTED, or an UPPER STEP EXECUTING.
-       EXECUTED (S/R): set by criteria Dn-1 and criteria An and STEP n SELECTED; reset by an UPPER STEP EXECUTING.
+       EXECUTED (S/R): set by criteria Dn-1 and criteria An and (STEP n SELECTED or UPPER STEP SELECTED = STEP UP ORDER, PAGE 7 OR gate);
+         reset by an UPPER STEP EXECUTING. (Until 2026-11-25 PM the ORDER pin set SELECTED; PAGE 7 puts UPPER STEP SELECTED only in the
+         EXECUTED set, and a lower step marked SELECTED would pulse OTHER STEP SELECTED and drop the upper step the operator picked.)
        COMPLETED (S/R): set by criteria Dn with the step executed; reset by the upper step's criteria D (upper STEP COMPLETED).
        BYPS (STEP n BYPASS, sheet 11 CRITERIA BYPASS: the criteria taken as ON) stands for criteria An and Dn.
-       Outs: SEL = STEP n SELECT(ED), STEP S = selected by STEP UP ORDER, PB ON = selected by the PB, ORDER = STEP IN n ORDER (selected: the
-       step whose A criteria are checked, sheet 10), EXEC = STEP n EXECUTING, FINISH = COMPLETED, START = the scan EXECUTED sets; ORDER1 / EXEC1 / FINI1 = the same to the DCS.
+       Outs: SEL = STEP n SELECT(ED), STEP S = asked by STEP UP ORDER (not yet executed), PB ON = selected by the PB, ORDER = STEP IN n
+       ORDER (selected or upper step selected, not yet executed: the step whose A criteria are checked, sheet 10 takes both), EXEC = STEP n EXECUTING, FINISH = COMPLETED, START = the scan EXECUTED sets; ORDER1 / EXEC1 / FINI1 = the same to the DCS.
        RESET (right pin) is wired on no sheet: not given.
      Not on the transition logic (printed DEF timers beside the block, roles not drawn, not read): TD 3.0 s x3, TP 0.2 s, TP 1.0 s. */
   MACRO['STEP CONTROL MD'] = Object.assign(
@@ -1012,22 +1014,23 @@
         other = pulseUp(st, 'pX', b01(I.EX1) || b01(I.EX2)),
         ord = b01(I.ORDER),
         pb = pulseUp(st, 'pF', b01(I.FORCE));
-      if (other || st.ex || up) (st.sel = 0), (st.how = '');
-      else if ((ord || pb) && b01(I.PERM) && !dn && !st.ex) (st.sel = 1), (st.how = pb ? 'pb' : 'order');
+      if (other || st.ex || up) st.sel = 0;
+      else if (pb && b01(I.PERM) && !dn && !st.ex) st.sel = 1;
       const was = st.ex;
       if (up) st.ex = 0;
-      else if (b01(I.TMG) && an && st.sel) (st.ex = 1), (st.sel = 0);
+      else if (b01(I.TMG) && an && (st.sel || ord)) (st.ex = 1), (st.sel = 0);
       if (b01(I.FINISH)) st.done = 0;
       else if (dn && st.ex) st.done = 1;
       const sel = st.sel ? 1 : 0,
         ex = st.ex ? 1 : 0,
         done = st.done ? 1 : 0;
+      const inOrd = sel || (ord && !ex && !done) ? 1 : 0;
       return {
         SEL: sel,
-        'STEP S': sel && st.how === 'order' ? 1 : 0,
-        'PB ON': sel && st.how === 'pb' ? 1 : 0,
-        ORDER: sel,
-        ORDER1: sel,
+        'STEP S': ord && !ex && !done ? 1 : 0,
+        'PB ON': sel,
+        ORDER: inOrd,
+        ORDER1: inOrd,
         EXEC: ex,
         EXEC1: ex,
         FINISH: done,
@@ -1107,6 +1110,165 @@
       need: notes => (aovT(notes).length === 2 ? [] : ['t1 / t2 (two TP without a unit)'])
     }
   );
+  /* ---------- ATS step macros (TCA500, TCA515, TCA582 ~ TCA586). Sources: ATS program 310SC90-795 Rev 2 (book pp 125-156; "PAGE n" below
+       is the page printed in its title block) and the TCA sheets of 331DM09788 Aug 2017 (the words on the lines into and out of each block).
+     START-UP MODE MT1 (LMA531), drawing: 310SC90-795 PAGE 12 "START-UP MODE TYPICAL CALCULATING FUNCTION" (the dashed box = this block):
+       per mode, SUB (TEMP. - mode temperature) and CMP ON<0 = TEMP. below that mode temperature; the mode is the lowest one the temperature
+       is below (A of its CMP and NOT the CMP of the mode under it); its S/R flip-flop is set by that A with the timing condition (TIMIG) and
+       reset by the set of any other mode. The timing condition itself (turbine trip FF, 52L / 52G / sync step PO) is drawn outside the box
+       and is on TCA500. Outs as the lines of TCA500 name them: WARMHOT = WARM OR HOT MODE, REQUEST = HEAT SOAK REQUEST (PAGE 19 / 22:
+       heat soak is asked in AMBIENT COLD, COLD 1 or COLD 2 mode), HEAT = MEMORIZED TEMP. FOR HEAT SOAK TIMER (PAGE 20 / 22 / 25: "one of
+       lower value in A and B is selected at the first steam-in of turbine": TEMP. taken while the mode is taken, held after).
+       VERYHOT (line VERY HOT MODE to (-)): no very hot mode on PAGE 12, not given. */
+  const MODES = ['AMB.', 'COLD1', 'COLD2', 'WARM', 'HOT'];
+  MACRO['START-UP MODE MT1'] = Object.assign(
+    (I, notes, st) => {
+      const T = +I['TEMP.'] || 0,
+        below = MODES.map(m => T - (+I[m] || 0) < 0);
+      if (b01(I.TIMIG)) {
+        const k = below.findIndex(b => b);
+        if (k >= 0) st.m = k;
+        st.t = T;
+      }
+      const o = Object.fromEntries(MODES.map((m, i) => [m, st.m === i ? 1 : 0]));
+      return { ...o, WARMHOT: o.WARM || o.HOT ? 1 : 0, REQUEST: o['AMB.'] || o.COLD1 || o.COLD2 ? 1 : 0, HEAT: st.t === undefined ? 0 : st.t };
+    },
+    { src: 'drawing: ATS program 310SC90-795 Rev 2 PAGE 12 (start-up mode calculating function)' }
+  );
+  /* STEP UP ORDER MT1 (LMA537), drawing: 310SC90-795 PAGE 7 (sheet 8) note *2 "UPPER STEP means an upper level step than the present
+       step": ORDER n = STEP m SELECT of any m > n among the steps 0 ~ 7 (note *1: STEP 7 NORMAL OPERATION has no upper step).
+       ORDER n goes to the ORDER pin of the STEP CONTROL MD of step n (UPPER STEP SELECTED of PAGE 7). */
+  MACRO['STEP UP ORDER MT1'] = Object.assign(
+    I => {
+      const o = {};
+      for (let n = 0; n < 8; n++) {
+        let u = 0;
+        for (let m = n + 1; m < 8; m++) u = u || b01(I['SELECT' + m]);
+        o['ORDER' + n] = u;
+      }
+      return o;
+    },
+    { src: 'drawing: ATS program 310SC90-795 Rev 2 PAGE 7 note *2' }
+  );
+  /* RUB CHECK CONTROL MT1 (LMA560), TCA582: inside not drawn; the sequence is the TURBINE RUB CHECK step, 310SC90-795 PAGE 17 / 18:
+       step executed -> SET ACCELERATION RATE (line 100RPM/M(RUB CHECK) = out ACC.) and SET TARGET SPEED (line 200RPM(ATS) = out TARGET1);
+       TURBINE SPEED = 200 RPM (the sheet gives RUB CHECK SPEED SG 190 rpm = in RUBCHK) -> SET CV, ICV CLOSE (line ALL VALVE CLOSED(ATS) =
+       out TARGET2, held); TURBINE SPEED < RPM (RUB CHECK COMPLETION SPEED SG 100 rpm = in COMP.) -> criteria D2 (line STEP 2 COMPLETE =
+       out COMP). Out SPEED = line TURBINE SPEED<100RPM. Cleared when step 2 is not executing or STEP 2 COMPLETED (in FINISH).
+       Not read (role not in the documents): in UPPER (CRI 1.23 LLM UPPER), in ACC. (120RPM/M SELECTED), DEF TP 1.0 s, DEF K 0.0 rpm x2;
+       out UPPER (line to nowhere) not given. */
+  MACRO['RUB CHECK CONTROL MT1'] = textMacro([], (I, notes, st) => {
+    const ex = b01(I.EXECUT) && !b01(I.FINISH),
+      sp = +I.SPEED || 0;
+    if (!ex) st.cl = 0;
+    else if (sp >= (+I.RUBCHK || 0)) st.cl = 1;
+    const cl = ex && st.cl ? 1 : 0,
+      low = sp < (+I['COMP.'] || 0) ? 1 : 0;
+    return { 'ACC.': ex && !cl ? 1 : 0, TARGET1: ex && !cl ? 1 : 0, TARGET2: cl, COMP: cl && low ? 1 : 0, SPEED: low };
+  });
+  /* ACC.CONTROL MT1 (LMA563A), TCA582: inside not drawn; the sequence is the ACCELERATION step, 310SC90-795 PAGE 19 ~ 22:
+       AMBIENT COLD / COLD 1 / COLD 2 (in COLD): HEAT SOAK ON (out SET), SET TARGET SPEED TO 1800 RPM (out TARGET1); at TURBINE SPEED = 1800
+       the 1800 rpm heat soak timer runs (out HEAT1 = line 1800RPM HEAT SOAK TIMER START) until 1800RPM HEAT SOAK TIME ELAPSED (in HEAT1);
+       QUESTION 1 "HP TURBINE 1ST STAGE INNER WALL METAL TEMP. > 170 C" (in TEMP.1 = CMP of that temperature, 170 degC on the sheet) and
+       QUESTION 2 "TURBINE SHELL EXPANSION > 3 mm" (in SHELL = CRI2.1 SHELL EXPANSION OK) are waited for. Then (and at once in WARM / HOT)
+       SPEED SET 3600 RPM (out TARGET3) until TURBINE SPEED > 3550 RPM (DEF K 3550.0 rpm printed), then the 3600 rpm heat soak timer runs
+       (out HEAT3) until 3600RPM HEAT SOAK TIME ELAPSED (in HEAT3); in the cold modes HEAT SOAK OFF (out RESET = line HEAT SOAK RESET(ATS));
+       then criteria D3 (out COMP = line STEP 3 COMPLETE). Out SHELL = line SHELL EXPANSION NOT OK.
+       "Speed = 1800 RPM" is read as the speed within the printed deviation band DEF HL -50.0 rpm under the set speed (HEATA SG 1800 rpm):
+       speed >= HEATA - 50 (derived: the four printed DEF HL / LL pairs are bands of speed minus target, the -50 rpm edge is the reached one).
+       2700 rpm: PAGE 19 ~ 22 draw no 2700 rpm hold (in TEMP.2 is wired ON(1)); out TARGET2 / HEAT2 stay 0 as in the program.
+       Not read: in HEAT2, HEATB (3600 SG, the 3600 target is TCE161's own), the other DEF HL / LL, TW 5 s, DEF K 1490 rpm, DEF TD 2.0 s,
+       HL 1490 / LL 690 rpm (critical speed band, PAGE 11 is drawn outside this block); out SPEED (line TURBINE SPEED>2950RPM to (-)) not given. */
+  MACRO['ACC.CONTROL MT1'] = textMacro([], (I, notes, st) => {
+    const ex = b01(I.EXECUT),
+      sp = +I.SPEED || 0,
+      cold = b01(I.COLD),
+      k3 = (notes || []).map(n => String(n[2])).filter(z => /^DEF K:/.test(z)).map(z => parseFloat(z.slice(6))),
+      top = k3.length ? Math.max(...k3) : undefined;
+    if (!ex) st.ph = 0;
+    else if (!st.ph) st.ph = cold ? 1 : 3;
+    const o = { TARGET1: 0, TARGET2: 0, TARGET3: 0, HEAT1: 0, HEAT2: 0, HEAT3: 0, SET: 0, COMP: 0, RESET: 0, SHELL: b01(I.SHELL) ? 0 : 1 };
+    if (!ex) return o;
+    if (st.ph === 1) {
+      o.SET = o.TARGET1 = 1;
+      if (sp >= (+I.HEATA || 0) - 50) (o.HEAT1 = 1), b01(I.HEAT1) && b01(I['TEMP.1']) && b01(I.SHELL) && (st.ph = 3);
+    }
+    if (st.ph === 3) {
+      o.SET = cold ? 1 : 0;
+      o.TARGET3 = 1;
+      if (top !== undefined && sp > top) (o.HEAT3 = 1), b01(I.HEAT3) && (st.ph = 4);
+    }
+    if (st.ph === 4) (o.TARGET3 = 1), (o.RESET = cold ? 1 : 0), (o.COMP = 1);
+    return o;
+  });
+  MACRO['ACC.CONTROL MT1'].need = notes => ((notes || []).some(n => /^DEF K:/.test(String(n[2]))) ? [] : ['DEF K (3550 rpm)']);
+  /* ACC.RATE SELECT MT1 (LMA575), TCA584: inside not drawn. 310SC90-795 PAGE 19 / 21 note: "MAXIMUM SELECTABLE ACCELERATION RATE DEPENDS
+       ON START UP MODE: AMBIENT 120, COLD 1 120, COLD 2 120, WARM 180, HOT 360 RPM/MIN" while the ACCELERATION step executes (in EXECUT):
+       out RATE2 = 120RPM/M(ATS), RATE3 = 180RPM/M(ATS), RATE4 = 360RPM/M(ATS) (lines to TCE160), by in AMB.C / COLD / WARM / HOT.
+       A request on in RATE n gives out RATE n (in RATE2 = 100RPM/M(RUB CHECK) of the rub check step; derived: the pins pair by name and
+       the rub check reads 120RPM/M SELECTED back from TCE160). HOLD (PAGE 19 HOLD CONTROL ITEM 1 ~ 6, PAGE 11 "HOLD SPEED/LOAD"): the
+       hold inputs VACUUM .. BEARING (all SPEED HOLD of TCA768): in the acceleration step it is a speed hold (out SPEED = SPEED HOLD(ATS),
+       out RATE1 = 0RPM/M(ATS)), out of it a load hold (out LOAD = LOAD HOLD); derived from PAGE 11 (one hold signal, speed or load).
+       Not read: in RATE5 / RATE6 (OFF(0)); out RESET (line RESET(ATS) to (-)) not given. */
+  MACRO['ACC.RATE SELECT MT1'] = textMacro([], I => {
+    const ex = b01(I.EXECUT),
+      hold = ['VACUUM', 'LPEXH.', 'VIB.', 'EXPAN.', 'BEARING'].some(k => b01(I[k])) ? 1 : 0;
+    return {
+      RATE1: b01(I.RATE1) || (ex && hold) ? 1 : 0,
+      RATE2: b01(I.RATE2) || (ex && (b01(I['AMB.C']) || b01(I.COLD))) ? 1 : 0,
+      RATE3: b01(I.RATE3) || (ex && b01(I.WARM)) ? 1 : 0,
+      RATE4: b01(I.RATE4) || (ex && b01(I.HOT)) ? 1 : 0,
+      SPEED: ex && hold ? 1 : 0,
+      LOAD: !ex && hold ? 1 : 0
+    };
+  });
+  /* EXCI./SYNC./LOADUPMT1 (LMA566), TCA583: inside not drawn; the sequence is 310SC90-795 PAGE 23 (EXCITATION), 24 / 25 (SYNCH. & INITIAL
+       LOAD), 26 / 27 (LOAD UP), with the lines of TCA583:
+       out START1 = EXCITATION START: step 4 executing (in EXECUT1) and field breaker 41 not closed (in FIELD) (PAGE 23 then criteria D4).
+       out START2 = ASD START: step 5 executing (in EXECUT2), ASD in use (in ASS = CRI 1.46 ASD IN USE) and 52G not closed (in GCB); the
+         sheet takes it with HOUSE LOAD to ASD2 (52L) or ASD1 (52G) (PAGE 24).
+       out INIT = SET INITIAL LOAD: step 5 executing and 52G closed (CRI 1.48 GCB CLOSED, PAGE 25).
+       out START3 = INITIAL LOAD HOLD TIMER START: that and GEN.LOAD>INIT.LOAD (in LOAD, CRI 2.5) (PAGE 25).
+       out LOADUP = LOAD UP START (ICV TO CV TRANSFER): step 6 executing (in EXECUT3) (PAGE 26). */
+  MACRO['EXCI./SYNC./LOADUPMT1'] = textMacro([], I => {
+    const e2 = b01(I.EXECUT2),
+      g = b01(I.GCB);
+    return {
+      START1: b01(I.EXECUT1) && !b01(I.FIELD) ? 1 : 0,
+      START2: e2 && b01(I.ASS) && !g ? 1 : 0,
+      INIT: e2 && g ? 1 : 0,
+      START3: e2 && g && b01(I.LOAD) ? 1 : 0,
+      LOADUP: b01(I.EXECUT3) ? 1 : 0
+    };
+  });
+  /* LOAD SET MT1 (LMA569), TCA583A: inside not drawn; the words printed by each SG on the sheet pair the loads with the modes:
+       LOAD1 (0.0%L) none; initial load LOAD2 HOT, LOAD3 WARM, LOAD4 COLD1, LOAD5 COLD2, LOAD6 A.COLD, LOAD7 V.HOT; load up load LOAD8 HOT,
+       LOAD9 WARM, LOAD10 COLD1, LOAD11 COLD2, LOAD12 A.COLD, LOAD13 V.HOT. 310SC90-795 PAGE 25 *2 "SET INITIAL LOAD AMBIENT COLD 3 %,
+       COLD 1 3 %, COLD 2 3 %, WARM 3 %, HOT 5 %" (the same as the SG words). INITIAL / LOADUP = the load of the mode in (HOT .. AMB.C);
+       no mode = LOAD1. V.HOT has no mode input on the block (LOAD7 / LOAD13 not used). */
+  const LSET = [['HOT', 2, 8], ['WARM', 3, 9], ['COLD1', 4, 10], ['COLD2', 5, 11], ['AMB.C', 6, 12]];
+  MACRO['LOAD SET MT1'] = textMacro([], I => {
+    const m = LSET.find(([k]) => b01(I[k]));
+    return { INITIAL: +I[m ? 'LOAD' + m[1] : 'LOAD1'] || 0, LOADUP: +I[m ? 'LOAD' + m[2] : 'LOAD1'] || 0 };
+  });
+  /* HEAT SOAK TIMER MT1 (LMA578A), TCA585 / TCA586: inside not drawn; 310SC90-795 PAGE 20 / 22 / 25 (1800 rpm, 3600 rpm heat soak timer,
+       initial load hold timer, minutes from the memorized metal temperature = the FG on the sheet into TIME n). Timer n runs while its
+       start is on (in MODE n) and is cleared when it goes off: out COMP n (lines ... HEAT SOAK ELAPSED) when it has run TIME n minutes;
+       out TIME n = the minutes left (lines LOW / MED / RATED / INITIAL SPD HLD REMAIN), limited to the printed HL 500.0 / LL 0.0;
+       out RATED = RATED TIMER ON (timer 3 runs), INIT = INITIAL TIMER ON (timer 4 runs). Not read: DEF TW 1 s, DEF K 0.0 %. */
+  MACRO['HEAT SOAK TIMER MT1'] = textMacro([], (I, notes, st, dt) => {
+    const o = {};
+    for (let n = 1; n <= 4; n++) {
+      const on = b01(I['MODE' + n]),
+        need = +I['TIME' + n] || 0;
+      st['t' + n] = on ? (st['t' + n] || 0) + dt / 60 : 0;
+      o['COMP' + n] = on && st['t' + n] >= need ? 1 : 0;
+      o['TIME' + n] = clamp(need - st['t' + n], 0, 500);
+    }
+    o.RATED = b01(I.MODE3);
+    o.INIT = b01(I.MODE4);
+    return o;
+  });
   const numConst = t => {
     const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
     return m ? +m[1] : null;
