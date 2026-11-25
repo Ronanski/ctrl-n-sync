@@ -40,7 +40,7 @@ Ginawa 2026-11-25 ~7:30 PM PHT (user "Go 1"). Bantay sa Checks: `tests/lanes/qa/
 | Instrument list | `over-all-instrument-list.xlsx` | Isa lang | Ranges |
 | Wiring | `LMYP-1(#1) WIRING.xls` | **Original 2023-10-03**; ang "Copy of ..." (2022-08-23) ay luma | I/O channels |
 | Modbus | Subsystem PLC IO lists (LPDSI `LMYP-1 #1-DOCUMENT\Subsystem PLC\`) | Isa lang | Modbus rows (walang IP address sa repo) |
-| Equipment list | K1AU3-L1-0-002 | **R0 (2016-08)** laban sa RA (2014-03); tingnan ang seksyon 4 | Seksyon 4 |
+| Equipment list | K1AU3-L1-0-002 | **R0 (2016-08-17)**; ang RA (2014-03) ay luma; tingnan ang seksyon 4 | Seksyon 4 |
 | **Planta at proseso (physics)** | | | |
 | P&ID | `flow-diagram-K1AU3-A1-0-001.zip` | **RB kung mayroon, kung wala RA**; AS BUILT kung mayroon (SMGP PHASE 1 `A1 FLOW DIAGRAM`) | Flow, lokasyon, HMI pages |
 | Mass balance | K1AU3-A2-0-001 RA | RA (walang enthalpy) | Check ng flows |
@@ -87,196 +87,647 @@ Pasok = nasa app (logic, signal, HMI at physics). Ang "walang hanggang supply" a
 
 ## 4. Equipment list (K1AU3-L1-0-002), sinuri
 
-**Paano sinuri (2026-11-25 ~7:20 PM PHT):** binasa ang dalawang file sa PC (`document-references/Equipment List/`). Ang **R0 (2016-08-17, 35 pahina) ang mas bago at masusunod**, pero scan ito na walang text layer: walang OCR tool sa cloud, kaya hindi pa nababasa nang isa-isa. Ang listahan sa ibaba ay mula sa text layer ng **RA (2014-03-21, 37 pahina, "For Information")**; inayos ng kamay ang mga tag na nasira ng OCR (hal. "l" na dapat "1").
+**Paano sinuri (2026-11-25, 7:39 ~ 7:47 PM PHT, sa PC):** binasa ng mata ang lahat ng 35 pahina ng **R0 (2016-08-17, "Issue for Final", scan), ang masusunod**, at ikinumpara sa 37 pahina ng RA (2014-03-21, ang mga pahina ay may tatak na "Rev.B"). Pinalaki ang mga malabong tag. Ang mga file ay nasa PC lang.
 
-**Bilang:** **182 equipment tag** sa RA (hindi 173: ang dating "173" ay walang source at hindi tugma sa dokumento). PASOK 126, LABAS 56 (38 air compressor / dryer at WTP, 18 mechanical / civil). Ang listahan ay ng FHI scope lamang: ang turbine, generator at TCS (MHPS / Hitachi) ay wala rito at nasa seksyon 2.
+**Bilang:** **553 equipment tag** sa R0: PASOK 349, LABAS 204 (150 WTP, 35 air compressor / dryer, 19 mechanical / civil). Ang RA ay **183** tag (hindi 182: naiwan ang H-1107C). Hindi tulad ng RA, **kasama sa R0 ang turbine, generator, langis ng turbine, mga safety / control valve, strainer at orifice.**
 
-**Kulang pa (para sa Phase 1 na TAPOS):** (a) basahin ang R0 pahina por pahina at itala ang pagkakaiba sa RA; (b) ang "Page sa app" ay sistema ng page; hindi pa nasusuri na may sariling simbolo ang bawat equipment sa page (Phase 9).
+**R0 laban sa RA:** 151 tag ang nasa dalawa; 375 ang bagong tag; 27 tag ng R0 ang kapalit ng ibang tag sa RA (4.1); 7 tag ng RA ang wala na sa R0 (4.2).
 
-| # | Tag (Unit 1 / Unit 2) | Equipment | Sistema | Saklaw | Page sa app |
-|---|---|---|---|---|---|
-| 1 | B-1043A/2043A | START-UP BURNER A | Start-up burners | PASOK | oil-burners |
-| 2 | B-1043B/2043B | START-UP BURNER B | Start-up burners | PASOK | oil-burners |
-| 3 | B-1043C/2043C | START-UP BURNER C | Start-up burners | PASOK | oil-burners |
-| 4 | B-1043D/2043D | START-UP BURNER D | Start-up burners | PASOK | oil-burners |
-| 5 | C-0703A | PLANT AIR COMPRESSOR A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 6 | C-0703B | PLANT AIR COMPRESSOR B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 7 | C-0703C | PLANT AIR COMPRESSOR C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 8 | C-0704A | INSTRUMENT AIR COMPRESSOR A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 9 | C-0704B | INSTRUMENT AIR COMPRESSOR B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 10 | C-0704C | INSTRUMENT AIR COMPRESSOR C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 11 | C-0707 | START-UP COMPRESSOR | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 12 | D-0703A | PLANT AIR DRYER A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 13 | D-0703B | PLANT AIR DRYER B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 14 | D-0703C | PLANT AIR DRYER C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 15 | D-0704A | INSTRUMENT AIR DRYER A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 16 | D-0704B | INSTRUMENT AIR DRYER B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 17 | D-0704C | INSTRUMENT AIR DRYER C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 18 | F-1053/2053 | PRIMARY AIR FAN | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 19 | F-1054/2054 | SECONDARY AIR FAN | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 20 | F-1055A/2055A | FLUIDIZING AIR BLOWER A | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 21 | F-1055B/2055B | FLUIDIZING AIR BLOWER B | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 22 | F-1056/2056 | INDUCED DRAFT FAN | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas |
-| 23 | F-1119A/2119A | STEAM EJECTOR EXHAUSTER A | Condenser and vacuum | PASOK | condensate |
-| 24 | F-1119B/2119B | STEAM EJECTOR EXHAUSTER B | Condenser and vacuum | PASOK | condensate |
-| 25 | H-1001/2001 | BOILER | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas |
-| 26 | H-1052/2052 | GAS AIR HEATER | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 27 | H-1101/2101 | #1 LOW PRESSURE HEATER | LP heaters | PASOK | condensate, heater-drains |
-| 28 | H-1102/2102 | #2 LOW PRESSURE HEATER | LP heaters | PASOK | condensate, heater-drains |
-| 29 | H-1103/2103 | #3 LOW PRESSURE HEATER | LP heaters | PASOK | condensate, heater-drains |
-| 30 | H-1104/2104 | DEAERATOR | Deaerator | PASOK | feedwater |
-| 31 | H-1105/2105 | #1 HIGH PRESSURE HEATER | HP heaters | PASOK | feedwater, heater-drains |
-| 32 | H-1106/2106 | #2 HIGH PRESSURE HEATER | HP heaters | PASOK | feedwater, heater-drains |
-| 33 | H-1107A/2107A | CLOSED CIRCUIT COOLING WATER HEAT EXCHANGER A | Closed cooling water | PASOK | makeup-cooling |
-| 34 | H-1107B/2107B | CLOSED CIRCUIT COOLING WATER HEAT EXCHANGER B | Closed cooling water | PASOK | makeup-cooling |
-| 35 | H-1110/2110 | CONDENSER | Condenser and vacuum | PASOK | condensate |
-| 36 | H-1119/2119 | STEAM JET AIR EJECTOR CONDENSER | Condenser and vacuum | PASOK | condensate |
-| 37 | L-0062 | ELEVATOR (BOILER HOUSE) | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — |
-| 38 | L-0063 | OILY WATER SEPARATOR | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — |
-| 39 | L-0129 | TURBINE BUILDING OVERHEAD CRANE | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — |
-| 40 | L-0503 | CRANE FOR SEAWATER PUMP | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — |
-| 41 | L-1060A/2060A | BOTTOM ASH SCREW CONVEYOR A | Bottom ash | PASOK | ash |
-| 42 | L-1060B/2060B | BOTTOM ASH SCREW CONVEYOR B | Bottom ash | PASOK | ash |
-| 43 | L-1060C/2060C | BOTTOM ASH SCREW CONVEYOR C | Bottom ash | PASOK | ash |
-| 44 | L-1060D/2060D | BOTTOM ASH SCREW CONVEYOR D | Bottom ash | PASOK | ash |
-| 45 | L-1061A/2061A | COAL FEEDER A | Coal feeders | PASOK | coal |
-| 46 | L-1061B/2061B | COAL FEEDER B | Coal feeders | PASOK | coal |
-| 47 | L-1061C/2061C | COAL FEEDER C | Coal feeders | PASOK | coal |
-| 48 | L-1121A/2121A | TUBE CLEANING SYSTEM - BALL SEPARATOR A | Condenser tube cleaning | PASOK | sea-water |
-| 49 | L-1121B/2121B | TUBE CLEANING SYSTEM - BALL SEPARATOR B | Condenser tube cleaning | PASOK | sea-water |
-| 50 | N-1011/2011 | SOOT BLOWER- RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 51 | N-1012/2012 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 52 | N-1013/2013 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 53 | N-1014/2014 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 54 | N-1015/2015 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 55 | N-1016/2016 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 56 | N-1017/2017 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 57 | N-1018/2018 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 58 | N-1019/2019 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 59 | N-1020/2020 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 60 | N-1021/2021 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 61 | N-1022/2022 | SOOT BLOWER - SH + ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 62 | N-1023/2023 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 63 | N-1024/2024 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 64 | N-1025/2025 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 65 | N-1026/2026 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 66 | N-1027/2027 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 67 | N-1028/2028 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 68 | N-1029/2029 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 69 | N-1030/2030 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 70 | N-1031/2031 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 71 | N-1032/2032 | SOOT BLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 72 | N-1033/2033 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 73 | N-1034/2034 | SOOT BLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers |
-| 74 | N-1035/2035 | SOOT BLOWER - COMMON ECO. | Sootblowers | PASOK | sootblowers |
-| 75 | N-1036/2036 | SOOT BLOWER - COMMON ECO. | Sootblowers | PASOK | sootblowers |
-| 76 | N-1037/2037 | SOOT BLOWER- COMMON ECO. | Sootblowers | PASOK | sootblowers |
-| 77 | N-1038/2038 | SOOT BLOWER - COMMON ECO. | Sootblowers | PASOK | sootblowers |
-| 78 | N-1040/2040 | SOOT BLOWER - GAS AIR HEATER | Sootblowers | PASOK | sootblowers |
-| 79 | N-1042/2042 | SOOT BLOWER-GAS AIR HEATER | Sootblowers | PASOK | sootblowers |
-| 80 | P-0058A | WASTEWATER PUMP A | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — |
-| 81 | P-0058B | WASTEWATER PUMP B | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — |
-| 82 | P-0702A | DIESEL OIL PUMP A | Diesel oil | PASOK | oil-burners |
-| 83 | P-0702B | DIESEL OIL PUMP B | Diesel oil | PASOK | oil-burners |
-| 84 | P-0709A | MAKE-UP WATER PUMP A | Make-up / industrial water | PASOK | makeup-cooling, industrial-water |
-| 85 | P-0709B | MAKE-UP WATER PUMP B | Make-up / industrial water | PASOK | makeup-cooling, industrial-water |
-| 86 | P-0709C | MAKE-UP WATER PUMP C | Make-up / industrial water | PASOK | makeup-cooling, industrial-water |
-| 87 | P-0715A | INDUSTRIAL WATER PUMP A | Make-up / industrial water | PASOK | makeup-cooling, industrial-water |
-| 88 | P-0715B | INDUSTRIAL WATER PUMP B | Make-up / industrial water | PASOK | makeup-cooling, industrial-water |
-| 89 | P-0718 | DIESEL ENGINE DRIVEN FIRE PUMP | Fire fighting | LABAS: mechanical / civil, walang DCS signal | — |
-| 90 | P-0719 | MOTOR DRIVEN FIRE PUMP | Fire fighting | LABAS: mechanical / civil, walang DCS signal | — |
-| 91 | P-0720 | MOTOR DRIVEN JOCKEY PUMP | Fire fighting | LABAS: mechanical / civil, walang DCS signal | — |
-| 92 | P-1108A/2108A | AUXILIARY COOLING WATER PUMP A | Closed cooling water | PASOK | makeup-cooling |
-| 93 | P-1108B/2108B | AUXILIARY COOLING WATER PUMP B | Closed cooling water | PASOK | makeup-cooling |
-| 94 | P-1111A/2111A | SEAWATER BOOSTER PUMP A | Sea water | PASOK | sea-water |
-| 95 | P-1111B/2111B | SEAWATER BOOSTER PUMP B | Sea water | PASOK | sea-water |
-| 96 | P-1111C/2111C | SEAWATER BOOSTER PUMP C | Sea water | PASOK | sea-water |
-| 97 | P-1115A/2115A | BOILER FEEDWATER PUMP A | Boiler feedwater pumps | PASOK | feedwater |
-| 98 | P-1115B/2115B | BOILER FEEDWATER PUMP B | Boiler feedwater pumps | PASOK | feedwater |
-| 99 | P-1116A/2116A | CONDENSATE PUMP A | Condensate and polisher | PASOK | condensate |
-| 100 | P-1116B/2116B | CONDENSATE PUMP B | Condensate and polisher | PASOK | condensate |
-| 101 | P-1122A/2122A | TUBE CLEANING SYSTEM - BALL RECIRCULATING PUMP A | Condenser tube cleaning | PASOK | sea-water |
-| 102 | P-1122B/2122B | TUBE CLEANING SYSTEM - BALL RECIRCULATING PUMP B | Condenser tube cleaning | PASOK | sea-water |
-| 103 | P-1127A/2127A | SUBMERGE PUMP A (TRANSFORMER AREA PIT A) | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — |
-| 104 | P-1127B/2127B | SUBMERGE PUMP B (TRANSFORMER AREA PIT B) | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — |
-| 105 | P-1501A/2501A | SEAWATER PUMP A | Sea water | PASOK | sea-water |
-| 106 | P-1501B/2501B | SEAWATER PUMP B | Sea water | PASOK | sea-water |
-| 107 | P-1501C/2501C | SEAWATER PUMP C | Sea water | PASOK | sea-water |
-| 108 | P-1716A/2716A | CONDENSATE POLISHER BOOSTER PUMP A | Condensate and polisher | PASOK | condensate |
-| 109 | P-1716B/2716B | CONDENSATE POLISHER BOOSTER PUMP B | Condensate and polisher | PASOK | condensate |
-| 110 | S-1009A/2009A | CYCLONE A | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas |
-| 111 | S-1009B/2009B | CYCLONE B | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas |
-| 112 | S-1055A/2055A | FILTER SILENCER - FLUIDIZING AIR BLOWER A | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 113 | S-1055B/2055B | FILTER SILENCER - FLUIDIZING AIR BLOWER B | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 114 | S-1112/2112 | DEBRIS FILTER FOR SEAWATER INLET OF CCCW HEAT EXCHANGERS | Sea water | PASOK | sea-water |
-| 115 | S-1502/2502 | SEAWATER DEBRIS FILTER | Sea water | PASOK | sea-water |
-| 116 | T-0113 | PLUMBING WATER TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — |
-| 117 | T-0114 | TURBINE BUILDING POTABLE WATER TANK | Make-up / industrial water | PASOK | makeup-cooling, industrial-water |
-| 118 | T-0701 | OIL SERVICE TANK | Diesel oil | PASOK | oil-burners |
-| 119 | T-0705A | PLANT AIR RECEIVER A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 120 | T-0705B | PLANT AIR RECEIVER B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 121 | T-0706A | INSTRUMENT AIR RECEIVER A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 122 | T-0706B | INSTRUMENT AIR RECEIVER B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 123 | T-0708A | DEMINERALIZED WATER TANK A | Demin water storage | PASOK (demin = walang hanggang supply) | makeup-cooling |
-| 124 | T-0708B | DEMINERALIZED WATER TANK B | Demin water storage | PASOK (demin = walang hanggang supply) | makeup-cooling |
-| 125 | T-0714A | INDUSTRIAL WATER TANK A | Make-up / industrial water | PASOK | makeup-cooling, industrial-water |
-| 126 | T-0714B | INDUSTRIAL WATER TANK B | Make-up / industrial water | PASOK | makeup-cooling, industrial-water |
-| 127 | T-0717 | RAW WATER PIT | Water treatment / potable | LABAS: WTP (user 11-25) | — |
-| 128 | T-0721 | WATER TREATMENT PLANT POTABLE WATER TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — |
-| 129 | T-1001/2001 | STEAM DRUM | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas |
-| 130 | T-1008A/2008A | COAL BUNKER A | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal |
-| 131 | T-1008B/2008B | COAL BUNKER B | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal |
-| 132 | T-1008C/2008C | COAL BUNKER C | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal |
-| 133 | T-1009A/2009A | CYCLONE SEAL POT A | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas |
-| 134 | T-1009B/2009B | CYCLONE SEAL POT B | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas |
-| 135 | T-1050/2050 | FLASH TANK | Boiler blowdown | PASOK | boiler-steam |
-| 136 | T-1051/2051 | BLOWDOWN TANK | Boiler blowdown | PASOK | boiler-steam |
-| 137 | T-1104/2104 | DEAERATOR STORAGE TANK | Deaerator | PASOK | feedwater |
-| 138 | T-1109/2109 | EXPANSION TANK | Closed cooling water | PASOK | makeup-cooling |
-| 139 | T-1123A/2123A | TUBE CLEANING SYSTEM-BALL VESSEL A | Condenser tube cleaning | PASOK | sea-water |
-| 140 | T-1123B/2123B | TUBE CLEANING SYSTEM-BALL VESSEL B | Condenser tube cleaning | PASOK | sea-water |
-| 141 | T-1125/2125 | DRAIN SEPARATOR | Turbine auxiliaries | PASOK | turbine-oil, extraction |
-| 142 | T-1128 | TURNING GEAR / BUFFER TANK | Turbine auxiliaries | PASOK | turbine-oil, extraction |
-| 143 | Z-0701 | FLAME ARRESTER | Diesel oil | PASOK | oil-burners |
-| 144 | Z-0703A | LUBE OIL - PLANT AIR COMPRESSOR A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 145 | Z-0703B | LUBE OIL - PLANT AIR COMPRESSOR B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 146 | Z-0703C | LUBE OIL - PLANT AIR COMPRESSOR C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 147 | Z-0704A | LUBE OIL - INSTRUMENT AIR COMPRESSOR A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 148 | Z-0704B | LUBE OIL - INSTRUMENT AIR COMPRESSOR B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 149 | Z-0704C | LUBE OIL - INSTRUMENT AIR COMPRESSOR C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 150 | Z-0710A | AIR INTAKE FILTER-SILENCER FOR PLANT AIR COMPRESSOR A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 151 | Z-0710B | AIR INTAKE FILTER-SILENCER FOR PLANT AIR COMPRESSOR B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 152 | Z-0710C | AIR INTAKE FILTER-SILENCER FOR PLANT AIR COMPRESSOR C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 153 | Z-0711A | RELIEF VALVE FOR PLANT AIR A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 154 | Z-0711B | RELIEF VALVE FOR PLANT AIR B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 155 | Z-0711C | RELIEF VALVE FOR PLANT AIR C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 156 | Z-0712A | AIR INTAKE FILTER-SILENCER FOR INSTRUMENT AIR COMPRESSOR A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 157 | Z-0712B | AIR INTAKE FILTER-SILENCER FOR INSTRUMENT AIR COMPRESSOR B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 158 | Z-0712C | AIR INTAKE FILTER-SILENCER FOR INSTRUMENT AIR COMPRESSOR C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 159 | Z-0713A | RELIEF VALVE FOR INSTRUMENT AIR A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 160 | Z-0713B | RELIEF VALVE FOR INSTRUMENT AIR B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 161 | Z-0713C | RELIEF VALVE FOR INSTRUMENT AIR C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) |
-| 162 | Z-1001/2001 | SILENCER - BOILER DRUM & SOOT BLOWING SYSTEM | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — |
-| 163 | Z-1002/2002 | SILENCER - BOILER DRUM | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — |
-| 164 | Z-1003/2003 | SILENCER - MAIN STEAM PIPE & BLOW-OFF VALVE | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — |
-| 165 | Z-1004/2004 | SILENCER - HOT REHEAT STEAM PIPE | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — |
-| 166 | Z-1005/2005 | SILENCER - HOT REHEAT STEAM PIPE & BLOW-OFF VALVE | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — |
-| 167 | Z-1006/2006 | SILENCER - HOT REHEAT STEAM PIPE | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — |
-| 168 | Z-1007/2007 | SILENCER - AUXILIARY STEAM HEADER | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — |
-| 169 | Z-1010/2010 | ESP (ELECTROSTATIC PRECIPITATOR) | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas |
-| 170 | Z-1053/2053 | SILENCER-PRIMARY AIR FAN AIR INLET | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 171 | Z-1054/2054 | SILENCER - SECONDARY AIR FAN AIR INLET | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 172 | Z-1055A/2055A | DISCHARGE SILENCER - FLUIDIZING AIR BLOWER A | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 173 | Z-1055B/2055B | DISCHARGE SILENCER - FLUIDIZING AIR BLOWER B | Air (fans, blowers, air heater) | PASOK | combustion-air |
-| 174 | Z-1056/2056 | SILENCER - INDUCED DRAFT FAN (NAME UNREADABLE IN RA TEXT LAYER) | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas |
-| 175 | Z-1057/2057 | STACK | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas |
-| 176 | Z-1104/2104 | SILENCER - DEAERATOR CONTINUOUS AIR VENT | Deaerator | PASOK | feedwater |
-| 177 | Z-1119/2119 | STEAM JET AIR EJECTOR | Condenser and vacuum | PASOK | condensate |
-| 178 | Z-1120/2120 | START-UP EJECTOR | Condenser and vacuum | PASOK | condensate |
-| 179 | Z-1124A/2124A | TUBE CLEANING SYSTEM-V-PIECE A | Condenser tube cleaning | PASOK | sea-water |
-| 180 | Z-1124B/2124B | TUBE CLEANING SYSTEM-V-PIECE B | Condenser tube cleaning | PASOK | sea-water |
-| 181 | Z-1124C/2124C | TUBE CLEANING SYSTEM-V-PIECE C | Condenser tube cleaning | PASOK | sea-water |
-| 182 | Z-1124D/2124D | TUBE CLEANING SYSTEM-V-PIECE D | Condenser tube cleaning | PASOK | sea-water |
+**Walang tag sa R0 (28 item):** economizer #1 ~ #3, SH panel #1 / #2, finishing SH (3), evaporator panel, RH panel (4), 1st / 2nd stage desuperheater, flash chamber, BFWP lube oil MOP / AOP / cooler / filter, oil skimmer, diaphragm pump, storage tank ng oil separator, agitator, eye washer, splitters (3). Ang SH / RH / economizer ay PASOK (`boiler-steam`, `reheat`). Seksyon 58 (boiler hoist) at 62 (coal conveying, LABAS) ay pamagat lang.
+
+**Saan ito ginagamit:** ang "Page sa app" ay sistema ng page. Ang bilang kung may sariling simbolo ang bawat equipment sa page ay trabaho ng **Phase 9**, hindi ng Phase 1.
+
+### 4.1 Nag-iba ang tag
+
+| RA | R0 | Equipment | Susundin |
+|---|---|---|---|
+| P-1111A/B/C | P-1503A/B/C | Seawater booster pump | R0 (P-1503 ang nasa DCS at app) |
+| S-1112 | S-1504 | Debris filter bago ang CCW heat exchanger | R0 (S-1504 ang nasa app) |
+| L-1121A/B | L-1111, L-1112 | Ball separator | R0 |
+| P-1122A/B | P-1113, P-1114 | Ball circulating pump | R0 |
+| T-1123A/B | T-1115, T-1116 | Ball vessel | R0 |
+| T-1008A/B/C | T-1108A/B/C | Coal bunker | App = T-1008 (DCS alarm list 20160912) |
+| T-0714A/B | T-0714 | Industrial water tank (2 naging 1) | R0 |
+| P-1127A/B | P-1127 | Submerge pump, transformer area | R0 (LABAS) |
+| Z-0710A/B/C | S-0710A/B/C | Suction filter ng plant air compressor | R0 (LABAS) |
+| Z-0712A/B/C | S-0712A/B/C | Suction filter ng instrument air compressor | R0 (LABAS) |
+| Z-1119 | Z-1119A/B/C/D | Steam jet air ejector (1st + 2nd stage) | R0 |
+| Z-1053 (silencer) | S-1053; Z-1053 = PAF lube oil cooler na | PAF suction silencer | R0 |
+| Z-1054 (silencer) | S-1054 (nakasulat S-1504) | SAF suction silencer | Tingnan ang mga mali sa R0 |
+| T-1128 | T-1128 / T-2128 | Turning gear IA buffer tank, may Unit 2 na | R0 |
+| Z-1057 / 2057 | Z-1057 lang | Stack (isa para sa dalawang unit) | R0 |
+
+Parehong tag, linaw ng pangalan: Z-1056 = hydraulic coupling ng ID fan (hindi silencer; ganito rin sa RA scan); H-1001 = FURNACE (dating BOILER); L-1060 = ASH COOLER (dating BOTTOM ASH SCREW CONVEYOR).
+
+### 4.2 Inalis (nasa RA, wala sa R0)
+
+| RA | Equipment | Estado |
+|---|---|---|
+| F-1119A/B | Steam ejector exhauster | Wala sa R0 |
+| T-1125 | Drain separator | Wala sa R0; may banggit pa sa app, susuriin laban sa P&ID sa Phase 9 |
+| Z-1124A/B/C/D | Tube cleaning V-piece | Wala sa R0 |
+
+### 4.3 Bago sa R0 (375 tag)
+
+| Sistema | Bilang | Tag (Unit 1) |
+|---|---|---|
+| Air (fans, blowers, air heater) | 4 | V-FA1001, V-FA1002, V-FA1003, V-FA1004 |
+| Boiler feedwater pumps | 10 | M-1115, OR-FW1001, OR-FW1002, OR-FW1003, OR-FW1004, STR-FW1001, STR-FW1002, Z-1115 |
+| Bottom ash | 12 | F-1091, L-1090, L-1091, L-1092, L-1903, L-1904, S-1090, S-1091, S-1092, T-1090, T-1091, T-1092 |
+| Chemical dosing (sea water) | 6 | P-0761, P-0762, T-0761, T-0762 |
+| Chemical dosing at sampling | 12 | Z-1101, Z-1102, Z-1103, Z-1105, Z-1106, Z-1107, Z-1108, Z-1109, Z-1140 |
+| Coal bunkers | 27 | T-1066, T-1067, T-1068 |
+| Coal feeders | 3 | T-1065 |
+| Condensate and polisher | 11 | OR-CD1001, OR-CD1002, OR-MU1002, STR-CD1002, STR-CD1003, STR-CD1004, STR-CD1005, STR-CD1006, STR-CD1007, STR-CD1008, STR-CD1011 |
+| Condenser and vacuum | 5 | T-1135, Z-1110, Z-1113, Z-1130 |
+| Deaerator | 1 | ZV-TS1104 |
+| Desuperheaters | 2 | DSH-CD1126, DSH-FW1150 |
+| Diesel oil | 2 | STR-DO0001, STR-DO0002 |
+| Feedwater | 6 | STR-FW1003, STR-FW1004, STR-FW1005, STR-FW1006, STR-FW1007, STR-FW1008 |
+| Fire fighting | 1 | T-0724 |
+| Flue gas (ID fan, ESP, stack) | 10 | T-1064, TCV-FG1116, TCV-FG1117 |
+| Fly ash | 19 | F-1250, L-1250, S-1250, S-1251, S-1252, S-1253, S-1254, S-1255, S-1256, T-1250, T-1251 |
+| Gland steam | 4 | F-1911, H-1911, M-1911, Z-1912 |
+| Limestone at sand | 12 | F-1301, F-1313, L-1311, S-1300, S-1301, S-1311, S-1312, S-1313, T-1300, T-1301, T-1311, T-1312 |
+| Main steam | 2 | OR-MS1001, OR-MS1002 |
+| Make-up / industrial water | 10 | RO-IW0715, RO-MU0709, STR-IW0001, STR-IW0002, STR-MU0001, STR-MU0002, STR-MU0003 |
+| Safety valves | 12 | ZV-AS1001, ZV-BR1001, ZV-BR1002, ZV-DO1001, ZV-FS1001, ZV-FW1001, ZV-FW1002, ZV-HR1001, ZV-HR1002, ZV-HR1003, ZV-MS1001, ZV-SB1001 |
+| Turbine at generator | 16 | E-1907, G-1901, G-1970, H-1971, L-1906, M-1906, S-1960, Z-1094, Z-1095, Z-1903 |
+| Turbine bypass at control valves | 8 | PCV-AS1010, PCV-HR1010, PCV-MS1020, TCV-CD1115, TCV-CD1124, TCV-CD1126, TCV-FW1060, TCV-FW1150 |
+| Turbine oil | 33 | F-1937, H-1921, M-1922, M-1923, M-1931, M-1937, M-1941, OR-CW1001, P-1922, P-1923, P-1931, P-1941, S-1932, S-1933, S-1936, S-1942, S-1943, T-1395, T-1920, T-1934, T-1938, Z-1930, Z-1940 |
+| Water treatment / potable | 147 | item 61.1 ~ 61.90 at 54A.17 ~ 54A.19 (LABAS) |
+
+### 4.4 Mga mali sa sulat ng R0 at ang tag na ginamit sa listahan
+
+| R0 | Problema | Nakalista bilang | Bakit |
+|---|---|---|---|
+| 52.1 L-1060C dalawang beses | Ang ikaapat ay dapat D | L-1060D | RA at DCS |
+| 45.2 S-1504 | Pareho ng debris filter (19.2) | S-1054 | Hinuha mula sa fan F-1054 at sa S-1053 ng PAF |
+| 34.4 Z-1104 | Pareho ng deaerator silencer (14.4) | Isang row, dalawang gamit | R0 |
+| 34.2 Z-1102 / Z-2101 | Unit 2 | Z-1102/2102 | Kapareho ng ibang row |
+| 44.3 Z-1053 / Z-2054 | Unit 2 | Z-1053/2053 | Kapareho ng ibang row |
+| 61.18 F-0850 | Kulang ang B | F-0850B | Kapares ng F-0850A |
+| 2.9 G1903 (H-1911) | Dalawang tag | H-1911 | R0, nasa panaklong |
+| 2.4 Z-1094, 2.5 Z-1095, 2.19.6 T-1395 | Hindi ayon sa serye (Z-19xx, T-19xx) | Ayon sa R0 | Iiwan hangga't walang P&ID na nagsasabing iba |
+| 12.2 STR-CD1011 | Kapares ay STR-CD1002 | Ayon sa R0 | Pareho |
+
+### 4.5 Buong listahan (R0)
+
+| # | Tag (Unit 1 / Unit 2) | Equipment | Sistema | Saklaw | Page sa app | R0 item |
+|---|---|---|---|---|---|---|
+| 1 | B-1043A/2043A | START-UP DIESEL OIL BURNER A | Start-up burners | PASOK | oil-burners | 25.1 |
+| 2 | B-1043B/2043B | START-UP DIESEL OIL BURNER B | Start-up burners | PASOK | oil-burners | 25.1 |
+| 3 | B-1043C/2043C | START-UP DIESEL OIL BURNER C | Start-up burners | PASOK | oil-burners | 25.1 |
+| 4 | B-1043D/2043D | START-UP DIESEL OIL BURNER D | Start-up burners | PASOK | oil-burners | 25.1 |
+| 5 | C-0703A | PLANT AIR COMPRESSOR & COOLER A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.2 |
+| 6 | C-0703B | PLANT AIR COMPRESSOR & COOLER B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.2 |
+| 7 | C-0703C | PLANT AIR COMPRESSOR & COOLER C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.2 |
+| 8 | C-0704A | INSTRUMENT AIR COMPRESSOR & COOLER A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.2 |
+| 9 | C-0704B | INSTRUMENT AIR COMPRESSOR & COOLER B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.2 |
+| 10 | C-0704C | INSTRUMENT AIR COMPRESSOR & COOLER C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.2 |
+| 11 | C-0707 | START-UP COMPRESSOR | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 28.1 |
+| 12 | C-0850 | AIR COMPRESSOR UNIT | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.10 |
+| 13 | D-0703A | PLANT AIR DRYER A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 29.1 |
+| 14 | D-0703B | PLANT AIR DRYER B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 29.1 |
+| 15 | D-0703C | PLANT AIR DRYER C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 29.1 |
+| 16 | D-0704A | INSTRUMENT AIR DRYER A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 29.2 |
+| 17 | D-0704B | INSTRUMENT AIR DRYER B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 29.2 |
+| 18 | D-0704C | INSTRUMENT AIR DRYER C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 29.2 |
+| 19 | DSH-CD1126/2126 | GLAND STEAM DESUPERHEATER | Desuperheaters | PASOK | reheat, extraction | 9A.2 |
+| 20 | DSH-FW1150/2150 | REHEATER INLET DESUPERHEATER | Desuperheaters | PASOK | reheat, extraction | 9A.1 |
+| 21 | E-1907/2907 | TURNING BOLT HEATER | Turbine at generator | LABAS: mechanical / civil, walang DCS signal | — | 2.8 |
+| 22 | F-0850A | MMF BLOWER A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.18 |
+| 23 | F-0850B | MMF BLOWER B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.18 |
+| 24 | F-0851A | MIXING BLOWER A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.17 |
+| 25 | F-0851B | MIXING BLOWER B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.17 |
+| 26 | F-1053/2053 | PRIMARY AIR FAN | Air (fans, blowers, air heater) | PASOK | combustion-air | 44.1 |
+| 27 | F-1054/2054 | SECONDARY AIR FAN | Air (fans, blowers, air heater) | PASOK | combustion-air | 45.1 |
+| 28 | F-1055A/2055A | FLUIDIZING AIR BLOWER A | Air (fans, blowers, air heater) | PASOK | combustion-air | 46.1 |
+| 29 | F-1055B/2055B | FLUIDIZING AIR BLOWER B | Air (fans, blowers, air heater) | PASOK | combustion-air | 46.1 |
+| 30 | F-1056/2056 | I.D. FAN | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 43.1 |
+| 31 | F-1091/2091 | DEDUST VENTING FAN | Bottom ash | PASOK | ash | 51.4 |
+| 32 | F-1250/2250 | DEDUST VENTING FAN | Fly ash | PASOK | ash | 53.8 |
+| 33 | F-1301/2301 | DEDUST VENTING FAN (SAND) | Limestone at sand | PASOK | limestone-sand | 50.3 |
+| 34 | F-1313/2313 | DEDUST VENTING FAN (LIMESTONE) | Limestone at sand | PASOK | limestone-sand | 49.4 |
+| 35 | F-1911/2911 | GLAND STEAM EXHAUSTER | Gland steam | PASOK | turbine-readings, extraction | 2.10 |
+| 36 | F-1937/2937 | VAPOUR EXTRACTOR (VX) | Turbine oil | PASOK | turbine-oil | 2.19.8 |
+| 37 | G-1901/2901 | STEAM TURBINE | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.1 |
+| 38 | G-1970/2970 | STEAM TURBINE GENERATOR | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.2 |
+| 39 | H-0869 | HEATER | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.61 |
+| 40 | H-1001/2001 | FURNACE | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas | 1.1 |
+| 41 | H-1052/2052 | AIR PREHEATER (ROTARY GAS AIR HEATER) | Air (fans, blowers, air heater) | PASOK | combustion-air | 38.1 |
+| 42 | H-1101/2101 | #1 LOW PRESSURE HEATER | LP heaters | PASOK | condensate, heater-drains | 13.1 |
+| 43 | H-1102/2102 | #2 LOW PRESSURE HEATER | LP heaters | PASOK | condensate, heater-drains | 13.2 |
+| 44 | H-1103/2103 | #3 LOW PRESSURE HEATER | LP heaters | PASOK | condensate, heater-drains | 13.3 |
+| 45 | H-1104/2104 | DEAERATOR | Deaerator | PASOK | feedwater | 14.1 |
+| 46 | H-1105/2105 | #1 HIGH PRESSURE HEATER | HP heaters | PASOK | feedwater, heater-drains | 13.4 |
+| 47 | H-1106/2106 | #2 HIGH PRESSURE HEATER | HP heaters | PASOK | feedwater, heater-drains | 13.5 |
+| 48 | H-1107A/2107A | PLATE HEAT EXCHANGER (CLOSED CIRCUIT COOLING WATER) A | Closed cooling water | PASOK | makeup-cooling | 18.1 |
+| 49 | H-1107B/2107B | PLATE HEAT EXCHANGER (CLOSED CIRCUIT COOLING WATER) B | Closed cooling water | PASOK | makeup-cooling | 18.1 |
+| 50 | H-1107C/2107C | PLATE HEAT EXCHANGER (CLOSED CIRCUIT COOLING WATER) C | Closed cooling water | PASOK | makeup-cooling | 18.1 |
+| 51 | H-1110/2110 | CONDENSER | Condenser and vacuum | PASOK | condensate | 11.1 |
+| 52 | H-1119/2119 | STEAM JET AIR EJECTOR CONDENSER | Condenser and vacuum | PASOK | condensate | 3.2 |
+| 53 | H-1911/2911 | GLAND STEAM CONDENSER (G-1903) | Gland steam | PASOK | turbine-readings, extraction | 2.9 |
+| 54 | H-1921A/2921A | LUBE OIL COOLER A | Turbine oil | PASOK | turbine-oil | 2.14 |
+| 55 | H-1921B/2921B | LUBE OIL COOLER B | Turbine oil | PASOK | turbine-oil | 2.14 |
+| 56 | H-1971A/2971A | GENERATOR AIR COOLER A | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.22 |
+| 57 | H-1971B/2971B | GENERATOR AIR COOLER B | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.22 |
+| 58 | H-1971C/2971C | GENERATOR AIR COOLER C | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.22 |
+| 59 | H-1971D/2971D | GENERATOR AIR COOLER D | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.22 |
+| 60 | L-0062 | ELEVATOR (BOILER HOUSE) | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — | 56.1 |
+| 61 | L-0063 | OIL WATER SEPARATOR | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — | 33.1 |
+| 62 | L-0129 | TURBINE BUILDING OVERHEAD CRANE | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — | 57.1 |
+| 63 | L-0503 | CRANE FOR SEA WATER PUMP STATION | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — | 59.1 |
+| 64 | L-1060A/2060A | ASH COOLER (BOTTOM ASH SCREW COOLER) A | Bottom ash | PASOK | ash | 52.1 |
+| 65 | L-1060B/2060B | ASH COOLER (BOTTOM ASH SCREW COOLER) B | Bottom ash | PASOK | ash | 52.1 |
+| 66 | L-1060C/2060C | ASH COOLER (BOTTOM ASH SCREW COOLER) C | Bottom ash | PASOK | ash | 52.1 |
+| 67 | L-1060D/2060D | ASH COOLER (BOTTOM ASH SCREW COOLER) D | Bottom ash | PASOK | ash | 52.1 |
+| 68 | L-1061A/2061A | COAL FEEDER A | Coal feeders | PASOK | coal | 47.1 |
+| 69 | L-1061B/2061B | COAL FEEDER B | Coal feeders | PASOK | coal | 47.1 |
+| 70 | L-1061C/2061C | COAL FEEDER C | Coal feeders | PASOK | coal | 47.1 |
+| 71 | L-1090/2090 | CHAIN CONVEYOR | Bottom ash | PASOK | ash | 51.1 |
+| 72 | L-1091/2091 | BUCKET ELEVATOR | Bottom ash | PASOK | ash | 51.2 |
+| 73 | L-1092/2092 | SCREW CONVEYOR | Bottom ash | PASOK | ash | 51.3 |
+| 74 | L-1111/2111 | BALL SEPARATOR | Condenser tube cleaning | PASOK | sea-water | 20.1 |
+| 75 | L-1112/2112 | BALL SEPARATOR | Condenser tube cleaning | PASOK | sea-water | 20.1 |
+| 76 | L-1250/2250 | DRY UNLOADER | Fly ash | PASOK | ash | 53.6 |
+| 77 | L-1311/2311 | LIMESTONE FEEDER | Limestone at sand | PASOK | limestone-sand | 49.5 |
+| 78 | L-1903/2903 | LOADING SPOUT | Bottom ash | PASOK | ash | 51.8 |
+| 79 | L-1904/2904 | TWO WAY SEPARATOR | Bottom ash | PASOK | ash | 51.6 |
+| 80 | L-1906/2906 | TURNING GEAR | Turbine at generator | PASOK | turbine-motors, turbine | 2.6 |
+| 81 | M-0850 | SLUDGE THICKENER SCRAPER | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.23 |
+| 82 | M-1115A/2115A | BFWP MAIN MOTOR / COOLER A | Boiler feedwater pumps | PASOK | feedwater | 15.2 |
+| 83 | M-1115B/2115B | BFWP MAIN MOTOR / COOLER B | Boiler feedwater pumps | PASOK | feedwater | 15.2 |
+| 84 | M-1906/2906 | TURNING GEAR MOTOR | Turbine at generator | PASOK | turbine-motors, turbine | 2.7 |
+| 85 | M-1911/2911 | GLAND STEAM EXHAUSTER MOTOR | Gland steam | PASOK | turbine-readings, extraction | 2.11 |
+| 86 | M-1922A/2922A | MAIN OIL PUMP MOTOR A | Turbine oil | PASOK | turbine-oil | 2.16 |
+| 87 | M-1922B/2922B | MAIN OIL PUMP MOTOR B | Turbine oil | PASOK | turbine-oil | 2.16 |
+| 88 | M-1923/2923 | EMERGENCY OIL PUMP MOTOR | Turbine oil | PASOK | turbine-oil | 2.18 |
+| 89 | M-1931A/2931A | CONTROL OIL PUMP MOTOR A | Turbine oil | PASOK | turbine-oil | 2.19.2 |
+| 90 | M-1931B/2931B | CONTROL OIL PUMP MOTOR B | Turbine oil | PASOK | turbine-oil | 2.19.2 |
+| 91 | M-1937/2937 | VAPOUR EXTRACTOR MOTOR | Turbine oil | PASOK | turbine-oil | 2.19.9 |
+| 92 | M-1941/2941 | OIL PURIFIER PUMP MOTOR | Turbine oil | PASOK | turbine-oil | 2.20.2 |
+| 93 | N-1011/2011 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 94 | N-1012/2012 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 95 | N-1013/2013 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 96 | N-1014/2014 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 97 | N-1015/2015 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 98 | N-1016/2016 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 99 | N-1017/2017 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 100 | N-1018/2018 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 101 | N-1019/2019 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 102 | N-1020/2020 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 103 | N-1021/2021 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 104 | N-1022/2022 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 105 | N-1023/2023 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 106 | N-1024/2024 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 107 | N-1025/2025 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 108 | N-1026/2026 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 109 | N-1027/2027 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 110 | N-1028/2028 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 111 | N-1029/2029 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 112 | N-1030/2030 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 113 | N-1031/2031 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 114 | N-1032/2032 | SOOTBLOWER - RH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 115 | N-1033/2033 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 116 | N-1034/2034 | SOOTBLOWER - SH+ ECO. PASS | Sootblowers | PASOK | sootblowers | 10A |
+| 117 | N-1035/2035 | SOOTBLOWER - COMMON ECO. | Sootblowers | PASOK | sootblowers | 10A |
+| 118 | N-1036/2036 | SOOTBLOWER - COMMON ECO. | Sootblowers | PASOK | sootblowers | 10A |
+| 119 | N-1037/2037 | SOOTBLOWER - COMMON ECO. | Sootblowers | PASOK | sootblowers | 10A |
+| 120 | N-1038/2038 | SOOTBLOWER - COMMON ECO. | Sootblowers | PASOK | sootblowers | 10A |
+| 121 | N-1040/2040 | SOOTBLOWER - GAS AIR HEATER | Sootblowers | PASOK | sootblowers | 10B.1 |
+| 122 | N-1042/2042 | SOOTBLOWER - GAS AIR HEATER | Sootblowers | PASOK | sootblowers | 10B.1 |
+| 123 | OR-CD1001/2001 | ORIFICE - CONDENSATE MINIMUM FLOW RECIRCULATION | Condensate and polisher | PASOK | condensate | ORI |
+| 124 | OR-CD1002/2002 | ORIFICE - FLASH CHAMBER SPRAY | Condensate and polisher | PASOK | condensate | ORI |
+| 125 | OR-CW1001A/2001A | ORIFICE - COOLING WATER OUTLET OF TURBINE OIL COOLER A | Turbine oil | PASOK | turbine-oil | ORI |
+| 126 | OR-CW1001B/2001B | ORIFICE - COOLING WATER OUTLET OF TURBINE OIL COOLER B | Turbine oil | PASOK | turbine-oil | ORI |
+| 127 | OR-FW1001/2001 | ORIFICE - MIN. FLOW | Boiler feedwater pumps | PASOK | feedwater | 15.4 |
+| 128 | OR-FW1002/2002 | ORIFICE - MIN. FLOW | Boiler feedwater pumps | PASOK | feedwater | 15.4 |
+| 129 | OR-FW1003/2003 | ORIFICE - BALANCE FLOW | Boiler feedwater pumps | PASOK | feedwater | 15.5 |
+| 130 | OR-FW1004/2004 | ORIFICE - BALANCE FLOW | Boiler feedwater pumps | PASOK | feedwater | 15.5 |
+| 131 | OR-MS1001/2001 | ORIFICE - MAIN STEAM CONTINUOUS DRAIN BEFORE PCV-MS1020 | Main steam | PASOK | boiler-steam | ORI |
+| 132 | OR-MS1002/2002 | ORIFICE - MAIN STEAM CONTINUOUS DRAIN BEFORE PCV-MS1010 | Main steam | PASOK | boiler-steam | ORI |
+| 133 | OR-MU1002/2002 | ORIFICE - MAKE-UP WATER TO CONDENSER, DOWNSTREAM LCV-MU1110 | Condensate and polisher | PASOK | condensate | ORI |
+| 134 | P-0058A | WASTE WATER PUMP A | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — | 32.1 |
+| 135 | P-0058B | WASTE WATER PUMP B | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — | 32.1 |
+| 136 | P-0702A | DIESEL OIL PUMP A | Diesel oil | PASOK | oil-burners | 24.1 |
+| 137 | P-0702B | DIESEL OIL PUMP B | Diesel oil | PASOK | oil-burners | 24.1 |
+| 138 | P-0709A | MAKE-UP WATER PUMP A | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 30.1 |
+| 139 | P-0709B | MAKE-UP WATER PUMP B | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 30.1 |
+| 140 | P-0709C | MAKE-UP WATER PUMP C | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 30.1 |
+| 141 | P-0715A | INDUSTRIAL WATER PUMP A | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 31.1 |
+| 142 | P-0715B | INDUSTRIAL WATER PUMP B | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 31.1 |
+| 143 | P-0718 | FIRE PUMP DIESEL DRIVEN | Fire fighting | LABAS: mechanical / civil, walang DCS signal | — | 60.1 |
+| 144 | P-0719 | FIRE PUMP MOTOR DRIVEN | Fire fighting | LABAS: mechanical / civil, walang DCS signal | — | 60.2 |
+| 145 | P-0720 | JOCKEY PUMP MOTOR DRIVEN | Fire fighting | LABAS: mechanical / civil, walang DCS signal | — | 60.3 |
+| 146 | P-0761A | NAOCL DOSING PUMP A | Chemical dosing (sea water) | PASOK | sea-water | 35.1 |
+| 147 | P-0761B | NAOCL DOSING PUMP B | Chemical dosing (sea water) | PASOK | sea-water | 35.1 |
+| 148 | P-0762A | HYPO-CHLORINATED DOSING PUMP A | Chemical dosing (sea water) | PASOK | sea-water | 35.3 |
+| 149 | P-0762B | HYPO-CHLORINATED DOSING PUMP B | Chemical dosing (sea water) | PASOK | sea-water | 35.3 |
+| 150 | P-0808A | FILTER WATER PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.30 |
+| 151 | P-0808B | FILTER WATER PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.30 |
+| 152 | P-0809A | BACK WASH PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.24 |
+| 153 | P-0809B | BACK WASH PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.24 |
+| 154 | P-0850A | RAW WATER TRANSFER PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.35 |
+| 155 | P-0850B | RAW WATER TRANSFER PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.35 |
+| 156 | P-0851A | MMF FEED PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.33 |
+| 157 | P-0851B | MMF FEED PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.33 |
+| 158 | P-0855A | HIGH PRESSURE PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.31 |
+| 159 | P-0855B | HIGH PRESSURE PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.31 |
+| 160 | P-0856A | CEDI TRANSFER PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.26 |
+| 161 | P-0856B | CEDI TRANSFER PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.26 |
+| 162 | P-0857 | POTABLE WATER TRANSFER PUMP | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.34 |
+| 163 | P-0858A | REGENERATION PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.36 |
+| 164 | P-0858B | REGENERATION PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.36 |
+| 165 | P-0858C | REGENERATION PUMP C | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.36 |
+| 166 | P-0859A | WASTE WATER PUMP 1 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.44 |
+| 167 | P-0859B | WASTE WATER PUMP 1 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.44 |
+| 168 | P-0860 | NEUTRALIZATION TANK AGITATOR | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.20 |
+| 169 | P-0861A | WASTE WATER FEED PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.43 |
+| 170 | P-0861B | WASTE WATER FEED PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.43 |
+| 171 | P-0862 | PH ADJUST TANK AGITATOR 2 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.22 |
+| 172 | P-0863A | EFFLUENT PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.29 |
+| 173 | P-0863B | EFFLUENT PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.29 |
+| 174 | P-0864A | WASTE WATER PUMP 2 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.45 |
+| 175 | P-0864B | WASTE WATER PUMP 2 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.45 |
+| 176 | P-0865 | PH ADJUST TANK AGITATOR 1 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.21 |
+| 177 | P-0866A | COOLING PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.28 |
+| 178 | P-0866B | COOLING PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.28 |
+| 179 | P-0867A | HOT WATER PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.32 |
+| 180 | P-0867B | HOT WATER PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.32 |
+| 181 | P-0868A | SLUDGE PUMP 1 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.38 |
+| 182 | P-0868B | SLUDGE PUMP 1 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.38 |
+| 183 | P-0869A | SLUDGE PUMP 2 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.39 |
+| 184 | P-0869B | SLUDGE PUMP 2 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.39 |
+| 185 | P-0870A | CIP PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.27 |
+| 186 | P-0870B | CIP PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.27 |
+| 187 | P-0871A | POLYMER DOSING PUMP 1 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.56 |
+| 188 | P-0871B | POLYMER DOSING PUMP 1 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.56 |
+| 189 | P-0871C | POLYMER DOSING PUMP 1 C | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.56 |
+| 190 | P-0872A | NAOCL DOSING PUMP 1 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.49 |
+| 191 | P-0872B | NAOCL DOSING PUMP 1 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.49 |
+| 192 | P-0872C | NAOCL DOSING PUMP 1 C | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.49 |
+| 193 | P-0873A | NAOCL DOSING PUMP 2 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.51 |
+| 194 | P-0873B | NAOCL DOSING PUMP 2 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.51 |
+| 195 | P-0874A | UNLOADING PUMP 1 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.40 |
+| 196 | P-0874B | UNLOADING PUMP 1 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.40 |
+| 197 | P-0875A | H2SO4 DOSING PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.48 |
+| 198 | P-0875B | H2SO4 DOSING PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.48 |
+| 199 | P-0875C | H2SO4 DOSING PUMP C | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.48 |
+| 200 | P-0875D | H2SO4 DOSING PUMP D | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.48 |
+| 201 | P-0875E | H2SO4 DOSING PUMP E | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.48 |
+| 202 | P-0875F | H2SO4 DOSING PUMP F | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.48 |
+| 203 | P-0876A | UNLOADING PUMP 2 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.41 |
+| 204 | P-0876B | UNLOADING PUMP 2 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.41 |
+| 205 | P-0877A | NAOH DOSING PUMP 1 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.52 |
+| 206 | P-0877B | NAOH DOSING PUMP 1 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.52 |
+| 207 | P-0877C | NAOH DOSING PUMP 1 C | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.52 |
+| 208 | P-0878A | NAOH DOSING PUMP 2 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.53 |
+| 209 | P-0878B | NAOH DOSING PUMP 2 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.53 |
+| 210 | P-0879A | NAOH DOSING PUMP 3 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.54 |
+| 211 | P-0879B | NAOH DOSING PUMP 3 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.54 |
+| 212 | P-0879C | NAOH DOSING PUMP 3 C | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.54 |
+| 213 | P-0879D | NAOH DOSING PUMP 3 D | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.54 |
+| 214 | P-0879E | NAOH DOSING PUMP 3 E | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.54 |
+| 215 | P-0879F | NAOH DOSING PUMP 3 F | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.54 |
+| 216 | P-0880A | ANTI-SCALANT DOSING PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.46 |
+| 217 | P-0880B | ANTI-SCALANT DOSING PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.46 |
+| 218 | P-0881A | PAC DOSING PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.55 |
+| 219 | P-0881B | PAC DOSING PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.55 |
+| 220 | P-0881C | PAC DOSING PUMP C | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.55 |
+| 221 | P-0882A | POLYMER DOSING PUMP 2 A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.57 |
+| 222 | P-0882B | POLYMER DOSING PUMP 2 B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.57 |
+| 223 | P-0883A | FECL3 DOSING PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.47 |
+| 224 | P-0883B | FECL3 DOSING PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.47 |
+| 225 | P-0884 | CARBON TANK AGITATOR | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.19 |
+| 226 | P-0885A | CARBON FEED PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.25 |
+| 227 | P-0885B | CARBON FEED PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.25 |
+| 228 | P-0894 | WASH PUMP | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.42 |
+| 229 | P-0895A | UTILITY WATER PUMP A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.37 |
+| 230 | P-0895B | UTILITY WATER PUMP B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.37 |
+| 231 | P-1108A/2108A | AUXILIARY COOLING WATER PUMP A | Closed cooling water | PASOK | makeup-cooling | 22.1 |
+| 232 | P-1108B/2108B | AUXILIARY COOLING WATER PUMP B | Closed cooling water | PASOK | makeup-cooling | 22.1 |
+| 233 | P-1113/2113 | BALL CIRCULATING PUMP | Condenser tube cleaning | PASOK | sea-water | 20.2 |
+| 234 | P-1114/2114 | BALL CIRCULATING PUMP | Condenser tube cleaning | PASOK | sea-water | 20.2 |
+| 235 | P-1115A/2115A | BOILER FEED WATER PUMP / COOLER A | Boiler feedwater pumps | PASOK | feedwater | 15.1 |
+| 236 | P-1115B/2115B | BOILER FEED WATER PUMP / COOLER B | Boiler feedwater pumps | PASOK | feedwater | 15.1 |
+| 237 | P-1116A/2116A | CONDENSATE PUMP A | Condensate and polisher | PASOK | condensate | 12.1 |
+| 238 | P-1116B/2116B | CONDENSATE PUMP B | Condensate and polisher | PASOK | condensate | 12.1 |
+| 239 | P-1127/2127 | SUBMERGE PUMP (TRANSFORMER AREA) | Plant services (crane, elevator, pits) | LABAS: mechanical / civil, walang DCS signal | — | 55.1 |
+| 240 | P-1501A/2501A | SEA WATER PUMP A | Sea water | PASOK | sea-water | 16.1 |
+| 241 | P-1501B/2501B | SEA WATER PUMP B | Sea water | PASOK | sea-water | 16.1 |
+| 242 | P-1501C/2501C | SEA WATER PUMP C | Sea water | PASOK | sea-water | 16.1 |
+| 243 | P-1503A/2503A | SEA WATER BOOSTER PUMP A | Sea water | PASOK | sea-water | 17.1 |
+| 244 | P-1503B/2503B | SEA WATER BOOSTER PUMP B | Sea water | PASOK | sea-water | 17.1 |
+| 245 | P-1503C/2503C | SEA WATER BOOSTER PUMP C | Sea water | PASOK | sea-water | 17.1 |
+| 246 | P-1716A/2716A | CONDENSATE POLISHER BOOSTER PUMP A | Condensate and polisher | PASOK | condensate | 37.1 |
+| 247 | P-1716B/2716B | CONDENSATE POLISHER BOOSTER PUMP B | Condensate and polisher | PASOK | condensate | 37.1 |
+| 248 | P-1922A/2922A | MAIN OIL PUMP (MOP) A | Turbine oil | PASOK | turbine-oil | 2.15 |
+| 249 | P-1922B/2922B | MAIN OIL PUMP (MOP) B | Turbine oil | PASOK | turbine-oil | 2.15 |
+| 250 | P-1923/2923 | EMERGENCY OIL PUMP (EOP) | Turbine oil | PASOK | turbine-oil | 2.17 |
+| 251 | P-1931A/2931A | CONTROL OIL PUMP (COP) A | Turbine oil | PASOK | turbine-oil | 2.19.1 |
+| 252 | P-1931B/2931B | CONTROL OIL PUMP (COP) B | Turbine oil | PASOK | turbine-oil | 2.19.1 |
+| 253 | P-1941/2941 | OIL PURIFIER PUMP | Turbine oil | PASOK | turbine-oil | 2.20.1 |
+| 254 | PCV-AS1010/2010 | PRESSURE CONTROL VALVE - TO AUX. STEAM | Turbine bypass at control valves | PASOK | boiler-steam, reheat, aux-steam | 7.3 |
+| 255 | PCV-HR1010/2010 | PRESSURE CONTROL VALVE - LP TURBINE BYPASS | Turbine bypass at control valves | PASOK | boiler-steam, reheat, aux-steam | 7.2 |
+| 256 | PCV-MS1020/2020 | PRESSURE CONTROL VALVE - HP TURBINE BYPASS | Turbine bypass at control valves | PASOK | boiler-steam, reheat, aux-steam | 7.1 |
+| 257 | RO-IW0715A | ORIFICE (INDUSTRIAL WATER PUMP) A | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 31.2 |
+| 258 | RO-IW0715B | ORIFICE (INDUSTRIAL WATER PUMP) B | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 31.2 |
+| 259 | RO-MU0709A | ORIFICE (MAKE-UP WATER PUMP) A | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 30.2 |
+| 260 | RO-MU0709B | ORIFICE (MAKE-UP WATER PUMP) B | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 30.2 |
+| 261 | RO-MU0709C | ORIFICE (MAKE-UP WATER PUMP) C | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 30.2 |
+| 262 | S-0710A | SUCTION FILTER (PLANT AIR) A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.4 |
+| 263 | S-0710B | SUCTION FILTER (PLANT AIR) B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.4 |
+| 264 | S-0710C | SUCTION FILTER (PLANT AIR) C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.4 |
+| 265 | S-0712A | SUCTION FILTER (INSTRUMENT AIR) A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.4 |
+| 266 | S-0712B | SUCTION FILTER (INSTRUMENT AIR) B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.4 |
+| 267 | S-0712C | SUCTION FILTER (INSTRUMENT AIR) C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.4 |
+| 268 | S-0850A | RO PRE FILTER A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.16 |
+| 269 | S-0850B | RO PRE FILTER B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.16 |
+| 270 | S-0851 | CIP FILTER | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.15 |
+| 271 | S-1009A/2009A | CYCLONE A | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas | 1.2 |
+| 272 | S-1009B/2009B | CYCLONE B | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas | 1.2 |
+| 273 | S-1053/2053 | PAF SUCTION SILENCER | Air (fans, blowers, air heater) | PASOK | combustion-air | 44.2 |
+| 274 | S-1054/2054 | SAF SUCTION SILENCER (nakasulat S-1504 / 2504 sa R0) | Air (fans, blowers, air heater) | PASOK | combustion-air | 45.2 |
+| 275 | S-1055A/2055A | FILTER SILENCER - FLUIDIZING AIR BLOWER A | Air (fans, blowers, air heater) | PASOK | combustion-air | 46.2 |
+| 276 | S-1055B/2055B | FILTER SILENCER - FLUIDIZING AIR BLOWER B | Air (fans, blowers, air heater) | PASOK | combustion-air | 46.2 |
+| 277 | S-1090/2090 | TRANSMITTER | Bottom ash | PASOK | ash | 51.10 |
+| 278 | S-1091/2091 | BAG FILTER | Bottom ash | PASOK | ash | 51.5 |
+| 279 | S-1092/2092 | VIBRATION SCREEN | Bottom ash | PASOK | ash | 51.7 |
+| 280 | S-1250A/2250A | FLY ASH TRANSMITTER A | Fly ash | PASOK | ash | 53.2 |
+| 281 | S-1250B/2250B | FLY ASH TRANSMITTER B | Fly ash | PASOK | ash | 53.2 |
+| 282 | S-1251A/2251A | FLY ASH TRANSMITTER A | Fly ash | PASOK | ash | 53.2 |
+| 283 | S-1251B/2251B | FLY ASH TRANSMITTER B | Fly ash | PASOK | ash | 53.2 |
+| 284 | S-1252A/2252A | FLY ASH TRANSMITTER A | Fly ash | PASOK | ash | 53.3 |
+| 285 | S-1252B/2252B | FLY ASH TRANSMITTER B | Fly ash | PASOK | ash | 53.3 |
+| 286 | S-1253A/2253A | FLY ASH TRANSMITTER A | Fly ash | PASOK | ash | 53.4 |
+| 287 | S-1253B/2253B | FLY ASH TRANSMITTER B | Fly ash | PASOK | ash | 53.4 |
+| 288 | S-1254A/2254A | FLY ASH TRANSMITTER A | Fly ash | PASOK | ash | 53.5 |
+| 289 | S-1254B/2254B | FLY ASH TRANSMITTER B | Fly ash | PASOK | ash | 53.5 |
+| 290 | S-1255A/2255A | FLY ASH TRANSMITTER A | Fly ash | PASOK | ash | 53.5 |
+| 291 | S-1255B/2255B | FLY ASH TRANSMITTER B | Fly ash | PASOK | ash | 53.5 |
+| 292 | S-1255C/2255C | FLY ASH TRANSMITTER C | Fly ash | PASOK | ash | 53.5 |
+| 293 | S-1255D/2255D | FLY ASH TRANSMITTER D | Fly ash | PASOK | ash | 53.5 |
+| 294 | S-1256/2256 | DEDUST VENTING FILTER | Fly ash | PASOK | ash | 53.7 |
+| 295 | S-1300/2300 | DENSE PHASE VESSEL (SAND) | Limestone at sand | PASOK | limestone-sand | 50.1 |
+| 296 | S-1301/2301 | BAG FILTER (SAND) | Limestone at sand | PASOK | limestone-sand | 50.4 |
+| 297 | S-1311/2311 | LIMESTONE LOCK VESSEL | Limestone at sand | PASOK | limestone-sand | 49.1 |
+| 298 | S-1312/2312 | LIMESTONE DISPENSING VESSEL | Limestone at sand | PASOK | limestone-sand | 49.2 |
+| 299 | S-1313/2313 | BAG FILTER (LIMESTONE) | Limestone at sand | PASOK | limestone-sand | 49.6 |
+| 300 | S-1502/2502 | DEBRIS FILTER - SEA WATER PUMP STATION | Sea water | PASOK | sea-water | 19.1 |
+| 301 | S-1504/2504 | DEBRIS FILTER - BEFORE CCWHE | Sea water | PASOK | sea-water | 19.2 |
+| 302 | S-1932A/2932A | DUPLEX OIL FILTER A | Turbine oil | PASOK | turbine-oil | 2.19.3 |
+| 303 | S-1932B/2932B | DUPLEX OIL FILTER B | Turbine oil | PASOK | turbine-oil | 2.19.3 |
+| 304 | S-1933A/2933A | CONTROL OIL FILTER A | Turbine oil | PASOK | turbine-oil | 2.19.4 |
+| 305 | S-1933B/2933B | CONTROL OIL FILTER B | Turbine oil | PASOK | turbine-oil | 2.19.4 |
+| 306 | S-1936/2936 | MIST ELIMINATOR | Turbine oil | PASOK | turbine-oil | 2.19.7 |
+| 307 | S-1942/2942 | COALESCER FILTER | Turbine oil | PASOK | turbine-oil | 2.20.3 |
+| 308 | S-1943/2943 | OIL PURIFIER PUMP SUCTION STRAINER | Turbine oil | PASOK | turbine-oil | 2.20.4 |
+| 309 | S-1960/2960 | LP EXHAUST HOOD WATER SPRAY STRAINER | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.21 |
+| 310 | STR-CD1002/2002 | CONDENSATE PUMP STRAINER | Condensate and polisher | PASOK | condensate | 12.2 |
+| 311 | STR-CD1003/2003 | STRAINER - CONDENSER CURTAIN SPRAY BLOCK VALVE (XV-CD1006) INLET | Condensate and polisher | PASOK | condensate | STR |
+| 312 | STR-CD1004/2004 | STRAINER - FLASH CHAMBER SPRAY BLOCK VALVE (XV-CD1005) INLET | Condensate and polisher | PASOK | condensate | STR |
+| 313 | STR-CD1005/2005 | STRAINER - LP TURBINE BYPASS DSH TCV-CD1115 INLET | Condensate and polisher | PASOK | condensate | STR |
+| 314 | STR-CD1006/2006 | STRAINER - AUX. STEAM DSH TCV-CD1124 INLET | Condensate and polisher | PASOK | condensate | STR |
+| 315 | STR-CD1007/2007 | STRAINER - GLAND STEAM DSH TCV-CD1126 INLET | Condensate and polisher | PASOK | condensate | STR |
+| 316 | STR-CD1008/2008 | STRAINER - CONDENSATE DEAERATOR INLET | Condensate and polisher | PASOK | condensate | STR |
+| 317 | STR-CD1011/2011 | CONDENSATE PUMP STRAINER | Condensate and polisher | PASOK | condensate | 12.2 |
+| 318 | STR-DO0001 | STRAINER - DIESEL OIL TANK TRUCK INLET | Diesel oil | PASOK | oil-burners | STR |
+| 319 | STR-DO0002 | DIESEL OIL STRAINER | Diesel oil | PASOK | oil-burners | 24.2 |
+| 320 | STR-FW1001/2001 | BFP SUCTION STRAINER | Boiler feedwater pumps | PASOK | feedwater | 15.3 |
+| 321 | STR-FW1002/2002 | BFP SUCTION STRAINER | Boiler feedwater pumps | PASOK | feedwater | 15.3 |
+| 322 | STR-FW1003/2003 | STRAINER - SH PANEL #2 OUTLET DSH TCV-FW1120-1 INLET | Feedwater | PASOK | feedwater, boiler-steam | STR |
+| 323 | STR-FW1004/2004 | STRAINER - SH PANEL #2 OUTLET DSH TCV-FW1120-2 INLET | Feedwater | PASOK | feedwater, boiler-steam | STR |
+| 324 | STR-FW1005/2005 | STRAINER - SH PANEL #1 OUTLET DSH TCV-FW1110-1 INLET | Feedwater | PASOK | feedwater, boiler-steam | STR |
+| 325 | STR-FW1006/2006 | STRAINER - SH PANEL #1 OUTLET DSH TCV-FW1110-2 INLET | Feedwater | PASOK | feedwater, boiler-steam | STR |
+| 326 | STR-FW1007/2007 | STRAINER - RH INLET DSH TCV-FW1150 INLET | Feedwater | PASOK | feedwater, boiler-steam | STR |
+| 327 | STR-FW1008/2008 | STRAINER - HP TURBINE BYPASS DSH TCV-FW1060 INLET | Feedwater | PASOK | feedwater, boiler-steam | STR |
+| 328 | STR-IW0001 | STRAINER (INDUSTRIAL WATER PUMP) | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 31.3 |
+| 329 | STR-IW0002 | STRAINER (INDUSTRIAL WATER PUMP) | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 31.3 |
+| 330 | STR-MU0001 | STRAINER (MAKE-UP WATER PUMP) | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 30.3 |
+| 331 | STR-MU0002 | STRAINER (MAKE-UP WATER PUMP) | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 30.3 |
+| 332 | STR-MU0003 | STRAINER (MAKE-UP WATER PUMP) | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 30.3 |
+| 333 | T-0113 | PLUMBING WATER TANK - TURBINE BUILDING | Water treatment / potable | LABAS: WTP (user 11-25) | — | 54A.9 |
+| 334 | T-0114 | POTABLE WATER TANK - TURBINE BUILDING | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 54A.10 |
+| 335 | T-0701 | OIL SERVICE TANK | Diesel oil | PASOK | oil-burners | 54A.4 |
+| 336 | T-0705A | PLANT AIR RECEIVER (TANK) A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.1 |
+| 337 | T-0705B | PLANT AIR RECEIVER (TANK) B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.1 |
+| 338 | T-0706A | INSTRUMENT AIR RECEIVER (TANK) A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.1 |
+| 339 | T-0706B | INSTRUMENT AIR RECEIVER (TANK) B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.1 |
+| 340 | T-0708A | DEMINERALIZED WATER TANK A | Demin water storage | PASOK (demin = walang hanggang supply) | makeup-cooling | 54A.5 |
+| 341 | T-0708B | DEMINERALIZED WATER TANK B | Demin water storage | PASOK (demin = walang hanggang supply) | makeup-cooling | 54A.5 |
+| 342 | T-0714 | INDUSTRIAL WATER TANK | Make-up / industrial water | PASOK | makeup-cooling, industrial-water | 54A.6 |
+| 343 | T-0717 | RAW WATER TANK (RAW WATER PIT) | Water treatment / potable | LABAS: WTP (user 11-25) | — | 54A.16 |
+| 344 | T-0721 | STORAGE TANK - WATER TREATMENT AREA | Water treatment / potable | LABAS: WTP (user 11-25) | — | 54A.8 |
+| 345 | T-0724 | FIRE WATER TANK | Fire fighting | LABAS: mechanical / civil, walang DCS signal | — | 54A.7 |
+| 346 | T-0761 | NAOCL STORAGE TANK | Chemical dosing (sea water) | PASOK | sea-water | 35.2 |
+| 347 | T-0762 | NAOCL STORAGE TANK | Chemical dosing (sea water) | PASOK | sea-water | 35.2 |
+| 348 | T-0851A | CLEAR WATER TANK A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.69 |
+| 349 | T-0851B | CLEAR WATER TANK B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.69 |
+| 350 | T-0852A | MMF A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.62 |
+| 351 | T-0852B | MMF B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.62 |
+| 352 | T-0852C | MMF C | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.62 |
+| 353 | T-0854A | CARBON FILTER A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.59 |
+| 354 | T-0854B | CARBON FILTER B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.59 |
+| 355 | T-0854C | CARBON FILTER C | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.59 |
+| 356 | T-0855 | RO PERMEATE WATER TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.77 |
+| 357 | T-0858A | ANTHRACITE FILTER A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.58 |
+| 358 | T-0858B | ANTHRACITE FILTER B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.58 |
+| 359 | T-0859A | POLISHER MB A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.63 |
+| 360 | T-0859B | POLISHER MB B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.63 |
+| 361 | T-0860 | REGENERATION WASTE WATER POOL 1 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 54A.17 |
+| 362 | T-0861 | NEUTRALIZATION TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.74 |
+| 363 | T-0862 | WASTE WATER BUFFER POOL | Water treatment / potable | LABAS: WTP (user 11-25) | — | 54A.18 |
+| 364 | T-0863 | PH ADJUST TANK 2 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.76 |
+| 365 | T-0864 | EFFLUENT TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.73 |
+| 366 | T-0865 | REGENERATION WASTE WATER POOL 2 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 54A.19 |
+| 367 | T-0866 | PH ADJUST TANK 1 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.75 |
+| 368 | T-0867 | CONCENTRATE WATER TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.71 |
+| 369 | T-0868 | COOLING TOWER | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.72 |
+| 370 | T-0869 | HEATING TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.60 |
+| 371 | T-0870 | SLUDGE BUFFER TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.78 |
+| 372 | T-0871 | SLUDGE THICKENER | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.66 |
+| 373 | T-0872 | CIP TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.68 |
+| 374 | T-0873 | NAOCL STORAGE TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.84 |
+| 375 | T-0874 | H2SO4 STORAGE TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.82 |
+| 376 | T-0875 | POLISHER MB H2SO4 MEASURING TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.89 |
+| 377 | T-0876 | H2SO4 DOSING TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.83 |
+| 378 | T-0877 | NAOH STORAGE TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.87 |
+| 379 | T-0878 | POLISHER MB NAOH MEASURING TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.90 |
+| 380 | T-0879 | NAOH DOSING TANK 1 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.85 |
+| 381 | T-0880 | NAOH DOSING TANK 2 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.86 |
+| 382 | T-0881 | ANTI-SCALANT STORAGE TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.80 |
+| 383 | T-0882 | PAC STORAGE TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.88 |
+| 384 | T-0883 | FECL3 STORAGE TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.81 |
+| 385 | T-0884 | CARBON STORAGE TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.67 |
+| 386 | T-0893 | WASH TANK | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.79 |
+| 387 | T-0895 | SLUDGE CAKE HOPPER 1 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.64 |
+| 388 | T-0896 | SLUDGE CAKE HOPPER 2 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.65 |
+| 389 | T-1001/2001 | STEAM DRUM | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas | 1.4 |
+| 390 | T-1009A/2009A | SEAL POT A | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas | 1.3 |
+| 391 | T-1009B/2009B | SEAL POT B | Boiler (furnace, drum, cyclones, seal pots) | PASOK | boiler-steam, furnace-gas | 1.3 |
+| 392 | T-1050/2050 | FLASH TANK | Boiler blowdown | PASOK | boiler-steam | 54A.1 |
+| 393 | T-1051/2051 | BLOWDOWN TANK | Boiler blowdown | PASOK | boiler-steam | 54A.2 |
+| 394 | T-1064A/2064A | BIASING DAMPER IA BUFFER TANK A | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 54B.2 |
+| 395 | T-1064B/2064B | BIASING DAMPER IA BUFFER TANK B | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 54B.2 |
+| 396 | T-1065A/2065A | AIR BUFFER TANK (COAL FEEDER) A | Coal feeders | PASOK | coal | 47.2 |
+| 397 | T-1065B/2065B | AIR BUFFER TANK (COAL FEEDER) B | Coal feeders | PASOK | coal | 47.2 |
+| 398 | T-1065C/2065C | AIR BUFFER TANK (COAL FEEDER) C | Coal feeders | PASOK | coal | 47.2 |
+| 399 | T-1066A/2066A | AIR CANNON A | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 400 | T-1066B/2066B | AIR CANNON B | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 401 | T-1066C/2066C | AIR CANNON C | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 402 | T-1066D/2066D | AIR CANNON D | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 403 | T-1066E/2066E | AIR CANNON E | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 404 | T-1066F/2066F | AIR CANNON F | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 405 | T-1066G/2066G | AIR CANNON G | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 406 | T-1066H/2066H | AIR CANNON H | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 407 | T-1066I/2066I | AIR CANNON I | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 408 | T-1067A/2067A | AIR CANNON A | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 409 | T-1067B/2067B | AIR CANNON B | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 410 | T-1067C/2067C | AIR CANNON C | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 411 | T-1067D/2067D | AIR CANNON D | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 412 | T-1067E/2067E | AIR CANNON E | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 413 | T-1067F/2067F | AIR CANNON F | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 414 | T-1067G/2067G | AIR CANNON G | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 415 | T-1067H/2067H | AIR CANNON H | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 416 | T-1067I/2067I | AIR CANNON I | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 417 | T-1068A/2068A | AIR CANNON A | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 418 | T-1068B/2068B | AIR CANNON B | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 419 | T-1068C/2068C | AIR CANNON C | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 420 | T-1068D/2068D | AIR CANNON D | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 421 | T-1068E/2068E | AIR CANNON E | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 422 | T-1068F/2068F | AIR CANNON F | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 423 | T-1068G/2068G | AIR CANNON G | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 424 | T-1068H/2068H | AIR CANNON H | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 425 | T-1068I/2068I | AIR CANNON I | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 48.1 |
+| 426 | T-1090/2090 | BOTTOM ASH SILO | Bottom ash | PASOK | ash | 54A.14 |
+| 427 | T-1091/2091 | RECYCLE BUFFER TANK | Bottom ash | PASOK | ash | 51.9 |
+| 428 | T-1092/2092 | AIR TANK | Bottom ash | PASOK | ash | 51.11 |
+| 429 | T-1104/2104 | DEAERATOR STORAGE TANK | Deaerator | PASOK | feedwater | 14.2 |
+| 430 | T-1108A/2108A | COAL BUNKER / COAL SILO (DCS alarm list: T-1008) A | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 54A.11 |
+| 431 | T-1108B/2108B | COAL BUNKER / COAL SILO (DCS alarm list: T-1008) B | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 54A.11 |
+| 432 | T-1108C/2108C | COAL BUNKER / COAL SILO (DCS alarm list: T-1008) C | Coal bunkers | PASOK (coal = walang hanggang supply; coal handling labas) | coal | 54A.11 |
+| 433 | T-1109/2109 | EXPANSION TANK | Closed cooling water | PASOK | makeup-cooling | 54A.3 |
+| 434 | T-1115/2115 | BALL VESSEL | Condenser tube cleaning | PASOK | sea-water | 20.3 |
+| 435 | T-1116/2116 | BALL VESSEL | Condenser tube cleaning | PASOK | sea-water | 20.3 |
+| 436 | T-1128/2128 | TURNING GEAR IA BUFFER TANK | Turbine at generator | PASOK | turbine-motors, turbine | 54B.1 |
+| 437 | T-1135/2135 | FLASH PIPE | Condenser and vacuum | PASOK | condensate | 11.4 |
+| 438 | T-1250/2250 | AIR TANK (AIR RECEIVER) | Fly ash | PASOK | ash | 53.1 |
+| 439 | T-1251/2251 | FLY ASH SILO | Fly ash | PASOK | ash | 54A.15 |
+| 440 | T-1300/2300 | SAND SILO | Limestone at sand | PASOK | limestone-sand | 54A.13 |
+| 441 | T-1301/2301 | AIR RECEIVER (SAND) | Limestone at sand | PASOK | limestone-sand | 50.2 |
+| 442 | T-1311/2311 | LIMESTONE SILO | Limestone at sand | PASOK | limestone-sand | 54A.12 |
+| 443 | T-1312/2312 | AIR RECEIVER (LIMESTONE) | Limestone at sand | PASOK | limestone-sand | 49.3 |
+| 444 | T-1395/2395 | CONTROL OIL ACCUMULATOR | Turbine oil | PASOK | turbine-oil | 2.19.6 |
+| 445 | T-1920/2920 | MAIN OIL TANK (MOT) | Turbine oil | PASOK | turbine-oil | 2.13 |
+| 446 | T-1934A/2934A | LUBE OIL ACCUMULATOR A | Turbine oil | PASOK | turbine-oil | 2.19.5 |
+| 447 | T-1934B/2934B | LUBE OIL ACCUMULATOR B | Turbine oil | PASOK | turbine-oil | 2.19.5 |
+| 448 | T-1934C/2934C | LUBE OIL ACCUMULATOR C | Turbine oil | PASOK | turbine-oil | 2.19.5 |
+| 449 | T-1938/2938 | TRIP OIL ACCUMULATOR | Turbine oil | PASOK | turbine-oil | 2.19.10 |
+| 450 | TCV-CD1115/2115 | TEMPERATURE CONTROL VALVE - LP TURBINE BYPASS | Turbine bypass at control valves | PASOK | boiler-steam, reheat, aux-steam | 8.1 |
+| 451 | TCV-CD1124/2124 | TEMPERATURE CONTROL VALVE - TO AUX. STEAM PCV | Turbine bypass at control valves | PASOK | boiler-steam, reheat, aux-steam | 8.2 |
+| 452 | TCV-CD1126/2126 | TEMPERATURE CONTROL VALVE - TO GLAND STEAM DSH | Turbine bypass at control valves | PASOK | boiler-steam, reheat, aux-steam | 8.3 |
+| 453 | TCV-FG1116A/2116A | FLUE GAS BIASING DAMPER (RH PASS) A | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 41.1 |
+| 454 | TCV-FG1116B/2116B | FLUE GAS BIASING DAMPER (RH PASS) B | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 41.1 |
+| 455 | TCV-FG1116C/2116C | FLUE GAS BIASING DAMPER (RH PASS) C | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 41.1 |
+| 456 | TCV-FG1116D/2116D | FLUE GAS BIASING DAMPER (RH PASS) D | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 41.1 |
+| 457 | TCV-FG1117A/2117A | FLUE GAS BIASING DAMPER (SH PASS) A | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 41.2 |
+| 458 | TCV-FG1117B/2117B | FLUE GAS BIASING DAMPER (SH PASS) B | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 41.2 |
+| 459 | TCV-FG1117C/2117C | FLUE GAS BIASING DAMPER (SH PASS) C | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 41.2 |
+| 460 | TCV-FG1117D/2117D | FLUE GAS BIASING DAMPER (SH PASS) D | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 41.2 |
+| 461 | TCV-FW1060/2060 | TEMPERATURE CONTROL VALVE - HP TURBINE BYPASS | Turbine bypass at control valves | PASOK | boiler-steam, reheat, aux-steam | 8.4 |
+| 462 | TCV-FW1150/2150 | TEMPERATURE CONTROL VALVE - REHEATER DSH | Turbine bypass at control valves | PASOK | boiler-steam, reheat, aux-steam | 8.5 |
+| 463 | V-FA1001/2001 | PRIMARY AIR MANUAL DAMPER | Air (fans, blowers, air heater) | PASOK | combustion-air | 42.1 |
+| 464 | V-FA1002/2002 | PRIMARY AIR MANUAL DAMPER | Air (fans, blowers, air heater) | PASOK | combustion-air | 42.1 |
+| 465 | V-FA1003/2003 | PRIMARY AIR MANUAL DAMPER | Air (fans, blowers, air heater) | PASOK | combustion-air | 42.1 |
+| 466 | V-FA1004/2004 | PRIMARY AIR MANUAL DAMPER | Air (fans, blowers, air heater) | PASOK | combustion-air | 42.1 |
+| 467 | Z-0701 | FLAME ARRESTER | Diesel oil | PASOK | oil-burners | 23.1 |
+| 468 | Z-0703A | LUBE OIL & OIL COOLER (PLANT AIR) A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.3 |
+| 469 | Z-0703B | LUBE OIL & OIL COOLER (PLANT AIR) B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.3 |
+| 470 | Z-0703C | LUBE OIL & OIL COOLER (PLANT AIR) C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.3 |
+| 471 | Z-0704A | LUBE OIL & OIL COOLER (INSTRUMENT AIR) A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.3 |
+| 472 | Z-0704B | LUBE OIL & OIL COOLER (INSTRUMENT AIR) B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.3 |
+| 473 | Z-0704C | LUBE OIL & OIL COOLER (INSTRUMENT AIR) C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.3 |
+| 474 | Z-0711A | BLOW-OFF SILENCER (PLANT AIR) A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.5 |
+| 475 | Z-0711B | BLOW-OFF SILENCER (PLANT AIR) B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.5 |
+| 476 | Z-0711C | BLOW-OFF SILENCER (PLANT AIR) C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 26.5 |
+| 477 | Z-0713A | BLOW-OFF SILENCER (INSTRUMENT AIR) A | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.5 |
+| 478 | Z-0713B | BLOW-OFF SILENCER (INSTRUMENT AIR) B | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.5 |
+| 479 | Z-0713C | BLOW-OFF SILENCER (INSTRUMENT AIR) C | Compressed air | LABAS: air compressors / dryers (user 11-25) | compressed-air (tingin lang) | 27.5 |
+| 480 | Z-0850A | ACTIFLO UNIT 1A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.1 |
+| 481 | Z-0850B | ACTIFLO UNIT 1B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.2 |
+| 482 | Z-0851A | RO UNIT A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.8 |
+| 483 | Z-0851B | RO UNIT B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.8 |
+| 484 | Z-0852A | CEDI A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.4 |
+| 485 | Z-0852B | CEDI B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.4 |
+| 486 | Z-0853 | ACTIFLO UNIT 2 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.3 |
+| 487 | Z-0854A | EVAPORATOR PACKAGE A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.6 |
+| 488 | Z-0854B | EVAPORATOR PACKAGE B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.6 |
+| 489 | Z-0855 | CRYSTALLIZATION PACKAGE | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.5 |
+| 490 | Z-0856 | FILTER PRESS | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.12 |
+| 491 | Z-0857 | POLYMER FEEDER UNIT 1 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.13 |
+| 492 | Z-0858 | POLYMER FEEDER UNIT 2 | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.14 |
+| 493 | Z-0859A | EYE SHOWER A | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.11 |
+| 494 | Z-0859B | EYE SHOWER B | Water treatment / potable | LABAS: WTP (user 11-25) | — | 61.11 |
+| 495 | Z-1001/2001 | SILENCER - BOILER DRUM & SOOT BLOWING SYSTEM | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — | 4.6 |
+| 496 | Z-1002/2002 | SILENCER - BOILER DRUM | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — | 4.7 |
+| 497 | Z-1003/2003 | SILENCER - MAIN STEAM PIPE & BLOW-OFF VALVE | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — | 4.1 |
+| 498 | Z-1004/2004 | SILENCER - HOT REHEAT STEAM PIPE | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — | 4.2 |
+| 499 | Z-1005/2005 | SILENCER - HOT REHEAT STEAM PIPE & BLOW-OFF VALVE | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — | 4.3 |
+| 500 | Z-1006/2006 | SILENCER - HOT REHEAT STEAM PIPE | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — | 4.4 |
+| 501 | Z-1007/2007 | SILENCER - AUXILIARY STEAM HEADER | Steam silencers | LABAS: mechanical / civil, walang DCS signal | — | 4.5 |
+| 502 | Z-1010/2010 | ESP (ELECTROSTATIC PRECIPITATOR) | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 39.1 |
+| 503 | Z-1053/2053 | PAF LUBE OIL COOLER | Air (fans, blowers, air heater) | PASOK | combustion-air | 44.3 |
+| 504 | Z-1055A/2055A | DISCHARGE SILENCER - FLUIDIZING AIR BLOWER A | Air (fans, blowers, air heater) | PASOK | combustion-air | 46.3 |
+| 505 | Z-1055B/2055B | DISCHARGE SILENCER - FLUIDIZING AIR BLOWER B | Air (fans, blowers, air heater) | PASOK | combustion-air | 46.3 |
+| 506 | Z-1056/2056 | HYDRAULIC COUPLING FOR ID FAN | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 43.2 |
+| 507 | Z-1057 | STACK (CHIMNEY) | Flue gas (ID fan, ESP, stack) | PASOK | furnace-gas | 40.1 |
+| 508 | Z-1094A/2094A | CONTROL VALVE (CV) A | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.4 |
+| 509 | Z-1094B/2094B | CONTROL VALVE (CV) B | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.4 |
+| 510 | Z-1095A/2095A | COMBINED REHEAT VALVE (CRV) A | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.5 |
+| 511 | Z-1095B/2095B | COMBINED REHEAT VALVE (CRV) B | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.5 |
+| 512 | Z-1101/2101 | PHOSPHATE STORAGE TANK | Chemical dosing at sampling | PASOK | sampling | 34.1 |
+| 513 | Z-1102/2102 | PHOSPHATE MEASURING VESSEL | Chemical dosing at sampling | PASOK | sampling | 34.2 |
+| 514 | Z-1103/2103 | NEUTRAL AMINE STORAGE TANK | Chemical dosing at sampling | PASOK | sampling | 34.3 |
+| 515 | Z-1104/2104 | DEAERATOR SILENCER; NEUTRAL AMINE MEASURING VESSEL (item 34.4, parehong tag) | Deaerator | PASOK | feedwater | 14.4 |
+| 516 | Z-1105/2105 | HYDRAZINE STORAGE TANK | Chemical dosing at sampling | PASOK | sampling | 34.5 |
+| 517 | Z-1106/2106 | HYDRAZINE MEASURING VESSEL | Chemical dosing at sampling | PASOK | sampling | 34.6 |
+| 518 | Z-1107A/2107A | PHOSPHATE DOSING PUMP A | Chemical dosing at sampling | PASOK | sampling | 34.8 |
+| 519 | Z-1107B/2107B | PHOSPHATE DOSING PUMP B | Chemical dosing at sampling | PASOK | sampling | 34.8 |
+| 520 | Z-1108A/2108A | AMINE DOSING PUMP A | Chemical dosing at sampling | PASOK | sampling | 34.9 |
+| 521 | Z-1108B/2108B | AMINE DOSING PUMP B | Chemical dosing at sampling | PASOK | sampling | 34.9 |
+| 522 | Z-1109A/2109A | HYDRAZINE DOSING PUMP A | Chemical dosing at sampling | PASOK | sampling | 34.10 |
+| 523 | Z-1109B/2109B | HYDRAZINE DOSING PUMP B | Chemical dosing at sampling | PASOK | sampling | 34.10 |
+| 524 | Z-1110/2110 | LPBV SPARGER (CONDENSER) | Condenser and vacuum | PASOK | condensate | 11.2 |
+| 525 | Z-1113A/2113A | CONDENSER WATER BOX VACUUM PRIMING AIR EJECTOR A | Condenser and vacuum | PASOK | condensate | 21.1 |
+| 526 | Z-1113B/2113B | CONDENSER WATER BOX VACUUM PRIMING AIR EJECTOR B | Condenser and vacuum | PASOK | condensate | 21.1 |
+| 527 | Z-1115A/2115A | BFWP LUBE OIL UNIT A | Boiler feedwater pumps | PASOK | feedwater | 15.6 |
+| 528 | Z-1115B/2115B | BFWP LUBE OIL UNIT B | Boiler feedwater pumps | PASOK | feedwater | 15.6 |
+| 529 | Z-1119A/2119A | STEAM JET AIR EJECTOR (1ST + 2ND) A | Condenser and vacuum | PASOK | condensate | 3.3 |
+| 530 | Z-1119B/2119B | STEAM JET AIR EJECTOR (1ST + 2ND) B | Condenser and vacuum | PASOK | condensate | 3.3 |
+| 531 | Z-1119C/2119C | STEAM JET AIR EJECTOR (1ST + 2ND) C | Condenser and vacuum | PASOK | condensate | 3.3 |
+| 532 | Z-1119D/2119D | STEAM JET AIR EJECTOR (1ST + 2ND) D | Condenser and vacuum | PASOK | condensate | 3.3 |
+| 533 | Z-1120/2120 | START-UP EJECTOR | Condenser and vacuum | PASOK | condensate | 3.1 |
+| 534 | Z-1130/2130 | SPARGER (FLASH PIPE) | Condenser and vacuum | PASOK | condensate | 11.5 |
+| 535 | Z-1140/2140 | SAMPLING RACK (analyzers at chiller) | Chemical dosing at sampling | PASOK | sampling | 36.1 |
+| 536 | Z-1903A/2903A | MAIN STEAM STOP VALVE (MSV) A | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.3 |
+| 537 | Z-1903B/2903B | MAIN STEAM STOP VALVE (MSV) B | Turbine at generator | PASOK | turbine, turbine-valves, generator | 2.3 |
+| 538 | Z-1912/2912 | GLAND STEAM CONDENSER DRAIN TRAP | Gland steam | PASOK | turbine-readings, extraction | 2.12 |
+| 539 | Z-1930/2930 | DUPLEX OIL FILTER UNIT | Turbine oil | PASOK | turbine-oil | 2.19 |
+| 540 | Z-1940/2940 | OIL PURIFIER UNIT | Turbine oil | PASOK | turbine-oil | 2.20 |
+| 541 | ZV-AS1001/2001 | SAFETY VALVE - AUXILIARY STEAM TO D/A | Safety valves | PASOK | aux-steam, sootblowers | 6.1 |
+| 542 | ZV-BR1001/2001 | SAFETY VALVE - DRUM | Safety valves | PASOK | boiler-steam, reheat | 5.5 |
+| 543 | ZV-BR1002/2002 | SAFETY VALVE - DRUM | Safety valves | PASOK | boiler-steam, reheat | 5.6 |
+| 544 | ZV-DO1001/2001 | SAFETY VALVE - DIESEL OIL SUPPLY | Safety valves | PASOK | feedwater, oil-burners | 6.5 |
+| 545 | ZV-FS1001/2001 | SAFETY VALVE - FLASH TANK | Safety valves | PASOK | feedwater, oil-burners | 6.4 |
+| 546 | ZV-FW1001/2001 | SAFETY VALVE - BFP SUCTION | Safety valves | PASOK | feedwater, oil-burners | 6.3 |
+| 547 | ZV-FW1002/2002 | SAFETY VALVE - BFP SUCTION | Safety valves | PASOK | feedwater, oil-burners | 6.3 |
+| 548 | ZV-HR1001/2001 | SAFETY VALVE - REHEATER OUTLET | Safety valves | PASOK | boiler-steam, reheat | 5.2 |
+| 549 | ZV-HR1002/2002 | SAFETY VALVE - REHEATER OUTLET | Safety valves | PASOK | boiler-steam, reheat | 5.3 |
+| 550 | ZV-HR1003/2003 | SAFETY VALVE - REHEATER OUTLET | Safety valves | PASOK | boiler-steam, reheat | 5.4 |
+| 551 | ZV-MS1001/2001 | SAFETY VALVE - MAIN STEAM LINE | Safety valves | PASOK | boiler-steam, reheat | 5.1 |
+| 552 | ZV-SB1001/2001 | SAFETY VALVE - SOOTBLOWER | Safety valves | PASOK | aux-steam, sootblowers | 6.2 |
+| 553 | ZV-TS1104/2104 | DEAERATOR SAFETY VALVE | Deaerator | PASOK | feedwater | 14.3 |
 
 ## 5. Mga kaugnay na file
 

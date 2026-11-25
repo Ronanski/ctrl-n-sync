@@ -77,7 +77,7 @@ TAMA = nasa app at may patunay; MAY = nasa app, hindi pa nasusuri ang galaw; KUL
 | Control loops (PID / MAN / SUMA) | Parameter list, 65 na loop | KULANG (MAN station hold ramp; MOV travel) | Bawat loop: A / M / R, SV, MV, tracking at force manual ayon sa ABC sheet |
 | ABC at DITL sheets | 54 ABC, 134 DITL na drawing | TAMA live, 1:1 sa PDF | Walang sheet na hindi tumatakbo |
 | I/O tags na nakakabit | DCS I/O list 2,702 tag | KULANG hanggang 476 walang kabit (bilang 11-24, kumpirmahin sa takbo) | 0 tag na walang kabit (sheet, model o page) |
-| Equipment | Equipment list K1AU3-L1-0-002, 173 | HINDI NASURI SA CLOUD (equipment list nasa PC lang) | Lahat ng 173 nasa app |
+| Equipment | Equipment list K1AU3-L1-0-002 R0, 349 na PASOK (SCOPE seksyon 4) | KULANG nasuri ang listahan; hindi pa nabibilang ang simbolo sa app (Phase 9) | Lahat ng 349 na PASOK nasa app |
 | Alarms at priority | Alarm list 20160912, 717 | KULANG 116 tag wala pa; 0 nakatayong alarm sa 150 MW | Lahat ng 717 nasa app, may priority; 0 nakatayong alarm sa steady 150 MW |
 | Values na walang design source | docs/audit/no-source-list.md, snapshot-values-list.md | KULANG 217 NO-SOURCE, 24 mula sa snapshot | 0 at 0 |
 | **Operator** | | | |

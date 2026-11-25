@@ -18,6 +18,8 @@ def un(s):
     return '°C' if '\u8693' in s else s
 def tg(s):
     return s.replace('ns*2;s*#/', '').strip()
+# PV address of the list that the as-built drawing and the I/O list correct (docs/TAGS.md section 3): (station, tag): address
+PV_FIX = {('2', 'FIQCD1121'): 'AI0436'}
 loops, utag = [], []
 for f in sorted(glob.glob(os.path.join(D, 'STN10*_LOOP,USERTAG.xls'))):
     st = os.path.basename(f)[5]
@@ -29,7 +31,7 @@ for f in sorted(glob.glob(os.path.join(D, 'STN10*_LOOP,USERTAG.xls'))):
         if not t:
             continue
         # 5 type, 13 PV, 14 REM-SV, 15 MV(AO), 33 PV-BS, 34 PV-FS, 35 PV-UNIT
-        loops.append([st, t, a[2], a[5], a[13], a[14], a[15], a[33], a[34], un(a[35])])
+        loops.append([st, t, a[2], a[5], PV_FIX.get((st, t), a[13]), a[14], a[15], a[33], a[34], un(a[35])])
     s = wb.sheet_by_name('UserTag_AX')
     for r in range(2, s.nrows):
         a = [v(c) for c in s.row(r)]
@@ -38,7 +40,7 @@ for f in sorted(glob.glob(os.path.join(D, 'STN10*_LOOP,USERTAG.xls'))):
         # 1 DATA NAME, 2 USER TAG NAME, 3 SYS TAG NAME, 5 Data Type, 8 base, 9 full, 12 unit
         utag.append([st, tg(a[2]), a[1], a[3], a[5], a[8], a[9], un(a[12])])
 js = ('/* DCS loop list and user tag list (STN101~105_LOOP,USERTAG.xls) of LMYP-1 #1,\n'
-      '   made by tools/data/dcslists.py. Read only; shown in the Library ALL SIGNALS tab. */\n'
+      '   made by tools/data/dcslists.py. FIQCD1121 PV: list SI9990, as-built ABC-032 AI0436 (docs/TAGS.md 3). Read only; shown in the Library ALL SIGNALS tab. */\n'
       'window.DCS_LOOPS_F=["stn","tag","name","type","pv","rsv","mv","lo","hi","unit"];\n'
       'window.DCS_LOOPS=' + json.dumps(loops, ensure_ascii=False, separators=(',', ':')) + ';\n'
       'window.DCS_UTAG_F=["stn","utag","dname","sys","type","lo","hi","unit"];\n'

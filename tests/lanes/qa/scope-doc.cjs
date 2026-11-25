@@ -29,12 +29,14 @@ for (const g of groups) if (!named.has(g)) fail('alarm group "' + g + '" is not 
 for (const k of ['WTP', 'Coal handling', 'compressors at dryers']) if (!s3.includes(k)) fail('section 3 does not say "' + k + '" is out');
 // the equipment list: rows numbered 1..N and N is the count written in the text
 const s4 = sec('## 4.', '## 5.');
-const rows = [...s4.matchAll(/^\| (\d+) \| ([A-Z]{1,2}-\d{4}[A-Z]?(?:\/\d{4}[A-Z]?)?) \|[^|]+\|[^|]+\| (PASOK|LABAS)/gm)];
+const rows = [...s4.matchAll(/^\| (\d+) \| ([A-Z]{1,3}-[A-Z]{0,2}\d{4}[A-Z]?(?:\/\d{4}[A-Z]?)?) \|[^|]+\|[^|]+\| (PASOK|LABAS)/gm)];
 const said = +((/\*\*(\d+) equipment tag\*\*/.exec(s4) || [])[1] || 0);
 if (!rows.length || rows.length !== said) fail('equipment rows ' + rows.length + ', the text says ' + said);
 rows.forEach((r, i) => +r[1] !== i + 1 && fail('equipment row ' + r[1] + ' out of order'));
 const tags = rows.map(r => r[2]);
 if (new Set(tags).size !== tags.length) fail('an equipment tag is listed twice');
+if (!s4.includes('35 pahina ng **R0')) fail('section 4 is not the R0 equipment list');
+if ((/PASOK (\d+), LABAS (\d+)/.exec(s4) || []).slice(1).join() !== [rows.filter(r => r[3] === 'PASOK').length, rows.filter(r => r[3] === 'LABAS').length].join()) fail('PASOK / LABAS counts of section 4');
 // docs/PHASES.md: the 15 phases, each with a status
 const P = rd('docs/PHASES.md');
 const ph = [...P.matchAll(/^\| (\d+) \| [^|]+\|[^|]+\| (TAPOS|BAHAGI|HINDI PA) \|/gm)].map(m => +m[1]);
