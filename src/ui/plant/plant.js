@@ -337,6 +337,14 @@
           fr = FR.find(x => (r && x.ai && +x.stn === r.st && x.ai === r.a) || N(x.tag) === c);
         if (fr) return { k: 'fld', f: fr.ai ? fr.stn + '|' + fr.ai : N(fr.tag), how: 'field row ' + fr.lane + ' (' + (fr.tag || fr.ai) + ')' };
       }
+      /* lane 7 MINAMI 2026-11-25 (YUA reviews): no sheet, I/O row or field row: a word the TCS sends the DCS over Modbus (src/data/tcs-dcs.json
+         modbus[], "PLC to DCS"), by its instrument tag or by its STN102 word ('SI1230', a bit 'SI1002.5'). The value is the TCS I/O end of
+         that row (TCE_IO_LIVE.mbRead, lane 2), the same read the TCS program is fed with: one source, nothing new in the model */
+      const MBL = (window.TCS_DCS_LIST && TCS_DCS_LIST.modbus) || [],
+        raw = String(it.tag || '').toUpperCase(),
+        mr = MBL.find(x => x.sh === 'PLC to DCS' && x.to && ((x.tag && x.tag !== '-' && N(x.tag) === k) || x.word + (x.bit != null ? '.' + x.bit : '') === raw));
+      if (mr)
+        return { k: 'mb', to: mr.to, bit: mr.ty === 'DI', how: 'TCS Modbus ' + mr.ma + ' (STN10' + mr.stn + ' ' + mr.word + (mr.bit != null ? ' bit ' + mr.bit : '') + ')' };
       return null;
     }
     if (it.t === 'pump' || it.t === 'fan' || it.t === 'motor') {
@@ -469,6 +477,10 @@
           const U = window.AN && AN.unit,
             v = U && U.on && AN.fieldRead ? AN.fieldRead(r.f) : null;
           o.set(v != null && isFinite(v) ? { v: +v, r } : null);
+        } else if (r.k === 'mb') {
+          const U = window.AN && AN.unit,
+            v = U && U.on && window.TCE_IO_LIVE ? TCE_IO_LIVE.mbRead(U, r.to) : NaN;
+          o.set(isFinite(v) ? { v: r.bit ? (v >= 0.5 ? 1 : 0) : +v, r } : null);
         } else if (r.k === 'unit') {
           const U = window.AN && AN.unit;
           o.set(U && U.on && isFinite(U[r.f]) ? { v: +U[r.f], r } : null);
