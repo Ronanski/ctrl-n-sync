@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 261; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 262; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 106;
@@ -417,6 +417,11 @@ for (const id of ['TCA762', 'TCA763']) {
   if (c.CLS !== 1) fail('TORQUE (INCHING): close command must close');
   if (r({ ACL: 1, LTOP: 0, LTCL: 1, TRCL: 1 }).CLS !== 0 || r({ ACL: 1, LTOP: 0, LTCL: 1, TRCL: 1 }).ABN !== 0) fail('TORQUE (INCHING): close seats on the torque switch, no alarm at the close limit');
   if (r({ ACL: 1, LTOP: 0, LTCL: 0, TRCL: 1 }).ABN !== 1) fail('TORQUE (INCHING): torque close in mid travel is ANN 3');
+}
+/* TCE202 IP unloader: PA2 004 gives K / B of LIN 004 (ML 39 Y = X*K + B) */
+{
+  const ln = A.plan.find(p => p.id === 'TCE202').nodes.find(x => x.key === 'lin004');
+  if (!ln || !ln.pa || ln.pa.K === undefined || ln.pa.B === undefined || (ln.open && ln.open.length)) fail('TCE202 LIN 004: K / B from PA2 004 ' + JSON.stringify(ln && ln.pa));
 }
 /* MODE (TCA768A, LMA810): load up rate by load band from the printed tables; 5.0 %/min until the IP -> HP transfer is complete */
 {
