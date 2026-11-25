@@ -3866,6 +3866,11 @@ function netlistCore(sh, strict) {
           if (d < 14 && (!best || d < best.d)) best = { d, n: z.n };
         })
       );
+      /* beta.556 (EIMI): the address written on the middle of the wire (DITL-43 O.0206, O.0208; DITL-27A, 57, 78: 5 in all), no wire end near */
+      if (!best) {
+        const z = segs.find(q => q.h && q.n >= 0 && Math.abs(q.y1 - t.y) < 3 && Math.min(q.x1, q.x2) <= t.x && Math.max(q.x1, q.x2) >= t.x);
+        if (z) best = { d: 0, n: z.n };
+      }
       if (!best || NL.pout.some(o => o.n === best.n) || outs.some(o => o.n === best.n)) continue;
       const svc = all
         .filter(q => q !== t && Math.abs(q.x - t.x) < 14 && q.y < t.y && t.y - q.y < 9 && /[A-Z]{3,}\s+[A-Z]/.test(q.t))
@@ -157514,10 +157519,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 1a3c6cc'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build e54ac0a'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 1a3c6cc';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build e54ac0a';
     } catch (e) {}
   };
   upd();
@@ -181332,6 +181337,11 @@ function netlistCore(sh, strict) {
           if (d < 14 && (!best || d < best.d)) best = { d, n: z.n };
         })
       );
+      /* beta.556 (EIMI): the address written on the middle of the wire (DITL-43 O.0206, O.0208; DITL-27A, 57, 78: 5 in all), no wire end near */
+      if (!best) {
+        const z = segs.find(q => q.h && q.n >= 0 && Math.abs(q.y1 - t.y) < 3 && Math.min(q.x1, q.x2) <= t.x && Math.max(q.x1, q.x2) >= t.x);
+        if (z) best = { d: 0, n: z.n };
+      }
       if (!best || NL.pout.some(o => o.n === best.n) || outs.some(o => o.n === best.n)) continue;
       const svc = all
         .filter(q => q !== t && Math.abs(q.x - t.x) < 14 && q.y < t.y && t.y - q.y < 9 && /[A-Z]{3,}\s+[A-Z]/.test(q.t))
@@ -337580,6 +337590,10 @@ html body.sc .fpo-box:not(#scnone) :is(.fpo-chip,.fpo-k,.fpo-fld){font:600 10px/
 html body.sc .fpo-box:not(#scnone) button.fpo-x{width:20px!important;height:20px!important;min-height:20px!important;min-width:20px!important;padding:0!important;font-size:12px!important;line-height:18px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-b{padding:6px 8px 7px!important;gap:5px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-r{gap:5px!important}
+/* beta.556: the monitor rows of the second faceplate: the name takes the free width, the values stand in one column */
+html body.sc .fpo-box:not(#scnone) .fpo-r.mon{flex-wrap:nowrap}
+html body.sc .fpo-box:not(#scnone) .fpo-r.mon .fpo-l{flex:1 1 0;width:auto!important;min-width:0;white-space:normal!important}
+html body.sc .fpo-box:not(#scnone) .fpo-r.mon .fpo-dim{flex:0 0 52px}
 html body.sc .fpo-box:not(#scnone) .fpo-l{width:68px!important;font:500 11px/13px var(--sc-ui)!important;letter-spacing:0!important}
 html body.sc .fpo-box:not(#scnone) .fpo-lp{font:600 11px var(--sc-ui)!important;gap:4px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-lp i{width:9px!important;height:9px!important}
@@ -349452,7 +349466,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 1a3c6cc'));
+    row('Version', E('span', 'scsver', ver + ' · build e54ac0a'));
   }
   function openSet(near) {
     if (!set) {
@@ -354184,7 +354198,7 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 /* words stay readable where a line passes behind them */
 .hx-process svg .hx-node text, .hx-process svg .hx-lane { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 4.4px; stroke-linejoin: round; }
 .hx-yn text, .hx-mode text { stroke: none !important; }
-.hx-yn:not(.y):not(.n) { display: none; }
+.hx-yn:not(.y):not(.n):not(.i) { display: none; }
 .hxo { fill: var(--hx-fill); fill: url(#hxg); stroke: var(--hx-ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 .hxn { fill: none; stroke: var(--hx-ink); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
 .hxd { fill: none; stroke: var(--hx-ink2); stroke-width: 1.05; stroke-linejoin: round; stroke-linecap: round; }
@@ -354256,6 +354270,7 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .hx-yn text { font: 700 9.5px var(--hx-font); fill: #fff !important; }
 .hx-yn.y rect { fill: var(--hx-run); }
 .hx-yn.n rect { fill: var(--hx-stop); }
+.hx-yn.i rect { fill: var(--hx-none); }
 .hx-yn { cursor: pointer; }
 .hx-link rect { fill: var(--hx-panel2); stroke: var(--hx-rule); stroke-width: 1.2; }
 .hx-link text { font-size: 11.6px; font-weight: 600; fill: var(--hx-accent) !important; }
@@ -354276,6 +354291,7 @@ input.n.nokb{cursor:default;caret-color:transparent;user-select:none}input.n.nok
 .hx-run .rxs { fill: var(--hx-run); }
 .hx-stop .rxs { fill: var(--hx-stop); }
 .hx-trip .rxs { fill: var(--hx-run); animation: hx-blink 1s steps(2) infinite; }
+.rxfw { fill: var(--rx-st3); fill-opacity: 0.22; stroke: var(--rx-edge); stroke-width: 0.9; }
 .rxvoid { fill: var(--rx-void); stroke-width: 0.7; }
 .rxe { fill: none; stroke: var(--rx-edge); stroke-width: 1; stroke-linecap: round; opacity: 0.7; }
 .rxst { fill: none; stroke: var(--rx-st2); stroke-width: 1.7; stroke-linecap: round; }
@@ -363711,7 +363727,7 @@ window.PLANT_SYS = [
               t: m.t,
               d: m.d,
               io: m.io,
-              st: { row: m.df.st, on: m.df.on || 'IN OPERATION', off: m.df.off || 'STOPPED' },
+              st: { row: m.df.st, d: m.df.std, inv: m.df.inv, on: m.df.on || 'IN OPERATION', off: m.df.off || 'STOPPED' },
               pbs: m.df.pbs,
               free: m.df.free,
               away: m.df.away,
@@ -364570,6 +364586,10 @@ window.PLANT_SYS = [
       LOA: { n: 'PAF LUBE OIL PUMP A', t: 'Primary air fan lube oil pump A', ad: 'DITL-24', d: 'DITL-24' },
       LOB: { n: 'PAF LUBE OIL PUMP B', t: 'Primary air fan lube oil pump B', ad: 'DITL-24 #B', d: 'DITL-24 #B' },
       APH: { n: 'AIR PREHEATER', t: 'H-1052', ad: 'DITL-43', d: 'DITL-43' },
+      /* beta.556 (EIMI): the push buttons of the air heater that no page had: the speed selection (DITL-43 rows 15 and 16, M.1423 and
+         M.1424, output O.0208 CSC-FA1052M1-2) and the back-up air motor (DITL-44 rows 4, 11 and 9: M.1430 OPEN, M.1431 CLOSE, M.1432 AUTO) */
+      APS: { n: 'AIR PREHEATER SPEED', t: 'CSC-FA1052M1-2', d: 'DITL-43', df: { pbs: [['LOW SPEED', 14, 'M.1423'], ['NORMAL SPEED', 15, 'M.1424']], st: null, perm: [], why: '' } },
+      APM: { n: 'AIR PREHEATER AIR MOTOR', t: 'SV-PA1052', d: 'DITL-44', df: { pbs: [['OPEN', 3, 'M.1430'], ['CLOSE', 10, 'M.1431'], ['AUTO', 8, 'M.1432', 'set', 1], ['MANUAL', 8, 'M.1432', 'set', 0]], st: null, perm: [], why: '' } },
       CPA: { n: 'FICFA1071', t: 'Primary air flow', ctl: 'FICFA1071', io: 'FICFA1071' },
       CSA: { n: 'FICFA1081', t: 'Secondary air flow', ctl: 'FICFA1081', io: 'FICFA1081' },
       MPA: { n: 'FICFA1071', t: 'MCV-FA1053-1', ctl: 'FICFA1071', io: 'FICFA1071' },
@@ -364848,6 +364868,17 @@ window.PLANT_SYS = [
    currents, silo outlet XV-BH1756, cycle mode timer readout. */
 (function () {
   if (!window.LS_MOCK) return;
+  /* beta.556 (EIMI): the bottom ash conveyors, the two-way separator, the bag filter fan and the ash transmitter had no push button on
+     any page. Their CRT push buttons are the input rows of DITL-BA61 (M.0913 ~ M.0944, M.1380 / 1381, M.1400 / 1401, M.0906, M.0921) and
+     of DITL-BA02 rows 8 ~ 11 (M.1300 ~ M.1303); the status is the RUNNING output of DITL-BA59 / BA60; need = rows the AND gate of the
+     ON COMMAND has (DITL-BA63, BA66 ~ BA69) */
+  const PB = (a, ra, ma, b, rb, mb) => [
+    [a, ra, ma, null, null, 'DITL-BA61'],
+    [b, rb, mb, null, null, 'DITL-BA61']
+  ];
+  const PRE = { d: 'DITL-BA62', row: 9, l: 'conveyors starting precondition' },
+    REM = (row, l) => ({ d: 'DITL-BA59', row, l });
+  const bam = (n, t, st, pbs, need) => ({ n, t, d: 'DITL-BA59', df: { st, on: 'RUNNING', off: 'STOPPED', pbs, need: [PRE].concat(need), perm: [], why: '' } });
   LS_MOCK.add({
     id: 'MK14',
     title: 'ESP AND ASH',
@@ -364865,6 +364896,14 @@ window.PLANT_SYS = [
       BCD: { n: 'ASH COOLER D', t: 'L-1060D', ad: 'DITL-21A #D', d: 'DITL-21A #D' },
       DP: { n: 'DPICFG108', t: 'Furnace differential pressure', ctl: 'DPICFG108', io: 'DPICFG108' },
       SA: { n: 'SICL1060A', t: 'Screw speed', ctl: 'SICL1060A', io: 'SICL1060A' },
+      BCH: bam('CHAIN CONVEYOR', 'L-1090', 7, PB('START', 0, 'M.0913', 'STOP', 1, 'M.0914'), [REM(0, 'remote selector'), REM(8, 'bucket elevator running')]),
+      BEL: bam('BUCKET ELEVATOR', 'L-1091', 8, PB('START', 2, 'M.0923', 'STOP', 3, 'M.0924'), [REM(1, 'remote selector'), REM(9, 'screw conveyor running')]),
+      BSC: bam('SCREW CONVEYOR', 'L-1092', 9, PB('START', 4, 'M.0933', 'STOP', 5, 'M.0934'), [REM(2, 'remote selector')]),
+      BVS: bam('VIBRATING SCREEN', 'S-1092', 11, PB('START', 10, 'M.1380', 'STOP', 11, 'M.1381'), [REM(4, 'remote selector')]),
+      BFF: bam('BAG FILTER FAN', 'F-1091', 13, PB('START', 12, 'M.0943', 'STOP', 13, 'M.0944'), [REM(6, 'remote selector')]),
+      BTW: { n: 'L-1094 TWO-WAY SEPARATOR', t: 'Open = to the screens, closed = to the silo', d: 'DITL-BA60', df: { st: 6, on: 'OPEN', off: 'CLOSED', free: true, pbs: PB('OPEN', 6, 'M.1400', 'CLOSE', 7, 'M.1401'), perm: [], why: '' } },
+      BRS: { n: 'BOTTOM ASH CONVEYORS', t: 'Emergency stop', d: 'DITL-BA62', df: { st: 2, on: 'EMERGENCY STOP', off: 'NORMAL', free: true, pbs: PB('RESET', 16, 'M.0906', 'EMERGENCY STOP', 17, 'M.0921'), perm: [], why: '' } },
+      BAT: { n: 'BOTTOM ASH TRANSMITTER', t: 'S-1090', d: 'DITL-BA02', /* the state = step 0 Waiting, DITL-BA04 out row 9: not waiting = the sequence runs */ df: { st: 8, std: 'DITL-BA04', inv: true, on: 'SEQUENCE ACTIVE', off: 'WAITING', free: true, pbs: [['START', 7, 'M.1300'], ['STOP', 8, 'M.1301'], ['RESET', 9, 'M.1302'], ['EMERGENCY STOP', 10, 'M.1303']], perm: [], why: '' } },
       /* tracker e1 (user 2026-11-10: a cold start without Training): the precipitator runs from the EP PLC panel (PR-OPE-5002 1.1, no DCS
          station): field equipment of the plant model AN.field('esp') (dust and opacity follow it), as the Training ESP step */
       ESP: { n: 'ESP', t: 'Electrostatic precipitator', d: 'EP PLC panel', fld: 'esp', fieldOp: true, why: 'Field equipment: the precipitator (transformer-rectifiers U-1201 ~ U-1205, purge air heater H-1201 and fan F-1201) is started at the EP PLC panel. No DCS command; dust and opacity follow it.' }
@@ -366073,6 +366112,21 @@ window.PLANT_SYS = [
     ports: { l: [-20, 0], r: [12, 0], t: [0, -8], b: [0, 8] },
     svg: '<path class="rxflame" d="M10 0Q16 -7 28 0Q16 7 10 0Z"/><path class="rxd" d="M-20 -6h3v12h-3z"/><path class="rx" d="M-17 -4.5H2L10 -2.5V2.5L2 4.5H-17Z"/><rect class="rxs" x="-12" y="-7.5" width="9" height="15" rx="1.5"/>'
   });
+  /* one water wall of the furnace seen from outside: the wall tubes and the open air ports (holes = [[x, y], ...], from the top left
+     corner of the wall, w x h) */
+  R.furnwall = o => {
+    const w = o.w || 1600,
+      h = o.h || 330;
+    let t = '';
+    for (let x = 14; x < w - 6; x += 14) t += `M${n(x)} 6V${n(h - 6)}`;
+    return {
+      box: [0, 0, w, h],
+      ports: { l: [0, h / 2], r: [w, h / 2], t: [w / 2, 0], b: [w / 2, h] },
+      svg:
+        `<rect class="rxfw" x="0" y="0" width="${n(w)}" height="${n(h)}" rx="4"/><path class="rxe" opacity=".45" d="${t}"/>` +
+        (o.holes || []).map(p => `<ellipse class="rxvoid" cx="${n(p[0])}" cy="${n(p[1])}" rx="7" ry="15"/>`).join('')
+    };
+  };
   /* air compressor as a package: the motor and the air end inside the enclosure, cut open. Ports: in (air in, left), out
      (compressed air, right) */
   R.compressor = () => ({
@@ -366294,6 +366348,9 @@ window.PLANT_SYS = [
   };
   /* o.words = [word at 1, word at 0] for an on / off point (a VCB, a heater): the row shows the word, not 1.0 / 0.0 */
   HX.V = (label, key, unit, dp, o) => Object.assign({ label, key, unit: unit || '', dp: dp == null ? 1 : dp }, o || {});
+  /* beta.556 (EIMI): a monitor row that is one on / off point of the I/O list: tag = its name there, key = where the app reads it
+     ('dl:SHEET|i, o or p|row' a row or an output address of a DITL drawing, 'fld:TAG' a field row). No key = no source: -----. */
+  HX.D = (label, tag, key, w1, w0) => HX.V(label, key || 'fld:' + tag, '', 0, { tag, words: [w1 || 'YES', w0 || 'NO'] });
   HX.E = (sym, name, tag, vals, o) => Object.assign({ k: 'eq', sym, name, tag: tag || '', vals: vals || [] }, o || {});
   /* beta.486 (EIMI): o.mon = [HX.V(...)] monitor rows of the machine (bearing, winding, vibration, heater ...): shown on its
      PERMISSIVE · TREND · MONITOR faceplate (README section 4 rule 6, user 2026-10-31: two faceplates, the monitor rows on the second),
@@ -366319,6 +366376,9 @@ window.PLANT_SYS = [
   /* a named state for a rule: HX.hk('g52', 'data-dy=...') gives 'h:g52', true while that state of the hmi-mock.js page is
      its red one (a breaker closed, a valve open, a Y) */
   HX.HK = {};
+  /* beta.556 (EIMI): a controller or a plain piece of plant with o.mon = [HX.V(...)] (and o.perm = [HX.V(...)], each 1 = made) gets the
+     square of the second faceplate, PERMISSIVE · TREND · MONITOR: Y red / N green when its permissives are known, else a grey i */
+  HX.MON = {};
   HX.hk = (name, hook) => ((HX.HK[name] = hook), 'h:' + name);
   /* a hand valve of the plant model as a valve SYMBOL on the line (hand wheel, red = open, the stem follows): a click opens
      its field faceplate. Use it where the valve stands on a drawn pipe; HX.H stays for a valve named beside the drawing */
@@ -366338,6 +366398,14 @@ window.PLANT_SYS = [
     );
   /* a hand valve of the plant model (a field valve the operator sets): OPEN / CLOSED, a click opens its field faceplate */
   HX.H = (tag, text, o) => HX.B(text || tag, 'fv:' + tag, Object.assign({ press: true, state: true, w: 104 }, o || {}));
+  /* beta.556 (EIMI): a machine of a system file (hx/sys) that hx-registry.js (generated) does not have: page = its system id, id = its key */
+  HX.mach = (page, id) => {
+    const d = window.LS_MOCK && LS_MOCK.defs.find(x => x.id === page),
+      m = d && d.mach && d.mach[id];
+    if (m && window.HXREG && !HXREG.machines[m.n]) HXREG.machines[m.n] = { t: m.t, page, id, bind: { d: m.d, df: m.df } };
+  };
+  /* beta.556: a value worked out from other keys, key 'cal:NAME' (a permissive that is one of two ways); null when one is unknown */
+  HX.CALC = {};
   HX.page = def => {
     def.no = HX.pages.length + 1;
     HX.pages.push(def);
@@ -366775,7 +366843,10 @@ window.PLANT_SYS = [
       }
     }
     /* the Y / N square (second faceplate) of a machine or an on / off valve: on the side away from its words */
-    const ynId = it.k === 'mach' ? 'mach:' + it.mach : it.k === 'valve' ? 'valve:' + it.valve : '',
+    /* beta.556: a machine with its own permissive rows (o.perm, all needed) has the same second faceplate */
+    const monId = it.mon && (it.k === 'loop' || it.k === 'eq' || (it.k === 'mach' && it.perm)) ? it.loop || it.mach || it.id || it.tag : '';
+    if (monId) HX.MON[monId] = it;
+    const ynId = it.k === 'mach' && !it.perm ? 'mach:' + it.mach : it.k === 'valve' ? 'valve:' + it.valve : monId ? 'mon:' + monId : '',
       ynX = it.yn ? it.yn[0] : lab === 'r' ? box[0] - 18 : box[2] + 4,
       ynY = it.yn ? it.yn[1] : lab === 'b' ? box[1] - 16 : side ? box[1] - 4 : box[1] - 2;
     const yn = ynId
@@ -367071,7 +367142,7 @@ window.PLANT_SYS = [
   /* UI check 2026-11-24 C6: a TCS system drawn as its valve (gland steam seal, hood spray: a name without a tag number) is in or
      out of service; its valve opening is a value of its own (PV-GS1031 position, FV-CD1904 open) */
   const stTxt = (s, name, vw) =>
-    vw && name && !/d/.test(name)
+    vw && name && !/[0-9]/.test(name) /* beta.556: was the letter d: a valve with a tag number said In / Out of service */
       ? s === 'run'
         ? 'In service'
         : s === 'stop'
@@ -367723,9 +367794,11 @@ window.PLANT_SYS = [
         });
         Q('.hx-yn[data-yn]').forEach(e => {
           const [yk, ...yr] = e.dataset.yn.split(':'),
-            p = ((yk === 'valve' ? D.valve(yr.join(':')) : D.machine(yr.join(':'))) || {}).perm;
-          setAt(e, 'class', 'hx-yn ' + (p == null ? '' : p ? 'y' : 'n'));
-          setTx(e.querySelector('text'), p == null ? '-' : p ? 'Y' : 'N');
+            mo = yk === 'mon' ? HX.MON[yr.join(':')] : null,
+            pv = mo && (mo.perm || []).map(r => D.value(r.key)),
+            p = mo ? (pv.length && !pv.includes(null) ? pv.every(x => x >= 0.5) : null) : ((yk === 'valve' ? D.valve(yr.join(':')) : D.machine(yr.join(':'))) || {}).perm;
+          setAt(e, 'class', 'hx-yn ' + (p == null ? (mo ? 'i' : '') : p ? 'y' : 'n'));
+          setTx(e.querySelector('text'), p == null ? (mo ? 'i' : '-') : p ? 'Y' : 'N');
         });
         Q('[data-level]').forEach(e => {
           const [key, lo, hi] = e.dataset.level.split('|'),
@@ -369569,11 +369642,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    Drawn simpler than the sheet:
    - 2 cyclones and 2 seal pots: one of each is drawn (a section through the boiler), both temperatures are shown;
    - the air side of the air heater, the fans and blowers of the combustion air: the Combustion air page;
-   - the single bank temperatures of the back pass TT-FG1100 ~ 1109 and 1111 have no signal in hx-registry.js: not shown.
+   - beta.556: the single bank temperatures of the back pass TT-FG1101 ~ 1109 and 1111 (DCS I/O list) stand beside it; a temperature
+     the plant model does not give shows -----.
    Left out on purpose, all without a signal in hx-registry.js: hand valves, test points, the single bed thermocouples, the
    bearing, winding and vibration measurements of the fan, the fly ash transmitters under the hoppers. */
 (function () {
-  const { V, E, M, C, L, page } = HX;
+  const { V, D, E, M, C, L, page } = HX;
   const MM = 'mmH₂O';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_G = 14;
@@ -369602,6 +369676,21 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     SY = 870,
     SS = 3.4; /* stack */
   const GAS = 'm:IDF';
+  /* the oil of the hydraulic coupling of the induced draft fan: DITL-25B */
+  const HCO = [
+    V('Coupling speed', 'fld:ST-LO1756', 'rpm', 0, { tag: 'ST-LO1756' }),
+    V('Scoop tube position', 'ABC-008|AI0482', '%', 1, { tag: 'ZT-LO1756' }),
+    D('Scoop tube open limit', 'ZSO-LO1756', '', 'OPEN', 'NOT OPEN'),
+    D('Scoop tube closed limit', 'ZSC-LO1756', '', 'CLOSED', 'NOT CLOSED'),
+    D('Oil pressure low', 'PSL-LO1756', 'dl:DITL-25B|i|19', 'LOW', 'NORMAL'),
+    D('Oil pressure low low', 'PSLL-LO1756', 'dl:DITL-25B|i|21', 'LOW LOW', 'NORMAL'),
+    D('Filter differential pressure', 'DPS-LO1756', 'dl:DITL-25B|i|17', 'HIGH', 'NORMAL'),
+    D('Working oil temperature', 'TS-LO1756-1', 'dl:DITL-25B|i|14', 'HIGH', 'NORMAL'),
+    D('Working oil temperature high high', 'TS-LO1756-2', 'dl:DITL-25B|i|15', 'HIGH HIGH', 'NORMAL')
+  ];
+  const air = tag => [V('Air buffer tank pressure', 'fld:' + tag, 'kg/cm²', 1, { tag })];
+  /* a list of temperatures: [tag, words] */
+  const tlist = (x, y, l) => l.map(([t, s], i) => ({ x, y: y + i * 16, s, key: 'fld:' + t, unit: '°C', dp: 0 }));
 
   page({
     id: 'furnace-gas',
@@ -369623,18 +369712,19 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           under: true,
           sc: BS
         }),
-        at(M('airheater', 'AIR PREHEATER', 'Air heater', []), AHX, AHY, { id: 'ah', sc: AS, lab: 'l' }),
+        at(M('airheater', 'AIR PREHEATER', 'Air heater', [], { mon: HX.MON_AH }), AHX, AHY, { id: 'ah', sc: AS, lab: 'l', yn: [-79, -66] }),
         at(E('esp', 'Precipitator', 'Z-1010', []), EX, EY, { id: 'esp', sc: ES, lab: 't' }),
         at(M('fan', 'IDF', 'Induced draft fan', [V('Current', 'IT-F1056', 'A')]), IX, IY, {
           id: 'idf',
           sc: IS,
-          lab: 'b'
+          lab: 'b',
+          yn: [90, -20]
         }),
         at(E('stack', '', '', [], { flow: GAS }), SX, SY, { id: 'st', under: true, sc: SS }),
 
         /* ---- dampers and controllers ---- */
         at(
-          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1116A-D', wrap: 14, mvb: true }),
+          C('HICHR1002A', 'Reheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1116A-D', wrap: 14, mvb: true, mon: air('PT-IA1064-A') }),
           BPX + 56 * BS,
           BPY + 350 * BS,
           {
@@ -369643,16 +369733,16 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           }
         ),
         at(
-          C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1117A-D', wrap: 14, mvb: true }),
+          C('HICHR1002B', 'Superheater pass damper', { sym: 'louver', w: 100, tag: 'TCV-FG1117A-D', wrap: 14, mvb: true, mon: air('PT-IA1064-B') }),
           BPX + 160 * BS,
           BPY + 350 * BS,
           { id: 'dmb', lab: 'b' }
         ),
-        at(C('PICFG108A', 'Fan inlet damper', { sym: 'louver', w: 56, tag: 'PCD-FG1056-1', wrap: 12 }), DX, 800, {
+        at(C('PICFG108A', 'Fan inlet damper', { sym: 'louver', w: 56, tag: 'PCD-FG1056-1', wrap: 12 }), DX, 822, {
           id: 'idd',
           lab: 'l'
         }),
-        at(C('PICFG108', 'Furnace pressure, fan coupling, ' + MM, { sym: 'ctl', unit: '', pvdp: 0, wrap: 32 }), 1500, 600, {
+        at(C('PICFG108', 'Furnace pressure, fan coupling, ' + MM, { sym: 'ctl', unit: '', pvdp: 0, wrap: 32, mon: HCO }), 1500, 600, {
           id: 'pic',
           lab: 't'
         }),
@@ -369661,18 +369751,18 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
            the hydraulic coupling selected the damper station tracks F(X) of the coupling (100 %), so the operator could not close the
            inlet damper for the ID fan START permissive (DITL-25A M.3117 IDF INLET VANE CLOSED) nor follow PR-OPE-5004 "change the
            furnace pressure control to DAMPER CONTROL" */
-        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1405, 470, { id: 'pbh' }) /* Audit 3: above the controller, clear of Fan outlet */,
-        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1600, 470, { id: 'pbd' }),
+        at(HX.B('HYDRAULIC CONTROL', 'data-apb="ABC-008|M.0200|M.0202=1"', { press: true }), 1385, 470, { id: 'pbh' }) /* Audit 3: above the controller, clear of Fan outlet */,
+        at(HX.B('DAMPER CONTROL', 'data-apb="ABC-008|M.0201|M.0202=0"', { press: true }), 1545, 470, { id: 'pbd' }),
         at(C('AICFG112', 'Oxygen control', { sym: 'ctl', unit: '%', pvdp: 1, wrap: 30 }), 1050, 400, {
           id: 'o2c',
           lab: 't'
         }),
-        at(L('combustion-air', 'Combustion air'), 480, 810, { id: 'cal' }),
+        at(L('combustion-air', 'Combustion air'), 480, 785, { id: 'cal' }),
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-G): no page linked to Purge and trip, the operator could not reach the purge */
         /* UI check 2026-11-24 C1: the three page links left of the gas duct down to the air heater */
-        at(L('purge-trip', 'Purge and trip'), 650, 810, { id: 'ptl' }),
+        at(L('purge-trip', 'Purge and trip'), 650, 785, { id: 'ptl' }),
         /* 3.2.5-beta.1 (F-M): the diesel oil and burners page was reached only through Purge and trip */
-        at(L('oil-burners', 'Burners'), 300, 810, { id: 'obl' })
+        at(L('oil-burners', 'Burners'), 300, 785, { id: 'obl' })
       ],
       pipes: [
         { med: 'gas', w: W_G, pts: ['fu.out', 'cy.in'], flow: GAS, arrow: false },
@@ -369728,6 +369818,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 24, y: 332, s: 'Lower to upper 2', key: 'DPT-FG1183', unit: MM, dp: 0 },
         { x: FX, y: FY + 200 * FS, s: 'Furnace', cls: 'hx-name', anchor: 'middle' },
         { x: CX, y: CY + 58, s: 'Cyclone', cls: 'hx-name', anchor: 'middle' },
+        { x: 24, y: 372, s: 'CYCLONES', cls: 'hx-zone' },
+        ...tlist(24, 394, [['TT-FG1092-A', 'Inlet A'], ['TT-FG1092-B', 'Inlet B'], ['TT-FG1096-A', 'Outlet A (2)'], ['TT-FG1096-B', 'Outlet B (2)']]),
+        { x: 1010, y: 96, s: 'BACK PASS, REHEATER SIDE', cls: 'hx-zone' },
+        ...tlist(1010, 118, [['TT-FG1102', 'Reheater 2 inlet'], ['TT-FG1104', 'Reheater 3 inlet'], ['TT-FG1106', 'Reheater 4 inlet'], ['TT-FG1108', 'Economizer 2R inlet']]),
+        { x: 1010, y: 206, s: 'BACK PASS, SUPERHEATER SIDE', cls: 'hx-zone' },
+        ...tlist(1010, 228, [['TT-FG1101', 'Finishing superheater 1 inlet'], ['TT-FG1103', 'Finishing superheater 2 inlet'], ['TT-FG1105', 'Finishing superheater 3 inlet'], ['TT-FG1107', 'Economizer 3 upper inlet'], ['TT-FG1109', 'Economizer 3 lower inlet'], ['TT-FG1111', 'Economizer 2S inlet']]),
         { x: 486, y: 650, s: 'SEAL POT', cls: 'hx-zone' },
         { x: 486, y: 670, s: 'Solids down A', key: 'TT-FG1009-A', unit: '°C', dp: 0 },
         { x: 486, y: 686, s: 'Solids down B', key: 'TT-FG1009-B', unit: '°C', dp: 0 },
@@ -369747,8 +369843,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 600, y: 978, s: 'Temperature 1', key: 'TT-FG1132', unit: '°C', dp: 0, anchor: 'end' },
         { x: 420, y: 962, s: 'Temperature 2', key: 'TT-FG1133', unit: '°C', dp: 0, anchor: 'end' },
         { x: 420, y: 978, s: 'Pressure', key: 'PT-FG1134', unit: MM, dp: 0, anchor: 'end' },
-        { x: 1336, y: 850, s: 'Fan inlet A', key: 'PT-FG1141-A', unit: MM, dp: 0, anchor: 'end' },
-        { x: 1336, y: 866, s: 'Fan inlet B', key: 'PT-FG1141-B', unit: MM, dp: 0, anchor: 'end' },
+        { x: 1336, y: 872, s: 'Fan inlet A', key: 'PT-FG1141-A', unit: MM, dp: 0, anchor: 'end' },
+        { x: 1336, y: 888, s: 'Fan inlet B', key: 'PT-FG1141-B', unit: MM, dp: 0, anchor: 'end' },
         { x: 1610, y: 150, s: 'STACK', cls: 'hx-zone', anchor: 'end' },
         { x: 1610, y: 172, s: 'Oxygen', key: 'AT-FG1057-4', unit: '%', dp: 1, anchor: 'end' },
         { x: 1610, y: 188, s: 'Nitrogen oxides', key: 'AT-FG1057-2', unit: 'ppm', dp: 0, anchor: 'end' },
@@ -369782,10 +369878,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    PD-053 and PD-054 were read through the temporary page 09 (the tags, names and order it binds); PD-052 on the sheet.
    Drawn simpler than the sheets: the silencers at the fan inlets and the flow elements are not drawn (the flows are the
    measured values of the two flow controllers); the 4 furnace inlets and the 22 wall dampers end as a link to the Furnace page.
+   beta.556 (HMI gap list 2026-11-25): the monitor rows of the air heater (DITL-43), of the primary air fan oil unit (DITL-26B) and of
+   its two pumps (DITL-24), the air heater speed and air motor push buttons, the link to the wall dampers page.
    Left out on purpose, all without a signal in hx-registry.js: the bearing, winding and vibration measurements of the fans,
    hand dampers, expansion joints, test points. */
 (function () {
-  const { V, E, M, C, X, L, page } = HX;
+  const { V, D, E, M, C, X, L, B, page } = HX;
   const MM = 'mmH₂O';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_A = 12,
@@ -369807,6 +369905,46 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     BY = 200,
     BS = 1.5 /* the two blowers */,
     HY = 70; /* fluidizing air line */
+  /* the monitor faceplate of the air heater, the same on the Furnace and flue gas page */
+  HX.MON_AH = [
+    D('Running', 'YS-FA1052M1', 'dl:DITL-43|i|9', 'RUNNING', 'STOPPED'),
+    D('Drive trip', 'XA-FA1052M1', 'dl:DITL-43|i|4', 'NORMAL', 'TRIP'),
+    D('Selector', 'YSR-FA1052M1', 'dl:DITL-43|i|3', 'LOCAL', 'REMOTE'),
+    D('Low speed', 'SAL-FA1052-6', 'dl:DITL-43|i|11', 'NORMAL', 'LOW'),
+    D('Low low speed', 'SALL-FA1052-5', 'dl:DITL-43|i|12', 'NORMAL', 'LOW LOW'),
+    D('Fire detection system', 'XA-FA1052-1', 'dl:DITL-43|o|7', 'NORMAL', 'FAULT'),
+    D('Fire detection sensor', 'XA-FA1052-2', 'dl:DITL-43|o|8', 'NORMAL', 'OPEN CIRCUIT'),
+    D('Fire alarm', 'XA-FA1052-3', 'dl:DITL-43|o|9', 'NORMAL', 'FIRE'),
+    D('Speed sensor', 'XA-FA1052-4', 'dl:DITL-43|o|10', 'NORMAL', 'FAULT'),
+    D('Secure power supply', 'XA-FA1052-5', 'dl:DITL-43|o|11', 'NORMAL', 'NOT NORMAL'),
+    D('Normal power supply', 'XA-FA1052-6', 'dl:DITL-43|o|12', 'NORMAL', 'NOT NORMAL'),
+    D('Emergency push button', 'ES-FA1052', 'dl:DITL-43|o|13', 'OPERATED', 'NORMAL'),
+    V('Motor current', 'fld:IT-FA1052M1', 'A', 1, { tag: 'IT-FA1052M1' }),
+    D('Motor current high high', 'DITL-43 row 23', 'dl:DITL-43|o|22', 'HIGH HIGH', 'NORMAL'),
+    D('Hot end bearing oil temperature', 'TA-FA1052-6', '', 'HIGH', 'NORMAL'),
+    D('Cold end bearing oil temperature', 'TA-FA1052-7', '', 'HIGH', 'NORMAL'),
+    D('Low speed selected', 'CSC-FA1052M1-2', 'dl:DITL-43|p|O.0208'),
+    D('Start command', 'CSC-FA1052M1-1', 'dl:DITL-43|p|O.0206'),
+    D('Stop command', 'CSO-FA1052M1-1', 'dl:DITL-43|p|O.0207')
+  ];
+  /* a lube oil pump of the primary air fan: DITL-24 / DITL-24 #B */
+  const lop = (s, p) => [
+    D('Running', 'MIR-LO1753-' + p, 'dl:' + s + '|i|1', 'RUNNING', 'STOPPED'),
+    D('Motor trip', 'MIT-LO1753-' + p, 'dl:' + s + '|i|10', 'TRIP', 'NORMAL'),
+    D('Selector', 'MIL-LO1753-' + p, 'dl:' + s + '|i|18', 'REMOTE', 'LOCAL')
+  ];
+  const LOU = [
+    D('Oil pressure low', 'PSL-LO1753', 'dl:DITL-26B|i|19', 'LOW', 'NORMAL'),
+    D('Oil pressure low low', 'PSLL-LO1753', 'dl:DITL-26B|i|21', 'LOW LOW', 'NORMAL'),
+    D('Filter differential pressure', 'DPS-LO1753', 'dl:DITL-26B|i|16', 'HIGH', 'NORMAL'),
+    D('Tank level low', 'LSL-LO1753', 'dl:DITL-26B|i|17', 'LOW', 'NORMAL'),
+    D('Tank level low low', 'LSLL-LO1753', '', 'LOW LOW', 'NORMAL'),
+    D('Oil temperature', 'TS-LO1753', 'dl:DITL-26B|i|18', 'HIGH', 'NORMAL'),
+    D('All oil pumps stopped', 'S-APAFLOPS', 'dl:DITL-24|o|24'),
+    D('Control power', 'MIA-LO1753-1', '', 'ON', 'OFF'),
+    D('Breaker NFB2', 'MIA-LO1753-2', '', 'ON', 'OFF'),
+    D('Breaker NFB1', 'MIA-LO1753-3', '', 'ON', 'OFF')
+  ];
   const PA = 'm:PAF',
     SA = 'm:SAF',
     FA = 'm:FA BLOWER-A',
@@ -369825,7 +369963,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       items: [
         /* ---- air heater ---- */
         /* UI check 2026-11-24 C1: name at the left side; below it the air ducts and the rotor shaft leave */
-        at(M('airheater', 'AIR PREHEATER', 'Air heater', []), AX, AY, { id: 'ah', sc: AS, lab: 'l' }),
+        /* beta.556: its square at the top left corner of the casing (it stood far right, on the gas duct) */
+        at(M('airheater', 'AIR PREHEATER', 'Air heater', [], { mon: HX.MON_AH }), AX, AY, { id: 'ah', sc: AS, lab: 'l', yn: [-122, -88] }),
         /* the back-up drive of the air heater: an air motor, its air valve SV-PA1052 is the output O.029F of DITL-44 (old page 038) */
         at(
           HX.HV('SVPA1052', 'Back-up air motor valve', {
@@ -369839,6 +369978,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           AY + 30,
           { id: 'amv', lab: 'b' }
         ),
+        at(B('Air motor valve', 'data-dpo="DITL-44|O.029F|OPEN|CLOSED"', { mach: 'AIR PREHEATER AIR MOTOR', w: 210 }), 1480, 570, { id: 'amb' }),
+        at(B('Air heater speed', 'data-dpo="DITL-43|O.0208|LOW|NORMAL"', { mach: 'AIR PREHEATER SPEED', w: 210 }), 1480, 610, { id: 'asb' }),
         at(L('furnace-gas', 'Flue gas from the back pass', { back: true }), 1230, 440, { id: 'gin' }),
         at(L('furnace-gas', 'Flue gas to the precipitator'), 1230, 690, { id: 'gout' }),
 
@@ -369855,8 +369996,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(L('coal', 'Cold primary air to the coal feeders'), 560, 780, { id: 'cfl' }),
         at(L('furnace-gas', 'Hot primary air to the furnace'), 330, 430, { id: 'pal' }),
         at(L('coal', 'To the coal pipes'), 330, 360, { id: 'cpl' }),
-        at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', []), 90, 952, { id: 'loa', sc: 0.8, lab: 'r' }),
-        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', []), 380, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP A', 'Lube oil pump A', [], { mon: lop('DITL-24', 'A') }), 90, 952, { id: 'loa', sc: 0.8, lab: 'r' }),
+        at(M('pump', 'PAF LUBE OIL PUMP B', 'Lube oil pump B', [], { mon: lop('DITL-24 #B', 'B') }), 380, 952, { id: 'lob', sc: 0.8, lab: 'r' }),
+        at(E('tank', 'Lube oil unit', 'LO1753', [], { w: 70, h: 50, mon: LOU }), 670, 950, { id: 'lou', lab: 'r' }),
 
         /* ---- secondary air ---- */
         at(M('fan', 'SAF', 'Secondary air fan', [V('Current', 'IT-F1054', 'A')]), SFX, FY, {
@@ -369869,7 +370011,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           id: 'sad',
           lab: 't'
         }),
-        at(L('furnace-gas', 'Hot secondary air to the furnace'), 1430, 350, { id: 'sal' }),
+        at(L('wall-dampers', 'Hot secondary air to the wall dampers'), 1430, 350, { id: 'sal' }),
 
         /* ---- fluidizing air ---- */
         at(
@@ -370058,7 +370200,13 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           lab: 'l'
         }),
         at(
-          M('feeder', 'COAL FEEDER ' + n, 'Coal feeder ' + n, [V('Total', 'MIA-CL1061-' + n + '1', 't', 0)]),
+          M('feeder', 'COAL FEEDER ' + n, 'Coal feeder ' + n, [V('Total', 'MIA-CL1061-' + n + '1', 't', 0)], {
+            /* beta.556: I/O list station 4, PS-IA1061-A1 / A2 / B1 / B2 / C1 / C2; no drawing of the app reads them: ----- */
+            mon: [
+              HX.D('Air tank pressure high', { A: 'PS-IA1061-A1', B: 'PS-IA1061-B1', C: 'PS-IA1061-C1' }[n], '', 'HIGH', 'NORMAL'),
+              HX.D('Air tank pressure low', { A: 'PS-IA1061-A2', B: 'PS-IA1061-B2', C: 'PS-IA1061-C2' }[n], '', 'LOW', 'NORMAL')
+            ]
+          }),
           fx,
           FDY,
           { id: 'f' + i, sc: FDS, lab: 'l' }
@@ -370216,9 +370364,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    notes on the page is the one that starts the system in the app (headless 2026-11-18: isolating valves, feeder, system;
    the system START pressed first does not latch).
    The SOx controller AICFG10571 (ABC-005) that sets the feeder speed has its faceplate next to the feeder (F-AM 2026-11-18).
+   beta.556 (EIMI): the remote selectors, running lamps, purge starts, vent fan and fluidizing / bypass air signals of the I/O list are
+   monitor rows of the silos, fans and vessels (DITL-771 ~ 776, DITL-LS10, LS212, LS214).
    NO-SOURCE in the app: the speed of the limestone feeder (ST-M1311 has no signal in hx-registry.js). */
 (function () {
-  const { V, E, M, C, L, page } = HX;
+  const { V, D, E, M, C, L, page } = HX;
   const B = HX.B;
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
@@ -370241,6 +370391,14 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     SD_FAN = HX.hk('sd-fan', dy('DITL-774|o|21', 'RUNNING', 'STOPPED')),
     SD_OUT = HX.hk('sd-out', dy('DITL-771|o|23')),
     SD_AIR = HX.hk('sd-air', dy('DITL-771|o|24'));
+  const dl = (s, k) => 'dl:DITL-' + s + '|' + k;
+  const sv = (label, tag, s, r) => D(label, tag, dl(s, 'o|' + r), 'OPEN', 'CLOSED');
+  const cmd = (label, tag, s, r) => D(label, tag, dl(s, 'o|' + r), 'ON', 'OFF');
+  const fan = (tag, run, rr, trip, rt, rem, rl, start, rs) => [
+    D('Running', 'MIR-' + tag, dl(run, 'i|' + rr)),
+    D('Motor trip', 'MIT-' + tag, dl(trip, 'i|' + rt), 'TRIP', 'NORMAL'),
+    D('Selector', 'MIL-' + tag, dl(rem, 'i|' + rl), 'REMOTE', 'LOCAL')
+  ].concat(start);
   const INJ = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   page({
@@ -370261,13 +370419,21 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           M('silo', 'Limestone system', 'Limestone daily silo', [V('Level', 'LT-LM1800', '%', 1)], {
             id: 'lm',
             h: 110,
-            level: ['LT-LM1800', 0, 100]
+            level: ['LT-LM1800', 0, 100],
+            mon: [
+              D('Injection system selector', 'SIL-LM1311', dl('LS10', 'i|5'), 'REMOTE', 'LOCAL'),
+              cmd('Injection system running lamp', 'SOR-LM1311', 'LS10', 9),
+              D('Air receiver pressure low', 'PS-PA1811', dl('LS10', 'i|7'), 'LOW', 'NORMAL'),
+              cmd('Vent filter purge start', 'POR-LM1313', 'LS214', 14),
+              sv('Fluidizing valve 1', 'SV-PA1813A', 'LS214', 0),
+              sv('Fluidizing valve 2', 'SV-PA1813B', 'LS214', 2)
+            ]
           }),
           LX,
           210,
           { id: 'lm', sc: 2, lab: 'l' }
         ),
-        at(E('fan', 'Vent fan', 'F-1313', [], { on: LM_FAN }), LX + 150, 110, { id: 'lmf', sc: 0.8, lab: 'r' }),
+        at(E('fan', 'Vent fan', 'F-1313', [], { on: LM_FAN, mon: fan('LM1313', 'LS214', 17, 'LS214', 16, 'LS214', 18, cmd('Start command', 'MOR-M1313', 'LS214', 13)) }), LX + 150, 110, { id: 'lmf', sc: 0.8, lab: 'r' }),
         at(xv('Lock vessel inlet valve', 'XV-LM1812', 'DITL-LS170|o|1'), LX, 370, { id: 'lv1', rot: 90, lab: 'l' }),
         at(E('silo', 'Lock vessel', 'S-1311', [V('Pressure', 'PT-LM1811', K)], { id: 'lk', h: 76 }), LX, 480, {
           id: 'lk',
@@ -370289,9 +370455,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(M('rotary', 'L-1311', 'Limestone feeder', []), LX, 812, { id: 'lfd', sc: 1.5, lab: 'l' }),
         /* the SOx control sets the feeder speed (ABC-005 AICFG10571, PV = stack SOx AT-FG1057-1 0 ~ 500 ppm, I/O list STN101 AI0466;
            HMI snapshot 19.PNG SV 200 ppm): the operator puts it in AUTO here (F-AM, Jennie live run 2026-11-18) */
-        at(C('AICFG10571', 'Limestone feed, stack SOx control', { sym: 'ctl', unit: 'ppm', pvdp: 0, wrap: 16 }), LX + 320, 760, {
+        at(C('AICFG10571', 'Limestone feed, stack SOx control', { sym: 'ctl', unit: 'ppm', pvdp: 0, wrap: 16 }), LX + 330, 800, {
           id: 'sox',
-          lab: 't' /* beta.305: right of the feed line (its box sat on it) */
+          lab: 'r' /* beta.305: right of the feed line (its box sat on it); beta.556: the injection valve tiles covered its name */
         }),
         at(M('valve', 'XV-LM1811A ~ H', 'Isolating valves A to H', [], { kind: 'shutoff', wrap: 12 }), 370, 890, {
           id: 'liso',
@@ -370304,7 +370470,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         }),
         at(xv('Equalising air valve', 'XV-PA1814C', 'DITL-LS200|o|1'), 110, 890, { id: 'lv5', lab: 'r' } /* beta.305: beside the valve, its air line comes up under it */),
         at(L('compressed-air', 'Plant air', { back: true }), 40, 960, { id: 'pal' }),
-        at(B('Bypass air valves', dy('DITL-LS212|o|9+10'), { w: 170 }), 640, 940, { id: 'lby' }),
+        at(B('Bypass air valve A, SV-PA1812A', dy('DITL-LS212|o|9'), { w: 230 }), 640, 950, { id: 'lby' }),
+        at(B('Bypass air valve B, SV-PA1812B', dy('DITL-LS212|o|10'), { w: 230 }), 880, 950, { id: 'lbz' }),
         ...INJ.map((n, i) =>
           at(
             B('Injection valve ' + n, dy('DITL-LS212|o|' + (11 + i)), { w: 148 }),
@@ -370319,13 +370486,24 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           M('silo', 'Sand system', 'Sand silo', [V('Level', 'LT-SD1800', '%', 1)], {
             id: 'sd',
             h: 110,
-            level: ['LT-SD1800', 0, 100]
+            level: ['LT-SD1800', 0, 100],
+            mon: [
+              D('Injection system selector', 'SIL-SD1300', dl('771', 'i|4'), 'REMOTE', 'LOCAL'),
+              cmd('Injection system running lamp', 'SOR-SD1300B', '771', 16),
+              D('Level switch high', 'LSH-SD1800', dl('774', 'i|2'), 'HIGH', 'NORMAL'),
+              D('Level switch low', 'LSL-SD1800', dl('774', 'i|3'), 'LOW', 'NORMAL'),
+              cmd('Vent filter purge start', 'SOR-SD1300A', '774', 24),
+              sv('Fluidizing valve 1', 'SV-PA1806A', '773', 1),
+              sv('Fluidizing valve 2', 'SV-PA1806B', '773', 3),
+              sv('Bypass air valve', 'SV-PA1805A', '772', 8),
+              sv('Density stabilizer valve', 'SV-PA1805B', '772', 11)
+            ]
           }),
           SX,
           210,
           { id: 'sd', sc: 2, lab: 'r' }
         ),
-        at(E('fan', 'Vent fan', 'F-1301', [], { on: SD_FAN }), SX - 150, 110, {
+        at(E('fan', 'Vent fan', 'F-1301', [], { on: SD_FAN, mon: fan('M1301', 'BA03', 5, 'BA03', 10, 'BA03', 4, cmd('Start command', 'MOR-M1301', '774', 21)) }), SX - 150, 110, {
           id: 'sdf',
           sc: 0.8,
           lab: 'l',
@@ -370348,9 +370526,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           id: 'sv4',
           lab: 'b'
         }),
-        at(B('Sand valve A, rear side', dy('DITL-776|o|10'), { w: 190 }), 1215, 420, { id: 'sda' }),
-        at(B('Sand valve B, rear side', dy('DITL-776|o|12'), { w: 190 }), 1215, 460, { id: 'sdb' }),
-        at(B('Bypass air valve', dy('DITL-776|o|11'), { w: 190 }), 1215, 500, { id: 'sdy' }),
+        at(B('Sand valve A, rear side', dy('DITL-776|o|10'), { w: 180 }), 1186, 420, { id: 'sda' }),
+        at(B('Sand valve B, rear side', dy('DITL-776|o|12'), { w: 180 }), 1186, 460, { id: 'sdb' }),
+        at(B('Bypass air valve, SV-PA1807', dy('DITL-776|o|11'), { w: 180 }), 1186, 500, { id: 'sdy' }),
         at(L('coal', 'Coal feeders', { back: true }), 880, 60, { id: 'col' })
       ],
       pipes: [
@@ -370442,7 +370620,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         },
         { x: 481, y: 604, s: 'LIMESTONE INJECTION · A to F', cls: 'hx-zone' },
         { x: 1121, y: 624, s: 'LIMESTONE · REAR SIDE', cls: 'hx-zone' },
-        { x: 1120, y: 392, s: 'SAND · REAR SIDE', cls: 'hx-zone' },
+        { x: 1098, y: 392, s: 'SAND · REAR SIDE', cls: 'hx-zone' },
         { x: 1121, y: 740, s: 'Bed temperature', key: 'TT-FG1090', unit: '°C', dp: 0 },
         { x: 1121, y: 756, s: 'Bed pressure drop', key: 'DPT-FG1081', unit: 'mmH₂O', dp: 0 }
       ]
@@ -370467,10 +370645,13 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    The precipitator has no signal in the app (no snapshot; it runs from its own panel, PR-OPE-5002 1.1): it is drawn with its
    field faceplate (machine "ESP" of page 14), without field voltages and currents. The fly ash silo T-1251 has no signal.
    Drawn simpler: the five fields of the precipitator are one casing with three hoppers; the ash transmitters under the
-   hoppers, the buffer T-1091 and the ash transmitter S-1090 of the recycle line, the cooler inlet valves XV-BH1060A ~ D
-   (no signal) are not drawn. */
+   hoppers and the cooler inlet valves XV-BH1060A ~ D (no signal) are not drawn. The buffer tank T-1091 and the ash transmitter
+   S-1090 of the recycle line have their own page (Bottom ash recycle).
+   beta.556 (EIMI): the conveyors, the screens, the two-way separator and the bag filter fan have their START / STOP (DITL-BA61),
+   their permissives (the AND gate of the ON COMMAND, DITL-BA63 / BA66 ~ BA69) and their monitor rows (DITL-BA59, BA60). The fly
+   ash panel gives XA-FH1701 ~ XA-FH1704 to the DCS (I/O list): no drawing of the app reads them, they show -----. */
 (function () {
-  const { V, E, M, C, L, page } = HX;
+  const { V, D, E, M, C, L, page } = HX;
   const B = HX.B;
   const MM = 'mmH₂O';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
@@ -370499,6 +370680,33 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     SCRB = run('ba-scrb', 'DITL-BA59|i|12'),
     BFAN = run('ba-fan', 'DITL-BA59|i|13');
 
+  for (const id of ['BCH', 'BEL', 'BSC', 'BVS', 'BFF', 'BTW', 'BRS']) HX.mach('MK14', id);
+  const dl = (s, k) => 'dl:DITL-' + s + '|' + k;
+  const trip = (tag, k) => D('Motor trip', tag, k, 'TRIP', 'NORMAL'),
+    rem = (tag, k) => D('Selector', tag, k, 'REMOTE', 'LOCAL'),
+    est = (tag, k) => D('Local emergency stop', tag, k, 'NORMAL', 'PRESSED'),
+    spd = (tag, k) => D('Speed switch', tag, k, 'TURNING', 'STOPPED');
+  /* the rows of the AND gate in front of each ON COMMAND: 1 = made */
+  const pm = (label, key) => V(label, key, '', 0);
+  const P0 = [pm('Conveyors starting precondition', dl('BA62', 'o|9')), pm('No conveyors emergency stop', dl('BA62', 'o|2|neg'))];
+  /* one ON COMMAND starts both screens (DITL-BA63) */
+  const SCP = P0.concat([pm('Selector remote', dl('BA59', 'o|4')), pm('No power fault', dl('BA63', 'o|13|neg'))]),
+    SCM = [
+      D('Screen A motor trip', 'MIT-S-1092-A', dl('BA59', 'i|17'), 'TRIP', 'NORMAL'),
+      D('Screen B motor trip', 'MIT-S-1092-B', dl('BA59', 'i|19'), 'TRIP', 'NORMAL'),
+      D('Screen A selector', 'MIL-S-1092-A', dl('BA59', 'i|3'), 'REMOTE', 'LOCAL'),
+      D('Screen B selector', 'MIL-S-1092-B', dl('BA59', 'i|5'), 'REMOTE', 'LOCAL'),
+      D('Screen A running', 'MIR-S-1092-A', dl('BA59', 'i|10')),
+      D('Screen B running', 'MIR-S-1092-B', dl('BA59', 'i|12')),
+      D('Screen A on command', 'MOR-S-1092-A', dl('BA71', 'o|0'), 'ON', 'OFF'),
+      D('Screen B on command', 'MOR-S-1092-B', dl('BA71', 'o|1'), 'ON', 'OFF')
+    ];
+  /* DITL-BA66: (two-way open and a screen running) or (two-way closed and the ash silo not high) */
+  HX.CALC.baScrewPath = v => {
+    const a = [v(dl('BA60', 'o|6')), v(dl('BA59', 'o|11')), v(dl('BA60', 'o|7')), v(dl('BA60', 'o|18'))];
+    return a.includes(null) ? null : Math.max(Math.min(a[0], a[1]), Math.min(a[2], 1 - a[3]));
+  };
+
   page({
     id: 'ash',
     group: 'Boiler',
@@ -370515,7 +370723,21 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(E('esp', '', '', [], { on: 'm:ESP' }), EX, EY, { id: 'esp', under: true, sc: ES }),
         at(M('cubicle', 'ESP', 'Precipitator panel', []), 150, 320, { id: 'espp', lab: 'r' }),
         at(L('furnace-gas', 'To the induced draft fan'), 930, EY, { id: 'gout' }),
-        at(E('silo', 'Fly ash silo', 'T-1251', [], { id: 'fa', h: 100 }), 1160, 250, { id: 'fa', sc: 1.7, lab: 'r' }),
+        at(
+          E('silo', 'Fly ash silo', 'T-1251', [], {
+            id: 'fa',
+            h: 100,
+            mon: [
+              D('Fly ash system common alarm', 'XA-FH1701', '', 'ALARM', 'NORMAL'),
+              D('Fly ash panel controller fault', 'XA-FH1702', '', 'FAULT', 'NORMAL'),
+              D('Fly ash panel communication fault', 'XA-FH1703', '', 'FAULT', 'NORMAL'),
+              D('Fly ash panel no power', 'XA-FH1704', '', 'NO POWER', 'NORMAL')
+            ]
+          }),
+          1160,
+          250,
+          { id: 'fa', sc: 1.7, lab: 'r' }
+        ),
 
         /* ---- furnace differential pressure and screw speed ---- */
         at(
@@ -370564,43 +370786,150 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ),
 
         /* ---- chain conveyor, bucket elevator, screw conveyor, screens, silo ---- */
-        at(E('conveyor', 'Chain conveyor', 'L-1090', [], { w: 620, on: CHAIN }), 540, KY, {
-          id: 'kc',
-          sc: 1.4,
-          lab: 'b'
-        }),
-        at(E('elevator', 'Bucket elevator', 'L-1091', [], { h: 250, on: ELEV, wrap: 10 }), LX, 650, {
-          id: 'el',
-          sc: 1.4,
-          lab: 'l'
-        }),
-        at(E('screw', 'Screw conveyor', 'L-1092', [], { w: 130, on: SCREW }), 1260, TOPY, {
-          id: 'sc',
-          sc: 1.3,
-          lab: 't'
-        }),
-        at(E('screen', 'Vibrating screen A', 'S-1092A', [], { on: SCRA, wrap: 18 }), 1290, 640, {
+        at(
+          M('conveyor', 'CHAIN CONVEYOR', 'Chain conveyor', [], {
+            w: 620,
+            tag: 'L-1090',
+            perm: P0.concat([
+              pm('Selector remote', dl('BA59', 'o|0')),
+              pm('Bucket elevator running', dl('BA59', 'o|8')),
+              pm('No power fault', dl('BA68', 'o|10|neg')),
+              pm('Not blocked', dl('BA68', 'o|12|neg')),
+              pm('No speed fault', dl('BA68', 'o|14|neg'))
+            ]),
+            mon: [
+              spd('SS-BH1750', dl('BA60', 'i|0')),
+              D('Block switch', 'ZS-BH1750', dl('BA60', 'i|1'), 'BLOCKED', 'NORMAL'),
+              trip('MIT-L-1090', dl('BA59', 'i|14')),
+              rem('MIL-L-1090', dl('BA59', 'i|0')),
+              est('ES-L-1090', dl('BA59', 'i|21')),
+              D('On command', 'MOR-L-1090', dl('BA71', 'o|9'), 'ON', 'OFF')
+            ]
+          }),
+          540,
+          KY,
+          { id: 'kc', sc: 1.4, lab: 'b' }
+        ),
+        at(
+          M('elevator', 'BUCKET ELEVATOR', 'Bucket elevator', [], {
+            h: 250,
+            tag: 'L-1091',
+            wrap: 10,
+            perm: P0.concat([
+              pm('Selector remote', dl('BA59', 'o|1')),
+              pm('Screw conveyor running', dl('BA59', 'o|9')),
+              pm('No power fault', dl('BA67', 'o|10|neg')),
+              pm('Not blocked', dl('BA67', 'o|12|neg')),
+              pm('No speed fault', dl('BA67', 'o|14|neg')),
+              pm('Chain not slack', dl('BA67', 'o|16|neg'))
+            ]),
+            mon: [
+              spd('SS-BH1751', dl('BA60', 'i|2')),
+              D('Chain slack switch', 'ZS-BH1751', dl('BA60', 'i|3'), 'SLACK', 'NORMAL'),
+              D('Block switch', 'ZS-BH1752', dl('BA60', 'i|4'), 'BLOCKED', 'NORMAL'),
+              trip('MIT-L-1091', dl('BA59', 'i|15')),
+              rem('MIL-L-1091', dl('BA59', 'i|1')),
+              est('ES-L-1091', dl('BA59', 'i|22')),
+              D('On command', 'MOR-L-1091', dl('BA71', 'o|8'), 'ON', 'OFF')
+            ]
+          }),
+          LX,
+          650,
+          { id: 'el', sc: 1.4, lab: 'l' }
+        ),
+        at(
+          M('screw', 'SCREW CONVEYOR', 'Screw conveyor', [], {
+            w: 130,
+            tag: 'L-1092',
+            perm: P0.concat([
+              pm('Selector remote', dl('BA59', 'o|2')),
+              pm('Way open: to a running screen, or to the silo below its high level', 'cal:baScrewPath'),
+              pm('No power fault', dl('BA66', 'o|13|neg')),
+              pm('No speed fault', dl('BA66', 'o|16|neg'))
+            ]),
+            mon: [
+              spd('SS-BH1752', dl('BA60', 'i|5')),
+              trip('MIT-L-1092', dl('BA59', 'i|16')),
+              rem('MIL-L-1092', dl('BA59', 'i|2')),
+              est('ES-L-1092', dl('BA59', 'i|23')),
+              D('On command', 'MOR-L-1092', dl('BA71', 'o|7'), 'ON', 'OFF')
+            ]
+          }),
+          1260,
+          TOPY,
+          { id: 'sc', sc: 1.3, lab: 't' }
+        ),
+        at(
+          M('valve', 'L-1094 TWO-WAY SEPARATOR', 'Two-way separator', [], {
+            kind: 'motor',
+            tag: 'L-1094',
+            wrap: 20,
+            perm: [pm('No close command', dl('BA65', 'i|6|neg'))],
+            mon: [
+              D('Open limit', 'ZSO-BH1754', dl('BA60', 'i|6'), 'OPEN', 'NOT OPEN'),
+              D('Closed limit', 'ZSC-BH1754', dl('BA60', 'i|7'), 'CLOSED', 'NOT CLOSED'),
+              D('Open command', 'SVO-BH1754', dl('BA71', 'o|5'), 'ON', 'OFF'),
+              D('Close command', 'SVC-BH1754', dl('BA71', 'o|6'), 'ON', 'OFF'),
+              D('Abnormal', 'XV-BH1754', dl('BA65', 'o|16'), 'FAULT', 'NORMAL')
+            ]
+          }),
+          1329,
+          552,
+          { id: 'tws', sc: 0.8, rot: 90, lab: 'r' }
+        ),
+        at(
+          B('Conveyors: reset, emergency stop', 'data-dy="DITL-BA62|o|2" data-on="EMERGENCY STOP" data-off="NORMAL"', {
+            mach: 'BOTTOM ASH CONVEYORS',
+            w: 260
+          }),
+          1590,
+          440,
+          { id: 'brs' }
+        ),
+        at(M('screen', 'VIBRATING SCREEN', 'Vibrating screen A', [], { on: SCRA, tag: 'S-1092A', wrap: 18, perm: SCP, mon: SCM }), 1290, 640, {
           id: 'vsa',
           sc: 1.4,
           lab: 'b' /* UI check 2026-11-24 C1: under the screen; at its left the feed line to screen B goes down */
         }),
-        at(E('screen', 'Vibrating screen B', 'S-1092B', [], { on: SCRB, wrap: 18 }), 1290, 760, {
+        at(M('screen', 'VIBRATING SCREEN', 'Vibrating screen B', [], { on: SCRB, tag: 'S-1092B', wrap: 18 }), 1290, 760, {
           id: 'vsb',
           sc: 1.4,
           lab: 'b'
         }),
-        at(L('limestone-sand', 'Coarse ash to the sand silo'), 1300, 880, { id: 'rcl' }),
+        at(L('ash-recycle', 'Coarse ash to the recycle buffer tank'), 1270, 890, { id: 'rcl' }),
         at(
-          E('silo', 'Bottom ash silo', 'T-1090', [V('Level', 'LT-BH1750', 'm', 1)], {
+          E('silo', 'Bottom ash silo', 'T-1090', [V('Level', 'LT-BH1750', '%', 1)], {
             id: 'ba',
             h: 110,
-            level: ['LT-BH1750', 0, 12]
+            level: ['LT-BH1750', 0, 100] /* beta.556: in % (alarm list HIGH 90, LOW 40; 16.PNG 15.8 %), was drawn as m of 12 */,
+            mon: [
+              V('Level', 'LT-BH1750', '%', 1),
+              D('Level high', 'LS-BH1754', dl('BA60', 'i|18'), 'HIGH', 'NORMAL'),
+              D('Level low', 'LS-BH1753', dl('BA60', 'i|19'), 'LOW', 'NORMAL'),
+              D('Discharging to the truck', 'LI1-L-1093', dl('BA60', 'i|14')),
+              D('Bag filter differential pressure high', 'PDS_H-BH1750', dl('BA60', 'i|16'), 'HIGH', 'NORMAL'),
+              D('Bag filter differential pressure low', 'PDS_L-BH1750', dl('BA60', 'i|17'), 'LOW', 'NORMAL')
+            ]
           }),
           SLX,
           SLY,
           { id: 'ba', sc: 1.9, lab: 'r' }
         ),
-        at(E('fan', 'Bag filter fan', 'F-1091', [], { on: BFAN }), 1680, 560, { id: 'bf', sc: 0.8, lab: 't' })
+        at(
+          M('fan', 'BAG FILTER FAN', 'Bag filter fan', [], {
+            tag: 'F-1091',
+            perm: P0.concat([pm('Selector remote', dl('BA59', 'o|6')), pm('No power fault', dl('BA69', 'o|9|neg'))]),
+            mon: [
+              trip('MIT-F-1091', dl('BA59', 'i|20')),
+              rem('MIL-F-1091', dl('BA59', 'i|6')),
+              D('On command', 'MOR-F-1091', dl('BA71', 'o|10'), 'ON', 'OFF'),
+              D('Filter cleaning solenoid', 'SV-BH1758', dl('BA71', 'o|11'), 'ON', 'OFF')
+            ]
+          }),
+          1680,
+          560,
+          { id: 'bf', sc: 0.8, lab: 't' }
+        )
       ],
       pipes: [
         /* flue gas through the precipitator */
@@ -370632,17 +370961,17 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           flow: ELEV,
           arrow: false
         },
-        { med: 'solid', w: W_S, pts: ['sc.out', [1329, 540]], flow: SCREW, arrow: false },
-        { med: 'solid', w: W_S, pts: [[1329, 540], [SLX, 540], 'ba.t'], flow: SCREW },
-        { med: 'solid', w: W_S, pts: [[1329, 540], [1259, 540], 'vsa.in'], flow: SCRA },
+        { med: 'solid', w: W_S, pts: ['sc.out', 'tws.l'], flow: SCREW, arrow: false },
+        { med: 'solid', w: W_S, pts: ['tws.r', [1329, 590], [SLX, 590], 'ba.t'], flow: SCREW },
+        { med: 'solid', w: W_S, pts: [[1329, 590], [1259, 590], 'vsa.in'], flow: SCRA },
         {
           med: 'solid',
           w: W_S,
-          pts: [[1259, 540], [1200, 540], [1200, 720], [1259, 720], 'vsb.in'],
+          pts: [[1259, 590], [1200, 590], [1200, 720], [1259, 720], 'vsb.in'],
           flow: SCRB,
           arrow: false
         },
-        { med: 'solid', w: 4, pts: ['vsa.over', [1400, 651], [1400, 880], 'rcl.r'], flow: SCRA + '|' + SCRB },
+        { med: 'solid', w: 4, pts: ['vsa.over', [1400, 651], [1400, 890], 'rcl.r'], flow: SCRA + '|' + SCRB },
         { med: 'solid', w: 4, pts: ['vsb.over', [1400, 771]], flow: SCRB, arrow: false },
         { med: 'air', w: 4, pts: [[SLX + 30, 630], [1643, 630], [1643, 560], 'bf.in'], flow: BFAN, arrow: false },
         { med: 'solid', w: W_S, pts: ['ba.b', [SLX, 880]], to: 'to truck' }
@@ -372913,10 +373242,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    Drawn simpler than the sheets, on purpose (this page is about the purge, the full trains are on their own pages): one
    coal bunker and feeder stand for A / B / C, one burner for A / B / C / D, one blower for A / B, one cyclone for A / B; the
    air heater, the precipitator and the limestone feed are not drawn.
+   beta.556 (HMI gap list 2026-11-25): the interlock relay panel with its signals from and to the DCS, read from DITL-03A ~ 03H, 02, 40, 42.
    NO-SOURCE in the app (as on page 10): the purge time (the 300 s on-delay of DITL-02 has no readout).
    The furnace purge start push button is pressed on its drawing (DITL-02, M.0500), as on page 10. */
 (function () {
-  const { V, E, M, C, L, page } = HX;
+  const { V, D, E, M, C, L, page } = HX;
   const B = HX.B;
   const MM = 'mmH₂O';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
@@ -372983,6 +373313,40 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     'Reheater outlet header temperature high-high',
     'Turbine trip'
   ];
+  /* the signals between the interlock relay panel and the DCS (I/O list, stations 1 ~ 4) */
+  const tr = (label, tag, key) => D(label, tag, key && 'dl:DITL-' + key, 'TRIP', 'NORMAL');
+  const IRP = [
+    tr('Master fuel trip 1', 'MFT-IRP', '03A|o|12'),
+    tr('Master fuel trip 2', 'MFTT-IRP', '03A|o|12'),
+    tr('Master fuel trip 3', 'MFTTT-IRP', '03A|o|12'),
+    tr('Master fuel trip 4', 'MFTS-IRP', '03A|o|12'),
+    D('No boiler trip command', 'NOT-MFTCP', 'dl:DITL-03A|o|8'),
+    D('All fluidizing air blowers stopped', 'ALL-FAB-STOP', 'dl:DITL-03B|o|13'),
+    tr('Emergency trip button, desk', 'BOILER-TRIP-OPC', '03F|o|23'),
+    tr('Emergency trip button, screen', 'MFT-PB', '03F|o|18'),
+    tr('Turbine emergency trip button', 'TBN-TRIP-OPC', ''),
+    tr('Total air flow below 25 %', 'TAF-LOW', '03C|o|1'),
+    tr('Primary air flow low low', 'PAF-LL', '03F|o|7'),
+    tr('Furnace pressure high high', 'FURNACE-HH', '03C|o|22'),
+    tr('Furnace pressure high high high', 'FURNACE-HHH', '03C|o|11'),
+    tr('Furnace pressure low low', 'FURNACE-LL', '03D|o|7'),
+    tr('Drum level high high', 'DRUM-LVL-HH', '03E|o|6'),
+    tr('Drum level low low', 'DRUM-LVL-LL', '03E|o|17'),
+    tr('Drum level low low to primary air fan', 'DR-LVL-LL', '03E|o|22'),
+    tr('Loss of all fuel', 'XA-AFL', '03F|o|2'),
+    tr('Furnace temperature inadequate', 'TEMP-INDQUATE', '03F|o|13'),
+    tr('Instrument air pressure low low', 'INS-PRESS-LL', '03G|o|7'),
+    tr('Cyclone outlet temperature high high', 'CYCLONE-HH', '03H|o|16'),
+    tr('Furnace bed temperature high high', 'S-FBTHH', '40|o|0'),
+    tr('Main steam pressure high high', 'S-MSPHH', '40|o|4'),
+    D('Induced draft fan stop command', 'IDF-STOP-CMD', 'dl:DITL-03D|o|13'),
+    D('Secondary air fan stop command', 'SAF-STOP-CMD', 'dl:DITL-03D|o|20'),
+    D('Primary air fan stop command', 'PAF-STOP-CMD', 'dl:DITL-03D|o|23'),
+    D('Fluidizing air blower stop command', 'FAB-STOP-CMD', 'dl:DITL-03D|o|16'),
+    D('Furnace purge completed', 'FP-CPL', 'dl:DITL-02|o|14'),
+    D('Panel power fault', 'IRP1-POWALM', 'dl:DITL-42|i|7', 'FAULT', 'NORMAL'),
+    D('Dosing system main power', 'SIA-CDS01', '', 'NORMAL', 'FAULT')
+  ];
   /* a permissive of DITL-01 beside the piece of plant it asks about */
   const pp = (id, text, k, x, y, w) => at(B(text, dy(k, 'PP'), { w: w || CW }), x, y, { id });
 
@@ -373028,7 +373392,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         }),
         at(E('stack', '', '', [], { flow: IDF }), SX, SY, { id: 'st', under: true, sc: SS }),
         at(M('fan', 'SAF', 'Secondary air fan', []), 150, 130, { id: 'saf', sc: 1.3, lab: 'b' }),
-        at(M('fan', 'PAF', 'Primary air fan', []), 540, 705, { id: 'paf', sc: 1.3, lab: 'r' }),
+        at(M('fan', 'PAF', 'Primary air fan', []), 540, 705, { id: 'paf', sc: 1.3, lab: 'r', yn: [45, -48] }),
+        at(E('cubicle', 'Interlock relay panel', 'IRP', [], { mon: IRP }), 1490, 636, { id: 'irp', lab: 'b' }),
         at(E('fan', 'Fluidizing air blowers', 'F-1055A / B', [], { on: FAB }), 977, 585, {
           id: 'fab',
           sc: 1.1,
@@ -373046,20 +373411,20 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
 
         /* ---- the 15 permissives of DITL-01, each at its equipment ---- */
         pp('pp1', 'Secondary air fan running', 'DITL-01|i|1', 150, 232),
-        pp('pp3', 'Primary air fan running', 'DITL-01|i|3', 300, 690),
-        pp('pp4', 'Total air flow above 25 % of full load', 'DITL-01|i|12|neg', 300, 730),
+        pp('pp3', 'Primary air fan running', 'DITL-01|i|3', 356, 690, 230),
+        pp('pp4', 'Total air flow above 25 % of full load', 'DITL-01|i|12|neg', 356, 730, 230),
         pp('pp2', 'Any fluidizing air blower running', 'DITL-01|i|2', 990, 676),
-        pp('pp0', 'Induced draft fan running', 'DITL-01|i|0', IX, 734),
+        pp('pp0', 'Induced draft fan running', 'DITL-01|i|0', IX, 762),
         pp('pp7', 'All coal feeders stopped (A, B, C)', 'DITL-01|o|21', 440, 388),
         pp('pp8', 'All coal feeder outlet valves closed', 'DITL-01|i|16+17+18', 440, 428),
         pp('pp5', 'All burners no flame (A to D)', 'DITL-01|o|4', 440, 490),
         pp('pp6', 'All burner oil valves closed (A to D)', 'DITL-01|i|8+9+10+11', 440, 530),
         pp('pp9', 'Limestone rotary valve stopped', 'DITL-01|i|13|neg', 440, 592),
-        pp('pp10', 'Reheater gas damper at least 30 %', 'DITL-01|i|15', 1475, 400, 290),
-        pp('pp11', 'Superheater gas damper at least 60 %', 'DITL-01|i|19', 1475, 440, 290),
+        pp('pp10', 'Reheater gas damper at least 30 %', 'DITL-01|i|15', 1475, 460, 290),
+        pp('pp11', 'Superheater gas damper at least 60 %', 'DITL-01|i|19', 1475, 498, 290),
         pp('pp13', 'Cyclone outlet gas temperature not high-high', 'DITL-03A|i|23|neg', 1490, 130, 320),
         pp('pp14', 'Reheater outlet header temperature not high-high', 'DITL-03A|i|24|neg', 1490, 170, 320),
-        pp('pp12', 'No boiler trip command', 'DITL-01|i|14', 1475, 500, 290),
+        pp('pp12', 'No boiler trip command', 'DITL-01|i|14', 1475, 536, 290),
 
         /* ---- purge sequence (DITL-02) ---- */
         at(B('Purge permissive', 'data-dys="PP|DITL-01|9|"', { w: CW, show: true }), QX, QY, { id: 'pps' }),
@@ -373125,9 +373490,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1330, y: 330, s: 'Cyclone outlet A', key: 'TT-FG1095-A', unit: '°C', dp: 0 },
         { x: 1330, y: 346, s: 'Cyclone outlet B', key: 'TT-FG1095-B', unit: '°C', dp: 0 },
         { x: 20, y: TY - 34, s: 'MASTER FUEL TRIP · any one trips', cls: 'hx-zone' },
-        { x: 292, y: 596, s: 'Hot restart: bed above 700 °C counts', cls: 'hx-note' },
-        { x: 292, y: 613, s: 'the purge complete 7 s after the trip.', cls: 'hx-note' },
-        { x: 292, y: 630, s: 'Reset: purge completed, no trip input left.', cls: 'hx-note' }
+        { x: 306, y: 622, s: 'Hot restart: bed above 700 °C counts', cls: 'hx-note' },
+        { x: 306, y: 638, s: 'the purge complete 7 s after the trip.', cls: 'hx-note' },
+        { x: 306, y: 654, s: 'Reset: purge completed, no trip input left.', cls: 'hx-note' }
       ]
     }
   });
@@ -373455,6 +373820,23 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           880,
           { id: 'ah', sc: 1.2, lab: 'b' }
         ),
+        /* beta.556: the panel of the air heater sootblower (I/O list station 2; DITL-80M, 80K) */
+        at(
+          E('cubicle', 'Sootblower panel', '', [], {
+            id: 'sbp',
+            mon: [
+              HX.D('Sootblowers selector', 'MIL-SB01', 'dl:DITL-80M|i|0', 'REMOTE', 'LOCAL'),
+              HX.D('Air heater sootblower selector', 'MIL-SB-APH01', 'dl:DITL-80M|i|1', 'LOCAL', 'REMOTE'),
+              HX.D('Air heater sootblower trip', 'MIT-SB-APH01', 'dl:DITL-80K|i|9', 'TRIP', 'NORMAL'),
+              HX.D('Air heater start command', 'MOR-SB-APH01', 'dl:DITL-80K|p|O.077C', 'ON', 'OFF'),
+              HX.D('Air heater stop command', 'MOS-SB-APH01', 'dl:DITL-80K|p|O.077D', 'ON', 'OFF'),
+              HX.D('Air heater cleaning device enable', 'MOP-SB-APH01', 'dl:DITL-80K|p|O.077E', 'ON', 'OFF')
+            ]
+          }),
+          1500,
+          900,
+          { id: 'sbp', lab: 'r' }
+        ),
         at(B('N-1040', op('DITL-80F', 25, 'N-1040') + ' data-n="40"', { plain: true, w: CW2, mach: 'N-1040' }), 300, 858, {
           id: 'a40'
         }),
@@ -373759,6 +374141,290 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           s: 'Compressors are started at their local panel. A standby compressor starts by itself when two of tank A, tank B and Unit 1 pressure are below 5 kg/cm² for 3 s.',
           cls: 'hx-note'
         }
+      ]
+    }
+  });
+})();
+
+/* HX page in the REALISTIC look: the bottom ash recycle (beta.556, HMI gap list 2026-11-25: the buffer tank, the ash transmitter
+   and their valves were on no page; their logic DITL-BA01 ~ BA54 had no picture and no push button).
+   THE PICTURE: the coarse ash of the vibrating screens falls into the buffer tank, through the hand valve and the inlet gate
+   valve into the ash transmitter under it. Plant air from the air tank on the left presses the transmitter and blows the ash
+   through the outlet valve to the sand silo; the vent line empties the transmitter into the same line.
+   THE CONNECTIONS: K1AU3-PD-071 Rev A sheet 2, bottom ash transfer and recycle system (Formosa Heavy Industries):
+     from the vibrating screen; recycle buffer tank T-1091 (LS-BH1751 high, LS-BH1752 low); hand valve V-BH1768; inlet gate
+     valve XV-BH1751; ash transmitter S-1090 (LS-BH1750 high, safety valve ZV-BH1750); outlet valve XV-BH1752; line BH-1-750
+     to the sand silo; vent line with V-BH1761 and the vent valve XV-BH1753 into that line
+     plant air, V-BH1758, air tank T-1092 (PS-BH1750, safety valve ZV-BH1750); V-BH1753 to the bottom ash silo; V-BH1757,
+     filter, pressing valve XV-BH1750, 3-way valve SV-BH1751; one way up with V-BH1759 to the top and V-BH1758 to the cone of
+     the transmitter, the other way down with V-BH1760 into the line to the sand silo
+   THE SIGNALS: the I/O list calls the inlet gate valve SV / ZSO / ZSC-BH1759 (the P&ID XV-BH1751); V-BH1758 and ZV-BH1750 stand
+   twice on the P&ID. Limits and valve commands DITL-BA38 / BA39 / BA53, step sequence DITL-BA04 ~ BA18, charging precondition
+   DITL-BA03, automatic start DITL-BA19, alarms DITL-BA24 ~ BA28 / BA48, local panel DITL-BA04 / BA05 / BA11 / BA21 / BA22 (its
+   push buttons) and BA54 (its lamps). The CRT push buttons START / STOP / RESET / EMERGENCY STOP are DITL-BA02 rows 8 ~ 11.
+   Drawn simpler than the sheet: the pressure regulator, the gauges and the drain of the air tank are not drawn. */
+(function () {
+  const { V, D, E, M, L, HV, page } = HX;
+  const B = HX.B;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  const dl = (s, k) => 'dl:DITL-' + s + '|' + k;
+  const pm = (label, key) => V(label, key, '', 0);
+  const dy = (k, on, off) => 'data-dy="DITL-' + k + '" data-on="' + (on || 'OPEN') + '" data-off="' + (off || 'CLOSED') + '"';
+  HX.mach('MK14', 'BAT');
+  /* places (the drawing is 1760 x 1000) */
+  const TX = 1080 /* buffer tank and transmitter */,
+    LY = 740 /* the line */,
+    RX = 840 /* air riser */,
+    BX = 1310 /* bypass joins */,
+    VX = 1430 /* vent joins */;
+  const W = 6,
+    WA = 4;
+  const GATE = HX.hk('bar-gate', dy('BA38|i|1')),
+    PRESS = HX.hk('bar-press', dy('BA38|i|5')),
+    OUT = HX.hk('bar-out', dy('BA39|i|1')),
+    VENT = HX.hk('bar-vent', dy('BA39|i|5')),
+    WAY3 = HX.hk('bar-3way', dy('BA53|o|10', 'ENERGIZED', 'NOT ENERGIZED'));
+  const lim = (tag, so, ro, sc, rc) => [D('Open limit', 'ZSO-' + tag, dl(so, 'i|' + ro), 'OPEN', 'NOT OPEN'), D('Closed limit', 'ZSC-' + tag, dl(sc, 'i|' + rc), 'CLOSED', 'NOT CLOSED')];
+  const abn = (s, r) => D('Valve abnormal', '', dl(s, 'o|' + r), 'FAULT', 'NORMAL');
+  /* DITL-BA03: the sand vent fan running OR its selector remote */
+  HX.CALC.baSandFan = v => {
+    const a = [v(dl('BA03', 'i|4')), v(dl('BA03', 'i|5'))];
+    return a.includes(null) ? null : Math.max(a[0], a[1]);
+  };
+  const PERM = [
+    pm('Inlet gate valve closed', dl('BA03', 'i|0')),
+    pm('Pressing valve closed', dl('BA03', 'i|1')),
+    pm('Outlet valve closed', dl('BA03', 'i|2')),
+    pm('Vent valve closed', dl('BA03', 'i|3')),
+    pm('Sand silo vent fan running or remote', 'cal:baSandFan'),
+    pm('Sand silo vent fan not tripped', dl('BA03', 'i|10|neg')),
+    pm('Air tank pressure not low', dl('BA03', 'i|6|neg')),
+    pm('No charging emergency stop', dl('BA03', 'i|7|neg')),
+    pm('No conveying emergency stop', dl('BA03', 'i|8|neg')),
+    pm('Not in step 2', dl('BA03', 'i|9|neg')),
+    pm('Automatic mode (local panel)', dl('BA19', 'i|3'))
+  ];
+  const al = (label, s, r) => D(label, '', dl(s, 'o|' + r), 'ALARM', 'NORMAL');
+  const STEPS = [
+    ['0  Waiting', 'BA04', 8],
+    ['2  Charge beginning', 'BA05', 14],
+    ['3  Material begins to enter', 'BA06', 7],
+    ['4  Inlet gate valve opening', 'BA07', 7],
+    ['5  Charging', 'BA08', 6],
+    ['6  Charging end', 'BA09', 13],
+    ['7  Charging finished', 'BA10', 7],
+    ['8  Conveying beginning', 'BA11', 22],
+    ['9  Pressing beginning', 'BA12', 3],
+    ['10  Vessel pressure high', 'BA13', 4],
+    ['11  Outlet valve open', 'BA14', 5],
+    ['12  Conveying', 'BA15', 5],
+    ['13  Cleaning start', 'BA16', 5],
+    ['14  Cleaning end', 'BA17', 5],
+    ['15  Batch finished', 'BA18', 5]
+  ];
+  const NS = 8;
+
+  page({
+    id: 'ash-recycle',
+    group: 'Boiler',
+    title: 'Bottom ash recycle',
+    about:
+      'Coarse bottom ash from the vibrating screens through the buffer tank and the ash transmitter to the sand silo. Connections: flow diagram K1AU3-PD-071 Rev A sheet 2; the states are read from the logic drawings.',
+    plan: {
+      look: 'real',
+      w: 1760,
+      h: 1000,
+      items: [
+        /* ---- ash way ---- */
+        at(L('ash', 'From the vibrating screens', { back: true }), 860, 60, { id: 'scr' }),
+        at(
+          E('silo', 'Recycle buffer tank', 'T-1091', [], {
+            id: 'bt',
+            h: 100,
+            mon: [
+              D('Level high', 'LS-BH1751', dl('BA60', 'i|15'), 'HIGH', 'NORMAL'),
+              D('Level low', 'LS-BH1752', dl('BA19', 'i|0'), 'LOW', 'NORMAL')
+            ]
+          }),
+          TX,
+          190,
+          { id: 'bt', sc: 1.9, lab: 'r' }
+        ),
+        at(HV('V-BH1768'), TX, 325, { id: 'h68', rot: 90, lab: 'r' }),
+        at(
+          E('valve', 'Inlet gate valve', 'XV-BH1751', [], {
+            kind: 'shutoff',
+            on: GATE,
+            wrap: 14,
+            mon: [D('Solenoid', 'SV-BH1759', dl('BA38', 'i|0'), 'ON', 'OFF')].concat(lim('BH1759', 'BA38', 1, 'BA38', 3), [abn('BA38', 2)])
+          }),
+          TX,
+          410,
+          { id: 'gate', rot: 90, lab: 'r' }
+        ),
+        at(
+          M('silo', 'BOTTOM ASH TRANSMITTER', 'Ash transmitter', [], {
+            id: 'tr',
+            h: 84,
+            tag: 'S-1090',
+            on: HX.hk('bar-auto', dy('BA19|o|5', 'RUNNING', 'STOPPED')),
+            perm: PERM,
+            mon: [
+              D('Vessel level high', 'LS-BH1750', dl('BA09', 'i|3'), 'HIGH', 'NORMAL'),
+              D('Vessel pressure high', 'PSH-BH1750', dl('BA24', 'i|0'), 'HIGH', 'NORMAL'),
+              D('Vessel pressure low', 'PSL-BH1750', dl('BA25', 'i|0'), 'LOW', 'NORMAL'),
+              D('Charging precondition', '', dl('BA03', 'o|4'), 'OK', 'NOT OK'),
+              D('Conveying precondition', '', dl('BA11', 'o|6'), 'OK', 'NOT OK'),
+              D('Automatic start', '', dl('BA19', 'o|5'), 'ON', 'OFF'),
+              al('Vessel pressure high high', 'BA24', 1),
+              al('Conveying pressure high high', 'BA24', 3),
+              al('Air source pressure low', 'BA25', 2),
+              al('Pressing over time', 'BA26', 6),
+              al('Conveying over time', 'BA27', 2),
+              al('Vessel pressure high as conveying starts', 'BA28', 3),
+              al('System fault', 'BA48', 4)
+            ]
+          }),
+          TX,
+          560,
+          { id: 'tr', sc: 1.8, lab: 'r' }
+        ),
+        at(
+          E('valve', 'Outlet valve', 'XV-BH1752', [], {
+            kind: 'shutoff',
+            on: OUT,
+            wrap: 12,
+            mon: [D('Solenoid', 'SV-BH1752', dl('BA39', 'i|0'), 'ON', 'OFF')].concat(lim('BH1752', 'BA39', 1, 'BA39', 3), [abn('BA39', 2)])
+          }),
+          1205,
+          LY,
+          { id: 'out', lab: 'b' }
+        ),
+        at(L('limestone-sand', 'To the sand silo'), 1640, LY, { id: 'sil' }),
+        /* ---- vent line ---- */
+        at(HV('V-BH1761'), 1520, 470, { id: 'h61', lab: 'b' }),
+        at(
+          E('valve', 'Vent valve', 'XV-BH1753', [], {
+            kind: 'shutoff',
+            on: VENT,
+            wrap: 12,
+            mon: [D('Solenoid', 'SV-BH1753', dl('BA39', 'i|4'), 'ON', 'OFF')].concat(lim('BH1753', 'BA39', 5, 'BA39', 7), [abn('BA39', 6)])
+          }),
+          VX,
+          610,
+          { id: 'ven', rot: 90, lab: 'r' }
+        ),
+        /* ---- plant air ---- */
+        at(L('compressed-air', 'Plant air', { back: true }), 90, LY, { id: 'pa' }),
+        at(HV('V-BH1758'), 215, LY, { id: 'h58', lab: 't' }),
+        at(E('valve', '', '', [], { kind: 'check' }), 290, LY, { id: 'ck1' }),
+        at(
+          E('vvessel', 'Air tank', 'T-1092', [], { w: 80, h: 190, mon: [D('Air pressure low', 'PS-BH1750', dl('BA25', 'i|1'), 'LOW', 'NORMAL')] }),
+          400,
+          760,
+          { id: 'tk', lab: 't' }
+        ),
+        at(HV('V-BH1753'), 510, 830, { id: 'h53', lab: 'b' }),
+        at(L('ash', 'To the bottom ash silo'), 660, 830, { id: 'bas' }),
+        at(HV('V-BH1757'), 510, LY, { id: 'h57', lab: 't' }),
+        at(E('strainer', 'Filter', '', []), 580, LY, { id: 'fil', lab: 'b' }),
+        at(
+          E('valve', 'Pressing valve', 'XV-BH1750', [], {
+            kind: 'shutoff',
+            on: PRESS,
+            wrap: 12,
+            mon: [D('Open solenoid', 'SVO-BH1750', dl('BA38', 'i|4'), 'ON', 'OFF'), D('Close solenoid', 'SVC-BH1750', dl('BA38', 'i|7'), 'ON', 'OFF')].concat(
+              lim('BH1750', 'BA38', 5, 'BA38', 8),
+              [abn('BA38', 6)]
+            )
+          }),
+          660,
+          LY,
+          { id: 'prs', lab: 't' }
+        ),
+        at(
+          E('valve', '3-way valve', 'SV-BH1751', [], {
+            kind: 'shutoff',
+            on: WAY3,
+            wrap: 10,
+            mon: [D('Solenoid', 'SV-BH1751', dl('BA53', 'o|10'), 'ON', 'OFF')]
+          }),
+          760,
+          LY,
+          { id: 'w3', lab: 't' }
+        ),
+        at(HV('V-BH1759'), RX, 570, { id: 'h59', rot: 90, lab: 'l' }),
+        at(E('valve', '', '', [], { kind: 'check' }), 930, 505, { id: 'ck2' }),
+        at(HV('V-BH1758'), 905, 625, { id: 'h58b', lab: 'b' }),
+        at(E('valve', '', '', [], { kind: 'check' }), 975, 625, { id: 'ck3' }),
+        at(HV('V-BH1760'), 1000, 890, { id: 'h60', lab: 't' }),
+        at(E('valve', '', '', [], { kind: 'check' }), BX, 820, { id: 'ck4', rot: -90 }),
+        /* ---- step sequence ---- */
+        ...STEPS.map((s, i) =>
+          at(B(s[0], dy(s[1] + '|o|' + s[2], 'ACTIVE', 'OFF'), { w: 250 }), 160 + (i < NS ? 0 : 275), 120 + (i % NS) * 46, { id: 'st' + i })
+        ),
+        /* ---- local panel and push buttons ---- */
+        at(
+          E('cubicle', 'Local panel', 'S-1090', [], {
+            mon: [
+              D('Automatic selector', 'LI8-S-1090', dl('BA09', 'i|1'), 'AUTO', 'MANUAL'),
+              D('Charging push button', 'LI1-S-1090', dl('BA05', 'i|4'), 'PRESSED', '-'),
+              D('Conveying push button', 'LI2-S-1090', dl('BA11', 'i|13'), 'PRESSED', '-'),
+              D('Cleaning push button', 'LI3-S-1090', dl('BA21', 'i|5'), 'PRESSED', '-'),
+              D('Stop push button', 'LI4-S-1090', dl('BA04', 'i|2'), 'PRESSED', '-'),
+              D('Reset push button', 'LI5-S-1090', dl('BA24', 'i|2'), 'PRESSED', '-'),
+              D('Buzzer stop push button', 'LI6-S-1090', dl('BA04', 'i|4'), 'PRESSED', '-'),
+              D('Emergency stop', 'LI7-S-1090', dl('BA22', 'i|1'), 'PRESSED', '-'),
+              D('Charging lamp', 'LO1-S-1090', dl('BA54', 'o|0'), 'ON', 'OFF'),
+              D('Conveying lamp', 'LO2-S-1090', dl('BA54', 'o|1'), 'ON', 'OFF'),
+              D('Cleaning lamp', 'LO3-S-1090', dl('BA54', 'o|2'), 'ON', 'OFF'),
+              D('Buzzer', 'LO4-S-1090', dl('BA54', 'o|4'), 'ON', 'OFF'),
+              D('System fault lamp', 'LO5-S-1090', dl('BA54', 'o|3'), 'ON', 'OFF')
+            ]
+          }),
+          1560,
+          180,
+          { id: 'lop', lab: 'l' }
+        ),
+        at(B('Mode', dy('BA09|i|1', 'AUTOMATIC', 'MANUAL'), { w: 250 }), 1570, 290, { id: 'mode' }),
+        at(B('Transmitter push buttons', dy('BA48|o|4', 'FAULT', 'NORMAL'), { w: 250, mach: 'BOTTOM ASH TRANSMITTER' }), 1570, 340, { id: 'tpb' })
+      ],
+      pipes: [
+        { med: 'solid', w: W, pts: ['scr.r', [TX, 60], 'bt.t'], flow: 'h:ba-scra|h:ba-scrb' },
+        { med: 'solid', w: W, pts: ['bt.b', 'h68.l'], flow: GATE, arrow: false },
+        { med: 'solid', w: W, pts: ['h68.r', 'gate.l'], flow: GATE, arrow: false },
+        { med: 'solid', w: W, pts: ['gate.r', 'tr.t'], flow: GATE },
+        { med: 'solid', w: W, pts: ['tr.b', [TX, LY], 'out.l'], flow: OUT, arrow: false },
+        { med: 'solid', w: W, pts: ['out.r', [BX, LY], [VX, LY], 'sil.l'], flow: OUT },
+        /* vent */
+        { med: 'air', w: WA, pts: [[TX + 34, 505], [VX, 505], 'ven.l'], flow: VENT, arrow: false },
+        { med: 'air', w: WA, pts: [[VX, 505], [VX, 470], 'h61.l'], arrow: false },
+        { med: 'air', w: WA, pts: ['ven.r', [VX, LY]], flow: VENT },
+        /* air */
+        { med: 'air', w: WA, pts: ['pa.r', 'h58.l'], arrow: false },
+        { med: 'air', w: WA, pts: ['h58.r', 'ck1.l'], arrow: false },
+        { med: 'air', w: WA, pts: ['ck1.r', [360, LY]] },
+        { med: 'air', w: WA, pts: [[440, LY], 'h57.l'], flow: PRESS, arrow: false },
+        { med: 'air', w: WA, pts: ['h57.r', 'fil.l'], flow: PRESS, arrow: false },
+        { med: 'air', w: WA, pts: ['fil.r', 'prs.l'], flow: PRESS, arrow: false },
+        { med: 'air', w: WA, pts: ['prs.r', 'w3.l'], flow: PRESS },
+        { med: 'air', w: WA, pts: ['w3.r', [RX, LY], [RX, 625], 'h59.r'], flow: PRESS, arrow: false },
+        { med: 'air', w: WA, pts: ['h59.l', [RX, 505], 'ck2.l'], flow: PRESS, arrow: false },
+        { med: 'air', w: WA, pts: ['ck2.r', [TX - 34, 505]], flow: PRESS },
+        { med: 'air', w: WA, pts: [[RX, 625], 'h58b.l'], flow: PRESS, arrow: false },
+        { med: 'air', w: WA, pts: ['h58b.r', 'ck3.l'], flow: PRESS, arrow: false },
+        { med: 'air', w: WA, pts: ['ck3.r', [TX - 14, 625]], flow: PRESS },
+        { med: 'air', w: WA, pts: ['w3.b', [760, 890], 'h60.l'], flow: PRESS + '&' + WAY3, arrow: false },
+        { med: 'air', w: WA, pts: ['h60.r', [BX, 890], 'ck4.l'], flow: PRESS + '&' + WAY3, arrow: false },
+        { med: 'air', w: WA, pts: ['ck4.r', [BX, LY]], flow: PRESS + '&' + WAY3 },
+        { med: 'air', w: WA, pts: [[440, 830], 'h53.l'], arrow: false },
+        { med: 'air', w: WA, pts: ['h53.r', 'bas.l'] }
+      ],
+      taps: [],
+      texts: [
+        { x: 36, y: 70, s: 'STEP SEQUENCE OF THE ASH TRANSMITTER', cls: 'hx-zone' },
+        { x: 36, y: 640, s: 'CONVEYING AIR', cls: 'hx-zone' },
+        { x: 1445, y: 100, s: 'CONTROLS', cls: 'hx-zone' }
       ]
     }
   });
@@ -374215,6 +374881,113 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
   });
 })();
 
+/* HX page in the REALISTIC look: the furnace wall air dampers (beta.556, HMI gap list 2026-11-25: FA1005 ~ FA1026 were on no page).
+   THE PICTURE: the front and the rear water wall of the furnace seen from outside, each under its hot secondary air duct; from the duct
+   the vertical ducts come down, each with an upper and a lower air port, a motor damper in front of every port.
+   THE CONNECTIONS: K1AU3-PD-053 Rev A, secondary air system (Formosa Heavy Industries; RA flow diagrams, page 44):
+     detail A  hot secondary air duct 2150 mm, branch 1750 mm to the front duct and 1600 mm to the rear duct; at the ends of the front duct
+               burners A (left) and B (right), at the ends of the rear duct burners C (left) and D (right), 1100 mm each
+     detail 1  front wall, 7 ducts of 24 inch from left to right: upper ports MCV-FA1005, 1007, 1009, 1011, 1013, 1015, 1017, after a
+               reducer the lower ports MCV-FA1006, 1008, 1010, 1012, 1014, 1016, 1018 (12 inch)
+     detail 2  rear wall, 4 ducts: upper MCV-FA1019, 1021, 1023, 1025, lower MCV-FA1020, 1022, 1024, 1026
+     "typical wiring diagram for MCV": motor with its position transmitter ZT, closed limit ZSC and open limit ZSO
+   THE CONTROL: HICFA1005 ~ HICFA1016 on ABC-015, HICFA1017 ~ HICFA1026 on ABC-016.
+   THE MONITOR FACEPLATE of each damper (the square): the signals of the DCS I/O list of station 3: ZSO, ZSC, MIT (motor trip), MIL
+   (remote), TS (torque switch). The limit switches come from the field rows of the plant model; a signal with no source in the app
+   shows -----.
+   Drawn simpler than the sheet: the two burner branches of a duct are one link at its end; the wall is stretched to the page width. */
+(function () {
+  const { V, E, C, L, page } = HX;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  const X0 = 90,
+    W = 1610,
+    W_D = 10,
+    W_B = 7;
+  /* a wall: duct line y, wall top y, upper and lower port y, the ducts from left to right */
+  const WALLS = [
+    { id: 'f', name: 'Front wall', hy: 66, wy: 112, wh: 330, yu: 190, yl: 340, tags: 'FA1005 FA1006 FA1007 FA1008 FA1009 FA1010 FA1011 FA1012 FA1013 FA1014 FA1015 FA1016 FA1017 FA1018'.split(' '), xs: Array.from({ length: 7 }, (_, i) => 250 + i * 226) },
+    { id: 'r', name: 'Rear wall', hy: 590, wy: 636, wh: 330, yu: 714, yl: 864, tags: 'FA1019 FA1020 FA1021 FA1022 FA1023 FA1024 FA1025 FA1026'.split(' '), xs: Array.from({ length: 4 }, (_, i) => 368 + i * 395) }
+  ];
+  const DX = 58,
+    PX = 112; /* damper and port, left of the vertical duct */
+  const items = [],
+    pipes = [];
+  for (const w of WALLS) {
+    const holes = w.xs.flatMap(x => [
+      [x - PX - X0, w.yu - w.wy],
+      [x - PX - X0, w.yl - w.wy]
+    ]);
+    items.push(at(E('furnwall', '', '', [], { w: W, h: w.wh, holes }), X0, w.wy, { id: 'w' + w.id, under: true }));
+    w.xs.forEach((x, i) => {
+      const up = w.tags[2 * i],
+        lo = w.tags[2 * i + 1];
+      pipes.push({ med: 'hotair', w: W_D, pts: [[x, w.hy], [x, w.yu], 'd' + up + '.t'], flow: 'l:HIC' + up, arrow: false });
+      pipes.push({ med: 'hotair', w: W_B, pts: [[x, w.yu], [x, w.yl], 'd' + lo + '.t'], flow: 'l:HIC' + lo, arrow: false });
+      [up, lo].forEach((n, k) => {
+        const y = k ? w.yl : w.yu,
+          pl = k ? 'Lower' : 'Upper',
+          t = 'HIC' + n;
+        items.push(
+          at(
+            C(t, pl + ' port ' + (i + 1), {
+              sym: 'louver',
+              w: 40,
+              blades: 2,
+              tag: 'MCV-' + n,
+              mvb: true,
+              cname: w.name + ', ' + pl.toLowerCase() + ' air port ' + (i + 1),
+              mon: [
+                V('Position', 'ZT-' + n, '%', 1),
+                V('Open limit', 'fld:ZSO-' + n, '', 0, { words: ['OPEN', 'NOT OPEN'] }),
+                V('Closed limit', 'fld:ZSC-' + n, '', 0, { words: ['CLOSED', 'NOT CLOSED'] }),
+                V('Motor trip', 'fld:MIT-' + n, '', 0, { words: ['TRIP', 'NORMAL'] }),
+                V('Selector', 'fld:MIL-' + n, '', 0, { words: ['REMOTE', 'LOCAL'] }),
+                V('Torque switch', 'fld:TS-' + n, '', 0, { words: ['HIGH', 'NORMAL'] })
+              ]
+            }),
+            x - DX,
+            y,
+            { id: 'd' + n, rot: 90, lab: 'b' }
+          )
+        );
+        pipes.push({ med: 'hotair', w: W_B, pts: ['d' + n + '.b', [x - PX, y]], flow: 'l:' + t });
+      });
+    });
+  }
+
+  page({
+    id: 'wall-dampers',
+    group: 'Boiler',
+    title: 'Furnace wall air dampers',
+    about:
+      'Hot secondary air to the 22 air ports of the furnace: 14 in the front wall, 8 in the rear wall, a motor damper at each. Connections: flow diagram K1AU3-PD-053 Rev A.',
+    plan: {
+      look: 'real',
+      w: 1760,
+      h: 1000,
+      items: items.concat([
+        at(L('combustion-air', 'Hot secondary air from the air heater', { back: true }), 1300, 516, { id: 'sup' }),
+        at(L('oil-burners', 'To burners A and B'), 1690, 66, { id: 'bab' }),
+        at(L('oil-burners', 'To burners C and D'), 1690, 590, { id: 'bcd' })
+      ]),
+      pipes: pipes.concat([
+        { med: 'hotair', w: 14, pts: ['sup.l', [50, 516]], flow: 'm:SAF', arrow: false },
+        { med: 'hotair', w: 12, pts: [[50, 516], [50, 66], 'bab.l'], flow: 'm:SAF' },
+        { med: 'hotair', w: 12, pts: [[50, 516], [50, 590], 'bcd.l'], flow: 'm:SAF' }
+      ]),
+      taps: [
+        { x: 320, y: 516, side: 't', label: 'Pressure', key: 'PT-FA1088', unit: 'mmH₂O', dp: 0, tag: 'PT-FA1088' },
+        { x: 620, y: 516, side: 't', label: 'Temperature', key: 'TT-FA1087', key2: 'TT-FA1086', unit: '°C', dp: 0, tag: 'TT-FA1087 / 1086' },
+        { x: 920, y: 516, side: 't', label: 'Secondary air flow', key: 'pv:FICFA1081', unit: 't/h', tag: 'FT-FA1081' }
+      ],
+      texts: [
+        { x: 100, y: 46, s: 'FRONT WALL, 14 AIR PORTS', cls: 'hx-zone' },
+        { x: 100, y: 570, s: 'REAR WALL, 8 AIR PORTS', cls: 'hx-zone' }
+      ]
+    }
+  });
+})();
+
 /* AN.condTarget(dy): the object a condition row of a logic sheet belongs to, for the pressable conditions of the station
    (user "go all" 2026-11-19, item 1). dy = "SHEET|i|row" (an input row) or "SHEET|o|row" (an output row), the data-dy of the pages.
    Returns { page, open, mark } or null:
@@ -374496,7 +375269,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     }
     return X;
   }
-  const plainKey = k => !/^(an|tcs):/.test(k);
+  const plainKey = k => !/^(an|tcs|fld|dl|cal):/.test(k);
   function proxy() {
     const mach = {},
       unit = {},
@@ -374512,7 +375285,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     }
     /* push buttons and states (HX.B): the element the page of hmi-mock.js wires, with the same data attribute */
     for (const h in S.hooks) {
-      if (h.slice(0, 3) === 'fv:') continue;
+      if (h.slice(0, 3) === 'fv:' || h.slice(0, 4) === 'fld:') continue;
       art +=
         '<g data-hxk="' +
         S.hooks[h].i +
@@ -374559,7 +375332,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       mach[name] = !ex
         ? S.machs[name]
         : Object.assign({}, S.machs[name], {
-            mon: (S.machs[name].mon || []).concat(ex.mon.map(r => [r.label, () => HX.data.value(r.key), r.unit, plainKey(r.key) ? r.key : '', r.dp, r.words])),
+            mon: (S.machs[name].mon || []).concat(ex.mon.map(r => [r.label, () => HX.data.value(r.key), r.unit, r.tag || (plainKey(r.key) ? r.key : ''), r.dp, r.words])),
             vcb: ex.vcb ? () => HX.data.value(ex.vcb) : S.machs[name].vcb,
             vcbTag: ex.vcb && plainKey(ex.vcb) ? ex.vcb : ''
           });
@@ -374668,6 +375441,22 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       x = typeof v === 'boolean' ? (v ? 1 : 0) : v != null && isFinite(v) ? +v : null;
     return { text: x == null ? '-----' : x >= 0.5 ? 'ON' : 'OFF', tone: x == null ? '' : x >= 0.5 ? 'on' : '' };
   };
+  /* beta.556 (EIMI): a row of a DITL drawing, 'SHEET|i or o|row' or '...|neg' (the same read as data-dy of hmi-mock.js): 1 / 0, null when
+     the drawing is not there or the logic is not on */
+  const dlRow = spec => {
+    const [ad, io, row, neg] = spec.split('|');
+    /* 'SHEET|p|O.xxxx' = an output the sheet writes at its address without an output row (the same read as data-dpo) */
+    if (io === 'p') {
+      const p = call(() => LS_OP.pout(ad, row), null);
+      return p == null ? null : p ? 1 : 0;
+    }
+    const
+      s = call(() => LS_OP.dOf(ad) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(ad)), null),
+      v = s ? call(() => (io === 'o' ? DUI.outVal(s, +row) : DUI.rowVal(s, +row)), null) : null;
+    return v == null ? null : neg ? 1 - (v ? 1 : 0) : v ? 1 : 0;
+  };
+  /* a field row of the plant model (AN.fieldRead: a limit switch, a transmitter no drawing reads), null when there is none */
+  const fldRow = tag => call(() => (AN.unit && AN.unit.on ? fin(AN.fieldRead(tag.replace(/[^A-Za-z0-9|]/g, ''))) : null), null);
   const ALC = { t: 0, m: {} };
   HX.data = {
     time: () => call(() => (window.AN && AN.unit && isFinite(AN.unit.t) ? AN.unit.t : null), Date.now() / 1000),
@@ -374679,6 +375468,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       /* a value of the TCS model ('tcs:aux.hso' = AN.tcs().aux.hso); an open / closed flag reads 100 / 0 % */
       if (/^tcs:/.test(key))
         return call(() => { const v = key.slice(4).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.tcs()); return typeof v === 'boolean' ? (v ? 100 : 0) : v != null && isFinite(v) ? +v : null; }, null);
+      /* beta.556 (EIMI): 'dl:SHEET|i or o|row' = a row of a DITL drawing, 'fld:TAG' = a field row of the plant model (monitor rows with words) */
+      if (/^dl:/.test(key)) return dlRow(key.slice(3));
+      if (/^fld:/.test(key)) return fldRow(key.slice(4));
+      if (/^cal:/.test(key)) return call(() => HX.CALC[key.slice(4)](HX.data.value), null);
       needVal(key);
       const e = pq('[data-v="' + key + '"]'),
         t = e ? e.textContent : '';
@@ -374694,7 +375487,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         /* a field item without a logic row: the lower ring header drains are a state of the plant model (hmi-mock-ms.js LHD) */
         FLD = name === 'V-BD1005 ~ V-BD1021' ? call(() => (AN.fieldState().lhd ? 1 : 0), null) : null,
         BD = R.machines[name] && R.machines[name].bind,
-        DFV = BD && BD.df && BD.d && BD.df.st != null ? call(() => window.LS_OP.dout(BD.d, BD.df.st), null) : null,
+        DF0 = BD && BD.df && BD.d && BD.df.st != null ? call(() => window.LS_OP.dout(BD.df.std || BD.d, BD.df.st), null) : null,
+        DFV = DF0 == null || !BD.df.inv ? DF0 : DF0 === 1 ? 0 : 1,
         md = (pq('[data-hxd="' + name + '"]') || {}).textContent || '',
         y = (pq('[data-hxy="' + name + '"]') || {}).textContent || '',
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-L): a state row that is not a running state (DITL-09 row 26 REMOTE of the
@@ -374791,6 +375585,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         return { text: o == null ? '' : o ? 'OPEN' : 'CLOSED', tone: o == null ? '' : o ? 'run' : 'stop' };
       }
       if (h.slice(0, 5) === 'crtl:') return crtLamp(h);
+      /* beta.556 (EIMI): 'fld:TAG|word at 1|word at 0' = the state of a field row (a limit switch that no drawing reads) */
+      if (h.slice(0, 4) === 'fld:') {
+        const [t, a, b] = h.slice(4).split('|'),
+          x = fldRow(t);
+        return { text: x == null ? '-----' : x >= 0.5 ? a || 'ON' : b || 'OFF', tone: x == null ? '' : x >= 0.5 ? 'run' : 'stop' };
+      }
       if (h.slice(0, 4) === 'crt:') return { text: CRT.api() ? '' : '-----', tone: '' };
       needHook(h, label);
       const e = S && S.hooks[h] && pq('[data-hxk="' + S.hooks[h].i + '"]');
@@ -374823,6 +375623,25 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     open(kind, id, second, anchor, name) {
       if (kind === 'value') return void valueCard(anchor, name, [id]);
       if (kind === 'loop') return click(S && S.loops[id]);
+      /* beta.556 (EIMI): the second faceplate of a controller or piece of plant with its own monitor rows (HX.C / HX.E o.mon, o.perm) */
+      if (kind === 'mon') {
+        const it = HX.MON[id];
+        if (!it || !window.LS_FPOP || !LS_FPOP.info) return;
+        const tr = it.mon.find(r => !r.words),
+          rd = k => () => HX.data.value(k),
+          /* the key of a row as the drawing writes it: DITL-BA62 out row 9 (rows count from 1, as on the button titles) */
+          keyTxt = k => {
+            const [s, side, n] = k.replace(/^[a-z]+:/, '').split('|');
+            return side === 'i' || side === 'o' ? s + (side === 'i' ? ' in row ' : ' out row ') + (+n + 1) : side === 'p' ? s + ' ' + n : s;
+          };
+        return void LS_FPOP.info({
+          n: it.cname || it.name,
+          t: it.tag || it.loop || '',
+          perm: (it.perm || []).map(r => [r.label + (r.tag || (r.key && !r.key.startsWith('cal:')) ? ' · ' + (r.tag || keyTxt(r.key)) : ''), rd(r.key)]),
+          mon: it.mon.map(r => [r.label + ' · ' + (r.tag || keyTxt(r.key)), rd(r.key), r.unit, r.dp, r.words]),
+          trend: tr ? { h: 'Trend · ' + tr.label + ' · ' + tr.key, fn: rd(tr.key) } : null
+        });
+      }
       /* audit 2026-11-21 A1 / A2: a piece of plant with no faceplate of its own (strainer, tube cleaning, generator values) or a
          Y square whose target is missing opened nothing under a hand cursor: the values it shows, with their trend */
       if (!click(pq(second ? '[data-yn="' + id + '"]' : '[data-hit="' + id + '"]'))) valueCard(anchor, name, null);
@@ -375963,7 +376782,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
          the machine is in operation while its lance is out of the retract position, also when it was started by hand (MANUAL mode), where
          the OPERATING lamp of the AUTO program (DITL-80A) stays off */
       const aw = P.away && call(() => dk.dOf(P.away.d) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(P.away.d)), null),
-        on = !noSt && (call(() => dk.dout(P.d, P.st.row), null) === 1 || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0)),
+        /* beta.556: st.d = the state row stands on another drawing than the push buttons; st.inv = the row is 1 while the machine waits */
+        on = !noSt && (call(() => dk.dout(P.st.d || P.d, P.st.row), null) === (P.st.inv ? 0 : 1) || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0)),
         run = isRun(),
         pv = (P.perm || []).map(p => ({ ...p, v: call(() => window.DUI.rowVal(s, p.row), null) })),
         ok = !pv.length || pv.some(p => p.v === 1);
@@ -376765,10 +377585,13 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
       }));
       F.bd.append(E('div', 'fpo-sh', h), ul);
     }
-    const monV = (P.mon || []).map(([l, f, u, dp]) => {
+    /* beta.556: words = [word at 1, word at 0] of an on / off point, as in the machine faceplate */
+    const monV = (P.mon || []).map(([l, f, u, dp, words]) => {
       const v = E('span', 'fpo-vb');
-      F.bd.append(row(l, v, E('small', 'fpo-dim', u || '')));
-      return [v, f, dp == null ? 1 : dp];
+      const r = row(l, v, ...((P.mon || []).some(x => x[2]) ? [E('small', 'fpo-dim', u || '')] : []));
+      r.classList.add('mon');
+      F.bd.append(r);
+      return [v, f, dp == null ? 1 : dp, words];
     });
     const trend = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     trend.setAttribute('viewBox', '0 0 300 50');
@@ -376791,9 +377614,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           return li;
         }));
       }
-      for (const [v, f, dp] of monV) {
+      for (const [v, f, dp, words] of monV) {
         const x = call(f, null);
-        setTx(v, x == null || !isFinite(+x) ? '-----' : (+x).toFixed(dp));
+        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp));
       }
       if (Hs) {
         const now = Date.now(),
