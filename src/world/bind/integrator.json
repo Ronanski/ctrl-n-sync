@@ -1,0 +1,16 @@
+[
+  {"stn": 2, "to": "DITL-80", "row": 14, "from": "80L-111", "src": "DITL-80L (S2 FM0006 P602) output M.4008 \"TO\" list; DITL-80 row 14 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80A", "row": 14, "from": "80L-111", "src": "DITL-80L (S2 FM0006 P602) output M.4008 \"TO\" list; DITL-80A row 14 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80G", "row": 5, "from": "80L-111", "src": "DITL-80L (S2 FM0006 P602) output M.4008 \"TO\" list; DITL-80G row 5 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80G", "row": 10, "from": "80L-112", "src": "DITL-80L (S2 FM0006 P602) output M.4232 \"TO\" list; DITL-80G row 10 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80K", "row": 5, "from": "80L-111", "src": "DITL-80L (S2 FM0006 P602) output M.4008 \"TO\" list; DITL-80K row 5 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80S", "row": 17, "from": "80L-111", "src": "DITL-80L (S2 FM0006 P602) output M.4008 \"TO\" list; DITL-80S row 17 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80O", "row": 5, "from": "80L-113", "src": "DITL-80L (S2 FM0006 P602) output M.4246 \"TO\" list; DITL-80O row 5 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80O", "row": 4, "from": "80L-114", "src": "DITL-80L (S2 FM0006 P602) output M.4247 \"TO\" list; DITL-80O row 4 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80O", "row": 12, "from": "80L-115", "src": "DITL-80L (S2 FM0006 P602) output M.4240 \"TO\" list; DITL-80O row 12 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80O", "row": 11, "from": "80L-116", "src": "DITL-80L (S2 FM0006 P602) output M.4241 \"TO\" list; DITL-80O row 11 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80O", "row": 26, "from": "80L-117", "src": "DITL-80L (S2 FM0006 P602) output M.4242 \"TO\" list; DITL-80O row 26 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80O", "row": 25, "from": "80L-118", "src": "DITL-80L (S2 FM0006 P602) output M.4243 \"TO\" list; DITL-80O row 25 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80K", "row": 24, "from": "80L-119", "src": "DITL-80L (S2 FM0006 P602) output N-1040 reset \"TO\" list; DITL-80K row 24 FROM \"DITL80L\""},
+  {"stn": 2, "to": "DITL-80K", "row": 22, "from": "80L-120", "src": "DITL-80L (S2 FM0006 P602) output N-1042 reset \"TO\" list; DITL-80K row 22 FROM \"DITL80L\""}
+]

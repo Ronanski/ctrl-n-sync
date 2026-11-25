@@ -1,4 +1,4 @@
-# v1.0.0-beta.479 (lane 9 AUDIT FIX : SORA, 2026-11-25 PHT)
+# v1.0.0-beta.579 (lane 9 AUDIT FIX : SORA, 2026-11-25 PHT)
 
 ## Ano ang binago
 - Ang TCS I/O list ng lane 2 (src/data/tcs-io.json, src/data/tcs-dcs.json, src/digital/tce-io.js) ay nasa app na mismo, hindi lang sa test. Basa lang ito: walang isinusulat sa planta (window.TCE_IO_LIVE, window.TCS_IO_LIST, window.TCS_DCS_LIST).

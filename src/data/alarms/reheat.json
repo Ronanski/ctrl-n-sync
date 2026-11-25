@@ -1,0 +1,7 @@
+[
+{"tag": "PT-HR1001", "lv": "HIGH", "p": 3, "sp": 39.0, "d": "#1 REHEATER OUTLET HEADER PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0530", "src": "Alarm List _20160912 sheet PT, PD-012"},
+{"tag": "PT-HR1001", "lv": "LOW", "p": 3, "sp": 8.0, "d": "#1 REHEATER OUTLET HEADER PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0530", "src": "Alarm List _20160912 sheet PT, PD-012"},
+{"tag": "PT-HR1011", "lv": "HIGH", "p": 3, "sp": 12.0, "d": "#1 LP TURBINE BYPASS OUTLET PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0531", "src": "Alarm List _20160912 sheet PT, PD-012"},
+{"tag": "PT-HR1011", "lv": "LOW", "p": 3, "sp": 6.0, "d": "#1 LP TURBINE BYPASS OUTLET PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0531", "src": "Alarm List _20160912 sheet PT, PD-012"},
+{"tag": "TE-HR1010", "lv": "HIGH", "p": 3, "sp": 220.0, "d": "#1 LP TURBINE BYPASS CONTROL VALVE OUTLET TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0870", "src": "Alarm List _20160912 sheet TE, PD-012", "io": "TT-HR1010"}
+]

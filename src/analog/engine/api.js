@@ -143,6 +143,8 @@ function anEngAPI() {
     doValve: anDoValve,
     /* 3.2.1 SEULGI (boiler.js AN_BA): the numbers of the bottom ash model (set points of its field switches) */
     baK: AN_BA,
+    fieldX: AN_FLD_X, /* the readers and the values of the lane field rows (unit.js, src/world/field) */
+    fieldRead: anFieldRead,
     engState: { capture: anStateCapture, apply: anStateApply },
     /* engine/sync.js: what changed, both ways (worker -> page, page -> worker) */
     sync: {

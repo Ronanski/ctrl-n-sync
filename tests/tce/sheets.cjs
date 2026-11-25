@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 196; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 202; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 70;
@@ -97,6 +97,27 @@ const S = R.stats(A);
   if (o.OUT !== 22 || o['DEV E'] !== 1 || o.ABN !== 0 || o.ERR !== 0) fail('TMR AI 20 / 22 / 40 gives ' + JSON.stringify(o));
   for (let i = 0; i < 11; i++) o = tmr({ SIG1: 20, SIG2: 22, SIG3: 40, ERR1: 0, ERR2: 1, ERR3: 1, ...lim }, tn, ts, 0.1);
   if (o.OUT !== -10 || o.ABN !== 1 || o.ERR !== 1) fail('TMR AI with two channels in error gives ' + JSON.stringify(o) + ', want SIM -10');
+  /* MOTOR STANDARD from IBD 310SC90-794 sheet 14: START PB in MANUAL starts; no MCC answer for 3 s = START FAULT (stop, ANN) until RESET;
+     AUTO START works only in AUTO */
+  const mo = M['MOTOR STANDARD'],
+    mn = [[0, 0, 'TD:1.0s'], [0, 0, 'TP:3.0s'], [0, 0, 'TP:3.0s'], [0, 0, 'TP:0.5s']],
+    ms = {},
+    base = { ASRT: 0, ASTP: 0, TRP: 0, EF: 0, RUN: 0, 'PB START': 0, 'PB STOP': 0, 'PB AUTO': 0, 'PB MANUAL': 0, 'PB RESET': 0 },
+    m = (q, n = 1) => {
+      for (let i = 0; i < n; i++) o = mo({ ...base, ...q }, mn, ms, 0.1);
+      return o;
+    };
+  if (m({ 'PB START': 1 }).STS !== 1) fail('MOTOR STANDARD: START PB in MANUAL gives no start');
+  m({}, 28);
+  if (o.ABN !== 0 || o.STS !== 1) fail('MOTOR STANDARD: start fault before 3 s ' + JSON.stringify(o));
+  m({}, 2);
+  if (o.ABN !== 1 || o.STS !== 0 || o.OUT !== 1) fail('MOTOR STANDARD: no answer 3 s is not a start fault ' + JSON.stringify(o));
+  if (m({ 'PB RESET': 1 }).ABN !== 0) fail('MOTOR STANDARD: RESET does not clear the start fault');
+  if (m({ ASRT: 1 }).STS !== 0) fail('MOTOR STANDARD: AUTO START works in MANUAL');
+  m({ 'PB AUTO': 1 });
+  if (m({ ASRT: 1, RUN: 1 }, 20).STS !== 1 || o.AUTO !== 1 || o.ABN !== 0) fail('MOTOR STANDARD: AUTO START in AUTO ' + JSON.stringify(o));
+  if (m({ RUN: 0 }).ABN !== 1) fail('MOTOR STANDARD: answer lost while running is not TRIPPED');
+  if (mo.need([]).length !== 2) fail('MOTOR STANDARD with no TD / TP printed must be open');
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
   if (!v || v.ins.IN === v.ins.ERR) fail('TCA322 line 3: the AI value and its PI/O error are one net');

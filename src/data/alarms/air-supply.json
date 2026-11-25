@@ -1,0 +1,20 @@
+[
+{"tag": "PT-PA1705", "lv": "LOW", "p": 3, "sp": 5.0, "d": "PLANT AIR TO UNIT NO.1 PRESSURE TRANSMITTER", "stn": 104, "addr": "AI0435", "src": "Alarm List _20160912 sheet PT, PD-023,3/6"},
+{"tag": "PT-PA1705", "lv": "LOW-LOW", "p": 2, "sp": -1.0, "d": "PLANT AIR TO UNIT NO.1 PRESSURE TRANSMITTER", "stn": 104, "addr": "AI0435", "src": "Alarm List _20160912 sheet PT, PD-023,3/6"},
+{"tag": "PT-IA1128", "lv": "LOW", "p": 3, "sp": 4.0, "d": "#1 AIR BUFFER TANK OF TURNING GEAR PRESSURE TRANSMITTER", "stn": 104, "addr": "AI0437", "src": "Alarm List _20160912 sheet PT, PD-023,4/6"},
+{"tag": "PT-IA1706", "lv": "LOW", "p": 3, "sp": 5.0, "d": "INSTRUMENT AIR UNIT NO.1 PRESSURE TRANSMITTER", "stn": 104, "addr": "AI0436", "src": "Alarm List _20160912 sheet PT, PD-023,5/6"},
+{"tag": "PT-IA1706", "lv": "LOW-LOW", "p": 2, "sp": 3.5, "d": "INSTRUMENT AIR UNIT NO.1 PRESSURE TRANSMITTER", "stn": 104, "addr": "AI0436", "src": "Alarm List _20160912 sheet PT, PD-023,5/6"},
+{"tag": "PT-IA1064-A", "lv": "LOW", "p": 3, "sp": 4.0, "d": "# 1 AIR BUFFER TANK OF BIASING DAMPER A PRESSURE TRANSMITTER", "stn": 104, "addr": "AI0438", "src": "Alarm List _20160912 sheet PT, PD-023,6/6"},
+{"tag": "PT-IA1064-B", "lv": "LOW", "p": 3, "sp": 4.0, "d": "# 1 AIR BUFFER TANK OF BIASING DAMPER B PRESSURE TRANSMITTER", "stn": 104, "addr": "AI0470", "src": "Alarm List _20160912 sheet PT, PD-023,6/6"},
+{"tag": "PSL-PA1705", "lv": "LOW", "p": 3, "on": 1, "d": "PLANT AIR TO UNIT NO.1 PRESSURE LOW SWITCH", "stn": 104, "addr": "I.052A", "src": "Alarm List _20160912 sheet PS, PD-023-3/6", "set": "L 2.8"},
+{"tag": "PSL-IA1706", "lv": "LOW", "p": 3, "on": 1, "d": "INSTRUMENT AIR UNIT NO.1 PRESSURE LOW SWITCH", "stn": 104, "addr": "I.0529", "src": "Alarm List _20160912 sheet PS, PD-023-5/6", "set": "LL 2.8"},
+{"tag": "PSL-PA1043-A1", "lv": "LOW", "p": 3, "on": 1, "d": "#1 BURNER(A) ATOMIZING AIR PRESSURE LOW SWITCH", "stn": 104, "addr": "I.004D", "src": "Alarm List _20160912 sheet PS, PD-022,2/5", "set": "L 3.0"},
+{"tag": "PSL-PA1043-C1", "lv": "LOW", "p": 3, "on": 1, "d": "#1 BURNER(C) ATOMIZING AIR PRESSURE LOW SWITCH", "stn": 104, "addr": "I.068D", "src": "Alarm List _20160912 sheet PS, PD-022,4/5", "set": "L 3.0"},
+{"tag": "PSL-PA1043-D1", "lv": "LOW", "p": 3, "on": 1, "d": "#1 BURNER(D) ATOMIZING AIR PRESSURE LOW SWITCH", "stn": 104, "addr": "I.100D", "src": "Alarm List _20160912 sheet PS, PD-022,5/5", "set": "L 3.0"},
+{"tag": "PS-IA1061-A1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER A INSTRUMENT AIR PRESSURE SWITCH HIGH", "stn": 104, "addr": "I.013E", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"},
+{"tag": "PS-IA1061-A2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER A INSTRUMENT AIR PRESSURE SWITCH LOW", "stn": 104, "addr": "I.013F", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"},
+{"tag": "PS-IA1061-B1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER B INSTRUMENT AIR PRESSURE SWITCH HIGH", "stn": 104, "addr": "I.045E", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"},
+{"tag": "PS-IA1061-B2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER B INSTRUMENT AIR PRESSURE SWITCH LOW", "stn": 104, "addr": "I.045F", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"},
+{"tag": "PS-IA1061-C1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER C INSTRUMENT AIR PRESSURE SWITCH HIGH", "stn": 104, "addr": "I.049E", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"},
+{"tag": "PS-IA1061-C2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER C INSTRUMENT AIR PRESSURE SWITCH LOW", "stn": 104, "addr": "I.049F", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"}
+]

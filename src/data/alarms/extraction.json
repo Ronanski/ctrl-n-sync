@@ -1,0 +1,15 @@
+[
+{"tag": "PT-TS1013", "lv": "HIGH", "p": 3, "sp": 16.0, "d": "#1 EXTRACTION STEAM NO.2 PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0560", "src": "Alarm List _20160912 sheet PT, PD-013"},
+{"tag": "PT-TS1013", "lv": "LOW", "p": 3, "sp": 5.0, "d": "#1 EXTRACTION STEAM NO.2 PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0560", "src": "Alarm List _20160912 sheet PT, PD-013"},
+{"tag": "PT-TS1017", "lv": "HIGH", "p": 3, "sp": 6.0, "d": "#1 EXTRACTION STEAM NO.3 PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0561", "src": "Alarm List _20160912 sheet PT, PD-013"},
+{"tag": "PT-TS1017", "lv": "LOW", "p": 3, "sp": 2.0, "d": "#1 EXTRACTION STEAM NO.3 PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0561", "src": "Alarm List _20160912 sheet PT, PD-013"},
+{"tag": "PT-TS1022", "lv": "HIGH", "p": 3, "sp": 3.5, "d": "#1 EXTRACTION STEAM NO.4 PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0562", "src": "Alarm List _20160912 sheet PT, PD-013"},
+{"tag": "PT-TS1022", "lv": "LOW", "p": 3, "sp": 0.5, "d": "#1 EXTRACTION STEAM NO.4 PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0562", "src": "Alarm List _20160912 sheet PT, PD-013"},
+{"tag": "PT-TS1026", "lv": "HIGH", "p": 3, "sp": 3.5, "d": "#1 EXTRACTION STEAM NO.5 PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0563", "src": "Alarm List _20160912 sheet PT, PD-013"},
+{"tag": "PT-TS1026", "lv": "LOW", "p": 3, "sp": -0.6, "d": "#1 EXTRACTION STEAM NO.5 PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0563", "src": "Alarm List _20160912 sheet PT, PD-013"},
+{"tag": "TE-TS1011", "lv": "HIGH", "p": 3, "sp": 385.0, "d": "#1 HIGH PRESSURE HEATER NO.2 COLD REHEAT STEAM TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0816", "src": "Alarm List _20160912 sheet TE, PD-013", "io": "TT-TS1011"},
+{"tag": "TE-TS1014", "lv": "HIGH", "p": 3, "sp": 430.0, "d": "#1 EXTRACTION STEAM NO.2 TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0817", "src": "Alarm List _20160912 sheet TE, PD-013", "io": "TT-TS1014"},
+{"tag": "TE-TS1018", "lv": "HIGH", "p": 3, "sp": 340.0, "d": "#1 EXTRACTION STEAM NO.3 STEAM TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0818", "src": "Alarm List _20160912 sheet TE, PD-013", "io": "TT-TS1018"},
+{"tag": "TE-TS1023", "lv": "HIGH", "p": 3, "sp": 195.0, "d": "#1 EXTRACTION STEAM NO.4 TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0819", "src": "Alarm List _20160912 sheet TE, PD-013", "io": "TT-TS1023"},
+{"tag": "TE-TS1027", "lv": "HIGH", "p": 3, "sp": 135.0, "d": "#1 EXTRACTION STEAM NO.5 TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0820", "src": "Alarm List _20160912 sheet TE, PD-013", "io": "TT-TS1027"}
+]
