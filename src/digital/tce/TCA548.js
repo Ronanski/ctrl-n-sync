@@ -174,11 +174,19 @@
   window.TCE_SHEETS.push({
     id: 'TCA548',
     /* pr: printed on page 118 beside each block, FG *1 ~ *4 tables (A040, A042 carry no mark and no table); the drawing above keeps them as text */
+    /* pr: FG A005 / A024 / A012 / A031 = the tables FG *1 / *2 / *3 / *4 printed on this page (Xn, Yn, No. 0-7 typed as X1-X8). They are
+       not the curves of the ATS criteria list 310SC90-796 Rev 2 sheet 21 (FIG. 2 upper (0,420) (180,420) (314,538); the page wins for
+       these). The page prints no table for the LOWER LIMIT FG A040 / A042; they are the LOWER LIMIT lines of 310SC90-796 Rev 2 sheet 21
+       (Turbine Control System book p 181), FIG. 2 ALLOWABLE TEMPERATURE DIFFERENCE ON MAIN STEAM AND TURBINE METAL: (0,305) (318,305)
+       (538,471) (the lower line ends in the corner it shares with the target line, printed (538,471)); FIG. 3 ... ON REHEAT STEAM AND
+       TURBINE METAL: (0,205) (309,205) (538,430). x = metal temp. degC, y = steam temp. degC; flat outside (ML 19). */
     pr: {
       fgA005: ['X1:0.00', 'Y1:400', 'X2:111.40', 'Y2:400', 'X3:288.10', 'Y3:538', 'X4:538.00', 'Y4:538', 'X5:540.00', 'Y5:538', 'X6:550.00', 'Y6:538', 'X7:560.00', 'Y7:538', 'X8:600.00', 'Y8:538'],
       fgA024: ['X1:0.00', 'Y1:330', 'X2:150.60', 'Y2:330', 'X3:365.70', 'Y3:538', 'X4:538.00', 'Y4:538', 'X5:540.00', 'Y5:538', 'X6:550.00', 'Y6:538', 'X7:560.00', 'Y7:538', 'X8:600.00', 'Y8:538'],
       fgA012: ['X1:0.00', 'Y1:345', 'X2:293.20', 'Y2:345', 'X3:323.20', 'Y3:345', 'X4:355.00', 'Y4:370', 'X5:483.00', 'Y5:470', 'X6:531.90', 'Y6:508', 'X7:538.00', 'Y7:512.80', 'X8:538.01', 'Y8:538'],
-      fgA031: ['X1:0.00', 'Y1:290', 'X2:302.60', 'Y2:290', 'X3:352.60', 'Y3:290', 'X4:445.60', 'Y4:380', 'X5:538.00', 'Y5:469.20', 'X6:588.40', 'Y6:518', 'X7:588.41', 'Y7:538', 'X8:600.00', 'Y8:538']
+      fgA031: ['X1:0.00', 'Y1:290', 'X2:302.60', 'Y2:290', 'X3:352.60', 'Y3:290', 'X4:445.60', 'Y4:380', 'X5:538.00', 'Y5:469.20', 'X6:588.40', 'Y6:518', 'X7:588.41', 'Y7:538', 'X8:600.00', 'Y8:538'],
+      fgA040: ['X1:0.0', 'Y1:305.0', 'X2:318.0', 'Y2:305.0', 'X3:538.0', 'Y3:471.0'],
+      fgA042: ['X1:0.0', 'Y1:205.0', 'X2:309.0', 'Y2:205.0', 'X3:538.0', 'Y3:430.0']
     },
     title: 'CRITERIA CONDITION',
     page: 118,

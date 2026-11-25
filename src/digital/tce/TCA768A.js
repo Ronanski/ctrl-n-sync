@@ -27,8 +27,17 @@
     ['017', 1218, 'COLD 2 MODE', 648, 1175],
     ['019', 1410, 'A-COLD MODE', 606, 1346]
   ];
+  /* the K tables printed beside each block (MW break points, then the six %/min rates, top to bottom), as the block's parameters:
+     L1 .. L4 = 90.0 / 60.0 / 33.0 / 22.5 MW, R1 .. R6 = the rates of that block */
+  const KR = {
+    '010': ['0.7', '0.4', '0.4', '1.0', '1.0', '5.0'],
+    '013': ['0.6', '0.35', '0.25', '0.25', '0.75', '5.0'],
+    '015': ['0.5', '0.3', '0.2', '0.2', '0.5', '5.0'],
+    '017': ['0.5', '0.3', '0.2', '0.2', '0.5', '5.0'],
+    '019': ['0.5', '0.3', '0.2', '0.2', '0.5', '5.0']
+  };
   M.forEach(([n, y, s, lx, ly]) => {
-    b.push(['mode' + n, 'MODE', n, xM, y, [], {}, [87.5, 107]]);
+    b.push(['mode' + n, 'MODE', n, xM, y, ['90.0', '60.0', '33.0', '22.5'].map((m, i) => 'L' + (i + 1) + ':' + m).concat(KR[n].map((r, i) => 'R' + (i + 1) + ':' + r)), {}, [87.5, 107]]);
     t.push([ML + 6, y - 14, 'L'], [ML + 6, y + 6, 'T'], [MR - 16, y - 14, 'M'], [xM, y + 80, '(LMA810)', 1], [lx, ly, s]);
   });
   WT('kLoad', [410, 684], [ML, 684]);
