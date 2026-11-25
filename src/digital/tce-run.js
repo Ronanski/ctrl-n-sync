@@ -1087,6 +1087,41 @@
   });
   MACRO['TORQUE (SEAL-IN)'] = Object.assign(sealIn(false), sealOpt(16));
   MACRO['POSITION (SEAL-IN)'] = Object.assign(sealIn(true), sealOpt(18));
+  /* TORQUE (INCHING), drawing: IBD 310SC90-794 Rev 2 sheet 20 "TORQUE SEAT (INCHING)", typical logic for motor operated valve (torque
+       seating, inching type), book p 36 (sheet 21, book p 37, is its simplified form). No seal-in flip-flop: the valve moves only while
+       the command stands.
+       open command = AUTO OPEN CONDITION and AUTO, or PB OPEN and MANUAL; close command the same with CLOSE (AUTO FF: S = PB AUTO,
+       R = PB MANUAL, reset first).
+       TCS side: open = open command and not OR(LIMIT FULL OPEN (the return loop, connector 1), EF, TORQUE FULL OPEN and not LIMIT FULL
+       CLOSE, the close command); close = close command and not OR(the open command, EF, TORQUE FULL CLOSE and not LIMIT FULL OPEN).
+       MOV side (the part the sheet draws simplified): OPEN out also needs not OR(TORQUE OPEN and not LIMIT FULL CLOSE, EF, LIMIT FULL
+       OPEN) and not CLOSE; CLOSE out also needs not OR(EF, TORQUE CLOSE and not LIMIT FULL OPEN) and not OPEN (last scan, the drawn
+       cross loop). The close side stops on the torque switch (torque seating), not on the limit switch.
+       ANN 1 = EF, ANN 2 = TORQUE FULL OPEN and not LIMIT FULL CLOSE, ANN 3 = TORQUE FULL CLOSE and not LIMIT FULL OPEN and not LIMIT
+       FULL CLOSE; ABN = any of them. LTOP / LTCL = the limit switches (lamps G = not LTOP, R = not LTCL).
+     Not on sheet 20 (printed beside the TCA block, not read): R, M, HL, LL, K x3 and the POS / POS.S position pins; POS.S is not given. */
+  MACRO['TORQUE (INCHING)'] = Object.assign(
+    (I, notes, st) => {
+      const lo = b01(I.LTOP),
+        lc = b01(I.LTCL),
+        ef = b01(I.EF),
+        tqO = b01(I.TROP) && !lc ? 1 : 0,
+        tqC = b01(I.TRCL) && !lo ? 1 : 0;
+      if (b01(I['PB MANUAL'])) st.auto = 0;
+      else if (b01(I['PB AUTO'])) st.auto = 1;
+      const auto = st.auto ? 1 : 0,
+        oCmd = (b01(I.AOP) && auto) || (b01(I['PB OPEN']) && !auto),
+        cCmd = (b01(I.ACL) && auto) || (b01(I['PB CLOSE']) && !auto),
+        a1 = oCmd && !(lo || ef || tqO || cCmd),
+        a2 = cCmd && !(oCmd || ef || tqC),
+        op = a1 && !(tqO || ef || lo) && !st.c ? 1 : 0,
+        cl = a2 && !(ef || tqC) && !st.o ? 1 : 0;
+      st.o = op;
+      st.c = cl;
+      return { OPS: op, CLS: cl, LTOP: lo, LTCL: lc, AUTO: auto, ABN: ef || tqO || (tqC && !lc) ? 1 : 0 };
+    },
+    { src: 'drawing: IBD 310SC90-794 Rev 2 sheet 20', pb: ['OPEN', 'CLOSE', 'AUTO', 'MANUAL'] }
+  );
   /* STEP CONTROL MD, drawing: ATS program 310SC90-795 Rev 2 sheet 8 "ATS CONTROL START UP STEP TRANSITION LOGIC" (book p 132), sheet 9
        (shutdown step, p 133) and sheet 10 "CRITERIA CHECK LOGIC" (p 134: A = start, B = during, D = end criteria). The pins as the TCA520 ..
        TCA528 sheets print them at the block: TMG = STEP n-1 COMPLETED (criteria Dn-1), IN CR = STEP n IN CONDITION OK (criteria An),

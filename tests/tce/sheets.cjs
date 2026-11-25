@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 260; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 261; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 106;
@@ -406,6 +406,17 @@ for (const id of ['TCA762', 'TCA763']) {
     fail('TCA530 chest temp diff limit curves');
   if (!near(fgy('TCA548', 'fgA040', 100), 305) || !near(fgy('TCA548', 'fgA040', 538), 471) || !near(fgy('TCA548', 'fgA042', 423.5), 317.5))
     fail('TCA548 lower limit curves');
+}
+/* TORQUE (INCHING), IBD 794 sheet 20: moves only while the command stands; open stops on the full open limit, close on the torque switch */
+{
+  const tq = R.MACRO['TORQUE (INCHING)'], st = {}, r = x => tq({ AOP: 0, ACL: 0, EF: 0, LTOP: 0, LTCL: 1, TROP: 0, TRCL: 0, ...x }, [], st, 0.1);
+  r({ 'PB AUTO': 1 });
+  if (r({ AOP: 1 }).OPS !== 1 || r({}).OPS !== 0) fail('TORQUE (INCHING): open only while AUTO OPEN CONDITION stands');
+  if (r({ AOP: 1, LTOP: 1, LTCL: 0 }).OPS !== 0) fail('TORQUE (INCHING): open must stop on the full open limit');
+  const c = r({ ACL: 1, LTOP: 1, LTCL: 0 });
+  if (c.CLS !== 1) fail('TORQUE (INCHING): close command must close');
+  if (r({ ACL: 1, LTOP: 0, LTCL: 1, TRCL: 1 }).CLS !== 0 || r({ ACL: 1, LTOP: 0, LTCL: 1, TRCL: 1 }).ABN !== 0) fail('TORQUE (INCHING): close seats on the torque switch, no alarm at the close limit');
+  if (r({ ACL: 1, LTOP: 0, LTCL: 0, TRCL: 1 }).ABN !== 1) fail('TORQUE (INCHING): torque close in mid travel is ANN 3');
 }
 /* MODE (TCA768A, LMA810): load up rate by load band from the printed tables; 5.0 %/min until the IP -> HP transfer is complete */
 {
