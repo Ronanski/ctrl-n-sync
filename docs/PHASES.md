@@ -14,7 +14,7 @@ Huling suri: 2026-11-25 ~7:30 PM PHT (verify mula sa repo, main 5ea1c1e; ulat `/
 | 4 | Tag database | I/O list bilang iisang table, iisang source of truth | BAHAGI | `tests/lanes/tcs-io/io.cjs` (TCS lang) | DCS tags kalat sa ilang file; 1,787 / 2,613 nakakabit |
 | 5 | Block library | Bawat vendor block (ABC / DITL, HIACS TCE / TCA macro) isang beses ginawa at sinubok laban sa block manual | BAHAGI | `tests/tce/run.cjs` | 54 TCS curve walang punto; ABC / DITL block test sa `sim-tests.yml` (main lang) |
 | 6 | Logic bilang data (netlist) | Bawat sheet = blocks + wires, kabit ayon sa tag sa lahat ng sheet | BAHAGI | `tests/tce/sheets.cjs`, `tests/lanes/qa/tce-complete.cjs` | TCS 368 / 419 tumatakbo; DCS link 1,787 / 2,613 |
-| 7 | Validator | Kusang bilang at check (walang kabit na pin, hindi kilalang tag, NaN) sa bawat takbo | BAHAGI | `tools/check/no-fit.cjs`, `tools/data/tce_check.mjs` | Ang QA trace (`tools/trace/`) ay mano-mano, wala sa Checks |
+| 7 | Validator | Kusang bilang at check (walang kabit na pin, hindi kilalang tag, NaN) sa bawat takbo | TAPOS | `tests/lanes/qa/trace-gate.cjs` (22 bilang laban sa `tools/trace/baseline.json`), `tests/lanes/qa/tce-complete.cjs` (floor 256), `tools/check/no-fit.cjs`, `tools/data/tce_check.mjs` | Tapos 2026-11-25 ("Go 7"). Ang mga bilang mismo (hal. 145 walang kabit) ay trabaho ng Phase 4 at 6 |
 | 8 | Komunikasyon | Modbus at package PLC emulation | BAHAGI | `tests/lanes/tcs-io/io.cjs` (Modbus TCS 237 / 237) | Fly ash / ESP / CTCS address lang, walang value; walang PLC emulation |
 | 9 | HMI | Generic faceplate bawat uri, mimic nakakabit sa tag | BAHAGI | `tests/lanes/hmi-turbine/pages-bound.cjs`, `tests/regress/hx_fp_mon.js`, `hx_unknown.js` | 1,045 / 1,067; approval ng user bawat page |
 | 10 | Alarms at events | Priority, ack, shelving, SOE, historian, trends | BAHAGI | `tests/lanes/lane5/alarm-rows.cjs`, `alarm-live.cjs` | Walang shelving at historian; 222 / 371 |
@@ -24,4 +24,4 @@ Huling suri: 2026-11-25 ~7:30 PM PHT (verify mula sa repo, main 5ea1c1e; ulat `/
 | 14 | V&V | Operator review laban sa plant / design data | HINDI PA | wala | Live run Cold hanggang 150 MW (ang user ang nagpapasya kung kailan) |
 | 15 | Config management | Version bawat sheet at daan ng MOC update | BAHAGI | `tools/version-check.js` | Walang version bawat sheet; walang MOC na daan |
 
-**Bilang: 0 TAPOS, 14 BAHAGI, 1 HINDI PA.**
+**Bilang: 1 TAPOS, 13 BAHAGI, 1 HINDI PA.**

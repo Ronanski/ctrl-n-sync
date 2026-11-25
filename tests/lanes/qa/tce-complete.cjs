@@ -8,7 +8,8 @@ const fs = require('fs'),
 const root = path.resolve(__dirname, '..', '..', '..');
 /* floor 194 -> 141 (2026-11-25, rules (a) explanation sheets and (b) links lost at compile: old rule 196, new rule 141 on main 502e57f);
    141 -> 196 after lane 1 PR 526 fixed both (nearest connector, INITIAL from TCE050) */
-const FLOOR = +(process.env.TCE_FLOOR || 196);
+/* 196 -> 256 (Phase 7, user "Go 7" 2026-11-25 ~7:40 PM PHT): the floor follows main again (COMPLETE 256 of 419 on main ebdeea5) */
+const FLOOR = +(process.env.TCE_FLOOR || 256);
 const dir = root + '/src/digital/tce';
 const src = fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8');
 const win = {};
