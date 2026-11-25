@@ -254,7 +254,13 @@ FIELD.add(lane, [
 ).concat([['ZSO-BH1754', 'twO', 'I.0173', 'LSO', 'two-way separator at its open end (ash to the vibrating screens)'],
   ['ZSC-BH1754', 'twC', 'I.0174', 'LSC', 'two-way separator at its closed end (ash to the silo)']].map(([tag, k, a, ls, rel]) => ({
   stn: 3, di: 1, tag, sheet: 'DITL-BA60', v: U => (U.ba && U.ba.sw ? U.ba.sw[k] : NaN), rel,
-  src: 'IO list STN103 ' + a + '; DITL-BA60 TWO-WAY ' + ls + ' input; position from DITL-BA71 outputs 5 / 6 = O.0210 / O.0211 (engine boiler.js anBaStep)' }))));
+  src: 'IO list STN103 ' + a + '; DITL-BA60 TWO-WAY ' + ls + ' input; position from DITL-BA71 outputs 5 / 6 = O.0210 / O.0211 (engine boiler.js anBaStep)' }))
+).concat([['A', '', '025B', '025C', 'O.0217 / O.0218'], ['B', ' #B', '053B', '053C', 'O.0298 / O.0299'], ['C', ' #C', '064B', '064C', 'O.0618 / O.0619'],
+  ['D', ' #D', '068B', '068C', 'O.029D / O.029E']].flatMap(([x, c, ao, ac, o]) => [['ZSO', ao, 1, 'open'], ['ZSC', ac, 0, 'closed']].map(([p, a, end, w]) => ({
+  stn: 3, di: 1, tag: p + '-BH1060-' + x, sheet: 'DITL-117' + c,
+  v: U => (U.ba && U.ba.gi && isFinite(U.ba.gi[x]) ? (U.ba.gi[x] === end ? 1 : 0) : NaN),
+  rel: 'bottom ash screw cooler ' + x + ' inlet valve ' + w,
+  src: 'IO list STN103 I.' + a + '; position from DITL-117' + c + ' outputs 7 / 12 = ' + o + ' SVO / SVC-BH1060-' + x + ' (engine boiler.js anBaStep U.ba.gi)' })))));
 
 /* 10. DITL input rows of the boiler drawings whose FROM column names an output of the same sheet (QA xref 2026-11-25 11:30 "missing":
    DITL-18 r20, DITL-19 r6 / r12 / r23, DITL-43 r4 / r5). That number is the station channel of the field contact (the output repeats
