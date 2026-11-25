@@ -123,12 +123,20 @@ const mt = t => U => fin((U.mt || {})[t]);
 R.push({ stn: 3, ai: 'AI0736', tag: 'TT-SW1501-BU', v: mt('TT-SW1501-BU'), rel: 'U.mt (AN_MT SWP-B)', src: io(3) + ' AI0736; unit.js AN_MT SWP-B' });
 R.push({ stn: 3, ai: 'AI0758', tag: 'VT-SW1501-C2', v: mt('VT-SW1501-C2'), rel: 'U.mt (AN_MT SWP-C)', src: io(3) + ' AI0758; unit.js AN_MT SWP-C' });
 for (const [ai, tag, k] of [
+  ['AI0448', 'PT-SW1110-A1', 'swPiA'],
+  ['AI0449', 'PT-SW1110-A2', 'swPoA'],
+  ['AI0805', 'TT-SW1110-A1', 'swTiA'],
+  ['AI0806', 'TT-SW1110-A2', 'swToA'],
   ['AI0800', 'PT-SW1110-B1', 'swPiB'],
   ['AI0801', 'PT-SW1110-B2', 'swPoB'],
   ['AI0933', 'TT-SW1110-B1', 'swTiB'],
   ['AI0934', 'TT-SW1110-B2', 'swToB']
 ])
-  R.push({ stn: 2, ai, tag, v: U => fin(U[k]), rel: 'U.' + k + ' (condenser sea water side B)', src: io(2) + ' ' + ai + '; unit.js sea water model' });
+  R.push({ stn: 2, ai, tag, v: U => fin(U[k]), rel: 'U.' + k + ' (condenser sea water side ' + tag.slice(-2, -1) + ')', src: io(2) + ' ' + ai + '; unit.js sea water model' });
+/* condensate water pressure low switch (STN102 I.0049; on no DITL row: alarm and HMI): made below 15.5 kg/cm2 of the pump discharge header
+   pressure of the model (U.cdPd, the PT-CD1117 value). The I.0049 on DITL-03B is the station 103 address (MIS-F1055A FA blower A stopped) */
+R.push({ stn: 2, di: 1, tag: 'PS-CD1117', v: U => (isFinite(U.cdPd) ? (U.cdPd < 15.5 ? 1 : 0) : NaN), rel: 'U.cdPd < 15.5 kg/cm2 (condensate pump discharge pressure)',
+  src: io(2) + ' I.0049 "#1 Condensate water pressure switch low"; Alarm List 20160912 sheet PS: PS-CD1117 stn 102 I.0049 set L 15.5; unit.js AN_CD cdPd' });
 R.push({ stn: 3, ai: 'AI0434', tag: 'IT-P1503B', v: U => fin(U.swIb1), rel: 'U.swIb1 booster pump B current', src: io(3) + ' AI0434; unit.js sea water booster model' });
 R.push({ stn: 3, ai: 'AI0435', tag: 'IT-P1503C', v: U => fin(U.swIb2), rel: 'U.swIb2 booster pump C current', src: io(3) + ' AI0435; unit.js sea water booster model' });
 R.push({ stn: 3, ai: 'AI0465', tag: 'IT-P1116B', v: U => fin(U.cdI1), rel: 'U.cdI1 CEP-B current', src: io(3) + ' AI0465; unit.js condensate pump model' });
@@ -291,6 +299,16 @@ for (const [stn, addr, tag, what] of [
 ST.push({ id: 'LO1753.ctl', tag: 'MIA-LO1753-1', di: 'I.065B', stn: 3, normal: 0, t: 'PAF circulating oil system control power switch off', g: 'Air and flue gas', src: io(3) + ' I.065B "PAF circulating oil system control power auxiliary switch off"; normal = switch on' });
 ST.push({ id: 'LO1753.nfb2', tag: 'MIA-LO1753-2', di: 'I.065C', stn: 3, normal: 1, t: 'PAF circulating oil system NFB2 off', g: 'Air and flue gas', src: io(3) + ' I.065C "PAF circulating oil system NFB2 auxiliary switch not off"; normal = NFB closed (1)' });
 ST.push({ id: 'LO1753.nfb1', tag: 'MIA-LO1753-3', di: 'I.065D', stn: 3, normal: 1, t: 'PAF circulating oil system NFB1 off', g: 'Air and flue gas', src: io(3) + ' I.065D "PAF circulating oil system NFB1 auxiliary switch not off"; normal = NFB closed (1)' });
+/* fire fighting pumps (DITL-87 rows 24 / 26, LOCATION FFS = the fire fighting system panel; that system is not in the DCS and not in the
+   model): the DCS only reads their running contacts. Normal = not running (no fire demand): DITL-87 out 27 "ANY FIRE PUMP RUNNING & FIRE
+   TANK LEVEL < 50%" is an annunciator (CRT ANN), so a running fire pump is an abnormal state. The jockey pump P-0720 (I.033C) starts and
+   stops on the header pressure by itself, so it has no single normal state: not here (K1AU3-M0-159, the fire fighting system, not read) */
+[
+  ['I.0338', 'MIR-P0719', 'Fire pump P-0719 (motor driven) running', 'DITL-87 row 24'],
+  ['I.033A', 'MIR-P0718', 'Fire pump P-0718 (diesel engine driven) running', 'DITL-87 row 26']
+].forEach(([addr, tag, what, row]) =>
+  ST.push({ id: tag.slice(4) + '.run', tag, di: addr, stn: 5, normal: 0, t: what, g: 'Other', src: io(5) + ' ' + addr + ' "' + what + '"; ' + row + '; DITL-87 out 27 (ANN) = running is abnormal' })
+);
 FIELD.state(
   lane,
   ST.map(({ id, tag, normal, t, g, src }) => ({ id, tag, normal, t, g, src }))
