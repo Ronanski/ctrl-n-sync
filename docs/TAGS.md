@@ -29,10 +29,18 @@ Nakalista sa `tests/lanes/qa/tag-db-known.json`, bawat isa ay may dahilan at may
 
 Kapag ang `tag` ng isang row ay ang baybay ng drawing o ng alarm list (kailangan ito para mahanap ang row sa sheet), may `io` ang row = ang pangalan sa I/O list, at ang `io` ang sinusuri. Halimbawa: field MIR-L-1090 (drawing DITL-BA59) `io` MIR-L1090 (STN103 I.0163); ARP / IRP (DITL-42 row 6 / 7) `io` ARP1-SYSERR / IRP1-POWALM; alarm PSL-DO1043-A1 / C1 / D1 `io` PSH-DO1043-x1 (ang alarm list 20160912 ay sumulat ng PSL pero "PRESSURE HIGH SWITCH", set H 5.9: mali ng baybay sa alarm list, nasa listahan para sa user).
 
-Natitira (1, 2026-11-25 8:40 PM): loop STN102 FIQCD1121 SI9990. Ang memory list ng STN102 ay hanggang SI2099 lang; ang STN105 memory list ay nagsasabing ang SI9990 ay broadcast mula sa ibang station ("FROM #2 STN104"). Kailangan ang loop list at STN104 memory list sa PC.
+Natitira: 0 (2026-11-25 9:10 PM). Ang huli, loop STN102 FIQCD1121 SI9990, ay AI0436. Nabasa sa PC:
+
+- ABC-032 as-built Rev. 1 (2017-10-03): FT-CD1121 -> AI0436 -> square root -> FIQCD1121.PV (SUMA S2-MDL086) at FICCD1121.
+- DCS I/O list Rev. 1 (Station 102) at Loop Test Report 2016-10-13 (Condensate, OK): AI0436 = FT-CD1121, 0 ~ 200 T/H.
+- STN102_LOOP,USERTAG.xls, LOOP_AX module 86: PV = SI9990 (doon lang ito nakasulat). Ang katabing module 83 ~ 87 ay AI0432 ~ AI0435 at AI0437.
+- Memory list ng STN102: nandoon ang SI9990 pero blangko ang pangalan (ang huling may pangalan ay SI2099); walang dokumentong nagsasabing may sumusulat dito. STN101 at STN103 ay hanggang SI1299 at SI1199 lang ang row.
+- Ang "FROM #2 STN104 SI9990 (BROADCAST)" ay nasa memory list ng STN105: sariling SI9990 ng STN105, galing sa Unit 2. Ibang salita ito, hindi sa STN102, kaya walang banggaan.
+
+Sa app, ang loop list row ay AI0436 (tools/data/dcslists.py, PV_FIX). Hindi alam kung bakit SI9990 ang nasa loop list ng planta (posibleng binago sa site pagkatapos ng as-built); tanong sa I&C ng planta kung kailangan.
 
 ## 4. Bukas na item (hindi pa tapos ang Phase 4)
 
-1. Ang 1 natitirang pagkakaiba, SI9990 (seksyon 3, kailangan ang PC).
+1. ~~Ang 1 natitirang pagkakaiba, SI9990~~ TAPOS 2026-11-25 9:10 PM: AI0436 (seksyon 3).
 2. Ang DITL / ABC sheets mismo ay may sariling text ng tag at address (pre.txt, apre.txt); ang pagtutugma nila ay binibilang ng QA trace (Phase 7: walang kabit 145, nasa drawing pero wala sa row 130), hindi pa 0.
 3. Ang HMI pages ay tumatawag ng tag sa code (`src/ui/plant/hx/`); hindi pa sinusuri ng test na ito (QA trace: I/O tags sa pages 824).

@@ -9,7 +9,7 @@
    pressures U.loPa / loPb / loCa / loCb / loEop; the signals of the protection controllers (TCPnnnn) = tcs-tpc.js; TCA636 / TCA638 B1 and
    INITIAL = the nets of their own sheets.
    THE WHOLE PROGRAM (TCE / TCA / G sheets) runs here, once, for the engine and the page. The sheets of TCS_SH.ids drive their motor and scan
-   at their own cycle; the others run beside tcs.js until their group drives, one scan every TCS_SH.slow s, their inputs from the TCS I/O list
+   at their own cycle; the others run beside tcs.js until their group drives, each at its own cycle, their inputs (every TCS_SH.slow s) from the TCS I/O list
    (src/digital/tce-io.js; a (TCP) connector with no source (tcs-tpc.js), a hardware status or a panel contact of the G sheets keeps its start value).
    The page shows the nets of the engine (AN.tce, engine/sync.js slot tceV).
    Memory: c.sm in the TCS state = { n: steps, pb: port -> seconds left, pur, mot: motor -> memory }; AN_TCE = the nets and the memory of
@@ -18,7 +18,7 @@ const TCS_SH = {
   ids: 'TCE300 TCE305 TCE310 TCA655 TCA680 TCA700 TCE040 TCE042 TCE102 TCE104 TCE111 TCA043 TCA047 TCA048'.split(' '),
   hold: 3 /* s, HOLD 3000 ms of HMI_DO */,
   slice: 0.1 /* s, COMM+MD cycle */,
-  slow: 0.25 /* s, the sheets that do not drive yet */,
+  slow: 0.25 /* s, the I/O list feed of the sheets that do not drive yet (each scans at its own cycle) */,
   mot: {
     mopA: ['TCE300.b007', c => c.mop[0], c => c.mopAu[0], 'TCE300', 'MOP-A'],
     mopB: ['TCE300.b021', c => c.mop[1], c => c.mopAu[1], 'TCE300', 'MOP-B'],
@@ -200,7 +200,8 @@ function tcsSheets(U, c, dt) {
   p.t += dt; /* the time the program has run, s (TCE.status) */
   AN_TCE.n = sm.n = (+sm.n || 0) + 1;
 }
-/* the sheets that do not drive yet: one scan every TCS_SH.slow s (a sheet with a longer cycle at its cycle) */
+/* the sheets that do not drive yet: their inputs from the TCS I/O list every TCS_SH.slow s; each sheet scans at its own drawing cycle
+   (10 / 30 / 100 ms; a longer cycle at its cycle), as the drive sheets (Phase 3, 2026-11-25: was one scan of 0.25 s) */
 function tcsShSlow(p, R, U, h) {
   p.tt += h;
   if (p.tt < TCS_SH.slow - 1e-9) return;
@@ -218,10 +219,7 @@ function tcsShSlow(p, R, U, h) {
     p.fed = n;
   }
   for (const q of p.rest) {
-    q.acc += d;
-    if (q.acc < q.cyc - 1e-9) continue;
-    R.scan(p, q, Math.max(d, q.cyc));
-    q.acc = q.cyc > d ? q.acc - q.cyc : 0;
+    for (q.acc += d; q.acc >= q.cyc - 1e-9; q.acc -= q.cyc) R.scan(p, q, q.cyc);
   }
 }
 /* the keyframe (engine/state.js): the nets that left their start value by name and the block memories; the motors are in c.sm */

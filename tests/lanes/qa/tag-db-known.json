@@ -1,6 +1,4 @@
 {
  "about": "Known differences against the tag database (src/data/ades.txt), found 2026-11-25 by tests/lanes/qa/tag-db.cjs. Each one has its reason; the lane that owns the row fixes it and removes it here. A new difference is never added here without a reason. A row whose tag is the drawing's spelling carries io = the I/O list name (field MIR-L-1090 / ARP / IRP, alarm PSL-DO1043-x1 where the alarm list 20160912 writes PSL for the PSH-DO1043 HIGH switch); the test checks io.",
- "known": {
-  "loop 2 SI9990": "the loop list (STN102 LOOP_AX) gives FIQCD1121 the address SI9990. The STN102 memory list stops at SI2099; the STN105 memory list names SI9990 a broadcast word 'FROM #2 STN104 SI9990 (BROADCAST)' (another station). Which station writes SI9990 needs the loop list and the STN104 memory list on the PC."
- }
+ "known": {}
 }
