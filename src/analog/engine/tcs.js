@@ -217,7 +217,8 @@ function tcsInit(U, how) {
 function tcsMode(U) {
   const c = U.tc,
     t = Math.min(c.Thp, c.Trh);
-  c.mode = TCS.modes.find(m => t < m[1])[0];
+  /* the mode of TCA500 (its outputs to the DCS I.0410 ~ I.0414, tcs-dcs.js); the metal band only before the program runs */
+  c.mode = tcsHwMode(U) || TCS.modes.find(m => t < m[1])[0];
   return c.mode;
 }
 function tcsPV(tag) {
@@ -1630,14 +1631,14 @@ function tcsVtState(U) {
     ph: vt.ph,
     t: vt.t,
     lowLoad: !!vt.lo,
-    msvA: p(tcsVtMsv(U, 'A')),
-    msvB: p(tcsVtMsv(U, 'B')),
+    msvA: p(tcsStop(U, tcsVtMsv, 'A')),
+    msvB: p(tcsStop(U, tcsVtMsv, 'B')),
     cvA: p(tcsVtCv(U, 'A')),
     cvB: p(tcsVtCv(U, 'B')),
     icvA: p((U.tb.icv || 0) * tcsVtIcvS(U, 'A')),
     icvB: p((U.tb.icv || 0) * tcsVtIcvS(U, 'B')),
-    rsvA: p(tcsVtRsv(U, 'A')),
-    rsvB: p(tcsVtRsv(U, 'B')),
+    rsvA: p(tcsStop(U, tcsVtRsv, 'A')),
+    rsvB: p(tcsStop(U, tcsVtRsv, 'B')),
     perm
   };
 }
@@ -1714,13 +1715,13 @@ function tcsLiveRead(U) {
     ostBk: o.bk ? 1 : 0,
     patMain: +o.pmain || 0 /* overspeed test pattern (MAIN), rpm above the target */,
     patBk: +o.pbk || 0,
-    /* TCE250 / TCE224: the valve positions of the valve test model (tcsVtMsv / Cv / Rsv, the ICV of side A / B); full close = at 0 */
-    msvAc: tcsVtMsv(U, 'A') <= 0 ? 1 : 0,
-    msvBc: tcsVtMsv(U, 'B') <= 0 ? 1 : 0,
+    /* TCE250 / TCE224: the valve positions (tcsStop: MSV / RSV by the trip oil and the valve test; tcsVtCv, the ICV of side A / B); full close = at 0 */
+    msvAc: tcsStop(U, tcsVtMsv, 'A') <= 0 ? 1 : 0,
+    msvBc: tcsStop(U, tcsVtMsv, 'B') <= 0 ? 1 : 0,
     cvAc: tcsVtCv(U, 'A') <= 0 ? 1 : 0,
     cvBc: tcsVtCv(U, 'B') <= 0 ? 1 : 0,
-    rsvAc: tcsVtRsv(U, 'A') <= 0 ? 1 : 0,
-    rsvBc: tcsVtRsv(U, 'B') <= 0 ? 1 : 0,
+    rsvAc: tcsStop(U, tcsVtRsv, 'A') <= 0 ? 1 : 0,
+    rsvBc: tcsStop(U, tcsVtRsv, 'B') <= 0 ? 1 : 0,
     icvAc: (tb.icv || 0) * tcsVtIcvS(U, 'A') <= 0 ? 1 : 0,
     icvBc: (tb.icv || 0) * tcsVtIcvS(U, 'B') <= 0 ? 1 : 0,
     l52o: U.el && U.el.l52 === false ? 1 : 0 /* 52L OPEN (elec.js) */,

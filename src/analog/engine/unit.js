@@ -5627,9 +5627,14 @@ function anUnitStep0(dt) {
       m = c && c.mode,
       H = U.hdLvl || {};
     for (const l of U.di.one || []) w(l, 1);
-    for (const l of U.di.warm || []) w(l, m === 'warm' ? 1 : 0);
-    for (const l of U.di.hot || []) w(l, m === 'hot' ? 1 : 0);
-    w(U.di.tg, c && c.tg && tb.rpm < 4 ? 1 : 0);
+    /* I.0413 / I.0414 / I.0417: the TCS outputs TCA980-21 / TCA980-20 / TCE960-8 of the program (tcs-dcs.js); before it runs, the state */
+    const hw = (id, x) => {
+      const y = tcsHw(U, id);
+      return y === undefined ? x : y > 0.5 ? 1 : 0;
+    };
+    for (const l of U.di.warm || []) w(l, hw('TCA980-21', m === 'warm' ? 1 : 0));
+    for (const l of U.di.hot || []) w(l, hw('TCA980-20', m === 'hot' ? 1 : 0));
+    w(U.di.tg, hw('TCE960-8', c && c.tg && tb.rpm < 4 ? 1 : 0));
     const eb = window.WORLD && WORLD.endBand; /* open limit switch: the one rule of plantsw.js (the engine alone, ABC only, has no field switches) */
     if (eb && U.lpbSp && U.lpbSp.n != null)
       w(U.di.lpbZso, anAv('TICHR1012', Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0))) >= eb.open ? 1 : 0);
@@ -6028,7 +6033,8 @@ function anUnitStep0(dt) {
     if (U.di.onCmd >= 0 && +v[U.di.onCmd] > 0.5 && tb.perm) dirt(U.di.on, 1);
     if ((U.di.offCmd >= 0 && +v[U.di.offCmd] > 0.5) || !tb.perm) dirt(U.di.on, 0);
   }
-  if (U.spd && U.spd.length) anUnitWrite(U.spd, tb.rpm);
+  /* AI0534 turbine speed: the TCS output TCE970-6 (TCE610); before the program runs, the shaft */
+  if (U.spd && U.spd.length) anUnitWrite(U.spd, tcsHw(U, 'TCE970-6') ?? tb.rpm);
   U.t += dt;
   /* transmitters */
   anUnitWrite(U.msp, Pms);

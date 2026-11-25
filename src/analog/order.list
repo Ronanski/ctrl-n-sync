@@ -18,6 +18,8 @@ engine/tcs.js
 engine/tcs-ibd-data.js
 engine/tcs-trip.js
 engine/tcs-sheets.js
+engine/tcs-tpc.js
+engine/tcs-dcs.js
 engine/tcs-gen.js
 engine/tcs-dev.js
 engine/elec.js

@@ -408,7 +408,17 @@
        the first pin: MOP(A) RUNNING and MOP(A),(B) FAULT of TCE300 read STS (2026-11-25, YUA) */
     const W = macroPins(s, macros, u, tol);
     /* "(*)" beside a connector = this same sheet (TCE300 B3 MOP (B) RUNNING: the output B3 of TCE300) */
-    const inputs = (s.c || []).filter(c => c[1] === 'in').map(c => ({ key: c[0], letter: c[2], name: c[5], from: (c[6] || []).map(f => (f === '*' ? s.id : f)) }));
+    /* a connector typed with no sheet list: its sheet is the one printed as a free text under it, "(TCA358)" (TCA370 A1 REHEAT BOWL INNER WALL
+       METAL TEMP., TCA510 D STEP n COMPLETED); without it the 33 such inputs were ports with no end, read as 0 (2026-11-25, YUA) */
+    const under = c =>
+      (s.t || [])
+        .filter(w => Math.abs(w[0] - c[3]) <= 150 && w[1] > c[4] && w[1] - c[4] <= 36 && /^\([A-Z]{3}\d+[A-Z]?\)$/.test(w[2]))
+        .sort((x, y) => x[1] - y[1])
+        .slice(0, 1)
+        .map(w => w[2].slice(1, -1));
+    const inputs = (s.c || [])
+      .filter(c => c[1] === 'in')
+      .map(c => ({ key: c[0], letter: c[2], name: c[5], from: ((c[6] || []).length ? c[6] : under(c)).map(f => (f === '*' ? s.id : f)) }));
     const outc = (s.c || []).filter(c => c[1] === 'out').map(c => ({ key: c[0], letter: c[2], sheets: c[6] || [] }));
     const res = { id: s.id, inputs, outc, blocks, macros, marks: marks.map(m => ({ key: m.key, type: m.type, in: null })), outputs: [], open: [] };
     const mk = Object.fromEntries(res.marks.map(m => [m.key, m]));
