@@ -197,7 +197,12 @@
     isFinite(L.rpm) ? b(L.rpm < 2400) : NaN
   );
   O('TCE960-19', 'ACCELERATION RELAY OPERATED -> DCS (XSMM, DCS I/O list sh 5, IBD TA-33)');
-  O('TCE960-20', 'DCS MODE ON FEEDBACK -> DCS STN101 I.0082 TCS-DI1047 (ABC-001C)');
+  /* the engine value: the DCS input ABC-001C I.0082 the engine writes (unit.js U.di.on: set by the DCS MODE ON command O.0178 while the
+     permissive holds, reset by O.0179 or the permissive lost; TCE180 FFR011 -> TCE601 007 on the drawing) */
+  O('TCE960-20', 'DCS MODE ON FEEDBACK -> DCS STN101 I.0082 TCS-DI1047 (ABC-001C); TCE180 DCS CONTROL MODE ON (FFR011) -> TCE601 007', U => {
+    const m = U && U.di && U.di.on;
+    return m && m.S && m.S.rt ? b(+m.S.rt.ext[m.n] > 0.5) : NaN;
+  });
   O('TCE960-24', 'ASD2 START SIGNAL (52L) -> synchronizer ASD2');
   O('TCE960-25', 'HP-CV FULL CLOSE (BOTH CV(A) & (B)) -> DCS STN102 I.041D TCS-DI1050 (IBD TA-6)', (U, L) =>
     b(L.cvAc && L.cvBc)
@@ -217,7 +222,10 @@
   O('TCE961-1', 'control oil pump (B) start command -> MCC (c.cop[1])', (U, L) => L.copB);
   O('TCE961-2', 'main oil pump (B) start command -> MCC (c.mop[1])', (U, L) => L.mopB);
   O('TCE961-3', 'ASD1 START SIGNAL (52G) -> synchronizer ASD1 (tcs-gen.js g.start)', (U, L) => L.synStart);
-  O('TCE961-5', 'DCS CONTROL MODE PERMISSIVE -> DCS STN101 I.0081 TCS-DI1046 (ABC-001C)');
+  /* the engine value: tb.perm of unit.js (TCE p.127 TCE180: NOT (52G not closed, TURBINE TRIP, HOUSE LOAD forced close, IP start before
+     TRANSFER REGION COMPLETE), the same value it writes to ABC-001C I.0081) */
+  O('TCE961-5', 'DCS CONTROL MODE PERMISSIVE -> DCS STN101 I.0081 TCS-DI1046 (ABC-001C); TCE180 output B -> TCE602', U =>
+    U && U.tb && U.tb.perm != null ? b(U.tb.perm) : NaN);
   O(
     'TCE961-8',
     'POWER LOAD UNBALANCE RY OPERATED -> DCS STN102 I.0405 TCS-DI1028 CV & ICV full closed by PLU activation (XSMM RY, IBD TA-33)',
@@ -271,10 +279,12 @@
     if (m[3] === 'POSITION')
       return ['model', 'LVDT ' + (r.ins || '') + ' ' + k + ' position, %: the valve model of tcs.js (tcsVt*)', vlv[k]];
     if (r.kind === 'SERVO-AO')
+      /* the engine's own command of the same valve (lane 9 compare): tcs.js has no actuator lag, the valve sits at its demand, so the
+         command = the valve model position of tcsVtState (msvA ... icvB), % as the coil output range 0 ~ 100 % */
       return [
         'out',
-        k + ' servo valve coil drive -> the valve actuator (the model moves the valve from the flow demand, tcs.js)',
-        null
+        k + ' servo valve coil drive -> the valve actuator; read = the engine valve demand of tcs.js (tcsVt*, no actuator lag in the model), %',
+        vlv[k]
       ];
     return [
       'needs',
@@ -493,10 +503,23 @@
   F('TCA905-9');
   F('TCA905-10');
   /* TSI contacts */
-  const tsi =
-    'TSI shaft vibration HIGH contact (IBD TA-18): the vibration exists (U.loVx / loVy) but the TSI HIGH setting is not in the docs read';
-  ['TCA904-1', 'TCA904-2', 'TCA904-17', 'TCA904-18', 'TCA905-1', 'TCA905-2', 'TCA905-17', 'TCA905-18'].forEach(id =>
-    N(id, tsi)
+  /* TSI shaft vibration HIGH contacts: ON >= 0.125 mm (setpoint list 310SC90-778 R0 p 11-12 rows 17-24, ANN / ATS, IBD TA-18; the same
+     limit tcs-trip.js TA-18 uses). The vibration of bearing n, X / Y = U.loVx<n> / U.loVy<n> of the oil model (tcs.js), mm */
+  [
+    ['TCA904-1', 'x', 1],
+    ['TCA904-17', 'y', 1],
+    ['TCA905-1', 'x', 2],
+    ['TCA905-17', 'y', 2],
+    ['TCA904-18', 'x', 3],
+    ['TCA904-2', 'y', 3],
+    ['TCA905-18', 'x', 4],
+    ['TCA905-2', 'y', 4]
+  ].forEach(([id, a, n]) =>
+    M(
+      id,
+      'NO.' + n + ' shaft vibration (' + a.toUpperCase() + ') HIGH: U.loV' + a + n + ' >= 0.125 mm (setpoint list 778 TA-18, ON >= 0.125 mm)',
+      U => (isFinite(U['loV' + a + n]) ? b(U['loV' + a + n] >= 0.125) : NaN)
+    )
   );
   SY('TCA904-9', 0, 'turbine supervisory instrument trouble: the app has no TSI hardware fault');
   /* TCS cabinet / Modbus / power supply / PCM / EOS / PLU */
