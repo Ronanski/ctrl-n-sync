@@ -246,7 +246,8 @@ for (const x of 'ABC') {
 );
 /* 7c. MCC contacts of the PAF / SAF inlet flow control dampers (STN101; YUA PDF read section C: ABC-007, DITL-26A / 27A use only their
    ZSC / ZSO). Monitor points in normal service, no interlock. */
-[[1, 'FA1053-1', 'MIT', 'I.0048', 0, 'PAF inlet damper tripped'], [1, 'FA1053-1', 'TS', 'I.004A', 0, 'PAF inlet damper torque switch made'],
+[[1, 'FA1053-1', 'MIT', 'I.0048', 0, 'PAF inlet damper tripped'], [1, 'FA1053-1', 'MIL', 'I.0049', 1, 'PAF inlet damper not in remote'],
+  [1, 'FA1053-1', 'TS', 'I.004A', 0, 'PAF inlet damper torque switch made'],
   [1, 'FA1054-1', 'MIT', 'I.0058', 0, 'SAF inlet damper tripped'], [1, 'FA1054-1', 'MIL', 'I.0059', 1, 'SAF inlet damper not in remote'],
   [1, 'FA1054-1', 'TS', 'I.005A', 0, 'SAF inlet damper torque switch made']].forEach(([stn, d, p, a, nrm, t]) => {
   const id = d + '.' + p.toLowerCase(),

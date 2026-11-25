@@ -356,6 +356,19 @@ const has = (txt, tag) => {
     }
     return o;
   };
+  /* the addresses of a text that are written with their station ("PAF BEARING TEMP HIGH S4 O.1361", "S4 O.1406/1407/1408"): address ->
+     station */
+  const SPX = /\bS(\d)\s+(?=[IOMB]\.[0-9A-F]{4})/g;
+  const adrStn = (t, first) => {
+    const m = new Map(),
+      x = String(t || '');
+    for (const q of x.matchAll(SPX)) {
+      const rest = x.slice(q.index + q[0].length),
+        one = /^[IOMB]\.[0-9A-F]{4}(?:\s*\/\s*(?:[IOMB]\.)?[0-9A-F]{2,4}(?![0-9A-F]))*/.exec(rest);
+      if (one) for (const a of adrList(one[0], first)) m.set(a, +q[1]);
+    }
+    return m;
+  };
   /* cells, nl.src / outs / mv / mot rows and the sampled inputs are keyed by the 0-based row INDEX i (app: world.js cellTxt, ditl.js);
      r.n is the number drawn on the row (= i + 1 on 5,399 of 5,559 rows), printed only (fix 2026-11-25, found by YUA) */
   const cellT = (s, i, col) => {
@@ -387,7 +400,10 @@ const has = (txt, tag) => {
     /* input rows whose net carries a user contact (nl.usr, e.g. ELECTRICAL TROUBLE ET272_ / ET274_; its usw entry exists only once set) on an address row (nl.ind): the contact writes the row */
     const usrIn = new Set();
     for (const u of (s.nl && s.nl.usr) || []) for (const m of (s.nl && s.nl.ind) || []) if (m.n === u.n && m.adr) usrIn.add(m.row);
-    const txA = new Map();
+    const txA = new Map(),
+      /* Phase 6 slice 12 (2026-11-26): an output address written with its station ("S4 O.1322" on DITL-26A of station 103: the PAF
+         STOPPED window of the station 104 annunciator, OPC-ANN-A3) is that station's address, not the sheet's */
+      oStn = new Map();
     /* a drawing for machines A / B / C / D has a copy per machine (W.inst): the drawing itself is machine A, its short list gives A only */
     const multi = !s._inst && ((WORLD.instOf && WORLD.instOf.get(s)) || []).length > 1;
     const rs0 =
@@ -414,6 +430,7 @@ const has = (txt, tag) => {
         continue; /* a row-unit copy holds only its rows; the drawing's own text belongs to the base */
       const k = ri + ':' + (x.x >= rs0 ? 'R' : 'L');
       txA.set(k, (txA.get(k) || []).concat(la));
+      for (const [a, z] of adrStn(tt, multi)) oStn.set(ri + '|' + a, z);
     }
     for (const [k, la] of txA)
       if (k.startsWith('-1:')) {
@@ -455,7 +472,12 @@ const has = (txt, tag) => {
       for (const t of [T, Sx, F]) for (const a of adrList(t, multi)) adrs.add(a);
       for (const a of txA.get(i + ':L') || []) adrs.add(a);
       const adrsR = new Set();
-      for (const t of [RT, RS]) for (const a of adrList(t, multi)) adrsR.add(a);
+      for (const t of [RT, RS])
+        for (const a of adrList(t, multi)) {
+          adrsR.add(a);
+          const z = adrStn(t, multi).get(a);
+          if (z) oStn.set(i + '|' + a, z);
+        }
       for (const a of txA.get(i + ':R') || []) adrsR.add(a);
       for (const a of adrsR) adrs.delete(a);
       if (adrsR.size) {
@@ -474,8 +496,15 @@ const has = (txt, tag) => {
         };
         ditl.push(ro);
         for (const a of adrsR) {
-          const k = (stn || '?') + ':' + a;
-          (dByKey.get(k) || dByKey.set(k, []).get(k)).push(ro);
+          /* an I/O address is the hardware of the station written beside it only; a memory address (M. / B.) written with a station is
+             the broadcast of the same number between the two stations (DITL-12, station 104: "STATION WIRING TO: S1 M.3412"; the
+             memory list of 104 has M.3412 A-BURNER IN SERVICE, the one of 101 the copy): it is on the sheet for both */
+          const os = oStn.get(i + '|' + a),
+            ks = os ? (/^[MB]\./.test(a) && os !== stn ? [os, stn || '?'] : [os]) : [stn || '?'];
+          for (const z of ks) {
+            const k = z + ':' + a;
+            (dByKey.get(k) || dByKey.set(k, []).get(k)).push(ro);
+          }
         }
       }
       const tags = String(T + ' ' + RT).match(/\b[A-Z]{1,6}\d?-[A-Z]{1,3}\d{3,4}[A-Z0-9-]*\b/g) || [];
