@@ -1,4 +1,4 @@
-# v1.0.0-beta.567 — Turbine pages, TCS operator buttons, registry machines and monitor points (lane 7, HMI turbine)
+# v1.0.0-beta.587 — Turbine pages, TCS operator buttons, registry machines and monitor points (lane 7, HMI turbine)
 
 ## Ano ang bago (nakikita ng operator)
 - **Turbine control interface** (bagong page, Plant > Turbine and generator): lahat ng hard-wired na signal ng TCS / generator panel at DCS sa limang hanay (trip at valves, speed at start-up, utos sa drain valves, load control, generator).
