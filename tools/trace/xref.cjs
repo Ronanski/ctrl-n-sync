@@ -64,10 +64,22 @@ const OUT = arg('out', path.join(os.tmpdir(), 'qa-xref'));
         /* a drawn code with no letter ("12-70") names the drawing set 12A / 12B / 12C as well */
         const same = c => (c = norm(c)) === N.code || (/^\d+$/.test(N.code) && new RegExp('^' + N.code + '[A-Z]$').test(c));
         const hit = dsrc.some(q => same(code(q.d.name)) || same(code(((q.d._inst || {}).base || {}).name || '')));
-        st = hit ? 'WIRED' : srcs.length ? 'OTHER' : null;
+        /* the source row names the reader on its own TO side ("TO DITL80G": DITL-80B ~ 80F give each sootblower its own copy of DITL-80G,
+           YUA 2026-11-25): the drawing of the source says where it goes, so it is wired as drawn */
+        const me = norm(code(((s._inst || {}).base || s).name));
+        const toMe = q => {
+          if (typeof q.row !== 'number') return false;
+          const t = ['RS', 'RT', 'RL', 'R'].map(c => cellT(q.d, q.row, c)).join(' ').toUpperCase().replace(/\s+/g, '');
+          /* DITL-80H / 80I / 80J hold only "(AS SHEET DITL80G BLOCK)" boxes (N-1016 ~ 1038): a TO DITL80H / 80I / 80J goes to that
+             sootblower's copy of DITL-80G (world.js; YUA 2026-11-25) */
+          const alias = me === '80G' ? '(80G|80H|80I|80J)' : me;
+          return new RegExp('(TO)?DITL-?0*' + alias + '(?![0-9A-Z])').test(t);
+        };
+        st = hit ? 'WIRED' : dsrc.some(toMe) ? 'WIRED (TO side)' : srcs.length ? 'OTHER' : null;
       } else st = srcs.length ? 'WIRED' : null;
       if (!st) st = psw.has(s.name + '|' + (i + 1)) || own.has(i) || (s.avw && Object.keys(s.avw).length && (s.nl.an || []).some(a => a.row === i)) ? 'MODEL' : 'MISSING';
-      const k = N.kind + ' ' + st;
+      const k = N.kind + ' ' + (st === 'WIRED (TO side)' ? 'WIRED' : st);
+      if (st === 'WIRED (TO side)') cnt[N.kind + ' TOSIDE'] = (cnt[N.kind + ' TOSIDE'] || 0) + 1;
       cnt[k] = (cnt[k] || 0) + 1;
       const nm = q => (q && (q.d || q.cs) && (q.d || q.cs).name ? (q.d || q.cs).name + (q.cs ? ' count' : ':' + ((q.row | 0) + 1)) : 'k=' + (q && q.k));
       rows.push([s.name, r.n, F.trim(), N.kind, st, srcs.map(nm).join(' ')]);
@@ -89,7 +101,7 @@ const OUT = arg('out', path.join(os.tmpdir(), 'qa-xref'));
   console.log('# QA xref ' + new Date().toISOString().slice(0, 16) + ' UTC');
   for (const k of ['DITL', 'ABC', 'TCS'])
     console.log(
-      '- DITL rows whose FROM names a ' + k + ' sheet: ' + tot(k) + '; wired ' + (cnt[k + ' WIRED'] || 0) + ', from another sheet ' + (cnt[k + ' OTHER'] || 0) +
+      '- DITL rows whose FROM names a ' + k + ' sheet: ' + tot(k) + '; wired ' + (cnt[k + ' WIRED'] || 0) + (cnt[k + ' TOSIDE'] ? ' (of these by the TO side of the source ' + cnt[k + ' TOSIDE'] + ')' : '') + ', from another sheet ' + (cnt[k + ' OTHER'] || 0) +
         ', model instead ' + (cnt[k + ' MODEL'] || 0) + ', missing ' + (cnt[k + ' MISSING'] || 0)
     );
   const st = WORLD.stat || {},

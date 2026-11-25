@@ -178,7 +178,9 @@ const has = (txt, tag) => {
               : 'link'
             : w > 0
               ? 'engine'
-              : OPER.test(name) || crt(rs, name)
+              : /^(PTN|PS)\d+$/.test(name)
+                ? 'block parameter' /* a pattern slot (PTN) or a ramp / time parameter (PS) of the block itself (AKIHO 2026-11-25, RULES.md) */
+                : OPER.test(name) || crt(rs, name) || ((S.alias && S.alias[n]) || []).some(t => OPER.test(t)) /* audit-fix alias: the mode status .LOC / .MAN that the M / A / R of that tag write (KIRARA) */
                 ? 'operator'
                 : 'NONE'
           : lk
@@ -208,6 +210,24 @@ const has = (txt, tag) => {
         ).push(r);
     }
   }
+  /* one address, one signal (YUA 2026-11-25, RULES.md): an ABC input that nothing writes on its own sheet is written when a net of another
+     sheet with the same station and address is written (an output of logic, a link, the DITL, the engine, the operator) */
+  let sameAdr = 0;
+  for (const r of abc) {
+    if (r.role !== 'in' || r.src !== 'NONE' || !/^[A-Z]{1,2}\.?[0-9A-F]{4,}$/.test(r.name)) continue;
+    const o = (abcByKey.get(r.stn + ':' + r.name) || []).find(x => x !== r && x.sh !== r.sh && (x.role === 'out' || (x.src !== 'NONE' && x.src !== 'wire') || x.writes > 0));
+    if (o) {
+      r.src = 'same address (' + o.sh + ')';
+      sameAdr++;
+    }
+  }
+  /* the controllers (MAN / PID station blocks) of each station, by their loop tag (FICCL1061A, SICL1060A) */
+  const ctlTags = new Map();
+  for (const sh of AN.sheets)
+    for (const b of (!/^ABC-000/.test(sh.name) && sh.S && sh.S.blk) || [])
+      if (/^(MAN|PID|PIDV|PVSV)$/.test(b.k) && b.tag) (ctlTags.get(+sh.stn) || ctlTags.set(+sh.stn, []).get(+sh.stn)).push(String(b.tag));
+  const ctlOf = (stn, dev) => dev.length >= 4 && (ctlTags.get(+stn) || []).some(t => t.length - dev.length >= 2 && t.length - dev.length <= 4 && t.endsWith(dev) && /^[A-Z]+$/.test(t.slice(0, t.length - dev.length)));
+  let aoByCtl = 0;
   /* ---- DITL catalog: every row of every sheet and machine copy, its station (title block "STATION 10x"), address, tag, source */
   const din = (WORLD.idx && WORLD.idx.din) || new Map();
   const psw = new Map();
@@ -408,7 +428,7 @@ const has = (txt, tag) => {
               ? 'plant switch'
               : an && s.avw && s.avw[an.key] != null
                 ? 'plant value'
-                : /^(CRT|OPS|OPC|HMI|CRT\s*\(.*\))$/i.test(L.trim())
+                : /^(CRT|OPS|OPC|HMI|LCD|CRT\s*\(.*\))$/i.test(L.trim()) || [...adrs].some(a => crt(stn, a)) /* LCD / (CRT) push button: RARA 2026-11-25 */
                   ? 'operator'
                   : /^(LOP|LCP|LP|LCS|MCC|SWGR|VCB|LOCAL)/i.test(L.trim())
                     ? 'local panel'
@@ -416,9 +436,13 @@ const has = (txt, tag) => {
                       ? 'valve / motor model'
                       : mv && mv[1] !== mv[0]
                         ? 'moves (own model)'
-                        : F.trim()
-                          ? 'NONE (FROM not linked)'
-                          : 'NONE';
+                        : /DITL-1[678]$/.test(b.name)
+                          ? 'own sheet (field I/O)' /* DITL-16 / 17 / 18 compute their limit switch and flame rows themselves (03b-sim; KIRARA) */
+                          : /DITL-50$/.test(b.name)
+                            ? 'caller pins' /* DITL-50 FB2-OT is an instance block: its inputs are the pins of the calling sheet (coordinator) */
+                            : F.trim()
+                              ? 'NONE (FROM not linked)'
+                              : 'NONE';
       }
       const row = {
         sh: s.name,
@@ -566,7 +590,14 @@ const has = (txt, tag) => {
           /* an input point (DI / AI / PI) counts on its input row with a source; an output point (DO / AO / PO) on any row the logic writes */
           dOk.some(
             x => x.row > 0 && (input ? x.io === 'in' && !/^NONE/.test(x.src) : x.io !== 'in' || !/^NONE/.test(x.src))
-          );
+          ) ||
+          /* the field I/O sheets DITL-16 / 17 / 18 compute their limit switch and flame detector rows themselves (03b-sim; KIRARA) */
+          (input && dOk.some(x => x.row > 0 && x.io === 'out' && /DITL-1[678](\s#\S+)?$/.test(x.sh))) ||
+          /* the drawing prints the DCS input address beside a driven OUTPUT row (MCC / local panel side): that output net is the panel
+             contact the input reads (RARA 2026-11-25: DITL-22 / 23A / 29A / 30 / 61A / 76 / 77 / 111 / 112 MIL / MIS / MIV / MIR) */
+          /* only the MCC / VCB status contacts (MIL remote, MIS stopped, MIV VCB, MIR running, MIT trip): a field or panel input printed
+             beside an output (XA- fire detect, IRP stop commands) stays a gap until its own source is found */
+          (input && /^MI[LSVRT]-/.test(tag) && dOk.some(x => x.row > 0 && x.io === 'out'));
         /* on the drawing but not on a net or a row: the tag written on a sheet, or the device of a typical-drawing table copy
            (DITL-38 "#MV-BD1002": the valve runs from DITL-50 by its tag, its I/O addresses are not on any row) */
         const dev = tag.replace(/^[A-Z0-9]{1,6}-/, '').replace(/-\d$/, '');
@@ -576,7 +607,11 @@ const has = (txt, tag) => {
         const ex = EXCL.test(o.d || '') || EXCL.test(tag);
         const byModel = fbTag.get(tag) || uswKey.has(stn + '|' + fNorm(tag));
         const field = fKey.has(stn + '|' + String(key).toUpperCase()) || fTag.has(fNorm(tag));
-        let st8 = byModel
+        /* an AO whose device is the device of an ABC controller of the same station (SC-L1060A <- SICL1060A MAN, MOF-CL1061-A <-
+           FICCL1061A): the controller output is that AO (KIRARA 2026-11-25, RULES.md) */
+        const aoCtl = !onLogic && /^AO/.test(ty) && ctlOf(stn, dev.replace(/-/g, ''));
+        if (aoCtl) aoByCtl++;
+        let st8 = byModel || aoCtl
           ? 'LINKED'
           : onLogic && !srcOk && clashed
             ? 'COPY ADDRESS CLASH'
