@@ -1525,8 +1525,8 @@
     const s = ftSheet(JAM[id]);
     if (!s) return '';
     if (!s.nl && typeof netlist === 'function') s.nl = netlist(s);
-    s.usw = s.usw || {};
-    for (const u of (s.nl && s.nl.usr) || []) if (u.key === 'FIMIA-CL1061-A4') s.usw[u.key] = on;
+    /* Phase 6 slice 9 (2026-11-26): the DISCHARGE PLUGGING contact MIA-CL1061-x4 of each copy is a field row now (field/boiler.js,
+       X.fault of this id): one source for the contact, written on the copy's own tag (B4 / C4 on DITL-19 #B / #C) */
     if (on) W.ft.add(id);
     else W.ft.delete(id);
     W.busy = true;

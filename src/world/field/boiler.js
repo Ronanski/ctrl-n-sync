@@ -133,9 +133,9 @@ const gb = (U, k, i) => {
 FIELD.add(lane, rows);
 
 /* 7. Field states (beta.530, FIELD.state): field devices with no physics in the plant model. Each starts in its documented normal service
-   state; the trainer changes it from the Plant menu (t = the abnormal condition). Left out on purpose, one source per tag: MIA-CL1061-x4
-   discharge plugging (trainer fault cf.jamA ~ C, world.js jamSet), MIA-CL1061-x6 and ZSO / ZSC-CL1061-x7 (linked on DITL-19 / 20),
-   MIA-CL1061-x1 (AI of unit.js). */
+   state; the trainer changes it from the Plant menu (t = the abnormal condition). Left out on purpose, one source per tag:
+   MIA-CL1061-x6 and ZSO / ZSC-CL1061-x7 (linked on DITL-19 / 20), MIA-CL1061-x1 (AI of unit.js). MIA-CL1061-x4 discharge plugging is
+   the trainer fault cf.jamA ~ C (world.js jamSet) read as a field row below (Phase 6 slice 9). */
 const states = [],
   fr = [];
 const YAM = 'Yamato GM-BSC22-36 Final Drawing for LMYP-1 (L12 Coal Feeder) P8 signal list';
@@ -149,6 +149,10 @@ const CO = { A: ['I.012E', 'I.0133'], B: ['I.044E', 'I.0453'], C: ['I.048E', 'I.
 for (const x of 'ABC') {
   const [cp, mit, mit1, zs, mia] = FD[x],
     sh = 'DITL-19' + cp;
+  /* discharge plugging (Yamato P8 signal 18, no-voltage contact from the chute plugging detector): made while the trainer fault
+     cf.jam<x> stands (world.js jamSet). DITL-19 takes it on the wire of output 65 COAL FEEDER DISCHARGE PLUGED (CRT, ANN) */
+  fr.push({ stn: 4, di: 1, tag: 'MIA-CL1061-' + x + '4', sheet: sh, v: (U, X) => X.fault('cf.jam' + x), rel: 'feeder discharge chute plugged (trainer fault cf.jam' + x + ')',
+    src: 'IO list STN104 ' + { A: 'I.012A', B: 'I.044A', C: 'I.048A' }[x] + ' MIA-CL1061-' + x + '4 "Coal feeder-' + x + ' discharge plugging"; DITL-19' + cp + ' output 65; ' + YAM + ' signal 18' });
   /* feeder fault = the field trip of the feeder motor drawing (trainer fault mt.cfa, the unit black-out) */
   fr.push({ stn: 4, di: 1, tag: 'MIT-CL1061-' + x, adr: mit, sheet: sh, v: (U, X) => X.ftrip(sh), rel: 'feeder motor tripped in the field (DITL-19' + cp + ' field trip)',
     src: 'IO list STN104 ' + mit + ' MIT-CL1061-' + x + ' "Coal feeder-' + x + ' fault"; DITL-19' + cp + ' row 12; ' + YAM });
