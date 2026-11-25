@@ -6,12 +6,13 @@
       30 min, N01 closes, F01 off, idle 16 h, then N01 again without watering; a stop in the run closes in the cycle-end order
    5. the watchdog bits change every exchange
    6. ESP (ESP-OM): in service at 150 MW (TR sets on, DE rapping, purge fan on, heaters off); CE rapping 2 min on, 7 / 13 / 19 / 25 / 31
-      min off for fields 1 ~ 5; after the TRs go off the CE rapping runs continuous for 2 h, then the aux devices stop */
+      min off for fields 1 ~ 5; after the TRs go off the CE rapping runs continuous for 2 h, then the aux devices stop
+   7. fly ash: the plant air low switch from the plant air model, no fail, no command; the tank valves have no value (NO-SOURCE times) */
 'use strict';
 const fs = require('fs'),
   path = require('path');
 const { load, root } = require(path.join(__dirname, '..', '..', '..', 'tools', 'trace', 'world.cjs'));
-const MIN = 214;
+const MIN = 270;
 let bad = 0;
 const ok = (c, m) => {
   if (!c) bad++;
@@ -68,6 +69,9 @@ const ok = (c, m) => {
   const dx = [7, 13, 19, 25, 31].map(o => 2 / (2 + o));
   ok(e.duty.every((d, i) => Math.abs(d - dx[i]) < 0.01), 'CE rapping duty 2 / (2 + off): ' + e.duty.join(' '));
   ok(JSON.stringify(e.post) === '[1,0,1,0]', 'after the TRs go off: CE continuous and aux on for 2 h, then off');
+  const fa = JSON.parse(E.js(`JSON.stringify([AN.pkgRead('fa','40006.08'),AN.pkgRead('fa','40001.05'),AN.pkgRead('fa','40051'),AN.pkgRead('fa','40001.02')])`));
+  ok(fa[0] === 0 && fa[1] === 0 && fa[2] === 0, 'fly ash at 150 MW: plant air not low, no tank fail, no DCS command');
+  ok(Number.isNaN(fa[3]) || fa[3] === null, 'fly ash tank valves stay without a value (cycle times NO-SOURCE)');
   process.exit(bad ? 1 : 0);
 })().catch(e => {
   console.error(e);
