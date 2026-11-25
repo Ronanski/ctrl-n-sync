@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 235; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 236; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 99;
@@ -219,6 +219,21 @@ const S = R.stats(A);
     if (by.EX !== 0 || by.BYPASS !== 1) fail('CRI MONT.MD: PB BYPASS does not take the criterion as OK ' + JSON.stringify(by));
     if (cr({ 'DEF STEP 1 EXECUTING': 1, IN: 1 }).BYPASS !== 0) fail('CRI MONT.MD: the bypass stays after the criterion is OK');
     if (cf.need([]).length !== 2) fail('CRI MONT.MD with no K tables must be open');
+  }
+  /* POSITION (SEAL-IN) from IBD 310SC90-794 sheet 18: the close stops on LIMIT FULL CLOSE (not on the torque switch) */
+  {
+    const pq = M['POSITION (SEAL-IN)'],
+      ps = {},
+      pb0 = { AOP: 0, ACL: 0, EF: 0, LTOP: 1, TROP: 0, LTCL: 0, TRCL: 0, 'PB OPEN': 0, 'PB CLOSE': 0, 'PB AUTO': 0, 'PB MANUAL': 0, 'PB RESET': 0 },
+      pr = x => pq({ ...pb0, ...x }, [[0, 0, 'TP:35.0s'], [0, 0, 'TP:35.0s']], ps, 0.5);
+    if (pr({ 'PB CLOSE': 1 }).CLS !== 1) fail('POSITION (SEAL-IN): PB CLOSE gives no close command');
+    if (pr({ LTOP: 0 }).CLS !== 1) fail('POSITION (SEAL-IN): the close does not seal in');
+    let po = pr({ LTOP: 0, LTCL: 1 });
+    if (po.CLS !== 0 || po.ABN !== 0) fail('POSITION (SEAL-IN): LIMIT FULL CLOSE is not a normal stop ' + JSON.stringify(po));
+    pr({ LTOP: 1, 'PB CLOSE': 0 });
+    pr({ 'PB CLOSE': 1 });
+    po = pr({ LTOP: 0, TRCL: 1 });
+    if (po.CLS !== 0 || po.ABN !== 1) fail('POSITION (SEAL-IN): close torque before full close must stop and alarm ' + JSON.stringify(po));
   }
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
