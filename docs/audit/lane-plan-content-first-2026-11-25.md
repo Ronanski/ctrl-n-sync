@@ -25,7 +25,7 @@ Today these files are shared by many lanes: `src/world/world.js`, `src/analog/en
 3. `src/ui/plant/hx/`: pages register themselves (`hx-pages.js` globs `hx-page-*.js`), so a new page is a new file only.
 4. `tests/lanes/<lane>/*.cjs`: checks.yml runs every file in the folder, so a lane adds its tests without editing CI.
 5. Alarms: `src/data/alarms/<group>.json` loaded by `alarm-pri.js` (one file per alarm group).
-6. Version: each lane PR raises only the version line of `delivery/app/app.json` and writes its own `docs/versions/v<ver>/UPDATE_REPORT.md`. Beta numbers end in the lane digit (lane 0 ends in 0, lane 1 in 1, ...), so two lanes never take the same number. On a conflict in app.json, the lane merges main and takes the next number with its own digit.
+6. Version (user 2026-11-25 "Go version gate"): a PR carries no version number, no `dist/` and no `HANDOFF.md`; it adds `docs/versions/updates/<lane>-<topic>.md`. The beta number is the commit count of main.
 
 **Integrator: LEADER : YUA.** YUA alone writes world.js, links.js, unit.js, tcs.js, the engine core, the build, checks.yml and st150. A lane that needs one of these changed sends YUA the exact change (through the coordinator, or message_thread). YUA lands it in her next PR within the hour. The lane carries on with work that does not depend on it.
 

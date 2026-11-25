@@ -1,8 +1,8 @@
 # src/ - sources of the DCS Logic Simulator
 
-The simulator is built from these files into ONE html file (`logic-sim-vX.Y.Z.html` in `dist/`). The html is what the Beta / Stable pages, the apk and the exe use, so it works without internet.
+The simulator is built from these files into ONE html file (`logic-sim-vX.Y.Z.html` in `dist/`). The html is not in git (the build makes it). It is what the Beta / Stable pages, the apk and the exe use, so it works without internet.
 
-**Edit the files here, then run `npm run build`.** Do not edit the html by hand (the Checks run on GitHub fails when the committed html is not exactly what `src/` builds: `npm run check`).
+**Edit the files here, then run `npm run build`.** Do not edit the html by hand (it is made again from `src/` on GitHub; the Checks build it twice and compare: `npm run check`).
 
 | Folder | Stack (ano ang laman) |
 |---|---|
@@ -27,6 +27,6 @@ Added by the build after these files (their sources are in `tools/`): `src/ui/sh
 
 ## Commands
 - `npm run build` - writes `logic-sim-v<version>.html` (and removes the older ones).
-- `npm run check` - builds in a temporary folder and compares with the committed html.
+- `npm run check` - builds in a temporary folder and compares with the html in `dist/`.
 - `npm run dev` - Vite development server (`http://localhost:5173`): the page is built from `src/` and the browser reloads when a file changes.
 - `node tools/engine/node-engine.js` - the same simulator code in Node without a browser (see the file; the result is the same as in Chromium: 51 of 51 sheets identical after 30 s of simulation).
