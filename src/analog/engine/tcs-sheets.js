@@ -56,7 +56,8 @@ const TCS_SH_IN = {
   ['B8', 'TA-14', 8]
 ].forEach(([b, sh, n]) => ['1', '2', '3'].forEach(p => (TCS_SH_IN['CON:TCP' + p + '120.' + b] = (U, c) => tcsIbNet(c, sh, n))));
 let tcsShP = null /* compiled program; false = no sheets in this build */,
-  tcsShB = null; /* the c.sm it is bound to */
+  tcsShB = null /* the c.sm it is bound to */,
+  tcsShN = -1; /* and its step count: a LOAD puts other values in the same object */
 function tcsShProg() {
   if (tcsShP !== null) return tcsShP;
   const R = window.TCE_RUN,
@@ -70,6 +71,8 @@ function tcsShProg() {
 }
 function tcsSm(c) {
   if (c.sm) return c.sm;
+  tcsOilInit(c);
+  tcsDevInit(c);
   if (c.eopAu == null) c.eopAu = !!c.eopArm;
   c.sm = { ids: TCS_SH.ids, v: {}, st: {}, acc: {}, pb: {}, pur: tcsPur() };
   for (const k in TCS_SH.mot) {
@@ -84,9 +87,15 @@ const tcsShMot = (c, k) => {
     m = TCS_SH.mot[k][0];
   return (sm.st[m] = sm.st[m] || {});
 };
-function tcsShBind(p, c) {
+function tcsShFeed(p, U, c) {
+  for (const [i, f] of p.in) {
+    const x = +f(U, c);
+    if (isFinite(x)) p.v[i] = x;
+  }
+}
+function tcsShBind(p, U, c) {
   const sm = tcsSm(c);
-  if (tcsShB === sm) return sm;
+  if (tcsShB === sm && tcsShN === sm.n) return sm;
   tcsShB = sm;
   for (const [key, x] of p.keyed) {
     const k = x.t === 'M' && x.name === 'MOTOR STANDARD' ? key.replace(':', '.').replace(/\.[A-Z]+$/, '') : key;
@@ -95,6 +104,11 @@ function tcsShBind(p, c) {
   p.v.fill(0);
   for (const n in sm.v) if (p.idx.has(n)) p.v[p.idx.get(n)] = sm.v[n];
   for (const q of p.plan) q.acc = +sm.acc[q.id] || 0;
+  /* a new memory: the nets take the run states before any command goes to a motor (no time passes) */
+  if (!('TCE300:b007.STS' in sm.v)) {
+    tcsShFeed(p, U, c);
+    for (let i = 0; i < 2; i++) for (const q of p.plan) window.TCE_RUN.scan(p, q, 0);
+  }
   return sm;
 }
 /* a CRT push button ('CRT:TCE300.b007.START'): '' or the reason */
@@ -125,16 +139,13 @@ function tcsSheets(U, c, dt) {
   const p = tcsShProg();
   if (!p || !(dt > 0)) return;
   const R = window.TCE_RUN,
-    sm = tcsShBind(p, c),
+    sm = tcsShBind(p, U, c),
     v = p.v,
     s = n => v[p.idx.get(n)] > 0.5;
   /* the local panel started or stopped the purifier since the last step */
   if (tcsPur() !== !!sm.pur) tcsShMot(c, 'pur').on = tcsPur() ? 1 : 0;
   for (let n = Math.max(1, Math.ceil(dt / TCS_SH.slice - 1e-9)), h = dt / n; n > 0; n--) {
-    for (const [i, f] of p.in) {
-      const x = +f(U, c);
-      if (isFinite(x)) v[i] = x;
-    }
+    tcsShFeed(p, U, c);
     for (const q of p.ports) if (q.startsWith('CRT:')) v[p.idx.get(q)] = sm.pb[q] > 0 ? 1 : 0;
     R.step(p, h);
     for (const q in sm.pb) if (!((sm.pb[q] -= h) > 1e-9)) delete sm.pb[q];
@@ -147,15 +158,17 @@ function tcsSheets(U, c, dt) {
     if (typeof AN_SRC !== 'undefined' && AN_SRC.field) AN_SRC.field.pur = s('TCA700:ffr020');
   }
   sm.pur = tcsPur();
-  c.mopAu = [s('TCE300:b007.AUTO'), s('TCE300:b021.AUTO')];
-  c.copAu = [s('TCE305:b031.AUTO'), s('TCE305:b021.AUTO')];
-  c.eopAu = s('TCE310:b006.AUTO');
-  c.gseAu = s('TCA680:mtr.AUTO');
+  const au = k => !!tcsShMot(c, k).auto;
+  c.mopAu = [au('mopA'), au('mopB')];
+  c.copAu = [au('copA'), au('copB')];
+  c.eopAu = au('eop');
+  c.gseAu = au('gse');
   tcsOilSet(c);
   for (let i = 0; i < p.names.length; i++) {
     const n = p.names[i],
       x = v[i];
-    if (isFinite(x) && sm.v[n] !== x && (x || sm.v[n])) sm.v[n] = x;
+    if (isFinite(x) && sm.v[n] !== x) sm.v[n] = x;
   }
   for (const q of p.plan) sm.acc[q.id] = q.acc;
+  tcsShN = sm.n = (+sm.n || 0) + 1;
 }
