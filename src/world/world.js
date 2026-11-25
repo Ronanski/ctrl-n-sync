@@ -220,10 +220,22 @@
   };
   /* a row names the machine of THIS drawing family (its letter turns with the instance) or an absolute one (BURNER B on the coal
      feeder drawing DITL-19 is burner B for every feeder) */
+  /* beta.530 (RARA): a row and a title that both spell the pump out ("INDUSTRIAL WATER PUMP A" on DITL-120 WASTE WATER PUMP A) name two
+     pumps: the letter of the row is absolute (I/O list I.0006 IWP A, I.0326 IWP B on both copies). The words before the last PUMP */
+  const pumpOf = t => {
+    const all = [...String(t || '').toUpperCase().matchAll(/((?:\b[A-Z][A-Z-]+\s+)+)PUMP\s*-?\(?[A-D]\b/g)];
+    return all.length ? all[all.length - 1][1].trim() : '';
+  };
   const relative = (sb, rowT) => {
     const w = machWord(rowT),
       f = famOf(sb);
     if (!w || !f) return false;
+    if (w === 'PUMP') {
+      const a = pumpOf(rowT),
+        b = pumpOf(sb.title);
+      /* SEAWATER PUMP and SEAWATER BOOSTER PUMP (DITL-30) share the machine letter: no word in common at the front = two pumps */
+      if (a && b && !a.split(/ +/).includes(b.split(' ')[0]) && !b.split(/ +/).includes(a.split(' ')[0])) return false;
+    }
     return GROUP(w) === f;
   };
   const machOfDesc = t => {
@@ -271,8 +283,10 @@
       const sw = L => ({ A: 'B', B: 'A' })[L.toUpperCase()] || L;
       return String(t || '').replace(/\b(BFWP|LOP)(\s*-?\(?)([A-D])(?![A-Z0-9])/gi, (m, w, sp, L) => w + sp + (/BFWP/i.test(w) ? (I.k >= 2 ? sw(L) : L) : I.k & 1 ? sw(L) : L));
     }
-    return String(t || '').replace(MRX, (m, L) => {
-      if (!relative(I.base, m)) return m;
+    return String(t || '').replace(MRX, (m, L, at, all) => {
+      if (!relative(I.base, all.slice(0, at + m.length))) return m;
+      /* beta.570: "COAL FEEDER A/B/C ALL IN REMOTE" names all of them on every copy */
+      if (/^\s*[/~]\s*[B-D](?![A-Z0-9])/.test(all.slice(at + m.length))) return m;
       const u = L.toUpperCase(),
         to = LET[(LET.indexOf(u) + I.k) % Math.max(I.n, LET.indexOf(u) + 1)];
       return m.replace(/([A-D])(\)?)$/i, to + '$2');
@@ -287,6 +301,8 @@
     /* beta.520: a text of the drawing that a bind row of a lane gives an I/O point in this copy ("MCV OPEN COMMAND" of DITL-38) */
     if (I.tadd && I.tadd.has(String(t).trim())) t = t + ' ' + I.tadd.get(String(t).trim());
     if (!I.k && !(I.n > 1)) return t;
+    const own = ownAddr(s, t);
+    if (own !== null) return own;
     let x = W.remap(s, t);
     if (I.data) {
       /* beta.520: a list of the machines ("O.021D/297 O.0615/617") is the one address of this unit */
@@ -309,8 +325,85 @@
       if (I.k && !isLop4(I.base) && LET[I.k]) x = x.replace(TAGA, (m, p) => (ioAddr(p + LET[I.k]) === la[ix] ? p + LET[I.k] : m));
     }
     const M = tagsK(s);
-    return M ? x.replace(TAGM, m => M.get(m) || m) : x;
+    if (M) x = x.replace(TAGM, m => M.get(m) || m);
+    /* beta.570: a row of one address that reads another row of the drawing in this copy (W.addrK: DITL-24 rows 25 / 26, DITL-19 rows 23 ~ 28
+       name every feeder, each with its own address): the address goes with the name, as the engine reads it */
+    if (I.k && la.length === 1) {
+      const m = rowSwap(s).get(la[0]);
+      if (m) x = x.replace(/\b[IO]\.[0-9A-F]{4}\b/g, a => (a === la[0] ? m : a));
+    }
+    return x;
   };
+  /* beta.570 (QA trace B5): a drawing for machines A ~ D writes the addresses of a signal beside the wire as two texts, "O.0093/413" (burner
+     A / B) and "O.0733/1053" (C / D) below it, and DITL-22 "O.0126/446" (LOP A / B of BFWP A) and "O.0127/447" (of BFWP B). Which machine an
+     address belongs to is in its tag in the I/O list (BO1-DO1043-C; MOR-P1115B1), not in its place in the text: a copy shows the address of
+     its own machine, and nothing for a text that holds only the addresses of the others (when another text of the drawing has its own).
+     Only a text that is addresses alone */
+  const PURE = /^[\s/-]*[IO]\.[0-9A-F]{4}(?:[\s/]*(?:[IO]\.)?[0-9A-F]{2,4}(?![0-9A-F]))*\s*$/;
+  const MTAG = /^(.*[\d-])([A-D])(\d{0,2}[UVW]?)$/;
+  let ioBy = null; /* address -> [[station, tag]] */
+  function ownMap(b) {
+    if (!(window.WIRING && window.WIRING.length)) return null;
+    if (!ioBy) {
+      ioBy = new Map();
+      for (const r of window.WIRING) (ioBy.get(r[2]) || ioBy.set(r[2], []).get(r[2])).push([r[1], String(r[3])]);
+    }
+    if (b._own) return b._own;
+    const grp = new Map(), /* station + tag stem -> Map(text -> Map(machine -> address)) */
+      lop = isLop4(b);
+    for (const t of new Set(txtOf(b).split('\n').map(x => x.trim())))
+      if (PURE.test(t)) {
+        const L = addrList0(t),
+          per = new Map();
+        for (const a of L)
+          for (const [st, tag] of ioBy.get(a) || []) {
+            const m = MTAG.exec(tag);
+            if (!m || (lop && !/P1115[AB][12]$/.test(tag))) continue;
+            const k = lop ? st + '|' + m[1] : st + '|' + m[1] + '*' + m[3];
+            (per.get(k) || per.set(k, new Map()).get(k)).set(lop ? m[2] + m[3] : m[2], a);
+          }
+        for (const [k, q] of per) if (q.size === L.length) (grp.get(k) || grp.set(k, new Map()).get(k)).set(t, q);
+      }
+    b._own = new Map(); /* text -> Map(machine -> address, '' = another text has it) */
+    for (const g of grp.values()) {
+      if (![...g.values()].some(q => q.size > 1)) continue;
+      const all = new Set([...g.values()].flatMap(q => [...q.keys()]));
+      for (const [t, q] of g) {
+        if (b._own.has(t)) continue;
+        const o = new Map();
+        for (const m of all) o.set(m, q.get(m) || '');
+        b._own.set(t, o);
+      }
+    }
+    return b._own;
+  }
+  function ownAddr(s, t) {
+    const I = s._inst,
+      x = String(t).trim();
+    if (I.lbl || I.sb || I.data || I.blk || !PURE.test(x)) return null;
+    const M = ownMap(I.base),
+      o = M && M.get(x);
+    if (!o) return null;
+    const v = o.get(isLop4(I.base) ? 'AB'[I.k >> 1] + '12'[I.k & 1] : LET[I.k]);
+    return v === undefined ? null : v && /^-/.test(x) ? '-' + v : v;
+  }
+  function rowSwap(s) {
+    const I = s._inst;
+    if (I.sw) return I.sw;
+    I.sw = new Map();
+    const no = new Set();
+    for (const r in I.base.rows || []) {
+      const la = rowList(I.base, +r);
+      if (la.length !== 1) continue;
+      const a = W.addrK(s, +r),
+        p = I.sw.has(la[0]) ? I.sw.get(la[0]) : a;
+      if (a !== p) no.add(la[0]);
+      I.sw.set(la[0], a);
+    }
+    for (const a of no) I.sw.delete(a);
+    for (const [a, v] of I.sw) if (a === v || !v) I.sw.delete(a);
+    return I.sw;
+  }
   /* a tag that ends with the letter of machine A ("SS-BH1060-A", "MIL-L1060A"); ioAddr = its address in the I/O list */
   const TAGA = /\b([A-Z]{1,5}\d?-[A-Z]{0,3}\d{3,4}-?)A\b/g;
   /* beta.520 (RARA; QA copy clash): the tag of machine A on a row or a symbol with no address list, in the copy of machine B / C / D. The
@@ -369,7 +462,7 @@
          I.005C and row 26 "LOP B STOPPED" I.037C; for LOP B the two swap): the address of that row */
       const me = W.remap(s, cellTxt(b, i, 'S')).replace(/\s+/g, ' ').trim();
       for (const r in b.rows || [])
-        if (+r !== i && cellTxt(b, +r, 'S').replace(/\s+/g, ' ').trim() === me) {
+        if (me && +r !== i && cellTxt(b, +r, 'S').replace(/\s+/g, ' ').trim() === me) {
           const o = rowList(b, +r);
           if (o.length === 1) return o[0];
         }
@@ -410,7 +503,9 @@
         const k = bare(r.to),
           m = W.xText.get(k) || W.xText.set(k, new Map()).get(k),
           x = String(r.text).trim();
-        m.set(x, ((m.get(x) || '') + ' ' + [r.tag, r.addr].filter(Boolean).join(' ')).trim());
+        /* beta.550: two lanes that name the same point give it once */
+        const pt = [r.tag, r.addr].filter(Boolean).join(' ');
+        if (!(' ' + (m.get(x) || '') + ' ').includes(' ' + pt + ' ')) m.set(x, ((m.get(x) || '') + ' ' + pt).trim());
         if (r.addr && r.tag && window.WIRING && !window.WIRING.some(q => q[1] === String(r.stn) && q[3] === r.tag)) window.WIRING.push(['LANE:' + (r.lane || ''), String(r.stn), r.addr, r.tag]);
         continue;
       }
@@ -545,6 +640,23 @@
         const b = (s._inst && s._inst.base) || s;
         s._inst.tadd = W.xText.get(bare(b.name) + ' #' + (s._inst.lbl || LET[s._inst.k])) || null;
       }
+    /* beta.550 (SAORI): DITL-38 is drawn once for its eight valves and names no device: the field contacts beside the wires (MIL, MIT, ZSO, ZSC,
+       TSC) and the two commands. Each copy takes the I/O point of its own valve from the I/O list by type + device (ZSO-FW1001 STN102 I.0000,
+       MOR-FW1001 O.0130); the torque switch is TS-FW1001 there. A bind row of a lane on the same text stays. The one typical drawing of
+       the DITL set: the other valve drawings name their own tags */
+    {
+      const mcv = S.sheets.find(x => x.name.endsWith(')DITL-38')),
+        TY = { MIL: 'MIL', MIT: 'MIT', ZSO: 'ZSO', ZSC: 'ZSC', TSC: 'TS', 'MCV OPEN COMMAND': 'MOR', 'MCV CLOSE COMMAND': 'MOS' };
+      for (const s of (mcv && W.instOf.get(mcv)) || []) {
+        const dev = String(s._inst.lbl || '').replace(/^MV-/, ''),
+          m = new Map(s._inst.tadd || []);
+        for (const t in TY) {
+          const w = !m.has(t) && (window.WIRING || []).find(q => q[3] === TY[t] + '-' + dev);
+          if (w) m.set(t, w[3] + ' ' + w[2]);
+        }
+        s._inst.tadd = m.size ? m : null;
+      }
+    }
     /* 3.2.1 d2: the row of a sootblower sheet that names one sootblower (output RS text without its addresses), for the copies of DITL-80G */
     const sbN = t => String(t || '').replace(/\b[IMOB]\.[0-9A-F]{4}\b/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
     let sbIdx = null;

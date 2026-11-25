@@ -2,7 +2,7 @@
    I/O address in the app and a set point or a switch, not yet alarmed by an ABC alarm block): every row is one level of one point,
    names its list sheet and PD page, and its station and address are the I/O list's (src/data/ades.txt) with the same tag
    (io: the I/O list tag when the alarm list names the element, TE-FA1053-U1 = TT-FA1053-U).
-   Analog rows: a number set point, HIGH-HIGH not under HIGH, LOW-LOW not over LOW. Switch rows: a digital input, on = 1. */
+   Analog rows: a number set point, HIGH-HIGH not under HIGH, LOW-LOW not over LOW. Switch rows: a digital input, on = the alarm input value (1, or 0 for a contact that is 1 in the normal state). */
 const fs = require('fs'),
   path = require('path'),
   zlib = require('zlib');
@@ -24,8 +24,8 @@ for (const f of fs.readdirSync(D).filter(x => /\.json$/.test(x)).sort()) {
     seen.add(r.tag + '|' + r.lv);
     const io = (ades[String(r.stn - 100)] || {})[r.addr];
     if (!io || io.tag !== (r.io || r.tag)) bad.push(id + ': not ' + r.stn + ' ' + r.addr + ' in the I/O list');
-    if (r.on) {
-      if (!/^I\.[0-9A-F]{4}$/.test(r.addr)) bad.push(id + ': switch not on a digital input');
+    if ('on' in r) {
+      if (!/^I\.[0-9A-F]{4}$/.test(r.addr) || (r.on !== 0 && r.on !== 1)) bad.push(id + ': switch row');
     } else {
       if (!/^AI\d{4}$/.test(r.addr) || typeof r.sp !== 'number' || !isFinite(r.sp) || r.lv === 'ALARM') bad.push(id + ': analog row');
       (pt[r.tag] = pt[r.tag] || {})[r.lv] = r.sp;
