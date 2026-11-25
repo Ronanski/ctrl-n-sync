@@ -1,0 +1,15 @@
+{
+ "about": "Known differences against the tag database (src/data/ades.txt), found 2026-11-25 by tests/lanes/qa/tag-db.cjs. Each one has its reason; the lane that owns the row fixes it and removes it here. A new difference is never added here without a reason.",
+ "known": {
+  "field 3 MIR-L-1090": "boiler.js field row spells the tag as on DITL-BA59 (MIR-L-1090); the I/O list writes MIR-L1090 (STN103 I.0163). Lane 3 boiler.",
+  "field 3 MIR-L-1091": "same: I/O list MIR-L1091 (STN103 I.0166). Lane 3 boiler.",
+  "field 3 MIR-L-1092": "same: I/O list MIR-L1092 (STN103 I.0169). Lane 3 boiler.",
+  "field 3 MIR-F-1091": "same spelling question for MIR-F-1091 (bottom ash PLC sheet). Lane 3 boiler.",
+  "field 1 ARP": "dcs.js names the panel row 'ARP'; the I/O point is ARP1-SYSERR (STN101 I.005B). Lane 0 / dcs.js.",
+  "field 1 IRP": "dcs.js names the panel row 'IRP'; the I/O point is IRP1-POWALM (STN101 I.005C). Lane 0 / dcs.js.",
+  "loop 2 SI9990": "the loop list (STN102 LOOP_AX) names SI9990, which the memory list of STN102 does not have. Read the loop list row on the PC.",
+  "alarm 4 I.004C": "alarm row PSL-DO1043-A1 sits on STN104 I.004C, which the I/O list names PSH-DO1043-A1 (LOW vs HIGH switch). Check the alarm list 20160912 and the I/O list on the PC. Lane 5 alarms.",
+  "alarm 4 I.068C": "alarm row PSL-DO1043-C1 sits on STN104 I.068C, which the I/O list names PSH-DO1043-C1 (LOW vs HIGH switch). Check the alarm list 20160912 and the I/O list on the PC. Lane 5 alarms.",
+  "alarm 4 I.100C": "alarm row PSL-DO1043-D1 sits on STN104 I.100C, which the I/O list names PSH-DO1043-D1 (LOW vs HIGH switch). Check the alarm list 20160912 and the I/O list on the PC. Lane 5 alarms."
+ }
+}
