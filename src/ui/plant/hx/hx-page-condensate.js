@@ -30,6 +30,7 @@
   /* beta.557: monitor rows and VCB point of each condensate pump (DCS I/O list station 3: MIV-P1116x1, VT-CD1116-x3 / x4,
      TT-CD1116-xU / xV / xW / x3 / x4 / x1; unit of the vibration points not in the I/O list) */
   const cepMon = n => [
+    V('VCB off', 'MIV-P1116' + n + '2', '', 0, { words: ['YES', 'NO'] }),
     V('Motor winding U', 'TT-CD1116-' + n + 'U', '°C', 0),
     V('Motor winding V', 'TT-CD1116-' + n + 'V', '°C', 0),
     V('Motor winding W', 'TT-CD1116-' + n + 'W', '°C', 0),
