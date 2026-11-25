@@ -645,7 +645,7 @@ const has = (txt, tag) => {
   let fxBlk = 0,
     fxUn = [];
   for (const sh of AN.sheets)
-    for (const b of (sh.S && sh.S.blk) || [])
+    for (const b of (!/^ABC-000/.test(sh.name) && sh.S && sh.S.blk) || [])
       if (b.k === 'FX') {
         fxBlk++;
         let r = {};
