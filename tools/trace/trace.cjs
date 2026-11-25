@@ -180,7 +180,7 @@ const has = (txt, tag) => {
               ? 'engine'
               : /^(PTN|PS)\d+$/.test(name)
                 ? 'block parameter' /* a pattern slot (PTN) or a ramp / time parameter (PS) of the block itself (AKIHO 2026-11-25, RULES.md) */
-                : OPER.test(name) || crt(rs, name)
+                : OPER.test(name) || crt(rs, name) || ((S.alias && S.alias[n]) || []).some(t => OPER.test(t)) /* audit-fix alias: the mode status .LOC / .MAN that the M / A / R of that tag write (KIRARA) */
                 ? 'operator'
                 : 'NONE'
           : lk
@@ -592,7 +592,12 @@ const has = (txt, tag) => {
             x => x.row > 0 && (input ? x.io === 'in' && !/^NONE/.test(x.src) : x.io !== 'in' || !/^NONE/.test(x.src))
           ) ||
           /* the field I/O sheets DITL-16 / 17 / 18 compute their limit switch and flame detector rows themselves (03b-sim; KIRARA) */
-          (input && dOk.some(x => x.row > 0 && x.io === 'out' && /DITL-1[678](\s#\S+)?$/.test(x.sh)));
+          (input && dOk.some(x => x.row > 0 && x.io === 'out' && /DITL-1[678](\s#\S+)?$/.test(x.sh))) ||
+          /* the drawing prints the DCS input address beside a driven OUTPUT row (MCC / local panel side): that output net is the panel
+             contact the input reads (RARA 2026-11-25: DITL-22 / 23A / 29A / 30 / 61A / 76 / 77 / 111 / 112 MIL / MIS / MIV / MIR) */
+          /* only the MCC / VCB status contacts (MIL remote, MIS stopped, MIV VCB, MIR running, MIT trip): a field or panel input printed
+             beside an output (XA- fire detect, IRP stop commands) stays a gap until its own source is found */
+          (input && /^MI[LSVRT]-/.test(tag) && dOk.some(x => x.row > 0 && x.io === 'out'));
         /* on the drawing but not on a net or a row: the tag written on a sheet, or the device of a typical-drawing table copy
            (DITL-38 "#MV-BD1002": the valve runs from DITL-50 by its tag, its I/O addresses are not on any row) */
         const dev = tag.replace(/^[A-Z0-9]{1,6}-/, '').replace(/-\d$/, '');

@@ -123,3 +123,11 @@ line unchanged.
   DITL-16 / 17 / 18 input rows 4).
 - xref: DITL-80H / 80I / 80J hold only "(AS SHEET DITL80G BLOCK)" boxes: a TO DITL80H / 80I / 80J goes to that sootblower's DITL-80G copy.
   Old -> new: other sheet 46 -> 0, wired by the TO side 8 -> 54.
+- audit-fix alias (KIRARA): an ABC input whose wire carries a second name in src/analog/engine/audit-fix.js (op alias, S.alias) that is
+  a mode status (.LOC / .MAN, written by the M / A / R of that tag) is "operator". Old -> new: B1 ABC 70 -> 68 (ABC-011 M.0230 =
+  TICBR1130.LOC, ABC-012 M.0240 = TICBR1150.LOC), memory on a sheet with no source 12 -> 10.
+- MCC / VCB status contact beside a driven output (RARA): an input point MIL- / MIS- / MIV- / MIR- / MIT- whose address the drawing prints
+  beside a driven OUTPUT row (DITL-76 row 7 "A-AUX. CW PUMP STOPPED I.0089", DITL-61A row 7 "CONDENSATE PUMP A STOPPED I.0083/403") is
+  that output net: LINKED. Other inputs printed beside an output (XA-FA1052 fire detect, IRP stop commands of DITL-03D) are NOT counted:
+  the general form moved 79 points, the motor-contact form 59. Old -> new: LINKED 1,726 -> 1,773, on a sheet no source 84 -> 41,
+  copy clash 5 -> 1 (DITL-45 12, 61A 6, 22 4, 21A 4, 120 4, 30 / 76 / 29A / 77 / 112 3 each, others under 3).

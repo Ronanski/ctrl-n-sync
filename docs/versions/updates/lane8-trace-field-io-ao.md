@@ -11,6 +11,8 @@
 - Nasa sheet pero walang source: 108 -> 84. Nasa drawing pero wala sa row: 138 -> 131.
 - DITL rows na walang source: 203 -> 194.
 - xref, ibang sheet: 46 -> 0.
+- audit-fix alias (.LOC): ABC B1 70 -> 68 (ABC-011 M.0230, ABC-012 M.0240).
+- MCC / VCB status contact (MIL / MIS / MIV / MIR / MIT) sa tabi ng output row (RARA): LINKED 1,726 -> 1,773, walang source 84 -> 41.
 
 ## Hindi nasubok
 - Walang binago sa app; tool lang ng QA.
