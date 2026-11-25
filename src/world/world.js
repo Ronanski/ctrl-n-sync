@@ -220,10 +220,22 @@
   };
   /* a row names the machine of THIS drawing family (its letter turns with the instance) or an absolute one (BURNER B on the coal
      feeder drawing DITL-19 is burner B for every feeder) */
+  /* beta.530 (RARA): a row and a title that both spell the pump out ("INDUSTRIAL WATER PUMP A" on DITL-120 WASTE WATER PUMP A) name two
+     pumps: the letter of the row is absolute (I/O list I.0006 IWP A, I.0326 IWP B on both copies). The words before the last PUMP */
+  const pumpOf = t => {
+    const all = [...String(t || '').toUpperCase().matchAll(/((?:\b[A-Z][A-Z-]+\s+)+)PUMP\s*-?\(?[A-D]\b/g)];
+    return all.length ? all[all.length - 1][1].trim() : '';
+  };
   const relative = (sb, rowT) => {
     const w = machWord(rowT),
       f = famOf(sb);
     if (!w || !f) return false;
+    if (w === 'PUMP') {
+      const a = pumpOf(rowT),
+        b = pumpOf(sb.title);
+      /* SEAWATER PUMP and SEAWATER BOOSTER PUMP (DITL-30) share the machine letter: no word in common at the front = two pumps */
+      if (a && b && !a.split(/ +/).includes(b.split(' ')[0]) && !b.split(/ +/).includes(a.split(' ')[0])) return false;
+    }
     return GROUP(w) === f;
   };
   const machOfDesc = t => {
@@ -271,8 +283,8 @@
       const sw = L => ({ A: 'B', B: 'A' })[L.toUpperCase()] || L;
       return String(t || '').replace(/\b(BFWP|LOP)(\s*-?\(?)([A-D])(?![A-Z0-9])/gi, (m, w, sp, L) => w + sp + (/BFWP/i.test(w) ? (I.k >= 2 ? sw(L) : L) : I.k & 1 ? sw(L) : L));
     }
-    return String(t || '').replace(MRX, (m, L) => {
-      if (!relative(I.base, m)) return m;
+    return String(t || '').replace(MRX, (m, L, at, all) => {
+      if (!relative(I.base, all.slice(0, at + m.length))) return m;
       const u = L.toUpperCase(),
         to = LET[(LET.indexOf(u) + I.k) % Math.max(I.n, LET.indexOf(u) + 1)];
       return m.replace(/([A-D])(\)?)$/i, to + '$2');
@@ -410,7 +422,9 @@
         const k = bare(r.to),
           m = W.xText.get(k) || W.xText.set(k, new Map()).get(k),
           x = String(r.text).trim();
-        m.set(x, ((m.get(x) || '') + ' ' + [r.tag, r.addr].filter(Boolean).join(' ')).trim());
+        /* beta.550: two lanes that name the same point give it once */
+        const pt = [r.tag, r.addr].filter(Boolean).join(' ');
+        if (!(' ' + (m.get(x) || '') + ' ').includes(' ' + pt + ' ')) m.set(x, ((m.get(x) || '') + ' ' + pt).trim());
         if (r.addr && r.tag && window.WIRING && !window.WIRING.some(q => q[1] === String(r.stn) && q[3] === r.tag)) window.WIRING.push(['LANE:' + (r.lane || ''), String(r.stn), r.addr, r.tag]);
         continue;
       }
@@ -545,6 +559,23 @@
         const b = (s._inst && s._inst.base) || s;
         s._inst.tadd = W.xText.get(bare(b.name) + ' #' + (s._inst.lbl || LET[s._inst.k])) || null;
       }
+    /* beta.550 (SAORI): DITL-38 is drawn once for its eight valves and names no device: the field contacts beside the wires (MIL, MIT, ZSO, ZSC,
+       TSC) and the two commands. Each copy takes the I/O point of its own valve from the I/O list by type + device (ZSO-FW1001 STN102 I.0000,
+       MOR-FW1001 O.0130); the torque switch is TS-FW1001 there. A bind row of a lane on the same text stays. The one typical drawing of
+       the DITL set: the other valve drawings name their own tags */
+    {
+      const mcv = S.sheets.find(x => x.name.endsWith(')DITL-38')),
+        TY = { MIL: 'MIL', MIT: 'MIT', ZSO: 'ZSO', ZSC: 'ZSC', TSC: 'TS', 'MCV OPEN COMMAND': 'MOR', 'MCV CLOSE COMMAND': 'MOS' };
+      for (const s of (mcv && W.instOf.get(mcv)) || []) {
+        const dev = String(s._inst.lbl || '').replace(/^MV-/, ''),
+          m = new Map(s._inst.tadd || []);
+        for (const t in TY) {
+          const w = !m.has(t) && (window.WIRING || []).find(q => q[3] === TY[t] + '-' + dev);
+          if (w) m.set(t, w[3] + ' ' + w[2]);
+        }
+        s._inst.tadd = m.size ? m : null;
+      }
+    }
     /* 3.2.1 d2: the row of a sootblower sheet that names one sootblower (output RS text without its addresses), for the copies of DITL-80G */
     const sbN = t => String(t || '').replace(/\b[IMOB]\.[0-9A-F]{4}\b/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
     let sbIdx = null;
