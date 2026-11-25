@@ -178,9 +178,9 @@
   const MBS = {
     tcs: { sys: 'TCS', pkg: 'Turbine PLC', pan: 'TCS panel', gcs: 'GCS10F', con: 'Modbus connection 1 (PLC-A) / 2 (PLC-B)', stn: 'STN102', ctl: 'FCS102', sftp: ['1H09', '2H09'], hub: 'SCADA LAN hub-1H port 9 / hub-2H port 9', hubup: '1H02 / 2H02', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A04 / 2B04 (A ctrl), 2A05 / 2B05 (B ctrl)', fcslen: '3 m UTP', dwg: 'K1AU3-E2-0-115 sh5 (GCS10F), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'turbine system', int: 1 },
     sca: { sys: 'SCADA', pkg: 'SCADA PLC', pan: 'SCADA panel', gcs: 'GCS10E', con: 'Modbus connection 7 (PLC-A) / 8 (PLC-B)', stn: 'STN105', ctl: 'FCS105', sftp: ['3H11', '4H11'], hub: 'SCADA LAN hub-3H port 11 / hub-4H port 11', hubup: '3H02 / 4H02', fl: '3A04 / 3B04 / 3A05 / 3B05', fllen: '10 m', fhubs: 'hub-3A / hub-3B', fhub: 'FCS1051', fcs: '3A02 / 3B02 (A ctrl), 3A03 / 3B03 (B ctrl)', fcslen: '1.5 m UTP', dwg: 'K1AU3-E2-0-115 sh12 (GCS10E), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'SCADA' },
-    fa: { sys: 'Fly ash', pkg: 'Fly ash PLC', pan: 'Fly ash panel', gcs: 'GCS10F', con: 'Modbus connection 3 (PLC-A) / 4 (PLC-B)', stn: 'STN104', ctl: 'FCS104', sftp: ['1H04', '2H04'], hub: 'SCADA LAN hub-1H port 4 / hub-2H port 4', hubup: '1H02 / 2H02', med: 'fiber optic: box F-2 (ST) fibers 1 / 2 (A), 3 / 4 (B), converters 10F-3 (A) / 10F-4 (B); the vendor hub before the box is not on the drawing', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A8 / 2B8 (A ctrl), 2A9 / 2B9 (B ctrl)', fcslen: '10 m UTP', dwg: 'K1AU3-E2-0-115 sh5 GS01(5) (GCS10F SCADA LAN), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'fly ash' },
-    esp: { sys: 'ESP', pkg: 'ESP PLC', pan: 'ESP panel', gcs: 'GCS10F', con: 'Modbus connection 5 (PLC-A) / 6 (PLC-B)', stn: 'STN104', ctl: 'FCS104', sftp: ['1H05', '2H05'], hub: 'SCADA LAN hub-1H port 5 / hub-2H port 5', hubup: '1H02 / 2H02', med: 'fiber optic: box F-3 (ST) fibers 1 / 2 (A), 3 / 4 (B), converters 10F-5 (A) / 10F-6 (B); the vendor hub before the box is not on the drawing', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A8 / 2B8 (A ctrl), 2A9 / 2B9 (B ctrl)', fcslen: '10 m UTP', dwg: 'K1AU3-E2-0-115 sh5 GS01(5) (GCS10F SCADA LAN), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'ESP' },
-    ctcs: { sys: 'CTCS', pkg: 'CTCS PLC', pan: 'CTCS panel', gcs: 'GCS10F', con: 'Modbus connection 7 (single PLC)', one: 1, stn: 'STN104', ctl: 'FCS104', sftp: ['1H03'], hub: 'SCADA LAN hub-1H port 3 (one link)', hubup: '1H02 / 2H02', med: 'fiber optic: box F-1 (ST) fibers 1 / 2, converter 10F-1; the vendor hub before the box is not on the drawing', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A8 / 2B8 (A ctrl), 2A9 / 2B9 (B ctrl)', fcslen: '10 m UTP', dwg: 'K1AU3-E2-0-115 sh5 GS01(5) (GCS10F SCADA LAN), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'CTCS', int: 1 }
+    fa: { sys: 'Fly ash', pkg: 'Fly ash PLC', pan: 'Fly ash panel', gcs: 'GCS10F', con: 'Modbus connection 3 (PLC-A) / 4 (PLC-B)', stn: 'STN104', ctl: 'FCS104', sftp: ['1H04', '2H04'], hub: 'SCADA LAN hub-1H port 4 / hub-2H port 4', hubup: '1H02 / 2H02', med: 'fiber optic: box F-2 (ST) fibers 1 / 2 (A), 3 / 4 (B), converters 10F-3 (A) / 10F-4 (B); the vendor hub before the box is not on the drawing', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A8 / 2B8 (A ctrl), 2A9 / 2B9 (B ctrl)', fcslen: '10 m UTP', dwg: 'K1AU3-E2-0-115 sh5 GS01(5) (GCS10F SCADA LAN), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'fly ash', mem: 'FLY ASH' },
+    esp: { sys: 'ESP', pkg: 'ESP PLC', pan: 'ESP panel', gcs: 'GCS10F', con: 'Modbus connection 5 (PLC-A) / 6 (PLC-B)', stn: 'STN104', ctl: 'FCS104', sftp: ['1H05', '2H05'], hub: 'SCADA LAN hub-1H port 5 / hub-2H port 5', hubup: '1H02 / 2H02', med: 'fiber optic: box F-3 (ST) fibers 1 / 2 (A), 3 / 4 (B), converters 10F-5 (A) / 10F-6 (B); the vendor hub before the box is not on the drawing', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A8 / 2B8 (A ctrl), 2A9 / 2B9 (B ctrl)', fcslen: '10 m UTP', dwg: 'K1AU3-E2-0-115 sh5 GS01(5) (GCS10F SCADA LAN), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'ESP', mem: 'ESP' },
+    ctcs: { sys: 'CTCS', pkg: 'CTCS PLC', pan: 'CTCS panel', gcs: 'GCS10F', con: 'Modbus connection 7 (single PLC)', one: 1, stn: 'STN104', ctl: 'FCS104', sftp: ['1H03'], hub: 'SCADA LAN hub-1H port 3 (one link)', hubup: '1H02 / 2H02', med: 'fiber optic: box F-1 (ST) fibers 1 / 2, converter 10F-1; the vendor hub before the box is not on the drawing', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A8 / 2B8 (A ctrl), 2A9 / 2B9 (B ctrl)', fcslen: '10 m UTP', dwg: 'K1AU3-E2-0-115 sh5 GS01(5) (GCS10F SCADA LAN), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'CTCS', int: 1, mem: 'CTCS' }
   };
   window.LS_ORIG = ORIG;
   const SY = [
@@ -305,6 +305,21 @@
     /* Modbus points: the DCS memory word of each point. AI = one SI word per point; DI = 16 points per SI word (bit 0 = the row
        that names the word, then bits 1 ~ 15 in the order of the list); DO = DCS to PLC, word of the first row. */
     const M = window.DCS_MODBUS || [];
+    /* the DCS memory bits of the DO points, by Modbus word: { word: [[M.xxxx, description], ...] } in memory list order (the memory list of AN.ades, STN104) */
+    const MEMW = {};
+    try {
+      const A4 = (A && A[4]) || {};
+      for (const k of Object.keys(A4).sort()) {
+        const q = /MODBUS ADDRESS\s+(\d+)\s+FOR\s+([A-Z ]+?)\s*\(DCS TO PLC/.exec(String((A4[k] && A4[k].r) || '').toUpperCase());
+        if (/^M\.[0-9A-F]{4}$/.test(k) && q) (MEMW[q[2] + '|' + q[1]] = MEMW[q[2] + '|' + q[1]] || []).push([k, A4[k].d || '']);
+      }
+    } catch (e) {}
+    const nrm = x => String(x || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const mbMem = (S, maddr, d) => {
+      const L = MEMW[S.mem + '|' + Math.floor(+maddr)] || [],
+        hit = L.find(x => nrm(x[1]) === nrm(d)) || L[S.int ? 0 : Math.round((+maddr % 1) * 100)];
+      return hit ? hit[0] : '';
+    };
     let w = null,
       nm = null;
     for (const m of M) {
@@ -318,7 +333,11 @@
       let word = w ? w[0] : '',
         bit = S.int ? +maddr - +nm : Math.round((+maddr % 1) * 100);
       if (ty === 'DI' && (S.int ? bit < 0 || bit > 15 : Math.floor(+maddr) !== Math.floor(+nm))) word = '';
-      const addr = ty === 'AI' ? word : ty === 'DI' ? (word ? word + ' bit ' + bit : 'word not in the list, bit ' + bit) : ty === 'AO' ? (w || []).join(' / ') + ' area, register ' + maddr : (w || []).join(' / ') + ' area, coil ' + maddr;
+      /* lane 2 (TSUBASA) 2026-11-25: a DO (DCS to PLC) point is a DCS memory bit of the memory list, remark "MODBUS ADDRESS <word> FOR
+         <system>(DCS TO PLC)": the bit of that word with the same description, else the bit at the place of the point (5 of 124: the
+         alive / watch dog bit, ALL HAMMER(S) / VIBRATOR(S) SWITCH AUTO, COMMUNICATION ACTIVE BIT, the same signal worded otherwise) */
+      const mw = ty === 'DO' && S.mem ? mbMem(S, maddr, d) : '';
+      const addr = ty === 'AI' ? word : ty === 'DI' ? (word ? word + ' bit ' + bit : 'word not in the list, bit ' + bit) : ty === 'AO' ? (w || []).join(' / ') + ' area, register ' + maddr : mw ? mw + ' (memory bit, coil ' + maddr + ')' : (w || []).join(' / ') + ' area, coil ' + maddr;
       const o = { t: 'MB', mt: ty, s: S.stn.slice(-1), a: addr, tag: tag || '', desc: d, sig: 'Modbus ' + ty, mb: S, maddr, word, word2: w && w[1] && /^SI/.test(w[1]) && ty !== 'DO' ? w[1] : '', from, to, ind: w && w[2] ? w[2] : '', up: [], og: S.sys, ref: '', mpl: '', jb: '' };
       o.sys = S.sys;
       o.h = (o.tag + ' ' + d + ' ' + addr + ' modbus ' + S.gcs + ' ' + maddr).toLowerCase();
