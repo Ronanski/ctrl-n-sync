@@ -212,8 +212,8 @@
     b(/^(msvB|cvB)$/.test(L.vtSel || ''))
   );
   O('TCE960-29', '41 CLOSE -> DCS STN102 I.0939 TCS-DI1052', (U, L) => L.f41);
-  O('TCE960-30', 'GEN. LOCKOUT RELAY (86G) A OPERATED -> DCS STN102 I.093A TCS-DI1053');
-  O('TCE960-31', 'GEN. LOCKOUT RELAY (86G) B OPERATED -> DCS STN102 I.093B TCS-DI1054');
+  O('TCE960-30', 'GEN. LOCKOUT RELAY (86G) A OPERATED -> DCS STN102 I.093A TCS-DI1053 (gen-panel.js U.lo86.a)', U => (U && U.lo86 ? b(U.lo86.a) : 0));
+  O('TCE960-31', 'GEN. LOCKOUT RELAY (86G) B OPERATED -> DCS STN102 I.093B TCS-DI1054 (gen-panel.js U.lo86.b)', U => (U && U.lo86 ? b(U.lo86.b) : 0));
   O('TCE960-32', 'ICV TO CV TRANSFER COMPLETE -> DCS STN102 I.0418 TCS-DI1031 (ABC-050)', (U, L) => L.xfer);
   /* ---------- EHG DO TABLE(2) TCE961 ---------- */
   O('TCE961-1', 'control oil pump (B) start command -> MCC (c.cop[1])', (U, L) => L.copB);
@@ -243,7 +243,9 @@
   O('TCE961-19', 'turning gear motor start lamp -> local panel (TB-9)');
   /* ---------- EHG AO TABLE(1) TCE970 ---------- */
   O('TCE970-1', 'TARGET MW SET POINT FEED BACK -> DCS STN101 AI0420 TCS-AI1001', U => num(U.tb && U.tb.tgt));
-  O('TCE970-2', 'TURBINE LOAD UP RATE -> DCS STN101 AI0421 TCS-AI1005 (max turbine load up rate set point)');
+  O('TCE970-2', 'TURBINE LOAD UP RATE -> DCS STN101 AI0421 TCS-AI1005 (max turbine load up rate set point, 0 ~ 5 %/min): U.rateUp MW/min x 100 / 150', U =>
+    U && isFinite(U.rateUp) ? (U.rateUp * 100) / 150 : NaN
+  );
   O('TCE970-3', 'HP turbine first stage steam pressure (A) -> DCS');
   O('TCE970-4', 'HP turbine first stage steam pressure (B) -> DCS');
   O('TCE970-5', 'HP turbine first stage steam pressure (C) -> DCS');
@@ -749,9 +751,9 @@
   O('TCA980-10', 'steam seal feed inlet valve open command -> MOV (TC-31)');
   O('TCA980-11', 'TURBINE GLAND STEAM LINE DRAIN VALVE OPEN COMMAND -> DCS STN102 I.040B TCS-DI1037 (IBD TE-6)');
   O('TCA980-12', 'TURBINE GLAND STEAM LINE DRAIN VALVE CLOSE COMMAND -> DCS STN102 I.040C TCS-DI1038 (IBD TE-6)');
-  O('TCA980-13', 'STEAM SEAL FEED INLET VALVE CLOSED -> DCS STN102 I.0419 TCS-DI1032');
+  O('TCA980-13', 'STEAM SEAL FEED INLET VALVE CLOSED -> DCS STN102 I.0419 TCS-DI1032 (tcs-dev.js U.dev.mov.ssfi CLOSED)', U => dev(U, 'mov', 'ssfi', 'c'));
   O('TCA980-15', 'AMB. COLD MODE TEMP. -> DCS STN102 I.089C TCS-DI1057');
-  O('TCA980-16', 'MODE JUDGEMENT INSTRUMENT NORMAL -> DCS STN102 I.089D TCS-DI1058');
+  O('TCA980-16', 'MODE JUDGEMENT INSTRUMENT NORMAL -> DCS STN102 I.089D TCS-DI1058: the metal temperature instruments of TCA500 have no fault in the model, healthy = 1', () => 1);
   O('TCA980-17', 'TURBINE START-UP AMBIENT COLD MODE -> DCS STN102 I.0410 TCS-DI1039', U =>
     U.tc ? b(U.tc.mode === 'amb') : NaN
   );
@@ -814,13 +816,19 @@
   O('TCA990-2', 'PV-GS1031 steam seal feed valve position demand -> valve (U.gsV31)', U => num(U.gsV31));
   O('TCA990-4', 'steam seal feed valve manipulation value -> valve (U.gsV31)', U => num(U.gsV31));
   O('TCA990-10', 'PV-GS1034 SPUV position demand -> valve (U.gsV34)', U => num(U.gsV34));
-  O('TCA990-3', 'HP turbine warming valve position -> DCS: ' + drainNeeds);
+  O('TCA990-3', 'HP turbine warming valve position -> DCS, % (U.tt ZT-AS1011, tcs-dev.js U.dev.mov.wv)', U => dev(U, 'mov', 'wv', 'p'));
   O('TCA990-5', 'GEN. CURRENT(A) -> DCS STN102 AI0791 TCS-AI1006: ' + genNeeds);
   O('TCA990-12', 'GEN. CURRENT(B) -> DCS STN102 AI0855 TCS-AI1007: ' + genNeeds);
   O('TCA990-17', 'GEN. CURRENT(C) -> DCS STN102 AI0887 TCS-AI1011: ' + genNeeds);
-  O('TCA990-6', 'GEN. VOLTAGE(A-B) -> DCS STN102 AI0807 GCP-AI1005: ' + genNeeds);
-  O('TCA990-13', 'GEN. VOLTAGE(B-C) -> DCS STN102 AI0871 TCS-AI1008: ' + genNeeds);
-  O('TCA990-18', 'GEN. VOLTAGE(C-A) -> DCS STN102 AI0903 TCS-AI1012: ' + genNeeds);
+  O('TCA990-6', 'GEN. VOLTAGE(A-B) -> DCS STN102 AI0807 GCP-AI1005, kV: tcs-gen.js g.V x 13.8 kV', U =>
+    U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN
+  );
+  O('TCA990-13', 'GEN. VOLTAGE(B-C) -> DCS STN102 AI0871 TCS-AI1008, kV: tcs-gen.js g.V x 13.8 kV', U =>
+    U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN
+  );
+  O('TCA990-18', 'GEN. VOLTAGE(C-A) -> DCS STN102 AI0903 TCS-AI1012, kV: tcs-gen.js g.V x 13.8 kV', U =>
+    U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN
+  );
   O('TCA990-11', 'GEN. MVAR -> DCS STN102 AI0775 GCP-AI1004: ' + genNeeds);
   O('TCA990-14', 'GEN. POWER FACTOR -> DCS STN102 AI0823 TCS-AI1009: ' + genNeeds);
   O('TCA990-15', 'FREQUENCY -> DCS STN102 AI0839 TCS-AI1010 (tcs-gen.js g.fg)', U => num(U.gen && U.gen.fg));
@@ -994,7 +1002,18 @@
   mb(30131, 'model', 'generator MW (A): the generator load of the model (tcsLiveRead mw)', (U, L) => num(L.mw));
   mb(30132, 'model', 'generator MW (B): the generator load of the model (tcsLiveRead mw)', (U, L) => num(L.mw));
   mb(30133, 'needs', 'generator Mvar: ' + genNeeds);
-  ['A', 'B', 'C'].forEach((p, i) => mb(30134 + i, 'needs', 'generator voltage (' + p + '): ' + genNeeds));
+  ['A', 'B', 'C'].forEach((p, i) =>
+    mb(30134 + i, 'model', 'generator voltage (' + p + '), kV: tcs-gen.js g.V x 13.8 kV (K1AU3E1-0003 G1 13.8 kV)', U =>
+      U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN
+    )
+  );
+  /* the hardwired TCS -> DCS points whose TCS end is not a PI/O table row (src/data/tcs-dcs.json 'to'): read by mbEnd / mbRead too */
+  MB['IBD:TA-6#15'] = ['ibd', 'IBD TA-6 net 15: OR (MSV (A) & (B) FULL CLOSE, CV (A) & (B) FULL CLOSE, TCS MAJOR TROUBLE) (tcs-trip.js)', ibd('TA-6', 15)];
+  MB['IBD:TA-1#10'] = ['ibd', 'IBD TA-1 input 10 (CENTRAL CONTROL ROOM) PB TURBINE TRIP: the operator console push button (tcs-trip.js)', ibd('TA-1', 10)];
+  MB['GPP:86G'] = ['model', 'generator trip of the generator protection panel: a lockout relay 86G-A or 86G-B operated (gen-panel.js U.lo86)', U =>
+    U && U.lo86 ? b(U.lo86.a || U.lo86.b) : 0];
+  MB['GCP:MWH'] = ['model', 'generator watt-hour, MWh: the integral of the generator MW since the counter started (tcs-dev.js U.dev.mwh)', U =>
+    U && U.dev && isFinite(U.dev.mwh) ? U.dev.mwh : NaN];
   /* DCS to PLC: the DCS commands that the COMM controller takes (STN102 WM0210 / WM0211 -> SI1900 / SI1901). In the app the same commands are
      the tcsCmd of tcs.js */
   mb('DO1', 'out', 'turbine gland seal group start command -> TCS (IBD TC-31 START, tcsCmd ibd TC-31)');

@@ -106,6 +106,9 @@ function tcsDev(U, dt) {
     if (!v) tcsDevSw((v = nrv[k] = {}), nOpen ? 100 : 0);
     tcsDevRun(v, nOpen ? 100 : 0, K.rAov, dt, false);
   }
+  /* the generator watt-hour meter of the generator control panel (GCP-AI1003, a pulse counter to the DCS): the integral of the MW,
+     counted from 0 when this state is made (a meter reading of the plant is not a physics value) */
+  d.mwh = (isFinite(d.mwh) ? d.mwh : 0) + (Math.max(0, +U.MW || 0) * dt) / 3600;
   /* FV-CD1904 LP exhaust hood water spray valve (solenoid valve, AOV travel): the engine's c.hso (IBD TC-35) */
   {
     let v = d.hood;

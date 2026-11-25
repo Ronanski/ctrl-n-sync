@@ -11,9 +11,14 @@ Bagong file na `src/analog/engine/tcs-dev.js` (U.dev, plain data), isang tawag n
 - **Healthy na contacts** (walang fault ang model, tuntunin ng tcs.js tcsIO): 18 AVR / protection trouble = 0, VT fuse normal = 1, 4 oil filter dP HIGH = 0, generator leakage HIGH = 0. Oil tank LOW / HIGH = 0 mula sa c.tankOk. Hand turning interlock = 0 (kapareho ng TB-9 net 53), turning gear local PB = 0, DS closed = 1.
 - **Gland steam seal header / LP inlet temp**: U.tt TEGS1002 / TEGS1003 ng engine.
 
+- **Hardwired TCS -> DCS na ends (para sa 33 ni MINAMI)**: IBD TA-6 net 15 (MSV / HPCV fully closed and TCS major trouble, I.0403 / 0404), IBD TA-1 input 10 (OPC turbine trip PB, I.1280), 86G-A / B operated at generator trip (U.lo86 ng gen-panel.js; I.093A / 093B / 041A), SSFI closed (I.0419), mode judgement instrument normal = 1 (I.089D), load up rate U.rateUp x 100 / 150 %/min (AI0421), gen voltage x3 (AI0807 / 0871 / 0903), generator MWh = integral ng MW (U.dev.mwh, AI0694).
+- **Modbus generator voltage A / B / C** (30134 ~ 30136): g.V x 13.8 kV.
+
 ## Bilang
 
 - TCS channels na "needs": 152 → 64.
+- 33 hardwired TCS -> DCS points: 12 → 24 na may value (natitira 9: gen current A / B / C, Mvar, pf, Mvarh, Modbus line A / B duty, AMB. COLD MODE TEMP.).
+- Modbus words na walang value: 3 generator voltage → 0 (natitira: Mvar, rotor position, metal temps ni YUA).
 
 ## Sinubok
 
