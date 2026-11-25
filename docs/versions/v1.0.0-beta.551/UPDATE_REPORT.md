@@ -1,6 +1,6 @@
-# LMYP OTS 1.0.0-beta.538 (QA : SAORI, lane 8, 2026-11-25)
+# LMYP OTS 1.0.0-beta.551 (QA : SAORI, lane 8, 2026-11-25)
 
-Sumunod sa beta.534. Tool lang; walang binago sa app, sa plant model, sa logic o sa HMI.
+Sumunod sa beta.550. Tool lang; walang binago sa app, sa plant model, sa logic o sa HMI.
 
 ## Ano ang bago (`tools/trace/trace.cjs`)
 
