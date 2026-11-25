@@ -1091,10 +1091,6 @@ function anTurbine0(cmd, arg) {
   if (!U.tc && (cmd === 'ostmain' || cmd === 'ostbk'))
     return 'OVERSPEED TEST not permitted: ' + (tb.st === 'sync' || tb.st === 'load' ? '52G CLOSE' : 'not in GOVERNING MODE at rated speed (TCE167)');
   if (!U.tc && cmd === 'oil') return tcsOilCmd(tcsOilState(U), arg || {});
-  if (!U.tc && cmd === 'vex') {
-    tcsOilState(U).vex = arg !== 0 && arg !== false;
-    return '';
-  }
   /* 3.2.0-beta.38 (CHECKLIST 0.6): the TCS / ATS model (tcs.js): the auxiliaries and the ATS step push buttons. 'roll' = ATS AUTO
      from the next step up to ACCELERATION (3600 rpm), 'sync' = EXCITATION + SYNCH. & INITIAL LOAD, 'loadup' = LOAD UP to the target */
   /* Mina 2026-11-09 (re-shell step 3): ROLL was accepted while the turbine was tripped and said "rolling" while the speed fell. A trip is

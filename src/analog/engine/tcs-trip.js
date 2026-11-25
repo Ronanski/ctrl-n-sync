@@ -323,9 +323,8 @@ const TCS_IBD_SP = {
   'TA-34@465,381': () => false,
   'TD-4@408,686': () => false
 };
-/* the oil pumps run through their sheets (TB-1, TB-2, TB-21, TB-22): the pump state goes in as the memories of the sheet, the sheet may change it:
-   AUTO start of the standby (other pump running 10 s or 15 s AND its discharge LOW), stop of a control oil pump on BEARING OIL PRESS. VERY LOW
-   TRIP. auto, run: nets of the AUTO and RUN memories, fb: the running contact. The operator's commands stay in tcsOilCmd */
+/* the oil pumps are driven by their TCE sheets (tcs-sheets.js); TB-1, TB-2, TB-21, TB-22 show the state: auto, run: nets of the AUTO and RUN
+   memories, fb: the running contact */
 const TCS_IBD_PUMP = {
   'TB-1': { k: 'mop', i: 0, auto: 1, run: 11, fb: 21 },
   'TB-2': { k: 'mop', i: 1, auto: 1, run: 11, fb: 21 },
@@ -360,8 +359,8 @@ const TCS_IBD_DROP = { 'TD-2': [3, 4, 5, 14, 15, 16] };
    oil pumps TB-1 / 2 / 21 / 22. Before: one screen command each set a flag (tcs.js 'tg', 'vex', 'gland', 'hood') with no sheet behind it.
    TCS_IBD_PBN: the push buttons of the TCS HMI by sheet and net (a 1.5 s pulse, AN.turbine('ibd', { id, pb })):
      TB-9  TURNING GEAR MOTOR (page 58; TCE350 ~ 352): START 20, AUTO 16, MANUAL 18, STOP 22, (LOCAL) JOG 9
-     TB-12 MAIN OIL TANK VAPOUR EXTRACTOR (TCA655): START 7, STOP 11
-     TC-28 GLAND STEAM EXHAUSTER (TCA680): START 7, AUTO 3, MANUAL 5, STOP 9
+     TB-12 MAIN OIL TANK VAPOUR EXTRACTOR (driven by TCA655, tcs-sheets.js): START 7, STOP 11
+     TC-28 GLAND STEAM EXHAUSTER (driven by TCA680, tcs-sheets.js): START 7, AUTO 3, MANUAL 5, STOP 9
      TC-31 STEAM SEAL FEED INLET VALVE (TCA650): OPEN 4, AUTO 0, MANUAL 2, CLOSE 6
      TC-35 LP EXHAUST HOOD WATER SPRAY VALVE FV-CD1904: OPEN 10, AUTO 0, MANUAL 9 (the reader found no CLOSE push button: finding D18-2)
    TCS_IBD_DEV: what each sheet reads from the plant before its gates (pre) and what its outputs do to the plant after them (post). The flip-flops
@@ -392,22 +391,27 @@ const TCS_IBD_DEV = {
     }
   },
   'TB-12': {
-    init: (v, c) => (v[8] = c.vex ? 1 : 0),
+    /* shown only: TCA655 drives it (tcs-sheets.js) */
+    init: () => {},
     pre: (v, c) => {
+      v[8] = c.vex ? 1 : 0;
       v[4] = c.vex ? 0 : 1; /* VAPOUR EXTRACTOR STOPPED */
       v[10] = c.empOff ? 1 : 0; /* MOTOR ELECTRICAL TROUBLE: MCC-EMP11 dead (unit black-out, tcs.js) */
     },
     post: (v, c) => {
-      v[13] = v[8];
-      c.vex = v[8] > 0.5 && !c.empOff;
+      v[8] = v[13] = c.vex ? 1 : 0;
     }
   },
   'TC-28': {
-    init: (v, c) => ((v[1] = c.gse ? 1 : 0), (v[4] = c.gseAu ? 1 : 0)),
+    /* shown only: TCA680 drives it (tcs-sheets.js) */
+    init: () => {},
+    pre: (v, c) => {
+      v[1] = c.gse ? 1 : 0;
+      v[4] = c.gseAu ? 1 : 0;
+    },
     post: (v, c) => {
-      v[17] = v[1];
-      c.gse = v[1] > 0.5;
-      c.gseAu = v[4] > 0.5;
+      v[1] = v[17] = c.gse ? 1 : 0;
+      v[4] = c.gseAu ? 1 : 0;
     }
   },
   'TC-31': {
@@ -608,6 +612,11 @@ function tcsIbdStep(U, c, dt) {
         v[out] = m !== undefined ? (m ? 1 : 0) : o;
       });
     if (dv) dv.post(v, c, U);
+    /* the oil pumps are driven by TCE300 / TCE305 (tcs-sheets.js): these sheets show the state */
+    if (pu && c[pu.k]) {
+      v[pu.auto] = c[pu.k + 'Au'][pu.i] ? 1 : 0;
+      v[pu.run] = v[pu.fb] = c[pu.k][pu.i] ? 1 : 0;
+    }
     for (const k in ib.fx) if (k.startsWith(id + ':')) v[+k.split(':')[1]] = ib.fx[k];
   }
   for (const k in ib.pbn) {
@@ -619,14 +628,13 @@ function tcsIbdStep(U, c, dt) {
       delete ib.pbn[k];
     }
   }
-  /* what the sheets did to the pumps; TB-1 and TB-2 note: TCS MAJOR TROUBLE starts the main oil pumps */
+  /* TB-1 and TB-2 note: TCS MAJOR TROUBLE starts the main oil pumps */
   if (c.mop) {
-    for (const id in TCS_IBD_PUMP) {
-      const pu = TCS_IBD_PUMP[id];
-      c[pu.k][pu.i] = ib.v[id][pu.run] > 0.5;
-    }
     const a = TCS_IBD.by['TA-9'].i.find(i => /TCS MAJOR TROUBLE/.test(i[1]));
-    if (a && ib.v['TA-9'][a[0]] > 0.5) c.mop = [true, true];
+    if (a && ib.v['TA-9'][a[0]] > 0.5) {
+      c.mop = [true, true];
+      tcsShMot(c, 'mopA').on = tcsShMot(c, 'mopB').on = 1;
+    }
     tcsOilSet(c);
   }
   tcsI0400(U, ib);
@@ -653,6 +661,8 @@ function tcsIbdPush(c, a) {
     m = TCS_IBD_PBN[id];
   if (!m) return 'No TCS push button sheet ' + id;
   if (!(pb in m)) return id + ' has no ' + pb + ' push button (' + Object.keys(m).join(' / ') + ')';
+  /* the extractor and the exhauster are driven by TCA655 / TCA680 (tcs-sheets.js): the button of their sheet */
+  if (id === 'TB-12' || id === 'TC-28') return tcsShOp(c, id === 'TB-12' ? 'vex' : 'gse', { START: 'start', STOP: 'stop', AUTO: 'auto', MANUAL: 'man' }[pb]);
   const ib = tcsIb(c);
   ib.pbn = ib.pbn || {};
   ib.pbn[id + ':' + m[pb]] = 1.5;
