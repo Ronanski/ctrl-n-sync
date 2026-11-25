@@ -82,6 +82,7 @@ Made by AUDIT FIX : SORA for the lane plan (docs/audit/lane-plan-content-first-2
 
 | Macro | Source | Status |
 |---|---|---|
+| PIV HL / LL (ML 13) | macro list words for PIF 12, INTEGRAL 9, ANALOG MEMORY 21, LMS 41; TCA022 (7); limit on Z + Y derived from TCE191 / TCE195; ML open | document + derived (EIMI PC lookup 2026-11-25) |
 | TRIPPLE INPUT DIAGNOSTICS (LME105) | TC-14-116 p 85, p 1298 No. 9; printed TP:3.0 | from manual text, inside not drawn (beta.461) |
 | AI DIAG.MD (LMA510 / LME510) | TC-14-116 p 1298 No. 4; printed H/L HL, LL, DEV HL, LL, DEF TP, DEF N, K | from manual text, inside not drawn (beta.461) |
 | TMR AI DIAGNOSTICS (LME111 / LME111A) | TC-14-116 p 1308 No. 6, p 1298 No. 4 / 9; printed TP:1.0, DELAY TP:3.0s | from manual text, inside not drawn (beta.461) |
