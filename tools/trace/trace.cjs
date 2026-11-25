@@ -320,6 +320,9 @@ const has = (txt, tag) => {
     /* a row-unit copy (YUA PR 549: s._inst.only = Set of row indexes) holds only those rows of the base drawing; its other rows are
        not part of it and are not counted on it */
     const only = s._inst && s._inst.only instanceof Set ? s._inst.only : null;
+    /* input rows whose net carries a user contact (nl.usr with a usw entry) on an address row (nl.ind): the contact writes the row */
+    const usrIn = new Set();
+    for (const u of (s.nl && s.nl.usr) || []) if (s.usw && u.key in s.usw) for (const m of (s.nl && s.nl.ind) || []) if (m.n === u.n && m.adr) usrIn.add(m.row);
     const txA = new Map();
     /* a drawing for machines A / B / C / D has a copy per machine (W.inst): the drawing itself is machine A, its short list gives A only */
     const multi = !s._inst && ((WORLD.instOf && WORLD.instOf.get(s)) || []).length > 1;
@@ -436,7 +439,9 @@ const has = (txt, tag) => {
                       ? 'valve / motor model'
                       : mv && mv[1] !== mv[0]
                         ? 'moves (own model)'
-                        : /DITL-1[678]$/.test(b.name)
+                        : usrIn.has(i)
+                          ? 'field contact (usr)' /* the ELECTRICAL TROUBLE contact on the same net writes the input row (simIn; YUA PR 590) */
+                          : /DITL-1[678]$/.test(b.name)
                           ? 'own sheet (field I/O)' /* DITL-16 / 17 / 18 compute their limit switch and flame rows themselves (03b-sim; KIRARA) */
                           : /DITL-50$/.test(b.name)
                             ? 'caller pins' /* DITL-50 FB2-OT is an instance block: its inputs are the pins of the calling sheet (coordinator) */
