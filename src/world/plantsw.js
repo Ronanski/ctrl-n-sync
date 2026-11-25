@@ -397,7 +397,9 @@
         } catch (e) {}
         if (!t) continue;
         const words = t.split(/\s+/);
-        const d = L.find(x => words.slice(0, 3).includes(x[0]) && (!x[6] || x[6].test(t)) && (!x[7] || x[7].test(s.name))) || byTag(s, words.slice(0, 3));
+        const hit = (z, ws) => ws.includes(z[0]) && (!z[6] || z[6].test(t)) && (!z[7] || z[7].test(s.name));
+        /* the tag of a lane's field row may stand later in the text (DITL-87 rows 24 / 26 "FIRE FIGHTING PUMP P-0719 MIR-P0719 RUNNING") */
+        const d = L.find(z => hit(z, words.slice(0, 3))) || byTag(s, words.slice(0, 3)) || L.find(z => z.fld && hit(z, words));
         if (d) map.push({ s, row: i, d, on: null });
       }
       for (const h of (s.sd && s.sd.hrow) || []) {
@@ -578,7 +580,7 @@
       const old = map;
       build(ALL);
       mapK = key;
-      if (old) for (const m of map) { const o = old.find(q => q.s === m.s && q.row === m.row); if (o) m.on = o.on; }
+      if (old) for (const m of map) { const o = old.find(q => q.s === m.s && q.row === m.row); if (o) (m.on = o.on), (m.clr = o.clr); }
     }
     if (pend) put();
     const pc = W.condP();
@@ -641,10 +643,16 @@
     if (map) put();
   };
   let pend = null;
+  /* the list says which rows the model had taken over when the save was made (on is a value): their field bit is the operator's and stays.
+     A row that is not in it (the model got it after the save: a build's #st150) has its old field bit cleared at the first value */
   const put = () => {
+    if (pend) for (const m of map) m.clr = 0;
     for (const q of pend || []) {
       const m = map.find(x => x.s.name === q.sheet && x.row === q.row - 1 && x.d[0] === q.tag);
-      if (m) m.on = q.on;
+      if (m) {
+        m.on = q.on;
+        m.clr = q.on == null ? 0 : 1;
+      }
     }
     pend = null;
   };

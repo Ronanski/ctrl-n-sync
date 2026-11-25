@@ -6024,7 +6024,7 @@ function anUnitStep0(dt) {
     /* TCE p.127 TCE180: permissive = NOT (52G not closed, TURBINE TRIP, FORCED CLOSE by HOUSE LOAD OPERATION, IP START before the
        TRANSFER REGION COMPLETE(IP)); the reset group also resets DCS CONTROL MODE ON */
     /* LMYP OTS: + GOV. MANUAL and LLM MANUAL of the TCS CRT (TCE180 reset group, tcs.js tcsGovCmd) */
-    tb.perm = onGrid && !trip && tb.xfer && !(U.el && U.el.l52 === false) && !tb.govMan && !tb.llmMan;
+    tb.perm = onGrid && !trip && !(U.tc && U.tc.trip) && tb.xfer && !(U.el && U.el.l52 === false) && !tb.govMan && !tb.llmMan;
     dirt(U.di.perm, tb.perm ? 1 : 0);
     if (U.di.onCmd >= 0 && +v[U.di.onCmd] > 0.5 && tb.perm) dirt(U.di.on, 1);
     if ((U.di.offCmd >= 0 && +v[U.di.offCmd] > 0.5) || !tb.perm) dirt(U.di.on, 0);
