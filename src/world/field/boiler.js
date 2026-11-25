@@ -14,7 +14,17 @@ rows.push(
   { stn: 2, di: 1, tag: 'ZSC-SB1001', v: (U, X) => closed(num(X.ditlPos('DITL-80S', 0))), rel: 'MV-SB1001 at 0 % travel (closed limit)',
     src: 'IO list STN102 I.024B ZSC-SB1001; DITL-80S MV-SB1001; MOV rule 03b-sim.js' },
   { stn: 2, ai: 'AI0770', tag: 'ZT-SB1001', v: (U, X) => num(X.ditlPos('DITL-80S', 0)), rel: 'MV-SB1001 position 0 ~ 100 %',
-    src: 'IO list STN102 AI0770 ZT-SB1001; DITL-80S MV-SB1001' }
+    src: 'IO list STN102 AI0770 ZT-SB1001; DITL-80S MV-SB1001' },
+  /* Phase 6 slice 5 (2026-11-26): the FORWARD running contact of sootblower 01 (the only lance with one in the I/O list). The lance of
+     DITL-80G (N-1011) travels out on its EXTEND COMMAND and back at its front end (world.js sbLance, Diamond Power N11639-SC1, 50.8 mm/s):
+     the motor runs forward while the lance goes out (_lance.dir 1). A lance not scanned yet stands retracted (18.PNG at 150 MW), 0. No
+     logic row reads it (80G, 80K, 80L, 80Q use ZSE, ZSR and MIT only): CRT. */
+  { stn: 2, di: 1, tag: 'MIF-N1011', rel: 'sootblower 01 lance moving out (forward)',
+    v: () => {
+      const L = typeof WORLD !== 'undefined' && WORLD.sbLances ? WORLD.sbLances().find(x => x._lance.n === 1011) : null;
+      return L && L._lance.dir > 0 ? 1 : 0;
+    },
+    src: 'IO list STN102 I.0562 MIF-N1011; DITL-80G EXTEND COMMAND net 14 / RETRACT net 0; lance travel world.js sbLance' }
 );
 
 /* 2. Furnace temperature control dampers FA1005 ~ FA1026 (STN103: front wall FA1005 ~ 1018 on ABC-015 / 016, rear wall FA1019 ~ 1026 on ABC-016): the open / closed limit switches of each motor damper. The damper
@@ -45,6 +55,39 @@ rows.push(
   rows.push({ stn: 4, di: 1, tag: 'ZSC-FA1043-' + x, v: (U, X) => closed(num(X.ai('1|' + z))), rel: 'ZT-FA1043-' + x + ' at 0 % (closed limit)',
     src: 'IO list STN104 ' + c + ' ZSC-FA1043-' + x + '; ZT-FA1043-' + x + ' STN101 ' + z + '; MOV rule' })
 );
+
+/* 3b. Hot reheat steam blow-off motor valve MV-HR1391 (ABC-054 PICHR1391, STN102 position ZT-HR1391 AI0737): its open / closed limit
+   switches (Phase 6, YUA PDF read 2026-11-26: memory list 102 WM 3588 / 3589 M.3222 / M.3223 "valve open / close", no logic sheet reads
+   them; display only). Same MOV rule. */
+rows.push(
+  { stn: 2, di: 1, tag: 'ZSO-HR1391', v: (U, X) => opened(num(X.ai('2|AI0737'))), rel: 'ZT-HR1391 at 100 % (open limit)',
+    src: 'IO list STN102 I.000A ZSO-HR1391; ZT-HR1391 STN102 AI0737 (ABC-054); memory list 102 M.3222; MOV rule' },
+  { stn: 2, di: 1, tag: 'ZSC-HR1391', v: (U, X) => closed(num(X.ai('2|AI0737'))), rel: 'ZT-HR1391 at 0 % (closed limit)',
+    src: 'IO list STN102 I.000B ZSC-HR1391; ZT-HR1391 STN102 AI0737 (ABC-054); memory list 102 M.3223; MOV rule' }
+);
+
+/* 3c. HP / LP turbine bypass valves PCV-MS1020 / PCV-HR1010 (STN102, positions ZT-MS1020 AI0384 on ABC-050 / DITL-03H, ZT-HR1010
+   AI0385 on ABC-052 / DITL-03H): the limit switches that no sheet reads (YUA PDF read 2026-11-26 section C: the sheets use ZSC-MS1020
+   I.0081 on DITL-115-16 and the positions). Display only; same end-of-travel rule. */
+rows.push(
+  { stn: 2, di: 1, tag: 'ZSO-MS1020', v: (U, X) => opened(num(X.ai('2|AI0384'))), rel: 'ZT-MS1020 at 100 % (open limit)',
+    src: 'IO list STN102 I.0080 ZSO-MS1020; ZT-MS1020 STN102 AI0384 (ABC-050); MOV rule' },
+  { stn: 2, di: 1, tag: 'ZSO-HR1010', v: (U, X) => opened(num(X.ai('2|AI0385'))), rel: 'ZT-HR1010 at 100 % (open limit)',
+    src: 'IO list STN102 I.0082 ZSO-HR1010; ZT-HR1010 STN102 AI0385 (ABC-052); MOV rule' },
+  { stn: 2, di: 1, tag: 'ZSC-HR1010', v: (U, X) => closed(num(X.ai('2|AI0385'))), rel: 'ZT-HR1010 at 0 % (closed limit)',
+    src: 'IO list STN102 I.0083 ZSC-HR1010; ZT-HR1010 STN102 AI0385 (ABC-052); MOV rule' }
+);
+
+/* 3d. FA blower inlet flow control dampers FCV-FA1055-A1 / B1 (STN101, positions ZT-FA1055-A1 AI0176 / ZT-FA1055-B1 AI0196, which
+   follow the MV of FICFA1055A / B on ABC-014: unit.js ztMap): the full open / full close limit switches (Phase 6 slice 6, 2026-11-26).
+   No logic sheet reads them (QA trace: on no parsed sheet); display only. Same end-of-travel rule. */
+for (const [x, ai, ao, ac] of [['A', 'AI0176', 'I.0040', 'I.0041'], ['B', 'AI0196', 'I.008A', 'I.008B']])
+  rows.push(
+    { stn: 1, di: 1, tag: 'ZSO-FA1055-' + x + '1', v: (U, X) => opened(num(X.ai('1|' + ai))), rel: 'ZT-FA1055-' + x + '1 at 100 % (full open)',
+      src: 'IO list STN101 ' + ao + ' ZSO-FA1055-' + x + '1; ZT-FA1055-' + x + '1 STN101 ' + ai + ' (ABC-014 FICFA1055' + x + ', unit.js ztMap); MOV rule' },
+    { stn: 1, di: 1, tag: 'ZSC-FA1055-' + x + '1', v: (U, X) => closed(num(X.ai('1|' + ai))), rel: 'ZT-FA1055-' + x + '1 at 0 % (full close)',
+      src: 'IO list STN101 ' + ac + ' ZSC-FA1055-' + x + '1; ZT-FA1055-' + x + '1 STN101 ' + ai + ' (ABC-014 FICFA1055' + x + ', unit.js ztMap); MOV rule' }
+  );
 
 /* 4. Biasing damper air buffer tanks PT-IA1064-A / B (STN104): on P&ID PD-023 sheet 6/6 (over-all instrument list), filled from the
    instrument air to unit 1 (IA1706, unit.js AN_AIR U.iaPU). The tank only fills the damper actuators: no flow through its inlet = no
@@ -177,6 +220,30 @@ for (const x of 'ABC') {
       { stn, di: 1, tag: 'TS-' + d, v: (U, X) => X.state(k + '.torque'), rel: 'torque switch', src: s0 + ts },
       { stn, di: 1, tag: 'MIL-' + d, v: (U, X) => X.state(k + '.remote'), rel: 'REMOTE selected on the field panel', src: s0 + mil });
   });
+/* 7b. MCC contacts of the motor valves MV-BR1391 (S/H No.1 outlet header to reheater, ABC-055, STN101) and MV-HR1391 (hot reheat blow-off,
+   ABC-054, STN102): trip (MIT), remote (MIL) and torque (TS). Phase 6, YUA PDF read 2026-11-26: no logic sheet reads them; TS goes only
+   to DISPLAY bits (memory list 101 B.2555 / B.2554, 102 B.253F / B.253E). Monitor points: field states in their normal service state
+   (no trip, remote, no torque), the trainer sets the abnormal one. No interlock is made from them. */
+[[1, 'BR1391', 'I.000C', 'I.000D', 'I.000E', 'S/H No.1 outlet header to reheater'], [2, 'HR1391', 'I.000C', 'I.000D', 'I.000E', 'hot reheat steam blow-off']].forEach(
+  ([stn, d, mit, mil, ts, w]) => {
+    const src = a => 'IO list STN10' + stn + ' ' + a + '; MV-' + d + ' (' + w + ' motor valve); Phase 6 wiring read (no logic sheet: monitor point)';
+    [['MIT', mit, 0, 'tripped'], ['MIL', mil, 1, 'not in remote'], ['TS', ts, 0, 'torque switch made']].forEach(([p, a, nrm, ab]) => {
+      const id = d + '.' + p.toLowerCase();
+      states.push({ id, tag: p + '-' + d, normal: nrm, t: 'MV-' + d + ' ' + ab, g: 'Boiler', src: src(a) });
+      fr.push({ stn, di: 1, tag: p + '-' + d, v: (U, X) => X.state(id), rel: 'MCC contact (field state)', src: src(a) });
+    });
+  }
+);
+/* 7c. MCC contacts of the PAF / SAF inlet flow control dampers (STN101; YUA PDF read section C: ABC-007, DITL-26A / 27A use only their
+   ZSC / ZSO). Monitor points in normal service, no interlock. */
+[[1, 'FA1053-1', 'MIT', 'I.0048', 0, 'PAF inlet damper tripped'], [1, 'FA1053-1', 'TS', 'I.004A', 0, 'PAF inlet damper torque switch made'],
+  [1, 'FA1054-1', 'MIT', 'I.0058', 0, 'SAF inlet damper tripped'], [1, 'FA1054-1', 'MIL', 'I.0059', 1, 'SAF inlet damper not in remote'],
+  [1, 'FA1054-1', 'TS', 'I.005A', 0, 'SAF inlet damper torque switch made']].forEach(([stn, d, p, a, nrm, t]) => {
+  const id = d + '.' + p.toLowerCase(),
+    src = 'IO list STN101 ' + a + ' ' + p + '-' + d + '; Phase 6 wiring read (ABC-007, DITL-26A / 27A do not read it: monitor point)';
+  states.push({ id, tag: p + '-' + d, normal: nrm, t, g: 'Air and flue gas', src });
+  fr.push({ stn, di: 1, tag: p + '-' + d, v: (U, X) => X.state(id), rel: 'MCC contact (field state)', src });
+});
 FIELD.state(lane, states);
 FIELD.add(lane, fr);
 
@@ -208,7 +275,13 @@ FIELD.add(lane, [
 ).concat([['ZSO-BH1754', 'twO', 'I.0173', 'LSO', 'two-way separator at its open end (ash to the vibrating screens)'],
   ['ZSC-BH1754', 'twC', 'I.0174', 'LSC', 'two-way separator at its closed end (ash to the silo)']].map(([tag, k, a, ls, rel]) => ({
   stn: 3, di: 1, tag, sheet: 'DITL-BA60', v: U => (U.ba && U.ba.sw ? U.ba.sw[k] : NaN), rel,
-  src: 'IO list STN103 ' + a + '; DITL-BA60 TWO-WAY ' + ls + ' input; position from DITL-BA71 outputs 5 / 6 = O.0210 / O.0211 (engine boiler.js anBaStep)' }))));
+  src: 'IO list STN103 ' + a + '; DITL-BA60 TWO-WAY ' + ls + ' input; position from DITL-BA71 outputs 5 / 6 = O.0210 / O.0211 (engine boiler.js anBaStep)' }))
+).concat([['A', '', '025B', '025C', 'O.0217 / O.0218'], ['B', ' #B', '053B', '053C', 'O.0298 / O.0299'], ['C', ' #C', '064B', '064C', 'O.0618 / O.0619'],
+  ['D', ' #D', '068B', '068C', 'O.029D / O.029E']].flatMap(([x, c, ao, ac, o]) => [['ZSO', ao, 1, 'open'], ['ZSC', ac, 0, 'closed']].map(([p, a, end, w]) => ({
+  stn: 3, di: 1, tag: p + '-BH1060-' + x, sheet: 'DITL-117' + c,
+  v: U => (U.ba && U.ba.gi && isFinite(U.ba.gi[x]) ? (U.ba.gi[x] === end ? 1 : 0) : NaN),
+  rel: 'bottom ash screw cooler ' + x + ' inlet valve ' + w,
+  src: 'IO list STN103 I.' + a + '; position from DITL-117' + c + ' outputs 7 / 12 = ' + o + ' SVO / SVC-BH1060-' + x + ' (engine boiler.js anBaStep U.ba.gi)' })))));
 
 /* 10. DITL input rows of the boiler drawings whose FROM column names an output of the same sheet (QA xref 2026-11-25 11:30 "missing":
    DITL-18 r20, DITL-19 r6 / r12 / r23, DITL-43 r4 / r5). That number is the station channel of the field contact (the output repeats

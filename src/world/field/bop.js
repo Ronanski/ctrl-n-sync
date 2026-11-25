@@ -58,7 +58,8 @@ for (const [stn, ai, tag, sheet, ctl, why] of [
   [2, 'AI0693', 'ZT-MU1110', 'ABC-031', 'LICCD1110A', 'LCV-MU1110 condenser make-up, item 17'],
   [1, 'AI0179', 'ZT-MS1001', 'ABC-013', 'PICMS1002', 'PCV-MS1001 blow off, item 1'],
   [2, 'AI0705', 'ZT-CW1201', 'ABC-053', 'TICLO1002', 'TCV-CW1201 lube oil temperature, item 40'],
-  [2, 'AI0386', 'ZT-AS1030', 'ABC-056', 'PICCD1104', 'PCV-AS1030 deaerator pegging steam (AO0403 on ABC-056)']
+  [2, 'AI0386', 'ZT-AS1030', 'ABC-056', 'PICCD1104', 'PCV-AS1030 deaerator pegging steam (AO0403 on ABC-056)'],
+  [2, 'AI0388', 'ZT-SB1053', 'ABC-017', 'PICSB1052', 'PCV-SB1053 sootblower steam supply pressure, item 9 (loop list STN104 row 73 ZISB1053)']
 ])
   R.push({ stn, ai, tag, v: (U, X) => open(X, sheet, ctl), rel: 'opening = anAv(' + ctl + ', MV of ' + ctl + ')', src: io(stn) + ' ' + ai + '; ' + sheet + ' ' + ctl + '; ' + why });
 for (const [n, k, sh, a1, a2] of [

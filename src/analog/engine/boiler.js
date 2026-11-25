@@ -1041,7 +1041,7 @@ function baTank(U) {
   return isFinite(U.paP) ? U.paP : typeof AN_AIR !== 'undefined' ? AN_AIR.P : 0;
 }
 function anBaStart(U) {
-  U.ba = { v: {}, sw: {}, lv: 0, p: 0, press: 0, tw: 0 };
+  U.ba = { v: {}, sw: {}, lv: 0, p: 0, press: 0, tw: 0, gi: { A: 0, B: 0, C: 0, D: 0 } };
   /* at rest (O&M L6 primary conditions): every valve closed, the vessel empty and at atmosphere; the field switches are known before
      the first step, so the start of the DITL (ditl150.js) reads them */
   const W = U.ba.sw;
@@ -1082,6 +1082,22 @@ function anBaStep(U, dt) {
     if (op !== cl) B.tw = Math.max(0, Math.min(1, B.tw + ((op ? 1 : -1) * dt) / AN_BA.stroke));
     B.sw.twO = B.tw >= 1 ? 1 : 0;
     B.sw.twC = B.tw <= 0 ? 1 : 0;
+  }
+  /* Phase 6 slice 4 (2026-11-26): the inlet valves XV-BH1060-A ~ D of the four bottom ash screw coolers. DITL-117 (and its copies #B ~ #D)
+     BOTTOM ASH SCREW COOLER INLET VALVE (1) gives the OPEN command on output row 7 (O.0217 / O.0298 / O.0618 / O.029D = SVO-BH1060-x)
+     and the CLOSE command on row 12 (O.0218 / O.0299 / O.0619 / O.029E = SVC-BH1060-x), counted from 0. The valve has two solenoids, so
+     like the pressing valve below it goes to the end of the last command and stays there; its limit switches ZSO / ZSC-BH1060-x
+     (IO list STN103 I.025B / 025C, I.053B / 053C, I.064B / 064C, I.068B / 068C) are made at that end. DITL-117 / 118 read no position
+     switch (the I/O list gives these two inputs no Logic column): they go to the CRT only. Travel time NO-SOURCE (no data sheet of the
+     valve in the docs), so the switch follows the command at once, as the pressing valve does. At rest closed (anBaStart: every valve
+     closed; the four coolers stand stopped at 150 MW, HMI snapshot 16.PNG); a save without U.ba.gi starts closed. */
+  if (!B.gi) B.gi = {};
+  for (const [x, c] of [['A', ''], ['B', ' #B'], ['C', ' #C'], ['D', ' #D']]) {
+    const op = fnOut('DITL-117' + c, 7) === 1,
+      cl = fnOut('DITL-117' + c, 12) === 1;
+    if (!isFinite(B.gi[x])) B.gi[x] = 0;
+    if (op && !cl) B.gi[x] = 1;
+    if (cl && !op) B.gi[x] = 0;
   }
   const K = AN_BA,
     o = r => fnOut(')DITL-BA53', r) === 1,
