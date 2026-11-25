@@ -59,7 +59,13 @@
     ['Line breaker 52L1 open (house load)', 'data-dy="DITL-03E|i|1"'],
     ['52G1 ready to synchronize', 'data-di="RY-52G|Y|N"'],
     ['52L1 ready to synchronize', 'data-di="RY-52L|Y|N"'],
-    ['Generator trip', 'data-di="MIT-GEN|Y|N"']
+    ['Generator trip', 'data-di="MIT-GEN|Y|N"'],
+    /* beta.557: the breaker contacts and the trip output of the I/O list (S2 I.0931 / I.0932 / I.0937, O.045F; sheets DITL-88 row 15,
+       DITL-51 row 3, generator protection 310SD03-743) */
+    ['Breaker 52G1 on contact', 'data-di="MIG-52G1-1|Y|N"'],
+    ['Breaker 52G1 off contact', 'data-di="MIG-52G1-2|Y|N"'],
+    ['Line breaker 52L1 open contact', 'data-di="MIG-52L1|Y|N"'],
+    ['Generator trip output of the DCS', 'data-di="MIT-GENS|Y|N"']
   ];
   const LIVE = ON + '|' + R.l1; /* the line above 52G1 is alive from the grid as well */
 

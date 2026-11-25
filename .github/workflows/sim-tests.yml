@@ -12,6 +12,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      - name: Build the html from the sources (it is not in git)
+        run: node tools/build/build.js
       - name: Playwright and the browser (no apt step)
         # The runner image already carries Google Chrome; the old "playwright install --with-deps" ran apt on security.ubuntu.com
         # and the runner DNS error there stopped the job before any test ran. Only the npm package is installed now; when the image

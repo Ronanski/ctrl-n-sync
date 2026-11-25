@@ -127,6 +127,9 @@
           { id: 'gs', lab: 'b' }
         ),
         at(L('turbine', 'Gland steam to the turbine'), 1620, GSY, { id: 'tul' }),
+        /* beta.557: the turbine gland steam line drain MV-AS1397 (DITL-116, hx-sys-as M116; opened / closed also by the TCS,
+           TCS-DI1037 / 1038 on the Turbine control interface page), on the line to the turbine, to the flash pipe */
+        at(X('MV-AS1397', 'Gland steam line drain', { wrap: 12 }), 1560, 370, { id: 'gsd', rot: 90, lab: 'r' }),
         /* beta.365 D18: the gland steam exhauster of IBD TC-28 (TCA680): it draws the gland leak-off steam and air through the gland
            steam condenser H-1903 (Condensate page) and blows the air out; its faceplate is the one of its sheet */
         at(L('condensate', 'Gland steam condenser H-1903', { back: true }), 1150, 66, { id: 'gcl' }),
@@ -188,6 +191,8 @@
         { med: 'condensate', w: W_WT, pts: ['cd2.r', 'xb2.l'], flow: 'l:TICAS1017', arrow: false },
         { med: 'condensate', w: W_WT, pts: ['xb2.r', 'sp2.l'], flow: 'l:TICAS1017' },
         { med: 'condensate', w: W_WT, pts: ['sp2.r', [1093, 110], 'ds2.t'], flow: 'l:TICAS1017', arrow: false },
+        { med: 'drain', w: W_DR, pts: [[1560, GSY], 'gsd.l'], flow: 'x:MV-AS1397', arrow: false },
+        { med: 'drain', w: W_DR, pts: ['gsd.r', [1560, 440]], to: 'flash pipe', flow: 'x:MV-AS1397' },
         { med: 'drain', w: W_DR, pts: [[1250, GSY], 'dsd.l'], flow: 'x:MV-AS1393', arrow: false },
         { med: 'drain', w: W_DR, pts: ['dsd.r', [1250, 390]], to: 'flash pipe', flow: 'x:MV-AS1393' },
         /* condenser */
@@ -216,10 +221,10 @@
         { x: 1035, y: HY + 30, s: 'AUXILIARY STEAM HEADER', cls: 'hx-zone', anchor: 'middle' },
         { x: 230, y: CRY - 60, s: 'Valve 1', key: 'ZT-AS1020-1', unit: '%', dp: 1 },
         { x: 230, y: CRY - 44, s: 'Valve 2', key: 'ZT-AS1020-2', unit: '%', dp: 1 },
-        { x: 1460, y: 330, s: 'Gland steam temperature 1', key: 'TEGS1002', unit: '°C', dp: 0 },
-        { x: 1460, y: 346, s: 'Gland steam temperature 2', key: 'TEGS1003', unit: '°C', dp: 0 },
-        { x: 1460, y: 362, s: 'Turbine side', key: 'TT-AS1017', unit: '°C', dp: 0 },
-        { x: 1460, y: 378, s: 'Unloading valve', key: 'PV-GS1034', unit: '%', dp: 1 },
+        { x: 1290, y: 400, s: 'Gland steam temperature 1', key: 'TEGS1002', unit: '°C', dp: 0 },
+        { x: 1290, y: 416, s: 'Gland steam temperature 2', key: 'TEGS1003', unit: '°C', dp: 0 },
+        { x: 1290, y: 432, s: 'Turbine side', key: 'TT-AS1017', unit: '°C', dp: 0 },
+        { x: 1290, y: 448, s: 'Unloading valve', key: 'PV-GS1034', unit: '%', dp: 1 },
         { x: 1440, y: 500, s: 'CONDENSER', cls: 'hx-zone' },
         { x: 1440, y: 520, s: 'Pressure', key: 'PT-CD1110', unit: K + ' abs', dp: 3 },
         /* beta.359 (ROSÉ, test as_page_values): PT-ST1110-1 ~ 3 are the exhaust hood absolute pressures in kg/cm² A like the condenser

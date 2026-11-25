@@ -1,4 +1,4 @@
-# v1.0.0-beta.574 — BOP batch 3: CEP VCB, dosing power at trips (lane 4, DCS LINKS BOP : RARA)
+# Lane 4: CEP VCB, dosing at hypochlorite power, field states ng BOP (DCS LINKS BOP : RARA)
 
 ## Ano ang bago (`src/world/field/bop.js`)
 - **Condensate pump A / B VCB ON / OFF** (STN103 I.0084 / 0085, I.0404 / 0405): ON = tumatakbo ang pump sa DITL-61A (o #B) at walang field trip o black-out (`X.ftrip`); OFF = hindi ON. Nakadrawing ang mga tag na ito sa MCC side ng DITL-61A, kaya ang field row ang nagpapagalaw sa contact (`WORLD.plantUsw`).

@@ -1,4 +1,4 @@
-/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.574. Field signals of the balance of plant (src/world/field/README.md).
+/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA). Field signals of the balance of plant (src/world/field/README.md).
    Each row reads engine state that already exists (read only) and names its physical source. No constant stands for a process value,
    no fitted number (RULES 3.12). Paper with the physical source of every value (QA : SAORI pass 2026-11-25):
    lanes/bop/lane4-field-values-paper-2026-11-25.md. A value that is not a number writes nothing (the point keeps its last value).

@@ -78,7 +78,11 @@
         at(E('tgset', '', '', [], { on: ON }), TX, TY, { id: 'tg', under: true }),
         at(E('generator', '', '', [], { on: ON }), TX - 332, TY, { id: 'gen', under: true }),
         /* live Cold run 2026-11-18 F-W: the turning gear (TCS 1.19), so the operator can turn the shaft before gland sealing */
-        at(M('motor', 'TURNING GEAR', 'Turning gear', [V('Speed', 'SI-TB', 'rpm', 0)], { tag: 'ZS-LO1906' }), TX - 332, TY + 110, {
+        at(M('motor', 'TURNING GEAR', 'Turning gear', [
+            V('Speed', 'SI-TB', 'rpm', 0),
+            /* beta.557: PT-IA1128 #1 air buffer tank of turning gear pressure (I/O list S4 AI0437) */
+            V('Air buffer tank', 'PT-IA1128', 'kg/cm²', 2)
+          ], { tag: 'ZS-LO1906' }), TX - 332, TY + 110, {
           id: 'tgm',
           sc: 1.4,
           lab: 'b'
