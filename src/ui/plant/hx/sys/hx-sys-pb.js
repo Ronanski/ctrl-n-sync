@@ -44,13 +44,13 @@
      Audit 3 (Jennie, live 2026-11-21: in MANUAL a START did nothing): row r is the step command of the AUTO program (FROM 80-59), no CRT
      button, and row r + 1 is the SKIPPED lamp. The CRT push buttons are on DITL-80M: row 2 "N-1011 SOOTBLOWER REMOTE START P.B." M.4015
      and row 7 "REMOTE REVERSE P.B." M.4014 (into DITL-80G rows 5 / 10 "REMOTE START / REVERSE COMMAND", F = 80M-303 / 80M-375), row 4
-     M.401D for N-1012; the other blowers are "AS ABOVE": their own copy of DITL-80G (world.js, its address map from memory list 102,
-     SB_B8 + 5 / + 4) takes the press on rows 5 / 10. The air preheater sootblower: DITL-80M rows 5 / 8 M.417D / M.417C. STATUS stays the
+     M.401D for N-1012; the other blowers (the dots of the drawing) have their own copy of DITL-80M rows 2 / 7
+     (src/world/inst/sootblowers.json, addresses of memory list 102): the press goes through the 2 s pulse and REMOTE SELECTED. The air preheater sootblower: DITL-80M rows 5 / 8 M.417D / M.417C. STATUS stays the
      OPERATING row of DITL-80A ~ 80F */
   const sb = defOf('MK15');
   const sbIns = n => {
     const L = (window.WORLD && WORLD.inst) || [];
-    return L.find(x => x.name.endsWith('DITL-80G #' + n));
+    return L.find(x => x.name.endsWith('DITL-80M #' + n));
   };
   const sbAd = (n, a) => () => {
     const x = sbIns(n),
@@ -63,8 +63,8 @@
       : n === 'N-1011'
         ? [['START', 2, null, null, 'DITL-80M'], ['RETRACT', 7, null, null, 'DITL-80M']]
         : n === 'N-1012'
-          ? [['START', 4, null, null, 'DITL-80M'], ['RETRACT', 10, null, null, 'DITL-80G #N-1012', sbAd(n, 'M.4014')]]
-          : [['START', 5, null, null, 'DITL-80G #' + n, sbAd(n, 'M.4015')], ['RETRACT', 10, null, null, 'DITL-80G #' + n, sbAd(n, 'M.4014')]];
+          ? [['START', 4, null, null, 'DITL-80M'], ['RETRACT', 7, null, null, 'DITL-80M #N-1012', sbAd(n, 'M.4014')]]
+          : [['START', 2, null, null, 'DITL-80M #' + n, sbAd(n, 'M.4015')], ['RETRACT', 7, null, null, 'DITL-80M #' + n, sbAd(n, 'M.4014')]];
   if (sb)
     /* Audit 3 #6: the 30 blower labels the old drawing had ([data-dy="DITL-80x|o|row"][data-on="N-10xx"]): [blower, sheet, row] */
     [["N-1011","DITL-80A",25],["N-1012","DITL-80B",1],["N-1014","DITL-80B",9],["N-1013","DITL-80B",5],["N-1015","DITL-80B",13],["N-1016","DITL-80B",17],["N-1018","DITL-80B",25],["N-1017","DITL-80B",21],["N-1019","DITL-80C",1],["N-1020","DITL-80C",5],["N-1022","DITL-80C",13],["N-1021","DITL-80C",9],["N-1023","DITL-80C",17],["N-1024","DITL-80C",21],["N-1026","DITL-80D",1],["N-1025","DITL-80C",25],["N-1027","DITL-80D",5],["N-1028","DITL-80D",9],["N-1030","DITL-80D",17],["N-1029","DITL-80D",13],["N-1031","DITL-80D",21],["N-1032","DITL-80D",25],["N-1034","DITL-80E",5],["N-1033","DITL-80E",1],["N-1035","DITL-80E",9],["N-1036","DITL-80E",13],["N-1038","DITL-80E",21],["N-1037","DITL-80E",17],["N-1040","DITL-80F",25],["N-1042","DITL-80F",25]].forEach(([n, d, r]) => {

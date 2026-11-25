@@ -913,7 +913,7 @@
       lOff = lampEl(P.st.off || 'STOPPED');
     if (!noSt) F.bd.append(row('STATUS', lOn, lOff));
     /* [.., 5] = the drawing of that push button when it is not the status drawing (a sootblower: STATUS on DITL-80A, its REMOTE START /
-       REVERSE P.B. on DITL-80M or its own copy of DITL-80G) */
+       REVERSE P.B. on DITL-80M or its own copy of it) */
     const B = P.pbs.map(([l, r, ad, , , pd]) => {
       const b = E('button', 'fpo-cmd', l);
       b.type = 'button';
