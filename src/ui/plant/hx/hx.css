@@ -236,7 +236,7 @@
 /* words stay readable where a line passes behind them */
 .hx-process svg .hx-node text, .hx-process svg .hx-lane { paint-order: stroke; stroke: var(--hx-panel); stroke-width: 4.4px; stroke-linejoin: round; }
 .hx-yn text, .hx-mode text { stroke: none !important; }
-.hx-yn:not(.y):not(.n) { display: none; }
+.hx-yn:not(.y):not(.n):not(.i) { display: none; }
 .hxo { fill: var(--hx-fill); fill: url(#hxg); stroke: var(--hx-ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 .hxn { fill: none; stroke: var(--hx-ink); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
 .hxd { fill: none; stroke: var(--hx-ink2); stroke-width: 1.05; stroke-linejoin: round; stroke-linecap: round; }
@@ -308,6 +308,7 @@
 .hx-yn text { font: 700 9.5px var(--hx-font); fill: #fff !important; }
 .hx-yn.y rect { fill: var(--hx-run); }
 .hx-yn.n rect { fill: var(--hx-stop); }
+.hx-yn.i rect { fill: var(--hx-none); }
 .hx-yn { cursor: pointer; }
 .hx-link rect { fill: var(--hx-panel2); stroke: var(--hx-rule); stroke-width: 1.2; }
 .hx-link text { font-size: 11.6px; font-weight: 600; fill: var(--hx-accent) !important; }
@@ -328,6 +329,7 @@
 .hx-run .rxs { fill: var(--hx-run); }
 .hx-stop .rxs { fill: var(--hx-stop); }
 .hx-trip .rxs { fill: var(--hx-run); animation: hx-blink 1s steps(2) infinite; }
+.rxfw { fill: var(--rx-st3); fill-opacity: 0.22; stroke: var(--rx-edge); stroke-width: 0.9; }
 .rxvoid { fill: var(--rx-void); stroke-width: 0.7; }
 .rxe { fill: none; stroke: var(--rx-edge); stroke-width: 1; stroke-linecap: round; opacity: 0.7; }
 .rxst { fill: none; stroke: var(--rx-st2); stroke-width: 1.7; stroke-linecap: round; }

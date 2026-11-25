@@ -33,6 +33,10 @@
       LOA: { n: 'PAF LUBE OIL PUMP A', t: 'Primary air fan lube oil pump A', ad: 'DITL-24', d: 'DITL-24' },
       LOB: { n: 'PAF LUBE OIL PUMP B', t: 'Primary air fan lube oil pump B', ad: 'DITL-24 #B', d: 'DITL-24 #B' },
       APH: { n: 'AIR PREHEATER', t: 'H-1052', ad: 'DITL-43', d: 'DITL-43' },
+      /* beta.556 (EIMI): the push buttons of the air heater that no page had: the speed selection (DITL-43 rows 15 and 16, M.1423 and
+         M.1424, output O.0208 CSC-FA1052M1-2) and the back-up air motor (DITL-44 rows 4, 11 and 9: M.1430 OPEN, M.1431 CLOSE, M.1432 AUTO) */
+      APS: { n: 'AIR PREHEATER SPEED', t: 'CSC-FA1052M1-2', d: 'DITL-43', df: { pbs: [['LOW SPEED', 14, 'M.1423'], ['NORMAL SPEED', 15, 'M.1424']], st: null, perm: [], why: '' } },
+      APM: { n: 'AIR PREHEATER AIR MOTOR', t: 'SV-PA1052', d: 'DITL-44', df: { pbs: [['OPEN', 3, 'M.1430'], ['CLOSE', 10, 'M.1431'], ['AUTO', 8, 'M.1432', 'set', 1], ['MANUAL', 8, 'M.1432', 'set', 0]], st: null, perm: [], why: '' } },
       CPA: { n: 'FICFA1071', t: 'Primary air flow', ctl: 'FICFA1071', io: 'FICFA1071' },
       CSA: { n: 'FICFA1081', t: 'Secondary air flow', ctl: 'FICFA1081', io: 'FICFA1081' },
       MPA: { n: 'FICFA1071', t: 'MCV-FA1053-1', ctl: 'FICFA1071', io: 'FICFA1071' },

@@ -15,10 +15,13 @@
    The precipitator has no signal in the app (no snapshot; it runs from its own panel, PR-OPE-5002 1.1): it is drawn with its
    field faceplate (machine "ESP" of page 14), without field voltages and currents. The fly ash silo T-1251 has no signal.
    Drawn simpler: the five fields of the precipitator are one casing with three hoppers; the ash transmitters under the
-   hoppers, the buffer T-1091 and the ash transmitter S-1090 of the recycle line, the cooler inlet valves XV-BH1060A ~ D
-   (no signal) are not drawn. */
+   hoppers and the cooler inlet valves XV-BH1060A ~ D (no signal) are not drawn. The buffer tank T-1091 and the ash transmitter
+   S-1090 of the recycle line have their own page (Bottom ash recycle).
+   beta.556 (EIMI): the conveyors, the screens, the two-way separator and the bag filter fan have their START / STOP (DITL-BA61),
+   their permissives (the AND gate of the ON COMMAND, DITL-BA63 / BA66 ~ BA69) and their monitor rows (DITL-BA59, BA60). The fly
+   ash panel gives XA-FH1701 ~ XA-FH1704 to the DCS (I/O list): no drawing of the app reads them, they show -----. */
 (function () {
-  const { V, E, M, C, L, page } = HX;
+  const { V, D, E, M, C, L, page } = HX;
   const B = HX.B;
   const MM = 'mmH₂O';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
@@ -47,6 +50,33 @@
     SCRB = run('ba-scrb', 'DITL-BA59|i|12'),
     BFAN = run('ba-fan', 'DITL-BA59|i|13');
 
+  for (const id of ['BCH', 'BEL', 'BSC', 'BVS', 'BFF', 'BTW', 'BRS']) HX.mach('MK14', id);
+  const dl = (s, k) => 'dl:DITL-' + s + '|' + k;
+  const trip = (tag, k) => D('Motor trip', tag, k, 'TRIP', 'NORMAL'),
+    rem = (tag, k) => D('Selector', tag, k, 'REMOTE', 'LOCAL'),
+    est = (tag, k) => D('Local emergency stop', tag, k, 'NORMAL', 'PRESSED'),
+    spd = (tag, k) => D('Speed switch', tag, k, 'TURNING', 'STOPPED');
+  /* the rows of the AND gate in front of each ON COMMAND: 1 = made */
+  const pm = (label, key) => V(label, key, '', 0);
+  const P0 = [pm('Conveyors starting precondition', dl('BA62', 'o|9')), pm('No conveyors emergency stop', dl('BA62', 'o|2|neg'))];
+  /* one ON COMMAND starts both screens (DITL-BA63) */
+  const SCP = P0.concat([pm('Selector remote', dl('BA59', 'o|4')), pm('No power fault', dl('BA63', 'o|13|neg'))]),
+    SCM = [
+      D('Screen A motor trip', 'MIT-S-1092-A', dl('BA59', 'i|17'), 'TRIP', 'NORMAL'),
+      D('Screen B motor trip', 'MIT-S-1092-B', dl('BA59', 'i|19'), 'TRIP', 'NORMAL'),
+      D('Screen A selector', 'MIL-S-1092-A', dl('BA59', 'i|3'), 'REMOTE', 'LOCAL'),
+      D('Screen B selector', 'MIL-S-1092-B', dl('BA59', 'i|5'), 'REMOTE', 'LOCAL'),
+      D('Screen A running', 'MIR-S-1092-A', dl('BA59', 'i|10')),
+      D('Screen B running', 'MIR-S-1092-B', dl('BA59', 'i|12')),
+      D('Screen A on command', 'MOR-S-1092-A', dl('BA71', 'o|0'), 'ON', 'OFF'),
+      D('Screen B on command', 'MOR-S-1092-B', dl('BA71', 'o|1'), 'ON', 'OFF')
+    ];
+  /* DITL-BA66: (two-way open and a screen running) or (two-way closed and the ash silo not high) */
+  HX.CALC.baScrewPath = v => {
+    const a = [v(dl('BA60', 'o|6')), v(dl('BA59', 'o|11')), v(dl('BA60', 'o|7')), v(dl('BA60', 'o|18'))];
+    return a.includes(null) ? null : Math.max(Math.min(a[0], a[1]), Math.min(a[2], 1 - a[3]));
+  };
+
   page({
     id: 'ash',
     group: 'Boiler',
@@ -63,7 +93,21 @@
         at(E('esp', '', '', [], { on: 'm:ESP' }), EX, EY, { id: 'esp', under: true, sc: ES }),
         at(M('cubicle', 'ESP', 'Precipitator panel', []), 150, 320, { id: 'espp', lab: 'r' }),
         at(L('furnace-gas', 'To the induced draft fan'), 930, EY, { id: 'gout' }),
-        at(E('silo', 'Fly ash silo', 'T-1251', [], { id: 'fa', h: 100 }), 1160, 250, { id: 'fa', sc: 1.7, lab: 'r' }),
+        at(
+          E('silo', 'Fly ash silo', 'T-1251', [], {
+            id: 'fa',
+            h: 100,
+            mon: [
+              D('Fly ash system common alarm', 'XA-FH1701', '', 'ALARM', 'NORMAL'),
+              D('Fly ash panel controller fault', 'XA-FH1702', '', 'FAULT', 'NORMAL'),
+              D('Fly ash panel communication fault', 'XA-FH1703', '', 'FAULT', 'NORMAL'),
+              D('Fly ash panel no power', 'XA-FH1704', '', 'NO POWER', 'NORMAL')
+            ]
+          }),
+          1160,
+          250,
+          { id: 'fa', sc: 1.7, lab: 'r' }
+        ),
 
         /* ---- furnace differential pressure and screw speed ---- */
         at(
@@ -112,43 +156,150 @@
         ),
 
         /* ---- chain conveyor, bucket elevator, screw conveyor, screens, silo ---- */
-        at(E('conveyor', 'Chain conveyor', 'L-1090', [], { w: 620, on: CHAIN }), 540, KY, {
-          id: 'kc',
-          sc: 1.4,
-          lab: 'b'
-        }),
-        at(E('elevator', 'Bucket elevator', 'L-1091', [], { h: 250, on: ELEV, wrap: 10 }), LX, 650, {
-          id: 'el',
-          sc: 1.4,
-          lab: 'l'
-        }),
-        at(E('screw', 'Screw conveyor', 'L-1092', [], { w: 130, on: SCREW }), 1260, TOPY, {
-          id: 'sc',
-          sc: 1.3,
-          lab: 't'
-        }),
-        at(E('screen', 'Vibrating screen A', 'S-1092A', [], { on: SCRA, wrap: 18 }), 1290, 640, {
+        at(
+          M('conveyor', 'CHAIN CONVEYOR', 'Chain conveyor', [], {
+            w: 620,
+            tag: 'L-1090',
+            perm: P0.concat([
+              pm('Selector remote', dl('BA59', 'o|0')),
+              pm('Bucket elevator running', dl('BA59', 'o|8')),
+              pm('No power fault', dl('BA68', 'o|10|neg')),
+              pm('Not blocked', dl('BA68', 'o|12|neg')),
+              pm('No speed fault', dl('BA68', 'o|14|neg'))
+            ]),
+            mon: [
+              spd('SS-BH1750', dl('BA60', 'i|0')),
+              D('Block switch', 'ZS-BH1750', dl('BA60', 'i|1'), 'BLOCKED', 'NORMAL'),
+              trip('MIT-L-1090', dl('BA59', 'i|14')),
+              rem('MIL-L-1090', dl('BA59', 'i|0')),
+              est('ES-L-1090', dl('BA59', 'i|21')),
+              D('On command', 'MOR-L-1090', dl('BA71', 'o|9'), 'ON', 'OFF')
+            ]
+          }),
+          540,
+          KY,
+          { id: 'kc', sc: 1.4, lab: 'b' }
+        ),
+        at(
+          M('elevator', 'BUCKET ELEVATOR', 'Bucket elevator', [], {
+            h: 250,
+            tag: 'L-1091',
+            wrap: 10,
+            perm: P0.concat([
+              pm('Selector remote', dl('BA59', 'o|1')),
+              pm('Screw conveyor running', dl('BA59', 'o|9')),
+              pm('No power fault', dl('BA67', 'o|10|neg')),
+              pm('Not blocked', dl('BA67', 'o|12|neg')),
+              pm('No speed fault', dl('BA67', 'o|14|neg')),
+              pm('Chain not slack', dl('BA67', 'o|16|neg'))
+            ]),
+            mon: [
+              spd('SS-BH1751', dl('BA60', 'i|2')),
+              D('Chain slack switch', 'ZS-BH1751', dl('BA60', 'i|3'), 'SLACK', 'NORMAL'),
+              D('Block switch', 'ZS-BH1752', dl('BA60', 'i|4'), 'BLOCKED', 'NORMAL'),
+              trip('MIT-L-1091', dl('BA59', 'i|15')),
+              rem('MIL-L-1091', dl('BA59', 'i|1')),
+              est('ES-L-1091', dl('BA59', 'i|22')),
+              D('On command', 'MOR-L-1091', dl('BA71', 'o|8'), 'ON', 'OFF')
+            ]
+          }),
+          LX,
+          650,
+          { id: 'el', sc: 1.4, lab: 'l' }
+        ),
+        at(
+          M('screw', 'SCREW CONVEYOR', 'Screw conveyor', [], {
+            w: 130,
+            tag: 'L-1092',
+            perm: P0.concat([
+              pm('Selector remote', dl('BA59', 'o|2')),
+              pm('Way open: to a running screen, or to the silo below its high level', 'cal:baScrewPath'),
+              pm('No power fault', dl('BA66', 'o|13|neg')),
+              pm('No speed fault', dl('BA66', 'o|16|neg'))
+            ]),
+            mon: [
+              spd('SS-BH1752', dl('BA60', 'i|5')),
+              trip('MIT-L-1092', dl('BA59', 'i|16')),
+              rem('MIL-L-1092', dl('BA59', 'i|2')),
+              est('ES-L-1092', dl('BA59', 'i|23')),
+              D('On command', 'MOR-L-1092', dl('BA71', 'o|7'), 'ON', 'OFF')
+            ]
+          }),
+          1260,
+          TOPY,
+          { id: 'sc', sc: 1.3, lab: 't' }
+        ),
+        at(
+          M('valve', 'L-1094 TWO-WAY SEPARATOR', 'Two-way separator', [], {
+            kind: 'motor',
+            tag: 'L-1094',
+            wrap: 20,
+            perm: [pm('No close command', dl('BA65', 'i|6|neg'))],
+            mon: [
+              D('Open limit', 'ZSO-BH1754', dl('BA60', 'i|6'), 'OPEN', 'NOT OPEN'),
+              D('Closed limit', 'ZSC-BH1754', dl('BA60', 'i|7'), 'CLOSED', 'NOT CLOSED'),
+              D('Open command', 'SVO-BH1754', dl('BA71', 'o|5'), 'ON', 'OFF'),
+              D('Close command', 'SVC-BH1754', dl('BA71', 'o|6'), 'ON', 'OFF'),
+              D('Abnormal', 'XV-BH1754', dl('BA65', 'o|16'), 'FAULT', 'NORMAL')
+            ]
+          }),
+          1329,
+          552,
+          { id: 'tws', sc: 0.8, rot: 90, lab: 'r' }
+        ),
+        at(
+          B('Conveyors: reset, emergency stop', 'data-dy="DITL-BA62|o|2" data-on="EMERGENCY STOP" data-off="NORMAL"', {
+            mach: 'BOTTOM ASH CONVEYORS',
+            w: 260
+          }),
+          1590,
+          440,
+          { id: 'brs' }
+        ),
+        at(M('screen', 'VIBRATING SCREEN', 'Vibrating screen A', [], { on: SCRA, tag: 'S-1092A', wrap: 18, perm: SCP, mon: SCM }), 1290, 640, {
           id: 'vsa',
           sc: 1.4,
           lab: 'b' /* UI check 2026-11-24 C1: under the screen; at its left the feed line to screen B goes down */
         }),
-        at(E('screen', 'Vibrating screen B', 'S-1092B', [], { on: SCRB, wrap: 18 }), 1290, 760, {
+        at(M('screen', 'VIBRATING SCREEN', 'Vibrating screen B', [], { on: SCRB, tag: 'S-1092B', wrap: 18 }), 1290, 760, {
           id: 'vsb',
           sc: 1.4,
           lab: 'b'
         }),
-        at(L('limestone-sand', 'Coarse ash to the sand silo'), 1300, 880, { id: 'rcl' }),
+        at(L('ash-recycle', 'Coarse ash to the recycle buffer tank'), 1270, 890, { id: 'rcl' }),
         at(
-          E('silo', 'Bottom ash silo', 'T-1090', [V('Level', 'LT-BH1750', 'm', 1)], {
+          E('silo', 'Bottom ash silo', 'T-1090', [V('Level', 'LT-BH1750', '%', 1)], {
             id: 'ba',
             h: 110,
-            level: ['LT-BH1750', 0, 12]
+            level: ['LT-BH1750', 0, 100] /* beta.556: in % (alarm list HIGH 90, LOW 40; 16.PNG 15.8 %), was drawn as m of 12 */,
+            mon: [
+              V('Level', 'LT-BH1750', '%', 1),
+              D('Level high', 'LS-BH1754', dl('BA60', 'i|18'), 'HIGH', 'NORMAL'),
+              D('Level low', 'LS-BH1753', dl('BA60', 'i|19'), 'LOW', 'NORMAL'),
+              D('Discharging to the truck', 'LI1-L-1093', dl('BA60', 'i|14')),
+              D('Bag filter differential pressure high', 'PDS_H-BH1750', dl('BA60', 'i|16'), 'HIGH', 'NORMAL'),
+              D('Bag filter differential pressure low', 'PDS_L-BH1750', dl('BA60', 'i|17'), 'LOW', 'NORMAL')
+            ]
           }),
           SLX,
           SLY,
           { id: 'ba', sc: 1.9, lab: 'r' }
         ),
-        at(E('fan', 'Bag filter fan', 'F-1091', [], { on: BFAN }), 1680, 560, { id: 'bf', sc: 0.8, lab: 't' })
+        at(
+          M('fan', 'BAG FILTER FAN', 'Bag filter fan', [], {
+            tag: 'F-1091',
+            perm: P0.concat([pm('Selector remote', dl('BA59', 'o|6')), pm('No power fault', dl('BA69', 'o|9|neg'))]),
+            mon: [
+              trip('MIT-F-1091', dl('BA59', 'i|20')),
+              rem('MIL-F-1091', dl('BA59', 'i|6')),
+              D('On command', 'MOR-F-1091', dl('BA71', 'o|10'), 'ON', 'OFF'),
+              D('Filter cleaning solenoid', 'SV-BH1758', dl('BA71', 'o|11'), 'ON', 'OFF')
+            ]
+          }),
+          1680,
+          560,
+          { id: 'bf', sc: 0.8, lab: 't' }
+        )
       ],
       pipes: [
         /* flue gas through the precipitator */
@@ -180,17 +331,17 @@
           flow: ELEV,
           arrow: false
         },
-        { med: 'solid', w: W_S, pts: ['sc.out', [1329, 540]], flow: SCREW, arrow: false },
-        { med: 'solid', w: W_S, pts: [[1329, 540], [SLX, 540], 'ba.t'], flow: SCREW },
-        { med: 'solid', w: W_S, pts: [[1329, 540], [1259, 540], 'vsa.in'], flow: SCRA },
+        { med: 'solid', w: W_S, pts: ['sc.out', 'tws.l'], flow: SCREW, arrow: false },
+        { med: 'solid', w: W_S, pts: ['tws.r', [1329, 590], [SLX, 590], 'ba.t'], flow: SCREW },
+        { med: 'solid', w: W_S, pts: [[1329, 590], [1259, 590], 'vsa.in'], flow: SCRA },
         {
           med: 'solid',
           w: W_S,
-          pts: [[1259, 540], [1200, 540], [1200, 720], [1259, 720], 'vsb.in'],
+          pts: [[1259, 590], [1200, 590], [1200, 720], [1259, 720], 'vsb.in'],
           flow: SCRB,
           arrow: false
         },
-        { med: 'solid', w: 4, pts: ['vsa.over', [1400, 651], [1400, 880], 'rcl.r'], flow: SCRA + '|' + SCRB },
+        { med: 'solid', w: 4, pts: ['vsa.over', [1400, 651], [1400, 890], 'rcl.r'], flow: SCRA + '|' + SCRB },
         { med: 'solid', w: 4, pts: ['vsb.over', [1400, 771]], flow: SCRB, arrow: false },
         { med: 'air', w: 4, pts: [[SLX + 30, 630], [1643, 630], [1643, 560], 'bf.in'], flow: BFAN, arrow: false },
         { med: 'solid', w: W_S, pts: ['ba.b', [SLX, 880]], to: 'to truck' }

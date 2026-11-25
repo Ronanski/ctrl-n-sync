@@ -57,6 +57,9 @@
   };
   /* o.words = [word at 1, word at 0] for an on / off point (a VCB, a heater): the row shows the word, not 1.0 / 0.0 */
   HX.V = (label, key, unit, dp, o) => Object.assign({ label, key, unit: unit || '', dp: dp == null ? 1 : dp }, o || {});
+  /* beta.556 (EIMI): a monitor row that is one on / off point of the I/O list: tag = its name there, key = where the app reads it
+     ('dl:SHEET|i, o or p|row' a row or an output address of a DITL drawing, 'fld:TAG' a field row). No key = no source: -----. */
+  HX.D = (label, tag, key, w1, w0) => HX.V(label, key || 'fld:' + tag, '', 0, { tag, words: [w1 || 'YES', w0 || 'NO'] });
   HX.E = (sym, name, tag, vals, o) => Object.assign({ k: 'eq', sym, name, tag: tag || '', vals: vals || [] }, o || {});
   /* beta.486 (EIMI): o.mon = [HX.V(...)] monitor rows of the machine (bearing, winding, vibration, heater ...): shown on its
      PERMISSIVE · TREND · MONITOR faceplate (README section 4 rule 6, user 2026-10-31: two faceplates, the monitor rows on the second),
@@ -82,6 +85,9 @@
   /* a named state for a rule: HX.hk('g52', 'data-dy=...') gives 'h:g52', true while that state of the hmi-mock.js page is
      its red one (a breaker closed, a valve open, a Y) */
   HX.HK = {};
+  /* beta.556 (EIMI): a controller or a plain piece of plant with o.mon = [HX.V(...)] (and o.perm = [HX.V(...)], each 1 = made) gets the
+     square of the second faceplate, PERMISSIVE · TREND · MONITOR: Y red / N green when its permissives are known, else a grey i */
+  HX.MON = {};
   HX.hk = (name, hook) => ((HX.HK[name] = hook), 'h:' + name);
   /* a hand valve of the plant model as a valve SYMBOL on the line (hand wheel, red = open, the stem follows): a click opens
      its field faceplate. Use it where the valve stands on a drawn pipe; HX.H stays for a valve named beside the drawing */
@@ -101,6 +107,14 @@
     );
   /* a hand valve of the plant model (a field valve the operator sets): OPEN / CLOSED, a click opens its field faceplate */
   HX.H = (tag, text, o) => HX.B(text || tag, 'fv:' + tag, Object.assign({ press: true, state: true, w: 104 }, o || {}));
+  /* beta.556 (EIMI): a machine of a system file (hx/sys) that hx-registry.js (generated) does not have: page = its system id, id = its key */
+  HX.mach = (page, id) => {
+    const d = window.LS_MOCK && LS_MOCK.defs.find(x => x.id === page),
+      m = d && d.mach && d.mach[id];
+    if (m && window.HXREG && !HXREG.machines[m.n]) HXREG.machines[m.n] = { t: m.t, page, id, bind: { d: m.d, df: m.df } };
+  };
+  /* beta.556: a value worked out from other keys, key 'cal:NAME' (a permissive that is one of two ways); null when one is unknown */
+  HX.CALC = {};
   HX.page = def => {
     def.no = HX.pages.length + 1;
     HX.pages.push(def);
@@ -538,7 +552,10 @@
       }
     }
     /* the Y / N square (second faceplate) of a machine or an on / off valve: on the side away from its words */
-    const ynId = it.k === 'mach' ? 'mach:' + it.mach : it.k === 'valve' ? 'valve:' + it.valve : '',
+    /* beta.556: a machine with its own permissive rows (o.perm, all needed) has the same second faceplate */
+    const monId = it.mon && (it.k === 'loop' || it.k === 'eq' || (it.k === 'mach' && it.perm)) ? it.loop || it.mach || it.id || it.tag : '';
+    if (monId) HX.MON[monId] = it;
+    const ynId = it.k === 'mach' && !it.perm ? 'mach:' + it.mach : it.k === 'valve' ? 'valve:' + it.valve : monId ? 'mon:' + monId : '',
       ynX = it.yn ? it.yn[0] : lab === 'r' ? box[0] - 18 : box[2] + 4,
       ynY = it.yn ? it.yn[1] : lab === 'b' ? box[1] - 16 : side ? box[1] - 4 : box[1] - 2;
     const yn = ynId
@@ -834,7 +851,7 @@
   /* UI check 2026-11-24 C6: a TCS system drawn as its valve (gland steam seal, hood spray: a name without a tag number) is in or
      out of service; its valve opening is a value of its own (PV-GS1031 position, FV-CD1904 open) */
   const stTxt = (s, name, vw) =>
-    vw && name && !/d/.test(name)
+    vw && name && !/[0-9]/.test(name) /* beta.556: was the letter d: a valve with a tag number said In / Out of service */
       ? s === 'run'
         ? 'In service'
         : s === 'stop'
@@ -1486,9 +1503,11 @@
         });
         Q('.hx-yn[data-yn]').forEach(e => {
           const [yk, ...yr] = e.dataset.yn.split(':'),
-            p = ((yk === 'valve' ? D.valve(yr.join(':')) : D.machine(yr.join(':'))) || {}).perm;
-          setAt(e, 'class', 'hx-yn ' + (p == null ? '' : p ? 'y' : 'n'));
-          setTx(e.querySelector('text'), p == null ? '-' : p ? 'Y' : 'N');
+            mo = yk === 'mon' ? HX.MON[yr.join(':')] : null,
+            pv = mo && (mo.perm || []).map(r => D.value(r.key)),
+            p = mo ? (pv.length && !pv.includes(null) ? pv.every(x => x >= 0.5) : null) : ((yk === 'valve' ? D.valve(yr.join(':')) : D.machine(yr.join(':'))) || {}).perm;
+          setAt(e, 'class', 'hx-yn ' + (p == null ? (mo ? 'i' : '') : p ? 'y' : 'n'));
+          setTx(e.querySelector('text'), p == null ? (mo ? 'i' : '-') : p ? 'Y' : 'N');
         });
         Q('[data-level]').forEach(e => {
           const [key, lo, hi] = e.dataset.level.split('|'),

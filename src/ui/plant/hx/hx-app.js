@@ -108,7 +108,7 @@
     }
     return X;
   }
-  const plainKey = k => !/^(an|tcs):/.test(k);
+  const plainKey = k => !/^(an|tcs|fld|dl|cal):/.test(k);
   function proxy() {
     const mach = {},
       unit = {},
@@ -124,7 +124,7 @@
     }
     /* push buttons and states (HX.B): the element the page of hmi-mock.js wires, with the same data attribute */
     for (const h in S.hooks) {
-      if (h.slice(0, 3) === 'fv:') continue;
+      if (h.slice(0, 3) === 'fv:' || h.slice(0, 4) === 'fld:') continue;
       art +=
         '<g data-hxk="' +
         S.hooks[h].i +
@@ -171,7 +171,7 @@
       mach[name] = !ex
         ? S.machs[name]
         : Object.assign({}, S.machs[name], {
-            mon: (S.machs[name].mon || []).concat(ex.mon.map(r => [r.label, () => HX.data.value(r.key), r.unit, plainKey(r.key) ? r.key : '', r.dp, r.words])),
+            mon: (S.machs[name].mon || []).concat(ex.mon.map(r => [r.label, () => HX.data.value(r.key), r.unit, r.tag || (plainKey(r.key) ? r.key : ''), r.dp, r.words])),
             vcb: ex.vcb ? () => HX.data.value(ex.vcb) : S.machs[name].vcb,
             vcbTag: ex.vcb && plainKey(ex.vcb) ? ex.vcb : ''
           });
@@ -280,6 +280,22 @@
       x = typeof v === 'boolean' ? (v ? 1 : 0) : v != null && isFinite(v) ? +v : null;
     return { text: x == null ? '-----' : x >= 0.5 ? 'ON' : 'OFF', tone: x == null ? '' : x >= 0.5 ? 'on' : '' };
   };
+  /* beta.556 (EIMI): a row of a DITL drawing, 'SHEET|i or o|row' or '...|neg' (the same read as data-dy of hmi-mock.js): 1 / 0, null when
+     the drawing is not there or the logic is not on */
+  const dlRow = spec => {
+    const [ad, io, row, neg] = spec.split('|');
+    /* 'SHEET|p|O.xxxx' = an output the sheet writes at its address without an output row (the same read as data-dpo) */
+    if (io === 'p') {
+      const p = call(() => LS_OP.pout(ad, row), null);
+      return p == null ? null : p ? 1 : 0;
+    }
+    const
+      s = call(() => LS_OP.dOf(ad) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(ad)), null),
+      v = s ? call(() => (io === 'o' ? DUI.outVal(s, +row) : DUI.rowVal(s, +row)), null) : null;
+    return v == null ? null : neg ? 1 - (v ? 1 : 0) : v ? 1 : 0;
+  };
+  /* a field row of the plant model (AN.fieldRead: a limit switch, a transmitter no drawing reads), null when there is none */
+  const fldRow = tag => call(() => (AN.unit && AN.unit.on ? fin(AN.fieldRead(tag.replace(/[^A-Za-z0-9|]/g, ''))) : null), null);
   const ALC = { t: 0, m: {} };
   HX.data = {
     time: () => call(() => (window.AN && AN.unit && isFinite(AN.unit.t) ? AN.unit.t : null), Date.now() / 1000),
@@ -291,6 +307,10 @@
       /* a value of the TCS model ('tcs:aux.hso' = AN.tcs().aux.hso); an open / closed flag reads 100 / 0 % */
       if (/^tcs:/.test(key))
         return call(() => { const v = key.slice(4).split('.').reduce((o, k) => (o == null ? o : o[k]), AN.tcs()); return typeof v === 'boolean' ? (v ? 100 : 0) : v != null && isFinite(v) ? +v : null; }, null);
+      /* beta.556 (EIMI): 'dl:SHEET|i or o|row' = a row of a DITL drawing, 'fld:TAG' = a field row of the plant model (monitor rows with words) */
+      if (/^dl:/.test(key)) return dlRow(key.slice(3));
+      if (/^fld:/.test(key)) return fldRow(key.slice(4));
+      if (/^cal:/.test(key)) return call(() => HX.CALC[key.slice(4)](HX.data.value), null);
       needVal(key);
       const e = pq('[data-v="' + key + '"]'),
         t = e ? e.textContent : '';
@@ -306,7 +326,8 @@
         /* a field item without a logic row: the lower ring header drains are a state of the plant model (hmi-mock-ms.js LHD) */
         FLD = name === 'V-BD1005 ~ V-BD1021' ? call(() => (AN.fieldState().lhd ? 1 : 0), null) : null,
         BD = R.machines[name] && R.machines[name].bind,
-        DFV = BD && BD.df && BD.d && BD.df.st != null ? call(() => window.LS_OP.dout(BD.d, BD.df.st), null) : null,
+        DF0 = BD && BD.df && BD.d && BD.df.st != null ? call(() => window.LS_OP.dout(BD.df.std || BD.d, BD.df.st), null) : null,
+        DFV = DF0 == null || !BD.df.inv ? DF0 : DF0 === 1 ? 0 : 1,
         md = (pq('[data-hxd="' + name + '"]') || {}).textContent || '',
         y = (pq('[data-hxy="' + name + '"]') || {}).textContent || '',
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-L): a state row that is not a running state (DITL-09 row 26 REMOTE of the
@@ -403,6 +424,12 @@
         return { text: o == null ? '' : o ? 'OPEN' : 'CLOSED', tone: o == null ? '' : o ? 'run' : 'stop' };
       }
       if (h.slice(0, 5) === 'crtl:') return crtLamp(h);
+      /* beta.556 (EIMI): 'fld:TAG|word at 1|word at 0' = the state of a field row (a limit switch that no drawing reads) */
+      if (h.slice(0, 4) === 'fld:') {
+        const [t, a, b] = h.slice(4).split('|'),
+          x = fldRow(t);
+        return { text: x == null ? '-----' : x >= 0.5 ? a || 'ON' : b || 'OFF', tone: x == null ? '' : x >= 0.5 ? 'run' : 'stop' };
+      }
       if (h.slice(0, 4) === 'crt:') return { text: CRT.api() ? '' : '-----', tone: '' };
       needHook(h, label);
       const e = S && S.hooks[h] && pq('[data-hxk="' + S.hooks[h].i + '"]');
@@ -435,6 +462,25 @@
     open(kind, id, second, anchor, name) {
       if (kind === 'value') return void valueCard(anchor, name, [id]);
       if (kind === 'loop') return click(S && S.loops[id]);
+      /* beta.556 (EIMI): the second faceplate of a controller or piece of plant with its own monitor rows (HX.C / HX.E o.mon, o.perm) */
+      if (kind === 'mon') {
+        const it = HX.MON[id];
+        if (!it || !window.LS_FPOP || !LS_FPOP.info) return;
+        const tr = it.mon.find(r => !r.words),
+          rd = k => () => HX.data.value(k),
+          /* the key of a row as the drawing writes it: DITL-BA62 out row 9 (rows count from 1, as on the button titles) */
+          keyTxt = k => {
+            const [s, side, n] = k.replace(/^[a-z]+:/, '').split('|');
+            return side === 'i' || side === 'o' ? s + (side === 'i' ? ' in row ' : ' out row ') + (+n + 1) : side === 'p' ? s + ' ' + n : s;
+          };
+        return void LS_FPOP.info({
+          n: it.cname || it.name,
+          t: it.tag || it.loop || '',
+          perm: (it.perm || []).map(r => [r.label + (r.tag || (r.key && !r.key.startsWith('cal:')) ? ' · ' + (r.tag || keyTxt(r.key)) : ''), rd(r.key)]),
+          mon: it.mon.map(r => [r.label + ' · ' + (r.tag || keyTxt(r.key)), rd(r.key), r.unit, r.dp, r.words]),
+          trend: tr ? { h: 'Trend · ' + tr.label + ' · ' + tr.key, fn: rd(tr.key) } : null
+        });
+      }
       /* audit 2026-11-21 A1 / A2: a piece of plant with no faceplate of its own (strainer, tube cleaning, generator values) or a
          Y square whose target is missing opened nothing under a hand cursor: the values it shows, with their trend */
       if (!click(pq(second ? '[data-yn="' + id + '"]' : '[data-hit="' + id + '"]'))) valueCard(anchor, name, null);

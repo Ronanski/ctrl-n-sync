@@ -9,6 +9,17 @@
    currents, silo outlet XV-BH1756, cycle mode timer readout. */
 (function () {
   if (!window.LS_MOCK) return;
+  /* beta.556 (EIMI): the bottom ash conveyors, the two-way separator, the bag filter fan and the ash transmitter had no push button on
+     any page. Their CRT push buttons are the input rows of DITL-BA61 (M.0913 ~ M.0944, M.1380 / 1381, M.1400 / 1401, M.0906, M.0921) and
+     of DITL-BA02 rows 8 ~ 11 (M.1300 ~ M.1303); the status is the RUNNING output of DITL-BA59 / BA60; need = rows the AND gate of the
+     ON COMMAND has (DITL-BA63, BA66 ~ BA69) */
+  const PB = (a, ra, ma, b, rb, mb) => [
+    [a, ra, ma, null, null, 'DITL-BA61'],
+    [b, rb, mb, null, null, 'DITL-BA61']
+  ];
+  const PRE = { d: 'DITL-BA62', row: 9, l: 'conveyors starting precondition' },
+    REM = (row, l) => ({ d: 'DITL-BA59', row, l });
+  const bam = (n, t, st, pbs, need) => ({ n, t, d: 'DITL-BA59', df: { st, on: 'RUNNING', off: 'STOPPED', pbs, need: [PRE].concat(need), perm: [], why: '' } });
   LS_MOCK.add({
     id: 'MK14',
     title: 'ESP AND ASH',
@@ -26,6 +37,14 @@
       BCD: { n: 'ASH COOLER D', t: 'L-1060D', ad: 'DITL-21A #D', d: 'DITL-21A #D' },
       DP: { n: 'DPICFG108', t: 'Furnace differential pressure', ctl: 'DPICFG108', io: 'DPICFG108' },
       SA: { n: 'SICL1060A', t: 'Screw speed', ctl: 'SICL1060A', io: 'SICL1060A' },
+      BCH: bam('CHAIN CONVEYOR', 'L-1090', 7, PB('START', 0, 'M.0913', 'STOP', 1, 'M.0914'), [REM(0, 'remote selector'), REM(8, 'bucket elevator running')]),
+      BEL: bam('BUCKET ELEVATOR', 'L-1091', 8, PB('START', 2, 'M.0923', 'STOP', 3, 'M.0924'), [REM(1, 'remote selector'), REM(9, 'screw conveyor running')]),
+      BSC: bam('SCREW CONVEYOR', 'L-1092', 9, PB('START', 4, 'M.0933', 'STOP', 5, 'M.0934'), [REM(2, 'remote selector')]),
+      BVS: bam('VIBRATING SCREEN', 'S-1092', 11, PB('START', 10, 'M.1380', 'STOP', 11, 'M.1381'), [REM(4, 'remote selector')]),
+      BFF: bam('BAG FILTER FAN', 'F-1091', 13, PB('START', 12, 'M.0943', 'STOP', 13, 'M.0944'), [REM(6, 'remote selector')]),
+      BTW: { n: 'L-1094 TWO-WAY SEPARATOR', t: 'Open = to the screens, closed = to the silo', d: 'DITL-BA60', df: { st: 6, on: 'OPEN', off: 'CLOSED', free: true, pbs: PB('OPEN', 6, 'M.1400', 'CLOSE', 7, 'M.1401'), perm: [], why: '' } },
+      BRS: { n: 'BOTTOM ASH CONVEYORS', t: 'Emergency stop', d: 'DITL-BA62', df: { st: 2, on: 'EMERGENCY STOP', off: 'NORMAL', free: true, pbs: PB('RESET', 16, 'M.0906', 'EMERGENCY STOP', 17, 'M.0921'), perm: [], why: '' } },
+      BAT: { n: 'BOTTOM ASH TRANSMITTER', t: 'S-1090', d: 'DITL-BA02', /* the state = step 0 Waiting, DITL-BA04 out row 9: not waiting = the sequence runs */ df: { st: 8, std: 'DITL-BA04', inv: true, on: 'SEQUENCE ACTIVE', off: 'WAITING', free: true, pbs: [['START', 7, 'M.1300'], ['STOP', 8, 'M.1301'], ['RESET', 9, 'M.1302'], ['EMERGENCY STOP', 10, 'M.1303']], perm: [], why: '' } },
       /* tracker e1 (user 2026-11-10: a cold start without Training): the precipitator runs from the EP PLC panel (PR-OPE-5002 1.1, no DCS
          station): field equipment of the plant model AN.field('esp') (dust and opacity follow it), as the Training ESP step */
       ESP: { n: 'ESP', t: 'Electrostatic precipitator', d: 'EP PLC panel', fld: 'esp', fieldOp: true, why: 'Field equipment: the precipitator (transformer-rectifiers U-1201 ~ U-1205, purge air heater H-1201 and fan F-1201) is started at the EP PLC panel. No DCS command; dust and opacity follow it.' }

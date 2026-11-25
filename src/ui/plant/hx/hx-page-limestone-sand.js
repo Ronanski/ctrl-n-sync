@@ -24,9 +24,11 @@
    notes on the page is the one that starts the system in the app (headless 2026-11-18: isolating valves, feeder, system;
    the system START pressed first does not latch).
    The SOx controller AICFG10571 (ABC-005) that sets the feeder speed has its faceplate next to the feeder (F-AM 2026-11-18).
+   beta.556 (EIMI): the remote selectors, running lamps, purge starts, vent fan and fluidizing / bypass air signals of the I/O list are
+   monitor rows of the silos, fans and vessels (DITL-771 ~ 776, DITL-LS10, LS212, LS214).
    NO-SOURCE in the app: the speed of the limestone feeder (ST-M1311 has no signal in hx-registry.js). */
 (function () {
-  const { V, E, M, C, L, page } = HX;
+  const { V, D, E, M, C, L, page } = HX;
   const B = HX.B;
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
@@ -49,6 +51,14 @@
     SD_FAN = HX.hk('sd-fan', dy('DITL-774|o|21', 'RUNNING', 'STOPPED')),
     SD_OUT = HX.hk('sd-out', dy('DITL-771|o|23')),
     SD_AIR = HX.hk('sd-air', dy('DITL-771|o|24'));
+  const dl = (s, k) => 'dl:DITL-' + s + '|' + k;
+  const sv = (label, tag, s, r) => D(label, tag, dl(s, 'o|' + r), 'OPEN', 'CLOSED');
+  const cmd = (label, tag, s, r) => D(label, tag, dl(s, 'o|' + r), 'ON', 'OFF');
+  const fan = (tag, run, rr, trip, rt, rem, rl, start, rs) => [
+    D('Running', 'MIR-' + tag, dl(run, 'i|' + rr)),
+    D('Motor trip', 'MIT-' + tag, dl(trip, 'i|' + rt), 'TRIP', 'NORMAL'),
+    D('Selector', 'MIL-' + tag, dl(rem, 'i|' + rl), 'REMOTE', 'LOCAL')
+  ].concat(start);
   const INJ = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   page({
@@ -69,13 +79,21 @@
           M('silo', 'Limestone system', 'Limestone daily silo', [V('Level', 'LT-LM1800', '%', 1)], {
             id: 'lm',
             h: 110,
-            level: ['LT-LM1800', 0, 100]
+            level: ['LT-LM1800', 0, 100],
+            mon: [
+              D('Injection system selector', 'SIL-LM1311', dl('LS10', 'i|5'), 'REMOTE', 'LOCAL'),
+              cmd('Injection system running lamp', 'SOR-LM1311', 'LS10', 9),
+              D('Air receiver pressure low', 'PS-PA1811', dl('LS10', 'i|7'), 'LOW', 'NORMAL'),
+              cmd('Vent filter purge start', 'POR-LM1313', 'LS214', 14),
+              sv('Fluidizing valve 1', 'SV-PA1813A', 'LS214', 0),
+              sv('Fluidizing valve 2', 'SV-PA1813B', 'LS214', 2)
+            ]
           }),
           LX,
           210,
           { id: 'lm', sc: 2, lab: 'l' }
         ),
-        at(E('fan', 'Vent fan', 'F-1313', [], { on: LM_FAN }), LX + 150, 110, { id: 'lmf', sc: 0.8, lab: 'r' }),
+        at(E('fan', 'Vent fan', 'F-1313', [], { on: LM_FAN, mon: fan('LM1313', 'LS214', 17, 'LS214', 16, 'LS214', 18, cmd('Start command', 'MOR-M1313', 'LS214', 13)) }), LX + 150, 110, { id: 'lmf', sc: 0.8, lab: 'r' }),
         at(xv('Lock vessel inlet valve', 'XV-LM1812', 'DITL-LS170|o|1'), LX, 370, { id: 'lv1', rot: 90, lab: 'l' }),
         at(E('silo', 'Lock vessel', 'S-1311', [V('Pressure', 'PT-LM1811', K)], { id: 'lk', h: 76 }), LX, 480, {
           id: 'lk',
@@ -97,9 +115,9 @@
         at(M('rotary', 'L-1311', 'Limestone feeder', []), LX, 812, { id: 'lfd', sc: 1.5, lab: 'l' }),
         /* the SOx control sets the feeder speed (ABC-005 AICFG10571, PV = stack SOx AT-FG1057-1 0 ~ 500 ppm, I/O list STN101 AI0466;
            HMI snapshot 19.PNG SV 200 ppm): the operator puts it in AUTO here (F-AM, Jennie live run 2026-11-18) */
-        at(C('AICFG10571', 'Limestone feed, stack SOx control', { sym: 'ctl', unit: 'ppm', pvdp: 0, wrap: 16 }), LX + 320, 760, {
+        at(C('AICFG10571', 'Limestone feed, stack SOx control', { sym: 'ctl', unit: 'ppm', pvdp: 0, wrap: 16 }), LX + 330, 800, {
           id: 'sox',
-          lab: 't' /* beta.305: right of the feed line (its box sat on it) */
+          lab: 'r' /* beta.305: right of the feed line (its box sat on it); beta.556: the injection valve tiles covered its name */
         }),
         at(M('valve', 'XV-LM1811A ~ H', 'Isolating valves A to H', [], { kind: 'shutoff', wrap: 12 }), 370, 890, {
           id: 'liso',
@@ -112,7 +130,8 @@
         }),
         at(xv('Equalising air valve', 'XV-PA1814C', 'DITL-LS200|o|1'), 110, 890, { id: 'lv5', lab: 'r' } /* beta.305: beside the valve, its air line comes up under it */),
         at(L('compressed-air', 'Plant air', { back: true }), 40, 960, { id: 'pal' }),
-        at(B('Bypass air valves', dy('DITL-LS212|o|9+10'), { w: 170 }), 640, 940, { id: 'lby' }),
+        at(B('Bypass air valve A, SV-PA1812A', dy('DITL-LS212|o|9'), { w: 230 }), 640, 950, { id: 'lby' }),
+        at(B('Bypass air valve B, SV-PA1812B', dy('DITL-LS212|o|10'), { w: 230 }), 880, 950, { id: 'lbz' }),
         ...INJ.map((n, i) =>
           at(
             B('Injection valve ' + n, dy('DITL-LS212|o|' + (11 + i)), { w: 148 }),
@@ -127,13 +146,24 @@
           M('silo', 'Sand system', 'Sand silo', [V('Level', 'LT-SD1800', '%', 1)], {
             id: 'sd',
             h: 110,
-            level: ['LT-SD1800', 0, 100]
+            level: ['LT-SD1800', 0, 100],
+            mon: [
+              D('Injection system selector', 'SIL-SD1300', dl('771', 'i|4'), 'REMOTE', 'LOCAL'),
+              cmd('Injection system running lamp', 'SOR-SD1300B', '771', 16),
+              D('Level switch high', 'LSH-SD1800', dl('774', 'i|2'), 'HIGH', 'NORMAL'),
+              D('Level switch low', 'LSL-SD1800', dl('774', 'i|3'), 'LOW', 'NORMAL'),
+              cmd('Vent filter purge start', 'SOR-SD1300A', '774', 24),
+              sv('Fluidizing valve 1', 'SV-PA1806A', '773', 1),
+              sv('Fluidizing valve 2', 'SV-PA1806B', '773', 3),
+              sv('Bypass air valve', 'SV-PA1805A', '772', 8),
+              sv('Density stabilizer valve', 'SV-PA1805B', '772', 11)
+            ]
           }),
           SX,
           210,
           { id: 'sd', sc: 2, lab: 'r' }
         ),
-        at(E('fan', 'Vent fan', 'F-1301', [], { on: SD_FAN }), SX - 150, 110, {
+        at(E('fan', 'Vent fan', 'F-1301', [], { on: SD_FAN, mon: fan('M1301', 'BA03', 5, 'BA03', 10, 'BA03', 4, cmd('Start command', 'MOR-M1301', '774', 21)) }), SX - 150, 110, {
           id: 'sdf',
           sc: 0.8,
           lab: 'l',
@@ -156,9 +186,9 @@
           id: 'sv4',
           lab: 'b'
         }),
-        at(B('Sand valve A, rear side', dy('DITL-776|o|10'), { w: 190 }), 1215, 420, { id: 'sda' }),
-        at(B('Sand valve B, rear side', dy('DITL-776|o|12'), { w: 190 }), 1215, 460, { id: 'sdb' }),
-        at(B('Bypass air valve', dy('DITL-776|o|11'), { w: 190 }), 1215, 500, { id: 'sdy' }),
+        at(B('Sand valve A, rear side', dy('DITL-776|o|10'), { w: 180 }), 1186, 420, { id: 'sda' }),
+        at(B('Sand valve B, rear side', dy('DITL-776|o|12'), { w: 180 }), 1186, 460, { id: 'sdb' }),
+        at(B('Bypass air valve, SV-PA1807', dy('DITL-776|o|11'), { w: 180 }), 1186, 500, { id: 'sdy' }),
         at(L('coal', 'Coal feeders', { back: true }), 880, 60, { id: 'col' })
       ],
       pipes: [
@@ -250,7 +280,7 @@
         },
         { x: 481, y: 604, s: 'LIMESTONE INJECTION · A to F', cls: 'hx-zone' },
         { x: 1121, y: 624, s: 'LIMESTONE · REAR SIDE', cls: 'hx-zone' },
-        { x: 1120, y: 392, s: 'SAND · REAR SIDE', cls: 'hx-zone' },
+        { x: 1098, y: 392, s: 'SAND · REAR SIDE', cls: 'hx-zone' },
         { x: 1121, y: 740, s: 'Bed temperature', key: 'TT-FG1090', unit: '°C', dp: 0 },
         { x: 1121, y: 756, s: 'Bed pressure drop', key: 'DPT-FG1081', unit: 'mmH₂O', dp: 0 }
       ]

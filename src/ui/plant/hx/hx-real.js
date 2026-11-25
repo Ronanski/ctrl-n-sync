@@ -815,6 +815,21 @@
     ports: { l: [-20, 0], r: [12, 0], t: [0, -8], b: [0, 8] },
     svg: '<path class="rxflame" d="M10 0Q16 -7 28 0Q16 7 10 0Z"/><path class="rxd" d="M-20 -6h3v12h-3z"/><path class="rx" d="M-17 -4.5H2L10 -2.5V2.5L2 4.5H-17Z"/><rect class="rxs" x="-12" y="-7.5" width="9" height="15" rx="1.5"/>'
   });
+  /* one water wall of the furnace seen from outside: the wall tubes and the open air ports (holes = [[x, y], ...], from the top left
+     corner of the wall, w x h) */
+  R.furnwall = o => {
+    const w = o.w || 1600,
+      h = o.h || 330;
+    let t = '';
+    for (let x = 14; x < w - 6; x += 14) t += `M${n(x)} 6V${n(h - 6)}`;
+    return {
+      box: [0, 0, w, h],
+      ports: { l: [0, h / 2], r: [w, h / 2], t: [w / 2, 0], b: [w / 2, h] },
+      svg:
+        `<rect class="rxfw" x="0" y="0" width="${n(w)}" height="${n(h)}" rx="4"/><path class="rxe" opacity=".45" d="${t}"/>` +
+        (o.holes || []).map(p => `<ellipse class="rxvoid" cx="${n(p[0])}" cy="${n(p[1])}" rx="7" ry="15"/>`).join('')
+    };
+  };
   /* air compressor as a package: the motor and the air end inside the enclosure, cut open. Ports: in (air in, left), out
      (compressed air, right) */
   R.compressor = () => ({
