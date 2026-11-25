@@ -1,4 +1,5 @@
-/* LANE 6 (EIMI): THE PACKAGE PANELS of the boiler (their own PLC, on the DCS by Modbus): electrostatic precipitator, fly ash.
+/* LANE 6 (EIMI): THE PACKAGE PANELS of the boiler (their own PLC, on the DCS by Modbus): electrostatic precipitator, fly ash,
+   condenser tube cleaning.
    State = U.pkg (plain data, saved with the plant); one step per plant step (anPkgStep, after the air and gas path); one operator
    action AN.pkgOp(panel, device, op, value): '' = done, else the reason it was refused.
    ---------- THE ELECTROSTATIC PRECIPITATOR (K C Cottrell O&M V19-1; points: Modbus list, node ESP PLC)
@@ -32,7 +33,15 @@
    Fails: the O&M gives "several seconds" and "several minutes": twice the time the step takes at design air (CALC).
    The level + timer mode has no time in the docs: the panel runs in LEVEL mode (LEVEL + TIMER with 0 = the same).
    Silo T-1251 1600 m3 (10 m dia.); LT-FH1700 = % of it. H / HH / L of the silo: the switch heights are not in the docs: H = one hour of
-     the design ash flow below HH, HH = full, L = empty (CALC). Dry unloader 150 m3/h, vent filter M-1250 starts with the first tank. */
+     the design ash flow below HH, HH = full, L = empty (CALC). Dry unloader 150 m3/h, vent filter M-1250 starts with the first tank.
+   ---------- THE CONDENSER TUBE CLEANING SYSTEM (GEA O&M V18-3, control philosophy GI 3862 106 09 014; points: Modbus list, node CTCS)
+   Two trains, A and B, one per path of the condenser: screens T11 / T12 of the ball separator, ball vessel inlet valve N01 and outlet
+   valve N02, ball recirculating pump F01. Times and DP settings of the manual: AN_CTC. Start permissive O.0286 and REMOTE AUTO START /
+   STOP O.0287 / O.0288 (A), O.028A / O.028B (B) are the outputs of DITL-119.
+   DP of the separator: 30 mbar clean at 15,750 m3/h, with the square of the flow of its path (textbook) and times the dirt on the screens
+   (1 = clean; no fouling rate in the docs, so only the instructor makes dirt). A backwash washes it off by three time constants in its
+   30 min (CALC). With the screens at BACKWASH they stand out of the flow: no DP across them.
+   The balls do not change the cleanness of the tubes in the condenser model (no rate in the docs). */
 const AN_PKG = {
   tr: [
     [83, 840, 94],
@@ -103,7 +112,354 @@ function anPkg(U) {
   if (!U.pkg) U.pkg = {};
   if (!U.pkg.esp) U.pkg.esp = anEspNew(on);
   if (!U.pkg.fa) U.pkg.fa = anFaNew(on);
+  /* in service with the sea water pumps when the plant is loaded */
+  if (!U.pkg.ctcs) U.pkg.ctcs = anCtcNew(on && U.swQc > 1000 ? 1 : 0);
   return U.pkg;
+}
+/* an output of a DITL drawing to a package panel, at its terminal net: 1 / 0, null while the world is not built */
+function anDlOut(sheet, adr) {
+  try {
+    if (typeof S === 'undefined' || !S.sheets || !window.WORLD || !WORLD.on || !WORLD.idx) return null;
+    const s = S.sheets.find(x => x.name.endsWith(sheet));
+    const q = s && s.nl && s.nl._v && (s.nl.pout || []).find(x => x.adr === adr);
+    if (!q) return null;
+    return s.nl._v[q.n] === 1 ? 1 : 0;
+  } catch (e) {
+    return null;
+  }
+}
+const AN_CTC = {
+  vlv: 12 /* s, ball valve actuator */,
+  scr: 22 /* s, screen actuator */,
+  vF: 16 /* s, run time fail */,
+  sF: 25,
+  wat: 300,
+  run: 8 * 3600,
+  col: 1800,
+  colE: 300,
+  idle: 16 * 3600,
+  bw: 1800,
+  stab: 120,
+  lead: 30,
+  nb: 40,
+  eb: 50,
+  dp: 30 /* mbar, clean screens */,
+  q: 15750 /* m3/h of one path at that DP */,
+  out: { A: ['O.0287', 'O.0288'], B: ['O.028A', 'O.028B'] }
+};
+/* one train. mode 0 = remote auto, 1 = local auto, 2 = manual. st: 0 stopped, 1 to the initial conditions, 2 watering, 3 cleaning cycle,
+   4 ball collection, 5 inlet valve closing, 6 idle, 7 backwash, 8 DP stabilizing, 9 held by a normal backwash, 10 held by an emergency
+   backwash, 11 failed. d = drives: p position (1 = open / backwash), c its command, t running time, stk = stuck (instructor) */
+function anCtcTrain(on) {
+  const dr = p => ({ p, c: p, t: 0, stk: 0, f: 0 });
+  return {
+    mode: 0,
+    st: on ? 3 : 0,
+    t: 0,
+    tr: 0,
+    ti: 0,
+    col: AN_CTC.col,
+    ret: 0,
+    bk: 0,
+    stop: 0,
+    d: { N01: dr(on), N02: dr(on), T11: dr(0), T12: dr(0) },
+    f1: on,
+    f1c: on,
+    f1t: 0,
+    dirt: 1,
+    dp: 0,
+    tn: 0,
+    te: 0,
+    nb: 0,
+    eb: 0,
+    hld: 0,
+    hoot: 0,
+    ack: 0,
+    sf: 0,
+    ms: 0,
+    rdy: 0,
+    op: on,
+    pw: 1,
+    ps: [0, 0]
+  };
+}
+function anCtcInit(r) {
+  r.d.N01.c = r.d.N02.c = r.d.T11.c = r.d.T12.c = 0;
+  r.f1c = 0;
+}
+const anCtcAtInit = r => !r.d.N01.p && !r.d.N02.p && !r.d.T11.p && !r.d.T12.p && !r.f1;
+function anCtcGo(r, st) {
+  r.st = st;
+  r.t = 0;
+}
+/* AUTO STOP */
+function anCtcStop(r) {
+  if (r.st === 1 || r.st === 2) {
+    r.ret = 0;
+    anCtcGo(r, 5);
+  } else if (r.st === 3) {
+    r.ret = 0;
+    r.col = AN_CTC.col;
+    anCtcGo(r, 4);
+  } else if (r.st === 4 || r.st === 5) {
+    /* a waiting backwash is still done, then the train stops */
+    if (r.ret >= 7) r.stop = 1;
+    else r.ret = 0;
+  } else if (r.st === 6) {
+    r.ti = 0;
+    anCtcGo(r, 0);
+  } else if (r.st === 7 || r.st === 8) r.stop = 1;
+}
+function anCtcFail(r, k) {
+  r[k] = 1;
+  r.hoot = 1;
+  r.ack = 0;
+  anCtcInit(r);
+  anCtcGo(r, 11);
+}
+function anCtcStart(r) {
+  if (!r.rdy || r.st) return 0;
+  r.stop = r.ret = 0;
+  r.tr = r.ti = 0;
+  anCtcGo(r, 1);
+  return 1;
+}
+function anCtcTrainStep(r, pw, per, q, pulse, dt) {
+  const K = AN_CTC,
+    d = r.d;
+  /* no power: the drives stay where they are, the pump stops; on return everything goes to the initial position and waits for a start */
+  if (!pw) {
+    r.f1 = r.f1c = 0;
+    r.rdy = r.op = 0;
+    r.pw = 0;
+    return;
+  }
+  if (!r.pw) {
+    r.pw = 1;
+    anCtcInit(r);
+    anCtcGo(r, 0);
+    r.ti = r.tr = r.stop = 0;
+  }
+  /* screens turned to BACKWASH stand out of the flow */
+  r.dp = K.dp * Math.pow(q / K.q, 2) * r.dirt * (1 - Math.max(d.T11.p, d.T12.p));
+  const auto = r.mode !== 2,
+    seq = auto && r.st >= 2 && r.st <= 6;
+  r.tn = r.dp > K.nb ? r.tn + dt : 0;
+  r.te = r.dp > K.eb ? r.te + dt : 0;
+  if (r.te >= K.lead && !r.eb) {
+    r.eb = r.hoot = 1;
+    r.ack = 0;
+    if (auto && r.st === 2) {
+      r.ret = 10;
+      anCtcGo(r, 5);
+    } else if (auto && r.st === 8) anCtcGo(r, 10);
+    else if (seq && r.st === 3) {
+      r.ret = 10;
+      r.col = K.colE;
+      anCtcGo(r, 4);
+    } else if (seq && r.st === 4) {
+      r.ret = 10;
+      r.col = Math.min(r.col, r.t + K.colE);
+    } else if (seq && r.st === 5) r.ret = 10;
+    else if (seq) {
+      r.ti = 0;
+      anCtcGo(r, 10);
+    }
+  } else if (r.tn >= K.lead && !r.nb && !r.eb) {
+    r.nb = r.hoot = 1;
+    r.ack = 0;
+    if (seq) {
+      r.bk = r.st === 4 || r.st === 5 ? 6 : r.st;
+      if (r.st === 2) {
+        r.ret = 7;
+        anCtcGo(r, 5);
+      } else if (r.st === 3) {
+        r.ret = 7;
+        r.col = K.col;
+        anCtcGo(r, 4);
+      } else if (r.st === 4 || r.st === 5) {
+        if (r.ret === 0) r.stop = 1;
+        r.ret = 7;
+      } else anCtcGo(r, 7);
+    }
+  }
+  r.rdy = auto && per && !r.nb && !r.eb && !r.sf && !r.ms ? 1 : 0;
+  /* the two pulses of the DCS count in REMOTE AUTO only */
+  for (let i = 0; i < 2; i++) {
+    if (pulse[i] === 1 && !r.ps[i] && r.mode === 0) {
+      if (i) anCtcStop(r);
+      else anCtcStart(r);
+    }
+    r.ps[i] = pulse[i] === 1 ? 1 : 0;
+  }
+  r.t += dt;
+  if (auto) {
+    switch (r.st) {
+      case 0:
+        r.ti = r.tr = 0;
+        anCtcInit(r);
+        break;
+      case 1:
+        anCtcInit(r);
+        if (anCtcAtInit(r)) anCtcGo(r, 2);
+        break;
+      case 2:
+        d.N01.c = r.f1c = 1;
+        if (r.t >= K.wat) anCtcGo(r, 3);
+        break;
+      case 3:
+        d.N01.c = r.f1c = 1;
+        d.N02.c = d.N01.p >= 1 ? 1 : 0;
+        if (r.op) r.tr += dt;
+        if (r.tr >= K.run) {
+          r.ret = 6;
+          r.col = K.col;
+          anCtcGo(r, 4);
+        }
+        break;
+      case 4:
+        d.N02.c = 0;
+        if (r.t >= r.col) anCtcGo(r, 5);
+        break;
+      case 5:
+        d.N01.c = d.N02.c = 0;
+        if (d.N01.p <= 0) {
+          r.f1c = 0;
+          if (r.ret === 6) r.ti = r.tr = 0;
+          if (r.ret === 7 && r.bk === 6) r.ti = r.tr = 0;
+          if (!r.ret) r.stop = 0;
+          anCtcGo(r, r.ret);
+        }
+        break;
+      case 6:
+        r.ti += dt;
+        if (r.ti >= K.idle) {
+          r.ti = r.tr = 0;
+          anCtcGo(r, 3);
+        }
+        break;
+      case 7:
+        d.T11.c = d.T12.c = 1;
+        if (r.bk === 6) r.ti += dt;
+        /* the reversed flow washes the screens */
+        if (q > 0) r.dirt = 1 + (r.dirt - 1) * Math.exp((-3 * dt) / K.bw);
+        if (r.t >= K.bw) anCtcGo(r, 8);
+        break;
+      case 8:
+        d.T11.c = d.T12.c = 0;
+        if (r.bk === 6) r.ti += dt;
+        if (d.T11.p > 0 || d.T12.p > 0) r.t = 0;
+        else if (r.t >= K.stab) {
+          if (r.dp >= K.nb) {
+            r.hoot = 1;
+            r.ack = 0;
+            anCtcGo(r, 9);
+          } else {
+            r.nb = r.hoot = r.ack = 0;
+            if (r.stop) {
+              r.stop = 0;
+              anCtcGo(r, 0);
+            } else if (r.bk === 6) anCtcGo(r, 6);
+            else {
+              if (r.bk === 2) r.tr = 0;
+              anCtcGo(r, 3);
+            }
+          }
+        }
+        break;
+      case 9:
+      case 10:
+        d.N01.c = d.N02.c = r.f1c = 0;
+        d.T11.c = d.T12.c = 1;
+        break;
+    }
+  }
+  r.hld = r.st === 9 || r.st === 10 ? 1 : 0;
+  for (const k in d) {
+    const x = d[k],
+      sc = k[0] === 'T',
+      lim = sc ? K.scr : K.vlv;
+    if (!x.stk) x.p = x.c ? Math.min(1, x.p + dt / lim) : Math.max(0, x.p - dt / lim);
+    x.t = x.p !== x.c ? x.t + dt : 0;
+    if (x.t > (sc ? K.sF : K.vF)) x.f = 1;
+    if (x.f && !r.sf) anCtcFail(r, 'sf');
+  }
+  if (r.f1t && !r.ms) anCtcFail(r, 'ms');
+  r.f1 = r.f1c && !r.f1t ? 1 : 0;
+  r.op = r.f1 && d.N01.p >= 1 && d.N02.p >= 1 ? 1 : 0;
+}
+function anCtcNew(on) {
+  return { A: anCtcTrain(on), B: anCtcTrain(on), per: on };
+}
+function anCtcStep(U, c, dt) {
+  const pw = !(U.el && U.el.bo);
+  c.per = anDlOut('DITL-119', 'O.0286') === 1 ? 1 : 0;
+  for (const k of ['A', 'B'])
+    anCtcTrainStep(
+      c[k],
+      pw,
+      c.per,
+      Math.max(0, U['swQc' + k] || 0),
+      AN_CTC.out[k].map(a => anDlOut('DITL-119', a)),
+      dt
+    );
+}
+/* the local panel of a train: dev 'A' / 'B', or a drive 'A-N01' ... 'A-F01' in MANUAL */
+function anCtcOp(c, dev, op, v) {
+  const m = /^([AB])(?:-(N01|N02|T11|T12|F01))?$/.exec(dev),
+    r = m && c[m[1]];
+  if (!r) return 'no such device';
+  if (m[2]) {
+    if (op === 'fault') {
+      if (m[2] === 'F01') r.f1t = v ? 1 : 0;
+      else r.d[m[2]].stk = v ? 1 : 0;
+      return '';
+    }
+    if (op !== 'start' && op !== 'stop') return 'no such command';
+    if (r.mode !== 2) return 'the train is in AUTO: select MANUAL at the panel first';
+    if (m[2] === 'F01') r.f1c = op === 'start' ? 1 : 0;
+    else r.d[m[2]].c = op === 'start' ? 1 : 0;
+    return '';
+  }
+  if (op === 'dirt') {
+    r.dirt = Math.max(1, +v || 1);
+    return '';
+  }
+  if (op === 'rem' || op === 'loc' || op === 'man') {
+    if (r.mode !== 2 && r.st > 0 && r.st < 9) return 'the sequence runs: AUTO STOP first';
+    r.mode = { rem: 0, loc: 1, man: 2 }[op];
+    return '';
+  }
+  if (op === 'ack') {
+    r.ack = r.sf || r.ms || r.nb || r.eb ? 1 : 0;
+    r.hoot = 0;
+    return '';
+  }
+  if (op === 'reset') {
+    if (r.f1t || Object.values(r.d).some(x => x.stk)) return 'the fault is still there';
+    r.sf = r.ms = r.nb = r.eb = r.hoot = r.ack = r.tn = r.te = 0;
+    for (const k in r.d) r.d[k].f = r.d[k].t = 0;
+    if (r.st > 8) anCtcGo(r, 0);
+    return '';
+  }
+  if (op === 'seq') {
+    if (r.mode === 2) return 'in MANUAL no sequence runs';
+    r.stop = r.ret = 0;
+    anCtcInit(r);
+    if (r.st < 11) anCtcGo(r, 0);
+    return '';
+  }
+  if (op === 'start' || op === 'stop') {
+    if (r.mode === 2) return 'in MANUAL: select an AUTO mode first';
+    if (r.mode === 0) return 'in REMOTE AUTO: start and stop are in the DCS';
+    if (op === 'stop') {
+      anCtcStop(r);
+      return '';
+    }
+    if (r.st) return 'the sequence runs';
+    return anCtcStart(r) ? '' : 'not READY TO START';
+  }
+  return 'no such command';
 }
 /* level of a hopper (m) from its ash */
 function anHopLevel(m) {
@@ -310,6 +666,7 @@ function anPkgStep(U, dt) {
     const s = Math.min(2, x);
     anFaStep(U, P.fa, P.esp, s);
     anEspStep(U, P.esp, P.fa, s);
+    anCtcStep(U, P.ctcs, s);
   }
 }
 /* an operator action on a package panel: '' = done, else why not. By 'rem' the field operator turns the selector, by 'flt' the fault clears */
@@ -379,5 +736,6 @@ function anPkgOp(panel, dev, op, v) {
     if (op === 'stop') return (t.on = 0), '';
     return 'no such command';
   }
+  if (panel === 'ctcs') return anCtcOp(P.ctcs, dev, op, v);
   return 'no such panel';
 }
