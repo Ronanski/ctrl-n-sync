@@ -24,6 +24,7 @@
   /* beta.557: monitor rows and VCB point of each sea water pump (DCS I/O list station 3: MIV-P1501x1, TT-SW1501-x*, VT-SW1501-x1 / x2;
      unit of the vibration points not in the I/O list) */
   const swMon = n => [
+    V('VCB off', 'MIV-P1501' + n + '2', '', 0, { words: ['YES', 'NO'] }),
     V('Motor winding U', 'TT-SW1501-' + n + 'U', '°C', 0),
     V('Motor winding V', 'TT-SW1501-' + n + 'V', '°C', 0),
     V('Motor winding W', 'TT-SW1501-' + n + 'W', '°C', 0),
