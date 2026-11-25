@@ -23,10 +23,10 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 250; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 252; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
-const FLOOR_TEXT = 99;
+const FLOOR_TEXT = 105;
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -188,8 +188,14 @@ const S = R.stats(A);
       ss = {},
       sb = { TMG: 0, 'IN CR': 0, 'OUT CR': 0, BYPS: 0, PERM: 1, EXE: 0, FINISH: 0, EX1: 0, EX2: 0, ORDER: 0, FORCE: 0 },
       sr = x => sc({ ...sb, ...x }, [], ss, 0.1);
+    /* PAGE 7: UPPER STEP SELECTED (STEP UP ORDER) is in the EXECUTED set only; it does not mark this step SELECTED */
     let so = sr({ ORDER: 1 });
-    if (so.SEL !== 1 || so['STEP S'] !== 1 || so.ORDER !== 1) fail('STEP CONTROL MD: STEP UP ORDER does not select ' + JSON.stringify(so));
+    if (so.SEL !== 0 || so['STEP S'] !== 1 || so.ORDER !== 1) fail('STEP CONTROL MD: STEP UP ORDER must ask the step in, not select it ' + JSON.stringify(so));
+    so = sr({ ORDER: 1, TMG: 1, 'IN CR': 1 });
+    if (so.EXEC !== 1 || so.SEL !== 0) fail('STEP CONTROL MD: an upper step selected does not execute this step ' + JSON.stringify(so));
+    sr({ EXE: 1 });
+    sr({});
+    sr({ FORCE: 1 });
     if (sr({ EX2: 1 }).SEL !== 0) fail('STEP CONTROL MD: another step selected does not drop the select');
     sr({});
     if (sr({ FORCE: 1, PERM: 0 }).SEL !== 0) fail('STEP CONTROL MD: selects with no permissive');
@@ -280,6 +286,82 @@ const S = R.stats(A);
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
   if (!v || v.ins.IN === v.ins.ERR) fail('TCA322 line 3: the AI value and its PI/O error are one net');
+}
+/* ATS step macros (310SC90-795 PAGE 7, 12, 17 ~ 27; TCA500 / TCA515 / TCA582 ~ TCA586) */
+{
+  const M = R.MACRO,
+    run = (f, I, notes = [], st = {}, dt = 0.1) => f(I, notes, st, dt);
+  /* START-UP MODE: the lowest mode whose temperature the metal is below, taken at the timing, held after it; HEAT = the memorized metal temp */
+  const sm = M['START-UP MODE MT1'],
+    sms = {},
+    lim = { 'AMB.': 150, COLD1: 170, COLD2: 230, WARM: 420, HOT: 999 };
+  let o = run(sm, { ...lim, 'TEMP.': 200, TIMIG: 1 }, [], sms);
+  if (o.COLD2 !== 1 || o.COLD1 || o.WARM || o.REQUEST !== 1 || o.HEAT !== 200) fail('START-UP MODE: 200 degC at the timing is not COLD 2 ' + JSON.stringify(o));
+  o = run(sm, { ...lim, 'TEMP.': 500, TIMIG: 0 }, [], sms);
+  if (o.COLD2 !== 1 || o.HEAT !== 200) fail('START-UP MODE: the mode / memorized temperature are not held without the timing ' + JSON.stringify(o));
+  o = run(sm, { ...lim, 'TEMP.': 500, TIMIG: 1 }, [], sms);
+  if (o.HOT !== 1 || o.COLD2 || o.WARMHOT !== 1 || o.REQUEST) fail('START-UP MODE: 500 degC is not HOT ' + JSON.stringify(o));
+  /* STEP UP ORDER: ORDER n = any upper step selected */
+  o = run(M['STEP UP ORDER MT1'], { SELECT5: 1 });
+  if (o.ORDER0 !== 1 || o.ORDER4 !== 1 || o.ORDER5 || o.ORDER7) fail('STEP UP ORDER: step 5 selected ' + JSON.stringify(o));
+  /* RUB CHECK: target 200 rpm and the rate until the rub check speed, then all valves closed until under the completion speed */
+  const rc = M['RUB CHECK CONTROL MT1'],
+    rs = {},
+    rb = { EXECUT: 1, RUBCHK: 190, 'COMP.': 100 };
+  o = run(rc, { ...rb, SPEED: 50 }, [], rs);
+  if (o.TARGET1 !== 1 || o['ACC.'] !== 1 || o.TARGET2 || o.COMP) fail('RUB CHECK: no 200 rpm target at the start ' + JSON.stringify(o));
+  o = run(rc, { ...rb, SPEED: 195 }, [], rs);
+  if (o.TARGET2 !== 1 || o.TARGET1 || o.COMP) fail('RUB CHECK: CV / ICV not closed at the rub check speed ' + JSON.stringify(o));
+  o = run(rc, { ...rb, SPEED: 90 }, [], rs);
+  if (o.TARGET2 !== 1 || o.COMP !== 1) fail('RUB CHECK: not complete under the completion speed ' + JSON.stringify(o));
+  /* ACC.CONTROL, cold: 1800 rpm heat soak, the two questions, 3600 rpm, its heat soak, heat soak off, complete */
+  const ac = M['ACC.CONTROL MT1'],
+    as = {},
+    an = [[0, 0, 'DEF K:1490rpm'], [0, 0, 'DEF K:3550.0rpm']],
+    ab = { EXECUT: 1, COLD: 1, HEATA: 1800, 'TEMP.1': 1, SHELL: 1 };
+  o = run(ac, { ...ab, SPEED: 500 }, an, as);
+  if (o.TARGET1 !== 1 || o.SET !== 1 || o.HEAT1 || o.TARGET3) fail('ACC.CONTROL: cold start does not go to 1800 rpm with heat soak ' + JSON.stringify(o));
+  o = run(ac, { ...ab, SPEED: 1790 }, an, as);
+  if (o.HEAT1 !== 1 || o.TARGET3) fail('ACC.CONTROL: 1800 rpm heat soak timer does not start ' + JSON.stringify(o));
+  o = run(ac, { ...ab, SPEED: 1800, HEAT1: 1, 'TEMP.1': 0 }, an, as);
+  if (o.TARGET3) fail('ACC.CONTROL: goes to 3600 rpm with QUESTION 1 not satisfied');
+  o = run(ac, { ...ab, SPEED: 1800, HEAT1: 1 }, an, as);
+  o = run(ac, { ...ab, SPEED: 2000 }, an, as);
+  if (o.TARGET3 !== 1 || o.HEAT3) fail('ACC.CONTROL: no 3600 rpm target after the 1800 rpm hold ' + JSON.stringify(o));
+  o = run(ac, { ...ab, SPEED: 3560 }, an, as);
+  if (o.HEAT3 !== 1 || o.COMP) fail('ACC.CONTROL: 3600 rpm heat soak timer does not start over 3550 rpm ' + JSON.stringify(o));
+  o = run(ac, { ...ab, SPEED: 3600, HEAT3: 1 }, an, as);
+  if (o.COMP !== 1 || o.RESET !== 1) fail('ACC.CONTROL: no heat soak off / complete ' + JSON.stringify(o));
+  o = run(ac, { ...ab, COLD: 0, SPEED: 500 }, an, {});
+  if (o.TARGET3 !== 1 || o.TARGET1 || o.SET) fail('ACC.CONTROL: warm / hot start does not go straight to 3600 rpm ' + JSON.stringify(o));
+  /* ACC.RATE SELECT: by mode in step 3 */
+  const ar = M['ACC.RATE SELECT MT1'];
+  if (run(ar, { EXECUT: 1, WARM: 1 }).RATE3 !== 1 || run(ar, { EXECUT: 1, HOT: 1 }).RATE4 !== 1 || run(ar, { EXECUT: 1, COLD: 1 }).RATE2 !== 1)
+    fail('ACC.RATE SELECT: the rate does not follow the start-up mode (120 / 180 / 360)');
+  if (run(ar, { EXECUT: 1, HOT: 1, VIB: 0, 'VIB.': 1 }).SPEED !== 1) fail('ACC.RATE SELECT: no speed hold in step 3');
+  /* EXCI./SYNC./LOADUP */
+  const ex = M['EXCI./SYNC./LOADUPMT1'];
+  if (run(ex, { EXECUT1: 1 }).START1 !== 1 || run(ex, { EXECUT1: 1, FIELD: 1 }).START1) fail('EXCI.: excitation start');
+  if (run(ex, { EXECUT2: 1, ASS: 1 }).START2 !== 1 || run(ex, { EXECUT2: 1, ASS: 1, GCB: 1 }).START2) fail('SYNC.: ASD start');
+  o = run(ex, { EXECUT2: 1, GCB: 1, LOAD: 1 });
+  if (o.INIT !== 1 || o.START3 !== 1) fail('SYNC.: initial load / hold timer ' + JSON.stringify(o));
+  if (run(ex, { EXECUT3: 1 }).LOADUP !== 1) fail('LOAD UP: no load up start');
+  /* LOAD SET on TCA583A as drawn: IP start block, WARM gives 3.0 %L = 4.5 MW initial and 20 %L = 30 MW load up; HOT 7.5 MW */
+  const ls = A.plan.find(p => p.id === 'TCA583A').nodes.find(x => x.t === 'M');
+  const lv = k => A.v[ls.ins[k]];
+  const li = Object.fromEntries(Object.keys(ls.ins).map(k => [k, lv(k)]));
+  o = run(M['LOAD SET MT1'], { ...li, HOT: 0, WARM: 1, COLD1: 0, COLD2: 0, 'AMB.C': 0 });
+  if (o.INITIAL !== 4.5 || o.LOADUP !== 30) fail('LOAD SET TCA583A WARM: ' + JSON.stringify(o));
+  o = run(M['LOAD SET MT1'], { ...li, HOT: 1, WARM: 0, COLD1: 0, COLD2: 0, 'AMB.C': 0 });
+  if (o.INITIAL !== 7.5) fail('LOAD SET TCA583A HOT: ' + JSON.stringify(o));
+  /* HEAT SOAK TIMER: 2 minutes asked, elapsed after 120 s, remaining time counts down, cleared when the start goes off */
+  const ht = M['HEAT SOAK TIMER MT1'],
+    hs = {};
+  for (let i = 0; i < 1190; i++) o = run(ht, { MODE1: 1, TIME1: 2 }, [], hs, 0.1);
+  if (o.COMP1 || Math.abs(o.TIME1 - 1 / 60) > 0.01) fail('HEAT SOAK TIMER: elapsed too early ' + JSON.stringify(o));
+  for (let i = 0; i < 20; i++) o = run(ht, { MODE1: 1, TIME1: 2 }, [], hs, 0.1);
+  if (o.COMP1 !== 1 || o.TIME1 !== 0) fail('HEAT SOAK TIMER: not elapsed after 2 min ' + JSON.stringify(o));
+  if (run(ht, { MODE1: 0, TIME1: 2 }, [], hs).COMP1) fail('HEAT SOAK TIMER: not cleared when the start goes off');
 }
 const G = A.plan.filter(p => /^G-/.test(p.id)),
   gRun = G.filter(p => !S.notRun.includes(p.id)).length;
