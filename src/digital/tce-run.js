@@ -936,6 +936,55 @@
       need: notes => ((notes || []).filter(n => /^TP:/.test(String(n[2]))).length < 2 ? ['TP x2 (t1 / t2)'] : [])
     }
   );
+  /* STEP CONTROL MD, drawing: ATS program 310SC90-795 Rev 2 sheet 8 "ATS CONTROL START UP STEP TRANSITION LOGIC" (book p 132), sheet 9
+       (shutdown step, p 133) and sheet 10 "CRITERIA CHECK LOGIC" (p 134: A = start, B = during, D = end criteria). The pins as the TCA520 ..
+       TCA528 sheets print them at the block: TMG = STEP n-1 COMPLETED (criteria Dn-1), IN CR = STEP n IN CONDITION OK (criteria An),
+       OUT CR = STEP n OUT CONDITION OK (criteria Dn), BYPS = STEP n BYPASS, PERM = STEP n SEL PERMISSIVE, EXE = upper STEP EXECUTING,
+       FINISH = upper STEP COMPLETED, EX1 / EX2 = ANOTHER STEP PB SELECT / ANOTHER STEP SELECT (OTHER STEP SELECTED), ORDER = STEP UP ORDER,
+       FORCE = STEP n SELECT (the CRT PB STEP n ON); APS A / APS S are wired to OFF(0) on every sheet.
+       SELECTED (S/R): set by (STEP UP ORDER or PB STEP n) and the permissive, not criteria Dn, not STEP n EXECUTED; reset (R first) by the
+         pulse (PO) of OTHER STEP SELECTED, STEP n EXECUTED, or an UPPER STEP EXECUTING.
+       EXECUTED (S/R): set by criteria Dn-1 and criteria An and STEP n SELECTED; reset by an UPPER STEP EXECUTING.
+       COMPLETED (S/R): set by criteria Dn with the step executed; reset by the upper step's criteria D (upper STEP COMPLETED).
+       BYPS (STEP n BYPASS, sheet 11 CRITERIA BYPASS: the criteria taken as ON) stands for criteria An and Dn.
+       Outs: SEL = STEP n SELECT(ED), STEP S = selected by STEP UP ORDER, PB ON = selected by the PB, ORDER = STEP IN n ORDER (selected or
+       executing), EXEC = STEP n EXECUTING, FINISH = COMPLETED, START = the scan EXECUTED sets; ORDER1 / EXEC1 / FINI1 = the same to the DCS.
+       RESET (right pin) is wired on no sheet: not given.
+     Not on the transition logic (printed DEF timers beside the block, roles not drawn, not read): TD 3.0 s x3, TP 0.2 s, TP 1.0 s. */
+  MACRO['STEP CONTROL MD'] = Object.assign(
+    (I, notes, st) => {
+      const by = b01(I.BYPS),
+        an = b01(I['IN CR']) || by,
+        dn = b01(I['OUT CR']) || by,
+        up = b01(I.EXE),
+        other = pulseUp(st, 'pX', b01(I.EX1) || b01(I.EX2)),
+        ord = b01(I.ORDER),
+        pb = pulseUp(st, 'pF', b01(I.FORCE));
+      if (other || st.ex || up) (st.sel = 0), (st.how = '');
+      else if ((ord || pb) && b01(I.PERM) && !dn && !st.ex) (st.sel = 1), (st.how = pb ? 'pb' : 'order');
+      const was = st.ex;
+      if (up) st.ex = 0;
+      else if (b01(I.TMG) && an && st.sel) (st.ex = 1), (st.sel = 0);
+      if (b01(I.FINISH)) st.done = 0;
+      else if (dn && st.ex) st.done = 1;
+      const sel = st.sel ? 1 : 0,
+        ex = st.ex ? 1 : 0,
+        done = st.done ? 1 : 0;
+      return {
+        SEL: sel,
+        'STEP S': sel && st.how === 'order' ? 1 : 0,
+        'PB ON': sel && st.how === 'pb' ? 1 : 0,
+        ORDER: sel || ex ? 1 : 0,
+        ORDER1: sel || ex ? 1 : 0,
+        EXEC: ex,
+        EXEC1: ex,
+        FINISH: done,
+        FINI1: done,
+        START: ex && !was ? 1 : 0
+      };
+    },
+    { src: 'drawing: ATS program 310SC90-795 Rev 2 sheets 8 ~ 11' }
+  );
   const numConst = t => {
     const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
     return m ? +m[1] : null;

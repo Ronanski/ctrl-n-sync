@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 208; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 217; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 99;
@@ -180,6 +180,27 @@ const S = R.stats(A);
     if (!O.some(o => o.sheet === 'TCE610' && o.row === 'TCE970-6')) fail('TCE610 has no output row TCE970-6');
     const miss = O.filter(o => !o.row && !/^G-/.test(o.sheet));
     if (miss.length) fail('PI/O outputs with no table row: ' + miss.map(o => o.sheet + '.' + o.key).join(' '));
+  }
+  /* STEP CONTROL MD from ATS program 310SC90-795 sheets 8 ~ 11: STEP UP ORDER with the permissive selects; criteria Dn-1 and An execute (the
+     select drops); criteria Dn completes; an upper step executing resets; another step selected drops the select */
+  {
+    const sc = M['STEP CONTROL MD'],
+      ss = {},
+      sb = { TMG: 0, 'IN CR': 0, 'OUT CR': 0, BYPS: 0, PERM: 1, EXE: 0, FINISH: 0, EX1: 0, EX2: 0, ORDER: 0, FORCE: 0 },
+      sr = x => sc({ ...sb, ...x }, [], ss, 0.1);
+    let so = sr({ ORDER: 1 });
+    if (so.SEL !== 1 || so['STEP S'] !== 1 || so.ORDER !== 1) fail('STEP CONTROL MD: STEP UP ORDER does not select ' + JSON.stringify(so));
+    if (sr({ EX2: 1 }).SEL !== 0) fail('STEP CONTROL MD: another step selected does not drop the select');
+    sr({});
+    if (sr({ FORCE: 1, PERM: 0 }).SEL !== 0) fail('STEP CONTROL MD: selects with no permissive');
+    sr({});
+    if (sr({ FORCE: 1 })['PB ON'] !== 1) fail('STEP CONTROL MD: PB STEP n does not select');
+    so = sr({ TMG: 1, 'IN CR': 1 });
+    if (so.EXEC !== 1 || so.START !== 1 || so.SEL !== 0) fail('STEP CONTROL MD: criteria Dn-1 and An do not execute ' + JSON.stringify(so));
+    if (sr({ TMG: 1, 'IN CR': 1 }).START !== 0) fail('STEP CONTROL MD: START is not one scan');
+    if (sr({ 'OUT CR': 1 }).FINISH !== 1) fail('STEP CONTROL MD: criteria Dn does not complete');
+    so = sr({ EXE: 1, FINISH: 1 });
+    if (so.EXEC !== 0 || so.FINISH !== 0) fail('STEP CONTROL MD: the upper step does not reset ' + JSON.stringify(so));
   }
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
