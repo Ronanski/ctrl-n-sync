@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 257; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 258; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 106;
@@ -181,6 +181,13 @@ const S = R.stats(A);
     const miss = O.filter(o => !o.row && !/^G-/.test(o.sheet));
     if (miss.length) fail('PI/O outputs with no table row: ' + miss.map(o => o.sheet + '.' + o.key).join(' '));
   }
+  /* ANOTHER SELECT MT1 (795 Rev 2 PAGE 7 note *3: OTHER STEP is collective): STEP n = any other step selected */
+  {
+    const ao = M['ANOTHER SELECT MT1']({ SELECT3: 1 }, [], {}, 0.1);
+    for (let n = 0; n < 8; n++) if (ao['STEP' + n] !== (n === 3 ? 0 : 1)) fail('ANOTHER SELECT MT1: step 3 selected gives ' + JSON.stringify(ao));
+    const a0 = M['ANOTHER SELECT MT1']({}, [], {}, 0.1);
+    if (Object.values(a0).some(v => v)) fail('ANOTHER SELECT MT1: nothing selected must give 0 ' + JSON.stringify(a0));
+  }
   /* STEP CONTROL MD from ATS program 310SC90-795 sheets 8 ~ 11: STEP UP ORDER with the permissive selects; criteria Dn-1 and An execute (the
      select drops); criteria Dn completes; an upper step executing resets; another step selected drops the select */
   {
@@ -190,7 +197,7 @@ const S = R.stats(A);
       sr = x => sc({ ...sb, ...x }, [], ss, 0.1);
     /* PAGE 7: UPPER STEP SELECTED (STEP UP ORDER) is in the EXECUTED set only; it does not mark this step SELECTED */
     let so = sr({ ORDER: 1 });
-    if (so.SEL !== 0 || so['STEP S'] !== 1 || so.ORDER !== 1) fail('STEP CONTROL MD: STEP UP ORDER must ask the step in, not select it ' + JSON.stringify(so));
+    if (so.SEL !== 0 || 'STEP S' in so || so.ORDER !== 1) fail('STEP CONTROL MD: STEP UP ORDER must ask the step in, not select it ' + JSON.stringify(so));
     so = sr({ ORDER: 1, TMG: 1, 'IN CR': 1 });
     if (so.EXEC !== 1 || so.SEL !== 0) fail('STEP CONTROL MD: an upper step selected does not execute this step ' + JSON.stringify(so));
     sr({ EXE: 1 });

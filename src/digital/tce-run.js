@@ -1100,9 +1100,26 @@
          EXECUTED set, and a lower step marked SELECTED would pulse OTHER STEP SELECTED and drop the upper step the operator picked.)
        COMPLETED (S/R): set by criteria Dn with the step executed; reset by the upper step's criteria D (upper STEP COMPLETED).
        BYPS (STEP n BYPASS, sheet 11 CRITERIA BYPASS: the criteria taken as ON) stands for criteria An and Dn.
-       Outs: SEL = STEP n SELECT(ED), STEP S = asked by STEP UP ORDER (not yet executed), PB ON = selected by the PB, ORDER = STEP IN n
+       Outs: SEL = STEP n SELECT(ED), PB ON = selected by the PB, ORDER = STEP IN n
        ORDER (selected or upper step selected, not yet executed: the step whose A criteria are checked, sheet 10 takes both), EXEC = STEP n EXECUTING, FINISH = COMPLETED, START = the scan EXECUTED sets; ORDER1 / EXEC1 / FINI1 = the same to the DCS.
-       RESET (right pin) is wired on no sheet: not given.
+       RESET (right pin) is wired on no sheet: not given. STEP S (line STEP n STEP SELECT, to ANOTHER SELECT MT1 = OTHER STEP SELECTED of
+       the other steps) is not given: PAGE 7 selects a step only by its PB, and a step asked by STEP UP ORDER must not drop the upper step
+       the operator selected (it would, through OTHER STEP SELECTED); what else selects a step is not drawn. */
+  /* ANOTHER SELECT MT1 (LMA535, TCA514), drawing: 310SC90-795 PAGE 7 note *3 "---- indicates the collective signals for OTHER STEP":
+       STEP n = SELECT m of any other step m (0 ~ 7). */
+  MACRO['ANOTHER SELECT MT1'] = Object.assign(
+    I => {
+      const o = {};
+      for (let n = 0; n < 8; n++) {
+        let u = 0;
+        for (let m = 0; m < 8; m++) if (m !== n) u = u || b01(I['SELECT' + m]);
+        o['STEP' + n] = u;
+      }
+      return o;
+    },
+    { src: 'drawing: ATS program 310SC90-795 Rev 2 PAGE 7 note *3' }
+  );
+  /* (end of ANOTHER SELECT)
      Not on the transition logic (printed DEF timers beside the block, roles not drawn, not read): TD 3.0 s x3, TP 0.2 s, TP 1.0 s. */
   MACRO['STEP CONTROL MD'] = Object.assign(
     (I, notes, st) => {
@@ -1126,7 +1143,7 @@
       const inOrd = sel || (ord && !ex && !done) ? 1 : 0;
       return {
         SEL: sel,
-        'STEP S': ord && !ex && !done ? 1 : 0,
+
         'PB ON': sel,
         ORDER: inOrd,
         ORDER1: inOrd,
