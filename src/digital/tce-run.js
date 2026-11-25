@@ -696,6 +696,70 @@
       out = abn ? I.SIM : good.length === 3 ? mid3(...good) : (good[0] + good[1]) / 2;
     return { OUT: out, ABN: abn, 'DEV E': dev, ERR: bad.length ? 1 : 0 };
   });
+  /* ---------- macro (MD) meanings FROM A DRAWING ---------- */
+  /* MOTOR STANDARD (LMA580A ~ D, 8 blocks on TCA655, TCA680, TCA700, TCE300 ~ TCE310; pins ASRT ASTP TRP EF RUN / STS, OUT or SPS, RUN,
+     STP, AUTO, ABN; printed TD:1.0s, TP:3.0s, TP:3.0s, TP:0.5s). Drawn: MHPS TYPICAL LOGIC FOR MOTOR, Interlock Block Diagram 310SC90-794
+     Rev 2 sheet 14 ("Turbine Control System (book)" p 30); the pins are its condition hexagons (AUTO START, AUTO STOP, STOP ABSOLUTE,
+     MOTOR ELECTRICAL TROUBLE) and the MCC answer, the operator push buttons START / STOP / AUTO / MANUAL / RESET are inside (CRT ports).
+     The MCC command flip-flop of sheet 14 is outside the macro on the TCS sheets (TCA655: STS sets and OUT resets FFR 015 = START COMMAND),
+     so STS / OUT are the start / stop commands of sheet 14 into that flip-flop.
+       AUTO / MANUAL: FF set by PB AUTO, reset (priority) by PB MANUAL; lamp W (AUTO) = AUTO.
+       start = AUTO START and AUTO, or PB START and MANUAL; stop = PB STOP and MANUAL, or AUTO STOP and AUTO, or STOP ABSOLUTE.
+       start FF: set by start, reset by stop or a trouble; stop FF: set by stop, reset by start or a trouble (trouble = MOTOR ELECTRICAL
+       TROUBLE, START FAULT, TRIPPED: the hexagons fed back over circles 1 / 2 "SH-*").
+       START FAULT (ANN 2): start FF for DI 3 s (printed TP 3.0 s) and no MCC answer; STOP FAULT (ANN 3): stop FF for DI 3 s (TP 3.0 s)
+       and the answer still there; TRIPPED (ANN 4): the answer seen DT 1 s (TD 1.0 s) after the start FF, then lost while the start FF is
+       set. MOTOR ELECTRICAL TROUBLE = ANN 1. Each fault is held until PB RESET or the next command of the other kind.
+       STS = start FF; OUT / SPS = stop FF or a trouble (the reset OR of the MCC command of sheet 14); RUN = the answer, STP = not the
+       answer (R / G lamps); ABN = any of ANN 1 ~ 4.
+     Not on sheet 14: the printed TP 0.5 s (not read). */
+  const pulseUp = (st, k, x) => {
+    const r = x && !st[k];
+    st[k] = x;
+    return r;
+  };
+  MACRO['MOTOR STANDARD'] = Object.assign(
+    (I, notes, st, dt) => {
+      const tms = (notes || []).filter(n => /^TP:/.test(String(n[2]))).map(n => parseFloat(String(n[2]).slice(3))),
+        TD = mpar(notes, 'TD'),
+        [T1, T2] = tms,
+        run = b01(I.RUN);
+      if (b01(I['PB MANUAL'])) st.auto = 0;
+      else if (b01(I['PB AUTO'])) st.auto = 1;
+      const auto = st.auto ? 1 : 0,
+        start = (b01(I.ASRT) && auto) || (pulseUp(st, 'pS', b01(I['PB START'])) && !auto),
+        stop = (pulseUp(st, 'pT', b01(I['PB STOP'])) && !auto) || (b01(I.ASTP) && auto) || b01(I.TRP),
+        reset = b01(I['PB RESET']),
+        ef = b01(I.EF);
+      const trouble = ef || st.sf || st.tr;
+      if (stop || trouble) st.on = 0;
+      else if (start) st.on = 1;
+      if (start || trouble) st.off = 0;
+      if (stop) st.off = 1;
+      if (reset || stop) (st.sf = 0), (st.tr = 0);
+      if (reset || start) st.stf = 0;
+      if (onDelay(st, 'd1', !!st.on, T1, dt) && !run) st.sf = 1;
+      if (onDelay(st, 'd2', !!st.off, T2, dt) && run) st.stf = 1;
+      if (onDelay(st, 'd0', !!st.on, TD, dt) && run) st.seen = 1;
+      if (!st.on) st.seen = 0;
+      if (st.seen && !run && st.on) (st.tr = 1), (st.on = 0);
+      const stopOut = st.off || ef || st.sf || st.tr ? 1 : 0;
+      return {
+        STS: st.on ? 1 : 0,
+        OUT: stopOut,
+        SPS: stopOut,
+        RUN: run,
+        STP: run ? 0 : 1,
+        AUTO: auto,
+        ABN: ef || st.sf || st.stf || st.tr ? 1 : 0
+      };
+    },
+    {
+      src: 'drawing: IBD 310SC90-794 Rev 2 sheet 14',
+      pb: ['START', 'STOP', 'AUTO', 'MANUAL', 'RESET'],
+      need: notes => (mpar(notes, 'TD') === undefined ? ['TD'] : []).concat((notes || []).filter(n => /^TP:/.test(String(n[2]))).length < 2 ? ['TP x2'] : [])
+    }
+  );
   const numConst = t => {
     const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
     return m ? +m[1] : null;
@@ -882,6 +946,9 @@
         M.R.forEach(p => p && (outs[p] = slot(n.id + ':' + M.key + '.' + p)));
         const ins = {};
         for (const i of M.ins) if (i.name) ins[i.name] = res(n.id, i.net);
+        /* push buttons of the operator station that the macro holds inside (MOTOR STANDARD: START / STOP / AUTO / MANUAL / RESET of the
+           typical, IBD 310SC90-794 sheet 14): a CRT port of the block, "CRT:<sheet>.<block>.<button>" */
+        for (const k of (f && f.pb) || []) ins['PB ' + k] = port('CRT:' + n.id + '.' + M.key + '.' + k);
         const open = f && f.need ? f.need(M.notes).map(k => name + ' needs ' + k) : [];
         nodes.push({ t: 'M', f, name, notes: M.notes, ins, outs, st: {}, open, src: f && f.src });
       }
@@ -1010,7 +1077,7 @@
           ok = false;
           for (const w of x.open) (open[w] = open[w] || new Set()).add(p.id);
         }
-        if (x.t === 'M') (macros++, x.f ? mOk++ : (ok = false), x.src && (mText++, (text = true)));
+        if (x.t === 'M') (macros++, x.f ? mOk++ : (ok = false), x.src === TEXT && (mText++, (text = true)));
         if (x.t === 'M' && x.open && x.open.length) {
           ok = false;
           for (const w of x.open) (open[w] = open[w] || new Set()).add(p.id);
