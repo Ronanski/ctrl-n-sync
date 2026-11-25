@@ -48,6 +48,7 @@ engine/sched.js
 engine/hist.js
 engine/soe.js
 engine/gen-panel.js
+engine/pkg.js
 engine/alarm-pri.js
 engine/fault-groups.js
 ui/trace.js

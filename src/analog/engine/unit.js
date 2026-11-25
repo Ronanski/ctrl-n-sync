@@ -5584,6 +5584,8 @@ function anUnitStep0(dt) {
   anChemStep(U, dt);
   /* 3.2.3 SOHEE: the steam of the sootblowers (AN_SB) */
   anSbStep(U, dt);
+  /* Phase 8: the package PLCs on the Modbus link (engine/pkg.js) */
+  if (typeof pkgStep === 'function') pkgStep(U, dt);
   anHrWarm(U, dt); /* 3.2.3 SOHEE: LP bypass warming valve XV-HR1010-1, TT-HR1010 */
   const trip = (U.trip || []).some(t => +t.S.rt.v[t.n] > 0.5);
   /* ---- 2.2.0-beta.17 (M4 step 4): the turbine black box (see AN_UNIT rollRate ...) ---- */
