@@ -21,8 +21,9 @@ const AN_FG_ORDER = [
 ];
 /* the system of each fault, by its id (the machine tags of the fault texts: P1115 feedwater, F105x fans, CL1061 coal feeder,
    P1116 condensate, P1501 seawater) */
-function anFaultGroup(id, g) {
+function anFaultGroup(id, g, fg) {
   id = String(id);
+  if (g === 'fs') return AN_FG_ORDER.includes(fg) ? fg : 'Other'; /* a field state names its own group (src/world/field) */
   if (/^cf\./.test(id) || id === 'mt.cfa') return 'Coal and limestone';
   if (/^mt\.(paf|saf|idf|faa)$/.test(id) || /^aph\./.test(id)) return 'Air and flue gas';
   if (/^tl\./.test(id)) return 'Boiler';
@@ -47,7 +48,7 @@ AN.faultGroups = () => {
     B = call(() => (typeof WORLD !== 'undefined' && WORLD.ftrip ? WORLD.ftrip() : []), []).map(f => Object.assign({}, f, { src: 'world' })),
     M = {};
   for (const f of A.concat(B)) {
-    const k = anFaultGroup(f.id, f.g);
+    const k = anFaultGroup(f.id, f.g, f.fg);
     (M[k] = M[k] || []).push({ id: f.id, t: f.t, on: !!f.on, src: f.src });
   }
   return AN_FG_ORDER.filter(k => M[k]).map(k => ({ g: k, items: M[k] }));

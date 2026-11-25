@@ -1,0 +1,10 @@
+[
+{"tag": "PT-HD1101", "lv": "HIGH", "p": 3, "sp": 0.2, "d": "#1 LOW PRESSURE HEATER NO.1 STEAM PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0419", "src": "Alarm List _20160912 sheet PT, PD-018"},
+{"tag": "PT-HD1101", "lv": "LOW", "p": 3, "sp": -2.2, "d": "#1 LOW PRESSURE HEATER NO.1 STEAM PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0419", "src": "Alarm List _20160912 sheet PT, PD-018"},
+{"tag": "PT-HD1101", "lv": "LOW-LOW", "p": 2, "sp": -2.2, "d": "#1 LOW PRESSURE HEATER NO.1 STEAM PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0419", "src": "Alarm List _20160912 sheet PT, PD-018"},
+{"tag": "LS-HD1101", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 LOW PRESSURE HEATER NO.1 LEVEL SWITCH-3", "stn": 102, "addr": "I.029B", "src": "Alarm List _20160912 sheet LS, PD-018", "set": "HH 150mm"},
+{"tag": "LS-HD1102", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 LOW PRESSURE HEATER NO.2 LEVEL SWITCH-3", "stn": 102, "addr": "I.029C", "src": "Alarm List _20160912 sheet LS, PD-018", "set": "HH 150mm"},
+{"tag": "LS-HD1103", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 LOW PRESSURE HEATER NO.3 LEVEL SWITCH-3", "stn": 102, "addr": "I.029D", "src": "Alarm List _20160912 sheet LS, PD-018", "set": "HH 140mm"},
+{"tag": "LS-HD1105", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 HIGH PRESSURE HEATER NO.1 LEVEL SWITCH-3", "stn": 102, "addr": "I.029E", "src": "Alarm List _20160912 sheet LS, PD-018", "set": "HH 140mm"},
+{"tag": "LS-HD1106", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 HIGH PRESSURE HEATER NO.2 LEVEL SWITCH-3", "stn": 102, "addr": "I.029F", "src": "Alarm List _20160912 sheet LS, PD-018", "set": "HH 150mm"}
+]

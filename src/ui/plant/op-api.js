@@ -444,6 +444,11 @@
       return null;
     }
   }
+  /* beta.506 (EIMI): has the drawing a DCS START / STOP push button at all (null = no drawing)? DITL-120 (waste water pumps) has none */
+  const hasPb = (addr, on) => {
+    const s = dOf(addr);
+    return s ? pbRow(s, on ? /\bSTART\b|\bST$/ : /\bSTOP\b/) >= 0 : null;
+  };
   function dmotor(addr, on) {
     const s = dOf(addr);
     if (!s || !(window.WORLD && WORLD.on && WORLD.live)) return false;
@@ -741,5 +746,5 @@
     const L = LAMPS.find(x => x[0] === k);
     return !!L && any(L[1]);
   };
-  window.LS_OP = { dOf, dName, dout, pout, runOut, dpress, dset, dsel, dmotor, dremote, mst, tripNew, tripAck, grpOn, modeOf, amRow, fieldRow, fieldSet, fieldOf, interlock, needNet, leaves, permOf, pbBlock, openD };
+  window.LS_OP = { dOf, dName, dout, pout, runOut, dpress, dset, dsel, dmotor, hasPb, dremote, mst, tripNew, tripAck, grpOn, modeOf, amRow, fieldRow, fieldSet, fieldOf, interlock, needNet, leaves, permOf, pbBlock, openD };
 })();

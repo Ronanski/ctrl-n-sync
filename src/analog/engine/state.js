@@ -3,10 +3,11 @@
    same state; a keyframe carries it from one to the other (start, a starting state, an operator action that the engine runs).
    What is in it: per sheet the run time (rt: values, inputs, forces, block states, plant model), the look, the links (xlk), the plant
    model of each block (b.proc) and the mode nets of a MAN block (b._mn); the unit / source / cycle models (AN_UNIT, AN_SRC, AN_CYC,
-   AN_SW, AN_MU, AN_ACW, AN_MT, AN_AIR) and the flags of AN the engine reads. A sheet, a block or a net of a sheet is written as its
+   AN_SW, AN_MU, AN_ACW, AN_AIR) and the flags of AN the engine reads. A sheet, a block or a net of a sheet is written as its
    index ({$S}, {$B}, {$N}), not copied: the other side has the same sheets (the same drawings, the same order). A function is not
    copied: the other side keeps its own ===== */
-const AN_STATE_OBJ = () => ({ AN_UNIT, AN_SRC, AN_CYC, AN_SW, AN_MU, AN_ACW, AN_MT, AN_AIR });
+/* beta.530: not AN_MT: it is a table only (the running values are AN_UNIT.mt); in a save it hid the motors added after the save was made */
+const AN_STATE_OBJ = () => ({ AN_UNIT, AN_SRC, AN_CYC, AN_SW, AN_MU, AN_ACW, AN_AIR });
 /* the flags of AN that the engine reads (plain values) */
 const AN_STATE_FLAGS = ['i', 'plantOn', 'procDefault', 'startState', 'steady', 'spd', 'run', 'view', 'tierK', '_cold0', 'load150', 'ramp', 'cat', 'restartKind' /* Mina beta.169: the PLANT chip (Warm / Hot restart) reads it on the page in Worker mode */, 'restartPd' /* Mina S179-1: the guide blow-off hold (guide.js holdP) reads it on the page in Worker mode */];
 /* the sheets a step takes besides the linked ones (links.js actSet): names, and the second sheet of the page (a sheet) */

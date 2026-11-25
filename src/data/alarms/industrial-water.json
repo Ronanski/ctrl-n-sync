@@ -1,0 +1,22 @@
+[
+{"tag": "PT-IW0715", "lv": "HIGH", "p": 3, "sp": 9.0, "d": "INDUSTRIAL WATER PUMP COMMON HEADER PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0198", "src": "Alarm List _20160912 sheet PT, PD-025"},
+{"tag": "PT-IW0715", "lv": "LOW", "p": 3, "sp": 5.6, "d": "INDUSTRIAL WATER PUMP COMMON HEADER PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0198", "src": "Alarm List _20160912 sheet PT, PD-025"},
+{"tag": "PT-IW0715", "lv": "LOW-LOW", "p": 2, "sp": 0.0, "d": "INDUSTRIAL WATER PUMP COMMON HEADER PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0198", "src": "Alarm List _20160912 sheet PT, PD-025"},
+{"tag": "DPT-IW0715-A", "lv": "HIGH-HIGH", "p": 2, "sp": 1.0, "d": "INDUSTRIAL WATER PUMP A SUCTION STRAINER DIFFERENTIAL PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0162", "src": "Alarm List _20160912 sheet DPT, PD-025"},
+{"tag": "DPT-IW0715-A", "lv": "HIGH", "p": 3, "sp": 0.6, "d": "INDUSTRIAL WATER PUMP A SUCTION STRAINER DIFFERENTIAL PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0162", "src": "Alarm List _20160912 sheet DPT, PD-025"},
+{"tag": "DPT-IW0715-B", "lv": "HIGH-HIGH", "p": 2, "sp": 1.0, "d": "INDUSTRIAL WATER PUMP B SUCTION STRAINER DIFFERENTIAL PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0242", "src": "Alarm List _20160912 sheet DPT, PD-025"},
+{"tag": "DPT-IW0715-B", "lv": "HIGH", "p": 3, "sp": 0.6, "d": "INDUSTRIAL WATER PUMP B SUCTION STRAINER DIFFERENTIAL PRESSURE TRANSMITTER", "stn": 105, "addr": "AI0242", "src": "Alarm List _20160912 sheet DPT, PD-025"},
+{"tag": "LT-IW0113", "lv": "HIGH-HIGH", "p": 2, "sp": 2000.0, "d": "TURBINE BUILDING PLUMBING WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0166", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0113", "lv": "HIGH", "p": 3, "sp": 1750.0, "d": "TURBINE BUILDING PLUMBING WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0166", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0113", "lv": "LOW", "p": 3, "sp": 500.0, "d": "TURBINE BUILDING PLUMBING WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0166", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0113", "lv": "LOW-LOW", "p": 2, "sp": 500.0, "d": "TURBINE BUILDING PLUMBING WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0166", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0714", "lv": "HIGH-HIGH", "p": 2, "sp": 6.7, "d": "INDUSTRIAL WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0161", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0714", "lv": "HIGH", "p": 3, "sp": 6.6, "d": "INDUSTRIAL WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0161", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0714", "lv": "LOW", "p": 3, "sp": 1.6, "d": "INDUSTRIAL WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0161", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0714", "lv": "LOW-LOW", "p": 2, "sp": 0.2, "d": "INDUSTRIAL WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0161", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0724", "lv": "HIGH-HIGH", "p": 2, "sp": 6.8, "d": "FIRE WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0112", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0724", "lv": "HIGH", "p": 3, "sp": 6.6, "d": "FIRE WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0112", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0724", "lv": "LOW", "p": 3, "sp": 1.6, "d": "FIRE WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0112", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LT-IW0724", "lv": "LOW-LOW", "p": 2, "sp": 0.2, "d": "FIRE WATER TANK LEVEL TRANSMITTER", "stn": 105, "addr": "AI0112", "src": "Alarm List _20160912 sheet LT, PD-025"},
+{"tag": "LS-IW0714", "lv": "ALARM", "p": 4, "on": 1, "d": "INDUSTRIAL WATER TANK LEVEL LOW SWITCH", "stn": 105, "addr": "I.001F", "src": "Alarm List _20160912 sheet LS, PD-025", "set": "LL 1M / 0.2m"}
+]

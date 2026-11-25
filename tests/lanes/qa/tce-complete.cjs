@@ -6,7 +6,9 @@ const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
 const root = path.resolve(__dirname, '..', '..', '..');
-const FLOOR = +(process.env.TCE_FLOOR || 194);
+/* floor 194 -> 141 (2026-11-25, rules (a) explanation sheets and (b) links lost at compile: old rule 196, new rule 141 on main 502e57f);
+   141 -> 196 after lane 1 PR 526 fixed both (nearest connector, INITIAL from TCE050) */
+const FLOOR = +(process.env.TCE_FLOOR || 196);
 const dir = root + '/src/digital/tce';
 const src = fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8');
 const win = {};
@@ -115,6 +117,24 @@ for (const p of P.plan) {
     if (ty === 'AM' && keys.has('M')) why(p.id, 'AM M parameter not applied');
   }
 }
+/* rule added 2026-11-25 (QA review against the Aug 2017 TCE / TCA PDFs):
+   (a) a LOGIC / PI/O EXPLANATION sheet (TCE022 / TCE023 ...) is a legend of the drawing set, not controller logic: it never counts;
+   (b) a sheet-to-sheet link that join() makes (the drawing names the source sheet and its letter) but that compile() turns into a
+       CON: port (= 0) is a broken wire of the reading sheet. TCE169 (PDF p 121, drawing p 119): HEAT SOAK MODE from TCE168 C reads 0. */
+for (const s of sheets)
+  if (run.has(s.id) && /EXPLANATION/i.test(s.title || '')) why(s.id, 'explanation sheet (legend, not logic)');
+{
+  const nets = sheets.map(s => (s.dwg ? R.gnet(s) : R.net(s)));
+  R.join(nets);
+  const nbI = Object.fromEntries(nets.map(n => [n.id, n]));
+  for (const n of nets)
+    for (const c of n.inputs) {
+      if (!c.src || !run.has(n.id)) continue;
+      const T = c.src.slice(0, c.src.indexOf(':')),
+        k = c.src.slice(T.length + 1);
+      if (!nbI[T].outputs.find(o => o.key === k)) why(n.id, 'link from another sheet lost at compile (reads 0)');
+    }
+}
 console.log('\nrunning sheets with a defect:', bad.size, 'of', run.size);
 const agg = {};
 for (const [id, s] of bad) for (const w of s) agg[w] = (agg[w] || []).concat(id);
@@ -130,8 +150,21 @@ for (const p of P.plan) {
 }
 console.log('controller: sheets / run / run without a found defect', JSON.stringify(ctl));
 
-const complete = run.size - bad.size;
-const empty = P.plan.filter(p => run.has(p.id) && !bad.has(p.id) && !p.blocks && !p.macros).length;
+/* two columns (2026-11-25, lane 1 PR 539): a sheet that runs only because a macro is coded from the manual text ("inside not drawn",
+   TCE_RUN.stats().runText) is not drawing-complete; it is counted on its own line and never in COMPLETE */
+const runText = new Set(S.runText || []);
+const ok = P.plan.filter(p => run.has(p.id) && !bad.has(p.id));
+const drawn = ok.filter(p => !runText.has(p.id)),
+  textOk = ok.filter(p => runText.has(p.id)).length;
+const complete = drawn.length;
+const empty = drawn.filter(p => !p.blocks && !p.macros).length;
 console.log('of the complete: real logic ' + (complete - empty) + ', tables with no block ' + empty);
+console.log(
+  'runs with a manual-text macro (not drawing-complete): ' +
+    runText.size +
+    ' (of these with no other defect ' +
+    textOk +
+    ')'
+);
 console.log('\nCOMPLETE ' + complete + ' of ' + P.plan.length + ' (floor ' + FLOOR + ')');
 process.exit(complete >= FLOOR ? 0 : 1);

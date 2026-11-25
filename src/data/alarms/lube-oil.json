@@ -1,0 +1,13 @@
+[
+{"tag": "PS-LO1115-B1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BFP(B) LUBE OIL PRESSURE SWITCH-1 (LOW ALARM/STANBY PUMP START)", "stn": 103, "addr": "I.0410", "src": "Alarm List _20160912 sheet PS, PD-017", "set": "H ?; L 1.5"},
+{"tag": "PS-LO1115-B2", "lv": "ALARM", "p": 4, "on": 0, "d": "#1 BFP(B) LUBE OIL PRESSURE SWITCH-2 (NORMAL/START PERMISIVE FOR BFP)", "stn": 103, "addr": "I.0411", "src": "Alarm List _20160912 sheet PS, PD-017"},
+{"tag": "PS-LO1115-B3", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BFP(B) LUBE OIL PRESSURE SWITCH-3 (LOW-LOW/MAIN EQUIPMENT TRIP)", "stn": 103, "addr": "I.0412", "src": "Alarm List _20160912 sheet PS, PD-017", "set": "LL 1"},
+{"tag": "PSL-LO1756", "lv": "LOW", "p": 3, "on": 1, "d": "#1 INDUCED DRAFT FAN LUBE OIL PRESSURE SWITCH LOW AT DOWNSTREAM OF LUBE OIL FILTER", "stn": 103, "addr": "I.0690", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "L 0.8"},
+{"tag": "DPS-LO1753", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 PRIMARY AIR FAN INLET FILTER DIFFERENTIAL PRESSURE SWITCH", "stn": 103, "addr": "I.0697", "src": "Alarm List _20160912 sheet DPS, PD-052", "set": "H 0.8"},
+{"tag": "DPS-LO1756", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 INDUCED DRAFT FAN HYDRAULIC COUPLING WORKING OIL DIFFERENTIAL PRESSURE SWITCH HIGH OF DUPLEX FILTER", "stn": 103, "addr": "I.0692", "src": "Alarm List _20160912 sheet DPS, PD-051", "set": "H 0.61"},
+{"tag": "LS-LO1115-B", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BFP(B) LUBE OIL LEVEL SWITCH (LOW ALARM)", "stn": 103, "addr": "I.0413", "src": "Alarm List _20160912 sheet LS, PD-017"},
+{"tag": "LSL-LO1753", "lv": "LOW", "p": 3, "on": 1, "d": "#1 PRIMARY AIR FAN LUBE OIL LEVEL SWITCH", "stn": 103, "addr": "I.0698", "src": "Alarm List _20160912 sheet LS, PD-052"},
+{"tag": "LSLL-LO1753", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 PRIMARY AIR FAN LUBE OIL LEVEL SWITCH", "stn": 103, "addr": "I.0699", "src": "Alarm List _20160912 sheet LS, PD-052"},
+{"tag": "TS-LO1756-1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 INDUCED DRAFT FAN HYDRAULIC COUPLING WORKING OIL TEMPERATURE SWITCH HIGH", "stn": 103, "addr": "I.0693", "src": "Alarm List _20160912 sheet TS, PD-051", "set": "H 100.0"},
+{"tag": "TS-LO1753", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 PRIMARY AIR FAN LUBE OIL SYSTEM TEMPERATURE SWITCH", "stn": 103, "addr": "I.069A", "src": "Alarm List _20160912 sheet TS, PD-052", "set": "H 52.0"}
+]

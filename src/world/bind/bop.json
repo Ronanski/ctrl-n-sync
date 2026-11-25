@@ -1,0 +1,12 @@
+[
+  { "stn": 1, "addr": "O.0212", "tag": "MOR-BD1002", "to": "DITL-38 #MV-BD1002", "text": "MCV OPEN COMMAND", "src": "IO list STN101 O.0212 Continuous blow down motor valve open command; DITL-38 MOTOR CONTROL VALVE output MCV OPEN COMMAND, MV-BD1002 table" },
+  { "stn": 2, "addr": "O.0131", "tag": "MOS-FW1001", "to": "DITL-38 #MV-FW1001", "text": "MCV CLOSE COMMAND", "src": "IO list STN102 O.0131 BFWP-A outlet motor valve close command; DITL-38 output MCV CLOSE COMMAND, MV-FW1001 table" },
+  { "stn": 2, "addr": "O.044C", "tag": "MOR-FW1002", "to": "DITL-38 #MV-FW1002", "text": "MCV OPEN COMMAND", "src": "IO list STN102 O.044C BFWP-B outlet motor valve open command; DITL-38 output MCV OPEN COMMAND, MV-FW1002 table" },
+  { "stn": 2, "addr": "O.044D", "tag": "MOS-FW1002", "to": "DITL-38 #MV-FW1002", "text": "MCV CLOSE COMMAND", "src": "IO list STN102 O.044D BFWP-B outlet motor valve close command; DITL-38 output MCV CLOSE COMMAND, MV-FW1002 table" },
+  { "stn": 2, "addr": "O.044E", "tag": "MOR-FW1392", "to": "DITL-38 #MV-FW1392", "text": "MCV OPEN COMMAND", "src": "IO list STN102 O.044E BFWP-B outlet bypass motor valve open command; DITL-38 output MCV OPEN COMMAND, MV-FW1392 table" },
+  { "stn": 2, "addr": "O.044F", "tag": "MOS-FW1392", "to": "DITL-38 #MV-FW1392", "text": "MCV CLOSE COMMAND", "src": "IO list STN102 O.044F BFWP-B outlet bypass motor valve close command; DITL-38 output MCV CLOSE COMMAND, MV-FW1392 table" },
+  { "stn": 2, "addr": "O.016C", "tag": "MOR-MS1392", "to": "DITL-38 #MV-MS1392", "text": "MCV OPEN COMMAND", "src": "IO list STN102 O.016C Main steam bypass motor valve open command; DITL-38 output MCV OPEN COMMAND, MV-MS1392 table" },
+  { "stn": 2, "addr": "O.016D", "tag": "MOS-MS1392", "to": "DITL-38 #MV-MS1392", "text": "MCV CLOSE COMMAND", "src": "IO list STN102 O.016D Main steam bypass motor valve close command; DITL-38 output MCV CLOSE COMMAND, MV-MS1392 table" },
+  { "stn": 2, "addr": "I.0333", "tag": "MIL-MS1392", "to": "DITL-38 #MV-MS1392", "text": "MCV REMOTE MODE SELECTED", "src": "IO list STN102 I.0333 Main steam bypass motor valve remote; DITL-38 input row 1 MCV REMOTE MODE SELECTED, MV-MS1392 table" },
+  { "stn": 5, "addr": "O.037F", "tag": "MOP-P0709C", "to": "DITL-112 #C", "text": "O.0044/0.037E/", "src": "IO list STN105 O.037F Make-up water pump-C start permission; DITL-112 address text O.0044/0.037E/ O.037F (machine C)" }
+]
