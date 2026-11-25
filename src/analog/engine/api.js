@@ -46,6 +46,7 @@ function anEngAPI() {
     oilValve: anOilValve,
     blowdown: anBlowdown,
     field: anField,
+    pkgOp: anPkgOp /* lane 6: an operator action on a package panel (pkg.js) */,
     tsat: steamTsat,
     fieldState: () => Object.assign({}, AN_SRC.field),
     /* F31 (live Cold start, beta.218): the opening of the lower ring header drains is in the engine (saved with the plant), so the

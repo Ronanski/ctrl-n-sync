@@ -698,7 +698,8 @@ function anAphStep(U, dt) {
     /* the ESP (AN_ESP): all the air ends in the flue gas, the leak too */
     const qN = ((v[0] + v[1] + v[2]) * K.gm * 1000) / AN_ESP.rhoN;
     U.dustIn = qN > 1000 ? ((U.flyA || 0) * 1e9) / qN : 0;
-    U.espEta = qN > 1000 ? 1 - Math.exp(-AN_ESP.wA / qN) : 1;
+    /* lane 6 (pkg.js): U.espK = the share of the collection that the fields in service give, 1 with the five fields at rated voltage */
+    U.espEta = qN > 1000 ? 1 - Math.exp((-AN_ESP.wA * (isFinite(U.espK) ? U.espK : 1)) / qN) : 1;
     /* audit 2026-11-21 B1: the transmitters of the air and gas path that no sheet reads (AN.unit.tt, the HX pages).
        TT-FA1073 / 1074, TT-FA1083 / 1084  PAF / SAF outlet air = tpa / tsa above (FHI Tab 3: ambient 35, PA 45, SA 39 C at MCR).
        AT-FG1131  O2 after the air heater: the furnace gas (U.o2v) with the seal leak air (lp + ls, 20.9 %) mixed in by mass. The
@@ -1159,4 +1160,5 @@ function anBoilerStep(U, dt) {
   anSoxStep(U, dt);
   anSdStep(U, dt);
   anBaStep(U, dt);
+  anPkgStep(U, dt); /* lane 6: the package panels (precipitator, fly ash) */
 }
