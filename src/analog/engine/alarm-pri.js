@@ -76,6 +76,28 @@ const anLaneOut = r => {
     return null;
   }
 };
+/* tag -> [sheet, analog key] of the DITL analog input rows (label "TAG text"), made again when the DITL sheets change */
+const anLaneDi = { s0: null, m: new Map() };
+const anLaneDitl = r => {
+  try {
+    if (typeof S === 'undefined' || !S.sheets) return null;
+    if (anLaneDi.s0 !== S.sheets) {
+      anLaneDi.s0 = S.sheets;
+      anLaneDi.m = new Map();
+      for (const s of S.sheets)
+        for (const a of (s.nl && s.nl.an) || []) {
+          const t = anLaneN((String(a.label || '').match(/^\S+/) || [])[0]);
+          if (t) (anLaneDi.m.get(t) || anLaneDi.m.set(t, []).get(t)).push([s, a.key]);
+        }
+    }
+    const L = anLaneDi.m.get(anLaneN(r.tag)) || (r.io ? anLaneDi.m.get(anLaneN(r.io)) : null) || [];
+    for (const [s, k] of L) {
+      const v = s.avw ? s.avw[k] : undefined;
+      if (v != null && isFinite(v)) return +v;
+    }
+  } catch (e) {}
+  return null;
+};
 AN.laneAlm = now => {
   const L = (typeof window !== 'undefined' && window.LANE_ALARMS) || globalThis.LANE_ALARMS || [],
     out = [];
@@ -125,6 +147,13 @@ AN.laneAlm = now => {
           st = S.rt && S.rt.st ? S.rt.st[b.id] : null;
         if (st && st.src) src = true;
         if (!isFinite(x) && isFinite(v)) x = v;
+      }
+      /* a DITL analog input row of the tag with a value the one world brings (s.avw: an ABC net or the plant model, world.js / plantsw.js;
+         not av150, the 150 MW snapshot seed, nor av, a value typed by the user). The base drawing only: a machine copy (" #B") keeps
+         the labels of machine A */
+      if (!src && !isFinite(x)) {
+        const d = anLaneDitl(r);
+        if (d != null) (src = true), (x = d);
       }
       if (!src) continue;
       if (!isFinite(x)) x = f;
