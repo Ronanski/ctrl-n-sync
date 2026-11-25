@@ -71,8 +71,9 @@ for (const [n, k, sh, a1, a2] of [
   R.push({ stn: 2, ai: a1, tag: 'ZT-HD' + n + '-1', v: (U, X) => hdv(U, X, k, 1), rel: 'primary drain valve = anAv(LICHD' + n + '1, split-range F(X) of the primary MV), as AN_HD', src: io(2) + ' ' + a1 + '; ' + sh + ' LICHD' + n + '1; LCV-HD' + n + '-1' });
   R.push({ stn: 2, ai: a2, tag: 'ZT-HD' + n + '-2', v: (U, X) => hdv(U, X, k, 2), rel: 'alternate drain valve = anAv(LICHD' + n + '2, its MV), as AN_HD', src: io(2) + ' ' + a2 + '; ' + sh + ' LICHD' + n + '2; LCV-HD' + n + '-2' });
 }
-/* 2. limit switches: end of travel (K1AU3-E2-0-123 R1 "Limit Switches: OMRON D4A-2502N (1 Open & 1 Closed)"), the app's end of travel:
-   open = position >= 100 %, closed = position <= 0 % (QA review 2026-11-25) */
+/* 2. limit switches: end of travel (K1AU3-E2-0-123 R1 "Limit Switches: OMRON D4A-2502N (1 Open & 1 Closed)"). All 11 are air-operated
+   valves with a positioner, so they use the one app rule of plantsw.js (WORLD.endBand: closed <= 2 %, open >= 98 %), not a copy */
+const END = () => (G.WORLD && G.WORLD.endBand) || null;
 const zt = t => {
   /* PCV-AS1010 (main steam to aux steam, AO0580 on ABC-030 PICAS1004): its ZT-AS1010 (AI0387) is written on ABC-030 by the model, so the
      switches read the same opening, not a second ZT row */
@@ -99,10 +100,11 @@ for (const [addr, tag, z, o] of [
     di: 1,
     tag,
     v: (U, X) => {
-      const p = f(U, X);
-      return isFinite(p) ? (o ? p >= 100 : p <= 0) : NaN;
+      const p = f(U, X),
+        e = END();
+      return isFinite(p) && e ? (o ? p >= e.open : p <= e.closed) : NaN;
     },
-    rel: (o ? 'open limit: ' : 'closed limit: ') + z + (o ? ' >= 100 %' : ' <= 0 %'),
+    rel: (o ? 'open limit: ' : 'closed limit: ') + z + (o ? ' >= WORLD.endBand.open (98 %)' : ' <= WORLD.endBand.closed (2 %)'),
     src: io(2) + ' ' + addr + '; K1AU3-E2-0-123 R1 OMRON D4A-2502N end of travel'
   });
 }
