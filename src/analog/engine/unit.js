@@ -5635,7 +5635,7 @@ function anUnitStep0(dt) {
     for (const l of U.di.hot || []) w(l, m === 'hot' ? 1 : 0);
     w(U.di.tg, c && c.tg && tb.rpm < 4 ? 1 : 0);
     if (U.lpbSp && U.lpbSp.n != null)
-      w(U.di.lpbZso, anAv('TICHR1012', Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0))) >= 99 ? 1 : 0);
+      w(U.di.lpbZso, anAv('TICHR1012', Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0))) >= 98 ? 1 : 0); /* open limit switch: the one rule of plantsw.js, >= 98 % */
     for (const [l, k, sp] of U.di.hd || []) if (isFinite(H[k])) w(l, H[k] >= sp ? 1 : 0);
   }
   U.turb = tb.st !== 'off';
