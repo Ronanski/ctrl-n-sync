@@ -11,11 +11,15 @@
 const PKG = {
   /* CTCS (CT-CP): drive travel, normal (a drive slower than 16 s valve / 25 s screen is a SEQUENCE FAILURE, CT-CP 8.0) */
   ct: { tv: 12, tsc: 22, water: 300, run: 8 * 3600, coll: 1800, idle: 16 * 3600, dpClean: 30, dpN: 40, dpE: 50 },
-  /* ESP (ESP-OM L19-1, KC Cottrell doc LMYP-1-14): CE rapping 2 min on, off 7 / 13 / 19 / 25 / 31 min for fields 1 ~ 5 (p3, "values will
-     be modified depending on the operation conditions": these are the documented ones); DE rapping continuous; heaters off 1 h after
-     the TRs are energized; after the TRs go off the CE rapping runs continuous for 2 h, then the aux devices stop (stop sequence);
-     TR current limit 100 % (p9 ~ 10) */
-  esp: { ceOn: 2, ceOff: [7, 13, 19, 25, 31], heatOff: 3600, post: 2 * 3600, iLim: 100 }
+  /* ESP: the control block diagram of K1AU3-D1-0-016 R1 (ED, KC Cottrell, p74 ~ 90) and the O&M manual (ESP-OM L19-1, LMYP-1-14).
+     CE rapping (ED p75, p76): first delay 3 / 5 / 7 / 9 / 11 min for fields 1 ~ 5, then 2 min on, off 7 / 13 / 19 / 23 / 27 min. The
+     manual says 25 / 31 for fields 4 / 5; 31 is outside the screen range 0 ~ 30 min of the drawing, so the drawing values are used (the
+     difference is logged, docs/versions/updates/phase8-slice5-esp-fix.md). DE rapping (ED p77 ~ 81): two motors per field together,
+     first delay 11 / 13 / 15 / 17 / 19 min, 2 min on, off set on the screen; the manual's "continuous" is off 0 (derived). Heaters off
+     1 h after the TRs are energized (manual; the drawing's thermostat 100 / 120 C on TE-BA1730 needs the insulator temperature, which is
+     not modelled); after the TRs go off the CE rapping runs continuous for 2 h, then the aux devices stop (manual stop sequence); TR
+     current limit 100 % (manual p9 ~ 10) */
+  esp: { ceOn: 2, ceOff: [7, 13, 19, 23, 27], ceDly: [3, 5, 7, 9, 11], deOn: 2, deOff: 0, deDly: [11, 13, 15, 17, 19], heatOff: 3600, post: 2 * 3600, iLim: 100 }
 };
 /* a DCS output of a DITL sheet by its I/O address (the output pin of the netlist): 1 / 0, or null when the sheet or the pin is not found */
 function pkgDo(sh, adr) {
@@ -140,18 +144,20 @@ function pkgStep(U, dt) {
    2 hopper high level switches; purge fan F-1201 and heater H-1201. In service = the TR sets energized: the field state of the plant
    model (AN_SRC.field.esp, the same one the house load counts, elec.js). The stop sequence: TRs off, CE rapping continuous, 2 h, the aux
    devices stop: the hammers, the purge fan and the heater run on in that window, then stop (the purge fan stops with the ID fan in the
-   manual; here at the end of the window: INFERRED). Not in the documents (NO-SOURCE, no value): the REMOTE / DCS CONTROL selectors, the
-   InterLock bits (30006.06 ~ .15, condition not written), the TR kV / mA and primary values (no model of the T/R electrics), the DE and
-   vibrator timer settings, the fan / heater AUTO. The hopper vibrators run 3 s on each inlet opening of the fly ash tank below: given
-   with the fly ash program. No fault model yet: faults, TR alarms and TR communication errors 0; hoppers emptied by the ash system:
+   manual; here at the end of the window: INFERRED; the drawing ED p87 stops the fan 5 ~ 20 min after the heater or 10 ~ 50 min after all
+   TRs, screen ranges only). Not in the documents (NO-SOURCE, no value): the fan / heater REMOTE and AUTO, DCS CONTROL, the vibrator
+   InterLock bits (30006.06 ~ .15 = the fly ash blocking valve contact, ED p27, FA p558: needs the tank cycle times), the TR kV / mA and
+   primary values (nameplates only: U-1201 83 kV 840 mA, U-1202 ~ 1205 72 kV average 1000 mA, ED p103, p107; normal values not in the
+   documents), the vibrator on / wait settings (screen ranges 5 ~ 120 s, 1 ~ 5 min only). No fault model yet: faults, TR alarms and TR communication errors 0; hoppers emptied by the ash system:
    level high 0. */
 function pkgEspStep(P, U, dt) {
   const E = P.esp || (P.esp = { on: 0, ton: 0, toff: Infinity, seen: 0 }),
     on = typeof AN_SRC !== 'undefined' && AN_SRC.field && AN_SRC.field.esp && U.on ? 1 : 0;
   if (on && !E.on) {
-    /* a start state already in service (150 MW): the heaters are long off */
+    /* a start state already in service (150 MW): the heaters are long off and the first delays long past */
     E.ton = E.seen ? 0 : PKG.esp.heatOff;
     E.toff = Infinity;
+    E.t = E.seen ? 0 : 24 * 3600;
   }
   if (!on && E.on) E.toff = 0;
   E.on = on;
@@ -160,9 +166,20 @@ function pkgEspStep(P, U, dt) {
   else if (isFinite(E.toff)) E.toff += dt;
   E.t = (E.t || 0) + dt;
 }
+/* the group timer of ED p75 ~ 81: first delay, then on / off; off 0 = continuous */
+function pkgEspTm(t, dly, on, off) {
+  const d = t - dly * 60;
+  if (d < 0) return 0;
+  return off <= 0 || d % ((on + off) * 60) < on * 60 ? 1 : 0;
+}
 function pkgEspCe(E, f) {
   const K = PKG.esp;
-  if (E.on) return E.t % ((K.ceOn + K.ceOff[f]) * 60) < K.ceOn * 60 ? 1 : 0;
+  if (E.on) return pkgEspTm(E.t, K.ceDly[f], K.ceOn, K.ceOff[f]);
+  return E.toff < K.post ? 1 : 0;
+}
+function pkgEspDe(E, f) {
+  const K = PKG.esp;
+  if (E.on) return pkgEspTm(E.t, K.deDly[f], K.deOn, K.deOff);
   return E.toff < K.post ? 1 : 0;
 }
 const pkgEspAux = E => (E.on || E.toff < PKG.esp.post ? 1 : 0);
@@ -187,6 +204,8 @@ const PKG_FA = {
       // silo pressure H, vent filter purge fault, fluidizing time out, dry unloader fault, unloading E-stop, vent filter trip, purge
       // interrupt, wet unloader motor trips
       '40006.03 40006.07 40006.15 40007.01 40007.02 40007.04 40009.03 40009.05 40009.08',
+      // the wet unloader and its rotary valve: CANCELLED by the contract (FA p13 item 10, p33: one dry unloading only), spare points
+      '40009.04 40009.06 40009.07 40009.09 40009.1',
       // DCS to PLC: start / stop PB of the 11 tanks, alarm reset, alarm acknowledge
       '40051 40051.01 40051.02 40051.03 40051.04 40051.05 40051.06 40051.07 40051.08 40051.09 40051.1 40051.11 40051.12 40051.13 40051.14',
       '40051.15 40052 40052.01 40052.02 40052.03 40052.04 40052.05 40052.06 40052.07'
@@ -252,12 +271,15 @@ const PKG_READ = {
       f = Math.floor(b / 3),
       k = b % 3;
     if ((w === 30018 && b === 15) || (w === 40026 && b === 10)) return P.wd.esp;
-    /* 30001 CE, 30002 / 30003 DE, 30004 / 30005 vibrators A / B: field f, bit 3f remote, 3f+1 run, 3f+2 fault */
+    /* 30001 CE, 30002 / 30003 DE, 30004 / 30005 vibrators A / B: field f, bit 3f remote, 3f+1 run, 3f+2 fault. REMOTE: the per motor
+       LOCAL / REMOTE switch of LOP-1201 ~ 1205 (ED p10 ~ 14, p22 ~ 27); the PLC AUTO timers run a motor only in REMOTE (ED p89, p90),
+       and these motors stand in AUTO (30016 / 30017), so REMOTE (derived). The vibrators run while the fly ash blocking valve of their
+       hopper is open (ED p82 ~ 86, the interlock contact ED p27): the tank cycle has no times (NO-SOURCE), so no run value */
     if (w >= 30001 && w <= 30005 && b < 15) {
-      if (k === 0) return NaN;
+      if (k === 0) return 1;
       if (k === 2) return 0;
       if (w === 30001) return pkgEspCe(E, f);
-      if (w <= 30003) return pkgEspAux(E);
+      if (w <= 30003) return pkgEspDe(E, f);
       return NaN;
     }
     if (w === 30006) {
@@ -270,12 +292,17 @@ const PKG_READ = {
     /* AUTO of the hammers (30016.00 ~ .14) and vibrators (30016.15 ~ 30017.08): the timer program runs them; fan / heater AUTO no source */
     if (w === 30016) return 1;
     if (w === 30017) return b <= 8 ? 1 : NaN;
-    if (w === 30018 && b < 15) return k === 0 ? NaN : k === 1 ? E.on : 0;
+    /* TR01 ~ 05: REMOTE = the LOCAL / REMOTE switch of the TR panel in REMOTE; the remote ON works only in REMOTE (ED p110, p111), and
+       the TRs are put on from the PLC, so REMOTE (derived) */
+    if (w === 30018 && b < 15) return k === 0 ? 1 : k === 1 ? E.on : 0;
     if (w === 30019) return b <= 4 ? 0 : NaN;
     /* CE timers: 30081 ~ 30090 (and the DCS set 40161 ~ 40170): run / stopped per field */
     const ce = (w0, x) => (x % 2 === 0 ? K.ceOn : K.ceOff[x >> 1]);
     if (w >= 30081 && w <= 30090) return ce(30081, w - 30081);
     if (w >= 40161 && w <= 40170) return ce(40161, w - 40161);
+    /* DE timers (ED p77 ~ 81): running 2 min (30117 ~ 30126, DCS set 40197 ~ 40206); stopped 0 = continuous (30071 ~ 30080, 40151 ~ 40160) */
+    if ((w >= 30117 && w <= 30126) || (w >= 40197 && w <= 40206)) return K.deOn;
+    if ((w >= 30071 && w <= 30080) || (w >= 40151 && w <= 40160)) return K.deOff;
     if ((w >= 30112 && w <= 30116) || (w >= 40192 && w <= 40196)) return K.iLim;
     /* the DCS commands (start / stop pulses, system auto start / stop, fan & heater): no screen sends one yet, 0 */
     if (w >= 40020 && w <= 40025 && b < 15) return k === 2 ? NaN : 0;
@@ -296,4 +323,4 @@ AN.pkgRead = (sys, ma) => {
 };
 AN.pkgBit = pkgBit;
 /* for the tests: the CTCS program alone (tests/lanes/pkg/pkg-modbus.cjs) */
-AN._pkg = { ctNew: pkgCtNew, ctStep: pkgCtStep, espCe: pkgEspCe, espAux: pkgEspAux, read: PKG_READ, K: PKG };
+AN._pkg = { ctNew: pkgCtNew, ctStep: pkgCtStep, espCe: pkgEspCe, espDe: pkgEspDe, espAux: pkgEspAux, read: PKG_READ, K: PKG };
