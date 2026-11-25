@@ -167,10 +167,20 @@
   /* Modbus over Ethernet (two-way link) with the package PLC: LMYP-1 #1-Communication list between DCS and package.xls (sheets
      #1 GCS10F and Common GCS10E: PLC-A / PLC-B, Modbus connection, "RJ-45 Only") and Memory for Sub_System PLC MODBUS.xls
      (SI Address: turbine area SI1000 ~ / SI1300 ~ of STN102, SCADA SI8600 ~ / SI8800 ~ of STN105; BC send / receive of the
-     GCS to the station). Points: the Modbus communication lists (src/ui/plant/dcslists.js). */
+     GCS to the station). Points: the Modbus communication lists (src/ui/plant/modbus.js, tools/data/modbus.py).
+     Lane 5 (2026-11-25): fly ash, ESP and CTCS (GCS10F connections 3 / 4, 5 / 6 and 7, "RJ-45 <--> Fiber Optic"; STN104 addresses of
+     their lists; GCS10F to FL-NET hub-2A / 2B cables 2A10 / 2B10 / 2A11 / 2B11 20 m and hub to FCS104 2A8 / 2B8 (A), 2A9 / 2B9 (B) 10 m
+     UTP: K1AU3-E2-0-106 sh2 cable list). Package side: K1AU3-E2-0-115 rev 1 GCS10F-05 "SCADA LAN Diagram" sheet GS01(5): MOXA EDS-316
+     HUB-1H / HUB-2H in GCS10F, cable number = hub + port; each link comes in on fiber (fiber box F-n (ST), converter 10F-n in the OSD370N
+     rack, SC-ST single-mode patch cord) and the converter goes to the hub port. The vendor's own hub after the fiber box has no port or
+     cable number on the drawing. CTCS has one link only (HUB-2H port 3 unwired, converter slot 2 empty). int: the list numbers the points 1, 2, 3 (a DI word = 16 rows
+     counted from the row that names the word); otherwise 40001.01 = word 40001 bit 1. */
   const MBS = {
-    tcs: { sys: 'TCS', pkg: 'Turbine PLC', pan: 'TCS panel', gcs: 'GCS10F', con: 'Modbus connection 1 (PLC-A) / 2 (PLC-B)', stn: 'STN102', ctl: 'FCS102', sftp: ['1H09', '2H09'], hub: 'SCADA LAN hub-1H port 9 / hub-2H port 9', hubup: '1H02 / 2H02', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A04 / 2B04 (A ctrl), 2A05 / 2B05 (B ctrl)', fcslen: '3 m UTP', dwg: 'K1AU3-E2-0-115 sh5 (GCS10F), K1AU3-E2-0-106 sh2 + cable list (FL-NET)' },
-    sca: { sys: 'SCADA', pkg: 'SCADA PLC', pan: 'SCADA panel', gcs: 'GCS10E', con: 'Modbus connection 7 (PLC-A) / 8 (PLC-B)', stn: 'STN105', ctl: 'FCS105', sftp: ['3H11', '4H11'], hub: 'SCADA LAN hub-3H port 11 / hub-4H port 11', hubup: '3H02 / 4H02', fl: '3A04 / 3B04 / 3A05 / 3B05', fllen: '10 m', fhubs: 'hub-3A / hub-3B', fhub: 'FCS1051', fcs: '3A02 / 3B02 (A ctrl), 3A03 / 3B03 (B ctrl)', fcslen: '1.5 m UTP', dwg: 'K1AU3-E2-0-115 sh12 (GCS10E), K1AU3-E2-0-106 sh2 + cable list (FL-NET)' }
+    tcs: { sys: 'TCS', pkg: 'Turbine PLC', pan: 'TCS panel', gcs: 'GCS10F', con: 'Modbus connection 1 (PLC-A) / 2 (PLC-B)', stn: 'STN102', ctl: 'FCS102', sftp: ['1H09', '2H09'], hub: 'SCADA LAN hub-1H port 9 / hub-2H port 9', hubup: '1H02 / 2H02', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A04 / 2B04 (A ctrl), 2A05 / 2B05 (B ctrl)', fcslen: '3 m UTP', dwg: 'K1AU3-E2-0-115 sh5 (GCS10F), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'turbine system', int: 1 },
+    sca: { sys: 'SCADA', pkg: 'SCADA PLC', pan: 'SCADA panel', gcs: 'GCS10E', con: 'Modbus connection 7 (PLC-A) / 8 (PLC-B)', stn: 'STN105', ctl: 'FCS105', sftp: ['3H11', '4H11'], hub: 'SCADA LAN hub-3H port 11 / hub-4H port 11', hubup: '3H02 / 4H02', fl: '3A04 / 3B04 / 3A05 / 3B05', fllen: '10 m', fhubs: 'hub-3A / hub-3B', fhub: 'FCS1051', fcs: '3A02 / 3B02 (A ctrl), 3A03 / 3B03 (B ctrl)', fcslen: '1.5 m UTP', dwg: 'K1AU3-E2-0-115 sh12 (GCS10E), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'SCADA' },
+    fa: { sys: 'Fly ash', pkg: 'Fly ash PLC', pan: 'Fly ash panel', gcs: 'GCS10F', con: 'Modbus connection 3 (PLC-A) / 4 (PLC-B)', stn: 'STN104', ctl: 'FCS104', sftp: ['1H04', '2H04'], hub: 'SCADA LAN hub-1H port 4 / hub-2H port 4', hubup: '1H02 / 2H02', med: 'fiber optic: box F-2 (ST) fibers 1 / 2 (A), 3 / 4 (B), converters 10F-3 (A) / 10F-4 (B); the vendor hub before the box is not on the drawing', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A8 / 2B8 (A ctrl), 2A9 / 2B9 (B ctrl)', fcslen: '10 m UTP', dwg: 'K1AU3-E2-0-115 sh5 GS01(5) (GCS10F SCADA LAN), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'fly ash' },
+    esp: { sys: 'ESP', pkg: 'ESP PLC', pan: 'ESP panel', gcs: 'GCS10F', con: 'Modbus connection 5 (PLC-A) / 6 (PLC-B)', stn: 'STN104', ctl: 'FCS104', sftp: ['1H05', '2H05'], hub: 'SCADA LAN hub-1H port 5 / hub-2H port 5', hubup: '1H02 / 2H02', med: 'fiber optic: box F-3 (ST) fibers 1 / 2 (A), 3 / 4 (B), converters 10F-5 (A) / 10F-6 (B); the vendor hub before the box is not on the drawing', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A8 / 2B8 (A ctrl), 2A9 / 2B9 (B ctrl)', fcslen: '10 m UTP', dwg: 'K1AU3-E2-0-115 sh5 GS01(5) (GCS10F SCADA LAN), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'ESP' },
+    ctcs: { sys: 'CTCS', pkg: 'CTCS PLC', pan: 'CTCS panel', gcs: 'GCS10F', con: 'Modbus connection 7 (single PLC)', one: 1, stn: 'STN104', ctl: 'FCS104', sftp: ['1H03'], hub: 'SCADA LAN hub-1H port 3 (one link)', hubup: '1H02 / 2H02', med: 'fiber optic: box F-1 (ST) fibers 1 / 2, converter 10F-1; the vendor hub before the box is not on the drawing', fl: '2A10 / 2B10 / 2A11 / 2B11', fllen: '20 m', fhubs: 'hub-2A / hub-2B', fhub: 'FCS1013', fcs: '2A8 / 2B8 (A ctrl), 2A9 / 2B9 (B ctrl)', fcslen: '10 m UTP', dwg: 'K1AU3-E2-0-115 sh5 GS01(5) (GCS10F SCADA LAN), K1AU3-E2-0-106 sh2 + cable list (FL-NET)', lst: 'CTCS', int: 1 }
   };
   window.LS_ORIG = ORIG;
   const SY = [
@@ -180,6 +190,9 @@
     ['GCP', 'Generator control (GCP)'],
     ['GPP', 'Generator protection (GPP)'],
     ['SCADA', 'Switchgear supervisory (SCADA)'],
+    ['Fly ash', 'Fly ash conveying PLC'],
+    ['ESP', 'Electrostatic precipitator PLC (ESP)'],
+    ['CTCS', 'Condenser tube cleaning PLC (CTCS)'],
     ['Breakers', 'Breakers'],
     ['MCC', 'Motor control centers (MCC)'],
     ['HVP', 'High-voltage panels (HVP)'],
@@ -303,9 +316,9 @@
         nm = maddr;
       }
       let word = w ? w[0] : '',
-        bit = sk === 'tcs' ? +maddr - +nm : Math.round((+maddr % 1) * 100);
-      if (ty === 'DI' && (sk === 'tcs' ? bit < 0 || bit > 15 : Math.floor(+maddr) !== Math.floor(+nm))) word = '';
-      const addr = ty === 'AI' ? word : ty === 'DI' ? (word ? word + ' bit ' + bit : 'word not in the list, bit ' + bit) : (w || []).join(' / ') + ' area, coil ' + maddr;
+        bit = S.int ? +maddr - +nm : Math.round((+maddr % 1) * 100);
+      if (ty === 'DI' && (S.int ? bit < 0 || bit > 15 : Math.floor(+maddr) !== Math.floor(+nm))) word = '';
+      const addr = ty === 'AI' ? word : ty === 'DI' ? (word ? word + ' bit ' + bit : 'word not in the list, bit ' + bit) : ty === 'AO' ? (w || []).join(' / ') + ' area, register ' + maddr : (w || []).join(' / ') + ' area, coil ' + maddr;
       const o = { t: 'MB', mt: ty, s: S.stn.slice(-1), a: addr, tag: tag || '', desc: d, sig: 'Modbus ' + ty, mb: S, maddr, word, word2: w && w[1] && /^SI/.test(w[1]) && ty !== 'DO' ? w[1] : '', from, to, ind: w && w[2] ? w[2] : '', up: [], og: S.sys, ref: '', mpl: '', jb: '' };
       o.sys = S.sys;
       o.h = (o.tag + ' ' + d + ' ' + addr + ' modbus ' + S.gcs + ' ' + maddr).toLowerCase();
@@ -1045,9 +1058,11 @@
     hp.append(legend(LEG));
     const E1 = 'Ethernet (two-way)',
       addr = S.stn + ' ' + r.a,
+      c0 = (S.med ? 'Ethernet over ' + S.med + '; converter to switch: cable ' : E1 + ', SFTP cable ') + S.sftp[0] + (S.sftp[1] ? ' (A) / ' + S.sftp[1] + ' (B)' : ''),
+      c1 = E1 + ', SFTP cable ' + S.hubup,
       hops = [
-        [S.pkg + ' A / B', S.pan + ', RJ-45 port. Modbus address ' + r.maddr, '', '', E1 + ', SFTP cable ' + S.sftp[0] + ' (A) / ' + S.sftp[1] + ' (B)'],
-        ['MOXA EDS-316 switch', S.hub, '', '', E1 + ', SFTP cable ' + S.hubup],
+        [S.pkg + (S.one ? '' : ' A / B'), S.pan + ', RJ-45 port. Modbus address ' + r.maddr, '', '', c0],
+        ['MOXA EDS-316 switch', S.hub, '', '', c1],
         ['Gateway ' + S.gcs + '-A / B', S.gcs + ' cabinet, Modbus to FL-NET', '', '', 'Ethernet FL-NET A + B (two-way), cables ' + S.fl + ', ' + S.fllen],
         ['FL-NET switches ' + S.fhubs, 'MOXA EDS-316 in ' + S.fhub, '', '', 'Ethernet FL-NET A + B (two-way), cables ' + S.fcs + ', ' + S.fcslen],
         ['Controller ' + S.ctl + '-A / B', toDcs ? 'receives into ' + r.a + (r.word2 ? ' (area 1) / ' + r.word2 + (r.mt === 'DI' ? ' bit ' + r.a.split(' bit ')[1] : '') + ' (area 2)' : '') : 'sends ' + r.a, '', '', toDcs ? 'inside the DCS controller (selects area 1 or 2)' : ''],
@@ -1058,8 +1073,8 @@
       const rev = hops.slice(0, 5).reverse().map((h, i, A) => [h[0], h[1], h[2], h[3], i < A.length - 1 ? A[i + 1][4] : '']);
       rev[0][4] = 'Ethernet FL-NET A + B (two-way), cables ' + S.fcs + ', ' + S.fcslen;
       rev[1][4] = 'Ethernet FL-NET A + B (two-way), cables ' + S.fl + ', ' + S.fllen;
-      rev[2][4] = E1 + ', SFTP cable ' + S.hubup;
-      rev[3][4] = E1 + ', SFTP cable ' + S.sftp[0] + ' (A) / ' + S.sftp[1] + ' (B)';
+      rev[2][4] = c1;
+      rev[3][4] = c0;
       rev[4][4] = '';
       hops.length = 0;
       hops.push(['DCS address ' + addr, 'DCS logic memory to the Modbus area', '', '', 'inside the DCS controller']);
@@ -1069,7 +1084,7 @@
       Object.assign({}, r, {
         og: 'MB',
         ref:
-          'Modbus communication list between DCS and ' + (S.sys === 'TCS' ? 'turbine system' : 'SCADA') + ' (point, Modbus address, SI word); communication list between DCS and package (' + S.gcs + ' connection, RJ-45); ' + S.dwg + ' (as read by the control network study). DI bit = position of the point in its 16-bit word, counted from the row that names the word. The list does not say which PLC (A or B) fills area 1 or area 2'
+          'Modbus communication list between DCS and ' + S.lst + ' (point, Modbus address, SI word); communication list between DCS and package (' + S.gcs + ' connection, RJ-45); ' + S.dwg + ' (as read by the control network study). DI bit = position of the point in its 16-bit word, counted from the row that names the word. The list does not say which PLC (A or B) fills area 1 or area 2'
       }),
       hops,
       hp,

@@ -30,6 +30,7 @@
      (station 3: LOP A / B MIR / MIT / MIL-P1115x1 / x2, VCB MIV-P1115x1, lube oil PS-LO1115-x1 ~ x3 and LS-LO1115-x, winding / bearing
      TT-FW1115-x*, casing vibration VT-FW1115-x**; unit of the vibration points not in the I/O list: shown as the number) */
   const bfwpMon = n => [
+    V('VCB off', 'MIV-P1115' + n + '2', '', 0, { words: ['YES', 'NO'] }),
     V('Lube oil pump A running', 'MIR-P1115' + n + '1', '', 0, { words: ['RUNNING', 'STOPPED'] }),
     V('Lube oil pump A trip', 'MIT-P1115' + n + '1', '', 0, { words: ['TRIP', 'NORMAL'] }),
     V('Lube oil pump A remote', 'MIL-P1115' + n + '1', '', 0, { words: ['REMOTE', 'LOCAL'] }),

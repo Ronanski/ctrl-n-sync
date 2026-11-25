@@ -268,11 +268,72 @@
       for (const s of S.sheets.concat((window.WORLD && WORLD.inst) || [])) delete s._mvc;
     } catch (e) {}
     if (!sv.ver) D.faLineup();
+    D.baSave();
     /* Full Audit 3 (the clock read 9:40 at a fresh 150 MW start): the 150 MW starting state is a save made after its model settled
        (app.js st150, ver "st150 ..."), and its sheets keep the time of that settling. A starting state begins at 0:00
        (trace-step.js anClock0, the same as the Cold load of hmi-op.js anLoadStart); a save point of the operator keeps its time */
     if (String(sv.ver || '').startsWith('st150 ') && window.AN && AN.clock0) AN.clock0();
     return 1;
+  };
+  /* lane 3 (KIRARA, beta.563): a save made before beta.563 (no separator position U.ba.tw in it). Its plant model ran the chain conveyor
+     L-1090 whenever the plant was not Cold (boiler.js: U.baConv = !U.cold || ...), so its ash coolers run on that contact (DITL-21A row 10
+     CHAIN CONVEYOR RUNNING I.0163), while the ON COMMAND latches of the conveyors (DITL-BA66 ~ BA69) were never set: now that the chain
+     follows its command, such a save would stop the chain and trip the coolers at the first scan. The save gets the line-up of the 150 MW
+     start (HMI snapshot 16.PNG): the ON COMMAND latches of the screw (BA66 row 5), bucket elevator (BA67 row 4), chain (BA68 row 4) and
+     venting fan (BA69 row 4) set, as their START buttons (DITL-BA61) leave them, the separator closed (the leg to the ash silo), and the
+     running bits that the old start seeded on DITL-BA59 (rows 7 ~ 9, 13: the plant model makes them now) cleared. A Cold save and a save
+     with the chain latch already set are left as saved */
+  D.baSave = () => {
+    const U = window.AN && AN.unit,
+      W = window.WORLD;
+    if (!U || !U.ba || isFinite(U.ba.tw)) return 0;
+    U.ba.tw = 0;
+    U.ba.sw.twO = 0;
+    U.ba.sw.twC = 1;
+    const L = ALL(),
+      sh = n => L.find(x => x.name.endsWith(')' + n)) || null,
+      ch = sh('DITL-BA68');
+    if (U.cold || !ch || !W || !W.out) return 0;
+    const on = (s, r) => {
+      const o = W.out[s.name];
+      return o instanceof Set ? o.has(r) : Array.isArray(o) && o.includes(r);
+    };
+    if (on(ch, 4)) return 0;
+    const put = (s, r) => {
+      const o = W.out[s.name];
+      if (o instanceof Set) o.add(r);
+      else W.out[s.name] = new Set((o || []).concat([r]));
+      if (W._o) W._o[s.name] = W.out[s.name];
+    };
+    /* first the outputs a running line-up has on the sheets the latches read in the same scan (the motor outputs DITL-BA71 rows 7 ~ 10,
+       the RUNNING rows of DITL-BA59 7 ~ 9 / 13, the speed switches and TWO-WAY CLOSE of DITL-BA60 0 / 2 / 5 / 7): the chain latch needs
+       the elevator running, the elevator the screw, the screw the separator on the silo leg */
+    for (const [nm, rows] of [['DITL-BA71', [7, 8, 9, 10]], ['DITL-BA59', [7, 8, 9, 13]], ['DITL-BA60', [0, 2, 5, 7]]]) {
+      const s = sh(nm);
+      if (s) rows.forEach(r => put(s, r));
+    }
+    /* then each ON COMMAND latch: its sheet is solved once with the latch net held at 1, so every net of the sheet (the seal-in OR, the
+       timers of its interlocks) takes the state of the running line-up; nothing is pressed and the logic is not changed */
+    let n = 0;
+    for (const [nm, r] of [['DITL-BA69', 4], ['DITL-BA66', 5], ['DITL-BA67', 4], ['DITL-BA68', 4]]) {
+      const s = sh(nm);
+      if (!s) continue;
+      if (!s.nl) s.nl = netlist(s);
+      const q = (s.nl.outs || []).find(x => x.row === r);
+      if (!q) continue;
+      const fx = s.nl.fx || (s.nl.fx = []);
+      fx.push(q.n);
+      try {
+        simSheet(s);
+      } finally {
+        fx.splice(fx.indexOf(q.n), 1);
+      }
+      put(s, r);
+      n++;
+    }
+    const s59 = sh('DITL-BA59');
+    if (s59 && s59.sig) for (const r of [7, 8, 9, 13]) delete s59.sig[r + ':S'];
+    return n;
   };
   /* 3.2.3 SOHEE (Mina F151-1): a save point made before beta.154 (no version in it; every save before that one had none). Before
      beta.150 the plant model did not read the FA blower surge SOV XV-FA1055-A2 / B2 nor its outlet SOV (DITL-28C), so a save could hold a
@@ -633,6 +694,20 @@
       D.scan(3, 1);
       rs.forEach(([s, i]) => delete s.sig[i + ':S']);
       D.scan(10, 1);
+      /* lane 3 (KIRARA, beta.563): the bottom ash conveyors at load (HMI snapshot 16.PNG: chain L-1090, bucket elevator L-1091, screw
+         L-1092 and bag filter venting fan F-1091 running, both vibrating screens stopped, the leg of the two-way separator L-1094 to the
+         ash silo in service). The operator starts them from the CRT buttons of DITL-BA61 (rows from 0: 12 VENTING FAN START, 7 TO CLOSE
+         TWO-WAY, 4 SCREW, 2 BUCKET ELEVATOR, 0 CHAIN CONVEYOR START), in the order their interlocks ask (DITL-BA66: fan running and
+         two-way CLOSE with the ash silo not high, the leg to the silo; OPEN is the leg to the vibrating screens, with a screen running;
+         BA67: screw running; BA68: elevator running). Their ON COMMAND latches (BA66 ~ BA69) then hold, and the plant follows the commands */
+      const ba61 = ALL().find(x => /\)DITL-BA61$/.test(x.name));
+      if (ba61)
+        for (const r of [12, 7, 4, 2, 0]) {
+          ba61.sig[r + ':S'] = true;
+          D.scan(3, 1);
+          delete ba61.sig[r + ':S'];
+          D.scan(6, 1);
+        }
       rep.resets = rs.map(([s, i]) => s.name + ' #' + (i + 1) + ' ' + textOf(s, i, 'S'));
     } finally {
       W.live = lv;

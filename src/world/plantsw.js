@@ -111,7 +111,8 @@
      open (PR-OPE-5002 19.16 "Fully OPEN ... Check if the limit switch is touched"). Before: the row stayed 0 and the standby BFWP B
      never started on its AUTO START (O.1400) */
   const fvOf = t => () => (window.AN && AN.fv && isFinite(AN.fv(t)) ? AN.fv(t) : NaN);
-  L.push(['ZSO-FW1031', fvOf('V-FW1001'), 100, 'ge', 0, 0, /\bBFWP A\b/], ['ZSO-FW1031', fvOf('V-FW1002'), 100, 'ge', 0, 0, /\bBFWP B\b/]);
+  /* beta.580: the row of the copy #B names its own switch, ZSO-FW1032 (world.js tagsK, TAGN) */
+  L.push(['ZSO-FW1031', fvOf('V-FW1001'), 100, 'ge'], ['ZSO-FW1032', fvOf('V-FW1002'), 100, 'ge']);
   /* 3.2.3-beta.200 (JENNIE live operator Cold start, finding F4): the inlet vane limit switches of the three fans. DITL-25A rows 26 / 27
      ZSC / ZSO-FG1056-1, DITL-26A rows 26 / 27 ZSC / ZSO-FA1053-1, DITL-27A rows 26 / 27 ZSC / ZSO-FA1054-1, and their station wiring
      copies on the start permissives: DITL-25A row 4 M.3111 PAF VANE OPENED, row 5 M.3113 SAF VANE OPENED, row 6 M.3117 IDF INLET VANE

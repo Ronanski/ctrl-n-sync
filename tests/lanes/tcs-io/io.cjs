@@ -59,7 +59,7 @@ const badRow = bind.rows.filter(q => {
   return !/^(IBD:T[A-E]-\d+(#\d+)?|MOD:|GCP:|GPP:)/.test(q.to);
 });
 ok(
-  bind.rows.length === 68 && !badRow.length,
+  bind.rows.length === 69 && !badRow.length,
   'DCS points bound ' +
     bind.rows.length +
     ', not in the DCS I/O list or with no TCS end: ' +
@@ -68,9 +68,14 @@ ok(
 let tcsTagged = 0;
 for (const st in ades)
   for (const a in ades[st]) if (/^(TCS-|GCP-|TBN-TRIP|MIT-GEN)/.test(ades[st][a].tag || '')) tcsTagged++;
+/* a bound point without a TCS tag must be proven by the wiring list (junction "DCS-->TCS"): beta.592 AO0471 TT-AS1017-1, the DCS
+   retransmit of TT-AS1017 to COMM AI TABLE(2) CH 2 */
+const tagRe = /^(TCS-|GCP-|TBN-TRIP|MIT-GEN)/,
+  untagged = bind.rows.filter(q => !tagRe.test(q.tag || ''));
 ok(
-  tcsTagged === bind.rows.length,
-  'DCS I/O list points tagged TCS / GCP / TBN-TRIP / MIT-GEN: ' + tcsTagged + ', in the binding ' + bind.rows.length
+  tcsTagged === bind.rows.length - untagged.length && untagged.every(q => /DCS-->TCS/.test(q.src || '')),
+  'DCS I/O list points tagged TCS / GCP / TBN-TRIP / MIT-GEN: ' + tcsTagged + ', in the binding ' + bind.rows.length +
+    ' (of these without that tag, proven by the wiring list: ' + untagged.map(q => q.stn + ' ' + q.addr + ' ' + q.tag).join(' ') + ')'
 );
 
 /* 4 */

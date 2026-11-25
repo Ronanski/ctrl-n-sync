@@ -15,10 +15,11 @@
    Drawn simpler than the sheets, on purpose (this page is about the purge, the full trains are on their own pages): one
    coal bunker and feeder stand for A / B / C, one burner for A / B / C / D, one blower for A / B, one cyclone for A / B; the
    air heater, the precipitator and the limestone feed are not drawn.
+   beta.556 (HMI gap list 2026-11-25): the interlock relay panel with its signals from and to the DCS, read from DITL-03A ~ 03H, 02, 40, 42.
    NO-SOURCE in the app (as on page 10): the purge time (the 300 s on-delay of DITL-02 has no readout).
    The furnace purge start push button is pressed on its drawing (DITL-02, M.0500), as on page 10. */
 (function () {
-  const { V, E, M, C, L, page } = HX;
+  const { V, D, E, M, C, L, page } = HX;
   const B = HX.B;
   const MM = 'mmH₂O';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
@@ -85,6 +86,40 @@
     'Reheater outlet header temperature high-high',
     'Turbine trip'
   ];
+  /* the signals between the interlock relay panel and the DCS (I/O list, stations 1 ~ 4) */
+  const tr = (label, tag, key) => D(label, tag, key && 'dl:DITL-' + key, 'TRIP', 'NORMAL');
+  const IRP = [
+    tr('Master fuel trip 1', 'MFT-IRP', '03A|o|12'),
+    tr('Master fuel trip 2', 'MFTT-IRP', '03A|o|12'),
+    tr('Master fuel trip 3', 'MFTTT-IRP', '03A|o|12'),
+    tr('Master fuel trip 4', 'MFTS-IRP', '03A|o|12'),
+    D('No boiler trip command', 'NOT-MFTCP', 'dl:DITL-03A|o|8'),
+    D('All fluidizing air blowers stopped', 'ALL-FAB-STOP', 'dl:DITL-03B|o|13'),
+    tr('Emergency trip button, desk', 'BOILER-TRIP-OPC', '03F|o|23'),
+    tr('Emergency trip button, screen', 'MFT-PB', '03F|o|18'),
+    tr('Turbine emergency trip button', 'TBN-TRIP-OPC', ''),
+    tr('Total air flow below 25 %', 'TAF-LOW', '03C|o|1'),
+    tr('Primary air flow low low', 'PAF-LL', '03F|o|7'),
+    tr('Furnace pressure high high', 'FURNACE-HH', '03C|o|22'),
+    tr('Furnace pressure high high high', 'FURNACE-HHH', '03C|o|11'),
+    tr('Furnace pressure low low', 'FURNACE-LL', '03D|o|7'),
+    tr('Drum level high high', 'DRUM-LVL-HH', '03E|o|6'),
+    tr('Drum level low low', 'DRUM-LVL-LL', '03E|o|17'),
+    tr('Drum level low low to primary air fan', 'DR-LVL-LL', '03E|o|22'),
+    tr('Loss of all fuel', 'XA-AFL', '03F|o|2'),
+    tr('Furnace temperature inadequate', 'TEMP-INDQUATE', '03F|o|13'),
+    tr('Instrument air pressure low low', 'INS-PRESS-LL', '03G|o|7'),
+    tr('Cyclone outlet temperature high high', 'CYCLONE-HH', '03H|o|16'),
+    tr('Furnace bed temperature high high', 'S-FBTHH', '40|o|0'),
+    tr('Main steam pressure high high', 'S-MSPHH', '40|o|4'),
+    D('Induced draft fan stop command', 'IDF-STOP-CMD', 'dl:DITL-03D|o|13'),
+    D('Secondary air fan stop command', 'SAF-STOP-CMD', 'dl:DITL-03D|o|20'),
+    D('Primary air fan stop command', 'PAF-STOP-CMD', 'dl:DITL-03D|o|23'),
+    D('Fluidizing air blower stop command', 'FAB-STOP-CMD', 'dl:DITL-03D|o|16'),
+    D('Furnace purge completed', 'FP-CPL', 'dl:DITL-02|o|14'),
+    D('Panel power fault', 'IRP1-POWALM', 'dl:DITL-42|i|7', 'FAULT', 'NORMAL'),
+    D('Dosing system main power', 'SIA-CDS01', '', 'NORMAL', 'FAULT')
+  ];
   /* a permissive of DITL-01 beside the piece of plant it asks about */
   const pp = (id, text, k, x, y, w) => at(B(text, dy(k, 'PP'), { w: w || CW }), x, y, { id });
 
@@ -130,7 +165,8 @@
         }),
         at(E('stack', '', '', [], { flow: IDF }), SX, SY, { id: 'st', under: true, sc: SS }),
         at(M('fan', 'SAF', 'Secondary air fan', []), 150, 130, { id: 'saf', sc: 1.3, lab: 'b' }),
-        at(M('fan', 'PAF', 'Primary air fan', []), 540, 705, { id: 'paf', sc: 1.3, lab: 'r' }),
+        at(M('fan', 'PAF', 'Primary air fan', []), 540, 705, { id: 'paf', sc: 1.3, lab: 'r', yn: [45, -48] }),
+        at(E('cubicle', 'Interlock relay panel', 'IRP', [], { mon: IRP }), 1490, 636, { id: 'irp', lab: 'b' }),
         at(E('fan', 'Fluidizing air blowers', 'F-1055A / B', [], { on: FAB }), 977, 585, {
           id: 'fab',
           sc: 1.1,
@@ -148,20 +184,20 @@
 
         /* ---- the 15 permissives of DITL-01, each at its equipment ---- */
         pp('pp1', 'Secondary air fan running', 'DITL-01|i|1', 150, 232),
-        pp('pp3', 'Primary air fan running', 'DITL-01|i|3', 300, 690),
-        pp('pp4', 'Total air flow above 25 % of full load', 'DITL-01|i|12|neg', 300, 730),
+        pp('pp3', 'Primary air fan running', 'DITL-01|i|3', 356, 690, 230),
+        pp('pp4', 'Total air flow above 25 % of full load', 'DITL-01|i|12|neg', 356, 730, 230),
         pp('pp2', 'Any fluidizing air blower running', 'DITL-01|i|2', 990, 676),
-        pp('pp0', 'Induced draft fan running', 'DITL-01|i|0', IX, 734),
+        pp('pp0', 'Induced draft fan running', 'DITL-01|i|0', IX, 762),
         pp('pp7', 'All coal feeders stopped (A, B, C)', 'DITL-01|o|21', 440, 388),
         pp('pp8', 'All coal feeder outlet valves closed', 'DITL-01|i|16+17+18', 440, 428),
         pp('pp5', 'All burners no flame (A to D)', 'DITL-01|o|4', 440, 490),
         pp('pp6', 'All burner oil valves closed (A to D)', 'DITL-01|i|8+9+10+11', 440, 530),
         pp('pp9', 'Limestone rotary valve stopped', 'DITL-01|i|13|neg', 440, 592),
-        pp('pp10', 'Reheater gas damper at least 30 %', 'DITL-01|i|15', 1475, 400, 290),
-        pp('pp11', 'Superheater gas damper at least 60 %', 'DITL-01|i|19', 1475, 440, 290),
+        pp('pp10', 'Reheater gas damper at least 30 %', 'DITL-01|i|15', 1475, 460, 290),
+        pp('pp11', 'Superheater gas damper at least 60 %', 'DITL-01|i|19', 1475, 498, 290),
         pp('pp13', 'Cyclone outlet gas temperature not high-high', 'DITL-03A|i|23|neg', 1490, 130, 320),
         pp('pp14', 'Reheater outlet header temperature not high-high', 'DITL-03A|i|24|neg', 1490, 170, 320),
-        pp('pp12', 'No boiler trip command', 'DITL-01|i|14', 1475, 500, 290),
+        pp('pp12', 'No boiler trip command', 'DITL-01|i|14', 1475, 536, 290),
 
         /* ---- purge sequence (DITL-02) ---- */
         at(B('Purge permissive', 'data-dys="PP|DITL-01|9|"', { w: CW, show: true }), QX, QY, { id: 'pps' }),
@@ -227,9 +263,9 @@
         { x: 1330, y: 330, s: 'Cyclone outlet A', key: 'TT-FG1095-A', unit: '°C', dp: 0 },
         { x: 1330, y: 346, s: 'Cyclone outlet B', key: 'TT-FG1095-B', unit: '°C', dp: 0 },
         { x: 20, y: TY - 34, s: 'MASTER FUEL TRIP · any one trips', cls: 'hx-zone' },
-        { x: 292, y: 596, s: 'Hot restart: bed above 700 °C counts', cls: 'hx-note' },
-        { x: 292, y: 613, s: 'the purge complete 7 s after the trip.', cls: 'hx-note' },
-        { x: 292, y: 630, s: 'Reset: purge completed, no trip input left.', cls: 'hx-note' }
+        { x: 306, y: 622, s: 'Hot restart: bed above 700 °C counts', cls: 'hx-note' },
+        { x: 306, y: 638, s: 'the purge complete 7 s after the trip.', cls: 'hx-note' },
+        { x: 306, y: 654, s: 'Reset: purge completed, no trip input left.', cls: 'hx-note' }
       ]
     }
   });

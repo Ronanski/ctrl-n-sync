@@ -23,6 +23,7 @@
   const { V, E, M, L, page } = HX;
   /* beta.557: monitor rows and VCB point of each closed cooling pump (DCS I/O list station 3: MIV-P1108x1, TT-CW1108-x*) */
   const acwMon = n => [
+    V('VCB off', 'MIV-P1108' + n + '2', '', 0, { words: ['YES', 'NO'] }),
     V('Motor winding U', 'TT-CW1108-' + n + 'U', '°C', 0),
     V('Motor winding V', 'TT-CW1108-' + n + 'V', '°C', 0),
     V('Motor winding W', 'TT-CW1108-' + n + 'W', '°C', 0),
