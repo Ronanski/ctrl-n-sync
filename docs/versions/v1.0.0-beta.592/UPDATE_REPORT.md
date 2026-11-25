@@ -16,7 +16,7 @@ Sumunod sa beta.587. Ayos sa `src/digital/tce-io.js` at `src/data/tcs-dcs.json` 
 
 ## Sinubok
 
-- `node tests/lanes/tcs-io/io.cjs` PASS.
+- `node tests/lanes/tcs-io/io.cjs` PASS (ang check ng binding ay 69 na ngayon; ang punto na walang TCS tag ay dapat may patunay na "DCS-->TCS" sa wiring list).
 - Live headless sa tunay na page sa 150 MW (151.0 MW): 230 reads, 0 walang numero; TCA931-2 = 10.2 kg/cm2, TCA931-3 = 185.0 °C (pareho sa PT-AS1004 / TT-AS1017 ng aux steam model); 0 page error.
 
 ## Hindi sinubok
