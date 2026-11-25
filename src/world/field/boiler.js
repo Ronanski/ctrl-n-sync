@@ -78,6 +78,17 @@ rows.push(
     src: 'IO list STN102 I.0083 ZSC-HR1010; ZT-HR1010 STN102 AI0385 (ABC-052); MOV rule' }
 );
 
+/* 3d. FA blower inlet flow control dampers FCV-FA1055-A1 / B1 (STN101, positions ZT-FA1055-A1 AI0176 / ZT-FA1055-B1 AI0196, which
+   follow the MV of FICFA1055A / B on ABC-014: unit.js ztMap): the full open / full close limit switches (Phase 6 slice 6, 2026-11-26).
+   No logic sheet reads them (QA trace: on no parsed sheet); display only. Same end-of-travel rule. */
+for (const [x, ai, ao, ac] of [['A', 'AI0176', 'I.0040', 'I.0041'], ['B', 'AI0196', 'I.008A', 'I.008B']])
+  rows.push(
+    { stn: 1, di: 1, tag: 'ZSO-FA1055-' + x + '1', v: (U, X) => opened(num(X.ai('1|' + ai))), rel: 'ZT-FA1055-' + x + '1 at 100 % (full open)',
+      src: 'IO list STN101 ' + ao + ' ZSO-FA1055-' + x + '1; ZT-FA1055-' + x + '1 STN101 ' + ai + ' (ABC-014 FICFA1055' + x + ', unit.js ztMap); MOV rule' },
+    { stn: 1, di: 1, tag: 'ZSC-FA1055-' + x + '1', v: (U, X) => closed(num(X.ai('1|' + ai))), rel: 'ZT-FA1055-' + x + '1 at 0 % (full close)',
+      src: 'IO list STN101 ' + ac + ' ZSC-FA1055-' + x + '1; ZT-FA1055-' + x + '1 STN101 ' + ai + ' (ABC-014 FICFA1055' + x + ', unit.js ztMap); MOV rule' }
+  );
+
 /* 4. Biasing damper air buffer tanks PT-IA1064-A / B (STN104): on P&ID PD-023 sheet 6/6 (over-all instrument list), filled from the
    instrument air to unit 1 (IA1706, unit.js AN_AIR U.iaPU). The tank only fills the damper actuators: no flow through its inlet = no
    friction drop, so the tank is at the header pressure. */
