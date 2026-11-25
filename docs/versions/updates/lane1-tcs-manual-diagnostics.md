@@ -1,4 +1,4 @@
-# v1.0.0-beta.571: TCS diagnostics macros mula sa manual text, GO MANUAL (TCS LOGIC : MARIA, 2026-11-25 PHT)
+# TCS diagnostics macros mula sa manual text, GO MANUAL (TCS LOGIC : MARIA, 2026-11-25 PHT)
 
 ## Binago
 - **USER GO MANUAL (2026-11-25 7:19 AM PHT):** ang diagnostics macro na wala sa drawing ang loob ay binibigyan ng kahulugan mula sa manual text, may marka `src = 'from manual text, inside not drawn'` at hiwalay na bilang (`stats().runText`).
