@@ -306,7 +306,7 @@
     return out;
   }
   const ALIAS = { 'G:OR': 'OR', 'G:A': 'A', PA1: 'PA', PA2: 'PA', PA3: 'PA', PA4: 'PA', 'o:BTR': 'BTR', 'o:FTR': 'FTR' };
-  /* marks that are not blocks: X inverts the wire it sits on (the netlist sets inv), NC is a pin drawn not connected */
+  /* marks that are not blocks: X = the loop mark (below, net()), NC is a pin drawn not connected */
   const MARK = { X: 1, NC: 1 };
   const kind = t => K[t] || K[ALIAS[t]] || null;
   const KINDS = Object.keys(K);
@@ -316,13 +316,45 @@
      net. What the net feeds is read from the last point of each piece, as on the drawing:
        - on the left edge of a small block: an input of that block (ordered by height, top first); on its top or bottom edge: the side input
          the drawing gives there (its SW, below);
-       - on a mark on the wire (BTR / FTR transfer, X crossed circle = inverted, NC circle of a NOT): the input of that mark;
+       - on a mark on the wire (BTR / FTR transfer, X crossed circle = loop mark, NC circle of a NOT): the input of that mark;
        - on the left edge of a macro block: the input pin at that height (the pin heights the sheet gives, or the drawing's even spacing);
        - on an output connector, a CRT lamp, a definition (constant of kind 'def') or a PI/O box: an output of the sheet;
        - at the start of, or on, another piece of the same key: the same net goes on (a gap for a mark of the drawing, or a junction).
      Anything else is "not named" (open), printed by the tool with its sheet, key and point. ---------- */
   const MARKRE = /^(o:BTR|o:FTR|X|NC)$/;
   const near = (a, b, d) => Math.abs(a - b) <= d;
+  function macroPins(s, macros, u, tol) {
+    const W = s.w || [],
+      by = new Map(macros.filter(M => M.R.length).map(M => [M.key, M]));
+    if (!W.some(w => by.has(w[0]))) return W;
+    const key = new Map(),
+      on = (p, v) =>
+        v[1].some((a, i) => {
+          if (!i) return false;
+          const b = v[1][i - 1];
+          return p[0] >= Math.min(a[0], b[0]) - tol && p[0] <= Math.max(a[0], b[0]) + tol && p[1] >= Math.min(a[1], b[1]) - tol && p[1] <= Math.max(a[1], b[1]) + tol;
+        });
+    for (const w of W) {
+      const M = by.get(w[0]),
+        p = w[1][0];
+      if (!M || Math.abs(p[0] - M.x1) > tol) continue;
+      const n = M.R.length,
+        i =
+          M.ry && M.ry.length
+            ? M.ry.reduce((a, y, j) => (Math.abs(y - p[1]) < Math.abs(M.ry[a] - p[1]) ? j : a), 0)
+            : Math.max(0, Math.min(n - 1, Math.floor(((p[1] - M.y0 - 15 * u) / (M.y1 - M.y0 - 30 * u)) * n)));
+      if (M.R[i]) key.set(w, M.key + '.' + M.R[i]);
+    }
+    for (let k = 0, ch = true; ch && k < 20; k++) {
+      ch = false;
+      for (const w of W)
+        if (by.has(w[0]) && !key.has(w)) {
+          const v = W.find(v => v !== w && String(v[0]).split('.')[0] === w[0] && (key.has(v) || v[0] !== w[0]) && on(w[1][0], v));
+          if (v) key.set(w, key.get(v) || v[0]), (ch = true);
+        }
+    }
+    return W.map(w => (key.has(w) ? [key.get(w)].concat(w.slice(1)) : w));
+  }
   function net(s) {
     const u = (s.f[2] - s.f[0]) / 1000,
       tol = 2.2 * u;
@@ -345,6 +377,7 @@
       L: L || [],
       R: R || [],
       ly: plain ? plain[0] : null,
+      ry: plain ? plain[1] : null,
       x0: x,
       x1: x + w,
       y0: y,
@@ -367,8 +400,12 @@
       return h ? /\((T[A-Z]{2}\d+[A-Z]?-\d+)\)/.exec(h[2])[1] : undefined;
     };
     const pio = (s.r || []).map(r => ({ key: r[0], x0: r[1], x1: r[1] + r[3], y0: r[2], y1: r[2] + r[4], row: pioRow(r[1], r[2], r[1] + r[3], r[2] + r[4]) }));
-    const W = s.w || [];
-    const inputs = (s.c || []).filter(c => c[1] === 'in').map(c => ({ key: c[0], letter: c[2], name: c[5], from: c[6] || [] }));
+    /* a wire keyed by a macro with no pin (TCE300 'b007') starts at an output pin of its right edge (the height gives the pin, the same
+       spacing rule as the input pins) or on another piece of the same key: it takes that piece's pin. Without this every such wire read
+       the first pin: MOP(A) RUNNING and MOP(A),(B) FAULT of TCE300 read STS (2026-11-25, YUA) */
+    const W = macroPins(s, macros, u, tol);
+    /* "(*)" beside a connector = this same sheet (TCE300 B3 MOP (B) RUNNING: the output B3 of TCE300) */
+    const inputs = (s.c || []).filter(c => c[1] === 'in').map(c => ({ key: c[0], letter: c[2], name: c[5], from: (c[6] || []).map(f => (f === '*' ? s.id : f)) }));
     const outc = (s.c || []).filter(c => c[1] === 'out').map(c => ({ key: c[0], letter: c[2], sheets: c[6] || [] }));
     const res = { id: s.id, inputs, outc, blocks, macros, marks: marks.map(m => ({ key: m.key, type: m.type, in: null })), outputs: [], open: [] };
     const mk = Object.fromEntries(res.marks.map(m => [m.key, m]));
@@ -437,20 +474,18 @@
       if (W.some(v => v !== w && v[0] === nt && (Math.hypot(v[1][0][0] - p[0], v[1][0][1] - p[1]) <= 20 * u || onSeg(p, v)))) continue;
       res.open.push({ net: nt, at: p });
     }
-    /* an X (crossed circle) on the last piece of a wire into a block: that input is taken inverted */
-    for (const w of W) {
-      const p = w[1][w[1].length - 1];
-      for (const m of marks)
-        if (m.type === 'X' && onSeg([m.x, m.y], w))
-          for (const b of blocks) for (const i of b.ins) if (i.net === w[0] && i.y === p[1] && near(p[0], b.x0, tol)) i.inv = true;
-    }
+    /* an X (crossed circle) marks a line that comes back from a block scanned later (a loop: the value of the last scan); it does NOT
+       invert it (2026-11-25, YUA; was read as inverted). On the drawings: TCE227 OR 005 -> X -> A 004 is the seal-in of the CRV(A) test;
+       TCE300 B3 (*) MOP (B) RUNNING -> X -> TP A001 is the mirror of MOP (A) RUNNING -> TP A015, drawn with no X, and IBD TB-1 takes MOP (B)
+       RUNNING itself; on analog lines (TCA763 HSG 010 back to ASW 013) there is nothing to invert. All of the 61 inputs with an X are fed
+       back from the same page or a later one. */
     for (const b of blocks) {
       b.ins.sort((a, c) => (a.side === c.side ? (a.y ?? a.x) - (c.y ?? c.x) : a.side < c.side ? -1 : 1));
       delete b.x0, delete b.x1, delete b.y0, delete b.y1;
     }
     for (const M of macros) {
       M.ins.sort((a, c) => a.y - c.y);
-      delete M.x0, delete M.x1, delete M.y0, delete M.y1, delete M.ly;
+      delete M.x0, delete M.x1, delete M.y0, delete M.y1, delete M.ly, delete M.ry;
     }
     return res;
   }
@@ -1176,7 +1211,7 @@
       const S = sh[n.id],
         nodes = [];
       for (const m of n.marks)
-        nodes.push({ t: 'm', out: slot(n.id + ':' + m.key), ins: m.in ? [res(n.id, m.in)] : [], inv: m.type === 'X' || m.type === 'NC' });
+        nodes.push({ t: 'm', out: slot(n.id + ':' + m.key), ins: m.in ? [res(n.id, m.in)] : [], inv: m.type === 'NC' });
       for (const b of n.blocks) {
         /* pr: the parameters printed on the page beside the block (or in its FG table) that the typed drawing keeps as text only */
         const notes = S.pr && S.pr[b.key] ? (b.notes || []).concat(S.pr[b.key]) : b.notes,

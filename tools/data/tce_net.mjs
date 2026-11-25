@@ -6,7 +6,7 @@
 // macro pin of the same sheet), so the key IS the net. What the net feeds is read from the last point of each piece, as on the drawing:
 //   - on the left edge of a small block: an input of that block (ordered by height, top first); on its top or bottom edge: the side input
 //     the drawing gives there (the time of a timer, the select of a switch);
-//   - on a mark on the wire (BTR / FTR transfer, X crossed circle = inverted, NC circle of a NOT): the input of that mark; the pieces after the
+//   - on a mark on the wire (BTR / FTR transfer, X crossed circle = loop mark (value of the last scan), NC circle of a NOT): the input of that mark; the pieces after the
 //     mark carry the key of the mark;
 //   - on the left edge of a macro block: the input pin at that height (the pin heights the sheet gives, or the drawing's even spacing);
 //   - on an output connector, a CRT lamp, a definition (constant of kind 'def') or a PI/O box: an output of the sheet;
