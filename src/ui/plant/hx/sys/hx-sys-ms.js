@@ -30,6 +30,10 @@
       PMS6: { n: 'PICMS1006', t: 'HP bypass PCV-MS1020', ctl: 'PICMS1006', io: 'PICMS1006' },
       TMS22: { n: 'TICMS1022', t: 'HP bypass spray TCV-FW1060', ctl: 'TICMS1022', io: 'TICMS1022' },
       D73: { n: 'XV-CR1011', t: 'Cold reheat drain pot DP-CR01', mov: 'DITL-73', tg: 'XV-CR1011' },
+      /* PR 568 (EIMI): XV-CR1012 (DITL-74, M.0570 ~ M.0573) and XV-MS1023 (DITL-89, M.0620 ~ M.0622) were drawn with no faceplate; XV-CR1013 (DITL-121, M.0650 ~ M.0653) was on no page */
+      D74: { n: 'XV-CR1012', t: 'Cold reheat drain pot DP-CR02', mov: 'DITL-74', tg: 'XV-CR1012' },
+      D121: { n: 'XV-CR1013', t: 'Cold reheat drain pot DP-CR03', mov: 'DITL-121', tg: 'XV-CR1013' },
+      D89: { n: 'XV-MS1023', t: 'High pressure bypass drain pot DP-MS02', mov: 'DITL-89', tg: 'XV-MS1023' },
       TS1: { n: 'MV-TS1001', t: 'Extraction steam No.1 shut-off', mov: 'DITL-94', tg: 'MV-TS1001' },
       THR2: { n: 'TICHR1002', t: 'Reheater inlet spray TCV-FW1150', ctl: 'TICHR1002', io: 'TICHR1002' },
       PHR391: { n: 'PICHR1391', t: 'MV-HR1391', ctl: 'PICHR1391', io: 'PICHR1391' },

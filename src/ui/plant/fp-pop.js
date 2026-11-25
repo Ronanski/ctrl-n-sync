@@ -1001,7 +1001,12 @@
        sootblower BLOWING PERMISSIVE, DITL-80A out 20). The button stays a real press to the logic; while a row is 0 the faceplate says
        "not permitted" and why, and a press that the logic did not take (no status after 3 s) says so instead of nothing */
     let sent = 0;
-    const needMiss = () => (P.need || []).filter(x => call(() => dk.dout(x.d, x.row), null) === 0);
+    const needMiss = () => (P.need || []).filter(x => call(() => (x.key ? window.HX.data.value(x.key) : dk.dout(x.d, x.row)), null) === 0);
+    /* a permissive of the drawing: input or output row (rows count from 1, as on the drawing) */
+    const needTx = x => {
+      const m = /^dl:([^|]+)\|([io])\|(\d+)/.exec(x.key || '');
+      return x.l + (m ? ' [' + m[1] + ' ' + (m[2] === 'i' ? 'in' : 'out') + ' row ' + (+m[3] + 1) + ']' : x.key ? '' : ' [' + x.d + ' out row ' + (x.row + 1) + ']');
+    };
     let k0 = '';
     function tick() {
       if (!me.isConnected) return closeEl(me);
@@ -1045,7 +1050,7 @@
         : !ok && !on
           ? P.pbs[0][0] + ' blocked: no ' + (P.permWhy || 'permissive') + '.'
           : nm.length
-            ? (late ? P.pbs[0][0] + ' sent, NOT PERMITTED by the logic: no ' : P.pbs[0][0] + ' not permitted: no ') + nm.map(x => x.l + ' [' + x.d + ' out row ' + (x.row + 1) + ']').join('; ') + '.'
+            ? (late ? P.pbs[0][0] + ' sent, NOT PERMITTED by the logic: missing: ' : P.pbs[0][0] + ' not permitted, missing: ') + nm.map(needTx).join('; ') + '.'
             : late
               ? P.pbs[0][0] + ' sent, but the logic did not start it (no ' + P.st.on + ' status after 3 s). Open Logic ' + P.d + ' to see the missing input.'
               : '';

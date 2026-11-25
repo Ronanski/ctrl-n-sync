@@ -30,6 +30,9 @@
       why: ''
     }
   });
+  /* lane 6: the start permissives of a machine as its drawing has them: [label, sheet, 'i' or 'o', row, 0 = the row must be 0]. The page
+     shows them on the second faceplate (Y / N square) and the control faceplate names the one that is missing */
+  const nd = L => L.map(([l, d, io, r, w]) => ({ l, key: 'dl:' + d + '|' + io + '|' + r + (w === 0 ? '|neg' : '') }));
   const defOf = id => {
     const def = (LS_MOCK.defs || []).find(x => x.id === id);
     if (!def || (def._pb = def._pb || {})[id]) return null;
@@ -105,15 +108,70 @@
     /* design review 2026-11-08 (Yuna): the faceplate title is the tag or the short name, the sub line the full name (as the debris
        filters: S-1504 / Debris filter), not in capitals */
     cl.mach.SDSYS = pbf('Sand system', 'Sand injection system', 'DITL-771', 14, 'SYSTEM ON', [['START', 2], ['STOP', 3]], 'SYSTEM OFF');
+    cl.mach.SDSYS.df.need = nd([
+      ['System ready (M.0881)', 'DITL-771', 'i', 1],
+      ['Selector in remote (SIL-SD1300)', 'DITL-771', 'i', 4],
+      ['No system trip', 'DITL-771', 'i', 5, 0],
+      ['No master fuel trip', 'DITL-771', 'i', 0, 0]
+    ]);
     /* ISO. VALVE OPEN/CLOSE M.0870 is a MAINTAINED selection (Jennie 2026-11-18; regress sand.js holds the row with WORLD.dset): a pulse
        lets the valves close again before the 3 s stroke reaches FULLY OPEN (rows 7 / 8), so ROUTE OK never came from the faceplate */
     cl.mach.SDISO = pbf('XV-SD1802A / B', 'Sand isolating valves', 'DITL-776', 13, 'ROUTE OK', [['OPEN', 2, 'set', 1], ['CLOSE', 2, 'set', 0]], 'ROUTE NOT OK');
+    cl.mach.SDISO.df.need = nd([
+      ['No emergency stop', 'DITL-776', 'i', 4, 0],
+      ['No master fuel trip', 'DITL-776', 'i', 5, 0]
+    ]);
     /* LIMESTONE (sweep item 8, Mina item 8a beta.73: no start path): FILL CYCLE START PB (LS10 row 3 M.1800, STOP row 5 M.1801) ->
        FILLING CYCLE ENABLED FLAG -> VALVE STATE CHANGE PERMIT (LS212 M.182D) -> ISOLATING VALVE A~H OPEN/CLOSE SW (LS212 row 10 M.184C)
        -> FEEDER START COMMAND PB (LS110 row 8 M.1847, STOP row 9 M.1848). The model (boiler.js AN_LM) answers these commands */
     cl.mach.LMSYS = pbf('Limestone system', 'Limestone injection, filling cycle', 'DITL-LS10', 3, 'FILL CYCLE ON', [['START', 2], ['STOP', 4]], 'FILL CYCLE OFF');
     cl.mach.LMISO = pbf('XV-LM1811A ~ H', 'Limestone isolating valves', 'DITL-LS212', 19, 'OPEN', [['OPEN', 9, 'set', 1], ['CLOSE', 9, 'set', 0]], 'CLOSED');
     cl.mach.LMFD = pbf('L-1311', 'Limestone rotary feeder', 'DITL-LS110', 6, 'RUNNING', [['START', 7], ['STOP', 8]]);
+    cl.mach.LMSYS.df.need = nd([
+      ['System switch in remote', 'DITL-LS10', 'i', 5],
+      ['Limestone feeder running', 'DITL-LS10', 'i', 10],
+      ['Isolating valves all open', 'DITL-LS10', 'i', 11],
+      ['Coal feeder in service', 'DITL-LS10', 'i', 9, 0],
+      ['No feeder fault', 'DITL-LS10', 'i', 6, 0],
+      ['Air tank pressure not low', 'DITL-LS10', 'i', 7, 0],
+      ['Vent filter not tripped', 'DITL-LS10', 'i', 8, 0],
+      ['Lock vessel inlet valve closed, no fault', 'DITL-LS10', 'i', 14, 0],
+      ['Dispensing vessel inlet valve closed, no fault', 'DITL-LS10', 'i', 15, 0],
+      ['Balance valve closed, no fault', 'DITL-LS10', 'i', 16, 0],
+      ['Vent valve closed, no fault', 'DITL-LS10', 'i', 17, 0],
+      ['Line not blocked', 'DITL-LS10', 'i', 18, 0],
+      ['No fill cycle fault', 'DITL-LS10', 'i', 20, 0],
+      ['No plant emergency stop', 'DITL-LS10', 'i', 13, 0],
+      ['Breaker 52G1 / 52L1 not open', 'DITL-LS10', 'i', 12, 0],
+      ['No master fuel trip', 'DITL-LS10', 'i', 3, 0]
+    ]);
+    cl.mach.LMISO.df.need = nd([
+      ['Valve state change permit (M.182D)', 'DITL-LS212', 'i', 14],
+      ['No plant emergency stop', 'DITL-LS212', 'i', 16, 0],
+      ['No master fuel trip', 'DITL-LS212', 'i', 17, 0],
+      ['Breaker 52G1 / 52L1 not open', 'DITL-LS212', 'i', 18, 0],
+      ['Coal feeder in service', 'DITL-LS212', 'i', 19, 0]
+    ]);
+    cl.mach.LMFD.df.need = [{ l: 'Conveying pressure at low limit (its own run holds it)', key: 'cal:lmFdPress' }].concat(
+      nd([
+        ['Conveying pressure not high', 'DITL-LS110', 'i', 4, 0],
+        ['Feeder drive in remote', 'DITL-LS110', 'i', 6],
+        ['System switch in remote', 'DITL-LS110', 'i', 10],
+        ['Conveying air valve open', 'DITL-LS110', 'i', 18],
+        ['No oil burner in service', 'DITL-LS110', 'i', 5, 0],
+        ['Coal feeder in service', 'DITL-LS110', 'i', 0, 0],
+        ['Air tank pressure not low', 'DITL-LS110', 'i', 3, 0],
+        ['No feeder fault', 'DITL-LS110', 'i', 9, 0],
+        ['Line not blocked', 'DITL-LS110', 'i', 12, 0],
+        ['Lock vessel valve closed, no fault', 'DITL-LS110', 'i', 13, 0],
+        ['Dispensing vessel inlet valve closed, no fault', 'DITL-LS110', 'i', 14, 0],
+        ['Balance valve closed, no fault', 'DITL-LS110', 'i', 15, 0],
+        ['Vent valve closed, no fault', 'DITL-LS110', 'i', 16, 0],
+        ['No plant emergency stop', 'DITL-LS110', 'i', 11, 0],
+        ['Breaker 52G1 / 52L1 not open', 'DITL-LS110', 'i', 1, 0],
+        ['No master fuel trip', 'DITL-LS110', 'i', 19, 0]
+      ])
+    );
   }
   /* PURGE AND TRIP (live Cold start 2026-11-13, finding F9: step 3 "Press FURNACE PURGE START" had no button). DITL-02 input row 6
      M.0500 "FURNACE PURGE START P.B." (CRT push button), STATUS = output row 6 "FURNACE PURGE IN PROGRESS". The permissives (rows 2 ~ 5
@@ -121,6 +179,15 @@
   const pt = defOf('MK10');
   if (pt) {
     pt.mach.PURGE = pbf('Furnace purge', 'Furnace purge start (screen push button)', 'DITL-02', 5, 'PURGE IN PROGRESS', [['PURGE START', 5]], 'NOT IN PROGRESS');
+    pt.mach.PURGE.df.need = nd([
+      ['Furnace purge permissive (M.050E)', 'DITL-02', 'i', 14],
+      ['Burner A air damper at purge position', 'DITL-02', 'i', 1],
+      ['Burner B air damper at purge position', 'DITL-02', 'i', 2],
+      ['Burner C air damper at purge position', 'DITL-02', 'i', 3],
+      ['Burner D air damper at purge position', 'DITL-02', 'i', 4],
+      ['Master fuel trip in effect', 'DITL-02', 'i', 26],
+      ['Furnace not above 700 °C (purge by-pass)', 'DITL-02', 'i', 24, 0]
+    ]);
   }
   /* DIESEL AND BURNERS (live Cold start 2026-11-13, finding F10: the igniter and burner ON / OFF push buttons were on no page). DITL-09 /
      #B / #C / #D input rows 5 / 7 / 9 / 11 = IGNITER x "ON" / "OFF" P.B., BURNER x "ON" / "OFF" P.B. (M.0110 / 0111 / 0118 / 0119 for A),
@@ -131,6 +198,20 @@
       const d = x === 'A' ? 'DITL-09' : 'DITL-09 #' + x;
       db.mach['BN' + x] = pbf('Burner ' + x, 'Igniter and burner ' + x + ' push buttons', d, 26, 'REMOTE', [['IGNITER ON', 4], ['IGNITER OFF', 6], ['BURNER ON', 8], ['BURNER OFF', 10]], 'NOT REMOTE');
       db.mach['BN' + x].df.free = 1; /* F10b: four separate presses, REMOTE does not lock IGNITER ON */
+      const n = x === 'A' ? '' : ' #' + x,
+        lo = 'DITL-12' + (x === 'A' ? '' : 'ABC'['BCD'.indexOf(x)]);
+      db.mach['BN' + x].df.need = nd([
+        ['Remote selected', d, 'i', 13, 0],
+        ['No master fuel trip', 'DITL-07' + n, 'i', 1, 0],
+        ['Igniter: air damper at ignition position', 'DITL-07' + n, 'i', 3],
+        ['Igniter: oil valve at ignition position', 'DITL-07' + n, 'i', 4],
+        ['Igniter: in retract position', 'DITL-10' + n, 'i', 1],
+        ['Burner: diesel oil pressure not high', 'DITL-07' + n, 'i', 9],
+        ['Burner: atomizing air pressure not low', 'DITL-07' + n, 'i', 11],
+        ['Burner: flame detector off', lo, 'i', 8, 0],
+        ['Burner: shutdown completed', lo, 'i', 10],
+        ['Burner: ready (igniter inserted or permitted)', lo, 'o', 7]
+      ]);
     }
   }
 })();

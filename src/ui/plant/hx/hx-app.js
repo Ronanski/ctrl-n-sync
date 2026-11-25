@@ -26,7 +26,17 @@
     for (const d of LS_MOCK.defs)
       for (const k in d.mach || {}) {
         const m = d.mach[k];
-        if (!m || !m.n || m.ctl || R.machines[m.n]) continue;
+        if (!m || !m.n || m.ctl) continue;
+        /* lane 6: the permissives and the reason of a push button machine always come from its system file */
+        if (R.machines[m.n]) {
+          const g = R.machines[m.n];
+          if (m.df && g.page === d.id && g.id === k && g.bind && g.bind.df) {
+            if (m.df.need) g.bind.df.need = m.df.need;
+            if (m.df.why) g.bind.df.why = m.df.why;
+            if (m.df.stWhy) g.bind.df.stWhy = m.df.stWhy;
+          }
+          continue;
+        }
         const bind = {};
         for (const f in m) if (f !== 'n' && f !== 't') bind[f] = m[f];
         R.machines[m.n] = { t: m.t || m.n, page: d.id, id: k, bind };

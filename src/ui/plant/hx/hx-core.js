@@ -117,6 +117,12 @@
   };
   /* beta.556: a value worked out from other keys, key 'cal:NAME' (a permissive that is one of two ways); null when one is unknown */
   HX.CALC = {};
+  /* DITL-LS110: CONV. PRESS. LOW LIMIT starts the feeder, then its own run holds it */
+  HX.CALC.lmFdPress = v => {
+    const a = v('dl:DITL-LS110|i|2'),
+      b = v('dl:DITL-LS110|o|6');
+    return a == null || b == null ? null : Math.max(a, b);
+  };
   HX.page = def => {
     def.no = HX.pages.length + 1;
     HX.pages.push(def);
@@ -565,6 +571,17 @@
     }
     /* the Y / N square (second faceplate) of a machine or an on / off valve: on the side away from its words */
     /* beta.556: a machine with its own permissive rows (o.perm, all needed) has the same second faceplate */
+    /* lane 6: a machine whose system file gives the start permissives of its drawing (df.need with keys) shows them here */
+    if (it.k === 'mach' && !it.perm) {
+      const M = window.HXREG && HXREG.machines && HXREG.machines[it.mach],
+        dm = M && window.LS_MOCK && (LS_MOCK.defs.find(x => x.id === M.page) || {}).mach,
+        df = dm && dm[M.id] && dm[M.id].df,
+        nk = df && Array.isArray(df.need) ? df.need.filter(x => x.key) : [];
+      if (nk.length) {
+        it.perm = nk.map(x => ({ label: x.l, key: x.key }));
+        it.mon = (df.st != null ? [{ label: 'State', key: 'dl:' + (df.std || dm[M.id].d) + '|o|' + df.st + (df.inv ? '|neg' : ''), words: [df.on, df.off] }] : []).concat(it.mon || it.vals || []);
+      }
+    }
     const monId = it.mon && (it.k === 'loop' || it.k === 'eq' || (it.k === 'mach' && it.perm)) ? it.loop || it.mach || it.id || it.tag : '';
     if (monId) HX.MON[monId] = it;
     const ynId = it.k === 'mach' && !it.perm ? 'mach:' + it.mach : it.k === 'valve' ? 'valve:' + it.valve : monId ? 'mon:' + monId : '',

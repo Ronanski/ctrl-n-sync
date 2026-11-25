@@ -84,6 +84,9 @@
       h: 1000,
       items: items.concat([
         at(L('combustion-air', 'Hot secondary air from the air heater', { back: true }), 1300, 516, { id: 'sup' }),
+        /* PR 568 (EIMI): the two CRT push buttons of ABC-057 (FURNACE FRONT / REAR WALL AUTO MODE S3 M.144A, MANUAL MODE S3 M.144B); lit = S3 M.144C */
+        at(HX.B('FRONT AND REAR WALL AUTO MODE', 'data-apb="ABC-057|S3 M.144A|S3 M.144C=1"', { press: true, w: 270 }), 1590, 482, { id: 'wam' }),
+        at(HX.B('FRONT AND REAR WALL MANUAL MODE', 'data-apb="ABC-057|S3 M.144B|S3 M.144C=0"', { press: true, w: 270 }), 1590, 532, { id: 'wmm' }),
         at(L('oil-burners', 'To burners A and B'), 1690, 66, { id: 'bab' }),
         at(L('oil-burners', 'To burners C and D'), 1690, 590, { id: 'bcd' })
       ]),

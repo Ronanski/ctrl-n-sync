@@ -101,6 +101,14 @@
         at(HX.B('Burner', dy('DITL-10' + INST[i] + '|i|18', 'IN SERVICE', 'OFF'), { w: 130 }), 1660, y - 22, {
           id: 'sv' + i
         }),
+        /* PR 568 (EIMI): the CRT push buttons of ABC-003A ~ D (M.03x7 PRESSURE, M.03x8 FLOW control of the burner oil valve; lit = M.03x9:
+           1 pressure, 0 flow). No operator page had them */
+        at(HX.B('PRESSURE', 'data-apb="ABC-003' + n + '|M.03' + (5 + i) + '7|M.03' + (5 + i) + '9=1"', { press: true, w: 116 }), 868, y + 88, {
+          id: 'pp' + i
+        }),
+        at(HX.B('FLOW', 'data-apb="ABC-003' + n + '|M.03' + (5 + i) + '8|M.03' + (5 + i) + '9=0"', { press: true, w: 116 }), 994, y + 88, {
+          id: 'pf' + i
+        }),
         at(HX.B('Igniter', dy('DITL-10' + INST[i] + '|o|15', 'ON', 'OFF'), { w: 130 }), 1660, y + 18, { id: 'ig' + i })
       ],
       pipes: [

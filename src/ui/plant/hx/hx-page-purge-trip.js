@@ -208,6 +208,7 @@
            temporary page 10 only, so the HX page had no way to start the purge: the same machine of page 10 (its faceplate START) */
         at(M('cubicle', 'Furnace purge', 'Furnace purge start', [], { tag: 'screen push button · DITL-02' }), QX - CW / 2 + 24, QY + 9 * QD + 22, {
           id: 'pbp',
+          yn: [-7, 30],
           lab: 'r'
         }),
 
