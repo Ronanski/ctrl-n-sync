@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 252; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 260; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 106;
@@ -181,6 +181,13 @@ const S = R.stats(A);
     const miss = O.filter(o => !o.row && !/^G-/.test(o.sheet));
     if (miss.length) fail('PI/O outputs with no table row: ' + miss.map(o => o.sheet + '.' + o.key).join(' '));
   }
+  /* ANOTHER SELECT MT1 (795 Rev 2 PAGE 7 note *3: OTHER STEP is collective): STEP n = any other step selected */
+  {
+    const ao = M['ANOTHER SELECT MT1']({ SELECT3: 1 }, [], {}, 0.1);
+    for (let n = 0; n < 8; n++) if (ao['STEP' + n] !== (n === 3 ? 0 : 1)) fail('ANOTHER SELECT MT1: step 3 selected gives ' + JSON.stringify(ao));
+    const a0 = M['ANOTHER SELECT MT1']({}, [], {}, 0.1);
+    if (Object.values(a0).some(v => v)) fail('ANOTHER SELECT MT1: nothing selected must give 0 ' + JSON.stringify(a0));
+  }
   /* STEP CONTROL MD from ATS program 310SC90-795 sheets 8 ~ 11: STEP UP ORDER with the permissive selects; criteria Dn-1 and An execute (the
      select drops); criteria Dn completes; an upper step executing resets; another step selected drops the select */
   {
@@ -190,7 +197,7 @@ const S = R.stats(A);
       sr = x => sc({ ...sb, ...x }, [], ss, 0.1);
     /* PAGE 7: UPPER STEP SELECTED (STEP UP ORDER) is in the EXECUTED set only; it does not mark this step SELECTED */
     let so = sr({ ORDER: 1 });
-    if (so.SEL !== 0 || so['STEP S'] !== 1 || so.ORDER !== 1) fail('STEP CONTROL MD: STEP UP ORDER must ask the step in, not select it ' + JSON.stringify(so));
+    if (so.SEL !== 0 || 'STEP S' in so || so.ORDER !== 1) fail('STEP CONTROL MD: STEP UP ORDER must ask the step in, not select it ' + JSON.stringify(so));
     so = sr({ ORDER: 1, TMG: 1, 'IN CR': 1 });
     if (so.EXEC !== 1 || so.SEL !== 0) fail('STEP CONTROL MD: an upper step selected does not execute this step ' + JSON.stringify(so));
     sr({ EXE: 1 });
@@ -382,6 +389,33 @@ const S = R.stats(A);
   for (let i = 0; i < 100; i++) R.step(T, 0.03);
   if (ov(dup, 'ERR B') !== 1 || ov(dup, 'QT2') || ov(dup, 'Y') !== 3599 || ov(dup, 'ABN')) fail('TCE143: speed B lost: ERR B ' + ov(dup, 'ERR B') + ', Y ' + ov(dup, 'Y'));
 }
+/* UNT-FG FG-1(LCFI) on TCA762 / TCA763 reads the table printed on the page (500 N/mm2 -> 0.5381 %, 175 -> between 0.0001 and 0.0002) */
+for (const id of ['TCA762', 'TCA763']) {
+  const fg = A.plan.find(p => p.id === id).nodes.find(x => x.type === 'UNT-FG'),
+    f = R.K['UNT-FG'];
+  if (!fg || fg.open && fg.open.length) fail(id + ' UNT-FG: no block or open ' + JSON.stringify(fg && fg.open));
+  const y = v => f([v], fg.notes)[0];
+  if (y(500) !== 0.5381 || !(y(175) > 0.0001 && y(175) < 0.0002) || y(600) !== 0.5381) fail(id + ' UNT-FG LCFI table: ' + [y(500), y(175), y(600)]);
+}
+/* FG curves of the ATS criteria list 310SC90-796 Rev 2 sheets 21 / 22: TCA530 chest temperature difference limits (FIG. 4 / 5), TCA548
+   lower limits (FIG. 2 / 3) */
+{
+  const fgy = (id, key, v) => R.K.FG([v], A.plan.find(p => p.id === id).nodes.find(x => x.key === key).notes)[0],
+    near = (a, b) => Math.abs(a - b) < 0.01;
+  if (!near(fgy('TCA530', 'fgA005', 200), 127.8) || !near(fgy('TCA530', 'fgA005', 382.8), 103.35) || !near(fgy('TCA530', 'fgA022', 600), 112.2))
+    fail('TCA530 chest temp diff limit curves');
+  if (!near(fgy('TCA548', 'fgA040', 100), 305) || !near(fgy('TCA548', 'fgA040', 538), 471) || !near(fgy('TCA548', 'fgA042', 423.5), 317.5))
+    fail('TCA548 lower limit curves');
+}
+/* MODE (TCA768A, LMA810): load up rate by load band from the printed tables; 5.0 %/min until the IP -> HP transfer is complete */
+{
+  const md = A.plan.find(p => p.id === 'TCA768A').nodes.filter(x => x.type === 'MODE'),
+    f = R.K.MODE;
+  if (md.length !== 5) fail('TCA768A: ' + md.length + ' MODE blocks, not 5');
+  const hot = md.find(x => x.notes.includes('R1:0.7'));
+  const r = (L, T) => f([L, T], hot.notes)[0];
+  if (!hot || r(100, 1) !== 0.7 || r(70, 1) !== 0.4 || r(25, 1) !== 1.0 || r(10, 1) !== 1.0 || r(100, 0) !== 5.0) fail('TCA768A HOT MODE rates: ' + [r(100, 1), r(70, 1), r(25, 1), r(10, 1), r(100, 0)]);
+}
 const G = A.plan.filter(p => /^G-/.test(p.id)),
   gRun = G.filter(p => !S.notRun.includes(p.id)).length;
 console.log(
@@ -446,7 +480,20 @@ if (R.need('PIV', ['G1:1', 'G2:1', 'TI:1', 'HL:100', 'LL:0', 'ML:100'], true).le
   if (Math.abs(pv([100, 0, 95], pn, ps, 0.1)[0] - 5) > 1e-9) fail('PIV: Z + Y is not held at HL (Z 95, HL 100 -> Y 5)');
   if (Math.abs(pv([-100, 0, 3], pn, ps, 0.1)[0] + 3) > 1e-9) fail('PIV: Z + Y is not held at LL (Z 3, LL 0 -> Y -3)');
 }
-if (!R.need('TP', ['TP:1'], false).length) fail('TP with no SW wire must be open');
+/* SW not wired: a timer takes INTL (SYSDEF No. 3, TCE p 16: 0 at initial start, 1 after), so it is not open; a CMP with hysteresis is */
+if (R.need('TP', ['TP:1'], false).length) fail('TP with no SW wire is open (SYSDEF INTL is its default)');
+if (!R.need('CMP', ['HL:2', 'LL:1'], false).length) fail('CMP with hysteresis and no SW wire must be open');
+if (R.need('CMP', ['HL:2'], false).length) fail('CMP with no hysteresis and no SW wire is open (SW does not change Y)');
+{
+  const sub = sheets.filter(s => s.id === 'TCA633'),
+    T = R.compile(sub),
+    tp = T.plan[0].nodes.find(x => x.type === 'TP' && x.sw < 0);
+  if (!tp) fail('TCA633: no TP with its SW not wired');
+  else {
+    const st = {};
+    if (R.K.TP([1], ['TP:0'], st, 0.1, 0)[0] !== 0) fail('TP: SW 0 (INTL at the first scan) gives 1');
+  }
+}
 if (!R.need('FG', ['X1:0', 'Y1:0'], true).length) fail('FG with one point must be open');
 const nOpen = Object.values(S.open).reduce((a, v) => a + v.length, 0);
 console.log('open items (sheet, reason): ' + nOpen + ' in ' + Object.keys(S.open).length + ' reasons');

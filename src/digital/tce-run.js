@@ -271,6 +271,37 @@
         if (X <= P[i][0]) return [P[i - 1][1] + ((P[i][1] - P[i - 1][1]) * (X - P[i - 1][0])) / (P[i][0] - P[i - 1][0])];
       return [P[P.length - 1][1]];
     },
+    /* MODE (LMA810, TCA768A, one block per start-up mode): the load up rate (%/min) of the generator load L (MW). The tables printed
+       beside each block: four MW points (L1 .. L4 = 90 / 60 / 33 / 22.5) and six rates R1 .. R6. EIMI (PDF, 2026-11-25): PPE-14-0726 R1
+       p 3 / Att-2 / 3, 310SC90-775 p 26 *2, STIE-14811 p 147: until the IP -> HP transfer is complete (T = TCA535 E CRI 2.6 = 0) the
+       rate is 5.0 %/min (R6) in every mode; with T = 1 the band rate: L > 90 R1, > 60 R2, > 33 R3, > 22.5 R4, else R5 (bands from the
+       order printed; checked by EIMI against the FHI start-up curves PART-2 SECT 7). Derived: the 0 / 1 sense of T, and "> " at each
+       boundary (> or >= and any dead band are not printed). */
+    MODE: (x, n) => {
+      const L = x[0];
+      if (!b01(x[1])) return [par(n, 'R6', NaN)];
+      for (let i = 1; i <= 4; i++) if (L > par(n, 'L' + i, NaN)) return [par(n, 'R' + i, NaN)];
+      return [par(n, 'R5', NaN)];
+    },
+    /* UNT-FG (unit function generator, LMA010 on TCA762 / TCA763 "FG-1(LCFI)"): Y = f(X) on the table printed beside it on the page
+       (Xn / Yn No. 0 .. 19, read as "Xi:" / "Yi:"), straight between the points, held flat outside, as the ML 19 FG. Check of the printed
+       table (EIMI, LM2-TEQ-17-240 R0 p 158, STIE-14852: log10 LCFI % = -11.658 + 0.69142 s - 1.7930E-2 s^2 + 2.4745E-4 s^3 - 1.7267E-6 s^4
+       + 4.6895E-9 s^5, s in kg/mm2): 500 N/mm2 = 50.99 kg/mm2 gives 0.536 %, the table 0.5381 %. No table on the page (TCE212 003 / 036):
+       NaN, the curve is open. */
+    'UNT-FG': (x, n) => {
+      const P = [];
+      for (let i = 0; i < 50; i++) {
+        const a = par(n, 'X' + i), b = par(n, 'Y' + i);
+        if (a !== undefined && b !== undefined) P.push([a, b]);
+      }
+      if (P.length < 2) return [NaN];
+      P.sort((p, q) => p[0] - q[0]);
+      const X = x[0];
+      if (X <= P[0][0]) return [P[0][1]];
+      for (let i = 1; i < P.length; i++)
+        if (X <= P[i][0]) return [P[i - 1][1] + ((P[i][1] - P[i - 1][1]) * (X - P[i - 1][0])) / (P[i][0] - P[i - 1][0])];
+      return [P[P.length - 1][1]];
+    },
     /* ML 59 TB tie-back: primary flag (SW) = 1 Y = X, else Y = the tie-back value X2 */
     TB: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
     /* ML 62 PA* parameter modify: the new value X is taken while its condition (SW) is met, else the previous value is kept */
@@ -284,6 +315,7 @@
      misses one, prints one the definition does not have, or has a SW input with no wire is OPEN: its sheet does not count as running
      (QA : SAORI review 2026-11-25: a missing parameter is an open item, never a default). */
   const REQ = {
+    MODE: ['L1', 'L2', 'L3', 'L4', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6'],
     I: ['TI'], LG: ['T'], PIF: ['G', 'TI'], PIV: ['G1', 'G2', 'TI'], SG: ['K'], SGW: ['K'], AM: ['R'], G: ['K'], FLT: ['N'], GRD: ['K'],
     PD: ['N', 'K'], LIN: ['K', 'B'], TP: ['TP'], TD: ['TD'], TW: ['TW'], CMP: ['HL'], CPL: ['HL'], CNT: ['N'], FLK: ['T1', 'T2'],
     LCK: ['K'], UCK: ['K']
@@ -291,6 +323,7 @@
   /* printed parameters that the definition of the ML does not have: their meaning is open until a document gives it */
   const EXTRA = { AM: ['M'] };
   const keysOf = n => new Set((n || []).map(q => (/^\s*([A-Z][A-Z0-9]*)\s*:/.exec(q) || [])[1]).filter(Boolean));
+  const INTL_SW = { TP: 1, TD: 1, TW: 1 };
   function need(type, notes, swWired) {
     const t = K[type] ? type : ALIAS[type] || type,
       f = K[t],
@@ -304,8 +337,13 @@
       for (let i = 1; i <= 8; i++) if (k.has('X' + i) && k.has('Y' + i)) c++;
       if (c < 2) out.push('FG curve not on the sheet');
     }
+    if (t === 'UNT-FG' && ![...k].filter(q => /^X\d+$/.test(q)).length) out.push('UNT-FG curve not on the sheet');
     /* ML 62 PA (parameter modify) has no SW in its symbol: its side input is the condition of the parameter, drawn or not */
-    if (!swWired && t !== 'PA' && /\bsw\s*=/.test(String(f))) out.push(t + ' SW not wired (HIACS default not in the macro list)');
+    /* SW not wired: the timer macros take INTL (SYSDEF No. 3, TCE p 16: "0 at initial start, and 1 after then. This condition is used for
+       the default of the switch input of the Timer macros"); a CMP with no hysteresis (LL not printed or LL = HL) gives the same Y with
+       SW = 1 or 0 (ML 51), so its SW does not matter */
+    const noHys = t === 'CMP' && (par(notes, 'LL') === undefined || par(notes, 'LL') === par(notes, 'HL'));
+    if (!swWired && t !== 'PA' && !INTL_SW[t] && !noHys && /\bsw\s*=/.test(String(f))) out.push(t + ' SW not wired (HIACS default not in the macro list)');
     return out;
   }
   const ALIAS = { 'G:OR': 'OR', 'G:A': 'A', PA1: 'PA', PA2: 'PA', PA3: 'PA', PA4: 'PA', 'o:BTR': 'BTR', 'o:FTR': 'FTR' };
@@ -1072,9 +1110,26 @@
          EXECUTED set, and a lower step marked SELECTED would pulse OTHER STEP SELECTED and drop the upper step the operator picked.)
        COMPLETED (S/R): set by criteria Dn with the step executed; reset by the upper step's criteria D (upper STEP COMPLETED).
        BYPS (STEP n BYPASS, sheet 11 CRITERIA BYPASS: the criteria taken as ON) stands for criteria An and Dn.
-       Outs: SEL = STEP n SELECT(ED), STEP S = asked by STEP UP ORDER (not yet executed), PB ON = selected by the PB, ORDER = STEP IN n
+       Outs: SEL = STEP n SELECT(ED), PB ON = selected by the PB, ORDER = STEP IN n
        ORDER (selected or upper step selected, not yet executed: the step whose A criteria are checked, sheet 10 takes both), EXEC = STEP n EXECUTING, FINISH = COMPLETED, START = the scan EXECUTED sets; ORDER1 / EXEC1 / FINI1 = the same to the DCS.
-       RESET (right pin) is wired on no sheet: not given.
+       RESET (right pin) is wired on no sheet: not given. STEP S (line STEP n STEP SELECT, to ANOTHER SELECT MT1 = OTHER STEP SELECTED of
+       the other steps) is not given: PAGE 7 selects a step only by its PB, and a step asked by STEP UP ORDER must not drop the upper step
+       the operator selected (it would, through OTHER STEP SELECTED); what else selects a step is not drawn. */
+  /* ANOTHER SELECT MT1 (LMA535, TCA514), drawing: 310SC90-795 PAGE 7 note *3 "---- indicates the collective signals for OTHER STEP":
+       STEP n = SELECT m of any other step m (0 ~ 7). */
+  MACRO['ANOTHER SELECT MT1'] = Object.assign(
+    I => {
+      const o = {};
+      for (let n = 0; n < 8; n++) {
+        let u = 0;
+        for (let m = 0; m < 8; m++) if (m !== n) u = u || b01(I['SELECT' + m]);
+        o['STEP' + n] = u;
+      }
+      return o;
+    },
+    { src: 'drawing: ATS program 310SC90-795 Rev 2 PAGE 7 note *3' }
+  );
+  /* (end of ANOTHER SELECT)
      Not on the transition logic (printed DEF timers beside the block, roles not drawn, not read): TD 3.0 s x3, TP 0.2 s, TP 1.0 s. */
   MACRO['STEP CONTROL MD'] = Object.assign(
     (I, notes, st) => {
@@ -1098,7 +1153,7 @@
       const inOrd = sel || (ord && !ex && !done) ? 1 : 0;
       return {
         SEL: sel,
-        'STEP S': ord && !ex && !done ? 1 : 0,
+
         'PB ON': sel,
         ORDER: inOrd,
         ORDER1: inOrd,
@@ -1576,6 +1631,7 @@
         const xs = x.ins.map((s, i) => (x.inv[i] ? b01(!v[s]) : v[s]));
         let sw;
         if (x.sw >= 0) sw = b01(v[x.sw]);
+        else if (INTL_SW[x.type]) (sw = x.st.intl ? 1 : 0), (x.st.intl = 1);
         const nt = x.pa ? Object.keys(x.pa).map(k => k + ':' + v[x.pa[k]]).concat(x.notes || []) : x.notes;
         v[x.out] = x.f(xs, nt, x.st, dt, sw)[0];
       } else {

@@ -279,6 +279,14 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA530',
+    /* pr: the curves of FG A005 / A022 are not on this sheet. They are the ATS criteria list 310SC90-796 Rev 2 sheet 22 (Turbine Control
+       System book p 182), VARIABLE SET POINT: FIG. 4 ALLOWABLE TEMPERATURE DIFFERENCE ON MAIN STOP VALVE CASING (+-127.8 degC at 200 degC
+       to +-78.9 degC at 565.6 degC inner surface) for CRI 1.32, FIG. 5 ... ON TURBINE CONTROL VALVE CASING (+-156.1 at 200 to +-112.2 at
+       565.6) for CRI 1.33; the two printed end points, straight between (the figure is one straight line), flat outside (ML 19). */
+    pr: {
+      fgA005: ['X1:200.0', 'Y1:127.8', 'X2:565.6', 'Y2:78.9'],
+      fgA022: ['X1:200.0', 'Y1:156.1', 'X2:565.6', 'Y2:112.2']
+    },
     title: 'CRITERIA CONDITION',
     page: 99,
     ctl: 'COMM+MD',
