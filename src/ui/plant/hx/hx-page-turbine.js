@@ -190,7 +190,9 @@
           ['SYNCH.', 'sync'],
           ['LOAD UP', 'loadup'],
           ['NORMAL', 'normal']
-        ].map((b, i) => at(B(b[0], 'data-tpb="' + b[1] + '"', { press: true, w: 114 }), 1206 + i * 124, PY, { id: 'pba' + i })),
+        ].map((b, i) =>
+          at(B(b[0], 'data-tpb="' + b[1] + '"', { press: true, w: 114 }), 1206 + i * 124, PY, { id: 'pba' + i })
+        ),
         ...TRIP.map((t, i) =>
           at(B(t[0], 'data-tfo="' + t[1] + '"', { plain: true, w: 330 }), 1570, 92 + i * 26, { id: 'tf' + i })
         )
@@ -214,7 +216,28 @@
         ...STEP.slice(1).map((s, i) => ({ med: 'signal', w: 2, pts: ['st' + i + '.r', 'st' + (i + 1) + '.l'] }))
       ],
       taps: [
-        { x: HPX + 60, y: 40, side: 'r', label: 'Main steam', key: 'PT-MS1006-1', unit: K, dp: 1, tag: 'PT-MS1006-1' },
+        /* main steam pressure 1 / 2 and temperature at the turbine inlet (I/O list PT-MS1006-1 / -2, TT-MS1007) */
+        {
+          x: HPX + 60,
+          y: 40,
+          side: 'r',
+          label: 'Main steam',
+          key: 'PT-MS1006-1',
+          key2: 'PT-MS1006-2',
+          unit: K,
+          dp: 1,
+          tag: 'PT-MS1006-1 / -2'
+        },
+        {
+          x: HPX + 230,
+          y: 40,
+          side: 'r',
+          label: 'Main steam temperature',
+          key: 'TT-MS1007',
+          unit: '°C',
+          dp: 0,
+          tag: 'TT-MS1007'
+        },
         {
           x: GX,
           y: TY + 70,
@@ -253,14 +276,17 @@
         val(5, 'Control oil / trip oil', 'PT-CTL', K, 0, 'PT-TRIP', 'PTLO10061 / 10071'),
         val(6, 'Lube oil after cooler', 'TT-LOCOOL', '°C', 0, null, 'TILO10021 / 22'),
         /* the target load of the turbine control system (the old UNIT page: TCS target MW) */
-        val(7, 'Target load', 'TCS-AI1001', 'MW', 1, null, 'TCS-AI1001')
+        val(7, 'Target load', 'TCS-AI1001', 'MW', 1, null, 'TCS-AI1001'),
+        /* high pressure turbine first stage pressure A / B / C (I/O list PT-ST1001-1 ~ 3) */
+        val(8, 'First stage pressure A / B and C', 'PT-ST1001-1', K, 1, 'PT-ST1001-2', 'PT-ST1001-1 / -2 / -3')
       ],
       texts: [
         { x: GX + 14, y: 34, s: 'to the grid', cls: 'hx-note' },
         { x: 20, y: 788, s: 'AUTOMATIC TURBINE START-UP', cls: 'hx-name' },
         { x: 1404, y: 60, s: 'TRIP FIRST OUT · red = came first', cls: 'hx-name' },
         { x: 1149, y: PY + 36, s: 'push buttons work in RUN', cls: 'hx-note' },
-        { x: VX - 10, y: 220, s: 'AT THE TURBINE', cls: 'hx-name' }
+        { x: VX - 10, y: 220, s: 'AT THE TURBINE', cls: 'hx-name' },
+        { x: VX + 196, y: 262 + 8 * 64 + 4, s: 'C', key: 'PT-ST1001-3', unit: K, dp: 1, anchor: 'start' }
       ]
     }
   });

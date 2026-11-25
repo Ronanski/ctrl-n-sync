@@ -157514,10 +157514,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 1a3c6cc'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 75306e7'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 1a3c6cc';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 75306e7';
     } catch (e) {}
   };
   upd();
@@ -349452,7 +349452,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 1a3c6cc'));
+    row('Version', E('span', 'scsver', ver + ' · build 75306e7'));
   }
   function openSet(near) {
     if (!set) {
@@ -372820,7 +372820,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           ['SYNCH.', 'sync'],
           ['LOAD UP', 'loadup'],
           ['NORMAL', 'normal']
-        ].map((b, i) => at(B(b[0], 'data-tpb="' + b[1] + '"', { press: true, w: 114 }), 1206 + i * 124, PY, { id: 'pba' + i })),
+        ].map((b, i) =>
+          at(B(b[0], 'data-tpb="' + b[1] + '"', { press: true, w: 114 }), 1206 + i * 124, PY, { id: 'pba' + i })
+        ),
         ...TRIP.map((t, i) =>
           at(B(t[0], 'data-tfo="' + t[1] + '"', { plain: true, w: 330 }), 1570, 92 + i * 26, { id: 'tf' + i })
         )
@@ -372844,7 +372846,28 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ...STEP.slice(1).map((s, i) => ({ med: 'signal', w: 2, pts: ['st' + i + '.r', 'st' + (i + 1) + '.l'] }))
       ],
       taps: [
-        { x: HPX + 60, y: 40, side: 'r', label: 'Main steam', key: 'PT-MS1006-1', unit: K, dp: 1, tag: 'PT-MS1006-1' },
+        /* main steam pressure 1 / 2 and temperature at the turbine inlet (I/O list PT-MS1006-1 / -2, TT-MS1007) */
+        {
+          x: HPX + 60,
+          y: 40,
+          side: 'r',
+          label: 'Main steam',
+          key: 'PT-MS1006-1',
+          key2: 'PT-MS1006-2',
+          unit: K,
+          dp: 1,
+          tag: 'PT-MS1006-1 / -2'
+        },
+        {
+          x: HPX + 230,
+          y: 40,
+          side: 'r',
+          label: 'Main steam temperature',
+          key: 'TT-MS1007',
+          unit: '°C',
+          dp: 0,
+          tag: 'TT-MS1007'
+        },
         {
           x: GX,
           y: TY + 70,
@@ -372883,14 +372906,17 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         val(5, 'Control oil / trip oil', 'PT-CTL', K, 0, 'PT-TRIP', 'PTLO10061 / 10071'),
         val(6, 'Lube oil after cooler', 'TT-LOCOOL', '°C', 0, null, 'TILO10021 / 22'),
         /* the target load of the turbine control system (the old UNIT page: TCS target MW) */
-        val(7, 'Target load', 'TCS-AI1001', 'MW', 1, null, 'TCS-AI1001')
+        val(7, 'Target load', 'TCS-AI1001', 'MW', 1, null, 'TCS-AI1001'),
+        /* high pressure turbine first stage pressure A / B / C (I/O list PT-ST1001-1 ~ 3) */
+        val(8, 'First stage pressure A / B and C', 'PT-ST1001-1', K, 1, 'PT-ST1001-2', 'PT-ST1001-1 / -2 / -3')
       ],
       texts: [
         { x: GX + 14, y: 34, s: 'to the grid', cls: 'hx-note' },
         { x: 20, y: 788, s: 'AUTOMATIC TURBINE START-UP', cls: 'hx-name' },
         { x: 1404, y: 60, s: 'TRIP FIRST OUT · red = came first', cls: 'hx-name' },
         { x: 1149, y: PY + 36, s: 'push buttons work in RUN', cls: 'hx-note' },
-        { x: VX - 10, y: 220, s: 'AT THE TURBINE', cls: 'hx-name' }
+        { x: VX - 10, y: 220, s: 'AT THE TURBINE', cls: 'hx-name' },
+        { x: VX + 196, y: 262 + 8 * 64 + 4, s: 'C', key: 'PT-ST1001-3', unit: K, dp: 1, anchor: 'start' }
       ]
     }
   });
@@ -374212,6 +374238,766 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1180, y: 330, s: 'Turbine building, boiler, ash, limestone, coal yard, sea water pumps' }
       ]
     }
+  });
+})();
+
+/* HX page: the hard-wired signals between the turbine control system (TCS) and the DCS (lane 7, user 2026-11-25 "Ikonek lahat ng
+   address nito sa lahat ng signal ... Kumpletuhin ang HMI").
+   THE PICTURE: five columns of states and values, grouped by what the operator asks of them: is the turbine tripped and are its
+   valves closed; where is the start-up; what the TCS asks of the drain valves; who has the load (DCS control mode, Modbus
+   links, target MW); the generator protection and metering.
+   THE SOURCE: the DCS I/O list (ades / wiring): TCS-DI1003 ~ 1058 (station 1 / 2 digital inputs from the TCS), TCS-AI1001 ~ 1012
+   and GCP-AI1001 ~ 1006 (analog inputs from the TCS and the generator control panel), TCS-AO1001 / 1006 / 1007 / 1011 and
+   GCP-AO1002 ~ 1008 (analog outputs of the DCS to the TCS and the generator panel); ranges and units from the DCS loop list.
+   Every state is a digital input of the I/O list (data-di), every value its I/O tag: they read '-----' until the TCS I/O
+   binding (lane 2) gives them a value. Nothing on this page presses a TCS button: the operator buttons of the TCS (CRT) are
+   on the Turbine page. */
+(function () {
+  const { L, page } = HX;
+  const B = HX.B;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  const di = (tag, on, off) => 'data-di="' + tag + '|' + on + '|' + off + '"';
+  /* places (the drawing is 1760 x 1000): five columns, a heading on top, then the boxes */
+  const CX = [190, 530, 870, 1210, 1550],
+    TOP = 120,
+    ROW = 46,
+    W = 300;
+  const COLS = [
+    {
+      head: 'Trip and valves',
+      di: [
+        ['Turbine trip', 'TCS-DI1003', 'TRIP', 'NORMAL'],
+        ['Turbine trip 2', 'TCS-DI1055', 'TRIP', 'NORMAL'],
+        ['Reheat stop / intercept valves closed 1', 'TCS-DI1024', 'CLOSED', 'NOT CLOSED'],
+        ['Reheat stop / intercept valves closed 2', 'TCS-DI1025', 'CLOSED', 'NOT CLOSED'],
+        ['Main stop / control valves closed, major trouble 1', 'TCS-DI1026', 'YES', 'NO'],
+        ['Main stop / control valves closed, major trouble 2', 'TCS-DI1027', 'YES', 'NO'],
+        ['Control and intercept valves closed by load unbalance', 'TCS-DI1028', 'YES', 'NO'],
+        ['High pressure control valves fully closed', 'TCS-DI1050', 'CLOSED', 'NOT CLOSED'],
+        ['Main stop valve A test', 'TCS-DI1051-1', 'TEST', 'NORMAL'],
+        ['Main stop valve B test', 'TCS-DI1051-2', 'TEST', 'NORMAL']
+      ]
+    },
+    {
+      head: 'Speed and start-up',
+      di: [
+        ['Turbine speed under 2400 rpm', 'TCS-DI1029', 'YES', 'NO'],
+        ['Turning gear engaged', 'TCS-DI1030', 'ENGAGED', 'NOT ENGAGED'],
+        ['Intercept to control valve transfer complete', 'TCS-DI1031', 'COMPLETE', 'NOT COMPLETE'],
+        ['Steam seal feed inlet valve closed', 'TCS-DI1032', 'CLOSED', 'NOT CLOSED'],
+        ['Start-up mode ambient cold', 'TCS-DI1039', 'SELECTED', 'NO'],
+        ['Start-up mode cold 1', 'TCS-DI1040', 'SELECTED', 'NO'],
+        ['Start-up mode cold 2', 'TCS-DI1041', 'SELECTED', 'NO'],
+        ['Start-up mode warm', 'TCS-DI1042', 'SELECTED', 'NO'],
+        ['Start-up mode hot', 'TCS-DI1043', 'SELECTED', 'NO'],
+        ['Ambient cold mode temperature', 'TCS-DI1057', 'YES', 'NO'],
+        ['Mode judgement instrument normal', 'TCS-DI1058', 'NORMAL', 'ABNORMAL'],
+        ['Turbine load hold', 'TCS-DI1044', 'HOLD', 'NO']
+      ],
+      val: [['Turbine rated speed', 'TCS-AI1004', 'rpm', 0]]
+    },
+    {
+      head: 'Drain commands from turbine',
+      di: [
+        ['Warming line drain MV-AS1394 open', 'TCS-DI1033', 'OPEN', 'NO'],
+        ['Warming line drain MV-AS1394 close', 'TCS-DI1034', 'CLOSE', 'NO'],
+        ['Gland steam line drain MV-AS1397 open', 'TCS-DI1037', 'OPEN', 'NO'],
+        ['Gland steam line drain MV-AS1397 close', 'TCS-DI1038', 'CLOSE', 'NO']
+      ],
+      links: [
+        ['aux-steam', 'Auxiliary steam'],
+        ['reheat-steam', 'Reheat steam']
+      ]
+    },
+    {
+      head: 'Load control',
+      di: [
+        ['DCS control mode permissive', 'TCS-DI1046', 'YES', 'NO'],
+        ['DCS control mode on', 'TCS-DI1047', 'ON', 'OFF'],
+        ['Modbus line A duty', 'TCS-DI1048', 'DUTY', 'STANDBY'],
+        ['Modbus line B duty', 'TCS-DI1049', 'DUTY', 'STANDBY']
+      ],
+      val: [
+        ['Target MW to the turbine', 'TCS-AO1001', 'MW', 1],
+        ['Target MW feedback', 'TCS-AI1001', 'MW', 1],
+        ['Maximum load up rate', 'TCS-AI1005', '%/min', 2]
+      ]
+    },
+    {
+      head: 'Generator',
+      di: [
+        ['Field breaker 41 closed', 'TCS-DI1052', 'CLOSED', 'OPEN'],
+        ['Generator lockout 86GA operated', 'TCS-DI1053', 'OPERATED', 'NORMAL'],
+        ['Generator lockout 86GB operated', 'TCS-DI1054', 'OPERATED', 'NORMAL']
+      ],
+      val: [
+        ['Current A', 'TCS-AI1006', 'kA', 2],
+        ['Current B', 'TCS-AI1007', 'kA', 2],
+        ['Current C', 'TCS-AI1011', 'kA', 2],
+        ['Voltage A-B', 'GCP-AI1005', 'kV', 2],
+        ['Voltage B-C', 'TCS-AI1008', 'kV', 2],
+        ['Voltage C-A', 'TCS-AI1012', 'kV', 2],
+        ['Power factor', 'TCS-AI1009', '', 3],
+        ['Frequency', 'TCS-AI1010', 'Hz', 2],
+        ['Reactive power', 'GCP-AI1004', 'MVar', 1],
+        ['Energy', 'GCP-AI1003', 'MWh', 0],
+        ['Reactive energy', 'GCP-AI1006', 'MVarh', 0],
+        ['Sent out: MW (D)', 'GCP-AO1002', 'MW', 1],
+        ['Sent out: MVar', 'GCP-AO1003', 'MVar', 1],
+        ['Sent out: voltage A-B', 'GCP-AO1004', 'kV', 2],
+        ['Sent out: voltage B-C', 'GCP-AO1005', 'kV', 2],
+        ['Sent out: voltage C-A', 'GCP-AO1006', 'kV', 2],
+        ['Sent out: power factor', 'GCP-AO1007', '', 3],
+        ['Sent out: frequency', 'GCP-AO1008', 'Hz', 2],
+        ['Sent out: current A', 'TCS-AO1006', 'kA', 2],
+        ['Sent out: current B', 'TCS-AO1007', 'kA', 2],
+        ['Sent out: current C', 'TCS-AO1011', 'kA', 2]
+      ],
+      links: [['generator', 'Generator']]
+    }
+  ];
+  const items = [],
+    texts = [];
+  COLS.forEach((c, i) => {
+    const x = CX[i];
+    texts.push({ x, y: TOP - 40, s: c.head.toUpperCase() });
+    let y = TOP;
+    c.di.forEach(([name, tag, on, off], k) => {
+      items.push(at(B(name, di(tag, on, off), { w: W }), x, y, { id: 'c' + i + 'd' + k }));
+      y += ROW;
+    });
+    y += 6;
+    (c.val || []).forEach(([name, tag, unit, dp]) => {
+      texts.push({ x: x - W / 2 + 4, y, s: name, key: tag, unit, dp, anchor: 'start' });
+      y += 20;
+    });
+    (c.links || []).forEach(([to, text], k) =>
+      items.push(at(L(to, text), x, y + 30 + 40 * k, { id: 'c' + i + 'l' + k }))
+    );
+  });
+
+  page({
+    id: 'turbine-interface',
+    group: 'Turbine and generator',
+    title: 'Turbine control interface',
+    about:
+      'The hard-wired states and values between the turbine control system, the generator panel and the DCS: trip and valves, start-up mode, drain valve commands, load control, generator protection and metering. Source: DCS I/O list (TCS-DI / AI / AO, GCP-AI / AO).',
+    plan: { look: 'real', w: 1760, h: 1000, items, pipes: [], texts }
+  });
+})();
+
+/* HX page: the operator push buttons and lamps of the turbine control system (TCS) for start-up, speed, load and tests (lane 7, user 2026-11-25 "Gawan ng
+   controls ... ilink ang permissives, logic, interlock, may addresses din ang HMI kung saan mag iisang galaw ang logic at HMI").
+   THE SOURCE: /mnt/project-files/lanes/tcs-crt-ports.json (lane 2 TCS IO): the CRT ports of the TCE / TCA sheet program with their
+   HMI_DO.xls command rows (HOLD 3000 ms) and the HMI_DI.xls answer-back lamps of the same faceplate (iolist-tcs.zip, PC); the lamp key is
+   the CRT lamp of the sheet that draws it (src/digital/tce/<sheet>.js). Generated once from that table; plain English labels.
+   A button presses its port in the running TCS program (window.TCE, lane 9); a lamp reads the sheet's lamp. While the program is not
+   running both show '-----' (hx-app.js 'crt:' / 'crtl:' hooks). "Enable" = the CRT AVAILABLE port of the faceplate. */
+(function () {
+  const { L, page } = HX;
+  const B = HX.B;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  /* one card a faceplate of the TCS operator station: t = title, b = [label, CRT port] push buttons (a press holds the port 3000 ms,
+     HMI_DO.xls), l = [label, sheet, key] lamps (HMI_DI.xls answer-back points that a TCE / TCA sheet draws as a CRT lamp), miss = the
+     HMI_DI lamps of the faceplate that no sheet of the TCE / TCA set draws (finding c: not on the typed sheets, not bound) */
+  const CARDS = [
+    {
+      t: 'Turbine master trip and reset',
+      b: [
+        ['Enable', 'CRT:TCE114.TCE114_1_IYS'],
+        ['Reset', 'CRT:TCE114.TCE114_1_RSET'],
+        ['Trip', 'CRT:TCE114.TCE114_1_TRIP']
+      ],
+      l: [
+        ['Operation permitted', 'TCE114', 'TCE114_1_IYP'],
+        ['Reset', 'TCE114', 'TCE114_1_RSTD'],
+        ['Tripped', 'TCE114', 'TCE114_1_TRPD']
+      ]
+    },
+    {
+      t: 'Turbine alarm reset',
+      b: [
+        ['Reset', 'CRT:TCE050.TCE050_1_IKR'],
+        ['Enable', 'CRT:TCE050.TCE050_1_IYS']
+      ],
+      l: [
+        ['Reset', 'TCE050', 'TCE050_1_IIR'],
+        ['Operation permitted', 'TCE050', 'TCE050_1_IYP']
+      ]
+    },
+    {
+      t: 'Automatic turbine start-up',
+      b: [
+        ['Auto', 'CRT:TCA501.TCA501_1_IKA'],
+        ['Enable', 'CRT:TCA501.TCA501_1_IYS'],
+        ['Off', 'CRT:TCA501.TCA501_1_JYP']
+      ],
+      l: [
+        ['Auto', 'TCA501', 'TCA501_1_IIA'],
+        ['Operation permitted', 'TCA501', 'TCA501_1_IYP'],
+        ['Off', 'TCA501', 'TCA501_1_YIP']
+      ]
+    },
+    {
+      t: 'Start-up mode: start from',
+      b: [
+        ['High pressure', 'CRT:TCE057.TCE057_1_IMH'],
+        ['Intermediate pressure', 'CRT:TCE057.TCE057_1_IMI'],
+        ['Enable', 'CRT:TCE057.TCE057_1_IYS']
+      ],
+      l: [
+        ['Operation permitted', 'TCE057', 'TCE057_1_IYP'],
+        ['High pressure', 'TCE057', 'TCE057_1_YMH'],
+        ['Intermediate pressure', 'TCE057', 'TCE057_1_YMI']
+      ]
+    },
+    {
+      t: 'High pressure turbine warming, auto',
+      b: [
+        ['Auto', 'CRT:TCA630.TCA630_1_IKA'],
+        ['Reset', 'CRT:TCA630.TCA630_1_IKR'],
+        ['Enable', 'CRT:TCA630.TCA630_1_IYS']
+      ],
+      l: [
+        ['In progress', 'TCA630', 'TCA630_1_IXP'],
+        ['Operation permitted', 'TCA630', 'TCA630_1_IYP']
+      ]
+    },
+    {
+      t: 'High pressure turbine warming, group',
+      b: [
+        ['Enable', 'CRT:TCA631.TCA631_1_IYS'],
+        ['Start', 'CRT:TCA631.TCA631_1_JYS'],
+        ['Stop', 'CRT:TCA633.TCA631_1_JYP']
+      ],
+      l: [
+        ['Start trouble', 'TCA631', 'TCA631_1_ABN'],
+        ['Operation permitted', 'TCA631', 'TCA631_1_IYP'],
+        ['Started', 'TCA631', 'TCA631_1_YIR'],
+        ['Stopped', 'TCA633', 'TCA631_1_YIP'],
+        ['Stop trouble', 'TCA633', 'TCA631_1_PABN'],
+        ['Stop complete', 'TCA633', 'TCA631_1_PIPC'],
+        ['Start complete', 'TCA632', 'TCA631_1_SPIC']
+      ]
+    },
+    {
+      t: 'Control valve chest warming',
+      b: [
+        ['Warming reset', 'CRT:TCE150.TCE150_1_IKR'],
+        ['Warming set', 'CRT:TCE150.TCE150_1_IKS'],
+        ['Enable', 'CRT:TCE150.TCE150_1_IYS'],
+        ['Warming stop', 'CRT:TCE150.TCE150_1_JYP'],
+        ['Warming start', 'CRT:TCE150.TCE150_1_JYS'],
+        ['Auto', 'CRT:TCE151.TCE150_1_IKA'],
+        ['Warming complete', 'CRT:TCE151.TCE150_1_IKC'],
+        ['Manual', 'CRT:TCE151.TCE150_1_IKH'],
+        ['Full close', 'CRT:TCE151.TCE150_1_JYC'],
+        ['Full open', 'CRT:TCE151.TCE150_1_JYO']
+      ],
+      l: [
+        ['Warming mode reset', 'TCE150', 'TCE150_1_IIR'],
+        ['Warming mode set', 'TCE150', 'TCE150_1_IIS'],
+        ['Operation permitted', 'TCE150', 'TCE150_1_IYP'],
+        ['Warming stopped', 'TCE150', 'TCE150_1_YIP'],
+        ['Warming started', 'TCE150', 'TCE150_1_YIR'],
+        ['Auto', 'TCE151', 'TCE150_1_IIA'],
+        ['Manual', 'TCE151', 'TCE150_1_IIH'],
+        ['Full closed (manual)', 'TCE151', 'TCE150_1_ZSC'],
+        ['Full open (manual)', 'TCE151', 'TCE150_1_ZSO'],
+        ['Warming complete', 'TCE152', 'TCE150_1_IIC']
+      ]
+    },
+    {
+      t: 'Control valve B crack open sequence',
+      b: [
+        ['Start', 'CRT:TCE155.TCE155_1_ICS'],
+        ['Enable', 'CRT:TCE155.TCE155_1_IYS']
+      ],
+      l: [
+        ['Sequence complete', 'TCE155', 'TCE155_1_IPC'],
+        ['Sequence detect', 'TCE155', 'TCE155_1_IYK'],
+        ['Sequence started', 'TCE155', 'TCE155_1_IYL'],
+        ['Operation permitted', 'TCE155', 'TCE155_1_IYP']
+      ]
+    },
+    {
+      t: 'Acceleration rate',
+      b: [
+        ['Fast', 'CRT:TCE160.TCE160_1_IMF'],
+        ['Medium', 'CRT:TCE160.TCE160_1_IMM'],
+        ['Slow', 'CRT:TCE160.TCE160_1_IMS'],
+        ['Enable', 'CRT:TCE160.TCE160_1_IYS']
+      ],
+      l: [
+        ['Operation permitted', 'TCE160', 'TCE160_1_IYP'],
+        ['Fast', 'TCE160', 'TCE160_1_YMF'],
+        ['Medium', 'TCE160', 'TCE160_1_YMM'],
+        ['Slow', 'TCE160', 'TCE160_1_YMS']
+      ]
+    },
+    {
+      t: 'Target speed',
+      b: [
+        ['Close valves', 'CRT:TCE161.TCE161_1_IMC'],
+        ['Low', 'CRT:TCE161.TCE161_1_IML'],
+        ['Medium', 'CRT:TCE161.TCE161_1_IMM'],
+        ['Rub check', 'CRT:TCE161.TCE161_1_IMN'],
+        ['Rated', 'CRT:TCE161.TCE161_1_IMR'],
+        ['Enable', 'CRT:TCE161.TCE161_1_IYS']
+      ],
+      l: [
+        ['Operation permitted', 'TCE162', 'TCE161_1_IYP'],
+        ['Close valves', 'TCE162', 'TCE161_1_YMC'],
+        ['Low', 'TCE162', 'TCE161_1_YML'],
+        ['Medium', 'TCE162', 'TCE161_1_YMM'],
+        ['Rub check', 'TCE162', 'TCE161_1_YMN'],
+        ['Rated', 'TCE162', 'TCE161_1_YMR']
+      ]
+    },
+    {
+      t: 'Heat soak',
+      b: [
+        ['Reset', 'CRT:TCE163.TCE163_1_IKR'],
+        ['Set', 'CRT:TCE163.TCE163_1_IKS'],
+        ['Enable', 'CRT:TCE163.TCE163_1_IYS']
+      ],
+      l: [
+        ['Heat soak reset', 'TCE163', 'TCE163_1_IIR'],
+        ['Heat soak set', 'TCE163', 'TCE163_1_IIS'],
+        ['Operation permitted', 'TCE163', 'TCE163_1_IYP']
+      ]
+    },
+    {
+      t: 'Speed and load hold',
+      b: [
+        ['Set', 'CRT:TCE164.TCE164_1_IKH'],
+        ['Reset', 'CRT:TCE164.TCE164_1_IKR'],
+        ['Enable', 'CRT:TCE164.TCE164_1_IYS']
+      ],
+      l: [
+        ['Hold', 'TCE164', 'TCE164_1_IIH'],
+        ['Hold reset', 'TCE164', 'TCE164_1_IIR'],
+        ['Critical speed zone', 'TCE164', 'TCE164_1_IXC'],
+        ['Operation permitted', 'TCE164', 'TCE164_1_IYP']
+      ]
+    },
+    {
+      t: 'Rub check',
+      b: [
+        ['Required', 'CRT:TCA547.TCA754_1_IKR'],
+        ['Bypass', 'CRT:TCA547.TCA754_1_IKS'],
+        ['Enable', 'CRT:TCA547.TCA754_1_IYS']
+      ],
+      l: [
+        ['Required', 'TCA547', 'TCA754_1_IIR'],
+        ['Bypass', 'TCA547', 'TCA754_1_IIS']
+      ]
+    },
+    {
+      t: 'Start-up criteria bypass',
+      b: [
+        ['Reset', 'CRT:TCA549.TCA549_1_IKR'],
+        ['Enable', 'CRT:TCA549.TCA549_1_IYS']
+      ],
+      l: [
+        ['Reset', 'TCA549', 'TCA549_1_IIR'],
+        ['Operation permitted', 'TCA549', 'TCA549_1_IYP']
+      ]
+    },
+    {
+      t: 'Overspeed test, main',
+      b: [
+        ['Off', 'CRT:TCE176.TCE176_1_IKC'],
+        ['Enable', 'CRT:TCE176.TCE176_1_IYS'],
+        ['On', 'CRT:TCE176.TCE176_1_JYS']
+      ],
+      l: [
+        ['Test off', 'TCE176', 'TCE176_1_IIC'],
+        ['Operation permitted', 'TCE176', 'TCE176_1_IYP'],
+        ['Test on', 'TCE176', 'TCE176_1_YIR']
+      ]
+    },
+    {
+      t: 'Overspeed test, back-up',
+      b: [
+        ['Off', 'CRT:TCE177.TCE177_1_IKC'],
+        ['Enable', 'CRT:TCE177.TCE177_1_IYS'],
+        ['On', 'CRT:TCE177.TCE177_1_JYS']
+      ],
+      l: [
+        ['Test off', 'TCE177', 'TCE177_1_IIC'],
+        ['Operation permitted', 'TCE177', 'TCE177_1_IYP'],
+        ['Test on', 'TCE177', 'TCE177_1_YIR']
+      ]
+    },
+    {
+      t: 'DCS load control mode',
+      b: [
+        ['On', 'CRT:TCE180.TCE180_1_IYD'],
+        ['Off', 'CRT:TCE180.TCE180_1_IYL'],
+        ['Enable', 'CRT:TCE180.TCE180_1_IYS']
+      ],
+      l: [
+        ['Operation permitted', 'TCE180', 'TCE180_1_IYP'],
+        ['On', 'TCE180', 'TCE180_1_YID'],
+        ['Off', 'TCE180', 'TCE180_1_YIL']
+      ]
+    },
+    {
+      t: 'Load up',
+      b: [
+        ['Enable', 'CRT:TCE184.TCE184_1_IYS'],
+        ['Load up start', 'CRT:TCE184.TCE184_1_JYS']
+      ],
+      l: [
+        ['Initial', 'TCE184', 'TCE184_1_IYP'],
+        ['Load up started', 'TCE184', 'TCE184_1_YIR']
+      ]
+    },
+    {
+      t: 'Intermediate pressure limit',
+      b: [
+        ['Reset', 'CRT:TCE201.TCE201_1_IKR'],
+        ['Select', 'CRT:TCE201.TCE201_1_IKS'],
+        ['Enable', 'CRT:TCE201.TCE201_1_IYS']
+      ],
+      l: [
+        ['Limit reset', 'TCE201', 'TCE201_1_IIR'],
+        ['Limit selected', 'TCE201', 'TCE201_1_IIS'],
+        ['Limiting', 'TCE201', 'TCE201_1_IXM'],
+        ['Operation permitted', 'TCE201', 'TCE201_1_IYP']
+      ]
+    },
+    {
+      t: 'AFR mode',
+      b: [
+        ['Reset', 'CRT:TCE170.TCE170_1_IKR'],
+        ['Select', 'CRT:TCE170.TCE170_1_IKS'],
+        ['Enable', 'CRT:TCE170.TCE170_1_IYS']
+      ],
+      l: [
+        ['Reset', 'TCE170', 'TCE170_1_IIR'],
+        ['Set', 'TCE170', 'TCE170_1_IIS'],
+        ['Operation permitted', 'TCE170', 'TCE170_1_IYP']
+      ]
+    }
+  ];
+  /* layout: four columns, each card to the shortest column; three boxes a row */
+  const COLS = 4,
+    CW = 415,
+    X0 = 22,
+    Y0 = 70,
+    BW = 132,
+    RH = 40,
+    GAP = 18;
+  const colY = Array(COLS).fill(Y0),
+    items = [],
+    texts = [];
+  CARDS.forEach((c, n) => {
+    const k = colY.indexOf(Math.min(...colY)),
+      left = X0 + k * (CW + 20);
+    let y = colY[k];
+    texts.push({ x: left + 2, y, s: c.t, anchor: 'start' });
+    y += 26;
+    const row = (list, f) =>
+      list.forEach((e, i) => {
+        items.push(
+          at(f(e), left + BW / 2 + (i % 3) * (BW + 9), y + Math.floor(i / 3) * RH, {
+            id: 'k' + n + (f === btn ? 'b' : 'l') + i
+          })
+        );
+        if (i === list.length - 1) y += (Math.floor(i / 3) + 1) * RH;
+      });
+    const btn = e => B(e[0], 'crt:' + e[1], { press: true, w: BW });
+    const lamp = e => B(e[0], 'crtl:' + e[1] + '|' + e[2], { w: BW });
+    row(c.b, btn);
+    row(c.l, lamp);
+    colY[k] = y + GAP;
+  });
+  page({
+    id: 'turbine-operation',
+    group: 'Turbine and generator',
+    title: 'Turbine operation',
+    about:
+      'The operator push buttons and lamps of the turbine control system for start-up, speed, load and tests: master trip and reset, automatic start-up, warming, target speed and acceleration, holds, overspeed tests, load control mode. Source: TCS CRT ports (HMI_DO / HMI_DI of the TCS I/O list) and the TCE / TCA sheets.',
+    plan: { look: 'real', w: 1760, h: 1000, items, pipes: [], texts }
+  });
+})();
+
+/* HX page: the operator push buttons and lamps of the turbine control system (TCS) for its valves and the generator excitation (lane 7, user 2026-11-25 "Gawan ng
+   controls ... ilink ang permissives, logic, interlock, may addresses din ang HMI kung saan mag iisang galaw ang logic at HMI").
+   THE SOURCE: /mnt/project-files/lanes/tcs-crt-ports.json (lane 2 TCS IO): the CRT ports of the TCE / TCA sheet program with their
+   HMI_DO.xls command rows (HOLD 3000 ms) and the HMI_DI.xls answer-back lamps of the same faceplate (iolist-tcs.zip, PC); the lamp key is
+   the CRT lamp of the sheet that draws it (src/digital/tce/<sheet>.js). Generated once from that table; plain English labels.
+   A button presses its port in the running TCS program (window.TCE, lane 9); a lamp reads the sheet's lamp. While the program is not
+   running both show '-----' (hx-app.js 'crt:' / 'crtl:' hooks). "Enable" = the CRT AVAILABLE port of the faceplate. */
+(function () {
+  const { L, page } = HX;
+  const B = HX.B;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  /* one card a faceplate of the TCS operator station: t = title, b = [label, CRT port] push buttons (a press holds the port 3000 ms,
+     HMI_DO.xls), l = [label, sheet, key] lamps (HMI_DI.xls answer-back points that a TCE / TCA sheet draws as a CRT lamp), miss = the
+     HMI_DI lamps of the faceplate that no sheet of the TCE / TCA set draws (finding c: not on the typed sheets, not bound) */
+  const CARDS = [
+    {
+      t: 'Field breaker (41)',
+      b: [
+        ['Close', 'CRT:TCA587.TCA587_1_IKA'],
+        ['Enable', 'CRT:TCA587.TCA587_1_IYS'],
+        ['Open', 'CRT:TCA587.TCA587_1_JYP']
+      ],
+      l: [
+        ['Close', 'TCA587', 'TCA587_1_IIA'],
+        ['Operation permitted', 'TCA587', 'TCA587_1_IYP'],
+        ['Open', 'TCA587', 'TCA587_1_YIP']
+      ]
+    },
+    {
+      t: 'Excitation',
+      b: [
+        ['Auto', 'CRT:TCA587.TCA587_2_IKA'],
+        ['Enable', 'CRT:TCA587.TCA587_2_IYS'],
+        ['Manual', 'CRT:TCA587.TCA587_2_JYP']
+      ],
+      l: [
+        ['Auto', 'TCA587', 'TCA587_2_IIA'],
+        ['Operation permitted', 'TCA587', 'TCA587_2_IYP'],
+        ['Manual', 'TCA587', 'TCA587_2_YIP']
+      ]
+    },
+    {
+      t: 'Power system stabilizer',
+      b: [
+        ['On', 'CRT:TCA745.TCA745_1_IKA'],
+        ['Enable', 'CRT:TCA745.TCA745_1_IYS'],
+        ['Off', 'CRT:TCA745.TCA745_1_JYP']
+      ],
+      l: [
+        ['On', 'TCA745', 'TCA745_1_IIA'],
+        ['Operation permitted', 'TCA745', 'TCA745_1_IYP'],
+        ['Off', 'TCA745', 'TCA745_1_YIP']
+      ]
+    },
+    {
+      t: 'Power factor control',
+      b: [
+        ['On', 'CRT:TCA745.TCA745_2_IKA'],
+        ['Enable', 'CRT:TCA745.TCA745_2_IYS'],
+        ['Off', 'CRT:TCA745.TCA745_2_JYP']
+      ],
+      l: [
+        ['On', 'TCA745', 'TCA745_2_IIA'],
+        ['Off', 'TCA745', 'TCA745_2_YIP'],
+        ['Operation permitted', 'TCA745', 'TCA745_2_IYP']
+      ]
+    },
+    {
+      t: 'Reactive power control',
+      b: [
+        ['On', 'CRT:TCA745.TCA745_3_IKA'],
+        ['Enable', 'CRT:TCA745.TCA745_3_IYS'],
+        ['Off', 'CRT:TCA745.TCA745_3_JYP']
+      ],
+      l: [
+        ['On', 'TCA745', 'TCA745_3_IIA'],
+        ['Operation permitted', 'TCA745', 'TCA745_3_IYP'],
+        ['Off', 'TCA745', 'TCA745_3_YIP']
+      ]
+    },
+    {
+      t: 'Gland seal group',
+      b: [
+        ['Enable', 'CRT:TCA636.TCA636_1_IYS'],
+        ['Start', 'CRT:TCA636.TCA636_1_JYS'],
+        ['Start reset', 'CRT:TCA636.TCA636_1_SIKR'],
+        ['Stop', 'CRT:TCA638.TCA636_1_JYP'],
+        ['Stop reset', 'CRT:TCA638.TCA636_1_PIKR']
+      ],
+      l: [
+        ['Start complete', 'TCA637', 'TCA636_1_IPC'],
+        ['Start trouble', 'TCA637', 'TCA636_1_SABN'],
+        ['Operation permitted', 'TCA636', 'TCA636_1_IYP'],
+        ['Start in progress', 'TCA636', 'TCA636_1_YIRS'],
+        ['Permissive', 'TCA636', 'TCA636_1_ABN'],
+        ['Stop complete', 'TCA638', 'TCA636_1_PIPC'],
+        ['Stop in progress', 'TCA638', 'TCA636_1_YIRP']
+      ]
+    },
+    {
+      t: 'Steam seal diverting valve',
+      b: [
+        ['Auto', 'CRT:TCA605.nFV-GSn036_IKA'],
+        ['Reset', 'CRT:TCA605.nFV-GSn036_IKR'],
+        ['Enable', 'CRT:TCA605.nFV-GSn036_IYS'],
+        ['Condenser side', 'CRT:TCA605.nFV-GSn036_JYC']
+      ],
+      l: [['Auto', 'TCA605', 'nFV-GSn036_IIA']],
+      miss: ['1FVGS1036_IEC', '1FVGS1036_IEO', '1FVGS1036_IYP', '1FVGS1036_ZSC', '1FVGS1036_ZSO']
+    },
+    {
+      t: 'Gland steam blowdown valve',
+      b: [
+        ['Enable', 'CRT:TCE365.nFV-GSn039_IIR'],
+        ['Reset', 'CRT:TCE365.nFV-GSn039_KTR']
+      ],
+      l: [],
+      miss: ['1FVGS1039_IEC', '1FVGS1039_IEO', '1FVGS1039_IYP', '1FVGS1039_ZSC', '1FVGS1039_ZSO']
+    },
+    {
+      t: 'Ventilator valve',
+      b: [
+        ['Reset', 'CRT:TCE360.nFV-CRn902_IKR'],
+        ['Enable', 'CRT:TCE360.nFV-CRn902_IYS']
+      ],
+      l: [
+        ['Trouble', 'TCE360', 'nFV-CRn902_ABN'],
+        ['Close fault', 'TCE360', 'nFV-CRn902_IEC'],
+        ['Open fault', 'TCE360', 'nFV-CRn902_IEO'],
+        ['Operation permitted', 'TCE360', 'nFV-CRn902_IYP'],
+        ['Closed', 'TCE360', 'nFV-CRn902_ZSC'],
+        ['Open', 'TCE360', 'nFV-CRn902_ZSO']
+      ]
+    },
+    {
+      t: 'Exhaust hood spray valve',
+      b: [
+        ['Auto', 'CRT:TCA738.nFV-CDn904_IKA'],
+        ['Manual', 'CRT:TCA738.nFV-CDn904_IKH'],
+        ['Reset', 'CRT:TCA738.nFV-CDn904_IKR'],
+        ['Enable', 'CRT:TCA738.nFV-CDn904_IYS'],
+        ['Open', 'CRT:TCA738.nFV-CDn904_JYO']
+      ],
+      l: [
+        ['Auto', 'TCA738', 'nFV-CDn904_IIA'],
+        ['Manual', 'TCA738', 'nFV-CDn904_IIH'],
+        ['Trouble', 'TCA738', 'nFV-CDn904_ABN']
+      ],
+      miss: ['1FVCD1904_IEC', '1FVCD1904_IEO', '1FVCD1904_IYP', '1FVCD1904_ZSC', '1FVCD1904_ZSO']
+    },
+    {
+      t: 'Cold reheat non-return valve',
+      b: [
+        ['Enable', 'CRT:TCA690.nXV-CRn901AF_IIR'],
+        ['Test', 'CRT:TCA690.nXV-CRn901AF_KTA'],
+        ['Test cancel', 'CRT:TCA690.nXV-CRn901AF_KTAC'],
+        ['Reset', 'CRT:TCA690.nXV-CRn901AF_KTR']
+      ],
+      l: [
+        ['Test feedback', 'TCA690', 'nXV-CRn901AF_ITA'],
+        ['Trouble', 'TCA690', 'nXV-CRn901AF_ABN']
+      ],
+      miss: ['1XVCR1901AF_IEC', '1XVCR1901AF_IEO', '1XVCR1901AF_IYP', '1XVCR1901AF_ZSC', '1XVCR1901AF_ZSO']
+    },
+    {
+      t: 'Extraction 2 non-return valve',
+      b: [
+        ['Reset', 'CRT:TCA711.nXV-TSn700_IKR'],
+        ['Enable', 'CRT:TCA711.nXV-TSn700_IYS'],
+        ['Test', 'CRT:TCA711.nXV-TSn700_KTA'],
+        ['Test cancel', 'CRT:TCA711.nXV-TSn700_TSC']
+      ],
+      l: [
+        ['Test feedback', 'TCA711', 'nXV-TSn700_ITA'],
+        ['Trouble', 'TCA711', 'nXV-TSn700_ABN']
+      ],
+      miss: ['1XVTS1700_IEC', '1XVTS1700_IEO', '1XVTS1700_IYP', '1XVTS1700_ZSC', '1XVTS1700_ZSO']
+    },
+    {
+      t: 'Extraction 3 primary non-return valve',
+      b: [
+        ['Reset', 'CRT:TCA712.nXV-TSn710_IKR'],
+        ['Enable', 'CRT:TCA712.nXV-TSn710_IYS'],
+        ['Test', 'CRT:TCA712.nXV-TSn710_KTA'],
+        ['Test cancel', 'CRT:TCA712.nXV-TSn710_KTAC']
+      ],
+      l: [
+        ['Test feedback', 'TCA712', 'nXV-TSn710_ITA'],
+        ['Trouble', 'TCA712', 'nXV-TSn710_ABN']
+      ],
+      miss: ['1XVTS1710_IEC', '1XVTS1710_IEO', '1XVTS1710_IYP', '1XVTS1710_ZSC', '1XVTS1710_ZSO']
+    },
+    {
+      t: 'Extraction 3 secondary non-return valve',
+      b: [
+        ['Reset', 'CRT:TCA714.nXV-TSn740_IKR'],
+        ['Enable', 'CRT:TCA714.nXV-TSn740_IYS'],
+        ['Test', 'CRT:TCA714.nXV-TSn740_KTA'],
+        ['Test cancel', 'CRT:TCA714.nXV-TSn740_KTAC']
+      ],
+      l: [
+        ['Test feedback', 'TCA714', 'nXV-TSn740_ITA'],
+        ['Trouble', 'TCA714', 'nXV-TSn740_ABN']
+      ],
+      miss: ['1XVTS1740_IEC', '1XVTS1740_IEO', '1XVTS1740_IYP', '1XVTS1740_ZSC', '1XVTS1740_ZSO']
+    },
+    {
+      t: 'Extraction 4 non-return valve',
+      b: [
+        ['Enable', 'CRT:TCA713.nXV-TSn720_IYS'],
+        ['Test', 'CRT:TCA713.nXV-TSn720_KTA'],
+        ['Test cancel', 'CRT:TCA713.nXV-TSn720_KTAC'],
+        ['Reset', 'CRT:TCA713.nXV-TSn720_KTR']
+      ],
+      l: [
+        ['Test feedback', 'TCA713', 'nXV-TSn720_ITA'],
+        ['Trouble', 'TCA713', 'nXV-TSn720_ABN']
+      ],
+      miss: ['1XVTS1720_IEC', '1XVTS1720_IEO', '1XVTS1720_IYP', '1XVTS1720_ZSC', '1XVTS1720_ZSO']
+    },
+    {
+      t: 'Extraction 5 non-return valve',
+      b: [
+        ['Reset', 'CRT:TCA715.nXV-TSn730_IKR'],
+        ['Enable', 'CRT:TCA715.nXV-TSn730_IYS'],
+        ['Test', 'CRT:TCA715.nXV-TSn730_KTA'],
+        ['Test cancel', 'CRT:TCA715.nXV-TSn730_KTAC']
+      ],
+      l: [
+        ['Test feedback', 'TCA715', 'nXV-TSn730_ITA'],
+        ['Trouble', 'TCA715', 'nXV-TSn730_ABN']
+      ],
+      miss: ['1XVTS1730_IEC', '1XVTS1730_IEO', '1XVTS1730_IYP', '1XVTS1730_ZSC', '1XVTS1730_ZSO']
+    }
+  ];
+  /* layout: four columns, each card to the shortest column; three boxes a row */
+  const COLS = 4,
+    CW = 415,
+    X0 = 22,
+    Y0 = 70,
+    BW = 132,
+    RH = 40,
+    GAP = 18;
+  const colY = Array(COLS).fill(Y0),
+    items = [],
+    texts = [];
+  CARDS.forEach((c, n) => {
+    const k = colY.indexOf(Math.min(...colY)),
+      left = X0 + k * (CW + 20);
+    let y = colY[k];
+    texts.push({ x: left + 2, y, s: c.t, anchor: 'start' });
+    y += 26;
+    const row = (list, f) =>
+      list.forEach((e, i) => {
+        items.push(
+          at(f(e), left + BW / 2 + (i % 3) * (BW + 9), y + Math.floor(i / 3) * RH, {
+            id: 'k' + n + (f === btn ? 'b' : 'l') + i
+          })
+        );
+        if (i === list.length - 1) y += (Math.floor(i / 3) + 1) * RH;
+      });
+    const btn = e => B(e[0], 'crt:' + e[1], { press: true, w: BW });
+    const lamp = e => B(e[0], 'crtl:' + e[1] + '|' + e[2], { w: BW });
+    row(c.b, btn);
+    row(c.l, lamp);
+    colY[k] = y + GAP;
+  });
+  page({
+    id: 'turbine-valves',
+    group: 'Turbine and generator',
+    title: 'Turbine valves and excitation',
+    about:
+      'The operator push buttons and lamps of the turbine control system for its valves and the generator excitation: field breaker, excitation, stabilizer, power factor and reactive power control, gland seal group, steam seal, blowdown and ventilator valves, exhaust hood spray, the non-return valve tests. Source: TCS CRT ports (HMI_DO / HMI_DI of the TCS I/O list) and the TCE / TCA sheets.',
+    plan: { look: 'real', w: 1760, h: 1000, items, pipes: [], texts }
   });
 })();
 
