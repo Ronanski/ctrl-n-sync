@@ -947,8 +947,8 @@
        EXECUTED (S/R): set by criteria Dn-1 and criteria An and STEP n SELECTED; reset by an UPPER STEP EXECUTING.
        COMPLETED (S/R): set by criteria Dn with the step executed; reset by the upper step's criteria D (upper STEP COMPLETED).
        BYPS (STEP n BYPASS, sheet 11 CRITERIA BYPASS: the criteria taken as ON) stands for criteria An and Dn.
-       Outs: SEL = STEP n SELECT(ED), STEP S = selected by STEP UP ORDER, PB ON = selected by the PB, ORDER = STEP IN n ORDER (selected or
-       executing), EXEC = STEP n EXECUTING, FINISH = COMPLETED, START = the scan EXECUTED sets; ORDER1 / EXEC1 / FINI1 = the same to the DCS.
+       Outs: SEL = STEP n SELECT(ED), STEP S = selected by STEP UP ORDER, PB ON = selected by the PB, ORDER = STEP IN n ORDER (selected: the
+       step whose A criteria are checked, sheet 10), EXEC = STEP n EXECUTING, FINISH = COMPLETED, START = the scan EXECUTED sets; ORDER1 / EXEC1 / FINI1 = the same to the DCS.
        RESET (right pin) is wired on no sheet: not given.
      Not on the transition logic (printed DEF timers beside the block, roles not drawn, not read): TD 3.0 s x3, TP 0.2 s, TP 1.0 s. */
   MACRO['STEP CONTROL MD'] = Object.assign(
@@ -974,8 +974,8 @@
         SEL: sel,
         'STEP S': sel && st.how === 'order' ? 1 : 0,
         'PB ON': sel && st.how === 'pb' ? 1 : 0,
-        ORDER: sel || ex ? 1 : 0,
-        ORDER1: sel || ex ? 1 : 0,
+        ORDER: sel,
+        ORDER1: sel,
         EXEC: ex,
         EXEC1: ex,
         FINISH: done,
@@ -984,6 +984,46 @@
       };
     },
     { src: 'drawing: ATS program 310SC90-795 Rev 2 sheets 8 ~ 11' }
+  );
+  /* CRI MONT.MD, drawing: ATS program 310SC90-795 Rev 2 sheet 10 "CRITERIA CHECK LOGIC" (book p 134) and sheet 11 "CRITERIA BYPASS
+       LOGIC" (p 135), with the criteria table 310SC90-796 (p 159: A = step in, B = step execution, D = step end, per step 0 .. 8). One block
+       per criterion: IN = the criterion OK; the K tables printed in the block, IN0 .. IN8 (column A) and EX0 .. EX8 (column B), say in which
+       steps it is asked. The steps come by their definitions on the step sheets (TCA520 .. TCA528): STEP IN n ORDER and STEP n EXECUTING.
+       STPIN = criterion not OK while a step that asks it at step in is in order (sheet 10: CRITERIA An not satisfied with STEP n SELECTED);
+       EX = criterion not OK while a step that asks it in execution is executing (STEP n EXECUTED and CRITERIA Bn not satisfied).
+       BYPASS (sheet 11): the CRT PB CRITERIA BYPASS of this criterion while it is not satisfied = INDIVIDUAL CRITERIA ON: STPIN / EX are
+       taken as OK and BYPASS is 1, until the criterion is OK or no step asks it.
+     The right pins FAIL / USE and the left MB / MB2 / MODE are wired on no sheet: not given / not read. */
+  const STEPS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const criK = (notes, p) =>
+    STEPS.map(i => {
+      const n = (notes || []).find(n => new RegExp('^' + p + i + ' K:').test(String(n[2])));
+      return n ? +String(n[2]).split('K:')[1] : undefined;
+    });
+  MACRO['CRI MONT.MD'] = Object.assign(
+    (I, notes, st) => {
+      const kin = st.kin || (st.kin = criK(notes, 'IN')),
+        kex = st.kex || (st.kex = criK(notes, 'EX')),
+        ok = b01(I.IN),
+        askIn = STEPS.some(i => kin[i] && b01(I['DEF STEP IN ' + i + ' ORDER'])),
+        askEx = STEPS.some(i => kex[i] && b01(I['DEF STEP ' + i + ' EXECUTING'])),
+        bad = !ok && (askIn || askEx);
+      if (!bad) st.byp = 0;
+      else if (pulseUp(st, 'pB', b01(I['PB BYPASS']))) st.byp = 1;
+      if (!bad) st.pB = b01(I['PB BYPASS']);
+      return {
+        STPIN: !ok && askIn && !st.byp ? 1 : 0,
+        EX: !ok && askEx && !st.byp ? 1 : 0,
+        BYPASS: st.byp ? 1 : 0
+      };
+    },
+    {
+      src: 'drawing: ATS program 310SC90-795 Rev 2 sheets 10 ~ 11, criteria table 310SC90-796 sheet 3',
+      pb: ['BYPASS'],
+      inBox: true,
+      defs: STEPS.flatMap(i => ['STEP IN ' + i + ' ORDER', 'STEP ' + i + ' EXECUTING']),
+      need: notes => ['IN', 'EX'].filter(p => criK(notes, p).some(v => v === undefined)).map(p => p + '0 .. ' + p + '8 K')
+    }
   );
   const numConst = t => {
     const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
@@ -1174,8 +1214,17 @@
         /* push buttons of the operator station that the macro holds inside (MOTOR STANDARD: START / STOP / AUTO / MANUAL / RESET of the
            typical, IBD 310SC90-794 sheet 14): a CRT port of the block, "CRT:<sheet>.<block>.<button>" */
         for (const k of (f && f.pb) || []) ins['PB ' + k] = port('CRT:' + n.id + '.' + M.key + '.' + k);
-        const open = f && f.need ? f.need(M.notes).map(k => name + ' needs ' + k) : [];
-        nodes.push({ t: 'M', f, name, notes: M.notes, ins, outs, st: {}, open, src: f && f.src });
+        /* signals the macro reads by their definition name (CRI MONT.MD: "STEP IN n ORDER" / "STEP n EXECUTING" of the step sheets),
+           as "DEF <name>"; one no sheet gives stays a REF port */
+        for (const d of (f && f.defs) || []) {
+          const dd = defs[S.ctl + '|' + d] || defs['|' + d];
+          ins['DEF ' + d] = dd && dd.length ? res(dd[0][0], dd[0][1]) : port('REF:' + d);
+        }
+        /* parameters printed INSIDE the block (CRI MONT.MD: the K tables IN0 .. IN8 / EX0 .. EX8) are its notes too */
+        const box = f && f.inBox && (S.m || []).find(e => e[0] === M.key),
+          notes = box ? M.notes.concat((S.t || []).filter(w => w[0] >= box[3] && w[0] <= box[3] + box[5] && w[1] >= box[4] && w[1] <= box[4] + box[6])) : M.notes;
+        const open = f && f.need ? f.need(notes).map(k => name + ' needs ' + k) : [];
+        nodes.push({ t: 'M', f, name, notes, ins, outs, st: {}, open, src: f && f.src });
       }
       /* order: a node after the nodes of this sheet that feed it (depth first; a loop keeps the last scan's value) */
       const by = new Map();

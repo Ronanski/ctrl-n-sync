@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 217; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 235; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 99;
@@ -201,6 +201,24 @@ const S = R.stats(A);
     if (sr({ 'OUT CR': 1 }).FINISH !== 1) fail('STEP CONTROL MD: criteria Dn does not complete');
     so = sr({ EXE: 1, FINISH: 1 });
     if (so.EXEC !== 0 || so.FINISH !== 0) fail('STEP CONTROL MD: the upper step does not reset ' + JSON.stringify(so));
+  }
+  /* CRI MONT.MD from ATS program 310SC90-795 sheets 10 ~ 11: TCA550 CRI 1.1 (IN K 001111100, EX K 011111110) is asked at step in of
+     steps 2 ~ 6 and in the execution of steps 1 ~ 7; the steps come by definition from TCA520 .. TCA528; PB BYPASS takes it as OK */
+  {
+    const cm = A.plan.find(p => p.id === 'TCA550').nodes.find(x => x.t === 'M' && x.name === 'CRI MONT.MD');
+    if (!cm || A.names[cm.ins['DEF STEP IN 2 ORDER']] !== 'TCA522:md.ORDER') fail('TCA550 CRI MONT.MD does not read STEP IN 2 ORDER of TCA522: ' + (cm && A.names[cm.ins['DEF STEP IN 2 ORDER']]));
+    const cf = M['CRI MONT.MD'],
+      cs = {},
+      cb = { IN: 0, 'PB BYPASS': 0 },
+      cr = x => cf({ ...cb, ...x }, cm.notes, cs, 0.1);
+    if (cr({ 'DEF STEP IN 1 ORDER': 1 }).STPIN !== 0) fail('CRI MONT.MD: CRI 1.1 is not asked at step in of step 1 (IN1 K:0)');
+    if (cr({ 'DEF STEP IN 2 ORDER': 1 }).STPIN !== 1) fail('CRI MONT.MD: CRI 1.1 not OK at step in of step 2 gives no STPIN');
+    if (cr({ 'DEF STEP IN 2 ORDER': 1, IN: 1 }).STPIN !== 0) fail('CRI MONT.MD: STPIN with the criterion OK');
+    if (cr({ 'DEF STEP 1 EXECUTING': 1 }).EX !== 1) fail('CRI MONT.MD: CRI 1.1 not OK in the execution of step 1 gives no EX');
+    const by = cr({ 'DEF STEP 1 EXECUTING': 1, 'PB BYPASS': 1 });
+    if (by.EX !== 0 || by.BYPASS !== 1) fail('CRI MONT.MD: PB BYPASS does not take the criterion as OK ' + JSON.stringify(by));
+    if (cr({ 'DEF STEP 1 EXECUTING': 1, IN: 1 }).BYPASS !== 0) fail('CRI MONT.MD: the bypass stays after the criterion is OK');
+    if (cf.need([]).length !== 2) fail('CRI MONT.MD with no K tables must be open');
   }
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
