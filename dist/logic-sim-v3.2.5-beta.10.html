@@ -157521,10 +157521,10 @@ document.head.appendChild(
       const sh = an ? AN.sheets[AN.i] : S.sheets[S.cur],
         t2 = sh && sh.name ? sh.name : '',
         t3 =
-          'v3.2.5-beta.10' + ' · build 61e09ef'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
+          'v3.2.5-beta.10' + ' · build 8196c36'; /* 3.2.0 retest #24 (the version label stays the one the CI checks) */
       if (c2.textContent !== t2) c2.textContent = t2;
       /* the CI reads the literal c3.textContent = 'v…' line, so the label is written in that form */
-      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 61e09ef';
+      if (c3.textContent !== t3) c3.textContent = 'v3.2.5-beta.10' + ' · build 8196c36';
     } catch (e) {}
   };
   upd();
@@ -349546,7 +349546,7 @@ window.LS_LIVE = (function () {
         'Engineering = white symbols, only wires, values and valves coloured'
       );
     const ver = (document.title.match(/v\d[\w.-]*/) || [''])[0];
-    row('Version', E('span', 'scsver', ver + ' · build 61e09ef'));
+    row('Version', E('span', 'scsver', ver + ' · build 8196c36'));
   }
   function openSet(near) {
     if (!set) {
@@ -368986,6 +368986,36 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    NOT on this page yet: the 1 ELEMENT / 3 ELEMENT push buttons of the drum level control (temporary page 06). */
 (function () {
   const { V, E, M, C, X, L, page } = HX;
+  /* beta.557: the monitor rows (PERMISSIVE · TREND · MONITOR faceplate) and the VCB point of each feed pump, from the DCS I/O list
+     (station 3: LOP A / B MIR / MIT / MIL-P1115x1 / x2, VCB MIV-P1115x1, lube oil PS-LO1115-x1 ~ x3 and LS-LO1115-x, winding / bearing
+     TT-FW1115-x*, casing vibration VT-FW1115-x**; unit of the vibration points not in the I/O list: shown as the number) */
+  const bfwpMon = n => [
+    V('Lube oil pump A running', 'MIR-P1115' + n + '1', '', 0, { words: ['RUNNING', 'STOPPED'] }),
+    V('Lube oil pump A trip', 'MIT-P1115' + n + '1', '', 0, { words: ['TRIP', 'NORMAL'] }),
+    V('Lube oil pump A remote', 'MIL-P1115' + n + '1', '', 0, { words: ['REMOTE', 'LOCAL'] }),
+    V('Lube oil pump B running', 'MIR-P1115' + n + '2', '', 0, { words: ['RUNNING', 'STOPPED'] }),
+    V('Lube oil pump B trip', 'MIT-P1115' + n + '2', '', 0, { words: ['TRIP', 'NORMAL'] }),
+    V('Lube oil pump B remote', 'MIL-P1115' + n + '2', '', 0, { words: ['REMOTE', 'LOCAL'] }),
+    V('Lube oil pressure under 1.5 kg/cm²', 'PS-LO1115-' + n + '1', '', 0, { words: ['YES', 'NO'] }),
+    V('Lube oil pressure over 2.0 kg/cm²', 'PS-LO1115-' + n + '2', '', 0, { words: ['YES', 'NO'] }),
+    V('Lube oil pressure under 1 kg/cm²', 'PS-LO1115-' + n + '3', '', 0, { words: ['YES', 'NO'] }),
+    V('Lube oil level low', 'LS-LO1115-' + n, '', 0, { words: ['LOW', 'NORMAL'] }),
+    V('Motor winding U', 'TT-FW1115-' + n + 'U', '°C', 0),
+    V('Motor winding V', 'TT-FW1115-' + n + 'V', '°C', 0),
+    V('Motor winding W', 'TT-FW1115-' + n + 'W', '°C', 0),
+    V('Motor drive end bearing', 'TT-FW1115-' + n + '3', '°C', 0),
+    V('Motor non drive end bearing', 'TT-FW1115-' + n + '4', '°C', 0),
+    V('Pump drive end bearing', 'TT-FW1115-' + n + '2', '°C', 0),
+    V('Pump non drive end bearing', 'TT-FW1115-' + n + '1', '°C', 0),
+    V('Pump non drive end vibration X', 'VT-FW1115-' + n + '11', '', 1),
+    V('Pump non drive end vibration Y', 'VT-FW1115-' + n + '12', '', 1),
+    V('Pump drive end vibration X', 'VT-FW1115-' + n + '21', '', 1),
+    V('Pump drive end vibration Y', 'VT-FW1115-' + n + '22', '', 1),
+    V('Motor non drive end vibration X', 'VT-FW1115-' + n + '41', '', 1),
+    V('Motor non drive end vibration Y', 'VT-FW1115-' + n + '42', '', 1),
+    V('Motor drive end vibration X', 'VT-FW1115-' + n + '31', '', 1),
+    V('Motor drive end vibration Y', 'VT-FW1115-' + n + '32', '', 1)
+  ];
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_FW = 6,
@@ -369072,7 +369102,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           M('pump', 'BFWP-A', 'Boiler feed pump A', [
             V('Current', 'IT-P1115A', 'A'),
             V('Strainer', 'DPT-FW1115-A', K, 2)
-          ]),
+          ], { mon: bfwpMon('A'), vcb: 'MIV-P1115A1' }),
           PAX,
           PY,
           {
@@ -369085,7 +369115,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           M('pump', 'BFWP-B', 'Boiler feed pump B', [
             V('Current', 'IT-P1115B', 'A'),
             V('Strainer', 'DPT-FW1115-B', K, 2)
-          ]),
+          ], { mon: bfwpMon('B'), vcb: 'MIV-P1115B1' }),
           PBX,
           PY,
           {
@@ -369323,6 +369353,18 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    of the hotwell, the chemical dosing and sampling lines, the seal water lines. */
 (function () {
   const { V, E, M, C, X, L, page } = HX;
+  /* beta.557: monitor rows and VCB point of each condensate pump (DCS I/O list station 3: MIV-P1116x1, VT-CD1116-x3 / x4,
+     TT-CD1116-xU / xV / xW / x3 / x4 / x1; unit of the vibration points not in the I/O list) */
+  const cepMon = n => [
+    V('Motor winding U', 'TT-CD1116-' + n + 'U', '°C', 0),
+    V('Motor winding V', 'TT-CD1116-' + n + 'V', '°C', 0),
+    V('Motor winding W', 'TT-CD1116-' + n + 'W', '°C', 0),
+    V('Motor bearing 1', 'TT-CD1116-' + n + '3', '°C', 0),
+    V('Motor bearing 2', 'TT-CD1116-' + n + '4', '°C', 0),
+    V('Coupling', 'TT-CD1116-' + n + '1', '°C', 0),
+    V('Motor drive end vibration', 'VT-CD1116-' + n + '3', '', 1),
+    V('Motor non drive end vibration', 'VT-CD1116-' + n + '4', '', 1)
+  ];
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_CD = 6,
@@ -369445,7 +369487,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         /* ---- the two condensate pumps ---- */
         at(
           M('vpump', 'CEP-A', 'Condensate pump A', [V('Current', 'ITP1116A', 'A'), V('Strainer', 'DPCEPA', K, 2)], {
-            wrap: 12
+            wrap: 12,
+            mon: cepMon('A'),
+            vcb: 'MIV-P1116A1'
           }),
           PAX,
           PY,
@@ -369453,7 +369497,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ),
         at(
           M('vpump', 'CEP-B', 'Condensate pump B', [V('Current', 'ITP1116B', 'A'), V('Strainer', 'DPCEPB', K, 2)], {
-            wrap: 12
+            wrap: 12,
+            mon: cepMon('B'),
+            vcb: 'MIV-P1116B1'
           }),
           PBX,
           PY,
@@ -371509,6 +371555,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           { id: 'gs', lab: 'b' }
         ),
         at(L('turbine', 'Gland steam to the turbine'), 1620, GSY, { id: 'tul' }),
+        /* beta.557: the turbine gland steam line drain MV-AS1397 (DITL-116, hx-sys-as M116; opened / closed also by the TCS,
+           TCS-DI1037 / 1038 on the Turbine control interface page), on the line to the turbine, to the flash pipe */
+        at(X('MV-AS1397', 'Gland steam line drain', { wrap: 12 }), 1560, 370, { id: 'gsd', rot: 90, lab: 'r' }),
         /* beta.365 D18: the gland steam exhauster of IBD TC-28 (TCA680): it draws the gland leak-off steam and air through the gland
            steam condenser H-1903 (Condensate page) and blows the air out; its faceplate is the one of its sheet */
         at(L('condensate', 'Gland steam condenser H-1903', { back: true }), 1150, 66, { id: 'gcl' }),
@@ -371570,6 +371619,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { med: 'condensate', w: W_WT, pts: ['cd2.r', 'xb2.l'], flow: 'l:TICAS1017', arrow: false },
         { med: 'condensate', w: W_WT, pts: ['xb2.r', 'sp2.l'], flow: 'l:TICAS1017' },
         { med: 'condensate', w: W_WT, pts: ['sp2.r', [1093, 110], 'ds2.t'], flow: 'l:TICAS1017', arrow: false },
+        { med: 'drain', w: W_DR, pts: [[1560, GSY], 'gsd.l'], flow: 'x:MV-AS1397', arrow: false },
+        { med: 'drain', w: W_DR, pts: ['gsd.r', [1560, 440]], to: 'flash pipe', flow: 'x:MV-AS1397' },
         { med: 'drain', w: W_DR, pts: [[1250, GSY], 'dsd.l'], flow: 'x:MV-AS1393', arrow: false },
         { med: 'drain', w: W_DR, pts: ['dsd.r', [1250, 390]], to: 'flash pipe', flow: 'x:MV-AS1393' },
         /* condenser */
@@ -371598,10 +371649,10 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1035, y: HY + 30, s: 'AUXILIARY STEAM HEADER', cls: 'hx-zone', anchor: 'middle' },
         { x: 230, y: CRY - 60, s: 'Valve 1', key: 'ZT-AS1020-1', unit: '%', dp: 1 },
         { x: 230, y: CRY - 44, s: 'Valve 2', key: 'ZT-AS1020-2', unit: '%', dp: 1 },
-        { x: 1460, y: 330, s: 'Gland steam temperature 1', key: 'TEGS1002', unit: '°C', dp: 0 },
-        { x: 1460, y: 346, s: 'Gland steam temperature 2', key: 'TEGS1003', unit: '°C', dp: 0 },
-        { x: 1460, y: 362, s: 'Turbine side', key: 'TT-AS1017', unit: '°C', dp: 0 },
-        { x: 1460, y: 378, s: 'Unloading valve', key: 'PV-GS1034', unit: '%', dp: 1 },
+        { x: 1290, y: 400, s: 'Gland steam temperature 1', key: 'TEGS1002', unit: '°C', dp: 0 },
+        { x: 1290, y: 416, s: 'Gland steam temperature 2', key: 'TEGS1003', unit: '°C', dp: 0 },
+        { x: 1290, y: 432, s: 'Turbine side', key: 'TT-AS1017', unit: '°C', dp: 0 },
+        { x: 1290, y: 448, s: 'Unloading valve', key: 'PV-GS1034', unit: '%', dp: 1 },
         { x: 1440, y: 500, s: 'CONDENSER', cls: 'hx-zone' },
         { x: 1440, y: 520, s: 'Pressure', key: 'PT-CD1110', unit: K + ' abs', dp: 3 },
         /* beta.359 (ROSÉ, test as_page_values): PT-ST1110-1 ~ 3 are the exhaust hood absolute pressures in kg/cm² A like the condenser
@@ -371888,7 +371939,11 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(E('tgset', '', '', [], { on: ON }), TX, TY, { id: 'tg', under: true }),
         at(E('generator', '', '', [], { on: ON }), TX - 332, TY, { id: 'gen', under: true }),
         /* live Cold run 2026-11-18 F-W: the turning gear (TCS 1.19), so the operator can turn the shaft before gland sealing */
-        at(M('motor', 'TURNING GEAR', 'Turning gear', [V('Speed', 'SI-TB', 'rpm', 0)], { tag: 'ZS-LO1906' }), TX - 332, TY + 110, {
+        at(M('motor', 'TURNING GEAR', 'Turning gear', [
+            V('Speed', 'SI-TB', 'rpm', 0),
+            /* beta.557: PT-IA1128 #1 air buffer tank of turning gear pressure (I/O list S4 AI0437) */
+            V('Air buffer tank', 'PT-IA1128', 'kg/cm²', 2)
+          ], { tag: 'ZS-LO1906' }), TX - 332, TY + 110, {
           id: 'tgm',
           sc: 1.4,
           lab: 'b'
@@ -372130,6 +372185,17 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    faceplate. */
 (function () {
   const { V, E, M, L, page } = HX;
+  /* beta.557: monitor rows and VCB point of each sea water pump (DCS I/O list station 3: MIV-P1501x1, TT-SW1501-x*, VT-SW1501-x1 / x2;
+     unit of the vibration points not in the I/O list) */
+  const swMon = n => [
+    V('Motor winding U', 'TT-SW1501-' + n + 'U', '°C', 0),
+    V('Motor winding V', 'TT-SW1501-' + n + 'V', '°C', 0),
+    V('Motor winding W', 'TT-SW1501-' + n + 'W', '°C', 0),
+    V('Motor drive end bearing', 'TT-SW1501-' + n + '3', '°C', 0),
+    V('Motor non drive end bearing', 'TT-SW1501-' + n + '4', '°C', 0),
+    V('Motor bearing vibration 1', 'VT-SW1501-' + n + '1', '', 1),
+    V('Motor bearing vibration 2', 'VT-SW1501-' + n + '2', '', 1)
+  ];
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_M = 9,
@@ -372179,7 +372245,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ),
         ...N.map((n, i) =>
           at(
-            M('vpump', 'SWP-' + n, 'Sea water pump ' + n, [V('Current', 'IIP1501' + n, 'A', 1), V('Discharge', 'PGSW1501' + n, 'kg/cm²', 2)], { tag: 'P-1501' + n }),
+            M('vpump', 'SWP-' + n, 'Sea water pump ' + n, [V('Current', 'IIP1501' + n, 'A', 1), V('Discharge', 'PGSW1501' + n, 'kg/cm²', 2)], { tag: 'P-1501' + n, mon: swMon(n), vcb: 'MIV-P1501' + n + '1' }),
             PX,
             PY[i],
             { id: 'p' + i, sc: PS, lab: 'b' }
@@ -372441,6 +372507,14 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    and their faceplate are the ones of fp-pop.js. */
 (function () {
   const { V, E, M, L, page } = HX;
+  /* beta.557: monitor rows and VCB point of each closed cooling pump (DCS I/O list station 3: MIV-P1108x1, TT-CW1108-x*) */
+  const acwMon = n => [
+    V('Motor winding U', 'TT-CW1108-' + n + 'U', '°C', 0),
+    V('Motor winding V', 'TT-CW1108-' + n + 'V', '°C', 0),
+    V('Motor winding W', 'TT-CW1108-' + n + 'W', '°C', 0),
+    V('Motor drive end bearing', 'TT-CW1108-' + n + '3', '°C', 0),
+    V('Motor non drive end bearing', 'TT-CW1108-' + n + '4', '°C', 0)
+  ];
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
   const W_M = 6,
@@ -372535,7 +372609,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
               'ACWP-' + n,
               'Closed cooling pump ' + n,
               [V('Current', 'IIP1108' + n, 'A', 1), V('Strainer', 'DPICW1108' + n, K, 3)],
-              { tag: 'P-1108' + n }
+              { tag: 'P-1108' + n, mon: acwMon(n), vcb: 'MIV-P1108' + n + '1' }
             ),
             CPX,
             CPY[i],
@@ -372914,7 +372988,9 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           ['SYNCH.', 'sync'],
           ['LOAD UP', 'loadup'],
           ['NORMAL', 'normal']
-        ].map((b, i) => at(B(b[0], 'data-tpb="' + b[1] + '"', { press: true, w: 114 }), 1206 + i * 124, PY, { id: 'pba' + i })),
+        ].map((b, i) =>
+          at(B(b[0], 'data-tpb="' + b[1] + '"', { press: true, w: 114 }), 1206 + i * 124, PY, { id: 'pba' + i })
+        ),
         ...TRIP.map((t, i) =>
           at(B(t[0], 'data-tfo="' + t[1] + '"', { plain: true, w: 330 }), 1570, 92 + i * 26, { id: 'tf' + i })
         )
@@ -372938,7 +373014,28 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         ...STEP.slice(1).map((s, i) => ({ med: 'signal', w: 2, pts: ['st' + i + '.r', 'st' + (i + 1) + '.l'] }))
       ],
       taps: [
-        { x: HPX + 60, y: 40, side: 'r', label: 'Main steam', key: 'PT-MS1006-1', unit: K, dp: 1, tag: 'PT-MS1006-1' },
+        /* main steam pressure 1 / 2 and temperature at the turbine inlet (I/O list PT-MS1006-1 / -2, TT-MS1007) */
+        {
+          x: HPX + 60,
+          y: 40,
+          side: 'r',
+          label: 'Main steam',
+          key: 'PT-MS1006-1',
+          key2: 'PT-MS1006-2',
+          unit: K,
+          dp: 1,
+          tag: 'PT-MS1006-1 / -2'
+        },
+        {
+          x: HPX + 230,
+          y: 40,
+          side: 'r',
+          label: 'Main steam temperature',
+          key: 'TT-MS1007',
+          unit: '°C',
+          dp: 0,
+          tag: 'TT-MS1007'
+        },
         {
           x: GX,
           y: TY + 70,
@@ -372977,14 +373074,17 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         val(5, 'Control oil / trip oil', 'PT-CTL', K, 0, 'PT-TRIP', 'PTLO10061 / 10071'),
         val(6, 'Lube oil after cooler', 'TT-LOCOOL', '°C', 0, null, 'TILO10021 / 22'),
         /* the target load of the turbine control system (the old UNIT page: TCS target MW) */
-        val(7, 'Target load', 'TCS-AI1001', 'MW', 1, null, 'TCS-AI1001')
+        val(7, 'Target load', 'TCS-AI1001', 'MW', 1, null, 'TCS-AI1001'),
+        /* high pressure turbine first stage pressure A / B / C (I/O list PT-ST1001-1 ~ 3) */
+        val(8, 'First stage pressure A / B and C', 'PT-ST1001-1', K, 1, 'PT-ST1001-2', 'PT-ST1001-1 / -2 / -3')
       ],
       texts: [
         { x: GX + 14, y: 34, s: 'to the grid', cls: 'hx-note' },
         { x: 20, y: 788, s: 'AUTOMATIC TURBINE START-UP', cls: 'hx-name' },
         { x: 1404, y: 60, s: 'TRIP FIRST OUT · red = came first', cls: 'hx-name' },
         { x: 1149, y: PY + 36, s: 'push buttons work in RUN', cls: 'hx-note' },
-        { x: VX - 10, y: 220, s: 'AT THE TURBINE', cls: 'hx-name' }
+        { x: VX - 10, y: 220, s: 'AT THE TURBINE', cls: 'hx-name' },
+        { x: VX + 196, y: 262 + 8 * 64 + 4, s: 'C', key: 'PT-ST1001-3', unit: K, dp: 1, anchor: 'start' }
       ]
     }
   });
@@ -373288,7 +373388,13 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     ['Line breaker 52L1 open (house load)', 'data-dy="DITL-03E|i|1"'],
     ['52G1 ready to synchronize', 'data-di="RY-52G|Y|N"'],
     ['52L1 ready to synchronize', 'data-di="RY-52L|Y|N"'],
-    ['Generator trip', 'data-di="MIT-GEN|Y|N"']
+    ['Generator trip', 'data-di="MIT-GEN|Y|N"'],
+    /* beta.557: the breaker contacts and the trip output of the I/O list (S2 I.0931 / I.0932 / I.0937, O.045F; sheets DITL-88 row 15,
+       DITL-51 row 3, generator protection 310SD03-743) */
+    ['Breaker 52G1 on contact', 'data-di="MIG-52G1-1|Y|N"'],
+    ['Breaker 52G1 off contact', 'data-di="MIG-52G1-2|Y|N"'],
+    ['Line breaker 52L1 open contact', 'data-di="MIG-52L1|Y|N"'],
+    ['Generator trip output of the DCS', 'data-di="MIT-GENS|Y|N"']
   ];
   const LIVE = ON + '|' + R.l1; /* the line above 52G1 is alive from the grid as well */
 
@@ -374038,7 +374144,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
    Left out: the filter, backwash and utility water pumps and the potable / plumbing water (water treatment, user exclusion);
    hand valves, level gauges. Every state is a digital input of the I/O list (data-di): '-----' until a link gives it a value. */
 (function () {
-  const { V, E, L, page } = HX;
+  const { V, E, L, M, X, page } = HX;
   const B = HX.B;
   const K = 'kg/cm²';
   const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
@@ -374058,17 +374164,19 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
     FY = 860 /* fire pumps */,
     WX = 1450,
     WY = 570 /* waste water sump */,
-    WPY = 430 /* its pumps */,
+    WPY = 412 /* its pumps */,
     PTX = 1330,
     PTY = 880; /* transformer area pit */
-  const IW = 'h:iw-MIR-P0715A|h:iw-MIR-P0715B',
+  const IW = 'm:P-0715A|m:P-0715B',
     FR = ['iw-MIR-P0718', 'iw-MIR-P0719', 'iw-MIR-P0720'],
     FIRE = FR.map(k => 'h:' + k).join('|');
   const pump = (n, i) =>
     at(
-      E('pump', 'Industrial water pump ' + n, 'P-0715' + n, [V('Strainer', 'DPT-IW0715-' + n, K, 2)], {
-        on: run('MIR-P0715' + n),
-        wrap: 14
+      /* beta.557: the machine of the registry (EIMI hx-sys-mu IWA / IWB, DITL-111 and #B): a click opens its two faceplates */
+      M('pump', 'P-0715' + n, 'Industrial water pump ' + n, [V('Strainer', 'DPT-IW0715-' + n, K, 2)], {
+        wrap: 14,
+        /* the remote / local point of the I/O list (MIL-P0715x) on its monitor faceplate */
+        mon: [V('Remote', 'MIL-P0715' + n, '', 0, { words: ['REMOTE', 'LOCAL'] })]
       }),
       PX,
       PY[i],
@@ -374114,26 +374222,18 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(B('Fire water level low', di('LS-IW0724', 'LOW', 'NORMAL'), { w: 160 }), TX, TBY + 128, { id: 'tbl' }),
         /* the connecting motor valve between the tanks */
         at(
-          E('valve', 'Tank connecting valve', 'MV-IW0391', [V('Position', 'ZT-IW0391', '%', 0)], {
-            kind: 'motor',
-            on: HX.hk('iw-mv0391', di('ZSO-IW0391', 'OPEN', 'NOT OPEN')),
-            wrap: 12
-          }),
+          /* beta.557: the motor valve of the registry (hx-sys-mu IWV, DITL-87): its faceplate opens / closes it */
+          X('MV-IW0391', 'Tank connecting valve', { vals: [V('Position', 'ZT-IW0391', '%', 0)], wrap: 12 }),
           360,
           470,
           { id: 'mv', rot: 90, lab: 'r' }
         ),
-        at(B('Open', di('ZSO-IW0391', 'OPEN', 'NOT OPEN'), { w: 100 }), 290, 420, { id: 'mvo' }),
-        at(B('Closed', di('ZSC-IW0391', 'CLOSED', 'NOT CLOSED'), { w: 100 }), 290, 520, { id: 'mvc' }),
         /* industrial water pumps */
         pump('A', 0),
         pump('B', 1),
-        ...['A', 'B'].flatMap((n, i) => [
-          at(B('Remote', di('MIL-P0715' + n, 'REMOTE', 'LOCAL'), { w: 130 }), PX + 135, PY[i] - 16, { id: 'pr' + i }),
-          at(B('Electric trouble', di('MIT-P0715' + n, 'TROUBLE', 'NORMAL'), { w: 130 }), PX + 135, PY[i] + 30, {
-            id: 'pt' + i
-          })
-        ]),
+        ...['A', 'B'].map((n, i) =>
+          at(B('Electric trouble', di('MIT-P0715' + n, 'TROUBLE', 'NORMAL'), { w: 130 }), PX + 135, PY[i] + 6, { id: 'pt' + i })
+        ),
         /* fire pumps on tank B */
         fire('P-0718', 'Fire pump, diesel engine', 0),
         fire('P-0719', 'Fire pump, motor', 1),
@@ -374147,7 +374247,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         at(B('Sump level high high', di('LSHH-P0058', 'HIGH HIGH', 'NORMAL'), { w: 180 }), WX + 210, WY, { id: 'wsh' }),
         ...['A', 'B'].map((n, i) =>
           at(
-            E('vpump', 'Waste water pump ' + n, 'P-0058' + n, [], { on: run('MIR-P0058' + n), wrap: 12 }),
+            /* beta.557: hx-sys-mu WWA / WWB (DITL-120 and #B); no START / STOP on the sheet, the faceplate shows the state only */
+            M('vpump', 'P-0058' + n, 'Waste water pump ' + n, [], { wrap: 12 }),
             WX - 70 + 140 * i,
             WPY,
             {
@@ -374193,12 +374294,12 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           arrow: false
         },
         ...['A', 'B'].flatMap((n, i) => [
-          { med: 'water', w: W_M, pts: [[SX, PY[i]], 'p' + i + '.s'], flow: 'h:iw-MIR-P0715' + n, arrow: false },
+          { med: 'water', w: W_M, pts: [[SX, PY[i]], 'p' + i + '.s'], flow: 'm:P-0715' + n, arrow: false },
           {
             med: 'water',
             w: W_M,
             pts: ['p' + i + '.d', [PX - 2, PY[i] - 60], [HX_, PY[i] - 60]],
-            flow: 'h:iw-MIR-P0715' + n,
+            flow: 'm:P-0715' + n,
             arrow: false
           }
         ]),
@@ -374223,8 +374324,8 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           to: 'plant users'
         },
         /* tank A to tank B through the connecting valve */
-        { med: 'water', w: W_S, pts: [[360, TAY + 66], 'mv.l'], flow: 'h:iw-mv0391', arrow: false },
-        { med: 'water', w: W_S, pts: ['mv.r', [360, TBY + 66], 'tb.r'], flow: 'h:iw-mv0391' },
+        { med: 'water', w: W_S, pts: [[360, TAY + 66], 'mv.l'], flow: 'x:MV-IW0391', arrow: false },
+        { med: 'water', w: W_S, pts: ['mv.r', [360, TBY + 66], 'tb.r'], flow: 'x:MV-IW0391' },
         /* tank B to the fire pumps (suction header under them), their discharge header to the fire fighting system */
         {
           med: 'water',
@@ -374262,14 +374363,14 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
           med: 'drain',
           w: W_S,
           pts: [[WX - 92 + 140 * i, WY + 10], 'w' + i + '.s'],
-          flow: 'h:iw-MIR-P0058' + 'AB'[i],
+          flow: 'm:P-0058' + 'AB'[i],
           arrow: false
         })),
         ...[0, 1].map(i => ({
           med: 'drain',
           w: W_S,
           pts: ['w' + i + '.d', [WX - 30 + 140 * i, WPY - 11], [WX - 30 + 140 * i, 360]],
-          flow: 'h:iw-MIR-P0058' + 'AB'[i],
+          flow: 'm:P-0058' + 'AB'[i],
           arrow: false
         })),
         {
@@ -374280,7 +374381,7 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
             [1680, 360]
           ],
           to: 'buffer basin',
-          flow: 'h:iw-MIR-P0058A|h:iw-MIR-P0058B'
+          flow: 'm:P-0058A|m:P-0058B'
         },
         {
           med: 'drain',
@@ -374306,6 +374407,843 @@ window.HXREG = {"from":"app 3.2.3-beta.272, Start at 150 MW, 20 s after Run","ma
         { x: 1180, y: 330, s: 'Turbine building, boiler, ash, limestone, coal yard, sea water pumps' }
       ]
     }
+  });
+})();
+
+/* HX page: the hard-wired signals between the turbine control system (TCS) and the DCS (lane 7, user 2026-11-25 "Ikonek lahat ng
+   address nito sa lahat ng signal ... Kumpletuhin ang HMI").
+   THE PICTURE: five columns of states and values, grouped by what the operator asks of them: is the turbine tripped and are its
+   valves closed; where is the start-up; what the TCS asks of the drain valves; who has the load (DCS control mode, Modbus
+   links, target MW); the generator protection and metering.
+   THE SOURCE: the DCS I/O list (ades / wiring): TCS-DI1003 ~ 1058 (station 1 / 2 digital inputs from the TCS), TCS-AI1001 ~ 1012
+   and GCP-AI1001 ~ 1006 (analog inputs from the TCS and the generator control panel), TCS-AO1001 / 1006 / 1007 / 1011 and
+   GCP-AO1002 ~ 1008 (analog outputs of the DCS to the TCS and the generator panel); ranges and units from the DCS loop list.
+   Every state is a digital input of the I/O list (data-di), every value its I/O tag: they read '-----' until the TCS I/O
+   binding (lane 2) gives them a value. Nothing on this page presses a TCS button: the operator buttons of the TCS (CRT) are
+   on the Turbine page. */
+(function () {
+  const { L, page } = HX;
+  const B = HX.B;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  const di = (tag, on, off) => 'data-di="' + tag + '|' + on + '|' + off + '"';
+  /* places (the drawing is 1760 x 1000): five columns, a heading on top, then the boxes */
+  const CX = [190, 530, 870, 1210, 1550],
+    TOP = 120,
+    ROW = 46,
+    W = 300;
+  const COLS = [
+    {
+      head: 'Trip and valves',
+      di: [
+        ['Turbine trip', 'TCS-DI1003', 'TRIP', 'NORMAL'],
+        ['Turbine trip 2', 'TCS-DI1055', 'TRIP', 'NORMAL'],
+        ['Reheat stop / intercept valves closed 1', 'TCS-DI1024', 'CLOSED', 'NOT CLOSED'],
+        ['Reheat stop / intercept valves closed 2', 'TCS-DI1025', 'CLOSED', 'NOT CLOSED'],
+        ['Main stop / control valves closed, major trouble 1', 'TCS-DI1026', 'YES', 'NO'],
+        ['Main stop / control valves closed, major trouble 2', 'TCS-DI1027', 'YES', 'NO'],
+        ['Control and intercept valves closed by load unbalance', 'TCS-DI1028', 'YES', 'NO'],
+        ['High pressure control valves fully closed', 'TCS-DI1050', 'CLOSED', 'NOT CLOSED'],
+        ['Main stop valve A test', 'TCS-DI1051-1', 'TEST', 'NORMAL'],
+        ['Main stop valve B test', 'TCS-DI1051-2', 'TEST', 'NORMAL']
+      ]
+    },
+    {
+      head: 'Speed and start-up',
+      di: [
+        ['Turbine speed under 2400 rpm', 'TCS-DI1029', 'YES', 'NO'],
+        ['Turning gear engaged', 'TCS-DI1030', 'ENGAGED', 'NOT ENGAGED'],
+        ['Intercept to control valve transfer complete', 'TCS-DI1031', 'COMPLETE', 'NOT COMPLETE'],
+        ['Steam seal feed inlet valve closed', 'TCS-DI1032', 'CLOSED', 'NOT CLOSED'],
+        ['Start-up mode ambient cold', 'TCS-DI1039', 'SELECTED', 'NO'],
+        ['Start-up mode cold 1', 'TCS-DI1040', 'SELECTED', 'NO'],
+        ['Start-up mode cold 2', 'TCS-DI1041', 'SELECTED', 'NO'],
+        ['Start-up mode warm', 'TCS-DI1042', 'SELECTED', 'NO'],
+        ['Start-up mode hot', 'TCS-DI1043', 'SELECTED', 'NO'],
+        ['Ambient cold mode temperature', 'TCS-DI1057', 'YES', 'NO'],
+        ['Mode judgement instrument normal', 'TCS-DI1058', 'NORMAL', 'ABNORMAL'],
+        ['Turbine load hold', 'TCS-DI1044', 'HOLD', 'NO']
+      ],
+      val: [['Turbine rated speed', 'TCS-AI1004', 'rpm', 0]]
+    },
+    {
+      head: 'Drain commands from turbine',
+      di: [
+        ['Warming line drain MV-AS1394 open', 'TCS-DI1033', 'OPEN', 'NO'],
+        ['Warming line drain MV-AS1394 close', 'TCS-DI1034', 'CLOSE', 'NO'],
+        ['Gland steam line drain MV-AS1397 open', 'TCS-DI1037', 'OPEN', 'NO'],
+        ['Gland steam line drain MV-AS1397 close', 'TCS-DI1038', 'CLOSE', 'NO']
+      ],
+      links: [
+        ['aux-steam', 'Auxiliary steam'],
+        ['reheat-steam', 'Reheat steam']
+      ]
+    },
+    {
+      head: 'Load control',
+      di: [
+        ['DCS control mode permissive', 'TCS-DI1046', 'YES', 'NO'],
+        ['DCS control mode on', 'TCS-DI1047', 'ON', 'OFF'],
+        ['Modbus line A duty', 'TCS-DI1048', 'DUTY', 'STANDBY'],
+        ['Modbus line B duty', 'TCS-DI1049', 'DUTY', 'STANDBY']
+      ],
+      val: [
+        ['Target MW to the turbine', 'TCS-AO1001', 'MW', 1],
+        ['Target MW feedback', 'TCS-AI1001', 'MW', 1],
+        ['Maximum load up rate', 'TCS-AI1005', '%/min', 2]
+      ]
+    },
+    {
+      head: 'Generator',
+      di: [
+        ['Field breaker 41 closed', 'TCS-DI1052', 'CLOSED', 'OPEN'],
+        ['Generator lockout 86GA operated', 'TCS-DI1053', 'OPERATED', 'NORMAL'],
+        ['Generator lockout 86GB operated', 'TCS-DI1054', 'OPERATED', 'NORMAL']
+      ],
+      val: [
+        ['Current A', 'TCS-AI1006', 'kA', 2],
+        ['Current B', 'TCS-AI1007', 'kA', 2],
+        ['Current C', 'TCS-AI1011', 'kA', 2],
+        ['Voltage A-B', 'GCP-AI1005', 'kV', 2],
+        ['Voltage B-C', 'TCS-AI1008', 'kV', 2],
+        ['Voltage C-A', 'TCS-AI1012', 'kV', 2],
+        ['Power factor', 'TCS-AI1009', '', 3],
+        ['Frequency', 'TCS-AI1010', 'Hz', 2],
+        ['Reactive power', 'GCP-AI1004', 'MVar', 1],
+        ['Energy', 'GCP-AI1003', 'MWh', 0],
+        ['Reactive energy', 'GCP-AI1006', 'MVarh', 0],
+        ['Sent out: MW (D)', 'GCP-AO1002', 'MW', 1],
+        ['Sent out: MVar', 'GCP-AO1003', 'MVar', 1],
+        ['Sent out: voltage A-B', 'GCP-AO1004', 'kV', 2],
+        ['Sent out: voltage B-C', 'GCP-AO1005', 'kV', 2],
+        ['Sent out: voltage C-A', 'GCP-AO1006', 'kV', 2],
+        ['Sent out: power factor', 'GCP-AO1007', '', 3],
+        ['Sent out: frequency', 'GCP-AO1008', 'Hz', 2],
+        ['Sent out: current A', 'TCS-AO1006', 'kA', 2],
+        ['Sent out: current B', 'TCS-AO1007', 'kA', 2],
+        ['Sent out: current C', 'TCS-AO1011', 'kA', 2]
+      ],
+      links: [['generator', 'Generator']]
+    }
+  ];
+  const items = [],
+    texts = [];
+  COLS.forEach((c, i) => {
+    const x = CX[i];
+    texts.push({ x, y: TOP - 40, s: c.head.toUpperCase() });
+    let y = TOP;
+    c.di.forEach(([name, tag, on, off], k) => {
+      items.push(at(B(name, di(tag, on, off), { w: W }), x, y, { id: 'c' + i + 'd' + k }));
+      y += ROW;
+    });
+    y += 6;
+    (c.val || []).forEach(([name, tag, unit, dp]) => {
+      texts.push({ x: x - W / 2 + 4, y, s: name, key: tag, unit, dp, anchor: 'start' });
+      y += 20;
+    });
+    (c.links || []).forEach(([to, text], k) =>
+      items.push(at(L(to, text), x, y + 30 + 40 * k, { id: 'c' + i + 'l' + k }))
+    );
+  });
+
+  page({
+    id: 'turbine-interface',
+    group: 'Turbine and generator',
+    title: 'Turbine control interface',
+    about:
+      'The hard-wired states and values between the turbine control system, the generator panel and the DCS: trip and valves, start-up mode, drain valve commands, load control, generator protection and metering. Source: DCS I/O list (TCS-DI / AI / AO, GCP-AI / AO).',
+    plan: { look: 'real', w: 1760, h: 1000, items, pipes: [], texts }
+  });
+})();
+
+/* HX page: the operator push buttons and lamps of the turbine control system (TCS) for its oil pumps and motors (lane 7, user 2026-11-25
+   "Gawan ng controls ... ilink ang permissives, logic, interlock, may addresses din ang HMI kung saan mag iisang galaw ang logic at HMI").
+   THE SOURCE: the macro MOTOR STANDARD of the TCE / TCA sheets (lane 1 MARIA, beta.561: MHPS TYPICAL LOGIC FOR MOTOR, Interlock Block
+   Diagram 310SC90-794 Rev 2 sheet 14, "Turbine Control System (book)" p 30). Its push buttons START / STOP / AUTO / MANUAL / RESET are
+   inside the macro: the CRT port of each block is "CRT:<sheet>.<block>.<button>" (src/digital/tce-run.js). Its lamps are the outputs of
+   the block on the sheet (src/digital/tce/<sheet>.js, the R pins): RUN (R lamp, the MCC answer), STP (G lamp), ABN (any fault: electrical
+   trouble, start fault, stop fault, tripped), AUTO (W lamp) where the sheet draws that pin.
+     TCE300 MAIN OIL PUMP (331DM09784 p 154): B007 nP-n922A (A), B021 nP-n922B (B)
+     TCE305 CONTROL OIL PUMP (p 155): B031 nP-n931A (A), B021 nP-n931B (B)
+     TCE310 EMERGENCY OIL PUMP (p 156): B006 nP-n923
+     TCA655 MAIN OIL TANK VAPOUR EXTRACTOR (331DM09788 p 165): nF-n937
+     TCA680 GLAND STEAM EXHAUSTER (TC-28, p 166)
+     TCA700 OIL PURIFIER PUMP (p 170): nP-n941
+   A button presses its port in the running TCS program (window.TCE); a lamp reads the block output. While the program is not running
+   both show '-----' (hx-app.js 'crt:' / 'crtl:' hooks). */
+(function () {
+  const { L, page } = HX;
+  const B = HX.B;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  /* t = title, s = sheet, k = block key, auto = the sheet draws the AUTO pin (W lamp) */
+  const MOTORS = [
+    { t: 'Main oil pump A (P-1922A)', s: 'TCE300', k: 'b007' },
+    { t: 'Main oil pump B (P-1922B)', s: 'TCE300', k: 'b021' },
+    { t: 'Control oil pump A (P-1931A)', s: 'TCE305', k: 'b031' },
+    { t: 'Control oil pump B (P-1931B)', s: 'TCE305', k: 'b021' },
+    { t: 'Emergency oil pump (P-1923)', s: 'TCE310', k: 'b006' },
+    { t: 'Main oil tank vapour extractor (F-1937)', s: 'TCA655', k: 'mtr' },
+    { t: 'Gland steam exhauster (TC-28)', s: 'TCA680', k: 'mtr', auto: true },
+    { t: 'Oil purifier pump (P-1941)', s: 'TCA700', k: 'mtr' }
+  ];
+  const PB = [
+    ['Start', 'START'],
+    ['Stop', 'STOP'],
+    ['Reset', 'RESET'],
+    ['Auto', 'AUTO'],
+    ['Manual', 'MANUAL']
+  ];
+  /* layout: four columns, two rows of cards; three boxes a row */
+  const CW = 415,
+    X0 = 22,
+    Y0 = 90,
+    BW = 132,
+    RH = 40,
+    CH = 230;
+  const items = [],
+    texts = [];
+  MOTORS.forEach((m, n) => {
+    const left = X0 + (n % 4) * (CW + 20);
+    let y = Y0 + Math.floor(n / 4) * CH;
+    texts.push({ x: left + 2, y, s: m.t, anchor: 'start' });
+    y += 26;
+    const put = (list, f, tag) => {
+      list.forEach((e, i) =>
+        items.push(at(f(e), left + BW / 2 + (i % 3) * (BW + 9), y + Math.floor(i / 3) * RH, { id: 'm' + n + tag + i }))
+      );
+      y += Math.ceil(list.length / 3) * RH;
+    };
+    put(PB, e => B(e[0], 'crt:CRT:' + m.s + '.' + m.k + '.' + e[1], { press: true, w: BW }), 'b');
+    const lamps = [
+      ['Running', 'RUN'],
+      ['Stopped', 'STP'],
+      ['Fault', 'ABN']
+    ].concat(m.auto ? [['Auto', 'AUTO']] : []);
+    put(lamps, e => B(e[0], 'crtl:' + m.s + '|' + m.k + '.' + e[1], { w: BW }), 'l');
+  });
+  items.push(at(L('turbine-oil', 'Turbine oil'), 1600, 40, { id: 'tol' }));
+  items.push(at(L('aux-steam', 'Auxiliary steam'), 1380, 40, { id: 'asl' }));
+  page({
+    id: 'turbine-motors',
+    group: 'Turbine and generator',
+    title: 'Turbine oil pumps and motors',
+    about:
+      'The operator push buttons and lamps of the turbine control system for its motors: main, control and emergency oil pumps, vapour extractor, gland steam exhauster, oil purifier. Start / Stop in manual, Auto / Manual, Reset of a fault; lamps running, stopped, fault. Source: TCS sheets TCE300, TCE305, TCE310, TCA655, TCA680, TCA700 (MOTOR STANDARD, IBD 310SC90-794 sheet 14).',
+    plan: { look: 'real', w: 1760, h: 1000, items, pipes: [], texts }
+  });
+})();
+
+/* HX page: the operator push buttons and lamps of the turbine control system (TCS) for start-up, speed, load and tests (lane 7, user 2026-11-25 "Gawan ng
+   controls ... ilink ang permissives, logic, interlock, may addresses din ang HMI kung saan mag iisang galaw ang logic at HMI").
+   THE SOURCE: /mnt/project-files/lanes/tcs-crt-ports.json (lane 2 TCS IO): the CRT ports of the TCE / TCA sheet program with their
+   HMI_DO.xls command rows (HOLD 3000 ms) and the HMI_DI.xls answer-back lamps of the same faceplate (iolist-tcs.zip, PC); the lamp key is
+   the CRT lamp of the sheet that draws it (src/digital/tce/<sheet>.js). Generated once from that table; plain English labels.
+   A button presses its port in the running TCS program (window.TCE, lane 9); a lamp reads the sheet's lamp. While the program is not
+   running both show '-----' (hx-app.js 'crt:' / 'crtl:' hooks). "Enable" = the CRT AVAILABLE port of the faceplate. */
+(function () {
+  const { L, page } = HX;
+  const B = HX.B;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  /* one card a faceplate of the TCS operator station: t = title, b = [label, CRT port] push buttons (a press holds the port 3000 ms,
+     HMI_DO.xls), l = [label, sheet, key] lamps (HMI_DI.xls answer-back points that a TCE / TCA sheet draws as a CRT lamp), miss = the
+     HMI_DI lamps of the faceplate that no sheet of the TCE / TCA set draws (finding c: not on the typed sheets, not bound) */
+  const CARDS = [
+    {
+      t: 'Turbine master trip and reset',
+      b: [
+        ['Enable', 'CRT:TCE114.TCE114_1_IYS'],
+        ['Reset', 'CRT:TCE114.TCE114_1_RSET'],
+        ['Trip', 'CRT:TCE114.TCE114_1_TRIP']
+      ],
+      l: [
+        ['Operation permitted', 'TCE114', 'TCE114_1_IYP'],
+        ['Reset', 'TCE114', 'TCE114_1_RSTD'],
+        ['Tripped', 'TCE114', 'TCE114_1_TRPD']
+      ]
+    },
+    {
+      t: 'Turbine alarm reset',
+      b: [
+        ['Reset', 'CRT:TCE050.TCE050_1_IKR'],
+        ['Enable', 'CRT:TCE050.TCE050_1_IYS']
+      ],
+      l: [
+        ['Reset', 'TCE050', 'TCE050_1_IIR'],
+        ['Operation permitted', 'TCE050', 'TCE050_1_IYP']
+      ]
+    },
+    {
+      t: 'Automatic turbine start-up',
+      b: [
+        ['Auto', 'CRT:TCA501.TCA501_1_IKA'],
+        ['Enable', 'CRT:TCA501.TCA501_1_IYS'],
+        ['Off', 'CRT:TCA501.TCA501_1_JYP']
+      ],
+      l: [
+        ['Auto', 'TCA501', 'TCA501_1_IIA'],
+        ['Operation permitted', 'TCA501', 'TCA501_1_IYP'],
+        ['Off', 'TCA501', 'TCA501_1_YIP']
+      ]
+    },
+    {
+      t: 'Start-up mode: start from',
+      b: [
+        ['High pressure', 'CRT:TCE057.TCE057_1_IMH'],
+        ['Intermediate pressure', 'CRT:TCE057.TCE057_1_IMI'],
+        ['Enable', 'CRT:TCE057.TCE057_1_IYS']
+      ],
+      l: [
+        ['Operation permitted', 'TCE057', 'TCE057_1_IYP'],
+        ['High pressure', 'TCE057', 'TCE057_1_YMH'],
+        ['Intermediate pressure', 'TCE057', 'TCE057_1_YMI']
+      ]
+    },
+    {
+      t: 'High pressure turbine warming, auto',
+      b: [
+        ['Auto', 'CRT:TCA630.TCA630_1_IKA'],
+        ['Reset', 'CRT:TCA630.TCA630_1_IKR'],
+        ['Enable', 'CRT:TCA630.TCA630_1_IYS']
+      ],
+      l: [
+        ['In progress', 'TCA630', 'TCA630_1_IXP'],
+        ['Operation permitted', 'TCA630', 'TCA630_1_IYP']
+      ]
+    },
+    {
+      t: 'High pressure turbine warming, group',
+      b: [
+        ['Enable', 'CRT:TCA631.TCA631_1_IYS'],
+        ['Start', 'CRT:TCA631.TCA631_1_JYS'],
+        ['Stop', 'CRT:TCA633.TCA631_1_JYP']
+      ],
+      l: [
+        ['Start trouble', 'TCA631', 'TCA631_1_ABN'],
+        ['Operation permitted', 'TCA631', 'TCA631_1_IYP'],
+        ['Started', 'TCA631', 'TCA631_1_YIR'],
+        ['Stopped', 'TCA633', 'TCA631_1_YIP'],
+        ['Stop trouble', 'TCA633', 'TCA631_1_PABN'],
+        ['Stop complete', 'TCA633', 'TCA631_1_PIPC'],
+        ['Start complete', 'TCA632', 'TCA631_1_SPIC']
+      ]
+    },
+    {
+      t: 'Control valve chest warming',
+      b: [
+        ['Warming reset', 'CRT:TCE150.TCE150_1_IKR'],
+        ['Warming set', 'CRT:TCE150.TCE150_1_IKS'],
+        ['Enable', 'CRT:TCE150.TCE150_1_IYS'],
+        ['Warming stop', 'CRT:TCE150.TCE150_1_JYP'],
+        ['Warming start', 'CRT:TCE150.TCE150_1_JYS'],
+        ['Auto', 'CRT:TCE151.TCE150_1_IKA'],
+        ['Warming complete', 'CRT:TCE151.TCE150_1_IKC'],
+        ['Manual', 'CRT:TCE151.TCE150_1_IKH'],
+        ['Full close', 'CRT:TCE151.TCE150_1_JYC'],
+        ['Full open', 'CRT:TCE151.TCE150_1_JYO']
+      ],
+      l: [
+        ['Warming mode reset', 'TCE150', 'TCE150_1_IIR'],
+        ['Warming mode set', 'TCE150', 'TCE150_1_IIS'],
+        ['Operation permitted', 'TCE150', 'TCE150_1_IYP'],
+        ['Warming stopped', 'TCE150', 'TCE150_1_YIP'],
+        ['Warming started', 'TCE150', 'TCE150_1_YIR'],
+        ['Auto', 'TCE151', 'TCE150_1_IIA'],
+        ['Manual', 'TCE151', 'TCE150_1_IIH'],
+        ['Full closed (manual)', 'TCE151', 'TCE150_1_ZSC'],
+        ['Full open (manual)', 'TCE151', 'TCE150_1_ZSO'],
+        ['Warming complete', 'TCE152', 'TCE150_1_IIC']
+      ]
+    },
+    {
+      t: 'Control valve B crack open sequence',
+      b: [
+        ['Start', 'CRT:TCE155.TCE155_1_ICS'],
+        ['Enable', 'CRT:TCE155.TCE155_1_IYS']
+      ],
+      l: [
+        ['Sequence complete', 'TCE155', 'TCE155_1_IPC'],
+        ['Sequence detect', 'TCE155', 'TCE155_1_IYK'],
+        ['Sequence started', 'TCE155', 'TCE155_1_IYL'],
+        ['Operation permitted', 'TCE155', 'TCE155_1_IYP']
+      ]
+    },
+    {
+      t: 'Acceleration rate',
+      b: [
+        ['Fast', 'CRT:TCE160.TCE160_1_IMF'],
+        ['Medium', 'CRT:TCE160.TCE160_1_IMM'],
+        ['Slow', 'CRT:TCE160.TCE160_1_IMS'],
+        ['Enable', 'CRT:TCE160.TCE160_1_IYS']
+      ],
+      l: [
+        ['Operation permitted', 'TCE160', 'TCE160_1_IYP'],
+        ['Fast', 'TCE160', 'TCE160_1_YMF'],
+        ['Medium', 'TCE160', 'TCE160_1_YMM'],
+        ['Slow', 'TCE160', 'TCE160_1_YMS']
+      ]
+    },
+    {
+      t: 'Target speed',
+      b: [
+        ['Close valves', 'CRT:TCE161.TCE161_1_IMC'],
+        ['Low', 'CRT:TCE161.TCE161_1_IML'],
+        ['Medium', 'CRT:TCE161.TCE161_1_IMM'],
+        ['Rub check', 'CRT:TCE161.TCE161_1_IMN'],
+        ['Rated', 'CRT:TCE161.TCE161_1_IMR'],
+        ['Enable', 'CRT:TCE161.TCE161_1_IYS']
+      ],
+      l: [
+        ['Operation permitted', 'TCE162', 'TCE161_1_IYP'],
+        ['Close valves', 'TCE162', 'TCE161_1_YMC'],
+        ['Low', 'TCE162', 'TCE161_1_YML'],
+        ['Medium', 'TCE162', 'TCE161_1_YMM'],
+        ['Rub check', 'TCE162', 'TCE161_1_YMN'],
+        ['Rated', 'TCE162', 'TCE161_1_YMR']
+      ]
+    },
+    {
+      t: 'Heat soak',
+      b: [
+        ['Reset', 'CRT:TCE163.TCE163_1_IKR'],
+        ['Set', 'CRT:TCE163.TCE163_1_IKS'],
+        ['Enable', 'CRT:TCE163.TCE163_1_IYS']
+      ],
+      l: [
+        ['Heat soak reset', 'TCE163', 'TCE163_1_IIR'],
+        ['Heat soak set', 'TCE163', 'TCE163_1_IIS'],
+        ['Operation permitted', 'TCE163', 'TCE163_1_IYP']
+      ]
+    },
+    {
+      t: 'Speed and load hold',
+      b: [
+        ['Set', 'CRT:TCE164.TCE164_1_IKH'],
+        ['Reset', 'CRT:TCE164.TCE164_1_IKR'],
+        ['Enable', 'CRT:TCE164.TCE164_1_IYS']
+      ],
+      l: [
+        ['Hold', 'TCE164', 'TCE164_1_IIH'],
+        ['Hold reset', 'TCE164', 'TCE164_1_IIR'],
+        ['Critical speed zone', 'TCE164', 'TCE164_1_IXC'],
+        ['Operation permitted', 'TCE164', 'TCE164_1_IYP']
+      ]
+    },
+    {
+      t: 'Rub check',
+      b: [
+        ['Required', 'CRT:TCA547.TCA754_1_IKR'],
+        ['Bypass', 'CRT:TCA547.TCA754_1_IKS'],
+        ['Enable', 'CRT:TCA547.TCA754_1_IYS']
+      ],
+      l: [
+        ['Required', 'TCA547', 'TCA754_1_IIR'],
+        ['Bypass', 'TCA547', 'TCA754_1_IIS']
+      ]
+    },
+    {
+      t: 'Start-up criteria bypass',
+      b: [
+        ['Reset', 'CRT:TCA549.TCA549_1_IKR'],
+        ['Enable', 'CRT:TCA549.TCA549_1_IYS']
+      ],
+      l: [
+        ['Reset', 'TCA549', 'TCA549_1_IIR'],
+        ['Operation permitted', 'TCA549', 'TCA549_1_IYP']
+      ]
+    },
+    {
+      t: 'Overspeed test, main',
+      b: [
+        ['Off', 'CRT:TCE176.TCE176_1_IKC'],
+        ['Enable', 'CRT:TCE176.TCE176_1_IYS'],
+        ['On', 'CRT:TCE176.TCE176_1_JYS']
+      ],
+      l: [
+        ['Test off', 'TCE176', 'TCE176_1_IIC'],
+        ['Operation permitted', 'TCE176', 'TCE176_1_IYP'],
+        ['Test on', 'TCE176', 'TCE176_1_YIR']
+      ]
+    },
+    {
+      t: 'Overspeed test, back-up',
+      b: [
+        ['Off', 'CRT:TCE177.TCE177_1_IKC'],
+        ['Enable', 'CRT:TCE177.TCE177_1_IYS'],
+        ['On', 'CRT:TCE177.TCE177_1_JYS']
+      ],
+      l: [
+        ['Test off', 'TCE177', 'TCE177_1_IIC'],
+        ['Operation permitted', 'TCE177', 'TCE177_1_IYP'],
+        ['Test on', 'TCE177', 'TCE177_1_YIR']
+      ]
+    },
+    {
+      t: 'DCS load control mode',
+      b: [
+        ['On', 'CRT:TCE180.TCE180_1_IYD'],
+        ['Off', 'CRT:TCE180.TCE180_1_IYL'],
+        ['Enable', 'CRT:TCE180.TCE180_1_IYS']
+      ],
+      l: [
+        ['Operation permitted', 'TCE180', 'TCE180_1_IYP'],
+        ['On', 'TCE180', 'TCE180_1_YID'],
+        ['Off', 'TCE180', 'TCE180_1_YIL']
+      ]
+    },
+    {
+      t: 'Load up',
+      b: [
+        ['Enable', 'CRT:TCE184.TCE184_1_IYS'],
+        ['Load up start', 'CRT:TCE184.TCE184_1_JYS']
+      ],
+      l: [
+        ['Initial', 'TCE184', 'TCE184_1_IYP'],
+        ['Load up started', 'TCE184', 'TCE184_1_YIR']
+      ]
+    },
+    {
+      t: 'Intermediate pressure limit',
+      b: [
+        ['Reset', 'CRT:TCE201.TCE201_1_IKR'],
+        ['Select', 'CRT:TCE201.TCE201_1_IKS'],
+        ['Enable', 'CRT:TCE201.TCE201_1_IYS']
+      ],
+      l: [
+        ['Limit reset', 'TCE201', 'TCE201_1_IIR'],
+        ['Limit selected', 'TCE201', 'TCE201_1_IIS'],
+        ['Limiting', 'TCE201', 'TCE201_1_IXM'],
+        ['Operation permitted', 'TCE201', 'TCE201_1_IYP']
+      ]
+    },
+    {
+      t: 'AFR mode',
+      b: [
+        ['Reset', 'CRT:TCE170.TCE170_1_IKR'],
+        ['Select', 'CRT:TCE170.TCE170_1_IKS'],
+        ['Enable', 'CRT:TCE170.TCE170_1_IYS']
+      ],
+      l: [
+        ['Reset', 'TCE170', 'TCE170_1_IIR'],
+        ['Set', 'TCE170', 'TCE170_1_IIS'],
+        ['Operation permitted', 'TCE170', 'TCE170_1_IYP']
+      ]
+    }
+  ];
+  /* layout: four columns, each card to the shortest column; three boxes a row */
+  const COLS = 4,
+    CW = 415,
+    X0 = 22,
+    Y0 = 70,
+    BW = 132,
+    RH = 40,
+    GAP = 18;
+  const colY = Array(COLS).fill(Y0),
+    items = [],
+    texts = [];
+  CARDS.forEach((c, n) => {
+    const k = colY.indexOf(Math.min(...colY)),
+      left = X0 + k * (CW + 20);
+    let y = colY[k];
+    texts.push({ x: left + 2, y, s: c.t, anchor: 'start' });
+    y += 26;
+    const row = (list, f) =>
+      list.forEach((e, i) => {
+        items.push(
+          at(f(e), left + BW / 2 + (i % 3) * (BW + 9), y + Math.floor(i / 3) * RH, {
+            id: 'k' + n + (f === btn ? 'b' : 'l') + i
+          })
+        );
+        if (i === list.length - 1) y += (Math.floor(i / 3) + 1) * RH;
+      });
+    const btn = e => B(e[0], 'crt:' + e[1], { press: true, w: BW });
+    const lamp = e => B(e[0], 'crtl:' + e[1] + '|' + e[2], { w: BW });
+    row(c.b, btn);
+    row(c.l, lamp);
+    colY[k] = y + GAP;
+  });
+  page({
+    id: 'turbine-operation',
+    group: 'Turbine and generator',
+    title: 'Turbine operation',
+    about:
+      'The operator push buttons and lamps of the turbine control system for start-up, speed, load and tests: master trip and reset, automatic start-up, warming, target speed and acceleration, holds, overspeed tests, load control mode. Source: TCS CRT ports (HMI_DO / HMI_DI of the TCS I/O list) and the TCE / TCA sheets.',
+    plan: { look: 'real', w: 1760, h: 1000, items, pipes: [], texts }
+  });
+})();
+
+/* HX page: the operator push buttons and lamps of the turbine control system (TCS) for its valves and the generator excitation (lane 7, user 2026-11-25 "Gawan ng
+   controls ... ilink ang permissives, logic, interlock, may addresses din ang HMI kung saan mag iisang galaw ang logic at HMI").
+   THE SOURCE: /mnt/project-files/lanes/tcs-crt-ports.json (lane 2 TCS IO): the CRT ports of the TCE / TCA sheet program with their
+   HMI_DO.xls command rows (HOLD 3000 ms) and the HMI_DI.xls answer-back lamps of the same faceplate (iolist-tcs.zip, PC); the lamp key is
+   the CRT lamp of the sheet that draws it (src/digital/tce/<sheet>.js). Generated once from that table; plain English labels.
+   A button presses its port in the running TCS program (window.TCE, lane 9); a lamp reads the sheet's lamp. While the program is not
+   running both show '-----' (hx-app.js 'crt:' / 'crtl:' hooks). "Enable" = the CRT AVAILABLE port of the faceplate. */
+(function () {
+  const { L, page } = HX;
+  const B = HX.B;
+  const at = (it, x, y, o) => Object.assign(it, { x, y }, o || {});
+  /* one card a faceplate of the TCS operator station: t = title, b = [label, CRT port] push buttons (a press holds the port 3000 ms,
+     HMI_DO.xls), l = [label, sheet, key] lamps (HMI_DI.xls answer-back points that a TCE / TCA sheet draws as a CRT lamp), miss = the
+     HMI_DI lamps of the faceplate that no sheet of the TCE / TCA set draws (finding c: not on the typed sheets, not bound) */
+  const CARDS = [
+    {
+      t: 'Field breaker (41)',
+      b: [
+        ['Close', 'CRT:TCA587.TCA587_1_IKA'],
+        ['Enable', 'CRT:TCA587.TCA587_1_IYS'],
+        ['Open', 'CRT:TCA587.TCA587_1_JYP']
+      ],
+      l: [
+        ['Close', 'TCA587', 'TCA587_1_IIA'],
+        ['Operation permitted', 'TCA587', 'TCA587_1_IYP'],
+        ['Open', 'TCA587', 'TCA587_1_YIP']
+      ]
+    },
+    {
+      t: 'Excitation',
+      b: [
+        ['Auto', 'CRT:TCA587.TCA587_2_IKA'],
+        ['Enable', 'CRT:TCA587.TCA587_2_IYS'],
+        ['Manual', 'CRT:TCA587.TCA587_2_JYP']
+      ],
+      l: [
+        ['Auto', 'TCA587', 'TCA587_2_IIA'],
+        ['Operation permitted', 'TCA587', 'TCA587_2_IYP'],
+        ['Manual', 'TCA587', 'TCA587_2_YIP']
+      ]
+    },
+    {
+      t: 'Power system stabilizer',
+      b: [
+        ['On', 'CRT:TCA745.TCA745_1_IKA'],
+        ['Enable', 'CRT:TCA745.TCA745_1_IYS'],
+        ['Off', 'CRT:TCA745.TCA745_1_JYP']
+      ],
+      l: [
+        ['On', 'TCA745', 'TCA745_1_IIA'],
+        ['Operation permitted', 'TCA745', 'TCA745_1_IYP'],
+        ['Off', 'TCA745', 'TCA745_1_YIP']
+      ]
+    },
+    {
+      t: 'Power factor control',
+      b: [
+        ['On', 'CRT:TCA745.TCA745_2_IKA'],
+        ['Enable', 'CRT:TCA745.TCA745_2_IYS'],
+        ['Off', 'CRT:TCA745.TCA745_2_JYP']
+      ],
+      l: [
+        ['On', 'TCA745', 'TCA745_2_IIA'],
+        ['Off', 'TCA745', 'TCA745_2_YIP'],
+        ['Operation permitted', 'TCA745', 'TCA745_2_IYP']
+      ]
+    },
+    {
+      t: 'Reactive power control',
+      b: [
+        ['On', 'CRT:TCA745.TCA745_3_IKA'],
+        ['Enable', 'CRT:TCA745.TCA745_3_IYS'],
+        ['Off', 'CRT:TCA745.TCA745_3_JYP']
+      ],
+      l: [
+        ['On', 'TCA745', 'TCA745_3_IIA'],
+        ['Operation permitted', 'TCA745', 'TCA745_3_IYP'],
+        ['Off', 'TCA745', 'TCA745_3_YIP']
+      ]
+    },
+    {
+      t: 'Gland seal group',
+      b: [
+        ['Enable', 'CRT:TCA636.TCA636_1_IYS'],
+        ['Start', 'CRT:TCA636.TCA636_1_JYS'],
+        ['Start reset', 'CRT:TCA636.TCA636_1_SIKR'],
+        ['Stop', 'CRT:TCA638.TCA636_1_JYP'],
+        ['Stop reset', 'CRT:TCA638.TCA636_1_PIKR']
+      ],
+      l: [
+        ['Start complete', 'TCA637', 'TCA636_1_IPC'],
+        ['Start trouble', 'TCA637', 'TCA636_1_SABN'],
+        ['Operation permitted', 'TCA636', 'TCA636_1_IYP'],
+        ['Start in progress', 'TCA636', 'TCA636_1_YIRS'],
+        ['Permissive', 'TCA636', 'TCA636_1_ABN'],
+        ['Stop complete', 'TCA638', 'TCA636_1_PIPC'],
+        ['Stop in progress', 'TCA638', 'TCA636_1_YIRP']
+      ]
+    },
+    {
+      t: 'Steam seal diverting valve',
+      b: [
+        ['Auto', 'CRT:TCA605.nFV-GSn036_IKA'],
+        ['Reset', 'CRT:TCA605.nFV-GSn036_IKR'],
+        ['Enable', 'CRT:TCA605.nFV-GSn036_IYS'],
+        ['Condenser side', 'CRT:TCA605.nFV-GSn036_JYC']
+      ],
+      l: [['Auto', 'TCA605', 'nFV-GSn036_IIA']],
+      miss: ['1FVGS1036_IEC', '1FVGS1036_IEO', '1FVGS1036_IYP', '1FVGS1036_ZSC', '1FVGS1036_ZSO']
+    },
+    {
+      t: 'Gland steam blowdown valve',
+      b: [
+        ['Enable', 'CRT:TCE365.nFV-GSn039_IIR'],
+        ['Reset', 'CRT:TCE365.nFV-GSn039_KTR']
+      ],
+      l: [],
+      miss: ['1FVGS1039_IEC', '1FVGS1039_IEO', '1FVGS1039_IYP', '1FVGS1039_ZSC', '1FVGS1039_ZSO']
+    },
+    {
+      t: 'Ventilator valve',
+      b: [
+        ['Reset', 'CRT:TCE360.nFV-CRn902_IKR'],
+        ['Enable', 'CRT:TCE360.nFV-CRn902_IYS']
+      ],
+      l: [
+        ['Trouble', 'TCE360', 'nFV-CRn902_ABN'],
+        ['Close fault', 'TCE360', 'nFV-CRn902_IEC'],
+        ['Open fault', 'TCE360', 'nFV-CRn902_IEO'],
+        ['Operation permitted', 'TCE360', 'nFV-CRn902_IYP'],
+        ['Closed', 'TCE360', 'nFV-CRn902_ZSC'],
+        ['Open', 'TCE360', 'nFV-CRn902_ZSO']
+      ]
+    },
+    {
+      t: 'Exhaust hood spray valve',
+      b: [
+        ['Auto', 'CRT:TCA738.nFV-CDn904_IKA'],
+        ['Manual', 'CRT:TCA738.nFV-CDn904_IKH'],
+        ['Reset', 'CRT:TCA738.nFV-CDn904_IKR'],
+        ['Enable', 'CRT:TCA738.nFV-CDn904_IYS'],
+        ['Open', 'CRT:TCA738.nFV-CDn904_JYO']
+      ],
+      l: [
+        ['Auto', 'TCA738', 'nFV-CDn904_IIA'],
+        ['Manual', 'TCA738', 'nFV-CDn904_IIH'],
+        ['Trouble', 'TCA738', 'nFV-CDn904_ABN']
+      ],
+      miss: ['1FVCD1904_IEC', '1FVCD1904_IEO', '1FVCD1904_IYP', '1FVCD1904_ZSC', '1FVCD1904_ZSO']
+    },
+    {
+      t: 'Cold reheat non-return valve',
+      b: [
+        ['Enable', 'CRT:TCA690.nXV-CRn901AF_IIR'],
+        ['Test', 'CRT:TCA690.nXV-CRn901AF_KTA'],
+        ['Test cancel', 'CRT:TCA690.nXV-CRn901AF_KTAC'],
+        ['Reset', 'CRT:TCA690.nXV-CRn901AF_KTR']
+      ],
+      l: [
+        ['Test feedback', 'TCA690', 'nXV-CRn901AF_ITA'],
+        ['Trouble', 'TCA690', 'nXV-CRn901AF_ABN']
+      ],
+      miss: ['1XVCR1901AF_IEC', '1XVCR1901AF_IEO', '1XVCR1901AF_IYP', '1XVCR1901AF_ZSC', '1XVCR1901AF_ZSO']
+    },
+    {
+      t: 'Extraction 2 non-return valve',
+      b: [
+        ['Reset', 'CRT:TCA711.nXV-TSn700_IKR'],
+        ['Enable', 'CRT:TCA711.nXV-TSn700_IYS'],
+        ['Test', 'CRT:TCA711.nXV-TSn700_KTA'],
+        ['Test cancel', 'CRT:TCA711.nXV-TSn700_TSC']
+      ],
+      l: [
+        ['Test feedback', 'TCA711', 'nXV-TSn700_ITA'],
+        ['Trouble', 'TCA711', 'nXV-TSn700_ABN']
+      ],
+      miss: ['1XVTS1700_IEC', '1XVTS1700_IEO', '1XVTS1700_IYP', '1XVTS1700_ZSC', '1XVTS1700_ZSO']
+    },
+    {
+      t: 'Extraction 3 primary non-return valve',
+      b: [
+        ['Reset', 'CRT:TCA712.nXV-TSn710_IKR'],
+        ['Enable', 'CRT:TCA712.nXV-TSn710_IYS'],
+        ['Test', 'CRT:TCA712.nXV-TSn710_KTA'],
+        ['Test cancel', 'CRT:TCA712.nXV-TSn710_KTAC']
+      ],
+      l: [
+        ['Test feedback', 'TCA712', 'nXV-TSn710_ITA'],
+        ['Trouble', 'TCA712', 'nXV-TSn710_ABN']
+      ],
+      miss: ['1XVTS1710_IEC', '1XVTS1710_IEO', '1XVTS1710_IYP', '1XVTS1710_ZSC', '1XVTS1710_ZSO']
+    },
+    {
+      t: 'Extraction 3 secondary non-return valve',
+      b: [
+        ['Reset', 'CRT:TCA714.nXV-TSn740_IKR'],
+        ['Enable', 'CRT:TCA714.nXV-TSn740_IYS'],
+        ['Test', 'CRT:TCA714.nXV-TSn740_KTA'],
+        ['Test cancel', 'CRT:TCA714.nXV-TSn740_KTAC']
+      ],
+      l: [
+        ['Test feedback', 'TCA714', 'nXV-TSn740_ITA'],
+        ['Trouble', 'TCA714', 'nXV-TSn740_ABN']
+      ],
+      miss: ['1XVTS1740_IEC', '1XVTS1740_IEO', '1XVTS1740_IYP', '1XVTS1740_ZSC', '1XVTS1740_ZSO']
+    },
+    {
+      t: 'Extraction 4 non-return valve',
+      b: [
+        ['Enable', 'CRT:TCA713.nXV-TSn720_IYS'],
+        ['Test', 'CRT:TCA713.nXV-TSn720_KTA'],
+        ['Test cancel', 'CRT:TCA713.nXV-TSn720_KTAC'],
+        ['Reset', 'CRT:TCA713.nXV-TSn720_KTR']
+      ],
+      l: [
+        ['Test feedback', 'TCA713', 'nXV-TSn720_ITA'],
+        ['Trouble', 'TCA713', 'nXV-TSn720_ABN']
+      ],
+      miss: ['1XVTS1720_IEC', '1XVTS1720_IEO', '1XVTS1720_IYP', '1XVTS1720_ZSC', '1XVTS1720_ZSO']
+    },
+    {
+      t: 'Extraction 5 non-return valve',
+      b: [
+        ['Reset', 'CRT:TCA715.nXV-TSn730_IKR'],
+        ['Enable', 'CRT:TCA715.nXV-TSn730_IYS'],
+        ['Test', 'CRT:TCA715.nXV-TSn730_KTA'],
+        ['Test cancel', 'CRT:TCA715.nXV-TSn730_KTAC']
+      ],
+      l: [
+        ['Test feedback', 'TCA715', 'nXV-TSn730_ITA'],
+        ['Trouble', 'TCA715', 'nXV-TSn730_ABN']
+      ],
+      miss: ['1XVTS1730_IEC', '1XVTS1730_IEO', '1XVTS1730_IYP', '1XVTS1730_ZSC', '1XVTS1730_ZSO']
+    }
+  ];
+  /* layout: four columns, each card to the shortest column; three boxes a row */
+  const COLS = 4,
+    CW = 415,
+    X0 = 22,
+    Y0 = 70,
+    BW = 132,
+    RH = 40,
+    GAP = 18;
+  const colY = Array(COLS).fill(Y0),
+    items = [],
+    texts = [];
+  CARDS.forEach((c, n) => {
+    const k = colY.indexOf(Math.min(...colY)),
+      left = X0 + k * (CW + 20);
+    let y = colY[k];
+    texts.push({ x: left + 2, y, s: c.t, anchor: 'start' });
+    y += 26;
+    const row = (list, f) =>
+      list.forEach((e, i) => {
+        items.push(
+          at(f(e), left + BW / 2 + (i % 3) * (BW + 9), y + Math.floor(i / 3) * RH, {
+            id: 'k' + n + (f === btn ? 'b' : 'l') + i
+          })
+        );
+        if (i === list.length - 1) y += (Math.floor(i / 3) + 1) * RH;
+      });
+    const btn = e => B(e[0], 'crt:' + e[1], { press: true, w: BW });
+    const lamp = e => B(e[0], 'crtl:' + e[1] + '|' + e[2], { w: BW });
+    row(c.b, btn);
+    row(c.l, lamp);
+    colY[k] = y + GAP;
+  });
+  page({
+    id: 'turbine-valves',
+    group: 'Turbine and generator',
+    title: 'Turbine valves and excitation',
+    about:
+      'The operator push buttons and lamps of the turbine control system for its valves and the generator excitation: field breaker, excitation, stabilizer, power factor and reactive power control, gland seal group, steam seal, blowdown and ventilator valves, exhaust hood spray, the non-return valve tests. Source: TCS CRT ports (HMI_DO / HMI_DI of the TCS I/O list) and the TCE / TCA sheets.',
+    plan: { look: 'real', w: 1760, h: 1000, items, pipes: [], texts }
   });
 })();
 

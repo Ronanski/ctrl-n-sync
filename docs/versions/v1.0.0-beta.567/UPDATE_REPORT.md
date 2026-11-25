@@ -1,9 +1,10 @@
-# v1.0.0-beta.557 — Turbine pages, TCS operator buttons, registry machines and monitor points (lane 7, HMI turbine)
+# v1.0.0-beta.567 — Turbine pages, TCS operator buttons, registry machines and monitor points (lane 7, HMI turbine)
 
 ## Ano ang bago (nakikita ng operator)
 - **Turbine control interface** (bagong page, Plant > Turbine and generator): lahat ng hard-wired na signal ng TCS / generator panel at DCS sa limang hanay (trip at valves, speed at start-up, utos sa drain valves, load control, generator).
 - **Turbine operation** (bagong page): 20 faceplate ng TCS CRT (trip, reset, start-up mode, speed / load, turning gear, oil pumps ...), mga pindot na button at mga lamp mula sa TCE / TCA sheets.
 - **Turbine valves and excitation** (bagong page): 16 faceplate (valve test, MSV / CV / CRV, excitation, mga valve ng TCS).
+- **Turbine oil pumps and motors** (bagong page): Start, Stop, Reset, Auto, Manual at lamp na Running, Stopped, Fault ng 8 motor ng TCS: main oil pump A / B, control oil pump A / B, emergency oil pump, vapour extractor, gland steam exhauster (may Auto lamp), oil purifier. 40 button (MOTOR STANDARD ni MARIA, beta.561; IBD 310SC90-794 sheet 14).
 - **Turbine**: main steam pressure 2, main steam temperature, first stage pressure A / B / C.
 - **Industrial and waste water**: ang P-0715A / B, P-0058A / B ay tunay na makina na (click = control faceplate, Y = permissive / monitor); MV-IW0391 ay motor valve na may faceplate. Ang remote / local ng P-0715 ay nasa monitor faceplate.
 - **Auxiliary steam**: bagong MV-AS1397 turbine gland steam line drain (DITL-116), papunta sa flash pipe.
@@ -22,8 +23,8 @@
 
 ## Hindi pa
 - Ang mga punto na wala pang value sa engine ay `-----` (lube oil switches, winding / bearing / vibration ng mga pump, 52G1 contacts ay may value na). Ang unit ng vibration ay wala sa I/O list: numero lang ang ipinapakita.
-- Ang 40 TCS motor button ng PR 545 (MARIA) ay idadagdag kapag nasa main na.
+- Ang mga TCS button at lamp ay `-----` hanggang nasa main ang TCS live API (PR 543, SORA); hindi pa napindot sa app.
 
 ## Sinubok
-- `tests/lanes/hmi-turbine/pages-bound.cjs`: 5 pages, 350 elemento, 0 problema.
+- `tests/lanes/hmi-turbine/pages-bound.cjs`: 6 pages, 415 elemento (kasama ang check na ang bawat motor button / lamp ay button o pin ng MOTOR STANDARD block ng sheet nito), 0 problema.
 - Headless app 150 MW RUN: bukas ang industrial water, auxiliary steam, generator, feedwater, turbine oil; walang error; ang Y faceplate ng BFWP-A ay nagpapakita ng 25 monitor row; ang 52G1 on contact = Y, off = N.
