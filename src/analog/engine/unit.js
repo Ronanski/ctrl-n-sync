@@ -260,6 +260,7 @@ function anUnitWrite(list, x) {
     const r = b.rng,
       y = r ? Math.max(r.lo, Math.min(r.hi, xi)) : xi;
     s.val = s.act = y;
+    s.src = 1; /* beta.530 (AKIHO): the model writes this point: it is live (the 150 MW snapshot seed sets s.snap only) */
   });
 }
 /* the value of every block of the list now (anchor of "Start at 150 MW"), kept on the list */
@@ -4032,7 +4033,11 @@ const AN_MT = {
        >= 90 C, DITL-23B > 100 C), winding U / V / W from the closed cooling water (AN_MT.cw below), vibration x1 / x2 (NO-SOURCE 1.8 mm/s;
        TECO data sheet: below 2.5 mm/s 0-P at no load) */
     ['BFWP-A', 'DITL-23A', 'FW1115-A', ['1', '2', '3', '4'], ['11', '12', '21', '22', '31', '32', '41', '42'], 1.8],
-    ['BFWP-B', 'DITL-23A #B', 'FW1115-B', ['1', '2', '3', '4'], ['11', '12', '21', '22', '31', '32', '41', '42'], 1.8]
+    ['BFWP-B', 'DITL-23A #B', 'FW1115-B', ['1', '2', '3', '4'], ['11', '12', '21', '22', '31', '32', '41', '42'], 1.8],
+    /* beta.530 (RARA): the condensate pumps P-1116A / B (DITL-61A and its #B; DITL-61B rows 12 ~ 14): the three windings only. The coupling
+       (A1), the grease lubricated motor bearings (A3 / A4) and the vibration (VT-CD1116) have no running value in the documents: no row */
+    ['CEP-A', 'DITL-61A', 'CD1116-A', [], [], 0],
+    ['CEP-B', 'DITL-61A #B', 'CD1116-B', [], [], 0]
   ],
   Tb: 55,
   Tw: 85,
@@ -4053,9 +4058,12 @@ const AN_MT = {
                       14.7 min (CALC).
        fan bearing    the fan manual gives only the limit (4.9 / 5.4.3: ambient + 40 C; vibration 6 mm/s): the running value Tb stays
                       NO-SOURCE. */
-  mot: { PAF: [373, 'fnPafI'], SAF: [192, 'fnSafI'], IDF: [350, 'fnIdfI'] },
+  mot: { PAF: [373, 'fnPafI'], SAF: [192, 'fnSafI'], IDF: [350, 'fnIdfI'], 'CEP-A': [35.2, 'cdI0', 80, 1], 'CEP-B': [35.2, 'cdI1', 80, 1] },
   sf: 1.15,
   rise: 90,
+  /* beta.530 (RARA): CEP motor TECO AEJG-WT 325 kW 4 P 6600 V 35.2 A, IC411 fan cooled, Ins. Class F, "Temp. Rise Limit (Res.) Stator
+     80 C at S.F. 1.0" (data sheet 3A057H186-74341 REV.05, KSB contract document K1AU3-D1-0-044 R0 p 24): the same form with its own rise and S.F. (the 3rd and 4th
+     number of mot): T = ambient + 80 x (I / 35.2)^2, I = U.cdI0 / cdI1 */
   rB: 25.3,
   tauMB: 882,
   /* 3.2.3-beta.178 (SOHEE): MOTOR WINDING ON THE CLOSED COOLING WATER. The BFWP motor (TECO AEZW-S2, 3550 kW 2 P 6600 V, data sheet
@@ -4131,7 +4139,7 @@ function anMotorStep(U, dt) {
       wT = cw
         ? Math.min(K.cwMax, Tc + K.cwRise * x2 + K.cwLoss * x2 * (1 / (K.cwC * fq) - 1 / K.cwC))
         : mo && isFinite(I)
-          ? T0 + K.rise * Math.pow(Math.max(0, I) / (mo[0] * K.sf), 2)
+          ? T0 + (mo[2] || K.rise) * Math.pow(Math.max(0, I) / (mo[0] * (mo[3] || K.sf)), 2)
           : K.Tw;
     brg.forEach((e, i) =>
       K.los[id]
@@ -5246,11 +5254,125 @@ function anChemStep(U, dt) {
   U.spAL2 = al;
   U.spAL1 = U.spAL3 = U.spALZ = 0;
 }
+/* beta.470 (lane plan 2026-11-25): the field signals of the lanes (src/world/field/<lane>.js, FIELD.add): a row { stn, ai: "AI0128", tag,
+   src, rel, v(U, X) } writes v(AN_UNIT, X) on the AI blocks of that address once a scan, after the unit model step, as the unit model writes
+   its own transmitters (anUnitWrite: a forced output is left alone, the range clamps). v reads the engine state only (X: anFieldX below). A row whose
+   value is not a number writes nothing. The block lists are made again when the sheets with a running engine change. */
+let AN_FLD = null;
+/* the reader a field row gets as its second argument (v(U, X)): the engine readers that live inside the engine closure, read only.
+   av(tag, x)    the opening that reaches the process for the command x of control valve tag (anAv: air lock, stuck fault); the hold
+                 memory anAv keeps is put back after the call, so a field row never moves it
+   ditlPos(n, j) the position 0 ~ 100 % of valve j of DITL drawing n ("DITL-32", "DITL-32 #B"), null while the world is not built
+   ditlRun(a)    1 RUN / 0 STOP of DITL drawing a ("DITL-23A", "DITL-39@3" = output row 3), null while the world is not built
+   ai(key)       the value on the AI blocks of "stn|AI0128" (the first block with a number), NaN when no running sheet has it
+   ftrip(n)      1 while drawing n ("DITL-19 #B") stands on a field trip (the protection relay or the undervoltage relay opened its
+                 breaker: s._ftrip of WORLD.ftrip / the black-out), else 0; null while the world is not built
+   fault(id)     1 while the trainer fault id stands (AN.fault or WORLD.ftrip list, 'cf.jamA', 'cv.fw'), else 0; null when the id is in no list
+   state(id)     the value 1 / 0 of a field state (FIELD.state, faults.js): its documented normal, the other one while the instructor
+                 holds it out of normal; null = no such id */
+const anFieldKey = () => AN.sheets.reduce((n, s) => n + (s.S ? 1 : 0), 0);
+function anFieldX() {
+  let C = {},
+    ck = -1;
+  return Object.freeze({
+    av: (tag, x) => {
+      const H = AN_UNIT.avH,
+        had = !!H && tag in H,
+        h = had ? H[tag] : undefined,
+        fs = typeof AN_FAULT_STUCK !== 'undefined' && tag in AN_FAULT_STUCK,
+        f = fs ? AN_FAULT_STUCK[tag] : undefined;
+      try {
+        return anAv(tag, x);
+      } finally {
+        if (AN_UNIT.avH) {
+          if (had) AN_UNIT.avH[tag] = h;
+          else delete AN_UNIT.avH[tag];
+          if (!H) delete AN_UNIT.avH;
+        }
+        if (fs) AN_FAULT_STUCK[tag] = f;
+      }
+    },
+    ditlPos: (n, j) => anDitlPos(n, j),
+    ditlRun: (a, last) => anDitlRun(a, last),
+    ftrip: n => {
+      const s = anDitlSheet(')' + n);
+      return s ? (s._ftrip ? 1 : 0) : null;
+    },
+    fault: id => {
+      const L = anFault().concat(typeof window !== 'undefined' && window.WORLD && WORLD.ftrip ? WORLD.ftrip() : []),
+        f = L.find(q => q.id === id);
+      return f ? (f.on ? 1 : 0) : null;
+    },
+    state: id => anFieldStateVal(String(id)),
+    ai: key => {
+      const k = anFieldKey();
+      if (k !== ck) (C = {}), (ck = k); /* the block lists again when the sheets with a running engine change */
+      return anUnitVal(C[key] || (C[key] = anUnitAIs(String(key))));
+    }
+  });
+}
+const anFieldN = t => String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const AN_FLD_X = anFieldX();
+const anFieldRows = () => (((typeof window !== 'undefined' ? window : globalThis).FIELD || {}).rows || []).filter(r => typeof (r.v || r.get) === 'function');
+/* the values of all rows now: [row, number] (a row whose value is not a number, or that fails, is left out) */
+function anFieldVals() {
+  const out = [];
+  for (const r of anFieldRows()) {
+    let v;
+    try {
+      v = (r.v || r.get)(AN_UNIT, AN_FLD_X);
+    } catch (e) {
+      continue;
+    }
+    v = v === true ? 1 : v === false ? 0 : v == null ? NaN : +v;
+    if (isFinite(v)) out.push([r, v]);
+  }
+  return out;
+}
+function anFieldMap(L) {
+  const V = {};
+  for (const [r, v] of L) {
+    if (r.ai) V[String(r.stn) + '|' + r.ai] = v;
+    if (r.tag) V[anFieldN(r.tag)] = v;
+  }
+  return V;
+}
+/* the value of a field row for the HMI, by "stn|AI0128" or by the tag without signs (PTIA1064A). AN.unit.fld is the map of the last scan
+   (in the keyframe: the mirror page of the Worker has it). A plant that is loaded and not yet run has none (the state just loaded takes
+   the key away): then the rows are read now, at most twice a second of the PC clock */
+let AN_FLD_NOW = null;
+const anFieldRead = key => {
+  let V = AN_UNIT.fld;
+  if (!V) {
+    const t = Date.now();
+    if (!AN_FLD_NOW || t - AN_FLD_NOW.t > 500 || t < AN_FLD_NOW.t) AN_FLD_NOW = { t, V: anFieldMap(anFieldVals()) };
+    V = AN_FLD_NOW.V;
+  }
+  const v = V[key];
+  return v === undefined ? null : v;
+};
+function anFieldStep() {
+  const F = anFieldRows();
+  if (!F.length) return;
+  const key = anFieldKey() + '/' + F.length;
+  if (!AN_FLD || AN_FLD.key !== key) {
+    AN_FLD = { key, L: new Map(F.filter(r => r.ai).map(r => [r, anUnitAIs(String(r.stn) + '|' + r.ai)])) };
+    /* for the lanes and QA: each AI row and the number of blocks it writes (0 = the address is on no running sheet) */
+    AN.fieldStat = [...AN_FLD.L].map(([r, l]) => ({ lane: r.lane, stn: r.stn, ai: r.ai, tag: r.tag, blocks: l.length }));
+  }
+  const L = anFieldVals();
+  for (const [r, v] of L) {
+    const l = AN_FLD.L.get(r);
+    if (l && l.length) anUnitWrite(l, v);
+  }
+  AN_UNIT.fld = anFieldMap(L);
+}
 function anUnitStep(dt) {
   const M = (typeof globalThis !== 'undefined' ? globalThis : window).LS_SIMM;
   if (M) M.on = ++M.n;
   try {
     anUnitStep0(dt);
+    anFieldStep();
     anGenInt(dt);
     anHistStep(dt); /* hist.js: the faceplate trend history, one sample a simulated second */
     anSoeStep(); /* soe.js: the sequence of events of the MFT and the turbine trip, one look per step */

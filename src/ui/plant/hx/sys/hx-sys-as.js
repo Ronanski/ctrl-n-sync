@@ -36,7 +36,9 @@
       GS: { n: 'GLAND STEAM SEAL', t: 'PV-GS1031', d: 'STEAM SEAL FEED · TCS', tcs: 'gland', why: '' } /* beta.365 D18: IBD TC-31 steam seal feed inlet valve (OPEN puts PV-GS1031 in service), faceplate LS_FPOP.ibd */,
       GSE: { n: 'GLAND STEAM EXHAUSTER', t: 'TC-28', d: 'GLAND STEAM EXHAUSTER · TCS', tcs: 'gse', why: '' } /* beta.365 D18: IBD TC-28 (TCA680) */,
       HSP: { n: 'LP EXHAUST HOOD SPRAY', t: 'FV-CD1904', d: 'HOOD SPRAY · TCS', tcs: 'hood', why: '' } /* beta.365 D18: IBD TC-35, faceplate LS_FPOP.ibd */,
-      M75: { n: 'MV-AS1394', t: 'Turbine warming line drain', mov: 'DITL-75', tg: 'MV-AS1394' }
+      M75: { n: 'MV-AS1394', t: 'Turbine warming line drain', mov: 'DITL-75', tg: 'MV-AS1394' },
+      /* beta.456 (EIMI): DITL-116 TURBINE GLAND STM LINE DRAIN MOV MV-AS1397 (IO list station 2: ZSO I.0250, ZSC I.0251, MOR O.016A) */
+      M116: { n: 'MV-AS1397', t: 'Turbine gland steam line drain', mov: 'DITL-116', tg: 'MV-AS1397' }
     },
     unit: {
       'PT-CD1110': 'cdP',

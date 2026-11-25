@@ -1194,6 +1194,7 @@ function anProcStep(S, dt) {
         x = r ? Math.max(r.lo === 0 ? 1e-6 * r.hi : r.lo, Math.min(r.hi, w1)) : w1;
       s.val = x;
       s.act = x;
+      s.src = 1; /* beta.520: live, as anUnitWrite */
     }
   }
 }
