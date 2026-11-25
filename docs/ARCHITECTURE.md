@@ -15,7 +15,7 @@ Ginawa 2026-11-25 ~8:10 PM PHT (user "sunod sunod"). Isinulat mula sa code mismo
 |---|---|---|---|
 | 1 | ABC | bawat tick (100 ms ng PC), step 0.5 s | links -> procRemote -> shareExt -> `anStep` ng bawat ABC sheet. Ang plant model (`unit.js anUnitStep`) ay tumatakbo sa loob ng step ng ABC-001C; ang lumang TCS model (`tcs.js tcsStep`) ay nasa loob ng plant step |
 | 2 | DITL world | sa pagitan ng mga plant step: bawat 1 s ng plant kapag may timer o gumagalaw na device (`W.busy`), bawat 3 s kapag tahimik; kapag hindi tumatakbo ang planta, bawat 200 ms | inputs ng bawat DITL sheet mula sa nakaraang scan (isang scan na delay, gaya ng DCS) -> plantIn -> simSheet + timers / MOV / motors -> FIRST-OUT -> outputs -> DITL at ABC inputs |
-| 3 | TCS sheets (TCE / TCA / G) | sa loob ng engine (`src/analog/engine/tcs-sheets.js`) | ang 14 na sheet na nagpapatakbo ng motor ay tumatakbo sa slice na 0.1 s (COMM+MD cycle); ang iba ay isang scan bawat 0.25 s sa tabi ng `tcs.js` hanggang sila na ang magpatakbo |
+| 3 | TCS sheets (TCE / TCA / G) | sa loob ng engine (`src/analog/engine/tcs-sheets.js`) | bawat sheet ay nag-i-scan sa sariling cycle ng drawing (10 / 30 / 100 ms, seksyon 3). Ang 14 na sheet na nagpapatakbo ng motor ay kumukuha ng input bawat 0.1 s (COMM+MD cycle); ang iba ay kumukuha ng input mula sa TCS I/O list bawat 0.25 s, sa tabi ng `tcs.js` hanggang sila na ang magpatakbo |
 
 Sa loob ng isang TCE / TCA sheet: bawat block ay tumatakbo pagkatapos ng mga block na nagpapakain dito; ang loop at seal-in ay kumukuha ng value ng nakaraang scan (`src/digital/tce-run.js`).
 
@@ -37,8 +37,8 @@ Tala: ang 14 na sheet na nagpapatakbo ay hinahati sa 0.1 s, at ang iba ay tumata
 ## 5. Bukas na item (hindi pa tapos ang Phase 3)
 
 1. **Scan rate ng totoong DCS (STN101 ~ 105):** wala sa repo. Hanapin sa DCS textbook / FCS spec (K1AU3-E2-0-001-RA Specification of DCS, PC) ang basic scan period. Hanggang doon, ang 0.5 s step ng ABC at ang 1 ~ 3 s na scan ng DITL world ay pasya ng app, hindi galing sa planta.
-2. **TCS sheets sa sariling cycle** (10 / 30 ms): sa engine ay 0.1 s at 0.25 s pa lang.
-3. **Lumang `tcs.js`** ay tumatakbo pa sa tabi ng TCE / TCA sheets (Audit 3 #4).
+2. ~~TCS sheets sa sariling cycle~~ TAPOS 2026-11-25 8:45 PM: bawat sheet ay nag-i-scan sa sariling cycle (dati 0.25 s ang hindi pa nagpapatakbo). Gastos: 18.6 -> 21.1 ms bawat 0.5 s na hakbang (headless). Bantay: `architecture.cjs`.
+3. **Lumang `tcs.js`** ay tumatakbo pa sa tabi ng TCE / TCA sheets (Audit 3 #4). Hindi ito maliit na item: 1,847 linya, at ang mga grupong hindi pa pinapatakbo ng sheet (hal. EHG, turbine speed, valve) ay nasa `tcs.js` pa. Mawawala ito group por group kapag ang sheet na ang nagpapatakbo (lane 1 TCS logic).
 
 ## 6. Mga numerong binabantayan (binabasa ng test)
 

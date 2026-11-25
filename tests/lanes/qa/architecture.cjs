@@ -33,6 +33,10 @@ same('worldChunkQuietS', W.worldChunkQuietS, +ch[2]);
 same('fixedStepS', W.fixedStepS, num(sched, /AN\.runFixed = \(sec, dt\) => \{[\s\S]*?dt > 0 \? dt : ([\d.]+)/, 'fixed clock step'));
 same('tcsSliceS', W.tcsSliceS, num(tsh, /slice: ([\d.]+)/, 'TCS slice'));
 same('tcsSlowS', W.tcsSlowS, num(tsh, /slow: ([\d.]+)/, 'TCS slow'));
+/* every TCS sheet scans at its own drawing cycle (10 / 30 / 100 ms): the drive loop and the loop of the other sheets both step
+   q.cyc, never a longer step (2026-11-25 8:45 PM, Phase 3 item 2) */
+if ((tsh.match(/q\.acc >= q\.cyc - 1e-9; q\.acc -= q\.cyc\) R\.scan\(p, q, q\.cyc\)/g) || []).length !== 2 || /R\.scan\(p, q, Math\.max/.test(tsh))
+  fail('tcs-sheets.js: a TCS sheet does not scan at its own cycle (both loops must step q.cyc)');
 same('tcsDriveSheets', W.tcsDriveSheets, (/ids: '([^']+)'/.exec(tsh) || ['', ''])[1].split(' ').filter(Boolean).length);
 same('tcsHwOutputs', W.tcsHwOutputs, (/TCS_HW = new Set\(\s*\(([\s\S]*?)\)\.split/.exec(tdc) || ['', ''])[1].replace(/['+\s]+/g, ' ').trim().split(' ').length);
 const cyc = {};
