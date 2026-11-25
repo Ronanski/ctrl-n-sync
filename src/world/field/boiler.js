@@ -14,7 +14,17 @@ rows.push(
   { stn: 2, di: 1, tag: 'ZSC-SB1001', v: (U, X) => closed(num(X.ditlPos('DITL-80S', 0))), rel: 'MV-SB1001 at 0 % travel (closed limit)',
     src: 'IO list STN102 I.024B ZSC-SB1001; DITL-80S MV-SB1001; MOV rule 03b-sim.js' },
   { stn: 2, ai: 'AI0770', tag: 'ZT-SB1001', v: (U, X) => num(X.ditlPos('DITL-80S', 0)), rel: 'MV-SB1001 position 0 ~ 100 %',
-    src: 'IO list STN102 AI0770 ZT-SB1001; DITL-80S MV-SB1001' }
+    src: 'IO list STN102 AI0770 ZT-SB1001; DITL-80S MV-SB1001' },
+  /* Phase 6 slice 5 (2026-11-26): the FORWARD running contact of sootblower 01 (the only lance with one in the I/O list). The lance of
+     DITL-80G (N-1011) travels out on its EXTEND COMMAND and back at its front end (world.js sbLance, Diamond Power N11639-SC1, 50.8 mm/s):
+     the motor runs forward while the lance goes out (_lance.dir 1). A lance not scanned yet stands retracted (18.PNG at 150 MW), 0. No
+     logic row reads it (80G, 80K, 80L, 80Q use ZSE, ZSR and MIT only): CRT. */
+  { stn: 2, di: 1, tag: 'MIF-N1011', rel: 'sootblower 01 lance moving out (forward)',
+    v: () => {
+      const L = typeof WORLD !== 'undefined' && WORLD.sbLances ? WORLD.sbLances().find(x => x._lance.n === 1011) : null;
+      return L && L._lance.dir > 0 ? 1 : 0;
+    },
+    src: 'IO list STN102 I.0562 MIF-N1011; DITL-80G EXTEND COMMAND net 14 / RETRACT net 0; lance travel world.js sbLance' }
 );
 
 /* 2. Furnace temperature control dampers FA1005 ~ FA1026 (STN103: front wall FA1005 ~ 1018 on ABC-015 / 016, rear wall FA1019 ~ 1026 on ABC-016): the open / closed limit switches of each motor damper. The damper
