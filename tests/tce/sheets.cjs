@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 236; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 245; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 99;
@@ -234,6 +234,27 @@ const S = R.stats(A);
     pr({ 'PB CLOSE': 1 });
     po = pr({ LTOP: 0, TRCL: 1 });
     if (po.CLS !== 0 || po.ABN !== 1) fail('POSITION (SEAL-IN): close torque before full close must stop and alarm ' + JSON.stringify(po));
+  }
+  /* AIR OPERAT VALVE from IBD 310SC90-794 sheet 22: SVE energizes and holds; no full open in t1 = OPEN FAULT (de-energize, ANN) until
+     RESET; SVD de-energizes; no full close in t2 = CLOSE FAULT */
+  {
+    const av = M['AIR OPERAT VALVE'],
+      as = {},
+      an = [[0, 0, 'TP:5.0s'], [0, 0, 'TP:10.0'], [0, 0, 'TP:20.0']],
+      ab = { FFP: 0, SVE: 0, SVD: 0, RESET: 0, LTOP: 0, LTCL: 1 },
+      ar = (x, n = 1) => {
+        let r;
+        for (let i = 0; i < n; i++) r = av({ ...ab, ...x }, an, as, 0.5);
+        return r;
+      };
+    if (ar({ SVE: 1 }).SVE !== 1 || ar({ LTCL: 0 }, 10).SVE !== 1) fail('AIR OPERAT VALVE: SVE does not energize and hold');
+    let ao = ar({ LTCL: 0 }, 12);
+    if (ao.SVE !== 0 || ao.ABN !== 1) fail('AIR OPERAT VALVE: no full open in t1 is not an open fault ' + JSON.stringify(ao));
+    if (ar({ LTCL: 1, RESET: 1 }).ABN !== 0) fail('AIR OPERAT VALVE: RESET does not clear the open fault');
+    ar({ SVE: 1, LTCL: 0, LTOP: 1 }, 4);
+    ao = ar({ SVD: 1, LTOP: 0, LTCL: 0 }, 41);
+    if (ao.SVE !== 0 || ao.ABN !== 1) fail('AIR OPERAT VALVE: no full close in t2 is not a close fault ' + JSON.stringify(ao));
+    if (av.need([[0, 0, 'TP:5.0s']]).length !== 1) fail('AIR OPERAT VALVE with no t1 / t2 printed must be open');
   }
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
