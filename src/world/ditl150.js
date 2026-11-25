@@ -650,6 +650,7 @@
       lv = W.live;
     W.live = true;
     rep.flips = 0;
+    D.loading = true; /* the field bits hold the start state until it is solved (world.js: then a linked row follows its link only) */
     try {
       D.scan(5, 1);
       for (let k = 0; k < 6; k++) {
@@ -711,6 +712,7 @@
       rep.resets = rs.map(([s, i]) => s.name + ' #' + (i + 1) + ' ' + textOf(s, i, 'S'));
     } finally {
       W.live = lv;
+      D.loading = false;
     }
     rep.want = 0;
     rep.miss = [];

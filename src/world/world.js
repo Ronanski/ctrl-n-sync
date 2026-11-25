@@ -1726,6 +1726,11 @@
                 : !!(q.sh.S && q.sh.S.rt && q.sh.S.rt.v[q.n] > 0.5);
           if (v) {
             on.add(row);
+            /* a row fed by an output of its own sheet (the seal-in: DITL-30 row 1 SEAWATER BOOSTER PUMP A RUNNING from 30-8) has one source, that
+               output. The field bit of the start state (DITL150) or of a save only starts the loop: once the output is 1 the bit goes, or the
+               row would stay 1 after a field trip and start the pump again at the relay RESET with no start command (RARA). Not the row that holds a contact of the MOV itself (REMOTE,
+               TORQUE: 03b-sim.js mvOut reads the field bit of fb.mir) */
+            if (q.k === 'd' && q.d === s && s.sig && s.sig[row + ':S'] && !((s.nl && s.nl.mv) || []).some(b => b.fb.some(f => f.mir === row)) && !(window.DITL150 && DITL150.loading)) delete s.sig[row + ':S'];
             break;
           }
         }
