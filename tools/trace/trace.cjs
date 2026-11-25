@@ -281,6 +281,15 @@ const has = (txt, tag) => {
   for (const sh of AN.sheets)
     for (const b of (!/^ABC-000/.test(sh.name) && sh.S && sh.S.blk) || [])
       if (/^(MAN|PID|PIDV|PVSV)$/.test(b.k) && b.tag) (ctlTags.get(+sh.stn) || ctlTags.set(+sh.stn, []).get(+sh.stn)).push(String(b.tag));
+  /* Phase 6 slice 7 (2026-11-26): a motor valve driven by pulses (MV-BR1391 / MV-HR1391): the controller (HICBR1391 ABC-055,
+     PICHR1391 ABC-054) feeds the PO block of its sheet, and the PO block gives the OPEN / CLOSE pulses (plant.js case 'PO': s.up / s.dn,
+     the I/O list PO points MOR- / MOS-, STN101 AO0704 / AO0705 / AO0708 / AO0709). A PO point counts as that controller's output only
+     when the controller's sheet has a PO block */
+  const poCtl = new Set();
+  for (const sh of AN.sheets)
+    if (!/^ABC-000/.test(sh.name) && sh.S && (sh.S.blk || []).some(b => b.k === 'PO'))
+      for (const b of sh.S.blk) if (/^(MAN|PID|PIDV|PVSV)$/.test(b.k) && b.tag) poCtl.add(+sh.stn + '|' + String(b.tag));
+  const poOf = (stn, dev) => dev.length >= 4 && [...poCtl].some(k => k.startsWith(stn + '|') && k.endsWith(dev) && /^[A-Z]{2,4}$/.test(k.slice(String(stn).length + 1, k.length - dev.length)));
   const ctlOf = (stn, dev) => dev.length >= 4 && (ctlTags.get(+stn) || []).some(t => t.length - dev.length >= 2 && t.length - dev.length <= 4 && t.endsWith(dev) && /^[A-Z]+$/.test(t.slice(0, t.length - dev.length)));
   let aoByCtl = 0;
   /* ---- DITL catalog: every row of every sheet and machine copy, its station (title block "STATION 10x"), address, tag, source */
@@ -686,7 +695,7 @@ const has = (txt, tag) => {
         const field = fKey.has(stn + '|' + String(key).toUpperCase()) || fTag.has(fNorm(tag));
         /* an AO whose device is the device of an ABC controller of the same station (SC-L1060A <- SICL1060A MAN, MOF-CL1061-A <-
            FICCL1061A): the controller output is that AO (KIRARA 2026-11-25, RULES.md) */
-        const aoCtl = !onLogic && /^AO/.test(ty) && ctlOf(stn, dev.replace(/-/g, ''));
+        const aoCtl = !onLogic && ((/^AO/.test(ty) && ctlOf(stn, dev.replace(/-/g, ''))) || (ty === 'PO' && poOf(stn, dev.replace(/-/g, ''))));
         if (aoCtl) aoByCtl++;
         let st8 = byModel || aoCtl
           ? 'LINKED'
