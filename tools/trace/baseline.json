@@ -3,19 +3,19 @@
  "up": {
   "sheets.abc": 51,
   "sheets.ditlRunning": 245,
-  "io.linked": 1787,
-  "io.value": 2139,
-  "mem.onSheet": 2971,
+  "io.linked": 1793,
+  "io.value": 2145,
+  "mem.onSheet": 3046,
   "alarms.withSetPoint": 96,
   "hmi.faceplateBound": 120,
   "fx.tablesUsed": 91
  },
  "down": {
-  "io.unlinked": 145,
+  "io.unlinked": 141,
   "io.noSource": 30,
   "io.onDrawing": 130,
   "io.copyClash": 1,
-  "mem.noSource": 9,
+  "mem.noSource": 10,
   "breaks.B1_abcInputNoSource": 48,
   "breaks.B1_ditlInputNoSource": 109,
   "breaks.B2_ioInputNowhere": 79,
@@ -28,5 +28,8 @@
   "tcs.ibdMissing",
   "run.trip"
  ],
- "why": {}
+ "why": {},
+ "notes": {
+  "2026-11-26 mem.noSource 9 -> 10": "Phase 6: the trace now reads every address text of a net (S.tagN, as engine/links.js does), so 75 more memory addresses are found on sheets; one of them, STN101 M.0149 'Stack outlet flue gas SOx ctl BU-CMD' on ABC-005, has no source. It was there before, now counted. The number is set to 10 (not a why) so the gate stays strict."
+ }
 }

@@ -247,6 +247,23 @@ const has = (txt, tag) => {
           abcByKey.set('T:' + name.replace(/\.\w+$/, ''), []).get('T:' + name.replace(/\.\w+$/, ''))
         ).push(r);
     }
+    /* Phase 6 (2026-11-26): one net, several addresses. The drawing prints two or three address texts on one wire (ABC-050: M.012C, O.0842
+       and O.0844 on the HP bypass spray output; M.012D, O.0843, O.0845), the reader keeps one as the net's name (S.lab) and the others in
+       S.tagN. The engine's own link index (engine/links.js) takes every tagN text within 4 of the wire as a name of that net; the trace does
+       the same, so an address the app links is not counted unlinked. */
+    const own = new Map(abc.filter(r => r.sh === sh.name).map(r => [r.n, r]));
+    for (const q of S.tagN || []) {
+      if (!(q.d <= 4) || !/^(S\d\s*)?([MBIO]\.[0-9A-F]{4}|A[IO]\d{4})$/.test(String(q.t).trim())) continue;
+      const main = own.get(q.n),
+        name = strip(q.t);
+      if (!main || main.name === name) continue;
+      const rs = refStn(q.t) || stn,
+        key = rs + ':' + name;
+      if ((abcByKey.get(key) || []).some(x => x.sh === sh.name && x.n === q.n)) continue;
+      const r = Object.assign({}, main, { stn: rs, name, alias: main.name });
+      abc.push(r);
+      (abcByKey.get(key) || abcByKey.set(key, []).get(key)).push(r);
+    }
   }
   /* one address, one signal (YUA 2026-11-25, RULES.md): an ABC input that nothing writes on its own sheet is written when a net of another
      sheet with the same station and address is written (an output of logic, a link, the DITL, the engine, the operator) */
@@ -578,6 +595,20 @@ const has = (txt, tag) => {
       /[- ]([A-D])\b(?![.-]?\d{3})/.exec(String(d || '')) || /-([A-D])\d?$/.exec(tag) || /\d([A-D])\d?$/.exec(tag);
     return m ? m[1] : null;
   };
+  /* Phase 6 (2026-11-26, YUA PDF read): a machine copy whose own rows carry another I/O tag of the same device is that device's copy, whatever
+     its letter. DITL-22 has four copies #A ~ #D for LOP A1 / A2 / B1 / B2 (lube oil pumps A / B of BFWP-A / B): #D carries MIR-P1115B2
+     I.0373, so O.0447 MOR-P1115B2 on #D row 5 is its own command, not machine D. */
+  const devOf = t => String(t).replace(/^[A-Z0-9]{1,6}-/, '');
+  const copyDev = new Map();
+  for (const x of ditl)
+    if (/ #[A-D]$/.test(x.sh))
+      for (const t of String(x.tags || '')
+        .split(' ')
+        .concat(String(x.adr || '').split(' ').map(a => ADES[x.stn] && ADES[x.stn][a] && ADES[x.stn][a].tag).filter(Boolean))
+        .filter(Boolean)) {
+        const m = copyDev.get(x.sh) || copyDev.set(x.sh, new Map()).get(x.sh);
+        (m.get(devOf(t)) || m.set(devOf(t), new Set()).get(devOf(t))).add(t);
+      }
   const clashList = [];
   let clashRows = 0;
   /* ---- I/O and memory points */
@@ -604,6 +635,7 @@ const has = (txt, tag) => {
           wrongM = x => {
             const L = M && machOfRow(x);
             if (!(L && L !== M)) return false;
+            if ([...((copyDev.get(x.sh) || new Map()).get(devOf(tag)) || [])].some(t => t !== tag)) return false;
             /* a row that names the other machine is a real cross reference (pump B's logic reads "PUMP A RUNNING") */
             return !new RegExp('(^|[^A-Z0-9])' + M + '([^A-Z0-9]|$)|[0-9]' + M + '\\b').test(x.text + ' ' + x.tags);
           };
@@ -713,7 +745,7 @@ const has = (txt, tag) => {
     }
   }
   /* ---- breaks */
-  const B1abc = abc.filter(x => x.role === 'in' && x.src === 'NONE');
+  const B1abc = abc.filter(x => x.role === 'in' && x.src === 'NONE' && !x.alias);
   const B1ditl = ditl.filter(x => x.io === 'in' && /^NONE/.test(x.src));
   const B2 = IO.filter(
     x => x.input && !x.excluded && (x.status === 'UNLINKED' || x.status === 'ON SHEET, STATION UNSURE')
