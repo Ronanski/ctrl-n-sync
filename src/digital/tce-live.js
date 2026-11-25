@@ -123,29 +123,49 @@
     /* the input ports of the program (CRT / PIO / CON / PLANT / SYS / REF) and the value of one */
     ports: () => (S.prog ? S.prog.ports.slice() : []),
     port: name => (S.prog && S.prog.idx.has(name) ? S.prog.v[S.prog.idx.get(name)] : undefined),
+    /* the outputs of the program (TCE_RUN.outs) with their value now: kind pio / con / crt / spare */
+    outs: () => (S.prog && R().outs ? R().outs(S.prog).map(o => Object.assign({}, o, { v: S.prog.v[o.slot] })) : null),
     crt: () => (S.prog && R().crt ? R().crt(S.prog) : null),
-    /* the outputs of the program (TCE_RUN.outs: kind pio / con / crt / spare) against the engine's own value of the same PI/O row */
+    /* the PI/O outputs of the program (TCE_RUN.outs kind 'pio') against the engine's own value of the same TCS I/O list row (tce-io.js
+       'out' end: what the engine drives today). Each output gets one state:
+         same / differs           both values exist (equal = within 1 % or 1e-6)
+         no engine value          the row is known, its end has no engine value yet (end text says why: tce-io.js)
+         builder box, no row      a box of a table builder sheet (TCA830 ~ 835, 850, TCE600 ~ 610) drawn with no name: the program
+                                  does not yet say which table row the output is (lane 1: outs() row); its rows are printed "(TCxxxx-n)"
+         reader box               a block the sheet reader takes as PI/O but is not a channel (TCE060 ~ 069 td2 / v2o3, the same list
+                                  as tests/lanes/tcs-io/io.cjs READER)
+         generator panel          a G sheet output to the generator / GCP panel (not a TCS PI/O table row)
+         no row                   anything else with no TCS I/O list row
+       'con' outputs (to the TCT / TCP sheets, not in the set) and CRT lamps have no engine twin and are only counted. */
     compare() {
       if (!S.prog) return { on: false };
       if (!R().outs) return { on: S.on, ready: false, why: 'TCE_RUN.outs (lane 1) is not in this build yet' };
       const io = root.TCE_IO_LIVE,
         U = unit(),
-        rows = [];
-      let same = 0,
-        diff = 0,
-        none = 0;
+        rows = [],
+        count = {},
+        kinds = {};
       for (const o of R().outs(S.prog)) {
+        kinds[o.kind] = (kinds[o.kind] || 0) + 1;
         if (o.kind !== 'pio') continue;
-        const id = io && io.ports['PIO:' + o.sheet + '.' + o.key],
-          tce = S.prog.v[o.slot],
-          eng = id && id !== 'SPARE' && U ? io.read(U, id) : NaN;
-        let st;
-        if (!isFinite(eng)) (st = 'no engine value'), none++;
-        else if (Math.abs(tce - eng) <= Math.max(1e-6, Math.abs(eng) * 0.01)) (st = 'same'), same++;
-        else (st = 'differs'), diff++;
-        rows.push({ sheet: o.sheet, key: o.key, row: id || '', tce, eng, st });
+        const id = (o.row && io && io.row(o.row) ? o.row : '') || (io && o.key ? io.ports['PIO:' + o.sheet + '.' + o.key] : '') || '',
+          tce = S.prog.v[o.slot];
+        let st,
+          eng = NaN,
+          why = '';
+        if (id && id !== 'SPARE') {
+          const e = io.end(id);
+          eng = U && e && e.read ? io.read(U, id) : NaN;
+          if (!isFinite(eng)) (st = 'no engine value'), (why = (e && e.text) || '');
+          else st = Math.abs(tce - eng) <= Math.max(1e-6, Math.abs(eng) * 0.01) ? 'same' : 'differs';
+        } else if (/^TCE06\d$/.test(o.sheet) && /^(td2|v2o3)$/.test(o.key)) st = 'reader box';
+        else if (/^G-/.test(o.sheet)) st = 'generator panel';
+        else if (!o.key) st = 'builder box, no row';
+        else st = 'no row';
+        count[st] = (count[st] || 0) + 1;
+        rows.push({ sheet: o.sheet, key: o.key, row: id === 'SPARE' ? '' : id, tce, eng, st, why });
       }
-      return { on: S.on, ready: true, same, diff, none, rows };
+      return { on: S.on, ready: true, t: S.prog.t, kinds, count, same: count.same || 0, diff: count.differs || 0, rows };
     },
     status() {
       const st = S.prog && R().stats ? R().stats(S.prog) : null;
