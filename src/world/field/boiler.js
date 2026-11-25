@@ -46,6 +46,16 @@ rows.push(
     src: 'IO list STN104 ' + c + ' ZSC-FA1043-' + x + '; ZT-FA1043-' + x + ' STN101 ' + z + '; MOV rule' })
 );
 
+/* 3b. Hot reheat steam blow-off motor valve MV-HR1391 (ABC-054 PICHR1391, STN102 position ZT-HR1391 AI0737): its open / closed limit
+   switches (Phase 6, YUA PDF read 2026-11-26: memory list 102 WM 3588 / 3589 M.3222 / M.3223 "valve open / close", no logic sheet reads
+   them; display only). Same MOV rule. */
+rows.push(
+  { stn: 2, di: 1, tag: 'ZSO-HR1391', v: (U, X) => opened(num(X.ai('2|AI0737'))), rel: 'ZT-HR1391 at 100 % (open limit)',
+    src: 'IO list STN102 I.000A ZSO-HR1391; ZT-HR1391 STN102 AI0737 (ABC-054); memory list 102 M.3222; MOV rule' },
+  { stn: 2, di: 1, tag: 'ZSC-HR1391', v: (U, X) => closed(num(X.ai('2|AI0737'))), rel: 'ZT-HR1391 at 0 % (closed limit)',
+    src: 'IO list STN102 I.000B ZSC-HR1391; ZT-HR1391 STN102 AI0737 (ABC-054); memory list 102 M.3223; MOV rule' }
+);
+
 /* 4. Biasing damper air buffer tanks PT-IA1064-A / B (STN104): on P&ID PD-023 sheet 6/6 (over-all instrument list), filled from the
    instrument air to unit 1 (IA1706, unit.js AN_AIR U.iaPU). The tank only fills the damper actuators: no flow through its inlet = no
    friction drop, so the tank is at the header pressure. */
@@ -177,6 +187,20 @@ for (const x of 'ABC') {
       { stn, di: 1, tag: 'TS-' + d, v: (U, X) => X.state(k + '.torque'), rel: 'torque switch', src: s0 + ts },
       { stn, di: 1, tag: 'MIL-' + d, v: (U, X) => X.state(k + '.remote'), rel: 'REMOTE selected on the field panel', src: s0 + mil });
   });
+/* 7b. MCC contacts of the motor valves MV-BR1391 (S/H No.1 outlet header to reheater, ABC-055, STN101) and MV-HR1391 (hot reheat blow-off,
+   ABC-054, STN102): trip (MIT), remote (MIL) and torque (TS). Phase 6, YUA PDF read 2026-11-26: no logic sheet reads them; TS goes only
+   to DISPLAY bits (memory list 101 B.2555 / B.2554, 102 B.253F / B.253E). Monitor points: field states in their normal service state
+   (no trip, remote, no torque), the trainer sets the abnormal one. No interlock is made from them. */
+[[1, 'BR1391', 'I.000C', 'I.000D', 'I.000E', 'S/H No.1 outlet header to reheater'], [2, 'HR1391', 'I.000C', 'I.000D', 'I.000E', 'hot reheat steam blow-off']].forEach(
+  ([stn, d, mit, mil, ts, w]) => {
+    const src = a => 'IO list STN10' + stn + ' ' + a + '; MV-' + d + ' (' + w + ' motor valve); Phase 6 wiring read (no logic sheet: monitor point)';
+    [['MIT', mit, 0, 'tripped'], ['MIL', mil, 1, 'not in remote'], ['TS', ts, 0, 'torque switch made']].forEach(([p, a, nrm, ab]) => {
+      const id = d + '.' + p.toLowerCase();
+      states.push({ id, tag: p + '-' + d, normal: nrm, t: 'MV-' + d + ' ' + ab, g: 'Boiler', src: src(a) });
+      fr.push({ stn, di: 1, tag: p + '-' + d, v: (U, X) => X.state(id), rel: 'MCC contact (field state)', src: src(a) });
+    });
+  }
+);
 FIELD.state(lane, states);
 FIELD.add(lane, fr);
 
