@@ -467,6 +467,14 @@ const has = (txt, tag) => {
     if (sx.nl) {
       for (const v of sx.nl.mv || [])
         for (const f of v.fb || []) if (f.tag) fbTag.set(WORLD.showText ? WORLD.showText(sx, f.tag) : f.tag, sx.name);
+      /* a typical drawing names no device (DITL-38: feedback "MIL", "ZSO", "TSC"): the copy's valve model answers the contacts of its own
+         device (#MV-FW1001 -> MIL-FW1001 ... TS-FW1001; world.js beta.550 binds them by type + device) */
+      const dvc = sx._inst && /^(?:[A-Z]{1,4}-)?([A-Z]{2}\d{3,4}[A-Z]?)$/.exec(String(sx._inst.lbl || ''));
+      if (dvc)
+        for (const v of sx.nl.mv || [])
+          for (const f of v.fb || [])
+            if (f.ty && /^[A-Z]{2,3}$/.test(f.tag || ''))
+              fbTag.set((f.ty === 'TS' ? 'TS' : f.ty) + '-' + dvc[1], sx.name);
       for (const m of sx.nl.mot || [])
         if (m.tag) for (const k of ['MIR', 'MIT', 'MIL', 'MOR', 'MOS']) fbTag.set(k + '-' + m.tag, sx.name);
     }

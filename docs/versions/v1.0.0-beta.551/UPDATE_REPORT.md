@@ -7,8 +7,8 @@ Sumunod sa beta.550. Tool lang; walang binago sa app, sa plant model, sa logic o
 1. Field contact sa kable ng output row (`WORLD.plantUsw`, hal. DITL-19 MIA-CL1061-A2): nakaguhit sa sheet at ang field ang nagpapagalaw, kaya LINKED (ayon sa station ng sheet at tag).
 2. Field state (`FIELD.states`, beta.530): ang tag nito ay value source tulad ng field row.
 3. DITL-38 "STATION 101 & 102": ang bawat copy ay kumukuha ng station mula sa I/O tags ng sariling device (#MV-FW1001 = 102).
+4. DITL-38 copy: ang valve model ng copy ang sumasagot sa contacts ng sariling device (MIL / MIT / ZSO / ZSC / TS-FW1001).
 
-## Sinubok (150 MW, 5 plant min, lumang tool -> bagong tool)
+## Sinubok (main 6683666, 150 MW, 5 plant min, lumang tool -> bagong tool)
 
-- main 736a935: LINKED 1,604 -> 1,616; drawing-not-on-row 195 -> 186; model / page 306 -> 303; value 1,726 -> 1,734. Ang 12: 8 sa DITL-38 (S2 MOS-FW1001, MOR/MOS-MS1392, MIL-MS1392, MOR/MOS-FW1002, MOR/MOS-FW1392) at ZSC-FA1043-A ~ D (S4).
-- PR 555 (195c397): LINKED 1,604 -> 1,640; drawing 195 -> 178; model / page 376 -> 357; value 1,809 -> 1,817. Dagdag na 24: ZSO / ZSC / MIA-CL1061-A / B / C (DITL-19 copies).
+LINKED 1,607 -> 1,687; on sheet walang source 115 -> 103; model / page 376 -> 357; nasa drawing hindi sa row 189 -> 138; wala kahit saan 296 -> 298 (S1 MIT / MIL-FA1054-1: dating naitugma sa DITL-38 copy ng ibang station); may live value 1,812 -> 1,864.
