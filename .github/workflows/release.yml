@@ -1,6 +1,6 @@
 name: Release apk + exe
 # Manual. Builds the app for Android (apk) and Windows (portable exe) and, with dry_run false, publishes a GitHub Release.
-# The version is the one in delivery/app/app.json:
+# The version is tools/app-version.js (delivery/app/app.json "X.Y.Z-beta" + the commit count of main, or a Final "X.Y.Z"):
 #   X.Y.Z-beta.N = EA build  -> a pre-release named "<name> vX.Y.Z-beta.N (EA)"
 #   X.Y.Z        = Final     -> a release named "<name> vX.Y.Z" and the tag the Stable page of the site follows
 # input go must be exactly "GO v<version>". Files: <NAME>-<version>.apk, <NAME>-<version>-Windows.exe, <NAME>-<version>.html,
@@ -23,6 +23,7 @@ jobs:
     outputs: { version: '${{ steps.v.outputs.version }}', code: '${{ steps.v.outputs.code }}', ea: '${{ steps.v.outputs.ea }}', name: '${{ steps.v.outputs.name }}', id: '${{ steps.v.outputs.id }}', file: '${{ steps.v.outputs.file }}' }
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0, filter: 'blob:none' } # the beta number is the commit count of main (tools/app-version.js)
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - id: v
@@ -47,6 +48,7 @@ jobs:
       KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0, filter: 'blob:none' } # the beta number is the commit count of main (tools/app-version.js)
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - uses: actions/setup-java@v4
@@ -57,6 +59,7 @@ jobs:
           cat > capacitor.config.json <<EOF
           {"appId":"${{ needs.gate.outputs.id }}","appName":"${{ needs.gate.outputs.name }}","webDir":"www","server":{"androidScheme":"https"}}
           EOF
+          node ../../tools/build/build.js
           # the app is built into the apk as a FOLDER (index.html + js/*.js, same content as the single page; opens at once, works without internet)
           node ../../tools/station/build.js "$(ls ../../dist/logic-sim-v*.html | head -1)" station-page/index.html
           node ../../tools/build/app-folder.js station-page/index.html www
@@ -84,6 +87,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0, filter: 'blob:none' } # the beta number is the commit count of main (tools/app-version.js)
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - name: Build portable exe
@@ -91,6 +95,7 @@ jobs:
         shell: bash
         run: |
           node -e "const a=require('../app/app.json');require('fs').writeFileSync('config.json',JSON.stringify({name:a.name,url:a.site,data:a.name}))"
+          node ../../tools/build/build.js
           node ../../tools/station/build.js "$(ls ../../dist/logic-sim-v*.html | head -1)" station-page/index.html
           node ../../tools/build/app-folder.js station-page/index.html www
           # app icon (delivery/app/icons): the exe file icon and the window icon
@@ -106,6 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0, filter: 'blob:none' } # the beta number is the commit count of main (tools/app-version.js)
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - uses: actions/download-artifact@v4
@@ -120,6 +126,7 @@ jobs:
           mkdir rel
           find out/apk -type f -name '*.apk' -print0 | while IFS= read -r -d '' f; do cp "$f" "rel/$F.apk"; done
           find out/exe -type f -name '*.exe' -print0 | while IFS= read -r -d '' f; do cp "$f" "rel/$F-Windows.exe"; done
+          node tools/build/build.js
           node tools/station/build.js "$(ls dist/logic-sim-v*.html | head -1)" "rel/$F.html"
           [ -f "docs/versions/v$V/Release-Report-v$V.pdf" ] && cp "docs/versions/v$V/Release-Report-v$V.pdf" "rel/$F-Report.pdf" || echo "no release report pdf for v$V"
           ls rel

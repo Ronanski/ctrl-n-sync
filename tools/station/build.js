@@ -1,11 +1,11 @@
 // Builds the page of the app: the built simulator html plus the station frame (src/station).
 // The simulator html itself is not changed.
 // usage: node tools/station/build.js <built logic-sim html> <out dir | out file .html>
-//        node tools/station/build.js --version          prints the version of the app (delivery/app/app.json)
+//        node tools/station/build.js --version          prints the version of the app (tools/app-version.js)
 //        node tools/station/build.js --file             prints the file name stem of a release, e.g. LMYP-OTS-1.0.0-beta.1
 //   out dir  -> <out dir>/<NAME>-<version>.html
 //   out file -> that file (the site and the apk / exe use index.html)
-// The app has its own version (delivery/app/app.json "version": 1.0.0-beta.1, 1.0.0-beta.2, ..., 1.0.0, then 1.0.1-beta.1 ...);
+// The app has its own version (tools/app-version.js: 1.0.0-beta.N with N counted by git, or the Final in delivery/app/app.json);
 // the simulator inside keeps its own (src/version.txt), which a save point is checked against.
 // What differs from the simulator html, besides the frame:
 //   - the <title> says "Logic Sim v<version of the app>": the update check of the page reads the installed version, and tells a
@@ -17,11 +17,11 @@ const fs = require('fs'),
   path = require('path');
 const APP = require('../../delivery/app/app.json'),
   NAME = APP.display || APP.name,
-  VER = APP.version,
+  VER = require('../app-version.js')(),
   STEM = APP.name.replace(/[^A-Za-z0-9]+/g, '-') + '-' + VER,
   SITE = "'https://ronanski.github.io/icms-master-tool/'";
 if (!/^\d+\.\d+\.\d+(-beta\.\d+)?$/.test(VER || ''))
-  throw new Error('delivery/app/app.json: version must be X.Y.Z or X.Y.Z-beta.N, found ' + VER);
+  throw new Error('app version must be X.Y.Z or X.Y.Z-beta.N, found ' + VER);
 if (process.argv[2] === '--version') {
   console.log(VER);
   process.exit(0);

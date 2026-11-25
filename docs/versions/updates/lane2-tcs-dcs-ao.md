@@ -1,6 +1,6 @@
-# LMYP OTS 1.0.0-beta.592 (TCS IO : TSUBASA, lane 2, 2026-11-25)
+# Lane 2 TCS IO: DCS AO0404 / AO0471 papunta sa TCS (2026-11-25)
 
-Sumunod sa beta.587. Ayos sa `src/digital/tce-io.js` at `src/data/tcs-dcs.json` lang. Walang pagbabago sa plant model at sa HMI.
+Ayos sa `src/digital/tce-io.js` at `src/data/tcs-dcs.json` lang. Walang pagbabago sa plant model at sa HMI.
 
 ## Ano ang bago
 
@@ -12,7 +12,7 @@ Sumunod sa beta.587. Ayos sa `src/digital/tce-io.js` at `src/data/tcs-dcs.json` 
 ## Bilang
 
 - Dulo ng mga channel: needs 161 → 160; may value na ang 2 DCS → TCS na channel (dcs 19 → 20).
-- Live headless sa 150 MW (beta.579, ayos ni SORA): 228 table reads at 175 Modbus reads, 0 walang numero (dati 6 + 9 = ang AN.tceSteam / AN.tceCrp).
+- Live headless sa 150 MW (pagkatapos ng ayos ni SORA): 228 table reads at 175 Modbus reads, 0 walang numero (dati 6 + 9 = ang AN.tceSteam / AN.tceCrp).
 
 ## Sinubok
 
@@ -26,3 +26,5 @@ Sumunod sa beta.587. Ayos sa `src/digital/tce-io.js` at `src/data/tcs-dcs.json` 
 ## Susunod
 
 - 160 "needs" na channel (drain MOV, NRV, generator Mvar / current / pf, AVR, TSI setting, rotor position, diff expansion).
+
+Pirma: TCS IO : TSUBASA (lane 2).
