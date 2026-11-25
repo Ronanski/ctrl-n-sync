@@ -10,7 +10,12 @@
    (NO-SOURCE): one exchange per engine scan here. */
 const PKG = {
   /* CTCS (CT-CP): drive travel, normal (a drive slower than 16 s valve / 25 s screen is a SEQUENCE FAILURE, CT-CP 8.0) */
-  ct: { tv: 12, tsc: 22, water: 300, run: 8 * 3600, coll: 1800, idle: 16 * 3600, dpClean: 30, dpN: 40, dpE: 50 }
+  ct: { tv: 12, tsc: 22, water: 300, run: 8 * 3600, coll: 1800, idle: 16 * 3600, dpClean: 30, dpN: 40, dpE: 50 },
+  /* ESP (ESP-OM L19-1, KC Cottrell doc LMYP-1-14): CE rapping 2 min on, off 7 / 13 / 19 / 25 / 31 min for fields 1 ~ 5 (p3, "values will
+     be modified depending on the operation conditions": these are the documented ones); DE rapping continuous; heaters off 1 h after
+     the TRs are energized; after the TRs go off the CE rapping runs continuous for 2 h, then the aux devices stop (stop sequence);
+     TR current limit 100 % (p9 ~ 10) */
+  esp: { ceOn: 2, ceOff: [7, 13, 19, 25, 31], heatOff: 3600, post: 2 * 3600, iLim: 100 }
 };
 /* a DCS output of a DITL sheet by its I/O address (the output pin of the netlist): 1 / 0, or null when the sheet or the pin is not found */
 function pkgDo(sh, adr) {
@@ -127,9 +132,40 @@ function pkgStep(U, dt) {
     pB = pkgDo('DITL-119', 'O.0289');
   pkgCtStep(P.ct.A, dt, pA === 1, pkgDo('DITL-119', 'O.0287') === 1, pkgDo('DITL-119', 'O.0288') === 1);
   pkgCtStep(P.ct.B, dt, (pB == null ? pA : pB) === 1, pkgDo('DITL-119', 'O.028A') === 1, pkgDo('DITL-119', 'O.028B') === 1);
+  pkgEspStep(P, U, dt);
   /* the watchdogs: the PLC returns the bit, the DCS inverts it */
   for (const k in P.wd) P.wd[k] = P.wd[k] ? 0 : 1;
 }
+/* ---------- ESP, electrostatic precipitator (ESP-OM): five fields, each 1 CE hammer, 2 DE hammers, hopper vibrators A / B, 1 TR set,
+   2 hopper high level switches; purge fan F-1201 and heater H-1201. In service = the TR sets energized: the field state of the plant
+   model (AN_SRC.field.esp, the same one the house load counts, elec.js). The stop sequence: TRs off, CE rapping continuous, 2 h, the aux
+   devices stop: the hammers, the purge fan and the heater run on in that window, then stop (the purge fan stops with the ID fan in the
+   manual; here at the end of the window: INFERRED). Not in the documents (NO-SOURCE, no value): the REMOTE / DCS CONTROL selectors, the
+   InterLock bits (30006.06 ~ .15, condition not written), the TR kV / mA and primary values (no model of the T/R electrics), the DE and
+   vibrator timer settings, the fan / heater AUTO. The hopper vibrators run 3 s on each inlet opening of the fly ash tank below: given
+   with the fly ash program. No fault model yet: faults, TR alarms and TR communication errors 0; hoppers emptied by the ash system:
+   level high 0. */
+function pkgEspStep(P, U, dt) {
+  const E = P.esp || (P.esp = { on: 0, ton: 0, toff: Infinity, seen: 0 }),
+    on = typeof AN_SRC !== 'undefined' && AN_SRC.field && AN_SRC.field.esp && U.on ? 1 : 0;
+  if (on && !E.on) {
+    /* a start state already in service (150 MW): the heaters are long off */
+    E.ton = E.seen ? 0 : PKG.esp.heatOff;
+    E.toff = Infinity;
+  }
+  if (!on && E.on) E.toff = 0;
+  E.on = on;
+  E.seen = 1;
+  if (on) E.ton += dt;
+  else if (isFinite(E.toff)) E.toff += dt;
+  E.t = (E.t || 0) + dt;
+}
+function pkgEspCe(E, f) {
+  const K = PKG.esp;
+  if (E.on) return E.t % ((K.ceOn + K.ceOff[f]) * 60) < K.ceOn * 60 ? 1 : 0;
+  return E.toff < K.post ? 1 : 0;
+}
+const pkgEspAux = E => (E.on || E.toff < PKG.esp.post ? 1 : 0);
 /* the bit of a Modbus address of the lists: '40001.1' = bit 10, '40001.01' = bit 1, '40001' = bit 0 */
 function pkgBit(ma) {
   const m = /^(\d+)(?:\.(\d{1,2}))?$/.exec(String(ma).trim());
@@ -172,8 +208,43 @@ const PKG_READ = {
     return NaN;
   },
   esp: (P, ma) => {
-    const a = pkgBit(ma);
-    if (a && ((a.w === 30018 && a.b === 15) || (a.w === 40026 && a.b === 10))) return P.wd.esp;
+    const a = pkgBit(ma),
+      E = P.esp,
+      K = PKG.esp;
+    if (!a || !E) return NaN;
+    const { w, b } = a,
+      f = Math.floor(b / 3),
+      k = b % 3;
+    if ((w === 30018 && b === 15) || (w === 40026 && b === 10)) return P.wd.esp;
+    /* 30001 CE, 30002 / 30003 DE, 30004 / 30005 vibrators A / B: field f, bit 3f remote, 3f+1 run, 3f+2 fault */
+    if (w >= 30001 && w <= 30005 && b < 15) {
+      if (k === 0) return NaN;
+      if (k === 2) return 0;
+      if (w === 30001) return pkgEspCe(E, f);
+      if (w <= 30003) return pkgEspAux(E);
+      return NaN;
+    }
+    if (w === 30006) {
+      if (b === 1) return pkgEspAux(E);
+      if (b === 4) return E.on && E.ton < K.heatOff ? 1 : E.on ? 0 : NaN;
+      if (b === 2 || b === 5) return 0;
+      return NaN;
+    }
+    if (w === 30008 && b >= 3 && b <= 12) return 0;
+    /* AUTO of the hammers (30016.00 ~ .14) and vibrators (30016.15 ~ 30017.08): the timer program runs them; fan / heater AUTO no source */
+    if (w === 30016) return 1;
+    if (w === 30017) return b <= 8 ? 1 : NaN;
+    if (w === 30018 && b < 15) return k === 0 ? NaN : k === 1 ? E.on : 0;
+    if (w === 30019) return b <= 4 ? 0 : NaN;
+    /* CE timers: 30081 ~ 30090 (and the DCS set 40161 ~ 40170): run / stopped per field */
+    const ce = (w0, x) => (x % 2 === 0 ? K.ceOn : K.ceOff[x >> 1]);
+    if (w >= 30081 && w <= 30090) return ce(30081, w - 30081);
+    if (w >= 40161 && w <= 40170) return ce(40161, w - 40161);
+    if ((w >= 30112 && w <= 30116) || (w >= 40192 && w <= 40196)) return K.iLim;
+    /* the DCS commands (start / stop pulses, system auto start / stop, fan & heater): no screen sends one yet, 0 */
+    if (w >= 40020 && w <= 40025 && b < 15) return k === 2 ? NaN : 0;
+    if (w === 40026 && b <= 9) return 0;
+    if (w === 40027 && b <= 5) return b === 2 || b === 3 ? NaN : 0;
     return NaN;
   }
 };
@@ -189,4 +260,4 @@ AN.pkgRead = (sys, ma) => {
 };
 AN.pkgBit = pkgBit;
 /* for the tests: the CTCS program alone (tests/lanes/pkg/pkg-modbus.cjs) */
-AN._pkg = { ctNew: pkgCtNew, ctStep: pkgCtStep, K: PKG };
+AN._pkg = { ctNew: pkgCtNew, ctStep: pkgCtStep, espCe: pkgEspCe, espAux: pkgEspAux, read: PKG_READ, K: PKG };

@@ -4,12 +4,14 @@
    3. CTCS at 150 MW: STOP as the plant snapshot (OPERATING_POINTS: CTCS-A / B STOP), ready to start (seawater pumps running), remote auto
    4. the CTCS cycle of CT-CP: N01 opens with F01, watering 5 min after AUTO START, N02 opens = balls in circulation, 8 h, collection
       30 min, N01 closes, F01 off, idle 16 h, then N01 again without watering; a stop in the run closes in the cycle-end order
-   5. the watchdog bits change every exchange */
+   5. the watchdog bits change every exchange
+   6. ESP (ESP-OM): in service at 150 MW (TR sets on, DE rapping, purge fan on, heaters off); CE rapping 2 min on, 7 / 13 / 19 / 25 / 31
+      min off for fields 1 ~ 5; after the TRs go off the CE rapping runs continuous for 2 h, then the aux devices stop */
 'use strict';
 const fs = require('fs'),
   path = require('path');
 const { load, root } = require(path.join(__dirname, '..', '..', '..', 'tools', 'trace', 'world.cjs'));
-const MIN = 22;
+const MIN = 214;
 let bad = 0;
 const ok = (c, m) => {
   if (!c) bad++;
@@ -54,6 +56,18 @@ const ok = (c, m) => {
   ok(Math.abs(at('close1') - at('coll') - 1800) <= 10, 'ball collection 30 min');
   ok(s.L1.find(x => x[1] === 'run')[3] === 1 && s.L1.find(x => x[1] === 'idle')[2] === 0, 'balls in circulation bit in run, F01 off in idle');
   ok(s.L2.map(x => x[1]).join(' > ').endsWith('close2 > coll > close1 > init'), 'stop in the run: N02, collection, N01, initial: ' + s.L2.map(x => x[1]).join(' > '));
+  const e = JSON.parse(
+    E.js(`(()=>{const R=n=>AN.pkgRead('esp',n);const P=AN._pkg;
+      const tr=[0,1,2,3,4].map(i=>R('30018.'+String(3*i+1).padStart(2,'0')));
+      const duty=[0,1,2,3,4].map(f=>{let on=0,n=0;for(let t=0;t<40*60*9;t+=10){on+=P.espCe({on:1,t},f);n++}return +(on/n).toFixed(3)});
+      const post=[P.espCe({on:0,toff:3600,t:0},0),P.espCe({on:0,toff:7300,t:0},0),P.espAux({on:0,toff:3600}),P.espAux({on:0,toff:7300})];
+      return JSON.stringify({tr,de:R('30002.01'),fan:R('30006.01'),heat:R('30006.04'),tm:[R('30081'),R('30082'),R('30090'),R('40162')],il:R('30112'),duty,post})})()`)
+  );
+  ok(e.tr.every(x => x === 1) && e.de === 1 && e.fan === 1 && e.heat === 0, 'ESP at 150 MW: TR01 ~ 05 run, DE rapping, purge fan on, heater off');
+  ok(JSON.stringify(e.tm) === '[2,7,31,7]' && e.il === 100, 'CE timers 2 / 7 ... 31 min, current limit 100 %: ' + e.tm.join(' '));
+  const dx = [7, 13, 19, 25, 31].map(o => 2 / (2 + o));
+  ok(e.duty.every((d, i) => Math.abs(d - dx[i]) < 0.01), 'CE rapping duty 2 / (2 + off): ' + e.duty.join(' '));
+  ok(JSON.stringify(e.post) === '[1,0,1,0]', 'after the TRs go off: CE continuous and aux on for 2 h, then off');
   process.exit(bad ? 1 : 0);
 })().catch(e => {
   console.error(e);
