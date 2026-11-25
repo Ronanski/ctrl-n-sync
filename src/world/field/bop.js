@@ -137,6 +137,7 @@ for (const [ai, tag, k] of [
    pressure of the model (U.cdPd, the PT-CD1117 value). The I.0049 on DITL-03B is the station 103 address (MIS-F1055A FA blower A stopped) */
 R.push({ stn: 2, di: 1, tag: 'PS-CD1117', v: U => (isFinite(U.cdPd) ? (U.cdPd < 15.5 ? 1 : 0) : NaN), rel: 'U.cdPd < 15.5 kg/cm2 (condensate pump discharge pressure)',
   src: io(2) + ' I.0049 "#1 Condensate water pressure switch low"; Alarm List 20160912 sheet PS: PS-CD1117 stn 102 I.0049 set L 15.5; unit.js AN_CD cdPd' });
+R.push({ stn: 3, ai: 'AI0433', tag: 'IT-P1503A', v: U => fin(U.swIb0), rel: 'U.swIb0 booster pump A current', src: io(3) + ' AI0433; unit.js sea water booster model' });
 R.push({ stn: 3, ai: 'AI0434', tag: 'IT-P1503B', v: U => fin(U.swIb1), rel: 'U.swIb1 booster pump B current', src: io(3) + ' AI0434; unit.js sea water booster model' });
 R.push({ stn: 3, ai: 'AI0435', tag: 'IT-P1503C', v: U => fin(U.swIb2), rel: 'U.swIb2 booster pump C current', src: io(3) + ' AI0435; unit.js sea water booster model' });
 R.push({ stn: 3, ai: 'AI0465', tag: 'IT-P1116B', v: U => fin(U.cdI1), rel: 'U.cdI1 CEP-B current', src: io(3) + ' AI0465; unit.js condensate pump model' });
@@ -210,6 +211,29 @@ for (const [L, on, off, sh] of [
     src: io(3) + ' ' + off + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008'
   });
 }
+/* BFWP 6.6 kV VCB (K1AU3E1-0008, bus 1AM): ON = the DITL-23A copy runs and its breaker is not opened by a field trip or the black-out,
+   OFF = NOT ON (as the sea water pumps above) */
+for (const [L, on, off, sh] of [
+  ['A', 'I.005A', 'I.005B', 'DITL-23A'],
+  ['B', 'I.037A', 'I.037B', 'DITL-23A #B']
+]) {
+  const vcb = X => {
+    const r = X.ditlRun(sh);
+    return r == null ? NaN : r === 1 && !X.ftrip(sh) && !X.fault('el.1am') ? 1 : 0;
+  };
+  R.push({ stn: 3, di: 1, tag: 'MIV-P1115' + L + '1', v: (U, X) => vcb(X), rel: 'VCB ON = ' + sh + ' running AND no field trip AND bus 1AM alive', src: io(3) + ' ' + on + ' "BFWP-' + L + ' VCB on"; K1AU3E1-0008' });
+  R.push({
+    stn: 3,
+    di: 1,
+    tag: 'MIV-P1115' + L + '2',
+    v: (U, X) => {
+      const x = vcb(X);
+      return isFinite(x) ? 1 - x : NaN;
+    },
+    rel: 'VCB OFF = NOT ON',
+    src: io(3) + ' ' + off + ' "BFWP-' + L + ' VCB off"; K1AU3E1-0008'
+  });
+}
 /* condensate pump 6.6 kV VCB (DITL-61A / #B input rows): ON = the pump runs and its breaker is not opened by a field trip or a black-out
    (X.ftrip), OFF = NOT ON. The rows are on the drawing, so the field row drives them (by the tag of each copy) */
 for (const [L, on, off, sh] of [
@@ -274,10 +298,11 @@ ST.push({
    list LS.csv 34-42: CH1103 LL 0.09 / L 0.12 / H 0.48 m, CH1105 LL 0.10 / L 0.13 / H 0.53 m). No tank level model (parked): in service
    the level stands between L and H; the instructor sets low, low low or high */
 for (const [n, what, LL, Lo, H, a] of [
+  ['CH1101', 'Tri-sodium phosphate solution tank', null, null, null, ['I.0130', 'I.0131', 'I.0132']],
   ['CH1103', 'Neutral amine solution tank', 0.09, 0.12, 0.48, ['I.0133', 'I.0134', 'I.0135']],
   ['CH1105', 'Carbon hydraride solution tank', 0.1, 0.13, 0.53, ['I.0136', 'I.0137', 'I.0138']]
 ]) {
-  const doc = '; K1AU3-D1-0-035 R0 p11 / p18; alarm list LS.csv 34-42 (LL ' + LL + ' / L ' + Lo + ' / H ' + H + ' m)';
+  const doc = LL == null ? '; K1AU3-D1-0-035 (tri-sodium phosphate tank Z-1101); switch heights not in the alarm list rows read' : '; K1AU3-D1-0-035 R0 p11 / p18; alarm list LS.csv 34-42 (LL ' + LL + ' / L ' + Lo + ' / H ' + H + ' m)';
   ST.push({ id: n + '.ll', tag: 'LSLL-' + n, di: a[0], stn: 1, normal: 0, t: what + ' level low low', g: 'Feedwater and condensate', src: io(1) + ' ' + a[0] + doc });
   ST.push({ id: n + '.lo', tag: 'LSL-' + n, di: a[1], stn: 1, normal: 0, t: what + ' level low', g: 'Feedwater and condensate', src: io(1) + ' ' + a[1] + doc });
   ST.push({ id: n + '.hi', tag: 'LSH-' + n, di: a[2], stn: 1, normal: 0, t: what + ' level high', g: 'Feedwater and condensate', src: io(1) + ' ' + a[2] + doc });
@@ -292,9 +317,14 @@ for (const [stn, addr, tag, what] of [
   [1, 'I.012B', 'MIT-Z1109B', 'Carbon hydraride dosing pump-B trip'],
   [1, 'I.012D', 'MIT-Z1101A', 'Tri-sodium phosphate agitator trip'],
   [5, 'I.032E', 'MIT-P0761A', 'Hypo-chlorinated dosing system unloading pump-A overload'],
-  [5, 'I.0121', 'MIT-P0761B', 'Hypo-chlorinated dosing system unloading pump-B overload']
+  [5, 'I.0121', 'MIT-P0761B', 'Hypo-chlorinated dosing system unloading pump-B overload'],
+  [5, 'I.032A', 'MIT-P0762A', 'Hypo-chlorinated dosing system NaOCl dosing pump-A overload'],
+  [5, 'I.032C', 'MIT-P0762B', 'Hypo-chlorinated dosing system NaOCl dosing pump-B overload']
 ])
   ST.push({ id: tag.slice(4) + '.trip', tag, di: addr, stn, normal: 0, t: what, g: 'Other', src: io(stn) + ' ' + addr + ' "' + what + '"; normal = no trip' });
+/* BFWP lube oil tank level switch low (KSB forced oil system of the pump; no oil inventory in the physics): normal = level above low */
+for (const [L, addr] of [['A', 'I.0093'], ['B', 'I.0413']])
+  ST.push({ id: 'LO1115-' + L + '.lo', tag: 'LS-LO1115-' + L, di: addr, stn: 3, normal: 0, t: 'BFWP-' + L + ' lube oil level low', g: 'Feedwater and condensate', src: io(3) + ' ' + addr + ' "Lube oil of BFWP-' + L + ' level switch low"; normal = no oil loss' });
 /* breaker positions of the PAF circulating oil panel (a breaker does not open on a dead bus): normal = closed */
 ST.push({ id: 'LO1753.ctl', tag: 'MIA-LO1753-1', di: 'I.065B', stn: 3, normal: 0, t: 'PAF circulating oil system control power switch off', g: 'Air and flue gas', src: io(3) + ' I.065B "PAF circulating oil system control power auxiliary switch off"; normal = switch on' });
 ST.push({ id: 'LO1753.nfb2', tag: 'MIA-LO1753-2', di: 'I.065C', stn: 3, normal: 1, t: 'PAF circulating oil system NFB2 off', g: 'Air and flue gas', src: io(3) + ' I.065C "PAF circulating oil system NFB2 auxiliary switch not off"; normal = NFB closed (1)' });
