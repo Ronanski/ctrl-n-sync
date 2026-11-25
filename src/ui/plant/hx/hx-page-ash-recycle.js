@@ -56,6 +56,9 @@
     pm('Not in step 2', dl('BA03', 'i|9|neg')),
     pm('Automatic mode (local panel)', dl('BA19', 'i|3'))
   ];
+  /* the same list on the control faceplate of the bottom ash transmitter */
+  const BAM = ((window.LS_MOCK && LS_MOCK.defs.find(x => x.id === 'MK14')) || {}).mach;
+  if (BAM && BAM.BAT) BAM.BAT.df.need = PERM.map(p => ({ l: p.label, key: p.key }));
   const al = (label, s, r) => D(label, '', dl(s, 'o|' + r), 'ALARM', 'NORMAL');
   const STEPS = [
     ['0  Waiting', 'BA04', 8],

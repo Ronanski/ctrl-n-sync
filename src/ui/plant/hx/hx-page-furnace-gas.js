@@ -85,7 +85,7 @@
           sc: BS
         }),
         at(M('airheater', 'AIR PREHEATER', 'Air heater', [], { mon: HX.MON_AH }), AHX, AHY, { id: 'ah', sc: AS, lab: 'l', yn: [-79, -66] }),
-        at(E('esp', 'Precipitator', 'Z-1010', []), EX, EY, { id: 'esp', sc: ES, lab: 't' }),
+        at(E('esp', 'Precipitator', 'Z-1010', [], { go: 'precipitator' }), EX, EY, { id: 'esp', sc: ES, lab: 't' }),
         at(M('fan', 'IDF', 'Induced draft fan', [V('Current', 'IT-F1056', 'A')]), IX, IY, {
           id: 'idf',
           sc: IS,

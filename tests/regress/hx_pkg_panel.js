@@ -1,0 +1,81 @@
+// The package panels on the HX pages (lane 6, EIMI): the faceplate LS_FPOP.pkg opens by a real click on the drawing, its buttons are real
+// clicks with EXECUTE, and what they do is read in the model of the panel (src/analog/engine/pkg.js). Precipitator and fly ash.
+const { open, startAs, pressRun, openHx } = require('./lib.js');
+const fs = require('fs');
+(async () => {
+  const html = process.argv[2] || 'dist/' + fs.readdirSync('dist').find(x => /^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
+  const { browser, page, errs } = await open(html);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  let bad = 0;
+  const ok = (c, t) => {
+    if (!c) bad++;
+    console.log((c ? 'PASS ' : 'FAIL ') + t);
+  };
+  await startAs(page, '150 MW');
+  await pressRun(page);
+  const val = k => page.evaluate(k => HX.data.value(k), k);
+  const openFp = async hp => {
+    await page.evaluate(() => { const b = document.querySelector('#fpop .fpo-x'); if (b) b.click(); });
+    await page.locator(`#plantws [data-hp="${hp}"]`).first().click({ force: true });
+    await page.waitForSelector('#fpop', { timeout: 5000 });
+    return page.locator('#fpop');
+  };
+  const press = async (f, label) => {
+    await f.locator('button', { hasText: new RegExp('^' + label + '$') }).first().click();
+    await f.locator('.fpo-go').click();
+    await page.waitForTimeout(1800);
+  };
+  await openHx(page, 'HX-precipitator');
+  let f = await openFp('pkg:esp.TR1');
+  ok((await val('an:pkg.esp.tr.0.kv')) > 80, 'rectifier 1 at its rated voltage: ' + (await val('an:pkg.esp.tr.0.kv')));
+  const dust0 = await val('AT-FG1057-5');
+  await press(f, 'STOP');
+  ok((await val('an:pkg.esp.tr.0.kv')) === 0, 'rectifier 1 STOP: 0 kV');
+  await page.evaluate(() => AN.runFixed(60));
+  const dust1 = await val('AT-FG1057-5');
+  ok(dust1 > dust0, 'more dust at the stack with field 1 out: ' + dust0 + ' -> ' + dust1);
+  await press(f, 'START');
+  await f.locator('.fpo-inp').fill('50');
+  await f.locator('.fpo-r.set button').click();
+  await f.locator('.fpo-go').click();
+  await page.waitForTimeout(1800);
+  const kv = await val('an:pkg.esp.tr.0.kv'),
+    ma = await val('an:pkg.esp.tr.0.ma');
+  ok(Math.abs(kv - 83 * Math.SQRT1_2) < 0.1 && Math.abs(ma - 420) < 0.1, 'current limit 50 %: ' + kv + ' kV ' + ma + ' mA');
+  f = await openFp('pkg:esp.M1201');
+  ok(await f.locator('button', { hasText: /^START$/ }).isDisabled(), 'plate rapper in AUTO: START is disabled');
+  await press(f, 'MAN');
+  await press(f, (await val('an:pkg.esp.d.M1201.run')) ? 'STOP' : 'START');
+  ok((await val('an:pkg.esp.d.M1201.auto')) === 0, 'plate rapper in MANUAL');
+  f = await openFp('pkg:esp.HAMMER');
+  await press(f, 'ALL TO AUTO');
+  ok((await val('an:pkg.esp.d.M1201.auto')) === 1, 'ALL TO AUTO puts the rapper back in AUTO');
+  f = await openFp('pkg:esp.SYS');
+  await press(f, 'AUTO STOP');
+  ok((await val('an:pkg.esp.tr.2.kv')) === 0 && (await page.evaluate(() => AN.fieldState().esp)) === false, 'AUTO STOP: every field off, the field item ESP off');
+  await press(f, 'AUTO START');
+  ok((await val('an:pkg.esp.tr.2.kv')) > 70, 'AUTO START: the fields are back');
+  await openHx(page, 'HX-fly-ash');
+  f = await openFp('pkg:fa.EP1A');
+  await press(f, 'STOP');
+  ok((await val('an:pkg.fa.t.EP1A.on')) === 0, 'blow tank 1A STOP');
+  f = await openFp('pkg:fa.MCP');
+  await press(f, 'LOCAL');
+  f = await openFp('pkg:fa.EP1A');
+  await press(f, 'START');
+  ok((await val('an:pkg.fa.t.EP1A.on')) === 0 && /LOCAL/.test(await f.locator('.fpo-why').innerText()), 'START with the panel at LOCAL is refused: ' + (await f.locator('.fpo-why').innerText()));
+  f = await openFp('pkg:fa.MCP');
+  await press(f, 'REMOTE');
+  f = await openFp('pkg:fa.EP1A');
+  await press(f, 'START');
+  ok((await val('an:pkg.fa.t.EP1A.on')) === 1, 'blow tank 1A START');
+  f = await openFp('pkg:fa.UNL');
+  await press(f, 'ON');
+  await page.evaluate(() => AN.runFixed(8));
+  ok((await val('an:pkg.fa.g1')) === 1 || (await val('an:pkg.fa.silo')) === 0, 'dry unloader ON opens its gates (or the silo is empty)');
+  await press(f, 'OFF');
+  ok(!errs.length, 'no page error ' + errs.join(' | '));
+  console.log(bad ? 'FAILED ' + bad : 'ALL PASS');
+  await browser.close();
+  process.exit(bad ? 1 : 0);
+})();

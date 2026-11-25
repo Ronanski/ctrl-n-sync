@@ -148,7 +148,7 @@
     X('XV-MS1011', '', { tag: 'XV-MS1011 · DP-MS01', cname: 'Main steam drain pot DP-MS01 valve' }),
     { dy: 46, to: 'flash pipe', rot: -90, lab: 'l' }
   );
-  const dMS2 = drain('dms2', BX - 22, 640, W_BY / 2, E('valve', '', 'XV-MS1023 · DP-MS02', [], { kind: 'shutoff' }), {
+  const dMS2 = drain('dms2', BX - 22, 640, W_BY / 2, X('XV-MS1023', '', { tag: 'XV-MS1023 · DP-MS02', cname: 'High pressure bypass drain pot DP-MS02 valve' }), {
     side: 'r',
     dx: 46
   });
@@ -160,7 +160,7 @@
     X('XV-CR1011', '', { tag: 'XV-CR1011 · DP-CR01', cname: 'Cold reheat drain pot DP-CR01 valve' }),
     { side: 'r', dx: 50, yn: [-38, -38] }
   );
-  const dCR2 = drain('dcr2', 782, CY, W_RH / 2, E('valve', '', 'XV-CR1012 · DP-CR02', [], { kind: 'shutoff' }), {
+  const dCR2 = drain('dcr2', 787, CY, W_RH / 2, X('XV-CR1012', '', { tag: 'XV-CR1012 · DP-CR02', cname: 'Cold reheat drain pot DP-CR02 valve' }), {
     dy: 56
   });
   const dHR1 = drain(
@@ -243,6 +243,12 @@
         /* ---- cold reheat ---- */
         at(E('valve', 'Ventilator valve', 'FV-CR1902', [], { kind: 'control' }), 1140, 716, { id: 'fv', lab: 'b' }),
         ...dCR1.items,
+        /* PR 568 (EIMI): DITL-121 (S2 O.012F, LCD push buttons M.0650 ~ M.0652). The I/O list marks it "not used" and PD-011 draws no
+           DP-CR03: no pot and no line are drawn, only the valve the logic drives */
+        at(X('XV-CR1013', '', { tag: 'XV-CR1013 · DP-CR03, not used', cname: 'Cold reheat drain pot DP-CR03 valve (not used)' }), 1213, 906, {
+          id: 'dcr3v',
+          lab: 'b'
+        }),
         at(
           E('valve', 'Turbine warming steam valve', 'MV-AS1011', [V('Position', 'ZT-AS1011', '%')], {
             kind: 'motor',
@@ -351,6 +357,9 @@
           by(350),
           { id: 'dmb', lab: 'b' }
         ),
+        /* PR 568 (EIMI): the CRT push button of ABC-020 "CRT SELECT MAINTENANCE" (S2 M.017F): resets the flip-flop S2 M.017A that forces
+           the superheater pass damper open while the reheater has no steam. No lamp: M.017C is 1 only while the button is held */
+        at(HX.B('SUPERHEATER PASS DAMPER MAINTENANCE', 'data-apb="ABC-020|S2 M.017F"', { press: true, w: 310 }), 180, 880, { id: 'dmm' }),
         at(L('furnace-gas', 'Furnace and flue gas'), bx(108), by(512) + 26, { id: 'fgl' })
       ],
       pipes: [

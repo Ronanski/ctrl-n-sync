@@ -56,6 +56,7 @@
   --rx-col: #d9dfe5;
   --rx-chip: #ffffff;
   --rx-hot: #e07a2e;
+  --rx-ball: #c65a12;
   --rx-coil0: #a8479a;
   --rx-coil1: #e2553c;
   --rx-wt: #58a6dc;
@@ -117,6 +118,7 @@
     --rx-col: #20272f;
     --rx-chip: #080c10;
     --rx-hot: #ff8a3c;
+    --rx-ball: #ff9a4d;
     --rx-coil0: #c46fae;
     --rx-coil1: #ff9166;
     --rx-wt: #2f7fc0;
@@ -176,6 +178,7 @@
   --rx-col: #20272f;
   --rx-chip: #080c10;
   --rx-hot: #ff8a3c;
+  --rx-ball: #ff9a4d;
   --rx-coil0: #c46fae;
   --rx-coil1: #ff9166;
   --rx-wt: #2f7fc0;
@@ -529,10 +532,18 @@ svg.hx-small .hx-tag { display: none; }
 /* The Operator Station (apk) sets body.st-move: a tablet with battery saver or "Remove animations" reports reduced motion, and the user
    could not see flow or a running fan at all (apk test 2026-11-22). There the movement is plant information, so it stays. */
 @media (prefers-reduced-motion: reduce) {
-  body:not(.st-move) .hx-run .hxr, body:not(.st-move) .hx-on > .hx-lnf, body:not(.st-move) .hx-trip .hxs, body:not(.st-move) .hx-st.trip, body:not(.st-move) .hx-real .hx-on > .hx-lnf, body:not(.st-move) .hx-run .rx-blade, body:not(.st-move) .hx-run .rx-jet, body:not(.st-move) .hx-run .rx-rip, body:not(.st-move) .hx-run .rxrot, body:not(.st-move) .hx-run .rx-lift, body:not(.st-move) .hx-on > .rx-tubef, body:not(.st-move) .hx-on > .rx-fall, body:not(.st-move) .hx-on > .rx-rise, body:not(.st-move) .hx-on > .rx-swirl, body:not(.st-move) .hx-on > .rx-bub circle, body:not(.st-move) .hx-run .rx-elem, body:not(.st-move) .hx-run .rx-belt, body:not(.st-move) .hx-run .rx-flight, body:not(.st-move) .hx-run .rxflame, body:not(.st-move) .hx-on > .rx-gas, body:not(.st-move) .hx-on > .rx-coilf, body:not(.st-move) .hx-on > .rx-mist, body:not(.st-move) .hx-trip .rxs { animation: none; }
+  body:not(.st-move) .hx-run .hxr, body:not(.st-move) .hx-on > .hx-lnf, body:not(.st-move) .hx-trip .hxs, body:not(.st-move) .hx-st.trip, body:not(.st-move) .hx-real .hx-on > .hx-lnf, body:not(.st-move) .hx-run .rx-blade, body:not(.st-move) .hx-run .rx-jet, body:not(.st-move) .hx-run .rx-rip, body:not(.st-move) .hx-run .rxrot, body:not(.st-move) .hx-run .rx-lift, body:not(.st-move) .hx-on > .rx-tubef, body:not(.st-move) .hx-on > .rx-balls, body:not(.st-move) .hx-on > .rx-fall, body:not(.st-move) .hx-on > .rx-rise, body:not(.st-move) .hx-on > .rx-swirl, body:not(.st-move) .hx-on > .rx-bub circle, body:not(.st-move) .hx-run .rx-elem, body:not(.st-move) .hx-run .rx-belt, body:not(.st-move) .hx-run .rx-flight, body:not(.st-move) .hx-run .rxflame, body:not(.st-move) .hx-on > .rx-gas, body:not(.st-move) .hx-on > .rx-coilf, body:not(.st-move) .hx-on > .rx-mist, body:not(.st-move) .hx-trip .rxs { animation: none; }
   body:not(.st-move) .hx-on > .rx-plume circle { animation: none; opacity: 0.5; }
   .rxix, .rxbl { transition: none; }
 }
+
+/* a part of a symbol that has two positions: .rx-unless = the line not flowing, .rx-when = flowing */
+.hx-idle > .rx-when, .hx-on > .rx-unless { display: none; }
+.rx-sieve { fill: none; stroke: var(--rx-st3); stroke-width: 3; stroke-dasharray: 2.2 1.8; }
+/* sponge balls of the condenser tube cleaning */
+.rx-balls { fill: none; stroke: var(--rx-ball); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0 28; opacity: 0; }
+.hx-on > .rx-balls { opacity: 1; animation: rx-balls 2.4s linear infinite; }
+@keyframes rx-balls { from { stroke-dashoffset: 28; } to { stroke-dashoffset: 0; } }
 
 /* ---- mini pop-ups (hx-cards-ui.js): CONTROL card and PERMISSIVE · TREND · MONITOR card, tethered to their equipment ---- */
 .hxc-wires { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 28; }

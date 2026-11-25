@@ -622,7 +622,7 @@
       for (const [v, f, dp, words] of monV) {
         const x = call(f, null);
         /* an on / off point shows its word (words = [at 1, at 0]); a value its decimals (dp, 1 when not given) */
-        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp == null ? 1 : dp));
+        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? wordOf(words, +x) : (+x).toFixed(dp == null ? 1 : dp));
       }
       setTx(chip, st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' && !noSt ? 'READY' : '');
       chip.className = 'fpo-chip ' + (st === 'TRIP' ? 'trip' : miss.length && st !== 'RUN' ? 'ilk' : '');
@@ -899,6 +899,8 @@
   /* live test #45: a package run by push buttons of a DITL drawing (debris filter S-1502 / S-1504, DITL-39: REMOTE AUTO START / STOP P.B.
      to the local panel, IN OPERATION back). P = { n, t, d (drawing), io, st: { row, on, off }, pbs: [[label, row, address]],
      perm: [{ row, l }] (any one = 1), vals: [[tag, fn, unit]] }. Same rows and calls as the dock (LS_OP.dout / dpress) */
+  /* two words = [at 1, at 0] of an on / off point; more = one word per step (0, 1, 2 ...) */
+  const wordOf = (w, x) => (w.length > 2 ? w[Math.round(x)] || '-----' : w[x >= 0.5 ? 0 : 1]);
   function pb(P) {
     const dk = D();
     if (!P || !dk || !P.d || !call(() => dk.dOf(P.d), null)) return false;
@@ -908,7 +910,10 @@
     /* Rosé 2026-11-24 (click check, sea water page): st.row null = the drawing has no status input back from the panel (the condenser
        tube cleaning, DITL-119: REMOTE AUTO START / STOP pulses out, nothing back). No STATUS lamps then: the header says where the
        state is (st.off), START needs its permissive, STOP is its own press */
-    const noSt = P.st.row == null;
+    /* lane 6: P.st.key = the status comes from a package panel (the tube cleaning PLC, Modbus): a HX data key, 1 = in operation. Its
+       buttons stay each its own press (noBt), as the drawing has no status to lock them with */
+    const noBt = P.st.row == null,
+      noSt = noBt && !P.st.key;
     const lOn = lampEl(P.st.on || ''),
       lOff = lampEl(P.st.off || 'STOPPED');
     if (!noSt) F.bd.append(row('STATUS', lOn, lOff));
@@ -995,13 +1000,18 @@
         d = pd || P.d;
       b.onclick = () =>
         !b.disabled &&
-        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), i === 0 && !P.free && !noSt && (sent = Date.now()), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
+        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), i === 0 && !P.free && !noBt && (sent = Date.now()), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
     });
     /* Rosé 2026-11-22 (live test finding 3): P.need = [{ d, row, l }] output rows of a drawing that the first command needs (the
        sootblower BLOWING PERMISSIVE, DITL-80A out 20). The button stays a real press to the logic; while a row is 0 the faceplate says
        "not permitted" and why, and a press that the logic did not take (no status after 3 s) says so instead of nothing */
     let sent = 0;
-    const needMiss = () => (P.need || []).filter(x => call(() => dk.dout(x.d, x.row), null) === 0);
+    const needMiss = () => (P.need || []).filter(x => call(() => (x.key ? window.HX.data.value(x.key) : dk.dout(x.d, x.row)), null) === 0);
+    /* a permissive of the drawing: input or output row (rows count from 1, as on the drawing) */
+    const needTx = x => {
+      const m = /^dl:([^|]+)\|([io])\|(\d+)/.exec(x.key || '');
+      return x.l + (m ? ' [' + m[1] + ' ' + (m[2] === 'i' ? 'in' : 'out') + ' row ' + (+m[3] + 1) + ']' : x.key ? '' : ' [' + x.d + ' out row ' + (x.row + 1) + ']');
+    };
     let k0 = '';
     function tick() {
       if (!me.isConnected) return closeEl(me);
@@ -1010,7 +1020,7 @@
          the OPERATING lamp of the AUTO program (DITL-80A) stays off */
       const aw = P.away && call(() => dk.dOf(P.away.d) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(P.away.d)), null),
         /* beta.556: st.d = the state row stands on another drawing than the push buttons; st.inv = the row is 1 while the machine waits */
-        on = !noSt && (call(() => dk.dout(P.st.d || P.d, P.st.row), null) === (P.st.inv ? 0 : 1) || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0)),
+        on = P.st.key ? call(() => HX.data.value(P.st.key), null) > 0 : !noSt && (call(() => dk.dout(P.st.d || P.d, P.st.row), null) === (P.st.inv ? 0 : 1) || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0)),
         run = isRun(),
         pv = (P.perm || []).map(p => ({ ...p, v: call(() => window.DUI.rowVal(s, p.row), null) })),
         ok = !pv.length || pv.some(p => p.v === 1);
@@ -1027,11 +1037,11 @@
       }
       /* live Cold start F10b: P.free = every button is its own press (igniter / burner ON / OFF): the status (REMOTE) does not lock or
          light the first one */
-      B[0].disabled = P.free ? !run : noSt ? !run || !ok : on || !run || !ok;
+      B[0].disabled = P.free ? !run : noBt ? !run || !ok : on || !run || !ok;
       /* design review 2026-11-08 (Yuna): the second push button is the STOP of the first only when it says so (STOP / CLOSE / AUTO STOP).
          Another command (the SKIP of a sootblower, DITL-80x row r + 1) is its own press: enabled in RUN, not lit green as a "stopped" */
       if (B[1]) {
-        const isStop = !P.free && !noSt && /\b(STOP|CLOSE)\b/.test(P.pbs[1][0]);
+        const isStop = !P.free && !noBt && /\b(STOP|CLOSE)\b/.test(P.pbs[1][0]);
         B[1].disabled = !run || (isStop && (!on || !rem));
         B[1].classList.toggle('lit-stop', isStop && !on);
       }
@@ -1045,7 +1055,7 @@
         : !ok && !on
           ? P.pbs[0][0] + ' blocked: no ' + (P.permWhy || 'permissive') + '.'
           : nm.length
-            ? (late ? P.pbs[0][0] + ' sent, NOT PERMITTED by the logic: no ' : P.pbs[0][0] + ' not permitted: no ') + nm.map(x => x.l + ' [' + x.d + ' out row ' + (x.row + 1) + ']').join('; ') + '.'
+            ? (late ? P.pbs[0][0] + ' sent, NOT PERMITTED by the logic: missing: ' : P.pbs[0][0] + ' not permitted, missing: ') + nm.map(needTx).join('; ') + '.'
             : late
               ? P.pbs[0][0] + ' sent, but the logic did not start it (no ' + P.st.on + ' status after 3 s). Open Logic ' + P.d + ' to see the missing input.'
               : '';
@@ -1320,6 +1330,155 @@
         bM.disabled = au == null || !au || !run;
         bA.classList.toggle('lit-run', au === true);
         bM.classList.toggle('lit-stop', au === false);
+      }
+    }
+    paint = tick;
+    tick();
+    place(me);
+    me._iv = setInterval(tick, 500);
+    return true;
+  }
+  /* lane 6 (EIMI): a device of a package panel (its own PLC, on the DCS by Modbus: precipitator, fly ash, tube cleaning). STATUS lamps,
+     the REMOTE / LOCAL selector at the panel (the field operator), AUTO / MAN, the buttons, the settings of the panel with their range, the
+     fault with its RESET. Every press is asked (EXECUTE / CANCEL) and goes to P.cmd(op, value): '' = done, else the reason it was refused.
+     P = { n: name, t: tag, d: panel, why, lamps: [on, off], st / flt / sel / au: () => 1 | 0 | null, fltWord, reset: true, free: no selector
+       needed, again: a lit button may be pressed again, cmds: [[label, op, lit word 'run' | 'stop' | '', () => lit, value]],
+       sets: [{ l, unit, max, dp, op, get: () => value }], cmd } */
+  function pkg(P) {
+    if (!P) return false;
+    const F = frame(P.n, (P.t ? P.t + ' · ' : '') + (P.d || ''));
+    const me = box;
+    F.hd.querySelector('.fpo-tt').append(E('span', 'fpo-chip', P.chip || 'PANEL'));
+    const W = P.lamps || ['RUN', 'STOP'],
+      lR = lampEl(W[0]),
+      lS = lampEl(W[1]),
+      lF = P.flt ? lampEl(P.fltWord || 'FAULT') : null;
+    if (P.st) F.bd.append(lF ? row('STATUS', lR, lS, lF) : row('STATUS', lR, lS));
+    const mk = t => {
+      const b = E('button', 'fpo-cmd', t);
+      b.type = 'button';
+      return b;
+    };
+    const [selS, [bRm, bLc]] = P.sel ? seg(['REMOTE', 'LOCAL']) : [null, []];
+    if (P.sel) F.bd.append(row('SELECTOR', selS, E('span', 'fpo-fld', 'FIELD')));
+    const bA = P.au ? mk('AUTO') : null,
+      bM = P.au ? mk('MAN') : null;
+    if (P.au) F.bd.append(row('MODE', bA, bM));
+    const C = (P.cmds || []).map(c => [c, mk(c[0])]);
+    if (C.length > 2) {
+      const g = E('div', 'fpo-grid');
+      g.append(...C.map(x => x[1]));
+      F.bd.append(E('div', 'fpo-sh', 'CONTROL'), g);
+    } else if (C.length) F.bd.append(row('CONTROL', ...C.map(x => x[1])));
+    const bR = P.reset ? mk('RESET') : null;
+    if (bR) F.bd.append(row('FAULT', bR));
+    const sets = (P.sets || []).map(s => {
+      const v = E('span', 'fpo-vb'),
+        inp = E('input', 'fpo-inp'),
+        b = E('button', '', 'SET');
+      inp.type = 'number';
+      inp.min = 0;
+      inp.max = s.max;
+      inp.step = 'any';
+      inp.setAttribute('aria-label', s.l + ', new value, ' + s.unit);
+      b.type = 'button';
+      const r = row(s.l, v, E('small', 'fpo-dim', s.unit), inp, b);
+      r.classList.add('set');
+      F.bd.append(r);
+      b.onclick = () => {
+        const x = inp.value.trim() === '' ? NaN : +inp.value;
+        if (!isFinite(x) || x < 0 || x > s.max) {
+          msg.hidden = false;
+          return setTx(msg, '⚠ ' + s.l + ': type a value from 0 to ' + s.max + ' ' + s.unit + '.');
+        }
+        ask(s.op, x, s.l + ' ' + x + ' ' + s.unit);
+      };
+      return [s, v];
+    });
+    const ex = E('div', 'fpo-ex'),
+      exT = E('span'),
+      exGo = E('button', 'fpo-go', 'EXECUTE'),
+      exNo = E('button', '', 'CANCEL');
+    exGo.type = exNo.type = 'button';
+    ex.append(exT, exGo, exNo);
+    ex.hidden = true;
+    const msg = E('div', 'fpo-why', P.why || '');
+    msg.hidden = !P.why;
+    F.bd.append(ex, msg);
+    let pend = null;
+    const ask = (op, v, word, fld) => {
+      pend = [op, v, word, fld];
+      setTx(exT, (fld ? 'FIELD: ' : '') + P.n + ': ' + word + '?');
+      ex.classList.toggle('fld', !!fld);
+      ex.hidden = false;
+      exGo.focus();
+    };
+    exNo.onclick = () => ((pend = null), (ex.hidden = true));
+    exGo.onclick = () => {
+      const q = pend;
+      pend = null;
+      ex.hidden = true;
+      if (!q) return;
+      const r = call(() => P.cmd(q[0], q[1]), 'no plant model') || '';
+      msg.hidden = false;
+      setTx(msg, r ? '⚠ Refused: ' + r + '.' : P.n + ': ' + q[2] + ' EXECUTED');
+      if (!r)
+        call(() =>
+          window.lsEventAdd(P.d || 'PANEL', q[3] ? 'FIELD' : 'DCS', (q[3] ? 'Field operator: ' : 'Operator: ') + P.n + (P.t ? ' ' + P.t : '') + ' ' + q[2] + ' (faceplate)')
+        );
+      setTimeout(tick, 150);
+    };
+    if (P.sel) {
+      bRm.onclick = () => ask('rem', 1, 'selector REMOTE', true);
+      bLc.onclick = () => ask('rem', 0, 'selector LOCAL', true);
+    }
+    if (bA) {
+      bA.onclick = () => ask('auto', 0, 'AUTO');
+      bM.onclick = () => ask('man', 0, 'MANUAL');
+    }
+    for (const [c, b] of C) b.onclick = () => ask(c[1], c[4], c[0]);
+    if (bR) bR.onclick = () => ask('reset', 0, 'RESET');
+    const ln = E('div', 'fpo-ln'),
+      ev = E('button', 'fpo-a', 'Events');
+    ev.type = 'button';
+    ev.onclick = () => call(() => document.getElementById('evbtn').click());
+    ln.append(ev);
+    F.bd.append(ln);
+    function tick() {
+      if (!me.isConnected) return closeEl(me);
+      const st = P.st ? call(P.st, null) : null,
+        fl = P.flt ? call(P.flt, null) : null,
+        sl = P.sel ? call(P.sel, null) : 1,
+        au = P.au ? call(P.au, null) : null,
+        go = isRun();
+      F.lamp.className = 'fpo-lamp ' + (fl ? 'trip' : st == null ? '' : st ? 'run' : 'stop');
+      setTx(F.val, P.st ? (fl ? P.fltWord || 'FAULT' : st == null ? '-----' : st ? W[0] : W[1]) : '');
+      F.val.classList.toggle('long', F.val.textContent.length > 10);
+      lR.className = 'fpo-lp' + (st ? ' run' : '');
+      lS.className = 'fpo-lp' + (st != null && !st ? ' stop' : '');
+      if (lF) lF.className = 'fpo-lp' + (fl ? ' trip' : '');
+      if (P.sel) {
+        bRm.classList.toggle('on', !!sl);
+        bLc.classList.toggle('on', sl != null && !sl);
+        bRm.disabled = sl == null || !!sl || !go;
+        bLc.disabled = !sl || !go;
+      }
+      if (bA) {
+        bA.disabled = au == null || !!au || !sl || !go;
+        bM.disabled = !au || !sl || !go;
+        bA.classList.toggle('lit-run', !!au);
+        bM.classList.toggle('lit-stop', au != null && !au);
+      }
+      for (const [c, b] of C) {
+        const lit = c[3] ? !!call(c[3], null) : c[1] === 'start' ? !!st : c[1] === 'stop' ? st != null && !st : false;
+        b.classList.toggle('lit-run', lit && c[2] !== 'stop' && c[1] !== 'stop');
+        b.classList.toggle('lit-stop', lit && (c[2] === 'stop' || c[1] === 'stop'));
+        b.disabled = !go || (!P.free && !sl) || !!au || (lit && !P.again);
+      }
+      if (bR) bR.disabled = !go || !fl;
+      for (const [s, v] of sets) {
+        const x = call(s.get, null);
+        setTx(v, x == null || !isFinite(x) ? '-----' : (+x).toFixed(s.dp == null ? 1 : s.dp));
       }
     }
     paint = tick;
@@ -1843,7 +2002,7 @@
       }
       for (const [v, f, dp, words] of monV) {
         const x = call(f, null);
-        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp));
+        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? wordOf(words, +x) : (+x).toFixed(dp));
       }
       if (Hs) {
         const now = Date.now(),
@@ -1863,7 +2022,7 @@
     me._iv = setInterval(tick, 500);
     return true;
   }
-  window.LS_FPOP = { motor, valve, valveTag, valveKind, valveOpen, tcs, ibd, mov, fieldPct, pb, field, fset, yn, hit, openAd, place, close, info, get open() {
+  window.LS_FPOP = { motor, valve, valveTag, valveKind, valveOpen, tcs, ibd, mov, fieldPct, pb, field, fset, pkg, yn, hit, openAd, place, close, info, get open() {
     return anyOpen();
   } };
 })();

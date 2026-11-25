@@ -1108,7 +1108,7 @@
               t: m.t,
               d: m.d,
               io: m.io,
-              st: { row: m.df.st, d: m.df.std, inv: m.df.inv, on: m.df.on || 'IN OPERATION', off: m.df.off || 'STOPPED' },
+              st: { row: m.df.st, key: m.df.stKey, d: m.df.std, inv: m.df.inv, on: m.df.on || 'IN OPERATION', off: m.df.off || 'STOPPED' },
               pbs: m.df.pbs,
               free: m.df.free,
               away: m.df.away,

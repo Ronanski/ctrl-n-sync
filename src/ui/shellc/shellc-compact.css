@@ -124,6 +124,7 @@ html body.sc .fpo-box:not(#scnone) button{min-height:22px!important;height:22px!
 html body.sc .fpo-box:not(#scnone) .fpo-seg{border-radius:2px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-seg button{height:20px!important;min-height:20px!important;line-height:20px!important;padding:0 6px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-cmd{min-width:64px!important}
+html body.sc .fpo-box:not(#scnone) .fpo-grid button.fpo-cmd{white-space:normal!important;height:auto!important;line-height:14px!important;padding:3px 4px!important}
 html body.sc .fpo-box:not(#scnone) :is(.fpo-dim,.fpo-nd){font-size:10.5px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-vb{min-width:64px!important;font:600 13px var(--sc-num)!important;padding:1px 6px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-tr{height:38px!important}
@@ -241,3 +242,7 @@ html body.sc #scov:not(#scnone) .sctile{border-radius:3px!important}
 html body.sc #scstart button.scskip{display:none!important}
 html body.sc #scstart .scchips button{border-radius:2px!important}
 html body.sc #scstart .sccont:disabled{display:none!important}
+/* lane 6: the settings of a package panel (fp-pop.js pkg) */
+html body.sc .fpo-box:not(#scnone) .fpo-r.set .fpo-l{flex:1 0 100%;width:auto!important}
+html body.sc .fpo-box:not(#scnone) .fpo-r.set .fpo-dim{flex:0 0 24px}
+html body.sc .fpo-box:not(#scnone) input.fpo-inp{width:58px!important;min-height:22px!important;height:22px!important;padding:0 4px!important;border-radius:2px!important;font:600 12px var(--sc-num)!important;background:var(--sc-white)!important;border:1px solid var(--sc-line2)!important;color:var(--sc-ink)!important}

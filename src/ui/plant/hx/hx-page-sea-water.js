@@ -118,6 +118,7 @@
           at(E('cooler', n, 'H-1107' + n, [], { flow: BP }), EX[i], EY, { id: 'e' + i, sc: 1.3, lab: 'r' })
         ),
         at(L('makeup-cooling', 'Closed cooling water'), 1500, 290, { id: 'ccl' }),
+        at(L('tube-cleaning', 'Tube cleaning'), 800, 905, { id: 'tcl' }),
         /* debris filters: in operation and common fail of DITL-39 (as temporary page 01) */
         at(HX.B('Filter S-1502', 'data-do="DITL-39|3|IN OPERATION|NOT IN OPERATION|run"', { w: 150 }), 575, 670, {
           id: 'f1s'
@@ -309,7 +310,7 @@
         { x: 1250, y: TOP - 14, s: 'siphon pit', cls: 'hx-note' },
         { x: 510, y: 965, s: 'to the booster pumps', cls: 'hx-note' },
         {
-          x: 800,
+          x: 900,
           y: 735,
           s: 'Cleaning balls go with the sea water through the condenser tubes.',
           cls: 'hx-note',

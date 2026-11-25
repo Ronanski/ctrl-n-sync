@@ -618,6 +618,59 @@
       live(o.flow, '<path class="rx-tubef" d="M-9 0H-3.5L0 8.5L3.5 0H9"/>')
   });
 
+  /* condenser tube cleaning (K1AU3 vendor P&ID GI 3862 100 01 004). One path of the condenser seen from the side: two water boxes and the
+     tubes between them, cut open; the sponge balls go through the tubes while balls = its rule is on. Ports: l / r */
+  R.tubepath = o => {
+    const a = (o.w || 260) / 2,
+      r = [-27, -18, -9, 0, 9, 18, 27];
+    return {
+      box: [-a - 1, -41, a + 1, 41],
+      ports: { l: [-a, 0], r: [a, 0], t: [0, -40], b: [0, 40] },
+      svg:
+        `<path class="rxd" d="M${-a} -12h6v24h-6zM${a - 6} -12h6v24h-6z"/><rect class="rx" x="${-a + 5}" y="-40" width="${2 * a - 10}" height="80" rx="9"/>` +
+        `<path class="rxvoid" d="M${-a + 10} -8V-28Q${-a + 10} -34 ${-a + 17} -34H${-a + 40}V34H${-a + 17}Q${-a + 10} 34 ${-a + 10} 28ZM${a - 10} -8V-28Q${a - 10} -34 ${a - 17} -34H${a - 40}V34H${a - 17}Q${a - 10} 34 ${a - 10} 28Z"/>` +
+        `<rect class="rxvoid" x="${-a + 44}" y="-34" width="${2 * a - 88}" height="68"/>` +
+        r.map(y => `<rect class="rxv" x="${-a + 40}" y="${y - 2.6}" width="${2 * a - 80}" height="5.2"/>`).join('') +
+        live(o.flow, r.map(y => `<path class="rx-tubef" d="M${-a + 42} ${y}H${a - 42}"/>`).join('')) +
+        live(o.balls, r.map((y, i) => `<path class="rx-balls" style="stroke-dashoffset:${i * 5}" d="M${-a + 14} ${n(y * 0.8)}L${-a + 42} ${y}H${a - 42}L${a - 14} ${n(y * 0.8)}"/>`).join('')) +
+        `<path class="rxd" d="M${-a + 40} -36h4v72h-4zM${a - 44} -36h4v72h-4z"/>`
+    };
+  };
+  /* ball separator in the outlet pipe, cut open: two screens on their shafts. In OPERATION they close to a point downstream and lead the
+     balls to the two extraction nozzles; turned to BACKWASH (bw = its rule) the water washes them from behind.
+     Ports: l / r, e1 / e2 (extraction), p1 / p2 (pressure taps before and after the screens) */
+  R.ballsep = o => ({
+    box: [-92, -46, 92, 58],
+    ports: { l: [-91, 0], r: [91, 0], e1: [10, 58], e2: [54, 58], p1: [-66, -38], p2: [74, -38], t: [0, -46], b: [0, 40] },
+    svg:
+      '<path class="rxd" d="M-92 -42h6v84h-6zM86 -42h6v84h-6z"/><rect class="rx" x="-87" y="-37" width="174" height="74"/>' +
+      '<rect class="rxvoid" x="-84" y="-31" width="168" height="62"/>' +
+      live(o.flow, '<path class="rx-tubef" d="M-82 -18H-30M-82 0H82M-82 18H-30M34 -18H82M34 18H82"/>') +
+      '<path class="rx" d="M4 30h12v24H4zM48 30h12v24H48z"/><path class="rxd" d="M1 54h18v4H1zM45 54h18v4H45z"/>' +
+      live(
+        o.bw,
+        '<g class="rx-unless"><path class="rx-sieve" d="M-46 -29L50 -2M-46 29L50 2"/></g><g class="rx-when"><path class="rx-sieve" d="M-46 -3L50 -29M-46 3L50 29"/></g>'
+      ) +
+      live(o.balls, '<path class="rx-balls" d="M-82 -12L-30 -10L46 0V10L54 34V54"/><path class="rx-balls" style="stroke-dashoffset:8" d="M-82 12L-30 9L10 4V54"/>') +
+      '<circle class="rxd" cx="-46" cy="-29" r="4"/><circle class="rxd" cx="-46" cy="29" r="4"/>' +
+      '<path class="rx" d="M-54 -46h16v10h-16zM-54 36h16v10h-16z"/><path class="rxd" d="M-69 -42h6v6h-6zM71 -42h6v6h-6z"/>'
+  });
+  /* ball vessel: upright, its basket inside, cut open. The balls turn in it while they are collected (cage = its rule) and pass while they
+     circulate (balls = its rule). Ports: r = inlet, b = outlet (valve N02), tip = bypass without balls (N05), vent, drain */
+  R.ballvessel = o => ({
+    box: [-34, -58, 34, 60],
+    ports: { r: [33, -22], l: [-33, 6], b: [0, 59], tip: [-33, 6], vent: [0, -58], t: [0, -58], drain: [26, 38] },
+    svg:
+      '<path class="rxd" d="M-26 34h5v24h-5zM21 34h5v24h-5z"/><path class="rx" d="M26 -28h7v12h-7zM-33 0h7v12h-7zM-6 48h12v10h-12z"/><path class="rxd" d="M31 -31h3v18h-3zM-34 -3h3v18h-3zM-9 56h18v3.5h-18z"/>' +
+      '<path class="rxv" d="M-28 -40Q-28 -52 0 -52Q28 -52 28 -40V26L7 50H-7L-28 26Z"/><path class="rxvoid" d="M-23 -38Q-23 -46 0 -46Q23 -46 23 -38V24L4 46H-4L-23 24Z"/>' +
+      '<path class="rxd" d="M-12 -57h24v5h-24z"/><circle class="rx" cx="0" cy="-36" r="5.5"/>' +
+      '<path class="rx-sieve" d="M-17 -24V21L-3 42M17 -14V21L3 42"/>' +
+      live(o.flow, '<path class="rx-tubef" d="M26 -22H8V22M8 22L-24 6"/>') +
+      live(o.balls, '<path class="rx-balls" d="M26 -22H4V48"/>') +
+      live(o.cage, '<path class="rx-balls" d="M26 -22H2Q-8 -22 -8 -8V16Q-6 24 0 24Q8 22 8 12Q8 2 -1 2"/>') +
+      '<path class="rxhi" d="M-25 -36V22"/>'
+  });
+
   /* ---------------- the boiler: furnace, cyclone, seal pot, air heater, precipitator, stack ---------------- */
   /* What is from a source: FHI manual Part 2 Sect 1 (circulating fluidized bed furnace with its grate, superheater panels
      No. 1 and No. 2 in the furnace, 2 recycle cyclones with a seal pot each, 4 start-up burners, 4 screw ash coolers, a rotary
@@ -732,6 +785,125 @@
         `<path class="rx-plate" d="${pl}"/>` +
         '<path class="rx" d="M-70 26L-54 52H-42L-26 26ZM-22 26L-6 52H6L22 26ZM26 26L42 52H54L70 26Z"/>' +
         '<rect class="rxs" x="-56" y="-36" width="16" height="8" rx="1.5"/><rect class="rxs" x="-8" y="-36" width="16" height="8" rx="1.5"/><rect class="rxs" x="40" y="-36" width="16" height="8" rx="1.5"/>'
+    };
+  };
+  /* ---------------- electrostatic precipitator in full (lane 6; K C Cottrell V19-1: five fields in series, 15 m plates of rolled strips,
+     the discharge frames hung from the insulators of the roof, two pyramid hoppers per field) ---------------- */
+  /* one field, cut open and seen from the side: the roof box with the support insulators, the collecting plates (the gas runs along
+     them), the discharge frames in front. "on" colours the high voltage bus; flow = the rule that shows the corona.
+     w, h = size. Ports: l / r (the gas), t (the bushing), ha / hb (below, over the two hoppers) */
+  R.espfield = o => {
+    const w = o.w || 256,
+      h = o.h || 300,
+      a = -w / 2,
+      t = -h / 2,
+      rf = o.roof || 84,
+      ix = a + 21,
+      pt = t + rf + 24,
+      pb = h / 2 - 46;
+    let pl = '',
+      fo = '',
+      de = '';
+    const N = 9,
+      s = (w - 36) / N;
+    for (let i = 0; i < N; i++) {
+      const x = a + 18 + i * s;
+      pl += `M${n(x + 2)} ${pt}h${n(s - 4)}V${pb}h${n(4 - s)}Z`;
+      fo += `M${n(x + s * 0.3)} ${pt}V${pb}M${n(x + s * 0.7)} ${pt}V${pb}`;
+      if (i) de += `M${n(x)} ${pt + 6}V${pb - 4}`;
+    }
+    return {
+      box: [a - 1, t - 24, -a + 1, h / 2 + 1],
+      ports: { l: [a, 0], r: [-a, 0], t: [0, t - 22], ha: [-w / 4, h / 2], hb: [w / 4, h / 2], b: [0, h / 2] },
+      svg:
+        `<path class="rxv" d="M${a} ${t}H${-a}V${h / 2}H${a}Z"/><path class="rxvoid" d="M${a + 5} ${t + 6}H${-a - 5}V${t + rf}H${a + 5}Z"/><path class="rxvoid" d="M${a + 2} ${t + rf + 6}H${-a - 2}V${h / 2}H${a + 2}Z"/>` +
+        `<path class="rx" d="${pl}"/><path class="rxe" d="${fo}"/><path class="rxst" style="stroke-width:1.4" d="${de}"/>` +
+        live(o.flow, `<path class="rx-mist" style="stroke:var(--hx-m-power)" d="${de}"/>`) +
+        `<path class="rxd" d="M${a + 8} ${pt - 6}H${-a - 8}v5H${a + 8}ZM${a + 8} ${pb + 1}H${-a - 8}v4H${a + 8}Z"/>` +
+        [ix, -ix].map(x => `<path class="rx" d="M${x - 7} ${t + 18}h14l4 ${rf - 18}h-22z"/><path class="rxe" d="M${x - 8} ${t + 34}h16M${x - 9} ${t + 48}h18M${x - 10} ${t + 62}h20"/><path class="rxst" style="stroke-width:1.8" d="M${x} ${t + rf}V${pt - 6}"/>`).join('') +
+        `<path class="rx" d="M-7 ${t - 22}h14v36h-14z"/><path class="rxe" d="M-7 ${t - 16}h14M-7 ${t - 10}h14M-7 ${t - 4}h14"/>` +
+        `<rect class="rxs" x="${ix - 9}" y="${t + 13}" width="${-2 * ix + 18}" height="5" rx="1.5"/>`
+    };
+  };
+  /* the gas inlet nozzle (out: true = the outlet nozzle) with its perforated gas distribution plate. h = height of the field, dh = height
+     of the duct. Ports: l, r */
+  R.espnozzle = o => {
+    const h = o.h || 300,
+      d = (o.dh || 90) / 2,
+      w = o.w || 100,
+      rf = o.roof || 84,
+      m = o.out ? -1 : 1,
+      x0 = -m * (w / 2),
+      x1 = m * (w / 2);
+    let pp = '';
+    for (let y = -h / 2 + rf + 32; y < h / 2 - 34; y += 9) pp += `M${x1 - m * 14} ${y}v4.5M${x1 - m * 7} ${y + 4}v4.5`;
+    return {
+      box: [-w / 2 - 1, -h / 2 + rf + 4, w / 2 + 1, h / 2 + 1],
+      ports: { l: [-w / 2, 0], r: [w / 2, 0], t: [0, -h / 2 + rf + 6], b: [0, h / 2] },
+      svg:
+        `<path class="rxv" d="M${x0} ${-d}L${x1} ${-h / 2 + rf + 6}V${h / 2}L${x0} ${d}Z"/><path class="rxvoid" d="M${x0} ${-d + 5}L${x1} ${-h / 2 + rf + 13}V${h / 2 - 6}L${x0} ${d - 5}Z"/>` +
+        (o.out ? '' : `<path class="rxst" style="stroke-width:2" d="${pp}"/>`)
+    };
+  };
+  /* ash hopper, an upside down pyramid, cut open, with its ash. level: [key, low, high]. w, h = size. Ports: t, b */
+  R.esphopper = o => {
+    const w = o.w || 120,
+      h = o.h || 120,
+      a = -w / 2,
+      id = o.id || 'eh',
+      inner = `M${a + 5} 4H${-a - 5}L7 ${h - 12}H-7Z`;
+    return {
+      box: [a - 1, -1, -a + 1, h + 1],
+      ports: { t: [0, 0], b: [0, h], l: [a + 8, 12], r: [-a - 8, 12] },
+      svg:
+        `<path class="rxv" d="M${a} 0H${-a}L11 ${h - 10}V${h}H-11V${h - 10}Z"/><path class="rxvoid" d="${inner}"/>` +
+        lvl(id, inner, a + 5, 4, -a - 5, h - 12, 0.3).replace('class="rxwt"', 'class="rxwt rxsolid"') +
+        `<path class="rxd" d="M-14 ${h - 3}h28v4h-28z"/>`
+    };
+  };
+  /* rapping drive: the geared motor (takes the state colour) turns a shaft with its hammers on the anvil bar. Ports: l, r */
+  R.rapper = () => ({
+    box: [-21, -11, 29, 13],
+    ports: { l: [-20, 0], r: [28, 0], t: [0, -10], b: [0, 12] },
+    svg:
+      '<path class="rxd" d="M-18 8h20v4h-20z"/><rect class="rxs" x="-20" y="-9" width="18" height="17" rx="2.5"/><path class="rxe" d="M-16 -9v17M-11.5 -9v17M-7 -9v17"/>' +
+      '<rect class="rx" x="-2" y="-7" width="8" height="13" rx="1.5"/><path class="rxst" style="stroke-width:2.4" d="M6 0H28"/><path class="rx" d="M12 -1h3v9h-3zM21 -1h3v9h-3z"/><path class="rxd" d="M9.5 6h8v6h-8zM18.5 6h8v6h-8z"/>'
+  });
+  /* vibrator on a hopper wall: a closed motor between two weight covers (takes the state colour). Ports: l, r */
+  R.vibrator = () => ({
+    box: [-15, -10, 15, 11],
+    ports: { l: [-14, 0], r: [14, 0], t: [0, -9], b: [0, 10] },
+    svg:
+      '<path class="rxd" d="M-10 6h20v4h-20z"/><rect class="rxs" x="-8" y="-8" width="16" height="14" rx="2"/><path class="rxe" d="M-3 -8v14M2 -8v14"/><path class="rx" d="M-14 -6h6v10q-6 0 -6 -3zM8 -6h6v7q0 3 -6 3z"/>'
+  });
+  /* electric air heater in its duct, cut open: the elements (glow while "on"). Ports: l, r */
+  R.eheater = o => ({
+    box: [-41, -27, 41, 19],
+    ports: { l: [-40, 0], r: [40, 0], t: [0, -26], b: [0, 18] },
+    svg:
+      '<path class="rxv" d="M-40 -9H-30V-17H30V-9H40V9H30V17H-30V9H-40Z"/><path class="rxvoid" d="M-40 -6H-26V-13H26V-6H40V6H26V13H-26V6H-40Z"/>' +
+      '<path class="rxst" style="stroke-width:2.2" d="M-20 -15V9M-12 -15V9M-4 -15V9M4 -15V9M12 -15V9M20 -15V9"/>' +
+      live(o.flow, '<path class="rx-tint" style="--m:var(--rx-hot)" d="M-24 -12H24V12H-24Z"/>') +
+      '<rect class="rxs" x="-24" y="-26" width="48" height="9" rx="2"/>'
+  });
+  /* blow tank of a pneumatic conveying system (Hwa Jann L5-1): a pressure vessel under a hopper with the dome valve on top, the discharge
+     below and the air on its side. level: [key, low, high]. Ports: t, b, l (air), r */
+  R.blowtank = o => {
+    const w = o.w || 52,
+      h = o.h || 92,
+      a = -w / 2,
+      id = o.id || 'bt',
+      y0 = -h / 2 + 14,
+      y1 = h / 2 - 34,
+      inner = `M${a + 4} ${y0 + 12}Q${a + 4} ${y0 + 4} 0 ${y0 + 4}Q${-a - 4} ${y0 + 4} ${-a - 4} ${y0 + 12}V${y1}L5 ${h / 2 - 8}H-5L${a + 4} ${y1}Z`;
+    return {
+      box: [a - 9, -h / 2 - 1, -a + 2, h / 2 + 1],
+      ports: { t: [0, -h / 2], b: [0, h / 2], l: [a - 8, y1 - 6], r: [-a, y1 - 6] },
+      svg:
+        `<path class="rxd" d="M${a + 5} ${y1 - 2}v30h4v-30zM${-a - 9} ${y1 - 2}v30h4v-30z"/><path class="rx" d="M-7 ${-h / 2}h14v16h-14zM${a - 8} ${y1 - 9}h9v6h-9z"/>` +
+        `<path class="rxv" d="M${a} ${y0 + 12}Q${a} ${y0} 0 ${y0}Q${-a} ${y0} ${-a} ${y0 + 12}V${y1 + 2}L8 ${h / 2 - 6}V${h / 2}H-8V${h / 2 - 6}L${a} ${y1 + 2}Z"/><path class="rxvoid" d="${inner}"/>` +
+        lvl(id, inner, a + 4, y0 + 6, -a - 4, h / 2 - 8, 0.5).replace('class="rxwt"', 'class="rxwt rxsolid"') +
+        `<path class="rxe" d="M${a} ${y0 + 12}H${-a}"/><rect class="rxs" x="-9" y="${-h / 2 + 2}" width="18" height="6" rx="1.5"/>`
     };
   };
   /* the stack. flow = the rule that shows the plume. Ports: in (at the foot, side), l / r */

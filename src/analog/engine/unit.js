@@ -906,6 +906,7 @@ function anUnitStart() {
   AN_SRC.lhdPct = 0;
   U.cwPrime = 1;
   AN_SRC.field.esp = true;
+  U.pkg = undefined; /* lane 6: the package panels start again (pkg.js) */
   /* 3.2.3 SOHEE: the dosing pumps A in service, B standby, agitator stopped (PR-OPE-5002 one pump each); the chemistry at its target */
   Object.assign(AN_SRC.field, {
     tspA: true,
@@ -986,6 +987,7 @@ function anUnitCold() {
   AN_SRC.lhdPct = 0;
   U.cwPrime = 0;
   AN_SRC.field.esp = false;
+  U.pkg = undefined; /* lane 6: the package panels start again (pkg.js) */
   /* 3.2.3 SOHEE: cold = the dosing pumps stopped (PR-OPE-5002 starts them in the start-up); no phosphate yet, the cycle water conditioned */
   Object.assign(AN_SRC.field, {
     tspA: false,
