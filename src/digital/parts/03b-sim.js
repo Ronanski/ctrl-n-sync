@@ -625,7 +625,8 @@ function invStep(s, v, dt) {
   let tgt = x.tgt == null ? x.run : x.tgt;
   if (v[N.st] && !(N.sp >= 0 && v[N.sp])) tgt = 1;
   if (N.sp >= 0 && v[N.sp]) tgt = 0;
-  const trip = s._ftrip || !s.sig[d.ok + ':S'];
+  /* the row as the logic has it: the field bit or the automatic row (a FROM link or the plant model, s._win) */
+  const trip = s._ftrip || !(s.sig[d.ok + ':S'] || (s._win && s._win.has(d.ok)));
   if (trip) tgt = 0;
   x.tgt = tgt;
   let ch = false;
@@ -760,6 +761,11 @@ function simIn(s) {
     GR = sim ? grpState(s) : new Map();
   /* one world: input rows driven by another DITL sheet (FROM column, e.g. 28A-77) or by the ABC (TO DITL) */
   if (sim && s._win) s._win.forEach(i => on.add(i));
+  /* the ELECTRICAL TROUBLE contact on the output wire of an input address (DITL-22 out 64 I.0054 LOP TRIP "TO 22-15", row 15 I.0054 "FROM
+     22-64"; also 24 / 30 / 31 / 61A / 76 / 77 / 111 / 112): one contact at the MCC, so the input row of that address has it too. Before, the
+     output lit and the logic of the row (the trip) did not see it */
+  if (sim && s.nl && s.usw)
+    for (const u of s.nl.usr || []) if (s.usw[u.key]) for (const m of s.nl.ind || []) if (m.n === u.n && m.adr) on.add(m.row);
   /* 3.2.0-beta.23: a normally closed push button (DITL-03F rows 25 / 26 BOILER EMERGENCY TRIP P.B.(1) / (2) (N.C.); the LCP contacts
      "NOT OFF P.B." / "NOT LOCAL STOP P.B." of DITL-09 rows 18 / 22 and DITL-21A row 25) is closed (1) while nobody presses it: a cold
      start had it 0 = pressed, the trip / OFF was ON for ever (the MFT could never be reset, a burner never lit). A press (or the
