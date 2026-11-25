@@ -40,6 +40,9 @@
 .fpo-box .fpo-seg button.on{background:#3d6f93;color:#fff}
 .fpo-box .fpo-fld{font:600 12px var(--uf,system-ui);letter-spacing:.08em;color:#c3ced8;border:1px solid #475563;border-radius:3px;padding:1px 6px}
 .fpo-box .fpo-cmd{min-width:84px}
+.fpo-box .fpo-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.fpo-box .fpo-grid .fpo-cmd{white-space:normal}
+.fpo-box .fpo-hv.long{white-space:normal;max-width:84px;text-align:right}
 .fpo-box .fpo-cmd.lit-run{background:#5a1c1f;border-color:#e5484d;color:#ffd0d2;opacity:1}
 .fpo-box .fpo-cmd.lit-stop{background:#173826;border-color:#2fa56a;color:#bdf0d3;opacity:1}
 .fpo-box .fpo-why{font-size:13px;color:#c3ced8;background:#1a2129;border-left:3px solid #475563;padding:5px 8px;border-radius:2px}

@@ -622,7 +622,7 @@
       for (const [v, f, dp, words] of monV) {
         const x = call(f, null);
         /* an on / off point shows its word (words = [at 1, at 0]); a value its decimals (dp, 1 when not given) */
-        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp == null ? 1 : dp));
+        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? wordOf(words, +x) : (+x).toFixed(dp == null ? 1 : dp));
       }
       setTx(chip, st === 'TRIP' ? 'TRIP' : st === 'RUN' ? 'RUNNING' : loc && miss.length ? 'INTERLOCK' : loc ? 'NOT READY' : sby ? 'STANDBY' : miss.length ? 'INTERLOCK' : st === 'STOP' && !noSt ? 'READY' : '');
       chip.className = 'fpo-chip ' + (st === 'TRIP' ? 'trip' : miss.length && st !== 'RUN' ? 'ilk' : '');
@@ -899,6 +899,8 @@
   /* live test #45: a package run by push buttons of a DITL drawing (debris filter S-1502 / S-1504, DITL-39: REMOTE AUTO START / STOP P.B.
      to the local panel, IN OPERATION back). P = { n, t, d (drawing), io, st: { row, on, off }, pbs: [[label, row, address]],
      perm: [{ row, l }] (any one = 1), vals: [[tag, fn, unit]] }. Same rows and calls as the dock (LS_OP.dout / dpress) */
+  /* two words = [at 1, at 0] of an on / off point; more = one word per step (0, 1, 2 ...) */
+  const wordOf = (w, x) => (w.length > 2 ? w[Math.round(x)] || '-----' : w[x >= 0.5 ? 0 : 1]);
   function pb(P) {
     const dk = D();
     if (!P || !dk || !P.d || !call(() => dk.dOf(P.d), null)) return false;
@@ -908,7 +910,10 @@
     /* Rosé 2026-11-24 (click check, sea water page): st.row null = the drawing has no status input back from the panel (the condenser
        tube cleaning, DITL-119: REMOTE AUTO START / STOP pulses out, nothing back). No STATUS lamps then: the header says where the
        state is (st.off), START needs its permissive, STOP is its own press */
-    const noSt = P.st.row == null;
+    /* lane 6: P.st.key = the status comes from a package panel (the tube cleaning PLC, Modbus): a HX data key, 1 = in operation. Its
+       buttons stay each its own press (noBt), as the drawing has no status to lock them with */
+    const noBt = P.st.row == null,
+      noSt = noBt && !P.st.key;
     const lOn = lampEl(P.st.on || ''),
       lOff = lampEl(P.st.off || 'STOPPED');
     if (!noSt) F.bd.append(row('STATUS', lOn, lOff));
@@ -995,7 +1000,7 @@
         d = pd || P.d;
       b.onclick = () =>
         !b.disabled &&
-        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), i === 0 && !P.free && !noSt && (sent = Date.now()), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
+        ask(P.n + ' ' + l + '?', () => (k === 'set' && window.WORLD && WORLD.dset ? WORLD.dset(d, r, !!v) : dk.dpress(d, r), i === 0 && !P.free && !noBt && (sent = Date.now()), call(() => window.lsEventAdd(d, 'DCS', 'Operator: ' + P.n + ' ' + l + ' (' + d + ' row ' + (r + 1) + ' · ' + ad + (k === 'set' ? ' = ' + (v ? 1 : 0) : '') + ', faceplate)'))));
     });
     /* Rosé 2026-11-22 (live test finding 3): P.need = [{ d, row, l }] output rows of a drawing that the first command needs (the
        sootblower BLOWING PERMISSIVE, DITL-80A out 20). The button stays a real press to the logic; while a row is 0 the faceplate says
@@ -1015,7 +1020,7 @@
          the OPERATING lamp of the AUTO program (DITL-80A) stays off */
       const aw = P.away && call(() => dk.dOf(P.away.d) || ((window.WORLD && WORLD.inst) || []).find(x => x.name.endsWith(P.away.d)), null),
         /* beta.556: st.d = the state row stands on another drawing than the push buttons; st.inv = the row is 1 while the machine waits */
-        on = !noSt && (call(() => dk.dout(P.st.d || P.d, P.st.row), null) === (P.st.inv ? 0 : 1) || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0)),
+        on = P.st.key ? call(() => HX.data.value(P.st.key), null) > 0 : !noSt && (call(() => dk.dout(P.st.d || P.d, P.st.row), null) === (P.st.inv ? 0 : 1) || (!!aw && call(() => window.DUI.rowVal(aw, P.away.row), null) === 0)),
         run = isRun(),
         pv = (P.perm || []).map(p => ({ ...p, v: call(() => window.DUI.rowVal(s, p.row), null) })),
         ok = !pv.length || pv.some(p => p.v === 1);
@@ -1032,11 +1037,11 @@
       }
       /* live Cold start F10b: P.free = every button is its own press (igniter / burner ON / OFF): the status (REMOTE) does not lock or
          light the first one */
-      B[0].disabled = P.free ? !run : noSt ? !run || !ok : on || !run || !ok;
+      B[0].disabled = P.free ? !run : noBt ? !run || !ok : on || !run || !ok;
       /* design review 2026-11-08 (Yuna): the second push button is the STOP of the first only when it says so (STOP / CLOSE / AUTO STOP).
          Another command (the SKIP of a sootblower, DITL-80x row r + 1) is its own press: enabled in RUN, not lit green as a "stopped" */
       if (B[1]) {
-        const isStop = !P.free && !noSt && /\b(STOP|CLOSE)\b/.test(P.pbs[1][0]);
+        const isStop = !P.free && !noBt && /\b(STOP|CLOSE)\b/.test(P.pbs[1][0]);
         B[1].disabled = !run || (isStop && (!on || !rem));
         B[1].classList.toggle('lit-stop', isStop && !on);
       }
@@ -1360,7 +1365,11 @@
       bM = P.au ? mk('MAN') : null;
     if (P.au) F.bd.append(row('MODE', bA, bM));
     const C = (P.cmds || []).map(c => [c, mk(c[0])]);
-    for (let i = 0; i < C.length; i += 2) F.bd.append(row(i ? '' : 'CONTROL', ...C.slice(i, i + 2).map(x => x[1])));
+    if (C.length > 2) {
+      const g = E('div', 'fpo-grid');
+      g.append(...C.map(x => x[1]));
+      F.bd.append(E('div', 'fpo-sh', 'CONTROL'), g);
+    } else if (C.length) F.bd.append(row('CONTROL', ...C.map(x => x[1])));
     const bR = P.reset ? mk('RESET') : null;
     if (bR) F.bd.append(row('FAULT', bR));
     const sets = (P.sets || []).map(s => {
@@ -1444,6 +1453,7 @@
         go = isRun();
       F.lamp.className = 'fpo-lamp ' + (fl ? 'trip' : st == null ? '' : st ? 'run' : 'stop');
       setTx(F.val, P.st ? (fl ? P.fltWord || 'FAULT' : st == null ? '-----' : st ? W[0] : W[1]) : '');
+      F.val.classList.toggle('long', F.val.textContent.length > 10);
       lR.className = 'fpo-lp' + (st ? ' run' : '');
       lS.className = 'fpo-lp' + (st != null && !st ? ' stop' : '');
       if (lF) lF.className = 'fpo-lp' + (fl ? ' trip' : '');
@@ -1992,7 +2002,7 @@
       }
       for (const [v, f, dp, words] of monV) {
         const x = call(f, null);
-        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? (+x >= 0.5 ? words[0] : words[1]) : (+x).toFixed(dp));
+        setTx(v, x == null || !isFinite(+x) ? '-----' : words ? wordOf(words, +x) : (+x).toFixed(dp));
       }
       if (Hs) {
         const now = Date.now(),

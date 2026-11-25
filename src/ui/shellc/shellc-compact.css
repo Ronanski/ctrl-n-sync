@@ -124,6 +124,7 @@ html body.sc .fpo-box:not(#scnone) button{min-height:22px!important;height:22px!
 html body.sc .fpo-box:not(#scnone) .fpo-seg{border-radius:2px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-seg button{height:20px!important;min-height:20px!important;line-height:20px!important;padding:0 6px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-cmd{min-width:64px!important}
+html body.sc .fpo-box:not(#scnone) .fpo-grid button.fpo-cmd{white-space:normal!important;height:auto!important;line-height:14px!important;padding:3px 4px!important}
 html body.sc .fpo-box:not(#scnone) :is(.fpo-dim,.fpo-nd){font-size:10.5px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-vb{min-width:64px!important;font:600 13px var(--sc-num)!important;padding:1px 6px!important}
 html body.sc .fpo-box:not(#scnone) .fpo-tr{height:38px!important}

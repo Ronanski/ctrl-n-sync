@@ -30,10 +30,11 @@
         /* lane 6: the permissives and the reason of a push button machine always come from its system file */
         if (R.machines[m.n]) {
           const g = R.machines[m.n];
+          if (m.df && m.df.stKey && g.page === d.id && g.id === k && g.bind && !g.bind.df) g.bind.df = m.df;
           if (m.df && g.page === d.id && g.id === k && g.bind && g.bind.df) {
             if (m.df.need) g.bind.df.need = m.df.need;
             if (m.df.why) g.bind.df.why = m.df.why;
-            if (m.df.stWhy) g.bind.df.stWhy = m.df.stWhy;
+            if (m.df.stKey) Object.assign(g.bind.df, { stKey: m.df.stKey, on: m.df.on, off: m.df.off });
           }
           continue;
         }
@@ -336,17 +337,14 @@
         /* a field item without a logic row: the lower ring header drains are a state of the plant model (hmi-mock-ms.js LHD) */
         FLD = name === 'V-BD1005 ~ V-BD1021' ? call(() => (AN.fieldState().lhd ? 1 : 0), null) : null,
         BD = R.machines[name] && R.machines[name].bind,
-        DF0 = BD && BD.df && BD.d && BD.df.st != null ? call(() => window.LS_OP.dout(BD.df.std || BD.d, BD.df.st), null) : null,
+        DF0 = BD && BD.df && BD.df.stKey ? call(() => (+HX.data.value(BD.df.stKey) > 0 ? 1 : 0), null) : BD && BD.df && BD.d && BD.df.st != null ? call(() => window.LS_OP.dout(BD.df.std || BD.d, BD.df.st), null) : null,
         DFV = DF0 == null || !BD.df.inv ? DF0 : DF0 === 1 ? 0 : 1,
         md = (pq('[data-hxd="' + name + '"]') || {}).textContent || '',
         y = (pq('[data-hxy="' + name + '"]') || {}).textContent || '',
         /* 3.2.5-beta.1 (JENNIE live Cold 2026-11-18, F-L): a state row that is not a running state (DITL-09 row 26 REMOTE of the
            burner panels) showed as Running in red on the oil page, a burner without flame looked fired: the words of the row, grey */
         ON = DFV != null && BD.df.on ? String(BD.df.on) : '',
-        /* Audit 3: the tube cleaning panels (DITL-119) get only REMOTE AUTO START / STOP pulses (rows 7, 9, 18, 20); no running
-           feedback comes back to the DCS (hmi-sw.js 'STATUS AT LCP'), so the page says where the state is instead of '-----' */
-        LCP = /^CTCS-[AB]$/.test(name) ? 'STATUS AT LOCAL PANEL' : null,
-        word = LCP || (ON && !/^(OPERATING|RUNNING|SYSTEM ON|FILL CYCLE ON|OPEN)$/.test(ON) ? (DFV === 1 ? ON : BD.df.off || '') : null);
+        word = ON && !/^(OPERATING|RUNNING|SYSTEM ON|FILL CYCLE ON|OPEN)$/.test(ON) ? (DFV === 1 ? ON : BD.df.off || '') : null;
       return {
         word,
         st:
@@ -505,9 +503,9 @@
         return void LS_FPOP.info({
           n: it.cname || it.name,
           t: it.tag || it.loop || '',
-          perm: (it.perm || []).map(r => [r.label + (r.tag || (r.key && !r.key.startsWith('cal:')) ? ' · ' + (r.tag || keyTxt(r.key)) : ''), rd(r.key)]),
+          perm: (it.perm || []).map(r => [r.label + (r.tag || (r.key && !/^(cal:|an:pkg)/.test(r.key)) ? ' · ' + (r.tag || keyTxt(r.key)) : ''), rd(r.key)]),
           mon: it.mon.map(r => [r.label + ' · ' + (r.tag || keyTxt(r.key)), rd(r.key), r.unit, r.dp, r.words]),
-          trend: tr ? { h: 'Trend · ' + tr.label + ' · ' + tr.key, fn: rd(tr.key) } : null
+          trend: tr ? { h: 'Trend · ' + tr.label + (tr.tag || !/^(cal:|an:pkg)/.test(tr.key) ? ' · ' + (tr.tag || tr.key) : ''), fn: rd(tr.key) } : null
         });
       }
       /* audit 2026-11-21 A1 / A2: a piece of plant with no faceplate of its own (strainer, tube cleaning, generator values) or a

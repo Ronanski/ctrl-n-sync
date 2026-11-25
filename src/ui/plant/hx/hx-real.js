@@ -618,6 +618,59 @@
       live(o.flow, '<path class="rx-tubef" d="M-9 0H-3.5L0 8.5L3.5 0H9"/>')
   });
 
+  /* condenser tube cleaning (K1AU3 vendor P&ID GI 3862 100 01 004). One path of the condenser seen from the side: two water boxes and the
+     tubes between them, cut open; the sponge balls go through the tubes while balls = its rule is on. Ports: l / r */
+  R.tubepath = o => {
+    const a = (o.w || 260) / 2,
+      r = [-27, -18, -9, 0, 9, 18, 27];
+    return {
+      box: [-a - 1, -41, a + 1, 41],
+      ports: { l: [-a, 0], r: [a, 0], t: [0, -40], b: [0, 40] },
+      svg:
+        `<path class="rxd" d="M${-a} -12h6v24h-6zM${a - 6} -12h6v24h-6z"/><rect class="rx" x="${-a + 5}" y="-40" width="${2 * a - 10}" height="80" rx="9"/>` +
+        `<path class="rxvoid" d="M${-a + 10} -8V-28Q${-a + 10} -34 ${-a + 17} -34H${-a + 40}V34H${-a + 17}Q${-a + 10} 34 ${-a + 10} 28ZM${a - 10} -8V-28Q${a - 10} -34 ${a - 17} -34H${a - 40}V34H${a - 17}Q${a - 10} 34 ${a - 10} 28Z"/>` +
+        `<rect class="rxvoid" x="${-a + 44}" y="-34" width="${2 * a - 88}" height="68"/>` +
+        r.map(y => `<rect class="rxv" x="${-a + 40}" y="${y - 2.6}" width="${2 * a - 80}" height="5.2"/>`).join('') +
+        live(o.flow, r.map(y => `<path class="rx-tubef" d="M${-a + 42} ${y}H${a - 42}"/>`).join('')) +
+        live(o.balls, r.map((y, i) => `<path class="rx-balls" style="stroke-dashoffset:${i * 5}" d="M${-a + 14} ${n(y * 0.8)}L${-a + 42} ${y}H${a - 42}L${a - 14} ${n(y * 0.8)}"/>`).join('')) +
+        `<path class="rxd" d="M${-a + 40} -36h4v72h-4zM${a - 44} -36h4v72h-4z"/>`
+    };
+  };
+  /* ball separator in the outlet pipe, cut open: two screens on their shafts. In OPERATION they close to a point downstream and lead the
+     balls to the two extraction nozzles; turned to BACKWASH (bw = its rule) the water washes them from behind.
+     Ports: l / r, e1 / e2 (extraction), p1 / p2 (pressure taps before and after the screens) */
+  R.ballsep = o => ({
+    box: [-92, -46, 92, 58],
+    ports: { l: [-91, 0], r: [91, 0], e1: [10, 58], e2: [54, 58], p1: [-66, -38], p2: [74, -38], t: [0, -46], b: [0, 40] },
+    svg:
+      '<path class="rxd" d="M-92 -42h6v84h-6zM86 -42h6v84h-6z"/><rect class="rx" x="-87" y="-37" width="174" height="74"/>' +
+      '<rect class="rxvoid" x="-84" y="-31" width="168" height="62"/>' +
+      live(o.flow, '<path class="rx-tubef" d="M-82 -18H-30M-82 0H82M-82 18H-30M34 -18H82M34 18H82"/>') +
+      '<path class="rx" d="M4 30h12v24H4zM48 30h12v24H48z"/><path class="rxd" d="M1 54h18v4H1zM45 54h18v4H45z"/>' +
+      live(
+        o.bw,
+        '<g class="rx-unless"><path class="rx-sieve" d="M-46 -29L50 -2M-46 29L50 2"/></g><g class="rx-when"><path class="rx-sieve" d="M-46 -3L50 -29M-46 3L50 29"/></g>'
+      ) +
+      live(o.balls, '<path class="rx-balls" d="M-82 -12L-30 -10L46 0V10L54 34V54"/><path class="rx-balls" style="stroke-dashoffset:8" d="M-82 12L-30 9L10 4V54"/>') +
+      '<circle class="rxd" cx="-46" cy="-29" r="4"/><circle class="rxd" cx="-46" cy="29" r="4"/>' +
+      '<path class="rx" d="M-54 -46h16v10h-16zM-54 36h16v10h-16z"/><path class="rxd" d="M-69 -42h6v6h-6zM71 -42h6v6h-6z"/>'
+  });
+  /* ball vessel: upright, its basket inside, cut open. The balls turn in it while they are collected (cage = its rule) and pass while they
+     circulate (balls = its rule). Ports: r = inlet, b = outlet (valve N02), tip = bypass without balls (N05), vent, drain */
+  R.ballvessel = o => ({
+    box: [-34, -58, 34, 60],
+    ports: { r: [33, -22], l: [-33, 6], b: [0, 59], tip: [-33, 6], vent: [0, -58], t: [0, -58], drain: [26, 38] },
+    svg:
+      '<path class="rxd" d="M-26 34h5v24h-5zM21 34h5v24h-5z"/><path class="rx" d="M26 -28h7v12h-7zM-33 0h7v12h-7zM-6 48h12v10h-12z"/><path class="rxd" d="M31 -31h3v18h-3zM-34 -3h3v18h-3zM-9 56h18v3.5h-18z"/>' +
+      '<path class="rxv" d="M-28 -40Q-28 -52 0 -52Q28 -52 28 -40V26L7 50H-7L-28 26Z"/><path class="rxvoid" d="M-23 -38Q-23 -46 0 -46Q23 -46 23 -38V24L4 46H-4L-23 24Z"/>' +
+      '<path class="rxd" d="M-12 -57h24v5h-24z"/><circle class="rx" cx="0" cy="-36" r="5.5"/>' +
+      '<path class="rx-sieve" d="M-17 -24V21L-3 42M17 -14V21L3 42"/>' +
+      live(o.flow, '<path class="rx-tubef" d="M26 -22H8V22M8 22L-24 6"/>') +
+      live(o.balls, '<path class="rx-balls" d="M26 -22H4V48"/>') +
+      live(o.cage, '<path class="rx-balls" d="M26 -22H2Q-8 -22 -8 -8V16Q-6 24 0 24Q8 22 8 12Q8 2 -1 2"/>') +
+      '<path class="rxhi" d="M-25 -36V22"/>'
+  });
+
   /* ---------------- the boiler: furnace, cyclone, seal pot, air heater, precipitator, stack ---------------- */
   /* What is from a source: FHI manual Part 2 Sect 1 (circulating fluidized bed furnace with its grate, superheater panels
      No. 1 and No. 2 in the furnace, 2 recycle cyclones with a seal pot each, 4 start-up burners, 4 screw ash coolers, a rotary

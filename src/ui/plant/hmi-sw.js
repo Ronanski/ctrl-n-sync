@@ -57,8 +57,8 @@
     BPC: { n: 'SWBP-C', t: 'P-1503C', ad: 'DITL-30 #C', io: 'MIR-P1503C', d: 'DITL-30 #C' },
     DF1: { n: 'S-1502', t: 'Debris filter', ad: 'DITL-39@3', io: 'DIR-DF1001', d: 'DITL-39', on: 'IN OPERATION' },
     DF2: { n: 'S-1504', t: 'Debris filter', ad: 'DITL-39@14', io: 'DIR-DF1002', d: 'DITL-39', on: 'IN OPERATION' },
-    /* DITL-119 sends the panel its permission (DOP-CTCS100x "ON FEEDBACK CTCS") and REMOTE AUTO start / stop pulses; no running
-       feedback comes back to the DCS: the run state is on the local control panel (LCP) */
+    /* DITL-119 sends the panel its permission (DOP-CTCS100x "ON FEEDBACK CTCS") and REMOTE AUTO start / stop pulses; the run state comes by Modbus from
+       the tube cleaning PLC (hx-sys-cw.js stKey) */
     CTA: { n: 'CTCS-A', t: 'P-1113', lcp: 'STATUS AT LCP', io: 'DOP-CTCS1001', d: 'DITL-119' },
     CTB: { n: 'CTCS-B', t: 'P-1114', lcp: 'STATUS AT LCP', io: 'DOP-CTCS1002', d: 'DITL-119' },
     ACA: { n: 'ACWP-A', t: 'P-1108A', ad: 'DITL-76', io: 'MIR-P1108A', d: 'DITL-76', outMode: 1, remRows: [19], auRow: 0 },

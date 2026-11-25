@@ -8,7 +8,6 @@
    (unit.js AN_SW) when no logic sheet has the transmitter, the faceplates of fp-pop.js. */
 (function () {
   if (!window.LS_MOCK) return;
-  const CTW = 'no running status comes to the DCS: the I/O list has only the outputs O.0286 ~ O.028B for the tube cleaning panels (DITL-119); the state is at the local panel';
   const HYPO = 'Field equipment (local panel HCDSP): the STN105 inputs are running / overload status only, no DCS command.';
   LS_MOCK.add({
     id: 'CWN',
@@ -37,10 +36,10 @@
       DF2: { n: 'S-1504', t: 'Debris filter', io: 'DIR-DF1002', d: 'DITL-39', df: { pbs: [['AUTO START', 18, 'M.0792'], ['AUTO STOP', 20, 'M.0793']], st: 14, dp: 'DPISW1504', perm: [], why: 'none on the sheet: DITL-39 takes AUTO START / STOP (M.0792 / M.0793) straight to a 2 s pulse out (TR392 / TR393), with no gate before it' } },
       /* Rosé 2026-11-24 (click check: a click on CTCS-A / B opened nothing in the Operator Station): the tube cleaning panels = the push
          buttons of DITL-119 (rows 7 / 9 M.0794 / M.0795 for A, 18 / 20 M.0796 / M.0797 for B, REMOTE AUTO START / STOP P.B. to the local
-         panel), row 1 ANY SEAWATER PUMP RUNNING (M.079C) the one input of the drawing. No running status comes back to the DCS: st null,
-         the faceplate says the state is at the local panel */
-      CTA: { n: 'CTCS-A', t: 'P-1113', io: 'DOP-CTCS1001', d: 'DITL-119', df: { pbs: [['AUTO START', 7, 'M.0794'], ['AUTO STOP', 9, 'M.0795']], st: null, stWhy: CTW, off: 'STATUS AT LOCAL PANEL', perm: [1], why: 'running seawater pump' } },
-      CTB: { n: 'CTCS-B', t: 'P-1114', io: 'DOP-CTCS1002', d: 'DITL-119', df: { pbs: [['AUTO START', 18, 'M.0796'], ['AUTO STOP', 20, 'M.0797']], st: null, stWhy: CTW, off: 'STATUS AT LOCAL PANEL', perm: [1], why: 'running seawater pump' } },
+         panel), row 1 ANY SEAWATER PUMP RUNNING (M.079C) the one input of the drawing. Lane 6 2026-11-25: the running status comes from the
+         tube cleaning PLC by Modbus (list of the CTCS, points 1 and 7, "ball in circulation"), not from the drawing: st null + stKey */
+      CTA: { n: 'CTCS-A', t: 'P-1113', io: 'DOP-CTCS1001', d: 'DITL-119', df: { pbs: [['AUTO START', 7, 'M.0794'], ['AUTO STOP', 9, 'M.0795']], st: null, stKey: 'an:pkg.ctcs.A.op', off: 'NOT IN OPERATION', on: 'IN OPERATION', perm: [1], why: 'running seawater pump' } },
+      CTB: { n: 'CTCS-B', t: 'P-1114', io: 'DOP-CTCS1002', d: 'DITL-119', df: { pbs: [['AUTO START', 18, 'M.0796'], ['AUTO STOP', 20, 'M.0797']], st: null, stKey: 'an:pkg.ctcs.B.op', off: 'NOT IN OPERATION', on: 'IN OPERATION', perm: [1], why: 'running seawater pump' } },
       HUA: { n: 'P-0761A', t: 'Unloading', fld: 'hypoU', io: 'MIR-P0761A', d: 'STN105 DI', fieldOp: true, why: HYPO },
       HDA: { n: 'P-0762A', t: 'NaOCl dosing', fld: 'hypo', io: 'MIR-P0762A', d: 'STN105 DI', fieldOp: true, why: HYPO },
       HDB: { n: 'P-0762B', t: 'NaOCl dosing', fld: 'hypoB', io: 'MIR-P0762B', d: 'STN105 DI', fieldOp: true, why: HYPO }

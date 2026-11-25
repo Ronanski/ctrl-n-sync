@@ -579,7 +579,7 @@
         nk = df && Array.isArray(df.need) ? df.need.filter(x => x.key) : [];
       if (nk.length) {
         it.perm = nk.map(x => ({ label: x.l, key: x.key }));
-        it.mon = (df.st != null ? [{ label: 'State', key: 'dl:' + (df.std || dm[M.id].d) + '|o|' + df.st + (df.inv ? '|neg' : ''), words: [df.on, df.off] }] : []).concat(it.mon || it.vals || []);
+        it.mon = (df.stKey ? [{ label: 'State', key: df.stKey, words: [df.on, df.off] }] : df.st != null ? [{ label: 'State', key: 'dl:' + (df.std || dm[M.id].d) + '|o|' + df.st + (df.inv ? '|neg' : ''), words: [df.on, df.off] }] : []).concat(it.mon || it.vals || []);
       }
     }
     const monId = it.mon && (it.k === 'loop' || it.k === 'eq' || (it.k === 'mach' && it.perm)) ? it.loop || it.mach || it.id || it.tag : '';
@@ -1433,7 +1433,8 @@
         Q('[data-hv]').forEach(e => {
           const pv = penVal(e.dataset.hv),
             w = e.dataset.w && pv != null && isFinite(+pv) ? e.dataset.w.split('|') : null,
-            t = w ? w[+pv > 0.5 ? 0 : 1] : fmt(pv, +e.dataset.dp);
+            /* more than two words = one word per step (0, 1, 2 ...) */
+            t = w ? (w.length > 2 ? w[Math.round(+pv)] || '-----' : w[+pv > 0.5 ? 0 : 1]) : fmt(pv, +e.dataset.dp);
           if (e.textContent !== t) e.textContent = t;
           if (w && e.dataset.wn) e.classList.toggle('hx-wrn', (+pv > 0.5 ? 1 : 0) === +e.dataset.wn);
           if (AL) {
