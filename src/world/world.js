@@ -686,10 +686,11 @@
     const sbOut = txt => {
       if (!sbIdx) {
         sbIdx = new Map();
-        for (const d of S.sheets)
-          if (isSB(d) && d.nl)
+        /* and the copies of DITL-80M (src/world/inst/sootblowers.json), each row with the name of its own sootblower */
+        for (const d of S.sheets.concat(W.inst.filter(x => x._inst.data)))
+          if (isSB(d._inst ? d._inst.base : d) && d.nl)
             for (const o of d.nl.outs || []) {
-              const k = sbN(cellTxt(d, o.row, 'RS'));
+              const k = sbN(d._inst && d._inst.k ? W.remap(d, cellTxt(d._inst.base, o.row, 'RS')) : cellTxt(d, o.row, 'RS'));
               if (k && !sbIdx.has(k)) sbIdx.set(k, { d, row: o.row });
             }
       }
@@ -832,7 +833,7 @@
             if (SB1RX.test(st)) {
               const q = sbOut(W.remap(s, st));
               if (q) {
-                addIn(s, i, { k: 'd', d: q.d, row: q.row, ref: codeOf(q.d.name) + '-' + (+q.d.rows[q.row].n + 50) });
+                addIn(s, i, { k: 'd', d: q.d, row: q.row, ref: codeOf((q.d._inst ? q.d._inst.base : q.d).name) + '-' + (+q.d.rows[q.row].n + 50) });
                 dd++;
               }
               return;
