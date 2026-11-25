@@ -325,7 +325,7 @@
       if (I.k && !isLop4(I.base) && LET[I.k]) x = x.replace(TAGA, (m, p) => (ioAddr(p + LET[I.k]) === la[ix] ? p + LET[I.k] : m));
     }
     const M = tagsK(s);
-    if (M) x = x.replace(TAGM, m => M.get(m) || m);
+    if (M) x = x.replace(TAGK, m => M.get(m) || m);
     /* beta.570: a row of one address that reads another row of the drawing in this copy (W.addrK: DITL-24 rows 25 / 26, DITL-19 rows 23 ~ 28
        name every feeder, each with its own address): the address goes with the name, as the engine reads it */
     if (I.k && la.length === 1) {
@@ -412,10 +412,17 @@
      EVERY machine of the drawing, and the drawing itself names none of the others (DITL-112 LS-MU0708-A and -B are the two demi tanks,
      the same for every pump). Not the BFWP lube oil drawing (isLop4), the sootblowers and the data copies (their own maps) */
   const TAGM = /\b[A-Z]{1,5}\d{0,2}-[A-Z]{0,3}\d{3,4}-?A[0-9UVW]{0,2}\b(?!-)/g;
+  /* beta.580 (QA trace B5): tags that tell the machines apart by their number, not by a letter: DPT-CD1001 / 1002 are the strainers of condensate
+     pump A / B (DITL-61A), ZSO-FW1031 / 1032 the suction valves of BFWP A / B (DITL-23A). The tag of the copy's own machine is the tag whose
+     I/O list description is the same words with the other letter */
+  const TAGN = /\b[A-Z]{1,5}\d{0,2}-[A-Z]{0,3}\d{4}\b(?![-/])/g;
+  const TAGK = /\b[A-Z]{1,5}\d{0,2}-[A-Z]{0,3}\d{3,4}(?:-?A[0-9UVW]{0,2})?\b(?!-)/g; /* a tag of either kind */
+  let ioD = null; /* tag -> [station, description], and station + description -> tag */
   let ioT = null; /* tag -> address: the I/O list (window.WIRING), and the DCS descriptions (AI / PI tags) when they are in */
   W.ioPut = A => {
     ioT = null;
     W._ades = A || null;
+    ioD = null;
   };
   const ioTag = t => {
     if (!ioT) {
@@ -440,6 +447,22 @@
         L = LET.slice(0, I.n).map(x => q[1] + x + q[2]);
       if (L.length < 2 || L.slice(1).some(x => all.has(x)) || !L.every(x => ioTag(x))) continue;
       M.set(m[0], L[I.k]);
+    }
+    if (!ioD) {
+      ioD = { tag: new Map(), des: new Map() };
+      for (const st of Object.keys(W._ades || {}))
+        for (const o of Object.values(W._ades[st]))
+          if (o && o.k === 'io' && o.tag && o.d) {
+            const t = String(o.tag).trim(),
+              d = st + '|' + String(o.d).replace(/\s+/g, ' ').toUpperCase();
+            ioD.tag.set(t, d);
+            ioD.des.set(d, ioD.des.has(d) ? null : t); /* two tags of one description: no pair */
+          }
+    }
+    for (const m of txtOf(b).matchAll(TAGN)) {
+      const d = ioD.tag.get(m[0]),
+        to = d && W.remap(s, d);
+      if (to && to !== d && ioD.des.get(to)) M.set(m[0], ioD.des.get(to));
     }
     I.tkT = ioT;
     return (I.tk = M.size ? M : null);
@@ -470,7 +493,7 @@
          address of the tag drawn */
       const M = tagsK(s);
       if (M)
-        for (const m of (cellTxt(b, i, 'T') + ' ' + cellTxt(b, i, 'S')).matchAll(TAGM)) {
+        for (const m of (cellTxt(b, i, 'T') + ' ' + cellTxt(b, i, 'S')).matchAll(TAGK)) {
           const a = M.has(m[0]) && ioTag(M.get(m[0]));
           if (a && (!la.length || la[0] === ioTag(m[0]))) return a;
         }

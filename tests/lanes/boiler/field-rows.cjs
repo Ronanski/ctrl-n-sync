@@ -22,7 +22,8 @@ for (const r of rows) {
   if (r.ai && !/^AI\d{4}$/.test(r.ai)) bad.push(id + ': ai format');
   if (seen.has(r.tag)) bad.push(id + ': two rows');
   seen.add(r.tag);
-  const l = io.get(r.tag);
+  /* the bottom ash PLC drawings write the I/O list tag MIR-L1090 as MIR-L-1090 (DITL-BA59): the same signal, one dash more */
+  const l = io.get(r.tag) || io.get(String(r.tag).replace(/^([A-Z]+-[A-Z])-(\d)/, '$1$2'));
   if (!l) bad.push(id + ': not in the I/O list');
   else if (l[0] !== +r.stn || (r.ai && l[1] !== r.ai) || r.src.indexOf(l[1]) < 0) bad.push(id + ': I/O list says STN10' + l[0] + ' ' + l[1]);
 }

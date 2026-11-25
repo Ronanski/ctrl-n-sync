@@ -85,6 +85,10 @@ Made by AUDIT FIX : SORA for the lane plan (docs/audit/lane-plan-content-first-2
 | TRIPPLE INPUT DIAGNOSTICS (LME105) | TC-14-116 p 85, p 1298 No. 9; printed TP:3.0 | from manual text, inside not drawn (beta.461) |
 | AI DIAG.MD (LMA510 / LME510) | TC-14-116 p 1298 No. 4; printed H/L HL, LL, DEV HL, LL, DEF TP, DEF N, K | from manual text, inside not drawn (beta.461) |
 | TMR AI DIAGNOSTICS (LME111 / LME111A) | TC-14-116 p 1308 No. 6, p 1298 No. 4 / 9; printed TP:1.0, DELAY TP:3.0s | from manual text, inside not drawn (beta.461) |
+| DUAL INPUT DIAGNOSTICS (LMA110 / LME110), DUP AI DIAGNOSTICS (LME114) | TC-14-116 p 1298 No. 4 / 9; printed TP:3.0, DELAY TP:3.0s | from manual text, inside not drawn; user GO MANUAL 2026-11-25 |
+| TMR LVDT DIAGNOSIS (LME124) | TC-14-116 p 1298 No. 9; printed HL / LL / DELAY TP per channel | from manual text, inside not drawn; user GO MANUAL 2026-11-25 |
+| VALVE DIAGNOSIS (LME122 / LME123) | TC-14-116 p 1298 No. 4; printed RATE, H/L, DEV, DEF HL / LL, DEF TP | from manual text, inside not drawn; user GO MANUAL 2026-11-25 |
+| TRIPLE DETECTOR2 (LME113), 2OO3 (LME120) | TC-14-116 p 85 (2 out of 3), p 1308 No. 6; printed TP:1.0 x3 | from manual text, inside not drawn; user GO MANUAL 2026-11-25 |
 | MOTOR STANDARD (LMA580A ~ D) | IBD 310SC90-794 Rev 2 sheet 14 TYPICAL LOGIC FOR MOTOR (Turbine Control System book p 30); printed TD 1.0 s, TP 3.0 s x2 | drawing (beta.561); TP 0.5 s not on sheet 14 |
 
 Specs: /mnt/project-files/lanes/tcs-macros/01, 02, 04 (lane 2). QA counts the sheets that run with these apart (`TCE_RUN.stats().runText`) until the user decides; a Logic Monitor print replaces the reading.

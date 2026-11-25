@@ -1042,7 +1042,7 @@ function baTank(U) {
   return isFinite(U.paP) ? U.paP : typeof AN_AIR !== 'undefined' ? AN_AIR.P : 0;
 }
 function anBaStart(U) {
-  U.ba = { v: {}, sw: {}, lv: 0, p: 0, press: 0 };
+  U.ba = { v: {}, sw: {}, lv: 0, p: 0, press: 0, tw: 0 };
   /* at rest (O&M L6 primary conditions): every valve closed, the vessel empty and at atmosphere; the field switches are known before
      the first step, so the start of the DITL (ditl150.js) reads them */
   const W = U.ba.sw;
@@ -1050,6 +1050,8 @@ function anBaStart(U) {
     W[k + 'O'] = 0;
     W[k + 'C'] = 1;
   }
+  W.twO = 0;
+  W.twC = 1;
   W.psh = 0;
   W.psl = 1;
   W.air = baTank(U) >= AN_BA.airSw ? 0 : 1;
@@ -1059,10 +1061,29 @@ function anBaStart(U) {
   baPub(U);
 }
 function anBaStep(U, dt) {
-  /* chain conveyor L-1090: runs at load (16.PNG); from Cold on its ON COMMAND, DITL-BA68 output 5 */
-  U.baConv = !U.cold || fnOut('DITL-BA68', 5) === 1 ? 1 : 0;
+  /* chain conveyor L-1090 runs on its ON COMMAND (DITL-BA68 output row 4, counted from 0; the 150 MW start presses its START, ditl150.js) */
+  U.baConv = fnOut('DITL-BA68', 4) === 1 ? 1 : 0;
   const B = U.ba;
   if (!B) return;
+  /* lane 3 (KIRARA, beta.563): the two-way separator L-1094 (OPEN = to the vibrating screens, CLOSE = to the ash silo: DITL-BA66 lets the
+     screw run with VIBRATING SCREEN RUNNING and TWO WAY OPEN, or NOT ASH SILO HIGH LEVEL and TWO WAY CLOSE). Its baffle is turned by one
+     double-acting air cylinder (K1AU3-D1-0-010 RA Engineering Data of Bottom Ash Transfer System, pdf p 22, drawing 130225A-TW-01 rev B
+     "Assembly for two way": MCQA-11-80-200-TC, bore 80, stroke 200 mm, used stroke 190 mm, 60 deg baffle, two OMRON WLCA2 limit
+     switches; P&ID 130225A-PID-01 rev D draws speed regulators on it). The solenoid of each end (DITL-BA71 output rows 5 TWO-WAY(O) =
+     O.0210 SVO-BH1754, 6 TWO-WAY(C) = O.0211 SVC-BH1754, counted from 0) drives the cylinder while it is on; with no command the
+     cylinder stays where it is (the DITL-BA65 command drops at the limit). Travel time (CALC): the MCQ series runs 50 ~ 500 mm/s, so
+     190 mm takes 0.4 ~ 3.8 s; DITL-BA65 TR29 gives TWO-WAY ABNORMAL when the limit is not made 5 s after the command, so a healthy stroke
+     is below 5 s. AN_BA.stroke 2 s (the stroke of the transmitter valves) is inside that range. U.ba.tw = position 0 (closed) ~ 1 (open);
+     ZSO-BH1754 made only at 1, ZSC-BH1754 only at 0, both open while it travels (DITL-BA60 TWO-WAY LSO / LSC). At rest it is closed
+     (anBaStart); a save made before beta.563 has no position: ditl150.js D.baSave puts it closed */
+  {
+    const op = fnOut('DITL-BA71', 5) === 1,
+      cl = fnOut('DITL-BA71', 6) === 1;
+    if (!isFinite(B.tw)) B.tw = 0;
+    if (op !== cl) B.tw = Math.max(0, Math.min(1, B.tw + ((op ? 1 : -1) * dt) / AN_BA.stroke));
+    B.sw.twO = B.tw >= 1 ? 1 : 0;
+    B.sw.twC = B.tw <= 0 ? 1 : 0;
+  }
   const K = AN_BA,
     o = r => fnOut(')DITL-BA53', r) === 1,
     vv = (k, cmd) => lmValve(B, k, cmd, dt, K.stroke, 0),

@@ -1,4 +1,4 @@
-/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA), beta.534. Field signals of the balance of plant (src/world/field/README.md).
+/* src/world/field/bop.js: LANE 4 DCS LINKS BOP (RARA). Field signals of the balance of plant (src/world/field/README.md).
    Each row reads engine state that already exists (read only) and names its physical source. No constant stands for a process value,
    no fitted number (RULES 3.12). Paper with the physical source of every value (QA : SAORI pass 2026-11-25):
    lanes/bop/lane4-field-values-paper-2026-11-25.md. A value that is not a number writes nothing (the point keeps its last value).
@@ -202,6 +202,39 @@ for (const [L, on, off, sh] of [
     src: io(3) + ' ' + off + '; DITL-29A HVP/SOFTSTARTER, K1AU3E1-0008'
   });
 }
+/* condensate pump 6.6 kV VCB (DITL-61A / #B input rows): ON = the pump runs and its breaker is not opened by a field trip or a black-out
+   (X.ftrip), OFF = NOT ON. The rows are on the drawing, so the field row drives them (by the tag of each copy) */
+for (const [L, on, off, sh] of [
+  ['A', 'I.0084', 'I.0085', 'DITL-61A'],
+  ['B', 'I.0404', 'I.0405', 'DITL-61A #B']
+]) {
+  const vcb = X => {
+    const r = X.ditlRun(sh);
+    return r == null ? NaN : r === 1 && !X.ftrip(sh) ? 1 : 0;
+  };
+  R.push({ stn: 3, di: 1, tag: 'MIV-P1116' + L + '1', v: (U, X) => vcb(X), rel: 'VCB ON = ' + sh + ' running AND no field trip', src: io(3) + ' ' + on + ' "Condensate pump-' + L + ' VCB on"; DITL-61A input row' });
+  R.push({
+    stn: 3,
+    di: 1,
+    tag: 'MIV-P1116' + L + '2',
+    v: (U, X) => {
+      const x = vcb(X);
+      return isFinite(x) ? 1 - x : NaN;
+    },
+    rel: 'VCB OFF = NOT ON',
+    src: io(3) + ' ' + off + ' "Condensate pump-' + L + ' VCB off"; DITL-61A input row'
+  });
+}
+/* the unit 460 V buses (TR-1B1 / TR-1B2, K1AU3-E1-0-307 load flow p A.14) are dead in the unit black-out (elec.js: BUS 1AM dead) */
+R.push({ stn: 1, di: 1, tag: 'SIA-CDS01', v: (U, X) => (X.fault('el.1am') ? 0 : 1), rel: 'dosing AC main power normal = the unit 460 V bus alive (no black-out el.1am)', src: io(1) + ' I.012E "Dosing system AC main power normal"; K1AU3-E1-0-307 p A.14; elec.js 460 V buses dead with BUS 1AM' });
+/* hypochlorite dosing AC main power (STN105 I.032F MIA-HC0001 "not fail"). Feeder: K1AU3E1-0052 rev 2 (as built) water treatment area 460 V
+   system WTX-B, feeder CD-PS "PUMP STATION CHEMICAL DOSING SYSTEM" 5 kW 9.8 A, MCCB 20AT. Chain (K1AU3E1-0014 rev 2): WTX-B <- ACBWT <-
+   TR-WTX1 6.6 kV / 460 V 2000 kVA <- VCB WTX3 <- 6.6 kV bus WTX <- 1A23 through WTX1M (N.C., K1AU3E1-0009); the other feeder 2A5 through
+   WTX2M is N.O. (K1AU3E1-0010) and closed by hand only. So the panel is dead in the unit black-out of bus 1A (el.1am) until WTX2M is closed
+   by hand (not in the model). Panel = CD-PS: derived, no drawing prints HC0001; the hypochlorite package (LIMAY-D1-41-0, Taiwan Nikkiso
+   QU15-1064) is part of the sea water intake, at the pump station, and CD-PS is the only chemical dosing feeder there (YUA search
+   2026-11-25; no feeder in K1AU3-E1-0-107, E1-0033, 0034, 0036 / 0037, 0045, 0053, 0073) */
+R.push({ stn: 5, di: 1, tag: 'MIA-HC0001', v: (U, X) => (X.fault('el.1am') ? 0 : 1), rel: 'power not fail = bus WTX alive through WTX1M from 1A23 (no black-out el.1am)', src: io(5) + ' I.032F; K1AU3E1-0052 rev 2 feeder CD-PS; K1AU3E1-0014 rev 2; K1AU3E1-0009 / 0010' });
 /* 6. field states (beta.530 FIELD.state): devices with no physics in the model. The instructor sets the abnormal state (Plant menu); the
    normal state is the documented service state */
 const ST = [];
@@ -241,6 +274,23 @@ for (const [n, what, LL, Lo, H, a] of [
   ST.push({ id: n + '.lo', tag: 'LSL-' + n, di: a[1], stn: 1, normal: 0, t: what + ' level low', g: 'Feedwater and condensate', src: io(1) + ' ' + a[1] + doc });
   ST.push({ id: n + '.hi', tag: 'LSH-' + n, di: a[2], stn: 1, normal: 0, t: what + ' level high', g: 'Feedwater and condensate', src: io(1) + ' ' + a[2] + doc });
 }
+/* dosing pump trips (no trip in the physics; the pumps are FIELD equipment, source.js AN_SRC.field): normal = no trip */
+for (const [stn, addr, tag, what] of [
+  [1, 'I.0121', 'MIT-Z1107A', 'Tri-sodium phosphate dosing pump-A trip'],
+  [1, 'I.0123', 'MIT-Z1107B', 'Tri-sodium phosphate dosing pump-B trip'],
+  [1, 'I.0125', 'MIT-Z1108A', 'Neutral amine dosing pump-A electric trouble'],
+  [1, 'I.0127', 'MIT-Z1108B', 'Neutral amine dosing pump-B electric trouble'],
+  [1, 'I.0129', 'MIT-Z1109A', 'Carbon hydraride dosing pump-A trip'],
+  [1, 'I.012B', 'MIT-Z1109B', 'Carbon hydraride dosing pump-B trip'],
+  [1, 'I.012D', 'MIT-Z1101A', 'Tri-sodium phosphate agitator trip'],
+  [5, 'I.032E', 'MIT-P0761A', 'Hypo-chlorinated dosing system unloading pump-A overload'],
+  [5, 'I.0121', 'MIT-P0761B', 'Hypo-chlorinated dosing system unloading pump-B overload']
+])
+  ST.push({ id: tag.slice(4) + '.trip', tag, di: addr, stn, normal: 0, t: what, g: 'Other', src: io(stn) + ' ' + addr + ' "' + what + '"; normal = no trip' });
+/* breaker positions of the PAF circulating oil panel (a breaker does not open on a dead bus): normal = closed */
+ST.push({ id: 'LO1753.ctl', tag: 'MIA-LO1753-1', di: 'I.065B', stn: 3, normal: 0, t: 'PAF circulating oil system control power switch off', g: 'Air and flue gas', src: io(3) + ' I.065B "PAF circulating oil system control power auxiliary switch off"; normal = switch on' });
+ST.push({ id: 'LO1753.nfb2', tag: 'MIA-LO1753-2', di: 'I.065C', stn: 3, normal: 1, t: 'PAF circulating oil system NFB2 off', g: 'Air and flue gas', src: io(3) + ' I.065C "PAF circulating oil system NFB2 auxiliary switch not off"; normal = NFB closed (1)' });
+ST.push({ id: 'LO1753.nfb1', tag: 'MIA-LO1753-3', di: 'I.065D', stn: 3, normal: 1, t: 'PAF circulating oil system NFB1 off', g: 'Air and flue gas', src: io(3) + ' I.065D "PAF circulating oil system NFB1 auxiliary switch not off"; normal = NFB closed (1)' });
 FIELD.state(
   lane,
   ST.map(({ id, tag, normal, t, g, src }) => ({ id, tag, normal, t, g, src }))

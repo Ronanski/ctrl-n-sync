@@ -26,7 +26,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
 const FLOOR = 202; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
-const FLOOR_TEXT = 70;
+const FLOOR_TEXT = 99;
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -97,6 +97,34 @@ const S = R.stats(A);
   if (o.OUT !== 22 || o['DEV E'] !== 1 || o.ABN !== 0 || o.ERR !== 0) fail('TMR AI 20 / 22 / 40 gives ' + JSON.stringify(o));
   for (let i = 0; i < 11; i++) o = tmr({ SIG1: 20, SIG2: 22, SIG3: 40, ERR1: 0, ERR2: 1, ERR3: 1, ...lim }, tn, ts, 0.1);
   if (o.OUT !== -10 || o.ABN !== 1 || o.ERR !== 1) fail('TMR AI with two channels in error gives ' + JSON.stringify(o) + ', want SIM -10');
+  /* DUAL INPUT: one value bad = the other; DEV E after DELAY TP; TMR LVDT: the stray channel is in error and left out; VALVE DIAGNOSIS:
+     position out of the H/L band = ABN.O, position away from the demand 5 s = ABN.M */
+  const du = M['DUAL INPUT DIAGNOSTICS'],
+    dn = [[0, 0, 'TP:3.0'], [0, 0, 'DELAY TP:3.0s']],
+    ds = {},
+    dl = { HL: 100, LL: 0, DEV: 5, SIM: -1, 'I-ERR2': 0 };
+  for (let i = 0; i < 31; i++) o = du({ SIG1: 50, SIG2: 60, 'I-ERR1': 1, ...dl }, dn, ds, 0.1);
+  if (o.OUT !== 60 || o.ABN !== 0 || o['DEV E'] !== 1 || o['I-ERR'] !== 1) fail('DUAL INPUT 50 (abnormal) / 60 gives ' + JSON.stringify(o));
+  const lv = M['TMR LVDT DIAGNOSIS'],
+    ln = [1, 2, 3].flatMap(k => [[0, k * 100, 'HL:1.0'], [0, k * 100 + 1, 'LL:-1.0'], [0, k * 100 + 2, 'DELAY TP:3.0s']]),
+    ls = {};
+  for (let i = 0; i < 31; i++) o = lv({ SIG1: 50, SIG2: 50.5, SIG3: 60, DEV: 0, 'ANN SW': 1 }, ln, ls, 0.1);
+  if (o.ERR3 !== 1 || o.ERR1 !== 0 || o.OUT !== 50.25) fail('TMR LVDT 50 / 50.5 / 60 gives ' + JSON.stringify(o));
+  const vd = M['VALVE DIAGNOSIS'],
+    vn = A.plan.find(p => p.id === 'TCE121').nodes.find(x => x.t === 'M' && x.name === 'VALVE DIAGNOSIS').notes,
+    vs = {};
+  for (let i = 0; i < 51; i++) o = vd({ 'POS.': 40, AMP: 0, DEMAND: 70, 'ANN.EN': 1 }, vn, vs, 0.1);
+  if (o['ABN.M'] !== 1 || o['ABN.O'] !== 0) fail('VALVE DIAGNOSIS 40 % against a demand of 70 % for 5 s gives ' + JSON.stringify(o));
+  if (vd({ 'POS.': 110, AMP: 0, DEMAND: 110, 'ANN.EN': 1 }, vn, {}, 0.1)['ABN.O'] !== 1) fail('VALVE DIAGNOSIS 110 % is not ABN.O');
+  /* TRIPLE DETECTOR2 = the middle of three, DEV after TP; 2OO3 = two of three (TCE060 ~ TCE069, typed as macro blocks) */
+  const td = M['TRIPLE DETECTOR2'],
+    tdn = [[0, 0, 'TP:1.0'], [0, 1, 'TP:1.0'], [0, 2, 'TP:1.0']],
+    tds = {};
+  for (let i = 0; i < 11; i++) o = td({ 'IN A': 10, 'IN B': 30, 'IN C': 11, DEV: 5 }, tdn, tds, 0.1);
+  if (o.OUT !== 11 || o.DEV !== 1) fail('TRIPLE DETECTOR2 10 / 30 / 11 gives ' + JSON.stringify(o));
+  if (M['2OO3']({ IN1: 1, IN2: 0, IN3: 1 }).OUT !== 1 || M['2OO3']({ IN1: 1, IN2: 0, IN3: 0 }).OUT !== 0) fail('2OO3 is not two out of three');
+  const t60 = A.plan.find(p => p.id === 'TCE060').nodes.find(x => x.t === 'M' && x.name === 'TRIPLE DETECTOR2');
+  if (!t60 || A.names[t60.ins['IN C']] !== 'TCE060:tmr3.OUT') fail('TCE060 TRIPLE DETECTOR2 IN C is not the third TMR AI DIAGNOSTICS');
   /* MOTOR STANDARD from IBD 310SC90-794 sheet 14: START PB in MANUAL starts; no MCC answer for 3 s = START FAULT (stop, ANN) until RESET;
      AUTO START works only in AUTO */
   const mo = M['MOTOR STANDARD'],

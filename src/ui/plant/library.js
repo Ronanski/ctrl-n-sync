@@ -263,7 +263,7 @@
     rows.all.sort((a, b) => (a.gk < b.gk ? -1 : a.gk > b.gk ? 1 : a.a < b.a ? -1 : a.a > b.a ? 1 : 0));
   }
   /* 3.2.3-beta.112: the DCS loop list, the user tag list and the Modbus point lists of the turbine control system and the SCADA
-     (src/ui/plant/dcslists.js, tools/data/dcslists.py). Loop type codes in words only where the logic sheets show the same tag
+     (src/ui/plant/dcslists.js, tools/data/dcslists.py; Modbus: src/ui/plant/modbus.js, tools/data/modbus.py). Loop type codes in words only where the logic sheets show the same tag
      as that block (checked 2026-11-12 on the app index: 1 = PID 55 tags, 2 = PIDV 2, 22 = MAN 58, 21 = ALM 104, 19 = SUMA 10);
      18 and 56 have no matching block and stay as their code. */
   const LT = { 1: 'Controller', 2: 'Controller', 22: 'Manual station', 21: 'Indicator and alarm', 19: 'Totalizer' };
@@ -288,11 +288,16 @@
         t = /DEVICE OPERATE/.test(o.type) ? 'Device operation word' : /UNIFY/.test(o.type) ? 'Engineering value' : o.type;
       addAll({ st: o.stn, s: 'STN10' + o.stn, a: o.sys, tag: o.utag.replace(/\.VAL$/, ''), d: o.dname, x: rng(o), t, ab: '', h: (o.sys + ' ' + o.utag + ' ' + o.dname + ' ' + o.type + ' USER TAG').toUpperCase(), lt: 1 }, 'ut');
     }
+    /* Modbus lists (src/ui/plant/modbus.js): turbine system on STN102, SCADA on STN105, fly ash / ESP / CTCS on STN104 (their lists'
+       STN104 address columns); those three are package panels */
+    const MBST = { tcs: '2', sca: '5', fa: '4', esp: '4', ctcs: '4' },
+      MBC = { tcs: 'tcs', sca: 'sca', fa: 'loc', esp: 'loc', ctcs: 'loc' },
+      MBN = { fa: 'Fly ash', esp: 'ESP', ctcs: 'CTCS' };
     for (const a of window.DCS_MODBUS || []) {
       const o = rec(window.DCS_MODBUS_F, a),
-        st = o.sys === 'tcs' ? '2' : '5',
-        x = (o.si ? o.si + ' · ' : '') + o.from + ' → ' + o.to;
-      addAll({ st, s: 'STN10' + st, a: 'Modbus ' + o.maddr, tag: o.tag, d: o.d, x, t: o.type + ' by Modbus', ab: '', h: ('MODBUS ' + o.maddr + ' ' + o.tag + ' ' + o.d + ' ' + o.si + ' ' + o.type).toUpperCase(), lt: 1, mb: 1 }, o.sys);
+        st = MBST[o.sys] || '9',
+        x = (o.si ? o.si + ' · ' : '') + o.from + ' → ' + o.to + (o.ut ? ' · user tag ' + o.ut : '') + (o.pict ? ' · ' + o.pict : '');
+      addAll({ st, s: 'STN10' + st, a: 'Modbus ' + o.maddr, tag: o.tag, d: (MBN[o.sys] ? MBN[o.sys] + ': ' : '') + o.d, x, t: o.type + ' by Modbus', ab: '', h: ('MODBUS ' + o.maddr + ' ' + o.tag + ' ' + o.d + ' ' + o.si + ' ' + o.type + ' ' + (o.ut || '') + ' ' + (o.pict || '') + ' ' + (MBN[o.sys] || '')).toUpperCase(), lt: 1, mb: 1 }, MBC[o.sys] || 'loc');
     }
   }
   /* the controller tags of the logic sheets (the index the faceplates use, AN.hmiList): read after the list is shown; the ones
