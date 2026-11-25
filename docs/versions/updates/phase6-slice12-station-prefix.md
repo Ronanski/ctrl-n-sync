@@ -9,7 +9,11 @@ address O.1322 ng station 104 (OPC-ANN-A3). Dati binabasa ito ng bilang bilang O
   sa dalawang station, hal. DITL-12 station 104 "STATION WIRING TO: S1 M.3412"), kaya nasa sheet ito para sa dalawa.
 - Nagbago: 39 I/O point (33 annunciator window at 6 alarm output na dati ay "model / HMI only" lang), 25 memory address na ngayon ay nasa
   sheet. Walang point na bumaba ang estado (sinuri isa-isa laban sa bilang bago ang ayos).
-- Bilang: nakakabit 1800 -> 1833; may value 2195 -> 2228; memory nasa sheet 3046 -> 3071; hindi nakakabit 92 -> 64.
-- Natitira sa annunciator: ANN-TEST / ACK / RESET (I.1281 ~ 1283), BUZZER-OUT, ang 26 window na walang pangalan sa I/O list (spare), at
-  ilang window na wala pa sa parsed na drawing (hal. OPC-ANN-B7 A-BFWP STOPPED, B9 / B10, C1, C7, C9, D3 ~ D5, G5, H1 ~ H3, H10, I1, I2).
+- Ikalawang ayos: ang station ay binabasa sa harap mismo ng address kahit may ibang salita bago nito sa parehong cell ("PAF BEARING
+  TEMP HIGH S4 O.1361"): 15 window pa (bearing temperature ng fan, BFWP stopped / auto start, make-up pump, diesel oil pump). Dahil dito,
+  5 MIS contact (stopped) ng fan sa DITL-03B na dati "station unsure" ay station 103 na (nakakabit), at ang MIL-FA1053-1 (PAF inlet
+  damper remote, STN101 I.0049) ay lumabas na tunay na walang kabit: ginawang field state, normal 1 (remote), kagaya ng SAF damper.
+- Bilang: nakakabit 1800 -> 1853; may value 2195 -> 2249; memory nasa sheet 3046 -> 3072; hindi nakakabit 92 -> 49; B2 34 -> 26.
+- Natitira sa annunciator: ANN-TEST / ACK / RESET (I.1281 ~ 1283), BUZZER-OUT, OPC-ANN-C1 (deaerator level L.L.), at ang 26 window na
+  walang pangalan sa I/O list (spare).
 - Hindi sinubok: sa browser (walang nagbago sa app mismo; tools/trace lang).

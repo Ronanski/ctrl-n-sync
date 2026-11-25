@@ -356,6 +356,19 @@ const has = (txt, tag) => {
     }
     return o;
   };
+  /* the addresses of a text that are written with their station ("PAF BEARING TEMP HIGH S4 O.1361", "S4 O.1406/1407/1408"): address ->
+     station */
+  const SPX = /\bS(\d)\s+(?=[IOMB]\.[0-9A-F]{4})/g;
+  const adrStn = (t, first) => {
+    const m = new Map(),
+      x = String(t || '');
+    for (const q of x.matchAll(SPX)) {
+      const rest = x.slice(q.index + q[0].length),
+        one = /^[IOMB]\.[0-9A-F]{4}(?:\s*\/\s*(?:[IOMB]\.)?[0-9A-F]{2,4}(?![0-9A-F]))*/.exec(rest);
+      if (one) for (const a of adrList(one[0], first)) m.set(a, +q[1]);
+    }
+    return m;
+  };
   /* cells, nl.src / outs / mv / mot rows and the sampled inputs are keyed by the 0-based row INDEX i (app: world.js cellTxt, ditl.js);
      r.n is the number drawn on the row (= i + 1 on 5,399 of 5,559 rows), printed only (fix 2026-11-25, found by YUA) */
   const cellT = (s, i, col) => {
@@ -417,7 +430,7 @@ const has = (txt, tag) => {
         continue; /* a row-unit copy holds only its rows; the drawing's own text belongs to the base */
       const k = ri + ':' + (x.x >= rs0 ? 'R' : 'L');
       txA.set(k, (txA.get(k) || []).concat(la));
-      if (refStn(tt)) for (const a of la) oStn.set(ri + '|' + a, refStn(tt));
+      for (const [a, z] of adrStn(tt, multi)) oStn.set(ri + '|' + a, z);
     }
     for (const [k, la] of txA)
       if (k.startsWith('-1:')) {
@@ -462,7 +475,8 @@ const has = (txt, tag) => {
       for (const t of [RT, RS])
         for (const a of adrList(t, multi)) {
           adrsR.add(a);
-          if (refStn(t)) oStn.set(i + '|' + a, refStn(t));
+          const z = adrStn(t, multi).get(a);
+          if (z) oStn.set(i + '|' + a, z);
         }
       for (const a of txA.get(i + ':R') || []) adrsR.add(a);
       for (const a of adrsR) adrs.delete(a);
