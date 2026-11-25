@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 202; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 208; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 99;
@@ -146,6 +146,31 @@ const S = R.stats(A);
   if (m({ ASRT: 1, RUN: 1 }, 20).STS !== 1 || o.AUTO !== 1 || o.ABN !== 0) fail('MOTOR STANDARD: AUTO START in AUTO ' + JSON.stringify(o));
   if (m({ RUN: 0 }).ABN !== 1) fail('MOTOR STANDARD: answer lost while running is not TRIPPED');
   if (mo.need([]).length !== 2) fail('MOTOR STANDARD with no TD / TP printed must be open');
+  /* TORQUE (SEAL-IN) from IBD 310SC90-794 sheet 16: PB OPEN in MANUAL seals in the open command until LIMIT FULL OPEN; no full open
+     in t1 (TP 35 s) = OPEN FAULT (ANN 2) until RESET; AUTO CLOSE works only in AUTO and stops on the close torque switch */
+  const tq = M['TORQUE (SEAL-IN)'],
+    tqn = [[0, 0, 'TD:5.0s'], [0, 0, 'TP:35.0s'], [0, 0, 'TP:35.0s'], [0, 0, 'TP:5.0s']],
+    tqs = {},
+    tqb = { AOP: 0, ACL: 0, EF: 0, LTOP: 0, TROP: 0, LTCL: 1, TRCL: 0, 'PB OPEN': 0, 'PB CLOSE': 0, 'PB AUTO': 0, 'PB MANUAL': 0, 'PB RESET': 0 },
+    tqr = (x, n = 1) => {
+      for (let i = 0; i < n; i++) o = tq({ ...tqb, ...x }, tqn, ts, 0.5);
+      return o;
+    };
+  if (tqr({ 'PB OPEN': 1 }).OPS !== 1) fail('TORQUE (SEAL-IN): PB OPEN in MANUAL gives no open command');
+  if (tqr({ LTCL: 0 }, 10).OPS !== 1) fail('TORQUE (SEAL-IN): the open command does not seal in after the PB is released');
+  if (tqr({ LTCL: 0, LTOP: 1 }).OPS !== 0 || o.ABN !== 0) fail('TORQUE (SEAL-IN): LIMIT FULL OPEN does not stop the open command ' + JSON.stringify(o));
+  tqr({ LTCL: 0, LTOP: 0, 'PB OPEN': 0 });
+  tqr({ LTCL: 0, 'PB OPEN': 1 });
+  tqr({ LTCL: 0 }, 68);
+  if (o.ABN !== 0 || o.OPS !== 1) fail('TORQUE (SEAL-IN): open fault before t1 ' + JSON.stringify(o));
+  tqr({ LTCL: 0 }, 2);
+  if (o.ABN !== 1 || o.OPS !== 0) fail('TORQUE (SEAL-IN): no full open in t1 is not an open fault ' + JSON.stringify(o));
+  if (tqr({ LTCL: 0, 'PB RESET': 1 }).ABN !== 0) fail('TORQUE (SEAL-IN): RESET does not clear the open fault');
+  if (tqr({ LTCL: 0, ACL: 1 }).CLS !== 0) fail('TORQUE (SEAL-IN): AUTO CLOSE works in MANUAL');
+  tqr({ LTCL: 0, 'PB AUTO': 1 });
+  if (tqr({ LTCL: 0, ACL: 1 }, 4).CLS !== 1 || o.AUTO !== 1) fail('TORQUE (SEAL-IN): AUTO CLOSE in AUTO ' + JSON.stringify(o));
+  if (tqr({ LTCL: 0, ACL: 1, TRCL: 1 }).CLS !== 0 || o.ABN !== 1) fail('TORQUE (SEAL-IN): close torque before full close must stop and alarm ' + JSON.stringify(o));
+  if (tq.need([]).length !== 1) fail('TORQUE (SEAL-IN) with no t1 / t2 printed must be open');
   /* a PI/O error box is its own signal, never the value of the same table row (TCA040 DI 1 and the card error both print "(TCA900-1)") */
   const v = A.plan.find(p => p.id === 'TCA322').nodes.find(x => x.t === 'M' && /TCA932-3 ERR$/.test(A.names[x.ins.ERR]));
   if (!v || v.ins.IN === v.ins.ERR) fail('TCA322 line 3: the AI value and its PI/O error are one net');
