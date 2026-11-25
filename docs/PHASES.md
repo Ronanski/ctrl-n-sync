@@ -8,7 +8,7 @@ Huling suri: 2026-11-25 ~7:30 PM PHT (verify mula sa repo, main 5ea1c1e; ulat `/
 
 | # | Phase | Tapos kapag | Estado | Bantay sa Checks | Kulang |
 |---|---|---|---|---|---|
-| 1 | Saklaw at docs | Isang listahan ng lahat ng docs, aling revision ang masusunod, aling sistema ang pasok at labas, equipment list nasuri | BAHAGI | `tests/lanes/qa/scope-doc.cjs` | Basahin ang equipment list R0 (scan) laban sa RA; simbolo bawat equipment sa page |
+| 1 | Saklaw at docs | Isang listahan ng lahat ng docs, aling revision ang masusunod, aling sistema ang pasok at labas, equipment list nasuri | TAPOS | `tests/lanes/qa/scope-doc.cjs` | Wala (equipment list R0 nabasa 2026-11-25; ang simbolo bawat equipment ay nasa Phase 9) |
 | 2 | Pasado / bagsak na sukat (ANSI/ANS-3.5) | Nakasulat muna ang pass / fail ng bawat item, may tolerance at source | BAHAGI | wala | 2 / 46 pasado; `tools/accept/part1.cjs` wala sa Checks |
 | 3 | Arkitektura | Scan rate, ayos ng takbo, deterministic timing, DCS-TCS link, nakasulat at sinubok | BAHAGI | `tests/gate/behaviour.cjs` (fixed 0.5 s, parehong numero 2x) | Walang nakasulat na scan rate bawat station; bahagi ng TCS nasa `tcs.js` pa |
 | 4 | Tag database | I/O list bilang iisang table, iisang source of truth | BAHAGI | `tests/lanes/tcs-io/io.cjs` (TCS lang) | DCS tags kalat sa ilang file; 1,787 / 2,613 nakakabit |
@@ -16,7 +16,7 @@ Huling suri: 2026-11-25 ~7:30 PM PHT (verify mula sa repo, main 5ea1c1e; ulat `/
 | 6 | Logic bilang data (netlist) | Bawat sheet = blocks + wires, kabit ayon sa tag sa lahat ng sheet | BAHAGI | `tests/tce/sheets.cjs`, `tests/lanes/qa/tce-complete.cjs` | TCS 368 / 419 tumatakbo; DCS link 1,787 / 2,613 |
 | 7 | Validator | Kusang bilang at check (walang kabit na pin, hindi kilalang tag, NaN) sa bawat takbo | TAPOS | `tests/lanes/qa/trace-gate.cjs` (22 bilang laban sa `tools/trace/baseline.json`), `tests/lanes/qa/tce-complete.cjs` (floor 256), `tools/check/no-fit.cjs`, `tools/data/tce_check.mjs` | Tapos 2026-11-25 ("Go 7"). Ang mga bilang mismo (hal. 145 walang kabit) ay trabaho ng Phase 4 at 6 |
 | 8 | Komunikasyon | Modbus at package PLC emulation | BAHAGI | `tests/lanes/tcs-io/io.cjs` (Modbus TCS 237 / 237) | Fly ash / ESP / CTCS address lang, walang value; walang PLC emulation |
-| 9 | HMI | Generic faceplate bawat uri, mimic nakakabit sa tag | BAHAGI | `tests/lanes/hmi-turbine/pages-bound.cjs`, `tests/regress/hx_fp_mon.js`, `hx_unknown.js` | 1,045 / 1,067; approval ng user bawat page |
+| 9 | HMI | Generic faceplate bawat uri, mimic nakakabit sa tag | BAHAGI | `tests/lanes/hmi-turbine/pages-bound.cjs`, `tests/regress/hx_fp_mon.js`, `hx_unknown.js` | 1,045 / 1,067; approval ng user bawat page; simbolo bawat equipment ng SCOPE seksyon 4 (R0) |
 | 10 | Alarms at events | Priority, ack, shelving, SOE, historian, trends | BAHAGI | `tests/lanes/lane5/alarm-rows.cjs`, `alarm-live.cjs` | Walang shelving at historian; 222 / 371 |
 | 11 | Plant model | Component library mula sa P&ID / datasheets, walang per-load tuning, pasado sa buong design curve | BAHAGI | `tools/check/no-fit.cjs` | Part 1 0 / 24 sa buong curve (huli sa order) |
 | 12 | Scenario tests | Trip, interlock at permissive tests, automated | BAHAGI | behaviour gate; `sim-tests.yml` (main lang) | Hindi kumpleto ang trip / interlock ng IBD at DITL; `tests/scenarios/` wala sa CI |
