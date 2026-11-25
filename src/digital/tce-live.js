@@ -12,7 +12,7 @@
      TCE.ports() / port(n)    the input ports of the program / the value of one
      TCE.crt()                the CRT buttons and lamps of the set (TCE_RUN.crt), null until lane 1 has it
      TCE.compare()            the program's outputs against the engine's value of the same signal (QA)
-     TCE.status()             on, sheets, plant time, PI/O inputs, the sheets that drive */
+     TCE.status()             on, sheets, the time the engine has run the program (s; 0 in the page of a Worker), PI/O inputs, the sheets that drive */
 (function (root) {
   'use strict';
   const HOLD_MS = 3000;
@@ -99,7 +99,7 @@
         on: S.on,
         sheets: st ? st.sheets : 0,
         run: st ? st.run : 0,
-        t: unit() ? +unit().t : 0,
+        t: S.prog ? S.prog.t : 0,
         inputs: S.prog ? S.prog.ports.filter(x => /^PIO:/.test(x)).length : 0,
         drive: S.prog ? S.prog.drv.map(q => q.id) : [],
         err: S.err

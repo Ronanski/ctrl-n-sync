@@ -77,11 +77,12 @@ function tcsShProg() {
   p.in = p.ports.filter(n => TCS_SH_IN[ch(n)]).map(n => [p.idx.get(n), TCS_SH_IN[ch(n)]]);
   /* the other PI/O inputs: the TCS I/O list. ERR = channel error: the app has no card fault (0) */
   p.io = io ? p.ports.filter(n => /^PIO:/.test(n) && ch(n) && !TCS_SH_IN[ch(n)]).map(n => [p.idx.get(n), ch(n)]) : [];
-  p.fed = p.tt = 0;
+  p.fed = p.tt = p.t = 0;
   p.keyed = [];
   for (const q of p.plan) for (const x of q.nodes) if (x.st) p.keyed.push([x.t === 'M' ? p.names[Object.values(x.outs)[0]] : p.names[x.out], x]);
   tcsShP = p;
-  if (AN_TCE.ld) tcsShLoad(AN_TCE.ld); /* a save loaded before the program was compiled */
+  if (AN_TCE.ld) tcsShPut(p, AN_TCE.ld); /* a save loaded before the program was compiled */
+  AN_TCE.ld = null;
   return p;
 }
 function tcsSm(c) {
@@ -90,7 +91,7 @@ function tcsSm(c) {
   tcsDevInit(c);
   if (c.eopAu == null) c.eopAu = !!c.eopArm;
   c.sm = { n: 0, pb: {}, pur: tcsPur(), mot: {} };
-  AN_TCE.ld = null;
+  AN_TCE.n = -1;
   for (const k in TCS_SH.mot) {
     const [m, run, au] = TCS_SH.mot[k],
       on = run(c) ? 1 : 0;
@@ -114,23 +115,30 @@ const tcsShNet = n => {
   const p = tcsShProg();
   return p && p.idx.has(n) ? p.v[p.idx.get(n)] : undefined;
 };
+const tcsShIsMot = x => x.t === 'M' && x.name === 'MOTOR STANDARD';
+/* the memory o of a keyframe into the program (the motors: c.sm, at tcsShBind); none = the start values */
+function tcsShPut(p, o) {
+  for (const [key, x] of p.keyed) x.st = (o && o.st[key]) || {};
+  p.v.set(p.v0);
+  if (o) for (const n in o.v) if (p.idx.has(n)) p.v[p.idx.get(n)] = o.v[n];
+  for (const q of p.plan) q.acc = (o && +o.acc[q.id]) || 0;
+  p.tt = (o && +o.tt) || 0;
+}
 function tcsShBind(p, U, c) {
   const sm = tcsSm(c);
   if (AN_TCE.sm === sm && AN_TCE.n === sm.n) return sm;
-  const ld = AN_TCE.ld && AN_TCE.ld.n === sm.n ? AN_TCE.ld : null;
+  /* the memory that is in the program is the one of this plant (a keyframe, or the mirror of the page): it goes on */
+  const own = AN_TCE.n === sm.n;
+  if (!own) tcsShPut(p, null);
   AN_TCE.sm = sm;
   AN_TCE.n = sm.n;
-  AN_TCE.ld = null;
-  for (const [key, x] of p.keyed) {
-    const k = x.t === 'M' && x.name === 'MOTOR STANDARD' ? key.replace(':', '.').replace(/\.[A-Z]+$/, '') : key;
-    x.st = k in sm.mot ? sm.mot[k] : (ld && ld.st[key]) || {};
-  }
-  p.v.set(p.v0);
-  if (ld) for (const n in ld.v) if (p.idx.has(n)) p.v[p.idx.get(n)] = ld.v[n];
-  for (const q of p.plan) q.acc = (ld && +ld.acc[q.id]) || 0;
-  p.tt = (ld && +ld.tt) || 0;
+  for (const [key, x] of p.keyed)
+    if (tcsShIsMot(x)) {
+      const k = key.replace(':', '.').replace(/\.[A-Z]+$/, '');
+      x.st = sm.mot[k] || (sm.mot[k] = {});
+    }
   /* a new memory: the nets take the run states before any command goes to a motor (no time passes) */
-  if (!ld) {
+  if (!own) {
     /* the controllers are in service already: INITIAL (TCE050 tp002 / TCA100 tpA001, 10 s) is over */
     for (let i = 0; i < 48; i++) tcsShSlow(p, window.TCE_RUN, U, TCS_SH.slow);
     tcsShFeed(p, U, c);
@@ -192,7 +200,7 @@ function tcsSheets(U, c, dt) {
   c.eopAu = au('eop');
   c.gseAu = au('gse');
   tcsOilSet(c);
-  p.t += dt;
+  p.t += dt; /* the time the program has run, s (TCE.status) */
   AN_TCE.n = sm.n = (+sm.n || 0) + 1;
 }
 /* the sheets that do not drive yet: one scan every TCS_SH.slow s (a sheet with a longer cycle at its cycle) */
@@ -222,19 +230,50 @@ function tcsShSlow(p, R, U, h) {
 /* the keyframe (engine/state.js): the nets that left their start value by name and the block memories; the motors are in c.sm */
 function tcsShSave() {
   const p = tcsShP;
-  if (!p || !AN_TCE.sm) return null;
+  if (!p || AN_TCE.n < 0) return null;
   const o = { n: AN_TCE.n, tt: p.tt, v: {}, st: {}, acc: {} };
   for (let i = 0; i < p.names.length; i++) if (!Object.is(p.v[i], p.v0[i])) o.v[p.names[i]] = p.v[i];
-  for (const [key, x] of p.keyed) if (!(x.t === 'M' && x.name === 'MOTOR STANDARD') && Object.keys(x.st).length) o.st[key] = x.st;
+  for (const [key, x] of p.keyed) if (!tcsShIsMot(x) && Object.keys(x.st).length) o.st[key] = x.st;
   for (const q of p.plan) if (q.acc) o.acc[q.id] = q.acc;
   return o;
 }
 function tcsShLoad(o) {
-  AN_TCE.ld = o || null;
+  AN_TCE.n = o ? o.n : -1;
   AN_TCE.sm = null;
-  const p = tcsShP;
+  AN_TCE.ld = tcsShP ? null : o || null;
+  if (tcsShP) tcsShPut(tcsShP, o);
+}
+/* the mirror (engine/sync.js): the block memories as text, one entry a block ('' = none or a motor: c.sm), and the run time */
+const tcsShNum = (k, v) => (typeof v === 'number' && !isFinite(v) ? { $n: String(v) } : v);
+const tcsShMem = () => {
+  const p = tcsShProg();
+  if (!p || AN_TCE.n < 0) return null;
+  return p.keyed.map(([, x]) => {
+    if (tcsShIsMot(x)) return '';
+    for (const k in x.st) return JSON.stringify(x.st, tcsShNum);
+    return '';
+  });
+};
+function tcsShMemPut(L) {
+  const p = tcsShProg();
   if (!p) return;
-  /* the page (it does not scan): the nets at once */
-  p.v.set(p.v0);
-  if (o) for (const n in o.v) if (p.idx.has(n)) p.v[p.idx.get(n)] = o.v[n];
+  for (let i = 0; i < L.length; i += 2) {
+    const x = p.keyed[L[i]] && p.keyed[L[i]][1];
+    if (x && !tcsShIsMot(x)) x.st = L[i + 1] ? JSON.parse(L[i + 1], (k, v) => (v && v.$n ? Number(v.$n) : v)) : {};
+  }
+}
+const tcsShTime = () => {
+  const p = tcsShProg();
+  return p && AN_TCE.n >= 0 ? { n: AN_TCE.n, tt: p.tt, t: p.t, fed: p.fed, a: p.plan.map(q => q.acc || 0) } : null;
+};
+function tcsShTimePut(d) {
+  const p = tcsShProg();
+  if (!p) return;
+  if (!d) return void tcsShLoad(null);
+  AN_TCE.n = d.n;
+  AN_TCE.sm = null;
+  p.tt = d.tt;
+  p.t = d.t;
+  p.fed = d.fed;
+  p.plan.forEach((q, i) => (q.acc = d.a[i] || 0));
 }

@@ -223,6 +223,7 @@ function anStateReset() {
   const objs = AN_STATE_OBJ(),
     st = anStateDec(AN_STATE_INIT, objs);
   for (const k in objs) anStateInPlace(objs[k], st[k]);
+  tcsShLoad(null); /* the TCS program: no memory */
 }
 /* the last values of the one-address groups (links.js shareExt); null = not built yet */
 const anXsGet = () => (AN._xs ? AN._xs.g.map(l => l.map(e => (e.v === undefined ? 'u' : e.v))) : null);

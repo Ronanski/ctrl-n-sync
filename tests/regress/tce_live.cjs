@@ -23,9 +23,14 @@ cp.execFileSync(process.execPath, ['tools/station/build.js', html, out]);
   await p.waitForTimeout(3000);
   await p.locator('#station .st-frame button', { hasText: /^\s*Paused\s*$/ }).first().click();
   await p.waitForTimeout(8000);
+  const now = () => p.evaluate(() => [TCE.status().t, AN.unit.t]);
+  const n0 = await now();
+  await p.waitForTimeout(4000);
+  const n1 = await now();
+  ck(n1[1] - n0[1] > 2 && Math.abs(n1[0] - n0[0] - (n1[1] - n0[1])) < 0.6, 'the program follows the plant time: plant +' + (n1[1] - n0[1]).toFixed(1) + ' s, program +' + (n1[0] - n0[0]).toFixed(1) + ' s');
   const s1 = await p.evaluate(() => window.TCE && TCE.status());
   ck(s1 && s1.on, 'program on at load: ' + JSON.stringify(s1));
-  ck(s1 && s1.t > 2 && s1.drive.length >= 14, 'program in the engine: plant time ' + (s1 && s1.t.toFixed(1)) + ' s, ' + (s1 && s1.drive.length) + ' sheets drive');
+  ck(s1 && s1.drive.length >= 14, 'program in the engine: ' + (s1 && s1.drive.length) + ' sheets drive');
   ck(s1 && s1.inputs >= 470, 'PI/O inputs ' + (s1 && s1.inputs));
   ck(s1 && !s1.err, 'no program error ' + (s1 && s1.err));
   const hold = await p.evaluate(async () => {
