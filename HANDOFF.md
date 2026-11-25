@@ -1,6 +1,6 @@
 # HANDOFF — iisang file ng estado
 
-Huling update: **2026-11-25 09:20 PHT** (DCS LINKS BOP : RARA, lane 4, beta.574: CEP VCB, dosing power at 13 field state ng BOP).
+Huling update: **2026-11-25 09:20 PHT** (DCS LINKS BOP : RARA, lane 4, beta.574: CEP VCB, dosing at hypochlorite power, 12 field state ng BOP).
 
 Patakaran: palitan ang luma, huwag magtambak ng kasaysayan. Ang kasaysayan ay nasa `docs/versions/v<ver>/UPDATE_REPORT.md` at sa git log. Kapag iba ang repo sa file na ito, ang repo ang tama; ayusin ang file na ito sa parehong PR.
 
