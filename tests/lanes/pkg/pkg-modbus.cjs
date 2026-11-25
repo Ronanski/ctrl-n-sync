@@ -5,14 +5,16 @@
    4. the CTCS cycle of CT-CP: N01 opens with F01, watering 5 min after AUTO START, N02 opens = balls in circulation, 8 h, collection
       30 min, N01 closes, F01 off, idle 16 h, then N01 again without watering; a stop in the run closes in the cycle-end order
    5. the watchdog bits change every exchange
-   6. ESP (ESP-OM): in service at 150 MW (TR sets on, DE rapping, purge fan on, heaters off); CE rapping 2 min on, 7 / 13 / 19 / 25 / 31
-      min off for fields 1 ~ 5; after the TRs go off the CE rapping runs continuous for 2 h, then the aux devices stop
+   6. ESP (ED K1AU3-D1-0-016 p74 ~ 90, ESP-OM): in service at 150 MW (TR sets on, DE rapping, purge fan on, heaters off, motors and TRs
+      in REMOTE); CE rapping first delay 3 / 5 / 7 / 9 / 11 min, then 2 min on, 7 / 13 / 19 / 23 / 27 min off for fields 1 ~ 5; DE first
+      delay 11 ~ 19 min, then continuous (off 0); after the TRs go off the CE rapping runs continuous for 2 h, then the aux devices stop
+   8. fly ash: the wet unloader is cancelled (FA p13): its points are spare, 0
    7. fly ash: the plant air low switch from the plant air model, no fail, no command; the tank valves have no value (NO-SOURCE times) */
 'use strict';
 const fs = require('fs'),
   path = require('path');
 const { load, root } = require(path.join(__dirname, '..', '..', '..', 'tools', 'trace', 'world.cjs'));
-const MIN = 270;
+const MIN = 345;
 let bad = 0;
 const ok = (c, m) => {
   if (!c) bad++;
@@ -60,18 +62,29 @@ const ok = (c, m) => {
   const e = JSON.parse(
     E.js(`(()=>{const R=n=>AN.pkgRead('esp',n);const P=AN._pkg;
       const tr=[0,1,2,3,4].map(i=>R('30018.'+String(3*i+1).padStart(2,'0')));
-      const duty=[0,1,2,3,4].map(f=>{let on=0,n=0;for(let t=0;t<40*60*9;t+=10){on+=P.espCe({on:1,t},f);n++}return +(on/n).toFixed(3)});
+      const duty=[0,1,2,3,4].map(f=>{let on=0,n=0;for(let t=3600;t<3600+29*60*9*8;t+=10){on+=P.espCe({on:1,t},f);n++}return +(on/n).toFixed(3)});
+      const dly=[0,1,2,3,4].map(f=>{for(let t=0;t<3600;t+=10)if(P.espCe({on:1,t},f))return t/60;return -1});
+      const ddl=[0,1,2,3,4].map(f=>{for(let t=0;t<3600;t+=10)if(P.espDe({on:1,t},f))return t/60;return -1});
+      const dcont=[0,1,2,3,4].every(f=>{for(let t=19*60;t<3*3600;t+=10)if(!P.espDe({on:1,t},f))return false;return true});
+      const rem=[R('30001'),R('30002.03'),R('30005.12'),R('30018'),R('30018.12')];
+      const det=[R('30117'),R('40206'),R('30071'),R('40160')];
       const post=[P.espCe({on:0,toff:3600,t:0},0),P.espCe({on:0,toff:7300,t:0},0),P.espAux({on:0,toff:3600}),P.espAux({on:0,toff:7300})];
-      return JSON.stringify({tr,de:R('30002.01'),fan:R('30006.01'),heat:R('30006.04'),tm:[R('30081'),R('30082'),R('30090'),R('40162')],il:R('30112'),duty,post})})()`)
+      return JSON.stringify({tr,de:R('30002.01'),fan:R('30006.01'),heat:R('30006.04'),tm:[R('30081'),R('30082'),R('30088'),R('30090'),R('40162')],il:R('30112'),duty,post,dly,ddl,dcont,rem,det})})()`)
   );
   ok(e.tr.every(x => x === 1) && e.de === 1 && e.fan === 1 && e.heat === 0, 'ESP at 150 MW: TR01 ~ 05 run, DE rapping, purge fan on, heater off');
-  ok(JSON.stringify(e.tm) === '[2,7,31,7]' && e.il === 100, 'CE timers 2 / 7 ... 31 min, current limit 100 %: ' + e.tm.join(' '));
-  const dx = [7, 13, 19, 25, 31].map(o => 2 / (2 + o));
+  ok(JSON.stringify(e.tm) === '[2,7,23,27,7]' && e.il === 100, 'CE timers 2 / 7 ... 23 / 27 min (drawing), current limit 100 %: ' + e.tm.join(' '));
+  ok(JSON.stringify(e.dly) === '[3,5,7,9,11]', 'CE first delay 3 / 5 / 7 / 9 / 11 min: ' + e.dly.join(' '));
+  ok(JSON.stringify(e.ddl) === '[11,13,15,17,19]' && e.dcont, 'DE first delay 11 ~ 19 min, then continuous: ' + e.ddl.join(' '));
+  ok(e.rem.every(x => x === 1), 'hammers, vibrators and TRs in REMOTE: ' + e.rem.join(' '));
+  ok(JSON.stringify(e.det) === '[2,2,0,0]', 'DE timers running 2 min, stopped 0: ' + e.det.join(' '));
+  const dx = [7, 13, 19, 23, 27].map(o => 2 / (2 + o));
   ok(e.duty.every((d, i) => Math.abs(d - dx[i]) < 0.01), 'CE rapping duty 2 / (2 + off): ' + e.duty.join(' '));
   ok(JSON.stringify(e.post) === '[1,0,1,0]', 'after the TRs go off: CE continuous and aux on for 2 h, then off');
   const fa = JSON.parse(E.js(`JSON.stringify([AN.pkgRead('fa','40006.08'),AN.pkgRead('fa','40001.05'),AN.pkgRead('fa','40051'),AN.pkgRead('fa','40001.02')])`));
   ok(fa[0] === 0 && fa[1] === 0 && fa[2] === 0, 'fly ash at 150 MW: plant air not low, no tank fail, no DCS command');
   ok(Number.isNaN(fa[3]) || fa[3] === null, 'fly ash tank valves stay without a value (cycle times NO-SOURCE)');
+  const wu = JSON.parse(E.js(`JSON.stringify(['40009.04','40009.06','40009.07','40009.09','40009.1'].map(n=>AN.pkgRead('fa',n)))`));
+  ok(wu.every(x => x === 0), 'wet unloader cancelled: its points read 0: ' + wu.join(' '));
   process.exit(bad ? 1 : 0);
 })().catch(e => {
   console.error(e);
