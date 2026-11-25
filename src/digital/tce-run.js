@@ -873,6 +873,59 @@
       need: notes => (mpar(notes, 'TD') === undefined ? ['TD'] : []).concat((notes || []).filter(n => /^TP:/.test(String(n[2]))).length < 2 ? ['TP x2'] : [])
     }
   );
+  /* TORQUE (SEAL-IN), drawing: IBD 310SC90-794 Rev 2 sheet 16 "TORQUE SEAT (SEAL-IN)", typical logic for motor operated valve (torque
+       seating, seal-in type), book p 32. Pins of the TCA sheets (C021): AOP / ACL = AUTO OPEN / CLOSE CONDITION, EF = MOTOR ELECTRICAL
+       TROUBLE, LTOP / LTCL = LIMIT SWITCH OF FULL OPEN / CLOSE SIDE, TROP / TRCL = TORQUE SWITCH OF FULL OPEN / CLOSE SIDE.
+       AUTO / MANUAL: FF set by PB AUTO, reset by PB MANUAL (R circled = reset first).
+       open command = AUTO OPEN CONDITION and AUTO, or PB OPEN and MANUAL; close command the same with CLOSE.
+       open stop (OR into the S of the open-stop FF) = EF, OPEN FAULT (circle 6), LIMIT FULL OPEN, TORQUE FULL OPEN and not LIMIT FULL CLOSE;
+       the open FF is set by the open command and not the open stop (A with the NOT circle), and is reset by the open stop or by the close
+       command (seal-in: the FF holds the MCC OPEN until the stop). Close side the same with circle 7.
+       OPEN FAULT (ANN 2): open FF for DI t1 and not LIMIT FULL OPEN; CLOSE FAULT (ANN 3): close FF for DI t2 and not LIMIT FULL CLOSE
+       (NOTE t1 / t2 = VALVE OPENING TIME + 5 sec = the printed TP 35.0 s x2). Each fault is held until PB RESET, EF or the other command.
+       ANN 1 = EF; ANN 4 = TORQUE SWITCH OPEN = torque full open and not limit full close; ANN 5 = TORQUE SWITCH CLOSE = torque full close
+       and not limit full open and not limit full close (A with circle 2).
+       OPS / CLS = open / close FF (to MCC); LTOP / LTCL = the limit switches (R (OPEN) / G (CLOSE) lamps); ABN = any of ANN 1 ~ 5.
+     Not on sheet 16 (printed beside the TCA blocks, not read): TD 5.0 s x2, R, M, HL, LL, K, the third TP 5.0 s. */
+  MACRO['TORQUE (SEAL-IN)'] = Object.assign(
+    (I, notes, st, dt) => {
+      const [T1, T2] = (notes || []).filter(n => /^TP:/.test(String(n[2]))).map(n => parseFloat(String(n[2]).slice(3))),
+        lo = b01(I.LTOP),
+        lc = b01(I.LTCL),
+        ef = b01(I.EF);
+      if (b01(I['PB MANUAL'])) st.auto = 0;
+      else if (b01(I['PB AUTO'])) st.auto = 1;
+      const auto = st.auto ? 1 : 0,
+        oCmd = (b01(I.AOP) && auto) || (pulseUp(st, 'pO', b01(I['PB OPEN'])) && !auto),
+        cCmd = (b01(I.ACL) && auto) || (pulseUp(st, 'pC', b01(I['PB CLOSE'])) && !auto),
+        tsO = b01(I.TROP) && !lc ? 1 : 0,
+        tsC = b01(I.TRCL) && !lo && !lc ? 1 : 0;
+      if (b01(I['PB RESET']) || ef) (st.of = 0), (st.cf = 0);
+      if (cCmd) st.of = 0;
+      if (oCmd) st.cf = 0;
+      const oStop = ef || st.of || lo || tsO,
+        cStop = ef || st.cf || lc || b01(I.TRCL);
+      if (oStop || cCmd) st.o = 0;
+      else if (oCmd) st.o = 1;
+      if (cStop || oCmd) st.c = 0;
+      else if (cCmd) st.c = 1;
+      if (onDelay(st, 'd1', !!st.o, T1, dt) && !lo) (st.of = 1), (st.o = 0);
+      if (onDelay(st, 'd2', !!st.c, T2, dt) && !lc) (st.cf = 1), (st.c = 0);
+      return {
+        OPS: st.o ? 1 : 0,
+        CLS: st.c ? 1 : 0,
+        LTOP: lo,
+        LTCL: lc,
+        AUTO: auto,
+        ABN: ef || st.of || st.cf || tsO || tsC ? 1 : 0
+      };
+    },
+    {
+      src: 'drawing: IBD 310SC90-794 Rev 2 sheet 16',
+      pb: ['OPEN', 'CLOSE', 'AUTO', 'MANUAL', 'RESET'],
+      need: notes => ((notes || []).filter(n => /^TP:/.test(String(n[2]))).length < 2 ? ['TP x2 (t1 / t2)'] : [])
+    }
+  );
   const numConst = t => {
     const m = /^\s*(?:ON|OFF)?\s*\(?\s*([-+]?\d*\.?\d+)\s*\)?\s*$/.exec(t || '');
     return m ? +m[1] : null;
