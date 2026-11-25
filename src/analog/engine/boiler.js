@@ -1041,7 +1041,7 @@ function baTank(U) {
   return isFinite(U.paP) ? U.paP : typeof AN_AIR !== 'undefined' ? AN_AIR.P : 0;
 }
 function anBaStart(U) {
-  U.ba = { v: {}, sw: {}, lv: 0, p: 0, press: 0 };
+  U.ba = { v: {}, sw: {}, lv: 0, p: 0, press: 0, tw: 0 };
   /* at rest (O&M L6 primary conditions): every valve closed, the vessel empty and at atmosphere; the field switches are known before
      the first step, so the start of the DITL (ditl150.js) reads them */
   const W = U.ba.sw;
@@ -1049,6 +1049,8 @@ function anBaStart(U) {
     W[k + 'O'] = 0;
     W[k + 'C'] = 1;
   }
+  W.twO = 0;
+  W.twC = 1;
   W.psh = 0;
   W.psl = 1;
   W.air = baTank(U) >= AN_BA.airSw ? 0 : 1;
@@ -1058,10 +1060,19 @@ function anBaStart(U) {
   baPub(U);
 }
 function anBaStep(U, dt) {
-  /* chain conveyor L-1090: runs at load (16.PNG); from Cold on its ON COMMAND, DITL-BA68 output 5 */
-  U.baConv = !U.cold || fnOut('DITL-BA68', 5) === 1 ? 1 : 0;
+  /* chain conveyor L-1090 runs on its ON COMMAND (DITL-BA68 output row 4, counted from 0; the 150 MW start presses its START, ditl150.js) */
+  U.baConv = fnOut('DITL-BA68', 4) === 1 ? 1 : 0;
   const B = U.ba;
   if (!B) return;
+  /* lane 3 (KIRARA, beta.563): the two-way separator L-1094 (OPEN = to the vibrating screens, CLOSE = to the ash silo: DITL-BA66) goes to the end its command drives
+     (DITL-BA71 output rows 5 TWO-WAY(O) / 6 TWO-WAY(C), counted from 0) and stays there between the commands (the DITL-BA65 command drops
+     at the limit); its limit switches ZSO / ZSC-BH1754 (DITL-BA60 TWO-WAY LSO / LSC). At rest it is closed (anBaStart, an old save with
+     no position too). Its travel time is
+     NO-SOURCE (none in the bottom ash O&M L6): it reaches the end in one step */
+  if (fnOut('DITL-BA71', 5) === 1) B.tw = 1;
+  else if (fnOut('DITL-BA71', 6) === 1 || B.tw == null) B.tw = 0;
+  B.sw.twO = B.tw === 1 ? 1 : 0;
+  B.sw.twC = B.tw === 0 ? 1 : 0;
   const K = AN_BA,
     o = r => fnOut(')DITL-BA53', r) === 1,
     vv = (k, cmd) => lmValve(B, k, cmd, dt, K.stroke, 0),

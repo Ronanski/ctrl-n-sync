@@ -633,6 +633,20 @@
       D.scan(3, 1);
       rs.forEach(([s, i]) => delete s.sig[i + ':S']);
       D.scan(10, 1);
+      /* lane 3 (KIRARA, beta.563): the bottom ash conveyors at load (HMI snapshot 16.PNG: chain L-1090, bucket elevator L-1091, screw
+         L-1092 and bag filter venting fan F-1091 running, both vibrating screens stopped, the leg of the two-way separator L-1094 to the
+         ash silo in service). The operator starts them from the CRT buttons of DITL-BA61 (rows from 0: 12 VENTING FAN START, 7 TO CLOSE
+         TWO-WAY, 4 SCREW, 2 BUCKET ELEVATOR, 0 CHAIN CONVEYOR START), in the order their interlocks ask (DITL-BA66: fan running and
+         two-way CLOSE with the ash silo not high, the leg to the silo; OPEN is the leg to the vibrating screens, with a screen running;
+         BA67: screw running; BA68: elevator running). Their ON COMMAND latches (BA66 ~ BA69) then hold, and the plant follows the commands */
+      const ba61 = ALL().find(x => /\)DITL-BA61$/.test(x.name));
+      if (ba61)
+        for (const r of [12, 7, 4, 2, 0]) {
+          ba61.sig[r + ':S'] = true;
+          D.scan(3, 1);
+          delete ba61.sig[r + ':S'];
+          D.scan(6, 1);
+        }
       rep.resets = rs.map(([s, i]) => s.name + ' #' + (i + 1) + ' ' + textOf(s, i, 'S'));
     } finally {
       W.live = lv;
