@@ -34,7 +34,13 @@ const P = [
   [4, 'I.057C', '1051-SYSERR', 'Control cabinet FCS1051 system alarm', HW],
   [4, 'I.057D', '1011-SYSERR', 'Control cabinet FCS1011 system alarm', HW],
   [4, 'I.057E', '1012-SYSERR', 'Control cabinet FCS1012 system alarm', HW],
-  [4, 'I.057F', '1013-SYSERR', 'Control cabinet FCS1013 system alarm', HW]
+  [4, 'I.057F', '1013-SYSERR', 'Control cabinet FCS1013 system alarm', HW],
+  /* Phase 6 (2026-11-26): the push buttons of the operator console annunciator (wiring list: "FROM OPC ANN", ANP1 TB111 3-4 / 5-6 / 7-8,
+     card OP0111). Released in service; the I/O list names the reset input "Not ANN-RESET", so that one is 1 while the button is not
+     pressed. No logic sheet reads them (the annunciator sequence is not drawn) */
+  [4, 'I.1281', 'ANN-TEST', 'Annunciator TEST push button pressed', 'wiring list LMYP-1(#1) WIRING.xls, FROM OPC ANN, ANP1 TB111 3-4'],
+  [4, 'I.1282', 'ANN-ACK', 'Annunciator ACK push button pressed', 'wiring list LMYP-1(#1) WIRING.xls, FROM OPC ANN, ANP1 TB111 5-6'],
+  [4, 'I.1283', 'ANN-RESET', 'Annunciator RESET push button pressed', 'wiring list LMYP-1(#1) WIRING.xls, FROM OPC ANN, ANP1 TB111 7-8; I/O list "Not ANN-RESET"', 1]
 ];
 FIELD.state(
   lane,
@@ -47,7 +53,13 @@ FIELD.add(
     di: 1,
     tag,
     v: (U, X) => X.state('dcs.' + tag),
-    rel: n ? 'healthy contacts in series: 1 in service, 0 on a fault' : 'alarm contact: 0 in service, 1 on an alarm',
+    rel: /^ANN-/.test(tag)
+      ? n
+        ? 'push button, NOT pressed contact: 1 released, 0 pressed'
+        : 'push button: 0 released, 1 pressed'
+      : n
+        ? 'healthy contacts in series: 1 in service, 0 on a fault'
+        : 'alarm contact: 0 in service, 1 on an alarm',
     src: 'IO list STN10' + s + ' ' + a + '; ' + src
   }))
 );

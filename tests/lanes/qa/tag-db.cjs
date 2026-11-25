@@ -73,6 +73,14 @@ for (const r of w.DCS_LOOPS) {
   for (const k of ['pv', 'rsv', 'mv'])
     for (const a of String(o[k] || '').split(/[ ,]+/).filter(x => /^(AI|AO|SI|DI|I\.|O\.|M\.|B\.)[0-9A-F]{4}$/.test(x))) byAddr('loop', o.stn, a);
 }
+/* spare points (src/data/io-spare.json): each is an I/O point of the table with that tag and NO service in the I/O list (a point the
+   docs name cannot be called spare) */
+for (const r of JSON.parse(fs.readFileSync(path.join(root, 'src/data/io-spare.json'), 'utf8')).rows) {
+  seen('spare');
+  const o = A[r.stn] && A[r.stn][r.key];
+  if (!o || o.k !== 'io' || o.tag !== r.tag) diff('spare|' + r.stn + '|' + r.key, 'spare S' + r.stn + ' ' + r.key + ' ' + r.tag + ' is not that I/O point');
+  else if (String(o.d || '').trim()) diff('spare|' + r.stn + '|' + r.key, 'spare S' + r.stn + ' ' + r.key + ' has a service in the I/O list: ' + o.d);
+}
 let bad = 0;
 for (const [k, m] of found) {
   if (KNOWN[k]) console.log('known ' + m + ' (' + KNOWN[k] + ')');

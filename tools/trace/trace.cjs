@@ -26,6 +26,15 @@ const START = arg('start', '150'),
   TAGS = args('tag'),
   STN = arg('stn', null);
 /* excluded by the user 2026-11-25 00:52 PHT: WTP, coal handling, air compressors (and their dryers); unlimited supply at the boundary */
+/* I/O points the docs show as spare (src/data/io-spare.json, with its source): not a gap, never given a function */
+const SPARE = (() => {
+  try {
+    const j = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'src', 'data', 'io-spare.json'), 'utf8'));
+    return new Set(j.rows.map(r => r.stn + '|' + r.key));
+  } catch (e) {
+    return new Set();
+  }
+})();
 const EXCL = /compressor|air dryer|\bdryer\b|water treatment|\bWTP\b|coal handling|coal yard|stacker|reclaimer/i;
 const OPER = /^COS manual|\.(MAN|LOC|REM|AUT|CAS)$|manual SV|\bSV\b|setup|SET ?UP/i;
 const strip = t =>
@@ -629,8 +638,12 @@ const has = (txt, tag) => {
     return m ? m[1] : baseHasCopies.has(r.sh) ? 'A' : null;
   };
   const machOfIo = (tag, d) => {
+    /* an operator console annunciator window is named by its place on the panel (OPC-ANN-C1 = row C, window 1), not by a machine: only
+       its service text can name one ("#1 B-BFWP STOPPED") (Phase 6, 2026-11-26: C1 DEAERATOR TANK LEVEL L.L. on DITL-23B was taken for
+       machine C) */
+    const win = /^OPC-ANN-/.test(String(tag));
     const m =
-      /[- ]([A-D])\b(?![.-]?\d{3})/.exec(String(d || '')) || /-([A-D])\d?$/.exec(tag) || /\d([A-D])\d?$/.exec(tag);
+      /[- ]([A-D])\b(?![.-]?\d{3})/.exec(String(d || '')) || (!win && (/-([A-D])\d?$/.exec(tag) || /\d([A-D])\d?$/.exec(tag)));
     return m ? m[1] : null;
   };
   /* Phase 6 (2026-11-26, YUA PDF read): a machine copy whose own rows carry another I/O tag of the same device is that device's copy, whatever
@@ -742,7 +755,9 @@ const has = (txt, tag) => {
                   ? 'ON SHEET, STATION UNSURE'
                   : model || hmi || field
                     ? 'MODEL / HMI ONLY'
-                    : 'UNLINKED';
+                    : SPARE.has(stn + '|' + key)
+                      ? 'SPARE'
+                      : 'UNLINKED';
         IO.push({
           stn,
           key,
@@ -880,6 +895,7 @@ const has = (txt, tag) => {
       clashRows,
       clashPoints: clashList.length,
       unlinked: byStatus('UNLINKED'),
+      spare: byStatus('SPARE'),
       moving: cnt(ioIn, x => x.live),
       fieldRows: FROWS.length,
       field: cnt(ioIn, x => x.field),
