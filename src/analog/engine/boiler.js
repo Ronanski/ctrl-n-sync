@@ -1064,15 +1064,25 @@ function anBaStep(U, dt) {
   U.baConv = fnOut('DITL-BA68', 4) === 1 ? 1 : 0;
   const B = U.ba;
   if (!B) return;
-  /* lane 3 (KIRARA, beta.563): the two-way separator L-1094 (OPEN = to the vibrating screens, CLOSE = to the ash silo: DITL-BA66) goes to the end its command drives
-     (DITL-BA71 output rows 5 TWO-WAY(O) / 6 TWO-WAY(C), counted from 0) and stays there between the commands (the DITL-BA65 command drops
-     at the limit); its limit switches ZSO / ZSC-BH1754 (DITL-BA60 TWO-WAY LSO / LSC). At rest it is closed (anBaStart, an old save with
-     no position too). Its travel time is
-     NO-SOURCE (none in the bottom ash O&M L6): it reaches the end in one step */
-  if (fnOut('DITL-BA71', 5) === 1) B.tw = 1;
-  else if (fnOut('DITL-BA71', 6) === 1 || B.tw == null) B.tw = 0;
-  B.sw.twO = B.tw === 1 ? 1 : 0;
-  B.sw.twC = B.tw === 0 ? 1 : 0;
+  /* lane 3 (KIRARA, beta.563): the two-way separator L-1094 (OPEN = to the vibrating screens, CLOSE = to the ash silo: DITL-BA66 lets the
+     screw run with VIBRATING SCREEN RUNNING and TWO WAY OPEN, or NOT ASH SILO HIGH LEVEL and TWO WAY CLOSE). Its baffle is turned by one
+     double-acting air cylinder (K1AU3-D1-0-010 RA Engineering Data of Bottom Ash Transfer System, pdf p 22, drawing 130225A-TW-01 rev B
+     "Assembly for two way": MCQA-11-80-200-TC, bore 80, stroke 200 mm, used stroke 190 mm, 60 deg baffle, two OMRON WLCA2 limit
+     switches; P&ID 130225A-PID-01 rev D draws speed regulators on it). The solenoid of each end (DITL-BA71 output rows 5 TWO-WAY(O) =
+     O.0210 SVO-BH1754, 6 TWO-WAY(C) = O.0211 SVC-BH1754, counted from 0) drives the cylinder while it is on; with no command the
+     cylinder stays where it is (the DITL-BA65 command drops at the limit). Travel time (CALC): the MCQ series runs 50 ~ 500 mm/s, so
+     190 mm takes 0.4 ~ 3.8 s; DITL-BA65 TR29 gives TWO-WAY ABNORMAL when the limit is not made 5 s after the command, so a healthy stroke
+     is below 5 s. AN_BA.stroke 2 s (the stroke of the transmitter valves) is inside that range. U.ba.tw = position 0 (closed) ~ 1 (open);
+     ZSO-BH1754 made only at 1, ZSC-BH1754 only at 0, both open while it travels (DITL-BA60 TWO-WAY LSO / LSC). At rest it is closed
+     (anBaStart); a save made before beta.563 has no position: ditl150.js D.baSave puts it closed */
+  {
+    const op = fnOut('DITL-BA71', 5) === 1,
+      cl = fnOut('DITL-BA71', 6) === 1;
+    if (!isFinite(B.tw)) B.tw = 0;
+    if (op !== cl) B.tw = Math.max(0, Math.min(1, B.tw + ((op ? 1 : -1) * dt) / AN_BA.stroke));
+    B.sw.twO = B.tw >= 1 ? 1 : 0;
+    B.sw.twC = B.tw <= 0 ? 1 : 0;
+  }
   const K = AN_BA,
     o = r => fnOut(')DITL-BA53', r) === 1,
     vv = (k, cmd) => lmValve(B, k, cmd, dt, K.stroke, 0),
