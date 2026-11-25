@@ -622,9 +622,22 @@
   ['TCA930-6', 'TCA930-7', 'TCA930-8'].forEach(id =>
     M(id, 'PT-ST1002 reheat bowl steam pressure, kg/cm2g: the IP turbine inlet of the model (U.Pip)', U => num(U.Pip))
   );
-  const genNeeds =
-    'generator electrical value: the generator model has MW and the voltage in per unit (tcs-gen.js g.V); current, Mvar, power factor and field values need the generator / AVR model';
-  ['TCA930-3', 'TCA930-11', 'TCA930-12', 'TCA930-13', 'TCA930-18', 'TCA931-17', 'TCA931-18'].forEach(id => N(id, genNeeds));
+  /* Phase 8 (2026-11-26): the on-line phasors of tcs-gen.js (tcsGenPh: one EMF behind Xd 1.92, Xt 0.137, stiff bus; paper
+     lanes/tcs-io/gen-reactive-model.md): stator current g.I x 7.384 kA (balanced: A = B = C), g.Q x 176.5 Mvar, the exciter field
+     g.efd x 4.5 A (GEE-2015-0152 p6 no-load 4.5 A) and that x 6.14 ohm (GAE-2015-0004 R1). The power factor transducer scale 0.5 ~ 1.5
+     (lag / lead form) is not read on a sheet yet: it stays a need */
+  const gq = (U, k) => (U && U.gen && isFinite(U.gen[k]) ? U.gen[k] : NaN);
+  const genI = U => gq(U, 'I') * 7.384,
+    genQ = U => gq(U, 'Q') * 176.5,
+    genIf = U => gq(U, 'efd') * 4.5;
+  const genNeeds = 'generator power factor: the 0.5 ~ 1.5 transducer form (lag = pf, lead = 2 - pf) is not read on a sheet (tcs-gen.js has g.pf)';
+  ['TCA930-3', 'TCA930-11', 'TCA930-18'].forEach((id, i) =>
+    M(id, 'GEN. CURRENT (' + 'ABC'[i] + '), kA: tcs-gen.js g.I x 7.384 kA (balanced)', genI)
+  );
+  M('TCA931-17', 'GEN. MVAR: tcs-gen.js g.Q x 176.5 MVA', genQ);
+  M('TCA930-13', 'GEN. FIELD CURRENT, A (exciter field): tcs-gen.js g.efd x 4.5 A', genIf);
+  M('TCA930-12', 'GEN. FIELD VOLTAGE, V (exciter field): g.efd x 4.5 A x 6.14 ohm', U => genIf(U) * 6.14);
+  N('TCA931-18', genNeeds);
   /* the line voltages: the terminal voltage of the generator model (tcs-gen.js g.V, per unit, balanced) x the rated 13.8 kV
      (K1AU3E1-0003 rev 2 key one line diagram: G1 176.5 MVA 13.8 kV, elec.js); card range 0 ~ 18 kV */
   [
@@ -844,9 +857,9 @@
   O('TCA990-4', 'steam seal feed valve manipulation value -> valve (U.gsV31)', U => num(U.gsV31));
   O('TCA990-10', 'PV-GS1034 SPUV position demand -> valve (U.gsV34)', U => num(U.gsV34));
   O('TCA990-3', 'HP turbine warming valve position -> DCS, % (U.tt ZT-AS1011, tcs-dev.js U.dev.mov.wv)', U => dev(U, 'mov', 'wv', 'p'));
-  O('TCA990-5', 'GEN. CURRENT(A) -> DCS STN102 AI0791 TCS-AI1006: ' + genNeeds);
-  O('TCA990-12', 'GEN. CURRENT(B) -> DCS STN102 AI0855 TCS-AI1007: ' + genNeeds);
-  O('TCA990-17', 'GEN. CURRENT(C) -> DCS STN102 AI0887 TCS-AI1011: ' + genNeeds);
+  O('TCA990-5', 'GEN. CURRENT(A) -> DCS STN102 AI0791 TCS-AI1006, kA: tcs-gen.js g.I x 7.384', genI);
+  O('TCA990-12', 'GEN. CURRENT(B) -> DCS STN102 AI0855 TCS-AI1007, kA: tcs-gen.js g.I x 7.384', genI);
+  O('TCA990-17', 'GEN. CURRENT(C) -> DCS STN102 AI0887 TCS-AI1011, kA: tcs-gen.js g.I x 7.384', genI);
   O('TCA990-6', 'GEN. VOLTAGE(A-B) -> DCS STN102 AI0807 GCP-AI1005, kV: tcs-gen.js g.V x 13.8 kV', U =>
     U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN
   );
@@ -856,7 +869,7 @@
   O('TCA990-18', 'GEN. VOLTAGE(C-A) -> DCS STN102 AI0903 TCS-AI1012, kV: tcs-gen.js g.V x 13.8 kV', U =>
     U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN
   );
-  O('TCA990-11', 'GEN. MVAR -> DCS STN102 AI0775 GCP-AI1004: ' + genNeeds);
+  O('TCA990-11', 'GEN. MVAR -> DCS STN102 AI0775 GCP-AI1004: tcs-gen.js g.Q x 176.5', genQ);
   O('TCA990-14', 'GEN. POWER FACTOR -> DCS STN102 AI0823 TCS-AI1009: ' + genNeeds);
   O('TCA990-15', 'FREQUENCY -> DCS STN102 AI0839 TCS-AI1010 (tcs-gen.js g.fg)', U => num(U.gen && U.gen.fg));
 
@@ -1028,7 +1041,7 @@
   );
   mb(30131, 'model', 'generator MW (A): the generator load of the model (tcsLiveRead mw)', (U, L) => num(L.mw));
   mb(30132, 'model', 'generator MW (B): the generator load of the model (tcsLiveRead mw)', (U, L) => num(L.mw));
-  mb(30133, 'needs', 'generator Mvar: ' + genNeeds);
+  mb(30133, 'model', 'generator Mvar: tcs-gen.js g.Q x 176.5 MVA', genQ);
   ['A', 'B', 'C'].forEach((p, i) =>
     mb(30134 + i, 'model', 'generator voltage (' + p + '), kV: tcs-gen.js g.V x 13.8 kV (K1AU3E1-0003 G1 13.8 kV)', U =>
       U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN
