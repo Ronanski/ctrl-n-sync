@@ -3,15 +3,15 @@
  "up": {
   "sheets.abc": 51,
   "sheets.ditlRunning": 245,
-  "io.linked": 1800,
-  "io.value": 2195,
-  "mem.onSheet": 3046,
+  "io.linked": 1833,
+  "io.value": 2228,
+  "mem.onSheet": 3071,
   "alarms.withSetPoint": 96,
   "hmi.faceplateBound": 120,
   "fx.tablesUsed": 91
  },
  "down": {
-  "io.unlinked": 92,
+  "io.unlinked": 64,
   "io.noSource": 30,
   "io.onDrawing": 129,
   "io.copyClash": 1,
