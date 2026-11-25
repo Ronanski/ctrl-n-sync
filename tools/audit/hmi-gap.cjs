@@ -22,6 +22,35 @@ for (const k in reg.machines || {}) {
     q = "'" + k + "'";
   for (const p in ptxt) if (ptxt[p].includes(q)) ptxt[p] += '\n' + JSON.stringify(m);
 }
+/* beta of 2026-11-25 (MINAMI): a page may build its tags in a loop (n + '-SYSERR'): run the page file with a stand-in HX that keeps
+   every text it gets, and search that too. A file the stand-in cannot run keeps its text match */
+const vm = require('vm');
+for (const f of pages) {
+  const p = f.replace(/^hx-page-|\.js$/g, ''),
+    got = [];
+  const keep = x => {
+    if (typeof x === 'string') got.push(x);
+    else if (x && typeof x === 'object') for (const k of Object.keys(x)) keep(x[k]);
+  };
+  const HXs = new Proxy(
+    { CALC: {}, PKG: {}, MON: {} },
+    {
+      get: (o, k) =>
+        k in o
+          ? o[k]
+          : (...a) => {
+              a.forEach(keep);
+              return typeof a[a.length - 1] === 'object' && k !== 'page' ? Object.assign({}, a[a.length - 1], { a }) : { a };
+            }
+    }
+  );
+  try {
+    vm.runInNewContext(fs.readFileSync(HX + f, 'utf8'), { HX: HXs, window: { HX: HXs }, document: {}, console });
+  } catch (e) {
+    if (process.argv.includes('-v')) console.error(f + ': ' + e.message);
+  }
+  ptxt[p] += '\n' + got.join('\n');
+}
 const OUT = { PW: 'water treatment', HC: 'water treatment', IW: 'water treatment', C: 'air compressors', D: 'air dryers' };
 /* proposed page for each system code: lane 6 = boiler (EIMI), lane 7 = water / steam / turbine (RIN) */
 const PAGE = {
@@ -49,7 +78,7 @@ for (const st in J)
     const sys = m ? m[1] : /^(OPC-ANN-|ANN-|BUZZER-OUT)/.test(p.tag) ? 'ANN' : /SYSERR|PDP-|POWALM/.test(p.tag) ? 'DIAG' : '?',
       num = m ? m[1] + m[2] : p.tag,
       key = m ? p.tag.slice(p.tag.indexOf('-') + 1) : p.tag;
-    if (OUT[sys] || /conveyor|crusher|stacker|reclaim/i.test(p.d)) continue;
+    if (OUT[sys] || /conveyor|crusher|stacker|reclaim|air compressor/i.test(p.d) || /^TE-M0703-/.test(p.tag)) continue; /* TE-M0703: the windings of the plant air compressors A / B / C */
     const e = (E[key] = E[key] || { key, sys, num, d: String(p.d).replace(/^#1\s*/, '').replace(SIG, ''), sig: [] });
     e.sig.push({ tag: p.tag, adr: 'S' + st + ' ' + a, t: p.t, d: String(p.d).replace(/^#1\s*/, '') });
   }
