@@ -111,3 +111,15 @@ line unchanged.
 - xref.cjs: a DITL input fed from another sheet than its FROM names is WIRED when the source row's own TO side names the reader
   ("TO DITL80G" on DITL-80B ~ 80F). Old -> new: other sheet 54 -> 46, wired 1,717 -> 1,725 (8). The 46 left: DITL-80G copies read 80B ~ 80F
   rows whose TO side says DITL80H (80G #N-1016 <- 80B row 18 "N-1016 SOOTBLOWER OPERATING" -> DITL80H).
+
+## Field I/O sheets, AO of a controller, instance block, DITL-80H/I/J (2026-11-25 12:15 PM PHT, KIRARA / YUA via the coordinator)
+- DITL-16 / 17 / 18 (field I/O sheets) compute their limit switch and flame detector rows themselves (03b-sim): an input point on an output
+  row of these sheets is sourced; their input rows are "own sheet (field I/O)". Old -> new: on a sheet no source 108 -> 84 (24 points:
+  ZSO-FA1043-A ~ D, ZSO-DO1043-A2 ~ D2, BI7 / BI8 / BI9 / BI10-DO1043-A ~ D; BI7 is on the same rows as BI8 ~ 10).
+- An AO whose device is the device of an ABC controller (MAN / PID block) of the same station is that controller's output
+  (SC-L1060A <- SICL1060A, MOF-CL1061-A <- FICCL1061A). Old -> new: on the drawing not on a row 138 -> 131 (SC-L1060A ~ D, MOF-CL1061-A ~ C),
+  UNLINKED 164 -> 163 (TCS-AS1004), model / HMI only 489 -> 488 (TT-AS1017-1); LINKED 1,693 -> 1,726 with the field I/O rule; value 1,942 -> 1,975.
+- DITL-50 (FB2-OT device overtime) is an instance block: its input rows are "caller pins". B1 DITL rows with no source 203 -> 194 (DITL-50 5,
+  DITL-16 / 17 / 18 input rows 4).
+- xref: DITL-80H / 80I / 80J hold only "(AS SHEET DITL80G BLOCK)" boxes: a TO DITL80H / 80I / 80J goes to that sootblower's DITL-80G copy.
+  Old -> new: other sheet 46 -> 0, wired by the TO side 8 -> 54.

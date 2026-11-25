@@ -70,7 +70,10 @@ const OUT = arg('out', path.join(os.tmpdir(), 'qa-xref'));
         const toMe = q => {
           if (typeof q.row !== 'number') return false;
           const t = ['RS', 'RT', 'RL', 'R'].map(c => cellT(q.d, q.row, c)).join(' ').toUpperCase().replace(/\s+/g, '');
-          return new RegExp('(TO)?DITL-?0*' + me + '(?![0-9A-Z])').test(t);
+          /* DITL-80H / 80I / 80J hold only "(AS SHEET DITL80G BLOCK)" boxes (N-1016 ~ 1038): a TO DITL80H / 80I / 80J goes to that
+             sootblower's copy of DITL-80G (world.js; YUA 2026-11-25) */
+          const alias = me === '80G' ? '(80G|80H|80I|80J)' : me;
+          return new RegExp('(TO)?DITL-?0*' + alias + '(?![0-9A-Z])').test(t);
         };
         st = hit ? 'WIRED' : dsrc.some(toMe) ? 'WIRED (TO side)' : srcs.length ? 'OTHER' : null;
       } else st = srcs.length ? 'WIRED' : null;
