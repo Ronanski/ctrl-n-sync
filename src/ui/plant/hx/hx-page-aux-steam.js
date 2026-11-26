@@ -80,6 +80,9 @@
           lab: 'b'
         }),
 
+        /* Phase 9 (2026-11-27): the strainers at the spray valve inlets (R0 equipment list: STR-CD1006 "AUX. STEAM DSH TCV-CD1124 INLET",
+           STR-CD1007 "GLAND STEAM DSH TCV-CD1126 INLET") */
+        at(E('strainer', 'Strainer', 'STR-CD1006', [], { flow: 'l:TICAS1001' }), 410, 80, { id: 'st1', lab: 't' }),
         /* ---- source 2: cold reheat ---- */
         at(L('reheat-steam', 'Cold reheat steam', { back: true }), 110, CRY, { id: 'crl' }),
         at(C('PICAS1005', 'Cold reheat to auxiliary steam valves', { tag: 'PCV-AS1020-1 / -2', wrap: 18 }), 310, CRY, {
@@ -93,6 +96,9 @@
         se.item,
         ae.item,
         at(L('feedwater', 'To the deaerator'), 740, 680, { id: 'dal' }),
+        /* Phase 9 (2026-11-27): safety valve ZV-AS1001 on header AS-1-002, blowing to the silencer Z-1007 (PD-014 Rev D, page head above;
+           R0 equipment list "SAFETY VALVE - AUXILIARY STEAM TO D/A") */
+        at(E('valve', 'Safety valve', 'ZV-AS1001', [], { kind: 'safety' }), 1140, HY - 4, { id: 'asv', lab: 't' }),
         at(E('ejector', 'Start-up ejector', 'Z-1120', [], { flow: 'x:MV-AS1395' }), 1010, 700, {
           id: 'ej1',
           sc: 1.6,
@@ -116,6 +122,7 @@
           id: 'sp2',
           lab: 'b'
         }),
+        at(E('strainer', 'Strainer', 'STR-CD1007', [], { flow: 'l:TICAS1017' }), 980, 110, { id: 'st2', lab: 't' }),
         at(X('MV-AS1393', 'Drain separator drain valve', { wrap: 14 }), 1250, 330, { id: 'dsd', rot: 90, lab: 'l' }),
         at(
           M('valve', 'GLAND STEAM SEAL', 'Steam seal feed valve', [V('Position', 'PV-GS1031', '%', 1)], {
@@ -155,7 +162,8 @@
         { med: 'steam', w: W_S, pts: ['prv.r', 'ds1.l'], flow: 'l:PICAS1004', arrow: false },
         { med: 'steam', w: W_S, pts: ['ds1.r', [700, MSY], [700, HY]], flow: 'l:PICAS1004' },
         { med: 'condensate', w: W_WT, pts: ['cd1.r', 'xb1.l'], flow: 'l:TICAS1001', arrow: false },
-        { med: 'condensate', w: W_WT, pts: ['xb1.r', 'sp1.l'], flow: 'l:TICAS1001' },
+        { med: 'condensate', w: W_WT, pts: ['xb1.r', 'st1.l'], flow: 'l:TICAS1001', arrow: false },
+        { med: 'condensate', w: W_WT, pts: ['st1.r', 'sp1.l'], flow: 'l:TICAS1001' },
         { med: 'condensate', w: W_WT, pts: ['sp1.r', [533, 80], 'ds1.t'], flow: 'l:TICAS1001', arrow: false },
         /* cold reheat to the header */
         { med: 'reheat', w: W_S, pts: ['crl.r', 'crv.l'], flow: 'l:PICAS1005', arrow: false },
@@ -189,7 +197,8 @@
         { med: 'air', w: W_SM, pts: ['gcl.r', 'gse.in'], flow: 'm:GLAND STEAM EXHAUSTER', arrow: false },
         { med: 'air', w: W_SM, pts: ['gse.out', [1640, 90]], to: 'outdoor', flow: 'm:GLAND STEAM EXHAUSTER' },
         { med: 'condensate', w: W_WT, pts: ['cd2.r', 'xb2.l'], flow: 'l:TICAS1017', arrow: false },
-        { med: 'condensate', w: W_WT, pts: ['xb2.r', 'sp2.l'], flow: 'l:TICAS1017' },
+        { med: 'condensate', w: W_WT, pts: ['xb2.r', 'st2.l'], flow: 'l:TICAS1017', arrow: false },
+        { med: 'condensate', w: W_WT, pts: ['st2.r', 'sp2.l'], flow: 'l:TICAS1017' },
         { med: 'condensate', w: W_WT, pts: ['sp2.r', [1093, 110], 'ds2.t'], flow: 'l:TICAS1017', arrow: false },
         { med: 'drain', w: W_DR, pts: [[1560, GSY], 'gsd.l'], flow: 'x:MV-AS1397', arrow: false },
         { med: 'drain', w: W_DR, pts: ['gsd.r', [1560, 440]], to: 'flash pipe', flow: 'x:MV-AS1397' },
