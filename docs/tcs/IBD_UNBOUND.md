@@ -21,6 +21,9 @@ Count: 797 inputs, 373 with no source (was 383). Every one of the 373 is in one 
 - TC-20 net 43 AUX. STEAM HEADER PRESS. (LOWER): the aux steam header of the ATS model (c.Pa, PIAS1004).
 - TC-18 net 0 INTERCEPT VALVE OPEN DEMAND >0.1%: the ICV position demand SV-STn905-A2 / B2 (TCS I/O list XSMM_IO_List_R1, IO LIST R.1
   rows 140 / 316, IBD TA-37 / 38) > 0.1 %; the model has one ICV value (U.tb.icv), its demand and its position.
+- Phase 6 TCS (lane 1, 2026-11-26): TC-17 net 5 HP TURBINE HEAT SOAK EXECUTE is bound to TCE163 output A1 HEAT SOAK SET (the TCE sheet is now
+  in the repository, page 114; A1 = SELECT of the HEAT SOAK SELECT macro, LME133 inside of the HIACS backup; connector A1 to "-"). INFERRED:
+  the PI/O card that carries A1 to the hard-wired logic is not decoded in the backup files (tcs-tcp-pio.json has card TCP1900 only).
 - 3.2.3-beta.57 (user 2026-11-11: no ASSUMED): TC-17 net 5 HP TURBINE HEAT SOAK EXECUTE is unbound again. Searched: IBD page 71, ATS
   310SC90-775 pages 20 / 22 (heat soak timers, no signal name), TCS I/O list HMI_DI (TCE163 HEAT SOAK SET / RESET / CRT OPE PERM, HMI_AI
   TCA586 HEAT SOAK REMAINING TIME): the signal comes from the TCS soft logic TCE163, in "TCA / TCE SOFT LOGIC DIAGRAM OF TCS.pdf" on
@@ -49,7 +52,6 @@ Other inputs, one by one.
 - TC-5 (page 66) net 15: ZT-STn008 CV(B) BELOW SEAT SECONDARY = (c) ZT-STn008 drain valve position: the label is cut by the reader (page 66)
 - TC-7 (page 67) net 27: CV CHEST WARMING COMPLETE = (c) CV CHEST WARMING COMPLETE: the ATS model has phase chest -> reset (tcs.js), the sheet source is not read; next batch
 - TC-12 (page 69) net 11: ICV TO CV TRANSFER START = (c) the reader lists net 11 as an off-page OUTPUT to TC-13 (link 3); the input side is not read
-- TC-17 (page 71) net 5: HP TURBINE HEAT SOAK EXECUTE = (c) source TCE163 soft logic, PC-only (see above)
 - TC-19 (page 73) net 3: DE-ENERGIZE = (c) output label (solenoid) read as input
 - TC-19 (page 73) net 5: SOLENOID VALVE ENERGIZE = (c) output label (solenoid) read as input
 - TC-20 (page 74) net 0: ZT-ASn011 HP TURBINE WARMING VALVE = (c) model gap: ZT-ASn011 warming valve position; the model has no warming valve position

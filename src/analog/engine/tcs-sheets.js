@@ -99,12 +99,12 @@ const tcsShMot = (c, k) => {
     m = TCS_SH.mot[k][0];
   return (sm.mot[m] = sm.mot[m] || {});
 };
-function tcsShFeed(p, U, c) {
+function tcsShFeed(p, U, c, h) {
   for (const [i, f] of p.in) {
     const x = +f(U, c);
     if (isFinite(x)) p.v[i] = x;
   }
-  tcsTpcFeed(p, U, c);
+  tcsTpcFeed(p, U, c, h); /* h: the slice, for the timers of the TPC logic (tcs-tpc.js) */
 }
 /* the value of a net now (tcs.js tcsIO, the page) */
 const tcsShNet = n => {
@@ -177,7 +177,7 @@ function tcsSheets(U, c, dt) {
   /* the local panel started or stopped the purifier since the last step */
   if (tcsPur() !== !!sm.pur) tcsShMot(c, 'pur').on = tcsPur() ? 1 : 0;
   for (let n = Math.max(1, Math.ceil(dt / TCS_SH.slice - 1e-9)), h = dt / n; n > 0; n--) {
-    tcsShFeed(p, U, c);
+    tcsShFeed(p, U, c, h);
     for (const [i, q] of p.crt) v[i] = sm.pb[q] > 0 ? 1 : 0;
     for (const q of p.drv) for (q.acc += h; q.acc >= q.cyc - 1e-9; q.acc -= q.cyc) R.scan(p, q, q.cyc);
     tcsShSlow(p, R, U, h);
