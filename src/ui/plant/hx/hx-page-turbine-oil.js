@@ -11,6 +11,9 @@
    generator bearings (generator bearings No. 3 / No. 4: TEGE1007 / TEGE1008); control oil pumps P-1931A / B (PTLO1931A / B),
    control oil filter, control oil header (PTLO10061 / 62 / 63) to the main stop valves, the control valves and the combined
    reheat valves; master trip solenoid and trip oil (PTLO10071 / 72 / 73).
+   Oil unit items from Hitachi 310PB64-455 (YUA read 2026-11-27): duplex oil filter S-1932A / B, control oil filters
+   S-1933A / B, mist eliminator S-1936, purifier strainer S-1943 and coalescer S-1942, lube oil accumulators T-1934A ~ C,
+   control oil accumulator T-1395, trip oil accumulator T-1938.
    NO flow diagram of the oil system was read for this page (it is a drawing of the turbine maker, not in K1AU3-A1-0-001):
    the tags, names and order are those of temporary page 04. Check the page against the maker's oil diagram before the
    temporary page is removed.
@@ -121,7 +124,7 @@
         at(E('cooler', 'Lube oil cooler B', '', [], { flow: MOP }), CX, BY, { id: 'cb', sc: CS, lab: 'b' }),
         at(C('TICLO1002', 'Oil temperature valve', { tag: 'TCV-CW1201', wrap: 14 }), 710, 575, { id: 'tv', lab: 't' }),
         at(L('makeup-cooling', 'Cooling water', { back: true }), 575, 575, { id: 'cwl' }),
-        at(E('strainer', 'Oil filter', '', [], { flow: MOP }), RX, 520, { id: 'of', rot: -90, lab: 'r' }),
+        at(E('strainer', 'Duplex oil filter', 'S-1932A / B', [], { flow: MOP }), RX, 520, { id: 'of', rot: -90, lab: 'r' }),
         at(M('pump', 'COP-A', 'Control oil pump A', [V('Discharge', 'PTLO1931A', K, 1)], { tag: 'P-1931A' }), QX, AY, {
           id: 'qa',
           sc: PS,
@@ -132,8 +135,23 @@
           sc: PS,
           lab: 'r'
         }),
-        at(E('strainer', 'Control oil filter', '', [], { flow: COP }), HX2, 500, { id: 'cf', rot: -90, lab: 'r' }),
+        at(E('strainer', 'Control oil filters', 'S-1933A / B', [], { flow: COP }), HX2, 500, { id: 'cf', rot: -90, lab: 'r' }),
         ...A.map(a => a.item),
+        /* Hitachi oil unit items, read by YUA 2026-11-27 from Hitachi 310PB64-455 (key plan of the oil unit; part 2 of the
+           P&ID read). Where each one sits on its line is that drawing's; the line order around them is NOT IN DOCS. */
+        at(E('strainer', 'Mist eliminator', 'S-1936', [], { flow: 'm:VAPOUR EXTRACTOR' }), KX, 600, {
+          id: 'me', rot: -90, sc: 0.8, lab: 'l' }) /* tank top, on the vapour extractor line */,
+        at(E('strainer', '', '', [], { flow: 'm:OIL PURIFIER' }), 163, 940, { id: 'ps', sc: 0.8 }) /* S-1943 suction strainer of P-1941 */,
+        at(E('strainer', '', '', [], { flow: 'm:OIL PURIFIER' }), 92, 873, { id: 'pc', rot: -90, sc: 0.8 }) /* S-1942 coalescer filter after P-1941 */,
+        at(E('tank', 'Lube oil accumulators', 'T-1934A-C', [], { id: 'lac', liquid: 'oil', w: 18, h: 34 }), 840, 445, {
+          id: 'lac', lab: 'l', wrap: 12 }) /* on the lube oil header */,
+        /* T-1395 in the equipment list; printed T-n935 control oil accumulator on 310PB64-455 (T-1935 most likely) */
+        at(E('tank', 'Control oil accumulator', 'T-1395', [], { id: 'cac', liquid: 'oil', w: 18, h: 34 }), 1500, 445, {
+          id: 'cac', lab: 'r', wrap: 12 }),
+        /* T-1128 turning gear air buffer tank, 0.5 m3 (PD-023 sh4/6 C-3/4, YUA P&ID read 2026-11-27): instrument air
+           IA-1-109 to the turning gear of the Hitachi lube oil system; its pressure PT-IA1128 is the row under the turning gear */
+        at(E('tank', 'Air buffer tank', 'T-1128', [], { id: 'iab', liquid: 'none', w: 22, h: 38 }), 110, 300, { id: 'iab', lab: 't' }),
+        at(E('tank', '', '', [], { id: 'tac', liquid: 'oil', w: 16, h: 28 }), 1712, 290, { id: 'tac' }) /* T-1938 trip oil accumulator */,
         at(E('valve', 'Master trip solenoid', '', [], { kind: 'control', wrap: 12 }), 1660, CH, {
           id: 'mts',
           lab: 't'
@@ -142,10 +160,17 @@
       ],
       pipes: [
         /* main oil tank: vapour extractor, purifier, suction of the pumps */
-        { med: 'air', w: W_S, pts: ['tk.t', [KX, 560], 'vx.in'], flow: 'm:VAPOUR EXTRACTOR', arrow: false },
+        { med: 'air', w: W_S, pts: ['tk.t', 'me.l'], flow: 'm:VAPOUR EXTRACTOR', arrow: false },
+        { med: 'air', w: W_S, pts: ['me.r', [KX, 560], 'vx.in'], flow: 'm:VAPOUR EXTRACTOR', arrow: false },
         { med: 'air', w: W_S, pts: ['vx.out', [KX + 32, 500]], to: 'outdoor', flow: 'm:VAPOUR EXTRACTOR' },
-        { med: 'lube', w: W_S, pts: ['tk.b', [KX, 940], 'pu.s'], flow: 'm:OIL PURIFIER', arrow: false },
-        { med: 'lube', w: W_S, pts: ['pu.d', [92, 838], 'tk.l'], flow: 'm:OIL PURIFIER' },
+        { med: 'lube', w: W_S, pts: ['tk.b', [KX, 940], 'ps.r'], flow: 'm:OIL PURIFIER', arrow: false },
+        { med: 'lube', w: W_S, pts: ['ps.l', 'pu.s'], flow: 'm:OIL PURIFIER', arrow: false },
+        { med: 'lube', w: W_S, pts: ['pu.d', 'pc.l'], flow: 'm:OIL PURIFIER', arrow: false },
+        { med: 'lube', w: W_S, pts: ['pc.r', [92, 838], 'tk.l'], flow: 'm:OIL PURIFIER' },
+        /* accumulators */
+        { med: 'lube', w: W_S, pts: [[RX, 470], [840, 470], 'lac.b'], flow: MOP, arrow: false },
+        { med: 'lube', w: W_S, pts: [[HX2, 470], [1500, 470], 'cac.b'], flow: COP, arrow: false },
+        { med: 'lube', w: W_S, pts: [[1712, CH], 'tac.b'], flow: COP, arrow: false },
         { med: 'lube', w: W_L, pts: ['tk.r', [SX, 838]], flow: LUBE, arrow: false },
         {
           med: 'lube',

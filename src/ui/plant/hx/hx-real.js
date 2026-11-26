@@ -106,6 +106,12 @@
   };
 
   /* ---------------- small things on a line ---------------- */
+  /* steam trap on a drain line: the ISA circle with a T. Ports: t (in), b (out), l, r */
+  R.trap = () => ({
+    box: [-8, -8, 8, 8],
+    ports: { t: [0, -7.5], b: [0, 7.5], l: [-7.5, 0], r: [7.5, 0] },
+    svg: '<circle class="rxv" r="7.5"/><path class="rxe" d="M-3.4 -3.4h6.8M0 -3.4v7.2"/>'
+  });
   /* drain pot: a small upright vessel under a steam line */
   R.pot = () => ({
     box: [-7, -13, 7, 13],

@@ -36,3 +36,16 @@ Source: /mnt/project-files/phase9-pid-positions-2026-11-27.md (flow diagram set 
 - Coal page: 9 air cannon bawat bunker (T-1066A ~ I = bunker A, T-1067 = B, T-1068 = C), nakaguhit sa cone ng bunker.
   Source: Martin LB-C214007-02 / 03 (bilang at lokasyon sa cone). Kung aling set ang aling bunker: INFERRED mula sa ayos ng tag.
 - Bilang: 260 / 349 may simbolo, 8 wala sa docs, 81 natitira.
+
+## Sea water, generator, turbine oil, gland steam (10 AM)
+- Sea water: ball separators L-1112 / L-1111 sa condenser outlet A / B (PD-020 C-4 / C-5), walang label (map);
+  ball vessels T-1115 / T-1116 sa tabi ng tube cleaning pumps (PD-020 D-6 / D-7). Kung bago o pagkatapos ng outlet hand valve
+  ang separator: NOT IN DOCS.
+- Generator: air coolers H-1971A ~ D sa ilalim ng generator, ayos A, C, D, B mula turbine end (PD-021, PD-027 A-1 ~ A-4).
+- Turbine oil (Hitachi 310PB64-455, basa ni YUA): duplex oil filter S-1932A / B (dating "Oil filter"), control oil filters
+  S-1933A / B, mist eliminator S-1936, purifier strainer S-1943 at coalescer S-1942, lube oil accumulators T-1934A ~ C,
+  control oil accumulator T-1395 (nakalimbag T-n935), trip oil accumulator T-1938; air buffer tank T-1128 ng turning gear
+  (PD-023 sh4/6).
+- Condensate: drain trap Z-1912 ng gland steam condenser (PD-014 C-9); bagong simbolo `R.trap` (ISA bilog na may T).
+- Hindi pa: OR-CW1001A / B (walang cooling water return line na nakaguhit sa turbine oil page).
+- Bilang: 281 / 349 may simbolo, 8 wala sa docs, 60 natitira.

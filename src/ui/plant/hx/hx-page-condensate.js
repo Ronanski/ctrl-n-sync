@@ -228,6 +228,9 @@
           id: 'gsc',
           lab: 'l'
         }),
+        /* Z-1912 gland steam condenser drain trap (PD-014 C-9, YUA P&ID read 2026-11-27): shell drain -> V-CD1915 ->
+           Z-1912 -> V-CD1914 -> condenser (PD-027 F-1); the hand valves are not drawn */
+        at(E('trap', '', 'Z-1912', []), UX + 66, 440, { id: 'gst', lab: 'r' }),
 
         /* ---- the three low pressure heaters with inlet, outlet and bypass valve ---- */
         ...H1.items,
@@ -302,6 +305,8 @@
         /* through the two small condensers */
         { med: 'condensate', w: W_CD, pts: [[1210, HY], [UX, HY], 'ejc.b'], flow: CD },
         { med: 'condensate', w: W_CD, pts: ['ejc.t', 'gsc.b'], flow: CD, arrow: false },
+        { med: 'drain', w: 3, pts: ['gsc.r', [UX + 66, 410], 'gst.t'], arrow: false },
+        { med: 'drain', w: 3, pts: ['gst.b', [UX + 66, 462]] },
         { med: 'condensate', w: W_CD, pts: ['gsc.t', [UX, 300], [RX, 300], [RX, HAY - BO1]], flow: CD },
         /* the three heaters, each with its inlet valve, its outlet valve and its bypass valve in the line */
         ...H1.pipes,

@@ -95,11 +95,7 @@
    "the motor is drawn in the pump symbol"
   ],
   "Z-1940": "turbine-oil|mach=OIL PURIFIER",
-  "Z-1930": "turbine-oil|name=Oil filter",
-  "S-1933A": [
-   "turbine-oil|name=Control oil filter",
-   "one control oil filter symbol; it stands for A (B has none)"
-  ],
+  "Z-1930": "turbine-oil|id=of",
   "L-1906": "turbine-oil|mach=TURNING GEAR",
   "M-1906": [
    "turbine-oil|mach=TURNING GEAR",
@@ -215,6 +211,26 @@
   "S-1054": [
    "combustion-air|id=zsa",
    "SAF suction silencer, printed Z-1054 SILENCER on PD-053 A-7 (YUA P&ID read 2026-11-27); drawn with no label at the fan inlet"
+  ],
+  "L-1112": [
+   "sea-water|id=bsa",
+   "ball separator in condenser outlet A SW-1-007 (PD-020 C-4, YUA P&ID read 2026-11-27); drawn with no label between the condenser and V-SW1009"
+  ],
+  "L-1111": [
+   "sea-water|id=bsb",
+   "ball separator in condenser outlet B SW-1-008 (PD-020 C-5, YUA P&ID read 2026-11-27); drawn with no label between the condenser and V-SW1010"
+  ],
+  "S-1943": [
+   "turbine-oil|id=ps",
+   "oil purifier pump P-1941 suction strainer (Hitachi 310PB64-455 key plan, YUA read 2026-11-27); drawn with no label"
+  ],
+  "S-1942": [
+   "turbine-oil|id=pc",
+   "oil purifier coalescer filter after pump P-1941 (Hitachi 310PB64-455 key plan, YUA read 2026-11-27); drawn with no label"
+  ],
+  "T-1938": [
+   "turbine-oil|id=tac",
+   "trip oil accumulator T-n938 on the trip oil end (Hitachi 310PB64-455 key plan, YUA read 2026-11-27); drawn with no label"
   ]
  },
  "approved": {},
