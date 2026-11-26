@@ -24,3 +24,10 @@ Source: /mnt/project-files/phase9-pid-positions-2026-11-27.md (flow diagram set 
   fluidizing air blower (S-1055A / B), silencer pagkatapos ng surge valve (Z-1055A / B; dati salita lang na "silencer"), ang manual damper
   ng hot primary air papunta sa furnace (V-FA1001 ~ 1004, isang simbolo), at ang lube oil cooler ng PAF (Z-1053).
 - Bilang: 233 / 349 may simbolo, 53 wala sa drawing, 63 natitira.
+
+## Part 2 ni YUA (7:35 AM): RB rev D at vendor docs
+- Nakita na ang 45 na dating NOT IN DOCS: OR-MS1001 / 1002 (PD-011 / PD-014 rev D), Z-1113A / B (nakalimbag Z-1131A / B, PD-020 rev D),
+  Z-1130 (PD-027 rev D), 27 air cannon (Martin LB-C214007-02 / 03), T-1064A / B (K1AU3-D1-0-070), 11 turbine oil item (Hitachi 310PB64-455).
+  Tinanggal sila sa `nodoc`; gagawan ng simbolo.
+- Natitira sa `nodoc` (8): STR-CD1011, T-0761 / 0762, S-1960, T-1065A ~ C, OR-CD1002.
+- Bilang: 233 / 349 may simbolo, 8 wala sa docs, 108 natitira.
