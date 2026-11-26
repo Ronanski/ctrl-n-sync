@@ -120,6 +120,10 @@
           500,
           { id: 't11b', lab: 'b' }
         ),
+        /* the strainer at the inlet of each spray valve (equipment list K1AU3-L1-0-002 R0: STR-FW1005 / 1006 "STRAINER - SH PANEL #1
+           OUTLET DSH TCV-FW1110-1 / -2 INLET", STR-FW1003 / 1004 "... SH PANEL #2 OUTLET DSH TCV-FW1120-1 / -2 INLET"); drawn with no label: the spray corner has no room for it (docs/phase9/equipment.json map) */
+        at(E('strainer', '', '', [], { flow: SP1 }), 180, 356, { id: 's11a' }),
+        at(E('strainer', '', '', [], { flow: SP1B }), 180, 500, { id: 's11b' }),
         at(L('feedwater', 'Feedwater', { back: true }), 62, 212, { id: 'fw1' }),
         at(M('valve', 'V-BD1005 ~ V-BD1021', 'Lower ring header drains', [], { kind: 'manual', wrap: 14 }), 240, 930, {
           id: 'lhd',
@@ -154,6 +158,8 @@
           id: 'x21b',
           lab: 'b'
         }),
+        at(E('strainer', '', '', [], { flow: SP2 }), 1638, 716, { id: 's21a' }),
+        at(E('strainer', '', '', [], { flow: SP2B }), 1638, 840, { id: 's21b' }),
         at(L('feedwater', 'Feedwater', { back: true }), 1690, 620, { id: 'fw2' }),
         at(C('TICMS1004', 'Main steam temperature', { sym: 'ctl', unit: '°C', pvdp: 0, wrap: 30 }), 1640, 540, {
           id: 'tm2',
@@ -209,17 +215,21 @@
         { med: 'drain', w: W_SM, pts: ['lhd.l', [150, 930]], to: 'blowdown tank', flow: 'm:V-BD1005 ~ V-BD1021' },
         /* spray 1 water */
         { med: 'water', w: W_WT, pts: ['fw1.b', [62, 356], 'x11a.l'], flow: SP1, arrow: false },
-        { med: 'water', w: W_WT, pts: ['x11a.r', 't11a.l'], flow: SP1 },
+        { med: 'water', w: W_WT, pts: ['x11a.r', 's11a.l'], flow: SP1 },
+        { med: 'water', w: W_WT, pts: ['s11a.r', 't11a.l'], flow: SP1 },
         { med: 'water', w: W_WT, pts: [[62, 356], [62, 500], 'x11b.l'], flow: SP1B, arrow: false },
-        { med: 'water', w: W_WT, pts: ['x11b.r', 't11b.l'], flow: SP1B },
+        { med: 'water', w: W_WT, pts: ['x11b.r', 's11b.l'], flow: SP1B },
+        { med: 'water', w: W_WT, pts: ['s11b.r', 't11b.l'], flow: SP1B },
         { med: 'water', w: W_WT, pts: ['t11a.r', [312, 356], [312, 440]], flow: SP1, arrow: false },
         { med: 'water', w: W_WT, pts: ['t11b.r', [312, 500], [312, 440]], flow: SP1B, arrow: false },
         { med: 'water', w: W_WT, pts: [[312, 440], 'ds1.t'], flow: SP1 + '|' + SP1B, arrow: false },
         /* spray 2 water (UI check 2026-11-24 C1: the riser at 1752 and the join at 1520 stay clear of the valve names and the mode pill) */
         { med: 'water', w: W_WT, pts: ['fw2.b', [1752, 660], [1752, 716], 'x21a.r'], flow: SP2, arrow: false },
-        { med: 'water', w: W_WT, pts: ['x21a.l', 't21a.r'], flow: SP2 },
+        { med: 'water', w: W_WT, pts: ['x21a.l', 's21a.r'], flow: SP2 },
+        { med: 'water', w: W_WT, pts: ['s21a.l', 't21a.r'], flow: SP2 },
         { med: 'water', w: W_WT, pts: [[1752, 716], [1752, 840], 'x21b.r'], flow: SP2B, arrow: false },
-        { med: 'water', w: W_WT, pts: ['x21b.l', 't21b.r'], flow: SP2B },
+        { med: 'water', w: W_WT, pts: ['x21b.l', 's21b.r'], flow: SP2B },
+        { med: 'water', w: W_WT, pts: ['s21b.l', 't21b.r'], flow: SP2B },
         { med: 'water', w: W_WT, pts: ['t21a.l', [1520, 716], [1520, 770]], flow: SP2, arrow: false },
         { med: 'water', w: W_WT, pts: ['t21b.l', [1520, 840], [1520, 770]], flow: SP2B, arrow: false },
         { med: 'water', w: W_WT, pts: [[1520, 770], 'ds2.t'], flow: SP2 + '|' + SP2B, arrow: false }

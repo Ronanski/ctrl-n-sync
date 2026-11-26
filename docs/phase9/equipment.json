@@ -1,0 +1,161 @@
+{
+ "_": "Phase 9: the symbol of each equipment of docs/SCOPE.md section 4.5 (R0, PASOK) on an HMI page. An equipment whose tag is on an element of a page (tag, machine, loop or valve name, also \"A / B\" and \"A-D\" lists) needs no row here. map = the element that draws it (page|key=value; key = mach, loop, valve, tag, name or sym), with a note when one symbol stands for more. Every other PASOK equipment has no own symbol yet: tests/lanes/qa/phase9-gate.cjs lists it. approved = the pages the user approved (only the user approves; COMMANDMENT 4).",
+ "map": {
+  "B-1043A": "oil-burners|mach=Burner A",
+  "B-1043B": "oil-burners|mach=Burner B",
+  "B-1043C": "oil-burners|mach=Burner C",
+  "B-1043D": "oil-burners|mach=Burner D",
+  "P-0702A": "oil-burners|mach=DIESEL OIL PUMP A",
+  "P-0702B": "oil-burners|mach=DIESEL OIL PUMP B",
+  "F-1053": "combustion-air|mach=PAF",
+  "F-1054": "combustion-air|mach=SAF",
+  "H-1052": "combustion-air|mach=AIR PREHEATER",
+  "F-1056": "furnace-gas|mach=IDF",
+  "H-1001": "furnace-gas|sym=furnace",
+  "Z-1057": "furnace-gas|sym=stack",
+  "S-1009A": [
+   "furnace-gas|sym=cyclone",
+   "one cyclone symbol is drawn; it stands for A (B has none)"
+  ],
+  "T-1009A": [
+   "furnace-gas|sym=sealpot",
+   "one seal pot symbol is drawn; it stands for A (B has none)"
+  ],
+  "T-1001": "drum-steam|sym=drum",
+  "P-1115A": "feedwater|mach=BFWP-A",
+  "M-1115A": [
+   "feedwater|mach=BFWP-A",
+   "the motor is drawn in the pump symbol"
+  ],
+  "P-1115B": "feedwater|mach=BFWP-B",
+  "M-1115B": [
+   "feedwater|mach=BFWP-B",
+   "the motor is drawn in the pump symbol"
+  ],
+  "T-1104": [
+   "extraction|tag=H-1104",
+   "the deaerator symbol draws the storage tank under it"
+  ],
+  "G-1901": "turbine|sym=tgset",
+  "G-1970": "turbine|sym=generator",
+  "Z-1903A": [
+   "turbine|name=Main stop valves",
+   "one symbol labelled A / B"
+  ],
+  "Z-1094A": [
+   "turbine|name=Control valves",
+   "one symbol labelled A / B"
+  ],
+  "Z-1095A": [
+   "turbine-oil|name=Combined reheat valves",
+   "one symbol labelled A1, A2, B1, B2"
+  ],
+  "H-1921A": "turbine-oil|name=Lube oil cooler A",
+  "M-1922A": [
+   "turbine-oil|mach=MOP-A",
+   "the motor is drawn in the pump symbol"
+  ],
+  "M-1931A": [
+   "turbine-oil|mach=COP-A",
+   "the motor is drawn in the pump symbol"
+  ],
+  "P-1116A": "condensate|mach=CEP-A",
+  "Z-1903B": [
+   "turbine|name=Main stop valves",
+   "one symbol labelled A / B"
+  ],
+  "Z-1094B": [
+   "turbine|name=Control valves",
+   "one symbol labelled A / B"
+  ],
+  "Z-1095B": [
+   "turbine-oil|name=Combined reheat valves",
+   "one symbol labelled A1, A2, B1, B2"
+  ],
+  "H-1921B": "turbine-oil|name=Lube oil cooler B",
+  "M-1922B": [
+   "turbine-oil|mach=MOP-B",
+   "the motor is drawn in the pump symbol"
+  ],
+  "M-1931B": [
+   "turbine-oil|mach=COP-B",
+   "the motor is drawn in the pump symbol"
+  ],
+  "P-1116B": "condensate|mach=CEP-B",
+  "M-1923": [
+   "turbine-oil|mach=EOP",
+   "the motor is drawn in the pump symbol"
+  ],
+  "M-1937": [
+   "turbine-oil|mach=VAPOUR EXTRACTOR",
+   "the motor is drawn in the fan symbol"
+  ],
+  "M-1941": [
+   "turbine-oil|mach=OIL PURIFIER",
+   "the motor is drawn in the pump symbol"
+  ],
+  "Z-1940": "turbine-oil|mach=OIL PURIFIER",
+  "Z-1930": "turbine-oil|name=Oil filter",
+  "S-1933A": [
+   "turbine-oil|name=Control oil filter",
+   "one control oil filter symbol; it stands for A (B has none)"
+  ],
+  "L-1906": "turbine-oil|mach=TURNING GEAR",
+  "M-1906": [
+   "turbine-oil|mach=TURNING GEAR",
+   "the motor is drawn in the turning gear symbol"
+  ],
+  "F-1911": "aux-steam|mach=GLAND STEAM EXHAUSTER",
+  "M-1911": [
+   "aux-steam|mach=GLAND STEAM EXHAUSTER",
+   "the motor is drawn in the fan symbol"
+  ],
+  "H-1911": [
+   "condensate|tag=H-1903",
+   "R0 writes the gland steam condenser H-1911 \"(G-1903)\"; the page tag is H-1903"
+  ],
+  "T-1108A": [
+   "coal|tag=T-1008A",
+   "the DCS alarm list writes T-1008"
+  ],
+  "T-1108B": [
+   "coal|tag=T-1008B",
+   "the DCS alarm list writes T-1008"
+  ],
+  "T-1108C": [
+   "coal|tag=T-1008C",
+   "the DCS alarm list writes T-1008"
+  ],
+  "T-1311": "limestone-sand|mach=Limestone system",
+  "T-1300": "limestone-sand|mach=Sand system",
+  "T-0714": [
+   "industrial-water|tag=T-0714A",
+   "R0 writes one tag for the tank; the page draws tanks A and B"
+  ],
+  "DSH-FW1150": [
+   "reheat-steam|id=dsh",
+   "the reheater spray symbol of TICHR1002 / TCV-FW1150 (spray TCV-FW1150 = reheater inlet desuperheater, R0 item)"
+  ],
+  "DSH-CD1126": [
+   "aux-steam|id=ds2",
+   "the gland steam spray symbol of TICAS1017 / TCV-CD1126"
+  ],
+  "STR-FW1005": [
+   "drum-steam|id=s11a",
+   "strainer symbol at the inlet of spray 1 valve 1, drawn with no label (no room)"
+  ],
+  "STR-FW1006": [
+   "drum-steam|id=s11b",
+   "strainer symbol at the inlet of spray 1 valve 2, drawn with no label (no room)"
+  ],
+  "STR-FW1003": [
+   "drum-steam|id=s21a",
+   "strainer symbol at the inlet of spray 2 valve 1, drawn with no label (no room)"
+  ],
+  "STR-FW1004": [
+   "drum-steam|id=s21b",
+   "strainer symbol at the inlet of spray 2 valve 2, drawn with no label (no room)"
+  ]
+ },
+ "approved": {}
+}
