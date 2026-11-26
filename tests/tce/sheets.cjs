@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 262; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 306; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
 const FLOOR_TEXT = 106;
@@ -422,6 +422,15 @@ for (const id of ['TCA762', 'TCA763']) {
 {
   const ln = A.plan.find(p => p.id === 'TCE202').nodes.find(x => x.key === 'lin004');
   if (!ln || !ln.pa || ln.pa.K === undefined || ln.pa.B === undefined || (ln.open && ln.open.length)) fail('TCE202 LIN 004: K / B from PA2 004 ' + JSON.stringify(ln && ln.pa));
+}
+/* Phase 6: the SW the drawing leaves unwired, from the HIACS backup record (phase6-tcs-records-2026-11-26.md): CMP side input ON(1) =
+   hysteresis; TB with no flag input = primary, Y = X */
+{
+  const nd = (id, key) => A.plan.find(p => p.id === id).nodes.find(x => x.key === key);
+  for (const [id, key] of [['TCA530A', 'cmp007'], ['TCA534', 'cmpA046'], ['TCE145', 'cmpC040'], ['TCE206', 'cmpA040'], ['TCE226', 'cmp006'], ['TCE227', 'cmp013'], ['TCE228', 'cmp013'], ['TCA767', 'tb065']]) {
+    const x = nd(id, key);
+    if (!x || x.swc !== 1 || (x.open && x.open.length)) fail(id + ' ' + key + ': SW from the backup record not taken ' + JSON.stringify(x && x.open));
+  }
 }
 /* MODE (TCA768A, LMA810): load up rate by load band from the printed tables; 5.0 %/min until the IP -> HP transfer is complete */
 {

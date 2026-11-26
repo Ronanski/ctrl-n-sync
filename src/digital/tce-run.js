@@ -1841,8 +1841,11 @@
           ins: L.map(i => res(n.id, i.net)),
           inv: L.map(i => !!i.inv),
           sw: side ? res(n.id, side.net) : -1,
+          /* swc: the SW the drawing leaves unwired, read from the block's HIACS backup record (sheet field swc, key -> value; source
+             in the sheet's comment): 102_DD00001 = the constant ON(1) (phase6-tcs-records-2026-11-26.md) */
+          swc: !side && S.swc && S.swc[b.key] !== undefined ? S.swc[b.key] : undefined,
           /* a G sheet (310SD03-743) is a relay diagram, not a HIACS macro: its time relays have no SW input */
-          open: need(b.type, notes, !!side || !!S.dwg),
+          open: need(b.type, notes, !!side || !!S.dwg || !!(S.swc && S.swc[b.key] !== undefined)),
           st: {}
         });
         /* UNT-FG with no table on the page (TCE212 003 / 036): the inside of the backup macro (LME010, three FG and their selection) */
@@ -1978,6 +1981,7 @@
         const xs = x.ins.map((s, i) => (x.inv[i] ? b01(!v[s]) : v[s]));
         let sw;
         if (x.sw >= 0) sw = b01(v[x.sw]);
+        else if (x.swc !== undefined) sw = x.swc;
         else if (INTL_SW[x.type]) (sw = x.st.intl ? 1 : 0), (x.st.intl = 1);
         const nt = x.pa ? Object.keys(x.pa).map(k => k + ':' + v[x.pa[k]]).concat(x.notes || []) : x.notes;
         v[x.out] = x.f(xs, nt, x.st, dt, sw)[0];
