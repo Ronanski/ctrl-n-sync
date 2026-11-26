@@ -1586,7 +1586,14 @@ function anStep(S, dt) {
                switch on the oil master leg), not a setting of the user */
             const sg = q.sig && q.sig[i];
             let on = P['c' + (i + 1)] > 0.5;
-            if (sg) {
+            if (sg && sg.auto) {
+              /* ABC-009A-4: the condition is "controller in AUTO": its .MAN mode status is 0 (engine/ctrls.js, every sheet of the tag);
+                 only when every sheet is loaded (as the MAN station _mn): a walk before that finds and caches no wire */
+              let L = sg._mn;
+              if (L === undefined && AN.modeNetsBy && AN.sheets.every(x => x.S || /^ABC-000/.test(x.name)))
+                L = sg._mn = AN.modeNetsBy(sg.auto, ['MAN', 'MANUAL'], null) || [];
+              on = !!L && L.length > 0 && !L.some(([S2, n2]) => +S2.rt.v[n2] > 0.5);
+            } else if (sg) {
               const sh = AN.sheets.find(z => z.name === sg.sh),
                 st = sh && sh.S && sh.S.rt && sh.S.rt.st[sg.blk];
               on = !!st && st.pk === sg.leg;
