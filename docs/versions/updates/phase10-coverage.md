@@ -17,3 +17,7 @@ Utos: user "Go 10 13 15" (2026-11-27 7:00 AM PHT), kasabay ng #9.
 - Ayos sa app (`src/analog/engine/alarm-pri.js`): (1) iisang linya bawat DCS point: ang list ay may element 1 at 2 ng iisang RTD (TE-CD1116-AU1 / AU2) pero iisa ang I/O (TT-CD1116-AU, STN103 AI0960), kaya dati 2 linya; (2) ang switch na ang source ay DI field row ng lane (field state na sine-set ng instructor) o ABC input na sinusulat ng model (PS-CD1110-1 ~ 3) ay nababasa na; dati hindi lumalabas ang alarm nito.
 - 30 walang linya, nakasulat sa `docs/phase10/open.json`: b 9, m 21 (Phase 11).
 - Sa 150 MW: 17 nakatayong alarm, pareho sa dati (walang bago).
+
+## Slice 4 (9:20 AM PHT): gawi ng alarm (item 3)
+- `tests/gate/alarms.cjs` (bagong hakbang sa Checks: ALARMS): sa Operator Station page mula 150 MW, pinilit ang main steam pressure (PT-MS1002 141 > HH 134) at ang neutral amine tank LOW-LOW switch (field state ng instructor). Pasado lahat: linya na may oras at level, priority 2, ACK ng isang linya (nananatili habang mataas pa), back to normal (umaalis sa listahan), ACK ALL (0 hindi naka-ACK), event log ayon sa oras hanggang segundo, walang page error.
+- Kulang: trend panel ng DCS (8 pen bawat grupo): mockup muna sa user.
