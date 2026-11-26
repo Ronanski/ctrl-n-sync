@@ -155,6 +155,14 @@
   "STR-FW1004": [
    "drum-steam|id=s21b",
    "strainer symbol at the inlet of spray 2 valve 2, drawn with no label (no room)"
+  ],
+  "STR-FW1001": [
+   "feedwater|id=sfa",
+   "suction strainer of boiler feed pump A, after ZV-FW1001 (PD-017 E-2, YUA P&ID read 2026-11-27), drawn with no label (the pump words fill the place)"
+  ],
+  "STR-FW1002": [
+   "feedwater|id=sfb",
+   "suction strainer of boiler feed pump B, after ZV-FW1002 (PD-017 E-7, YUA P&ID read 2026-11-27), drawn with no label"
   ]
  },
  "approved": {}
