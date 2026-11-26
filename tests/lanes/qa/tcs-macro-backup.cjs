@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, '..', '..', '..');
 const win = {};
 vm.runInNewContext(fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8'), { window: win });
 const R = win.TCE_RUN;
-const FLOOR = 41; /* + Phase 5: DUAL INPUT DIAGNOSTICS TCE101, VALVE TEST TCE220 x2 / TCE222 x2 / TCE226 x2 */ /* + slice F: CHANGE OVER TCE172 (LME300 + 301), HEAT SOAK CONTROL TCE207 (LME242 + 243) */ /* + slice D: CV WARMING SET x2, CRT OPE INC/DEC TCE194 / TCE205, L-RATE TCE185 */ /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502
+const FLOOR = 81; /* + DISTRIBUTION x10, THERMAL STRESS x2 (ML 7 / ML 8 read) */ /* + Phase 5 3 PM read (phase5-tcs-macros-17): SIMCV x6, PI CNT x3, SET x4, PLU/BUG x4, THSC INITIAL x2, RUB CHECK, ACC.CONTROL, TURBINE SIM x2, CCS SIM, AUX TYPE 15, FILTER, PRESS COMPENSATE, CRT OPE INC/DEC TCE196 */ /* + Phase 5: DUAL INPUT DIAGNOSTICS TCE101, VALVE TEST TCE220 x2 / TCE222 x2 / TCE226 x2 */ /* + slice F: CHANGE OVER TCE172 (LME300 + 301), HEAT SOAK CONTROL TCE207 (LME242 + 243) */ /* + slice D: CV WARMING SET x2, CRT OPE INC/DEC TCE194 / TCE205, L-RATE TCE185 */ /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502
    + 6 VALVE CONTROL MT1 (TCE210, TCE211, TCE212 x2, TCE214 x2; slice C) + TURNING GEAR TCE350 */
 let fail = 0;
 const ck = (ok, w) => (console.log((ok ? 'PASS ' : 'FAIL ') + w), ok || fail++);
@@ -144,6 +144,12 @@ const run = (f, I, st, n, dt) => {
   O = run(h, { ...J, 'DEF ALLVALVECLOSED': 1 }, s2, 3, 0.1);
   ck(O.ICV === 0, 'all valves closed: ICV 0');
 }
+// Phase 5 (3 PM read): ML 5 AW add with weight Y = G1 X1 + G2 X2 + G3 X3 + B (TCA013 No. 5), the record values of LME280 AW 069
+ck(R.K.AW([10, 20, 5], ['G1:0.8', 'G2:0.2', 'G3:0', 'B:0'])[0] === 12, 'AW 0.8 x 10 + 0.2 x 20 = 12');
+ck(R.K.AW([10, 4, 0], ['G1:1', 'G2:-1', 'G3:0', 'B:0.5'])[0] === 6.5, 'AW 10 - 4 + 0.5 = 6.5');
+// ML 7 ML Y = (X1 - X0)(C + G X2) + Y0 and ML 8 DV Y = G (X1 - X0) / (X2 + XC) + Y0 (TCA013, phase5-ml-dv-blocks); the backup values 0, 0, 1, 0
+ck(R.K.ML([3, 4], ['X0:0', 'C:0', 'G:1', 'Y0:0'])[0] === 12 && R.K.ML([3, 4], ['X0:1', 'C:2', 'G:1', 'Y0:5'])[0] === 17, 'ML 3 x 4 = 12; (3 - 1)(2 + 4) + 5 = 17');
+ck(R.K.DV([12, 4], ['X0:0', 'XC:0', 'G:1', 'Y0:0'], {})[0] === 3 && R.K.DV([12, 2], ['X0:2', 'XC:3', 'G:2', 'Y0:1'], {})[0] === 5, 'DV 12 / 4 = 3; 2 (12 - 2) / (2 + 3) + 1 = 5');
 // Phase 5: DUAL INPUT DIAGNOSTICS TCE101 001 (LME110 + LME110A, MJL / ASWW), VALVE TEST TCE222 005 (LME253), TCE220 002 (LME252), TCE226 036 (LME250)
 {
   const f = mk('TCE101', '001'),

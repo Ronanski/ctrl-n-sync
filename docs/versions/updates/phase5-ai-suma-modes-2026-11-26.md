@@ -73,3 +73,13 @@ The 150 MW start state is made again by `tools/steady150/make.cjs`.
 - Headless, from the 150 MW start with nothing pressed, the drum level goes from 0.5 to -53 mm in 10 plant minutes. The code before this change does the same.
 - The 150 MW start state was made with the 0.5 s step. The step is now 0.2 s (Phase 3).
 - The start state will be made again in the next slice.
+
+## 4. Slice 2 (2026-11-26, 2:30 PM PHT)
+- FICFA1055A: AUTO in the 150 MW start state. `tools/steady150/modes.cjs` loads the start, presses A as the faceplate does
+  (check.js autoSv), runs 10 s and writes `src/data/st150.txt` back; nothing else of the start state is made again. A full remake by
+  `tools/steady150/make.cjs` (60 plant minutes) was tried and NOT kept: it lost the bottom ash conveyor line-up and the sootblower
+  push button state that lanes put on the start state since (3 tests failed: ash-cooler-inlet, old-save-ash, sootblower-pb).
+- PIC-BASC: stays MANUAL. Snapshot 16.PNG (149.8 MW) shows the four ash cooler speed controls SICL1060A ~ D in M (screws stopped,
+  cycle mode timers) and DPICFG108 in M; the drawing holds PIC-BASC on its manual leg while all four coolers are MANUAL (M.0212).
+  The snapshot is direct evidence; the AUTO of the PC read was derived. Finding type b.
+- Result: the 9 loops match the procedure, the drawing or the snapshot.
