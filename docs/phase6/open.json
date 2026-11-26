@@ -1,0 +1,110 @@
+{
+  "_": "Phase 6 (logic as netlist): every input the QA trace still finds with no source (tools/trace/trace.cjs B1). Each entry is one finding of CLAUDE.md 5: type b = correct, with evidence from the drawing; type c = the drawing cannot be read, with the exact part named; type open = a bug or link still to be made (owner named). tests/lanes/qa/phase6-gate.cjs: docs/PHASES.md row 6 may be TAPOS only when no entry is open and the trace counts equal the b + c entries of each kind.",
+  "abc": [
+    {
+      "sheet": "ABC-003E",
+      "input": "→ SW (digital)",
+      "type": "b",
+      "why": "The drawn select wire of the 4-leg switch B4 (SI0304). The switch takes its legs from the conditions written beside it, (1) ~ (4) IF BNR-A ~ D OIL FLOW CONTROL REMOTE (M.009A ~ M.009D), read as signals (audit-fix ABC-003E-1, plant.js q4.sig). The wire itself carries no other signal."
+    },
+    {
+      "sheet": "ABC-005",
+      "input": "M.3403",
+      "type": "c",
+      "why": "Memory list 101 M.3403 LIMESTONE FEEDER TRIP (BC FROM S4), 'FROM STN104 STATION WIRING'. No sheet of the app (ABC, DITL, DITL-LS) writes it: the STN104 station wiring sheet that sends it is not in the drawing set read by the app. It feeds AMT B11 and OR B39 -> M.0148 (SOx control force manual)."
+    },
+    {
+      "sheet": "ABC-009A",
+      "input": "SELECT TO \"b\"",
+      "type": "open",
+      "owner": "phase thread",
+      "why": "The 4-leg switch B32 (SI0199) selects by (1) ~ (4) IF A ~ D-ASH COOLER AUTO (M.021A ~ M.021D; memory list 101 'A-ASH SCREW COOLER CTRL AUTO ONLY (FIRST AUTO)', 'B ~ D ... AUTO ONLY'). No sheet makes M.021A ~ D, so the conditions are user settings (0). The fix needs the switch evaluated every scan (it is evaluated only when its own wires change); engine slice after the gate."
+    }
+  ],
+  "ditl": [
+    {
+      "sheet": "DITL-43",
+      "input": "r5 AIR PREHEATER NOT TRIP FROM 43-55",
+      "type": "b",
+      "why": "Row of the AIR PREHEATER INVERTER PANEL box (drawn as a box on DITL-43, not a DCS sheet). The app runs the panel itself: src/digital/parts/03b-sim.js INV[\"DITL-43\"] / invStep sets the RUNNING and speed rows from START / STOP COMMAND after 2 s, and NOT TRIP is the field bit (instructor trip s._ftrip). The trace does not see a writer inside the sheet code, so it counts the row."
+    },
+    {
+      "sheet": "DITL-43",
+      "input": "r10 AIR PREHEATER RUNNING FROM 43-53",
+      "type": "b",
+      "why": "Row of the AIR PREHEATER INVERTER PANEL box (drawn as a box on DITL-43, not a DCS sheet). The app runs the panel itself: src/digital/parts/03b-sim.js INV[\"DITL-43\"] / invStep sets the RUNNING and speed rows from START / STOP COMMAND after 2 s, and NOT TRIP is the field bit (instructor trip s._ftrip). The trace does not see a writer inside the sheet code, so it counts the row."
+    },
+    {
+      "sheet": "DITL-43",
+      "input": "r12 AIR PREHEATER SPEED NOT LOW FROM 43-56",
+      "type": "b",
+      "why": "Row of the AIR PREHEATER INVERTER PANEL box (drawn as a box on DITL-43, not a DCS sheet). The app runs the panel itself: src/digital/parts/03b-sim.js INV[\"DITL-43\"] / invStep sets the RUNNING and speed rows from START / STOP COMMAND after 2 s, and NOT TRIP is the field bit (instructor trip s._ftrip). The trace does not see a writer inside the sheet code, so it counts the row."
+    },
+    {
+      "sheet": "DITL-43",
+      "input": "r13 AIR PREHEATER SPEED NOT L.L. FROM 43-57",
+      "type": "b",
+      "why": "Row of the AIR PREHEATER INVERTER PANEL box (drawn as a box on DITL-43, not a DCS sheet). The app runs the panel itself: src/digital/parts/03b-sim.js INV[\"DITL-43\"] / invStep sets the RUNNING and speed rows from START / STOP COMMAND after 2 s, and NOT TRIP is the field bit (instructor trip s._ftrip). The trace does not see a writer inside the sheet code, so it counts the row."
+    },
+    {
+      "sheet": "DITL-BA60",
+      "input": "r21 ASH SILO LEVEL_INPUT",
+      "type": "b",
+      "why": "Drawn analog input row that only passes the transmitter value on to the output row of the same sheet (no gate). The value is the I/O list row AI0386 LT-BH1750 (stn 3), written by src/world/field/alarm.js from U.bhSilo, unit.js bottom ash silo. The trace counts analog rows wired to no DITL net."
+    },
+    {
+      "sheet": "DITL-LS214",
+      "input": "r9 LIMESTONE SILO LEVEL FROM LT-LM1800",
+      "type": "b",
+      "why": "Drawn analog input row that only passes the transmitter value on to the output row of the same sheet (no gate). The value is the I/O list row AI0432 LT-LM1800 (stn 4), written by src/world/field/alarm.js from U.lmSilo, boiler.js limestone conveying. The trace counts analog rows wired to no DITL net."
+    },
+    {
+      "sheet": "DITL-LS240",
+      "input": "r1 LOCK VESSEL PRESSURE FROM PT-LM1811",
+      "type": "b",
+      "why": "Drawn analog input row that only passes the transmitter value on to the output row of the same sheet (no gate). The value is the I/O list row AI0434 PT-LM1811 (stn 4), written by src/world/field/alarm.js from U.lmPl, boiler.js limestone conveying. The trace counts analog rows wired to no DITL net."
+    },
+    {
+      "sheet": "DITL-LS240",
+      "input": "r2 DISPENSE VESSEL PRESSURE FROM PT-LM1812",
+      "type": "b",
+      "why": "Drawn analog input row that only passes the transmitter value on to the output row of the same sheet (no gate). The value is the I/O list row AI0433 PT-LM1812 (stn 4), written by src/world/field/alarm.js from U.lmPd, boiler.js limestone conveying. The trace counts analog rows wired to no DITL net."
+    },
+    {
+      "sheet": "DITL-LS240",
+      "input": "r3 ACTURE ROTOFEEDER SPEED FROM ST-M1311",
+      "type": "b",
+      "why": "Drawn analog input row that only passes the feeder speed to the output row of the same sheet (no gate). I/O list AI0151 ST-M1311 \"#1 Limestone feeder speed\"; the app has no speed model for it yet (src/ui/plant/hx/hx-page-limestone-sand.js notes NO-SOURCE), so the row carries no logic effect."
+    },
+    {
+      "sheet": "DITL-771",
+      "input": "r8 OVERRIDE",
+      "type": "b",
+      "why": "M.0803. Operator input from the DCS graphic, memory list text (CRT); the HMI button itself is Phase 9."
+    },
+    {
+      "sheet": "DITL-772",
+      "input": "r2 EMERGENT STOP",
+      "type": "b",
+      "why": "M.0882. Operator input from the DCS graphic, memory list text (CRT); the HMI button itself is Phase 9."
+    },
+    {
+      "sheet": "DITL-774",
+      "input": "r1 SAND SILO LEVEL AI0387 TRANSMITTER LT (LT-SD1800)",
+      "type": "c",
+      "why": "DITL-774 row 1, transmitter LT-SD1800 (I/O list AI0387), drawn as an analog row wired straight into the OR gate with row 2 (net 47). The drawing shows no comparator or switch between the transmitter and the OR, so which level makes the OR input 1 cannot be read from the sheet."
+    },
+    {
+      "sheet": "DITL-774",
+      "input": "r2 SAND VESSEL AI0432 PRESS. TRANS. PT (PT-SD1800)",
+      "type": "c",
+      "why": "DITL-774 row 2, transmitter PT-SD1800 (I/O list stn 3 AI0432), drawn as an analog row wired straight into the same OR gate as row 1 (net 48). No comparator or set point is drawn, so the pressure that makes the OR input 1 cannot be read from the sheet."
+    },
+    {
+      "sheet": "DITL-776",
+      "input": "r3 ISO. VALVE M.0870 OPEN CLOSE",
+      "type": "b",
+      "why": "M.0870. Operator input from the DCS graphic, memory list text (CRT); the HMI button itself is Phase 9."
+    }
+  ]
+}

@@ -5,7 +5,7 @@
   "sheets.ditlRunning": 245,
   "io.linked": 1870,
   "io.value": 2292,
-  "mem.onSheet": 3072,
+  "mem.onSheet": 3073,
   "alarms.withSetPoint": 96,
   "hmi.faceplateBound": 120,
   "fx.tablesUsed": 91
@@ -15,9 +15,9 @@
   "io.noSource": 15,
   "io.onDrawing": 129,
   "io.copyClash": 0,
-  "mem.noSource": 10,
-  "breaks.B1_abcInputNoSource": 46,
-  "breaks.B1_ditlInputNoSource": 16,
+  "mem.noSource": 2,
+  "breaks.B1_abcInputNoSource": 3,
+  "breaks.B1_ditlInputNoSource": 14,
   "breaks.B2_ioInputNowhere": 6,
   "breaks.B3_faceplateNoController": 16,
   "breaks.B4_alarmNoSetPoint": 9

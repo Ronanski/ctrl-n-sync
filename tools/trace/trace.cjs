@@ -188,6 +188,18 @@ const has = (txt, tag) => {
     for (const v of Array.isArray(o) ? o : Object.values(o)) walkDi(v);
   };
   walkDi(AN.unit && AN.unit.di);
+  /* Phase 6 DCS audit (2026-11-26): the other wires the unit model writes on a change, by their net (unit.js): the turbine trip
+     U.trip / U.vtrip (ABC-050 I.0400, ABC-001C M.3200), the station wiring broadcast U.bcast (STN102 -> STN101 "BC FROM S2": M.3200,
+     M.3220, M.3221), the station links U.alink (the target of each pair) and the turbine valve positions U.vpos */
+  {
+    const Un = AN.unit || {};
+    walkDi(Un.trip);
+    walkDi(Un.vtrip);
+    walkDi(Un.vpos);
+    walkDi(Un.diX); /* Phase 6 audit: heater H.H. of ABC-036 / 037, condenser pressure switches of ABC-052 */ /* the turbine valve positions SI1812 ~ SI1829 of the T/G Modbus (ABC-050 / 051) */
+    for (const b of Un.bcast || []) walkDi(b && b[1]);
+    for (const a of Un.alink || []) walkDi(a && a[1]);
+  }
   /* NaN in the source chain (YUA 2026-11-25): a NaN that enters a compare / switch block comes out as 0, so a "0" can be silently wrong.
      A net has a NaN in its source chain when it, or any net upstream of it on the same sheet (the in pins of the blocks that drive it,
      and so on), read NaN / Infinity in a sample of the run. A link from another sheet carries the NaN into this sheet's input net. */
@@ -210,6 +222,27 @@ const has = (txt, tag) => {
     m.set(n0, bad);
     return bad;
   };
+  /* Phase 6 DCS audit (2026-11-26): the mode status wires the engine writes by the tag text on the drawing (engine/ctrls.js
+     modeNetsRaw: "HIC-BM.MAN" written over the wire "BOILER MASTER IN MANUAL", ABC-001A / B / C, ABC-004A ...). The M / A / R of that
+     tag and its BU-CMD write them, so their source is the operator, as for a wire named "HIC-BM.MAN" */
+  const modeW = new Map(); /* S -> Set(n) */
+  {
+    const tags = new Set();
+    for (const sh of AN.sheets)
+      for (const q of (sh.S && sh.S.tx) || []) {
+        const m = /^([A-Z][A-Z0-9-]*\d[A-Z0-9-]*|[A-Z]{2,4}-[A-Z0-9]+)\.(MAN|LOC|REM)$/.exec(String(q.t).trim());
+        if (m) tags.add(m[1] + '|' + m[2]);
+      }
+    const K = { MAN: ['MAN', 'MANUAL'], LOC: ['LOC', 'LOCAL', 'AUTO', 'AUT'], REM: ['REM', 'REMOTE'] };
+    for (const tk of tags) {
+      const [tag, k] = tk.split('|');
+      let L = [];
+      try {
+        L = AN.modeNetsBy(tag, K[k], null) || [];
+      } catch (e) {}
+      for (const [S2, n] of L) (modeW.get(S2) || modeW.set(S2, new Set()).get(S2)).add(n);
+    }
+  }
   for (const sh of AN.sheets) {
     if (/^ABC-000/.test(sh.name)) continue;
     const S = sh.S;
@@ -243,7 +276,7 @@ const has = (txt, tag) => {
               ? 'engine'
               : /^(PTN|PS)\d+$/.test(name)
                 ? 'block parameter' /* a pattern slot (PTN) or a ramp / time parameter (PS) of the block itself (AKIHO 2026-11-25, RULES.md) */
-                : OPER.test(name) || crt(rs, name) || ((S.alias && S.alias[n]) || []).some(t => OPER.test(t)) /* audit-fix alias: the mode status .LOC / .MAN that the M / A / R of that tag write (KIRARA) */
+                : OPER.test(name) || crt(rs, name) || (modeW.get(S) && modeW.get(S).has(n)) || ((S.alias && S.alias[n]) || []).some(t => OPER.test(t)) /* audit-fix alias: the mode status .LOC / .MAN that the M / A / R of that tag write (KIRARA) */
                 ? 'operator'
                 : 'NONE'
           : lk
@@ -295,8 +328,11 @@ const has = (txt, tag) => {
      sheet with the same station and address is written (an output of logic, a link, the DITL, the engine, the operator) */
   let sameAdr = 0;
   for (const r of abc) {
-    if (r.role !== 'in' || r.src !== 'NONE' || !/^[A-Z]{1,2}\.?[0-9A-F]{4,}$/.test(r.name)) continue;
-    const o = (abcByKey.get(r.stn + ':' + r.name) || []).find(x => x !== r && x.sh !== r.sh && (x.role === 'out' || (x.src !== 'NONE' && x.src !== 'wire') || x.writes > 0));
+    /* Phase 6 DCS audit: the address with a note after it (ABC-054 "S2 I.0400 ( M.3200 )") is that address (engine/links.js shareExt
+       joins it: held 1 on ABC-050 I.0400, ABC-054 reads 1) */
+    const an = r.name.replace(/\s*\(.*\)\s*$/, '');
+    if (r.role !== 'in' || r.src !== 'NONE' || !/^[A-Z]{1,2}\.?[0-9A-F]{4,}$/.test(an)) continue;
+    const o = (abcByKey.get(r.stn + ':' + an) || []).find(x => x !== r && x.sh !== r.sh && (x.role === 'out' || (x.src !== 'NONE' && x.src !== 'wire') || x.writes > 0));
     if (o) {
       r.src = 'same address (' + o.sh + ')';
       sameAdr++;
@@ -366,6 +402,10 @@ const has = (txt, tag) => {
       const own = s._inst && WORLD.showText ? WORLD.showText(s, t) : t;
       st = byDev || voteStn(own, among) || (among ? among[0] : null);
     }
+    /* Phase 6 (2026-11-26, MARIA DITL audit): the sand injection sheets DITL-771 ~ 777 are one system of station 103 (I/O list STN103:
+       I.057A SIL-SD1300 "#1 Boiler sand injection system remote", I.0571 sand silo vent filter trip, AI0387 LT-SD1800). DITL-777
+       (SYSTEM TRIP) has no I/O tag and no title block station, so it takes the station of its system */
+    if (st == null && /\)DITL-77[1-7]$/.test(s.name || '')) st = 3;
     return (s._qaStnOwn = st);
   };
   /* an address list of machines A / B / C / D written short: "I.0047/367", "O.0080/400", "O.0088/408 O.0728/1048" */
@@ -818,7 +858,8 @@ const has = (txt, tag) => {
   }
   /* ---- breaks */
   const B1abc = abc.filter(x => x.role === 'in' && x.src === 'NONE' && !x.alias);
-  const B1ditl = ditl.filter(x => x.io === 'in' && /^NONE/.test(x.src));
+  /* an input row printed SPARE on the drawing (DITL-BA74 row 5) carries no signal (MARIA DITL audit 2026-11-26) */
+  const B1ditl = ditl.filter(x => x.io === 'in' && /^NONE/.test(x.src) && !/^\s*SPARE\s*$/i.test(x.text || ''));
   const B2 = IO.filter(
     x => x.input && !x.excluded && (x.status === 'UNLINKED' || x.status === 'ON SHEET, STATION UNSURE')
   );

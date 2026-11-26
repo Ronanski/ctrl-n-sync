@@ -24,14 +24,16 @@ source at 150 MW: **83 -> 16** (copy clash count 1 -> 0). No trip at 150 MW (tra
 - `src/world/world.js` FROM ABC linker: a row "(FROM STATION WIRING)" is common to every machine copy.
 - `tests/lanes/ditl/yua-field.cjs` (41 checks).
 
-## Left (16)
+## Left (14), all explained in docs/phase6/open.json
 
-- DITL-43 rows 5 / 10 / 12 / 13 (4): APH running / not trip / speed contacts. The APH inverter reads row 5 in the first scan; binding
-  needs the start order checked so the APH does not trip at load (field/boiler.js note).
-- Sand operator controls (4): DITL-771 OVERRIDE M.0803, DITL-772 / 777 EMERGENT STOP M.0882, DITL-776 ISO VALVE M.0870. They are DCS
-  graphic push buttons / switches; they need the HMI binding. The trace also has no station for DITL-777.
-- Analog values drawn on digital rows (7): LS214 r9 LT-LM1800, LS240 r1 / r2 / r3, DITL-774 r1 / r2, BA60 r21.
-- DITL-BA74 row 5: SPARE (the phase thread's trace rule).
+After PR 645 (trace: DITL-777 = station 103, BA74 row 5 SPARE) the trace counts 14 DITL inputs. Each is a type b or c finding:
+
+- DITL-43 rows 5 / 10 / 12 / 13 (4), b: rows of the APH INVERTER PANEL box, run by 03b-sim.js INV / invStep.
+- Analog pass-through rows (5), b: BA60 r21 LT-BH1750, LS214 r9 LT-LM1800, LS240 r1 / r2 PT-LM1811 / 1812, r3 ST-M1311 (I/O list AI rows).
+- DITL-774 rows 1 / 2 (2), c: LT-SD1800 / PT-SD1800 wired straight into the OR gate, no comparator drawn.
+- Sand operator inputs (3), b: 771 r8 M.0803, 772 r2 M.0882, 776 r3 M.0870 (CRT; the HMI button is Phase 9).
+
+ABC-050 I.041E / I.041F are no longer counted (TCS link below) and are removed from open.json.
 
 ## TCS to DCS: MSV(A) / (B) TEST
 
