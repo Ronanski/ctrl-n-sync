@@ -41,19 +41,19 @@ FIELD.add(
   for (const [x, cp, rp, al, ri] of D) {
     const sh = 'DITL-45' + cp;
     st.push(
-      { id: 'PA-DRY-' + x + '.remote', tag: 'PLANT AIR DRYER-' + x + ' REMOTE', normal: 1, t: 'Plant air dryer ' + x + ' not in remote', g: 'Other',
+      { id: 'PA-DRY-' + x + '.remote', tag: 'MIL-D0703' + x, normal: 1, t: 'Plant air dryer ' + x + ' not in remote', g: 'Other',
         src: 'DITL-45' + cp + ' rows 5 / 9 I.00' + rp + ' PLANT AIR DRYER-' + x + ' REMOTE (DCS start P.B. on the same sheet: in service = REMOTE)' },
-      { id: 'PA-DRY-' + x + '.alarm', tag: 'PLANT AIR DRYER-' + x + ' ALARM', normal: 0, t: 'Plant air dryer ' + x + ' alarm', g: 'Other',
+      { id: 'PA-DRY-' + x + '.alarm', tag: 'MIT-D0703' + x, normal: 0, t: 'Plant air dryer ' + x + ' alarm', g: 'Other',
         src: 'DITL-45' + cp + ' row 6 I.00' + al + ' PLANT AIR DRYER-' + x + ' ALARM' },
-      { id: 'IA-DRY-' + x + '.remote', tag: 'INSTRUMENT AIR DRYER-' + x + ' REMOTE', normal: 1, t: 'Instrument air dryer ' + x + ' not in remote', g: 'Other',
+      { id: 'IA-DRY-' + x + '.remote', tag: 'MIL-D0704' + x, normal: 1, t: 'Instrument air dryer ' + x + ' not in remote', g: 'Other',
         src: 'DITL-45' + cp + ' rows 16 / 20 I.00' + ri + ' INSTRUMENT AIR DRYER-' + x + ' REMOTE (DCS start P.B. on the same sheet)' }
     );
     rw.push(
-      { stn: 5, di: 1, tag: 'PLANT AIR DRYER-' + x + ' REMOTE', adr: 'I.00' + rp, sheet: sh, v: (U, X) => X.state('PA-DRY-' + x + '.remote'),
+      { stn: 5, di: 1, tag: 'PLANT AIR DRYER-' + x + ' REMOTE', io: 'MIL-D0703' + x, adr: 'I.00' + rp, sheet: sh, v: (U, X) => X.state('PA-DRY-' + x + '.remote'),
         rel: 'plant air dryer ' + x + ' selector at REMOTE', src: sh + ' rows 5 / 9' },
-      { stn: 5, di: 1, tag: 'PLANT AIR DRYER-' + x + ' ALARM', adr: 'I.00' + al, sheet: sh, v: (U, X) => X.state('PA-DRY-' + x + '.alarm'),
+      { stn: 5, di: 1, tag: 'PLANT AIR DRYER-' + x + ' ALARM', io: 'MIT-D0703' + x, adr: 'I.00' + al, sheet: sh, v: (U, X) => X.state('PA-DRY-' + x + '.alarm'),
         rel: 'plant air dryer ' + x + ' alarm contact', src: sh + ' row 6' },
-      { stn: 5, di: 1, tag: 'INSTRUMENT AIR DRYER-' + x + ' REMOTE', adr: 'I.00' + ri, sheet: sh, v: (U, X) => X.state('IA-DRY-' + x + '.remote'),
+      { stn: 5, di: 1, tag: 'INSTRUMENT AIR DRYER-' + x + ' REMOTE', io: 'MIL-D0704' + x, adr: 'I.00' + ri, sheet: sh, v: (U, X) => X.state('IA-DRY-' + x + '.remote'),
         rel: 'instrument air dryer ' + x + ' selector at REMOTE', src: sh + ' rows 16 / 20' }
     );
   }
@@ -67,21 +67,21 @@ FIELD.add(
    START P.B. from the CRT, DITL-80K REMOTE START COMMAND), so the APH sootblower system stands at REMOTE: LOCAL normal 0. DERIVED from the
    drawings */
 FIELD.state(lane, [
-  ...['1011', '1012', '1038'].map(n => ({ id: 'SB-N' + n + '.trip', tag: 'N-' + n + ' SOOTBLOWER TRIP', normal: 0, t: 'Sootblower N-' + n + ' trip',
+  ...['1011', '1012', '1038'].map(n => ({ id: 'SB-N' + n + '.trip', tag: 'MIT-N' + n, normal: 0, t: 'Sootblower N-' + n + ' trip',
     g: 'Boiler', src: 'DITL-80Q row ' + { 1011: 11, 1012: 12, 1038: 38 }[n] + ' N-' + n + ' SOOTBLOWER TRIP from the SB panel' })),
-  { id: 'SB-APH.trip', tag: 'AIR PREHEATER SOOTBLOWER TRIP', normal: 0, t: 'Air preheater sootblower trip', g: 'Boiler',
+  { id: 'SB-APH.trip', tag: 'MIT-SB-APH01', normal: 0, t: 'Air preheater sootblower trip', g: 'Boiler',
     src: 'DITL-80K row 10 I.073D (SB-PANEL), DITL-80Q row 39 (LOCAL/MCC) AIR PREHEATER SOOTBLOWER TRIP' },
-  { id: 'SB-APH.local', tag: 'AIR PREHEATER SOOTBLOWER SYSTEM LOCAL SELECTED', normal: 0, t: 'Air preheater sootblower system in local',
+  { id: 'SB-APH.local', tag: 'MIL-SB-APH01', normal: 0, t: 'Air preheater sootblower system in local',
     g: 'Boiler', src: 'DITL-80M row 2 I.073E AIR PREHEATER SOOTBLOWER SYSTEM LOCAL SELECTED (LOCAL/MCC)' }
 ]);
 /* the rows match by a word of their text (plantsw.js build: the tag is one of the first words): the sootblower number, the I/O address.
    DITL-80Q row 39 AIR PREHEATER SOOTBLOWER TRIP has neither (it is the same contact as DITL-80K row 10 I.073D): left to the linker */
 FIELD.add(lane, [
-  ...['1011', '1012', '1038'].map(n => ({ di: 1, tag: 'N-' + n, sheet: 'DITL-80Q', v: (U, X) => X.state('SB-N' + n + '.trip'),
+  ...['1011', '1012', '1038'].map(n => ({ stn: 2, di: 1, tag: 'N-' + n, io: 'MIT-N' + n, sheet: 'DITL-80Q', v: (U, X) => X.state('SB-N' + n + '.trip'),
     rel: 'sootblower N-' + n + ' trip contact of the SB panel', src: 'DITL-80Q row ' + { 1011: 11, 1012: 12, 1038: 38 }[n] + ' (SB PANEL)' })),
-  { di: 1, tag: 'I.073D', sheet: 'DITL-80K', v: (U, X) => X.state('SB-APH.trip'), rel: 'air preheater sootblower trip contact',
+  { stn: 2, di: 1, tag: 'I.073D', io: 'MIT-SB-APH01', sheet: 'DITL-80K', v: (U, X) => X.state('SB-APH.trip'), rel: 'air preheater sootblower trip contact',
     src: 'DITL-80K row 10 I.073D' },
-  { di: 1, tag: 'I.073E', sheet: 'DITL-80M', v: (U, X) => X.state('SB-APH.local'),
+  { stn: 2, di: 1, tag: 'I.073E', io: 'MIL-SB-APH01', sheet: 'DITL-80M', v: (U, X) => X.state('SB-APH.local'),
     rel: 'air preheater sootblower system selector at LOCAL', src: 'DITL-80M row 2 I.073E' }
 ]);
 
@@ -130,8 +130,8 @@ FIELD.add(lane, [
      0 in service (1 = trip) */
   S('M1301.trip', 'MIT-M1301', 0, 'Sand silo venting fan trip', 'Boiler', 'IO list stn 103 r469 I.0571 MIT-M1301; DITL-BA03 r11, BA11 r2, 774 r12, 777 r11 (YUA B10 / D17)');
   R({ stn: 3, di: 1, tag: 'MIT-M1301', v: (U, X) => X.state('M1301.trip'), rel: 'sand venting fan trip contact', src: 'DITL-BA03 row 11 / BA11 row 2' });
-  R({ stn: 3, di: 1, tag: 'I.0571', sheet: 'DITL-774', row: 12, v: (U, X) => X.state('M1301.trip'), rel: 'sand venting fan trip contact', src: 'DITL-774 row 12 I.0571' });
-  R({ stn: 3, di: 1, tag: 'I.0571', sheet: 'DITL-777', row: 11, v: (U, X) => X.state('M1301.trip'), rel: 'sand venting fan trip contact', src: 'DITL-777 row 11 I.0571' });
+  R({ stn: 3, di: 1, tag: 'I.0571', io: 'MIT-M1301', sheet: 'DITL-774', row: 12, v: (U, X) => X.state('M1301.trip'), rel: 'sand venting fan trip contact', src: 'DITL-774 row 12 I.0571' });
+  R({ stn: 3, di: 1, tag: 'I.0571', io: 'MIT-M1301', sheet: 'DITL-777', row: 11, v: (U, X) => X.state('M1301.trip'), rel: 'sand venting fan trip contact', src: 'DITL-777 row 11 I.0571' });
   /* DITL-774 row 5 DPS-SD1800 VENT FILTER PURGE FAULT, I.056C: 0 in service (YUA D17, fault contact) */
   S('SD1800.purge', 'DPS-SD1800', 0, 'Sand silo vent filter purge fault', 'Boiler', 'IO list stn 103 r464 I.056C DPS-SD1800; DITL-774 row 5 (YUA D17)');
   R({ stn: 3, di: 1, tag: 'DPS-SD1800', sheet: 'DITL-774', row: 5, v: (U, X) => X.state('SD1800.purge'), rel: 'vent filter purge fault contact', src: 'DITL-774 row 5 I.056C' });
@@ -143,7 +143,7 @@ FIELD.add(lane, [
   /* 4d. limestone (station 104, limestone_logic.xls; YUA C12 ~ C15) */
   S('M1311.fault', 'MIT-M1311', 0, 'Limestone rotofeeder fault', 'Coal and limestone', 'IO list stn 104 I.0171 MIT-M1311; sheet 230 row 10 "1 = FAULT"');
   [['DITL-LS10', 7], ['DITL-LS110', 10], ['DITL-LS230', 10]].forEach(([sh, r]) =>
-    R({ stn: 4, di: 1, tag: 'I.0171', sheet: sh, row: r, v: (U, X) => X.state('M1311.fault'), rel: 'rotofeeder fault contact', src: sh + ' row ' + r + ' I.0171 FROM MIT-M1311' }));
+    R({ stn: 4, di: 1, tag: 'I.0171', io: 'MIT-M1311', sheet: sh, row: r, v: (U, X) => X.state('M1311.fault'), rel: 'rotofeeder fault contact', src: sh + ' row ' + r + ' I.0171 FROM MIT-M1311' }));
   S('LM1313.trip', 'MIT-LM1313', 0, 'Limestone vent filter trip', 'Coal and limestone', 'IO list stn 104 I.0174; sheet 214 row 17 "1 = TRIP"');
   S('LM1313.remote', 'MIL-LM1313', 1, 'Limestone vent filter not in remote', 'Coal and limestone', 'IO list stn 104 I.0175; sheet 214 row 19 "1 = REMOTE"');
   R({ stn: 4, di: 1, tag: 'MIT-LM1313', adr: 'I.0174', sheet: 'DITL-LS214', v: (U, X) => X.state('LM1313.trip'), rel: 'vent filter trip contact', src: 'DITL-LS214 row 17 I.0174' });
@@ -161,7 +161,7 @@ FIELD.add(lane, [
   R({ stn: 4, di: 1, tag: 'PS-PA1811', sheet: 'DITL-LS240', row: 16, v: U => (U.lm && U.lm.sw && isFinite(U.lm.sw.tank) ? 1 - U.lm.sw.tank : NaN),
     rel: 'air tank pressure above 4 kg/cm2 (1 - U.lm.sw.tank)', src: 'DITL-LS240 row 16 I.016A "1 = P > 4 Kg/cm2" (YUA C15)' });
   /* 4e. DITL-80Q row 39 AIR PREHEATER SOOTBLOWER TRIP (LOCAL/MCC) = the contact of DITL-80K row 10 I.073D (section 3, the same field state) */
-  R({ stn: 2, di: 1, tag: 'I.073D', sheet: 'DITL-80Q', row: 39, v: (U, X) => X.state('SB-APH.trip'), rel: 'air preheater sootblower trip contact', src: 'DITL-80Q row 39 = DITL-80K row 10 I.073D' });
+  R({ stn: 2, di: 1, tag: 'I.073D', io: 'MIT-SB-APH01', sheet: 'DITL-80Q', row: 39, v: (U, X) => X.state('SB-APH.trip'), rel: 'air preheater sootblower trip contact', src: 'DITL-80Q row 39 = DITL-80K row 10 I.073D' });
   FIELD.state(lane, st);
   FIELD.add(lane, rw);
 }
