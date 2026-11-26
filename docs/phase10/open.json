@@ -1,0 +1,170 @@
+{
+"what": "Phase 10 item 2: alarm rows that give no line of their own in tools/alarms/force.cjs, each with its reason: b = right as it is (evidence in note), link = Phase 10 still binds it, m = Phase 11 plant model owns it",
+"rows": [
+{
+"row": "DPS-LO1753|ALARM",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "DPS-LO1756|ALARM",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "LS-CR1001-1|ALARM",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "LS-CR1001-2|ALARM",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "LS-FS1410|ALARM",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "LS-FS1411|ALARM",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "LSH-CL1008-A|HIGH",
+"why": "m",
+"note": "coal bunker level stands in the model (unit.js LT-CL1008 constants); the list gives no switch height (FHI): Phase 11 bunker level model"
+},
+{
+"row": "LSH-CL1008-B|HIGH",
+"why": "m",
+"note": "coal bunker level stands in the model (unit.js LT-CL1008 constants); the list gives no switch height (FHI): Phase 11 bunker level model"
+},
+{
+"row": "LSH-CL1008-C|HIGH",
+"why": "m",
+"note": "coal bunker level stands in the model (unit.js LT-CL1008 constants); the list gives no switch height (FHI): Phase 11 bunker level model"
+},
+{
+"row": "LSL-CL1008-A|LOW",
+"why": "m",
+"note": "coal bunker level stands in the model (unit.js LT-CL1008 constants); the list gives no switch height (FHI): Phase 11 bunker level model"
+},
+{
+"row": "LSL-CL1008-B|LOW",
+"why": "m",
+"note": "coal bunker level stands in the model (unit.js LT-CL1008 constants); the list gives no switch height (FHI): Phase 11 bunker level model"
+},
+{
+"row": "LSL-CL1008-C|LOW",
+"why": "m",
+"note": "coal bunker level stands in the model (unit.js LT-CL1008 constants); the list gives no switch height (FHI): Phase 11 bunker level model"
+},
+{
+"row": "LSL-LO1753|LOW",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "LT-IW0113|LOW",
+"why": "m",
+"note": "industrial water: no model (Phase 9 NO-SOURCE, industrial water 6); Phase 11"
+},
+{
+"row": "PS-CD1110-1|ALARM",
+"why": "link",
+"note": "the plant model writes the switch on ABC-052 (unit.js anDiXOf, U.cdP >= 0.173 kg/cm2A); the alarm scan does not read ABC digital inputs yet (Phase 10 work)"
+},
+{
+"row": "PS-CD1110-2|ALARM",
+"why": "link",
+"note": "the plant model writes the switch on ABC-052 (unit.js anDiXOf, U.cdP >= 0.173 kg/cm2A); the alarm scan does not read ABC digital inputs yet (Phase 10 work)"
+},
+{
+"row": "PS-CD1110-3|ALARM",
+"why": "link",
+"note": "the plant model writes the switch on ABC-052 (unit.js anDiXOf, U.cdP >= 0.173 kg/cm2A); the alarm scan does not read ABC digital inputs yet (Phase 10 work)"
+},
+{
+"row": "PSL-LO1753|LOW",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "PSL-LO1756|LOW",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "PSLL-LO1753|LOW-LOW",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "PSLL-LO1756|LOW-LOW",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "PT-HD1101|LOW",
+"why": "b",
+"note": "list: L -2.2 = LL -2.2; a value under both gives the LOW-LOW line (one line per point)"
+},
+{
+"row": "SS-BH1060-A|ALARM",
+"why": "b",
+"note": "DITL-21A \"SPEED LOW\" output (FORWARD RUNNING and NOT the speed switch): needs the cooler running; tested by tests/lanes/lane5/alarm-live.cjs case 8"
+},
+{
+"row": "SS-BH1060-B|ALARM",
+"why": "b",
+"note": "DITL-21A \"SPEED LOW\" output (FORWARD RUNNING and NOT the speed switch): needs the cooler running; tested by tests/lanes/lane5/alarm-live.cjs case 8"
+},
+{
+"row": "SS-BH1060-C|ALARM",
+"why": "b",
+"note": "DITL-21A \"SPEED LOW\" output (FORWARD RUNNING and NOT the speed switch): needs the cooler running; tested by tests/lanes/lane5/alarm-live.cjs case 8"
+},
+{
+"row": "SS-BH1060-D|ALARM",
+"why": "b",
+"note": "DITL-21A \"SPEED LOW\" output (FORWARD RUNNING and NOT the speed switch): needs the cooler running; tested by tests/lanes/lane5/alarm-live.cjs case 8"
+},
+{
+"row": "TE-FW1115-A1|HIGH",
+"why": "b",
+"note": "list: H 200 = HH 200; a value over both gives the HIGH-HIGH line (one line per point)"
+},
+{
+"row": "TE-FW1115-A2|HIGH",
+"why": "b",
+"note": "list: H 200 = HH 200; a value over both gives the HIGH-HIGH line (one line per point)"
+},
+{
+"row": "TE-FW1115-B1|HIGH",
+"why": "b",
+"note": "list: H 200 = HH 200; a value over both gives the HIGH-HIGH line (one line per point)"
+},
+{
+"row": "TE-FW1115-B2|HIGH",
+"why": "b",
+"note": "list: H 200 = HH 200; a value over both gives the HIGH-HIGH line (one line per point)"
+},
+{
+"row": "TS-LO1753|ALARM",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "TS-LO1756-1|ALARM",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+},
+{
+"row": "TS-LO1756-2|ALARM",
+"why": "m",
+"note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"
+}
+]
+}
