@@ -10,11 +10,9 @@ const fs = require('fs'),
   path = require('path');
 const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSync('dist').find(x => /^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
 const NOVAL = {
-  /* the generator power factor: the TCS sends it in the 0.5 ~ 1.5 transducer form (lag = pf, lead = 2 - pf), which no sheet read
-     shows; the DCS out to the generator panel meter repeats it (tcs-gen.js has g.pf, the form is the gap) */
   /* the drain valve commands of the TCS (IBD TE-1 / TE-6 outputs TCA981-8 / 9, TCA980-11 / 12): those IBD sheets are not bound yet
      (TE-6 reader errors, finding D18-1); Modbus line A / B duty: the TCS link program is not in the documents read */
-  'turbine-interface': ['TCS-AI1009', 'GCP-AO1007', 'di:TCS-DI1033', 'di:TCS-DI1034', 'di:TCS-DI1037', 'di:TCS-DI1038', 'di:TCS-DI1048', 'di:TCS-DI1049'],
+  'turbine-interface': ['di:TCS-DI1033', 'di:TCS-DI1034', 'di:TCS-DI1037', 'di:TCS-DI1038', 'di:TCS-DI1048', 'di:TCS-DI1049'],
   /* condensate polisher train ready RY-CD01: the polisher package is bypassed at 150 MW (28.png) and its ready logic is not in the docs */
   condensate: ['di:RY-CD01'],
   /* flash pipe level switches: no model of the flash pipe level */
@@ -29,7 +27,7 @@ const NOVAL = {
      treatment plant, out of scope; field/bop.js) */
   'industrial-water': ['LT-IW0714', 'LT-IW0724', 'ZT-IW0391', 'DPT-IW0715-A', 'DPT-IW0715-B', 'PT-IW0715'],
   /* turbine metal temperatures, expansion and rotor position: no model of the turbine casing and rotor metal yet */
-  'turbine-readings': ['TE-ST1008', 'TE-ST1001-2', 'TE-ST1002-1', 'TE-ST1002-2', 'TE-ST1005', 'TE-ST1006-1', 'TE-ST1006-2', 'TE-ST1007-1', 'TE-ST1007-2', 'TE-ST1903-B1', 'TE-ST1903-B2', 'ZE-ST1002-1', 'ZE-ST1002-2', 'ZE-ST1003-1', 'ZE-ST1003-2', 'ZE-ST1003-3', 'ZE-ST1004', 'SI1240']
+  'turbine-readings': ['TE-ST1008', 'TE-ST1001-2', 'TE-ST1002-1', 'TE-ST1002-2', 'TE-ST1005', 'TE-ST1006-1', 'TE-ST1006-2', 'TE-ST1007-1', 'TE-ST1007-2', 'TE-ST1903-B1', 'TE-ST1903-B2', 'ZE-ST1002-1', 'ZE-ST1002-2', 'ZE-ST1003-1', 'ZE-ST1003-2', 'ZE-ST1003-3', 'ZE-ST1004']
 };
 (async () => {
   const { browser, page, errs } = await open(html);
