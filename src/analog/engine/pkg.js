@@ -254,6 +254,12 @@ const PKG_READ = {
     const k = a.w + '.' + a.b;
     if (k === '40009.15' || k === '40052.15') return P.wd.fa;
     if (PKG_FA.zero.has(k)) return 0;
+    /* Control By Level / L+T (1 = L+T): the fill ends at the level probe or the fill timer, whichever comes first; "level+timer" is the
+       recommended mode (L5-1 Sec 4 p3 item 1.1, p11 VI remark; YUA read 2026-11-27), so the plant runs L+T (INFERRED from "recommended") */
+    if (k === '40006.10') return 1;
+    /* MIS-M1250 silo vent filter in remote control: its fan starts by itself with the blow tanks (L5-1 Sec 4 p11 Attention 4), so the
+       PLC runs it, which needs REMOTE (derived, the rule of the ESP motors) */
+    if (k === '40007.3') return 1;
     /* PS-PA1700 plant air tank pressure low: below 4 bar (FA-OM 4) = 4.08 kg/cm2g, the unit 1 plant air header of the model (AN_AIR) */
     if (k === '40006.8') {
       const U = AN.unit,
@@ -283,6 +289,9 @@ const PKG_READ = {
       return NaN;
     }
     if (w === 30006) {
+      /* purge air fan / heater REMOTE: the LOCAL / REMOTE switch of LOP-1206 (ED p15); the auto logic of ED p87 runs them from the PLC,
+         which works only in REMOTE (ED p89, p90), the same rule as the motors above (derived) */
+      if (b === 0 || b === 3) return 1;
       if (b === 1) return pkgEspAux(E);
       if (b === 4) return E.on && E.ton < K.heatOff ? 1 : E.on ? 0 : NaN;
       if (b === 2 || b === 5) return 0;

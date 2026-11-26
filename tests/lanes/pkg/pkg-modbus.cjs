@@ -14,7 +14,7 @@
 const fs = require('fs'),
   path = require('path');
 const { load, root } = require(path.join(__dirname, '..', '..', '..', 'tools', 'trace', 'world.cjs'));
-const MIN = 372; /* 345 -> 372 (2026-11-27): ESP hammer / vibrator Auto / Manual levels and the ALL ... SWITCH AUTO pulses (INFERRED) */
+const MIN = 376; /* 345 -> 372 (2026-11-27): ESP hammer / vibrator Auto / Manual levels and the ALL ... SWITCH AUTO pulses (INFERRED); 372 -> 376: fan / heater / vent filter REMOTE, fly ash L+T mode */
 let bad = 0;
 const ok = (c, m) => {
   if (!c) bad++;

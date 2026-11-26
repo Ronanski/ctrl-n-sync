@@ -78,22 +78,8 @@
    ]
   },
   {
-   "sys": "turbine",
-   "type": "open",
-   "owner": "YUA (PC read)",
-   "why": "Gen. power factor: TCA931 / TCA990 give 4 ~ 20 mA = 0.5 ~ 1.5 and TCA320 converts with SG K 2.0 and SUB (2 - x); which side of 1.0 is lead is not on the sheets. tcs-gen.js has g.pf. Needs the transducer form from the docs (asked YUA)",
-   "rows": [
-    "30141"
-   ],
-   "names": [
-    "Gen. Power Factor"
-   ]
-  },
-  {
    "sys": "fa",
-   "type": "open",
-   "owner": "phase thread",
-   "why": "Blow tank cycle (inlet / discharge / air valves, level high, filling time out, purge valves PV): to be DERIVED from the process data YUA gave (tank 1000 / 600 / 200 / 100 L, ash 11,500 kg/h normal, 721 kg/m3, air 20 Nm3/min at 7 kg/cm2; FA p8, p10, p11, p40 ~ 45); times not in the docs read. YUA PC read phase8-gaps-2026-11-26-v2.md (FA = L5-1 Fly Ash O&M, ED = K1AU3-D1-0-016 R1, ESP O&M). Not yet read: the image-only K1AU3-D2-0-016, D2-0-017, D1-0-017 (YUA section 7 item 4)",
+   "type": "m",
    "rows": [
     "40001",
     "40001.01",
@@ -255,13 +241,13 @@
     "SV-PA1716 Purge Valve Open PV-701",
     "SV-PA1718 Purge Valve Open PV-702",
     "SV-PA1719 Purge Valve Open PV-703"
-   ]
+   ],
+   "why": "Blow tank cycle (air supply / discharge / inlet valves, level high, filling time out, purge valves). The link is read; the value needs the cycle model. Rule (L5-1 Sec 4 p11 VI): ASV open, P >= 2.5 bar ADV open; level low + P <= 0.4 bar + delay t ASV close; 5 s ADV close; 3 s AIV open; auto purge; next tank; Lmax or fill timer AIV close. NOT IN DOCS as numbers: fill timer, pressurized fail (\"several seconds\"), transported fail (\"several minutes\"), delay t, purge cycle (YUA read 2026-11-27 (phase8-image-docs-2026-11-27.md): L5-1 Sec 1 / Sec 4, K1AU3-D1-0-017 p40 / p60 / p137 ~ 169, D2-0-017, D2-0-016, L19-1 parts 4 / 5 / 7). DERIVED: pressurize 0 -> 2.5 bar of a 1000 L tank on the 20 Nm3/min air (FA p11) is at most 2.5 / 1.013 x 1.0 m3 / (20 / 60) = 7.4 s; the transport time needs the solids loading of the line, which no document gives. Process model: Phase 11.",
+   "owner": "Phase 11"
   },
   {
    "sys": "fa",
-   "type": "open",
-   "owner": "phase thread + YUA",
-   "why": "Fly ash hopper vibrators: run 3 s per inlet opening (FA manual), follows the blow tank cycle (to be derived with it)",
+   "type": "m",
    "rows": [
     "40008.09",
     "40008.1",
@@ -285,25 +271,21 @@
     "EP-4B Hopper Vibrator On",
     "EP-5A Hopper Vibrator On",
     "EP-5B Hopper Vibrator On"
-   ]
+   ],
+   "why": "Fly ash hopper vibrators: run 3 s each time the inlet valve AIV of that hopper opens (L5-1 Sec 4 p11 Attention 5). They follow the blow tank cycle model above (Phase 11).",
+   "owner": "Phase 11"
   },
   {
    "sys": "fa",
-   "type": "open",
-   "owner": "YUA (PC read)",
-   "why": "Ash silo level, H / HH / L, unloading, fluidizing, vent filter, control mode: silo heights, size and unloading schedule not found in the docs read. YUA PC read phase8-gaps-2026-11-26-v2.md (FA = L5-1 Fly Ash O&M, ED = K1AU3-D1-0-016 R1, ESP O&M). Not yet read: the image-only K1AU3-D2-0-016, D2-0-017, D1-0-017 (YUA section 7 item 4)",
+   "type": "m",
    "rows": [
     "40006.04",
     "40006.05",
     "40006.06",
-    "40006.09",
-    "40006.1",
-    "40006.11",
     "40006.12",
     "40006.13",
     "40006.14",
     "40007",
-    "40007.03",
     "40007.05",
     "40008.08",
     "40021"
@@ -312,24 +294,33 @@
     "LSHH-FH1714 Ash Silo Level HH",
     "LSH-FH1714 Ash Silo Level H",
     "LSL-FH1700 Ash Silo Level L",
-    "Control Mode Remote",
-    "Control By Level / L+T (1=L+T ; 0=Level)",
-    "Ash Silo Unloading System Auto",
     "SV-FH1725 Ash Silo Unloader Up Gate Valve Open",
     "SV-FH1726 Ash Silo Unloadier Down Gate Valve Open",
     "SV-PA1729 Ash Silo Fluidizing Valve Open",
     "Ash Silo Dry Unloader Running",
-    "MIS-M1250 Ash Silo Vent Filter in Remote Control",
     "MIR-M1250 Ash Silo Vent Filter Running",
     "System Not Ready",
     "LT-FH1700 Ash Silo Level"
-   ]
+   ],
+   "why": "Ash silo level and what follows it (LT-FH1700, LSL / LSH / LSHH, unloader gate valves, fluidizing, dry unloader, vent filter running, system not ready). Silo T-1251 1,600 m3, 10 m dia (D2-0-017 2.11, L5-1 Sec 1 p4). DERIVED from D1-0-017 p60: N11 fork 1,000 mm (flange FL+32,551) = HH tip EL 31.55 m, N9 2,000 mm (FL+32,520) = H tip EL 30.52 m; LSL FL+9.6 m. H = alarm and truck unloading, HH = system ready off, tanks stop after the cycle (L5-1 Sec 4 p9, p11, p15). The level is a state of the process (ash in from the tanks, out by trucks on the local dry unloader): Phase 11 model.",
+   "owner": "Phase 11"
+  },
+  {
+   "sys": "fa",
+   "type": "c",
+   "rows": [
+    "40006.09",
+    "40006.11"
+   ],
+   "names": [
+    "Control Mode Remote",
+    "Ash Silo Unloading System Auto"
+   ],
+   "why": "Control Mode Remote and Ash Silo Unloading System Auto: no document says which mode the plant uses (the dry unloader is local only, FA p13, p37). NO-SOURCE after YUA read 2026-11-27 (phase8-image-docs-2026-11-27.md): L5-1 Sec 1 / Sec 4, K1AU3-D1-0-017 p40 / p60 / p137 ~ 169, D2-0-017, D2-0-016, L19-1 parts 4 / 5 / 7."
   },
   {
    "sys": "esp",
-   "type": "open",
-   "owner": "phase thread",
-   "why": "ESP hopper vibrator run / interlock: the interlock is the fly ash blocking valve contact (ED p27, FA p558; INFERRED = inlet open, 3 s); follows the fly ash blow tank cycle",
+   "type": "m",
    "rows": [
     "30004.01",
     "30004.04",
@@ -373,13 +364,13 @@
     "CRM-MO_1235 4TH Field Hopper Vibrator B InterLock",
     "CRM-MO_1244 5TH Field Hopper Vibrator A InterLock",
     "CRM-MO_1245 5TH Field Hopper Vibrator B InterLock"
-   ]
+   ],
+   "why": "ESP hopper vibrator run / interlock: the interlock is the fly ash blocking valve contact (ED p27, FA p558), a 3 s run each time that hopper inlet valve opens (L5-1 Sec 4 p11 Attention 5). Follows the blow tank cycle model (Phase 11).",
+   "owner": "Phase 11"
   },
   {
    "sys": "esp",
-   "type": "open",
-   "owner": "YUA (PC read)",
-   "why": "TR01 ~ 05 primary / secondary kV and mA: only nameplates (U-1201 83 kV 840 mA, U-1202 ~ 1205 72 kV 1000 mA, ED p103, p107); normal operating values not in the docs read. YUA PC read phase8-gaps-2026-11-26-v2.md (FA = L5-1 Fly Ash O&M, ED = K1AU3-D1-0-016 R1, ESP O&M). Not yet read: the image-only K1AU3-D2-0-016, D2-0-017, D1-0-017 (YUA section 7 item 4)",
+   "type": "m",
    "rows": [
     "30051",
     "30052",
@@ -423,13 +414,13 @@
     "TR05 PRIMARY CURRENT",
     "TR05 SECOND VOLTAGE",
     "TR05 SECOND CURRENT"
-   ]
+   ],
+   "why": "TR01 ~ 05 primary / secondary kV and mA: normal running values NOT IN DOCS (L19-1 part 7 says only \"at the threshold of sparking\"). Ratings: U-1201 83 kVDC / 840 mA, U-1202 ~ 1205 72 kVDC / 1,000 mA (L19-1 part 4, ED p103, p107). The running value depends on the gas and dust in the field: an ESP electrical model, Phase 11.",
+   "owner": "Phase 11"
   },
   {
    "sys": "esp",
-   "type": "open",
-   "owner": "YUA (PC read)",
-   "why": "Vibrator interval timer settings M-1204 ~ M-1245 (running / stopped): screen ranges only (5 ~ 120 s, 1 ~ 5 min, ED p82 ~ 86). YUA PC read phase8-gaps-2026-11-26-v2.md (FA = L5-1 Fly Ash O&M, ED = K1AU3-D1-0-016 R1, ESP O&M). Not yet read: the image-only K1AU3-D2-0-016, D2-0-017, D1-0-017 (YUA section 7 item 4)",
+   "type": "c",
    "rows": [
     "30091",
     "30092",
@@ -513,16 +504,13 @@
     "M-1244 AUTO STOPPED INTERVAL TIMER SET",
     "M-1245 AUTO RUNNING INTERVAL TIMER SET",
     "M-1245 AUTO STOPPED INTERVAL TIMER SET"
-   ]
+   ],
+   "why": "Hopper vibrator interval timer settings M-1204 ~ M-1245 (running / stopped): only the screen ranges 5 ~ 120 s and 1 ~ 5 min (ED p82 ~ 86); the ESP O&M gives no on / off time (L19-1 part 4, part 5 7.7). The vibrator run itself is the 3 s fly ash contact. NO-SOURCE after YUA read 2026-11-27 (phase8-image-docs-2026-11-27.md): L5-1 Sec 1 / Sec 4, K1AU3-D1-0-017 p40 / p60 / p137 ~ 169, D2-0-017, D2-0-016, L19-1 parts 4 / 5 / 7."
   },
   {
    "sys": "esp",
-   "type": "open",
-   "owner": "YUA (PC read)",
-   "why": "Purge air fan / heater REMOTE, AUTO and the DCS Auto / Manual of the fan and heater (40025.02 / .05), DCS CONTROL: not in the docs read. YUA PC read phase8-gaps-2026-11-26-v2.md (FA = L5-1 Fly Ash O&M, ED = K1AU3-D1-0-016 R1, ESP O&M). Not yet read: the image-only K1AU3-D2-0-016, D2-0-017, D1-0-017 (YUA section 7 item 4)",
+   "type": "c",
    "rows": [
-    "30006",
-    "30006.03",
     "30017.09",
     "30017.1",
     "30019.05",
@@ -530,14 +518,13 @@
     "40025.05"
    ],
    "names": [
-    "CRM-F_1201 Pugre Air Fan Remote",
-    "CRM-H_1201 Heater Remote",
     "F_1201 PUGRE AIR FAN Auto",
     "H_1201 HEATER Auto",
     "DCS CONTROL",
     "F_1201 AUTO PUGRE AIR FAN Auto / Manual",
     "H_1201 AUTO HEATER Auto / Manual"
-   ]
+   ],
+   "why": "Purge air fan / heater AUTO (30017.09 / .10), the DCS Auto / Manual of the fan and heater (40025.02 / .05) and DCS CONTROL (30019.05): the documents give the start / stop times (L19-1 part 7 p5 ~ 7: on 4 ~ 6 h before firing, heaters off 1 h after energizing) and the auto logic (ED p87), not the mode the plant uses. NO-SOURCE after YUA read 2026-11-27 (phase8-image-docs-2026-11-27.md): L5-1 Sec 1 / Sec 4, K1AU3-D1-0-017 p40 / p60 / p137 ~ 169, D2-0-017, D2-0-016, L19-1 parts 4 / 5 / 7."
   }
  ]
 }

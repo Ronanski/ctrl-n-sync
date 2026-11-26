@@ -661,14 +661,22 @@
   const genI = U => gq(U, 'I') * 7.384,
     genQ = U => gq(U, 'Q') * 176.5,
     genIf = U => gq(U, 'efd') * 4.5;
-  const genNeeds = 'generator power factor: the 0.5 ~ 1.5 transducer form (lag = pf, lead = 2 - pf) is not read on a sheet (tcs-gen.js has g.pf)';
+  /* Phase 8 (2026-11-27): the power factor transducer (GEE-2015-0141 R2 p13 item 3 "GEN. POWER FACTOR +/-0.5 (-: Lead, +: Lag)":
+     4 mA = 0.5 LEAD, 12 mA = 1.0, 20 mA = 0.5 LAG; TCS PI/O TCA931 row 18 / TCA990 row 14 scale 0.5 ~ 1.5): a lead pf reads its value,
+     a lag pf reads 2 - pf. Lag = Mvar plus (the same table, item 4: "minus = lead, plus = lag"), so g.Q > 0 (the generator gives Mvar)
+     reads 2 - g.pf */
+  const genPF = U => {
+    const pf = gq(U, 'pf'),
+      q = gq(U, 'Q');
+    return isFinite(pf) && isFinite(q) ? (q > 0 ? 2 - pf : pf) : NaN;
+  };
   ['TCA930-3', 'TCA930-11', 'TCA930-18'].forEach((id, i) =>
     M(id, 'GEN. CURRENT (' + 'ABC'[i] + '), kA: tcs-gen.js g.I x 7.384 kA (balanced)', genI)
   );
   M('TCA931-17', 'GEN. MVAR: tcs-gen.js g.Q x 176.5 MVA', genQ);
   M('TCA930-13', 'GEN. FIELD CURRENT, A (exciter field): tcs-gen.js g.efd x 4.5 A', genIf);
   M('TCA930-12', 'GEN. FIELD VOLTAGE, V (exciter field): g.efd x 4.5 A x 6.14 ohm', U => genIf(U) * 6.14);
-  N('TCA931-18', genNeeds);
+  M('TCA931-18', 'GEN. POWER FACTOR, 0.5 (lead) ~ 1.0 ~ 1.5 (0.5 lag): tcs-gen.js g.pf, lag (g.Q > 0) = 2 - pf (GEE-2015-0141 p13)', genPF);
   /* the line voltages: the terminal voltage of the generator model (tcs-gen.js g.V, per unit, balanced) x the rated 13.8 kV
      (K1AU3E1-0003 rev 2 key one line diagram: G1 176.5 MVA 13.8 kV, elec.js); card range 0 ~ 18 kV */
   [
@@ -901,7 +909,7 @@
     U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN
   );
   O('TCA990-11', 'GEN. MVAR -> DCS STN102 AI0775 GCP-AI1004: tcs-gen.js g.Q x 176.5', genQ);
-  O('TCA990-14', 'GEN. POWER FACTOR -> DCS STN102 AI0823 TCS-AI1009: ' + genNeeds);
+  O('TCA990-14', 'GEN. POWER FACTOR -> DCS STN102 AI0823 TCS-AI1009, 0.5 ~ 1.5 (lag = 2 - pf, GEE-2015-0141 p13)', genPF);
   O('TCA990-15', 'FREQUENCY -> DCS STN102 AI0839 TCS-AI1010 (tcs-gen.js g.fg)', U => num(U.gen && U.gen.fg));
 
   /* ---------- TCS -> DCS MODBUS (LMYP-1 #1 MODBUS Communication list between DCS and turbine system.xls, sheets PLC to DCS / DCS to PLC) ----------
@@ -1090,13 +1098,14 @@
   /* Phase 9 (2026-11-26): the DCS analog outputs to the meters of the generator control panel (tcs-dcs.json rows 'out', GCP:<meter>,
      drawing GAE-2013-0136). No ABC sheet of the app draws the logic that drives them, so each one repeats the DCS input of the same
      generator quantity (the TCS COMM AO table TCA990 above, one source): current A / B / C, Mvar, voltage A-B / B-C / C-A, frequency.
-     The power factor stays without a value for the same reason as TCA990-14 (the transducer form) */
+     The power factor repeats TCA990-14 the same way (0.5 ~ 1.5, lag = 2 - pf, GEE-2015-0141 p13) */
   const gV = U => (U && U.gen && isFinite(U.gen.V) ? U.gen.V * 13.8 : NaN);
   ['IA', 'IB', 'IC'].forEach(m => (MB['GCP:' + m] = ['model', 'DCS out to the GCP meter: generator current, kA (= TCA990-5 / 12 / 17, tcs-gen.js g.I x 7.384)', genI]));
   MB['GCP:MW'] = ['model', 'DCS out to the GCP meter: generator MW (D) (= GCP-AI1002, the model MW U.MW)', U => num(U.MW)];
   MB['GCP:MVAR'] = ['model', 'DCS out to the GCP meter: generator Mvar (= TCA990-11, tcs-gen.js g.Q x 176.5)', genQ];
   ['VAB', 'VBC', 'VCA'].forEach(m => (MB['GCP:' + m] = ['model', 'DCS out to the GCP meter: generator voltage, kV (= TCA990-6 / 13 / 18, tcs-gen.js g.V x 13.8 kV)', gV]));
   MB['GCP:HZ'] = ['model', 'DCS out to the GCP meter: frequency, Hz (= TCA990-15, tcs-gen.js g.fg)', U => num(U.gen && U.gen.fg)];
+  MB['GCP:PF'] = ['model', 'DCS out to the GCP meter: power factor, 0.5 ~ 1.5 (= TCA990-14, lag = 2 - pf)', genPF];
   /* DCS to PLC: the DCS commands that the COMM controller takes (STN102 WM0210 / WM0211 -> SI1900 / SI1901). In the app the same commands are
      the tcsCmd of tcs.js */
   mb('DO1', 'out', 'turbine gland seal group start command -> TCS (IBD TC-31 START, tcsCmd ibd TC-31)');
