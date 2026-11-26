@@ -205,6 +205,23 @@
     },
     /* ML 39 LIN Y = K X + B */
     LIN: (x, n) => [par(n, 'K') * x[0] + par(n, 'B')],
+    /* TINV inverse time pick-up of a protection relay element (the generator 24 V/Hz 2nd step of the Beckwith M-3425A, G-5A / G-6A
+       d24b; lane 0 read phase5-24-vhz-curve1-2026-11-26.md): x = [pick-up contact, M (V/Hz %)]. Curve #1: t = 1800 TD / (M - 100)^2 s
+       (= 0.18 TD / (M/100 - 1)^2), operating at M >= PU. The FORM is fitted to the vendor's own expected values (LM-GEE-2015-0059 p.22
+       rows 9 - 10, curve #1 TD 2: 110 % -> 36.00 s, 115 % -> 16.00 s, both exact); the M-3425A instruction book (Appendix D) is not on
+       the PC, so the scaling with TD is assumed (TD 2 is the plant setting). The time is integrated (1 / t per second); reset linear in
+       RST s from the trip threshold (report p.21: 30 s). Y = 1 when the integral reaches 1 */
+    TINV: (x, n, st, dt) => {
+      const M = +x[1],
+        TD = par(n, 'TD'),
+        PU = par(n, 'PU'),
+        RST = par(n, 'RST');
+      const on = !!(x[0] > 0.5) && isFinite(M) && M >= PU && M > 100;
+      st.a = st.a || 0;
+      if (on) st.a = Math.min(1, st.a + dt / ((1800 * TD) / Math.pow(M - 100, 2)));
+      else st.a = Math.max(0, st.a - (RST > 0 ? dt / RST : 1));
+      return [b01(st.a >= 1)];
+    },
     /* ML 5 AW add with weight (TCA013 No. 5, tcs-macros-layout-2026-11-26.md: values G1 G2 G3 B): Y = G1 X1 + G2 X2 + G3 X3 + B */
     AW: (x, n) => [par(n, 'G1') * (x[0] || 0) + par(n, 'G2') * (x[1] || 0) + par(n, 'G3') * (x[2] || 0) + par(n, 'B')],
     /* ML 41 LMS limiter LL <= Y <= HL */
@@ -357,7 +374,7 @@
      (QA : SAORI review 2026-11-25: a missing parameter is an open item, never a default). */
   const REQ = {
     MODE: ['L1', 'L2', 'L3', 'L4', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6'],
-    I: ['TI'], LG: ['T'], PIF: ['G', 'TI'], PIV: ['G1', 'G2', 'TI'], SG: ['K'], SGW: ['K'], AM: ['R'], G: ['K'], FLT: ['N'], GRD: ['K'],
+    I: ['TI'], LG: ['T'], TINV: ['TD', 'PU', 'RST'], PIF: ['G', 'TI'], PIV: ['G1', 'G2', 'TI'], SG: ['K'], SGW: ['K'], AM: ['R'], G: ['K'], FLT: ['N'], GRD: ['K'],
     PD: ['N', 'K'], LIN: ['K', 'B'], TP: ['TP'], TD: ['TD'], TW: ['TW'], CMP: ['HL'], CPL: ['HL'], CNT: ['N'], FLK: ['T1', 'T2'],
     LCK: ['K'], UCK: ['K']
   };
@@ -646,7 +663,11 @@
         const m = /^([\d.]+)\s*(s|min)$/i.exec(z[1] || ''),
           st = (s.set || {})[key];
         const notes = m ? ['TP:' + +m[1] * (/min/i.test(m[2]) ? 60 : 1)] : st ? st : ['time "' + (z[1] || '') + '" not printed'];
-        blocks.push({ key, type: m || st ? 'TP' : 'TP?', no: '', notes, pins: {}, ex: x, ys: [y, y + h], ins: [] });
+        /* an inverse time element (TINV, the sheet's `set` gives TD / PU): its second input is the operating quantity of the relay
+           (V/Hz % for the 24 element), a PLANT port of the sheet; the first is the pick-up contact drawn into the box */
+        const inv = !m && st && /^TINV/.test(st[0]);
+        if (inv) res.ports[key + '.M'] = 'PLANT:' + s.id + '.' + key + '.M operating quantity (V/Hz %)';
+        blocks.push({ key, type: inv ? 'TINV' : m || st ? 'TP' : 'TP?', no: '', notes: inv ? st.slice(1) : notes, pins: {}, ex: x, ys: [y, y + h], ins: inv ? [{ net: key + '.M', y: y + h + 1, side: 'l' }] : [] });
       } else res.ports[key] = 'PLANT:' + s.id + '.' + key + ' ' + (text || z.join(' ') || '').trim();
     }
     for (const x of s.s || []) {
@@ -1639,7 +1660,12 @@
       at: {"TCA752 001":{},"TCA752 004":{},"TCA752 007":{},"TCA753 004":{},"TCA753 007":{},"TCA756 001":{},"TCA756 004":{},"TCA756 007":{},"TCA757 004":{},"TCA757 007":{}} },
     LMA628: { name: "THERMAL STRESS", pi: ["SG1","T1","SG2","T2","SG3","T3","SG4","T4","SG5","T5","TS"], po: {"SURF":"G 005","BORE":"G 008","TB":"G 012"}, pb: [],
       b: [["ML","001",["pin SG1","pin T1"],[0,0,1,0]], ["ML","006",["pin SG2","pin T2"],[0,0,1,0]], ["ML","009",["pin SG3","pin T3"],[0,0,1,0]], ["ML","010",["pin SG4","pin T4"],[0,0,1,0]], ["ML","013",["pin SG5","pin T5"],[0,0,1,0]], ["ADD","002",["ML 001","ML 006","ML 009","ML 010","ML 013"],[]], ["ADD","015",["pin SG1","pin SG2","pin SG3","pin SG4","pin SG5"],[]], ["DV","003",["ADD 002","ADD 015"],[0,0,1,0]], ["SUB","004",["DV 003","pin TS"],[]], ["G","005",["SUB 004"],[3.989]], ["G","014",["pin T5"],[9]], ["SUB","011",["G 014","pin T4"],[]], ["G","012",["SUB 011"],[0.125]], ["SUB","007",["DV 003","G 012"],[]], ["G","008",["SUB 007"],[3.989]]],
-      at: {"TCA754 001":{},"TCA758 001":{}} }
+      at: {"TCA754 001":{},"TCA758 001":{}} },
+    /* TCA782 A002: the 2 out of 3 select MJL (ML 71) drawn as a box with no name (backup record MJL 002, S 0, M 30.0). SW is not drawn
+       (the T of INITIAL at its top is not a pin of ML 71); with S = 0 the select does not read SW, so it is OFF here */
+    MJL: { name: "MJL (2 OUT OF 3 SELECT, ML 71)", pi: ["X1","X2","X3","E1","E2","E3"], po: {"Y":"MJL 002","Z1":"MJL 002 out2","Z2":"MJL 002 out3","Z3":"MJL 002 out4"}, pb: [],
+      b: [["MJL", "002", ["pin X1", "pin X2", "pin X3", "pin E1", "pin E2", "pin E3", "SW:const 0"], [0, 30]]],
+      at: {"TCA782 002": {}} }
   };
   /* record order of the values (lane 0, tcs-macros-layout-2026-11-26.md question 1: each matched against the drawing blocks of the same
      number, e.g. MR n = 18 of 18, LMS 44 of 44, I 4 of 4, AM 4 of 4) */
