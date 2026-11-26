@@ -134,6 +134,14 @@
         /* lane 7 (MINAMI): I/O list station 2: LSLL-CD1104-4 I.004C (read by DITL-23B, feed pump trip); the suction valve limit
            switches ZSO-FW1031 I.028F (DITL-23A) / ZSO-FW1032 I.032F (V-FW1001 / 1002 of PD-017, hand valves with a limit switch) */
         at(HX.B('Deaerator level low low', 'data-di="LSLL-CD1104-4|LOW LOW|NORMAL"', { w: 170 }), 600, 335, { id: 'dall' }),
+        /* Phase 9 (2026-11-27, flow diagram PD-017 E-2 / E-7 and PD-013 D-2, YUA P&ID read): on each pump suction, after the suction valve
+           V-FW1001 / 1002, the safety valve ZV-FW1001 / 1002 and then the suction strainer STR-FW1001 / 1002 (the strainers are drawn with
+           no label: the pump words fill the place; docs/phase9/equipment.json map); the deaerator safety valve ZV-TS1104 on its top */
+        at(E('valve', 'Safety valve', 'ZV-FW1001', [], { kind: 'safety' }), 250, 930, { id: 'zva', rot: -90, lab: 'l' }),
+        at(E('valve', 'Safety valve', 'ZV-FW1002', [], { kind: 'safety' }), 560, 930, { id: 'zvb', rot: -90, lab: 'l' }),
+        at(E('strainer', '', '', [], { flow: A }), 250, 880, { id: 'sfa', rot: 90 }),
+        at(E('strainer', '', '', [], { flow: B }), 560, 880, { id: 'sfb', rot: 90 }),
+        at(E('valve', 'Deaerator safety valve', 'ZV-TS1104', [], { kind: 'safety' }), 231, 203, { id: 'zvd', lab: 'l' }),
         at(HX.B('Pump A suction valve', 'data-di="ZSO-FW1031|OPEN|NOT OPEN"', { w: 160 }), 330, 978, { id: 'sva' }),
         at(HX.B('Pump B suction valve', 'data-di="ZSO-FW1032|OPEN|NOT OPEN"', { w: 160 }), 680, 978, { id: 'svb' }),
         at(L('extraction', 'Extraction steam', { back: true }), 680, DAY - 12 * DAS, { id: 'exl3' }),
@@ -220,8 +228,10 @@
         { med: 'steam', w: W_ST, pts: ['ts3.l', 'da.stin'], flow: 'x:MV-TS1003' },
         /* suction: one line from the deaerator, a branch to each pump */
         { med: 'water', w: W_FW, pts: ['da.out', [DAX + 48 * DAS, 300], [SUX, 300], [SUX, SUY], [250, SUY]], flow: FW },
-        { med: 'water', w: W_FW, pts: [[250, SUY], [250, PY], 'pa.s'], flow: A, arrow: false },
-        { med: 'water', w: W_FW, pts: [[250, SUY], [560, SUY], [560, PY], 'pb.s'] /* beta.305: clear of the words under pump B */, flow: B, arrow: false },
+        { med: 'water', w: W_FW, pts: [[250, SUY], 'sfa.r'], flow: A, arrow: false },
+        { med: 'water', w: W_FW, pts: ['sfa.l', [250, PY], 'pa.s'], flow: A, arrow: false },
+        { med: 'water', w: W_FW, pts: [[250, SUY], [560, SUY], 'sfb.r'] /* beta.305: clear of the words under pump B */, flow: B, arrow: false },
+        { med: 'water', w: W_FW, pts: ['sfb.l', [560, PY], 'pb.s'], flow: B, arrow: false },
         /* discharge of pump A: valve and its bypass, recirculation */
         { med: 'water', w: W_FW, pts: ['pa.d', 'dva.l'], flow: A, arrow: false },
         { med: 'water', w: W_FW, pts: ['dva.r', [PAX - 3, DHY]], flow: 'x:MV-FW1001' },
