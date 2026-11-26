@@ -125,8 +125,10 @@
           rot: 90,
           lab: 'r'
         }),
-        /* Phase 9 (2026-11-27): safety valve ZV-SB1001 of the sootblower steam (R0 equipment list, SCOPE 4.5). Drawn on the header after the
-           pressure valve PCV-SB1053, the side it protects (INFERRED: the flow diagram position is not read yet, YUA list phase9) */
+        /* Phase 9 (2026-11-27): safety valve ZV-SB1001 of the sootblower steam (R0 equipment list, SCOPE 4.5). Flow diagram PD-015 A-9 (YUA
+           P&ID read 2026-11-27): S.H. panel #1 outlet -> MV-SB1001 -> pressure control valve -> ZV-SB1001 -> sootblower header SB-1-003; the
+           relief outlet SB-1-101 goes to the silencer Z-1001 (PD-019 B-5). The flow diagram names the valve PCV-SB1001, the I/O list and
+           this page PCV-SB1053 (the same valve, one place on the line) */
         at(E('valve', 'Safety valve', 'ZV-SB1001', [], { kind: 'safety' }), 220, 421, { id: 'ssv', lab: 't' }),
         /* drains */
         at(
