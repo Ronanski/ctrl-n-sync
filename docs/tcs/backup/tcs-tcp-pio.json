@@ -1,0 +1,3410 @@
+{
+ "1": {
+  "di": [
+   {
+    "card": "TCP1900",
+    "pt": 1,
+    "desc": "NO.1 BEARING SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP1050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00000",
+    "drives": [
+     "TCP1930/22 NO.1 TURBINE SHAFT VIBRATION VERY HIGH",
+     "TCP1930/27 TURBINE TRIP",
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP1930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP1105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 2,
+    "desc": "NO.2 BEARING SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP1050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00001",
+    "drives": [
+     "TCP1930/23 NO.2 TURBINE SHAFT VIBRATION VERY HIGH",
+     "TCP1930/27 TURBINE TRIP",
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP1930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP1105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 3,
+    "desc": "NO.3 GEN. SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP1050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00002",
+    "drives": [
+     "TCP1930/24 NO.3 GEN. SHAFT VIBRATION VERY HIGH",
+     "TCP1930/27 TURBINE TRIP",
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP1930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP1105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 4,
+    "desc": "NO.4 GEN. SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP1050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00003",
+    "drives": [
+     "TCP1930/25 NO.4 GEN. SHAFT VIBRATION VERY HIGH",
+     "TCP1930/27 TURBINE TRIP",
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP1930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP1105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 5,
+    "desc": "GEN TRANSF. PROTECTION OPERATED FOR GEN. PROTECTION A (86T)",
+    "sheet": "TCP1050",
+    "dwg": "TC0319",
+    "from": "CUSTOMER",
+    "net": "YY00004",
+    "drives": [
+     "TCP1930/27 TURBINE TRIP",
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP1930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP1119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 6,
+    "desc": "GEN TRANSF. PROTECTION OPERATED FOR GEN. PROTECTION B (86T)",
+    "sheet": "TCP1050",
+    "dwg": "TC0319",
+    "from": "CUSTOMER",
+    "net": "YY00005",
+    "drives": [
+     "TCP1930/27 TURBINE TRIP",
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP1930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP1119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 7,
+    "desc": "BOILER MFT 1",
+    "sheet": "TCP1050",
+    "dwg": "TC0319",
+    "from": "DCS",
+    "net": "YY00006",
+    "drives": [
+     "TCP1930/27 TURBINE TRIP",
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP1930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP1119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 8,
+    "desc": "86G-A GEN LOCK OUT RELAY OPERATED",
+    "sheet": "TCP1050",
+    "dwg": "TC0319",
+    "from": "GPP",
+    "net": "YY00007",
+    "drives": [
+     "TCP1930/27 TURBINE TRIP",
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP1930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP1119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 9,
+    "desc": "TURBINE TRIP PB 1",
+    "sheet": "TCP1050",
+    "dwg": "TC0320",
+    "from": "CCR",
+    "net": "YY00008",
+    "drives": [
+     "TCP1930/18 TURBINE MANUAL TRIP",
+     "TCP1930/27 TURBINE TRIP",
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP1930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP1121 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 10,
+    "desc": "(SPARE)",
+    "sheet": "TCP1050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY00009",
+    "drives": [],
+    "users": [
+     "TCP1050 TP 005"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 11,
+    "desc": "(SPARE)",
+    "sheet": "TCP1050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000A",
+    "drives": [],
+    "users": [
+     "TCP1050 TP 007"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 12,
+    "desc": "(SPARE)",
+    "sheet": "TCP1050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000B",
+    "drives": [],
+    "users": [
+     "TCP1050 TP 009"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 13,
+    "desc": "(SPARE)",
+    "sheet": "TCP1050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000C",
+    "drives": [],
+    "users": [
+     "TCP1050 TP 011"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 14,
+    "desc": "(SPARE)",
+    "sheet": "TCP1050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000D",
+    "drives": [],
+    "users": [
+     "TCP1050 TP 013"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 15,
+    "desc": "(SPARE)",
+    "sheet": "TCP1050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000E",
+    "drives": [],
+    "users": [
+     "TCP1050 TP 015"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 16,
+    "desc": "P.S.NORMAL",
+    "sheet": "TCP1050",
+    "dwg": "TC0320",
+    "from": "INTERNAL",
+    "net": "YY0000F",
+    "drives": [],
+    "users": [
+     "TCP1500 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 17,
+    "desc": "VENTILATOR VALVE FULL CLOSE POSITION",
+    "sheet": "TCP1051",
+    "dwg": "TC0321",
+    "from": "AOV",
+    "net": "YY00010",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 001"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 18,
+    "desc": "VENTILATOR VALVE FULL OPEN POSITION",
+    "sheet": "TCP1051",
+    "dwg": "TC0321",
+    "from": "AOV",
+    "net": "YY00011",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 003"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 19,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00012",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 005"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 20,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00013",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 007"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 21,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00014",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 009"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 22,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00015",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 011"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 23,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00016",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 013"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 24,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00017",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 015"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 25,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY00018",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 002"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 26,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY00019",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 004"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 27,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY0001A",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 006"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 28,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY0001B",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 008"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 29,
+    "desc": "(SPARE)",
+    "sheet": "TCP1051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY0001C",
+    "drives": [],
+    "users": [
+     "TCP1051 TP 010"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 30,
+    "desc": "MASTER TRIP SOLENOID(A1) TRIP POSITION",
+    "sheet": "TCP1051",
+    "dwg": "TC0322",
+    "from": "FIELD",
+    "net": "YY0001D",
+    "drives": [
+     "TCP1930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP1930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND"
+    ],
+    "users": [
+     "TCP1200 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 31,
+    "desc": "MASTER TRIP SOLENOID(B1) TRIP POSITION",
+    "sheet": "TCP1051",
+    "dwg": "TC0322",
+    "from": "FIELD",
+    "net": "YY0001E",
+    "drives": [
+     "TCP1930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP1930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND"
+    ],
+    "users": [
+     "TCP1200 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP1900",
+    "pt": 32,
+    "desc": "P.S.NORMAL",
+    "sheet": "TCP1051",
+    "dwg": "TC0322",
+    "from": "INTERNAL",
+    "net": "YY0001F",
+    "drives": [],
+    "users": [
+     "TCP1500 JOINT 0"
+    ]
+   }
+  ],
+  "dout": [
+   {
+    "card": "TCP1930",
+    "pt": 1,
+    "desc": "HP TURBINE INLET/EXHAUST STEAM DIFF. PRESS. VERY HIGH TRIP",
+    "sheet": "TCP1600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00096",
+    "madeBy": "TCP1600 BTR 001"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 2,
+    "desc": "CONTROL OIL PRESS. VERY LOW TRIP",
+    "sheet": "TCP1600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00097",
+    "madeBy": "TCP1600 BTR 003"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 3,
+    "desc": "CONDENSER VACUUM VERY LOW TRIP",
+    "sheet": "TCP1600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00098",
+    "madeBy": "TCP1600 BTR 005"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 4,
+    "desc": "MAIN STEAM TEMP. VERY LOW",
+    "sheet": "TCP1600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00099",
+    "madeBy": "TCP1600 BTR 007"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 5,
+    "desc": "HP TURBINE EXHAUST STEAM TEMP. VERY HIGH TRIP",
+    "sheet": "TCP1600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY0009A",
+    "madeBy": "TCP1600 BTR 009"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 6,
+    "desc": "(SPARE)",
+    "sheet": "TCP1600",
+    "dwg": "TC0340",
+    "from": "",
+    "net": "YY0009B",
+    "madeBy": "TCP1600 BTR 011"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 7,
+    "desc": "MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+    "sheet": "TCP1600",
+    "dwg": "TC0340",
+    "from": "INTERNAL",
+    "net": "YY0009C",
+    "madeBy": "TCP1600 BTR 013"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 8,
+    "desc": "MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+    "sheet": "TCP1600",
+    "dwg": "TC0340",
+    "from": "INTERNAL",
+    "net": "YY0009D",
+    "madeBy": "TCP1600 BTR 015"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 9,
+    "desc": "TURBINE TRIP OIL PRESS.VERY LOW TRIP",
+    "sheet": "TCP1600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY0009E",
+    "madeBy": "TCP1600 BTR 002"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 10,
+    "desc": "HP TURBINE EXHAUST STEAM PRESS. VERY HIGH TRIP",
+    "sheet": "TCP1600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY0009F",
+    "madeBy": "TCP1600 BTR 004"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 11,
+    "desc": "LP TURBINE EXHAUST HOOD STEAM TEMP. VERY HIGH TRIP",
+    "sheet": "TCP1600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY000A0",
+    "madeBy": "TCP1600 BTR 006"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 12,
+    "desc": "BEARING OIL PRESS. VERY LOW",
+    "sheet": "TCP1600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY000A1",
+    "madeBy": "TCP1600 BTR 008"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 13,
+    "desc": "TURBINE BACK-UP OVERSPEED TRIP",
+    "sheet": "TCP1600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY000A2",
+    "madeBy": "TCP1600 BTR 010"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 14,
+    "desc": "(SPARE)",
+    "sheet": "TCP1600",
+    "dwg": "TC0341",
+    "from": "",
+    "net": "YY000A3",
+    "madeBy": "TCP1600 BTR 012"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 15,
+    "desc": "(SPARE)",
+    "sheet": "TCP1600",
+    "dwg": "TC0341",
+    "from": "",
+    "net": "YY000A4",
+    "madeBy": "TCP1600 BTR 014"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 16,
+    "desc": "(SPARE)",
+    "sheet": "TCP1600",
+    "dwg": "TC0341",
+    "from": "",
+    "net": "YY000A5",
+    "madeBy": "TCP1600 BTR 016"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 17,
+    "desc": "TURBINE OVERSPEED TRIP",
+    "sheet": "TCP1601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000A6",
+    "madeBy": "TCP1601 BTR 001"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 18,
+    "desc": "TURBINE MANUAL TRIP",
+    "sheet": "TCP1601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000A7",
+    "madeBy": "TCP1601 BTR 003"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 19,
+    "desc": "(SPARE)",
+    "sheet": "TCP1601",
+    "dwg": "TC0342",
+    "from": "",
+    "net": "YY000A8",
+    "madeBy": "TCP1601 BTR 005"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 20,
+    "desc": "THRUST BEARING FAILURE (FRONT) TRIP",
+    "sheet": "TCP1601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000A9",
+    "madeBy": "TCP1601 BTR 007"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 21,
+    "desc": "THRUST BEARING FAILURE (REAR) TRIP",
+    "sheet": "TCP1601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AA",
+    "madeBy": "TCP1601 BTR 009"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 22,
+    "desc": "NO.1 TURBINE SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP1601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AB",
+    "madeBy": "TCP1601 BTR 011"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 23,
+    "desc": "NO.2 TURBINE SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP1601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AC",
+    "madeBy": "TCP1601 BTR 013"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 24,
+    "desc": "NO.3 GEN. SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP1601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AD",
+    "madeBy": "TCP1601 BTR 015"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 25,
+    "desc": "NO.4 GEN. SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP1601",
+    "dwg": "TC0343",
+    "from": "DCS",
+    "net": "YY000AE",
+    "madeBy": "TCP1601 BTR 002"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 26,
+    "desc": "TURBINE RESET",
+    "sheet": "TCP1601",
+    "dwg": "TC0343",
+    "from": "DCS",
+    "net": "YY000AF",
+    "madeBy": "TCP1601 BTR 004"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 27,
+    "desc": "TURBINE TRIP",
+    "sheet": "TCP1601",
+    "dwg": "TC0343",
+    "from": "DCS",
+    "net": "YY000B0",
+    "madeBy": "TCP1601 BTR 006"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 28,
+    "desc": "(SPARE)",
+    "sheet": "TCP1601",
+    "dwg": "TC0343",
+    "from": "",
+    "net": "YY000B1",
+    "madeBy": "TCP1601 BTR 008"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 29,
+    "desc": "ST TRIP (FOR GEN GROUP A)",
+    "sheet": "TCP1601",
+    "dwg": "TC0343",
+    "from": "GPP",
+    "net": "YY000B2",
+    "madeBy": "TCP1601 BTR 010"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 30,
+    "desc": "ST TRIP (FOR GEN GROUP B)",
+    "sheet": "TCP1601",
+    "dwg": "TC0343",
+    "from": "GPP",
+    "net": "YY000B3",
+    "madeBy": "TCP1601 BTR 012"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 31,
+    "desc": "MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+    "sheet": "TCP1601",
+    "dwg": "TC0343",
+    "from": "INTERNAL",
+    "net": "YY000B4",
+    "madeBy": "TCP1601 BTR 014"
+   },
+   {
+    "card": "TCP1930",
+    "pt": 32,
+    "desc": "MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+    "sheet": "TCP1601",
+    "dwg": "TC0343",
+    "from": "INTERNAL",
+    "net": "YY000B5",
+    "madeBy": "TCP1601 BTR 016"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 1,
+    "desc": "VENTILATOR VALVE SOLENOID VALVE ENERGIZE COMMAND",
+    "sheet": "TCP1602",
+    "dwg": "TC0344",
+    "from": "SV",
+    "net": "YY000B6",
+    "madeBy": "TCP1602 BTR 001"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 2,
+    "desc": "BLOWDOWN VALVE ENERGIZE COMMAND",
+    "sheet": "TCP1602",
+    "dwg": "TC0344",
+    "from": "SV",
+    "net": "YY000B7",
+    "madeBy": "TCP1602 BTR 003"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 3,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000B8",
+    "madeBy": "TCP1602 BTR 005"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 4,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000B9",
+    "madeBy": "TCP1602 BTR 007"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 5,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BA",
+    "madeBy": "TCP1602 BTR 009"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 6,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BB",
+    "madeBy": "TCP1602 BTR 011"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 7,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BC",
+    "madeBy": "TCP1602 BTR 013"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 8,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BD",
+    "madeBy": "TCP1602 BTR 015"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 9,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000BE",
+    "madeBy": "TCP1602 BTR 002"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 10,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000BF",
+    "madeBy": "TCP1602 BTR 004"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 11,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C0",
+    "madeBy": "TCP1602 BTR 006"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 12,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C1",
+    "madeBy": "TCP1602 BTR 008"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 13,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C2",
+    "madeBy": "TCP1602 BTR 010"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 14,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C3",
+    "madeBy": "TCP1602 BTR 012"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 15,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C4",
+    "madeBy": "TCP1602 BTR 014"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 16,
+    "desc": "(SPARE)",
+    "sheet": "TCP1602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C5",
+    "madeBy": "TCP1602 BTR 016"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 17,
+    "desc": "MSV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C6",
+    "madeBy": "TCP1603 BTR 001"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 18,
+    "desc": "CV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C7",
+    "madeBy": "TCP1603 BTR 003"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 19,
+    "desc": "ICV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C8",
+    "madeBy": "TCP1603 BTR 005"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 20,
+    "desc": "RSV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C9",
+    "madeBy": "TCP1603 BTR 007"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 21,
+    "desc": "RSV(A) TEST SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CA",
+    "madeBy": "TCP1603 BTR 009"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 22,
+    "desc": "MSV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CB",
+    "madeBy": "TCP1603 BTR 011"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 23,
+    "desc": "CV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CC",
+    "madeBy": "TCP1603 BTR 013"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 24,
+    "desc": "ICV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CD",
+    "madeBy": "TCP1603 BTR 015"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 25,
+    "desc": "RSV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0347",
+    "from": "SV",
+    "net": "YY000CE",
+    "madeBy": "TCP1603 BTR 002"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 26,
+    "desc": "RSV(B) TEST SOLENOID VALVE",
+    "sheet": "TCP1603",
+    "dwg": "TC0347",
+    "from": "SV",
+    "net": "YY000CF",
+    "madeBy": "TCP1603 BTR 004"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 27,
+    "desc": "(SPARE)",
+    "sheet": "TCP1603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D0",
+    "madeBy": "TCP1603 BTR 006"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 28,
+    "desc": "(SPARE)",
+    "sheet": "TCP1603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D1",
+    "madeBy": "TCP1603 BTR 008"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 29,
+    "desc": "(SPARE)",
+    "sheet": "TCP1603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D2",
+    "madeBy": "TCP1603 BTR 010"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 30,
+    "desc": "(SPARE)",
+    "sheet": "TCP1603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D3",
+    "madeBy": "TCP1603 BTR 012"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 31,
+    "desc": "(SPARE)",
+    "sheet": "TCP1603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D4",
+    "madeBy": "TCP1603 BTR 014"
+   },
+   {
+    "card": "TCP1931",
+    "pt": 32,
+    "desc": "(SPARE)",
+    "sheet": "TCP1603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D5",
+    "madeBy": "TCP1603 BTR 016"
+   }
+  ]
+ },
+ "2": {
+  "di": [
+   {
+    "card": "TCP2900",
+    "pt": 1,
+    "desc": "NO.1 BEARING SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP2050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00000",
+    "drives": [
+     "TCP2930/22 NO.1 TURBINE SHAFT VIBRATION VERY HIGH",
+     "TCP2930/27 TURBINE TRIP",
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP2930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP2105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 2,
+    "desc": "NO.2 BEARING SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP2050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00001",
+    "drives": [
+     "TCP2930/23 NO.2 TURBINE SHAFT VIBRATION VERY HIGH",
+     "TCP2930/27 TURBINE TRIP",
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP2930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP2105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 3,
+    "desc": "NO.3 GEN. SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP2050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00002",
+    "drives": [
+     "TCP2930/24 NO.3 GEN. SHAFT VIBRATION VERY HIGH",
+     "TCP2930/27 TURBINE TRIP",
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP2930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP2105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 4,
+    "desc": "NO.4 GEN. SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP2050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00003",
+    "drives": [
+     "TCP2930/25 NO.4 GEN. SHAFT VIBRATION VERY HIGH",
+     "TCP2930/27 TURBINE TRIP",
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP2930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP2105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 5,
+    "desc": "GEN TRANSF. PROTECTION OPERATED FOR GEN. PROTECTION A (86T)",
+    "sheet": "TCP2050",
+    "dwg": "TC0319",
+    "from": "CUSTOMER",
+    "net": "YY00004",
+    "drives": [
+     "TCP2930/27 TURBINE TRIP",
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP2930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP2119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 6,
+    "desc": "GEN TRANSF. PROTECTION OPERATED FOR GEN. PROTECTION B (86T)",
+    "sheet": "TCP2050",
+    "dwg": "TC0319",
+    "from": "CUSTOMER",
+    "net": "YY00005",
+    "drives": [
+     "TCP2930/27 TURBINE TRIP",
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP2930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP2119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 7,
+    "desc": "BOILER MFT 1",
+    "sheet": "TCP2050",
+    "dwg": "TC0319",
+    "from": "DCS",
+    "net": "YY00006",
+    "drives": [
+     "TCP2930/27 TURBINE TRIP",
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP2930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP2119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 8,
+    "desc": "86G-A GEN LOCK OUT RELAY A OPERATED",
+    "sheet": "TCP2050",
+    "dwg": "TC0319",
+    "from": "GPP",
+    "net": "YY00007",
+    "drives": [
+     "TCP2930/27 TURBINE TRIP",
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP2930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP2119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 9,
+    "desc": "TURBINE TRIP PB 1",
+    "sheet": "TCP2050",
+    "dwg": "TC0320",
+    "from": "CCR",
+    "net": "YY00008",
+    "drives": [
+     "TCP2930/18 TURBINE MANUAL TRIP",
+     "TCP2930/27 TURBINE TRIP",
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP2930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP2121 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 10,
+    "desc": "(SPARE)",
+    "sheet": "TCP2050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY00009",
+    "drives": [],
+    "users": [
+     "TCP2050 TP 005"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 11,
+    "desc": "(SPARE)",
+    "sheet": "TCP2050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000A",
+    "drives": [],
+    "users": [
+     "TCP2050 TP 007"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 12,
+    "desc": "(SPARE)",
+    "sheet": "TCP2050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000B",
+    "drives": [],
+    "users": [
+     "TCP2050 TP 009"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 13,
+    "desc": "(SPARE)",
+    "sheet": "TCP2050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000C",
+    "drives": [],
+    "users": [
+     "TCP2050 TP 011"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 14,
+    "desc": "(SPARE)",
+    "sheet": "TCP2050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000D",
+    "drives": [],
+    "users": [
+     "TCP2050 TP 013"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 15,
+    "desc": "(SPARE)",
+    "sheet": "TCP2050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000E",
+    "drives": [],
+    "users": [
+     "TCP2050 TP 015"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 16,
+    "desc": "P.S.NORMAL",
+    "sheet": "TCP2050",
+    "dwg": "TC0320",
+    "from": "INTERNAL",
+    "net": "YY0000F",
+    "drives": [],
+    "users": [
+     "TCP2500 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 17,
+    "desc": "VENTILATOR VALVE FULL CLOSE POSITION",
+    "sheet": "TCP2051",
+    "dwg": "TC0321",
+    "from": "AOV",
+    "net": "YY00010",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 001"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 18,
+    "desc": "VENTILATOR VALVE FULL OPEN POSITION",
+    "sheet": "TCP2051",
+    "dwg": "TC0321",
+    "from": "AOV",
+    "net": "YY00011",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 003"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 19,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00012",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 005"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 20,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00013",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 007"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 21,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00014",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 009"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 22,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00015",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 011"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 23,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00016",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 013"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 24,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00017",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 015"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 25,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY00018",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 002"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 26,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY00019",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 004"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 27,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY0001A",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 006"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 28,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY0001B",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 008"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 29,
+    "desc": "(SPARE)",
+    "sheet": "TCP2051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY0001C",
+    "drives": [],
+    "users": [
+     "TCP2051 TP 010"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 30,
+    "desc": "MASTER TRIP SOLENOID(A1) TRIP POSITION",
+    "sheet": "TCP2051",
+    "dwg": "TC0322",
+    "from": "FIELD",
+    "net": "YY0001D",
+    "drives": [
+     "TCP2930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP2930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND"
+    ],
+    "users": [
+     "TCP2200 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 31,
+    "desc": "MASTER TRIP SOLENOID(B1) TRIP POSITION",
+    "sheet": "TCP2051",
+    "dwg": "TC0322",
+    "from": "FIELD",
+    "net": "YY0001E",
+    "drives": [
+     "TCP2930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP2930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND"
+    ],
+    "users": [
+     "TCP2200 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP2900",
+    "pt": 32,
+    "desc": "P.S.NORMAL",
+    "sheet": "TCP2051",
+    "dwg": "TC0322",
+    "from": "INTERNAL",
+    "net": "YY0001F",
+    "drives": [],
+    "users": [
+     "TCP2500 JOINT 0"
+    ]
+   }
+  ],
+  "dout": [
+   {
+    "card": "TCP2930",
+    "pt": 1,
+    "desc": "HP TURBINE INLET/EXHAUST STEAM DIFF. PRESS. VERY HIGH TRIP",
+    "sheet": "TCP2600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00096",
+    "madeBy": "TCP2600 BTR 001"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 2,
+    "desc": "CONTROL OIL PRESS. VERY LOW TRIP",
+    "sheet": "TCP2600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00097",
+    "madeBy": "TCP2600 BTR 003"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 3,
+    "desc": "CONDENSER VACUUM VERY LOW TRIP",
+    "sheet": "TCP2600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00098",
+    "madeBy": "TCP2600 BTR 005"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 4,
+    "desc": "MAIN STEAM TEMP. VERY LOW",
+    "sheet": "TCP2600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00099",
+    "madeBy": "TCP2600 BTR 007"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 5,
+    "desc": "HP TURBINE EXHAUST STEAM TEMP. VERY HIGH TRIP",
+    "sheet": "TCP2600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY0009A",
+    "madeBy": "TCP2600 BTR 009"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 6,
+    "desc": "(SPARE)",
+    "sheet": "TCP2600",
+    "dwg": "TC0340",
+    "from": "",
+    "net": "YY0009B",
+    "madeBy": "TCP2600 BTR 011"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 7,
+    "desc": "MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+    "sheet": "TCP2600",
+    "dwg": "TC0340",
+    "from": "INTERNAL",
+    "net": "YY0009C",
+    "madeBy": "TCP2600 BTR 013"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 8,
+    "desc": "MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+    "sheet": "TCP2600",
+    "dwg": "TC0340",
+    "from": "INTERNAL",
+    "net": "YY0009D",
+    "madeBy": "TCP2600 BTR 015"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 9,
+    "desc": "TURBINE TRIP OIL PRESS.VERY LOW TRIP",
+    "sheet": "TCP2600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY0009E",
+    "madeBy": "TCP2600 BTR 002"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 10,
+    "desc": "HP TURBINE EXHAUST STEAM PRESS. VERY HIGH TRIP",
+    "sheet": "TCP2600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY0009F",
+    "madeBy": "TCP2600 BTR 004"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 11,
+    "desc": "LP TURBINE EXHAUST HOOD STEAM TEMP. VERY HIGH TRIP",
+    "sheet": "TCP2600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY000A0",
+    "madeBy": "TCP2600 BTR 006"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 12,
+    "desc": "BEARING OIL PRESS. VERY LOW",
+    "sheet": "TCP2600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY000A1",
+    "madeBy": "TCP2600 BTR 008"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 13,
+    "desc": "TURBINE BACK-UP OVERSPEED TRIP",
+    "sheet": "TCP2600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY000A2",
+    "madeBy": "TCP2600 BTR 010"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 14,
+    "desc": "(SPARE)",
+    "sheet": "TCP2600",
+    "dwg": "TC0341",
+    "from": "",
+    "net": "YY000A3",
+    "madeBy": "TCP2600 BTR 012"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 15,
+    "desc": "(SPARE)",
+    "sheet": "TCP2600",
+    "dwg": "TC0341",
+    "from": "",
+    "net": "YY000A4",
+    "madeBy": "TCP2600 BTR 014"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 16,
+    "desc": "(SPARE)",
+    "sheet": "TCP2600",
+    "dwg": "TC0341",
+    "from": "",
+    "net": "YY000A5",
+    "madeBy": "TCP2600 BTR 016"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 17,
+    "desc": "TURBINE OVERSPEED TRIP",
+    "sheet": "TCP2601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000A6",
+    "madeBy": "TCP2601 BTR 001"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 18,
+    "desc": "TURBINE MANUAL TRIP",
+    "sheet": "TCP2601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000A7",
+    "madeBy": "TCP2601 BTR 003"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 19,
+    "desc": "(SPARE)",
+    "sheet": "TCP2601",
+    "dwg": "TC0342",
+    "from": "",
+    "net": "YY000A8",
+    "madeBy": "TCP2601 BTR 005"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 20,
+    "desc": "THRUST BEARING FAILURE (FRONT) TRIP",
+    "sheet": "TCP2601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000A9",
+    "madeBy": "TCP2601 BTR 007"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 21,
+    "desc": "THRUST BEARING FAILURE (REAR) TRIP",
+    "sheet": "TCP2601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AA",
+    "madeBy": "TCP2601 BTR 009"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 22,
+    "desc": "NO.1 TURBINE SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP2601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AB",
+    "madeBy": "TCP2601 BTR 011"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 23,
+    "desc": "NO.2 TURBINE SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP2601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AC",
+    "madeBy": "TCP2601 BTR 013"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 24,
+    "desc": "NO.3 GEN. SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP2601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AD",
+    "madeBy": "TCP2601 BTR 015"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 25,
+    "desc": "NO.4 GEN. SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP2601",
+    "dwg": "TC0343",
+    "from": "DCS",
+    "net": "YY000AE",
+    "madeBy": "TCP2601 BTR 002"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 26,
+    "desc": "TURBINE RESET",
+    "sheet": "TCP2601",
+    "dwg": "TC0343",
+    "from": "DCS",
+    "net": "YY000AF",
+    "madeBy": "TCP2601 BTR 004"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 27,
+    "desc": "TURBINE TRIP",
+    "sheet": "TCP2601",
+    "dwg": "TC0343",
+    "from": "DCS",
+    "net": "YY000B0",
+    "madeBy": "TCP2601 BTR 006"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 28,
+    "desc": "(SPARE)",
+    "sheet": "TCP2601",
+    "dwg": "TC0343",
+    "from": "",
+    "net": "YY000B1",
+    "madeBy": "TCP2601 BTR 008"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 29,
+    "desc": "ST TRIP (FOR GEN GROUP A)",
+    "sheet": "TCP2601",
+    "dwg": "TC0343",
+    "from": "GPP",
+    "net": "YY000B2",
+    "madeBy": "TCP2601 BTR 010"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 30,
+    "desc": "ST TRIP (FOR GEN GROUP B)",
+    "sheet": "TCP2601",
+    "dwg": "TC0343",
+    "from": "GPP",
+    "net": "YY000B3",
+    "madeBy": "TCP2601 BTR 012"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 31,
+    "desc": "MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+    "sheet": "TCP2601",
+    "dwg": "TC0343",
+    "from": "INTERNAL",
+    "net": "YY000B4",
+    "madeBy": "TCP2601 BTR 014"
+   },
+   {
+    "card": "TCP2930",
+    "pt": 32,
+    "desc": "MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+    "sheet": "TCP2601",
+    "dwg": "TC0343",
+    "from": "INTERNAL",
+    "net": "YY000B5",
+    "madeBy": "TCP2601 BTR 016"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 1,
+    "desc": "VENTILATOR VALVE SOLENOID VALVE ENERGIZE COMMAND",
+    "sheet": "TCP2602",
+    "dwg": "TC0344",
+    "from": "SV",
+    "net": "YY000B6",
+    "madeBy": "TCP2602 BTR 001"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 2,
+    "desc": "BLOWDOWN VALVE ENERGIZE COMMAND",
+    "sheet": "TCP2602",
+    "dwg": "TC0344",
+    "from": "SV",
+    "net": "YY000B7",
+    "madeBy": "TCP2602 BTR 003"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 3,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000B8",
+    "madeBy": "TCP2602 BTR 005"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 4,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000B9",
+    "madeBy": "TCP2602 BTR 007"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 5,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BA",
+    "madeBy": "TCP2602 BTR 009"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 6,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BB",
+    "madeBy": "TCP2602 BTR 011"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 7,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BC",
+    "madeBy": "TCP2602 BTR 013"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 8,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BD",
+    "madeBy": "TCP2602 BTR 015"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 9,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000BE",
+    "madeBy": "TCP2602 BTR 002"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 10,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000BF",
+    "madeBy": "TCP2602 BTR 004"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 11,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C0",
+    "madeBy": "TCP2602 BTR 006"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 12,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C1",
+    "madeBy": "TCP2602 BTR 008"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 13,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C2",
+    "madeBy": "TCP2602 BTR 010"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 14,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C3",
+    "madeBy": "TCP2602 BTR 012"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 15,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C4",
+    "madeBy": "TCP2602 BTR 014"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 16,
+    "desc": "(SPARE)",
+    "sheet": "TCP2602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C5",
+    "madeBy": "TCP2602 BTR 016"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 17,
+    "desc": "MSV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C6",
+    "madeBy": "TCP2603 BTR 001"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 18,
+    "desc": "CV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C7",
+    "madeBy": "TCP2603 BTR 003"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 19,
+    "desc": "ICV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C8",
+    "madeBy": "TCP2603 BTR 005"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 20,
+    "desc": "RSV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C9",
+    "madeBy": "TCP2603 BTR 007"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 21,
+    "desc": "RSV(A) TEST SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CA",
+    "madeBy": "TCP2603 BTR 009"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 22,
+    "desc": "MSV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CB",
+    "madeBy": "TCP2603 BTR 011"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 23,
+    "desc": "CV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CC",
+    "madeBy": "TCP2603 BTR 013"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 24,
+    "desc": "ICV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CD",
+    "madeBy": "TCP2603 BTR 015"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 25,
+    "desc": "RSV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0347",
+    "from": "SV",
+    "net": "YY000CE",
+    "madeBy": "TCP2603 BTR 002"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 26,
+    "desc": "RSV(B) TEST SOLENOID VALVE",
+    "sheet": "TCP2603",
+    "dwg": "TC0347",
+    "from": "SV",
+    "net": "YY000CF",
+    "madeBy": "TCP2603 BTR 004"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 27,
+    "desc": "(SPARE)",
+    "sheet": "TCP2603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D0",
+    "madeBy": "TCP2603 BTR 006"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 28,
+    "desc": "(SPARE)",
+    "sheet": "TCP2603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D1",
+    "madeBy": "TCP2603 BTR 008"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 29,
+    "desc": "(SPARE)",
+    "sheet": "TCP2603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D2",
+    "madeBy": "TCP2603 BTR 010"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 30,
+    "desc": "(SPARE)",
+    "sheet": "TCP2603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D3",
+    "madeBy": "TCP2603 BTR 012"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 31,
+    "desc": "(SPARE)",
+    "sheet": "TCP2603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D4",
+    "madeBy": "TCP2603 BTR 014"
+   },
+   {
+    "card": "TCP2931",
+    "pt": 32,
+    "desc": "(SPARE)",
+    "sheet": "TCP2603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D5",
+    "madeBy": "TCP2603 BTR 016"
+   }
+  ]
+ },
+ "3": {
+  "di": [
+   {
+    "card": "TCP3900",
+    "pt": 1,
+    "desc": "NO.1 BEARING SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP3050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00000",
+    "drives": [
+     "TCP3930/22 NO.1 TURBINE SHAFT VIBRATION VERY HIGH",
+     "TCP3930/27 TURBINE TRIP",
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP3930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP3105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 2,
+    "desc": "NO.2 BEARING SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP3050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00001",
+    "drives": [
+     "TCP3930/23 NO.2 TURBINE SHAFT VIBRATION VERY HIGH",
+     "TCP3930/27 TURBINE TRIP",
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP3930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP3105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 3,
+    "desc": "NO.3 GEN. SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP3050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00002",
+    "drives": [
+     "TCP3930/24 NO.3 GEN. SHAFT VIBRATION VERY HIGH",
+     "TCP3930/27 TURBINE TRIP",
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP3930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP3105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 4,
+    "desc": "NO.4 GEN. SHAFT VIBRATION VERY HIGH(A)",
+    "sheet": "TCP3050",
+    "dwg": "TC0319",
+    "from": "TSI",
+    "net": "YY00003",
+    "drives": [
+     "TCP3930/25 NO.4 GEN. SHAFT VIBRATION VERY HIGH",
+     "TCP3930/27 TURBINE TRIP",
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP3930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP3105 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 5,
+    "desc": "GEN TRANSF. PROTECTION OPERATED FOR GEN. PROTECTION A (86T)",
+    "sheet": "TCP3050",
+    "dwg": "TC0319",
+    "from": "CUSTOMER",
+    "net": "YY00004",
+    "drives": [
+     "TCP3930/27 TURBINE TRIP",
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP3930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP3119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 6,
+    "desc": "GEN TRANSF. PROTECTION OPERATED FOR GEN. PROTECTION B (86T)",
+    "sheet": "TCP3050",
+    "dwg": "TC0319",
+    "from": "CUSTOMER",
+    "net": "YY00005",
+    "drives": [
+     "TCP3930/27 TURBINE TRIP",
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP3930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP3119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 7,
+    "desc": "BOILER MFT 1",
+    "sheet": "TCP3050",
+    "dwg": "TC0319",
+    "from": "DCS",
+    "net": "YY00006",
+    "drives": [
+     "TCP3930/27 TURBINE TRIP",
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP3930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP3119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 8,
+    "desc": "86G-A GEN LOCK OUT RELAY A OPERATED",
+    "sheet": "TCP3050",
+    "dwg": "TC0319",
+    "from": "GPP",
+    "net": "YY00007",
+    "drives": [
+     "TCP3930/27 TURBINE TRIP",
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP3930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP3119 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 9,
+    "desc": "TURBINE TRIP PB 1",
+    "sheet": "TCP3050",
+    "dwg": "TC0320",
+    "from": "CCR",
+    "net": "YY00008",
+    "drives": [
+     "TCP3930/18 TURBINE MANUAL TRIP",
+     "TCP3930/27 TURBINE TRIP",
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+     "TCP3930/4 MAIN STEAM TEMP. VERY LOW"
+    ],
+    "users": [
+     "TCP3121 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 10,
+    "desc": "(SPARE)",
+    "sheet": "TCP3050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY00009",
+    "drives": [],
+    "users": [
+     "TCP3050 TP 005"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 11,
+    "desc": "(SPARE)",
+    "sheet": "TCP3050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000A",
+    "drives": [],
+    "users": [
+     "TCP3050 TP 007"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 12,
+    "desc": "(SPARE)",
+    "sheet": "TCP3050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000B",
+    "drives": [],
+    "users": [
+     "TCP3050 TP 009"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 13,
+    "desc": "(SPARE)",
+    "sheet": "TCP3050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000C",
+    "drives": [],
+    "users": [
+     "TCP3050 TP 011"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 14,
+    "desc": "(SPARE)",
+    "sheet": "TCP3050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000D",
+    "drives": [],
+    "users": [
+     "TCP3050 TP 013"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 15,
+    "desc": "(SPARE)",
+    "sheet": "TCP3050",
+    "dwg": "TC0320",
+    "from": "",
+    "net": "YY0000E",
+    "drives": [],
+    "users": [
+     "TCP3050 TP 015"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 16,
+    "desc": "P.S.NORMAL",
+    "sheet": "TCP3050",
+    "dwg": "TC0320",
+    "from": "INTERNAL",
+    "net": "YY0000F",
+    "drives": [],
+    "users": [
+     "TCP3500 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 17,
+    "desc": "VENTILATOR VALVE FULL CLOSE POSITION",
+    "sheet": "TCP3051",
+    "dwg": "TC0321",
+    "from": "AOV",
+    "net": "YY00010",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 001"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 18,
+    "desc": "VENTILATOR VALVE FULL OPEN POSITION",
+    "sheet": "TCP3051",
+    "dwg": "TC0321",
+    "from": "AOV",
+    "net": "YY00011",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 003"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 19,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00012",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 005"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 20,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00013",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 007"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 21,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00014",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 009"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 22,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00015",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 011"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 23,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00016",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 013"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 24,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0321",
+    "from": "",
+    "net": "YY00017",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 015"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 25,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY00018",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 002"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 26,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY00019",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 004"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 27,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY0001A",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 006"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 28,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY0001B",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 008"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 29,
+    "desc": "(SPARE)",
+    "sheet": "TCP3051",
+    "dwg": "TC0322",
+    "from": "",
+    "net": "YY0001C",
+    "drives": [],
+    "users": [
+     "TCP3051 TP 010"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 30,
+    "desc": "MASTER TRIP SOLENOID(A1) TRIP POSITION",
+    "sheet": "TCP3051",
+    "dwg": "TC0322",
+    "from": "FIELD",
+    "net": "YY0001D",
+    "drives": [
+     "TCP3930/7 MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+     "TCP3930/32 MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND"
+    ],
+    "users": [
+     "TCP3200 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 31,
+    "desc": "MASTER TRIP SOLENOID(B1) TRIP POSITION",
+    "sheet": "TCP3051",
+    "dwg": "TC0322",
+    "from": "FIELD",
+    "net": "YY0001E",
+    "drives": [
+     "TCP3930/8 MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+     "TCP3930/31 MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND"
+    ],
+    "users": [
+     "TCP3200 JOINT 0"
+    ]
+   },
+   {
+    "card": "TCP3900",
+    "pt": 32,
+    "desc": "P.S.NORMAL",
+    "sheet": "TCP3051",
+    "dwg": "TC0322",
+    "from": "INTERNAL",
+    "net": "YY0001F",
+    "drives": [],
+    "users": [
+     "TCP3500 JOINT 0"
+    ]
+   }
+  ],
+  "dout": [
+   {
+    "card": "TCP3930",
+    "pt": 1,
+    "desc": "HP TURBINE INLET/EXHAUST STEAM DIFF. PRESS. VERY HIGH TRIP",
+    "sheet": "TCP3600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00096",
+    "madeBy": "TCP3600 BTR 001"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 2,
+    "desc": "CONTROL OIL PRESS. VERY LOW TRIP",
+    "sheet": "TCP3600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00097",
+    "madeBy": "TCP3600 BTR 003"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 3,
+    "desc": "CONDENSER VACUUM VERY LOW TRIP",
+    "sheet": "TCP3600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00098",
+    "madeBy": "TCP3600 BTR 005"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 4,
+    "desc": "MAIN STEAM TEMP. VERY LOW",
+    "sheet": "TCP3600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY00099",
+    "madeBy": "TCP3600 BTR 007"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 5,
+    "desc": "HP TURBINE EXHAUST STEAM TEMP. VERY HIGH TRIP",
+    "sheet": "TCP3600",
+    "dwg": "TC0340",
+    "from": "DCS",
+    "net": "YY0009A",
+    "madeBy": "TCP3600 BTR 009"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 6,
+    "desc": "(SPARE)",
+    "sheet": "TCP3600",
+    "dwg": "TC0340",
+    "from": "",
+    "net": "YY0009B",
+    "madeBy": "TCP3600 BTR 011"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 7,
+    "desc": "MASTER TRIP SOLENOID VALVE(A1) ENERGIZE COMMAND",
+    "sheet": "TCP3600",
+    "dwg": "TC0340",
+    "from": "INTERNAL",
+    "net": "YY0009C",
+    "madeBy": "TCP3600 BTR 013"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 8,
+    "desc": "MASTER TRIP SOLENOID VALVE(B1) ENERGIZE COMMAND",
+    "sheet": "TCP3600",
+    "dwg": "TC0340",
+    "from": "INTERNAL",
+    "net": "YY0009D",
+    "madeBy": "TCP3600 BTR 015"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 9,
+    "desc": "TURBINE TRIP OIL PRESS.VERY LOW TRIP",
+    "sheet": "TCP3600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY0009E",
+    "madeBy": "TCP3600 BTR 002"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 10,
+    "desc": "HP TURBINE EXHAUST STEAM PRESS. VERY HIGH TRIP",
+    "sheet": "TCP3600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY0009F",
+    "madeBy": "TCP3600 BTR 004"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 11,
+    "desc": "LP TURBINE EXHAUST HOOD STEAM TEMP. VERY HIGH TRIP",
+    "sheet": "TCP3600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY000A0",
+    "madeBy": "TCP3600 BTR 006"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 12,
+    "desc": "BEARING OIL PRESS. VERY LOW",
+    "sheet": "TCP3600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY000A1",
+    "madeBy": "TCP3600 BTR 008"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 13,
+    "desc": "TURBINE BACK-UP OVERSPEED TRIP",
+    "sheet": "TCP3600",
+    "dwg": "TC0341",
+    "from": "DCS",
+    "net": "YY000A2",
+    "madeBy": "TCP3600 BTR 010"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 14,
+    "desc": "(SPARE)",
+    "sheet": "TCP3600",
+    "dwg": "TC0341",
+    "from": "",
+    "net": "YY000A3",
+    "madeBy": "TCP3600 BTR 012"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 15,
+    "desc": "(SPARE)",
+    "sheet": "TCP3600",
+    "dwg": "TC0341",
+    "from": "",
+    "net": "YY000A4",
+    "madeBy": "TCP3600 BTR 014"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 16,
+    "desc": "(SPARE)",
+    "sheet": "TCP3600",
+    "dwg": "TC0341",
+    "from": "",
+    "net": "YY000A5",
+    "madeBy": "TCP3600 BTR 016"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 17,
+    "desc": "TURBINE OVERSPEED TRIP",
+    "sheet": "TCP3601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000A6",
+    "madeBy": "TCP3601 BTR 001"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 18,
+    "desc": "TURBINE MANUAL TRIP",
+    "sheet": "TCP3601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000A7",
+    "madeBy": "TCP3601 BTR 003"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 19,
+    "desc": "(SPARE)",
+    "sheet": "TCP3601",
+    "dwg": "TC0342",
+    "from": "",
+    "net": "YY000A8",
+    "madeBy": "TCP3601 BTR 005"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 20,
+    "desc": "THRUST BEARING FAILURE (FRONT) TRIP",
+    "sheet": "TCP3601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000A9",
+    "madeBy": "TCP3601 BTR 007"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 21,
+    "desc": "THRUST BEARING FAILURE (REAR) TRIP",
+    "sheet": "TCP3601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AA",
+    "madeBy": "TCP3601 BTR 009"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 22,
+    "desc": "NO.1 TURBINE SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP3601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AB",
+    "madeBy": "TCP3601 BTR 011"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 23,
+    "desc": "NO.2 TURBINE SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP3601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AC",
+    "madeBy": "TCP3601 BTR 013"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 24,
+    "desc": "NO.3 GEN. SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP3601",
+    "dwg": "TC0342",
+    "from": "DCS",
+    "net": "YY000AD",
+    "madeBy": "TCP3601 BTR 015"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 25,
+    "desc": "NO.4 GEN. SHAFT VIBRATION VERY HIGH",
+    "sheet": "TCP3601",
+    "dwg": "TC0343",
+    "from": "DCS",
+    "net": "YY000AE",
+    "madeBy": "TCP3601 BTR 002"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 26,
+    "desc": "TURBINE RESET",
+    "sheet": "TCP3601",
+    "dwg": "TC0343",
+    "from": "DCS",
+    "net": "YY000AF",
+    "madeBy": "TCP3601 BTR 004"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 27,
+    "desc": "TURBINE TRIP",
+    "sheet": "TCP3601",
+    "dwg": "TC0343",
+    "from": "DCS",
+    "net": "YY000B0",
+    "madeBy": "TCP3601 BTR 006"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 28,
+    "desc": "(SPARE)",
+    "sheet": "TCP3601",
+    "dwg": "TC0343",
+    "from": "",
+    "net": "YY000B1",
+    "madeBy": "TCP3601 BTR 008"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 29,
+    "desc": "ST TRIP (FOR GEN GROUP A)",
+    "sheet": "TCP3601",
+    "dwg": "TC0343",
+    "from": "GPP",
+    "net": "YY000B2",
+    "madeBy": "TCP3601 BTR 010"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 30,
+    "desc": "ST TRIP (FOR GEN GROUP B)",
+    "sheet": "TCP3601",
+    "dwg": "TC0343",
+    "from": "GPP",
+    "net": "YY000B3",
+    "madeBy": "TCP3601 BTR 012"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 31,
+    "desc": "MASTER TRIP SOLENOID VALVE(B2) ENERGIZE COMMAND",
+    "sheet": "TCP3601",
+    "dwg": "TC0343",
+    "from": "INTERNAL",
+    "net": "YY000B4",
+    "madeBy": "TCP3601 BTR 014"
+   },
+   {
+    "card": "TCP3930",
+    "pt": 32,
+    "desc": "MASTER TRIP SOLENOID VALVE(A2) ENERGIZE COMMAND",
+    "sheet": "TCP3601",
+    "dwg": "TC0343",
+    "from": "INTERNAL",
+    "net": "YY000B5",
+    "madeBy": "TCP3601 BTR 016"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 1,
+    "desc": "VENTILATOR VALVE SOLENOID VALVE ENERGIZE COMMAND",
+    "sheet": "TCP3602",
+    "dwg": "TC0344",
+    "from": "SV",
+    "net": "YY000B6",
+    "madeBy": "TCP3602 BTR 001"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 2,
+    "desc": "BLOWDOWN VALVE ENERGIZE COMMAND",
+    "sheet": "TCP3602",
+    "dwg": "TC0344",
+    "from": "SV",
+    "net": "YY000B7",
+    "madeBy": "TCP3602 BTR 003"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 3,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000B8",
+    "madeBy": "TCP3602 BTR 005"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 4,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000B9",
+    "madeBy": "TCP3602 BTR 007"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 5,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BA",
+    "madeBy": "TCP3602 BTR 009"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 6,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BB",
+    "madeBy": "TCP3602 BTR 011"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 7,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BC",
+    "madeBy": "TCP3602 BTR 013"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 8,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0344",
+    "from": "",
+    "net": "YY000BD",
+    "madeBy": "TCP3602 BTR 015"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 9,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000BE",
+    "madeBy": "TCP3602 BTR 002"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 10,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000BF",
+    "madeBy": "TCP3602 BTR 004"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 11,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C0",
+    "madeBy": "TCP3602 BTR 006"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 12,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C1",
+    "madeBy": "TCP3602 BTR 008"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 13,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C2",
+    "madeBy": "TCP3602 BTR 010"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 14,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C3",
+    "madeBy": "TCP3602 BTR 012"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 15,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C4",
+    "madeBy": "TCP3602 BTR 014"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 16,
+    "desc": "(SPARE)",
+    "sheet": "TCP3602",
+    "dwg": "TC0345",
+    "from": "",
+    "net": "YY000C5",
+    "madeBy": "TCP3602 BTR 016"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 17,
+    "desc": "MSV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C6",
+    "madeBy": "TCP3603 BTR 001"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 18,
+    "desc": "CV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C7",
+    "madeBy": "TCP3603 BTR 003"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 19,
+    "desc": "ICV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C8",
+    "madeBy": "TCP3603 BTR 005"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 20,
+    "desc": "RSV(A) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000C9",
+    "madeBy": "TCP3603 BTR 007"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 21,
+    "desc": "RSV(A) TEST SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CA",
+    "madeBy": "TCP3603 BTR 009"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 22,
+    "desc": "MSV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CB",
+    "madeBy": "TCP3603 BTR 011"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 23,
+    "desc": "CV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CC",
+    "madeBy": "TCP3603 BTR 013"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 24,
+    "desc": "ICV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0346",
+    "from": "SV",
+    "net": "YY000CD",
+    "madeBy": "TCP3603 BTR 015"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 25,
+    "desc": "RSV(B) FAST ACTING SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0347",
+    "from": "SV",
+    "net": "YY000CE",
+    "madeBy": "TCP3603 BTR 002"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 26,
+    "desc": "RSV(B) TEST SOLENOID VALVE",
+    "sheet": "TCP3603",
+    "dwg": "TC0347",
+    "from": "SV",
+    "net": "YY000CF",
+    "madeBy": "TCP3603 BTR 004"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 27,
+    "desc": "(SPARE)",
+    "sheet": "TCP3603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D0",
+    "madeBy": "TCP3603 BTR 006"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 28,
+    "desc": "(SPARE)",
+    "sheet": "TCP3603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D1",
+    "madeBy": "TCP3603 BTR 008"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 29,
+    "desc": "(SPARE)",
+    "sheet": "TCP3603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D2",
+    "madeBy": "TCP3603 BTR 010"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 30,
+    "desc": "(SPARE)",
+    "sheet": "TCP3603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D3",
+    "madeBy": "TCP3603 BTR 012"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 31,
+    "desc": "(SPARE)",
+    "sheet": "TCP3603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D4",
+    "madeBy": "TCP3603 BTR 014"
+   },
+   {
+    "card": "TCP3931",
+    "pt": 32,
+    "desc": "(SPARE)",
+    "sheet": "TCP3603",
+    "dwg": "TC0347",
+    "from": "",
+    "net": "YY000D5",
+    "madeBy": "TCP3603 BTR 016"
+   }
+  ]
+ }
+}

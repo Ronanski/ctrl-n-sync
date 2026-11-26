@@ -136,6 +136,9 @@
       const d = x[0] - (x[1] || 0);
       return [b01(d > par(n, 'HL', Infinity) || d < par(n, 'LL', -Infinity))];
     },
+    /* SC sign change Y = -X: not in the macro list TCA013 ~ TCA021 (73 kinds); DERIVED from the backup wiring (lane 0 slice D): TCE060
+       LME111 gives HL = DEV and LL = SC(DEV) to three limit blocks; CRT OPE INC/DEC passes +step on INC and SC(step) on DEC */
+    SC: x => [0 - (x[0] || 0)],
     /* ML 30 ABS Y = |X| */
     ABS: x => [Math.abs(x[0])],
     /* ML 32 BP1 bumpless transfer: SW=1 Y -> X1, SW=0 Y -> X2, a step at the switch is taken out at the rate R */
@@ -1494,7 +1497,23 @@
        "pb X" = the screen port CRT:<sheet>.<macro>.<X> */
     LME030: { name: "TURNING GEAR", pi: ["EL"], po: {"STS": "A 002", "MANU": "NOT 003", "AUTO": "FFR 006", "STOP": "A 009"}, pb: ["START", "AUTO", "MANUAL", "STOP", "CRT AVAILABLE"],
       b: [["A", "001", ["pb START", "pb CRT AVAILABLE"], []], ["A", "005", ["pb AUTO", "pb CRT AVAILABLE"], []], ["A", "008", ["pb MANUAL", "pb CRT AVAILABLE"], []], ["FFR", "006", ["A 005", "A 008"], []], ["NOT", "003", ["FFR 006"], []], ["A", "002", ["A 001", "NOT 003"], []], ["BTR", "004", ["FFR 006"], []], ["DENSO", "", ["BTR 004"], [3]], ["BTR", "007", ["NOT 003"], []], ["DENSO", "", ["BTR 007"], [3]], ["A", "010", ["pb STOP", "pb CRT AVAILABLE"], []], ["A", "009", ["NOT 003", "A 010"], []], ["BTR", "011", ["pin EL"], []], ["DENSO", "", ["BTR 011"], [3]], ["BTR", "012", ["REF CRTOPEPERM"], []], ["DENSO", "", ["BTR 012"], [3]]],
-      at: {"TCE350 010": {}} }
+      at: {"TCE350 010": {}} },
+    /* slice D (lane 0 re-export tcs-macros-20261126T021103-0cc9.json + tcs-macros-slice-d-2026-11-26.md): SCREEN <code> "<word>" = a
+       button or set value from the operator screen (DENSO 2) -> "pb <word>"; SYS OFF(0) / 0.0 / ON(1) = system constants -> "const".
+       TCE196 004 (CRT OPE INC/DEC) is marked "other wiring" in the backup with no detail: not taken. AM M (word 1 / 10, not in the macro
+       list): CV WARMING SET has M = 1 (SGW 011) and in L-RATE the I / D inputs are OFF, so M does not act in either */
+    LME131: { name: "CV WARMING SET", pi: ["FOPN", "CL.POS", "FCLS", "RATE", "OP.POS"], po: {"SET": "RL 007", "UPPER": "UCK 014", "LOWER": "LCK 016"}, pb: [],
+      b: [["FTR", "021", ["pin CL.POS"], []], ["NOT", "008", ["REF TURBINETRIP"], []], ["A", "001", ["pin FCLS", "NOT 008"], []], ["OR", "022", ["A 001", "REF TURBINETRIP"], []], ["ASW", "017", ["FTR 021", "AM 006", "SW:OR 022"], []], ["TD", "004", ["pin FOPN", "SW:REF INITIAL"], [0.03]], ["FTR", "019", ["pin RATE"], []], ["SGW", "011", [], [1]], ["FTR", "020", ["pin OP.POS"], []], ["PA46", "006", ["FTR 019", "SGW 011", "FTR 020", "FTR 021"], []], ["AM", "006", ["pin FOPN", "const 0", "ASW 017", "SW:TD 004"], []], ["UCK", "005", ["RL 007"], [-0.1]], ["A", "002", ["OR 022", "UCK 005"], []], ["PA24", "007", ["FTR 019", "FTR 019"], []], ["RL", "007", ["AM 006", "SW:A 002"], []], ["SUB", "013", ["RL 007", "FTR 020"], []], ["UCK", "014", ["SUB 013"], [-0.01]], ["SUB", "015", ["RL 007", "FTR 021"], []], ["LCK", "016", ["SUB 015"], [0.01]]],
+      at: {"TCE155 002": {}, "TCE155 011": {}} },
+    LME025: { name: "CRT OPE INC/DEC", pi: ["PERM", "Z", "RATE", "X", "INC", "DEC", "HSS", "LSS"], po: {"MANU": "A 003", "OUT": "ASW 008"}, pb: ["SV-C", "SYNCHRO"],
+      b: [["A", "003", ["pb SYNCHRO", "pin PERM"], []], ["BTR", "023", ["pin PERM"], []], ["ASW", "005", ["pb SV-C", "pin Z", "SW:A 003"], []], ["SUB", "006", ["ASW 005", "pin Z"], []], ["LMS", "007", ["SUB 006"], [1, -1]], ["SG", "015", [], [0.03]], ["MLT", "014", ["pin RATE", "SG 015"], []], ["SC", "010", ["MLT 014"], []], ["ASW", "013", ["MLT 014", "pin X", "SW:pin LSS"], []], ["ASW", "011", ["SC 010", "ASW 013", "SW:pin LSS"], []], ["ASW", "008", ["LMS 007", "ASW 011", "SW:A 003"], []], ["FTR", "009", ["pin Z"], []], ["BTR", "019", ["pin LSS"], []], ["BTR", "021", ["pin LSS"], []]],
+      at: {"TCE194 001": {}} },
+    LME026: { name: "CRT OPE INC/DEC", pi: ["PERM", "Z", "RATE", "X", "INC", "DEC", "LIMIT"], po: {"MANU": "A 003", "OUT": "ASW 008"}, pb: ["SV-C", "SYNCHRO"],
+      b: [["A", "003", ["pb SYNCHRO", "pin PERM"], []], ["ASW", "005", ["pb SV-C", "pin Z", "SW:A 003"], []], ["SUB", "006", ["ASW 005", "pin Z"], []], ["LMS", "007", ["SUB 006"], [1, -1]], ["SG", "015", [], [0.03]], ["MLT", "014", ["pin RATE", "SG 015"], []], ["SC", "010", ["MLT 014"], []], ["ASW", "013", ["MLT 014", "pin X", "SW:pin INC"], []], ["ASW", "011", ["SC 010", "ASW 013", "SW:pin DEC"], []], ["ASW", "008", ["LMS 007", "ASW 011", "SW:A 003"], []], ["FTR", "009", ["pin Z"], []], ["BTR", "016", ["pin PERM"], []], ["BTR", "017", ["pin LIMIT"], []]],
+      at: {"TCE205 006": {}} },
+    LME043: { name: "L-RATE", pi: ["PER", "TR", "SW"], po: {"OUT": "FTR 008"}, pb: ["SV-C", "SYNCH"],
+      b: [["BTR", "021", ["pin PER"], []], ["BTR", "027", ["const 0"], []], ["BTR", "028", ["const 0"], []], ["A", "024", ["pb SYNCH", "pin SW"], []], ["ASW", "023", ["pb SV-C", "pin TR", "SW:A 024"], []], ["NOT", "026", ["pb SYNCH"], []], ["A", "025", ["pin SW", "NOT 026"], []], ["AM", "007", ["BTR 027", "BTR 028", "ASW 023", "SW:A 025"], [1, 10, 100, 0]], ["FTR", "008", ["AM 007"], []], ["FTR", "029", ["FTR 008"], []]],
+      at: {"TCE185 003": {}} }
   };
   /* record order of the values (lane 0, tcs-macros-layout-2026-11-26.md question 1: each matched against the drawing blocks of the same
      number, e.g. MR n = 18 of 18, LMS 44 of 44, I 4 of 4, AM 4 of 4) */
@@ -1547,7 +1566,7 @@
     bl.forEach(visit);
     const f = (I, notes, st, dt) => {
       const v = (st.v = st.v || {});
-      const rd = s => (/^pin /.test(s) ? +I[s.slice(4).replace(/\s+/g, '')] || 0 : /^pb /.test(s) ? +I['PB ' + s.slice(3)] || 0 : /^REF /.test(s) ? I['DEF ' + f.map[s.slice(4)]] : v[s] || 0);
+      const rd = s => (/^pin /.test(s) ? +I[s.slice(4).replace(/\s+/g, '')] || 0 : /^pb /.test(s) ? +I['PB ' + s.slice(3)] || 0 : /^const /.test(s) ? +s.slice(6) : /^REF /.test(s) ? I['DEF ' + f.map[s.slice(4)]] : v[s] || 0);
       for (const b of order) {
         const bs = (st[b.id] = st[b.id] || {});
         let sw;
