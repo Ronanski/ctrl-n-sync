@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, '..', '..', '..');
 const win = {};
 vm.runInNewContext(fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8'), { window: win });
 const R = win.TCE_RUN;
-const FLOOR = 32; /* + slice D: CV WARMING SET x2, CRT OPE INC/DEC TCE194 / TCE205, L-RATE TCE185 */ /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502
+const FLOOR = 34; /* + slice F: CHANGE OVER TCE172 (LME300 + 301), HEAT SOAK CONTROL TCE207 (LME242 + 243) */ /* + slice D: CV WARMING SET x2, CRT OPE INC/DEC TCE194 / TCE205, L-RATE TCE185 */ /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502
    + 6 VALVE CONTROL MT1 (TCE210, TCE211, TCE212 x2, TCE214 x2; slice C) + TURNING GEAR TCE350 */
 let fail = 0;
 const ck = (ok, w) => (console.log((ok ? 'PASS ' : 'FAIL ') + w), ok || fail++);
@@ -117,6 +117,32 @@ const run = (f, I, st, n, dt) => {
   let Q;
   for (let i = 0; i < 20; i++) Q = h(K0, [], s2, 0.1);
   ck(Q.SET === 5, 'CV warming FCLS: SET goes to CL.POS (5)');
+}
+// slice F: CHANGE OVER TCE172 8 (LME300 + LME301), HEAT SOAK CONTROL TCE207 007 (LME242 + LME243): two backup files, one macro
+{
+  const f = mk('TCE172', '8'),
+    st = {},
+    I = { PERM: 1, TEST: 0, GS: 0, LS: 0, GM: 0, LM: 0, LIMIT: 0, USE: 1, GOV: 50, LLM: 60, 'DEF 52GCLOSE': 1, 'DEF TURBINETRIP': 0, 'DEF ALLVALVECLOSED': 0, 'DEF INITIAL': 1, 'DEF CRTOPEPERM': 1 };
+  ck(!!f && f.lme === 'LME300', 'TCE172 8 is the backup CHANGE OVER (LME300 + LME301)');
+  let O = run(f, I, st, 3, 0.1);
+  ck(O.GOV === 1 && O.LLM === 0 && O.LC === 0, 'start: governor in control (GOV 1, LLM 0)');
+  O = run(f, { ...I, LS: 1 }, st, 3, 0.1);
+  ck(O.LC === 1 && O.GOV === 1, 'LS with load limit above governor + 0.1: change to load limit running (LC 1)');
+  O = run(f, { ...I, LLM: 49.8 }, st, 3, 0.1);
+  ck(O.LC === 0 && O.LLM === 1 && O.GOV === 0, 'load limit comes under governor - 0.1: LC ends, load limit in control (LLM 1, GOV 0)');
+  ck(O.FIN === 1, 'USE and the two within 5: FIN 1');
+  O = run(f, { ...I, LLM: 49.8, 'DEF TURBINETRIP': 1 }, st, 2, 0.1);
+  ck(O.GOV === 1 && O.LLM === 0, 'turbine trip: back to governor');
+  const h = mk('TCE207', '007'),
+    s2 = {},
+    J = { DEMAND: 30, OPEN1: 4, OPEN2: 0, CVHLD: 0, CONT: 0, HOLD: 0, RESET: 0, 'S.SEL1': 0, 'S.SEL2': 0, 'S.TARG': 0, 'DEF HEATSOAKCONTROL': 0, 'DEF ALLVALVECLOSED': 0, 'DEF INITIAL': 1 };
+  ck(!!h && h.lme === 'LME242', 'TCE207 007 is the backup HEAT SOAK CONTROL (LME242 + LME243)');
+  O = run(h, J, s2, 3, 0.1);
+  ck(O.ICV === 30 && O['BIAS.C'] === 1 && O.CV === 0, 'heat soak off: ICV = DEMAND 30, bias cleared (BIAS.C 1), CV 0');
+  O = run(h, { ...J, 'DEF HEATSOAKCONTROL': 1 }, s2, 3, 0.1);
+  ck(Math.abs(O.CV - 34) < 1e-9, 'heat soak on: CV = DEMAND 30 + CV opening bias OPEN1 4 (got ' + O.CV + ')');
+  O = run(h, { ...J, 'DEF ALLVALVECLOSED': 1 }, s2, 3, 0.1);
+  ck(O.ICV === 0, 'all valves closed: ICV 0');
 }
 // the sheets: count of macros run from the backup
 {

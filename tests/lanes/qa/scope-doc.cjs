@@ -41,6 +41,17 @@ if ((/PASOK (\d+), LABAS (\d+)/.exec(s4) || []).slice(1).join() !== [rows.filter
 const P = rd('docs/PHASES.md');
 const ph = [...P.matchAll(/^\| (\d+) \| [^|]+\|[^|]+\| (TAPOS|BAHAGI|HINDI PA) \|/gm)].map(m => +m[1]);
 if (ph.join() !== Array.from({ length: 15 }, (_, i) => i + 1).join()) fail('PHASES.md does not list phases 1 ~ 15 with a status (' + ph.join() + ')');
+// strictly in order (user 2026-11-26 "Bkt may laktawan pala?"): no phase is TAPOS while an earlier phase is not TAPOS, unless that
+// earlier phase writes its blocker with an owner, "HADLANG (may-ari: <who>...)"; and the count line matches the table
+const prow = [...P.matchAll(/^\| (\d+) \| [^|]+\|[^|]+\| (TAPOS|BAHAGI|HINDI PA) \|(.*)$/gm)].map(m => ({ n: +m[1], st: m[2], rest: m[3] }));
+for (const r of prow)
+  if (r.st === 'TAPOS')
+    for (const e of prow.filter(e => e.n < r.n && e.st !== 'TAPOS'))
+      if (!/HADLANG \(may-ari: [^)]+\)/.test(e.rest)) fail('phase ' + r.n + ' is TAPOS while phase ' + e.n + ' is ' + e.st + ' with no HADLANG (may-ari: ...) written');
+const cnt = k => prow.filter(r => r.st === k).length,
+  bl = /\*\*Bilang: (\d+) TAPOS, (\d+) BAHAGI, (\d+) HINDI PA\.\*\*/.exec(P);
+if (!bl || +bl[1] !== cnt('TAPOS') || +bl[2] !== cnt('BAHAGI') || +bl[3] !== cnt('HINDI PA'))
+  fail('PHASES.md Bilang line does not match the table (' + cnt('TAPOS') + ' TAPOS, ' + cnt('BAHAGI') + ' BAHAGI, ' + cnt('HINDI PA') + ' HINDI PA)');
 // no plant IP address in the scope files (public repo)
 for (const [f, t] of [['docs/SCOPE.md', S], ['docs/PHASES.md', P]]) if (/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(t)) fail(f + ' has an IP address');
 console.log((bad ? 'FAIL' : 'PASS') + ' scope-doc: ' + need.length + ' sections, ' + pages.length + ' pages + ' + groups.length + ' alarm groups in scope, ' + rows.length + ' equipment, ' + ph.length + ' phases');
