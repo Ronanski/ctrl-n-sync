@@ -50,6 +50,10 @@ const { load } = require(path.join(__dirname, '../../../tools/trace/world.cjs'))
   ok(sm.length === 15, 'SI0130 step writers found: ' + sm.length + ' (steps 0, 2 ~ 15)');
   const st = P.filter(p => p.tag === 'SI0130');
   ok(st.length === 15 && st.filter(p => p.on).length === 1 && st.find(p => p.on).sheet.endsWith('BA04'), 'STEP rows: 15 bound, only STEP 0 (BA04) = 1 at rest');
+    /* DITL-61A row 27 ANY CONDENSATE PUMP AUTO STARTING: each pump reads the other pump's AUTO STARTING bit (world.js copy mapping) */
+  const xc = JSON.parse(E.js('JSON.stringify(WORLD.xcopy || [])'));
+  ok(xc.some(x => /DITL-61A r27 <- .*61A #B net \d+ M\.1193/.test(x)) && xc.some(x => /61A #B r27 <- .*DITL-61A net \d+ M\.1183/.test(x)),
+    'DITL-61A row 27: pump A reads M.1193 of pump B, pump B reads M.1183 of pump A (' + xc.join('; ') + ')');
     /* the instructor trips screw cooler B: only machine B's row follows */
   E.AN.fault('fs.L1060-B.trip', true);
   E.step(2);

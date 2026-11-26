@@ -979,6 +979,50 @@
         }
       }
     }
+    /* Phase 6 DITL (lane 1, 2026-11-26, copy mapping; YUA PC read A6): an input row of a machine-copy drawing that reads the bit the OTHER
+       machine makes on an internal wire. DITL-61A: the AND gate of AUTO STARTING carries "M.1183/1193" on its wire (pump A / B, memory
+       list 103 M.1183 / M.1193 CONDENSATE PUMP-A / B AUTO START PERMISSION); row 27 "M.1193" of the A drawing reads pump B's, and the B
+       copy ("THE DIAGRAM IS THE SAME FOR CONDENSATE PUMP B") reads pump A's M.1183. Entry j of the list is machine j; the row of machine k
+       that names entry j of the drawing reads machine (j + k) mod n, on the net of that wire. Only rows with no other source */
+    const xcopy = [];
+    for (const sb of S.sheets) {
+      const cps = W.instOf.get(sb) || [];
+      if (cps.length < 2 || isSB(sb) || !(sb.tx || []).some(t => /^[IMOB]\.[0-9A-F]{4}(\/[0-9A-F]{2,4})+$/i.test(String(t.t).trim()))) continue;
+      const nl = nlOf(sb);
+      if (!nl || !nl.segs) continue;
+      for (const t of sb.tx || []) {
+        const L = addrList0(t.t);
+        if (L.length !== cps.length || !/^[IMOB]\.[0-9A-F]{4}(\/[0-9A-F]{2,4})+$/i.test(String(t.t).trim())) continue;
+        let bn = -1,
+          bd = 8;
+        /* the insertion point of the text (ix / iy: the label is written beside its wire, DITL-61A "M.1183/1193" 1.7 from it) */
+        const tx0 = t.ix != null ? t.ix : t.x,
+          ty0 = t.iy != null ? t.iy : t.y;
+        for (const g of nl.segs) {
+          const dx = g.x2 - g.x1,
+            dy = g.y2 - g.y1,
+            L2 = dx * dx + dy * dy,
+            u = L2 > 0 ? Math.max(0, Math.min(1, ((tx0 - g.x1) * dx + (ty0 - g.y1) * dy) / L2)) : 0,
+            dd2 = Math.hypot(tx0 - (g.x1 + u * dx), ty0 - (g.y1 + u * dy));
+          if (dd2 < bd) ((bd = dd2), (bn = g.n));
+        }
+        if (bn < 0) continue;
+        sb.rows.forEach((r, i) => {
+          const la = rowList(sb, i);
+          if (la.length !== 1) return;
+          const j = L.indexOf(la[0]);
+          if (j < 0) return;
+          cps.forEach((x, k) => {
+            const y = cps[(j + k) % cps.length];
+            if (y === x || (din.get(x) && din.get(x).get(i))) return;
+            (y._xn = y._xn || new Set()).add(bn);
+            addIn(x, i, { k: 'd', d: y, row: 'n' + bn, ref: codeOf(sb.name) + ' ' + L[(j + k) % cps.length] });
+            xcopy.push(x.name + ' r' + +r.n + ' <- ' + y.name + ' net ' + bn + ' ' + L[(j + k) % cps.length]);
+          });
+        });
+      }
+    }
+    W.xcopy = xcopy;
     /* 3.2.1 d2 (LISA): the PLC sheets with no FROM column read their inputs by address (CLAUDE.md rule 1: one address = one signal in its
        station). Sand E10210-3-771 ~ 777 = station 103, limestone DITL-LS = station 104.
        - an output row of another sheet of the same set that writes the address (sand: 771 row 7 M.0851 SAND SILO LEVEL L <- 774 out

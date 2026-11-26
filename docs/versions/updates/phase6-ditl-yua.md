@@ -1,7 +1,7 @@
 # Phase 6 DITL: rows bound from the PC drawing read (lane 1, MARIA, 2026-11-26)
 
 Source: YUA's read of the drawings, the I/O list and the memory list (groups A ~ D of the DITL sources request). DITL inputs with no
-source at 150 MW: **83 -> 18** (copy clash count 1 -> 0). No trip at 150 MW (trace run.trip 0).
+source at 150 MW: **83 -> 16** (copy clash count 1 -> 0). No trip at 150 MW (trace run.trip 0).
 
 ## What the operator sees
 
@@ -24,11 +24,10 @@ source at 150 MW: **83 -> 18** (copy clash count 1 -> 0). No trip at 150 MW (tra
 - `src/world/world.js` FROM ABC linker: a row "(FROM STATION WIRING)" is common to every machine copy.
 - `tests/lanes/ditl/yua-field.cjs` (41 checks).
 
-## Left (18)
+## Left (16)
 
 - DITL-43 rows 5 / 10 / 12 / 13 (4): APH running / not trip / speed contacts. The APH inverter reads row 5 in the first scan; binding
   needs the start order checked so the APH does not trip at load (field/boiler.js note).
-- DITL-61A row 27 (A and #B, 2): AUTO STARTING M.1183 / M.1193 is an internal gate of the other copy, not an output row.
 - Sand operator controls (4): DITL-771 OVERRIDE M.0803, DITL-772 / 777 EMERGENT STOP M.0882, DITL-776 ISO VALVE M.0870. They are DCS
   graphic push buttons / switches; they need the HMI binding. The trace also has no station for DITL-777.
 - Analog values drawn on digital rows (7): LS214 r9 LT-LM1800, LS240 r1 / r2 / r3, DITL-774 r1 / r2, BA60 r21.
@@ -46,3 +45,9 @@ The STEP n rows of DITL-BA04 ~ BA18 (15) read the step register SI0130, kept fro
 bit comes on ("IF M.1313 ON THEN 2 --> SI0130", read from the sheet text; BA11 M.1333 -> 8 and BA18 M.1352 -> 15 from the PDF, YUA). The compare is "=",
 the memory list name of M.1360 ~ M.136E "B/A SYS. STEP=n". All 15 writers are found (BA18 M.1352 -> 15 from the PDF, YUA). At rest the register is 0 (STEP 0 = 1).
 Not tested: a full ash transmitter cycle through all steps.
+
+## Condensate pump AUTO STARTING (DITL-61A row 27)
+
+Each pump reads the other pump's AUTO STARTING bit: the AND gate wire carries "M.1183/1193" (pump A / B), so row 27 of the A drawing
+(M.1193) reads the net of the B copy, and the B copy reads M.1183 of A (YUA A6, memory list 103). `src/world/world.js` copy mapping:
+a one-address input row that names entry j of an address list written on an internal wire reads machine (j + k) mod n.
