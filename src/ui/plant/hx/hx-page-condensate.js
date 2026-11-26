@@ -125,16 +125,22 @@
       fv('V-CD1030'),
       fv('V-CD1031')
     );
-  const spray = (id, valve, name, cname, x, to) => ({
+  /* str = the strainer at the valve inlet (PD-016 F/G-9: STR-CD1003 before XV-CD1006, STR-CD1004 before XV-CD1005; YUA P&ID read
+     2026-11-27), drawn with no label (docs/phase9/equipment.json map) */
+  const spray = (id, valve, name, cname, x, to, str) => ({
     item: at(X(valve, name, { wrap: 10, cname }), x, 690, { id, rot: 90, lab: 'l' }),
+    str: str ? at(E('strainer', '', '', [], { flow: 'x:' + valve }), x, 648, { id: str, rot: 90 }) : null,
     pipes: [
-      { med: 'condensate', w: W_DR, pts: [[x, HY], id + '.l'], flow: 'x:' + valve, arrow: false },
+      str
+        ? { med: 'condensate', w: W_DR, pts: [[x, HY], str + '.l'], flow: 'x:' + valve, arrow: false }
+        : { med: 'condensate', w: W_DR, pts: [[x, HY], id + '.l'], flow: 'x:' + valve, arrow: false },
+      ...(str ? [{ med: 'condensate', w: W_DR, pts: [str + '.r', id + '.l'], flow: 'x:' + valve, arrow: false }] : []),
       { med: 'condensate', w: W_DR, pts: [id + '.r', [x, 744]], to, flow: 'x:' + valve }
     ]
   });
-  const cs = spray('cs', 'XV-CD1006', 'Curtain spray', 'Curtain spray valve', 830, 'curtain spray'),
+  const cs = spray('cs', 'XV-CD1006', 'Curtain spray', 'Curtain spray valve', 830, 'curtain spray', 'scs'),
     f1 = spray('fs1', 'XV-CD1004', 'Flash spray 1', 'Flash chamber spray valve 1', 955, 'flash chamber'),
-    f2 = spray('fs2', 'XV-CD1005', 'Flash spray 2', 'Flash chamber spray valve 2', 1080, 'flash chamber');
+    f2 = spray('fs2', 'XV-CD1005', 'Flash spray 2', 'Flash chamber spray valve 2', 1080, 'flash chamber', 'sf2');
 
   page({
     id: 'condensate',
@@ -183,6 +189,17 @@
 
         /* ---- on the discharge line: sprays, polisher branch, minimum flow, dump ---- */
         cs.item,
+        cs.str,
+        f2.str,
+        /* Phase 9 (2026-11-27, YUA P&ID read of PD-016): the suction strainers of the condensate pumps (STR-CD1001 A, D-9; STR-CD1002 B, D-10),
+           the restriction orifices on the minimum flow to the condenser (OR-CD1001, A-8, after FCV-CD1120) and on the make-up after
+           LCV-MU1110 (OR-MU1002, A-9), the strainer STR-CD1008 before the deaerator (A-3). Strainers with no label (map); the orifices carry
+           the tag of the equipment list (the sheet prints only "RO") */
+        at(E('strainer', '', '', [], { flow: A }), PAX - 110, 800, { id: 'ssa', rot: 90 }),
+        at(E('strainer', '', '', [], { flow: B }), PBX - 110, 800, { id: 'ssb', rot: 90 }),
+        at(E('orifice', '', 'OR-CD1001', [], {}), 600, RY, { id: 'orm', lab: 'b' }),
+        at(E('orifice', '', 'OR-MU1002', [], {}), 180, 400, { id: 'oru', rot: 90, lab: 'l' }),
+        at(E('strainer', '', '', [], { flow: 'l:LICCD1104' }), 1736, 196, { id: 'sda', rot: 90 }),
         f1.item,
         f2.item,
         at(X('MV-CD1007', 'Polisher inlet valve', { wrap: 12 }), 800, 505, { id: 'pin', rot: -90, lab: 'l', ly: -25 }),
@@ -226,12 +243,15 @@
         { med: 'condensate', w: W_SM, pts: ['mul.b', [80, 352], 'mu1.l'], flow: 'x:MV-MU1001', arrow: false },
         { med: 'condensate', w: W_SM, pts: ['mu1.r', 'cd.mu'], flow: 'x:MV-MU1001|l:LICCD1110A' },
         { med: 'condensate', w: W_SM, pts: [[80, 352], [80, 450], 'mu2.l'], flow: 'l:LICCD1110A', arrow: false },
-        { med: 'condensate', w: W_SM, pts: ['mu2.r', [180, 450], [180, 352]], flow: 'l:LICCD1110A', arrow: false },
+        { med: 'condensate', w: W_SM, pts: ['mu2.r', [180, 450], 'oru.r'], flow: 'l:LICCD1110A', arrow: false },
+        { med: 'condensate', w: W_SM, pts: ['oru.l', [180, 352]], flow: 'l:LICCD1110A', arrow: false },
         /* suction: hotwell to the two pumps, into the side of each can */
         /* beta.305: the suction comes in at the side of each pump (port s), so it no longer runs up through the words under the pump */
         { med: 'condensate', w: W_CD, pts: ['cd.hw', [CX, SUY], [PAX - 110, SUY]], flow: CD },
-        { med: 'condensate', w: W_CD, pts: [[PAX - 110, SUY], [PAX - 110, PY + 12 * PS], 'pa.s'], flow: A, arrow: false },
-        { med: 'condensate', w: W_CD, pts: [[PAX - 110, SUY], [PBX - 110, SUY], [PBX - 110, PY + 12 * PS], 'pb.s'], flow: B, arrow: false },
+        { med: 'condensate', w: W_CD, pts: [[PAX - 110, SUY], 'ssa.r'], flow: A, arrow: false },
+        { med: 'condensate', w: W_CD, pts: ['ssa.l', [PAX - 110, PY + 12 * PS], 'pa.s'], flow: A, arrow: false },
+        { med: 'condensate', w: W_CD, pts: [[PAX - 110, SUY], [PBX - 110, SUY], 'ssb.r'], flow: B, arrow: false },
+        { med: 'condensate', w: W_CD, pts: ['ssb.l', [PBX - 110, PY + 12 * PS], 'pb.s'], flow: B, arrow: false },
         /* discharge */
         { med: 'condensate', w: W_CD, pts: ['pa.d', [PAX + 22 * PS, HY]], flow: A, arrow: false },
         { med: 'condensate', w: W_CD, pts: ['pb.d', [PBX + 22 * PS, HY]], flow: B, arrow: false },
@@ -265,7 +285,8 @@
         },
         /* minimum flow back to the condenser, dump */
         { med: 'condensate', w: W_SM, pts: [[1120, HY], [1120, RY], 'mf.r'], flow: 'l:FICCD1120', arrow: false },
-        { med: 'condensate', w: W_SM, pts: ['mf.l', [520, RY], [520, CY + 64 * CS], 'cd.rc'], flow: 'l:FICCD1120' },
+        { med: 'condensate', w: W_SM, pts: ['mf.l', 'orm.r'], flow: 'l:FICCD1120', arrow: false },
+        { med: 'condensate', w: W_SM, pts: ['orm.l', [520, RY], [520, CY + 64 * CS], 'cd.rc'], flow: 'l:FICCD1120' },
         {
           med: 'condensate',
           w: W_CD,
@@ -306,7 +327,8 @@
         ...H3.pipes,
         /* to the deaerator */
         { med: 'condensate', w: W_CD, pts: [[RX, HCY + BO2], [RX, TY], [1736, TY], 'dlv.r'], flow: CD },
-        { med: 'condensate', w: W_CD, pts: ['dlv.l', [1736, 150], 'dal.r'], flow: 'l:LICCD1104' }
+        { med: 'condensate', w: W_CD, pts: ['dlv.l', 'sda.r'], flow: 'l:LICCD1104', arrow: false },
+        { med: 'condensate', w: W_CD, pts: ['sda.l', [1736, 150], 'dal.r'], flow: 'l:LICCD1104' }
       ],
       taps: [
         { x: 470, y: HY, side: 't', label: 'Temperature', key: 'TTCD1118', unit: '°C', dp: 0, tag: 'TT-CD1118' },

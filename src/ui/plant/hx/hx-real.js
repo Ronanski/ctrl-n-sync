@@ -618,6 +618,13 @@
       live(o.flow, '<path class="rx-tubef" d="M-9 0H-3.5L0 8.5L3.5 0H9"/>')
   });
 
+  /* restriction orifice (Phase 9, 2026-11-27): the plate between two flanges, a hole in its middle (the RO of the flow diagrams). Ports l, r */
+  R.orifice = () => ({
+    box: [-9, -11, 9, 11],
+    ports: { l: [-8, 0], r: [8, 0] },
+    svg: '<path class="rxd" d="M-8 -8h3v16h-3zM5 -8h3v16h-3z"/><path class="rx" d="M-1.6 -11h3.2v8h-3.2zM-1.6 3h3.2v8h-3.2z"/>'
+  });
+
   /* ---------------- the boiler: furnace, cyclone, seal pot, air heater, precipitator, stack ---------------- */
   /* What is from a source: FHI manual Part 2 Sect 1 (circulating fluidized bed furnace with its grate, superheater panels
      No. 1 and No. 2 in the furnace, 2 recycle cyclones with a seal pot each, 4 start-up burners, 4 screw ash coolers, a rotary

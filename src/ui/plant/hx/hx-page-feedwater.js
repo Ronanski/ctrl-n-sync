@@ -142,6 +142,12 @@
         at(E('strainer', '', '', [], { flow: A }), 250, 880, { id: 'sfa', rot: 90 }),
         at(E('strainer', '', '', [], { flow: B }), 560, 880, { id: 'sfb', rot: 90 }),
         at(E('valve', 'Deaerator safety valve', 'ZV-TS1104', [], { kind: 'safety' }), 231, 203, { id: 'zvd', lab: 'l' }),
+        /* the minimum flow orifices OR-FW1001 / 1002 on the recirculation of each pump to the deaerator (PD-017 A-2, after V-FW1007 / 1008)
+           and the lube oil units Z-1115A / B of the pumps (PD-017 G-2 / G-5; the lube oil pumps stay in the faceplate of their feed pump) */
+        at(E('orifice', '', 'OR-FW1001', [], {}), PAX - 42, 730, { id: 'ora', lab: 'b' }),
+        at(E('orifice', '', 'OR-FW1002', [], {}), PBX - 42, 730, { id: 'orb', lab: 'b' }),
+        at(E('tank', 'Lube oil unit', 'Z-1115A', [], { w: 56, h: 36 }), 480, 800, { id: 'loa', lab: 't' }),
+        at(E('tank', 'Lube oil unit', 'Z-1115B', [], { w: 56, h: 36 }), 818, 800, { id: 'lob', lab: 't' }),
         at(HX.B('Pump A suction valve', 'data-di="ZSO-FW1031|OPEN|NOT OPEN"', { w: 160 }), 330, 978, { id: 'sva' }),
         at(HX.B('Pump B suction valve', 'data-di="ZSO-FW1032|OPEN|NOT OPEN"', { w: 160 }), 680, 978, { id: 'svb' }),
         at(L('extraction', 'Extraction steam', { back: true }), 680, DAY - 12 * DAS, { id: 'exl3' }),
@@ -240,10 +246,14 @@
         {
           med: 'water',
           w: W_DR,
-          pts: [
-            [PAX - 3, 730],
-            [PAX - 60, 730]
-          ],
+          pts: [[PAX - 3, 730], 'ora.r'],
+          arrow: false,
+          flow: A
+        },
+        {
+          med: 'water',
+          w: W_DR,
+          pts: ['ora.l', [PAX - 60, 730]],
           to: 'to deaerator',
           flow: A
         },
@@ -255,10 +265,14 @@
         {
           med: 'water',
           w: W_DR,
-          pts: [
-            [PBX - 3, 730],
-            [PBX - 60, 730]
-          ],
+          pts: [[PBX - 3, 730], 'orb.r'],
+          arrow: false,
+          flow: B
+        },
+        {
+          med: 'water',
+          w: W_DR,
+          pts: ['orb.l', [PBX - 60, 730]],
           to: 'to deaerator',
           flow: B
         },
