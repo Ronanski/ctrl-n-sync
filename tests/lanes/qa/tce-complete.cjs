@@ -15,7 +15,7 @@ const root = path.resolve(__dirname, '..', '..', '..');
 /* 270 -> 272 (slice F 2026-11-26: CHANGE OVER TCE172, HEAT SOAK CONTROL TCE207, two backup files each) */
 /* 272 -> 275 (Phase 5 2026-11-26: DUAL INPUT DIAGNOSTICS TCE101, VALVE TEST TCE220 TCE222 from the backup, lane 0 read) */
 /* 275 -> 292 (Phase 5 3 PM read: 17 TCS macro types from the backup, phase5-tcs-macros-17 + phase5-ml-dv-blocks 2026-11-26) */
-const FLOOR = +(process.env.TCE_FLOOR || 295); /* 292 -> 293: TCA782 MJL box; 295: G-5A / G-6A 24 V/Hz inverse time */
+const FLOOR = +(process.env.TCE_FLOOR || 311); /* 292 -> 293: TCA782 MJL box; 295: G-5A / G-6A 24 V/Hz inverse time; 311: PA / KA / PIV HL LL read as the engine applies them (TCE168 169 190 191 195 202) */
 const dir = root + '/src/digital/tce';
 const src = fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8');
 const win = {};
@@ -106,7 +106,13 @@ for (const p of P.plan) {
     if (x.t !== 'b') continue;
     const ty = x.type,
       n = x.notes || [];
-    const keys = new Set(n.map(q => (/^\s*([A-Z][A-Z0-9]*)\s*:/.exec(q) || [])[1]).filter(Boolean));
+    /* a PA (ML 62) wired to the block gives its parameters at run time (tce-run.js node field pa, e.g. TCE202 LIN 004 K / B) */
+    const keys = new Set(
+      n
+        .map(q => (/^\s*([A-Z][A-Z0-9]*)\s*:/.exec(q) || [])[1])
+        .filter(Boolean)
+        .concat(Object.keys(x.pa || {}))
+    );
     if (ty === 'FG') {
       let c = 0;
       for (let i = 1; i <= 8; i++) if (keys.has('X' + i) && keys.has('Y' + i)) c++;
@@ -116,11 +122,13 @@ for (const p of P.plan) {
     if (ty === 'TP' && !keys.has('TP')) why(p.id, 'TP with no time');
     if (ty === 'TD' && !keys.has('TD')) why(p.id, 'TD with no time');
     if (ty === 'FLK' && !keys.has('T1')) why(p.id, 'FLK with no times');
-    if (ty === 'G' && !keys.has('K'))
+    /* G: the engine takes KA where no K is printed (tce-run.js K.G, TCE190 C014 prints only KA:1.0, read on the PC 2026-11-25) */
+    if (ty === 'G' && !keys.has('K') && !keys.has('KA'))
       why(p.id, 'G with no K (gain 1 used)' + (keys.size ? ' printed ' + [...keys] : ''));
     if (ty === 'LIN' && !keys.has('K')) why(p.id, 'LIN with no K/B');
-    if (ty === 'PIV' && (keys.has('HL') || keys.has('LL') || keys.has('ML')))
-      why(p.id, 'PIV output limits HL/LL/ML on the sheet not applied');
+    /* PIV HL / LL: applied by the engine on Z + Y (tce-run.js K.PIV, DERIVED, TCE168 TCE169 TCE191 TCE195); a PIV with only one of
+       the two printed is still a defect. ML stays an open meaning (equal to HL on every sheet, no page defines it). */
+    if (ty === 'PIV' && keys.has('HL') !== keys.has('LL')) why(p.id, 'PIV with only one output limit printed');
     if (ty === 'AM' && keys.has('M')) why(p.id, 'AM M parameter not applied');
   }
 }

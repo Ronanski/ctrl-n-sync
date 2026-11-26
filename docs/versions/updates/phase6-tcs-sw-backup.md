@@ -29,3 +29,14 @@ Source: phase6-tcs-records-2026-11-26.md (YUA, read-only from team-files/tcs-dec
   at the PIF, so the app did not read it as an input. The same line is now also typed toward the PIF, so it ends on the pin.
 - The backup records hold a signal there (102_YY02748 / 102_YY0277A), not a constant, which agrees with a wired SW.
 - PIF in AUT integrates; in MAN (SW = 0) it tracks.
+
+## COMPLETE check follows the engine, 305 -> 311 of 419 (2026-11-26)
+
+The QA check `tests/lanes/qa/tce-complete.cjs` flagged six running sheets as defects that the engine already handles:
+
+- **TCE168, TCE169, TCE191, TCE195 (PIV HL / LL):** `K.PIV` clamps Z + Y to LL .. HL (DERIVED, see the comment in tce-run.js). The check now flags only a PIV with just one of the two limits printed. ML stays an open meaning; it does not block the sheet.
+- **TCE190 (G C014 KA:1.0):** `K.G` takes KA where no K is printed (PC read 2026-11-25).
+- **TCE202 (LIN 004):** K and B come from PA2 004 at run time (the sheet field `pa`). The check now counts the PA names as given parameters.
+
+No engine change; the expected count went up only because the check now reads the same parameters the engine runs. FLOOR 295 -> 311.
+Noted difference (drawing wins): TCE202 FG C001 point 5 is 97.9 : 0 on the drawing and 100 : 0 in the backup table.
