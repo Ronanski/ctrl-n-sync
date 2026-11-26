@@ -13,7 +13,8 @@ const root = path.resolve(__dirname, '..', '..', '..');
 /* 257 -> 261 (Phase 6 TCS slice B 2026-11-26: the macro insides of the HIACS backup, tce-run.js BKM: TCE163 TCE166 TCE450 TCE451) */
 /* 261 -> 265 (slice C 2026-11-26: VALVE CONTROL MT1 inside from the backup: TCE210 TCE211 TCE212 TCE214; TURNING GEAR TCE350 -> 266; slice D CV WARMING SET TCE155, CRT OPE INC/DEC TCE194 TCE205, L-RATE TCE185 -> 270) */
 /* 270 -> 272 (slice F 2026-11-26: CHANGE OVER TCE172, HEAT SOAK CONTROL TCE207, two backup files each) */
-const FLOOR = +(process.env.TCE_FLOOR || 272);
+/* 272 -> 275 (Phase 5 2026-11-26: DUAL INPUT DIAGNOSTICS TCE101, VALVE TEST TCE220 TCE222 from the backup, lane 0 read) */
+const FLOOR = +(process.env.TCE_FLOOR || 275);
 const dir = root + '/src/digital/tce';
 const src = fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8');
 const win = {};

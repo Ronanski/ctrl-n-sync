@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, '..', '..', '..');
 const win = {};
 vm.runInNewContext(fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8'), { window: win });
 const R = win.TCE_RUN;
-const FLOOR = 34; /* + slice F: CHANGE OVER TCE172 (LME300 + 301), HEAT SOAK CONTROL TCE207 (LME242 + 243) */ /* + slice D: CV WARMING SET x2, CRT OPE INC/DEC TCE194 / TCE205, L-RATE TCE185 */ /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502
+const FLOOR = 41; /* + Phase 5: DUAL INPUT DIAGNOSTICS TCE101, VALVE TEST TCE220 x2 / TCE222 x2 / TCE226 x2 */ /* + slice F: CHANGE OVER TCE172 (LME300 + 301), HEAT SOAK CONTROL TCE207 (LME242 + 243) */ /* + slice D: CV WARMING SET x2, CRT OPE INC/DEC TCE194 / TCE205, L-RATE TCE185 */ /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502
    + 6 VALVE CONTROL MT1 (TCE210, TCE211, TCE212 x2, TCE214 x2; slice C) + TURNING GEAR TCE350 */
 let fail = 0;
 const ck = (ok, w) => (console.log((ok ? 'PASS ' : 'FAIL ') + w), ok || fail++);
@@ -143,6 +143,47 @@ const run = (f, I, st, n, dt) => {
   ck(Math.abs(O.CV - 34) < 1e-9, 'heat soak on: CV = DEMAND 30 + CV opening bias OPEN1 4 (got ' + O.CV + ')');
   O = run(h, { ...J, 'DEF ALLVALVECLOSED': 1 }, s2, 3, 0.1);
   ck(O.ICV === 0, 'all valves closed: ICV 0');
+}
+// Phase 5: DUAL INPUT DIAGNOSTICS TCE101 001 (LME110 + LME110A, MJL / ASWW), VALVE TEST TCE222 005 (LME253), TCE220 002 (LME252), TCE226 036 (LME250)
+{
+  const f = mk('TCE101', '001'),
+    st = {},
+    I = { SIG1: 100, SIG2: 102, HL: 153, LL: -7.5, DEV: 30, M: 10000, S: 1, 'I-ERR1': 0, 'I-ERR2': 0, SIM: 0, 'DEF SIMULATIONUSE': 0, 'DEF OUTSIDESIMULATION': 0, 'DEF ANNENABLE': 1, 'DEF INITIAL': 1, 'DEF ANNRESET': 0 };
+  ck(!!f && f.lme === 'LME110', 'TCE101 001 is the backup DUAL INPUT DIAGNOSTICS (LME110 + LME110A)');
+  let O = run(f, I, st, 5, 0.1);
+  ck(O.OUT === 100 && O.ERR === 0 && O.ABN === 0 && O.DEVE === 0, 'two good transmitters: OUT = the lower (100), no alarm');
+  O = run(f, { ...I, SIG1: 200 }, st, 5, 0.1);
+  ck(O.OUT === 102 && O.ERR1 === 0, 'SIG1 over HL 153: OUT = SIG2 (102) at once, ERR1 not yet (3 s)');
+  O = run(f, { ...I, SIG1: 200 }, st, 30, 0.1);
+  ck(O.ERR1 === 1 && O.ERR === 1 && O.DEVE === 1 && O.ABN === 0, 'after 3 s: ERR1, ERR and DEV E (98 > 30) latched, ABN 0');
+  O = run(f, { ...I, SIG1: 200, SIG2: -20 }, st, 40, 0.1);
+  ck(O.OUT === 102 && O.ABN === 1, 'both bad: OUT holds 102, ABN 1');
+  O = run(f, { ...I, 'DEF ANNRESET': 1 }, st, 2, 0.1);
+  ck(O.ERR === 0 && O.ABN === 0 && O.DEVE === 0 && O.OUT === 100, 'both good again + ANN RESET: alarms clear, OUT 100');
+  O = run(f, { ...I, 'DEF SIMULATIONUSE': 1, SIM: 50 }, st, 2, 0.1);
+  ck(O.OUT === 50, 'SIMULATION USE: both signals = SIM (50)');
+  const v = mk('TCE222', '005'),
+    s2 = {},
+    J = { PPERM: 1, COMP: 1, PPOS: 0, 'DEF CRTOPEPERM': 1, 'DEF INITIAL': 1, 'PB PARTIAL TEST': 0, 'PB CRT AVAILABLE': 1, 'PB CANCEL': 0 };
+  ck(!!v && v.lme === 'LME253', 'TCE222 005 is the backup VALVE TEST(1) (LME253)');
+  ck(run(v, { ...J, 'PB PARTIAL TEST': 1 }, s2, 1, 1).PTEST === 1 && run(v, J, s2, 10, 1).PTEST === 1, 'PARTIAL TEST with PPERM: test on, held after the button');
+  ck(run(v, J, s2, 195, 1).PTEST === 0, 'stops after 200 s (TP 012, drawing value; backup 60 s)');
+  run(v, { ...J, 'PB PARTIAL TEST': 1 }, s2, 1, 1);
+  ck(run(v, { ...J, COMP: 0 }, s2, 1, 1).PTEST === 0, 'NOT COMP stops the test');
+  ck(run(v, { ...J, 'PB PARTIAL TEST': 1, 'PB CRT AVAILABLE': 0 }, s2, 2, 1).PTEST === 0, 'no CRT AVAILABLE: the button does nothing');
+  const w = mk('TCE220', '002'),
+    s3 = {},
+    K0 = { FPERM: 1, PPERM: 1, COMP: 1, PPOS: 0, CLOSE: 0, 'DEF CRTOPEPERM': 1, 'DEF INITIAL': 1, 'PB FULL TEST': 0, 'PB PARTIAL TEST': 0, 'PB CRT AVAILABLE': 1, 'PB CANCEL': 0 };
+  ck(!!w && w.lme === 'LME252', 'TCE220 002 is the backup VALVE TEST (LME252)');
+  run(w, { ...K0, 'PB FULL TEST': 1 }, s3, 1, 1);
+  ck(run(w, { ...K0, CLOSE: 1 }, s3, 3, 1).FTEST === 1 && run(w, { ...K0, CLOSE: 1 }, s3, 3, 1).FTEST === 0, 'FULL TEST stops when CLOSE has been on 5 s');
+  O = run(w, { ...K0, 'PB CANCEL': 1 }, s3, 1, 1);
+  ck(O.CNCL === 1 && run(w, K0, s3, 3, 1).CNCL === 0, 'CANCEL: the cancel pulse (TW 3 s)');
+  const x = mk('TCE226', '036'),
+    s4 = {},
+    L0 = { 'TEST.C': 1, PERM: 1, COMP: 1, 'REST.C': 0, OPEN: 0, CLS: 0, 'DEF CRTOPEPERM': 1, 'DEF INITIAL': 1, 'PB TEST': 0, 'PB CRT AVAILABLE': 1, 'PB CANCEL': 0 };
+  ck(!!x && x.lme === 'LME250', 'TCE226 036 is the backup VALVE TEST (LME250)');
+  ck(run(x, { ...L0, 'PB TEST': 1 }, s4, 1, 1).TEST === 1 && run(x, L0, s4, 58, 1).TEST === 1 && run(x, L0, s4, 3, 1).TEST === 0, 'TEST on, stops after 60 s (TP 024, drawing value; backup 90 s)');
 }
 // the sheets: count of macros run from the backup
 {

@@ -92,7 +92,10 @@
     ['rl026', [[987, YS], [1015, YS]], 1],
     /* out of LG: the short piece ends on the middle of the line from SIM down to connector E, where the drawing has its dot */
     ['lg027', [[1073, YS], [1098, YS]], 1],
-    ['lg027', [[MX, SIM], [1098, SIM], [1098, 1332], [1199, 1332]], 1]
+    /* the line from the dot down to connector E, and from the dot up to the SIM pin of the macro (typed as one line that started at the
+       pin; the reader takes a wire's LAST point as its end, so the SIM pin got no signal: two pieces from the dot, same drawing) */
+    ['lg027', [[1098, YS], [1098, SIM], [MX, SIM]], 1],
+    ['lg027', [[1098, YS], [1098, 1332], [1199, 1332]], 1]
   );
   /* the outputs */
   const XM = 1722,
