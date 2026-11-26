@@ -31,6 +31,15 @@ const ch = /worldChunk = \(\) => \(window\.WORLD && WORLD\.busy \? ([\d.]+) : ([
 same('worldChunkBusyS', W.worldChunkBusyS, +ch[1]);
 same('worldChunkQuietS', W.worldChunkQuietS, +ch[2]);
 same('fixedStepS', W.fixedStepS, num(sched, /AN\.runFixed = \(sec, dt\) => \{[\s\S]*?dt > 0 \? dt : ([\d.]+)/, 'fixed clock step'));
+const pl = rd('src/analog/engine/plant.js'),
+  eh = rd('src/world/eng-host.js');
+same('abcCycleS', W.abcCycleS, num(pl, /const AN_CYCLE = \{ slow: ([\d.]+),/, 'ABC cycle'));
+same('abcFastS', W.abcFastS, num(pl, /const AN_CYCLE = \{ slow: [\d.]+, fast: ([\d.]+) \}/, 'ABC fast cycle'));
+same('abcFastLoops', W.abcFastLoops, ((/const AN_FAST_LOOPS = \[([^\]]*)\]/.exec(pl) || ['', ''])[1].match(/'[A-Z0-9]+'/g) || []).length);
+/* the control blocks skip the steps between two scans of the sheet (Phase 3 3b); the Worker steps as the page */
+if (!/rt\.cacc < cyc - 1e-9\) return rt;/.test(pl)) fail('plant.js: the ABC blocks do not wait for the cycle of the sheet');
+same('Worker plant step', W.plantStepS, num(eh, /Math\.ceil\(dt \/ ([\d.]+)\), Math\.max/, 'Worker plant step'));
+same('Worker fixed step', W.fixedStepS, num(eh, /dt > 0 \? dt : ([\d.]+)/, 'Worker fixed step'));
 same('tcsSliceS', W.tcsSliceS, num(tsh, /slice: ([\d.]+)/, 'TCS slice'));
 same('tcsSlowS', W.tcsSlowS, num(tsh, /slow: ([\d.]+)/, 'TCS slow'));
 /* every TCS sheet scans at its own drawing cycle (10 / 30 / 100 ms): the drive loop and the loop of the other sheets both step

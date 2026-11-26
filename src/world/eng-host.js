@@ -45,7 +45,7 @@
     AN.runFixed = (sec, dt) => {
       const sh = AN.sheets[AN.i] || AN.sheets.find(x => /057/.test(x.name));
       if (!sh || !sh.S || !AN.run || AN._loading) return false;
-      const h = dt > 0 ? dt : 0.5,
+      const h = dt > 0 ? dt : 0.2,
         n = Math.max(1, Math.round(sec / h));
       let wAcc = 0;
       for (let i = 0; i < n; i++) {
@@ -133,7 +133,7 @@
         if (lag >= 60) return void (acc = 0);
         const dt = Math.min(acc, 60 - lag),
           /* M32: the steps that fit in about 80 ms (sched.js anSteps), 0.5 s each when there is time, never longer than 3 s */
-          n = Math.max(1, Math.min(Math.ceil(dt / 0.5), Math.max(Math.max(1, Math.floor(80 / (AN._ms > 0 ? AN._ms : 2))), Math.ceil(dt / 1)))) /* never longer than 1 s (sched.js AN_STEP_MAX, Mina beta.157) */,
+          n = Math.max(1, Math.min(Math.ceil(dt / 0.2), Math.max(Math.max(1, Math.floor(80 / (AN._ms > 0 ? AN._ms : 2))), Math.ceil(dt / 1)))) /* never longer than 1 s (sched.js AN_STEP_MAX, Mina beta.157) */,
           K = AN.tierK || 1;
         acc = 0;
         busy = true;
