@@ -191,6 +191,30 @@
   "STR-CD1005": [
    "reheat-steam|id=s15",
    "strainer between XV-CD1114 and TCV-CD1115, LP bypass spray (PD-016 G-6/7, YUA P&ID read 2026-11-27), drawn with no label"
+  ],
+  "V-FA1001": [
+   "combustion-air|id=vfa",
+   "hot primary air manual dampers V-FA1001 ~ 1004 to the furnace rear wall (PD-052 C-5/6 Detail A, YUA P&ID read 2026-11-27): one manual damper symbol with no label for the four"
+  ],
+  "V-FA1002": [
+   "combustion-air|id=vfa",
+   "hot primary air manual dampers V-FA1001 ~ 1004 to the furnace rear wall (PD-052 C-5/6 Detail A, YUA P&ID read 2026-11-27): one manual damper symbol with no label for the four"
+  ],
+  "V-FA1003": [
+   "combustion-air|id=vfa",
+   "hot primary air manual dampers V-FA1001 ~ 1004 to the furnace rear wall (PD-052 C-5/6 Detail A, YUA P&ID read 2026-11-27): one manual damper symbol with no label for the four"
+  ],
+  "V-FA1004": [
+   "combustion-air|id=vfa",
+   "hot primary air manual dampers V-FA1001 ~ 1004 to the furnace rear wall (PD-052 C-5/6 Detail A, YUA P&ID read 2026-11-27): one manual damper symbol with no label for the four"
+  ],
+  "S-1053": [
+   "combustion-air|id=zpa",
+   "PAF suction silencer, printed Z-1053 SILENCER on PD-052 E-7 (YUA P&ID read 2026-11-27); drawn with no label at the fan inlet"
+  ],
+  "S-1054": [
+   "combustion-air|id=zsa",
+   "SAF suction silencer, printed Z-1054 SILENCER on PD-053 A-7 (YUA P&ID read 2026-11-27); drawn with no label at the fan inlet"
   ]
  },
  "approved": {},

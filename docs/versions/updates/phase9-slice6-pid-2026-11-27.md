@@ -18,3 +18,9 @@ Source: /mnt/project-files/phase9-pid-positions-2026-11-27.md (flow diagram set 
 ## Hindi pa
 - OR-FW1003 / 1004 (balance line): hindi nakaguhit ang balance line sa page.
 - P-1716A / B (polisher booster pumps), T-1135 (flash pipe): susunod.
+
+## Dagdag (8:30 AM)
+- Combustion air: suction silencer ng PAF at SAF (S-1053 / 1054, nakalimbag na Z-1053 / Z-1054 SILENCER), filter silencer ng dalawang
+  fluidizing air blower (S-1055A / B), silencer pagkatapos ng surge valve (Z-1055A / B; dati salita lang na "silencer"), ang manual damper
+  ng hot primary air papunta sa furnace (V-FA1001 ~ 1004, isang simbolo), at ang lube oil cooler ng PAF (Z-1053).
+- Bilang: 233 / 349 may simbolo, 53 wala sa drawing, 63 natitira.

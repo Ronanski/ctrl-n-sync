@@ -15,7 +15,7 @@
                          to the silencer XV-FA1055-A2 / -B2 and its outlet valve XV-FA1055-A3 / -B3; PT-FA1055-A / -B,
                          FT-FA1055
    PD-053 and PD-054 were read through the temporary page 09 (the tags, names and order it binds); PD-052 on the sheet.
-   Drawn simpler than the sheets: the silencers at the fan inlets and the flow elements are not drawn (the flows are the
+   Drawn simpler than the sheets: the flow elements are not drawn (the silencers are, Phase 9) (the flows are the
    measured values of the two flow controllers); the 4 furnace inlets and the 22 wall dampers end as a link to the Furnace page.
    beta.556 (HMI gap list 2026-11-25): the monitor rows of the air heater (DITL-43), of the primary air fan oil unit (DITL-26B) and of
    its two pumps (DITL-24), the air heater speed and air motor push buttons, the link to the wall dampers page.
@@ -189,18 +189,33 @@
           id: 'ovb',
           lab: 't'
         }),
+        /* Phase 9 (2026-11-27, YUA P&ID read): the silencers and the manual dampers. Suction silencers of the fans: S-1053 PAF (PD-052 E-7,
+           printed Z-1053 SILENCER), S-1054 SAF (PD-053 A-7, printed Z-1054); filter silencers at the blower suctions S-1055A / B (PD-054
+           sh1 E-6 / E-3); discharge silencers after the surge valves Z-1055A / B (PD-054 sh1 D/E-7, D/E-4); the four hot primary air manual
+           dampers V-FA1001 ~ 1004 to the rear wall (PD-052 C-5/6 Detail A), one symbol with no label, and the two fan suction silencers with no
+           label (no room beside the inlet vanes) (docs/phase9/equipment.json map); the
+           PAF lube oil cooler Z-1053 on the auxiliary cooling water (PD-021 E-5) */
+        at(E('vent', '', '', []), 40, FY, { id: 'zpa' }),
+        at(E('vent', '', '', []), 1730, FY, { id: 'zsa' }),
+        at(E('vent', 'Filter silencer', 'S-1055A', []), 90, BY, { id: 'zfa', lab: 't' }),
+        at(E('vent', 'Filter silencer', 'S-1055B', []), 520, BY, { id: 'zfb', lab: 't' }),
+        at(E('vent', 'Silencer', 'Z-1055A', [], { flow: 'x:XV-FA1055-A2' }), 170, 110, { id: 'zda', lab: 'l' }),
+        at(E('vent', 'Silencer', 'Z-1055B', [], { flow: 'x:XV-FA1055-B2' }), 600, 110, { id: 'zdb', lab: 'l' }),
+        at(E('valve', '', '', [], { kind: 'manual' }), 470, 430, { id: 'vfa' }),
+        at(E('cooler', 'Lube oil cooler', 'Z-1053', []), 880, 950, { id: 'loc', lab: 'r' }),
         at(L('furnace-gas', 'Fluidizing air to the seal pots'), 1300, HY, { id: 'fal' })
       ],
       pipes: [
         /* primary air: inlet damper, fan, up through the air heater, hot air out on top */
-        { med: 'air', w: W_A, pts: [[40, FY], 'pad.l'], flow: PA, arrow: false },
+        { med: 'air', w: W_A, pts: ['zpa.b', 'pad.l'], flow: PA, arrow: false },
         { med: 'air', w: W_A, pts: ['pad.r', 'paf.in'], flow: PA },
         { med: 'air', w: W_A, pts: ['paf.out', [PFX - 2 * FS, 700], [PAX, 700], 'ah.paB'], flow: PA },
         { med: 'air', w: W_S, pts: [[560, 700], 'cfl.t'], flow: PA, arrow: false },
-        { med: 'hotair', w: W_A, pts: ['ah.paT', [PAX, 430], 'pal.r'], flow: PA },
+        { med: 'hotair', w: W_A, pts: ['ah.paT', [PAX, 430], 'vfa.r'], flow: PA, arrow: false },
+        { med: 'hotair', w: W_A, pts: ['vfa.l', 'pal.r'], flow: PA },
         { med: 'hotair', w: W_S, pts: [[560, 430], [560, 360], 'cpl.r'], flow: PA, arrow: false },
         /* secondary air */
-        { med: 'air', w: W_A, pts: [[1730, FY], 'sad.r'], flow: SA, arrow: false },
+        { med: 'air', w: W_A, pts: ['zsa.b', 'sad.r'], flow: SA, arrow: false },
         { med: 'air', w: W_A, pts: ['sad.l', 'saf.in'], flow: SA },
         { med: 'air', w: W_A, pts: ['saf.out', [SFX + 2 * FS, 740], [SAX, 740], 'ah.saB'], flow: SA },
         { med: 'hotair', w: W_A, pts: ['ah.saT', [SAX, 350], 'sal.l'], flow: SA },
@@ -208,17 +223,17 @@
         { med: 'gas', w: W_G, pts: ['gin.l', [GAX, 440], 'ah.gasT'], flow: 'v:TT-FG1124>80' },
         { med: 'gas', w: W_G, pts: ['ah.gasB', [GAX, 690], 'gout.l'], flow: 'v:TT-FG1124>80' },
         /* fluidizing air: inlet damper, blower, surge valve to the silencer, outlet valve, common line */
-        { med: 'air', w: W_S, pts: [[90, BY], 'fad.l'], flow: FA, arrow: false },
+        { med: 'air', w: W_S, pts: ['zfa.b', 'fad.l'], flow: FA, arrow: false },
         { med: 'air', w: W_S, pts: ['fad.r', 'fa.in'], flow: FA },
         { med: 'air', w: W_S, pts: ['fa.out', [BAX - 2 * BS, HY], 'ova.l'], flow: FA, arrow: false },
         { med: 'air', w: 4, pts: [[BAX - 2 * BS, 110], 'sva.r'], flow: 'x:XV-FA1055-A2', arrow: false },
-        { med: 'air', w: 4, pts: ['sva.l', [170, 110]], to: 'silencer', flow: 'x:XV-FA1055-A2' },
+        { med: 'air', w: 4, pts: ['sva.l', 'zda.b'], flow: 'x:XV-FA1055-A2' },
         { med: 'air', w: W_S, pts: ['ova.r', [1000, HY]], flow: 'x:XV-FA1055-A3' },
-        { med: 'air', w: W_S, pts: [[520, BY], 'fbd.l'], flow: FB, arrow: false },
+        { med: 'air', w: W_S, pts: ['zfb.b', 'fbd.l'], flow: FB, arrow: false },
         { med: 'air', w: W_S, pts: ['fbd.r', 'fb.in'], flow: FB },
         { med: 'air', w: W_S, pts: ['fb.out', [BBX - 2 * BS, 110], 'ovb.l'], flow: FB, arrow: false },
         { med: 'air', w: 4, pts: [[BBX - 2 * BS, 110], 'svb.r'], flow: 'x:XV-FA1055-B2', arrow: false },
-        { med: 'air', w: 4, pts: ['svb.l', [600, 110]], to: 'silencer', flow: 'x:XV-FA1055-B2' },
+        { med: 'air', w: 4, pts: ['svb.l', 'zdb.b'], flow: 'x:XV-FA1055-B2' },
         { med: 'air', w: W_S, pts: ['ovb.r', [1000, 110], [1000, HY]], flow: 'x:XV-FA1055-B3', arrow: false },
         { med: 'air', w: W_S, pts: [[1000, HY], 'fal.l'], flow: FA + '|' + FB }
       ],
