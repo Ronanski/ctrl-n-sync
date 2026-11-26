@@ -26,6 +26,15 @@ const dec = s =>
    that is the same for machines A ~ D shows the machine picked on its header (S.mach[sheet index] = 1 / 2 / 3 = B / C / D): its own
    inputs, values and addresses (the machine instance of the one world, src/world/world.js) */
 const cur = () => {
+  /* a unit sheet saved by name (ditl.curname "(18)DITL-07 #B") opens once the units are built */
+  if (S._wantU && typeof WORLD !== 'undefined' && WORLD.instOf && S.sheets[S.cur]) {
+    const L = WORLD.instOf.get(S.sheets[S.cur]),
+      j = L ? L.findIndex(x => x.name === S._wantU) : -1;
+    if (L) {
+      if (j > 0) (S.mach = S.mach || {})[S.cur] = j;
+      S._wantU = null;
+    }
+  }
   const s = S.sheets[S.cur],
     k = S.mach && S.mach[S.cur];
   if (k && s && typeof WORLD !== 'undefined' && WORLD.instOf) {
@@ -33,6 +42,52 @@ const cur = () => {
     if (L && L[k]) return L[k];
   }
   return s;
+};
+/* Phase 6 (user 2026-11-26 "Alam mo nmn pala n dapat hiwalay na sheet eh!"): every unit of a shared drawing is its OWN sheet of the
+   viewer: one entry in the sheet list, the picker and Prev / Next, with its own name, title, addresses and live values. The units are
+   built from the one drawing (WORLD.instOf, src/world/world.js), so the logic stays one source (tests/lanes/qa/unit-sheets.cjs). */
+const unitsOf = i => {
+  const s = S.sheets[i],
+    L = s && typeof WORLD !== 'undefined' && WORLD.instOf ? WORLD.instOf.get(s) : null;
+  return L && L.length > 1 ? L : s ? [s] : [];
+};
+/* the sheet name of a unit: "(18)DITL-07 #A" for the drawing itself when it has units, "(18)DITL-07 #B" ..., "(S16)DITL-80G #N-1012" */
+const unitName = (x, k) => {
+  if (!x) return '';
+  const I = x._inst;
+  if (I && I.base && I.base !== x) return x.name;
+  return k === undefined || unitsOf(S.sheets.indexOf(x)).length < 2 ? x.name : x.name + ' #' + ((I && I.lbl) || 'A');
+};
+const unitTitle = x => {
+  const I = x && x._inst;
+  return I && I.base && I.base !== x && typeof WORLD !== 'undefined' && WORLD.showText ? WORLD.showText(x, I.base.title || '') : (x && x.title) || '';
+};
+/* every unit sheet in order, [sheet index, unit] */
+const unitNav = tcs => {
+  const r = [];
+  S.sheets.forEach((x, i) => {
+    if (tcs !== undefined && !!x.tcs !== tcs) return;
+    unitsOf(i).forEach((u, k) => r.push([i, k, u]));
+  });
+  return r;
+};
+const goUnit = (i, k) => {
+  S.cur = i;
+  (S.mach = S.mach || {})[i] = k || 0;
+  sel = null;
+  render();
+};
+/* Prev / Next and PageUp / PageDown: the next unit sheet of the same family (DCS / TCS) */
+const unitStep = d => {
+  const s = S.sheets[S.cur];
+  if (!s) return false;
+  const N = unitNav(!!s.tcs),
+    k = (S.mach && S.mach[S.cur]) || 0,
+    j = N.findIndex(([i, kk]) => i === S.cur && kk === k),
+    t = N[j + d];
+  if (j < 0 || !t) return false;
+  goUnit(t[0], t[1]);
+  return true;
 };
 /* ---------- DXF parse ---------- */
 const SYM = {

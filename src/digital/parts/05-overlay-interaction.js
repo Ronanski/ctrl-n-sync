@@ -535,10 +535,14 @@ function drawSide() {
   if (!sd) return;
   sd.classList.toggle('min', SIDEMIN === '1');
   $('sidetg').textContent = SIDEMIN === '1' ? '▶' : '◀';
-  const cn = S.sheets[S.cur] ? S.sheets[S.cur].name : '';
   const TCSL = !!(S.sheets[S.cur] && S.sheets[S.cur].tcs);
-  $('sidect').textContent = 'Sheets (' + S.sheets.filter(x => !!x.tcs === TCSL).length + ')';
-  $('sidevt').textContent = cn ? cn + '  ·  ' + (S.cur + 1) + '/' + S.sheets.length : 'Sheets';
+  /* Phase 6: every unit sheet is counted and listed (unitNav) */
+  const NAV = unitNav(),
+    k0 = (S.mach && S.mach[S.cur]) || 0,
+    pos = NAV.findIndex(([i, k]) => i === S.cur && k === k0),
+    cn = pos >= 0 ? unitName(NAV[pos][2], k0) : '';
+  $('sidect').textContent = 'Sheets (' + NAV.filter(([i]) => !!S.sheets[i].tcs === TCSL).length + ')';
+  $('sidevt').textContent = cn ? cn + '  ·  ' + (pos + 1) + '/' + NAV.length : 'Sheets';
   /* 2.5.0-beta.13 (user: "sa left pane, wala ang option na by order/category"): By order / By category as the ABC sheet list */
   let so = $('dsort');
   if (!so) {
@@ -564,7 +568,7 @@ function drawSide() {
     $('sidebody').insertBefore(so, $('sidefl'));
   }
   so.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === SIDESM));
-  const key = S.sheets.map(x => x.name + (x.bv !== BV ? '!' : '')).join('|') + '#' + SIDEFL + '#' + SIDESM + '#' + TCSL;
+  const key = S.sheets.map(x => x.name + (x.bv !== BV ? '!' : '')).join('|') + '#' + NAV.length + '#' + SIDEFL + '#' + SIDESM + '#' + TCSL;
   if (key !== SIDEKEY) {
     SIDEKEY = key;
     list.innerHTML = '';
@@ -572,36 +576,41 @@ function drawSide() {
       G = {};
     /* 2.5.0-beta.11 (user: "DAPAT BY CATEGORY DIN ANG SHEET LIST SA DITL"): grouped by system, as the ABC list (category headers in
        the order of the contents sheets DITL-0A ~ 0D); the search still filters by name and title */
-    S.sheets.forEach((x, i) => {
+    NAV.forEach(([i, k, u]) => {
+      const x = S.sheets[i];
       if (!!x.tcs !== TCSL) return;
-      if (f && (x.name + ' ' + (x.title || '') + ' ' + ditlCat(x)).toLowerCase().indexOf(f) < 0) return;
-      if (SIDESM === 'order') return sideBtn(x, i, list);
-      (G[ditlCat(x)] = G[ditlCat(x)] || []).push(i);
+      if (f && (unitName(u, k) + ' ' + unitTitle(u) + ' ' + ditlCat(x)).toLowerCase().indexOf(f) < 0) return;
+      if (SIDESM === 'order') return sideBtn(x, i, list, k, u);
+      (G[ditlCat(x)] = G[ditlCat(x)] || []).push([i, k, u]);
     });
     if (SIDESM !== 'order') DITL_CATS.concat(Object.keys(G).filter(k => !DITL_CATS.includes(k))).forEach(c => {
       if (!G[c]) return;
-      const body = sideGrp(list, 'ditl.cc', c, G[c].length, G[c].includes(S.cur), !!f);
-      G[c].forEach(i => sideBtn(S.sheets[i], i, body));
+      const body = sideGrp(list, 'ditl.cc', c, G[c].length, G[c].some(([i]) => i === S.cur), !!f);
+      G[c].forEach(([i, k, u]) => sideBtn(S.sheets[i], i, body, k, u));
     });
-    function sideBtn(x, i, box) {
-      const b = document.createElement('button');
+    function sideBtn(x, i, box, k, u) {
+      const b = document.createElement('button'),
+        nm = x.tcs ? x.meta.dwg : unitName(u, k),
+        t = unitTitle(u);
       b.dataset.i = i;
+      b.dataset.k = k;
       const l1 = document.createElement('span');
       l1.className = 'sn';
-      l1.textContent = (x.bv !== BV ? '⚠ ' : '') + (x.tcs ? x.meta.dwg : x.name);
+      l1.textContent = (x.bv !== BV ? '⚠ ' : '') + nm;
       b.appendChild(l1);
-      if (x.title) {
+      if (t) {
         const l2 = document.createElement('span');
         l2.className = 'st';
-        l2.textContent = x.title;
+        l2.textContent = t;
         b.appendChild(l2);
       }
       b.title =
         x.bv !== BV
           ? 'Imported with an older version: import this DXF again (same name replaces it)'
-          : x.name + (x.title ? ' - ' + x.title : '');
+          : nm + (t ? ' - ' + t : '');
       b.onclick = () => {
         S.cur = i;
+        (S.mach = S.mach || {})[i] = k;
         sel = null;
         if (innerWidth < 820) {
           SIDEMIN = '1';
@@ -616,15 +625,15 @@ function drawSide() {
   }
   let on = null;
   list.querySelectorAll('button').forEach(b => {
-    const o = +b.dataset.i === S.cur;
+    const o = +b.dataset.i === S.cur && +b.dataset.k === k0;
     if (o !== b.classList.contains('on')) b.classList.toggle('on', o);
     if (o) on = b;
   });
-  if (on && drawSide.last !== S.cur) sideShow(on);
-  if (on && SIDEMIN !== '1' && drawSide.last !== S.cur) {
+  if (on && drawSide.last !== S.cur + ':' + k0) sideShow(on);
+  if (on && SIDEMIN !== '1' && drawSide.last !== S.cur + ':' + k0) {
     on.scrollIntoView({ block: 'nearest' });
   }
-  drawSide.last = S.cur;
+  drawSide.last = S.cur + ':' + k0;
 }
 {
   const tg = document.getElementById('sidetg');

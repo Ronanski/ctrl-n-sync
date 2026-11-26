@@ -319,18 +319,8 @@ addEventListener('keydown', e => {
     (document.activeElement && document.activeElement.isContentEditable)
   )
     return;
-  if (e.key === 'PageDown' && shFam(1)) {
+  if ((e.key === 'PageDown' || e.key === 'PageUp') && unitStep(e.key === 'PageDown' ? 1 : -1)) {
     e.preventDefault();
-    S.cur++;
-    sel = null;
-    render();
-    return;
-  }
-  if (e.key === 'PageUp' && shFam(-1)) {
-    e.preventDefault();
-    S.cur--;
-    sel = null;
-    render();
     return;
   }
   if (NOEDIT && e.ctrlKey && /^[zy]$/.test(e.key)) return;
@@ -361,24 +351,11 @@ $('bmode').onclick = () => {
   render();
 };
 $('shsel').onchange = e => {
-  S.cur = +e.target.value;
-  sel = null;
-  render();
+  const [i, k] = String(e.target.value).split(':');
+  goUnit(+i, +k || 0);
 };
-$('shprev').onclick = () => {
-  if (shFam(-1)) {
-    S.cur--;
-    sel = null;
-    render();
-  }
-};
-$('shnext').onclick = () => {
-  if (shFam(1)) {
-    S.cur++;
-    sel = null;
-    render();
-  }
-};
+$('shprev').onclick = () => unitStep(-1);
+$('shnext').onclick = () => unitStep(1);
 $('bundo').onclick = undo;
 $('bredo').onclick = redo;
 $('bclr').onclick = clearSel;
@@ -677,7 +654,12 @@ addEventListener('load', async () => {
     } catch (e) {}
     cn = cn || (S.sheets[S.cur] && S.sheets[S.cur].name);
     S.sheets = out;
-    const ix = out.findIndex(x => x.name === cn);
+    let ix = out.findIndex(x => x.name === cn);
+    /* a unit sheet (Phase 6): its drawing, then the unit once the units are built (cur) */
+    if (ix < 0 && / #\S+$/.test(cn || '')) {
+      ix = out.findIndex(x => x.name === cn.replace(/ #\S+$/, ''));
+      if (ix >= 0) S._wantU = cn;
+    }
     S.cur =
       ix >= 0
         ? ix
