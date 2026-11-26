@@ -7,7 +7,7 @@
 const fs = require('fs'),
   path = require('path');
 const { load, root } = require(path.join(__dirname, '..', '..', '..', 'tools', 'trace', 'world.cjs'));
-const MIN = 213;
+const MIN = 214; /* 213 -> 214 (2026-11-27): the power factor (GEE-2015-0141 p13) */
 let bad = 0;
 const ok = (c, m) => {
   if (!c) bad++;

@@ -254,6 +254,12 @@ const PKG_READ = {
     const k = a.w + '.' + a.b;
     if (k === '40009.15' || k === '40052.15') return P.wd.fa;
     if (PKG_FA.zero.has(k)) return 0;
+    /* Control By Level / L+T (1 = L+T): the fill ends at the level probe or the fill timer, whichever comes first; "level+timer" is the
+       recommended mode (L5-1 Sec 4 p3 item 1.1, p11 VI remark; YUA read 2026-11-27), so the plant runs L+T (INFERRED from "recommended") */
+    if (k === '40006.10') return 1;
+    /* MIS-M1250 silo vent filter in remote control: its fan starts by itself with the blow tanks (L5-1 Sec 4 p11 Attention 4), so the
+       PLC runs it, which needs REMOTE (derived, the rule of the ESP motors) */
+    if (k === '40007.3') return 1;
     /* PS-PA1700 plant air tank pressure low: below 4 bar (FA-OM 4) = 4.08 kg/cm2g, the unit 1 plant air header of the model (AN_AIR) */
     if (k === '40006.8') {
       const U = AN.unit,
@@ -283,6 +289,9 @@ const PKG_READ = {
       return NaN;
     }
     if (w === 30006) {
+      /* purge air fan / heater REMOTE: the LOCAL / REMOTE switch of LOP-1206 (ED p15); the auto logic of ED p87 runs them from the PLC,
+         which works only in REMOTE (ED p89, p90), the same rule as the motors above (derived) */
+      if (b === 0 || b === 3) return 1;
       if (b === 1) return pkgEspAux(E);
       if (b === 4) return E.on && E.ton < K.heatOff ? 1 : E.on ? 0 : NaN;
       if (b === 2 || b === 5) return 0;
@@ -305,9 +314,15 @@ const PKG_READ = {
     if ((w >= 30071 && w <= 30080) || (w >= 40151 && w <= 40160)) return K.deOff;
     if ((w >= 30112 && w <= 30116) || (w >= 40192 && w <= 40196)) return K.iLim;
     /* the DCS commands (start / stop pulses, system auto start / stop, fan & heater): no screen sends one yet, 0 */
-    if (w >= 40020 && w <= 40025 && b < 15) return k === 2 ? NaN : 0;
+    /* Auto / Manual of a hammer or vibrator (40020.02 ~ 40024.14, every third bit): ONE bit for two states beside separate START / STOP
+       pulses, so a level, 1 = AUTO (INFERRED from the list layout); the PLC reports these motors in AUTO (30016, 30017.00 ~ .08), so the
+       DCS holds 1. The purge fan / heater Auto / Manual (40025.02 / .05): their AUTO status is not in the documents read, no value */
+    if (w >= 40020 && w <= 40024 && b < 15) return k === 2 ? 1 : 0;
+    if (w === 40025 && b <= 5) return k === 2 ? NaN : 0;
     if (w === 40026 && b <= 9) return 0;
-    if (w === 40027 && b <= 5) return b === 2 || b === 3 ? NaN : 0;
+    /* ALL HAMMERS / ALL VIBRATORS SWITCH AUTO (40027.02 / .03): a group command with no "all manual" partner while each motor has its own
+       Auto / Manual level, so a pulse (INFERRED), 0 at rest like the other commands of the word */
+    if (w === 40027 && b <= 5) return 0;
     return NaN;
   }
 };

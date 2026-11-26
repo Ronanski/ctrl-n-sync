@@ -1,0 +1,18 @@
+{
+ "_": "Phase 8: how the Modbus links behave and what shows a link fault. 'tested' = from a document, held by tests/lanes/qa/phase8-link.cjs; 'nosource' = no document read gives it (the docs searched are named). tests/lanes/qa/phase8-gate.cjs reads this file.",
+ "tested": [
+  {"id": "wd.fa", "what": "fly ash watch dog: the DCS sends 40052.15 (Watch Dog Sending Signal) and the PLC returns it on 40009.15 (Watch Dog Receiving Signal); the bit changes every DCS cycle", "src": "LMYP-1 #1-MODBUS Communication list between DCS and fly ash.xls (src/ui/plant/modbus.js); src/analog/engine/pkg.js P.wd"},
+  {"id": "wd.esp", "what": "ESP watch dog WTD FOR COMMUNICATION CHECK: DCS 40026.10 out, PLC 30018.15 back, changes every DCS cycle", "src": "LMYP-1 #1-MODBUS Communication list between DCS and ESP.xls"},
+  {"id": "wd.ctcs", "what": "CTCS COMMUNICATION ACTIVE BIT: DCS coil 18 out, PLC 15 back, changes every DCS cycle", "src": "LMYP-1 #1-MODBUS Communication list between DCS and CTCS.xls"},
+  {"id": "tr.comm", "what": "TR01 ~ TR05 COMMUNICATION ERROR STATUS (ESP 30019.00 ~ .04): 0 in service", "src": "ESP Modbus list; the TR controllers talk to the ESP PLC (ED p110)"},
+  {"id": "alive.tcs", "what": "TCS alive signal (Modbus 10068, SI1004 bit 3) and the DCS alive signal to the TCS (DO25, WM0211 bit 8): 1 in service", "src": "LMYP-1 #1-MODBUS Communication list between DCS and turbine system.xls; src/digital/tce-io.js MB"},
+  {"id": "tcs.modbusIF", "what": "TCS side: MODBUS CPU(A) / (B) NORMAL = 1 and MODBUS P.S(A) / (B) ABNORMAL = 0 in service (TCA906-14 / 15 / 12 / 13 -> TCA052 -> TCA820 -> TCA822 Modbus I/F ABNORMAL -> COM MINOR TROUBLE)", "src": "TCA052, TCA820, TCA822, TCA906 (TCA soft logic diagram, src/digital/tce)"},
+  {"id": "gcs.syserr", "what": "DCS side: the gateway cabinet system alarm GCS10F-SYSERR (STN104 I.057B) and GCS10DE-SYSERR (I.057A): 0 in service, 1 when the instructor sets the fault (Plant menu)", "src": "K1AU3-E2-0-115 (gateway cabinets), alarm unit HALMA-12 SYSTEM ALM, TB2 1, 2; src/world/field/dcs.js"}
+ ],
+ "nosource": [
+  {"id": "dcs.hold", "what": "what the DCS shows on a lost Modbus link: last value held, value marked bad, or zero", "why": "not in any document read: the package O&M (L5-1 Sec 1 item 19 and Sec 4 say only 'Modbus TCP/IP over optic fiber'), L12, L14 ESP, L15 SCADA, CTCS IO Config, the ESP ED K1AU3-D1-0-016, the Modbus lists, the gateway drawings K1AU3-E2-0-115 / 106. Needs the HIACS-5000M gateway (GCS10F) Modbus manual."},
+  {"id": "dcs.period", "what": "the Modbus poll period of GCS10F for each package and for the TCS", "why": "not in the documents read (same list as dcs.hold). The TCS COMM sheets scan at 100 ms (docs/ARCHITECTURE.md), which is the TCS program cycle, not the poll period of the link."},
+  {"id": "dcs.wdtime", "what": "the time a watch dog may stay still before the DCS calls the link failed, and the alarm text", "why": "the Modbus lists name the watch dog bits (fly ash 40009.15 / 40052.15, ESP 30018.15 / 40026.10, CTCS 15 / 18) but no document read gives the DCS logic that checks them: no ABC / DITL sheet reads these SI words (lanes/tcs-io/modbus-where-used.md) and the plant alarm list 20160912 (717 tags) has no link fault alarm."},
+  {"id": "tcs.alive", "what": "what the TCS does when the DCS alive signal (DO25) stops", "why": "no TCE / TCA sheet of the program reads DO25 (src/digital/tce-io.js MB 'sys'); the TCS shows only its own Modbus I/F hardware status (TCA820 / TCA822)."}
+ ]
+}
