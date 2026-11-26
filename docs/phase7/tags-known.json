@@ -1,0 +1,10 @@
+{
+  "_": "Phase 7 validator: tags written on a sheet that are in none of the DCS tag lists (I/O list, memory list, loop list, user-tag list), each with its reason. tools/trace/trace.cjs counts every other one as valid.tagsUnknown, which must stay 0 (tools/trace/baseline.json zero). A reason here needs a source.",
+  "known": [
+    {
+      "tag": "PT-PA1706",
+      "where": "DITL-114 row 3 PLANT AIR SYSTEM PRESSURE",
+      "why": "Drawing typo. The I/O list (STN104 AI0435), the alarm list and flow diagram PD-023 1/6 name the plant air to unit 1 transmitter PT-PA1705; no PT-PA1706 exists. The app reads the row as PT-PA1705 (src/world/plantsw.js, docs UNLINK_AUDIT)."
+    }
+  ]
+}

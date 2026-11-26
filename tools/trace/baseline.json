@@ -8,7 +8,9 @@
   "mem.onSheet": 3073,
   "alarms.withSetPoint": 96,
   "hmi.faceplateBound": 120,
-  "fx.tablesUsed": 91
+  "fx.tablesUsed": 91,
+  "valid.pins": 11863,
+  "valid.tags": 642
  },
  "down": {
   "io.unlinked": 0,
@@ -26,7 +28,9 @@
   "io.nanSource",
   "fx.fxUnresolved",
   "tcs.ibdMissing",
-  "run.trip"
+  "run.trip",
+  "valid.pinsNoWire",
+  "valid.tagsUnknown"
  ],
  "why": {},
  "notes": {
