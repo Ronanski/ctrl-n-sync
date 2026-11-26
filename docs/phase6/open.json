@@ -1,0 +1,39 @@
+{
+  "_": "Phase 6 (logic as netlist): every input the QA trace still finds with no source (tools/trace/trace.cjs B1). Each entry is one finding of CLAUDE.md 5: type b = correct, with evidence from the drawing; type c = the drawing cannot be read, with the exact part named; type open = a bug or link still to be made (owner named). tests/lanes/qa/phase6-gate.cjs: docs/PHASES.md row 6 may be TAPOS only when no entry is open and the trace counts equal the b + c entries of each kind.",
+  "abc": [
+    {
+      "sheet": "ABC-003E",
+      "input": "→ SW (digital)",
+      "type": "b",
+      "why": "The drawn select wire of the 4-leg switch B4 (SI0304). The switch takes its legs from the conditions written beside it, (1) ~ (4) IF BNR-A ~ D OIL FLOW CONTROL REMOTE (M.009A ~ M.009D), read as signals (audit-fix ABC-003E-1, plant.js q4.sig). The wire itself carries no other signal."
+    },
+    {
+      "sheet": "ABC-005",
+      "input": "M.3403",
+      "type": "c",
+      "why": "Memory list 101 M.3403 LIMESTONE FEEDER TRIP (BC FROM S4), 'FROM STN104 STATION WIRING'. No sheet of the app (ABC, DITL, DITL-LS) writes it: the STN104 station wiring sheet that sends it is not in the drawing set read by the app. It feeds AMT B11 and OR B39 -> M.0148 (SOx control force manual)."
+    },
+    {
+      "sheet": "ABC-009A",
+      "input": "SELECT TO \"b\"",
+      "type": "open",
+      "owner": "phase thread",
+      "why": "The 4-leg switch B32 (SI0199) selects by (1) ~ (4) IF A ~ D-ASH COOLER AUTO (M.021A ~ M.021D; memory list 101 'A-ASH SCREW COOLER CTRL AUTO ONLY (FIRST AUTO)', 'B ~ D ... AUTO ONLY'). No sheet makes M.021A ~ D, so the conditions are user settings (0). The fix needs the switch evaluated every scan (it is evaluated only when its own wires change); engine slice after the gate."
+    },
+    {
+      "sheet": "ABC-050",
+      "input": "I.041E",
+      "type": "open",
+      "owner": "MARIA (TCS)",
+      "why": "STN102 I.041E TCS-DI1051-1 '#1 MSV(A) test' (FROM TCS), into OR B95 -> M.0705. A TCS output to the DCS: the MSV test state of the TCS program (TCE220 / TCE224) is to be sent here."
+    },
+    {
+      "sheet": "ABC-050",
+      "input": "I.041F",
+      "type": "open",
+      "owner": "MARIA (TCS)",
+      "why": "STN102 I.041F TCS-DI1051-2 '#1 MSV(B) test' (FROM TCS), into OR B95 -> M.0705. As I.041E, for MSV(B)."
+    }
+  ],
+  "ditl": []
+}
