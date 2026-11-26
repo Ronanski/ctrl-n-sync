@@ -37,5 +37,10 @@ if (row === 'TAPOS') {
 }
 /* RULES.md 3.2: no training, no guided start-up, no instructor console, no scoring in the station */
 if (/['"]Instructor['"]|st-instr|score\s*\(/i.test(ST)) fail('station.js has an instructor console or a scoring again (RULES.md 3.2)');
+/* user 2026-11-27 "Instructor kasi di tugma sa mga laman na menus?": no text of the app says "Instructor"; the menu is the Plant menu */
+const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => (e.isDirectory() ? walk(path.join(d, e.name)) : /\.js$/.test(e.name) ? [path.join(d, e.name)] : []));
+for (const f of walk(path.join(root, 'src')))
+  for (const m of fs.readFileSync(f, 'utf8').matchAll(/(['"`])((?:(?!\1)[^\n\\])*\bInstructor\b(?:(?!\1)[^\n\\])*)\1/g))
+    fail(path.relative(root, f) + ': app text "' + m[2].slice(0, 80) + '" says Instructor (the menu is the Plant menu)');
 console.log((bad ? 'FAIL' : 'PASS') + ' phase13-gate: row 13 ' + row + ', ' + need.length + ' instructor functions in the browser gate');
 process.exit(bad ? 1 : 0);

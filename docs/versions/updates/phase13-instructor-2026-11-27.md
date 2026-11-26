@@ -9,6 +9,8 @@ station at ang Run / Pause / Speed ang mga gamit ng instructor.
   (parehong orasan ng event log) at ilang fault ang naka-on; Back (dalawang pindot) = ibinabalik ang planta doon at naka-Pause. Ang mga punto
   pagkatapos nito ay nawawala. Hindi mas madalas sa 20 s ng totoong oras (x60 / x300). Bagong simula o LOAD ng save point = bagong listahan.
 - Plant menu, Starting point: dagdag ang **Warm** at **Hot** (dati 150 MW at Cold lang; nasa start screen na sila dati).
+- Pangalan (user "Instructor kasi di tugma sa mga laman na menus?"): ang 2 natirang text na "Instructor" ay "Plant menu" na (event log ng
+  52L1, at ang "no save point yet" ng start screen). Bantay: phase13-gate bagsak kapag may text ng app na "Instructor" ulit.
 - Speed: dagdag ang **x0.5** (mabagal). Ang listahan: x0.5, x1, x5, x10, x60, x300.
 
 ## Sinubok (headless, Worker engine, 150 MW; `tests/gate/instructor.cjs`, 31 PASS)

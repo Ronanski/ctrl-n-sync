@@ -2676,7 +2676,7 @@
                         lsEventAdd(
                           'TCS',
                           'TCS',
-                          'Instructor: ' + (el.l52 ? 'open' : 'close') + ' 52L1' + (r ? ': ' + r : '')
+                          'Plant menu: ' + (el.l52 ? 'open' : 'close') + ' 52L1' + (r ? ': ' + r : '')
                         );
                     } catch (e) {}
                     say(r ? 'Grid: ' + r : 'Grid: 52L1 ' + (el.l52 ? 'opened (house load operation)' : 'closed'));
