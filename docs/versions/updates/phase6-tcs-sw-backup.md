@@ -40,3 +40,21 @@ The QA check `tests/lanes/qa/tce-complete.cjs` flagged six running sheets as def
 
 No engine change; the expected count went up only because the check now reads the same parameters the engine runs. FLOOR 295 -> 311.
 Noted difference (drawing wins): TCE202 FG C001 point 5 is 97.9 : 0 on the drawing and 100 : 0 in the backup table.
+
+## TRIPPLE INPUT DIAGNOSTICS runs the LME105 inside of the backup, COMPLETE 311 -> 348 (2026-11-26)
+
+- **Source:** the drawing prints "(LME105)" and "TP:3.0" under each of the 146 TRIPPLE INPUT DIAGNOSTICS boxes (TCE075 ~ TCE119A, TCE100, TCE113A, TCE145). The backup (tcs-macros-2026-11-26.md, LME105) gives the inside, with TP 007 = 3. The backup lists only one instance, TCE145 005. The other 145 boxes carry the same macro number and the same value, so they are the same library macro.
+- **Rule (tce-run.js `lmeOf`):** a box takes the backup inside from the macro number printed under it only when (1) the backup has that macro, (2) the name is the same, and (3) every value printed beside the box equals the backup value for that parameter. A printed value that differs keeps the manual-text reading, because the drawing wins.
+- **What changes for the operator:** OUT is still 2 out of 3. DEV E was "the three not all equal for 3 s" (manual text). It is now the program: a 3 s pick-up of "some but not all on" (timer active once INITIAL is up) sets a flip-flop that holds DEV E until ANN RESET.
+- Manual-text macros 346 -> 201. Sheets that run with a manual-text macro 106 -> 69 (FLOOR_TEXT follows). Sheets running 417 of 419, unchanged.
+- **Still manual text (the backup does not have their inside):** AI DIAG.MD (LMA510 / LME510), TMR AI DIAGNOSTICS (LMA111 / LME111), VALVE DIAGNOSIS (LME122), TRIPLE DETECTOR2 (LME113), 2OO3 (LME120), TMR LVDT DIAGNOSIS (LME124), DUAL INPUT DIAGNOSTICS LMA110, DUP AI DIAGNOSTICS (LME114, LME100), PTI ERROR DETECT (LME102), and the TCA MT1 macros (LMA566, 569, 575, 578A).
+
+## TCA777 / TCE503 AM: runs at R, M NOT IN DOCS, 417 -> 419 of 419 (2026-11-26)
+
+- **Search:** lane 0 searched 14 document groups on the PC (/mnt/project-files/phase6-am-m-2026-11-26.md). Every macro list copy gives AM (No. 21) with SW, I, D, Z and HL / LL only. No Hitachi R600 macro function manual is on the PC. **M: NOT IN DOCS.**
+- **Backup fact:** M is a whole number and PA46 can feed it on line. M = 10 appears only on operator raise / lower setters (LMA040 / 043 / 584B, LME043, TCA777 / TCE503). M = 1 appears only on AMs that logic drives.
+- **INFERRED, not applied:** M is a speed-up factor, up to R x M while the button is held.
+- **Team decision (coordinator, after the full search):** the AM moves at R and is clamped to LL .. HL. This is exact for M = 1 and the slow, safe case for M = 10. M is not read. The derivation is in the tce-run.js `EXTRA` comment.
+- **Open item:** the meaning of M, until the Hitachi R600 macro function manual is found.
+- Test: TCE503 AM B003 raised for 10 s at R 0.4 goes from 100 to 104 degC, and lowering stops at LL 50 (tests/tce/sheets.cjs).
+- All 419 of 419 TCS sheets now run as their logic. COMPLETE is 350 of 419; the other 69 run with a manual-text macro whose inside the backup does not give yet (PC read asked: phase6-tcs-macro-insides-request-2026-11-26.md).

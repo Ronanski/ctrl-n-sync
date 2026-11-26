@@ -15,7 +15,7 @@ const root = path.resolve(__dirname, '..', '..', '..');
 /* 270 -> 272 (slice F 2026-11-26: CHANGE OVER TCE172, HEAT SOAK CONTROL TCE207, two backup files each) */
 /* 272 -> 275 (Phase 5 2026-11-26: DUAL INPUT DIAGNOSTICS TCE101, VALVE TEST TCE220 TCE222 from the backup, lane 0 read) */
 /* 275 -> 292 (Phase 5 3 PM read: 17 TCS macro types from the backup, phase5-tcs-macros-17 + phase5-ml-dv-blocks 2026-11-26) */
-const FLOOR = +(process.env.TCE_FLOOR || 311); /* 292 -> 293: TCA782 MJL box; 295: G-5A / G-6A 24 V/Hz inverse time; 311: PA / KA / PIV HL LL read as the engine applies them (TCE168 169 190 191 195 202) */
+const FLOOR = +(process.env.TCE_FLOOR || 350); /* 292 -> 293: TCA782 MJL box; 295: G-5A / G-6A 24 V/Hz inverse time; 311: PA / KA / PIV HL LL read as the engine applies them (TCE168 169 190 191 195 202); 348: TRIPPLE INPUT DIAGNOSTICS = the LME105 inside of the backup; 350: TCA777 TCE503 AM at R (M NOT IN DOCS) */
 const dir = root + '/src/digital/tce';
 const src = fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8');
 const win = {};
@@ -129,7 +129,8 @@ for (const p of P.plan) {
     /* PIV HL / LL: applied by the engine on Z + Y (tce-run.js K.PIV, DERIVED, TCE168 TCE169 TCE191 TCE195); a PIV with only one of
        the two printed is still a defect. ML stays an open meaning (equal to HL on every sheet, no page defines it). */
     if (ty === 'PIV' && keys.has('HL') !== keys.has('LL')) why(p.id, 'PIV with only one output limit printed');
-    if (ty === 'AM' && keys.has('M')) why(p.id, 'AM M parameter not applied');
+    /* AM M: NOT IN DOCS after the full search (tce-run.js EXTRA comment, phase6-am-m-2026-11-26.md); team decision 2026-11-26: the
+       AM runs at R with the LL .. HL clamp (exact for M = 1). M stays an open item in the report, not a sheet defect. */
   }
 }
 /* rule added 2026-11-25 (QA review against the Aug 2017 TCE / TCA PDFs):

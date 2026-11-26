@@ -23,10 +23,10 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 308; /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 350; /* 308 -> 350 (2026-11-26 Phase 6 TCS: SW from the backup, LME105 inside, AM at R) */ /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
-const FLOOR_TEXT = 106;
+const FLOOR_TEXT = 69; /* 106 -> 69 (2026-11-26): the 37 sheets with only TRIPPLE INPUT DIAGNOSTICS now run its LME105 inside from the HIACS backup */
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -451,6 +451,43 @@ for (const id of ['TCA762', 'TCA763']) {
   for (const [id, key] of [['TCA740', 'pif009'], ['TCA741', 'pifC009']]) {
     const x = nd(id, key);
     if (!x || !(x.sw >= 0) || (x.open && x.open.length)) fail(id + ' ' + key + ': AUT is not on the PIF SW');
+  }
+}
+/* TRIPPLE INPUT DIAGNOSTICS: the drawing prints "(LME105)" and TP:3.0 under every box; the backup gives the LME105 inside (TP 007 = 3)
+   (tcs-macros-2026-11-26.md LME105). OUT = 2 out of 3; DEV E = FFS of (some but not all on) for 3 s, held until ANN RESET. */
+{
+  const p = A.plan.find(q => q.id === 'TCE100'),
+    x = p && p.nodes.find(n => n.t === 'M' && n.name === 'TRIPPLE INPUT DIAGNOSTICS');
+  if (!x || x.src !== R.BK) fail('TCE100 TRIPPLE INPUT DIAGNOSTICS does not run the LME105 inside of the backup');
+  else {
+    const st = {},
+      go = (a, b, c, ar, n) => {
+        let o;
+        for (let i = 0; i < n; i++) o = x.f({ IN1: a, IN2: b, IN3: c, 'DEF INITIAL': 1, 'DEF ANN RESET': ar }, x.notes, st, 0.03);
+        return o;
+      };
+    if (go(1, 1, 0, 0, 3).OUT !== 1 || go(1, 0, 0, 0, 3).OUT !== 0) fail('LME105 OUT is not 2 out of 3');
+    if (go(1, 0, 0, 0, 90).DEVE !== 0) fail('LME105 DEV E before 3 s');
+    if (go(1, 0, 0, 0, 15).DEVE !== 1) fail('LME105 DEV E not set after 3 s');
+    if (go(1, 1, 1, 0, 5).DEVE !== 1) fail('LME105 DEV E not held until ANN RESET');
+    if (go(1, 1, 1, 1, 2).DEVE !== 0) fail('LME105 DEV E not reset by ANN RESET');
+  }
+  const n = A.plan.flatMap(q => q.nodes).filter(n => n.t === 'M' && n.name === 'TRIPPLE INPUT DIAGNOSTICS' && n.src === R.BK).length;
+  if (n !== 146) fail(`TRIPPLE INPUT DIAGNOSTICS on the backup inside ${n}, expected 146`);
+}
+/* AM M (TCA777 / TCE503 "M :10"): NOT IN DOCS after the full PC search (phase6-am-m-2026-11-26.md); team decision 2026-11-26: the AM
+   moves at R with the LL .. HL clamp. TCE503 AM B003: R 0.4 degC/s, HL 700, LL 50. */
+{
+  const x = A.plan.find(q => q.id === 'TCE503').nodes.find(n => n.t === 'b' && n.type === 'AM');
+  if (!x || x.open.length) fail('TCE503 AM is open: ' + (x && x.open));
+  else {
+    const st = {};
+    R.K.AM([0, 0, 100], x.notes, st, 0.1, 1);
+    let y;
+    for (let i = 0; i < 100; i++) y = R.K.AM([1, 0, 100], x.notes, st, 0.1, 1)[0];
+    if (Math.abs(y - 104) > 1e-6) fail(`TCE503 AM raise 10 s at R 0.4 gives ${y}, expected 104`);
+    for (let i = 0; i < 2000; i++) y = R.K.AM([0, 1, 100], x.notes, st, 0.1, 1)[0];
+    if (y !== 50) fail(`TCE503 AM lower stops at ${y}, expected LL 50`);
   }
 }
 /* MODE (TCA768A, LMA810): load up rate by load band from the printed tables; 5.0 %/min until the IP -> HP transfer is complete */
