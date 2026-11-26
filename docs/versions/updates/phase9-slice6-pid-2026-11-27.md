@@ -57,3 +57,12 @@ Source: /mnt/project-files/phase9-pid-positions-2026-11-27.md (flow diagram set 
 - Potable water tank T-0114 (PD-026 C/D-6), walang signal sa I/O list kaya walang value.
 - Hindi pa: RO-MU0709A ~ C at RO-IW0715A / B (min flow lines ay hindi nakaguhit sa page).
 - Bilang: 287 / 349 may simbolo, 8 wala sa docs, 54 natitira.
+
+## Oil burner, sampling, limestone at sand (11 AM)
+- Diesel oil: ang strainer sa pagitan ng V-DO0004 at ng pumps ay STR-DO0002 (PD-022 E-4, DPIT-DO0001; equipment list item
+  319), hindi STR-DO0001: naitama ang tag. Ang STR-DO0001 (truck inlet strainer, item 318) ay nasa truck inlet line ng tank;
+  ang lugar nito sa PD-022 ay hindi nabasa (galing lang sa pangalan). Flame arrester Z-0701 sa vent ng tank (PD-022 B-3).
+  Relief valve ZV-DO1001 sa burner supply pagkatapos ng FCV-DO1012 (PD-022 G-6).
+- Sampling: measuring vessels Z-1102 / 1104 / 1106 sa itaas ng chemical tanks (PD-042), sampling rack Z-1140 (PD-044).
+- Limestone at sand: vent filters S-1313 / S-1301 sa bubong ng silo (PD-062 / 063 B-3/4), air receiver T-1312 (PD-062 C/D-9).
+- Bilang: 297 / 349 may simbolo, 8 wala sa docs, 44 natitira.
