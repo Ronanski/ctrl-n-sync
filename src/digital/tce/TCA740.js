@@ -22,6 +22,10 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA740',
+    /* pa: PA4 009 prints no names at its four inputs. Top to bottom they are SG C032 1.0, SG C033 20.0, RL A003 (105.0 % with the inlet
+       valve open, else -5.0 %) and SG A036 -5.0. The twin loop TCA741 prints the same PIF with "G :1.0, TI:20.0, HL:105.0%, LL:-5.0%" in
+       that order, and the values match one for one, so the inputs give G, TI, HL, LL. */
+    pa: { pa4009: ['G', 'TI', 'HL', 'LL'] },
     title: 'GLAND SEAL STEAM HEADER PRESS.(AUX STEAM) CONTROL',
     page: 178,
     ctl: 'COMM+MD',
