@@ -264,8 +264,9 @@
     id: 'G-5A',
     /* the relay times the drawing prints only as "t": the as-set Time Delay of each element of the Beckwith M-3425A of protection A,
        from LM-GEE-2015-0059 R1 Inspection Report GPP Limay Unit 1 (page of the report). The time of the 24 2nd step (d24b) is the relay's inverse time curve (#1, time dial 2, pickup
-       107 %), not a constant: it stays to read from the M-3425A instruction book. */
+       107 %): TINV (tce-run.js), the curve form from the vendor test points (lane 0 read 2026-11-26). */
     set: {
+      d24b: ['TINV', 'TD:2', 'PU:107', 'RST:30', 'p.21 24A inverse #1: time dial 2, pickup 107 %, reset 30 s; curve form from the vendor test points (LM-GEE-2015-0059 p.22)'],
       d59g: ['TP:10', 'p.35 59GNA #1 Time Delay 600 cycles (10.0 s)'],
       d24c: ['TP:2', 'p.21 24A Def. time #1 (Trip) 24-3rd Time Delay 120 cycles (2.0 s)'],
       d59a: ['TP:2', 'p.33 59A #1 (Alarm) Time Delay 120 cycles (2.0 s)'],

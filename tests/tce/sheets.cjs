@@ -60,11 +60,27 @@ for (const p of A.plan)
     if (R.get(P, 'G-1B', 'i45') !== r) fail('G-1B circle 45 (52G REMOTE SELECTED) = ' + R.get(P, 'G-1B', 'i45') + ' with the selector at ' + r);
   }
 }
-/* the relay times of SH-G-5A / 5B / 6A / 6B from LM-GEE-2015-0059 R1: 59GNA 10 s, 59A 2nd step 20 s, 81 2 s; 24 2nd step (inverse) not yet */
-for (const [sid, key, tp] of [['G-5A', 'd59g', 10], ['G-5A', 'd59b', 20], ['G-6B', 'd4', 2], ['G-5A', 'd24b', null]]) {
+/* the relay times of SH-G-5A / 5B / 6A / 6B from LM-GEE-2015-0059 R1: 59GNA 10 s, 59A 2nd step 20 s, 81 2 s;
+   24 2nd step = inverse time (TINV, time dial 2, pickup 107 %, reset 30 s: p.21 24A / p.49 24B) */
+for (const [sid, key, tp] of [['G-5A', 'd59g', 10], ['G-5A', 'd59b', 20], ['G-6B', 'd4', 2]]) {
   const x = A.plan.find(p => p.id === sid).nodes.find(x => x.out === A.idx.get(sid + ':' + key));
   const got = x && x.f ? +/TP:([\d.]+)/.exec(x.notes[0])[1] : null;
   if (got !== tp) fail(sid + ' ' + key + ' time ' + got + ', want ' + tp);
+}
+for (const sid of ['G-5A', 'G-6A']) {
+  const x = A.plan.find(p => p.id === sid).nodes.find(x => x.out === A.idx.get(sid + ':d24b'));
+  if (!x || !x.f || x.type !== 'TINV' || !x.notes.includes('TD:2') || !x.notes.includes('PU:107'))
+    fail(sid + ' d24b is not the 24 inverse time element: ' + (x && x.type) + ' ' + (x && JSON.stringify(x.notes)));
+}
+/* the inverse curve against the vendor test points (LM-GEE-2015-0059 p.22, time dial 2): 110 % trips in about 36 s, 115 % in about 16 s, 105 % never */
+{
+  const T = R.K.TINV, n = ['TD:2', 'PU:107', 'RST:30'];
+  for (const [M, lo, hi] of [[110, 35, 37], [115, 15, 17], [105, 1e9, 1e9]]) {
+    const st = {};
+    let t = 0;
+    while (t < 200 && !T([1, M], n, st, 0.1)[0]) t += 0.1;
+    if (hi < 1e9 ? t < lo || t > hi : t < 200) fail('24 inverse at ' + M + ' % trips at ' + t.toFixed(1) + ' s');
+  }
 }
 const S = R.stats(A);
 /* the macros from the manual text (lane 2 specs 01 / 02 / 04): 2 out of 3, the range / rate check with SIM on abnormal, the TMR middle */
