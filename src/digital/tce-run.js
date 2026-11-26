@@ -126,6 +126,34 @@
     /* ML 25 ASW / ML 53 DSW: SW=1 Y = X1, SW=0 Y = X2 */
     ASW: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
     DSW: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
+    /* ML 26 ASWW word-type analog switch (lane 0 read of TCA015, tcs-phase5-blocks-2026-11-26.md 1): SW = 1 Y = X1, SW = 0 Y = X2 */
+    ASWW: (x, n, st, dt, sw = 1) => [sw ? x[0] : x[1]],
+    /* ML 71 MJL 2 out of 3 select (TCA019, tcs-phase5-blocks-2026-11-26.md 2): X1 X2 X3, error flags E1 E2 E3 (1 = abnormal), SW; values
+       S (mode) and M (largest allowed difference). The good inputs sorted A > B (> C): S 0 = A, S 1 = the lowest, S 2 with SW 1 = the one
+       closest to the last output, else the average; with a difference above M the output does not change (the list writes it for 3
+       inputs; for 2 the same rule, lane 0 "likely"); 1 good input = that one; none = the output holds. Outputs Y, Z1, Z2, Z3.
+       DERIVED (the list draws Z but does not define it): Zi = 1 when the block does not use input i (abnormal, or left out by the M rule),
+       which is how DUAL INPUT DIAGNOSTICS uses it (Zi OR Di = quality bad of input i) */
+    MJL: (x, n, st, dt, sw = 0) => {
+      const S = par(n, 'S', 0),
+        M = par(n, 'M', Infinity),
+        g = [0, 1, 2].filter(i => !x[3 + i] && isFinite(x[i])),
+        last = st.y;
+      let y = last,
+        used = g;
+      const vs = g.map(i => x[i]).sort((a, b) => b - a);
+      if (g.length === 1) y = vs[0];
+      else if (g.length > 1) {
+        const ok = vs.every((v, i) => !i || Math.abs(vs[i - 1] - v) <= M);
+        if (!ok) used = [];
+        else if (S === 0) y = vs[0];
+        else if (S === 1) y = vs[vs.length - 1];
+        else if (S === 2 && sw && isFinite(last)) y = vs.reduce((a, v) => (Math.abs(v - last) < Math.abs(a - last) ? v : a), vs[0]);
+        else y = vs.reduce((a, v) => a + v, 0) / vs.length;
+      }
+      st.y = y;
+      return [y === undefined ? NaN : y, b01(!used.includes(0)), b01(!used.includes(1)), b01(!used.includes(2))];
+    },
     /* ML 27 G Y = K X (TCA015 MACRO LIST(3) No. 27 GAIN: "Input signal is multiplied by gain. Y=K*X. K:Gain").
        KA: TCE190 G C014 prints only "KA:1.0" (EIMI read the PC drawing 2026-11-25, 331DM09784 p 132 = PDF p 134, 2x crop: no other K
        anywhere, not a misread); the macro list has no KA. DERIVED: GAIN has one parameter and the block prints one value, so KA is its
@@ -1522,14 +1550,32 @@
       at: {"TCE172 8":{}} },
     LME242: { name: "HEAT SOAK CONTROL", pi: ["CVHLD","S.SEL1","S.SEL2","CONT","HOLD","S.TARG","OPEN1","DEMAND","RESET","OPEN2"], po: {"ICV":"ASW 027","BIAS.C":"LCK B013","CV":"ADD B011","RESET":"A B015"}, pb: [],
       b: [["A", "002",["REF HEATSOAKCONTROL", "pin CVHLD"], []], ["BTR", "001",["REF HEATSOAKCONTROL"], []], ["TD", "003",["A 002", "SW:REF INITIAL"], [0.05]], ["TP", "005",["A 002", "SW:REF INITIAL"], [1]], ["OR", "028",["pin S.SEL1", "pin S.SEL2"], []], ["NOT", "014",["pin HOLD"], []], ["A", "012",["OR 028", "pin CONT", "NOT 014"], []], ["A", "006",["TP 005", "A 012"], []], ["TP", "007",["A 006", "SW:REF INITIAL"], [180]], ["NOT", "019",["TP 005"], []], ["A", "020",["NOT 019", "LCK B013"], []], ["OR", "018",["REF ALLVALVECLOSED", "A 020"], []], ["FFR", "008",["TP 007", "OR 018"], []], ["TD", "013",["A 012", "SW:REF INITIAL"], [1]], ["A", "030",["pin S.TARG", "TP 007"], []], ["A", "009",["FFR 008", "TD 013", "TP 005", "A 030"], []], ["TW", "010",["A 009", "SW:REF INITIAL"], [0.03]], ["NOT", "011",["TW 010"], []], ["A", "004",["TD 003", "NOT 011"], []], ["A", "029",["FFR 008", "TP 007"], []], ["TD", "015",["TP 007", "SW:REF INITIAL"], [2]], ["OR", "022",["REF HEATSOAKCONTROL", "NOT B014"], []], ["ASW", "025",["pin OPEN1", "const 0", "SW:OR 022"], []], ["NOT", "023",["REF ALLVALVECLOSED"], []], ["ASW", "026",["ASW 025", "const 0", "SW:NOT 023"], []], ["ASW", "027",["HSG B018", "const 0", "SW:NOT 023"], []], ["ASW", "B012",["ADD B005", "pin DEMAND", "SW:TD 015"], []], ["HLD", "B007",["ASW B012", "SW:A 004"], []], ["ASW", "B008",["HLD B007", "const 0", "SW:BTR 001"], []], ["NOT", "B001",["BTR 001"], []], ["A", "B002",["NOT B001", "pin RESET"], []], ["RL", "B009",["ASW B008", "SW:A B002"], [0.03,0.03]], ["LCK", "B013",["RL B009"], [0.1]], ["ADD", "B005",["RL B009", "LSG B022"], []], ["ADD", "B010",["RL B009", "ASW 026"], []], ["ADD", "B011",["ADD B010", "LSG B022"], []], ["SUB", "B017",["pin DEMAND", "RL B009"], []], ["HLD", "B019",["SUB B017", "SW:A 029"], []], ["SUB", "B023",["ADD B011", "ASW 026"], []], ["LSG", "B024",["SUB B023", "const 0", "const 0"], []], ["ASW", "B025",["LSG B024", "const 0", "SW:A 029"], []], ["ADD", "B026",["ASW B025", "pin OPEN2"], []], ["ADD", "B020",["HLD B019", "ADD B026"], []], ["HSG", "B018",["SUB B017", "ADD B020", "ADD B020"], []], ["SUB", "B021",["SUB B017", "HSG B018"], []], ["LSG", "B022",["SUB B021", "HSG B018", "const 0"], []], ["NOT", "B014",["LCK B013"], []], ["NOT", "B016",["A 002"], []], ["A", "B015",["NOT B014", "NOT B016"], []]],
-      at: {"TCE207 007":{}} }
+      at: {"TCE207 007":{}} },
+    /* Phase 5 (lane 0 read 2026-11-26 12:08 ~ 12:12 PM, tcs-phase5-blocks-2026-11-26.md): DUAL INPUT DIAGNOSTICS (LME110 + LME110A, two
+       pages, TCE101 001, the main steam pressure pair) with the new blocks ASWW and MJL; VALVE TEST LME250 (TCE226), LME252 (TCE220), LME253
+       (TCE222). ASTA / TSTF are wired in the backup and blank on the 2017 drawing: the drawing wins, they stay open (0), logged.
+       The drawing (2017) wins on the timer values (per sheet below): TCE226 TP 024 60 s (backup 90); TCE222 TP 012 200 s (backup 60);
+       TCE220 TP 019 (partial) 200 s, TP 018 (full) 300 s (backup 70 / 210; DERIVED: the two drawn TPs matched to partial / full by size,
+       as in the backup). TCE220 TD 028 / TP 029 (the TSTF path) are not drawn and stay with the backup values */
+    LME110: { name: "DUAL INPUT DIAGNOSTICS", pi: ["SIM","SIG1","I-ERR1","HL","LL","SIG2","I-ERR2","M","DEV","S"], po: {"DEVE":"FFS 036","I-ERR":"OR 018","OUT":"MJL B001","ERR":"OR B021","ERR1":"FFS B006","QT1":"A B004","ERR2":"FFS B010","QT2":"A B008","ABN":"A B011"}, pb: [],
+      b: [["DSW", "011",["const 0", "REF SIMULATIONUSE", "SW:REF OUTSIDESIMULATION"], []], ["ASW", "044",["pin SIM", "pin SIG1", "SW:DSW 011"], []], ["FTR", "038",["pin HL"], []], ["FTR", "039",["pin LL"], []], ["PA21", "022",["FTR 038", "FTR 039"], []], ["WCM", "022",["ASW 044"], []], ["A", "023",["WCM 022", "REF ANNENABLE"], []], ["OR", "021",["pin I-ERR1", "A 023"], []], ["ASW", "045",["pin SIM", "pin SIG2", "SW:DSW 011"], []], ["FTR", "040",["pin HL"], []], ["FTR", "041",["pin LL"], []], ["PA21", "026",["FTR 040", "FTR 041"], []], ["WCM", "026",["ASW 045"], []], ["A", "027",["WCM 026", "REF ANNENABLE"], []], ["OR", "025",["pin I-ERR2", "A 027"], []], ["SUB", "028",["ASW 044", "ASW 045"], []], ["ABS", "029",["SUB 028"], []], ["SUB", "030",["ABS 029", "pin M"], []], ["UCK", "031",["SUB 030"], [-0.01]], ["SC", "037",["pin DEV"], []], ["PA21", "034",["pin DEV", "SC 037"], []], ["MR", "034",["ASW 045", "ASW 044"], []], ["TP", "035",["MR 034", "SW:REF INITIAL"], [3]], ["FFS", "036",["TP 035", "REF ANNRESET"], []], ["BTR", "042",["FFS 036"], []], ["OR", "018",["pin I-ERR1", "pin I-ERR2", "pin I-ERR2"], []], ["SGW", "B014", [], [2]], ["ASWW", "B015",["SGW B014", "pin S", "SW:UCK 031"], []], ["FTR", "B013",["pin M"], []], ["PA25", "B001",["ASWW B015", "FTR B013"], []], ["MJL", "B001",["ASW 044", "ASW 045", "const 0", "OR 021", "OR 025", "const 1", "SW:const 0"], []], ["FTR", "B016",["MJL B001"], []], ["OR", "B003",["MJL B001 out2", "OR 021"], []], ["A", "B004",["OR B003", "REF ANNENABLE"], []], ["TP", "B005",["A B004", "SW:REF INITIAL"], [3]], ["FFS", "B006",["TP B005", "REF ANNRESET"], []], ["OR", "B007",["MJL B001 out3", "OR 025"], []], ["A", "B008",["OR B007", "REF ANNENABLE"], []], ["TP", "B009",["A B008", "SW:REF INITIAL"], [3]], ["FFS", "B010",["TP B009", "REF ANNRESET"], []], ["OR", "B021",["BTR 042", "FFS B006", "FFS B010"], []], ["BTR", "B020",["OR B021"], []], ["A", "B018",["A B004", "A B008"], []], ["A", "B011",["FFS B010", "FFS B006"], []]],
+      at: {"TCE101 001":{}} },
+    LME250: { name: "VALVE TEST", pi: ["TEST.C","PERM","COMP","REST.C","ASTA","OPEN","CLS"], po: {"TEST":"FFR 008"}, blank: ["ASTA"], pb: ["TEST","CRT AVAILABLE","CANCEL"],
+      b: [["A", "003",["pb TEST", "pb CRT AVAILABLE"], []], ["A", "011",["pb CANCEL", "pb CRT AVAILABLE"], []], ["NOT", "010",["A 011"], []], ["A", "007",["A 003", "NOT 010", "pin TEST.C", "pin PERM"], []], ["NOT", "017",["pin COMP"], []], ["TP", "023",["pin REST.C", "SW:REF INITIAL"], [5]], ["TP", "024",["FFR 008", "SW:REF INITIAL"], [90]], ["BTR", "031",["pin ASTA"], []], ["OR", "015",["A 011", "NOT 017", "TP 023", "TP 024", "BTR 031"], []], ["FFR", "008",["A 007", "OR 015"], []], ["BTR", "001",["FFR 008"], []], ["BTR", "018",["A 011"], []], ["TD", "019",["BTR 018", "SW:REF INITIAL"], [5]], ["TW", "020",["TD 019", "SW:REF INITIAL"], [3]], ["BTR", "021",["TW 020"], []], ["BTR", "025",["pin OPEN"], []], ["BTR", "027",["pin CLS"], []], ["BTR", "029",["REF CRTOPEPERM"], []]],
+      at: {"TCE226 036":{"TP 024":[60]},"TCE226 037":{"TP 024":[60]}} },
+    LME252: { name: "VALVE TEST", pi: ["PPERM","COMP","PPOS","ASTA","FPERM","CLOSE","TSTF"], po: {"PTEST":"FFR 006","CNCL":"BTR 012","FTEST":"FFR 015","TSTFE":"OR 033"}, blank: ["ASTA", "TSTF"], pb: ["PARTIAL TEST","CRT AVAILABLE","CANCEL","FULL TEST"],
+      b: [["BTR", "001",["REF CRTOPEPERM"], []], ["A", "004",["pb PARTIAL TEST", "pb CRT AVAILABLE"], []], ["A", "005",["A 004", "pin PPERM"], []], ["A", "008",["pb CANCEL", "pb CRT AVAILABLE"], []], ["NOT", "017",["pin COMP"], []], ["TP", "019",["FFR 006", "SW:REF INITIAL"], [70]], ["OR", "026",["A 008", "NOT 017", "TP 019", "pin PPOS", "pin ASTA"], []], ["FFR", "006",["A 005", "OR 026"], []], ["BTR", "002",["FFR 006"], []], ["A", "007",["pb FULL TEST", "pb CRT AVAILABLE"], []], ["A", "014",["A 007", "pin FPERM"], []], ["TP", "018",["FFR 015", "SW:REF INITIAL"], [210]], ["TP", "023",["pin CLOSE", "SW:REF INITIAL"], [5]], ["OR", "016",["A 008", "pin ASTA", "NOT 017", "TP 018", "TP 023"], []], ["FFR", "015",["A 014", "OR 016"], []], ["BTR", "003",["FFR 015"], []], ["TD", "009",["A 008", "SW:REF INITIAL"], [5]], ["TW", "010",["TD 009", "SW:REF INITIAL"], [3]], ["BTR", "011",["TW 010"], []], ["BTR", "012",["TW 010"], []], ["BTR", "034",["pin TSTF"], []], ["OR", "032",["BTR 034", "TW 010"], []], ["TD", "028",["OR 032", "SW:REF INITIAL"], [15]], ["TP", "029",["TD 028", "SW:REF INITIAL"], [10]], ["OR", "033",["TP 029", "pin ASTA"], []], ["A", "024",["pin PPERM", "pin COMP"], []], ["BTR", "020",["A 024"], []], ["BTR", "022",["pin FPERM"], []]],
+      at: {"TCE220 002":{"TP 019":[200],"TP 018":[300]},"TCE220 021":{"TP 019":[200],"TP 018":[300]}} },
+    LME253: { name: "VALVE TEST(1)", pi: ["PPERM","COMP","PPOS","ASTA"], po: {"PTEST":"FFR 005"}, blank: ["ASTA"], pb: ["PARTIAL TEST","CRT AVAILABLE","CANCEL"],
+      b: [["BTR", "001",["REF CRTOPEPERM"], []], ["A", "003",["pb PARTIAL TEST", "pb CRT AVAILABLE"], []], ["A", "004",["A 003", "pin PPERM"], []], ["A", "009",["pb CANCEL", "pb CRT AVAILABLE"], []], ["NOT", "011",["pin COMP"], []], ["TP", "012",["FFR 005", "SW:REF INITIAL"], [60]], ["BTR", "015",["pin ASTA"], []], ["OR", "010",["A 009", "NOT 011", "TP 012", "pin PPOS", "BTR 015"], []], ["FFR", "005",["A 004", "OR 010"], []], ["BTR", "002",["FFR 005"], []], ["TD", "007",["A 009", "SW:REF INITIAL"], [5]], ["TW", "008",["TD 007", "SW:REF INITIAL"], [3]]],
+      at: {"TCE222 005":{"TP 012":[200]},"TCE222 027":{"TP 012":[200]}} }
   };
   /* record order of the values (lane 0, tcs-macros-layout-2026-11-26.md question 1: each matched against the drawing blocks of the same
      number, e.g. MR n = 18 of 18, LMS 44 of 44, I 4 of 4, AM 4 of 4) */
   const BKPAR = {
     TP: ['TP'], TD: ['TD'], TW: ['TW'], LCK: ['K'], UCK: ['K'], G: ['K'], GRD: ['K'], LG: ['T'], SG: ['K'], I: ['TI', 'HL', 'LL'],
     RL: ['RI', 'RD'], LIN: ['K', 'B'], LMS: ['HL', 'LL'], MR: ['HL', 'LL'], LIM: ['HL', 'LL'], CMP: ['HL', 'LL'], CPL: ['HL', 'LL'],
-    WCM: ['HL', 'LL'], AM: ['R', 'M', 'HL', 'LL']
+    WCM: ['HL', 'LL'], AM: ['R', 'M', 'HL', 'LL'], MJL: ['S', 'M'], SGW: ['K']
   };
   const BKAT = {};
   for (const lme in BKM) for (const at in BKM[lme].at) BKAT[at] = lme;
@@ -1582,7 +1628,9 @@
         if (b.S) sw = b01(rd(b.S));
         else if (INTL_SW[b.op]) (sw = bs.intl ? 1 : 0), (bs.intl = 1);
         const nt = b.pa ? b.pa.map((s, i) => BKPAR[b.op][i] + ':' + rd(s)).concat(b.notes) : b.notes;
-        v[b.id] = b.f(b.L.map(rd), nt, bs, dt, sw)[0];
+        const y = b.f(b.L.map(rd), nt, bs, dt, sw);
+        v[b.id] = y[0];
+        for (let k = 1; k < y.length; k++) v[b.id + ' out' + (k + 1)] = y[k]; /* "MJL 001 out2" = the second output (Z1) */
       }
       const O = {};
       for (const p in M.po) O[p.replace(/\s+/g, '')] = v[M.po[p]];
@@ -1595,6 +1643,7 @@
     f.map = {};
     f.pb = M.pb || [];
     f.need = () => [];
+    f.blank = M.blank || [] /* pins of the backup that the drawing leaves blank on purpose (drawing wins): open, not a defect */;
     return f;
   }
   function compile(sheets) {
@@ -1805,7 +1854,7 @@
             ins['DEF ' + (t || r)] = dd && dd.length ? res(dd[0][0], dd[0][1]) : cn ? res(cn[0], cn[1]) : port('REF:' + (t || r));
           }
           /* a pin of the backup macro that the drawing does not draw stays open (its value in HIACS is not known) */
-          const miss = bk.pins.filter(q => !(nz(q) in ins));
+          const miss = bk.pins.filter(q => !(nz(q) in ins) && !bk.blank.includes(q));
           bk.need = () => miss.map(q => 'pin ' + q + ' not drawn');
         }
         /* push buttons of the operator station that the macro holds inside (MOTOR STANDARD: START / STOP / AUTO / MANUAL / RESET of the
