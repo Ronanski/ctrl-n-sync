@@ -392,11 +392,29 @@
         if (by.has(w[0]) && !key.has(w)) {
           const v = W.find(v => v !== w && String(v[0]).split('.')[0] === w[0] && (key.has(v) || v[0] !== w[0]) && on(w[1][0], v));
           if (v) key.set(w, key.get(v) || v[0]), (ch = true);
+          /* or a keyed wire ends on this one (a T joint in the middle of a riser: TCE212 mt012 D.TEST at 1472,912) */
+          const e = !v && W.find(v => v !== w && key.has(v) && String(key.get(v)).split('.')[0] === w[0] && on(v[1][v[1].length - 1], w));
+          if (e) key.set(w, key.get(e)), (ch = true);
         }
     }
     return W.map(w => (key.has(w) ? [key.get(w)].concat(w.slice(1)) : w));
   }
+  /* a macro typed as a block with named pins (VALVE CONTROL MT1 on TCE210 / 211 / 212 / 214) whose inside comes from the HIACS backup:
+     run it as a macro (s.m) so each pin keeps its own wire; the pins sit at the middle of equal slots down the box (the typed pins of
+     TCE210 meet the wire ends at slots 1.0, 2.0 ... within 0.1). The typed sheet itself is not changed. */
+  function bkBlocks(s) {
+    const cv = (s.b || []).filter(b => b[6] && b[6].l && b[6].r && b[7] && !MARKRE.test(b[1]) && (bkMacro(s.id, b[2]) || { pins: [] }).pins.length > 1);
+    if (!cv.length) return s;
+    const m = cv.map(([key, type, no, x, y, notes, pins, size]) => {
+      const [w, h] = size,
+        y0 = y - h / 2,
+        at = P => P.map((q, i) => y0 + ((i + 0.5) * h) / P.length);
+      return [key, type, no, x - w / 2, y0, w, h, pins.l, pins.r, no, notes || [], [at(pins.l), at(pins.r)]];
+    });
+    return Object.assign({}, s, { b: s.b.filter(b => !cv.includes(b)), m: (s.m || []).concat(m) });
+  }
   function net(s) {
+    s = bkBlocks(s);
     const u = (s.f[2] - s.f[0]) / 1000,
       tol = 2.2 * u;
     const blocks = [],
@@ -1465,8 +1483,26 @@
     LME249: { name: "ACCELERATION RELAY", pi: ["SPEED", "ACC.S", "RATEDS", "OPE.S", "CLOSE", "HPMODE", "BACK.S"], po: {"OPE": "A 006"},
       b: [["GRD", "001", ["pin SPEED", "SW:REF INITIAL"], [1]], ["SUB", "002", ["GRD 001", "pin ACC.S"], []], ["UCK", "003", ["SUB 002"], [0]], ["LCK", "014", ["GRD 001"], [0]], ["G", "018", ["pin RATEDS"], [1.005]], ["SUB", "016", ["pin SPEED", "G 018"], []], ["LCK", "017", ["SUB 016"], [0]], ["OR", "015", ["LCK 014", "LCK 017"], []], ["FFR", "005", ["UCK 003", "OR 015"], []], ["SUB", "008", ["pin SPEED", "pin OPE.S"], []], ["UCK", "009", ["SUB 008"], [0]], ["TP", "024", ["pin CLOSE", "SW:REF INITIAL"], [10]], ["NOT", "012", ["TP 024"], []], ["OR", "013", ["NOT 012", "pin HPMODE"], []], ["A", "010", ["UCK 009", "OR 013"], []], ["SUB", "019", ["pin SPEED", "pin BACK.S"], []], ["UCK", "020", ["SUB 019"], [0]], ["A", "021", ["UCK 020", "TP 024"], []], ["NOT", "023", ["pin HPMODE"], []], ["A", "022", ["A 021", "NOT 023"], []], ["OR", "011", ["A 010", "A 022"], []], ["A", "006", ["FFR 005", "OR 011"], []]],
       at: {"TCE166 001": {}} }
+,
+    LME244: { name: "VALVE CONTROL MT1", pi: ["CL.POS.", "DEMAND", "TEST", "CLOSE", "WARM", "TO.SPD", "OP.SPD", "TC.SPD", "CL.SPD"], po: {"DEMAND": "RL 023", "D.TEST": "FFS 026"},
+      b: [["ASW", "024", ["pin CL.POS.", "pin DEMAND", "SW:pin TEST"], []], ["ASW", "021", ["pin CL.POS.", "ASW 024", "SW:pin CLOSE"], []], ["NOT", "015", ["pin CLOSE"], []], ["OR", "016", ["NOT 015", "pin WARM"], []], ["A", "017", ["OR 016", "REF INITIAL"], []], ["BTR", "033", ["REF FORCEDCLOSE"], []], ["MR", "029", ["pin DEMAND", "RL 023"], [0.1, -0.1]], ["NOT", "030", ["MR 029"], []], ["OR", "034", ["BTR 033", "NOT 030"], []], ["FFS", "026", ["pin TEST", "OR 034"], []], ["ASW", "031", ["pin TO.SPD", "pin OP.SPD", "SW:FFS 026"], []], ["ASW", "032", ["pin TC.SPD", "pin CL.SPD", "SW:pin TEST"], []], ["PA24", "023", ["ASW 031", "ASW 032"], []], ["RL", "023", ["ASW 021", "SW:A 017"], []]],
+      /* TCE212 004 / 012: the drawing prints VALVE CONTROL MT1 (LME244) there; the backup has LME244A (pins EXCLSN, M.C.VT more) at TCE212
+         074 / 077, one of the wiring differences where the drawing wins */
+      at: {"TCE210 003": {}, "TCE211 003": {}, "TCE214 003": {}, "TCE214 013": {}, "TCE212 004": {}, "TCE212 012": {}} },
+    /* TURNING GEAR (LME030) at TCE350 010: each DENSO 2 (a button of the operator screen) read by name from lane 0's per-instance table
+       (tcs-macros-layout-2026-11-26.md question 3): A 001 = START, A 005 = AUTO, A 008 = MANUAL, A 010 = STOP, each AND CRT AVAILABLE;
+       "pb X" = the screen port CRT:<sheet>.<macro>.<X> */
+    LME030: { name: "TURNING GEAR", pi: ["EL"], po: {"STS": "A 002", "MANU": "NOT 003", "AUTO": "FFR 006", "STOP": "A 009"}, pb: ["START", "AUTO", "MANUAL", "STOP", "CRT AVAILABLE"],
+      b: [["A", "001", ["pb START", "pb CRT AVAILABLE"], []], ["A", "005", ["pb AUTO", "pb CRT AVAILABLE"], []], ["A", "008", ["pb MANUAL", "pb CRT AVAILABLE"], []], ["FFR", "006", ["A 005", "A 008"], []], ["NOT", "003", ["FFR 006"], []], ["A", "002", ["A 001", "NOT 003"], []], ["BTR", "004", ["FFR 006"], []], ["DENSO", "", ["BTR 004"], [3]], ["BTR", "007", ["NOT 003"], []], ["DENSO", "", ["BTR 007"], [3]], ["A", "010", ["pb STOP", "pb CRT AVAILABLE"], []], ["A", "009", ["NOT 003", "A 010"], []], ["BTR", "011", ["pin EL"], []], ["DENSO", "", ["BTR 011"], [3]], ["BTR", "012", ["REF CRTOPEPERM"], []], ["DENSO", "", ["BTR 012"], [3]]],
+      at: {"TCE350 010": {}} }
   };
-  const BKPAR = { TP: ['TP'], TD: ['TD'], TW: ['TW'], LCK: ['K'], UCK: ['K'], G: ['K'], GRD: ['K'], LG: ['T'], SG: ['K'] };
+  /* record order of the values (lane 0, tcs-macros-layout-2026-11-26.md question 1: each matched against the drawing blocks of the same
+     number, e.g. MR n = 18 of 18, LMS 44 of 44, I 4 of 4, AM 4 of 4) */
+  const BKPAR = {
+    TP: ['TP'], TD: ['TD'], TW: ['TW'], LCK: ['K'], UCK: ['K'], G: ['K'], GRD: ['K'], LG: ['T'], SG: ['K'], I: ['TI', 'HL', 'LL'],
+    RL: ['RI', 'RD'], LIN: ['K', 'B'], LMS: ['HL', 'LL'], MR: ['HL', 'LL'], LIM: ['HL', 'LL'], CMP: ['HL', 'LL'], CPL: ['HL', 'LL'],
+    WCM: ['HL', 'LL'], AM: ['R', 'M', 'HL', 'LL']
+  };
   const BKAT = {};
   for (const lme in BKM) for (const at in BKM[lme].at) BKAT[at] = lme;
   /* the macro of the backup at this sheet + number ("TCE212", "A003" -> "TCE212 003"), or null */
@@ -1483,11 +1519,19 @@
       .map(([op, el, ins, val]) => {
         const id = op + ' ' + el,
           vals = ov[id] || val,
-          notes = op === 'FG' ? vals.map((v, i) => (i % 2 ? 'Y' : 'X') + (((i / 2) | 0) + 1) + ':' + v) : (BKPAR[op] || []).map((k, i) => k + ':' + vals[i]);
+          notes = op === 'FG' ? vals.map((v, i) => (i % 2 ? 'Y' : 'X') + (((i / 2) | 0) + 1) + ':' + v) : (BKPAR[op] || []).filter((k, i) => vals[i] !== undefined).map((k, i) => k + ':' + vals[i]);
         const L = ins.filter(s => !/^SW:/.test(s)),
           S = ins.find(s => /^SW:/.test(s));
-        return { id, op, f: K[op], notes, L, S: S ? S.slice(3) : null };
+        return { id, op, el, f: /^PA\d\d$/.test(op) ? 'PA' : K[op], notes, L, S: S ? S.slice(3) : null };
       });
+    /* PAnm (ML 62, lane 0 question 2): its n inputs give values 1 .. n of the block of the same number, in record order, on line (no
+       condition input inside these macros, so always) */
+    for (const pa of bl.filter(b => b.f === 'PA')) {
+      const tg = bl.find(b => b.f !== 'PA' && b.el === pa.el);
+      if (!tg || !BKPAR[tg.op] || pa.L.length > BKPAR[tg.op].length) return null;
+      tg.pa = pa.L;
+    }
+    for (let i = bl.length - 1; i >= 0; i--) if (bl[i].f === 'PA') bl.splice(i, 1);
     if (bl.some(b => !b.f)) return null;
     const refs = [...new Set(M.b.flatMap(b => b[2]).map(s => s.replace(/^SW:/, '')).filter(s => /^REF /.test(s)).map(s => s.slice(4)))];
     /* order: a block after the inside blocks that feed it (a loop reads the last scan's value) */
@@ -1497,19 +1541,20 @@
     const visit = b => {
       if (seen.has(b.id)) return;
       seen.add(b.id);
-      for (const s of b.L.concat(b.S ? [b.S] : [])) if (by.has(s)) visit(by.get(s));
+      for (const s of b.L.concat(b.S ? [b.S] : [], b.pa || [])) if (by.has(s)) visit(by.get(s));
       order.push(b);
     };
     bl.forEach(visit);
     const f = (I, notes, st, dt) => {
       const v = (st.v = st.v || {});
-      const rd = s => (/^pin /.test(s) ? +I[s.slice(4).replace(/\s+/g, '')] || 0 : /^REF /.test(s) ? I['DEF ' + f.map[s.slice(4)]] : v[s] || 0);
+      const rd = s => (/^pin /.test(s) ? +I[s.slice(4).replace(/\s+/g, '')] || 0 : /^pb /.test(s) ? +I['PB ' + s.slice(3)] || 0 : /^REF /.test(s) ? I['DEF ' + f.map[s.slice(4)]] : v[s] || 0);
       for (const b of order) {
         const bs = (st[b.id] = st[b.id] || {});
         let sw;
         if (b.S) sw = b01(rd(b.S));
         else if (INTL_SW[b.op]) (sw = bs.intl ? 1 : 0), (bs.intl = 1);
-        v[b.id] = b.f(b.L.map(rd), b.notes, bs, dt, sw)[0];
+        const nt = b.pa ? b.pa.map((s, i) => BKPAR[b.op][i] + ':' + rd(s)).concat(b.notes) : b.notes;
+        v[b.id] = b.f(b.L.map(rd), nt, bs, dt, sw)[0];
       }
       const O = {};
       for (const p in M.po) O[p.replace(/\s+/g, '')] = v[M.po[p]];
@@ -1520,6 +1565,7 @@
     f.pins = M.pi;
     f.refs = refs;
     f.map = {};
+    f.pb = M.pb || [];
     f.need = () => [];
     return f;
   }
@@ -1595,6 +1641,9 @@
             const d = defs[sh[sid].ctl + '|' + text] || defs['|' + text];
             r = d && d.length ? res(d[0][0], d[0][1], depth + 1) : port('REF:' + text);
           } else if (v !== null) r = slot('CONST:' + v, v);
+          /* MAX (sys.ref, SYSREF AA00006): the largest value of the controller; used only as CL.SPD of VALVE CONTROL MT1 (TCE210 / 211 /
+             214), the closing rate when not testing = no limit. INFERRED from the name (lane 0: its number is not printed in the backup) */
+          else if (text === 'MAX') r = slot('CONST:MAX', Number.MAX_VALUE);
           else r = port('SYS:' + text);
         } else if (t === 'r' && x[6] === 'fn') r = slot(mk); /* a function box: its node (no meaning yet) holds the value */
         else if ((t === 'r' || t === 's') && nb[sid].ports && nb[sid].ports[x[0]]) r = port(nb[sid].ports[x[0]]);
@@ -1722,7 +1771,10 @@
             const t = Object.keys(defs).filter(k => k[0] === '|' && k.slice(1).replace(/\s+/g, '') === r).map(k => k.slice(1))[0];
             bk.map[r] = t || r;
             const dd = t && (defs[S.ctl + '|' + t] || defs['|' + t]);
-            ins['DEF ' + (t || r)] = dd && dd.length ? res(dd[0][0], dd[0][1]) : port('REF:' + (t || r));
+            /* no definition of that name on any sheet: the sheet connector that carries a signal of the same name (FORCED CLOSE = TCE053 E,
+               received under that name by TCE180 / 183 / 184 / 206); one signal, one name (INFERRED from the name, logged in slice C) */
+            const cn = !(dd && dd.length) && sheets.flatMap(q => (q.c || []).filter(c => c[1] === 'in' && String(c[5]).replace(/\s+/g, '') === r).map(c => [q.id, c[0]]))[0];
+            ins['DEF ' + (t || r)] = dd && dd.length ? res(dd[0][0], dd[0][1]) : cn ? res(cn[0], cn[1]) : port('REF:' + (t || r));
           }
           /* a pin of the backup macro that the drawing does not draw stays open (its value in HIACS is not known) */
           const miss = bk.pins.filter(q => !(nz(q) in ins));

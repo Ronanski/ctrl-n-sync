@@ -10,7 +10,8 @@ const root = path.resolve(__dirname, '..', '..', '..');
 const win = {};
 vm.runInNewContext(fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8'), { window: win });
 const R = win.TCE_RUN;
-const FLOOR = 20; /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502 */
+const FLOOR = 27; /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502
+   + 6 VALVE CONTROL MT1 (TCE210, TCE211, TCE212 x2, TCE214 x2; slice C) + TURNING GEAR TCE350 */
 let fail = 0;
 const ck = (ok, w) => (console.log((ok ? 'PASS ' : 'FAIL ') + w), ok || fail++);
 const mk = (sheet, no) => {
@@ -56,6 +57,40 @@ const run = (f, I, st, n, dt) => {
   const z = Object.fromEntries(f.pins.map(p => [p, 0]));
   ck(f({ ...z }, [], {}, 0.1)['ABN.O'] === 0, 'HMI INDI: no abnormal input, ABN.O 0');
   ck(f({ ...z, ABNB: 1 }, [], {}, 0.1)['ABN.O'] === 1, 'HMI INDI: ABNB on, ABN.O 1');
+}
+// VALVE CONTROL MT1 TCE210 003 (LME244): RL 023 rate set on line by PA24 (RI = OP.SPD / TO.SPD, RD = CL.SPD / TC.SPD)
+{
+  const f = mk('TCE210', '003');
+  ck(!!f && f.lme === 'LME244', 'TCE210 003 is the backup VALVE CONTROL MT1 (LME244)');
+  const st = {},
+    I = { DEMAND: 0, 'CL.POS.': -5, TEST: 0, CLOSE: 0, WARM: 0, 'TO.SPD': 1, 'OP.SPD': 10, 'TC.SPD': 2, 'CL.SPD': 1e300, 'DEF INITIAL': 1, 'DEF FORCEDCLOSE': 0 };
+  run(f, I, st, 3, 0.1);
+  let O = run(f, { ...I, DEMAND: 50 }, st, 10, 0.1);
+  ck(Math.abs(O.DEMAND - 10) < 1e-9, 'opening: DEMAND 0 -> 50 rises at OP.SPD 10 %/s (1 s: ' + O.DEMAND + ')');
+  O = run(f, { ...I, DEMAND: 50 }, st, 50, 0.1);
+  ck(Math.abs(O.DEMAND - 50) < 1e-9, 'reaches the demand 50');
+  O = run(f, { ...I, DEMAND: 20 }, st, 1, 0.1);
+  ck(Math.abs(O.DEMAND - 20) < 1e-9, 'closing at CL.SPD (MAX): 50 -> 20 in one scan');
+  O = run(f, { ...I, DEMAND: 20, TEST: 1 }, st, 1, 0.1);
+  ck(O['D.TEST'] === 1, 'TEST: D.TEST set');
+  const y0 = O.DEMAND;
+  O = run(f, { ...I, DEMAND: 20, TEST: 1 }, st, 10, 0.1);
+  ck(Math.abs(y0 - 19.8) < 1e-9 && Math.abs(O.DEMAND - 17.8) < 1e-9, 'TEST: towards CL.POS. at TC.SPD 2 %/s (' + y0 + ' -> ' + O.DEMAND + ')');
+  O = run(f, { ...I, DEMAND: 20, CLOSE: 1 }, st, 1, 0.1);
+  ck(O.DEMAND === -5, 'CLOSE: output = CL.POS. at once (RL SW off)');
+}
+// TURNING GEAR TCE350 010 (LME030): screen buttons AUTO / MANUAL / START / STOP, each only with CRT AVAILABLE
+{
+  const f = mk('TCE350', '010'),
+    st = {},
+    I = { EL: 0, 'PB START': 0, 'PB AUTO': 0, 'PB MANUAL': 0, 'PB STOP': 0, 'PB CRT AVAILABLE': 1 },
+    r = x => f({ ...I, ...x }, [], st, 0.1);
+  ck(!!f && f.lme === 'LME030' && f.pb.length === 5, 'TCE350 010 is the backup TURNING GEAR (LME030) with 5 screen buttons');
+  ck(r({}).MANU === 1, 'starts in MANUAL');
+  ck(r({ 'PB AUTO': 1 }).AUTO === 1 && r({}).AUTO === 1, 'AUTO pressed: AUTO, held');
+  ck(r({ 'PB MANUAL': 1 }).MANU === 1, 'MANUAL pressed: back to MANUAL');
+  ck(r({ 'PB START': 1 }).STS === 1 && r({ 'PB STOP': 1 }).STOP === 1, 'START / STOP in MANUAL');
+  ck(r({ 'PB AUTO': 1, 'PB CRT AVAILABLE': 0 }).AUTO === 0, 'no button acts without CRT AVAILABLE');
 }
 // the sheets: count of macros run from the backup
 {
