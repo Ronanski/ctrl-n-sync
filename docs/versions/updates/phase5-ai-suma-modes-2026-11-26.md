@@ -57,8 +57,13 @@ PR-OPE-5003 says: "The unit is operating at full load on automatic control". Wha
 
 The 150 MW start state is made again by `tools/steady150/make.cjs`.
 - **FICFA1055A:** on its manual leg at the start. Tried headless: a press of A puts it in AUTO and the PID stops tracking.
-- **LICBR1001A:** on its AUTO leg, but it tracks the back-up value (60.96 %) of the feedwater selector after it. To be read on ABC-010.
-- **PIC-BASC** (AUTO is DERIVED): the station stays on its B leg after a press of A, because its select n108 = 1. To be read on ABC-009A.
+- **PIC-BASC** (AUTO is DERIVED): the station stays on its B leg after a press of A. Traced on ABC-009A: n108 = NOT M.0211
+  (ASH SCREW COOLER CONTROL FORCE AUTO & REMOTE, TON 2 s of NOT M.0212); M.0212 = ALL ASH SCREW COOLER SPEED CONTROL IN MANUAL = 1,
+  because the four cooler stations SICL1060A ~ D are MANUAL in the 150 MW start state. The drawing is right: the fix is the start
+  state (the coolers in AUTO, as `tools/steady150/make.cjs` already asks).
+- **LICBR1001A:** traced on ABC-010: the selector after it (AMT 23) is on its B leg because M.0224 (DRUM LEVEL SINGLE ELEMENT CONTROL
+  BU-CMD) = NOT M.0222 (BOILER FEED WATER CONTROL BU-CMD, FF, 0 at 150 MW) = 1. To check against the ABC-010 drawing on the PC
+  whether M.0224 has another input (the read here gives a single-element back-up at full load, which the procedure does not say).
 
 ## Found, not changed
 
