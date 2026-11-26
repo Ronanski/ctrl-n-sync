@@ -318,6 +318,8 @@
   two(1778, 744, 'BUG OPERATED', 'INPUT ERROR');
   (window.TCE_SHEETS = window.TCE_SHEETS || []).push({
     id: 'TCE145',
+    /* swc: the SW of these CMP is not wired on the drawing; the HIACS backup record of each (phase6-tcs-records-2026-11-26.md (YUA, team-files/tcs-decoded), EHG+MD 2018-07-14) has 102_DD00001 = ON(1) on its side input: the comparison with hysteresis (ML 51 SW = 1) */
+    swc: { cmpC040: 1, cmpC041: 1, cmpC042: 1 },
     title: 'BACK UP GOVERNOR',
     page: 106,
     ctl: 'EHG+MD',

@@ -6,6 +6,8 @@
    (11.0 / 10.0 %), CMP C013 FULL OPEN (98.0 / 97.0 %) and CPL C016 FULL CLOSE (3.0 / 2.0 %). */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE228',
+  /* swc: the SW of these CMP is not wired on the drawing; the HIACS backup record of each (phase6-tcs-records-2026-11-26.md (YUA, team-files/tcs-decoded), EHG+MD 2018-07-14) has 102_DD00001 = ON(1) on its side input: the comparison with hysteresis (ML 51 SW = 1) */
+  swc: { cmp013: 1 },
   title: 'CRV TEST(3)',
   page: 152,
   ctl: 'EHG+MD',

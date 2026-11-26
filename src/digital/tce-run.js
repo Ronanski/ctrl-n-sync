@@ -378,8 +378,18 @@
     PD: ['N', 'K'], LIN: ['K', 'B'], TP: ['TP'], TD: ['TD'], TW: ['TW'], CMP: ['HL'], CPL: ['HL'], CNT: ['N'], FLK: ['T1', 'T2'],
     LCK: ['K'], UCK: ['K']
   };
-  /* printed parameters that the definition of the ML does not have: their meaning is open until a document gives it */
-  const EXTRA = { AM: ['M'] };
+  /* printed parameters that the definition of the ML does not have: their meaning is open until a document gives it.
+     AM M (TCA777 / TCE503 "M:10"): NOT IN DOCS. Searched 2026-11-26 by lane 0 on the PC (/mnt/project-files/phase6-am-m-2026-11-26.md),
+     14 document groups: TCA.pdf 331DM09788 MACRO LIST (1)-(8) + TCA021 / TCA022, TCE.pdf 331DM09784 TCE015 / TCE016, TCS LOGIC
+     SYMBOL.pdf, LOGIC LEGEND.pdf, TCA / TCE SOFT LOGIC DIAGRAM OF TCS, ML-331DM07730 Functional Block Diagram, 2-2 TURBINE CONTROL
+     SYSTEM_R1 (TC-14-116), 331DM10701 Specification of HMI, ML-310SC90-778 Setpoint List / Generator Protection / IO List and IBD,
+     TC-13-101 Turbine Control System Specification, TCS LOGIC OPENING PROCEDURE, the TCS backup tool files, the DCS manuals and
+     textbook, and the file lists of D:/LPDSI, OneDrive and the repo. Backup fact: M is a whole number (1 or 10, PA46 can feed it);
+     M = 10 only on operator raise / lower setters (LMA040 / 043 / 584B, LME043, TCA777 / TCE503), M = 1 only on logic-driven AMs.
+     INFERRED (not applied): M is a speed-up factor, up to R x M while the button is held. Team decision 2026-11-26 (coordinator,
+     after every doc was searched): K.AM moves at R with the LL .. HL clamp, exact for M = 1 and the slow, safe case for M = 10.
+     M is read nowhere; it stays an OPEN item until the Hitachi R600 macro function manual is found. */
+  const EXTRA = {};
   const keysOf = n => new Set((n || []).map(q => (/^\s*([A-Z][A-Z0-9]*)\s*:/.exec(q) || [])[1]).filter(Boolean));
   const INTL_SW = { TP: 1, TD: 1, TW: 1 };
   function need(type, notes, swWired) {
@@ -1677,11 +1687,30 @@
   const BKAT = {};
   for (const lme in BKM) for (const at in BKM[lme].at) BKAT[at] = lme;
   /* the macro of the backup at this sheet + number ("TCE212", "A003" -> "TCE212 003"), or null */
-  function bkMacro(sheet, no) {
+  /* lmeOf: the macro number the drawing prints under the box ("(LME105)", _lib.js TID), when the backup gives that macro's inside and
+     the name matches and every value printed beside the box equals the backup's value for that parameter (the drawing wins: a printed
+     value that differs keeps the manual-text reading). The backup lists one instance of LME105 (TCE145 005); the drawing names the
+     other 145 TRIPPLE INPUT DIAGNOSTICS boxes LME105 with the same TP:3.0, so they are the same library macro. */
+  function lmeOf(name, notes) {
+    const t = (notes || []).map(q => String(Array.isArray(q) ? q[2] : q));
+    const m = t.map(q => /^\((LM[A-Z]\d+[A-Z]?)\)$/.exec(q.trim())).find(Boolean);
+    const M = m && BKM[m[1]];
+    if (!M || M.name !== name) return null;
+    for (const q of t) {
+      const kv = /^([A-Z][A-Z0-9]*):\s*(-?[\d.]+)/.exec(q.trim());
+      if (!kv) continue;
+      for (const [op, , , val] of M.b) {
+        const i = (BKPAR[op] || []).indexOf(kv[1]);
+        if (i >= 0 && val[i] !== undefined && Math.abs(val[i] - parseFloat(kv[2])) > 1e-9) return null;
+      }
+    }
+    return m[1];
+  }
+  function bkMacro(sheet, no, hint) {
     const d = /(\d+)\s*$/.exec(String(no || ''));
     if (!d) return null;
     const at = sheet + ' ' + d[1].padStart(3, '0'),
-      lme = BKAT[at] || BKAT[sheet + ' ' + d[1]];
+      lme = BKAT[at] || BKAT[sheet + ' ' + d[1]] || hint;
     if (!lme) return null;
     const M = BKM[lme],
       ov = M.at[at] || M.at[sheet + ' ' + d[1]] || {};
@@ -1867,8 +1896,11 @@
           ins: L.map(i => res(n.id, i.net)),
           inv: L.map(i => !!i.inv),
           sw: side ? res(n.id, side.net) : -1,
+          /* swc: the SW the drawing leaves unwired, read from the block's HIACS backup record (sheet field swc, key -> value; source
+             in the sheet's comment): 102_DD00001 = the constant ON(1) (phase6-tcs-records-2026-11-26.md) */
+          swc: !side && S.swc && S.swc[b.key] !== undefined ? S.swc[b.key] : undefined,
           /* a G sheet (310SD03-743) is a relay diagram, not a HIACS macro: its time relays have no SW input */
-          open: need(b.type, notes, !!side || !!S.dwg),
+          open: need(b.type, notes, !!side || !!S.dwg || !!(S.swc && S.swc[b.key] !== undefined)),
           st: {}
         });
         /* UNT-FG with no table on the page (TCE212 003 / 036): the inside of the backup macro (LME010, three FG and their selection) */
@@ -1932,7 +1964,7 @@
       for (const M of n.macros) {
         /* the inside from the HIACS backup comes first (it is the program itself); the manual-text reading stays for the others */
         const name = M.type.slice(2),
-          bk = bkMacro(n.id, M.no),
+          bk = bkMacro(n.id, M.no, lmeOf(name, M.notes)),
           f = bk || MACRO[name] || null;
         if (!f) unknown[M.type] = (unknown[M.type] || 0) + 1;
         const nz = q => (bk ? String(q).replace(/\s+/g, '') : q);
@@ -2004,6 +2036,7 @@
         const xs = x.ins.map((s, i) => (x.inv[i] ? b01(!v[s]) : v[s]));
         let sw;
         if (x.sw >= 0) sw = b01(v[x.sw]);
+        else if (x.swc !== undefined) sw = x.swc;
         else if (INTL_SW[x.type]) (sw = x.st.intl ? 1 : 0), (x.st.intl = 1);
         const nt = x.pa ? Object.keys(x.pa).map(k => k + ':' + v[x.pa[k]]).concat(x.notes || []) : x.notes;
         v[x.out] = x.f(xs, nt, x.st, dt, sw)[0];

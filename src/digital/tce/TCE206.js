@@ -8,6 +8,8 @@
    GOV LIMITING = A044 (the demand below the governor demand, LLM CONTROL held 10 s (TP A043), not CHANGE OVER). */
 (typeof window !== 'undefined' ? (window.TCE_SHEETS = window.TCE_SHEETS || []) : []).push({
   id: 'TCE206',
+  /* swc: the SW of these CMP is not wired on the drawing; the HIACS backup record of each (phase6-tcs-records-2026-11-26.md (YUA, team-files/tcs-decoded), EHG+MD 2018-07-14) has 102_DD00001 = ON(1) on its side input: the comparison with hysteresis (ML 51 SW = 1) */
+  swc: { cmpA040: 1 },
   /* pr: printed on page 140 beside each block, FG *1 table; the drawing above keeps them as text */
   pr: {
     sgA011: ['K:3600.0rpm'],
