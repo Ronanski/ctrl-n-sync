@@ -305,9 +305,15 @@ const PKG_READ = {
     if ((w >= 30071 && w <= 30080) || (w >= 40151 && w <= 40160)) return K.deOff;
     if ((w >= 30112 && w <= 30116) || (w >= 40192 && w <= 40196)) return K.iLim;
     /* the DCS commands (start / stop pulses, system auto start / stop, fan & heater): no screen sends one yet, 0 */
-    if (w >= 40020 && w <= 40025 && b < 15) return k === 2 ? NaN : 0;
+    /* Auto / Manual of a hammer or vibrator (40020.02 ~ 40024.14, every third bit): ONE bit for two states beside separate START / STOP
+       pulses, so a level, 1 = AUTO (INFERRED from the list layout); the PLC reports these motors in AUTO (30016, 30017.00 ~ .08), so the
+       DCS holds 1. The purge fan / heater Auto / Manual (40025.02 / .05): their AUTO status is not in the documents read, no value */
+    if (w >= 40020 && w <= 40024 && b < 15) return k === 2 ? 1 : 0;
+    if (w === 40025 && b <= 5) return k === 2 ? NaN : 0;
     if (w === 40026 && b <= 9) return 0;
-    if (w === 40027 && b <= 5) return b === 2 || b === 3 ? NaN : 0;
+    /* ALL HAMMERS / ALL VIBRATORS SWITCH AUTO (40027.02 / .03): a group command with no "all manual" partner while each motor has its own
+       Auto / Manual level, so a pulse (INFERRED), 0 at rest like the other commands of the word */
+    if (w === 40027 && b <= 5) return 0;
     return NaN;
   }
 };
