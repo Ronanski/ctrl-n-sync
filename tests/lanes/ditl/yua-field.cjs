@@ -1,8 +1,8 @@
 /* Phase 6 DITL (lane 1, 2026-11-26): the rows of src/world/field/ditl.js sections 4 ~ 6, from the PC read of the drawings (YUA groups A ~ D).
    Field contacts read their normal service value, the instructor can change one, the rows bound by drawn row number (`row`) and the analog
-   rows (`an`) get their value. Usage: node tests/ditl/yua-field.cjs */
+   rows (`an`) get their value. Usage: node tests/lanes/ditl/yua-field.cjs */
 const path = require('path');
-const { load } = require(path.join(__dirname, '../../tools/trace/world.cjs'));
+const { load } = require(path.join(__dirname, '../../../tools/trace/world.cjs'));
 (async () => {
   let bad = 0;
   const ok = (c, m) => (c || bad++, console.log((c ? 'PASS ' : 'FAIL ') + m));

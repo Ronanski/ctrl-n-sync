@@ -616,6 +616,10 @@ function anUnitStart() {
     warm: [labOf('ABC-050', 'I.0413'), labOf('ABC-051', 'I.0413')].filter(Boolean),
     hot: [labOf('ABC-050', 'I.0414'), labOf('ABC-051', 'I.0414')].filter(Boolean),
     tg: labOf('ABC-053', 'I.0417'),
+    /* Phase 6 (lane 1, 2026-11-26): TCS-DI1051-1 / -2 MSV(A) / (B) TEST (I.041E / I.041F STN102, ABC-050 FROM TCS -> OR B95 -> M.0705):
+       the EHG DO TABLE(1) outputs TCE960-27 / 28 MSV/CV(A) / (B) SEQUENTIAL FULL CLOSE TEST EXECUTING (src/data/tcs-dcs.json) */
+    msvA: labOf('ABC-050', 'I.041E'),
+    msvB: labOf('ABC-050', 'I.041F'),
     /* ZSO-CD1115 LP turbine bypass desuperheater spray water control valve open (STN102 I.0892, ABC-052): the valve TCV-CD1115 at full stroke */
     lpbZso: labOf('ABC-052', 'I.0892'),
     /* memory list STN101 / 104 M.0001 ALWAYS "1" (ABC-029, ABC-001B): nothing wrote it, it read 0 */
@@ -5669,6 +5673,25 @@ function anUnitStep0(dt) {
     for (const l of U.di.warm || []) w(l, hw('TCA980-21', m === 'warm' ? 1 : 0));
     for (const l of U.di.hot || []) w(l, hw('TCA980-20', m === 'hot' ? 1 : 0));
     w(U.di.tg, hw('TCE960-8', c && c.tg && tb.rpm < 4 ? 1 : 0));
+    /* the MSV / CV test executing outputs of the TCS (TCE960-27 / 28): the PI/O row of the program, else its end in tce-io.js (the valve
+       test selected on TCE220 / TCE224, L.vtSel); one source, the TCS */
+    const io = window.TCE_IO_LIVE,
+      mb = id => {
+        const y = io && io.mbRead ? io.mbRead(U, id) : NaN;
+        return isFinite(y) ? (y > 0.5 ? 1 : 0) : 0;
+      };
+    /* a save made before these two links has no U.di.msvA / msvB: found once here (the same label read as anUnitStart) */
+    if (!('msvA' in U.di)) {
+      const x = AN.sheets.find(y => y.name === 'ABC-050'),
+        L1 = t => {
+          const n = x && x.S ? x.S.lab.findIndex(z => z && String(z.t).trim() === t) : -1;
+          return n >= 0 ? { S: x.S, n } : null;
+        };
+      U.di.msvA = L1('I.041E');
+      U.di.msvB = L1('I.041F');
+    }
+    if (U.di.msvA) w(U.di.msvA, mb('TCE960-27'));
+    if (U.di.msvB) w(U.di.msvB, mb('TCE960-28'));
     const eb = window.WORLD && WORLD.endBand; /* open limit switch: the one rule of plantsw.js (the engine alone, ABC only, has no field switches) */
     if (eb && U.lpbSp && U.lpbSp.n != null)
       w(U.di.lpbZso, anAv('TICHR1012', Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0))) >= eb.open ? 1 : 0);

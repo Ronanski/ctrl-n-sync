@@ -1,8 +1,8 @@
 /* Phase 6 DITL (lane 1, 2026-11-26): the field rows of src/world/field/ditl.js. DITL-42 COMPRESSOR RUNNING = the run state of the air model
    (unit.js anAirStep U.paR / U.iaR); DITL-45 (A / #B / #C) DRYER REMOTE = 1 and PLANT AIR DRYER ALARM = 0 in service, the sootblower trips and the APH sootblower LOCAL = 0 (field states, normal).
-   Usage: node tests/ditl/air-field.cjs */
+   Usage: node tests/lanes/ditl/air-field.cjs */
 const path = require('path');
-const { load } = require(path.join(__dirname, '../../tools/trace/world.cjs'));
+const { load } = require(path.join(__dirname, '../../../tools/trace/world.cjs'));
 (async () => {
   let bad = 0;
   const ok = (c, m) => (c || bad++, console.log((c ? 'PASS ' : 'FAIL ') + m));

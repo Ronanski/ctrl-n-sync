@@ -15,7 +15,7 @@
   - DITL-80Q rows 11 / 12 / 38: N-1011 / 1012 / 1038 SOOTBLOWER TRIP.
   - DITL-80K row 10 (I.073D): AIR PREHEATER SOOTBLOWER TRIP.
   - DITL-80M row 2 (I.073E): AIR PREHEATER SOOTBLOWER SYSTEM LOCAL SELECTED. The sootblowing runs from the DCS. DERIVED.
-- **Test:** tests/ditl/air-field.cjs. It covers the values at 150 MW and an instructor trip of N-1011.
+- **Test:** tests/lanes/ditl/air-field.cjs. It covers the values at 150 MW and an instructor trip of N-1011.
 - **Baseline** (tools/trace/baseline.json):
   - B1_ditlInputNoSource 109 -> 83
   - io.linked 1854 -> 1855

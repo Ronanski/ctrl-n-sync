@@ -22,7 +22,7 @@ source at 150 MW: **83 -> 33** (copy clash count 1 -> 0). No trip at 150 MW (tra
 - `src/world/plantsw.js` FIELD rows: optional `row` (drawn row number with `sheet`, for a row whose text has no tag word) and `an: 1`
   (an analog row of the drawing). Agreed with the phase thread.
 - `src/world/world.js` FROM ABC linker: a row "(FROM STATION WIRING)" is common to every machine copy.
-- `tests/ditl/yua-field.cjs` (41 checks).
+- `tests/lanes/ditl/yua-field.cjs` (41 checks).
 
 ## Left (33)
 
@@ -35,3 +35,9 @@ source at 150 MW: **83 -> 33** (copy clash count 1 -> 0). No trip at 150 MW (tra
   graphic push buttons / switches; they need the HMI binding. The trace also has no station for DITL-777.
 - Analog values drawn on digital rows (7): LS214 r9 LT-LM1800, LS240 r1 / r2 / r3, DITL-774 r1 / r2, BA60 r21.
 - DITL-BA74 row 5: SPARE (the phase thread's trace rule).
+
+## TCS to DCS: MSV(A) / (B) TEST
+
+ABC-050 I.041E / I.041F TCS-DI1051-1 / -2 (FROM TCS, OR B95 -> M.0705) now take the TCS outputs TCE960-27 / 28 MSV/CV(A) / (B)
+SEQUENTIAL FULL CLOSE TEST EXECUTING (src/data/tcs-dcs.json, the valve test of TCE220 / TCE224). 0 in service; an MSV(A) test sets
+I.041E only (`tests/tce/msv-test-dcs.cjs`). Code: `src/analog/engine/unit.js` U.di.msvA / msvB.
