@@ -156,10 +156,12 @@ FIELD.add(lane, [
     S(id, tag, 0, t, 'Coal and limestone', 'IO list stn 104 ' + a + ' ' + tag + '; sheet 240 row ' + r + ' (0 in service, YUA C15)');
     R({ stn: 4, di: 1, tag, sheet: 'DITL-LS240', row: r, v: (U, X) => X.state(id), rel: tag + ' field contact', src: 'DITL-LS240 row ' + r + ' ' + a });
   });
-  /* LS240 row 16 PS-PA1811 AIR TANK PRESSURE (I.016A): the sheet prints "1 = P > 4 kg/cm2". The air receiver of the limestone model
-     (boiler.js AN_LM, U.lm.sw.tank = 1 below 4) */
-  R({ stn: 4, di: 1, tag: 'PS-PA1811', sheet: 'DITL-LS240', row: 16, v: U => (U.lm && U.lm.sw && isFinite(U.lm.sw.tank) ? 1 - U.lm.sw.tank : NaN),
-    rel: 'air tank pressure above 4 kg/cm2 (1 - U.lm.sw.tank)', src: 'DITL-LS240 row 16 I.016A "1 = P > 4 Kg/cm2" (YUA C15)' });
+  /* LS240 row 16 PS-PA1811 AIR TANK PRESSURE SW LOW (I.016A): 1 = air tank pressure LOW, 0 in normal service; the "P > 4 kg/cm2" of
+     the sheet is the set point of the switch (YUA correction 2026-11-26: IO list stn 104 row 142 "pressure switch LOW"; sheet 10 row 8
+     enters M.180F FILLING CYCLE ENABLED through a NEGATE; sheet 110 row 4; LS240 row 16 feeds the 3 s LOW ALARM with no negate). The
+     air receiver of the limestone model (boiler.js AN_LM, U.lm.sw.tank = 1 below 4), the same contact as plantsw.js I.016A */
+  R({ stn: 4, di: 1, tag: 'PS-PA1811', sheet: 'DITL-LS240', row: 16, v: U => (U.lm && U.lm.sw && isFinite(U.lm.sw.tank) ? U.lm.sw.tank : NaN),
+    rel: 'air tank pressure below 4 kg/cm2 (U.lm.sw.tank)', src: 'DITL-LS240 row 16 I.016A; IO list stn 104 row 142 (YUA correction)' });
   /* 4e. DITL-80Q row 39 AIR PREHEATER SOOTBLOWER TRIP (LOCAL/MCC) = the contact of DITL-80K row 10 I.073D (section 3, the same field state) */
   R({ stn: 2, di: 1, tag: 'I.073D', io: 'MIT-SB-APH01', sheet: 'DITL-80Q', row: 39, v: (U, X) => X.state('SB-APH.trip'), rel: 'air preheater sootblower trip contact', src: 'DITL-80Q row 39 = DITL-80K row 10 I.073D' });
   FIELD.state(lane, st);

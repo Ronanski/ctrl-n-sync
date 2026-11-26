@@ -24,7 +24,7 @@ const { load } = require(path.join(__dirname, '../../tools/trace/world.cjs'));
   for (const [s, r] of [['DITL-LS10', 7], ['DITL-LS110', 10], ['DITL-LS230', 10], ['DITL-LS214', 17], ['DITL-LS240', 10], ['DITL-LS240', 12], ['DITL-LS240', 14]])
     ok(row(P, s, r) === 0, s + ' row ' + r + ' = 0 in service');
   ok(row(P, 'DITL-LS214', 19) === 1, 'DITL-LS214 row 19 VENT FILTER IN REMOTE = 1');
-  ok(row(P, 'DITL-LS240', 16) === 1 - U.lm.sw.tank, 'DITL-LS240 row 16 AIR TANK P > 4 = 1 - model low switch (' + U.lm.sw.tank + ')');
+  ok(row(P, 'DITL-LS240', 16) === U.lm.sw.tank && U.lm.sw.tank === 0, 'DITL-LS240 row 16 AIR TANK PRESSURE LOW = model low switch, 0 in service (' + U.lm.sw.tank + ')');
   {
     const q = P.find(p => p.sheet.endsWith(')DITL-80Q') && p.tag === 'I.073D');
     ok(q && !q.on, 'DITL-80Q drawn row 39 APH SOOTBLOWER TRIP (I.073D) = 0');

@@ -9,7 +9,7 @@ source at 150 MW: **83 -> 33** (copy clash count 1 -> 0). No trip at 150 MW (tra
   rotofeeder fault, vent filter trip and purge fault, silo LSH / LSL, sand venting fan trip, screw cooler inverter trips) read their
   normal service value. The instructor can change each one from the Plant menu (field states).
 - Sand silo high level on DITL-BA02 follows the sand model, the same switch as DITL-774.
-- DITL-LS240 AIR TANK PRESSURE reads the limestone air receiver of the model (the sheet prints 1 = P > 4 kg/cm2).
+- DITL-LS240 AIR TANK PRESSURE LOW reads the limestone air receiver of the model: 1 below 4 kg/cm2, 0 in service (the 4 kg/cm2 on the sheet is the switch set point).
 - The two DCS flashers M.133F (1 s / 0.5 s) and M.135F (300 ms / 6 s) blink.
 - The screw cooler ash temperatures (DITL-21A rows 11 / 12, all four coolers) and the air heater sootblower steam pressures (DITL-80K rows
   16 / 17) take the model value. FURNACE DP LOW M.3122 reaches all four coolers (one station wiring bit).
