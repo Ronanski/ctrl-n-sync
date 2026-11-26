@@ -361,6 +361,8 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA534',
+    /* swc: the SW of these CMP is not wired on the drawing; the HIACS backup record of each (phase6-tcs-records-2026-11-26.md (YUA, team-files/tcs-decoded), COMM+MD 2017-02-23) has 102_DD00001 = ON(1) on its side input: the comparison with hysteresis (ML 51 SW = 1) */
+    swc: { cmpA046: 1, cmpA050: 1 },
     title: 'CRITERIA CONDITION',
     page: 104,
     ctl: 'COMM+MD',

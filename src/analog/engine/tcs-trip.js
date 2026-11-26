@@ -184,14 +184,21 @@ const TCS_IBD_NET = {
   'TC-20': { 43: U => (U.tc ? U.tc.Pa : NaN) },
   /* TC-18 BLOWDOWN VALVE (page 72) net 0 INTERCEPT VALVE OPEN DEMAND >0.1%: the ICV position demand SV-STn905-A2 / B2 (TCS I/O list
      XSMM_IO_List_R1, IO LIST R.1 rows 140 / 316, IBD TA-37 / TA-38). The model has one ICV value, U.tb.icv, that is its demand and its
-     position (ZT-STn905 above). TC-17 net 5 HP TURBINE HEAT SOAK EXECUTE stays unbound: its source is the TCS soft logic TCE163 (I/O list
-     HMI_DI HEAT SOAK SET / RESET), not in the repository (docs/tcs/IBD_UNBOUND.md) */
+     position (ZT-STn905 above). */
   'TC-18': { 0: U => (U.tb && U.tb.icv > 0.001 ? 1 : 0) },
   /* 3.2.3-beta.264 (SAKURA): TC-17 VENTILATOR VALVE (IBD page 71) net 6 TURBINE FLOW DEMAND (EL) (CV FULL CLOSE), contact ON <= 20 % on the
      sheet = the TCS flow demand of the model (U.tb.fd, 1 = 100 %, anTbFlow in unit.js) <= 20 %. Its OR with HEAT SOAK EXECUTE, DT 5 s, gives the
      VENTILATOR VALVE OPEN COMMAND that also closes the cold reheat NRV (TC-19 page 73). Before the flow demand runs (tb.fd not set) the label
      itself says CV FULL CLOSE: the CV position of the model (U.gv) */
-  'TC-17': { 6: U => (U.tb && isFinite(U.tb.fd) ? (U.tb.fd <= 0.2 ? 1 : 0) : U.gv > 0.001 ? 0 : 1) },
+  /* Phase 6 TCS (lane 1, 2026-11-26): TC-17 net 5 HP TURBINE HEAT SOAK EXECUTE = TCE163 output A1 HEAT SOAK SET (drawing page 114, connector
+     A1 to "-": it leaves the TCE / TCA set). A1 is the SELECT pin of the HEAT SOAK SELECT macro (LME133 inside of the HIACS backup, TCE163 001),
+     the same signal as HEAT SOAK MODE (C, to TCE207) and the CRT lamp TCE163_1. INFERRED: the backup of the PI/O card that carries A1 to the
+     hard-wired logic is not decoded (tcs-tcp-pio.json has card TCP1900 only); the IBD names no other heat soak input. 0 when the program does
+     not run */
+  'TC-17': {
+    5: U => (tcsTceOut(U, 'TCE163', 'oA1') > 0.5 ? 1 : 0),
+    6: U => (U.tb && isFinite(U.tb.fd) ? (U.tb.fd <= 0.2 ? 1 : 0) : U.gv > 0.001 ? 0 : 1)
+  },
   'TA-42': { 27: (U, c) => (c.ib && c.ib.v['TA-41'] ? c.ib.v['TA-41'][23] || 0 : 0) },
   /* c2 batch 3 (3.2.3): the inputs of the IBD that the model already has a value for. A contact of the TSI with its set point written on the
      sheet is 1 at that set point. TA-18 (IBD page 37): SHAFT VIBRATION HIGH ON >= 0.125 mm; TA-17 (page 36): VERY HIGH ON >= 0.200 mm, X = -1,
@@ -254,6 +261,16 @@ const tcsHpx = U => (U.xt && U.xt.T && isFinite(U.xt.T.cr) ? U.xt.T.cr : NaN);
 /* c2: the value of a DITL input row (by the tag in its TAG column), of a DITL output (by its RS text) and of an ABC net (by its name), as the
    DCS has them now; 0 / NaN when absent */
 const TCS_DCS = { row: {}, abc: {}, out: {} };
+/* the value now of an output of a TCE / TCA sheet (TCE_RUN.outs key), as the program of engine/tcs-sheets.js runs it; undefined = the program
+   does not run (no plant, no TCS state yet, same rule as tcsHw in tcs-dcs.js) or the sheet has no such output */
+function tcsTceOut(U, sheet, key) {
+  const c = U && (U.tc || U.tco),
+    p = c && c.sm && AN_TCE.n === c.sm.n && AN_TCE.n >= 0 ? tcsShProg() : null;
+  if (!p) return undefined;
+  if (!p.tceOut) p.tceOut = new Map(window.TCE_RUN.outs(p).map(o => [o.sheet + ':' + o.key, o.slot]));
+  const k = p.tceOut.get(sheet + ':' + key);
+  return k === undefined || Number.isNaN(p.v[k]) ? undefined : p.v[k];
+}
 function tcsDitlOut(sh, re) {
   try {
     if (typeof S === 'undefined' || !S.sheets) return 0;

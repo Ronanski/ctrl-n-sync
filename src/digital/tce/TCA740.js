@@ -150,7 +150,10 @@
       ['pif009', [[1080, 436], [I(1613), 436]], 1],
       ['set2.OUT', [[1474, 576], [1528.5, 576], [1528.5, 457.5], [I(1613), 457.5]], 1],
       ['set2.AUT', [[1474, 619], [1506, 619], [1506, 373]]],
+      /* AUT to the top (SW) of PIF 009: the same line typed again toward the PIF so its last point lands on the pin (phase 6; the HIACS record has a signal,
+         102_YY02748, on this side input) */
       ['set2.AUT', [[1039, 425], [1039, 373], [1613.5, 373], [1613.5, 363], [1959, 363]]],
+      ['set2.AUT', [[1613.5, 373], [1039, 373], [1039, 425]]],
       ['set2.AUT', [[1613.5, 373], [1613.5, 425.5]]],
       /* MV and its users */
       ['asw005', [[O(1613), 436], [1958.5, 436]], 1],

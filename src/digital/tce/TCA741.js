@@ -135,6 +135,9 @@
       ['set2.AUT', [[1320, 583], [1941.5, 583]]],
       ['set2.AUT', [[1353, 583], [1353, 337]]],
       ['set2.AUT', [[950, 390], [950, 337], [1534.7, 337], [1534.7, 390]]],
+      /* the same line to the top (SW) of PIF C009, typed toward the PIF so its last point lands on the pin (phase 6; the HIACS record
+         has a signal, 102_YY0277A, on this side input) */
+      ['set2.AUT', [[1534.7, 337], [950, 337], [950, 390]]],
       /* MV and its users */
       ['asw005', [[O(1535), 400.5], [1955, 400.5]], 1],
       ['asw005', [[1608, 400.5], [1608, 168], [1883, 168]], 1],

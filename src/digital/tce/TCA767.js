@@ -243,6 +243,10 @@
   window.TCE_SHEETS = window.TCE_SHEETS || [];
   window.TCE_SHEETS.push({
     id: 'TCA767',
+    /* swc: TB 065 / 066 (ML 59 TIE-BACK) show no flag wire on the drawing, and their HIACS backup records (phase6-tcs-records-2026-11-26.md (YUA, team-files/tcs-decoded), COMM+MD 2017-02-23)
+       carry no side input at all ("TB 065 201_XX00FC5 200_XX00CF0 ..."): the primary / secondary flags of ML 59 are the duplex controller's
+       own status, not a wire. DERIVED: the simulator runs one controller, which is the primary, so ML 59 (1) applies: Y = X. */
+    swc: { tb065: 1, tb066: 1 },
     /* pr: printed on page 194 beside each block; the drawing above keeps them as text */
     pr: {
       cmpA002: ['HL:430.0', 'LL:428.0'],

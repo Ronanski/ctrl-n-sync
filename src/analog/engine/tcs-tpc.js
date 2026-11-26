@@ -6,8 +6,12 @@
    transmitter.
    Not linked, they keep 0 (no source in the documents read): the input errors (E1 ~ E7) and TCP500 / 501 / 503.A of TCE476 (the model has no card
    fault), the SPARE channels, the rotor position (TCE066: no model), BOILER MFT 1 AND 2 NOT SYN. (one MFT), CRT OPE. PERM. of the solenoid test
-   (TCE118 / 119) and the energize commands of the fast acting solenoids (TCE099 / 099A, TCE116): the IBD sheets TA-31 ~ TA-38 draw them, the
-   reader has no net for them. */
+   (TCE118 / 119) and the energize commands of the fast acting solenoids (TCE099 / 099A): the IBD sheets TA-31 ~ TA-38 draw them, the
+   reader has no net for them.
+   Phase 6 TCS (lane 1, 2026-11-26, lane 0 read of the PI/O cards TCPn901 / n902, phase6-tcs-tpc-sources-2026-11-26.md): TCPn052 B5 / B6 =
+   TCPn901-5 / -6 UNIT TRANSF. PROTECTION OPERATED GEN. PROTECTION A / B (87T, 51N) and TCPn054 B5 / B6 = TCPn902-5 / -6 50BF-86BF FOR GEN.
+   PROTECTION A / B, both from CUSTOMER (the generator protection panel). The model has only the 32 reverse power relay of that panel
+   (unit.js anRp32, 86G-A); the 87T / 51N and 50BF relays are not modelled, so these four keep 0 (no relay operated) until they are */
 const TCS_TPC = (() => {
   const T = {},
     mb = n => U => (window.TCE_IO_LIVE ? window.TCE_IO_LIVE.mbRead(U, 'MB:' + n) : NaN),
@@ -73,8 +77,53 @@ const TCS_TPC = (() => {
     ['C7', 'TA-3', 1],
     ['C8', 'TA-3', 4]
   ].forEach(([p, sh, n]) => put(200, p, ib(sh, n)));
+  /* Phase 6 TCS (lane 1, 2026-11-26): ICV(A) / (B) FAST ACTING DURING VALVE TEST, the output E of TCPn230 / TCPn231 to TCE116 E. The TPC
+     makes it with its own logic, read by lane 0 from the HIACS backup (FNCTCP1230 / 1231, /mnt/project-files/phase6-tcs-tpc-sources-2026-11-26.md
+     part A; TCP2230 / 3230 are the same line for line):
+       YY00337 = A 005 (TD 004 2.0 s of (CRV(A) TEST COMMAND and ICV(A) TEST POSITION), NOT TD 012 2.0 s of (PLU OPERATED or ACCELERATION RELAY OPERATED))
+       YY00331 = TD 007 8.0 s of YY00337;  YY00329 = A 008 (YY00331, NOT RSV(A) FULL OPEN);  E = OR 009 (YY00329, YY00337)
+     (B): the same with CRV(B) / ICV(B) / RSV(B), and the PLU-or-acceleration of TCP1230 (JOINT D) on its own TD 011 2.5 s.
+     The inputs are the TCE outputs the drawings send to TCP1230 / 1231: TCE226 B1 / E1 CRV TEST COMMAND, TCE227 / TCE228 B1 ICV TEST POSITION,
+     C1 RSV FULL OPEN, TCE043 B15 PLU OPERATED, TCE166 B ACCELERATION RELAY OPERATED. TD = the HIACS TD (tce-run.js K.TD): ON with its input,
+     held TD seconds after it goes OFF. The timers live in the TCS state (c.tpcVt); h = the slice of the program step */
+  const tceOn = (U, sh, k) => (tcsTceOut(U, sh, k) > 0.5 ? 1 : 0),
+    td = (st, k, x, T, h) => (x ? (st[k] = T + 1e-9) : (st[k] = Math.max(0, (st[k] || 0) - (h || 0)))) > 0,
+    vt = (side, crv, icv, T2) => (U, c, h) => {
+      const st = ((c.tpcVt = c.tpcVt || {})[side] = c.tpcVt[side] || {}),
+        blk = tceOn(U, 'TCE043', 'b15') || tceOn(U, 'TCE166', 'oB'),
+        y337 = td(st, 't1', tceOn(U, 'TCE226', crv) && tceOn(U, icv, 'oB1'), 2.0, h) && !td(st, 't2', blk, T2, h),
+        y329 = td(st, 't3', y337, 8.0, h) && !tceOn(U, icv, 'oC1');
+      return y329 || y337 ? 1 : 0;
+    };
+  put(230, 'E', vt('a', 'oB1', 'TCE227', 2.0));
+  put(231, 'E', vt('b', 'oE1', 'TCE228', 2.5));
   return T;
 })();
+/* Phase 6 TCS (lane 1, 2026-11-26): input connectors printed "(-)" on the drawing, with no writer in the HIACS backup (lane 0,
+   phase6-tcs-tpc-sources-2026-11-26.md part B), given their source from the documents (lane 0 search, phase6-tcs-dash-inputs-docs-2026-11-26.md):
+   - TCA782 Z1 ~ Z3 EOS(1) ~ (3) TURBINE SPEED: the three speed pickups of the one shaft (2-2 TCS book p.93-94, 5.3.2.2 and Fig. 5.9; HMI_AI
+     TCA782_A1 EOS TURBINE SPEED 0-5000 rpm) = the shaft speed of the model, the same on each channel.
+   - TCE100 PLU(1) ~ (3) / EOS(1) ~ (3) OPERATED: the PLU / EOS relays (A) (B) (C) of the TCS panel, PI/O card TCA906-29 ~ 31 / -26 ~ 28
+     (elementary 331DM10710 p.244). They read those card inputs of the program (tce-io.js gives them: PLU = tb.plu, EOS = the IBD TA-15
+     overspeed comparators), one source. INFERRED: (1)(2)(3) = (A)(B)(C).
+   The others of part B stay 0, logged in docs/versions/updates/phase6-tcs-link-audit.md: TCE073 and TCE116 B11 / B12 SPARE, TCE153 B3 (no CV
+   upper thermocouple exists), TCE195 RUNBACK (the DCS sends no runback), TCE250 / TCE472 (self-diagnosis, 0 = healthy), TCE164 A (NOT IN DOCS) */
+const tcsPio = id => () => {
+  const p = tcsShProg(),
+    i = p ? p.idx.get('PIO:' + id) : undefined;
+  return i === undefined ? NaN : p.v[i];
+};
+const TCS_CON = {
+  'CON:TCA782.Z1': U => (U.tb ? +U.tb.rpm : NaN),
+  'CON:TCA782.Z2': U => (U.tb ? +U.tb.rpm : NaN),
+  'CON:TCA782.Z3': U => (U.tb ? +U.tb.rpm : NaN),
+  'CON:TCE100.-PLU(1) OPERATED': tcsPio('TCA906-29'),
+  'CON:TCE100.-PLU(2) OPERATED': tcsPio('TCA906-30'),
+  'CON:TCE100.-PLU(3) OPERATED': tcsPio('TCA906-31'),
+  'CON:TCE100.-EOS(1) OPERATED': tcsPio('TCA906-26'),
+  'CON:TCE100.-EOS(2) OPERATED': tcsPio('TCA906-27'),
+  'CON:TCE100.-EOS(3) OPERATED': tcsPio('TCA906-28')
+};
 /* the ports of the program: [[slots of the three controllers], value] */
 function tcsTpcPorts(p) {
   const L = [];
@@ -83,13 +132,14 @@ function tcsTpcPorts(p) {
       at = [1, 2, 3].map(n => p.idx.get('CON:TCP' + (1000 * n + +s) + '.' + port)).filter(i => i !== undefined);
     if (at.length) L.push([at, TCS_TPC[k]]);
   }
+  for (const n in TCS_CON) if (p.idx.has(n)) L.push([[p.idx.get(n)], TCS_CON[n]]);
   return L;
 }
-function tcsTpcFeed(p, U, c) {
+function tcsTpcFeed(p, U, c, h) {
   const io = window.TCE_IO_LIVE,
     run = () => {
       for (const [at, f] of p.tpc) {
-        const x = +f(U, c);
+        const x = +f(U, c, h);
         if (isFinite(x)) for (const i of at) p.v[i] = x;
       }
     };
