@@ -1236,7 +1236,11 @@
           /* 3.2.0-beta.23: one address and a row that names no machine of this family (DITL-19 row 16 "FURNACE LOWER LAYER UNDER
              TEMP. > 700 C" M.3330 is ONE furnace for feeders A, B, C) is the same signal for every instance (CLAUDE.md rule 1);
              before, feeders B and C had no furnace temperature and tripped when the last start-up burner was put out */
-          const common = k > 0 && !la[k] && la.length === 1 && !relative(sb, T);
+          /* Phase 6 DITL (lane 1, 2026-11-26, YUA PC read A3): a row "(FROM STATION WIRING)" is one signal broadcast by another station
+             for every machine of the drawing, even when its text names machine A (DITL-21A row 7 M.3122 FURNACE DP LOW, made in station 101,
+             read by the four screw coolers) */
+          const common =
+            k > 0 && !la[k] && la.length === 1 && (!relative(sb, T) || /FROM STATION WIRING/i.test(T + ' ' + cellTxt(sb, i, 'L')));
           if (k > 0 && !la[k] && !common) return;
           const adr = la[k] || (common ? la[0] : null),
             wt = (sb.tx || []).filter(x => x && x.t && Math.abs((x.iy != null ? x.iy : x.y) - r.y) < 5 && /^[A-Z0-9-]{4,}\.(MAN|MV|PV|SV)$/.test(String(x.t).trim())),
