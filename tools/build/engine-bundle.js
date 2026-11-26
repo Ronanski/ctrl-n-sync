@@ -44,7 +44,7 @@ function bundle(o) {
     'AN.reset=()=>{anResetRun();const c=anCur();if(c&&c.S)for(let i=0;i<6;i++)stepSet(c,0)};\n' +
     'AN.settle=()=>{const c=anCur();if(c&&c.S)for(let i=0;i<6;i++)stepSet(c,0)};\n' +
     'AN.plantSwitch=on=>{AN.plantOn=!!on;for(const sh of AN.sheets){if(!sh.S)continue;for(const b of sh.S.procs||[])if(b.proc)b.proc.on=!!on;if(!on){sh.S.rt.pm={};sh.S.plantT=null;sh.S._rem=0}}};\n' +
-    'globalThis.ENGINE={AN,E:{ensure,stepSet,anResetAll,anPlantLoad150,anPlantCold}};\n';
+    'globalThis.ENGINE={AN,E:{ensure,stepSet,anStep,anResetAll,anPlantLoad150,anPlantCold}};\n';
   return (o.world ? '' : tceAlone()) + '(function(){\n' + core + body + '\n;\n' + hooks + '})();\n';
 }
 /* 3.2.0 Web Worker, stage b: the whole engine, the one world: the DITL engine parts of src/digital/order.list (up to 03e-user.js:
