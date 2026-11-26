@@ -547,9 +547,20 @@
         .sort((x, y) => x[1] - y[1])
         .slice(0, 1)
         .map(w => w[2].slice(1, -1));
+    /* Phase 6 TCS (2026-11-26): a sheet with several input connectors printed "-" (no letter) under different names (TCE100: PLU(1) ~ (3)
+       OPERATED, EOS(1) ~ (3) OPERATED) gave them one port CON:sheet.-, six signals on one net. Each such input is its own port, "-" + its
+       name; a single "-" input (TCE250) keeps CON:sheet.- */
+    const dash = (s.c || []).filter(c => c[1] === 'in' && c[2] === '-' && c[5]),
+      dashN = new Set(dash.map(c => c[5])).size > 1;
     const inputs = (s.c || [])
       .filter(c => c[1] === 'in')
-      .map(c => ({ key: c[0], letter: c[2], name: c[5], from: ((c[6] || []).length ? c[6] : under(c)).map(f => (f === '*' ? s.id : f)) }));
+      .map(c => ({
+        key: c[0],
+        letter: c[2],
+        pin: dashN && c[2] === '-' && c[5] ? '-' + c[5] : c[2],
+        name: c[5],
+        from: ((c[6] || []).length ? c[6] : under(c)).map(f => (f === '*' ? s.id : f))
+      }));
     const outc = (s.c || []).filter(c => c[1] === 'out').map(c => ({ key: c[0], letter: c[2], sheets: c[6] || [] }));
     const res = { id: s.id, inputs, outc, blocks, macros, marks: marks.map(m => ({ key: m.key, type: m.type, in: null })), outputs: [], open: [] };
     const mk = Object.fromEntries(res.marks.map(m => [m.key, m]));
@@ -1872,10 +1883,10 @@
             const T = x.src.slice(0, x.src.indexOf(':')),
               ok = x.src.slice(T.length + 1),
               o = nb[T].outputs.find(o => o.key === ok);
-            r = o ? res(T, o.net, depth + 1) : port('CON:' + sid + '.' + x.letter);
+            r = o ? res(T, o.net, depth + 1) : port('CON:' + sid + '.' + (x.pin || x.letter));
           } else {
             const f = x.from.filter(f => /^[A-Z]/.test(f));
-            r = port('CON:' + (f.length ? f.join('/') : sid) + '.' + x.letter);
+            r = port('CON:' + (f.length ? f.join('/') : sid) + '.' + (x.pin || x.letter));
           }
         } else if (t === 'k') {
           const [, , , text, note] = x,

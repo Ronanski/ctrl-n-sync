@@ -99,6 +99,30 @@ const TCS_TPC = (() => {
   put(231, 'E', vt('b', 'oE1', 'TCE228', 2.5));
   return T;
 })();
+/* Phase 6 TCS (lane 1, 2026-11-26): input connectors printed "(-)" on the drawing, with no writer in the HIACS backup (lane 0,
+   phase6-tcs-tpc-sources-2026-11-26.md part B), given their source from the documents (lane 0 search, phase6-tcs-dash-inputs-docs-2026-11-26.md):
+   - TCA782 Z1 ~ Z3 EOS(1) ~ (3) TURBINE SPEED: the three speed pickups of the one shaft (2-2 TCS book p.93-94, 5.3.2.2 and Fig. 5.9; HMI_AI
+     TCA782_A1 EOS TURBINE SPEED 0-5000 rpm) = the shaft speed of the model, the same on each channel.
+   - TCE100 PLU(1) ~ (3) / EOS(1) ~ (3) OPERATED: the PLU / EOS relays (A) (B) (C) of the TCS panel, PI/O card TCA906-29 ~ 31 / -26 ~ 28
+     (elementary 331DM10710 p.244). They read those card inputs of the program (tce-io.js gives them), one source. INFERRED: (1)(2)(3) = (A)(B)(C).
+   The others of part B stay 0, logged in docs/versions/updates/phase6-tcs-link-audit.md: TCE073 and TCE116 B11 / B12 SPARE, TCE153 B3 (no CV
+   upper thermocouple exists), TCE195 RUNBACK (the DCS sends no runback), TCE250 / TCE472 (self-diagnosis, 0 = healthy), TCE164 A (NOT IN DOCS) */
+const tcsPio = id => () => {
+  const p = tcsShProg(),
+    i = p ? p.idx.get('PIO:' + id) : undefined;
+  return i === undefined ? NaN : p.v[i];
+};
+const TCS_CON = {
+  'CON:TCA782.Z1': U => (U.tb ? +U.tb.rpm : NaN),
+  'CON:TCA782.Z2': U => (U.tb ? +U.tb.rpm : NaN),
+  'CON:TCA782.Z3': U => (U.tb ? +U.tb.rpm : NaN),
+  'CON:TCE100.-PLU(1) OPERATED': tcsPio('TCA906-29'),
+  'CON:TCE100.-PLU(2) OPERATED': tcsPio('TCA906-30'),
+  'CON:TCE100.-PLU(3) OPERATED': tcsPio('TCA906-31'),
+  'CON:TCE100.-EOS(1) OPERATED': tcsPio('TCA906-26'),
+  'CON:TCE100.-EOS(2) OPERATED': tcsPio('TCA906-27'),
+  'CON:TCE100.-EOS(3) OPERATED': tcsPio('TCA906-28')
+};
 /* the ports of the program: [[slots of the three controllers], value] */
 function tcsTpcPorts(p) {
   const L = [];
@@ -107,6 +131,7 @@ function tcsTpcPorts(p) {
       at = [1, 2, 3].map(n => p.idx.get('CON:TCP' + (1000 * n + +s) + '.' + port)).filter(i => i !== undefined);
     if (at.length) L.push([at, TCS_TPC[k]]);
   }
+  for (const n in TCS_CON) if (p.idx.has(n)) L.push([[p.idx.get(n)], TCS_CON[n]]);
   return L;
 }
 function tcsTpcFeed(p, U, c, h) {

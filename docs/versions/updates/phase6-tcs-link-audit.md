@@ -60,9 +60,14 @@ The audit checks that each signal has one source, that no input is left dangling
 
 ## 5. The "(-)" inputs
 
-- **Lane 0 checked every FNC record of the six stations and the PI/O card lists.** None of the "(-)" inputs has a writer: all are NOT IN BACKUP. TCE116 B11 / B12 are SPARE by their own label.
-- **They stay 0** and stay in the OPEN list of tests/lanes/integrator/tcs-dcs.cjs.
-- **INFERRED hints for a later binding (not bound here):**
-  - TCE153 B3 CV(UPPER) INNER / OUTER TEMP: the sister sheets TCE152 / TCE154 get theirs from TCA359 / TCA363.
-  - TCA782 Z1 ~ Z3 EOS TURBINE SPEED and TCE100 PLU / EOS OPERATED: the three overspeed channels of the TPC.
-  - TCE250 TCMS MAJOR TROUBLE and TCE472 CPU STOP: controller self-diagnostics.
+- **No writer in the backup:** lane 0 checked every FNC record of the six stations and the PI/O card lists. Then lane 0 searched the documents for each one (/mnt/project-files/phase6-tcs-dash-inputs-docs-2026-11-26.md).
+- **Bound now** (engine/tcs-tpc.js TCS_CON; test tests/tce/dash-inputs.cjs):
+  - **TCA782 Z1 ~ Z3 EOS(1) ~ (3) TURBINE SPEED** = the shaft speed of the model, the same on the three pickups (2-2 TCS book p.93-94, Fig. 5.9).
+  - **TCE100 PLU(1) ~ (3) / EOS(1) ~ (3) OPERATED** = the program's PI/O inputs TCA906-29 ~ 31 / -26 ~ 28 (elementary 331DM10710 p.244). INFERRED: (1)(2)(3) = (A)(B)(C). PLU follows the PLU of the model. EOS stays 0, because tce-io.js has no EOS relay source yet.
+- **Compiler bug found and fixed (tce-run.js):** the six TCE100 inputs are all printed "-", so they shared one port CON:TCE100.-, which made six signals one net. A sheet with several "-" inputs under different names now gives each its own port ("-" + name). A single "-" input (TCE250) keeps CON:sheet.-.
+- **Stay 0, with their reason:**
+  - TCE073 (6 inputs) and TCE116 B11 / B12: SPARE (HMI_DI rows 807-815; the record label).
+  - TCE153 B3 CV(UPPER) INNER / OUTER TEMP: no CV upper thermocouple exists (card TCA961 has only CV(B) inner / outer, sent by TCA359 / 363 to TCE152 / 154). Not bound, not guessed.
+  - TCE195 C RUNBACK COMMAND: the DCS sends the TCS no runback (dcs-io-list, every TO TCS row). 0 is correct for this plant.
+  - TCE250 TCMS MAJOR TROUBLE and TCE472 C EHG(A) or (B) CPU STOP: self-diagnosis of the system (2-2 book p.2259, p.2027 / 2030 Fig. 8.4). 0 = healthy. An instructor fault can set them later.
+  - TCE164 A CV OPEN INHIBITION: **NO-SOURCE.** Searched: the HMI_DI list (TCE164 rows 512-516), the DCS I/O list, every TCS PI/O card, and the backup records.
