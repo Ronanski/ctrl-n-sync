@@ -94,16 +94,22 @@
       '<path class="rxd" d="M-12 -7h2.6v14h-2.6zM9.4 -7h2.6v14h-2.6z"/><rect class="rxv" x="-4.2" y="-22" width="8.4" height="12" rx="1.6"/><path class="rxd" d="M-5.6 -11.6h11.2v2.4h-11.2z"/>' +
       '<rect class="rxs" x="-9.4" y="-9.2" width="18.8" height="18.4" rx="4.4"/><path class="rxhi" d="M-6.6 -5.6H6.6"/>'
   });
-  /* three spring loaded safety valves on a line, each with its own exhaust pipe and silencer */
-  R.safeties = () => {
+  /* three spring loaded safety valves on a line, each with its own exhaust pipe and silencer; one: true = a single valve */
+  R.safeties = (o = {}) => {
     let s = '';
-    for (const x of [-16, 0, 16])
+    for (const x of o.one ? [0] : [-16, 0, 16])
       s +=
         `<path class="rxpe" d="M${x + 4} -10h4.2v-21"/><rect class="rxv" x="${x + 4.6}" y="-45" width="7.2" height="14" rx="2.4"/>` +
         `<path class="rxd" d="M${x - 2.2} -6h4.4v6h-4.4z"/><rect class="rxs" x="${x - 4.6}" y="-14.5" width="9.2" height="9" rx="2"/>` +
         `<rect class="rxv" x="${x - 3}" y="-27.5" width="6" height="13" rx="1"/><path class="rxe" d="M${x - 3} -17.5l6 -2.5l-6 -2.5l6 -2.5"/><path class="rxd" d="M${x - 3.8} -30h7.6v2.6h-7.6z"/>`;
-    return { box: [-22, -46, 29, 9], ports: { l: [-22, 0], r: [29, 0], b: [0, 0], t: [0, -45] }, svg: s };
+    return { box: o.one ? [-6, -46, 13, 9] : [-22, -46, 29, 9], ports: { l: [o.one ? -6 : -22, 0], r: [o.one ? 13 : 29, 0], b: [0, 0], t: [0, -45] }, svg: s };
   };
+  /* flame arrester on a tank vent: a box with its element. Ports: t, b */
+  R.arrester = () => ({
+    box: [-8, -9, 8, 9],
+    ports: { t: [0, -9], b: [0, 9] },
+    svg: '<rect class="rxv" x="-7.5" y="-8.5" width="15" height="17" rx="2"/><path class="rxe" d="M-4.5 -5.5v11M-1.5 -5.5v11M1.5 -5.5v11M4.5 -5.5v11"/>'
+  });
 
   /* ---------------- small things on a line ---------------- */
   /* steam trap on a drain line: the ISA circle with a T. Ports: t (in), b (out), l, r */

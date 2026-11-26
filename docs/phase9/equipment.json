@@ -243,6 +243,10 @@
   "STR-MU0003": [
    "makeup-cooling|id=sm2",
    "suction strainer of make-up pump P-0709C (PD-024 F-7, YUA P&ID read 2026-11-27); drawn with no label after V-MU0005"
+  ],
+  "ZV-DO1001": [
+   "oil-burners|id=rv",
+   "relief valve on the burner supply DO-1-021 after FCV-DO1012 (PD-022 sh1/5 G-6, YUA P&ID read 2026-11-27); drawn with no label between the supply valve and the burner header"
   ]
  },
  "approved": {},
