@@ -5040,7 +5040,15 @@ const AN_SB = {
      SELECT (M.4212, 1 = plant air: no steam taken). While a lance blows: its RESET POSITION is 0 (plantsw.js) and its pressure PT-SB1040 /
      PT-SB1042 (I/O list STN102 AI0549 / AI0550, 0 ~ 16) is the header pressure (at most 16). NO-SOURCE: the steps of the lance (one
      rotor turn each), the plant air pressure at the blower */
-  aph: { q: 3.9, head: 10.5, tB: 19 * 60 + 40, rng: 16 },
+  /* Phase 6 DCS (2026-11-26, YUA PC read /mnt/project-files/phase6-dcs-5-signals-2026-11-26.md): the lance travel of the air heater
+     blowers, Clyde Bergemann Mk VX-AB semi-retractable (L20 SCM: VX-AB manual p.11, drawing 110460/29/1 'F', control panel manual
+     contract 110460 p.7 / p.9 / p.12): stroke 750 mm; forward in one continuous run to the reverse limit switch, no dwell at full stroke
+     (p.11: the reverse limit reverses the motor); reverse in steps of 38 mm (panel timer T-on) with a dwell of 55 s (T-off, factory
+     value = one rotor turn, rotor 1.10 rpm OMM p.17 / p.35); the poppet valve opens mechanically after the first 50 mm, so steam blows
+     both ways beyond 50 mm (drawing 110460/29/1; 3900 kg/h x 19 min 40 s = 1278 kg = the OMM total, p.15). The travel speed is printed
+     nowhere: DERIVED from the cycle, 20 steps (750 / 38 = 19.7) with 19 dwells = 1045 s, the 1500 mm of travel in the other 135 s at one
+     speed both ways (11.1 mm/s): forward about 68 s, each step about 3.4 s, reverse about 18 min 32 s */
+  aph: { q: 3.9, head: 10.5, tB: 19 * 60 + 40, rng: 16, L: 750, stp: 38, dw: 55, poppet: 50 },
   /* 3.2.3 (SOHEE): the drain temperatures TT-SB1056 (A, middle riser SB-1-046) / TT-SB1057 (B, right riser SB-1-039), I/O list STN102
      AI0916 / AI0917 0 ~ 600 C; DITL-80P rows 2 / 3 -> DITL-80A rows 22 / 23 (> 220 C = BLOWING PERMISSIVE with MV-SB1001 open 600 s)
      and rows 18 / 19 (> 250 C = the drain SOVs XV-SB1054 / 1059 close by themselves). Flow diagram PD-015: the steam comes from the
@@ -5104,7 +5112,8 @@ function anSbStep(U, dt) {
     U.msb += AN_SB.q[k] * 3.6 * Math.min(1, (P + 1.033) / (AN_SB.head[k] + 1.033));
   }
 }
-/* the air heater blowers (AN_SB.aph): U.sbA = { op: last OPERATING, ph: 0 rest / 1 hot end / 2 cold end, t: s in the phase, p40, p42 } */
+/* the air heater blowers (AN_SB.aph): U.sbA = { op: last OPERATING, ph: 0 rest / 1 hot end / 2 cold end, t: s in the phase, p40, p42,
+   x: lance mm from park, mv: 1 forward / -1 reverse / 0 still } */
 function anSbAph(U, dt, P) {
   const K = AN_SB.aph,
     A = U.sbA || (U.sbA = { op: 0, ph: 0, t: 0, p40: 0, p42: 0 }),
@@ -5132,6 +5141,29 @@ function anSbAph(U, dt, P) {
       A.t = 0;
     }
   }
+  /* the lance of the running blower (AN_SB.aph, DERIVED travel): A.x mm from park, A.mv 1 forward (MOF), -1 reverse step (MOR), 0 dwell
+     or at rest. Steps: (L / stp) rounded up = 20, dwells one fewer = 19, speed = 2 L / (tB - dwells x dw) */
+  {
+    const n = Math.ceil(K.L / K.stp),
+      v = (2 * K.L) / (K.tB - (n - 1) * K.dw),
+      tf = K.L / v,
+      ts = K.stp / v;
+    let x = 0,
+      mv = 0;
+    if (A.ph) {
+      if (A.t < tf) (x = v * A.t), (mv = 1);
+      else {
+        const r = A.t - tf,
+          k = Math.floor(r / (ts + K.dw)),
+          w = r - k * (ts + K.dw);
+        if (w < ts) (x = K.L - k * K.stp - v * w), (mv = -1);
+        else x = K.L - (k + 1) * K.stp;
+        if (x <= 0) (x = 0), (mv = 0);
+      }
+    }
+    A.x = x;
+    A.mv = mv;
+  }
   let air = false;
   try {
     const k = typeof S !== 'undefined' && S.sheets ? S.sheets.find(x => /\)DITL-80K$/.test(x.name)) : null;
@@ -5140,7 +5172,7 @@ function anSbAph(U, dt, P) {
   const Ph = isFinite(P) && P > 0 ? Math.min(K.rng, P) : 0;
   A.p40 = A.ph === 1 && !air ? Ph : 0;
   A.p42 = A.ph === 2 && !air ? Ph : 0;
-  if (A.ph && !air && Ph > 0) {
+  if (A.ph && !air && Ph > 0 && A.x > K.poppet) {
     U.sbN++;
     U.msb += K.q * Math.min(1, (Ph + 1.033) / (K.head + 1.033));
   }

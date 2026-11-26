@@ -24,7 +24,22 @@ rows.push(
       const L = typeof WORLD !== 'undefined' && WORLD.sbLances ? WORLD.sbLances().find(x => x._lance.n === 1011) : null;
       return L && L._lance.dir > 0 ? 1 : 0;
     },
-    src: 'IO list STN102 I.0562 MIF-N1011; DITL-80G EXTEND COMMAND net 14 / RETRACT net 0; lance travel world.js sbLance' }
+    src: 'IO list STN102 I.0562 MIF-N1011; DITL-80G EXTEND COMMAND net 14 / RETRACT net 0; lance travel world.js sbLance' },
+  /* Phase 6 DCS (2026-11-26): the motor forward / reverse contacts of the air heater blowers (Clyde Bergemann Mk VX-AB, local panel of
+     contract 110460). MOF = the motor runs the lance in (forward, one continuous run of about 68 s), MOR = the motor runs it back
+     (reverse: 20 steps of 38 mm, the motor stops for each 55 s dwell, so MOR is made only while a step moves). The travel is unit.js
+     AN_SB.aph (U.sbA.x / mv, DERIVED split of the 19 min 40 s). N-1040 = hot end (phase 1), N-1042 = cold end (phase 2): INFERRED from
+     drawing 110460/29/1 "Blowers No. 1 - TOP GAS SIDE" with the Unit 1 tags ZSR / ZSF / PT-SB1040 (YUA PC read
+     phase6-dcs-5-signals-2026-11-26.md). No logic row reads them (DITL-80K / 80L use ZSE / ZSR only): CRT history message */
+  ...[
+    ['MOF', 1040, 'I.0737', 1, 1], ['MOR', 1040, 'I.0738', 1, -1],
+    ['MOF', 1042, 'I.073B', 2, 1], ['MOR', 1042, 'I.073C', 2, -1]
+  ].map(([f, n, di, ph, mv]) => ({
+    stn: 2, di: 1, tag: f + '-N' + n,
+    rel: 'air heater sootblower N-' + n + ' motor ' + (mv > 0 ? 'forward (lance going in)' : 'reverse (lance stepping back)'),
+    v: U => (U.sbA && U.sbA.ph === ph && U.sbA.mv === mv ? 1 : 0),
+    src: 'IO list STN102 ' + di + ' ' + f + '-N' + n + '; wiring GAHSB-DI2 / MPL101R; L20 SCM VX-AB manual p.11, control panel manual p.7 / p.9 / p.12'
+  }))
 );
 
 /* 2. Furnace temperature control dampers FA1005 ~ FA1026 (STN103: front wall FA1005 ~ 1018 on ABC-015 / 016, rear wall FA1019 ~ 1026 on ABC-016): the open / closed limit switches of each motor damper. The damper

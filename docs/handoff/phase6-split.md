@@ -15,11 +15,11 @@ Owns:
 - `docs/versions/updates/phase6-dcs-*.md`
 
 ## TCS side: MARIA (lane 1)
-Work: the TCE / TCA / G sheets that do not run yet. 405 of 419 run as logic on main after Phase 5, so 14 are left. The reasons are listed by `tests/tce/sheets.cjs`:
+Work: the TCE / TCA / G sheets that do not run yet. 407 of 419 run as logic on main after Phase 5, so 12 are left. The reasons are listed by `tests/tce/sheets.cjs`:
 - CMP / PIF / TB SW not wired (HIACS default);
 - PIF G / TI not on TCA740;
-- AM M printed;
-- the G-5A / G-6A 24 V/Hz curve.
+- AM M printed.
+(The G-5A / G-6A 24 V/Hz curve is done in Phase 5, PR 638.)
 
 Owns:
 - `src/digital/tce/**`, `src/digital/tce-run.js`, `src/digital/tce-io.js`, `src/digital/tce-live.js`

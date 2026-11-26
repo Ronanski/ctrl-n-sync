@@ -285,17 +285,22 @@
      itself now (AKIHO beta.515; links: src/world/bind/integrator.json); its 60 limit switches are the rows sd.hrow (build below) */
   const sbL = () => (W.sbLances ? W.sbLances() : []);
   L.push(['SOOTBLOWER', m => (m && m.s._lance ? (m.s._lance.x <= 0 ? 1 : 0) : 1), 0.5, 'hi', 0, 0, /SOOTBLOWER RETRACT POSITION/, /\)DITL-80G( #N-\d+)?$/]);
-  /* 3.2.3 SOHEE: the air heater blowers leave their reset position while they blow (unit.js AN_SB.aph: hot end N-1040, then cold end N-1042) */
-  const aphPh = () => (window.AN && AN.unit && AN.unit.sbA ? AN.unit.sbA.ph : 0);
+  /* 3.2.3 SOHEE: the air heater blowers leave their reset position while they blow (unit.js AN_SB.aph: cold end N-1042 at program count 29, then hot end N-1040 at count 30) */
   /* a limit switch row of DITL-80L by its tag: ZSR-N1014 on its retract limit, ZSE-N1014 at its front end (the lance of its DITL-80G copy; a
-     copy not scanned yet stands retracted). N-1040 / N-1042 are drawn "NOT ON": ZSR NOT ON while the blower is off its reset position;
-     ZSE (forward limit) NOT ON always: where in the 19 min 40 s the lance stands at its front end is not in the docs */
+     copy not scanned yet stands retracted). N-1040 / N-1042 are drawn "NOT ON": ZSR NOT ON while the lance is off its park position,
+     ZSE (forward limit) NOT ON while the lance is short of full stroke. Phase 6 DCS (2026-11-26): the lance travel of unit.js AN_SB.aph
+     (U.sbA.x, Mk VX-AB 750 mm, YUA PC read phase6-dcs-5-signals-2026-11-26.md); the forward limit reverses the motor with no dwell
+     (VX-AB manual p.11), so it is made only for the instant the lance is at full stroke */
+  const aphX = n => {
+    const A = window.AN && AN.unit && AN.unit.sbA;
+    return A && A.ph === (n === 1040 ? 1 : 2) ? +A.x || 0 : 0;
+  };
   const sbZs = tag => {
     const q = /^ZS([RE])-N(\d+)$/.exec(tag);
     if (!q) return null;
     const r = q[1] === 'R',
       n = +q[2];
-    if (n >= 1040) return () => (r ? (aphPh() === (n === 1040 ? 1 : 2) ? 1 : 0) : 1);
+    if (n >= 1040) return () => (r ? (aphX(n) > 0 ? 1 : 0) : aphX(n) >= 750 ? 0 : 1);
     return () => {
       const z = sbL().find(y => y._lance.n === n);
       return z ? (r ? (z._lance.x <= 0 ? 1 : 0) : z._lance.x >= z._lance.len ? 1 : 0) : r ? 1 : 0;
