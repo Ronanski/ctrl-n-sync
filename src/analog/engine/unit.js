@@ -318,6 +318,29 @@ function anVposOf() {
   /* LMYP OTS valve tests: CV(A) SI1812 ~ SI1814 and CV(B) SI1815 ~ SI1817 apart (a CV test moves one group) */
   return { cvA: of(['SI1812', 'SI1813', 'SI1814']), cvB: of(['SI1815', 'SI1816', 'SI1817']), icvA: of(['SI1821', 'SI1822', 'SI1823']), icvB: of(['SI1827', 'SI1828', 'SI1829']) };
 }
+/* Phase 6 DCS audit (2026-11-26, QA trace B1): more ABC inputs of the I/O list STN102 that nothing wrote. Kept apart from U.di: the
+   150 MW start state (src/data/st150.txt) carries U.di as it was saved, so a new entry there would be lost on that start; a save
+   without U.diX makes it on its first scan (as U.vpos).
+   - ABC-036 / ABC-037 read their heater's H.H. switch too (I.029F LS-HD1106 No.2 HPH, I.029B LS-HD1101 No.1 LPH; the same switches
+     as DITL-41, plantsw.js, alarm list 150 mm); they read 0.
+   - the condenser pressure switches PS-CD1110-1 / 2 / 3 (I.004D / I.004E / I.004F, ABC-052), "#1 CONDENSER PRESSURE SWITCH", alarm
+     list 2016-09-12 sheet PS: set H -0.86 kg/cm2 (gauge), alarm on 1; flow diagram PD-016. Made while the model condenser pressure
+     U.cdP (kg/cm2 abs) is at or above -0.86 + 1.033 = 0.173; they read 0 (good vacuum) even with the condenser at atmosphere */
+function anDiXOf() {
+  const lab = (k, t) => {
+    const x = AN.sheets.find(y => y.name === k);
+    if (!x || !x.S) return null;
+    const n = x.S.lab.findIndex(z => z && String(z.t).trim() === t);
+    return n >= 0 ? { S: x.S, n } : null;
+  };
+  return {
+    hd: [
+      [lab('ABC-036', 'I.029F'), 'H6', 150],
+      [lab('ABC-037', 'I.029B'), 'H1', 150]
+    ].filter(x => x[0]),
+    cdps: [lab('ABC-052', 'I.004D'), lab('ABC-052', 'I.004E'), lab('ABC-052', 'I.004F')].filter(Boolean)
+  };
+}
 function anUnitStart() {
   const U = AN_UNIT;
   anUnitStop();
@@ -632,6 +655,7 @@ function anUnitStart() {
      writer and read 0: the CV average SI0226 / SI0227 never reached ">= 2 %" (M.070C), so the HP bypass close of ABC-050 (M.070D / M.070E,
      PICMS1006 MV to 0 % after the ICV -> CV transfer with 52G1 closed) never came and the HP bypass stayed 69 % open at 90 MW. The
      turbine model writes its valve positions there (three transmitters of one valve read the same) */
+  U.diX = anDiXOf();
   U.vpos = anVposOf();
   {
     const st2 = stOf('ABC-053');
@@ -5673,6 +5697,10 @@ function anUnitStep0(dt) {
     if (eb && U.lpbSp && U.lpbSp.n != null)
       w(U.di.lpbZso, anAv('TICHR1012', Math.max(0, Math.min(100, +U.lpbSp.S.rt.v[U.lpbSp.n] || 0))) >= eb.open ? 1 : 0);
     for (const [l, k, sp] of U.di.hd || []) if (isFinite(H[k])) w(l, H[k] >= sp ? 1 : 0);
+    if (U.diX === undefined) U.diX = anDiXOf(); /* a save point from before Phase 6 (2026-11-26) */
+    const X = U.diX || {};
+    for (const [l, k, sp] of X.hd || []) if (isFinite(H[k])) w(l, H[k] >= sp ? 1 : 0);
+    if (isFinite(U.cdP)) for (const l of X.cdps || []) w(l, U.cdP - 1.033 >= -0.86 ? 1 : 0);
   }
   U.turb = tb.st !== 'off';
   const onGrid = tb.st === 'sync' || tb.st === 'load';
