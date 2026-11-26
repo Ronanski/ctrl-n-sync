@@ -131,6 +131,30 @@
   "T-0714": [
    "industrial-water|tag=T-0714A",
    "R0 writes one tag for the tank; the page draws tanks A and B"
+  ],
+  "DSH-FW1150": [
+   "reheat-steam|id=dsh",
+   "the reheater spray symbol of TICHR1002 / TCV-FW1150 (spray TCV-FW1150 = reheater inlet desuperheater, R0 item)"
+  ],
+  "DSH-CD1126": [
+   "aux-steam|id=ds2",
+   "the gland steam spray symbol of TICAS1017 / TCV-CD1126"
+  ],
+  "STR-FW1005": [
+   "drum-steam|id=s11a",
+   "strainer symbol at the inlet of spray 1 valve 1, drawn with no label (no room)"
+  ],
+  "STR-FW1006": [
+   "drum-steam|id=s11b",
+   "strainer symbol at the inlet of spray 1 valve 2, drawn with no label (no room)"
+  ],
+  "STR-FW1003": [
+   "drum-steam|id=s21a",
+   "strainer symbol at the inlet of spray 2 valve 1, drawn with no label (no room)"
+  ],
+  "STR-FW1004": [
+   "drum-steam|id=s21b",
+   "strainer symbol at the inlet of spray 2 valve 2, drawn with no label (no room)"
   ]
  },
  "approved": {}

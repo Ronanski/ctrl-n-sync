@@ -13,3 +13,8 @@ Map (53): mga simbolong nakaguhit na pero hindi nakasulat ang tag (hal. PAF = F-
 Sinubok: phase9-gate PASS (row 9 BAHAGI, nagpi-print ng natitira bawat page); sinubok din na pumapalya ito kapag mali ang map (5 FAIL noong may map row ng tag na nasa page na). Walang binago sa screen.
 
 Susunod: lagyan ng simbolo ang 158, page kada page, may larawan bago ipakita sa user.
+
+## Dagdag (4:10 AM PHT)
+- Drum and superheaters page: 4 strainer sa spray water line (STR-FW1003 / 1004 / 1005 / 1006), bago ng bawat spray valve, ayon sa R0 equipment list ("STR ... TCV INLET"). Walang label sa screen dahil masikip ang sulok; nakakabit sa listahan sa `docs/phase9/equipment.json`.
+- Desuperheater ng reheat (DSH-FW1150) at ng auxiliary steam (DSH-CD1126): nakaguhit na, idinagdag sa map.
+- Bilang: 197 / 349 may simbolo, 152 natitira.
