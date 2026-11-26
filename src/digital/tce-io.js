@@ -630,11 +630,16 @@
     'TCA906-24',
     'TCA906-25'
   ].forEach(id => SY(id, 0));
-  ['TCA906-26', 'TCA906-27', 'TCA906-28'].forEach(id =>
-    N(
-      id,
-      'electrical overspeed (EOS) relay operated (A / B / C): the EOS channels are in the IBD TA-15 netlist; the relay contact net is not named yet'
-    )
+  /* Phase 6 TCS (lane 1, 2026-11-26): EOS OPERATED (A) (B) (C) = the electrical overspeed comparator of each speed channel on IBD TA-15
+     (OVERSPEED TRIP, page 35): SE-STn001-1 (1A) net 1, -2 (1B) net 0, -3 (1C) net 2, ON >= 111.75 %, OFF <= 111.25 %, whose 2 out of 3 trips
+     the turbine (TA-9). The TCS book 2-2 p.94 Fig. 5.9 gives the EOS as "EOS(A) / (B) / (C) > 112 %" on the three pickups. INFERRED: the relay
+     contact of the card is that channel comparator (the card list names no other net, lane 0 phase6-tcs-dash-inputs-docs-2026-11-26.md) */
+  [
+    ['TCA906-26', 1, 'A', 1],
+    ['TCA906-27', 0, 'B', 2],
+    ['TCA906-28', 2, 'C', 3]
+  ].forEach(([id, n, ch, k]) =>
+    E.push([id, 'ibd', 'EOS OPERATED(' + ch + '): IBD TA-15 overspeed comparator of SE-STn001-' + k + ' (>= 111.75 %), net ' + n, ibd('TA-15', n)])
   );
   ['TCA906-29', 'TCA906-30', 'TCA906-31'].forEach(id =>
     M(id, 'PLU operated (A / B / C): the power load unbalance of the model (tb.plu), one per channel', U =>
