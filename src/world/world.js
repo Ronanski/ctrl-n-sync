@@ -297,6 +297,23 @@
   W.showText = (s, t) => {
     const I = s && s._inst;
     /* live test #56: machine A (k 0) of a drawing for several machines keeps its own address of the list too */
+    /* Phase 6 DITL (lane 1, 2026-11-26, B5 copy clash): the base sheet of a unit set from data (src/world/inst, DITL-21D row 22
+       "O.021D/297 O.0615/617" LOS-L1060A ~ D, S4 O.137C ~ F OPC-ANN-G1 ~ G4) is unit A: it keeps the first address of the list, its own.
+       It read the whole list, so the base drove the outputs of B ~ D too, beside their own copies */
+    if ((!I || (!I.k && !I.data)) && s && t && W.instOf) {
+      if (s._dcopyOf !== W.instOf) {
+        s._dcopyOf = W.instOf;
+        s._dcopy = (W.instOf.get(s) || []).find(c => c !== s && c._inst && c._inst.data && c._inst.amap) || null;
+      }
+      const d = s._dcopy;
+      if (d) {
+        const l0 = addrList0(t);
+        if (l0.length > 1 && d._inst.amap[l0[0]] && l0.includes(d._inst.amap[l0[0]])) {
+          let first = true;
+          return t.replace(LRXG, () => (first ? ((first = false), l0[0]) : '')).replace(/\s{2,}/g, ' ');
+        }
+      }
+    }
     if (!I || !t) return t;
     /* beta.520: a text of the drawing that a bind row of a lane gives an I/O point in this copy ("MCV OPEN COMMAND" of DITL-38) */
     if (I.tadd && I.tadd.has(String(t).trim())) t = t + ' ' + I.tadd.get(String(t).trim());
