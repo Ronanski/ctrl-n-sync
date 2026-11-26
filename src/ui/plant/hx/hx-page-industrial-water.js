@@ -73,6 +73,12 @@
       w: 1760,
       h: 1000,
       items: [
+        /* strainers on the pump suctions (PD-025 C-4/5, D-4/5, YUA P&ID read 2026-11-27): V-IW0007 / 8 -> STR-IW0001 / 2 ->
+           EJ-IW000x -> P-0715A / B; their dp is the Strainer row of each pump */
+        ...['A', 'B'].map((n, i) => at(E('strainer', '', 'STR-IW000' + (i + 1), [], { flow: 'm:P-0715' + n }), 578, PY[i], { id: 'si' + i, sc: 0.8, lab: 't' })),
+        /* T-0114 potable water tank of the turbine building, 5 m3 (PD-026 C/D-6): RO water tank (PD-045 G-2) PW-0-001 ->
+           SV-PW0114 -> T-0114 -> V-PW0001 -> PW-0-004 to the rooms and eye washers. No signal in the I/O list: no value. */
+        at(E('tank', 'Potable water tank', 'T-0114', [], { id: 'pw', liquid: 'none', w: 50, h: 60 }), 1250, 190, { id: 'pw', lab: 't' }),
         /* tanks */
         at(
           E('tank', 'Industrial and fire water tank A', 'T-0714A', [V('Level', 'LT-IW0714', 'm', 2)], {
@@ -155,6 +161,8 @@
         at(L('sea-water', 'Sea water'), 1600, 100, { id: 'swl' })
       ],
       pipes: [
+        { med: 'water', w: 3, pts: [[1118, 210], 'pw.l'], arrow: false },
+        { med: 'water', w: 3, pts: ['pw.r', [1400, 210]], to: 'rooms and eye washers' },
         /* tank A to the pump suction header, the pumps into the common header, the header to its users */
         { med: 'water', w: W_M, pts: ['ta.r', [SX, TAY + 66]], flow: IW, arrow: false },
         {
@@ -168,7 +176,8 @@
           arrow: false
         },
         ...['A', 'B'].flatMap((n, i) => [
-          { med: 'water', w: W_M, pts: [[SX, PY[i]], 'p' + i + '.s'], flow: 'm:P-0715' + n, arrow: false },
+          { med: 'water', w: W_M, pts: [[SX, PY[i]], 'si' + i + '.l'], flow: 'm:P-0715' + n, arrow: false },
+          { med: 'water', w: W_M, pts: ['si' + i + '.r', 'p' + i + '.s'], flow: 'm:P-0715' + n, arrow: false },
           {
             med: 'water',
             w: W_M,
@@ -276,6 +285,7 @@
         { x: HX_, y: 240, side: 'r', label: 'Header pressure', key: 'PT-IW0715', unit: K, dp: 2, tag: 'PT-IW0715' }
       ],
       texts: [
+        { x: 1110, y: 214, s: 'from the RO water tank', anchor: 'end' },
         { x: WX, y: WY + 120, s: 'In: turbine and boiler house drains' },
         { x: 760, y: 760, s: 'Fire pumps: running states only (fire fighting system K1AU3-M0-159)' },
         { x: 1180, y: 330, s: 'Turbine building, boiler, ash, limestone, coal yard, sea water pumps' }

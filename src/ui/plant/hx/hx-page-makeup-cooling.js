@@ -138,7 +138,12 @@
         /* hand valves of the plant model (temporary page 02; K1AU3-PD-021 for the V-CW valves) */
         at(HX.H('V-MU0001'), 195, 380, { id: 'hm1' }),
         at(HX.H('V-MU0002'), 405, 380, { id: 'hm2' }),
-        ...['V-MU0003', 'V-MU0004', 'V-MU0005'].map((t, i) => at(HX.H(t, t, { w: 80 }), 542, MY[i], { id: 'hs' + i })),
+        /* suction of each make-up pump (PD-024 D-7 / E-7 / F-7, YUA P&ID read 2026-11-27): V-MU0003 / 4 / 5 -> STR-MU0001 /
+           2 / 3 -> EJ-MU000x -> P-0709x; the hand valves as valve symbols so the strainer has its place on the line */
+        ...['V-MU0003', 'V-MU0004', 'V-MU0005'].map((t, i) => at(HX.HV(t), 524, MY[i], { id: 'hs' + i, lab: 'b' })),
+        ...N.map((n, i) =>
+          at(E('strainer', '', '', [], { flow: 'm:MWP-' + n }), 558, MY[i], { id: 'sm' + i, sc: 0.8 }) /* no label: the pump's Y button sits above; named in docs/phase9/equipment.json map */
+        ),
         ...['V-MU0007', 'V-MU0009', 'V-MU0011'].map((t, i) =>
           at(HX.H(t, t, { w: 78 }), 818, MY[i] - 58 /* beta.373: outlet line up 13, off the pump names */, { id: 'hd' + i })
         ),
@@ -157,7 +162,9 @@
         { med: 'water', w: W_M, pts: ['ta.r', [195, 266], [195, 420] /* UI check 2026-11-24 C1: outlet low at the side, the level under the tank stays clear */, [MSX, 420], [MSX, MY[0]]], flow: MU, arrow: false },
         { med: 'water', w: W_M, pts: ['tb.r', [405, 266], [405, 420]], flow: MU, arrow: false },
         ...N.flatMap((n, i) => [
-          { med: 'water', w: W_M, pts: [[MSX, MY[i]], 'm' + i + '.s'], flow: 'm:MWP-' + n, arrow: false },
+          { med: 'water', w: W_M, pts: [[MSX, MY[i]], 'hs' + i + '.l'], flow: 'm:MWP-' + n, arrow: false },
+          { med: 'water', w: W_M, pts: ['hs' + i + '.r', 'sm' + i + '.l'], flow: 'm:MWP-' + n + '&h:fv-V-MU000' + (i + 3), arrow: false },
+          { med: 'water', w: W_M, pts: ['sm' + i + '.r', 'm' + i + '.s'], flow: 'm:MWP-' + n + '&h:fv-V-MU000' + (i + 3), arrow: false },
           {
             med: 'water',
             w: W_M,

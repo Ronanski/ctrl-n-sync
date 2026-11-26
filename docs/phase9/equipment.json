@@ -231,6 +231,18 @@
   "T-1938": [
    "turbine-oil|id=tac",
    "trip oil accumulator T-n938 on the trip oil end (Hitachi 310PB64-455 key plan, YUA read 2026-11-27); drawn with no label"
+  ],
+  "STR-MU0001": [
+   "makeup-cooling|id=sm0",
+   "suction strainer of make-up pump P-0709A (PD-024 D-7, YUA P&ID read 2026-11-27); drawn with no label after V-MU0003"
+  ],
+  "STR-MU0002": [
+   "makeup-cooling|id=sm1",
+   "suction strainer of make-up pump P-0709B (PD-024 E-7, YUA P&ID read 2026-11-27); drawn with no label after V-MU0004"
+  ],
+  "STR-MU0003": [
+   "makeup-cooling|id=sm2",
+   "suction strainer of make-up pump P-0709C (PD-024 F-7, YUA P&ID read 2026-11-27); drawn with no label after V-MU0005"
   ]
  },
  "approved": {},
