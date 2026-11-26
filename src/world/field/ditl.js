@@ -194,3 +194,63 @@ FIELD.add(lane, [
   { stn: 4, an: 1, tag: 'LS230-SP-HIGH', sheet: 'DITL-LS230', row: 6, v: () => 2.5, rel: 'set point 2.5 kg/cm2 (INT. REGISTER)', src: 'limestone_logic.xls sheet 230 row 6' },
   { stn: 4, an: 1, tag: 'LS230-SP-LOW', sheet: 'DITL-LS230', row: 9, v: () => 0.5, rel: 'set point 0.5 kg/cm2 (INT. REGISTER)', src: 'limestone_logic.xls sheet 230 row 9' }
 ]);
+
+/* 7. bottom ash step register SI0130 (memory list 103 "BOTTOM ASH SYS. STEP"; YUA B8). Each step sheet writes it: "IF M.1311 ON THEN 0
+   --> SI0130" (BA04), "IF M.1313 ON THEN 2 --> SI0130" (BA05) ... (hd600 pdf p.4 / p.5 / p.11). The register keeps its last value. The
+   rows STEP n of BA04 ~ BA18 compare it with n: memory list 103 names their outputs M.1360 ~ M.136E "B/A SYS. STEP=n", so the compare
+   is "=" (the PDF text prints the sign as "]", the reader read ">="; YUA: use the memory list name). The register is read from the
+   step sheets' own text, nothing is typed here but the row numbers */
+{
+  let map = null,
+    reg = 0,
+    tk = -1;
+  const build = () => {
+    map = [];
+    const sh = (typeof S !== 'undefined' && S.sheets) || [];
+    for (const s of sh) {
+      if (!/\)DITL-BA\d+$/.test(s.name)) continue;
+      /* the step of a sheet: "THEN n --> SI0130" where the text is read; the sheets that have only the IF (or only the THEN) text follow the
+         numbering the read ones show: BA04 = 0, BA05 = 2, BA(k) = k - 3 for BA06 ~ BA18 (BA08 THEN 5, BA10 THEN 7, BA13 THEN 10, BA14 11,
+         BA15 12, BA17 14) */
+      const tx = s.tx || [],
+        k = +/BA(\d+)$/.exec(s.name)[1],
+        th = tx.find(t => /THEN\s+(\d+)\s*-->\s*SI0130/.test(t.t)),
+        n = th ? +/THEN\s+(\d+)/.exec(th.t)[1] : k === 4 ? 0 : k === 5 ? 2 : k >= 6 && k <= 18 ? k - 3 : NaN,
+        ift = tx.find(q => /^IF\s+M\.[0-9A-F]{4}\s+ON/.test(q.t)),
+        near = t => tx.filter(q => /^M\.[0-9A-F]{4}$/.test(String(q.t).trim())).sort((a, b) => Math.hypot(a.x - t.x, a.y - t.y) - Math.hypot(b.x - t.x, b.y - t.y))[0],
+        /* BA11 has no IF / THEN text in the file: "IF M.1333 ON THEN 8 --> SI0130" is read from the PDF (YUA B8, hd600 pdf p.11) */
+        m = ift ? /M\.[0-9A-F]{4}/.exec(ift.t)[0] : th && near(th) ? String(near(th).t).trim() : k === 11 ? 'M.1333' : null;
+      if (!isFinite(n) || !m) continue;
+      /* the output row of that M bit: the address written at the right end of an output row, at its height (BA05 M.1313 = row 12) */
+      const at = tx.find(q => String(q.t).trim() === m),
+        r = at && ((s.nl && s.nl.outs) || []).map(q => q.row).find(i => s.rows[i] && Math.abs(s.rows[i].y - at.y) < 6);
+      if (r != null) map.push({ s: s.name, r, n, m });
+    }
+  };
+  const step = U => {
+    const W = typeof WORLD !== 'undefined' ? WORLD : null;
+    if (!W || !W._o) return NaN;
+    if (!map || !map.length) build();
+    if (tk !== U.t) {
+      tk = U.t;
+      for (const q of map) {
+        const o = W._o[q.s];
+        if (o && (o.has ? o.has(q.r) : o.includes(q.r))) reg = q.n;
+      }
+    }
+    return reg;
+  };
+  FIELD.add(
+    lane,
+    [[4, 9, 0], [5, 15, 2], [6, 8, 3], [7, 8, 4], [8, 7, 5], [9, 14, 6], [10, 8, 7], [11, 23, 8], [12, 4, 9], [13, 5, 10], [14, 6, 11], [15, 6, 12],
+      [16, 6, 13], [17, 6, 14], [18, 6, 15]].map(([b, row, n]) => ({
+      stn: 3, di: 1, tag: 'SI0130', sheet: 'DITL-BA' + String(b).padStart(2, '0'), row,
+      v: U => {
+        const x = step(U);
+        return isFinite(x) ? (x === n ? 1 : 0) : NaN;
+      },
+      rel: 'bottom ash step register SI0130 = ' + n, src: 'DITL-BA' + String(b).padStart(2, '0') + ' row ' + row + ' STEP ' + n + '; memory list 103 M.13' + (0x60 + n).toString(16).toUpperCase() + ' "B/A SYS. STEP=' + n + '"'
+    }))
+  );
+  FIELD.stepMap = () => (map ? map.map(q => q.s + '@' + q.r + ' ' + q.m + ' -> ' + q.n) : []);
+}

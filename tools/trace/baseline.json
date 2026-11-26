@@ -17,7 +17,7 @@
   "io.copyClash": 0,
   "mem.noSource": 10,
   "breaks.B1_abcInputNoSource": 46,
-  "breaks.B1_ditlInputNoSource": 33,
+  "breaks.B1_ditlInputNoSource": 18,
   "breaks.B2_ioInputNowhere": 6,
   "breaks.B3_faceplateNoController": 16,
   "breaks.B4_alarmNoSetPoint": 9

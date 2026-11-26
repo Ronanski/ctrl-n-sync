@@ -1,7 +1,7 @@
 # Phase 6 DITL: rows bound from the PC drawing read (lane 1, MARIA, 2026-11-26)
 
 Source: YUA's read of the drawings, the I/O list and the memory list (groups A ~ D of the DITL sources request). DITL inputs with no
-source at 150 MW: **83 -> 33** (copy clash count 1 -> 0). No trip at 150 MW (trace run.trip 0).
+source at 150 MW: **83 -> 18** (copy clash count 1 -> 0). No trip at 150 MW (trace run.trip 0).
 
 ## What the operator sees
 
@@ -24,10 +24,8 @@ source at 150 MW: **83 -> 33** (copy clash count 1 -> 0). No trip at 150 MW (tra
 - `src/world/world.js` FROM ABC linker: a row "(FROM STATION WIRING)" is common to every machine copy.
 - `tests/lanes/ditl/yua-field.cjs` (41 checks).
 
-## Left (33)
+## Left (18)
 
-- BA04 ~ BA18 STEP>=n (15): the step register SI0130 is not computed in the app yet (each step sheet writes "n --> SI0130"). Needs
-  the register in the engine.
 - DITL-43 rows 5 / 10 / 12 / 13 (4): APH running / not trip / speed contacts. The APH inverter reads row 5 in the first scan; binding
   needs the start order checked so the APH does not trip at load (field/boiler.js note).
 - DITL-61A row 27 (A and #B, 2): AUTO STARTING M.1183 / M.1193 is an internal gate of the other copy, not an output row.
@@ -41,3 +39,11 @@ source at 150 MW: **83 -> 33** (copy clash count 1 -> 0). No trip at 150 MW (tra
 ABC-050 I.041E / I.041F TCS-DI1051-1 / -2 (FROM TCS, OR B95 -> M.0705) now take the TCS outputs TCE960-27 / 28 MSV/CV(A) / (B)
 SEQUENTIAL FULL CLOSE TEST EXECUTING (src/data/tcs-dcs.json, the valve test of TCE220 / TCE224). 0 in service; an MSV(A) test sets
 I.041E only (`tests/tce/msv-test-dcs.cjs`). Code: `src/analog/engine/unit.js` U.di.msvA / msvB.
+
+## Bottom ash step register SI0130
+
+The STEP n rows of DITL-BA04 ~ BA18 (15) read the step register SI0130, kept from scan to scan. Each step sheet writes it when its step
+bit comes on ("IF M.1313 ON THEN 2 --> SI0130", read from the sheet text; BA11 M.1333 -> 8 from the PDF, YUA B8). The compare is "=",
+the memory list name of M.1360 ~ M.136E "B/A SYS. STEP=n". 14 of the 15 writers are found; DITL-BA18 (step 15) has no IF / THEN text
+in the file, so the register never reaches 15 (a PC read of hd600 pdf p.18 is needed). At rest the register is 0 (STEP 0 = 1).
+Not tested: a full ash transmitter cycle through all steps.

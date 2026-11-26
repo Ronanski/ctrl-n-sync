@@ -45,7 +45,12 @@ const { load } = require(path.join(__dirname, '../../../tools/trace/world.cjs'))
   }
   ok(av('DITL-LS230', 6) === 2.5 && av('DITL-LS230', 9) === 0.5, 'DITL-LS230 rows 6 / 9 set points 2.5 / 0.5 kg/cm2');
   ok(isFinite(av('DITL-80K', 16)) && isFinite(av('DITL-80K', 17)), 'DITL-80K rows 16 / 17 PT-SB1040 / 1042 have the model value');
-  /* the instructor trips screw cooler B: only machine B's row follows */
+  /* the bottom ash step register SI0130 (section 7): 14 step writers read from the step sheets, at rest the register is 0 */
+  const sm = JSON.parse(E.js('JSON.stringify(FIELD.stepMap())'));
+  ok(sm.length === 14, 'SI0130 step writers found: ' + sm.length + ' (BA18 step 15 has no readable text)');
+  const st = P.filter(p => p.tag === 'SI0130');
+  ok(st.length === 15 && st.filter(p => p.on).length === 1 && st.find(p => p.on).sheet.endsWith('BA04'), 'STEP rows: 15 bound, only STEP 0 (BA04) = 1 at rest');
+    /* the instructor trips screw cooler B: only machine B's row follows */
   E.AN.fault('fs.L1060-B.trip', true);
   E.step(2);
   P = sw();
