@@ -14,7 +14,8 @@ const root = path.resolve(__dirname, '..', '..', '..');
 /* 261 -> 265 (slice C 2026-11-26: VALVE CONTROL MT1 inside from the backup: TCE210 TCE211 TCE212 TCE214; TURNING GEAR TCE350 -> 266; slice D CV WARMING SET TCE155, CRT OPE INC/DEC TCE194 TCE205, L-RATE TCE185 -> 270) */
 /* 270 -> 272 (slice F 2026-11-26: CHANGE OVER TCE172, HEAT SOAK CONTROL TCE207, two backup files each) */
 /* 272 -> 275 (Phase 5 2026-11-26: DUAL INPUT DIAGNOSTICS TCE101, VALVE TEST TCE220 TCE222 from the backup, lane 0 read) */
-const FLOOR = +(process.env.TCE_FLOOR || 275);
+/* 275 -> 292 (Phase 5 3 PM read: 17 TCS macro types from the backup, phase5-tcs-macros-17 + phase5-ml-dv-blocks 2026-11-26) */
+const FLOOR = +(process.env.TCE_FLOOR || 292);
 const dir = root + '/src/digital/tce';
 const src = fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8');
 const win = {};
