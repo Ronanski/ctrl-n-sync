@@ -38,7 +38,7 @@ Owns:
 - `src/digital/parts/**`;
 - a new field file `src/world/field/ditl.js`, for the field values those rows need (the shape is in `src/world/field/README.md`);
 - the machine copy address mapping in `src/world/world.js` (only that section, for the 19 copy clashes);
-- `tests/ditl/**`;
+- `tests/lanes/ditl/**`;
 - `docs/versions/updates/phase6-ditl-*.md`.
 
 A value already made by `src/world/plantsw.js` or another field file stays there (one source per tag): ask the phase thread.

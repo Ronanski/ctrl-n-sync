@@ -54,7 +54,24 @@ const AN_AUDIT_FIX = {
     { id: 'ABC-009A-2', op: 'link', blk: 109, k: 'AND', n: 175, src: 67 },
     { id: 'ABC-009A-2', op: 'link', blk: 109, k: 'AND', n: 174, src: 49 },
     /* ABC-009A-3: "PIC-BASC.MAN  BOTTOM ASH SCREW COOLER CONTROL IN MANUAL" */
-    { id: 'ABC-009A-3', op: 'lab', n: 167, was: '', t: 'PIC-BASC.MAN' }
+    { id: 'ABC-009A-3', op: 'lab', n: 167, was: '', t: 'PIC-BASC.MAN' },
+    /* ABC-009A-4 (Phase 6 DCS audit 2026-11-26, QA trace B1 "SELECT TO b"): the 4-leg switch B32 (out SI0199) selects by "(1) IF A-ASH
+       COOLER AUTO ( M.021A ) SELECT to a" ... "(4) IF D-ASH COOLER AUTO ( M.021D )". Memory list 101: M.021A "A-ASH SCREW COOLER CTRL
+       AUTO ONLY (FIRST AUTO)", M.021B ~ D "B ~ D-ASH SCREW COOLER CTRL AUTO ONLY". No sheet of the app makes them, so the conditions were
+       user settings (0): DERIVED from the names, the condition is the speed control SICL1060A ~ D in AUTO (not .MAN), the first in
+       the order A ~ D wins (the 4-leg switch takes the first condition that is on) */
+    {
+      id: 'ABC-009A-4',
+      op: 'q4sig',
+      blk: 32,
+      k: 'SW',
+      sig: [
+        { tag: 'M.021A', auto: 'SICL1060A' },
+        { tag: 'M.021B', auto: 'SICL1060B' },
+        { tag: 'M.021C', auto: 'SICL1060C' },
+        { tag: 'M.021D', auto: 'SICL1060D' }
+      ]
+    }
   ],
   'ABC-009B': [
     /* ABC-009B-1: M.331D (FROM DITL 21D-59) is its own wire into OR M.0320; the AND(B.0646, B.066E) output is another input */
