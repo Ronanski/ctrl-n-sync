@@ -61,9 +61,12 @@ The 150 MW start state is made again by `tools/steady150/make.cjs`.
   (ASH SCREW COOLER CONTROL FORCE AUTO & REMOTE, TON 2 s of NOT M.0212); M.0212 = ALL ASH SCREW COOLER SPEED CONTROL IN MANUAL = 1,
   because the four cooler stations SICL1060A ~ D are MANUAL in the 150 MW start state. The drawing is right: the fix is the start
   state (the coolers in AUTO, as `tools/steady150/make.cjs` already asks).
-- **LICBR1001A:** traced on ABC-010: the selector after it (AMT 23) is on its B leg because M.0224 (DRUM LEVEL SINGLE ELEMENT CONTROL
-  BU-CMD) = NOT M.0222 (BOILER FEED WATER CONTROL BU-CMD, FF, 0 at 150 MW) = 1. To check against the ABC-010 drawing on the PC
-  whether M.0224 has another input (the read here gives a single-element back-up at full load, which the procedure does not say).
+- **LICBR1001A: correct, finding type b** (YUA PC read 2026-11-26, ABC-010 sheet 23 as-built 2017/10/03, zone D-E/6-7,
+  `/mnt/project-files/abc010-m0224-inputs-2026-11-26.md`): M.0224 = NOT M.0222 ("1 ELEMENT SELECTED" S/R), no other gate, and it is
+  the BU-CMD of the LICBR1001A output switch (B = RB-MV from FICFW1007.MV). At 150 MW the 3-element control runs (M.0222 = 0), so
+  the 1-element controller LICBR1001A follows FICFW1007.MV by its BU-CMD while its mode stays A (snapshot 03.png: A). Same as the
+  heater drains: the drawing holds the output, the mode is AUTO. So 6 of the 7 are right; only FICFA1055A (and PIC-BASC through the
+  coolers) need the new start state.
 
 ## Found, not changed
 
