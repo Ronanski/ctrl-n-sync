@@ -53,5 +53,9 @@
 {"tag": "FS-CW1060-B1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060B COOLING WATER FLOW SWITCH(CASING)", "stn": 103, "addr": "I.0539", "src": "Alarm List _20160912 sheet FS, PD-072"},
 {"tag": "FS-CW1060-B2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060B COOLING WATER FLOW SWITCH(SCREW)", "stn": 103, "addr": "I.053A", "src": "Alarm List _20160912 sheet FS, PD-072"},
 {"tag": "FS-CW1060-C1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060C COOLING WATER FLOW SWITCH(CASING)", "stn": 103, "addr": "I.0649", "src": "Alarm List _20160912 sheet FS, PD-072"},
-{"tag": "FS-CW1060-C2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060C COOLING WATER FLOW SWITCH(SCREW)", "stn": 103, "addr": "I.064A", "src": "Alarm List _20160912 sheet FS, PD-072"}
+{"tag": "FS-CW1060-C2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060C COOLING WATER FLOW SWITCH(SCREW)", "stn": 103, "addr": "I.064A", "src": "Alarm List _20160912 sheet FS, PD-072"},
+{"tag": "FS-CW1060-A1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060A COOLING WATER FLOW SWITCH(CASING)", "stn": 103, "addr": "I.0259", "src": "Alarm List _20160912 sheet FS, PD-072"},
+{"tag": "FS-CW1060-A2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060A COOLING WATER FLOW SWITCH(SCREW)", "stn": 103, "addr": "I.025A", "src": "Alarm List _20160912 sheet FS, PD-072"},
+{"tag": "FS-CW1060-D1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060D COOLING WATER FLOW SWITCH(CASING)", "stn": 103, "addr": "I.0689", "src": "Alarm List _20160912 sheet FS, PD-072"},
+{"tag": "FS-CW1060-D2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BOTTOM ASH SCREW CONVEYOR L-1060D COOLING WATER FLOW SWITCH(SCREW)", "stn": 103, "addr": "I.068A", "src": "Alarm List _20160912 sheet FS, PD-072"}
 ]

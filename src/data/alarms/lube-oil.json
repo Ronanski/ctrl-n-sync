@@ -9,5 +9,13 @@
 {"tag": "LSL-LO1753", "lv": "LOW", "p": 3, "on": 1, "d": "#1 PRIMARY AIR FAN LUBE OIL LEVEL SWITCH", "stn": 103, "addr": "I.0698", "src": "Alarm List _20160912 sheet LS, PD-052"},
 {"tag": "LSLL-LO1753", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 PRIMARY AIR FAN LUBE OIL LEVEL SWITCH", "stn": 103, "addr": "I.0699", "src": "Alarm List _20160912 sheet LS, PD-052"},
 {"tag": "TS-LO1756-1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 INDUCED DRAFT FAN HYDRAULIC COUPLING WORKING OIL TEMPERATURE SWITCH HIGH", "stn": 103, "addr": "I.0693", "src": "Alarm List _20160912 sheet TS, PD-051", "set": "H 100.0"},
-{"tag": "TS-LO1753", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 PRIMARY AIR FAN LUBE OIL SYSTEM TEMPERATURE SWITCH", "stn": 103, "addr": "I.069A", "src": "Alarm List _20160912 sheet TS, PD-052", "set": "H 52.0"}
+{"tag": "TS-LO1753", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 PRIMARY AIR FAN LUBE OIL SYSTEM TEMPERATURE SWITCH", "stn": 103, "addr": "I.069A", "src": "Alarm List _20160912 sheet TS, PD-052", "set": "H 52.0"},
+{"tag": "PS-LO1115-A1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BFP(A) LUBE OIL PRESSURE SWITCH-1 (LOW ALARM/STANBY PUMP START)", "stn": 103, "addr": "I.0090", "src": "Alarm List _20160912 sheet PS, PD-017", "set": "L 1.5"},
+{"tag": "PS-LO1115-A2", "lv": "ALARM", "p": 4, "on": 0, "d": "#1 BFP(A) LUBE OIL PRESSURE SWITCH-2 (NORMAL/START PERMISIVE FOR BFP)", "stn": 103, "addr": "I.0091", "src": "Alarm List _20160912 sheet PS, PD-017"},
+{"tag": "PS-LO1115-A3", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BFP(A) LUBE OIL PRESSURE SWITCH-3 (LOW-LOW/MAIN EQUIPMENT TRIP)", "stn": 103, "addr": "I.0092", "src": "Alarm List _20160912 sheet PS, PD-017", "set": "LL 1"},
+{"tag": "PSLL-LO1756", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 INDUCED DRAFT FAN LUBE OIL PRESSURE SWITCH LOW-LOW AT DOWNSTREAM OF LUBE OIL FILTER", "stn": 103, "addr": "I.0691", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "LL 0.6"},
+{"tag": "PSL-LO1753", "lv": "LOW", "p": 3, "on": 1, "d": "#1 PRIMARY AIR FAN LUBE OIL SYSTEM PRESSURE LOW SWITCH", "stn": 103, "addr": "I.0695", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "L 1.3"},
+{"tag": "PSLL-LO1753", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 PRIMARY AIR FAN LUBE OIL SYSTEM PRESSURE LOW LOW SWITCH", "stn": 103, "addr": "I.0696", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "LL 0.4"},
+{"tag": "LS-LO1115-A", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 BFP(A) LUBE OIL LEVEL SWITCH (LOW ALARM)", "stn": 103, "addr": "I.0093", "src": "Alarm List _20160912 sheet LS, PD-017"},
+{"tag": "TS-LO1756-2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 INDUCED DRAFT FAN HYDRAULIC COUPLING WORKING OIL TEMPERATURE SWITCH HIGH-HIGH", "stn": 103, "addr": "I.0694", "src": "Alarm List _20160912 sheet TS, PD-051", "set": "HH 110.0"}
 ]

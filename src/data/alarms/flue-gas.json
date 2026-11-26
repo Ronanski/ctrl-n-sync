@@ -90,5 +90,18 @@
 {"tag": "AT-FG1057-4", "lv": "HIGH", "p": 3, "sp": 7.0, "d": "#1 STACK FLUE GAS O2 ANALYZER", "stn": 101, "addr": "AI0469", "src": "Alarm List _20160912 sheet AT, PD-051"},
 {"tag": "AT-FG1057-4", "lv": "LOW", "p": 3, "sp": 3.5, "d": "#1 STACK FLUE GAS O2 ANALYZER", "stn": 101, "addr": "AI0469", "src": "Alarm List _20160912 sheet AT, PD-051"},
 {"tag": "AT-FG1057-4", "lv": "LOW-LOW", "p": 2, "sp": 3.0, "d": "#1 STACK FLUE GAS O2 ANALYZER", "stn": 101, "addr": "AI0469", "src": "Alarm List _20160912 sheet AT, PD-051"},
-{"tag": "AT-FG1131", "lv": "HIGH", "p": 3, "sp": 11.4, "d": "#1 AIR PRE-HEATER GAS OUTLET FLUE GAS O2 (C)", "stn": 101, "addr": "AI0455", "src": "Alarm List _20160912 sheet AT, PD-051"}
+{"tag": "AT-FG1131", "lv": "HIGH", "p": 3, "sp": 11.4, "d": "#1 AIR PRE-HEATER GAS OUTLET FLUE GAS O2 (C)", "stn": 101, "addr": "AI0455", "src": "Alarm List _20160912 sheet AT, PD-051"},
+{"tag": "PSHH-FG1085", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH HIGH-HIGH (A)", "stn": 104, "addr": "I.0521", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "H 267 / mmH2O"},
+{"tag": "PSHH-FG1085-NC", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH NOT HIGH-HIGH (A)", "stn": 104, "addr": "I.0211", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "H 267 / mmH2O"},
+{"tag": "PSHH-FG1086-NC", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH NOT HIGH-HIGH (B)", "stn": 104, "addr": "I.0214", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "H 267 / mmH2O"},
+{"tag": "PSHH-FG1087-NC", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH NOT HIGH-HIGH (C)", "stn": 104, "addr": "I.0217", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "H 267 / mmH2O"},
+{"tag": "PSHHH-FG1085", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH HIGH-HIGH-HIGH (A)", "stn": 104, "addr": "I.0520", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "HH 381.0"},
+{"tag": "PSHHH-FG1085-NC", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH NOT HIGH-HIGH-HIGH (A)", "stn": 104, "addr": "I.0210", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "HH 381.0"},
+{"tag": "PSHHH-FG1086-NC", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH NOT HIGH-HIGH-HIGH (B)", "stn": 104, "addr": "I.0213", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "HH 381.0"},
+{"tag": "PSHHH-FG1087", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH HIGH-HIGH-HIGH (C)", "stn": 104, "addr": "I.0526", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "HH 381.0"},
+{"tag": "PSHHH-FG1087-NC", "lv": "HIGH-HIGH", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH NOT HIGH-HIGH-HIGH (C)", "stn": 104, "addr": "I.0216", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "HH 381.0"},
+{"tag": "PSLL-FG1085", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH LOW-LOW (A)", "stn": 104, "addr": "I.0522", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "LL -267.0"},
+{"tag": "PSLL-FG1085-NC", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH NOT LOW-LOW (A)", "stn": 104, "addr": "I.0212", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "LL -267.0"},
+{"tag": "PSLL-FG1086-NC", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH NOT LOW-LOW (B)", "stn": 104, "addr": "I.0215", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "LL -267.0"},
+{"tag": "PSLL-FG1087-NC", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 FURNACE PRESSURE SWITCH NOT LOW-LOW (C)", "stn": 104, "addr": "I.0218", "src": "Alarm List _20160912 sheet PS, PD-051", "set": "LL -267.0"}
 ]

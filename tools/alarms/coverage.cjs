@@ -30,6 +30,9 @@ const out = W.map(x => {
   const o = { tag: x.tag, sheet: x.sheet, pd: String(x.pid || '').replace(/\s+/g, '') };
   if (rows[x.tag]) return { ...o, kind: 'row', in: [...rows[x.tag]].sort().join(', ') };
   if (x.st === 'A_ALARM_BLOCK') return { ...o, kind: 'abc', in: x.alm.join(', ') };
+  if (x.st === 'B_ON_LOGIC' && lab(x.tag)) return { ...o, kind: 'out', why: 'SCOPE.md 3 LABAS: fire fighting; SCOPE.md 4 ' + lab(x.tag) + ' (' + String(x.fn).replace(/\s+/g, ' ').trim() + ')' };
+  /* a transmitter (no switch letter S) whose list row has no set point: only its DITL bits are on logic (BT-DO1043-C flame bits) */
+  if (x.st === 'B_ON_LOGIC' && !/^[A-Z]*S[HL]*-/.test(x.tag) && !/\d/.test(sp(x))) return { ...o, kind: 'blank', why: 'list HH / H / L / LL: ' + sp(x) + ' (' + String(x.scope).replace(/\s+/g, ' ').trim() + ')' };
   if (x.st === 'B_ON_LOGIC') return { ...o, kind: 'ditl', in: x.io.filter(a => x.ditl.includes(a[1])).map(a => 'STN10' + a[0] + ' ' + a[1] + ' ' + a[2]).join(', ') };
   if (x.st === 'D_IO_NO_SETPOINT') return { ...o, kind: 'blank', why: 'list HH / H / L / LL: ' + sp(x) + ' (' + String(x.scope).replace(/\s+/g, ' ').trim() + ')' };
   if (x.st === 'E_NOT_IN_IO') return { ...o, kind: 'noio', why: String(x.scope).replace(/\s+/g, ' ').trim() + '; list HH / H / L / LL: ' + sp(x) };
