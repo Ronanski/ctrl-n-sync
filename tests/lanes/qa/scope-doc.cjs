@@ -44,8 +44,14 @@ if (ph.join() !== Array.from({ length: 15 }, (_, i) => i + 1).join()) fail('PHAS
 // strictly in order (user 2026-11-26 "Bkt may laktawan pala?"): no phase is TAPOS while an earlier phase is not TAPOS, unless that
 // earlier phase writes its blocker with an owner, "HADLANG (may-ari: <who>...)"; and the count line matches the table
 const prow = [...P.matchAll(/^\| (\d+) \| [^|]+\|[^|]+\| (TAPOS|BAHAGI|HINDI PA) \|(.*)$/gm)].map(m => ({ n: +m[1], st: m[2], rest: m[3] }));
+/* the user's own exception to the order (user 2026-11-27 7:00 AM PHT "Go 10 13 15"): the phases named on the line
+   "**Labas ng user (<date>, "<words>"): phase <n>, <n>...**" may be TAPOS while an earlier phase is not; every other phase keeps the order.
+   Only the user adds a phase to that line (the words and date of the user's message are written with it). */
+const ovl = /^\*\*Labas ng user \([^)]*"[^"]+"\): phase ([\d, ]+)\*\*/m.exec(P);
+const OVR = new Set(ovl ? ovl[1].split(',').map(x => +x.trim()).filter(Boolean) : []);
+for (const n of OVR) if (!(n >= 1 && n <= 15)) fail('the Labas ng user line names phase ' + n);
 for (const r of prow)
-  if (r.st === 'TAPOS')
+  if (r.st === 'TAPOS' && !OVR.has(r.n))
     for (const e of prow.filter(e => e.n < r.n && e.st !== 'TAPOS'))
       if (!/HADLANG \(may-ari: [^)]+\)/.test(e.rest)) fail('phase ' + r.n + ' is TAPOS while phase ' + e.n + ' is ' + e.st + ' with no HADLANG (may-ari: ...) written');
 const cnt = k => prow.filter(r => r.st === k).length,

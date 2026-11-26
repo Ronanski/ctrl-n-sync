@@ -4,6 +4,8 @@ Paraan: translated simulator (ang logic ng planta ay isinalin sa app; hindi stim
 
 Patakaran ng sunod-sunod (user 2026-11-26 "Bkt may laktawan pala?"): walang phase na TAPOS habang may naunang phase na hindi TAPOS. Ang tanging labas: ang naunang phase ay may nakasulat na `HADLANG (may-ari: ...)` (dahilan at kung sino ang may hawak), at alam ito ng user. Bantay: `tests/lanes/qa/scope-doc.cjs`.
 
+**Labas ng user (2026-11-27 7:00 AM PHT, "Go 10 13 15"): phase 10, 13, 15** — ang user mismo ang nagbigay ng labas na ito: ang Phase 10 (alarms), 13 (instructor station) at 15 (config / MOC) ay ginagawa nang sabay sa Phase 9 at puwedeng maging TAPOS kahit hindi pa TAPOS ang 9, 11, 12 o 14, dahil hiwalay ang mga file nila. Ang ibang phase ay sunod-sunod pa rin. Ang user lang ang nagdadagdag ng phase sa linyang ito.
+
 Patakaran ng estado: **TAPOS** lang kapag kumpleto ang "tapos kapag" AT may automated test sa Checks (`.github/workflows/checks.yml`) na nagbabantay, para hindi ito tahimik na masira. **BAHAGI** = nasimulan, may kulang. **HINDI PA** = wala pa.
 
 Huling suri: 2026-11-25 ~7:30 PM PHT (verify mula sa repo, main 5ea1c1e; ulat `/mnt/project-files/audits/phases-verify-2026-11-25.md`). Ang thread na nagbago ng estado ng phase ang nag-a-update ng row nito sa parehong PR.
