@@ -104,7 +104,8 @@ const TCS_TPC = (() => {
    - TCA782 Z1 ~ Z3 EOS(1) ~ (3) TURBINE SPEED: the three speed pickups of the one shaft (2-2 TCS book p.93-94, 5.3.2.2 and Fig. 5.9; HMI_AI
      TCA782_A1 EOS TURBINE SPEED 0-5000 rpm) = the shaft speed of the model, the same on each channel.
    - TCE100 PLU(1) ~ (3) / EOS(1) ~ (3) OPERATED: the PLU / EOS relays (A) (B) (C) of the TCS panel, PI/O card TCA906-29 ~ 31 / -26 ~ 28
-     (elementary 331DM10710 p.244). They read those card inputs of the program (tce-io.js gives them), one source. INFERRED: (1)(2)(3) = (A)(B)(C).
+     (elementary 331DM10710 p.244). They read those card inputs of the program (tce-io.js gives them: PLU = tb.plu, EOS = the IBD TA-15
+     overspeed comparators), one source. INFERRED: (1)(2)(3) = (A)(B)(C).
    The others of part B stay 0, logged in docs/versions/updates/phase6-tcs-link-audit.md: TCE073 and TCE116 B11 / B12 SPARE, TCE153 B3 (no CV
    upper thermocouple exists), TCE195 RUNBACK (the DCS sends no runback), TCE250 / TCE472 (self-diagnosis, 0 = healthy), TCE164 A (NOT IN DOCS) */
 const tcsPio = id => () => {

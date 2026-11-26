@@ -63,7 +63,7 @@ The audit checks that each signal has one source, that no input is left dangling
 - **No writer in the backup:** lane 0 checked every FNC record of the six stations and the PI/O card lists. Then lane 0 searched the documents for each one (/mnt/project-files/phase6-tcs-dash-inputs-docs-2026-11-26.md).
 - **Bound now** (engine/tcs-tpc.js TCS_CON; test tests/tce/dash-inputs.cjs):
   - **TCA782 Z1 ~ Z3 EOS(1) ~ (3) TURBINE SPEED** = the shaft speed of the model, the same on the three pickups (2-2 TCS book p.93-94, Fig. 5.9).
-  - **TCE100 PLU(1) ~ (3) / EOS(1) ~ (3) OPERATED** = the program's PI/O inputs TCA906-29 ~ 31 / -26 ~ 28 (elementary 331DM10710 p.244). INFERRED: (1)(2)(3) = (A)(B)(C). PLU follows the PLU of the model. EOS stays 0, because tce-io.js has no EOS relay source yet.
+  - **TCE100 PLU(1) ~ (3) / EOS(1) ~ (3) OPERATED** = the program's PI/O inputs TCA906-29 ~ 31 / -26 ~ 28 (elementary 331DM10710 p.244). INFERRED: (1)(2)(3) = (A)(B)(C). PLU follows the PLU of the model. **EOS (A) (B) (C)** (tce-io.js TCA906-26 ~ 28) = the overspeed comparator of each speed channel on IBD TA-15 (SE-STn001-1 / 2 / 3, ON >= 111.75 %, OFF <= 111.25 %, page 35; TCS book Fig. 5.9 "EOS > 112 %"). INFERRED: the relay contact is that channel comparator. One source: the same comparators whose 2 out of 3 trips the turbine.
 - **Compiler bug found and fixed (tce-run.js):** the six TCE100 inputs are all printed "-", so they shared one port CON:TCE100.-, which made six signals one net. A sheet with several "-" inputs under different names now gives each its own port ("-" + name). A single "-" input (TCE250) keeps CON:sheet.-.
 - **Stay 0, with their reason:**
   - TCE073 (6 inputs) and TCE116 B11 / B12: SPARE (HMI_DI rows 807-815; the record label).

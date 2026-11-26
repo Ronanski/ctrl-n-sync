@@ -30,6 +30,15 @@ const { load } = require(path.join(__dirname, '../../tools/trace/world.cjs'));
   ok(seen, 'the model makes a PLU on the load drop');
   E.step(1); /* the TCS reads it the next step */
   ok(['PLU(1)', 'PLU(2)', 'PLU(3)'].every(k => v('CON:TCE100.-' + k + ' OPERATED') === 1), 'PLU of the model: PLU(1) ~ (3) OPERATED = 1');
-  ok(['EOS(1)', 'EOS(2)', 'EOS(3)'].every(k => v('CON:TCE100.-' + k + ' OPERATED') === 0), 'EOS(1) ~ (3) stay 0');
+  ok(['EOS(1)', 'EOS(2)', 'EOS(3)'].every(k => v('CON:TCE100.-' + k + ' OPERATED') === 0), 'EOS(1) ~ (3) stay 0 below the overspeed');
+  /* EOS: the overspeed comparators of IBD TA-15 (>= 111.75 % of 3600 rpm = 4023 rpm) through TCA906-26 ~ 28 */
+  const ta15 = () => (AN.tcsIbd('TA-15') || { v: [] }).v;
+  let hit = 0;
+  for (let i = 0; i < 6 && !hit; i++) {
+    AN.unit.tb.rpm = 4100;
+    E.step(1);
+    hit = ['EOS(1)', 'EOS(2)', 'EOS(3)'].every(k => v('CON:TCE100.-' + k + ' OPERATED') === 1) ? 1 : 0;
+  }
+  ok(hit, 'shaft 4100 rpm: TA-15 comparators ' + [1, 0, 2].map(n => ta15()[n]).join('/') + ', EOS(1) ~ (3) OPERATED = 1');
   process.exit(bad ? 1 : 0);
 })();
