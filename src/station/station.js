@@ -893,7 +893,7 @@
        the window stays lit after its alarm clears until RESET; RESET turns off only the windows whose alarm has cleared; an alarm that
        comes back before the RESET flashes again. TEST lights every lamp while it is held. Windows already lit when a start state loads
        are taken as acknowledged (a standing alarm of that state, not a new one). */
-  const ANN = { w: null, src: null, ss: undefined, test: false, nf: 0 };
+  const ANN = { w: null, src: null, ss: undefined, test: false, nf: 0, buz: 0 };
   let annPop = null,
     annB = null;
   function annWins() {
@@ -989,6 +989,14 @@
       if (w.st) lit++;
     }
     ANN.nf = nf;
+    /* BUZZER-OUT (STN104 O.145F "#1 BUZZER OUTPUT", card 1042-4-4 DO31, ANP1 OP0115 terminal 35): the one buzzer of the panel, relay RY1
+       switching 24 VDC (K1AU3-E2-0-113 as-built, sheet OP11(5) ANP Power Diagram). Phase 6 DCS (2026-11-26, YUA PC read
+       phase6-dcs-5-signals-2026-11-26.md): memory list 104 has per window "SIGNAL ABNORMAL" (M.4000, even) and "BUZZER KEEP" (M.4001,
+       odd), per row A ~ J "BUZZER FOR OPC-ANN-x" (M.4130 ~ M.4139); no buzzer timer (STN104 TR) and no silence button. INFERRED chain
+       (the gate sheet is not in the docs in a readable form): a new alarm sets its BUZZER KEEP, ACK resets it, the row is the OR of its
+       windows and O.145F the OR of the 10 rows, so the buzzer sounds while any window is new (not acknowledged). TEST sounds it too
+       (INFERRED, a lamp and horn test of the annunciator) */
+    ANN.buz = nf > 0 || ANN.test ? 1 : 0;
     annB.textContent = nf ? 'Annunciator · ' + nf : 'Annunciator';
     annB.classList.toggle('new', !!nf);
     annB.title = nf ? nf + ' new alarm window' + (nf > 1 ? 's' : '') + ' on the annunciator: open it to acknowledge' : 'Open the console annunciator';
@@ -1024,7 +1032,7 @@
         test = E('button', 'st-b', 'Test'),
         ack = E('button', 'st-b', 'Acknowledge'),
         rst = E('button', 'st-b', 'Reset');
-      test.title = 'Lamp test: every lamp is lit while the button is held';
+      test.title = 'Lamp test: every lamp is lit and the horn sounds while the button is held';
       ack.title = 'Stops the horn; the flashing windows turn steady';
       rst.title = 'Turns off the steady windows whose alarm has cleared';
       const hold = on => () => {
@@ -1075,8 +1083,8 @@
       }
     }
     annPop._sub.textContent = lit + ' lit · ' + ANN.nf + ' new' + (ns ? ' · ' + ns + ' without signal' : '');
-    annPop._horn.classList.toggle('on', ANN.nf > 0);
-    annPop._horn.textContent = ANN.nf ? 'Horn sounding' : 'Horn quiet';
+    annPop._horn.classList.toggle('on', !!ANN.buz);
+    annPop._horn.textContent = ANN.buz ? 'Horn sounding' : 'Horn quiet';
     annPop._ack.disabled = !ANN.nf;
     annPop._rst.disabled = !wait;
   }
