@@ -123,6 +123,19 @@ async function run() {
   for (const r of swR) if (!set.some(q => N(q.tag) === N(r.tag) || (r.io && N(q.tag) === N(r.io)))) for (const k of [N(r.tag)].concat(r.io ? [N(r.io)] : [])) if (fr0(k) != null) swk.set(k, r.on);
   AN.fieldRead = k => (swk.has(k) ? swk.get(k) : fr0(k));
   check();
+  /* a switch the plant model writes on an ABC digital input (unit.js U.diX: PS-CD1110-1 ~ 3, ABC-052): the label forced */
+  const dif = [];
+  for (const r of swR)
+    for (const sh of AN.sheets) {
+      if (!sh.S || String(sh.stn) !== String(r.stn - 100)) continue;
+      sh.S.lab.forEach((z, n) => {
+        if (z && String(z.t || '').trim() === r.addr) dif.push([sh.S, n, r.on]);
+      });
+    }
+  for (const [S, n, v] of dif) S.rt.force[n] = v;
+  E.step(1); /* the step puts the plant-model switches back to their process value: their check is above */
+  check();
+  for (const [S, n] of dif) delete S.rt.force[n];
   AN.fieldRead = fr0;
   await restore();
   const after = [...lines().keys()].filter(k => !base.has(k));

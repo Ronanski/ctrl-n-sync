@@ -72,21 +72,6 @@
 "note": "industrial water: no model (Phase 9 NO-SOURCE, industrial water 6); Phase 11"
 },
 {
-"row": "PS-CD1110-1|ALARM",
-"why": "link",
-"note": "the plant model writes the switch on ABC-052 (unit.js anDiXOf, U.cdP >= 0.173 kg/cm2A); the alarm scan does not read ABC digital inputs yet (Phase 10 work)"
-},
-{
-"row": "PS-CD1110-2|ALARM",
-"why": "link",
-"note": "the plant model writes the switch on ABC-052 (unit.js anDiXOf, U.cdP >= 0.173 kg/cm2A); the alarm scan does not read ABC digital inputs yet (Phase 10 work)"
-},
-{
-"row": "PS-CD1110-3|ALARM",
-"why": "link",
-"note": "the plant model writes the switch on ABC-052 (unit.js anDiXOf, U.cdP >= 0.173 kg/cm2A); the alarm scan does not read ABC digital inputs yet (Phase 10 work)"
-},
-{
 "row": "PSL-LO1753|LOW",
 "why": "m",
 "note": "no plant model value for this switch yet (lube oil pressure / temperature of the fan oil units, drain pot and flash pipe levels): Phase 11 plant model"

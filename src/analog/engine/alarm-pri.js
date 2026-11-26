@@ -76,6 +76,34 @@ const anLaneOut = r => {
     return null;
   }
 };
+/* Phase 10 (2026-11-27): a digital input on an ABC sheet that the plant model writes (unit.js U.di / U.diX: the condenser pressure
+   switches PS-CD1110-1 ~ 3 on ABC-052 I.004D ~ I.004F, the heater H.H. switches) is the switch's registered source: its value, or null
+   when the address is on no label the model writes */
+const anLaneDiK = { u: null, set: null };
+const anLaneDi = r => {
+  const U = AN.unit;
+  if (!U || !AN.sheets) return null;
+  if (anLaneDiK.u !== U.diX || !anLaneDiK.set) {
+    const set = new Set(),
+      walk = x => {
+        if (!x || typeof x !== 'object') return;
+        if (x.S && typeof x.n === 'number') return set.add(x);
+        for (const k in x) walk(x[k]);
+      };
+    walk(U.di);
+    walk(U.diX);
+    anLaneDiK.u = U.diX;
+    anLaneDiK.set = set;
+  }
+  for (const l of anLaneDiK.set) {
+    const sh = AN.sheets.find(z => z.S === l.S);
+    if (!sh || String(sh.stn) !== String(r.stn - 100) || String((l.S.lab[l.n] || {}).t || '').trim() !== r.addr) continue;
+    const rt = l.S.rt || {},
+      v = rt.force && rt.force[l.n] !== undefined ? +rt.force[l.n] : rt.ext && rt.ext[l.n] !== undefined ? +rt.ext[l.n] : +(rt.v || [])[l.n];
+    return isFinite(v) ? v : null;
+  }
+  return null;
+};
 AN.laneAlm = now => {
   const L = (typeof window !== 'undefined' && window.LANE_ALARMS) || globalThis.LANE_ALARMS || [],
     out = [];
@@ -118,6 +146,10 @@ AN.laneAlm = now => {
         let f = anLaneFld(anLaneN(r.tag));
         if (f == null && r.io) f = anLaneFld(anLaneN(r.io));
         if (f != null) v = f > 0.5;
+      }
+      if (v === undefined) {
+        const d = anLaneDi(r);
+        if (d != null) v = d > 0.5;
       }
       if (v === undefined) continue;
       hit = (v ? 1 : 0) === r.on;
