@@ -20,6 +20,7 @@ for(const plant of PL==='both'?['off','on']:[PL]){
  const names=await page.evaluate(()=>AN.sheets.filter(s=>!/ABC-000/.test(s.name)).map(s=>s.name));
  for(const name of names){if(ONLY.length&&!ONLY.includes(name))continue;
   const r=await page.evaluate(([name,plant])=>{
+   AN.scanEvery=true; /* a block test: every step is one scan of the sheet (Phase 3 cycle 1.0 / 0.2 s is held by architecture.cjs) */
    const sh=AN.sheets.find(s=>s.name===name);let S;try{S=AN.ensure(sh)}catch(e){return {name,err:'sheet not built: '+e.message}}
    const procs=on=>{for(const x of AN.sheets)if(x.S)for(const b of x.S.procs||[])b.proc.on=on};
    AN.reset();if(plant==='on'){AN.plantLoad150();for(let i=0;i<4;i++)AN.stepSet(sh,.5)}else{procs(false);for(let i=0;i<4;i++)AN.stepSet(sh,.5)}

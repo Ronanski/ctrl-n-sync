@@ -1249,6 +1249,13 @@ function swTimer(S, b) {
   };
   return (b._tl = (b.cs || []).some(c => up(c.n, 0, new Set())));
 }
+/* the 11 loops at 0.2 s (STN101 ~ 105_LOOP,USERTAG.xls LOOP_AX "Cyl" 0.2, PC; ARCHITECTURE.md 3a); every other loop 1.0 s */
+const AN_FAST_LOOPS = ['FICFA1071', 'FICFA1081', 'FICFA1055A', 'FICFA1055B', 'PICFG108A', 'PICHR1391', 'HICBR1391', 'PICMS1006', 'TICMS1022', 'PICHR1003', 'TICHR1012'];
+const AN_CYCLE = { slow: 1.0, fast: 0.2 };
+/* DERIVED: the cycle is set per loop in the DCS, the app scans a whole sheet; a sheet with a 0.2 s loop scans all its blocks at 0.2 s */
+function anSheetCycle(S) {
+  return (S.blk || []).some(b => (b.k === 'PID' || b.k === 'PIDV' || b.k === 'MAN') && AN_FAST_LOOPS.some(t => b.tag === t || (b.txt || []).includes(t))) ? AN_CYCLE.fast : AN_CYCLE.slow;
+}
 function anStep(S, dt) {
   const rt = S.rt,
     v = rt.v,
@@ -1327,6 +1334,19 @@ function anStep(S, dt) {
           if (q.eq === 0 ? v[q.c] < 0.5 : v[q.c] > 0.5) v[n] = q.src != null ? v[q.src] : q.val;
     }
   };
+  /* Phase 3 (ARCHITECTURE.md 3a): the control blocks of a sheet run at the execution cycle of the real controller, not at every plant
+     step: 1.0 s (K1AU3-E2-0-001 Rev. A 1-2 item 3; loop list STN101 ~ 105 LOOP_AX "Cyl" 1.0 for 1,154 loops), 0.2 s on a sheet that holds
+     one of the 11 loops set to 0.2 s. Between two scans the outputs hold, as in the DCS; the inputs and the plant model still move every
+     step. A step longer than the cycle runs the blocks once with that step (no catch-up loop). dt 0 (the first settle) always runs.
+     AN.scanEvery = true: every step is a scan (the block library check tests/regress/blocks_io.js tests each block's function, not the
+     cycle; the cycle itself is held by tests/lanes/qa/architecture.cjs) */
+  const cyc = S.cyc || (S.cyc = anSheetCycle(S));
+  if (dt > 0 && !AN.scanEvery) {
+    rt.cacc = (rt.cacc || 0) + dt;
+    if (rt.cacc < cyc - 1e-9) return rt;
+    dt = rt.cacc;
+    rt.cacc = 0;
+  }
   for (const b of S.ord) {
     if (b.k === 'LINK') {
       /* 2.3.0-beta.1: an AND link (ABC-004A "COAL FEEDER B & C ALL IN MANUAL" = FICCL1061B.MAN and FICCL1061C.MAN) */

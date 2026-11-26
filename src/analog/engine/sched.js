@@ -109,7 +109,7 @@ const anTick = () => {
    the full Training a step cost more and x300 ran x225 ~ 240) */
 const AN_STEP_MAX = 1; /* s, the longest step of the plant (was 3) */
 const anSteps = dt => {
-  const want = Math.ceil(dt / 0.5),
+  const want = Math.ceil(dt / 0.2) /* Phase 3: 0.2 s, the cycle of the 11 fast loops (ARCHITECTURE.md 3a); was 0.5 */,
     fit = Math.max(1, Math.floor(80 / (AN._ms > 0 ? AN._ms : 2)));
   /* Mina beta.156 / 157 (HIGH): at x60 on a slow PC the steps were up to 3 s and the PA flow and furnace pressure loops swung until a
      TAF / furnace LOW-LOW MFT at a steady 150 MW. A step is never longer than AN_STEP_MAX (1 s): above what the PC can give the real
@@ -150,7 +150,7 @@ AN.clockFixed = on => (AN.extClock = !!on);
 AN.runFixed = (sec, dt) => {
   const sh = cs();
   if (!sh || !sh.S || !AN.run || AN._loading || anMirror()) return false;
-  const h = dt > 0 ? dt : 0.5,
+  const h = dt > 0 ? dt : 0.2,
     n = Math.max(1, Math.round(sec / h));
   histRec(sh, 1);
   let wAcc = 0;

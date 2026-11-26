@@ -2146,7 +2146,7 @@
         if (sh && sh.S) {
           /* Mina F37: the steps of the ABC tick (sched.js anSteps: what fits in 80 ms, 0.5 s each when there is time, never more than 3 s). Fixed 0.5 s
              steps took a second a job at x300 and the Logic page ran x90 */
-          const k = AN.anSteps ? AN.anSteps(dt) : Math.max(1, Math.min(240, Math.ceil(dt / 0.5))),
+          const k = AN.anSteps ? AN.anSteps(dt) : Math.max(1, Math.min(240, Math.ceil(dt / 0.2))),
             t1 = performance.now();
           for (let i = 0; i < k; i++) {
             AN.stepSet(sh, dt / k);
