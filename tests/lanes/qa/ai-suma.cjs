@@ -4,8 +4,10 @@
      (a linear 0 ~ 100 % signal on the range printed at the block; ABC-AUDIT "AI ranges against the workbooks").
    - AI with no feedback (a transmitter): the value typed by the user (PLANT MODEL OFF) reaches the output, inside the range.
    - SUMA: a flow of 12 per hour for one hour gives 12 (ABC-AUDIT.md "SUMA integration: 12 / h for 1 h = 12", batch 28).
-   NOT here, written as NO-SOURCE until the textbook is read on the PC (lane 0): the value an AI gives on SIG.AB (signal abnormal), and the
-   SUMA parameters KK, CUT and RSTS (reset). Fails on any FAIL or fewer blocks than the floor. Usage: node tests/lanes/qa/ai-suma.cjs */
+   - AI on SIG.AB (YUA PC read 2026-11-26, FCS2000 Function Edition p.2-189 and p.2-186): with the flag forced (card / channel error) the
+     AI still sends its input value and the flag is 1; a value of 115 % of the range (112.5 % or more) sets the flag by itself.
+   - SUMA CUT and RSTS (FE p.2-110): a PV below CUT counts as 0; the total clears to 0 when it goes above RSTS.
+   Fails on any FAIL or fewer blocks than the floor. Usage: node tests/lanes/qa/ai-suma.cjs */
 'use strict';
 const path = require('path');
 const root = path.resolve(__dirname, '..', '..', '..');
@@ -20,7 +22,7 @@ AN.reset();
 AN.plantOn = false; /* PLANT MODEL OFF as the app's switch (plant-window.js plantSwitch): also the coal feeder load cells of ABC-004A ~ C */
 for (const x of AN.sheets) if (x.S) for (const b of x.S.procs || []) b.proc.on = false;
 const bad = [],
-  n = { ai: 0, aiFb: 0, suma: 0, skip: {} };
+  n = { ai: 0, aiFb: 0, suma: 0, sig: 0, flag: 0, skip: {} };
 const skip = w => (n.skip[w] = (n.skip[w] || 0) + 1);
 for (const sh of AN.sheets) {
   if (/ABC-000/.test(sh.name)) continue;
@@ -71,6 +73,21 @@ for (const sh of AN.sheets) {
         for (let i = 0; i < 200; i++) anStep(S, 0.5);
         n.ai++;
         if (!(Math.abs(S.rt.v[o] - want) <= 1e-6 * Math.max(1, Math.abs(sp)))) bad.push(sh.name + ' AI#' + b.id + ' ' + lab(b) + ': set ' + want + ', output ' + S.rt.v[o]);
+        if (b.sig && S.rt.st[b.sig.id]) {
+          const g = S.rt.st[b.sig.id],
+            fo = (S.blk.find(q => q.id === b.sig.id).o || [])[0];
+          g.val = 1;
+          for (let i = 0; i < 4; i++) anStep(S, 0.5);
+          n.sig++;
+          if (fo != null && fo >= 0) n.flag++;
+          if (!(Math.abs(S.rt.v[o] - want) <= 1e-6 * Math.max(1, Math.abs(sp)))) bad.push(sh.name + ' AI#' + b.id + ' ' + lab(b) + ' SIG.AB forced: the output ' + S.rt.v[o] + ' is not the input value ' + want);
+          if (fo != null && fo >= 0 && S.rt.v[fo] !== 1) bad.push(sh.name + ' AI#' + b.id + ' ' + lab(b) + ' SIG.AB forced: the flag is ' + S.rt.v[fo]);
+          g.val = 0;
+          st.val = r.lo + 1.15 * sp;
+          for (let i = 0; i < 200; i++) anStep(S, 0.5);
+          if (fo != null && fo >= 0 && S.rt.v[fo] !== 1) bad.push(sh.name + ' AI#' + b.id + ' ' + lab(b) + ' at 115 % of the range: the SIG.AB flag is ' + S.rt.v[fo] + ', not 1 (FE p.2-186)');
+          if (!(Math.abs(S.rt.v[o] - st.val) <= 1e-6 * Math.max(1, Math.abs(sp)))) bad.push(sh.name + ' AI#' + b.id + ' ' + lab(b) + ' at 115 %: the output ' + S.rt.v[o] + ' is not the input value');
+        }
       }
     } else if (b.k === 'SUMA') {
       const i = (b.i || [])[0],
@@ -86,11 +103,27 @@ for (const sh of AN.sheets) {
       const got = S.rt.st[b.id].tot;
       n.suma++;
       if (!(Math.abs(got - 12) < 1e-6)) bad.push(sh.name + ' SUMA#' + b.id + ' ' + (b.txt || []).join('/') + ': 12 / h for 1 h gives ' + got + ', not 12');
+      const P = b.p,
+        p0 = { cut: P.cut, rsts: P.rsts };
+      S.rt = clone(base);
+      S.rt.st[b.id] = {};
+      P.cut = 10; /* 10 % of the 100 % input (K x the last digit of RSTS) */
+      S.rt.force[i] = (0.05 * P.kk) / Math.pow(10, (String(p0.rsts).split('.')[1] || '').length);
+      for (let k = 0; k < 600; k++) anStep(S, 1);
+      if (S.rt.st[b.id].tot !== 0) bad.push(sh.name + ' SUMA#' + b.id + ': a PV of 5 % under CUT 10 % adds ' + S.rt.st[b.id].tot + ', not 0');
+      P.cut = p0.cut;
+      P.rsts = 5;
+      S.rt.st[b.id] = { tot: 4.9 };
+      S.rt.force[i] = 3600;
+      anStep(S, 1);
+      anStep(S, 1);
+      if (!(S.rt.st[b.id].tot < 4.9)) bad.push(sh.name + ' SUMA#' + b.id + ': above RSTS 5 the total is ' + S.rt.st[b.id].tot + ', not cleared');
+      P.rsts = p0.rsts;
     }
   }
   S.rt = base;
 }
 bad.forEach(x => console.log('FAIL', x));
 const ok = !bad.length && n.ai + n.aiFb >= FLOOR.ai && n.suma >= FLOOR.suma;
-console.log((ok ? 'PASS' : 'FAIL') + ' AI / SUMA headless: AI transmitter ' + n.ai + ', AI position feedback ' + n.aiFb + ', SUMA ' + n.suma + ' (floor AI ' + FLOOR.ai + ', SUMA ' + FLOOR.suma + '); skipped ' + JSON.stringify(n.skip) + '; NO-SOURCE: AI value on SIG.AB, SUMA KK / CUT / RSTS; ' + ((Date.now() - t0) / 1000).toFixed(0) + ' s');
+console.log((ok ? 'PASS' : 'FAIL') + ' AI / SUMA headless: AI transmitter ' + n.ai + ', AI position feedback ' + n.aiFb + ', SIG.AB ' + n.sig + ' (flag wire read ' + n.flag + '), SUMA ' + n.suma + ' (floor AI ' + FLOOR.ai + ', SUMA ' + FLOOR.suma + '); skipped ' + JSON.stringify(n.skip) + '; ' + ((Date.now() - t0) / 1000).toFixed(0) + ' s');
 process.exit(ok ? 0 : 1);

@@ -8,7 +8,7 @@ function P_isMinAir(S, b) {
 function aiBad(S, id) {
   const a = S.blk.find(z => z.id === id),
     q = a && a.sig && S.rt.st[a.sig.id];
-  return !!(q && q.val > 0.5);
+  return !!(q && (q.val > 0.5 || q.det));
 }
 function anNetRange(S, n) {
   const d = (S.drv[n] || [])[0],

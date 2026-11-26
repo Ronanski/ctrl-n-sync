@@ -1103,7 +1103,7 @@ function buildPanel() {
         });
       bt.classList.add('wr');
       bt.onclick = () => {
-        st.val = st.val === 0 ? 1 : st.val === 1 ? 2 : 0;
+        st.val = st.val > 0.5 ? 0 : 1;
         (sv(sh).ai = sv(sh).ai || {})[b.id] = st.val;
         anSave();
         AN.settle();
@@ -1119,9 +1119,9 @@ function buildPanel() {
       );
       PU.push(() => {
         bt.textContent =
-          st.val > 1.5 ? 'FORCED BAD: reads FULL SCALE' : st.val ? 'FORCED BAD: reads 0' : 'Bad Signal: OFF';
+          st.val > 0.5 ? 'FORCED BAD: flag ON, value passes' : 'Bad Signal: OFF';
         bt.title =
-          'Click: OFF -> BAD (the instrument reads 0) -> BAD (reads FULL SCALE) -> OFF. The SIG.AB flag is 1 in both BAD states, the drawn logic reacts.';
+          'Click: OFF <-> BAD. BAD = a card / channel error: the SIG.AB flag is 1 and the drawn logic reacts; the AI still sends its input value (FCS2000 Function Edition p.2-189).';
         bt.classList.toggle('on', !!st.val);
       });
     });
@@ -2070,22 +2070,18 @@ function selUpd0_(d) {
     const st = S.rt.st[b.sig.id],
       bt = h$('button', {
         title:
-          'Simulation only. Forces the SIG.AB flag of this transmitter ON (FORCED BAD) or back to normal. While ON, the logic receives 0 from this transmitter and the B.xxxx flag is 1. Nothing is written to a DCS.'
+          'Simulation only. Forces the SIG.AB flag of this transmitter ON (FORCED BAD) or back to normal. While ON, the B.xxxx flag is 1 and the AI still sends its input value (FCS2000 Function Edition p.2-189). Nothing is written to a DCS.'
       });
     bt.classList.add('wr');
     bt.onclick = () => {
-      st.val = st.val === 0 ? 1 : st.val === 1 ? 2 : 0;
+      st.val = st.val > 0.5 ? 0 : 1;
       (sv(sh).ai = sv(sh).ai || {})[b.sig.id] = st.val;
       anSave();
       AN.settle();
     };
     const up = () => {
       bt.textContent =
-        st.val > 1.5
-          ? 'FORCED BAD (reads FULL SCALE) - click for normal'
-          : st.val
-            ? 'FORCED BAD (reads 0) - click for FULL SCALE'
-            : 'Bad Signal: OFF - click to force BAD';
+        st.val > 0.5 ? 'FORCED BAD (flag ON, the value passes) - click for normal' : 'Bad Signal: OFF - click to force BAD';
       bt.classList.toggle('on', !!st.val);
     };
     up();
