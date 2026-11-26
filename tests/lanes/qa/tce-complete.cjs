@@ -15,7 +15,7 @@ const root = path.resolve(__dirname, '..', '..', '..');
 /* 270 -> 272 (slice F 2026-11-26: CHANGE OVER TCE172, HEAT SOAK CONTROL TCE207, two backup files each) */
 /* 272 -> 275 (Phase 5 2026-11-26: DUAL INPUT DIAGNOSTICS TCE101, VALVE TEST TCE220 TCE222 from the backup, lane 0 read) */
 /* 275 -> 292 (Phase 5 3 PM read: 17 TCS macro types from the backup, phase5-tcs-macros-17 + phase5-ml-dv-blocks 2026-11-26) */
-const FLOOR = +(process.env.TCE_FLOOR || 292);
+const FLOOR = +(process.env.TCE_FLOOR || 295); /* 292 -> 293: TCA782 MJL box; 295: G-5A / G-6A 24 V/Hz inverse time */
 const dir = root + '/src/digital/tce';
 const src = fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8');
 const win = {};

@@ -53,5 +53,16 @@ Floors are raised to match: `tests/lanes/qa/tce-complete.cjs` 292 and `tests/lan
 
 ## Still open
 
-- 3 boxes that are not macros in the backup: TP? x2 and one unnamed "M:". These need a drawing read.
+- Nothing of Phase 5. The 11 sheets still not running belong to Phase 6.
+
+## Slice 3 (2026-11-26, 6 PM PHT): the last 3 boxes
+
+- TCA782 A002, the unnamed "M:" box = MJL (2 out of 3 select, macro list ML 71), from the backup record MJL 002.
+  Pins X1 ~ X3, E1 ~ E3 in; Y, Z1 ~ Z3 out.
+- G-5A and G-6A d24b, the "TP?" boxes = 24 V/Hz 2nd step, an inverse time element (TINV).
+  - Settings: time dial 2, pickup 107 %, reset 30 s (LM-GEE-2015-0059 p.21 for 24A, p.49 for 24B).
+  - Curve: t = 1800 x TD / (M - 100)^2 s. The form is DERIVED from the vendor test points on p.22 (110 % = 36 s, 115 % = 16 s at time dial 2); the scaling with time dial is INFERRED.
+  - Its V/Hz % input is a plant port (G-5A.d24b.M), not yet bound to the generator model (Phase 6 / 11).
+- Test: `tests/tce/sheets.cjs` checks both boxes are TINV and the curve at 105 / 110 / 115 %.
+- Result: 3,540 of 3,540 blocks have a meaning, 537 of 537 macros, COMPLETE 295.
 - The 11 sheets still not running have other defects: CMP / PIF / TB SW not wired (HIACS default), and the PIF G / TI not on TCA740.

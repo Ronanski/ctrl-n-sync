@@ -1,6 +1,7 @@
 /* TCA782 EOS TURBINE SPEED (331DM09788 page 203, controller COMM+MD, cycle 100 ms). Typed from the drawing;
    units = the pixels of the page rendered 2296 wide. As drawn:
-   - MJL A002 (S:0, M:30.0): X = EOS(1) / (2) / (3) TURBINE SPEED (Z1 / Z2 / Z3), T = INITIAL (ref, TCA100) through BTR 001;
+   - MJL A002 (S:0, M:30.0; the box carries no name on the drawing, the backup record is MJL 002 S 0 M 30.0, lane 0 read
+     tcs-phase5-blocks-2026-11-26.md 2): X = EOS(1) / (2) / (3) TURBINE SPEED (Z1 / Z2 / Z3), T = INITIAL (ref, TCA100) through BTR 001;
      1 / 2 / 3 = OFF(0) through BTR 007 / 008 / 009.
    - Y through FTR 003 = A; from it FTR 013 = EOS TURBINE SPEED to CRT TCA782_A1 and FTR 014 to B1.
    - 1 / 2 / 3 through BTR 010 / 011 / 012 = A1 / A2 / A3.
@@ -27,9 +28,9 @@
   WT('mA002.Y', [xR, P[0]], [xO - 27, P[0]]);
   WT('mA002.Y', [1582, P[0]], [1582, 165], [xO - 35, 165]);
   WT('mA002.Y', [1582, 228], [1991 - 27, 228]);
-  W('mA002.1', [xR, 325], [1721, 325], [1721, 377], [xO - 27, 377]);
-  W('mA002.2', [xR, 346], [1613, 346], [1613, 452], [xO - 27, 452]);
-  W('mA002.3', [xR, 368], [1528, 368], [1528, 527], [xO - 27, 527]);
+  W('mA002.Z1', [xR, 325], [1721, 325], [1721, 377], [xO - 27, 377]);
+  W('mA002.Z2', [xR, 346], [1613, 346], [1613, 452], [xO - 27, 452]);
+  W('mA002.Z3', [xR, 368], [1528, 368], [1528, 527], [xO - 27, 527]);
   const b = [
     ['btr001', 'o:BTR', '001', 944, 229],
     ['btr007', 'o:BTR', '007', 1050, P[3]],
@@ -45,14 +46,15 @@
   const m = [
     [
       'mA002',
-      '',
+      'MJL',
       '',
       xL,
       292,
       xR - xL,
       129,
-      ['X', 'X', 'X', '1', '2', '3'],
-      ['Y', '1', '2', '3'],
+      /* pin names of ML 71 MJL (TCA019; the drawing prints X X X / 1 2 3 at the box): X1 ~ X3, E1 ~ E3 in, Y, Z1 ~ Z3 out */
+      ['X1', 'X2', 'X3', 'E1', 'E2', 'E3'],
+      ['Y', 'Z1', 'Z2', 'Z3'],
       'A002',
       [
         [1170, 444, 'S:0'],
