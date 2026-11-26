@@ -23,10 +23,10 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 350; /* 308 -> 350 (2026-11-26 Phase 6 TCS: SW from the backup, LME105 inside, AM at R) */ /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 419; /* 411 -> 419 every sheet drawing-complete; 381 -> 411 the companions and SUM SW; 308 -> 350 (2026-11-26 Phase 6 TCS: SW from the backup, LME105 inside, AM at R); 381: diagnosis macro insides */ /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
-const FLOOR_TEXT = 69; /* 106 -> 69 (2026-11-26): the 37 sheets with only TRIPPLE INPUT DIAGNOSTICS now run its LME105 inside from the HIACS backup */
+const FLOOR_TEXT = 0; /* 8 -> 0: TCE120 ~ 130 / TCA586 pins typed toward the pin, TCA582 insides; 37 -> 8: the companion macros (LME111A, LME123, LMA110A, LME114A, LME101) joined in; 106 -> 69 (2026-11-26): the 37 sheets with only TRIPPLE INPUT DIAGNOSTICS now run its LME105 inside from the HIACS backup; 69 -> 37: the diagnosis macros of phase6-tcs-macro-insides */
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -140,7 +140,7 @@ const S = R.stats(A);
   if (o.OUT !== 11 || o.DEV !== 1) fail('TRIPLE DETECTOR2 10 / 30 / 11 gives ' + JSON.stringify(o));
   if (M['2OO3']({ IN1: 1, IN2: 0, IN3: 1 }).OUT !== 1 || M['2OO3']({ IN1: 1, IN2: 0, IN3: 0 }).OUT !== 0) fail('2OO3 is not two out of three');
   const t60 = A.plan.find(p => p.id === 'TCE060').nodes.find(x => x.t === 'M' && x.name === 'TRIPLE DETECTOR2');
-  if (!t60 || A.names[t60.ins['IN C']] !== 'TCE060:tmr3.OUT') fail('TCE060 TRIPLE DETECTOR2 IN C is not the third TMR AI DIAGNOSTICS');
+  if (!t60 || A.names[t60.ins['IN C'] ?? t60.ins.INC] !== 'TCE060:tmr3.OUT') fail('TCE060 TRIPLE DETECTOR2 IN C is not the third TMR AI DIAGNOSTICS');
   /* MOTOR STANDARD from IBD 310SC90-794 sheet 14: START PB in MANUAL starts; no MCC answer for 3 s = START FAULT (stop, ANN) until RESET;
      AUTO START works only in AUTO */
   const mo = M['MOTOR STANDARD'],
@@ -386,24 +386,37 @@ const S = R.stats(A);
   if (o.COMP1 !== 1 || o.TIME1 !== 0) fail('HEAT SOAK TIMER: not elapsed after 2 min ' + JSON.stringify(o));
   if (run(ht, { MODE1: 0, TIME1: 2 }, [], hs).COMP1) fail('HEAT SOAK TIMER: not cleared when the start goes off');
 }
-/* TCE143 turbine speed (TC-14-116 5.3.2.2: three pickups, 2oo3 for control): the three pickups at 3599 rpm give TURBINE SPEED 3599 and the
-   high counter mode; one pickup lost (0 rpm) is marked bad after its DELAY TP and the speed stays the middle of the other two */
+/* TCE143 turbine speed (TC-14-116 5.3.2.2: three pickups, 2oo3 for control). DUP AI DIAGNOSTICSV = LME100 with its companion LME101 and
+   PTI ERROR DETECT = LME102, the insides of the HIACS backup (phase6-tcs-macro-insides / phase6-tcs-companions-2026-11-26.md). The backup
+   compares each pickup with its low counter (MR 046 / 056 / 066, 500 rpm) and runs its timers after INITIAL with ANN ENABLE, so the test
+   takes TCE050 / TCE053 (INITIAL, ANN RESET, ANN ENABLE), sets the low counters (PIO TCE980-5 / -14 / -23 through TCE140 ~ 142 G) with the
+   speeds, and lets INITIAL come up (10 s). Three pickups at 3599 rpm give TURBINE SPEED 3599 and the high counter mode; pickup B lost
+   (high and low counter 0) is marked bad after its DELAY TP (PA15 from ASW 070: 5 s with TCH 0) and the speed stays 3599. QT2 (A 052 in
+   the backup) is the error of B before the delay, so it is on once B is lost (the manual-text reading had it as a quality bit). */
 {
-  const sub = sheets.filter(s => ['TCE140', 'TCE141', 'TCE142', 'TCE143'].includes(s.id)),
+  const sub = sheets.filter(s => ['TCE050', 'TCE053', 'TCE140', 'TCE141', 'TCE142', 'TCE143'].includes(s.id)),
     T = R.compile(sub),
     pk = ['A', 'B', 'C'].map(k => 'PIO:TCE140.pk' + k),
+    lc = ['PIO:TCE980-5', 'PIO:TCE980-14', 'PIO:TCE980-23'],
     dup = T.plan.find(p => p.id === 'TCE143').nodes.find(x => x.name === 'DUP AI DIAGNOSTICSV'),
     pti = T.plan.find(p => p.id === 'TCE143').nodes.find(x => x.name === 'PTI ERROR DETECT'),
-    ov = (x, k) => T.v[x.outs[k]];
+    ov = (x, k) => T.v[x.outs[k] ?? x.outs[k.replace(/\s+/g, '')]]; /* a backup macro names its pins without spaces (H-CNTMODE) */
   if (['LCA', 'LCB', 'LCC'].some(k => dup.ins[k] === undefined)) fail('TCE143: the low counters are not wired to LCA / LCB / LCC');
-  for (const n of pk) R.set(T, n, 3599);
-  for (let i = 0; i < 100; i++) R.step(T, 0.03);
-  if (ov(dup, 'Y') !== 3599 || ov(dup, 'ABN') || ov(pti, 'H-CNT MODE') !== 1) fail('TCE143: 3 x 3599 rpm gives speed ' + ov(dup, 'Y') + ', ABN ' + ov(dup, 'ABN') + ', H-CNT ' + ov(pti, 'H-CNT MODE'));
+  if (dup.src !== R.BK || pti.src !== R.BK) fail('TCE143: DUP AI DIAGNOSTICSV / PTI ERROR DETECT do not run the backup insides');
+  for (const n of pk.concat(lc)) R.set(T, n, 3599);
+  /* H-CNT MODE: OR 035 of the pins HFLAG A / B / C (LME102), which TCE143 wires to the speed card inputs PIO TCE980-1 / -10 / -19 (the
+     card's high counter flag), not the speed >= 3000 rpm for 2 s of the manual-text reading. The card sets its flag at this speed. */
+  for (const n of ['PIO:TCE980-1', 'PIO:TCE980-10', 'PIO:TCE980-19']) R.set(T, n, 1);
+  for (let i = 0; i < 400; i++) R.step(T, 0.03);
+  if (ov(dup, 'Y') !== 3599 || ov(dup, 'ABN') || ov(dup, 'ERR') || ov(pti, 'H-CNT MODE') !== 1)
+    fail('TCE143: 3 x 3599 rpm gives speed ' + ov(dup, 'Y') + ', ABN ' + ov(dup, 'ABN') + ', ERR ' + ov(dup, 'ERR') + ', H-CNT ' + ov(pti, 'H-CNT MODE'));
   R.set(T, pk[1], 0);
+  R.set(T, lc[1], 0);
   for (let i = 0; i < 100; i++) R.step(T, 0.03);
   if (ov(dup, 'ERR B')) fail('TCE143: speed B bad before its DELAY TP 5 s');
-  for (let i = 0; i < 100; i++) R.step(T, 0.03);
-  if (ov(dup, 'ERR B') !== 1 || ov(dup, 'QT2') || ov(dup, 'Y') !== 3599 || ov(dup, 'ABN')) fail('TCE143: speed B lost: ERR B ' + ov(dup, 'ERR B') + ', Y ' + ov(dup, 'Y'));
+  for (let i = 0; i < 300; i++) R.step(T, 0.03);
+  if (ov(dup, 'ERR B') !== 1 || ov(dup, 'QT2') !== 1 || ov(dup, 'Y') !== 3599 || ov(dup, 'ABN'))
+    fail('TCE143: speed B lost: ERR B ' + ov(dup, 'ERR B') + ', QT2 ' + ov(dup, 'QT2') + ', Y ' + ov(dup, 'Y') + ', ABN ' + ov(dup, 'ABN'));
 }
 /* UNT-FG FG-1(LCFI) on TCA762 / TCA763 reads the table printed on the page (500 N/mm2 -> 0.5381 %, 175 -> between 0.0001 and 0.0002) */
 for (const id of ['TCA762', 'TCA763']) {
@@ -489,6 +502,67 @@ for (const id of ['TCA762', 'TCA763']) {
     for (let i = 0; i < 2000; i++) y = R.K.AM([0, 1, 100], x.notes, st, 0.1, 1)[0];
     if (y !== 50) fail(`TCE503 AM lower stops at ${y}, expected LL 50`);
   }
+}
+/* AI DIAG.MD on TCA310 002 = the LMA510 inside of the backup (phase6-tcs-macro-insides-2026-11-26.md: WCM 006 2.06 / -1.15, MR 013 0.6 / -0.6
+   against the PD 003 value of N 3 cycles). A step over the rate limit sets ABN at once (TP 015 0.03 s); OUT holds the last good value
+   while ABN is latched, until ANN RESET. */
+{
+  const x = A.plan.find(q => q.id === 'TCA310').nodes.find(n => n.t === 'M' && n.name === 'AI DIAG.MD');
+  if (!x || x.src !== R.BK || x.f.lme !== 'LMA510') fail('TCA310 AI DIAG.MD does not run the LMA510 inside of the backup');
+  else {
+    const st = {},
+      go = (IN, n, ar = 0) => {
+        let o;
+        for (let i = 0; i < n; i++)
+          o = x.f({ IN, ERR: 0, SIM: 0, 'DEF INITIAL': 1, 'DEF ANN RESET': ar, 'DEF ANN ENABLE': 1, 'DEF SIMULATION USE': 0, 'DEF OUTSIDE SIMULATION': 0 }, x.notes, st, 0.03);
+        return o;
+      };
+    let o = go(1, 20);
+    if (o.OUT !== 1 || o.ABN !== 0) fail('LMA510 steady 1.0 gives ' + JSON.stringify(o));
+    o = go(1.5, 20);
+    if (o.OUT !== 1.5 || o.ABN !== 0) fail('LMA510 slow change to 1.5 gives ' + JSON.stringify(o));
+    o = go(3, 3);
+    if (o.OUT !== 1.5 || o.ABN !== 1) fail('LMA510 step to 3.0 does not hold 1.5 with ABN: ' + JSON.stringify(o));
+    o = go(1, 10);
+    if (o.OUT !== 1.5 || o.ABN !== 1) fail('LMA510 ABN not held until ANN RESET: ' + JSON.stringify(o));
+    go(1, 3, 1);
+    o = go(1, 3);
+    if (o.OUT !== 1 || o.ABN !== 0) fail('LMA510 after ANN RESET gives ' + JSON.stringify(o));
+  }
+}
+/* TMR AI DIAGNOSTICS = LME111 + its companion LME111A (backup): OUT = the middle of the three. On TCE067 / 068 / 069 the backup wires
+   channels 1 and 2 to SIG3 / ERR3 as well (phase6-tcs-macro-insides-2026-11-26.md "instances wired differently"), built as it is. */
+{
+  const I = { SIM: 0, SIG1: 10, SIG2: 20, SIG3: 30, ERR1: 0, ERR2: 0, ERR3: 0, HL: 110, LL: -10, DEV: 5, 'DEF INITIAL': 1, 'DEF ANN ENABLE': 1, 'DEF ANN RESET': 0, 'DEF SIMULATION USE': 0, 'DEF OUTSIDE SIMULATION': 0 };
+  for (const [id, want] of [['TCE060', 20], ['TCE067', 30]]) {
+    const x = A.plan.find(q => q.id === id).nodes.find(n => n.t === 'M' && n.name === 'TMR AI DIAGNOSTICS'),
+      st = {};
+    let o;
+    if (!x || x.src !== R.BK) {
+      fail(id + ' TMR AI DIAGNOSTICS does not run the LME111 / LME111A insides');
+      continue;
+    }
+    for (let i = 0; i < 5; i++) o = x.f(I, x.notes, st, 0.03);
+    if (o.OUT !== want) fail(`${id} TMR AI DIAGNOSTICS 10 / 20 / 30 gives OUT ${o.OUT}, expected ${want}`);
+  }
+}
+/* SUM SW (DERIVED, tce-run.js K.SUM): SW 1 Y = X1 + X2 within LL .. HL, SW 0 Y = X2 */
+{
+  const n = ['HL:500', 'LL:0'];
+  if (R.K.SUM([2, 3], n, {}, 0.1, 1)[0] !== 5 || R.K.SUM([2, 3], n, {}, 0.1, 0)[0] !== 3 || R.K.SUM([400, 300], n, {}, 0.1, 1)[0] !== 500)
+    fail('SUM SW rule');
+}
+/* the pins the drawing joins on one vertical line, typed toward each pin (phase6-tcs-last8-2026-11-26.md: the backup feeds both the same nets):
+   both VALVE DIAGNOSIS blocks of TCE120 read DEMAND TCE210 and S.POS. TCE501 LMS 015; TCA586 MODE2 / 3 / 4 = TCA582 HEAT2 / HEAT3, TCA583 START3 */
+{
+  const v = A.plan.find(q => q.id === 'TCE120').nodes.filter(n => n.t === 'M');
+  if (v.length !== 2 || v.some(x => A.names[x.ins.DEMAND] !== 'TCE210:mt003.DEMAND' || A.names[x.ins['S.POS.']] !== 'TCE501:lmsB015'))
+    fail('TCE120: both VALVE DIAGNOSIS blocks do not read DEMAND (TCE210) and S.POS. (TCE501 LMS 015)');
+  const h = A.plan.find(q => q.id === 'TCA586').nodes.find(n => n.t === 'M'),
+    want = { MODE2: 'TCA582:mt2.HEAT2', MODE3: 'TCA582:mt2.HEAT3', MODE4: 'TCA583:mt1.START3' };
+  for (const k in want) if (A.names[h.ins[k]] !== want[k]) fail(`TCA586 ${k} reads ${A.names[h.ins[k]]}, expected ${want[k]}`);
+  const a = A.plan.find(q => q.id === 'TCA582').nodes.filter(n => n.t === 'M');
+  if (a.length !== 2 || a.some(x => x.src !== R.BK)) fail('TCA582: RUB CHECK / ACC.CONTROL do not run the LMA560 / LMA563A insides');
 }
 /* MODE (TCA768A, LMA810): load up rate by load band from the printed tables; 5.0 %/min until the IP -> HP transfer is complete */
 {
