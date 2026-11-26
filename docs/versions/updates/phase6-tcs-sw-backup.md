@@ -22,3 +22,10 @@ Source: phase6-tcs-records-2026-11-26.md (YUA, read-only from team-files/tcs-dec
   - TCA782: done in PR 638.
 - Tests: new check in tests/tce/sheets.cjs. sheets.cjs, run.cjs, tce-complete.cjs, tce-loop-mark.cjs, tcs-curves.cjs and
   tcs-macro-backup.cjs pass.
+
+## TCA740 / TCA741 PIF SW, 412 -> 414
+
+- The drawing does draw the SW of both PIFs: the AUT output of the valve station goes to the top of the PIF. The typed line started
+  at the PIF, so the app did not read it as an input. The same line is now also typed toward the PIF, so it ends on the pin.
+- The backup records hold a signal there (102_YY02748 / 102_YY0277A), not a constant, which agrees with a wired SW.
+- PIF in AUT integrates; in MAN (SW = 0) it tracks.
