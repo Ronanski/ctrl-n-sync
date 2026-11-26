@@ -58,9 +58,40 @@ const unitName = (x, k) => {
   if (I && I.base && I.base !== x) return x.name;
   return k === undefined || unitsOf(S.sheets.indexOf(x)).length < 2 ? x.name : x.name + ' #' + ((I && I.lbl) || 'A');
 };
-const unitTitle = x => {
+const unitTitle0 = x => {
   const I = x && x._inst;
   return I && I.base && I.base !== x && typeof WORLD !== 'undefined' && WORLD.showText ? WORLD.showText(x, I.base.title || '') : (x && x.title) || '';
+};
+/* units of one drawing that read one title (DITL-22 "BFWP A AUX. LUB. OIL PUMP" is drawn for LOP A and LOP B of each BFWP; DITL-07
+   "PERMISSION TO BURNER (1)" for burners A ~ D): (1) the drawing's own name of the unit, the shortest text of the drawing that begins as
+   the title and ends with the unit letter, as it reads for the unit (DITL-22 row 25 motor "BFWP A AUX. LOP A" -> "BFWP A AUX. LOP B";
+   IO list STN103 I.0050 LOP A / I.0370 LOP B of BFWP-A), used only when it gives every unit its own title; (2) else the title and the
+   unit ("PERMISSION TO BURNER (1) · C", "SOOTBLOWER CONTROL LOGIC DIAGRAM(8) · N-1012") */
+const unitLbl = x => (x && x._inst && (x._inst.lbl || 'ABCD'[x._inst.k])) || 'A';
+const unitTitle = x => {
+  const I = x && x._inst,
+    b = (I && I.base) || x,
+    t = unitTitle0(x);
+  if (!b || typeof WORLD === 'undefined' || !WORLD.instOf) return t;
+  const L = WORLD.instOf.get(b) || [];
+  if (L.length < 2) return t;
+  if (!b._utl || b._utl.n !== L.length) {
+    const T = L.map(unitTitle0),
+      M = new Map();
+    if (new Set(T).size === T.length) L.forEach((y, j) => M.set(y, T[j]));
+    else {
+      const w2 = String(b.title || '').split(/\s+/).slice(0, 2).join(' ');
+      let best = null;
+      for (const k in b.cells || {})
+        for (const q of [].concat(b.cells[k] || []))
+          if (q && typeof q.t === 'string' && q.t.startsWith(w2 + ' ') && /\s[A-D]$/.test(q.t.trim()) && (!best || q.t.trim().length < best.length)) best = q.t.trim();
+      const N = best ? L.map(y => (y === b ? best : WORLD.showText(y, best))) : [];
+      if (best && new Set(N).size === N.length) L.forEach((y, j) => M.set(y, N[j]));
+      else L.forEach((y, j) => M.set(y, T[j] + ' · ' + unitLbl(y)));
+    }
+    b._utl = { n: L.length, M };
+  }
+  return b._utl.M.get(x) || t;
 };
 /* every unit sheet in order, [sheet index, unit] */
 const unitNav = tcs => {

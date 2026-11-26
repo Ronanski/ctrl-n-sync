@@ -1109,7 +1109,7 @@
           nl = s.nl,
           nIn = s.rows.filter((r, i) => fbk(s, i, 'S')).length,
           nOut = nl ? new Set((nl.outs || []).map(o => o.row)).size : 0;
-        const ttl = isK(s) ? WORLD.showText(s, s._inst.base.title || '') : m.title || s.title || '';
+        const ttl = (s._inst && unitsOf(S.cur).length > 1 && unitTitle(s)) || (isK(s) ? WORLD.showText(s, s._inst.base.title || '') : m.title || s.title || '');
         dm.append(
           /* Phase 6 (user 2026-11-26): each unit is its own sheet of the list (unitNav); the header names the unit, A included */
           E('b', { txt: (m.dwg || s.name).replace(/\s*#\S+$/, '') + (s._inst && (s._inst.k || s._inst.lbl || unitsOf(S.cur).length > 1) ? ' · ' + (s._inst.lbl || LETTERS[s._inst.k]) : '') }),
