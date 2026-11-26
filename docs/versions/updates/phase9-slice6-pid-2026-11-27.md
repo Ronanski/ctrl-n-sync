@@ -49,3 +49,11 @@ Source: /mnt/project-files/phase9-pid-positions-2026-11-27.md (flow diagram set 
 - Condensate: drain trap Z-1912 ng gland steam condenser (PD-014 C-9); bagong simbolo `R.trap` (ISA bilog na may T).
 - Hindi pa: OR-CW1001A / B (walang cooling water return line na nakaguhit sa turbine oil page).
 - Bilang: 281 / 349 may simbolo, 8 wala sa docs, 60 natitira.
+
+## Make-up at industrial water (10:30 AM)
+- Make-up pumps: strainers STR-MU0001 ~ 3 sa suction pagkatapos ng V-MU0003 ~ 5 (PD-024 D/E/F-7); ang V-MU0003 ~ 5 ay
+  valve symbol na ngayon (pula = bukas, click = field faceplate), hindi na status box.
+- Industrial water pumps: strainers STR-IW0001 / 2 (PD-025 C/D-4/5).
+- Potable water tank T-0114 (PD-026 C/D-6), walang signal sa I/O list kaya walang value.
+- Hindi pa: RO-MU0709A ~ C at RO-IW0715A / B (min flow lines ay hindi nakaguhit sa page).
+- Bilang: 287 / 349 may simbolo, 8 wala sa docs, 54 natitira.
