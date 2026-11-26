@@ -433,29 +433,13 @@
   const MSEEN = new Map();
   /* sweep 2: the suppressed alarms already written once since the load */
   const LATEK = new Set();
-  /* transmitters that the drawing alarms by comparators (not by an ALM block): tag, sheet, AI address, limits (kg/cm2) */
-  /* Mina B66-3 (beta.66 house load: hotwell -1 to -285 mm, then condensate pump A stopped with no alarm before it): ABC-031 has no ALM block
-     on the hotwell level AI0640 (LT-CD1110, -436 ~ 464 mm), only the comparator < -300 mm M.3211 WATER LEVEL LOW LOW to DITL-61A row 13 (the
-     condensate pump stop). The alarm list (Alarm List _20160912, unit.js AN_CD) gives LT-CD1110 H 150 / HH 300, L -150 / LL -300 mm */
-  const XALM = [
-    { tag: 'PIMS1002', d: 'main steam pressure (PT-MS1002, finishing superheater outlet header)', sh: 'ABC-001C', ai: 'AI0131', hh: 134, h: 130, l: 100, ll: 72.9 },
-    { tag: 'LICD1110', d: 'condenser hotwell level (LT-CD1110)', sh: 'ABC-031', ai: 'AI0640', hh: 300, h: 150, l: -150, ll: -300 }
-  ];
+  /* Phase 10 (2026-11-27): the code tables XALM (PIMS1002 main steam pressure, LICD1110 hotwell level), SWALM (LSLL-CD1104-4) and the
+     expansion tank T-1109 HIGH line (U|LICW1109) are gone: the alarm rows of the plant list (src/data/alarms PT-MS1002, LT-CD1110,
+     LSLL-CD1104-4, LT-CW1109, same set points) raise those lines from their registered source (AN.laneAlm below). One alarm, one path */
   /* level switches of the field with no ABC alarm block: tag, DITL sheet, 0-based input row */
   /* annunciator bits of the ABC drawings with no ALM block: the bit, its sheet, the tag and the text of the drawing */
   const BALM = [{ bit: 'B.0804', sh: 'ABC-010', tag: 'LIBR1001', d: '#1 Boiler drum level (1) / (3), over 5 %' }];
-  const SWALM = [{ tag: 'LSLL-CD1104-4', d: 'deaerator storage tank water level low-low switch', sh: 'DITL-23B', row: 3 }];
-  function xalmVal(A, p) {
-    const sh = A.sheets.find(x => x.name === p.sh),
-      S = sh && sh.S;
-    if (!S || !S.rt) return NaN;
-    if (p.S !== S) {
-      const b = S.blk.find(z => z.k === 'AI' && z.o && z.o.length && String(A.nm(S, z.o[0]) || '').replace(/^S\d\s*/, '').trim() === p.ai);
-      p.S = S;
-      p.n = b ? b.o[0] : -1;
-    }
-    return p.n >= 0 ? +S.rt.v[p.n] : NaN;
-  }
+
   function almScan() {
     const A = window.AN;
     if (!A || !A.sheets || (A.plantOn && !A.startState)) return;
@@ -506,31 +490,6 @@
           /* Mina F2: the name of the alarm is the tag on the ALM block and its description, not the name of the net before it ("SQRT out", "AI0674") */
           if (lv !== 'normal') now.set(sh.name + '|' + b.id, { sh: sh.name, kind: 'ALM', nm: almName(b) || A.nm(S, b.i[0]) || 'ALM #' + b.id, lv });
         }
-    }
-    /* Mina #M15: the expansion tank T-1109 HIGH level (alarm list LT-CW1109, PD-021: H 1700 mm / L 800 mm in the DCS): the level is the
-       plant model's (unit.js etAlm, LICW1109), no ABC alarm block reads it. HIGH only: the cold tank stands at L (0.8 m), a shutdown alarm */
-    if (A.unit && A.unit.etAlm === 'H') now.set('U|LICW1109', { sh: 'MAKE-UP WATER', kind: 'ALM', nm: 'LICW1109 expansion tank T-1109 level', lv: 'HIGH' });
-    /* Mina beta.173 (Faults: main steam pressure transmitter over range, PT-MS1002 = 150.0, no alarm): no ALM block reads AI0131. The
-       drawing alarms it with comparators on ABC-001C (> 134 O.0177, > 130 M.3109, < 100 M.310A, < 72.9 M.310D) into the annunciator
-       DITL-40 (MAIN STEAM PRESSURE H.H. / HIGH / LOW / LOW LOW); the alarm list has the same set points for PT-MS1002 (HH 134, H 131 / 130,
-       L 100, LL 72.9 kg/cm2). The header alarm from the transmitter value of ABC-001C with those limits */
-    for (const p of XALM) {
-      const x = xalmVal(A, p);
-      if (!isFinite(x)) continue;
-      const lv = x > p.hh ? 'HIGH-HIGH' : x > p.h ? 'HIGH' : x < p.ll ? 'LOW-LOW' : x < p.l ? 'LOW' : null;
-      if (lv) now.set('X|' + p.tag, { sh: p.sh, kind: 'ALM', nm: p.tag + ' ' + p.d, lv });
-    }
-    /* S155-1 (deaerator emptied, both feed pumps tripped, no deaerator LOW-LOW line before the trip): the alarm list (Alarm List
-       _20160912, sheet LS) has the switch LSLL-CD1104-4 "DEAERATOR STORAGE TANK WATER LEVEL LOW-LOW SWITCH-4" at 177 mm from the bottom
-       (-2147 mm of the transmitter, plantsw.js), above the transmitter LL -2174 mm of LT-CD1104-1 ~ 3 (ABC-031 ALM): the switch comes
-       first. It is DITL-23B row 4 (the feed pump trip) and the annunciator DITL-40 "LEVEL SWITCH LOW LOW"; its own alarm line from row 4 */
-    for (const p of SWALM) {
-      const s = dSheets().find(z => dnm(z) === p.sh);
-      let v = null;
-      try {
-        v = s ? DUI.rowVal(s, p.row) : null;
-      } catch (e) {}
-      if (v === 1) now.set('W|' + p.tag, { sh: p.sh, kind: 'ALM', nm: p.tag + ' ' + p.d, lv: 'LOW-LOW' });
     }
     /* 3.2.4 (JENNIE, live test of beta.4: the feeder A chute plugged, the alarm list had only the O2 HIGH): the local panel alarms of
        the coal feeders go to the annunciator through DITL-19 (the same drawing for B and C): outputs 63 NO COAL ON BELT, 64 INLET PLUGED,
