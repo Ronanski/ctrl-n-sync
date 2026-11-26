@@ -88,7 +88,7 @@ FIELD.state(
   lane,
   ['A', 'B'].map(l => ({
     id: 'tcs.link' + l,
-    tag: 'LINE-' + l + ' DCS-TURBINE',
+    /* no tag: the line is a cable, not an I/O point of the tag table */
     normal: 0,
     t: 'Modbus line ' + l + ' between the DCS and the turbine control system lost',
     g: NAME,
