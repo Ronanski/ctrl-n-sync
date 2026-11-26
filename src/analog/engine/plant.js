@@ -1287,7 +1287,7 @@ function anStep(S, dt) {
   }
   for (const q of S.sfl) {
     const n = q[1];
-    if (F[n] === undefined && !(S.xlk && S.xlk[n])) rt.ext[n] = rt.st[q[0]] && rt.st[q[0]].val > 0.5 ? 1 : 0;
+    if (F[n] === undefined && !(S.xlk && S.xlk[n])) rt.ext[n] = rt.st[q[0]] && (rt.st[q[0]].val > 0.5 || rt.st[q[0]].det) ? 1 : 0;
   }
   for (const n of S.ext) {
     if (F[n] !== undefined) {
@@ -1373,15 +1373,23 @@ function anStep(S, dt) {
           s.val = lo + ((hi - lo) * pos) / 100;
           s.act = s.val;
         } else s.act = slew(s.act, s.val, sp);
-        s.bad = b.sig && rt.st[b.sig.id] && rt.st[b.sig.id].val > 0.5 ? 1 : 0;
-        out(s.bad ? (rt.st[b.sig.id].val > 1.5 ? (r ? r.hi : 100) : 0) : s.act);
+        /* Phase 5 (YUA PC read 2026-11-26, FCS2000 Function Edition p.2-189 "(c) Input signal error detect function": "The input signal
+           (input IV value) is output when any error is detected"): the AI ALWAYS outputs its input value; the error only sets the alarm
+           flag (SIG.AB). The error is detected (FE p.2-186) on a card / channel error (the SIG.AB box forced by the trainer or a fault)
+           or when the value is 112.5 % of the range or more, or -12.5 % or less. The PID downstream holds its MV on that flag (TB p.73
+           FAULT input). Before: 0 or the top of the range was sent, with no source. */
+        const pct = r ? ((s.act - r.lo) * 100) / sp : s.act,
+          sg = b.sig && rt.st[b.sig.id];
+        if (sg) sg.det = pct >= 112.5 || pct <= -12.5 ? 1 : 0;
+        s.bad = sg && (sg.val > 0.5 || sg.det) ? 1 : 0;
+        out(s.act);
         break;
       }
       case 'CONST':
         out(P.mt ? (P.th * P.orig) / 100 : P.val);
         break;
       case 'SIGAB':
-        out(s.val > 0.5 ? 1 : 0);
+        out(s.val > 0.5 || s.det ? 1 : 0); /* forced (card / channel error) or the AI value out of -12.5 ~ 112.5 % (FE p.2-186) */
         break;
       case 'MAN': {
         if (b.svI === undefined) {
@@ -1853,7 +1861,7 @@ function anStep(S, dt) {
           hk = all.map((x, k) => {
             const sid = b.sgi && b.sgi[k];
             const q = sid != null && rt.st[sid];
-            return !(q && q.val > 0.5) && (!(b.txi && b.txi[k]) || Math.abs(x) > 1e-9); /* transmitter zero = lost signal (user rule, SIG.AB) */
+            return !(q && (q.val > 0.5 || q.det)) && (!(b.txi && b.txi[k]) || Math.abs(x) > 1e-9); /* transmitter zero = lost signal (user rule, SIG.AB) */
           }),
           ok = all.filter((_, k) => hk[k]);
         const md = P.mode || 'AVG',
@@ -1876,8 +1884,17 @@ function anStep(S, dt) {
         break;
       }
       case 'SUMA': {
-        const x = rd(b.i[0]);
+        /* Phase 5 (YUA PC read 2026-11-26, FCS2000 Function Edition 2.4.8 p.2-108 ~ 2-111, textbook p.97): dSUM = PV x period x K / 10000
+           per hour, K (KK) = the counts added in one hour at 100 % input. The 100 % input in the unit of the total is K x the last digit
+           of RSTS (FIQDO1043A: K 350, RSTS 9999999.99 = 3.50 T in one hour = its AI range 0 ~ 3.5 T/H), so in plant units the total adds
+           PV x dt / 3600. CUT (0 ~ 51 % of that 100 %): a PV below CUT counts as 0. RSTS: when the total goes above it, the total clears
+           to 0. RES (manual reset, FE p.2-111): no SUMA of the ABC sheets has a reset pin drawn. */
+        const x0 = rd(b.i[0]),
+          dec = P.rsts != null ? (String(P.rsts).split('.')[1] || '').length : 0,
+          full = P.kk > 0 ? P.kk / Math.pow(10, dec) : 0,
+          x = full > 0 ? ((x0 * 100) / full < (P.cut || 0) ? 0 : x0) : x0;
         s.tot = (s.tot || 0) + (x * dt) / 3600;
+        if (P.rsts > 0 && s.tot > P.rsts) s.tot = 0;
         if (b.o.length) out(s.tot);
         break;
       }
