@@ -259,7 +259,7 @@
   function goItem(i, nn, from, itx) {
     const s0 = cur(),
       v0 = (VB[S.cur] || []).slice();
-    hist.push(from || { cat: 'dig', i: S.cur, vb: v0 });
+    hist.push(from || { cat: 'dig', i: S.cur, k: (S.mach && S.mach[S.cur]) || 0, vb: v0 });
     updBack();
     if (from && window.AN && AN.cat === 'an') AN.setCat('dig');
     S.cur = i;
@@ -315,7 +315,7 @@
     if (r.tcs) {
       const i = S.sheets.findIndex(x => x.tcs === r.tcs);
       if (i < 0) return false;
-      hist.push({ cat: 'dig', i: S.cur, vb: (VB[S.cur] || []).slice() });
+      hist.push({ cat: 'dig', i: S.cur, k: (S.mach && S.mach[S.cur]) || 0, vb: (VB[S.cur] || []).slice() });
       updBack();
       S.cur = i;
       sel = null;
@@ -324,7 +324,7 @@
     }
     if (r.abc) {
       if (!window.AN) return false;
-      hist.push({ cat: 'dig', i: S.cur, vb: (VB[S.cur] || []).slice() });
+      hist.push({ cat: 'dig', i: S.cur, k: (S.mach && S.mach[S.cur]) || 0, vb: (VB[S.cur] || []).slice() });
       updBack();
       /* 3.2.0-beta.39: the ABC ↩ Back returns to this DITL sheet */
       if (AN.hist && AN.updBack) {
@@ -472,6 +472,7 @@
     }
     if (window.AN && AN.cat === 'an') AN.setCat('dig');
     S.cur = h.i;
+    if (h.k !== undefined) (S.mach = S.mach || {})[S.cur] = h.k;
     sel = null;
     if (h.vb && h.vb.length) VB[S.cur] = h.vb;
     render();
@@ -1086,25 +1087,8 @@
     document.body.classList.add('dm');
   }
   let dmKey = '';
-  /* 3.2.0-beta.35: the machines of a drawing that is the same for A ~ D: one chip each; the picked one is the sheet shown (cur()) */
   const LETTERS = 'ABCD';
-  const machChips = () => {
-    const b = S.sheets[S.cur],
-      L = b && window.WORLD && WORLD.instOf ? WORLD.instOf.get(b) : null;
-    if (!L || L.length < 2) return null;
-    const k = (S.mach && S.mach[S.cur]) || 0,
-      fam = String(b.title || '').replace(/\s*\(\d\)\s*$/, '');
-    return E(
-      'span',
-      { cls: 'dm-mach', title: 'The drawing is the same for these machines: each one has its own inputs, values and addresses' },
-      L.map((x, i) => {
-        const nm = i ? WORLD.showText(x, fam) : fam;
-        const c = E('button', { type: 'button', cls: 'dm-m' + (i === k ? ' on' : ''), txt: (x._inst && x._inst.lbl) || LETTERS[i], title: (x._inst && x._inst.lbl) || nm });
-        c.onclick = () => D.setMach(i);
-        return c;
-      })
-    );
-  };
+  /* a unit sheet by its number (op-api: the Training opens burner B as DITL-07 #B) */
   D.setMach = k => {
     S.mach = S.mach || {};
     S.mach[S.cur] = k || 0;
@@ -1127,10 +1111,9 @@
           nOut = nl ? new Set((nl.outs || []).map(o => o.row)).size : 0;
         const ttl = isK(s) ? WORLD.showText(s, s._inst.base.title || '') : m.title || s.title || '';
         dm.append(
-          E('b', { txt: (m.dwg || s.name).replace(/\s*#[B-D]$|\s*#MV-\S+$/, '') + (isK(s) || (s._inst && s._inst.lbl) ? ' · ' + (s._inst.lbl || LETTERS[s._inst.k]) : '') }),
+          /* Phase 6 (user 2026-11-26): each unit is its own sheet of the list (unitNav); the header names the unit, A included */
+          E('b', { txt: (m.dwg || s.name).replace(/\s*#\S+$/, '') + (s._inst && (s._inst.k || s._inst.lbl || unitsOf(S.cur).length > 1) ? ' · ' + (s._inst.lbl || LETTERS[s._inst.k]) : '') }),
           E('span', { cls: 'dm-t', txt: (m.no ? 'SHEET ' + m.no + ' · ' : '') + ttl, title: (m.no ? 'SHEET ' + m.no + ' · ' : '') + ttl }),
-          /* 3.2.0-beta.40 (bug): a sheet of one machine has no chips; append(null) wrote the text "null" in the header */
-          machChips() || '',
           dmode,
           E('span', { cls: 'sp' }),
           E('span', { cls: 'dm-lg' }, [E('i', { cls: 'on' }), document.createTextNode(' 1 = ON  '), E('i'), document.createTextNode(' 0 = OFF')].concat(s.tce ? [E('i', { cls: 'ns' }), document.createTextNode(' no value')] : [])) /* a TCE sheet: a wire the engine gives no value for */,
