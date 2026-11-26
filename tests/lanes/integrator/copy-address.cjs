@@ -52,7 +52,9 @@ const ok = (c, m) => c || bad.push(m);
   E.step(10);
   const sw = W.plantSw().filter(q => /DITL-BA0[12]$/.test(q.sheet)),
     on = (c, r) => (sw.find(q => q.sheet.endsWith(c) && q.row === r) || {}).on;
-  ok(sw.length === 12, 'DITL-BA01 / BA02 switch rows: ' + sw.length);
+  /* 12 + 2 since Phase 6 DITL (lane 1, 2026-11-26, PC read YUA B10): DITL-BA01 row 12 LS-BH1752 BUFFER TANK LOW and DITL-BA02 row 12
+     LSH-SD1800 SAND SILO HI LEVEL got their field source (src/world/field/ditl.js section 4b) */
+  ok(sw.length === 14, 'DITL-BA01 / BA02 switch rows: ' + sw.length);
   ok(on('BA01', 11) === true && on('BA01', 10) === false && on('BA01', 14) === true, 'DITL-BA01 rows 11 / 10 / 14');
   const fw = W.plantSw().find(q => /DITL-23A #B$/.test(q.sheet) && q.row === 11);
   ok(fw && fw.tag === 'ZSO-FW1032' && fw.on === true, 'DITL-23A #B row 11: ' + JSON.stringify(fw));

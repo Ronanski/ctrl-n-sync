@@ -1,0 +1,55 @@
+# Phase 6 DITL: rows bound from the PC drawing read (lane 1, MARIA, 2026-11-26)
+
+Source: YUA's read of the drawings, the I/O list and the memory list (groups A ~ D of the DITL sources request). DITL inputs with no
+source at 150 MW: **83 -> 16** (copy clash count 1 -> 0). No trip at 150 MW (trace run.trip 0).
+
+## What the operator sees
+
+- Bottom ash, limestone and sand field switches (bag filter DP, ash silo high / low, chain conveyor and bucket elevator block switches,
+  rotofeeder fault, vent filter trip and purge fault, silo LSH / LSL, sand venting fan trip, screw cooler inverter trips) read their
+  normal service value. The instructor can change each one from the Plant menu (field states).
+- Sand silo high level on DITL-BA02 follows the sand model, the same switch as DITL-774.
+- DITL-LS240 AIR TANK PRESSURE LOW reads the limestone air receiver of the model: 1 below 4 kg/cm2, 0 in service (the 4 kg/cm2 on the sheet is the switch set point).
+- The two DCS flashers M.133F (1 s / 0.5 s) and M.135F (300 ms / 6 s) blink.
+- The screw cooler ash temperatures (DITL-21A rows 11 / 12, all four coolers) and the air heater sootblower steam pressures (DITL-80K rows
+  16 / 17) take the model value. FURNACE DP LOW M.3122 reaches all four coolers (one station wiring bit).
+- DITL-21A row 5 AUTO SEQUENCE MODE SELECTED is linked to DITL-21B output 52, the same as row 26.
+- DITL-LS230 rows 6 / 9 hold the set points 2.5 / 0.5 kg/cm2.
+
+## Code
+
+- `src/world/field/ditl.js` sections 4 ~ 6; `src/world/bind/ditl.json` (new, lane 1).
+- `src/world/plantsw.js` FIELD rows: optional `row` (drawn row number with `sheet`, for a row whose text has no tag word) and `an: 1`
+  (an analog row of the drawing). Agreed with the phase thread.
+- `src/world/world.js` FROM ABC linker: a row "(FROM STATION WIRING)" is common to every machine copy.
+- `tests/lanes/ditl/yua-field.cjs` (41 checks).
+
+## Left (14), all explained in docs/phase6/open.json
+
+After PR 645 (trace: DITL-777 = station 103, BA74 row 5 SPARE) the trace counts 14 DITL inputs. Each is a type b or c finding:
+
+- DITL-43 rows 5 / 10 / 12 / 13 (4), b: rows of the APH INVERTER PANEL box, run by 03b-sim.js INV / invStep.
+- Analog pass-through rows (5), b: BA60 r21 LT-BH1750, LS214 r9 LT-LM1800, LS240 r1 / r2 PT-LM1811 / 1812, r3 ST-M1311 (I/O list AI rows).
+- DITL-774 rows 1 / 2 (2), c: LT-SD1800 / PT-SD1800 wired straight into the OR gate, no comparator drawn.
+- Sand operator inputs (3), b: 771 r8 M.0803, 772 r2 M.0882, 776 r3 M.0870 (CRT; the HMI button is Phase 9).
+
+ABC-050 I.041E / I.041F are no longer counted (TCS link below) and are removed from open.json.
+
+## TCS to DCS: MSV(A) / (B) TEST
+
+ABC-050 I.041E / I.041F TCS-DI1051-1 / -2 (FROM TCS, OR B95 -> M.0705) now take the TCS outputs TCE960-27 / 28 MSV/CV(A) / (B)
+SEQUENTIAL FULL CLOSE TEST EXECUTING (src/data/tcs-dcs.json, the valve test of TCE220 / TCE224). 0 in service; an MSV(A) test sets
+I.041E only (`tests/tce/msv-test-dcs.cjs`). Code: `src/analog/engine/unit.js` U.di.msvA / msvB.
+
+## Bottom ash step register SI0130
+
+The STEP n rows of DITL-BA04 ~ BA18 (15) read the step register SI0130, kept from scan to scan. Each step sheet writes it when its step
+bit comes on ("IF M.1313 ON THEN 2 --> SI0130", read from the sheet text; BA11 M.1333 -> 8 and BA18 M.1352 -> 15 from the PDF, YUA). The compare is "=",
+the memory list name of M.1360 ~ M.136E "B/A SYS. STEP=n". All 15 writers are found (BA18 M.1352 -> 15 from the PDF, YUA). At rest the register is 0 (STEP 0 = 1).
+Not tested: a full ash transmitter cycle through all steps.
+
+## Condensate pump AUTO STARTING (DITL-61A row 27)
+
+Each pump reads the other pump's AUTO STARTING bit: the AND gate wire carries "M.1183/1193" (pump A / B), so row 27 of the A drawing
+(M.1193) reads the net of the B copy, and the B copy reads M.1183 of A (YUA A6, memory list 103). `src/world/world.js` copy mapping:
+a one-address input row that names entry j of an address list written on an internal wire reads machine (j + k) mod n.

@@ -338,11 +338,22 @@
   /* beta.470 (lane plan 2026-11-25): a field signal row of a lane with di (src/world/field/<lane>.js: { tag, di: 1, sheet, src, rel,
      v(U, X) }) is a switch row of the plant model like the rows above: the DITL input row whose text starts with the tag is 1 while
      v(AN.unit, AN.fieldX) is true (above 0.5). sheet (optional): the code of the sheet, "DITL-23A", when the tag is on more than one sheet */
+  const FROW = [],
+    FAN = [],
+    fan = [];
   for (const r of (window.FIELD && FIELD.rows) || []) {
     const fn = r.v || r.get;
+    /* an analog row of a drawing (a comparator row: DITL-21A row 11 TT-BH1060-A1 > 940 C) bound by `an: 1`, `sheet` and `row`: its value
+       is v(U, X) each scan, as the analog rows of the plant model below (s.avw) */
+    if (r.an && r.row && r.sheet && typeof fn === 'function') {
+      FAN.push({ re: new RegExp('\\)' + String(r.sheet).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'), n: +r.row, fn });
+      continue;
+    }
     if (!r.di || !r.tag || typeof fn !== 'function') continue;
-    /* a tag the plant model already switches above keeps that one source (one signal, one source); the row is listed in FIELD.dup */
-    if (L.some(x => x[0] === String(r.tag).toUpperCase())) {
+    /* a tag the plant model already switches above keeps that one source (one signal, one source); the row is listed in FIELD.dup.
+       Phase 6 DITL (lane 1, 2026-11-26): a row with `row` (the drawn row number, with `sheet`) is bound to that one row of that sheet,
+       for a drawing row whose text has no tag or address word (DITL-777 row 1 "STOP"); a row the plant model already drives keeps it */
+    if (!r.row && L.some(x => x[0] === String(r.tag).toUpperCase())) {
       (FIELD.dup = FIELD.dup || []).push(r.lane + ' ' + r.tag);
       continue;
     }
@@ -356,6 +367,10 @@
     };
     /* the sheet code of a copy keeps its " #B" (DITL-19 #B): the name of the copy ends with it */
     const shRe = r.sheet ? new RegExp('\\)' + String(r.sheet).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') : null;
+    if (r.row) {
+      if (shRe) FROW.push({ re: shRe, n: +r.row, d: Object.assign([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, shRe], { fld: 1 }) });
+      continue;
+    }
     L.push([String(r.tag).toUpperCase(), f, 0.5, 'hi', 0, 0, null, shRe]);
     L[L.length - 1].fld = 1;
     /* a drawing that writes the row by its I/O address, not by the tag ("I.0132 COAL FEEDER A REMOTE SELECTED", DITL-19 row 6): the row
@@ -377,6 +392,7 @@
     mu.length = 0;
     air.length = 0;
     bo.length = 0;
+    fan.length = 0;
     mtr.length = 0;
     usw.length = 0;
     const FD = new Map(L.filter(x => x.fld).map(x => [x[0], x]));
@@ -409,7 +425,12 @@
         const words = t.split(/\s+/);
         const hit = (z, ws) => ws.includes(z[0]) && (!z[6] || z[6].test(t)) && (!z[7] || z[7].test(s.name));
         /* the tag of a lane's field row may stand later in the text (DITL-87 rows 24 / 26 "FIRE FIGHTING PUMP P-0719 MIR-P0719 RUNNING") */
-        const d = L.find(z => hit(z, words.slice(0, 3))) || byTag(s, words.slice(0, 3)) || L.find(z => z.fld && hit(z, words));
+        const rn = b.rows[i] && b.rows[i].n,
+          d =
+            L.find(z => hit(z, words.slice(0, 3))) ||
+            byTag(s, words.slice(0, 3)) ||
+            L.find(z => z.fld && hit(z, words)) ||
+            ((FROW.find(q => +q.n === +rn && q.re.test(s.name)) || {}).d);
         if (d) map.push({ s, row: i, d, on: null });
       }
       for (const h of (s.sd && s.sd.hrow) || []) {
@@ -428,6 +449,11 @@
       /* P2 #13: the DITL comparator rows on the condenser pressure transmitter (DITL-55 row 6, DITL-73 row 26 PT-CD1110) */
       for (const a of (s.nl && s.nl.an) || []) {
         const z = (s.nl.src || []).find(q => q.n === a.net);
+        const fq = z && b && b.rows[z.row] && FAN.find(q => +q.n === +b.rows[z.row].n && q.re.test(s.name));
+        if (fq) {
+          fan.push({ s, key: a.key, fn: fq.fn });
+          continue;
+        }
         let t = '';
         try {
           const I = (z && window.DUI && DUI.rowInfo(s, z.row)) || {};
@@ -600,6 +626,13 @@
     for (const a of air) if (isFinite(U[a.f])) (a.s.avw = a.s.avw || {})[a.key] = Math.round(U[a.f] * 1000) / 1000;
     for (const a of mtr) if (U.mt && isFinite(U.mt[a.g])) (a.s.avw = a.s.avw || {})[a.key] = Math.round(U.mt[a.g] * 10) / 10;
     for (const a of bo) if (isFinite(U[a.f])) (a.s.avw = a.s.avw || {})[a.key] = Math.round(U[a.f] * 1000) / 1000;
+    for (const a of fan) {
+      let x = NaN;
+      try {
+        x = +a.fn(U, (window.AN && AN.fieldX) || {});
+      } catch (e) {}
+      if (isFinite(x)) (a.s.avw = a.s.avw || {})[a.key] = Math.round(x * 1000) / 1000;
+    }
     const ps = suc.length ? W.sucP() : NaN;
     if (isFinite(ps)) for (const a of suc) (a.s.avw = a.s.avw || {})[a.key] = ps;
     for (const u of usw) {

@@ -1,4 +1,10 @@
 {
  "about": "Known differences against the tag database (src/data/ades.txt), found 2026-11-25 by tests/lanes/qa/tag-db.cjs. Each one has its reason; the lane that owns the row fixes it and removes it here. A new difference is never added here without a reason. A row whose tag is the drawing's spelling carries io = the I/O list name (field MIR-L-1090 / ARP / IRP, alarm PSL-DO1043-x1 where the alarm list 20160912 writes PSL for the PSH-DO1043 HIGH switch); the test checks io.",
- "known": {}
+ "known": {
+  "field 3 FLASHER(ON/OFF)": "DITL-BA52 row 1 is the DCS flasher memory bit M.133F (memory list 103 FLASHER(ON/OFF)), no I/O tag; bound by its row text (lane 1, YUA PC read B9)",
+  "field 3 M.135F": "DITL-BA69 row 13 is the DCS flasher memory bit M.135F (memory list 103 FLASHER(ON/OFF)), no I/O tag (lane 1, YUA PC read B9)",
+  "field 4 LS230-SP-HIGH": "limestone sheet 230 row 6 INT. REGISTER 2.5 kg/cm2, a constant of the logic with no address (lane 1, YUA PC read C14)",
+  "field 4 LS230-SP-LOW": "limestone sheet 230 row 9 INT. REGISTER 0.5 kg/cm2, a constant of the logic with no address (lane 1, YUA PC read C14)",
+  "field 3 SI0130": "DITL-BA04 ~ BA18 STEP n rows read the bottom ash step register SI0130 (memory list 103 BOTTOM ASH SYS. STEP), a data register with no I/O tag (lane 1, YUA PC read B8)"
+ }
 }

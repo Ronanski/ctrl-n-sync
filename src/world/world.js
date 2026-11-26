@@ -297,6 +297,23 @@
   W.showText = (s, t) => {
     const I = s && s._inst;
     /* live test #56: machine A (k 0) of a drawing for several machines keeps its own address of the list too */
+    /* Phase 6 DITL (lane 1, 2026-11-26, B5 copy clash): the base sheet of a unit set from data (src/world/inst, DITL-21D row 22
+       "O.021D/297 O.0615/617" LOS-L1060A ~ D, S4 O.137C ~ F OPC-ANN-G1 ~ G4) is unit A: it keeps the first address of the list, its own.
+       It read the whole list, so the base drove the outputs of B ~ D too, beside their own copies */
+    if ((!I || (!I.k && !I.data)) && s && t && W.instOf) {
+      if (s._dcopyOf !== W.instOf) {
+        s._dcopyOf = W.instOf;
+        s._dcopy = (W.instOf.get(s) || []).find(c => c !== s && c._inst && c._inst.data && c._inst.amap) || null;
+      }
+      const d = s._dcopy;
+      if (d) {
+        const l0 = addrList0(t);
+        if (l0.length > 1 && d._inst.amap[l0[0]] && l0.includes(d._inst.amap[l0[0]])) {
+          let first = true;
+          return t.replace(LRXG, () => (first ? ((first = false), l0[0]) : '')).replace(/\s{2,}/g, ' ');
+        }
+      }
+    }
     if (!I || !t) return t;
     /* beta.520: a text of the drawing that a bind row of a lane gives an I/O point in this copy ("MCV OPEN COMMAND" of DITL-38) */
     if (I.tadd && I.tadd.has(String(t).trim())) t = t + ' ' + I.tadd.get(String(t).trim());
@@ -962,6 +979,50 @@
         }
       }
     }
+    /* Phase 6 DITL (lane 1, 2026-11-26, copy mapping; YUA PC read A6): an input row of a machine-copy drawing that reads the bit the OTHER
+       machine makes on an internal wire. DITL-61A: the AND gate of AUTO STARTING carries "M.1183/1193" on its wire (pump A / B, memory
+       list 103 M.1183 / M.1193 CONDENSATE PUMP-A / B AUTO START PERMISSION); row 27 "M.1193" of the A drawing reads pump B's, and the B
+       copy ("THE DIAGRAM IS THE SAME FOR CONDENSATE PUMP B") reads pump A's M.1183. Entry j of the list is machine j; the row of machine k
+       that names entry j of the drawing reads machine (j + k) mod n, on the net of that wire. Only rows with no other source */
+    const xcopy = [];
+    for (const sb of S.sheets) {
+      const cps = W.instOf.get(sb) || [];
+      if (cps.length < 2 || isSB(sb) || !(sb.tx || []).some(t => /^[IMOB]\.[0-9A-F]{4}(\/[0-9A-F]{2,4})+$/i.test(String(t.t).trim()))) continue;
+      const nl = nlOf(sb);
+      if (!nl || !nl.segs) continue;
+      for (const t of sb.tx || []) {
+        const L = addrList0(t.t);
+        if (L.length !== cps.length || !/^[IMOB]\.[0-9A-F]{4}(\/[0-9A-F]{2,4})+$/i.test(String(t.t).trim())) continue;
+        let bn = -1,
+          bd = 8;
+        /* the insertion point of the text (ix / iy: the label is written beside its wire, DITL-61A "M.1183/1193" 1.7 from it) */
+        const tx0 = t.ix != null ? t.ix : t.x,
+          ty0 = t.iy != null ? t.iy : t.y;
+        for (const g of nl.segs) {
+          const dx = g.x2 - g.x1,
+            dy = g.y2 - g.y1,
+            L2 = dx * dx + dy * dy,
+            u = L2 > 0 ? Math.max(0, Math.min(1, ((tx0 - g.x1) * dx + (ty0 - g.y1) * dy) / L2)) : 0,
+            dd2 = Math.hypot(tx0 - (g.x1 + u * dx), ty0 - (g.y1 + u * dy));
+          if (dd2 < bd) ((bd = dd2), (bn = g.n));
+        }
+        if (bn < 0) continue;
+        sb.rows.forEach((r, i) => {
+          const la = rowList(sb, i);
+          if (la.length !== 1) return;
+          const j = L.indexOf(la[0]);
+          if (j < 0) return;
+          cps.forEach((x, k) => {
+            const y = cps[(j + k) % cps.length];
+            if (y === x || (din.get(x) && din.get(x).get(i))) return;
+            (y._xn = y._xn || new Set()).add(bn);
+            addIn(x, i, { k: 'd', d: y, row: 'n' + bn, ref: codeOf(sb.name) + ' ' + L[(j + k) % cps.length] });
+            xcopy.push(x.name + ' r' + +r.n + ' <- ' + y.name + ' net ' + bn + ' ' + L[(j + k) % cps.length]);
+          });
+        });
+      }
+    }
+    W.xcopy = xcopy;
     /* 3.2.1 d2 (LISA): the PLC sheets with no FROM column read their inputs by address (CLAUDE.md rule 1: one address = one signal in its
        station). Sand E10210-3-771 ~ 777 = station 103, limestone DITL-LS = station 104.
        - an output row of another sheet of the same set that writes the address (sand: 771 row 7 M.0851 SAND SILO LEVEL L <- 774 out
@@ -1219,7 +1280,11 @@
           /* 3.2.0-beta.23: one address and a row that names no machine of this family (DITL-19 row 16 "FURNACE LOWER LAYER UNDER
              TEMP. > 700 C" M.3330 is ONE furnace for feeders A, B, C) is the same signal for every instance (CLAUDE.md rule 1);
              before, feeders B and C had no furnace temperature and tripped when the last start-up burner was put out */
-          const common = k > 0 && !la[k] && la.length === 1 && !relative(sb, T);
+          /* Phase 6 DITL (lane 1, 2026-11-26, YUA PC read A3): a row "(FROM STATION WIRING)" is one signal broadcast by another station
+             for every machine of the drawing, even when its text names machine A (DITL-21A row 7 M.3122 FURNACE DP LOW, made in station 101,
+             read by the four screw coolers) */
+          const common =
+            k > 0 && !la[k] && la.length === 1 && (!relative(sb, T) || /FROM STATION WIRING/i.test(T + ' ' + cellTxt(sb, i, 'L')));
           if (k > 0 && !la[k] && !common) return;
           const adr = la[k] || (common ? la[0] : null),
             wt = (sb.tx || []).filter(x => x && x.t && Math.abs((x.iy != null ? x.iy : x.y) - r.y) < 5 && /^[A-Z0-9-]{4,}\.(MAN|MV|PV|SV)$/.test(String(x.t).trim())),

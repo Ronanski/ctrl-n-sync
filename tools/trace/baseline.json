@@ -3,21 +3,21 @@
  "up": {
   "sheets.abc": 51,
   "sheets.ditlRunning": 245,
-  "io.linked": 1854,
-  "io.value": 2269,
-  "mem.onSheet": 3072,
+  "io.linked": 1870,
+  "io.value": 2292,
+  "mem.onSheet": 3073,
   "alarms.withSetPoint": 96,
   "hmi.faceplateBound": 120,
   "fx.tablesUsed": 91
  },
  "down": {
   "io.unlinked": 0,
-  "io.noSource": 30,
+  "io.noSource": 15,
   "io.onDrawing": 129,
-  "io.copyClash": 1,
+  "io.copyClash": 0,
   "mem.noSource": 2,
-  "breaks.B1_abcInputNoSource": 5,
-  "breaks.B1_ditlInputNoSource": 107,
+  "breaks.B1_abcInputNoSource": 3,
+  "breaks.B1_ditlInputNoSource": 14,
   "breaks.B2_ioInputNowhere": 6,
   "breaks.B3_faceplateNoController": 16,
   "breaks.B4_alarmNoSetPoint": 9
