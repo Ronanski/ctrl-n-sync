@@ -1,0 +1,61 @@
+{
+  "id": "20261127-0758-phase10-switch-rows",
+  "date": "2026-11-27 07:58 PHT",
+  "what": "Phase 10: 48 alarm list switches that only DITL logic read get their own alarm row (level and alarm state from the sibling row already in the app)",
+  "source": "Alarm List _20160912 (newest plant alarm list), rows of each switch tag; sibling rows in src/data/alarms; docs/phase10/coverage.json",
+  "by": "PHASE 10 ALARMS : HIKARU",
+  "items": [
+    {
+      "k": "alarm:air",
+      "op": "change"
+    },
+    {
+      "k": "alarm:air-supply",
+      "op": "change"
+    },
+    {
+      "k": "alarm:bottom-ash",
+      "op": "change"
+    },
+    {
+      "k": "alarm:chemical",
+      "op": "change"
+    },
+    {
+      "k": "alarm:coal",
+      "op": "change"
+    },
+    {
+      "k": "alarm:cooling-water",
+      "op": "change"
+    },
+    {
+      "k": "alarm:diesel-oil",
+      "op": "change"
+    },
+    {
+      "k": "alarm:drum",
+      "op": "change"
+    },
+    {
+      "k": "alarm:flue-gas",
+      "op": "change"
+    },
+    {
+      "k": "alarm:heater-drain",
+      "op": "change"
+    },
+    {
+      "k": "alarm:lube-oil",
+      "op": "change"
+    },
+    {
+      "k": "alarm:makeup",
+      "op": "change"
+    },
+    {
+      "k": "alarm:reheat",
+      "op": "change"
+    }
+  ]
+}
