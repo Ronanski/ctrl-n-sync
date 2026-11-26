@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, '..', '..', '..');
 const win = {};
 vm.runInNewContext(fs.readFileSync(root + '/src/digital/tce-run.js', 'utf8'), { window: win });
 const R = win.TCE_RUN;
-const FLOOR = 27; /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502
+const FLOOR = 34; /* + slice F: CHANGE OVER TCE172 (LME300 + 301), HEAT SOAK CONTROL TCE207 (LME242 + 243) */ /* + slice D: CV WARMING SET x2, CRT OPE INC/DEC TCE194 / TCE205, L-RATE TCE185 */ /* 8 HMI INDI + HEAT SOAK SELECT + ACCELERATION RELAY + TRIPPLE TCE145 + 2 UNT-FG TCE212 + 7 LME286 on TCE500 / TCE502
    + 6 VALVE CONTROL MT1 (TCE210, TCE211, TCE212 x2, TCE214 x2; slice C) + TURNING GEAR TCE350 */
 let fail = 0;
 const ck = (ok, w) => (console.log((ok ? 'PASS ' : 'FAIL ') + w), ok || fail++);
@@ -91,6 +91,58 @@ const run = (f, I, st, n, dt) => {
   ck(r({ 'PB MANUAL': 1 }).MANU === 1, 'MANUAL pressed: back to MANUAL');
   ck(r({ 'PB START': 1 }).STS === 1 && r({ 'PB STOP': 1 }).STOP === 1, 'START / STOP in MANUAL');
   ck(r({ 'PB AUTO': 1, 'PB CRT AVAILABLE': 0 }).AUTO === 0, 'no button acts without CRT AVAILABLE');
+}
+// slice D: CRT OPE INC/DEC TCE194 001 (LME025), L-RATE TCE185 003 (LME043), CV WARMING SET TCE155 002 (LME131)
+{
+  const f = mk('TCE194', '001'),
+    I = { PERM: 1, Z: 40, RATE: 10, X: 33, INC: 0, DEC: 0, HSS: 0, LSS: 0, 'PB SYNCHRO': 0, 'PB SV-C': 50 };
+  ck(!!f && f.lme === 'LME025', 'TCE194 001 is the backup CRT OPE INC/DEC (LME025)');
+  let O = f(I, [], {}, 0.1);
+  ck(O.MANU === 0 && O.OUT === 33, 'no SYNCHRO: MANU 0, OUT = X');
+  O = f({ ...I, 'PB SYNCHRO': 1 }, [], {}, 0.1);
+  ck(O.MANU === 1 && O.OUT === 1, 'SYNCHRO with PERM: MANU 1, OUT = screen set value - Z held to +-1 (50 - 40 -> 1)');
+  O = f({ ...I, LSS: 1 }, [], {}, 0.1);
+  ck(Math.abs(O.OUT - -0.3) < 1e-12, 'LSS: OUT = SC(RATE x 0.03) = -0.3 (SC = sign change, derived)');
+  const g = mk('TCE185', '003'),
+    st = {},
+    J = { PER: 1, TR: 7, SW: 1, 'PB SYNCH': 1, 'PB SV-C': 3 };
+  ck(!!g && g.lme === 'LME043', 'TCE185 003 is the backup L-RATE (LME043)');
+  ck(g(J, [], st, 0.1).OUT === 3, 'L-RATE SYNCH: tracks the screen value 3');
+  ck(g({ ...J, 'PB SYNCH': 0, 'PB SV-C': 9 }, [], st, 0.1).OUT === 3, 'L-RATE no SYNCH: holds 3 (I / D off)');
+  ck(g({ ...J, SW: 0, 'PB SYNCH': 0 }, [], st, 0.1).OUT === 7, 'L-RATE SW off: tracks TR 7');
+  const h = mk('TCE155', '002'),
+    s2 = {},
+    K0 = { FOPN: 0, 'CL.POS': 5, FCLS: 1, RATE: 100, 'OP.POS': 60, 'DEF TURBINETRIP': 0, 'DEF INITIAL': 1 };
+  ck(!!h && h.lme === 'LME131', 'TCE155 002 is the backup CV WARMING SET (LME131)');
+  let Q;
+  for (let i = 0; i < 20; i++) Q = h(K0, [], s2, 0.1);
+  ck(Q.SET === 5, 'CV warming FCLS: SET goes to CL.POS (5)');
+}
+// slice F: CHANGE OVER TCE172 8 (LME300 + LME301), HEAT SOAK CONTROL TCE207 007 (LME242 + LME243): two backup files, one macro
+{
+  const f = mk('TCE172', '8'),
+    st = {},
+    I = { PERM: 1, TEST: 0, GS: 0, LS: 0, GM: 0, LM: 0, LIMIT: 0, USE: 1, GOV: 50, LLM: 60, 'DEF 52GCLOSE': 1, 'DEF TURBINETRIP': 0, 'DEF ALLVALVECLOSED': 0, 'DEF INITIAL': 1, 'DEF CRTOPEPERM': 1 };
+  ck(!!f && f.lme === 'LME300', 'TCE172 8 is the backup CHANGE OVER (LME300 + LME301)');
+  let O = run(f, I, st, 3, 0.1);
+  ck(O.GOV === 1 && O.LLM === 0 && O.LC === 0, 'start: governor in control (GOV 1, LLM 0)');
+  O = run(f, { ...I, LS: 1 }, st, 3, 0.1);
+  ck(O.LC === 1 && O.GOV === 1, 'LS with load limit above governor + 0.1: change to load limit running (LC 1)');
+  O = run(f, { ...I, LLM: 49.8 }, st, 3, 0.1);
+  ck(O.LC === 0 && O.LLM === 1 && O.GOV === 0, 'load limit comes under governor - 0.1: LC ends, load limit in control (LLM 1, GOV 0)');
+  ck(O.FIN === 1, 'USE and the two within 5: FIN 1');
+  O = run(f, { ...I, LLM: 49.8, 'DEF TURBINETRIP': 1 }, st, 2, 0.1);
+  ck(O.GOV === 1 && O.LLM === 0, 'turbine trip: back to governor');
+  const h = mk('TCE207', '007'),
+    s2 = {},
+    J = { DEMAND: 30, OPEN1: 4, OPEN2: 0, CVHLD: 0, CONT: 0, HOLD: 0, RESET: 0, 'S.SEL1': 0, 'S.SEL2': 0, 'S.TARG': 0, 'DEF HEATSOAKCONTROL': 0, 'DEF ALLVALVECLOSED': 0, 'DEF INITIAL': 1 };
+  ck(!!h && h.lme === 'LME242', 'TCE207 007 is the backup HEAT SOAK CONTROL (LME242 + LME243)');
+  O = run(h, J, s2, 3, 0.1);
+  ck(O.ICV === 30 && O['BIAS.C'] === 1 && O.CV === 0, 'heat soak off: ICV = DEMAND 30, bias cleared (BIAS.C 1), CV 0');
+  O = run(h, { ...J, 'DEF HEATSOAKCONTROL': 1 }, s2, 3, 0.1);
+  ck(Math.abs(O.CV - 34) < 1e-9, 'heat soak on: CV = DEMAND 30 + CV opening bias OPEN1 4 (got ' + O.CV + ')');
+  O = run(h, { ...J, 'DEF ALLVALVECLOSED': 1 }, s2, 3, 0.1);
+  ck(O.ICV === 0, 'all valves closed: ICV 0');
 }
 // the sheets: count of macros run from the backup
 {
