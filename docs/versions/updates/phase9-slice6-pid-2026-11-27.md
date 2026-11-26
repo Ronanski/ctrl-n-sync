@@ -31,3 +31,8 @@ Source: /mnt/project-files/phase9-pid-positions-2026-11-27.md (flow diagram set 
   Tinanggal sila sa `nodoc`; gagawan ng simbolo.
 - Natitira sa `nodoc` (8): STR-CD1011, T-0761 / 0762, S-1960, T-1065A ~ C, OR-CD1002.
 - Bilang: 233 / 349 may simbolo, 8 wala sa docs, 108 natitira.
+
+## Air cannon (9 AM)
+- Coal page: 9 air cannon bawat bunker (T-1066A ~ I = bunker A, T-1067 = B, T-1068 = C), nakaguhit sa cone ng bunker.
+  Source: Martin LB-C214007-02 / 03 (bilang at lokasyon sa cone). Kung aling set ang aling bunker: INFERRED mula sa ayos ng tag.
+- Bilang: 260 / 349 may simbolo, 8 wala sa docs, 81 natitira.

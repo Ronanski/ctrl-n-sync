@@ -792,6 +792,25 @@
       '<path class="rxd" d="M-26 -7h3v14h-3zM27 -8h3v16h-3zM-15 12h10v3h-10z"/><path class="rx" d="M-23 -5H-18L-16 -9H-4L-2 -5L10 -2.5L27 -6.5V6.5L10 2.5L-2 5V12H-18V5H-23Z"/>' +
       live(o.flow, '<path class="rx-mist" style="stroke:var(--hx-m-steam)" d="M-18 0H24"/>')
   });
+  /* air cannons on the cone of a coal bunker (Phase 9, 2026-11-27; Martin Engineering LB-C214007-02 / 03, K1AU3-D1-0-056): drawn over the
+     bunker symbol at the same place and scale, small cannons outside the cone walls on the three levels (level 3 near the top of the cone,
+     4 cannons; level 2, 3; level 1 near the outlet, 2), each with its blow pipe into the wall. Side view: the cannons of a level are split
+     over the two walls. No ports */
+  R.cannons = () => {
+    const at = (t, side, k) => {
+      const tt = t + k * 0.12,
+        x = side * (30 - 19 * tt),
+        y = 8 + 36 * tt,
+        dx = side * 4;
+      return `<path class="rxe" d="M${n(x)} ${n(y)}H${n(x + dx)}"/><rect class="rxv" x="${n(x + dx + (side > 0 ? 0 : -8))}" y="${n(y - 2.5)}" width="8" height="5" rx="2.2"/>`;
+    };
+    let s = '';
+    for (const [t, L, R2] of [[0.2, 2, 2], [0.5, 2, 1], [0.8, 1, 1]]) {
+      for (let k = 0; k < L; k++) s += at(t, -1, k);
+      for (let k = 0; k < R2; k++) s += at(t, 1, k);
+    }
+    return { box: [-40, -45, 40, 48], ports: {}, svg: s };
+  };
   /* coal bunker, cut open: the coal inside, the outlet below. level: [key, low, high]. Ports: t, b */
   R.bunker = o => {
     const id = o.id || 'bk',

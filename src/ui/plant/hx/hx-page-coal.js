@@ -50,6 +50,9 @@
           sc: BS,
           lab: 'l'
         }),
+        /* Phase 9 (2026-11-27): the 9 air cannons of the bunker (Martin Big Blaster, LB-C214007-02 / 03, YUA vendor read part 2): T-1066 on
+           bunker A, T-1067 on B, T-1068 on C (from the tag order: the drawing does not name the silo; INFERRED) */
+        at(E('cannons', 'Air cannons', ['T-1066', 'T-1067', 'T-1068'][i] + 'A-I', []), bx, BY, { id: 'ac' + i, sc: BS, lab: 't' }),
         at(
           M('feeder', 'COAL FEEDER ' + n, 'Coal feeder ' + n, [V('Total', 'MIA-CL1061-' + n + '1', 't', 0)], {
             /* beta.556: I/O list station 4, PS-IA1061-A1 / A2 / B1 / B2 / C1 / C2; no drawing of the app reads them: ----- */
