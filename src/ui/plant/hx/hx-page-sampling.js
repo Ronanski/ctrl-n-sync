@@ -144,9 +144,24 @@
             at(B('Level low-low', di('LSLL-' + k.sw, 'YES', 'NO'), { w: 130 }), sx - 110, 924, { id: 'lll' + i })
           ];
         }),
-        at(M('mixer', 'Z-1101', 'Agitator', []), SX[0] - 110, TY - 78, { id: 'agt', sc: 1.3, lab: 'l' })
+        at(M('mixer', 'Z-1101', 'Agitator', []), SX[0] - 110, TY - 78, { id: 'agt', sc: 1.3, lab: 'l' }),
+        /* measuring vessels (PD-042 B/C-3, B/C-5, B/C-7, YUA P&ID read 2026-11-27): demineralized water CH-1-032 -> vessel ->
+           its chemical tank. Z-1102 10 L to the phosphate tank, Z-1104 15 L to the neutral amine tank, Z-1106 10 L to the
+           carbohydrazide tank (the equipment list says hydrazine; the sheet says carbohydrazide) */
+        ...['Z-1102', 'Z-1104', 'Z-1106'].map((t, i) =>
+          at(E('tank', 'Measuring vessel', t, [], { id: 'mv' + i, liquid: 'none', w: 18, h: 30, wrap: 10 }), SX[i] - 30, 640, {
+            id: 'mv' + i,
+            lab: 'r'
+          })
+        ),
+        /* Z-1140 sampling rack (PD-044 whole sheet, drawn there as the box "BY SAMPLING RACK SUPPLIER", tag not printed) */
+        at(E('rack', 'Sampling rack', 'Z-1140', []), 1400, 395, { id: 'srk', sc: 0.6, lab: 'r' })
       ],
       pipes: [
+        ...[0, 1, 2].flatMap(i => [
+          { med: 'water', w: 3, pts: [[SX[i] - 30, 600], 'mv' + i + '.t'], arrow: false },
+          { med: 'water', w: 3, pts: ['mv' + i + '.b', [SX[i] - 30, 668], [SX[i] - 110 + 48, 668]] }
+        ]),
         /* the sample lines into the coolers */
         ...STREAMS.map((s, i) => ({ med: s[2], w: 3, pts: [[CX(i), 118], 'c' + i + '.t'], arrow: false })),
         /* dosing: tank to the two pumps, the pumps to the cycle */
