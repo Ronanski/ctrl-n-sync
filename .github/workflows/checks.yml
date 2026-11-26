@@ -75,6 +75,9 @@ jobs:
           V=$(node tools/version.js)
           node tools/station/build.js "dist/logic-sim-v$V.html" /tmp/gate/index.html
           node tests/gate/behaviour.cjs /tmp/gate/index.html --mins 20
+      - name: INSTRUCTOR GATE (Phase 13) - Plant menu, freeze, slow / fast speed, backtrack, malfunction, field action, Warm / Hot restarts
+        timeout-minutes: 20
+        run: node tests/gate/instructor.cjs /tmp/gate/index.html
       - name: ABC VALUES LAYOUT - no live value on a text, a value, a block or a wire, side values level, top / bottom values centred (54 sheets)
         timeout-minutes: 10
         run: |
