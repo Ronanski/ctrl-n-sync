@@ -926,6 +926,75 @@ const has = (txt, tag) => {
   const byStatus = s => cnt(ioIn, x => x.status === s);
   const abcSheets = AN.sheets.filter(s => !/^ABC-000/.test(s.name)).length;
   const dBase = DITL.S.sheets.filter(s => !/DITL-0[A-D]$/.test(s.name));
+  /* Phase 7 VALIDATOR (OPLAN TRANSLATED #7, "walang kabit na pin, hindi kilalang tag, NaN, sa bawat takbo"): (1) block pins with no
+     wire: an ABC block input pin with no net, a DITL gate pin the netlist could not wire (nl.gates[].miss); (2) unknown tags: a tag
+     written on an ABC net or a DITL row that is in none of the tag lists of the DCS: the I/O list and memory list (src/data/ades.txt,
+     tags and addresses), the loop list and the user-tag list (src/ui/plant/dcslists.js DCS_LOOPS / DCS_UTAG). NaN is io.nanSource. */
+  const V = { pins: 0, pinsNoWire: [], tags: 0, tagsUnknown: [] };
+  {
+    const N = t => String(t || '').toUpperCase().replace(/\s+/g, '');
+    const known = new Set();
+    for (const st of Object.keys(ADES))
+      for (const [k, o] of Object.entries(ADES[st])) {
+        known.add(N(k));
+        if (o && o.tag) known.add(N(o.tag));
+      }
+    try {
+      const w = {};
+      new Function('window', fs.readFileSync(path.join(root, 'src', 'ui', 'plant', 'dcslists.js'), 'utf8'))(w);
+      for (const r of w.DCS_LOOPS || []) known.add(N(r[w.DCS_LOOPS_F.indexOf('tag')]).replace(/\.\w+$/, ''));
+      for (const r of w.DCS_UTAG || []) known.add(N(r[3]));
+    } catch (e) {}
+    /* the equipment of an I/O tag: MV-CD1001 is the valve whose points are ZSO / ZSC / MOR / MOS-CD1001 (I/O list STN102) */
+    const dev = new Set([...known].map(t => t.replace(/^[A-Z]{1,6}-(?=[A-Z]{1,3}\d{3,4})/, '')).filter(t => /^[A-Z]{1,3}\d{3,4}/.test(t)));
+    let expl = new Set();
+    try {
+      expl = new Set(JSON.parse(fs.readFileSync(path.join(root, 'docs', 'phase7', 'tags-known.json'), 'utf8')).known.map(k => N(k.tag)));
+    } catch (e) {}
+    const pad = a => a.replace(/^([A-Z]{2})(\d{1,3})$/, (m, p, d) => p + d.padStart(4, '0'));
+    const isKnown = t => {
+      const u = N(t).replace(/^S[1-5](?=[A-Z])/, ''),
+        b = u.replace(/\.[A-Z0-9]+$/, '');
+      return (
+        known.has(u) || known.has(b) || known.has(pad(u)) || known.has(pad(b)) || expl.has(b) ||
+        (/^(MV|M|P|F|V|CV|PCV|LCV|FCV|TCV)-[A-Z]{1,3}\d{3,4}/.test(b) && dev.has(b.replace(/^[A-Z]{1,6}-/, '')))
+      );
+    };
+    for (const sh of AN.sheets) {
+      const S = sh.S;
+      if (!S || !S.blk) continue;
+      for (const b of S.blk)
+        for (const p of b.pins || [])
+          if (p.role === 'in') {
+            V.pins++;
+            if (p.n === undefined || p.n === null || p.n < 0 || !S.nets[p.n]) V.pinsNoWire.push(sh.name + ' ' + b.k + ' #' + b.id + ' ' + (p.lab || ''));
+          }
+    }
+    for (const s of dBase)
+      for (const g of (s.nl && s.nl.gates) || []) {
+        V.pins += (g.ins || []).length + (g.s || []).length + (g.r || []).length;
+        for (const m of g.miss || []) V.pinsNoWire.push(s.name + ' ' + g.t + ' pin ' + JSON.stringify(m));
+      }
+    const seen = new Set();
+    /* the tag texts the drawing writes on an ABC wire (S.tagN, the texts engine/links.js links by) */
+    for (const sh of AN.sheets)
+      for (const q of (sh.S && sh.S.tagN) || []) {
+        if (!q || !q.t) continue;
+        const t = N(q.t).replace(/\(.*$/, '');
+        if (!t || /^[A-Z]{1,2}\.?[0-9A-F]{3,}$|^(AI|AO|SI|DI|DO|PI|PO|AB|TR|DB|FP)\d{2,4}$|^SIG\.|^[A-Z]\.?$/.test(t.replace(/^S[1-5](?=[A-Z])/, ''))) continue;
+        if (seen.has('a' + t)) continue;
+        seen.add('a' + t);
+        V.tags++;
+        if (!isKnown(t)) V.tagsUnknown.push(sh.name + ' ' + q.t);
+      }
+    for (const x of ditl)
+      for (const t of String(x.tags || '').split(' ').filter(Boolean)) {
+        if (seen.has('d' + t)) continue;
+        seen.add('d' + t);
+        V.tags++;
+        if (!isKnown(t)) V.tagsUnknown.push(x.sh + ' r' + x.row + ' ' + t);
+      }
+  }
   const C = {
     run: {
       start: START,
@@ -984,6 +1053,12 @@ const has = (txt, tag) => {
       almBlocks: alm.length,
       withSetPoint: alm.length - B4.length,
       plantList: alList ? alList.length : 'not in the app yet (src/data/alarms/, lane 5)'
+    },
+    valid: {
+      pins: V.pins,
+      pinsNoWire: V.pinsNoWire.length,
+      tags: V.tags,
+      tagsUnknown: V.tagsUnknown.length
     },
     fx: {
       patternsNamed: PTN.length,
@@ -1054,7 +1129,9 @@ const has = (txt, tag) => {
         B3,
         B4: B4.map(a => a.sh + ' ' + a.tag),
         B5copyClash: clashList,
-        fxUnresolved: fxUn
+        fxUnresolved: fxUn,
+        pinsNoWire: V.pinsNoWire,
+        tagsUnknown: V.tagsUnknown
       },
       null,
       1
