@@ -1278,10 +1278,14 @@
       w.push(
         /* the position demand: to DEMAND of both blocks */
         ['iD', [[490, yD], [871, yD]], 1],
-        ['iD', [[BX, a(2)], [871, a(2)], [871, z(2)], [BX, z(2)]], 1],
+        /* typed toward each pin: a line read as an input only where it ends (the drawing joins both DEMAND pins on one vertical; the
+           backup feeds the same net to both blocks, phase6-tcs-last8-2026-11-26.md 1) */
+        ['iD', [[871, yD], [871, a(2)], [BX, a(2)]], 1],
+        ['iD', [[871, a(2)], [871, z(2)], [BX, z(2)]], 1],
         /* the simulator position */
         ['iS', [[490, yS], [893, yS]], 1],
-        ['iS', [[BX, a(4)], [893, a(4)], [893, z(4)], [BX, z(4)]], 1],
+        ['iS', [[893, yS], [893, a(4)], [BX, a(4)]], 1],
+        ['iS', [[893, a(4)], [893, z(4)], [BX, z(4)]], 1],
         /* the annunciator enable */
         ['iE', [[486, yE], [BX, yE]]],
         ['iE', [[908, yE], [908, a(5)], [BX, a(5)]]],

@@ -129,3 +129,23 @@ Noted difference (drawing wins): TCE202 FG C001 point 5 is 97.9 : 0 on the drawi
 **Counts:**
 - Manual-text macros 74 -> 9.
 - COMPLETE 381 -> 411 of 419.
+
+## The last 8 sheets, COMPLETE 411 -> 419 of 419 (2026-11-26)
+
+**Source:** lane 0 read them (/mnt/project-files/phase6-tcs-last8-2026-11-26.md / .json).
+
+**VALVE DIAGNOSIS on TCE120 / 122 / 124 / 126 / 128 / 130 (_lib.js vd2), a bug that is now fixed:**
+- The drawing joins the DEMAND pins of both blocks on one vertical line, and the S.POS. pins on another. The line was typed starting at block 1's pin, and a line is read as an input only where it ends. So block 1 read no DEMAND and no S.POS.
+- The lines are now typed toward each pin. Both blocks read the same nets, as the backup has them: DEMAND = the LME244 DEMAND of TCE210 / 211 / 212 / 214, S.POS. = TCE501 / 502 LMS (103 / -3) of LME271 Y1. The mapping was checked sheet by sheet against the table in the read.
+
+**HEAT SOAK TIMER on TCA586, the same typing bug, now fixed:** the MODE2 / 3 / 4 lines were typed starting at the macro pin. Now MODE2 = TCA582 ACC.CONTROL HEAT2, MODE3 = HEAT3 and MODE4 = TCA583 LMA566 START3, exactly as in the backup.
+- Fact from the backup: HEAT2 is BTR of SYS OFF(0) inside LMA563A, so the 2700 rpm (medium speed) hold never runs.
+
+**TCA582:**
+- RUB CHECK CONTROL MT1 = LMA560 002, and ACC.CONTROL MT1 = LMA563A 017. Which name goes with which macro is INFERRED from the pin names, because the record has no title.
+- TEMP.2 = ON(1): the drawing (CONST 1) and the backup agree.
+- The drawing prints "COMP" where the backup has "COMP.". A drawn pin now matches the backup pin when the only difference is the last dot.
+
+**Logged difference:** on TCE120 the backup feeds POS.OT of both blocks SYS 0.0 (FTR 014 / 019). The drawing also gives 0.0, so they agree.
+
+**Result:** every one of the 419 TCS sheets runs as its logic, and none runs on a manual-text macro (0 of 537 macros). COMPLETE 419 of 419.

@@ -133,11 +133,20 @@
           [xr, y]
         ]
       ],
+      /* typed toward each pin (a line is read as an input only where it ends): up to MODEn of the macro, and down to the SW of the
+         remaining-time switch. The backup feeds MODE2 / 3 / 4 from these same nets (phase6-tcs-last8-2026-11-26.md 2) */
       [
         key,
         [
-          [MX, PL[i]],
+          [xr, y],
           [xr, PL[i]],
+          [MX, PL[i]]
+        ]
+      ],
+      [
+        key,
+        [
+          [xr, y],
           [xr, ys],
           [xs, ys],
           [xs, top]

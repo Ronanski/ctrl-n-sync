@@ -23,10 +23,10 @@ for (const f of fs.readdirSync(dir).filter(f => /^(TC[AE]|G-).*\.js$/.test(f)).s
   sheets.push(...(w.TCE_SHEETS || []));
 }
 /* the count that runs today (beta.401: 204 TCE / TCA + 12 G); it may only go up: raise it in the PR that makes more sheets run */
-const FLOOR = 411; /* 381 -> 411 the companions and SUM SW; 308 -> 350 (2026-11-26 Phase 6 TCS: SW from the backup, LME105 inside, AM at R); 381: diagnosis macro insides */ /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
+const FLOOR = 419; /* 411 -> 419 every sheet drawing-complete; 381 -> 411 the companions and SUM SW; 308 -> 350 (2026-11-26 Phase 6 TCS: SW from the backup, LME105 inside, AM at R); 381: diagnosis macro insides */ /* 2026-11-25: every parameter of every block on the sheet (QA : SAORI); the 2 explanation sheets TCE022 / TCE023 are not logic */
 /* sheets that run with a macro meaning from the manual text (inside not drawn: TRIPPLE INPUT / AI DIAG.MD / TMR AI DIAGNOSTICS), counted
    apart from FLOOR (QA column "from manual text, not drawing-complete") until the user decides */
-const FLOOR_TEXT = 8; /* 37 -> 8: the companion macros (LME111A, LME123, LMA110A, LME114A, LME101) joined in; 106 -> 69 (2026-11-26): the 37 sheets with only TRIPPLE INPUT DIAGNOSTICS now run its LME105 inside from the HIACS backup; 69 -> 37: the diagnosis macros of phase6-tcs-macro-insides */
+const FLOOR_TEXT = 0; /* 8 -> 0: TCE120 ~ 130 / TCA586 pins typed toward the pin, TCA582 insides; 37 -> 8: the companion macros (LME111A, LME123, LMA110A, LME114A, LME101) joined in; 106 -> 69 (2026-11-26): the 37 sheets with only TRIPPLE INPUT DIAGNOSTICS now run its LME105 inside from the HIACS backup; 69 -> 37: the diagnosis macros of phase6-tcs-macro-insides */
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
 function run(secs) {
@@ -551,6 +551,18 @@ for (const id of ['TCA762', 'TCA763']) {
   const n = ['HL:500', 'LL:0'];
   if (R.K.SUM([2, 3], n, {}, 0.1, 1)[0] !== 5 || R.K.SUM([2, 3], n, {}, 0.1, 0)[0] !== 3 || R.K.SUM([400, 300], n, {}, 0.1, 1)[0] !== 500)
     fail('SUM SW rule');
+}
+/* the pins the drawing joins on one vertical line, typed toward each pin (phase6-tcs-last8-2026-11-26.md: the backup feeds both the same nets):
+   both VALVE DIAGNOSIS blocks of TCE120 read DEMAND TCE210 and S.POS. TCE501 LMS 015; TCA586 MODE2 / 3 / 4 = TCA582 HEAT2 / HEAT3, TCA583 START3 */
+{
+  const v = A.plan.find(q => q.id === 'TCE120').nodes.filter(n => n.t === 'M');
+  if (v.length !== 2 || v.some(x => A.names[x.ins.DEMAND] !== 'TCE210:mt003.DEMAND' || A.names[x.ins['S.POS.']] !== 'TCE501:lmsB015'))
+    fail('TCE120: both VALVE DIAGNOSIS blocks do not read DEMAND (TCE210) and S.POS. (TCE501 LMS 015)');
+  const h = A.plan.find(q => q.id === 'TCA586').nodes.find(n => n.t === 'M'),
+    want = { MODE2: 'TCA582:mt2.HEAT2', MODE3: 'TCA582:mt2.HEAT3', MODE4: 'TCA583:mt1.START3' };
+  for (const k in want) if (A.names[h.ins[k]] !== want[k]) fail(`TCA586 ${k} reads ${A.names[h.ins[k]]}, expected ${want[k]}`);
+  const a = A.plan.find(q => q.id === 'TCA582').nodes.filter(n => n.t === 'M');
+  if (a.length !== 2 || a.some(x => x.src !== R.BK)) fail('TCA582: RUB CHECK / ACC.CONTROL do not run the LMA560 / LMA563A insides');
 }
 /* MODE (TCA768A, LMA810): load up rate by load band from the printed tables; 5.0 %/min until the IP -> HP transfer is complete */
 {
