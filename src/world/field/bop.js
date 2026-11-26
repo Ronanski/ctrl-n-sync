@@ -335,7 +335,7 @@ for (const [stn, addr, tag, what] of [
   [5, 'I.032A', 'MIT-P0762A', 'Hypo-chlorinated dosing system NaOCl dosing pump-A overload'],
   [5, 'I.032C', 'MIT-P0762B', 'Hypo-chlorinated dosing system NaOCl dosing pump-B overload']
 ])
-  ST.push({ id: tag.slice(4) + '.trip', tag, di: addr, stn, normal: 0, t: what, g: 'Other', src: io(stn) + ' ' + addr + ' "' + what + '"; normal = no trip' });
+  ST.push({ id: tag.slice(4) + '.trip', tag, di: addr, stn, normal: 0, t: what, g: 'Chemical dosing', src: io(stn) + ' ' + addr + ' "' + what + '"; normal = no trip' });
 /* BFWP lube oil tank level switch low (KSB forced oil system of the pump; no oil inventory in the physics): normal = level above low */
 for (const [L, addr] of [['A', 'I.0093'], ['B', 'I.0413']])
   ST.push({ id: 'LO1115-' + L + '.lo', tag: 'LS-LO1115-' + L, di: addr, stn: 3, normal: 0, t: 'BFWP-' + L + ' lube oil level low', g: 'Feedwater and condensate', src: io(3) + ' ' + addr + ' "Lube oil of BFWP-' + L + ' level switch low"; normal = no oil loss' });
@@ -349,7 +349,7 @@ for (const [x, hi, lo] of [['A', 'I.013E', 'I.013F'], ['B', 'I.045E', 'I.045F'],
 }
 for (const [x, addr] of [['A', 'I.0094'], ['B', 'I.0414']])
   ST.push({ id: 'FA1055-' + x + '.filter', tag: 'DPSH-FA1055-' + x, di: addr, stn: 3, normal: 0, t: 'FA blower ' + x + ' inlet filter DP high', g: 'Air and flue gas', src: io(3) + ' ' + addr + '; alarm list DPS (PD-054); normal = clean filter' });
-ST.push({ id: 'IW0714.lo', tag: 'LS-IW0714', di: 'I.001F', stn: 5, normal: 0, t: 'Industrial water tank level low', g: 'Other', src: io(5) + ' I.001F; alarm list LS (PD-025, LL 1 m / 0.2 m); normal = tank filled by the water treatment plant (unlimited)' });
+ST.push({ id: 'IW0714.lo', tag: 'LS-IW0714', di: 'I.001F', stn: 5, normal: 0, t: 'Industrial water tank level low', g: 'Water, waste water and fire', src: io(5) + ' I.001F; alarm list LS (PD-025, LL 1 m / 0.2 m); normal = tank filled by the water treatment plant (unlimited)' });
 /* Phase 9 (2026-11-26): the inputs shown on the HX pages that no sheet reads and no model drives. Electric trouble of the industrial water,
    waste water and transformer pit pumps: no electrical fault in the physics, normal = no trouble */
 for (const [stn, addr, tag, what] of [
@@ -359,15 +359,15 @@ for (const [stn, addr, tag, what] of [
   [5, 'I.001D', 'MIT-P0058B', 'Waste water pump-B electric trouble'],
   [3, 'I.017E', 'MIT-P1127', 'Transformer area pit submerge pump electric trouble']
 ])
-  ST.push({ id: tag.slice(4) + '.trip', tag, di: addr, stn, normal: 0, t: what, g: 'Other', src: io(stn) + ' ' + addr + ' "' + what + '"; normal = no trouble' });
+  ST.push({ id: tag.slice(4) + '.trip', tag, di: addr, stn, normal: 0, t: what, g: 'Water, waste water and fire', src: io(stn) + ' ' + addr + ' "' + what + '"; normal = no trouble' });
 /* fire water tank level low: the tank is filled from the water treatment plant (excluded, unlimited), as LS-IW0714 (INFERRED: same supply) */
-ST.push({ id: 'IW0724.lo', tag: 'LS-IW0724', di: 'I.0018', stn: 5, normal: 0, t: 'Fire water tank level low', g: 'Other', src: io(5) + ' I.0018 "Fire water tank level switch low"; normal = tank filled by the water treatment plant (INFERRED, as LS-IW0714)' });
+ST.push({ id: 'IW0724.lo', tag: 'LS-IW0724', di: 'I.0018', stn: 5, normal: 0, t: 'Fire water tank level low', g: 'Water, waste water and fire', src: io(5) + ' I.0018 "Fire water tank level switch low"; normal = tank filled by the water treatment plant (INFERRED, as LS-IW0714)' });
 /* pits and the hypochlorite unloading: no rain, no leak and no truck in the model. Normal (INFERRED): the waste water pit below its high
    high switch, the transformer area pit dry (its submerge pump stopped), the unloading pump B stopped (it runs only while a truck
    unloads, from its local panel: hx-page-sea-water.js) */
-ST.push({ id: 'P0058.hh', tag: 'LSHH-P0058', di: 'I.001A', stn: 5, normal: 0, t: 'Waste water pit level high high', g: 'Other', src: io(5) + ' I.001A "Waste water pit level switch high high"; normal = no high high (INFERRED: no inflow model)' });
-ST.push({ id: 'P1127.run', tag: 'MIR-P1127', di: 'I.017D', stn: 3, normal: 0, t: 'Transformer area pit submerge pump running', g: 'Other', src: io(3) + ' I.017D "Transformer area pit submerge pump running"; normal = pit dry, pump stopped (INFERRED: no rain model)' });
-ST.push({ id: 'P0761B.run', tag: 'MIR-P0761B', di: 'I.0120', stn: 5, normal: 0, t: 'Hypochlorite unloading pump-B running', g: 'Other', src: io(5) + ' I.0120 (beside MIT-P0761B I.0121 overload); normal = no unloading (INFERRED: runs only while a truck unloads)' });
+ST.push({ id: 'P0058.hh', tag: 'LSHH-P0058', di: 'I.001A', stn: 5, normal: 0, t: 'Waste water pit level high high', g: 'Water, waste water and fire', src: io(5) + ' I.001A "Waste water pit level switch high high"; normal = no high high (INFERRED: no inflow model)' });
+ST.push({ id: 'P1127.run', tag: 'MIR-P1127', di: 'I.017D', stn: 3, normal: 0, t: 'Transformer area pit submerge pump running', g: 'Water, waste water and fire', src: io(3) + ' I.017D "Transformer area pit submerge pump running"; normal = pit dry, pump stopped (INFERRED: no rain model)' });
+ST.push({ id: 'P0761B.run', tag: 'MIR-P0761B', di: 'I.0120', stn: 5, normal: 0, t: 'Hypochlorite unloading pump-B running', g: 'Chemical dosing', src: io(5) + ' I.0120 (beside MIT-P0761B I.0121 overload); normal = no unloading (INFERRED: runs only while a truck unloads)' });
 /* BFWP suction manual valves: a running or stand-by boiler feed pump has its suction valve open (a pump cannot run on a shut suction), so
    normal = open */
 for (const [L, addr] of [['A', 'I.028F'], ['B', 'I.032F']])
@@ -388,9 +388,9 @@ ST.push({ id: 'LO1753.nfb1', tag: 'MIA-LO1753-3', di: 'I.065D', stn: 3, normal: 
   ['I.0338', 'MIR-P0719', 'Fire pump P-0719 (motor driven) running', 'DITL-87 row 24'],
   ['I.033A', 'MIR-P0718', 'Fire pump P-0718 (diesel engine driven) running', 'DITL-87 row 26']
 ].forEach(([addr, tag, what, row]) =>
-  ST.push({ id: tag.slice(4) + '.run', tag, di: addr, stn: 5, normal: 0, t: what, g: 'Other', src: io(5) + ' ' + addr + ' "' + what + '"; ' + row + '; DITL-87 out 27 (ANN) = running is abnormal' })
+  ST.push({ id: tag.slice(4) + '.run', tag, di: addr, stn: 5, normal: 0, t: what, g: 'Water, waste water and fire', src: io(5) + ' ' + addr + ' "' + what + '"; ' + row + '; DITL-87 out 27 (ANN) = running is abnormal' })
 );
-ST.push({ id: 'P0720.run', tag: 'MIR-P0720', di: 'I.033C', stn: 5, normal: 1, t: 'Fire jockey pump P-0720 running', g: 'Other', src: io(5) + ' I.033C "Fire fighting system fire motor driven jockey pump running"; STN105 screen message: alarm on stop' });
+ST.push({ id: 'P0720.run', tag: 'MIR-P0720', di: 'I.033C', stn: 5, normal: 1, t: 'Fire jockey pump P-0720 running', g: 'Water, waste water and fire', src: io(5) + ' I.033C "Fire fighting system fire motor driven jockey pump running"; STN105 screen message: alarm on stop' });
 /* the CEMS common alarm (I.001F, STN101, CEMS panel contact): the screen raises a process alarm on ON (StsChange sheet of STN101), so 0 in
    service; the CEMS own list of causes (K1AU3-E2-0-124) was not read: one state for the instructor */
 ST.push({ id: 'FG1057.cems', tag: 'LI1-FG1057', di: 'I.001F', stn: 1, normal: 0, t: 'CEMS common alarm', g: 'Air and flue gas', src: io(1) + ' I.001F "#1 CEMS common alarm"; STN101 screen message: alarm on ON' });

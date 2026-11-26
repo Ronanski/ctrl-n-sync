@@ -125,6 +125,9 @@
           rot: 90,
           lab: 'r'
         }),
+        /* Phase 9 (2026-11-27): safety valve ZV-SB1001 of the sootblower steam (R0 equipment list, SCOPE 4.5). Drawn on the header after the
+           pressure valve PCV-SB1053, the side it protects (INFERRED: the flow diagram position is not read yet, YUA list phase9) */
+        at(E('valve', 'Safety valve', 'ZV-SB1001', [], { kind: 'safety' }), 220, 421, { id: 'ssv', lab: 't' }),
         /* drains */
         at(
           B('Drain A bypass valve XV-SB1054', 'data-dy="DITL-80R|o|20" data-on="OPEN" data-off="CLOSED"', { w: 240, plain: true }),

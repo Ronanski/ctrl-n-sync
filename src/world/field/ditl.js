@@ -41,11 +41,11 @@ FIELD.add(
   for (const [x, cp, rp, al, ri] of D) {
     const sh = 'DITL-45' + cp;
     st.push(
-      { id: 'PA-DRY-' + x + '.remote', tag: 'MIL-D0703' + x, normal: 1, t: 'Plant air dryer ' + x + ' not in remote', g: 'Other',
+      { id: 'PA-DRY-' + x + '.remote', tag: 'MIL-D0703' + x, normal: 1, t: 'Plant air dryer ' + x + ' not in remote', g: 'Compressed air',
         src: 'DITL-45' + cp + ' rows 5 / 9 I.00' + rp + ' PLANT AIR DRYER-' + x + ' REMOTE (DCS start P.B. on the same sheet: in service = REMOTE)' },
-      { id: 'PA-DRY-' + x + '.alarm', tag: 'MIT-D0703' + x, normal: 0, t: 'Plant air dryer ' + x + ' alarm', g: 'Other',
+      { id: 'PA-DRY-' + x + '.alarm', tag: 'MIT-D0703' + x, normal: 0, t: 'Plant air dryer ' + x + ' alarm', g: 'Compressed air',
         src: 'DITL-45' + cp + ' row 6 I.00' + al + ' PLANT AIR DRYER-' + x + ' ALARM' },
-      { id: 'IA-DRY-' + x + '.remote', tag: 'MIL-D0704' + x, normal: 1, t: 'Instrument air dryer ' + x + ' not in remote', g: 'Other',
+      { id: 'IA-DRY-' + x + '.remote', tag: 'MIL-D0704' + x, normal: 1, t: 'Instrument air dryer ' + x + ' not in remote', g: 'Compressed air',
         src: 'DITL-45' + cp + ' rows 16 / 20 I.00' + ri + ' INSTRUMENT AIR DRYER-' + x + ' REMOTE (DCS start P.B. on the same sheet)' }
     );
     rw.push(

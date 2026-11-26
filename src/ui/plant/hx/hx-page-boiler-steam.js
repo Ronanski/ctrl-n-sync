@@ -96,6 +96,10 @@
         }),
         at(X('MV-BD1002', 'Continuous blowdown valve', { wrap: 14 }), 870, 150, { id: 'cbd', lab: 't' }),
         at(X('MV-BD1001', 'Mass blowdown valve', { wrap: 14 }), 1070, 196, { id: 'mbd', lab: 't' }),
+        /* Phase 9 (2026-11-27): the flash tank T-1050 and the blowdown tank T-1051 at the ends of the two blowdown lines (R0 equipment list,
+           SCOPE 4.5; the page head above names them). No level or pressure reading of either tank is on this page */
+        at(E('vvessel', 'Flash tank', 'T-1050', [], { w: 28, h: 52 }), 990, 137, { id: 'ftk', lab: 't' }),
+        at(E('vvessel', 'Blowdown tank', 'T-1051', [], { w: 28, h: 52 }), 1152, 183, { id: 'btk', lab: 'r' }),
 
         /* ---- spray 1: between superheater panel No. 1 and No. 2, two parallel water lines ---- */
         at(E('spray', '', '', [], { flow: SP1 + '|' + SP1B }), P1X, 440, { id: 'ds1', rot: 90 }),
@@ -201,9 +205,9 @@
         { med: 'steam', w: W_SM, pts: ['bov.r', 'sil.b'], flow: 'l:PICMS1002', arrow: false },
         /* blowdown */
         { med: 'drain', w: W_SM, pts: ['dr.r', [810, DY], [810, 150], 'cbd.l'], flow: 'x:MV-BD1002', arrow: false },
-        { med: 'drain', w: W_SM, pts: ['cbd.r', [926, 150]], to: 'flash tank', flow: 'x:MV-BD1002' },
+        { med: 'drain', w: W_SM, pts: ['cbd.r', 'ftk.l'], flow: 'x:MV-BD1002' },
         { med: 'drain', w: W_SM, pts: [[810, DY], [810, 196], 'mbd.l'], flow: 'x:MV-BD1001', arrow: false },
-        { med: 'drain', w: W_SM, pts: ['mbd.r', [1130, 196]], to: 'blowdown tank', flow: 'x:MV-BD1001' },
+        { med: 'drain', w: W_SM, pts: ['mbd.r', 'btk.l'], flow: 'x:MV-BD1001' },
         /* lower ring header drains: manual valves at the bottom of the furnace to the blowdown tank (PD-019 Rev D) */
         {
           med: 'drain',

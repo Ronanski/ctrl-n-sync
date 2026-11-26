@@ -13,6 +13,10 @@ const AN_FG_ORDER = [
   'Feedwater and condensate',
   'Turbine and condenser',
   'Seawater cooling',
+  /* 2026-11-27: the field states of the BOP packages (src/world/field/bop.js, ditl.js) had no group and sat in Other */
+  'Chemical dosing',
+  'Water, waste water and fire',
+  'Compressed air',
   'Electrical and generator',
   'Instruments (transmitters)',
   'Control valves',
