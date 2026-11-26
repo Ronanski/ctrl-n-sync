@@ -81,3 +81,17 @@ FIELD.add(
     src: 'DITL-42 ' + row + '; K1AU3-E2-0-114'
   }))
 );
+/* Phase 8 (2026-11-27): the two Modbus lines DCS <-> TCS (Turbine Modbus list PLC-A / PLC-B; STN102 WB r393 / r394 LINE-A / LINE-B COMM. FAIL
+   (DCS<->TURBINE)). In service the line carries the alive bit; the instructor cuts a line (Plant menu). The TCS calls a line dead after
+   10 s with no change of the alive bit and takes the DCS commands as OFF when both are dead (tcs.js tcsLinkStep, TCS sheet TCT090A) */
+FIELD.state(
+  lane,
+  ['A', 'B'].map(l => ({
+    id: 'tcs.link' + l,
+    tag: 'LINE-' + l + ' DCS-TURBINE',
+    normal: 0,
+    t: 'Modbus line ' + l + ' between the DCS and the turbine control system lost',
+    g: NAME,
+    src: 'Turbine Modbus list (PLC-' + l + '); STN102 WB LINE-' + l + ' COMM. FAIL (DCS<->TURBINE); TCS sheet TCT090A'
+  }))
+);

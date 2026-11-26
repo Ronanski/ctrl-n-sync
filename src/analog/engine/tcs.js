@@ -454,6 +454,41 @@ function tcsMiss(U, list) {
     .join('; ');
 }
 /* the operator on the TCS panel: auxiliaries and the ATS step push buttons. Returns '' (done) or the reason it is refused */
+/* Phase 8 (2026-11-27, the TCS backup read of YUA, /mnt/project-files/phase8-modbus-linkfail-2026-11-27.md): the Modbus link DCS <-> TCS,
+   two lines A and B (PLC-A / PLC-B of the Turbine Modbus list = the two TCS COMM ports).
+   - the DCS sends its alive bit (Modbus 25, DO25, STN102 WM r2602) on both lines; it must keep changing. The DCS side period is NOT IN DOCS
+     (the GCS "Time Interval" is a setting per connection, FCS2000 manual 16 ch 33.4 p33-8, the LMYP value is not in the doc set): the app
+     changes it every DCS cycle, like the package watch dogs (pkg.js P.wd).
+   - TCS sheet TCT090A: per line two 10.0 s pick-up timers, alive stuck at 1 or stuck at 0 for 10 s = that line is dead (TP 031 / 034 line A,
+     TP 035 / 038 line B, OR 032 / 036). The TCS takes the DCS commands from line A while A is healthy, else from line B (DSW 033, 035 ...);
+     both lines dead = every DCS command into the TCS forced OFF (0) (DSW 034, 036 ..., DD00002). No trip and no TCS alarm (ETH+MD).
+   - TCT081D BTR 008 / 015: the TCS sends the alive bit straight back on DO_0068 of each line = Modbus 10068 "Alive signal".
+   - a lost line is an instructor fault (field states fs.tcs.linkA / fs.tcs.linkB, src/world/field/dcs.js): the TCS keeps the last value it
+     got on that line, and nothing comes back to the DCS on it (the DCS register holds its last value, FCS2000 manual 06 1.3.6 note 1).
+   U.tlk = { alive, A: { v, t, dead, echo }, B: {...}, off } */
+const TCS_LINK_DEAD_S = 10.0; /* TCT090A TP 031 / 034 / 035 / 038 */
+function tcsLinkStep(U, dt) {
+  const L = U.tlk || (U.tlk = { alive: 0, A: { v: 0, t: 0, dead: 0, echo: 0 }, B: { v: 0, t: 0, dead: 0, echo: 0 }, off: 0 });
+  L.alive = L.alive ? 0 : 1;
+  for (const ln of ['A', 'B']) {
+    const s = L[ln],
+      cut = typeof anFieldStateVal === 'function' && anFieldStateVal('fs.tcs.link' + ln) === 1,
+      v = cut ? s.v : L.alive;
+    s.t = v === s.v ? s.t + dt : 0;
+    s.v = v;
+    s.dead = s.t >= TCS_LINK_DEAD_S ? 1 : 0;
+    if (!cut) s.echo = v;
+  }
+  L.off = L.A.dead && L.B.dead ? 1 : 0;
+}
+/* the DCS commands of the Turbine Modbus list (DO1 ~ DO13 + spares, 15 in TCT090A) as the app runs them: gland seal group start / stop
+   (IBD TC-31), ATS AUTO / OFF, the ATS step push buttons and the start-up buttons that press them (roll, sync) */
+const TCS_DCS_CMDS = ['auto', 'roll', 'sync', 'warm', 'prep', 'rub', 'accel', 'excite', 'loadup', 'normal', 'shutdown'];
+function tcsLinkRefuse(U, cmd, arg) {
+  if (!(U.tlk && U.tlk.off)) return '';
+  const dcs = TCS_DCS_CMDS.includes(cmd) || (cmd === 'ibd' && arg && arg.id === 'TC-31');
+  return dcs ? 'Both Modbus lines DCS to TCS are dead: the TCS takes every DCS command as OFF (TCS sheet TCT090A)' : '';
+}
 function tcsCmd(U, cmd, arg) {
   /* CRITERIA BYPASS (310SC90-775 p.3, p.10): the operator takes one unsatisfied criterion out of the step-in and step criteria; a second press puts it back. A hold is not bypassed */
   if (cmd === 'critbypass') {

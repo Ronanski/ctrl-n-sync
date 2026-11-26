@@ -997,7 +997,9 @@
   mb(10067, 'model', 'ATS criteria unsatisfied: the ATS hold of tcs.js (c.hold not empty, 310SC90-776)', U =>
     U.tc ? b(!!U.tc.hold) : NaN
   );
-  mb(10068, 'sys', 'alive signal of the TCS COMM controller: the app has no communication fault, so healthy', () => 1);
+  mb(10068, 'model', 'alive signal: the TCS sends the DCS alive bit straight back, line A (TCT081D BTR 008, tcs.js tcsLinkStep U.tlk.A.echo)', U =>
+    U.tlk ? U.tlk.A.echo : NaN
+  );
   mb(10069, 'model', 'ATS AUTO ON: tcs.js c.auto', U => (U.tc ? b(U.tc.auto) : NaN));
   mb(10079, 'model', 'GOV operation: the GOV SET is the low select of TCE206 (not load limiting, U.tb.lim false)', U =>
     U.tb ? b(!U.tb.lim) : NaN
@@ -1117,7 +1119,9 @@
       stp(U, k, 'run')
     )
   );
-  mb('DO25', 'sys', 'alive signal of the DCS to the TCS: the app has no communication fault, so healthy', () => 1);
+  mb('DO25', 'model', 'alive signal of the DCS to the TCS: changes every DCS cycle (tcs.js tcsLinkStep U.tlk.alive; TCT090A 10 s dead line)', U =>
+    U.tlk ? U.tlk.alive : NaN
+  );
 
   const byId = {};
   for (const e of E) byId[e[0]] = e;

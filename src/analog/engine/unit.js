@@ -1096,6 +1096,9 @@ function anTurbine0(cmd, arg) {
   const U = AN_UNIT;
   if (!U.on || !U.tb) return 'No unit model: start from Cold first';
   const tb = U.tb;
+  /* Phase 8: both Modbus lines to the TCS dead = the DCS commands are OFF at the TCS (tcs.js tcsLinkRefuse, TCT090A) */
+  const lk = typeof tcsLinkRefuse === 'function' ? tcsLinkRefuse(U, cmd, arg) : '';
+  if (lk) return lk;
   /* live run 2026-11-19 (F-CP): LOAD UP with the TCS panel target load and load-up rate { mw, rate %/min }. The rate is the TCS load-up
      rate setting, 0 ~ 5 %/min of 150 MW (rateUp, PR-OPE-5002 LOAD UP 5 %/min); a plain number stays the target MW alone */
   if (cmd === 'loadup' && arg && typeof arg === 'object') {
@@ -5646,6 +5649,8 @@ function anUnitStep0(dt) {
   anSbStep(U, dt);
   /* Phase 8: the package PLCs on the Modbus link (engine/pkg.js) */
   if (typeof pkgStep === 'function') pkgStep(U, dt);
+  /* Phase 8: the Modbus link DCS <-> TCS, alive bit and the 10 s dead line of TCT090A (tcs.js) */
+  if (typeof tcsLinkStep === 'function') tcsLinkStep(U, dt);
   anHrWarm(U, dt); /* 3.2.3 SOHEE: LP bypass warming valve XV-HR1010-1, TT-HR1010 */
   const trip = (U.trip || []).some(t => +t.S.rt.v[t.n] > 0.5);
   /* ---- 2.2.0-beta.17 (M4 step 4): the turbine black box (see AN_UNIT rollRate ...) ---- */
