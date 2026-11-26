@@ -218,8 +218,10 @@ FIELD.add(lane, [
         n = th ? +/THEN\s+(\d+)/.exec(th.t)[1] : k === 4 ? 0 : k === 5 ? 2 : k >= 6 && k <= 18 ? k - 3 : NaN,
         ift = tx.find(q => /^IF\s+M\.[0-9A-F]{4}\s+ON/.test(q.t)),
         near = t => tx.filter(q => /^M\.[0-9A-F]{4}$/.test(String(q.t).trim())).sort((a, b) => Math.hypot(a.x - t.x, a.y - t.y) - Math.hypot(b.x - t.x, b.y - t.y))[0],
-        /* BA11 has no IF / THEN text in the file: "IF M.1333 ON THEN 8 --> SI0130" is read from the PDF (YUA B8, hd600 pdf p.11) */
-        m = ift ? /M\.[0-9A-F]{4}/.exec(ift.t)[0] : th && near(th) ? String(near(th).t).trim() : k === 11 ? 'M.1333' : null;
+        /* BA11 / BA18 have no IF / THEN text in the file, read from the PDF (YUA): BA11 "IF M.1333 ON THEN 8 --> SI0130" (hd600 pdf p.11),
+           BA18 "IF M.1352 ON THEN 15 --> SI0130" (hd600 pdf p.18, STATION 103 FM0006 P609; memory list 103 M.1352 "B/A SYS. STEP=15
+           (BATCH FINISHED)") */
+        m = ift ? /M\.[0-9A-F]{4}/.exec(ift.t)[0] : th && near(th) ? String(near(th).t).trim() : { 11: 'M.1333', 18: 'M.1352' }[k] || null;
       if (!isFinite(n) || !m) continue;
       /* the output row of that M bit: the address written at the right end of an output row, at its height (BA05 M.1313 = row 12) */
       const at = tx.find(q => String(q.t).trim() === m),

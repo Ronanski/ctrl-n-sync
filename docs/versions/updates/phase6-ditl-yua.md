@@ -43,7 +43,6 @@ I.041E only (`tests/tce/msv-test-dcs.cjs`). Code: `src/analog/engine/unit.js` U.
 ## Bottom ash step register SI0130
 
 The STEP n rows of DITL-BA04 ~ BA18 (15) read the step register SI0130, kept from scan to scan. Each step sheet writes it when its step
-bit comes on ("IF M.1313 ON THEN 2 --> SI0130", read from the sheet text; BA11 M.1333 -> 8 from the PDF, YUA B8). The compare is "=",
-the memory list name of M.1360 ~ M.136E "B/A SYS. STEP=n". 14 of the 15 writers are found; DITL-BA18 (step 15) has no IF / THEN text
-in the file, so the register never reaches 15 (a PC read of hd600 pdf p.18 is needed). At rest the register is 0 (STEP 0 = 1).
+bit comes on ("IF M.1313 ON THEN 2 --> SI0130", read from the sheet text; BA11 M.1333 -> 8 and BA18 M.1352 -> 15 from the PDF, YUA). The compare is "=",
+the memory list name of M.1360 ~ M.136E "B/A SYS. STEP=n". All 15 writers are found (BA18 M.1352 -> 15 from the PDF, YUA). At rest the register is 0 (STEP 0 = 1).
 Not tested: a full ash transmitter cycle through all steps.
