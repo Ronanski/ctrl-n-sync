@@ -7,8 +7,11 @@
    since beta.256, rule-0 list 2026-11-24 item 5) are deleted.
    Rule 0 (RULES.md 3.12): physics from first principles and the design data only; the open fits of this file are on
    docs/audit/rule0-fit-list-2026-11-24.md items 1 (kKL) and 2 (bed inventory anchor) and go away in the next steps of Phase 11. */
-/* FIFA1079 / FIFA1071 at load: 328.2 / 354.0 T/H (HMI snapshot, a check value; no document gives the split of the primary air) */
-const AN_PA_FURN = 328.2 / 354.0;
+/* FIFA1079 (hot PA to the grate plenum) over FIFA1071 (the PA fan flow). Phase 11 AOI 2026-11-28 (user rule: no snapshot): DESIGN-SRC
+   the FHI mass balance at 100 % BMCR, PA sheet (YUA read, /mnt/project-files/aoi-design-reads-2026-11-28.md): PAF outlet 388 t/h, of it
+   325 to the grate plenum (4 x 81.25), 27 to the coal pipes, 3 cold to the feeder seals, 33 lost in the air heater. The loop seals and
+   cyclones are on the FA blowers (not PA). Was 328.2 / 354.0 from an HMI snapshot */
+const AN_PA_FURN = 325 / 388;
 /* bed temperature at steady firing. FHI Fig 8 (furnace temperature) on the coal share of Fig 13, scaled to the bed of the anchor; more air than
    Fig 12 gives at that firing cools it with the same exponent 0.45. Below 40 % load no curve is printed: the start-up law of beta.15 (a small
    fire with the light-off air, 450 C with two burners) stays, and the lower of the two holds. Before: the start-up law alone, 95 C too hot at
@@ -17,16 +20,32 @@ const AN_PA_FURN = 328.2 / 354.0;
    against 909 C at 150 MW the same day. The Fig 8 fall (660 to 840) and the extra air cooling are not seen on this plant: t follows the trend ratios,
    the air term has exponent 0 */
 /* 3.2.3 plan b5 (fuel): coal that does not burn stays in the bed (the cyclone sends the fines back) and burns when the bed is hot
-   enough, instead of being lost. Model state U.cbed (t of coal held in the bed). Fed coal burns at the share bf (Tburn0 ~ Tburn1, above);
-   the rest goes into U.cbed; the bed coal burns at bf x U.cbed / tau. tau 60 s: PR-OPE-5002 6.4 batch firing at 400 ~ 450 C is a 10 s
-   burp then a 60 s rest, and the CO, O2 and lower furnace temperature rise of each burp is checked inside that rest, so a batch that
-   lights burns out in about 60 s; "wait 5 min if a batch does not burn" = coal left in the bed can still light later, which this
-   carry-over gives. tau itself is NO-SOURCE inside that bound. At a hot bed (bf = 1) with no coal held, the burn is the fed coal, as
-   before. Module level (never a function on U: SAVE / LOAD).
-   3.2.4-beta.21 (JENNIE): a char split was tried (coal crusher spec K1AU3-D2-0-102 R0 p4: VM 30.56 %, FC 28.67 %, char 61 % of the LHV
-   burning over tau): at 75 MW the PIC-COBM swing grew to an MFT in 110 min (the plant runs there with coal 47 ~ 51 T/H, plant trend).
-   The burnout time of the char is NO-SOURCE; the bed / refractory lumps already give the lag the plant tuning stands on. Not used. */
-const AN_CBED = { tau: 60 };
+   enough (U.cbed, below). 3.2.4-beta.21 tried a char split with a guessed burnout time and dropped it (PIC-COBM swing to an MFT at 75 MW);
+   step 4 below puts it back with the burnout time from the design coal size. */
+/* Phase 11 AOI step 4 (rank 4b, docs/audit/kkl-bed-storage-derivation.md (A)): THE CHAR IN THE BED. Coal burns in two steps: the
+   volatiles leave and burn in seconds, the char (fixed carbon) burns over minutes and is a store of fuel in the bed. U.cbed holds that
+   store (t of coal-equivalent: char of the hot bed + coal fed into a bed too cold to burn it). Burnt coal Fb = bf F fV (volatiles, at
+   once) + bf U.cbed / tauC (char). At steady Fb = F; the store at MCR is (1 - fV) F tauC / 3600 = 1.9 t of coal-equivalent = 0.9 t of fixed
+   carbon (0.5 % of the bed, the low end of the 0.5 ~ 3 % of the CFB textbooks, as a diffusion-only time gives).
+   fV 0.39: DESIGN-SRC coal crusher spec K1AU3-D2-0-102 R0 p4, VM 30.56 % / FC 28.67 % as received: the char carries 61 % of the LHV.
+   tauC: CALC, diffusion-controlled burnout of a shrinking char particle (Basu, Combustion and Gasification in Fluidized Beds, ch. 4):
+   tauC = rhoC d0^2 / (4 Sh D CO2 MC), d0 = the design d50 1.1 mm (DESIGN-SRC K1AU3-D2-0-102 R0 2-4-4, d50 0.7 ~ 1.5 mm; feeder sheet D1
+   d50 0.7 ~ 1.5 mm), Sh 2 (fine particle), D = 2.0e-5 (T / 298)^1.75 m2/s at the bed 850 C, CO2 = p / (R T) x the design exit O2 3.6 %
+   (FHI P2S7 Fig 7), MC 0.012 kg/mol, rhoC 800 kg/m3 (textbook char of a 34 % moisture sub-bituminous coal). The kinetic resistance of
+   the char is not added: no design char reactivity (NO-SOURCE on that term only; it could only make tauC longer).
+   Replaces tau 60 s (NO-SOURCE, bounded by the PR-OPE-5002 6.4 batch firing): a batch fired at 400 ~ 450 C now burns its volatiles at
+   once and its char over tauC, inside the "wait 5 min if a batch does not burn" of the procedure. */
+const AN_CBED = { fV: 0.39, rhoC: 800, d0: 1.1e-3, Sh: 2 };
+/* the char burnout time at the bed temperature T (C) and the O2 the char sees (dry %, the furnace O2 of the mole balance): the
+   diffusion law above, live. More air gives more O2 at the char and a faster burn: the fast answer of the fire to the air of the boiler
+   master that a fixed time does not have. 3.6 % at 850 C = 127 s; floor 0.3 % O2 (a bed short of air keeps a store, it does not stop) */
+function anCharTau(T, o2) {
+  const K = AN_CBED,
+    Tk = (isFinite(T) ? Math.max(500, T) : 850) + 273.15,
+    D = 2.0e-5 * Math.pow(Tk / 298, 1.75),
+    cO2 = (101325 / (8.314 * Tk)) * (Math.max(0.3, isFinite(o2) ? o2 : 3.6) / 100);
+  return (K.rhoC * K.d0 * K.d0) / (4 * K.Sh * D * cO2 * 0.012);
+}
 /* live Cold start 2026-11-14 (user: "Code ang gawin ... WALANG DAYAIN"): THE GAS THAT REACHES THE SUPERHEATER / REHEATER (Cold path).
    The furnace exit gas U.tgF comes from the bed heat balance (AN_BB below). It then crosses the refractory of the cyclone inlet ducts,
    the cyclones and their outlet ducts before the backpass (03-boiler; P2S4): inlet ducts 98.8 ~ 118.3 t + cyclones 373.7 ~ 450.2 t +
@@ -152,7 +171,15 @@ const AN_BB = {
      plant anchor and with the design anchor). With 9.2 the design anchor (tbA 860 below) is damped at 150 MW. So 9.2 stays until the
      part-load bed is solved in the physics (the FHI 60 % point says the solids profile at part load is not the 150 MW one with a
      lower velocity only); 9.2 itself is the plant trend value of beta.282 (finding D3 stays open) */
-  kKL: 9.2,
+  /* Phase 11 AOI 2026-11-28 (new st150 of PR 705, 60 plant min headless): main and the char store alone (AN_CBED) hold 150 MW
+     (Pms 122.1 ~ 122.6); kKL 3.80 alone swings and grows (coal 85 ~ 95 T/H by 55 min); both together trip at about 52 min. So the
+     char store is not the missing fast answer and 3.80 stays held (rank 4b, the 45 MW panel heat with it) */
+  /* The Rule 0 tag is on the kKL line below (team decision 2026-11-28 6:00 AM PHT, TEMPORARY placeholder): 9.2 is a fitted value,
+     not a design value. FHI P2S7 Fig 9 (furnace DP vs load, with Fig 12 / 13 / 8) gives kKL about 1.7 ~ 3 (rms 4 ~ 8 mmH2O; 9.2 gives
+     rms 32, 1,427 at 60 % against 1,380) and the FHI 60 % thermal point gives 3.80 (/mnt/project-files/phase11/aoi-kkl-from-fig9-
+     2026-11-28.md). It stays only because the design value leaves the 150 MW pressure loop (PIC-COBM as the manual) under-damped:
+     the steam answers the firing in ~6 min (bed lag) against the 165 s integral time. Goes out when the fast-answer physics is found. */
+  kKL: 9.2 /* RULE 0 VIOLATION, fit, contradicts FHI Fig 9 (temporary placeholder, see above) */,
   /* 1.0.0-beta.286 (JENNIE, F3 of report 282: start-up save points S10 / S12 / S29): beta.282 gave the SH panels only the solids part
      (uaP x phi^0.5), so at the low air of a start-up (phi ~ 1e-4) they took no heat at all (S12: 0.0 ~ 0.4 MW, was 1.3 ~ 2.0; the panel
      outlet steam 156 C after 30 min, was 176) and the bed rose 40 C faster. The gas in the upper furnace radiates to the panels as it
@@ -391,3 +418,38 @@ function anFgMol(cb, r, oil, air, lm, cap, stm) {
 /* the design gas of the furnace at 100 % MCR, the base of the gas velocity share uRel (DESIGN-SRC: FHI P2S7 Fig 13 coal 89.5 T/H and
    limestone 12 T/H, Fig 12 total air 596 T/H, design coal r 1, the S taken up at the design 200 ppm of 1822: 0.89) */
 const AN_FG0 = anFgMol(89.5, 1, 0, 596, 12, 1 - 200 / 1822, 0);
+
+/* Phase 11 AOI 2026-11-28 (phase thread ask, the coal row of the sweep judge): the heat the plant holds, kJ, from the engine's own
+   stores, so a judge of a steady design curve on a ramp minute can take out the stored heat that leaves or enters (dE/dt). Read only,
+   changes no plant state. Only dE/dt has a meaning (absolute temperatures, no reference state). The terms are the same capacities the
+   scan integrates, nothing new:
+   - bed: inventory U.bedI t x AN_BB.cpS x U.Tb (unit.js bed balance Cb);
+   - lining: AN_BB.mRef kJ/K x U.Trf;
+   - drum water and evaporative steel: U.Cw (T/H s per K) x AN_BB.kW x U.Tw (unit.js drum law, r = B.kW / kWe);
+   - drum steam space and flash: AN_STORE.cs (T/H s per kg/cm2) x U.kWe x U.Pd (the same drum law);
+   - reheat pipe: U.rhPipeM kJ/K x U.TpR;
+   - tube metal of every bank: AN_HX [metal kJ/K] x U.hxM (hx.js; U.shM / U.rhM are not used by the scan and are not counted);
+   - coal held in the bed (char store): U.cbed t x AN_BB.lhvC x 3600 x (1 - AN_BB.fUC), the heat it gives when it burns. */
+function anStoredE(U) {
+  if (!U) return NaN;
+  const B = AN_BB,
+    n = x => (isFinite(x) ? x : 0),
+    M = U.hxM,
+    K = AN_HX;
+  let hx = 0;
+  if (M)
+    for (const k of Object.keys(K.m0)) {
+      const m = M[k];
+      if (Array.isArray(m)) m.forEach((t, i) => (hx += n(K[k][i][0]) * n(t)));
+      else hx += n(K[k][0]) * n(m);
+    }
+  return (
+    n(U.bedI) * 1000 * B.cpS * n(U.Tb) +
+    B.mRef * n(U.Trf) +
+    n(U.Cw) * B.kW * n(U.Tw) +
+    AN_STORE.cs * n(U.kWe) * n(U.Pd) +
+    (U.rhPipeM || 10000) * n(U.TpR) +
+    hx +
+    n(U.cbed) * B.lhvC * 3600 * (1 - B.fUC)
+  );
+}

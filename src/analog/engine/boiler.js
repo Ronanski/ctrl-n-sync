@@ -415,14 +415,15 @@ const anFabKw = (m, p2) => {
   const p1 = (lo + hi) / 2;
   return (anFabLin(AN_FAB.P, (Math.max(0, m) * pb) / p1) * p1) / pb;
 };
-const anFabAmp = kw => {
-  const ia = kw / 0.955 / (Math.sqrt(3) * 6.6),
-    ir = 12.7 + (49.4 * Math.sqrt(1 - 0.89 * 0.89) - 12.7) * Math.pow(ia / (49.4 * 0.89), 2);
-  return Math.hypot(ia, ir);
-};
-AN_FAB.a0 = anFabAmp(anFabKw(26300, 3257));
+/* the FA blower motor at machine kW kw: current I (A), electrical input P (kW), Q (kvar), on its TECO curve (Phase 11 AOI 2026-11-28,
+   was a fixed 95.5 % / 0.89 with a guessed magnetizing law): M-1007A/B TECO AFJH-WT 480 kW, 6.6 kV (LMYP-2 motor data, the same
+   motor on the load list; yui-reads-4.md): table 100 % eff 95.5 / PF 0.89 / 49.4 A, curve p11 75 % 95.2 / 0.87, 50 % 94.2 / 0.83
+   (read +-1 %); the same law as the PAF / SAF / IDF motors (anFdEl, AN_FD.mot.fab) */
+const anFabEl = kw => anFdEl(AN_FD.mot.fab, AN_FD.mot.fab.kW, kw);
 /* current of one FA blower: running, its flow (T/H), the header gauge pressure (mmH2O) */
-const anFabI = (on, q, p2) => (on ? (AN_FN.I0.fa * anFabAmp(anFabKw(q * 1000, p2))) / AN_FAB.a0 : 0);
+/* Phase 11 AOI 2026-11-28 (user rule: no snapshot, not even as a check): the current is the TECO motor at the blower curve's machine
+   kW, no longer scaled to the 9.png 37.3 A (the old scale x 0.90 above is gone) */
+const anFabI = (on, q, p2) => (on ? anFabEl(anFabKw(q * 1000, p2)).I : 0);
 /* motor current: no-load share + the rest x air power over the snapshot one. Same law on the HMI (api.js fanI); the HMI fallback
    passes only the snapshot current, so the share is found by it */
 /* beta.324: the FA blower has no share; the HMI fallback passes x = (flow ratio)^3, so it is read back as its flow and the header
@@ -484,7 +485,8 @@ const AN_FD = {
   mot: {
     paf: { I: 373, t: [[0.1, 0.8, 0.475], [0.25, 0.929, 0.747], [0.5, 0.949, 0.86], [0.75, 0.955, 0.899], [1, 0.958, 0.905]] },
     saf: { I: 192, t: [[0.1, 0.8, 0.39], [0.25, 0.93, 0.653], [0.5, 0.952, 0.816], [0.75, 0.955, 0.864], [1, 0.956, 0.88]] },
-    idf: { I: 350, t: [[0.1, 0.8, 0.31], [0.25, 0.922, 0.586], [0.5, 0.948, 0.771], [0.75, 0.957, 0.84], [1, 0.96, 0.86]] }
+    idf: { I: 350, t: [[0.1, 0.8, 0.31], [0.25, 0.922, 0.586], [0.5, 0.948, 0.771], [0.75, 0.957, 0.84], [1, 0.96, 0.86]] },
+    fab: { kW: 480, I: 49.4, t: [[0.5, 0.942, 0.83], [0.75, 0.952, 0.87], [1, 0.955, 0.89]] } /* FA blower, see anFabEl */
   }
 };
 /* system: fan outlet pressure (mmH2O) at fan flow q (T/H), bed share b */
@@ -512,15 +514,17 @@ const anFdCap = (k, b) => {
   }
   return lo;
 };
-/* motor current (A) at shaft kW p */
-const anFdAmp = (m, kW, p) => {
+/* the motor at shaft kW p on its TECO curve (load share, efficiency, power factor): current I (A), electrical input P (kW) and Q (kvar),
+   from the same numbers (Phase 11 YUI: P / Q go to the house load, port q.motor.AOI). Under the first point (10 %) the reactive current
+   of that point stays (magnetizing) */
+const anFdEl = (m, kW, p) => {
   const t = m.t,
     x = Math.max(0, p) / kW,
     V = Math.sqrt(3) * 6.6;
   if (x <= t[0][0]) {
     const ia = Math.max(0, p) / t[0][1] / V,
       ir = ((t[0][0] * kW) / t[0][1] / V) * Math.tan(Math.acos(t[0][2]));
-    return Math.hypot(ia, ir);
+    return { I: Math.hypot(ia, ir), P: V * ia, Q: V * ir };
   }
   let i = 1;
   while (i < t.length - 1 && x > t[i][0]) i++;
@@ -528,8 +532,9 @@ const anFdAmp = (m, kW, p) => {
     [c, e2, f2] = t[i],
     w = (x - a) / (c - a),
     e = e1 + (e2 - e1) * w,
-    f = Math.min(0.95, f1 + (f2 - f1) * w);
-  return p / e / (V * f);
+    f = Math.min(0.95, f1 + (f2 - f1) * w),
+    P = p / e;
+  return { I: P / (V * f), P, Q: P * Math.tan(Math.acos(f)) };
 };
 /* ID fan at speed n (rpm) and its inlet gas: m T/H, T C. Returns the fan rise sp (mmH2O, the curve by the fan laws and the gas density)
    and the fan shaft kW. Q1141 = the flow of the similar point on the 1141 rpm curve */
@@ -731,6 +736,9 @@ function anFanStep(U, dt) {
   const p2 = i => (sil[i] ? 0 : pfa);
   U.fnIa = lagI('ia', anFabI(fr[0], qi[0], p2(0)), 2);
   U.fnIb = lagI('ib', anFabI(fr[1], qi[1], p2(1)), 2);
+  /* Phase 11 (YUI): the electrical input of the running 6.6 kV motors of this part, for the house load (port q.motor.AOI, kW / kvar).
+     The FA blowers from their machine kW without the snapshot scale of anFabI (AOI 2026-11-28) */
+  const el = [0, 1].filter(i => fr[i]).map(i => anFabEl(anFabKw(qi[i] * 1000, p2(i))));
   /* PAF / SAF: flow of the loop model (fan inlet transmitters), outlet pressure on the D2-003 system curve (AN_FD), current from the
      shaft power on the TECO motor curve */
   const qpa = Math.max(0, val(F.qpa)) || 0,
@@ -743,8 +751,12 @@ function anFanStep(U, dt) {
   U.fnPaP = lag('pp', ppa, 2);
   U.fnSaP = lag('sp', psa, 2);
   if (F.ai.pa.length) anUnitWrite(F.ai.pa, U.fnPaP);
-  U.fnPafI = lagI('ip', paf ? anFdAmp(AN_FD.mot.paf, AN_FD.pa.kW, anFdKw('pa', qpa, ppa)) : 0, 2);
-  U.fnSafI = lagI('is', saf ? anFdAmp(AN_FD.mot.saf, AN_FD.sa.kW, anFdKw('sa', qsa, psa)) : 0, 2);
+  const ePa = paf ? anFdEl(AN_FD.mot.paf, AN_FD.pa.kW, anFdKw('pa', qpa, ppa)) : null,
+    eSa = saf ? anFdEl(AN_FD.mot.saf, AN_FD.sa.kW, anFdKw('sa', qsa, psa)) : null;
+  U.fnPafI = lagI('ip', ePa ? ePa.I : 0, 2);
+  U.fnSafI = lagI('is', eSa ? eSa.I : 0, 2);
+  if (ePa) el.push(ePa);
+  if (eSa) el.push(eSa);
   /* IDF: the flue gas goes with the total air (unit.js U.taf) over the design total air; the draft losses with its square (AN_FD.ga) */
   const G = AN_FD.ga,
     taf = U.taf && U.tafS ? U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0) : 0,
@@ -766,8 +778,12 @@ function anFanStep(U, dt) {
   /* ID fan: the shaft power of the p157 curve at the speed of the hydraulic coupling and the gas of the ID inlet (anIdFan) */
   const n = idf && U.idfV && typeof anIdfN === 'function' ? anIdfN(+U.idfV.S.rt.v[U.idfV.n] || 0) : G.n0,
     pf = anIdFan((taf * G.G) / G.A, U.aphGo, n).kw;
-  U.fnIdfI = lagI('ii', idf ? anFdAmp(AN_FD.mot.idf, G.kW, (pf * G.nm) / Math.max(G.n0, n)) : 0, 2);
+  /* the ID motor shaft = the fan kW x rated / coupling output speed (the coupling passes the torque, AOI) */
+  const eId = idf ? anFdEl(AN_FD.mot.idf, G.kW, (pf * G.nm) / Math.max(G.n0, n)) : null;
+  U.fnIdfI = lagI('ii', eId ? eId.I : 0, 2);
+  if (eId) el.push(eId);
   U.fnI = [U.fnPafI, U.fnSafI, U.fnIdfI, U.fnIa, U.fnIb];
+  if (typeof anPortSet === 'function') anPortSet(U, 'q.motor.AOI', { P: el.reduce((a, x) => a + x.P, 0), Q: el.reduce((a, x) => a + x.Q, 0) });
 }
 /* AIR PREHEATER AND FLUE GAS (FHI Tab 3, Figures 7, 12, 13; docs/versions/v3.2.1/GAS_PATH.md).
    (afs, the stoichiometric air of the coal, is now computed from Tab 2 in cfb.js AN_FUEL with the flue gas mole balance, Phase 11)

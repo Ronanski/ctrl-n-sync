@@ -84,8 +84,6 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
   ok(same(r.p.If, r.g.If, 1e-6), 'one generator: page field ' + r.p.If.toFixed(2) + ' A = TCS ' + r.g.If.toFixed(2) + ' A');
   const Ip = r.MW / (Math.sqrt(3) * r.p.kV * r.p.pf);
   ok(same(r.p.kA, Ip, 0.01 * Ip), 'page current = P / (sqrt3 V pf) ' + Ip.toFixed(3) + ' kA');
-  /* check only (RULES 3.5): control room screen 37.PNG, 151.1 MW: field 8.7 A */
-  console.log('INFO field ' + r.p.If.toFixed(2) + ' A at ' + r.MW.toFixed(1) + ' MW (screen 37.PNG: 8.7 A at 151.1 MW, check only)');
   /* the stator and cooling gas temperatures go to their design value: cold gas = cooling water + 8 K (37 C water -> 45 C gas, GAE-2013-0136
      R2 / nameplate 310SD18-613), stator = cold gas + 78 K x (I / 7.384 kA)^2 (123 C limit by RTD at the rating, GEE-2014-0322 R2 p4), lag 600 s */
   const th = () => JSON.parse(E.js(`JSON.stringify({ts:AN.unit.genT.ts.slice(),ta:AN.unit.genT.ta.slice(),cw:AN.unit.acT2,kA:AN.gen().kA})`));
@@ -125,19 +123,31 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
   const E2 = load();
   await E2.start('150');
   E2.step(10);
+  /* this case judges the generator relay alone: with GOV SET 0 at full firing the boiler goes to MFT (drum pressure and level rise, KANA
+     2026-11-28), which trips the turbine through TA-9 BOILER MFT 1 / 2 before the 32 times out. Those two TA-9 inputs are held at 0 for
+     this case (an IBD force, AN.turbine('fault'), as the instructor's jumper), so the turbine stays latched and the steam goes to 0 */
+  for (const net of [21, 22]) E2.js(`AN.turbine('fault',{id:'TA-9',net:${net},on:0})`);
   E2.js("AN.turbine('gov',{op:'set',v:0})");
   let tNeg = -1,
     tLo = -1,
     mwNeg = 0,
+    mot = null,
     why = '';
   for (let i = 1; i <= 120 && tLo < 0; i++) {
     E2.step(2);
-    const o = JSON.parse(E2.js(`JSON.stringify({MW:AN.unit.MW,lo:AN.unit.lo86})`));
+    const o = JSON.parse(E2.js(`JSON.stringify({MW:AN.unit.MW,lo:AN.unit.lo86,L:AN.unit.genT.L,m:-AN.unit.Pm,st:AN.unit.tb.st})`));
     if (tNeg < 0 && o.MW <= -0.013 * 176.5) (tNeg = i), (mwNeg = o.MW);
     if (o.lo.a && o.lo.b) (tLo = i), (why = o.lo.why);
+    else if (o.st === 'load' && (!mot || o.MW < mot.MW)) mot = o;
   }
+  /* the motoring power with the valves shut = the turbine mechanical loss (AN_TB.mech, HB) + the generator losses at no load (type test
+     p31: friction and windage, core, field, exciter): it holds the 2nd step pick-up -0.013 pu (GEE-2015-0173 p16) with margin, the 1st
+     step -0.008 pu about half of it. Blade windage without steam flow is not modelled (NO-SOURCE): it only adds to the motoring power */
+  ok(mot && Math.abs(mot.MW + mot.m + mot.L / 1000) < 0.02 && mot.MW < -0.013 * 176.5 - 0.3,
+    'motoring power ' + (mot ? mot.MW.toFixed(2) : '?') + ' MW = turbine ' + (mot ? mot.m.toFixed(2) : '?') + ' + generator ' + (mot ? (mot.L / 1000).toFixed(2) : '?') + ' MW no load, ' + (mot ? (mot.MW / 176.5).toFixed(4) : '?') + ' pu (2nd step -0.013, 1st -0.008)');
   E2.step(10);
   const st2 = E2.js('AN.unit.tb.st');
+  for (const net of [21, 22]) E2.js(`AN.turbine('fault',{id:'TA-9',net:${net}})`);
   ok(tNeg > 0 && tLo - tNeg >= 9 && tLo - tNeg <= 12 && st2 === 'off',
     'reverse power: ' + mwNeg.toFixed(2) + ' MW (motoring at the losses), 86G-A / 86G-B ' + (tLo - tNeg) + ' s after -2.3 MW (' + why + '), turbine off');
   ok(E2.js("AN.turbine('gen',{op:'reset86'})") === '' && !JSON.parse(E2.js('JSON.stringify(AN.unit.lo86)')).a, 'lockouts reset once the relay has dropped out (52G open)');

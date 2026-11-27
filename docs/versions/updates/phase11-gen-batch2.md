@@ -40,7 +40,7 @@
 
 ## 3. Still NO-SOURCE, and not derivable
 - The exciter time constant te ("Project related, N.A." in the ABB report) and the AVR set rate vrr.
-- The exciter air rise needs the air flow. The 29 kW loss alone gives no temperature. TIGE1005 stays on its snapshot check value, marked.
+- The exciter air rise needs the air flow (NO-SOURCE). The 29 kW loss alone gives no temperature. TIGE1005 now reads the cold air of the generator circuit, the lower bound (phase11-gen-reverse-power.md); no plant reading is used.
 
 ## Test
 - tcs_gen_desk 18 / 18, gen-electrical 28 PASS, tce sheets 0 open, lanes run-all 74 / 74.

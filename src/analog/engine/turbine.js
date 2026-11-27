@@ -669,6 +669,9 @@ function anTbPorts(U, rpm, hpb) {
   anPortSet(U, 'ext.lp2', st('l2'));
   anPortSet(U, 'ext.lp1', st('l1'));
   anPortSet(U, 'lp.exh', { m: S.exh.m, h: S.exh.h });
+  /* leak B: taken from the cold reheat in tbPath (L.B); HB PPE-14-0725 note "B joins the deaerator extraction line" (case 1: DEA
+     heater 26786 = line 22225 + 4561 kg/h), so the deaerator (NANA anDeaStep) gets it */
+  anPortSet(U, 'lk.b', { m: S.L && isFinite(S.L.B) ? S.L.B / 1000 : 0, h: S.H && isFinite(S.H.crh) ? S.H.crh : null });
   /* the LP bypass PCV-HR1010 steam (anVlvW, the step before) at the hot reheat enthalpy (a throttle keeps h); its spray TCV-CD1115 is
      condensate the condenser part adds (x.spray: not written here) */
   anPortSet(U, 'lp.bypass', { m: +U.qlp || 0, h: S.H && isFinite(S.H.hrh) ? S.H.hrh : null });
