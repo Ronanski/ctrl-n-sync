@@ -93,7 +93,7 @@ const AN_PORTS = {
     'gs.leak': { by: 'RIN', to: ['MEI'], kind: 'steam', v: ['m', 'h'], note: 'gland leak-off to the gland steam condenser', d150: {} },
     'gs.supply': { by: 'SUZU', to: ['RIN'], kind: 'steam', v: ['m', 'P', 'T', 'h'], note: 'gland steam seal supply from the auxiliary steam', d150: {} },
     /* ---- condenser, condensate, deaerator ---- */
-    'cd': { by: 'MEI', to: ['RIN', 'SUZU'], kind: 'signal', v: ['P', 'T', 'Q'], note: 'condenser pressure, saturation, heat to sea water (x = {QA, QB})', d150: {} },
+    'cd': { by: 'MEI', to: ['RIN', 'SUZU', 'NANA'], kind: 'signal', v: ['P', 'T', 'Q'], note: 'condenser pressure, saturation, heat to sea water (x = {QA, QB})', d150: {} },
     'cd.out': { by: 'MEI', to: ['NANA'], kind: 'water', v: ['m', 'P', 'T', 'h'], note: 'condensate at the deaerator inlet after LCV-CD1104', d150: {} },
     'dea': { by: 'NANA', to: ['MEI', 'SUZU'], kind: 'signal', v: ['P', 'T', 'L'], note: 'deaerator pressure, saturation, storage level', d150: {} },
     'hph.emerg': { by: 'NANA', to: ['MEI'], kind: 'water', v: ['m', 'h'], note: 'HP heater emergency drains to the condenser', d150: { m: 0 }, src: 'HB PPE-14-0725 case 1 has no such flow: closed at load' },
