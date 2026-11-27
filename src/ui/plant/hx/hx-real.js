@@ -94,18 +94,57 @@
       '<path class="rxd" d="M-12 -7h2.6v14h-2.6zM9.4 -7h2.6v14h-2.6z"/><rect class="rxv" x="-4.2" y="-22" width="8.4" height="12" rx="1.6"/><path class="rxd" d="M-5.6 -11.6h11.2v2.4h-11.2z"/>' +
       '<rect class="rxs" x="-9.4" y="-9.2" width="18.8" height="18.4" rx="4.4"/><path class="rxhi" d="M-6.6 -5.6H6.6"/>'
   });
-  /* three spring loaded safety valves on a line, each with its own exhaust pipe and silencer */
-  R.safeties = () => {
+  /* three spring loaded safety valves on a line, each with its own exhaust pipe and silencer; one: true = a single valve */
+  R.safeties = (o = {}) => {
     let s = '';
-    for (const x of [-16, 0, 16])
+    for (const x of o.one ? [0] : [-16, 0, 16])
       s +=
         `<path class="rxpe" d="M${x + 4} -10h4.2v-21"/><rect class="rxv" x="${x + 4.6}" y="-45" width="7.2" height="14" rx="2.4"/>` +
         `<path class="rxd" d="M${x - 2.2} -6h4.4v6h-4.4z"/><rect class="rxs" x="${x - 4.6}" y="-14.5" width="9.2" height="9" rx="2"/>` +
         `<rect class="rxv" x="${x - 3}" y="-27.5" width="6" height="13" rx="1"/><path class="rxe" d="M${x - 3} -17.5l6 -2.5l-6 -2.5l6 -2.5"/><path class="rxd" d="M${x - 3.8} -30h7.6v2.6h-7.6z"/>`;
-    return { box: [-22, -46, 29, 9], ports: { l: [-22, 0], r: [29, 0], b: [0, 0], t: [0, -45] }, svg: s };
+    return { box: o.one ? [-6, -46, 13, 9] : [-22, -46, 29, 9], ports: { l: [o.one ? -6 : -22, 0], r: [o.one ? 13 : 29, 0], b: [0, 0], t: [0, -45] }, svg: s };
   };
+  /* flame arrester on a tank vent: a box with its element. Ports: t, b */
+  R.arrester = () => ({
+    box: [-8, -9, 8, 9],
+    ports: { t: [0, -9], b: [0, 9] },
+    svg: '<rect class="rxv" x="-7.5" y="-8.5" width="15" height="17" rx="2"/><path class="rxe" d="M-4.5 -5.5v11M-1.5 -5.5v11M1.5 -5.5v11M4.5 -5.5v11"/>'
+  });
 
   /* ---------------- small things on a line ---------------- */
+  /* steam trap on a drain line: the ISA circle with a T. Ports: t (in), b (out), l, r */
+  R.trap = () => ({
+    box: [-8, -8, 8, 8],
+    ports: { t: [0, -7.5], b: [0, 7.5], l: [-7.5, 0], r: [7.5, 0] },
+    svg: '<circle class="rxv" r="7.5"/><path class="rxe" d="M-3.4 -3.4h6.8M0 -3.4v7.2"/>'
+  });
+  /* a row of small pressure vessels on a conveying line (fly ash transmitters): n vessels side by side. Ports: l, r */
+  R.pots = o => {
+    const n = o.n || 2,
+      w = 13 * n - 3,
+      a = -w / 2;
+    let s = '';
+    for (let i = 0; i < n; i++) s += `<path class="rxv" d="M${a + 13 * i} -9h10v12l-5 6l-5 -6z"/><path class="rxd" d="M${a + 13 * i + 3} -12h4v3h-4z"/>`;
+    return { box: [a - 1, -13, -a + 1, 10], ports: { l: [a, 0], r: [-a, 0] }, svg: s };
+  };
+  /* telescopic loading spout under a silo (dry unloader, loading spout). Ports: t, b */
+  R.spout = () => ({
+    box: [-12, -16, 12, 16],
+    ports: { t: [0, -16], b: [0, 16] },
+    svg: '<path class="rxv" d="M-9 -16h18v8h-18zM-7 -8h14v8h-14zM-5 0h10v8h-10z"/><path class="rxv" d="M-11 8h22l-4 8h-14z"/>'
+  });
+  /* fluid (hydraulic) coupling on a shaft between motor and fan: a short drum. No ports */
+  R.coupling = () => ({
+    box: [-8, -10, 8, 10],
+    ports: {},
+    svg: '<rect class="rxv" x="-7" y="-9.5" width="14" height="19" rx="3"/><path class="rxe" d="M-7 -3h14M-7 3h14"/>'
+  });
+  /* sparger: a perforated pipe end that spreads drains into a vessel. Ports: l */
+  R.sparger = () => ({
+    box: [-14, -5, 14, 5],
+    ports: { l: [-14, 0], r: [14, 0] },
+    svg: '<rect class="rxv" x="-14" y="-4" width="28" height="8" rx="4"/><path class="rxe" d="M-8 0h1M-3 0h1M2 0h1M7 0h1"/>'
+  });
   /* drain pot: a small upright vessel under a steam line */
   R.pot = () => ({
     box: [-7, -13, 7, 13],
@@ -618,6 +657,13 @@
       live(o.flow, '<path class="rx-tubef" d="M-9 0H-3.5L0 8.5L3.5 0H9"/>')
   });
 
+  /* restriction orifice (Phase 9, 2026-11-27): the plate between two flanges, a hole in its middle (the RO of the flow diagrams). Ports l, r */
+  R.orifice = () => ({
+    box: [-9, -11, 9, 11],
+    ports: { l: [-8, 0], r: [8, 0] },
+    svg: '<path class="rxd" d="M-8 -8h3v16h-3zM5 -8h3v16h-3z"/><path class="rx" d="M-1.6 -11h3.2v8h-3.2zM-1.6 3h3.2v8h-3.2z"/>'
+  });
+
   /* ---------------- the boiler: furnace, cyclone, seal pot, air heater, precipitator, stack ---------------- */
   /* What is from a source: FHI manual Part 2 Sect 1 (circulating fluidized bed furnace with its grate, superheater panels
      No. 1 and No. 2 in the furnace, 2 recycle cyclones with a seal pot each, 4 start-up burners, 4 screw ash coolers, a rotary
@@ -785,6 +831,25 @@
       '<path class="rxd" d="M-26 -7h3v14h-3zM27 -8h3v16h-3zM-15 12h10v3h-10z"/><path class="rx" d="M-23 -5H-18L-16 -9H-4L-2 -5L10 -2.5L27 -6.5V6.5L10 2.5L-2 5V12H-18V5H-23Z"/>' +
       live(o.flow, '<path class="rx-mist" style="stroke:var(--hx-m-steam)" d="M-18 0H24"/>')
   });
+  /* air cannons on the cone of a coal bunker (Phase 9, 2026-11-27; Martin Engineering LB-C214007-02 / 03, K1AU3-D1-0-056): drawn over the
+     bunker symbol at the same place and scale, small cannons outside the cone walls on the three levels (level 3 near the top of the cone,
+     4 cannons; level 2, 3; level 1 near the outlet, 2), each with its blow pipe into the wall. Side view: the cannons of a level are split
+     over the two walls. No ports */
+  R.cannons = () => {
+    const at = (t, side, k) => {
+      const tt = t + k * 0.12,
+        x = side * (30 - 19 * tt),
+        y = 8 + 36 * tt,
+        dx = side * 4;
+      return `<path class="rxe" d="M${n(x)} ${n(y)}H${n(x + dx)}"/><rect class="rxv" x="${n(x + dx + (side > 0 ? 0 : -8))}" y="${n(y - 2.5)}" width="8" height="5" rx="2.2"/>`;
+    };
+    let s = '';
+    for (const [t, L, R2] of [[0.2, 2, 2], [0.5, 2, 1], [0.8, 1, 1]]) {
+      for (let k = 0; k < L; k++) s += at(t, -1, k);
+      for (let k = 0; k < R2; k++) s += at(t, 1, k);
+    }
+    return { box: [-40, -45, 40, 48], ports: {}, svg: s };
+  };
   /* coal bunker, cut open: the coal inside, the outlet below. level: [key, low, high]. Ports: t, b */
   R.bunker = o => {
     const id = o.id || 'bk',

@@ -180,9 +180,19 @@
         }),
         at(E('vent', '', '', [], { flow: 'l:PICMS1002' }), 1500, 258, { id: 'sil' }),
         at(E('valve', 'Safety valve', 'ZV-MS1001', [], { kind: 'safety' }), 1684, MSY - 4, { id: 'msv', lab: 't' }),
-        at(L('reheat-steam', 'Main steam to the turbine'), 1620, 440, { id: 'msl' })
+        at(L('reheat-steam', 'Main steam to the turbine'), 1620, 440, { id: 'msl' }),
+        /* main steam drains through multi-stage orifices to the deaerator (PD-013 E-2), read by YUA 2026-11-27 (part 2, rev D):
+           OR-MS1001 before the HP bypass valve PCV-MS1020, V-MS1511 / 1512 -> MS-1-016 (PD-011 rev D F-5); OR-MS1002 on the aux
+           steam branch AS-1-001 before PCV-AS1010, V-AS1510 / 1511 -> AS-1-017 (PD-014 rev D B-6/7). Both lines start off this
+           page's main steam line on the turbine side; drawn as two short drains down from it, no label (map) */
+        at(E('orifice', '', '', []), 1455, MSY + 30, { id: 'om1', rot: 90, sc: 0.8 }),
+        at(E('orifice', '', '', []), 1482, MSY + 30, { id: 'om2', rot: 90, sc: 0.8 })
       ],
       pipes: [
+        ...[1, 2].flatMap(k => [
+          { med: 'steam', w: 3, pts: [[1428 + 27 * k, MSY], 'om' + k + '.l'], flow: 'v:SI-TB>50', arrow: false },
+          { med: 'steam', w: 3, pts: ['om' + k + '.r', [1428 + 27 * k, MSY + 62]], flow: 'v:SI-TB>50' }
+        ]),
         /* drum and furnace: downcomer and riser */
         { med: 'water', w: W_ST, pts: ['dr.dn1', 'fu.dn1'], arrow: false },
         { med: 'water', w: W_ST, pts: ['fu.dn2', 'dr.dn2'], flow: STEAM, arrow: false },
@@ -294,6 +304,7 @@
         { x: 1600, y: MSY, side: 'b', label: 'Pressure', key: 'PT-MS1002', unit: K, tag: 'PT-MS1002' }
       ],
       texts: [
+        { x: 1468, y: MSY + 78, s: 'to the deaerator', cls: 'hx-note', anchor: 'middle' },
         { x: 110, y: 404, s: 'Position', key: 'ZT-FW1110-1', unit: '%' },
         /* Jennie 2026-11-21: spray 1 is split range (ABC-011 TICBR1130 MV: LN46 to TCV-FW1110-2, the small valve, which is full open
            first; LN47 to TCV-FW1110-1, the large valve). Spray valve 2 at 100 % with valve 1 part open is normal, not a stuck valve */

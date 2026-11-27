@@ -2,7 +2,8 @@
    tests/lanes/hmi-turbine/pages-bound.cjs reads them). docs/PHASES.md row 9 may say TAPOS only when:
    - every equipment of docs/SCOPE.md section 4.5 (equipment list K1AU3-L1-0-002 R0, PASOK) has a symbol on an HMI page: its tag is on an
      element of a page (tag, machine, loop or valve name; "A / B", "A-D", "1001 to 1003" lists count), or docs/phase9/equipment.json map
-     names the element that draws it (and that element is there);
+     names the element that draws it (and that element is there), or docs/phase9/equipment.json nodoc says the flow diagram set does not
+     draw it (the sheet / note read and the documents still missing; no symbol is made up for it, COMMANDMENT 1);
    - the user approved every page (docs/phase9/equipment.json approved; COMMANDMENT 4: only the user approves).
    The boxes with no value are held by tests/regress/hx_values.js. While row 9 is not TAPOS the gate passes and prints what is left. */
 'use strict';
@@ -74,7 +75,9 @@ for (let i = i0 + 3; i < t.length && t[i].startsWith('|'); i++) {
 const pas = rows.filter(r => /^PASOK/.test(r.scope));
 if (pas.length < 349) fail('SCOPE 4.5: ' + pas.length + ' PASOK equipment (2026-11-25: 349)');
 let byTag = 0,
-  byMap = 0;
+  byMap = 0,
+  byNodoc = 0;
+const NODOC = EQ.nodoc || {};
 const left = [];
 for (const r of pas) {
   if (own.has(N(r.tag))) {
@@ -88,12 +91,21 @@ for (const r of pas) {
     else fail(r.tag + ': equipment.json map names ' + s + ', which is not on the page');
     continue;
   }
+  if (NODOC[r.tag]) {
+    if (String(NODOC[r.tag]).length < 40) fail(r.tag + ': equipment.json nodoc needs the documents read and what is missing');
+    byNodoc++;
+    continue;
+  }
   left.push(r);
+}
+for (const k in NODOC) {
+  if (!pas.some(r => r.tag === k)) fail('equipment.json nodoc ' + k + ' is not a PASOK equipment of SCOPE 4.5');
+  if (EQ.map[k] || own.has(N(k))) fail('equipment.json nodoc ' + k + ' has a symbol: take it out of nodoc');
 }
 for (const k in EQ.map) if (!pas.some(r => r.tag === k)) fail('equipment.json map ' + k + ' is not a PASOK equipment of SCOPE 4.5');
 const pages = HX.pages.map(p => p.id),
   notOk = pages.filter(id => !(EQ.approved || {})[id]);
-console.log('  equipment with a symbol: ' + (byTag + byMap) + ' of ' + pas.length + ' (tag on the page ' + byTag + ', map ' + byMap + '); no own symbol yet ' + left.length);
+console.log('  equipment with a symbol: ' + (byTag + byMap) + ' of ' + pas.length + ' (tag on the page ' + byTag + ', map ' + byMap + '); not drawn in the flow diagram set ' + byNodoc + ' (nodoc); no own symbol yet ' + left.length);
 const by = {};
 for (const r of left) (by[r.page] = by[r.page] || []).push(r.tag);
 for (const k of Object.keys(by).sort()) console.log('    ' + k + ' (' + by[k].length + '): ' + by[k].slice(0, 14).join(' ') + (by[k].length > 14 ? ' ...' : ''));

@@ -299,7 +299,31 @@
           1680,
           560,
           { id: 'bf', sc: 0.8, lab: 't' }
-        )
+        ),
+        /* ---- fly ash transmitters and the other P&ID items (YUA P&ID read 2026-11-27) ---- */
+        /* PD-073 sh1/9: each hopper -> V-FH -> XV-FH inlet dome -> transmitter -> XV-FH outlet -> FH-1-70x conveying line -> fly ash
+           silo T-1251; EP-1A / B 1000 L (S-1250A / B), EP-2 1000 L (S-1251), EP-3 600 L (S-1252), EP-4 200 L (S-1253), EP-5 100 L
+           (S-1254), air heater hoppers AH-A ~ D 100 L (S-1255A ~ D). Drawn as one group per pair on the one collecting line; the
+           five conveying lines FH-1-700 ~ 706 are drawn as that one line. */
+        ...[
+          ['S-1255A-D', 4, 450],
+          ['S-1250A / B', 2, 570],
+          ['S-1251A / B', 2, 680],
+          ['S-1252A / B', 2, 770],
+          ['S-1253A / B', 2, 860],
+          ['S-1254A / B', 2, 945]
+        ].map(([t, n, x], i) => at(E('pots', '', t, [], { n }), x, 382, { id: 'ft' + i, lab: 'b' })),
+        /* T-1250 conveying air tank (PD-073 sh1/9 F/G-2): plant air PA-1-042 -> T-1250 -> PV-PA1700 -> PA-1-707 to all transmitters */
+        at(E('tank', 'Air tank', 'T-1250', [], { id: 'fat', liquid: 'none', w: 18, h: 28 }), 350, 392, { id: 'fat', lab: 'l' }),
+        /* S-1256 dedust venting filter and F-1250 vent fan on the fly ash silo roof (PD-073 sh2/9 B-5) */
+        at(E('strainer', '', 'S-1256', []), 1228, 150, { id: 'fvf', sc: 0.7, lab: 't' }),
+        at(E('fan', 'Vent fan', 'F-1250', []), 1300, 150, { id: 'fvn', sc: 0.7, lab: 't' }),
+        /* L-1250 dry unloader under the fly ash silo (PD-073 sh2/9 G-4) */
+        at(E('spout', 'Dry unloader', 'L-1250', []), 1160, 345, { id: 'fdu', lab: 'l' }),
+        /* L-1903 loading spout under the bottom ash silo (PD-071 sh1/2 G-7, printed L-1093) */
+        at(E('spout', 'Loading spout', 'L-1903', []), SLX, 850, { id: 'bls', lab: 'r' }),
+        /* S-1091 bag filter on the bottom ash silo roof, before the bag filter fan F-1091 (PD-071 sh1/2 C-8) */
+        at(E('strainer', '', '', [], { flow: BFAN }), 1643, 600, { id: 'bgf', sc: 0.7, rot: -90 }) /* no label: no room between the silo and the fan; named in docs/phase9/equipment.json map */
       ],
       pipes: [
         /* flue gas through the precipitator */
@@ -310,7 +334,11 @@
         { med: 'solid', w: 4, pts: ['esp.h2', [EX, 382]], flow: 'm:ESP', arrow: false },
         { med: 'solid', w: 4, pts: ['esp.h3', [EX + 48 * ES, 382]], flow: 'm:ESP', arrow: false },
         { med: 'solid', w: 4, pts: [[1000, 382], [1000, 130], [1160, 130], 'fa.t'], flow: 'm:ESP' },
-        { med: 'solid', w: 4, pts: ['fa.b', [1160, 372]], to: 'to truck' },
+        { med: 'solid', w: 4, pts: ['fa.b', 'fdu.t'], arrow: false },
+        { med: 'solid', w: 4, pts: ['fdu.b', [1160, 385]], to: 'to truck' },
+        { med: 'air', w: 3, pts: ['fat.r', [395, 396], [395, 382], [410, 382]], arrow: false },
+        { med: 'air', w: 3, pts: [[1180, 172], [1180, 150], 'fvf.l'], arrow: false },
+        { med: 'air', w: 3, pts: ['fvf.r', 'fvn.in'], arrow: false },
         /* bottom ash: furnace, coolers, chain conveyor */
         ...CXS.flatMap((x, i) => [
           { med: 'solid', w: W_S, pts: [[x - 48 * 1.3, 470], 'c' + i + '.in'], flow: cooler(i) },
@@ -343,8 +371,10 @@
         },
         { med: 'solid', w: 4, pts: ['vsa.over', [1400, 651], [1400, 890], 'rcl.r'], flow: SCRA + '|' + SCRB },
         { med: 'solid', w: 4, pts: ['vsb.over', [1400, 771]], flow: SCRB, arrow: false },
-        { med: 'air', w: 4, pts: [[SLX + 30, 630], [1643, 630], [1643, 560], 'bf.in'], flow: BFAN, arrow: false },
-        { med: 'solid', w: W_S, pts: ['ba.b', [SLX, 880]], to: 'to truck' }
+        { med: 'air', w: 4, pts: [[SLX + 30, 630], [1643, 630], 'bgf.l'], flow: BFAN, arrow: false },
+        { med: 'air', w: 4, pts: ['bgf.r', [1643, 560], 'bf.in'], flow: BFAN, arrow: false },
+        { med: 'solid', w: W_S, pts: ['ba.b', 'bls.t'], arrow: false },
+        { med: 'solid', w: W_S, pts: ['bls.b', [SLX, 895]], to: 'to truck' }
       ],
       taps: [],
       texts: [

@@ -333,6 +333,12 @@
           lab: 'b'
         }),
         at(L('condensate', 'Condensate', { back: true }), 1320, 50, { id: 'cdl' }),
+        /* Phase 9 (2026-11-27, YUA P&ID read): the strainer between each spray block valve and its control valve, drawn with no label
+           (docs/phase9/equipment.json map): STR-FW1008 HP bypass (PD-017 D-6), STR-FW1007 reheater inlet (PD-017 C-6), STR-CD1005 LP
+           bypass (PD-016 G-6/7) */
+        at(E('strainer', '', '', [], { flow: 'l:TICMS1022' }), 640, 498, { id: 's60' }),
+        at(E('strainer', '', '', [], { flow: 'l:TICHR1002' }), 546, 697, { id: 's50' }),
+        at(E('strainer', '', '', [], { flow: 'l:TICHR1012' }), 1559, 50, { id: 's15' }),
 
         /* ---- reheat temperature: the controller and the two gas dampers of the back pass ---- */
         at(C('TICHR1002A', 'Reheat temperature control', { sym: 'ctl', unit: '°C', pvdp: 0, wrap: 18 }), 100, 64, {
@@ -393,7 +399,8 @@
         { med: 'steam', w: W_BY, pts: ['hps.r', [BX, 640], [JX, 640], [JX, CY]], flow: HPB },
         ...dMS2.pipes,
         { med: 'water', w: W_WT, pts: ['fw1.r', 'xfw61.l'], flow: 'l:TICMS1022', arrow: false },
-        { med: 'water', w: W_WT, pts: ['xfw61.r', 'tcms.l'], flow: 'l:TICMS1022' },
+        { med: 'water', w: W_WT, pts: ['xfw61.r', 's60.l'], flow: 'l:TICMS1022', arrow: false },
+        { med: 'water', w: W_WT, pts: ['s60.r', 'tcms.l'], flow: 'l:TICMS1022' },
         { med: 'water', w: W_WT, pts: ['tcms.r', 'hps.b'], flow: 'l:TICMS1022', arrow: false },
         /* cold reheat: high pressure exhaust to the reheater inlet header */
         { med: 'reheat', w: W_RH, pts: ['tg.hpEx', [tx(110), CY], 'nrv.l'], flow: LOAD, vfirst: true },
@@ -421,7 +428,8 @@
           vfirst: true,
           arrow: false
         },
-        { med: 'water', w: W_WT, pts: ['xfw51.l', 'tfw50.r'], flow: 'l:TICHR1002' },
+        { med: 'water', w: W_WT, pts: ['xfw51.l', 's50.r'], flow: 'l:TICHR1002', arrow: false },
+        { med: 'water', w: W_WT, pts: ['s50.l', 'tfw50.r'], flow: 'l:TICHR1002' },
         { med: 'water', w: W_WT, pts: ['tfw50.l', 'dsh.b'], flow: 'l:TICHR1002', arrow: false },
         { med: 'steam', w: W_SM, pts: ['sh2.l', [RX, 225], 'mbr.r'], flow: 'l:HICBR1391', arrow: false },
         { med: 'steam', w: W_SM, pts: ['mbr.l', [RX, by(260)]], flow: 'l:HICBR1391', arrow: false },
@@ -463,7 +471,8 @@
         { med: 'reheat', w: W_RH, pts: ['lpb.r', [LX, HY], 'lps.l'], flow: LPB, arrow: false },
         { med: 'reheat', w: W_RH, pts: ['lps.r', [LX, ty(119)], 'tg.cdIn'], flow: LPB, vfirst: true },
         { med: 'condensate', w: W_WT, pts: ['cdl.r', 'xcd.l'], flow: 'l:TICHR1012', arrow: false },
-        { med: 'condensate', w: W_WT, pts: ['xcd.r', 'tcd.l'], flow: 'l:TICHR1012' },
+        { med: 'condensate', w: W_WT, pts: ['xcd.r', 's15.l'], flow: 'l:TICHR1012', arrow: false },
+        { med: 'condensate', w: W_WT, pts: ['s15.r', 'tcd.l'], flow: 'l:TICHR1012' },
         {
           med: 'condensate',
           w: W_WT,
