@@ -348,15 +348,13 @@ function tbDraws(U, ms) {
   const pt = U.pt || {},
     hp = pt['ext.w_hp'] && pt['ext.w_hp'].x,
     lp = pt['ext.w_lp'] && pt['ext.w_lp'].x,
-    d = AN_TB.c1,
-    h6 = isFinite(U.hpF2) ? U.hpF2 : 0,
-    h5 = isFinite(U.hpF1) && isFinite(U.hpF2) ? Math.max(0, U.hpF1 - U.hpF2) : 0,
     lb = lp || tbLpDraws(U);
   U.tbD = lb;
   return {
-    hp6: hp ? hp.hp2 : h6,
-    hp5: hp ? hp.hp1 : h5,
-    da: hp ? hp.da : (h5 * d.xda) / d.x5,
+    /* the HP heater and deaerator draws: the port of the feedwater part (ext.w_hp, NANA fw.js anDeaStep); not written = none */
+    hp6: hp ? hp.hp2 : 0,
+    hp5: hp ? hp.hp1 : 0,
+    da: hp ? hp.da : 0,
     lp3: lb.lp3,
     lp2: lb.lp2,
     lp1: lb.lp1
