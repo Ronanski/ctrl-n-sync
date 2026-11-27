@@ -5,7 +5,8 @@
       no-load field 4.5 A and the ceiling 17.6 A (GEE-2015-0152 p6), and the stator current stays under its rating 7384 A (GAE-2013-0136 R2).
       The V curves of 310SD23-270 R1 at 1.0 pu kVA (main field A; 463 A = 1 pu field, 310SD23-268 R1) from Xd of the same file: within 2 %.
    B. The running app at 150 MW: ONE generator. The page values (AN.gen, page 17 and the HMI) are the TCS values (U.gen: TCS I/O, Modbus,
-      var-hour meter): Mvar, power factor, stator current, terminal voltage, field current. */
+      var-hour meter): Mvar, power factor, stator current, terminal voltage, field current; the generator temperatures go to their
+      design values (unit.js anGenTemp). */
 'use strict';
 const fs = require('fs'),
   path = require('path'),
@@ -85,6 +86,18 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
   ok(same(r.p.kA, Ip, 0.01 * Ip), 'page current = P / (sqrt3 V pf) ' + Ip.toFixed(3) + ' kA');
   /* check only (RULES 3.5): control room screen 37.PNG, 151.1 MW: field 8.7 A */
   console.log('INFO field ' + r.p.If.toFixed(2) + ' A at ' + r.MW.toFixed(1) + ' MW (screen 37.PNG: 8.7 A at 151.1 MW, check only)');
+  /* the stator and cooling gas temperatures go to their design value: cold gas = cooling water + 3 K (37 C water -> 40 C gas, GAE-2013-0136
+     R2 / IEC 60034-1), stator = cold gas + 83 K x (I / 7.384 kA)^2 (123 C limit by RTD at the rating, GEE-2014-0322 R2 p4), lag 600 s */
+  const th = () => JSON.parse(E.js(`JSON.stringify({ts:AN.unit.genT.ts.slice(),ta:AN.unit.genT.ta.slice(),cw:AN.unit.acT2,kA:AN.gen().kA})`));
+  const t0 = th();
+  E.step(1);
+  const t1 = th(),
+    air = t1.cw + 3,
+    a = 0.5 / 600,
+    eTa = t0.ta.map(v => v + (air - v) * a),
+    eTs = t0.ts.map(v => v + (air + 83 * (t1.kA / 7.384) ** 2 - v) * a);
+  ok(t1.ta.every((v, i) => Math.abs(v - eTa[i]) < 2e-3), 'cooling gas after the coolers goes to the cooling water + 3 K = ' + air.toFixed(1) + ' C');
+  ok(t1.ts.every((v, i) => Math.abs(v - eTs[i]) < 2e-3), 'stator coil goes to ' + (air + 83 * (t1.kA / 7.384) ** 2).toFixed(1) + ' C at ' + t1.kA.toFixed(2) + ' kA (123 C at 7.384 kA)');
   process.exit(bad ? 1 : 0);
 })().catch(e => {
   console.error(e);

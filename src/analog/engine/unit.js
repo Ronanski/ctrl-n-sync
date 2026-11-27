@@ -4911,24 +4911,42 @@ function anGenEl() {
     tex: U.genT ? U.genT.ex : null
   };
 }
-/* 3.2.1: the generator temperatures of pages 13 / 17 from snapshot P35SHAFT (035 SHAFT MONITOR, 130 MW, 3596 rpm): air cooler outlet
-   TIGE10041 ~ 44 39 / 38 / 43 / 44 C, AC exciter outlet air TIGE1005 80 C, stator coil TIGE10061 ~ 66 81 / 84 / 81 / 83 / 79 / 84 C.
-   The stator copper loss goes with the current squared: stator = cooler air (mean 41) + its snapshot rise x (kA / 5.57)^2, 5.57 kA =
-   the current of the generator model at 130 MW; the exciter air = 41 + 39 x (field current / 7.85 A)^2 (7.85 A = the model field at
-   130 MW). The cooler outlet air stays at the snapshot while the shaft turns (NO-SOURCE: its change with the cooling water); at rest
-   all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding) */
-const AN_GENT = { ta: [39, 38, 43, 44], ts: [81, 84, 81, 83, 79, 84], ex: 80, tA: 41, kA: 5.57, If: 7.85, tau: 600 };
+/* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): the generator temperatures of pages 13 / 17 and of TCS GD-5 from the design of
+   the machine (was: the readings of screen P35SHAFT at 130 MW scaled with the current squared).
+   - cooling gas after the four air coolers H-1971A ~ D (TIGE10041 ~ 44): the cooler water is the closed (auxiliary) cooling water supply
+     (AN_ACW, U.acT2). DESIGN-SRC: GAE-2013-0136 R2 p1 "Temperatures Cooling Water Max. 37 C"; GEE-2014-0322 R2 p4 IEC 60034-1-2010,
+     whose reference coolant (the cold gas of an indirectly cooled machine) is 40 C: the coolers hold 40 C gas with 37 C water, approach
+     40 - 37 = 3 K. The cooler duty itself is not in the docs, so the 3 K is held at every load (the loss that sets it changes by about a
+     third between no load and rated: the friction, windage and core loss are there at no load too).
+   - stator coil (TIGE10061 ~ 66, six RTD in the slots): stator rise class B, indirectly air cooled (GAE-2013-0136 R2), total limit
+     123 C by RTD at the rating (GEE-2014-0322 R2 p4) over the 40 C cold gas: 83 K at the rated current 7,384 A; the rise is the I2R loss
+     of the armature (3 I^2 Ra, Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2; GEE-2014-0322 5.6.2 c), so rise = 83 K x (I / 7.384 kA)^2.
+     The six RTD read one value: the docs give no difference between the slots. The TCS alarm GD-5 HIGH 123 C is the same limit.
+   - AC exciter outlet air (TIGE1005): its rise follows the exciter field squared; its rated rise is not in the docs, so it stays on the
+     old reading 80 C at 7.85 A (screen P35SHAFT, a check value; finding for the PC lookup).
+   At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs). */
+const AN_GENT = {
+  tCold: 40 /* C, IEC 60034-1 reference coolant (GEE-2014-0322 R2 p4) */,
+  tCw: 37 /* C, cooling water max (GAE-2013-0136 R2) */,
+  tLim: 123 /* C, stator winding total limit by RTD (GEE-2014-0322 R2 p4) */,
+  In: 7.384 /* kA rated (GAE-2013-0136 R2) */,
+  ex: 80,
+  tA: 41,
+  If: 7.85,
+  tau: 600
+};
 function anGenTemp(U, G, dt) {
   const K = AN_GENT,
     Ta = U.Tamb || 30,
     turn = U.tb && U.tb.rpm > 100,
-    T = U.genT || (U.genT = { ta: K.ta.slice(), ts: K.ts.slice(), ex: K.ex }),
+    T = U.genT || (U.genT = { ta: [Ta, Ta, Ta, Ta], ts: [Ta, Ta, Ta, Ta, Ta, Ta], ex: Ta }),
     a = Math.min(1, dt / K.tau),
-    r = (G.kA / K.kA) ** 2,
+    cw = isFinite(U.acT2) ? U.acT2 : Ta,
+    air = turn ? cw + (K.tCold - K.tCw) : Ta,
+    rise = (K.tLim - K.tCold) * (G.kA / K.In) ** 2,
     rf = (G.If / K.If) ** 2;
-  K.ta.forEach((v, i) => (T.ta[i] += ((turn ? v : Ta) - T.ta[i]) * a));
-  const air = turn ? K.tA : Ta;
-  K.ts.forEach((v, i) => (T.ts[i] += (air + (v - K.tA) * r - T.ts[i]) * a));
+  T.ta.forEach((v, i) => (T.ta[i] += (air - v) * a));
+  T.ts.forEach((v, i) => (T.ts[i] += (air + rise - v) * a));
   T.ex += (air + (K.ex - K.tA) * rf - T.ex) * a;
 }
 /* the energy meters of page 17 count the sim time while synchronised */
