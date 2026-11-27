@@ -4254,7 +4254,7 @@ function anGenEl() {
    - AC exciter outlet air (TIGE1005): its rise follows the exciter field squared; its rated rise is not in the docs, so it stays on the
      old reading 80 C at 7.85 A (screen P35SHAFT, a check value; finding for the PC lookup).
    At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs).
-   The heat the air coolers give to the closed cooling water (U.genQ, kW; the cooler duty port of the plant model) = the generator losses:
+   The heat the air coolers give to the closed cooling water (port q.ccw.YUI, kW, written by anGenInt) = the generator losses:
      stator copper 3 I^2 Ra (Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2; 172 kW at 7,384 A),
      main field I^2 Rf (Rf 0.2188 ohm at 95 C, GAE-2013-0136 R2; main field = exciter field x 463 / 4.5 A: 463 A main = 4.5 A exciter =
        1 pu field, 310SD23-268 R1 / GEE-2015-0152 p6; 1,218 A = 325 kW at the rating, 310SD23-270 R1),
@@ -4292,7 +4292,7 @@ function anGenTemp(U, G, dt) {
   T.ts.forEach((v, i) => (T.ts[i] += (air + rise - v) * a));
   T.ex += (air + (K.ex - K.tA) * rf - T.ex) * a;
   const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600));
-  U.genQ = (3 * (G.kA * 1000) ** 2 * K.Ra + (G.If * K.ifMain) ** 2 * K.Rf) / 1000 + K.q0 * n ** 3;
+  return (3 * (G.kA * 1000) ** 2 * K.Ra + (G.If * K.ifMain) ** 2 * K.Rf) / 1000 + K.q0 * n ** 3;
 }
 /* the energy meters of page 17 count the sim time while synchronised */
 function anGenInt(dt) {
@@ -4300,10 +4300,21 @@ function anGenInt(dt) {
   if (!U || !U.on || !(dt > 0)) return;
   const G = anGenEl();
   if (!G) return;
-  anGenTemp(U, G, dt);
-  const P = G.kA * Math.sqrt(3) * AN_GEN.kV * (G.pf || 0);
+  const Q = anGenTemp(U, G, dt),
+    P = G.kA * Math.sqrt(3) * AN_GEN.kV * (G.pf || 0);
   U.genE.MWh += (P * dt) / 3600;
   U.genE.MVArh += (G.MVAr * dt) / 3600;
+  /* Phase 11 ports (ports.js, YUI): the generator output, the unit auxiliary power, the cooler duty and the store of this part, once per
+     plant step. gen.W = U.MW for now (the turbine side writes it); with the RIN shaft port it becomes shaft.W - the generator losses.
+     store.YUI E = the kinetic energy of the generator + exciter rotor: H 4.01 s x 176.5 MVA is the whole machine, and the generator +
+     exciter share of its GD2 is 16,200 / (23,700 + 16,200) (GAE-2013-0136 R2), x (speed / 3600)^2 */
+  const g52 = !!U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'),
+    el = typeof anElec === 'function' ? anElec(U) : null,
+    n = Math.max(0, ((U.tb && U.tb.rpm) || 0) / 3600);
+  anPortSet(U, 'gen', { W: g52 ? +U.MW || 0 : 0, x: { b52g: g52 ? 1 : 0 } });
+  anPortSet(U, 'aux.power', { W: el ? el.aux : null });
+  anPortSet(U, 'q.ccw.YUI', { Q });
+  anPortSet(U, 'store.YUI', { mw: 0, E: U.Hgen * AN_GEN.S * (16200 / (23700 + 16200)) * n * n });
 }
 /* 3.2.3 (SOHEE : PLANT MODEL HELPER, plan task a7 note): SAMPLING AND CHEMICAL DOSING (page "SAMPLING AND DOSING"). Before: no model,
    every analyzer '-----'. docs/versions/v3.2.1/SAMPLING_DOSING_PLANT_MODEL.md has the full source list.
