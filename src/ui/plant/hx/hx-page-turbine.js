@@ -288,6 +288,32 @@
         { x: VX - 10, y: 220, s: 'AT THE TURBINE', cls: 'hx-name' },
         { x: VX + 196, y: 262 + 8 * 64 + 4, s: 'C', key: 'PT-ST1001-3', unit: K, dp: 1, anchor: 'start' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Turbine load',
+        pens: [
+          ['Generator load', 'GCP-AI1001', 'MW'],
+          ['Turbine master', 'pv:EIC-TM', 'MW'],
+          ['Target load', 'TCS-AI1001', 'MW'],
+          ['Control valve position', 'ZI-CV', '%'],
+          ['First stage pressure', 'PT-ST1001-1', 'kg/cm²'],
+          ['Speed', 'SI-TB', 'rpm', 0]
+        ]
+      },
+      {
+        title: 'Turbine steam and oil',
+        pens: [
+          ['Main steam pressure', 'PT-MS1006-1', 'kg/cm²'],
+          ['Main steam temperature', 'TT-MS1007', '°C', 0],
+          ['Exhaust hood temperature', 'TT-HOOD', '°C'],
+          ['Bearing oil pressure', 'PT-BRG', 'kg/cm²', 2],
+          ['Lube oil after cooler', 'TT-LOCOOL', '°C'],
+          ['Shell expansion', 'ZI-SEXP', 'mm', 2]
+        ]
+      }
+    ]
   });
 })();

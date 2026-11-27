@@ -294,6 +294,28 @@
         { x: 1121, y: 740, s: 'Bed temperature', key: 'TT-FG1090', unit: '°C', dp: 0 },
         { x: 1121, y: 756, s: 'Bed pressure drop', key: 'DPT-FG1081', unit: 'mmH₂O', dp: 0 }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Limestone feed',
+        pens: [
+          ['Stack sulphur oxides', 'pv:AICFG10571', 'ppm', 0],
+          ['Set point', 'sv:AICFG10571', 'ppm', 0],
+          ['Limestone feed output', 'mv:AICFG10571', '%'],
+          ['Limestone silo level', 'LT-LM1800', '%'],
+          ['Bed temperature', 'TT-FG1090', '°C', 0]
+        ]
+      },
+      {
+        title: 'Sand',
+        pens: [
+          ['Sand silo level', 'LT-SD1800', '%'],
+          ['Dense phase vessel pressure', 'PT-SD1800', 'kg/cm²', 2],
+          ['Bed pressure drop', 'DPT-FG1081', 'mmH₂O', 0]
+        ]
+      }
+    ]
   });
 })();

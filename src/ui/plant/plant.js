@@ -420,6 +420,83 @@
   }
   let noLink = false;
   const snap = v => (noLink ? '—' : v);
+  /* the value of one resolved link (r = resolve(it)), the ONE reader of every live number of the plant pages: the loop below sets
+     each page item with it, and lsPlantRead gives it to the HX trend recorder for a page that is not open (Phase 10) */
+  function readLink(r, it) {
+    if (r.k === 'ctl') {
+      const sh = shOf(r.sh),
+        S = sh && sh.S,
+        c = r.c,
+        v = S.rt.v;
+      const pk = c.amt && S.rt.st[c.amt.id] ? S.rt.st[c.amt.id].pk : c.autoLeg;
+      const auto = !c.amt || pk === c.autoLeg,
+        rem = !!(c.remote && c.svSw && S.rt.st[c.svSw.id] && S.rt.st[c.svSw.id].pk === 'A');
+      return { pv: v[c.q.pv], sv: v[c.q.sv], mv: v[c.out], m: !auto ? 'M' : rem ? 'R' : 'A' };
+    } else if (r.k === 'man') {
+      /* MAN station (plant.js MAN): MV = its output; SV = its set input (the AUTO demand, leg A of the A / M switch on that
+         input); PV = the TAG.PV wire when the drawing has one (EIC-TM.PV = MW actual), else the set input; A when that switch
+         is on leg A (the station follows its input), else M (operator or BU-CMD, CLAUDE.md 10) */
+      const S = shOf(r.sh).S,
+        b = r.b,
+        v = S.rt.v,
+        si = b.svI >= 0 ? b.i[b.svI] : null,
+        dr = si != null ? (S.drv[si] || []).find(x => x.k === 'AMT') : null,
+        auto = !!(dr && S.rt.st[dr.id] && S.rt.st[dr.id].pk === 'A'),
+        pv = r.pv ? shOf(r.pv.sh).S.rt.v[r.pv.n] : si != null ? v[si] : NaN;
+      return { pv, sv: si != null ? v[si] : NaN, mv: v[b.o[0]], m: auto ? 'A' : 'M' };
+    } else if (r.k === 'flag') {
+      const bits = r.L.map(x => netVal(x) > 0.5);
+      return {
+        v:
+          r.op === 'nor'
+            ? bits.every(b => !b)
+              ? 1
+              : 0
+            : r.op === 'and'
+              ? bits.every(b => b)
+                ? 1
+                : 0
+              : bits.some(b => b)
+                ? 1
+                : 0,
+        r
+      };
+    } else if (r.k === 'ditl') {
+      const ds = window.LS_OP && LS_OP.dOf ? LS_OP.dOf(r.d) : null,
+        m = ds && window.lsAlarms ? lsAlarms.motState(ds) : null;
+      return m
+        ? { v: m === 'RUN' ? 1 : 0, r, tr: m === 'TRIP' || (m !== 'RUN' && !!(lsAlarms.ntTrip && lsAlarms.ntTrip(ds))) }
+        : null;
+    } else if (r.k === 'fld') {
+      const U = window.AN && AN.unit,
+        v = U && U.on && AN.fieldRead ? AN.fieldRead(r.f) : null;
+      return v != null && isFinite(v) ? { v: +v, r } : null;
+    } else if (r.k === 'mb') {
+      const U = window.AN && AN.unit,
+        v = U && U.on && window.TCE_IO_LIVE ? TCE_IO_LIVE.mbRead(U, r.to) : NaN;
+      return isFinite(v) ? { v: r.bit ? (v >= 0.5 ? 1 : 0) : +v, r } : null;
+    } else if (r.k === 'unit') {
+      const U = window.AN && AN.unit;
+      return U && U.on && isFinite(U[r.f]) ? { v: +U[r.f], r } : null;
+    } else if (r.k === 'avg') {
+      const xs = r.L.map(netVal).filter(x => x != null && isFinite(x));
+      return xs.length ? { v: xs.reduce((a, b) => a + b, 0) / xs.length, r } : null;
+    } else if (r.k === 'mv') {
+      const S = shOf(r.sh).S;
+      return { v: S.rt.v[r.c.out], r };
+    } else if (r.cc) {
+      let x = netVal(r);
+      const mv = shOf(r.cc.sh).S.rt.v[r.cc.c.out];
+      if (isFinite(x) && isFinite(mv) && Math.abs(x - (100 - mv)) < 0.5 && Math.abs(x - mv) > 1)
+        x = 100 - x; /* fail-open valve */
+      return { v: x, r };
+    } else {
+      /* 3.2.0 retest #34: a pump / fan / motor whose drawing is in TRIP (its "... TRIP · CRT (ANN)" output) flashes */
+      const mt = r.a && /^(pump|fan|motor)$/.test(it.t) && window.lsAlarms ? lsAlarms.motOf(r.a) : null;
+      return { v: netVal(r), r, tr: mt === 'TRIP' };
+    }
+    return null;
+  }
   function liveTick() {
     if (!ws || ws.style.display !== 'grid') return;
     for (const o of LV) {
@@ -433,84 +510,7 @@
           noLink = false;
           continue;
         }
-        if (r.k === 'ctl') {
-          const sh = shOf(r.sh),
-            S = sh && sh.S,
-            c = r.c,
-            v = S.rt.v;
-          const pk = c.amt && S.rt.st[c.amt.id] ? S.rt.st[c.amt.id].pk : c.autoLeg;
-          const auto = !c.amt || pk === c.autoLeg,
-            rem = !!(c.remote && c.svSw && S.rt.st[c.svSw.id] && S.rt.st[c.svSw.id].pk === 'A');
-          o.set({ pv: v[c.q.pv], sv: v[c.q.sv], mv: v[c.out], m: !auto ? 'M' : rem ? 'R' : 'A' });
-        } else if (r.k === 'man') {
-          /* MAN station (plant.js MAN): MV = its output; SV = its set input (the AUTO demand, leg A of the A / M switch on that
-             input); PV = the TAG.PV wire when the drawing has one (EIC-TM.PV = MW actual), else the set input; A when that switch
-             is on leg A (the station follows its input), else M (operator or BU-CMD, CLAUDE.md 10) */
-          const S = shOf(r.sh).S,
-            b = r.b,
-            v = S.rt.v,
-            si = b.svI >= 0 ? b.i[b.svI] : null,
-            dr = si != null ? (S.drv[si] || []).find(x => x.k === 'AMT') : null,
-            auto = !!(dr && S.rt.st[dr.id] && S.rt.st[dr.id].pk === 'A'),
-            pv = r.pv ? shOf(r.pv.sh).S.rt.v[r.pv.n] : si != null ? v[si] : NaN;
-          o.set({ pv, sv: si != null ? v[si] : NaN, mv: v[b.o[0]], m: auto ? 'A' : 'M' });
-        } else if (r.k === 'flag') {
-          const bits = r.L.map(x => netVal(x) > 0.5);
-          o.set({
-            v:
-              r.op === 'nor'
-                ? bits.every(b => !b)
-                  ? 1
-                  : 0
-                : r.op === 'and'
-                  ? bits.every(b => b)
-                    ? 1
-                    : 0
-                  : bits.some(b => b)
-                    ? 1
-                    : 0,
-            r
-          });
-        } else if (r.k === 'ditl') {
-          const ds = window.LS_OP && LS_OP.dOf ? LS_OP.dOf(r.d) : null,
-            m = ds && window.lsAlarms ? lsAlarms.motState(ds) : null;
-          o.set(
-            m
-              ? {
-                  v: m === 'RUN' ? 1 : 0,
-                  r,
-                  tr: m === 'TRIP' || (m !== 'RUN' && !!(lsAlarms.ntTrip && lsAlarms.ntTrip(ds)))
-                }
-              : null
-          );
-        } else if (r.k === 'fld') {
-          const U = window.AN && AN.unit,
-            v = U && U.on && AN.fieldRead ? AN.fieldRead(r.f) : null;
-          o.set(v != null && isFinite(v) ? { v: +v, r } : null);
-        } else if (r.k === 'mb') {
-          const U = window.AN && AN.unit,
-            v = U && U.on && window.TCE_IO_LIVE ? TCE_IO_LIVE.mbRead(U, r.to) : NaN;
-          o.set(isFinite(v) ? { v: r.bit ? (v >= 0.5 ? 1 : 0) : +v, r } : null);
-        } else if (r.k === 'unit') {
-          const U = window.AN && AN.unit;
-          o.set(U && U.on && isFinite(U[r.f]) ? { v: +U[r.f], r } : null);
-        } else if (r.k === 'avg') {
-          const xs = r.L.map(netVal).filter(x => x != null && isFinite(x));
-          o.set(xs.length ? { v: xs.reduce((a, b) => a + b, 0) / xs.length, r } : null);
-        } else if (r.k === 'mv') {
-          const S = shOf(r.sh).S;
-          o.set({ v: S.rt.v[r.c.out], r });
-        } else if (r.cc) {
-          let x = netVal(r);
-          const mv = shOf(r.cc.sh).S.rt.v[r.cc.c.out];
-          if (isFinite(x) && isFinite(mv) && Math.abs(x - (100 - mv)) < 0.5 && Math.abs(x - mv) > 1)
-            x = 100 - x; /* fail-open valve */
-          o.set({ v: x, r });
-        } else {
-          /* 3.2.0 retest #34: a pump / fan / motor whose drawing is in TRIP (its "... TRIP · CRT (ANN)" output) flashes */
-          const mt = r.a && /^(pump|fan|motor)$/.test(o.it.t) && window.lsAlarms ? lsAlarms.motOf(r.a) : null;
-          o.set({ v: netVal(r), r, tr: mt === 'TRIP' });
-        }
+        o.set(readLink(r, o.it));
       } catch (e) {}
     }
   }
@@ -1347,6 +1347,14 @@
   window.lsPlantFp = fpOpen; /* for the tests */
   /* the logic signal of an HMI value, the same link the page shows (loop check split view: an instrument batch); undefined = the links are not read yet */
   window.lsPlantResolve = it => (IX ? resolve(it) || null : undefined);
+  /* Phase 10: the number a page item shows, read the same way while its page is not open (null when LIVE is off or no link) */
+  let ixAsk = null;
+  window.lsPlantRead = it => {
+    /* the links are read once, when the plant view first opens; the recorder may ask before that: read them now (once) */
+    if (!IX) return void (ixAsk || (ixAsk = index().finally(() => (ixAsk = null))));
+    const r = liveOn ? resolve(it) : null;
+    return r ? readLink(r, it) : null;
+  };
   window.lsPlantLinks = () =>
     LV.map(o => ({ tag: o.it.tag || o.it.ref || '', t: o.it.t, on: !!o.r })); /* for the tests (retest #60) */
   function reg(it, set, hit) {

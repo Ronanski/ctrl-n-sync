@@ -190,6 +190,31 @@
         { x: 1505, y: 100, s: 'COORDINATED CONTROL', cls: 'hx-zone' },
         { x: 1505, y: 720, s: 'PAGES', cls: 'hx-zone' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Unit',
+        pens: [
+          ['Generator load', 'GCP-AI1001', 'MW'],
+          ['Unit load demand', 'pv:HIC-ULD', 'MW'],
+          ['Main steam pressure', 'PT-MS1002', 'kg/cm²'],
+          ['Main steam temperature', 'pv:TICMS1004', '°C', 0],
+          ['Feedwater flow', 'pv:FICFW1007', 't/h', 0],
+          ['Coal flow', 'pv:FIC-CM', 't/h']
+        ]
+      },
+      {
+        title: 'Boiler',
+        pens: [
+          ['Drum level', 'pv:LICBR1001B', 'mm', 0],
+          ['Furnace pressure', 'PT-FG1085', 'mmH₂O', 1],
+          ['Total air flow', 'ABC-002|SI0060', 't/h', 0],
+          ['Boiler master', 'mv:HIC-BM', '%'],
+          ['Condenser pressure', 'PT-CD1110', 'kg/cm² abs', 3]
+        ]
+      }
+    ]
   });
 })();

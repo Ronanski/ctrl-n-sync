@@ -177,6 +177,32 @@
           cls: 'hx-note'
         }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Instrument air',
+        pens: [
+          ['Compressor A current', 'IIC0704A', 'A', 0],
+          ['Compressor B current', 'IIC0704B', 'A', 0],
+          ['Compressor C current', 'IIC0704C', 'A', 0],
+          ['Receiver A pressure', 'PIIA0706A', 'kg/cm²', 2],
+          ['Receiver B pressure', 'PIIA0706B', 'kg/cm²', 2],
+          ['To Unit 1', 'PIIA1706', 'kg/cm²', 2]
+        ]
+      },
+      {
+        title: 'Plant air',
+        pens: [
+          ['Compressor A current', 'IIC0703A', 'A', 0],
+          ['Compressor B current', 'IIC0703B', 'A', 0],
+          ['Compressor C current', 'IIC0703C', 'A', 0],
+          ['Receiver A pressure', 'PIPA0705A', 'kg/cm²', 2],
+          ['Receiver B pressure', 'PIPA0705B', 'kg/cm²', 2],
+          ['To Unit 1', 'PIPA1705', 'kg/cm²', 2]
+        ]
+      }
+    ]
   });
 })();
