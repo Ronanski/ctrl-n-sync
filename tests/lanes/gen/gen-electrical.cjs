@@ -123,6 +123,10 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
   const E2 = load();
   await E2.start('150');
   E2.step(10);
+  /* this case judges the generator relay alone: with GOV SET 0 at full firing the boiler goes to MFT (drum pressure and level rise, KANA
+     2026-11-28), which trips the turbine through TA-9 BOILER MFT 1 / 2 before the 32 times out. Those two TA-9 inputs are held at 0 for
+     this case (an IBD force, AN.turbine('fault'), as the instructor's jumper), so the turbine stays latched and the steam goes to 0 */
+  for (const net of [21, 22]) E2.js(`AN.turbine('fault',{id:'TA-9',net:${net},on:0})`);
   E2.js("AN.turbine('gov',{op:'set',v:0})");
   let tNeg = -1,
     tLo = -1,
@@ -143,6 +147,7 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
     'motoring power ' + (mot ? mot.MW.toFixed(2) : '?') + ' MW = turbine ' + (mot ? mot.m.toFixed(2) : '?') + ' + generator ' + (mot ? (mot.L / 1000).toFixed(2) : '?') + ' MW no load, ' + (mot ? (mot.MW / 176.5).toFixed(4) : '?') + ' pu (2nd step -0.013, 1st -0.008)');
   E2.step(10);
   const st2 = E2.js('AN.unit.tb.st');
+  for (const net of [21, 22]) E2.js(`AN.turbine('fault',{id:'TA-9',net:${net}})`);
   ok(tNeg > 0 && tLo - tNeg >= 9 && tLo - tNeg <= 12 && st2 === 'off',
     'reverse power: ' + mwNeg.toFixed(2) + ' MW (motoring at the losses), 86G-A / 86G-B ' + (tLo - tNeg) + ' s after -2.3 MW (' + why + '), turbine off');
   ok(E2.js("AN.turbine('gen',{op:'reset86'})") === '' && !JSON.parse(E2.js('JSON.stringify(AN.unit.lo86)')).a, 'lockouts reset once the relay has dropped out (52G open)');
