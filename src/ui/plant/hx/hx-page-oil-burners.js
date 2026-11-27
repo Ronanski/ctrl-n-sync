@@ -3,7 +3,7 @@
    THE PICTURE: the oil service tank cut open on the left with the two diesel oil pumps under it, the oil line to the four
    burners one above the other on the right, each with its oil valve and its combustion air damper.
    THE CONNECTIONS, as the temporary page 11 binds them (its sources: K1AU3-PD-022 diesel oil system, 5 sheets; ABC-003E,
-   ABC-028, ABC-029): oil service tank T-0701 (LT-DO0701, range 0 to 8.2 m), strainer STR-DO0001 (DPT-DO0001), diesel oil
+   ABC-028, ABC-029): oil service tank T-0701 (LT-DO0701, range 0 to 8.2 m), strainer STR-DO0002 (DPT-DO0001; tag corrected 2026-11-27, PD-022 E-4), diesel oil
    pumps P-0702A / B, pump outlet PT-DO0005, the recirculation valve PCV-DO0002 (PIC-DO0005) back to the tank, the supply
    valve to the burners FCV-DO1012 (HIC-DO1012); per burner A / B / C / D: FT-DO1043, oil valve FCV-DO1043-x3 (FIC-DO1043x),
    the shut-off valves XV-DO1043-x1 / x2, PT-DO1043-x2, oil gun L-1043x with atomizing and purge air, flame detector
@@ -150,12 +150,23 @@
         }),
         at(HX.HV('V-DO0003'), TX, 520, { id: 'v03', rot: 90, lab: 'l' }),
         at(HX.HV('V-DO0004'), TX, 620, { id: 'v04', rot: 90, lab: 'l' }),
-        at(E('strainer', 'Strainer', 'STR-DO0001', [], { flow: OIL + '&' + TKO }), TX, 740, {
+        /* tag corrected 2026-11-27: this strainer between V-DO0004 and the pumps is STR-DO0002 "DIESEL OIL STRAINER" with
+           DPIT-DO0001 (PD-022 sh1/5 E-4, YUA P&ID read; equipment list K1AU3-L1-0-002 item 319). STR-DO0001 is the tank truck
+           inlet strainer (item 318), drawn on the truck inlet below. */
+        at(E('strainer', 'Strainer', 'STR-DO0002', [], { flow: OIL + '&' + TKO }), TX, 740, {
           id: 'str',
           rot: 90,
           lab: 'r',
           sc: 1.3
         }),
+        /* STR-DO0001 "STRAINER - DIESEL OIL TANK TRUCK INLET" (equipment list item 318): on the truck unloading line into
+           T-0701; its place on PD-022 was not read (NOT IN the P&ID read), the line is drawn from its name only */
+        at(E('strainer', 'Truck inlet strainer', 'STR-DO0001', []), 75, TY + 28 * TS, { id: 'sti', sc: 0.8, lab: 'b', wrap: 12 }),
+        /* Z-0701 flame arrester on the vent at the top of T-0701 (PD-022 sh1/5 B-3) */
+        at(E('arrester', 'Flame arrester', 'Z-0701', []), TX - 40, 205, { id: 'fla', lab: 'l' }),
+        /* ZV-DO1001 relief valve on the burner supply DO-1-021 after FCV-DO1012 and check V-DO1030 (PD-022 sh1/5 G-6); it
+           relieves into the return DO-1-022 to T-0701 (not drawn). No label: no room beside the supply valve */
+        at(E('valve', '', '', [], { kind: 'safety', one: true }), 742, DY, { id: 'rv' }),
         at(HX.HV('V-DO0015'), SAX, 895, { id: 'v15', rot: -90, lab: 'r' }),
         at(HX.HV('V-DO0016'), SBX, 895, { id: 'v16', rot: -90, lab: 'r' }),
         at(HX.HV('V-DO0007'), PAX - 2 * PS, 645, { id: 'v07', rot: -90, lab: 'r' }),
@@ -201,6 +212,10 @@
         { med: 'oil', w: W_S, pts: ['rc.r', [490, 330], [TX + 34 * TS, 330]], flow: 'l:PICDO0005' },
         { med: 'oil', w: W_O, pts: [[PBX - 2 * PS, DY], 'sup.l'], flow: OIL },
         { med: 'oil', w: W_O, pts: ['sup.r', [HX0, DY]], flow: 'l:HICDO1012', arrow: false },
+        { med: 'oil', w: W_S, pts: [[20, TY + 28 * TS], 'sti.l'], arrow: false },
+        { med: 'oil', w: W_S, pts: ['sti.r', 'tk.l'] },
+        { med: 'air', w: W_S, pts: [[TX - 40, 258], 'fla.b'], arrow: false },
+        { med: 'air', w: W_S, pts: ['fla.t', [TX - 40, 175]] },
         {
           med: 'oil',
           w: W_O,
@@ -224,7 +239,7 @@
         { x: 560, y: 90, side: 'b', label: 'Return pressure', key: 'PT-DO1008', unit: K, tag: 'PT-DO1008' },
         ...B.flatMap(b => b.taps)
       ],
-      texts: []
+      texts: [{ x: 20, y: TY + 28 * TS - 10, s: 'tank truck' }]
     }
   });
 })();

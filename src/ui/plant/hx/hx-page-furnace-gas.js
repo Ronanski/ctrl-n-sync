@@ -12,7 +12,7 @@
    PT-FG1151); the stack Z-1057 with the gas analyzers AT-FG1057-1 ~ -6, the velocity FT-FG1057-7 and TT-FG1057-8.
    Names of the values as the temporary page 09 gives them (bed DP, plenum to lower bed DP, lower to upper DP, solids down).
    Drawn simpler than the sheet:
-   - 2 cyclones and 2 seal pots: one of each is drawn (a section through the boiler), both temperatures are shown;
+   - 2 cyclones and 2 seal pots: B is drawn behind A (a section through the boiler), both temperatures are shown;
    - the air side of the air heater, the fans and blowers of the combustion air: the Combustion air page;
    - beta.556: the single bank temperatures of the back pass TT-FG1101 ~ 1109 and 1111 (DCS I/O list) stand beside it; a temperature
      the plant model does not give shows -----.
@@ -77,6 +77,10 @@
       items: [
         /* ---- the large pieces ---- */
         at(E('furnace', '', '', [], { fire: 'v:TT-FG1090>300' }), FX, FY, { id: 'fu', under: true, sc: FS }),
+        /* cyclone B S-1009B and seal pot B T-1009B (PD-054 sh3/3 A/B-5 and D/E-5, PD-051 C-3 / D-3, YUA P&ID read 2026-11-27):
+           the twin of A, drawn behind it (the page is a section through the boiler, B stands behind A) */
+        at(E('cyclone', '', '', [], { flow: GAS }), CX + 26, CY - 14, { id: 'cyb', under: true, sc: CS }),
+        at(E('sealpot', '', '', [], { flow: GAS }), CX + 26, CY + 196 * CS - 14, { id: 'spb', under: true, sc: CS, mir: true }),
         at(E('cyclone', '', '', [], { flow: GAS }), CX, CY, { id: 'cy', under: true, sc: CS }),
         at(E('sealpot', '', '', [], { flow: GAS }), CX, CY + 196 * CS, { id: 'sp', under: true, sc: CS, mir: true }),
         at(E('backpass', '', '', [], { gasA: 'l:HICHR1002A', gasB: 'l:HICHR1002B', e1y: 478 }), BPX, BPY, {
@@ -93,6 +97,14 @@
           yn: [90, -20]
         }),
         at(E('stack', '', '', [], { flow: GAS }), SX, SY, { id: 'st', under: true, sc: SS }),
+        /* Z-1056 hydraulic coupling between the motor and the induced draft fan (PD-051 F-8, YUA P&ID read 2026-11-27); no
+           label: the fan's words are under it; named in docs/phase9/equipment.json map */
+        at(E('coupling', '', '', []), 1497, IY - 3, { id: 'hcp', sc: 1.3 }),
+        /* T-1064A / B air buffer tanks of the biasing dampers (K1AU3-D1-0-070 R0, 0.3 m3; YUA read 2026-11-27, vendor data,
+           no flow line): A with the reheater pass damper (its air pressure PT-IA1064-A), B with the superheater pass damper
+           (PT-IA1064-B). No label: named in docs/phase9/equipment.json map */
+        at(E('tank', '', '', [], { id: 'bta', liquid: 'none', w: 14, h: 24 }), 648, 548, { id: 'bta' }),
+        at(E('tank', '', '', [], { id: 'btb', liquid: 'none', w: 14, h: 24 }), 908, 548, { id: 'btb' }),
 
         /* ---- dampers and controllers ---- */
         at(

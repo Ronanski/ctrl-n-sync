@@ -14,12 +14,12 @@
   "H-1001": "furnace-gas|sym=furnace",
   "Z-1057": "furnace-gas|sym=stack",
   "S-1009A": [
-   "furnace-gas|sym=cyclone",
-   "one cyclone symbol is drawn; it stands for A (B has none)"
+   "furnace-gas|id=cy",
+   "cyclone A, the front one of the two drawn"
   ],
   "T-1009A": [
-   "furnace-gas|sym=sealpot",
-   "one seal pot symbol is drawn; it stands for A (B has none)"
+   "furnace-gas|id=sp",
+   "seal pot A, the front one of the two drawn"
   ],
   "T-1001": "drum-steam|sym=drum",
   "P-1115A": "feedwater|mach=BFWP-A",
@@ -95,11 +95,7 @@
    "the motor is drawn in the pump symbol"
   ],
   "Z-1940": "turbine-oil|mach=OIL PURIFIER",
-  "Z-1930": "turbine-oil|name=Oil filter",
-  "S-1933A": [
-   "turbine-oil|name=Control oil filter",
-   "one control oil filter symbol; it stands for A (B has none)"
-  ],
+  "Z-1930": "turbine-oil|id=of",
   "L-1906": "turbine-oil|mach=TURNING GEAR",
   "M-1906": [
    "turbine-oil|mach=TURNING GEAR",
@@ -163,7 +159,181 @@
   "STR-FW1002": [
    "feedwater|id=sfb",
    "suction strainer of boiler feed pump B, after ZV-FW1002 (PD-017 E-7, YUA P&ID read 2026-11-27), drawn with no label"
+  ],
+  "STR-CD1002": [
+   "condensate|id=ssb",
+   "suction strainer of condensate pump B (PD-016 D-10, YUA P&ID read 2026-11-27), drawn with no label"
+  ],
+  "STR-CD1003": [
+   "condensate|id=scs",
+   "strainer before the curtain spray valve XV-CD1006 (PD-016 F/G-9, YUA P&ID read 2026-11-27), drawn with no label"
+  ],
+  "STR-CD1004": [
+   "condensate|id=sf2",
+   "strainer before the flash spray valve XV-CD1005 (PD-016 G-9, YUA P&ID read 2026-11-27), drawn with no label"
+  ],
+  "STR-CD1008": [
+   "condensate|id=sda",
+   "strainer on the condensate to the deaerator after LCV-CD1104 (PD-016 A-3, YUA P&ID read 2026-11-27), drawn with no label"
+  ],
+  "STR-FW1008": [
+   "reheat-steam|id=s60",
+   "strainer between XV-FW1061 and TCV-FW1060, HP bypass spray (PD-017 D-6, YUA P&ID read 2026-11-27), drawn with no label"
+  ],
+  "STR-FW1007": [
+   "reheat-steam|id=s50",
+   "strainer between XV-FW1151 and TCV-FW1150, reheater inlet spray (PD-017 C-6, YUA P&ID read 2026-11-27), drawn with no label"
+  ],
+  "STR-CD1005": [
+   "reheat-steam|id=s15",
+   "strainer between XV-CD1114 and TCV-CD1115, LP bypass spray (PD-016 G-6/7, YUA P&ID read 2026-11-27), drawn with no label"
+  ],
+  "V-FA1001": [
+   "combustion-air|id=vfa",
+   "hot primary air manual dampers V-FA1001 ~ 1004 to the furnace rear wall (PD-052 C-5/6 Detail A, YUA P&ID read 2026-11-27): one manual damper symbol with no label for the four"
+  ],
+  "V-FA1002": [
+   "combustion-air|id=vfa",
+   "hot primary air manual dampers V-FA1001 ~ 1004 to the furnace rear wall (PD-052 C-5/6 Detail A, YUA P&ID read 2026-11-27): one manual damper symbol with no label for the four"
+  ],
+  "V-FA1003": [
+   "combustion-air|id=vfa",
+   "hot primary air manual dampers V-FA1001 ~ 1004 to the furnace rear wall (PD-052 C-5/6 Detail A, YUA P&ID read 2026-11-27): one manual damper symbol with no label for the four"
+  ],
+  "V-FA1004": [
+   "combustion-air|id=vfa",
+   "hot primary air manual dampers V-FA1001 ~ 1004 to the furnace rear wall (PD-052 C-5/6 Detail A, YUA P&ID read 2026-11-27): one manual damper symbol with no label for the four"
+  ],
+  "S-1053": [
+   "combustion-air|id=zpa",
+   "PAF suction silencer, printed Z-1053 SILENCER on PD-052 E-7 (YUA P&ID read 2026-11-27); drawn with no label at the fan inlet"
+  ],
+  "S-1054": [
+   "combustion-air|id=zsa",
+   "SAF suction silencer, printed Z-1054 SILENCER on PD-053 A-7 (YUA P&ID read 2026-11-27); drawn with no label at the fan inlet"
+  ],
+  "L-1112": [
+   "sea-water|id=bsa",
+   "ball separator in condenser outlet A SW-1-007 (PD-020 C-4, YUA P&ID read 2026-11-27); drawn with no label between the condenser and V-SW1009"
+  ],
+  "L-1111": [
+   "sea-water|id=bsb",
+   "ball separator in condenser outlet B SW-1-008 (PD-020 C-5, YUA P&ID read 2026-11-27); drawn with no label between the condenser and V-SW1010"
+  ],
+  "S-1943": [
+   "turbine-oil|id=ps",
+   "oil purifier pump P-1941 suction strainer (Hitachi 310PB64-455 key plan, YUA read 2026-11-27); drawn with no label"
+  ],
+  "S-1942": [
+   "turbine-oil|id=pc",
+   "oil purifier coalescer filter after pump P-1941 (Hitachi 310PB64-455 key plan, YUA read 2026-11-27); drawn with no label"
+  ],
+  "T-1938": [
+   "turbine-oil|id=tac",
+   "trip oil accumulator T-n938 on the trip oil end (Hitachi 310PB64-455 key plan, YUA read 2026-11-27); drawn with no label"
+  ],
+  "STR-MU0001": [
+   "makeup-cooling|id=sm0",
+   "suction strainer of make-up pump P-0709A (PD-024 D-7, YUA P&ID read 2026-11-27); drawn with no label after V-MU0003"
+  ],
+  "STR-MU0002": [
+   "makeup-cooling|id=sm1",
+   "suction strainer of make-up pump P-0709B (PD-024 E-7, YUA P&ID read 2026-11-27); drawn with no label after V-MU0004"
+  ],
+  "STR-MU0003": [
+   "makeup-cooling|id=sm2",
+   "suction strainer of make-up pump P-0709C (PD-024 F-7, YUA P&ID read 2026-11-27); drawn with no label after V-MU0005"
+  ],
+  "ZV-DO1001": [
+   "oil-burners|id=rv",
+   "relief valve on the burner supply DO-1-021 after FCV-DO1012 (PD-022 sh1/5 G-6, YUA P&ID read 2026-11-27); drawn with no label between the supply valve and the burner header"
+  ],
+  "L-1904": [
+   "ash|id=tws",
+   "two way separator, printed L-1094 on PD-071 sh1/2 B-5 (YUA P&ID read 2026-11-27); the page shows the printed tag L-1094"
+  ],
+  "S-1092": [
+   "ash|id=vsa",
+   "vibration screen S-1092 (PD-071 sh1/2 C-4/5); the page draws it as the two screens S-1092A / B of DITL-BA59"
+  ],
+  "S-1091": [
+   "ash|id=bgf",
+   "bag filter on the bottom ash silo roof before F-1091 (PD-071 sh1/2 C-8, YUA P&ID read 2026-11-27); drawn with no label on the fan suction"
+  ],
+  "Z-1056": [
+   "furnace-gas|id=hcp",
+   "hydraulic coupling between the IDF motor and fan (PD-051 F-8, YUA P&ID read 2026-11-27); drawn with no label on the shaft"
+  ],
+  "T-1064A": [
+   "furnace-gas|id=bta",
+   "air buffer tank of the reheater pass biasing damper (K1AU3-D1-0-070 R0; PT-IA1064-A); drawn with no label beside the damper"
+  ],
+  "T-1064B": [
+   "furnace-gas|id=btb",
+   "air buffer tank of the superheater pass biasing damper (K1AU3-D1-0-070 R0; PT-IA1064-B); drawn with no label beside the damper"
+  ],
+  "RO-MU0709A": [
+   "makeup-cooling|id=rm0",
+   "minimum flow orifice of make-up pump P-0709A (PD-024 B-8, tag not printed; which orifice is on which line NOT IN DOCS, drawn in order); no label"
+  ],
+  "RO-MU0709B": [
+   "makeup-cooling|id=rm1",
+   "minimum flow orifice of make-up pump P-0709B (PD-024 B-8, tag not printed; which orifice is on which line NOT IN DOCS, drawn in order); no label"
+  ],
+  "RO-MU0709C": [
+   "makeup-cooling|id=rm2",
+   "minimum flow orifice of make-up pump P-0709C (PD-024 B-8, tag not printed; which orifice is on which line NOT IN DOCS, drawn in order); no label"
+  ],
+  "OR-CW1001A": [
+   "turbine-oil|id=oc0",
+   "orifice on the cooling water out of lube oil cooler A (PD-021 D-3, tag not printed, YUA P&ID read 2026-11-27); no label"
+  ],
+  "OR-CW1001B": [
+   "turbine-oil|id=oc1",
+   "orifice on the cooling water out of lube oil cooler B (PD-021 D-3, tag not printed, YUA P&ID read 2026-11-27); no label"
+  ],
+  "OR-FW1004": [
+   "feedwater|id=ob1",
+   "orifice on pump balance line 1 FW-1-027 to the deaerator (PD-017 B-2, YUA P&ID read 2026-11-27); no label"
+  ],
+  "OR-FW1003": [
+   "feedwater|id=ob2",
+   "orifice on pump balance line 2 FW-1-028 to the deaerator (PD-017 B-2, YUA P&ID read 2026-11-27); no label"
+  ],
+  "P-1716A": [
+   "condensate|id=pbp",
+   "condenser polisher booster pump NO.3 (PD-047 B-8/9, YUA reads NO.3 = A, NO.4 = B); one small pump symbol for the two on the polisher return line, no label"
+  ],
+  "P-1716B": [
+   "condensate|id=pbp",
+   "condenser polisher booster pump NO.4 (PD-047 B-8/9, YUA reads NO.3 = A, NO.4 = B); one small pump symbol for the two on the polisher return line, no label"
+  ],
+  "OR-MS1001": [
+   "drum-steam|id=om1",
+   "multi-stage orifice on the main steam drain before the HP bypass valve to the deaerator (PD-011 rev D F-5, YUA P&ID read 2026-11-27 part 2); no label"
+  ],
+  "OR-MS1002": [
+   "drum-steam|id=om2",
+   "multi-stage orifice on the aux steam branch drain before PCV-AS1010 to the deaerator (PD-014 rev D B-6/7, YUA P&ID read 2026-11-27 part 2); no label"
+  ],
+  "S-1009B": [
+   "furnace-gas|id=cyb",
+   "cyclone B (PD-054 sh3/3 A/B-5, YUA P&ID read 2026-11-27), drawn behind cyclone A"
+  ],
+  "T-1009B": [
+   "furnace-gas|id=spb",
+   "seal pot B (PD-054 sh3/3 D/E-5), drawn behind seal pot A"
   ]
  },
- "approved": {}
+ "approved": {},
+ "nodoc": {
+  "STR-CD1011": "not on PD-016 (only STR-CD1001 / 1002 at the condensate pumps); RB PD-016 not read yet. YUA P&ID read 2026-11-27 (/mnt/project-files/phase9-pid-positions-2026-11-27.md), flow diagram set K1AU3-A1-0-001 Rev A Part 2 (RB rev D sheets and vendor documents, 2026-11-27 7:35 AM) did not find it either.",
+  "T-0761": "NaOCl storage tank: PD-043 shows only the hypo solution tank (printed Z-0701) and the dosing pumps. YUA P&ID read 2026-11-27 (/mnt/project-files/phase9-pid-positions-2026-11-27.md), flow diagram set K1AU3-A1-0-001 Rev A Part 2 (RB rev D sheets and vendor documents, 2026-11-27 7:35 AM) did not find it either.",
+  "T-0762": "NaOCl storage tank: PD-043 shows only the hypo solution tank (printed Z-0701) and the dosing pumps. YUA P&ID read 2026-11-27 (/mnt/project-files/phase9-pid-positions-2026-11-27.md), flow diagram set K1AU3-A1-0-001 Rev A Part 2 (RB rev D sheets and vendor documents, 2026-11-27 7:35 AM) did not find it either.",
+  "T-1065A": "air buffer tank of coal feeder A: PD-061 D-2 draws its instrument air line (filter, solenoid, gate cylinder) but not the tank. YUA P&ID read 2026-11-27 (/mnt/project-files/phase9-pid-positions-2026-11-27.md), flow diagram set K1AU3-A1-0-001 Rev A Part 2 (RB rev D sheets and vendor documents, 2026-11-27 7:35 AM) did not find it either.",
+  "T-1065B": "air buffer tank of coal feeder B: PD-061 D-4 draws its instrument air line (filter, solenoid, gate cylinder) but not the tank. YUA P&ID read 2026-11-27 (/mnt/project-files/phase9-pid-positions-2026-11-27.md), flow diagram set K1AU3-A1-0-001 Rev A Part 2 (RB rev D sheets and vendor documents, 2026-11-27 7:35 AM) did not find it either.",
+  "T-1065C": "air buffer tank of coal feeder C: PD-061 D-7 draws its instrument air line (filter, solenoid, gate cylinder) but not the tank. YUA P&ID read 2026-11-27 (/mnt/project-files/phase9-pid-positions-2026-11-27.md), flow diagram set K1AU3-A1-0-001 Rev A Part 2 (RB rev D sheets and vendor documents, 2026-11-27 7:35 AM) did not find it either.",
+  "OR-CD1002": "PD-016 G-9 / PD-027 D-4 draw the flash chamber spray line (STR-CD1004, XV-CD1005) but no orifice on it. YUA P&ID read 2026-11-27 (/mnt/project-files/phase9-pid-positions-2026-11-27.md), flow diagram set K1AU3-A1-0-001 Rev A Part 2 (RB rev D sheets and vendor documents, 2026-11-27 7:35 AM) did not find it either.",
+  "S-1960": "LP hood spray strainer: only the tie-in is on PD-016 D-5 (\"to turbine exhaust hood spray (Hitachi)\"); the strainer is on Hitachi drawing 310PB61-986, not in the doc set. YUA P&ID read 2026-11-27 (/mnt/project-files/phase9-pid-positions-2026-11-27.md), flow diagram set K1AU3-A1-0-001 Rev A Part 2 (RB rev D sheets and vendor documents, 2026-11-27 7:35 AM) did not find it either."
+ }
 }

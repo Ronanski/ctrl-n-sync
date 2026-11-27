@@ -130,6 +130,13 @@
         }),
         at(xv('Equalising air valve', 'XV-PA1814C', 'DITL-LS200|o|1'), 110, 890, { id: 'lv5', lab: 'r' } /* beta.305: beside the valve, its air line comes up under it */),
         at(L('compressed-air', 'Plant air', { back: true }), 40, 960, { id: 'pal' }),
+        /* vent filters on the silo roofs (YUA P&ID read 2026-11-27): S-1313 on T-1311 (PD-062 sh1/2 B-3/4), S-1301 on T-1300
+           (PD-063 sh1/2 B-3/4), each before its vent fan */
+        at(E('strainer', '', 'S-1313', [], { flow: LM_FAN }), LX + 70, 130, { id: 'lvf', sc: 0.7, lab: 't' }),
+        at(E('strainer', '', 'S-1301', [], { flow: SD_FAN }), SX - 70, 130, { id: 'svf', sc: 0.7, lab: 't', mir: true }),
+        /* T-1312 air receiver of the limestone system on plant air PA-1-058 (PD-062 sh1/2 C/D-9): it feeds the vessels
+           (PV-PA1811), the conveying line (PV-PA1812) and the equalising air; drawn on the equalising air line */
+        at(E('tank', 'Air receiver', 'T-1312', [], { id: 'par', liquid: 'none', w: 18, h: 28 }), 60, 935, { id: 'par', lab: 't' }),
         at(B('Bypass air valve A, SV-PA1812A', dy('DITL-LS212|o|9'), { w: 230 }), 640, 950, { id: 'lby' }),
         at(B('Bypass air valve B, SV-PA1812B', dy('DITL-LS212|o|10'), { w: 230 }), 880, 950, { id: 'lbz' }),
         ...INJ.map((n, i) =>
@@ -206,12 +213,15 @@
         {
           med: 'air',
           w: W_A,
-          pts: [[LX + 46, 130], [LX + 80, 130], [LX + 80, 110], 'lmf.in'],
+          pts: ['lvf.r', [LX + 95, 130], [LX + 95, 110], 'lmf.in'],
           flow: LM_FAN,
           arrow: false
         },
         /* conveying line: air in at the feeder, limestone and air to the furnace */
-        { med: 'air', w: W_A, pts: ['pal.r', [110, 960], 'lv5.b'], flow: 'h:ls5', arrow: false },
+        { med: 'air', w: W_A, pts: [[LX + 46, 130], 'lvf.l'], flow: LM_FAN, arrow: false },
+        { med: 'air', w: W_A, pts: [[SX - 46, 130], 'svf.r'], flow: SD_FAN, arrow: false },
+        { med: 'air', w: W_A, pts: ['pal.r', [60, 960], 'par.b'], flow: 'h:ls5', arrow: false },
+        { med: 'air', w: W_A, pts: ['par.t', [60, 912], [110, 912], 'lv5.b'], flow: 'h:ls5', arrow: false },
         {
           med: 'air',
           w: W_A,
@@ -245,7 +255,7 @@
         {
           med: 'air',
           w: W_A,
-          pts: [[SX - 46, 130], [SX - 80, 130], [SX - 80, 110], 'sdf.in'],
+          pts: ['svf.l', [SX - 95, 130], [SX - 95, 110], 'sdf.in'],
           flow: SD_FAN,
           arrow: false
         },

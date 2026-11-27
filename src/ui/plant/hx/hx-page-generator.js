@@ -91,6 +91,12 @@
         at(E('breaker', 'Generator breaker 52G1', '', [], { on: R.g1, wrap: 12 }), LX, 520, { id: 'g1', lab: 'l' }),
         at(E('generator', 'Generator', '', [], { on: ON }), LX, GY, { id: 'gen', sc: 2.2, lab: 'b' }),
         at(L('turbine', 'Turbine', { back: true }), 130, GY, { id: 'tbl' }),
+        /* generator air coolers H-1971A ~ D (PD-021 B-2 / C-2 / D-2 "GENERATOR AIR COOLER (A)..(D)", tag not printed; PD-027
+           A-1 ~ A-4; YUA P&ID read 2026-11-27): closed cooling water through each. Order on the generator, turbine end to
+           exciter end: A, C, D, B (PD-027). Their outlet air temperatures are TEGE10041 ~ 44 on the right. */
+        ...['A', 'C', 'D', 'B'].map((n, i) =>
+          at(E('cooler', '', 'H-1971' + n, []), LX - 96 + i * 64, 905, { id: 'gc' + n, sc: 0.7, lab: 'b' })
+        ),
         /* excitation */
         at(E('transformer', 'Exciter transformer', '', [], { wrap: 12 }), EXX, 600, { id: 'et', sc: 0.75, lab: 'r' }),
         at(E('cubicle', 'Voltage regulator', '', [], { wrap: 12 }), EXX, 710, { id: 'avr', lab: 'r' }),
@@ -160,6 +166,7 @@
         val(17, 'Stator coil E / F', 'GEN.TS5', '°C', 0, 'GEN.TS6', 'TEGE10065 / 66')
       ],
       texts: [
+        { x: LX, y: 975, s: 'Generator air coolers, turbine end to exciter end', cls: 'hx-note', anchor: 'middle' },
         { x: LX + 14, y: 48, s: 'to the grid', cls: 'hx-note' },
         { x: 890, y: 60, s: 'GENERATOR VALUES AND MONITORING', cls: 'hx-name' },
         { x: 866, y: 645, s: 'BREAKER STATUS AND PROTECTION', cls: 'hx-zone' },
