@@ -2909,6 +2909,8 @@ function anGenInt(dt) {
   anPortSet(U, 'aux.power', { W: el ? el.aux : null });
   anPortSet(U, 'q.ccw.YUI', { Q });
   anPortSet(U, 'store.YUI', { mw: 0, E: U.Hgen * AN_GEN.S * (16200 / (23700 + 16200)) * n * n });
+  /* the pick-up contacts of the generator protection relay (A) for the TCS sheets SH-G-5A / 5B (elec.js anGenRelay) */
+  anPortSet(U, 'relay.gen', { x: anGenRelay(U) });
 }
 /* 3.2.3 (SOHEE : PLANT MODEL HELPER, plan task a7 note): SAMPLING AND CHEMICAL DOSING (page "SAMPLING AND DOSING"). Before: no model,
    every analyzer '-----'. docs/versions/v3.2.1/SAMPLING_DOSING_PLANT_MODEL.md has the full source list.
