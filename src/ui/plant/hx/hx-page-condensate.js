@@ -408,6 +408,41 @@
         { x: 1000, y: 432, s: 'from polisher', cls: 'hx-end', anchor: 'middle' },
         { x: 900, y: 385, s: 'Polisher flow', key: 'FTCD1121', unit: 't/h', anchor: 'middle' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Hotwell and condensate pumps',
+        pens: [
+          ['Hotwell level', 'pv:LICCD1110A', 'mm', 0],
+          ['Hotwell level set point', 'sv:LICCD1110A', 'mm', 0],
+          ['Hotwell level valve', 'mv:LICCD1110A', '%'],
+          ['Pump A current', 'ITP1116A', 'A'],
+          ['Pump B current', 'ITP1116B', 'A'],
+          ['Pump outlet pressure', 'PTCD1117', 'kg/cm²']
+        ]
+      },
+      {
+        title: 'Deaerator level control',
+        pens: [
+          ['Deaerator level', 'pv:LICCD1104', 'mm', 0],
+          ['Set point', 'sv:LICCD1104', 'mm', 0],
+          ['Deaerator level valve', 'mv:LICCD1104', '%'],
+          ['Condensate flow', 'FTCD1122', 't/h'],
+          ['Minimum flow valve', 'mv:FICCD1120', '%']
+        ]
+      },
+      {
+        title: 'Low pressure heaters',
+        pens: [
+          ['Heater 1 inlet', 'TT-CD1101', '°C'],
+          ['After heater 1', 'TT-CD1102', '°C'],
+          ['After heater 2', 'TT-CD1103-1', '°C'],
+          ['After heater 3', 'TT-CD1103-2', '°C'],
+          ['Condenser pressure', 'PTCD1110', 'kg/cm² abs', 3]
+        ]
+      }
+    ]
   });
 })();

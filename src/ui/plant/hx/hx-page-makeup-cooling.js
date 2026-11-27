@@ -320,6 +320,32 @@
         { x: 160, y: 890, s: 'sampling rack.', cls: 'hx-note' },
         { x: 620, y: 965, s: 'return to the pumps', cls: 'hx-note' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Make-up water',
+        pens: [
+          ['Tank A level', 'LIMU0708A', 'm'],
+          ['Tank B level', 'LIMU0708B', 'm'],
+          ['Make-up header pressure', 'PIMU0709', 'kg/cm²'],
+          ['Make-up flow', 'FIMU1001', 'm³/h'],
+          ['Pump A current', 'IIP0709A', 'A'],
+          ['Pump C current', 'IIP0709C', 'A']
+        ]
+      },
+      {
+        title: 'Closed cooling water',
+        pens: [
+          ['Head tank level', 'LICW1109', 'm', 2],
+          ['Pump discharge pressure', 'PICW1152', 'kg/cm²'],
+          ['Supply pressure', 'PICW1153', 'kg/cm²'],
+          ['Pump discharge temperature', 'TICW1152', '°C'],
+          ['Supply temperature', 'TICW1153', '°C'],
+          ['Pump A current', 'IIP1108A', 'A']
+        ]
+      }
+    ]
   });
 })();

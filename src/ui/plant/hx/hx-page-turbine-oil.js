@@ -329,6 +329,31 @@
         { x: 700, y: 978, s: 'control oil from the main oil tank', cls: 'hx-note' },
         { x: 1022, y: 440, s: 'straight to the bearing oil header', cls: 'hx-note' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Lube oil',
+        pens: [
+          ['Bearing oil header', 'PTLO10031', 'kg/cm²', 2],
+          ['Lube oil pump A discharge', 'PTLO1922A', 'kg/cm²', 2],
+          ['Cooler inlet', 'TELO1001', '°C'],
+          ['Cooler outlet', 'TE-LO1002-1', '°C'],
+          ['Oil temperature set point', 'sv:TICLO1002', '°C'],
+          ['Oil temperature valve', 'mv:TICLO1002', '%']
+        ]
+      },
+      {
+        title: 'Control and trip oil',
+        pens: [
+          ['Control oil header', 'PTLO10061', 'kg/cm²'],
+          ['Trip oil', 'PTLO10071', 'kg/cm²'],
+          ['Control oil pump A discharge', 'PTLO1931A', 'kg/cm²'],
+          ['Control oil pump B discharge', 'PTLO1931B', 'kg/cm²'],
+          ['Speed', 'SI-TB', 'rpm', 0]
+        ]
+      }
+    ]
   });
 })();

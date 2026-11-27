@@ -239,6 +239,42 @@
         { x: 1610, y: 268, s: 'Temperature', key: 'TT-FG1057-8', unit: '°C', dp: 0, anchor: 'end' },
         { x: 1610, y: 284, s: 'Velocity', key: 'FT-FG1057-7', unit: 'm/s', dp: 1, anchor: 'end' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Furnace pressure control',
+        pens: [
+          ['Furnace pressure', 'pv:PICFG108', 'mmH₂O', 1],
+          ['Set point', 'sv:PICFG108', 'mmH₂O', 1],
+          ['Fan coupling output', 'mv:PICFG108', '%'],
+          ['Fan inlet damper', 'mv:PICFG108A', '%'],
+          ['Induced draft fan current', 'IT-F1056', 'A', 0]
+        ]
+      },
+      {
+        title: 'Oxygen and stack',
+        pens: [
+          ['Oxygen', 'pv:AICFG112', '%'],
+          ['Oxygen set point', 'sv:AICFG112', '%'],
+          ['Stack oxygen', 'AT-FG1057-4', '%'],
+          ['Stack sulphur oxides', 'AT-FG1057-1', 'ppm', 0],
+          ['Stack nitrogen oxides', 'AT-FG1057-2', 'ppm', 0],
+          ['Stack carbon monoxide', 'AT-FG1057-3', 'ppm', 0]
+        ]
+      },
+      {
+        title: 'Bed and cyclones',
+        pens: [
+          ['Lower bed temperature', 'TT-FG1090', '°C', 0],
+          ['Upper bed temperature', 'TT-FG1091', '°C', 0],
+          ['Bed pressure drop', 'DPT-FG1081', 'mmH₂O', 0],
+          ['Cyclone A outlet', 'TT-FG1095-A', '°C', 0],
+          ['Cyclone B outlet', 'TT-FG1095-B', '°C', 0],
+          ['Fan outlet temperature', 'TT-FG1152', '°C', 0]
+        ]
+      }
+    ]
   });
 })();
