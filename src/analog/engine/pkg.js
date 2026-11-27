@@ -137,6 +137,7 @@ function pkgStep(U, dt) {
   pkgCtStep(P.ct.A, dt, pA === 1, pkgDo('DITL-119', 'O.0287') === 1, pkgDo('DITL-119', 'O.0288') === 1);
   pkgCtStep(P.ct.B, dt, (pB == null ? pA : pB) === 1, pkgDo('DITL-119', 'O.028A') === 1, pkgDo('DITL-119', 'O.028B') === 1);
   pkgEspStep(P, U, dt);
+  pkgFaStep(P, U, dt);
   /* the watchdogs: the PLC returns the bit, the DCS inverts it */
   for (const k in P.wd) P.wd[k] = P.wd[k] ? 0 : 1;
 }
@@ -189,6 +190,131 @@ function pkgBit(ma) {
   if (!m) return null;
   return { w: +m[1], b: m[2] == null ? 0 : m[2].length === 1 ? +m[2] * 10 : +m[2] };
 }
+/* ---------- FLY ASH, THE PROCESS (Phase 11, SUZU 2026-11-27; YUA PC read /mnt/project-files/suzu-pc-answers-2026-11-27.md 4). The PLC
+   cycle of each blow tank on the physics of the ash and the air:
+   ash in     U.flyA (T/H, the fly ash of the bed balance, unit.js). The air heater hoppers take 575 of 11,500 kg/h (L5-1 Sec 1 A.1
+              normal: A/H 575, ESP 10,925, DESIGN-SRC); the rest goes to the ESP and U.espEta of it is collected (boiler.js, Deutsch).
+              Split over the 5 ESP fields (not in the docs, DERIVED): the 5 fields are alike (L14: 5 fields, 10 hoppers), so each lets
+              through the same share p = (1 - eta)^(1/5); field f collects p^(f-1) (1 - p) of the ESP inlet: 72 / 20 / 5.5 / 1.5 / 0.4 %
+              at eta 0.99839 (31,000 -> 50 mg/Nm3), the order of the tank sizes 1000 / 1000 / 600 / 200 / 100 L. Two hoppers per field,
+              half each; four A/H hoppers, a quarter each;
+   tanks      L5-1 Sec 1 p 3 and the tubing panel list E10209-3-750 ~ 754: EP-1 / EP-2 1000 L, EP-3 600 L, EP-4 200 L, EP-5 100 L, AH
+              100 L; EP-3 / 4 / 5 are A + B tanks with one discharge (one command, FA list). A tank is full at its volume x the bulk
+              density 721 kg/m3 (L5-1, for volume): the level high probe at the top (Lmax);
+   fill       the inlet valve AIV open: the ash the hopper collects falls into the tank (one volume with it). While the AIV is shut the
+              hopper holds the ash and drops it in when the AIV opens again. Mode L+T (pkg read 40006.10): the fill ends at Lmax; the
+              fill timer setting is NOT IN DOCS (set at commissioning, L5-1 Sec 3 5), so the timer never ends a fill here and the
+              FILLING TIME OUT bit stays 0;
+   air        one conveying air supply per unit, 20 Nm3/min at 7 kg/cm2 (L5-1 Sec 1), so one tank conveys at a time (DERIVED; the cycle
+              text "next tank"): the full tanks wait in the order they filled;
+   pressurize ASV open: isothermal, dP/dt = 1.013 bar x q / V (q = 20 / 60 Nm3/s, V = the tank); at 2.5 bar g the ADV opens (L5-1 Sec 3
+              4);
+   convey     the ash leaves at the design conveying capacity 16,100 kg/h (L5-1 Sec 1 A.1, the system capacity, one tank at a time)
+              into silo T-1251, the tank held at 2.5 bar; empty = level low;
+   blow-down  the empty tank and the line (130 m of 3" sch40, ID 77.9 mm: 0.62 m3, L5-1 Sec 1 A.3) vent to the silo: P_abs falls with
+              tau = (V + V_line) / q (the air throughput of the line); at 0.4 bar g, after the delay t (NOT IN DOCS: 0 here), the ASV
+              closes; 5 s later the ADV closes; 3 s later the AIV opens (L5-1 Sec 3 4) and the hopper vibrator of an ESP hopper runs 3 s
+              (Attention 5);
+   silo       T-1251 1,600 m3 effective, 10 m dia (78.54 m2), L5-1 Sec 1 / D2-0-017: level above FL = 9.6 m (LSL-FH1700 tip) + V / 78.54;
+              LSH-FH1714 tip EL 30.52 m, LSHH tip 31.55 m (D1-0-017 p 60, phase 8 read). LT-FH1700 0 ~ 100 % = 0 ~ 1,600 m3 (INFERRED: the
+              span is not printed). The dry unloader is local (trucks, L5-1): none in progress here. Start state: 50 % (a start
+              state, the trucks keep it between L and H);
+   vent filter MIR-M1250 runs while a tank sends air to the silo (pressurize to ADV close): it starts with the tank (Sec 4 p 11 Att 4);
+   not modelled (no value, docs/phase8/open.json): purge valves (purge time NOT IN DOCS), the wet unloader (cancelled), faults. */
+const PKG_FAP = {
+  rhoB: 721,
+  q: 20 / 60,
+  Pon: 2.5,
+  Poff: 0.4,
+  R: 16100 / 3600,
+  Vl: 130 * Math.PI * 0.0779 ** 2 / 4,
+  tAsv: 0 /* delay t: NOT IN DOCS */,
+  tAdv: 5,
+  tAiv: 3,
+  tVib: 3,
+  ah: 575 / 11500,
+  silo: { V: 1600, A: Math.PI * 25, z0: 9.6, zH: 30.52, zHH: 31.55, V0: 800 },
+  /* the 11 commanded tanks: hoppers [field (0 = A/H, 1 ~ 5 = ESP), side 0 / 1 (A / B), A/H hopper 0 ~ 3], volume m3 per hopper tank */
+  tanks: [
+    { n: 'AH-A', h: [[0, 0]], V: 0.1 },
+    { n: 'AH-B', h: [[0, 1]], V: 0.1 },
+    { n: 'AH-C', h: [[0, 2]], V: 0.1 },
+    { n: 'AH-D', h: [[0, 3]], V: 0.1 },
+    { n: 'EP-1A', h: [[1, 0]], V: 1.0 },
+    { n: 'EP-1B', h: [[1, 1]], V: 1.0 },
+    { n: 'EP-2A', h: [[2, 0]], V: 1.0 },
+    { n: 'EP-2B', h: [[2, 1]], V: 1.0 },
+    { n: 'EP-3', h: [[3, 0], [3, 1]], V: 0.6 },
+    { n: 'EP-4', h: [[4, 0], [4, 1]], V: 0.2 },
+    { n: 'EP-5', h: [[5, 0], [5, 1]], V: 0.1 }
+  ]
+};
+/* kg/s collected by one hopper [field, side] */
+function pkgFaHop(U, f, k) {
+  const K = PKG_FAP,
+    fly = Math.max(0, +U.flyA || 0) / 3.6 /* kg/s */;
+  if (f === 0) return (fly * K.ah) / 4;
+  const eta = Math.max(0, Math.min(0.999999, isFinite(U.espEta) ? U.espEta : 0)),
+    p = Math.pow(1 - eta, 1 / 5);
+  return (fly * (1 - K.ah) * Math.pow(p, f - 1) * (1 - p)) / 2;
+}
+function pkgFaStep(P, U, dt) {
+  const K = PKG_FAP;
+  const F =
+    P.fa ||
+    (P.fa = {
+      tk: K.tanks.map(() => ({ ph: 'fill', m: 0, hop: 0, P: 0, t: 0, vib: 0 })),
+      q: [],
+      silo: K.silo.V0 * K.rhoB,
+      vent: 0
+    });
+  let busy = F.tk.findIndex(c => c.ph !== 'fill' && c.ph !== 'wait');
+  K.tanks.forEach((T, i) => {
+    const c = F.tk[i],
+      mMax = T.V * T.h.length * K.rhoB,
+      inflow = T.h.reduce((a, [f, k]) => a + pkgFaHop(U, f, k), 0) * dt;
+    c.t += dt;
+    c.vib = Math.max(0, c.vib - dt);
+    if (c.ph === 'fill') {
+      c.m += inflow + c.hop;
+      c.hop = 0;
+      if (c.m >= mMax) {
+        c.hop = c.m - mMax;
+        c.m = mMax;
+        c.ph = 'wait';
+        F.q.push(i);
+      }
+    } else c.hop += inflow;
+  });
+  if (busy < 0 && F.q.length) {
+    busy = F.q.shift();
+    Object.assign(F.tk[busy], { ph: 'press', t: 0, P: 0 });
+  }
+  if (busy >= 0) {
+    const T = K.tanks[busy],
+      c = F.tk[busy],
+      V = T.V * T.h.length;
+    if (c.ph === 'press') {
+      c.P += (1.013 * K.q * dt) / V;
+      if (c.P >= K.Pon) Object.assign(c, { ph: 'conv', P: K.Pon, t: 0 });
+    } else if (c.ph === 'conv') {
+      const d = Math.min(c.m, K.R * dt);
+      c.m -= d;
+      F.silo += d;
+      if (c.m <= 0) Object.assign(c, { ph: 'blow', t: 0, m: 0 });
+    } else if (c.ph === 'blow') {
+      const tau = (V + K.Vl) / K.q;
+      c.P = (c.P + 1.013) * Math.exp(-dt / tau) - 1.013;
+      if (c.P <= K.Poff && c.t >= K.tAsv) Object.assign(c, { ph: 'adv', t: 0, P: Math.max(0, c.P) });
+    } else if (c.ph === 'adv') {
+      c.P = Math.max(0, c.P * Math.exp(-dt / ((V + K.Vl) / K.q)));
+      if (c.t >= K.tAdv) Object.assign(c, { ph: 'aiv', t: 0 });
+    } else if (c.ph === 'aiv' && c.t >= K.tAiv) Object.assign(c, { ph: 'fill', t: 0, P: 0, vib: K.tVib });
+  }
+  F.vent = busy >= 0 && F.tk[busy].ph !== 'aiv' ? 1 : 0;
+  F.lv = (100 * F.silo) / K.rhoB / K.silo.V;
+  F.z = K.silo.z0 + F.silo / K.rhoB / K.silo.A;
+}
 /* ---------- FLY ASH (FA-OM L5-1 section 4): eleven blow tanks AH-A ~ D, EP-1A, 1B, 2A, 2B, 3, 4, 5. The tank cycle (air valve, 2.5 bar,
    discharge, level low and 0.4 bar + t, discharge close 5 s, inlet 3 s, filling until level high or the filling time) needs the filling
    time, the pressurized / transported fail times and the delay t, which are not in the documents read (NO-SOURCE), and the silo level
@@ -196,6 +322,40 @@ function pkgBit(ma) {
    Given: no fault model yet, so the PRESSURIZED / TRANSPORTED FAIL of each tank and the fault / trip bits read 0; the DCS commands (start /
    stop push buttons, alarm reset / ack): no screen sends one yet, 0; the plant air low switch from the plant air model. */
 const PKG_FA = {
+  /* Phase 11: the bits of each tank (FA list "PLC to DCS" r4 ~ r86): [tank index, kind]; lh level high, ft filling time out, iv inlet
+     valve, dv discharge valve, as air supply valve (the fails are in zero below) */
+  tank: (() => {
+    const o = {},
+      put = (adr, i, kind) => {
+        const b = pkgBit(adr);
+        o[b.w + '.' + b.b] = [i, kind];
+      },
+      L = [
+        ['40001', '40001.01', '40001.02', '40001.03', '40001.04'],
+        ['40001.07', '40001.08', '40001.09', '40001.1', '40001.11'],
+        ['40001.14', '40001.15', '40002', '40002.01', '40002.02'],
+        ['40002.05', '40002.06', '40002.07', '40002.08', '40002.09'],
+        ['40002.12', '40002.13', '40002.14', '40002.15', '40003'],
+        ['40003.03', '40003.04', '40003.05', '40003.06', '40003.07'],
+        ['40003.1', '40003.11', '40003.12', '40003.13', '40003.14'],
+        ['40004.01', '40004.02', '40004.03', '40004.04', '40004.05']
+      ];
+    L.forEach((r, i) => ['lh', 'ft', 'iv', 'dv', 'as'].forEach((kind, j) => put(r[j], i, kind)));
+    /* EP-3 / 4 / 5: level high A, B, one filling time out, inlet A, B, one discharge, one air supply */
+    [
+      [8, '40004.08 40004.09 40004.1 40004.11 40004.12 40004.13 40004.14'],
+      [9, '40005.01 40005.02 40005.03 40005.04 40005.05 40005.06 40005.07'],
+      [10, '40005.1 40005.11 40005.12 40005.13 40005.14 40005.15 40006']
+    ].forEach(([i, r]) => r.split(' ').forEach((adr, j) => put(adr, i, ['lh', 'lh', 'ft', 'iv', 'iv', 'dv', 'as'][j])));
+    return o;
+  })(),
+  /* EP-1A ~ EP-5B hopper vibrator on (FA list r125 ~ r134), field 1 ~ 5, A / B */
+  vib: '40008.09 40008.1 40008.11 40008.12 40008.13 40008.14 40008.15 40009 40009.01 40009.02'.split(' ').map(x => {
+    const b = pkgBit(x);
+    return b.w + '.' + b.b;
+  }),
+  /* the tank of an ESP hopper (field 1 ~ 5, side 0 / 1) */
+  hopTank: (f, k) => PKG_FAP.tanks.findIndex(T => T.h.some(h => h[0] === f && h[1] === k)),
   zero: new Set(
     [
       // pressurized / transported fail of the 11 tanks
@@ -261,11 +421,45 @@ const PKG_READ = {
        PLC runs it, which needs REMOTE (derived, the rule of the ESP motors) */
     if (k === '40007.3') return 1;
     /* PS-PA1700 plant air tank pressure low: below 4 bar (FA-OM 4) = 4.08 kg/cm2g, the unit 1 plant air header of the model (AN_AIR) */
-    if (k === '40006.8') {
+    const airLow = () => {
       const U = AN.unit,
         p = U && isFinite(U.paPU) ? U.paPU : U ? U.paP : NaN;
       return isFinite(p) ? (p < 4 / 0.980665 ? 1 : 0) : NaN;
+    };
+    if (k === '40006.8') return airLow();
+    /* Phase 11: the process of the tanks and the silo (pkgFaStep) */
+    const F = P.fa;
+    if (!F) return NaN;
+    const t = PKG_FA.tank[k];
+    if (t) {
+      const c = F.tk[t[0]],
+        T = PKG_FAP.tanks[t[0]],
+        full = c.m >= T.V * T.h.length * PKG_FAP.rhoB - 1e-6;
+      switch (t[1]) {
+        case 'lh':
+          return full ? 1 : 0;
+        case 'ft':
+          return 0; /* the fill timer is NOT IN DOCS: the level ends every fill (pkgFaStep notes) */
+        case 'iv':
+          return c.ph === 'fill' ? 1 : 0;
+        case 'dv':
+          return c.ph === 'conv' || c.ph === 'blow' || c.ph === 'adv' ? 1 : 0;
+        case 'as':
+          return c.ph === 'press' || c.ph === 'conv' || c.ph === 'blow' ? 1 : 0;
+      }
     }
+    const v = PKG_FA.vib.indexOf(k);
+    if (v >= 0) return F.tk[PKG_FA.hopTank(1 + (v >> 1), v & 1)].vib > 0 ? 1 : 0;
+    const K = PKG_FAP.silo;
+    if (k === '40006.4') return F.z >= K.zHH ? 1 : 0;
+    if (k === '40006.5') return F.z >= K.zH ? 1 : 0;
+    if (k === '40006.6') return F.silo <= 0 ? 1 : 0;
+    /* the dry unloader is local (trucks): none in progress, its gates, fluidizing and motor at rest */
+    if (k === '40006.12' || k === '40006.13' || k === '40006.14' || k === '40007.0') return 0;
+    if (k === '40007.5') return F.vent;
+    if (k === '40008.8') return airLow() || F.z >= K.zHH ? 1 : 0;
+    /* LT-FH1700: the word is 0 ~ 10000 = 0.0 ~ 100.0 % (FA list r144); read in % as the DCS loop LIFH1700 (0 ~ 100 %) shows it */
+    if (a.w === 40021 && a.b === 0) return Math.round(100 * Math.max(0, Math.min(100, F.lv))) / 100;
     return NaN;
   },
   esp: (P, ma) => {
@@ -286,8 +480,11 @@ const PKG_READ = {
       if (k === 2) return 0;
       if (w === 30001) return pkgEspCe(E, f);
       if (w <= 30003) return pkgEspDe(E, f);
-      return NaN;
+      /* Phase 11: the hopper vibrators run 3 s each time the fly ash inlet valve of their hopper opens (L5-1 Sec 4 p 11 Att 5) */
+      return P.fa ? (P.fa.tk[PKG_FA.hopTank(f + 1, w - 30004)].vib > 0 ? 1 : 0) : NaN;
     }
+    /* Phase 11: InterLock = the fly ash blocking (inlet) valve contact of that hopper (ED p27, FA p558): open while the tank fills */
+    if (w === 30006 && b >= 6 && P.fa) return P.fa.tk[PKG_FA.hopTank(1 + ((b - 6) >> 1), (b - 6) & 1)].ph === 'fill' ? 1 : 0;
     if (w === 30006) {
       /* purge air fan / heater REMOTE: the LOCAL / REMOTE switch of LOP-1206 (ED p15); the auto logic of ED p87 runs them from the PLC,
          which works only in REMOTE (ED p89, p90), the same rule as the motors above (derived) */

@@ -34,6 +34,38 @@ function anIdfN(m) {
    - superheaters 75.8 m3 (T8 Tab 2 HYD less the water parts), superheated about 450 C, 0.42 kg/m3 per kg/cm2 = 32 kg;
    - main steam line to the stop valves: NO-SOURCE, about 20 m3 (8 kg).
    53 kg per kg/cm2 = 190 (T/H) x s per kg/cm2 (CALC). The old field C of a save is not read */
+/* Phase 11 (KANA, 2026-11-27): THE SUPERHEATER PRESSURE DROP, drum to SH outlet. Turbulent flow in the SH tubes at a Reynolds number
+   far above the transition (the friction factor nearly constant): dP = f (L / D) rho V^2 / 2 = k m^2 / rho, the mass flow m and the
+   mean steam density rho of the superheaters. k from the one design point, DESIGN-SRC: FHI P2S7 Tab 3 (page 2-7-TAB_3-1) at MCR:
+   460 T/H, SH outlet 129 kg/cm2 G and 541 C, "Superheater Pressure Drop 16 kg/cm2" (drum 145 kg/cm2 G). rho = the mean of the
+   saturated steam at the drum and the steam at the SH outlet (IF97, steam.js). Same law at every load and state; the flow is the steam
+   through the SH (main steam to the turbine; the other outlets are taken after the SH outlet, as the drawing PD-012 shows).
+   Before: kdp = (drum - MSP) / MSF^2 of the plant snapshot at 150 MW (134.2 - 122.6 at 474.1 T/H), a constant fitted to one plant (NO-FIT-OK: history note)
+   reading with no density term (no-fit baseline, Audit 3 ranking 5). U.kdp is kept as the name the valve flow solve reads. */
+/* The tap pressures inside the chain, PT-BR1130 (after SH panel #1 = spray 1 point) and PT-BR1150 (finishing SH inlet = spray 2
+   point), are the drum less the share s1 / s2 of this drop. The shares are where the taps sit along the drop, read on the plant
+   transmitters of 03.png (150.5 MW: drum 134.2, PIBR1130 127.8, PIBR1150 124.9, MSP 122.6: 6.4 / 11.6 and 9.3 / 11.6). OPEN (Phase 11,
+   KANA): the share from the tube geometry needs the panel SH drawings (C series, not in the documents; hx.js); until then the shares
+   stay and the size of the drop is the design law. Before, the taps took 6.4 / 9.3 kg/cm2 x (MSF / 474.1)^2 by themselves. */
+const AN_SHDP = { dp0: 16, m0: 460, Po: 129, To: 541, s1: 6.4 / 11.6, s2: 9.3 / 11.6 };
+/* the pressure at the share s of the SH drop (kg/cm2 G), drum Pd, steam through the SH m (T/H) */
+function anShTap(U, s, Pd, m) {
+  const k = isFinite(U && U.kdp) ? U.kdp : AN_SHDP.dp0 / (AN_SHDP.m0 * AN_SHDP.m0);
+  return Pd - s * k * m * m;
+}
+function anShRho(Pd, Po, To) {
+  return (steamRho(Pd, steamTsat(Pd)) + steamRho(Po, Math.max(steamTsat(Po), To))) / 2;
+}
+function anShKdp(U) {
+  const D = AN_SHDP,
+    k0 = D.dp0 / (D.m0 * D.m0);
+  if (!AN_SHDP.rho0) AN_SHDP.rho0 = anShRho(D.Po + D.dp0, D.Po, D.To);
+  if (!U || !isFinite(U.Pd) || U.Pd <= 0) return k0;
+  const To = U.hxO && isFinite(U.hxO.ms) ? U.hxO.ms : steamTsat(U.Pd),
+    Po = isFinite(U.Pms) && U.Pms > 0 ? U.Pms : U.Pd,
+    rho = anShRho(U.Pd, Po, To);
+  return isFinite(rho) && rho > 0 ? (k0 * AN_SHDP.rho0) / rho : k0;
+}
 const AN_STORE = { cs: 190 };
 const AN_UNIT = {
   on: false,
@@ -82,7 +114,7 @@ const AN_UNIT = {
      -> 'sync' (3600 rpm, the TCS closes the GCB: I.0931 = 1 / I.0932 = 0, INITIAL LOAD 4.5 MW on the ICV) -> 'load' (LOAD UP
      at rate MW/min = 5 % of 150 MW per minute; the HP control valves open as the flow demand passes the CV opening bias (anTbFlow), ICV -> CV
      TRANSFER COMPLETE I.0418 = 1, "transfer at 20 MW or HP bypass closed"). While the generator is on the grid the MW is the HP
-     steam and the IP / LP steam, each x its enthalpy drop from the MHPS heat balance, less the losses (anTbGen, AN_TBW). Before the transfer the IP / LP steam comes from the HP bypass through the
+     steam and the IP / LP steam, each x its enthalpy drop (turbine.js tbPath, Stodola + IF97, Phase 11), less the losses (anTbGen). Before the transfer the IP / LP steam comes from the HP bypass through the
      reheater (U.rr integrator of beta.16, with the ICV flow out). DCS CONTROL MODE PERMISSIVE I.0081 (3.2.3-beta.135, TCS soft logic
      TCE 331DM09784 p.127 TCE180, read 2026-11-12 on the PC): the NOT of the reset group of DCS CONTROL MODE = 52G closed, no TURBINE
      TRIP, no FORCED CLOSE (HOUSE LOAD OPERATION), and in IP START the TRANSFER REGION COMPLETE(IP); was MWperm 45 MW (the NORMAL
@@ -138,7 +170,7 @@ const AN_UNIT = {
   /* 3.2.4-beta.11 (priority list: load rejection): the steam between the valves and the blading still drives the shaft after the valves
      close. HP part (behind the CVs): steam chest tSc; IP / LP part (behind the ICVs): the crossover pipe to the LP turbine tXo. Textbook
      typical values of the IEEE steam turbine model (Kundur, Power System Stability and Control, ch. 9: T_CH 0.2 ~ 0.3 s, T_CO 0.4 ~ 0.6 s);
-     NO-SOURCE for this unit. The HP / IP-LP split is the heat balance of AN_TBW (HP about 25 %, IP / LP about 75 % of the shaft) */
+     NO-SOURCE for this unit. The HP / IP-LP split is the steam path of turbine.js tbPath (HP about 25 %, IP / LP about 75 % of the shaft) */
   tSc: 0.3,
   tXo: 0.5,
   Hgen: 4.01,
@@ -150,7 +182,7 @@ const AN_UNIT = {
   kfp: 150 /* fallback; the authority of the ID fan of the anchored loop model is used when known (anUnitStart) */,
   /* 2.2.0-beta.14 (M4 step 1, PR-OPE-5002 / boiler manual SECT_7 Fig 1 / 2): COLD START. "Start cold" (hmi-op.js anPlantCold) keeps
      the anchors of "Start at 150 MW" (the gains of every loop model) and puts the plant cold: drum 0 kg/cm2, water and bed at the
-     ambient, no coal, turbine valves shut (U.turb = false until the turbine is rolled, M4 step 4). The physics added here:
+     ambient, no coal, turbine valves shut (U.turb false until the turbine is rolled, M4 step 4). The physics added here:
      - FIRING = coal + oil of the four start-up burners (ABC-003A ~ D FICDO1043A ~ D, PV SI0070 / 0380 / 0460 / 0480 = AI0515 / 0546 /
        0517 / 0548 0 ~ 3.5 T/H after the gate of the SUPPLY OIL VALVE CLOSE M.3410 / 3411 / 3416 / 3417). One T/H of oil makes ao
        times the steam of one T/H of coal (ao = 2.55: PR-OPE-5002 "2.55 TPH coal = 1 TPH diesel"; the heating values of the design
@@ -411,11 +443,9 @@ function anUnitStart() {
     P0,
     Pd0,
     MW0,
-    /* S/H pressure drop, drum to S/H outlet, from the plant 150 MW data (about 12 kg/cm2). Design beside it (Audit 3 ranking 5): FHI
-       P2S7 Tab 3 "Superheater Pressure Drop 16 kg/cm2" at MCR 460 T/H. A vendor DP at MCR is a design / guarantee maximum with margin,
-       not the clean operating value: it is the upper bound, and the anchor stays on the plant (user Q4: close to the DCS 150 MW data,
-       small tolerance; moving the drum ~4 kg/cm2 off the plant would break it) */
-    kdp: (Pd0 - P0) / (m0 * m0),
+    /* Phase 11 (KANA, 2026-11-27): the S/H pressure drop is the physics law of anShKdp (design FHI P2S7 Tab 3), no longer the plant
+       150 MW anchor (Pd0 - P0) / m0^2 (no-fit finding: a constant taken from the snapshot). NO-FIT-OK: history note */
+    kdp: anShKdp(null),
     kln: isFinite(Ptin) && Ptin <= P0 ? (P0 - Ptin) / (m0 * m0) : 0 /* main steam line drop to the turbine inlet */,
     Kt: m0 / P0 /* valve opening 1 = the opening at the anchor */,
     gv: 1,
@@ -766,7 +796,6 @@ function anUnitStart() {
     X.fw0 = a(X.fw);
     X.dea0 = a(X.dea);
     X.faF0 = a(X.faF);
-    X.MST0 = 541;
     X.lt2Off = X.lt13.length ? a(X.lt2) - X.lt13.reduce((s, L) => s + a(L), 0) / X.lt13.length : NaN;
     X.T = {};
   }
@@ -1442,7 +1471,7 @@ function anLphStep(U, dt) {
   let tin = lag('in', hw + K.rise * Math.max(0, Math.min(1, ld)));
   const t = { in1: tin };
   for (const [k, P0, ttd, dca, mov] of K.h) {
-    const Ps = P0 * anHb('x' + k.slice(1), ms) * thr(pos(mov)),
+    const Ps = P0 * anTbPx('x' + k.slice(1)) * thr(pos(mov)),
       ts = anTsatA(Ps),
       tout = lag(k, tin + (wL[k] ? wL[k].s : 1) * Math.max(0, ts - ttd - tin)),
       h = hd.find(x => x.k === k),
@@ -1557,8 +1586,8 @@ function anHxTagStep(U, dt) {
     'TT-BR1110': r1(H.wl),
     'TT-BR1120-1': r1(H.p1o),
     'TT-BR1120-2': r1(H.p1o),
-    'PT-BR1130': r1(pd - 6.4 * lf),
-    'PT-BR1150': r1(pd - 9.3 * lf),
+    'PT-BR1130': r1(anShTap(U, AN_SHDP.s1, pd, ms)),
+    'PT-BR1150': r1(anShTap(U, AN_SHDP.s2, pd, ms)),
     'PT-FG1009-A2': Math.round(aiH('1|AI0146') + 615 * fr),
     'PT-FG1009-B2': Math.round(aiH('1|AI0147') + 392 * fr),
     'LT-CL1008-A': 4.56,
@@ -3796,6 +3825,7 @@ function anUnitStep0(dt) {
   /* 3.2.0 P1 #3: the steam reaches the turbine through the main steam stop MOV MV-MS1391 (or its warming bypass, anUnitStepX) */
   /* LMYP OTS valve tests (tcs.js tcsVtStep / tcsVtLift, TCE220 / 222): the two CV groups in series with their MSV, half the steam each */
   tcsVtStep(U, dt);
+  U.kdp = anShKdp(U); /* Phase 11: the SH pressure drop law at the density of this scan (anShKdp) */
   const k = U.Kt * tcsVtLift(U) * (U.msG == null ? 1 : U.msG),
     a2 = U.kdp * k,
     ms = a2 > 0 ? (-1 + Math.sqrt(1 + 4 * a2 * k * Math.max(0, U.Pd))) / (2 * a2) : k * U.Pd;
@@ -4000,27 +4030,53 @@ function anUnitStep0(dt) {
   }
   const Pms = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
   U.Pms = Pms; /* 3.2.0-beta.14: source of the reducing stations (source.js) */
-  /* generator: HP steam x its enthalpy drop + IP / LP steam x its drop less the extractions, less the mechanical and generator losses
-     (anTbGen, MHPS heat balance; qip = the reheat pressure x the ICV opening, = the HP steam when the bypass is shut and the ICV full
-     open); 0 off the grid */
+  /* generator: the shaft work of the steam path less the mechanical and generator losses (anTbGen, turbine.js); qip = the reheat
+     pressure x the ICV opening, = the HP steam when the bypass is shut and the ICV full open; 0 off the grid */
   /* 3.2.3-beta.240 (user 2026-11-14, reverse power): on the grid the MW is not held at 0 or above. With too little steam the generator
      takes power from the grid to keep the shaft at 3600 rpm (motoring): the losses of anTbGen stay when the steam is gone. The 32 relay
      (anRp32) sees the negative power */
-  const qip = U.m0 * U.rr * tb.icv * tcsVtIcvF(U) /* the CRV test of tcs.js (TCE226 / 227): one RSV / ICV side shut */,
-    kTh = anTbT(U.hxO && U.hxO.ms, U.ms),
-    kTi = anTbT(U.hxO && U.hxO.rh, qip),
-    MWss = onGrid ? anTbGen(U.ms, qip, kTh, kTi) - anVacMW(U) + (U.dMWx || 0) : 0;
-  /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of anTbGen, each behind its steam volume (tSc,
-     tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft. Before, Pm fell
-     with the valves at once and a load rejection from 150 MW peaked at 102.2 % (TG manual STIE-14752: about 106 % within about 1 s) */
+  /* Phase 11 C (RIN): the steam the IP turbine takes from the reheater (T/H) = its Stodola swallowing capacity at the reheater pressure
+     (the IP / LP blading of turbine.js from the condenser up: m = Kip sqrt(Prh^2 - Pc^2), Kip read off the last pass of the steam path,
+     at the start the design point HB case 1 400944 kg/h at 34.77 ata), x the ICV opening, x the CRV test of tcs.js (TCE226 / 227: one
+     RSV / ICV side shut). Before: m0 x rr (main steam anchor x reheater pressure share), which gave the IP the whole main steam flow */
+  const tbPc = isFinite(U.cdP) ? U.cdP : 1.0332,
+    tbPr = Math.max(0, U.rr * (U.rhp.length && U.rhp[0].a0.length && U.rhp[0].a0[0] > 0 ? U.rhp[0].a0[0] : 34)) + 1.0332,
+    tbK =
+      U.tbS && U.tbS.f.ip1 > 1000 && U.tbS.P.hrh > tbPc * 1.01
+        ? U.tbS.f.ip1 / 1000 / Math.sqrt(U.tbS.P.hrh * U.tbS.P.hrh - tbPc * tbPc)
+        : AN_TB.c1.hrh / 1000 / Math.sqrt(AN_TB.c1.Phr * AN_TB.c1.Phr - AN_TB.c1.Pc * AN_TB.c1.Pc),
+    qip = tbK * Math.sqrt(Math.max(0, tbPr * tbPr - tbPc * tbPc)) * tb.icv * tcsVtIcvF(U);
+  /* Phase 11 C (RIN): the steam path of the turbine by physics (turbine.js tbPath: Stodola stage pressures, IF97 expansion of each
+     group, the design geometry of HB PPE-14-0725 R1 case 1 / VWO only). In: the steam through the CVs (U.ms) at the turbine inlet
+     pressure and the main steam temperature, the steam through the ICVs (qip) at the reheat temperature, the condenser pressure
+     (U.cdP, ata) and the steam the heaters draw (tbDraws). The vacuum and the heaters out of service are in the expansion itself (the
+     exhaust pressure, the extraction left in the turbine), so the old corrections anVacMW and U.dMWx are no longer added: one path */
+  U.tbS = tbPath(
+    {
+      ms: U.ms,
+      Pin: Math.max(0, Pms - U.kln * U.ms * U.ms) + 1.0332,
+      Tms: U.hxO && U.hxO.ms,
+      qip,
+      Thr: U.hxO && U.hxO.rh,
+      Pc: isFinite(U.cdP) ? U.cdP : 1.0332,
+      hpb: U.mhp || 0,
+      w: tbDraws(U, U.ms)
+    },
+    U.tbS
+  );
+  anTbPorts(U, tb.rpm, U.mhp);
+  const MWss = onGrid ? anTbGen(U.tbS.Whp + U.tbS.Wip) : 0;
+  /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of the steam path, each behind its steam
+     volume (tSc, tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft.
+     Before, Pm fell with the valves at once and a load rejection from 150 MW peaked at 102.2 % (TG manual STIE-14752: about 106 % within
+     about 1 s) */
   {
-    const hp = onGrid ? (Math.max(0, U.ms) * anTbW('wh', U.ms) * kTh) / 1000 : 0,
-      ip = onGrid ? (Math.max(0, qip) * anTbW('wi', qip) * kTi) / 1000 : 0,
+    const hp = onGrid ? Math.max(0, U.tbS.Whp) : 0,
+      ip = onGrid ? Math.max(0, U.tbS.Wip) : 0,
       f = T => 1 - Math.exp(-dt / Math.max(0.01, T));
     tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(U.tSc || 0.3) : hp;
     tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(U.tXo || 0.5) : ip;
-    const sh = tb.pH + tb.pI;
-    U.Pm = onGrid ? sh - AN_TBW.lo - AN_TBW.kq * sh * sh - anVacMW(U) + (U.dMWx || 0) : 0;
+    U.Pm = onGrid ? anTbGen(tb.pH + tb.pI) : 0;
   }
   /* 3.2.4-beta.11: on house load (52L1 open) the generator gives what the house load takes (elec.js): its MW is that load, at once.
      Before, the MW fell from 150 to the house load with the 10 s steam lag (tauMW) while the breaker was open */
@@ -4103,7 +4159,9 @@ function anUnitStep0(dt) {
     const Prh0 = U.rhp.length && U.rhp[0].a0.length && U.rhp[0].a0[0] > 0 ? U.rhp[0].a0[0] : 34,
       orb = U.rhbv ? Math.max(0, Math.min(100, +U.rhbv.S.rt.v[U.rhbv.n] || 0)) : 0,
       qout = (U.m0 * U.rr * (U.lpb * olp + U.rhb * orb)) / 100 + qip + (U.msvR = anSvFlow(U, AN_SV.r, U.rr * Prh0)); /* 3.2.4-beta.1 RH safety valves */
-    U.rr = Math.max(0, U.rr + ((U.mhp + U.ms - qout) * dt) / (U.Crh * Prh0));
+    /* in: the HP exhaust to the reheater (turbine.js tbPath f.rh: HP blade flow less the HP exhaust glands and the No.6 extraction) + the
+       HP bypass; before: the whole main steam U.ms + U.mhp */
+    U.rr = Math.max(0, U.rr + ((U.tbS.f.rh / 1000 - qout) * dt) / (U.Crh * Prh0));
   }
   /* live Cold start F12 (user 2026-11-13 "may steam naba sa reheat line?"): an empty reheater reads 0 kg/cm2 on PT-HR1003-1 / -2, a live
      4 mA signal. Written as exactly 0 the SELECT CIRCUIT of ABC-052 (SI0180) took both as lost and held its last value 0.6 kg/cm2 on
@@ -4332,7 +4390,11 @@ function anUnitStepX(dt, mso) {
   if (X) {
     /* cold reheat: the HP turbine exhaust and the HP bypass outlet, mixed by their steam */
     const mst = pvOf(X.mst),
-      thx = isFinite(X.cr0) ? X.cr0 + (isFinite(mst) ? mst - X.MST0 : 0) : NaN,
+      /* Phase 11 rank 1 (RIN): the HP exhaust temperature of the steam path (turbine.js tbPath, Stodola + IF97: port crh.rh_in T), in
+         place of the snapshot anchor 370 C moved by the main steam temperature (X.cr0 + mst - X.MST0, which held the part load CRH
+         temperature at the full load value: HB case 7 30 % 338 C) */
+      crT = typeof anPortGet === 'function' && anPortGet(U, 'crh.rh_in') ? anPortGet(U, 'crh.rh_in').T : null,
+      thx = isFinite(crT) && crT != null ? crT : U.Tamb,
       w = (U.ms || 0) + (U.mhp || 0);
     /* 3.2.4 (live Cold start F-T: HP bypass outlet TT-MS1022 64 C with the bypass 8 % open at 60 kg/cm2): the outlet of the HP bypass
        is an energy balance, not the snapshot loop gated by 3 % of the MCR flow (source.js R.TICMS1022). The main steam (PT-MS1006

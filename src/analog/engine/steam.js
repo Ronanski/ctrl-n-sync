@@ -167,14 +167,7 @@ function steamPhM(p, h) {
     const x = Math.max(0, (h - S.hf) / (S.hg - S.hf));
     return { T: S.T, s: S.sf + x * (S.sg - S.sf), x };
   }
-  let a = S.T,
-    b = 1073.15;
-  for (let i = 0; i < 50; i++) {
-    const m = (a + b) / 2;
-    if (steamR2(p, m).h < h) a = m;
-    else b = m;
-  }
-  const T = (a + b) / 2;
+  const T = steamR2T(p, S.T, h, 'h');
   return { T, s: steamR2(p, T).s, x: 1 };
 }
 /* the isentropic end enthalpy at p MPa of entropy s */
@@ -184,14 +177,22 @@ function steamHsM(p, s) {
     const x = Math.max(0, (s - S.sf) / (S.sg - S.sf));
     return S.hf + x * (S.hg - S.hf);
   }
-  let a = S.T,
-    b = 1073.15;
-  for (let i = 0; i < 50; i++) {
-    const m = (a + b) / 2;
-    if (steamR2(p, m).s < s) a = m;
-    else b = m;
+  return steamR2(p, steamR2T(p, S.T, s, 's')).h;
+}
+/* the temperature K of superheated steam at p MPa (above Ts K) of a given h (k 'h') or s (k 's'): Newton on the region 2 equation
+   (dh / dT = cp, ds / dT = cp / T, cp from a 0.5 K difference), kept between Ts and 1100 K; 6 steps reach 1e-6 K */
+function steamR2T(p, Ts, y, k) {
+  let T = Math.max(Ts, Math.min(1100, k === 'h' ? Ts + (y - steamR2(p, Ts).h) / 2.2 : Ts * Math.exp((y - steamR2(p, Ts).s) / 2.2)));
+  for (let i = 0; i < 8; i++) {
+    const a = steamR2(p, T),
+      b = steamR2(p, T + 0.5),
+      d = (k === 'h' ? b.h - a.h : b.s - a.s) / 0.5,
+      e = y - (k === 'h' ? a.h : a.s);
+    const n = Math.max(Ts, Math.min(1100, T + e / d));
+    if (Math.abs(n - T) < 1e-6) return n;
+    T = n;
   }
-  return steamR2(p, (a + b) / 2).h;
+  return T;
 }
 /* specific volume m3/kg of superheated or wet steam at p MPa, h kJ/kg (region 2 at the state temperature; wet: x vg, the liquid share
    is below 0.1 % of the volume at turbine pressures) */
