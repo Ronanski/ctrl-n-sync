@@ -17,6 +17,27 @@
   "(top level of src/world/ditl150.js)",
   "anBaStep"
  ],
+ "Tb": [
+  "anBedMigrate",
+  "anUnitStep0"
+ ],
+ "Tu": [
+  "anBedMigrate",
+  "anUnitStep0"
+ ],
+ "tgF": [
+  "anBedMigrate",
+  "anHxRun",
+  "anUnitStep0"
+ ],
+ "phi": [
+  "anBedMigrate",
+  "anUnitStep0"
+ ],
+ "bedK": [
+  "anBedStep",
+  "anUnitStep0"
+ ],
  "el": [
   "anElecBo",
   "anElecL52",
@@ -58,31 +79,6 @@
  "acT2": [
   "anAcwStep",
   "anLubeCoolStep"
- ],
- "Tb": [
-  "anBedMigrate",
-  "anUnitStep0"
- ],
- "Tu": [
-  "anBedMigrate",
-  "anUnitStep0"
- ],
- "tgF": [
-  "anBedMigrate",
-  "anHxRun",
-  "anUnitStep0"
- ],
- "phi": [
-  "anBedMigrate",
-  "anUnitStep0"
- ],
- "bedK": [
-  "anBedStep",
-  "anUnitStep0"
- ],
- "svOpen": [
-  "anBedStep",
-  "anSvFlow"
  ],
  "cdP": [
   "anCondStep",
