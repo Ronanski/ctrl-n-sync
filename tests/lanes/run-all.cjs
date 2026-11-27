@@ -1,5 +1,5 @@
-/* PR 0 (lane plan 2026-11-25): runs every tests/tce/*.cjs except run.cjs (its own step) and every tests/lanes/<lane>/*.cjs, one after the
-   other; a lane adds a test as a new file only. Exit 1 when any test exits non-zero. */
+/* PR 0 (lane plan 2026-11-25): runs every tests/tce/*.cjs except run.cjs (its own step) and every tests/lanes/<lane>/*.cjs (in parallel since
+   2026-11-27, below); a lane adds a test as a new file only. Exit 1 when any test exits non-zero. */
 const fs = require('fs'),
   path = require('path'),
   cp = require('child_process');
@@ -13,12 +13,35 @@ for (const d of fs.readdirSync(lanes).sort()) {
   if (!fs.statSync(D).isDirectory()) continue;
   for (const f of fs.readdirSync(D).sort()) if (/\.cjs$/.test(f)) list.push(path.join(D, f));
 }
+/* Phase 11 speed (user 2026-11-27 "Bat antagal"): the tests run J at a time (LANES_J, default the CPU count; LANES_J=1 = one after
+   the other as before). Each test is its own process with its own output, printed whole when it ends, so the log stays readable. A
+   test that needs to run alone (it writes a shared file, or measures time) lists its path in tests/lanes/serial.txt: those run
+   after the parallel ones, one at a time. */
+const serialF = path.join(lanes, 'serial.txt'),
+  serial = fs.existsSync(serialF) ? fs.readFileSync(serialF, 'utf8').split(/\r?\n/).map(l => l.trim()).filter(l => l && l[0] !== '#') : [];
+const relOf = f => path.relative(root, f).split(path.sep).join('/');
+const J = Math.max(1, +process.env.LANES_J || require('os').cpus().length);
 let bad = 0;
-for (const f of list) {
-  const rel = path.relative(root, f).split(path.sep).join('/');
-  const r = cp.spawnSync(process.execPath, [f], { cwd: root, stdio: 'inherit' });
-  console.log((r.status === 0 ? 'PASS ' : 'FAIL ') + rel);
-  if (r.status !== 0) bad++;
-}
-console.log(list.length + ' tests, ' + bad + ' failed');
-process.exit(bad ? 1 : 0);
+const runOne = f =>
+  new Promise(res => {
+    const t0 = Date.now(),
+      out = [],
+      c = cp.spawn(process.execPath, [f], { cwd: root });
+    c.stdout.on('data', d => out.push(d));
+    c.stderr.on('data', d => out.push(d));
+    c.on('close', code => {
+      process.stdout.write(Buffer.concat(out));
+      console.log((code === 0 ? 'PASS ' : 'FAIL ') + relOf(f) + ' (' + ((Date.now() - t0) / 1000).toFixed(0) + ' s)');
+      if (code !== 0) bad++;
+      res();
+    });
+  });
+(async () => {
+  const par = list.filter(f => !serial.includes(relOf(f))),
+    ser = list.filter(f => serial.includes(relOf(f)));
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(J, par.length) }, async () => { while (i < par.length) await runOne(par[i++]); }));
+  for (const f of ser) await runOne(f);
+  console.log(list.length + ' tests (' + par.length + ' at ' + J + ' at a time, ' + ser.length + ' alone), ' + bad + ' failed');
+  process.exit(bad ? 1 : 0);
+})();

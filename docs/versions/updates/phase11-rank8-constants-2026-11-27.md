@@ -17,3 +17,10 @@ Tested (headless tools/trace/world.cjs, "At 150 MW" start):
 
 Not done yet (rank 8 step 2): the values that anUnitStart DERIVES from the start state (kdp, Kt, taf0 / pa0 / sa0, the transmitter
 offsets U.xt) and the nested anchors of the parts (e.g. AOI's bed DP anchor, the AI lists' a0) are still state in the save.
+
+## Faster Checks (user 2026-11-27 "Bat antagal")
+
+- `tests/lanes/run-all.cjs` now runs the lane and TCS tests in parallel, as many at a time as the runner has CPUs
+  (LANES_J; LANES_J=1 = one after the other as before). Each test's output is printed whole when it ends, with its time.
+- A test that must run alone goes in `tests/lanes/serial.txt`; the file is empty today.
+- On 2026-11-27 these tests took 42 of the 62 minutes of Checks, one after the other.
