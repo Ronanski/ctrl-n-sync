@@ -5,11 +5,12 @@
      SYNCH. & INITIAL LOAD (Fig. 3 hold timer, initial load 3 % / 5 %), 26 ~ 27 LOAD UP (ICV -> CV transfer), 28 NORMAL OPERATION
    - ATS Criteria 310SC90-776: page 3 criteria table (step-in A, step criteria B, step-out D), page 5 ~ 14 criteria list, page 21 Fig.
      2 / 3 allowable steam - metal temperature (MSV inlet vs HP first stage inner wall, CRV inlet vs reheat bowl inner wall)
-   - PR-OPE-5002-02: GLAND SEALING (6118: MS > 12, aux > 7 kg/cm2, TIAS1015 220 C, turning gear, vacuum breaker open), VACUUM UP
+   - PR-OPE-5002-02 (SNAPSHOT-TO-REPLACE, every number of this line: SOP, user rule 2026-11-28): GLAND SEALING (6118: MS > 12, aux > 7 kg/cm2, TIAS1015 220 C, turning gear, vacuum breaker open), VACUUM UP
      (6512: aux > 10, gland done, vacuum breaker MV-AV1391 closed, ejectors), ROLLING (8254: cold MS 60 kg/cm2 / 400 C, RH 7.5 / 415 C),
      heat soak table (8437), LP exhaust hood < 80 C before sync (8673) and < 52 C before load up (9123)
    Table of the criteria against the app: docs/tcs/ATS_CRITERIA.md. The numbers that the drawings give as "REFER TO IBD" (graphic, not
-   readable here) are taken from PR-OPE-5002 and marked so; the HP / IP metal time constants are CALC from the TCS thermal stress rotor model (TCA752 ~ 757) and the start-up modes by the time since shutdown (FHI SECT_7, STIE-14811 p147), see tauMetal / tauCool.
+   readable here) were taken from PR-OPE-5002: each is marked SNAPSHOT-TO-REPLACE (user rule 2026-11-28: no snapshot, trend or SOP number
+   in the model, not even as a check; the source is the TCS logic / IBD / backup or a design document); the HP / IP metal time constants are CALC from the TCS thermal stress rotor model (TCA752 ~ 757) and the start-up modes by the time since shutdown (FHI SECT_7, STIE-14811 p147), see tauMetal / tauCool.
    The state is AN_UNIT.tc; the operator acts on the TCS panel with AN.turbine(cmd) (unit.js anTurbine). */
 const TCS = {
   /* start-up mode judgement on the lower of the reheat bowl and the HP first stage inner wall metal temperatures (page 12). The
@@ -37,7 +38,8 @@ const TCS = {
      3.2.0-beta.38: the reheat pressure "NOT LOW" at 7.0: the procedure gives 7.5 kg/cm2 as the rolling condition and holds it with the
      LP bypass at SV 7.6 ("HP and LP bypass and RH BOV automatically open to maintain RHP SV = 7.6"); with 7.5 as the limit the step
      criteria B dropped in and out on the 0.1 ~ 0.5 kg/cm2 swing of the LP bypass. The criteria themselves now use the set
-     points of the TCS drawings (TCS.cri below); this table stays the rolling steam of the procedure, for the guide */
+     points of the TCS drawings (TCS.cri below); this table stays the rolling steam of the procedure, for the guide text only
+     (SNAPSHOT-TO-REPLACE: SOP numbers, not used by the model or the criteria) */
   steam: {
     amb: [60, 400, 7.0, 415],
     c1: [60, 400, 7.0, 415],
@@ -79,8 +81,8 @@ const TCS = {
       [538, 465]
     ]
   },
-  rub: 200 /* rpm, PR-OPE-5002 8325 "target speed 200 rpm for rub check"; complete below 100 rpm (criteria page 14 Fig. 1) */,
-  crit: [1372, 1723] /* rpm, critical zone, no hold (PR-OPE-5002 8561) */,
+  rub: 200 /* rpm, the rub check target 200 r/min at 120 r/min/min, go on when the coast is below 100 r/min: MHPS Operation Manual STIE-14747 Rev 0 6/12 item 3 (TG 2-1-1 p.40); the ATS sheets 310SC90-775 p.17 / 776 p.18 leave the number blank */,
+  crit: [1372, 1723] /* rpm, critical speed zone, no hold: TCS logic TCE164 TARGET SPEED HOLD MR A023 / A025 1372 ~ 1723 rpm (331DM09784 p.115) */,
   /* 1.0.0-beta.238 CALC from the TCS thermal stress logic (TCA752 / TCA753 HP, TCA756 / TCA757 IP, 331DM09788 pages 182 ~ 183 and
      186 ~ 187): the vendor's rotor model is five rings, surface ring 1 to centre ring 5, DISTRIBUTION blocks LMA627 with the heat
      capacities HA1 ~ HA5 (HP 638.306 / 496.208 / 354.435 / 212.667 / 70.8869 = 70.887 x 9 / 7 / 5 / 3 / 1, the ring areas of a
@@ -151,7 +153,8 @@ function tcsInit(U, how) {
     lop: svc /* a main oil pump MOP running (= mop[0] || mop[1], tcsOilSet): lube oil (1.15 / 1.16 with the bearing oil, see brgOk) */,
     eh: svc /* a control oil pump COP running (= cop[0] || cop[1]): control oil pressure (1.14) */,
     /* 3.2.0-beta.66 (036 TURBINE OIL HMI): the pumps one by one, as the TCS I/O list (HMI_DI: 1P1922A / B, 1P1931A / B RUNNING, AUTO,
-       MANUAL; 1P1923 EOP; 1F1937 vapour extractor). In service = the 36.PNG / SOP 2620 line-up: A running, B standby in AUTO */
+       MANUAL; 1P1923 EOP; 1F1937 vapour extractor). In service: A running, B standby in AUTO, the standby start of the TCS logic
+       (TCE300 / TCE305: the pump in AUTO starts on the low discharge of the running one) */
     mop: [svc, false],
     mopAu: [false, svc],
     cop: [svc, false],
@@ -243,7 +246,7 @@ function tcsSteam(U) {
     rht = tcsPV('TICHR1002'),
     /* roadmap 2 batch 3 (checkpoint retest of the 3600 rpm heat soak: ATS HOLD 1.5 at 7.0 while the operator saw 7.6 on PICHR1003): the
        reheat pressure is the corrected one of ABC-052 (PV = AI0421 / AI0513 + 0.6, SEL), the value the LP bypass holds at 7.5 ~ 7.6
-       (PR-OPE-5002 "RH pressure 7.5 ksc"); the raw AI0421 sat 0.6 lower, under the ATS limit 7 with the SOP pressure */
+       (the LP bypass set point of the DCS logic); the raw AI0421 sat 0.6 lower, under the ATS limit 7 */
     Pv = tcsPV('PICHR1003'),
     Prh = isFinite(Pv) ? Pv : U.rhp && U.rhp.length ? anUnitVal(U.rhp[0]) : NaN;
   /* 3.2.0 P1 #3: the MSV inlet is after the main steam stop MOV MV-MS1391 (unit.js U.Pmsv, while the one world runs) */
@@ -509,8 +512,8 @@ function tcsCmd(U, cmd, arg) {
   switch (cmd) {
     /* 1.0.0-beta.362 D18 (JENNIE): no 'lop' / 'eh' commands (the Training buttons that started the A pump): each pump has its own
        START / STOP / AUTO / MANUAL ('oil' below, IBD TB-1 / 2 / 21 / 22) */
-    /* 3.2.0-beta.66: the TCS CRT operation of one pump (036 TURBINE OIL HMI, SOP 2620 "COP(B) > MANUAL > EXECUTE > STOP ... AUTO >
-       EXECUTE"): arg = { p: 'mopA' | 'mopB' | 'copA' | 'copB' | 'eop', op: 'start' | 'stop' | 'auto' | 'man' } */
+    /* 3.2.0-beta.66: the TCS CRT operation of one pump (the MOTOR STANDARD of its sheet TCE300 / 305 / 310: MANUAL, then START / STOP;
+       AUTO): arg = { p: 'mopA' | 'mopB' | 'copA' | 'copB' | 'eop', op: 'start' | 'stop' | 'auto' | 'man' } */
     case 'oil':
       return tcsOilCmd(c, arg || {});
     /* 1.0.0-beta.362 D18 (JENNIE): no 'vex' / 'tg' / 'gland' / 'hood' commands. The vapour extractor (IBD TB-12), the turning gear motor
@@ -583,7 +586,7 @@ function tcsStepIn(U, k, arg) {
     return '';
   }
   /* the step before: 0 is skipped when the HP first stage metal is above 150 C (page 13 *1); the rub check is bypassed in warm / hot
-     (page 14 Fig. 1: complete when not ambient cold / cold 1, PR-OPE-5002 8267) */
+     (page 14 Fig. 1: complete when not ambient cold / cold 1) */
   /* LMYP OTS: with the speed brought to RATED 3600 rpm by the CRT target speed (ATS AUTO OFF, TCE161) the ACCELERATION step of the ATS is
      not used; EXCITATION then needs the turbine reset and its own criteria A4 (rated speed 2.4 > 3550 rpm, 310SC90-776) */
   const crt = k === 4 && c.spd && c.spd.sel === 3600 && c.step >= 1 && tb.rpm > 3550;
@@ -649,7 +652,9 @@ function tcsAux(U, dt) {
   if (!c) return;
   const tb = U.tb,
     s = tcsSteam(U);
-  /* aux steam header: from the main steam through MV-AS1391 (PCV to 10 kg/cm2, PR-OPE-5002 5708 aux 10 ksc); audit A3: with the one world
+  /* aux steam header: from the main steam through MV-AS1391 (its pressure is the aux steam header mass balance of unit.js AN_AS; the
+     vendor minimum is 7.0 kg/cm2g for HP prewarming and the gland seal start, MHPS Operation Manual TG 2-1-1 p.32 / p.87; the PCV set
+     itself is not in the docs); audit A3: with the one world
      the valve is its DCS drawing DITL-51 (IO list STN102 O.0160 / O.0161, AI0752 ZT-AS1391) */
   {
     const p51 = typeof anDitlPos === 'function' ? anDitlPos('DITL-51', 0) : null;
@@ -674,7 +679,9 @@ function tcsAux(U, dt) {
   if (isFinite(U.gsP)) c.gland = !!c.gsOn && c.gsOk;
   /* 1.0.0-beta.362 D18: the turning gear motor runs as IBD TB-9 says (the bearing oil is a start permissive there, net 3); the shaft turns
      only with the bearing oil (below) */
-  /* turning gear: about 3 rpm (PR-OPE-5002 7955); disengages above 4 rpm and engages again at zero speed */
+  /* turning gear: "approx. 2/3 r/min" (MHPS Turbine Maintenance Manual TG 2-1-2 p.35, Rotor Turning Gear), 3 r/min here; the clash gear
+     throws the pinion out as soon as steam drives the rotor faster than the gear (same page): DERIVED 4 r/min = the gear speed + 1;
+     engages again at zero speed */
   const Ta = tcsMetal(U, c, s, dt);
   const steam = tcsSteamOn(U);
   /* 2.1 SHELL EXPANSION OK, TCA535 CMP A003 HL 3.0 mm / LL 2.5 mm: on at 3.0, off below 2.5 (IBD TD-4 net 6) */
@@ -686,7 +693,7 @@ function tcsAux(U, dt) {
   {
     const T = U.loTout,
       r = !!(tb && tb.rpm >= 3550),
-      eng = !!c.tg && !!tb && tb.rpm <= 4; /* TURNING GEAR ENGAGED: selected and at turning speed (it disengages above 4 rpm, PR-OPE-5002 7955) */
+      eng = !!c.tg && !!tb && tb.rpm <= 4; /* TURNING GEAR ENGAGED: selected and at turning speed (above 4 rpm disengaged, DERIVED above) */
     /* a save made before this timer existed: a turbine already at rated speed counts as held (the IBD DI timer of that save had run) */
     c.ratedT = r ? (c.ratedT === undefined ? 60 : c.ratedT + dt) : 0;
     const held = c.ratedT >= 60,
@@ -696,22 +703,21 @@ function tcsAux(U, dt) {
       lo40 = tcsBandI(c, '1.16d', T, 38, 40);
     if (isFinite(T)) c.brgTok = (eng && lo27 && hi42) || (!eng && lo27 && hi52 && !held) || (lo40 && hi52 && held);
   }
-  /* LP exhaust hood: windage of the blades with little steam, the hood spray below 15 % load (PR-OPE-5002 9195), the vacuum
+  /* LP exhaust hood: windage of the blades with little steam, the hood spray below 15 % load (TCS logic IBD TC-35: GEN. LOAD < 15 %), the vacuum
      (NO-SOURCE law, limits 80 / 52 C sourced, ambient 30 C: with the spray about 56 C at 3600 rpm with no load, about 49 C at the initial load 4.5 MW, about 58 C on load: under the 80 C of 1.12) */
   /* live Cold start sweep (user 2026-11-13): the 15 C of the windage counts with the speed: a turbine at rest makes no heat, the hood
      sat at 45 C with no steam and 0 rpm (the condenser TEST11101 ~ 3 too). At 3600 rpm the values above are unchanged */
   const sp = Math.min(1, (tb.rpm || 0) / 3600),
-    /* 3.2.0-beta.38: the hood spray FVCD1904 in AUTO (PR-OPE-5002 6307, put in AUTO at the vacuum up) sprays below 15 % load (22.5
-       MW, 9195) and takes 70 % of the windage heat (NO-SOURCE share; the spray itself is sourced: FV-CD1904 full open below 15 % load, IBD TC-28, 5226 kg/h, TG maintenance manual p104 and p2520 ~ 2521). Without it: 82 C at 3600 rpm with no load, over the 80 C of 1.12 (hold) */
+    /* 3.2.0-beta.38: the hood spray FVCD1904 in AUTO sprays below 15 % load (22.5 MW, IBD TC-35) and takes 70 % of the windage heat (NO-SOURCE share; the spray itself is sourced: FV-CD1904 full open below 15 % load, IBD TC-28, 5226 kg/h, TG maintenance manual p104 and p2520 ~ 2521). Without it: 82 C at 3600 rpm with no load, over the 80 C of 1.12 (hold) */
     hs = c.hso ? 0.3 : 1 /* c.hso: FV-CD1904 open, IBD TC-35 (AUTO: GSE started 3 s and GEN. LOAD < 15 %; beta.362 D18) */,
     XSS =
       Ta +
       15 * sp +
       37 * hs * sp * sp * Math.max(0.35, 1 - (U.MW || 0) / 7.5) +
       120 * Math.max(0, 0.9 - (U.vac || 0)) * sp,
-    /* 3.2.1 (IRENE, 29.PNG 151 MW: TEST11101 ~ 3 38 / 38 / 37 C = the saturation of the condenser 0.056 kg/cm2A): on load the steam
-       carries the windage away and the hood is wet steam at the condenser saturation. NO-SOURCE blend: from the windage value at 7.5 MW to the
-       saturation at 22.5 MW (15 % load, the hood spray limit of PR-OPE-5002 9195), linear; below 7.5 MW unchanged */
+    /* 3.2.1: on load the steam carries the windage away and the hood is wet steam at the condenser saturation (physics: the exhaust
+       is wet steam at the condenser pressure). NO-SOURCE blend: from the windage value at 7.5 MW to the saturation at 22.5 MW (15 % load,
+       the hood spray limit of IBD TC-35), linear; below 7.5 MW unchanged */
     Tsc = isFinite(U.cdP) && typeof anTsatA === 'function' ? anTsatA(U.cdP) : NaN,
     fL = Math.max(0, Math.min(1, ((U.MW || 0) - 7.5) / 15)),
     XS = isFinite(Tsc) && fL > 0 ? XSS + (Tsc + 120 * Math.max(0, 0.9 - (U.vac || 0)) * sp - XSS) * fL : XSS;
@@ -728,8 +734,8 @@ function tcsStep(U, dt) {
   const c = U.tc;
   if (!c) return;
   const tb = U.tb;
-  /* holds (PR-OPE-5002 8570 ~ 8576, ATS page 19 *1): vacuum low, exhaust hood temp. high, bearing oil press. low, thermal stress
-     high (the steam outside Fig. 2 / 3); not inside the critical zone (8561) */
+  /* holds (ATS sequence 310SC90-775 page 19 *1): vacuum low, exhaust hood temp. high, bearing oil press. low, thermal stress
+     high (the steam outside Fig. 2 / 3); not inside the critical speed zone (TCE164) */
   const C = tcsCrit(U);
   const why = [];
   if (!C['1.11'].ok) why.push('CONDENSER VACUUM LOW');
@@ -867,10 +873,11 @@ function tcsStep(U, dt) {
         c.holdMin = TCS.hold(c.mode);
         tcsGcb(U, true);
       } else if (c.ph === 'init' && U.MW >= 0.9 * tb.aim && c.tm >= c.holdMin * 60) {
-        /* plan c3: PR-OPE-5002 9082 ~ 9088 / 9123: the initial load is held also until the LP exhaust hood is below 52 C (the hood spray
-           cools it below 15 % load); before, only the 80 C of criterion 1.12 was checked */
+        /* plan c3: the initial load is held also until the LP exhaust hood is below 52 C: "Maintain the initial load until the LP turbine
+           exhaust hood cools down below 52 C", MHPS Operation Manual STIE-14747 / 14748 / 14749 (TG 2-1-1 p.45 / 52 / 59); 80 C before
+           synchronizing (p.43, criterion 1.12) */
         if (isFinite(c.Tx) && c.Tx >= 52)
-          c.hold = 'Waiting: LP exhaust hood ' + c.Tx.toFixed(0) + ' C, below 52 C before load up (PR-OPE-5002)';
+          c.hold = 'Waiting: LP exhaust hood ' + c.Tx.toFixed(0) + ' C, below 52 C before load up';
         else {
           if (/LP exhaust hood/.test(c.hold || '')) c.hold = '';
           tcsDone(U, 5);
@@ -925,38 +932,46 @@ function tcsStep(U, dt) {
   /* the trips of IBD TA-9 (tcs-trip.js), bearing oil among them */
   tcsTripScan(U, dt);
 }
-/* 3.2.0-beta.66 (036 TURBINE OIL HMI, PR-OPE-5002 "TURBINE CONTROL OIL": pre-start check, MAIN OIL PUMP & VAPOR EXTRACTOR, OIL
-   PURIFIER, CONTROL OIL PUMP start-up). The pumps and their automatic start as the SOP note and the TCS I/O list (iolist-tcs HMI_AI /
-   HMI_DI) give them:
+/* 3.2.0-beta.66 (036 TURBINE OIL HMI). The pumps and their automatic start as the TCS logic (TCE300 / 305 / 310, IBD TB-1 / 2 / 5) and
+   the TCS I/O list (iolist-tcs HMI_AI / HMI_DI) give them:
      MOP P-1922A / B   lube oil; the one in AUTO starts when the running pump discharge (1PTLO1922A / B) is <= 5.6 kg/cm2g;
-     COP P-1931A / B   control oil (the suction is the lube oil header, 36.PNG); AUTO start at the discharge (1PTLO1931A / B) <= 133;
-     EOP P-1923 (DC)   bearing oil; starts at the bearing oil (1PSLO1004) <= 1.05 kg/cm2g; stop by hand only (SOP);
+     COP P-1931A / B   control oil, on the main oil tank and drawing from it (MHPS 310PB64-455 Rev 1 Outline of Turbine Lube Oil Unit); AUTO start at the discharge (1PTLO1931A / B) <= 133 (TCE305);
+     EOP P-1923 (DC)   bearing oil; starts at the bearing oil (1PSLO1004) <= 1.05 kg/cm2g (IBD TB-5); stop by hand only (TCE310 MOTOR STANDARD);
      vapour extractor  F-1937 (main oil tank vacuum PGLO1920 -20 ~ -50 mmH2O);
-     oil purifier      P-1941, local panel (AN_SRC.field.pur), discharge ~ 2.96 kg/cm2 (SOP).
-   Values (36.PNG at 149 MW, SOP limits; the rest NO-SOURCE and marked):
+     oil purifier      P-1941, local panel (AN_SRC.field.pur), discharge 3.0 kg/cm2 DERIVED (the purifier manual STIE-14666 is not read:
+                       a centrifugal purifier feed pump of vendor practice, 2 ~ 3 kg/cm2; display only).
+   Values (user rule 2026-11-28: no snapshot, trend or SOP number in the model; design document or TCS logic, else DERIVED from physics):
      MOP discharge     6.63 kg/cm2g while running = 0.65 MPa(g), the design MAIN OIL PUMP DISCHARGE OIL of the TG lube oil system
                        drawing 310SD14-354 (TG maintenance manual 2-1-2, legend; bearing oil 0.18 MPa(g) there). The header is held by
                        the LUBE OIL PRESSURE CONTROL VALVE V-LOn004 (valve list), so a set value; no pump curve in the docs (the pump
-                       datasheet is a scan). 36.PNG shows 6.9, SOP 5.6 ~ 6.6. beta.212 had 6.1, the SOP mid value: IBD TB-1 / TB-2 resets the
-                       LOW of the running pump only ABOVE 6.1 (CMP 5.6 / 6.1), so the LOW stayed on and the standby in AUTO started;
-     bearing oil       3.3 (36.PNG PILO10031 ~ 33) with a MOP; 1.6 with the EOP only (NO-SOURCE, above its 1.05 start); else 0;
+                       datasheet is a scan). IBD TB-1 / TB-2 resets the LOW of the running pump only ABOVE 6.1 (CMP 5.6 / 6.1);
+     bearing oil       1.84 kg/cm2g = 0.18 MPa(g), the design BEARING OIL of the same drawing 310SD14-354 (was 3.3 from a snapshot), with a
+                       MOP; 1.6 with the EOP only (NO-SOURCE, above its 1.05 start); else 0;
      EOP discharge     1.6 while running (NO-SOURCE);
-     COP discharge     163.2 while running (SOP "163.2 ksc"; 36.PNG 164.2); control oil header = discharge - 0.6 (the filter, 36.PNG
-                       164.2 -> 163.6); trip oil (PILO10071 ~ 73) = the control oil while the turbine is reset (36.PNG 163.2 ~ 163.7), 0 tripped;
-     cooler inlet      TILO1001 = the cooler outlet (TICLO1002 PV, ABC-053) + 16 C x speed / 3600 (36.PNG 62 / 46 C) with lube oil;
-     bearing outlet    TIGE1007 / 1008 = the cooler outlet + 9 / 10 C x speed / 3600 (36.PNG 55 / 56 C);
+     COP discharge     163 kg/cm2g while running (310PB64-455 specification of equipments: 163 kg/cm2, 60 L/min x 2; master trip valve
+                       block rated 163 kgf/cm2, maintenance manual p.861); control oil header = discharge - 0.5 (the clean control oil
+                       filter S-n933: DERIVED, not in the docs; vendor practice of a clean high pressure element about 0.5 bar, its
+                       clogging indicator at 2.4 bar about 5 x clean); trip oil
+                       (PILO10071 ~ 73) = the control oil while the turbine is reset, 0 tripped;
+     oil rise          the bearing heat the oil carries = the lube oil cooler duty of unit.js AN_LO (one source): 1,300 kW at rated
+                       speed, oil 63 -> 46 C (vendor O&M L2 TG 2-3), so m cp = 1300 / 17 = 76.5 kW/K and the rise is 17 C at rated;
+                       below rated the heat goes as (speed / 3600)^2 (journal friction, Petroff: DERIVED, the same law as AN_LO);
+     cooler inlet      TILO1001 = the cooler outlet (TICLO1002 PV, ABC-053) + the oil rise (all the oil returns through the cooler);
+     bearing outlet    TIGE1007 / 1008 = the cooler outlet + the oil rise (each bearing's loss in proportion to its oil);
+     low limits        MOP AUTO start 5.6 = TCS logic TCE300 CPL A030 LL 5.6 (HL 6.1); COP AUTO start 133 = TCE305 CPL A005 LL 133 (HL 138);
+                       EOP start 1.05 = IBD TB-5 (also the turning gear start, Operation Manual p.31);
      pressures follow with a lag of 1.5 s (NO-SOURCE), so a stopped running pump lets the header fall and the standby in AUTO start. */
 const TCS_OIL = {
   mop: 6.63,
-  brg: 3.3,
+  brg: 1.84 /* kg/cm2g, design bearing oil 0.18 MPa(g), 310SD14-354 */,
   brgEop: 1.6 /* kg/cm2, NO-SOURCE inside sourced bounds: above the EOP LOW OFF 1.33 and below the 5.0 design (V-LOn005) */,
   eop: 1.6 /* same bounds */,
-  cop: 163.2,
-  filt: 0.6,
-  mopLo: 5.6,
-  copLo: 133,
-  brgLo: 1.05,
-  pur: 2.96,
+  cop: 163 /* kg/cm2g, 310PB64-455 */,
+  filt: 0.5 /* kg/cm2, DERIVED (clean filter, above) */,
+  mopLo: 5.6 /* TCE300 CPL A030 LL */,
+  copLo: 133 /* TCE305 CPL A005 LL */,
+  brgLo: 1.05 /* IBD TB-5 EOP start */,
+  pur: 3.0 /* kg/cm2, DERIVED (above) */,
   vac: -35,
   tau: 1.5
 };
@@ -993,7 +1008,7 @@ function tcsOilCmd(c, a) {
      DO  _IKA AUTO, _IKH MANUAL, _IYS CRT AVAILABLE, _JYP STOP, _JYS START, _IKR RESET (HOLD 3000 ms: 1 for 3 s after the command);
      AI  1PTLO1931A_PV / B_PV COP (A) / (B) DISCHARGE OIL PRESS. (FOR COP (B) / (A) AUTO START);
      alarm 1PTLO1931AA_XA "COP (B) DISCHARGE OIL PRESS. (FOR COP (A) AUTO START) LOW" / 1PTLO1931BA_XA = the other pump's discharge at or
-         below the auto start of the SOP NOTE (<= 133 kg/cm2g) while that pump runs (NO-SOURCE: which contact drives the auto start is not in the docs; the LOW contact is taken).
+         below the auto start of TCE305 CPL A005 (<= 133 kg/cm2g) while that pump runs (NO-SOURCE: which contact drives the auto start is not in the docs; the LOW contact is taken).
    ABN / IEP / IES / IET are the faults of the MOTOR STANDARD of the pump's sheet (tcs-sheets.js), YEE its dead MCC; IYP / IYS (CRT operation
    permitted / available) 1. */
 function tcsIO(U) {
@@ -1042,8 +1057,9 @@ function tcsIO(U) {
   Object.assign(o, { '1P1941_JYS': 0, '1P1941_JYP': 0, '1P1941_IKR': 0 });
   return o;
 }
-/* the oil state: the TCS model (U.tc, start-up / shutdown) or, at the "Start at 150 MW" snapshot (no TCS model, U.tc null), an oil-only
-   state in service (36.PNG: MOP-A / COP-A running, B in AUTO, vapour extractor running) so the 036 page and its pumps work there too */
+/* the oil state: the TCS model (U.tc, start-up / shutdown) or, at the "Start at 150 MW" start (no TCS model, U.tc null), an oil-only
+   state in service (MOP-A / COP-A running, B in AUTO as the standby of TCE300 / TCE305, vapour extractor running) so the 036 page and
+   its pumps work there too */
 /* Start at 150 MW keeps no ATS program; a turbine trip needs one to come back: the pumps and the trip logic carry over */
 function tcsFromOil(U) {
   const o = U.tco;
@@ -1112,8 +1128,9 @@ function tcsOil(U, dt) {
   lag('loEop', c.eop ? K.eop : 0);
   lag('loBrg', c.lop ? K.brg : c.eop ? K.brgEop : 0);
   c.brgOk = U.loBrg > K.brgLo || c.lop || c.eop;
-  /* COP suction = the lube oil header (36.PNG): no lube oil, no control oil */
-  const suc = U.loLube > K.brgLo;
+  /* the control oil pumps sit on the main oil tank and draw from it (310PB64-455), not from the lube oil header: a COP gives control
+     oil without a MOP (before: it needed the lube oil header, read from a snapshot) */
+  const suc = true;
   lag('loCa', c.cop[0] && suc ? K.cop : 0);
   lag('loCb', c.cop[1] && suc ? K.cop : 0);
   U.loCtl = Math.max(0, ctl() - (ctl() > 1 ? K.filt : 0));
@@ -1135,25 +1152,29 @@ function tcsOil(U, dt) {
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
     flow = c.lop || c.eop;
   U.loTout = out;
-  lag('loTin', out + (flow ? 16 * sp : 0));
-  lag('loTb3', out + (flow ? 9 * sp : 0));
-  lag('loTb4', out + (flow ? 10 * sp : 0));
+  /* the oil rise (header above): the AN_LO bearing heat / the AN_LO oil m cp (vendor O&M L2 TG 2-3) */
+  const rise = flow && typeof AN_LO !== 'undefined' ? (AN_LO.Qb * sp * sp) / AN_LO.Co : 0;
+  lag('loTin', out + rise);
+  lag('loTb3', out + rise);
+  lag('loTb4', out + rise);
   /* 3.2.0-beta (user 2026-10-30 "OK v3 + bearing temp at vibration", 036 TURBINE OIL tab 1): the bearing metal temperatures and the
      shaft vibrations of the TCS I/O list HMI_AI: 1TEST1009 / 1010 (No.1 / 2 turbine journal), 1TEGE1001 / 1002 (No.3 / 4), 0 ~ 150 C;
-     1VEST10011 / 12, 10021 / 22, 1VEGE10011 / 12, 10021 / 22 (X / Y), 0 ~ 0.4 mm. 3.2.1: the values at speed from snapshot P35SHAFT
-     (035 SHAFT MONITOR, 3596 rpm, 130 MW) with the lube oil after the cooler 46 C (36.PNG TILO10021 / 22): bearing metal No.1 / 2 / 3 / 4
-     91 / 102 / 80 / 78 C = the cooler outlet + 45 / 56 / 34 / 32 C x speed / 3600 (before beta.27: 25 / 28 / 22 / 20 without a source), thrust bearing front
-     TIST10111 / 12 54 / 55 C and rear TIST10121 / 22 63 / 60 C = + 8.5 / + 15.5 C; vibration X / Y 0.033 / 0.035, 0.038 / 0.028, 0.016 /
-     0.016, 0.063 / 0.037 mm x (speed / 3600)^2 (the square law and the first critical speed bump of 0.03 mm at about 1700 rpm, bell 250
-     rpm: SU 8561 band 1372 ~ 1723 rpm, the peak height NO-SOURCE). Without oil + 60 C (NO-SOURCE) x speed / 3600 (no film); a lag of 20 s. */
+     1VEST10011 / 12, 10021 / 22, 1VEGE10011 / 12, 10021 / 22 (X / Y), 0 ~ 0.4 mm. Not in the docs (Operation Manual Section 7
+     "Limitation items" is printed "Later"; the maintenance manual lists them only as items to watch, p.747 / 751), so DERIVED, no plant
+     number (user rule 2026-11-28): journal bearing metal = the oil drain + 25 C x (speed / 3600) (the babbitt to drain difference of a
+     tilting pad journal at full speed, vendor practice 20 ~ 30 C), thrust bearing = the oil drain + 10 C; shaft vibration X / Y = 0.04 mm
+     x (speed / 3600)^2 on every bearing (half the zone A / B boundary 4800 / sqrt(n) um p-p = 80 um at 3600 r/min of ISO 7919-2 /
+     20816-2, a good machine) plus a bump of 0.03 mm (NO-SOURCE height) at the calculated first critical speeds 1510 / 1550 r/min
+     (generator / turbine rotor, Operation Manual STIE-14747 8/12, p.42), bell 250 r/min. Without oil + 60 C (NO-SOURCE) x speed / 3600 (no
+     film); a lag of 20 s. */
   const rpm = U.tb ? U.tb.rpm : 0,
-    crit = 0.03 * Math.exp(-(((rpm - 1700) / 250) ** 2)),
+    crit = 0.03 * Math.exp(-(((rpm - 1530) / 250) ** 2)),
     lagS = (k, x) => (U[k] = isFinite(U[k]) ? U[k] + ((x - U[k]) * Math.min(dt, 20)) / 20 : x);
-  [45, 56, 34, 32].forEach((d, i) => lagS('loM' + (i + 1), out + (flow ? d : 60) * sp));
-  lagS('loThF', out + (flow ? 8.5 : 60) * sp);
-  lagS('loThR', out + (flow ? 15.5 : 60) * sp);
-  const VX = [0.033, 0.038, 0.016, 0.063],
-    VY = [0.035, 0.028, 0.016, 0.037];
+  [1, 2, 3, 4].forEach(i => lagS('loM' + i, out + (flow ? rise + 25 * sp : 60 * sp)));
+  lagS('loThF', out + (flow ? rise + 10 * sp : 60 * sp));
+  lagS('loThR', out + (flow ? rise + 10 * sp : 60 * sp));
+  const VX = [0.04, 0.04, 0.04, 0.04],
+    VY = [0.04, 0.04, 0.04, 0.04];
   VX.forEach((v, i) => {
     U['loVx' + (i + 1)] = v * sp * sp + (rpm > 4 ? crit : 0);
     U['loVy' + (i + 1)] = VY[i] * sp * sp + (rpm > 4 ? 0.8 * crit : 0);
@@ -1240,9 +1261,8 @@ function tcsState() {
     Tcvo: c.Tcvo,
     Tx: c.Tx,
     sexp: c.sexp,
-    /* R9 #77: the oil pressures of the TCS panel (PR-OPE-5002 sections 14 / 16 operating limits): MOP (lop) running = lube oil
-       6.1 kg/cm2g (5.6 ~ 6.6), bearing oil 1.4 kg/cm2g (PGLO1008 > 1.05, the EOP starts at <= 1.05, IBD TB-5); COP (eh) = control oil 148 kg/cm2g
-       (133 ~ 163); the vapour extractor = main oil tank vacuum -35 mmH2O (PGLO1920 -20 ~ -50). Stopped: 0 */
+    /* R9 #77: the oil pressures of the TCS panel = the values of the oil model below (TCS_OIL; the EOP starts at <= 1.05, IBD TB-5).
+       Stopped: 0 */
     /* 3.2.0-beta.66: the values of the oil model (tcsOil, AN_UNIT lo*): the same numbers as the 036 TURBINE OIL HMI */
     oil: { lube: U.loLube || 0, brg: U.loBrg || 0, ctl: U.loCtl || 0, vac: U.loVac || 0 },
     aux: {
@@ -1363,8 +1383,9 @@ function tcsGovCmd(U, cmd, arg) {
 }
 /* one scan of the GOV SET / LLM SET (called by anTbFlow with the flow demand fd before the LLM select); returns the flow demand after the
    low select of TCE206. TCE206 p.140: LSG009 (GOV path, LLM SET) comes BEFORE ADD010 PRESS COMPENSATE (LME237): the GOV SET and the LLM are
-   in load (steam flow at the rated pressure), the compensation turns that into valve opening. Steam flow through the CVs is proportional
-   to opening x main steam pressure (this model: m = Kt x gv x MSP, anUnitStep), so the load-equivalent GOV path = fd x MSP / MSP at the
+   in load (steam flow at the rated pressure), the compensation turns that into valve opening. Steam flow through the CVs is about
+   proportional to opening x main steam pressure (choked nozzle; this model solves the CVs in series with the HP blading, turbine.js
+   tbMsFlow), so the load-equivalent GOV path = fd x MSP / MSP at the
    150 MW anchor (U.Pms / U.P0), and the flow demand after the select = that over the same ratio. So a low main steam pressure at full
    load opens the valves past 100 % without the LLM cutting it, as on the drawing */
 function tcsGovLlm(U, tb, fd, dt) {
@@ -1434,7 +1455,7 @@ const TCS_VT_ON = { msvA: 'MSV(A)', msvB: 'MSV(B)', cvA: 'CV(A)', cvB: 'CV(B)', 
    - PERM: CRV(A) FULL CLOSE TEST PERMISSIVE (TCE224, one test at a time), TRANSFER REGION COMPLETE(IP), RSV(B) POSITION >= 98 % (CMP 97 / 98 %).
      No load limit on the sheets (the other side passes the IP steam, below).
    - CRV(A) TEST PB ON -> ICV(A) TEST SIGNAL (TCE227 OR002) -> the ICV closes at the valve test speed 10 %/s (TCE214 SG 016 / 018) to the
-     ICV TEST POSITION (CPL 10 / 11 %); then, after TD A019 1.0 s, ICV(A) FAST ACTING (TEST) dumps it shut (the trip oil speed U.tauTrip);
+     ICV TEST POSITION (CPL 10 / 11 %); then, after TD A019 1.0 s, ICV(A) FAST ACTING (TEST) dumps it shut (the fast-acting speed AN_TBV.icvOpc, turbine.js);
      then the CRV(A) TEST COMMAND closes RSV(A) the same way (LME250 TP 5 s: the RSV must move at once); at RSV(A) FULL CLOSE (CPL 2 / 3 %)
      the test is complete (COMP), the RSV reopens (the reset opening speed of the stop valves of tcs-trip.js tcsValves, 10 s full stroke,
      inside the 10 ~ 40 s of the vendor) and, once RSV(A) is FULL OPEN, the ICV test signal goes off and the ICV reopens at 10 %/s.
@@ -1474,17 +1495,10 @@ function tcsVtSide(U, s) {
   if (!vt) return g;
   return Math.max(0, Math.min(g - vt['d' + s], 1.4 * vt['m' + s]));
 }
-/* the effective CV lift that passes steam: the two sides, half the flow each */
-function tcsVtLift(U) {
-  const g = +U.gv || 0,
-    vt = U.tb && U.tb.vt;
-  if (!vt || (!vt.sel && !vt.dA && !vt.dB && vt.mA >= 1 && vt.mB >= 1)) return g;
-  return 0.5 * (tcsVtSide(U, 'A') + tcsVtSide(U, 'B'));
-}
-/* the CV group lift of a side alone (the T/G Modbus CV position), 0 ~ 1.4 */
+/* the CV lift of a side (the T/G Modbus CV position, 0 ~ 1.05): the TCS position demand FG 003 / 036 of its flow demand (turbine.js tbCvLift) */
 function tcsVtCv(U, s) {
   const vt = U.tb && U.tb.vt;
-  return Math.max(0, (+U.gv || 0) - (vt ? vt['d' + s] : 0));
+  return tbCvLift(U, s, Math.max(0, (+U.gv || 0) - (vt ? vt['d' + s] : 0)));
 }
 /* the MSV opening of a side as the test leaves it, 0 ~ 1 (the trip oil position tcsVp of tcs-trip.js multiplies it) */
 function tcsVtMsv(U, s) {
@@ -1620,7 +1634,7 @@ function tcsVtCrv(U, vt, dt) {
     s = v.slice(-1),
     i = 'i' + s,
     r = 'r' + s,
-    fast = dt / (U.tauTrip || 1);
+    fast = dt / AN_TBV.icvOpc;
   vt.t += dt;
   if ((vt.ph === 'icv' || vt.ph === 'icvw' || vt.ph === 'rsv') && vt.t > 60) {
     Object.assign(vt, { ph: 'rsvo', t: 0 });

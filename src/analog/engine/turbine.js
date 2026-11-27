@@ -231,6 +231,16 @@ function tbGroup(m, p1, h1, p2, h2) {
     eta: (h1 - h2) / (h1 - steamHsM(P2, steamPhM(P1, h1).s))
   };
 }
+/* Phase 11 RIN 2026-11-28: the LEAVING (exhaust) LOSS of the last LP stage, kJ/kg = c^2 / 2 of the steam leaving the blades, c = the
+   volume flow / the annulus area (c = m v / A). A = the annulus of stage 24 (single flow SF-33.5): tip 3176 / root 1457 mm read by scale
+   from the cross section 310PK03-994 (YUA 2026-11-28, /mnt/project-files/rin-turbine-section-2026-11-28.md; the blade height 860 mm
+   against the printed 33.5 in = 851 mm checks the scale), pi / 4 (3.176^2 - 1.457^2) = 6.25 m2. At HB case 1 (87.8 kg/s, 0.07 ata):
+   about 270 m/s, 36 kJ/kg (8.6 kcal/kg). The loss falls with the volume flow at part load, as the steam path of a real turbine */
+AN_TB.Aex = (Math.PI / 4) * (3.176 * 3.176 - 1.457 * 1.457);
+function tbEL(m, Pc, h) {
+  const c = ((Math.max(0, m) / 3600) * steamVhM(Pc * TB_A, h)) / AN_TB.Aex;
+  return (c * c) / 2 / 1000;
+}
 const tbHt = (P, T) => steamH(P - 1.0332, T); /* kJ/kg of steam at P ata, T C */
 /* the design geometry (K, eta, leak and drop coefficients), once */
 function tbGeo() {
@@ -240,8 +250,9 @@ function tbGeo() {
     k = 4.1868,
     hpF = c => c.ms - c.lkC - c.lkN2 - c.lkA /* the steam through the HP blades */,
     vhp = hpF(v),
-    /* HP flow area: VWO, the blades at 126 ata in front of them (valves wide open) */
-    Khp = tbGroup(vhp, v.Pms, v.Hms * k, v.Pcr, 751.8 * k).K,
+    /* HP flow area: VWO, the blades behind the two CVs at full lift (tbCvFs: 126 -> 124.4 ata, the velocity head of the seat throat,
+       AN_CV above; before 2026-11-28 the blades were taken at the full 126 ata, no valve drop) */
+    Khp = tbGroup(vhp, tbCvFs(2 * tbCvA(1), v.ms - v.lkA, v.Pms, v.Hms * k), v.Hms * k, v.Pcr, 751.8 * k).K,
     p1 = tbP1(Khp, hpF(d), d.Pcr, d.Hms * k),
     ip2 = d.hrh - d.x5,
     lp0 = ip2 - d.xda + d.lkN2 + d.lkA,
@@ -253,7 +264,9 @@ function tbGeo() {
       lp1: tbGroup(lp0, d.Pda, hm * k, d.P3, d.H3 * k),
       lp2: tbGroup(lp0 - d.x3, d.P3, d.H3 * k, d.P2, d.H2 * k),
       lp3: tbGroup(lp0 - d.x3 - d.x2, d.P2, d.H2 * k, d.P1, d.H1 * k),
-      lp4: tbGroup(lp0 - d.x3 - d.x2 - d.x1, d.P1, d.H1 * k, d.Pc, d.Hx * k)
+      /* the last group expands to the expansion line end point (ELEP); the HB exhaust enthalpy 570.1 is the used energy end point
+         (UEEP) = ELEP + the leaving loss of the last stage (tbEL) */
+      lp4: tbGroup(lp0 - d.x3 - d.x2 - d.x1, d.P1, d.H1 * k, d.Pc, d.Hx * k - tbEL(lp0 - d.x3 - d.x2 - d.x1, d.Pc, d.Hx * k))
     },
     sv = (P, h) => Math.sqrt(P * steamVhM(P * TB_A, h)) /* p / sqrt(p v) ~ the choked labyrinth flow */,
     vcr = steamVhM(d.Pcr * TB_A, d.Hcr * k);
@@ -286,7 +299,12 @@ function tbPath(I, o) {
     sv = (p, h) => Math.sqrt(Math.max(1e-9, p * steamVhM(p * TB_A, h)));
   P.c = Pc;
   const hhr = tbHt(Math.max(Pc, P.hrh), isFinite(I.Thr) ? I.Thr : 538),
-    dr = x => Math.max(0, +(w[x] || 0)) * 1000;
+    /* a draw is signed: below 0 the heater shell sends steam BACK into the turbine (Phase 11 RIN 2026-11-28: the shell and its
+       saturated water flash when the stage pressure falls, through the extraction line until its non-return valve shuts; the heater
+       parts NANA / MEI write it in ext.w_hp / ext.w_lp). The back steam enters at the saturated vapour enthalpy of the stage pressure */
+    dr = x => (+(w[x] || 0) || 0) * 1000,
+    hg = p => steamSatM(Math.max(Pc, p) * TB_A).hg,
+    mix = (f, h, x, p) => (dr(x) < 0 && f - dr(x) > 0 ? (f * h - dr(x) * hg(p)) / (f - dr(x)) : h);
   /* leaks at the pressures of the last pass */
   const L = {
     C: (C.lkC * P.fs) / sv(P.fs, hms),
@@ -305,11 +323,11 @@ function tbPath(I, o) {
     f4 = Math.max(0, f3 - dr('lp2')),
     f5 = Math.max(0, f4 - dr('lp1'));
   /* pressures from the condenser up (Stodola), with the enthalpies of the last pass */
-  P.l1 = tbP1(G.lp4.K, f5, Pc, H.l1, P.l1);
-  P.l2 = tbP1(G.lp3.K, f4, P.l1, H.l2, P.l2);
-  P.l3 = tbP1(G.lp2.K, f3, P.l2, H.l3, P.l3);
+  P.l1 = tbP1(G.lp4.K, f5, Pc, H.l1i || H.l1, P.l1);
+  P.l2 = tbP1(G.lp3.K, f4, P.l1, H.l2i || H.l2, P.l2);
+  P.l3 = tbP1(G.lp2.K, f3, P.l2, H.l3i || H.l3, P.l3);
   P.da = tbP1(G.lp1.K, flp, P.l3, H.lm || H.da, P.da);
-  P.x5 = tbP1(G.ip2.K, f2, P.da, H.x5, P.x5);
+  P.x5 = tbP1(G.ip2.K, f2, P.da, H.x5i || H.x5, P.x5);
   P.hrh = tbP1(G.ip1.K, f1, P.x5, hhr, P.hrh);
   /* the cold reheat: the hot reheat + the reheater drop of the steam through it (CRH less the No.6 extraction) */
   const frh = Math.max(0, fhp - L.B - L.C2 - dr('hp6') + (+I.hpb || 0) * 1000);
@@ -319,13 +337,18 @@ function tbPath(I, o) {
   H.crh = fhp > 0 ? tbEx(G.hp.eta, P.fs, hms, P.crh) : H.crh || 751.7 * k;
   H.hrh = hhr;
   H.x5 = f1 > 0 ? tbEx(G.ip1.eta, P.hrh, hhr, P.x5) : H.x5;
-  H.da = f2 > 0 ? tbEx(G.ip2.eta, P.x5, H.x5, P.da) : H.da;
-  const fda = Math.max(0, f2 - dr('da'));
-  H.lm = flp > 0 ? (fda * H.da + (ms > 0 ? L.N2 * AN_TB.c1.Hn2 * k * (hms / (823.2 * k)) + L.A * hms : 0)) / flp : H.da;
+  H.x5i = mix(f1, H.x5, 'hp5', P.x5);
+  H.da = f2 > 0 ? tbEx(G.ip2.eta, P.x5, H.x5i, P.da) : H.da;
+  const fda = Math.max(0, f2 - Math.max(0, dr('da')));
+  H.lm = flp > 0 ? (fda * H.da + Math.max(0, -dr('da')) * hg(P.da) + (ms > 0 ? L.N2 * AN_TB.c1.Hn2 * k * (hms / (823.2 * k)) + L.A * hms : 0)) / flp : H.da;
   H.l3 = flp > 0 ? tbEx(G.lp1.eta, P.da, H.lm, P.l3) : H.l3;
-  H.l2 = f3 > 0 ? tbEx(G.lp2.eta, P.l3, H.l3, P.l2) : H.l2;
-  H.l1 = f4 > 0 ? tbEx(G.lp3.eta, P.l2, H.l2, P.l1) : H.l1;
-  H.x = f5 > 0 ? tbEx(G.lp4.eta, P.l1, H.l1, Pc) : H.x;
+  H.l3i = mix(flp, H.l3, 'lp3', P.l3);
+  H.l2 = f3 > 0 ? tbEx(G.lp2.eta, P.l3, H.l3i, P.l2) : H.l2;
+  H.l2i = mix(f3, H.l2, 'lp2', P.l2);
+  H.l1 = f4 > 0 ? tbEx(G.lp3.eta, P.l2, H.l2i, P.l1) : H.l1;
+  H.l1i = mix(f4, H.l1, 'lp1', P.l1);
+  H.xe = f5 > 0 ? tbEx(G.lp4.eta, P.l1, H.l1i, Pc) : H.xe || H.x;
+  H.x = f5 > 0 ? H.xe + tbEL(f5, Pc, H.x) : H.x;
   const kW = (f, a, b) => (f / 3600) * (a - b);
   return {
     P,
@@ -333,7 +356,7 @@ function tbPath(I, o) {
     L,
     f: { hp: fhp, ip1: f1, ip2: f2, lp: flp, lp2: f3, lp3: f4, lp4: f5, rh: frh },
     Whp: kW(fhp, hms, H.crh) / 1000,
-    Wip: (kW(f1, hhr, H.x5) + kW(f2, H.x5, H.da) + kW(flp, H.lm, H.l3) + kW(f3, H.l3, H.l2) + kW(f4, H.l2, H.l1) + kW(f5, H.l1, H.x)) / 1000,
+    Wip: (kW(f1, hhr, H.x5) + kW(f2, H.x5i, H.da) + kW(flp, H.lm, H.l3) + kW(f3, H.l3i, H.l2) + kW(f4, H.l2i, H.l1) + kW(f5, H.l1i, H.x)) / 1000,
     exh: { m: f5 / 1000, h: H.x }
   };
 }
@@ -369,6 +392,161 @@ function anTbPx(k) {
    1.794 MW, unit.js anGenTemp U.genT.L from the generator type test LM-GEE-2014-0822 R0 p31, 2,032 kW at the rating) = 1.55 MW, constant with load (bearing
    friction goes with the speed, not the load). NO-SOURCE: the MHPS turbine bearing loss itself (not in the TG manuals, YUA) */
 AN_TB.mech = 1.55;
+/* Phase 11 RIN 2026-11-28: CLOSING TIMES OF THE TURBINE VALVES, seconds for a full stroke (the model moves the lift linearly:
+   lift -= dt / t). DERIVED by physics from the actuator and trip oil data (YUA PC reads /mnt/project-files/rin-actuators-2026-11-28*.md,
+   rin-ets-2026-11-28.md; derivation /mnt/project-files/phase11/rin-valve-close-derivation-2026-11-28.md):
+   TRIP (ETS lost): t = MTSV + ETS + dump.
+     MTSV: the master trip solenoid valves, Tokyo Keiki DG5S4 "response within 0.25 s" (TEQ-17-241 p864, p870): 0.25 s.
+     ETS: after the spool shifts, the ETS header gives up the 8 cartridge control chambers (8 x A3 10.18 cm2 x 1.4 cm = 0.11 L,
+       TEQ p639) plus the oil compression of the 1" line, against the Ø5.0 feed orifice (~160 L/min, TEQ p79 / p81); the
+       accumulator sits behind a Ø1.6 orifice (TEQ p861, about 10 L/min) and cannot hold the header: about 0.05 s.
+     dump: the cartridge LC32 A40E7X empties the cylinder, Q = 385 sqrt(dp) L/min (the vendor curve TEQ p640, mean of the 2 / 4 /
+       6 / 8.6 bar points). dp = spring force / piston area: the spring is not printed, so its LOWEST physical value, the 4 bar
+       cracking of the cartridge, is taken (the slowest closing: the conservative side for overspeed; the fastest, at the 112 kg/cm2
+       low-oil-trip bound, is 5 x quicker). Oil volume = piston area x valve stroke (TEQ p511-518): MSV 94.4 cm2 x 112 mm = 1.06 L
+       -> 0.082 s; CV B 316.5 x 43 = 1.36 L -> 0.106 s (CV A 0.042 s; the model has one CV lift, the slower B is taken); RSV
+       125.7 x 140 = 1.76 L -> 0.137 s; ICV 172.8 x 127 = 2.19 L -> 0.171 s.
+     The end cushion (VD orifice, MSV 18 / CV 12 / CV B 6 mm) slows the last mm; its orifice size is not printed, so it is not added.
+   FAST ACTING (OPC on PLU / the valve test): the actuator NG6 4WE6D (110 V AC, switching 15 ~ 40 ms ISO 6403, TEQ p723) vents the
+     control chamber straight to tank (Y port, no orifice, TEQ p511): t = 0.04 + dump: CV 0.15 s, ICV 0.21 s.
+   SERVO (house-load governing): the servo valve 4WS2EM10-5X/60 (60 L/min at 70 bar valve drop, TEQ p511) at the 160 bar supply:
+     60 sqrt(160 / 70) = 91 L/min; CV B 1.36 L -> 0.90 s for a full stroke. */
+/* Phase 11 RIN 2026-11-28: THE STEAM LEFT IN THE TURBINE after the valves close, as the time constant of each part, T = M / m: the steam
+   mass held between the valves and the blading over the steam flow through it at HB case 1 (an ideal-gas volume that empties through a
+   Stodola section, m ~ p, empties with T = V rho / m). Volumes from the cross section 310PK03-994 and the outline 310PK02-353 (YUA
+   2026-11-28, /mnt/project-files/rin-turbine-section-2026-11-28.md, rin-turbine-volumes-2026-11-28.md; tip / root read by scale):
+   HP (behind the CVs): the nozzle chamber 0.15 m3 (0.1 ~ 0.2) at the first-stage pressure 122.3 ata (34.9 kg/m3) + the HP blading
+   annulus, stages 1 (920 / 810 mm) to 11 (985 / 860 mm) x 1.1 m = 0.18 m3 at the mean state (21.6 kg/m3): 9.2 kg / 125.7 kg/s = 0.073 s.
+   IP / LP (behind the ICVs): the CRV-to-IP leads 1.1 m3 + the IP inlet chamber 0.4 m3 at the hot reheat (9.3 kg/m3) + the IP blading,
+   stages 12 (1270 / 1100) to 21 (1890 / 1295) x 1.35 m = 1.22 m3 (4.6 kg/m3) + the IP-LP passage 0.5 m3 (2.35 kg/m3) + the LP
+   blading, stages 22 (2180 / 1457) to 24 (3176 / 1457) x 0.85 m = 3.54 m3 (0.36 kg/m3): 22.0 kg / 111.4 kg/s = 0.198 s.
+   (The CRH / reheater / HRH steam, 60 m3, sits behind the ICVs and does not reach the blades once they close.) */
+AN_TB.tSc = 0.073;
+AN_TB.tXo = 0.198;
+const AN_TBV = { msv: 0.38, rsv: 0.44, cv: 0.41, icv: 0.47, cvOpc: 0.15, icvOpc: 0.21, cvServo: 0.9 };
+/* Phase 11 RIN 2026-11-28: THE MAIN STEAM FLOW = THE TWO HP CONTROL VALVES IN SERIES WITH THE HP BLADING, solved each scan (tbMsFlow).
+   It replaces m = Kt x gv x MSP with Kt = m0 / P0 read off the save-point snapshot (a fitted constant), under which the blading never
+   limited the flow: at 121.7 ata in front of the turbine the app passed 459.8 T/H through blades that pass 448 T/H there (Stodola, K of
+   HB PPE-14-0725 VWO), so 150 MW was reached with 7.9 T/H more steam than HB case 1.
+   VALVE: the sleeve CV, seat throat 165.1 mm, main stroke 43 mm (CVU parts drawing, YUA /mnt/project-files/rin-turbine-section-
+   2026-11-28.md (3); nominal bore 165.1 mm, MT p473 STIE-14598). Flow area = the curtain pi d x lift, up to the seat pi d^2 / 4 (the
+   curtain at full stroke, 0.0223 m2, is just over the seat, 0.0214 m2: the seat limits above 96 % lift). The steam expands to the
+   first-stage pressure in the throat by the nozzle law of a perfect gas, kappa 1.3 (superheated steam), choked below r* = 0.546. No
+   discharge coefficient or diffuser recovery is printed, so the throat takes the whole velocity head (coefficient 1): at VWO the valves
+   then drop 1.3 % of the inlet pressure (126 -> 124.4 ata at 82 m/s); at HB case 1 (lift about 50 %) the drop the blading asks for,
+   126 -> 122.3 ata, is passed at about 93 % flow demand, inside the flat part of the TCS curves below, as on the drawing.
+   LIFT: the TCS position demand of each CV from the flow demand, FG 003 (CV A) and FG 036 (CV B) of TCE212 (macro LME010, HIACS backup;
+   YUA /mnt/project-files/rin-doc-reads.md 1a), flat at 105 % past 100 % demand. The flow demand = the CV OPENING BIAS + (1 - bias) x the
+   CV share U.gv (TCE207, anTbFlow). */
+const AN_CV = {
+  d: 0.1651,
+  S: 0.043,
+  kap: 1.3,
+  fgA: [[0, 0], [20, 0], [24, 11.4], [25, 12.143], [29, 13.7], [42, 22.33], [52, 27.88], [60, 29.896], [72, 37], [76, 39], [82, 42.5], [84, 44], [87, 45.2], [89, 46.2], [91, 48], [92, 49.7], [93, 52.2], [94, 55.5], [95, 60.6], [97, 79.618], [100, 105]],
+  fgB: [[0, 0], [20, 0], [29, 4.85], [31, 6.42], [43, 15.2], [51, 20.4], [60, 25.3], [69, 29.5], [74, 32], [78, 34.35], [84, 38.8], [87, 40.2], [89, 41.35], [92, 45.3], [93, 48.07], [94, 51.8], [95, 57.35], [97, 78.9], [100, 105]]
+};
+function tbFg(t, x) {
+  if (x <= t[0][0]) return t[0][1];
+  for (let i = 1; i < t.length; i++)
+    if (x <= t[i][0]) return t[i - 1][1] + ((t[i][1] - t[i - 1][1]) * (x - t[i - 1][0])) / (t[i][0] - t[i - 1][0]);
+  return t[t.length - 1][1];
+}
+/* the lift (0 ~ 1.05) of CV s ('A' / 'B') at the CV share g (U.gv units, 0 = shut) */
+function tbCvLift(U, s, g) {
+  if (!(g > 0)) return 0;
+  const B = U.cvBias || 0.2;
+  return tbFg(s === 'B' ? AN_CV.fgB : AN_CV.fgA, 100 * (B + (1 - B) * g)) / 100;
+}
+/* the flow area (m2) of one CV at lift l */
+function tbCvA(l) {
+  const d = AN_CV.d;
+  return Math.max(0, Math.min(Math.PI * d * AN_CV.S * Math.min(1, l), (Math.PI * d * d) / 4));
+}
+/* the steam (kg/h) through the area A (m2) from Pin (ata, enthalpy h kJ/kg) to the outlet pressure fs (ata) */
+function tbCvW(A, Pin, h, fs) {
+  if (!(A > 0) || !(Pin > 0)) return 0;
+  const k = AN_CV.kap,
+    rc = Math.pow(2 / (k + 1), k / (k - 1)),
+    r = Math.max(rc, Math.min(1, fs / Pin)),
+    P = Pin * TB_A * 1e6;
+  return 3600 * A * Math.sqrt(Math.max(0, ((2 * k) / (k - 1)) * (P / steamVhM(Pin * TB_A, h)) * (Math.pow(r, 2 / k) - Math.pow(r, (k + 1) / k))));
+}
+/* the outlet pressure (ata) at which the area A passes m (kg/h) from Pin; r* x Pin when it cannot */
+function tbCvFs(A, m, Pin, h) {
+  const k = AN_CV.kap;
+  let lo = Math.pow(2 / (k + 1), k / (k - 1)),
+    hi = 1;
+  if (tbCvW(A, Pin, h, lo * Pin) <= m) return lo * Pin;
+  for (let i = 0; i < 50; i++) {
+    const r = (lo + hi) / 2;
+    if (tbCvW(A, Pin, h, r * Pin) > m) lo = r;
+    else hi = r;
+  }
+  return ((lo + hi) / 2) * Pin;
+}
+/* the main steam (T/H) that the CVs (total area Av, m2) and the HP blading pass together, from the drum pressure U.Pd (kg/cm2 g) through
+   the SH and main steam line drops (U.kdp, U.kln: P = Pd - (kdp + kln) m^2 in front of the CVs), at the steam temperature T (C), against
+   the cold reheat pressure of the steam path (the last scan, U.tbS). The CV passes the main steam less the stem leak A, the blades also
+   less the packing leaks C and N2 (the shares of the last scan, HB case 1 at the start). Solved by regula falsi (Illinois) on [0, mHi] */
+function tbMsFlow(U, Av, T) {
+  const Pd = +U.Pd || 0,
+    kd = Math.max(0, (+U.kdp || 0) + (+U.kln || 0));
+  if (!(Av > 0) || !(Pd > 0)) return 0;
+  const G = tbGeo(),
+    c = AN_TB.c1,
+    S = U.tbS,
+    m1 = S && S.f && S.L && U.ms > 1 ? U.ms * 1000 : 0,
+    rv = m1 > 0 ? 1 - S.L.A / m1 : 1 - c.lkA / c.ms,
+    rb = m1 > 0 ? S.f.hp / m1 : (c.ms - c.lkC - c.lkN2 - c.lkA) / c.ms,
+    Pcr = S && S.P && isFinite(S.P.crh) && S.P.crh > 0 ? S.P.crh : 1.0332,
+    g = m => {
+      const Pin = Pd - kd * m * m + 1.0332;
+      if (Pin <= 1.0332) return -m;
+      const h = tbHt(Pin, isFinite(T) ? T : steamTsat(Pin - 1.0332)),
+        fb = m > 0 ? tbP1(G.hp.K, m * 1000 * rb, Math.min(Pcr, Pin * 0.999), h) : Math.min(Pcr, Pin);
+      return tbCvW(Av, Pin, h, Math.min(fb, Pin)) / 1000 - m * rv;
+    };
+  const top = kd > 0 ? Math.sqrt(Pd / kd) : 2000;
+  /* the bracket: 1 % around the flow of the last scan (the flow moves little in one scan), else [0, top] */
+  let a = 0,
+    b = top,
+    fa,
+    fb,
+    side = 0;
+  if (U.ms > 1 && U.ms * 1.01 < top) {
+    const fl = g(U.ms * 0.99),
+      fh = g(U.ms * 1.01);
+    if (fl > 0 && fh < 0) {
+      a = U.ms * 0.99;
+      b = U.ms * 1.01;
+      fa = fl;
+      fb = fh;
+    }
+  }
+  if (fa === undefined) {
+    fa = g(a);
+    fb = g(b);
+    if (fa <= 0) return 0;
+    if (fb >= 0) return b;
+  }
+  for (let i = 0; i < 60 && b - a > 1e-3; i++) {
+    const m = (a * fb - b * fa) / (fb - fa),
+      fm = g(m);
+    if (fm > 0) {
+      a = m;
+      fa = fm;
+      if (side === 1) fb /= 2;
+      side = 1;
+    } else {
+      b = m;
+      fb = fm;
+      if (side === -1) fa /= 2;
+      side = -1;
+    }
+    if (Math.abs(fm) < 1e-3) return m;
+  }
+  return (a + b) / 2;
+}
 /* Phase 11 rank 9 (RIN, 2026-11-27): THE BYPASS AND BLOW-OFF VALVES BY THE CONTROL VALVE FLOW LAW of IEC 60534-2-1 (compressible fluid),
    in place of "share x anchor flow x opening x pressure / anchor pressure" (U.hpb / U.blo / U.lpb, scaled on the 150 MW start).
      W = N6 Fp Cv(lift) Y sqrt(x p1 rho1)   kg/h, N6 = 27.3 (p bar, rho kg/m3), x = (p1 - p2) / p1 held at the choked limit Fg xT,
@@ -448,6 +626,9 @@ function anTbPorts(U, rpm, hpb) {
   anPortSet(U, 'ext.lp2', st('l2'));
   anPortSet(U, 'ext.lp1', st('l1'));
   anPortSet(U, 'lp.exh', { m: S.exh.m, h: S.exh.h });
+  /* leak B: taken from the cold reheat in tbPath (L.B); HB PPE-14-0725 note "B joins the deaerator extraction line" (case 1: DEA
+     heater 26786 = line 22225 + 4561 kg/h), so the deaerator (NANA anDeaStep) gets it */
+  anPortSet(U, 'lk.b', { m: S.L && isFinite(S.L.B) ? S.L.B / 1000 : 0, h: S.H && isFinite(S.H.crh) ? S.H.crh : null });
   /* the LP bypass PCV-HR1010 steam (anVlvW, the step before) at the hot reheat enthalpy (a throttle keeps h); its spray TCV-CD1115 is
      condensate the condenser part adds (x.spray: not written here) */
   anPortSet(U, 'lp.bypass', { m: +U.qlp || 0, h: S.H && isFinite(S.H.hrh) ? S.H.hrh : null });

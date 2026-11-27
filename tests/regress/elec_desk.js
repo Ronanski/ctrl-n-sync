@@ -4,29 +4,52 @@ const fs = require('fs'),
 const G = { MVAr: 33.1 };
 const ctx = { Math, isFinite, Object, AN_UNIT: null, anGenEl: () => G, AN_SRC: { field: { esp: false } } };
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync('src/analog/engine/elec.js', 'utf8') + ';this.API={anElec,anElecStep,anElecL52}', ctx);
-const { anElec, anElecStep, anElecL52 } = ctx.API;
+/* Phase 11 (YUI 2026-11-28): the house load is the sum of the motor ports q.motor.<part> {P kW, Q kvar} (ports.js anPortGet, loaded
+   here as in the app) + the rows of AN_EL.mot not yet moved to a port + the 460 V and ESP transformers; was: current x a fixed pf */
+vm.runInContext(fs.readFileSync('src/analog/engine/ports.js', 'utf8') + ';' + fs.readFileSync('src/analog/engine/elec.js', 'utf8') + ';this.API={anElec,anElecStep,anElecL52,AN_EL}', ctx);
+const { anElec, anElecStep, anElecL52, AN_EL } = ctx.API;
 const lab = () => ({ S: { rt: { force: {}, ext: {} }, ext: [5] }, n: 5 });
-/* the 150 MW currents of the plant model (A): SWP 230 + 230, PAF 253.5, SAF 137.3, IDF 206.9, FAB A 35.7, BFP A 290.5, CEP A 28.1, ACWP A 26.8, PA compressor A 43.8 */
-const mk = () => ({ on: true, MW: 150, tcsT: 150, tb: { st: 'load', rpm: 3600 }, di: { l52: lab(), on: lab() }, swIa0: 230, swIa1: 230, fnPafI: 253.5, fnSafI: 137.3, fnIdfI: 206.9, fnIa: 35.7, fwI0: 290.5, cdI0: 28.1, acI0: 26.8, paI0: 43.8, iaI: 300 });
+/* desk inputs (not a plant reading): three part ports and the 6.6 kV currents of the rows still in AN_EL.mot */
+const PT = { 'q.motor.AOI': { P: 5990, Q: 2900 }, 'q.motor.NANA': { P: 3030, Q: 1700 }, 'q.motor.MEI': { P: 260, Q: 140 } };
+const mk = () => ({ on: true, MW: 150, tcsT: 150, tb: { st: 'load', rpm: 3600 }, di: { l52: lab(), on: lab() }, pt: JSON.parse(JSON.stringify(PT)), swIa0: 230, swIa1: 230, acI0: 26.8, paI0: 43.8 });
 let fail = 0;
 const ck = (ok, w, x) => {
   console.log((ok ? 'PASS ' : 'FAIL ') + w + (x !== undefined ? ' ' + JSON.stringify(x) : ''));
   if (!ok) fail++;
 };
+const r3 = Math.sqrt(3),
+  u0 = mk();
+let P = 0,
+  Q = 0;
+for (const k in PT) (P += PT[k].P / 1000), (Q += PT[k].Q / 1000);
+for (const [k, , pf] of AN_EL.mot) {
+  const p = (r3 * 6.6 * (+u0[k] || 0) * pf) / 1000;
+  (P += p), (Q += p * Math.tan(Math.acos(pf)));
+}
+(P += 0.721), (Q += 0.496);
+const tr = (T, S) => {
+  const k = S / T.S,
+    r = T.pk / T.S;
+  return [T.p0 + T.pk * k * k, T.q0 * T.S + Math.sqrt(T.z * T.z - r * r) * T.S * k * k];
+};
 let U = mk(),
   e = anElec(U);
-/* 1.0.0-beta.332: + the 6.6 kV side of TR-1B1 + TR-1B2, 0.721 MW / 0.496 Mvar without the ESP (K1AU3-E1-0-307 p A.14) = 76.6 A */
-ck(Math.abs(e.busA - 1559.2) < 0.1, '6.6 kV bus current = the 6.6 kV motors 1482.6 A + the 460 V transformers 76.6 A (ESP off)', +e.busA.toFixed(1));
-/* 1.0.0-beta.330: the pf of each motor from the ETAP load flow of K1AU3-E1-0-307 RA (0.930 PAF / IDF / BFP, 0.927 SAF / seawater,
-   0.922 FA blower / PA compressor, 0.919 CEP / ACWP); was one pf 0.85 (NO-SOURCE, 14.41 MW) */
-ck(Math.abs(e.aux - 16.448) < 0.005 && Math.abs(e.auxMVAr - 6.811) < 0.005, 'house load: 1.732 x 6.6 kV x I x pf of each motor (15.73 MW, 6.32 MVAr) + 460 V 0.721 MW / 0.496 Mvar = 16.45 MW, 6.81 MVAr', [+e.aux.toFixed(3), +e.auxMVAr.toFixed(3)]);
+ck(Math.abs(e.aux - P) < 1e-9 && Math.abs(e.auxMVAr - Q) < 1e-9, 'house load = ports + the rows left + 460 V 0.721 MW / 0.496 Mvar', [+e.aux.toFixed(3), +e.auxMVAr.toFixed(3)]);
+const S = Math.hypot(P, Q);
+ck(Math.abs(e.busA - (1000 * S) / (r3 * 6.6)) < 1e-6, '6.6 kV bus current = S / (sqrt3 x 6.6 kV)', +e.busA.toFixed(1));
+U = mk();
+delete U.pt['q.motor.NANA'];
+ck(Math.abs(anElec(U).aux - (P - 3.03)) < 1e-9, 'a port not written adds nothing');
 ctx.AN_SRC.field.esp = true;
 const eE = anElec(mk());
 ctx.AN_SRC.field.esp = false;
 ck(Math.abs(eE.aux - e.aux - 0.91) < 1e-9 && Math.abs(eE.auxMVAr - e.auxMVAr - 0.024) < 1e-9, 'ESP in service: + its T/R sets 0.910 MW / 0.024 Mvar (Bus51)', +eE.aux.toFixed(3));
-ck(Math.abs(e.exp - (150 - e.aux)) < 1e-9 && e.mtPct > 70 && e.mtPct < 80, 'export = 150 - house load, main transformer % of 180 MVA', [+e.exp.toFixed(1), +e.mtPct.toFixed(1)]);
-ck(Math.abs(e.uatPct - (100 * Math.hypot(e.aux, e.auxMVAr)) / 34) < 1e-6 && Math.abs(e.uatPct - 52.36) < 0.01, 'unit auxiliary transformer % of 34 MVA', +e.uatPct.toFixed(2));
+const Lu = tr(AN_EL.tr.uat, S),
+  P13 = 150 - P - Lu[0],
+  Q13 = 33.1 - Q - Lu[1],
+  Lm = tr(AN_EL.tr.mt, Math.hypot(P13, Q13));
+ck(Math.abs(e.exp - (P13 - Lm[0])) < 1e-9 && e.mtPct > 70 && e.mtPct < 80, 'export = 150 - house load - UAT and main transformer losses (Shihlin guaranteed), main transformer % of 180 MVA', [+e.exp.toFixed(2), +e.mtPct.toFixed(1)]);
+ck(Math.abs(e.uatPct - (100 * S) / 34) < 1e-6, 'unit auxiliary transformer % of 34 MVA', +e.uatPct.toFixed(2));
 anElecStep(U);
 ck(U.di.l52.S.rt.ext[5] === 0, '52L1 closed: I.0937 = 0');
 U.tb.st = 'off';

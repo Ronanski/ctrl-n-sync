@@ -5,15 +5,20 @@
       the stage 6.369 ata / 310.3 C through the extraction line of AN_DA: the deaerator holds 158.4 C +-1.0 C (5.05 kg/cm2 G) with
       26.79 +-1.5 t/h of steam, from a start 10 C away on either side (the line law is the physics, not a fit at one point).
    3. Sweep: the extraction stage from 30 % to 100 % of the heat balance line (anHb 'xd'), condensate + drains scaled with the
-      steam, the drain at its own load's deaerator water + the design DCA: the deaerator pressure is below the stage pressure at every point and rises with it (monotonic, no step). */
+      steam, the drain at its own load's deaerator water + the design DCA: the deaerator pressure is below the stage pressure at every point and rises with it (monotonic, no step).
+   4. Reverse flow on a stage pressure collapse, and none with an NRV shut. */
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
 const root = path.resolve(__dirname, '..', '..', '..');
 const ctx = { Math, console, isFinite, Number, Object, Array };
 vm.createContext(ctx);
-for (const f of ['engine/steam.js', 'engine/ports.js', 'engine/fw.js']) vm.runInContext(fs.readFileSync(path.join(root, 'src/analog', f), 'utf8'), ctx, { filename: f });
-let bad = 0;
+for (const f of ['engine/steam.js', 'engine/ports.js']) vm.runInContext(fs.readFileSync(path.join(root, 'src/analog', f), 'utf8'), ctx, { filename: f });
+/* the IF97 water density of plant.js (anDeaStep writes U.da.rho / rhoL for the BFWP suction, 2026-11-28) */
+vm.runInContext(fs.readFileSync(path.join(root, 'src/analog/engine/plant.js'), 'utf8').match(/function anWaterRho\(T\) \{[\s\S]*?\n\}/)[0], ctx);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/analog/engine/fw.js'), 'utf8'), ctx, { filename: 'engine/fw.js' });
+let bad = 0,
+  nrvS = 100; /* the secondary NRV position of the runs (tcs-dev.js U.dev.nrv) */
 const fail = m => (bad++, console.log('FAIL', m));
 const h1 = (p, T) => vm.runInContext(`steamR1(${p}, ${T}).h`, ctx);
 for (const [p, T, h] of [[3, 300, 115.331273], [80, 300, 184.142828], [3, 500, 975.542239]]) {
@@ -23,7 +28,7 @@ for (const [p, T, h] of [[3, 300, 115.331273], [80, 300, 184.142828], [3, 500, 9
 /* a steady run of anDeaStep with the inflows fixed (U fields as the plant model gives them) */
 function run(T0, Pxa, wc, tc, wd, td, mins) {
   vm.runInContext('var AN_CYC = { y: { da: 0 }, kgmm: { da: () => 3.3 * 13.14 * 0.909 } }; function anCycFlows(){ return { fda: 0 }; }', ctx);
-  ctx.U = { Tamb: 30, ms: 0, da: { T: T0 }, hd: [{ k: 'H5', w1: wd }], hpD1: td, lpHt: { H3: { out: tc } }, tt: { 'TT-TS1018': 310.3 } };
+  ctx.U = { Tamb: 30, ms: 0, da: { T: T0 }, hd: [{ k: 'H5', w1: wd }], hpD1: td, lpHt: { H3: { out: tc } }, tt: { 'TT-TS1018': 310.3 }, dev: { nrv: { ex3p: { p: 100 }, ex3s: { p: nrvS } } } };
   ctx.Pxa = Pxa;
   ctx.wc = wc;
   ctx.tc = tc;
@@ -54,5 +59,16 @@ for (let f = 0.3; f <= 1.0001; f += 0.05) {
   if (!(d.P > last)) fail(`load ${f.toFixed(2)}: pressure ${d.P.toFixed(3)} not above the lower load ${last.toFixed(3)}`);
   last = d.P;
 }
-console.log(bad ? `deaerator: ${bad} FAIL` : 'deaerator: PASS (IF97 r1, design point, 30 ~ 100 % sweep)');
+/* 4. Reverse (RIN 2026-11-28, load rejection): the stage falls to 2.0 ata under the deaerator at 158.4 C: the steam goes back to the
+   turbine (wx < 0) at the saturated steam of the deaerator and the water cools by its flash; the NRVs shut (tcs-dev.js) = no flow */
+{
+  const d = run(158.4, 2.0, 0, 114.9, 0, 158.4, 1 / 300);
+  console.log(`reverse: stage 2.0 ata, deaerator ${d.P.toFixed(3)} G: steam ${d.wx.toFixed(2)} t/h`);
+  if (!(d.wx < -26.79)) fail(`reverse steam ${d.wx.toFixed(2)} t/h: not back to the turbine above the design forward flow`);
+  nrvS = 0;
+  const z = run(158.4, 2.0, 0, 114.9, 0, 158.4, 1 / 300);
+  if (z.wx !== 0) fail(`NRV shut: steam ${z.wx} t/h, not 0`);
+  nrvS = 100;
+}
+console.log(bad ? `deaerator: ${bad} FAIL` : 'deaerator: PASS (IF97 r1, design point, 30 ~ 100 % sweep, reverse flow + NRV)');
 process.exit(bad ? 1 : 0);
