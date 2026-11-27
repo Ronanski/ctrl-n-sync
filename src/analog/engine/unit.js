@@ -238,6 +238,10 @@ const AN_UNIT = {
   vacUp: 1846 /* ED 066 p15: starting ejector 0.345 kg/cm2 A at 20 min, 65 % of full vacuum */,
   vacDn: 60
 };
+/* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
+   whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
+   code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
+const AN_UNIT_K = ['tauMW', 'tcs', 'hpb', 'blo', 'lpb', 'tauRH', 'Crh', 'rhb', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'tauTrip', 'droop', 'flowSpan', 'tSc', 'tXo', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'kfp', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -1213,10 +1217,12 @@ const AN_SW_V0 = {
      heat         Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history, was oil 64.5 kW/K and 1,032 kW fitted on snapshot 36.PNG): the vendor
                   design point of the cooler itself (O&M L2 TG 2-3): 1,300 kW with the oil 63.0 -> 46 C, so the oil flow is 1,300 / 17 =
                   76.5 kW/K (2,670 L/min of ISO VG 32 at 0.86 kg/L x 2.0 kJ/kg K = the 2,660 L/min maximum of the sheet); the bearing
-                  heat 1,300 kW at 3600 rpm x speed / 3600 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js),
-                  linear in speed NO-SOURCE (as the 16 C x speed of tcs.js). MB-021 items 12 / 13 (170 T/H 34 -> 41 C = 1,384 kW) is
+                  heat 1,300 kW at 3600 rpm x (speed / 3600)^2 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js):
+                  the friction of a journal bearing at a fixed oil viscosity (Petroff: torque ~ speed, power ~ speed^2, DERIVED; was
+                  linear in speed, NO-SOURCE). MB-021 items 12 / 13 (170 T/H 34 -> 41 C = 1,384 kW) is
                   the water side sizing of the same cooler, 6 % above the vendor duty;
-     oil tank     one temperature node (the return oil), 25,800 kJ/K (about 15 m3 of oil, NO-SOURCE: the tank volume is not in the docs);
+     oil tank     one temperature node (the return oil): main oil tank T-n920 13,200 L normal (21,500 L max; YUA PC read, project file
+                  suzu-leftovers-doc-reads.md) x 0.86 kg/L x 2.0 kJ/kg K = 22,704 kJ/K (was 25,800, NO-SOURCE);
      cooler node  3.2.5 (JENNIE): the oil and the plates inside the cooler are a second node, Ch = 730 kJ/K (CALC from the vendor area
                   146.94 m2: oil channels = half of a 3 mm plate gap -> 0.22 m3 x 0.86 kg/L x 2.0 kJ/kg K = 379 kJ/K; plates 0.6 mm
                   stainless -> 0.088 m3 x 7,900 kg/m3 x 0.5 kJ/kg K = 348 kJ/K; gap and plate thickness NO-SOURCE, the usual values of a
@@ -2132,17 +2138,17 @@ function anAuxStep(U, dt) {
   if (U.gsAI) anUnitWrite(U.gsAI, U.gsV31);
 }
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
-const AN_LO = { UA: 95.8, Co: 1300 / (63.0 - 46), Qb: 1300, Wmax: 170, M: 25800, Ch: 730, Tamb: 30 } /* DESIGN-SRC: O&M L2 TG 2-3 */;
+const AN_LO = { UA: 95.8, Co: 1300 / (63.0 - 46), Qb: 1300, Wmax: 170, M: 13.2 * 860 * 2.0, Ch: 730, Tamb: 30 } /* DESIGN-SRC: O&M L2 TG 2-3; M: main oil tank T-n920 13,200 L normal (YUA read suzu-leftovers-doc-reads.md) */;
 function anLubeCoolStep(U, dt) {
   const K = AN_LO,
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
     flow = (+U.loBrg || 0) > 1.05,
-    mv = U.loMv ? Math.max(0, Math.min(100, anAv('TICLO1002', +U.loMv.S.rt.v[U.loMv.n] || 0))) : 53.1,
-    acw = Math.max(0, Math.min(1, (+U.acQ || 0) / 1500)),
+    mv = U.loMv ? Math.max(0, Math.min(100, anAv('TICLO1002', +U.loMv.S.rt.v[U.loMv.n] || 0))) : 0 /* no TICLO1002 output: no command, TCV-CW1201 shut (was the 27.PNG 53.1 %) */,
+    acw = Math.max(0, Math.min(1, (+U.acQ || 0) / AN_ACW_MB.Q)) /* MB-021 design flow */,
     W = (K.Wmax * mv * acw) / 100 /* T/H */,
     Cw = (W * 1000 * 4.18) / 3600,
     Tw = isFinite(U.acT2) ? U.acT2 : K.Tamb,
-    Qb = flow ? K.Qb * sp : 0;
+    Qb = flow ? K.Qb * sp * sp : 0 /* journal bearing friction ~ speed^2 (Petroff, DERIVED) */;
   let q = 0;
   const hx = Ti => {
     if (!flow || !(Cw > 0)) return 0;

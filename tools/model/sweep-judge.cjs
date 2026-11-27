@@ -18,17 +18,29 @@ const MCR = 460; /* FHI P2S7 Tab 3: 460 T/H at 100 % MCR (the x basis of the FHI
 const HB = C.hb,
   hbPts = arr => HB.mw.map((mw, i) => [(mw / 150) * 100, arr[i]]),
   hb3 = arr => [30, 60, 100].map((x, i) => [x, arr[i]]);
+/* LOGGED DIFFERENCE (team decision 2026-11-27, Phase 11; the plant sheet wins, DCS limits are never changed to meet a design curve):
+   the DCS keeps a minimum total air of 446 T/H (ABC-006 LN5 air demand floor, ABC-002 LN40 cross limit 446 -> 35 % fuel; OPERATOR_GUIDE
+   5.4 and the limits table), which keeps the bed fluidized. Where FHI Fig 12 total air is below 446 T/H, total air is judged against that
+   floor; PA and SA against the logic demands (AOI 2026-11-27: PA = S1-LN12 coal -> PA demand + LN14 HIC-TADBS bias, SA = the rest of
+   the LN5 air demand; recorded as s.PAsv / s.SAsv, the FICFA1071 / FICFA1081 set points), and O2 against the flue gas balance at the
+   air actually given (s.O2bal, AOI's mole balance from FHI Tab 2, recorded by tools/accept/part1.cjs), not against FHI Fig 7. Above
+   that point FHI Fig 12 / Fig 7 hold as printed. */
+const MINAIR = { total: 446 };
+const minAir = s => {
+  const y = at(C.fhi.fig12_air_TH.total, (s.MSF / MCR) * 100);
+  return y != null && y < MINAIR.total;
+};
 /* [label, sample key, curve points, x basis, document]. x: 'mcr' or 'load'. f = a function of the sample when the key is derived */
 const CURVES = [
   ['SH outlet temperature, C', 'MST', C.fhi.fig6_sh_rh_temp_C.pts, 'mcr', 'FHI Fig 6'],
   ['RH outlet temperature, C', 'RHT', C.fhi.fig6_sh_rh_temp_C.pts, 'mcr', 'FHI Fig 6'],
-  ['O2, %', 'O2', C.fhi.fig7_o2_pct.pts, 'mcr', 'FHI Fig 7'],
+  ['O2, %', 'O2', C.fhi.fig7_o2_pct.pts, 'mcr', 'FHI Fig 7; below the DCS minimum air: the flue gas balance at the air given (s.O2bal)', (s, y) => (minAir(s) ? s.O2bal : y)],
   ['Furnace average temperature, C', 'Tu', C.fhi.fig8_furnace_avg_C.pts, 'mcr', 'FHI Fig 8'],
   ['Furnace DP (bed inventory), mmH2O', 'dp', C.fhi.fig9_furnace_dp_mmH2O.pts, 'mcr', 'FHI Fig 9'],
   ['SH spray, T/H', 'sp', C.fhi.fig10_sh_spray_pct_of_MSF.pts, 'mcr', 'FHI Fig 10 (% of MSF x MSF)', (s, y) => (y * s.MSF) / 100],
-  ['Total air, T/H', 'air', C.fhi.fig12_air_TH.total, 'mcr', 'FHI Fig 12'],
-  ['Primary air, T/H', 'PA', C.fhi.fig12_air_TH.pa, 'mcr', 'FHI Fig 12'],
-  ['Secondary air, T/H', 'SA', C.fhi.fig12_air_TH.sa, 'mcr', 'FHI Fig 12'],
+  ['Total air, T/H', 'air', C.fhi.fig12_air_TH.total, 'mcr', 'FHI Fig 12; DCS minimum air 446 floor', (s, y) => Math.max(y, MINAIR.total)],
+  ['Primary air, T/H', 'PA', C.fhi.fig12_air_TH.pa, 'mcr', 'FHI Fig 12; at the DCS minimum air the logic PA demand (FICFA1071 SV)', (s, y) => (minAir(s) ? s.PAsv : y)],
+  ['Secondary air, T/H', 'SA', C.fhi.fig12_air_TH.sa, 'mcr', 'FHI Fig 12; at the DCS minimum air the logic SA demand (FICFA1081 SV)', (s, y) => (minAir(s) ? s.SAsv : y)],
   ['Coal, T/H', 'coal', C.fhi.fig13_coal_TH.pts, 'mcr', 'FHI Fig 13'],
   ['Air heater gas in, C', 'ahGi', C.fhi.l20_aph_gas_in_C.pts, 'mcr', 'L20 Howden APH'],
   ['Main steam flow, T/H', 'MSF', hbPts(HB.ms_TH), 'load', 'HB PPE-14-0725'],
@@ -67,8 +79,9 @@ function judge(S) {
       const x = xb === 'mcr' ? (s.MSF / MCR) * 100 : (s.MW / 150) * 100,
         y0 = at(pts, x);
       if (y0 == null || !isFinite(s[key]) || t.tol == null) continue;
+      /* a derived target the sample cannot give (e.g. no s.O2bal recorded yet) counts as a miss, never as a skip */
       const y = f ? f(s, y0) : y0,
-        d = t.kind === 'p' ? Math.abs(s[key] / y - 1) * 100 : Math.abs(s[key] - y);
+        d = !isFinite(y) ? Infinity : t.kind === 'p' ? Math.abs(s[key] / y - 1) * 100 : Math.abs(s[key] - y);
       n++;
       if (d <= t.tol) ok++;
       if (!worst || d > worst.d) worst = { d, x, v: s[key], y };

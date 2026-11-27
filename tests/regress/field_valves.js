@@ -85,13 +85,13 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   });
   console.log(JSON.stringify(r));
   const b = r.base;
-  ck(b.cw.n === 2 && Math.abs(b.cw.Q - 1500) < 30 && Math.abs(b.cw.P1 - 6.4) < 0.1, `150 MW normal line-up: 2 CCWHE in service, ACW flow ${b.cw.Q} m3/h, PT-CW1152 ${b.cw.P1} (27.PNG 6.4)`);
+  ck(b.cw.n === 2 && Math.abs(b.cw.Q - 1500) < 30 && Math.abs(b.cw.P1 - 7.8) < 0.1, `150 MW normal line-up: 2 CCWHE in service, ACW flow ${b.cw.Q} m3/h, PT-CW1152 ${b.cw.P1} (Phase 11: MB-021 item 7 7.8; 27.PNG 6.4)`);
   ck(r.hx1.n === 1 && r.hx1.Q < b.cw.Q && r.hx1.P1 > b.cw.P1, `CCWHE A outlet V-CW1013 closed: 1 CCWHE, flow ${r.hx1.Q}, PT-CW1152 ${r.hx1.P1}`);
   ck(r.hx0.n === 0 && r.hx0.Q === 0 && r.hx0.P1 > r.hx1.P1, `CCWHE A and B outlets closed: no flow (${r.hx0.Q}), PT-CW1152 ${r.hx0.P1} (shut-off)`);
   ck(Math.abs(r.hxBack.Q - b.cw.Q) < 30, `outlets opened again: flow ${r.hxBack.Q}`);
   ck(r.dis5.qA < 0.2 * b.cw.Q, `ACWP-A discharge V-CW1007 at 5 %: ACWP-A flow ${r.dis5.qA} m3/h (loop ${r.dis5.Q}, ${r.dis5.N} ACWP running)`);
   ck(r.muShut.feed === 0 && r.muShut.P < 5.5 && Math.abs(r.muShut.d112 - r.muShut.P) < 0.05, `MWP discharges V-MU0007 / 0011 closed: header PT-MU0709 ${r.muShut.P} kg/cm2 (static), the logic reads ${r.muShut.d112}`);
-  ck(r.muBack.P > 8.5, `discharges opened: header ${r.muBack.P} kg/cm2, ${r.muBack.N} MWP running`);
+  ck(r.muBack.P > 7.5, `discharges opened: header ${r.muBack.P} kg/cm2, ${r.muBack.N} MWP running (Phase 11 design head: about 7.9 with the E2-0-102 elevations, was 9.0 of 28.png)`);
   ck(r.iso.PU < 2.8 && r.iso.psl.includes(true) && r.iso.P > 6.9, `unit 1 header V-IA1101 closed: PT-IA1706 ${r.iso.PU}, PSL-IA1706 ${r.iso.psl}, tanks ${r.iso.P}`);
   ck(r.isoBack.PU > 6.5, `V-IA1101 opened: PT-IA1706 ${r.isoBack.PU}`);
   ck(r.xt.N === 0 && r.xt.P > 5 && r.xt.xQ > 0, `all IA compressors tripped, cross-tie V-PA0013 open: IA tanks ${r.xt.P} kg/cm2 from the plant air (${r.xt.xQ} m3/h)`);
