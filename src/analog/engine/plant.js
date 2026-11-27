@@ -538,7 +538,6 @@ function anFlashG(Pd, Tw, col) {
    lowering header drain ... MBD and CBD"); the drains are in the Training since beta.51. PR-OPE-5004-01 bottle-up step 4 "Fill steam drum
    to +200 mm" is the reserve for this shrink. Probe (Hot restart, faster cooling): water 309 -> 292 C, level +166 -> -199 mm */
 const AN_THERM = { vEvap: 147, on: true }; /* not in AN_CYC: a loaded state replaces AN_CYC's fields */
-AN_CYC.vacLoss = (U, T) => (6 * Math.max(-1, T - 38.65) * 0.7 * U.ms) / 3600;
 AN_CYC.y = {};
 AN_CYC.levels = () => ({ ...AN_CYC.y });
 AN_CYC.rate = x => 1000 / 3600 / AN_CYC.kgmm[x]();

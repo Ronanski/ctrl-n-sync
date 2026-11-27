@@ -2080,12 +2080,26 @@ function anCondStep(U, dt) {
     Ps = Math.min(1.033, anPsat(U.cdTs));
   U.cdQ = Math.round(Q / 100) / 10; /* MW */
   U.cdT = U.cdTs;
+  /* Phase 11 (MEI): the cd port (ports.js) for the turbine (RIN, back pressure) and the sea water (SUZU, CW outlet temperature).
+     The heat each water box path takes NOW from the condensing steam at U.cdTs: Q_i = C_i (1 - exp(-UA_i / C_i)) (Ts - Tin_i), with
+     the path flow U.swQcA / B (SUZU), UA_i = UA / 2 x sqrt(W_i / (Cd / 2)) (the same exchanger law as above, split in its two
+     halves: K2MC3A is a two-pass, two-path condenser, PD-020). In a steady state QA + QB = Q; while Ts lags they differ (the stored
+     heat of the steam side). kW, unrounded (agreed with SUZU). The pressure is set below (U.cdP), the port is written there. */
+  const qBox = (Wt, Ti) => {
+    const Wi = Math.max(0, (Wt || 0) * 1.02),
+      Ci = (Wi / 3.6) * K.cp,
+      UAi = (K.UA / 2) * Math.sqrt(Wi / (K.Cd / 2));
+    return Ci > 1 && isFinite(Ti) ? Ci * (1 - Math.exp(-UAi / Ci)) * Math.max(0, U.cdTs - Ti) : 0;
+  },
+    QA = qBox(U.swQcA, isFinite(U.swTiA) ? U.swTiA : Tin),
+    QB = qBox(U.swQcB, isFinite(U.swTiB) ? U.swTiB : Tin);
   /* 3.2.3 live Cold start: the air in the condenser is its own mass balance (anAuxStep U.cdAirP); the vacuum share is what is left of the
      room between the saturation and the atmosphere (the screens and the hood model read it) */
   if (isFinite(U.cdAirP)) {
     U.cdP = anCdP(U.cdTs, U.cdAirP);
     U.vac = Math.max(0, Math.min(1, (1.033 - U.cdP) / Math.max(1e-3, 1.033 - Ps)));
   } else U.cdP = Ps + (1.033 - Ps) * (1 - vac);
+  anPortSet(U, 'cd', { P: U.cdP, T: U.cdTs, Q: QA + QB, x: { QA, QB } });
   /* the condensate pumps */
   const run = [srcBit(['M.3350']) > 0.5 ? 1 : 0, srcBit(['M.3351']) > 0.5 ? 1 : 0],
     n = run[0] + run[1],
@@ -2595,6 +2609,31 @@ function anLphStep(U, dt) {
     tin = tout;
   }
   U.lpHt = t;
+  /* Phase 11 (MEI): the cd.out port (ports.js) for the deaerator (NANA): the condensate after the No.3 LP heater through LCV-CD1104.
+     m = the flow anDaQ solves (plant.js anCycFlows fda); P = the valve outlet P2 = deaerator PT-CD1104 + z2 + kN m^2 (plant.js
+     anCdHydK, LCV-CD1104 sheet + deaerator O&M L15-2), absolute; T = the No.3 LP heater outlet; h = IAPWS-IF97 region 1 (steamR1).
+     And the store of this part (ports.js rule 4): the hotwell water, 61.9 / 0.9 = 68.8 m2 (AN_CYC.kgmm.hw, K2MC3A) x (600 mm normal
+     water over the hotwell bottom: HHL is 900 mm over the bottom and 300 mm over the normal level FL+1814 / HHL FL+2114, K2MC3A O&M
+     1.1.2) + the level LT-CD1110; E = m x h of water at the hotwell temperature. The LP heater water boxes and shells are not in the
+     store yet (no water volume in the model: rank 6) */
+  {
+    const fl = typeof anCycFlows === 'function' ? anCycFlows(0) : null,
+      mo = fl ? Math.max(0, fl.fda) : 0,
+      pd = U.xt && U.xt.dea ? anUnitVal(U.xt.dea) : NaN,
+      k = anCdHydK(),
+      Po = isFinite(pd) ? pd + 1.0332 + (mo > 0 ? k.z2 + k.kN * mo * mo : 0) : null,
+      To = t.H3.out,
+      hw = isFinite(U.cdHw) ? U.cdHw : 0,
+      Tw = isFinite(U.cdT) ? U.cdT : 30,
+      mw = (AN_CYC.kgmm.hw() * (0.6 + hw / 1000) * anWaterRho(Tw)) / 1000;
+    anPortSet(U, 'cd.out', {
+      m: mo,
+      P: Po,
+      T: To,
+      h: Po != null && isFinite(To) ? steamR1(Po * 0.0980665, To + 273.15).h : null
+    });
+    anPortSet(U, 'store.MEI', { mw, E: mw * steamR1(0.0980665 * Math.max(0.01, +U.cdP || 1.0332), Tw + 273.15).h });
+  }
   U.tt = Object.assign(U.tt || {}, {
     'TT-CD1101': r1(t.H1.in),
     'TT-CD1102': r1(t.H2.in),
