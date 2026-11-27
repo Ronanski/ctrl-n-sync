@@ -27,3 +27,7 @@
 - Signed heater draws in tbPath: a draw below 0 is steam the heater shell sends back into the turbine (shell flash on a load
   rejection, through the extraction line until its NRV shuts), entering at the saturated vapour enthalpy of the stage. No change
   while the draws are positive (turbine-hb unchanged); the heater parts (NANA ext.w_hp, MEI ext.w_lp) write the back flow next.
+- Extraction NRVs (tcs-dev.js, coordinator OK 2026-11-28): close on the turbine trip only, 100 % in 2 s on air dump (KARATU sheet
+  "within 2 sec"); off load without a trip (load rejection) they keep their position; the normal stroke stays the AOV rate. MOC recorded.
+  Checked: trip from 150 MW, No.3 / No.4 NRV 100 -> 0 % in 2 s; house load, they stay 100 %. The swing disc closing by reverse flow
+  alone has no data in the docs and is not modelled.
