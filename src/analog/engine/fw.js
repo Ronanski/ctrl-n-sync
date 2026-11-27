@@ -670,6 +670,7 @@ function anFwTagStep(U) {
     ps = typeof window !== 'undefined' && window.WORLD && WORLD.sucP ? WORLD.sucP() : NaN,
     pd = isFinite(U.fwPd) ? U.fwPd : NaN,
     ffw = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.ffw) ? Math.max(0, AN_CYC.ffw) : 0,
+    fdr = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.fdr) ? Math.max(0, AN_CYC.fdr) : 0 /* the drum feed through the economizer */,
     lf = (ms / 474.1) * (ms / 474.1),
     sq = P => (isFinite(pd) && isFinite(P) ? Math.sqrt(Math.max(0, pd - P)) : NaN);
   /* the spray valves follow their controller MV, held by the airlock without air (AN_AV) */
@@ -743,7 +744,10 @@ function anFwTagStep(U) {
     'PT-FW1115-A': isFinite(ps) ? r1(ps - (U.fwDp0 || 0)) : null /* pump inlet = header - strainer DP */,
     'PT-FW1115-B': isFinite(ps) ? r1(ps - (U.fwDp1 || 0)) : null,
     'TT-FW1011': isFinite(Pda) ? r1(Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30) : null,
-    'PT-FW1160': isFinite(drum) ? r1(drum + 3.5 * (ffw / 499.1) * (ffw / 499.1)) : null,
+    /* Phase 11 NANA: the economizer inlet = drum + the drop from the feedwater valve outlet to the drum at the economizer flow, the
+       same law as the valve (AN_MFW kDn 2.2 kg/cm2 at 480 T/H: Raven sheet P2 147.2 against the FHI P2S7 drum 145.0 at MCR); was
+       drum + 3.5 x (feedwater / 499.1)^2 of the 03.png snapshot */
+    'PT-FW1160': isFinite(drum) ? r1(drum + AN_MFW.kDn * (fdr / AN_MFW.w0) * (fdr / AN_MFW.w0)) : null,
     'ZT-FW1110-1': r1(z11),
     'ZT-FW1110-2': r1(z12),
     'ZT-FW1120-1': r1(z21),
