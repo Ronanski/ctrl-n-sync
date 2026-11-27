@@ -12,9 +12,9 @@ Inaprubahan ng user: **GO LIST, 2026-11-24 06:06 PHT** (GO FINISH LINE 2026-11-2
 ## Bilang (2026-11-24 18:15 PHT, beta.364; bagong paraan, RULES.md 3.12)
 
 - Part 1 (process): 24 na item. **0 pasado, 24 susukatin ulit sa buong kurba.** Ang dating 7 pasado ay sukat sa 3 load lang (45 / 90 / 150 MW) at nakatayo sa mga constant na ikinabit sa trend ng planta (bed solids kKL, bed temperature ratios, fouling): hindi na binibilang. Susunod na sukat: sweep 40 ~ 100 % laban sa bawat punto ng FHI Fig 2 / 6 / 8 / 9 / 12 / 13 at ng HB cases.
-- Part 2 (kumpleto): 32 na item (21 + 11 ANS-3.5, idinagdag ng user 2026-11-25 8:43 PM). Pasado (TAMA): 2 (ABC at DITL sheets; Bilis 135 ~ 144 FPS, sukat ni Rosé). Natitira: 30. May usad: HMI (452 faceplates sumasagot sa totoong click, kulang pa ang approval mo bawat page); sea water (SWP trip naayos at may test, 102 tag walang kabit pa).
+- Part 2 (kumpleto): 32 na item (21 + 11 ANS-3.5, idinagdag ng user 2026-11-25 8:43 PM). Pasado (TAMA): 3 (ABC at DITL sheets; Bilis 135 ~ 144 FPS, sukat ni Rosé; Gamit ng instructor, Phase 13 2026-11-27). Natitira: 29. May usad: HMI (452 faceplates sumasagot sa totoong click, kulang pa ang approval mo bawat page); sea water (SWP trip naayos at may test, 102 tag walang kabit pa).
 - Part 3 (live run): 1 item. Natitira: 1 (ang user ang nagpapasya kung kailan).
-- **Kabuuan: 2 pasado, 55 natitira.**
+- **Kabuuan: 3 pasado, 54 natitira.**
 
 ## Part 1 · Process bawat load
 
@@ -82,7 +82,7 @@ TAMA = nasa app at may patunay; MAY = nasa app, hindi pa nasusuri ang galaw; KUL
 | Values na walang design source | docs/audit/no-source-list.md, snapshot-values-list.md | KULANG 217 NO-SOURCE, 24 mula sa snapshot | 0 at 0 |
 | **Operator** | | | |
 | HMI pages at faceplates | 22 plant pages + turbine / generator | MAY: 452 faceplates sumasagot sa totoong click (Rosé); kulang ang approval mo bawat page | Bawat page aprubado mo; bawat item sumasagot sa click |
-| Starting points | Cold, Warm, Hot, 150 MW (Q3) | KULANG Warm / Hot wala sa start screen | Apat na simula sa start screen, gawa ng physics |
+| Starting points | Cold, Warm, Hot, 150 MW (Q3) | MAY apat na simula sa start screen at sa Plant menu (Warm / Hot = save point ng trip sa 150 MW, nasubok na naglo-load sa instructor gate); hindi pa sinusukat ang HP metal laban sa ATS band | Apat na simula sa start screen, gawa ng physics |
 | Bilis | Q6: 60 FPS pataas | TAMA 135 ~ 144 FPS (Rosé, 2026-11-24) | ≥ 60 FPS sa PC at tablet sa bawat page |
 | **Galaw sa trip at sira (ANSI/ANS-3.5; idinagdag ng user "IDAGDAG" 2026-11-25 8:43 PM PHT)** | | | |
 | Turbine trip sa 150 MW | IBD trip sheets, DITL turbine trip / MFT interlock, ABC-001C (M.2013 BU-CMD), FHI P2 Sect 8 | KULANG hindi pa nasusukat | Bawat awtomatikong aksyon na nasa logic ay nangyayari sa tamang ayos (HP / LP bypass, Boiler Master MANUAL sa M.2013, runback); walang aksyon na wala sa logic; tama ang direksyon ng physics (drum pressure, level, main steam temperature); walang MFT na hindi hinihingi ng logic |
@@ -95,7 +95,7 @@ TAMA = nasa app at may patunay; MAY = nasa app, hindi pa nasusuri ang galaw; KUL
 | Steady 60 min sa 150 MW | ANSI/ANS-3.5 steady-state stability (kopya ng standard wala pa sa repo) | KULANG hindi pa nasusukat | Sa 60 min na walang pindot, ang bawat item ng Part 1 ay hindi gumagalaw nang higit sa ±2 % ng simula |
 | Real time | ANSI/ANS-3.5 real time; `src/analog/engine/sched.js` (AN_STEP_MAX 1 s) | MAY plant time sumusunod sa orasan sa x1; hindi pa sinusukat ang kulang na hakbang | 60 min sa x1 sa PC at sa tablet: plant time = orasan ±1 %, walang hakbang na nalaktawan |
 | Repeatability (parehong takbo, parehong resulta) | ANSI/ANS-3.5; `tests/gate/behaviour.cjs` (fixed 0.5 s, 2 takbo) | MAY isang scenario lang ang sinusubok | Bawat test sa grupong ito: 2 takbo mula sa parehong save at parehong pindot = parehong numero |
-| Gamit ng instructor | ANSI/ANS-3.5 instructor functions; Q1 Save / Load | KULANG walang backtrack | Nasa instructor menu at nasubok: freeze, save / load ng simula, backtrack, bilis (x1 / mabilis / mabagal), pasok ng malfunction, field action (local valve, breaker) |
+| Gamit ng instructor | ANSI/ANS-3.5 instructor functions; Q1 Save / Load | TAMA (Phase 13, 2026-11-27): Plant menu at Run / Pause / Speed; bantay `tests/gate/instructor.cjs` sa bawat Checks (freeze, x0.5 / x5, backtrack bawat 2 plant min hanggang 1 oras, malfunction, field action ng drain valve, 52L1, Warm / Hot) at `tests/gate/behaviour.cjs` (SAVE / LOAD) | Nasa instructor menu at nasubok: freeze, save / load ng simula, backtrack, bilis (x1 / mabilis / mabagal), pasok ng malfunction, field action (local valve, breaker) |
 
 ## Part 3 · Huling patunay: isang live run
 

@@ -384,7 +384,8 @@ const bRun = h$('button', { txt: '▶ Run', title: 'Run / pause simulation (Spac
   sSpd = h$(
     'select',
     { title: 'Simulation speed' },
-    [1, 5, 10, 60, 300].map(v => h$('option', { value: v, txt: v + 'x' }))
+    /* Phase 13 (ANS-3.5 slow time; docs/ACCEPTANCE.md "Gamit ng instructor": bilis x1 / mabilis / mabagal): 0.5 = half of real time */
+    [0.5, 1, 5, 10, 60, 300].map(v => h$('option', Object.assign({ value: v, txt: v + 'x' }, v === 1 ? { selected: '' } : {})))
   ),
   bRst = h$('button', {
     txt: 'Reset',

@@ -1354,6 +1354,7 @@
     if (!plantPop.hidden) {
       plm.name.value = call(() => lsSaves.name(), '') || '';
       fillSaves();
+      fillBack();
       fillTrips();
       fillFaults();
     }
@@ -1368,9 +1369,12 @@
     };
     head('Starting point');
     let r = row();
+    /* Phase 13: the four starting points of the start screen (RULES.md 3.7, Q3); Warm and Hot are the app's own restarts (app.js rst) */
     for (const [t, id] of [
       ['150 MW', 'load150'],
-      ['Cold', 'loadcold']
+      ['Cold', 'loadcold'],
+      ['Warm', 'loadwarm'],
+      ['Hot', 'loadhot']
     ]) {
       const b = E('button', 'st-b', t);
       b.title = 'The running plant is replaced by the ' + t + ' starting point';
@@ -1420,6 +1424,10 @@
     plm.name = nm;
     plm.saves = E('div', 'st-svl');
     body.append(plm.saves);
+    /* Phase 13 BACKTRACK (app.js lsSaves.back): the plant kept by itself every 2 plant min, the last hour; Back puts one back and pauses */
+    head('Backtrack');
+    plm.back = E('div', 'st-svl');
+    body.append(plm.back);
     head('Trips');
     plm.trips = row();
     head('Faults');
@@ -1458,6 +1466,26 @@
       plm.saves.replaceChildren(...N);
     };
     Promise.resolve(call(() => lsSaves.list(), [])).then(show, () => show([]));
+  }
+  /* the backtrack points, newest first: the plant time of each (the plant clock of the event log, events.js lsTfmt) and the faults that were on */
+  function fillBack() {
+    const B = call(() => lsSaves.back, null),
+      L = B ? call(() => B.list(), []) : [],
+      N = [];
+    if (!L.length) N.push(E('p', 'st-none', 'No backtrack point yet: one is kept every 2 min of plant time while the plant runs.'));
+    for (const e of L.slice().reverse()) {
+      const rr = E('div', 'st-svr'),
+        ld = E('button', 'st-b', 'Back'),
+        tt = call(() => lsTfmt(isFinite(e.pt) ? e.pt : e.t), '') || '';
+      ld.title = 'Puts the whole plant back as it was at this plant time, then pauses; the points after it are dropped';
+      arm(ld, 'Back', () => {
+        plantPop.hidden = true;
+        Promise.resolve(call(() => B.load(e.i))).then(() => setTimeout(tick, 300), () => {});
+      });
+      rr.append(E('span', '', 'Plant time ' + tt + (e.flt ? ' · ' + e.flt + ' fault' + (e.flt > 1 ? 's' : '') + ' on' : '')), ld);
+      N.push(rr);
+    }
+    plm.back.replaceChildren(...N);
   }
   function fillTrips() {
     const N = [],

@@ -1017,7 +1017,7 @@
           last = L && L.length ? L[L.length - 1] : null;
           cont.lastChild.textContent = last
             ? 'last save point: ' + last.name
-            : 'no save point yet (SAVE one from the Instructor)';
+            : 'no save point yet (Save now in the Plant menu)';
           cont.disabled = !last;
         })
         .catch(() => (cont.lastChild.textContent = 'no save point yet'))

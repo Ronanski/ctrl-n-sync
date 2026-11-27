@@ -75,6 +75,9 @@ jobs:
           V=$(node tools/version.js)
           node tools/station/build.js "dist/logic-sim-v$V.html" /tmp/gate/index.html
           node tests/gate/behaviour.cjs /tmp/gate/index.html --mins 20
+      - name: INSTRUCTOR GATE (Phase 13) - Plant menu, freeze, slow / fast speed, backtrack, malfunction, field action, Warm / Hot restarts
+        timeout-minutes: 20
+        run: node tests/gate/instructor.cjs /tmp/gate/index.html
       - name: ALARMS (Phase 10) - alarm line with time and level, priority, ACK, back to normal, ACK ALL, event log in time order (tests/gate/alarms.cjs)
         timeout-minutes: 10
         run: |
