@@ -27,45 +27,66 @@ const walk = d => {
   }
 };
 DIRS.forEach(d => walk(path.join(root, d)));
+/* Phase 11 (2026-11-27, port / balance thread): the 7 model parts move code out of unit.js into their own files. A flagged line that
+   moves keeps its baseline entry (the match is by the line, in any file), so a move never needs --update. Two more patterns, read on
+   the CODE only (comments taken out first): a value divided by the MCR (/ 460, / U.mcr), which keys a physics value on the load
+   (the one line of 2026-11-27, hx.js anHxSettle gas mass pro rata on the steam, is in the baseline). CEILING = the most flagged lines there may ever be: it only goes down. */
+const STRICT = /\/\s*(U\.)?mcr\b|\/\s*460\b/;
+const CEILING = 45;
+const code = s =>
+  s
+    .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+    .split(/\r?\n/)
+    .map(l => l.replace(/(^|[^:'"\\])\/\/.*$/, '$1'));
 const found = {};
 for (const f of files.sort()) {
-  const rel = path.relative(root, f).split(path.sep).join('/');
-  fs.readFileSync(f, 'utf8')
-    .split(/\r?\n/)
-    .forEach((l, i) => {
-      if ((WORDS.test(l) || LOAD.test(l)) && !TAG.test(l)) (found[rel] = found[rel] || []).push([i + 1, norm(l)]);
-    });
+  const rel = path.relative(root, f).split(path.sep).join('/'),
+    src = fs.readFileSync(f, 'utf8'),
+    C = code(src);
+  src.split(/\r?\n/).forEach((l, i) => {
+    if ((WORDS.test(l) || LOAD.test(l) || STRICT.test(C[i] || '')) && !TAG.test(l)) (found[rel] = found[rel] || []).push([i + 1, norm(l)]);
+  });
 }
 const bp = path.join(__dirname, 'no-fit-baseline.json');
 if (process.argv.includes('--update')) {
   const o = {};
   for (const k in found) o[k] = found[k].map(x => x[1]);
+  const nNew = Object.values(o).reduce((a, b) => a + b.length, 0);
+  const nNow = fs.existsSync(bp) ? Object.values(JSON.parse(fs.readFileSync(bp, 'utf8'))).flat().length : CEILING;
+  if (nNew > Math.min(CEILING, nNow)) {
+    console.log('REFUSED: ' + nNew + ' flagged lines, more than the baseline has now (' + nNow + ', ceiling ' + CEILING + '). A new fit is not added to the baseline: fix it.');
+    process.exit(1);
+  }
   fs.writeFileSync(bp, JSON.stringify(o, null, 1) + '\n');
   console.log('baseline written: ' + Object.values(o).reduce((a, b) => a + b.length, 0) + ' lines');
   process.exit(0);
 }
 const base = fs.existsSync(bp) ? JSON.parse(fs.readFileSync(bp, 'utf8')) : {};
+/* one pool of baseline lines for all files: a line moved to another file still matches */
+const pool = Object.values(base).flat(),
+  nBase = pool.length;
 let bad = 0,
   gone = 0,
-  old = 0;
-for (const k in found) {
-  const left = (base[k] || []).slice();
+  old = 0,
+  moved = 0;
+if (nBase > CEILING) {
+  bad++;
+  console.log('baseline has ' + nBase + ' lines, more than the ceiling ' + CEILING + ': a new fit was added to the baseline');
+}
+for (const k in found)
   for (const [n, l] of found[k]) {
-    const j = left.indexOf(l);
+    const j = pool.indexOf(l);
     if (j >= 0) {
-      left.splice(j, 1);
+      pool.splice(j, 1);
       old++;
+      if (!(base[k] || []).includes(l)) moved++;
     } else {
       bad++;
       console.log(`NEW ${k}:${n}: ${l.slice(0, 200)}`);
     }
   }
-}
-for (const k in base) {
-  const now = (found[k] || []).map(x => x[1]);
-  for (const l of base[k]) if (!now.includes(l)) gone++;
-}
-console.log(`no-fit: ${old} old fits left (baseline, findings D27 ~ D36), ${gone} removed${gone ? ' (run --update)' : ''}, ${bad} new`);
+gone = pool.length;
+console.log(`no-fit: ${old} old fits left (baseline, findings D27 ~ D36; ${moved} moved to another file), ${gone} removed${gone ? ' (run --update)' : ''}, ${bad} new; ceiling ${CEILING}`);
 if (bad) {
   console.log('FAIL: a physics value keyed on the load or fitted to a plant trend / snapshot (RULES.md 3.12). Use first principles and the design geometry, or a logic curve for a set point, and tag the line DESIGN-SRC: / LOGIC-SRC: <source>.');
   process.exit(1);
