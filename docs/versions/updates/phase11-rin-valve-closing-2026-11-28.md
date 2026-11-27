@@ -24,3 +24,6 @@
   load rejection: OPEN, not fitted. Physics check: 106 % needs about 88 MJ into the rotor (H 4.01 s x 176.5 MVA); the entrained steam is
   22 MJ (IP / LP) + 0.7 MJ (HP), the valve ramps about 10 to 15 MJ.
 - 150 MW held 20 min: 150.0 to 151.7 MW, no trip.
+- Signed heater draws in tbPath: a draw below 0 is steam the heater shell sends back into the turbine (shell flash on a load
+  rejection, through the extraction line until its NRV shuts), entering at the saturated vapour enthalpy of the stage. No change
+  while the draws are positive (turbine-hb unchanged); the heater parts (NANA ext.w_hp, MEI ext.w_lp) write the back flow next.

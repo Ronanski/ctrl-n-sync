@@ -298,7 +298,12 @@ function tbPath(I, o) {
     sv = (p, h) => Math.sqrt(Math.max(1e-9, p * steamVhM(p * TB_A, h)));
   P.c = Pc;
   const hhr = tbHt(Math.max(Pc, P.hrh), isFinite(I.Thr) ? I.Thr : 538),
-    dr = x => Math.max(0, +(w[x] || 0)) * 1000;
+    /* a draw is signed: below 0 the heater shell sends steam BACK into the turbine (Phase 11 RIN 2026-11-28: the shell and its
+       saturated water flash when the stage pressure falls, through the extraction line until its non-return valve shuts; the heater
+       parts NANA / MEI write it in ext.w_hp / ext.w_lp). The back steam enters at the saturated vapour enthalpy of the stage pressure */
+    dr = x => (+(w[x] || 0) || 0) * 1000,
+    hg = p => steamSatM(Math.max(Pc, p) * TB_A).hg,
+    mix = (f, h, x, p) => (dr(x) < 0 && f - dr(x) > 0 ? (f * h - dr(x) * hg(p)) / (f - dr(x)) : h);
   /* leaks at the pressures of the last pass */
   const L = {
     C: (C.lkC * P.fs) / sv(P.fs, hms),
@@ -317,11 +322,11 @@ function tbPath(I, o) {
     f4 = Math.max(0, f3 - dr('lp2')),
     f5 = Math.max(0, f4 - dr('lp1'));
   /* pressures from the condenser up (Stodola), with the enthalpies of the last pass */
-  P.l1 = tbP1(G.lp4.K, f5, Pc, H.l1, P.l1);
-  P.l2 = tbP1(G.lp3.K, f4, P.l1, H.l2, P.l2);
-  P.l3 = tbP1(G.lp2.K, f3, P.l2, H.l3, P.l3);
+  P.l1 = tbP1(G.lp4.K, f5, Pc, H.l1i || H.l1, P.l1);
+  P.l2 = tbP1(G.lp3.K, f4, P.l1, H.l2i || H.l2, P.l2);
+  P.l3 = tbP1(G.lp2.K, f3, P.l2, H.l3i || H.l3, P.l3);
   P.da = tbP1(G.lp1.K, flp, P.l3, H.lm || H.da, P.da);
-  P.x5 = tbP1(G.ip2.K, f2, P.da, H.x5, P.x5);
+  P.x5 = tbP1(G.ip2.K, f2, P.da, H.x5i || H.x5, P.x5);
   P.hrh = tbP1(G.ip1.K, f1, P.x5, hhr, P.hrh);
   /* the cold reheat: the hot reheat + the reheater drop of the steam through it (CRH less the No.6 extraction) */
   const frh = Math.max(0, fhp - L.B - L.C2 - dr('hp6') + (+I.hpb || 0) * 1000);
@@ -331,13 +336,17 @@ function tbPath(I, o) {
   H.crh = fhp > 0 ? tbEx(G.hp.eta, P.fs, hms, P.crh) : H.crh || 751.7 * k;
   H.hrh = hhr;
   H.x5 = f1 > 0 ? tbEx(G.ip1.eta, P.hrh, hhr, P.x5) : H.x5;
-  H.da = f2 > 0 ? tbEx(G.ip2.eta, P.x5, H.x5, P.da) : H.da;
-  const fda = Math.max(0, f2 - dr('da'));
-  H.lm = flp > 0 ? (fda * H.da + (ms > 0 ? L.N2 * AN_TB.c1.Hn2 * k * (hms / (823.2 * k)) + L.A * hms : 0)) / flp : H.da;
+  H.x5i = mix(f1, H.x5, 'hp5', P.x5);
+  H.da = f2 > 0 ? tbEx(G.ip2.eta, P.x5, H.x5i, P.da) : H.da;
+  const fda = Math.max(0, f2 - Math.max(0, dr('da')));
+  H.lm = flp > 0 ? (fda * H.da + Math.max(0, -dr('da')) * hg(P.da) + (ms > 0 ? L.N2 * AN_TB.c1.Hn2 * k * (hms / (823.2 * k)) + L.A * hms : 0)) / flp : H.da;
   H.l3 = flp > 0 ? tbEx(G.lp1.eta, P.da, H.lm, P.l3) : H.l3;
-  H.l2 = f3 > 0 ? tbEx(G.lp2.eta, P.l3, H.l3, P.l2) : H.l2;
-  H.l1 = f4 > 0 ? tbEx(G.lp3.eta, P.l2, H.l2, P.l1) : H.l1;
-  H.xe = f5 > 0 ? tbEx(G.lp4.eta, P.l1, H.l1, Pc) : H.xe || H.x;
+  H.l3i = mix(flp, H.l3, 'lp3', P.l3);
+  H.l2 = f3 > 0 ? tbEx(G.lp2.eta, P.l3, H.l3i, P.l2) : H.l2;
+  H.l2i = mix(f3, H.l2, 'lp2', P.l2);
+  H.l1 = f4 > 0 ? tbEx(G.lp3.eta, P.l2, H.l2i, P.l1) : H.l1;
+  H.l1i = mix(f4, H.l1, 'lp1', P.l1);
+  H.xe = f5 > 0 ? tbEx(G.lp4.eta, P.l1, H.l1i, Pc) : H.xe || H.x;
   H.x = f5 > 0 ? H.xe + tbEL(f5, Pc, H.x) : H.x;
   const kW = (f, a, b) => (f / 3600) * (a - b);
   return {
@@ -346,7 +355,7 @@ function tbPath(I, o) {
     L,
     f: { hp: fhp, ip1: f1, ip2: f2, lp: flp, lp2: f3, lp3: f4, lp4: f5, rh: frh },
     Whp: kW(fhp, hms, H.crh) / 1000,
-    Wip: (kW(f1, hhr, H.x5) + kW(f2, H.x5, H.da) + kW(flp, H.lm, H.l3) + kW(f3, H.l3, H.l2) + kW(f4, H.l2, H.l1) + kW(f5, H.l1, H.x)) / 1000,
+    Wip: (kW(f1, hhr, H.x5) + kW(f2, H.x5i, H.da) + kW(flp, H.lm, H.l3) + kW(f3, H.l3i, H.l2) + kW(f4, H.l2i, H.l1) + kW(f5, H.l1i, H.x)) / 1000,
     exh: { m: f5 / 1000, h: H.x }
   };
 }
