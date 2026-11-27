@@ -8,9 +8,9 @@ AOI, 2026-11-27 PHT, user "Go fix 11" (12:37 PM).
 - Stoichiometric air `U.afs` = 5.46 kg / kg coal, kinukuwenta mula sa Tab 2 (`AN_FUEL.afs`); tinanggal ang literal na `AN_GAS.afs` sa boiler.js.
 - Gas papunta sa backpass `U.mG` = mass ng mole balance (sarado ang mass: 596 air + 89.5 coal - ash = 679.40 T/H, pareho). `U.fgM` = ang buong gas (para sa port gas.fe).
 - Gas velocity share ng solids (`uRel`): dami ng gas (moles x temperatura ng bed) laban sa DESIGN gas ng 100 % MCR (`AN_FG0`: Fig 13 coal 89.5 + limestone 12, Fig 12 air 596). Dati ay air lang laban sa air ng "Start at 150 MW" (U.taf0). Ang U.taf0 ay natitira lang sa draft (furnace pressure) loop model, na sa fans fix (rank 10) aalisin.
-- Ginawa ulit ang 150 MW na simula (`src/data/st150.txt`).
+- Ang 150 MW na simula (`src/data/st150.txt`): st150 ng step 2 na pinatakbo ng 30 plant min sa bagong code (`tools/steady150/settle.cjs`).
 
 ## Sinubok
 - Sa bagong 150 MW: O2 3.58 % dry (Fig 7 3.6), air needed / air 0.834 = excess air 19.9 % (Tab 3: 20 %), coal 90.1 T/H (Fig 13 89.5), bed 873 C, solids share 0.994.
-- Behaviour gate 150 MW 20 plant min: ALL PASS (MW galaw 0.26, pressure 0.31, level 7 mm, MST 1.1 C).
+- Behaviour gate 150 MW 20 plant min (sa main ng 2026-11-27 4:30 PM): ALL PASS (MW galaw 0.13, pressure 0.18, level 3 mm, MST 0.4 C). tcs-motors, old-save-ash, pages-bound: pasado.
 - no-fit 0 bago; one-path PASS; ports PASS; build OK.
