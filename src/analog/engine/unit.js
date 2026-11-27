@@ -3277,7 +3277,7 @@ const AN_SB = {
      and rows 18 / 19 (> 250 C = the drain SOVs XV-SB1054 / 1059 close by themselves). Flow diagram PD-015: the steam comes from the
      S/H panel #1 outlet. Its temperature (CALC): the heat balance of the No.1 spray, steam in = (steam out x h(spray 1 outlet) - spray x
      h(water)) / (steam out - spray), steam out = main steam - No.2 spray (FT-FW1119), spray FT-FW1109 at TT-FW1011, h(water) = 4.19 x T
-     (liquid, within 2 % of the steam table), pressure = drum - 6.4 x (main steam / 474.1)^2 (03.png PIBR1130). Check at 03.png (150.5 MW:
+     (liquid, within 2 % of the steam table), pressure = the PT-BR1130 tap of KANA's SH drop law (anShTap). Check at 03.png (150.5 MW:
      MSF 474.1, spray 37.5 / 28.2 T/H, TICBR1130 394 C, PIBR1130 127.8, TIFW1011 162 C): 460 C against TT-BR1120-1 / -2 458 / 454 C.
      Through MV-SB1001 and PCV-SB1053 the steam is throttled at constant enthalpy to the header pressure (PICSB1052): steam.js steamTph
      (IAPWS-IF97 region 2). With steam in the header (above 0.5 kg/cm2: 18.PNG reads 0.4 with MV-SB1001 shut) the drains go to that
@@ -3300,7 +3300,9 @@ function anSbDrain(U, dt, P) {
     Tf = tt['TT-FW1011'] != null && isFinite(tt['TT-FW1011']) ? +tt['TT-FW1011'] : Ta;
   let Ts = NaN;
   if (isFinite(T1) && Pd > 0) {
-    const P1 = Math.max(0, Pd - 6.4 * (ms / 474.1) * (ms / 474.1)),
+    /* Phase 11 (SUZU 2026-11-28, NO-FIT-OK: history; was drum - 6.4 x (MSF / 474.1)^2 of 03.png): the PT-BR1130 tap of KANA's SH drop
+       law (anShTap, FHI design drop 16 kg/cm2 at 460 T/H with the steam density; its tap share is KANA's open item) */
+    const P1 = Math.max(0, anShTap(U, AN_SHDP.s1, Pd, ms)),
       mo = ms - w2;
     Ts = Math.max(T1, steamTsat(P1));
     if (w1 > 0 && mo - w1 > 1) Ts = steamTph(P1, (mo * steamH(P1, Ts) - w1 * 4.19 * Tf) / (mo - w1));
