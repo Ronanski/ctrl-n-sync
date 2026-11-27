@@ -15,7 +15,6 @@
 const AN_SRC = {
   field: { hypo: true, hypoB: false, hypoU: false, pur: true, mu1033: false, esp: true, cw1001: true, lhd: false, tspA: true, tspB: false, amnA: true, amnB: false, chzA: true, chzB: false, agt: false } /* 3.2.0 retest #33: hypochlorite pump (no DCS signal); R9 #77: turbine oil purifier pump P-n941 (local); live test 2026-10-30 #23: V-MU1033 expansion tank bypass (manual valve, PD-021) */,
   Tamb: 30,
-  fanMax: { pa: 354.0 * Math.sqrt(2328 / 1551), sa: 213.0 * Math.sqrt(1922 / 1427) } /* T/H, see SRC_RULES R.FICFA1071 / 1081 */,
   st: null,
   t: -1,
   bits: null,
@@ -122,8 +121,12 @@ const SRC_RULES = (() => {
      pressure, NO-SOURCE for its slope: the real limit is a little higher, never above the design capacity 281 / 460 T/H at 40 C).
      Before, a feeder trip at 150 MW (boiler master up, air follows) took the SA to about 350 T/H at 394 A, two times the rated 192 A,
      and the winding temperature HH tripped the fan, then the MFT */
-  R.FICFA1071 = () => ({ cap: AN_SRC.fanMax.pa });
-  R.FICFA1081 = () => ({ cap: AN_SRC.fanMax.sa });
+  /* Phase 11 rank 10 (AOI): the most air is where the vendor curve (inlet vanes full open, D1-003 p151 / p145) meets the D2-003 system
+     curve with the bed of the model (boiler.js anFdCap): 481.5 / 294.3 T/H with the design bed. Before: the snapshot system curve
+     taken to the spec discharge pressure (433.7 / 247.2 T/H) */
+  const bk = () => (AN_UNIT && isFinite(AN_UNIT.bedK) ? AN_UNIT.bedK : 1);
+  R.FICFA1071 = () => ({ cap: anFdCap('pa', bk()) });
+  R.FICFA1081 = () => ({ cap: anFdCap('sa', bk()) });
   /* loop 4, fluidizing air: FA blower A / B running (ABC-014 M.3308 / M.3309) */
   /* 3.2.3 SOHEE: the flow of the FA blowers that run with their outlet SOV open and their silencer SOV shut, by their dampers
      (boiler.js anFanStep U.fnFaT); before the fan model has run, a blower running as before */

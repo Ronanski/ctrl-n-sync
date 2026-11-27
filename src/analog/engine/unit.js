@@ -4191,10 +4191,14 @@ function anUnitStep0(dt) {
      SU 4954-5090): 600 = the bed back pressure at the anchor bed DP (DPIFG1081 1426 mmH2O, 7.PNG), read from the bed model (U.bedK = bed DP
      / 1426, read only); the rest with the square of the SA flow. PIFA1088 the same with its own anchor (1273). The SA port dampers that
      ABC-057 closes with load (S3-LN1 ~ 22) are not in it: damper characteristic NO-SOURCE */
-  if (U.saP && U.saP.length && U.sa0 > 0) {
-    const r = Math.max(0, +U.tafS.rt.v[U.saN] || 0) / U.sa0,
-      bk = 600 * Math.max(0, isFinite(U.bedK) ? U.bedK : 1);
-    for (const L of U.saP) anUnitWrite(L, i => bk + Math.max(0, L.a0[i] - 600) * r * r);
+  /* Phase 11 rank 10 (AOI): on the D2-003 system curve (boiler.js anFanStep U.fnSaP: SA entry 1016 x bed + 521 at MCR fan flow 236.95
+     T/H); PIFA1088 after the air heater = less its duct 31 and air heater 100. Before: the snapshot anchors 1427 / 1273 (U field a0,
+     restored by every save) split 600 / rest. The start procedure check (above 1200 with bed, above 600 without) stands: with no bed
+     the start flow gives the duct loss only */
+  if (U.saP && U.saP.length && U.saN >= 0 && isFinite(U.fnSaP)) {
+    const r = Math.max(0, +U.tafS.rt.v[U.saN] || 0) / AN_FD.sa.Q,
+      p = [U.fnSaP, Math.max(0, U.fnSaP - AN_FD.sa.Lah * r * r)];
+    U.saP.forEach((L, i) => anUnitWrite(L, () => p[Math.min(i, 1)]));
   }
   if (U.idfS && U.idfS.length) {
     const on = !U.idf || +U.idf.S.rt.v[U.idf.n] > 0.5,

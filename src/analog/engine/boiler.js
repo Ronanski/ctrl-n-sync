@@ -353,10 +353,9 @@ const AN_FN = {
      FA blower: beta.324 (JENNIE, Audit #5 / user finding "FA blower A trips on low current when running with B"): no share; its
      current comes from its own curve (anFabKw / anFabI below). The 0.45 share and the straight line from 232 kW at 10,000 kg/h were
      both wrong: the power curve bends, and an inlet-throttled blower makes less power at the same mass flow. */
+  /* Phase 11 rank 10: I0 / fI are now only the HMI estimate without the plant model (hmi2.js, AN.fanI); the plant model takes the
+     PAF / SAF / IDF pressures and currents from the design documents (AN_FD below) */
   fI: { paf: 0.47, saf: 0.51, idf: 0.57 },
-  pa: { Q0: 354.0, P0: 1551 },
-  sa: { Q0: 213.0, P0: 1427 },
-  ga: { T0: 592.1, Pi: [-442, -450], Po: -7 },
   fa: { Q0: 26.3, z0: 42.8, P0: [3257, 3315] },
   run: {
     paf: 'DITL-26A',
@@ -435,6 +434,102 @@ const anFanI = (I0, on, x, f = AN_FN.fI[Object.keys(AN_FN.I0).find(k => AN_FN.I0
   }
   return on ? I0 * (f + (1 - f) * Math.max(0, x)) : 0;
 };
+/* Phase 11 rank 10 (AOI, 2026-11-27, user "Go fix 11"): PAF / SAF / IDF ON THE DESIGN DOCUMENTS, in place of the 7.PNG snapshot
+   anchors (pressures and currents through the 150 MW snapshot point, Rule 0). Sources (YUA PC reads, /mnt/project-files/
+   aoi-fan-system-motors-2026-11-27.md and aoi-fan-curves-2026-11-27.md):
+   SYSTEM CURVES, DESIGN-SRC K1AU3-D2-0-003 Rev A (Procuring Specification of Boiler Fans, FHI) Ch. 1-3, MCR, per fan (one fan
+   each per boiler, D2-003 1-2 and FHI P5S1):
+     PA  fan outlet 387,620 kg/h: furnace at the PA entry 1,092 + nozzles 550 + duct 90 + air heater 100 + duct 30 = discharge
+         1,862 mmH2O; suction -118.
+     SA  fan outlet 236,950 kg/h: furnace at the SA entry 1,016 + burner 250 + duct 140 + air heater 100 + duct / damper 31 =
+         discharge 1,537; suction -118.
+     ID  fan inlet 732,730 kg/h: furnace top -15, cyclone 205, superheater 50, economizer 60, duct / biasing damper 90 (= air heater
+         gas inlet -420), air heater 110 (= air heater gas outlet -530), ESP 30, duct 50 = suction -610; discharge 25.
+   The flow transmitters FT-FA1071 / FA1081 are at the fan inlets (alarm list FT sheet, see AN_APK), so the loop flow IS the fan flow.
+   Each loss goes with the square of the flow (CALC; D2-003 prints MCR only: part-load NOT IN DOCS). The furnace pressure at the PA /
+   SA entry is the weight of the fluidized bed: it goes with the bed model (cfb.js U.bedK = fluidized bed inventory / design). The ID
+   gas goes with the total air over the FHI Fig 12 design total air 596 T/H (cfb.js AN_FG0); furnace top held at its design -15.
+   FAN CURVES, DESIGN-SRC K1AU3-D1-0-003 R0 p145 (SA) / p151 (PA), inlet vanes full open, 40 C, 1780 rpm: static pressure SP vs the
+   axis ACMM; per fan flow = axis / 2 (DERIVED by YUA: the spec SP falls at 2 x the spec ACMM on both curves). ACMM to T/H by the
+   spec sheets' own density: PA 465,200 kg/h / 60 / 6,907 ACMM, SA 284,340 / 60 / 4,222 = 1.1225 kg/m3. The most air of a fan = where
+   its full open curve (outlet = SP + suction) meets the system curve: 481.5 T/H PA, 294.3 T/H SA with the design bed (CALC).
+   FAN POWER (vanes): a straight line in air power through the two vendor points, no flow (curve p151 PA 470 BKW, p145 SA 260 BKW:
+   the old beta.308 read) and the spec point (PA 6,907 ACMM x 2,481 mmAq -> 3,341 BKW; SA 4,222 x 2,075 -> 1,698 BKW, D1-003 p147 /
+   p141). ID (variable speed hydraulic coupling): air power / TE 0.87 (spec p153: 17,621 ACMM x 858 mmAq -> 2,850 BKW), not under the
+   no-flow power at its speed (34 kW at 350 rpm, cube of the speed, beta.308 read of p157); the coupling passes the same torque, so
+   the motor gives fan power x 1193 / fan speed (ST-LO1756, unit.js anIdfN).
+   MOTORS, DESIGN-SRC TECO spec tables and Eff & PF vs load curves (Fan Instruction Manual p288-330, 6.6 kV): load share -> efficiency,
+   power factor at 10 (beta.308 read) / 25 / 50 / 75 / 100 %; I = shaft kW / eff / (sqrt3 x 6.6 x PF); under 10 % the reactive current of
+   the 10 % point stays (magnetizing).
+   Checks at 150 MW (FIFA1071 354, FIFA1081 213, total air 592, ID fan 872 rpm; the HMI snapshot 7.PNG is a check only, not a target):
+   PIFA1075 1,734 (snapshot 1,551), PIFA1085 1,437 (1,427), PIFG1141 -602 (-442 / -450), PIFG1151 25 (-7), PAF 221 A (253.6),
+   SAF 117 A (134.0), IDF 259 A (199.6). All inside the alarm list limits (PT-FA1075 LL 1200 / HH 2300, PT-FG1141 H -390). */
+const AN_FD = {
+  pa: { Q: 387.62, E: 1092, L: 770, Lah: 130, S: -118, kW: 3700, P0: 470, Ps: 3341, As: (6907 / 60) * 2481 * 0.00980665 },
+  sa: { Q: 236.95, E: 1016, L: 521, Lah: 131, S: -118, kW: 1850, P0: 260, Ps: 1698, As: (4222 / 60) * 2075 * 0.00980665 },
+  ga: { A: 596, top: -15, Lah: 405, Lao: 515, Li: 595, Lo: 25, rho: 879300 / 60 / 17621, te: 0.87, kW: 3300, n0: 350, P0: 34, nm: 1193 },
+  rho: 1.1225,
+  /* SP mmAq at axis ACMM 0, 1000, ... (p151 PA to 17,000 then the curve end 17,450; p145 SA to 11,000 then the axis end 11,800) */
+  cpa: [[0, 2880], [1000, 2920], [2000, 3020], [3000, 3100], [4000, 3140], [5000, 3190], [6000, 3200], [7000, 3170], [8000, 3140], [9000, 3060], [10000, 3000], [11000, 2940], [12000, 2820], [13000, 2730], [14000, 2510], [15000, 2350], [16000, 2140], [17000, 1910], [17450, 1800]],
+  csa: [[0, 2210], [1000, 2290], [2000, 2350], [3000, 2380], [4000, 2390], [5000, 2370], [6000, 2300], [7000, 2200], [8000, 2090], [9000, 1970], [10000, 1700], [11000, 1520], [11800, 1380]],
+  /* load share, efficiency, power factor */
+  mot: {
+    paf: { I: 373, t: [[0.1, 0.8, 0.475], [0.25, 0.929, 0.747], [0.5, 0.949, 0.86], [0.75, 0.955, 0.899], [1, 0.958, 0.905]] },
+    saf: { I: 192, t: [[0.1, 0.8, 0.39], [0.25, 0.93, 0.653], [0.5, 0.952, 0.816], [0.75, 0.955, 0.864], [1, 0.956, 0.88]] },
+    idf: { I: 350, t: [[0.1, 0.8, 0.31], [0.25, 0.922, 0.586], [0.5, 0.948, 0.771], [0.75, 0.957, 0.84], [1, 0.96, 0.86]] }
+  }
+};
+/* system: fan outlet pressure (mmH2O) at fan flow q (T/H), bed share b */
+const anFdSys = (k, q, b) => {
+  const s = AN_FD[k],
+    r = Math.max(0, q) / s.Q;
+  return s.E * Math.max(0, b) + s.L * r * r;
+};
+/* the full open curve: fan outlet pressure at fan flow q (T/H) */
+const anFdCrv = (k, q) => {
+  const s = AN_FD[k],
+    r = Math.max(0, q) / s.Q;
+  return anFabLin(AN_FD['c' + k], (Math.max(0, q) * 2000) / (60 * AN_FD.rho)) + s.S * r * r;
+};
+/* the most air of the fan (T/H): the curve meets the system */
+const anFdCap = (k, b) => {
+  const c = AN_FD['c' + k];
+  let lo = 0,
+    hi = (c[c.length - 1][0] * 60 * AN_FD.rho) / 2000;
+  if (anFdCrv(k, hi) >= anFdSys(k, hi, b)) return hi;
+  for (let i = 0; i < 30; i++) {
+    const m = (lo + hi) / 2;
+    if (anFdCrv(k, m) >= anFdSys(k, m, b)) lo = m;
+    else hi = m;
+  }
+  return lo;
+};
+/* motor current (A) at shaft kW p */
+const anFdAmp = (m, kW, p) => {
+  const t = m.t,
+    x = Math.max(0, p) / kW,
+    V = Math.sqrt(3) * 6.6;
+  if (x <= t[0][0]) {
+    const ia = Math.max(0, p) / t[0][1] / V,
+      ir = ((t[0][0] * kW) / t[0][1] / V) * Math.tan(Math.acos(t[0][2]));
+    return Math.hypot(ia, ir);
+  }
+  let i = 1;
+  while (i < t.length - 1 && x > t[i][0]) i++;
+  const [a, e1, f1] = t[i - 1],
+    [c, e2, f2] = t[i],
+    w = (x - a) / (c - a),
+    e = e1 + (e2 - e1) * w,
+    f = Math.min(0.95, f1 + (f2 - f1) * w);
+  return p / e / (V * f);
+};
+/* PAF / SAF shaft kW: air power = volume x pressure rise (outlet - suction) */
+const anFdKw = (k, q, pOut) => {
+  const s = AN_FD[k],
+    r = Math.max(0, q) / s.Q,
+    air = ((Math.max(0, q) * 1000) / 3600 / AN_FD.rho) * Math.max(0, pOut - s.S * r * r) * 0.00980665;
+  return s.P0 + ((s.Ps - s.P0) * air) / s.As;
+};
 /* speed (F37): a DITL sheet by its name, kept: these two run many times a step and made a new list of all sheets each time */
 const fnShC = new Map();
 let fnShK = -1;
@@ -501,7 +596,7 @@ function anFanStart(U) {
    fan suction (U.fnGi, the fan current follows), and the fan at the same opening moves less gas: the share of the fan command that
    reaches the furnace pressure is the square root of the old over the new system loss (fan law at one speed, unit.js pr.uf).
    U.aphPl = the added loss in units of dp; clearing the fault (water wash) puts it back to 0 */
-const AN_APL = { dp: 113, t: 1800, max: 3 };
+const AN_APL = { dp: 110 /* D2-003 rotary air heater gas loss at MCR */, t: 1800, max: 3 };
 /* 3.2.4 (JENNIE, list item: air heater leak): the radial / axial seals of the tri-sector air heater wear and pass more air to the gas side
    (trainer fault aph.leak, world.js). L20 Howden APH OMM sheet 16, duty 1 (performance coal): PA to gas 33,993 kg/h, SA to gas 19,036
    kg/h, total air to gas 7.82 % of the gas inlet. Check of the mixing rule: the same sheet gives the gas out 132.8 C undiluted and
@@ -587,7 +682,6 @@ function anFanStep(U, dt) {
   const qi = g.map((x, i) =>
     lag('fq' + i, fr[i] ? (K.fa.Q0 * (sil[i] && g0[i] > 0 ? g0[i] : x)) / K.fa.z0 : 0, 5)
   );
-  const cur = anFanI;
   U.fnI = U.fnI || [0, 0, 0, 0, 0];
   /* S160-2 (Mina beta.160: FA blower B STOPPED while it ran on its own at the 25 % line-up damper, then started again): the air power
      was its flow x the HEADER pressure (P ~ Q^2), so one blower at about 14 T/H drew 21.5 A, under the L.L. 24.6 A of DITL-28B row 12,
@@ -604,38 +698,44 @@ function anFanStep(U, dt) {
   const p2 = i => (sil[i] ? 0 : pfa);
   U.fnIa = lagI('ia', anFabI(fr[0], qi[0], p2(0)), 2);
   U.fnIb = lagI('ib', anFabI(fr[1], qi[1], p2(1)), 2);
-  /* PAF / SAF: flow of the loop model, outlet pressure on the system curve */
+  /* PAF / SAF: flow of the loop model (fan inlet transmitters), outlet pressure on the D2-003 system curve (AN_FD), current from the
+     shaft power on the TECO motor curve */
   const qpa = Math.max(0, val(F.qpa)) || 0,
     qsa = Math.max(0, val(F.qsa)) || 0,
-    ppa = K.pa.P0 * Math.pow(qpa / K.pa.Q0, 2),
-    psa = K.sa.P0 * Math.pow(qsa / K.sa.Q0, 2);
+    bk = isFinite(U.bedK) ? U.bedK : 1,
+    paf = fnRun(K.run.paf),
+    saf = fnRun(K.run.saf),
+    ppa = paf ? anFdSys('pa', qpa, bk) : 0,
+    psa = saf ? anFdSys('sa', qsa, bk) : 0;
   U.fnPaP = lag('pp', ppa, 2);
+  U.fnSaP = lag('sp', psa, 2);
   if (F.ai.pa.length) anUnitWrite(F.ai.pa, U.fnPaP);
-  U.fnPafI = lagI('ip', cur(K.I0.paf, fnRun(K.run.paf), (qpa * ppa) / (K.pa.Q0 * K.pa.P0), K.fI.paf), 2);
-  U.fnSafI = lagI('is', cur(K.I0.saf, fnRun(K.run.saf), (qsa * psa) / (K.sa.Q0 * K.sa.P0), K.fI.saf), 2);
-  /* IDF: the flue gas is the total air (unit.js U.taf); inlet suction and outlet with its square */
-  const taf = U.taf && U.tafS ? U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0) : 0,
-    rg = Math.pow(taf / K.ga.T0, 2),
-    idf = fnRun(K.run.idf);
-  U.fnGi = K.ga.Pi.map((p, i) => lag('gi' + i, idf ? (p - AN_APL.dp * (U.aphPl || 0)) * rg : 0, 2));
-  U.fnGo = lag('go', idf ? K.ga.Po * rg : 0, 2);
-  /* audit 2026-11-21 B1 (HX page values with no number): the gas path pressures no sheet reads. A pressure of the draft system is
-     a share of the flow squared (the same rg as the ID fan suction), anchored on the HMI snapshot (hmi-op.js): air heater gas inlet
-     PT-FG1121 -233, air heater outlet PT-FG1134 -372, air heater gas DP DPT-FG1052-5 113 mmH2O; a plugged air heater (AN_APL) adds
-     its DP across the air heater (outlet and DP), as at the ID fan suction. PA after the air heater PT-FA1078 = the PAF outlet on the
-     same system curve, 1444 / 1551 of it (snapshot / AN_FN.pa.P0) */
-  {
-    const pl = AN_APL.dp * (U.aphPl || 0);
-    Object.assign(U.tt || (U.tt = {}), {
-      'PT-FG1121': idf ? Math.round(-233 * rg) : 0,
-      'PT-FG1134': idf ? Math.round((-372 - pl) * rg) : 0,
-      'DPT-FG1052-5': idf ? Math.round((113 + pl) * rg) : 0,
-      'PT-FA1078': Math.round((U.fnPaP * 1444) / K.pa.P0)
-    });
-  }
-  const dpg = U.fnGo - (U.fnGi[0] + U.fnGi[1]) / 2,
-    dpg0 = K.ga.Po - (K.ga.Pi[0] + K.ga.Pi[1]) / 2;
-  U.fnIdfI = lagI('ii', cur(K.I0.idf, idf, ((taf / K.ga.T0) * dpg) / dpg0, K.fI.idf), 2);
+  U.fnPafI = lagI('ip', paf ? anFdAmp(AN_FD.mot.paf, AN_FD.pa.kW, anFdKw('pa', qpa, ppa)) : 0, 2);
+  U.fnSafI = lagI('is', saf ? anFdAmp(AN_FD.mot.saf, AN_FD.sa.kW, anFdKw('sa', qsa, psa)) : 0, 2);
+  /* IDF: the flue gas goes with the total air (unit.js U.taf) over the design total air; the draft losses with its square (AN_FD.ga) */
+  const G = AN_FD.ga,
+    taf = U.taf && U.tafS ? U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0) : 0,
+    rg = Math.pow(taf / G.A, 2),
+    idf = fnRun(K.run.idf),
+    pl = AN_APL.dp * (U.aphPl || 0);
+  U.fnGi = [0, 1].map(i => lag('gi' + i, idf ? G.top - G.Li * rg - pl : 0, 2));
+  U.fnGo = lag('go', idf ? G.Lo * rg : 0, 2);
+  /* audit 2026-11-21 B1 (HX page values with no number): the gas path pressures no sheet reads, now on the D2-003 loss build-up:
+     air heater gas inlet PT-FG1121 (-15 - 405), air heater gas outlet PT-FG1134 (-15 - 515), air heater gas DP DPT-FG1052-5 (110), with
+     the square of the gas; a plugged air heater (AN_APL) adds its DP across the air heater. PA after the air heater PT-FA1078 = the
+     PAF outlet less the duct 30 and air heater 100 (D2-003) */
+  Object.assign(U.tt || (U.tt = {}), {
+    'PT-FG1121': idf ? Math.round(G.top - G.Lah * rg) : 0,
+    'PT-FG1134': idf ? Math.round(G.top - G.Lao * rg - pl) : 0,
+    'DPT-FG1052-5': idf ? Math.round((G.Lao - G.Lah) * rg + pl) : 0,
+    'PT-FA1078': Math.round(Math.max(0, U.fnPaP - (paf ? AN_FD.pa.Lah * Math.pow(qpa / AN_FD.pa.Q, 2) : 0)))
+  });
+  /* ID fan: gas volume at the ID inlet (density of the spec sheet, 150 C) x the rise, at the speed of the hydraulic coupling */
+  const n = idf && U.idfV && typeof anIdfN === 'function' ? anIdfN(+U.idfV.S.rt.v[U.idfV.n] || 0) : G.n0,
+    qg = ((taf * 732.73) / G.A) * 1000 / 3600 / G.rho,
+    air = qg * Math.max(0, U.fnGo - (U.fnGi[0] + U.fnGi[1]) / 2) * 0.00980665,
+    pf = Math.max(G.P0 * Math.pow(n / G.n0, 3), air / G.te);
+  U.fnIdfI = lagI('ii', idf ? anFdAmp(AN_FD.mot.idf, G.kW, (pf * G.nm) / Math.max(G.n0, n)) : 0, 2);
   U.fnI = [U.fnPafI, U.fnSafI, U.fnIdfI, U.fnIa, U.fnIb];
 }
 /* AIR PREHEATER AND FLUE GAS (FHI Tab 3, Figures 7, 12, 13; docs/versions/v3.2.1/GAS_PATH.md).
@@ -648,6 +748,8 @@ function anFanStep(U, dt) {
    eco       colder feedwater takes more from the gas: the economizer cools the gas 43 C of the 120 C between gas in (365, snapshot
              TIFG1110 / 1113) and feedwater 245.4 (Tab 3), so gas to the air heater falls 0.36 C per C of feedwater. */
 const AN_GAS = {
+  qPa: 354 /* Tab 3 PA, the flow of dtP */,
+  qSa: 218 /* Tab 3 SA, the flow of dtS */,
   gi: 322,
   ePA: 240.8 / 277,
   eSA: 262.6 / 283,
@@ -690,8 +792,8 @@ function anAphStep(U, dt) {
     /* 3.2.3-beta.258: the gas that leaves the No.1 economizer of the heat transfer chain (hx.js); the curve anAphIn only without it */
     hxG = U.hxO && isFinite(U.hxO.gEo) ? U.hxO.gEo : NaN,
     gi = isFinite(hxG) ? hxG : anAphIn(amb, k, g, U.fwDrop),
-    tpa = anAphAir(amb, fnRun(AN_FN.run.paf) ? v[0] / AN_FN.pa.Q0 : 0, 'p'),
-    tsa = anAphAir(amb, fnRun(AN_FN.run.saf) ? v[1] / AN_FN.sa.Q0 : 0, 's');
+    tpa = anAphAir(amb, fnRun(AN_FN.run.paf) ? v[0] / AN_GAS.qPa : 0, 'p'),
+    tsa = anAphAir(amb, fnRun(AN_FN.run.saf) ? v[1] / AN_GAS.qSa : 0, 's');
   /* the chain has its own metal lag: no second lag on it */
   z.gi = isFinite(hxG) || !isFinite(z.gi) ? gi : z.gi + ((gi - z.gi) * Math.min(dt, K.tauG)) / K.tauG;
   /* the rotor carries the heat across: stopped, the air stops heating as the metal cools */
