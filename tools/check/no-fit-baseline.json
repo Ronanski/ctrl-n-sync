@@ -18,6 +18,11 @@
   "- tau 56 h: CALC from the plant DCS trend (team-files/plant-trends, Scenario 1 Trend B, 60 s samples, PC only). Held loads, no load",
   "const AN_FOUL = { rInf: 0.0042 /* m2K/W, CALC (see above) */, tau: 56 * 3600 /* s, CALC from the plant trend (see above) */, e: 0.8 /* NO-SOURCE */, mcr: 89 },"
  ],
+ "src/analog/engine/model/cooling.js": [
+  "z = 11.3 m CALIBRATED on the HMI snapshot 28.png (2 MWP running at their recirculation flow, levels 13.8 / 13.7 m,",
+  "750). The UA in service is CALIBRATED on 27.PNG (return 40 C, supply 38 C at 1500 m3/h = 3,452 kW, seawater",
+  "const ld = Math.max(0, Math.min(1, (isFinite(U.MW) ? U.MW : 0) / 150)),"
+ ],
  "src/analog/engine/unit.js": [
   "tauMW: 10 /* s, steam flow -> MW (reheater, NO-SOURCE: the plant trends are 60 s averages, too slow to fit it) */,",
   "/* F11 (user 2026-11-13: the ratio of beta.206 / 207 was a curve fit, not a model). Superheater and reheater tube metal, heated by the flue",
@@ -25,9 +30,6 @@
   "TIFG1090 339 C at 1.5 h, 523 C at 4 h, 726 C at 6 h; simulator 141 C at 2 h). Fit on the bed of the model (TIFG1090 = 30 + 1.127 x",
   "(Tb - 30), the 954 / 850 snapshot ratio): lag 1.9 h at 1.5 h, 2.6 h at 4 h -> 9000 s; the trend outranks the design curve */",
   "/* 3.2.3-beta.265: the plant trend ~1465 (AN_BI), the two transmitters 6 mmH2O apart as on the snapshot (1426 / 1432) */",
-  "z = 11.3 m CALIBRATED on the HMI snapshot 28.png (2 MWP running at their recirculation flow, levels 13.8 / 13.7 m,",
-  "750). The UA in service is CALIBRATED on 27.PNG (return 40 C, supply 38 C at 1500 m3/h = 3,452 kW, seawater",
-  "const ld = Math.max(0, Math.min(1, (isFinite(U.MW) ? U.MW : 0) / 150)),",
   "the transmitter elevation, calibrated to 16.9 at 150 MW); current = 28.1 A x shaft power / 245.7 kW (snapshot ratio). */",
   "/* 3.2.1 b6: plant DCS trends 2026-11-08 (team-files/plant-study/14): TIFG1090 952 to 962 C from 90 to 150 MW with the plant air, 855 C at 40 MW",
   "burning over tau): at 75 MW the PIC-COBM swing grew to an MFT in 110 min (the plant runs there with coal 47 ~ 51 T/H, plant trend).",
