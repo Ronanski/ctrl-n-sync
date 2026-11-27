@@ -756,6 +756,38 @@ function anAcwStep(U, dt) {
   if (typeof anPortSet === 'function') anPortSet(U, 'ccw', { m: (Q * 991) / 1000, T: U.acT2 });
   U.acTb = n ? U.acT2 + 1 : U.acT2;
   anBacStep(U, dt);
+  anSuzuMotorPort(U);
+}
+/* Phase 11 (SUZU 2026-11-28, YUI house load): the electrical input of the SUZU 6.6 kV motors of BUS 1AM, the port q.motor.SUZU
+   {P kW, Q kvar} that YUI's elec.js sums (ports.js aux.power). Each running motor: P = shaft kW / eff, Q = P x tan(acos pf).
+     SWP A / B / C   shaft U.swKw (pump curve D1-0-064 p6); TECO 2050 kW motor table D1-0-064 p26 (YUA yui-reads-4.md): eff 95.0 /
+                     95.7 / 95.8 %, pf 0.52 / 0.65 / 0.72 at 50 / 75 / 100 % load (check: 2050 / 0.958 / (1.732 x 6.6 x 0.72) = 260 A
+                     = the table). Outside 50 ~ 100 % the end value is held (DERIVED: the table prints no eff / pf there).
+     ACWP A / B      shaft U.acKw (pump curve D1-0-033 p8); TECO 300 kW motor D1-0-033 p10: eff 95.0 %, pf 0.86 (AN_ACW.eff / pf, the
+                     100 % point only: held at every load, DERIVED).
+     PA comp. A ~ C  shaft U.paKw (anAirStep); TECO 671 kW motor D1-0-059 p7: eff 95.5 %, pf 0.88 (100 % point only, held; check: 671 /
+                     0.955 / (1.732 x 6.6 x 0.88) = 69.8 A = AN_AIR.sys.pa.I100 69.9).
+   The instrument air compressors are 460 V (AN_EL.lv), not in this port. Kept outside AN_SW / AN_AIR: a save carries those. */
+const AN_MOT_SW = { L: [50, 75, 100], eff: [0.95, 0.957, 0.958], pf: [0.52, 0.65, 0.72] };
+const AN_MOT_PA = { eff: 0.955, pf: 0.88 };
+function anSuzuMotorPort(U) {
+  if (typeof anPortSet !== 'function') return;
+  let P = 0,
+    Q = 0;
+  const add = (kw, e, pf) => {
+    if (!(kw > 0)) return;
+    const p = kw / e;
+    P += p;
+    Q += p * Math.tan(Math.acos(pf));
+  };
+  for (let i = 0; i < 3; i++) {
+    const kw = +U['swKw' + i] || 0,
+      l = Math.min(100, Math.max(50, (100 * kw) / AN_SW.mkW));
+    add(kw, swInterp(AN_MOT_SW.L, AN_MOT_SW.eff, l), swInterp(AN_MOT_SW.L, AN_MOT_SW.pf, l));
+  }
+  for (let i = 0; i < 2; i++) add(+U['acKw' + i] || 0, AN_ACW.eff, AN_ACW.pf);
+  for (let i = 0; i < 3; i++) add(+U['paKw' + i] || 0, AN_MOT_PA.eff, AN_MOT_PA.pf);
+  anPortSet(U, 'q.motor.SUZU', { P, Q });
 }
 /* 3.2.4-beta.71 (JENNIE, for the ESP AND ASH page: TT-BH1060 / TT-CW1060 were '-----', no model). The bottom ash screw coolers
    L-1060A ~ D (DITL-21A / #B / #C / #D): bed drain ash in, cooled ash out to the chain conveyor; closed cooling water (supply TT-CW1156
