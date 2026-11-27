@@ -157,7 +157,6 @@ function anDeaStep(U, dt) {
                   491.04 T/H at 1750 m, shut-off 2254.6 m, discharge 165.1 kg/cm2g at suction 6.0, 2946 kW (motor 3550 kW),
                   minimum recirculation 151 m3/h (ARC valve); curve 2250 m at 100, 2140 at 300, 2010 at 400, 1620 at 600 m3/h; power
                   1700 kW at 150, 2230 at 300, 2580 at 400, 3100 at 600 m3/h;
-     snapshot     03.png (150.5 MW): BFWP-A 289.4 A, PIFW1011 165.4 kg/cm2, DPIFW1115A 0.29 kg/cm2, feedwater 499.1 T/H;
      DITL-23B     row 25 PT-FW1011 < 155 kg/cm2 = M.3210 BFWP OUTLET PRESSURE LOW (the standby BFWP in AUTO starts, DITL-22 / 23A);
                   row 26 DPT-FW1115-A strainer DP > 0.8 / 0.9 kg/cm2, alarm > 0.6.
    How it works: flow of a running pump = the feedwater to the drum (plant.js AN_CYC.ffw) / running pumps, at least the ARC minimum
@@ -810,12 +809,7 @@ function anHdStep(U, dt) {
   U.hdHH = Object.fromEntries(U.hd.map(h => [h.k, h.hh ? 1 : 0]));
 }
 const AN_FWT = {
-  ms0: 472.7,
-  ts13: 14.07,
-  ts17: 5.3,
-  ts26: 0.25 /* PT-TS1026 No.5 extraction, 4.PNG */,
-  ext: { "TT-TS1014": 426, "TT-TS1018": 314, "TT-TS1023": 188, "TT-TS1027": 91 } /* 4.PNG at 148.8 MW, C */,
-  hr0: 540 /* TIHR1004 hot reheat of the same snapshots (OPERATING_POINTS.md), the anchor of the extraction temperatures */,
+  ms0: 472.7 /* SNAPSHOT-TO-REPLACE (audit-NANA): main steam scale still read by unit.js anUnitTagStep; no feedwater use left */,
   crP: 36.6 / 35.1 /* HP exhaust PICR1901x over the hot reheat pressure, as Pcr of the bypass model */,
   K: 35000 / (9.49 * Math.sqrt(165.3 - 142.2)) / 1000,
   cv: {
@@ -852,7 +846,17 @@ function anFwTagStep(U) {
     r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
     r2 = x => (isFinite(x) ? Math.round(100 * x) / 100 : null),
     ms = Math.max(0, +U.ms || 0),
-    stage = P => (P + 1.0332) * (ms / K.ms0) - 1.0332,
+    /* the extraction transmitters read the turbine stage the turbine model computes (RIN anTbPorts, ports ext.*, P kg/cm2 a, T C):
+       PT/TT-TS1013 / 1014 extraction II, PT/TT-TS1017 / 1018 extraction III, TT-TS1023 extraction IV, PT/TT-TS1026 / 1027 extraction V.
+       A port not written yet gives no value (no stand-in). Was: snapshot pressures x main steam / 472.7 and snapshot temperatures */
+    xP = id => {
+      const p = anPortGet(U, id);
+      return p && isFinite(p.P) && p.P !== null ? r2(Math.max(-1, p.P - 1.0332)) : null;
+    },
+    xT = id => {
+      const p = anPortGet(U, id);
+      return p && isFinite(p.T) && p.T !== null ? r1(p.T) : null;
+    },
     C = U.fwC || (U.fwC = {}),
     sh = n => AN.sheets.find(y => y.name === n),
     ctl = (n, t) => {
@@ -929,14 +933,6 @@ function anFwTagStep(U) {
     wrh = anSprW(cvOf(AN_BYS.rh, held('TICHR1002', mvOf('ABC-019', 'TICHR1002'))), Pis, Prh, rSp) * pos('DITL-35') /* TCV-FW1150, XV-FW1151 */,
     whp = anSprW(cvOf(AN_BYS.hp, held('TICMS1022', mvOf('ABC-051', 'TICMS1022'))), Pis, Prh * K.crP, rSp) * pos('DITL-79') /* TCV-FW1060, XV-FW1061 */,
     cr = U.xt && U.xt.T ? U.xt.T.cr : NaN,
-    Xt = U.xt || {},
-    thr = Xt.hr ? anUnitVal(Xt.hr) : NaN,
-    Ta = isFinite(U.Tamb) ? U.Tamb : 30,
-    fx5 = Math.max(0, Math.min(1, ms / (0.05 * K.ms0))),
-    extT = T0 =>
-      isFinite(thr)
-        ? Ta + ((thr + 273.15) * ((T0 + 273.15) / (K.hr0 + 273.15)) - 273.15 - Ta) * fx5
-        : NaN,
     pcr = Prh * K.crP;
   /* beta.258: the spray water, the feedwater and the flue gas biasing dampers (ABC-020 HICHR1002A RH / HICHR1002B SH) for the heat
      transfer chain (hx.js); numbers only on U */
@@ -955,14 +951,14 @@ function anFwTagStep(U) {
   U.dmpR = isFinite(dA) ? dA / 100 : NaN;
   U.dmpS = isFinite(dB) ? dB / 100 : NaN;
   Object.assign(U.tt || (U.tt = {}), {
-    'PT-TS1013': ms > 0 ? r2(Math.max(-1, stage(K.ts13))) : r2(0),
-    'PT-TS1017': ms > 0 ? r2(Math.max(-1, stage(K.ts17))) : r2(0),
+    'PT-TS1013': xP('ext.hp1'),
+    'PT-TS1017': xP('ext.da'),
     'TT-TS1011': r1(cr),
-    'PT-TS1026': ms > 0 ? r2(Math.max(-1, stage(K.ts26))) : r2(0),
-    'TT-TS1014': r1(extT(K.ext['TT-TS1014'])),
-    'TT-TS1018': r1(extT(K.ext['TT-TS1018'])),
-    'TT-TS1023': r1(extT(K.ext['TT-TS1023'])),
-    'TT-TS1027': r1(extT(K.ext['TT-TS1027'])),
+    'PT-TS1026': xP('ext.lp2'),
+    'TT-TS1014': xT('ext.hp1'),
+    'TT-TS1018': xT('ext.da'),
+    'TT-TS1023': xT('ext.lp3'),
+    'TT-TS1027': xT('ext.lp2'),
     PICR19011: r2(pcr),
     PICR19012: r2(pcr),
     PICR19013: r2(pcr),
@@ -1034,7 +1030,7 @@ function anSuFw(x, pd, p1) {
    BFWP discharge (U.fwPd, PT-FW1011) less the drum (U.Pd) less the line on each side, both with the square of the flow: pump to valve
    1.5 kg/cm2 at 480 T/H (KSB data sheet discharge 165.1 at 491 T/H against the valve P1 163.6, COND 1), valve to drum 2.2 kg/cm2 at
    480 T/H (P2 147.2 against the drum at MCR 145.0 = SH outlet 129 + SH pressure drop 16, FHI P2S7 design data). Check at 150 MW
-   (Start at 150 MW: drum 133.3, BFWP 165.6): 475 T/H at about 64 % travel; HMI snapshot 03.png 499 T/H at 56 % (check only) */
+   (Start at 150 MW: drum 133.3, BFWP 165.6): 475 T/H at about 64 % travel */
 const AN_MFW = {
   pts: [
     [6, 4.49],
