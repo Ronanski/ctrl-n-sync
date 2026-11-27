@@ -2084,7 +2084,8 @@ function anAuxStep(U, dt) {
   const gsOn = c ? (c.gsOn != null ? !!c.gsOn : !!c.gland || !!c.fromLoad) : onLoad;
   if (c && c.gsOn == null) c.gsOn = gsOn;
   if (!isFinite(U.gsP)) U.gsP = gsOn ? K.gSv : 0;
-  if (!isFinite(U.gsY)) U.gsY = gsOn && onLoad ? -42.6 * Math.max(0, Math.min(1, (+U.MW || 0) / 150)) : 0;
+  /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history; was -42.6 % x MW / 150 of 29.PNG): the gland PI starts at rest; a save (st150) brings its state */
+  if (!isFinite(U.gsY)) U.gsY = 0;
   const Tc = isFinite(U.cdTs) ? U.cdTs : isFinite(U.Tamb) ? U.Tamb : 30,
     Psc = Math.min(1.033, anPsat(Tc));
   if (!isFinite(U.cdAirP))
@@ -2108,7 +2109,6 @@ function anAuxStep(U, dt) {
     m1396 = pos('DITL-55', onLoad ? 100 : 0),
     mVb = pos('DITL-56', 0),
     cep = srcBit(['M.3350', 'M.3351']) ? 1 : 0,
-    L = Math.max(0, Math.min(1, (+U.MW || 0) / 150)),
     Pcr0 = 34.4 * (36.6 / 35.1) + 1.033,
     Patm = 1.033;
   const n = Math.max(1, Math.ceil(dt / 0.1)),
@@ -2143,7 +2143,12 @@ function anAuxStep(U, dt) {
         onLoad && Pcra > Pga
           ? (K.Whp0 * Math.sqrt(Pcra * Pcra - Pga * Pga)) / Math.sqrt(Pcr0 * Pcr0 - 1.353 * 1.353)
           : 0,
-      wGu = oU > 0 ? anStmW(K.cvGu * Math.pow(50, oU - 1), Pg, Math.max(Pc, 0.366 * L) - 1.0332, 364) : 0;
+      /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history; was the back pressure max(Pc, 0.366 x MW / 150) and 364 C of 29.PNG): PV-GS1034 spills
+         to the No.1 LP heater (HB case 1, via FV-GS1036): its shell = the extraction VI pressure of RIN's port ext.lp1 (ata), not below
+         the condenser; the steam at the gland header temperature (TEGS1002) */
+      lp1 = typeof anPortGet === 'function' ? anPortGet(U, 'ext.lp1') : null,
+      Pu = Math.max(Pc, lp1 && isFinite(lp1.P) ? lp1.P : Pc),
+      wGu = oU > 0 ? anStmW(K.cvGu * Math.pow(50, oU - 1), Pg, Pu - 1.0332, isFinite(U.asTgs) ? U.asTgs : K.Tg) : 0;
     /* header pressures: dm = V drho/dP dP (drho/dP of IF97 at the header state) */
     const dRa = Math.max(0.05, (steamRho(Pa + 0.05, K.Ta) - steamRho(Pa - 0.05, K.Ta)) / 0.1),
       dRg = Math.max(0.05, (steamRho(Pg + 0.05, K.Tg) - steamRho(Pg - 0.05, K.Tg)) / 0.1);
