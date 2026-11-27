@@ -2154,6 +2154,10 @@ function anAuxStep(U, dt) {
     metal('asTgs', TgsIn, wGs, K.Mc17, K.UA17, 0, Ta0);
     U.asT1 = T1;
     U.asT3 = T3;
+    /* Phase 11 (SUZU 2026-11-27): the aux steam header for the other parts (ports.js aux.hdr: NANA deaerator pegging, RIN, MEI):
+       P kg/cm2 g = the header volume above, T = TT-AS1003 (the header metal balance), h kJ/kg of IF97 at that state */
+    if (typeof anPortSet === 'function')
+      anPortSet(U, 'aux.hdr', { P: U.asP, T: T3, h: U.asP > -0.9 ? steamH(U.asP, Math.max(tsA, T3)) : NaN });
     anUnitWrite(U.asTAI[0], U.asT1);
     anUnitWrite(U.asTAI[1], U.asT17);
   }
