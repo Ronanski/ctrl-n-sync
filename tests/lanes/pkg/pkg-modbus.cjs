@@ -9,7 +9,7 @@
       in REMOTE); CE rapping first delay 3 / 5 / 7 / 9 / 11 min, then 2 min on, 7 / 13 / 19 / 23 / 27 min off for fields 1 ~ 5; DE first
       delay 11 ~ 19 min, then continuous (off 0); after the TRs go off the CE rapping runs continuous for 2 h, then the aux devices stop
    8. fly ash: the wet unloader is cancelled (FA p13): its points are spare, 0
-   7. fly ash: the plant air low switch from the plant air model, no fail, no command; the tank valves have no value (NO-SOURCE times) */
+   7. fly ash: the plant air low switch from the plant air model, no fail, no command; the tank valves come from the blow tank cycle of Phase 11 (pkgFaStep, L5-1 design data) */
 'use strict';
 const fs = require('fs'),
   path = require('path');
@@ -82,7 +82,7 @@ const ok = (c, m) => {
   ok(JSON.stringify(e.post) === '[1,0,1,0]', 'after the TRs go off: CE continuous and aux on for 2 h, then off');
   const fa = JSON.parse(E.js(`JSON.stringify([AN.pkgRead('fa','40006.08'),AN.pkgRead('fa','40001.05'),AN.pkgRead('fa','40051'),AN.pkgRead('fa','40001.02')])`));
   ok(fa[0] === 0 && fa[1] === 0 && fa[2] === 0, 'fly ash at 150 MW: plant air not low, no tank fail, no DCS command');
-  ok(Number.isNaN(fa[3]) || fa[3] === null, 'fly ash tank valves stay without a value (cycle times NO-SOURCE)');
+  ok(fa[3] === 0 || fa[3] === 1, 'fly ash tank valve 40001.02 has a value from the blow tank cycle (Phase 11 SUZU, L5-1 design data): ' + fa[3]);
   const wu = JSON.parse(E.js(`JSON.stringify(['40009.04','40009.06','40009.07','40009.09','40009.1'].map(n=>AN.pkgRead('fa',n)))`));
   ok(wu.every(x => x === 0), 'wet unloader cancelled: its points read 0: ' + wu.join(' '));
   process.exit(bad ? 1 : 0);
