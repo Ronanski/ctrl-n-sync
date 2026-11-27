@@ -410,3 +410,38 @@ function anFgMol(cb, r, oil, air, lm, cap, stm) {
 /* the design gas of the furnace at 100 % MCR, the base of the gas velocity share uRel (DESIGN-SRC: FHI P2S7 Fig 13 coal 89.5 T/H and
    limestone 12 T/H, Fig 12 total air 596 T/H, design coal r 1, the S taken up at the design 200 ppm of 1822: 0.89) */
 const AN_FG0 = anFgMol(89.5, 1, 0, 596, 12, 1 - 200 / 1822, 0);
+
+/* Phase 11 AOI 2026-11-28 (phase thread ask, the coal row of the sweep judge): the heat the plant holds, kJ, from the engine's own
+   stores, so a judge of a steady design curve on a ramp minute can take out the stored heat that leaves or enters (dE/dt). Read only,
+   changes no plant state. Only dE/dt has a meaning (absolute temperatures, no reference state). The terms are the same capacities the
+   scan integrates, nothing new:
+   - bed: inventory U.bedI t x AN_BB.cpS x U.Tb (unit.js bed balance Cb);
+   - lining: AN_BB.mRef kJ/K x U.Trf;
+   - drum water and evaporative steel: U.Cw (T/H s per K) x AN_BB.kW x U.Tw (unit.js drum law, r = B.kW / kWe);
+   - drum steam space and flash: AN_STORE.cs (T/H s per kg/cm2) x U.kWe x U.Pd (the same drum law);
+   - reheat pipe: U.rhPipeM kJ/K x U.TpR;
+   - tube metal of every bank: AN_HX [metal kJ/K] x U.hxM (hx.js; U.shM / U.rhM are not used by the scan and are not counted);
+   - coal held in the bed (char store): U.cbed t x AN_BB.lhvC x 3600 x (1 - AN_BB.fUC), the heat it gives when it burns. */
+function anStoredE(U) {
+  if (!U) return NaN;
+  const B = AN_BB,
+    n = x => (isFinite(x) ? x : 0),
+    M = U.hxM,
+    K = AN_HX;
+  let hx = 0;
+  if (M)
+    for (const k of Object.keys(K.m0)) {
+      const m = M[k];
+      if (Array.isArray(m)) m.forEach((t, i) => (hx += n(K[k][i][0]) * n(t)));
+      else hx += n(K[k][0]) * n(m);
+    }
+  return (
+    n(U.bedI) * 1000 * B.cpS * n(U.Tb) +
+    B.mRef * n(U.Trf) +
+    n(U.Cw) * B.kW * n(U.Tw) +
+    AN_STORE.cs * n(U.kWe) * n(U.Pd) +
+    (U.rhPipeM || 10000) * n(U.TpR) +
+    hx +
+    n(U.cbed) * B.lhvC * 3600 * (1 - B.fUC)
+  );
+}
