@@ -1383,8 +1383,9 @@ function tcsGovCmd(U, cmd, arg) {
 }
 /* one scan of the GOV SET / LLM SET (called by anTbFlow with the flow demand fd before the LLM select); returns the flow demand after the
    low select of TCE206. TCE206 p.140: LSG009 (GOV path, LLM SET) comes BEFORE ADD010 PRESS COMPENSATE (LME237): the GOV SET and the LLM are
-   in load (steam flow at the rated pressure), the compensation turns that into valve opening. Steam flow through the CVs is proportional
-   to opening x main steam pressure (this model: m = Kt x gv x MSP, anUnitStep), so the load-equivalent GOV path = fd x MSP / MSP at the
+   in load (steam flow at the rated pressure), the compensation turns that into valve opening. Steam flow through the CVs is about
+   proportional to opening x main steam pressure (choked nozzle; this model solves the CVs in series with the HP blading, turbine.js
+   tbMsFlow), so the load-equivalent GOV path = fd x MSP / MSP at the
    150 MW anchor (U.Pms / U.P0), and the flow demand after the select = that over the same ratio. So a low main steam pressure at full
    load opens the valves past 100 % without the LLM cutting it, as on the drawing */
 function tcsGovLlm(U, tb, fd, dt) {
@@ -1454,7 +1455,7 @@ const TCS_VT_ON = { msvA: 'MSV(A)', msvB: 'MSV(B)', cvA: 'CV(A)', cvB: 'CV(B)', 
    - PERM: CRV(A) FULL CLOSE TEST PERMISSIVE (TCE224, one test at a time), TRANSFER REGION COMPLETE(IP), RSV(B) POSITION >= 98 % (CMP 97 / 98 %).
      No load limit on the sheets (the other side passes the IP steam, below).
    - CRV(A) TEST PB ON -> ICV(A) TEST SIGNAL (TCE227 OR002) -> the ICV closes at the valve test speed 10 %/s (TCE214 SG 016 / 018) to the
-     ICV TEST POSITION (CPL 10 / 11 %); then, after TD A019 1.0 s, ICV(A) FAST ACTING (TEST) dumps it shut (the trip oil speed U.tauTrip);
+     ICV TEST POSITION (CPL 10 / 11 %); then, after TD A019 1.0 s, ICV(A) FAST ACTING (TEST) dumps it shut (the fast-acting speed AN_TBV.icvOpc, turbine.js);
      then the CRV(A) TEST COMMAND closes RSV(A) the same way (LME250 TP 5 s: the RSV must move at once); at RSV(A) FULL CLOSE (CPL 2 / 3 %)
      the test is complete (COMP), the RSV reopens (the reset opening speed of the stop valves of tcs-trip.js tcsValves, 10 s full stroke,
      inside the 10 ~ 40 s of the vendor) and, once RSV(A) is FULL OPEN, the ICV test signal goes off and the ICV reopens at 10 %/s.
@@ -1494,17 +1495,10 @@ function tcsVtSide(U, s) {
   if (!vt) return g;
   return Math.max(0, Math.min(g - vt['d' + s], 1.4 * vt['m' + s]));
 }
-/* the effective CV lift that passes steam: the two sides, half the flow each */
-function tcsVtLift(U) {
-  const g = +U.gv || 0,
-    vt = U.tb && U.tb.vt;
-  if (!vt || (!vt.sel && !vt.dA && !vt.dB && vt.mA >= 1 && vt.mB >= 1)) return g;
-  return 0.5 * (tcsVtSide(U, 'A') + tcsVtSide(U, 'B'));
-}
-/* the CV group lift of a side alone (the T/G Modbus CV position), 0 ~ 1.4 */
+/* the CV lift of a side (the T/G Modbus CV position, 0 ~ 1.05): the TCS position demand FG 003 / 036 of its flow demand (turbine.js tbCvLift) */
 function tcsVtCv(U, s) {
   const vt = U.tb && U.tb.vt;
-  return Math.max(0, (+U.gv || 0) - (vt ? vt['d' + s] : 0));
+  return tbCvLift(U, s, Math.max(0, (+U.gv || 0) - (vt ? vt['d' + s] : 0)));
 }
 /* the MSV opening of a side as the test leaves it, 0 ~ 1 (the trip oil position tcsVp of tcs-trip.js multiplies it) */
 function tcsVtMsv(U, s) {
@@ -1640,7 +1634,7 @@ function tcsVtCrv(U, vt, dt) {
     s = v.slice(-1),
     i = 'i' + s,
     r = 'r' + s,
-    fast = dt / (U.tauTrip || 1);
+    fast = dt / AN_TBV.icvOpc;
   vt.t += dt;
   if ((vt.ph === 'icv' || vt.ph === 'icvw' || vt.ph === 'rsv') && vt.t > 60) {
     Object.assign(vt, { ph: 'rsvo', t: 0 });

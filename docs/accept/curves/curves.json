@@ -33,15 +33,11 @@
     "lph3_ext_kgh": [4251, 5603, 6963, 8422, 10009, 12531, 15246],
     "lph2_ext_kgh": [3426, 4525, 5685, 6871, 8190, 10192, 12270],
     "lph1_ext_kgh": [2243, 4184, 6060, 7935, 10093, 13357, 16834],
-    "three_cases_only": {
-      "cases": ["30 %", "60 %", "100 %"],
-      "crh_TH": [145.0, 265.4, 446.1], "crh_C": [328.8, 358.1, 370.2],
-      "hrh_TH": [134.8, 243.1, 400.9], "hrh_ata": [11.51, 21.13, 34.77],
-      "fw_C": [188.6, 218.0, 245.4], "fw_TH": [150.3, 273.7, 458.7],
-      "heat_rate_kcal_kWh": [2331, 2079, 1989],
-      "missing": "the same rows for 40 / 50 / 70 / 85 %",
-      "status": "repo (3 cases), pc (4 cases)"
-    },
+    "all_cases_src": "PPE-14-0725 R1 heat balance cases 7, 6, 5, 4, 3, 2, 1 (30 to 100 % load, the order of mw): CRH / HRH G P T, final FW T and G to boiler, TGHR (RIN read /mnt/project-files/turbine-hb-read-2026-11-27.md, 2026-11-28; was three cases only, 30 / 60 / 100 %)",
+    "crh_TH": [145.0, 184.7, 224.9, 265.4, 309.8, 377.0, 446.1], "crh_C": [328.8, 335.5, 346.6, 358.1, 361.5, 365.3, 370.2],
+    "hrh_TH": [134.8, 170.7, 206.9, 243.1, 282.4, 341.1, 400.9], "hrh_ata": [11.51, 14.71, 17.91, 21.13, 24.53, 29.6, 34.77],
+    "fw_C": [188.6, 200.0, 209.6, 218.0, 225.9, 236.2, 245.4], "fw_TH": [150.3, 191.1, 232.3, 273.7, 319.2, 387.9, 458.7],
+    "heat_rate_kcal_kWh": [2331, 2205, 2129, 2079, 2049, 2014, 1989],
     "from": "src/analog/engine/unit.js AN_TBW / AN_HB (lines 2713-2790); tools/accept/part1.cjs; docs/ACCEPTANCE.md. MW per case checked: shaft (wh + wi) less losses gives 45.00 / 59.99 / 74.99 / 89.99 / 104.97 / 127.46 / 150.00",
     "bypass_sheet": { "src": "PPE-14-0728 R1 (bypass cases, ten cases)", "status": "pc (only LP bypass point 5 ratio in unit.js line 5967)" }
   }
