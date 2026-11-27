@@ -29,6 +29,11 @@
   "- tau 56 h: CALC from the plant DCS trend (team-files/plant-trends, Scenario 1 Trend B, 60 s samples, PC only). Held loads, no load",
   "const AN_FOUL = { rInf: 0.0042 /* m2K/W, CALC (see above) */, tau: 56 * 3600 /* s, CALC from the plant trend (see above) */, e: 0.8 /* NO-SOURCE */, mcr: 89 },"
  ],
+ "src/analog/engine/turbine.js": [
+  "/* 3.2.3 (SAKURA, coordinator / Jennie 2026-11-15: the MW line MW = c x steam - mwK was fitted on the plant trends of 2026-11-08, which",
+  "pressure swings as on the plant (plant trend SCENARIO 1 A, 150 MW hold: MW sd 0.43, MW / MSF correlation 0.86, MW / MSP 0.40). With the",
+  "and the 60 s averages of the plant trends), Pe = the house load (elec.js). On the grid (52L1 closed) the grid holds 3600 rpm (the"
+ ],
  "src/analog/engine/unit.js": [
   "tauMW: 10 /* s, steam flow -> MW (reheater, NO-SOURCE: the plant trends are 60 s averages, too slow to fit it) */,",
   "/* F11 (user 2026-11-13: the ratio of beta.206 / 207 was a curve fit, not a model). Superheater and reheater tube metal, heated by the flue",
@@ -38,15 +43,12 @@
   "const ld = Math.max(0, Math.min(1, (isFinite(U.MW) ? U.MW : 0) / 150)),",
   "the transmitter elevation, calibrated to 16.9 at 150 MW); current = 28.1 A x shaft power / 245.7 kW (snapshot ratio). */",
   "current = 289.4 A x shaft power / its power at 150 MW (snapshot ratio); strainer DP = 0.29 x (flow / 549)^2. */",
-  "/* 3.2.3 (SAKURA, coordinator / Jennie 2026-11-15: the MW line MW = c x steam - mwK was fitted on the plant trends of 2026-11-08, which",
   "Design beside it (Audit 3 ranking 5, user Q4 \"close to the DCS 150 MW data, tuned from design, small tolerance\"):",
   "L = Math.max(0, Math.min(1, (+U.MW || 0) / 150)),",
   "if (!isFinite(U.gsY)) U.gsY = gsOn && onLoad ? -42.6 * Math.max(0, Math.min(1, (+U.MW || 0) / 150)) : 0;",
   "L = Math.max(0, Math.min(1, (+U.MW || 0) / 150)),",
   "from one load of the feeder to the next. Plant DCS trend scenario 1 (team-files/plant-study/14-plant-trends, 60 s values, 150 MW held",
   "The spreads are set from the plant trend above, which measures them: clSd so the coal flow (the load cells) moves sd 0.45 T/H (headless",
-  "and the 60 s averages of the plant trends), Pe = the house load (elec.js). On the grid (52L1 closed) the grid holds 3600 rpm (the",
-  "pressure swings as on the plant (plant trend SCENARIO 1 A, 150 MW hold: MW sd 0.43, MW / MSF correlation 0.86, MW / MSP 0.40). With the",
   "/* beta.261: the steam made (U.Qs) is the bed / wall heat balance below over the boiling heat; the fuel line a x coal (a fitted on the",
   "2026-11-08 plant trends) and its lag tauF are gone */"
  ]

@@ -46,6 +46,8 @@
   --hx-pen4: #178a8e;
   --hx-pen5: #7a52c7;
   --hx-pen6: #55626f;
+  --hx-pen7: #b8452f;
+  --hx-pen8: #4f7d2a;
   /* realistic look (hx-real.js): steel from light to dark, the edge of a body, the inside of a cut, concrete, a display */
   --rx-st1: #ffffff;
   --rx-st2: #c9d2db;
@@ -108,6 +110,8 @@
     --hx-pen4: #3fbfc3;
     --hx-pen5: #a98bf0;
     --hx-pen6: #aab4bf;
+    --hx-pen7: #f08a6e;
+    --hx-pen8: #8fc65a;
     --rx-st1: #c3ced9;
     --rx-st2: #6b7885;
     --rx-st3: #323c46;
@@ -167,6 +171,8 @@
   --hx-pen4: #3fbfc3;
   --hx-pen5: #a98bf0;
   --hx-pen6: #aab4bf;
+  --hx-pen7: #f08a6e;
+  --hx-pen8: #8fc65a;
   --rx-st1: #c3ced9;
   --rx-st2: #6b7885;
   --rx-st3: #323c46;
