@@ -14,12 +14,9 @@
                "OIL SUPPLY LINE VALVE (1) / (2) OPENED") -> PT-DO1043-x2 -> oil gun (FT-DO1043-x, PV of FICDO1043x)
             -> return PCV-DO1009 (the MV of PICDO1008: back pressure of the ring) -> tank.
    Sources:
-     pump, valves, line: from the design documents (AN_DO notes, Phase 11 2026-11-27). The HMI snapshot 6.PNG (PIDO0005 12.8 kg/cm2
-              with PCV-DO0002 24.2 %, PIDO1008 11.0, P-0702A 25.4 A, burners off) and SOP PR-OPE-5002 sect 20 (PI-DO0005 12.5,
-              PI-DO1008 10.4 kg/cm2) are checks only.
+     pump, valves, line: from the design documents (AN_DO notes, Phase 11 2026-11-27).
      burner   M&S load curve 1612 13-4-71 (tip N 90 AG 8, LMYP-1, on the PC): oil pressure linear in the flow, 5.0 bar at 3072 kg/h
-              (MAX), 614.4 kg/h MIN (range 1:5, BMS description 1612 13-4-105); SOP 27: "Oil pressure for burner min = 1 kg/cm2 and
-              max = 5 kg/cm2", "min = 614.4 ... max = 3078". Burner supply 10.5 kg/cm2 (MB-022 items 8-1 ~ 8-4): FCV-DO1043-x3 full
+              (MAX), 614.4 kg/h MIN (range 1:5, BMS description 1612 13-4-105). Burner supply 10.5 kg/cm2 (MB-022 items 8-1 ~ 8-4): FCV-DO1043-x3 full
               open gives the MAX at that ring pressure (DESIGN-SRC: MB-022 8-x and the M&S curve).
      limits   alarm list "Alarm List _20160912": PT-DO0005 H 19.5 / normal 15 / L 5 / LL 3; LT-DO0701 H 7.5 / L 3, 2 / LL 0.2 m;
               DPT-DO0001 H 0.1 / HH 0.2; PT-DO1043-x2 HH 6.0 / H 5.5 / L 0.8. DITL-31 (drawing): tank < 0.2 m and strainer > 0.8
@@ -27,7 +24,7 @@
      tank area A from the inventory table (below); oil density 0.87 from the pump data (below); current and pressure lags (1 s),
               the unit 2 branch closed. */
 const AN_DO = {
-  /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history, the valve sizes, the line and the pump current were CALIBRATED on 6.PNG). From the
+  /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history, the valve sizes, the line and the pump current were a plant calibration). From the
      design documents (YUA PC read, /mnt/project-files/suzu-pc-answers-2026-11-27.md 3):
      pump     DESIGN-SRC: ALLWEILER SNH660 ER40E6.9-W2 data K1AU3-D1-0-060 R0 p 6 / 8: 33.9 m3/h at 15.5 bar dP, 1.8 mm2/s, oil 0.87
               kg/dm3 = 29.5 T/H (a screw pump: the flow stays with the pressure). MB-022 items 2-1 / 2-2 print 25 T/H, the system
@@ -54,7 +51,7 @@ const AN_DO = {
     Math.sqrt(
       10.5 - 5 / 0.980665
     ) /* FCV-DO1043-x3 full open: MAX 3072 kg/h at 5 bar with 10.5 kg/cm2 ring (MB-022 8-x) */,
-  dp0: 0.029 /* kg/cm2 strainer at 25 T/H, 6.PNG (NO-SOURCE: no strainer sheet read yet) */,
+  dp0: 0.029 /* kg/cm2 strainer at 25 T/H (SNAPSHOT-TO-REPLACE: read from the plant; no strainer sheet read yet) */,
   /* the motor (DESIGN-SRC: TECO 40 HP 4P 460 V, D1-0-060 p 9: FLC 46.0 A, eff 92.5 %, pf 88.0 %) and the pump power (ALLWEILER SNH 660
      p 7 / 8: shaft 2.6 kW at 0 bar + 1.09 kW per bar, 19.5 kW at 15.5 bar). Current = sqrt(Ia^2 + Im^2): active Ia = P / (eff x sqrt3 x
      460 V); the magnetizing current of an induction motor hardly changes from no load to full load, so Im = the reactive current
@@ -72,10 +69,9 @@ const AN_DO = {
      (offer XZ-EPPA31 2014-02-21, K1AU3-D1-0-060 R0 Engineering Data of Diesel Oil Pump p 7, PC only): "Liquid pumped Diesel Oil,
      Density 0,87 kg/dm3", 40 C. Used only for the tank level (the volume of the oil burnt) */
   rho: 0.87 /* t/m3 */,
-  L0: 4.978 /* m, 6.PNG */,
-  /* the field valves of the diesel oil line-up (SOP 20, PD-022 1/5 Rev D): tank outlet V-DO0003, strainer inlet V-DO0004, pump A
-     suction V-DO0015 / discharge V-DO0007, pump B suction V-DO0016 / discharge V-DO0009 (SOP 20 names the discharge "V-DO0017": not
-     on PD-022, the drawing is used); open in service */
+  L0: 4.978 /* m, the tank level of the start state (SNAPSHOT-TO-REPLACE: read from the plant) */,
+  /* the field valves of the diesel oil line-up (PD-022 1/5 Rev D): tank outlet V-DO0003, strainer inlet V-DO0004, pump A
+     suction V-DO0015 / discharge V-DO0007, pump B suction V-DO0016 / discharge V-DO0009; open in service (the start state) */
   fv0: { 'V-DO0003': 100, 'V-DO0004': 100, 'V-DO0015': 100, 'V-DO0007': 100, 'V-DO0016': 100, 'V-DO0009': 100 },
   pv: [
     ['V-DO0015', 'V-DO0007'],
@@ -86,7 +82,7 @@ const AN_DO = {
   svc: ['M.3410', 'M.3411', 'M.3416', 'M.3417'] /* ABC-003x "SUPPLY OIL VALVE CLOSE" (unit.js comment of AN_UNIT ao) */,
   rows: { sv1: 21, sv2: 23 } /* DITL-16 output rows (0-based) "OIL SUPPLY LINE VALVE (1) / (2) OPENED" */
 };
-/* the opening of a diesel oil field valve (0 ~ 100 %): the field operator's (AN_SRC.valve) or the line-up of the SOP */
+/* the opening of a diesel oil field valve (0 ~ 100 %): the field operator's (AN_SRC.valve) or the line-up of the start state */
 function anDoFv(tag) {
   const V = (typeof AN_SRC !== 'undefined' && AN_SRC.valve) || {};
   return isFinite(V[tag]) ? V[tag] : AN_DO.fv0[tag];
