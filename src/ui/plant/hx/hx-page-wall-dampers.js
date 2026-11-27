@@ -101,6 +101,55 @@
         { x: 100, y: 46, s: 'FRONT WALL, 14 AIR PORTS', cls: 'hx-zone' },
         { x: 100, y: 570, s: 'REAR WALL, 8 AIR PORTS', cls: 'hx-zone' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Secondary air to the wall ports',
+        pens: [
+          ['Secondary air flow', 'pv:FICFA1081', 't/h', 0],
+          ['Header pressure', 'PT-FA1088', 'mmH₂O', 0],
+          ['Header temperature', 'TT-FA1087', '°C', 0]
+        ]
+      },
+      {
+        title: 'Front wall ports 1 to 4',
+        pens: [
+          ['Upper port 1', 'mv:HICFA1005', '%'],
+          ['Lower port 1', 'mv:HICFA1006', '%'],
+          ['Upper port 2', 'mv:HICFA1007', '%'],
+          ['Lower port 2', 'mv:HICFA1008', '%'],
+          ['Upper port 3', 'mv:HICFA1009', '%'],
+          ['Lower port 3', 'mv:HICFA1010', '%'],
+          ['Upper port 4', 'mv:HICFA1011', '%'],
+          ['Lower port 4', 'mv:HICFA1012', '%']
+        ]
+      },
+      {
+        title: 'Front wall ports 5 to 7',
+        pens: [
+          ['Upper port 5', 'mv:HICFA1013', '%'],
+          ['Lower port 5', 'mv:HICFA1014', '%'],
+          ['Upper port 6', 'mv:HICFA1015', '%'],
+          ['Lower port 6', 'mv:HICFA1016', '%'],
+          ['Upper port 7', 'mv:HICFA1017', '%'],
+          ['Lower port 7', 'mv:HICFA1018', '%']
+        ]
+      },
+      {
+        title: 'Rear wall ports 1 to 4',
+        pens: [
+          ['Upper port 1', 'mv:HICFA1019', '%'],
+          ['Lower port 1', 'mv:HICFA1020', '%'],
+          ['Upper port 2', 'mv:HICFA1021', '%'],
+          ['Lower port 2', 'mv:HICFA1022', '%'],
+          ['Upper port 3', 'mv:HICFA1023', '%'],
+          ['Lower port 3', 'mv:HICFA1024', '%'],
+          ['Upper port 4', 'mv:HICFA1025', '%'],
+          ['Lower port 4', 'mv:HICFA1026', '%']
+        ]
+      }
+    ]
   });
 })();

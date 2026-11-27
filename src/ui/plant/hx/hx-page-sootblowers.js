@@ -293,6 +293,23 @@
           cls: 'hx-note'
         }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Sootblower steam',
+        pens: [
+          ['Header pressure', 'pv:PICSB1052', 'kg/cm²', 2],
+          ['Set point', 'sv:PICSB1052', 'kg/cm²', 2],
+          ['Pressure control valve', 'mv:PICSB1052', '%'],
+          ['Hot end pressure', 'PT-SB1040', 'kg/cm²', 2],
+          ['Cold end pressure', 'PT-SB1042', 'kg/cm²', 2],
+          ['Drain A temperature', 'TT-SB1056', '°C'],
+          ['Drain B temperature', 'TT-SB1057', '°C'],
+          ['System current', 'IT-SB01', 'A']
+        ]
+      }
+    ]
   });
 })();

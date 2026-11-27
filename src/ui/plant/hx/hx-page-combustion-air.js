@@ -297,6 +297,43 @@
         { x: AX + 350, y: AY - 20, s: 'Back-up drive of the air heater', cls: 'hx-note', anchor: 'middle' },
         { x: 1500, y: 150, s: 'Total air flow', key: 'ABC-002|SI0060', unit: 't/h', cls: 'hx-name' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Primary air',
+        pens: [
+          ['Primary air flow', 'pv:FICFA1071', 't/h', 0],
+          ['Set point', 'sv:FICFA1071', 't/h', 0],
+          ['Inlet vane', 'mv:FICFA1071', '%'],
+          ['Fan current', 'IT-F1053', 'A', 0],
+          ['Fan outlet pressure', 'PT-FA1075', 'mmH₂O', 0],
+          ['Hot primary air', 'TT-FA1076', '°C', 0]
+        ]
+      },
+      {
+        title: 'Secondary air',
+        pens: [
+          ['Secondary air flow', 'pv:FICFA1081', 't/h', 0],
+          ['Set point', 'sv:FICFA1081', 't/h', 0],
+          ['Inlet vane', 'mv:FICFA1081', '%'],
+          ['Fan current', 'IT-F1054', 'A', 0],
+          ['Fan outlet pressure', 'PT-FA1085', 'mmH₂O', 0],
+          ['Hot secondary air', 'TT-FA1087', '°C', 0]
+        ]
+      },
+      {
+        title: 'Fluidizing air blowers and total air',
+        pens: [
+          ['Total air flow', 'ABC-002|SI0060', 't/h', 0],
+          ['Blower air flow', 'FT-FA1055', 't/h'],
+          ['Blower A current', 'IT-F1055A', 'A', 0],
+          ['Blower B current', 'IT-F1055B', 'A', 0],
+          ['Inlet damper A', 'mv:FICFA1055A', '%'],
+          ['Inlet damper B', 'mv:FICFA1055B', '%']
+        ]
+      }
+    ]
   });
 })();

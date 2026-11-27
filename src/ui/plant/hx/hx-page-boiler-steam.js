@@ -330,6 +330,42 @@
         { x: 1640, y: 596, s: 'sets spray 2', cls: 'hx-note', anchor: 'middle' },
         { x: 150, y: 152, s: 'sets spray 1', cls: 'hx-note', anchor: 'middle' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Drum',
+        pens: [
+          ['Drum level 1', 'ABC-010|LIBR10011.PV', 'mm', 0],
+          ['Drum level 2', 'ABC-010|LIBR10012.PV', 'mm', 0],
+          ['Drum level 3', 'ABC-010|LIBR10013.PV', 'mm', 0],
+          ['Drum pressure', 'PT-BR1001-1', 'kg/cm²'],
+          ['Main steam flow', 'FT-MS1031', 't/h', 0],
+          ['Main steam pressure', 'PT-MS1002', 'kg/cm²']
+        ]
+      },
+      {
+        title: 'Superheater temperatures',
+        pens: [
+          ['Panel 1 outlet', 'TT-BR1120-1', '°C', 0],
+          ['Panel 2 inlet', 'TT-BR1130-1', '°C', 0],
+          ['Panel 2 outlet', 'TT-BR1140-1', '°C', 0],
+          ['Finishing superheater inlet', 'TT-BR1150-1', '°C', 0],
+          ['Main steam temperature', 'pv:TICMS1004', '°C', 0],
+          ['Main steam temperature set point', 'sv:TICMS1004', '°C', 0]
+        ]
+      },
+      {
+        title: 'Superheater spray',
+        pens: [
+          ['Spray 1 output', 'mv:TICBR1130', '%'],
+          ['Spray 1 water', 'FT-FW1109', 't/h'],
+          ['Spray 2 output', 'mv:TICBR1150', '%'],
+          ['Spray 2 water', 'FT-FW1119', 't/h'],
+          ['Final temperature control output', 'mv:TICMS1004', '%']
+        ]
+      }
+    ]
   });
 })();

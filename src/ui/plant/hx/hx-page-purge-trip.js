@@ -267,6 +267,29 @@
         { x: 306, y: 638, s: 'the purge complete 7 s after the trip.', cls: 'hx-note' },
         { x: 306, y: 654, s: 'Reset: purge completed, no trip input left.', cls: 'hx-note' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Air and furnace for the purge',
+        pens: [
+          ['Total air flow', 'ABC-002|SI0060', 't/h', 0],
+          ['Primary air', 'pv:FICFA1071', 't/h', 0],
+          ['Secondary air', 'pv:FICFA1081', 't/h', 0],
+          ['Furnace pressure 1', 'PT-FG1085', 'mmH₂O', 1],
+          ['Furnace pressure 2', 'PT-FG1086', 'mmH₂O', 1],
+          ['Induced draft fan current', 'IT-F1056', 'A', 0]
+        ]
+      },
+      {
+        title: 'Bed temperature',
+        pens: [
+          ['Lower bed temperature', 'TT-FG1090', '°C', 0],
+          ['Cyclone outlet A', 'TT-FG1095-A', '°C', 0],
+          ['Cyclone outlet B', 'TT-FG1095-B', '°C', 0]
+        ]
+      }
+    ]
   });
 })();
