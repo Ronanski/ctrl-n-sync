@@ -23,5 +23,12 @@ GO FIX 11 (user 2026-11-27 12:37 PM PHT), rank 6 of /mnt/project-files/phase11/a
   (HB 15.2 / 12.3 / 16.8) at 392 T/H condensate (design 362.6: the deaerator level valve is open wide from the old st150).
 - no-fit 0 new, one-path PASS (baseline lost cdP / anVacMW), model ports PASS.
 
-## Not tested / left
-- st150 settled from main after PR 669 merges; behaviour gate; sweep before / after.
+- st150 settled FROM main's st150 (KANA's settle.cjs, headless, 20 + 40 + 40 + 40 plant min). The old start had the deaerator at
+  -218 mm with LCV-CD1104 wide open (the start was made on the old condensate law); the level loops recover with a slow damped swing
+  (deaerator +161 -> +5 -> +107 -> +76 mm, LCV 72 ~ 86 %, hotwell within +-50 mm at the end). At the end 151.06 MW, MSP 122.4.
+- Behaviour gate 20 min on the new start: ALL PASS (MW 151.06 -> 150.96, Pms max move 0.26, drum level max move 5.5 mm, no trip).
+- tests/lanes/integrator/tcs-motors.cjs PASS on the new start.
+
+## Left
+- The deaerator needs ~392 T/H of condensate (design 362.6): the model HP heater drains to the deaerator are ~46 T/H against HB 69
+  (NANA, told by the phase thread). With that fixed the LCV comes back down from ~80 %.
