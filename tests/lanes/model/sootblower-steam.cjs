@@ -8,9 +8,9 @@
 //     1.2 kg/s = 4.32 T/H for about 230 s, 276 kg in one operation (the table); N-1035 (common economizer, IK4M-PT) 0.9 kg/s for
 //     about 98 s, 88 kg; the water that leaves the drum (AN_CYC.dl) grows by that steam; nothing after the lance is back.
 //   - the air heater blowers (L20 Gas air heater O&M manual: 3900 kg/hour per lance, 19 min 40 s per lance, hot & cold end sequential):
-//     the start command of DITL-80F row 25 runs N-1040 (hot end, PT-SB1040 = header, off its reset position) then N-1042, 2 x 1278 kg.
-// Usage: node tests/regress/sootblower_steam.js [html]
-const { open } = require('./lib.js');
+//     the start command of DITL-80F row 25 runs N-1040 (hot end, PT-SB1040 = header, off its reset position) then N-1042, 2 x 1209 kg (steam while the poppet is open, Mk VX-AB manual).
+// Usage: node tests/lanes/model/sootblower-steam.cjs [html] (Phase 11 SUZU: moved from tests/regress so Checks runs it, run-all.cjs)
+const { open } = require('../../regress/lib.js');
 const fs = require('fs');
 const html =
   process.argv.find(a => /\.html$/.test(a)) ||
@@ -116,11 +116,13 @@ const html =
     /* 4. the air heater blowers: the start command of the program (DITL-80F row 25 input, from DITL-80 out 87) */
     const opRow = v => ((WORLD.live = true), WORLD.dset('DITL-80F', 25, v));
     const A = () => Object.assign({}, U.sbA);
-    /* the reset position inputs of DITL-80K (row 22 N-1042, row 24 N-1040) as the plant switches give them (plantsw.js) */
+    /* the reset positions of N-1040 / N-1042: since Phase 6 DCS (4076f568, plantsw.js sbZs) they are the DITL-80L limit switch rows
+       ZSR-N1040 / ZSR-N1042, drawn "NOT ON" (made while the lance is off its park position). At reset = the row is not made. Before:
+       DITL-80K rows 22 / 24, which no longer carry the switch (the test read null) */
     const rsp = re => {
-      const row = re.source.indexOf('1040') >= 0 ? 24 : 22,
-        m = WORLD.plantSw().find(x => /\)DITL-80K$/.test(x.sheet) && x.row === row);
-      return m ? !!m.on : null;
+      const tag = 'ZSR-N' + (re.source.indexOf('1040') >= 0 ? '1040' : '1042'),
+        m = WORLD.plantSw().find(x => /\)DITL-80L( #.*)?$/.test(x.sheet) && x.tag === tag);
+      return m ? !m.on : null;
     };
     /* beta.322: the drum outflow AN_CYC.dl is the drum steam (main steam + blowdown + sootblower + vents less the two SH sprays,
        unit.js mDr) plus the losses; in the 10 s after the start the steam loops move it too (the sprays, 0 - 9 T/H). The check is that
@@ -130,16 +132,18 @@ const html =
     const rest = () => (U.ms || 0) + (U.mb || 0) + (U.msv || 0) - (U.w1s || 0) - (U.w2s || 0),
       dl1 = AN_CYC.dl,
       re1 = rest();
-    opRow(true);
-    await run(10);
-    o.a0 = { A: A(), op: AN.ditlRun('DITL-80F@25'), msb: r1(U.msb), dl: r1(AN_CYC.dl - dl1 - (rest() - re1)), r40: rsp(/N-1040.*RESET/), r42: rsp(/N-1042.*RESET/) };
-    opRow(false);
+    /* the steam is counted from the start command: the poppet opens only when the lance is 50 mm out (VX-AB manual) */
     let kgA = 0, tA = 0;
-    await run(2400, () => {
+    const cnt = () => {
       kgA += (U.msb / 3.6) * 0.5;
       if (U.msb > 0) tA += 0.5;
-    });
-    o.a1 = { A: A(), kg: r1(kgA + (o.a0.msb / 3.6) * 10), t: tA + 10, msb: U.msb, r40: rsp(/N-1040.*RESET/), r42: rsp(/N-1042.*RESET/) };
+    };
+    opRow(true);
+    await run(10, cnt);
+    o.a0 = { A: A(), op: AN.ditlRun('DITL-80F@25'), msb: r1(U.msb), dl: r1(AN_CYC.dl - dl1 - (rest() - re1)), r40: rsp(/N-1040.*RESET/), r42: rsp(/N-1042.*RESET/) };
+    opRow(false);
+    await run(2400, cnt);
+    o.a1 = { A: A(), kg: r1(kgA), t: tA, msb: U.msb, r40: rsp(/N-1040.*RESET/), r42: rsp(/N-1042.*RESET/) };
     o.drHot = dr();
     /* MV-SB1001 shut again: the drains cool back */
     hold = () => {
@@ -172,8 +176,14 @@ const html =
      19 min 40 s each). The test gives only the row 25 step, so the cold end blows once; the hot end needs the DITL-80 program step */
   ck(a0.A.ph === 2 && a0.A.p42 > 10 && a0.A.p40 === 0 && Math.abs(a0.msb - 3.9) < 0.01 && Math.abs(a0.dl - 3.9) < 1 && a0.r42 === false && a0.r40 === true,
     `air heater blowers started (step 29): cold end N-1042 blows 3900 kg/h (${a0.msb} T/H, drum outflow +${a0.dl} beside the rest of the drum steam), PT-SB1042 ${a0.A.p42} kg/cm2, N-1042 off its reset position (reset 1040 / 1042 = ${a0.r40} / ${a0.r42}, ph ${a0.A.ph}, op ${a0.op})`);
-  ck(a1.A.ph === 0 && a1.msb === 0 && a1.r40 === true && a1.r42 === true && Math.abs(a1.t - 1180) <= 2 && Math.abs(a1.kg - 1278) < 6,
-    `cold end 19 min 40 s (L20 manual): ${a1.t} s, ${a1.kg} kg (1278), both back to their reset position (${a1.r40} / ${a1.r42}, ph ${a1.A.ph}, steam ${a1.msb})`);
+  /* Phase 11 (SUZU, after Phase 6 DCS 4076f568): the cycle is 19 min 40 s (L20 OMM) but the steam flows only while the poppet is open,
+     the lance more than 50 mm out (Mk VX-AB manual). The travel from the documents: stroke L 750 mm in steps of 38 mm (n = 20 steps,
+     19 dwells of 55 s), speed v = 2 L / (1180 - 19 x 55) = 11.1 mm/s. Out: 50 / v = 4.5 s before the poppet opens; back: the last
+     dwell is at 750 - 19 x 38 = 28 mm, below the poppet, so the steam stops 50 / v + 55 s before the end. Steam time = 1180 - 100 / v
+     - 55 = 1116 s, at 3900 kg/h = 1209 kg. Was 1180 s, 1278 kg (steam over the whole cycle, before the poppet) */
+  const L20 = 1180, vX = (2 * 750) / (L20 - 19 * 55), tSt = L20 - 100 / vX - 55, kgSt = (3900 / 3600) * tSt;
+  ck(a1.A.ph === 0 && a1.msb === 0 && a1.r40 === true && a1.r42 === true && Math.abs(a1.t - tSt) <= 2 && Math.abs(a1.kg - kgSt) < 6,
+    `cold end cycle 19 min 40 s (L20 manual), steam while the poppet is open: ${a1.t} s, ${a1.kg} kg (${tSt.toFixed(1)} s, ${kgSt.toFixed(0)} kg), both back to their reset position (${a1.r40} / ${a1.r42}, ph ${a1.A.ph}, steam ${a1.msb})`);
   /* 5. drain temperatures */
   const d0 = r.cold.dr, d1 = r.l150.dr, d2 = r.open.dr, d3 = r.drHot, d4 = r.drCool;
   ck(Math.abs(d0.a - 30) < 1 && Math.abs(d0.b - 30) < 1 && d0.bp !== 1, `Cold: drain temperatures ${d0.a} / ${d0.b} C (ambient), no blowing permissive`);
