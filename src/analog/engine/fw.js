@@ -121,6 +121,11 @@ function anDeaStep(U, dt) {
     pP = pg('aux.peg'),
     wp = isFinite(fin(pP && pP.m)) ? Math.max(0, fin(pP.m)) : 0,
     hp = isFinite(fin(pP && pP.h)) ? fin(pP.h) : 0,
+    /* HP gland leak B: the port lk.b of the turbine (RIN), it joins the extraction line to the deaerator (HB PPE-14-0725 note B,
+       DEA heater G 26786 = line 22225 + 4561 kg/h); not written = none (ports.js rule 3) */
+    pB = pg('lk.b'),
+    wb = isFinite(fin(pB && pB.m)) ? Math.max(0, fin(pB.m)) : 0,
+    hb = isFinite(fin(pB && pB.h)) ? fin(pB.h) : 0,
     /* HP heater normal drain */
     h5 = (U.hd || []).find(h => h.k === 'H5'),
     wd = h5 && isFinite(h5.w1) ? Math.max(0, h5.w1) : 0,
@@ -131,12 +136,12 @@ function anDeaStep(U, dt) {
     wc = isFinite(fin(pC && pC.m)) ? fin(pC.m) : 0,
     tc = isFinite(fin(pC && pC.T)) ? fin(pC.T) : Ta,
     hc = isFinite(fin(pC && pC.h)) ? fin(pC.h) : fwHw(Pd, tc),
-    Q = (wx * (hx - hf) + wp * (hp - hf) + wd * (fwHw(Pd, td) - hf) + wc * (hc - hf)) / 3.6 /* kW */,
+    Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (fwHw(Pd, td) - hf) + wc * (hc - hf)) / 3.6 /* kW */,
     C = M * 1000 * cw + K.Mm * 1000 * K.cm /* kJ/K */;
   if (dt > 0) U.da.T = Math.max(Ta - 5, Math.min(200, T + (Q * dt) / C));
   const Pn = Math.max(0, steamPsat(U.da.T));
-  Object.assign(U.da, { P: Pn, M, wx, wp, wd, wc, hx, Q, Pxa });
-  U.daIn = wx + wp + wd; /* T/H into the storage water besides the condensate */
+  Object.assign(U.da, { P: Pn, M, wx, wb, wp, wd, wc, hx, Q, Pxa });
+  U.daIn = wx + wb + wp + wd; /* T/H into the storage water besides the condensate */
   U.daTb = wx; /* the turbine steam taken by the deaerator (the condenser does not get it) */
   if (U.xt && U.xt.dea) anUnitWrite(U.xt.dea, Pn);
   anPortSet(U, 'dea', { P: Pn + 1.0332, T: U.da.T, L: lvl });

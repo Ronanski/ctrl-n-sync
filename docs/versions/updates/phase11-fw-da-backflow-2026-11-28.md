@@ -20,3 +20,11 @@
 **Hindi ginawa:**
 - Ang HP2, dahil hinaharangan ito ng CRH NRV.
 - Ang HP1, dahil NO-SOURCE ang dami ng tubig sa shell. Ayon kay RIN, hindi pa ito kailangan.
+
+## Leak B into the deaerator (port lk.b, RIN + NANA, phase thread OK 2026-11-28)
+
+- Found: the turbine took the HP gland leak B out of the cold reheat (turbine.js tbPath L.B) but no part received it, so the deaerator energy balance drew that steam again from the extraction 3 stage (sweep batch 1, 90 MW: DA draw 15.4 vs HB 12.1 T/H, about +0.7 % heat rate).
+- Source: HB PPE-14-0725 note "B = joins the deaerator extraction line"; case 1 DEA heater G 26786 = line 22225 + leak B 4561 kg/h (turbine.js lkB 4561).
+- Change: new port lk.b {m T/H, h kJ/kg} written by the turbine (anTbPorts), read by anDeaStep into the deaerator inflow and energy (U.da.wb, U.daIn). Not written = none, no fallback.
+- Checked: ports 61/61, one-path, no-fit, u-const, fw lane tests PASS; 150 MW held 20 min, no trip, MW within 0.42, Pms within 0.29; leak B 4.58 T/H, the DA stage draw 23.8 T/H (was about 28.4 with the leak drawn twice).
+- Not checked here: the 45-150 MW sweep (phase thread on main).
