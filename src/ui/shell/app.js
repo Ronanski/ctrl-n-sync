@@ -2049,6 +2049,7 @@
     };
     const svLoad = e => {
       window.lsRestartKind = null;
+      if (!e._bt) BT.L = []; /* Phase 13: the backtrack points of the plant before a LOAD are not this plant's past */
       if (AN.pauseOn && AN.run) AN.pauseOn();
       msg('Loading save point ' + e.name + '...');
       return Promise.resolve(DITL150.savePut({ kf: e.kf, kd: e.kd, ver: e.ver || '' })).then(() => {
@@ -2062,6 +2063,63 @@
         else if (window.lsEventAdd) lsEventAdd('DCS', 'DCS', 'Save point loaded: ' + e.name);
         msg('Plant back at: ' + e.name + '. Paused: press Run to go on.');
       });
+    };
+    /* PHASE 13 BACKTRACK (user "Go 10 13 15" 2026-11-27 7:00 AM PHT; docs/ACCEPTANCE.md "Gamit ng instructor": backtrack). The app keeps
+       the whole plant by itself every BT_EVERY s of plant time while the plant model runs (the same capture as SAVE: every ABC and DITL
+       sheet, the turbine, the plant model, the modes and the faults that are on), the last BT_KEEP of them in memory only (a reload of the
+       page drops them; SAVE keeps one for good). Back puts one back through the same LOAD as a save point and pauses; the points after it
+       are dropped, as the plant time goes on from there. Never more often than BT_REAL ms of real time (x60 / x300: about 100 ms of the
+       engine per capture). The numbers are the team's choice (ANS-3.5 asks for backtrack, its copy is not in the repo): 2 plant min x 30
+       = the last hour of plant time at x1. A new starting state (AN.loadN) or a LOAD of a save point starts an empty list. */
+    const BT_EVERY = 120,
+      BT_KEEP = 30,
+      BT_REAL = 20000;
+    const BT = { L: [], n: -1, busy: false };
+    const btTick = () => {
+      const u = AN.unit;
+      /* a point only of a plant that has a starting state and has stepped (t > 0), as the trend recorder (live.js recTick) */
+      if (!u || !u.on || AN._loading || BT.busy || !AN.startState || !(+u.t > 0)) return;
+      if ((AN.loadN || 0) !== BT.n) ((BT.n = AN.loadN || 0), (BT.L = []));
+      const t = +u.t || 0;
+      if (BT.L.length && t < BT.L[BT.L.length - 1].t) BT.L = BT.L.filter(e => e.t <= t); /* the plant time went back */
+      const p = BT.L[BT.L.length - 1];
+      if (p && (t - p.t < BT_EVERY || Date.now() - p.real < BT_REAL)) return;
+      BT.busy = true;
+      svCap()
+        .then(sv => {
+          if (AN._loading || (AN.loadN || 0) !== BT.n) return;
+          sv.t = t;
+          sv.pt = AN.plantT ? +AN.plantT() : t; /* the plant clock of the event log and the alarm list (events.js) */
+          sv.real = Date.now();
+          sv.ver = '@@VERSION@@';
+          sv.flt = svFlt();
+          sv.name = 'Back ' + svName();
+          sv._bt = 1;
+          BT.L.push(sv);
+          if (BT.L.length > BT_KEEP) BT.L.shift();
+        })
+        .catch(() => {})
+        .then(() => (BT.busy = false));
+    };
+    setInterval(btTick, 2000);
+    window.lsSaves.back = {
+      /* the points, oldest first: { i, t (plant model s), pt (plant clock s), name, faults on } */
+      list: () => BT.L.map((e, i) => ({ i, t: e.t, pt: e.pt, name: e.name, flt: (e.flt.an || []).length + (e.flt.w || []).length })),
+      load: i => {
+        const e = BT.L[i];
+        if (!e) return Promise.reject(new Error('no backtrack point ' + i));
+        BT.L = BT.L.slice(0, i + 1);
+        BT.busy = true;
+        return svLoad(e).then(
+          () => ((BT.busy = false), (BT.n = AN.loadN || 0)),
+          x => {
+            BT.busy = false;
+            throw x;
+          }
+        );
+      },
+      every: BT_EVERY,
+      keep: BT_KEEP
     };
     btn(
       'loadsave',
@@ -2618,7 +2676,7 @@
                         lsEventAdd(
                           'TCS',
                           'TCS',
-                          'Instructor: ' + (el.l52 ? 'open' : 'close') + ' 52L1' + (r ? ': ' + r : '')
+                          'Plant menu: ' + (el.l52 ? 'open' : 'close') + ' 52L1' + (r ? ': ' + r : '')
                         );
                     } catch (e) {}
                     say(r ? 'Grid: ' + r : 'Grid: 52L1 ' + (el.l52 ? 'opened (house load operation)' : 'closed'));
