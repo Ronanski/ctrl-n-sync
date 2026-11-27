@@ -33,9 +33,8 @@
                       (SOP 2.3 ~ 2.4) with suction = node N (SOP suction 1 ~ 1.1). The constants of the lines come from this point.
      Valves           the manual valves are field valves (no DCS signal; AN_SRC.valve, set by the field operator): loss = loss at 100 %
                       / (opening)^4, flow area = opening^2 (NO-SOURCE: no valve data in the repository); closed = no flow.
-     Condenser water  in: 28.5 / 28.6 C (snapshot 30.PNG); rise = 5.6 C x (condenser steam / 316 T/H) x (31,500 T/H / seawater flow)
-                      (condenser design specification, K1AU3-D1-0-039 R0 p7: tube side 30 -> 35.6 C at 31,500 T/H, shell 316.024 T/H);
-                      condenser steam = main steam x 316 / 460 (FHI MCR 460 T/H) + LP bypass.
+     Condenser water  in: 30 C (AN_SW_TIN, D1-0-039 R1); out = in + the heat of the condenser port (MEI, ports.js cd) / (water x cp)
+                      (Phase 11; the old rise 5.6 C x steam / 316 T/H was a second copy of the condenser duty, deleted).
    The forebay is the SOP normal level -4 m (live test beta.74 #36). UNUSUAL (in the report): the alarm list H of LT-SW1501 is -6.0 m. */
 /* C, condenser seawater inlet design, K1AU3-D1-0-039 R1 sheet K2MC3A-100 (in / out 30 / 35.6 C). beta.362 D21: was AN_SW.Tin 28.5 / 28.6
    (no source, the 30.PNG snapshot); kept outside AN_SW because a save carries AN_SW (state.js AN_STATE_OBJ) and the starting states of
@@ -103,8 +102,8 @@ const AN_SW = {
   ki100: 0.0069 /* kg/cm2, open condenser inlet valve at the design path flow (above) */,
   hb100: 0.34 /* m, open SWBP discharge valve at 1,000 m3/h (above) */,
   oDes: 40 /* condenser outlet opening of the design point (SOP 2.31) */,
-  rise0: 5.6,
-  cTH: 31500,
+  /* read by the condenser step (MEI, unit.js anCondStep: its steam estimate) until its duty comes from the turbine port (rank 6); not
+     used by the sea water: D1-0-039 R0 p7 shell 316.024 T/H, FHI MCR 460 T/H */
   cSt: 316.024,
   mcr: 460,
   ramp: 10 /* s, SWP soft starter ramp: ACC. TIME of the installed Solcon HRVS-DN, O&M L23-3 manual 7.8 (its set value; the plant setting sheet is not in the docs) */,
@@ -300,12 +299,15 @@ function anSeawaterStep(U, dt) {
   /* condenser seawater temperatures */
   U.swTiA = AN_SW_TIN[0];
   U.swTiB = AN_SW_TIN[1];
-  const ws = Math.max(0, ((U.ms || 0) * K.cSt) / K.mcr + (U.qlp || 0) + (U.xtra || 0));
-  const thC = (r.Qc[0] + r.Qc[1]) * 1.02; /* T/H through the condenser: the design rise is per condenser */
+  /* Phase 11 (SUZU 2026-11-27): the outlet of each water box path = in + the heat that path takes from the condensing steam / (its
+     water x cp): the condenser port of MEI (ports.js cd, x = {QA, QB} kW, the same water and cp, AN_CD.cp). Was a steam estimate of
+     this part (main steam x 316 / 460 + LP bypass, a second copy of the condenser duty): deleted. No port yet (or no water): no rise */
+  const cd = typeof anPortGet === 'function' ? anPortGet(U, 'cd') : null;
   [0, 1].forEach(j => {
-    /* one box shut: its share of the heat goes to the other box (heat = water x rise) */
-    const rise = r.Qc[j] * 1.02 > 100 ? K.rise0 * (ws / K.cSt) * (K.cTH / thC) : 0;
-    lag(j ? 'swToB' : 'swToA', AN_SW_TIN[j] + Math.min(rise, 40), K.tauT);
+    const C = ((r.Qc[j] * 1.02) / 3.6) * AN_CD.cp /* kW/K */,
+      q = cd && cd.x ? +cd.x[j ? 'QB' : 'QA'] : NaN,
+      rise = C > 1 && isFinite(q) ? Math.max(0, q) / C : 0;
+    lag(j ? 'swToB' : 'swToA', AN_SW_TIN[j] + rise, K.tauT);
   });
   /* PG-SW1501A / B / C: the pump side of the check valve (a stopped pump: the water column of the pit, below the gauge = 0) */
   r.q.forEach((q, i) => lag('swPd' + i, U.swSpd[i] > 0 ? Math.max(0, K.kP * (r.H[i] - K.zD + U.swLvl)) : 0, K.tauP));
