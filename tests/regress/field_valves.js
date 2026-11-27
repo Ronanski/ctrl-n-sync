@@ -91,7 +91,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   ck(Math.abs(r.hxBack.Q - b.cw.Q) < 30, `outlets opened again: flow ${r.hxBack.Q}`);
   ck(r.dis5.qA < 0.2 * b.cw.Q, `ACWP-A discharge V-CW1007 at 5 %: ACWP-A flow ${r.dis5.qA} m3/h (loop ${r.dis5.Q}, ${r.dis5.N} ACWP running)`);
   ck(r.muShut.feed === 0 && r.muShut.P < 5.5 && Math.abs(r.muShut.d112 - r.muShut.P) < 0.05, `MWP discharges V-MU0007 / 0011 closed: header PT-MU0709 ${r.muShut.P} kg/cm2 (static), the logic reads ${r.muShut.d112}`);
-  ck(r.muBack.P > 8.5, `discharges opened: header ${r.muBack.P} kg/cm2, ${r.muBack.N} MWP running`);
+  ck(r.muBack.P > 7.5, `discharges opened: header ${r.muBack.P} kg/cm2, ${r.muBack.N} MWP running (Phase 11 design head: about 7.9 with the E2-0-102 elevations, was 9.0 of 28.png)`);
   ck(r.iso.PU < 2.8 && r.iso.psl.includes(true) && r.iso.P > 6.9, `unit 1 header V-IA1101 closed: PT-IA1706 ${r.iso.PU}, PSL-IA1706 ${r.iso.psl}, tanks ${r.iso.P}`);
   ck(r.isoBack.PU > 6.5, `V-IA1101 opened: PT-IA1706 ${r.isoBack.PU}`);
   ck(r.xt.N === 0 && r.xt.P > 5 && r.xt.xQ > 0, `all IA compressors tripped, cross-tie V-PA0013 open: IA tanks ${r.xt.P} kg/cm2 from the plant air (${r.xt.xQ} m3/h)`);

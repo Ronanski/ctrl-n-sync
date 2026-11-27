@@ -83,7 +83,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   ck(d.T2 >= 30 && d.T2 <= 34 && near((d.T1 - d.T2) * (d.Q * 991 * 4.18) / 3600, d.load, 0.1 * d.load), '150 MW: TT-CW1152 ' + d.T1 + ', TT-CW1153 ' + d.T2 + ' C: supply between the sea water 30 C (MB-020) and the MB-021 design supply 34 C, return - supply = the users ' + d.load + ' kW / (flow x cp) within 10 % (one-node loop, 900 s after the start state) (Phase 11 energy balance; the plant snapshot 27.PNG reads 40 / 38)');
   ck(d.I[0] > 25 && d.I[0] < 29.5 && d.I[1] === 0, '150 MW: ACWP-A current ' + d.I[0] + ' A (motor 300 kW 6.6 kV; 27.PNG 28.2)');
   ck(near(d.d76, d.P1, 0.01) && near(d.d41, d.P6, 0.01) && near(d.d21, d.Tb, 0.05) && near(d.d112, d.muP, 0.01), 'the logic reads the plant: DITL-76 PT-CW1152 ' + d.d76 + ', DITL-41 PT-CW1156 ' + d.d41 + ', DITL-21A TT-CW1060 ' + d.d21 + ', DITL-112 PT-MU0709 ' + d.d112);
-  ck(near(d.muP, 9.0, 0.3) && d.muN === 2, '150 MW: make-up header PT-MU0709 ' + d.muP + ' kg/cm2 with ' + d.muN + ' MWP (28.png 9.0)');
+  ck(near(d.muP, 7.9, 0.3) && d.muN === 2, '150 MW: make-up header PT-MU0709 ' + d.muP + ' kg/cm2 with ' + d.muN + ' MWP (Phase 11: 0.1 x (tank 13.8 m + LT zero +10.200 - PT body +10.400 (K1AU3-E2-0-102) + KEW-65/200 head 64.9 m at the recirculation flow) = 7.85; the plant snapshot 28.png reads 9.0)');
   ck(d.fs === 0, '150 MW: no low-flow switch FS-CW1060 made (' + d.fs + ')');
   const t = r.trip;
   ck(t.runB === 1 && t.n === 1 && near(t.Q, 1500, 30) && near(t.P1, 7.8, 0.1), 'ACWP-A trip: the logic starts ACWP-B (running ' + t.runB + '), flow ' + t.Q + ' m3/h, PT-CW1152 ' + t.P1);

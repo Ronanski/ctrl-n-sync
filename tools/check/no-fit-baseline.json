@@ -27,9 +27,6 @@
   "const AN_FOUL = { rInf: 0.0042 /* m2K/W, CALC (see above) */, tau: 56 * 3600 /* s, CALC from the plant trend (see above) */, e: 0.8 /* NO-SOURCE */, mcr: 89 },",
   "mG: I.mG > 0 ? I.mG : (184.2 * Math.max(0, I.mOut || 0)) / 460"
  ],
- "src/analog/engine/model/cooling.js": [
-  "z = 11.3 m CALIBRATED on the HMI snapshot 28.png (2 MWP running at their recirculation flow, levels 13.8 / 13.7 m,"
- ],
  "src/analog/engine/turbine.js": [
   "pressure swings as on the plant (plant trend SCENARIO 1 A, 150 MW hold: MW sd 0.43, MW / MSF correlation 0.86, MW / MSP 0.40). With the",
   "and the 60 s averages of the plant trends), Pe = the house load (elec.js). On the grid (52L1 closed) the grid holds 3600 rpm (the"

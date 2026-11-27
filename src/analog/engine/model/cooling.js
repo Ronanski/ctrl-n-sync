@@ -380,8 +380,12 @@ function anSwValve(tag, pct) {
      motor        TECO AEHLWA-R 50 HP 2P 460 V (p8: FLC 58.2 A, LRC 775 % = 451 A, direct on line or Y / delta; p11 load characteristic:
                   18.6 / 32.8 / 44.7 / 58.0 / 70.1 A at 26.4 / 51.7 / 76.6 / 101.5 / 126.6 % load);
      header       PT-MU0709 = 0.1 kg/cm2 per m (water, sg 1.0, p6) x (tank level + z + pump head at the flow of each running pump);
-                  z = 11.3 m CALIBRATED on the HMI snapshot 28.png (2 MWP running at their recirculation flow, levels 13.8 / 13.7 m,
-                  PIMU0709 9.0 kg/cm2): 90 - 13.8 - 64.9 m (the heights of the tanks and of the transmitter are not in the repository);
+                  z = -0.20 m (Phase 11 SUZU 2026-11-27, Rule 0; was 11.3 m FIT on 28.png, NO-FIT-OK: history): the as-built
+                  instrument location plan K1AU3-E2-0-102 p11 / 12 (YUA read, project file suzu-mu-elevations-2026-11-27.md) gives
+                  the zero of LT-MU0708-A / B at its tap +10.200 and the body of PT-MU0709 at +10.400 (tap +11.740 on the header, the
+                  impulse line full of water reads at the body): z = 10.200 - 10.400. Friction of the header at the recirculation flow
+                  is left out (NO-SOURCE line loss). This gives about 7.9 kg/cm2 with 2 MWP on recirculation; 28.png reads 9.0: plant
+                  vs design, written down, not fitted (the vendor head curve or the DCS range of PT-MU0709, not in the docs);
      flow         FT-MU1001 = the hotwell make-up of the cycle model (plant.js 0.58 T/H per % of LCV-MU1110 + MV-MU1001) + the expansion tank filling;
                   each running MWP also returns its recirculation 10 m3/h (p6 MIN.FLOW) to the tank;
      strainer DP  0.03 kg/cm2 while its pump runs (28.png DPIMU0709A / B / C 0.029 / 0.042 / 0.001; no strainer curve: NO-SOURCE shape);
@@ -404,9 +408,9 @@ const AN_MU = {
   pQ: [0, 30, 60, 80.4, 90, 120, 150],
   pHP: [18.9, 22.7, 27.0, 29.6, 31.6, 35.4, 37.0],
   qRec: 10,
-  /* UNUSUAL (docs/versions/v3.2.1/DATA_ANSWERS.md item 6): the vendor BHP curve gives ~26 A at the recirculation flow, the snapshot
-     28.png reads MWP-A 20.5 / MWP-C 20.8 A (SOP 20 A); CLAUDE.md: the snapshot is the operating point, so the shaft power is scaled */
-  pCal: 0.74,
+  /* Phase 11 (SUZU 2026-11-27, Rule 0; was pCal 0.74 FIT on 28.png, NO-FIT-OK: history): the shaft power is the vendor BHP curve as
+     printed. It gives about 26 A at the recirculation flow; 28.png reads MWP-A 20.5 / MWP-C 20.8 A (SOP 20 A): plant vs vendor, written
+     down, not fitted (docs/versions/v3.2.1/DATA_ANSWERS.md item 6) */
   mL: [26.4, 51.7, 76.6, 101.5, 126.6],
   mI: [18.6, 32.8, 44.7, 58.0, 70.1],
   mkW: 37.3 /* 50 HP */,
@@ -417,7 +421,7 @@ const AN_MU = {
      1 / 3 = 10 N m) = 205 N m; t = J w / T = 0.41 s (motor rotor only: the impeller inertia is not in the docs) -> 0.5 s */
   ramp: 0.5,
   kP: 0.1,
-  z: 11.3,
+  z: -0.2 /* m, K1AU3-E2-0-102: LT zero +10.200 - PT-MU0709 body +10.400 */,
   dp: 0.03,
   et0: 0.8,
   etMax: 2.0,
@@ -489,7 +493,7 @@ function anMakeupStep(U, dt) {
   lag('muP', K.kP * (lv + K.z + Math.max(0, H)), K.tauH);
   run.forEach((r, i) => {
     const s = U.muSpd[i],
-      P = s > 0 ? K.pCal * 0.7457 * swInterp(K.pQ, K.pHP, U.muQ[i] / s) * s * s * s : 0;
+      P = s > 0 ? 0.7457 * swInterp(K.pQ, K.pHP, U.muQ[i] / s) * s * s * s : 0;
     U['muKw' + i] = Math.round(P * 10) / 10;
     if (s <= 0) U['muI' + i] = 0;
     else lag('muI' + i, s < 1 ? K.Ist : Math.max(0, swInterp(K.mL, K.mI, (100 * P) / K.mkW)), K.tauI);
