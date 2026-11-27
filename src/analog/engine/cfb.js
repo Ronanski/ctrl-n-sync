@@ -179,7 +179,7 @@ const AN_BB = {
      rms 32, 1,427 at 60 % against 1,380) and the FHI 60 % thermal point gives 3.80 (/mnt/project-files/phase11/aoi-kkl-from-fig9-
      2026-11-28.md). It stays only because the design value leaves the 150 MW pressure loop (PIC-COBM as the manual) under-damped:
      the steam answers the firing in ~6 min (bed lag) against the 165 s integral time. Goes out when the fast-answer physics is found. */
-  kKL: 9.2,
+  kKL: 9.2 /* RULE 0 VIOLATION, fit, contradicts FHI Fig 9 (temporary placeholder, see above) */,
   /* 1.0.0-beta.286 (JENNIE, F3 of report 282: start-up save points S10 / S12 / S29): beta.282 gave the SH panels only the solids part
      (uaP x phi^0.5), so at the low air of a start-up (phi ~ 1e-4) they took no heat at all (S12: 0.0 ~ 0.4 MW, was 1.3 ~ 2.0; the panel
      outlet steam 156 C after 30 min, was 176) and the bed rose 40 C faster. The gas in the upper furnace radiates to the panels as it
