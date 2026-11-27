@@ -49,3 +49,6 @@ offsets U.xt) and the nested anchors of the parts (e.g. AOI's bed DP anchor, the
   air actually given (s.O2bal, from LS_FG.o2dry of AOI's mole balance). Above that point FHI Fig 12 / Fig 7 hold as printed.
 - A derived target that a sample cannot give (no O2bal yet) counts as a miss, never a skip.
 - On the 3:00 PM main sweep, total air in the floor zone is 473 vs 446 (6 %).
+- `.github/workflows/checks.yml`: a newer push to a branch cancels that branch's older Checks run. Main keeps every run. On 2026-11-27,
+  six old runs of one branch were still holding runners.
+- Measured: the first Checks run with parallel lanes took 44 min, against 62 min one after the other.

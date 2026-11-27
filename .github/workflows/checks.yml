@@ -2,6 +2,10 @@ name: Checks
 # Runs on every push. A green Checks run on a branch publishes the Beta site (site.yml); on main it publishes Stable.
 on: [push, workflow_dispatch]
 permissions: { contents: read }
+# a newer push to the same branch replaces its older run (they only queued the runners: user 2026-11-27 "Bat antagal"); main keeps every run
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   checks:
     runs-on: ubuntu-latest
