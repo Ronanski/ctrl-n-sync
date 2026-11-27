@@ -765,15 +765,21 @@ function anAcwStep(U, dt) {
              stopped (NO-SOURCE: the metal mass is not in the spec). 16.PNG (all four stopped at 150 MW): ash 31 ~ 55 C, water 36 ~ 38 C.
    TT-BH1060-x1 / x2 = ash in / out (DITL-21A rows 11 / 12 INLET / OUTLET ASH TEMP.); TT-CW1060-x1 / x2 = the SHELL SIDE OUTLET /
    SHAFT COOLING water temperatures (DITL-21A rows 14 / 13, also fed from here by plantsw.js): both outlets, one water outlet
-   temperature for both (NO-SOURCE: the shell / shaft split of the 3 kg/s is not in the spec); the inlet is TT-CW1156. LT-BH1750 bottom ash silo: silos stand in this simulator (scope 2026-11-07), 15.8 % of 16.PNG. */
-const AN_BAC = { UA: 1.34, cpA: 0.84, mw: 3, Tmax: 920, tauR: 120, tauS: 1800, silo: 15.8 };
+   temperature for both (NO-SOURCE: the shell / shaft split of the 3 kg/s is not in the spec); the inlet is TT-CW1156. LT-BH1750 bottom ash silo T-1090: Phase 11 (SUZU 2026-11-27, was a fixed 15.8 % of 16.PNG, NO-FIT-OK: history) a mass balance, AN_BAS. */
+const AN_BAC = { UA: 1.34, cpA: 0.84, mw: 3, Tmax: 920, tauR: 120, tauS: 1800 };
+/* the bottom ash silo T-1090 (LT-BH1750, IO list STN103 AI0386 0 ~ 100 %). In: the ash of the running screw coolers while the chain
+   conveyor L-1090 runs (DITL-BA68, U.baConv) and the two-way L-1094 is to the silo (closed, U.ba.tw 0; open = to the vibrating screens).
+   Out: the unloading to the trucks is local (no DCS signal), none here. V 200 m3: JAT layout 130225A-LAYOUT-01 rev 0 equipment table
+   item 7 (YUA PC read, project file suzu-leftovers-doc-reads.md 3a: the first digit is a doubtful scan, 200 or 700). rho 1,000 kg/m3:
+   NO-SOURCE (no bulk density of the bottom ash in L6 / L13 / the DITL logic). The level of the start state is the state (16.PNG 15.8 %) */
+const AN_BAS = { V: 200, rho: 1000 };
 function anBacStep(U, dt) {
   const K = AN_BAC,
     Tw = isFinite(U.acT6) ? U.acT6 : 30,
     fw = Math.max(0, Math.min(1, (+U.acQ || 0) / AN_ACW_MB.Q)),
     Tb = isFinite(U.Tb) ? U.Tb : 30;
-  U.bhSilo = K.silo;
-  let bacQ = 0;
+  let bacQ = 0,
+    toSilo = 0;
   'ABCD'.split('').forEach((x, i) => {
     const o = (U.bedSc || [])[i],
       run = typeof anDitlRun === 'function' && anDitlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1,
@@ -804,6 +810,7 @@ function anBacStep(U, dt) {
     }
     /* the water side, screw stopped: while the loop gives flow, the water passes through with no heat put in it (3 kg/s through the
        shell, seconds), so the outlets are the supply; no flow: it stands with the metal (tauS) */
+    if (U.baConv && U.ba && !(U.ba.tw > 0)) toSilo += ma; /* kg/s to the silo (AN_BAS) */
     const f = Math.min(1, dt / tau),
       fW = Ch > 0 ? f : fw > 0 ? 1 : f,
       L = (k, v, g) => (U[k] = isFinite(U[k]) ? U[k] + (v - U[k]) * g : v);
@@ -813,4 +820,6 @@ function anBacStep(U, dt) {
     L('bw' + x + '2', w2, fW);
   });
   U.bacQ = bacQ; /* kW to the closed cooling water (acwLoad) */
+  if (!isFinite(U.bhSilo)) U.bhSilo = 0;
+  U.bhSilo = Math.max(0, Math.min(100, U.bhSilo + (100 * toSilo * dt) / (AN_BAS.rho * AN_BAS.V)));
 }
