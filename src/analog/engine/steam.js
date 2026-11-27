@@ -118,20 +118,24 @@ const STEAM_R1 = [
   [21, -29, -0.68762131295531e-18], [23, -31, 0.14478307828521e-19], [29, -38, 0.26335781662795e-22],
   [30, -39, -0.11947622640071e-22], [31, -40, 0.18228094581404e-23], [32, -41, -0.93537087292458e-25]
 ];
-/* region 1: h and s of water, p MPa, T K (IF97 Table 3) */
+/* region 1: h, s and v of water, p MPa, T K (IF97 Table 3; v = R T / p x pi x gamma_pi, IF97 Table 3 / eq. 7, m3/kg with R kJ/kg K
+   and p MPa: x 1e-3) */
 function steamR1(p, T) {
   const pi = p / 16.53,
     tau = 1386 / T,
     a = 7.1 - pi,
     b = tau - 1.222;
   let g = 0,
-    gt = 0;
+    gt = 0,
+    gp = 0;
   for (const [I, J, n] of STEAM_R1) {
-    const x = n * Math.pow(a, I);
-    g += x * Math.pow(b, J);
+    const x = n * Math.pow(a, I),
+      y = Math.pow(b, J);
+    g += x * y;
     gt += x * J * Math.pow(b, J - 1);
+    gp -= I ? n * I * Math.pow(a, I - 1) * y : 0;
   }
-  return { h: STEAM_RW * T * tau * gt, s: STEAM_RW * (tau * gt - g) };
+  return { h: STEAM_RW * T * tau * gt, s: STEAM_RW * (tau * gt - g), v: (STEAM_RW * T * pi * gp) / p / 1000 };
 }
 /* region 2: h and s of steam, p MPa, T K (IF97 Table 12; coefficients STEAM_R2_0 / STEAM_R2_R of steam.js) */
 function steamR2(p, T) {

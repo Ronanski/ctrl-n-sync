@@ -460,12 +460,12 @@ AN_CYC.flows = anCycFlows;
    Deaerator storage tank T-1104: K2MC2G-001, ID 3.30 m x shell 13.14 m at its centre line, water at 158.4 C (density 909 kg/m3).
    Drum: K1AU3D-101 Rev 4, R824.2 inside, shell 12.481 m, water density at the saturation temperature of the drum pressure.
    Hotwell: its plan area is not printed on K2MC3A-100, NO-SOURCE, the old rate is kept. */
-const AN_WATER_RHO = [[20, 998], [100, 958], [200, 865], [250, 799], [300, 712], [340, 611], [360, 528]];
+/* Phase 11 (KANA 2026-11-27): saturated water density at T C from IF97 region 1 at the saturation pressure (steam.js steamR1 /
+   steamPsat), in place of the 7-point table AN_WATER_RHO (one water property source). Region 1 holds to 350 C (IF97 Table 1),
+   above it the 350 C value (the drum at 170 kg/cm2 is 352 C) */
 function anWaterRho(T) {
-  const R = AN_WATER_RHO;
-  if (T <= R[0][0]) return R[0][1];
-  for (let i = 1; i < R.length; i++) if (T <= R[i][0]) return R[i - 1][1] + ((R[i][1] - R[i - 1][1]) * (T - R[i - 1][0])) / (R[i][0] - R[i - 1][0]);
-  return R[R.length - 1][1];
+  const Tc = Math.min(350, Math.max(0.01, isFinite(T) ? T : 20));
+  return 1 / steamR1((Math.max(0.006117, (steamPsat(Tc) + 1.0332) * 0.0980665)), Tc + 273.15).v;
 }
 AN_CYC.kgmm = {
   /* Mina beta.116 (Normal shutdown, 30 MW: hotwell -7 -> -272 mm in 6 min, CEP-A stopped, vacuum trip): the old rate was 27.8 m2 of
