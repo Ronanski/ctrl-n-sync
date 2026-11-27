@@ -17,8 +17,3 @@
   pressure 133.7 -> 99.7 kg/cm2 g.
 - Not done: the closing / opening stroke times (anAv actuator as it was; vendor < 2 s digital, < 5 s analogue); HP / LP spray valves
   TCV-FW1060 / TCV-CD1115 (Cv 10.3 / 25.4) not yet on this law; tests/regress/unit_trip.js (not in Checks) still reads U.hpb.
-- Follow-up (same day): bypass stroke times from the vendor sheets: PCV-MS1020 / PCV-HR1010 move at 100 % / 2 s on the trip-open
-  solenoid and 100 % / 5 s on the 4-20 mA positioner (turbine.js anVlvStroke, AN_VLV.tQ / tA; vendor upper limits, taken as is).
-  Before: the opening followed the controller at once. Trip from 150 MW: the HP bypass reaches 32 T/H after 2 s (was full at once).
-  The blow-off PCV-MS1001 has no stroke time in the docs (no solenoid, positioner only): as commanded.
-- Spray valves TCV-FW1060 / TCV-CD1115 (water, Cv 10.3 / 25.4): handed to NANA (fw.js) and MEI (anCdTagStep), their files.
