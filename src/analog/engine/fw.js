@@ -112,7 +112,6 @@ function anDeaStep(U, dt) {
   U.daTb = wx; /* the turbine steam taken by the deaerator (the condenser does not get it) */
   if (U.xt && U.xt.dea) anUnitWrite(U.xt.dea, Pn);
   anPortSet(U, 'dea', { P: Pn + 1.0332, T: U.da.T, L: lvl });
-  anPortSet(U, 'aux.peg', { m: wp });
   /* the extraction steam the heaters draw (T/H), for the turbine steam path (RIN tbDraws) */
   const e2 = isFinite(U.hpF2) ? U.hpF2 : 0,
     e1 = isFinite(U.hpF1) ? Math.max(0, U.hpF1 - e2) : 0;
