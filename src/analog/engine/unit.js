@@ -97,6 +97,16 @@ function anShKdp(U) {
    AND the HP bypass steam up to the tee; the 12" leads (0.34) the turbine steam only. PT-MS1006 (U.tin) stands at the tee end of the
    18" run (after it only TE-MS1007 and the scope break before the tee). f18 = the 18" share of the design drop. */
 const AN_MSLN = { dp0: 1.74, m0: 474, Po: 122.4, To: 536, f18: 1.41 / 1.74 };
+/* the hot reheat line, reheater outlet (PT-HR1001) to the turbine end (PT-HR1003): dp0 kg/cm2 at m0 T/H and the design state (Po kg/cm2 G,
+   To C) = FHI P2S7 RH outlet 35.1 kg/cm2 G (36.13 ata) less HB PPE-14-0725 case 1 HRH 34.77 ata, at 400.944 T/H, 538 C (RIN 2026-11-28) */
+const AN_HRLN = { dp0: 35.1 + 1.0332 - 34.77, m0: 400.944, Po: 34.77 - 1.0332, To: 538 };
+function anHrDrop(U, m, Pg) {
+  const D = AN_HRLN;
+  if (!D.rho0) D.rho0 = steamRho(D.Po, D.To);
+  const rho = steamRho(Math.max(0, +Pg || 0), U && U.hxO && isFinite(U.hxO.rh) ? U.hxO.rh : D.To),
+    x = Math.max(0, +m || 0) / D.m0;
+  return isFinite(rho) && rho > 0 ? (D.dp0 * x * x * D.rho0) / rho : 0;
+}
 /* the main steam line drops (kg/cm2) at the turbine flow ms and the HP bypass flow mhp (T/H): to PT-MS1006 / the bypass tee, and to the MSVs */
 function anMsDrop(U, ms, mhp) {
   const k = +U.kln || 0,
@@ -1698,19 +1708,30 @@ function anHxTagStep(U, dt) {
       return isFinite(v) ? v : h ? +h[0] : NaN;
     },
     r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
-    ms0 = AN_FWT.ms0,
     ms = Math.max(0, +U.ms || 0),
     Ta = isFinite(U.Tamb) ? U.Tamb : 30,
     H = U.hxO || {},
     t1004 = ai('1|AI0612'),
     pd = ai('1|AI0128'),
-    lf = (ms / ms0) * (ms / ms0),
-    mr = ms + Math.max(0, +U.mhp || 0),
+    /* the reheater outlet flow (T/H): the steam path's reheater flow (turbine.js tbPath f.rh: the CRH less the No.6 extraction, plus the
+       HP bypass) */
+    mr = U.tbS && U.tbS.f && isFinite(U.tbS.f.rh) ? Math.max(0, U.tbS.f.rh / 1000) : ms + Math.max(0, +U.mhp || 0),
+    p1003 = ai('2|AI0421'),
     fr = U.bedI > 0 ? U.bedI / AN_BI.t0 : 0,
     T = U.tt || (U.tt = {});
   Object.assign(T, {
-    'TT-MS1007': r1(isFinite(t1004) ? Math.max(Ta, t1004 - Math.min(t1004 - Ta, (4 * ms0) / Math.max(ms, 0.05 * ms0))) : NaN),
-    'PT-HR1001': r1(ai('2|AI0421') + 0.7 * (mr / ms0) * (mr / ms0)),
+    /* Phase 11 RIN 2026-11-28 (was 4 C "at MCR 472.7 T/H" and 0.7 kg/cm2 x (mr / 472.7)^2: a plant snapshot flow, deleted):
+       TT-MS1007 (at PT-MS1006, the HP bypass tee end of the 18" run, AN_MSLN): the steam of TE-MS1004 / the MSP throttled at constant
+       enthalpy through the line drop to the tee (anMsDrop; adiabatic: the insulation is not in the documents read, and any heat loss of
+       a lagged 18" line, a few tens of kW, is under 0.1 C at load) */
+    'TT-MS1007': r1(
+      isFinite(t1004) && isFinite(U.Pms)
+        ? steamPhM(Math.max(0.01, U.Pms - anMsDrop(U, ms, U.mhp).tee + 1.0332) * 0.0980665, steamH(U.Pms, t1004)).T - 273.15
+        : NaN
+    ),
+    /* PT-HR1001 (the reheater outlet): PT-HR1003 (AI0421, the turbine end) + the hot reheat line drop dP = k m^2 / rho, k from the design:
+       FHI P2S7 RH outlet 35.1 kg/cm2 G against HB PPE-14-0725 case 1 HRH 34.77 ata at 400,944 kg/h, 538 C: 1.36 kg/cm2 (AN_HRLN) */
+    'PT-HR1001': r1(isFinite(p1003) ? p1003 + anHrDrop(U, mr, p1003) : NaN),
     'TT-BR1020': r1(H.e1o),
     'TT-BR1030': r1(H.e2o),
     'TT-BR1040': r1(H.tEco),
