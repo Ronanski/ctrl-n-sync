@@ -3037,7 +3037,7 @@ function anGenEl() {
   };
 }
 /* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): the generator temperatures of pages 13 / 17 and of TCS GD-5 from the design of
-   the machine (was: the readings of screen P35SHAFT at 130 MW scaled with the current squared).
+   the machine.
    - cooling gas after the four air coolers H-1971A ~ D (TIGE10041 ~ 44): the cooler water is the closed (auxiliary) cooling water supply
      (AN_ACW, U.acT2). DESIGN-SRC: nameplate 310SD18-613 (generator O&M GAE-2014-0791 R0 PDF p180, read by YUA 2026-11-27) "cold air
      45 C", with GAE-2013-0136 R2 p1 "Temperatures Cooling Water Max. 37 C": the coolers hold 45 C gas with 37 C water, approach
@@ -3048,8 +3048,10 @@ function anGenEl() {
      78 K at the rated current 7,384 A; the rise is the I2R loss of the armature (3 I^2 Ra, Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2;
      GEE-2014-0322 5.6.2 c), so rise = 78 K x (I / 7.384 kA)^2.
      The six RTD read one value: the docs give no difference between the slots. The TCS alarm GD-5 HIGH 123 C is the same limit.
-   - AC exciter outlet air (TIGE1005): its rise follows the exciter field squared; its rated rise is not in the docs, so it stays on the
-     old reading 80 C at 7.85 A (screen P35SHAFT, a check value; finding for the PC lookup).
+   - AC exciter outlet air (TIGE1005): the air into the exciter is taken as the cold air of the generator circuit (45 C nameplate over the
+     cooling water, as above). Its rise = the exciter loss (type test p31, qEx x (main field / 1,141 A)^2, 29 kW at the rating) / (air
+     flow x cp) needs the exciter air flow, which is NO-SOURCE (not in GAE-2013-0136 R2, GAE-2014-0791 R0 or the loss test: asked of the
+     PC read). So the rise is not added: TIGE1005 reads the inlet air, the lower bound of the outlet. No plant reading is used (rule 0).
    At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs).
    THE GENERATOR LOSSES (Phase 11 YUI, 2026-11-27, was: the rated heat duty of the four air coolers 2,120 kW less the copper losses,
    DERIVED): the SEGREGATED LOSS TABLE of the type test of this machine, MHPS LM-GEE-2014-0822 R0 Inspection Report for Generator,
@@ -3073,9 +3075,6 @@ const AN_GENT = {
   tCw: 37 /* C, cooling water max (GAE-2013-0136 R2) */,
   tLim: 123 /* C, stator winding total limit by RTD (GEE-2014-0322 R2 p4) */,
   In: 7.384 /* kA rated (GAE-2013-0136 R2) */,
-  ex: 80,
-  tA: 41,
-  If: 7.85,
   tau: 600,
   Ra: 0.001051 /* ohm, armature 1 phase at 95 C */,
   Rf: 0.2188 /* ohm, main field at 95 C */,
@@ -3095,11 +3094,10 @@ function anGenTemp(U, G, dt) {
     a = Math.min(1, dt / K.tau),
     cw = isFinite(U.acT2) ? U.acT2 : Ta,
     air = turn ? cw + (K.tCold - K.tCw) : Ta,
-    rise = (K.tLim - K.tCold) * (G.kA / K.In) ** 2,
-    rf = (G.If / K.If) ** 2;
+    rise = (K.tLim - K.tCold) * (G.kA / K.In) ** 2;
   T.ta.forEach((v, i) => (T.ta[i] += (air - v) * a));
   T.ts.forEach((v, i) => (T.ts[i] += (air + rise - v) * a));
-  T.ex += (air + (K.ex - K.tA) * rf - T.ex) * a;
+  T.ex += (air - T.ex) * a; /* the exciter air rise: NO-SOURCE, above */
   const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600)),
     ifm = G.If * K.ifMain,
     V = U.gen && isFinite(U.gen.V) ? U.gen.V : 0,
