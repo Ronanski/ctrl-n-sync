@@ -9,24 +9,20 @@
 //     about 98 s, 88 kg; the water that leaves the drum (AN_CYC.dl) grows by that steam; nothing after the lance is back.
 //   - the air heater blowers (L20 Gas air heater O&M manual: 3900 kg/hour per lance, 19 min 40 s per lance, hot & cold end sequential):
 //     the start command of DITL-80F row 25 runs N-1040 (hot end, PT-SB1040 = header, off its reset position) then N-1042, 2 x 1209 kg (steam while the poppet is open, Mk VX-AB manual).
-// Usage: node tests/lanes/model/sootblower-steam.cjs [html] (Phase 11 SUZU: moved from tests/regress so Checks runs it, run-all.cjs)
-const { open } = require('../../regress/lib.js');
-const fs = require('fs');
-const html =
-  process.argv.find(a => /\.html$/.test(a)) ||
-  'dist/' + fs.readdirSync('dist').find(x => /^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
+// Usage: node tests/lanes/model/sootblower-steam.cjs (Phase 11 SUZU: moved from tests/regress so Checks runs it, run-all.cjs; headless world)
+/* Phase 11 (SUZU 2026-11-28): runs headless in the world of tools/trace/world.cjs (no browser: the lane step of Checks runs before
+   Playwright is installed); the body is the same plant steps, run inside that world */
+const W = require('../../../tools/trace/world.cjs');
 (async () => {
-  const { browser, page, errs } = await open(html);
+  const E = W.load();
+  E.ctx.__st150 = JSON.parse(W.gz('st150.txt'));
+  const errs = [];
   let fail = 0;
   const ck = (ok, w) => {
     console.log((ok ? 'PASS ' : 'FAIL ') + w);
     if (!ok) fail++;
   };
-  await page.waitForFunction(() => AN.sheets && AN.sheets.length >= 54 && window.WORLD && WORLD.idx && window.DITL150, null, {
-    timeout: 120000
-  });
-  await page.waitForTimeout(2000);
-  const r = await page.evaluate(async () => {
+  const body = async () => {
     const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
     const r1 = x => Math.round(x * 100) / 100;
     let hold = null;
@@ -77,10 +73,11 @@ const html =
     /* 2. Start at 150 MW */
     /* beta.346 (JENNIE, T1): the one start path "At 150 MW" (the st150 steady save, PR 480), as unit_load and cd_page_values. The bare
        AN.plantLoad150 starts the heat chain at its design metal (MST 459 C at t = 0), and the turbine MW now follows the steam temperature */
-    await AN.ades();
-    WORLD.set(true);
-    document.getElementById('load150').click();
-    await AN._startP;
+    /* the start of tools/trace/world.cjs start('150') = the app's "At 150 MW" (the st150 steady save) */
+    await AN.loadStart('150', true);
+    AN.settle();
+    DITL150.apply();
+    await DITL150.savePut({ kf: __st150.kf, kd: __st150.kd, ver: __st150.ver || 'st150' });
     await run(300);
     o.l150 = { msb: U.msb, n: U.sbN, out: out(), mv: pos(), P: r1(hdr()), L: lances().length, dr: dr() };
     man('ABC-017', 'PICSB1052', 60);
@@ -153,7 +150,14 @@ const html =
     o.drCool = dr();
     hold = null;
     return o;
-  });
+  };
+  let r;
+  try {
+    r = await E.js('(' + body.toString() + ')()');
+  } catch (e) {
+    console.log('FAIL the run stopped: ' + (e && e.stack ? e.stack.split('\n').slice(0, 3).join(' | ') : e));
+    process.exit(1);
+  }
   console.log(JSON.stringify(r));
   for (const k of ['cold', 'l150']) {
     const x = r[k];
@@ -200,6 +204,5 @@ const html =
   ck(d4.a < d3.a - 50 && d4.bp !== 1, `MV-SB1001 shut 30 min: drains cool to ${d4.a} / ${d4.b} C, no blowing permissive`);
   ck(errs.length === 0, 'no page error' + (errs.length ? ': ' + errs.join(' | ') : ''));
   console.log(fail ? 'FAILED ' + fail : 'ALL PASS');
-  await browser.close();
   process.exit(fail ? 1 : 0);
 })();
