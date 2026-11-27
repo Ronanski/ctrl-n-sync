@@ -51,9 +51,8 @@ const judge = (v, tg, tol, kind) => {
        samples go to OUT_SWEEP and are judged against the design curves at every load by tools/model/sweep-judge.cjs */
     const SWEEP = !!process.env.SWEEP, SW = [];
     let swAcc = 0;
-    /* the bed inventory by hand along FHI P2S7 Fig 9 (furnace DP versus % MCR; AOI 2026-11-28). The plant holds the bed DP by operator
-       action (16.PNG 150 MW: FURNACE DIFF. PRESS. CTL DPICFG108 MANUAL, MV 0, coolers stopped; PR-OPE-5002 "Bottom ash screw cooler
-       normal operation": the operator watches the bed temperature and DP), so the sweep operator holds Fig 9 with DPICFG108 (ABC-009A):
+    /* the bed inventory by hand along FHI P2S7 Fig 9 (furnace DP versus % MCR; AOI 2026-11-28). Fig 9 is a design curve
+       that the DCS bed DP controller DPICFG108 (ABC-009A, an operator SV) can hold, so the sweep operator holds it with DPICFG108:
        once a plant minute it puts the SV on Fig 9 at the main steam flow of that minute (x = MSF / 460 T/H, FHI Tab 3 MCR; held at the
        end points outside 40 ~ 100 %), within the ABC-009A SV limits 1450 ~ 2100 (the DCS limit is never changed for a design curve:
        below about 45 % MCR the SV stays 1450, sweep-judge.cjs DPMIN). In MANUAL with the MV under 14 % the station is forced MANUAL
@@ -270,7 +269,7 @@ const judge = (v, tg, tol, kind) => {
     };
     for (let m = 0; m < 120 && Math.abs((await st()).MW - OP.aim) > 1; m++) { await slide(); await runOp(1); }
     /* 1.0.0-beta.356 (D15, user 2026-11-24 "Ang design ang masusunod"): the design main steam pressure of the 45 MW point is the HB
-       case 7 sliding pressure (PPE-14-0725, 98.9, the Pms target of this column), not the 123 ~ 126 of PR-OPE-5003. The operator slides
+       case 7 sliding pressure (PPE-14-0725, 98.9, the Pms target of this column). The operator slides
        the PIC-COBM SV down 0.5 kg/cm2 a minute on its faceplate (no step: a step to 98.9 cut the coal to 17 T/H and tripped on
        FURNACE TEMP. INADEQUATE FOR COAL FIRING) */
     for (let m = 0; m < 80 && !(await slide()); m++) await runOp(1);

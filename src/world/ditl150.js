@@ -662,12 +662,11 @@
       /* 3.2.0 P1 #3 / #4: the eight valves of DITL-38 (one drawing, src/world/world.js W.MCV). On load the turbine takes its steam
          through the main steam stop MOV MV-MS1391 (4.PNG) and the feedwater flows through the discharge MOVs of the pumps (03.png
          BFWP-A in service, BFWP-B standby in AUTO: its discharge open so that the auto start feeds at once); the warming bypass
-         MV-MS1392, the filling bypasses MV-FW1391 / 1392 and the mass blowdown MV-BD1001 are shut; the continuous blowdown MV-BD1002
-         in service at the plant position 2.1 % (ZT-BD1002 STN101 AI0178 at 150 MW, docs/hmi/OPERATING_POINTS.md; KANA 2026-11-28: the 15 T/H
-         of MB-019 item 22 is the sizing flow of the CBD line, not the operating blowdown; the drum water is clean, 4.6 uS/cm, and HB case 1
-         has no make-up). Before 2026-11-28 it was 100 % open = 14.8 T/H at 150 MW */
+         MV-MS1392, the filling bypasses MV-FW1391 / 1392, the mass blowdown MV-BD1001 and the continuous blowdown MV-BD1002 are shut
+         (design: HB PPE-14-0725 case 1 has no make-up, so no blowdown leaves the cycle at 150 MW; the 15 T/H of MB-019 item 22 is the
+         sizing flow of the CBD line). Before 2026-11-28 MV-BD1002 was 100 % open (14.8 T/H) */
       {
-        const OPEN = { 'MV-MS1391': 100, 'MV-FW1001': 100, 'MV-FW1002': 100, 'MV-BD1002': 2.1 };
+        const OPEN = { 'MV-MS1391': 100, 'MV-FW1001': 100, 'MV-FW1002': 100 } /* open, %; the rest shut */;
         for (const s of ALL()) {
           const lbl = s._inst && s._inst.lbl;
           if (!lbl || !s.nl || !(s.nl.mv || []).length) continue;

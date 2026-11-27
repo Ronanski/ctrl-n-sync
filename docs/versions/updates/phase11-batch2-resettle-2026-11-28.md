@@ -1,30 +1,32 @@
-# Phase 11 batch 2: start line-up from the plant, st150 on RIN's CV + HP blading flow, judge on the design documents (2026-11-28, phase thread)
+# Phase 11 batch 2: start line-up from design and DCS logic, st150 on RIN's CV + HP blading flow, judge on the design documents (2026-11-28, phase thread)
 
-## Start line-up (src/world/ditl150.js, st150 settle inits in tools/steady150/init/)
-- Continuous blowdown MV-BD1002 is set to the plant position, 2.1 %. Source: ZT-BD1002 STN101 AI0178 at 150 MW, docs/hmi/OPERATING_POINTS.md.
-  - It was 100 % open, giving 14.8 T/H. KANA: the 15 T/H of MB-019 item 22 is the sizing flow of the CBD line, and HB case 1 has no make-up.
-  - CBD is now 0.31 T/H at 150 MW. Condensate went from 381.6 to 371.8 T/H.
-  - The ditl150 OPEN map now holds positions (%), not 1 / 0.
-- The PA flow bias HIC-TADBS is set to -50 (7.PNG, AOI PR 674) in st150, which had carried the old trend value -26.7. Init: tadbs-50.js.
-- RIN PR 703 is merged here at 3068350. Main steam flow now passes through the two CVs in series with the HP blading, and Kt is deleted.
-  - With the CVs wide open at the DCS MSP SV (122.3), the unit gives 148.9 to 149.1 MW. This matches the 4.PNG check point, 148.8 MW at 122.9.
-- st150 settles: 60 min tadbs-50, then 60 min cbd-21, then 90 min on 703.
-  - Last settle: MW 148.8 to 149.1, MSP 122.2 to 122.4.
-  - CCS AUTO: PIC-COBM, HIC-BM and EIC-TM, with the HP bypass closed.
+User rule of 5:18 AM PHT 2026-11-28: plant snapshots, plant trends and SOP are not used for the plant model, not even as a check.
+The source of truth is first principles plus design data. Set points come from the DCS / TCS logic, and acceptance is the design-curve sweep.
+
+## Start line-up (src/world/ditl150.js, hmi-op.js AN_HMI_MAN, settle init tools/steady150/init/lineup-logic.js)
+- The continuous blowdown MV-BD1002 is shut.
+  - Design source: HB PPE-14-0725 case 1 has no make-up, so no blowdown leaves the cycle at 150 MW.
+  - The 15 T/H of MB-019 item 22 is the sizing flow of the line.
+  - It was 100 % open, which took 14.8 T/H out of the cycle.
+  - The ditl150 OPEN map now holds positions in %.
+- The PA flow bias HIC-TADBS is now 0. This is the neutral point of the logic curve S1-LN14 (0 T/H bias), so the PA demand is S1-LN12 of the coal alone. It was a value taken from an operating screen.
+- RIN PR 703 is merged here at 3068350: the main steam flow passes the two CVs in series with the HP blading, and Kt is deleted.
+  - With the CVs wide open at the DCS MSP SV (122.3), the HB turbine gives about 149 MW.
+- st150 settles: the 703 code, then 90 min with lineup-logic (results in the PR).
 
 ## Judge (tools/model/sweep-judge.cjs, docs/accept/curves/curves.json)
-- The HB rows (CRH flow / T, HRH flow / P, final FW T / flow, heat rate) use all 7 load cases, 7 / 6 / 5 / 4 / 3 / 2 / 1, from RIN's read. Before, they used 30 / 60 / 100 % with straight lines in between.
-- Logged differences (the team rule: DCS limits are never changed for a design curve):
+- The HB rows (CRH flow / T, HRH flow / P, final FW T / flow, heat rate) use all 7 load cases: 7 / 6 / 5 / 4 / 3 / 2 / 1, from RIN's read. Before, they used 30 / 60 / 100 % with straight lines between.
+- Logged differences (team rule: DCS limits are never changed for a design curve):
   - Total air is judged against max(Fig 12, 446, the logic demand PA SV + SA SV + the FA blower flow).
-  - The furnace DP target has a floor of 1450, the DPICFG108 SV low limit.
-- Final FW flow target is HB + the drum water storage rate of each minute (KANA's q.y mass integrator x AN_CYC.kgmm.dr). At a hold this is the HB value as printed, so the gate stays continuous.
-- On the batch 1 samples: 11 of 22.
+  - The furnace DP has a floor of 1450, the DPICFG108 SV low limit.
+- The final FW flow target is HB + the drum water storage rate of the minute (KANA's q.y mass integrator x AN_CYC.kgmm.dr). At a hold the target is the HB value as printed, so the gate stays continuous.
 
 ## Sweep tool (tools/accept/part1.cjs)
-- The bed DP is held on FHI Fig 9 through DPICFG108, inside its SV limits 1450 to 2100. The station's MV goes to 14 % first if it is in MAN. Plant source: 16.PNG MANUAL, PR-OPE-5002 (operator action).
-- New samples: dpSv, dpMd and drum { y, kgmm }.
+- The bed DP is held on FHI Fig 9 through DPICFG108, within its SV limits of 1450 to 2100. If the station is in MAN, its MV first goes to 14 %.
+- New sample fields: dpSv, dpMd, drum { y, kgmm }.
+- The snapshot and SOP comparisons are taken out of the comments of the parts this PR touches.
 
 ## Tests
 - u-const, one-path and no-fit: PASS (0 new fits).
-- 20 min behaviour gate (main + this branch) ALL PASS: MW 149.07 -> 149.00 (max move 0.32), MSP max move 0.23, level 4 mm, MST 0.5 C, no trip, save / load and determinism PASS.
-- The full sweep runs on main after the merge.
+- 20 min behaviour gate: in the PR.
+- Full sweep: on main after merge.
