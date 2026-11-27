@@ -35,7 +35,6 @@
 - **150 MW save point of main, 40 min**: no trip. The MW settles at 148.0 ~ 148.6.
   - The CVs are wide open (gv 1.03 = flow demand 102 %, lift 105 % = full).
   - Main steam is 455 T/H at MSP 122.0 ~ 122.6.
-  - The 4.PNG check point is 148.8 MW at MSP 122.9.
 - **Scan time**: +11 % (the flow solve).
 
 ## Open
