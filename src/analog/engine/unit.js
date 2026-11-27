@@ -4736,12 +4736,9 @@ function anUnitOwnsPv(S, n) {
   return U.on && n != null && (U.alink || []).some(([a, t]) => t.S === S && t.n === n);
 }
 /* one step of dt seconds (called by the plant step of ABC-001C) */
-/* 3.2.1 c4: the generator electrical values of page 17 (GENERATOR). Sources: data sheet GAE-2013-0136 R2 (Mitsubishi Hitachi TFLQQ-KD,
-   176.5 MVA, 0.85 lag, 13.8 kV, 60 Hz, 3600 rpm, Xd unsaturated 1.99 pu) and snapshot 37.PNG (151.1 MW: 33.1 MVar, power factor 0.977,
-   13.8 ~ 13.9 kV, 6.3 ~ 6.6 kA, field 46.0 VDC / 8.7 A, 7266257 MWh, 882996 MVarh). The voltage regulator (AVR) holds the power
-   factor of the snapshot (0.977) while synchronised; current = MVA / (1.732 x 13.8 kV); the exciter field follows the internal
-   voltage E = |1 + j Xd I| (calculated with the data sheet Xd, no saturation), scaled to the snapshot point (E = 2.19 pu at 151.1 MW
-   / 33.1 MVar), so 1.0 pu at no load = 4.0 A / 21 VDC. The field breaker = the TCS excitation on (tc.exc, ATS step 4 EXCITATION). */
+/* 3.2.1 c4: the generator electrical values of page 17 (GENERATOR), data sheet GAE-2013-0136 R2 (Mitsubishi Hitachi TFLQQ-KD, 176.5 MVA,
+   0.85 lag, 13.8 kV, 60 Hz, 3600 rpm). Phase 11 (2026-11-27): read from the one field / phasor model of tcs-gen.js (anGenEl below); the
+   AVR holds the terminal voltage at its set 90R (AUTO), so the Mvar follows the voltage set and the load, not a fixed power factor. */
 /* 3.2.3 house load (52L1 open, 52G1 closed): the turbine generator speed from the swing equation 2 H w dw/dt = Pm - Pe (per unit on
    AN_GEN.S): Pm = the turbine steam power MWss (no tauMW lag: the CV / ICV cut the steam at once, the lag of U.MW stands for the reheater
    and the 60 s averages of the plant trends), Pe = the house load (elec.js). On the grid (52L1 closed) the grid holds 3600 rpm (the
@@ -4859,22 +4856,15 @@ function anTbSpeed(U, tb, dt, on, Pm, Pe) {
   const w = Math.max(0.5, (tb.rpm || 3600) / 3600);
   tb.rpm = Math.max(0, (w + (dt * (Pm - Pe)) / (2 * U.Hgen * AN_GEN.S * w)) * 3600);
 }
+/* the rating of the machine (GAE-2013-0136 R2: 176.5 MVA, 13.8 kV, 60 Hz) and the page 17 energy meters, which start at the meter
+   reading of snapshot 37.PNG (a meter reading, not a physics value; the GCP meters of tcs-dev.js count from 0) */
 const AN_GEN = {
   kV: 13.8,
   Hz: 60,
   S: 176.5,
-  xd: 1.99,
-  pf: 0.977,
-  If: 8.7,
-  Vf: 46.0,
-  E0: 0,
   MWh: 7266257,
   MVArh: 882996
 };
-AN_GEN.E0 = Math.hypot(
-  1 + (AN_GEN.xd * 151.1 * Math.tan(Math.acos(AN_GEN.pf))) / AN_GEN.S,
-  (AN_GEN.xd * 151.1) / AN_GEN.S
-);
 function anGenEl() {
   const U = AN.unit;
   if (!U || !U.on) return null;
@@ -4882,32 +4872,38 @@ function anGenEl() {
     c = U.tc,
     syn = tb.st === 'sync' || tb.st === 'load',
     fcb = syn || !!(c && c.exc),
-    /* beta.240: P negative = reverse power (motoring); the reactive power follows the positive load only */
+    /* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): ONE generator model. The terminal voltage, stator current, Mvar, power
+       factor and field are the ones of the field and on-line phasor model of tcs-gen.js (tcsGenStep / tcsGenPh: EMF behind Xd 1.92 pu,
+       TR 2310 Xt 0.137 pu, stiff 230 kV bus; GEE-2015-0152 R1 p6, GAE-2013-0136 R2, K1AU3E1-0003 rev 2; checked against the V curves
+       310SD23-270 R1 within 1.5 %), the same values the TCS I/O, the Modbus list and the var-hour meter read. Before, this page computed
+       its own Mvar with a fixed power factor 0.977 (screen 37.PNG) and its own field scaled on that screen: two answers for one machine
+       (150 MW: 33.1 Mvar here, 8.8 Mvar in the TCS). Read only: the mirror page does not make U.gen (beta.277) */
+    g = U.gen || {},
+    G = TCS_GEN,
+    /* beta.240: P negative = reverse power (motoring) */
     P = syn ? +U.MW || 0 : 0,
-    Q = syn ? Math.max(0, P) * Math.tan(Math.acos(AN_GEN.pf)) : 0,
-    p = P / AN_GEN.S,
-    q = Q / AN_GEN.S,
-    /* 3.2.3-beta.235: before 52G the voltage builds up after the field breaker 41 closes (tcs-gen.js g.V, 30 s); was 13.8 kV at once */
-    vb = syn ? 1 : U.gen && isFinite(U.gen.V) ? U.gen.V : fcb ? 1 : 0,
-    /* beta.236: before 52G the exciter output of the field model (tcs-gen.js g.efd, 1 = no load field) */
-    E = !fcb
-      ? 0
-      : syn || !(U.gen && isFinite(U.gen.efd))
-        ? (vb * Math.hypot(1 + AN_GEN.xd * q, AN_GEN.xd * p)) / AN_GEN.E0
-        : U.gen.efd / AN_GEN.E0,
-    kA = Math.hypot(P, Q) / (Math.sqrt(3) * AN_GEN.kV),
-    g = U.genE || (U.genE = { MWh: AN_GEN.MWh, MVArh: AN_GEN.MVArh });
+    on = syn && !!g.f41,
+    Q = on && isFinite(g.Q) ? g.Q * G.sb : 0,
+    /* terminal voltage: on line the phasor |Vt|; off line the open circuit voltage, flux x speed (tcsGenStep g.V = eq x n already) */
+    vt = fcb && isFinite(g.V) ? g.V : 0,
+    kA = on && isFinite(g.I) ? g.I * G.ib : 0,
+    /* the exciter field (brushless machine, UNITROL 6080): 4.5 A per pu of field (no load, GEE-2015-0152 p6), voltage = current x the
+       exciter field resistance 6.14 ohm at 100 C (GAE-2015-0004 R1) */
+    If = fcb && isFinite(g.efd) ? Math.max(0, g.efd) * G.ifo : 0,
+    m = U.genE || (U.genE = { MWh: AN_GEN.MWh, MVArh: AN_GEN.MVArh });
   return {
     fcb: fcb ? 1 : 0,
-    kV: fcb ? (vb * AN_GEN.kV * Math.min(tb.rpm || 0, 3600)) / 3600 : 0,
+    kV: vt * AN_GEN.kV,
     Hz: syn && !(U.el && U.el.l52 === false) ? AN_GEN.Hz : ((tb.rpm || 0) / 3600) * AN_GEN.Hz,
     MVAr: Q,
-    pf: syn && P > 0 ? AN_GEN.pf : null,
+    /* the sign of the Mvar tells lag (export) or lead (import) */
+    pf: on && P > 0 && isFinite(g.pf) ? g.pf : null,
+    lead: on && Q < 0 ? 1 : 0,
     kA,
-    Vf: AN_GEN.Vf * E,
-    If: AN_GEN.If * E,
-    MWh: g.MWh,
-    MVArh: g.MVArh,
+    Vf: If * G.rf,
+    If,
+    MWh: m.MWh,
+    MVArh: m.MVArh,
     ta: (U.genT && U.genT.ta) || null,
     tAir: U.genT ? U.genT.ta.reduce((a, b) => a + b, 0) / 4 : null,
     ts: (U.genT && U.genT.ts) || null,
