@@ -2145,10 +2145,10 @@ function anAuxStep(U, dt) {
           : 0,
       /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history; was the back pressure max(Pc, 0.366 x MW / 150) and 364 C of 29.PNG): PV-GS1034 spills
          to the No.1 LP heater (HB case 1, via FV-GS1036): its shell = the extraction VI pressure of RIN's port ext.lp1 (ata), not below
-         the condenser; the steam at the gland header temperature (TEGS1002) */
-      lp1 = typeof anPortGet === 'function' ? anPortGet(U, 'ext.lp1') : null,
-      Pu = Math.max(Pc, lp1 && isFinite(lp1.P) ? lp1.P : Pc),
-      wGu = oU > 0 ? anStmW(K.cvGu * Math.pow(50, oU - 1), Pg, Pu - 1.0332, isFinite(U.asTgs) ? U.asTgs : K.Tg) : 0;
+         the condenser; the steam at the gland header temperature (TEGS1002). Only the port: no flow until RIN has written it */
+      lp1 = U.pt && U.pt['ext.lp1'],
+      Pu = lp1 && isFinite(lp1.P) ? Math.max(Pc, lp1.P) : NaN,
+      wGu = oU > 0 && isFinite(Pu) ? anStmW(K.cvGu * Math.pow(50, oU - 1), Pg, Pu - 1.0332, isFinite(U.asTgs) ? U.asTgs : K.Tg) : 0;
     /* header pressures: dm = V drho/dP dP (drho/dP of IF97 at the header state) */
     const dRa = Math.max(0.05, (steamRho(Pa + 0.05, K.Ta) - steamRho(Pa - 0.05, K.Ta)) / 0.1),
       dRg = Math.max(0.05, (steamRho(Pg + 0.05, K.Tg) - steamRho(Pg - 0.05, K.Tg)) / 0.1);
