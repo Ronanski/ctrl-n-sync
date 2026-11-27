@@ -36,3 +36,17 @@ offsets U.xt) and the nested anchors of the parts (e.g. AOI's bed DP anchor, the
 - Now 0.5 x error - 3.0 x the trend: tau about 18 min, and it still looks about 9 min ahead (the bed lag). It is still at most one
   1 % press every 3 min, reading only what the operator sees.
 - The sweep with this law is running. Its result comes with the st150 re-settle PR.
+
+## Judge: the DCS minimum air (logged difference, team decision 2026-11-27)
+
+- The DCS keeps a minimum total air of 446 T/H, which keeps the bed fluidized. Sources:
+  - ABC-006 LN5 floor and ABC-002 LN40 cross limit;
+  - OPERATOR_GUIDE 5.3 / 5.4: PA 285 + SA 161 at minimum air.
+- DCS limits are plant sheets and are not changed. So where FHI Fig 12 total air is below 446 T/H, the judge
+  (tools/model/sweep-judge.cjs) reads the air rows against that floor. O2 is read against the dry O2 the flue gas balance gives at the
+  air actually given (s.O2bal, from LS_FG.o2dry of AOI's mole balance). Above that point FHI Fig 12 / Fig 7 hold as printed.
+- A derived target that a sample cannot give (no O2bal yet) counts as a miss, never a skip.
+- On the 3:00 PM main sweep, the floor zone now shows the real gaps:
+  - total air 473 vs 446 (6 %);
+  - PA 314 vs 285;
+  - SA 123 vs 161.

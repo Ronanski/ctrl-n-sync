@@ -97,7 +97,7 @@ const judge = (v, tg, tol, kind) => {
         MSF: U.ms, Pms: U.Pms + 1.0332, MSTt: H.ms, Psh: U.Pms, MST: H.ms, RHT: H.rh,
         tEco: H.tEco, Tfw: tfw, FWf: U.fwMain + w1 + w2 - bd /* FE-FW1007 is before the SH spray tap (PD-017, beta.374) */, sp: w1 + w2, rsp: U.rhSp || 0, MW: U.MW, HR: U.MW > 1 ? (qT * 3600) / 4.1868 / (U.MW * 1000) * 1000 / 1000 : NaN,
         bed: U.Tb, Tu: U.Tu, dp: pv('DPICFG108'), ahGi: U.aphGi, ahGo: U.aphGo, coal: U.Fc, lime: U.lm ? U.lm.q : NaN, air: air.reduce((a, b) => a + (b || 0), 0), PA: air[0], SA: air[1],
-        O2: U.o2v, eff: fuel > 0 ? (100 * steam) / fuel : NaN, trip: !!(AN.soeTrip && AN.soeTrip().mft.on)
+        O2: U.o2v, O2bal: window.LS_FG && typeof LS_FG.o2dry === 'function' ? LS_FG.o2dry(U.Fc, air.reduce((a, b) => a + (b || 0), 0)) : NaN /* AOI: the dry O2 the FHI Tab 2 mole balance gives at this coal and air (the judge below the DCS minimum air) */, eff: fuel > 0 ? (100 * steam) / fuel : NaN, trip: !!(AN.soeTrip && AN.soeTrip().mft.on)
       };
     });
     const win = async () => {
