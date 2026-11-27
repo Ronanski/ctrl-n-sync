@@ -27,3 +27,12 @@ offsets U.xt) and the nested anchors of the parts (e.g. AOI's bed DP anchor, the
 - `tests/lanes/first.txt`: the slowest tests start first. aph-blower takes about 26 min alone and sets the floor.
 - Local run, 4 at a time, while 2 sweeps were running on the same machine: 69 tests, 0 failed, 28 min. One after the other they take
   about 68 min of CPU.
+
+## Sweep tool: the operator's pressure law below 220 T/H (KANA 2026-11-27)
+
+- Below 220 T/H the boiler master is MANUAL (M.2013), so the scripted operator in tools/accept/part1.cjs closes the pressure loop.
+- With 0.3 x error - 1.0 x the 3-min trend it limit-cycled against the bed lag at 45 MW: MSP 94 to 106 ata, about a 57 min period.
+- KANA probe: 3.0 x the trend stops the swing (coal 30.5 to 33.4 T/H), but the pressure then comes in slowly (tau about 30 min).
+- Now 0.5 x error - 3.0 x the trend: tau about 18 min, and it still looks about 9 min ahead (the bed lag). It is still at most one
+  1 % press every 3 min, reading only what the operator sees.
+- The sweep with this law is running. Its result comes with the st150 re-settle PR.
