@@ -47,6 +47,22 @@
   "anElecStep",
   "anUnitStep0"
  ],
+ "fwPd": [
+  "anFwStep",
+  "anSuFwCv"
+ ],
+ "hlW": [
+  "anHpLeak",
+  "anHphStep"
+ ],
+ "hlA": [
+  "anHpLeak",
+  "anHphStep"
+ ],
+ "avH": [
+  "anAsTagStep",
+  "anFwTagStep"
+ ],
  "hxM": [
   "anHxGas",
   "anHxStep"
@@ -89,33 +105,9 @@
   "anCondStep",
   "anUnitStep0"
  ],
- "fwPd": [
-  "anFwStep",
-  "anSuFwCv"
- ],
- "hlW": [
-  "anHpLeak",
-  "anHphStep"
- ],
- "hlA": [
-  "anHpLeak",
-  "anHphStep"
- ],
- "avH": [
-  "anAsTagStep",
-  "anFwTagStep"
- ],
  "mt": [
   "anLubeCoolStep",
   "anMotorStep"
- ],
- "coalR": [
-  "anCoalWet",
-  "anSuFw"
- ],
- "coalK": [
-  "anCoalWet",
-  "anSuFw"
  ],
  "clS": [
   "anClRnd",
