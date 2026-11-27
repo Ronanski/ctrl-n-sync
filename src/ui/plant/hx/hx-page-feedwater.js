@@ -395,6 +395,42 @@
         { x: 1380, y: 410, s: 'Level 1', key: 'LT-HD1106-1', unit: 'mm', dp: 0 },
         { x: 1380, y: 426, s: 'Level 2', key: 'LT-HD1106-2', unit: 'mm', dp: 0 }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Drum level control',
+        pens: [
+          ['Drum level', 'pv:LICBR1001', 'mm', 0],
+          ['Set point', 'sv:LICBR1001', 'mm', 0],
+          ['Feedwater flow', 'pv:FICFW1007', 't/h', 0],
+          ['Feedwater flow set point', 'sv:FICFW1007', 't/h', 0],
+          ['Main feedwater valve', 'mv:FICFW1007', '%'],
+          ['Start-up feedwater valve', 'mv:LICBR1001B', '%']
+        ]
+      },
+      {
+        title: 'Boiler feed pumps and deaerator',
+        pens: [
+          ['Feed pump A current', 'IT-P1115A', 'A', 0],
+          ['Feed pump B current', 'IT-P1115B', 'A', 0],
+          ['Feed pump discharge pressure', 'PT-FW1011', 'kg/cm²'],
+          ['Deaerator level', 'LT-CD1104-1', 'mm', 0],
+          ['Deaerator pressure', 'PT-CD1104', 'kg/cm²']
+        ]
+      },
+      {
+        title: 'High pressure heaters',
+        pens: [
+          ['Feedwater after heater 1', 'TT-FW1105', '°C', 0],
+          ['Feedwater after heater 2', 'TT-FW1106', '°C', 0],
+          ['Heater 1 level', 'pv:LICHD11051', 'mm', 0],
+          ['Heater 2 level', 'pv:LICHD11061', 'mm', 0],
+          ['Heater 1 drain valve', 'mv:LICHD11051', '%'],
+          ['Heater 2 drain valve', 'mv:LICHD11061', '%']
+        ]
+      }
+    ]
   });
 })();

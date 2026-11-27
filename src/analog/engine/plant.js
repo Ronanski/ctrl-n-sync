@@ -335,14 +335,96 @@ function anCompNet(S, ai) {
 const AN_CYC = { u: {}, ffw: 0, fdr: 0 };
 if (typeof window !== 'undefined') window.AN_CYC = AN_CYC; /* read by the world (plantsw.js BFWP suction pressure) */
 const AN_CYC_TAG = { LICCD1104: 'da', LICCD1110A: 'hw', FICCD1120: 'cf' };
-/* 3.2.3-beta.25 (Mina beta.24 B24-1, beta.19 B19-2, beta.20 B20-2: after the trip LCV-CD1104 at 3.7 % passed 80 T/H against 25 T/H of
-   feedwater and the deaerator rose to +544 mm; at 10.5 % 230 T/H drained the hotwell): the low end of the valve from its sheet
-   (control valve sheet p74, LCV-CD1104: 36,000 kg/h at 6 % travel, team-files plant-study 12-assumptions), the 150 MW point from the
-   snapshot (17.5 % = 380 T/H, hmi-op.js 28.png / 03.png), straight lines between; above 17.5 % the slope of before (21.7 T/H per %).
-   Was 21.7 T/H per % from 0 (linear, no source). The sheet's 362 T/H at 68 % and the snapshot cannot both hold: still open */
-function anDaQ(u) {
-  u = Math.max(0, +u || 0);
-  return u <= 6 ? 6 * u : u <= 17.5 ? 36 + ((380 - 36) / 11.5) * (u - 6) : 380 + 21.7 * (u - 17.5);
+/* 3.2.5 PHASE 11 (MEI, condenser / condensate). THE CONDENSATE TO THE DEAERATOR (LCV-CD1104): the flow where the pump curve meets the system.
+   Before: anDaQ (plant.js) gave the flow straight from the valve opening, a line through 6 % = 36 T/H (valve sheet) and 17.5 % =
+   380 T/H taken from the HMI snapshot 28.png / 03.png (a snapshot fit, RULES 3.12), with no pump, no deaerator pressure, no line.
+   Now the flow w (T/H) solves  CEP discharge(w) - line(w) - valve(w) = deaerator inlet(w):
+     pump      KSB WKTB 6/1+2 curve Q43495D (AN_CD qQ / qH, 1780 rpm, sp. gr. 0.9926): head H(q) at q = (w + recirculation) /
+               running pumps; discharge = suction + 0.09926 H, suction = condenser (U.cdP, kg/cm2 abs) + the water down to the
+               discharge flanges (AN_CD zS 1.678 m, KSB GA F30157 A, + hotwell level) - 1.0332 (anCdPdis, also PT-CD1117 in anCondStep).
+     valve     LCV-CD1104 Copes-Vulcan data sheet K1AU3-E2-0-123 R1 item 14 (FHI ITEM 14, PDF p74 spec sheet, p75 "Cv vs. Lift"):
+               8" CL300 GS-10 globe, Multi-Stage HUSH II trim, LINEAR, max Cv 340 at 100 % lift; COND 1 362,594 kg/h 13.6 ->
+               10.1 kg/cm2 g at 40 C, Cv 228 (67 %) at 68 % travel; COND 2 36,000 kg/h 19.9 -> 3.02 kg/cm2 g at 37.8 C, Cv 10.3 (3 %)
+               at 6 % travel. Cv vs lift read off the p75 graph: 0 -> 2 % Cv at 2 % lift, flat to the COND 2 point (3.03 % at 6 %),
+               the linear trim from 8.5 % lift (3.1 %) through COND 1 to 100 % / 100 % (CV_LIFT below; the graph, not a fit).
+               ISA liquid sizing: q (US gpm) = Cv sqrt(dp psi / SG) -> w (T/H) = 0.22712 x 0.9926 x Cv sqrt(14.2233 dp / SG)
+               = 0.8566 Cv sqrt(dp SG), dp kg/cm2 (check: COND 1 0.8566 x 228 x sqrt(3.5 x 0.9926) = 364.9 T/H, sheet 362.6;
+               COND 2 0.8566 x 10.3 x sqrt(16.88 x 0.9926) = 36.1 T/H, sheet 36.0).
+     line      P1 (valve inlet) = discharge - z1 - kL w^2: the static lift from the pump to the valve and the friction of the gland
+               steam / ejector condensers, polisher and LP heaters 1 ~ 3 (the recirculation FCV-CD1120 is taken off after the
+               polisher, before the heaters: PD-016, so kL carries w only). z1 and kL from the two sheet conditions with the pump
+               law above: COND 1 = the design point (one CEP, condenser at its design 68.6 mbar abs = 0.0700 kg/cm2 abs, K2MC3A O&M
+               L15-1 1.1.2), COND 2 = the fill before start-up (deaerator O&M L15-2 1.3.2.1: "the LP heater and the feedwater tank
+               must be filled ... by the extraction pumps. Once the operation is complete, steam is admitted": no steam yet, so the
+               condenser and the deaerator are at the atmosphere). Both conditions at the normal hotwell level. Result below
+               (anCdHydK): z1 1.05 kg/cm2, kL 2.26e-5 kg/cm2 per (T/H)^2.
+     deaerator P2 (valve outlet) = deaerator (U.xt.dea, PT-CD1104 kg/cm2 g, ABC-056 AI0417) + z2 + kN w^2: the static head up to the
+               deaerator and its spring-loaded spray nozzles (L15-2 1.2: 10 nozzles). COND 1 with the deaerator at its design 6.05 ata
+               = 5.02 kg/cm2 g (L15-2 1.1.2 nominal thermal characteristics, condensate 362.59 T/H), COND 2 at the atmosphere:
+               z2 3.00 kg/cm2, kN 1.58e-5 per (T/H)^2.
+   No pump = no flow. The polisher and the heater paths (anHtrPath) still multiply the result in plant.js anCycFlows. */
+const AN_CDH = {
+  sg: 0.9926 /* KSB data sheet, condensate at 40 C */,
+  cvMax: 340 /* LCV-CD1104 sheet, max Cv at 127 mm lift */,
+  /* lift %, Cv % of cvMax: data sheet p75 graph (see above) */
+  lift: [0, 2, 6, 8.5, 68, 100],
+  cv: [0, 2, 3.03, 3.1, 67.06, 100],
+  c1: { w: 362.594, P1: 13.6, P2: 10.1, Pcd: 0.07, Pda: 6.05 - 1.0332 } /* COND 1, design */,
+  c2: { w: 36.0, P1: 19.9, P2: 3.02, Pcd: 1.0332, Pda: 0 } /* COND 2, the fill */,
+  kW: 0.8566 /* T/H per Cv sqrt(kg/cm2), ISA liquid sizing, see above */
+};
+/* Cv of LCV-CD1104 at a lift (%) */
+function anCdCv(u) {
+  const K = AN_CDH;
+  return (K.cvMax * swInterp(K.lift, K.cv, Math.max(0, Math.min(100, +u || 0)))) / 100;
+}
+/* CEP discharge (kg/cm2 g) at the total flow Q (m3/h) shared by n running pumps, condenser Pcd (kg/cm2 abs), hotwell hw (mm) */
+function anCdPdis(Q, n, Pcd, hw) {
+  const K = AN_CD,
+    suc = Pcd - 1.0332 + 0.09926 * (K.zS + (isFinite(hw) ? hw : 0) / 1000);
+  return n > 0 ? suc + 0.09926 * swInterp(K.qQ, K.qH, Q / n) : suc;
+}
+/* the line and deaerator constants from the two sheet conditions (one CEP, normal hotwell level) */
+function anCdHydK() {
+  const K = AN_CDH;
+  if (K.k) return K.k;
+  const d1 = anCdPdis(K.c1.w / K.sg, 1, K.c1.Pcd, 0) - K.c1.P1,
+    d2 = anCdPdis(K.c2.w / K.sg, 1, K.c2.Pcd, 0) - K.c2.P1,
+    w1 = K.c1.w * K.c1.w,
+    w2 = K.c2.w * K.c2.w,
+    kL = (d1 - d2) / (w1 - w2),
+    e1 = K.c1.P2 - K.c1.Pda,
+    e2 = K.c2.P2 - K.c2.Pda,
+    kN = (e1 - e2) / (w1 - w2);
+  K.k = { kL, z1: d2 - kL * w2, kN, z2: e2 - kN * w2 };
+  return K.k;
+}
+/* the condensate flow to the deaerator (T/H) through LCV-CD1104 at lift u (%), with the recirculation wr (T/H) on the same pumps.
+   Reads the plant (AN_UNIT): the running CEP (M.3350 / M.3351), the condenser U.cdP, the hotwell U.cdHw, the deaerator PT-CD1104.
+   Solved by bisection: the valve flow falls as w rises (the pump head falls, the line and nozzle losses rise), so one root. */
+function anDaQ(u, wr) {
+  const K = AN_CDH,
+    k = anCdHydK(),
+    U = typeof AN_UNIT !== 'undefined' ? AN_UNIT : null,
+    n = typeof srcBit === 'function' ? (srcBit(['M.3350']) > 0.5 ? 1 : 0) + (srcBit(['M.3351']) > 0.5 ? 1 : 0) : 0,
+    Cv = anCdCv(u);
+  if (!n || !(Cv > 0) || !U) return 0;
+  const Pcd = isFinite(U.cdP) ? U.cdP : 1.0332,
+    hw = isFinite(U.cdHw) ? U.cdHw : 0,
+    pda = U.xt && U.xt.dea ? anUnitVal(U.xt.dea) : NaN,
+    Pda = isFinite(pda) ? pda : 0,
+    r = Math.max(0, +wr || 0),
+    dp = w => anCdPdis((w + r) / K.sg, n, Pcd, hw) - k.z1 - k.kL * w * w - (Pda + k.z2 + k.kN * w * w),
+    f = w => K.kW * Cv * Math.sqrt(K.sg * Math.max(0, dp(w))) - w;
+  if (f(0) <= 0) return 0;
+  let a = 0,
+    b = 1000;
+  for (let i = 0; i < 40; i++) {
+    const m = (a + b) / 2;
+    if (f(m) > 0) a = m;
+    else b = m;
+  }
+  return (a + b) / 2;
 }
 function anCycFlows(t) {
   const s = (typeof srcState === 'function' && srcState(t)) || { cep: 0, ms: 0, ext: 0 },
@@ -354,8 +436,8 @@ function anCycFlows(t) {
     /* 3.2.3 SOHEE: the condensate polisher and its bypass FCV-CD1121 both shut = no condensate, to the deaerator nor back through the
        min-flow recirculation (its take-off is after the polisher, MK05 / PD-016; unit.js U.polP) */
     pol = typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.polP) ? AN_UNIT.polP : 1,
-    fda = cep * cdp * pol * Math.min(520, anDaQ(AN_CYC.u.da || 0)),
     frec = cep * pol * 2.23 /* FCV-CD1120, valve sheet p96, 223 T/H */ * 100 * c((AN_CYC.u.cf || 0) / 100),
+    fda = cep * cdp * pol * anDaQ(AN_CYC.u.da || 0, frec),
     /* the steam of the turbine and of the HP bypass (MB-011 item 8, MB-012 items 6, 10: bypass -> cold reheat -> reheater -> LP
        bypass -> condenser) both come back as water; only vented steam leaves the cycle */
     ext = s.ext || 0;

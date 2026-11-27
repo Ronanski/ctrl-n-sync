@@ -185,6 +185,31 @@
         { x: 372, y: 928, s: 'flash pipe', cls: 'hx-note', anchor: 'end' } /* above its line, clear of the condenser pressure */,
         { x: 170, y: 780, s: 'in the condenser neck', cls: 'hx-note', anchor: 'middle' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Extraction steam pressure',
+        pens: [
+          ['High pressure heater 2 extraction', 'PICR19011', 'kg/cm²'],
+          ['High pressure heater 1 extraction', 'PT-TS1013', 'kg/cm²'],
+          ['Deaerator extraction', 'PT-TS1017', 'kg/cm²', 2],
+          ['Low pressure heater 3 extraction', 'PT-TS1022', 'kg/cm²', 2],
+          ['Low pressure heater 2 extraction', 'PT-TS1026', 'kg/cm²', 3],
+          ['Condenser pressure', 'PT-CD1110', 'kg/cm² abs', 3]
+        ]
+      },
+      {
+        title: 'Extraction steam temperature',
+        pens: [
+          ['High pressure heater 2 extraction', 'TT-TS1011', '°C', 0],
+          ['High pressure heater 1 extraction', 'TT-TS1014', '°C', 0],
+          ['Deaerator extraction', 'TT-TS1018', '°C', 0],
+          ['Low pressure heater 3 extraction', 'TT-TS1023', '°C', 0],
+          ['Low pressure heater 2 extraction', 'TT-TS1027', '°C', 0]
+        ]
+      }
+    ]
   });
 })();
