@@ -193,11 +193,11 @@ const judge = (v, tg, tol, kind) => {
       /* the firing by hand (guide 7.2): one HIC-BM press of 1 %, then 3 min watching the 3-min MSP trend before the next (the bed
          answers a firing change in ~10 min; a press every minute overshoots and swings the coal 23 <-> 41 T/H, D15 study 2026-11-24).
          KANA 2026-11-27: with 0.3 x error - 1.0 x the 3-min trend the operator limit-cycled against the bed lag at 45 MW (MSP 94 <-> 106
-         ata, ~57 min period, coal 26.6 <-> 38.7 T/H); 3.0 x the trend (looks ~9 min ahead, the bed lag) stops the swing, and 0.5 x the
-         error brings the pressure to the SV in about 18 min (3 min x 3.0 / 0.5) instead of 30 */
+         ata, ~57 min period, coal 26.6 <-> 38.7 T/H); 3.0 x the trend (looks ~9 min ahead, the bed lag) stops the swing. 0.5 x the error with 3.0 x the trend
+         swung again at 45 MW in the main sweep (MSP 91 <-> 130 ata, phase thread 2026-11-27), so the error gain stays 0.3 */
       if (s.bm === 'MAN') {
         OP.h = OP.h || []; OP.h.push(s.P); OP.n = (OP.n || 0) + 1;
-        const dP3 = OP.h.length > 3 ? s.P - OP.h[OP.h.length - 4] : 0, d = 0.5 * (s.sv - s.P) - 3.0 * dP3;
+        const dP3 = OP.h.length > 3 ? s.P - OP.h[OP.h.length - 4] : 0, d = 0.3 * (s.sv - s.P) - 3.0 * dP3;
         if (OP.n - (OP.last || -9) >= 3 && Math.abs(d) >= 0.5 && (OP.last = OP.n)) await fpBtn('ABC-001C', 'HIC-BM', d > 0 ? '▲' : '▼');
       }
       /* the O2 trim AICFG112 (ABC-002) is forced MANUAL below 220 T/H (M.0102 / M.0103); the operator puts it at 50 % = neutral
