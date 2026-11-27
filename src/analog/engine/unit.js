@@ -1985,8 +1985,13 @@ function anBacStep(U, dt) {
                   hotwell temperature = Ts (alarm list normal 38.6 = saturation of the design 68.6 mbar);
      turbine      the TCS LOW VACUUM trip at 0.26 kg/cm2 abs (IBD 310SC90-794 rev 2 sheet TA-10: 2 of 3, ON >= 0.26, OFF <= 0.22; LOW alarm 0.14);
      CEP          flow of a running pump = (condensate to the deaerator + recirculation) / running pumps (plant.js AN_CYC); head from the
-                  curve; outlet = suction (condenser pressure + the water above the impeller) + head - kz (kz 0.96 kg/cm2, NO-SOURCE:
-                  the transmitter elevation, calibrated to 16.9 at 150 MW); current = 28.1 A x shaft power / 245.7 kW (snapshot ratio). */
+                  curve; outlet PT-CD1117 = the discharge flange (plant.js anCdPdis): suction at the flange (condenser pressure + the
+                  water from the hotwell surface down to the flanges, zS) + the head of the curve. Phase 11 (MEI): KSB GA drawing
+                  F30157 A rev 3 (L10-1 A05): suction N1 / discharge N2 flange centre line 336 mm above the installation floor (GL),
+                  first stage impeller 4,322 mm below it; the KSB head is flange to flange (the can and the column are inside the pump).
+                  Hotwell normal level FL+1814 = GL+2014 mm (K2MC3A, FL = GL+200: data sheet "GL+1700 = FL+1500"), so zS = 2.014 -
+                  0.336 = 1.678 m. Before: zS 6.336 m (down to the impeller, which the flange-to-flange head already counts) and a
+                  kz 0.96 kg/cm2 taken off to meet the snapshot 16.9 (28.png); both are gone; current = 28.1 A x shaft power / 245.7 kW (snapshot ratio). */
 const AN_CD = {
   Qd: 195700,
   Wd: 316.024,
@@ -2000,8 +2005,7 @@ const AN_CD = {
   qH: [210, 209, 205, 196, 180, 170, 160, 130],
   pQ: [0, 50, 400, 480],
   pP: [105, 123, 252, 283],
-  zS: 6.336,
-  kz: 0.96,
+  zS: 2.014 - 0.336 /* m, GA F30157 A + K2MC3A hotwell normal level, see above */,
   kI: 28.1 / 245.7,
   dp0: 0.019,
   q0: 383
@@ -2443,19 +2447,15 @@ function anCondStep(U, dt) {
   const run = [srcBit(['M.3350']) > 0.5 ? 1 : 0, srcBit(['M.3351']) > 0.5 ? 1 : 0],
     n = run[0] + run[1],
     u = (typeof AN_CYC !== 'undefined' && AN_CYC.u) || {},
-    Qt = n
-      ? (Math.min(520, typeof anDaQ === 'function' ? anDaQ(u.da) : 21.7 * Math.max(0, u.da || 0)) +
-          2.5 * Math.max(0, Math.min(100, u.cf || 0))) /
-        0.9926
-      : 0,
+    wr = 2.23 * Math.max(0, Math.min(100, u.cf || 0)) /* FCV-CD1120, valve sheet p96, 223 T/H (as plant.js anCycFlows) */,
+    Qt = n ? (anDaQ(u.da, wr) + wr) / 0.9926 : 0,
     q = n ? Qt / n : 0,
-    hw = anUnitVal(U.cdHwL || []),
-    Psuc = U.cdP - 1.033 + 0.09926 * (K.zS + (isFinite(hw) ? hw : 0) / 1000);
+    hw = anUnitVal(U.cdHwL || []);
   U.cdQp = Math.round(q);
   U.cdQt = Math.round(Qt); /* Mina F28: FT-CD1120 of DITL-64 row 28 reads the plant, it stood at the default 75 T/H */
   U.cdHw = hw;
   U.cdRun = run;
-  U.cdPd = Math.max(0, Math.min(25, Psuc + (n ? 0.09926 * swInterp(K.qQ, K.qH, q) : 0) - K.kz));
+  U.cdPd = Math.max(0, Math.min(25, anCdPdis(Qt, n, U.cdP, hw)));
   run.forEach((r, i) => {
     U['cdI' + i] = r ? Math.round(10 * K.kI * swInterp(K.pQ, K.pP, q)) / 10 : 0;
     U['cdDp' + i] = r ? Math.round(1000 * K.dp0 * (q / K.q0) * (q / K.q0)) / 1000 : 0;
