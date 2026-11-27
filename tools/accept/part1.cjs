@@ -63,6 +63,7 @@ const judge = (v, tg, tol, kind) => {
     const snap = () => page.evaluate(() => {
       const U = AN.unit, H = U.hxO || {}, hs = BAL.hs, hw = BAL.hw, L = window.LS_LIVE;
       const pv = t => { try { const f = L.fp(t); return +f.S.rt.v[f.c.q.pv]; } catch (e) { return NaN; } };
+      const sv = t => { try { return +L.svOf(L.fp(t)); } catch (e) { return NaN; } };
       const nv = n => (U.tafS && U.tafS.rt && n >= 0 ? +U.tafS.rt.v[n] : NaN);
       const air = (U.taf || []).map(nv);
       const w1 = U.w1s || 0, w2 = U.w2s || 0;
@@ -97,7 +98,7 @@ const judge = (v, tg, tol, kind) => {
         MSF: U.ms, Pms: U.Pms + 1.0332, MSTt: H.ms, Psh: U.Pms, MST: H.ms, RHT: H.rh,
         tEco: H.tEco, Tfw: tfw, FWf: U.fwMain + w1 + w2 - bd /* FE-FW1007 is before the SH spray tap (PD-017, beta.374) */, sp: w1 + w2, rsp: U.rhSp || 0, MW: U.MW, HR: U.MW > 1 ? (qT * 3600) / 4.1868 / (U.MW * 1000) * 1000 / 1000 : NaN,
         bed: U.Tb, Tu: U.Tu, dp: pv('DPICFG108'), ahGi: U.aphGi, ahGo: U.aphGo, coal: U.Fc, lime: U.lm ? U.lm.q : NaN, air: air.reduce((a, b) => a + (b || 0), 0), PA: air[0], SA: air[1],
-        O2: U.o2v, O2bal: window.LS_FG && typeof LS_FG.o2dry === 'function' ? LS_FG.o2dry(U.Fc, air.reduce((a, b) => a + (b || 0), 0)) : NaN /* AOI: the dry O2 the FHI Tab 2 mole balance gives at this coal and air (the judge below the DCS minimum air) */, eff: fuel > 0 ? (100 * steam) / fuel : NaN, trip: !!(AN.soeTrip && AN.soeTrip().mft.on)
+        PAsv: sv('FICFA1071'), SAsv: sv('FICFA1081') /* the DCS air demands: PA = S1-LN12 + LN14, SA = the rest of LN5 (AOI 2026-11-27; FICFA1071 / FICFA1081 both REMOTE on the ABC-006 LN5 air demand, OPERATOR_GUIDE 1.2 and 5.4) */, O2: U.o2v, O2bal: window.LS_FG && typeof LS_FG.o2dry === 'function' ? LS_FG.o2dry(U.Fc, air.reduce((a, b) => a + (b || 0), 0)) : NaN /* AOI: the dry O2 the FHI Tab 2 mole balance gives at this coal and air (the judge below the DCS minimum air) */, eff: fuel > 0 ? (100 * steam) / fuel : NaN, trip: !!(AN.soeTrip && AN.soeTrip().mft.on)
       };
     });
     const win = async () => {

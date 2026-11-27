@@ -20,11 +20,12 @@ const HB = C.hb,
   hb3 = arr => [30, 60, 100].map((x, i) => [x, arr[i]]);
 /* LOGGED DIFFERENCE (team decision 2026-11-27, Phase 11; the plant sheet wins, DCS limits are never changed to meet a design curve):
    the DCS keeps a minimum total air of 446 T/H (ABC-006 LN5 air demand floor, ABC-002 LN40 cross limit 446 -> 35 % fuel; OPERATOR_GUIDE
-   5.4 and the limits table; at minimum air PA 285 + SA 161 with HIC-TADBS bias 0, OPERATOR_GUIDE 5.3), which keeps the bed fluidized.
-   Where FHI Fig 12 total air is below 446 T/H the air rows are judged against that floor, and O2 against the flue gas balance at the
+   5.4 and the limits table), which keeps the bed fluidized. Where FHI Fig 12 total air is below 446 T/H, total air is judged against that
+   floor; PA and SA against the logic demands (AOI 2026-11-27: PA = S1-LN12 coal -> PA demand + LN14 HIC-TADBS bias, SA = the rest of
+   the LN5 air demand; recorded as s.PAsv / s.SAsv, the FICFA1071 / FICFA1081 set points), and O2 against the flue gas balance at the
    air actually given (s.O2bal, AOI's mole balance from FHI Tab 2, recorded by tools/accept/part1.cjs), not against FHI Fig 7. Above
    that point FHI Fig 12 / Fig 7 hold as printed. */
-const MINAIR = { total: 446, pa: 285, sa: 161 };
+const MINAIR = { total: 446 };
 const minAir = s => {
   const y = at(C.fhi.fig12_air_TH.total, (s.MSF / MCR) * 100);
   return y != null && y < MINAIR.total;
@@ -38,8 +39,8 @@ const CURVES = [
   ['Furnace DP (bed inventory), mmH2O', 'dp', C.fhi.fig9_furnace_dp_mmH2O.pts, 'mcr', 'FHI Fig 9'],
   ['SH spray, T/H', 'sp', C.fhi.fig10_sh_spray_pct_of_MSF.pts, 'mcr', 'FHI Fig 10 (% of MSF x MSF)', (s, y) => (y * s.MSF) / 100],
   ['Total air, T/H', 'air', C.fhi.fig12_air_TH.total, 'mcr', 'FHI Fig 12; DCS minimum air 446 floor', (s, y) => Math.max(y, MINAIR.total)],
-  ['Primary air, T/H', 'PA', C.fhi.fig12_air_TH.pa, 'mcr', 'FHI Fig 12; at the DCS minimum air PA 285', (s, y) => (minAir(s) ? MINAIR.pa : y)],
-  ['Secondary air, T/H', 'SA', C.fhi.fig12_air_TH.sa, 'mcr', 'FHI Fig 12; at the DCS minimum air SA 161', (s, y) => (minAir(s) ? MINAIR.sa : y)],
+  ['Primary air, T/H', 'PA', C.fhi.fig12_air_TH.pa, 'mcr', 'FHI Fig 12; at the DCS minimum air the logic PA demand (FICFA1071 SV)', (s, y) => (minAir(s) ? s.PAsv : y)],
+  ['Secondary air, T/H', 'SA', C.fhi.fig12_air_TH.sa, 'mcr', 'FHI Fig 12; at the DCS minimum air the logic SA demand (FICFA1081 SV)', (s, y) => (minAir(s) ? s.SAsv : y)],
   ['Coal, T/H', 'coal', C.fhi.fig13_coal_TH.pts, 'mcr', 'FHI Fig 13'],
   ['Air heater gas in, C', 'ahGi', C.fhi.l20_aph_gas_in_C.pts, 'mcr', 'L20 Howden APH'],
   ['Main steam flow, T/H', 'MSF', hbPts(HB.ms_TH), 'load', 'HB PPE-14-0725'],
