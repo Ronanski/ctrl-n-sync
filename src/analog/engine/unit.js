@@ -110,7 +110,7 @@ const AN_UNIT = {
      -> 'sync' (3600 rpm, the TCS closes the GCB: I.0931 = 1 / I.0932 = 0, INITIAL LOAD 4.5 MW on the ICV) -> 'load' (LOAD UP
      at rate MW/min = 5 % of 150 MW per minute; the HP control valves open as the flow demand passes the CV opening bias (anTbFlow), ICV -> CV
      TRANSFER COMPLETE I.0418 = 1, "transfer at 20 MW or HP bypass closed"). While the generator is on the grid the MW is the HP
-     steam and the IP / LP steam, each x its enthalpy drop (turbine.js tbPath, Stodola + IF97, Phase 11), less the losses (anTbGen). Before the transfer the IP / LP steam comes from the HP bypass through the
+     steam and the IP / LP steam, each x its enthalpy drop (turbine.js tbPath, Stodola + IF97, Phase 11), less the mechanical loss (AN_TB.mech) and the generator losses (anGenW, YUI). Before the transfer the IP / LP steam comes from the HP bypass through the
      reheater (U.rr integrator of beta.16, with the ICV flow out). DCS CONTROL MODE PERMISSIVE I.0081 (3.2.3-beta.135, TCS soft logic
      TCE 331DM09784 p.127 TCE180, read 2026-11-12 on the PC): the NOT of the reset group of DCS CONTROL MODE = 52G closed, no TURBINE
      TRIP, no FORCED CLOSE (HOUSE LOAD OPERATION), and in IP START the TRANSFER REGION COMPLETE(IP); was MWperm 45 MW (the NORMAL
@@ -3916,7 +3916,9 @@ function anUnitStep0(dt) {
   const qOn = l => !!(l && l.S && l.S.rt && +l.S.rt.v[l.n] > 0.5),
     qHp = qOn(U.qo && U.qo.hp);
   for (const x of U.vlv) {
-    const o = x.rh && qHp ? 100 : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))),
+    const o = x.rh
+        ? anVlvStroke(U, 'hpb', qHp ? 100 : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))), qHp, dt)
+        : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))) /* PCV-MS1001: stroke time NOT IN DOCS (positioner only, no solenoid): as commanded */,
       /* Phase 11 rank 9: the valve law of the vendor Cv (turbine.js anVlvW): main steam at the SH outlet (P1, the finishing SH steam
          temperature) to the reheater (its pressure, the step before: the cold reheat line is the reheater inlet; with the turbine
          tripped the steam path has no HP exhaust pressure of its own) or to the silencer (atmosphere; the blow-off is choked at every
@@ -4120,10 +4122,10 @@ function anUnitStep0(dt) {
   }
   const Pms = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
   U.Pms = Pms; /* 3.2.0-beta.14: source of the reducing stations (source.js) */
-  /* generator: the shaft work of the steam path less the mechanical and generator losses (anTbGen, turbine.js); qip = the reheat
+  /* generator: the shaft work of the steam path less the mechanical and generator losses (AN_TB.mech, turbine.js; generator losses anGenW, YUI); qip = the reheat
      pressure x the ICV opening, = the HP steam when the bypass is shut and the ICV full open; 0 off the grid */
   /* 3.2.3-beta.240 (user 2026-11-14, reverse power): on the grid the MW is not held at 0 or above. With too little steam the generator
-     takes power from the grid to keep the shaft at 3600 rpm (motoring): the losses of anTbGen stay when the steam is gone. The 32 relay
+     takes power from the grid to keep the shaft at 3600 rpm (motoring): the mechanical and generator losses stay when the steam is gone. The 32 relay
      (anRp32) sees the negative power */
   /* Phase 11 C (RIN): the steam the IP turbine takes from the reheater (T/H) = its Stodola swallowing capacity at the reheater pressure
      (the IP / LP blading of turbine.js from the condenser up: m = Kip sqrt(Prh^2 - Pc^2), Kip read off the last pass of the steam path,
@@ -4227,7 +4229,8 @@ function anUnitStep0(dt) {
     shifted = (L, d) => anUnitWrite(L, i => L.a0[i] + d);
   /* reheat pressure: proportional to the steam through the IP / LP turbine = turbine steam + HP bypass, less what the LP bypass
      takes (its size lpb x the anchor flow at the anchor pressure); first stage pressure: proportional to the turbine steam */
-  const olp = qOn(U.qo && U.qo.lp) ? 100 : U.lpv ? Math.max(0, Math.min(100, +U.lpv.S.rt.v[U.lpv.n] || 0)) : 0;
+  const qLp = qOn(U.qo && U.qo.lp),
+    olp = anVlvStroke(U, 'lpb', qLp ? 100 : U.lpv ? Math.max(0, Math.min(100, +U.lpv.S.rt.v[U.lpv.n] || 0)) : 0, qLp, dt);
   /* 3.2.3-beta.239: one mass balance of the reheater at every load (was: this balance until the ICV to CV transfer, then a steady
      state law (ms + mhp) / (m0 (1 + LP bypass)) with a 10 s lag that took the reheater pressure from 19 to 5.7 kg/cm2 at the transfer
      while the ICV was thrown open). In = HP turbine exhaust (the CV steam U.ms) + HP bypass; out = ICV (qip) + LP bypass + RH blow-off.
@@ -4261,6 +4264,11 @@ function anUnitStep0(dt) {
        and F5 = 1.263 x the steam F4 (spray from the CP outlet, 216949 / 171756). Gauge = ata - 1.033; shut, the line is at condenser
        vacuum and the 0 ~ 50 transmitter reads 0 (snapshot 0.0 at 150 MW) */
     U.Plpo = Math.max(0, 0.0538 * 1.263 * U.qlp - 1.033);
+    /* Phase 11 rank 9b (RIN, for MEI's spray TCV-CD1115): the PCV-HR1010 BODY outlet, where the spray nozzle No. 84 of the DSCV injects
+       (K1AU3-D1-0-043 R0 p9): the sheet P2 4.0 / 2.02 / 0.58 kg/cm2a at 217.1 / 111.8 / 33.2 T/H outlet flow = 0.0184 ata per T/H
+       (cond 1; the line after it is choked, pressure in line with flow, as PT-HR1011 above), never below the condenser. ata (abs).
+       The outlet flow = the steam x 217102 / 171756 (the spray of cond 1). DESIGN-SRC: vendor sheet K1AU3-D1-0-043 R0 p9 */
+    U.Pvlo = Math.max(isFinite(U.cdP) ? U.cdP : 1.0332, (4.0 / 217.102) * U.qlp * (217102 / 171756));
   }
   /* PT-ST1002-1 / -2 / -3 (after reheat valve A, the IP turbine inlet): the IP turbine passes steam in line with its inlet pressure
      (Stodola, the same law as qip above), so the absolute pressure = 150 MW value x qip / m0. 150 MW anchor: PIST10021 / 2 / 3 =
