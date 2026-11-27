@@ -4,3 +4,9 @@
 - `unit.js` `anCondStep`: the CEP flow uses the same anDaQ plus the FCV-CD1120 recirculation (223 T/H valve sheet). The old 2.5 T/H per % path is gone.
 - Tested: no-fit 0 new; behaviour gate 150 MW 20 min ALL PASS.
 - Not tested: 45 ~ 150 MW sweep (phase gate).
+
+## Item 2: CEP outlet pressure PT-CD1117
+- `unit.js` `AN_CD.zS` was 6.336 m (down to the 1st-stage impeller) and the snapshot calibration kz 0.96 kg/cm2 sat beside it. Now zS = 1.678 m, from the hotwell surface (GL+2014) to the suction / discharge flanges (GL+336, KSB GA F30157 A rev 3). The KSB head is measured flange to flange. kz is removed.
+- `anCondStep` reads PT-CD1117 from `anCdPdis`, the same law as the deaerator flow, so there is one path.
+- Still open: the CEP motor current law is still the snapshot ratio (28.1 A x shaft power / 245.7 kW). The TECO motor data sheet (eff / pf, drawing 4A040Y856) is not on the PC. The baseline line was swapped one-for-one with the phase thread's OK.
+- Tested: no-fit 0 new; behaviour gate 150 MW 20 min ALL PASS.

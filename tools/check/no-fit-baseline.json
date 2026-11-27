@@ -28,7 +28,7 @@
   "z = 11.3 m CALIBRATED on the HMI snapshot 28.png (2 MWP running at their recirculation flow, levels 13.8 / 13.7 m,",
   "750). The UA in service is CALIBRATED on 27.PNG (return 40 C, supply 38 C at 1500 m3/h = 3,452 kW, seawater",
   "const ld = Math.max(0, Math.min(1, (isFinite(U.MW) ? U.MW : 0) / 150)),",
-  "the transmitter elevation, calibrated to 16.9 at 150 MW); current = 28.1 A x shaft power / 245.7 kW (snapshot ratio). */",
+  "kz 0.96 kg/cm2 taken off to meet the snapshot 16.9 (28.png); both are gone; current = 28.1 A x shaft power / 245.7 kW (snapshot ratio). */",
   "/* 3.2.1 b6: plant DCS trends 2026-11-08 (team-files/plant-study/14): TIFG1090 952 to 962 C from 90 to 150 MW with the plant air, 855 C at 40 MW",
   "burning over tau): at 75 MW the PIC-COBM swing grew to an MFT in 110 min (the plant runs there with coal 47 ~ 51 T/H, plant trend).",
   "/* live Cold start 2026-11-14 (user: \"WALANG DAYAIN\", no curve fits): THE BED HEAT BALANCE of the Cold path. Before, the bed went first",

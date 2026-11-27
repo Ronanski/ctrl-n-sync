@@ -340,8 +340,8 @@ const AN_CYC_TAG = { LICCD1104: 'da', LICCD1110A: 'hw', FICCD1120: 'cf' };
    380 T/H taken from the HMI snapshot 28.png / 03.png (a snapshot fit, RULES 3.12), with no pump, no deaerator pressure, no line.
    Now the flow w (T/H) solves  CEP discharge(w) - line(w) - valve(w) = deaerator inlet(w):
      pump      KSB WKTB 6/1+2 curve Q43495D (AN_CD qQ / qH, 1780 rpm, sp. gr. 0.9926): head H(q) at q = (w + recirculation) /
-               running pumps; discharge = suction + 0.09926 H, suction = condenser (U.cdP, kg/cm2 abs) + the water over the first
-               stage impeller (AN_CD zS 6.336 m + hotwell level) - 1.0332 (anCdPdis, the same law as anCondStep).
+               running pumps; discharge = suction + 0.09926 H, suction = condenser (U.cdP, kg/cm2 abs) + the water down to the
+               discharge flanges (AN_CD zS 1.678 m, KSB GA F30157 A, + hotwell level) - 1.0332 (anCdPdis, also PT-CD1117 in anCondStep).
      valve     LCV-CD1104 Copes-Vulcan data sheet K1AU3-E2-0-123 R1 item 14 (FHI ITEM 14, PDF p74 spec sheet, p75 "Cv vs. Lift"):
                8" CL300 GS-10 globe, Multi-Stage HUSH II trim, LINEAR, max Cv 340 at 100 % lift; COND 1 362,594 kg/h 13.6 ->
                10.1 kg/cm2 g at 40 C, Cv 228 (67 %) at 68 % travel; COND 2 36,000 kg/h 19.9 -> 3.02 kg/cm2 g at 37.8 C, Cv 10.3 (3 %)
@@ -357,7 +357,7 @@ const AN_CYC_TAG = { LICCD1104: 'da', LICCD1110A: 'hw', FICCD1120: 'cf' };
                L15-1 1.1.2), COND 2 = the fill before start-up (deaerator O&M L15-2 1.3.2.1: "the LP heater and the feedwater tank
                must be filled ... by the extraction pumps. Once the operation is complete, steam is admitted": no steam yet, so the
                condenser and the deaerator are at the atmosphere). Both conditions at the normal hotwell level. Result below
-               (anCdHydK): z1 1.51 kg/cm2, kL 2.26e-5 kg/cm2 per (T/H)^2.
+               (anCdHydK): z1 1.05 kg/cm2, kL 2.26e-5 kg/cm2 per (T/H)^2.
      deaerator P2 (valve outlet) = deaerator (U.xt.dea, PT-CD1104 kg/cm2 g, ABC-056 AI0417) + z2 + kN w^2: the static head up to the
                deaerator and its spring-loaded spray nozzles (L15-2 1.2: 10 nozzles). COND 1 with the deaerator at its design 6.05 ata
                = 5.02 kg/cm2 g (L15-2 1.1.2 nominal thermal characteristics, condensate 362.59 T/H), COND 2 at the atmosphere:
