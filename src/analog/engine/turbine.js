@@ -436,6 +436,19 @@ const AN_VLV = {
      piping volume NO-SOURCE about 200 m3: audit B5, piping ISO volumes from YUA next) */
   Crh: 400
 };
+/* the full stroke times of the bypass valves (s): PCV-MS1020 and PCV-HR1010 sheets (K1AU3-D1-0-043 R0 p11 / p9, rev 01 / 02): "< 2 s"
+   trip open on the 24 VDC solenoid (energise to open), "< 5 s" on the 4-20 mA positioner. The vendor gives upper limits only: the
+   valve here takes the full limit (the slowest the sheet allows), NO-SOURCE for the actual commissioning time */
+AN_VLV.tQ = 2;
+AN_VLV.tA = 5;
+/* the lift (%) of bypass valve k moving to the command c (%) at its stroke rate: the solenoid trip open (q) at 100 % / tQ, the
+   positioner at 100 % / tA, both ways; state U.vp (plant state; a save point without it starts at the command) */
+function anVlvStroke(U, k, c, q, dt) {
+  const P = U.vp || (U.vp = {}),
+    x = isFinite(P[k]) ? P[k] : c,
+    r = (100 / (q ? AN_VLV.tQ : AN_VLV.tA)) * Math.max(0, +dt || 0);
+  return (P[k] = x + Math.max(-r, Math.min(r, c - x)));
+}
 /* the Cv share (0 ~ 1) of a valve at lift o (%) */
 function anVlvCv(v, o) {
   const L = v.L,

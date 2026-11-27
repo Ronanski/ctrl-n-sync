@@ -3870,7 +3870,9 @@ function anUnitStep0(dt) {
   const qOn = l => !!(l && l.S && l.S.rt && +l.S.rt.v[l.n] > 0.5),
     qHp = qOn(U.qo && U.qo.hp);
   for (const x of U.vlv) {
-    const o = x.rh && qHp ? 100 : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))),
+    const o = x.rh
+        ? anVlvStroke(U, 'hpb', qHp ? 100 : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))), qHp, dt)
+        : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))) /* PCV-MS1001: stroke time NOT IN DOCS (positioner only, no solenoid): as commanded */,
       /* Phase 11 rank 9: the valve law of the vendor Cv (turbine.js anVlvW): main steam at the SH outlet (P1, the finishing SH steam
          temperature) to the reheater (its pressure, the step before: the cold reheat line is the reheater inlet; with the turbine
          tripped the steam path has no HP exhaust pressure of its own) or to the silencer (atmosphere; the blow-off is choked at every
@@ -4190,7 +4192,8 @@ function anUnitStep0(dt) {
     shifted = (L, d) => anUnitWrite(L, i => L.a0[i] + d);
   /* reheat pressure: proportional to the steam through the IP / LP turbine = turbine steam + HP bypass, less what the LP bypass
      takes (its size lpb x the anchor flow at the anchor pressure); first stage pressure: proportional to the turbine steam */
-  const olp = qOn(U.qo && U.qo.lp) ? 100 : U.lpv ? Math.max(0, Math.min(100, +U.lpv.S.rt.v[U.lpv.n] || 0)) : 0;
+  const qLp = qOn(U.qo && U.qo.lp),
+    olp = anVlvStroke(U, 'lpb', qLp ? 100 : U.lpv ? Math.max(0, Math.min(100, +U.lpv.S.rt.v[U.lpv.n] || 0)) : 0, qLp, dt);
   /* 3.2.3-beta.239: one mass balance of the reheater at every load (was: this balance until the ICV to CV transfer, then a steady
      state law (ms + mhp) / (m0 (1 + LP bypass)) with a 10 s lag that took the reheater pressure from 19 to 5.7 kg/cm2 at the transfer
      while the ICV was thrown open). In = HP turbine exhaust (the CV steam U.ms) + HP bypass; out = ICV (qip) + LP bypass + RH blow-off.
