@@ -61,9 +61,17 @@ const { load } = require(path.join(__dirname, '../../../tools/trace/world.cjs'))
   ok(P().v.every((q, i) => Object.is(q, v1[i])), 'keyframe: the nets come back');
   E.step(1);
   ok(c().mop[0] && c().sm.n === keep.n + 1, 'and the program goes on from it');
+  /* the discharge falls at a physical rate: TCE102 m1 AI DIAG.MD (LME510, PT-LOn922-A, drawn settings DEV HL 2.0 / LL -2.0 kg/cm2g,
+     DEF TP 0.03 S, DEF N 3; src/digital/tce/TCE102.js row 1, src/digital/tce/_lib.js aid) is the rate check of TC-14-116 p 1298 No. 4
+     ("an excessively large rate of signal change"): a fall of more than 2.0 kg/cm2g between two samples is a bad transmitter, the
+     block holds the last good value and the low pressure never reaches CPL A030 (TCE300, LL 5.6). A step 6.63 -> 3 in one scan is such
+     a jump (it failed whenever the 150 MW start carried the inner state of the TCS macros). 0.5 kg/cm2g a scan (1 kg/cm2g/s) is a pump
+     losing its discharge, under the rate limit, and reaches 3 in about 4 s */
   const q = U();
-  for (let i = 0; i < 8; i++) {
-    q.loPa = 3;
+  let p = q.loPa;
+  for (let i = 0; i < 16; i++) {
+    p = Math.max(3, p - 0.5);
+    q.loPa = p;
     E.step(1);
   }
   ok(c().mop[1], 'MOP-B standby start on the low discharge of MOP-A');
