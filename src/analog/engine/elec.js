@@ -122,7 +122,24 @@ function anElec(U) {
   };
 }
 /* the line breaker 52L1 as an ABC input (I.0937) and the turbine target on house load; called by the unit step */
+/* Phase 11 (YUI, 2026-11-28): the generator breaker 52G (GMCB G1, K1AU3E1-0003) trips open on its own: the Plant-menu fault 'gen.52g'
+   (world.js), a trip of the breaker that is not a turbine trip (the 86G lockouts open 52G AND trip the turbine, gen-panel.js; they are
+   not this). The breaker is trip-free: while the trip stands it does not stay closed (IEC 62271-100 trip-free mechanism), so a close
+   from the ATS or the panel opens again at the next scan. 52G OPEN goes to the TCS as the open breaker (tcs.js tcsGcb: GCB ON / OFF
+   inputs, the same as the shutdown step 52G OPEN of TCA587); the turbine stays latched, its speed is the TCS's (full load rejection:
+   TG operator manual tg-2-1-1 p.137, about 106 % in about 1 s). The field breaker 41 stays closed: the AVR holds the no-load voltage. */
+function anElec52gTrip(U) {
+  const W = typeof window !== 'undefined' ? window.WORLD : null,
+    tb = U.tb || {};
+  if (!(W && W.ft && W.ft.has('gen.52g')) || !(tb.st === 'sync' || tb.st === 'load')) return false;
+  if (typeof tcsGcb === 'function') tcsGcb(U, false);
+  Object.assign(tb, { st: 'roll', xfer: false, tgt: 0, aim: 0 });
+  if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
+    lsEventAdd('GEN', 'GEN', 'GENERATOR BREAKER 52G TRIPPED OPEN at ' + Math.round(+U.MW || 0) + ' MW (breaker trip, turbine not tripped)');
+  return true;
+}
 function anElecStep(U) {
+  anElec52gTrip(U);
   const e = U.el || (U.el = { l52: true }),
     tb = U.tb || {},
     g52 = tb.st === 'sync' || tb.st === 'load',
