@@ -622,7 +622,7 @@ function acwSolve(s, kv, kA) {
      sampling rack: fixed sample flows (items 24 / 25, 30.5 T/H 34 -> 43 = 319 kW at the design drum, FHI P2S7 design data SH outlet
        129 + SH drop 16 = 145 kg/cm2 G) x (sample saturation - supply) / (Tsat(145) - 34): the heat goes with the sample temperature;
      turbine lube oil cooler: what anLubeCoolStep removes (U.loQ); bottom ash screw coolers: what anBacStep removes (U.bacQ);
-     generator air coolers (items 14 ~ 21, 3,041 kW design): the generator losses of the generator part (YUI, PR 665: U.genQ =
+     generator air coolers (items 14 ~ 21, 3,041 kW design): the generator losses of the generator part (YUI, PR 665: U.genQ, the sum of
        stator 3 I^2 Ra + field I^2 Rf + the rest at speed, 3,041 kW at the rating; it becomes the port q.ccw.YUI with ports.js).
    The values of the step before (the users step after the loop), a one-scan lag. */
 const AN_CCWQ = { bfp: 414, idf: 617, gah: 3, saf: 21, paf: 7, iaD: 42, paD: 126, smp: 319, Pd: 145, Td: 34 };

@@ -18,8 +18,8 @@ const MAX = +process.argv[2] || 120, CHUNK = +process.argv[3] || 10;
    P2S7 Fig 9 normal overall furnace pressure drop at 100 % load, 1630 mmH2O (hmi-op.js AN_HMI_CTL) */
 const AUTO = { AICFG112: 3.5, DPICFG108: 1630, SICL1060A: undefined, SICL1060B: undefined, SICL1060C: undefined, SICL1060D: undefined };
 /* 3.2.4-beta.8: the drum level too (the feedwater valve law of beta.6 swings the three-element loop ~10 min; a start taken mid-swing dipped to -34 mm) */
-/* the design bed anchor AN_BB.tbA of the engine source (the engine constants are not globals of the page) */
-const TBA = +(/\btbA:\s*([\d.]+)/.exec(fs.readFileSync('src/analog/engine/unit.js', 'utf8')) || [])[1];
+/* the design bed anchor AN_BB.tbA of the engine source (src/analog/engine/cfb.js since Phase 11) (the engine constants are not globals of the page) */
+const TBA = +(/\btbA:\s*([\d.]+)/.exec(fs.readFileSync('src/analog/engine/cfb.js', 'utf8')) || [])[1];
 const LIM = { lm: 0.3, MW: 0.3, Tb: 1, Pd: 0.3, msT: 1, rh: 1, F: 0.5, lvl: 1 };
 async function chunk(sv, min, log) {
   const { browser, page } = await open(html);
