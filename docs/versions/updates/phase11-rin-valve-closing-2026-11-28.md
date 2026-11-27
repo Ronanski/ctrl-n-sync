@@ -13,3 +13,14 @@
   RIN's next item, from the HP chest and crossover volumes.
 - Checks: turbine-hb, ports, bypass-valves, tcs-dcs, gen-electrical, bypass-spray, tce tpc-valve-test, heat-soak-ibd, sheets,
   dash-inputs, one-path, no-fit, u-const. Not run: 150 MW 20 min hold (the closing times do not act in steady load).
+
+## Added in the same PR (2026-11-28 ~1:40 AM PHT)
+- LP leaving loss: tbEL = c^2 / 2, c = m v / A, A = 6.25 m2 (stage 24 tip 3176 / root 1457 mm from the cross section 310PK03-994,
+  YUA read). The last LP group now expands to the ELEP; the HB exhaust 570.1 is the UEEP = ELEP + leaving loss. turbine-hb: the
+  part-load MW gap is now -0.2 to -0.4 MW (was -0.5 to -0.9); exhaust H within 0.7 kcal/kg at 85 ~ 40 %, -3.6 at 30 % (low volume flow).
+- Steam left in the turbine after the valves close: AN_TB.tSc 0.073 s (HP), AN_TB.tXo 0.198 s (IP / LP), T = M / m from the casing
+  volumes of 310PK03-994 / 310PK02-353 at HB case 1 (derivation beside the values). The textbook U.tSc 0.3 / U.tXo 0.5 are deleted.
+- House load from 150 MW now peaks at 101.0 % at 0.4 s. The TG manual (tg-2-1-1 p137) says "about 106 % in about one second" for a full
+  load rejection: OPEN, not fitted. Physics check: 106 % needs about 88 MJ into the rotor (H 4.01 s x 176.5 MVA); the entrained steam is
+  22 MJ (IP / LP) + 0.7 MJ (HP), the valve ramps about 10 to 15 MJ.
+- 150 MW held 20 min: 150.0 to 151.7 MW, no trip.

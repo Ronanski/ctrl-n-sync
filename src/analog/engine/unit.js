@@ -160,12 +160,8 @@ const AN_UNIT = {
      110.5 % (IBD SC90794 sheet 35) is the IBD logic of the app (tcs-ibd-data.js) */
   droop: 0.06,
   flowSpan: 0.873,
-  /* 3.2.4-beta.11 (priority list: load rejection): the steam between the valves and the blading still drives the shaft after the valves
-     close. HP part (behind the CVs): steam chest tSc; IP / LP part (behind the ICVs): the crossover pipe to the LP turbine tXo. Textbook
-     typical values of the IEEE steam turbine model (Kundur, Power System Stability and Control, ch. 9: T_CH 0.2 ~ 0.3 s, T_CO 0.4 ~ 0.6 s);
-     NO-SOURCE for this unit. The HP / IP-LP split is the steam path of turbine.js tbPath (HP about 25 %, IP / LP about 75 % of the shaft) */
-  tSc: 0.3,
-  tXo: 0.5,
+  /* (tSc / tXo, the textbook steam chest / crossover times, moved to turbine.js AN_TB.tSc / tXo 2026-11-28, derived there from the
+     steam volumes of this turbine) */
   Hgen: 4.01,
   dbRpm: 7.2,
   /* GOVERNOR RUNBACK (TCE p.128 TCE182: TW 60 s of HOUSE LOAD OPERATION, or PLU OPERATED): GOV.SET = the runback position (TCE p.136
@@ -238,7 +234,7 @@ const AN_UNIT = {
 /* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
    whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
    code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
-const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'tSc', 'tXo', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'kfp', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
+const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'kfp', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -4247,15 +4243,15 @@ function anUnitStep0(dt) {
   );
   anTbPorts(U, tb.rpm, U.mhp);
   /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of the steam path, each behind its steam
-     volume (tSc, tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft.
+     volume (AN_TB.tSc / tXo, turbine.js; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft.
      Before, Pm fell with the valves at once and a load rejection from 150 MW peaked at 102.2 % (TG manual STIE-14752: about 106 % within
      about 1 s) */
   {
     const hp = onGrid ? Math.max(0, U.tbS.Whp) : 0,
       ip = onGrid ? Math.max(0, U.tbS.Wip) : 0,
       f = T => 1 - Math.exp(-dt / Math.max(0.01, T));
-    tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(U.tSc || 0.3) : hp;
-    tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(U.tXo || 0.5) : ip;
+    tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(AN_TB.tSc) : hp;
+    tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(AN_TB.tXo) : ip;
     /* Phase 11 (RIN / YUI): the shaft side of the swing equation = the blade work less the mechanical loss of the turbine (AN_TB.mech,
        turbine.js); the generator losses are on the electrical side (anGenW) */
     U.Pm = onGrid ? tb.pH + tb.pI - AN_TB.mech : 0;

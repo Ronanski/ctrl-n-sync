@@ -231,6 +231,16 @@ function tbGroup(m, p1, h1, p2, h2) {
     eta: (h1 - h2) / (h1 - steamHsM(P2, steamPhM(P1, h1).s))
   };
 }
+/* Phase 11 RIN 2026-11-28: the LEAVING (exhaust) LOSS of the last LP stage, kJ/kg = c^2 / 2 of the steam leaving the blades, c = the
+   volume flow / the annulus area (c = m v / A). A = the annulus of stage 24 (single flow SF-33.5): tip 3176 / root 1457 mm read by scale
+   from the cross section 310PK03-994 (YUA 2026-11-28, /mnt/project-files/rin-turbine-section-2026-11-28.md; the blade height 860 mm
+   against the printed 33.5 in = 851 mm checks the scale), pi / 4 (3.176^2 - 1.457^2) = 6.25 m2. At HB case 1 (87.8 kg/s, 0.07 ata):
+   about 270 m/s, 36 kJ/kg (8.6 kcal/kg). The loss falls with the volume flow at part load, as the steam path of a real turbine */
+AN_TB.Aex = (Math.PI / 4) * (3.176 * 3.176 - 1.457 * 1.457);
+function tbEL(m, Pc, h) {
+  const c = ((Math.max(0, m) / 3600) * steamVhM(Pc * TB_A, h)) / AN_TB.Aex;
+  return (c * c) / 2 / 1000;
+}
 const tbHt = (P, T) => steamH(P - 1.0332, T); /* kJ/kg of steam at P ata, T C */
 /* the design geometry (K, eta, leak and drop coefficients), once */
 function tbGeo() {
@@ -253,7 +263,9 @@ function tbGeo() {
       lp1: tbGroup(lp0, d.Pda, hm * k, d.P3, d.H3 * k),
       lp2: tbGroup(lp0 - d.x3, d.P3, d.H3 * k, d.P2, d.H2 * k),
       lp3: tbGroup(lp0 - d.x3 - d.x2, d.P2, d.H2 * k, d.P1, d.H1 * k),
-      lp4: tbGroup(lp0 - d.x3 - d.x2 - d.x1, d.P1, d.H1 * k, d.Pc, d.Hx * k)
+      /* the last group expands to the expansion line end point (ELEP); the HB exhaust enthalpy 570.1 is the used energy end point
+         (UEEP) = ELEP + the leaving loss of the last stage (tbEL) */
+      lp4: tbGroup(lp0 - d.x3 - d.x2 - d.x1, d.P1, d.H1 * k, d.Pc, d.Hx * k - tbEL(lp0 - d.x3 - d.x2 - d.x1, d.Pc, d.Hx * k))
     },
     sv = (P, h) => Math.sqrt(P * steamVhM(P * TB_A, h)) /* p / sqrt(p v) ~ the choked labyrinth flow */,
     vcr = steamVhM(d.Pcr * TB_A, d.Hcr * k);
@@ -325,7 +337,8 @@ function tbPath(I, o) {
   H.l3 = flp > 0 ? tbEx(G.lp1.eta, P.da, H.lm, P.l3) : H.l3;
   H.l2 = f3 > 0 ? tbEx(G.lp2.eta, P.l3, H.l3, P.l2) : H.l2;
   H.l1 = f4 > 0 ? tbEx(G.lp3.eta, P.l2, H.l2, P.l1) : H.l1;
-  H.x = f5 > 0 ? tbEx(G.lp4.eta, P.l1, H.l1, Pc) : H.x;
+  H.xe = f5 > 0 ? tbEx(G.lp4.eta, P.l1, H.l1, Pc) : H.xe || H.x;
+  H.x = f5 > 0 ? H.xe + tbEL(f5, Pc, H.x) : H.x;
   const kW = (f, a, b) => (f / 3600) * (a - b);
   return {
     P,
@@ -388,6 +401,18 @@ AN_TB.mech = 1.55;
      control chamber straight to tank (Y port, no orifice, TEQ p511): t = 0.04 + dump: CV 0.15 s, ICV 0.21 s.
    SERVO (house-load governing): the servo valve 4WS2EM10-5X/60 (60 L/min at 70 bar valve drop, TEQ p511) at the 160 bar supply:
      60 sqrt(160 / 70) = 91 L/min; CV B 1.36 L -> 0.90 s for a full stroke. */
+/* Phase 11 RIN 2026-11-28: THE STEAM LEFT IN THE TURBINE after the valves close, as the time constant of each part, T = M / m: the steam
+   mass held between the valves and the blading over the steam flow through it at HB case 1 (an ideal-gas volume that empties through a
+   Stodola section, m ~ p, empties with T = V rho / m). Volumes from the cross section 310PK03-994 and the outline 310PK02-353 (YUA
+   2026-11-28, /mnt/project-files/rin-turbine-section-2026-11-28.md, rin-turbine-volumes-2026-11-28.md; tip / root read by scale):
+   HP (behind the CVs): the nozzle chamber 0.15 m3 (0.1 ~ 0.2) at the first-stage pressure 122.3 ata (34.9 kg/m3) + the HP blading
+   annulus, stages 1 (920 / 810 mm) to 11 (985 / 860 mm) x 1.1 m = 0.18 m3 at the mean state (21.6 kg/m3): 9.2 kg / 125.7 kg/s = 0.073 s.
+   IP / LP (behind the ICVs): the CRV-to-IP leads 1.1 m3 + the IP inlet chamber 0.4 m3 at the hot reheat (9.3 kg/m3) + the IP blading,
+   stages 12 (1270 / 1100) to 21 (1890 / 1295) x 1.35 m = 1.22 m3 (4.6 kg/m3) + the IP-LP passage 0.5 m3 (2.35 kg/m3) + the LP
+   blading, stages 22 (2180 / 1457) to 24 (3176 / 1457) x 0.85 m = 3.54 m3 (0.36 kg/m3): 22.0 kg / 111.4 kg/s = 0.198 s.
+   (The CRH / reheater / HRH steam, 60 m3, sits behind the ICVs and does not reach the blades once they close.) */
+AN_TB.tSc = 0.073;
+AN_TB.tXo = 0.198;
 const AN_TBV = { msv: 0.38, rsv: 0.44, cv: 0.41, icv: 0.47, cvOpc: 0.15, icvOpc: 0.21, cvServo: 0.9 };
 /* Phase 11 rank 9 (RIN, 2026-11-27): THE BYPASS AND BLOW-OFF VALVES BY THE CONTROL VALVE FLOW LAW of IEC 60534-2-1 (compressible fluid),
    in place of "share x anchor flow x opening x pressure / anchor pressure" (U.hpb / U.blo / U.lpb, scaled on the 150 MW start).
