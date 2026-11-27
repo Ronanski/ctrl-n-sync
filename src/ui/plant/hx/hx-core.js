@@ -925,6 +925,16 @@
   REC.watch = key => REC.buf[key] || (REC.buf[key] = []);
   REC.sample = () => {
     const t = HX.data.time();
+    if (t == null || !isFinite(t)) return;
+    /* the time went back (a save loaded, a new start, or the clock of the PC before the simulator was up): the samples after it are
+       of another run and go; the recorder starts again from this time */
+    if (t < REC.last) {
+      for (const k in REC.buf) {
+        const b = REC.buf[k];
+        while (b.length && b[b.length - 1][0] > t) b.pop();
+      }
+      REC.last = -1e9;
+    }
     if (t - REC.last < REC.step) return;
     REC.last = t;
     for (const k in REC.buf) {
@@ -934,6 +944,25 @@
       while (b.length && t - b[0][0] > REC.keep) b.shift();
     }
   };
+  /* Phase 10 (plant DCS textbook INC-TN5A2098/2099: a trend keeps collecting at its collection cycle whatever screen is shown): the
+     recorder runs on its own 500 ms timer, not in the tick of the open page, so a trend has its history when the page opens. It
+     records every pen of every page's trend groups (pages register after this file, so the list is read again when it grows).
+     A trend group holds at most 8 pens (DCS textbook: trend panel of 8 pens), colours --hx-pen1..8 */
+  REC.pens = 8;
+  let recPages = 0;
+  REC.run = () => {
+    if (!HX.data || !HX.data.time) return;
+    if (recPages !== HX.pages.length) {
+      recPages = HX.pages.length;
+      for (const d of HX.pages) (d.trends || []).forEach(g => g.pens.forEach(p => REC.watch(p[1])));
+    }
+    REC.sample();
+  };
+  if (typeof setInterval === 'function') setInterval(() => {
+    try {
+      REC.run();
+    } catch (e) {}
+  }, 500);
   function drawTrends(def) {
     if (!(def.trends || []).length)
       return '<p style="padding:14px;color:var(--hx-mute)">No trend group is set for this page yet.</p>';
@@ -947,7 +976,7 @@
       .join('')}<span style="margin-left:auto">each pen has its own scale, shown beside its name</span></div>`;
     def.trends.forEach((g, gi) => {
       g.pens.forEach(p => REC.watch(p[1]));
-      h += `<div class="hx-trend" data-trend="${gi}"><h3>${esc(g.title)}</h3><svg viewBox="0 0 1000 170" preserveAspectRatio="none"></svg><div class="hx-pens">${g.pens.map((p, i) => `<div><i style="background:var(--hx-pen${(i % 6) + 1})"></i><span>${esc(p[0])} <small data-rng="${i}"></small></span><b data-pen="${i}">-----</b></div>`).join('')}</div></div>`;
+      h += `<div class="hx-trend" data-trend="${gi}"><h3>${esc(g.title)}</h3><svg viewBox="0 0 1000 170" preserveAspectRatio="none"></svg><div class="hx-pens">${g.pens.map((p, i) => `<div><i style="background:var(--hx-pen${(i % REC.pens) + 1})"></i><span>${esc(p[0])} <small data-rng="${i}"></small></span><b data-pen="${i}">-----</b></div>`).join('')}</div></div>`;
     });
     return h;
   }
@@ -984,7 +1013,7 @@
           d += (d ? 'L' : 'M') + n1(x) + ' ' + n1(y);
         }
         if (d)
-          s += `<path d="${d}" fill="none" style="stroke:var(--hx-pen${(i % 6) + 1})" stroke-width="1.8" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+          s += `<path d="${d}" fill="none" style="stroke:var(--hx-pen${(i % REC.pens) + 1})" stroke-width="1.8" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
         const cur = penVal(p[1]),
           o = box.querySelector(`[data-pen="${i}"]`);
         if (o) setTx(o, fmt(cur, p[3] == null ? 1 : p[3]) + ' ' + p[2]);
@@ -1386,7 +1415,6 @@
       /* Audit 3: words that appear later (a Y / N mark, a state) get the 11 px floor too, checked every 2 s */
       if (view === 'process' && Date.now() - mtT > 2000) ((mtT = Date.now()), minText(page, true));
       if (view === 'process') plates();
-      REC.sample();
       /* status line */
       let run = 0,
         man = 0,
