@@ -17,3 +17,6 @@
   + (main steam T - 541) (X.cr0 / X.MST0, deleted MST0), which held the part load temperature at the full load value.
 - Sweep before (main) / after: 3 / 22 curves PASS both. The sweep tool reads U.Prh (gauge) against the HB ata targets and the cold
   reheat flow as 0.973 x main steam: told the phase thread (tools/accept owner) to read the ports crh.rh_in / hrh (ata).
+- st150: kept as main's. This PR adds no constant to a U field (U.tbS / U.tbD / U.pt are computed every step), and the loaded start
+  "At 150 MW" was checked on main's st150 (150.5 ~ 151.3 MW at 455 ~ 461 T/H, LP heater levels back within 20 mm in 24 min). A st150
+  settled on this code fails tcs-motors MOP-B (the known TCS macro state blocker, TCS owner), so it is not committed.
