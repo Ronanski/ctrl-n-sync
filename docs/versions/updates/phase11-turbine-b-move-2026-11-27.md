@@ -1,0 +1,6 @@
+# Phase 11 turbine B: ang turbine ng plant model, inilipat sa sariling file (RIN, 2026-11-27)
+
+- Binago: ang turbine ng KASALUKUYANG plant model ay inilipat mula `unit.js` papunta sa `src/analog/engine/turbine.js` (ayon sa hati ng code ng Phase 11, `/mnt/project-files/phase11/ownership-2026-11-27.md`): mga utos ng operator sa TCS panel (AN_TCS_CMD, anTurbine), trabaho ng steam at stage values (AN_TBW, AN_HB, anTbW / anTbT / anTbGen / anHb), flow demand sa valves (anTbFlow), 32 reverse power relay (anRp32), bilis ng shaft (anTbSpeed), LP bypass warming (anHrWarm). Binura ang lumang kopya sa `unit.js` sa parehong pagbabago: iisang turbine pa rin, walang luma at bago na sabay.
+- Walang binago sa kuwenta: parehong code at numero. Ang `no-fit-baseline.json` ay sumunod lang sa lipat (44 pa rin, 0 bago).
+- Sinubok: 150 MW, 6 plant min headless: MW, main steam flow, reheat pressure, main steam pressure, bilis at IP pressure EKSAKTONG pareho sa `main` bawat minuto. `npm run check` SAME. `pages-bound.cjs` at `instrument_coverage.js` binabasa na rin ang `turbine.js`.
+- Susunod: palitan sa `turbine.js` ang per-load table AN_TBW / AN_HB ng Stodola at efficiency mula sa 100 % design point (hinihintay ang buong heat balance mula kay YUA).
