@@ -1261,7 +1261,9 @@ const AN_SW_V0 = {
                   first stage impeller 4,322 mm below it; the KSB head is flange to flange (the can and the column are inside the pump).
                   Hotwell normal level FL+1814 = GL+2014 mm (K2MC3A, FL = GL+200: data sheet "GL+1700 = FL+1500"), so zS = 2.014 -
                   0.336 = 1.678 m. Before: zS 6.336 m (down to the impeller, which the flange-to-flange head already counts) and a
-                  kz 0.96 kg/cm2 taken off to meet the snapshot 16.9 (28.png); both are gone; current = 28.1 A x shaft power / 245.7 kW (snapshot ratio). */
+                  kz 0.96 kg/cm2 taken off to meet the snapshot 16.9 (28.png); both are gone.
+     current      Phase 11 rank 10 (MEI): the motor current from the shaft power of the pump curve through the induction motor balance
+                  (anCepI, AN_CD_M below), in place of the old fixed ratio 28.1 A per 245.7 kW (deleted). */
 const AN_CD = {
   Qd: 195700,
   Wd: 316.024,
@@ -1276,10 +1278,45 @@ const AN_CD = {
   pQ: [0, 50, 400, 480],
   pP: [105, 123, 252, 283],
   zS: 2.014 - 0.336 /* m, GA F30157 A + K2MC3A hotwell normal level, see above */,
-  kI: 28.1 / 245.7,
   dp0: 0.019,
   q0: 383
 };
+/* Phase 11 rank 10 (MEI): the condensate pump motor M-1116A / B (6.6 kV induction motor, KSB pump P-1116A / B).
+   Design point, FHI load schedule K1AU3-E1-0-302 Rev A p4 (bus 1AM, items 6 / 7; YUA PC read 2026-11-27, project file
+   mei-cep-motor-2026-11-27.md): 6600 V, 298.4 kW shaft, eff 0.94, pf 0.88, F.L.A. 31.56 A (= 298.4 / (sqrt3 x 6.6 x 0.94 x 0.88)),
+   input 317.45 kW, 171.34 kvar, 360.74 kVA. The TECO data sheet 4A040Y856 (no-load current, part load eff / pf) is NOT IN DOCS, so the
+   part load comes from the per-phase balance of an induction motor (equivalent circuit, the slip small):
+     P_in = P_shaft + P_fix + P_cu,fl x (I / I_fl)^2      (fixed core + friction losses; copper losses with the square of the current)
+     Q    = Q_0 + Q_L,fl x (I / I_fl)^2                    (magnetising kvar at rated voltage; leakage reactance kvar with I^2)
+     I    = sqrt(P_in^2 + Q^2) / (sqrt3 x V)
+   solved by a fixed point (4 passes, it moves < 0.01 A after 3). The two splits:
+     i0   0.30 pu no-load (magnetising) current: Q_0 = sqrt3 x 6.6 x 0.30 x 31.56 = 108.2 kvar, so Q_L,fl = 171.34 - 108.2 = 63.1 kvar =
+          0.175 pu leakage reactance, inside the usual 0.15 ~ 0.20 pu of a 4-pole MV motor (the check that the split holds);
+          NO-SOURCE: 0.30 pu is the usual value of a 6.6 kV 4-pole motor of 300 kW (the range 0.25 ~ 0.35 of the PC read, general motor
+          knowledge, not a plant document);
+     fix  0.36 of the full-load losses (19.05 kW) are fixed: the efficiency is highest where copper = fixed losses, at 75 % load for a
+          motor of this class (0.75^2 = 0.5625 = fixed / copper -> fixed = 0.5625 / 1.5625 = 0.36); NO-SOURCE: the 75 % maximum, the usual
+          design of a standard induction motor.
+   At the design point the balance gives 31.56 A exactly; at the KSB duty 252 kW 27.0 A; at shut-off (105 kW) 14.6 A. Snapshot check only
+   (28.png CP-A 28.1 A at 150 MW). DESIGN-SRC: K1AU3-E1-0-302 Rev A, induction motor equivalent circuit */
+const AN_CD_M = { V: 6.6, P: 298.4, eff: 0.94, pf: 0.88, i0: 0.3, fix: 0.36 };
+function anCepI(Ps) {
+  const M = AN_CD_M,
+    r3 = Math.sqrt(3),
+    Pin = M.P / M.eff,
+    Ifl = Pin / M.pf / (r3 * M.V),
+    Qfl = Pin * Math.tan(Math.acos(M.pf)),
+    Pl = Pin - M.P,
+    Q0 = r3 * M.V * M.i0 * Ifl;
+  let I = Ifl;
+  for (let k = 0; k < 4; k++) {
+    const u = (I / Ifl) * (I / Ifl),
+      P = Math.max(0, Ps) + M.fix * Pl + (1 - M.fix) * Pl * u,
+      Q = Q0 + (Qfl - Q0) * u;
+    I = Math.sqrt(P * P + Q * Q) / (r3 * M.V);
+  }
+  return I;
+}
 /* MW lost to the back pressure. docs/versions/v3.2.1/HEAT_BALANCE.md: calculated from the mass balance (exhaust quality 0.92 closes the
    balance at 150 MW). At constant entropy dh/dT = x hfg / T = 7.1 kJ/kg per C at 38.65 C; with 0.85 LP efficiency (NO-SOURCE) 6 kJ/kg per C,
    on the exhaust steam, 0.70 of the main steam (309.7 / 446 T/H, MB-013). A better vacuum gives a small gain, capped at 1 C. */
@@ -1399,7 +1436,7 @@ function anCondStep(U, dt) {
   U.cdRun = run;
   U.cdPd = Math.max(0, Math.min(25, anCdPdis(Qt, n, U.cdP, hw)));
   run.forEach((r, i) => {
-    U['cdI' + i] = r ? Math.round(10 * K.kI * swInterp(K.pQ, K.pP, q)) / 10 : 0;
+    U['cdI' + i] = r ? Math.round(10 * anCepI(swInterp(K.pQ, K.pP, q))) / 10 : 0;
     U['cdDp' + i] = r ? Math.round(1000 * K.dp0 * (q / K.q0) * (q / K.q0)) / 1000 : 0;
   });
 }

@@ -36,7 +36,6 @@
  "src/analog/engine/unit.js": [
   "tauMW: 10 /* s, steam flow -> MW (reheater, NO-SOURCE: the plant trends are 60 s averages, too slow to fit it) */,",
   "/* F11 (user 2026-11-13: the ratio of beta.206 / 207 was a curve fit, not a model). Superheater and reheater tube metal, heated by the flue",
-  "kz 0.96 kg/cm2 taken off to meet the snapshot 16.9 (28.png); both are gone; current = 28.1 A x shaft power / 245.7 kW (snapshot ratio). */",
   "Design beside it (Audit 3 ranking 5, user Q4 \"close to the DCS 150 MW data, tuned from design, small tolerance\"):",
   "L = Math.max(0, Math.min(1, (+U.MW || 0) / 150)),",
   "if (!isFinite(U.gsY)) U.gsY = gsOn && onLoad ? -42.6 * Math.max(0, Math.min(1, (+U.MW || 0) / 150)) : 0;",
