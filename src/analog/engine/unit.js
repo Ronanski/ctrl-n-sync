@@ -4259,10 +4259,14 @@ function anGenEl() {
      stator copper 3 I^2 Ra (Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2; 172 kW at 7,384 A),
      main field I^2 Rf (Rf 0.2188 ohm at 95 C, GAE-2013-0136 R2; main field = exciter field x 463 / 4.5 A: 463 A main = 4.5 A exciter =
        1 pu field, 310SD23-268 R1 / GEE-2015-0152 p6; 1,218 A = 325 kW at the rating, 310SD23-270 R1),
-     the rest (core, friction and windage, stray) at rated speed: DERIVED = the design duty of the four coolers 3,041 kW (mass balance
-       K1AU3-MB-021 items 14 ~ 21: 290.5 t/h, 34 -> 42 C; /mnt/project-files/suzu-pc-answers-2026-11-27.md 1b) less the two above at the
-       rating (176.5 MVA 0.85 lag, the machine the coolers are sized for) = 2,544 kW, with the cube of the speed (the windage; the split
-       of core and windage is not in the docs: NO-SOURCE form). No load table: one design point closes the balance. */
+     the rest (core, friction and windage, stray) at rated speed: DERIVED = the heat duty of the four coolers 2,120 kW (generator O&M
+       GAE-2015-0063 R0 p36 "total cooler heat duty 2120 kW, water 400 m3/h, supply max 37 C"; Kitashiba sheets PLH10293 / PLH10294,
+       PDF p221 / p222: main A, B 810 kW each, air (78.1) -> 45.0 C, sub C, D 250 kW each, air (76.7) -> 45.0 C; read by YUA,
+       /mnt/project-files/suzu-leftovers-doc-reads.md) less the two above at the rating (176.5 MVA 0.85 lag, the machine the coolers are
+       rated for) = 1,623 kW, with the cube of the speed (the windage; the split of core and windage is not in the docs: NO-SOURCE form).
+       The bearing friction is not in it: it goes to the lube oil (same O&M p36: generator bearings 600 L/min, 240 kW). The 3,041 kW of
+       mass balance K1AU3-MB-021 items 14 ~ 21 (290.5 t/h, 34 -> 42 C) is the cooling water line sizing, not the cooler duty (was used
+       here before the O&M was read). No load table: one design point closes the balance. */
 const AN_GENT = {
   tCold: 45 /* C, cold air of the nameplate 310SD18-613 (GAE-2014-0791 R0 PDF p180) */,
   tCw: 37 /* C, cooling water max (GAE-2013-0136 R2) */,
@@ -4275,7 +4279,7 @@ const AN_GENT = {
   Ra: 0.001051 /* ohm, armature 1 phase at 95 C */,
   Rf: 0.2188 /* ohm, main field at 95 C */,
   ifMain: 463 / 4.5 /* A main field per A exciter field */,
-  qD: 3041 /* kW, cooler design duty (MB-021) */,
+  qD: 2120 /* kW, total heat duty of the four air coolers at the rating (GAE-2015-0063 R0 p36) */,
   ifD: 1218 /* A main field at the rating (310SD23-270 R1) */
 };
 AN_GENT.q0 = AN_GENT.qD - (3 * (AN_GENT.In * 1000) ** 2 * AN_GENT.Ra + AN_GENT.ifD ** 2 * AN_GENT.Rf) / 1000;

@@ -98,11 +98,11 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
     eTs = t0.ts.map(v => v + (air + 78 * (t1.kA / 7.384) ** 2 - v) * a);
   ok(t1.ta.every((v, i) => Math.abs(v - eTa[i]) < 2e-3), 'cooling gas after the coolers goes to the cooling water + 8 K (45 C gas at 37 C water, nameplate 310SD18-613) = ' + air.toFixed(1) + ' C');
   ok(t1.ts.every((v, i) => Math.abs(v - eTs[i]) < 2e-3), 'stator coil goes to ' + (air + 78 * (t1.kA / 7.384) ** 2).toFixed(1) + ' C at ' + t1.kA.toFixed(2) + ' kA (123 C at 7.384 kA)');
-  /* the cooler duty = the generator losses (stator 3 I^2 Ra, field I^2 Rf, rest at speed; 3,041 kW at the rating, MB-021) */
+  /* the cooler duty = the generator losses (stator 3 I^2 Ra, field I^2 Rf, rest at speed; 2,120 kW at the rating, GAE-2015-0063 R0 p36) */
   const q = JSON.parse(E.js(`JSON.stringify({q:AN.unit.pt['q.ccw.YUI'].Q,kA:AN.gen().kA,If:AN.gen().If,n:AN.unit.tb.rpm/3600})`)),
-    q0 = 3041 - (3 * 7384 ** 2 * 0.001051 + 1218 ** 2 * 0.2188) / 1000,
+    q0 = 2120 - (3 * 7384 ** 2 * 0.001051 + 1218 ** 2 * 0.2188) / 1000,
     qe = (3 * (q.kA * 1000) ** 2 * 0.001051 + (q.If * 463 / 4.5) ** 2 * 0.2188) / 1000 + q0 * q.n ** 3;
-  ok(Math.abs(q.q - qe) < 1 && q.q < 3041 && q.q > q0, 'generator cooler duty ' + q.q.toFixed(0) + ' kW (losses; 3,041 kW at the rating)');
+  ok(Math.abs(q.q - qe) < 1 && q.q < 2120 && q.q > q0, 'generator cooler duty ' + q.q.toFixed(0) + ' kW (losses; 2,120 kW at the rating)');
   const pt = JSON.parse(E.js(`JSON.stringify({g:AN.unit.pt.gen,a:AN.unit.pt['aux.power'],s:AN.unit.pt['store.YUI'],MW:AN.unit.MW,aux:AN.elec().aux})`));
   ok(pt.g && pt.g.W === pt.MW && pt.g.x.b52g === 1, 'port gen: ' + (pt.g && pt.g.W.toFixed(2)) + ' MW, 52G closed');
   ok(pt.a && Math.abs(pt.a.W - pt.aux) < 1e-9, 'port aux.power: ' + (pt.a && pt.a.W.toFixed(2)) + ' MW = the house load of elec.js');
