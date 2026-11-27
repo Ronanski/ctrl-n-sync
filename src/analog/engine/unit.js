@@ -89,7 +89,23 @@ function anShKdp(U) {
    Crane K (LR elbow 0.2, gate 0.1, MOV 0.1, 45 0.2, split 0.5, tee branch 1.0): 18" 1.41 + 12" 0.34 = 1.74 kg/cm2. The BOM lengths are
    all the MS installation pipe of each size (the isometrics M1-201 ~ 214 are not in the documents), so this drop is an UPPER BOUND.
    Before: kln = (MSP - PT-MS1006) / MSF^2 of the 150 MW start (0.50 kg/cm2 at 464 T/H; a constant from the snapshot taps, no density; NO-FIT-OK: history note) */
-const AN_MSLN = { dp0: 1.74, m0: 474, Po: 122.4, To: 536 };
+/* Phase 11 RIN 2026-11-28 (one owner of the line drop from here on, phase thread): WHICH FLOW EACH SECTION CARRIES, flow diagram PD-011
+   rev 0 2015-03-03 (A1-0-001-R0 p8; YUA /mnt/project-files/rin-ms-line-pd011-2026-11-28.md). Along the line from the SH outlet: FT-MS1031,
+   PT-MS1002 (the MSP), the 8" blow-off take-off to PCV-MS1001, ZV-MS1001, the gear stop valve V-MS1001, PT-MS1901-1/2, PT-MS1006-1/2,
+   TE-MS1007, the scope break, the HP BYPASS TAKE-OFF (V-MS1003, MS-1-004 8" to PCV-MS1020), MV-MS1391 (bypass MV-MS1392), then the
+   split into the two 12" leads MS-1-002 / -003 to MSV (A) / (B). So the 18" run (1.41 of the 1.74 kg/cm2 above) carries the turbine
+   AND the HP bypass steam up to the tee; the 12" leads (0.34) the turbine steam only. PT-MS1006 (U.tin) stands at the tee end of the
+   18" run (after it only TE-MS1007 and the scope break before the tee). f18 = the 18" share of the design drop. */
+const AN_MSLN = { dp0: 1.74, m0: 474, Po: 122.4, To: 536, f18: 1.41 / 1.74 };
+/* the main steam line drops (kg/cm2) at the turbine flow ms and the HP bypass flow mhp (T/H): to PT-MS1006 / the bypass tee, and to the MSVs */
+function anMsDrop(U, ms, mhp) {
+  const k = +U.kln || 0,
+    f = AN_MSLN.f18,
+    a = Math.max(0, +ms || 0),
+    t = a + Math.max(0, +mhp || 0),
+    tee = k * f * t * t;
+  return { tee, msv: tee + k * (1 - f) * a * a };
+}
 function anMsKln(U) {
   const D = AN_MSLN,
     k0 = D.dp0 / (D.m0 * D.m0);
@@ -4273,7 +4289,7 @@ function anUnitStep0(dt) {
   U.tbS = tbPath(
     {
       ms: U.ms,
-      Pin: Math.max(0, Pms - U.kln * U.ms * U.ms) + 1.0332,
+      Pin: Math.max(0, Pms - anMsDrop(U, U.ms, U.mhp).msv) + 1.0332,
       Tms: U.hxO && U.hxO.ms,
       qip,
       Thr: U.hxO && U.hxO.rh,
@@ -4346,7 +4362,7 @@ function anUnitStep0(dt) {
   anUnitWrite(U.msp, Pms);
   /* live Cold start sweep (user 2026-11-13): written as exactly 0 the SELECT CIRCUIT of ABC-050 took PT-MS1006-1 / -2 as lost and held
      122.0 kg/cm2 on the HP bypass PV with the main steam at 0. A live transmitter at 0 kg/cm2 is a healthy 4 mA signal: not exactly 0 */
-  for (const l of U.tin) anUnitWrite(l, Math.max(1e-3, Pms - U.kln * U.ms * U.ms));
+  for (const l of U.tin) anUnitWrite(l, Math.max(1e-3, Pms - anMsDrop(U, U.ms, U.mhp).tee)) /* PT-MS1006 at the bypass tee (AN_MSLN) */;
   anUnitWrite(U.drum, U.Pd);
   /* 1.0.0-beta.370 (JENNIE, Rosé: Warm / Hot saves, EIC-TM PV 151 MW at 0 MW): the generator MW transmitters GCPAI1001 / 1002 at 0 MW are a live
      4 mA signal, written a hair above 0 as the turbine inlet pressure above; exactly 0 made the AVERAGE SELECT of ABC-001C hold the 151 MW of the trip */

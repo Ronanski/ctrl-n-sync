@@ -526,12 +526,14 @@ function tbCvFs(A, m, Pin, h) {
   return ((lo + hi) / 2) * Pin;
 }
 /* the main steam (T/H) that the CVs (total area Av, m2) and the HP blading pass together, from the drum pressure U.Pd (kg/cm2 g) through
-   the SH and main steam line drops (U.kdp, U.kln: P = Pd - (kdp + kln) m^2 in front of the CVs), at the steam temperature T (C), against
+   the SH drop (U.kdp) and the main steam line drops (unit.js anMsDrop: the 18" run with the HP bypass steam of the last scan U.mhp, the
+   12" leads with the turbine steam) in front of the CVs, at the steam temperature T (C), against
    the cold reheat pressure of the steam path (the last scan, U.tbS). The CV passes the main steam less the stem leak A, the blades also
    less the packing leaks C and N2 (the shares of the last scan, HB case 1 at the start). Solved by regula falsi (Illinois) on [0, mHi] */
 function tbMsFlow(U, Av, T) {
   const Pd = +U.Pd || 0,
-    kd = Math.max(0, (+U.kdp || 0) + (+U.kln || 0));
+    kd = Math.max(0, (+U.kdp || 0) + (+U.kln || 0)),
+    mhp = Math.max(0, +U.mhp || 0);
   if (!(Av > 0) || !(Pd > 0)) return 0;
   const G = tbGeo(),
     c = AN_TB.c1,
@@ -541,7 +543,7 @@ function tbMsFlow(U, Av, T) {
     rb = m1 > 0 ? S.f.hp / m1 : (c.ms - c.lkC - c.lkN2 - c.lkA) / c.ms,
     Pcr = S && S.P && isFinite(S.P.crh) && S.P.crh > 0 ? S.P.crh : 1.0332,
     g = m => {
-      const Pin = Pd - kd * m * m + 1.0332;
+      const Pin = Pd - (+U.kdp || 0) * m * m - anMsDrop(U, m, mhp).msv + 1.0332;
       if (Pin <= 1.0332) return -m;
       const h = tbHt(Pin, isFinite(T) ? T : steamTsat(Pin - 1.0332)),
         fb = m > 0 ? tbP1(G.hp.K, m * 1000 * rb, Math.min(Pcr, Pin * 0.999), h) : Math.min(Pcr, Pin);
