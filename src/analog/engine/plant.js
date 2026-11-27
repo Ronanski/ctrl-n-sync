@@ -1111,12 +1111,14 @@ function anProcStep(S, dt) {
          soot blowing steam 8 T/H (taken from the superheater, intermittent). 3.2.3-beta.66: integLoss is now the CBD design 15 T/H
          (hmi-op.js AN_CBD_DESIGN); before it was the 25 T/H snapshot difference, of which 10 T/H had no outlet on MB-019. integLoss stays the setting of the
          field blowdown valve (AN.blowdown); now it also follows the MOV position and, as a choked flashing flow, the drum pressure:
-         x G(P) / G(134 kg/cm2, the drum at 150 MW, unit model Start at 150 MW). Before: 25 T/H at any pressure and with MV-BD1002
+         x G(P) / G(142.5 kg/cm2). Phase 11 (KANA 2026-11-27): the 15 T/H of item 22 is a design flow, so the normaliser is the drum
+         pressure of the same design sheet (MB-019 item 24, the common drum outlet, 142.5 kg/cm2), DOC; before it was 134 kg/cm2, the
+         drum of the old 150 MW start (SNAP). Before beta.66: 25 T/H at any pressure and with MV-BD1002
          shut. About 6.3 T/H at 35 kg/cm2 full open (3.2.3-beta.217, the IF97 HEM table; 5.5 T/H with the old chart table) */
       let loss = pr.integLoss || 0;
       if (loss > 0 && typeof anDitlPos === 'function') {
         const pc = anDitlPos('DITL-38 #MV-BD1002', 0);
-        if (pc != null) loss *= (Math.min(100, Math.max(0, pc)) / 100) * (anBdG(drumP * 0.980665 + 1.013) / anBdG(134 * 0.980665 + 1.013));
+        if (pc != null) loss *= (Math.min(100, Math.max(0, pc)) / 100) * (anBdG(drumP * 0.980665 + 1.013) / anBdG(142.5 * 0.980665 + 1.013));
       }
       AN_CYC.cbd = loss;
       /* a feedwater heater with its tubes and its bypass shut stops the feedwater (unit.js anHtrPath) */

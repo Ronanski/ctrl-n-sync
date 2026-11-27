@@ -206,11 +206,8 @@ const AN_TB = {
     lkC: 403, lkN2: 4650, Hn2: 818.3, lkA: 1205, lkB: 4561, lkC2: 1417
   },
   vwo: { ms: 472460, Pms: 126, Tms: 538, Hms: 823.2, Pcr: 39.78, lkC: 415, lkN2: 4798, lkA: 1193 },
-  /* shaft - generator: the mechanical and generator losses (the HB prints the generator kW after the excitation; shaft = the sum of
-     m dh of the 8 cases from the HB enthalpies): 3.37 MW at 100 % to 2.65 MW at 30 %, lo + kq x shaft^2 (the friction and windage
-     constant, the copper loss with the square of the load) within 0.03 MW on the 8 cases. DESIGN-SRC: HB PPE-14-0725 R1 (8 cases) */
-  lo: 2.565,
-  kq: 3.295e-5
+  /* (lo / kq, the HB lumped mechanical + generator loss, deleted 2026-11-27: the generator losses are YUI's anGenW / anGenTemp from
+     the machine data, the turbine keeps only AN_TB.mech below; the test turbine-hb.cjs holds the lumped HB loss to read the HB kW) */
 };
 const TB_A = 0.0980665; /* MPa per ata */
 /* the upstream pressure (ata) a group needs to pass m (kg/h) to p2 (ata) with inlet enthalpy h (kJ/kg): Stodola solved for p1 */
@@ -339,10 +336,6 @@ function tbPath(I, o) {
     exh: { m: f5 / 1000, h: H.x }
   };
 }
-/* the generator MW of a shaft work (MW) on the grid: less the mechanical and generator losses (negative = motoring) */
-function anTbGen(sh) {
-  return sh - AN_TB.lo - AN_TB.kq * sh * sh;
-}
 /* the heater draws (T/H) the steam path takes this step; see the head of this block (ports when written) */
 function tbDraws(U, ms) {
   const pt = U.pt || {},
@@ -403,7 +396,7 @@ function anTbPx(k) {
 }
 /* Phase 11 rank 1: the turbine ports (ports.js; one writer: this file). Units ata, C, kJ/kg, T/H, MW.
    shaft.W = the steam work on the blades less the turbine bearing / mechanical loss (YUI subtracts the generator losses from it, agreed
-   2026-11-27). The mechanical loss: the HB lumped loss at 100 % (AN_TB lo + kq: 3.34 MW) less the generator losses at 150 MW (YUI:
+   2026-11-27). The mechanical loss: the HB lumped loss at 100 % (2.565 + 3.295e-5 shaft^2 = 3.34 MW, turbine-hb.cjs) less the generator losses at 150 MW (YUI:
    1.94 MW from the generator air cooler rated duty 2,120 kW, generator O&M GAE-2015-0063 R0 p36) = 1.40 MW, constant with load (bearing
    friction goes with the speed, not the load). NO-SOURCE: the MHPS turbine bearing loss itself (not in the TG manuals, YUA) */
 AN_TB.mech = 1.4;
@@ -434,6 +427,19 @@ const AN_VLV = {
      piping volume NO-SOURCE about 200 m3: audit B5, piping ISO volumes from YUA next) */
   Crh: 400
 };
+/* the full stroke times of the bypass valves (s): PCV-MS1020 and PCV-HR1010 sheets (K1AU3-D1-0-043 R0 p11 / p9, rev 01 / 02): "< 2 s"
+   trip open on the 24 VDC solenoid (energise to open), "< 5 s" on the 4-20 mA positioner. The vendor gives upper limits only: the
+   valve here takes the full limit (the slowest the sheet allows), NO-SOURCE for the actual commissioning time */
+AN_VLV.tQ = 2;
+AN_VLV.tA = 5;
+/* the lift (%) of bypass valve k moving to the command c (%) at its stroke rate: the solenoid trip open (q) at 100 % / tQ, the
+   positioner at 100 % / tA, both ways; state U.vp (plant state; a save point without it starts at the command) */
+function anVlvStroke(U, k, c, q, dt) {
+  const P = U.vp || (U.vp = {}),
+    x = isFinite(P[k]) ? P[k] : c,
+    r = (100 / (q ? AN_VLV.tQ : AN_VLV.tA)) * Math.max(0, +dt || 0);
+  return (P[k] = x + Math.max(-r, Math.min(r, c - x)));
+}
 /* the Cv share (0 ~ 1) of a valve at lift o (%) */
 function anVlvCv(v, o) {
   const L = v.L,
