@@ -171,7 +171,7 @@ const csvQ = x => {
   const dec = f => zlib.gunzipSync(Buffer.from(fs.readFileSync(path.join(root, 'src/data', f), 'utf8').trim(), 'base64')).toString('utf8');
   const abc = dec('apre.txt').split('\n').filter(Boolean).map(l => [JSON.parse(l).name, l.toUpperCase()]);
   const ditl = dec('pre.txt').split('\n').filter(Boolean).map(l => [JSON.parse(l).name.replace(/^\(\w+\)/, ''), l.toUpperCase()]);
-  const model = ['src/analog/engine/unit.js', 'src/analog/engine/tcs.js', 'src/analog/engine/source.js', 'src/analog/engine/plant.js'].map(f => [path.basename(f), fs.readFileSync(path.join(root, f), 'utf8').toUpperCase()]);
+  const model = ['src/analog/engine/unit.js', 'src/analog/engine/fw.js', 'src/analog/engine/tcs.js', 'src/analog/engine/source.js', 'src/analog/engine/plant.js'].map(f => [path.basename(f), fs.readFileSync(path.join(root, f), 'utf8').toUpperCase()]);
   const train = ['src/ui/plant/live.js', 'src/ui/plant/op-api.js', 'src/ui/uat/check.js'].map(f => [path.basename(f), strsOf(f).toUpperCase()]);
   const sopTxt = cp
     .execSync('unzip -p ' + JSON.stringify(path.join(root, 'document-references/procedure-start-up-PR-OPE-5002-02.docx')) + ' word/document.xml', { maxBuffer: 1 << 26 })

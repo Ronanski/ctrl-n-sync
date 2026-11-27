@@ -38,7 +38,6 @@
   "kKL, CALC from the plant at 90 MW: scenario 1 of the plant DCS trend (14-plant-trends: coal 55.4 T/H, PA 318 + SA 187 T/H,",
   "lower velocity only); 9.2 itself is the plant trend value of beta.282 (finding D3 stays open) */",
   "1 mmH2O = 1 kg/m2 = 0.119 t. 3.2.3-beta.265 (SOHEE, Jennie): the 150 MW anchor is the plant DCS trend, scenario 1: overall furnace DP 1440 ~ 1490,",
-  "current = 289.4 A x shaft power / its power at 150 MW (snapshot ratio); strainer DP = 0.29 x (flow / 549)^2. */",
   "/* 3.2.3 (SAKURA, coordinator / Jennie 2026-11-15: the MW line MW = c x steam - mwK was fitted on the plant trends of 2026-11-08, which",
   "Design beside it (Audit 3 ranking 5, user Q4 \"close to the DCS 150 MW data, tuned from design, small tolerance\"):",
   "L = Math.max(0, Math.min(1, (+U.MW || 0) / 150)),",
