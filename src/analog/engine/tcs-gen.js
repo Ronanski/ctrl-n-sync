@@ -2,10 +2,28 @@
    is in elec.js (plan c4): 52L1 is closed unless the instructor opens it (house load); 52G1 closes only with 52L1 closed. No relay is modelled either, so no protection operates by itself; a protection held on TA-9 trips the turbine through the IBD logic. */
 /* 3.2.3-beta.236 (live Cold start, user 2026-11-14: "model dapat, physics, hindi patch"): the excitation and the automatic synchronizing are
    physics (was: a 30 s voltage ramp and a 60 s ASD timer). Sources (local notes document-references/_notes/gen-sync-llm-2026-11-14.txt):
-   - main field: T'do 7.69 s (GAE-2013-0136 R2 generator data sheet p.2); the open circuit voltage = field flux x speed (the saturation
+   - main field: T'do 8.6 s (Phase 11 YUI 2026-11-27, MARIA OK): Hitachi reply to the FHI-SMC generator data request, signed 2013-04-08,
+     Annex A p1 item 15a (read by YUA, /mnt/project-files/yui-reads-2.md 2). REPLACED: 7.69 s of the GAE-2013-0136 R2 generator data
+     sheet p.2. Both are manufacturer documents and they disagree (logged in docs/versions/updates/phase11-gen-batch2.md). The choice
+     between the two is the machine's own sudden short-circuit test, LM-GEE-2014-0822 R0 p27, Td' 0.92 s measured: at the terminals
+     Td' = T'do x X'd / Xd with this model's Xd 1.92 / X'd 0.21 gives 0.84 s with 7.69 and 0.94 s with 8.6. A choice of source, not a
+     fitted value. (The on-line lag below adds Xt; that is not the test value.) The open circuit voltage = field flux x speed (the saturation
      curve is not in the docs: NO-SOURCE, linear). Brushless exciter fed by the UNITROL 6080 (GEE-2015-0152 p.7): exciter field no load
      4.5 A / 28 V, ceiling 17.6 A / 109.8 V, so the field forcing ceiling is 17.6 / 4.5 = 3.9 times the no-load field.
-     NO-SOURCE: the exciter time constant (te), the AVR gains (kp, ki), the AVR set point rate during a raise / lower pulse (vrr).
+     AVR (Phase 11 YUI 2026-11-28): the UNITROL 6000 voltage regulator of ABB 3BHS823069 E62 "Computer Models Excitation System"
+     (407_DBE-15-0115 R1, 2015-12-17, printed p8 1.2; read by YUA, /mnt/project-files/yui-reads-3.md c): ABB PROPOSED settings; the
+     as-set values are NO-SOURCE unless a commissioning record confirms them (the E33 site pages are blank, LM-GEE-2015-0152 R0 is the
+     procedure only, yui-reads-2.md 2; MARIA review 2026-11-28). The
+     transfer function of its default structure: VA = KR1 (1 + s TC11) / (1 + s TB11) x (1 + s TC21) / (1 + s TB21) x (Vref - Vm),
+     KR1 200 (steady-state gain), TC11 1 s / TB11 5 s, TC21 = TB21 = 0.1 s (that stage is flat: left out), the measuring filter TR 0.01 s
+     (shorter than the 0.05 s sub-step: Vm = V). Was: a PI kp 6 / ki 0.6, NO-SOURCE. The finite gain 200 is a real droop: the terminal
+     voltage sits efd / 200 pu under the set point (1 % at 2 pu field), the operator's 90R makes it up. FLAGS: the report is in the
+     Phase 2 set and proposes a static exciter (SES = 1); Unit 1 has the UNITROL 6080 on a brushless AC exciter (E33), so the output
+     limit stays the exciter field forcing of E33 (ceiling 17.6 / no load 4.5 A = 3.9 pu, not VAmax 6) and the lower limit is 0
+     (the rotating diodes pass no negative field current): the static-exciter limits VAmax 6 / VAmin -5.1 do not apply here. Not modelled: KIR +0.05
+     (reactive compensation, the grid is a stiff 1.0 pu bus here, NO-SOURCE), the PSS2B (proposed PSSEnable 0), the limiters.
+     NO-SOURCE: the exciter time constant (te: "Project related, N.A." in the same report), the AVR set point rate during a raise /
+     lower pulse (vrr).
    - synchronizing: ASD1 Daiichi ASY-96-S7 for 52G (GEE-2015-0141 p.20): dV 2 %, dF 0.1 Hz, dTheta 15 deg, advance 130 ms, voltage pulse
      0.2 s every 2.0 s, speed pulse 0.5 s; check synchronizing relay 25 CSY-96-S2 (p.26): dV 5 %, dF 0.15 Hz, dTheta 10 deg; 52G closes
      only while 25 is operated (Generator Logic.pdf p.4); GCB closing time 85 ~ 100 ms (Alstom FKG1N manual p.175), 0.1 s here.
@@ -15,11 +33,12 @@
 const TCS_GEN = {
   x3: 3 /* G-1B */,
   to: 300 /* G-1B 5 min */,
-  tdo: 7.69,
+  tdo: 8.6 /* s, Hitachi GDR Annex A p1 item 15a (was 7.69, GAE-2013-0136 R2 p2), header */,
   ceil: 17.6 / 4.5,
   te: 0.4 /* s, NO-SOURCE */,
-  kp: 6 /* NO-SOURCE: picked for no overshoot, 98 % in about 4 s at x1 */,
-  ki: 0.6 /* 1/s, NO-SOURCE */,
+  kr: 200 /* AVR steady-state gain KR1 (ABB 3BHS823069 E62 p8, proposed) */,
+  tc: 1 /* s, lead TC11 (same) */,
+  tb: 5 /* s, lag TB11 (same) */,
   vrr: 0.01 /* pu/s, NO-SOURCE */,
   dV: 0.02,
   dF: 0.1,
@@ -101,7 +120,6 @@ function tcsWrap(a) {
 function tcsGenFill(U, g) {
   if (!isFinite(g.eq)) g.eq = g.f41 ? g.V || 0 : 0;
   if (!isFinite(g.efd)) g.efd = g.eq;
-  if (!isFinite(g.ai)) g.ai = g.eq;
   if (!isFinite(g.vr)) g.vr = 1;
   if (!isFinite(g.th)) g.th = 120;
   const g52 = !!U.tb && (U.tb.st === 'sync' || U.tb.st === 'load');
@@ -111,7 +129,8 @@ function tcsGenFill(U, g) {
   if (!isFinite(g.dv)) g.dv = (g52 ? 1 : g.V || 0) - 1;
   /* a state made before the on-line phasors (no g.Q): on the line its flux is the one that holds the AVR set at this load */
   if (g52 && g.f41 && !isFinite(g.Q) && g.avr !== 'MAN') {
-    g.eq = g.efd = g.ai = tcsGenEqFor(isFinite(g.vr) ? g.vr : 1, tcsGenP(U));
+    g.zl = null;
+    g.eq = g.efd = tcsGenEqFor(isFinite(g.vr) ? g.vr : 1, tcsGenP(U));
   }
   return g;
 }
@@ -178,17 +197,29 @@ function tcsGenStep(U, dt) {
     const P = tcsGenP(U),
       /* on line the flux lags with the short circuit transient time T'd = T'do (Xd' + Xt) / (Xd + Xt) */
       td = g52 ? (K.tdo * (K.xdp + K.xt)) / (K.xd + K.xt) : K.tdo;
+    /* on line in AUTO with no regulator state (the start on the grid, a save point of before the ABB regulator): the steady state of
+       the finite gain, the set point the operator holds for the voltage the machine has = V + efd / KR1, z = efd / KR1 */
+    if (g52 && !man && !Number.isFinite(g.zl)) {
+      g.vr = Math.max(0.9, Math.min(1.1, tcsGenPh(g.eq, P).V + g.efd / K.kr));
+      g.zl = g.efd / K.kr;
+    }
     for (let i = 0; i < m; i++) {
       const e = g.vr - (g52 ? tcsGenPh(g.eq, P).V : g.eq * n);
-      g.ai = Math.max(0, Math.min(K.ceil, g.ai + K.ki * e * h));
-      /* MANUAL: the exciter takes the field set point, no voltage loop; the integrator follows it, so AUTO takes over without a bump */
-      const u = man ? Math.max(0, Math.min(K.ceil, g.fr)) : Math.max(0, Math.min(K.ceil, g.ai + K.kp * e));
-      if (man) g.ai = u;
+      /* the lead-lag KR1 (1 + s TC) / (1 + s TB): VA = KR1 (a e + (1 - a) z), z' = (e - z) / TB, a = TC / TB. A state without z (start,
+         save point, MANUAL): z is set so the output is the field it has, so the AVR takes over without a bump */
+      const a = K.tc / K.tb,
+        zf = v => (v / K.kr - a * e) / (1 - a);
+      if (!Number.isFinite(g.zl)) g.zl = zf(g.efd);
+      const y = K.kr * (a * e + (1 - a) * g.zl),
+        u = man ? Math.max(0, Math.min(K.ceil, g.fr)) : Math.max(0, Math.min(K.ceil, y));
+      /* at a limit the state follows the limited output (anti-windup: the report does not draw it, the usual form of a digital regulator,
+         NO-SOURCE form); else the lag */
+      g.zl = man || u !== y ? zf(u) : g.zl + ((e - g.zl) * h) / K.tb;
       g.efd += ((u - g.efd) * h) / K.te;
       g.eq += ((g.efd - g.eq) * h) / td;
     }
   } else {
-    g.ai = 0;
+    g.zl = null;
     g.efd = 0;
     g.eq = Math.max(0, g.eq - (g.eq * dt) / K.tdo);
     if (g.eq < 1e-3) g.eq = 0;
@@ -287,7 +318,7 @@ function tcsGenTrip(U) {
     V: 0,
     eq: 0,
     efd: 0,
-    ai: 0,
+    zl: null,
     cmd: false,
     ex: false,
     start: false,

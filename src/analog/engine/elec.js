@@ -30,6 +30,14 @@ const AN_EL = {
   kV: 6.6,
   mt: 180 /* MVA, TR 2310 ONAN */,
   uat: 34 /* MVA, TR-1A1 ONAN */,
+  /* Phase 11 (YUI, 2026-11-28): the transformer losses, Shihlin K1AU3-E1-0-113 "Drawing of Transformer" (read by YUA,
+     /mnt/project-files/yui-reads-3.md b), the GUARANTEED values at 85 C (the factory test report is not in the docs):
+     TR 2310 p14: no-load 100 kW, load loss 512 kW at 180 MVA, exciting current 0.5 %; nameplate p16 / p17 Z 13.9 % / 13.98 % (the
+       serial of Unit 1 is not printed: 13.9 % taken);
+     TR-1A1 p262 / p264: no-load 25 kW, load loss 180 kW at 34 MVA, exciting current 0.5 %, nameplate Z 10.69 %.
+     Load loss = its rated value x (S / S rated)^2 (copper, I^2 R); no-load loss and exciting Mvar while the transformer is energized;
+     the leakage Mvar = X x S^2 / S rated, X = sqrt(Z^2 - R^2), R = load loss / S rated */
+  tr: { mt: { S: 180, p0: 0.1, pk: 0.512, q0: 0.005, z: 0.139 }, uat: { S: 34, p0: 0.025, pk: 0.18, q0: 0.005, z: 0.1069 } },
   bus: 4000 /* A, BUS 1AM */,
   /* 460 V load of the unit through TR-1B1 + TR-1B2 (K1AU3-E1-0-307 p A.14): MW, Mvar; ESP T/R sets separately */
   lv: [0.721, 0.496],
@@ -55,6 +63,13 @@ const AN_EL = {
     ['paI2', 'Plant air compressor C', 0.922]
   ]
 };
+/* the losses of a transformer at S MVA through it: [MW, Mvar] (AN_EL.tr) */
+function anTrLoss(T, S) {
+  const r = T.pk / T.S,
+    x = Math.sqrt(Math.max(0, T.z * T.z - r * r)),
+    k = S / T.S;
+  return [T.p0 + T.pk * k * k, T.q0 * T.S + x * T.S * k * k];
+}
 function anElec(U) {
   U = U || AN_UNIT;
   if (!U || !U.on) return null;
@@ -75,11 +90,17 @@ function anElec(U) {
       ESP * AN_EL.esp[1],
     Pg = g52 && G ? +U.MW || 0 : 0 /* beta.240: negative = reverse power from the grid */,
     Qg = g52 && G ? G.MVAr || 0 : 0,
-    /* the main transformer carries the generator minus the house load (export), or the house load from the grid (back-feed) */
-    Pt = e.l52 ? Pg - Pa : 0,
-    Qt = e.l52 ? Qg - Qa : 0,
-    St = Math.hypot(Pt, Qt),
-    Su = Math.hypot(Pa, Qa);
+    /* the 13.8 kV side of TR-1A1 = the house load + its losses (energized while the generator or the grid feeds it) */
+    on = g52 || e.l52,
+    Su = Math.hypot(Pa, Qa),
+    Lu = on ? anTrLoss(AN_EL.tr.uat, Su) : [0, 0],
+    /* the main transformer carries the generator minus the house load (export), or the house load from the grid (back-feed), its
+       13.8 kV side; the 230 kV export is that less its own losses */
+    P13 = e.l52 ? Pg - Pa - Lu[0] : 0,
+    Q13 = e.l52 ? Qg - Qa - Lu[1] : 0,
+    St = Math.hypot(P13, Q13),
+    Lm = e.l52 ? anTrLoss(AN_EL.tr.mt, St) : [0, 0],
+    Pt = e.l52 ? P13 - Lm[0] : 0;
   return {
     l52: e.l52 ? 1 : 0,
     g52: g52 ? 1 : 0,
@@ -91,6 +112,8 @@ function anElec(U) {
     auxMVAr: Qa,
     gen: Pg,
     exp: Pt,
+    mtLoss: Lm[0],
+    uatLoss: Lu[0],
     mtMVA: St,
     mtPct: (100 * St) / AN_EL.mt,
     uatMVA: Su,
@@ -139,10 +162,12 @@ function anElecL52(U, on) {
      DG1 controller DSE7320 (LIMAY parameter table, 2016-07-05): Remote Start On Load 5 s, Delay Crank 0.5 s, Warming Up 1 s, Load Delay
        0.7 s (p10; "Mains Failure Detection: No" p16, so the ATS starts it). FLAG: the table is in the Phase 2 EDG folder (100 % = 680 kW);
        the Phase 1 print was not found, same DSE7320;
-     the crank until the engine fires: NO-SOURCE (no start test record; at most 15 s per attempt, 3 attempts, 15 s rest, DSE p10 / p18).
-       Taken as the 1.8 s left of the NFPA 110 Type 10 class (10 s), so the first attempt fires.
+     the crank until the engine fires (crank disconnect at 21.0 Hz / 600 rpm, DSE p20; at most 15 s per attempt, 3 attempts, 15 s rest,
+       DSE p10 / p18): no start test record and no start time in the EDG specification XZ-FEB444 (yui-reads-3.md a). Taken as the 1.8 s
+       left of the ASCO Group 5 manual's printed typical, "usually about 10 seconds elapse from dropout of the NR relay to acceptance of
+       the emergency source" (381333-126 p21 / p23 / p26, vendor typical text, not a plant test), so the first attempt fires.
    U.el.bo = { t: s since the loss } while the bus is dead */
-const AN_EL_BO = { ats: 1 + 0 /* s, ASCO 1C + 2B defaults */, dse: 5 + 0.5 + 1 + 0.7 /* s, DSE7320 p10 */, crank: 1.8 /* s, NO-SOURCE */ };
+const AN_EL_BO = { ats: 1 + 0 /* s, ASCO 1C + 2B defaults */, dse: 5 + 0.5 + 1 + 0.7 /* s, DSE7320 p10 */, crank: 1.8 /* s, the rest of the ASCO typical 10 s (above) */ };
 AN_EL_BO.emp = AN_EL_BO.ats + AN_EL_BO.dse + AN_EL_BO.crank;
 function anElecBo(U, on) {
   const e = U.el || (U.el = { l52: true });

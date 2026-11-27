@@ -81,6 +81,23 @@ function anShKdp(U) {
     rho = anShRho(U.Pd, Po, To);
   return isFinite(rho) && rho > 0 ? (k0 * AN_SHDP.rho0) / rho : k0;
 }
+/* Phase 11 (KANA, 2026-11-27): THE MAIN STEAM LINE DROP, SH outlet (PT-MS1002, the MSP) to the turbine inlet (the MSV), the same
+   turbulent law as the SH (dP = k m^2 / rho). k from the line geometry, DESIGN-SRC: line list K1AU3-L1-0-011 R0 p36 (MS-1-001 18" SCH120,
+   MS-1-002 / -003 12" SCH120, 458.3 / 229.2 T/H) and the MS BOM K1AU3-P3-1-001 R7 / K1AU3-MM-002 (18" 132.8 m, 13 x 90 LR, 1 x 45, the
+   gate valve, the MOV; 12" 17.9 m in two legs; YUA PC read, /mnt/project-files/kana-pipe-tube-2026-11-27.md). CALC (KANA): ID 387.4 /
+   273.0 mm (ASME B36.10), at 474 T/H, 122.4 kg/cm2 G, 536 C: IF97 rho 35.3 kg/m3, 31.7 m/s, Colebrook f 0.0125 (e 0.046 mm, Re 1.4e7),
+   Crane K (LR elbow 0.2, gate 0.1, MOV 0.1, 45 0.2, split 0.5, tee branch 1.0): 18" 1.41 + 12" 0.34 = 1.74 kg/cm2. The BOM lengths are
+   all the MS installation pipe of each size (the isometrics M1-201 ~ 214 are not in the documents), so this drop is an UPPER BOUND.
+   Before: kln = (MSP - PT-MS1006) / MSF^2 of the 150 MW start (0.50 kg/cm2 at 464 T/H; a constant from the snapshot taps, no density; NO-FIT-OK: history note) */
+const AN_MSLN = { dp0: 1.74, m0: 474, Po: 122.4, To: 536 };
+function anMsKln(U) {
+  const D = AN_MSLN,
+    k0 = D.dp0 / (D.m0 * D.m0);
+  if (!D.rho0) D.rho0 = steamRho(D.Po, D.To);
+  if (!U || !isFinite(U.Pms) || U.Pms <= 0) return k0;
+  const rho = steamRho(U.Pms, U.hxO && isFinite(U.hxO.ms) ? U.hxO.ms : 0) /* steamRho takes saturation at least */;
+  return isFinite(rho) && rho > 0 ? (k0 * D.rho0) / rho : k0;
+}
 const AN_STORE = { cs: 3.6 * (13 + 32 + 0.4 * ((Math.PI / 4) * (0.3874 ** 2 * 132.8 + 0.273 ** 2 * 17.9))) /* 186, CALC above */ };
 const AN_UNIT = {
   on: false,
@@ -437,8 +454,7 @@ function anUnitStart() {
     P0 = anUnitVal(U.msp),
     Pd0 = anUnitVal(U.drum),
     mwv = U.mw.map(anUnitVal).filter(isFinite),
-    MW0 = mwv.length ? mwv.slice(0, 2).reduce((a, x) => a + x, 0) / Math.min(2, mwv.length) : NaN,
-    Ptin = U.tin.length ? anUnitVal(U.tin[0]) : NaN;
+    MW0 = mwv.length ? mwv.slice(0, 2).reduce((a, x) => a + x, 0) / Math.min(2, mwv.length) : NaN;
   if (![F0, m0, P0, Pd0, MW0].every(isFinite) || m0 <= 0 || P0 <= 0 || Pd0 <= P0) return;
   Object.assign(U, {
     F0,
@@ -449,7 +465,7 @@ function anUnitStart() {
     /* Phase 11 (KANA, 2026-11-27): the S/H pressure drop is the physics law of anShKdp (design FHI P2S7 Tab 3), no longer the plant
        150 MW anchor (Pd0 - P0) / m0^2 (no-fit finding: a constant taken from the snapshot). NO-FIT-OK: history note */
     kdp: anShKdp(null),
-    kln: isFinite(Ptin) && Ptin <= P0 ? (P0 - Ptin) / (m0 * m0) : 0 /* main steam line drop to the turbine inlet */,
+    kln: anMsKln(null) /* the main steam line drop law (AN_MSLN) */,
     Kt: m0 / P0 /* valve opening 1 = the opening at the anchor */,
     gv: 1,
     Pd: Pd0,
@@ -3997,6 +4013,7 @@ function anUnitStep0(dt) {
   /* LMYP OTS valve tests (tcs.js tcsVtStep / tcsVtLift, TCE220 / 222): the two CV groups in series with their MSV, half the steam each */
   tcsVtStep(U, dt);
   U.kdp = anShKdp(U); /* Phase 11: the SH pressure drop law at the density of this scan (anShKdp) */
+  U.kln = anMsKln(U); /* Phase 11: the main steam line drop law at the density of this scan (anMsKln) */
   const k = U.Kt * tcsVtLift(U) * (U.msG == null ? 1 : U.msG),
     a2 = U.kdp * k,
     ms = a2 > 0 ? (-1 + Math.sqrt(1 + 4 * a2 * k * Math.max(0, U.Pd))) / (2 * a2) : k * U.Pd;
