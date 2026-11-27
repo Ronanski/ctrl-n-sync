@@ -294,11 +294,15 @@ const AN_UNIT = {
      total 3.90 m3 x 7770 kg/m3 (ASTM A335 P91, ASME II-D Table PRD) = 30.3 t
    x cp of 9Cr-1Mo-V at about 500 C = k / (rho alpha) = 26.6 W/m K / (7770 x 5.8e-6 m2/s) = 0.59 kJ/kg K (ASME II-D Table TCD)
    = 17.9e3 kJ/K (was 10e3 NO-SOURCE "20 t x 0.5").
-   UA: lagging loss 0.02 kW/K, NO-SOURCE: the hot reheat insulation spec (thickness, material) is asked from the PC docs; replace it then. */
+   UA: lagging loss. Class HW6 on the as-built isos (K1AU3-P3-1-002 R7), thickness FHI K1AU3-P1-0-001 p6: 24" 200 mm, 18" / 16" 190 mm,
+   rock wool ASTM C547 Type II. Loss per metre by the MHPS TDA-15-046 R2 / JIS A9501 law Q = (To - Ta) / (ln(dn/do)/(2 pi k) + 1/(h pi dn)),
+   k 0.0945 W/m K and h 9.4 W/m2 K back-calculated from the TDA printed rows (YUA read 2026-11-28,
+   /mnt/project-files/rin-hrh-ms-insulation-reads-2026-11-28.md), at 538 / 35 C: 24" 570, 18" 475, 16" 436 W/m. UA = sum(L Q) / (538 - 35):
+   (111.651 x 570 + 25.405 x 475 + 27.392 x 436) / 503 = 0.174 kW/K (87.7 kW at 538 C; was 0.02 NO-SOURCE). Cool-down time M / UA about 29 h. */
 const AN_RHPIPE = {
   M: (Math.PI * (0.6096 - 0.0143) * 0.0143 * 105.651 + Math.PI * (0.6096 - 0.031) * 0.031 * 6 + Math.PI * (0.4572 - 0.01113) * 0.01113 * 24.405 +
     Math.PI * (0.4572 - 0.02383) * 0.02383 * 1 + Math.PI * (0.4064 - 0.00953) * 0.00953 * 27.392) * 7770 * 0.59 /* kJ/K */,
-  UA: 0.02 /* kW/K, NO-SOURCE (insulation spec asked) */
+  UA: (111.651 * 570 + 25.405 * 475 + 27.392 * 436) / (538 - 35) / 1000 /* kW/K */
 };
 
 const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
