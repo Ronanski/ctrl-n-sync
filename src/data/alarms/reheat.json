@@ -3,5 +3,7 @@
 {"tag": "PT-HR1001", "lv": "LOW", "p": 3, "sp": 8.0, "d": "#1 REHEATER OUTLET HEADER PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0530", "src": "Alarm List _20160912 sheet PT, PD-012"},
 {"tag": "PT-HR1011", "lv": "HIGH", "p": 3, "sp": 12.0, "d": "#1 LP TURBINE BYPASS OUTLET PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0531", "src": "Alarm List _20160912 sheet PT, PD-012"},
 {"tag": "PT-HR1011", "lv": "LOW", "p": 3, "sp": 6.0, "d": "#1 LP TURBINE BYPASS OUTLET PRESSURE TRANSMITTER", "stn": 102, "addr": "AI0531", "src": "Alarm List _20160912 sheet PT, PD-012"},
-{"tag": "TE-HR1010", "lv": "HIGH", "p": 3, "sp": 220.0, "d": "#1 LP TURBINE BYPASS CONTROL VALVE OUTLET TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0870", "src": "Alarm List _20160912 sheet TE, PD-012", "io": "TT-HR1010"}
+{"tag": "TE-HR1010", "lv": "HIGH", "p": 3, "sp": 220.0, "d": "#1 LP TURBINE BYPASS CONTROL VALVE OUTLET TEMPERATURE ELEMENT", "stn": 102, "addr": "AI0870", "src": "Alarm List _20160912 sheet TE, PD-012", "io": "TT-HR1010"},
+{"tag": "LS-CR1001-1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COLD REHEATER LINE A DRAIN POT DP-CR01 HIGH LEVEL SWITCH", "stn": 102, "addr": "I.004A", "src": "Alarm List _20160912 sheet LS, PD-011", "set": "H 220.0"},
+{"tag": "LS-CR1001-2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COLD REHEATER LINE A DRAIN POT DP-CR01 HIGH-HIGH LEVEL SWITCH", "stn": 102, "addr": "I.004B", "src": "Alarm List _20160912 sheet LS, PD-011", "set": "HH 320.0"}
 ]

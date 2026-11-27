@@ -26,5 +26,6 @@
 {"tag": "BT-DO1043-A", "lv": "LOW", "p": 3, "sp": 50.0, "d": "#1 BURNER(A) COMPACT FLAME DETECTOR", "stn": 101, "addr": "AI0274", "src": "Alarm List _20160912 sheet AT, PD-022,2/5"},
 {"tag": "BT-DO1043-A", "lv": "LOW-LOW", "p": 2, "sp": 25.0, "d": "#1 BURNER(A) COMPACT FLAME DETECTOR", "stn": 101, "addr": "AI0274", "src": "Alarm List _20160912 sheet AT, PD-022,2/5"},
 {"tag": "BT-DO1043-B", "lv": "LOW", "p": 3, "sp": 50.0, "d": "#1 BURNER(B) COMPACT FLAME DETECTOR", "stn": 101, "addr": "AI0435", "src": "Alarm List _20160912 sheet AT, PD-022,3/5"},
-{"tag": "BT-DO1043-B", "lv": "LOW-LOW", "p": 2, "sp": 25.0, "d": "#1 BURNER(B) COMPACT FLAME DETECTOR", "stn": 101, "addr": "AI0435", "src": "Alarm List _20160912 sheet AT, PD-022,3/5"}
+{"tag": "BT-DO1043-B", "lv": "LOW-LOW", "p": 2, "sp": 25.0, "d": "#1 BURNER(B) COMPACT FLAME DETECTOR", "stn": 101, "addr": "AI0435", "src": "Alarm List _20160912 sheet AT, PD-022,3/5"},
+{"tag": "PSL-DO1043-B1", "lv": "LOW", "p": 3, "on": 1, "d": "#1 BURNER(B) DIESEL OIL PRESSURE HIGH SWITCH", "stn": 104, "addr": "I.036C", "src": "Alarm List _20160912 sheet PS, PD-022,3/5", "io": "PSH-DO1043-B1", "set": "H 5.9"}
 ]

@@ -12,5 +12,12 @@
 {"tag": "TE-BR1120-1", "lv": "HIGH-HIGH", "p": 2, "sp": 440.0, "d": "#1 SUPERHEATER PANEL NO.1 OUTLET STEAM TEMPERATURE ELEMENT-1", "stn": 101, "addr": "AI0608", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1120-1"},
 {"tag": "TE-BR1120-1", "lv": "HIGH", "p": 3, "sp": 430.0, "d": "#1 SUPERHEATER PANEL NO.1 OUTLET STEAM TEMPERATURE ELEMENT-1", "stn": 101, "addr": "AI0608", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1120-1"},
 {"tag": "TE-BR1120-2", "lv": "HIGH-HIGH", "p": 2, "sp": 440.0, "d": "#1 SUPERHEATER PANEL NO.1 OUTLET STEAM TEMPERATURE ELEMENT-2", "stn": 101, "addr": "AI0640", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1120-2"},
-{"tag": "TE-BR1120-2", "lv": "HIGH", "p": 3, "sp": 430.0, "d": "#1 SUPERHEATER PANEL NO.1 OUTLET STEAM TEMPERATURE ELEMENT-2", "stn": 101, "addr": "AI0640", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1120-2"}
+{"tag": "TE-BR1120-2", "lv": "HIGH", "p": 3, "sp": 430.0, "d": "#1 SUPERHEATER PANEL NO.1 OUTLET STEAM TEMPERATURE ELEMENT-2", "stn": 101, "addr": "AI0640", "src": "Alarm List _20160912 sheet TE, PD-019", "io": "TT-BR1120-2"},
+{"tag": "LSH-BR1001-1", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 DRUM LEVEL SWITCH-1 (HIGH)", "stn": 104, "addr": "I.0531", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "H 127mm"},
+{"tag": "LSL-BR1001-1", "lv": "LOW", "p": 3, "on": 1, "d": "#1 DRUM LEVEL SWITCH-1 (LOW)", "stn": 104, "addr": "I.0532", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "L -100mm"},
+{"tag": "LSLL-BR1001-1", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 DRUM LEVEL SWITCH-1 (LOW LOW)", "stn": 104, "addr": "I.0533", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "L -178mm"},
+{"tag": "LSLL-BR1001-1-NC", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 DRUM LEVEL SWITCH-1 (NOT LOW LOW)", "stn": 104, "addr": "I.0219", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "LL -254mm"},
+{"tag": "LSH-BR1001-2", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 DRUM LEVEL SWITCH-2 (HIGH)", "stn": 104, "addr": "I.0535", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "H 127mm"},
+{"tag": "LSL-BR1001-2", "lv": "LOW", "p": 3, "on": 1, "d": "#1 DRUM LEVEL SWITCH-2 (LOW)", "stn": 104, "addr": "I.0536", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "L -100mm"},
+{"tag": "LSLL-BR1001-2-NC", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 DRUM LEVEL SWITCH-2 ( NOT LOW LOW)", "stn": 104, "addr": "I.021A", "src": "Alarm List _20160912 sheet LS, PD-019", "set": "LL -254mm"}
 ]
