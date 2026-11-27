@@ -15,9 +15,11 @@ const root = path.resolve(__dirname, '..', '..', '..');
 const ctx = {};
 vm.createContext(ctx);
 for (const f of ['steam.js', 'turbine.js']) vm.runInContext(fs.readFileSync(path.join(root, 'src/analog/engine', f), 'utf8'), ctx);
+/* shaft -> generator MW with the HB lumped losses (as tests/lanes/model/turbine-hb.cjs HBGEN: anTbGen left turbine.js, YUI owns them) */
+vm.runInContext('var HBGEN = sh => sh - 2.565 - 3.295e-5 * sh * sh;', ctx);
 const run = Pc => {
   ctx.I = { ms: 458.327, Pin: 126, Tms: 538, qip: 400.944, Thr: 538, Pc, w: { hp6: 45.147, hp5: 24.2, da: 22.225, lp3: 15.246, lp2: 12.27, lp1: 16.834 } };
-  return vm.runInContext('(()=>{let o=null;for(let i=0;i<12;i++)o=tbPath(I,o);o.MW=anTbGen(o.Whp+o.Wip);return o})()', ctx);
+  return vm.runInContext('(()=>{let o=null;for(let i=0;i<12;i++)o=tbPath(I,o);o.MW=HBGEN(o.Whp+o.Wip);return o})()', ctx);
 };
 let bad = 0;
 const ck = (ok, w) => {
