@@ -166,10 +166,13 @@ function anElecBoStep(U, dt) {
      81U      1st step <= 57.40 Hz, 2nd step <= 57.20 Hz; 81O 1st step >= 62.60 Hz, 2nd step >= 62.80 Hz (p.34).
    The relay's own dropout ratio and its alarm delays that the drawing does not draw (24 1st step 2.0 s, the 81 / 59 / 27 times are the
    sheet's timers) are NO-SOURCE / not drawn: the contact here is the pick-up. Not fed (no state in the model): 87G, 59GN, 40 zones 1 / 2,
-   46, 51V, 50, 78, 60FL. The 32 reverse power stays in turbine.js anRp32 until its timers move to SH-G-5A d32 (one path). Relay (B)
+   46, 51V, 50, 78, 60FL.
+     32 reverse power P = the generator MW with 52G closed / 176.5 MVA (1 pu = 115 V x 3.69 A secondary, taken as the rating, AN_GEN.S):
+              1st step (#1 alarm) <= -0.008 pu (-1.4 MW), 2nd step (#2 trip) <= -0.013 pu (-2.3 MW) (p.16); its 10 s of the 2nd step is
+              the timer d32 of SH-G-5A / 6A, into 86G-A / 86G-B (before: turbine.js anRp32 timed and latched it beside the sheet). Relay (B)
    (SH-G-6A / 6B, KKS F42GA080, p.41 ~ 65) has the same settings (YUA read /mnt/project-files/yui-relay-b-2026-11-27.md); its trips
    go to 86G-B: the same contacts feed both sheets. */
-const AN_GPR = { vb: 115, vhz: [105, 107, 115], ov: [120, 123], uv: 86, uf: [57.4, 57.2], of: [62.6, 62.8] };
+const AN_GPR = { vb: 115, vhz: [105, 107, 115], ov: [120, 123], uv: 86, uf: [57.4, 57.2], of: [62.6, 62.8], rp: [-0.008, -0.013] };
 function anGenRelay(U) {
   const K = AN_GPR,
     g = U.gen || {},
@@ -177,6 +180,8 @@ function anGenRelay(U) {
     V = isFinite(g.V) ? Math.max(0, +g.V) : 0,
     v = V * K.vb,
     M = f > 0 ? (100 * V) / (f / 60) : 0,
+    g52 = !!U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'),
+    p = g52 && isFinite(+U.MW) ? +U.MW / AN_GEN.S : 0,
     b = c => (c ? 1 : 0);
   return {
     r24a: b(M >= K.vhz[0]),
@@ -189,6 +194,8 @@ function anGenRelay(U) {
     r81l1: b(f <= K.uf[0]),
     r81l2: b(f <= K.uf[1]),
     r81h1: b(f >= K.of[0]),
-    r81h2: b(f >= K.of[1])
+    r81h2: b(f >= K.of[1]),
+    r32a: b(p <= K.rp[0]),
+    r32b: b(p <= K.rp[1])
   };
 }

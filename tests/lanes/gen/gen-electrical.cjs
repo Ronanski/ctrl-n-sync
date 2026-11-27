@@ -116,6 +116,27 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
     vhz = (100 * r1.V) / (r1.f / 60);
   ok(Object.entries(r1.x).every(([k, v]) => k === 'vhz' || v === 0) && Math.abs(r1.M - vhz) < 0.05 && r1.MB === r1.M && r1.gC === 0 && r1.gD === 0 && Object.values(r1.c).every(v => v === 0) && r1.gA === 0 && r1.gB === 0,
     'relays (A) and (B) at 150 MW: every contact open, V/Hz ' + r1.M.toFixed(2) + ' % into the 24 inverse element, no trip');
+  /* the 32 reverse power through the sheets (GEE-2015-0173 p.16: #2 -0.013 pu = -2.3 MW, 10 s, SH-G-5A d32 / 6A -> 86G-A / 86G-B):
+     GOV SET to 0 with 52G closed and the turbine not tripped: the generator motors at minus its losses, the lockouts trip the turbine */
+  const E2 = load();
+  await E2.start('150');
+  E2.step(10);
+  E2.js("AN.turbine('gov',{op:'set',v:0})");
+  let tNeg = -1,
+    tLo = -1,
+    mwNeg = 0,
+    why = '';
+  for (let i = 1; i <= 120 && tLo < 0; i++) {
+    E2.step(2);
+    const o = JSON.parse(E2.js(`JSON.stringify({MW:AN.unit.MW,lo:AN.unit.lo86})`));
+    if (tNeg < 0 && o.MW <= -0.013 * 176.5) (tNeg = i), (mwNeg = o.MW);
+    if (o.lo.a && o.lo.b) (tLo = i), (why = o.lo.why);
+  }
+  E2.step(10);
+  const st2 = E2.js('AN.unit.tb.st');
+  ok(tNeg > 0 && tLo - tNeg >= 9 && tLo - tNeg <= 12 && st2 === 'off',
+    'reverse power: ' + mwNeg.toFixed(2) + ' MW (motoring at the losses), 86G-A / 86G-B ' + (tLo - tNeg) + ' s after -2.3 MW (' + why + '), turbine off');
+  ok(E2.js("AN.turbine('gen',{op:'reset86'})") === '' && !JSON.parse(E2.js('JSON.stringify(AN.unit.lo86)')).a, 'lockouts reset once the relay has dropped out (52G open)');
   E.js("AN.turbine('trip')");
   E.step(240);
   const r2 = JSON.parse(E.js(rq));

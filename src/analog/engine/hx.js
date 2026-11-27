@@ -265,41 +265,25 @@ function anHxZeta(x) {
     if (a <= L[i][0]) return Math.exp(Math.log(L[i - 1][1]) + ((Math.log(L[i][1]) - Math.log(L[i - 1][1])) * (a - L[i - 1][0])) / (L[i][0] - L[i - 1][0]));
   return L[L.length - 1][1];
 }
-/* saturated liquid enthalpy, kJ/kg (IF97 table points) */
-const AN_HX_HF = [
-  [0, 0],
-  [20, 83.9],
-  [40, 167.5],
-  [60, 251.2],
-  [80, 335],
-  [100, 419.2],
-  [120, 503.8],
-  [140, 589.2],
-  [160, 675.5],
-  [180, 763.1],
-  [200, 852.3],
-  [220, 943.6],
-  [240, 1037.6],
-  [260, 1135],
-  [280, 1236.8],
-  [300, 1345],
-  [320, 1462.2],
-  [340, 1594.5],
-  [360, 1761.5]
-];
+/* saturated liquid enthalpy, kJ/kg, at T C: IF97 region 1 at the saturation pressure (steam.js steamR1 / steamPsat). Phase 11
+   (KANA 2026-11-27): in place of the 19-point table AN_HX_HF (one water property source). Region 1 holds to 350 C (IF97 Table 1) */
 function anHxHw(T) {
-  const L = AN_HX_HF;
   if (!(T > 0)) return 0;
-  for (let i = 1; i < L.length; i++)
-    if (T <= L[i][0]) return L[i - 1][1] + ((L[i][1] - L[i - 1][1]) * (T - L[i - 1][0])) / (L[i][0] - L[i - 1][0]);
-  return L[L.length - 1][1];
+  const Tc = Math.min(350, T);
+  return steamR1(Math.max(0.006117, (steamPsat(Tc) + 1.0332) * 0.0980665), Tc + 273.15).h;
 }
+/* its inverse, T C of a saturated liquid enthalpy: secant on anHxHw, from h / 4.2 and h / 4.6 (about 4 evaluations to 0.01 kJ/kg) */
 function anHxTw(h) {
-  const L = AN_HX_HF;
   if (!(h > 0)) return 0;
-  for (let i = 1; i < L.length; i++)
-    if (h <= L[i][1]) return L[i - 1][0] + ((L[i][0] - L[i - 1][0]) * (h - L[i - 1][1])) / (L[i][1] - L[i - 1][1]);
-  return L[L.length - 1][0];
+  let T0 = Math.min(350, h / 4.6),
+    f0 = anHxHw(T0) - h,
+    T1 = Math.min(350, h / 4.2),
+    f1 = anHxHw(T1) - h;
+  for (let k = 0; k < 8 && Math.abs(f1) > 0.01 && f1 !== f0; k++) {
+    const T2 = Math.min(350, Math.max(0.01, T1 - (f1 * (T1 - T0)) / (f1 - f0)));
+    (T0 = T1), (f0 = f1), (T1 = T2), (f1 = anHxHw(T1) - h);
+  }
+  return T1;
 }
 /* steam enthalpy at P (kg/cm2 g) and T, never under saturated vapour */
 function anHxHs(P, T) {

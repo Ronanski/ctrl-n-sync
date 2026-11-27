@@ -95,10 +95,10 @@ const AN_PORTS = {
     /* ---- condenser, condensate, deaerator ---- */
     'cd': { by: 'MEI', to: ['RIN', 'SUZU', 'NANA'], kind: 'signal', v: ['P', 'T', 'Q'], note: 'condenser pressure, saturation, heat to sea water (x = {QA, QB})', d150: {} },
     'cd.out': { by: 'MEI', to: ['NANA'], kind: 'water', v: ['m', 'P', 'T', 'h'], note: 'condensate at the deaerator inlet after LCV-CD1104', d150: {} },
-    'dea': { by: 'NANA', to: ['MEI'], kind: 'signal', v: ['P', 'T', 'L'], note: 'deaerator pressure, saturation, storage level', d150: {} },
+    'dea': { by: 'NANA', to: ['MEI', 'SUZU'], kind: 'signal', v: ['P', 'T', 'L'], note: 'deaerator pressure, saturation, storage level', d150: {} },
     'hph.emerg': { by: 'NANA', to: ['MEI'], kind: 'water', v: ['m', 'h'], note: 'HP heater emergency drains to the condenser', d150: { m: 0 }, src: 'HB PPE-14-0725 case 1 has no such flow: closed at load' },
     'ej.steam': { by: 'SUZU', to: ['MEI'], kind: 'steam', v: ['m', 'h'], note: 'ejector / start-up ejector motive steam from the auxiliary steam', d150: {} },
-    'aux.peg': { by: 'NANA', to: ['SUZU'], kind: 'steam', v: ['m'], note: 'deaerator pegging steam taken PCV-AS1030', d150: { m: 0 }, src: 'HB PPE-14-0725 case 1 has no such flow: closed at load' },
+    'aux.peg': { by: 'SUZU', to: ['NANA'], kind: 'steam', v: ['m', 'h'], note: 'deaerator pegging steam through PCV-AS1030 (t/h, kJ/kg): computed in the aux header substeps', d150: { m: 0 }, src: 'HB PPE-14-0725 case 1 has no such flow: closed at load' },
     'aux.hdr': { by: 'SUZU', to: ['NANA', 'RIN', 'MEI'], kind: 'signal', v: ['P', 'T', 'h'], note: 'auxiliary steam header', d150: {} },
     'mu': { by: 'SUZU', to: ['MEI'], kind: 'water', v: ['m', 'T'], io: 'in', note: 'make-up water into the hotwell', d150: {} },
     /* ---- cooling ---- */
@@ -109,7 +109,7 @@ const AN_PORTS = {
     'shaft': { by: 'RIN', to: ['YUI'], kind: 'power', v: ['W', 'n'], note: 'turbine mechanical power and speed', d150: {} },
     'gen': { by: 'YUI', to: ['RIN'], kind: 'power', v: ['W'], io: 'out', note: 'generator electrical output (x.b52g = breaker closed 1 / 0)', d150: { W: 150 }, src: 'HB case 1' },
     'aux.power': { by: 'YUI', to: [], kind: 'power', v: ['W'], note: 'unit auxiliary power, sum of the motor loads (each part writes q.motor.<part> in kW)', d150: {} },
-    'relay.gen': { by: 'YUI', to: [], kind: 'signal', v: ['x'], note: 'pick-up contacts of the generator protection relays (A) and (B), read by the TCS sheets SH-G-5A / 5B / 6A / 6B (tcs-sheets.js TCS_SH_IN): x = {r24a, r24b, r24c, vhz (V/Hz %), r59a, r59b, r27, r81l1, r81l2, r81h1, r81h2}, 1 = picked up', d150: { x: { r24a: 0, r24b: 0, r24c: 0, r59a: 0, r59b: 0, r27: 0, r81l1: 0, r81l2: 0, r81h1: 0, r81h2: 0 } }, src: 'GEE-2015-0173 R1 pickups (YUA read): all open at 13.8 kV 60 Hz' }
+    'relay.gen': { by: 'YUI', to: [], kind: 'signal', v: ['x'], note: 'pick-up contacts of the generator protection relays (A) and (B), read by the TCS sheets SH-G-5A / 5B / 6A / 6B (tcs-sheets.js TCS_SH_IN): x = {r24a, r24b, r24c, vhz (V/Hz %), r59a, r59b, r27, r81l1, r81l2, r81h1, r81h2, r32a, r32b}, 1 = picked up', d150: { x: { r24a: 0, r24b: 0, r24c: 0, r59a: 0, r59b: 0, r27: 0, r81l1: 0, r81l2: 0, r81h1: 0, r81h2: 0, r32a: 0, r32b: 0 } }, src: 'GEE-2015-0173 R1 pickups (YUA read): all open at 13.8 kV 60 Hz' }
   },
   /* the stores each part keeps (rule 4) */
   stores: ['store.AOI', 'store.KANA', 'store.RIN', 'store.MEI', 'store.NANA', 'store.YUI', 'store.SUZU']

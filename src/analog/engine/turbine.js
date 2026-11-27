@@ -194,9 +194,10 @@ function anTurbine0(cmd, arg) {
    inlet pressure ratio: up to 260 kg/h (0.15 % of the flow) apart.
    Reheater: cold reheat 38.64 ata 446091 kg/h (incl. No.6 extraction 45147) to hot reheat 34.77 ata 400944 kg/h: the drop goes with
    m^2 v (pipe and tube friction), its coefficient from case 1.
-   The heater draws: the steam the heaters condense (ports ext.w_hp NANA, ext.w_lp MEI). Until those ports land (NANA / MEI PRs agreed
-   2026-11-27 11:25 AM PHT) the draws are read from the heater models as they stand: No.2 / No.1 HP heater U.hpF2 / U.hpF1 - U.hpF2,
-   the LP heaters by their heat balance (tbLpDraws), the deaerator in line with the No.1 HP heater draw (HB case 1 22225 / 24200).
+   The heater draws: the steam the heaters condense (ports ext.w_hp NANA, ext.w_lp MEI). The LP heater draws are the port ext.w_lp
+   (MEI anLphStep, Phase 11 rank 6: the shell first law with the drain cascade). Until NANA's ext.w_hp lands the HP draws are read from
+   the heater model as it stands: No.2 / No.1 HP heater U.hpF2 / U.hpF1 - U.hpF2, the deaerator in line with the No.1 HP heater draw
+   (HB case 1 22225 / 24200).
    Units in AN_TB: kg/h, ata, C, kcal/kg as printed (x 4.1868 = kJ/kg). DESIGN-SRC: HB PPE-14-0725 R1 cases 1 / 9 */
 const AN_TB = {
   c1: {
@@ -341,8 +342,7 @@ function tbDraws(U, ms) {
   const pt = U.pt || {},
     hp = pt['ext.w_hp'] && pt['ext.w_hp'].x,
     lp = pt['ext.w_lp'] && pt['ext.w_lp'].x,
-    lb = lp || tbLpDraws(U);
-  U.tbD = lb;
+    lb = lp || { lp3: 0, lp2: 0, lp1: 0 } /* no port yet (the first scan): nothing drawn */;
   return {
     /* the HP heater and deaerator draws: the port of the feedwater part (ext.w_hp, NANA fw.js anDeaStep); not written = none */
     hp6: hp ? hp.hp2 : 0,
@@ -352,37 +352,6 @@ function tbDraws(U, ms) {
     lp2: lb.lp2,
     lp1: lb.lp1
   };
-}
-/* Phase 11 rank 1 (RIN, GO FIX 11 2026-11-27): the LP heater draws by the HEAT BALANCE of each heater, in place of the per-load rows
-   AN_HB f3 / f2 / f1 (deleted). The steam a heater condenses gives the condensate its rise (first law, steady shell):
-     w (h_ext - h_drain) + D_in (h_drain,in - h_drain) = m_cd (h_out - h_in)
-   m_cd the condensate through the heaters (plant.js anCycFlows fda, T/H), h_out / h_in / h_drain of the condensate and the drain at the
-   temperatures of the LP heater model (U.lpHt, anLphStep, the step before), h_ext the extraction enthalpy of the steam path (U.tbS),
-   water by IAPWS-IF97 region 1 at 1 MPa (the condensate line; the pressure moves h by under 0.1 %). The drains cascade No.3 -> No.2 ->
-   No.1 (FHI heater O&M L15-5 ~ 7, drain in from the heater above). Check at HB case 1 with the heater O&M design temperatures: No.3 15.1
-   (HB 15.2), No.2 12.2 (12.3), No.1 18.1 T/H (16.8: the HB No.1 heater also takes the gland / ejector drains, not in this balance).
-   MEI's LP heater NTU model (rank 6) writes ext.w_lp and then this balance is no longer read. DESIGN-SRC: first law, IAPWS-IF97 */
-function tbLpDraws(U) {
-  const t = U.lpHt,
-    S = U.tbS,
-    f = typeof anCycFlows === 'function' ? anCycFlows(0) : null,
-    o = { lp3: 0, lp2: 0, lp1: 0 };
-  if (!t || !S || !S.H || !f) return o;
-  const m = Math.max(0, +f.fda || 0),
-    hw = T => steamR1(1, Math.max(274, (isFinite(T) ? T : 30) + 273.15)).h;
-  let D = 0,
-    hin = 0;
-  for (const [k, e, q] of [['H3', 'l3', 'lp3'], ['H2', 'l2', 'lp2'], ['H1', 'l1', 'lp1']]) {
-    const x = t[k];
-    if (!x) continue;
-    const hd = hw(x.dr),
-      hs = S.H[e],
-      duty = m * Math.max(0, hw(x.out) - hw(x.in)) - (D > 0 ? D * Math.max(0, hin - hd) : 0);
-    o[q] = hs - hd > 50 ? Math.max(0, duty / (hs - hd)) : 0;
-    D += o[q];
-    hin = hd;
-  }
-  return o;
 }
 /* anTbPx(k): the stage pressure of the steam path NOW (AN_UNIT.tbS, tbPath) over its 100 % design pressure, for the heater shells
    (the callers multiply it by the design heater pressure): 'x6' cold reheat (No.6 = No.2 HP heater), 'x5', 'xd' deaerator, 'x3',
@@ -540,33 +509,6 @@ function anTbFlow(U, tb, D, dt, dirt) {
     tb.xfer = true;
     dirt(U.di.xfer, 1);
   }
-}
-/* 3.2.3-beta.240 (user 2026-11-14): the 32 REVERSE POWER relay of the generator protection panel (Beckwith M-3425A, GEE-2015-0173 R1
-   SITE TEST PROCEDURE OF GEN. PROTECTION RELAY PANEL, PDF p.16 (PAGE 14) 32A: #1 (Alarm) pickup -0.008 pu, delay 300 cycles (5.0 s); #2
-   (Trip) pickup -0.013 pu, delay 600 cycles (10.0 s); over / under power "Over"; 1 pu = 115 V / 3.69 A secondary, taken as the generator
-   rating 176.5 MVA (AN_GEN.S): alarm at -1.4 MW, trip at -2.3 MW. Sequence test PDF p.7 (P.5) rows 12 / 13: both with 52G closed; #1 =
-   "1st REVERSE POWER (32) OPERATED"; #2 = "2nd REVERSE POWER (32) OPERATED", lockout relay 86G-A: 52G and 41 open and the turbine trips
-   (ANN & ST TRIP). Here the 86G-A drives the TA-9 input GEN./UNIT TRANS. PROTECTION A & GEN. LOCKOUT RELAY A (tcs-trip.js); the turbine
-   trip opens 52G and 41 (tcsGenTrip). The 86G-A is reset with the TURBINE RESET (NO-SOURCE: the hand reset of the lockout relay is on the
-   protection panel, not on the app). Other relays of the panel are not modelled */
-const AN_RP32 = { a: -0.008, t1: 5, b: -0.013, t2: 10 };
-function anRp32(U, on, dt) {
-  const r = U.rp32 || (U.rp32 = { t1: 0, t2: 0, al: false, lo: false }),
-    p = on ? (+U.MW || 0) / AN_GEN.S : 0,
-    ev = m => {
-      if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
-        lsEventAdd('GEN', 'GEN', m);
-    };
-  r.t1 = on && p <= AN_RP32.a ? r.t1 + dt : 0;
-  r.t2 = on && p <= AN_RP32.b ? r.t2 + dt : 0;
-  const al = r.t1 >= AN_RP32.t1;
-  if (al && !r.al) ev('1st REVERSE POWER (32) OPERATED: ' + (+U.MW).toFixed(1) + ' MW');
-  r.al = al;
-  if (r.t2 >= AN_RP32.t2 && !r.lo) {
-    r.lo = true;
-    ev('2nd REVERSE POWER (32) OPERATED: generator lockout relays 86G-A / 86G-B, turbine trip');
-  }
-  tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T */
 }
 /* 3.2.3 house load (52L1 open, 52G1 closed): the turbine generator speed from the swing equation 2 H w dw/dt = Pm - Pe (per unit on
    AN_GEN.S): Pm = the turbine steam power MWss (no tauMW lag: the CV / ICV cut the steam at once, the lag of U.MW stands for the reheater

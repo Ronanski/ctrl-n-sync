@@ -32,8 +32,11 @@ function anIdfN(m) {
    - drum steam space at the normal level: half of 1.676 m ID x 12.48 m tangent + heads (K1AU3-B-0-004) = 15 m3, saturated steam
      0.88 kg/m3 per kg/cm2 = 13 kg;
    - superheaters 75.8 m3 (T8 Tab 2 HYD less the water parts), superheated about 450 C, 0.42 kg/m3 per kg/cm2 = 32 kg;
-   - main steam line to the stop valves: NO-SOURCE, about 20 m3 (8 kg).
-   53 kg per kg/cm2 = 190 (T/H) x s per kg/cm2 (CALC). The old field C of a save is not read */
+   - main steam line to the stop valves (Phase 11 KANA 2026-11-27, DOC: line list L1-0-011 and MS BOM P3-1-001 R7, PC read
+     /mnt/project-files/kana-pipe-tube-2026-11-27.md): MS-1-001 18" SCH120 ID 387.4 mm x 132.8 m = 15.65 m3, MS-1-002 / -003
+     12" SCH120 ID 273.0 mm x 17.9 m = 1.05 m3; 16.7 m3 (the BOM lengths are an upper bound: the isos are not in the documents),
+     0.4 kg/m3 per kg/cm2 = 6.7 kg. Before: NO-SOURCE, about 20 m3 (8 kg).
+   51.7 kg per kg/cm2 = 186 (T/H) x s per kg/cm2 (CALC). The old field C of a save is not read */
 /* Phase 11 (KANA, 2026-11-27): THE SUPERHEATER PRESSURE DROP, drum to SH outlet. Turbulent flow in the SH tubes at a Reynolds number
    far above the transition (the friction factor nearly constant): dP = f (L / D) rho V^2 / 2 = k m^2 / rho, the mass flow m and the
    mean steam density rho of the superheaters. k from the one design point, DESIGN-SRC: FHI P2S7 Tab 3 (page 2-7-TAB_3-1) at MCR:
@@ -66,7 +69,7 @@ function anShKdp(U) {
     rho = anShRho(U.Pd, Po, To);
   return isFinite(rho) && rho > 0 ? (k0 * AN_SHDP.rho0) / rho : k0;
 }
-const AN_STORE = { cs: 190 };
+const AN_STORE = { cs: 3.6 * (13 + 32 + 0.4 * ((Math.PI / 4) * (0.3874 ** 2 * 132.8 + 0.273 ** 2 * 17.9))) /* 186, CALC above */ };
 const AN_UNIT = {
   on: false,
   /* sweep 34 (Mina beta.175: AN.unit.MW read NaN once right after a chip load): a load begins with the Reset (anStateInPlace back to
@@ -1356,16 +1359,6 @@ function anSvFlow(U, list, P) {
   }
   return q;
 }
-function anVacMW(U) {
-  if (!isFinite(U.cdT) || !(U.ms > 0)) return 0;
-  /* 3.2.4 (JENNIE): the LP exhaust sees the whole condenser pressure, the steam and the air in it (U.cdP = steam + U.cdAirP): the
-     temperature of the back pressure is the saturation of U.cdP when the air raises it above the steam side (an air leak, the
-     ejectors short); before, only the cooling water side (U.cdT) moved the power */
-  const Tb = isFinite(U.cdP) ? anTsatA(U.cdP) : -Infinity,
-    dT = Math.max(-1, Math.max(U.cdT, Tb) - AN_CD.Tref);
-  U.dMWv = (6 * dT * 0.7 * U.ms) / 3600;
-  return U.dMWv;
-}
 /* beta.362 (JENNIE, D21, design K2MC3A-100: 0.07 kg/cm2 A with the steam side at 38.65 C, Psat(38.65) = 0.0700): the air in the condenser
    collects in the air cooling zone at the ejector suction, where the air-steam mixture is cooled below the steam side. HEI Standards for
    Steam Surface Condensers (air removal): the suction mixture is 7.5 F = 4.17 K below the saturation of the condensing steam. The
@@ -1381,11 +1374,34 @@ function anCdP(Ts, pA) {
 }
 const anPsat = T =>
   (Math.pow(10, 8.07131 - 1730.63 / (233.426 + T)) * 1.33322) / 980.665; /* kg/cm2A, Antoine (water) */
+/* Phase 11 rank 6 (MEI): the condenser duty from the steam that comes in (ports.js), first law at the steam side, kW:
+     Q = sum m_i / 3.6 x (h_i - h_f(Ts))
+   m T/H, h kJ/kg, h_f the hotwell water at the condensing temperature U.cdTs (IAPWS-IF97 region 1, steamR1). What comes in:
+     lp.exh     the LP turbine exhaust (RIN, tbPath): an extraction that is shut (heater out, MOV shut) stays in the turbine and comes
+                here, so the old corrections U.xtra (HP / LP heaters out) and the main steam share ms x cSt / mcr are gone: one path;
+     LPH drain  the No.1 LP heater drain to the condenser (anLphStep U.lpW.d1 at U.lpW.h1, the cascade H3 -> H2 -> H1; FHI heater O&M
+                L15-5 drain out to the condenser);
+     hph.emerg  the HP heater emergency drains (NANA; d150 m 0);
+     lp.bypass  the LP bypass steam (RIN, turbine.js: U.qlp at the hot reheat enthalpy, before its spray) + the spray water TCV-CD1115
+                (U.lpbW T/H at the condensate enthalpy, anCdTagStep): the desuperheater moves no heat, so the condenser takes both;
+   Check at HB PPE-14-0725 case 1: exhaust 316024 kg/h at 570.1 kcal/kg, Ts 38.65 C: 195.3 MW + No.1 LPH drain 44.35 T/H at 45.6 C
+   0.4 MW = 195.7 MW = K.Qd. DESIGN-SRC: HB PPE-14-0725 R1 case 1, first law, IAPWS-IF97 */
+function anCdDuty(U) {
+  const Ts = isFinite(U.cdTs) ? U.cdTs : AN_CD.Tref,
+    hf = steamR1(0.0980665 * 1.0332, Math.max(274, Ts + 273.15)).h,
+    q = p => (p && isFinite(p.m) && isFinite(p.h) && p.m > 0 ? (p.m / 3.6) * Math.max(0, p.h - hf) : 0),
+    W = U.lpW || {};
+  return (
+    q(anPortGet(U, 'lp.exh')) +
+    q({ m: W.d1, h: W.h1 }) +
+    q(anPortGet(U, 'hph.emerg')) +
+    q(anPortGet(U, 'lp.bypass')) +
+    q({ m: +U.lpbW || 0, h: anCdHw(isFinite(U.cdT) ? U.cdT : Ts) })
+  );
+}
 function anCondStep(U, dt) {
   const K = AN_CD,
-    sw = AN_SW,
-    ws = Math.max(0, ((U.ms || 0) * sw.cSt) / sw.mcr + (U.qlp || 0) + (U.xtra || 0)),
-    Q = (K.Qd * ws) / K.Wd,
+    Q = anCdDuty(U),
     Tin = isFinite(U.swTiA) ? (U.swTiA + U.swTiB) / 2 : AN_SW_TIN[0],
     W = Math.max(0, (U.swQc || 0) * 1.02),
     C = (W / 3.6) * K.cp,
@@ -1449,27 +1465,40 @@ function anCondStep(U, dt) {
                between the hotwell and the No.1 LPH inlet: 40 - 38.65 = 1.35 C at the design point.
    Tags (IO list STN102): TT-CD1101 No.1 LPH inlet, TT-CD1102 No.2 LPH inlet, TT-CD1103-1 No.3 LPH inlet, TT-CD1103-2 No.3 LPH outlet,
    TT-CD1122 deaerator inlet, TT-HD1102 / 1103 No.2 / 3 LPH drain, TT-HD1105 / 1106 No.1 / 2 HPH drain (AN_HP hpD1 / hpD2).
-   How it works: the shell pressure (abs) = design x main steam / 458.684 x the extraction MOV (DITL-97 No.3, DITL-98 No.2; the No.1 LPH has
-   none), as AN_HP / AN_HD; condensate out = saturation of the shell - TTD, never below the water that comes in; drain out = condensate in
-   + DCA while the heater drains (else the shell saturation); lag 120 s (NO-SOURCE, as AN_HP). NO-SOURCE: the 1.35 C rise taken with
-   the load share; no pipe loss to the deaerator (02.png 94 / 93 C). */
+   How it works (Phase 11 rank 6, MEI: first principles in place of the load share; one path):
+     shell      the pressure of the extraction NOW (ports ext.lp1 ~ 3, RIN tbPath) less the line drop to the shell. The drop goes with
+                m^2 v (v ~ 1 / P): dP = dPd x (w / wd)^2 x (Pd / P), dPd and wd at HB PPE-14-0725 case 1 (turbine 1.914 / 0.826 / 0.373
+                ata, heaters 1.818 / 0.785 / 0.354 ata: 0.096 / 0.041 / 0.019 ata at 15246 / 12270 / 16834 kg/h), w the draw of the step
+                before; x the extraction MOV (DITL-97 No.3, DITL-98 No.2; the No.1 LPH has none), as AN_HP / AN_HD;
+     condensate effectiveness-NTU of a condensing shell: tube out = Ts - (Ts - Tin) exp(-NTU), NTU = UA / (m cp) with UA fixed from
+                the O&M design point (NTU_d = ln((Ts - Tin) / (Ts - Tout)) at 362.594 t/h; then NTU = NTU_d x 362.594 / m_tube), the
+                tube share s of anHtrPath, the bypass water mixed after (mass weighted);
+     drain      condensate in + DCA while the heater drains (else the shell saturation), O&M DCA;
+     draw       the steam each heater condenses, first law of the shell: w (h_ext - h_drain) + D_in (h_drain,in - h_drain) =
+                m (h_out - h_in), h_ext of the port, the drains cascade No.3 -> No.2 -> No.1 -> condenser (O&M L15-5 ~ 7); written to
+                the port ext.w_lp (RIN takes it from the steam path) and U.lpW (the No.1 drain to the condenser, anCdDuty);
+     GSC / EJ   the gland steam condenser and the ejector condenser between the hotwell and the No.1 LPH: their duty is that of the
+                design point, 362.594 t/h x (h(40) - h(38.65)) = 568 kW (condenser O&M L15-1 p16 38.65 C, No.1 LPH O&M 40 C), on the
+                whole CEP flow (U.cdQt) while the condenser holds its vacuum (cdP < 0.5 ata: the gland seal and the ejectors are in).
+     lag 120 s (NO-SOURCE, as AN_HP). NO-SOURCE: no pipe loss to the deaerator (02.png 94 / 93 C). DESIGN-SRC: FHI heater O&M L15-5 ~ 7,
+     HB PPE-14-0725 R1 case 1, IAPWS-IF97 */
 const AN_LP = {
   F0: 458.684,
-  /* key, design shell kgf/cm2A, TTD, DCA, extraction MOV */
+  /* key, design shell kgf/cm2A, design condensate in / out C, DCA, extraction MOV, steam path stage, port, HB extraction P / kg/h */
   h: [
-    ['H1', 0.354, 1.72, 5.62, null],
-    ['H2', 0.785, 1.78, 5.61, 'DITL-98'],
-    ['H3', 1.818, 1.74, 5.62, 'DITL-97']
+    ['H1', 0.354, 40, 70.8, 5.62, null, 'ext.lp1', 'lp1', 0.373, 16834],
+    ['H2', 0.785, 70.8, 90.7, 5.61, 'DITL-98', 'ext.lp2', 'lp2', 0.826, 12270],
+    ['H3', 1.818, 90.7, 114.9, 5.62, 'DITL-97', 'ext.lp3', 'lp3', 1.914, 15246]
   ],
-  rise: 40 - 38.65,
+  Fd: 362.594 /* t/h, condensate of the O&M design point */,
   tau: 120
 };
 /* saturation temperature (C) of a pressure in kg/cm2A: the Antoine inverse of anPsat */
 const anTsatA = P => (P > 0.005 ? 1730.63 / (8.07131 - Math.log10((P * 980.665) / 1.33322)) - 233.426 : -Infinity);
+/* water enthalpy kJ/kg on the condensate line (IAPWS-IF97 region 1 at 1 MPa: the pressure moves h by under 0.1 %) */
+const anCdHw = T => steamR1(1, Math.max(274, (isFinite(T) ? T : 30) + 273.15)).h;
 function anLphStep(U, dt) {
   const K = AN_LP,
-    ms = Math.max(0, +U.ms || 0),
-    ld = ms / K.F0,
     pos = n => {
       if (!n) return 100;
       const p = typeof anDitlPos === 'function' ? anDitlPos(n, 0) : null;
@@ -1502,18 +1531,53 @@ function anLphStep(U, dt) {
     pol = anHtrPath(dp('DITL-64', 0), dp('DITL-65', 0), typeof doX === 'function' ? doX(pmv, 1) * 100 : 100);
   U.polS = pol.s;
   U.polP = pol.p;
-  let tin = lag('in', hw + K.rise * Math.max(0, Math.min(1, ld)));
-  const t = { in1: tin };
-  for (const [k, P0, ttd, dca, mov] of K.h) {
-    const Ps = P0 * anTbPx('x' + k.slice(1)) * thr(pos(mov)),
+  /* the gland steam / ejector condenser rise on the CEP flow */
+  const qGs = (K.Fd / 3.6) * (anCdHw(40) - anCdHw(38.65)),
+    mCep = Math.max(0, +U.cdQt || 0) * 0.9926;
+  U.lpRise = mCep > 1 && U.cdP < 0.5 ? qGs / ((mCep / 3.6) * ((anCdHw(hw + 1) - anCdHw(hw - 1)) / 2)) : 0;
+  let tin = lag('in', hw + U.lpRise);
+  const t = { in1: tin },
+    fl = typeof anCycFlows === 'function' ? anCycFlows(0) : null,
+    m = fl ? Math.max(0, +fl.fda || 0) : 0,
+    W0 = U.lpW || {};
+  for (const [k, P0, ti, to, dca, mov, port, q, Pd, wd] of K.h) {
+    const e = anPortGet(U, port),
+      Pe = e && isFinite(e.P) ? Math.max(0, e.P) : 0,
+      wr = Math.max(0, +W0[q] || 0) / (wd / 1000),
+      Ps = Pe > 0 ? Math.max(0.5 * Pe, Pe - (Pd - P0) * wr * wr * (Pd / Pe)) * thr(pos(mov)) : 0,
       ts = anTsatA(Ps),
-      tout = lag(k, tin + (wL[k] ? wL[k].s : 1) * Math.max(0, ts - ttd - tin)),
+      Tsd = anTsatA(P0),
+      sh = wL[k] ? wL[k].s : 1,
+      ntu = m * sh > 0.1 ? (Math.log((Tsd - ti) / (Tsd - to)) * K.Fd) / (m * sh) : 50,
+      tt = ts > tin ? ts - (ts - tin) * Math.exp(-Math.min(50, ntu)) : tin,
+      tout = lag(k, tin + sh * (tt - tin)),
       h = hd.find(x => x.k === k),
       drains = h && h.win > 0.5;
     t[k] = { in: tin, out: tout, Ps, dr: lag(k + 'd', drains ? tin + dca : Math.max(tin, ts)) };
     tin = tout;
   }
   U.lpHt = t;
+  /* the draws, No.3 first (its drain goes down to No.2, then No.1, then the condenser) */
+  {
+    const W = { lp3: 0, lp2: 0, lp1: 0, d1: 0, h1: 0 };
+    let D = 0,
+      hin = 0;
+    for (let i = K.h.length - 1; i >= 0; i--) {
+      const [k, , , , , , port, q] = K.h[i],
+        x = t[k],
+        e = anPortGet(U, port),
+        hd1 = anCdHw(x.dr),
+        hs = e && isFinite(e.h) ? e.h : 0,
+        duty = m * Math.max(0, anCdHw(x.out) - anCdHw(x.in)) - (D > 0 ? D * Math.max(0, hin - hd1) : 0);
+      W[q] = hs - hd1 > 50 ? Math.max(0, duty / (hs - hd1)) : 0;
+      D += W[q];
+      hin = hd1;
+    }
+    W.d1 = D;
+    W.h1 = hin;
+    U.lpW = W;
+    anPortSet(U, 'ext.w_lp', { m: W.lp3 + W.lp2 + W.lp1, x: { lp3: W.lp3, lp2: W.lp2, lp1: W.lp1 } });
+  }
   /* Phase 11 (MEI): the cd.out port (ports.js) for the deaerator (NANA): the condensate after the No.3 LP heater through LCV-CD1104.
      m = the flow anDaQ solves (plant.js anCycFlows fda); P = the valve outlet P2 = deaerator PT-CD1104 + z2 + kN m^2 (plant.js
      anCdHydK, LCV-CD1104 sheet + deaerator O&M L15-2), absolute; T = the No.3 LP heater outlet; h = IAPWS-IF97 region 1 (steamR1).
@@ -1550,7 +1614,7 @@ function anLphStep(U, dt) {
     'TT-HD1105': U.hpD1,
     'TT-HD1106': U.hpD2
   });
-  anCdTagStep(U, ld);
+  anCdTagStep(U, Math.max(0, +U.ms || 0) / K.F0);
   anFwTagStep(U);
   anAsTagStep(U, dt);
   anHxTagStep(U, dt);
@@ -1654,15 +1718,29 @@ function anHxTagStep(U, dt) {
    Sources: 28.png (151.3 MW, MSF 480.3 T/H): hotwell TT-CD1110-1 / -2 40, flash chamber TT-CD1110-4 42, TT-CD1118 40, ejector condenser
    outlet TT-CD1119 41, gland steam condenser outlet TT-CD1120 42 C, LP bypass spray FT-CD1115 0.0 (XV-CD1114 closed, TCV-CD1115 0.2 %
    MANUAL); 02.png (60 MW): FT-CD1122 165.4 T/H, PT-CD1122 3.8 with PT-CD1104 2.2 kg/cm2, TT-CD1104 131 C; IO list FT-CD1115 0 ~ 46 T/H.
-     TT-CD1119     hotwell + half of the ejector / gland steam condenser rise of AN_LP (28.png: 40 -> 41 -> 42 C, half each);
+     TT-CD1119     hotwell + half of the ejector / gland steam condenser rise U.lpRise (anLphStep; 28.png: 40 -> 41 -> 42 C, half each);
      TT-CD1110-4   hotwell + 2 C x load share (28.png 42 vs 40 C: the heater drains that flash in the chamber; NO-SOURCE: the load shape);
      FT-CD1122     the condensate that the deaerator level valve passes (plant.js anCycFlows fda, without the recirculation of FT-CD1120);
      PT-CD1122     deaerator pressure PT-CD1104 + 1.6 kg/cm2 (02.png 3.8 - 2.2; NO-SOURCE: kept the same at every flow, the water column to
                    the deaerator inlet; no CEP = no flow, the column stays);
      TT-CD1104     the storage tank water at the saturation of the deaerator pressure PT-CD1104 (02.png 131 C with 2.2 kg/cm2 = sat 135.6 C:
                    4.6 C under, not modelled);
-     FT-CD1115     LP bypass spray: TCV-CD1115 opening (ABC-052 TICHR1012 MV, its airlock AN_AV) x the share of the block valve XV-CD1114
-                   (DITL-66) x 46 T/H (NO-SOURCE: the valve capacity taken as the transmitter range of the IO list). */
+     FT-CD1115     LP bypass spray (Phase 11, MEI): TCV-CD1115 by its valve sheet K1AU3-D1-0-043 R0 p12 (RIN PC read, rin-valve-reads.md):
+                   1 in, Cv 25.4, modified equal %: Cv % 7 / 36 / 72 at travel 17 / 54 / 81 %; liquid ISA w = 0.8566 Cv sqrt(dp SG) (T/H,
+                   kg/cm2, as plant.js AN_CDH); the travel = ABC-052 TICHR1012 MV through its airlock (AN_AV) x the block valve XV-CD1114
+                   (DITL-66) share; P1 = the CEP discharge U.cdPd (abs; the line to the valve not counted), P2 = the LP bypass valve body
+                   outlet U.Pvlo (ata, RIN: max(condenser, 4.0 / 217.1 ata per T/H outlet flow, PCV-HR1010 sheet); the nozzle No. 84 is in the valve). Check, sheet case 1: 45.3 T/H at 14.6 -> 4.0 kg/cm2 a needs Cv 16.3 = 64 %
+                   Cv = 76 % travel. Before: travel x 68 T/H (NO-SOURCE). */
+const AN_LPS = { cv: 25.4, tr: [0, 17, 54, 81, 100], pc: [0, 7, 36, 72, 100], sg: 0.9922 /* water at 40 C */ };
+function anLpbSpray(U, tr) {
+  const K = AN_LPS,
+    cv = (K.cv * swInterp(K.tr, K.pc, Math.max(0, Math.min(100, tr)))) / 100,
+    P1 = (+U.cdPd || 0) + 1.0332,
+    P2 = isFinite(U.Pvlo) ? U.Pvlo : +U.cdP || 1.0332 /* the LP bypass valve body outlet, ata (RIN, PCV-HR1010 sheet): the spray nozzle is in the valve */,
+    w = (+U.cdQt || 0) > 0 && P1 > P2 ? 0.8566 * cv * Math.sqrt((P1 - P2) * K.sg) : 0;
+  U.lpbW = w;
+  return w;
+}
 function anCdTagStep(U, ld) {
   const hw = isFinite(U.cdT) ? U.cdT : isFinite(U.Tamb) ? U.Tamb : 30,
     r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
@@ -1680,13 +1758,13 @@ function anCdTagStep(U, ld) {
   /* F6 2026-11-22: U.tt may not exist yet (the Web Worker engine runs this first at 'go', before any other tag step made it): the same
      guard as the other tag steps; without it the Worker stopped at start and the page ran the engine on its own thread */
   Object.assign(U.tt || (U.tt = {}), {
-    'TT-CD1119': r1(hw + (AN_LP.rise * L) / 2),
+    'TT-CD1119': r1(hw + (+U.lpRise || 0) / 2),
     'TT-CD1110-4': r1(hw + 2 * L),
     'FT-CD1122': f ? r1(f.fda) : null,
     'PT-CD1122': isFinite(Pda) ? r1(Pda + 1.6) : null,
     'TT-CD1104':
       isFinite(Pda) && Pda > 0.05 ? r1(steamTsat(Pda)) : isFinite(Pda) ? r1(isFinite(U.Tamb) ? U.Tamb : 30) : null,
-    'FT-CD1115': isFinite(mv) && isFinite(uf) ? r1((68 * anAv('TICHR1012', mv) * uf) / 100) : null
+    'FT-CD1115': isFinite(mv) && isFinite(uf) ? r1(anLpbSpray(U, anAv('TICHR1012', mv) * uf)) : null
   });
 }
 /* 3.2.1 (IRENE, page 06 FEEDWATER): the turbine extraction, feedwater and spray transmitters of the page that no sheet reads (AN.unit.tt).
@@ -1996,8 +2074,8 @@ function anAuxStep(U, dt) {
     Pcr = (isFinite(U.Prh) ? U.Prh : 0) * (36.6 / 35.1),
     tcr = anUnitVal(X.cr || []),
     Tcr = isFinite(tcr) ? tcr : 370,
-    pdea = anUnitVal(X.dea || []),
-    Pdea = isFinite(pdea) ? pdea : 0,
+    dea = typeof anPortGet === 'function' ? anPortGet(U, 'dea') : null /* NANA's deaerator port, P ata */,
+    Pdea = dea && isFinite(dea.P) ? dea.P - 1.0332 : 0,
     o1004 = cl(anAsCtl('ABC-030', 'PICAS1004')),
     o1030 = cl(anAsCtl('ABC-056', 'PICCD1104')),
     tt = U.tt || {},
@@ -2147,6 +2225,14 @@ function anAuxStep(U, dt) {
     metal('asTgs', TgsIn, wGs, K.Mc17, K.UA17, 0, Ta0);
     U.asT1 = T1;
     U.asT3 = T3;
+    /* Phase 11 (SUZU 2026-11-27): the aux steam header for the other parts (ports.js aux.hdr: NANA deaerator pegging, RIN, MEI):
+       P kg/cm2 g = the header volume above, T = TT-AS1003 (the header metal balance), h kJ/kg of IF97 at that state */
+    if (typeof anPortSet === 'function') {
+      const hA3 = U.asP > -0.9 ? steamH(U.asP, Math.max(tsA, T3)) : NaN;
+      anPortSet(U, 'aux.hdr', { P: U.asP, T: T3, h: hA3 });
+      /* the deaerator pegging steam: PCV-AS1030 is a sink of the header substeps here, so its flow is written here (NANA reads it) */
+      anPortSet(U, 'aux.peg', { m: (F.w1030 || 0) / 1000, h: hA3 });
+    }
     anUnitWrite(U.asTAI[0], U.asT1);
     anUnitWrite(U.asTAI[1], U.asT17);
   }
@@ -4118,8 +4204,8 @@ function anUnitStep0(dt) {
   /* generator: the shaft work of the steam path less the mechanical and generator losses (AN_TB.mech, turbine.js; generator losses anGenW, YUI); qip = the reheat
      pressure x the ICV opening, = the HP steam when the bypass is shut and the ICV full open; 0 off the grid */
   /* 3.2.3-beta.240 (user 2026-11-14, reverse power): on the grid the MW is not held at 0 or above. With too little steam the generator
-     takes power from the grid to keep the shaft at 3600 rpm (motoring): the mechanical and generator losses stay when the steam is gone. The 32 relay
-     (anRp32) sees the negative power */
+     takes power from the grid to keep the shaft at 3600 rpm (motoring): the losses stay when the steam is gone (anGenW). The 32 relay
+     (elec.js anGenRelay, SH-G-5A / 6A) sees the negative power */
   /* Phase 11 C (RIN): the steam the IP turbine takes from the reheater (T/H) = its Stodola swallowing capacity at the reheater pressure
      (the IP / LP blading of turbine.js from the condenser up: m = Kip sqrt(Prh^2 - Pc^2), Kip read off the last pass of the steam path,
      at the start the design point HB case 1 400944 kg/h at 34.77 ata), x the ICV opening, x the CRV test of tcs.js (TCE226 / 227: one
@@ -4165,7 +4251,7 @@ function anUnitStep0(dt) {
     U.Pm = onGrid ? tb.pH + tb.pI - AN_TB.mech : 0;
   }
   U.MW = anGenW(U, onGrid, trip, D);
-  anRp32(U, onGrid && !trip, dt);
+  tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T (their coils: SH-G-5A / SH-G-6A, the 32 relay among them) */
   anTbSpeed(U, tb, dt, onGrid && !trip && tb.xfer, U.Pm, D);
   U.rpm = tb.rpm;
   U.icvp = 100 * tb.icv;
