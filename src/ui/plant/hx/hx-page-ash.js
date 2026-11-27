@@ -393,6 +393,32 @@
         { x: 1390, y: 267, s: 'stops the coolers. Cycle mode', cls: 'hx-note' },
         { x: 1390, y: 284, s: 'timer 15 minutes (DITL-21E).', cls: 'hx-note' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Bed and bottom ash',
+        pens: [
+          ['Bed pressure drop 1', 'DPT-FG1081', 'mmH₂O', 0],
+          ['Bed pressure drop 2', 'DPT-FG1082', 'mmH₂O', 0],
+          ['Furnace differential pressure', 'pv:DPICFG108', 'mmH₂O', 0],
+          ['Set point', 'sv:DPICFG108', 'mmH₂O', 0],
+          ['Screw speed A to D', 'mv:SICL1060A', '%'],
+          ['Ash silo level', 'LT-BH1750', '%']
+        ]
+      },
+      {
+        title: 'Ash coolers',
+        pens: [
+          ['Cooler A ash out', 'TT-BH1060-A2', '°C'],
+          ['Cooler B ash out', 'TT-BH1060-B2', '°C'],
+          ['Cooler C ash out', 'TT-BH1060-C2', '°C'],
+          ['Cooler D ash out', 'TT-BH1060-D2', '°C'],
+          ['Cooling water pressure', 'PT-CW1156', 'kg/cm²'],
+          ['Cooling water temperature', 'TT-CW1156', '°C']
+        ]
+      }
+    ]
   });
 })();

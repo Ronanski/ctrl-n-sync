@@ -200,6 +200,22 @@
         ...SKIDS.map((k, i) => ({ x: pa(SX[i]) - 40, y: HY - 34, s: k.name, cls: 'hx-name' })),
         ...SKIDS.map((k, i) => ({ x: pa(SX[i]) - 40, y: HY - 18, s: k.duty, cls: 'hx-note' }))
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Steam and water quality',
+        pens: [
+          ['Cation conductivity', 'AT-SP1002', 'µS/cm', 2],
+          ['Dissolved oxygen', 'AT-SP1004', 'ppb', 1],
+          ['Cation conductivity', 'AT-SP1005', 'µS/cm', 2],
+          ['Conductivity', 'AT-SP1007', 'µS/cm', 2],
+          ['Silica', 'AT-SP1008', 'ppb', 1],
+          ['Conductivity', 'AT-SP1012', 'µS/cm', 1],
+          ['Sodium', 'AT-SP1020', 'ppb', 1]
+        ]
+      }
+    ]
   });
 })();

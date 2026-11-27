@@ -240,6 +240,34 @@
         ...B.flatMap(b => b.taps)
       ],
       texts: [{ x: 20, y: TY + 28 * TS - 10, s: 'tank truck' }]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Oil supply',
+        pens: [
+          ['Pump outlet pressure', 'PT-DO0005', 'kg/cm²'],
+          ['Recirculation valve', 'mv:PICDO0005', '%'],
+          ['Return pressure', 'PT-DO1008', 'kg/cm²'],
+          ['Oil return valve', 'mv:PICDO1008', '%'],
+          ['Tank level', 'LT-DO0701', 'm', 2],
+          ['Pump A current', 'IT-P0702A', 'A']
+        ]
+      },
+      {
+        title: 'Burners',
+        pens: [
+          ['Oil master', 'mv:FIC-OM', '%'],
+          ['Burner A oil flow', 'FT-DO1043-A', 't/h', 2],
+          ['Burner B oil flow', 'FT-DO1043-B', 't/h', 2],
+          ['Burner C oil flow', 'FT-DO1043-C', 't/h', 2],
+          ['Burner D oil flow', 'FT-DO1043-D', 't/h', 2],
+          ['Burner A flame', 'BT-DO1043-A', '%', 0],
+          ['Burner B flame', 'BT-DO1043-B', '%', 0],
+          ['Burner C flame', 'BT-DO1043-C', '%', 0]
+        ]
+      }
+    ]
   });
 })();

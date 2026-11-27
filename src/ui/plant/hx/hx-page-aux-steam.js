@@ -247,6 +247,32 @@
         { x: 1440, y: 960, s: 'Exhaust hood 2', key: 'TEST11102', unit: '°C', dp: 0 },
         { x: 1440, y: 976, s: 'Exhaust hood 3', key: 'TEST11103', unit: '°C', dp: 0 }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Auxiliary steam header',
+        pens: [
+          ['Header pressure', 'PT-AS1004', 'kg/cm²'],
+          ['Reducing valve set point', 'sv:PICAS1004', 'kg/cm²'],
+          ['Reducing valve', 'mv:PICAS1004', '%'],
+          ['Cold reheat supply valve', 'mv:PICAS1005', '%'],
+          ['Header temperature', 'TT-AS1003', '°C', 0],
+          ['After spray', 'TT-AS1001', '°C', 0]
+        ]
+      },
+      {
+        title: 'Deaerator pegging and gland steam',
+        pens: [
+          ['Deaerator pressure', 'pv:PICCD1104', 'kg/cm²'],
+          ['Pegging set point', 'sv:PICCD1104', 'kg/cm²'],
+          ['Pegging valve', 'mv:PICCD1104', '%'],
+          ['Gland steam header', 'PTGS10011', 'kg/cm²', 2],
+          ['Gland steam temperature', 'TEGS1002', '°C', 0],
+          ['Unloading valve', 'PV-GS1034', '%']
+        ]
+      }
+    ]
   });
 })();
