@@ -639,8 +639,7 @@ function anFanStep(U, dt) {
   U.fnI = [U.fnPafI, U.fnSafI, U.fnIdfI, U.fnIa, U.fnIb];
 }
 /* AIR PREHEATER AND FLUE GAS (FHI Tab 3, Figures 7, 12, 13; docs/versions/v3.2.1/GAS_PATH.md).
-   afs       air for burning 1 T of coal: 5.46 T, from the ultimate analysis of Tab 3 (C 42.97, H 2.75, S 1.49, O 11.42 %). With it
-             21 x (1 - air needed / air given) gives Fig 7 from Fig 12 and 13: 40 % 8.9 (8.8), 50 % 4.8 (4.6), 60 % 3.7 (3.6), 100 % 3.8 (3.6).
+   (afs, the stoichiometric air of the coal, is now computed from Tab 2 in cfb.js AN_FUEL with the flue gas mole balance, Phase 11)
    ePA, eSA  how close each air comes to the gas entering: (285.8 - 45) / (322 - 45), (301.6 - 39) / (322 - 39), Tab 3. Held at
              all loads: the change with flow is NO-SOURCE.
    kCp, gm   gas side of the same heat: 354 x 240.8 + 218 x 262.6 T/H x C of air takes the gas 681 T/H (air 598 + coal less ash) from
@@ -649,7 +648,6 @@ function anFanStep(U, dt) {
    eco       colder feedwater takes more from the gas: the economizer cools the gas 43 C of the 120 C between gas in (365, snapshot
              TIFG1110 / 1113) and feedwater 245.4 (Tab 3), so gas to the air heater falls 0.36 C per C of feedwater. */
 const AN_GAS = {
-  afs: 5.46,
   gi: 322,
   ePA: 240.8 / 277,
   eSA: 262.6 / 283,

@@ -570,15 +570,16 @@ function anUnitStart() {
     O20 = o2a.length ? o2a.reduce((a, q) => a + q, 0) / o2a.length : NaN;
   U.afs = 0;
   if (U.taf.length === 3 && isFinite(O20) && O20 > 0 && O20 < 21 && taf0 > 0 && F0 > 0) {
-    U.afs = AN_GAS.afs; /* T/H of air per T/H of coal, stoichiometric, boiler.js */
+    U.afs = AN_FUEL.afs; /* T/H of air per T/H of coal, stoichiometric, CALC from FHI P2S7 Tab 2 (cfb.js AN_FUEL) */
     U.O20 = U.o2v = O20;
     U.taf0 = taf0;
   }
   U.pa = ais('ABC-006', 'AI0166');
   U.bedDp = [
-    /* 3.2.3-beta.265: the plant trend ~1465 (AN_BI), the two transmitters 6 mmH2O apart as on the snapshot (1426 / 1432) */
-    [ais('ABC-006', 'AI0134'), 1462],
-    [ais('ABC-006', 'AI0262'), 1468]
+    /* Phase 11 (AOI): both transmitters read the one overall DP, the design 1630 mmH2O at the design inventory (cfb.js AN_BI t0,
+       DESIGN-SRC: FHI P2S7 Fig 9); the 6 mmH2O split was a snapshot reading */
+    [ais('ABC-006', 'AI0134'), AN_BI.dp0],
+    [ais('ABC-006', 'AI0262'), AN_BI.dp0]
   ];
   U.soxAI = anUnitAIs('1|AI0466'); /* stack SOx, boiler.js anSoxStep */
   U.bedSc = [
@@ -3596,8 +3597,7 @@ function anUnitStep0(dt) {
     bf = Math.max(0, Math.min(1, (U.Tb - U.Tburn0) / (U.Tburn1 - U.Tburn0))),
     cb0 = isFinite(U.cbed) && U.cbed > 0 ? U.cbed : 0,
     cbB = (bf * cb0 * 3600) / AN_CBED.tau /* T/H of the held coal that burns */,
-    Fb = bf * F + cbB /* coal burnt, T/H */,
-    Fe = Fb + U.ao * oil;
+    Fb = bf * F + cbB /* coal burnt, T/H */;
   U.oilF = oil;
   U.burn = bf;
   U.cbn = Fb;
@@ -3940,9 +3940,7 @@ function anUnitStep0(dt) {
   /* drum: stored energy. 2.2.0-beta.14 (cold start): the firing heats the water first (U.Tw), then the pressure rises against the
      storage of the steam AND of the saturated water (C + Cw x dTsat/dP) */
   const tsatOf = steamTsat; /* 3.2.0-beta.15: IF97 steam table (steam.js), was the fit 100 + 47.1 x ln(P + 1) */
-  /* air share (total air over the anchor), used by the cooling below and by the bed temperature */
-  const taf = U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0),
-    as = U.taf0 > 0 ? Math.max(0.05, taf / U.taf0) : 1;
+  const taf = U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0);
   /* beta.258: the cooling of an unfired boiler by the draft and the room is inside the bed / wall heat balance below (one model) */
   /* 3.2.3-beta.258 (user 2026-11-15 "isang unit lng naman yan"): ONE model for every state. The bed heat balance below runs at every load
      (before: Cold only; "Start at 150 MW" had the curve anBedSS and a steam made from a fuel line) */
@@ -3956,18 +3954,20 @@ function anUnitStep0(dt) {
       tPa = isFinite(U.aphPa) ? U.aphPa : U.Tamb,
       tSa = isFinite(U.aphSa) ? U.aphSa : U.Tamb,
       dW = U.Tb - U.Tw /* bed over the wall water, both signs */,
-      fg = (Fb * (1 - AN_FG.ash * (U.coalR || 1)) + oil) / 3.6 /* fuel gas, kg/s (beta.13: the ash share with the wet coal) */,
+      /* Phase 11 rank 3 (AOI): the gas of the furnace from the mole balance (cfb.js anFgMol, FHI P2S7 Tab 2): the air into the furnace,
+         the coal burnt, the oil, the limestone CO2, the S taken up and the steam of a wall leak */
+      fgm = anFgMol(Fb, U.coalR || 1, oil, av[0] + av[1] + av[2], U.lmQ || 0, isFinite(U.soxF) ? 1 - U.soxF : 0, U.tlW || 0),
+      mGas = Math.max(0, fgm.m - (U.tlW || 0)) / 3.6 /* kg/s of gas less the leak steam (the leak is its own term, qTl) */,
       /* beta.261: cp(T). Air: Incropera Table A.4 (300 K 1.007, 700 K 1.075, 1100 K 1.159 kJ/kg K) as cp = 1.0 + 0.000155 T(C), CALC;
          flue gas: anHxCp (hx.js, FHI Tab 2 fuel at 20 % excess air). The heat to bring the air in and the fuel to the bed is the enthalpy
          of the flue gas at the bed less that of the air as it comes in (preheated by the air heater), both from the room */
       hAir = T => 1.0 * T + 0.0000775 * T * T,
       hFg = T => 1.08 * T + 0.0001065 * T * T,
-      mAir = (av[0] + av[1] + av[2]) / 3.6,
-      gcp = (mAir + fg) * anHxCp(U.Tb) /* kW/K, flue gas at the bed */,
-      /* 3.2.4-beta.16 (user "Physics nga"): the gas that lifts the solids is the air AND the steam of a water wall tube leak, which boils in
-         the bed: per kg 28.9 / 18 times the volume of air (ideal gas, same temperature and pressure) */
-      /* beta.256: the velocity share is to the gas of the 150 MW anchor, which leaves the bed at the anchor bed tbA (AN_BB), not Tb0 */
-      uRel = U.taf0 > 0 ? ((av[0] + av[1] + av[2] + ((U.tlW || 0) * 28.9) / 18) / U.taf0) * ((U.Tb + 273) / (B.tbA + 273)) : 0,
+      gcp = mGas * anHxCp(U.Tb) /* kW/K, flue gas at the bed */,
+      /* the gas that lifts the solids: its volume (ideal gas, the moles of the mole balance, the steam of a wall leak in them, at the bed)
+         over the DESIGN gas of 100 % MCR at the design bed tbA (cfb.js AN_FG0, DESIGN-SRC: FHI P2S7 Fig 12 / 13). Was the air alone over
+         the air of the "Start at 150 MW" state (U.taf0) */
+      uRel = (fgm.wet * (U.Tb + 273.15)) / (AN_FG0.wet * (B.tbA + 273.15)),
       phi = Math.min(1.2, Math.max(0, isFinite(U.bedI) ? U.bedI / AN_BI.t0 : 1)) * anBbPhiV(uRel) /* beta.282: Kunii & Levenspiel (AN_BB kKL) */,
       /* beta.263: the lower furnace refractory is its own lump. 25 mm castable k 1.5 W/m K over the tubes (13-thermal-masses), bed film
          300 W/m2 K (textbook), 359 m2: bed -> refractory centre 1 / (1/300 + 0.0125/1.5) = 85.7 W/m2 K = 30.8 kW/K, centre -> water
@@ -4012,7 +4012,7 @@ function anUnitStep0(dt) {
       qPan = isFinite(U.hxQp) ? U.hxQp : 0 /* kW, to the in-furnace SH panels (hx.js, last scan, from Tu) */,
       qFuel = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) + oil * B.lhvO,
       qAirG =
-        (mAir + fg) * (hFg(U.Tb) - hFg(U.Tamb)) -
+        mGas * (hFg(U.Tb) - hFg(U.Tamb)) -
         (av[0] / 3.6) * (hAir(tPa) - hAir(U.Tamb)) -
         (av[1] / 3.6) * (hAir(tSa) - hAir(U.Tamb)),
       Cb = Math.max(0, isFinite(U.bedI) ? U.bedI : AN_BI.tCold) * 1000 * B.cpS;
@@ -4046,7 +4046,8 @@ function anUnitStep0(dt) {
     /* 1.0.0-beta.14 (JENNIE, live test F-t): only the water wall leak leaves the furnace with the gas. The economizer leak enters the
        gas at the No.1 economizer (hx.js, I.mL), after the superheaters and reheaters: adding it here sent its mass through the SH / RH
        banks at the furnace exit temperature and the hot reheat went HIGH-HIGH (live run S87, 75 MW, 63 T/H leak) */
-    U.mG = (av[0] + av[1] + av[2]) / 3.6 + fg + (U.tlW || 0) / 3.6 /* flue gas kg/s, to the backpass (hx.js), with a water wall leak */;
+    U.mG = fgm.m / 3.6 /* flue gas kg/s, to the backpass (hx.js), with a water wall leak (mole balance) */;
+    U.fgM = fgm /* the gas of the mole balance: O2 below, the port gas.fe */;
     U.phi = phi;
     /* water walls, T/H of steam-equivalent (the unit of Cw / C): both ways, a bed under the water cools it. The air cooling of the
        unfired boiler (kcool) is inside this balance now; the loss to the room (kamb) stays */
@@ -4289,21 +4290,15 @@ function anUnitStep0(dt) {
     h.x = T;
     for (const L of h.L) anUnitWrite(L, T);
   }
-  /* O2 of the flue gas: 21 x (1 - stoichiometric air / total air), analyzer lag. Both analyzers read it: FHI gives one curve (Fig 7) and
-     the 6.4 / 2.2 % of one snapshot has no source, it stood the B side on LOW-LOW at 150 MW */
-  if (U.afs > 0) {
-    const taf = Math.max(0, U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0) - (U.aphLk || 0) * (typeof AN_APK !== 'undefined' ? AN_APK.pa + AN_APK.sa : 0)) /* beta.21: less the air heater seal leak, which joins after the analyzer */,
-      o2a = Math.max(0, Math.min(21, 21 * (1 - ((Fe - Fb * (1 - (U.coalR || 1))) * U.afs) / Math.max(1, taf)))),
-      /* 3.2.4 (JENNIE): the analyzers sit at the air heater gas inlet (plant service reports "AT-FG3122 / 3123 GAH INLET O2
-         ANALYZER", unit 3 of the same design) and read the gas as it is, wet (the stack design O2 of K1AU3-E2-0-005 sheet 2 is
-         "4.22 % Vol, wet base"). A tube leak (water wall U.tlW, economizer U.tlE) adds steam that brings no oxygen: the same O2 in
-         more moles, O2 x n / (n + leak). Moles of the gas: the air, 28.9 kg/kmol; the leak, 18. The air does not change */
-      nA = taf / 28.9,
-      nL = ((U.tlW || 0) + (U.tlE || 0)) / 18,
-      o2s = nA > 0 ? (o2a * nA) / (nA + nL) : o2a;
+  /* O2 of the flue gas at the analyzers (ABC-002 AT-FG1122 / 1123, the air heater gas inlet, ahead of the air heater seal leak): the dry
+     O2 of the mole balance (cfb.js anFgMol, AN_FUEL: the dry basis is the one the FHI design curves agree on). Both analyzers read it:
+     FHI gives one curve (Fig 7). Phase 11 rank 3: was 21 x (1 - air needed / air), with the oil as 2.55 t of coal for its air and a wall
+     leak diluting a wet reading. On the dry basis the leak steam does not change the O2 (it is taken out with the water) */
+  if (U.afs > 0 && U.fgM) {
+    const g = U.fgM;
     /* audit 2026-11-21 B1: the air needed over the air given (above 1 = short of air: the stack CO of boiler.js anAphStep) */
-    U.airR = taf > 1 ? ((Fe - Fb * (1 - (U.coalR || 1))) * U.afs) / taf : 0;
-    U.o2v += ((o2s - U.o2v) * dt) / U.tauO2;
+    U.airR = g.airR;
+    U.o2v += ((g.o2d - U.o2v) * dt) / U.tauO2;
     for (const L of U.o2) anUnitWrite(L, U.o2v);
   }
   /* bed inventory and the furnace pressure drop */
@@ -4325,7 +4320,10 @@ function anUnitStep0(dt) {
         Math.max(0, +U.tafS.rt.v[U.paNet]),
         U.taf && U.taf.length === 3 ? Math.max(0, +U.tafS.rt.v[U.taf[2]]) : null
       );
-    for (const [L, a] of U.bedDp || []) if (L.length) anUnitWrite(L, a * k);
+    /* Phase 11 (AOI): the DP comes from the engine constant AN_BI.dp0, not from the anchor kept in U.bedDp: a save point (st150 and the
+       user saves) keeps U.bedDp as it was when it was made, so the old snapshot anchors 1426 / 1432 came back with every start at
+       150 MW and the step 2 design value never reached the transmitters */
+    for (const [L] of U.bedDp || []) if (L.length) anUnitWrite(L, AN_BI.dp0 * k);
     /* 3.2.4-beta.16 (user "Physics nga"): the split of the bed DP. Plenum / upper (DPT-FG1081 / 1082, above) = the weight of all the
        solids in the furnace. Of them, the upper furnace holds the solids the gas lifts: its density is the share phi of the bed balance
        (the same suspension that carries the heat to the walls, AN_BB.nU), so lower / upper (DPT-FG1083 / 1183) = its anchor x phi, and

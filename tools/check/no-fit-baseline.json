@@ -10,12 +10,10 @@
   "by the plant DCS trend, scenario 1 (14-plant-trends): bed TIFG1090 flat 952 ~ 962 C from 150 to 90 MW with PA + SA 610 -> 505 T/H.",
   "snapshot thermocouples (plant trend 952 ~ 962 C). The design bed: P2S4 p2-4-8 850 ~ 900 C normal (above 900 C call FHI), the",
   "kKL, CALC from the plant at 90 MW: scenario 1 of the plant DCS trend (14-plant-trends: coal 55.4 T/H, PA 318 + SA 187 T/H,",
-  "lower velocity only); 9.2 itself is the plant trend value of beta.282 (finding D3 stays open) */",
-  "1 mmH2O = 1 kg/m2 = 0.119 t. 3.2.3-beta.265 (SOHEE, Jennie): the 150 MW anchor is the plant DCS trend, scenario 1: overall furnace DP 1440 ~ 1490,"
+  "lower velocity only); 9.2 itself is the plant trend value of beta.282 (finding D3 stays open) */"
  ],
  "src/analog/engine/hmi-op.js": [
   "'AICFG112': { pv: null, sv: 3.5, mv: 72.5, mode: 'A' } /* 3.2.3-beta.272: AUTO as the logic at full load (M.0103 / M.0102 = 0): healthy analyzers, the trim on LN16 SV 3.5 (plant-study 14: simulator keeps the drawing; a held trim is an analyzer fault scenario) */ /* 3.2.1 b6: plant trends 2026-11-08: the O2 sensors fail often (user), the trim is held: SA = (LN5 air - PA - FA) x 1.09 at 150 and 90 MW = S1-LN15(72.5 %) */ /* 2.2.0-beta.7: MV from the drawing: SA demand 211.5 T/H x O2 trim = SAF FLOW CTL R-SV 215.3 (7.PNG) -> trim 1.0 = S1-LN15(50 %), the MH of AICFG112 (PID summary). Before: the O2 model was anchored at the manual 100 % of the cold start and went to 2.4 % */,",
-  "'HIC-TADBS': [-26.7, 'plant trends 2026-11-08: PA 16 to 21 T/H above the model at every load, less 4 T/H of coal: bias -16 T/H (7.PNG had -30)']",
   "/* 2.1.0-beta.6: the PV of every loop from the snapshot transmitters, with the plant model OFF for a moment (logic only); the",
   "/* the held plant models start now, from the snapshot PV (pr.y0) and the anchor */",
   "Only the MW select: the pressure and level selects keep their hold, the warm / hot start states are tuned on it */"
@@ -33,7 +31,6 @@
  ],
  "src/analog/engine/unit.js": [
   "/* F11 (user 2026-11-13: the ratio of beta.206 / 207 was a curve fit, not a model). Superheater and reheater tube metal, heated by the flue",
-  "/* 3.2.3-beta.265: the plant trend ~1465 (AN_BI), the two transmitters 6 mmH2O apart as on the snapshot (1426 / 1432) */",
   "Design beside it (Audit 3 ranking 5, user Q4 \"close to the DCS 150 MW data, tuned from design, small tolerance\"):",
   "if (!isFinite(U.gsY)) U.gsY = gsOn && onLoad ? -42.6 * Math.max(0, Math.min(1, (+U.MW || 0) / 150)) : 0;",
   "L = Math.max(0, Math.min(1, (+U.MW || 0) / 150)),",
