@@ -4353,12 +4353,16 @@ function anUnitStep0(dt) {
   tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T (their coils: SH-G-5A / SH-G-6A, the 32 relay among them) */
   /* the load on the shaft: on house load the house load (elec.js), after a load rejection the no-load losses of the generator (anGenTemp
      U.genT.L at 0 kA: field, exciter, core and windage / friction, LM-GEE-2014-0822 R0 p31) */
+  /* the shaft work over the step is the mean of the power at its start and at its end (trapezoid): the valves close in 0.15 ~ 0.47 s,
+     a few scans, and the end value alone dropped the work done while they moved (2026-11-28) */
+  const PmA = isFinite(tb.PmL) ? (tb.PmL + U.Pm) / 2 : U.Pm;
+  tb.PmL = U.Pm;
   anTbSpeed(
     U,
     tb,
     dt,
     (onGrid && !trip && tb.xfer) || !!tb.rej,
-    U.Pm,
+    PmA,
     tb.rej ? (U.genT && isFinite(U.genT.L) ? U.genT.L / 1000 : 0) : D
   );
   U.rpm = tb.rpm;
