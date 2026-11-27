@@ -9,6 +9,23 @@
   "anHxTagStep",
   "anLphStep"
  ],
+ "Tb": [
+  "anBedMigrate",
+  "anUnitStep0"
+ ],
+ "Tu": [
+  "anBedMigrate",
+  "anUnitStep0"
+ ],
+ "tgF": [
+  "anBedMigrate",
+  "anHxRun",
+  "anUnitStep0"
+ ],
+ "phi": [
+  "anBedMigrate",
+  "anUnitStep0"
+ ],
  "el": [
   "anElecBo",
   "anElecL52",
@@ -37,23 +54,6 @@
  ],
  "Tw": [
   "anUnitLive",
-  "anUnitStep0"
- ],
- "Tb": [
-  "anBedMigrate",
-  "anUnitStep0"
- ],
- "Tu": [
-  "anBedMigrate",
-  "anUnitStep0"
- ],
- "tgF": [
-  "anBedMigrate",
-  "anHxRun",
-  "anUnitStep0"
- ],
- "phi": [
-  "anBedMigrate",
   "anUnitStep0"
  ],
  "vac": [
