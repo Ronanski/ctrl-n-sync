@@ -3008,18 +3008,23 @@ function anGenEl() {
    - AC exciter outlet air (TIGE1005): its rise follows the exciter field squared; its rated rise is not in the docs, so it stays on the
      old reading 80 C at 7.85 A (screen P35SHAFT, a check value; finding for the PC lookup).
    At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs).
-   The heat the air coolers give to the closed cooling water (port q.ccw.YUI, kW, written by anGenInt) = the generator losses:
-     stator copper 3 I^2 Ra (Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2; 172 kW at 7,384 A),
-     main field I^2 Rf (Rf 0.2188 ohm at 95 C, GAE-2013-0136 R2; main field = exciter field x 463 / 4.5 A: 463 A main = 4.5 A exciter =
-       1 pu field, 310SD23-268 R1 / GEE-2015-0152 p6; 1,218 A = 325 kW at the rating, 310SD23-270 R1),
-     the rest (core, friction and windage, stray) at rated speed: DERIVED = the heat duty of the four coolers 2,120 kW (generator O&M
-       GAE-2015-0063 R0 p36 "total cooler heat duty 2120 kW, water 400 m3/h, supply max 37 C"; Kitashiba sheets PLH10293 / PLH10294,
-       PDF p221 / p222: main A, B 810 kW each, air (78.1) -> 45.0 C, sub C, D 250 kW each, air (76.7) -> 45.0 C; read by YUA,
-       /mnt/project-files/suzu-leftovers-doc-reads.md) less the two above at the rating (176.5 MVA 0.85 lag, the machine the coolers are
-       rated for) = 1,623 kW, with the cube of the speed (the windage; the split of core and windage is not in the docs: NO-SOURCE form).
-       The bearing friction is not in it: it goes to the lube oil (same O&M p36: generator bearings 600 L/min, 240 kW). The 3,041 kW of
-       mass balance K1AU3-MB-021 items 14 ~ 21 (290.5 t/h, 34 -> 42 C) is the cooling water line sizing, not the cooler duty (was used
-       here before the O&M was read). No load table: one design point closes the balance. */
+   THE GENERATOR LOSSES (Phase 11 YUI, 2026-11-27, was: the rated heat duty of the four air coolers 2,120 kW less the copper losses,
+   DERIVED): the SEGREGATED LOSS TABLE of the type test of this machine, MHPS LM-GEE-2014-0822 R0 Inspection Report for Generator,
+   Limay Unit 1, Mfg No. 16D021-1, p31 6.6 (4) (read by YUA 2026-11-27, /mnt/project-files/yui-reads-2.md 1), at 176.5 MVA 0.85 pf,
+   total 2,032 kW (efficiency 98.66 %):
+     armature I^2 R 172 kW = 3 I^2 Ra (Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2; 3 x 7,384^2 x 0.001051 = 171.9 kW: the same number),
+     field I^2 R 285 kW = If^2 Rf (Rf 0.2188 ohm at 95 C; 1,141^2 x 0.2188 = 284.9 kW at the 1,141 A of p31; main field = exciter
+       field x 463 / 4.5 A, 310SD23-268 R1 / GEE-2015-0152 p6),
+     exciter 29 kW x (main field / 1,141 A)^2 (p31 gives 29 / 19 / 12 / 7 kW at 1,141 / 937 / 746 / 573 A: = 29 x (If / 1,141)^2
+       within 0.5 kW at each load, so the exciter loss is a field I^2 R),
+     stray load 283 kW x (I / 7,384 A)^2 (IEC 60034-2-1: the additional load loss goes with the current squared),
+     core 388 kW x V^2 (V pu terminal voltage: the iron loss goes with the flux x speed squared),
+     friction and windage 875 kW x (speed / 3600)^3 (the split of bearing friction and windage is not in the docs: NO-SOURCE form).
+   All of it is taken from the shaft: U.MW = Pm - L (anGenW). Where it goes: the air coolers H-1971A ~ D get L less the generator
+   bearing friction (port q.ccw.YUI); the bearings give 240 kW to the lube oil at rated speed (generator O&M GAE-2015-0063 R0 p36
+   "generator bearings 600 L/min, 240 kW"; the friction and windage of a type test include the bearing friction, IEC 60034-2-1),
+   x (speed / 3600)^3 with the windage. The coolers are rated 2,120 kW (same O&M p36): 2,032 - 240 = 1,792 kW at the rating leaves
+   them 15 % margin. No load table: one test point and the physics of each loss. */
 const AN_GENT = {
   tCold: 45 /* C, cold air of the nameplate 310SD18-613 (GAE-2014-0791 R0 PDF p180) */,
   tCw: 37 /* C, cooling water max (GAE-2013-0136 R2) */,
@@ -3032,10 +3037,13 @@ const AN_GENT = {
   Ra: 0.001051 /* ohm, armature 1 phase at 95 C */,
   Rf: 0.2188 /* ohm, main field at 95 C */,
   ifMain: 463 / 4.5 /* A main field per A exciter field */,
-  qD: 2120 /* kW, total heat duty of the four air coolers at the rating (GAE-2015-0063 R0 p36) */,
-  ifD: 1218 /* A main field at the rating (310SD23-270 R1) */
+  ifT: 1141 /* A main field at the rating in the loss test (LM-GEE-2014-0822 R0 p31) */,
+  qEx: 29 /* kW exciter loss at ifT (same p31) */,
+  qSt: 283 /* kW stray load loss at the rated current (same p31) */,
+  qFe: 388 /* kW core loss at 1.0 pu voltage (same p31) */,
+  qFw: 875 /* kW friction and windage at 3600 rpm (same p31) */,
+  qBr: 240 /* kW of it to the lube oil, generator bearings (GAE-2015-0063 R0 p36) */
 };
-AN_GENT.q0 = AN_GENT.qD - (3 * (AN_GENT.In * 1000) ** 2 * AN_GENT.Ra + AN_GENT.ifD ** 2 * AN_GENT.Rf) / 1000;
 function anGenTemp(U, G, dt) {
   const K = AN_GENT,
     Ta = U.Tamb || 30,
@@ -3049,13 +3057,17 @@ function anGenTemp(U, G, dt) {
   T.ta.forEach((v, i) => (T.ta[i] += (air - v) * a));
   T.ts.forEach((v, i) => (T.ts[i] += (air + rise - v) * a));
   T.ex += (air + (K.ex - K.tA) * rf - T.ex) * a;
-  const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600));
-  return (3 * (G.kA * 1000) ** 2 * K.Ra + (G.If * K.ifMain) ** 2 * K.Rf) / 1000 + K.q0 * n ** 3;
+  const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600)),
+    ifm = G.If * K.ifMain,
+    V = U.gen && isFinite(U.gen.V) ? U.gen.V : 0,
+    w = n ** 3;
+  T.L = (3 * (G.kA * 1000) ** 2 * K.Ra + ifm ** 2 * K.Rf) / 1000 + K.qEx * (ifm / K.ifT) ** 2 + K.qSt * (G.kA / K.In) ** 2 + K.qFe * V * V + K.qFw * w;
+  return T.L - K.qBr * w;
 }
 /* Phase 11 (YUI): THE GENERATOR ELECTRICAL OUTPUT U.MW (the one writer; port gen.W = it, anGenInt).
    - 52G closed on the grid: the shaft power less the generator losses, P = Pm - L. Pm = the blade work less the turbine mechanical loss
-     (U.Pm above, turbine.js AN_TB.mech); L = the losses of the generator (anGenTemp: stator copper 3 I^2 Ra, main field I^2 Rf, core /
-     windage / stray at speed, all to the air coolers, port q.ccw.YUI, GAE-2015-0063 R0 p36 2,120 kW at the rating), of the last step.
+     (U.Pm above, turbine.js AN_TB.mech); L = the losses of the generator (anGenTemp U.genT.L: the segregated loss test LM-GEE-2014-0822 R0 p31,
+     2,032 kW at the rating; the air coolers get it less the bearing friction, port q.ccw.YUI), of the last step.
      With the steam cut (turbine trip, 52G still closed) P goes below 0: the machine motors on the grid, the 32 reverse power relay sees it.
      Before: the turbine side lumped all the losses (AN_TB lo + kq, the HB loss) and tripped P lagged 10 s behind it (tauMW, NO-SOURCE).
    - house load (52L1 open, the transfer done): the generator gives what the house load takes (D = the TCS target = the house load,
@@ -3065,8 +3077,7 @@ function anGenW(U, onGrid, trip, D) {
   const tb = U.tb || {};
   if (!onGrid) return 0;
   if (U.el && U.el.l52 === false && tb.xfer && !trip && isFinite(D)) return D;
-  const q = typeof anPortGet === 'function' ? anPortGet(U, 'q.ccw.YUI') : null,
-    L = q && isFinite(q.Q) ? q.Q / 1000 : 0;
+  const L = U.genT && isFinite(U.genT.L) ? U.genT.L / 1000 : 0;
   return isFinite(U.Pm) ? U.Pm - L : 0;
 }
 /* the energy meters of page 17 count the sim time while synchronised */
