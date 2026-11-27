@@ -49,6 +49,8 @@ jobs:
         run: node tools/check/no-fit.cjs
       - name: One path per plant value, the existing model repaired in place (user 2026-11-27, Phase 11)
         run: node tools/check/one-path.cjs
+      - name: Unit constants come from the code on every load (Phase 11 rank 8)
+        run: node tools/check/u-const.cjs
       - name: TCS soft logic sheets (straight wires only, keys, sources)
         run: node tools/data/tce_check.mjs
       - name: TCS block meanings from the HIACS macro list, every kind on the sheets known (Audit 3 #4 step 2)
