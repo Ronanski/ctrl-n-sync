@@ -694,7 +694,7 @@ function anTbFlow(U, tb, D, dt, dirt) {
    sync check relay 25 closes 52L1 at once in the model, elec.js) */
 function anTbSpeed(U, tb, dt, on, Pm, Pe) {
   const hz = anGridHz(U, dt);
-  if (!(U.el && U.el.l52 === false)) {
+  if (!(U.el && U.el.l52 === false) && !tb.rej) {
     /* on the grid the shaft turns with the grid (2-pole, 60 Hz = 3600 rpm) */
     if (tb.st === 'sync' || tb.st === 'load') tb.rpm = hz * 60;
     return;

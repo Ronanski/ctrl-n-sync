@@ -3894,7 +3894,7 @@ function anUnitStep0(dt) {
   if (U.tc) {
     /* the ATS sets the speed and the ICV (tcs.js); a stopped machine coasts down to the turning gear */
     if (!U.turb && tb.rpm > 4) tb.rpm = Math.max(0, tb.rpm - (3600 * dt) / 600);
-  } else if (tb.st === 'roll') {
+  } else if (tb.st === 'roll' && !tb.rej) {
     tb.rpm = Math.min(3600, tb.rpm + (U.rollRate * dt) / 60);
     tb.icv = Math.min(U.icvRoll, tb.icv + (U.icvRoll * dt) / 60);
   } else if (!U.turb) tb.rpm = Math.max(0, tb.rpm - (3600 * dt) / 600);
@@ -3918,6 +3918,14 @@ function anUnitStep0(dt) {
   } else if (!isFinite(U.tcsT)) U.tcsT = U.MW;
   /* plan c4: 52L1 as the ABC input, and on house load the turbine carries the house load only (elec.js) */
   if (typeof anElecStep === 'function') anElecStep(U);
+  /* Phase 11 RIN 2026-11-28: LOAD REJECTION. 52G opening on load without a turbine trip (elec.js anElec52gTrip, the Plant-menu fault
+     'gen.52g'; the TCS shutdown step 52G OPEN of TCA587 the same) leaves the turbine latched with its valves open and no electrical load:
+     the speed is the swing equation (anTbSpeed, Pe = the no-load losses of the generator), the PLU closes the CV / ICV at the fast-acting
+     rate and the speed governor takes the speed back (the house-load branch below with no load), as TG operator manual tg-2-1-1 p.137
+     (full load rejection: about 106 % in about 1 s). tb.rej holds until the machine trips, stops or is synchronised again. Before, the
+     state 'roll' set the CVs shut and the speed to the roll ramp at once: no overspeed */
+  if (tb.st === 'roll' && onGrid && !trip) tb.rej = true;
+  if (tb.st !== 'roll' || trip) tb.rej = false;
   const D = U.tcsT;
   /* LMYP OTS 1.0.0-beta.3 (JENNIE, live Hot roll 2026-11-19, F-CN): the load loop of the TCS (TCE207 flow demand tb.fd, MW error integral
      tb.fi) works only with 52G closed. Off the grid (turbine stopped, tripped or under speed control) it starts again from the valves at
@@ -3934,10 +3942,10 @@ function anUnitStep0(dt) {
     /* turbine trip: the TCS closes the valves; the load set point is gone */
     U.gv = Math.max(0, U.gv - dt / AN_TBV.cv);
     U.tcsT = 0;
-  } else if (tb.st === 'roll') {
+  } else if (tb.st === 'roll' && !tb.rej) {
     U.gv = 0;
     U.tcsT = 0;
-  } else if (!tb.xfer) {
+  } else if (!tb.xfer && !tb.rej) {
     /* IP start mode (TCE207): the one flow demand opens the ICV first; the CVs stay shut until it passes the CV OPENING BIAS (20 %) */
     anTbFlow(U, tb, D, dt, dirt);
   } else {
@@ -3947,10 +3955,11 @@ function anUnitStep0(dt) {
        load, elec.js) and the turbine power U.MW minus that load over 40 % of U.MW0. The valves close at the fast-acting rate (AN_TBV.cvOpc / icvOpc, the same
        fast acting dump through the NG6 solenoid, derived in turbine.js) until the unbalance is under 40 %, then the speed control opens them again.
        Not modelled: the 2 out of 3 voting (one value) */
-    const ld = U.el && U.el.l52 === false ? D : U.MW,
+    const hl = (U.el && U.el.l52 === false) || !!tb.rej /* house load (52L1 open) or load rejection (52G open): the speed governor */,
+      ld = tb.rej ? 0 : U.el && U.el.l52 === false ? D : U.MW,
       /* 3.2.3 house load speed: the power side is the steam power of the last step (U.Pm, no tauMW lag: the reheat bowl pressure falls
          as soon as the ICV closes); before, the lagged U.MW kept the valves shut about 7 s and the speed fell to 95.8 % */
-      plu = U.el && U.el.l52 === false && ((isFinite(U.Pm) ? U.Pm : U.MW) - ld) / U.MW0 > 0.4;
+      plu = hl && ((isFinite(U.Pm) ? U.Pm : U.MW) - ld) / U.MW0 > 0.4;
     if (plu && !tb.plu && typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
       lsEventAdd(
         'TCS',
@@ -3962,13 +3971,13 @@ function anUnitStep0(dt) {
           ' MW load'
       );
     tb.plu = plu;
-    if (plu || (U.el && U.el.l52 === false)) tb.fd = NaN;
+    if (plu || hl) tb.fd = NaN;
     if (plu) {
       U.gv = Math.max(0.02, U.gv - dt / AN_TBV.cvOpc);
       tb.icv = Math.max(0, tb.icv - dt / AN_TBV.icvOpc);
       tb.gs = U.rbIP;
       tb.hlT = (tb.hlT || 0) + dt;
-    } else if (U.el && U.el.l52 === false) {
+    } else if (hl) {
       /* 3.2.3 house load: the speed governor (TCE p.140 TCE206): flow demand = GOV.SET - flow span x (rpm - 3600) / (droop x 3600), the
          HP CV opening U.gv taken as the flow demand (1 = the anchor flow). GOV.SET (tb.gs) starts at the CV opening after the PLU and is
          trimmed by the TCS load loop toward the house load (elec.js, as before). The CV moves at its servo rate (AN_TBV.cvServo, turbine.js).
@@ -4281,18 +4290,28 @@ function anUnitStep0(dt) {
      Before, Pm fell with the valves at once and a load rejection from 150 MW peaked at 102.2 % (TG manual STIE-14752: about 106 % within
      about 1 s) */
   {
-    const hp = onGrid ? Math.max(0, U.tbS.Whp) : 0,
-      ip = onGrid ? Math.max(0, U.tbS.Wip) : 0,
+    const sp = onGrid || !!tb.rej /* the steam drives the shaft: on the grid, or after a load rejection (52G open, not tripped) */,
+      hp = sp ? Math.max(0, U.tbS.Whp) : 0,
+      ip = sp ? Math.max(0, U.tbS.Wip) : 0,
       f = T => 1 - Math.exp(-dt / Math.max(0.01, T));
     tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(AN_TB.tSc) : hp;
     tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(AN_TB.tXo) : ip;
     /* Phase 11 (RIN / YUI): the shaft side of the swing equation = the blade work less the mechanical loss of the turbine (AN_TB.mech,
        turbine.js); the generator losses are on the electrical side (anGenW) */
-    U.Pm = onGrid ? tb.pH + tb.pI - AN_TB.mech : 0;
+    U.Pm = sp ? tb.pH + tb.pI - AN_TB.mech : 0;
   }
   U.MW = anGenW(U, onGrid, trip, D);
   tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T (their coils: SH-G-5A / SH-G-6A, the 32 relay among them) */
-  anTbSpeed(U, tb, dt, onGrid && !trip && tb.xfer, U.Pm, D);
+  /* the load on the shaft: on house load the house load (elec.js), after a load rejection the no-load losses of the generator (anGenTemp
+     U.genT.L at 0 kA: field, exciter, core and windage / friction, LM-GEE-2014-0822 R0 p31) */
+  anTbSpeed(
+    U,
+    tb,
+    dt,
+    (onGrid && !trip && tb.xfer) || !!tb.rej,
+    U.Pm,
+    tb.rej ? (U.genT && isFinite(U.genT.L) ? U.genT.L / 1000 : 0) : D
+  );
   U.rpm = tb.rpm;
   U.icvp = 100 * tb.icv;
   if (U.vpos === undefined || (U.vpos && !U.vpos.icvA)) U.vpos = anVposOf(); /* a save point from before 3.2.3-beta.244 / the A, B split */
