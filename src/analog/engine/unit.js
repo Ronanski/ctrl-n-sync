@@ -2473,7 +2473,7 @@ function anHdStep(U, dt) {
     let ein;
     if (k === 'H6') ein = isFinite(U.hpF2) ? U.hpF2 : 0;
     else if (k === 'H5') ein = isFinite(U.hpF1) && isFinite(U.hpF2) ? U.hpF1 - U.hpF2 : 0;
-    else ein = U.tbD && isFinite(U.tbD['lp' + k.slice(1)]) ? U.tbD['lp' + k.slice(1)] : 0; /* Phase 11 rank 1: the draw of the heat balance (turbine.js tbLpDraws), the shell MOV and the tubes in it through the shell pressure and the rise */
+    else ein = U.lpW && isFinite(U.lpW['lp' + k.slice(1)]) ? U.lpW['lp' + k.slice(1)] : 0; /* Phase 11 rank 6: the steam the LP heater condenses (anLphStep U.lpW, the port ext.w_lp; the shell MOV and the tubes in it through the shell pressure and the NTU) */
     /* an HP heater tube leak (anHpLeak) joins the condensate in the shell */
     const hl = U.hlW ? (k === 'H5' ? U.hlW[0] : k === 'H6' ? U.hlW[1] : 0) : 0;
     const win = ein + hl + (from && out[from] ? out[from] : 0);
