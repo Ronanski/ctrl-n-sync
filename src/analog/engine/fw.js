@@ -100,12 +100,9 @@ function anDeaStep(U, dt) {
     td = isFinite(U.hpD1) ? U.hpD1 : T,
     /* condensate */
     pC = pg('cd.out'),
-    wc = isFinite(fin(pC && pC.m))
-      ? fin(pC.m)
-      : typeof anCycFlows === 'function' && typeof AN_CYC !== 'undefined'
-        ? Math.max(0, anCycFlows('dea').fda)
-        : 0,
-    tc = isFinite(fin(pC && pC.T)) ? fin(pC.T) : U.lpHt && U.lpHt.H3 && isFinite(U.lpHt.H3.out) ? U.lpHt.H3.out : Ta,
+    /* condensate: the port of the condensate part (cd.out, MEI); not written = none (ports.js rule 3) */
+    wc = isFinite(fin(pC && pC.m)) ? fin(pC.m) : 0,
+    tc = isFinite(fin(pC && pC.T)) ? fin(pC.T) : Ta,
     hc = isFinite(fin(pC && pC.h)) ? fin(pC.h) : fwHw(Pd, tc),
     Q = (wx * (hx - hf) + wp * (hp - hf) + wd * (fwHw(Pd, td) - hf) + wc * (hc - hf)) / 3.6 /* kW */,
     C = M * 1000 * cw + K.Mm * 1000 * K.cm /* kJ/K */;

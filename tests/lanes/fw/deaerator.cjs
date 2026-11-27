@@ -26,8 +26,9 @@ function run(T0, Pxa, wc, tc, wd, td, mins) {
   ctx.U = { Tamb: 30, ms: 0, da: { T: T0 }, hd: [{ k: 'H5', w1: wd }], hpD1: td, lpHt: { H3: { out: tc } }, tt: { 'TT-TS1018': 310.3 }, asF: { w1030: 0 } };
   ctx.Pxa = Pxa;
   ctx.wc = wc;
+  ctx.tc = tc;
   vm.runInContext(
-    `var anPortGet = (U, id) => id === 'ext.da' ? { P: Pxa, T: 310.3 } : id === 'cd.out' ? { m: wc } : null; var anDitlPos = () => 100;`,
+    `var anPortGet = (U, id) => id === 'ext.da' ? { P: Pxa, T: 310.3 } : id === 'cd.out' ? { m: wc, T: tc } : null; var anDitlPos = () => 100;`,
     ctx
   );
   for (let i = 0; i < mins * 300; i++) vm.runInContext('anDeaStep(U, 0.2)', ctx);
