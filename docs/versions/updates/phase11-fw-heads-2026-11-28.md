@@ -24,18 +24,3 @@ Checked:
 - 150 MW held 20 min with no trip: MW within 0.42, Pms within 0.29.
 
 Not checked: the 45-150 MW sweep (phase thread, on main).
-
-## 5. BFWP suction pressure PT-FW1115-A / B by physics (coordinator decision 2026-11-28: the snapshot head was a Rule 0 break)
-- **Was:** plantsw.js W.sucP = deaerator pressure + 1.8 kg/cm2. The 1.8 was a snapshot head from 02.png / 03.png.
-- **Now:** deaerator PT-CD1104 + the storage water from its level down to the tap GL.+12500 + the 1.9 m impulse line down to the transmitter GL.+10600 − the suction line loss with flow^2.
-  - The line loss is 0.185 kg/cm2 at the KSB rated point: 6.00 kg/cm2 g at 491 T/H, deaerator 5.05.
-- **Calibration** (/mnt/project-files/nana-pt-calibration-2026-11-28.md):
-  - EJA430E gauge, 0-10 kg/cm2, linear;
-  - no zero suppression or elevation, no wet-leg setting;
-  - PT-CD1104 taps the deaerator steam space with a negligible leg.
-- **Result:**
-  - 150 MW: 6.15. The 03.png snapshot shows 6.7 / 7.1; the snapshot is check-only.
-  - 60 MW, 02.png deaerator 2.2: about 3.5 (snapshot 4.0).
-  - Cold start, vented deaerator, cold water at the normal level: 1.37. This is below the DITL-23A START permissive of 1.5, so the BFWP cannot start until the deaerator is pressurised above about 0.13 kg/cm2 g. PR-OPE-5002 starts the BFP before "DEAERATOR WARMING UP"; this difference is reported and not scripted.
-- **Tests that hold the snapshot numbers** (not changed here, sim-tests and not Checks): tests/regress/fw_page_values.js (PT-FW1115 6.7 / 7.1 ± 0.3).
-- **MOC:** plantsw.js is not a controlled item of tools/moc/moc.cjs (logic sheets, tag tables, alarm groups, link files), so there is no change file. This section is the change record.
