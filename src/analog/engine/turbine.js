@@ -510,33 +510,6 @@ function anTbFlow(U, tb, D, dt, dirt) {
     dirt(U.di.xfer, 1);
   }
 }
-/* 3.2.3-beta.240 (user 2026-11-14): the 32 REVERSE POWER relay of the generator protection panel (Beckwith M-3425A, GEE-2015-0173 R1
-   SITE TEST PROCEDURE OF GEN. PROTECTION RELAY PANEL, PDF p.16 (PAGE 14) 32A: #1 (Alarm) pickup -0.008 pu, delay 300 cycles (5.0 s); #2
-   (Trip) pickup -0.013 pu, delay 600 cycles (10.0 s); over / under power "Over"; 1 pu = 115 V / 3.69 A secondary, taken as the generator
-   rating 176.5 MVA (AN_GEN.S): alarm at -1.4 MW, trip at -2.3 MW. Sequence test PDF p.7 (P.5) rows 12 / 13: both with 52G closed; #1 =
-   "1st REVERSE POWER (32) OPERATED"; #2 = "2nd REVERSE POWER (32) OPERATED", lockout relay 86G-A: 52G and 41 open and the turbine trips
-   (ANN & ST TRIP). Here the 86G-A drives the TA-9 input GEN./UNIT TRANS. PROTECTION A & GEN. LOCKOUT RELAY A (tcs-trip.js); the turbine
-   trip opens 52G and 41 (tcsGenTrip). The 86G-A is reset with the TURBINE RESET (NO-SOURCE: the hand reset of the lockout relay is on the
-   protection panel, not on the app). Other relays of the panel are not modelled */
-const AN_RP32 = { a: -0.008, t1: 5, b: -0.013, t2: 10 };
-function anRp32(U, on, dt) {
-  const r = U.rp32 || (U.rp32 = { t1: 0, t2: 0, al: false, lo: false }),
-    p = on ? (+U.MW || 0) / AN_GEN.S : 0,
-    ev = m => {
-      if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
-        lsEventAdd('GEN', 'GEN', m);
-    };
-  r.t1 = on && p <= AN_RP32.a ? r.t1 + dt : 0;
-  r.t2 = on && p <= AN_RP32.b ? r.t2 + dt : 0;
-  const al = r.t1 >= AN_RP32.t1;
-  if (al && !r.al) ev('1st REVERSE POWER (32) OPERATED: ' + (+U.MW).toFixed(1) + ' MW');
-  r.al = al;
-  if (r.t2 >= AN_RP32.t2 && !r.lo) {
-    r.lo = true;
-    ev('2nd REVERSE POWER (32) OPERATED: generator lockout relays 86G-A / 86G-B, turbine trip');
-  }
-  tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T */
-}
 /* 3.2.3 house load (52L1 open, 52G1 closed): the turbine generator speed from the swing equation 2 H w dw/dt = Pm - Pe (per unit on
    AN_GEN.S): Pm = the turbine steam power MWss (no tauMW lag: the CV / ICV cut the steam at once, the lag of U.MW stands for the reheater
    and the 60 s averages of the plant trends), Pe = the house load (elec.js). On the grid (52L1 closed) the grid holds 3600 rpm (the

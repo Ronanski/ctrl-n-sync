@@ -11,7 +11,7 @@
    Phase 6 TCS (lane 1, 2026-11-26, lane 0 read of the PI/O cards TCPn901 / n902, phase6-tcs-tpc-sources-2026-11-26.md): TCPn052 B5 / B6 =
    TCPn901-5 / -6 UNIT TRANSF. PROTECTION OPERATED GEN. PROTECTION A / B (87T, 51N) and TCPn054 B5 / B6 = TCPn902-5 / -6 50BF-86BF FOR GEN.
    PROTECTION A / B, both from CUSTOMER (the generator protection panel). The model has only the 32 reverse power relay of that panel
-   (unit.js anRp32, 86G-A); the 87T / 51N and 50BF relays are not modelled, so these four keep 0 (no relay operated) until they are */
+   (gen-panel.js tcsLo86, 86G-A); the 87T / 51N and 50BF relays are not modelled, so these four keep 0 (no relay operated) until they are */
 const TCS_TPC = (() => {
   const T = {},
     mb = n => U => (window.TCE_IO_LIVE ? window.TCE_IO_LIVE.mbRead(U, 'MB:' + n) : NaN),

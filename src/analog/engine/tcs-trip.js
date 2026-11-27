@@ -128,7 +128,7 @@ const TCS_IBD_PV = [
   [/^52L OPEN/, U => (U.el && U.el.l52 === false ? 1 : 0)],
   [/^52G OPEN$/, U => (U.tb && (U.tb.st === 'sync' || U.tb.st === 'load') ? 0 : 1)],
   [/^TURBINE TRIP$/, (U, c) => (c.trip ? 1 : 0)],
-  /* 3.2.3-beta.240: TA-9 row 17, the generator lockout relay 86G-A (only the 32 reverse power relay is modelled, unit.js anRp32) */
+  /* 3.2.3-beta.240: TA-9 row 17, the generator lockout relay 86G-A (gen-panel.js tcsLo86: the OR of SH-G-5A) */
   [/^GEN\.\/UNIT TRANS\. PROTECTION A/, U => (U.lo86 && U.lo86.a ? 1 : 0)],
   /* TA-9 row 19, the generator lockout relay 86G-B (gen-panel.js tcsLo86) */
   [/^GEN\.\/UNIT TRANS\. PROTECTION B/, U => (U.lo86 && U.lo86.b ? 1 : 0)],
@@ -816,8 +816,7 @@ function tcsTripReset(U) {
   if (tcsMirror()) return '';
   const ib = tcsIb(tcsOilState(U));
   ib.pb.rst = 1.5;
-  /* beta.240: the 86G-A lockout is reset with it, 52G open (unit.js anRp32) */
-  if (U.rp32 && !(U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'))) U.rp32.lo = false;
+  /* beta.240: the 86G-A / 86G-B lockouts are reset with it, 52G open (gen-panel.js tcsLo86Reset) */
   if (U.lo86 && !(U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'))) tcsLo86Reset(U);
   if (U.tc) U.tc.sdDone = false;
   /* LMYP OTS (Rose, Turbine trip page): the press is made, but a trip input of TA-9 that is still at 1 keeps the A gate of the reset at 0

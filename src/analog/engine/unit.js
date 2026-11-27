@@ -4195,8 +4195,8 @@ function anUnitStep0(dt) {
   /* generator: the shaft work of the steam path less the mechanical and generator losses (AN_TB.mech, turbine.js; generator losses anGenW, YUI); qip = the reheat
      pressure x the ICV opening, = the HP steam when the bypass is shut and the ICV full open; 0 off the grid */
   /* 3.2.3-beta.240 (user 2026-11-14, reverse power): on the grid the MW is not held at 0 or above. With too little steam the generator
-     takes power from the grid to keep the shaft at 3600 rpm (motoring): the mechanical and generator losses stay when the steam is gone. The 32 relay
-     (anRp32) sees the negative power */
+     takes power from the grid to keep the shaft at 3600 rpm (motoring): the losses stay when the steam is gone (anGenW). The 32 relay
+     (elec.js anGenRelay, SH-G-5A / 6A) sees the negative power */
   /* Phase 11 C (RIN): the steam the IP turbine takes from the reheater (T/H) = its Stodola swallowing capacity at the reheater pressure
      (the IP / LP blading of turbine.js from the condenser up: m = Kip sqrt(Prh^2 - Pc^2), Kip read off the last pass of the steam path,
      at the start the design point HB case 1 400944 kg/h at 34.77 ata), x the ICV opening, x the CRV test of tcs.js (TCE226 / 227: one
@@ -4242,7 +4242,7 @@ function anUnitStep0(dt) {
     U.Pm = onGrid ? tb.pH + tb.pI - AN_TB.mech : 0;
   }
   U.MW = anGenW(U, onGrid, trip, D);
-  anRp32(U, onGrid && !trip, dt);
+  tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T (their coils: SH-G-5A / SH-G-6A, the 32 relay among them) */
   anTbSpeed(U, tb, dt, onGrid && !trip && tb.xfer, U.Pm, D);
   U.rpm = tb.rpm;
   U.icvp = 100 * tb.icv;
