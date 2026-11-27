@@ -162,7 +162,13 @@ function anDeaStep(U, dt) {
    speed 3580 rpm: no hydraulic coupling or scoop), at 100 % load 355 A, efficiency 96.2 %, power factor 91.0 % (355 = 3550 / (0.962
    x 0.91 x sqrt3 x 6.6), the sheet closes). Induction motor: the active current = shaft power / (efficiency x sqrt3 x V), the
    magnetizing (reactive) current = 355 x sin(acos 0.91) = 147 A, held at rated voltage; I = sqrt(Ia^2 + Ir^2). The efficiency is held
-   at its rated value (the sheet gives only the 100 % point: NO-SOURCE part load efficiency). strainer DP = 0.29 x (flow / 549)^2. */
+   at its rated value (the sheet gives only the 100 % point: NO-SOURCE part load efficiency).
+   suction strainer (Phase 11 NANA 2026-11-27, was 0.29 kg/cm2 at 549 m3/h of the 03.png snapshot and a 0.4 branch loss of the same
+   snapshot): KSB Y strainer, Filteration Engineers FE/KSB/GAD/YST/FR-3453-02 rev 03 (O&M V7 BFP, "14 Y TYPE STRAINER" p2; YUA PC read
+   2026-11-27, /mnt/project-files/nana-doc-reads.md): 250 NB, 40 mesh, design 563.5 m3/h at 158.4 C, maximum allowable pressure drop
+   0.10 kg/cm2 clean (0.15 at 50 % clogged). Turbulent flow through a screen: dP = k Q^2 (the square law), k from the clean point. The
+   pump inlet PT-FW1115 = suction header - strainer DP; the suction pipe loss between the header and the strainer is NO-SOURCE (no line
+   size / length in D1-0-052 or the strainer list MS-017) and is not modelled. */
 const AN_FW = {
   sg: 0.9093,
   qQ: [0, 100, 200, 300, 400, 500, 540, 600, 700],
@@ -176,8 +182,7 @@ const AN_FW = {
   mEff: 0.962 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
   mPf: 0.91 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
   mV: 6.6 /* kV */,
-  q0: 549,
-  dp0: 0.29
+  stK: 0.1 / (563.5 * 563.5) /* kg/cm2 per (m3/h)^2, clean strainer, DESIGN-SRC: KSB FE/KSB/GAD/YST/FR-3453-02 r03 */
 };
 /* the BFWP discharge (kg/cm2 g) at a total feedwater flow w (T/H), with the pumps that run now: the same law as anFwStep */
 function anFwPdAt(U, w) {
@@ -187,7 +192,7 @@ function anFwPdAt(U, w) {
     Ps = isFinite(ps) ? ps : 0;
   if (!n) return Ps;
   const q = Math.max(K.qMin, Math.max(0, w) / K.sg / n);
-  return Math.max(0, Math.min(250, Ps - 0.4 * (q / K.q0) * (q / K.q0) + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz));
+  return Math.max(0, Math.min(250, Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz));
 }
 /* motor current (A) of a BFWP at a shaft power kW (TECO data sheet, see AN_FW) */
 function anFwAmp(kW) {
@@ -212,14 +217,14 @@ function anFwStep(U, dt) {
     Ps = isFinite(ps) ? ps : 0;
   U.fwRun = run;
   U.fwQp = Math.round(q);
-  /* the pump inlet = the suction header less its branch loss (strainer + line, 0.4 kg/cm2 at q0: 03.png, see anFwTagStep) */
+  /* the pump inlet = the suction header less the strainer DP (stK, KSB strainer drawing) */
   U.fwPd = Math.max(
     0,
-    Math.min(250, n ? Ps - 0.4 * (q / K.q0) * (q / K.q0) + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz : Ps)
+    Math.min(250, n ? Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz : Ps)
   );
   run.forEach((r, i) => {
     U['fwI' + i] = r ? Math.round(10 * anFwAmp(swInterp(K.pQ, K.pP, q))) / 10 : 0;
-    U['fwDp' + i] = r ? Math.round(1000 * K.dp0 * (q / K.q0) * (q / K.q0)) / 1000 : 0;
+    U['fwDp' + i] = r ? Math.round(1000 * K.stK * q * q) / 1000 : 0; /* DPT-FW1115-A / B */
   });
   /* 3.2.4-beta.21: PUMP HEAT. All the shaft power goes into the water: dh = P / m (KSB curve Q43446D shaft power pP and head qH at
      the pump flow q). Of the useful part rho g Q H only (1 - T beta) warms the water (isentropic compression of a liquid:
@@ -735,8 +740,8 @@ function anFwTagStep(U) {
     PICR19011: r2(pcr),
     PICR19012: r2(pcr),
     PICR19013: r2(pcr),
-    'PT-FW1115-A': isFinite(ps) ? r1(ps - ((U.fwDp0 || 0) * 0.4) / 0.29) : null,
-    'PT-FW1115-B': isFinite(ps) ? r1(ps - ((U.fwDp1 || 0) * 0.4) / 0.29) : null,
+    'PT-FW1115-A': isFinite(ps) ? r1(ps - (U.fwDp0 || 0)) : null /* pump inlet = header - strainer DP */,
+    'PT-FW1115-B': isFinite(ps) ? r1(ps - (U.fwDp1 || 0)) : null,
     'TT-FW1011': isFinite(Pda) ? r1(Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30) : null,
     'PT-FW1160': isFinite(drum) ? r1(drum + 3.5 * (ffw / 499.1) * (ffw / 499.1)) : null,
     'ZT-FW1110-1': r1(z11),
