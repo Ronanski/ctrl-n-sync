@@ -51,8 +51,24 @@ const judge = (v, tg, tol, kind) => {
        samples go to OUT_SWEEP and are judged against the design curves at every load by tools/model/sweep-judge.cjs */
     const SWEEP = !!process.env.SWEEP, SW = [];
     let swAcc = 0;
+    /* the bed inventory by hand along FHI P2S7 Fig 9 (furnace DP versus % MCR; AOI 2026-11-28): the bed DP control DPICFG108 holds its SV
+       through the ash cooler drains, and the DP of Fig 9 at part load is an operator SV (snapshot SV 1630 at 150 MW = Fig 9 at 100 %).
+       Once a plant minute, while DPICFG108 is in AUTO, the operator puts its SV on Fig 9 at the main steam flow of that minute (x =
+       MSF / 460 T/H, FHI Tab 3 MCR; held at the end points outside 40 ~ 100 %); a change under 1 mmH2O is not entered */
+    const FIG9 = JSON.parse(fs.readFileSync(path.join(root, 'docs/accept/curves/curves.json'), 'utf8')).fhi.fig9_furnace_dp_mmH2O.pts;
+    let dpAcc = 0;
+    const bedDp = async () => {
+      const s = await page.evaluate(() => { const L = window.LS_LIVE, f = L.fp('DPICFG108'); return { md: L.modeOf(f), sv: +L.svOf(f), msf: AN.unit.ms }; });
+      if (s.md !== 'AUTO' || !isFinite(s.sv)) return;
+      const x = Math.min(FIG9[FIG9.length - 1][0], Math.max(FIG9[0][0], (s.msf / 460) * 100));
+      let y = FIG9[FIG9.length - 1][1];
+      for (let i = 1; i < FIG9.length; i++) if (x <= FIG9[i][0]) { const [x0, y0] = FIG9[i - 1], [x1, y1] = FIG9[i]; y = x1 === x0 ? y1 : y0 + ((y1 - y0) * (x - x0)) / (x1 - x0); break; }
+      if (Math.abs(y - s.sv) >= 1) await page.evaluate(v => TOP.auto('DPICFG108', v), Math.round(y));
+    };
     const run = async m => {
       await run1(m);
+      dpAcc += m;
+      if (dpAcc >= 1) { dpAcc = 0; await bedDp(); }
       if (!SWEEP) return;
       swAcc += m;
       if (swAcc >= 1) {
@@ -98,7 +114,7 @@ const judge = (v, tg, tol, kind) => {
         MSF: U.ms, Pms: U.Pms + 1.0332, MSTt: H.ms, Psh: U.Pms, MST: H.ms, RHT: H.rh,
         tEco: H.tEco, Tfw: tfw, FWf: U.fwMain + w1 + w2 - bd /* FE-FW1007 is before the SH spray tap (PD-017, beta.374) */, sp: w1 + w2, rsp: U.rhSp || 0, MW: U.MW, HR: U.MW > 1 ? (qT * 3600) / 4.1868 / (U.MW * 1000) * 1000 / 1000 : NaN,
         bed: U.Tb, Tu: U.Tu, dp: pv('DPICFG108'), ahGi: U.aphGi, ahGo: U.aphGo, coal: U.Fc, lime: U.lm ? U.lm.q : NaN, air: air.reduce((a, b) => a + (b || 0), 0), PA: air[0], SA: air[1],
-        PAsv: sv('FICFA1071'), SAsv: sv('FICFA1081') /* the DCS air demands: PA = S1-LN12 + LN14, SA = the rest of LN5 (AOI 2026-11-27; FICFA1071 / FICFA1081 both REMOTE on the ABC-006 LN5 air demand, OPERATOR_GUIDE 1.2 and 5.4) */, O2: U.o2v, O2bal: window.LS_FG && typeof LS_FG.o2dry === 'function' ? LS_FG.o2dry(U.Fc, air.reduce((a, b) => a + (b || 0), 0)) : NaN /* AOI: the dry O2 the FHI Tab 2 mole balance gives at this coal and air (the judge below the DCS minimum air) */, eff: fuel > 0 ? (100 * steam) / fuel : NaN, trip: !!(AN.soeTrip && AN.soeTrip().mft.on)
+        Psv: sv('PIC-COBM') + 1.0332 /* the main steam pressure SV, ata */, cdP: U.cdP /* condenser pressure, kg/cm2 abs (RIN: the heat rate split) */, hr: { W: U.pt && U.pt.shaft ? U.pt.shaft.W : NaN, Pm: U.Pm, xhp: U.pt && U.pt['ext.w_hp'] ? U.pt['ext.w_hp'].x : null, xlp: U.pt && U.pt['ext.w_lp'] ? U.pt['ext.w_lp'].x : null, Qgen: U.pt && U.pt['q.ccw.YUI'] ? U.pt['q.ccw.YUI'].Q : NaN, pH: U.tb && U.tb.pH, pI: U.tb && U.tb.pI } /* RIN: the steam path to U.MW split */, PAsv: sv('FICFA1071'), SAsv: sv('FICFA1081') /* the DCS air demands: PA = S1-LN12 + LN14, SA = the rest of LN5 (AOI 2026-11-27; FICFA1071 / FICFA1081 both REMOTE on the ABC-006 LN5 air demand, OPERATOR_GUIDE 1.2 and 5.4) */, O2: U.o2v, O2bal: window.LS_FG && typeof LS_FG.o2dry === 'function' ? LS_FG.o2dry(U.Fc, air.reduce((a, b) => a + (b || 0), 0)) : NaN /* AOI: the dry O2 the FHI Tab 2 mole balance gives at this coal and air (the judge below the DCS minimum air) */, eff: fuel > 0 ? (100 * steam) / fuel : NaN, trip: !!(AN.soeTrip && AN.soeTrip().mft.on)
       };
     });
     const win = async () => {
@@ -194,7 +210,9 @@ const judge = (v, tg, tol, kind) => {
          answers a firing change in ~10 min; a press every minute overshoots and swings the coal 23 <-> 41 T/H, D15 study 2026-11-24).
          KANA 2026-11-27: with 0.3 x error - 1.0 x the 3-min trend the operator limit-cycled against the bed lag at 45 MW (MSP 94 <-> 106
          ata, ~57 min period, coal 26.6 <-> 38.7 T/H); 3.0 x the trend (looks ~9 min ahead, the bed lag) stops the swing. 0.5 x the error with 3.0 x the trend
-         swung again at 45 MW in the main sweep (MSP 91 <-> 130 ata, phase thread 2026-11-27), so the error gain stays 0.3 */
+         swung again at 45 MW in the main sweep (MSP 91 <-> 130 ata, phase thread 2026-11-27), so the error gain stays 0.3.
+         Phase thread 2026-11-27: the 3-min trend of the ERROR (SV - MSP) followed the slide better (107 ata at the end of the ramp, was
+         119) but undershot to 93 ata at 45 MW and held fewer samples in band (24 of 121, was 36 of 112): the trend of the MSP stays */
       if (s.bm === 'MAN') {
         OP.h = OP.h || []; OP.h.push(s.P); OP.n = (OP.n || 0) + 1;
         const dP3 = OP.h.length > 3 ? s.P - OP.h[OP.h.length - 4] : 0, d = 0.3 * (s.sv - s.P) - 3.0 * dP3;
