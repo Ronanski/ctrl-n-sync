@@ -75,8 +75,11 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   /* 3.2.3-beta.268 (SOHEE, Jennie 2026-11-16): since beta.260 / 261 the Start at 150 MW is the steady state of the plant model (MHPS heat
      balance PPE-13-0106, 460 T/H steam + sprays + blowdown = feedwater about 472 T/H); the 03.png plant snapshot (499.1 T/H at a worse heat
      rate) is a plant check (+-6 %) only. The pump values are checked at the model flow Q by the KSB HGC 5/1+6 data sheet (O&M L7 BFP, curve
-     Q43446D at 3580 rpm, sp. gr. 0.9093): outlet = suction header - branch loss 0.4 x (Q / 549)^2 + head(Q) x 0.9093 / 10, current =
-     289.4 A x shaft power(Q) / shaft power(549 m3/h) (03.png ratio), strainer DP = 0.29 x (Q / 549)^2 (03.png 0.29 at 549 m3/h). */
+     Q43446D at 3580 rpm, sp. gr. 0.9093): outlet = suction header - strainer DP + head(Q) x 0.9093 / 10. Phase 11 NANA 2026-11-27 (PR 677,
+     the design in place of the 03.png fits): strainer DP = 0.10 x (Q / 563.5)^2 (KSB Y strainer FE/KSB/GAD/YST/FR-3453-02 r03: 0.10 kg/cm2
+     clean at 563.5 m3/h; was 0.29 at 549 of 03.png), no branch loss (was 0.4 of 03.png, NO-SOURCE), current = the TECO AEZW-S2 motor
+     (3550 kW, 355 A, eff 0.962, pf 0.91, 6.6 kV): sqrt(Ia^2 + Ir^2), Ia = shaft power(Q) / (0.962 sqrt3 6.6), Ir = 355 sin(acos 0.91)
+     (was 289.4 A x a power ratio of 03.png). */
   const lin = (X, Y, x) => {
     for (let i = 1; i < X.length; i++) if (x <= X[i]) return Y[i - 1] + ((Y[i] - Y[i - 1]) * (x - X[i - 1])) / (X[i] - X[i - 1]);
     return Y[Y.length - 1];
@@ -86,15 +89,15 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     pQ = [0, 150, 300, 400, 540, 600],
     pP = [1170, 1700, 2230, 2580, 2946, 3100];
   const Q = b.q,
-    ePd = r.da - 0.4 * (Q / 549) * (Q / 549) + (0.9093 / 10) * lin(qQ, qH, Q),
-    eI = (289.4 * lin(pQ, pP, Q)) / lin(pQ, pP, 549),
-    eDp = 0.29 * (Q / 549) * (Q / 549);
+    eDp = 0.1 * (Q / 563.5) * (Q / 563.5),
+    ePd = r.da - eDp + (0.9093 / 10) * lin(qQ, qH, Q),
+    eI = Math.hypot(lin(pQ, pP, Q) / (0.962 * Math.sqrt(3) * 6.6), 355 * Math.sqrt(1 - 0.91 * 0.91));
   /* 1.0.0-beta.346 (JENNIE, user 2026-11-24 "GO DESIGN"): the target is the design: the drum feed = the main steam of the heat balance PPE-14-0725 case 1
      (458.3 T/H; its boiler box has no blowdown, cycle loss 0) + the continuous blowdown in service, design 15 T/H (mass balance
      K1AU3-MB-019 item 22) = 473.3 T/H, +-3 %. The 03.png 499.1 T/H is a plant snapshot, sanity only */
   ck(Math.abs(b.ffw / 473.3 - 1) < 0.03, `150 MW feedwater ${b.ffw} T/H: design HB case 1 main steam 458.3 + CBD 15 (MB-019) = 473.3 T/H (+-3 %)`);
   ck(b.run[0] === 1 && b.run[1] === 0 && Math.abs(b.Pd - ePd) < 1 && Math.abs(b.I[0] - eI) < 3 && b.d25 === b.Pd, `150 MW BFWP-A ${b.q} m3/h (feedwater ${b.ffw} T/H), suction header ${r.da} (03.png: idle BFWP-B 7.1), PT-FW1011 ${b.Pd} kg/cm2 (data sheet at Q ${ePd.toFixed(1)}; 03.png 165.4 at 549 m3/h), ${b.I[0]} A (${eI.toFixed(1)}; 03.png 289.4), DITL-23B row 25 reads ${b.d25}`);
-  ck(Math.abs(b.dp[0] - eDp) < 0.01 && b.d26 === b.dp[0], `strainer DP ${b.dp[0]} kg/cm2 (${eDp.toFixed(3)} at Q; 03.png 0.29 at 549 m3/h), DITL-23B row 26 reads ${b.d26}`);
+  ck(Math.abs(b.dp[0] - eDp) < 0.01 && b.d26 === b.dp[0], `strainer DP ${b.dp[0]} kg/cm2 (${eDp.toFixed(3)} at Q, KSB strainer 0.10 at 563.5 m3/h), DITL-23B row 26 reads ${b.d26}`);
   ck(r.trMin < 155, `BFWP A tripped: PT-FW1011 down to ${r.trMin} kg/cm2 (< 155 = M.3210 LL, the AUTO START of B)`);
   ck(r.tr.run[1] === 1 && r.trB != null && r.tr.ffw > 0.8 * r.base.ffw && r.tr.Pd > 155 && r.tr.d25 === r.tr.Pd, `BFWP B started by its AUTO START after ${r.trB} s: ${r.tr.q} m3/h, PT-FW1011 ${r.tr.Pd} kg/cm2, feedwater ${r.tr.ffw} T/H after 60 s (before the trip ${r.base.ffw}), ${r.tr.I[1]} A, DITL-23B row 25 reads ${r.tr.d25}`);
   ck(r.mft === 0, `no boiler trip (DITL-06 BOILER TRIP SIGNAL PRESENT stays 0): the feedwater comes back in seconds, the drum level stays above L.L.`);
