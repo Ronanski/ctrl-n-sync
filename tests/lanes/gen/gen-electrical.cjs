@@ -111,7 +111,7 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
      the times and the 52G gating are the sheets' */
   const rq = `(()=>{const p=AN.tce(),U=AN.unit,x=U.pt['relay.gen'].x,pl=k=>{const n=p.ports.find(q=>q.startsWith('PLANT:'+k+' '));return n?p.v[p.idx.get(n)]:NaN},
     v=k=>p.v[p.idx.get(k)];return JSON.stringify({x,c:{r24b:pl('G-5A.r24b'),r27:pl('G-5A.r27'),r81l1:pl('G-5B.r81l1'),r81l2:pl('G-5B.r81l2'),r59a:pl('G-5A.r59a'),
-    b27:pl('G-6A.r27'),b81:pl('G-6B.r81l2'),b24:pl('G-6A.r24b')},M:v('G-5A:d24b.M'),MB:v('G-6A:d24b.M'),gA:v('G-5A:gor'),gB:v('G-5B:gor'),gC:v('G-6A:gor'),gD:v('G-6B:gor'),V:U.gen.V,f:U.tb.rpm/60})})()`;
+    b27:pl('G-6A.r27'),b81:pl('G-6B.r81l2'),b24:pl('G-6A.r24b')},M:pl('G-5A.d24b.M'),MB:pl('G-6A.d24b.M'),gA:v('G-5A:gor'),gB:v('G-5B:gor'),gC:v('G-6A:gor'),gD:v('G-6B:gor'),V:U.gen.V,f:U.tb.rpm/60})})()`;
   const r1 = JSON.parse(E.js(rq)),
     vhz = (100 * r1.V) / (r1.f / 60);
   ok(Object.entries(r1.x).every(([k, v]) => k === 'vhz' || v === 0) && Math.abs(r1.M - vhz) < 0.05 && r1.MB === r1.M && r1.gC === 0 && r1.gD === 0 && Object.values(r1.c).every(v => v === 0) && r1.gA === 0 && r1.gB === 0,
