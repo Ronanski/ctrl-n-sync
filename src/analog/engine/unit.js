@@ -4043,11 +4043,14 @@ function anUnitStep0(dt) {
      kdp (m + mo)^2, m = k MSP. Before it was the turbine flow alone, so with the CVs shut and 286 T/H through the bypass the SH outlet
      rose to the drum pressure and lifted the SH safety valve. mo is the flow of these outlets of the scan before (U.mso, they depend on
      the MSP: the fixed point converges, 2 kdp (m + mo) x dmo/dP is about 0.1 at 400 T/H). With u = m + mo: k kdp u^2 + u - (mo +
-     k drum) = 0 */
+     k drum) = 0. Solved for m itself, k kdp m^2 + (1 + 2 k kdp mo) m - k (drum - kdp mo^2) = 0, in the form with no difference of
+     two near-equal numbers (m = 2c / (b + sqrt(b^2 + 4 a c))): with the CVs almost shut k kdp is about 1e-12 and the form
+     u - mo lost the turbine flow in the rounding (gen-electrical reverse power, the turbine kept a few MW) */
   const k = U.Kt * tcsVtLift(U) * (U.msG == null ? 1 : U.msG),
     mo = isFinite(U.mso) ? Math.max(0, U.mso) : 0,
     a2 = U.kdp * k,
-    ms = a2 > 0 ? (-1 + Math.sqrt(1 + 4 * a2 * (mo + k * Math.max(0, U.Pd)))) / (2 * a2) - mo : k * Math.max(0, U.Pd - U.kdp * mo * mo);
+    Pd0 = Math.max(0, U.Pd),
+    ms = (2 * k * (Pd0 - U.kdp * mo * mo)) / (1 + 2 * a2 * mo + Math.sqrt(1 + 4 * a2 * (mo + k * Pd0)));
   U.ms = Math.max(0, ms);
   /* the other outlets: their valve laws at the SH outlet pressure P1 */
   const P1 = Math.max(0, U.Pd - U.kdp * (U.ms + mo) * (U.ms + mo));
