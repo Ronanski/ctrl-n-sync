@@ -13,7 +13,10 @@ const fs = require('fs'),
 const root = path.resolve(__dirname, '..', '..', '..');
 const ctx = { Math, console, isFinite, Number, Object, Array };
 vm.createContext(ctx);
-for (const f of ['engine/steam.js', 'engine/ports.js', 'engine/fw.js']) vm.runInContext(fs.readFileSync(path.join(root, 'src/analog', f), 'utf8'), ctx, { filename: f });
+for (const f of ['engine/steam.js', 'engine/ports.js']) vm.runInContext(fs.readFileSync(path.join(root, 'src/analog', f), 'utf8'), ctx, { filename: f });
+/* the IF97 water density of plant.js (anDeaStep writes U.da.rho / rhoL for the BFWP suction, 2026-11-28) */
+vm.runInContext(fs.readFileSync(path.join(root, 'src/analog/engine/plant.js'), 'utf8').match(/function anWaterRho\(T\) \{[\s\S]*?\n\}/)[0], ctx);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/analog/engine/fw.js'), 'utf8'), ctx, { filename: 'engine/fw.js' });
 let bad = 0,
   nrvS = 100; /* the secondary NRV position of the runs (tcs-dev.js U.dev.nrv) */
 const fail = m => (bad++, console.log('FAIL', m));
