@@ -34,6 +34,38 @@ function anIdfN(m) {
    - superheaters 75.8 m3 (T8 Tab 2 HYD less the water parts), superheated about 450 C, 0.42 kg/m3 per kg/cm2 = 32 kg;
    - main steam line to the stop valves: NO-SOURCE, about 20 m3 (8 kg).
    53 kg per kg/cm2 = 190 (T/H) x s per kg/cm2 (CALC). The old field C of a save is not read */
+/* Phase 11 (KANA, 2026-11-27): THE SUPERHEATER PRESSURE DROP, drum to SH outlet. Turbulent flow in the SH tubes at a Reynolds number
+   far above the transition (the friction factor nearly constant): dP = f (L / D) rho V^2 / 2 = k m^2 / rho, the mass flow m and the
+   mean steam density rho of the superheaters. k from the one design point, DESIGN-SRC: FHI P2S7 Tab 3 (page 2-7-TAB_3-1) at MCR:
+   460 T/H, SH outlet 129 kg/cm2 G and 541 C, "Superheater Pressure Drop 16 kg/cm2" (drum 145 kg/cm2 G). rho = the mean of the
+   saturated steam at the drum and the steam at the SH outlet (IF97, steam.js). Same law at every load and state; the flow is the steam
+   through the SH (main steam to the turbine; the other outlets are taken after the SH outlet, as the drawing PD-012 shows).
+   Before: kdp = (drum - MSP) / MSF^2 of the plant snapshot at 150 MW (134.2 - 122.6 at 474.1 T/H), a constant fitted to one plant (NO-FIT-OK: history note)
+   reading with no density term (no-fit baseline, Audit 3 ranking 5). U.kdp is kept as the name the valve flow solve reads. */
+/* The tap pressures inside the chain, PT-BR1130 (after SH panel #1 = spray 1 point) and PT-BR1150 (finishing SH inlet = spray 2
+   point), are the drum less the share s1 / s2 of this drop. The shares are where the taps sit along the drop, read on the plant
+   transmitters of 03.png (150.5 MW: drum 134.2, PIBR1130 127.8, PIBR1150 124.9, MSP 122.6: 6.4 / 11.6 and 9.3 / 11.6). OPEN (Phase 11,
+   KANA): the share from the tube geometry needs the panel SH drawings (C series, not in the documents; hx.js); until then the shares
+   stay and the size of the drop is the design law. Before, the taps took 6.4 / 9.3 kg/cm2 x (MSF / 474.1)^2 by themselves. */
+const AN_SHDP = { dp0: 16, m0: 460, Po: 129, To: 541, s1: 6.4 / 11.6, s2: 9.3 / 11.6 };
+/* the pressure at the share s of the SH drop (kg/cm2 G), drum Pd, steam through the SH m (T/H) */
+function anShTap(U, s, Pd, m) {
+  const k = isFinite(U && U.kdp) ? U.kdp : AN_SHDP.dp0 / (AN_SHDP.m0 * AN_SHDP.m0);
+  return Pd - s * k * m * m;
+}
+function anShRho(Pd, Po, To) {
+  return (steamRho(Pd, steamTsat(Pd)) + steamRho(Po, Math.max(steamTsat(Po), To))) / 2;
+}
+function anShKdp(U) {
+  const D = AN_SHDP,
+    k0 = D.dp0 / (D.m0 * D.m0);
+  if (!AN_SHDP.rho0) AN_SHDP.rho0 = anShRho(D.Po + D.dp0, D.Po, D.To);
+  if (!U || !isFinite(U.Pd) || U.Pd <= 0) return k0;
+  const To = U.hxO && isFinite(U.hxO.ms) ? U.hxO.ms : steamTsat(U.Pd),
+    Po = isFinite(U.Pms) && U.Pms > 0 ? U.Pms : U.Pd,
+    rho = anShRho(U.Pd, Po, To);
+  return isFinite(rho) && rho > 0 ? (k0 * AN_SHDP.rho0) / rho : k0;
+}
 const AN_STORE = { cs: 190 };
 const AN_UNIT = {
   on: false,
@@ -150,7 +182,7 @@ const AN_UNIT = {
   kfp: 150 /* fallback; the authority of the ID fan of the anchored loop model is used when known (anUnitStart) */,
   /* 2.2.0-beta.14 (M4 step 1, PR-OPE-5002 / boiler manual SECT_7 Fig 1 / 2): COLD START. "Start cold" (hmi-op.js anPlantCold) keeps
      the anchors of "Start at 150 MW" (the gains of every loop model) and puts the plant cold: drum 0 kg/cm2, water and bed at the
-     ambient, no coal, turbine valves shut (U.turb = false until the turbine is rolled, M4 step 4). The physics added here:
+     ambient, no coal, turbine valves shut (U.turb false until the turbine is rolled, M4 step 4). The physics added here:
      - FIRING = coal + oil of the four start-up burners (ABC-003A ~ D FICDO1043A ~ D, PV SI0070 / 0380 / 0460 / 0480 = AI0515 / 0546 /
        0517 / 0548 0 ~ 3.5 T/H after the gate of the SUPPLY OIL VALVE CLOSE M.3410 / 3411 / 3416 / 3417). One T/H of oil makes ao
        times the steam of one T/H of coal (ao = 2.55: PR-OPE-5002 "2.55 TPH coal = 1 TPH diesel"; the heating values of the design
@@ -411,11 +443,9 @@ function anUnitStart() {
     P0,
     Pd0,
     MW0,
-    /* S/H pressure drop, drum to S/H outlet, from the plant 150 MW data (about 12 kg/cm2). Design beside it (Audit 3 ranking 5): FHI
-       P2S7 Tab 3 "Superheater Pressure Drop 16 kg/cm2" at MCR 460 T/H. A vendor DP at MCR is a design / guarantee maximum with margin,
-       not the clean operating value: it is the upper bound, and the anchor stays on the plant (user Q4: close to the DCS 150 MW data,
-       small tolerance; moving the drum ~4 kg/cm2 off the plant would break it) */
-    kdp: (Pd0 - P0) / (m0 * m0),
+    /* Phase 11 (KANA, 2026-11-27): the S/H pressure drop is the physics law of anShKdp (design FHI P2S7 Tab 3), no longer the plant
+       150 MW anchor (Pd0 - P0) / m0^2 (no-fit finding: a constant taken from the snapshot). NO-FIT-OK: history note */
+    kdp: anShKdp(null),
     kln: isFinite(Ptin) && Ptin <= P0 ? (P0 - Ptin) / (m0 * m0) : 0 /* main steam line drop to the turbine inlet */,
     Kt: m0 / P0 /* valve opening 1 = the opening at the anchor */,
     gv: 1,
@@ -1555,8 +1585,8 @@ function anHxTagStep(U, dt) {
     'TT-BR1110': r1(H.wl),
     'TT-BR1120-1': r1(H.p1o),
     'TT-BR1120-2': r1(H.p1o),
-    'PT-BR1130': r1(pd - 6.4 * lf),
-    'PT-BR1150': r1(pd - 9.3 * lf),
+    'PT-BR1130': r1(anShTap(U, AN_SHDP.s1, pd, ms)),
+    'PT-BR1150': r1(anShTap(U, AN_SHDP.s2, pd, ms)),
     'PT-FG1009-A2': Math.round(aiH('1|AI0146') + 615 * fr),
     'PT-FG1009-B2': Math.round(aiH('1|AI0147') + 392 * fr),
     'LT-CL1008-A': 4.56,
@@ -3794,6 +3824,7 @@ function anUnitStep0(dt) {
   /* 3.2.0 P1 #3: the steam reaches the turbine through the main steam stop MOV MV-MS1391 (or its warming bypass, anUnitStepX) */
   /* LMYP OTS valve tests (tcs.js tcsVtStep / tcsVtLift, TCE220 / 222): the two CV groups in series with their MSV, half the steam each */
   tcsVtStep(U, dt);
+  U.kdp = anShKdp(U); /* Phase 11: the SH pressure drop law at the density of this scan (anShKdp) */
   const k = U.Kt * tcsVtLift(U) * (U.msG == null ? 1 : U.msG),
     a2 = U.kdp * k,
     ms = a2 > 0 ? (-1 + Math.sqrt(1 + 4 * a2 * k * Math.max(0, U.Pd))) / (2 * a2) : k * U.Pd;
