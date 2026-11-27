@@ -560,19 +560,30 @@
     [/PILM1811\.PV/, 'lmPl'],
     [/PILM1812\.PV/, 'lmPd']
   ];
-  /* 3.2.0-beta.50 (live check #94): the BFWP suction pressure PT-FW1115-A / -B (DITL-23A row 12, START permissive > 1.5 kg/cm2) is the
-     deaerator pressure (ABC-056 AI0417 PT-CD1104) plus the static head of the deaerator water (its level, ABC-031 AI0672 LT-CD1104).
-     Before: the row kept its default 0.75 and the trainee had to FIELD-force it at Hakbang 25.
-     3.2.1 (IRENE 2026-11-04, the two snapshots, docs/hmi/OPERATING_POINTS.md): the pump that is not running (strainer DP 0.00) reads
-     the deaerator pressure plus the static head: low load PICD1104 2.2, PIFW1115B 4.0 (head 1.8 kg/cm2); 03.png 150 MW PIFW1115B 7.1 =
-     the model deaerator ~5.3 + 1.8. So the common suction header has no loss to see (before: ASSUMED head 2.2 less 1.4 at 499 T/H, which
-     gave 5.9 / 6.1 against 6.7 / 7.1). The loss of a running pump is on its own branch (unit.js anFwTagStep, PT-FW1115-A / B).
-     The level: 1 kg/cm2 per 10 m of water (LT-CD1104 mm). */
+  /* The BFWP suction pressure PT-FW1115-A / -B (DITL-23A row 12, START permissive > 1.5 kg/cm2: AND suction valve open, AND lube oil,
+     OR running with a 2 s OFF DELAY), at its transmitter (Phase 11 NANA 2026-11-28, coordinator decision: was the deaerator pressure + a
+     snapshot head of 1.8 kg/cm2 from 02.png / 03.png):
+       P = deaerator PT-CD1104 (ABC-056 AI0417) + the storage water from its level down to the suction tap + the impulse line from
+           the tap down to the transmitter.
+     Elevations (YUA PC reads 2026-11-28, /mnt/project-files/nana-da-elevation-2026-11-28.md and pc-reads-npsh-elev-2026-11-28.md):
+     storage tank CL GL.+32300 on the steel frame TOS GL.+30300 above the roof (E2-0-102 as-built p37 I0-362; A3-0-002 as-built Section
+     A-A p8; the D1-0-038 "GL.+23400" is a rev-3 cloud with no datum, superseded), normal water level CL + 924 = GL.+33224 (D1-0-038
+     p8), LT-CD1104 (ABC-031 AI0672) in mm from it (range -2335 ~ +1095, 0 = NWL); suction tap GL.+12500, transmitter GL.+10600
+     (E2-0-102 p4, I0-303). Calibration (nana-pt-calibration-2026-11-28.md): EJA430E gauge 0 ~ 10 kg/cm2, no suppression, no wet leg.
+     The suction line loss is not modelled (its size and routing are NO-SOURCE; the KSB rated suction 6.00 kg/cm2 g, 997274702 p2, is
+     the pump design basis, below the static head). Water density: IF97 of the deaerator water (U.da.rho, fw.js) and of the impulse
+     line at ambient (U.da.rhoL, a still line). */
   W.sucP = () => {
     const pd = val(['ABC-056', null, 'AI0417']),
-      lv = val(['ABC-031', null, 'AI0672']);
+      lv = val(['ABC-031', null, 'AI0672']),
+      U = (window.AN && AN.unit) || {};
     if (!isFinite(pd)) return NaN;
-    const r = Math.max(0, pd + Math.max(0, 1.8 + (isFinite(lv) ? lv : 0) / 1e4));
+    /* densities from the plant model (fw.js anDeaStep, IF97: U.da.rho the storage water, U.da.rhoL the impulse line at ambient);
+       no plant state yet (plant model off): water at 30 C, IF97 995.7 kg/m3 */
+    const rho = U.da && isFinite(U.da.rho) ? U.da.rho : 995.7,
+      rl = U.da && isFinite(U.da.rhoL) ? U.da.rhoL : 995.7,
+      zw = 33.224 + (isFinite(lv) ? lv : 0) / 1000,
+      r = Math.max(0, pd) + (rho * (zw - 12.5)) / 1e4 + (rl * (12.5 - 10.6)) / 1e4;
     return Math.round(r * 100) / 100;
   };
   W.condP = () => {

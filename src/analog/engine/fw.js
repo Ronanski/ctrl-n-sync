@@ -140,7 +140,7 @@ function anDeaStep(U, dt) {
     C = M * 1000 * cw + K.Mm * 1000 * K.cm /* kJ/K */;
   if (dt > 0) U.da.T = Math.max(Ta - 5, Math.min(200, T + (Q * dt) / C));
   const Pn = Math.max(0, steamPsat(U.da.T));
-  Object.assign(U.da, { P: Pn, M, wx, wb, wp, wd, wc, hx, Q, Pxa });
+  Object.assign(U.da, { P: Pn, M, wx, wb, wp, wd, wc, hx, Q, Pxa, rho: anWaterRho(U.da.T), rhoL: anWaterRho(isFinite(U.Tamb) ? U.Tamb : 30) }); /* rho / rhoL: the BFWP suction PT-FW1115 (plantsw.js W.sucP) */
   U.daIn = wx + wb + wp + wd; /* T/H into the storage water besides the condensate */
   U.daTb = wx; /* the turbine steam taken by the deaerator (the condenser does not get it) */
   if (U.xt && U.xt.dea) anUnitWrite(U.xt.dea, Pn);
@@ -604,17 +604,21 @@ const AN_HD = {
      LCV-HD1106-2   16.820 -  9.900 = 6.920     0 (0.60 - 0.599)                        0.28 - 0.07 = 0.21
      LCV-HD1105-1   16.845 - 27.850 = -11.005   0.511 (-1.50 + 0.989)                   7.62 - 6.083 = 1.537
      LCV-HD1105-2   16.845 -  9.948 = 6.897     0 (0.60 - 0.622)                        0.72 - 0.07 = 0.65
+   LCV-HD1105-1 lifts its drain to the deaerator on the roof frame (H-1104 CL GL.+35600, E2-0-102 p37 / A3-0-002 Section A-A, YUA
+   2026-11-28, nana-da-elevation-2026-11-28.md): at COND 1 its outlet 7.62 is above the saturation of the 166.3 C drain (7.41), so the
+   riser is liquid: outlet static z2 = 35.6 - 27.85 = 7.75 m (0.698 kg/cm2 at 901 kg/m3), its loss 1.537 - 0.698 = 0.839. The
+   others flash at the outlet (two-phase, the mixture density NO-SOURCE): z2 0, all in the loss.
    (W0 = the COND 1 flow: 45.147 / 69.347 t/h; place: No.1 HPH 14.12 ata, deaerator 6.083 ata K2MC2F-001, condenser 0.07 ata HB.)
    Water density: IF97 saturated water (plant.js anWaterRho). */
 const AN_HDV = {
   FL: 0.9 /* DESIGN-SRC: E2-0-123 R1 HD1105 / HD1106 sizing cases (derived, see above) */,
   H6: {
-    p: { cv: 25, x: [0, 20, 32, 57, 100], y: [0, 8.6, 18.16, 51.6, 100], w0: 45.147, z: 16.82 - 16.05, l1: 0.067, l2: 14.48 - 14.12 },
-    a: { cv: 40, x: [0, 14, 24, 43, 100], y: [0, 5.2, 10.95, 31.75, 100], w0: 45.147, z: 16.82 - 9.9, l1: 0, l2: 0.28 - 0.07 }
+    p: { cv: 25, x: [0, 20, 32, 57, 100], y: [0, 8.6, 18.16, 51.6, 100], w0: 45.147, z: 16.82 - 16.05, l1: 0.067, z2: 0, l2: 14.48 - 14.12 },
+    a: { cv: 40, x: [0, 14, 24, 43, 100], y: [0, 5.2, 10.95, 31.75, 100], w0: 45.147, z: 16.82 - 9.9, l1: 0, z2: 0, l2: 0.28 - 0.07 }
   },
   H5: {
-    p: { cv: 50, x: [0, 46, 75, 80, 100], y: [0, 37.2, 76.4, 81.8, 100], w0: 69.347, z: 16.845 - 27.85, l1: 0.511, l2: 7.62 - 6.083 },
-    a: { cv: 69.27, x: [0, 24, 41, 65, 100], y: [0, 6.76, 14.87, 45.47, 100], w0: 69.347, z: 16.845 - 9.948, l1: 0, l2: 0.72 - 0.07 }
+    p: { cv: 50, x: [0, 46, 75, 80, 100], y: [0, 37.2, 76.4, 81.8, 100], w0: 69.347, z: 16.845 - 27.85, l1: 0.511, z2: 35.6 - 27.85, l2: 7.62 - 6.083 - 0.698 },
+    a: { cv: 69.27, x: [0, 24, 41, 65, 100], y: [0, 6.76, 14.87, 45.47, 100], w0: 69.347, z: 16.845 - 9.948, l1: 0, z2: 0, l2: 0.72 - 0.07 }
   }
 };
 /* the valve alone: t/h through valve V at opening x % between p1 and p2 bar a at the valve, drain T C (IEC 60534 liquid, choked) */
@@ -635,7 +639,7 @@ function anHdW(V, x, P1, P2, T) {
     a = 0.0273 * Cv * Math.sqrt(rho),
     b = 0.980665 /* kg/cm2 -> bar */,
     p1 = (P1 + 1.0332 + (rho * V.z) / 10000) * b /* bar a at the valve before the inlet loss */,
-    p2 = (P2 + 1.0332) * b,
+    p2 = (P2 + 1.0332 + (rho * V.z2) / 10000) * b /* bar a at the valve outlet before the outlet loss */,
     k1 = (V.l1 * b) / (V.w0 * V.w0),
     k2 = (V.l2 * b) / (V.w0 * V.w0),
     pv = (steamPsat(T) + 1.0332) * b,

@@ -50,7 +50,7 @@ const html =
     page.evaluate(() => {
       const T = AN.sheets.find(s => s.name === 'ABC-011').S,
         c = AN.hmiCtrls(T).find(x => x.tag === 'TICBR1130');
-      return Object.assign({ ms: Math.round(AN.unit.ms), mv1: Math.round(+T.rt.v[c.out] * 10) / 10 }, AN.unit.tt);
+      return Object.assign({ ms: Math.round(AN.unit.ms), mv1: Math.round(+T.rt.v[c.out] * 10) / 10, daP: AN.unit.da.P, daRho: AN.unit.da.rho, daRhoL: AN.unit.da.rhoL }, AN.unit.tt);
     });
   const a = await read(),
     m = await tt();
@@ -60,7 +60,11 @@ const html =
   ck(K.every(k => a[k] && !/-----/.test(a[k])), 'page 06: the 15 values show a number');
   ck(near('PT-TS1013', 14.07, 1.5) && near('PT-TS1017', 5.3, 0.8), `main steam ${m.ms} T/H: extraction No.2 ${m['PT-TS1013']}, No.3 ${m['PT-TS1017']} kg/cm2 (4.PNG 14.07 / 5.30 at 472.7 T/H)`);
   ck(near('TT-TS1011', 371, 25), `cold reheat to No.2 HPH ${m['TT-TS1011']} C (4.PNG 371)`);
-  ck(near('PT-FW1115-A', 6.7, 0.3) && near('PT-FW1115-B', 7.1, 0.3), `BFWP suction A ${m['PT-FW1115-A']} / B ${m['PT-FW1115-B']} kg/cm2 (03.png 6.7 / 7.1)`);
+  /* Phase 11 NANA 2026-11-28 (coordinator: Rule 0, was the 03.png 6.7 / 7.1 +- 0.3): the suction at the transmitter by the as-built
+     heights (plantsw.js W.sucP): deaerator + the storage water from the normal level GL.+33224 to the tap GL.+12500 + the 1.9 m impulse
+     line; the idle pump B reads that, the running pump A that less its strainer DP. The level offset (LT-CD1104, mm) is within 0.02 */
+  const sB = m.daP + (m.daRho * (33.224 - 12.5)) / 1e4 + (m.daRhoL * 1.9) / 1e4;
+  ck(near('PT-FW1115-B', sB, 0.05) && m['PT-FW1115-A'] <= m['PT-FW1115-B'] && m['PT-FW1115-B'] - m['PT-FW1115-A'] < 0.5, `BFWP suction A ${m['PT-FW1115-A']} / B ${m['PT-FW1115-B']} kg/cm2 (as-built head ${sB.toFixed(2)}; 03.png 6.7 / 7.1, a check only)`);
   ck(near('TT-FW1011', 162, 8) && near('PT-FW1160', 137.7, 8), `BFWP discharge ${m['TT-FW1011']} C, economizer inlet ${m['PT-FW1160']} kg/cm2 (03.png 162 / 137.7)`);
   ck(m['ZT-FW1110-2'] >= 99 && m['ZT-FW1110-1'] > 0, `No.1 SH spray MV ${m.mv1} %: valves ${m['ZT-FW1110-1']} / ${m['ZT-FW1110-2']} % (LN47 / LN46)`);
   ck(m['FT-FW1109'] > 5 && m['FT-FW1109'] <= 60 && m['FT-FW1119'] >= 0 && m['FT-FW1149'] >= 0 && m['FT-FW1059'] >= 0, `spray flows No.1 ${m['FT-FW1109']}, No.2 ${m['FT-FW1119']}, RH ${m['FT-FW1149']}, HP bypass ${m['FT-FW1059']} T/H`);
