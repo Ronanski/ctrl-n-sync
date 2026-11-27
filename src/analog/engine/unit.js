@@ -3048,10 +3048,13 @@ function anGenEl() {
      78 K at the rated current 7,384 A; the rise is the I2R loss of the armature (3 I^2 Ra, Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2;
      GEE-2014-0322 5.6.2 c), so rise = 78 K x (I / 7.384 kA)^2.
      The six RTD read one value: the docs give no difference between the slots. The TCS alarm GD-5 HIGH 123 C is the same limit.
-   - AC exciter outlet air (TIGE1005): the air into the exciter is taken as the cold air of the generator circuit (45 C nameplate over the
-     cooling water, as above). Its rise = the exciter loss (type test p31, qEx x (main field / 1,141 A)^2, 29 kW at the rating) / (air
-     flow x cp) needs the exciter air flow, which is NO-SOURCE (not in GAE-2013-0136 R2, GAE-2014-0791 R0 or the loss test: asked of the
-     PC read). So the rise is not added: TIGE1005 reads the inlet air, the lower bound of the outlet. No plant reading is used (rule 0).
+   - AC exciter outlet air (TIGE1005): the exciter breathes the cold gas of the generator closed circuit through its "To Exciter" pipe
+     pair after the main cooler and returns it there (generator O&M OM1 p45 Fig 2.8 M0206, p79 10.3.2; no cooler or fan of its own; read
+     by YUA 2026-11-28, /mnt/project-files/yui-reads-5.md). Inlet = the cold air above. Rise = the exciter loss / (air flow x cp), the loss
+     from the type test p31: qEx 29 kW x (main field / 1,141 A)^2. The air flow is NOT IN DOCS: DERIVED from the design normal outlet
+     90 C of TE-GEn005 (OM2 p212 dwg 310SC99-329, p203 dwg 310SC99-321 row 47) over the 45 C nameplate cold air = 45 K at the rated
+     field, i.e. 29 kW / (1.005 kJ/kg K x 45 K) = 0.64 kg/s, held at every load (the rotor fan, fixed speed). So rise = 45 K x
+     (main field / 1,141 A)^2. No plant reading is used (rule 0).
    At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs).
    THE GENERATOR LOSSES (Phase 11 YUI, 2026-11-27, was: the rated heat duty of the four air coolers 2,120 kW less the copper losses,
    DERIVED): the SEGREGATED LOSS TABLE of the type test of this machine, MHPS LM-GEE-2014-0822 R0 Inspection Report for Generator,
@@ -3081,6 +3084,7 @@ const AN_GENT = {
   ifMain: 463 / 4.5 /* A main field per A exciter field */,
   ifT: 1141 /* A main field at the rating in the loss test (LM-GEE-2014-0822 R0 p31) */,
   qEx: 29 /* kW exciter loss at ifT (same p31) */,
+  exR: 90 - 45 /* K exciter air rise at ifT: design normal outlet 90 C (TE-GEn005, 310SC99-329) - nameplate cold air 45 C, DERIVED above */,
   qSt: 283 /* kW stray load loss at the rated current (same p31) */,
   qFe: 388 /* kW core loss at 1.0 pu voltage (same p31) */,
   qFw: 875 /* kW friction and windage at 3600 rpm (same p31) */,
@@ -3097,7 +3101,7 @@ function anGenTemp(U, G, dt) {
     rise = (K.tLim - K.tCold) * (G.kA / K.In) ** 2;
   T.ta.forEach((v, i) => (T.ta[i] += (air - v) * a));
   T.ts.forEach((v, i) => (T.ts[i] += (air + rise - v) * a));
-  T.ex += (air - T.ex) * a; /* the exciter air rise: NO-SOURCE, above */
+  T.ex += (air + (turn ? K.exR * ((G.If * K.ifMain) / K.ifT) ** 2 : 0) - T.ex) * a; /* the exciter air: cold gas + its loss rise, above */
   const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600)),
     ifm = G.If * K.ifMain,
     V = U.gen && isFinite(U.gen.V) ? U.gen.V : 0,

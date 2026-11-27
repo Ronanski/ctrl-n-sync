@@ -17,7 +17,7 @@ Ano ang tiningnan: ang "manipis na margin" ng reverse power (−2.34 MW laban sa
 - Sa model: ang trip flag ay I.0400 mula sa TA-6, kaya bukas na ang 52G sa valve full close. Ang tunay na mali (nakita ni RIN): hindi binabasa ng steam flow ang stop valves, kaya ang power ay nanatili sa 152 MW hanggang sa pagbukas ng 52G. Si RIN ang mag-aayos sa susunod niyang PR (ang CV / ICV flow ay pinararami sa stop valve opening).
 
 ## Rule 0 (user 5:18 AM PHT): walang snapshot sa generator files
-- TIGE1005 (AC exciter outlet air): tinanggal ang 80 C / 7.85 A ng screen P35SHAFT. Ngayon = cold air ng generator circuit (45 C nameplate). Ang rise = exciter loss / (air flow x cp), at ang air flow ay NO-SOURCE (hiningi sa PC read).
+- TIGE1005 (AC exciter outlet air): tinanggal ang 80 C / 7.85 A ng screen P35SHAFT. Ngayon = cold air ng generator closed circuit (45 C nameplate; ang exciter ay humihinga mula rito, O&M OM1 p45 Fig 2.8) + rise na 45 K x (main field / 1,141 A)^2. Ang 45 K = design normal outlet 90 C (TE-GEn005, 310SC99-329) less 45 C, kaya air flow 29 kW / (1.005 x 45) = 0.64 kg/s (DERIVED, yui-reads-5.md).
 - gen-electrical test: tinanggal ang INFO line ng screen 37.PNG.
 
 ## Test
