@@ -1331,7 +1331,9 @@ const AN_CD = {
    At the design point the balance gives 31.56 A exactly; at the KSB duty 252 kW 27.0 A; at shut-off (105 kW) 14.6 A. Snapshot check only
    (28.png CP-A 28.1 A at 150 MW). DESIGN-SRC: K1AU3-E1-0-302 Rev A, induction motor equivalent circuit */
 const AN_CD_M = { V: 6.6, P: 298.4, eff: 0.94, pf: 0.88, i0: 0.3, fix: 0.36 };
-function anCepI(Ps) {
+/* Phase 11 (YUI, MEI OK): o (optional) gets the electrical input of the same fixed point, o.P kW and o.Q kvar (house load, port
+   q.motor.MEI) */
+function anCepI(Ps, o) {
   const M = AN_CD_M,
     r3 = Math.sqrt(3),
     Pin = M.P / M.eff,
@@ -1345,6 +1347,7 @@ function anCepI(Ps) {
       P = Math.max(0, Ps) + M.fix * Pl + (1 - M.fix) * Pl * u,
       Q = Q0 + (Qfl - Q0) * u;
     I = Math.sqrt(P * P + Q * Q) / (r3 * M.V);
+    if (o) (o.P = P), (o.Q = Q);
   }
   return I;
 }
@@ -1479,10 +1482,14 @@ function anCondStep(U, dt) {
   U.cdHw = hw;
   U.cdRun = run;
   U.cdPd = Math.max(0, Math.min(25, anCdPdis(Qt, n, U.cdP, hw)));
+  const el = { P: 0, Q: 0 };
   run.forEach((r, i) => {
-    U['cdI' + i] = r ? Math.round(10 * anCepI(swInterp(K.pQ, K.pP, q))) / 10 : 0;
+    const o = {};
+    U['cdI' + i] = r ? Math.round(10 * anCepI(swInterp(K.pQ, K.pP, q), o)) / 10 : 0;
+    if (r) (el.P += o.P), (el.Q += o.Q);
     U['cdDp' + i] = r ? Math.round(1000 * K.dp0 * (q / K.q0) * (q / K.q0)) / 1000 : 0;
   });
+  if (typeof anPortSet === 'function') anPortSet(U, 'q.motor.MEI', el);
 }
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
@@ -1914,18 +1921,16 @@ function anAsTagStep(U, dt) {
      aux header       in: PCV-AS1010 (PICAS1004 MV, ABC-030) from the main steam through the MOV MV-AS1391 (DITL-51), Cv 93 (plant study
                       04 from the L21 sheet: 45,500 kg/h, 60.2 -> 11.4 kg/cm2 G); PCV-AS1020-1 Cv 341.5 linear and PCV-AS1020-2 Cv 9 linear
                       (E2-0-123 p32 / p37) from the cold reheat, their openings = F(X) LN17 / LN16 of the PICAS1005 MV (ABC-030);
-                      out: deaerator pegging PCV-AS1030 (PICCD1104 MV, ABC-056) Cv 253.7 (E2-0-123 p42, linear: NO-SOURCE characteristic)
+                      out: deaerator pegging PCV-AS1030 (PICCD1104 MV, ABC-056) Cv 253.7 (E2-0-123 p42, RAVEN curve #50 of p43: AN_AS.ch1030)
                       to the deaerator pressure PT-CD1104; the steam jet air ejector MV-AS1396 (DITL-55) 223 + 202 = 425 kg/h and the
                       start-up ejector MV-AS1395 (DITL-54) 1477 kg/h at 11 kg/cm2 G (ED 066 p6 / p9), a choked nozzle: x (P / 12.03 abs);
-                      the steam seal feed valve PV-GS1031; the volume 6 m3 is NO-SOURCE (the 12-inch header and branches are only on
-                      the scanned P&ID PD-014); the header steam at 350 C (MB-014 items 2 / 5 operating 11 kg/cm2 G, 350 C);
+                      the steam seal feed valve PV-GS1031; the volume 5.5 m3 of the isometrics (AN_AS.Va); the header steam at 350 C (MB-014 items 2 / 5 operating 11 kg/cm2 G, 350 C);
      gland header     PV-GS1031 Cv 75 linear DN80 (TG maintenance manual p2385 ~ 2394) from the aux header, PV-GS1034 unloading Cv 375
                       equal % (p2395 ~ 2404) to the No.1 LP heater; one PI on PT-GS1001 (p103: feed at vacuum up / low load, unloading
                       spills the surplus on load), split at 0; set point 0.32 kg/cm2 G (29.PNG 150 MW; the feed valve sheet NOR outlet
                       1.31 kg/cm2 A = 0.28 G); PI gains NO-SOURCE; the glands take K sqrt(P^2 - Pc^2) (labyrinth), K from the NOR case
                       2170 kg/h at 1.31 abs into a condenser at 0.07 abs; on load the HP / IP packing leaks into the header with the cold
-                      reheat pressure (CALC: 2694 kg/h at 150 MW = the glands 2243 + the unloading valve 451 at 42.6 %, 29.PNG); volume
-                      1.5 m3 NO-SOURCE; "in service" (ATS 1.10) = header >= 0.10 kg/cm2 G (IBD TD-3 LOW alarm);
+                      reheat pressure (Hitachi HB case 1: 1,820 kg/h at 150 MW, AN_AS.Whp0); volume 0.45 m3 (AN_AS.Vg); "in service" (ATS 1.10) = header >= 0.10 kg/cm2 G (IBD TD-3 LOW alarm);
      condenser air    the evacuated volume 338 m3 (ED 066 p15) at the condenser temperature; in: the air in-leakage, an orifice that passes
                       the design 25.5 kg/h (ED 066 p6) at the design 0.055 kg/cm2 A, the LP glands while their steam is below the
                       atmosphere (orifice CdA 0.00072 m2, NO-SOURCE: 610 kg/h into full vacuum, the gland clearances are not in the docs),
@@ -1938,13 +1943,20 @@ function anAsTagStep(U, dt) {
      Check: the start-up ejector alone takes the condenser from 1.03 to 0.345 kg/cm2 A in about 14 min in this model; ED 066 p15 gives
      20 min (its p16 capacity curve, read from the plot, is higher than the p15 pump-down needs). */
 const AN_AS = {
-  Va: 6 /* m3, NO-SOURCE */,
-  Vg: 1.5 /* m3, NO-SOURCE */,
+  /* Phase 11 (SUZU 2026-11-28; were 6 / 1.5 m3 NO-SOURCE): YUA read suzu-aux-steam-2026-11-28.md. Va = every aux steam line of the
+     isometrics K1AU3-MM-2304 (pipe BOM lengths x the B36.10 bore, the 12" header AS-1-005 33.2 m = 2.40 m3 of it), 5.5 m3 DERIVED; Vg =
+     the gland seal header between PV-GSn031 / PV-GSn034 and the packings (MHPS 310QK05-228 / 229 as built: DN200 header 8.7 m with
+     fittings 0.28 m3 + the feed / dump DN200 piping 0.165 m3), 0.45 m3 DERIVED (the packing chambers are not in the docs) */
+  Va: 5.5,
+  Vg: 0.45,
   Ta: 350,
   Tg: 260 /* PV-GS1031 sheet 260 C */,
   cv1010: 93,
   cv1020: [341.5, 9],
   cv1030: 253.7,
+  /* PCV-AS1030 trim RAVEN, E2-0-123 R1 p43 "CURVE #50 - RAVEN CUSTOM": lift % -> Cv share (YUA pixel read, DERIVED; near linear above
+     10 % with a low-lift toe; checks the p42 cases: COND 1 Cv 190 at 73 %, COND 2 Cv 17.9 at 15 %); was linear (NO-SOURCE) */
+  ch1030: [[0, 0], [7, 0.025], [10, 0.057], [15, 0.116], [20, 0.173], [30, 0.3], [40, 0.425], [50, 0.545], [60, 0.658], [70, 0.767], [80, 0.873], [87.5, 0.945], [92, 0.96], [100, 1]],
   cvGf: 75,
   cvGu: 375,
   ej: { sjae: 425, start: 1477, Pm: 12.0332 },
@@ -2132,7 +2144,7 @@ function anAuxStep(U, dt) {
         m1391 > 0 && o1004 > 0 ? 1 / Math.sqrt(1 / Math.pow(K.cv1010 * o1004, 2) + 1 / Math.pow(1500 * m1391, 2)) : 0,
       w1010 = anStmW(cvA, Pms, Pa, Tms),
       w1020 = anStmW(K.cv1020[0] * o1020[0] + K.cv1020[1] * o1020[1], Pcr, Pa, Tcr),
-      w1030 = anStmW(K.cv1030 * o1030, Pa, Pdea, K.Ta),
+      w1030 = anStmW(K.cv1030 * anAsTab(K.ch1030, 100 * o1030), Pa, Pdea, K.Ta),
       wej = (K.ej.sjae * m1396 + K.ej.start * m1395) * fm,
       /* gland PI (split range at 0: + opens the feed valve, - opens the unloading valve) */
       e = K.gSv - Pg;
@@ -3036,7 +3048,7 @@ function anGenEl() {
   };
 }
 /* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): the generator temperatures of pages 13 / 17 and of TCS GD-5 from the design of
-   the machine (was: the readings of screen P35SHAFT at 130 MW scaled with the current squared).
+   the machine.
    - cooling gas after the four air coolers H-1971A ~ D (TIGE10041 ~ 44): the cooler water is the closed (auxiliary) cooling water supply
      (AN_ACW, U.acT2). DESIGN-SRC: nameplate 310SD18-613 (generator O&M GAE-2014-0791 R0 PDF p180, read by YUA 2026-11-27) "cold air
      45 C", with GAE-2013-0136 R2 p1 "Temperatures Cooling Water Max. 37 C": the coolers hold 45 C gas with 37 C water, approach
@@ -3047,8 +3059,13 @@ function anGenEl() {
      78 K at the rated current 7,384 A; the rise is the I2R loss of the armature (3 I^2 Ra, Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2;
      GEE-2014-0322 5.6.2 c), so rise = 78 K x (I / 7.384 kA)^2.
      The six RTD read one value: the docs give no difference between the slots. The TCS alarm GD-5 HIGH 123 C is the same limit.
-   - AC exciter outlet air (TIGE1005): its rise follows the exciter field squared; its rated rise is not in the docs, so it stays on the
-     old reading 80 C at 7.85 A (screen P35SHAFT, a check value; finding for the PC lookup).
+   - AC exciter outlet air (TIGE1005): the exciter breathes the cold gas of the generator closed circuit through its "To Exciter" pipe
+     pair after the main cooler and returns it there (generator O&M OM1 p45 Fig 2.8 M0206, p79 10.3.2; no cooler or fan of its own; read
+     by YUA 2026-11-28, /mnt/project-files/yui-reads-5.md). Inlet = the cold air above. Rise = the exciter loss / (air flow x cp), the loss
+     from the type test p31: qEx 29 kW x (main field / 1,141 A)^2. The air flow is NOT IN DOCS: DERIVED from the design normal outlet
+     90 C of TE-GEn005 (OM2 p212 dwg 310SC99-329, p203 dwg 310SC99-321 row 47) over the 45 C nameplate cold air = 45 K at the rated
+     field, i.e. 29 kW / (1.005 kJ/kg K x 45 K) = 0.64 kg/s, held at every load (the rotor fan, fixed speed). So rise = 45 K x
+     (main field / 1,141 A)^2. No plant reading is used (rule 0).
    At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs).
    THE GENERATOR LOSSES (Phase 11 YUI, 2026-11-27, was: the rated heat duty of the four air coolers 2,120 kW less the copper losses,
    DERIVED): the SEGREGATED LOSS TABLE of the type test of this machine, MHPS LM-GEE-2014-0822 R0 Inspection Report for Generator,
@@ -3072,15 +3089,13 @@ const AN_GENT = {
   tCw: 37 /* C, cooling water max (GAE-2013-0136 R2) */,
   tLim: 123 /* C, stator winding total limit by RTD (GEE-2014-0322 R2 p4) */,
   In: 7.384 /* kA rated (GAE-2013-0136 R2) */,
-  ex: 80,
-  tA: 41,
-  If: 7.85,
   tau: 600,
   Ra: 0.001051 /* ohm, armature 1 phase at 95 C */,
   Rf: 0.2188 /* ohm, main field at 95 C */,
   ifMain: 463 / 4.5 /* A main field per A exciter field */,
   ifT: 1141 /* A main field at the rating in the loss test (LM-GEE-2014-0822 R0 p31) */,
   qEx: 29 /* kW exciter loss at ifT (same p31) */,
+  exR: 90 - 45 /* K exciter air rise at ifT: design normal outlet 90 C (TE-GEn005, 310SC99-329) - nameplate cold air 45 C, DERIVED above */,
   qSt: 283 /* kW stray load loss at the rated current (same p31) */,
   qFe: 388 /* kW core loss at 1.0 pu voltage (same p31) */,
   qFw: 875 /* kW friction and windage at 3600 rpm (same p31) */,
@@ -3094,11 +3109,10 @@ function anGenTemp(U, G, dt) {
     a = Math.min(1, dt / K.tau),
     cw = isFinite(U.acT2) ? U.acT2 : Ta,
     air = turn ? cw + (K.tCold - K.tCw) : Ta,
-    rise = (K.tLim - K.tCold) * (G.kA / K.In) ** 2,
-    rf = (G.If / K.If) ** 2;
+    rise = (K.tLim - K.tCold) * (G.kA / K.In) ** 2;
   T.ta.forEach((v, i) => (T.ta[i] += (air - v) * a));
   T.ts.forEach((v, i) => (T.ts[i] += (air + rise - v) * a));
-  T.ex += (air + (K.ex - K.tA) * rf - T.ex) * a;
+  T.ex += (air + (turn ? K.exR * ((G.If * K.ifMain) / K.ifT) ** 2 : 0) - T.ex) * a; /* the exciter air: cold gas + its loss rise, above */
   const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600)),
     ifm = G.If * K.ifMain,
     V = U.gen && isFinite(U.gen.V) ? U.gen.V : 0,
@@ -3285,7 +3299,7 @@ const AN_SB = {
      and rows 18 / 19 (> 250 C = the drain SOVs XV-SB1054 / 1059 close by themselves). Flow diagram PD-015: the steam comes from the
      S/H panel #1 outlet. Its temperature (CALC): the heat balance of the No.1 spray, steam in = (steam out x h(spray 1 outlet) - spray x
      h(water)) / (steam out - spray), steam out = main steam - No.2 spray (FT-FW1119), spray FT-FW1109 at TT-FW1011, h(water) = 4.19 x T
-     (liquid, within 2 % of the steam table), pressure = drum - 6.4 x (main steam / 474.1)^2 (03.png PIBR1130). Check at 03.png (150.5 MW:
+     (liquid, within 2 % of the steam table), pressure = the PT-BR1130 tap of KANA's SH drop law (anShTap). Check at 03.png (150.5 MW:
      MSF 474.1, spray 37.5 / 28.2 T/H, TICBR1130 394 C, PIBR1130 127.8, TIFW1011 162 C): 460 C against TT-BR1120-1 / -2 458 / 454 C.
      Through MV-SB1001 and PCV-SB1053 the steam is throttled at constant enthalpy to the header pressure (PICSB1052): steam.js steamTph
      (IAPWS-IF97 region 2). With steam in the header (above 0.5 kg/cm2: 18.PNG reads 0.4 with MV-SB1001 shut) the drains go to that
@@ -3308,7 +3322,9 @@ function anSbDrain(U, dt, P) {
     Tf = tt['TT-FW1011'] != null && isFinite(tt['TT-FW1011']) ? +tt['TT-FW1011'] : Ta;
   let Ts = NaN;
   if (isFinite(T1) && Pd > 0) {
-    const P1 = Math.max(0, Pd - 6.4 * (ms / 474.1) * (ms / 474.1)),
+    /* Phase 11 (SUZU 2026-11-28, NO-FIT-OK: history; was drum - 6.4 x (MSF / 474.1)^2 of 03.png): the PT-BR1130 tap of KANA's SH drop
+       law (anShTap, FHI design drop 16 kg/cm2 at 460 T/H with the steam density; its tap share is KANA's open item) */
+    const P1 = Math.max(0, anShTap(U, AN_SHDP.s1, Pd, ms)),
       mo = ms - w2;
     Ts = Math.max(T1, steamTsat(P1));
     if (w1 > 0 && mo - w1 > 1) Ts = steamTph(P1, (mo * steamH(P1, Ts) - w1 * 4.19 * Tf) / (mo - w1));

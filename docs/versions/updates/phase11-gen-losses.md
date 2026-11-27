@@ -26,7 +26,7 @@ Source reads: /mnt/project-files/yui-reads-2.md (YUA, PC, 2026-11-27 10:36 to 11
 ## 3. AVR and exciter: checked, no change
 - The ceiling 109.8 V / 17.6 A and the no-load 28 V / 4.5 A (E33 p6) are already the values in tcs-gen.js.
 - T'do: the as-built data sheet GAE-2013-0136 R2 gives 7.69 s, kept. The 2013 Hitachi reply gives 8.6 s. The measured Td' 0.92 s (GEN p27) agrees with both within the spread of Xd (1.92 vs 2.1).
-- Still NOT IN DOCS: the AVR gains and step test (the E33 site pages are blank), the exciter T'do, the exciter air flow and its rise. TIGE1005 stays on its old check value.
+- Still NOT IN DOCS: the AVR gains and step test (the E33 site pages are blank), the exciter T'do, the exciter air flow and its rise. TIGE1005 reads the generator cold air, with the rise NO-SOURCE (phase11-gen-reverse-power.md).
 
 ## Test
 - gen-electrical: the loss terms sum to 2,032 kW at the rating; L and the cooler duty match the formula at 150 MW; reverse power -2.5 MW, 86G-A / B 11 s after, turbine off.
