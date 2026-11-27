@@ -1,0 +1,1 @@
+# tests that must run alone, one path a line (tests/lanes/run-all.cjs). Empty: every test runs in parallel.

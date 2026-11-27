@@ -77,8 +77,8 @@ const AN_UNIT = {
   /* other steam outlets of the main steam line, flow at 100 % open and the anchor pressure, as a share of the anchor flow (the valve
      sizes: valve sheets below): ABC-050 PICMS1006 HP turbine bypass PCV-MS1020 (main steam -> cold reheat) and
      ABC-013 PICMS1002 main steam blow-off PCV-MS1001 (start-up vent to the silencer) */
-  hpb: 0.48 /* PCV-MS1020, valve sheet L21: 141.7 T/H at 62 % stroke, trim Cv 215 = about 227 T/H (plant-study/12-assumptions.md) */,
-  blo: 0.46 /* PCV-MS1001, valve sheet E2-0-123 p5: 184 T/H at 76 % travel, full Cv 232 = about 217 T/H */,
+  /* the HP bypass PCV-MS1020 and the blow-off PCV-MS1001: their flow by the valve law and the vendor Cv (turbine.js AN_VLV, anVlvW;
+     Phase 11 rank 9, was the shares hpb 0.48 / blo 0.46 of the anchor flow) */
   /* 2.2.0-beta.11 (M2 steps 1 ~ 3): reheat, temperatures, O2.
      - Reheat pressure (ABC-052 PT-HR1003-1 / -2, ABC-019 PT-CR1006 cold reheat, ABC-052 PT-ST1001 first stage): the IP / LP turbine
        is a fixed nozzle, so its inlet pressure is proportional to the steam through it (design: RH 401 T/H, MHPS HB PPE-14-0725 p6 HRH 400,944 kg/h, MB-012; the FHI "181.9 T/H" is lb/h read as kg/h; at 36.6 / 35.1 kg/cm2
@@ -95,18 +95,15 @@ const AN_UNIT = {
      - O2 (ABC-002 AT-FG1122 / 1123): O2 = 21 x (1 - stoichiometric air / total air), total air = PA + SA + FA of ABC-006 (FT-FA1071,
        FT-FA1081, FT-FA1055), stoichiometric air per T/H of coal AN_GAS.afs (boiler.js, FHI Tab 3); it replaced the anchor (O2 4.3 % at the snapshot air and coal: excess air
        about 26 %; design 20 %). Analyzer lag tauO2 (ASSUMED). PA to the furnace FT-FA1079 (ABC-006 indicator) follows the PAF flow */
-  lpb: 1.05 /* PCV-HR1010, L21: 87.4 T/H at 8.3 ata at 81 % stroke, trim Cv 1700 = about 117 T/H. Before, 0.8. */ /* 2.2.0-beta.16: was 0.3; sized so that at 7.5 kg/cm2 it passes the HP bypass flow of the bypass servicing with the valve
-    in its working range (PR-OPE-5002: steam flow > 40 T/H, RH pressure 7.5 ksc held by the LP bypass in AUTO): 0.8 x 475 x 7.6 / 34.4 =
-    84 T/H, about 60 % open at 50 T/H (that sizing replaced by the L21 sheet above) */,
-  tauRH: 10,
+  /* the LP bypass PCV-HR1010: turbine.js AN_VLV.lpb (Cv 1700, Phase 11 rank 9; was lpb 1.05 of the anchor flow). tauRH (10 s) deleted:
+     read nowhere (audit B6) */
   /* 2.2.0-beta.16 (M4 step 3, bypass system and pressure raise): while the turbine is shut (cold start, before the roll) the reheater
      is a closed volume: the HP bypass fills it, the LP bypass (ABC-052 PCV-HR1003) and the RH blow-off (ABC-054 PICHR1391, PR-OPE-5002
      "Reheat blow-off MVHR1391 open" for warming, closed when the LP bypass is in service) empty it. Crh = steam stored per kg/cm2 of
      hot reheat pressure ((T/H) x s per kg/cm2; the reheater alone is 60 m3 (FHI T8T2 60,068 kg of water, hydro test 60 m3; RH alone Crh = 120), the piping volume is NO-SOURCE, about 200 m3 in all kept: steam at
      7.6 kg/cm2 is about 4 kg/m3, so about 110 kg per kg/cm2 = 400 (T/H) x s; 40 T/H through the HP bypass fills 0 -> 7.6 kg/cm2 in
      about 75 s); rhb = size of the RH blow-off as a share of the anchor flow at the anchor reheat pressure (silencer, below) */
-  Crh: 400,
-  rhb: 0.42 /* RH blow-off: silencer Z-1006 200 T/H (Equipment List p2); no valve sheet in the docs */,
+  /* Crh (the reheater steam storage) and rhb (RH blow-off) are turbine.js AN_VLV.Crh / rhbT (engine constants, Phase 11 rank 9) */
   /* 2.2.0-beta.17 (M4 step 4, turbine roll / sync / load up; PR-OPE-5002 4.4 ~ 4.6): the turbine and its TCS are a black box outside
      the DCS drawings (the DCS only sees the TCS digital inputs of the I/O list and the TARGET MW feedback AI0420). State U.tb:
      st 'off' (stop valves shut) -> 'roll' (rpm ramps at rollRate, IP START MODE: the ICV lets roll steam from the hot reheat, icvRoll)
@@ -241,6 +238,10 @@ const AN_UNIT = {
   vacUp: 1846 /* ED 066 p15: starting ejector 0.345 kg/cm2 A at 20 min, 65 % of full vacuum */,
   vacDn: 60
 };
+/* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
+   whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
+   code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
+const AN_UNIT_K = ['tauMW', 'tcs', 'hpb', 'blo', 'lpb', 'tauRH', 'Crh', 'rhb', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'tauTrip', 'droop', 'flowSpan', 'tSc', 'tXo', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'kfp', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -409,12 +410,12 @@ function anUnitStart() {
     return c && c.out != null ? { S: x.S, n: c.out, c, t } : null;
   };
   U.vlv = [
-    ['ABC-050', 'PICMS1006', U.hpb, 1 /* to the cold reheat */],
-    ['ABC-013', 'PICMS1002', U.blo, 0]
+    ['ABC-050', 'PICMS1006', 1 /* to the cold reheat: AN_VLV.hpb */],
+    ['ABC-013', 'PICMS1002', 0 /* to the silencer: AN_VLV.blo */]
   ]
-    .map(([k, t, f, rh]) => {
+    .map(([k, t, rh]) => {
       const o = ctlOut(k, t);
-      return o ? { S: o.S, n: o.n, f, rh, t } : null;
+      return o ? { S: o.S, n: o.n, rh, t } : null;
     })
     .filter(Boolean);
   /* 2.2.0-beta.14: the oil flow of the four start-up burners (PV of FICDO1043A ~ D after the gate of the drawing) */
@@ -1216,10 +1217,12 @@ const AN_SW_V0 = {
      heat         Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history, was oil 64.5 kW/K and 1,032 kW fitted on snapshot 36.PNG): the vendor
                   design point of the cooler itself (O&M L2 TG 2-3): 1,300 kW with the oil 63.0 -> 46 C, so the oil flow is 1,300 / 17 =
                   76.5 kW/K (2,670 L/min of ISO VG 32 at 0.86 kg/L x 2.0 kJ/kg K = the 2,660 L/min maximum of the sheet); the bearing
-                  heat 1,300 kW at 3600 rpm x speed / 3600 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js),
-                  linear in speed NO-SOURCE (as the 16 C x speed of tcs.js). MB-021 items 12 / 13 (170 T/H 34 -> 41 C = 1,384 kW) is
+                  heat 1,300 kW at 3600 rpm x (speed / 3600)^2 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js):
+                  the friction of a journal bearing at a fixed oil viscosity (Petroff: torque ~ speed, power ~ speed^2, DERIVED; was
+                  linear in speed, NO-SOURCE). MB-021 items 12 / 13 (170 T/H 34 -> 41 C = 1,384 kW) is
                   the water side sizing of the same cooler, 6 % above the vendor duty;
-     oil tank     one temperature node (the return oil), 25,800 kJ/K (about 15 m3 of oil, NO-SOURCE: the tank volume is not in the docs);
+     oil tank     one temperature node (the return oil): main oil tank T-n920 13,200 L normal (21,500 L max; YUA PC read, project file
+                  suzu-leftovers-doc-reads.md) x 0.86 kg/L x 2.0 kJ/kg K = 22,704 kJ/K (was 25,800, NO-SOURCE);
      cooler node  3.2.5 (JENNIE): the oil and the plates inside the cooler are a second node, Ch = 730 kJ/K (CALC from the vendor area
                   146.94 m2: oil channels = half of a 3 mm plate gap -> 0.22 m3 x 0.86 kg/L x 2.0 kJ/kg K = 379 kJ/K; plates 0.6 mm
                   stainless -> 0.088 m3 x 7,900 kg/m3 x 0.5 kJ/kg K = 348 kJ/K; gap and plate thickness NO-SOURCE, the usual values of a
@@ -2135,17 +2138,17 @@ function anAuxStep(U, dt) {
   if (U.gsAI) anUnitWrite(U.gsAI, U.gsV31);
 }
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
-const AN_LO = { UA: 95.8, Co: 1300 / (63.0 - 46), Qb: 1300, Wmax: 170, M: 25800, Ch: 730, Tamb: 30 } /* DESIGN-SRC: O&M L2 TG 2-3 */;
+const AN_LO = { UA: 95.8, Co: 1300 / (63.0 - 46), Qb: 1300, Wmax: 170, M: 13.2 * 860 * 2.0, Ch: 730, Tamb: 30 } /* DESIGN-SRC: O&M L2 TG 2-3; M: main oil tank T-n920 13,200 L normal (YUA read suzu-leftovers-doc-reads.md) */;
 function anLubeCoolStep(U, dt) {
   const K = AN_LO,
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
     flow = (+U.loBrg || 0) > 1.05,
-    mv = U.loMv ? Math.max(0, Math.min(100, anAv('TICLO1002', +U.loMv.S.rt.v[U.loMv.n] || 0))) : 53.1,
-    acw = Math.max(0, Math.min(1, (+U.acQ || 0) / 1500)),
+    mv = U.loMv ? Math.max(0, Math.min(100, anAv('TICLO1002', +U.loMv.S.rt.v[U.loMv.n] || 0))) : 0 /* no TICLO1002 output: no command, TCV-CW1201 shut (was the 27.PNG 53.1 %) */,
+    acw = Math.max(0, Math.min(1, (+U.acQ || 0) / AN_ACW_MB.Q)) /* MB-021 design flow */,
     W = (K.Wmax * mv * acw) / 100 /* T/H */,
     Cw = (W * 1000 * 4.18) / 3600,
     Tw = isFinite(U.acT2) ? U.acT2 : K.Tamb,
-    Qb = flow ? K.Qb * sp : 0;
+    Qb = flow ? K.Qb * sp * sp : 0 /* journal bearing friction ~ speed^2 (Petroff, DERIVED) */;
   let q = 0;
   const hx = Ti => {
     if (!flow || !(Cw > 0)) return 0;
@@ -3892,7 +3895,17 @@ function anUnitStep0(dt) {
     qHp = qOn(U.qo && U.qo.hp);
   for (const x of U.vlv) {
     const o = x.rh && qHp ? 100 : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))),
-      q = (((x.f * U.m0 * o) / 100) * P1) / U.P0;
+      /* Phase 11 rank 9: the valve law of the vendor Cv (turbine.js anVlvW): main steam at the SH outlet (P1, the finishing SH steam
+         temperature) to the reheater (its pressure, the step before: the cold reheat line is the reheater inlet; with the turbine
+         tripped the steam path has no HP exhaust pressure of its own) or to the silencer (atmosphere; the blow-off is choked at every
+         pressure above 3 ata) */
+      q = anVlvW(
+        x.rh ? AN_VLV.hpb : AN_VLV.blo /* by the outlet, not a field of U.vlv: a save point restores U.vlv as it was saved */,
+        o,
+        P1 + 1.0332,
+        U.hxO && isFinite(U.hxO.ms) ? U.hxO.ms : steamTsat(P1),
+        x.rh ? Math.max(0, +U.Prh || 0) + 1.0332 : 1.0332
+      );
     U.mb += q;
     if (x.rh) {
       U.mhp += q;
@@ -4202,10 +4215,14 @@ function anUnitStep0(dt) {
        pressure (as the outlets of the main steam line). 2.2.0-beta.17: + the ICV flow (roll steam, initial load) until the transfer */
     const Prh0 = U.rhp.length && U.rhp[0].a0.length && U.rhp[0].a0[0] > 0 ? U.rhp[0].a0[0] : 34,
       orb = U.rhbv ? Math.max(0, Math.min(100, +U.rhbv.S.rt.v[U.rhbv.n] || 0)) : 0,
-      qout = (U.m0 * U.rr * (U.lpb * olp + U.rhb * orb)) / 100 + qip + (U.msvR = anSvFlow(U, AN_SV.r, U.rr * Prh0)); /* 3.2.4-beta.1 RH safety valves */
+      /* Phase 11 rank 9: the LP bypass PCV-HR1010 by the valve law of its vendor Cv (turbine.js anVlvW): hot reheat (this pressure,
+         the reheater outlet temperature) to the condenser; the RH blow-off MV-HR1391 at its silencer rating (AN_VLV.rhbT) */
+      qlp = anVlvW(AN_VLV.lpb, olp, U.rr * Prh0 + 1.0332, U.hxO && isFinite(U.hxO.rh) ? U.hxO.rh : steamTsat(U.rr * Prh0), isFinite(U.cdP) ? U.cdP : 1.0332),
+      qout = qlp + (AN_VLV.rhbT * U.rr * orb) / 100 + qip + (U.msvR = anSvFlow(U, AN_SV.r, U.rr * Prh0)); /* 3.2.4-beta.1 RH safety valves */
+    U.qlp = qlp;
     /* in: the HP exhaust to the reheater (turbine.js tbPath f.rh: HP blade flow less the HP exhaust glands and the No.6 extraction) + the
        HP bypass; before: the whole main steam U.ms + U.mhp */
-    U.rr = Math.max(0, U.rr + ((U.tbS.f.rh / 1000 - qout) * dt) / (U.Crh * Prh0));
+    U.rr = Math.max(0, U.rr + ((U.tbS.f.rh / 1000 - qout) * dt) / (AN_VLV.Crh * Prh0));
   }
   /* live Cold start F12 (user 2026-11-13 "may steam naba sa reheat line?"): an empty reheater reads 0 kg/cm2 on PT-HR1003-1 / -2, a live
      4 mA signal. Written as exactly 0 the SELECT CIRCUIT of ABC-052 (SI0180) took both as lost and held its last value 0.6 kg/cm2 on
@@ -4215,7 +4232,6 @@ function anUnitStep0(dt) {
   {
     const Prh0 = U.rhp.length && U.rhp[0].a0.length && U.rhp[0].a0[0] > 0 ? U.rhp[0].a0[0] : 34;
     U.Prh = U.rr * Prh0;
-    U.qlp = (U.m0 * U.rr * U.lpb * olp) / 100;
     /* Audit 3 (blank HMI values): PT-HR1011 (STN102 AI0531, "LP turbine bypass outlet pressure", 0 ~ 50 kg/cm2) sits after the LP
        bypass desuperheater, ahead of the condenser energy damper (point 5 of PPE-14-0728 p2). The ten cases of that sheet give
        P5 = 0.0538 ata per T/H of F5 (11.7 / 216.9, 3.2 / 59.9, 1.8 / 33.2, 13.3 / 247.2: a choked damper, pressure in line with flow),
