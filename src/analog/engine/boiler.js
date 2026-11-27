@@ -420,11 +420,10 @@ const anFabKw = (m, p2) => {
    motor on the load list; yui-reads-4.md): table 100 % eff 95.5 / PF 0.89 / 49.4 A, curve p11 75 % 95.2 / 0.87, 50 % 94.2 / 0.83
    (read +-1 %); the same law as the PAF / SAF / IDF motors (anFdEl, AN_FD.mot.fab) */
 const anFabEl = kw => anFdEl(AN_FD.mot.fab, AN_FD.mot.fab.kW, kw);
-/* the current at the design point (26,300 kg/h into 3,257 mmH2O), the scale of the HMI current; found on the first call, as
-   AN_FD is set further down */
-const anFabA0 = () => AN_FAB.a0 || (AN_FAB.a0 = anFabEl(anFabKw(26300, 3257)).I);
 /* current of one FA blower: running, its flow (T/H), the header gauge pressure (mmH2O) */
-const anFabI = (on, q, p2) => (on ? (AN_FN.I0.fa * anFabEl(anFabKw(q * 1000, p2)).I) / anFabA0() : 0);
+/* Phase 11 AOI 2026-11-28 (user rule: no snapshot, not even as a check): the current is the TECO motor at the blower curve's machine
+   kW, no longer scaled to the 9.png 37.3 A (the old scale x 0.90 above is gone) */
+const anFabI = (on, q, p2) => (on ? anFabEl(anFabKw(q * 1000, p2)).I : 0);
 /* motor current: no-load share + the rest x air power over the snapshot one. Same law on the HMI (api.js fanI); the HMI fallback
    passes only the snapshot current, so the share is found by it */
 /* beta.324: the FA blower has no share; the HMI fallback passes x = (flow ratio)^3, so it is read back as its flow and the header
