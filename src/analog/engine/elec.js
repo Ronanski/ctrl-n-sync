@@ -46,8 +46,9 @@ const AN_EL = {
      (P kW, Q kvar, the same numbers as its current): AOI PAF / SAF / IDF / FA blowers (boiler.js anFdEl / anFabEl, TECO curves),
      NANA BFWP A / B (fw.js anFwEl, TECO AEZW-S2), MEI CEP A / B (unit.js anCepI, load schedule point). Before: current x a fixed ETAP
      pf for every motor, which counted the magnetizing current of a part-loaded motor as active power. */
-  parts: ['AOI', 'NANA', 'MEI'],
-  /* still current x the ETAP pf (K1AU3-E1-0-307, see above) until SUZU writes q.motor.SUZU (SUZU's next PR deletes these rows) */
+  parts: ['AOI', 'NANA', 'MEI', 'SUZU'] /* a port not written adds nothing (as q.ccw.<part>) */,
+  /* still current x the ETAP pf (K1AU3-E1-0-307, see above) until SUZU writes q.motor.SUZU: SUZU's PR that writes it deletes these
+     rows in the same commit, so the load is never counted twice */
   mot: [
     ['swIa0', 'Seawater pump A', 0.927],
     ['swIa1', 'Seawater pump B', 0.927],
