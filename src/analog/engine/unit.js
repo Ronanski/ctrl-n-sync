@@ -466,7 +466,6 @@ function anUnitStart() {
        150 MW anchor (Pd0 - P0) / m0^2 (no-fit finding: a constant taken from the snapshot). NO-FIT-OK: history note */
     kdp: anShKdp(null),
     kln: anMsKln(null) /* the main steam line drop law (AN_MSLN) */,
-    Kt: m0 / P0 /* valve opening 1 = the opening at the anchor */,
     gv: 1,
     Pd: Pd0,
     Qs: m0,
@@ -4008,16 +4007,18 @@ function anUnitStep0(dt) {
       anTbFlow(U, tb, D, dt, dirt);
     }
   }
-  /* steam flow through the valves: m = Kt x gv x MSP, MSP = drum - kdp x m^2 */
+  /* steam flow through the valves: the two CVs in series with the HP blading (turbine.js tbMsFlow, AN_CV), MSP = drum - kdp x m^2 */
   /* 3.2.0 P1 #3: the steam reaches the turbine through the main steam stop MOV MV-MS1391 (or its warming bypass, anUnitStepX) */
-  /* LMYP OTS valve tests (tcs.js tcsVtStep / tcsVtLift, TCE220 / 222): the two CV groups in series with their MSV, half the steam each */
+  /* LMYP OTS valve tests (tcs.js tcsVtStep / tcsVtSide, TCE220 / 222): the two CV groups in series with their MSV, each its own lift */
   tcsVtStep(U, dt);
   U.kdp = anShKdp(U); /* Phase 11: the SH pressure drop law at the density of this scan (anShKdp) */
   U.kln = anMsKln(U); /* Phase 11: the main steam line drop law at the density of this scan (anMsKln) */
-  const k = U.Kt * tcsVtLift(U) * (U.msG == null ? 1 : U.msG),
-    a2 = U.kdp * k,
-    ms = a2 > 0 ? (-1 + Math.sqrt(1 + 4 * a2 * k * Math.max(0, U.Pd))) / (2 * a2) : k * U.Pd;
-  U.ms = Math.max(0, ms);
+  /* Phase 11 RIN 2026-11-28: the CV areas from the TCS lift curves (tbCvLift) of each side (tcsVtSide: the valve test), x the share of the
+     main steam stop MOV MV-MS1391 / its bypass (U.msG); the flow the CVs and the HP blading pass together (tbMsFlow). Kt (m0 / P0 of the
+     save point) is deleted */
+  const Av =
+    (tbCvA(tbCvLift(U, 'A', tcsVtSide(U, 'A'))) + tbCvA(tbCvLift(U, 'B', tcsVtSide(U, 'B')))) * (U.msG == null ? 1 : U.msG);
+  U.ms = Math.max(0, tbMsFlow(U, Av, U.hxO && U.hxO.ms));
   /* the other outlets: flow = share x anchor flow x opening x MSP / anchor MSP */
   const P1 = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
   U.mb = 0;
