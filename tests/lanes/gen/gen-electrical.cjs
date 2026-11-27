@@ -141,6 +141,28 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
   ok(tNeg > 0 && tLo - tNeg >= 9 && tLo - tNeg <= 12 && st2 === 'off',
     'reverse power: ' + mwNeg.toFixed(2) + ' MW (motoring at the losses), 86G-A / 86G-B ' + (tLo - tNeg) + ' s after -2.3 MW (' + why + '), turbine off');
   ok(E2.js("AN.turbine('gen',{op:'reset86'})") === '' && !JSON.parse(E2.js('JSON.stringify(AN.unit.lo86)')).a, 'lockouts reset once the relay has dropped out (52G open)');
+  /* the generator breaker 52G trips open alone (Plant-menu fault 'gen.52g', elec.js anElec52gTrip): 52G open, the turbine stays latched,
+     the field 41 stays closed, the open circuit voltage starts at the transient EMF |E'q, E'd| (tcs-gen.js), the house load comes back
+     from the grid through 52L1 (back-feed); trip-free: a 52G CLOSE while the trip stands does not hold */
+  const E3 = load();
+  await E3.start('150');
+  E3.step(10);
+  E3.js("WORLD.ftrip('gen.52g',true)");
+  let vMin = 9,
+    vMax = 0,
+    vhz3 = 0;
+  for (let i = 0; i < 20; i++) {
+    E3.step(1);
+    const v = +E3.js('AN.unit.gen.V');
+    vMin = Math.min(vMin, v);
+    vMax = Math.max(vMax, v);
+    vhz3 = Math.max(vhz3, +E3.js("AN.unit.pt['relay.gen'].x.vhz"));
+  }
+  const r3 = JSON.parse(E3.js(`JSON.stringify({st:AN.unit.tb.st,trip:!!(AN.unit.tc&&AN.unit.tc.trip),f41:AN.unit.gen.f41,lo:AN.unit.lo86,b52:AN.unit.pt.gen.x.b52g,el:AN.elec(),c:AN.turbine('gen',{op:'close52g'})})`));
+  E3.step(2);
+  const st3 = E3.js('AN.unit.tb.st');
+  ok(r3.st === 'roll' && r3.b52 === 0 && !r3.trip && r3.f41 && !r3.lo.a && !r3.lo.b && vMin > 0.9 && vMax < 1.1 && r3.el.exp < 0 && Math.abs(r3.el.exp + r3.el.aux + r3.el.uatLoss + r3.el.mtLoss) < 1e-6 && st3 !== 'sync' && st3 !== 'load',
+    '52G trip: open, turbine not tripped, field on, voltage ' + vMin.toFixed(3) + ' ~ ' + vMax.toFixed(3) + ' pu, peak V/Hz ' + vhz3.toFixed(1) + ' % (relay.gen), house load ' + r3.el.aux.toFixed(1) + ' MW from the grid, no reclose while the trip stands');
   E.js("AN.turbine('trip')");
   E.step(240);
   const r2 = JSON.parse(E.js(rq));
