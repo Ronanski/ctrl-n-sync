@@ -765,7 +765,6 @@ function anUnitStart() {
     X.fw0 = a(X.fw);
     X.dea0 = a(X.dea);
     X.faF0 = a(X.faF);
-    X.MST0 = 541;
     X.lt2Off = X.lt13.length ? a(X.lt2) - X.lt13.reduce((s, L) => s + a(L), 0) / X.lt13.length : NaN;
     X.T = {};
   }
@@ -5749,7 +5748,11 @@ function anUnitStepX(dt, mso) {
   if (X) {
     /* cold reheat: the HP turbine exhaust and the HP bypass outlet, mixed by their steam */
     const mst = pvOf(X.mst),
-      thx = isFinite(X.cr0) ? X.cr0 + (isFinite(mst) ? mst - X.MST0 : 0) : NaN,
+      /* Phase 11 rank 1 (RIN): the HP exhaust temperature of the steam path (turbine.js tbPath, Stodola + IF97: port crh.rh_in T), in
+         place of the snapshot anchor 370 C moved by the main steam temperature (X.cr0 + mst - X.MST0, which held the part load CRH
+         temperature at the full load value: HB case 7 30 % 338 C) */
+      crT = typeof anPortGet === 'function' && anPortGet(U, 'crh.rh_in') ? anPortGet(U, 'crh.rh_in').T : null,
+      thx = isFinite(crT) && crT != null ? crT : U.Tamb,
       w = (U.ms || 0) + (U.mhp || 0);
     /* 3.2.4 (live Cold start F-T: HP bypass outlet TT-MS1022 64 C with the bypass 8 % open at 60 kg/cm2): the outlet of the HP bypass
        is an energy balance, not the snapshot loop gated by 3 % of the MCR flow (source.js R.TICMS1022). The main steam (PT-MS1006

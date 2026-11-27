@@ -405,10 +405,10 @@ function anTbPx(k) {
 }
 /* Phase 11 rank 1: the turbine ports (ports.js; one writer: this file). Units ata, C, kJ/kg, T/H, MW.
    shaft.W = the steam work on the blades less the turbine bearing / mechanical loss (YUI subtracts the generator losses from it, agreed
-   2026-11-27). The mechanical loss: the HB lumped loss at 100 % (AN_TB lo + kq: 3.34 MW) less the generator losses of the machine data
-   (YUI PR 665: 2.85 MW) = 0.49 MW, constant with load (bearing friction goes with the speed, not the load). NO-SOURCE: the MHPS bearing
-   loss itself (asked YUA, PC) */
-AN_TB.mech = 0.49;
+   2026-11-27). The mechanical loss: the HB lumped loss at 100 % (AN_TB lo + kq: 3.34 MW) less the generator losses at 150 MW (YUI:
+   1.94 MW from the generator air cooler rated duty 2,120 kW, generator O&M GAE-2015-0063 R0 p36) = 1.40 MW, constant with load (bearing
+   friction goes with the speed, not the load). NO-SOURCE: the MHPS turbine bearing loss itself (not in the TG manuals, YUA) */
+AN_TB.mech = 1.4;
 function anTbPorts(U, rpm, hpb) {
   const S = U.tbS;
   if (!S || !S.P) return;
