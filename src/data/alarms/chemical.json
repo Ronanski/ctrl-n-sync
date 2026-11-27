@@ -5,5 +5,7 @@
 {"tag": "LSH-CH1103", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 NEUTRAL AMINE SOLUTION TANK LEVEL HIGH SWITCH", "stn": 101, "addr": "I.0135", "src": "Alarm List _20160912 sheet LS, PD-042"},
 {"tag": "LSLL-CH1105", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 CARBON HYDRARIDE SOLUTION TANK LEVEL LOW-LOW SWITCH", "stn": 101, "addr": "I.0136", "src": "Alarm List _20160912 sheet LS, PD-042"},
 {"tag": "LSL-CH1105", "lv": "LOW", "p": 3, "on": 1, "d": "#1 CARBON HYDRARIDE SOLUTION TANK LEVEL LOW SWITCH", "stn": 101, "addr": "I.0137", "src": "Alarm List _20160912 sheet LS, PD-042"},
-{"tag": "LSH-CH1105", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 CARBON HYDRARIDE SOLUTION TANK LEVEL HIGH SWITCH", "stn": 101, "addr": "I.0138", "src": "Alarm List _20160912 sheet LS, PD-042"}
+{"tag": "LSH-CH1105", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 CARBON HYDRARIDE SOLUTION TANK LEVEL HIGH SWITCH", "stn": 101, "addr": "I.0138", "src": "Alarm List _20160912 sheet LS, PD-042"},
+{"tag": "LSLL-CH1101", "lv": "LOW-LOW", "p": 2, "on": 1, "d": "#1 TRI-SODIUM PHOSPHATE SOLUTION TANK LEVEL LOW-LOW SWITCH", "stn": 101, "addr": "I.0130", "src": "Alarm List _20160912 sheet LS, PD-042"},
+{"tag": "LSH-CH1101", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 TRI-SODIUM PHOSPHATE SOLUTION TANK LEVEL HIGH SWITCH", "stn": 101, "addr": "I.0132", "src": "Alarm List _20160912 sheet LS, PD-042"}
 ]

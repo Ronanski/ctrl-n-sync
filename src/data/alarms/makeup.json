@@ -7,5 +7,7 @@
 {"tag": "LT-MU0708-A", "lv": "LOW-LOW", "p": 2, "sp": 0.2, "d": "DEMINERALIZED WATER TANK A LEVEL TRANSMITTER", "stn": 105, "addr": "AI0160", "src": "Alarm List _20160912 sheet LT, PD-024"},
 {"tag": "LT-MU0708-B", "lv": "HIGH", "p": 3, "sp": 13.8, "d": "DEMINERALIZED WATER TANK B LEVEL TRANSMITTER", "stn": 105, "addr": "AI0240", "src": "Alarm List _20160912 sheet LT, PD-024"},
 {"tag": "LT-MU0708-B", "lv": "LOW", "p": 3, "sp": 2.0, "d": "DEMINERALIZED WATER TANK B LEVEL TRANSMITTER", "stn": 105, "addr": "AI0240", "src": "Alarm List _20160912 sheet LT, PD-024"},
-{"tag": "LT-MU0708-B", "lv": "LOW-LOW", "p": 2, "sp": 0.2, "d": "DEMINERALIZED WATER TANK B LEVEL TRANSMITTER", "stn": 105, "addr": "AI0240", "src": "Alarm List _20160912 sheet LT, PD-024"}
+{"tag": "LT-MU0708-B", "lv": "LOW-LOW", "p": 2, "sp": 0.2, "d": "DEMINERALIZED WATER TANK B LEVEL TRANSMITTER", "stn": 105, "addr": "AI0240", "src": "Alarm List _20160912 sheet LT, PD-024"},
+{"tag": "LS-MU0708-A", "lv": "ALARM", "p": 4, "on": 1, "d": "DEMINERALIZED WATER TANK A LEVEL LOW SWITCH", "stn": 105, "addr": "I.001E", "src": "Alarm List _20160912 sheet LS, PD-024", "set": "LL 0.2m"},
+{"tag": "LS-MU0708-B", "lv": "ALARM", "p": 4, "on": 1, "d": "DEMINERALIZED WATER TANK B LEVEL LOW SWITCH", "stn": 105, "addr": "I.033E", "src": "Alarm List _20160912 sheet LS, PD-024", "set": "LL 0.2m"}
 ]

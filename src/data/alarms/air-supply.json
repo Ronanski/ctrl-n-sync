@@ -16,5 +16,7 @@
 {"tag": "PS-IA1061-B1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER B INSTRUMENT AIR PRESSURE SWITCH HIGH", "stn": 104, "addr": "I.045E", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"},
 {"tag": "PS-IA1061-B2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER B INSTRUMENT AIR PRESSURE SWITCH LOW", "stn": 104, "addr": "I.045F", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"},
 {"tag": "PS-IA1061-C1", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER C INSTRUMENT AIR PRESSURE SWITCH HIGH", "stn": 104, "addr": "I.049E", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"},
-{"tag": "PS-IA1061-C2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER C INSTRUMENT AIR PRESSURE SWITCH LOW", "stn": 104, "addr": "I.049F", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"}
+{"tag": "PS-IA1061-C2", "lv": "ALARM", "p": 4, "on": 1, "d": "#1 COAL FEEDER C INSTRUMENT AIR PRESSURE SWITCH LOW", "stn": 104, "addr": "I.049F", "src": "Alarm List _20160912 sheet PS, PD-052", "set": "HH BY VENDOR; H BY VENDOR; L BY VENDOR; LL BY VENDOR"},
+{"tag": "PSL-IA1706-NC", "lv": "LOW", "p": 3, "on": 1, "d": "INSTRUMENT AIR UNIT NO.1 PRESSURE NOT LOW SWITCH", "stn": 104, "addr": "I.021B", "src": "Alarm List _20160912 sheet PS, PD-023,5/6", "set": "LL 2.8"},
+{"tag": "PSL-PA1043-B1", "lv": "LOW", "p": 3, "on": 1, "d": "#1 BURNER(B) ATOMIZING AIR PRESSURE LOW SWITCH", "stn": 104, "addr": "I.036D", "src": "Alarm List _20160912 sheet PS, PD-022,3/5", "set": "L 3.0"}
 ]

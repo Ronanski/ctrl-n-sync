@@ -14,5 +14,7 @@
 {"tag": "LSL-CL1008-A", "lv": "LOW", "p": 3, "on": 1, "d": "#1 COAL SILO (A) T-1008A LEVEL LOW SWITCH", "stn": 104, "addr": "I.0127", "src": "Alarm List _20160912 sheet LS, PD-061"},
 {"tag": "LSH-CL1008-A", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 COAL SILO (A) T-1008A LEVEL HIGH SWITCH", "stn": 104, "addr": "I.0126", "src": "Alarm List _20160912 sheet LS, PD-061"},
 {"tag": "LSL-CL1008-B", "lv": "LOW", "p": 3, "on": 1, "d": "#1 COAL SILO (B) T-1008B LEVEL LOW SWITCH", "stn": 104, "addr": "I.0447", "src": "Alarm List _20160912 sheet LS, PD-061"},
-{"tag": "LSH-CL1008-B", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 COAL SILO (B) T-1008B LEVEL HIGH SWITCH", "stn": 104, "addr": "I.0446", "src": "Alarm List _20160912 sheet LS, PD-061"}
+{"tag": "LSH-CL1008-B", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 COAL SILO (B) T-1008B LEVEL HIGH SWITCH", "stn": 104, "addr": "I.0446", "src": "Alarm List _20160912 sheet LS, PD-061"},
+{"tag": "LSL-CL1008-C", "lv": "LOW", "p": 3, "on": 1, "d": "#1 COAL SILO (C) T-1008C LEVEL LOW SWITCH", "stn": 104, "addr": "I.0487", "src": "Alarm List _20160912 sheet LS, PD-061"},
+{"tag": "LSH-CL1008-C", "lv": "HIGH", "p": 3, "on": 1, "d": "#1 COAL SILO (C) T-1008C LEVEL HIGH SWITCH", "stn": 104, "addr": "I.0486", "src": "Alarm List _20160912 sheet LS, PD-061"}
 ]

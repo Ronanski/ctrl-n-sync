@@ -76,6 +76,34 @@ const anLaneOut = r => {
     return null;
   }
 };
+/* Phase 10 (2026-11-27): a digital input on an ABC sheet that the plant model writes (unit.js U.di / U.diX: the condenser pressure
+   switches PS-CD1110-1 ~ 3 on ABC-052 I.004D ~ I.004F, the heater H.H. switches) is the switch's registered source: its value, or null
+   when the address is on no label the model writes */
+const anLaneDiK = { u: null, set: null };
+const anLaneDi = r => {
+  const U = AN.unit;
+  if (!U || !AN.sheets) return null;
+  if (anLaneDiK.u !== U.diX || !anLaneDiK.set) {
+    const set = new Set(),
+      walk = x => {
+        if (!x || typeof x !== 'object') return;
+        if (x.S && typeof x.n === 'number') return set.add(x);
+        for (const k in x) walk(x[k]);
+      };
+    walk(U.di);
+    walk(U.diX);
+    anLaneDiK.u = U.diX;
+    anLaneDiK.set = set;
+  }
+  for (const l of anLaneDiK.set) {
+    const sh = AN.sheets.find(z => z.S === l.S);
+    if (!sh || String(sh.stn) !== String(r.stn - 100) || String((l.S.lab[l.n] || {}).t || '').trim() !== r.addr) continue;
+    const rt = l.S.rt || {},
+      v = rt.force && rt.force[l.n] !== undefined ? +rt.force[l.n] : rt.ext && rt.ext[l.n] !== undefined ? +rt.ext[l.n] : +(rt.v || [])[l.n];
+    return isFinite(v) ? v : null;
+  }
+  return null;
+};
 AN.laneAlm = now => {
   const L = (typeof window !== 'undefined' && window.LANE_ALARMS) || globalThis.LANE_ALARMS || [],
     out = [];
@@ -111,6 +139,18 @@ AN.laneAlm = now => {
     } else if (r.on === 0 || r.on === 1) {
       let v = swOn.get(anLaneN(r.tag));
       if (v === undefined && r.io) v = swOn.get(anLaneN(r.io));
+      /* Phase 10 (2026-11-27): a DI field row of a lane (src/world/field, FIELD.add di / a field state the instructor sets: the chemical
+         tank level switches, the BFWP lube oil level, the coal feeder air tank pressure) is the switch's registered source too; it is read
+         by its tag (AN.fieldRead, 1 / 0). Before, only WORLD.plantSw was read and these rows never raised */
+      if (v === undefined) {
+        let f = anLaneFld(anLaneN(r.tag));
+        if (f == null && r.io) f = anLaneFld(anLaneN(r.io));
+        if (f != null) v = f > 0.5;
+      }
+      if (v === undefined) {
+        const d = anLaneDi(r);
+        if (d != null) v = d > 0.5;
+      }
       if (v === undefined) continue;
       hit = (v ? 1 : 0) === r.on;
     } else {
@@ -137,14 +177,16 @@ AN.laneAlm = now => {
     const up = /HIGH/.test(r.lv);
     if (/HIGH|LOW/.test(r.lv) && names.some(([n, lv]) => /HIGH|LOW/.test(lv) && /HIGH/.test(lv) === up && (n.indexOf(T) >= 0 || (I && n.indexOf(I) >= 0)))) continue;
     if (!/HIGH|LOW/.test(r.lv) && names.some(([n]) => n.indexOf(T) >= 0)) continue;
-    out.push(['L|' + r.tag + '|' + r.lv, { sh: e.sh, kind: 'ALM', nm: r.tag + ' ' + r.d, lv: r.lv }]);
+    out.push(['L|' + r.tag + '|' + r.lv, { sh: e.sh, kind: 'ALM', nm: r.tag + ' ' + r.d, lv: r.lv }, key]);
   }
-  /* a point with HIGH-HIGH and HIGH both over: one line, the higher level (as an ALM block gives one level) */
+  /* a point with HIGH-HIGH and HIGH both over: one line, the higher level (as an ALM block gives one level).
+     Phase 10 (2026-11-27): one line per DCS point (station and address), not per list tag. The list names both elements of a
+     dual-element winding / bearing RTD (TE-CD1116-AU1 and -AU2) and the I/O list wires one, TT-CD1116-AU (STN103 AI0960): one signal,
+     one alarm, under the first row of the point (element 1) */
   const top = new Map();
-  for (const [k, x] of out) {
-    const tg = k.split('|')[1],
-      o = top.get(tg);
-    if (!o || /-/.test(x.lv)) top.set(tg, [k, x]);
+  for (const [k, x, key] of out) {
+    const o = top.get(key);
+    if (!o || (/-/.test(x.lv) && !/-/.test(o[1].lv))) top.set(key, [k, x]);
   }
   return [...top.values()];
 };
