@@ -162,10 +162,12 @@ function anElecL52(U, on) {
      DG1 controller DSE7320 (LIMAY parameter table, 2016-07-05): Remote Start On Load 5 s, Delay Crank 0.5 s, Warming Up 1 s, Load Delay
        0.7 s (p10; "Mains Failure Detection: No" p16, so the ATS starts it). FLAG: the table is in the Phase 2 EDG folder (100 % = 680 kW);
        the Phase 1 print was not found, same DSE7320;
-     the crank until the engine fires: NO-SOURCE (no start test record; at most 15 s per attempt, 3 attempts, 15 s rest, DSE p10 / p18).
-       Taken as the 1.8 s left of the NFPA 110 Type 10 class (10 s), so the first attempt fires.
+     the crank until the engine fires (crank disconnect at 21.0 Hz / 600 rpm, DSE p20; at most 15 s per attempt, 3 attempts, 15 s rest,
+       DSE p10 / p18): no start test record and no start time in the EDG specification XZ-FEB444 (yui-reads-3.md a). Taken as the 1.8 s
+       left of the ASCO Group 5 manual's printed typical, "usually about 10 seconds elapse from dropout of the NR relay to acceptance of
+       the emergency source" (381333-126 p21 / p23 / p26, vendor typical text, not a plant test), so the first attempt fires.
    U.el.bo = { t: s since the loss } while the bus is dead */
-const AN_EL_BO = { ats: 1 + 0 /* s, ASCO 1C + 2B defaults */, dse: 5 + 0.5 + 1 + 0.7 /* s, DSE7320 p10 */, crank: 1.8 /* s, NO-SOURCE */ };
+const AN_EL_BO = { ats: 1 + 0 /* s, ASCO 1C + 2B defaults */, dse: 5 + 0.5 + 1 + 0.7 /* s, DSE7320 p10 */, crank: 1.8 /* s, the rest of the ASCO typical 10 s (above) */ };
 AN_EL_BO.emp = AN_EL_BO.ats + AN_EL_BO.dse + AN_EL_BO.crank;
 function anElecBo(U, on) {
   const e = U.el || (U.el = { l52: true });
