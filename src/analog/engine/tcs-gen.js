@@ -2,7 +2,12 @@
    is in elec.js (plan c4): 52L1 is closed unless the instructor opens it (house load); 52G1 closes only with 52L1 closed. No relay is modelled either, so no protection operates by itself; a protection held on TA-9 trips the turbine through the IBD logic. */
 /* 3.2.3-beta.236 (live Cold start, user 2026-11-14: "model dapat, physics, hindi patch"): the excitation and the automatic synchronizing are
    physics (was: a 30 s voltage ramp and a 60 s ASD timer). Sources (local notes document-references/_notes/gen-sync-llm-2026-11-14.txt):
-   - main field: T'do 7.69 s (GAE-2013-0136 R2 generator data sheet p.2); the open circuit voltage = field flux x speed (the saturation
+   - main field: T'do 8.6 s (Phase 11 YUI 2026-11-27, MARIA OK): Hitachi reply to the FHI-SMC generator data request, signed 2013-04-08,
+     Annex A p1 item 15a (read by YUA, /mnt/project-files/yui-reads-2.md 2). REPLACED: 7.69 s of the GAE-2013-0136 R2 generator data
+     sheet p.2. Both are manufacturer documents and they disagree (logged in docs/versions/updates/phase11-gen-batch2.md). The choice
+     between the two is the machine's own sudden short-circuit test, LM-GEE-2014-0822 R0 p27, Td' 0.92 s measured: at the terminals
+     Td' = T'do x X'd / Xd with this model's Xd 1.92 / X'd 0.21 gives 0.84 s with 7.69 and 0.94 s with 8.6. A choice of source, not a
+     fitted value. (The on-line lag below adds Xt; that is not the test value.) The open circuit voltage = field flux x speed (the saturation
      curve is not in the docs: NO-SOURCE, linear). Brushless exciter fed by the UNITROL 6080 (GEE-2015-0152 p.7): exciter field no load
      4.5 A / 28 V, ceiling 17.6 A / 109.8 V, so the field forcing ceiling is 17.6 / 4.5 = 3.9 times the no-load field.
      NO-SOURCE: the exciter time constant (te), the AVR gains (kp, ki), the AVR set point rate during a raise / lower pulse (vrr).
@@ -15,7 +20,7 @@
 const TCS_GEN = {
   x3: 3 /* G-1B */,
   to: 300 /* G-1B 5 min */,
-  tdo: 7.69,
+  tdo: 8.6 /* s, Hitachi GDR Annex A p1 item 15a (was 7.69, GAE-2013-0136 R2 p2), header */,
   ceil: 17.6 / 4.5,
   te: 0.4 /* s, NO-SOURCE */,
   kp: 6 /* NO-SOURCE: picked for no overshoot, 98 % in about 4 s at x1 */,
