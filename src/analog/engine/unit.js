@@ -198,24 +198,9 @@ const AN_UNIT = {
   Tburn0: 350,
   Tburn1: 600,
   Cw: 1726 /* water 175.6 t (T8 Tab 2) x 4.18 + evaporative steel 437.7 t (B-0-001) x 0.5 kJ/kg K = 953 MJ/K, in units of 0.554 MW */,
-  /* 3.2.3-beta.78 (CHAEWON, Training ramp 90 -> 150 MW stalled at about 113 MW, MSP 127 -> 62): the cap qW = uaW x (Tb - Tw) is in
-     T/H of steam made, the unit of U.Qs (U.a line above). 0.58 came from 0.32 MW/K divided by 0.554 MW, which is not the heat of one T/H
-     of steam made here (164 MW / 460 T/H = 0.356 MW), so the cap was 0.58 x (850 - 335) = about 300 T/H: a boiler started from Cold
-     could not make more than about 300 T/H (about 113 MW). CALC: steam made at 150 MW = 484 T/H main steam (plant trends 2026-11-08,
-     U.a) + 15 T/H CBD (MB-019 item 22, K1AU3-A2-0-001 p11) = 499 T/H, over bed 850 C at full load (FHI Fig 8) minus the drum
-     saturation at the design drum pressure 129 + 16 = 145 kg/cm2 g (FHI P2 S7 design data: SH outlet 129, SH pressure drop 16;
-     IF97 steamTsat 338.5 C): 499 / (850 - 338.5) = 0.976 */
-  uaW: 0.976,
   kcool: 60 /* 2.2.0-beta.21: cooling of the unfired boiler by the air, T/H steam-equivalent at the anchor air and 300 C (ASSUMED, Fig. 5) */,
   kamb: 1 /* 2.2.0-beta.21: bottled boiler loss to the ambient, T/H steam-equivalent at 300 C (ASSUMED) */,
   tauB: 900,
-  /* 3.2.1 b6 (plant cold start trend 2026-11-08, plant-study 14 Scenario 2): the oil-only heat-up of the plant is faster than FHI Fig 2 (bed
-     TIFG1090 339 C at 1.5 h, 523 C at 4 h, 726 C at 6 h; simulator 141 C at 2 h). Fit on the bed of the model (TIFG1090 = 30 + 1.127 x
-     (Tb - 30), the 954 / 850 snapshot ratio): lag 1.9 h at 1.5 h, 2.6 h at 4 h -> 9000 s; the trend outranks the design curve */
-  tauBc: 9000,
-  /* the start-up law exponent (fuel share / air share)^k: plant oil-only plateau TIFG1090 730 C on 4.5 T/H oil with PA 177 + SA 222 T/H
-     (k = ln 0.756 / ln 0.19 = 0.168), check 796 C on 6 T/H oil at 10 h (model 765). Was 0.45 ASSUMED */
-  kBedSU: 0.168,
   Tb0: 850,
   /* 3.2.0-beta.15 (phase B, utilities): CONDENSER VACUUM. The turbine exhausts to the condenser, cooled by the seawater pumps (SWP-A ~ C
      M.3353 ~ M.3355) with the condensate pumps (CP-A / B M.3350 / M.3351) taking the water out (PR-OPE-5002: SWP, CEP and VACUUM UP
@@ -780,7 +765,6 @@ function anUnitStart() {
     X.fw0 = a(X.fw);
     X.dea0 = a(X.dea);
     X.faF0 = a(X.faF);
-    X.MST0 = 541;
     X.lt2Off = X.lt13.length ? a(X.lt2) - X.lt13.reduce((s, L) => s + a(L), 0) / X.lt13.length : NaN;
     X.T = {};
   }
@@ -1111,231 +1095,6 @@ function anDitlRun(addr, last) {
     return null;
   }
 }
-/* 3.2.1 (IRENE: PLANT MODEL, CIRCULATING WATER; user 2026-11-04 "OK lang nang ok kay irene ... Tapusin muna lahat"): the seawater
-   system of flow diagram K1AU3-PD-020 Rev D, from the vendor data of the machines (the earlier model of beta.59 used fixed steps).
-   Every number has its source; the ones with none are NO-SOURCE (docs/versions/v3.2.1/CW_PLANT_MODEL.md lists them).
-   Network: forebay (LT-SW1501) -> SWP P-1501A / B / C (each: pump -> PG-SW1501x -> check valve -> discharge valve V-SW1002 / 1004 /
-   1006) -> 96" header -> debris filter S-1502 -> node N -> condenser path A (inlet V-SW1007, H-1110 tubes, outlet V-SW1009) and path
-   B (V-SW1008, V-SW1010) -> siphon pit -> discharge channel; node N -> 24" line -> SWBP P-1503A / B / C (suction PG-SW1503x1, discharge
-   PG-SW1503x2, valve V-SW1016 / 1018 / 1020) -> debris filter S-1504 -> CCW heat exchangers H-1107A / B / C -> discharge.
-   The flows are solved every step: the head of each running pump on its curve meets the losses of the lines (drop ~ flow^2).
-     SWP curve        EBARA 1350VZM, K1AU3-D1-0-064 p6 "Pump characteristic curve" (doc R1306832-8902-0102), read off the graph:
-                      head and pump efficiency vs capacity; shaft power p6 bottom; rated 18,900 m3/h x 28 m x 507 rpm, min flow 5,000,
-                      max 22,680 m3/h (p4 data sheet R1306832-8902-0101); sp. gr. 1.02 (p4) so 1 m of seawater = 0.102 kg/cm2.
-     SWP gauge        PG-SW1501 at the discharge center GL +1.8 m (p4 "DISCHARGE CENTER GL +1800"): P = 0.102 x (H - 1.8 + forebay).
-     SWP motor        TECO 2050 kW 6.6 kV, D1-0-064 p26 "Starting & operating performance": load 25 / 50 / 75 / 100 / 125 % =
-                      166 / 182 / 216 / 260 / 317 A (load = shaft power / 2050 kW; below 25 % the 25 ~ 50 % line, extrapolated).
-                      Start: soft starter (PR-OPE-5002 2.1 "SWP soft starter"), PR-OPE-5002 "Starting Current - 500A" while it ramps.
-     SWBP curve       PACO CL12151, K1AU3-D1-0-034 p8 "Pump Performance Datasheet": rated 1,000 m3/h x 15 m, 1,180 rpm, head at
-                      shut-off (rated diameter) 19.9 m, efficiency 80.25 % at rated, BEP 1,129.9 m3/h, rated power 50.87 kW;
-                      H = 19.9 - 4.9e-6 Q^2 (through the two points), efficiency = e x (2r - r^2), r = Q / 1,129.9, e from 80.25 %.
-     SWBP motor       TECO 100 HP 460 V, D1-0-034 p10: 100 % load = 120 A, Y / delta start (LRC 685 % / 3 = 274 A);
-                      PR-OPE-5002 section 5: normal 90 A, alarm 120, trip 126. Current = line through (the shaft power at the SOP point,
-                      90 A) and (74.6 kW = 100 HP, 120 A).
-     Debris filters   S-1502 DN2400 (O&M L18-4, Technical details): normal flow 37,800 m3/h, clean DP 500 mmH2O, backwash starts at
-                      800 mmH2O (PR-OPE-5002 "Input cut in 80 mBar"), flushing period 3 min, max DP 1.0 kg/cm2; S-1504 DN600 (O&M
-                      L18-5): normal flow 2,000 m3/h, clean 500, backwash 800 mmH2O. DP = clean x (flow / normal)^2 x (1 + dirt).
-     Calibration      the design point = the two vendor documents that agree: 2 SWP at 18,900 m3/h = 37,800 m3/h = the S-1502 normal
-     (one point)      flow; SWP discharge valves 100 %, condenser inlet 100 % / outlet 40 % (PR-OPE-5002 2.31), forebay -4 m (SOP NL):
-                      PG-SW1501 = 0.102 x (28 - 1.8 - 4) = 2.26 kg/cm2 (SOP 2.2 ~ 2.4), condenser inlet water box 1.05 kg/cm2 (SOP
-                      1.0 ~ 1.1), condenser drop 0.4 kg/cm2 (SOP "0.4 Kg/cm2 difference"); 2 SWBP at their SOP discharge 2.35 kg/cm2
-                      (SOP 2.3 ~ 2.4) with suction = node N (SOP suction 1 ~ 1.1). The constants of the lines come from this point.
-     Valves           the manual valves are field valves (no DCS signal; AN_SRC.valve, set by the field operator): loss = loss at 100 %
-                      / (opening)^4, flow area = opening^2 (NO-SOURCE: no valve data in the repository); closed = no flow.
-     Condenser water  in: 28.5 / 28.6 C (snapshot 30.PNG); rise = 5.6 C x (condenser steam / 316 T/H) x (31,500 T/H / seawater flow)
-                      (condenser design specification, K1AU3-D1-0-039 R0 p7: tube side 30 -> 35.6 C at 31,500 T/H, shell 316.024 T/H);
-                      condenser steam = main steam x 316 / 460 (FHI MCR 460 T/H) + LP bypass.
-   The forebay is the SOP normal level -4 m (live test beta.74 #36). UNUSUAL (in the report): the alarm list H of LT-SW1501 is -6.0 m. */
-/* C, condenser seawater inlet design, K1AU3-D1-0-039 R1 sheet K2MC3A-100 (in / out 30 / 35.6 C). beta.362 D21: was AN_SW.Tin 28.5 / 28.6
-   (no source, the 30.PNG snapshot); kept outside AN_SW because a save carries AN_SW (state.js AN_STATE_OBJ) and the starting states of
-   the app (Cold / 150 MW) had 28.5 / 28.6 in it */
-const AN_SW_TIN = [30, 30];
-const AN_SW = {
-  swp: ['M.3353', 'M.3354', 'M.3355'],
-  swbp: ['DITL-30', 'DITL-30 #B', 'DITL-30 #C'],
-  df: ['DITL-39@3', 'DITL-39@14'],
-  /* SWP curve D1-0-064 p6 (m3/h, m, %, kW) */
-  cQ: [0, 2500, 5000, 7500, 10000, 12500, 15000, 17500, 18900, 20000, 21000, 22000, 22680],
-  cH: [47.0, 43.1, 39.9, 37.5, 35.5, 33.6, 31.7, 29.5, 28.0, 26.6, 25.4, 23.9, 22.6],
-  pQ: [0, 5000, 10000, 15000, 18900, 22680],
-  pP: [1720, 1630, 1620, 1650, 1700, 1690],
-  Qr: 18900,
-  Qmin: 5000,
-  Qmax: 22680,
-  zD: 1.8,
-  kP: 0.102 /* kg/cm2 per m of seawater, sp. gr. 1.02 */,
-  mL: [0, 25, 50, 75, 100, 125],
-  mI: [150, 166, 182, 216, 260, 317] /* 0 % = the 25 ~ 50 % line extrapolated */,
-  mkW: 2050,
-  Ist: 500,
-  /* SWBP D1-0-034 p8 / p10 */
-  bH0: 19.9,
-  bA: 4.9e-6,
-  bQr: 1000,
-  bBep: 1129.9,
-  bEff: 0.8025,
-  bkW: 74.6,
-  bI100: 120,
-  bIsop: 90,
-  bIst: 274,
-  /* debris filters (L18-4 / L18-5) */
-  f1Q: 37800,
-  f2Q: 2000,
-  dp0: 500,
-  dpBw: 800,
-  bwT: 180,
-  dirtBw: 0.6 /* (800 / 500) - 1 */,
-  /* beta.314 (JENNIE, Audit #5): the filter PLC timers, O&M L18-4 (DN2400) p36 section 7.4 "TIMER SETTING" and p47 section 4.3, the
-     same in L18-5 (DN600): flushing 3 min, SYSTEM CYCLE TIMER 4 h (a flush every 4 h from the end of the last one), DP HIGH SEQUENCE
-     LEAD TIMER 30 s (DP above 80 mbar for 30 s starts a flush and resets the cycle timer). The vendor data (p15, DP at normal flow) gives:
-     clean 500, partly (50 %) choked 1,200 mmH2O. The fouling rate of the seawater is not in the docs and no plant DP trend has the
-     S-1502 / S-1504 tags: dirtT keeps the clean -> 800 mmH2O time equal to the vendor cycle timer (4 h), so in normal water the
-     timer flush comes first and the DP flush is the back-up, as the control philosophy describes. */
-  cycT: 4 * 3600,
-  hiT: 30,
-  dirtT: 4 * 3600 /* = cycT (above): clean -> 800 mmH2O at the normal flow */,
-  /* design point (calibration) */
-  dQ: 18900,
-  dL: -4,
-  dPci: 1.05,
-  dPdc: 0.4,
-  dPbd: 2.35,
-  /* beta.312 (JENNIE, Audit #5, the three valve losses were NO-SOURCE): loss = K x v^2 / 2g, K of the open valve from the Crane TP-410
-     table (K = n x fT, fT = the fully rough friction factor 1 / (2 log10(3.7 D / e))^2, e = 0.046 mm), v from the line size of the docs.
-     hv100: SWP discharge DN1350 (D1-0-064 p4 "DISCHARGE 1350 mm"), 18,900 m3/h -> v 3.67 m/s, v^2/2g 0.686 m, fT 0.0099;
-       butterfly 25 fT + swing check 50 fT = 0.74 -> 0.51 m (check valve type not in the docs: swing, the larger Crane K).
-     ki100: condenser inlet nozzle 66" (D1-0-039 p7 nozzle chart N1a/b, ID 1628.4 mm), design path flow 17,686 m3/h -> v 2.36 m/s,
-       v^2/2g 0.284 m, fT 0.0096; butterfly 25 fT = 0.24 -> 0.068 m = 0.0069 kg/cm2.
-     hb100: SWBP discharge 12" (D1-0-034 p5 "Discharge size: 12 inches", ID 304.8 mm), 1,000 m3/h -> v 3.81 m/s, v^2/2g 0.739 m;
-       butterfly 10 ~ 14" 35 fT, fT 0.013 (Crane 12") = 0.455 -> 0.34 m. */
-  hv100: 0.51 /* m, open SWP check + discharge valve at 18,900 m3/h (above) */,
-  ki100: 0.0069 /* kg/cm2, open condenser inlet valve at the design path flow (above) */,
-  hb100: 0.34 /* m, open SWBP discharge valve at 1,000 m3/h (above) */,
-  oDes: 40 /* condenser outlet opening of the design point (SOP 2.31) */,
-  rise0: 5.6,
-  cTH: 31500,
-  cSt: 316.024,
-  mcr: 460,
-  ramp: 10 /* s, SWP soft starter ramp: ACC. TIME of the installed Solcon HRVS-DN, O&M L23-3 manual 7.8 (its set value; the plant setting sheet is not in the docs) */,
-  bRamp: 5 /* s, NO-SOURCE: Y / delta change-over of the SWBP */,
-  tauP: 2,
-  tauT: 60,
-  tauI: 1
-};
-const swInterp = (X, Y, x) => {
-  if (x <= X[0]) return Y[0] + ((Y[1] - Y[0]) * (x - X[0])) / (X[1] - X[0]);
-  for (let i = 1; i < X.length; i++)
-    if (x <= X[i]) return Y[i - 1] + ((Y[i] - Y[i - 1]) * (x - X[i - 1])) / (X[i] - X[i - 1]);
-  const n = X.length - 1;
-  return Y[n] + ((Y[n] - Y[n - 1]) * (x - X[n])) / (X[n] - X[n - 1]);
-};
-/* the head of a pump at speed s (affinity: H(Q, s) = s^2 H(Q / s)) */
-const swH = (Q, s) => (s > 0 ? s * s * swInterp(AN_SW.cQ, AN_SW.cH, Q / s) : 0);
-const swbH = (Q, s) => (s > 0 ? s * s * AN_SW.bH0 - AN_SW.bA * Q * Q : 0);
-/* the flow of a pump when the line after it is at head h: pump head - valve loss = h (0 if the pump cannot reach h: check valve) */
-function swPumpQ(fH, s, kv, h, qMax) {
-  if (!(s > 0) || !(kv < Infinity)) return 0;
-  const f = q => fH(q, s) - kv * q * q - h;
-  if (f(0) <= 0) return 0;
-  let a = 0,
-    b = qMax * Math.max(s, 0.05);
-  if (f(b) > 0) return b;
-  for (let i = 0; i < 40; i++) {
-    const m = (a + b) / 2;
-    if (f(m) > 0) a = m;
-    else b = m;
-  }
-  return (a + b) / 2;
-}
-const swBisect = (f, a, b, n) => {
-  for (let i = 0; i < (n || 40); i++) {
-    const m = (a + b) / 2;
-    if (f(m) > 0) a = m;
-    else b = m;
-  }
-  return (a + b) / 2;
-};
-/* valve: opening 0 ~ 100 % -> multiplier of its loss at 100 % (Infinity = closed); flow area = opening^2 (a butterfly valve opens
-   little area at a small opening; NO-SOURCE: no valve curve in the repository) */
-const swVk = pct => (pct > 0.5 ? 1 / Math.pow(Math.min(100, pct) / 100, 4) : Infinity);
-/* the line constants from the design point (once) */
-/* SWBP efficiency: a plain function, a function kept in K.c does not cross the Worker snapshot (Mina beta.103, c.eb is not a function) */
-const swEb = (K, r) => (K.bEff / (2 * (K.bQr / K.bBep) - Math.pow(K.bQr / K.bBep, 2))) * Math.max(0, 2 * r - r * r);
-function swCal() {
-  const K = AN_SW;
-  if (K.c) return K.c;
-  const c = {};
-  c.kv = K.hv100 / (K.dQ * K.dQ); /* m per (m3/h)^2, SWP valve open */
-  /* SWBP at the SOP discharge 2.35 with suction = node N */
-  const PN = K.dPci + K.ki100,
-    hb = (K.dPbd - PN) / K.kP,
-    qb = Math.sqrt((K.bH0 - hb) / K.bA);
-  c.kbv = K.hb100 / (K.bQr * K.bQr);
-  c.qbD = qb;
-  const Pbv = K.dPbd - K.kP * c.kbv * qb * qb;
-  c.kb = Pbv / Math.pow(2 * qb, 2); /* kg/cm2 per (m3/h)^2: S-1504, CCW HX and the return of the 2 SWBP */
-  const Qt = 2 * K.dQ,
-    q = (Qt - 2 * qb) / 2; /* per condenser path */
-  c.qcD = q;
-  c.ki = K.ki100 / (q * q);
-  c.kc = K.dPdc / (q * q);
-  c.ko = (K.dPci - K.dPdc) / (q * q) / swVk(K.oDes); /* outlet loss at 100 % open */
-  const Ph = K.kP * (K.dQ ? swH(K.dQ, 1) - c.kv * K.dQ * K.dQ - K.zD + K.dL : 0),
-    dpF = (K.dp0 * Math.pow(Qt / K.f1Q, 2)) / 1e4;
-  c.kup = (Ph - dpF - PN) / (Qt * Qt); /* header -> node N (pipes, NO-SOURCE elevation lumped in) */
-  /* SWBP shaft power at the SOP point (for its current line) */
-  const eb = r => swEb(K, r);
-  c.bPsop = (1020 * 9.80665 * (qb / 3600) * hb) / 1000 / Math.max(0.25, eb(qb / K.bBep));
-  return (K.c = c);
-}
-/* the SWBP branch: the flows of the running booster pumps with node N at PN */
-function swBooster(PN, sb, vb, c) {
-  const K = AN_SW;
-  const each = Pbv => sb.map((s, i) => swPumpQ(swbH, s, c.kbv * swVk(vb[i]), (Pbv - PN) / K.kP, 2.5 * K.bQr));
-  if (!sb.some(s => s > 0) || PN <= 0) return { q: sb.map(() => 0), Q: 0, Pbv: 0 };
-  const Q = swBisect(x => each(c.kb * x * x).reduce((a, b) => a + b, 0) - x, 0, 3 * 2.5 * K.bQr, 40);
-  return { q: each(c.kb * Q * Q), Q, Pbv: c.kb * Q * Q };
-}
-/* the whole network for the speeds, the valve openings, the forebay and the dirt of S-1502 */
-function swSolve(st) {
-  const K = AN_SW,
-    c = swCal(),
-    kv = st.vd.map(p => c.kv * swVk(p)),
-    pathK = [0, 1].map(j => {
-      const ki = c.ki * swVk(st.vi[j]),
-        ko = c.ko * swVk(st.vo[j]);
-      return { ki, ko, k: ki + c.kc + ko };
-    });
-  const supplyAt = h => st.s.map((s, i) => swPumpQ(swH, s, kv[i], h, 1.6 * K.Qr));
-  const dpF = Q => (K.dp0 * Math.pow(Q / K.f1Q, 2) * (1 + st.dirt)) / 1e4;
-  const r = { q: [0, 0, 0], H: [0, 0, 0], Qt: 0, Qc: [0, 0], b: { q: [0, 0, 0], Q: 0, Pbv: 0 }, Ph: 0, PN: 0 };
-  if (!st.s.some(s => s > 0)) return r;
-  const solveAt = Qt => {
-    /* the header head that gives this total from the pumps */
-    const Hh = swBisect(h => supplyAt(h).reduce((a, b) => a + b, 0) - Qt, -200, 80, 40);
-    const Ph = K.kP * (Hh - K.zD + st.L),
-      PN = Ph - dpF(Qt) - c.kup * Qt * Qt;
-    const qc = pathK.map(p => (PN > 0 && p.k < Infinity ? Math.sqrt(PN / p.k) : 0)),
-      b = swBooster(PN, st.sb, st.vb, c);
-    return { Hh, Ph, PN, qc, b, dem: qc[0] + qc[1] + b.Q };
-  };
-  const qMax = supplyAt(-200).reduce((a, b) => a + b, 0);
-  const Qt = swBisect(Q => solveAt(Q).dem - Q, 0, qMax, 36),
-    z = solveAt(Qt);
-  r.Qt = Qt;
-  r.q = supplyAt(z.Hh);
-  r.H = r.q.map((q, i) => (st.s[i] > 0 ? swH(q, st.s[i]) : 0));
-  r.Ph = z.Ph;
-  r.PN = z.PN;
-  r.Qc = z.qc;
-  r.b = z.b;
-  r.pin = z.qc.map((q, j) => Math.max(0, z.PN - pathK[j].ki * q * q));
-  r.pout = z.qc.map((q, j) => (pathK[j].ko < Infinity ? pathK[j].ko * q * q : Math.max(0, z.PN - pathK[j].ki * q * q)));
-  r.dpF = dpF(Qt);
-  return r;
-}
-/* the field valves of the seawater system (no DCS signal): opening in %, set by the field operator; the normal line-up of a
-   running unit (PR-OPE-5002 section 2 / 5 after the start: discharge valves open, condenser inlet 100 %, outlet 40 %) */
 /* 3.2.1 (IRENE: PLANT MODEL, user 2026-11-04 "Kung ano lng ang mapapakinabangan ntn s simulation"): the useful manual valves of the
    closed cooling, make-up and air systems (field valves, no DCS signal; opening in %, normal line-up at 150 MW):
      closed cooling (PD-021 Rev D, hmi-cw.js): ACWP suction V-CW1002 / 1004, discharge V-CW1007 / 1009 (SOP: 5 % at start, then open to
@@ -1418,529 +1177,6 @@ const AN_SW_V0 = {
   'V-SW1018': 100,
   'V-SW1020': 100
 };
-function anSeawaterStep(U, dt) {
-  const K = AN_SW,
-    c = swCal(),
-    V = (AN_SRC.valve = AN_SRC.valve || Object.assign({}, AN_SW_V0)),
-    vp = k => (isFinite(V[k]) ? V[k] : AN_SW_V0[k]),
-    lag = (k, x, tau) => (U[k] = isFinite(U[k]) ? U[k] + ((x - U[k]) * Math.min(dt, tau)) / tau : x),
-    sw = K.swp.map(a => srcBit([a])),
-    bp = K.swbp.map(a => anDitlRun(a) || 0),
-    df = K.df.map(a => {
-      const r = anDitlRun(a, true);
-      return r == null ? 1 : r;
-    });
-  /* the speed of each pump: a start ramps it (soft starter / Y-delta), a stop drops it at once (coast-down not modelled); the first
-     step after a starting state takes the running pumps at full speed (no start transient at 150 MW) */
-  const first = !U.swSpd;
-  U.swSpd = U.swSpd || [0, 0, 0];
-  U.swbSpd = U.swbSpd || [0, 0, 0];
-  sw.forEach((r, i) => (U.swSpd[i] = r ? (first ? 1 : Math.min(1, U.swSpd[i] + dt / K.ramp)) : 0));
-  bp.forEach((r, i) => (U.swbSpd[i] = r ? (first ? 1 : Math.min(1, U.swbSpd[i] + dt / K.bRamp)) : 0));
-  U.swN = sw.reduce((a, b) => a + b, 0);
-  U.swNb = bp.reduce((a, b) => a + b, 0);
-  /* live test beta.74 #36: the forebay at the SOP normal level, PR-OPE-5002 section 2 "Sea Water inlet pool (fore bay) level (NL = 4m
-     below GL)" */
-  U.swLvl = K.dL;
-  if (!isFinite(U.swDirt1)) U.swDirt1 = 0;
-  if (!isFinite(U.swDirt2)) U.swDirt2 = 0;
-  const st = {
-    s: U.swSpd,
-    sb: U.swbSpd,
-    vd: ['V-SW1002', 'V-SW1004', 'V-SW1006'].map(vp),
-    vi: ['V-SW1007', 'V-SW1008'].map(vp),
-    vo: ['V-SW1009', 'V-SW1010'].map(vp),
-    vb: ['V-SW1016', 'V-SW1018', 'V-SW1020'].map(vp),
-    L: U.swLvl,
-    dirt: U.swDirt1
-  };
-  /* the network is solved again only when a speed, a valve, the forebay or the dirt (0.01) changed */
-  const key = [
-    st.s.map(x => x.toFixed(3)),
-    st.sb.map(x => x.toFixed(3)),
-    st.vd,
-    st.vi,
-    st.vo,
-    st.vb,
-    st.L,
-    st.dirt.toFixed(2)
-  ].join('|');
-  if (!U._swR || U._swK !== key) {
-    U._swR = swSolve(st);
-    U._swK = key;
-  }
-  const r = U._swR;
-  U.swRunout = r.q.map(q =>
-    q > K.Qmax ? 1 : 0
-  ); /* above the max flow of the curve (22,680 m3/h): the curve is extrapolated */
-  /* flows (m3/h), for the HMI and the loop check */
-  r.q.forEach((q, i) => (U['swQa' + i] = Math.round(q)));
-  r.b.q.forEach((q, i) => (U['swQb' + i] = Math.round(q)));
-  U.swQt = Math.round(r.Qt);
-  U.swQcA = Math.round(r.Qc[0]);
-  U.swQcB = Math.round(r.Qc[1]);
-  U.swQc = U.swQcA + U.swQcB;
-  U.swQbT = Math.round(r.b.Q);
-  /* condenser water boxes (PT-SW1110-A1 / B1 in, A2 / B2 out) */
-  const pin = r.pin || [0, 0],
-    pout = r.pout || [0, 0];
-  lag('swPiA', pin[0], K.tauP);
-  lag('swPiB', pin[1], K.tauP);
-  lag('swPoA', pout[0], K.tauP);
-  lag('swPoB', pout[1], K.tauP);
-  /* condenser seawater temperatures */
-  U.swTiA = AN_SW_TIN[0];
-  U.swTiB = AN_SW_TIN[1];
-  const ws = Math.max(0, ((U.ms || 0) * K.cSt) / K.mcr + (U.qlp || 0) + (U.xtra || 0));
-  const thC = (r.Qc[0] + r.Qc[1]) * 1.02; /* T/H through the condenser: the design rise is per condenser */
-  [0, 1].forEach(j => {
-    /* one box shut: its share of the heat goes to the other box (heat = water x rise) */
-    const rise = r.Qc[j] * 1.02 > 100 ? K.rise0 * (ws / K.cSt) * (K.cTH / thC) : 0;
-    lag(j ? 'swToB' : 'swToA', AN_SW_TIN[j] + Math.min(rise, 40), K.tauT);
-  });
-  /* PG-SW1501A / B / C: the pump side of the check valve (a stopped pump: the water column of the pit, below the gauge = 0) */
-  r.q.forEach((q, i) => lag('swPd' + i, U.swSpd[i] > 0 ? Math.max(0, K.kP * (r.H[i] - K.zD + U.swLvl)) : 0, K.tauP));
-  /* shut-off time of a running SWP below its min flow (EBARA O&M 4.2 / 4.4: open the discharge valve within 2 minutes) */
-  U.swLow = U.swLow || [0, 0, 0];
-  r.q.forEach((q, i) => (U.swLow[i] = U.swSpd[i] >= 1 && q < K.Qmin ? U.swLow[i] + dt : 0));
-  /* debris filters: DP (mmH2O); the dirt grows while water passes; a filter IN OPERATION (DITL-39) backwashes at 800 for 3 min */
-  [
-    [1, r.Qt / K.f1Q, df[0]],
-    [2, r.b.Q / K.f2Q, df[1]]
-  ].forEach(([i, q, op]) => {
-    const d = 'swDirt' + i,
-      b = 'swBw' + i;
-    const cy = 'swCyc' + i,
-      hi = 'swHi' + i;
-    if (U[b] > 0) {
-      U[b] = Math.max(0, U[b] - dt);
-      U[d] = Math.max(0, U[d] - (K.dirtBw * dt) / K.bwT);
-    } else U[d] += (K.dirtBw * q * q * dt) / K.dirtT;
-    const dp = K.dp0 * q * q * (1 + U[d]);
-    /* the filter PLC (beta.314): DP high for 30 s or the 4 h cycle timer starts a 3 min flush; the cycle timer counts from its end */
-    U[hi] = op && dp >= K.dpBw && !(U[b] > 0) ? (U[hi] || 0) + dt : 0;
-    U[cy] = op && !(U[b] > 0) ? (U[cy] || 0) + dt : 0;
-    if (op && !(U[b] > 0) && (U[hi] >= K.hiT || U[cy] >= K.cycT)) {
-      U[b] = K.bwT;
-      U[hi] = 0;
-      U[cy] = 0;
-    }
-    lag('swDp' + i, dp, K.tauP);
-  });
-  /* SWP motor current: 500 A while the soft starter ramps, then the load of the shaft power (motor table) */
-  r.q.forEach((q, i) => {
-    const s = U.swSpd[i];
-    const P = s > 0 ? swInterp(K.pQ, K.pP, q / s) * s * s * s : 0;
-    U['swKw' + i] = Math.round(P);
-    /* Mina F15: an open breaker carries no current: stopped = 0 at once, the lag is for the start only */
-    if (s <= 0) U['swIa' + i] = 0;
-    else lag('swIa' + i, s < 1 ? K.Ist : swInterp(K.mL, K.mI, (100 * P) / K.mkW), K.tauI);
-  });
-  /* SWBP: suction (PG-SW1503x1) = node N, discharge (PG-SW1503x2) before its valve; current from its shaft power */
-  r.b.q.forEach((q, i) => {
-    const s = U.swbSpd[i],
-      PN = Math.max(0, r.PN || 0);
-    lag('swBs' + i, PN, K.tauP);
-    lag('swBd' + i, s > 0 && PN > 0 ? PN + K.kP * swbH(q, s) : PN, K.tauP);
-    const Pw =
-      s > 0
-        ? Math.max(0.4 * 50.87, (1020 * 9.80665 * (q / 3600) * swbH(q, s)) / 1000 / Math.max(0.25, swEb(K, q / K.bBep)))
-        : 0; /* floor 40 % of the rated 50.87 kW at low flow: NO-SOURCE */
-    const I = K.bIsop + ((K.bI100 - K.bIsop) * (Pw - c.bPsop)) / (K.bkW - c.bPsop);
-    if (s <= 0) U['swIb' + i] = 0;
-    else lag('swIb' + i, s < 1 ? K.bIst : Math.max(0, I), K.tauI);
-  });
-}
-/* the field operator sets a manual valve of the seawater system (V-SW1002 ... 0 ~ 100 %); returns false for an unknown tag */
-function anSwValve(tag, pct) {
-  if (!(tag in AN_SW_V0) && !(tag in AN_FV0)) return false;
-  AN_SRC.valve = AN_SRC.valve || Object.assign({}, AN_SW_V0);
-  AN_SRC.valve[tag] = Math.max(0, Math.min(100, +pct || 0));
-  return true;
-}
-/* 3.2.1 (IRENE: PLANT MODEL, MAKE-UP WATER; user 2026-11-04 "tama connection, flow, at plant model, at dapat may communication sya sa
-   logic na ABC DITL"; replaces the fixed steps of 3.2.0-beta.63). Flow diagram K1AU3-PD-024 Rev D (+ expansion tank of PD-021 Rev D):
-   demi water tanks T-0708A / B -> suction header -> MWP P-0709A / B / C (DITL-112, machine instances #B / #C) -> common header
-   (PT-MU0709) -> #1 condenser hotwell (LCV-MU1110 ABC-031 / MV-MU1001 DITL-60), expansion tank T-1109 (XV-MU1109 DITL-78 / bypass
-   V-MU1033), each pump's recirculation line (SOP: V-MU0013 / 15 / 17 OPEN). Sources (docs/versions/v3.2.1/MU_CCW_PLANT_MODEL.md):
-     pump curve   KAO HONG KEW-65/200 performance curve KEW102066C (K1AU3-D1-0-032 p6): rated 80 m3/h (1.34 CMM) x 60 m x 3500 rpm,
-                  the head curve through the rated point (shut-off 65 m), MIN.FLOW 0.167 CMM = 10 m3/h; shaft power = the mean of the
-                  170 / 192 mm BHP curves (the rated impeller lies between them: shut-off head 65 m between 57.5 and 72.2 m);
-     motor        TECO AEHLWA-R 50 HP 2P 460 V (p8: FLC 58.2 A, LRC 775 % = 451 A, direct on line or Y / delta; p11 load characteristic:
-                  18.6 / 32.8 / 44.7 / 58.0 / 70.1 A at 26.4 / 51.7 / 76.6 / 101.5 / 126.6 % load);
-     header       PT-MU0709 = 0.1 kg/cm2 per m (water, sg 1.0, p6) x (tank level + z + pump head at the flow of each running pump);
-                  z = 11.3 m CALIBRATED on the HMI snapshot 28.png (2 MWP running at their recirculation flow, levels 13.8 / 13.7 m,
-                  PIMU0709 9.0 kg/cm2): 90 - 13.8 - 64.9 m (the heights of the tanks and of the transmitter are not in the repository);
-     flow         FT-MU1001 = the hotwell make-up of the cycle model (plant.js 0.58 T/H per % of LCV-MU1110 + MV-MU1001) + the expansion tank filling;
-                  each running MWP also returns its recirculation 10 m3/h (p6 MIN.FLOW) to the tank;
-     strainer DP  0.03 kg/cm2 while its pump runs (28.png DPIMU0709A / B / C 0.029 / 0.042 / 0.001; no strainer curve: NO-SOURCE shape);
-     demi tanks   the snapshot level, constant (the water treatment refills them; not modelled); LS-MU0708-A / B (alarm list 0.2 m,
-                  DITL-112 rows 19 / 21) follow it (plantsw.js);
-     expansion tank (as 3.2.0-beta.63 / live test #50) fills while XV-MU1109 (DITL-78 row 4) or V-MU1033 is open and the header is above
-                  6 kg/cm2 (SOP 7) at 0.003 m/s (NO-SOURCE), primes the closed loop at the first opening of V-CW1001 (NO-SOURCE volume).
-   Logic: DITL-112 START / trip of each MWP drives the pumps here; PT-MU0709 (< 5.5 kg/cm2 = M.2506 L.L. = standby AUTO start),
-   LT-MU0708-A / B (< 0.2 m), DPT-MU0709-A / B / C (>= 1.0 kg/cm2) go back into DITL-112, LT-CW1109 into DITL-76 / 77 / 78. */
-/* T/H, MV-MU1001 fully open: MB-016 item 20. Kept outside AN_MU: a save carries AN_MU (state.js AN_STATE_OBJ), and a save made
-   before this number existed would take it away (NaN) */
-const AN_MU_QMV = 70;
-const AN_MU = {
-  mwp: ['DITL-112', 'DITL-112 #B', 'DITL-112 #C'],
-  xv: 'DITL-78@3',
-  mv: 'DITL-60',
-  lv: [13.8, 13.7],
-  cQ: [0, 30, 60, 80.4, 90, 105, 120, 135, 150],
-  cH: [65.0, 64.7, 63.2, 60.3, 58.8, 55.5, 52.1, 47.5, 43.5],
-  pQ: [0, 30, 60, 80.4, 90, 120, 150],
-  pHP: [18.9, 22.7, 27.0, 29.6, 31.6, 35.4, 37.0],
-  qRec: 10,
-  /* UNUSUAL (docs/versions/v3.2.1/DATA_ANSWERS.md item 6): the vendor BHP curve gives ~26 A at the recirculation flow, the snapshot
-     28.png reads MWP-A 20.5 / MWP-C 20.8 A (SOP 20 A); CLAUDE.md: the snapshot is the operating point, so the shaft power is scaled */
-  pCal: 0.74,
-  mL: [26.4, 51.7, 76.6, 101.5, 126.6],
-  mI: [18.6, 32.8, 44.7, 58.0, 70.1],
-  mkW: 37.3 /* 50 HP */,
-  Ist: 451,
-  /* beta.316 (JENNIE, Audit #5, was 2 s NO-SOURCE): direct on line run-up time from the TECO sheet (D1-0-032 p8, 50 HP 2P,
-     3555 rpm, GD2 0.905 kg m2, LRT 160 %, BDT 270 %): J = GD2 / 4 = 0.226 kg m2, w = 372.3 rad/s, rated torque 37.3 kW / w = 100 N m;
-     mean motor torque (LRT + BDT) / 2 = 215 N m, less the pump on its recirculation (about 30 N m at full speed, square law: mean
-     1 / 3 = 10 N m) = 205 N m; t = J w / T = 0.41 s (motor rotor only: the impeller inertia is not in the docs) -> 0.5 s */
-  ramp: 0.5,
-  kP: 0.1,
-  z: 11.3,
-  dp: 0.03,
-  et0: 0.8,
-  etMax: 2.0,
-  etRate: 0.003,
-  etQ: 20 /* T/H, Mass Balance K1AU3-MB-024 item 17 and MB-021 item 1 (make-up to the unit 1 expansion tank) */,
-  etPrime: 0.4 /* m of tank level that the priming of the closed loop takes (NO-SOURCE) */,
-  etPrimeT: 120 /* s (NO-SOURCE) */,
-  etH: 1.7,
-  etL: 0.8,
-  etLL: 0.3,
-  tauP: 3,
-  tauH: 1 /* s, the header pressure: a full water line answers at once (NO-SOURCE number). DITL-112 gives the first pump only TR25 3 s to clear M.2506 before the AUTO pumps start (Mina F21) */,
-  tauI: 2
-};
-function anMakeupStep(U, dt) {
-  const K = AN_MU,
-    lag = (k, x, tau) => (U[k] = isFinite(U[k]) ? U[k] + ((x - U[k]) * Math.min(dt, tau)) / tau : x),
-    run = K.mwp.map(a => anDitlRun(a) || 0),
-    n = run.reduce((a, b) => a + b, 0);
-  const first = !U.muSpd;
-  U.muSpd = U.muSpd || [0, 0, 0];
-  run.forEach((r, i) => (U.muSpd[i] = r ? (first ? 1 : Math.min(1, U.muSpd[i] + dt / K.ramp)) : 0));
-  U.muN = n;
-  U.muLvA = K.lv[0];
-  U.muLvB = K.lv[1];
-  /* 3.2.1 the valve itself (the DITL-78 machine), not only its command: XV-MU1109 is spring opening (AN_AV), it opens without air */
-  const xp = anDitlPos('DITL-78', 0);
-  U.muXv = xp != null ? (xp > 0 ? 1 : 0) : anDitlRun(K.xv) === 1 ? 1 : 0;
-  const mv = anDitlPos(K.mv);
-  U.muMv = mv == null ? null : mv;
-  if (!isFinite(U.etLvl)) U.etLvl = K.et0;
-  /* live test 2026-10-30 #23: or through the bypass V-MU1033 (manual, field operator; PR-OPE-5002 section 7 "XV-MU1109 ... or Bypass valve V-MU1033") */
-  U.muByp = typeof AN_SRC !== 'undefined' && AN_SRC.field && AN_SRC.field.mu1033 ? 1 : 0;
-  /* the flow out of the header: the hotwell make-up and the expansion tank filling (the header pressure of the step before decides
-     whether the tank fills), plus the recirculation of each running pump */
-  U.muLine = anFv('V-MU1031') > 0 && anFv('V-MU1032') > 0 ? 1 : 0;
-  const fill = U.muLine && (U.muXv || U.muByp) && U.muP > 6 && U.etLvl < K.etMax;
-  U.muFill = fill ? 1 : 0;
-  /* 3.2.1 the field valves (AN_FV0): a pump has water when a demi tank outlet (V-MU0001 / 0002) and its suction (V-MU0003 / 4 / 5) are
-     open; it feeds the header through its discharge (V-MU0007 / 9 / 11) and returns its recirculation through V-MU0013 / 15 / 17; a
-     running pump with no water or with both closed = no flow (shut-off power); no pump feeding = the header at its static pressure */
-  const op = t => anFv(t) > 0,
-    tk = op('V-MU0001') || op('V-MU0002'),
-    wet = [0, 1, 2].map(i => tk && op('V-MU000' + (3 + i))),
-    dis = [0, 1, 2].map(i => op('V-MU' + String(7 + 2 * i).padStart(4, '0'))),
-    rec = [0, 1, 2].map(i => op('V-MU00' + (13 + 2 * i))),
-    feed = U.muSpd.map((s, i) => (s > 0 && wet[i] && dis[i] ? s : 0)),
-    ss = feed.reduce((a, b) => a + b, 0);
-  /* MV-MU1001 (DITL-60, operator only) on the 8 inch line MU-1-024, parallel to LCV-MU1110 on the 3 inch line MU-1-025 (PD-016 zone A-7):
-     70 T/H fully open = MB-016 item 20, the design flow of the line before the two branches (the only figure for it; the branch itself has
-     no flow on the drawings); the flow follows the travel (NO-SOURCE: the shape of the MOV) */
-  U.muMvQ = ss > 0 && U.muMv > 0 ? (AN_MU_QMV * Math.min(100, U.muMv)) / 100 : 0;
-  /* the hotwell make-up is the one flow of the cycle model (FT-MU1001 used 1.8 T/H per % here while the hotwell got 0.58) */
-  const hw = typeof AN_CYC !== 'undefined' && AN_CYC.flows ? Math.max(0, AN_CYC.flows('net').mu) : 0,
-    qOut = ss > 0 ? hw + (fill ? K.etQ : 0) : 0,
-    lv = Math.max(K.lv[0], K.lv[1]);
-  /* the feeding pumps share the flow by speed (identical pumps in parallel), each with its recirculation */
-  let H = 0;
-  U.muQ = [0, 0, 0];
-  U.muSpd.forEach((s, i) => {
-    if (s > 0 && wet[i]) U.muQ[i] = (ss > 0 && feed[i] ? (qOut * s) / ss : 0) + (rec[i] ? K.qRec * s : 0);
-  });
-  if (ss > 0) {
-    const j = feed.findIndex(s => s > 0),
-      s = feed[j];
-    H = s * s * swInterp(K.cQ, K.cH, U.muQ[j] / s);
-  }
-  U.muFeed = feed.filter(s => s > 0).length;
-  lag('muP', K.kP * (lv + K.z + Math.max(0, H)), K.tauH);
-  run.forEach((r, i) => {
-    const s = U.muSpd[i],
-      P = s > 0 ? K.pCal * 0.7457 * swInterp(K.pQ, K.pHP, U.muQ[i] / s) * s * s * s : 0;
-    U['muKw' + i] = Math.round(P * 10) / 10;
-    if (s <= 0) U['muI' + i] = 0;
-    else lag('muI' + i, s < 1 ? K.Ist : Math.max(0, swInterp(K.mL, K.mI, (100 * P) / K.mkW)), K.tauI);
-    lag('muDp' + i, r && wet[i] ? K.dp : 0, K.tauP);
-  });
-  if (fill) U.etLvl = Math.min(K.etMax, U.etLvl + K.etRate * dt);
-  /* live test #50: PR-OPE-5002 7.20 "Open Expansion tank outlet valve to prime the close cooling line (V-CW1001)" and 7.22 "Ensure
-     Expansion tank is at NL = 1.7m and make up if necessary": the first opening of V-CW1001 after a cold plant fills the closed loop
-     from the tank (K.etPrime m of tank level over K.etPrimeT s, NO-SOURCE: the loop volume is not in the repository); then the level stays */
-  if (!isFinite(U.cwPrime)) U.cwPrime = AN_SRC.field.cw1001 ? 1 : 0;
-  if (AN_SRC.field.cw1001 && U.cwPrime < 1) {
-    const d = Math.min(1 - U.cwPrime, dt / K.etPrimeT);
-    U.cwPrime += d;
-    U.etLvl = Math.max(0, U.etLvl - K.etPrime * d);
-  }
-  U.etPct = (100 * U.etLvl) / K.etMax;
-  /* live test #50: the alarms of LT-CW1109 (alarm list LT: H 1700 mm (DCS), L 800 mm (DCS); LS: LSLL-CW1109 300 mm = DITL-77 row 26
-     M.1238 "EXPANSION TANK LEVEL < 0.3 M", the ACWP trip). UNUSUAL: the H alarm is the normal level NL 1.7 m of the SOP */
-  U.etAlm = U.etLvl <= K.etLL ? 'LL' : U.etLvl <= K.etL ? 'L' : U.etLvl > K.etH ? 'H' : '';
-  lag('muF', qOut, K.tauP);
-}
-/* 3.2.1 (IRENE: PLANT MODEL, CLOSED COOLING WATER; replaces the fixed steps of 3.2.0-beta.69). Flow diagram K1AU3-PD-021 Rev D: return
-   header CW-1-002 20" + expansion tank T-1109 (V-CW1001) -> suction CW-1-003 20" -> ACWP P-1108A / B (DITL-76 / 77; strainers
-   DPT-CW1108-A / B) -> common discharge CW-1-007 20" (PT / TT-CW1152) -> CCWHE H-1107A / B / C (seawater of the SWBP, unit.js AN_SW) ->
-   supply CW-1-014 20" (PT / TT-CW1153) -> the users (turbine oil coolers TCV-CW1201, generator air coolers, BFP, bottom ash screw
-   coolers L-1060A ~ D PT / TT-CW1156 and TT-CW1060, fans, APH, air compressors and dryers, sampling) -> return. Sources
-   (docs/versions/v3.2.1/MU_CCW_PLANT_MODEL.md):
-     pump curve   PACO KP1415-1/2 "Pump Performance Datasheet" (K1AU3-D1-0-033 p8): rated 1500 m3/h x 50 m x 1750 rpm, impeller
-                  377.44 mm curve (shut-off 67.8 m), shaft power curve (250 kW rated), MCSF 932.4 m3/h, water 991 kg/m3;
-     motor        TECO AFJH-WR 300 kW 4P 6600 V (p10): FLC 32.1 A, eff 95.0 %, PF 86.0 %, soft start, LRC <= 240 A; current =
-                  shaft power / (1.732 x 6.6 kV x eff x PF);
-     line         ONE design point = HMI snapshot 27.PNG (148 MW, ACWP-A): PICW1152 6.4, PICW1153 5.2 kg/cm2, expansion tank 0.80 m, at
-                  the rated 1500 m3/h (= 2 CCWHE x 750 m3/h of D1-0-041; the ACWP current there, 26.8 A, is the snapshot's 28.2 A
-                  within 5 %): suction static = 6.4 - 4.955 = 1.445 kg/cm2 (tank level + its height, CALIBRATED: the height is not in
-                  the repository), CCWHE + its piping 1.2 kg/cm2 at 1500 m3/h (of it the CCWHE 0.571 = 0.056 MPa of D1-0-041), the
-                  users 3.755 kg/cm2 at 1500 m3/h; both as loss = k Q^2; two pumps in parallel share the flow;
-     strainer DP  0.27 kg/cm2 at 1500 m3/h (27.PNG), x (Q / 1500)^2;
-     CCWHE        Hisaka (D1-0-041) per unit: ACW 750 m3/h 50 -> 34 C, seawater 1000 m3/h 30 -> 42.12 C, 13,830 kW, counter flow,
-                  357.5 m2: clean UA = 13830 / LMTD 5.72 = 2418 kW/K. 2 of the 3 in service (NO-SOURCE: the design flow 1500 = 2 x
-                  750). The UA in service is CALIBRATED on 27.PNG (return 40 C, supply 38 C at 1500 m3/h = 3,452 kW, seawater
-                  28.5 C, 2 SWBP): 7.2 % of the clean UA (UNUSUAL: fouled plates, or the snapshot heat load is not the design one);
-                  effectiveness-NTU, counter flow, with the seawater of the running SWBP (U.swQbT) shared by the units in service;
-     heat load    3,480 kW x (0.4 + 0.6 x load / 150 MW) (27.PNG 3,452 kW at 148 MW; the 40 / 60 split NO-SOURCE, as 3.2.0-beta.69);
-     temperature  one node for the water of the loop, 180,000 kJ/K (about 43 m3, NO-SOURCE: the loop volume is not in the repository;
-                  10 min to settle at full load, ~17 min from 40 to 60 C without seawater); no ACWP: no flow, the water goes to the
-                  room temperature 30 C (NO-SOURCE) in 30 min; the bottom ash cooler outlets TT-CW1060 = the supply + 1 C while an
-                  ACWP runs (NO-SOURCE, the ash heat is not modelled; the snapshot reads 36 ~ 38 C at 37 C).
-   Logic: DITL-76 / 77 START / trip drive the pumps here; PT-CW1152 (< 3.5 kg/cm2 = standby AUTO start), DPT-CW1108-A / B (> 0.8 trip),
-   LT-CW1109 (< 0.3 m trip) go back into DITL-76 / 77; PT-CW1156 (DITL-41 < 3.5 / > 7 kg/cm2 annunciator), TT-CW1060 (DITL-21A) and the
-   flow switches FS-CW1060 (DITL-21B, low flow) follow this model (plantsw.js). */
-const AN_ACW = {
-  acwp: ['DITL-76', 'DITL-77'],
-  cQ: [0, 300, 600, 900, 1200, 1500, 1800, 2100, 2400],
-  cH: [67.8, 66.7, 64.3, 60.7, 55.8, 50.0, 42.5, 34.4, 25.6],
-  pP: [194, 210, 224, 238, 246, 250, 246, 235, 217],
-  rho: 0.0991 /* kg/cm2 per m (991 kg/m3) */,
-  kV: 6.6,
-  eff: 0.95,
-  pf: 0.86,
-  Ist: 240,
-  ramp: 10 /* s, soft starter: the ACWP starter is a Solcon HRVS-DN 140 A 6.6 kV (E1-0-131 p4, S-1A2 "M-1108A Aux. CW PUMP A 300KW"),
-     the same type as the SWP: ACC. TIME 10 s, the vendor set value (O&M L23-3 manual 7.8; the plant setting sheet is not in the docs) */,
-  dQ: 1500,
-  dP1: 6.4,
-  dP2: 5.2,
-  dLv: 0.8,
-  dp: 0.27,
-  hxN: 2,
-  /* beta.316 (JENNIE, Audit #5, was NO-SOURCE): the open ACWP discharge valve V-CW1007 / 1009 at 1500 m3/h, the Crane TP-410 method
-     of AN_SW (beta.312): discharge DN350 (D1-0-033 p6 KP14153 "DISCHARGE FLANGE DN 350"), 14" ID 336.5 mm, v 4.69 m/s, v^2/2g 1.12 m;
-     fT 0.0127; the SOP throttles it (5 % at start), a butterfly 10 ~ 14" 35 fT = 0.445 -> 0.50 m x 0.0991 = 0.049 kg/cm2. The check
-     valve V-CW1006 / 1008 is not modelled (its type is not in the docs) */
-  kd100: 0.05,
-  heat: 3480,
-  UA: 174.8 /* kW/K per CCWHE in service, CALIBRATED (see above): NTU 0.2025 at 27.PNG with 2 SWBP (2,450 m3/h of the CW model) */,
-  M: 180000,
-  Tsw: 28.5,
-  Tamb: 30,
-  tauP: 3,
-  tauI: 2,
-  tauA: 1800
-};
-/* the line constants from the design point (kg/cm2 per (m3/h)^2) */
-const acwCal = (() => {
-  let c = null;
-  return () => {
-    if (c) return c;
-    const K = AN_ACW,
-      Ps = K.dP1 - K.rho * swInterp(K.cQ, K.cH, K.dQ);
-    c = { z: Ps - K.rho * K.dLv, kA: (K.dP1 - K.dP2) / (K.dQ * K.dQ), kU: (K.dP2 - Ps) / (K.dQ * K.dQ) };
-    return c;
-  };
-})();
-/* the flow of the loop with the pumps at speeds s[] (0 = stopped): sum of the pump flows at the head the line needs */
-function acwSolve(s, kv, kA) {
-  const K = AN_ACW,
-    c = acwCal(),
-    k = (kA == null ? c.kA : kA) + c.kU,
-    qOf = (si, dp, i) => {
-      const v = (kv && kv[i]) || 0;
-      if (!(si > 0) || !(v < Infinity) || K.rho * si * si * K.cH[0] <= dp) return 0;
-      return swBisect(
-        q => K.rho * si * si * swInterp(K.cQ, K.cH, q / si) - v * q * q - dp,
-        0,
-        1.6 * K.cQ[K.cQ.length - 1] * si,
-        40
-      );
-    };
-  if (!s.some(x => x > 0) || !(k < Infinity)) return { Q: 0, q: s.map(() => 0) };
-  const Q = swBisect(
-    x => s.reduce((a, si, i) => a + qOf(si, k * x * x, i), 0) - x,
-    0,
-    2 * 1.6 * K.cQ[K.cQ.length - 1],
-    40
-  );
-  return { Q, q: s.map((si, i) => qOf(si, k * Q * Q, i)) };
-}
-function anAcwStep(U, dt) {
-  const K = AN_ACW,
-    c = acwCal(),
-    lag = (k, x, tau) => (U[k] = isFinite(U[k]) ? U[k] + ((x - U[k]) * Math.min(dt, tau)) / tau : x),
-    run = K.acwp.map(a => anDitlRun(a) || 0),
-    n = run.reduce((a, b) => a + b, 0),
-    lv = isFinite(U.etLvl) ? U.etLvl : K.dLv,
-    stat = c.z + K.rho * lv;
-  const first = !U.acSpd;
-  U.acSpd = U.acSpd || [0, 0];
-  run.forEach((r, i) => (U.acSpd[i] = r ? (first ? 1 : Math.min(1, U.acSpd[i] + dt / K.ramp)) : 0));
-  U.acN = n;
-  /* 3.2.1 the field valves (AN_FV0): a closed suction = the pump has no water (no flow); the discharge throttles its pump (loss = loss
-     at 100 % / opening^4, as the seawater valves; closed = no flow); the CCWHE in service = inlet and outlet open, the CCWHE part of
-     the line (0.571 of the 1.2 kg/cm2 at 1500 m3/h, D1-0-041) shared by them (none = the loop blocked) */
-  const op = t => Math.max(0, Math.min(100, anFv(t))) / 100,
-    suc = [op('V-CW1002'), op('V-CW1004')],
-    dis = [op('V-CW1007'), op('V-CW1009')],
-    hxo = [0, 1, 2].map(i => Math.min(op('V-CW' + (1010 + i)), op('V-CW' + (1013 + i)))),
-    nHx = hxo.reduce((a, o) => a + (o > 0 ? 1 : 0), 0),
-    fx = 0.571 / 1.2,
-    sc = hxo.reduce((a, o) => a + o * o, 0) /* parallel paths: flow area ~ opening^2 */,
-    kA = nHx ? c.kA * (1 - fx + fx * Math.pow(K.hxN / sc, 2)) : Infinity,
-    kv = dis.map(o =>
-      o > 0 ? (K.kd100 / (K.dQ * K.dQ)) * (1 / Math.pow(o, 4) - 1) : Infinity
-    ) /* 100 % = the calibration (27.PNG) */,
-    sp = U.acSpd.map((x, i) => (suc[i] > 0 ? x : 0));
-  U.acHxN = nHx;
-  const key = sp.map(x => x.toFixed(3)).join(',') + '|' + dis.join(',') + '|' + hxo.join(',');
-  if (!U._acR || U._acK !== key) {
-    U._acR = acwSolve(sp, kv, kA);
-    U._acK = key;
-  }
-  const r = U._acR,
-    Q = r.Q;
-  U.acQ = Math.round(Q);
-  /* no CCWHE in service: the pumps run against the closed valves (shut-off head at PT-CW1152) */
-  const shut = Math.max(0, ...sp.map((x, i) => (x > 0 && dis[i] > 0 ? K.rho * x * x * K.cH[0] : 0)));
-  lag('acP1', nHx ? stat + (kA + c.kU) * Q * Q : stat + shut, K.tauP);
-  lag('acP2', stat + c.kU * Q * Q, K.tauP);
-  U.acP6 = U.acP2;
-  r.q.forEach((q, i) => {
-    const s = U.acSpd[i],
-      P = s > 0 ? swInterp(K.cQ, K.pP, q / s) * s * s * s : 0;
-    U['acKw' + i] = Math.round(P);
-    lag('acDp' + i, s > 0 ? K.dp * Math.pow(q / K.dQ, 2) : 0, K.tauP);
-    if (s <= 0) U['acI' + i] = 0;
-    else lag('acI' + i, s < 1 ? K.Ist : (1000 * P) / (1732.05 * K.kV * K.eff * K.pf), K.tauI);
-  });
-  /* heat: the users, the CCWHE (effectiveness-NTU, counter flow) with the seawater of the running SWBP */
-  const ld = Math.max(0, Math.min(1, (isFinite(U.MW) ? U.MW : 0) / 150)),
-    Qload = K.heat * (0.4 + 0.6 * ld),
-    Ch = (Q * 991 * 4.18) / 3600 /* kW/K */,
-    Qsw = Math.max(0, U.swQbT || 0),
-    Cc = (Qsw * 1025 * 3.99) / 3600;
-  let hx = 0;
-  if (Ch > 0 && Cc > 0) {
-    const ch = Ch / Math.max(1, nHx),
-      cc = Cc / Math.max(1, nHx),
-      cmin = Math.min(ch, cc),
-      cr = cmin / Math.max(ch, cc),
-      ntu = K.UA / cmin,
-      e = cr < 0.999 ? (1 - Math.exp(-ntu * (1 - cr))) / (1 - cr * Math.exp(-ntu * (1 - cr))) : ntu / (1 + ntu);
-    hx = e * cmin * nHx; /* kW per K of (return - seawater) */
-  }
-  U.acCool = n && hx > 0 ? 1 : 0;
-  if (Ch > 0) {
-    /* the return (pump discharge, TT-CW1152) is the node; the first step after a starting state starts at its steady value */
-    if (first || !isFinite(U.acT1))
-      U.acT1 =
-        hx > 0 && Q > 0.5 * K.dQ
-          ? K.Tsw + Qload / hx
-          : Math.min(60, K.Tamb + 10); /* 3.2.1: a throttled first step does not start hot */
-    U.acT1 += ((Qload - hx * (U.acT1 - K.Tsw)) * dt) / K.M;
-    U.acT1 = Math.max(K.Tsw, Math.min(99, U.acT1));
-    U.acT2 = U.acT1 - (hx * (U.acT1 - K.Tsw)) / Ch;
-    U.acHx = Math.round(hx * (U.acT1 - K.Tsw));
-  } else {
-    if (!isFinite(U.acT1)) U.acT1 = K.Tamb;
-    if (!isFinite(U.acT2)) U.acT2 = K.Tamb;
-    lag('acT1', K.Tamb, K.tauA);
-    lag('acT2', K.Tamb, K.tauA);
-    U.acHx = 0;
-  }
-  U.acT6 = U.acT2;
-  U.acTb = n ? U.acT2 + 1 : U.acT2;
-  anBacStep(U, dt);
-}
-/* 3.2.4-beta.71 (JENNIE, for the ESP AND ASH page: TT-BH1060 / TT-CW1060 were '-----', no model). The bottom ash screw coolers
-   L-1060A ~ D (DITL-21A / #B / #C / #D): bed drain ash in, cooled ash out to the chain conveyor; closed cooling water (supply TT-CW1156
-   = AN_ACW acT6) through the shell and the shaft. Source: Rauma "Technical specification" E130122B (O&M V13 Bottom ash screw cooler,
-   01_Technical Specification/3094): ash 2000 kg/h normal, 4000 kg/h max at 0.5 ~ 5 rpm; ash in max 920 C, out < 150 C normal,
-   about 250 C at max; cooling water in max 33 C, out about 60 C, 3 kg/s normal, 5.5 kg/s max; K 57 W/m2K.
-     UA      from the max case: Q = 4000 / 3600 x 0.84 x (920 - 250) = 625 kW; water 5.5 kg/s 33 -> 60 C; counter flow LMTD
-             (860, 217) = 466 K -> UA = 1.34 kW/K per cooler. Check at the normal case (2000 kg/h, 3 kg/s, 33 C): ash out 89 C < 150 OK.
-     ash     the flow of the bed drain step (AN_BI.q 0.8 T/H per rpm, the SIC-L1060x speed) while the cooler runs; in = the bed
-             temperature, at most the 920 C of the spec; cp 0.84 kJ/kgK (NO-SOURCE, textbook value of ash).
-     water   3 kg/s per cooler (spec normal) while an ACWP gives flow (x acQ / 1500); in = the supply of the loop (TT-CW1156).
-     stopped no ash: no heat; the water outlets go to the supply, the ash thermocouples cool to the water in. tau 120 s running, 1800 s
-             stopped (NO-SOURCE: the metal mass is not in the spec). 16.PNG (all four stopped at 150 MW): ash 31 ~ 55 C, water 36 ~ 38 C.
-   TT-BH1060-x1 / x2 = ash in / out (DITL-21A rows 11 / 12 INLET / OUTLET ASH TEMP.); TT-CW1060-x1 / x2 = the SHELL SIDE OUTLET /
-   SHAFT COOLING water temperatures (DITL-21A rows 14 / 13, also fed from here by plantsw.js): both outlets, one water outlet
-   temperature for both (NO-SOURCE: the shell / shaft split of the 3 kg/s is not in the spec); the inlet is TT-CW1156. LT-BH1750 bottom ash silo: silos stand in this simulator (scope 2026-11-07), 15.8 % of 16.PNG. */
-const AN_BAC = { UA: 1.34, cpA: 0.84, mw: 3, Tmax: 920, tauR: 120, tauS: 1800, silo: 15.8 };
-function anBacStep(U, dt) {
-  const K = AN_BAC,
-    Tw = isFinite(U.acT6) ? U.acT6 : 30,
-    fw = Math.max(0, Math.min(1, (+U.acQ || 0) / 1500)),
-    Tb = isFinite(U.Tb) ? U.Tb : 30;
-  U.bhSilo = K.silo;
-  'ABCD'.split('').forEach((x, i) => {
-    const o = (U.bedSc || [])[i],
-      run = typeof anDitlRun === 'function' && anDitlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1,
-      rpm = run && o && o.S ? Math.max(0, Math.min(5, +o.S.rt.v[o.n] || 0)) : 0,
-      ma = (AN_BI.q * rpm) / 3.6 /* kg/s */,
-      Ch = ma * K.cpA,
-      Cc = K.mw * fw * 4.18,
-      Ti = Math.min(K.Tmax, Math.max(Tw, Tb));
-    let a1 = Tw,
-      a2 = Tw,
-      w2 = Tw,
-      tau = K.tauS;
-    if (Ch > 0) {
-      a1 = Ti;
-      if (Cc > 0) {
-        const cmin = Math.min(Ch, Cc),
-          cr = cmin / Math.max(Ch, Cc),
-          ntu = K.UA / cmin,
-          e = cr < 0.999 ? (1 - Math.exp(-ntu * (1 - cr))) / (1 - cr * Math.exp(-ntu * (1 - cr))) : ntu / (1 + ntu),
-          q = e * cmin * (Ti - Tw);
-        a2 = Ti - q / Ch;
-        w2 = Tw + q / Cc;
-      } else {
-        a2 = Ti; /* no cooling water flow: no heat taken, the ash leaves hot */
-      }
-      tau = K.tauR;
-    }
-    const f = Math.min(1, dt / tau),
-      L = (k, v) => (U[k] = isFinite(U[k]) ? U[k] + (v - U[k]) * f : v);
-    L('bh' + x + '1', a1);
-    L('bh' + x + '2', a2);
-    L('bw' + x + '1', w2);
-    L('bw' + x + '2', w2);
-  });
-}
 /* 3.2.1 (IRENE: PLANT MODEL, TURBINE OIL; user 2026-11-04 cross-system: "Kung mag adjust ka dito, mag aadjust din doon ang effect").
    The lube oil cooler H-1921A (B standby) on the closed cooling water: oil from the bearings (main oil tank) -> cooler -> bearings; cooling
    water from the ACW supply (TT-CW1153, AN_ACW) through TCV-CW1201 (ABC-053 TICLO1002 MV) -> return. Sources:
@@ -1948,10 +1184,12 @@ function anBacStep(U, dt) {
                   170,000 kg/h max, water inlet 37 C max, oil outlet 46 C, 1,300 kW max -> clean UA 95.8 kW/K (counter flow, oil
                   63.0 -> 46 C, water 37 -> 43.6 C); Mass Balance K1AU3-MB-021 items 12 / 13: 170 T/H, 34 -> 41 C;
      snapshot     36.PNG (149 MW): oil in TILO1001 62 C, out 46 C; 27.PNG: TCV-CW1201 53.1 %, ACW supply 38 C;
-     calibrated   with the vendor UA and a linear valve (170 T/H x MV, NO-SOURCE: no valve curve), the snapshot gives an oil flow of 64.5 kW/K
-                  (2,250 L/min, below the 2,660 maximum; ISO VG 32 0.86 kg/L x 2.0 kJ/kg K) and a bearing heat of 1,032 kW (16 C x 64.5);
-     heat         1,032 kW x speed / 3600 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js), NO-SOURCE shape (as the
-                  16 C x speed of tcs.js); the water flow also needs the ACW loop (x ACW flow / 1500);
+     heat         Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history, was oil 64.5 kW/K and 1,032 kW fitted on snapshot 36.PNG): the vendor
+                  design point of the cooler itself (O&M L2 TG 2-3): 1,300 kW with the oil 63.0 -> 46 C, so the oil flow is 1,300 / 17 =
+                  76.5 kW/K (2,670 L/min of ISO VG 32 at 0.86 kg/L x 2.0 kJ/kg K = the 2,660 L/min maximum of the sheet); the bearing
+                  heat 1,300 kW at 3600 rpm x speed / 3600 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js),
+                  linear in speed NO-SOURCE (as the 16 C x speed of tcs.js). MB-021 items 12 / 13 (170 T/H 34 -> 41 C = 1,384 kW) is
+                  the water side sizing of the same cooler, 6 % above the vendor duty;
      oil tank     one temperature node (the return oil), 25,800 kJ/K (about 15 m3 of oil, NO-SOURCE: the tank volume is not in the docs);
      cooler node  3.2.5 (JENNIE): the oil and the plates inside the cooler are a second node, Ch = 730 kJ/K (CALC from the vendor area
                   146.94 m2: oil channels = half of a 3 mm plate gap -> 0.22 m3 x 0.86 kg/L x 2.0 kJ/kg K = 379 kJ/K; plates 0.6 mm
@@ -2014,348 +1252,6 @@ const AN_CD = {
 /* MW lost to the back pressure. docs/versions/v3.2.1/HEAT_BALANCE.md: calculated from the mass balance (exhaust quality 0.92 closes the
    balance at 150 MW). At constant entropy dh/dT = x hfg / T = 7.1 kJ/kg per C at 38.65 C; with 0.85 LP efficiency (NO-SOURCE) 6 kJ/kg per C,
    on the exhaust steam, 0.70 of the main steam (309.7 / 446 T/H, MB-013). A better vacuum gives a small gain, capped at 1 C. */
-/* FIFA1079 / FIFA1071 at load: 328.2 / 354.0 T/H (HMI snapshot, a check value; no document gives the split of the primary air) */
-const AN_PA_FURN = 328.2 / 354.0;
-/* bed temperature at steady firing. FHI Fig 8 (furnace temperature) on the coal share of Fig 13, scaled to the bed of the anchor; more air than
-   Fig 12 gives at that firing cools it with the same exponent 0.45. Below 40 % load no curve is printed: the start-up law of beta.15 (a small
-   fire with the light-off air, 450 C with two burners) stays, and the lower of the two holds. Before: the start-up law alone, 95 C too hot at
-   60 % load. Fuel share at 40, 50, 60, 70, 85, 100 % load: 38.5, 47, 56, 64, 77, 89.5 T/H of 89.5 */
-/* 3.2.1 b6: plant DCS trends 2026-11-08 (team-files/plant-study/14): TIFG1090 952 to 962 C from 90 to 150 MW with the plant air, 855 C at 40 MW
-   against 909 C at 150 MW the same day. The Fig 8 fall (660 to 840) and the extra air cooling are not seen on this plant: t follows the trend ratios,
-   the air term has exponent 0 */
-/* 3.2.3 plan b5 (fuel): coal that does not burn stays in the bed (the cyclone sends the fines back) and burns when the bed is hot
-   enough, instead of being lost. Model state U.cbed (t of coal held in the bed). Fed coal burns at the share bf (Tburn0 ~ Tburn1, above);
-   the rest goes into U.cbed; the bed coal burns at bf x U.cbed / tau. tau 60 s: PR-OPE-5002 6.4 batch firing at 400 ~ 450 C is a 10 s
-   burp then a 60 s rest, and the CO, O2 and lower furnace temperature rise of each burp is checked inside that rest, so a batch that
-   lights burns out in about 60 s; "wait 5 min if a batch does not burn" = coal left in the bed can still light later, which this
-   carry-over gives. tau itself is NO-SOURCE inside that bound. At a hot bed (bf = 1) with no coal held, the burn is the fed coal, as
-   before. Module level (never a function on U: SAVE / LOAD).
-   3.2.4-beta.21 (JENNIE): a char split was tried (coal crusher spec K1AU3-D2-0-102 R0 p4: VM 30.56 %, FC 28.67 %, char 61 % of the LHV
-   burning over tau): at 75 MW the PIC-COBM swing grew to an MFT in 110 min (the plant runs there with coal 47 ~ 51 T/H, plant trend).
-   The burnout time of the char is NO-SOURCE; the bed / refractory lumps already give the lag the plant tuning stands on. Not used. */
-const AN_CBED = { tau: 60 };
-/* live Cold start 2026-11-14 (user: "Code ang gawin ... WALANG DAYAIN"): THE GAS THAT REACHES THE SUPERHEATER / REHEATER (Cold path).
-   The furnace exit gas U.tgF comes from the bed heat balance (AN_BB below). It then crosses the refractory of the cyclone inlet ducts,
-   the cyclones and their outlet ducts before the backpass (03-boiler; P2S4): inlet ducts 98.8 ~ 118.3 t + cyclones 373.7 ~ 450.2 t +
-   outlet ducts 214.4 ~ 303.9 t (13-thermal-masses A6, K1AU3-C-0-007), centre 780 t x 1.0 kJ/kg K (textbook refractory) = 780 MJ/K,
-   one lump the gas heats or cools on its way. The gas leaves the cyclones at the lining temperature (exchange effectiveness 1:
-   NO-SOURCE, the lining area and film coefficient are not in the documents). Flue gas cp 1.15 kJ/kg K (textbook), coal ash 6.82 % (T3).
-   live Cold start 2026-11-14 (beta.243, MS 439 C and RH 381 C flat from 45 to 70 MW, cyclone outlet 544 C under a furnace of 800 C):
-   one 780 t lump with effectiveness 1 made the gas leave at the temperature of the WHOLE lining, so the backpass saw the lining that
-   heats in tens of hours. A refractory heats from its hot face and conducts inward (textbook, semi-infinite wall: about 75 mm in 1 h
-   at 5e-7 m2/s), and the gas only touches the hot face through its film. Two layers:
-   - lining area A 1,200 m2: two cyclones ID 7.89 m x about 24.5 m high (03-boiler, P2S4 p2-4-10: cylinder, cone and roof about 520 m2
-     each, CALC) + outlet ducts (about 160 m2, ASSUMED: duct size not in the docs).
-   - gas film h 0.1 kW/m2 K (NO-SOURCE, textbook dusty gas at 800 C, convection + radiation 50 ~ 200 W/m2 K): hA 120 kW/K.
-   - hot face layer 50 mm (the depth that follows the gas within about an hour): 1,200 m2 x 0.05 m x 2.3 t/m3 x 1.0 kJ/kg K = 138 MJ/K;
-     the back of the lining = the rest of the 780 MJ/K (642 MJ/K).
-   - face to back: fireclay k 1.2 W/m K (textbook) over 0.15 m between the layer centres: 1.2 x 1,200 / 0.15 = 9.6 kW/K.
-   Lining fully soaked: the gas leaves at the furnace exit temperature (no loss term: 75 mm calcium silicate behind, P4S1) */
-const AN_FG = { cpG: 1.15, ash: 0.0682, mCy: 780e3, hA: 120, mF: 138e3, mB: 642e3, kAB: 9.6 };
-/* live Cold start 2026-11-14 (user: "WALANG DAYAIN", no curve fits): THE BED HEAT BALANCE of the Cold path. Before, the bed went first
-   order to a law fitted on the plant trend (start-up exponent kBedSU 0.168 and the AN_BED table), and the water walls took
-   min(firing line, uaW x (bed - water)): a patch. Now one lump of the lower furnace (bed solids + the refractory of the lower furnace)
-   takes the fuel heat and gives it to the gas that crosses it and to the water walls:
-     Cb dTb/dt = fuel heat - air x cp x (Tb - air in) - fuel gas x cp x (Tb - ambient) - wall heat (solids + lower refractory walls)
-   - fuel heat: coal burnt x LHV 3,662 kcal/kg (T3) + oil x the diesel LHV 42.7 MJ/kg (textbook; the design data Tab_1 heating values
-     are an image without text). Check: 42.7 / 15.33 = 2.79 t of coal per t of oil, against the plant figure 2.55 (PR-OPE-5002).
-   - air in: PA / SA at the hot air temperatures of the air heater model (boiler.js anAphStep), FA at the ambient; air cp 1.005
-     kJ/kg K (textbook). All the air crosses the bed zone (PA grate, SA nozzles of the lower furnace, FA through the seal pots; P2S4).
-   - Cb: bed solids (U.bedI, t, the bed inventory model) x 0.84 kJ/kg K (sand / ash, textbook) + the lower furnace refractory 191.1 ~
-     218.2 t, centre 204.65 t x 1.0 kJ/kg K (13-thermal-masses A6, textbook refractory).
-   - wall heat by the circulating solids: (ua0 - uag) x phi x (Tb - water). ua0 = the design wall conductance uaW 0.976 T/H per K
-     (AN_UNIT, CALC from the design heat balance) x 554 kW per T/H (the unit of Cw / Qs) = 541 kW/K. phi = the solids that the gas
-     carries up the furnace relative to full load = bed inventory share x (gas velocity share)^2: the entrainment rises with the
-     gas velocity (P2S6, qualitative; P2S4: the solids density falls up the furnace). 3.2.3-beta.269 (Jennie): the exponent nU 3.5 is set
-     by the plant DCS trend, scenario 1 (14-plant-trends): bed TIFG1090 flat 952 ~ 962 C from 150 to 90 MW with PA + SA 610 -> 505 T/H.
-     With 2 (NO-SOURCE) the model bed fell 828 -> 775 C at 90 MW and coal / pressure swung 48 ~ 56.5 T/H, 121.1 ~ 123.4 kg/cm2 every
-     ~18 min; with 3.5 the bed is 816 C, coal 53.0 ~ 54.6 T/H (plant 55.4), pressure 122.1 ~ 122.4, O2 9.1 % (plant 9.1). The
-     circulation rate itself is not in the documents (03-boiler). The gas
-     velocity share = total air / anchor air x (Tb + 273) / (Tb0 + 273) (the gas expands with its temperature).
-   - wall heat through the refractory of the lower furnace: 25 mm refractory over the tubes (13-thermal-masses), k 1.5 W/m K
-     (textbook castable) = 60 W/m2 K, in series with a dense bed film 300 W/m2 K (textbook) = 50 W/m2 K, over the lower walls 46.38 m
-     perimeter x 7.75 m = 359 m2 (T2, P2S4) = 18 kW/K.
-   - upper furnace, gas alone: the gas leaves the bed at Tb and gives heat to the bare upper walls with uag = 27 W/m2 K (textbook gas
-     radiation about 17 + convection about 10, NO-SOURCE) x 1,199 m2 (upper walls 46.38 x 25.85 m) = 32 kW/K; the gas cools
-     exponentially along the walls: q = gas x cp x (Tb - water) x (1 - e^(-uag / (gas x cp))). The circulating solids hold the gas at
-     the bed temperature in the share phi (capped 1).
-   Steady check at the anchor (coal 87.5 T/H, air 593 T/H, hot air about 285 C, drum 145 kg/cm2): bed about 820 C, steam about
-   470 T/H, against the design 850 C (FHI design data) and 476 T/H: not fitted, the result of the balance. */
-const AN_BB = {
-  lhvC: (3662 * 4.1868) / 3.6,
-  /* 3.2.3-beta.271 (Jennie, physics audit 2026-11-15 MISSING item): the coal heat that never reaches the bed, gas or water: carbon
-     left unburnt in the fly and bottom ash, ash heat, CO. FHI Tab 3: efficiency 90.9 % LHV at MCR. The model at 150 MW without it:
-     input 83.5 T/H x 4,259 kW = 355.4 MW, stack 194.2 kg/s from 125 to 30 C = 20.3 MW (5.7 %), room loss kamb 0.6 MW (0.2 %):
-     94.1 %, so these losses are 3.2 % of the LHV (CALC, the split between them is not in the documents). Coal per MW was 4 % under
-     the plant (snapshot FIC-CM 87.0 T/H at 150 MW, model 83.5) */
-  fUC: 0.032,
-  lhvO: 42700 / 3.6,
-  cpA: 1.005,
-  cpS: 0.84,
-  mRef: 204650,
-  /* 1.0.0-beta.256 (JENNIE): the upper furnace suspension (the bed balance, unit step). Was ua0w 289.3 kW/K, CALC with the bed AND the
-     furnace exit both at 850 C. CALC of the 150 MW anchor (phi 1, drum 145 kg/cm2 g = 338.5 C, IF97):
-     - tbA 937 C: the bed, the average of the eighteen lower layer thermocouples TT-FG1090 / 1091 A ~ I of the HMI snapshot at 150 MW
-       (the anchor the thermocouples are written from, anGasA0; trend scenario 1 TIFG1090 952 ~ 962 C);
-     - furnace exit 850 C: FHI design data / Fig 8 (the gas the backpass chain of hx.js is built on);
-     - evaporator 157.2 MW (design heat balance, as before): the lower refractory 17.96 kW/K x (937 - 338.5) = 10.75 MW, the upper
-       walls 146.45 MW;
-     - SH panels 62.5 MW: the panel heat of uaP 75 at the 150 MW state of the model (bed 856 C, metals p1 412.7 / p2 465.8 C, save
-       "150 MW bed AUTO 2 coolers" 2026-11-22), held: the panels now see Tu, uaP is CALC again in hx.js;
-     - Cs = (146.45 + 62.5) MW / (937 - 850) K = 2,402 kW/K; less the flue gas 237 kW/K (anHxCp, 188 kg/s): cSol 2,165 kW/K, that is
-       2,577 kg/s of solids at 0.84 kJ/kg K = 21.7 kg/m2 s over the 119 m2 grate (check: CFB circulation flux 10 ~ 100 kg/m2 s, Basu,
-       Circulating Fluidized Bed Boilers, ch. 2; the rate itself is not in the documents);
-     - the profile of the bed balance with these sinks gives Tu 892.3 C; Uw = 146.45 MW / (892.3 - 338.5) = 264.5 kW/K, of it the gas
-       radiation uag(892 C) 106.9 (WSGG, upper walls): uaS 157.6 kW/K by the solids. */
-  /* 1.0.0-beta.348 (JENNIE, D9 of user 2026-11-24 "GO DESIGN"): THE ANCHOR IS THE DESIGN, NOT THE PLANT. tbA 937 above was the HMI
-     snapshot thermocouples (plant trend 952 ~ 962 C). The design bed: P2S4 p2-4-8 850 ~ 900 C normal (above 900 C call FHI), the
-     procedure holds 850 ~ 870 C (SU:10198); FHI P2S7 Fig 8 furnace average 840 C at 100 %. tbA = 860 C (the middle of the held band),
-     furnace exit 840 C (Fig 8 at 100 %, was 850 FHI design data). Same CALC as beta.256, same sinks (upper walls 146.45 MW, SH panels
-     62.5 MW, drum 338.5 C, flue gas 237 kW/K):
-     - Cs = (146.45 + 62.5) MW / (860 - 840) K = 10,448 kW/K, less the gas 237: cSol 10,211 kW/K (12,156 kg/s of solids at 0.84 kJ/kg K =
-       102 kg/m2 s over the 119 m2 grate: the top of the CFB range 10 ~ 100 kg/m2 s, Basu ch. 2; an isothermal furnace at MCR is what
-       the design curve says, bed 860 and exit 840);
-     - the profile (anBbSus) at these: Tu 849.9 C, Uw = 146.45 MW / (849.9 - 338.5) = 286.4 kW/K, gas radiation uag(849.9) 100.6 (WSGG):
-       uaS 185.8 kW/K. Checked by anBbSus itself: tgF 840.0, walls 146.47, panels 62.51 MW (scratchpad d3solve.cjs, the app's laws) */
-  tbA: 860,
-  cSol: 10211,
-  uaS: 185.8,
-  uaL: 18,
-  uaBR: 30.8 /* kW/K, bed -> refractory centre (beta.263, see the bed balance) */,
-  uaRW: 43.1 /* kW/K, refractory centre -> water */,
-  /* 1.0.0-beta (JENNIE, heat balance study 2026-11-21): the upper furnace gas to the bare upper walls is gas radiation + convection,
-     no longer the fixed 32 kW/K (NO-SOURCE). Radiation: WSGG emissivity of the CO2 + H2O gas (hx.js anHxEps, the same model as the
-     backpass) at the beam length 3.6 V / A of the upper furnace (T2: 15.507 x 7.684 m grate, 25.85 m upper walls) = 7.7 m, gray wall
-     factor (1 + 0.8) / 2 = 0.9 (Hottel, oxidised steel 0.8, textbook), area 46.38 x 25.85 = 1,199 m2 (T2), convection 10 W/m2 K
-     (textbook). At bed 830 C, drum 322 C: eps 0.51, h 70 + 10 W/m2 K = 96 kW/K. uag stays the fallback for a cold gas */
-  uag: 32 /* kW/K, fallback below 200 C gas */,
-  aUp: 1199 /* m2, upper furnace walls (T2) */,
-  lUp: 7.7 /* m, beam length 3.6 V / A */,
-  fwUp: 0.9 /* gray wall factor */,
-  hcUp: 0.01 /* kW/m2 K, convection (textbook) */,
-  kW: 554,
-  nU: 3.5 /* the law before 1.0.0-beta.282 (phi = velocity share ^ 3.5): only to read a save point of an older engine (anBedMigrate) */,
-  /* 1.0.0-beta.282 (JENNIE, part load: furnace exit gas +30 ~ +55 C over FHI P2S7 Tab 4 Fig 8 and SH spray 3x Fig 10 at 70 ~ 50 %
-     load, with the operator, while the bed held). THE CIRCULATING SOLIDS AT PART LOAD, two textbook laws instead of one power law:
-     (1) the solids flux that the gas carries to the top of the furnace decays with the height as Kunii & Levenspiel (Fluidization
-         Engineering, 2nd ed., ch. 7, the freeboard): flux(H) = flux(0) e^(-a H) with a U = c (constant for a bed material). Against the
-         150 MW anchor: phi = e^(-c H / U0 (1 / uRel - 1)) = e^(-kKL (1 / uRel - 1)), uRel = the gas velocity share (unit step).
-     (2) the heat transfer coefficient of the suspension to the walls and the panels grows with the square root of its density
-         (Basu & Nag, h = 40 rho^0.5 W/m2 K; Basu, Circulating Fluidized Bed Boilers, ch. 6), while the heat it carries up grows with
-         the flux: walls uaS x phi^0.5, panels uaP x phi^0.5 (hx.js), solids cSol x phi. At phi 1 (the anchor) nothing changes.
-     kKL, CALC from the plant at 90 MW: scenario 1 of the plant DCS trend (14-plant-trends: coal 55.4 T/H, PA 318 + SA 187 T/H,
-     bed TIFG1090 955 C; anchor PA + SA 610 T/H) and the furnace exit of FHI Fig 8 at 60 % MCR (755 C):
-       coal 55.4 T/H x lhvC 4,259 kW per T/H x (1 - fUC 0.032) = 228 MW, less the gas heated to the bed (qAirG) ~138 MW, less the
-       lower refractory and the limestone ~14 MW (the bed balance below at those flows) = 76 MW that the solids carry up;
-       solids heat capacity flow = 76,000 / (955 - 755) = 380 kW/K = phi x cSol 2,165 -> phi 0.175;
-       uRel = 505 / 610 x (955 + 273) / (937 + 273) = 0.840; kKL = -ln 0.175 / (1 / 0.840 - 1) = 9.2.
-     Check against (1): U0 = the flue gas at 150 MW (188 kg/s, density 0.29 kg/m3 at 937 C) over the 119 m2 grate = 5.4 m/s, furnace
-     height 7.75 + 25.85 = 33.6 m (T2): c = 9.2 x 5.4 / 33.6 = 1.5 s^-1, inside the range Kunii & Levenspiel give for a U (0.5 ~ 10
-     s^-1, larger for coarser solids; the sand of P2S7 Tab 3 d50 0.15 ~ 0.30 mm). The circulation rate itself is not in the documents */
-  /* 1.0.0-beta.350 (JENNIE, D3 of "GO DESIGN", held): the FHI 60 % point (air 371 T/H Fig 12, coal 56.0 Fig 13, furnace 755 C Fig 8,
-     bed 860 held) asks for kKL 3.80 (CALC, scratchpad d3solve.cjs). Measured 2026-11-24 (team-files/plant-study/
-     15-boiler-balance-2026-11-24-damping.md points 7 - 9): kKL 3.8 takes most of the fast answer of the steam to the coal away (gas
-     velocity -> solids circulation, the lead of the PIC-COBM loop) and the 150 MW pressure loop swings into DRUM LEVEL H.H. (with the
-     plant anchor and with the design anchor). With 9.2 the design anchor (tbA 860 below) is damped at 150 MW. So 9.2 stays until the
-     part-load bed is solved in the physics (the FHI 60 % point says the solids profile at part load is not the 150 MW one with a
-     lower velocity only); 9.2 itself is the plant trend value of beta.282 (finding D3 stays open) */
-  kKL: 9.2,
-  /* 1.0.0-beta.286 (JENNIE, F3 of report 282: start-up save points S10 / S12 / S29): beta.282 gave the SH panels only the solids part
-     (uaP x phi^0.5), so at the low air of a start-up (phi ~ 1e-4) they took no heat at all (S12: 0.0 ~ 0.4 MW, was 1.3 ~ 2.0; the panel
-     outlet steam 156 C after 30 min, was 176) and the bed rose 40 C faster. The gas in the upper furnace radiates to the panels as it
-     does to the walls (Uw = gas uag + solids uaS x phi^0.5 above). The panels take the same split: at the 150 MW anchor the walls have
-     gas 106.9 of 264.5 kW/K (CALC above, Tu 892.3 C) = fgP 0.404. Panel factor = fgP x uag(Tu, metal) / uag(892.3, metal) +
-     (1 - fgP) x phi^0.5 (anBbPanF): 1 at the anchor, the gas part follows the WSGG radiation of the gas temperature. Why the same split:
-     the panels hang in the same suspension at the same temperatures as the upper walls, so they take the same coefficient per m2; their
-     area is read from the anchor: 2 x uaP 65 = 130 kW/K / (264.5 / 1,199 m2) = 589 m2
-     of wall-equivalent surface, of it gas 589 x 106.9 / 1,199 = 52.5 kW/K = 40.4 % (CALC). Check at start-up air (save S12, bed 500 C):
-     WSGG gas at Tu 434 ~ 499 C to metal ~200 C gives 6.3 ~ 7.2 MW, a gray-gas hand check 0.3 x 5.67e-8 x (773^4 - 473^4) x 589 m2 = 3 MW, the same order (eps 0.3 assumed for the check only).
-     Check against the drawing (FHI K1AU3C-201 "Vert. superheater arrangement", in K1AU3-B-0-003 as built): 14 rows across the furnace
-     at 622.3 mm pitch, each row one #1 and one #2 panel, 609.6 mm deep, straight from FL 27,774 to FL 42,527 (14.75 m) = 28 x 2 sides
-     x 0.6096 x 14.75 = 503 m2, plus the lower bent legs: the 589 m2 of the anchor (CALC). The lanes between the panels (gap 622.3 -
-     50.8 = 571 mm, 1.8 x gap = 1.03 m beam, Hottel) take the gas share down by the same 0.83 at 700 ~ 892 C (view factor to the next
-     panel 0.43, WSGG 0.31 vs 0.50 at 7.7 m), so the shading changes the size of fgP, already set by the anchor, not its part-load slope */
-  /* 1.0.0-beta.290 (JENNIE, report 288 F1: at 90 MW MST 543 / RHT 540 held with sprays 6.6 + 6.5 T/H, plant 522 / 521 with the 2nd
-     spray at 0; backpass deposits clean or full give MST 544 both: the extra heat is in these panels, upstream of the 1st spray).
-     The gas share of the panels is no longer the wall split above. The gas between two panels is a lane, not the furnace: the lane
-     beam is 1.8 x gap 571 mm = 1.03 m (Hottel, K1AU3C-201: 622.3 mm pitch, 50.8 mm tubes), and the WSGG emissivity there is 0.305
-     against 0.504 at the furnace beam 7.7 m (hx.js anHxEps, 892 C). Panel faces from the drawing: 28 panels x 2 sides x 0.6096 m x
-     (14.75 m straight + 3.126 m lower legs) = 610 m2 (CALC). Gas to the panels at the anchor (Tu 892.3 C, panel metal ~440 C, save
-     "150 MW bed AUTO 2 coolers"): 610 m2 x (WSGG lane radiation 54.5 W/m2 K, gray wall factor 0.9 in it, + convection 10) = 39.4
-     kW/K, of the anchor panel conductance 2 x uaP 65 = 130 kW/K: fgP 0.303 (CALC). beta.348 (D9): at the design anchor Tu 849.9 C the
-     lane radiation is 51.4 W/m2 K and the panels 2 x 76.1 kW/K (hx.js uaP): fgP = 610 x (0.0514 + 0.01) / 152.2 = 0.246 (CALC). The solids take the rest (0.697 x phi^0.5), so the
-     panels lose heat faster at part load than the walls do; at the anchor (phi 1) the panel heat is the same as before. Hand check at
-     90 MW (Tu 850, phi 0.2): panel factor 0.65 -> 0.60, about 3 MW less to the SH. Was fgP 106.9 / 264.5 = 0.404 (beta.286, the wall
-     split; the 17:35 note of report 286 said the lane changes only the size of fgP, not its part-load slope: wrong, the size IS the
-     slope, because the solids part falls with phi^0.5 and the gas part does not) */
-  fgP: (610 * (0.0514 + 0.01)) / 152.2,
-  aPan: 610 /* m2, panel faces (K1AU3C-201, CALC above) */,
-  lPan: 1.03 /* m, lane beam between two panels */,
-  tuA: 849.9 /* beta.348: the design anchor (D9 above) */,
-  /* 1.0.0-beta.334 (JENNIE, whole boiler balance 2026-11-23, plant-study/15-boiler-balance-2026-11-23.md): THE SOLIDS DENSITY ALONG
-     THE HEIGHT. The law of beta.282 (Kunii & Levenspiel) makes the density fall with the height as e^(-a h), a = c / U, and phi is its
-     share at the furnace top. The walls and the panels gave both phi (the top), but they do not sit at the top: the upper walls run
-     from the refractory top to the roof and the SH panels hang in the upper part only. Each now takes the mean density over its own
-     height (anBbMeanH): at the anchor (phi 1) every mean is 1, nothing changes at 150 MW; at part load the walls keep more solids
-     than the panels. Heights (sourced): grate FL +6,400 and refractory top FL +14,264.6 (thermal masses 01.01), SH panels FL 27,774 to
-     42,527 = the furnace top (K1AU3C-201): H = 36.13 m, upper walls from x = 7.865 / 36.13 = 0.218, panels from 21.374 / 36.13 =
-     0.592 (CALC). The solids that carry the heat up (Cs = gas + phi x cSol) stay the top flux.
-     Check against the plant (scenario 2 trend A, the load-up day, coal only, cyclone out TIFG1095 median by load): 40 / 50 / 60 / 70
-     / 90 / 150 MW = 556 / 596 / 634 / 661 / 711 / 875 C. App before: 45 MW 600, 72 MW 702, 90 MW 769, 150 MW 865; now 557, 667, 720,
-     864. Scenario 1 at 90 MW (MST 522, 2nd spray 0): before MST 541 with sprays 3 + 5 T/H, now 525 with no spray. */
-  xW: 0.218 /* upper walls start, share of the furnace height (CALC above) */,
-  xP: 0.592 /* SH panels start (CALC above) */
-};
-/* 1.0.0-beta.334: the mean of the solids density share between the heights a and b (shares of H), phi = the share at the top:
-   the density at x is phi^x of the anchor (e^(-k x), k = -ln phi) */
-function anBbMeanH(phi, a, b) {
-  const k = -Math.log(Math.max(1e-12, phi));
-  return Math.abs(k) < 1e-6 ? 1 : (Math.exp(-k * a) - Math.exp(-k * b)) / (k * (b - a));
-}
-/* gas radiation (WSGG) + convection of the upper furnace gas at tg to the walls at tw, kW/K (AN_BB above) */
-function anBbUag(tg, tw) {
-  const B = AN_BB;
-  if (!(tg > 200) || !(tg - tw > 1) || typeof anHxEps !== 'function') return B.uag;
-  const K1 = tg + 273.15, K2 = tw + 273.15;
-  return B.aUp * (B.hcUp + (B.fwUp * anHxEps(tg, B.lUp) * 5.67e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tw));
-}
-/* 1.0.0-beta.282: the circulating solids share phi at the gas velocity share u (AN_BB kKL above; u capped 1.2 as before) */
-function anBbPhiV(u) {
-  return u > 0.05 ? Math.exp(-AN_BB.kKL * (1 / Math.min(1.2, u) - 1)) : 0;
-}
-/* beta.286: the share of the anchor conductance of an SH panel at the suspension tu, panel metal tm, solids share phi (AN_BB fgP) */
-function anBbPanF(tu, tm, phi) {
-  const B = AN_BB,
-    /* beta.290: the gas of the lane between two panels (beam lPan), per m2 of panel face, kW/m2 K */
-    hL = tg => {
-      if (!(tg > 200) || !(tg - tm > 1) || typeof anHxEps !== 'function') return 0;
-      const K1 = tg + 273.15, K2 = tm + 273.15;
-      return B.hcUp + (B.fwUp * anHxEps(tg, B.lPan) * 5.67e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tm);
-    },
-    gA = hL(B.tuA);
-  return B.fgP * (gA > 0 && isFinite(tu) ? hL(tu) / gA : 0) + (1 - B.fgP) * Math.sqrt(anBbMeanH(phi, B.xP, 1)) /* beta.334: the panels' own height */;
-}
-/* the upper furnace suspension of the bed balance (unit step): exit tgF and mean Tu of the gas + circulating solids that leave the bed
-   at Tb, with the walls (Uw, sink Tw) and the SH panels (Up, sink Tp) in parallel; uag at the mean of the last scan (tu0) */
-function anBbSus(Tb, Tw, gcp, phi, up, tu0) {
-  const B = AN_BB,
-    Uw = anBbUag(isFinite(tu0) ? tu0 : Tb, Tw) + Math.sqrt(anBbMeanH(phi, B.xW, 1)) * B.uaS /* beta.282: h ~ rho^0.5 (AN_BB); beta.334: over the walls' height */,
-    Cs = gcp + phi * B.cSol,
-    Ut = Uw + up.U;
-  if (!(Cs > 0.01) || !(Ut > 0)) return { tgF: Tb, Tu: Tb, Uw, qW: 0, qP: 0 };
-  const Ts = (Uw * Tw + up.U * up.T) / Ut,
-    N = Ut / Cs,
-    e = Math.exp(-N),
-    Tu = Ts + ((Tb - Ts) * (1 - e)) / N;
-  return { tgF: Ts + (Tb - Ts) * e, Tu, Uw, qW: Uw * (Tu - Tw), qP: up.U * (Tu - up.T) };
-}
-/* 1.0.0-beta.256 (JENNIE; coordinator 2026-11-22: every save point must load and run without a trip): A SAVE POINT OF AN OLDER ENGINE.
-   Its bed was solved by the one-temperature model (the bed and the furnace exit both at Tb, walls ua0w 289.3 kW/K, panels uaP 75 at Tb).
-   Loaded as it is, the new balance takes less heat from that bed: the bed heats ~60 C in 10 min while the steam made falls, the boiler
-   master runs the coal to its top and the unit trips (headless, save "150 MW bed AUTO 2 coolers", 2026-11-22). The saved plant is a
-   steady heat balance, so the bed is moved to the temperature at which the NEW model takes the SAME heat out of the bed as the old one
-   did at the saved state: walls + lower refractory + SH panels + the gas that leaves the furnace (gcp x its exit change). Same fuel, same
-   total out: the loaded plant starts in balance. Gate: a state without U.Tu (saved before beta.256). One scan of arithmetic, no fit. */
-function anBedMigrate(U) {
-  if (!U || isFinite(U.Tu) || !isFinite(U.Tb) || !isFinite(U.Tw)) return;
-  const B = AN_BB,
-    Tb = U.Tb,
-    Tw = U.Tw,
-    gcp = isFinite(U.gcp) ? U.gcp : 0,
-    phi = isFinite(U.phi) ? U.phi : 0,
-    hm = U.hxM || {},
-    pm = [hm.p1, hm.p2].filter(isFinite),
-    Tp = pm.length ? pm.reduce((a, v) => a + v, 0) / pm.length : Tw,
-    Trf = isFinite(U.Trf) ? U.Trf : (B.uaBR * Tb + B.uaRW * Tw) / (B.uaBR + B.uaRW),
-    dW = Tb - Tw,
-    tg0 = isFinite(U.tgF) ? U.tgF : Tb /* the old exit gas */;
-  /* the old balance at the saved state (the code of 1.0.0-beta.254) */
-  const ug = anBbUag(Tb, Tw),
-    qG = gcp > 0.01 ? gcp * dW * (1 - Math.exp(-ug / gcp)) : 0,
-    qS = phi * (Math.sign(dW) * Math.max(0, Math.abs(289.3 * dW) - Math.abs(qG))),
-    qOld = qS + Math.min(1, phi) * qG + B.uaBR * (Tb - Trf) + 75 * phi * pm.reduce((a, p) => a + (Tb - p), 0);
-  /* the new balance at a bed T: phi moves with the gas velocity (Tb + 273) / (tbA + 273), the old one used Tb0. beta.282: the saved phi is
-     of the old law (velocity share ^ nU on the Tb0 basis): its velocity share is read back from it, then the law of today (anBbPhiV) */
-  const u0 = Math.pow(Math.max(1e-9, phi), 1 / B.nU) * ((U.Tb0 + 273) / (B.tbA + 273)),
-    out = T => {
-    const ph = anBbPhiV((u0 * (T + 273)) / (Tb + 273)),
-      uaP = typeof AN_HX !== 'undefined' ? (AN_HX.uaP1 + AN_HX.uaP2) / 2 : 0 /* beta.342: mean of the two panels (F13) */,
-      s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * anBbPanF(T, Tp, ph), T: Tp }, T);
-    return { q: s.qW + s.qP + B.uaBR * (T - Trf) + gcp * (s.tgF - tg0), s, ph };
-  };
-  let lo = Math.min(Tb, Tw) - 50,
-    hi = Math.max(Tb, Tw) + 400;
-  for (let i = 0; i < 60; i++) {
-    const m = (lo + hi) / 2;
-    if (out(m).q > qOld) hi = m;
-    else lo = m;
-  }
-  const T = (lo + hi) / 2,
-    r = out(T);
-  U.Tb = T;
-  U.Tu = r.s.Tu;
-  U.tgF = r.s.tgF;
-  U.phi = r.ph;
-}
-const AN_BED = {
-  s: [0.43, 0.525, 0.626, 0.715, 0.86, 1],
-  t: [798, 819, 840, 840, 840, 840],
-  a: [0.612, 0.557, 0.622, 0.716, 0.861, 1]
-};
-function anBedSS(U, fs, as) {
-  const K = AN_BED,
-    start = U.Tamb + (U.Tb0 - U.Tamb) * Math.pow(Math.min(3, fs / as), U.kBedSU != null ? U.kBedSU : 0.45),
-    x = Math.min(1.1, fs),
-    ip = Y => {
-      if (x <= K.s[0]) return Y[0];
-      for (let i = 1; i < K.s.length; i++)
-        if (x <= K.s[i]) return Y[i - 1] + ((Y[i] - Y[i - 1]) * (x - K.s[i - 1])) / (K.s[i] - K.s[i - 1]);
-      return Y[Y.length - 1] + ((x - 1) * (Y[Y.length - 1] - Y[Y.length - 2])) / (1 - K.s[K.s.length - 2]);
-    };
-  const tab = U.Tamb + (ip(K.t) * (U.Tb0 / 840) - U.Tamb) * Math.pow(ip(K.a) / as, 0);
-  /* 3.2.1 b6 (Mina beta.108 rerun: bed 841 / 771 / 741 at 150 / 105 / 90 MW, still falling; plant 954 / 955 / 955): the start-up law is for
-     the small fire below 40 % load only. At part load the plant keeps more air than its coal share (PA 318 T/H at 90 MW), so fs / as < 1
-     and the start-up law capped the bed under the trend. It now fades out between 30 and 43 % fuel share (no jump at 40 % load) */
-  const w = Math.max(0, Math.min(1, (fs - 0.3) / (K.s[0] - 0.3)));
-  return Math.min(start + (tab - start) * w, tab);
-}
-/* bed inventory (t of solids in the furnace). The overall furnace pressure drop is its weight on the grate: 15.51 x 7.68 m = 119 m2 (T2), so
-   1 mmH2O = 1 kg/m2 = 0.119 t. 3.2.3-beta.265 (SOHEE, Jennie): the 150 MW anchor is the plant DCS trend, scenario 1: overall furnace DP 1440 ~ 1490,
-   ~1465 mmH2O (team-files/plant-study/14-plant-trends.md) = 174.3 t. Checks only: FHI Section 7 Tab 4 Fig. 9 (overall furnace DP vs load: normal
-   ~1630 at 100 %, low limit ~1450) and the HMI snapshot DPIFG1081 1426 / DPIFG1082 1432 (hmi-op.js). Before 265 the snapshot 1426 = 170 t. In: ash of the coal 6.82 % (T3), limestone less its CO2 (93.66 % CaCO3,
-   T3: 0.59 stays), sand. Of the ash and limestone 20 % stays as bottom ash (ASH L5-1, scanned page, read with care), the rest leaves as fly ash.
-   Out: the four screw coolers, 2 T/H at normal, 4 T/H at 5 rpm (BAC E130122B): 0.8 T/H per rpm. The fan flow that fluidizes: NO-SOURCE, full
-   reading above 30 % of the anchor primary air. Initial charge at Cold 100 t (T9 p3). */
-/* The loop: the cyclones catch the solids and the seal pots give them back while the fluidizing air blows. Below the FA blower flow low low of ABC-006
-   (20 T/H) the seal pots stop passing: the solids stay in the cyclone legs and the bed empties, and they come back with the air. The rate is
-   NO-SOURCE: the circulation rate is not in the documents. */
-const AN_BI = { t0: 174.3, tCold: 100, kA: 0.0682, kL: 0.59, kB: 0.2, q: 0.8, faLL: 20, loop: 60 };
-function anBedStep(U, dt, rpm, pa, fa) {
-  const K = AN_BI;
-  if (!isFinite(U.bedI)) U.bedI = U.cold ? K.tCold : K.t0;
-  const sol = K.kA * (U.coalR || 1) * (isFinite(U.cbn) ? U.cbn : (U.Fc || 0) * (U.burn || 0)) + K.kL * (U.lmQ || 0);
-  U.bedIn = K.kB * sol + (U.sdQ || 0);
-  /* beta.21: the rest of the solids leaves the cyclones as fly ash (T/H), to the air heater hoppers and the ESP (boiler.js anAphStep) */
-  U.flyA = (1 - K.kB) * sol;
-  U.bedOut = K.q * rpm;
-  U.bedI = Math.max(0, U.bedI + ((U.bedIn - U.bedOut) * dt) / 3600);
-  /* the solids held in the cyclone legs (t) */
-  U.bedLeg = U.bedLeg || 0;
-  const mv = (K.loop * (pa > 106 ? 1 : 0) * dt) / 3600,
-    seal = fa == null || fa >= K.faLL;
-  U.bedSeal = seal ? 1 : 0;
-  if (!seal) {
-    const d = Math.min(mv, U.bedI);
-    U.bedI -= d;
-    U.bedLeg += d;
-  } else {
-    const d = Math.min(mv * 4, U.bedLeg);
-    U.bedI += d;
-    U.bedLeg -= d;
-  }
-  U.bedK = Math.max(0, Math.min(1, pa / 106)) * (U.bedI / K.t0);
-  return U.bedK;
-}
 /* 3.2.4-beta.1 (Jennie, user 2026-11-17 "unahin mo nlng ang mga pinakamahalaga sa operation"): THE BOILER SAFETY VALVES. Before: none,
    so an over-pressure had no relief. Source: K1AU3-D1-0-011 RA Engineering Data of Safety Valve for Section I (FHI master documents
    D1, Consolidated / Dresser 1700 series, Fluids Control approval Rev. E): set pressure kg/cm2 G and rated capacity kg/h of Unit 1:
@@ -2367,7 +1263,7 @@ function anBedStep(U, dt, rpm, pa, fa) {
    steam flow of an open valve goes with the absolute pressure (critical flow, CALC). Reseat at the set less 4 % blowdown (ASME Section
    I PG-72.1: 2 to 4 %, the upper value; the data sheet has no blowdown). The drum and SH valves take the steam between the drum and
    FT-MS1031 as the sootblowers (U.msb): the drum loses it and the cycle needs it back as make-up. The reheater valves take it from the
-   reheater mass balance. U.msv (drum + SH, T/H), U.msvR (reheater, T/H), U.svOpen = { tag: 1 } of the valves open */
+   reheater mass balance. U.msv (drum + SH, T/H), U.msvR (reheater, T/H), U.svOpen holds { tag: 1 } for each valve open */
 const AN_SV = {
   bd: 0.04,
   acc: 0.03,
@@ -2438,12 +1334,26 @@ function anCondStep(U, dt) {
     Ps = Math.min(1.033, anPsat(U.cdTs));
   U.cdQ = Math.round(Q / 100) / 10; /* MW */
   U.cdT = U.cdTs;
+  /* Phase 11 (MEI): the cd port (ports.js) for the turbine (RIN, back pressure) and the sea water (SUZU, CW outlet temperature).
+     The heat each water box path takes NOW from the condensing steam at U.cdTs: Q_i = C_i (1 - exp(-UA_i / C_i)) (Ts - Tin_i), with
+     the path flow U.swQcA / B (SUZU), UA_i = UA / 2 x sqrt(W_i / (Cd / 2)) (the same exchanger law as above, split in its two
+     halves: K2MC3A is a two-pass, two-path condenser, PD-020). In a steady state QA + QB = Q; while Ts lags they differ (the stored
+     heat of the steam side). kW, unrounded (agreed with SUZU). The pressure is set below (U.cdP), the port is written there. */
+  const qBox = (Wt, Ti) => {
+    const Wi = Math.max(0, (Wt || 0) * 1.02),
+      Ci = (Wi / 3.6) * K.cp,
+      UAi = (K.UA / 2) * Math.sqrt(Wi / (K.Cd / 2));
+    return Ci > 1 && isFinite(Ti) ? Ci * (1 - Math.exp(-UAi / Ci)) * Math.max(0, U.cdTs - Ti) : 0;
+  },
+    QA = qBox(U.swQcA, isFinite(U.swTiA) ? U.swTiA : Tin),
+    QB = qBox(U.swQcB, isFinite(U.swTiB) ? U.swTiB : Tin);
   /* 3.2.3 live Cold start: the air in the condenser is its own mass balance (anAuxStep U.cdAirP); the vacuum share is what is left of the
      room between the saturation and the atmosphere (the screens and the hood model read it) */
   if (isFinite(U.cdAirP)) {
     U.cdP = anCdP(U.cdTs, U.cdAirP);
     U.vac = Math.max(0, Math.min(1, (1.033 - U.cdP) / Math.max(1e-3, 1.033 - Ps)));
   } else U.cdP = Ps + (1.033 - Ps) * (1 - vac);
+  anPortSet(U, 'cd', { P: U.cdP, T: U.cdTs, Q: QA + QB, x: { QA, QB } });
   /* the condensate pumps */
   const run = [srcBit(['M.3350']) > 0.5 ? 1 : 0, srcBit(['M.3351']) > 0.5 ? 1 : 0],
     n = run[0] + run[1],
@@ -2530,7 +1440,7 @@ function anLphStep(U, dt) {
   let tin = lag('in', hw + K.rise * Math.max(0, Math.min(1, ld)));
   const t = { in1: tin };
   for (const [k, P0, ttd, dca, mov] of K.h) {
-    const Ps = P0 * anHb('x' + k.slice(1), ms) * thr(pos(mov)),
+    const Ps = P0 * anTbPx('x' + k.slice(1)) * thr(pos(mov)),
       ts = anTsatA(Ps),
       tout = lag(k, tin + (wL[k] ? wL[k].s : 1) * Math.max(0, ts - ttd - tin)),
       h = hd.find(x => x.k === k),
@@ -2539,6 +1449,31 @@ function anLphStep(U, dt) {
     tin = tout;
   }
   U.lpHt = t;
+  /* Phase 11 (MEI): the cd.out port (ports.js) for the deaerator (NANA): the condensate after the No.3 LP heater through LCV-CD1104.
+     m = the flow anDaQ solves (plant.js anCycFlows fda); P = the valve outlet P2 = deaerator PT-CD1104 + z2 + kN m^2 (plant.js
+     anCdHydK, LCV-CD1104 sheet + deaerator O&M L15-2), absolute; T = the No.3 LP heater outlet; h = IAPWS-IF97 region 1 (steamR1).
+     And the store of this part (ports.js rule 4): the hotwell water, 61.9 / 0.9 = 68.8 m2 (AN_CYC.kgmm.hw, K2MC3A) x (600 mm normal
+     water over the hotwell bottom: HHL is 900 mm over the bottom and 300 mm over the normal level FL+1814 / HHL FL+2114, K2MC3A O&M
+     1.1.2) + the level LT-CD1110; E = m x h of water at the hotwell temperature. The LP heater water boxes and shells are not in the
+     store yet (no water volume in the model: rank 6) */
+  {
+    const fl = typeof anCycFlows === 'function' ? anCycFlows(0) : null,
+      mo = fl ? Math.max(0, fl.fda) : 0,
+      pd = U.xt && U.xt.dea ? anUnitVal(U.xt.dea) : NaN,
+      k = anCdHydK(),
+      Po = isFinite(pd) ? pd + 1.0332 + (mo > 0 ? k.z2 + k.kN * mo * mo : 0) : null,
+      To = t.H3.out,
+      hw = isFinite(U.cdHw) ? U.cdHw : 0,
+      Tw = isFinite(U.cdT) ? U.cdT : 30,
+      mw = (AN_CYC.kgmm.hw() * (0.6 + hw / 1000) * anWaterRho(Tw)) / 1000;
+    anPortSet(U, 'cd.out', {
+      m: mo,
+      P: Po,
+      T: To,
+      h: Po != null && isFinite(To) ? steamR1(Po * 0.0980665, To + 273.15).h : null
+    });
+    anPortSet(U, 'store.MEI', { mw, E: mw * steamR1(0.0980665 * Math.max(0.01, +U.cdP || 1.0332), Tw + 273.15).h });
+  }
   U.tt = Object.assign(U.tt || {}, {
     'TT-CD1101': r1(t.H1.in),
     'TT-CD1102': r1(t.H2.in),
@@ -3134,7 +2069,7 @@ function anAuxStep(U, dt) {
   if (U.gsAI) anUnitWrite(U.gsAI, U.gsV31);
 }
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
-const AN_LO = { UA: 95.8, Co: 64.5, Qb: 1032, Wmax: 170, M: 25800, Ch: 730, Tamb: 30 };
+const AN_LO = { UA: 95.8, Co: 1300 / (63.0 - 46), Qb: 1300, Wmax: 170, M: 25800, Ch: 730, Tamb: 30 } /* DESIGN-SRC: O&M L2 TG 2-3 */;
 function anLubeCoolStep(U, dt) {
   const K = AN_LO,
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
@@ -3748,13 +2683,18 @@ function anAirStep(U, dt) {
     const ts = U[k + 'Ts'] || (U[k + 'Ts'] = K.rows.map(() => 1e9)),
       wr = U[k + 'Wr'] || (U[k + 'Wr'] = run.slice()),
       rem = U[k + 'Rem'] || (U[k + 'Rem'] = K.rows.map(() => 0));
+    /* Phase 11 (SUZU 2026-11-27, YUI read): the plant air compressors are 6.6 kV motors on BUS 1AM (M-0703A, ETAP K1AU3-E1-0-307 RA
+       p A.3 / A.12, elec.js AN_EL.mot): a unit black-out (U.el.bo) leaves them with no supply, so they stop and no start (logic or
+       local) holds until the bus is back. The instrument air compressors are 460 V motors: elec.js (anElStep LV) has every 460 V bus
+       dead with BUS 1AM in a black-out, so they stop too */
+    const dead = !!(U.el && U.el.bo);
     K.rows.forEach((r, i) => {
       const fld = s ? (s.sig[r + ':S'] ? 1 : 0) : wr[i];
       if (fld !== wr[i]) {
         run[i] = fld; /* the field operator at the local panel */
         if (fld) ts[i] = 0;
       }
-      if (trip[i]) run[i] = 0;
+      if (trip[i] || dead) run[i] = 0;
       else if (!run[i] && rem[i] && s && DUI.outVal(s, r) === 1) {
         run[i] = 1;
         ts[i] = 0;
@@ -3812,12 +2752,9 @@ function anUnitOwnsPv(S, n) {
   return U.on && n != null && (U.alink || []).some(([a, t]) => t.S === S && t.n === n);
 }
 /* one step of dt seconds (called by the plant step of ABC-001C) */
-/* 3.2.1 c4: the generator electrical values of page 17 (GENERATOR). Sources: data sheet GAE-2013-0136 R2 (Mitsubishi Hitachi TFLQQ-KD,
-   176.5 MVA, 0.85 lag, 13.8 kV, 60 Hz, 3600 rpm, Xd unsaturated 1.99 pu) and snapshot 37.PNG (151.1 MW: 33.1 MVar, power factor 0.977,
-   13.8 ~ 13.9 kV, 6.3 ~ 6.6 kA, field 46.0 VDC / 8.7 A, 7266257 MWh, 882996 MVarh). The voltage regulator (AVR) holds the power
-   factor of the snapshot (0.977) while synchronised; current = MVA / (1.732 x 13.8 kV); the exciter field follows the internal
-   voltage E = |1 + j Xd I| (calculated with the data sheet Xd, no saturation), scaled to the snapshot point (E = 2.19 pu at 151.1 MW
-   / 33.1 MVar), so 1.0 pu at no load = 4.0 A / 21 VDC. The field breaker = the TCS excitation on (tc.exc, ATS step 4 EXCITATION). */
+/* 3.2.1 c4: the generator electrical values of page 17 (GENERATOR), data sheet GAE-2013-0136 R2 (Mitsubishi Hitachi TFLQQ-KD, 176.5 MVA,
+   0.85 lag, 13.8 kV, 60 Hz, 3600 rpm). Phase 11 (2026-11-27): read from the one field / phasor model of tcs-gen.js (anGenEl below); the
+   AVR holds the terminal voltage at its set 90R (AUTO), so the Mvar follows the voltage set and the load, not a fixed power factor. */
 function anDb(x, b) {
   return x > b ? x - b : x < -b ? x + b : 0;
 }
@@ -3836,22 +2773,15 @@ function anGridHz(U, dt) {
   U.gridHz = aim < f ? Math.max(aim, f - AN_GRID.down * dt) : Math.min(aim, f + AN_GRID.up * dt);
   return U.gridHz;
 }
+/* the rating of the machine (GAE-2013-0136 R2: 176.5 MVA, 13.8 kV, 60 Hz) and the page 17 energy meters, which start at the meter
+   reading of snapshot 37.PNG (a meter reading, not a physics value; the GCP meters of tcs-dev.js count from 0) */
 const AN_GEN = {
   kV: 13.8,
   Hz: 60,
   S: 176.5,
-  xd: 1.99,
-  pf: 0.977,
-  If: 8.7,
-  Vf: 46.0,
-  E0: 0,
   MWh: 7266257,
   MVArh: 882996
 };
-AN_GEN.E0 = Math.hypot(
-  1 + (AN_GEN.xd * 151.1 * Math.tan(Math.acos(AN_GEN.pf))) / AN_GEN.S,
-  (AN_GEN.xd * 151.1) / AN_GEN.S
-);
 function anGenEl() {
   const U = AN.unit;
   if (!U || !U.on) return null;
@@ -3859,32 +2789,38 @@ function anGenEl() {
     c = U.tc,
     syn = tb.st === 'sync' || tb.st === 'load',
     fcb = syn || !!(c && c.exc),
-    /* beta.240: P negative = reverse power (motoring); the reactive power follows the positive load only */
+    /* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): ONE generator model. The terminal voltage, stator current, Mvar, power
+       factor and field are the ones of the field and on-line phasor model of tcs-gen.js (tcsGenStep / tcsGenPh: EMF behind Xd 1.92 pu,
+       TR 2310 Xt 0.137 pu, stiff 230 kV bus; GEE-2015-0152 R1 p6, GAE-2013-0136 R2, K1AU3E1-0003 rev 2; checked against the V curves
+       310SD23-270 R1 within 1.5 %), the same values the TCS I/O, the Modbus list and the var-hour meter read. Before, this page computed
+       its own Mvar with a fixed power factor 0.977 (screen 37.PNG) and its own field scaled on that screen: two answers for one machine
+       (150 MW: 33.1 Mvar here, 8.8 Mvar in the TCS). Read only: the mirror page does not make U.gen (beta.277) */
+    g = U.gen || {},
+    G = TCS_GEN,
+    /* beta.240: P negative = reverse power (motoring) */
     P = syn ? +U.MW || 0 : 0,
-    Q = syn ? Math.max(0, P) * Math.tan(Math.acos(AN_GEN.pf)) : 0,
-    p = P / AN_GEN.S,
-    q = Q / AN_GEN.S,
-    /* 3.2.3-beta.235: before 52G the voltage builds up after the field breaker 41 closes (tcs-gen.js g.V, 30 s); was 13.8 kV at once */
-    vb = syn ? 1 : U.gen && isFinite(U.gen.V) ? U.gen.V : fcb ? 1 : 0,
-    /* beta.236: before 52G the exciter output of the field model (tcs-gen.js g.efd, 1 = no load field) */
-    E = !fcb
-      ? 0
-      : syn || !(U.gen && isFinite(U.gen.efd))
-        ? (vb * Math.hypot(1 + AN_GEN.xd * q, AN_GEN.xd * p)) / AN_GEN.E0
-        : U.gen.efd / AN_GEN.E0,
-    kA = Math.hypot(P, Q) / (Math.sqrt(3) * AN_GEN.kV),
-    g = U.genE || (U.genE = { MWh: AN_GEN.MWh, MVArh: AN_GEN.MVArh });
+    on = syn && !!g.f41,
+    Q = on && isFinite(g.Q) ? g.Q * G.sb : 0,
+    /* terminal voltage: on line the phasor |Vt|; off line the open circuit voltage, flux x speed (tcsGenStep g.V = eq x n already) */
+    vt = fcb && isFinite(g.V) ? g.V : 0,
+    kA = on && isFinite(g.I) ? g.I * G.ib : 0,
+    /* the exciter field (brushless machine, UNITROL 6080): 4.5 A per pu of field (no load, GEE-2015-0152 p6), voltage = current x the
+       exciter field resistance 6.14 ohm at 100 C (GAE-2015-0004 R1) */
+    If = fcb && isFinite(g.efd) ? Math.max(0, g.efd) * G.ifo : 0,
+    m = U.genE || (U.genE = { MWh: AN_GEN.MWh, MVArh: AN_GEN.MVArh });
   return {
     fcb: fcb ? 1 : 0,
-    kV: fcb ? (vb * AN_GEN.kV * Math.min(tb.rpm || 0, 3600)) / 3600 : 0,
+    kV: vt * AN_GEN.kV,
     Hz: syn && !(U.el && U.el.l52 === false) ? AN_GEN.Hz : ((tb.rpm || 0) / 3600) * AN_GEN.Hz,
     MVAr: Q,
-    pf: syn && P > 0 ? AN_GEN.pf : null,
+    /* the sign of the Mvar tells lag (export) or lead (import) */
+    pf: on && P > 0 && isFinite(g.pf) ? g.pf : null,
+    lead: on && Q < 0 ? 1 : 0,
     kA,
-    Vf: AN_GEN.Vf * E,
-    If: AN_GEN.If * E,
-    MWh: g.MWh,
-    MVArh: g.MVArh,
+    Vf: If * G.rf,
+    If,
+    MWh: m.MWh,
+    MVArh: m.MVArh,
     ta: (U.genT && U.genT.ta) || null,
     tAir: U.genT ? U.genT.ta.reduce((a, b) => a + b, 0) / 4 : null,
     ts: (U.genT && U.genT.ts) || null,
@@ -3892,25 +2828,64 @@ function anGenEl() {
     tex: U.genT ? U.genT.ex : null
   };
 }
-/* 3.2.1: the generator temperatures of pages 13 / 17 from snapshot P35SHAFT (035 SHAFT MONITOR, 130 MW, 3596 rpm): air cooler outlet
-   TIGE10041 ~ 44 39 / 38 / 43 / 44 C, AC exciter outlet air TIGE1005 80 C, stator coil TIGE10061 ~ 66 81 / 84 / 81 / 83 / 79 / 84 C.
-   The stator copper loss goes with the current squared: stator = cooler air (mean 41) + its snapshot rise x (kA / 5.57)^2, 5.57 kA =
-   the current of the generator model at 130 MW; the exciter air = 41 + 39 x (field current / 7.85 A)^2 (7.85 A = the model field at
-   130 MW). The cooler outlet air stays at the snapshot while the shaft turns (NO-SOURCE: its change with the cooling water); at rest
-   all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding) */
-const AN_GENT = { ta: [39, 38, 43, 44], ts: [81, 84, 81, 83, 79, 84], ex: 80, tA: 41, kA: 5.57, If: 7.85, tau: 600 };
+/* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): the generator temperatures of pages 13 / 17 and of TCS GD-5 from the design of
+   the machine (was: the readings of screen P35SHAFT at 130 MW scaled with the current squared).
+   - cooling gas after the four air coolers H-1971A ~ D (TIGE10041 ~ 44): the cooler water is the closed (auxiliary) cooling water supply
+     (AN_ACW, U.acT2). DESIGN-SRC: nameplate 310SD18-613 (generator O&M GAE-2014-0791 R0 PDF p180, read by YUA 2026-11-27) "cold air
+     45 C", with GAE-2013-0136 R2 p1 "Temperatures Cooling Water Max. 37 C": the coolers hold 45 C gas with 37 C water, approach
+     45 - 37 = 8 K (was 40 C, the IEC 60034-1 reference coolant, before the nameplate was read). The cooler duty itself changes by about a
+     third between no load and rated (the friction, windage and core loss are there at no load too); the 8 K is held at every load.
+   - stator coil (TIGE10061 ~ 66, six RTD in the slots): stator rise class B, indirectly air cooled (GAE-2013-0136 R2), total limit
+     123 C by RTD at the rating (GEE-2014-0322 R2 p4; O&M GAE-2014-0791 p35 "stator <= 123 C") over the 45 C cold air of the nameplate:
+     78 K at the rated current 7,384 A; the rise is the I2R loss of the armature (3 I^2 Ra, Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2;
+     GEE-2014-0322 5.6.2 c), so rise = 78 K x (I / 7.384 kA)^2.
+     The six RTD read one value: the docs give no difference between the slots. The TCS alarm GD-5 HIGH 123 C is the same limit.
+   - AC exciter outlet air (TIGE1005): its rise follows the exciter field squared; its rated rise is not in the docs, so it stays on the
+     old reading 80 C at 7.85 A (screen P35SHAFT, a check value; finding for the PC lookup).
+   At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs).
+   The heat the air coolers give to the closed cooling water (port q.ccw.YUI, kW, written by anGenInt) = the generator losses:
+     stator copper 3 I^2 Ra (Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2; 172 kW at 7,384 A),
+     main field I^2 Rf (Rf 0.2188 ohm at 95 C, GAE-2013-0136 R2; main field = exciter field x 463 / 4.5 A: 463 A main = 4.5 A exciter =
+       1 pu field, 310SD23-268 R1 / GEE-2015-0152 p6; 1,218 A = 325 kW at the rating, 310SD23-270 R1),
+     the rest (core, friction and windage, stray) at rated speed: DERIVED = the heat duty of the four coolers 2,120 kW (generator O&M
+       GAE-2015-0063 R0 p36 "total cooler heat duty 2120 kW, water 400 m3/h, supply max 37 C"; Kitashiba sheets PLH10293 / PLH10294,
+       PDF p221 / p222: main A, B 810 kW each, air (78.1) -> 45.0 C, sub C, D 250 kW each, air (76.7) -> 45.0 C; read by YUA,
+       /mnt/project-files/suzu-leftovers-doc-reads.md) less the two above at the rating (176.5 MVA 0.85 lag, the machine the coolers are
+       rated for) = 1,623 kW, with the cube of the speed (the windage; the split of core and windage is not in the docs: NO-SOURCE form).
+       The bearing friction is not in it: it goes to the lube oil (same O&M p36: generator bearings 600 L/min, 240 kW). The 3,041 kW of
+       mass balance K1AU3-MB-021 items 14 ~ 21 (290.5 t/h, 34 -> 42 C) is the cooling water line sizing, not the cooler duty (was used
+       here before the O&M was read). No load table: one design point closes the balance. */
+const AN_GENT = {
+  tCold: 45 /* C, cold air of the nameplate 310SD18-613 (GAE-2014-0791 R0 PDF p180) */,
+  tCw: 37 /* C, cooling water max (GAE-2013-0136 R2) */,
+  tLim: 123 /* C, stator winding total limit by RTD (GEE-2014-0322 R2 p4) */,
+  In: 7.384 /* kA rated (GAE-2013-0136 R2) */,
+  ex: 80,
+  tA: 41,
+  If: 7.85,
+  tau: 600,
+  Ra: 0.001051 /* ohm, armature 1 phase at 95 C */,
+  Rf: 0.2188 /* ohm, main field at 95 C */,
+  ifMain: 463 / 4.5 /* A main field per A exciter field */,
+  qD: 2120 /* kW, total heat duty of the four air coolers at the rating (GAE-2015-0063 R0 p36) */,
+  ifD: 1218 /* A main field at the rating (310SD23-270 R1) */
+};
+AN_GENT.q0 = AN_GENT.qD - (3 * (AN_GENT.In * 1000) ** 2 * AN_GENT.Ra + AN_GENT.ifD ** 2 * AN_GENT.Rf) / 1000;
 function anGenTemp(U, G, dt) {
   const K = AN_GENT,
     Ta = U.Tamb || 30,
     turn = U.tb && U.tb.rpm > 100,
-    T = U.genT || (U.genT = { ta: K.ta.slice(), ts: K.ts.slice(), ex: K.ex }),
+    T = U.genT || (U.genT = { ta: [Ta, Ta, Ta, Ta], ts: [Ta, Ta, Ta, Ta, Ta, Ta], ex: Ta }),
     a = Math.min(1, dt / K.tau),
-    r = (G.kA / K.kA) ** 2,
+    cw = isFinite(U.acT2) ? U.acT2 : Ta,
+    air = turn ? cw + (K.tCold - K.tCw) : Ta,
+    rise = (K.tLim - K.tCold) * (G.kA / K.In) ** 2,
     rf = (G.If / K.If) ** 2;
-  K.ta.forEach((v, i) => (T.ta[i] += ((turn ? v : Ta) - T.ta[i]) * a));
-  const air = turn ? K.tA : Ta;
-  K.ts.forEach((v, i) => (T.ts[i] += (air + (v - K.tA) * r - T.ts[i]) * a));
+  T.ta.forEach((v, i) => (T.ta[i] += (air - v) * a));
+  T.ts.forEach((v, i) => (T.ts[i] += (air + rise - v) * a));
   T.ex += (air + (K.ex - K.tA) * rf - T.ex) * a;
+  const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600));
+  return (3 * (G.kA * 1000) ** 2 * K.Ra + (G.If * K.ifMain) ** 2 * K.Rf) / 1000 + K.q0 * n ** 3;
 }
 /* the energy meters of page 17 count the sim time while synchronised */
 function anGenInt(dt) {
@@ -3918,10 +2893,21 @@ function anGenInt(dt) {
   if (!U || !U.on || !(dt > 0)) return;
   const G = anGenEl();
   if (!G) return;
-  anGenTemp(U, G, dt);
-  const P = G.kA * Math.sqrt(3) * AN_GEN.kV * (G.pf || 0);
+  const Q = anGenTemp(U, G, dt),
+    P = G.kA * Math.sqrt(3) * AN_GEN.kV * (G.pf || 0);
   U.genE.MWh += (P * dt) / 3600;
   U.genE.MVArh += (G.MVAr * dt) / 3600;
+  /* Phase 11 ports (ports.js, YUI): the generator output, the unit auxiliary power, the cooler duty and the store of this part, once per
+     plant step. gen.W = U.MW for now (the turbine side writes it); with the RIN shaft port it becomes shaft.W - the generator losses.
+     store.YUI E = the kinetic energy of the generator + exciter rotor: H 4.01 s x 176.5 MVA is the whole machine, and the generator +
+     exciter share of its GD2 is 16,200 / (23,700 + 16,200) (GAE-2013-0136 R2), x (speed / 3600)^2 */
+  const g52 = !!U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'),
+    el = typeof anElec === 'function' ? anElec(U) : null,
+    n = Math.max(0, ((U.tb && U.tb.rpm) || 0) / 3600);
+  anPortSet(U, 'gen', { W: g52 ? +U.MW || 0 : 0, x: { b52g: g52 ? 1 : 0 } });
+  anPortSet(U, 'aux.power', { W: el ? el.aux : null });
+  anPortSet(U, 'q.ccw.YUI', { Q });
+  anPortSet(U, 'store.YUI', { mw: 0, E: U.Hgen * AN_GEN.S * (16200 / (23700 + 16200)) * n * n });
 }
 /* 3.2.3 (SOHEE : PLANT MODEL HELPER, plan task a7 note): SAMPLING AND CHEMICAL DOSING (page "SAMPLING AND DOSING"). Before: no model,
    every analyzer '-----'. docs/versions/v3.2.1/SAMPLING_DOSING_PLANT_MODEL.md has the full source list.
@@ -5046,6 +4032,7 @@ function anUnitStep0(dt) {
     },
     U.tbS
   );
+  anTbPorts(U, tb.rpm, U.mhp);
   const MWss = onGrid ? anTbGen(U.tbS.Whp + U.tbS.Wip) : 0;
   /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of the steam path, each behind its steam
      volume (tSc, tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft.
@@ -5368,7 +4355,11 @@ function anUnitStepX(dt, mso) {
   if (X) {
     /* cold reheat: the HP turbine exhaust and the HP bypass outlet, mixed by their steam */
     const mst = pvOf(X.mst),
-      thx = isFinite(X.cr0) ? X.cr0 + (isFinite(mst) ? mst - X.MST0 : 0) : NaN,
+      /* Phase 11 rank 1 (RIN): the HP exhaust temperature of the steam path (turbine.js tbPath, Stodola + IF97: port crh.rh_in T), in
+         place of the snapshot anchor 370 C moved by the main steam temperature (X.cr0 + mst - X.MST0, which held the part load CRH
+         temperature at the full load value: HB case 7 30 % 338 C) */
+      crT = typeof anPortGet === 'function' && anPortGet(U, 'crh.rh_in') ? anPortGet(U, 'crh.rh_in').T : null,
+      thx = isFinite(crT) && crT != null ? crT : U.Tamb,
       w = (U.ms || 0) + (U.mhp || 0);
     /* 3.2.4 (live Cold start F-T: HP bypass outlet TT-MS1022 64 C with the bypass 8 % open at 60 kg/cm2): the outlet of the HP bypass
        is an energy balance, not the snapshot loop gated by 3 % of the MCR flow (source.js R.TICMS1022). The main steam (PT-MS1006

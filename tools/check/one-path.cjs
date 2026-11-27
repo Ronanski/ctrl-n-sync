@@ -26,10 +26,24 @@ const defs = {},
 for (const f of files) {
   const rel = path.relative(root, f).split(path.sep).join('/'),
     one = rel.startsWith('src/analog/');
-  let fn = '';
+  let fn = '',
+    inC = false;
+  /* comments are not code: a "U.x = 1" written in a comment is not a writer (AOI 2026-11-27, the AN_SV note in unit.js) */
+  const code = l => {
+    let o = '';
+    for (let j = 0; j < l.length; j++) {
+      if (inC) {
+        if (l[j] === '*' && l[j + 1] === '/') (inC = false), j++;
+      } else if (l[j] === '/' && l[j + 1] === '*') (inC = true), j++;
+      else if (l[j] === '/' && l[j + 1] === '/') break;
+      else o += l[j];
+    }
+    return o;
+  };
   fs.readFileSync(f, 'utf8')
     .split(/\r?\n/)
-    .forEach((l, i) => {
+    .forEach((l0, i) => {
+      const l = code(l0);
       const mf = /^(?:async\s+)?function\s+([A-Za-z0-9_$]+)/.exec(l),
         mv = /^(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*=/.exec(l),
         m = mf || mv;

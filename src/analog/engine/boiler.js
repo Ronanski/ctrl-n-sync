@@ -14,55 +14,55 @@
                "OIL SUPPLY LINE VALVE (1) / (2) OPENED") -> PT-DO1043-x2 -> oil gun (FT-DO1043-x, PV of FICDO1043x)
             -> return PCV-DO1009 (the MV of PICDO1008: back pressure of the ring) -> tank.
    Sources:
-     pump     ALLWEILER screw pump SN..ER series (O&M L14-4, on the PC): positive displacement, the flow does not depend on the
-              pressure; built-in pressure relief valve (8.2: "opening pressure 10 % higher than the operating pressure").
-              Capacity 25 T/H, 15 kg/cm2 (MB-022 items 2-1 / 2-2 / 3); relief 16.5 kg/cm2 = 15 x 1.1.
-     header   snapshot 6.PNG: PIDO0005 12.8 kg/cm2 with PCV-DO0002 24.2 %, PIDO1008 11.0 with FCV-DO1012 100.1 % and PCV-DO1009 85.7 %,
-              strainer DPIDO0001 0.029, LIDO0701 4.978 m, P-0702A 25.4 A, burners off. SOP PR-OPE-5002 sect 20: PI-DO0005 12.5,
-              PI-DO1008 10.4 kg/cm2; at the start every valve fully open.
-     split    MB-022 items 6 / 7: 12.5 T/H to the unit 1 burners; the rest (12.5) through PCV-DO0002 (pump 25, unit 2 closed).
-              The valve sizes (K) are CALIBRATED on 6.PNG with that split; linear valves (NO-SOURCE: no valve curve). Check: PCV-DO0002
-              full open passes 20.4 T/H at 2 kg/cm2 (MB-022 item 4: 25 T/H at 2 kg/cm2).
+     pump, valves, line: from the design documents (AN_DO notes, Phase 11 2026-11-27). The HMI snapshot 6.PNG (PIDO0005 12.8 kg/cm2
+              with PCV-DO0002 24.2 %, PIDO1008 11.0, P-0702A 25.4 A, burners off) and SOP PR-OPE-5002 sect 20 (PI-DO0005 12.5,
+              PI-DO1008 10.4 kg/cm2) are checks only.
      burner   M&S load curve 1612 13-4-71 (tip N 90 AG 8, LMYP-1, on the PC): oil pressure linear in the flow, 5.0 bar at 3072 kg/h
               (MAX), 614.4 kg/h MIN (range 1:5, BMS description 1612 13-4-105); SOP 27: "Oil pressure for burner min = 1 kg/cm2 and
               max = 5 kg/cm2", "min = 614.4 ... max = 3078". Burner supply 10.5 kg/cm2 (MB-022 items 8-1 ~ 8-4): FCV-DO1043-x3 full
-              open gives the MAX at that ring pressure (CALIBRATED).
+              open gives the MAX at that ring pressure (DESIGN-SRC: MB-022 8-x and the M&S curve).
      limits   alarm list "Alarm List _20160912": PT-DO0005 H 19.5 / normal 15 / L 5 / LL 3; LT-DO0701 H 7.5 / L 3, 2 / LL 0.2 m;
               DPT-DO0001 H 0.1 / HH 0.2; PT-DO1043-x2 HH 6.0 / H 5.5 / L 0.8. DITL-31 (drawing): tank < 0.2 m and strainer > 0.8
               kg/cm2 = pump trip, outlet < 5 kg/cm2 = standby AUTO start, < 7 = LOW alarm (world/plantsw.js rows r15 / r17 / r28).
-     tank area A from the inventory table (below); oil density 0.87 from the pump data (below); pump current split (49 % at no load, beta.306 from the pump and motor data), current and
-              pressure lags (1 s), the unit 2 branch closed. */
+     tank area A from the inventory table (below); oil density 0.87 from the pump data (below); current and pressure lags (1 s),
+              the unit 2 branch closed. */
 const AN_DO = {
-  Qp: 25 /* T/H per pump, MB-022 item 2-1 / 2-2 */,
-  Prv: 16.5 /* kg/cm2, pump relief = 15 x 1.1 (ALLWEILER 8.2, MB-022 15 kg/cm2) */,
-  Ka: 12.8 /* PCV-DO0002, valve sheet CV p218 */,
-  Kf: 13.1 /* FCV-DO1012, valve sheet CV p228 */,
-  /* 3.2.3: the split at 6.PNG from the two valve sheets (K1AU3-E2-0-123 p218 PCV-DO0002 Cv 17.4 full open = 12.8, p228 FCV-DO1012
-     Cv 17.1 = 13.1; 12.5 T/H at 3.7 kg/cm2 = Cv 8.49): PCV-DO0002 24.2 % at 12.8 kg/cm2 passes 11.1 T/H, so 13.9 T/H goes to the
-     unit 1 ring (MB-022 12.5 / 12.5 is the design split). FCV-DO1012 100 % alone passes 13.9 T/H with 1.1 kg/cm2; 6.PNG reads
-     12.8 -> 11.0 = 1.8: the line from the header to the ring (pipe, fittings, flow element) in series takes the rest
-     (CALIBRATED on 6.PNG; the pipe itself is NO-SOURCE). The return PCV-DO1009 passes the same 13.9 T/H at 85.7 % and 11.0. */
-  q6: 25 - 12.8 * 0.242 * Math.sqrt(12.8),
-  get Kl() {
-    return 1 / Math.sqrt(1.8 / this.q6 ** 2 - 1 / 13.1 ** 2);
+  /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history, the valve sizes, the line and the pump current were CALIBRATED on 6.PNG). From the
+     design documents (YUA PC read, /mnt/project-files/suzu-pc-answers-2026-11-27.md 3):
+     pump     DESIGN-SRC: ALLWEILER SNH660 ER40E6.9-W2 data K1AU3-D1-0-060 R0 p 6 / 8: 33.9 m3/h at 15.5 bar dP, 1.8 mm2/s, oil 0.87
+              kg/dm3 = 29.5 T/H (a screw pump: the flow stays with the pressure). MB-022 items 2-1 / 2-2 print 25 T/H, the system
+              design flow, below the machine's own; the machine is used;
+     valves   DESIGN-SRC: control valve sheets K1AU3-E2-0-123 R1 (Copes-Vulcan): PCV-DO0002 Cv 17.4 (p 218), FCV-DO1012 Cv 17.1 (p 228),
+              PCV-DO1009 Cv 6.1 (p 223). Flow T/H = 0.865 Cv sqrt(dP bar / SG) m3/h x SG (ISA S75 liquid, SG 0.87, 1 kg/cm2 =
+              0.980665 bar) = 0.799 Cv sqrt(dP kg/cm2). Opening -> share of Cv through the two sizing points printed on each sheet
+              (straight lines between them, 0 and 100 %): PCV-DO0002 modified parabolic 11 % -> 1.1, 70 % -> 11 of 17.4; FCV-DO1012
+              modified parabolic 9 % -> 0.78, 59 % -> 8.49 of 17.1; PCV-DO1009 cascade 13 % -> 0.46, 72 % -> 4.56 of 6.1;
+     line     DESIGN-SRC: mass balance K1AU3-MB-022 (A2-0-001 RA p 14): pump header item 3 15 kg/cm2, unit 1 supply items 6 / 7
+              13 kg/cm2 at 12.5 T/H: the line to FCV-DO1012 takes 2 kg/cm2 at 12.5 T/H (loss with the flow squared). */
+  Qp: 33.9 * 0.87 /* T/H per pump */,
+  Prv: 16.5 /* kg/cm2, pump relief DT44A set 16.5 bar (D1-0-060) */,
+  kCv: 0.865 * Math.sqrt(0.87 * 0.980665),
+  cv: {
+    a: { max: 17.4, x: [0, 11, 70, 100], c: [0, 1.1, 11, 17.4] },
+    f: { max: 17.1, x: [0, 9, 59, 100], c: [0, 0.78, 8.49, 17.1] },
+    r: { max: 6.1, x: [0, 13, 72, 100], c: [0, 0.46, 4.56, 6.1] }
   },
-  get Kr() {
-    return this.q6 / (0.857 * Math.sqrt(11.0)); /* PCV-DO1009, 6.PNG */
-  },
+  Kl: 12.5 / Math.sqrt(15 - 13) /* T/H per sqrt(kg/cm2), header -> FCV-DO1012 inlet (MB-022 items 3 / 6) */,
   g: 0.6144 * 0.980665 /* T/H per kg/cm2 at the gun: 614.4 kg/h per bar (M&S 1612 13-4-71) */,
   Kb:
     3.072 /
     Math.sqrt(
       10.5 - 5 / 0.980665
     ) /* FCV-DO1043-x3 full open: MAX 3072 kg/h at 5 bar with 10.5 kg/cm2 ring (MB-022 8-x) */,
-  dp0: 0.029 /* kg/cm2 strainer at 25 T/H, 6.PNG */,
-  I0: 25.4 /* A, P-0702A at 25 T/H x 12.8 kg/cm2, 6.PNG */,
-  /* beta.306 (JENNIE, was 0.45 NO-SOURCE): share of the current at no load, from K1AU3-D1-0-060 R0 (PC only). Pump (ALLWEILER SNH 660,
-     p7 curve): shaft 2.6 kW at 0 bar + 1.09 kW/bar (19.5 kW at 15.5 bar, p8). Motor (TECO 40 HP 460 V, p9): eff 92.5 %. Active current
-     Ia = P / (eff x sqrt3 x 460 V): 22.5 A at 12.8 bar, 3.5 A at 0 bar. The magnetizing current Im is not on the sheet; from the snapshot
-     25.4 A = sqrt(Im^2 + 22.5^2): Im = 11.9 A (0.26 x FLA 46 A, under the full-load reactive 46 x sin(acos 0.88) = 21.8 A). No load:
-     sqrt(11.9^2 + 3.5^2) = 12.4 A = 0.49 x 25.4 A. */
-  fI: 0.49,
+  dp0: 0.029 /* kg/cm2 strainer at 25 T/H, 6.PNG (NO-SOURCE: no strainer sheet read yet) */,
+  /* the motor (DESIGN-SRC: TECO 40 HP 4P 460 V, D1-0-060 p 9: FLC 46.0 A, eff 92.5 %, pf 88.0 %) and the pump power (ALLWEILER SNH 660
+     p 7 / 8: shaft 2.6 kW at 0 bar + 1.09 kW per bar, 19.5 kW at 15.5 bar). Current = sqrt(Ia^2 + Im^2): active Ia = P / (eff x sqrt3 x
+     460 V); the magnetizing current of an induction motor hardly changes from no load to full load, so Im = the reactive current
+     at full load 46.0 x sin(acos 0.88) = 21.8 A (the test report with the no-load current is not in D1-0-060) */
+  pk0: 2.6,
+  pk1: 1.09,
+  eff: 0.925,
+  Im: 46.0 * Math.sin(Math.acos(0.88)),
   /* beta.292 (JENNIE, Full Audit 3 #5, was 23.8 m2 NO-SOURCE): "Limay Project Diesel Oil Tank Inventory Table" 2016-08-16 (O&M V28,
      PC only): DCS level 0.5 m = 43.0 m3 ... 7.7 m = 300.0 m3, linear in between (7.1 m 279.8, 6.9 m 272.6: 36 m3 per m). The tank
      area is the slope: (300.0 - 43.0) / (7.7 - 0.5) = 35.69 m2 (CALC; inside the bound 300 m3 / 7.5 m = 40 m2 of the Equipment List
@@ -108,15 +108,26 @@ function doBurnerQ(P2, x) {
   const b = a / K.g;
   return (-b + Math.sqrt(b * b + 4 * a * P2)) / 2;
 }
+/* a diesel oil valve at opening x (0 ~ 1): T/H per sqrt(kg/cm2) from its Cv curve (AN_DO.cv, the two sizing points of the sheet) */
+function doK(v, x) {
+  const C = AN_DO.cv[v],
+    p = Math.max(0, Math.min(100, 100 * (x || 0)));
+  let i = 1;
+  while (i < C.x.length - 1 && p > C.x[i]) i++;
+  const cv = C.c[i - 1] + ((C.c[i] - C.c[i - 1]) * (p - C.x[i - 1])) / (C.x[i] - C.x[i - 1]);
+  return AN_DO.kCv * cv;
+}
 /* the steady pressures of the network for a pump capacity Qc (T/H): P1 (PT-DO0005), P2 (PT-DO1008), flows */
 function doSolve(Qc, xa, xf, xr, xb) {
   const K = AN_DO,
     sq = x => Math.sqrt(Math.max(0, x)),
-    ring = P2 => K.Kr * xr * sq(P2) + xb.reduce((s, x) => s + doBurnerQ(P2, x), 0),
-    kf = xf > 0 ? 1 / Math.sqrt(1 / (K.Kf * xf) ** 2 + 1 / K.Kl ** 2) : 0; /* FCV-DO1012 and the line, in series */
+    kr = doK('r', xr),
+    kfv = doK('f', xf),
+    ring = P2 => kr * sq(P2) + xb.reduce((s, x) => s + doBurnerQ(P2, x), 0),
+    kf = kfv > 0 ? 1 / Math.sqrt(1 / kfv ** 2 + 1 / K.Kl ** 2) : 0; /* FCV-DO1012 and the line, in series */
   /* for a header P1: the ring pressure where the flow through FCV-DO1012 = return + burners */
   const p2Of = P1 => {
-    if (!(xf > 0) || !(P1 > 0)) return 0;
+    if (!(kf > 0) || !(P1 > 0)) return 0;
     let a = 0,
       b = P1;
     for (let i = 0; i < 30; i++) {
@@ -128,7 +139,7 @@ function doSolve(Qc, xa, xf, xr, xb) {
   };
   const out = P1 => {
     const P2 = p2Of(P1);
-    return { P2, qa: K.Ka * xa * sq(P1), qf: kf * sq(P1 - P2) };
+    return { P2, qa: doK('a', xa) * sq(P1), qf: kf * sq(P1 - P2) };
   };
   if (!(Qc > 0)) return { P1: 0, P2: 0, qa: 0, qf: 0, qrv: 0 };
   let r = out(K.Prv);
@@ -276,8 +287,14 @@ function anDieselOilStep(U, dt) {
      puts back what leaves: an unlimited supply (user 2026-11-14 "Unli supply"), the tank never falls below its level of the starting
      state L0 (3.2.3-beta.233; beta.232 refilled at 25 T/H, slow after a low level) */
   U.doLv = Math.max(K.L0, U.doLv - (burn / K.rho / K.A / 3600) * dt);
-  /* the motors: current = no-load share + hydraulic share (Q x P), 25.4 A at 25 T/H and 12.8 kg/cm2 (6.PNG) */
-  U.doI = sp.map((s, i) => (run[i] ? K.I0 * (K.fI + ((1 - K.fI) * (qi[i] * U.doP1)) / (K.Qp * 12.8)) : 0));
+  /* the motors (AN_DO notes): shaft power from the pump curve at the pump's dP (outlet, suction about 0), current from the motor data;
+     a pump with its valves shut makes no flow and runs at the no-load power */
+  U.doI = sp.map((s, i) => {
+    if (!run[i]) return 0;
+    const P = K.pk0 + K.pk1 * (qi[i] > 0 ? Math.max(0, U.doP1) : 0) * 0.980665,
+      Ia = (1000 * P) / (K.eff * Math.sqrt(3) * 460);
+    return Math.sqrt(Ia * Ia + K.Im * K.Im);
+  });
   /* write the transmitters */
   const A = D.ai,
     w = (l, x) => l && l.length && anUnitWrite(l, x);

@@ -12,7 +12,7 @@
        69.35 = 458.73); empty 9,830 kg, operating 13,370 kg (water 3.54 t).
      same doc p8, K2MC2G-001 rev 3 storage tank T-1104: 158.4 C, 5.05 kg/cm2 G, empty 40,000 kg, operating 140,400 kg (water 100.4 t),
        volume 120.9 m3, ID 3338.
-     Hitachi heat balance PPE-14-0725 R1 case 1 (unit.js AN_HB): deaerator extraction stage 6.369 ata at 458,327 kg/h main steam. */
+     Hitachi heat balance PPE-14-0725 R1 case 1 (turbine.js AN_TB c1): deaerator extraction stage 6.369 ata at 458,327 kg/h main steam. */
 
 /* water enthalpy kJ/kg at P kg/cm2 G (at least its saturation pressure) and T C */
 function fwHw(P, T) {
@@ -34,9 +34,8 @@ function fwHw(P, T) {
      extraction no. 3 (heat balance "deaerator" stage, PD-013) through MV-TS1003 (DITL-96) and its non-return valve: steam flows
      only from the higher pressure, w = k sqrt(rho dP) (turbulent line + valves); k from the design point: 26.79 t/h at the stage
      6.369 ata against the deaerator 5.05 + 1.0332 = 6.083 ata (dP 0.286), rho of the steam at the deaerator inlet 310.3 C (IF97).
-     The stage pressure is the port ext.da of the turbine part (RIN) when it is written, else the heat balance stage pressure
-     (unit.js anHb 'xd' x 6.369 ata, the same HB line the HP heaters use). Enthalpy: the port, else IF97 at the stage pressure and
-     the extraction temperature TT-TS1018 of the turbine tags (unit.js anFwTagStep), else the design 310.3 C;
+     The stage pressure, temperature and enthalpy are the port ext.da of the turbine part (RIN, turbine.js anTbPorts); not written =
+     no steam (ports.js rule 3); a port without h: IF97 at its P and T;
      pegging steam PCV-AS1030 from the auxiliary steam header: the flow the aux steam model takes out of its header (U.asF.w1030, the
      same ISA-75.01 valve law, one flow: no second calculation here), header steam 350 C (MB-014, as AN_AS.Ta);
      the No.1 HP heater normal drain (primary valve LCV-HD1105-1 of unit.js anHdStep, which carries the No.2 cascade and a tube leak)
@@ -137,7 +136,13 @@ function anDeaStep(U, dt) {
    speed 3580 rpm: no hydraulic coupling or scoop), at 100 % load 355 A, efficiency 96.2 %, power factor 91.0 % (355 = 3550 / (0.962
    x 0.91 x sqrt3 x 6.6), the sheet closes). Induction motor: the active current = shaft power / (efficiency x sqrt3 x V), the
    magnetizing (reactive) current = 355 x sin(acos 0.91) = 147 A, held at rated voltage; I = sqrt(Ia^2 + Ir^2). The efficiency is held
-   at its rated value (the sheet gives only the 100 % point: NO-SOURCE part load efficiency). strainer DP = 0.29 x (flow / 549)^2. */
+   at its rated value (the sheet gives only the 100 % point: NO-SOURCE part load efficiency).
+   suction strainer (Phase 11 NANA 2026-11-27, was 0.29 kg/cm2 at 549 m3/h of the 03.png snapshot and a 0.4 branch loss of the same
+   snapshot): KSB Y strainer, Filteration Engineers FE/KSB/GAD/YST/FR-3453-02 rev 03 (O&M V7 BFP, "14 Y TYPE STRAINER" p2; YUA PC read
+   2026-11-27, /mnt/project-files/nana-doc-reads.md): 250 NB, 40 mesh, design 563.5 m3/h at 158.4 C, maximum allowable pressure drop
+   0.10 kg/cm2 clean (0.15 at 50 % clogged). Turbulent flow through a screen: dP = k Q^2 (the square law), k from the clean point. The
+   pump inlet PT-FW1115 = suction header - strainer DP; the suction pipe loss between the header and the strainer is NO-SOURCE (no line
+   size / length in D1-0-052 or the strainer list MS-017) and is not modelled. */
 const AN_FW = {
   sg: 0.9093,
   qQ: [0, 100, 200, 300, 400, 500, 540, 600, 700],
@@ -151,8 +156,7 @@ const AN_FW = {
   mEff: 0.962 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
   mPf: 0.91 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
   mV: 6.6 /* kV */,
-  q0: 549,
-  dp0: 0.29
+  stK: 0.1 / (563.5 * 563.5) /* kg/cm2 per (m3/h)^2, clean strainer, DESIGN-SRC: KSB FE/KSB/GAD/YST/FR-3453-02 r03 */
 };
 /* the BFWP discharge (kg/cm2 g) at a total feedwater flow w (T/H), with the pumps that run now: the same law as anFwStep */
 function anFwPdAt(U, w) {
@@ -162,7 +166,7 @@ function anFwPdAt(U, w) {
     Ps = isFinite(ps) ? ps : 0;
   if (!n) return Ps;
   const q = Math.max(K.qMin, Math.max(0, w) / K.sg / n);
-  return Math.max(0, Math.min(250, Ps - 0.4 * (q / K.q0) * (q / K.q0) + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz));
+  return Math.max(0, Math.min(250, Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz));
 }
 /* motor current (A) of a BFWP at a shaft power kW (TECO data sheet, see AN_FW) */
 function anFwAmp(kW) {
@@ -187,14 +191,14 @@ function anFwStep(U, dt) {
     Ps = isFinite(ps) ? ps : 0;
   U.fwRun = run;
   U.fwQp = Math.round(q);
-  /* the pump inlet = the suction header less its branch loss (strainer + line, 0.4 kg/cm2 at q0: 03.png, see anFwTagStep) */
+  /* the pump inlet = the suction header less the strainer DP (stK, KSB strainer drawing) */
   U.fwPd = Math.max(
     0,
-    Math.min(250, n ? Ps - 0.4 * (q / K.q0) * (q / K.q0) + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz : Ps)
+    Math.min(250, n ? Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz : Ps)
   );
   run.forEach((r, i) => {
     U['fwI' + i] = r ? Math.round(10 * anFwAmp(swInterp(K.pQ, K.pP, q))) / 10 : 0;
-    U['fwDp' + i] = r ? Math.round(1000 * K.dp0 * (q / K.q0) * (q / K.q0)) / 1000 : 0;
+    U['fwDp' + i] = r ? Math.round(1000 * K.stK * q * q) / 1000 : 0; /* DPT-FW1115-A / B */
   });
   /* 3.2.4-beta.21: PUMP HEAT. All the shaft power goes into the water: dh = P / m (KSB curve Q43446D shaft power pP and head qH at
      the pump flow q). Of the useful part rho g Q H only (1 - T beta) warms the water (isentropic compression of a liquid:
@@ -567,7 +571,7 @@ function anHdStep(U, dt) {
     let ein;
     if (k === 'H6') ein = isFinite(U.hpF2) ? U.hpF2 : 0;
     else if (k === 'H5') ein = isFinite(U.hpF1) && isFinite(U.hpF2) ? U.hpF1 - U.hpF2 : 0;
-    else ein = ext * anHb('f' + k.slice(1), ms) * thr(pos(mov)) * (U.lpS && isFinite(U.lpS[k]) ? U.lpS[k] : 1);
+    else ein = U.tbD && isFinite(U.tbD['lp' + k.slice(1)]) ? U.tbD['lp' + k.slice(1)] : 0; /* Phase 11 rank 1: the draw of the heat balance (turbine.js tbLpDraws), the shell MOV and the tubes in it through the shell pressure and the rise */
     /* an HP heater tube leak (anHpLeak) joins the condensate in the shell */
     const hl = U.hlW ? (k === 'H5' ? U.hlW[0] : k === 'H6' ? U.hlW[1] : 0) : 0;
     const win = ein + hl + (from && out[from] ? out[from] : 0);
@@ -798,8 +802,8 @@ function anFwTagStep(U) {
     PICR19011: r2(pcr),
     PICR19012: r2(pcr),
     PICR19013: r2(pcr),
-    'PT-FW1115-A': isFinite(ps) ? r1(ps - ((U.fwDp0 || 0) * 0.4) / 0.29) : null,
-    'PT-FW1115-B': isFinite(ps) ? r1(ps - ((U.fwDp1 || 0) * 0.4) / 0.29) : null,
+    'PT-FW1115-A': isFinite(ps) ? r1(ps - (U.fwDp0 || 0)) : null /* pump inlet = header - strainer DP */,
+    'PT-FW1115-B': isFinite(ps) ? r1(ps - (U.fwDp1 || 0)) : null,
     'TT-FW1011': isFinite(Pda) ? r1(Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30) : null,
     'PT-FW1160': isFinite(drum) ? r1(drum + 3.5 * (ffw / 499.1) * (ffw / 499.1)) : null,
     'ZT-FW1110-1': r1(z11),

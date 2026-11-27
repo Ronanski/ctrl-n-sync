@@ -9,73 +9,6 @@
   "anHxTagStep",
   "anLphStep"
  ],
- "airR": [
-  "anAphStep",
-  "anUnitStep0"
- ],
- "baConv": [
-  "(top level of src/world/ditl150.js)",
-  "anBaStep"
- ],
- "el": [
-  "anElecBo",
-  "anElecL52",
-  "anElecStep"
- ],
- "tcsT": [
-  "anElecStep",
-  "anUnitStep0"
- ],
- "fwPd": [
-  "anFwStep",
-  "anSuFwCv"
- ],
- "hlW": [
-  "anHpLeak",
-  "anHphStep"
- ],
- "hlA": [
-  "anHpLeak",
-  "anHphStep"
- ],
- "avH": [
-  "anAsTagStep",
-  "anFwTagStep"
- ],
- "hxM": [
-  "anHxGas",
-  "anHxStep"
- ],
- "tlk": [
-  "tcsLinkStep",
-  "tcsMiss"
- ],
- "tco": [
-  "tcsFromOil",
-  "tcsOilState"
- ],
- "tb": [
-  "anUnitLive",
-  "anUnitStep0",
-  "tcsVt"
- ],
- "gv": [
-  "anTbFlow",
-  "anUnitStep0"
- ],
- "turb": [
-  "anIdfN",
-  "anUnitLive",
-  "anUnitStep0"
- ],
- "Tw": [
-  "anUnitLive",
-  "anUnitStep0"
- ],
- "acT2": [
-  "anAcwStep",
-  "anLubeCoolStep"
- ],
  "Tb": [
   "anBedMigrate",
   "anUnitStep0"
@@ -93,49 +26,51 @@
   "anBedMigrate",
   "anUnitStep0"
  ],
- "bedK": [
-  "anBedStep",
+ "el": [
+  "anElecBo",
+  "anElecL52",
+  "anElecStep"
+ ],
+ "tcsT": [
+  "anElecStep",
   "anUnitStep0"
  ],
- "svOpen": [
-  "anBedStep",
-  "anSvFlow"
+ "avH": [
+  "anAsTagStep",
+  "anFwTagStep"
  ],
- "cdP": [
-  "anCondStep",
-  "anVacMW"
+ "tco": [
+  "tcsFromOil",
+  "tcsOilState"
+ ],
+ "tb": [
+  "anUnitLive",
+  "anUnitStep0",
+  "tcsVt"
+ ],
+ "gv": [
+  "anTbFlow",
+  "anUnitStep0"
+ ],
+ "turb": [
+  "anUnitLive",
+  "anUnitStep0"
+ ],
+ "Tw": [
+  "anUnitLive",
+  "anUnitStep0"
  ],
  "vac": [
   "anCondStep",
   "anUnitStep0"
  ],
- "mt": [
-  "anLubeCoolStep",
-  "anMotorStep"
- ],
  "clS": [
   "anClRnd",
   "anCoalLots"
  ],
- "sbT": [
-  "anGenInt",
-  "anSbDrain"
- ],
- "sbTh": [
-  "anGenInt",
-  "anSbDrain"
- ],
  "msb": [
   "anSbAph",
   "anSbStep"
- ],
- "sbA": [
-  "anSbAph",
-  "anSbStep"
- ],
- "hxO": [
-  "anGasA0",
-  "anHxRun"
  ],
  "gCy": [
   "anHxRun",
