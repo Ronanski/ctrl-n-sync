@@ -132,9 +132,18 @@ function anElecL52(U, on) {
 }
 /* 3.2.4: the unit black-out (world.js WORLD.ftrip 'el.1am'). 6.6 kV BUS 1AM dead; the 460 V emergency panel EMP-11 comes back on the
    diesel generator DG1 (750 kW, 460 V) through ATS-11 (K1AU3E1-0040: N-BUS from 1B2-M, E-BUS from DG1). The time from the loss to EMP-11
-   live again (DG1 start + ATS-11 transfer): 10 s = NO-SOURCE for this unit (no DG1 / ATS-11 setting sheet read); 10 s is the Type 10
-   class of NFPA 110 for an emergency power supply. U.el.bo = { t: s since the loss } while the bus is dead */
-const AN_EL_BO = { emp: 10 /* s, NO-SOURCE (NFPA 110 Type 10) */ };
+   live again = the sum of the start sequence (Phase 11 YUI 2026-11-27, read by YUA, /mnt/project-files/yui-reads-2.md 3; was 10 s, the
+   NFPA 110 Type 10 class, NO-SOURCE):
+     ATS-11 (ASCO 7000 closed transition, Group 5 controller) feature 1C "override momentary Normal source outage" 1 s and 2B "transfer to
+       Emergency" 0 s: ASCO 381333-126 p7, the FACTORY DEFAULTS (the ATS-11 settings are not in the docs);
+     DG1 controller DSE7320 (LIMAY parameter table, 2016-07-05): Remote Start On Load 5 s, Delay Crank 0.5 s, Warming Up 1 s, Load Delay
+       0.7 s (p10; "Mains Failure Detection: No" p16, so the ATS starts it). FLAG: the table is in the Phase 2 EDG folder (100 % = 680 kW);
+       the Phase 1 print was not found, same DSE7320;
+     the crank until the engine fires: NO-SOURCE (no start test record; at most 15 s per attempt, 3 attempts, 15 s rest, DSE p10 / p18).
+       Taken as the 1.8 s left of the NFPA 110 Type 10 class (10 s), so the first attempt fires.
+   U.el.bo = { t: s since the loss } while the bus is dead */
+const AN_EL_BO = { ats: 1 + 0 /* s, ASCO 1C + 2B defaults */, dse: 5 + 0.5 + 1 + 0.7 /* s, DSE7320 p10 */, crank: 1.8 /* s, NO-SOURCE */ };
+AN_EL_BO.emp = AN_EL_BO.ats + AN_EL_BO.dse + AN_EL_BO.crank;
 function anElecBo(U, on) {
   const e = U.el || (U.el = { l52: true });
   if (on) e.bo = e.bo || { t: 0 };
