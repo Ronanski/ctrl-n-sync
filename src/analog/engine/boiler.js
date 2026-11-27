@@ -455,9 +455,9 @@ const anFanI = (I0, on, x, f = AN_FN.fI[Object.keys(AN_FN.I0).find(k => AN_FN.I0
    its full open curve (outlet = SP + suction) meets the system curve: 481.5 T/H PA, 294.3 T/H SA with the design bed (CALC).
    FAN POWER (vanes): a straight line in air power through the two vendor points, no flow (curve p151 PA 470 BKW, p145 SA 260 BKW:
    the old beta.308 read) and the spec point (PA 6,907 ACMM x 2,481 mmAq -> 3,341 BKW; SA 4,222 x 2,075 -> 1,698 BKW, D1-003 p147 /
-   p141). ID (variable speed hydraulic coupling): air power / TE 0.87 (spec p153: 17,621 ACMM x 858 mmAq -> 2,850 BKW), not under the
-   no-flow power at its speed (34 kW at 350 rpm, cube of the speed, beta.308 read of p157); the coupling passes the same torque, so
-   the motor gives fan power x 1193 / fan speed (ST-LO1756, unit.js anIdfN).
+   p141). ID (variable speed hydraulic coupling): the p157 curve (SP and BKW/3 at 1141 rpm, AN_FD.cid / bid) by the fan laws at the
+   speed and the gas density (anIdFan); the coupling passes the same torque, so the motor gives fan power x 1193 / fan speed
+   (ST-LO1756, unit.js anIdfN). The same curve holds the furnace pressure (anIdPf, unit.js draft).
    MOTORS, DESIGN-SRC TECO spec tables and Eff & PF vs load curves (Fan Instruction Manual p288-330, 6.6 kV): load share -> efficiency,
    power factor at 10 (beta.308 read) / 25 / 50 / 75 / 100 %; I = shaft kW / eff / (sqrt3 x 6.6 x PF); under 10 % the reactive current of
    the 10 % point stays (magnetizing).
@@ -467,7 +467,15 @@ const anFanI = (I0, on, x, f = AN_FN.fI[Object.keys(AN_FN.I0).find(k => AN_FN.I0
 const AN_FD = {
   pa: { Q: 387.62, E: 1092, L: 770, Lah: 130, S: -118, kW: 3700, P0: 470, Ps: 3341, As: (6907 / 60) * 2481 * 0.00980665 },
   sa: { Q: 236.95, E: 1016, L: 521, Lah: 131, S: -118, kW: 1850, P0: 260, Ps: 1698, As: (4222 / 60) * 2075 * 0.00980665 },
-  ga: { A: 596, top: -15, Lah: 405, Lao: 515, Li: 595, Lo: 25, rho: 879300 / 60 / 17621, te: 0.87, kW: 3300, n0: 350, P0: 34, nm: 1193 },
+  ga: { A: 596, G: 732.73, top: -15, Lah: 405, Lao: 515, Li: 595, Lo: 25, rho: 879300 / 60 / 17621, T0: 150, n1: 1141, kW: 3300, n0: 350, nm: 1193, qd: 17.5 },
+  /* ID fan D1-003 p157 at 1141 rpm, 150 C (YUA pixel read 2026-11-28, /mnt/project-files/aoi-id-fan-curve-2026-11-27.md): SP mmAq and
+     BKW/3 vs ACMM; the other speeds are exact affinity scalings of this curve (Q ~ n, SP ~ n^2, power ~ n^3, checked on all 9 curves) */
+  cid: [[0, 935], [1000, 956], [2000, 975], [3000, 988], [4000, 1000], [5000, 1007], [6000, 1011], [7000, 1015], [8000, 1019], [11000, 1019], [12000, 1025], [13000, 1030], [13500, 1033], [14000, 1029], [15000, 993], [16000, 944], [17000, 894], [17621, 862], [18000, 841], [19000, 787], [20000, 733], [21000, 680], [22000, 627], [23000, 570], [24000, 513], [25000, 457], [26000, 400], [26530, 373]],
+  bid: [[0, 355], [2000, 462], [4000, 537], [6000, 608], [8000, 684], [10000, 765], [12000, 855], [14000, 951], [16000, 978], [17000, 983], [17621, 985], [20000, 987], [22000, 994], [24000, 975], [26000, 948], [26530, 940]],
+  /* inlet damper PCDFG10561 (PICFG108A): butterfly loss coefficient vs closing angle from open (deg), Idelchik Diagram 9-17 (textbook);
+     velocity pressure at the damper at the MCR gas qd = 17.5 mmH2O (NO-SOURCE: 20 m/s duct at 0.86 kg/m3; damper and duct size not
+     in the docs searched). At 150 MW the damper is 99.1 % open (7.PNG): its loss there is under 1 mmH2O */
+  zd: [[0, 0.24], [10, 0.52], [20, 1.54], [30, 3.91], [40, 10.8], [50, 32.6], [60, 118], [70, 751], [80, 5000], [90, 50000]],
   rho: 1.1225,
   /* SP mmAq at axis ACMM 0, 1000, ... (p151 PA to 17,000 then the curve end 17,450; p145 SA to 11,000 then the axis end 11,800) */
   cpa: [[0, 2880], [1000, 2920], [2000, 3020], [3000, 3100], [4000, 3140], [5000, 3190], [6000, 3200], [7000, 3170], [8000, 3140], [9000, 3060], [10000, 3000], [11000, 2940], [12000, 2820], [13000, 2730], [14000, 2510], [15000, 2350], [16000, 2140], [17000, 1910], [17450, 1800]],
@@ -522,6 +530,31 @@ const anFdAmp = (m, kW, p) => {
     e = e1 + (e2 - e1) * w,
     f = Math.min(0.95, f1 + (f2 - f1) * w);
   return p / e / (V * f);
+};
+/* ID fan at speed n (rpm) and its inlet gas: m T/H, T C. Returns the fan rise sp (mmH2O, the curve by the fan laws and the gas density)
+   and the fan shaft kW. Q1141 = the flow of the similar point on the 1141 rpm curve */
+const anIdFan = (m, T, n) => {
+  const G = AN_FD.ga,
+    rho = (G.rho * (G.T0 + 273.15)) / ((isFinite(T) ? T : G.T0) + 273.15),
+    q = (Math.max(0, m) * 1000) / 60 / rho,
+    r = Math.max(G.n0, n) / G.n1,
+    q1 = q / r,
+    dr = rho / G.rho,
+    end = AN_FD.cid[AN_FD.cid.length - 1];
+  /* past the curve end the rise falls on the slope of the last two points to 0 */
+  const sp1 = q1 <= end[0] ? anFabLin(AN_FD.cid, q1) : Math.max(0, end[1] - ((q1 - end[0]) * 57) / 1000);
+  return { sp: sp1 * r * r * dr, kw: 3 * anFabLin(AN_FD.bid, q1) * r * r * r * dr, q };
+};
+/* furnace pressure (mmH2O) the ID fan holds at steady state: the stack discharge + the draft losses from the furnace top to the ID inlet
+   (D2-003, square of the gas, a plugged air heater adds its DP) less the fan rise less the inlet damper loss. idf = running, n = speed,
+   d = damper open % ; with the fan stopped the gas leaves through it with no rise */
+const anIdPf = (m, T, idf, n, d, pl) => {
+  const G = AN_FD.ga,
+    r = Math.max(0, m) / G.G,
+    los = (G.Lo + G.Li) * r * r + (pl || 0) * r * r;
+  if (!idf) return los;
+  const th = 90 * (1 - Math.max(0, Math.min(100, isFinite(d) ? d : 100)) / 100);
+  return los - anIdFan(m, T, n).sp + anFabLin(AN_FD.zd, th) * G.qd * r * r;
 };
 /* PAF / SAF shaft kW: air power = volume x pressure rise (outlet - suction) */
 const anFdKw = (k, q, pOut) => {
@@ -730,11 +763,9 @@ function anFanStep(U, dt) {
     'DPT-FG1052-5': idf ? Math.round((G.Lao - G.Lah) * rg + pl) : 0,
     'PT-FA1078': Math.round(Math.max(0, U.fnPaP - (paf ? AN_FD.pa.Lah * Math.pow(qpa / AN_FD.pa.Q, 2) : 0)))
   });
-  /* ID fan: gas volume at the ID inlet (density of the spec sheet, 150 C) x the rise, at the speed of the hydraulic coupling */
+  /* ID fan: the shaft power of the p157 curve at the speed of the hydraulic coupling and the gas of the ID inlet (anIdFan) */
   const n = idf && U.idfV && typeof anIdfN === 'function' ? anIdfN(+U.idfV.S.rt.v[U.idfV.n] || 0) : G.n0,
-    qg = ((taf * 732.73) / G.A) * 1000 / 3600 / G.rho,
-    air = qg * Math.max(0, U.fnGo - (U.fnGi[0] + U.fnGi[1]) / 2) * 0.00980665,
-    pf = Math.max(G.P0 * Math.pow(n / G.n0, 3), air / G.te);
+    pf = anIdFan((taf * G.G) / G.A, U.aphGo, n).kw;
   U.fnIdfI = lagI('ii', idf ? anFdAmp(AN_FD.mot.idf, G.kW, (pf * G.nm) / Math.max(G.n0, n)) : 0, 2);
   U.fnI = [U.fnPafI, U.fnSafI, U.fnIdfI, U.fnIa, U.fnIb];
 }

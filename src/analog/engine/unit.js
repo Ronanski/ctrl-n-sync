@@ -4,6 +4,18 @@ const AN_IDF_CRV = [
   [46.1, 872],
   [100, 1140]
 ];
+/* Phase 11 rank 10: the MV of the IDF inlet damper PCDFG10561 (ABC-008 PICFG108A), found each scan from the sheets (a save point
+   restores U as it was saved, so a reference kept in U would be missing on the saves made before it) */
+let anIdfDc = null;
+function anIdfDmp() {
+  const x = AN.sheets.find(y => y.name === 'ABC-008');
+  if (!x || !x.S) return null;
+  if (!anIdfDc || anIdfDc.S !== x.S) {
+    const c = AN.hmiCtrls ? (AN.hmiCtrls(x.S) || []).find(q => q.tag === 'PICFG108A') : null;
+    anIdfDc = c && c.out != null ? { S: x.S, n: c.out } : null;
+  }
+  return anIdfDc;
+}
 function anIdfN(m) {
   const c = AN_IDF_CRV,
     x = Math.max(0, Math.min(100, +m || 0)),
@@ -144,9 +156,8 @@ const AN_UNIT = {
        (ABC-010 M.0170 ~ M.0172, -254 mm) where the DITL trips the boiler (STN104 M.3407 DRUM LEVEL L.L.).
      - FAN STOPPED (ABC-007 M.3302 PAF / M.3303 SAF, ABC-008 M.3304 IDF <- STN103): the air flow of a stopped fan is 0 (pr.mul on
        FICFA1071 / FICFA1081); the furnace pressure (ABC-008 PICFG108 / 108A, PT-FG1085 / 1086 / 1087) is air in minus flue gas
-       out: more air in than the ID fan takes out raises it (kfp mmH2O at twice the air of the anchor, ASSUMED: the range of the
-       instrument is +-600 mmH2O, FURNACE PRESSURE HIGH > 30 mmH2O M.3107), a stopped ID fan takes nothing out (plant.js pr.uf = 0
-       on the IDF command).
+       out: the ID fan curve against the draft losses (Phase 11 rank 10, anIdPf; the instrument range is +-600 mmH2O, FURNACE
+       PRESSURE HIGH > 30 mmH2O M.3107), a stopped ID fan gives no rise.
      - MFT (I.000F "MFT FROM IRP" on every station, STN101 M.0341 MFT TPs, coal feeders stopped M.3400 ~ M.3402): the coal is 0
        (plant.js feeder model), the steam made decays with tauF, the pressure falls to MAIN STEAM PRESSURE LOW LOW (M.310D, 72.9).
      The DITL consequences (fan trip -> MFT, drum level L.L. -> MFT, MFT -> turbine trip) are the DITL's: with the one world OFF the
@@ -173,7 +184,6 @@ const AN_UNIT = {
      TCE196: HP START 24.3 %, IP START 4.2 %; the model has the IP start only, TCE p.27 default) */
   rbIP: 0.042,
   rbT: 60,
-  kfp: 150 /* fallback; the authority of the ID fan of the anchored loop model is used when known (anUnitStart) */,
   /* 2.2.0-beta.14 (M4 step 1, PR-OPE-5002 / boiler manual SECT_7 Fig 1 / 2): COLD START. "Start cold" (hmi-op.js anPlantCold) keeps
      the anchors of "Start at 150 MW" (the gains of every loop model) and puts the plant cold: drum 0 kg/cm2, water and bed at the
      ambient, no coal, turbine valves shut (U.turb false until the turbine is rolled, M4 step 4). The physics added here:
@@ -239,7 +249,7 @@ const AN_UNIT = {
 /* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
    whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
    code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
-const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'tauTrip', 'droop', 'flowSpan', 'tSc', 'tXo', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'kfp', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
+const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'tauTrip', 'droop', 'flowSpan', 'tSc', 'tXo', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -570,7 +580,6 @@ function anUnitStart() {
   if (U.taf.length === 3 && isFinite(O20) && O20 > 0 && O20 < 21 && taf0 > 0 && F0 > 0) {
     U.afs = AN_FUEL.afs; /* T/H of air per T/H of coal, stoichiometric, CALC from FHI P2S7 Tab 2 (cfb.js AN_FUEL) */
     U.O20 = U.o2v = O20;
-    U.taf0 = taf0;
   }
   U.pa = ais('ABC-006', 'AI0166');
   U.bedDp = [
@@ -709,8 +718,6 @@ function anUnitStart() {
   /* furnace pressure: the two IDF actuators in series (hydraulic coupling PICFG108, inlet damper PICFG108A) take the flue gas out */
   U.fp = procsOf('ABC-008', ['PICFG108', 'PICFG108A']);
   U.idf = labOf('ABC-008', 'M.3304');
-  U.kfpA =
-    null; /* the pressure rise when the ID fan takes nothing out, from the loop model (so that no air and no ID fan = the anchor) */
   /* 3.2.0-beta.23: the furnace / cyclone thermocouples (the bed temperature, see the step) */
   U.tbed = Object.keys(AN_HMI_AI)
     .filter(k => /^TIFG(1090|1091|1095|1096|1009)[A-Z]?$/.test(AN_HMI_AI[k][1]))
@@ -4491,65 +4498,53 @@ function anUnitStep0(dt) {
     for (const p of m.pr) p.mul = run;
   }
   if (U.fp && U.fp.length) {
-    if (U.kfpA == null)
-      for (const p of U.fp) {
-        const pr = p.pr,
-          pp = p.b.p || {};
-        if (pr.hop && pr.Ka > 0) {
-          U.kfpA = (pr.Ka * Math.max(0, pr.hop.mv - (pp.lo == null ? 0 : pp.lo)) * (pp.span > 0 ? pp.span : 100)) / 100;
-          break;
-        }
-      }
+    /* Phase 11 rank 10 (AOI, 2026-11-28): THE FURNACE PRESSURE BY THE ID FAN CURVE. The target of the draft loop is the pressure the ID
+       fan holds at steady state (boiler.js anIdPf): the stack discharge and the draft losses of D2-003 with the square of the gas, less
+       the rise of the p157 fan curve at the coupling speed (ST-LO1756, anIdfN of the PICFG108 MV) and the gas density at the ID inlet
+       (air heater gas out U.aphGo), less the inlet damper loss (PICFG108A MV). The loop model keeps only its lag. Before: the loop model
+       anchored at the 150 MW state (its MV / PV of the snapshot, the gain Ka) plus a load term kfp x (gas / U.taf0 - 1), the air of the
+       "Start at 150 MW" state. Gas = total air (+ the leak steam as air moles) x the D2-003 ID inlet gas over the FHI Fig 12 total air
+       (732.73 / 596, CALC). The ID fan stopped: the gas leaves through it with no rise (the furnace open to the stack) */
     const idf = !U.idf || +U.idf.S.rt.v[U.idf.n] > 0.5,
-      taf = U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0),
-      ld = U.taf0 > 0 ? (U.kfpA > 0 ? U.kfpA : U.kfp) * ((taf + (((U.tlW || 0) + (U.tlE || 0)) * 28.9) / 18) / U.taf0 - 1) : 0;
-    /* 3.2.0-beta.19 (VIEW / TRACE audit, Cold): no ID fan and no air = the furnace open to the stack, 0 mmH2O. Before, a cold plant
-       read about +200 mmH2O (the loop model with the ID fan taking nothing out and the air term). With air and no ID fan the
-       pressure still rises (as before); with the ID fan running the model is unchanged. */
-    const nair = !idf && U.taf0 > 0 ? Math.min(1, taf / (0.1 * U.taf0)) : null;
+      taf = U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0) + (((U.tlW || 0) + (U.tlE || 0)) * 28.9) / 18,
+      mv = U.idfV ? Math.max(0, Math.min(100, +U.idfV.S.rt.v[U.idfV.n] || 0)) : 0,
+      dO = anIdfDmp(),
+      dmp = dO ? Math.max(0, Math.min(100, +dO.S.rt.v[dO.n] || 0)) : 100,
+      pfP = anIdPf((taf * AN_FD.ga.G) / AN_FD.ga.A, U.aphGo, idf, anIdfN(mv), dmp, AN_APL.dp * (U.aphPl || 0));
+    U.pfSS = pfP;
     for (const p of U.fp) {
-      /* an air heater plugged on the gas side (boiler.js AN_APL): the fan moves less gas at the same opening */
-      p.pr.uf = idf ? 1 / Math.sqrt(1 + (AN_APL.dp * (U.aphPl || 0)) / 442) : 0;
-      p.pr.ld = ld;
-      if (!p.pr.src) {
-        p.pr.smul = nair == null ? undefined : nair;
-        p.pr.sbase = nair == null ? undefined : 0;
-      }
-      /* the open furnace empties in seconds, not with the time constant of the draft loop (65 s) */
-      const q = nair != null && nair < 1 && U.idf && U.idf.S.rt.pm ? U.idf.S.rt.pm[p.b.id] : null;
-      if (q && isFinite(q.y)) q.y -= (1 - nair) * q.y * (1 - Math.exp(-dt / 5));
+      p.pr.uf = undefined;
+      p.pr.ld = undefined;
       /* 3.2.0-beta.51 (#99) / live check #105 #107 (PR-OPE-5002 IDF / PAF START-UP: "Hydraulic Coupling Furnace Pressure Control at
          13 %", "Adjust manually (commonly reduce) ... maintaining -15 mmH2O", "Once the Hydraulic Coupling is at 16 % MV and Furnace
          Pressure is Stable at around -15 mmH2O, set the HC Control in AUTO"): the cold furnace (no fire) is a gas path, the ID fan
          suction against the loss of the air pushed through it: fp = -A * speed^2 + Kq * (total air / 406 T/H)^2, speed of the fan
-         manual (350 ~ 1140 rpm on the coupling, linear ASSUMED). A = 124: the IDF alone at 13 % = about -19.5 mmH2O (the operator
-         reduces it, SOP); Kq: the purge air of the SOP (PA 180 + SA 200 + FA 26 = 406 T/H) at 16 % = -15 mmH2O. As the bed heats
-         (100 ~ 300 C) the loop model of the hot plant (anchored at 150 MW) takes over. Before: the cold model was blended out at 10 %
-         of the design air, and the loop model wanted 27 % at 348 T/H */
+         manual (350 ~ 1140 rpm on the coupling). A: the IDF alone at 13 % = about -19.5 mmH2O (the operator reduces it, SOP); Kq: the
+         purge air of the SOP (PA 180 + SA 200 + FA 26 = 406 T/H) at 16 % = -15 mmH2O. The fan curve with no air in gives -248 at 13 %:
+         the cold furnace takes air in through the open paths of the stopped plant (inleakage NO-SOURCE), so the SOP law stays until
+         the bed is hot and the air is up (ia), as before.
+         Jennie beta.192: a hot bed with no fire and no air is the same gas path as the cold furnace, fully on the fan curve from half
+         the purge air of the SOP (203 of 406 T/H), so the Hot / Warm restart starts the fans like the Cold one */
       const tb = isFinite(+U.Tb) ? +U.Tb : 30,
-        /* Jennie beta.192 (headless Hot restart, beta.191: the ID fan at 13 % before any air read -172 mmH2O for 4 minutes, steps 33 ~ 36;
-           PR-OPE-5002 IDF START-UP: about -15 at 13 %). A hot bed with no fire and no air is the same gas path as the cold furnace: the
-           loop model anchored at 150 MW (its air term taf / taf0 - 1 = -1 with no air) takes over only with the air too, fully from half
-           the purge air of the SOP (203 of 406 T/H), so the Hot / Warm restart starts the fans like the Cold one */
-        ia =
-          idf && U.idf && U.idf.S.rt.pm
-            ? Math.max(0, Math.min(1, (tb - 100) / 200)) * Math.max(0, Math.min(1, taf / 203))
-            : 1;
-      if (ia < 1 && !p.pr.src) {
-        const m = U.idfV ? Math.max(0, Math.min(100, +U.idfV.S.rt.v[U.idfV.n] || 0)) : 0,
-          sp = anIdfN(m) / AN_IDF_CRV[2][1],
+        ia = idf && U.idf && U.idf.S.rt.pm ? Math.max(0, Math.min(1, (tb - 100) / 200)) * Math.max(0, Math.min(1, taf / 203)) : 1;
+      let y = pfP;
+      if (ia < 1) {
+        const sp = anIdfN(mv) / AN_IDF_CRV[2][1],
           sp13 = anIdfN(13) / AN_IDF_CRV[2][1],
           sp16 = anIdfN(16) / AN_IDF_CRV[2][1],
-          /* 3.2.3-beta.104: A from the same target as before (the IDF alone at 13 % = -19.5 mmH2O) on the new speed curve, so the
-             cold start of the SOP reads as before at 13 % and 16 % (before: A = 124 fixed on the straight line) */
           A = 19.5 / (sp13 * sp13),
           Kq = A * sp16 * sp16 - 15,
           ylo = -A * sp * sp + Kq * Math.pow(taf / 406, 2);
-        /* the target of the loop model (plant.js ss: y = smul * y + (1 - smul) * sbase); its own lag (<= 5 s) makes the response. Before
-           (beta.51 ~ 53) the state was overwritten here and the loop model pulled it back each scan to its own value */
-        p.pr.smul = ia;
-        p.pr.sbase = ylo;
+        y = ia * pfP + (1 - ia) * ylo;
       }
+      if (!p.pr.src) {
+        /* the target of the loop model (plant.js ss: y = smul * y + (1 - smul) * sbase); its own lag makes the response */
+        p.pr.smul = 0;
+        p.pr.sbase = y;
+      }
+      /* the open furnace (ID fan stopped) empties in seconds, not with the time constant of the draft loop (65 s) */
+      const q = !idf && U.idf && U.idf.S.rt.pm ? U.idf.S.rt.pm[p.b.id] : null;
+      if (q && isFinite(q.y)) q.y += (y - q.y) * (1 - Math.exp(-dt / 5));
     }
   }
   anUnitStepX(dt, mso);

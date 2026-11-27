@@ -10,9 +10,13 @@ AOI, 2026-11-27 PHT, user "Go fix 11", "Double time sana".
 - SA pressures PIFA1085 / 1088 (unit.js): sa parehong system curve (dati 1427 / 1273 snapshot anchors na nasa U at bumabalik sa bawat save). PT-FA1078 = PAF outlet bawas duct 30 at air heater 100. Gas path PT-FG1121 / 1134 / DPT-FG1052-5 sa D2-003 losses. Air heater gas DP (plug fault) 113 -> 110 (D2-003).
 - Tinanggal: `AN_SRC.fanMax`, `AN_FN.pa / sa / ga` (snapshot points). Ang `AN_FN.I0 / fI` ay natira lang para sa HMI estimate kapag OFF ang plant model.
 
+- **Furnace pressure (draft)**, commit 2, matapos ang basa ni YUA ng ID fan curve D1-003 p157 (1141 rpm, fan laws sa ibang bilis): ang target ng PICFG108 loop = ang presyon na hawak ng ID fan sa steady state = stack discharge + draft losses ng D2-003 - rise ng fan curve sa bilis ng hydraulic coupling at sa density ng gas sa ID inlet - loss ng inlet damper (PICFG108A, butterfly ng Idelchik; velocity pressure 17.5 mmH2O NO-SOURCE). Ang lag lang ng loop model ang natira. Tinanggal: `U.taf0` (hangin ng "Start at 150 MW"), `U.kfpA`, `kfp` at ang anchor ng snapshot MV / PV ng loop na ito. Ang ID fan current ay galing na sa BKW/3 curve ng p157 (pinalitan ang TE 0.87).
+- Cold start (walang apoy, mahina ang hangin): nananatili ang SOP law (PR-OPE-5002: -19.5 sa 13 %, -15 sa 16 %), dahil ang fan curve na walang hangin ay -248 sa 13 %: may pasok na hangin sa bukas na daan ng planta na NOT IN DOCS.
+
 ## Sinubok
 - 150 MW (HMI snapshot = pang-check lang): PIFA1075 1734 (snapshot 1551), PIFA1085 1437 (1427), PIFG1141 -602 (-442 / -450), PAF 221 A (253.6), SAF 117 A (134.0), IDF 259 A (199.6). Lahat ay nasa loob ng alarm list (PT-FA1075 LL 1200 / HH 2300, PT-FG1141 H -390, PT-FG1151 H 35).
-- Behaviour gate 150 MW 20 plant min sa st150 ng main: ALL PASS (MW galaw 0.78, pressure 0.87, level 32 mm, MST 3.0 C).
+- Behaviour gate 150 MW 20 plant min sa st150 ng main: ALL PASS (MW galaw 0.78, pressure 0.88, level 32 mm, MST 3.0 C), kasama ang furnace pressure.
+- Furnace pressure mula sa st150 ng main: ang design draft ay mas malalim kaysa sa planta, kaya ang hydraulic coupling ay umaakyat mula 46.9 % hanggang mga 58 % (fan curve) at ang furnace pressure ay +54 -> -5 mmH2O sa 6 min (PID ng plant sheet). Mawawala ito sa re-settle ng st150. ID fan sa 58 %: 243 A.
 - no-fit 0 bago; one-path PASS; u-const PASS; ports PASS; build OK.
 
 ## Hindi sinubok / natitira
