@@ -733,7 +733,6 @@ function anFwTagStep(U) {
     pd = isFinite(U.fwPd) ? U.fwPd : NaN,
     ffw = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.ffw) ? Math.max(0, AN_CYC.ffw) : 0,
     fdr = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.fdr) ? Math.max(0, AN_CYC.fdr) : 0 /* the drum feed through the economizer */,
-    lf = (ms / 474.1) * (ms / 474.1),
     sq = P => (isFinite(pd) && isFinite(P) ? Math.sqrt(Math.max(0, pd - P)) : NaN);
   /* the spray valves follow their controller MV, held by the airlock without air (AN_AV) */
   const H = U.avH || (U.avH = {}),
@@ -753,8 +752,8 @@ function anFwTagStep(U) {
     z12 = fx('ABC-011', 'TICBR1130', 'LN46', m1),
     z21 = fx('ABC-012', 'TICBR1150', 'LN49', m2),
     z22 = fx('ABC-012', 'TICBR1150', 'LN48', m2),
-    w1 = K.K * (cv(K.cv.a1, z11) * pos('DITL-32') + cv(K.cv.a2, z12) * pos('DITL-32 #B')) * sq(drum - 6.4 * lf),
-    w2 = K.K * (cv(K.cv.b1, z21) * pos('DITL-33') + cv(K.cv.b2, z22) * pos('DITL-33 #B')) * sq(drum - 9.3 * lf),
+    w1 = K.K * (cv(K.cv.a1, z11) * pos('DITL-32') + cv(K.cv.a2, z12) * pos('DITL-32 #B')) * sq(anShTap(U, AN_SHDP.s1, drum, ms)) /* the spray goes in at the SH tap 1 (KANA anShTap: the design SH drop law); was drum - 6.4 x (ms / 474.1)^2 of 03.png */,
+    w2 = K.K * (cv(K.cv.b1, z21) * pos('DITL-33') + cv(K.cv.b2, z22) * pos('DITL-33 #B')) * sq(anShTap(U, AN_SHDP.s2, drum, ms)) /* SH tap 2 */,
     Prh = isFinite(U.Prh) ? U.Prh : 0,
     dr = isFinite(pd) ? Math.sqrt(Math.max(0, pd - Prh) / (165.4 - 34.9)) : NaN,
     wrh =
