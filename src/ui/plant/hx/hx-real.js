@@ -118,6 +118,21 @@
     ports: { t: [0, -7.5], b: [0, 7.5], l: [-7.5, 0], r: [7.5, 0] },
     svg: '<circle class="rxv" r="7.5"/><path class="rxe" d="M-3.4 -3.4h6.8M0 -3.4v7.2"/>'
   });
+  /* a row of small pressure vessels on a conveying line (fly ash transmitters): n vessels side by side. Ports: l, r */
+  R.pots = o => {
+    const n = o.n || 2,
+      w = 13 * n - 3,
+      a = -w / 2;
+    let s = '';
+    for (let i = 0; i < n; i++) s += `<path class="rxv" d="M${a + 13 * i} -9h10v12l-5 6l-5 -6z"/><path class="rxd" d="M${a + 13 * i + 3} -12h4v3h-4z"/>`;
+    return { box: [a - 1, -13, -a + 1, 10], ports: { l: [a, 0], r: [-a, 0] }, svg: s };
+  };
+  /* telescopic loading spout under a silo (dry unloader, loading spout). Ports: t, b */
+  R.spout = () => ({
+    box: [-12, -16, 12, 16],
+    ports: { t: [0, -16], b: [0, 16] },
+    svg: '<path class="rxv" d="M-9 -16h18v8h-18zM-7 -8h14v8h-14zM-5 0h10v8h-10z"/><path class="rxv" d="M-11 8h22l-4 8h-14z"/>'
+  });
   /* drain pot: a small upright vessel under a steam line */
   R.pot = () => ({
     box: [-7, -13, 7, 13],

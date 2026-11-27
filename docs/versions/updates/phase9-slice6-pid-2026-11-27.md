@@ -66,3 +66,13 @@ Source: /mnt/project-files/phase9-pid-positions-2026-11-27.md (flow diagram set 
 - Sampling: measuring vessels Z-1102 / 1104 / 1106 sa itaas ng chemical tanks (PD-042), sampling rack Z-1140 (PD-044).
 - Limestone at sand: vent filters S-1313 / S-1301 sa bubong ng silo (PD-062 / 063 B-3/4), air receiver T-1312 (PD-062 C/D-9).
 - Bilang: 297 / 349 may simbolo, 8 wala sa docs, 44 natitira.
+
+## Ash (8:40 AM)
+- Fly ash transmitters (PD-073 sh1/9): anim na grupo sa collecting line papunta sa fly ash silo: S-1255A ~ D (air heater
+  hoppers), S-1250A / B ~ S-1254A / B (precipitator fields 1 ~ 5). Ang limang conveying line FH-1-700 ~ 706 ay iisang linya
+  sa page. Air tank T-1250 (PD-073 F/G-2) sa simula ng linya.
+- Fly ash silo: vent filter S-1256 at vent fan F-1250 sa bubong, dry unloader L-1250 sa ilalim (PD-073 sh2/9).
+- Bottom ash silo: bag filter S-1091 bago ang F-1091 (walang label, map), loading spout L-1903 sa ilalim (nakalimbag L-1093).
+- L-1904 = ang two-way separator (nakalimbag L-1094); S-1092 = ang vibrating screens A / B (map).
+- Mga bagong simbolo: `R.pots` (hanay ng maliit na vessel), `R.spout` (loading spout).
+- Bilang: 319 / 349 may simbolo, 8 wala sa docs, 22 natitira.

@@ -247,6 +247,18 @@
   "ZV-DO1001": [
    "oil-burners|id=rv",
    "relief valve on the burner supply DO-1-021 after FCV-DO1012 (PD-022 sh1/5 G-6, YUA P&ID read 2026-11-27); drawn with no label between the supply valve and the burner header"
+  ],
+  "L-1904": [
+   "ash|id=tws",
+   "two way separator, printed L-1094 on PD-071 sh1/2 B-5 (YUA P&ID read 2026-11-27); the page shows the printed tag L-1094"
+  ],
+  "S-1092": [
+   "ash|id=vsa",
+   "vibration screen S-1092 (PD-071 sh1/2 C-4/5); the page draws it as the two screens S-1092A / B of DITL-BA59"
+  ],
+  "S-1091": [
+   "ash|id=bgf",
+   "bag filter on the bottom ash silo roof before F-1091 (PD-071 sh1/2 C-8, YUA P&ID read 2026-11-27); drawn with no label on the fan suction"
   ]
  },
  "approved": {},
