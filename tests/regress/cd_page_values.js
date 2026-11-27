@@ -1,6 +1,6 @@
 // 3.2.1 (IRENE, coordinator 2026-11-04): page 05 CONDENSATE (hmi-mock-cd.js) showed '-----' for six transmitters no sheet reads. They now
 // come from the plant model (unit.js anCdTagStep, sources there). At "Start at 150 MW" (one world, plant model ON) the page shows a
-// value for each, near the 28.png full load snapshot (TT-CD1110-4 42, TT-CD1119 41, FT-CD1115 0.0, condensate to the deaerator ~ 380);
+// value for each, checked against design data and first principles only (Phase 11 rule 0, 2026-11-28: no plant screen);
 // the deaerator storage water is at the saturation of PT-CD1104; with the deaerator level valve LCV-CD1104 closed by hand FT-CD1122
 // goes to 0.
 // Usage: node tests/regress/cd_page_values.js [html]
@@ -71,10 +71,13 @@ const html =
   const num = s => (s == null ? NaN : parseFloat(s));
   ck(K.every(k => a[k] && !/-----/.test(a[k])), 'page 05: the six values show a number: ' + K.map(k => k + ' ' + a[k]).join(', '));
   const hw = m.tt.hw;
-  ck(Math.abs(m.tt['TT-CD1110-4'] - hw - 2) <= 0.5 && m.tt['TT-CD1119'] > hw && m.tt['TT-CD1119'] < m.tt['TT-CD1101'], `flash chamber ${a.TTCD11104}, ejector condenser outlet ${a.TTCD1119}, hotwell ${hw} C (28.png: 42 / 41 over a hotwell of 40 C)`);
-  ck(num(a.FTCD1115) === 0, `LP bypass spray ${a.FTCD1115} (28.png 0.0, XV-CD1114 closed)`);
-  ck(num(a.FTCD1122) > 300 && num(a.FTCD1122) < 520, `condensate to the deaerator ${a.FTCD1122} (28.png condensate 380 T/H, no recirculation)`);
-  ck(num(a.PTCD1122) > 1.6 && num(a.TTCD1104) > 140, `deaerator inlet ${a.PTCD1122}, storage water ${a.TTCD1104} (saturation of PT-CD1104)`);
+  /* flash chamber = the saturation of the condenser (it vents to the shell); ejector condenser outlet between the hotwell and the
+     No.1 LPH inlet (568 kW GSC / ejector duty); LP bypass spray 0 with the bypass shut; condensate to the deaerator: design 362.59 T/H
+     (L15-2) inside the CEP curve (min flow 100 to 480 m3/h of one pump); deaerator inlet above its LOW-LOW 7.5 kg/cm2 (alarm list) */
+  ck(Math.abs(m.tt['TT-CD1110-4'] - hw) <= 0.1 && m.tt['TT-CD1119'] > hw && m.tt['TT-CD1119'] < m.tt['TT-CD1101'], `flash chamber ${a.TTCD11104}, ejector condenser outlet ${a.TTCD1119}, hotwell ${hw} C`);
+  ck(num(a.FTCD1115) === 0, `LP bypass spray ${a.FTCD1115} (LP bypass shut, XV-CD1114 closed)`);
+  ck(num(a.FTCD1122) > 300 && num(a.FTCD1122) < 480, `condensate to the deaerator ${a.FTCD1122} (design 362.59 T/H, L15-2)`);
+  ck(num(a.PTCD1122) > 7.5 && num(a.TTCD1104) > 140, `deaerator inlet ${a.PTCD1122} (> LOW-LOW 7.5), storage water ${a.TTCD1104} (saturation of PT-CD1104)`);
   /* the deaerator level valve closed by hand: no condensate to the deaerator */
   await page.evaluate(() => {
     const T = AN.sheets.find(s => s.name === 'ABC-031').S,
