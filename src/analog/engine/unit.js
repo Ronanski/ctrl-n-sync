@@ -4924,7 +4924,15 @@ function anGenEl() {
      The six RTD read one value: the docs give no difference between the slots. The TCS alarm GD-5 HIGH 123 C is the same limit.
    - AC exciter outlet air (TIGE1005): its rise follows the exciter field squared; its rated rise is not in the docs, so it stays on the
      old reading 80 C at 7.85 A (screen P35SHAFT, a check value; finding for the PC lookup).
-   At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs). */
+   At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs).
+   The heat the air coolers give to the closed cooling water (U.genQ, kW; the cooler duty port of the plant model) = the generator losses:
+     stator copper 3 I^2 Ra (Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2; 172 kW at 7,384 A),
+     main field I^2 Rf (Rf 0.2188 ohm at 95 C, GAE-2013-0136 R2; main field = exciter field x 463 / 4.5 A: 463 A main = 4.5 A exciter =
+       1 pu field, 310SD23-268 R1 / GEE-2015-0152 p6; 1,218 A = 325 kW at the rating, 310SD23-270 R1),
+     the rest (core, friction and windage, stray) at rated speed: DERIVED = the design duty of the four coolers 3,041 kW (mass balance
+       K1AU3-MB-021 items 14 ~ 21: 290.5 t/h, 34 -> 42 C; /mnt/project-files/suzu-pc-answers-2026-11-27.md 1b) less the two above at the
+       rating (176.5 MVA 0.85 lag, the machine the coolers are sized for) = 2,544 kW, with the cube of the speed (the windage; the split
+       of core and windage is not in the docs: NO-SOURCE form). No load table: one design point closes the balance. */
 const AN_GENT = {
   tCold: 40 /* C, IEC 60034-1 reference coolant (GEE-2014-0322 R2 p4) */,
   tCw: 37 /* C, cooling water max (GAE-2013-0136 R2) */,
@@ -4933,8 +4941,14 @@ const AN_GENT = {
   ex: 80,
   tA: 41,
   If: 7.85,
-  tau: 600
+  tau: 600,
+  Ra: 0.001051 /* ohm, armature 1 phase at 95 C */,
+  Rf: 0.2188 /* ohm, main field at 95 C */,
+  ifMain: 463 / 4.5 /* A main field per A exciter field */,
+  qD: 3041 /* kW, cooler design duty (MB-021) */,
+  ifD: 1218 /* A main field at the rating (310SD23-270 R1) */
 };
+AN_GENT.q0 = AN_GENT.qD - (3 * (AN_GENT.In * 1000) ** 2 * AN_GENT.Ra + AN_GENT.ifD ** 2 * AN_GENT.Rf) / 1000;
 function anGenTemp(U, G, dt) {
   const K = AN_GENT,
     Ta = U.Tamb || 30,
@@ -4948,6 +4962,8 @@ function anGenTemp(U, G, dt) {
   T.ta.forEach((v, i) => (T.ta[i] += (air - v) * a));
   T.ts.forEach((v, i) => (T.ts[i] += (air + rise - v) * a));
   T.ex += (air + (K.ex - K.tA) * rf - T.ex) * a;
+  const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600));
+  U.genQ = (3 * (G.kA * 1000) ** 2 * K.Ra + (G.If * K.ifMain) ** 2 * K.Rf) / 1000 + K.q0 * n ** 3;
 }
 /* the energy meters of page 17 count the sim time while synchronised */
 function anGenInt(dt) {

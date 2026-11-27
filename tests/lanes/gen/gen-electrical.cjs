@@ -98,6 +98,11 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
     eTs = t0.ts.map(v => v + (air + 83 * (t1.kA / 7.384) ** 2 - v) * a);
   ok(t1.ta.every((v, i) => Math.abs(v - eTa[i]) < 2e-3), 'cooling gas after the coolers goes to the cooling water + 3 K = ' + air.toFixed(1) + ' C');
   ok(t1.ts.every((v, i) => Math.abs(v - eTs[i]) < 2e-3), 'stator coil goes to ' + (air + 83 * (t1.kA / 7.384) ** 2).toFixed(1) + ' C at ' + t1.kA.toFixed(2) + ' kA (123 C at 7.384 kA)');
+  /* the cooler duty = the generator losses (stator 3 I^2 Ra, field I^2 Rf, rest at speed; 3,041 kW at the rating, MB-021) */
+  const q = JSON.parse(E.js(`JSON.stringify({q:AN.unit.genQ,kA:AN.gen().kA,If:AN.gen().If,n:AN.unit.tb.rpm/3600})`)),
+    q0 = 3041 - (3 * 7384 ** 2 * 0.001051 + 1218 ** 2 * 0.2188) / 1000,
+    qe = (3 * (q.kA * 1000) ** 2 * 0.001051 + (q.If * 463 / 4.5) ** 2 * 0.2188) / 1000 + q0 * q.n ** 3;
+  ok(Math.abs(q.q - qe) < 1 && q.q < 3041 && q.q > q0, 'generator cooler duty ' + q.q.toFixed(0) + ' kW (losses; 3,041 kW at the rating)');
   process.exit(bad ? 1 : 0);
 })().catch(e => {
   console.error(e);
