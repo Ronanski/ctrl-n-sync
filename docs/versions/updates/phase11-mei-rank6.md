@@ -32,3 +32,10 @@ GO FIX 11 (user 2026-11-27 12:37 PM PHT), rank 6 of /mnt/project-files/phase11/a
 ## Left
 - The deaerator needs ~392 T/H of condensate (design 362.6): the model HP heater drains to the deaerator are ~46 T/H against HB 69
   (NANA, told by the phase thread). With that fixed the LCV comes back down from ~80 %.
+
+## Second fix in this PR (batch rule, phase thread 2026-11-27 6:34 PM PHT): LP bypass into the condenser, FT-CD1115 by its valve sheet
+- Condenser duty takes the lp.bypass port (RIN, on main) + the spray water TCV-CD1115 at the condensate enthalpy, in place of
+  U.qlp x Qd / Wd (deleted).
+- FT-CD1115 (anLpbSpray): TCV-CD1115 vendor sheet K1AU3-D1-0-043 R0 p12, Cv 25.4 modified equal %, ISA liquid sizing between the CEP
+  discharge and the LP bypass outlet. Sheet case 1 check: 46.2 T/H at 76 % travel (sheet 45.3 T/H). Before: travel x 68 T/H (NO-SOURCE).
+- At 150 MW the LP bypass is shut: no change to the start.

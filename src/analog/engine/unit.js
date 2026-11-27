@@ -1378,7 +1378,8 @@ const anPsat = T =>
      LPH drain  the No.1 LP heater drain to the condenser (anLphStep U.lpW.d1 at U.lpW.h1, the cascade H3 -> H2 -> H1; FHI heater O&M
                 L15-5 drain out to the condenser);
      hph.emerg  the HP heater emergency drains (NANA; d150 m 0);
-     LP bypass  U.qlp at the design exhaust enthalpy drop K.Qd / K.Wd until RIN writes the lp.bypass port (its enthalpy after the spray).
+     lp.bypass  the LP bypass steam (RIN, turbine.js: U.qlp at the hot reheat enthalpy, before its spray) + the spray water TCV-CD1115
+                (U.lpbW T/H at the condensate enthalpy, anCdTagStep): the desuperheater moves no heat, so the condenser takes both;
    Check at HB PPE-14-0725 case 1: exhaust 316024 kg/h at 570.1 kcal/kg, Ts 38.65 C: 195.3 MW + No.1 LPH drain 44.35 T/H at 45.6 C
    0.4 MW = 195.7 MW = K.Qd. DESIGN-SRC: HB PPE-14-0725 R1 case 1, first law, IAPWS-IF97 */
 function anCdDuty(U) {
@@ -1390,7 +1391,8 @@ function anCdDuty(U) {
     q(anPortGet(U, 'lp.exh')) +
     q({ m: W.d1, h: W.h1 }) +
     q(anPortGet(U, 'hph.emerg')) +
-    (Math.max(0, +U.qlp || 0) * AN_CD.Qd) / AN_CD.Wd
+    q(anPortGet(U, 'lp.bypass')) +
+    q({ m: +U.lpbW || 0, h: anCdHw(isFinite(U.cdT) ? U.cdT : Ts) })
   );
 }
 function anCondStep(U, dt) {
@@ -1719,8 +1721,22 @@ function anHxTagStep(U, dt) {
                    the deaerator inlet; no CEP = no flow, the column stays);
      TT-CD1104     the storage tank water at the saturation of the deaerator pressure PT-CD1104 (02.png 131 C with 2.2 kg/cm2 = sat 135.6 C:
                    4.6 C under, not modelled);
-     FT-CD1115     LP bypass spray: TCV-CD1115 opening (ABC-052 TICHR1012 MV, its airlock AN_AV) x the share of the block valve XV-CD1114
-                   (DITL-66) x 46 T/H (NO-SOURCE: the valve capacity taken as the transmitter range of the IO list). */
+     FT-CD1115     LP bypass spray (Phase 11, MEI): TCV-CD1115 by its valve sheet K1AU3-D1-0-043 R0 p12 (RIN PC read, rin-valve-reads.md):
+                   1 in, Cv 25.4, modified equal %: Cv % 7 / 36 / 72 at travel 17 / 54 / 81 %; liquid ISA w = 0.8566 Cv sqrt(dp SG) (T/H,
+                   kg/cm2, as plant.js AN_CDH); the travel = ABC-052 TICHR1012 MV through its airlock (AN_AV) x the block valve XV-CD1114
+                   (DITL-66) share; P1 = the CEP discharge U.cdPd (abs; the line to the valve not counted), P2 = the LP bypass outlet U.Plpo
+                   (abs, turbine side), at least the condenser. Check, sheet case 1: 45.3 T/H at 14.6 -> 4.0 kg/cm2 a needs Cv 16.3 = 64 %
+                   Cv = 76 % travel. Before: travel x 68 T/H (NO-SOURCE). */
+const AN_LPS = { cv: 25.4, tr: [0, 17, 54, 81, 100], pc: [0, 7, 36, 72, 100], sg: 0.9922 /* water at 40 C */ };
+function anLpbSpray(U, tr) {
+  const K = AN_LPS,
+    cv = (K.cv * swInterp(K.tr, K.pc, Math.max(0, Math.min(100, tr)))) / 100,
+    P1 = (+U.cdPd || 0) + 1.0332,
+    P2 = Math.max(+U.cdP || 0, (+U.Plpo || 0) + 1.0332),
+    w = (+U.cdQt || 0) > 0 && P1 > P2 ? 0.8566 * cv * Math.sqrt((P1 - P2) * K.sg) : 0;
+  U.lpbW = w;
+  return w;
+}
 function anCdTagStep(U, ld) {
   const hw = isFinite(U.cdT) ? U.cdT : isFinite(U.Tamb) ? U.Tamb : 30,
     r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
@@ -1744,7 +1760,7 @@ function anCdTagStep(U, ld) {
     'PT-CD1122': isFinite(Pda) ? r1(Pda + 1.6) : null,
     'TT-CD1104':
       isFinite(Pda) && Pda > 0.05 ? r1(steamTsat(Pda)) : isFinite(Pda) ? r1(isFinite(U.Tamb) ? U.Tamb : 30) : null,
-    'FT-CD1115': isFinite(mv) && isFinite(uf) ? r1((68 * anAv('TICHR1012', mv) * uf) / 100) : null
+    'FT-CD1115': isFinite(mv) && isFinite(uf) ? r1(anLpbSpray(U, anAv('TICHR1012', mv) * uf)) : null
   });
 }
 /* 3.2.1 (IRENE, page 06 FEEDWATER): the turbine extraction, feedwater and spray transmitters of the page that no sheet reads (AN.unit.tt).
