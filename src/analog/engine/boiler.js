@@ -415,16 +415,16 @@ const anFabKw = (m, p2) => {
   const p1 = (lo + hi) / 2;
   return (anFabLin(AN_FAB.P, (Math.max(0, m) * pb) / p1) * p1) / pb;
 };
-/* the FA blower motor at machine kW kw: current I (A), electrical input P (kW), Q (kvar) from the same numbers (Phase 11 YUI) */
-const anFabEl = kw => {
-  const V = Math.sqrt(3) * 6.6,
-    ia = kw / 0.955 / V,
-    ir = 12.7 + (49.4 * Math.sqrt(1 - 0.89 * 0.89) - 12.7) * Math.pow(ia / (49.4 * 0.89), 2);
-  return { I: Math.hypot(ia, ir), P: V * ia, Q: V * ir };
-};
-AN_FAB.a0 = anFabEl(anFabKw(26300, 3257)).I;
+/* the FA blower motor at machine kW kw: current I (A), electrical input P (kW), Q (kvar), on its TECO curve (Phase 11 AOI 2026-11-28,
+   was a fixed 95.5 % / 0.89 with a guessed magnetizing law): M-1007A/B TECO AFJH-WT 480 kW, 6.6 kV (LMYP-2 motor data, the same
+   motor on the load list; yui-reads-4.md): table 100 % eff 95.5 / PF 0.89 / 49.4 A, curve p11 75 % 95.2 / 0.87, 50 % 94.2 / 0.83
+   (read +-1 %); the same law as the PAF / SAF / IDF motors (anFdEl, AN_FD.mot.fab) */
+const anFabEl = kw => anFdEl(AN_FD.mot.fab, AN_FD.mot.fab.kW, kw);
+/* the current at the design point (26,300 kg/h into 3,257 mmH2O), the scale of the HMI current; found on the first call, as
+   AN_FD is set further down */
+const anFabA0 = () => AN_FAB.a0 || (AN_FAB.a0 = anFabEl(anFabKw(26300, 3257)).I);
 /* current of one FA blower: running, its flow (T/H), the header gauge pressure (mmH2O) */
-const anFabI = (on, q, p2) => (on ? (AN_FN.I0.fa * anFabEl(anFabKw(q * 1000, p2)).I) / AN_FAB.a0 : 0);
+const anFabI = (on, q, p2) => (on ? (AN_FN.I0.fa * anFabEl(anFabKw(q * 1000, p2)).I) / anFabA0() : 0);
 /* motor current: no-load share + the rest x air power over the snapshot one. Same law on the HMI (api.js fanI); the HMI fallback
    passes only the snapshot current, so the share is found by it */
 /* beta.324: the FA blower has no share; the HMI fallback passes x = (flow ratio)^3, so it is read back as its flow and the header
@@ -486,7 +486,8 @@ const AN_FD = {
   mot: {
     paf: { I: 373, t: [[0.1, 0.8, 0.475], [0.25, 0.929, 0.747], [0.5, 0.949, 0.86], [0.75, 0.955, 0.899], [1, 0.958, 0.905]] },
     saf: { I: 192, t: [[0.1, 0.8, 0.39], [0.25, 0.93, 0.653], [0.5, 0.952, 0.816], [0.75, 0.955, 0.864], [1, 0.956, 0.88]] },
-    idf: { I: 350, t: [[0.1, 0.8, 0.31], [0.25, 0.922, 0.586], [0.5, 0.948, 0.771], [0.75, 0.957, 0.84], [1, 0.96, 0.86]] }
+    idf: { I: 350, t: [[0.1, 0.8, 0.31], [0.25, 0.922, 0.586], [0.5, 0.948, 0.771], [0.75, 0.957, 0.84], [1, 0.96, 0.86]] },
+    fab: { kW: 480, I: 49.4, t: [[0.5, 0.942, 0.83], [0.75, 0.952, 0.87], [1, 0.955, 0.89]] } /* FA blower, see anFabEl */
   }
 };
 /* system: fan outlet pressure (mmH2O) at fan flow q (T/H), bed share b */
