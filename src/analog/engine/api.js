@@ -27,6 +27,8 @@ function anEngAPI() {
       const U = AN.unit || {};
       return anFgMol(coal, U.coalR || 1, 0, air, U.lmQ || 0, isFinite(U.soxF) ? 1 - U.soxF : 0, U.tlW || 0).o2d;
     },
+    /* Phase 11 AOI: the heat the plant holds, kJ (cfb.js anStoredE), for the sweep judge dE/dt */
+    storedE: () => anStoredE(AN.unit),
     plantLoad150: anPlantLoad150,
     plantCold: anPlantCold,
     plantColdAsync: anPlantColdAsync,

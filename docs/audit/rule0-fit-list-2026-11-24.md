@@ -20,6 +20,7 @@ So 29 lines need real work (17 items), 15 need only a tag.
 Each item: what it is · where · what it was fitted to · design source that replaces it · physics note ready for the code comment · PC page needed (if any).
 
 ### 1. Solids carried up the furnace at part load, kKL 9.2 (D3 / D27) · HIGHEST
+- **STATUS 2026-11-28 (team decision): RULE 0 VIOLATION, fit, contradicts FHI Fig 9.** TEMPORARY placeholder only. FHI Fig 9 (furnace DP vs load) gives kKL about 1.7 ~ 3; 9.2 is rejected (rms 32 mmH2O). Checked and not the cause: the char store (fast, PR 710), the drum storage (KANA PR 714, Cw 984), the PID block (matches FCS2000 FE 2.4.1). Open: the physics of the fast steam answer to firing (the 150 MW loop needs it in under ~3 min; the design model gives ~6 min).
 - **Where:** `src/analog/engine/unit.js:2281`, `:2296` (`AN_BB.kKL`, line 2297).
 - **Fitted to:** the plant DCS trend scenario 1 at 90 MW (coal 55.4 T/H, PA 318 + SA 187 T/H, bed 955 C).
 - **Design source:** FHI P2S7 at 60 % MCR, the same calculation as in the code: air 371 T/H (Fig 12), coal 56.0 T/H (Fig 13), furnace average 755 C (Fig 8), bed 860 C (SU:10198 band, design anchor tbA). This gives **kKL = 3.80** (Jennie's CALC, beta.350 note).
