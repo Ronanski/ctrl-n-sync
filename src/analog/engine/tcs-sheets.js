@@ -51,7 +51,23 @@ const TCS_SH_IN = {
   'PIO:TCA901-25': () => tcsPur(),
   'PIO:TCA903-23': (U, c) => c.vex,
   'PIO:TCA903-24': (U, c) => c.empOff,
-  'PIO:TCA904-12': (U, c) => c.gse
+  'PIO:TCA904-12': (U, c) => c.gse,
+  /* Phase 11 (YUI): the pick-up contacts of the generator protection relays (A) SH-G-5A / 5B and (B) SH-G-6A / 6B = the port relay.gen
+     of the generator model (elec.js anGenRelay, GEE-2015-0173 R1 settings; (B) p.41 ~ 65 has the same settings as (A), YUA read
+     /mnt/project-files/yui-relay-b-2026-11-27.md). Only a map: the times, the gating and the lockout (86G-A / 86G-B) are the sheets'.
+     d24b.M = the operating quantity (V/Hz %) of the inverse time element (tce-run.js TINV), its PLANT port. The contacts with no
+     model state (r87, r59g, r40a / b, r46a / b, r51, r50, r78, r60) are not fed: NO-SOURCE */
+  ...Object.fromEntries(
+    ['5A', '5B', '6A', '6B'].flatMap(g =>
+      (g[1] === 'A' ? ['r24a', 'r24b', 'r24c', 'r59a', 'r59b', 'r27'] : ['r81l1', 'r81l2', 'r81h1', 'r81h2']).map(k => ['PLANT:G-' + g + '.' + k, U => tcsRelGen(U, k)])
+    )
+  ),
+  'PLANT:G-5A.d24b.M': U => tcsRelGen(U, 'vhz'),
+  'PLANT:G-6A.d24b.M': U => tcsRelGen(U, 'vhz')
+};
+const tcsRelGen = (U, k) => {
+  const p = typeof anPortGet === 'function' ? anPortGet(U, 'relay.gen') : null;
+  return p && p.x ? p.x[k] : NaN;
 };
 let tcsShP = null; /* the compiled program; null = no sheets in this build (yet) */
 /* sm / n: the c.sm the memory belongs to and its step count (a LOAD puts other values in the same object); ld: the memory of a keyframe */
