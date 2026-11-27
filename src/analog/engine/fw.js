@@ -36,8 +36,8 @@ function fwHw(P, T) {
      6.369 ata against the deaerator 5.05 + 1.0332 = 6.083 ata (dP 0.286), rho of the steam at the deaerator inlet 310.3 C (IF97).
      The stage pressure, temperature and enthalpy are the port ext.da of the turbine part (RIN, turbine.js anTbPorts); not written =
      no steam (ports.js rule 3); a port without h: IF97 at its P and T;
-     pegging steam PCV-AS1030 from the auxiliary steam header: the flow the aux steam model takes out of its header (U.asF.w1030, the
-     same ISA-75.01 valve law, one flow: no second calculation here), header steam 350 C (MB-014, as AN_AS.Ta);
+     pegging steam PCV-AS1030 from the auxiliary steam header: the port aux.peg {m t/h, h kJ/kg} of the aux steam part (SUZU, the valve
+     in its header substeps; Phase 11 2026-11-27, was U.asF.w1030 and IF97 at U.asP and a fixed 350 C); not written = no steam;
      the No.1 HP heater normal drain (primary valve LCV-HD1105-1 of unit.js anHdStep, which carries the No.2 cascade and a tube leak)
      at its drain temperature (U.hpD1);
      the condensate after the No.3 LP heater (port cd.out when written, else plant.js anCycFlows fda at the LP heater outlet U.lpHt.H3).
@@ -54,7 +54,6 @@ const AN_DA = {
   Px0: 6.369 /* ata DESIGN-SRC: HB PPE-14-0725 case 1 deaerator stage */,
   Pd0: 5.05 + 1.0332 /* ata DESIGN-SRC: K2MC2F-001 operating 5.05 kg/cm2 G */,
   Tx0: 310.3 /* C DESIGN-SRC: K2MC2F-001 steam in */,
-  Tpeg: 350 /* C, MB-014 aux steam header (as AN_AS.Ta) */
 };
 AN_DA.k = AN_DA.w0 / Math.sqrt(steamRho(AN_DA.Px0 - 1.0332, AN_DA.Tx0) * (AN_DA.Px0 - AN_DA.Pd0));
 /* the deaerator pressure transmitter PT-CD1104 (ABC-056 AI0417, U.xt.dea) is written by this model: it is not a loop model any more */
@@ -90,9 +89,10 @@ function anDeaStep(U, dt) {
     TxC = Pxa > 0.05 ? Math.max(steamTsat(Pxa - 1.0332), isFinite(fin(pX.T)) ? fin(pX.T) : 0) : Ta,
     wx = Pxa > Pda && open > 0 ? open * K.k * Math.sqrt(steamRho(Pxa - 1.0332, TxC) * (Pxa - Pda)) : 0,
     hx = isFinite(fin(pX && pX.h)) ? fin(pX.h) : Pxa > 0.05 ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */ : 0,
-    /* pegging steam (the aux steam model's own flow, kg/h) */
-    wp = U.asF && isFinite(U.asF.w1030) ? Math.max(0, U.asF.w1030) / 1000 : 0,
-    hp = steamH(isFinite(U.asP) ? U.asP : Pd, K.Tpeg),
+    /* pegging steam: the port aux.peg of the aux steam part (SUZU) */
+    pP = pg('aux.peg'),
+    wp = isFinite(fin(pP && pP.m)) ? Math.max(0, fin(pP.m)) : 0,
+    hp = isFinite(fin(pP && pP.h)) ? fin(pP.h) : 0,
     /* HP heater normal drain */
     h5 = (U.hd || []).find(h => h.k === 'H5'),
     wd = h5 && isFinite(h5.w1) ? Math.max(0, h5.w1) : 0,
@@ -551,7 +551,7 @@ const AN_HD = {
    P1 / P2: the heater shell (U.hpPs) and the place it drains to (No.1 HPH shell U.hpPs, deaerator U.da.P, condenser port 'cd' P)
    plus the head and line of the sheet: dz = sizing COND 1 P1 / P2 less the design shell / place
    (No.2 HPH 37.48 ata, No.1 HPH 14.12 ata, K1AU3-D1-0-036; deaerator 6.083 ata, K2MC2F-001; condenser 0.07 ata, HB PPE-14-0725),
-   held at every flow (the heater elevations are NOT IN DOCS: PD-017 / PD-018). Water density: the saturated table (AN_WATER_RHO). */
+   held at every flow (the heater elevations are NOT IN DOCS: PD-017 / PD-018). Water density: IF97 saturated water (plant.js anWaterRho). */
 const AN_HDV = {
   FL: 0.9 /* DESIGN-SRC: E2-0-123 R1 HD1105 / HD1106 sizing cases (derived, see above) */,
   H6: {
@@ -844,7 +844,7 @@ function anFwTagStep(U) {
     Prh = isFinite(U.Prh) ? U.Prh : 0,
     /* the RH and HP bypass spray from the BFWP 3rd stage (AN_BYS, anSprW), at the deaerator water (U.tSr of the last step) */
     Pis = isFinite(U.fwPis) ? U.fwPis : NaN,
-    rSp = anWaterRho(isFinite(U.tSr) ? U.tSr : 30) /* saturated water table (plant.js AN_WATER_RHO) */,
+    rSp = anWaterRho(isFinite(U.tSr) ? U.tSr : 30) /* IF97 saturated water (plant.js anWaterRho) */,
     cvOf = (V, m) => (isFinite(m) ? (V.cv * swInterp(V.x, V.y, Math.max(0, Math.min(100, m)))) / 100 : NaN),
     wrh = anSprW(cvOf(AN_BYS.rh, held('TICHR1002', mvOf('ABC-019', 'TICHR1002'))), Pis, Prh, rSp) * pos('DITL-35') /* TCV-FW1150, XV-FW1151 */,
     whp = anSprW(cvOf(AN_BYS.hp, held('TICMS1022', mvOf('ABC-051', 'TICMS1022'))), Pis, Prh * K.crP, rSp) * pos('DITL-79') /* TCV-FW1060, XV-FW1061 */,

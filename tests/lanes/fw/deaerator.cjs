@@ -23,7 +23,7 @@ for (const [p, T, h] of [[3, 300, 115.331273], [80, 300, 184.142828], [3, 500, 9
 /* a steady run of anDeaStep with the inflows fixed (U fields as the plant model gives them) */
 function run(T0, Pxa, wc, tc, wd, td, mins) {
   vm.runInContext('var AN_CYC = { y: { da: 0 }, kgmm: { da: () => 3.3 * 13.14 * 0.909 } }; function anCycFlows(){ return { fda: 0 }; }', ctx);
-  ctx.U = { Tamb: 30, ms: 0, da: { T: T0 }, hd: [{ k: 'H5', w1: wd }], hpD1: td, lpHt: { H3: { out: tc } }, tt: { 'TT-TS1018': 310.3 }, asF: { w1030: 0 } };
+  ctx.U = { Tamb: 30, ms: 0, da: { T: T0 }, hd: [{ k: 'H5', w1: wd }], hpD1: td, lpHt: { H3: { out: tc } }, tt: { 'TT-TS1018': 310.3 } };
   ctx.Pxa = Pxa;
   ctx.wc = wc;
   ctx.tc = tc;
