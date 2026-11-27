@@ -3940,8 +3940,8 @@ function anFwTagStep(U) {
     z12 = fx('ABC-011', 'TICBR1130', 'LN46', m1),
     z21 = fx('ABC-012', 'TICBR1150', 'LN49', m2),
     z22 = fx('ABC-012', 'TICBR1150', 'LN48', m2),
-    w1 = K.K * (cv(K.cv.a1, z11) * pos('DITL-32') + cv(K.cv.a2, z12) * pos('DITL-32 #B')) * sq(anShTap(U, AN_SHDP.s1, drum, ms)),
-    w2 = K.K * (cv(K.cv.b1, z21) * pos('DITL-33') + cv(K.cv.b2, z22) * pos('DITL-33 #B')) * sq(anShTap(U, AN_SHDP.s2, drum, ms)),
+    w1 = K.K * (cv(K.cv.a1, z11) * pos('DITL-32') + cv(K.cv.a2, z12) * pos('DITL-32 #B')) * sq(drum - 6.4 * lf),
+    w2 = K.K * (cv(K.cv.b1, z21) * pos('DITL-33') + cv(K.cv.b2, z22) * pos('DITL-33 #B')) * sq(drum - 9.3 * lf),
     Prh = isFinite(U.Prh) ? U.Prh : 0,
     dr = isFinite(pd) ? Math.sqrt(Math.max(0, pd - Prh) / (165.4 - 34.9)) : NaN,
     wrh =
@@ -5138,7 +5138,7 @@ function anSbDrain(U, dt, P) {
     Tf = tt['TT-FW1011'] != null && isFinite(tt['TT-FW1011']) ? +tt['TT-FW1011'] : Ta;
   let Ts = NaN;
   if (isFinite(T1) && Pd > 0) {
-    const P1 = Math.max(0, anShTap(U, AN_SHDP.s1, Pd, ms)),
+    const P1 = Math.max(0, Pd - 6.4 * (ms / 474.1) * (ms / 474.1)),
       mo = ms - w2;
     Ts = Math.max(T1, steamTsat(P1));
     if (w1 > 0 && mo - w1 > 1) Ts = steamTph(P1, (mo * steamH(P1, Ts) - w1 * 4.19 * Tf) / (mo - w1));
