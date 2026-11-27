@@ -204,7 +204,18 @@
         f2.item,
         at(X('MV-CD1007', 'Polisher inlet valve', { wrap: 12 }), 800, 505, { id: 'pin', rot: -90, lab: 'l', ly: -25 }),
         at(C('FICCD1121', 'Polisher bypass valve', { tag: 'FCV-CD1121', wrap: 14 }), 885, HY, { id: 'pby', lab: 't' }) /* UI check 2026-11-24 B2: its output clear of the flash spray 1 line */,
+        /* flash pipe T-1135 (printed "FLASH PIPE") with its sparger Z-1130 on top (PD-027 rev D E/F-7, YUA P&ID read 2026-11-27):
+           drain headers FS-1-011 / FS-1-022 (stop / control valve leak-offs, main steam drain pots, aux steam drains) -> Z-1130 ->
+           flash pipe; vent to atmosphere at the top; bottom FS-1-012 -> XV-FS1005 -> condenser flash chamber. Level LT-FS1410
+           is not in the DCS I/O list: no value. */
+        at(E('tank', 'Flash pipe', 'T-1135', [], { id: 'fp', liquid: 'none', w: 26, h: 96 }), 160, 760, { id: 'fp', lab: 'r' }),
+        at(E('sparger', 'Sparger', 'Z-1130', []), 118, 728, { id: 'fsp', lab: 'b' }),
         at(X('MV-CD1008', 'Polisher outlet valve', { wrap: 12 }), 1000, 505, { id: 'pout', rot: 90, lab: 'l', ly: -31 }),
+        /* polisher booster pumps P-1716A / B, printed "CONDENSER POLISHER BOOSTER PUMPS NO.3 / NO.4" (PD-047 B-8/9, YUA P&ID read
+           2026-11-27): mix bed towers -> M valve -> booster pumps -> check + M valve -> Unit 1 condensate (PD-016 B-9). The two
+           pumps are one small pump symbol on the return line, no label (no room; named in docs/phase9/equipment.json map); no
+           signal of them in the I/O list (polisher local panel) */
+        at(E('pump', '', '', []), 1000, 462, { id: 'pbp', sc: 0.5, rot: 90 }),
         /* lane 7 (MINAMI): the ready signal of the polisher package (I/O list station 2 I.025F), read by DITL-64 (polisher inlet valve) */
         at(HX.B('Polisher train ready', 'data-di="RY-CD01|READY|NOT READY"', { w: 150 }), 900, 330, { id: 'prdy' }),
         at(C('FICCD1120', 'Minimum flow valve', { tag: 'FCV-CD1120' }), 700, RY, { id: 'mf', lab: 't' }),
@@ -275,7 +286,12 @@
         { med: 'condensate', w: W_SM, pts: ['pin.r', [800, 440]], to: 'to polisher', tox: 26, flow: 'x:MV-CD1007' },
         { med: 'condensate', w: W_CD, pts: [[800, HY], 'pby.l'], flow: 'l:FICCD1121', arrow: false },
         { med: 'condensate', w: W_CD, pts: ['pby.r', [1000, HY]], flow: 'l:FICCD1121', arrow: false },
-        { med: 'condensate', w: W_SM, pts: [[1000, 440], 'pout.l'], flow: 'x:MV-CD1008', arrow: false },
+        { med: 'drain', w: 3, pts: [[40, 728], 'fsp.l'], arrow: false },
+        { med: 'drain', w: 3, pts: ['fsp.r', [147, 728]] },
+        { med: 'steam', w: 3, pts: ['fp.t', [160, 680]], to: 'atmosphere' },
+        { med: 'drain', w: 3, pts: ['fp.b', [160, 870]], to: 'to the flash chamber' },
+        { med: 'condensate', w: W_SM, pts: [[1000, 440], 'pbp.s'], flow: 'x:MV-CD1008', arrow: false },
+        { med: 'condensate', w: W_SM, pts: ['pbp.d', [1024, 461], [1024, 480], [1000, 480], 'pout.l'], flow: 'x:MV-CD1008', arrow: false },
         { med: 'condensate', w: W_SM, pts: ['pout.r', [1000, HY]], flow: 'x:MV-CD1008' },
         {
           med: 'condensate',
@@ -377,6 +393,7 @@
         { x: 1580, y: TY, side: 'b', label: 'Temperature', key: 'TT-CD1122', unit: '°C', dp: 0, tag: 'TT-CD1122' }
       ],
       texts: [
+        { x: 40, y: 718, s: 'drain headers', cls: 'hx-note' },
         { x: CX, y: CY - 16, s: 'from the low pressure turbine', cls: 'hx-note', anchor: 'middle' },
         { x: 150, y: 580, s: 'Condenser', cls: 'hx-name' },
         { x: 36, y: 110, s: 'Pressure', key: 'PTCD1110', unit: K + ' abs', dp: 3 },

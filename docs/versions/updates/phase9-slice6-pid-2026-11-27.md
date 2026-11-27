@@ -84,3 +84,11 @@ Source: /mnt/project-files/phase9-pid-positions-2026-11-27.md (flow diagram set 
 - Min flow orifices: RO-IW0715A / B (PD-025), RO-MU0709A ~ C (PD-024 B-8; kung aling orifice ang sa aling pump: NOT IN DOCS,
   ayos A, B, C), OR-CW1001A / B sa cooling water ng lube oil coolers (PD-021 D-3). Maikling sanga lang ang linya.
 - Bilang: 331 / 349 may simbolo, 8 wala sa docs, 10 natitira.
+
+## Huling 10 (10 AM)
+- Feedwater: OR-FW1004 / 1003 sa pump balance lines 1 / 2 papunta sa deaerator (PD-017 B-2); kung aling pump: NOT IN DOCS.
+- Condensate: polisher booster pumps P-1716A / B (iisang maliit na pump sa polisher return, PD-047 B-8/9); flash pipe T-1135
+  at sparger Z-1130 (PD-027 rev D E/F-7), walang value (LT-FS1410 wala sa I/O list).
+- Drum at superheaters: OR-MS1001 / 1002 sa dalawang drain papunta sa deaerator (PD-011 rev D F-5, PD-014 rev D B-6/7).
+- Furnace gas: cyclone B at seal pot B, nakaguhit sa likod ng A.
+- Bilang: 341 / 349 may simbolo, 8 wala sa anumang doc (nodoc), 0 natitira. Ang natitira sa row 9: approval ng user ng 33 page.

@@ -145,6 +145,11 @@
         /* the minimum flow orifices OR-FW1001 / 1002 on the recirculation of each pump to the deaerator (PD-017 A-2, after V-FW1007 / 1008)
            and the lube oil units Z-1115A / B of the pumps (PD-017 G-2 / G-5; the lube oil pumps stay in the faceplate of their feed pump) */
         at(E('orifice', '', 'OR-FW1001', [], {}), PAX - 42, 730, { id: 'ora', lab: 'b' }),
+        /* pump balance lines FW-1-027 / 028 back to the deaerator T-1104 (PD-017 B-2, YUA P&ID read 2026-11-27): line 1 -> V-FW1043
+           check -> V-FW1044 -> OR-FW1004, line 2 -> V-FW1045 -> V-FW1046 -> OR-FW1003. Which pump each line comes from is NOT IN
+           DOCS; drawn as two short lines into the left end of the deaerator, no label (map) */
+        at(E('orifice', '', '', []), 165, 233, { id: 'ob1', sc: 0.8 }),
+        at(E('orifice', '', '', []), 165, 251, { id: 'ob2', sc: 0.8 }),
         at(E('orifice', '', 'OR-FW1002', [], {}), PBX - 42, 730, { id: 'orb', lab: 'b' }),
         at(E('tank', 'Lube oil unit', 'Z-1115A', [], { w: 56, h: 36 }), 480, 800, { id: 'loa', lab: 't' }),
         at(E('tank', 'Lube oil unit', 'Z-1115B', [], { w: 56, h: 36 }), 818, 800, { id: 'lob', lab: 't' }),
@@ -228,6 +233,10 @@
         at(HX.B('1 ELEMENT', 'data-apb="ABC-010|M.054F|M.0222=1"', { press: true }), 1270, 130, { id: 'pb1' })
       ],
       pipes: [
+        ...[1, 2].flatMap(k => [
+          { med: 'water', w: 3, pts: [[138, 215 + 18 * k], 'ob' + k + '.l'], arrow: false },
+          { med: 'water', w: 3, pts: ['ob' + k + '.r', [200, 215 + 18 * k]] }
+        ]),
         /* into the deaerator */
         { med: 'condensate', w: W_FW, pts: ['cdl.r', 'da.cin'], flow: 'v:PT-CD1104>0.05' },
         { med: 'steam', w: W_ST, pts: ['exl3.l', 'ts3.r'], flow: 'x:MV-TS1003', arrow: false },
@@ -372,6 +381,7 @@
         { x: 1270, y: 338, side: 't', label: 'Temperature', key: 'TT-TS1011', unit: '°C', dp: 0, tag: 'TT-TS1011' }
       ],
       texts: [
+        { x: 133, y: 247, s: 'pump balance lines', cls: 'hx-note', anchor: 'end' },
         { x: DAX, y: DAY + 74 * DAS - 22, s: 'Deaerator', cls: 'hx-name', anchor: 'middle' },
         { x: 520, y: 230, s: 'Level 1', key: 'LT-CD1104-1', unit: 'mm', dp: 0 },
         { x: 520, y: 246, s: 'Level 2', key: 'LT-CD1104-2', unit: 'mm', dp: 0 },

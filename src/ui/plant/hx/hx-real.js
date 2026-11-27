@@ -139,6 +139,12 @@
     ports: {},
     svg: '<rect class="rxv" x="-7" y="-9.5" width="14" height="19" rx="3"/><path class="rxe" d="M-7 -3h14M-7 3h14"/>'
   });
+  /* sparger: a perforated pipe end that spreads drains into a vessel. Ports: l */
+  R.sparger = () => ({
+    box: [-14, -5, 14, 5],
+    ports: { l: [-14, 0], r: [14, 0] },
+    svg: '<rect class="rxv" x="-14" y="-4" width="28" height="8" rx="4"/><path class="rxe" d="M-8 0h1M-3 0h1M2 0h1M7 0h1"/>'
+  });
   /* drain pot: a small upright vessel under a steam line */
   R.pot = () => ({
     box: [-7, -13, 7, 13],

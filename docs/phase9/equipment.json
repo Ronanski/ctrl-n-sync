@@ -14,12 +14,12 @@
   "H-1001": "furnace-gas|sym=furnace",
   "Z-1057": "furnace-gas|sym=stack",
   "S-1009A": [
-   "furnace-gas|sym=cyclone",
-   "one cyclone symbol is drawn; it stands for A (B has none)"
+   "furnace-gas|id=cy",
+   "cyclone A, the front one of the two drawn"
   ],
   "T-1009A": [
-   "furnace-gas|sym=sealpot",
-   "one seal pot symbol is drawn; it stands for A (B has none)"
+   "furnace-gas|id=sp",
+   "seal pot A, the front one of the two drawn"
   ],
   "T-1001": "drum-steam|sym=drum",
   "P-1115A": "feedwater|mach=BFWP-A",
@@ -291,6 +291,38 @@
   "OR-CW1001B": [
    "turbine-oil|id=oc1",
    "orifice on the cooling water out of lube oil cooler B (PD-021 D-3, tag not printed, YUA P&ID read 2026-11-27); no label"
+  ],
+  "OR-FW1004": [
+   "feedwater|id=ob1",
+   "orifice on pump balance line 1 FW-1-027 to the deaerator (PD-017 B-2, YUA P&ID read 2026-11-27); no label"
+  ],
+  "OR-FW1003": [
+   "feedwater|id=ob2",
+   "orifice on pump balance line 2 FW-1-028 to the deaerator (PD-017 B-2, YUA P&ID read 2026-11-27); no label"
+  ],
+  "P-1716A": [
+   "condensate|id=pbp",
+   "condenser polisher booster pump NO.3 (PD-047 B-8/9, YUA reads NO.3 = A, NO.4 = B); one small pump symbol for the two on the polisher return line, no label"
+  ],
+  "P-1716B": [
+   "condensate|id=pbp",
+   "condenser polisher booster pump NO.4 (PD-047 B-8/9, YUA reads NO.3 = A, NO.4 = B); one small pump symbol for the two on the polisher return line, no label"
+  ],
+  "OR-MS1001": [
+   "drum-steam|id=om1",
+   "multi-stage orifice on the main steam drain before the HP bypass valve to the deaerator (PD-011 rev D F-5, YUA P&ID read 2026-11-27 part 2); no label"
+  ],
+  "OR-MS1002": [
+   "drum-steam|id=om2",
+   "multi-stage orifice on the aux steam branch drain before PCV-AS1010 to the deaerator (PD-014 rev D B-6/7, YUA P&ID read 2026-11-27 part 2); no label"
+  ],
+  "S-1009B": [
+   "furnace-gas|id=cyb",
+   "cyclone B (PD-054 sh3/3 A/B-5, YUA P&ID read 2026-11-27), drawn behind cyclone A"
+  ],
+  "T-1009B": [
+   "furnace-gas|id=spb",
+   "seal pot B (PD-054 sh3/3 D/E-5), drawn behind seal pot A"
   ]
  },
  "approved": {},
