@@ -2076,8 +2076,8 @@ function anAuxStep(U, dt) {
     Pcr = (isFinite(U.Prh) ? U.Prh : 0) * (36.6 / 35.1),
     tcr = anUnitVal(X.cr || []),
     Tcr = isFinite(tcr) ? tcr : 370,
-    pdea = anUnitVal(X.dea || []),
-    Pdea = isFinite(pdea) ? pdea : 0,
+    dea = typeof anPortGet === 'function' ? anPortGet(U, 'dea') : null /* NANA's deaerator port, P ata */,
+    Pdea = dea && isFinite(dea.P) ? dea.P - 1.0332 : 0,
     o1004 = cl(anAsCtl('ABC-030', 'PICAS1004')),
     o1030 = cl(anAsCtl('ABC-056', 'PICCD1104')),
     tt = U.tt || {},
@@ -2227,6 +2227,14 @@ function anAuxStep(U, dt) {
     metal('asTgs', TgsIn, wGs, K.Mc17, K.UA17, 0, Ta0);
     U.asT1 = T1;
     U.asT3 = T3;
+    /* Phase 11 (SUZU 2026-11-27): the aux steam header for the other parts (ports.js aux.hdr: NANA deaerator pegging, RIN, MEI):
+       P kg/cm2 g = the header volume above, T = TT-AS1003 (the header metal balance), h kJ/kg of IF97 at that state */
+    if (typeof anPortSet === 'function') {
+      const hA3 = U.asP > -0.9 ? steamH(U.asP, Math.max(tsA, T3)) : NaN;
+      anPortSet(U, 'aux.hdr', { P: U.asP, T: T3, h: hA3 });
+      /* the deaerator pegging steam: PCV-AS1030 is a sink of the header substeps here, so its flow is written here (NANA reads it) */
+      anPortSet(U, 'aux.peg', { m: (F.w1030 || 0) / 1000, h: hA3 });
+    }
     anUnitWrite(U.asTAI[0], U.asT1);
     anUnitWrite(U.asTAI[1], U.asT17);
   }
