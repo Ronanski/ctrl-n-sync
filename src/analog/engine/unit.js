@@ -1323,7 +1323,9 @@ const AN_CD = {
    At the design point the balance gives 31.56 A exactly; at the KSB duty 252 kW 27.0 A; at shut-off (105 kW) 14.6 A. Snapshot check only
    (28.png CP-A 28.1 A at 150 MW). DESIGN-SRC: K1AU3-E1-0-302 Rev A, induction motor equivalent circuit */
 const AN_CD_M = { V: 6.6, P: 298.4, eff: 0.94, pf: 0.88, i0: 0.3, fix: 0.36 };
-function anCepI(Ps) {
+/* Phase 11 (YUI, MEI OK): o (optional) gets the electrical input of the same fixed point, o.P kW and o.Q kvar (house load, port
+   q.motor.MEI) */
+function anCepI(Ps, o) {
   const M = AN_CD_M,
     r3 = Math.sqrt(3),
     Pin = M.P / M.eff,
@@ -1337,6 +1339,7 @@ function anCepI(Ps) {
       P = Math.max(0, Ps) + M.fix * Pl + (1 - M.fix) * Pl * u,
       Q = Q0 + (Qfl - Q0) * u;
     I = Math.sqrt(P * P + Q * Q) / (r3 * M.V);
+    if (o) (o.P = P), (o.Q = Q);
   }
   return I;
 }
@@ -1471,10 +1474,14 @@ function anCondStep(U, dt) {
   U.cdHw = hw;
   U.cdRun = run;
   U.cdPd = Math.max(0, Math.min(25, anCdPdis(Qt, n, U.cdP, hw)));
+  const el = { P: 0, Q: 0 };
   run.forEach((r, i) => {
-    U['cdI' + i] = r ? Math.round(10 * anCepI(swInterp(K.pQ, K.pP, q))) / 10 : 0;
+    const o = {};
+    U['cdI' + i] = r ? Math.round(10 * anCepI(swInterp(K.pQ, K.pP, q), o)) / 10 : 0;
+    if (r) (el.P += o.P), (el.Q += o.Q);
     U['cdDp' + i] = r ? Math.round(1000 * K.dp0 * (q / K.q0) * (q / K.q0)) / 1000 : 0;
   });
+  if (typeof anPortSet === 'function') anPortSet(U, 'q.motor.MEI', el);
 }
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
