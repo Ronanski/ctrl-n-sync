@@ -250,7 +250,13 @@ const AN_UNIT = {
      coal-dependent, set at commissioning). 350 and the straight line between are NO-SOURCE inside that bound. */
   Tburn0: 350,
   Tburn1: 600,
-  Cw: 1726 /* water 175.6 t (T8 Tab 2) x 4.18 + evaporative steel 437.7 t (B-0-001) x 0.5 kJ/kg K = 953 MJ/K, in units of 0.554 MW */,
+  Cw: (51 * 6.4 + 437.7 * 0.5) / 0.554 /* 984 = 545 MJ/K in units of 0.554 MW. Phase 11 (KANA 2026-11-27): the stored heat of what sits at
+     saturation, DP-CALC at 150 MW (139.6 kg/cm2, Tsat 336 C, rho_f 620 kg/m3): water 51 t = downcomers 18.7 m3 full (4 x 14" x 48 m +
+     6 x 8" x 26 m, FHI P2S7 Tab 1) + risers / walls 69.9 m3 at the mean void 0.23 (plant.js AN_RISER, Astrom-Bell) = 53.8 m3 liquid +
+     the drum below NWL 9.8 m3 (30.7 % of 31.8 m3, K1AU3D-101 / -109), x dh_f/dT_sat 6.4 kJ/kg K (IF97, 1594.4 - 1462.2 over 320 -> 340
+     C); evaporative steel 437.7 t (B-0-001) x 0.5 kJ/kg K. Before: 1726 = water 175.6 t (FHI P2S8 Tab 2, hydro full at 15.5 C, with
+     the 55.4 t of the subcooled economizer and the drum full) x 4.18. OPEN: whether B-0-001 437.7 t holds the economizer steel (hx.js
+     has its own 112 MJ/K metal store); the inventory is held at the 150 MW point (does not follow the level / void) */,
   kcool: 60 /* 2.2.0-beta.21: cooling of the unfired boiler by the air, T/H steam-equivalent at the anchor air and 300 C (ASSUMED, Fig. 5) */,
   kamb: 1 /* 2.2.0-beta.21: bottled boiler loss to the ambient, T/H steam-equivalent at 300 C (ASSUMED) */,
   tauB: 900,
