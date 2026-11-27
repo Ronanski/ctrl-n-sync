@@ -4227,6 +4227,11 @@ function anUnitStep0(dt) {
        and F5 = 1.263 x the steam F4 (spray from the CP outlet, 216949 / 171756). Gauge = ata - 1.033; shut, the line is at condenser
        vacuum and the 0 ~ 50 transmitter reads 0 (snapshot 0.0 at 150 MW) */
     U.Plpo = Math.max(0, 0.0538 * 1.263 * U.qlp - 1.033);
+    /* Phase 11 rank 9b (RIN, for MEI's spray TCV-CD1115): the PCV-HR1010 BODY outlet, where the spray nozzle No. 84 of the DSCV injects
+       (K1AU3-D1-0-043 R0 p9): the sheet P2 4.0 / 2.02 / 0.58 kg/cm2a at 217.1 / 111.8 / 33.2 T/H outlet flow = 0.0184 ata per T/H
+       (cond 1; the line after it is choked, pressure in line with flow, as PT-HR1011 above), never below the condenser. ata (abs).
+       The outlet flow = the steam x 217102 / 171756 (the spray of cond 1). DESIGN-SRC: vendor sheet K1AU3-D1-0-043 R0 p9 */
+    U.Pvlo = Math.max(isFinite(U.cdP) ? U.cdP : 1.0332, (4.0 / 217.102) * U.qlp * (217102 / 171756));
   }
   /* PT-ST1002-1 / -2 / -3 (after reheat valve A, the IP turbine inlet): the IP turbine passes steam in line with its inlet pressure
      (Stodola, the same law as qip above), so the absolute pressure = 150 MW value x qip / m0. 150 MW anchor: PIST10021 / 2 / 3 =

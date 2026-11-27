@@ -5,3 +5,5 @@
   Before: the opening followed the controller at once. Trip from 150 MW: the HP bypass reaches 32 T/H after 2 s (was full at once).
   The blow-off PCV-MS1001 has no stroke time in the docs (no solenoid, positioner only): as commanded.
 - Spray valves TCV-FW1060 / TCV-CD1115 (water, Cv 10.3 / 25.4): handed to NANA (fw.js) and MEI (anCdTagStep), their files.
+- U.Pvlo (ata abs): the PCV-HR1010 body outlet pressure, where the TCV-CD1115 spray nozzle injects: 0.0184 ata per T/H outlet
+  flow from the vendor sheet cases (4.0 / 217.1, 2.02 / 111.8, 0.58 / 33.2), never below the condenser; for MEI's spray back pressure.
