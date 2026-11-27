@@ -4046,7 +4046,12 @@ function anUnitStep0(dt) {
   /* Phase 11 RIN 2026-11-28: the CV effective area (tbCvAs, TCE500 FG A011) at the TCS lifts (tbCvLift) of each side (tcsVtSide: the valve test), x the share of the
      main steam stop MOV MV-MS1391 / its bypass (U.msG); the flow the CVs and the HP blading pass together (tbMsFlow). Kt (m0 / P0 of the
      save point) is deleted */
-  const Av = tbCvAs(tbCvLift(U, 'A', tcsVtSide(U, 'A')), tbCvLift(U, 'B', tcsVtSide(U, 'B'))) * (U.msG == null ? 1 : U.msG);
+  /* Phase 11 RIN 2026-11-28 (YUI finding, IBD TA-6): x the stop valve opening of the trip oil (tcs-trip.js tcsVp, MSV / RSV closing at
+     AN_TBV): on a trip the steam is cut by the MSVs in series with the CVs, so the shaft power falls while 52G is still closed and 52G opens
+     on MAIN STOP VALVE FULL CLOSE (TA-6 -> SH-G-9 -> I.0400). Before, the flow ignored the stop valves and the steam work stopped at the
+     52G opening instead. The MSV taken as an area in series proportional to its opening (its bore is not read: the closing lasts 0.38 s) */
+  const vpS = U.tc || U.tco ? tcsVp(U, U.tc || U.tco) : 1,
+    Av = tbCvAs(tbCvLift(U, 'A', tcsVtSide(U, 'A')), tbCvLift(U, 'B', tcsVtSide(U, 'B'))) * (U.msG == null ? 1 : U.msG) * vpS;
   U.ms = Math.max(0, tbMsFlow(U, Av, U.hxO && U.hxO.ms));
   /* the other outlets: flow = share x anchor flow x opening x MSP / anchor MSP */
   const P1 = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
@@ -4280,7 +4285,7 @@ function anUnitStep0(dt) {
       U.tbS && U.tbS.f.ip1 > 1000 && U.tbS.P.hrh > tbPc * 1.01
         ? U.tbS.f.ip1 / 1000 / Math.sqrt(U.tbS.P.hrh * U.tbS.P.hrh - tbPc * tbPc)
         : AN_TB.c1.hrh / 1000 / Math.sqrt(AN_TB.c1.Phr * AN_TB.c1.Phr - AN_TB.c1.Pc * AN_TB.c1.Pc),
-    qip = tbK * Math.sqrt(Math.max(0, tbPr * tbPr - tbPc * tbPc)) * tb.icv * tcsVtIcvF(U);
+    qip = tbK * Math.sqrt(Math.max(0, tbPr * tbPr - tbPc * tbPc)) * tb.icv * tcsVtIcvF(U) * (U.tc || U.tco ? tcsVp(U, U.tc || U.tco) : 1) /* x the RSVs (trip oil) */;
   /* Phase 11 C (RIN): the steam path of the turbine by physics (turbine.js tbPath: Stodola stage pressures, IF97 expansion of each
      group, the design geometry of HB PPE-14-0725 R1 case 1 / VWO only). In: the steam through the CVs (U.ms) at the turbine inlet
      pressure and the main steam temperature, the steam through the ICVs (qip) at the reheat temperature, the condenser pressure
@@ -4314,6 +4319,14 @@ function anUnitStep0(dt) {
     /* Phase 11 (RIN / YUI): the shaft side of the swing equation = the blade work less the mechanical loss of the turbine (AN_TB.mech,
        turbine.js); the generator losses are on the electrical side (anGenW) */
     U.Pm = sp ? tb.pH + tb.pI - AN_TB.mech : 0;
+    /* Phase 11 RIN 2026-11-28: after a trip 52G opens on MAIN STOP VALVE FULL CLOSE (TA-6) with the steam behind the closed valves still
+       expanding (tb.pH / tb.pI decaying at tSc / tXo): that work goes into the rotor (swing equation, the losses of the generator and the
+       turbine against it) until it is spent; the coast-down after it is the existing one */
+    if (!sp && tb.st === 'off' && tb.rpm > 1000 && tb.pH + tb.pI > 0.5 && U.Hgen > 0) {
+      const w = tb.rpm / 3600,
+        Pr = tb.pH + tb.pI - AN_TB.mech - (U.genT && isFinite(U.genT.L) ? U.genT.L / 1000 : 0);
+      tb.rpm = Math.max(0, (w + (dt * Pr) / (2 * U.Hgen * AN_GEN.S * w)) * 3600);
+    }
   }
   U.MW = anGenW(U, onGrid, trip, D);
   tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T (their coils: SH-G-5A / SH-G-6A, the 32 relay among them) */

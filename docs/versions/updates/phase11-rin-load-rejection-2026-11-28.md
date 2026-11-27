@@ -31,3 +31,13 @@
   - The SV steam is not seen by FT-MS1031, so the feedwater falls short and the level drops.
   - The SH drop should use the whole SH flow (turbine + bypass + blow-off). That belongs to KANA (anShKdp / Pms).
 - During tb.rej the ASD 15R / 15L speed pulses do not yet move GOV.SET (the speed / load changer for resync).
+
+## Turbine trip: the stop valves cut the steam before 52G opens (YUI finding, IBD TA-6)
+- **Before:** the steam flow ignored the trip-oil stop valve opening. The shaft power stayed at 152 MW while the MSV / RSV closed, then dropped to 0 when 52G opened on MAIN STOP VALVE FULL CLOSE (TA-6 -> SH-G-9 -> I.0400).
+- **Now:** the CV flow area and the ICV flow are multiplied by the stop valve opening (tcs-trip.js tcsVp).
+  - Trip from 150 MW, with 52G closed: MW 150 -> 142 -> 131 -> 115 -> 75 -> 32 over 0.6 s. Then TA-6 opens 52G.
+  - After that, the steam behind the closed valves (tb.pH / tb.pI) drives the rotor by the swing equation against the losses: peak 100.2 % at 0.9 s. Then the coast-down as before.
+- **Tests:**
+  - 150 MW 20 min: no trip.
+  - Rejection peak: 101.6 %. House load peak: 101.1 %.
+  - Regression: gen-electrical, tpc-valve-test, dash-inputs, heat-soak-ibd, ports, u-const, one-path and no-fit pass.
