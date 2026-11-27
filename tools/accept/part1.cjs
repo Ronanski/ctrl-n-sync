@@ -88,7 +88,9 @@ const judge = (v, tg, tol, kind) => {
           const pt = U.pt || {}, cr = pt['crh.rh_in'], hr = pt['hrh'], ok = x => x && isFinite(x.m) && isFinite(x.P);
           return {
             pt: ok(cr) && ok(hr) ? 1 : 0,
-            CRHf: ok(cr) ? cr.m : crh, Pcr: ok(cr) ? cr.P : U.Prh + 1.5 + 1.0332, Tcr: ok(cr) && isFinite(cr.T) ? cr.T : tcr,
+            /* HB 'cold reheat' 446.1 T/H is the HP exhaust BEFORE the No.6 extraction; crh.rh_in is the steam into the reheater (400.9):
+               + the No.2 HP heater draw (ext.w_hp x.hp2 by NANA; until it is written, the model draw U.hpF2) */
+            CRHf: ok(cr) ? cr.m + (pt['ext.w_hp'] && pt['ext.w_hp'].x && isFinite(pt['ext.w_hp'].x.hp2) ? pt['ext.w_hp'].x.hp2 : isFinite(U.hpF2) ? U.hpF2 : 0) : crh, Pcr: ok(cr) ? cr.P : U.Prh + 1.5 + 1.0332, Tcr: ok(cr) && isFinite(cr.T) ? cr.T : tcr,
             HRHf: ok(hr) ? hr.m : hrh, Prh: ok(hr) ? hr.P : U.Prh + 1.0332
           };
         })(),
@@ -226,16 +228,23 @@ const judge = (v, tg, tol, kind) => {
     R.t45 = await press(45);
     OP.aim = 45;
     /* the TCS ramp to the aim first (0.6 MW/min below 220 T/H), then the settle time */
-    for (let m = 0; m < 120 && Math.abs((await st()).MW - OP.aim) > 1; m++) await runOp(1);
+    /* the operator slides the PIC-COBM SV with the load on the HB sliding pressure line (PPE-14-0725: 126 ata from 60 % load down to
+       98.9 ata at 30 %), 0.5 kg/cm2 a minute at most, during the ramp too (the sweep judges every minute). HB is ATA, the SV is gauge
+       (- 1.0332); before 2026-11-27 the SV went to 98.9 gauge after the ramp */
+    const SJ0 = require(path.join(root, 'tools/model/sweep-judge.cjs')), PMS = SJ0.CURVES.find(c => c[1] === 'Pms')[2];
+    const slide = async () => {
+      const s = await st(), y = SJ0.at(PMS, Math.max(PMS[0][0], (s.MW / 150) * 100));
+      if (y == null || !isFinite(s.sv)) return true;
+      const goal = y - 1.0332, sv = s.sv > goal ? Math.max(goal, s.sv - 0.5) : s.sv;
+      if (sv < s.sv) await page.evaluate(v => TOP.auto('PIC-COBM', v), sv);
+      return sv <= goal + 1e-6;
+    };
+    for (let m = 0; m < 120 && Math.abs((await st()).MW - OP.aim) > 1; m++) { await slide(); await runOp(1); }
     /* 1.0.0-beta.356 (D15, user 2026-11-24 "Ang design ang masusunod"): the design main steam pressure of the 45 MW point is the HB
        case 7 sliding pressure (PPE-14-0725, 98.9, the Pms target of this column), not the 123 ~ 126 of PR-OPE-5003. The operator slides
        the PIC-COBM SV down 0.5 kg/cm2 a minute on its faceplate (no step: a step to 98.9 cut the coal to 17 T/H and tripped on
        FURNACE TEMP. INADEQUATE FOR COAL FIRING) */
-    for (let sv = (await st()).sv; sv > T.find(t => t[0] === "Pms")[2][0]; ) {
-      sv = Math.max(T.find(t => t[0] === "Pms")[2][0], sv - 0.5);
-      await page.evaluate(v => TOP.auto("PIC-COBM", v), sv);
-      await runOp(1);
-    }
+    for (let m = 0; m < 80 && !(await slide()); m++) await runOp(1);
     await runOp(SETTLE);
     R[45] = await win();
     const f = x => (isFinite(x) ? (Math.abs(x) >= 100 ? x.toFixed(1) : x.toFixed(2)) : '-');
