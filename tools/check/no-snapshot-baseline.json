@@ -15,7 +15,7 @@
  "src/analog/engine/source.js": 9,
  "src/analog/engine/state.js": 2,
  "src/analog/engine/tcs-trip.js": 4,
- "src/analog/engine/tcs.js": 33,
+ "src/analog/engine/tcs.js": 27,
  "src/analog/engine/turbine.js": 7,
  "src/analog/engine/unit.js": 148,
  "src/world/ditl150.js": 78,

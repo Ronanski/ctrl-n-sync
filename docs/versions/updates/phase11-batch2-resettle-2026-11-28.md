@@ -28,5 +28,7 @@ The source of truth is first principles plus design data. Set points come from t
 
 ## Tests
 - u-const, one-path and no-fit: PASS (0 new fits).
-- 20 min behaviour gate: in the PR.
+- 20 min behaviour gate on the station build (after the main merge of 709 / 710 / 712): ALL PASS. MW 149.11 to 149.02, Pms 122.37 to 122.31, level max move 2.8 mm, MST max move 0.4 C, SAVE / LOAD equal, repeat run equal. CCS (PIC-COBM, HIC-BM, EIC-TM) AUTO the whole run; MV-BD1002 0 %, HIC-TADBS 0, AN_CYC.cbd 0 after the load.
+- Not tested here: the full 45 ~ 150 MW sweep (runs on main after this merge).
+- Still to replace (list with owners): /mnt/project-files/phase11/no-snapshot-flags-2026-11-28.md. Next phase-thread PR: PIC-COBM local set point 122.3 (a screen value) to the HB throttle pressure, with a re-settle.
 - Full sweep: on main after merge.
