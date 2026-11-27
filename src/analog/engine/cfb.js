@@ -291,16 +291,18 @@ function anBedMigrate(U) {
   U.phi = r.ph;
 }
 /* bed inventory (t of solids in the furnace). The overall furnace pressure drop is its weight on the grate: 15.51 x 7.68 m = 119 m2 (T2), so
-   1 mmH2O = 1 kg/m2 = 0.119 t. 3.2.3-beta.265 (SOHEE, Jennie): the 150 MW anchor is the plant DCS trend, scenario 1: overall furnace DP 1440 ~ 1490,
-   ~1465 mmH2O (team-files/plant-study/14-plant-trends.md) = 174.3 t. Checks only: FHI Section 7 Tab 4 Fig. 9 (overall furnace DP vs load: normal
-   ~1630 at 100 %, low limit ~1450) and the HMI snapshot DPIFG1081 1426 / DPIFG1082 1432 (hmi-op.js). Before 265 the snapshot 1426 = 170 t. In: ash of the coal 6.82 % (T3), limestone less its CO2 (93.66 % CaCO3,
+   1 mmH2O = 1 kg/m2 = 0.119 t. Phase 11 (AOI, 2026-11-27, rule-0 list item 2 / D29): the full load inventory t0 is the DESIGN, FHI P2S7
+   Fig 9 normal overall furnace DP 1630 mmH2O at 100 % MCR x 119.1 m2 = 194.2 t (DESIGN-SRC: FHI P2S7 Fig 9). It is also the set point the
+   plant logic holds (DPICFG108 SV 1630, ABC-009A / B, bottom ash coolers in AUTO): the steady 150 MW of the model already sat at 194.5 t
+   by that controller, so the old anchor (a plant reading 1465 mmH2O = 174.3 t, beta.265) put the solids share phi at 1.14 at full load,
+   off the design anchor of the bed balance (AN_BB cSol / uaS, CALC at phi 1). Now phi = 1 at the design inventory. In: ash of the coal 6.82 % (T3), limestone less its CO2 (93.66 % CaCO3,
    T3: 0.59 stays), sand. Of the ash and limestone 20 % stays as bottom ash (ASH L5-1, scanned page, read with care), the rest leaves as fly ash.
    Out: the four screw coolers, 2 T/H at normal, 4 T/H at 5 rpm (BAC E130122B): 0.8 T/H per rpm. The fan flow that fluidizes: NO-SOURCE, full
    reading above 30 % of the anchor primary air. Initial charge at Cold 100 t (T9 p3). */
 /* The loop: the cyclones catch the solids and the seal pots give them back while the fluidizing air blows. Below the FA blower flow low low of ABC-006
    (20 T/H) the seal pots stop passing: the solids stay in the cyclone legs and the bed empties, and they come back with the air. The rate is
    NO-SOURCE: the circulation rate is not in the documents. */
-const AN_BI = { t0: 174.3, tCold: 100, kA: 0.0682, kL: 0.59, kB: 0.2, q: 0.8, faLL: 20, loop: 60 };
+const AN_BI = { t0: (1630 * 15.507 * 7.684) / 1000 /* t, FHI P2S7 Fig 9 x grate (T2), see above */, tCold: 100, kA: 0.0682, kL: 0.59, kB: 0.2, q: 0.8, faLL: 20, loop: 60 };
 function anBedStep(U, dt, rpm, pa, fa) {
   const K = AN_BI;
   if (!isFinite(U.bedI)) U.bedI = U.cold ? K.tCold : K.t0;

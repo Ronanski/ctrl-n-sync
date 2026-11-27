@@ -546,9 +546,10 @@ function anUnitStart() {
   }
   U.pa = ais('ABC-006', 'AI0166');
   U.bedDp = [
-    /* 3.2.3-beta.265: the plant trend ~1465 (AN_BI), the two transmitters 6 mmH2O apart as on the snapshot (1426 / 1432) */
-    [ais('ABC-006', 'AI0134'), 1462],
-    [ais('ABC-006', 'AI0262'), 1468]
+    /* Phase 11 (AOI): both transmitters read the one overall DP, the design 1630 mmH2O at the design inventory (cfb.js AN_BI t0,
+       DESIGN-SRC: FHI P2S7 Fig 9); the 6 mmH2O split was a snapshot reading */
+    [ais('ABC-006', 'AI0134'), 1630],
+    [ais('ABC-006', 'AI0262'), 1630]
   ];
   U.soxAI = anUnitAIs('1|AI0466'); /* stack SOx, boiler.js anSoxStep */
   U.bedSc = [
