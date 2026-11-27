@@ -407,6 +407,57 @@ function anTbPx(k) {
    1.94 MW from the generator air cooler rated duty 2,120 kW, generator O&M GAE-2015-0063 R0 p36) = 1.40 MW, constant with load (bearing
    friction goes with the speed, not the load). NO-SOURCE: the MHPS turbine bearing loss itself (not in the TG manuals, YUA) */
 AN_TB.mech = 1.4;
+/* Phase 11 rank 9 (RIN, 2026-11-27): THE BYPASS AND BLOW-OFF VALVES BY THE CONTROL VALVE FLOW LAW of IEC 60534-2-1 (compressible fluid),
+   in place of "share x anchor flow x opening x pressure / anchor pressure" (U.hpb / U.blo / U.lpb, scaled on the 150 MW start).
+     W = N6 Fp Cv(lift) Y sqrt(x p1 rho1)   kg/h, N6 = 27.3 (p bar, rho kg/m3), x = (p1 - p2) / p1 held at the choked limit Fg xT,
+     Y = 1 - x / (3 Fg xT), Fg = k / 1.40 with k = 1.3 (superheated steam), rho1 from IAPWS-IF97 (steam.js) at p1 / T1.
+   Cv(lift): the vendor lift curve (SPX Copes-Vulcan, %Cv against % lift, read by YUA 2026-11-27, /mnt/project-files/rin-valve-reads.md):
+     hpb PCV-MS1020 HP bypass, DSCV-SA Hush II: Cv 215, K1AU3-D1-0-043 R0 PDF p26 (curve), p11 (sizing)
+     lpb PCV-HR1010 LP bypass, DSCV-SA Hush III: Cv 1700, same document PDF p24 / p9
+     blo PCV-MS1001 main steam blow-off, one stage Hush curve #4: Cv 232, K1AU3-E2-0-123 R1 PDF p5 / p6
+   xT (the pressure drop ratio factor) is not printed (NOT IN DOCS): DERIVED from the vendor's own sizing cases (flow, p1, T1, p2 and the
+   steam Cv required as printed), solving the law above for xT: MS1020 0.859 / 0.862 / 0.924 (cases 1 / 2 / 3), HR1010 0.851 / 0.814 /
+   1.132, MS1001 0.668 / 0.668 (case 1 printed "outlet restricted by sonic velocity"). Each valve takes the median of its cases (one
+   number per valve, from the design sheet only). Fp = 1 (the sheets size the valve at its own body / line size).
+   Test: tests/lanes/model/bypass-valves.cjs (the 8 vendor cases: flow at the printed lift within 6 %). DESIGN-SRC: IEC 60534-2-1,
+   vendor sheets above */
+const AN_VLV = {
+  N6: 27.3,
+  Fg: 1.3 / 1.4,
+  hpb: { Cv: 215, xT: 0.862, L: [0, 10, 19, 30, 40, 50, 60, 70, 80, 90, 100], C: [0, 3, 4.5, 20, 33, 46, 60, 72, 84, 92.5, 100] },
+  lpb: { Cv: 1700, xT: 0.851, L: [0, 10, 19, 30, 40, 50, 60, 70, 80, 90, 100], C: [0, 1.2, 1.8, 12.5, 25, 38.5, 50, 62, 74.5, 87, 100] },
+  blo: { Cv: 232, xT: 0.668, L: [0, 10, 14, 20, 30, 40, 50, 60, 70, 76, 80, 90, 100], C: [0, 1, 4, 11, 24, 37, 50, 62, 74, 83, 87, 95, 100] },
+  /* the RH blow-off MV-HR1391: a motor valve with no valve sheet (Cv NOT IN DOCS, YUA 2026-11-27); its silencer Z-1006 is rated 200 T/H
+     (Equipment List p2): kept as that flow x opening x hot reheat pressure / 150 MW reheat pressure, NO-SOURCE (was U.rhb 0.42 x m0) */
+  rhbT: 200,
+  /* the reheater + reheat piping steam storage, (T/H) x s per kg/cm2 of hot reheat pressure (was U.Crh; the FHI reheater 60 m3 and a
+     piping volume NO-SOURCE about 200 m3: audit B5, piping ISO volumes from YUA next) */
+  Crh: 400
+};
+/* the Cv share (0 ~ 1) of a valve at lift o (%) */
+function anVlvCv(v, o) {
+  const L = v.L,
+    C = v.C,
+    x = Math.max(0, Math.min(100, +o || 0));
+  let i = 1;
+  while (i < L.length - 1 && L[i] < x) i++;
+  return (C[i - 1] + ((C[i] - C[i - 1]) * (x - L[i - 1])) / (L[i] - L[i - 1])) / 100;
+}
+/* the steam (T/H) through valve v at lift o (%), inlet p1 (ata) and T1 (C), outlet p2 (ata) */
+function anVlvW(v, o, p1, T1, p2) {
+  const P1 = Math.max(0, +p1 || 0),
+    c = anVlvCv(v, o);
+  if (!(c > 0) || !(P1 > 0.05)) return 0;
+  const K = AN_VLV,
+    pM = P1 * TB_A /* MPa */,
+    Ts = steamTsatK(pM),
+    T = Math.max(Ts + 0.01, (isFinite(T1) ? +T1 : Ts - 273.15) + 273.15),
+    rho = 1 / steamV2(pM, T),
+    xc = K.Fg * v.xT,
+    x = Math.max(0, Math.min(xc, (P1 - Math.max(0, +p2 || 0)) / P1)),
+    Y = 1 - x / (3 * xc);
+  return (K.N6 * v.Cv * c * Y * Math.sqrt(x * pM * 10 * rho)) / 1000;
+}
 function anTbPorts(U, rpm, hpb) {
   const S = U.tbS;
   if (!S || !S.P) return;
@@ -422,6 +473,9 @@ function anTbPorts(U, rpm, hpb) {
   anPortSet(U, 'ext.lp2', st('l2'));
   anPortSet(U, 'ext.lp1', st('l1'));
   anPortSet(U, 'lp.exh', { m: S.exh.m, h: S.exh.h });
+  /* the LP bypass PCV-HR1010 steam (anVlvW, the step before) at the hot reheat enthalpy (a throttle keeps h); its spray TCV-CD1115 is
+     condensate the condenser part adds (x.spray: not written here) */
+  anPortSet(U, 'lp.bypass', { m: +U.qlp || 0, h: S.H && isFinite(S.H.hrh) ? S.H.hrh : null });
   anPortSet(U, 'shaft', { W: S.Whp + S.Wip > 0 ? S.Whp + S.Wip - AN_TB.mech : 0, n: isFinite(rpm) ? rpm : null });
 }
 /* 3.2.3-beta.240 (live Cold start, ICV to CV transfer; user 2026-11-14: per the TCS drawings, the normal ATS load up, no GOV manual):
