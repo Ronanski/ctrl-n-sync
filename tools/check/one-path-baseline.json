@@ -35,6 +35,10 @@
   "anElecStep",
   "anUnitStep0"
  ],
+ "avH": [
+  "anAsTagStep",
+  "anFwTagStep"
+ ],
  "tco": [
   "tcsFromOil",
   "tcsOilState"
@@ -59,10 +63,6 @@
  "vac": [
   "anCondStep",
   "anUnitStep0"
- ],
- "avH": [
-  "anAsTagStep",
-  "anFwTagStep"
  ],
  "clS": [
   "anClRnd",
