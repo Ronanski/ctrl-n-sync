@@ -3918,8 +3918,8 @@ function anUnitStep0(dt) {
        ICVs are energized when the generator current falls faster than 40 % / 10 ms and the power (reheat bowl pressure) minus the load
        (generator current) is over 40 % of the rating, 2 out of 3 modules. Here: 52L1 opened on load (the load drops at once to the house
        load, elec.js) and the turbine power U.MW minus that load over 40 % of U.MW0. The valves close at the fast-acting rate (AN_TBV.cvOpc / icvOpc, the same
-       fast acting dump; NO-SOURCE: the PLU closing time) until the unbalance is under 40 %, then the speed control opens them again.
-       Not modelled: the speed peak, the 2 out of 3 voting (one value) */
+       fast acting dump through the NG6 solenoid, derived in turbine.js) until the unbalance is under 40 %, then the speed control opens them again.
+       Not modelled: the 2 out of 3 voting (one value) */
     const ld = U.el && U.el.l52 === false ? D : U.MW,
       /* 3.2.3 house load speed: the power side is the steam power of the last step (U.Pm, no tauMW lag: the reheat bowl pressure falls
          as soon as the ICV closes); before, the lagged U.MW kept the valves shut about 7 s and the speed fell to 95.8 % */
