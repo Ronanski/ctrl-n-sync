@@ -81,10 +81,6 @@
   "anAcwStep",
   "anLubeCoolStep"
  ],
- "cdP": [
-  "anCondStep",
-  "anVacMW"
- ],
  "vac": [
   "anCondStep",
   "anUnitStep0"
