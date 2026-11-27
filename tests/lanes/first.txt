@@ -1,0 +1,6 @@
+# the slowest tests start first, so they do not finish last (tests/lanes/run-all.cjs); times from a local run 2026-11-27
+tests/lanes/boiler/aph-blower.cjs
+tests/lanes/fw/deaerator.cjs
+tests/lanes/boiler/old-save-ash.cjs
+tests/lanes/qa/blocks.cjs
+tests/lanes/integrator/keyframe.cjs

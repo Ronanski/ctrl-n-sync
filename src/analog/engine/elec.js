@@ -151,3 +151,44 @@ function anElecBoStep(U, dt) {
   }
   return { dead: true, emp: b.t >= AN_EL_BO.emp };
 }
+/* Phase 11 (YUI, 2026-11-27): THE PICK-UP CONTACTS OF THE GENERATOR PROTECTION RELAYS (A) KKS F02GA055 AND (B) F42GA080, Beckwith M-3425A, panel GPP.
+   Settings: GEE-2015-0173 R1 SITE TEST PROCEDURE OF GEN. PROTECTION RELAY PANEL (read by YUA, /mnt/project-files/yui-doc-reads.md 4),
+   base 1 pu = 115.0 V secondary, 60 Hz. The model gives the quantity each element measures; the relay compares it with its pick-up and
+   the contact closes. The TIMES, the 52G / 60FL gating and the OR to the lockout relay 86G-A are the logic of the TCS sheets SH-G-5A /
+   SH-G-5B (310SD03-743 sheets 13 / 14, src/digital/tce/G-5A.js / G-5B.js, their `set`): not here. Port relay.gen (ports.js), fed to the
+   PLANT: contacts of those sheets by tcs-sheets.js TCS_SH_IN.
+     terminal voltage V = U.gen.V (pu of 13.8 kV, tcs-gen.js), x 115 V on the secondary;
+     frequency f = the shaft speed / 60 (2 pole, GAE-2013-0136 R2; on line the grid holds it);
+     24 V/Hz  M = 100 V / (f / 60) %: 1st step (DT #2 alarm) >= 105 %, 2nd step (inverse trip, curve #1 TD 2, the TINV of d24b takes
+              M itself) >= 107 %, 3rd step (DT #1 trip) >= 115 % (PDF p.14);
+     59       1st step (#1 alarm) >= 120 V, 2nd step (#2 trip) >= 123 V (p.26);
+     27       <= 86 V (p.22);
+     81U      1st step <= 57.40 Hz, 2nd step <= 57.20 Hz; 81O 1st step >= 62.60 Hz, 2nd step >= 62.80 Hz (p.34).
+   The relay's own dropout ratio and its alarm delays that the drawing does not draw (24 1st step 2.0 s, the 81 / 59 / 27 times are the
+   sheet's timers) are NO-SOURCE / not drawn: the contact here is the pick-up. Not fed (no state in the model): 87G, 59GN, 40 zones 1 / 2,
+   46, 51V, 50, 78, 60FL. The 32 reverse power stays in turbine.js anRp32 until its timers move to SH-G-5A d32 (one path). Relay (B)
+   (SH-G-6A / 6B, KKS F42GA080, p.41 ~ 65) has the same settings (YUA read /mnt/project-files/yui-relay-b-2026-11-27.md); its trips
+   go to 86G-B: the same contacts feed both sheets. */
+const AN_GPR = { vb: 115, vhz: [105, 107, 115], ov: [120, 123], uv: 86, uf: [57.4, 57.2], of: [62.6, 62.8] };
+function anGenRelay(U) {
+  const K = AN_GPR,
+    g = U.gen || {},
+    f = ((U.tb && U.tb.rpm) || 0) / 60,
+    V = isFinite(g.V) ? Math.max(0, +g.V) : 0,
+    v = V * K.vb,
+    M = f > 0 ? (100 * V) / (f / 60) : 0,
+    b = c => (c ? 1 : 0);
+  return {
+    r24a: b(M >= K.vhz[0]),
+    r24b: b(M >= K.vhz[1]),
+    r24c: b(M >= K.vhz[2]),
+    vhz: M,
+    r59a: b(v >= K.ov[0]),
+    r59b: b(v >= K.ov[1]),
+    r27: b(v <= K.uv),
+    r81l1: b(f <= K.uf[0]),
+    r81l2: b(f <= K.uf[1]),
+    r81h1: b(f >= K.of[0]),
+    r81h2: b(f >= K.of[1])
+  };
+}
