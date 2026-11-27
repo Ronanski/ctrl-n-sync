@@ -1,6 +1,6 @@
 // The feedwater, extraction and spray transmitters on the HX pages (HX-feedwater, HX-drum-steam, HX-reheat-steam, data-hv) at
 // "Start at 150 MW" with RUN: every box shows a number, and the values are judged against the design only (user rule 0,
-// 2026-11-28: no HMI snapshot, trend or procedure value, not even as a check):
+// 2026-11-28: design documents and as-built drawings only):
 //   HB PPE-14-0725 case 1 (150 MW): No.2 extraction PT-TS1013 = stage 14.87 ata, No.3 PT-TS1017 = 6.369 ata (+- 1.0 kg/cm2, the
 //   sweep judge band of a pressure), cold reheat TT-TS1011 370.2 C and BFWP outlet TT-FW1011 160.7 C (+- 5 C, the sweep band);
 //   the BFWP suction PT-FW1115 by the as-built head (plantsw.js W.sucP); PT-FW1160 (economizer inlet) has no design value read:
