@@ -29,6 +29,11 @@ GO FIX 11 (user 2026-11-27 12:37 PM PHT), rank 6 of /mnt/project-files/phase11/a
 - Behaviour gate 20 min on the new start: ALL PASS (MW 151.06 -> 150.96, Pms max move 0.26, drum level max move 5.5 mm, no trip).
 - tests/lanes/integrator/tcs-motors.cjs PASS on the new start.
 
+- Settled again on main's new start after KANA PR 672 (settle 140 plant min): 150.95 MW, MSP 122.4, drum 139.4, deaerator +43 mm
+  with LCV-CD1104 81 %, hotwell +17 mm. Behaviour gate 20 min on it with both fixes: ALL PASS (MW 150.95 -> 151.26, Pms max move
+  0.49, level max move 5.3 mm, no trip). tcs-motors and field-state PASS. The 45-150 MW sweep is run by the phase thread on main
+  (test split rule 2026-11-27 6:35 PM PHT).
+
 ## Left
 - The deaerator needs ~392 T/H of condensate (design 362.6): the model HP heater drains to the deaerator are ~46 T/H against HB 69
   (NANA, told by the phase thread). With that fixed the LCV comes back down from ~80 %.
