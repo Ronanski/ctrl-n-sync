@@ -166,7 +166,7 @@ R.push({
   tag: 'PT-HD1101',
   v: U => fin(((U.lpHt || {}).H1 || {}).Ps - 1.0332),
   rel: 'No.1 LPH shell U.lpHt.H1.Ps (kgf/cm2 A) - 1.0332 = gauge',
-  src: io(2) + ' AI0419 "NO.1 LPH steam pressure"; unit.js AN_LP (design 0.354 kgf/cm2A x anHb x1)'
+  src: io(2) + ' AI0419 "NO.1 LPH steam pressure"; unit.js AN_LP (design 0.354 kgf/cm2A x turbine.js anTbPx x1)'
 });
 /* the transmitter shows its own range at most (alarm list FT.csv rows 12-13: FT-HD1102 0-27.5, FT-HD1103 0-15 t/h); the AI is on no
    sheet, so no AI block range clamps it */

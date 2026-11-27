@@ -196,7 +196,7 @@ function anTurbine0(cmd, arg) {
    m^2 v (pipe and tube friction), its coefficient from case 1.
    The heater draws: the steam the heaters condense (ports ext.w_hp NANA, ext.w_lp MEI). Until those ports land (NANA / MEI PRs agreed
    2026-11-27 11:25 AM PHT) the draws are read from the heater models as they stand: No.2 / No.1 HP heater U.hpF2 / U.hpF1 - U.hpF2,
-   the LP heaters AN_HB f rows (MEI's), the deaerator in line with the No.1 HP heater draw (HB case 1 22225 / 24200).
+   the LP heaters by their heat balance (tbLpDraws), the deaerator in line with the No.1 HP heater draw (HB case 1 22225 / 24200).
    Units in AN_TB: kg/h, ata, C, kcal/kg as printed (x 4.1868 = kJ/kg). DESIGN-SRC: HB PPE-14-0725 R1 cases 1 / 9 */
 const AN_TB = {
   c1: {
@@ -350,44 +350,81 @@ function tbDraws(U, ms) {
     lp = pt['ext.w_lp'] && pt['ext.w_lp'].x,
     d = AN_TB.c1,
     h6 = isFinite(U.hpF2) ? U.hpF2 : 0,
-    h5 = isFinite(U.hpF1) && isFinite(U.hpF2) ? Math.max(0, U.hpF1 - U.hpF2) : 0;
+    h5 = isFinite(U.hpF1) && isFinite(U.hpF2) ? Math.max(0, U.hpF1 - U.hpF2) : 0,
+    lb = lp || tbLpDraws(U);
+  U.tbD = lb;
   return {
     hp6: hp ? hp.hp2 : h6,
     hp5: hp ? hp.hp1 : h5,
     da: hp ? hp.da : (h5 * d.xda) / d.x5,
-    lp3: lp ? lp.lp3 : (d.x3 / 1000) * anHb('f3', ms),
-    lp2: lp ? lp.lp2 : (d.x2 / 1000) * anHb('f2', ms),
-    lp1: lp ? lp.lp1 : (d.x1 / 1000) * anHb('f1', ms)
+    lp3: lb.lp3,
+    lp2: lb.lp2,
+    lp1: lb.lp1
   };
 }
-/* the LP heater draws of the LP heater model of unit.js (anLphStep, MEI) until it computes them from its heater duty: the AN_HB rows
-   f3 / f2 / f1 (HB extraction kg/h at the 7 loads), ratio to the 100 % value. NO-FIT-OK: MEI replaces them (agreed 2026-11-27) */
-const AN_HB = {
-  ms: [149954, 190769, 231940, 273360, 318817, 387587, 458327],
-  f3: [4251, 5603, 6963, 8422, 10009, 12531, 15246],
-  f2: [3426, 4525, 5685, 6871, 8190, 10192, 12270],
-  f1: [2243, 4184, 6060, 7935, 10093, 13357, 16834]
-};
-/* anHb(k, ms): 'f3' / 'f2' / 'f1' the AN_HB rows above; 'x6' (cold reheat = No.6), 'x5', 'xd', 'x3', 'x2', 'x1': the stage pressure of
-   the steam path NOW (AN_UNIT.tbS, tbPath) over its 100 % design pressure (the callers multiply it by the design heater pressure) */
-function anHb(k, msT) {
-  if (k[0] === 'x') {
-    const S = typeof AN_UNIT !== 'undefined' && AN_UNIT.tbS,
-      d = AN_TB.c1,
-      key = { x6: ['crh', d.Pcr], x5: ['x5', d.P5], xd: ['da', d.Pda], x3: ['l3', d.P3], x2: ['l2', d.P2], x1: ['l1', d.P1] }[k];
-    if (!key) return 0;
-    return S && S.P && isFinite(S.P[key[0]]) ? Math.max(0, S.P[key[0]] / key[1]) : 0;
+/* Phase 11 rank 1 (RIN, GO FIX 11 2026-11-27): the LP heater draws by the HEAT BALANCE of each heater, in place of the per-load rows
+   AN_HB f3 / f2 / f1 (deleted). The steam a heater condenses gives the condensate its rise (first law, steady shell):
+     w (h_ext - h_drain) + D_in (h_drain,in - h_drain) = m_cd (h_out - h_in)
+   m_cd the condensate through the heaters (plant.js anCycFlows fda, T/H), h_out / h_in / h_drain of the condensate and the drain at the
+   temperatures of the LP heater model (U.lpHt, anLphStep, the step before), h_ext the extraction enthalpy of the steam path (U.tbS),
+   water by IAPWS-IF97 region 1 at 1 MPa (the condensate line; the pressure moves h by under 0.1 %). The drains cascade No.3 -> No.2 ->
+   No.1 (FHI heater O&M L15-5 ~ 7, drain in from the heater above). Check at HB case 1 with the heater O&M design temperatures: No.3 15.1
+   (HB 15.2), No.2 12.2 (12.3), No.1 18.1 T/H (16.8: the HB No.1 heater also takes the gland / ejector drains, not in this balance).
+   MEI's LP heater NTU model (rank 6) writes ext.w_lp and then this balance is no longer read. DESIGN-SRC: first law, IAPWS-IF97 */
+function tbLpDraws(U) {
+  const t = U.lpHt,
+    S = U.tbS,
+    f = typeof anCycFlows === 'function' ? anCycFlows(0) : null,
+    o = { lp3: 0, lp2: 0, lp1: 0 };
+  if (!t || !S || !S.H || !f) return o;
+  const m = Math.max(0, +f.fda || 0),
+    hw = T => steamR1(1, Math.max(274, (isFinite(T) ? T : 30) + 273.15)).h;
+  let D = 0,
+    hin = 0;
+  for (const [k, e, q] of [['H3', 'l3', 'lp3'], ['H2', 'l2', 'lp2'], ['H1', 'l1', 'lp1']]) {
+    const x = t[k];
+    if (!x) continue;
+    const hd = hw(x.dr),
+      hs = S.H[e],
+      duty = m * Math.max(0, hw(x.out) - hw(x.in)) - (D > 0 ? D * Math.max(0, hin - hd) : 0);
+    o[q] = hs - hd > 50 ? Math.max(0, duty / (hs - hd)) : 0;
+    D += o[q];
+    hin = hd;
   }
-  const X = AN_HB.ms,
-    Y = AN_HB[k],
-    n = X.length - 1,
-    m = Math.max(0, +msT || 0) * 1000,
-    y = m <= X[0] ? (Y[0] * m) / X[0] : m >= X[n] ? Y[n] + ((Y[n] - Y[n - 1]) * (m - X[n])) / (X[n] - X[n - 1]) : (() => {
-      let i = 1;
-      while (X[i] < m) i++;
-      return Y[i - 1] + ((Y[i] - Y[i - 1]) * (m - X[i - 1])) / (X[i] - X[i - 1]);
-    })();
-  return Math.max(0, y / Y[n]);
+  return o;
+}
+/* anTbPx(k): the stage pressure of the steam path NOW (AN_UNIT.tbS, tbPath) over its 100 % design pressure, for the heater shells
+   (the callers multiply it by the design heater pressure): 'x6' cold reheat (No.6 = No.2 HP heater), 'x5', 'xd' deaerator, 'x3',
+   'x2', 'x1' LP heaters. Replaces anHb (the per-load AN_HB table) */
+function anTbPx(k) {
+  const S = typeof AN_UNIT !== 'undefined' && AN_UNIT.tbS,
+    d = AN_TB.c1,
+    key = { x6: ['crh', d.Pcr], x5: ['x5', d.P5], xd: ['da', d.Pda], x3: ['l3', d.P3], x2: ['l2', d.P2], x1: ['l1', d.P1] }[k];
+  if (!key) return 0;
+  return S && S.P && isFinite(S.P[key[0]]) ? Math.max(0, S.P[key[0]] / key[1]) : 0;
+}
+/* Phase 11 rank 1: the turbine ports (ports.js; one writer: this file). Units ata, C, kJ/kg, T/H, MW.
+   shaft.W = the steam work on the blades less the turbine bearing / mechanical loss (YUI subtracts the generator losses from it, agreed
+   2026-11-27). The mechanical loss: the HB lumped loss at 100 % (AN_TB lo + kq: 3.34 MW) less the generator losses of the machine data
+   (YUI PR 665: 2.85 MW) = 0.49 MW, constant with load (bearing friction goes with the speed, not the load). NO-SOURCE: the MHPS bearing
+   loss itself (asked YUA, PC) */
+AN_TB.mech = 0.49;
+function anTbPorts(U, rpm, hpb) {
+  const S = U.tbS;
+  if (!S || !S.P) return;
+  const T = (P, h) => (isFinite(P) && isFinite(h) && P > 0 ? steamPhM(P * TB_A, h).T - 273.15 : null),
+    st = k => ({ P: S.P[k], h: S.H[k], T: T(S.P[k], S.H[k]) });
+  anPortSet(U, 'ms.draw', { m: (+U.ms || 0) + (+hpb || 0), x: { tb: +U.ms || 0, hpb: +hpb || 0 } });
+  anPortSet(U, 'crh.rh_in', Object.assign({ m: S.f.rh / 1000 }, st('crh')));
+  anPortSet(U, 'hrh', { m: S.f.ip1 / 1000, P: S.P.hrh });
+  anPortSet(U, 'ext.hp2', st('crh'));
+  anPortSet(U, 'ext.hp1', st('x5'));
+  anPortSet(U, 'ext.da', st('da'));
+  anPortSet(U, 'ext.lp3', st('l3'));
+  anPortSet(U, 'ext.lp2', st('l2'));
+  anPortSet(U, 'ext.lp1', st('l1'));
+  anPortSet(U, 'lp.exh', { m: S.exh.m, h: S.exh.h });
+  anPortSet(U, 'shaft', { W: S.Whp + S.Wip > 0 ? S.Whp + S.Wip - AN_TB.mech : 0, n: isFinite(rpm) ? rpm : null });
 }
 /* 3.2.3-beta.240 (live Cold start, ICV to CV transfer; user 2026-11-14: per the TCS drawings, the normal ATS load up, no GOV manual):
    the TCS load loop on the grid. FLOW DEMAND (TCE206 p.140: GOV.SET through the low select with LLM SET, which the ATS has at its upper

@@ -2539,7 +2539,7 @@ function anFwStep(U, dt) {
      No.2 HPH  extraction 37.48 kgf/cm2A (sat 245.37 C), FW 195.7 -> 245.4 C, TTD -0.05, drain 45.147 t/h 201.3 C (DCA 5.6 over FW in)
      No.1 HPH  extraction 14.12 kgf/cm2A (sat 194.63 C), FW out = sat + 1.07 (TTD -1.07) = 195.7 C, extraction 7.035 kg/s = 25.33 t/h;
                the drains of both to the deaerator: deaerator O&M (L15-2 p14) "HPH condensate" 69.35 t/h 166.3 C (FW in 158.4 C)
-   The extraction pressure goes with the turbine steam by the MHPS heat balance (AN_HB / anHb above; before: U.ms / 458.684, NO-SOURCE); a shut-off MOV less than 20 % open throttles it (NO-SOURCE). The heater gives FW out = saturation of its
+   The extraction pressure goes with the turbine steam by the MHPS heat balance (turbine.js anTbPx: the Stodola stage pressure of the steam path; before: the AN_HB table, and before that U.ms / 458.684, NO-SOURCE); a shut-off MOV less than 20 % open throttles it (NO-SOURCE). The heater gives FW out = saturation of its
    shell + TTD, never below FW in; the extraction (= drain) flow from its heat duty, scaled on the design point. Metal / water lag 120 s
    (NO-SOURCE). The water side valves: AN_FV0, anHtrPath. */
 const AN_HP = {
@@ -2574,8 +2574,8 @@ function anHphStep(U, dt) {
     },
     thr = p => Math.max(0, Math.min(1, p / 20)),
     /* shell pressures (kg/cm2 g): extraction x turbine steam x MOV */
-    Ps2 = (K.P1 + 1.0332) * anHb('x6', ms) * thr(pos('DITL-94')) - 1.0332,
-    Ps1 = (K.P2 + 1.0332) * anHb('x5', ms) * thr(pos('DITL-95')) - 1.0332,
+    Ps2 = (K.P1 + 1.0332) * anTbPx('x6') * thr(pos('DITL-94')) - 1.0332,
+    Ps1 = (K.P2 + 1.0332) * anTbPx('x5') * thr(pos('DITL-95')) - 1.0332,
     /* deaerator pressure PT-CD1104 (ABC-056 AI0417): the water to the BFWP is at its saturation */
     Pda = U.xt && U.xt.dea ? anUnitVal(U.xt.dea) : NaN,
     Tin = (isFinite(Pda) && Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30) + (ffwIn(U) > 1 ? U.fwDT || 0 : 0),
@@ -2595,7 +2595,7 @@ function anHphStep(U, dt) {
     /* 1.0.0-beta.364 (JENNIE, Lisa air_valves: No.2 HPH level 83 mm after the unit trip). The condensate in the shell is the extraction
        steam that condenses, so it is the smaller of the heat the feedwater takes (the lagged outlet, hpT1 / hpT2) and the steam the
        turbine sends at the shell pressure of this step (t1 / t2: Ps1 / Ps2 = extraction x load x MOV). On a trip the extraction pressure
-       goes (anHb at 0 t/h, the NRVs / MOVs shut, DITL-94 / 95): the feedwater still cools the shell metal and water down (the lag), but
+       goes (anTbPx at 0 t/h, the NRVs / MOVs shut, DITL-94 / 95): the feedwater still cools the shell metal and water down (the lag), but
        no new steam comes, so no new condensate. Before, e2 kept 38 T/H into the shell for minutes while the drain (sqrt of main steam)
        was already 0, and the level rose 5 -> 136 mm with no steam. At a steady load the two are equal (lag = target) */
     e1s = ffw > 1 ? (K.m1 * f * Math.max(0, t1 - Tin)) / K.dT1 : 0,
@@ -2610,8 +2610,8 @@ function anHphStep(U, dt) {
   U.hpMov = [pos('DITL-95'), pos('DITL-94')]; /* MV-TS1002 / MV-TS1001 position % */
   /* docs/versions/v3.2.1/HEAT_BALANCE.md: an extraction that is shut stays in the turbine and works down to the condenser, and colder
      feedwater takes more of the boiler heat per kg of steam. Measured from the same heaters with the MOVs open, so the start-up curves stay */
-  const t1o = Math.max(Tin, sat((K.P2 + 1.0332) * anHb('x5', ms) - 1.0332) + K.ttd1),
-    t2o = Math.max(t1o, sat((K.P1 + 1.0332) * anHb('x6', ms) - 1.0332) + K.ttd2),
+  const t1o = Math.max(Tin, sat((K.P2 + 1.0332) * anTbPx('x5') - 1.0332) + K.ttd1),
+    t2o = Math.max(t1o, sat((K.P1 + 1.0332) * anTbPx('x6') - 1.0332) + K.ttd2),
     e1o = ffw > 1 ? (K.m1 * f * Math.max(0, t1o - Tin)) / K.dT1 : 0,
     e2o = ffw > 1 ? (K.m2 * f * Math.max(0, t2o - t1o)) / K.dT2 : 0,
     ls = U.lpS || {},
@@ -2806,7 +2806,7 @@ function anHdStep(U, dt) {
     let ein;
     if (k === 'H6') ein = isFinite(U.hpF2) ? U.hpF2 : 0;
     else if (k === 'H5') ein = isFinite(U.hpF1) && isFinite(U.hpF2) ? U.hpF1 - U.hpF2 : 0;
-    else ein = ext * anHb('f' + k.slice(1), ms) * thr(pos(mov)) * (U.lpS && isFinite(U.lpS[k]) ? U.lpS[k] : 1);
+    else ein = U.tbD && isFinite(U.tbD['lp' + k.slice(1)]) ? U.tbD['lp' + k.slice(1)] : 0; /* Phase 11 rank 1: the draw of the heat balance (turbine.js tbLpDraws), the shell MOV and the tubes in it through the shell pressure and the rise */
     /* an HP heater tube leak (anHpLeak) joins the condensate in the shell */
     const hl = U.hlW ? (k === 'H5' ? U.hlW[0] : k === 'H6' ? U.hlW[1] : 0) : 0;
     const win = ein + hl + (from && out[from] ? out[from] : 0);
@@ -2943,7 +2943,7 @@ function anLphStep(U, dt) {
   let tin = lag('in', hw + K.rise * Math.max(0, Math.min(1, ld)));
   const t = { in1: tin };
   for (const [k, P0, ttd, dca, mov] of K.h) {
-    const Ps = P0 * anHb('x' + k.slice(1), ms) * thr(pos(mov)),
+    const Ps = P0 * anTbPx('x' + k.slice(1)) * thr(pos(mov)),
       ts = anTsatA(Ps),
       tout = lag(k, tin + (wL[k] ? wL[k].s : 1) * Math.max(0, ts - ttd - tin)),
       h = hd.find(x => x.k === k),
@@ -5714,6 +5714,7 @@ function anUnitStep0(dt) {
     },
     U.tbS
   );
+  anTbPorts(U, tb.rpm, U.mhp);
   const MWss = onGrid ? anTbGen(U.tbS.Whp + U.tbS.Wip) : 0;
   /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of the steam path, each behind its steam
      volume (tSc, tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft.
