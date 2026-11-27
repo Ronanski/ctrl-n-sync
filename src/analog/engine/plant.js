@@ -554,6 +554,68 @@ function anFlashG(Pd, Tw, col) {
    lowering header drain ... MBD and CBD"); the drains are in the Training since beta.51. PR-OPE-5004-01 bottle-up step 4 "Fill steam drum
    to +200 mm" is the reserve for this shrink. Probe (Hot restart, faster cooling): water 309 -> 292 C, level +166 -> -199 mm */
 const AN_THERM = { vEvap: 147, on: true }; /* not in AN_CYC: a loaded state replaces AN_CYC's fields */
+/* Phase 11 (KANA, 2026-11-27, GO FIX 11 rank 7): SHRINK AND SWELL of the drum level from the steam in the risers (natural circulation),
+   replacing the lag term ks 10 mm per kg/cm2 / tauS 60 s (NO-SOURCE). The water walls and the evaporator panels carry a mixture of water
+   and steam bubbles up to the drum; the bubbles take room that the water would fill, so the drum shows
+   level = water in the boiler + steam volume under the water surface / the drum water surface. More steam in the risers (load up, a
+   pressure fall that flashes the riser water) swells the level; less (load down, MFT, a pressure rise after a turbine trip that
+   condenses bubbles) shrinks it. Physics (Astrom and Bell, "Drum-boiler dynamics", Automatica 36 (2000), eqs. for the mean void):
+   - riser exit quality x = G / m, G the steam made in the risers (kg/s), m the circulation;
+   - mean void of a riser with a linear quality rise: a = rf / (rf - rg) (1 - rg / ((rf - rg) x) ln(1 + (rf - rg) x / rg));
+   - circulation from the momentum balance of the loop: (rf - rmix) g H = m^2 (Kdc / (2 rf Adc^2) + Kr / (2 rex Ar^2));
+   - G = the steam of the walls (unit.js U.Qs) + the flash of the riser water: - Mrw (dhf / dt) / hfg (negative on a pressure rise);
+   - the steam volume follows its steady value with the transit time of the risers, Vr rmix / m (about 20 s at 150 MW).
+   Geometry, DESIGN-SRC: FHI P2S7 Tab 1 and K1AU3-B-0-006 (KANA doc reads 2026-11-27): 4 furnace downcomers C2 14" x 22.3 mm (ID 311)
+   + 6 evaporator downcomers C21 8" SCH100 (ID 182.6), 52 risers C6 / C14 / C25 168.3 OD (ID 146.3, SCH80), drum centre line FL+45,262
+   to the lower inlet headers FL+5,008 (H 40.25 m); two-phase volume = furnace 74.5 m3 + evaporator 14.0 m3 (P2S8 Tab 2, water weight
+   at 15.5 C) less the downcomers (4 x 0.076 m2 x 48 m, 6 x 0.0262 m2 x 26 m): 69.3 m3. Loss coefficients: smooth steel pipe friction
+   0.0125 / 0.0135 (Moody chart at Re about 1e6), entrance 0.5 and bends 1.2 of the downcomers (Crane TP-410). NO-SOURCE: the riser
+   pipe length (12 m, the pipe parts list is not legible), the drum cyclone separator loss (2.0) and the lower headers (left in the
+   volume): they move the circulation, which the mean void barely follows (CR about 13 at 150 MW: void 0.23). CALC at 150 MW:
+   circulation 5,900 T/H, x 0.078, void 0.23, 16 m3 of steam in the risers; 90 MW 12.7 m3, 45 MW 9.6 m3 (the level controller makes up
+   the difference, about 160 mm from 150 to 90 MW). Units: m3, kg/s, m. */
+const AN_RISER = {
+  vr: 74.477 + 13.994 - 4 * 0.076 * 48 - 6 * 0.0262 * 26,
+  H: 45.262 - 5.008,
+  adc: 4 * ((Math.PI * 0.311 * 0.311) / 4) + 6 * ((Math.PI * 0.1826 * 0.1826) / 4),
+  ar: 52 * ((Math.PI * 0.1463 * 0.1463) / 4),
+  kdc: (0.0125 * 48) / 0.311 + 0.5 + 1.2,
+  kr: (0.0135 * 12) / 0.1463 + 2.0
+};
+function anRiserVoid(x, rf, rg) {
+  if (!(x > 1e-6)) return 0;
+  const e = ((rf - rg) * x) / rg;
+  return (rf / (rf - rg)) * (1 - Math.log(1 + e) / e);
+}
+/* one scan of the riser steam: q keeps vs (m3 of steam), m (kg/s), hf (kJ/kg); returns the steady and the dynamic steam volume */
+function anRiserStep(q, Pd, Qs, dt, steady) {
+  const R = AN_RISER,
+    ts = steamTsat(Math.max(0, Pd)),
+    rf = anWaterRho(ts),
+    rg = steamRho(Math.max(0, Pd), ts),
+    hf = anHxHw(ts),
+    hfg = Math.max(100, anHxHs(Math.max(0, Pd), ts) - hf),
+    a0 = isFinite(q.vs) ? Math.min(0.95, q.vs / R.vr) : 0,
+    dhf = isFinite(q.hf) && dt > 0 && !steady ? (hf - q.hf) / dt : 0,
+    G = Math.max(0, (Qs || 0) / 3.6 - ((1 - a0) * R.vr * rf * dhf) / hfg);
+  q.hf = hf;
+  let m = isFinite(q.m) && q.m > 1 ? q.m : 1500,
+    a = 0;
+  for (let i = 0; i < 6; i++) {
+    const x = Math.min(1, G / m);
+    a = anRiserVoid(x, rf, rg);
+    const rmix = rf * (1 - a) + rg * a,
+      rex = 1 / (x / rg + (1 - x) / rf),
+      c = R.kdc / (2 * rf * R.adc * R.adc) + R.kr / (2 * rex * R.ar * R.ar),
+      mn = Math.sqrt(Math.max(0, (rf - rmix) * 9.81 * R.H) / c);
+    m = Math.max(1, 0.5 * m + 0.5 * mn);
+  }
+  q.m = m;
+  const vss = a * R.vr,
+    tr = (R.vr * (rf * (1 - a) + rg * a)) / m;
+  q.vs = steady || !isFinite(q.vs) ? vss : q.vs + (vss - q.vs) * (1 - Math.exp(-dt / Math.max(dt, tr)));
+  return q.vs;
+}
 AN_CYC.y = {};
 AN_CYC.levels = () => ({ ...AN_CYC.y });
 AN_CYC.rate = (x, L) => 1000 / 3600 / AN_CYC.kgmm[x](L);
@@ -878,11 +940,8 @@ function anProcStep(S, dt) {
               su,
               suK: 0.3 * fsp,
               fsp,
-              sh1: s1,
-              k: 0.02,
-              ks: 10,
-              tauS: 60
-            }; /* about 0.36 mm/s for 20 T/H of imbalance (drum about 22 m2 of water surface) */
+              sh1: s1
+            }; /* Phase 11: the old level rate k 0.02 (read by nothing, the level integrates by AN_CYC.rate('dr')) and the swell lag ks / tauS deleted */
         }
       } catch (e) {}
     }
@@ -1082,25 +1141,14 @@ function anProcStep(S, dt) {
       AN_CYC.fdr = ffw; /* beta.374: the water into the economizer and the drum */
       AN_CYC.ffw = ffw + fwSp; /* the deaerator gives this water (condensate cycle balance), the BFWPs and the HP heaters pass it: the
          drum feed plus the SH spray (beta.374, PD-017) */
-      /* 2.2.0-beta.12 (M3): SHRINK / SWELL. A fast change of the drum pressure moves the level the other way for a while (the steam
-         bubbles in the water collapse when the pressure rises after a turbine trip, grow when it falls after an MFT): the level
-         read is the water level minus ks x (pressure - its lag of tauS), so a pressure step gives a transient of ks mm per
-         kg/cm2 that fades in tauS (ks 10 mm per kg/cm2, tauS 60 s). CALC check (3.2.3, no ASSUMED): the saturated water of the boiler,
-         furnace 74.5 t + evaporator 14.0 t + drum about 16 t = 104.5 t (FHI P2 S8 Tab 2 p 2-8-TAB_2-1, plant-study 12-assumptions), at
-         130 bar (hf 1531.4, hfg 1131 kJ/kg, rho water 647, steam 76.6 kg/m3; hf falls 3.96 kJ/kg per kg/cm2) flashes 104,500 x 3.96 /
-         1131 = 366 kg of steam per kg/cm2 of pressure drop: 366 x (1 / 76.6 - 1 / 647) = 4.2 m3, over the drum water surface 20.6 m2
-         (2 x 0.8242 x 12.481, K1AU3D-101) = 204 mm per kg/cm2 while that steam is in the risers. On a ramp the model gives ks x tauS x
-         dP/dt = 600 mm per kg/cm2/s, the flash 204 x tr: the two agree for a riser transit time tr of about 3 s, which is NO-SOURCE
-         (no circulation data in the FHI manual), so ks and tauS stay as they are */
-      if (S1 && pr.integ.pd >= 0) {
-        const ps = S1.rt.st[pr.integ.pd],
-          P = ps && isFinite(ps.val) ? +ps.val : NaN;
-        if (isFinite(P)) {
-          if (q.pl == null) q.pl = P;
-          q.pl += ((P - q.pl) * dt) / pr.integ.tauS;
-          q.sw = pr.integ.ks * (P - q.pl);
-        }
-      }
+      /* SHRINK / SWELL (Phase 11, AN_RISER above): the level read is the water of the drum plus the change of the steam volume in the
+         risers since this level state began (q.vr0: a start or a load begins with the level it reads, no jump), over the water
+         surface of the drum at this level. q.sw is what the level read is BELOW the water (y = q.y - q.sw) */
+      if (typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.Pd)) {
+        const Vs = anRiserStep(q, AN_UNIT.Pd, AN_UNIT.Qs, dt, !!AN.steady) /* U.Qs is 0 below saturation */;
+        if (!isFinite(q.vr0) || AN.steady) q.vr0 = Vs;
+        q.sw = (-1000 * (Vs - q.vr0)) / Math.max(1, AN_CYC.kgmm.dr(q.y) / (anWaterRho(isFinite(AN_UNIT.Tw) ? AN_UNIT.Tw : 30) / 1000));
+      } else q.sw = 0;
       q.h.length = 0;
     } else if (pr.cyc && dt > 0) {
       /* the condensate cycle balance (AN_CYC above): levels integrate, the flow follows its valves with the lag of the loop */
