@@ -487,6 +487,7 @@ function anUnitStart() {
     Tw: steamTsat(Pd0),
     oilF: 0,
     cbed: 0,
+    cbV: 1 /* the char store law of step 4 (cfb.js AN_CBED) */,
     /* 3.2.0-beta.14: the sources of the loops at the anchor (source.js), before the first step */
     Pms: P0,
     Fc: F0,
@@ -1015,6 +1016,7 @@ function anUnitCold() {
     burn: 0,
     unb: 0,
     cbed: 0,
+    cbV: 1,
     t: 0
   });
   U.o2v = 21;
@@ -3713,13 +3715,19 @@ function anUnitStep0(dt) {
     }, 0),
     oil = (U.oilN || []).reduce((a, x) => a + Math.max(0, +x.S.rt.v[x.n] || 0), 0),
     bf = Math.max(0, Math.min(1, (U.Tb - U.Tburn0) / (U.Tburn1 - U.Tburn0))),
-    cb0 = isFinite(U.cbed) && U.cbed > 0 ? U.cbed : 0,
-    cbB = (bf * cb0 * 3600) / AN_CBED.tau /* T/H of the held coal that burns */,
-    Fb = bf * F + cbB /* coal burnt, T/H */;
+    tauC = anCharTau(U.Tb, U.o2v) /* s, cfb.js */,
+    /* Phase 11 AOI step 4: a save of an engine before the char store (no U.cbV) held no char at a hot bed (all fed coal burnt in the
+       scan): its store starts at the steady one of the fed coal, so the load does not lose 61 % of the fire for two minutes */
+    cb0 =
+      (isFinite(U.cbed) && U.cbed > 0 ? U.cbed : 0) +
+      (U.cbV === 1 ? 0 : (bf * F * (1 - AN_CBED.fV) * tauC) / 3600),
+    cbB = (bf * cb0 * 3600) / tauC /* T/H of the char (and held coal) that burns, cfb.js AN_CBED */,
+    Fb = bf * F * AN_CBED.fV + cbB /* coal burnt, T/H: the volatiles at once + the char store */;
   U.oilF = oil;
   U.burn = bf;
   U.cbn = Fb;
-  U.cbed = Math.max(0, cb0 + (((1 - bf) * F - cbB) * dt) / 3600);
+  U.cbed = Math.max(0, cb0 + (((1 - bf * AN_CBED.fV) * F - cbB) * dt) / 3600);
+  U.cbV = 1;
   U.unb = F - Fb; /* fed minus burnt: negative while held coal burns out */
   U.Fc = F; /* 3.2.0-beta.14: coal of the feeders (source.js: SOx) */
   /* beta.261: the steam made (U.Qs) is the bed / wall heat balance below over the boiling heat; the fuel line a x coal (a fitted on the
