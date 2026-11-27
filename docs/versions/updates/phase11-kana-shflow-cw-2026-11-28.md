@@ -18,3 +18,11 @@ B-0-001 (evaporative steel), IAPWS-IF97. Finding ng RIN (load rejection).
 
 ## Bukas
 - Kung kasama ng B-0-001 437.7 t ang bakal ng economizer (may sariling 112 MJ/K ang hx.js). Ang dami ng tubig ay hawak sa 150 MW.
+
+## Governor sa 0 habang 150 MW ang apoy (gen-electrical reverse power case), sa 194 s, PR 714 laban sa main
+- Drum 153.4 vs 148.2 kg/cm2. Ang HP bypass + SH safety valve (mga 240 T/H) ay dumadaan na sa SH drop, at mas maliit ang Cw (545 MJ/K).
+- Level 276 vs 233 mm, +43 mm. Hinati:
+  - thermal expansion ng 147 m3 na tubig (economizer / wall / downcomer), rho 600.9 vs 610.0 kg/m3: +99 mm;
+  - mass balance (mas mababa ang FW): -16 mm;
+  - mas maraming steam sa riser (sw 131 vs 91 mm): -40 mm.
+- Ang +43 mm ay galing sa mas mataas na drum pressure (pisika), hindi bagong swing. Lumalampas ito sa DRUM LEVEL H.H. 254 mm, kaya nag-MFT sa 194 s bago ang reverse power relay. Hindi binago ang test; ang generator lane ang may hawak ng case.
