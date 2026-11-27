@@ -17,6 +17,27 @@
   "(top level of src/world/ditl150.js)",
   "anBaStep"
  ],
+ "Tb": [
+  "anBedMigrate",
+  "anUnitStep0"
+ ],
+ "Tu": [
+  "anBedMigrate",
+  "anUnitStep0"
+ ],
+ "tgF": [
+  "anBedMigrate",
+  "anHxRun",
+  "anUnitStep0"
+ ],
+ "phi": [
+  "anBedMigrate",
+  "anUnitStep0"
+ ],
+ "bedK": [
+  "anBedStep",
+  "anUnitStep0"
+ ],
  "el": [
   "anElecBo",
   "anElecL52",
@@ -43,6 +64,10 @@
   "anUnitStep0",
   "tcsVt"
  ],
+ "gv": [
+  "anTbFlow",
+  "anUnitStep0"
+ ],
  "turb": [
   "anIdfN",
   "anUnitLive",
@@ -55,31 +80,6 @@
  "acT2": [
   "anAcwStep",
   "anLubeCoolStep"
- ],
- "Tb": [
-  "anBedMigrate",
-  "anUnitStep0"
- ],
- "Tu": [
-  "anBedMigrate",
-  "anUnitStep0"
- ],
- "tgF": [
-  "anBedMigrate",
-  "anHxRun",
-  "anUnitStep0"
- ],
- "phi": [
-  "anBedMigrate",
-  "anUnitStep0"
- ],
- "bedK": [
-  "anBedStep",
-  "anUnitStep0"
- ],
- "svOpen": [
-  "anBedStep",
-  "anSvFlow"
  ],
  "cdP": [
   "anCondStep",
@@ -120,10 +120,6 @@
  "clS": [
   "anClRnd",
   "anCoalLots"
- ],
- "gv": [
-  "anTbFlow",
-  "anUnitStep0"
  ],
  "sbT": [
   "anGenInt",
