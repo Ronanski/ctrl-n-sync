@@ -38,7 +38,7 @@ const judge = (v, tg, tol, kind) => {
       document.getElementById('load150').click();
       await AN._startP;
     });
-    const run = m => page.evaluate(async mins => {
+    const run1 = m => page.evaluate(async mins => {
       const C = AN.sheets.find(s => s.name === 'ABC-001C');
       for (let j = 0; j < mins * 120; j++) {
         WORLD.live = true;
@@ -47,6 +47,19 @@ const judge = (v, tg, tol, kind) => {
         if (j % 200 === 199) await new Promise(r => setTimeout(r, 0));
       }
     }, m);
+    /* Phase 11 SWEEP=1 (2026-11-27): one snap each plant minute the whole way 150 -> 90 -> 45 MW (ramps and settles included); the
+       samples go to OUT_SWEEP and are judged against the design curves at every load by tools/model/sweep-judge.cjs */
+    const SWEEP = !!process.env.SWEEP, SW = [];
+    let swAcc = 0;
+    const run = async m => {
+      await run1(m);
+      if (!SWEEP) return;
+      swAcc += m;
+      if (swAcc >= 1) {
+        swAcc = 0;
+        SW.push(await snap());
+      }
+    };
     const snap = () => page.evaluate(() => {
       const U = AN.unit, H = U.hxO || {}, hs = BAL.hs, hw = BAL.hw, L = window.LS_LIVE;
       const pv = t => { try { const f = L.fp(t); return +f.S.rt.v[f.c.q.pv]; } catch (e) { return NaN; } };
@@ -230,6 +243,11 @@ const judge = (v, tg, tol, kind) => {
     out.push('', `Window ${WIN} min each, settle ${SETTLE} min after each load step. MW range 45 / 90 / 150: ${[45, 90, 150].map(L => f(R[L].MW.lo) + '-' + f(R[L].MW.hi)).join(' / ')}. Trip: ${[45, 90, 150].map(L => R[L].trip).join(' / ')}. Target MW set by the presses: ${f(R.t90)} / ${f(R.t45)}. Operator by hand below 220 T/H: ${OP.log.join(", ") || "-"}. Limestone and FW from the model fields U.lm.q and U.fwMain less the blowdown. PASS ${pass}, FAIL ${fail}. Page errors: ${errs.length}`);
     console.log(out.join('\n'));
     fs.writeFileSync(process.env.OUT || 'part1.json', JSON.stringify(R));
+    if (SWEEP) {
+      const SJ = require(path.join(root, 'tools/model/sweep-judge.cjs')), J = SJ.judge(SW);
+      console.log('\nSWEEP (every plant minute, 150 -> 45 MW, design curves):\n' + SJ.md(J));
+      fs.writeFileSync(process.env.OUT_SWEEP || 'sweep.json', JSON.stringify({ SW, J }));
+    }
   } finally {
     await browser.close();
   }

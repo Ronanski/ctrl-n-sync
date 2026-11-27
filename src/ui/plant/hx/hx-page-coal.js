@@ -188,6 +188,32 @@
         /* beta.373: at x 1532 the sand silo covered it ("rea"): under the sand line, between the furnace and the silo */
         { x: 1456, y: FY + 290 * FS + 22, s: 'rear side', cls: 'hx-note', anchor: 'middle' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Boiler master and coal',
+        pens: [
+          ['Boiler master', 'mv:HIC-BM', '%'],
+          ['Boiler pressure', 'pv:PIC-COBM', 'kg/cm²'],
+          ['Boiler pressure set point', 'sv:PIC-COBM', 'kg/cm²'],
+          ['Coal flow', 'pv:FIC-CM', 't/h'],
+          ['Coal flow set point', 'sv:FIC-CM', 't/h'],
+          ['Coal feeder master', 'mv:FIC-CF', '%']
+        ]
+      },
+      {
+        title: 'Coal feeders',
+        pens: [
+          ['Feed rate A', 'pv:FICCL1061A', 't/h'],
+          ['Feed rate B', 'pv:FICCL1061B', 't/h'],
+          ['Feed rate C', 'pv:FICCL1061C', 't/h'],
+          ['Bunker A level', 'LT-CL1008-A', 'm'],
+          ['Bunker B level', 'LT-CL1008-B', 'm'],
+          ['Bunker C level', 'LT-CL1008-C', 'm']
+        ]
+      }
+    ]
   });
 })();

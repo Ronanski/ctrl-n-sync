@@ -178,6 +178,31 @@
         },
         { x: 866, y: 910, s: 'The generator is synchronized from the Turbine start page.', cls: 'hx-note' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Generator output',
+        pens: [
+          ['Power', 'GCP-AI1001', 'MW'],
+          ['Reactive power', 'GEN.MVAR', 'MVar'],
+          ['Current', 'GEN.KA', 'kA', 2],
+          ['Voltage', 'GEN.KV', 'kV', 2],
+          ['Frequency', 'GEN.HZ', 'Hz', 2]
+        ]
+      },
+      {
+        title: 'Generator temperatures',
+        pens: [
+          ['Stator coil A', 'GEN.TS1', '°C'],
+          ['Stator coil C', 'GEN.TS3', '°C'],
+          ['Stator coil E', 'GEN.TS5', '°C'],
+          ['Air cooler outlet A', 'GEN.TA1', '°C'],
+          ['Exciter outlet air', 'GEN.TEX', '°C'],
+          ['Bearing 3 metal', 'TEGE1001', '°C']
+        ]
+      }
+    ]
   });
 })();

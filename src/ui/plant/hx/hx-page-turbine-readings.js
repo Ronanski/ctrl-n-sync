@@ -201,6 +201,41 @@
     title: 'Turbine readings from the turbine control',
     about:
       'The 143 analog words the turbine control system sends the DCS over Modbus: steam pressures and temperatures, metal temperatures, shaft speed, vibration and expansion, oil and bearings, generator, valve positions. Each shows its DCS indicator loop where the loop list has one. Source: Modbus list DCS / turbine (PLC to DCS), STN102 loop list.',
-    plan: { look: 'real', w: 1760, h: 1080, items, pipes: [], texts }
+    plan: { look: 'real', w: 1760, h: 1080, items, pipes: [], texts },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Turbine pressures',
+        pens: [
+          ['Main steam', 'PT-MS1901-1', 'kg/cm²'],
+          ['First stage', 'PT-ST1001-1', 'kg/cm²'],
+          ['Cold reheat', 'PT-CR1901-1', 'kg/cm²'],
+          ['Hot reheat', 'PT-HR1901', 'kg/cm²'],
+          ['Exhaust hood', 'PT-ST1110-1', 'kg/cm² abs', 3]
+        ]
+      },
+      {
+        title: 'Turbine temperatures',
+        pens: [
+          ['Main steam', 'TE-MS1902-1', '°C', 0],
+          ['Hot reheat', 'TE-HR1902', '°C', 0],
+          ['Cold reheat', 'TE-ST1003-1', '°C', 0],
+          ['Exhaust hood', 'TE-ST1110-1', '°C'],
+          ['Gland steam', 'TE-GS1002', '°C', 0]
+        ]
+      },
+      {
+        title: 'Speed, vibration and expansion',
+        pens: [
+          ['Speed 1', 'SE-ST1001-1', 'rpm', 0],
+          ['Bearing 1 vibration', 'VE-ST1001-1', 'mm', 3],
+          ['Bearing 2 vibration', 'VE-ST1002-1', 'mm', 3],
+          ['Bearing 3 vibration', 'VE-GE1001-1', 'mm', 3],
+          ['Bearing 4 vibration', 'VE-GE1002-1', 'mm', 3],
+          ['Shell expansion', 'ZE-ST1001', 'mm', 2]
+        ]
+      }
+    ]
   });
 })();

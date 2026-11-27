@@ -154,6 +154,32 @@
         { x: DAX, y: DAY + 74 * DAS - 18, s: 'Deaerator', cls: 'hx-name', anchor: 'middle' },
         { x: 880, y: 975, s: 'Primary valve: on to the next heater. Alternate valve: dump on high level.', cls: 'hx-note', anchor: 'middle' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'High pressure heater levels',
+        pens: [
+          ['Heater 2 level', 'pv:LICHD11061', 'mm'],
+          ['Heater 2 drain valve', 'mv:LICHD11061', '%'],
+          ['Heater 1 level', 'pv:LICHD11051', 'mm'],
+          ['Heater 1 drain valve', 'mv:LICHD11051', '%'],
+          ['Heater 2 drain flow', 'an:hpF2', 't/h'],
+          ['Heater 1 drain flow', 'an:hpF1', 't/h']
+        ]
+      },
+      {
+        title: 'Low pressure heater levels',
+        pens: [
+          ['Heater 3 level', 'pv:LICHD11031', 'mm'],
+          ['Heater 3 drain valve', 'mv:LICHD11031', '%'],
+          ['Heater 2 level', 'pv:LICHD11021', 'mm'],
+          ['Heater 2 drain valve', 'mv:LICHD11021', '%'],
+          ['Heater 1 level', 'pv:LICHD11011', 'mm'],
+          ['Heater 1 drain valve', 'mv:LICHD11011', '%']
+        ]
+      }
+    ]
   });
 })();
