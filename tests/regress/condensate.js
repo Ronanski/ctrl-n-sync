@@ -96,7 +96,9 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   ck(r.trMin < 14 && r.trB != null, `CEP A tripped: PT-CD1117 down to ${r.trMin} kg/cm2 (< 14.0, DITL-61B M.3217), CEP B running after ${r.trB} s`);
   ck(r.tr30.run[1] === 1 && r.tr30.Pd > 14, `the logic started CEP B: ${r.tr30.q} m3/h, PT-CD1117 ${r.tr30.Pd}, ${r.tr30.I[1]} A`);
   ck(r.box1.W < b.W && r.box1.P > b.P && !r.box1.trip, `condenser inlet V-SW1007 closed: seawater ${r.box1.W} m3/h, condenser ${r.box1.P} kg/cm2A at ${r.box1.T} C, no trip`);
-  ck(r.box0.W === 0 && r.box0.P > 0.447 && r.box0.trip, `both inlets closed: no seawater, condenser ${r.box0.P} kg/cm2A, turbine LOW VACUUM trip`);
+  /* no seawater: the pressure passes the TCS LOW VACUUM trip 0.26 kg/cm2 abs (IBD 310SC90-794 TA-10) and, with no water to cool it,
+     stays above it after the trip */
+  ck(r.box0.W === 0 && r.box0.P >= 0.26 && r.box0.trip, `both inlets closed: no seawater, condenser ${r.box0.P} kg/cm2A, turbine LOW VACUUM trip`);
   ck(r.muFeed === 0 && r.hwMu < r.hwN - 0.5, `MWP discharges closed: no make-up, hotwell ${r.hwMu} mm in 2 min (with make-up ${r.hwN} mm)`);
   ck(!errs.length, 'no page error' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
   await browser.close();

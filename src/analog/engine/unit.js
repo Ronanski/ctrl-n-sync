@@ -1436,8 +1436,12 @@ function anCondStep(U, dt) {
     W = Math.max(0, (U.swQc || 0) * 1.02),
     C = (W / 3.6) * K.cp,
     UA = K.UA * Math.sqrt(W / K.Cd);
+  /* no seawater (C ~ 0): nothing takes the heat out, so the shell does not cool to the seawater inlet; with steam coming in it heats
+     to 100 C, with no steam (turbine tripped, LP bypass shut) it holds where it is (first law, no cooling term; the shell losses to the
+     air are not modelled). Before: no steam with no seawater went to the seawater inlet temperature, a cooling with no water */
   let Tss = Tin;
-  if (Q > 0) Tss = C > 1 ? Tin + Q / (C * (1 - Math.exp(-UA / C))) : 100;
+  if (C <= 1) Tss = Q > 0 ? 100 : isFinite(U.cdTs) ? U.cdTs : Tin;
+  else if (Q > 0) Tss = Tin + Q / (C * (1 - Math.exp(-UA / C)));
   Tss = Math.min(100, Tss);
   if (!isFinite(U.cdTs)) U.cdTs = Tss;
   U.cdTs += (Tss - U.cdTs) * Math.min(1, dt / K.tau);
