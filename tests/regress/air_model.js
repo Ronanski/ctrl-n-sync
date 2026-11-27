@@ -1,9 +1,9 @@
 // 3.2.1 (IRENE: INSTRUMENT AND PLANT AIR plant model, unit.js AN_AIR / anAirStep; docs/versions/v3.2.1/AIR_PLANT_MODEL.md).
 // The one world ON (ABC + DITL), plant model ON. Checks:
 //  150 MW: one IA and one PA compressor run (the start state), the tanks at
-//    the model set pressure 7.0 kg/cm2 (unit.js AN_AIR, SNAPSHOT-TO-REPLACE there), the currents from the motor data, the logic reads the plant (DITL-113 / 114 rows 1 ~ 3);
+//    the set pressure of the compressor panel (unit.js AN_AIR_SP: PA 0.800 MPa IHI TRE list, IA SNAPSHOT-TO-REPLACE), the currents from the motor data, the logic reads the plant (DITL-113 / 114 rows 1 ~ 3);
 //  IA compressor A trip (DITL-113 row 7 I.0016): the tanks fall, < 5.0 kg/cm2 for 3 s = M.0300, the START COMMAND of compressor B,
-//    the model runs it (its RUNNING contact I.0095 back to the logic) and the tanks come back to 7.0;
+//    the model runs it (its RUNNING contact I.0095 back to the logic) and the tanks come back to the set pressure (the trip is watched 240 s: from 8.16 the PA tanks take longer to reach 5.0);
 //  the same for the plant air (DITL-114, M.0310);
 //  all IA compressors tripped: the instrument air header falls below 3.5 (alarm list LL, DITL-03G MFT 2 of 3) and below 2.8 (PSL-IA1706);
 //  Cold: no compressor, the tanks empty.
@@ -66,7 +66,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     set('DITL-114', 6, true); /* I.0011 PLANT AIR COMPRESSOR A TRIP */
     const lo = { ia: 9, pa: 9 },
       cmd = { ia: [0, 0, 0], pa: [0, 0, 0] };
-    for (let t = 0; t < 240; t++) {
+    for (let t = 0; t < 480; t++) {
       await run(0.5);
       lo.ia = Math.min(lo.ia, AN.unit.iaP);
       lo.pa = Math.min(lo.pa, AN.unit.paP);
@@ -95,17 +95,19 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   });
   console.log(JSON.stringify(r));
   const near = (x, y, e) => isFinite(x) && Math.abs(x - y) <= e;
+  /* the set pressures from the docs: PA = IHI TRE set point list PIC1 0.800 MPa; IA 7.0 = SNAPSHOT-TO-REPLACE (unit.js AN_AIR_SP) */
+  r.sp = { pa: 0.8 * 10.1972, ia: 7.0 };
   for (const k of ['ia', 'pa']) {
     const d = r.d[k],
       K = k.toUpperCase();
     ck(d.R.join() === '1,0,0' && d.dRun.join() === '1,0,0', `150 MW ${K}: compressor A runs (model ${d.R}, logic RUNNING ${d.dRun})`);
-    ck(near(d.P, 7.0, 0.05), `150 MW ${K}: tanks ${d.P} kg/cm2 (the model set pressure 7.0)`);
-    ck(d.av.length >= 3 && d.av.every(v => v > 6.5 && v <= 7.0), `150 MW ${K}: the logic reads the tank / header pressures ${d.av}`);
+    ck(near(d.P, r.sp[k], 0.05), `150 MW ${K}: tanks ${d.P} kg/cm2 (the set pressure ${r.sp[k]}, unit.js AN_AIR_SP)`);
+    ck(d.av.length >= 3 && d.av.every(v => v > r.sp[k] - 0.5 && v <= r.sp[k] + 0.001), `150 MW ${K}: the logic reads the tank / header pressures ${d.av}`);
     ck(k === 'ia' ? d.I[0] > 150 && d.I[0] < 286 : d.I[0] > 35 && d.I[0] < 69.9, `150 MW ${K}: compressor A current ${d.I[0]} A (motor data)`);
     const t = r.trip[k],
       b = r.back[k];
     ck(r.trip.lo[k] < 5.0 && r.cmd[k][1] === 1 && t.R[1] === 1 && t.dRun[1] === 1 && t.R[2] === 0, `${K} A trip: tanks fell to ${Math.round(r.trip.lo[k] * 100) / 100} (< 5.0), START COMMAND ${r.cmd[k]} (B and C: the drawing), B in REMOTE runs ${t.R[1]} (logic RUNNING ${t.dRun[1]}), C in LOCAL stays ${t.R[2]}`);
-    ck(near(b.P, 7.0, 0.05) && b.R[0] === 0, `${K} A trip: tanks back to ${b.P} with compressor B, A stays stopped`);
+    ck(near(b.P, r.sp[k], 0.05) && b.R[0] === 0, `${K} A trip: tanks back to ${b.P} with compressor B, A stays stopped`);
   }
   const n = r.noia;
   ck(n.ia.P < 2.8 && n.mft.length && n.mft.every(x => x === 1) && n.psl.includes(true), `all IA compressors tripped: header ${n.ia.PU} kg/cm2, DITL-03G instrument air MFT rows ${r.mft} = ${n.mft}, PSL-IA1706 ${n.psl}`);
@@ -113,7 +115,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   const c = r.cold;
   ck(c.ia.R.join() === '0,0,0' && c.pa.R.join() === '0,0,0' && c.ia.P === 0 && c.pa.P === 0, `Cold: no compressor, tanks ${c.ia.P} / ${c.pa.P}`);
   const l = r.loc;
-  ck(l.R.join() === '1,0,0' && l.dRun[0] === 1 && near(l.P, 7.0, 0.05) && l.I[0] > 150, `Cold, IA compressor A started at its local panel: runs ${l.R}, tanks ${l.P} after 6 min, current ${l.I[0]} A`);
+  ck(l.R.join() === '1,0,0' && l.dRun[0] === 1 && near(l.P, r.sp.ia, 0.05) && l.I[0] > 150, `Cold, IA compressor A started at its local panel: runs ${l.R}, tanks ${l.P} after 6 min, current ${l.I[0]} A`);
   ck(!errs.length, 'no page error' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
   await browser.close();
   console.log(fail ? 'FAILED ' + fail : 'ALL PASS');
