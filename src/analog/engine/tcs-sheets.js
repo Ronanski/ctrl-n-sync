@@ -59,11 +59,19 @@ const TCS_SH_IN = {
      model state (r87, r59g, r40a / b, r46a / b, r51, r50, r78, r60) are not fed: NO-SOURCE */
   ...Object.fromEntries(
     ['5A', '5B', '6A', '6B'].flatMap(g =>
-      (g[1] === 'A' ? ['r24a', 'r24b', 'r24c', 'r59a', 'r59b', 'r27'] : ['r81l1', 'r81l2', 'r81h1', 'r81h2']).map(k => ['PLANT:G-' + g + '.' + k, U => tcsRelGen(U, k)])
+      (g[1] === 'A' ? ['r24a', 'r24b', 'r24c', 'r59a', 'r59b', 'r27', 'r32a', 'r32b'] : ['r81l1', 'r81l2', 'r81h1', 'r81h2']).map(k => ['PLANT:G-' + g + '.' + k, U => tcsRelGen(U, k)])
     )
   ),
+  /* the auxiliary contacts of the generator breaker 52G on SH-G-1A (CLOSE / OPEN of the breaker box, out as "52G CLOSED" to SH-G-5A /
+     6A / 8A / 4 / 2B / 1B) = the breaker of the generator model, port gen x.b52g (closed in sync / load) */
+  'PLANT:G-1A.cl': U => tcsB52g(U),
+  'PLANT:G-1A.op': U => 1 - tcsB52g(U),
   'PLANT:G-5A.d24b.M': U => tcsRelGen(U, 'vhz'),
   'PLANT:G-6A.d24b.M': U => tcsRelGen(U, 'vhz')
+};
+const tcsB52g = U => {
+  const p = typeof anPortGet === 'function' ? anPortGet(U, 'gen') : null;
+  return p && p.x && isFinite(p.x.b52g) ? +p.x.b52g : 0; /* no port yet (a start before the plant runs, an old save): not on line */
 };
 const tcsRelGen = (U, k) => {
   const p = typeof anPortGet === 'function' ? anPortGet(U, 'relay.gen') : null;

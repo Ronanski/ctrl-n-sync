@@ -11,9 +11,9 @@
    - Lockout relays (GEE-2015-0173 2-3 Sequence Test, Trip Interlock and Alarm, Group A rows 1 ~ 35, Group B rows 38 ~ 68): 86G-A takes the
      protections of relay (A), 86G-B those of relay (B); each opens 52G, 52L and 41 and trips the turbine (TA-9 inputs 17 / 19, GEN./UNIT
      TRANS. PROTECTION A / B & GEN. LOCKOUT RELAY A / B). "GEN. TRANSF. LOCKOUT RELAY (86T) Operated" is an input of both groups (rows
-     33 / 66). Modelled causes: the 2nd REVERSE POWER (32) of both relays (rows 13 / 50, unit.js anRp32) and 86T (the transformer
-     protections behind it are not in these papers: the instructor operates 86T, world.js 'gen.86t'). The other relays of the panel
-     (87G, 40, 24, 46, 59, 64, 81 ...) are not modelled.
+     33 / 66). Causes: the OR of the TCS sheets SH-G-5A (86G-A) / SH-G-6A (86G-B) on the relay contacts of the generator model (24, 27,
+     32, 59; elec.js anGenRelay) and 86T (the transformer protections behind it are not in these papers: the instructor operates 86T,
+     world.js 'gen.86t'). 87G, 40, 46, 51V, 50, 59GN have no state in the model.
    - The lockout relays are hand reset (RESET of the relay, here AN.turbine('gen', { op: 'reset86' })), refused while the cause stands.
      The TURBINE RESET also resets them, as before (NO-SOURCE, kept: the panel reset is not on every page yet).
    AN.turbine('gen', { op, v }): op 'syn' v 'AUTO' | 'MAN'; 'avr' v 'AUTO' | 'MAN'; 'v+' / 'v-' (7-90R); 'n+' / 'n-' (7-65); 'close52g'; 'close41' / 'open41' (TCA587);
@@ -27,20 +27,35 @@ function tcsLo86(U) {
       if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
         lsEventAdd('GEN', 'GEN', m);
     },
-    op = (why, m) => {
-      if (L.a && L.b) return;
-      if (!L.a) ev('GEN. LOCKOUT RELAY (86G-A) OPERATED: ' + m);
-      if (!L.b) ev('GEN. LOCKOUT RELAY (86G-B) OPERATED: ' + m);
-      L.a = L.b = true;
-      L.why = why;
+    op = (why, m, a = true, b = true) => {
+      if (a && !L.a) ev('GEN. LOCKOUT RELAY (86G-A) OPERATED: ' + m);
+      if (b && !L.b) ev('GEN. LOCKOUT RELAY (86G-B) OPERATED: ' + m);
+      if ((a && !L.a) || (b && !L.b)) L.why = why;
+      L.a = L.a || a;
+      L.b = L.b || b;
     };
   if (W && W.ft && W.ft.has('gen.86t') && !L.t) {
     L.t = true;
     ev('GEN. TRANSF. LOCKOUT RELAY (86T) OPERATED');
   }
   if (L.t) op('86T', 'GEN. TRANSF. LOCKOUT RELAY (86T)');
-  if (U.rp32 && U.rp32.lo) op('32', '2nd REVERSE POWER (32)');
+  /* Phase 11 (YUI): the coils of 86G-A / 86G-B = the OR of the protection relay (A) / (B) of the TCS sheets SH-G-5A / SH-G-6A (gor,
+     310SD03-743 sheets 13 / 15: each relay with its timer and its 52G / 60FL gating), the contacts fed by the generator model
+     (elec.js anGenRelay, port relay.gen). Before: only the 32 relay, timed and latched in turbine.js anRp32 beside the sheet */
+  const ga = tcsGor('G-5A'),
+    gb = tcsGor('G-6A');
+  if (ga || gb) op('GPR', 'GENERATOR PROTECTION RELAY' + (ga && gb ? 'S (A) AND (B)' : ga ? ' (A)' : ' (B)') + tcsGprWhy(U), ga, gb);
   return L;
+}
+/* the OR of a protection relay sheet to its lockout relay (tcs-sheets.js program) */
+const tcsGor = sh => (typeof tcsShNet === 'function' ? tcsShNet(sh + ':gor') : 0) > 0.5;
+/* the picked-up elements of the generator protection relay (port relay.gen), for the event text */
+function tcsGprWhy(U) {
+  const p = typeof anPortGet === 'function' ? anPortGet(U, 'relay.gen') : null,
+    x = (p && p.x) || {},
+    N = { r24b: '24 V/Hz 2ND STEP', r24c: '24 V/Hz 3RD STEP', r59b: '59 OVER VOLTAGE 2ND STEP', r27: '27 UNDER VOLTAGE', r32b: '2nd REVERSE POWER (32)' },
+    on = Object.keys(N).filter(k => x[k] > 0.5).map(k => N[k]);
+  return on.length ? ': ' + on.join(', ') : '';
 }
 /* the reset of the lockout relays: 86T first (its cause is the instructor's fault), then 86G-A / B (no cause standing) */
 function tcsLo86Reset(U) {
@@ -50,8 +65,7 @@ function tcsLo86Reset(U) {
   if (L.t && W && W.ft && W.ft.has('gen.86t'))
     return 'RESET refused: 86T is still operated by the transformer protection';
   L.t = false;
-  if (U.rp32 && U.rp32.t2 >= AN_RP32.t2) return 'RESET refused: the 2nd REVERSE POWER (32) is still operated';
-  if (U.rp32) U.rp32.lo = false;
+  if (tcsGor('G-5A') || tcsGor('G-6A')) return 'RESET refused: a generator protection relay is still operated' + tcsGprWhy(U);
   L.a = L.b = false;
   L.why = '';
   if (typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
