@@ -158,6 +158,39 @@ const AN_FW = {
   mV: 6.6 /* kV */,
   stK: 0.1 / (563.5 * 563.5) /* kg/cm2 per (m3/h)^2, clean strainer, DESIGN-SRC: KSB FE/KSB/GAD/YST/FR-3453-02 r03 */
 };
+/* Phase 11 NANA (2026-11-27): THE RH AND HP BYPASS SPRAY WATER from the BFWP 3rd stage, in place of 29.5 / 67 T/H x MV x
+   sqrt((BFWP discharge - RH pressure) / (165.4 - 34.9)) (a design flow scaled from the pump DISCHARGE, which the spray line does not
+   see).
+   Sources (YUA PC read 2026-11-27, /mnt/project-files/nana-bfp-interstage-2026-11-27.md; RIN valve read /mnt/project-files/rin-valve-reads.md):
+     the line     PD-017 Rev 1 D-7: each BFWP interstage nozzle (FW-1-025 / 026, 3", checks V-FW1003 / 1005) -> FW-1-016 -> FE-FW1059 ->
+                  V-FW1047 -> XV-FW1061 (DITL-79) -> STR-FW1008 -> TCV-FW1060 -> check V-FW1050 -> FW-1-020 to the HP bypass
+                  desuperheater (PD-011); the RH branch the same (XV-FW1151, TCV-FW1150). No orifice is drawn. Hitachi bypass diagram
+                  488 Table 1 point 3 "HP spray (BFP interstage)".
+     the pump     KSB HGC 5/1+6, 7 stages, tap-off at the 3rd stage (curve Q43446D, read about +-10 m): 894 m at 0, 857 at 300, 816 at
+                  400, 722 at 540 (design), 661 at 600 m3/h; data sheet 997274702 item 8 bleeding stage pressure 69.4 kg/cm2 g at
+                  turbine trip. Tap pressure = suction - strainer DP + head x 0.9093 / 10 (the same law as the discharge, anFwStep).
+     TCV-FW1060   E2-0-123 R1 A PDF p15: Cv 10.3 at 1.25 in, modified equal %, air fail closed; sizing (Cv % at travel %):
+                  Cv 0.68 / 24, 1.70 / 34 (COND 2; COND 3 prints Cv 1.30 at the same 34 %, taken as a misprint), 6.88 / 73 %
+                  travel (the printed Cv over 10.3: 6.6, 16.5, 66.8 %).
+     TCV-FW1150   Cv 6.2 (L21 sheet, the RH spray), its characteristic NO-SOURCE: linear (as before).
+     flow         liquid, IEC 60534: W kg/h = 27.3 Cv sqrt(dP bar x rho); the line from the tap to the valve inlet: dP = k W^2, k from
+                  the turbine trip case of both sheets: tap 69.4 kg/cm2 g (KSB item 8) against the TCV-FW1060 COND 1 inlet 68.34 kg/cm2 a
+                  at 30.019 t/h: k = (69.4 - 67.31) / 30.019^2. With P1 = tap - k W^2 the flow is W = a sqrt(dP / (1 + a^2 k)),
+                  a = 0.0273 Cv sqrt(0.980665 rho) t/h, dP = tap - outlet (kg/cm2).
+     outlet       the cold reheat pressure (HP bypass) and the RH pressure (RH spray), as before. */
+const AN_BYS = {
+  tQ: [0, 300, 400, 540, 600] /* m3/h, DESIGN-SRC: KSB curve Q43446D 3rd-stage tap-off */,
+  tH: [894, 857, 816, 722, 661] /* m */,
+  kL: (69.4 - (68.34 - 1.0332)) / (30.019 * 30.019) /* kg/cm2 per (t/h)^2, DESIGN-SRC: KSB 997274702 item 8 + E2-0-123 TCV-FW1060 COND 1 */,
+  hp: { cv: 10.3, x: [0, 24, 34, 73, 100], y: [0, 6.6, 16.5, 66.8, 100] } /* travel %, Cv % = printed Cv / 10.3, DESIGN-SRC: E2-0-123 R1 TCV-FW1060 */,
+  rh: { cv: 6.2, x: [0, 100], y: [0, 100] } /* DESIGN-SRC: L21 TCV-FW1150 Cv 6.2; characteristic NO-SOURCE (linear) */
+};
+/* spray water t/h through a valve of Cv (at its opening) from the tap at Pis to the outlet P2 (kg/cm2 g), water density rho kg/m3 */
+function anSprW(Cv, Pis, P2, rho) {
+  const dP = Pis - P2,
+    a = 0.0273 * Cv * Math.sqrt(0.980665 * rho);
+  return Cv > 0 && dP > 0 && rho > 0 ? a * Math.sqrt(dP / (1 + a * a * AN_BYS.kL)) : 0;
+}
 /* the BFWP discharge (kg/cm2 g) at a total feedwater flow w (T/H), with the pumps that run now: the same law as anFwStep */
 function anFwPdAt(U, w) {
   const K = AN_FW,
@@ -191,6 +224,8 @@ function anFwStep(U, dt) {
     Ps = isFinite(ps) ? ps : 0;
   U.fwRun = run;
   U.fwQp = Math.round(q);
+  /* the 3rd-stage tap-off (KSB curve Q43446D lower curve): the RH and HP bypass spray water (PD-017 FW-1-025 / 026 -> FW-1-016) */
+  U.fwPis = Math.max(0, Math.min(250, n ? Ps - K.stK * q * q + (K.sg / 10) * swInterp(AN_BYS.tQ, AN_BYS.tH, q) : Ps));
   /* the pump inlet = the suction header less the strainer DP (stK, KSB strainer drawing) */
   U.fwPd = Math.max(
     0,
@@ -755,15 +790,12 @@ function anFwTagStep(U) {
     w1 = K.K * (cv(K.cv.a1, z11) * pos('DITL-32') + cv(K.cv.a2, z12) * pos('DITL-32 #B')) * sq(anShTap(U, AN_SHDP.s1, drum, ms)) /* the spray goes in at the SH tap 1 (KANA anShTap: the design SH drop law); was drum - 6.4 x (ms / 474.1)^2 of 03.png */,
     w2 = K.K * (cv(K.cv.b1, z21) * pos('DITL-33') + cv(K.cv.b2, z22) * pos('DITL-33 #B')) * sq(anShTap(U, AN_SHDP.s2, drum, ms)) /* SH tap 2 */,
     Prh = isFinite(U.Prh) ? U.Prh : 0,
-    dr = isFinite(pd) ? Math.sqrt(Math.max(0, pd - Prh) / (165.4 - 34.9)) : NaN,
-    wrh =
-      ((29.5 * held('TICHR1002', mvOf('ABC-019', 'TICHR1002'))) / 100) *
-      pos('DITL-35') *
-      dr /* 29.5 T/H at 100 %, Cv 6.2, dp 34, L21 */,
-    whp =
-      ((67 * held('TICMS1022', mvOf('ABC-051', 'TICMS1022'))) / 100) *
-      pos('DITL-79') *
-      dr /* 67 T/H at 100 %, Cv 10.3, dp 61, L21 */,
+    /* the RH and HP bypass spray from the BFWP 3rd stage (AN_BYS, anSprW), at the deaerator water (U.tSr of the last step) */
+    Pis = isFinite(U.fwPis) ? U.fwPis : NaN,
+    rSp = anWaterRho(isFinite(U.tSr) ? U.tSr : 30) /* saturated water table (plant.js AN_WATER_RHO) */,
+    cvOf = (V, m) => (isFinite(m) ? (V.cv * swInterp(V.x, V.y, Math.max(0, Math.min(100, m)))) / 100 : NaN),
+    wrh = anSprW(cvOf(AN_BYS.rh, held('TICHR1002', mvOf('ABC-019', 'TICHR1002'))), Pis, Prh, rSp) * pos('DITL-35') /* TCV-FW1150, XV-FW1151 */,
+    whp = anSprW(cvOf(AN_BYS.hp, held('TICMS1022', mvOf('ABC-051', 'TICMS1022'))), Pis, Prh * K.crP, rSp) * pos('DITL-79') /* TCV-FW1060, XV-FW1061 */,
     cr = U.xt && U.xt.T ? U.xt.T.cr : NaN,
     Xt = U.xt || {},
     thr = Xt.hr ? anUnitVal(Xt.hr) : NaN,

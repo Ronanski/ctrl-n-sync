@@ -1727,10 +1727,8 @@ function anCdTagStep(U, ld) {
                         points; spray point = drum - 6.4 / 9.3 kg/cm2 x (main steam / 474.1)^2 (03.png); 0.7674 from item 19 COND 1. The
                         No.1 spray gives 37.3 T/H at the 03.png point (37.5). The No.2 spray gives 9.6 T/H by its sheet against 28.2 in
                         03.png: UNUSUAL (the equal % curve at 14.9 % travel is far below what flows); beta.259: the x 2.94 snapshot calibration is removed (no patches: the Cv of the data sheet only);
-     FT-FW1149          14.8 x TCV-FW1150 (TICHR1002 MV) / 66.0 x XV-FW1151 (DITL-35) x sqrt(dp / 130.5) (NO-SOURCE: linear valve, the tap
-                        at the pump discharge, dp to the reheat inlet 165.4 - 34.9);
-     FT-FW1059          40 T/H x TCV-FW1060 (TICMS1022 MV) x XV-FW1061 (DITL-79) x sqrt(dp / 130.5) (NO-SOURCE: no data sheet, the
-                        capacity taken as the IO range; 4.PNG 1.8 T/H at 0.1 % with the block valve closed is not modelled).
+     FT-FW1149 / 1059   Phase 11 NANA 2026-11-27: fw.js AN_BYS / anSprW (TCV-FW1150 Cv 6.2, TCV-FW1060 Cv 10.3 modified equal % from the
+                        BFWP 3rd-stage tap, KSB curve Q43446D, PD-017); was 14.8 / 40 T/H x MV x sqrt(dp / 130.5) from the pump discharge.
    Not on any DCS sheet: XV-TS1700 / 1710 (NO-SOURCE, not modelled). */
 /* 3.2.1 (IRENE: page 08 AUX STEAM AND VACUUM; docs/versions/v3.2.1/AUX_STEAM_PLANT_MODEL.md). The values of page 08 that no ABC / DITL
    sheet reads, in AN.unit.tt for the plant page.
@@ -4476,8 +4474,8 @@ function anUnitStepX(dt, mso) {
     /* 3.2.4 (live Cold start F-T: HP bypass outlet TT-MS1022 64 C with the bypass 8 % open at 60 kg/cm2): the outlet of the HP bypass
        is an energy balance, not the snapshot loop gated by 3 % of the MCR flow (source.js R.TICMS1022). The main steam (PT-MS1006
        pressure U.Pms, SH outlet TICMS1004 PV) is throttled at constant enthalpy to the cold reheat pressure and mixed with the spray
-       water of TCV-FW1060 (U.whps, 67 T/H at 100 %, L21) at the deaerator water temperature (the spray comes from the BFP discharge,
-       before the HP heaters); IF97 steam table (steam.js), wet = saturation. TT-MS1022 sits on the cold reheat side: it also sees the
+       water of TCV-FW1060 (U.whps, fw.js AN_BYS: Cv 10.3 from the BFWP 3rd stage) at the deaerator water temperature (PD-017: the BFWP
+       interstage, before the HP heaters); IF97 steam table (steam.js), wet = saturation. TT-MS1022 sits on the cold reheat side: it also sees the
        HP exhaust (snapshot 359 C at 150 MW with the bypass shut), mixed by their steam; no steam = the pipe cools to the room */
     const mhp = U.mhp || 0,
       whp = U.whps || 0,
