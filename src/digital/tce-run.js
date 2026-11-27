@@ -1873,7 +1873,11 @@
       const base = key.split('.')[0],
         hit = part[sid].get(key) || part[sid].get(base);
       let r;
-      if (!hit || depth > 40) r = port('UNK:' + mk);
+      /* Phase 11 (lane 1, YUI PR 682): an input net of a block that no drawn element drives but the sheet names as a port (the operating
+         quantity d24b.M of the TINV element, G-5A / G-6A: res.ports['d24b.M'] = 'PLANT:G-5A.d24b.M ...') is that port. Before, the base
+         name hit the TINV block itself and the net was a plain slot nobody wrote, so the plant could not feed it */
+      if (key.includes('.') && !part[sid].get(key) && nb[sid] && nb[sid].ports && nb[sid].ports[key]) r = port(nb[sid].ports[key]);
+      else if (!hit || depth > 40) r = port('UNK:' + mk);
       else {
         const [t, x] = hit;
         if (t === 'b' || t === 'm') r = slot(mk);
