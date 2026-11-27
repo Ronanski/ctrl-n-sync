@@ -4024,12 +4024,19 @@ function anUnitStep0(dt) {
   tcsVtStep(U, dt);
   U.kdp = anShKdp(U); /* Phase 11: the SH pressure drop law at the density of this scan (anShKdp) */
   U.kln = anMsKln(U); /* Phase 11: the main steam line drop law at the density of this scan (anMsKln) */
+  /* Phase 11 (KANA 2026-11-27, RIN finding on the 52G load rejection): the SH pressure drop is on the WHOLE steam that leaves the
+     SH outlet, the turbine m plus the other outlets mo (HP bypass PCV-MS1020, blow-off PCV-MS1001, SH safety valves): MSP = drum -
+     kdp (m + mo)^2, m = k MSP. Before it was the turbine flow alone, so with the CVs shut and 286 T/H through the bypass the SH outlet
+     rose to the drum pressure and lifted the SH safety valve. mo is the flow of these outlets of the scan before (U.mso, they depend on
+     the MSP: the fixed point converges, 2 kdp (m + mo) x dmo/dP is about 0.1 at 400 T/H). With u = m + mo: k kdp u^2 + u - (mo +
+     k drum) = 0 */
   const k = U.Kt * tcsVtLift(U) * (U.msG == null ? 1 : U.msG),
+    mo = isFinite(U.mso) ? Math.max(0, U.mso) : 0,
     a2 = U.kdp * k,
-    ms = a2 > 0 ? (-1 + Math.sqrt(1 + 4 * a2 * k * Math.max(0, U.Pd))) / (2 * a2) : k * U.Pd;
+    ms = a2 > 0 ? (-1 + Math.sqrt(1 + 4 * a2 * (mo + k * Math.max(0, U.Pd)))) / (2 * a2) - mo : k * Math.max(0, U.Pd - U.kdp * mo * mo);
   U.ms = Math.max(0, ms);
-  /* the other outlets: flow = share x anchor flow x opening x MSP / anchor MSP */
-  const P1 = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
+  /* the other outlets: their valve laws at the SH outlet pressure P1 */
+  const P1 = Math.max(0, U.Pd - U.kdp * (U.ms + mo) * (U.ms + mo));
   U.mb = 0;
   U.mhp = 0;
   const qOn = l => !!(l && l.S && l.S.rt && +l.S.rt.v[l.n] > 0.5),
@@ -4057,7 +4064,9 @@ function anUnitStep0(dt) {
     }
   }
   /* 3.2.4-beta.1: the safety valves of the drum (drum pressure) and of the SH outlet (main steam pressure P1), AN_SV */
-  U.msv = anSvFlow(U, AN_SV.d, U.Pd) + anSvFlow(U, AN_SV.s, P1);
+  const svS = anSvFlow(U, AN_SV.s, P1);
+  U.msv = anSvFlow(U, AN_SV.d, U.Pd) + svS;
+  U.mso = U.mb + svS; /* the SH outlet flow besides the turbine, for the SH drop of the next scan (above) */
   /* drum: stored energy. 2.2.0-beta.14 (cold start): the firing heats the water first (U.Tw), then the pressure rises against the
      storage of the steam AND of the saturated water (C + Cw x dTsat/dP) */
   const tsatOf = steamTsat; /* 3.2.0-beta.15: IF97 steam table (steam.js), was the fit 100 + 47.1 x ln(P + 1) */
@@ -4243,7 +4252,7 @@ function anUnitStep0(dt) {
       m = U.idfV ? Math.max(0, Math.min(100, +U.idfV.S.rt.v[U.idfV.n] || 0)) : 0;
     anUnitWrite(U.idfS, () => (on ? anIdfN(m) : 0));
   }
-  const Pms = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
+  const Pms = Math.max(0, U.Pd - U.kdp * (U.ms + (isFinite(U.mso) ? U.mso : 0)) ** 2) /* the SH drop on the whole outlet flow (above) */;
   U.Pms = Pms; /* 3.2.0-beta.14: source of the reducing stations (source.js) */
   /* generator: the shaft work of the steam path less the mechanical and generator losses (AN_TB.mech, turbine.js; generator losses anGenW, YUI); qip = the reheat
      pressure x the ICV opening, = the HP steam when the bypass is shut and the ICV full open; 0 off the grid */
