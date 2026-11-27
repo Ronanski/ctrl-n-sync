@@ -32,7 +32,7 @@ const PAGES = [
 ];
 const abc = unz('src/data/apre.txt'),
   ditl = unz('src/data/pre.txt'),
-  unit = rd('src/analog/engine/unit.js');
+  unit = rd('src/analog/engine/unit.js') + '\n' + rd('src/analog/engine/cfb.js') /* Phase 11: the furnace model is its own file */;
 const io = new Set();
 {
   const w = {};

@@ -127,7 +127,6 @@ function anEngAPI() {
     aphIn: anAphIn,
     aphAir: anAphAir,
     aphOut: anAphOut,
-    bedSS: (U, fs, as) => anBedSS(U, fs, as),
     bedStep: (U, dt, rpm, pa, fa) => anBedStep(U, dt, rpm, pa, fa),
     swValve: (tag, pct) => anSwValve(tag, pct) || anDoValve(tag, pct),
     swValves: () => Object.assign({}, AN_SW_V0, AN_FV0, AN_DO.fv0, AN_LM.fv0, AN_SRC.valve || {}),
