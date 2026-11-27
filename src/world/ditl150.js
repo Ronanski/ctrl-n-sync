@@ -663,14 +663,16 @@
          through the main steam stop MOV MV-MS1391 (4.PNG) and the feedwater flows through the discharge MOVs of the pumps (03.png
          BFWP-A in service, BFWP-B standby in AUTO: its discharge open so that the auto start feeds at once); the warming bypass
          MV-MS1392, the filling bypasses MV-FW1391 / 1392 and the mass blowdown MV-BD1001 are shut; the continuous blowdown MV-BD1002
-         in service (the 15 T/H design of the CBD line to the flash tank, mass balance K1AU3-MB-019 item 22, plant.js integLoss) */
+         in service at the plant position 2.1 % (ZT-BD1002 STN101 AI0178 at 150 MW, docs/hmi/OPERATING_POINTS.md; KANA 2026-11-28: the 15 T/H
+         of MB-019 item 22 is the sizing flow of the CBD line, not the operating blowdown; the drum water is clean, 4.6 uS/cm, and HB case 1
+         has no make-up). Before 2026-11-28 it was 100 % open = 14.8 T/H at 150 MW */
       {
-        const OPEN = { 'MV-MS1391': 1, 'MV-FW1001': 1, 'MV-FW1002': 1, 'MV-BD1002': 1 };
+        const OPEN = { 'MV-MS1391': 100, 'MV-FW1001': 100, 'MV-FW1002': 100, 'MV-BD1002': 2.1 };
         for (const s of ALL()) {
           const lbl = s._inst && s._inst.lbl;
           if (!lbl || !s.nl || !(s.nl.mv || []).length) continue;
           const r = mvRT(s);
-          r[0].pos = OPEN[lbl] ? 100 : 0;
+          r[0].pos = OPEN[lbl] || 0;
           r[0].run = 0;
         }
         D.scan(3, 1);

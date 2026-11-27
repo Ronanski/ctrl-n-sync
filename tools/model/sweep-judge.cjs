@@ -17,7 +17,7 @@ for (const r of PT.rows) TOL[r.key] = { tol: r.tol, kind: r.kind };
 const MCR = 460; /* FHI P2S7 Tab 3: 460 T/H at 100 % MCR (the x basis of the FHI figures, not a model constant) */
 const HB = C.hb,
   hbPts = arr => HB.mw.map((mw, i) => [(mw / 150) * 100, arr[i]]),
-  hb3 = arr => [30, 60, 100].map((x, i) => [x, arr[i]]);
+  hb7 = k => hbPts(HB[k]); /* all 7 HB load cases (30 ~ 100 %), RIN 2026-11-28; was 3 cases with straight lines between 30 and 60 % */
 /* LOGGED DIFFERENCE (team decision 2026-11-27, Phase 11; the plant sheet wins, DCS limits are never changed to meet a design curve):
    the DCS keeps a minimum total air of 446 T/H (ABC-006 LN5 air demand floor, ABC-002 LN40 cross limit 446 -> 35 % fuel; OPERATOR_GUIDE
    5.4 and the limits table), which keeps the bed fluidized. Where FHI Fig 12 total air is below 446 T/H, total air is judged against that
@@ -26,6 +26,13 @@ const HB = C.hb,
    air actually given (s.O2bal, AOI's mole balance from FHI Tab 2, recorded by tools/accept/part1.cjs), not against FHI Fig 7. Above
    that point FHI Fig 12 / Fig 7 hold as printed. */
 const MINAIR = { total: 446 };
+/* LOGGED DIFFERENCE (phase thread 2026-11-28, same team rule): the bed DP set point of DPICFG108 (ABC-009A) has the DCS limits 1450 ~ 2100
+   mmH2O (AOI); FHI Fig 9 below about 45 % MCR (1380 at 40 %) is under the 1450 low limit, so there the furnace DP is judged against 1450 */
+const DPMIN = 1450;
+/* LOGGED DIFFERENCE (AOI 2026-11-28, same rule): the ABC-002 total air demand is the high select of S1-LN5 (boiler master) and S1-LN22
+   (total fuel -> air), trimmed by the O2 ratio LN16; at part load both logic curves give more air than FHI Fig 12 (60 %: Fig 12 371,
+   LN22 about 519 T/H at 57.8 T/H coal). Where the logic demand (FICFA1071 SV + FICFA1081 SV + the fluidizing air FIFA1055 = air - PA - SA, part of the ABC-006 total air and of its 446 floor) is above Fig 12, total air is judged against
+   it: the model must give the air the logic asks for; above it Fig 12 holds as printed */
 const minAir = s => {
   const y = at(C.fhi.fig12_air_TH.total, (s.MSF / MCR) * 100);
   return y != null && y < MINAIR.total;
@@ -36,9 +43,9 @@ const CURVES = [
   ['RH outlet temperature, C', 'RHT', C.fhi.fig6_sh_rh_temp_C.pts, 'mcr', 'FHI Fig 6'],
   ['O2, %', 'O2', C.fhi.fig7_o2_pct.pts, 'mcr', 'FHI Fig 7; below the DCS minimum air: the flue gas balance at the air given (s.O2bal)', (s, y) => (minAir(s) ? s.O2bal : y)],
   ['Furnace average temperature, C', 'Tu', C.fhi.fig8_furnace_avg_C.pts, 'mcr', 'FHI Fig 8'],
-  ['Furnace DP (bed inventory), mmH2O', 'dp', C.fhi.fig9_furnace_dp_mmH2O.pts, 'mcr', 'FHI Fig 9'],
+  ['Furnace DP (bed inventory), mmH2O', 'dp', C.fhi.fig9_furnace_dp_mmH2O.pts, 'mcr', 'FHI Fig 9; DPICFG108 SV low limit 1450 floor', (s, y) => Math.max(y, DPMIN)],
   ['SH spray, T/H', 'sp', C.fhi.fig10_sh_spray_pct_of_MSF.pts, 'mcr', 'FHI Fig 10 (% of MSF x MSF)', (s, y) => (y * s.MSF) / 100],
-  ['Total air, T/H', 'air', C.fhi.fig12_air_TH.total, 'mcr', 'FHI Fig 12; DCS minimum air 446 floor', (s, y) => Math.max(y, MINAIR.total)],
+  ['Total air, T/H', 'air', C.fhi.fig12_air_TH.total, 'mcr', 'FHI Fig 12; where the DCS air demand is higher, the demand (PA + SA SV + the FA blower flow FIFA1055, AOI)', (s, y) => Math.max(y, MINAIR.total, s.PAsv + s.SAsv + (s.air - s.PA - s.SA))],
   ['Primary air, T/H', 'PA', C.fhi.fig12_air_TH.pa, 'mcr', 'FHI Fig 12; at the DCS minimum air the logic PA demand (FICFA1071 SV)', (s, y) => (minAir(s) ? s.PAsv : y)],
   ['Secondary air, T/H', 'SA', C.fhi.fig12_air_TH.sa, 'mcr', 'FHI Fig 12; at the DCS minimum air the logic SA demand (FICFA1081 SV)', (s, y) => (minAir(s) ? s.SAsv : y)],
   ['Coal, T/H', 'coal', C.fhi.fig13_coal_TH.pts, 'mcr', 'FHI Fig 13'],
@@ -47,13 +54,13 @@ const CURVES = [
   ['Main steam temperature at the turbine, C', 'MSTt', hbPts(HB.mst_rht_C), 'load', 'HB PPE-14-0725'],
   ['Main steam pressure at the turbine, ata', 'Pms', HB.ms_press_ata.pts, 'load', 'HB PPE-14-0725'],
   ['Cold reheat pressure, ata', 'Pcr', hbPts(HB.crh_ata_x6), 'load', 'HB PPE-14-0725'],
-  ['Cold reheat flow, T/H', 'CRHf', hb3(HB.three_cases_only.crh_TH), 'load', 'HB PPE-14-0725'],
-  ['Cold reheat temperature, C', 'Tcr', hb3(HB.three_cases_only.crh_C), 'load', 'HB PPE-14-0725'],
-  ['Hot reheat flow, T/H', 'HRHf', hb3(HB.three_cases_only.hrh_TH), 'load', 'HB PPE-14-0725'],
-  ['Hot reheat pressure, ata', 'Prh', hb3(HB.three_cases_only.hrh_ata), 'load', 'HB PPE-14-0725'],
-  ['Final feedwater temperature, C', 'Tfw', hb3(HB.three_cases_only.fw_C), 'load', 'HB PPE-14-0725'],
-  ['Final feedwater flow, T/H', 'FWf', hb3(HB.three_cases_only.fw_TH), 'load', 'HB PPE-14-0725'],
-  ['Turbine heat rate, kcal/kWh', 'HR', hb3(HB.three_cases_only.heat_rate_kcal_kWh), 'load', 'HB PPE-14-0725']
+  ['Cold reheat flow, T/H', 'CRHf', hb7('crh_TH'), 'load', 'HB PPE-14-0725'],
+  ['Cold reheat temperature, C', 'Tcr', hb7('crh_C'), 'load', 'HB PPE-14-0725'],
+  ['Hot reheat flow, T/H', 'HRHf', hb7('hrh_TH'), 'load', 'HB PPE-14-0725'],
+  ['Hot reheat pressure, ata', 'Prh', hb7('hrh_ata'), 'load', 'HB PPE-14-0725'],
+  ['Final feedwater temperature, C', 'Tfw', hb7('fw_C'), 'load', 'HB PPE-14-0725'],
+  ['Final feedwater flow, T/H', 'FWf', hb7('fw_TH'), 'load', 'HB PPE-14-0725 + the drum water storage rate of the minute (s.dMdt)', (s, y) => y + (isFinite(s.dMdt) ? s.dMdt : 0)],
+  ['Turbine heat rate, kcal/kWh', 'HR', hb7('heat_rate_kcal_kWh'), 'load', 'HB PPE-14-0725']
 ];
 const at = (pts, x) => {
   if (!pts || !pts.length || x < pts[0][0] || x > pts[pts.length - 1][0]) return null;
@@ -66,6 +73,13 @@ const at = (pts, x) => {
   return pts[pts.length - 1][1];
 };
 function judge(S) {
+  /* the drum water storage rate, T/H, of each sample from the minute before (KANA 2026-11-28: q.y is the boiler water mass integrator as
+     drum level, mm; x kg per mm AN_CYC.kgmm.dr): the feedwater above the steam on a ramp is the water the drum stores. At a hold it is 0,
+     so the row is the HB value as printed (team decision 2026-11-28, the gate stays continuous) */
+  for (let i = 1; i < S.length; i++) {
+    const a = S[i - 1].drum, b = S[i].drum;
+    if (a && b && isFinite(a.y) && isFinite(b.y)) S[i].dMdt = (((b.y - a.y) * (a.kgmm + b.kgmm)) / 2 / 1000) * 60;
+  }
   const rows = [];
   let pass = 0,
     fail = 0;
