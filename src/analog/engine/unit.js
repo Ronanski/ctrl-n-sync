@@ -548,8 +548,8 @@ function anUnitStart() {
   U.bedDp = [
     /* Phase 11 (AOI): both transmitters read the one overall DP, the design 1630 mmH2O at the design inventory (cfb.js AN_BI t0,
        DESIGN-SRC: FHI P2S7 Fig 9); the 6 mmH2O split was a snapshot reading */
-    [ais('ABC-006', 'AI0134'), 1630],
-    [ais('ABC-006', 'AI0262'), 1630]
+    [ais('ABC-006', 'AI0134'), AN_BI.dp0],
+    [ais('ABC-006', 'AI0262'), AN_BI.dp0]
   ];
   U.soxAI = anUnitAIs('1|AI0466'); /* stack SOx, boiler.js anSoxStep */
   U.bedSc = [
@@ -5509,7 +5509,10 @@ function anUnitStep0(dt) {
         Math.max(0, +U.tafS.rt.v[U.paNet]),
         U.taf && U.taf.length === 3 ? Math.max(0, +U.tafS.rt.v[U.taf[2]]) : null
       );
-    for (const [L, a] of U.bedDp || []) if (L.length) anUnitWrite(L, a * k);
+    /* Phase 11 (AOI): the DP comes from the engine constant AN_BI.dp0, not from the anchor kept in U.bedDp: a save point (st150 and the
+       user saves) keeps U.bedDp as it was when it was made, so the old snapshot anchors 1426 / 1432 came back with every start at
+       150 MW and the step 2 design value never reached the transmitters */
+    for (const [L] of U.bedDp || []) if (L.length) anUnitWrite(L, AN_BI.dp0 * k);
     /* 3.2.4-beta.16 (user "Physics nga"): the split of the bed DP. Plenum / upper (DPT-FG1081 / 1082, above) = the weight of all the
        solids in the furnace. Of them, the upper furnace holds the solids the gas lifts: its density is the share phi of the bed balance
        (the same suspension that carries the heat to the walls, AN_BB.nU), so lower / upper (DPT-FG1083 / 1183) = its anchor x phi, and

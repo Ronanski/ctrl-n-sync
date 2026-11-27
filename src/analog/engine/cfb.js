@@ -302,7 +302,7 @@ function anBedMigrate(U) {
 /* The loop: the cyclones catch the solids and the seal pots give them back while the fluidizing air blows. Below the FA blower flow low low of ABC-006
    (20 T/H) the seal pots stop passing: the solids stay in the cyclone legs and the bed empties, and they come back with the air. The rate is
    NO-SOURCE: the circulation rate is not in the documents. */
-const AN_BI = { t0: (1630 * 15.507 * 7.684) / 1000 /* t, FHI P2S7 Fig 9 x grate (T2), see above */, tCold: 100, kA: 0.0682, kL: 0.59, kB: 0.2, q: 0.8, faLL: 20, loop: 60 };
+const AN_BI = { dp0: 1630 /* mmH2O, FHI P2S7 Fig 9, the overall furnace DP at t0 */, t0: (1630 * 15.507 * 7.684) / 1000 /* t, FHI P2S7 Fig 9 x grate (T2), see above */, tCold: 100, kA: 0.0682, kL: 0.59, kB: 0.2, q: 0.8, faLL: 20, loop: 60 };
 function anBedStep(U, dt, rpm, pa, fa) {
   const K = AN_BI;
   if (!isFinite(U.bedI)) U.bedI = U.cold ? K.tCold : K.t0;
