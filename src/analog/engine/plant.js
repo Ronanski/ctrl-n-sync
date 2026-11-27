@@ -473,7 +473,18 @@ AN_CYC.kgmm = {
      (plant-study 12-assumptions; the outline 12.32 x 7.3 m = 90 m2 is the upper bound) */
   hw: () => 61.9 / 0.9,
   da: () => 3.3 * 13.14 * 0.909,
-  dr: () => 2 * 0.8242 * 12.481 * (anWaterRho(typeof AN_UNIT !== 'undefined' && isFinite(AN_UNIT.Tw) ? AN_UNIT.Tw : 30) / 1000)
+  /* Phase 11 (KANA, 2026-11-27): the drum water surface at the level L (mm from NWL), from the as-built drum K1AU3-B-0-004:
+     K1AU3D-101 inside R 824.2 mm, shell (tangent) 12,481 mm, hemispherical heads; K1AU3D-109 section A-A: N.W.L. 254 mm below the
+     drum centreline (level 0 of LT-BR1001 = NWL). At the height y from the centreline the shell gives 2 r x 12.481 m and the two
+     heads a half disc each (pi r^2 / 2), r = sqrt(R^2 - y^2): 21.50 m2 at NWL. Before: the full diameter 1.648 m x the shell
+     (20.57 m2 at every level, no heads) */
+  dr: L => {
+    const R = 0.8242,
+      y = Math.max(-R, Math.min(R, -0.254 + (isFinite(L) ? L : 0) / 1000)),
+      r = Math.sqrt(Math.max(0, R * R - y * y)),
+      A = Math.max(0.05, 2 * r * 12.481 + Math.PI * r * r);
+    return A * (anWaterRho(typeof AN_UNIT !== 'undefined' && isFinite(AN_UNIT.Tw) ? AN_UNIT.Tw : 30) / 1000);
+  }
 };
 /* 3.2.3: the water volume outside the drum that heats with it (thermal expansion above): Boiler Hydrostatic Test Procedure K1AU3-R3-0-101
    R0 p.6: boiler without the reheater (economizer, drum, waterwall, superheater to the hydro boundary) about 252 m3 (290 m3 with a
@@ -545,7 +556,7 @@ function anFlashG(Pd, Tw, col) {
 const AN_THERM = { vEvap: 147, on: true }; /* not in AN_CYC: a loaded state replaces AN_CYC's fields */
 AN_CYC.y = {};
 AN_CYC.levels = () => ({ ...AN_CYC.y });
-AN_CYC.rate = x => 1000 / 3600 / AN_CYC.kgmm[x]();
+AN_CYC.rate = (x, L) => 1000 / 3600 / AN_CYC.kgmm[x](L);
 AN_CYC.net = () => {
   const f = anCycFlows('net');
   return f.mu + f.hwIn + f.daIn - (AN_CYC.dl || 0);
@@ -1053,7 +1064,7 @@ function anProcStep(S, dt) {
       if (typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.fwPath)) ffw *= AN_UNIT.fwPath;
       /* 3.2.4-beta.7: a tube leak (unit.js anTubeLeak): the water wall leak leaves the drum water, the economizer leak never reaches it */
       const tlQ = typeof AN_UNIT !== 'undefined' && AN_UNIT.on ? (AN_UNIT.tlW || 0) + (AN_UNIT.tlE || 0) : 0;
-      q.y = Math.max(lo, Math.min(lo + span, q.y + dt * AN_CYC.rate('dr') * (ffw - fst - loss - lhdQ - tlQ)));
+      q.y = Math.max(lo, Math.min(lo + span, q.y + dt * AN_CYC.rate('dr', q.y) * (ffw - fst - loss - lhdQ - tlQ)));
       /* 3.2.3 THERMAL EXPANSION of the boiler water (PR-OPE-5002 5697: "Observe steam drum level: swelling approximately > 100 C; use
          lowering header drain ... above 10 kg/cm2 the MBD and CBD"). The economizer, waterwall and downcomers stay full of water: when it
          heats its density falls (anWaterRho, steam table) and the water it no longer holds goes into the drum, kg = AN_THERM.vEvap x the
@@ -1063,7 +1074,7 @@ function anProcStep(S, dt) {
         const r = anWaterRho(AN_UNIT.Tw);
         if (!AN.therm) AN.therm = AN_THERM;
         if (AN_THERM.on && isFinite(q.rhoE) && !AN.steady)
-          q.y = Math.max(lo, Math.min(lo + span, q.y + (AN_THERM.vEvap * (q.rhoE - r)) / AN_CYC.kgmm.dr()));
+          q.y = Math.max(lo, Math.min(lo + span, q.y + (AN_THERM.vEvap * (q.rhoE - r)) / AN_CYC.kgmm.dr(q.y)));
         q.rhoE = r;
       }
       AN_CYC.y.dr = q.y;

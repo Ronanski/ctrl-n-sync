@@ -49,6 +49,20 @@ async function chunk(sv, min, log) {
          FHI SU:10198 hold 850 - 870 C), not at the bed of the start state made by an older model: a 60 - 80 C step of the bed swings the
          boiler master to the feeder limit and the drum level out (a start transient, not the plant at 150 MW) */
       if (!sv && isFinite(TBA)) AN.unit.Tb = TBA;
+      /* Phase 11 (KANA, 2026-11-27): the same for the drum. The SH pressure drop is now the design law (unit.js anShKdp, FHI Tab 3
+         16 kg/cm2 at 460 T/H) instead of the 11.6 of the old start state: the first chunk keeps the main steam pressure of the start
+         state and puts the drum at it plus the SH drop of the law (water at saturation), so the start is not a 5 kg/cm2 step that sends
+         the boiler master to the feeder limit and the drum level out */
+      if (!sv) {
+        const U = AN.unit;
+        /* no scan here: one scan with the old drum and the new law reads a 7 kg/cm2 pressure dip, which forces the boiler and turbine
+           masters to MANUAL (BU-CMD, held). The design k of the law (density at MCR) is close enough: the run settles the rest */
+        if (isFinite(U.Pms) && isFinite(U.ms)) {
+          U.kdp = 16 / (460 * 460);
+          U.Pd = U.Pms + U.kdp * U.ms * U.ms;
+          U.Tw = AN.tsat(U.Pd);
+        }
+      }
       window.__h = { C: AN.sheets.find(s => s.name === 'ABC-001C') };
     }, [sv, AUTO, TBA]);
     for (let m = 0; m < min; m++) {
