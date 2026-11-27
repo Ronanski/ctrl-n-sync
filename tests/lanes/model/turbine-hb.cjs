@@ -23,13 +23,17 @@ const HB = {
   7: [149954, 98.9, 505, 134834, 11.51, 505, 12.79, 328.8, [10176, 6177, 5793, 4251, 3426, 2243], [5.0, 2.173, 0.658, 0.286, 0.133], 0.053, 589.1, 45000],
   VWO: [472460, 126, 538, 412809, 35.8, 538, 39.78, 371.2, [47091, 25088, 23092, 15768, 12691, 17527], [15.3, 6.55, 1.968, 0.849, 0.383], 0.071, 569.7, 154500]
 };
+/* the HB generator kW from the shaft work: the lumped mechanical + generator loss of the 8 HB cases (shaft = sum of m dh from the HB
+   enthalpies less the printed kW: 3.37 MW at 100 % to 2.65 MW at 30 %, lo + kq shaft^2 within 0.03 MW). Test side only: the model
+   splits it into the turbine mechanical loss (turbine.js AN_TB.mech) and the generator losses of the machine data (YUI anGenW) */
+vm.runInContext('var HBGEN = sh => sh - 2.565 - 3.295e-5 * sh * sh;', ctx);
 let bad = 0;
 const lim = { 6: [2, 2, 2, 4, 4], 7: [2, 2, 2, 4, 8] };
 for (const k of Object.keys(HB)) {
   const [ms, Pms, Tms, hrh, Phr, Thr, Pcr, Tcr, x, Ps, Pc, Hx, kW] = HB[k];
   const I = { ms: ms / 1000, Pin: Pms, Tms, qip: hrh / 1000, Thr, Pc, w: { hp6: x[0] / 1000, hp5: x[1] / 1000, da: x[2] / 1000, lp3: x[3] / 1000, lp2: x[4] / 1000, lp1: x[5] / 1000 } };
   ctx.I = I;
-  const r = vm.runInContext('(()=>{let o=null;for(let i=0;i<12;i++)o=tbPath(I,o);o.Tcr=steamPhM(o.P.crh*TB_A,o.H.crh).T-273.15;o.MW=anTbGen(o.Whp+o.Wip);return o})()', ctx);
+  const r = vm.runInContext('(()=>{let o=null;for(let i=0;i<12;i++)o=tbPath(I,o);o.Tcr=steamPhM(o.P.crh*TB_A,o.H.crh).T-273.15;o.MW=HBGEN(o.Whp+o.Wip);return o})()', ctx);
   const row = [],
     ck = (n, v, t, tol, pct) => {
       const e = pct ? (v / t - 1) * 100 : v - t,

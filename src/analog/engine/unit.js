@@ -110,7 +110,7 @@ const AN_UNIT = {
      -> 'sync' (3600 rpm, the TCS closes the GCB: I.0931 = 1 / I.0932 = 0, INITIAL LOAD 4.5 MW on the ICV) -> 'load' (LOAD UP
      at rate MW/min = 5 % of 150 MW per minute; the HP control valves open as the flow demand passes the CV opening bias (anTbFlow), ICV -> CV
      TRANSFER COMPLETE I.0418 = 1, "transfer at 20 MW or HP bypass closed"). While the generator is on the grid the MW is the HP
-     steam and the IP / LP steam, each x its enthalpy drop (turbine.js tbPath, Stodola + IF97, Phase 11), less the losses (anTbGen). Before the transfer the IP / LP steam comes from the HP bypass through the
+     steam and the IP / LP steam, each x its enthalpy drop (turbine.js tbPath, Stodola + IF97, Phase 11), less the mechanical loss (AN_TB.mech) and the generator losses (anGenW, YUI). Before the transfer the IP / LP steam comes from the HP bypass through the
      reheater (U.rr integrator of beta.16, with the ICV flow out). DCS CONTROL MODE PERMISSIVE I.0081 (3.2.3-beta.135, TCS soft logic
      TCE 331DM09784 p.127 TCE180, read 2026-11-12 on the PC): the NOT of the reset group of DCS CONTROL MODE = 52G closed, no TURBINE
      TRIP, no FORCED CLOSE (HOUSE LOAD OPERATION), and in IP START the TRANSFER REGION COMPLETE(IP); was MWperm 45 MW (the NORMAL
@@ -4093,10 +4093,10 @@ function anUnitStep0(dt) {
   }
   const Pms = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
   U.Pms = Pms; /* 3.2.0-beta.14: source of the reducing stations (source.js) */
-  /* generator: the shaft work of the steam path less the mechanical and generator losses (anTbGen, turbine.js); qip = the reheat
+  /* generator: the shaft work of the steam path less the mechanical and generator losses (AN_TB.mech, turbine.js; generator losses anGenW, YUI); qip = the reheat
      pressure x the ICV opening, = the HP steam when the bypass is shut and the ICV full open; 0 off the grid */
   /* 3.2.3-beta.240 (user 2026-11-14, reverse power): on the grid the MW is not held at 0 or above. With too little steam the generator
-     takes power from the grid to keep the shaft at 3600 rpm (motoring): the losses of anTbGen stay when the steam is gone. The 32 relay
+     takes power from the grid to keep the shaft at 3600 rpm (motoring): the mechanical and generator losses stay when the steam is gone. The 32 relay
      (anRp32) sees the negative power */
   /* Phase 11 C (RIN): the steam the IP turbine takes from the reheater (T/H) = its Stodola swallowing capacity at the reheater pressure
      (the IP / LP blading of turbine.js from the condenser up: m = Kip sqrt(Prh^2 - Pc^2), Kip read off the last pass of the steam path,
