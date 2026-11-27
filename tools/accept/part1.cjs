@@ -245,8 +245,16 @@ const judge = (v, tg, tol, kind) => {
     fs.writeFileSync(process.env.OUT || 'part1.json', JSON.stringify(R));
     if (SWEEP) {
       const SJ = require(path.join(root, 'tools/model/sweep-judge.cjs')), J = SJ.judge(SW);
+      /* the ports of src/analog/engine/ports.js that no part writes yet, and the whole-plant water / steam balance (Phase 11 gate) */
+      const PB = await page.evaluate(() => {
+        const P = window.LS_PORTS, U = AN.unit;
+        if (!P) return { missingPorts: null, balance: null };
+        const ids = Object.keys(P.AN_PORTS.list).concat(P.AN_PORTS.stores);
+        return { missingPorts: ids.filter(id => !P.anPortGet(U, id)), balance: P.anPortBalance(U) };
+      });
       console.log('\nSWEEP (every plant minute, 150 -> 45 MW, design curves):\n' + SJ.md(J));
-      fs.writeFileSync(process.env.OUT_SWEEP || 'sweep.json', JSON.stringify({ SW, J }));
+      console.log('ports not written: ' + (PB.missingPorts ? PB.missingPorts.length : 'n/a') + '; balance ' + JSON.stringify(PB.balance));
+      fs.writeFileSync(process.env.OUT_SWEEP || 'sweep.json', JSON.stringify({ SW, J, missingPorts: PB.missingPorts, balance: PB.balance }));
     }
   } finally {
     await browser.close();
