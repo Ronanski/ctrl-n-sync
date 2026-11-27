@@ -32,7 +32,7 @@ const PAGES = [
 ];
 const abc = unz('src/data/apre.txt'),
   ditl = unz('src/data/pre.txt'),
-  unit = rd('src/analog/engine/unit.js') + '\n' + rd('src/analog/engine/cfb.js') + '\n' + rd('src/analog/engine/turbine.js'); /* Phase 11: the furnace (cfb.js) and the turbine (turbine.js) are their own files */
+  unit = rd('src/analog/engine/unit.js') + '\n' + rd('src/analog/engine/cfb.js') + '\n' + rd('src/analog/engine/turbine.js') + '\n' + rd('src/analog/engine/fw.js'); /* Phase 11: the furnace (cfb.js), the turbine (turbine.js) and the feedwater (fw.js) are their own files */
 const io = new Set();
 {
   const w = {};

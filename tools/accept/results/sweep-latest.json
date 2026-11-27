@@ -1,0 +1,365 @@
+{
+ "date": "2026-11-27",
+ "app": "main db27e39 build (PR 661 branch), 3.2.5-beta.10",
+ "how": "tools/accept/part1.cjs SWEEP=1 settle 20 win 10",
+ "samples": 157,
+ "J": {
+  "rows": [
+   {
+    "label": "SH outlet temperature, C",
+    "key": "MST",
+    "doc": "FHI Fig 6",
+    "basis": "% MCR",
+    "tol": "5",
+    "n": 52,
+    "ok": 8,
+    "res": "FAIL",
+    "worst": {
+     "d": 13.049163780122853,
+     "x": 49.20607229655448,
+     "v": 546.2552360766773,
+     "y": 533.2060722965545
+    }
+   },
+   {
+    "label": "RH outlet temperature, C",
+    "key": "RHT",
+    "doc": "FHI Fig 6",
+    "basis": "% MCR",
+    "tol": "5",
+    "n": 52,
+    "ok": 29,
+    "res": "FAIL",
+    "worst": {
+     "d": 26.70061163230605,
+     "x": 40.20629425960161,
+     "v": 497.5056826272955,
+     "y": 524.2062942596016
+    }
+   },
+   {
+    "label": "O2, %",
+    "key": "O2",
+    "doc": "FHI Fig 7",
+    "basis": "% MCR",
+    "tol": "0.5",
+    "n": 52,
+    "ok": 3,
+    "res": "FAIL",
+    "worst": {
+     "d": 7.014746764018673,
+     "x": 50.20452030784016,
+     "v": 11.594294733234657,
+     "y": 4.579547969215984
+    }
+   },
+   {
+    "label": "Furnace average temperature, C",
+    "key": "Tu",
+    "doc": "FHI Fig 8",
+    "basis": "% MCR",
+    "tol": "15",
+    "n": 52,
+    "ok": 0,
+    "res": "FAIL",
+    "worst": {
+     "d": 70.57795724307562,
+     "x": 49.65319693180429,
+     "v": 776.430642669146,
+     "y": 705.8526854260704
+    }
+   },
+   {
+    "label": "Furnace DP (bed inventory), mmH2O",
+    "key": "dp",
+    "doc": "FHI Fig 9",
+    "basis": "% MCR",
+    "tol": "20",
+    "n": 52,
+    "ok": 0,
+    "res": "FAIL",
+    "worst": {
+     "d": 229.29262919244684,
+     "x": 40.20629425960161,
+     "v": 1609.2926291924468,
+     "y": 1380
+    }
+   },
+   {
+    "label": "SH spray, T/H",
+    "key": "sp",
+    "doc": "FHI Fig 10 (% of MSF x MSF)",
+    "basis": "% MCR",
+    "tol": "3",
+    "n": 5,
+    "ok": 2,
+    "res": "FAIL",
+    "worst": {
+     "d": 6.067513877646773,
+     "x": 99.97271140645368,
+     "v": 18.477849970547545,
+     "y": 12.410336092900772
+    }
+   },
+   {
+    "label": "Total air, T/H",
+    "key": "air",
+    "doc": "FHI Fig 12",
+    "basis": "% MCR",
+    "tol": "3 %",
+    "n": 52,
+    "ok": 3,
+    "res": "FAIL",
+    "worst": {
+     "d": 41.82031327145879,
+     "x": 49.20607229655448,
+     "v": 474.55907755662173,
+     "y": 334.6199614213702
+    }
+   },
+   {
+    "label": "Primary air, T/H",
+    "key": "PA",
+    "doc": "FHI Fig 12",
+    "basis": "% MCR",
+    "tol": "3 %",
+    "n": 52,
+    "ok": 3,
+    "res": "FAIL",
+    "worst": {
+     "d": 32.022525907401715,
+     "x": 59.67595565896083,
+     "v": 311.765676327313,
+     "y": 236.14581995346762
+    }
+   },
+   {
+    "label": "Secondary air, T/H",
+    "key": "SA",
+    "doc": "FHI Fig 12",
+    "basis": "% MCR",
+    "tol": "3 %",
+    "n": 52,
+    "ok": 0,
+    "res": "FAIL",
+    "worst": {
+     "d": 44.53071409829925,
+     "x": 43.872815824838725,
+     "v": 142.9475418098808,
+     "y": 98.90461186862905
+    }
+   },
+   {
+    "label": "Coal, T/H",
+    "key": "coal",
+    "doc": "FHI Fig 13",
+    "basis": "% MCR",
+    "tol": "3 %",
+    "n": 52,
+    "ok": 31,
+    "res": "FAIL",
+    "worst": {
+     "d": 25.421540105117646,
+     "x": 50.20452030784016,
+     "v": 35.189151436778225,
+     "y": 47.18406827705615
+    }
+   },
+   {
+    "label": "Air heater gas in, C",
+    "key": "ahGi",
+    "doc": "L20 Howden APH",
+    "basis": "% MCR",
+    "tol": "10",
+    "n": 52,
+    "ok": 49,
+    "res": "FAIL",
+    "worst": {
+     "d": 13.732307652344446,
+     "x": 99.58359299795787,
+     "v": 307.88251587076655,
+     "y": 321.614823523111
+    }
+   },
+   {
+    "label": "Main steam flow, T/H",
+    "key": "MSF",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "3 %",
+    "n": 85,
+    "ok": 85,
+    "res": "PASS",
+    "worst": {
+     "d": 2.0975224435312745,
+     "x": 50.95330998346984,
+     "v": 230.94079341606476,
+     "y": 235.8886099515321
+    }
+   },
+   {
+    "label": "Main steam temperature at the turbine, C",
+    "key": "MSTt",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "5",
+    "n": 85,
+    "ok": 6,
+    "res": "FAIL",
+    "worst": {
+     "d": 19.28502518525619,
+     "x": 32.31037978974301,
+     "v": 527.7505948698707,
+     "y": 508.46556968461454
+    }
+   },
+   {
+    "label": "Main steam pressure at the turbine, ata",
+    "key": "Pms",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "1.5",
+    "n": 85,
+    "ok": 2,
+    "res": "FAIL",
+    "worst": {
+     "d": 29.761831129105815,
+     "x": 30.14825295029856,
+     "v": 128.79575296087552,
+     "y": 99.0339218317697
+    }
+   },
+   {
+    "label": "Cold reheat pressure, ata",
+    "key": "Pcr",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "1",
+    "n": 85,
+    "ok": 44,
+    "res": "FAIL",
+    "worst": {
+     "d": 2.4461947245208435,
+     "x": 62.72951270469377,
+     "v": 22.062831565148706,
+     "y": 24.50902628966955
+    }
+   },
+   {
+    "label": "Cold reheat flow, T/H",
+    "key": "CRHf",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "3 %",
+    "n": 85,
+    "ok": 85,
+    "res": "PASS",
+    "worst": {
+     "d": 2.6864815159411304,
+     "x": 30.000527696246078,
+     "v": 148.89757291391683,
+     "y": 145.00211782093425
+    }
+   },
+   {
+    "label": "Cold reheat temperature, C",
+    "key": "Tcr",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "5",
+    "n": 85,
+    "ok": 5,
+    "res": "FAIL",
+    "worst": {
+     "d": 28.788277176186796,
+     "x": 39.829446878130994,
+     "v": 367.1883702938281,
+     "y": 338.4000931176413
+    }
+   },
+   {
+    "label": "Hot reheat flow, T/H",
+    "key": "HRHf",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "3 %",
+    "n": 85,
+    "ok": 83,
+    "res": "FAIL",
+    "worst": {
+     "d": 3.981623739214646,
+     "x": 30.14825295029856,
+     "v": 129.94665497258242,
+     "y": 135.33519315057782
+    }
+   },
+   {
+    "label": "Hot reheat pressure, ata",
+    "key": "Prh",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "1",
+    "n": 85,
+    "ok": 50,
+    "res": "FAIL",
+    "worst": {
+     "d": 1.5351118675864832,
+     "x": 59.803160637111674,
+     "v": 19.531768310047326,
+     "y": 21.06688017763381
+    }
+   },
+   {
+    "label": "Final feedwater temperature, C",
+    "key": "Tfw",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "3",
+    "n": 85,
+    "ok": 84,
+    "res": "FAIL",
+    "worst": {
+     "d": 3.2657562161995486,
+     "x": 50.95330998346984,
+     "v": 212.4,
+     "y": 209.13424378380046
+    }
+   },
+   {
+    "label": "Final feedwater flow, T/H",
+    "key": "FWf",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "3 %",
+    "n": 85,
+    "ok": 52,
+    "res": "FAIL",
+    "worst": {
+     "d": 14.043987585208173,
+     "x": 30.14825295029856,
+     "v": 172.10356931747376,
+     "y": 150.9098138022281
+    }
+   },
+   {
+    "label": "Turbine heat rate, kcal/kWh",
+    "key": "HR",
+    "doc": "HB PPE-14-0725",
+    "basis": "% load",
+    "tol": "1 %",
+    "n": 85,
+    "ok": 16,
+    "res": "FAIL",
+    "worst": {
+     "d": 4.167555571306614,
+     "x": 50.95330998346984,
+     "v": 2065.1816988074456,
+     "y": 2154.992196138853
+    }
+   }
+  ],
+  "pass": 2,
+  "fail": 20,
+  "samples": 157
+ }
+}
