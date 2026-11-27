@@ -56,7 +56,7 @@ const TCS_MST_ANN = [
 const tcsFst = U => (U.pist && U.pist.length ? anUnitVal(U.pist[0]) : NaN); /* PT-ST1001 */
 const tcsCrp = U => (U.rhp && U.rhp.length > 2 ? anUnitVal(U.rhp[2]) : NaN); /* PT-CR1006 */
 /* the value of a field signal by its tag on the sheet; NaN = no value in the model */
-/* stop valve position 1 open, 0 full close: the master trip of TA-1 dumps the trip oil and the valves close (U.tauTrip); reset opens them */
+/* stop valve position 1 open, 0 full close: the master trip of TA-1 dumps the trip oil and the valves close (AN_TBV.rsv, the slower stop valve, turbine.js); reset opens them */
 const tcsVp = (U, c) => (c.vp == null ? (c.vp = U.tb && U.tb.st !== 'off' ? 1 : 0) : c.vp);
 /* the lift of a stop valve (MSV, RSV) of side s, 0 ~ 1: what its LVDT reads = the trip oil position x the position the valve test leaves */
 function tcsStop(U, f, s) {
@@ -66,7 +66,7 @@ function tcsStop(U, f, s) {
 function tcsValves(U, c, ib, dt) {
   tcsVp(U, c);
   if (!ib.r1) return;
-  c.vp = ib.v['TA-1'] && ib.v['TA-1'][TA1_RESET] > 0.5 ? Math.min(1, c.vp + dt / 10) : Math.max(0, c.vp - dt / U.tauTrip);
+  c.vp = ib.v['TA-1'] && ib.v['TA-1'][TA1_RESET] > 0.5 ? Math.min(1, c.vp + dt / 10) : Math.max(0, c.vp - dt / AN_TBV.rsv);
 }
 /* I.0400 TURBINE TRIP to the DCS is TA-6 out 16 (valve position, or TCS MAJOR TROUBLE); before the first reset of a cold plant it stays 0 so the ATS can start */
 function tcsI0400(U, ib) {

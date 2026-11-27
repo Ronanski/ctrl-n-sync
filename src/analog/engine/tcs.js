@@ -1434,7 +1434,7 @@ const TCS_VT_ON = { msvA: 'MSV(A)', msvB: 'MSV(B)', cvA: 'CV(A)', cvB: 'CV(B)', 
    - PERM: CRV(A) FULL CLOSE TEST PERMISSIVE (TCE224, one test at a time), TRANSFER REGION COMPLETE(IP), RSV(B) POSITION >= 98 % (CMP 97 / 98 %).
      No load limit on the sheets (the other side passes the IP steam, below).
    - CRV(A) TEST PB ON -> ICV(A) TEST SIGNAL (TCE227 OR002) -> the ICV closes at the valve test speed 10 %/s (TCE214 SG 016 / 018) to the
-     ICV TEST POSITION (CPL 10 / 11 %); then, after TD A019 1.0 s, ICV(A) FAST ACTING (TEST) dumps it shut (the trip oil speed U.tauTrip);
+     ICV TEST POSITION (CPL 10 / 11 %); then, after TD A019 1.0 s, ICV(A) FAST ACTING (TEST) dumps it shut (the fast-acting speed AN_TBV.icvOpc, turbine.js);
      then the CRV(A) TEST COMMAND closes RSV(A) the same way (LME250 TP 5 s: the RSV must move at once); at RSV(A) FULL CLOSE (CPL 2 / 3 %)
      the test is complete (COMP), the RSV reopens (the reset opening speed of the stop valves of tcs-trip.js tcsValves, 10 s full stroke,
      inside the 10 ~ 40 s of the vendor) and, once RSV(A) is FULL OPEN, the ICV test signal goes off and the ICV reopens at 10 %/s.
@@ -1620,7 +1620,7 @@ function tcsVtCrv(U, vt, dt) {
     s = v.slice(-1),
     i = 'i' + s,
     r = 'r' + s,
-    fast = dt / (U.tauTrip || 1);
+    fast = dt / AN_TBV.icvOpc;
   vt.t += dt;
   if ((vt.ph === 'icv' || vt.ph === 'icvw' || vt.ph === 'rsv') && vt.t > 60) {
     Object.assign(vt, { ph: 'rsvo', t: 0 });

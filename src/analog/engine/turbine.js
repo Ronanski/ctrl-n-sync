@@ -369,6 +369,26 @@ function anTbPx(k) {
    1.794 MW, unit.js anGenTemp U.genT.L from the generator type test LM-GEE-2014-0822 R0 p31, 2,032 kW at the rating) = 1.55 MW, constant with load (bearing
    friction goes with the speed, not the load). NO-SOURCE: the MHPS turbine bearing loss itself (not in the TG manuals, YUA) */
 AN_TB.mech = 1.55;
+/* Phase 11 RIN 2026-11-28: CLOSING TIMES OF THE TURBINE VALVES, seconds for a full stroke (the model moves the lift linearly:
+   lift -= dt / t). DERIVED by physics from the actuator and trip oil data (YUA PC reads /mnt/project-files/rin-actuators-2026-11-28*.md,
+   rin-ets-2026-11-28.md; derivation /mnt/project-files/phase11/rin-valve-close-derivation-2026-11-28.md):
+   TRIP (ETS lost): t = MTSV + ETS + dump.
+     MTSV: the master trip solenoid valves, Tokyo Keiki DG5S4 "response within 0.25 s" (TEQ-17-241 p864, p870): 0.25 s.
+     ETS: after the spool shifts, the ETS header gives up the 8 cartridge control chambers (8 x A3 10.18 cm2 x 1.4 cm = 0.11 L,
+       TEQ p639) plus the oil compression of the 1" line, against the Ø5.0 feed orifice (~160 L/min, TEQ p79 / p81); the
+       accumulator sits behind a Ø1.6 orifice (TEQ p861, about 10 L/min) and cannot hold the header: about 0.05 s.
+     dump: the cartridge LC32 A40E7X empties the cylinder, Q = 385 sqrt(dp) L/min (the vendor curve TEQ p640, mean of the 2 / 4 /
+       6 / 8.6 bar points). dp = spring force / piston area: the spring is not printed, so its LOWEST physical value, the 4 bar
+       cracking of the cartridge, is taken (the slowest closing: the conservative side for overspeed; the fastest, at the 112 kg/cm2
+       low-oil-trip bound, is 5 x quicker). Oil volume = piston area x valve stroke (TEQ p511-518): MSV 94.4 cm2 x 112 mm = 1.06 L
+       -> 0.082 s; CV B 316.5 x 43 = 1.36 L -> 0.106 s (CV A 0.042 s; the model has one CV lift, the slower B is taken); RSV
+       125.7 x 140 = 1.76 L -> 0.137 s; ICV 172.8 x 127 = 2.19 L -> 0.171 s.
+     The end cushion (VD orifice, MSV 18 / CV 12 / CV B 6 mm) slows the last mm; its orifice size is not printed, so it is not added.
+   FAST ACTING (OPC on PLU / the valve test): the actuator NG6 4WE6D (110 V AC, switching 15 ~ 40 ms ISO 6403, TEQ p723) vents the
+     control chamber straight to tank (Y port, no orifice, TEQ p511): t = 0.04 + dump: CV 0.15 s, ICV 0.21 s.
+   SERVO (house-load governing): the servo valve 4WS2EM10-5X/60 (60 L/min at 70 bar valve drop, TEQ p511) at the 160 bar supply:
+     60 sqrt(160 / 70) = 91 L/min; CV B 1.36 L -> 0.90 s for a full stroke. */
+const AN_TBV = { msv: 0.38, rsv: 0.44, cv: 0.41, icv: 0.47, cvOpc: 0.15, icvOpc: 0.21, cvServo: 0.9 };
 /* Phase 11 rank 9 (RIN, 2026-11-27): THE BYPASS AND BLOW-OFF VALVES BY THE CONTROL VALVE FLOW LAW of IEC 60534-2-1 (compressible fluid),
    in place of "share x anchor flow x opening x pressure / anchor pressure" (U.hpb / U.blo / U.lpb, scaled on the 150 MW start).
      W = N6 Fp Cv(lift) Y sqrt(x p1 rho1)   kg/h, N6 = 27.3 (p bar, rho kg/m3), x = (p1 - p2) / p1 held at the choked limit Fg xT,

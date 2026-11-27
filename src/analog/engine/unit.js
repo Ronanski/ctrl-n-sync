@@ -134,7 +134,7 @@ const AN_UNIT = {
   /* 2.2.0-beta.12 (M3, trips). The DCS drawings give the LOGIC of a trip (force manual, BU-CMD, interlock); the plant answers:
      - TURBINE TRIP (STN102 I.0400 TCS-DI1003 "#1 Turbine trip", FROM ARP; memory list STN101 M.3200 "T/B TRIP (BC FROM S2)" and
        M.3220 "52G1 OPENED (BC FROM S2)" <- I.0932 "GCB 52G1 off"): the station wiring broadcasts the S2 inputs to S1 (bcast below,
-       so one input of the operator trips the whole DCS). The TCS closes the turbine valves (tauTrip 1 s, NO-SOURCE: the valve closing time is in the PC-only TG valve scans, asked of Jennie): no steam to the
+       so one input of the operator trips the whole DCS). The TCS closes the turbine valves (closing times AN_TBV, turbine.js, derived from the actuator and trip oil data): no steam to the
        turbine, MW 0; the HP bypass (ABC-050) and the blow-off (ABC-013) take the steam. TURBINE TRIP is an MFT first out of the
        DITL (STN104 memory list M.053F / B.125F "TURBINE TRIP FIRST OUT"; PR-OPE-5003: the alarm is bypassed only for a normal
        shutdown), so the boiler trips with the turbine and cools down through the bypass; the pulse M.0124 / M.0256 of ABC-050 is
@@ -151,7 +151,6 @@ const AN_UNIT = {
        (plant.js feeder model), the steam made decays with tauF, the pressure falls to MAIN STEAM PRESSURE LOW LOW (M.310D, 72.9).
      The DITL consequences (fan trip -> MFT, drum level L.L. -> MFT, MFT -> turbine trip) are the DITL's: with the one world OFF the
      operator forces them (CLAUDE.md 7, user 2026-10-16) */
-  tauTrip: 1,
   /* 3.2.3 house load speed (SAKURA): TCE 331DM09784 p.140 TCE206 FLOW CONTROL: rated 3600.0 rpm, droop 6.0 %, flow span 87.3 (read:
      6 % speed = 87.3 % flow demand); the FG*1 table of the same sheet gives 0.0 % at -7.2 / 0.0 / 7.2 rpm: dead band +-7.2 rpm (the
      table points beyond it not read: linear outside the band). Hgen = inertia constant of the whole machine (turbine + generator +
@@ -239,7 +238,7 @@ const AN_UNIT = {
 /* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
    whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
    code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
-const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'tauTrip', 'droop', 'flowSpan', 'tSc', 'tXo', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'kfp', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
+const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'tSc', 'tXo', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'kfp', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -3812,7 +3811,7 @@ function anUnitStep0(dt) {
   if (trip && tb.st !== 'off') {
     /* the machine is lost at any start: stop valves shut, 52G open by ST TRIP (IBD TA-6, 310SD03-743 sheet 4 E-1), no transfer, no DCS mode, the ATS off (310SC90-775
        page 6). Coming back is the ATS again, there is no reload on reset: at Start 150 MW the ATS program starts here */
-    tb.icv = Math.max(0, tb.icv - dt / U.tauTrip);
+    tb.icv = Math.max(0, tb.icv - dt / AN_TBV.icv);
     if (!U.tc) tcsFromOil(U);
     Object.assign(tb, { st: 'off', xfer: false, tgt: 0, aim: 0 });
     tcsTrip(U);
@@ -3910,7 +3909,7 @@ function anUnitStep0(dt) {
     tb.icv = 0;
   } else if (trip) {
     /* turbine trip: the TCS closes the valves; the load set point is gone */
-    U.gv = Math.max(0, U.gv - dt / U.tauTrip);
+    U.gv = Math.max(0, U.gv - dt / AN_TBV.cv);
     U.tcsT = 0;
   } else if (tb.st === 'roll') {
     U.gv = 0;
@@ -3922,7 +3921,7 @@ function anUnitStep0(dt) {
     /* 3.2.3 PLU (POWER LOAD UNBALANCE, TG manual 2-2 TURBINE CONTROL SYSTEM_R1 5.3.2.4): the fast acting solenoid valves of the CVs and
        ICVs are energized when the generator current falls faster than 40 % / 10 ms and the power (reheat bowl pressure) minus the load
        (generator current) is over 40 % of the rating, 2 out of 3 modules. Here: 52L1 opened on load (the load drops at once to the house
-       load, elec.js) and the turbine power U.MW minus that load over 40 % of U.MW0. The valves close at the trip rate (U.tauTrip, the same
+       load, elec.js) and the turbine power U.MW minus that load over 40 % of U.MW0. The valves close at the fast-acting rate (AN_TBV.cvOpc / icvOpc, the same
        fast acting dump; NO-SOURCE: the PLU closing time) until the unbalance is under 40 %, then the speed control opens them again.
        Not modelled: the speed peak, the 2 out of 3 voting (one value) */
     const ld = U.el && U.el.l52 === false ? D : U.MW,
@@ -3942,14 +3941,14 @@ function anUnitStep0(dt) {
     tb.plu = plu;
     if (plu || (U.el && U.el.l52 === false)) tb.fd = NaN;
     if (plu) {
-      U.gv = Math.max(0.02, U.gv - dt / U.tauTrip);
-      tb.icv = Math.max(0, tb.icv - dt / U.tauTrip);
+      U.gv = Math.max(0.02, U.gv - dt / AN_TBV.cvOpc);
+      tb.icv = Math.max(0, tb.icv - dt / AN_TBV.icvOpc);
       tb.gs = U.rbIP;
       tb.hlT = (tb.hlT || 0) + dt;
     } else if (U.el && U.el.l52 === false) {
       /* 3.2.3 house load: the speed governor (TCE p.140 TCE206): flow demand = GOV.SET - flow span x (rpm - 3600) / (droop x 3600), the
          HP CV opening U.gv taken as the flow demand (1 = the anchor flow). GOV.SET (tb.gs) starts at the CV opening after the PLU and is
-         trimmed by the TCS load loop toward the house load (elec.js, as before). The CV moves at the trip rate (U.tauTrip, NO-SOURCE).
+         trimmed by the TCS load loop toward the house load (elec.js, as before). The CV moves at its servo rate (AN_TBV.cvServo, turbine.js).
          Not yet: the GOVERNOR RUNBACK (TCE p.128 / 136: GOV.SET 24.3 % HP / 4.2 % IP start for 60 s), the low droop 16 % */
       /* GOVERNOR RUNBACK (rbIP, rbT above): GOV.SET held at the runback position (integral I005 SW = 0, Y = Z) for the 60 s pulse of the
          house load, then the integral goes on from there (TCE p.136), trimmed by the TCS load loop toward the house load (NO-SOURCE:
@@ -3973,7 +3972,7 @@ function anUnitStep0(dt) {
           0,
           Math.min(1.4, tb.gs - (U.flowSpan * anDb((tb.rpm || 3600) - 3600, U.dbRpm || 0)) / ((U.droop || 0.06) * 3600))
         ),
-        r = dt / U.tauTrip,
+        r = dt / AN_TBV.cvServo,
         B = U.cvBias || 0.2,
         cvD = Math.max(0, Math.min(1.4, (dem - B) / (1 - B))),
         icvD = Math.max(0, Math.min(1, dem / B)),
