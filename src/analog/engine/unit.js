@@ -66,21 +66,6 @@ function anShKdp(U) {
     rho = anShRho(U.Pd, Po, To);
   return isFinite(rho) && rho > 0 ? (k0 * AN_SHDP.rho0) / rho : k0;
 }
-/* Phase 11 (KANA, 2026-11-27, GO FIX 11 rank 2): THE MAIN STEAM LINE PRESSURE DROP, SH outlet (PT-MS1006, U.Pms) to the turbine inlet
-   (U.tin). Same turbulent law as the superheaters: dP = k m^2 / rho, rho = steam at the SH outlet (U.Pms, main steam temperature).
-   k from the design point (DESIGN-SRC): FHI P2S7 Tab 4 Fig 11 SH outlet 129.0 kg/cm2 G at 100 % MCR (460 T/H, 541 C) and the
-   turbine inlet of the Hitachi heat balance HB PPE-14-0725 126 ata = 124.97 kg/cm2 G (turbine.js AN_TBW note): 4.03 kg/cm2 at 460 T/H.
-   Before: kln = (MSP - turbine inlet) / MSF^2 of the 150 MW snapshot anchor (no-fit finding), deleted. NO-FIT-OK: history note */
-const AN_LNDP = { dp0: 129.0 - (126 - 1.0332), m0: 460, Po: 129, To: 541 };
-function anLnKln(U) {
-  const D = AN_LNDP,
-    k0 = D.dp0 / (D.m0 * D.m0);
-  if (!D.rho0) D.rho0 = steamRho(D.Po, D.To);
-  if (!U || !isFinite(U.Pms) || U.Pms <= 0) return k0;
-  const To = U.hxO && isFinite(U.hxO.ms) ? U.hxO.ms : steamTsat(U.Pms),
-    rho = steamRho(U.Pms, Math.max(steamTsat(U.Pms), To));
-  return isFinite(rho) && rho > 0 ? (k0 * D.rho0) / rho : k0;
-}
 const AN_STORE = { cs: 190 };
 const AN_UNIT = {
   on: false,
@@ -464,7 +449,8 @@ function anUnitStart() {
     P0 = anUnitVal(U.msp),
     Pd0 = anUnitVal(U.drum),
     mwv = U.mw.map(anUnitVal).filter(isFinite),
-    MW0 = mwv.length ? mwv.slice(0, 2).reduce((a, x) => a + x, 0) / Math.min(2, mwv.length) : NaN;
+    MW0 = mwv.length ? mwv.slice(0, 2).reduce((a, x) => a + x, 0) / Math.min(2, mwv.length) : NaN,
+    Ptin = U.tin.length ? anUnitVal(U.tin[0]) : NaN;
   if (![F0, m0, P0, Pd0, MW0].every(isFinite) || m0 <= 0 || P0 <= 0 || Pd0 <= P0) return;
   Object.assign(U, {
     F0,
@@ -475,7 +461,7 @@ function anUnitStart() {
     /* Phase 11 (KANA, 2026-11-27): the S/H pressure drop is the physics law of anShKdp (design FHI P2S7 Tab 3), no longer the plant
        150 MW anchor (Pd0 - P0) / m0^2 (no-fit finding: a constant taken from the snapshot). NO-FIT-OK: history note */
     kdp: anShKdp(null),
-    kln: anLnKln(null) /* main steam line drop to the turbine inlet: the design law of anLnKln (FHI Fig 11 + HB), not the snapshot */,
+    kln: isFinite(Ptin) && Ptin <= P0 ? (P0 - Ptin) / (m0 * m0) : 0 /* main steam line drop to the turbine inlet */,
     Kt: m0 / P0 /* valve opening 1 = the opening at the anchor */,
     gv: 1,
     Pd: Pd0,
@@ -5796,7 +5782,6 @@ function anUnitStep0(dt) {
   anUnitWrite(U.msp, Pms);
   /* live Cold start sweep (user 2026-11-13): written as exactly 0 the SELECT CIRCUIT of ABC-050 took PT-MS1006-1 / -2 as lost and held
      122.0 kg/cm2 on the HP bypass PV with the main steam at 0. A live transmitter at 0 kg/cm2 is a healthy 4 mA signal: not exactly 0 */
-  U.kln = anLnKln(U); /* Phase 11: the main steam line drop law at the density of this scan */
   for (const l of U.tin) anUnitWrite(l, Math.max(1e-3, Pms - U.kln * U.ms * U.ms));
   anUnitWrite(U.drum, U.Pd);
   /* 1.0.0-beta.370 (JENNIE, Rosé: Warm / Hot saves, EIC-TM PV 151 MW at 0 MW): the generator MW transmitters GCPAI1001 / 1002 at 0 MW are a live
