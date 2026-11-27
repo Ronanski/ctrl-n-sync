@@ -7,7 +7,8 @@
      sheet p.2. Both are manufacturer documents and they disagree (logged in docs/versions/updates/phase11-gen-batch2.md). The choice
      between the two is the machine's own sudden short-circuit test, LM-GEE-2014-0822 R0 p27, Td' 0.92 s measured: at the terminals
      Td' = T'do x X'd / Xd with this model's Xd 1.92 / X'd 0.21 gives 0.84 s with 7.69 and 0.94 s with 8.6. A choice of source, not a
-     fitted value. (The on-line lag below adds Xt; that is not the test value.) The open circuit voltage = field flux x speed (the saturation
+     fitted value. (The on-line lag below adds Xt; that is not the test value.) T'qo 1.0 s: the same Hitachi reply, Annex A
+     p1-2 (yui-reads-2.md 2), for the E'd of the round rotor after a 52G opening (below). The open circuit voltage = field flux x speed (the saturation
      curve is not in the docs: NO-SOURCE, linear). Brushless exciter fed by the UNITROL 6080 (GEE-2015-0152 p.7): exciter field no load
      4.5 A / 28 V, ceiling 17.6 A / 109.8 V, so the field forcing ceiling is 17.6 / 4.5 = 3.9 times the no-load field.
      AVR (Phase 11 YUI 2026-11-28): the UNITROL 6000 voltage regulator of ABB 3BHS823069 E62 "Computer Models Excitation System"
