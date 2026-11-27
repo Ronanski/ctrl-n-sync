@@ -87,12 +87,18 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   });
   console.log(JSON.stringify(r));
   const b = r.base;
-  ck(b.P > 0.05 && b.P < 0.075 && b.T > 33 && b.T < 41, `150 MW condenser ${b.P} kg/cm2A at ${b.T} C (heat ${b.Q} MW, seawater ${b.W} m3/h; O&M design 0.070 / 38.65 C, 4.PNG 0.057, alarm list 38.6 C)`);
-  ck(b.run[0] === 1 && b.run[1] === 0 && Math.abs(b.Pd - 16.9) < 0.3 && Math.abs(b.I[0] - 28.1) < 1 && b.d61 === b.Pd, `CEP A ${b.q} m3/h, PT-CD1117 ${b.Pd} kg/cm2 (28.png 16.9), ${b.I[0]} A (28.1), DITL-61B row 19 reads ${b.d61}`);
+  /* Phase 11 (MEI, rule 0 2026-11-28): design references only, no plant screen. Condenser: O&M L15-1 design 0.070 kg/cm2A / 38.65 C
+     (+-0.01 for the seawater and the steam of the model point). CEP: PT-CD1117 above its LOW 14.0 (DITL-61B row 19) and below the
+     shut-off head 210 m of the KSB curve Q43495D (~21.6 kg/cm2 g with the suction); current inside the motor balance of the load
+     schedule K1AU3-E1-0-302 (14.6 A at the shut-off power 105 kW, F.L.A. 31.56 A at 298.4 kW) */
+  ck(b.P > 0.06 && b.P < 0.08 && b.T > 36 && b.T < 41.5, `150 MW condenser ${b.P} kg/cm2A at ${b.T} C (heat ${b.Q} MW, seawater ${b.W} m3/h; O&M design 0.070 / 38.65 C)`);
+  ck(b.run[0] === 1 && b.run[1] === 0 && b.Pd > 14.0 && b.Pd < 21.6 && b.I[0] > 14.6 && b.I[0] < 31.56 && b.d61 === b.Pd, `CEP A ${b.q} m3/h, PT-CD1117 ${b.Pd} kg/cm2 (LOW 14.0 < Pd < shut-off), ${b.I[0]} A (14.6 ~ 31.56, load schedule), DITL-61B row 19 reads ${b.d61}`);
   ck(r.trMin < 14 && r.trB != null, `CEP A tripped: PT-CD1117 down to ${r.trMin} kg/cm2 (< 14.0, DITL-61B M.3217), CEP B running after ${r.trB} s`);
   ck(r.tr30.run[1] === 1 && r.tr30.Pd > 14, `the logic started CEP B: ${r.tr30.q} m3/h, PT-CD1117 ${r.tr30.Pd}, ${r.tr30.I[1]} A`);
   ck(r.box1.W < b.W && r.box1.P > b.P && !r.box1.trip, `condenser inlet V-SW1007 closed: seawater ${r.box1.W} m3/h, condenser ${r.box1.P} kg/cm2A at ${r.box1.T} C, no trip`);
-  ck(r.box0.W === 0 && r.box0.P > 0.447 && r.box0.trip, `both inlets closed: no seawater, condenser ${r.box0.P} kg/cm2A, turbine LOW VACUUM trip`);
+  /* no seawater: the pressure passes the TCS LOW VACUUM trip 0.26 kg/cm2 abs (IBD 310SC90-794 TA-10) and, with no water to cool it,
+     stays above it after the trip */
+  ck(r.box0.W === 0 && r.box0.P >= 0.26 && r.box0.trip, `both inlets closed: no seawater, condenser ${r.box0.P} kg/cm2A, turbine LOW VACUUM trip`);
   ck(r.muFeed === 0 && r.hwMu < r.hwN - 0.5, `MWP discharges closed: no make-up, hotwell ${r.hwMu} mm in 2 min (with make-up ${r.hwN} mm)`);
   ck(!errs.length, 'no page error' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
   await browser.close();

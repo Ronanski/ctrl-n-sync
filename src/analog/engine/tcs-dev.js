@@ -37,6 +37,10 @@ const TCS_DEV = {
     ['crvB', 'TC-13', 16, 18, 'seal'] /* CRV(B) BELOW SEAT */,
     ['cvBw', 'TC-5', 20, 22, 'inch'] /* CV(B) BELOW SEAT SECONDARY WARMING DRAIN VALVE ZT-STn008 */
   ],
+  /* Phase 11 RIN 2026-11-28: the NRV closing on the trip (the ETS relay dump vents the air cylinder, the spring assist shuts the disc):
+     100 % in 2 s, KARATU swing check data sheet "within 2 sec" on air dump (YUA read, /mnt/project-files/rin-extraction-2026-11-28.md).
+     The normal stroke stays the AOV rate rAov */
+  rNrvDump: 50,
   nrv: ['crv', 'ex2', 'ex3p', 'ex3s', 'ex4', 'ex5'] /* TC-19 cold reheat, TC-41 No.2, TC-42 / 43 No.3 primary / secondary, TC-44 No.4, TC-45 No.5 */
 };
 /* the limit / torque switches of a position (open, closed) */
@@ -104,7 +108,9 @@ function tcsDev(U, dt) {
   for (const k of K.nrv) {
     let v = nrv[k];
     if (!v) tcsDevSw((v = nrv[k] = {}), nOpen ? 100 : 0);
-    tcsDevRun(v, nOpen ? 100 : 0, K.rAov, dt, false);
+    /* they close on the TURBINE TRIP only (the ETS relay dump; not on OPC / PLU: TEQ via YUA, /mnt/project-files/mei-lph-flash-reads-2026-11-28.md):
+       off load without a trip (a load rejection, 52G open) they keep their position */
+    tcsDevRun(v, c.trip ? 0 : nOpen ? 100 : v.p, c.trip ? K.rNrvDump : K.rAov, dt, false);
   }
   /* the generator watt-hour meter of the generator control panel (GCP-AI1003, a pulse counter to the DCS): the integral of the MW,
      counted from 0 when this state is made (a meter reading of the plant is not a physics value) */
