@@ -2081,12 +2081,26 @@ function anCondStep(U, dt) {
     Ps = Math.min(1.033, anPsat(U.cdTs));
   U.cdQ = Math.round(Q / 100) / 10; /* MW */
   U.cdT = U.cdTs;
+  /* Phase 11 (MEI): the cd port (ports.js) for the turbine (RIN, back pressure) and the sea water (SUZU, CW outlet temperature).
+     The heat each water box path takes NOW from the condensing steam at U.cdTs: Q_i = C_i (1 - exp(-UA_i / C_i)) (Ts - Tin_i), with
+     the path flow U.swQcA / B (SUZU), UA_i = UA / 2 x sqrt(W_i / (Cd / 2)) (the same exchanger law as above, split in its two
+     halves: K2MC3A is a two-pass, two-path condenser, PD-020). In a steady state QA + QB = Q; while Ts lags they differ (the stored
+     heat of the steam side). kW, unrounded (agreed with SUZU). The pressure is set below (U.cdP), the port is written there. */
+  const qBox = (Wt, Ti) => {
+    const Wi = Math.max(0, (Wt || 0) * 1.02),
+      Ci = (Wi / 3.6) * K.cp,
+      UAi = (K.UA / 2) * Math.sqrt(Wi / (K.Cd / 2));
+    return Ci > 1 && isFinite(Ti) ? Ci * (1 - Math.exp(-UAi / Ci)) * Math.max(0, U.cdTs - Ti) : 0;
+  },
+    QA = qBox(U.swQcA, isFinite(U.swTiA) ? U.swTiA : Tin),
+    QB = qBox(U.swQcB, isFinite(U.swTiB) ? U.swTiB : Tin);
   /* 3.2.3 live Cold start: the air in the condenser is its own mass balance (anAuxStep U.cdAirP); the vacuum share is what is left of the
      room between the saturation and the atmosphere (the screens and the hood model read it) */
   if (isFinite(U.cdAirP)) {
     U.cdP = anCdP(U.cdTs, U.cdAirP);
     U.vac = Math.max(0, Math.min(1, (1.033 - U.cdP) / Math.max(1e-3, 1.033 - Ps)));
   } else U.cdP = Ps + (1.033 - Ps) * (1 - vac);
+  anPortSet(U, 'cd', { P: U.cdP, T: U.cdTs, Q: QA + QB, x: { QA, QB } });
   /* the condensate pumps */
   const run = [srcBit(['M.3350']) > 0.5 ? 1 : 0, srcBit(['M.3351']) > 0.5 ? 1 : 0],
     n = run[0] + run[1],
@@ -2596,6 +2610,31 @@ function anLphStep(U, dt) {
     tin = tout;
   }
   U.lpHt = t;
+  /* Phase 11 (MEI): the cd.out port (ports.js) for the deaerator (NANA): the condensate after the No.3 LP heater through LCV-CD1104.
+     m = the flow anDaQ solves (plant.js anCycFlows fda); P = the valve outlet P2 = deaerator PT-CD1104 + z2 + kN m^2 (plant.js
+     anCdHydK, LCV-CD1104 sheet + deaerator O&M L15-2), absolute; T = the No.3 LP heater outlet; h = IAPWS-IF97 region 1 (steamR1).
+     And the store of this part (ports.js rule 4): the hotwell water, 61.9 / 0.9 = 68.8 m2 (AN_CYC.kgmm.hw, K2MC3A) x (600 mm normal
+     water over the hotwell bottom: HHL is 900 mm over the bottom and 300 mm over the normal level FL+1814 / HHL FL+2114, K2MC3A O&M
+     1.1.2) + the level LT-CD1110; E = m x h of water at the hotwell temperature. The LP heater water boxes and shells are not in the
+     store yet (no water volume in the model: rank 6) */
+  {
+    const fl = typeof anCycFlows === 'function' ? anCycFlows(0) : null,
+      mo = fl ? Math.max(0, fl.fda) : 0,
+      pd = U.xt && U.xt.dea ? anUnitVal(U.xt.dea) : NaN,
+      k = anCdHydK(),
+      Po = isFinite(pd) ? pd + 1.0332 + (mo > 0 ? k.z2 + k.kN * mo * mo : 0) : null,
+      To = t.H3.out,
+      hw = isFinite(U.cdHw) ? U.cdHw : 0,
+      Tw = isFinite(U.cdT) ? U.cdT : 30,
+      mw = (AN_CYC.kgmm.hw() * (0.6 + hw / 1000) * anWaterRho(Tw)) / 1000;
+    anPortSet(U, 'cd.out', {
+      m: mo,
+      P: Po,
+      T: To,
+      h: Po != null && isFinite(To) ? steamR1(Po * 0.0980665, To + 273.15).h : null
+    });
+    anPortSet(U, 'store.MEI', { mw, E: mw * steamR1(0.0980665 * Math.max(0.01, +U.cdP || 1.0332), Tw + 273.15).h });
+  }
   U.tt = Object.assign(U.tt || {}, {
     'TT-CD1101': r1(t.H1.in),
     'TT-CD1102': r1(t.H2.in),
@@ -4126,12 +4165,9 @@ function anUnitOwnsPv(S, n) {
   return U.on && n != null && (U.alink || []).some(([a, t]) => t.S === S && t.n === n);
 }
 /* one step of dt seconds (called by the plant step of ABC-001C) */
-/* 3.2.1 c4: the generator electrical values of page 17 (GENERATOR). Sources: data sheet GAE-2013-0136 R2 (Mitsubishi Hitachi TFLQQ-KD,
-   176.5 MVA, 0.85 lag, 13.8 kV, 60 Hz, 3600 rpm, Xd unsaturated 1.99 pu) and snapshot 37.PNG (151.1 MW: 33.1 MVar, power factor 0.977,
-   13.8 ~ 13.9 kV, 6.3 ~ 6.6 kA, field 46.0 VDC / 8.7 A, 7266257 MWh, 882996 MVarh). The voltage regulator (AVR) holds the power
-   factor of the snapshot (0.977) while synchronised; current = MVA / (1.732 x 13.8 kV); the exciter field follows the internal
-   voltage E = |1 + j Xd I| (calculated with the data sheet Xd, no saturation), scaled to the snapshot point (E = 2.19 pu at 151.1 MW
-   / 33.1 MVar), so 1.0 pu at no load = 4.0 A / 21 VDC. The field breaker = the TCS excitation on (tc.exc, ATS step 4 EXCITATION). */
+/* 3.2.1 c4: the generator electrical values of page 17 (GENERATOR), data sheet GAE-2013-0136 R2 (Mitsubishi Hitachi TFLQQ-KD, 176.5 MVA,
+   0.85 lag, 13.8 kV, 60 Hz, 3600 rpm). Phase 11 (2026-11-27): read from the one field / phasor model of tcs-gen.js (anGenEl below); the
+   AVR holds the terminal voltage at its set 90R (AUTO), so the Mvar follows the voltage set and the load, not a fixed power factor. */
 function anDb(x, b) {
   return x > b ? x - b : x < -b ? x + b : 0;
 }
@@ -4150,22 +4186,15 @@ function anGridHz(U, dt) {
   U.gridHz = aim < f ? Math.max(aim, f - AN_GRID.down * dt) : Math.min(aim, f + AN_GRID.up * dt);
   return U.gridHz;
 }
+/* the rating of the machine (GAE-2013-0136 R2: 176.5 MVA, 13.8 kV, 60 Hz) and the page 17 energy meters, which start at the meter
+   reading of snapshot 37.PNG (a meter reading, not a physics value; the GCP meters of tcs-dev.js count from 0) */
 const AN_GEN = {
   kV: 13.8,
   Hz: 60,
   S: 176.5,
-  xd: 1.99,
-  pf: 0.977,
-  If: 8.7,
-  Vf: 46.0,
-  E0: 0,
   MWh: 7266257,
   MVArh: 882996
 };
-AN_GEN.E0 = Math.hypot(
-  1 + (AN_GEN.xd * 151.1 * Math.tan(Math.acos(AN_GEN.pf))) / AN_GEN.S,
-  (AN_GEN.xd * 151.1) / AN_GEN.S
-);
 function anGenEl() {
   const U = AN.unit;
   if (!U || !U.on) return null;
@@ -4173,32 +4202,38 @@ function anGenEl() {
     c = U.tc,
     syn = tb.st === 'sync' || tb.st === 'load',
     fcb = syn || !!(c && c.exc),
-    /* beta.240: P negative = reverse power (motoring); the reactive power follows the positive load only */
+    /* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): ONE generator model. The terminal voltage, stator current, Mvar, power
+       factor and field are the ones of the field and on-line phasor model of tcs-gen.js (tcsGenStep / tcsGenPh: EMF behind Xd 1.92 pu,
+       TR 2310 Xt 0.137 pu, stiff 230 kV bus; GEE-2015-0152 R1 p6, GAE-2013-0136 R2, K1AU3E1-0003 rev 2; checked against the V curves
+       310SD23-270 R1 within 1.5 %), the same values the TCS I/O, the Modbus list and the var-hour meter read. Before, this page computed
+       its own Mvar with a fixed power factor 0.977 (screen 37.PNG) and its own field scaled on that screen: two answers for one machine
+       (150 MW: 33.1 Mvar here, 8.8 Mvar in the TCS). Read only: the mirror page does not make U.gen (beta.277) */
+    g = U.gen || {},
+    G = TCS_GEN,
+    /* beta.240: P negative = reverse power (motoring) */
     P = syn ? +U.MW || 0 : 0,
-    Q = syn ? Math.max(0, P) * Math.tan(Math.acos(AN_GEN.pf)) : 0,
-    p = P / AN_GEN.S,
-    q = Q / AN_GEN.S,
-    /* 3.2.3-beta.235: before 52G the voltage builds up after the field breaker 41 closes (tcs-gen.js g.V, 30 s); was 13.8 kV at once */
-    vb = syn ? 1 : U.gen && isFinite(U.gen.V) ? U.gen.V : fcb ? 1 : 0,
-    /* beta.236: before 52G the exciter output of the field model (tcs-gen.js g.efd, 1 = no load field) */
-    E = !fcb
-      ? 0
-      : syn || !(U.gen && isFinite(U.gen.efd))
-        ? (vb * Math.hypot(1 + AN_GEN.xd * q, AN_GEN.xd * p)) / AN_GEN.E0
-        : U.gen.efd / AN_GEN.E0,
-    kA = Math.hypot(P, Q) / (Math.sqrt(3) * AN_GEN.kV),
-    g = U.genE || (U.genE = { MWh: AN_GEN.MWh, MVArh: AN_GEN.MVArh });
+    on = syn && !!g.f41,
+    Q = on && isFinite(g.Q) ? g.Q * G.sb : 0,
+    /* terminal voltage: on line the phasor |Vt|; off line the open circuit voltage, flux x speed (tcsGenStep g.V = eq x n already) */
+    vt = fcb && isFinite(g.V) ? g.V : 0,
+    kA = on && isFinite(g.I) ? g.I * G.ib : 0,
+    /* the exciter field (brushless machine, UNITROL 6080): 4.5 A per pu of field (no load, GEE-2015-0152 p6), voltage = current x the
+       exciter field resistance 6.14 ohm at 100 C (GAE-2015-0004 R1) */
+    If = fcb && isFinite(g.efd) ? Math.max(0, g.efd) * G.ifo : 0,
+    m = U.genE || (U.genE = { MWh: AN_GEN.MWh, MVArh: AN_GEN.MVArh });
   return {
     fcb: fcb ? 1 : 0,
-    kV: fcb ? (vb * AN_GEN.kV * Math.min(tb.rpm || 0, 3600)) / 3600 : 0,
+    kV: vt * AN_GEN.kV,
     Hz: syn && !(U.el && U.el.l52 === false) ? AN_GEN.Hz : ((tb.rpm || 0) / 3600) * AN_GEN.Hz,
     MVAr: Q,
-    pf: syn && P > 0 ? AN_GEN.pf : null,
+    /* the sign of the Mvar tells lag (export) or lead (import) */
+    pf: on && P > 0 && isFinite(g.pf) ? g.pf : null,
+    lead: on && Q < 0 ? 1 : 0,
     kA,
-    Vf: AN_GEN.Vf * E,
-    If: AN_GEN.If * E,
-    MWh: g.MWh,
-    MVArh: g.MVArh,
+    Vf: If * G.rf,
+    If,
+    MWh: m.MWh,
+    MVArh: m.MVArh,
     ta: (U.genT && U.genT.ta) || null,
     tAir: U.genT ? U.genT.ta.reduce((a, b) => a + b, 0) / 4 : null,
     ts: (U.genT && U.genT.ts) || null,
@@ -4206,25 +4241,59 @@ function anGenEl() {
     tex: U.genT ? U.genT.ex : null
   };
 }
-/* 3.2.1: the generator temperatures of pages 13 / 17 from snapshot P35SHAFT (035 SHAFT MONITOR, 130 MW, 3596 rpm): air cooler outlet
-   TIGE10041 ~ 44 39 / 38 / 43 / 44 C, AC exciter outlet air TIGE1005 80 C, stator coil TIGE10061 ~ 66 81 / 84 / 81 / 83 / 79 / 84 C.
-   The stator copper loss goes with the current squared: stator = cooler air (mean 41) + its snapshot rise x (kA / 5.57)^2, 5.57 kA =
-   the current of the generator model at 130 MW; the exciter air = 41 + 39 x (field current / 7.85 A)^2 (7.85 A = the model field at
-   130 MW). The cooler outlet air stays at the snapshot while the shaft turns (NO-SOURCE: its change with the cooling water); at rest
-   all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding) */
-const AN_GENT = { ta: [39, 38, 43, 44], ts: [81, 84, 81, 83, 79, 84], ex: 80, tA: 41, kA: 5.57, If: 7.85, tau: 600 };
+/* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): the generator temperatures of pages 13 / 17 and of TCS GD-5 from the design of
+   the machine (was: the readings of screen P35SHAFT at 130 MW scaled with the current squared).
+   - cooling gas after the four air coolers H-1971A ~ D (TIGE10041 ~ 44): the cooler water is the closed (auxiliary) cooling water supply
+     (AN_ACW, U.acT2). DESIGN-SRC: GAE-2013-0136 R2 p1 "Temperatures Cooling Water Max. 37 C"; GEE-2014-0322 R2 p4 IEC 60034-1-2010,
+     whose reference coolant (the cold gas of an indirectly cooled machine) is 40 C: the coolers hold 40 C gas with 37 C water, approach
+     40 - 37 = 3 K. The cooler duty itself is not in the docs, so the 3 K is held at every load (the loss that sets it changes by about a
+     third between no load and rated: the friction, windage and core loss are there at no load too).
+   - stator coil (TIGE10061 ~ 66, six RTD in the slots): stator rise class B, indirectly air cooled (GAE-2013-0136 R2), total limit
+     123 C by RTD at the rating (GEE-2014-0322 R2 p4) over the 40 C cold gas: 83 K at the rated current 7,384 A; the rise is the I2R loss
+     of the armature (3 I^2 Ra, Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2; GEE-2014-0322 5.6.2 c), so rise = 83 K x (I / 7.384 kA)^2.
+     The six RTD read one value: the docs give no difference between the slots. The TCS alarm GD-5 HIGH 123 C is the same limit.
+   - AC exciter outlet air (TIGE1005): its rise follows the exciter field squared; its rated rise is not in the docs, so it stays on the
+     old reading 80 C at 7.85 A (screen P35SHAFT, a check value; finding for the PC lookup).
+   At rest all go to the ambient. Lag 600 s (NO-SOURCE: the thermal time of the winding is not in the docs).
+   The heat the air coolers give to the closed cooling water (U.genQ, kW; the cooler duty port of the plant model) = the generator losses:
+     stator copper 3 I^2 Ra (Ra 0.001051 ohm at 95 C, GAE-2013-0136 R2; 172 kW at 7,384 A),
+     main field I^2 Rf (Rf 0.2188 ohm at 95 C, GAE-2013-0136 R2; main field = exciter field x 463 / 4.5 A: 463 A main = 4.5 A exciter =
+       1 pu field, 310SD23-268 R1 / GEE-2015-0152 p6; 1,218 A = 325 kW at the rating, 310SD23-270 R1),
+     the rest (core, friction and windage, stray) at rated speed: DERIVED = the design duty of the four coolers 3,041 kW (mass balance
+       K1AU3-MB-021 items 14 ~ 21: 290.5 t/h, 34 -> 42 C; /mnt/project-files/suzu-pc-answers-2026-11-27.md 1b) less the two above at the
+       rating (176.5 MVA 0.85 lag, the machine the coolers are sized for) = 2,544 kW, with the cube of the speed (the windage; the split
+       of core and windage is not in the docs: NO-SOURCE form). No load table: one design point closes the balance. */
+const AN_GENT = {
+  tCold: 40 /* C, IEC 60034-1 reference coolant (GEE-2014-0322 R2 p4) */,
+  tCw: 37 /* C, cooling water max (GAE-2013-0136 R2) */,
+  tLim: 123 /* C, stator winding total limit by RTD (GEE-2014-0322 R2 p4) */,
+  In: 7.384 /* kA rated (GAE-2013-0136 R2) */,
+  ex: 80,
+  tA: 41,
+  If: 7.85,
+  tau: 600,
+  Ra: 0.001051 /* ohm, armature 1 phase at 95 C */,
+  Rf: 0.2188 /* ohm, main field at 95 C */,
+  ifMain: 463 / 4.5 /* A main field per A exciter field */,
+  qD: 3041 /* kW, cooler design duty (MB-021) */,
+  ifD: 1218 /* A main field at the rating (310SD23-270 R1) */
+};
+AN_GENT.q0 = AN_GENT.qD - (3 * (AN_GENT.In * 1000) ** 2 * AN_GENT.Ra + AN_GENT.ifD ** 2 * AN_GENT.Rf) / 1000;
 function anGenTemp(U, G, dt) {
   const K = AN_GENT,
     Ta = U.Tamb || 30,
     turn = U.tb && U.tb.rpm > 100,
-    T = U.genT || (U.genT = { ta: K.ta.slice(), ts: K.ts.slice(), ex: K.ex }),
+    T = U.genT || (U.genT = { ta: [Ta, Ta, Ta, Ta], ts: [Ta, Ta, Ta, Ta, Ta, Ta], ex: Ta }),
     a = Math.min(1, dt / K.tau),
-    r = (G.kA / K.kA) ** 2,
+    cw = isFinite(U.acT2) ? U.acT2 : Ta,
+    air = turn ? cw + (K.tCold - K.tCw) : Ta,
+    rise = (K.tLim - K.tCold) * (G.kA / K.In) ** 2,
     rf = (G.If / K.If) ** 2;
-  K.ta.forEach((v, i) => (T.ta[i] += ((turn ? v : Ta) - T.ta[i]) * a));
-  const air = turn ? K.tA : Ta;
-  K.ts.forEach((v, i) => (T.ts[i] += (air + (v - K.tA) * r - T.ts[i]) * a));
+  T.ta.forEach((v, i) => (T.ta[i] += (air - v) * a));
+  T.ts.forEach((v, i) => (T.ts[i] += (air + rise - v) * a));
   T.ex += (air + (K.ex - K.tA) * rf - T.ex) * a;
+  const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600));
+  U.genQ = (3 * (G.kA * 1000) ** 2 * K.Ra + (G.If * K.ifMain) ** 2 * K.Rf) / 1000 + K.q0 * n ** 3;
 }
 /* the energy meters of page 17 count the sim time while synchronised */
 function anGenInt(dt) {
