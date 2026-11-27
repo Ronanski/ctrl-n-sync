@@ -73,7 +73,6 @@ const AN_UNIT = {
      this object), which had no MW, so MW was undefined until the starting state set it (MW0 / 0). The generator gives 0 MW until then */
   MW: 0,
 
-  tauMW: 10 /* s, steam flow -> MW (reheater, NO-SOURCE: the plant trends are 60 s averages, too slow to fit it) */,
   tcs: 20 /* s, not used since 1.0.0-beta.304 (the MW loop takes the TCE195 gains, AN_TCE195); kept for the save points */,
   /* other steam outlets of the main steam line, flow at 100 % open and the anchor pressure, as a share of the anchor flow (the valve
      sizes: valve sheets below): ABC-050 PICMS1006 HP turbine bypass PCV-MS1020 (main steam -> cold reheat) and
@@ -234,6 +233,10 @@ const AN_UNIT = {
   vacUp: 1846 /* ED 066 p15: starting ejector 0.345 kg/cm2 A at 20 min, 65 % of full vacuum */,
   vacDn: 60
 };
+/* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
+   whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
+   code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
+const AN_UNIT_K = ['tauMW', 'tcs', 'hpb', 'blo', 'lpb', 'tauRH', 'Crh', 'rhb', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'tauTrip', 'droop', 'flowSpan', 'tSc', 'tXo', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'kfp', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -1209,10 +1212,12 @@ const AN_SW_V0 = {
      heat         Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history, was oil 64.5 kW/K and 1,032 kW fitted on snapshot 36.PNG): the vendor
                   design point of the cooler itself (O&M L2 TG 2-3): 1,300 kW with the oil 63.0 -> 46 C, so the oil flow is 1,300 / 17 =
                   76.5 kW/K (2,670 L/min of ISO VG 32 at 0.86 kg/L x 2.0 kJ/kg K = the 2,660 L/min maximum of the sheet); the bearing
-                  heat 1,300 kW at 3600 rpm x speed / 3600 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js),
-                  linear in speed NO-SOURCE (as the 16 C x speed of tcs.js). MB-021 items 12 / 13 (170 T/H 34 -> 41 C = 1,384 kW) is
+                  heat 1,300 kW at 3600 rpm x (speed / 3600)^2 while the lube oil flows (bearing oil pressure above 1.05 kg/cm2, tcs.js):
+                  the friction of a journal bearing at a fixed oil viscosity (Petroff: torque ~ speed, power ~ speed^2, DERIVED; was
+                  linear in speed, NO-SOURCE). MB-021 items 12 / 13 (170 T/H 34 -> 41 C = 1,384 kW) is
                   the water side sizing of the same cooler, 6 % above the vendor duty;
-     oil tank     one temperature node (the return oil), 25,800 kJ/K (about 15 m3 of oil, NO-SOURCE: the tank volume is not in the docs);
+     oil tank     one temperature node (the return oil): main oil tank T-n920 13,200 L normal (21,500 L max; YUA PC read, project file
+                  suzu-leftovers-doc-reads.md) x 0.86 kg/L x 2.0 kJ/kg K = 22,704 kJ/K (was 25,800, NO-SOURCE);
      cooler node  3.2.5 (JENNIE): the oil and the plates inside the cooler are a second node, Ch = 730 kJ/K (CALC from the vendor area
                   146.94 m2: oil channels = half of a 3 mm plate gap -> 0.22 m3 x 0.86 kg/L x 2.0 kJ/kg K = 379 kJ/K; plates 0.6 mm
                   stainless -> 0.088 m3 x 7,900 kg/m3 x 0.5 kJ/kg K = 348 kJ/K; gap and plate thickness NO-SOURCE, the usual values of a
@@ -2128,17 +2133,17 @@ function anAuxStep(U, dt) {
   if (U.gsAI) anUnitWrite(U.gsAI, U.gsV31);
 }
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
-const AN_LO = { UA: 95.8, Co: 1300 / (63.0 - 46), Qb: 1300, Wmax: 170, M: 25800, Ch: 730, Tamb: 30 } /* DESIGN-SRC: O&M L2 TG 2-3 */;
+const AN_LO = { UA: 95.8, Co: 1300 / (63.0 - 46), Qb: 1300, Wmax: 170, M: 13.2 * 860 * 2.0, Ch: 730, Tamb: 30 } /* DESIGN-SRC: O&M L2 TG 2-3; M: main oil tank T-n920 13,200 L normal (YUA read suzu-leftovers-doc-reads.md) */;
 function anLubeCoolStep(U, dt) {
   const K = AN_LO,
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
     flow = (+U.loBrg || 0) > 1.05,
-    mv = U.loMv ? Math.max(0, Math.min(100, anAv('TICLO1002', +U.loMv.S.rt.v[U.loMv.n] || 0))) : 53.1,
-    acw = Math.max(0, Math.min(1, (+U.acQ || 0) / 1500)),
+    mv = U.loMv ? Math.max(0, Math.min(100, anAv('TICLO1002', +U.loMv.S.rt.v[U.loMv.n] || 0))) : 0 /* no TICLO1002 output: no command, TCV-CW1201 shut (was the 27.PNG 53.1 %) */,
+    acw = Math.max(0, Math.min(1, (+U.acQ || 0) / AN_ACW_MB.Q)) /* MB-021 design flow */,
     W = (K.Wmax * mv * acw) / 100 /* T/H */,
     Cw = (W * 1000 * 4.18) / 3600,
     Tw = isFinite(U.acT2) ? U.acT2 : K.Tamb,
-    Qb = flow ? K.Qb * sp : 0;
+    Qb = flow ? K.Qb * sp * sp : 0 /* journal bearing friction ~ speed^2 (Petroff, DERIVED) */;
   let q = 0;
   const hx = Ti => {
     if (!flow || !(Cw > 0)) return 0;
@@ -2946,6 +2951,23 @@ function anGenTemp(U, G, dt) {
   const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600));
   return (3 * (G.kA * 1000) ** 2 * K.Ra + (G.If * K.ifMain) ** 2 * K.Rf) / 1000 + K.q0 * n ** 3;
 }
+/* Phase 11 (YUI): THE GENERATOR ELECTRICAL OUTPUT U.MW (the one writer; port gen.W = it, anGenInt).
+   - 52G closed on the grid: the shaft power less the generator losses, P = Pm - L. Pm = the blade work less the turbine mechanical loss
+     (U.Pm above, turbine.js AN_TB.mech); L = the losses of the generator (anGenTemp: stator copper 3 I^2 Ra, main field I^2 Rf, core /
+     windage / stray at speed, all to the air coolers, port q.ccw.YUI, GAE-2015-0063 R0 p36 2,120 kW at the rating), of the last step.
+     With the steam cut (turbine trip, 52G still closed) P goes below 0: the machine motors on the grid, the 32 reverse power relay sees it.
+     Before: the turbine side lumped all the losses (AN_TB lo + kq, the HB loss) and tripped P lagged 10 s behind it (tauMW, NO-SOURCE).
+   - house load (52L1 open, the transfer done): the generator gives what the house load takes (D = the TCS target = the house load,
+     elec.js), at once (3.2.4-beta.11).
+   - 52G open: 0. */
+function anGenW(U, onGrid, trip, D) {
+  const tb = U.tb || {};
+  if (!onGrid) return 0;
+  if (U.el && U.el.l52 === false && tb.xfer && !trip && isFinite(D)) return D;
+  const q = typeof anPortGet === 'function' ? anPortGet(U, 'q.ccw.YUI') : null,
+    L = q && isFinite(q.Q) ? q.Q / 1000 : 0;
+  return isFinite(U.Pm) ? U.Pm - L : 0;
+}
 /* the energy meters of page 17 count the sim time while synchronised */
 function anGenInt(dt) {
   const U = AN.unit;
@@ -2957,16 +2979,18 @@ function anGenInt(dt) {
   U.genE.MWh += (P * dt) / 3600;
   U.genE.MVArh += (G.MVAr * dt) / 3600;
   /* Phase 11 ports (ports.js, YUI): the generator output, the unit auxiliary power, the cooler duty and the store of this part, once per
-     plant step. gen.W = U.MW for now (the turbine side writes it); with the RIN shaft port it becomes shaft.W - the generator losses.
+     plant step. gen.W = U.MW = the shaft power less the generator losses (anGenW).
      store.YUI E = the kinetic energy of the generator + exciter rotor: H 4.01 s x 176.5 MVA is the whole machine, and the generator +
      exciter share of its GD2 is 16,200 / (23,700 + 16,200) (GAE-2013-0136 R2), x (speed / 3600)^2 */
   const g52 = !!U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'),
     el = typeof anElec === 'function' ? anElec(U) : null,
     n = Math.max(0, ((U.tb && U.tb.rpm) || 0) / 3600);
-  anPortSet(U, 'gen', { W: g52 ? +U.MW || 0 : 0, x: { b52g: g52 ? 1 : 0 } });
+  anPortSet(U, 'gen', { W: g52 ? +U.MW || 0 : 0, x: { b52g: g52 ? 1 : 0 } }); /* = anGenW */
   anPortSet(U, 'aux.power', { W: el ? el.aux : null });
   anPortSet(U, 'q.ccw.YUI', { Q });
   anPortSet(U, 'store.YUI', { mw: 0, E: U.Hgen * AN_GEN.S * (16200 / (23700 + 16200)) * n * n });
+  /* the pick-up contacts of the generator protection relay (A) for the TCS sheets SH-G-5A / 5B (elec.js anGenRelay) */
+  anPortSet(U, 'relay.gen', { x: anGenRelay(U) });
 }
 /* 3.2.3 (SOHEE : PLANT MODEL HELPER, plan task a7 note): SAMPLING AND CHEMICAL DOSING (page "SAMPLING AND DOSING"). Before: no model,
    every analyzer '-----'. docs/versions/v3.2.1/SAMPLING_DOSING_PLANT_MODEL.md has the full source list.
@@ -4103,7 +4127,6 @@ function anUnitStep0(dt) {
     U.tbS
   );
   anTbPorts(U, tb.rpm, U.mhp);
-  const MWss = onGrid ? anTbGen(U.tbS.Whp + U.tbS.Wip) : 0;
   /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of the steam path, each behind its steam
      volume (tSc, tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft.
      Before, Pm fell with the valves at once and a load rejection from 150 MW peaked at 102.2 % (TG manual STIE-14752: about 106 % within
@@ -4114,22 +4137,13 @@ function anUnitStep0(dt) {
       f = T => 1 - Math.exp(-dt / Math.max(0.01, T));
     tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(U.tSc || 0.3) : hp;
     tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(U.tXo || 0.5) : ip;
-    U.Pm = onGrid ? anTbGen(tb.pH + tb.pI) : 0;
+    /* Phase 11 (RIN / YUI): the shaft side of the swing equation = the blade work less the mechanical loss of the turbine (AN_TB.mech,
+       turbine.js); the generator losses are on the electrical side (anGenW) */
+    U.Pm = onGrid ? tb.pH + tb.pI - AN_TB.mech : 0;
   }
-  /* 3.2.4-beta.11: on house load (52L1 open) the generator gives what the house load takes (elec.js): its MW is that load, at once.
-     Before, the MW fell from 150 to the house load with the 10 s steam lag (tauMW) while the breaker was open */
-  if (onGrid && U.el && U.el.l52 === false && tb.xfer && !trip && isFinite(D)) U.MW = D;
-  else if (onGrid && !trip && isFinite(U.Pm)) {
-    /* 3.2.4 (JENNIE, grid frequency fault): on the grid the shaft speed is the grid, so the generator gives the shaft power of now (U.Pm):
-       the HP part behind the steam chest (0.3 s) and the IP / LP part behind the reheater, whose pressure is its own mass balance (U.rr,
-       Crh: about 20 ~ 30 s). Before, a second lag tauMW 10 s on top of them (the reheater counted twice): +6 MW of governor answer took
-       25 s to show instead of the HP part at once */
-    U.MW = U.Pm;
-  } else U.MW += ((MWss - U.MW) * dt) / U.tauMW;
+  U.MW = anGenW(U, onGrid, trip, D);
   anRp32(U, onGrid && !trip, dt);
   anTbSpeed(U, tb, dt, onGrid && !trip && tb.xfer, U.Pm, D);
-  /* 52G open: no load on the machine */
-  if (U.tc && (tb.st === 'off' || tb.st === 'roll')) U.MW = 0;
   U.rpm = tb.rpm;
   U.icvp = 100 * tb.icv;
   if (U.vpos === undefined || (U.vpos && !U.vpos.icvA)) U.vpos = anVposOf(); /* a save point from before 3.2.3-beta.244 / the A, B split */

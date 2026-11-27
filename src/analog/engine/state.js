@@ -317,6 +317,8 @@ function anStateApply(kf) {
     ini = anStateDec(AN_STATE_INIT, objs);
   } catch (e) {}
   for (const k in objs) if (st.obj[k]) anStateInto(objs[k], st.obj[k], ini && ini[k]);
+  /* Phase 11 rank 8: the constants of the unit model come from the code, not from the save (unit.js AN_UNIT_K) */
+  if (ini && ini.AN_UNIT) for (const k of AN_UNIT_K) if (k in ini.AN_UNIT) AN_UNIT[k] = ini.AN_UNIT[k];
   for (const k of AN_STATE_FLAGS) AN[k] = st.flags[k];
   for (const k of AN_STATE_SETS) AN[k] = st.sets[k];
   if (st.u) AN.unit = AN_UNIT;
