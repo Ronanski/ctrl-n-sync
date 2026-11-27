@@ -526,11 +526,13 @@ function anMakeupStep(U, dt) {
                   users 3.755 kg/cm2 at 1500 m3/h; both as loss = k Q^2; two pumps in parallel share the flow;
      strainer DP  0.27 kg/cm2 at 1500 m3/h (27.PNG), x (Q / 1500)^2;
      CCWHE        Hisaka (D1-0-041) per unit: ACW 750 m3/h 50 -> 34 C, seawater 1000 m3/h 30 -> 42.12 C, 13,830 kW, counter flow,
-                  357.5 m2: clean UA = 13830 / LMTD 5.72 = 2418 kW/K. 2 of the 3 in service (NO-SOURCE: the design flow 1500 = 2 x
-                  750). The UA in service is CALIBRATED on 27.PNG (return 40 C, supply 38 C at 1500 m3/h = 3,452 kW, seawater
-                  28.5 C, 2 SWBP): 7.2 % of the clean UA (UNUSUAL: fouled plates, or the snapshot heat load is not the design one);
+                  357.5 m2: clean UA = 13830 / LMTD 5.72 = 2418 kW/K. 2 of the 3 in service (DERIVED: MB-021 header 7 1500 = 2 x 750, MB-020 header 9 2000 = 2 x 1000; the standby is not printed;
+                  ). Phase 11 (SUZU 2026-11-27): the UA in service is the sheet's design point (NO-FIT-OK: history; was 7.2 % of it, CALIBRATED on
+                  27.PNG); the sheet prints no fouling factor (YUA PC read, suzu-pc-answers-2026-11-27.md 2), so the design duty
+                  13,830 kW at its LMTD is the service UA;
                   effectiveness-NTU, counter flow, with the seawater of the running SWBP (U.swQbT) shared by the units in service;
-     heat load    3,480 kW x (0.4 + 0.6 x load / 150 MW) (27.PNG 3,452 kW at 148 MW; the 40 / 60 split NO-SOURCE, as 3.2.0-beta.69);
+     heat load    Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history, was 3,480 kW x (0.4 + 0.6 x MW / 150) on 27.PNG): the sum of the coolers the loop serves,
+                  each from its own physics (acwLoad below, the users of mass balance K1AU3-MB-021 rev 0, A2-0-001 RA p 13);
      temperature  one node for the water of the loop, 180,000 kJ/K (about 43 m3, NO-SOURCE: the loop volume is not in the repository;
                   10 min to settle at full load, ~17 min from 40 to 60 C without seawater); no ACWP: no flow, the water goes to the
                   room temperature 30 C (NO-SOURCE) in 30 min; the bottom ash cooler outlets TT-CW1060 = the supply + 1 C while an
@@ -538,6 +540,10 @@ function anMakeupStep(U, dt) {
    Logic: DITL-76 / 77 START / trip drive the pumps here; PT-CW1152 (< 3.5 kg/cm2 = standby AUTO start), DPT-CW1108-A / B (> 0.8 trip),
    LT-CW1109 (< 0.3 m trip) go back into DITL-76 / 77; PT-CW1156 (DITL-41 < 3.5 / > 7 kg/cm2 annunciator), TT-CW1060 (DITL-21A) and the
    flow switches FS-CW1060 (DITL-21B, low flow) follow this model (plantsw.js). */
+/* kW/K per CCWHE in service. DESIGN-SRC: Hisaka K1AU3-D1-0-041 R0: 13,830 kW counter flow, ACW 50 -> 34 C, sea water 30 -> 42.12 C:
+   LMTD (7.88 - 4.00) / ln(7.88 / 4.00) = 5.72 K -> 2,418 kW/K (U 6,760 W/m2K on 357.5 m2); no fouling factor printed. Kept outside AN_ACW:
+   a save carries AN_ACW (state.js AN_STATE_OBJ), so the 150 MW start state would bring back the old fitted 174.8 */
+const AN_ACW_UA = 13830 / ((50 - 42.12 - (34 - 30)) / Math.log((50 - 42.12) / (34 - 30)));
 const AN_ACW = {
   acwp: ['DITL-76', 'DITL-77'],
   cQ: [0, 300, 600, 900, 1200, 1500, 1800, 2100, 2400],
@@ -561,10 +567,7 @@ const AN_ACW = {
      fT 0.0127; the SOP throttles it (5 % at start), a butterfly 10 ~ 14" 35 fT = 0.445 -> 0.50 m x 0.0991 = 0.049 kg/cm2. The check
      valve V-CW1006 / 1008 is not modelled (its type is not in the docs) */
   kd100: 0.05,
-  heat: 3480,
-  UA: 174.8 /* kW/K per CCWHE in service, CALIBRATED (see above): NTU 0.2025 at 27.PNG with 2 SWBP (2,450 m3/h of the CW model) */,
   M: 180000,
-  Tsw: 28.5,
   Tamb: 30,
   tauP: 3,
   tauI: 2,
@@ -604,6 +607,49 @@ function acwSolve(s, kv, kA) {
     40
   );
   return { Q, q: s.map((si, i) => qOf(si, k * Q * Q, i)) };
+}
+/* Phase 11 (SUZU 2026-11-27): the heat the closed cooling water takes from its users, kW, each from its own cause (no load key).
+   DESIGN-SRC: mass balance K1AU3-MB-021 rev 0 (A2-0-001 RA p 13, YUA PC read suzu-pc-answers-2026-11-27.md 1a / 1b): design duty =
+   flow T/H x 1.1628 kW per T/H K x (out - in).
+     coolers whose loss does not change with the plant load (bearings, a motor at its fixed speed, fan oil): the design duty while
+       that machine runs: BFP set (motor cooler + pump + oil cooler) 39.6 T/H 34 -> 43 = 414 kW each (items 22 / 23); ID fan oil
+       cooler + bearings 59 T/H 34 -> 43 = 617 kW (items 35 / 41) and the GAH 0.3 T/H 34 -> 43 = 3 kW (items 59 / 60, the air heater
+       turns with the ID fan); SA fan bearings 6 T/H 34 -> 37 = 21 kW (34 / 40); PA fan oil cooler 2 T/H 34 -> 37 = 7 kW (34-1 / 40-1);
+       air dryers IA 6 T/H 34 -> 40 = 42 kW, PA 18 T/H 34 -> 40 = 126 kW each (48-4 ~ 6 / 52-4 ~ 6);
+     air compressors: the heat of compression leaves in the cooling water, so the duty = the shaft power of each running compressor
+       (anAirStep U.iaKw / U.paKw). The MB-021 sizing (29 / 80 T/H 34 -> 43 = 304 / 837 kW) is above that shaft power (176 / 600 kW)
+       and is not used;
+     sampling rack: fixed sample flows (items 24 / 25, 30.5 T/H 34 -> 43 = 319 kW at the design drum, FHI P2S7 design data SH outlet
+       129 + SH drop 16 = 145 kg/cm2 G) x (sample saturation - supply) / (Tsat(145) - 34): the heat goes with the sample temperature;
+     turbine lube oil cooler: what anLubeCoolStep removes (U.loQ); bottom ash screw coolers: what anBacStep removes (U.bacQ);
+     generator air coolers (items 14 ~ 21, 3,041 kW design): the generator losses of the generator part (YUI, PR 665: U.genQ =
+       stator 3 I^2 Ra + field I^2 Rf + the rest at speed, 3,041 kW at the rating; it becomes the port q.ccw.YUI with ports.js).
+   The values of the step before (the users step after the loop), a one-scan lag. */
+const AN_CCWQ = { bfp: 414, idf: 617, gah: 3, saf: 21, paf: 7, iaD: 42, paD: 126, smp: 319, Pd: 145, Td: 34 };
+function acwLoad(U) {
+  const K = AN_CCWQ,
+    bit = a => (typeof srcBit === 'function' && srcBit([a]) > 0.5 ? 1 : 0),
+    idf = bit('M.3304'),
+    sum = (k, n) => {
+      let q = 0;
+      for (let i = 0; i < n; i++) q += +U[k + i] || 0;
+      return q;
+    },
+    Tsat = isFinite(U.Pd) && typeof steamTsat === 'function' ? steamTsat(Math.max(0, U.Pd)) : 0,
+    Tw = isFinite(U.acT2) ? U.acT2 : K.Td,
+    smp = (K.smp * Math.max(0, Tsat - Tw)) / (steamTsat(K.Pd) - K.Td),
+    gen = Math.max(0, +U.genQ || 0);
+  const q = {
+    bfp: K.bfp * (U.fwRun || []).reduce((a, r) => a + (r ? 1 : 0), 0),
+    fans: (K.idf + K.gah) * idf + K.saf * bit('M.3303') + K.paf * bit('M.3302'),
+    air: sum('iaKw', 3) + sum('paKw', 3) + K.iaD * sum('iaD', 3) + K.paD * sum('paD', 3),
+    smp,
+    lo: Math.max(0, +U.loQ || 0),
+    bac: Math.max(0, +U.bacQ || 0),
+    gen
+  };
+  U.acLoad = q;
+  return q.bfp + q.fans + q.air + q.smp + q.lo + q.bac + q.gen;
 }
 function anAcwStep(U, dt) {
   const K = AN_ACW,
@@ -655,8 +701,9 @@ function anAcwStep(U, dt) {
     else lag('acI' + i, s < 1 ? K.Ist : (1000 * P) / (1732.05 * K.kV * K.eff * K.pf), K.tauI);
   });
   /* heat: the users, the CCWHE (effectiveness-NTU, counter flow) with the seawater of the running SWBP */
-  const ld = Math.max(0, Math.min(1, (isFinite(U.MW) ? U.MW : 0) / 150)),
-    Qload = K.heat * (0.4 + 0.6 * ld),
+  const Tsw =
+      AN_SW_TIN[0] /* the sea water of the SWBP: the intake, MB-020 items 7 ~ 10 30 C (= the condenser inlet) */,
+    Qload = acwLoad(U),
     Ch = (Q * 991 * 4.18) / 3600 /* kW/K */,
     Qsw = Math.max(0, U.swQbT || 0),
     Cc = (Qsw * 1025 * 3.99) / 3600;
@@ -666,7 +713,7 @@ function anAcwStep(U, dt) {
       cc = Cc / Math.max(1, nHx),
       cmin = Math.min(ch, cc),
       cr = cmin / Math.max(ch, cc),
-      ntu = K.UA / cmin,
+      ntu = AN_ACW_UA / cmin,
       e = cr < 0.999 ? (1 - Math.exp(-ntu * (1 - cr))) / (1 - cr * Math.exp(-ntu * (1 - cr))) : ntu / (1 + ntu);
     hx = e * cmin * nHx; /* kW per K of (return - seawater) */
   }
@@ -676,12 +723,12 @@ function anAcwStep(U, dt) {
     if (first || !isFinite(U.acT1))
       U.acT1 =
         hx > 0 && Q > 0.5 * K.dQ
-          ? K.Tsw + Qload / hx
+          ? Tsw + Qload / hx
           : Math.min(60, K.Tamb + 10); /* 3.2.1: a throttled first step does not start hot */
-    U.acT1 += ((Qload - hx * (U.acT1 - K.Tsw)) * dt) / K.M;
-    U.acT1 = Math.max(K.Tsw, Math.min(99, U.acT1));
-    U.acT2 = U.acT1 - (hx * (U.acT1 - K.Tsw)) / Ch;
-    U.acHx = Math.round(hx * (U.acT1 - K.Tsw));
+    U.acT1 += ((Qload - hx * (U.acT1 - Tsw)) * dt) / K.M;
+    U.acT1 = Math.max(Tsw, Math.min(99, U.acT1));
+    U.acT2 = U.acT1 - (hx * (U.acT1 - Tsw)) / Ch;
+    U.acHx = Math.round(hx * (U.acT1 - Tsw));
   } else {
     if (!isFinite(U.acT1)) U.acT1 = K.Tamb;
     if (!isFinite(U.acT2)) U.acT2 = K.Tamb;
@@ -715,6 +762,7 @@ function anBacStep(U, dt) {
     fw = Math.max(0, Math.min(1, (+U.acQ || 0) / 1500)),
     Tb = isFinite(U.Tb) ? U.Tb : 30;
   U.bhSilo = K.silo;
+  let bacQ = 0;
   'ABCD'.split('').forEach((x, i) => {
     const o = (U.bedSc || [])[i],
       run = typeof anDitlRun === 'function' && anDitlRun(i ? 'DITL-21A #' + x : 'DITL-21A') === 1,
@@ -737,6 +785,7 @@ function anBacStep(U, dt) {
           q = e * cmin * (Ti - Tw);
         a2 = Ti - q / Ch;
         w2 = Tw + q / Cc;
+        bacQ += q;
       } else {
         a2 = Ti; /* no cooling water flow: no heat taken, the ash leaves hot */
       }
@@ -749,4 +798,5 @@ function anBacStep(U, dt) {
     L('bw' + x + '1', w2);
     L('bw' + x + '2', w2);
   });
+  U.bacQ = bacQ; /* kW to the closed cooling water (acwLoad) */
 }
