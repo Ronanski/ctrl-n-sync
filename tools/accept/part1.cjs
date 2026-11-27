@@ -274,7 +274,7 @@ const judge = (v, tg, tol, kind) => {
       });
       console.log('\nSWEEP (every plant minute, 150 -> 45 MW, design curves):\n' + SJ.md(J));
       console.log('ports not written: ' + (PB.missingPorts ? PB.missingPorts.length : 'n/a') + '; balance ' + JSON.stringify(PB.balance));
-      fs.writeFileSync(process.env.OUT_SWEEP || 'sweep.json', JSON.stringify({ SW, J, missingPorts: PB.missingPorts, balance: PB.balance }));
+      fs.writeFileSync(process.env.OUT_SWEEP || 'sweep.json', JSON.stringify({ date: new Date().toISOString().slice(0, 10), SW, J, missingPorts: PB.missingPorts, balance: PB.balance }));
     }
   } finally {
     await browser.close();
