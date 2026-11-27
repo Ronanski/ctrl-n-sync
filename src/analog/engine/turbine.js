@@ -365,10 +365,10 @@ function anTbPx(k) {
 }
 /* Phase 11 rank 1: the turbine ports (ports.js; one writer: this file). Units ata, C, kJ/kg, T/H, MW.
    shaft.W = the steam work on the blades less the turbine bearing / mechanical loss (YUI subtracts the generator losses from it, agreed
-   2026-11-27). The mechanical loss: the HB lumped loss at 100 % (2.565 + 3.295e-5 shaft^2 = 3.34 MW, turbine-hb.cjs) less the generator losses at 150 MW (YUI:
-   1.94 MW from the generator air cooler rated duty 2,120 kW, generator O&M GAE-2015-0063 R0 p36) = 1.40 MW, constant with load (bearing
+   2026-11-27). The mechanical loss: the HB lumped loss at 100 % (2.565 + 3.295e-5 shaft^2 = 3.34 MW, turbine-hb.cjs) less the generator losses at 150 MW (YUI PR 700:
+   1.794 MW, unit.js anGenTemp U.genT.L from the generator type test LM-GEE-2014-0822 R0 p31, 2,032 kW at the rating) = 1.55 MW, constant with load (bearing
    friction goes with the speed, not the load). NO-SOURCE: the MHPS turbine bearing loss itself (not in the TG manuals, YUA) */
-AN_TB.mech = 1.4;
+AN_TB.mech = 1.55;
 /* Phase 11 rank 9 (RIN, 2026-11-27): THE BYPASS AND BLOW-OFF VALVES BY THE CONTROL VALVE FLOW LAW of IEC 60534-2-1 (compressible fluid),
    in place of "share x anchor flow x opening x pressure / anchor pressure" (U.hpb / U.blo / U.lpb, scaled on the 150 MW start).
      W = N6 Fp Cv(lift) Y sqrt(x p1 rho1)   kg/h, N6 = 27.3 (p bar, rho kg/m3), x = (p1 - p2) / p1 held at the choked limit Fg xT,
