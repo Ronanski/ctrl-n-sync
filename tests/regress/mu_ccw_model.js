@@ -53,11 +53,12 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
       };
     };
     const o = {};
-    AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
+    /* Phase 11 (SUZU 2026-11-27): the one start path "At 150 MW" (the st150 steady save), as feedwater.js / unit_load.js. The bare
+       AN.plantLoad150 + DITL150.apply no longer holds the load on main (the turbine is off in 60 s), so the old start tested a tripped plant */
+    await AN.ades();
+    WORLD.set(true);
+    document.getElementById('load150').click();
+    await AN._startP;
     await run(900); /* Phase 11: the loop settles from the start state to its own energy balance (180,000 kJ/K) */
     o.d = snap();
     set('DITL-76', 2, true); /* I.0087 MIT-P1108A A-AUX. CW PUMP TRIP */

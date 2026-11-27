@@ -41,11 +41,12 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     };
     const snap = () => ({ out: f(U().loCoolOut), tin: f(U().loTin), tb3: f(U().loTb3), mv: U().loMv ? f(+U().loMv.S.rt.v[U().loMv.n]) : null, cw: U().loCwF, sup: f(U().acT2), ctl: pv() });
     const o = {};
-    AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
+    /* Phase 11 (SUZU 2026-11-27): the one start path "At 150 MW" (the st150 steady save), as feedwater.js / unit_load.js. The bare
+       AN.plantLoad150 + DITL150.apply no longer holds the load on main (the turbine is off in 60 s), so the old start tested a tripped plant */
+    await AN.ades();
+    WORLD.set(true);
+    document.getElementById('load150').click();
+    await AN._startP;
     await run(120);
     o.d = snap();
     for (const n of ['DITL-30', 'DITL-30 #B', 'DITL-30 #C']) set(n, 2, true);
