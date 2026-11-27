@@ -50,7 +50,7 @@ const html =
     return o;
   };
   const a = await read();
-  const m = await page.evaluate(() => ({ cdP: AN.unit.cdP, MW: AN.unit.MW, f1: AN.unit.tt['ZT-AS1020-1'], f2: AN.unit.tt['ZT-AS1020-2'] }));
+  const m = await page.evaluate(() => ({ cdP: AN.unit.cdP, MW: AN.unit.MW, f1: AN.unit.tt['ZT-AS1020-1'], f2: AN.unit.tt['ZT-AS1020-2'], T3: AN.unit.asT3, F: AN.unit.asF }));
   console.log(JSON.stringify(a));
   const num = s => (s == null ? NaN : parseFloat(s));
   /* saturation (C) of a pressure in kg/cm2 A, the water Antoine law the engine uses for the hood (unit.js anTsatA, not on window) */
@@ -63,7 +63,10 @@ const html =
   ck(['TEST11101', 'TEST11102', 'TEST11103'].every(k => Math.abs(num(a[k]) - m.Ts) <= 1.5), `exhaust hood temperature ${a.TEST11101} / ${a.TEST11102} / ${a.TEST11103} C = saturation ${m.Ts.toFixed(1)} C at ${m.cdP.toFixed(3)} kg/cm2A`);
   /* beta.359: the two cold reheat valves are the ABC-030 F(X) of the PIC-AS1005 output (unit.js): the page shows the logic value */
   ck(near('ZT-AS1020-1', m.f1, 0.11) && near('ZT-AS1020-2', m.f2, 0.11), `PCV-AS1020-1 / -2 page ${a['ZT-AS1020-1']} / ${a['ZT-AS1020-2']} % = F(X) of PIC-AS1005 ${m.f1} / ${m.f2} %`);
-  ck(near('PTGS10011', 0.32, 0.01) && near('TEGS1002', 364, 15) && near('TEGS1003', 362, 15) && near('TT-AS1015', 257, 15), `gland header ${a.PTGS10011} kg/cm2, ${a.TEGS1002} / ${a.TEGS1003} C, TT-AS1015 ${a['TT-AS1015']} C (29.PNG 0.32, 364 / 362, 257)`);
+  /* Phase 11 (SUZU 2026-11-27): the gland header by the Hitachi HB case 1 balance (1,820 kg/h of HP packing leak in, 793 to the seals,
+     the rest spilled by PV-GS1034): its steam is the leak mix (767.5 kcal/kg) less the header loss, so near 29.PNG 364 / 362; TT-AS1015
+     is the aux header steam that the 5 mm warm-up orifice passes with PV-GS1031 shut (PD-014, 310PK01-852), = TT-AS1003 (29.PNG 257) */
+  ck(near('PTGS10011', 0.32, 0.01) && near('TEGS1002', 364, 20) && near('TEGS1003', 362, 20) && near('TT-AS1015', m.T3, 3) && m.F.wWu > 10 && m.F.wGf < 1, `gland header ${a.PTGS10011} kg/cm2, ${a.TEGS1002} / ${a.TEGS1003} C (29.PNG 0.32, 364 / 362), TT-AS1015 ${a['TT-AS1015']} C = the aux header TT-AS1003 ${(+m.T3).toFixed(1)} C through the warm-up orifice ${m.F.wWu} kg/h, feed PV-GS1031 ${m.F.wGf} kg/h (self-sealing; 29.PNG 257)`);
   /* beta.359: no snapshot number (design is the model): the unloading valve throttles (between closed and full open) to hold the gland
      header checked above; the HP warming valve MV-AS1011 is shut on load */
   ck(num(a['PV-GS1034']) > 1 && num(a['PV-GS1034']) < 99 && num(a['ZT-AS1011']) === 0, `unloading valve PV-GS1034 ${a['PV-GS1034']} % throttling, HP warming MV-AS1011 ${a['ZT-AS1011']} % shut`);

@@ -1748,12 +1748,8 @@ function anCdTagStep(U, ld) {
      PTST11101 ~ 3 = PT-CD1110 (the model condenser U.cdP); TEST11101 ~ 3 = the LP exhaust hood of the TCS model (tcs.js c.Tx, start-up),
      the condenser saturation without it (Start at 150 MW);
      ZT-AS1020-1 / -2 = the F(X) of the PIC-AS1005 MV (held by the airlock without air, AN_AV);
-     gland header (in service: the TCS gland sealing, or a turbine on load): 0.32 kg/cm2 = 29.PNG; the steam seal feed valve
-     sheet (TG maintenance manual p2500 ~ 2501) gives a set point of about 0.3 kg/cm2 g (CALC), the LOW alarm is 0.10 kg/cm2 (ATS 1.10);
-     out of service 0;
-     NO-SOURCE (no load curve in the docs): from no load (fed from the aux steam header, TT-AS1015 = TT-AS1003) to 150 MW (self-sealing, 29.PNG)
-     linear in the load: TT-AS1015 + 21 C, TEGS1002 + 107 C over TT-AS1015, TEGS1003 = TEGS1002 - 2, PV-GS1034 42.6 %; the temperatures
-     follow with 300 s;
+     gland header PTGS10011 / 2, PV-GS1031 / 1034, TEGS1002 / 1003: the gland header volume and its energy balance in anAuxStep
+     (AN_AS; Phase 11 SUZU 2026-11-27, was a 0.32 kg/cm2 fallback and a load law on 29.PNG), TT-AS1015 the steam before PV-GS1031;
      MV-AS1011 = 40 % while the TCS is in HP TURBINE WARMING (step 0, phase warm), else 0. */
 function anAsTagStep(U, dt) {
   const r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
@@ -1761,8 +1757,6 @@ function anAsTagStep(U, dt) {
     C = U.asC || (U.asC = {}),
     c = U.tc,
     Ta = isFinite(U.Tamb) ? U.Tamb : 30,
-    L = Math.max(0, Math.min(1, (+U.MW || 0) / 150)),
-    gland = isFinite(U.gsP) ? U.gsP >= 0.1 : c ? !!c.gland : (U.tb && U.tb.rpm > 100) || (+U.MW || 0) > 0,
     Ps = isFinite(U.cdP) ? anTsatA(U.cdP) : NaN,
     hood = c && isFinite(c.Tx) ? c.Tx : isFinite(Ps) ? Ps : Ta;
   /* PIC-AS1005 MV -> the two valves (ABC-030 F(X)) */
@@ -1773,7 +1767,6 @@ function anAsTagStep(U, dt) {
     C.n = k ? k.out : null;
     C.f1 = C.S ? C.S.blk.find(b => b.k === 'FX' && b.p && b.p.ln === 'LN17') || null : null;
     C.f2 = C.S ? C.S.blk.find(b => b.k === 'FX' && b.p && b.p.ln === 'LN16') || null : null;
-    C.taux = anUnitAIs('2|AI0642');
   }
   let mv = C.S ? Math.max(0, Math.min(100, +C.S.rt.v[C.n] || 0)) : NaN;
   if (AN_AV.hold.PICAS1005) {
@@ -1784,12 +1777,7 @@ function anAsTagStep(U, dt) {
     mv = H['mv:PICAS1005'];
   }
   const fx = b => (b && isFinite(mv) ? Math.max(0, Math.min(100, anFXs(b.p, mv).y)) : NaN),
-    Taux = anUnitVal(C.taux || []),
-    t15 = gland ? (isFinite(Taux) ? Taux : Ta) + 21 * L : Ta,
-    tgs = gland ? t15 + 107 * L : Ta,
-    lag = (k, x) => (U[k] = !isFinite(U[k]) ? x : dt > 0 ? U[k] + ((x - U[k]) * Math.min(dt, 300)) / 300 : U[k]); /* beta.241: dt 0 (anTagsNow at a load) holds the lag */
-  lag('asT15', t15);
-  lag('asTgs', tgs);
+    Tst = x => (isFinite(x) ? x : Ta) /* TT-AS1015 / TEGS1002: the balances of anAuxStep (AN_AS), the room before its first step */;
   Object.assign(U.tt || (U.tt = {}), {
     PTST11101: r3(U.cdP),
     PTST11102: r3(U.cdP),
@@ -1799,12 +1787,12 @@ function anAsTagStep(U, dt) {
     TEST11103: r1(hood),
     'ZT-AS1020-1': r1(fx(C.f1)),
     'ZT-AS1020-2': r1(fx(C.f2)),
-    'TT-AS1015': r1(U.asT15),
-    PTGS10011: isFinite(U.gsP) ? r3(U.gsP) : gland ? 0.32 : 0,
-    PTGS10012: isFinite(U.gsP) ? r3(U.gsP) : gland ? 0.32 : 0,
-    TEGS1002: r1(U.asTgs),
-    TEGS1003: r1(U.asTgs - 2 * L),
-    'PV-GS1034': isFinite(U.gsV34) ? r1(U.gsV34) : gland ? r1(42.6 * L) : 0,
+    'TT-AS1015': r1(Tst(U.asT15)),
+    PTGS10011: r3(U.gsP) /* the gland header volume of anAuxStep (was a 0.32 fallback of 29.PNG) */,
+    PTGS10012: r3(U.gsP),
+    TEGS1002: r1(Tst(U.asTgs)),
+    TEGS1003: r1(Tst(U.asTgs)),
+    'PV-GS1034': isFinite(U.gsV34) ? r1(U.gsV34) : 0 /* the gland PI of anAuxStep (NO-FIT-OK: history, was a 42.6 % x MW / 150 fallback) */,
     'PV-GS1031': isFinite(U.gsV31) ? r1(U.gsV31) : 0,
     'ZT-AS1011': c && c.cur === 0 && c.ph === 'warm' ? 40 : 0
   });
@@ -1861,7 +1849,20 @@ const AN_AS = {
   gKp: 60 /* % per kg/cm2, NO-SOURCE */,
   gTi: 15 /* s, NO-SOURCE */,
   Kseal: 2170 / Math.sqrt(1.31 * 1.31 - 0.07 * 0.07),
-  Whp0: 2694,
+  /* Phase 11 (SUZU 2026-11-27, Rule 0; was Whp0 2694 = 2243 + 451 FIT on 29.PNG, NO-FIT-OK: history). Hitachi heat balance
+     PPE-14-0725 R1 case 1 (150 MW, 310SD07-485, YUA read suzu-gland-2026-11-27.md 3): the HP packings put 403 kg/h (inlet end, outer,
+     main steam 823.2 kcal/kg) + 1,417 kg/h (exhaust end, outer, cold reheat 751.7 kcal/kg) = 1,820 kg/h into the steam seal regulator
+     (the gland header); the header gives 421 (gland steam condenser) + 372 (main condenser, No.3 PKG) = 793 kg/h to the LP / outer
+     seals and spills 1,027 to the No.1 LP heater (PV-GS1034). So the seal users on load are the LP / outer glands only (kLP from the
+     793 at the HB 0.070 ata and the 0.32 kg/cm2 g header); off load the HP packings take seal steam too: kHP = Kseal - kLP (the feed
+     valve sheet NOR 2,170 kg/h at no load). */
+  Whp0: 1820,
+  hpMs: 403 / 1820 /* share of the leak at the main steam enthalpy, the rest at the cold reheat (HB case 1) */,
+  kLP: 793 / Math.sqrt(1.353 * 1.353 - 0.0714 * 0.0714),
+  /* the warm-up orifice around PV-GS1031 (Hitachi 310PK01-852 R1 as-built, GS-n-022 / 023 1", RO 5 mm, no valve; between MV-GSn030
+     and PV-GS1031 to the header): Cv of a 5 mm sharp-edged orifice, Cd 0.61 (textbook): Q = Cd A sqrt(2 dP / rho), 0.70 gpm at 1 psi
+     of water = Cv 0.70 (DERIVED). MV-GSn030 (TCS TCA650, auto open) is taken open while the gland sealing is in service */
+  cvWu: 0.7,
   Vc: 338,
   cdaLeak: 25.5 / 3600 / 235 /* m2, the orifice that passes 25.5 kg/h into the design vacuum */,
   cdaGl: 0.00072,
@@ -2040,7 +2041,8 @@ function anAuxStep(U, dt) {
       wGf = anStmW(K.cvGf * oF, Pa, Pg, K.Tg),
       Pga = Pg + 1.0332,
       Pc = anCdP(Tc, U.cdAirP),
-      wSeal = Pga > Pc ? K.Kseal * Math.sqrt(Pga * Pga - Pc * Pc) : 0,
+      wSeal = Pga > Pc ? (onLoad ? K.kLP : K.Kseal) * Math.sqrt(Pga * Pga - Pc * Pc) : 0 /* HB case 1: on load the HP packings feed (wHp), not take */,
+      wWu = gsOn ? anStmW(K.cvWu, Pa, Pg, K.Ta) : 0 /* the 5 mm warm-up orifice around PV-GS1031 */,
       Pcra = Pcr + 1.0332,
       wHp =
         onLoad && Pcra > Pga
@@ -2050,8 +2052,8 @@ function anAuxStep(U, dt) {
     /* header pressures: dm = V drho/dP dP (drho/dP of IF97 at the header state) */
     const dRa = Math.max(0.05, (steamRho(Pa + 0.05, K.Ta) - steamRho(Pa - 0.05, K.Ta)) / 0.1),
       dRg = Math.max(0.05, (steamRho(Pg + 0.05, K.Tg) - steamRho(Pg - 0.05, K.Tg)) / 0.1);
-    U.asP = Math.max(-1, Pa + ((w1010 + w1020 - w1030 - wej - wGf) / 3600) * (h / (K.Va * dRa)));
-    U.gsP = Math.max(Pc - 1.0332, Pg + ((wGf + wHp - wSeal - wGu) / 3600) * (h / (K.Vg * dRg)));
+    U.asP = Math.max(-1, Pa + ((w1010 + w1020 - w1030 - wej - wGf - wWu) / 3600) * (h / (K.Va * dRa)));
+    U.gsP = Math.max(Pc - 1.0332, Pg + ((wGf + wWu + wHp - wSeal - wGu) / 3600) * (h / (K.Vg * dRg)));
     /* condenser air */
     /* 3.2.4 (JENNIE): trainer fault cd.air "Condenser air in-leakage (grows)": a crack at a flange or an expansion joint under
        vacuum. The in-leakage orifice (25.5 kg/h design, ED 066 p6) opens: x2 every 10 min (NO-SOURCE trainer rate) up to x64
@@ -2074,7 +2076,7 @@ function anAuxStep(U, dt) {
       sJ = anAsTab(K.sSjae, Pc) * m1396 * fm * cep,
       aout = ((sS + sJ) * rhoA) / 3600;
     U.cdAirP = Math.max(0, U.cdAirP + ((ain - aout) * h * 287 * (Tc + 273.15)) / K.Vc / 98066.5);
-    Object.assign(F, { w1010, w1020, w1030, wej, wGf, wSeal, wHp, wGu, ain: ain * 3600, aout: aout * 3600, oF, oU });
+    Object.assign(F, { w1010, w1020, w1030, wej, wGf, wWu, wSeal, wHp, wGu, ain: ain * 3600, aout: aout * 3600, oF, oU });
   }
   for (const k in F) F[k] = Math.round(F[k] * 1000) / 1000;
   U.asF = F;
@@ -2128,7 +2130,27 @@ function anAuxStep(U, dt) {
       hG = steamH(Pa, Math.max(tsA, T3)),
       T17in = wG > 0 ? tOf(Pg, (wG * hG + sG * hw) / (wG + sG), tsG) : NaN,
       Tgs = isFinite(U.asTgs) ? U.asTgs : Ta0;
-    metal('asT17', T17in, wG + sG, K.Mc17, K.UA17, K.G17, Tgs);
+    const T17 = metal('asT17', T17in, wG + sG, K.Mc17, K.UA17, K.G17, Tgs);
+    /* Phase 11 (SUZU 2026-11-27, Rule 0, NO-FIT-OK: history; was TEGS1002 = TT-AS1015 + 107 C x MW / 150, a load law on 29.PNG):
+       TT-AS1015 (STN102 AI0643 "gland steam desuperheater outlet") is the steam after the
+       spray, upstream of PV-GS1031 (PD-014 zone G-H: desuperheater, TT-AS1015, drain pot DP-AS01, MV-GSn030, PV-GS1031, header): the
+       steam of the aux header that the feed valve and the 5 mm warm-up orifice pass (29.PNG reads 257 C at 150 MW with the feed valve
+       shut). TEGS1002 (the gland steam seal header) is the energy balance of the header
+       metal: in, the feed of PV-GS1031 at TT-AS1017, the warm-up orifice at TT-AS1015 and the HP packing leak wHp (throttled,
+       constant enthalpy, HB case 1 mix of main steam and cold reheat), out the same flow; metal and loss of the header as the gland pipe (Mc17 / UA17, NO-SOURCE). TEGS1003 (LP inlet) is
+       the header steam: the loss of the line to the LP glands is not in the docs (NO-SOURCE), none. */
+    const wH = F.wHp || 0,
+      wW = F.wWu || 0,
+      wF = wG + wW,
+      /* TT-AS1015: the steam after the desuperheater at the aux header pressure, while PV-GS1031 or the warm-up orifice passes it
+         (the spray only with the feed valve open: TICAS1017); no steam: the line cools to the room (300 s, NO-SOURCE) */
+      h15 = wF > 0 ? (wF * hG + sG * hw) / (wF + sG) : NaN,
+      T15 = wF > 0 ? tOf(Pa, h15, tsA) : Ta0;
+    U.asT15 = wF > 0 || !isFinite(U.asT15) ? T15 : U.asT15 + ((T15 - U.asT15) * Math.min(dt, 300)) / 300;
+    const hLk = K.hpMs * h1 + (1 - K.hpMs) * hR /* HB case 1: 403 kg/h at the main steam, 1,417 at the cold reheat enthalpy */,
+      wGs = wG + sG + wW + wH,
+      TgsIn = wGs > 0 ? tOf(Pg, ((wG + sG) * steamH(Pg, Math.max(tsG, T17)) + wW * h15 + wH * hLk) / wGs, tsG) : NaN;
+    metal('asTgs', TgsIn, wGs, K.Mc17, K.UA17, 0, Ta0);
     U.asT1 = T1;
     U.asT3 = T3;
     anUnitWrite(U.asTAI[0], U.asT1);
