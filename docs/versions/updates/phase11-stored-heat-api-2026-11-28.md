@@ -10,3 +10,4 @@
 - AN_FAB.a0 (the HMI current scale) is found on the first call (anFabA0), because AN_FD is set further down.
 - Tested headless at 150 MW: FA blower A current unchanged 37.75 A; q.motor.AOI P +0.8 kW, Q +7 kvar. gen-electrical, tcs-motors, no-fit, one-path, u-const pass.
 - User rule 2026-11-28 5:18 AM PHT (no snapshot, not even as a check): the FA blower current is no longer scaled to the 9.png 37.3 A. It is the TECO motor at the blower curve's machine kW: 42.3 A for blower A at the 150 MW start (FLA 49.4 A). tests/regress/fans.js and fab_curve_current.js (not in Checks) still expect the 9.png 37.3 A; they are listed for the phase thread's snapshot guard and were not changed here.
+- PA grate share AN_PA_FURN = 325 / 388 (FHI mass balance 100 % BMCR, PA sheet; was 328.2 / 354.0 from an HMI snapshot). Headless 150 MW 30 plant min: MW 150.9 ~ 151.1, Pms 122.1 ~ 122.5, no trip.
