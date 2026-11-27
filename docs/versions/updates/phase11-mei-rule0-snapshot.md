@@ -8,7 +8,11 @@ Rule 0 (user 2026-11-28 5:18 AM PHT): plant snapshots, trends and SOP are not us
 - TT-CD1110-4 (flash chamber) = the condenser saturation U.cdTs (the chamber vents to the shell). Was hotwell + 2 C x load.
 - anCondStep: no seawater = no cooling. With no circulating water and no steam the shell held its heat instead of relaxing to the
   seawater inlet temperature; with steam it heats to 100 C as before.
-- SNAPSHOT-TO-REPLACE, PC read asked: CEP strainer DP 0.019 kg/cm2 at 383 T/H; the 1/2 split of the GSC / ejector rise (TT-CD1119).
+- CEP suction strainer DP (DPT-CD1001 / 1002): was 0.019 kg/cm2 at 383 T/H (a plant reading). Now clean-screen K rho v^2 / 2 on the
+  suction DN350 (KSB P&ID PR 73721 B), 40 mesh (D1-0-052), Idelchik woven screen, screen / pipe area 3 (NO-SOURCE, usual minimum):
+  0.003 kg/cm2 at 400 m3/h. The strainer's own sheet is not in the docs (YUA read 2026-11-28).
+- TT-CD1119 (SJAE condenser outlet): share 0.460 of the SJAE + GSC rise from the HB case 1 steam-side duties (310SD07-485 R4: SJAE
+  400 kg/h 752 -> 152 kcal/kg, GSC 421 kg/h 767.6 -> 99.1); was 1/2 (a plant screen). 150 MW: 38.3 C over a 37.7 C hotwell.
 - Snapshot notes removed from the condenser, CEP, LP heater and polisher comments.
 
 ## Tests (regress, not in Checks)

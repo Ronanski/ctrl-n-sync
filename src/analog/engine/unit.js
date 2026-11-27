@@ -1302,12 +1302,25 @@ const AN_CD = {
   pQ: [0, 50, 400, 480],
   pP: [105, 123, 252, 283],
   zS: 2.014 - 0.336 /* m, GA F30157 A + K2MC3A hotwell normal level, see above */,
-  /* CEP suction strainer DP (DPT-CD1001 / 1002; DITL-61A rows 24 / 27 alarm at 0.08 / 0.1 kg/cm2): SNAPSHOT-TO-REPLACE (rule 0,
-     2026-11-28): 0.019 kg/cm2 at 383 T/H is a plant reading, not a design value. Its replacement, DP = K v^2 from the strainer design
-     (clean DP at the rated flow, KSB P&ID A06 / PD-016 strainer data), is asked of the PC read; until then it shows a DP only */
-  dp0: 0.019,
-  q0: 383
+  /* CEP suction strainer DP (DPT-CD1001 / 1002, range 0 ~ 1 kg/cm2; DITL-61A rows 24 / 27 alarm at 0.08 / 0.1 kg/cm2, clogging).
+     The strainer's own data (clean DP, mesh, K) is NOT IN DOCS (YUA PC read 2026-11-28, mei-snapshot-replace-reads-2026-11-28.md:
+     KSB L10-1 A06 has no strainer in scope; D1-0-052 covers the other STR-CD). Derived, clean screen, rule 0:
+       line   the pump suction nozzle N1 DN350 (14 in, STD, ID 333.4 mm; KSB P&ID PR 73721 B rev 2): v = q / (pi D^2 / 4);
+       screen 40 mesh SUS304 (the plant condensate strainer spec D1-0-052, same service; 0.25 mm wire: open ratio f = (0.385 /
+              0.635)^2 = 0.367); Idelchik (Handbook of Hydraulic Resistance, diagram 8-6, woven wire screen) on the screen face
+              velocity: K_s = 1.3 (1 - f) + (1 / f - 1)^2 = 3.79;
+       area   screen open area / pipe area 3 (NO-SOURCE: the usual minimum of a basket / Y strainer), so on the pipe velocity
+              K = K_s / 3^2 = 0.42; the housing turn is not counted.
+     DP = K rho v^2 / 2: 0.003 kg/cm2 at 400 m3/h, clean. Before: 0.019 kg/cm2 at 383 T/H, a plant reading (gone). */
+  str: { D: 0.3334, f: 0.367, ar: 3, rho: 992.6 /* water at 40 C, KSB sp. gr. 0.9926 */ }
 };
+/* the clean suction strainer DP, kg/cm2, at q m3/h through one pump (AN_CD.str above) */
+function anCdStrDp(q) {
+  const S = AN_CD.str,
+    Ks = 1.3 * (1 - S.f) + (1 / S.f - 1) ** 2,
+    v = Math.max(0, q) / 3600 / ((Math.PI / 4) * S.D * S.D);
+  return ((Ks / (S.ar * S.ar)) * S.rho * v * v) / 2 / 98066.5;
+}
 /* Phase 11 rank 10 (MEI): the condensate pump motor M-1116A / B (6.6 kV induction motor, KSB pump P-1116A / B).
    Design point, FHI load schedule K1AU3-E1-0-302 Rev A p4 (bus 1AM, items 6 / 7; YUA PC read 2026-11-27, project file
    mei-cep-motor-2026-11-27.md): 6600 V, 298.4 kW shaft, eff 0.94, pf 0.88, F.L.A. 31.56 A (= 298.4 / (sqrt3 x 6.6 x 0.94 x 0.88)),
@@ -1487,7 +1500,7 @@ function anCondStep(U, dt) {
     const o = {};
     U['cdI' + i] = r ? Math.round(10 * anCepI(swInterp(K.pQ, K.pP, q), o)) / 10 : 0;
     if (r) (el.P += o.P), (el.Q += o.Q);
-    U['cdDp' + i] = r ? Math.round(1000 * K.dp0 * (q / K.q0) * (q / K.q0)) / 1000 : 0;
+    U['cdDp' + i] = r ? Math.round(1000 * anCdStrDp(q)) / 1000 : 0;
   });
   if (typeof anPortSet === 'function') anPortSet(U, 'q.motor.MEI', el);
 }
@@ -1754,10 +1767,12 @@ function anHxTagStep(U, dt) {
 /* 3.2.1 (IRENE, page 05 CONDENSATE): the other condensate transmitters of the page that no sheet reads (AN.unit.tt).
    Phase 11 (MEI, rule 0 of 2026-11-28: no plant snapshot, trend or SOP as a source or a check): design data and first principles only.
    IO list FT-CD1115 0 ~ 46 T/H; alarm list PT-CD1122 "#1 DEAERATOR INLET CONDENSATE PRESSURE" LOW-LOW 7.5 kg/cm2 (STN102 AI0422).
-     TT-CD1119     hotwell + the ejector condenser part of the GSC / ejector condenser rise U.lpRise (anLphStep, 568 kW design duty).
-                   SNAPSHOT-TO-REPLACE: the split 1/2 of U.lpRise came off a plant screen; its replacement is the ejector condenser duty
-                   over the gland steam condenser duty (their design data sheets, or the ej.steam / gs.leak ports when SUZU / RIN write
-                   them), asked of the PC read;
+     TT-CD1119     the ejector (SJAE) condenser outlet: hotwell + its share of the SJAE + GSC rise U.lpRise (anLphStep). The SJAE is
+                   first on the line (HB PPE-14-0725 R1 Attachment-1 r: "between condensate pump and gland steam condenser"). Its share =
+                   the steam-side duties of HB case 1 (310SD07-485 R4): SJAE 400 kg/h x (752.0 - 152.0) = 240,000 kcal/h, GSC 421 kg/h x
+                   (767.6 - 99.1) = 281,400 kcal/h: 0.460 (the steam side, as the condensate side 38.7 -> 39.3 -> 40.1 kcal/kg is rounded
+                   to 0.1, +-15 %). Before: 1/2 (a plant screen, gone). When SUZU / RIN write the ej.steam / gs.leak ports this becomes
+                   their duties;
      TT-CD1110-4   the flash chamber: the No.1 LPH drain (and the drains sent to it) flashes there and the chamber vents to the condenser
                    shell, so its water leaves at the saturation of the condenser pressure: = U.cdTs (first law, flash at constant
                    enthalpy). Before: hotwell + 2 C x load share (a load shape, gone);
@@ -1773,6 +1788,7 @@ function anHxTagStep(U, dt) {
                    (DITL-66) share; P1 = the CEP discharge U.cdPd (abs; the line to the valve not counted), P2 = the LP bypass valve body
                    outlet U.Pvlo (ata, RIN: max(condenser, 4.0 / 217.1 ata per T/H outlet flow, PCV-HR1010 sheet); the nozzle No. 84 is in the valve). Check, sheet case 1: 45.3 T/H at 14.6 -> 4.0 kg/cm2 a needs Cv 16.3 = 64 %
                    Cv = 76 % travel. Before: travel x 68 T/H (NO-SOURCE). */
+const AN_SJAE_F = 240000 / (240000 + 421 * (767.6 - 99.1)); /* 0.460, HB case 1 SJAE / (SJAE + GSC) duty, see TT-CD1119 above */
 const AN_LPS = { cv: 25.4, tr: [0, 17, 54, 81, 100], pc: [0, 7, 36, 72, 100], sg: 0.9922 /* water at 40 C */ };
 function anLpbSpray(U, tr) {
   const K = AN_LPS,
@@ -1800,7 +1816,7 @@ function anCdTagStep(U) {
   /* F6 2026-11-22: U.tt may not exist yet (the Web Worker engine runs this first at 'go', before any other tag step made it): the same
      guard as the other tag steps; without it the Worker stopped at start and the page ran the engine on its own thread */
   Object.assign(U.tt || (U.tt = {}), {
-    'TT-CD1119': r1(hw + (+U.lpRise || 0) / 2),
+    'TT-CD1119': r1(hw + (+U.lpRise || 0) * AN_SJAE_F),
     'TT-CD1110-4': r1(isFinite(U.cdTs) ? U.cdTs : hw),
     'FT-CD1122': f ? r1(f.fda) : null,
     'PT-CD1122': isFinite(Pda) && kH ? r1(Pda + kH.z2 + kH.kN * (f ? f.fda : 0) ** 2) : null,
