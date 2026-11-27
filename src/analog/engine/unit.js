@@ -163,7 +163,7 @@ const AN_UNIT = {
   /* 2.2.0-beta.12 (M3, trips). The DCS drawings give the LOGIC of a trip (force manual, BU-CMD, interlock); the plant answers:
      - TURBINE TRIP (STN102 I.0400 TCS-DI1003 "#1 Turbine trip", FROM ARP; memory list STN101 M.3200 "T/B TRIP (BC FROM S2)" and
        M.3220 "52G1 OPENED (BC FROM S2)" <- I.0932 "GCB 52G1 off"): the station wiring broadcasts the S2 inputs to S1 (bcast below,
-       so one input of the operator trips the whole DCS). The TCS closes the turbine valves (tauTrip 1 s, NO-SOURCE: the valve closing time is in the PC-only TG valve scans, asked of Jennie): no steam to the
+       so one input of the operator trips the whole DCS). The TCS closes the turbine valves (closing times AN_TBV, turbine.js, derived from the actuator and trip oil data): no steam to the
        turbine, MW 0; the HP bypass (ABC-050) and the blow-off (ABC-013) take the steam. TURBINE TRIP is an MFT first out of the
        DITL (STN104 memory list M.053F / B.125F "TURBINE TRIP FIRST OUT"; PR-OPE-5003: the alarm is bypassed only for a normal
        shutdown), so the boiler trips with the turbine and cools down through the bypass; the pulse M.0124 / M.0256 of ABC-050 is
@@ -179,7 +179,6 @@ const AN_UNIT = {
        (plant.js feeder model), the steam made decays with tauF, the pressure falls to MAIN STEAM PRESSURE LOW LOW (M.310D, 72.9).
      The DITL consequences (fan trip -> MFT, drum level L.L. -> MFT, MFT -> turbine trip) are the DITL's: with the one world OFF the
      operator forces them (CLAUDE.md 7, user 2026-10-16) */
-  tauTrip: 1,
   /* 3.2.3 house load speed (SAKURA): TCE 331DM09784 p.140 TCE206 FLOW CONTROL: rated 3600.0 rpm, droop 6.0 %, flow span 87.3 (read:
      6 % speed = 87.3 % flow demand); the FG*1 table of the same sheet gives 0.0 % at -7.2 / 0.0 / 7.2 rpm: dead band +-7.2 rpm (the
      table points beyond it not read: linear outside the band). Hgen = inertia constant of the whole machine (turbine + generator +
@@ -189,12 +188,8 @@ const AN_UNIT = {
      110.5 % (IBD SC90794 sheet 35) is the IBD logic of the app (tcs-ibd-data.js) */
   droop: 0.06,
   flowSpan: 0.873,
-  /* 3.2.4-beta.11 (priority list: load rejection): the steam between the valves and the blading still drives the shaft after the valves
-     close. HP part (behind the CVs): steam chest tSc; IP / LP part (behind the ICVs): the crossover pipe to the LP turbine tXo. Textbook
-     typical values of the IEEE steam turbine model (Kundur, Power System Stability and Control, ch. 9: T_CH 0.2 ~ 0.3 s, T_CO 0.4 ~ 0.6 s);
-     NO-SOURCE for this unit. The HP / IP-LP split is the steam path of turbine.js tbPath (HP about 25 %, IP / LP about 75 % of the shaft) */
-  tSc: 0.3,
-  tXo: 0.5,
+  /* (tSc / tXo, the textbook steam chest / crossover times, moved to turbine.js AN_TB.tSc / tXo 2026-11-28, derived there from the
+     steam volumes of this turbine) */
   Hgen: 4.01,
   dbRpm: 7.2,
   /* GOVERNOR RUNBACK (TCE p.128 TCE182: TW 60 s of HOUSE LOAD OPERATION, or PLU OPERATED): GOV.SET = the runback position (TCE p.136
@@ -266,7 +261,7 @@ const AN_UNIT = {
 /* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
    whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
    code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
-const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'tauTrip', 'droop', 'flowSpan', 'tSc', 'tXo', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
+const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -471,7 +466,6 @@ function anUnitStart() {
        150 MW anchor (Pd0 - P0) / m0^2 (no-fit finding: a constant taken from the snapshot). NO-FIT-OK: history note */
     kdp: anShKdp(null),
     kln: anMsKln(null) /* the main steam line drop law (AN_MSLN) */,
-    Kt: m0 / P0 /* valve opening 1 = the opening at the anchor */,
     gv: 1,
     Pd: Pd0,
     Qs: m0,
@@ -3890,7 +3884,7 @@ function anUnitStep0(dt) {
   if (trip && tb.st !== 'off') {
     /* the machine is lost at any start: stop valves shut, 52G open by ST TRIP (IBD TA-6, 310SD03-743 sheet 4 E-1), no transfer, no DCS mode, the ATS off (310SC90-775
        page 6). Coming back is the ATS again, there is no reload on reset: at Start 150 MW the ATS program starts here */
-    tb.icv = Math.max(0, tb.icv - dt / U.tauTrip);
+    tb.icv = Math.max(0, tb.icv - dt / AN_TBV.icv);
     if (!U.tc) tcsFromOil(U);
     Object.assign(tb, { st: 'off', xfer: false, tgt: 0, aim: 0 });
     tcsTrip(U);
@@ -3988,7 +3982,7 @@ function anUnitStep0(dt) {
     tb.icv = 0;
   } else if (trip) {
     /* turbine trip: the TCS closes the valves; the load set point is gone */
-    U.gv = Math.max(0, U.gv - dt / U.tauTrip);
+    U.gv = Math.max(0, U.gv - dt / AN_TBV.cv);
     U.tcsT = 0;
   } else if (tb.st === 'roll') {
     U.gv = 0;
@@ -4000,9 +3994,9 @@ function anUnitStep0(dt) {
     /* 3.2.3 PLU (POWER LOAD UNBALANCE, TG manual 2-2 TURBINE CONTROL SYSTEM_R1 5.3.2.4): the fast acting solenoid valves of the CVs and
        ICVs are energized when the generator current falls faster than 40 % / 10 ms and the power (reheat bowl pressure) minus the load
        (generator current) is over 40 % of the rating, 2 out of 3 modules. Here: 52L1 opened on load (the load drops at once to the house
-       load, elec.js) and the turbine power U.MW minus that load over 40 % of U.MW0. The valves close at the trip rate (U.tauTrip, the same
-       fast acting dump; NO-SOURCE: the PLU closing time) until the unbalance is under 40 %, then the speed control opens them again.
-       Not modelled: the speed peak, the 2 out of 3 voting (one value) */
+       load, elec.js) and the turbine power U.MW minus that load over 40 % of U.MW0. The valves close at the fast-acting rate (AN_TBV.cvOpc / icvOpc, the same
+       fast acting dump through the NG6 solenoid, derived in turbine.js) until the unbalance is under 40 %, then the speed control opens them again.
+       Not modelled: the 2 out of 3 voting (one value) */
     const ld = U.el && U.el.l52 === false ? D : U.MW,
       /* 3.2.3 house load speed: the power side is the steam power of the last step (U.Pm, no tauMW lag: the reheat bowl pressure falls
          as soon as the ICV closes); before, the lagged U.MW kept the valves shut about 7 s and the speed fell to 95.8 % */
@@ -4020,14 +4014,14 @@ function anUnitStep0(dt) {
     tb.plu = plu;
     if (plu || (U.el && U.el.l52 === false)) tb.fd = NaN;
     if (plu) {
-      U.gv = Math.max(0.02, U.gv - dt / U.tauTrip);
-      tb.icv = Math.max(0, tb.icv - dt / U.tauTrip);
+      U.gv = Math.max(0.02, U.gv - dt / AN_TBV.cvOpc);
+      tb.icv = Math.max(0, tb.icv - dt / AN_TBV.icvOpc);
       tb.gs = U.rbIP;
       tb.hlT = (tb.hlT || 0) + dt;
     } else if (U.el && U.el.l52 === false) {
       /* 3.2.3 house load: the speed governor (TCE p.140 TCE206): flow demand = GOV.SET - flow span x (rpm - 3600) / (droop x 3600), the
          HP CV opening U.gv taken as the flow demand (1 = the anchor flow). GOV.SET (tb.gs) starts at the CV opening after the PLU and is
-         trimmed by the TCS load loop toward the house load (elec.js, as before). The CV moves at the trip rate (U.tauTrip, NO-SOURCE).
+         trimmed by the TCS load loop toward the house load (elec.js, as before). The CV moves at its servo rate (AN_TBV.cvServo, turbine.js).
          Not yet: the GOVERNOR RUNBACK (TCE p.128 / 136: GOV.SET 24.3 % HP / 4.2 % IP start for 60 s), the low droop 16 % */
       /* GOVERNOR RUNBACK (rbIP, rbT above): GOV.SET held at the runback position (integral I005 SW = 0, Y = Z) for the 60 s pulse of the
          house load, then the integral goes on from there (TCE p.136), trimmed by the TCS load loop toward the house load (NO-SOURCE:
@@ -4051,7 +4045,7 @@ function anUnitStep0(dt) {
           0,
           Math.min(1.4, tb.gs - (U.flowSpan * anDb((tb.rpm || 3600) - 3600, U.dbRpm || 0)) / ((U.droop || 0.06) * 3600))
         ),
-        r = dt / U.tauTrip,
+        r = dt / AN_TBV.cvServo,
         B = U.cvBias || 0.2,
         cvD = Math.max(0, Math.min(1.4, (dem - B) / (1 - B))),
         icvD = Math.max(0, Math.min(1, dem / B)),
@@ -4068,16 +4062,18 @@ function anUnitStep0(dt) {
       anTbFlow(U, tb, D, dt, dirt);
     }
   }
-  /* steam flow through the valves: m = Kt x gv x MSP, MSP = drum - kdp x m^2 */
+  /* steam flow through the valves: the two CVs in series with the HP blading (turbine.js tbMsFlow, AN_CV), MSP = drum - kdp x m^2 */
   /* 3.2.0 P1 #3: the steam reaches the turbine through the main steam stop MOV MV-MS1391 (or its warming bypass, anUnitStepX) */
-  /* LMYP OTS valve tests (tcs.js tcsVtStep / tcsVtLift, TCE220 / 222): the two CV groups in series with their MSV, half the steam each */
+  /* LMYP OTS valve tests (tcs.js tcsVtStep / tcsVtSide, TCE220 / 222): the two CV groups in series with their MSV, each its own lift */
   tcsVtStep(U, dt);
   U.kdp = anShKdp(U); /* Phase 11: the SH pressure drop law at the density of this scan (anShKdp) */
   U.kln = anMsKln(U); /* Phase 11: the main steam line drop law at the density of this scan (anMsKln) */
-  const k = U.Kt * tcsVtLift(U) * (U.msG == null ? 1 : U.msG),
-    a2 = U.kdp * k,
-    ms = a2 > 0 ? (-1 + Math.sqrt(1 + 4 * a2 * k * Math.max(0, U.Pd))) / (2 * a2) : k * U.Pd;
-  U.ms = Math.max(0, ms);
+  /* Phase 11 RIN 2026-11-28: the CV areas from the TCS lift curves (tbCvLift) of each side (tcsVtSide: the valve test), x the share of the
+     main steam stop MOV MV-MS1391 / its bypass (U.msG); the flow the CVs and the HP blading pass together (tbMsFlow). Kt (m0 / P0 of the
+     save point) is deleted */
+  const Av =
+    (tbCvA(tbCvLift(U, 'A', tcsVtSide(U, 'A'))) + tbCvA(tbCvLift(U, 'B', tcsVtSide(U, 'B')))) * (U.msG == null ? 1 : U.msG);
+  U.ms = Math.max(0, tbMsFlow(U, Av, U.hxO && U.hxO.ms));
   /* the other outlets: flow = share x anchor flow x opening x MSP / anchor MSP */
   const P1 = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
   U.mb = 0;
@@ -4331,15 +4327,15 @@ function anUnitStep0(dt) {
   );
   anTbPorts(U, tb.rpm, U.mhp);
   /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of the steam path, each behind its steam
-     volume (tSc, tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft.
+     volume (AN_TB.tSc / tXo, turbine.js; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft.
      Before, Pm fell with the valves at once and a load rejection from 150 MW peaked at 102.2 % (TG manual STIE-14752: about 106 % within
      about 1 s) */
   {
     const hp = onGrid ? Math.max(0, U.tbS.Whp) : 0,
       ip = onGrid ? Math.max(0, U.tbS.Wip) : 0,
       f = T => 1 - Math.exp(-dt / Math.max(0.01, T));
-    tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(U.tSc || 0.3) : hp;
-    tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(U.tXo || 0.5) : ip;
+    tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(AN_TB.tSc) : hp;
+    tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(AN_TB.tXo) : ip;
     /* Phase 11 (RIN / YUI): the shaft side of the swing equation = the blade work less the mechanical loss of the turbine (AN_TB.mech,
        turbine.js); the generator losses are on the electrical side (anGenW) */
     U.Pm = onGrid ? tb.pH + tb.pI - AN_TB.mech : 0;
