@@ -4,7 +4,6 @@
  ],
  "src/analog/engine/cfb.js": [
   "/* 3.2.1 b6: plant DCS trends 2026-11-08 (team-files/plant-study/14): TIFG1090 952 to 962 C from 90 to 150 MW with the plant air, 855 C at 40 MW",
-  "burning over tau): at 75 MW the PIC-COBM swing grew to an MFT in 110 min (the plant runs there with coal 47 ~ 51 T/H, plant trend).",
   "/* live Cold start 2026-11-14 (user: \"WALANG DAYAIN\", no curve fits): THE BED HEAT BALANCE of the Cold path. Before, the bed went first",
   "order to a law fitted on the plant trend (start-up exponent kBedSU 0.168 and the AN_BED table), and the water walls took",
   "by the plant DCS trend, scenario 1 (14-plant-trends): bed TIFG1090 flat 952 ~ 962 C from 150 to 90 MW with PA + SA 610 -> 505 T/H.",
