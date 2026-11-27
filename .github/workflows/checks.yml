@@ -104,3 +104,8 @@ jobs:
           node tests/regress/hx_fp_mon.js "dist/logic-sim-v$V.html"
           node tests/regress/hx_unknown.js "dist/logic-sim-v$V.html"
           node tests/regress/hx_values.js "dist/logic-sim-v$V.html"
+      - name: FEEDWATER VALUES - the 15 feedwater / spray values on the HX pages, BFWP suction by the as-built head, sprays stop with the suction valves shut
+        timeout-minutes: 10
+        run: |
+          V=$(node tools/version.js)
+          node tests/regress/fw_page_values.js "dist/logic-sim-v$V.html"

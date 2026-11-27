@@ -3,9 +3,10 @@
 // (one world, plant model ON) the page shows a value for each, near the snapshots (4.PNG PT-TS1013 14.07, PT-TS1017 5.30, TT-TS1011
 // 371; 03.png PT-FW1115-A 6.7, TT-FW1011 162, PT-FW1160 137.7, FT-FW1109 37.5, FT-FW1119 28.2; 5.png FT-FW1149 14.8); the spray valve
 // positions follow the F(X) of their controller (ABC-011 LN47 / LN46). Both BFWP suction valves closed: no spray flow.
+// 2026-11-28 (NANA): read from the HX pages (data-hv), the PT-FW1115 suction judged against the as-built head (plantsw.js W.sucP).
 // Usage: node tests/regress/fw_page_values.js [html]
 const fs = require('fs');
-const { open } = require('./lib.js');
+const { open, startAs, pressRun, openHx } = require('./lib.js');
 const html =
   process.argv.find(a => /\.html$/.test(a)) ||
   'dist/' + fs.readdirSync('dist').find(x => /^logic-sim-v[\d.]+(?:-beta\.\d+)?\.html$/.test(x));
@@ -22,30 +23,22 @@ const html =
   });
   await page.waitForTimeout(2000);
   const K = ['PT-TS1013', 'PT-TS1017', 'TT-TS1011', 'PT-FW1115-A', 'PT-FW1115-B', 'TT-FW1011', 'PT-FW1160', 'FT-FW1109', 'FT-FW1119', 'FT-FW1149', 'FT-FW1059', 'ZT-FW1110-1', 'ZT-FW1110-2', 'ZT-FW1120-1', 'ZT-FW1120-2'];
-  const run = sec =>
-    page.evaluate(async sec => {
-      const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
-      for (let i = 0; i < sec * 2; i++) {
-        WORLD.live = true;
-        AN.stepSet(C1, 0.5);
-        WORLD.tick(0.5);
-        if (i % 100 === 99) await new Promise(r => setTimeout(r, 0));
-      }
-      WORLD.live = true;
-    }, sec);
-  await page.evaluate(() => {
-    AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
-  });
-  await run(300);
-  await page.evaluate(() => lsPlant(true));
-  await page.waitForTimeout(1000);
-  await page.evaluate(() => document.querySelector('#pllist button[data-id="MK06"]').click());
-  await page.waitForTimeout(2500);
-  const read = () => page.evaluate(K => Object.fromEntries(K.map(k => [k, (document.querySelector(`[data-v="${k}"]`) || {}).textContent || null])), K);
+  /* the app's own start (as hx_values.js): Start at 150 MW, RUN, the plant model live */
+  await startAs(page, '150 MW');
+  await pressRun(page);
+  await page.waitForTimeout(5000);
+  /* NANA 2026-11-28: the HX pages (Phase 9) replaced the old page 06 FEEDWATER (MK06 / data-v): the 15 values sit on HX-feedwater,
+     HX-drum-steam (the SH sprays) and HX-reheat-steam (the RH and HP bypass sprays), each box a data-hv */
+  const read = async () => {
+    const o = {};
+    for (const pg of ['HX-feedwater', 'HX-drum-steam', 'HX-reheat-steam']) {
+      await openHx(page, pg);
+      await page.waitForTimeout(2500);
+      const r = await page.evaluate(K => Object.fromEntries(K.map(k => [k, (document.querySelector(`#plantws [data-hv="${k}"]`) || {}).textContent || null])), K);
+      for (const k of K) if (r[k] != null && o[k] == null) o[k] = r[k];
+    }
+    return o;
+  };
   const tt = () =>
     page.evaluate(() => {
       const T = AN.sheets.find(s => s.name === 'ABC-011').S,
@@ -57,7 +50,7 @@ const html =
   console.log(JSON.stringify(a));
   console.log(JSON.stringify(m));
   const near = (k, y, d) => isFinite(m[k]) && Math.abs(m[k] - y) <= d;
-  ck(K.every(k => a[k] && !/-----/.test(a[k])), 'page 06: the 15 values show a number');
+  ck(K.every(k => a[k] && !/-----/.test(a[k])), 'HX pages: the 15 values show a number' + (K.some(k => !a[k] || /-----/.test(a[k])) ? ': ' + K.filter(k => !a[k] || /-----/.test(a[k])).join(' ') : ''));
   ck(near('PT-TS1013', 14.07, 1.5) && near('PT-TS1017', 5.3, 0.8), `main steam ${m.ms} T/H: extraction No.2 ${m['PT-TS1013']}, No.3 ${m['PT-TS1017']} kg/cm2 (4.PNG 14.07 / 5.30 at 472.7 T/H)`);
   ck(near('TT-TS1011', 371, 25), `cold reheat to No.2 HPH ${m['TT-TS1011']} C (4.PNG 371)`);
   /* Phase 11 NANA 2026-11-28 (coordinator: Rule 0, was the 03.png 6.7 / 7.1 +- 0.3): the suction at the transmitter by the as-built
@@ -73,7 +66,7 @@ const html =
     AN.swValve('V-FW1001', 0);
     AN.swValve('V-FW1002', 0);
   });
-  await run(20);
+  await page.waitForTimeout(25000); /* 20 plant seconds and more at the live speed */
   const b = await tt();
   ck(b['FT-FW1109'] === 0 && b['FT-FW1119'] === 0 && b['FT-FW1149'] === 0, `BFWP suction valves closed: sprays No.1 ${m['FT-FW1109']} -> ${b['FT-FW1109']}, No.2 ${b['FT-FW1119']}, RH ${b['FT-FW1149']} T/H`);
   ck(errs.length === 0, 'no page error' + (errs.length ? ': ' + errs.join(' | ') : ''));
