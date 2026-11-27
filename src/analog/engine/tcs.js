@@ -8,7 +8,7 @@
    - the TG Operation Manual STIE-14747 (design document of the vendor): rub check 200 r/min (p.40), critical speeds (p.42), LP exhaust
      hood < 80 C before sync (p.43) and < 52 C before load up (p.45); aux steam minimum 7.0 kg/cm2g (p.32)
    Table of the criteria against the app: docs/tcs/ATS_CRITERIA.md. Every number is from the TCS logic (TCE / TCA, IBD, the HIACS
-   backup) or a design document (user rule 2026-11-28: no snapshot, trend or SOP number in the model, not even as a check); the HP / IP
+   backup) or a design document (user rule 2026-11-28: design data and TCS logic are the only sources of the model); the HP / IP
    metal time constants are CALC from the TCS thermal stress rotor model (TCA752 ~ 757) and the start-up modes by the time since shutdown
    (FHI SECT_7, STIE-14811 p147), see tauMetal / tauCool.
    The state is AN_UNIT.tc; the operator acts on the TCS panel with AN.turbine(cmd) (unit.js anTurbine). */
@@ -935,12 +935,12 @@ function tcsStep(U, dt) {
      vapour extractor  F-1937 (main oil tank vacuum PGLO1920 -20 ~ -50 mmH2O);
      oil purifier      P-1941, local panel (AN_SRC.field.pur), discharge 3.0 kg/cm2 DERIVED (the purifier manual STIE-14666 is not read:
                        a centrifugal purifier feed pump of vendor practice, 2 ~ 3 kg/cm2; display only).
-   Values (user rule 2026-11-28: no snapshot, trend or SOP number in the model; design document or TCS logic, else DERIVED from physics):
+   Values (user rule 2026-11-28: design document or TCS logic, else DERIVED from physics):
      MOP discharge     6.63 kg/cm2g while running = 0.65 MPa(g), the design MAIN OIL PUMP DISCHARGE OIL of the TG lube oil system
                        drawing 310SD14-354 (TG maintenance manual 2-1-2, legend; bearing oil 0.18 MPa(g) there). The header is held by
                        the LUBE OIL PRESSURE CONTROL VALVE V-LOn004 (valve list), so a set value; no pump curve in the docs (the pump
                        datasheet is a scan). IBD TB-1 / TB-2 resets the LOW of the running pump only ABOVE 6.1 (CMP 5.6 / 6.1);
-     bearing oil       1.84 kg/cm2g = 0.18 MPa(g), the design BEARING OIL of the same drawing 310SD14-354 (was 3.3 from a snapshot), with a
+     bearing oil       1.84 kg/cm2g = 0.18 MPa(g), the design BEARING OIL of the same drawing 310SD14-354, with a
                        MOP; 1.6 with the EOP only (NO-SOURCE, above its 1.05 start); else 0;
      EOP discharge     1.6 while running (NO-SOURCE);
      COP discharge     163 kg/cm2g while running (310PB64-455 specification of equipments: 163 kg/cm2, 60 L/min x 2; master trip valve
@@ -1124,7 +1124,7 @@ function tcsOil(U, dt) {
   lag('loBrg', c.lop ? K.brg : c.eop ? K.brgEop : 0);
   c.brgOk = U.loBrg > K.brgLo || c.lop || c.eop;
   /* the control oil pumps sit on the main oil tank and draw from it (310PB64-455), not from the lube oil header: a COP gives control
-     oil without a MOP (before: it needed the lube oil header, read from a snapshot) */
+     oil without a MOP */
   const suc = true;
   lag('loCa', c.cop[0] && suc ? K.cop : 0);
   lag('loCb', c.cop[1] && suc ? K.cop : 0);

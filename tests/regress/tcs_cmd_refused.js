@@ -40,7 +40,7 @@ const html =
       o = {};
     const ev = () => lsEvents.map(e => e.kind + ' ' + e.text);
     /* the ATS as Mina had it: step 6 LOAD UP done, step 7 NORMAL OPERATION not reached (a plant from the cold start-up). The 150 MW
-       snapshot has no ATS program: the first SHUT-DOWN builds it from the oil state (unit.js tcsFromOil), then the steps are put back */
+       start state has no ATS program: the first SHUT-DOWN builds it from the oil state (unit.js tcsFromOil), then the steps are put back */
     AN.turbine('shutdown');
     U.tc.step = 6;
     U.tc.cur = -1;
