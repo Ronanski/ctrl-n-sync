@@ -15,6 +15,7 @@ engine/ports.js
 engine/boiler.js
 engine/hx.js
 engine/cfb.js
+engine/model/cooling.js
 engine/turbine.js
 engine/fw.js
 engine/unit.js

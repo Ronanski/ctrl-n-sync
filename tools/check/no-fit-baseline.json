@@ -1,8 +1,5 @@
 {
  "src/analog/engine/boiler.js": [
-  "The valve sizes (K) are CALIBRATED on 6.PNG with that split; linear valves (NO-SOURCE: no valve curve). Check: PCV-DO0002",
-  "(CALIBRATED on 6.PNG; the pipe itself is NO-SOURCE). The return PCV-DO1009 passes the same 13.9 T/H at 85.7 % and 11.0. */",
-  "Ia = P / (eff x sqrt3 x 460 V): 22.5 A at 12.8 bar, 3.5 A at 0 bar. The magnetizing current Im is not on the sheet; from the snapshot",
   "starts at the design Ca/S (z0). Was k 11 and z0 0.346, a fit to the snapshot 41 ppm with limestone STOP (not a document)."
  ],
  "src/analog/engine/cfb.js": [
@@ -30,6 +27,9 @@
   "const AN_FOUL = { rInf: 0.0042 /* m2K/W, CALC (see above) */, tau: 56 * 3600 /* s, CALC from the plant trend (see above) */, e: 0.8 /* NO-SOURCE */, mcr: 89 },",
   "mG: I.mG > 0 ? I.mG : (184.2 * Math.max(0, I.mOut || 0)) / 460"
  ],
+ "src/analog/engine/model/cooling.js": [
+  "z = 11.3 m CALIBRATED on the HMI snapshot 28.png (2 MWP running at their recirculation flow, levels 13.8 / 13.7 m,"
+ ],
  "src/analog/engine/turbine.js": [
   "/* 3.2.3 (SAKURA, coordinator / Jennie 2026-11-15: the MW line MW = c x steam - mwK was fitted on the plant trends of 2026-11-08, which",
   "pressure swings as on the plant (plant trend SCENARIO 1 A, 150 MW hold: MW sd 0.43, MW / MSF correlation 0.86, MW / MSP 0.40). With the",
@@ -39,9 +39,6 @@
   "tauMW: 10 /* s, steam flow -> MW (reheater, NO-SOURCE: the plant trends are 60 s averages, too slow to fit it) */,",
   "/* F11 (user 2026-11-13: the ratio of beta.206 / 207 was a curve fit, not a model). Superheater and reheater tube metal, heated by the flue",
   "/* 3.2.3-beta.265: the plant trend ~1465 (AN_BI), the two transmitters 6 mmH2O apart as on the snapshot (1426 / 1432) */",
-  "z = 11.3 m CALIBRATED on the HMI snapshot 28.png (2 MWP running at their recirculation flow, levels 13.8 / 13.7 m,",
-  "750). The UA in service is CALIBRATED on 27.PNG (return 40 C, supply 38 C at 1500 m3/h = 3,452 kW, seawater",
-  "const ld = Math.max(0, Math.min(1, (isFinite(U.MW) ? U.MW : 0) / 150)),",
   "kz 0.96 kg/cm2 taken off to meet the snapshot 16.9 (28.png); both are gone; current = 28.1 A x shaft power / 245.7 kW (snapshot ratio). */",
   "Design beside it (Audit 3 ranking 5, user Q4 \"close to the DCS 150 MW data, tuned from design, small tolerance\"):",
   "L = Math.max(0, Math.min(1, (+U.MW || 0) / 150)),",
