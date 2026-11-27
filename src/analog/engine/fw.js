@@ -31,9 +31,10 @@ function fwHw(P, T) {
      Mm  the metal: 40,000 + 9,830 = 49,830 kg (empty weights), carbon steel SA516-70, cm 0.49 kJ/kg K (textbook carbon steel);
      cw  dhf/dT of the water at T (IF97, numerical);
    In:
-     extraction no. 3 (heat balance "deaerator" stage, PD-013) through MV-TS1003 (DITL-96) and its non-return valve: steam flows
-     only from the higher pressure, w = k sqrt(rho dP) (turbulent line + valves); k from the design point: 26.79 t/h at the stage
-     6.369 ata against the deaerator 5.05 + 1.0332 = 6.083 ata (dP 0.286), rho of the steam at the deaerator inlet 310.3 C (IF97).
+     extraction no. 3 (heat balance "deaerator" stage, PD-013) through MV-TS1003 (DITL-96) and its two non-return valves (XV-TS1710 /
+     1740, tcs-dev.js positions): steam flows from the higher pressure side, both ways (anDaLine, compressible; reverse = the deaerator
+     steam back to the turbine until the NRVs close); k from the design point: 26.79 t/h at the stage 6.369 ata against the deaerator
+     5.05 + 1.0332 = 6.083 ata (dP 0.286), rho of the steam at the deaerator inlet 310.3 C (IF97).
      The stage pressure, temperature and enthalpy are the port ext.da of the turbine part (RIN, turbine.js anTbPorts); not written =
      no steam (ports.js rule 3); a port without h: IF97 at its P and T;
      pegging steam PCV-AS1030 from the auxiliary steam header: the port aux.peg {m t/h, h kJ/kg} of the aux steam part (SUZU, the valve
@@ -55,7 +56,15 @@ const AN_DA = {
   Pd0: 5.05 + 1.0332 /* ata DESIGN-SRC: K2MC2F-001 operating 5.05 kg/cm2 G */,
   Tx0: 310.3 /* C DESIGN-SRC: K2MC2F-001 steam in */,
 };
-AN_DA.k = AN_DA.w0 / Math.sqrt(steamRho(AN_DA.Px0 - 1.0332, AN_DA.Tx0) * (AN_DA.Px0 - AN_DA.Pd0));
+/* the extraction line as a compressible flow (ISA-75.01 gas form, as unit.js anStmW): w = k Y sqrt(rho1 x P1), x = min(xc, dP / P1),
+   Y = 1 - x / (3 xc), xc = (1.3 / 1.4) 0.7; from the higher pressure side (forward: the stage, reverse: the deaerator steam space);
+   k from the design point (26.79 t/h, 6.369 -> 6.083 ata, 310.3 C) */
+function anDaLine(P1, P2, rho1) {
+  const xc = (1.3 / 1.4) * 0.7,
+    x = Math.min(xc, Math.max(0, (P1 - P2) / P1));
+  return P1 > P2 && rho1 > 0 ? (1 - x / (3 * xc)) * Math.sqrt(rho1 * x * P1) : 0;
+}
+AN_DA.k = AN_DA.w0 / anDaLine(AN_DA.Px0, AN_DA.Pd0, steamRho(AN_DA.Px0 - 1.0332, AN_DA.Tx0));
 /* the deaerator pressure transmitter PT-CD1104 (ABC-056 AI0417, U.xt.dea) is written by this model: it is not a loop model any more */
 function anFwStart(U) {
   if (U.own && U.xt && U.xt.dea) for (const [S2, b] of U.xt.dea) U.own.add(S2.rt.st[b.id]);
@@ -84,11 +93,30 @@ function anDeaStep(U, dt) {
     pX = pg('ext.da'),
     Pxa = isFinite(fin(pX && pX.P)) ? fin(pX.P) : 0,
     mov = typeof anDitlPos === 'function' ? anDitlPos('DITL-96', 0) : null,
-    open = mov == null ? 1 : Math.max(0, Math.min(1, mov / 100)),
+    /* the No.3 extraction NRVs XV-TS1710 (primary) and XV-TS1740 (secondary) in series with MV-TS1003: the positions of the TCS
+       device model (tcs-dev.js U.dev.nrv ex3p / ex3s: open on load, closed by the cylinder on a trip or off line) */
+    nv = U.dev && U.dev.nrv ? U.dev.nrv : {},
+    nrv = Math.min(nv.ex3p ? +nv.ex3p.p || 0 : 0, nv.ex3s ? +nv.ex3s.p || 0 : 0) / 100,
+    open = (mov == null ? 1 : Math.max(0, Math.min(1, mov / 100))) * nrv,
     Pda = Pd + 1.0332,
     TxC = Pxa > 0.05 ? Math.max(steamTsat(Pxa - 1.0332), isFinite(fin(pX.T)) ? fin(pX.T) : 0) : Ta,
-    wx = Pxa > Pda && open > 0 ? open * K.k * Math.sqrt(steamRho(Pxa - 1.0332, TxC) * (Pxa - Pda)) : 0,
-    hx = isFinite(fin(pX && pX.h)) ? fin(pX.h) : Pxa > 0.05 ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */ : 0,
+    /* signed: + the stage steam into the deaerator; - (RIN 2026-11-28, load rejection) the deaerator steam space and the flash of its
+       saturated water back into the turbine while the stage pressure falls below the deaerator, until the NRVs close (2 s on the air
+       dump, KARATU VCL-5101-H, /mnt/project-files/rin-extraction-2026-11-28.md), at the saturated steam of the deaerator */
+    wx =
+      open > 0
+        ? Pxa >= Pda
+          ? open * K.k * anDaLine(Pxa, Pda, steamRho(Pxa - 1.0332, TxC))
+          : -open * K.k * anDaLine(Pda, Math.max(0.01, Pxa), steamRho(Pd, steamTsat(Pd)))
+        : 0,
+    hx =
+      wx < 0
+        ? steamH(Pd, steamTsat(Pd) + 0.01) /* the saturated steam of the deaerator going back */
+        : isFinite(fin(pX && pX.h))
+          ? fin(pX.h)
+          : Pxa > 0.05
+            ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */
+            : 0,
     /* pegging steam: the port aux.peg of the aux steam part (SUZU) */
     pP = pg('aux.peg'),
     wp = isFinite(fin(pP && pP.m)) ? Math.max(0, fin(pP.m)) : 0,
