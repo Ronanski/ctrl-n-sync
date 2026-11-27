@@ -437,18 +437,23 @@ function anCycFlows(t) {
        min-flow recirculation (its take-off is after the polisher, MK05 / PD-016; unit.js U.polP) */
     pol = typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.polP) ? AN_UNIT.polP : 1,
     frec = cep * pol * 2.23 /* FCV-CD1120, valve sheet p96, 223 T/H */ * 100 * c((AN_CYC.u.cf || 0) / 100),
-    fda = cep * cdp * pol * anDaQ(AN_CYC.u.da || 0, frec),
-    /* the steam of the turbine and of the HP bypass (MB-011 item 8, MB-012 items 6, 10: bypass -> cold reheat -> reheater -> LP
-       bypass -> condenser) both come back as water; only vented steam leaves the cycle */
-    ext = s.ext || 0;
+    fda = cep * cdp * pol * anDaQ(AN_CYC.u.da || 0, frec);
+  /* the steam of the turbine and of the HP bypass (MB-011 item 8, MB-012 items 6, 10: bypass -> cold reheat -> reheater -> LP
+     bypass -> condenser) both come back as water; only vented steam leaves the cycle */
   /* 3.2.1 (IRENE): no make-up water pump feeding the header (unit.js AN_MU muFeed) = no make-up to the hotwell */
   const muOff = typeof AN_UNIT !== 'undefined' && AN_UNIT.on && AN_UNIT.muFeed === 0;
   const muMv = typeof AN_UNIT !== 'undefined' && AN_UNIT.on ? AN_UNIT.muMvQ || 0 : 0; /* MV-MU1001, parallel to LCV-MU1110 (PD-016 A-7; unit.js AN_MU) */
-  /* Mina B66-3 (house load, 52L1 open: hotwell -297 mm in 6 min, deaerator +117 mm): the 25 % to the deaerator are the extractions and
-     heater drains of the TURBINE steam (MB-013); the HP bypass steam goes cold reheat -> reheater -> LP bypass -> condenser and passes no
-     extraction. Before: 25 % of the bypass flow too went to the deaerator (on house load about 40 ~ 60 T/H taken from the hotwell) */
+  /* Mina B66-3 (house load): only the TURBINE steam passes the extractions; the HP bypass steam goes cold reheat -> reheater -> LP
+     bypass -> condenser (s.mhp) */
   const mt = s.ms || 0;
-  return { fda, frec, hwIn: mt * (1 - 0.25 * ext) + (s.mhp || 0), daIn: 0.25 * ext * mt, mu: muOff ? 0 : 0.58 /* LCV-MU1110, valve sheet p90 */ * (AN_CYC.u.hw || 0) + muMv };
+  /* Phase 11 (NANA, 2026-11-27): the deaerator takes the extraction no. 3, the pegging steam and the No.1 HP heater drain of the
+     deaerator model (unit.js anDeaStep U.daIn), not 25 % of the turbine steam. The turbine steam that does not reach the condenser:
+     the deaerator extraction (U.daTb) and the HP heater extractions (hpF1: the No.1 + No.2 drains) less what the HP heater
+     alternate drains send to the condenser. With no unit model (no starting state) there is no steam to split */
+  const U1 = typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.daIn) ? AN_UNIT : null,
+    hdAlt = U1 && U1.hd ? U1.hd.filter(h => h.k === 'H5' || h.k === 'H6').reduce((a, h) => a + (isFinite(h.w2) ? h.w2 : 0), 0) : 0,
+    tbDa = U1 ? (U1.daTb || 0) + (isFinite(U1.hpF1) ? U1.hpF1 : 0) - hdAlt : 0;
+  return { fda, frec, hwIn: mt - tbDa + (s.mhp || 0), daIn: U1 ? U1.daIn : 0, mu: muOff ? 0 : 0.58 /* LCV-MU1110, valve sheet p90 */ * (AN_CYC.u.hw || 0) + muMv };
 }
 AN_CYC.flows = anCycFlows;
 /* one water inventory: kg of water per mm of level of each vessel, so the three levels add up to one balance.
@@ -1222,7 +1227,11 @@ function anProcStep(S, dt) {
       const p = tv[tpin];
       if (q.up != null && Math.abs(q.u - q.up) > 1e-6 * span) {
         const gg = (p - q.pp) / (q.u - q.up);
-        if (isFinite(gg) && Math.abs(gg) > 0.02 && Math.abs(gg) < 50) q.g = gg;
+        /* Phase 11 (NANA, 2026-11-27): the chain from the raw transmitter to the PV (a compensation, a select) is monotonic, so its
+           gain keeps its sign: an estimate of the other sign is two noisy samples, not the chain. Before, ABC-010 LICBR1001 took
+           g = -0.02 from the 1 s swing of the feedwater, wrote its raw AIs to the top of the range (818 mm) and tripped the boiler
+           on DRUM LEVEL H.H. at 2 min of a 150 MW start */
+        if (isFinite(gg) && Math.abs(gg) > 0.02 && Math.abs(gg) < 50 && !(q.g && Math.sign(gg) !== Math.sign(q.g))) q.g = gg;
       }
       q.pp = p;
       q.up = q.u;
