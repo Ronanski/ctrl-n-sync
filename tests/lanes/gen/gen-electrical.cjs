@@ -84,8 +84,6 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
   ok(same(r.p.If, r.g.If, 1e-6), 'one generator: page field ' + r.p.If.toFixed(2) + ' A = TCS ' + r.g.If.toFixed(2) + ' A');
   const Ip = r.MW / (Math.sqrt(3) * r.p.kV * r.p.pf);
   ok(same(r.p.kA, Ip, 0.01 * Ip), 'page current = P / (sqrt3 V pf) ' + Ip.toFixed(3) + ' kA');
-  /* check only (RULES 3.5): control room screen 37.PNG, 151.1 MW: field 8.7 A */
-  console.log('INFO field ' + r.p.If.toFixed(2) + ' A at ' + r.MW.toFixed(1) + ' MW (screen 37.PNG: 8.7 A at 151.1 MW, check only)');
   /* the stator and cooling gas temperatures go to their design value: cold gas = cooling water + 8 K (37 C water -> 45 C gas, GAE-2013-0136
      R2 / nameplate 310SD18-613), stator = cold gas + 78 K x (I / 7.384 kA)^2 (123 C limit by RTD at the rating, GEE-2014-0322 R2 p4), lag 600 s */
   const th = () => JSON.parse(E.js(`JSON.stringify({ts:AN.unit.genT.ts.slice(),ta:AN.unit.genT.ta.slice(),cw:AN.unit.acT2,kA:AN.gen().kA})`));
@@ -129,13 +127,20 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
   let tNeg = -1,
     tLo = -1,
     mwNeg = 0,
+    mot = null,
     why = '';
   for (let i = 1; i <= 120 && tLo < 0; i++) {
     E2.step(2);
-    const o = JSON.parse(E2.js(`JSON.stringify({MW:AN.unit.MW,lo:AN.unit.lo86})`));
+    const o = JSON.parse(E2.js(`JSON.stringify({MW:AN.unit.MW,lo:AN.unit.lo86,L:AN.unit.genT.L,m:-AN.unit.Pm,st:AN.unit.tb.st})`));
     if (tNeg < 0 && o.MW <= -0.013 * 176.5) (tNeg = i), (mwNeg = o.MW);
     if (o.lo.a && o.lo.b) (tLo = i), (why = o.lo.why);
+    else if (o.st === 'load' && (!mot || o.MW < mot.MW)) mot = o;
   }
+  /* the motoring power with the valves shut = the turbine mechanical loss (AN_TB.mech, HB) + the generator losses at no load (type test
+     p31: friction and windage, core, field, exciter): it holds the 2nd step pick-up -0.013 pu (GEE-2015-0173 p16) with margin, the 1st
+     step -0.008 pu about half of it. Blade windage without steam flow is not modelled (NO-SOURCE): it only adds to the motoring power */
+  ok(mot && Math.abs(mot.MW + mot.m + mot.L / 1000) < 0.02 && mot.MW < -0.013 * 176.5 - 0.3,
+    'motoring power ' + (mot ? mot.MW.toFixed(2) : '?') + ' MW = turbine ' + (mot ? mot.m.toFixed(2) : '?') + ' + generator ' + (mot ? (mot.L / 1000).toFixed(2) : '?') + ' MW no load, ' + (mot ? (mot.MW / 176.5).toFixed(4) : '?') + ' pu (2nd step -0.013, 1st -0.008)');
   E2.step(10);
   const st2 = E2.js('AN.unit.tb.st');
   ok(tNeg > 0 && tLo - tNeg >= 9 && tLo - tNeg <= 12 && st2 === 'off',
