@@ -175,7 +175,7 @@ function anDeaStep(U, dt) {
    pump inlet PT-FW1115 = suction header - strainer DP; the suction pipe loss between the header and the strainer is NO-SOURCE (no line
    size / length in D1-0-052 or the strainer list MS-017) and is not modelled. */
 const AN_FW = {
-  sg: 0.9093,
+  sg: 0.9093 /* DESIGN-SRC: KSB data sheet sp. gr. at 158.4 C: the curves pP below are at this density; the pumped water uses anFwSg */,
   qQ: [0, 100, 200, 300, 400, 500, 540, 600, 700],
   qH: [2254.6, 2250, 2215, 2140, 2010, 1840, 1750, 1620, 1380],
   pQ: [0, 150, 300, 400, 540, 600],
@@ -222,15 +222,23 @@ function anSprW(Cv, Pis, P2, rho) {
     a = 0.0273 * Cv * Math.sqrt(0.980665 * rho);
   return Cv > 0 && dP > 0 && rho > 0 ? a * Math.sqrt(dP / (1 + a * a * AN_BYS.kL)) : 0;
 }
+/* Phase 11 NANA 2026-11-28: the specific gravity of the pumped water = the deaerator water (IF97 saturated water, plant.js anWaterRho, at
+   U.da.T; ambient water before the deaerator has a state). The pump head in metres does not change with the density; the pressure it
+   gives does (dp = rho g H) and the volume flow is the mass flow / rho. Was the data sheet 0.9093 (158.4 C) at every load: at part load
+   the deaerator water is colder and denser, so the discharge read low (45 MW about 4 % of the head) */
+function anFwSg(U) {
+  return anWaterRho(U.da && isFinite(U.da.T) ? U.da.T : isFinite(U.Tamb) ? U.Tamb : 30) / 1000;
+}
 /* the BFWP discharge (kg/cm2 g) at a total feedwater flow w (T/H), with the pumps that run now: the same law as anFwStep */
 function anFwPdAt(U, w) {
   const K = AN_FW,
+    sg = anFwSg(U),
     n = (U.fwRun || []).reduce((a, r) => a + (r ? 1 : 0), 0),
     ps = typeof window !== 'undefined' && window.WORLD && WORLD.sucP ? WORLD.sucP() : NaN,
     Ps = isFinite(ps) ? ps : 0;
   if (!n) return Ps;
-  const q = Math.max(K.qMin, Math.max(0, w) / K.sg / n);
-  return Math.max(0, Math.min(250, Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz));
+  const q = Math.max(K.qMin, Math.max(0, w) / sg / n);
+  return Math.max(0, Math.min(250, Ps - K.stK * q * q + (sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz));
 }
 /* a BFWP motor at a shaft power kW (TECO data sheet, see AN_FW): current I (A), electrical input P (kW) and Q (kvar) from the same
    numbers (Phase 11 YUI: P / Q go to the house load, port q.motor.NANA) */
@@ -243,6 +251,7 @@ function anFwEl(kW) {
 }
 function anFwStep(U, dt) {
   const K = AN_FW,
+    sg = anFwSg(U),
     dr = d => (typeof anDitlRun === 'function' ? anDitlRun(d) : null),
     /* a running pump with its suction manual valve closed (V-FW1001 / 1002) gives no head (dry: the motor protection is not modelled) */
     run = [
@@ -252,19 +261,21 @@ function anFwStep(U, dt) {
     n = run[0] + run[1],
     ffw = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.ffw) ? Math.max(0, AN_CYC.ffw) : 0,
     /* an HP heater tube leak passes the pumps too (anHpLeak, last step) */
-    q = n ? Math.max(K.qMin, (ffw + (U.hlW ? U.hlW[0] + U.hlW[1] : 0)) / K.sg / n) : 0,
+    q = n ? Math.max(K.qMin, (ffw + (U.hlW ? U.hlW[0] + U.hlW[1] : 0)) / sg / n) : 0,
     ps = typeof window !== 'undefined' && window.WORLD && WORLD.sucP ? WORLD.sucP() : NaN,
     Ps = isFinite(ps) ? ps : 0;
   U.fwRun = run;
   U.fwQp = Math.round(q);
   /* the 3rd-stage tap-off (KSB curve Q43446D lower curve): the RH and HP bypass spray water (PD-017 FW-1-025 / 026 -> FW-1-016) */
-  U.fwPis = Math.max(0, Math.min(250, n ? Ps - K.stK * q * q + (K.sg / 10) * swInterp(AN_BYS.tQ, AN_BYS.tH, q) : Ps));
+  U.fwPis = Math.max(0, Math.min(250, n ? Ps - K.stK * q * q + (sg / 10) * swInterp(AN_BYS.tQ, AN_BYS.tH, q) : Ps));
   /* the pump inlet = the suction header less the strainer DP (stK, KSB strainer drawing) */
   U.fwPd = Math.max(
     0,
-    Math.min(250, n ? Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz : Ps)
+    Math.min(250, n ? Ps - K.stK * q * q + (sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz : Ps)
   );
-  const el = run.map(r => (r ? anFwEl(swInterp(K.pQ, K.pP, q)) : null));
+  /* shaft power at this density: the data sheet curve x sg / 0.9093 (the power of a pump goes with rho at the same Q and H) */
+  const Ph = n ? (swInterp(K.pQ, K.pP, q) * sg) / K.sg : 0,
+    el = run.map(r => (r ? anFwEl(Ph) : null));
   anPortSet(U, 'q.motor.NANA', { P: el.reduce((a, x) => a + (x ? x.P : 0), 0), Q: el.reduce((a, x) => a + (x ? x.Q : 0), 0) });
   run.forEach((r, i) => {
     U['fwI' + i] = r ? Math.round(10 * el[i].I) / 10 : 0;
@@ -275,9 +286,8 @@ function anFwStep(U, dt) {
      dT_s = T beta v dp / cp); the losses (P - rho g Q H) warm it in full. dT = (P - (1 - T beta) rho g Q H) / (m cp), with
      T beta = 0.45 and cp 4.33 kJ/kg K at 158.4 C (IAPWS-IF97 water properties). 150 MW (549 m3/h): about 2.8 C; at the ARC minimum
      151 m3/h about 7.5 C. The water to No.1 HPH is the deaerator saturation + dT (anHphStep). */
-  const Ph = n ? swInterp(K.pQ, K.pP, q) : 0,
-    Hy = n ? (K.sg * 1000 * 9.81 * (q / 3600) * swInterp(K.qQ, K.qH, q)) / 1000 : 0,
-    mk = (K.sg * 1000 * q) / 3600;
+  const Hy = n ? (sg * 1000 * 9.81 * (q / 3600) * swInterp(K.qQ, K.qH, q)) / 1000 : 0,
+    mk = (sg * 1000 * q) / 3600;
   U.fwDT = n && mk > 0 ? Math.max(0, (Ph - 0.55 * Hy) / (mk * 4.33)) : 0;
 }
 /* Phase 11 rank 5 (NANA, user 2026-11-27 "Go fix 11"): THE HP HEATERS by energy balance and heat transfer, in place of the old
