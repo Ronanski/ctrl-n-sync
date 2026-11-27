@@ -24,3 +24,6 @@ offsets U.xt) and the nested anchors of the parts (e.g. AOI's bed DP anchor, the
   (LANES_J; LANES_J=1 = one after the other as before). Each test's output is printed whole when it ends, with its time.
 - A test that must run alone goes in `tests/lanes/serial.txt`; the file is empty today.
 - On 2026-11-27 these tests took 42 of the 62 minutes of Checks, one after the other.
+- `tests/lanes/first.txt`: the slowest tests start first. aph-blower takes about 26 min alone and sets the floor.
+- Local run, 4 at a time, while 2 sweeps were running on the same machine: 69 tests, 0 failed, 28 min. One after the other they take
+  about 68 min of CPU.

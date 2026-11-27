@@ -37,7 +37,10 @@ const runOne = f =>
     });
   });
 (async () => {
-  const par = list.filter(f => !serial.includes(relOf(f))),
+  const firstF = path.join(lanes, 'first.txt'),
+    first = fs.existsSync(firstF) ? fs.readFileSync(firstF, 'utf8').split(/\r?\n/).map(l => l.trim()).filter(l => l && l[0] !== '#') : [],
+    rank = f => (first.includes(relOf(f)) ? first.indexOf(relOf(f)) : first.length);
+  const par = list.filter(f => !serial.includes(relOf(f))).sort((a, b) => rank(a) - rank(b)),
     ser = list.filter(f => serial.includes(relOf(f)));
   let i = 0;
   await Promise.all(Array.from({ length: Math.min(J, par.length) }, async () => { while (i < par.length) await runOne(par[i++]); }));
