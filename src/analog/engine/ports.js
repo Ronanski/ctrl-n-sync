@@ -74,7 +74,7 @@ const AN_PORTS = {
     'ms.vent': { by: 'KANA', to: [], kind: 'steam', v: ['m', 'h'], io: 'out', note: 'main steam blow-off PCV-MS1001 + drum / SH safety valves + vents', d150: { m: 0 }, src: 'HB PPE-14-0725 case 1 has no such flow: closed at load' },
     'bd.out': { by: 'KANA', to: ['SUZU'], kind: 'water', v: ['m', 'h'], note: 'continuous / intermittent blowdown and boiler drains to the flash / blowdown tank', d150: { m: null } },
     /* ---- reheat ---- */
-    'crh.rh_in': { by: 'RIN', to: ['KANA'], kind: 'steam', v: ['m', 'P', 'T', 'h'], note: 'cold reheat after the RH spray into the reheater banks', d150: { m: 446.1, P: 38.64, T: 370.2 }, src: 'HB case 1 (cold reheat)' },
+    'crh.rh_in': { by: 'RIN', to: ['KANA'], kind: 'steam', v: ['m', 'P', 'T', 'h'], note: 'cold reheat after the RH spray into the reheater banks (the HP exhaust less the No.6 extraction to the No.2 HP heater, ext.w_hp x.hp2)', d150: { m: 400.9, P: 38.64, T: 370.2 }, src: 'HB case 1 (HP exhaust 446.1 T/H less the No.6 extraction = reheater inlet 400.9 T/H)' },
     'hrh.rh_out': { by: 'KANA', to: ['RIN'], kind: 'steam', v: ['T', 'h'], note: 'reheater outlet temperature from the bank heat; mass and pressure are RIN', d150: { T: 541 }, src: 'FHI Fig 6, Tab 3' },
     'hrh': { by: 'RIN', to: ['KANA'], kind: 'steam', v: ['m', 'P'], note: 'hot reheat flow and pressure at the IP inlet', d150: { m: 400.9, P: 34.77 }, src: 'HB case 1 (hot reheat)' },
     'crh.aux': { by: 'SUZU', to: ['RIN'], kind: 'steam', v: ['m'], note: 'cold reheat to the auxiliary steam header PICAS1005', d150: { m: null } },
