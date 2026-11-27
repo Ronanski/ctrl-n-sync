@@ -380,7 +380,7 @@ function anSwValve(tag, pct) {
      motor        TECO AEHLWA-R 50 HP 2P 460 V (p8: FLC 58.2 A, LRC 775 % = 451 A, direct on line or Y / delta; p11 load characteristic:
                   18.6 / 32.8 / 44.7 / 58.0 / 70.1 A at 26.4 / 51.7 / 76.6 / 101.5 / 126.6 % load);
      header       PT-MU0709 = 0.1 kg/cm2 per m (water, sg 1.0, p6) x (tank level + z + pump head at the flow of each running pump);
-                  z = -0.20 m (Phase 11 SUZU 2026-11-27, Rule 0; was 11.3 m FIT on 28.png, NO-FIT-OK: history): the as-built
+                  AN_MU_Z = -0.20 m (Phase 11 SUZU 2026-11-27, Rule 0; was 11.3 m FIT on 28.png, NO-FIT-OK: history): the as-built
                   instrument location plan K1AU3-E2-0-102 p11 / 12 (YUA read, project file suzu-mu-elevations-2026-11-27.md) gives
                   the zero of LT-MU0708-A / B at its tap +10.200 and the body of PT-MU0709 at +10.400 (tap +11.740 on the header, the
                   impulse line full of water reads at the body): z = 10.200 - 10.400. Friction of the header at the recirculation flow
@@ -398,6 +398,9 @@ function anSwValve(tag, pct) {
 /* T/H, MV-MU1001 fully open: MB-016 item 20. Kept outside AN_MU: a save carries AN_MU (state.js AN_STATE_OBJ), and a save made
    before this number existed would take it away (NaN) */
 const AN_MU_QMV = 70;
+/* m, the static head of PT-MU0709 over the demi tank level: K1AU3-E2-0-102 LT-MU0708 zero +10.200 - PT-MU0709 body +10.400 (see the
+   head). Kept outside AN_MU for the same reason: the st150 save carries AN_MU and would bring back the old 11.3 m fit */
+const AN_MU_Z = -0.2;
 const AN_MU = {
   mwp: ['DITL-112', 'DITL-112 #B', 'DITL-112 #C'],
   xv: 'DITL-78@3',
@@ -421,7 +424,6 @@ const AN_MU = {
      1 / 3 = 10 N m) = 205 N m; t = J w / T = 0.41 s (motor rotor only: the impeller inertia is not in the docs) -> 0.5 s */
   ramp: 0.5,
   kP: 0.1,
-  z: -0.2 /* m, K1AU3-E2-0-102: LT zero +10.200 - PT-MU0709 body +10.400 */,
   dp: 0.03,
   et0: 0.8,
   etMax: 2.0,
@@ -490,7 +492,7 @@ function anMakeupStep(U, dt) {
     H = s * s * swInterp(K.cQ, K.cH, U.muQ[j] / s);
   }
   U.muFeed = feed.filter(s => s > 0).length;
-  lag('muP', K.kP * (lv + K.z + Math.max(0, H)), K.tauH);
+  lag('muP', K.kP * (lv + AN_MU_Z + Math.max(0, H)), K.tauH);
   run.forEach((r, i) => {
     const s = U.muSpd[i],
       P = s > 0 ? 0.7457 * swInterp(K.pQ, K.pHP, U.muQ[i] / s) * s * s * s : 0;
