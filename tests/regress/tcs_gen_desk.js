@@ -82,5 +82,30 @@ const roll = rpm => ({ tb: { st: 'roll', rpm } });
   run(U, 0.5);
   ck(ok === '' && U.gen.close, '52G CLOSE accepted inside 25, close order given');
 }
+/* Phase 11 (YUI, MARIA review 2026-11-28): the ABB lead-lag regulator state g.zl */
+{
+  /* a save made mid-transient keeps zl: the copy steps the same as the original (no re-init to steady state) */
+  const U = roll(3600);
+  tcsGen(U).ex = true;
+  run(U, 1.5);
+  const C = JSON.parse(JSON.stringify(U));
+  ck(Number.isFinite(U.gen.zl) && C.gen.zl === U.gen.zl, 'regulator state zl kept in the save (' + U.gen.zl.toFixed(4) + ')');
+  run(U, 2);
+  run(C, 2);
+  ck(Math.abs(C.gen.V - U.gen.V) < 1e-12 && Math.abs(C.gen.efd - U.gen.efd) < 1e-12, 'a save loaded mid build-up steps as the original');
+}
+{
+  /* AVR MANUAL -> AUTO in service is bumpless: zl tracks the manual output */
+  const U = { tb: { st: 'load', rpm: 3600 } };
+  run(U, 5);
+  U.gen.avr = 'MAN';
+  U.gen.fr = U.gen.efd * 1.03;
+  run(U, 30);
+  const e0 = U.gen.efd,
+    v0 = U.gen.V;
+  U.gen.avr = 'AUTO';
+  tcsGenStep(U, 0.05);
+  ck(Math.abs(U.gen.efd - e0) < 0.002 && Math.abs(U.gen.V - v0) < 0.001, 'AVR MANUAL -> AUTO on line: field ' + e0.toFixed(4) + ' -> ' + U.gen.efd.toFixed(4) + ', no kick');
+}
 console.log(f ? 'FAIL ' + f : 'ALL PASS');
 process.exit(f ? 1 : 0);
