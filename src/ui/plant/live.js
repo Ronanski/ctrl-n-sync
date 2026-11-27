@@ -5,6 +5,8 @@
    - getV / NAMES: the main plant values (generator MW, steam, air, drum, O2 …) with units;
    - rec / recCsv / recNow / recClear: the trend recorder (one row each minute of plant time).
    Read only: nothing here writes the engine. ===== */
+/* Phase 11 AOI: the dry O2 of the flue gas mole balance at a coal and air flow (T/H), for the sweep judge (engine api fgO2dry) */
+window.LS_FG = { o2dry: (coalTH, airTH) => AN.fgO2dry(coalTH, airTH) };
 window.LS_LIVE = (function () {
   /* ---------- reading the running plant ---------- */
   const abc = () => ((typeof AN !== 'undefined' && AN.sheets) || []).filter(s => /^ABC-/.test(s.name) && !/^ABC-000/.test(s.name));

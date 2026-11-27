@@ -419,7 +419,8 @@ const AN_HMI_MAN = {
   'HIC-MWRL': [3.0, '33.PNG OUTPUT CHANGE RATE SET (MW/MIN)'],
   /* 2.2.0-beta.7: ABC-002 HIC-TADBS (station -50 ~ +50) -> F(X) S1-LN14 "PA FLOW BIAS" (x 0 % -> -30 T/H, 50 % -> 0, 100 % -> +30):
      7.PNG PAF FLOW BIAS -30.0 T/H = station -50. PA demand = S1-LN12(coal 81 T/H) 380 - 30 = 350 T/H (7.PNG PAF FLOW CTL R-SV 354.6) */
-  'HIC-TADBS': [-26.7, 'plant trends 2026-11-08: PA 16 to 21 T/H above the model at every load, less 4 T/H of coal: bias -16 T/H (7.PNG had -30)']
+  /* Phase 11 AOI (Rule 0): the station value of the operating point again; the old -26.7 made up for a model PA error */
+  'HIC-TADBS': [-50.0, '7.PNG PAF FLOW BIAS -30.0 T/H (station -50)']
 };
 /* 2.1.0-beta.11: digital inputs that the drawing names only by a text beside the wire (no address): [sheet, text, nth (same text
    counted top to bottom), value, why]. ABC-004A: the 8 "BNR SUPPLY OIL VALVE CLOSE" inputs of HS-COAL (I/O list STN104

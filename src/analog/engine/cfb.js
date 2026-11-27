@@ -291,16 +291,18 @@ function anBedMigrate(U) {
   U.phi = r.ph;
 }
 /* bed inventory (t of solids in the furnace). The overall furnace pressure drop is its weight on the grate: 15.51 x 7.68 m = 119 m2 (T2), so
-   1 mmH2O = 1 kg/m2 = 0.119 t. 3.2.3-beta.265 (SOHEE, Jennie): the 150 MW anchor is the plant DCS trend, scenario 1: overall furnace DP 1440 ~ 1490,
-   ~1465 mmH2O (team-files/plant-study/14-plant-trends.md) = 174.3 t. Checks only: FHI Section 7 Tab 4 Fig. 9 (overall furnace DP vs load: normal
-   ~1630 at 100 %, low limit ~1450) and the HMI snapshot DPIFG1081 1426 / DPIFG1082 1432 (hmi-op.js). Before 265 the snapshot 1426 = 170 t. In: ash of the coal 6.82 % (T3), limestone less its CO2 (93.66 % CaCO3,
+   1 mmH2O = 1 kg/m2 = 0.119 t. Phase 11 (AOI, 2026-11-27, rule-0 list item 2 / D29): the full load inventory t0 is the DESIGN, FHI P2S7
+   Fig 9 normal overall furnace DP 1630 mmH2O at 100 % MCR x 119.1 m2 = 194.2 t (DESIGN-SRC: FHI P2S7 Fig 9). It is also the set point the
+   plant logic holds (DPICFG108 SV 1630, ABC-009A / B, bottom ash coolers in AUTO): the steady 150 MW of the model already sat at 194.5 t
+   by that controller, so the old anchor (a plant reading 1465 mmH2O = 174.3 t, beta.265) put the solids share phi at 1.14 at full load,
+   off the design anchor of the bed balance (AN_BB cSol / uaS, CALC at phi 1). Now phi = 1 at the design inventory. In: ash of the coal 6.82 % (T3), limestone less its CO2 (93.66 % CaCO3,
    T3: 0.59 stays), sand. Of the ash and limestone 20 % stays as bottom ash (ASH L5-1, scanned page, read with care), the rest leaves as fly ash.
    Out: the four screw coolers, 2 T/H at normal, 4 T/H at 5 rpm (BAC E130122B): 0.8 T/H per rpm. The fan flow that fluidizes: NO-SOURCE, full
    reading above 30 % of the anchor primary air. Initial charge at Cold 100 t (T9 p3). */
 /* The loop: the cyclones catch the solids and the seal pots give them back while the fluidizing air blows. Below the FA blower flow low low of ABC-006
    (20 T/H) the seal pots stop passing: the solids stay in the cyclone legs and the bed empties, and they come back with the air. The rate is
    NO-SOURCE: the circulation rate is not in the documents. */
-const AN_BI = { t0: 174.3, tCold: 100, kA: 0.0682, kL: 0.59, kB: 0.2, q: 0.8, faLL: 20, loop: 60 };
+const AN_BI = { dp0: 1630 /* mmH2O, FHI P2S7 Fig 9, the overall furnace DP at t0 */, t0: (1630 * 15.507 * 7.684) / 1000 /* t, FHI P2S7 Fig 9 x grate (T2), see above */, tCold: 100, kA: 0.0682, kL: 0.59, kB: 0.2, q: 0.8, faLL: 20, loop: 60 };
 function anBedStep(U, dt, rpm, pa, fa) {
   const K = AN_BI;
   if (!isFinite(U.bedI)) U.bedI = U.cold ? K.tCold : K.t0;
@@ -327,3 +329,65 @@ function anBedStep(U, dt, rpm, pa, fa) {
   U.bedK = Math.max(0, Math.min(1, pa / 106)) * (U.bedI / K.t0);
   return U.bedK;
 }
+/* Phase 11 rank 3 (AOI, 2026-11-27, user "Go fix 11"): THE FLUE GAS MOLE BALANCE. The gas the furnace makes, mole by mole, from the
+   fuel analysis, in place of the law O2 = 21 x (1 - air needed / air) (which takes the gas moles = the air moles) and the oil counted
+   as 2.55 t of coal for its air (PR-OPE-5002 4.3.x is a HEAT ratio, not an air ratio).
+   Coal as fired (DESIGN-SRC: FHI P2S7 Tab 2, performance coal): C 42.97, H 2.75, O 11.42, N 0.59, S 1.49, ash 6.82, moisture 33.96 %
+   (sum 100.00). A wetter coal (anCoalWet: U.coalR holds r) keeps the dry analysis: combustibles x r, moisture 1 - r (1 - 0.3396).
+   Diesel oil: C 86.5, H 13.5 % (NO-SOURCE in the plant documents: the diesel analysis is not in them; textbook light fuel oil).
+   Dry air: O2 20.95 %, M 28.965 (textbook). Limestone: CaCO3 93.66 % (DESIGN-SRC: FHI P2S7 Tab 3 p2) calcines to CaO + CO2; the S taken
+   up (CaO + SO2 + 1/2 O2 -> CaSO4, share cap = 1 - U.soxF of anSoxStep) leaves the gas and takes its O2. A water wall leak (KANA, T/H)
+   is steam in the gas.
+   O2 of the analyzers: DRY basis. The design is self-consistent only on the dry basis: FHI P2S7 Fig 7 O2 against the Fig 12 air and
+   Fig 13 coal gives, dry / wet: 40 % MCR 8.97 / 8.15 (Fig 7 8.8), 50 % 4.82 / 4.24 (4.6), 60 % 3.73 / 3.26 (3.6), 100 % 3.82 / 3.34
+   (3.6); and Tab 3 "excess air 20 %" is dry 3.54 / wet 3.09 against Fig 7 3.6 (CALC, scratchpad fg.js). The data sheet of AT-FG1122 /
+   1123 (in situ or extractive) is a PC read; until it is read the design basis is used. Short of air the O2 is 0 and airR > 1 (CO). */
+const AN_FUEL = (() => {
+  const c = { C: 0.4297, H: 0.0275, O: 0.1142, N: 0.0059, S: 0.0149, A: 0.0682, M: 0.3396 } /* DESIGN-SRC: FHI P2S7 Tab 2 */,
+    o = { C: 0.865, H: 0.135 } /* diesel, textbook (NO-SOURCE in the plant documents) */,
+    W = { C: 12.011, H2: 2.016, O2: 31.998, N2: 28.013, S: 32.06, H2O: 18.015, CO2: 44.009, SO2: 64.064, air: 28.965, CaCO3: 100.086, N2a: (28.965 - 0.2095 * 31.998) / 0.7905 /* atmospheric N2 with its argon, 28.16 */ },
+    xO2 = 0.2095;
+  /* O2 needed, kmol per kg of fuel */
+  const nCoal = r => ({ C: (c.C * r) / W.C, H2: (c.H * r) / W.H2, S: (c.S * r) / W.S, O2: (c.O * r) / W.O2, N2: (c.N * r) / W.N2, W: (1 - r * (1 - c.M)) / W.H2O }),
+    need = n => n.C + n.H2 / 2 + n.S - (n.O2 || 0),
+    c1 = nCoal(1),
+    o1 = { C: o.C / W.C, H2: o.H / W.H2, S: 0, O2: 0, N2: 0, W: 0 };
+  return { c, o, W, xO2, nCoal, need, o1, afs: (need(c1) / xO2) * W.air /* 5.46 kg air per kg coal (CALC, Tab 2) */, afo: (need(o1) / xO2) * W.air /* 14.4 */ };
+})();
+/* the gas of the furnace, per hour: cb coal burnt T/H, r coal dry share (U.coalR), oil T/H, air T/H into the furnace (dry), lm limestone
+   T/H, cap S taken up (share), stm steam of a wall leak T/H. Out: kmol/h of each gas, wet / dry total, O2 % wet and dry, mass T/H, the
+   air needed T/H and airR = air needed / air given */
+function anFgMol(cb, r, oil, air, lm, cap, stm) {
+  const F = AN_FUEL,
+    W = F.W,
+    k = Math.max(0, cb) * 1000,
+    q = Math.max(0, oil) * 1000,
+    nc = F.nCoal(isFinite(r) && r > 0 ? r : 1),
+    nS = k * nc.S,
+    cp = Math.max(0, Math.min(1, cap || 0)),
+    o2n = k * F.need(nc) + q * F.need(F.o1) + (cp * nS) / 2 /* kmol/h of O2 the fuel and the sulphation take */,
+    nA = (Math.max(0, air) * 1000) / W.air,
+    n = {
+      CO2: k * nc.C + q * F.o1.C + (Math.max(0, lm) * 1000 * 0.9366) / W.CaCO3 /* calcination, DESIGN-SRC: FHI P2S7 Tab 3 p2 */,
+      H2O: k * (nc.H2 + nc.W) + q * F.o1.H2 + (Math.max(0, stm) * 1000) / W.H2O,
+      SO2: nS * (1 - cp),
+      N2: nA * (1 - F.xO2) + k * nc.N2 /* the air part at N2a (argon in it) */,
+      O2: Math.max(0, nA * F.xO2 - o2n)
+    },
+    wet = n.CO2 + n.H2O + n.SO2 + n.N2 + n.O2,
+    dry = wet - n.H2O,
+    m = (n.CO2 * W.CO2 + n.H2O * W.H2O + n.SO2 * W.SO2 + nA * (1 - F.xO2) * W.N2a + k * nc.N2 * W.N2 + n.O2 * W.O2) / 1000;
+  return {
+    n,
+    wet,
+    dry,
+    o2w: wet > 0 ? (100 * n.O2) / wet : 20.95,
+    o2d: dry > 0 ? (100 * n.O2) / dry : 20.95,
+    m,
+    airN: (o2n / F.xO2) * W.air / 1000,
+    airR: nA > 0 ? o2n / (nA * F.xO2) : 0
+  };
+}
+/* the design gas of the furnace at 100 % MCR, the base of the gas velocity share uRel (DESIGN-SRC: FHI P2S7 Fig 13 coal 89.5 T/H and
+   limestone 12 T/H, Fig 12 total air 596 T/H, design coal r 1, the S taken up at the design 200 ppm of 1822: 0.89) */
+const AN_FG0 = anFgMol(89.5, 1, 0, 596, 12, 1 - 200 / 1822, 0);
