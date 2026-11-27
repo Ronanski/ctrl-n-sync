@@ -81,7 +81,18 @@ const judge = (v, tg, tol, kind) => {
       const MWq = (m, dh) => m / 3.6 * dh / 1000;
       const steam = MWq(U.mEco || 0, (H.hEco || 0) - hw(tfw)) + MWq(mDr, hg - (H.hEco || 0)) + MWq(mOut, hs(U.Pms, H.ms) - hg) + MWq(hrh, hs(U.Prh, H.rh) - hs(U.Prh + 1.5, tcr));
       return {
-        MSF: U.ms, Pms: U.Pms, MSTt: H.ms, Psh: U.Pms, MST: H.ms, CRHf: crh, Pcr: U.Prh + 1.5, Tcr: tcr, HRHf: hrh, Prh: U.Prh, RHT: H.rh,
+        /* RIN 2026-11-27: the HB rows are ATA (U.Pms / U.Prh are gauge kg/cm2: + 1.0332), and the reheat rows read the turbine's own
+           ports (src/analog/engine/ports.js crh.rh_in, hrh; written by RIN since PR 669). Before 669 the ports are empty: the old
+           estimate is used, marked by pt: 0 in the sample */
+        ...(() => {
+          const pt = U.pt || {}, cr = pt['crh.rh_in'], hr = pt['hrh'], ok = x => x && isFinite(x.m) && isFinite(x.P);
+          return {
+            pt: ok(cr) && ok(hr) ? 1 : 0,
+            CRHf: ok(cr) ? cr.m : crh, Pcr: ok(cr) ? cr.P : U.Prh + 1.5 + 1.0332, Tcr: ok(cr) && isFinite(cr.T) ? cr.T : tcr,
+            HRHf: ok(hr) ? hr.m : hrh, Prh: ok(hr) ? hr.P : U.Prh + 1.0332
+          };
+        })(),
+        MSF: U.ms, Pms: U.Pms + 1.0332, MSTt: H.ms, Psh: U.Pms, MST: H.ms, RHT: H.rh,
         tEco: H.tEco, Tfw: tfw, FWf: U.fwMain + w1 + w2 - bd /* FE-FW1007 is before the SH spray tap (PD-017, beta.374) */, sp: w1 + w2, rsp: U.rhSp || 0, MW: U.MW, HR: U.MW > 1 ? (qT * 3600) / 4.1868 / (U.MW * 1000) * 1000 / 1000 : NaN,
         bed: U.Tb, Tu: U.Tu, dp: pv('DPICFG108'), ahGi: U.aphGi, ahGo: U.aphGo, coal: U.Fc, lime: U.lm ? U.lm.q : NaN, air: air.reduce((a, b) => a + (b || 0), 0), PA: air[0], SA: air[1],
         O2: U.o2v, eff: fuel > 0 ? (100 * steam) / fuel : NaN, trip: !!(AN.soeTrip && AN.soeTrip().mft.on)
@@ -245,8 +256,16 @@ const judge = (v, tg, tol, kind) => {
     fs.writeFileSync(process.env.OUT || 'part1.json', JSON.stringify(R));
     if (SWEEP) {
       const SJ = require(path.join(root, 'tools/model/sweep-judge.cjs')), J = SJ.judge(SW);
+      /* the ports of src/analog/engine/ports.js that no part writes yet, and the whole-plant water / steam balance (Phase 11 gate) */
+      const PB = await page.evaluate(() => {
+        const P = window.LS_PORTS, U = AN.unit;
+        if (!P) return { missingPorts: null, balance: null };
+        const ids = Object.keys(P.AN_PORTS.list).concat(P.AN_PORTS.stores);
+        return { missingPorts: ids.filter(id => !P.anPortGet(U, id)), balance: P.anPortBalance(U) };
+      });
       console.log('\nSWEEP (every plant minute, 150 -> 45 MW, design curves):\n' + SJ.md(J));
-      fs.writeFileSync(process.env.OUT_SWEEP || 'sweep.json', JSON.stringify({ SW, J }));
+      console.log('ports not written: ' + (PB.missingPorts ? PB.missingPorts.length : 'n/a') + '; balance ' + JSON.stringify(PB.balance));
+      fs.writeFileSync(process.env.OUT_SWEEP || 'sweep.json', JSON.stringify({ SW, J, missingPorts: PB.missingPorts, balance: PB.balance }));
     }
   } finally {
     await browser.close();

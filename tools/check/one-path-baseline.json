@@ -9,14 +9,6 @@
   "anHxTagStep",
   "anLphStep"
  ],
- "airR": [
-  "anAphStep",
-  "anUnitStep0"
- ],
- "baConv": [
-  "(top level of src/world/ditl150.js)",
-  "anBaStep"
- ],
  "Tb": [
   "anBedMigrate",
   "anUnitStep0"
@@ -34,10 +26,6 @@
   "anBedMigrate",
   "anUnitStep0"
  ],
- "bedK": [
-  "anBedStep",
-  "anUnitStep0"
- ],
  "el": [
   "anElecBo",
   "anElecL52",
@@ -47,13 +35,9 @@
   "anElecStep",
   "anUnitStep0"
  ],
- "hxM": [
-  "anHxGas",
-  "anHxStep"
- ],
- "tlk": [
-  "tcsLinkStep",
-  "tcsMiss"
+ "avH": [
+  "anAsTagStep",
+  "anFwTagStep"
  ],
  "tco": [
   "tcsFromOil",
@@ -69,7 +53,6 @@
   "anUnitStep0"
  ],
  "turb": [
-  "anIdfN",
   "anUnitLive",
   "anUnitStep0"
  ],
@@ -77,65 +60,17 @@
   "anUnitLive",
   "anUnitStep0"
  ],
- "acT2": [
-  "anAcwStep",
-  "anLubeCoolStep"
- ],
  "vac": [
   "anCondStep",
   "anUnitStep0"
- ],
- "fwPd": [
-  "anFwStep",
-  "anSuFwCv"
- ],
- "hlW": [
-  "anHpLeak",
-  "anHphStep"
- ],
- "hlA": [
-  "anHpLeak",
-  "anHphStep"
- ],
- "avH": [
-  "anAsTagStep",
-  "anFwTagStep"
- ],
- "mt": [
-  "anLubeCoolStep",
-  "anMotorStep"
- ],
- "coalR": [
-  "anCoalWet",
-  "anSuFw"
- ],
- "coalK": [
-  "anCoalWet",
-  "anSuFw"
  ],
  "clS": [
   "anClRnd",
   "anCoalLots"
  ],
- "sbT": [
-  "anGenInt",
-  "anSbDrain"
- ],
- "sbTh": [
-  "anGenInt",
-  "anSbDrain"
- ],
  "msb": [
   "anSbAph",
   "anSbStep"
- ],
- "sbA": [
-  "anSbAph",
-  "anSbStep"
- ],
- "hxO": [
-  "anGasA0",
-  "anHxRun"
  ],
  "gCy": [
   "anHxRun",
