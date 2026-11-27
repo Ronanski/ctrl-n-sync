@@ -12,10 +12,10 @@ const fs = require('fs'),
 const root = path.resolve(__dirname, '..', '..', '..');
 const ctx = { Math, console, isFinite, Number, Object, Array };
 vm.createContext(ctx);
-for (const f of ['engine/steam.js', 'engine/fw.js']) vm.runInContext(fs.readFileSync(path.join(root, 'src/analog', f), 'utf8'), ctx, { filename: f });
+for (const f of ['engine/steam.js', 'engine/ports.js', 'engine/fw.js']) vm.runInContext(fs.readFileSync(path.join(root, 'src/analog', f), 'utf8'), ctx, { filename: f });
 let bad = 0;
 const fail = m => (bad++, console.log('FAIL', m));
-const h1 = (p, T) => vm.runInContext(`fwH1(${p}, ${T})`, ctx);
+const h1 = (p, T) => vm.runInContext(`steamR1(${p}, ${T}).h`, ctx);
 for (const [p, T, h] of [[3, 300, 115.331273], [80, 300, 184.142828], [3, 500, 975.542239]]) {
   const v = h1(p, T);
   if (Math.abs(v - h) > 1e-5) fail(`IF97 r1 h(${p} MPa, ${T} K) = ${v}, table ${h}`);
@@ -27,7 +27,7 @@ function run(T0, Pxa, wc, tc, wd, td, mins) {
   ctx.Pxa = Pxa;
   ctx.wc = wc;
   vm.runInContext(
-    `var anPortGet = (U, id) => id === 'ext.da' ? { P: Pxa } : id === 'cd.out' ? { m: wc } : null; var anDitlPos = () => 100;`,
+    `var anPortGet = (U, id) => id === 'ext.da' ? { P: Pxa, T: 310.3 } : id === 'cd.out' ? { m: wc } : null; var anDitlPos = () => 100;`,
     ctx
   );
   for (let i = 0; i < mins * 300; i++) vm.runInContext('anDeaStep(U, 0.2)', ctx);

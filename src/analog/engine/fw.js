@@ -14,33 +14,11 @@
        volume 120.9 m3, ID 3338.
      Hitachi heat balance PPE-14-0725 R1 case 1 (unit.js AN_HB): deaerator extraction stage 6.369 ata at 458,327 kg/h main steam. */
 
-/* IAPWS-IF97 region 1 (compressed / saturated liquid), the basic equation: dimensionless Gibbs free energy, Table 2 of the IF97
-   release (I, J, n). Checked with the IF97 verification values, Table 5 (tests/lanes/fw/deaerator.cjs): 300 K / 3 MPa
-   h 115.331273, 300 K / 80 MPa 184.142828, 500 K / 3 MPa 975.542239 kJ/kg */
-const FW_R1 = [
-  [0, -2, 0.14632971213167], [0, -1, -0.84548187169114], [0, 0, -0.3756360367204e1], [0, 1, 0.33855169168385e1],
-  [0, 2, -0.95791963387872], [0, 3, 0.15772038513228], [0, 4, -0.16616417199501e-1], [0, 5, 0.81214629983568e-3],
-  [1, -9, 0.28319080123804e-3], [1, -7, -0.60706301565874e-3], [1, -1, -0.18990068218419e-1], [1, 0, -0.32529748770505e-1],
-  [1, 1, -0.21841717175414e-1], [1, 3, -0.5283835796993e-4], [2, -3, -0.47184321073267e-3], [2, 0, -0.30001780793026e-3],
-  [2, 1, 0.47661393906987e-4], [2, 3, -0.44141845330846e-5], [2, 17, -0.72694996297594e-15], [3, -4, -0.31679644845054e-4],
-  [3, 0, -0.28270797985312e-5], [3, 6, -0.85205128120103e-9], [4, -5, -0.22425281908e-5], [4, -2, -0.65171222895601e-6],
-  [4, 10, -0.14341729937924e-12], [5, -8, -0.40516996860117e-6], [8, -11, -0.12734301741641e-8], [8, -6, -0.17424871230634e-9],
-  [21, -29, -0.68762131295531e-18], [23, -31, 0.14478307828521e-19], [29, -38, 0.26335781662795e-22],
-  [30, -39, -0.11947622640071e-22], [31, -40, 0.18228094581404e-23], [32, -41, -0.93537087292458e-25]
-];
-/* liquid enthalpy kJ/kg, p MPa abs, T K */
-function fwH1(p, T) {
-  const pi = p / 16.53,
-    tau = 1386 / T;
-  let g = 0;
-  for (const [I, J, n] of FW_R1) g += n * Math.pow(7.1 - pi, I) * J * Math.pow(tau - 1.222, J - 1);
-  return 0.461526 * T * tau * g;
-}
 /* water enthalpy kJ/kg at P kg/cm2 G (at least its saturation pressure) and T C */
 function fwHw(P, T) {
   const Tc = Math.max(0.01, Math.min(350, +T || 0)),
     Pg = Math.max(+P || 0, typeof steamPsat === 'function' ? steamPsat(Tc) : 0);
-  return fwH1((Pg + 1.0332) * 0.0980665, Tc + 273.15);
+  return steamR1((Pg + 1.0332) * 0.0980665, Tc + 273.15).h; /* IAPWS-IF97 region 1, steam.js (one copy) */
 }
 
 /* THE DEAERATOR (H-1104 + storage tank T-1104): one well mixed body of saturated water with its metal.
@@ -89,7 +67,7 @@ function anDeaStep(U, dt) {
   /* a save point made before this model has a U.own without PT-CD1104 (as anAuxStep for the aux steam transmitters) */
   if (U.own && U.xt && U.xt.dea && U.xt.dea.some(([S2, b]) => !U.own.has(S2.rt.st[b.id]))) anFwStart(U);
   const K = AN_DA,
-    pg = id => (typeof anPortGet === 'function' ? anPortGet(U, id) : null),
+    pg = id => anPortGet(U, id),
     fin = x => (x != null && isFinite(x) ? +x : NaN),
     Ta = isFinite(U.Tamb) ? U.Tamb : 30,
     lvl = typeof AN_CYC !== 'undefined' && AN_CYC.y && isFinite(AN_CYC.y.da) ? AN_CYC.y.da : 0,
@@ -104,17 +82,15 @@ function anDeaStep(U, dt) {
     Pd = Math.max(0, steamPsat(T)) /* kg/cm2 G; vented below 100 C */,
     hf = fwHw(Pd, T),
     cw = (fwHw(Pd, T + 0.5) - fwHw(Pd, T - 0.5)) / 1,
-    /* extraction no. 3 */
-    ms = Math.max(0, +U.ms || 0),
+    /* extraction no. 3: the port of the turbine (ext.da, RIN: stage pressure ata, h, T); not written = no steam (ports.js rule 3) */
     pX = pg('ext.da'),
-    Pxa = isFinite(fin(pX && pX.P)) ? fin(pX.P) : K.Px0 * (typeof anHb === 'function' ? anHb('xd', ms) : 0),
+    Pxa = isFinite(fin(pX && pX.P)) ? fin(pX.P) : 0,
     mov = typeof anDitlPos === 'function' ? anDitlPos('DITL-96', 0) : null,
     open = mov == null ? 1 : Math.max(0, Math.min(1, mov / 100)),
     Pda = Pd + 1.0332,
-    tX = U.tt && isFinite(U.tt['TT-TS1018']) ? U.tt['TT-TS1018'] : K.Tx0,
-    TxC = Math.max(steamTsat(Pxa - 1.0332), tX),
+    TxC = Pxa > 0.05 ? Math.max(steamTsat(Pxa - 1.0332), isFinite(fin(pX.T)) ? fin(pX.T) : 0) : Ta,
     wx = Pxa > Pda && open > 0 ? open * K.k * Math.sqrt(steamRho(Pxa - 1.0332, TxC) * (Pxa - Pda)) : 0,
-    hx = isFinite(fin(pX && pX.h)) ? fin(pX.h) : steamH(Pxa - 1.0332, TxC),
+    hx = isFinite(fin(pX && pX.h)) ? fin(pX.h) : Pxa > 0.05 ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */ : 0,
     /* pegging steam (the aux steam model's own flow, kg/h) */
     wp = U.asF && isFinite(U.asF.w1030) ? Math.max(0, U.asF.w1030) / 1000 : 0,
     hp = steamH(isFinite(U.asP) ? U.asP : Pd, K.Tpeg),
@@ -139,10 +115,12 @@ function anDeaStep(U, dt) {
   U.daIn = wx + wp + wd; /* T/H into the storage water besides the condensate */
   U.daTb = wx; /* the turbine steam taken by the deaerator (the condenser does not get it) */
   if (U.xt && U.xt.dea) anUnitWrite(U.xt.dea, Pn);
-  if (typeof anPortSet === 'function') {
-    anPortSet(U, 'dea', { P: Pn + 1.0332, T: U.da.T, L: lvl });
-    anPortSet(U, 'aux.peg', { m: wp });
-  }
+  anPortSet(U, 'dea', { P: Pn + 1.0332, T: U.da.T, L: lvl });
+  anPortSet(U, 'aux.peg', { m: wp });
+  /* the extraction steam the heaters draw (T/H), for the turbine steam path (RIN tbDraws) */
+  const e2 = isFinite(U.hpF2) ? U.hpF2 : 0,
+    e1 = isFinite(U.hpF1) ? Math.max(0, U.hpF1 - e2) : 0;
+  anPortSet(U, 'ext.w_hp', { m: e2 + e1 + wx, x: { hp2: e2, hp1: e1, da: wx } });
 }
 /* 3.2.1 (IRENE: FEEDWATER plant model; docs/versions/v3.2.1/FEEDWATER_PLANT_MODEL.md). The boiler feed water pumps P-1115A / B
    (BFWP) of flow diagram PD-016 / 003.
@@ -231,100 +209,188 @@ function anFwStep(U, dt) {
     mk = (K.sg * 1000 * q) / 3600;
   U.fwDT = n && mk > 0 ? Math.max(0, (Ph - 0.55 * Hy) / (mk * 4.33)) : 0;
 }
-/* 3.2.1 (IRENE: HP HEATERS; docs/versions/v3.2.1/HP_HEATERS_PLANT_MODEL.md). Feedwater after the BFWP: deaerator -> No.1 HPH
-   (extraction no. 2, MV-TS1002 DITL-95) -> No.2 HPH (extraction no. 1, MV-TS1001 DITL-94) -> economizer inlet (TT-FW1160 / PT-FW1160).
-   Sources: FHI heater O&M (PC, o&m-package-phase-1 L15-3 / L15-4, PDF p14 "Nominal thermal characteristics", feedwater 458.684 t/h):
-     No.2 HPH  extraction 37.48 kgf/cm2A (sat 245.37 C), FW 195.7 -> 245.4 C, TTD -0.05, drain 45.147 t/h 201.3 C (DCA 5.6 over FW in)
-     No.1 HPH  extraction 14.12 kgf/cm2A (sat 194.63 C), FW out = sat + 1.07 (TTD -1.07) = 195.7 C, extraction 7.035 kg/s = 25.33 t/h;
-               the drains of both to the deaerator: deaerator O&M (L15-2 p14) "HPH condensate" 69.35 t/h 166.3 C (FW in 158.4 C)
-   The extraction pressure goes with the turbine steam by the MHPS heat balance (AN_HB / anHb above; before: U.ms / 458.684, NO-SOURCE); a shut-off MOV less than 20 % open throttles it (NO-SOURCE). The heater gives FW out = saturation of its
-   shell + TTD, never below FW in; the extraction (= drain) flow from its heat duty, scaled on the design point. Metal / water lag 120 s
-   (NO-SOURCE). The water side valves: AN_FV0, anHtrPath. */
+/* Phase 11 rank 5 (NANA, user 2026-11-27 "Go fix 11"): THE HP HEATERS by energy balance and heat transfer, in place of the old
+   model (3.2.1 IRENE: FW out = saturation + a fixed TTD, extraction = design flow x feedwater / 458.684 x rise / design rise, shell
+   pressure = design x anHb, a MOV under 20 % open = a linear throttle, a 120 s lag; all deleted here).
+   Feedwater: deaerator -> No.1 HPH H-1105 (extraction II, MV-TS1002 DITL-95) -> No.2 HPH H-1106 (extraction I = cold reheat,
+   MV-TS1001 DITL-94) -> economizer inlet.
+   DESIGN-SRC: K1AU3-D1-0-036 R0 heater specifications (PC 2026-11-27, /mnt/project-files/phase11/fw/pc-reads-2026-11-27.md):
+     No.1 HPH (PDF p3): shell 14.12 ata, steam in 417.8 C, drain out 166.3 C, 69.347 t/h out (own + the No.2 cascade 45.147 = own
+       24.2 t/h, as HB PPE-14-0725 case 1 No.5 24,200 kg/h); tubes 160.7 -> 195.7 C, 458.684 t/h; area 515.5 m2; fabricated 22,200 kg,
+       operating 29,300 kg.
+     No.2 HPH (PDF p6): steam in 370.2 C, drain out 201.3 C, 45.147 t/h; tubes 195.7 -> 245.4 C, 458.684 t/h; area 516 m2; fabricated
+       25,700 kg, operating 29,000 kg. Shell 37.48 ata of the FHI heater O&M L15-4 p14 nominal thermal characteristics (sat 245.37 C,
+       TTD -0.05; the spec sheet prints 36.48, which gives no condensing temperature for 245.4 C out: the O&M value is the heat balance
+       one). At the turbine (HB case 1): cold reheat 38.64 ata, No.5 14.87 ata: the line drop to the shell 1.16 / 0.75 kg/cm2.
+   Check of the design data with IF97 (steam.js): No.2 duty 28.70 MW = 45.11 t/h x (h 370.2 C - h 201.3 C), sheet 45.147;
+   No.1 19.37 MW = 24.18 t/h with the cascade flash, sheet 24.2. The data close to 0.1 %.
+   THE MODEL, each heater, each step (steady state of the step, the metal as a lag):
+     shell pressure  Ps = P port (ext.hp2 / ext.hp1 of the turbine, RIN) - line drop dP0 (e / e0)^2 (P0 / P) / a^2: the drop of a gas
+                     line goes with m^2 v (v ~ 1 / P), a = MOV opening (a gate valve: flow area in line with the stroke).
+     three zones in counterflow (the heater layout of the O&M: drain cooler, condensing, desuperheating):
+       drain cooler  the drain (own + cascade) from saturation Ts down, the feedwater from in to Ta, e-NTU counterflow;
+       condensing    Tb = Ts - (Ts - Ta) exp(-UAc / Cfw);
+       desuperheat   the steam from its port temperature down to Ts, the feedwater from Tb to out, e-NTU counterflow, at most
+                     e (h steam - hg).
+     UA of each zone: from the design point above (zone duties from IF97, LMTD), times (feedwater / design)^0.8 off design (the tube side
+     film controls, Dittus-Boelter Nu ~ Re^0.8; the condensing shell film is several times higher). No other constant.
+     extraction e   from the energy balance of the heater: e (h steam - h drain) + cascade (h cascade - h drain) = feedwater duty.
+     metal / water  the outlet follows its steady value with tau = (metal x 0.49 + water x cp) / (feedwater x cp), metal = the
+                    fabricated weight, water = operating - fabricated weight; no feedwater = no change. */
 const AN_HP = {
-  dhX: [
-    1160.1, 917.1, 454.8, 311.4, 257.2
-  ] /* kJ/kg down to the exhaust 2378.4: No.2 HPH hot reheat 3538.5, No.1 HPH 3295.5, No.3 LPH 2833.2, No.2 LPH 2689.8, No.1 LPH saturated 2635.6 (HEAT_BALANCE.md) */,
-  cpFw: 4.6 /* kJ/kg per C, feedwater 195.7 to 245.4 C */,
-  dhB: 2382 /* kJ/kg, main steam 3446.7 less feedwater 1064.4 */,
-  F0: 458.684,
-  P1: 37.48 - 1.0332,
-  P2: 14.12 - 1.0332,
-  ttd1: 1.07,
-  ttd2: 0.05,
-  dT1: 195.7 - 158.4,
-  dT2: 245.4 - 195.7,
-  m1: 25.33,
-  m2: 45.147,
-  dca1: 166.3 - 158.4,
-  dca2: 201.3 - 195.7,
-  tau: 120
+  m0: 458.684 /* t/h feedwater, DESIGN-SRC: K1AU3-D1-0-036 */,
+  nRe: 0.8 /* Dittus-Boelter exponent, DESIGN-SRC: textbook (Incropera 8.60) */,
+  cm: 0.49 /* kJ/kg K carbon steel, DESIGN-SRC: textbook */,
+  /* No.1 HPH (H5, extraction II, port ext.hp1), No.2 HPH (H6, cold reheat, port ext.hp2); DESIGN-SRC: K1AU3-D1-0-036, HB case 1 */
+  h: [
+    { k: 'H5', port: 'ext.hp1', mov: 'DITL-95', Ps: 14.12, Px: 14.87, Tx: 417.8, Td: 166.3, Ti: 160.7, To: 195.7, e: 24.2, cas: 45.147, Tc: 201.3, Mm: 22200, Mw: 7100 },
+    { k: 'H6', port: 'ext.hp2', mov: 'DITL-94', Ps: 37.48, Px: 38.64, Tx: 370.2, Td: 201.3, Ti: 195.7, To: 245.4, e: 45.147, cas: 0, Tc: 0, Mm: 25700, Mw: 3300 }
+  ]
 };
+const HP_A = 0.0980665; /* MPa per ata */
+/* water h kJ/kg at P ata, T C (IF97 region 1) and steam h at P ata, T C (region 2) */
+const hpHw = (P, T) => steamR1(P * HP_A, T + 273.15).h,
+  hpHs = (P, T) => steamR2(P * HP_A, T + 273.15).h;
+/* the design UA of the three zones (kW/K), once, from the design data and IF97 */
+function anHpGeo() {
+  if (AN_HP.g) return AN_HP.g;
+  const lm = (a, b) => (Math.abs(a - b) < 1e-6 ? a : (a - b) / Math.log(a / b));
+  AN_HP.g = AN_HP.h.map(d => {
+    const S = steamSatM(d.Ps * HP_A),
+      Ts = S.T - 273.15,
+      m = (AN_HP.m0 * 1000) / 3600,
+      cp = (hpHw(160, d.To) - hpHw(160, d.Ti)) / (d.To - d.Ti),
+      hd = hpHw(d.Ps + 5, d.Td),
+      Qdc = (((d.e + d.cas) * 1000) / 3600) * (S.hf - hd),
+      Qds = ((d.e * 1000) / 3600) * (hpHs(d.Ps, d.Tx) - S.hg),
+      Ta = d.Ti + Qdc / (m * cp),
+      Tb = d.To - Qds / (m * cp);
+    return {
+      dc: Qdc / lm(Ts - Ta, d.Td - d.Ti),
+      c: m * cp * Math.log((Ts - Ta) / (Ts - Tb)),
+      ds: Qds / lm(d.Tx - d.To, Ts - Tb),
+      dP: d.Px - d.Ps
+    };
+  });
+  return AN_HP.g;
+}
+/* counterflow effectiveness of NTU and Cmin / Cmax */
+function anHpEff(ntu, cr) {
+  if (!(ntu > 0)) return 0;
+  if (cr > 0.999) return ntu / (1 + ntu);
+  const x = Math.exp(-ntu * (1 - cr));
+  return (1 - x) / (1 - cr * x);
+}
+/* one heater at steady state. m feedwater t/h through the tubes, Ti C, Pt tube ata, Px / hx extraction port (ata, kJ/kg), a MOV 0 ~ 1,
+   cas cascade drain t/h at hc kJ/kg, e guess t/h. Returns { e, To, Td, Ps } (Ps ata) */
+function anHpSolve(i, m, Ti, Pt, Px, hx, a, cas, hc, eg) {
+  const d = AN_HP.h[i],
+    G = anHpGeo()[i],
+    ms = (m * 1000) / 3600,
+    cs = (Math.max(0, cas) * 1000) / 3600,
+    cp = ms > 0 ? (hpHw(Pt, Ti + 20) - hpHw(Pt, Ti)) / 20 : 4.3,
+    Cc = ms * cp,
+    f = Math.pow(Math.max(0, m) / AN_HP.m0, AN_HP.nRe);
+  let e = Math.max(0, isFinite(eg) ? eg : d.e),
+    r = { e: 0, To: Ti, Td: Ti, Ps: Math.max(0.05, Px || 0) };
+  if (!(ms > 0) || !(Px > 0) || !(a > 0.005) || !isFinite(hx)) {
+    /* no steam or no water: the cascade alone flashes into the shell and leaves at its saturation */
+    if (cs > 0 && Px > 0 && a > 0.005) r.Td = steamTsatK(r.Ps * HP_A) - 273.15;
+    return r;
+  }
+  for (let it = 0; it < 30; it++) {
+    const es = (e * 1000) / 3600,
+      Ps = Math.max(0.05, Px - (G.dP * (e / d.e) * (e / d.e) * (d.Px / Px)) / (a * a)),
+      S = steamSatM(Ps * HP_A),
+      Ts = S.T - 273.15;
+    if (Ts <= Ti + 0.01) {
+      r = { e: 0, To: Ti, Td: Ti, Ps };
+      break;
+    }
+    /* drain cooler: drain (own + cascade) at Ts, liquid cp from IF97 */
+    const cpl = (S.hf - hpHw(Ps + 5, Ts - 20)) / 20,
+      Ch = (es + cs) * cpl,
+      Cmin = Math.min(Ch, Cc),
+      Qdc = Ch > 0 ? anHpEff((G.dc * f) / Cmin, Cmin / Math.max(Ch, Cc)) * Cmin * (Ts - Ti) : 0,
+      Td = Ch > 0 ? Ts - Qdc / Ch : Ts,
+      Ta = Ti + Qdc / Cc,
+      /* condensing */
+      Tb = Ts - (Ts - Ta) * Math.exp(-(G.c * f) / Cc),
+      /* desuperheater: the steam from its port temperature down to Ts */
+      Tx = steamPhM(Px * HP_A, hx).T - 273.15,
+      cps = Tx > Ts + 0.1 ? (hx - S.hg) / (Tx - Ts) : 0,
+      Cs = es * cps,
+      Cm2 = Math.min(Cs, Cc),
+      Qds = Cs > 0 ? Math.min(es * (hx - S.hg), anHpEff((G.ds * f) / Cm2, Cm2 / Math.max(Cs, Cc)) * Cm2 * (Tx - Tb)) : 0,
+      To = Tb + Qds / Cc,
+      hd = hpHw(Ps + 5, Td),
+      en = Math.max(0, ((Cc * (To - Ti) - cs * (hc - hd)) / Math.max(1, hx - hd)) * 3.6);
+    r = { e: en, To, Td, Ps };
+    if (Math.abs(en - e) < 1e-4) break;
+    e = 0.5 * (e + en);
+  }
+  return r;
+}
 /* the feedwater pumped now (T/H): pump heat only while water moves through the heaters */
 function ffwIn() {
   return typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.ffw) ? Math.max(0, AN_CYC.ffw) : 0;
 }
 function anHphStep(U, dt) {
   const K = AN_HP,
-    ms = Math.max(0, +U.ms || 0),
     pos = n => {
       const p = typeof anDitlPos === 'function' ? anDitlPos(n, 0) : null;
       return p == null ? 100 : p;
     },
-    thr = p => Math.max(0, Math.min(1, p / 20)),
-    /* shell pressures (kg/cm2 g): extraction x turbine steam x MOV */
-    Ps2 = (K.P1 + 1.0332) * anHb('x6', ms) * thr(pos('DITL-94')) - 1.0332,
-    Ps1 = (K.P2 + 1.0332) * anHb('x5', ms) * thr(pos('DITL-95')) - 1.0332,
-    /* deaerator pressure PT-CD1104 (ABC-056 AI0417): the water to the BFWP is at its saturation */
-    Pda = U.xt && U.xt.dea ? anUnitVal(U.xt.dea) : NaN,
-    Tin = (isFinite(Pda) && Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30) + (ffwIn(U) > 1 ? U.fwDT || 0 : 0),
-    sat = P => (P > -0.9 ? steamTsat(P) : 0),
-    w1 = anHtrPath(anFv('V-FW1009'), anFv('V-FW1010'), anFv('V-FW1011')),
-    w2 = anHtrPath(anFv('V-FW1012'), anFv('V-FW1013'), anFv('V-FW1014')),
-    t1 = Tin + w1.s * Math.max(0, sat(Ps1) + K.ttd1 - Tin),
-    t2 = t1 + w2.s * Math.max(0, sat(Ps2) + K.ttd2 - t1),
-    ffw = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.ffw) ? Math.max(0, AN_CYC.ffw) : 0,
-    lag = (k, x) => (U[k] = isFinite(U[k]) && dt > 0 ? U[k] + ((x - U[k]) * Math.min(dt, K.tau)) / K.tau : x);
-  U.fwPath = Math.min(w1.p, w2.p); /* both the tubes and the bypass of a heater shut = no feedwater */
-  U.hpT1 = Math.round(10 * lag('hpT1x', t1)) / 10;
-  U.hpT2 = Math.round(10 * lag('hpT2x', t2)) / 10;
-  const f = ffw / K.F0,
-    e1h = ffw > 1 ? (K.m1 * f * Math.max(0, U.hpT1 - Tin)) / K.dT1 : 0,
-    e2h = ffw > 1 ? (K.m2 * f * Math.max(0, U.hpT2 - U.hpT1)) / K.dT2 : 0,
-    /* 1.0.0-beta.364 (JENNIE, Lisa air_valves: No.2 HPH level 83 mm after the unit trip). The condensate in the shell is the extraction
-       steam that condenses, so it is the smaller of the heat the feedwater takes (the lagged outlet, hpT1 / hpT2) and the steam the
-       turbine sends at the shell pressure of this step (t1 / t2: Ps1 / Ps2 = extraction x load x MOV). On a trip the extraction pressure
-       goes (anHb at 0 t/h, the NRVs / MOVs shut, DITL-94 / 95): the feedwater still cools the shell metal and water down (the lag), but
-       no new steam comes, so no new condensate. Before, e2 kept 38 T/H into the shell for minutes while the drain (sqrt of main steam)
-       was already 0, and the level rose 5 -> 136 mm with no steam. At a steady load the two are equal (lag = target) */
-    e1s = ffw > 1 ? (K.m1 * f * Math.max(0, t1 - Tin)) / K.dT1 : 0,
-    e2s = ffw > 1 ? (K.m2 * f * Math.max(0, t2 - t1)) / K.dT2 : 0,
-    e1 = Math.min(e1h, e1s),
-    e2 = Math.min(e2h, e2s);
-  U.hpF2 = Math.round(10 * e2) / 10; /* FT-HD1106: No.2 HPH drain = its extraction */
-  U.hpF1 = Math.round(10 * (e1 + e2)) / 10; /* FT-HD1105: No.1 HPH drain = its extraction + the No.2 drain (cascade) */
-  U.hpD2 = Math.round(10 * (e2 > 0.5 ? U.hpT1 + K.dca2 : U.hpT2)) / 10; /* TT-HD1106 */
-  U.hpD1 = Math.round(10 * (U.hpF1 > 0.5 ? Tin + K.dca1 : U.hpT1)) / 10; /* TT-HD1105 */
-  U.hpPs = [Ps1, Ps2];
+    ffw = ffwIn(),
+    /* the water to the BFWP is the deaerator water (anDeaStep), the pump heat on top (anFwStep) */
+    Tda = U.da && isFinite(U.da.T) ? U.da.T : isFinite(U.Tamb) ? U.Tamb : 30,
+    Tin = Tda + (ffw > 1 ? U.fwDT || 0 : 0),
+    Pt = (isFinite(U.fwPd) ? Math.max(0, U.fwPd) : 0) + 1.0332,
+    w = [anHtrPath(anFv('V-FW1009'), anFv('V-FW1010'), anFv('V-FW1011')), anHtrPath(anFv('V-FW1012'), anFv('V-FW1013'), anFv('V-FW1014'))],
+    port = i => anPortGet(U, K.h[i].port) || {},
+    st = U.hpS || (U.hpS = [{}, {}]),
+    /* the cascade into No.1: the No.2 primary drain (LCV-HD1106-1, anHdStep, the last step) at its temperature */
+    h6 = (U.hd || []).find(h => h.k === 'H6'),
+    cas = h6 && isFinite(h6.w1) ? h6.w1 : 0,
+    out = [],
+    open = [];
+  U.fwPath = Math.min(w[0].p, w[1].p); /* both the tubes and the bypass of a heater shut = no feedwater */
+  let T = Tin,
+    To = Tin;
+  for (let i = 0; i < 2; i++) {
+    const p = port(i),
+      a = pos(K.h[i].mov) / 100,
+      mt = ffw * w[i].s,
+      c = i === 0 ? cas : 0,
+      hc = i === 0 && isFinite(U.hpD2) && isFinite(U.hpPs && U.hpPs[1]) ? hpHw(U.hpPs[1] + 1.0332, U.hpD2) : 0,
+      r = anHpSolve(i, mt, T, Pt, +p.P || 0, +p.h, a, c, hc, st[i].e),
+      /* the same heater with its MOV open (the feedwater the boiler would get with both heaters in: U.fwDrop) */
+      ro = a >= 0.999 ? r : anHpSolve(i, mt, To, Pt, +p.P || 0, +p.h, 1, c, hc, st[i].eo);
+    st[i].e = r.e;
+    st[i].eo = ro.e;
+    const ss = T + w[i].s * (r.To - T),
+      C = K.h[i].Mm * K.cm + K.h[i].Mw * 4.4,
+      k = ffw > 0 && dt > 0 ? Math.min(1, (dt * ((ffw * 1000) / 3600) * 4.4) / C) : 0;
+    /* a start (Start at a load, a save point without this state): the heater at the steady state of the first step that has its
+       extraction port and the deaerator water; before that the outlet is the steady value */
+    if (isFinite(st[i].T)) st[i].T += (ss - st[i].T) * k;
+    else if ((p.P > 0 && U.da) || !(+U.ms > 0)) st[i].T = ss;
+    const Tl = isFinite(st[i].T) ? st[i].T : ss;
+    out.push(r);
+    open.push(ss);
+    T = Tl;
+    To = To + w[i].s * (ro.To - To);
+  }
+  const [r1, r2] = out;
+  U.hpT1 = Math.round(10 * (isFinite(st[0].T) ? st[0].T : open[0])) / 10;
+  U.hpT2 = Math.round(10 * (isFinite(st[1].T) ? st[1].T : open[1])) / 10;
+  U.hpF2 = Math.round(10 * r2.e) / 10; /* FT-HD1106: No.2 HPH drain = its extraction */
+  U.hpF1 = Math.round(10 * (r1.e + r2.e)) / 10; /* FT-HD1105: No.1 HPH drain = its extraction + the No.2 drain (cascade) */
+  U.hpD2 = Math.round(10 * (r2.e > 0.5 ? r2.Td : U.hpT2)) / 10; /* TT-HD1106 */
+  U.hpD1 = Math.round(10 * (r1.e + cas > 0.5 ? r1.Td : U.hpT1)) / 10; /* TT-HD1105 */
+  U.hpPs = [r1.Ps - 1.0332, r2.Ps - 1.0332]; /* kg/cm2 g */
   U.hpMov = [pos('DITL-95'), pos('DITL-94')]; /* MV-TS1002 / MV-TS1001 position % */
-  /* docs/versions/v3.2.1/HEAT_BALANCE.md: an extraction that is shut stays in the turbine and works down to the condenser, and colder
-     feedwater takes more of the boiler heat per kg of steam. Measured from the same heaters with the MOVs open, so the start-up curves stay */
-  const t1o = Math.max(Tin, sat((K.P2 + 1.0332) * anHb('x5', ms) - 1.0332) + K.ttd1),
-    t2o = Math.max(t1o, sat((K.P1 + 1.0332) * anHb('x6', ms) - 1.0332) + K.ttd2),
-    e1o = ffw > 1 ? (K.m1 * f * Math.max(0, t1o - Tin)) / K.dT1 : 0,
-    e2o = ffw > 1 ? (K.m2 * f * Math.max(0, t2o - t1o)) / K.dT2 : 0,
-    ls = U.lpS || {},
-    sh = k => (isFinite(ls[k]) ? ls[k] : 1),
-    x = [
-      Math.max(0, e2o - e2),
-      Math.max(0, e1o - e1),
-      (15.25 * ms * (1 - (pos('DITL-97') / 100) * sh('H3'))) / K.F0,
-      (12.27 * ms * (1 - (pos('DITL-98') / 100) * sh('H2'))) / K.F0,
-      (8.42 * ms * (1 - sh('H1'))) / K.F0
-    ];
-  U.xtra = x[0] + x[1] + x[2] + x[3]; /* T/H more to the condenser */
-  U.dMWx = (x.reduce((a, q, i) => a + q * K.dhX[i], 0) * 0.985) / 3600;
-  U.fwDrop = Math.max(0, t2o - U.hpT2); /* feedwater colder than with both heaters in: boiler.js anAphIn */
-  U.hpFac = 1 / (1 + (K.cpFw * U.fwDrop) / K.dhB);
+  U.fwDrop = Math.max(0, To - open[1]); /* colder than with both MOVs open: boiler.js anAphIn */
 }
 /* 3.2.1 (IRENE: HEATER LEVELS, docs/versions/v3.2.1/HEATER_LEVELS_PLANT_MODEL.md). The shell (drain) level of the No.2 / No.1 HP and
    No.3 / No.2 / No.1 LP heaters and their drain valves.
