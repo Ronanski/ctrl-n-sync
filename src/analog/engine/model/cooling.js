@@ -16,14 +16,14 @@
      SWP gauge        PG-SW1501 at the discharge center GL +1.8 m (p4 "DISCHARGE CENTER GL +1800"): P = 0.102 x (H - 1.8 + forebay).
      SWP motor        TECO 2050 kW 6.6 kV, D1-0-064 p26 "Starting & operating performance": load 25 / 50 / 75 / 100 / 125 % =
                       166 / 182 / 216 / 260 / 317 A (load = shaft power / 2050 kW; below 25 % the 25 ~ 50 % line, extrapolated).
-                      Start: soft starter (Solcon HRVS-DN, E1-0-131), 500 A while it ramps (SNAPSHOT-TO-REPLACE: an operating
-                      procedure number, not a design value; the starter current limit setting is not in the docs read yet).
+                      Start: soft starter (Solcon HRVS-DN, E1-0-131), 500 A while it ramps (SNAPSHOT-TO-REPLACE: no design source;
+                      the plant current limit setting is NOT IN DOCS, the HRVS-DN range is 100 ~ 400 % FLA, manual p42).
      SWBP curve       PACO CL12151, K1AU3-D1-0-034 p8 "Pump Performance Datasheet": rated 1,000 m3/h x 15 m, 1,180 rpm, head at
                       shut-off (rated diameter) 19.9 m, efficiency 80.25 % at rated, BEP 1,129.9 m3/h, rated power 50.87 kW;
                       H = 19.9 - 4.9e-6 Q^2 (through the two points), efficiency = e x (2r - r^2), r = Q / 1,129.9, e from 80.25 %.
      SWBP motor       TECO 100 HP 460 V, D1-0-034 p10: 100 % load = 120 A, Y / delta start (LRC 685 % / 3 = 274 A);
-                      Current = line through (the shaft power at the design point, 90 A: SNAPSHOT-TO-REPLACE, an operating procedure
-                      number, no motor load curve in the docs read yet) and (74.6 kW = 100 HP, 120 A).
+                      Current = line through (the shaft power at the design point, 90 A: SNAPSHOT-TO-REPLACE, no design source:
+                      only the 100 % point is printed on D1-0-034 p10, the part-load current is NOT IN DOCS) and (74.6 kW = 100 HP, 120 A).
      Debris filters   S-1502 DN2400 (O&M L18-4, Technical details): normal flow 37,800 m3/h, clean DP 500 mmH2O, backwash starts at
                       800 mmH2O (L18-4 p36 7.4: DP above 80 mbar for 30 s), flushing period 3 min, max DP 1.0 kg/cm2; S-1504 DN600 (O&M
                       L18-5): normal flow 2,000 m3/h, clean 500, backwash 800 mmH2O. DP = clean x (flow / normal)^2 x (1 + dirt).
@@ -164,7 +164,7 @@ const swBisect = (f, a, b, n) => {
    little area at a small opening; NO-SOURCE: no valve curve in the repository) */
 const swVk = pct => (pct > 0.5 ? 1 / Math.pow(Math.min(100, pct) / 100, 4) : Infinity);
 /* the line constants from the design point (once) */
-/* SWBP efficiency: a plain function, a function kept in K.c does not cross the Worker snapshot (Mina beta.103, c.eb is not a function) */
+/* SWBP efficiency: a plain function, a function kept in K.c does not cross the Worker state copy (Mina beta.103, c.eb is not a function) */
 const swEb = (K, r) => (K.bEff / (2 * (K.bQr / K.bBep) - Math.pow(K.bQr / K.bBep, 2))) * Math.max(0, 2 * r - r * r);
 /* the line constants: computed once in this realm, not kept in AN_SW (a save carries AN_SW and would bring back old constants) */
 let swCalC = null;
@@ -424,7 +424,7 @@ const AN_MU_Z = -0.2;
    the static head of the tank: DERIVED from the CW isometrics K1AU3-P3-2-101 R3 (unit 2, the 4 units identical; YUA read
    suzu-mb020-units-and-t1109-elevation-2026-11-28.md): tank bottom outlet CW-2-001 8" GL +28.386 m, upper connection CW-2-099 6"
    GL +30.386 m (= the LT-CW1109 range 0 ~ 2 m); the nozzle of the XV-MU1109 line is not on the sheets read, so the top of the tank:
-   0.1 x (30.386 - 10.400 PT-MU0709 body) = 2.0. Was 6 kg/cm2 (an operating procedure number). Kept outside AN_MU (a save carries it) */
+   0.1 x (30.386 - 10.400 PT-MU0709 body) = 2.0. Kept outside AN_MU (a save carries it) */
 const AN_MU_ETP = 0.1 /* kg/cm2 per m, AN_MU.kP */ * (30.386 - 10.4);
 const AN_MU = {
   mwp: ['DITL-112', 'DITL-112 #B', 'DITL-112 #C'],
