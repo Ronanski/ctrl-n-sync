@@ -1941,18 +1941,16 @@ function anAsTagStep(U, dt) {
      aux header       in: PCV-AS1010 (PICAS1004 MV, ABC-030) from the main steam through the MOV MV-AS1391 (DITL-51), Cv 93 (plant study
                       04 from the L21 sheet: 45,500 kg/h, 60.2 -> 11.4 kg/cm2 G); PCV-AS1020-1 Cv 341.5 linear and PCV-AS1020-2 Cv 9 linear
                       (E2-0-123 p32 / p37) from the cold reheat, their openings = F(X) LN17 / LN16 of the PICAS1005 MV (ABC-030);
-                      out: deaerator pegging PCV-AS1030 (PICCD1104 MV, ABC-056) Cv 253.7 (E2-0-123 p42, linear: NO-SOURCE characteristic)
+                      out: deaerator pegging PCV-AS1030 (PICCD1104 MV, ABC-056) Cv 253.7 (E2-0-123 p42, RAVEN curve #50 of p43: AN_AS.ch1030)
                       to the deaerator pressure PT-CD1104; the steam jet air ejector MV-AS1396 (DITL-55) 223 + 202 = 425 kg/h and the
                       start-up ejector MV-AS1395 (DITL-54) 1477 kg/h at 11 kg/cm2 G (ED 066 p6 / p9), a choked nozzle: x (P / 12.03 abs);
-                      the steam seal feed valve PV-GS1031; the volume 6 m3 is NO-SOURCE (the 12-inch header and branches are only on
-                      the scanned P&ID PD-014); the header steam at 350 C (MB-014 items 2 / 5 operating 11 kg/cm2 G, 350 C);
+                      the steam seal feed valve PV-GS1031; the volume 5.5 m3 of the isometrics (AN_AS.Va); the header steam at 350 C (MB-014 items 2 / 5 operating 11 kg/cm2 G, 350 C);
      gland header     PV-GS1031 Cv 75 linear DN80 (TG maintenance manual p2385 ~ 2394) from the aux header, PV-GS1034 unloading Cv 375
                       equal % (p2395 ~ 2404) to the No.1 LP heater; one PI on PT-GS1001 (p103: feed at vacuum up / low load, unloading
                       spills the surplus on load), split at 0; set point 0.32 kg/cm2 G (29.PNG 150 MW; the feed valve sheet NOR outlet
                       1.31 kg/cm2 A = 0.28 G); PI gains NO-SOURCE; the glands take K sqrt(P^2 - Pc^2) (labyrinth), K from the NOR case
                       2170 kg/h at 1.31 abs into a condenser at 0.07 abs; on load the HP / IP packing leaks into the header with the cold
-                      reheat pressure (CALC: 2694 kg/h at 150 MW = the glands 2243 + the unloading valve 451 at 42.6 %, 29.PNG); volume
-                      1.5 m3 NO-SOURCE; "in service" (ATS 1.10) = header >= 0.10 kg/cm2 G (IBD TD-3 LOW alarm);
+                      reheat pressure (Hitachi HB case 1: 1,820 kg/h at 150 MW, AN_AS.Whp0); volume 0.45 m3 (AN_AS.Vg); "in service" (ATS 1.10) = header >= 0.10 kg/cm2 G (IBD TD-3 LOW alarm);
      condenser air    the evacuated volume 338 m3 (ED 066 p15) at the condenser temperature; in: the air in-leakage, an orifice that passes
                       the design 25.5 kg/h (ED 066 p6) at the design 0.055 kg/cm2 A, the LP glands while their steam is below the
                       atmosphere (orifice CdA 0.00072 m2, NO-SOURCE: 610 kg/h into full vacuum, the gland clearances are not in the docs),
@@ -1965,13 +1963,20 @@ function anAsTagStep(U, dt) {
      Check: the start-up ejector alone takes the condenser from 1.03 to 0.345 kg/cm2 A in about 14 min in this model; ED 066 p15 gives
      20 min (its p16 capacity curve, read from the plot, is higher than the p15 pump-down needs). */
 const AN_AS = {
-  Va: 6 /* m3, NO-SOURCE */,
-  Vg: 1.5 /* m3, NO-SOURCE */,
+  /* Phase 11 (SUZU 2026-11-28; were 6 / 1.5 m3 NO-SOURCE): YUA read suzu-aux-steam-2026-11-28.md. Va = every aux steam line of the
+     isometrics K1AU3-MM-2304 (pipe BOM lengths x the B36.10 bore, the 12" header AS-1-005 33.2 m = 2.40 m3 of it), 5.5 m3 DERIVED; Vg =
+     the gland seal header between PV-GSn031 / PV-GSn034 and the packings (MHPS 310QK05-228 / 229 as built: DN200 header 8.7 m with
+     fittings 0.28 m3 + the feed / dump DN200 piping 0.165 m3), 0.45 m3 DERIVED (the packing chambers are not in the docs) */
+  Va: 5.5,
+  Vg: 0.45,
   Ta: 350,
   Tg: 260 /* PV-GS1031 sheet 260 C */,
   cv1010: 93,
   cv1020: [341.5, 9],
   cv1030: 253.7,
+  /* PCV-AS1030 trim RAVEN, E2-0-123 R1 p43 "CURVE #50 - RAVEN CUSTOM": lift % -> Cv share (YUA pixel read, DERIVED; near linear above
+     10 % with a low-lift toe; checks the p42 cases: COND 1 Cv 190 at 73 %, COND 2 Cv 17.9 at 15 %); was linear (NO-SOURCE) */
+  ch1030: [[0, 0], [7, 0.025], [10, 0.057], [15, 0.116], [20, 0.173], [30, 0.3], [40, 0.425], [50, 0.545], [60, 0.658], [70, 0.767], [80, 0.873], [87.5, 0.945], [92, 0.96], [100, 1]],
   cvGf: 75,
   cvGu: 375,
   ej: { sjae: 425, start: 1477, Pm: 12.0332 },
@@ -2159,7 +2164,7 @@ function anAuxStep(U, dt) {
         m1391 > 0 && o1004 > 0 ? 1 / Math.sqrt(1 / Math.pow(K.cv1010 * o1004, 2) + 1 / Math.pow(1500 * m1391, 2)) : 0,
       w1010 = anStmW(cvA, Pms, Pa, Tms),
       w1020 = anStmW(K.cv1020[0] * o1020[0] + K.cv1020[1] * o1020[1], Pcr, Pa, Tcr),
-      w1030 = anStmW(K.cv1030 * o1030, Pa, Pdea, K.Ta),
+      w1030 = anStmW(K.cv1030 * anAsTab(K.ch1030, 100 * o1030), Pa, Pdea, K.Ta),
       wej = (K.ej.sjae * m1396 + K.ej.start * m1395) * fm,
       /* gland PI (split range at 0: + opens the feed valve, - opens the unloading valve) */
       e = K.gSv - Pg;
@@ -3312,7 +3317,7 @@ const AN_SB = {
      and rows 18 / 19 (> 250 C = the drain SOVs XV-SB1054 / 1059 close by themselves). Flow diagram PD-015: the steam comes from the
      S/H panel #1 outlet. Its temperature (CALC): the heat balance of the No.1 spray, steam in = (steam out x h(spray 1 outlet) - spray x
      h(water)) / (steam out - spray), steam out = main steam - No.2 spray (FT-FW1119), spray FT-FW1109 at TT-FW1011, h(water) = 4.19 x T
-     (liquid, within 2 % of the steam table), pressure = drum - 6.4 x (main steam / 474.1)^2 (03.png PIBR1130). Check at 03.png (150.5 MW:
+     (liquid, within 2 % of the steam table), pressure = the PT-BR1130 tap of KANA's SH drop law (anShTap). Check at 03.png (150.5 MW:
      MSF 474.1, spray 37.5 / 28.2 T/H, TICBR1130 394 C, PIBR1130 127.8, TIFW1011 162 C): 460 C against TT-BR1120-1 / -2 458 / 454 C.
      Through MV-SB1001 and PCV-SB1053 the steam is throttled at constant enthalpy to the header pressure (PICSB1052): steam.js steamTph
      (IAPWS-IF97 region 2). With steam in the header (above 0.5 kg/cm2: 18.PNG reads 0.4 with MV-SB1001 shut) the drains go to that
@@ -3335,7 +3340,9 @@ function anSbDrain(U, dt, P) {
     Tf = tt['TT-FW1011'] != null && isFinite(tt['TT-FW1011']) ? +tt['TT-FW1011'] : Ta;
   let Ts = NaN;
   if (isFinite(T1) && Pd > 0) {
-    const P1 = Math.max(0, Pd - 6.4 * (ms / 474.1) * (ms / 474.1)),
+    /* Phase 11 (SUZU 2026-11-28, NO-FIT-OK: history; was drum - 6.4 x (MSF / 474.1)^2 of 03.png): the PT-BR1130 tap of KANA's SH drop
+       law (anShTap, FHI design drop 16 kg/cm2 at 460 T/H with the steam density; its tap share is KANA's open item) */
+    const P1 = Math.max(0, anShTap(U, AN_SHDP.s1, Pd, ms)),
       mo = ms - w2;
     Ts = Math.max(T1, steamTsat(P1));
     if (w1 > 0 && mo - w1 > 1) Ts = steamTph(P1, (mo * steamH(P1, Ts) - w1 * 4.19 * Tf) / (mo - w1));
