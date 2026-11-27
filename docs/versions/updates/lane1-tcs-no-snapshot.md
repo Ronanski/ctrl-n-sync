@@ -13,16 +13,21 @@ Re-sourced to TCS logic or design (value kept or changed):
 - bearing oil 3.3 -> 1.84 kg/cm2g: design BEARING OIL 0.18 MPa(g), TG lube oil system 310SD14-354 (3.3 was a snapshot value).
 - standby line-up (A running, B AUTO): the standby start of TCE300 / TCE305; pump CRT operation: the MOTOR STANDARD of the sheet.
 
-Marked SNAPSHOT-TO-REPLACE (number kept until a design / logic source is read; 21 marks):
-- rub check target 200 rpm (read ATS 310SC90-775 p.17 ~ 18 / TCA511).
-- COP discharge 163.2 kg/cm2g and filter drop 0.6 (TG EHC control oil design pressure).
-- oil purifier discharge 2.96.
-- cooler inlet rise 16 C, bearing oil outlet rise 9 / 10 C, bearing metal rises 45 / 56 / 34 / 32 C, thrust 8.5 / 15.5 C, shaft
-  vibration amplitudes (TG maintenance manual bearing design, vendor vibration data).
-- turning gear 3 rpm / disengage 4 rpm (TG maintenance manual).
-- aux steam PCV 10 kg/cm2 (aux steam drawing or DCS logic).
-- LP exhaust hood 52 C before load up (only 80 C, criterion 1.12, is in 310SC90-776).
-- gland sealing / vacuum up / rolling steam numbers of the header and the guide table (guide text, not used by the criteria).
-- COP suction from the lube oil header (310SD14-354 to confirm).
+Second pass (design values read by YUA from the TG documents, tcs-design-values-2026-11-28):
+- rub check 200 rpm: Operation Manual STIE-14747 p.40 (rub check 200 r/min, 120 r/min/min, go on below 100 r/min).
+- COP 163 kg/cm2g, 60 L/min x 2: 310PB64-455 specification of equipments; the COPs draw from the main oil tank (not the lube header).
+- turning gear 3 rpm: maintenance manual p.35 (about 2 / 3 r/min); disengage 4 rpm = gear speed + 1 (DERIVED, clash gear, no number in the docs).
+- LP hood 52 C before load up / 80 C before sync: Operation Manual STIE-14747 p.43 / 45 / 52 / 59.
+- aux steam: vendor minimum 7.0 kg/cm2g (Operation Manual p.32 / 87), the header pressure is unit.js AN_AS (no fixed 10).
+- oil rise: one source with the lube oil cooler model unit.js AN_LO: 1,300 kW at rated, oil 63 -> 46 C (O&M L2 TG 2-3), heat ~ speed^2;
+  17 C at rated.
+
+DERIVED (not in the docs; physics or vendor practice, each written beside the value in tcs.js):
+- control oil filter drop 0.5 (clean high pressure element), oil purifier discharge 3.0.
+- bearing metal = bearing oil outlet + 25 C x speed, thrust = + 10 C x speed (babbitt film rise).
+- shaft vibration 0.04 mm (half the ISO 7919-2 zone A / B boundary), a bump at the critical speeds 1510 / 1550 rpm (Operation Manual p.42).
+
+Still SNAPSHOT-TO-REPLACE (3 lines): the gland sealing / vacuum / rolling steam guide text in the header and the guide table; these
+numbers are text only, not used by the model or the criteria.
 
 Tests: tcs-motors, field-state, alarm-live, gen-electrical, heat-soak-ibd PASS.

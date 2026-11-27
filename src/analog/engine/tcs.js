@@ -81,7 +81,7 @@ const TCS = {
       [538, 465]
     ]
   },
-  rub: 200 /* rpm, SNAPSHOT-TO-REPLACE (SOP: PR-OPE-5002 8325 "target speed 200 rpm for rub check"; the rub check target of the ATS sequence 310SC90-775 p.17 ~ 18 / TCA511 is the source to read); complete below 100 rpm (criteria page 14 Fig. 1) */,
+  rub: 200 /* rpm, the rub check target 200 r/min at 120 r/min/min, go on when the coast is below 100 r/min: MHPS Operation Manual STIE-14747 Rev 0 6/12 item 3 (TG 2-1-1 p.40); the ATS sheets 310SC90-775 p.17 / 776 p.18 leave the number blank */,
   crit: [1372, 1723] /* rpm, critical speed zone, no hold: TCS logic TCE164 TARGET SPEED HOLD MR A023 / A025 1372 ~ 1723 rpm (331DM09784 p.115) */,
   /* 1.0.0-beta.238 CALC from the TCS thermal stress logic (TCA752 / TCA753 HP, TCA756 / TCA757 IP, 331DM09788 pages 182 ~ 183 and
      186 ~ 187): the vendor's rotor model is five rings, surface ring 1 to centre ring 5, DISTRIBUTION blocks LMA627 with the heat
@@ -652,8 +652,9 @@ function tcsAux(U, dt) {
   if (!c) return;
   const tb = U.tb,
     s = tcsSteam(U);
-  /* aux steam header: from the main steam through MV-AS1391 (PCV to 10 kg/cm2: SNAPSHOT-TO-REPLACE, SOP number; the PCV set of the
-     aux steam drawing / DCS logic is the source); audit A3: with the one world
+  /* aux steam header: from the main steam through MV-AS1391 (its pressure is the aux steam header mass balance of unit.js AN_AS; the
+     vendor minimum is 7.0 kg/cm2g for HP prewarming and the gland seal start, MHPS Operation Manual TG 2-1-1 p.32 / p.87; the PCV set
+     itself is not in the docs); audit A3: with the one world
      the valve is its DCS drawing DITL-51 (IO list STN102 O.0160 / O.0161, AI0752 ZT-AS1391) */
   {
     const p51 = typeof anDitlPos === 'function' ? anDitlPos('DITL-51', 0) : null;
@@ -678,8 +679,9 @@ function tcsAux(U, dt) {
   if (isFinite(U.gsP)) c.gland = !!c.gsOn && c.gsOk;
   /* 1.0.0-beta.362 D18: the turning gear motor runs as IBD TB-9 says (the bearing oil is a start permissive there, net 3); the shaft turns
      only with the bearing oil (below) */
-  /* turning gear: about 3 rpm, disengages above 4 rpm and engages again at zero speed (SNAPSHOT-TO-REPLACE: SOP numbers; the turning
-     gear speed of the TG maintenance manual is the source) */
+  /* turning gear: "approx. 2/3 r/min" (MHPS Turbine Maintenance Manual TG 2-1-2 p.35, Rotor Turning Gear), 3 r/min here; the clash gear
+     throws the pinion out as soon as steam drives the rotor faster than the gear (same page): DERIVED 4 r/min = the gear speed + 1;
+     engages again at zero speed */
   const Ta = tcsMetal(U, c, s, dt);
   const steam = tcsSteamOn(U);
   /* 2.1 SHELL EXPANSION OK, TCA535 CMP A003 HL 3.0 mm / LL 2.5 mm: on at 3.0, off below 2.5 (IBD TD-4 net 6) */
@@ -691,7 +693,7 @@ function tcsAux(U, dt) {
   {
     const T = U.loTout,
       r = !!(tb && tb.rpm >= 3550),
-      eng = !!c.tg && !!tb && tb.rpm <= 4; /* TURNING GEAR ENGAGED: selected and at turning speed (above 4 rpm disengaged: SNAPSHOT-TO-REPLACE, as above) */
+      eng = !!c.tg && !!tb && tb.rpm <= 4; /* TURNING GEAR ENGAGED: selected and at turning speed (above 4 rpm disengaged, DERIVED above) */
     /* a save made before this timer existed: a turbine already at rated speed counts as held (the IBD DI timer of that save had run) */
     c.ratedT = r ? (c.ratedT === undefined ? 60 : c.ratedT + dt) : 0;
     const held = c.ratedT >= 60,
@@ -871,8 +873,9 @@ function tcsStep(U, dt) {
         c.holdMin = TCS.hold(c.mode);
         tcsGcb(U, true);
       } else if (c.ph === 'init' && U.MW >= 0.9 * tb.aim && c.tm >= c.holdMin * 60) {
-        /* plan c3: the initial load is held also until the LP exhaust hood is below 52 C (SNAPSHOT-TO-REPLACE: the 52 C is an SOP
-           number, PR-OPE-5002 9123; the ATS criteria 310SC90-776 give only the 80 C of criterion 1.12) */
+        /* plan c3: the initial load is held also until the LP exhaust hood is below 52 C: "Maintain the initial load until the LP turbine
+           exhaust hood cools down below 52 C", MHPS Operation Manual STIE-14747 / 14748 / 14749 (TG 2-1-1 p.45 / 52 / 59); 80 C before
+           synchronizing (p.43, criterion 1.12) */
         if (isFinite(c.Tx) && c.Tx >= 52)
           c.hold = 'Waiting: LP exhaust hood ' + c.Tx.toFixed(0) + ' C, below 52 C before load up';
         else {
@@ -932,11 +935,12 @@ function tcsStep(U, dt) {
 /* 3.2.0-beta.66 (036 TURBINE OIL HMI). The pumps and their automatic start as the TCS logic (TCE300 / 305 / 310, IBD TB-1 / 2 / 5) and
    the TCS I/O list (iolist-tcs HMI_AI / HMI_DI) give them:
      MOP P-1922A / B   lube oil; the one in AUTO starts when the running pump discharge (1PTLO1922A / B) is <= 5.6 kg/cm2g;
-     COP P-1931A / B   control oil (suction from the lube oil header: SNAPSHOT-TO-REPLACE, see tcsOil); AUTO start at the discharge (1PTLO1931A / B) <= 133 (TCE305);
+     COP P-1931A / B   control oil, on the main oil tank and drawing from it (MHPS 310PB64-455 Rev 1 Outline of Turbine Lube Oil Unit); AUTO start at the discharge (1PTLO1931A / B) <= 133 (TCE305);
      EOP P-1923 (DC)   bearing oil; starts at the bearing oil (1PSLO1004) <= 1.05 kg/cm2g (IBD TB-5); stop by hand only (TCE310 MOTOR STANDARD);
      vapour extractor  F-1937 (main oil tank vacuum PGLO1920 -20 ~ -50 mmH2O);
-     oil purifier      P-1941, local panel (AN_SRC.field.pur), discharge ~ 2.96 kg/cm2 (SNAPSHOT-TO-REPLACE, SOP).
-   Values (user rule 2026-11-28: no snapshot, trend or SOP number in the model; design drawing or TCS logic, else SNAPSHOT-TO-REPLACE):
+     oil purifier      P-1941, local panel (AN_SRC.field.pur), discharge 3.0 kg/cm2 DERIVED (the purifier manual STIE-14666 is not read:
+                       a centrifugal purifier feed pump of vendor practice, 2 ~ 3 kg/cm2; display only).
+   Values (user rule 2026-11-28: no snapshot, trend or SOP number in the model; design document or TCS logic, else DERIVED from physics):
      MOP discharge     6.63 kg/cm2g while running = 0.65 MPa(g), the design MAIN OIL PUMP DISCHARGE OIL of the TG lube oil system
                        drawing 310SD14-354 (TG maintenance manual 2-1-2, legend; bearing oil 0.18 MPa(g) there). The header is held by
                        the LUBE OIL PRESSURE CONTROL VALVE V-LOn004 (valve list), so a set value; no pump curve in the docs (the pump
@@ -944,26 +948,30 @@ function tcsStep(U, dt) {
      bearing oil       1.84 kg/cm2g = 0.18 MPa(g), the design BEARING OIL of the same drawing 310SD14-354 (was 3.3 from a snapshot), with a
                        MOP; 1.6 with the EOP only (NO-SOURCE, above its 1.05 start); else 0;
      EOP discharge     1.6 while running (NO-SOURCE);
-     COP discharge     163.2 while running: SNAPSHOT-TO-REPLACE (SOP / snapshot number; the design control oil pressure of the TG
-                       EHC oil system is to be read); control oil header = discharge - 0.6 (the filter: SNAPSHOT-TO-REPLACE); trip oil
+     COP discharge     163 kg/cm2g while running (310PB64-455 specification of equipments: 163 kg/cm2, 60 L/min x 2; master trip valve
+                       block rated 163 kgf/cm2, maintenance manual p.861); control oil header = discharge - 0.5 (the clean control oil
+                       filter S-n933: DERIVED, not in the docs; vendor practice of a clean high pressure element about 0.5 bar, its
+                       clogging indicator at 2.4 bar about 5 x clean); trip oil
                        (PILO10071 ~ 73) = the control oil while the turbine is reset, 0 tripped;
-     cooler inlet      TILO1001 = the cooler outlet (TICLO1002 PV, ABC-053) + 16 C x speed / 3600 with lube oil: SNAPSHOT-TO-REPLACE (rise
-                       from a snapshot; the design bearing oil temperature rise is to be read);
-     bearing outlet    TIGE1007 / 1008 = the cooler outlet + 9 / 10 C x speed / 3600: SNAPSHOT-TO-REPLACE (as above);
+     oil rise          the bearing heat the oil carries = the lube oil cooler duty of unit.js AN_LO (one source): 1,300 kW at rated
+                       speed, oil 63 -> 46 C (vendor O&M L2 TG 2-3), so m cp = 1300 / 17 = 76.5 kW/K and the rise is 17 C at rated;
+                       below rated the heat goes as (speed / 3600)^2 (journal friction, Petroff: DERIVED, the same law as AN_LO);
+     cooler inlet      TILO1001 = the cooler outlet (TICLO1002 PV, ABC-053) + the oil rise (all the oil returns through the cooler);
+     bearing outlet    TIGE1007 / 1008 = the cooler outlet + the oil rise (each bearing's loss in proportion to its oil);
      low limits        MOP AUTO start 5.6 = TCS logic TCE300 CPL A030 LL 5.6 (HL 6.1); COP AUTO start 133 = TCE305 CPL A005 LL 133 (HL 138);
-                       EOP start 1.05 = IBD TB-5; purifier discharge 2.96: SNAPSHOT-TO-REPLACE (SOP);
+                       EOP start 1.05 = IBD TB-5 (also the turning gear start, Operation Manual p.31);
      pressures follow with a lag of 1.5 s (NO-SOURCE), so a stopped running pump lets the header fall and the standby in AUTO start. */
 const TCS_OIL = {
   mop: 6.63,
   brg: 1.84 /* kg/cm2g, design bearing oil 0.18 MPa(g), 310SD14-354 */,
   brgEop: 1.6 /* kg/cm2, NO-SOURCE inside sourced bounds: above the EOP LOW OFF 1.33 and below the 5.0 design (V-LOn005) */,
   eop: 1.6 /* same bounds */,
-  cop: 163.2 /* SNAPSHOT-TO-REPLACE */,
-  filt: 0.6 /* SNAPSHOT-TO-REPLACE */,
+  cop: 163 /* kg/cm2g, 310PB64-455 */,
+  filt: 0.5 /* kg/cm2, DERIVED (clean filter, above) */,
   mopLo: 5.6 /* TCE300 CPL A030 LL */,
   copLo: 133 /* TCE305 CPL A005 LL */,
   brgLo: 1.05 /* IBD TB-5 EOP start */,
-  pur: 2.96 /* SNAPSHOT-TO-REPLACE (SOP) */,
+  pur: 3.0 /* kg/cm2, DERIVED (above) */,
   vac: -35,
   tau: 1.5
 };
@@ -1120,9 +1128,9 @@ function tcsOil(U, dt) {
   lag('loEop', c.eop ? K.eop : 0);
   lag('loBrg', c.lop ? K.brg : c.eop ? K.brgEop : 0);
   c.brgOk = U.loBrg > K.brgLo || c.lop || c.eop;
-  /* COP suction = the lube oil header: no lube oil, no control oil (SNAPSHOT-TO-REPLACE: read from a snapshot; the oil system drawing
-     310SD14-354 is the source to confirm it) */
-  const suc = U.loLube > K.brgLo;
+  /* the control oil pumps sit on the main oil tank and draw from it (310PB64-455), not from the lube oil header: a COP gives control
+     oil without a MOP (before: it needed the lube oil header, read from a snapshot) */
+  const suc = true;
   lag('loCa', c.cop[0] && suc ? K.cop : 0);
   lag('loCb', c.cop[1] && suc ? K.cop : 0);
   U.loCtl = Math.max(0, ctl() - (ctl() > 1 ? K.filt : 0));
@@ -1144,26 +1152,29 @@ function tcsOil(U, dt) {
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
     flow = c.lop || c.eop;
   U.loTout = out;
-  lag('loTin', out + (flow ? 16 * sp : 0));
-  lag('loTb3', out + (flow ? 9 * sp : 0));
-  lag('loTb4', out + (flow ? 10 * sp : 0));
+  /* the oil rise (header above): the AN_LO bearing heat / the AN_LO oil m cp (vendor O&M L2 TG 2-3) */
+  const rise = flow && typeof AN_LO !== 'undefined' ? (AN_LO.Qb * sp * sp) / AN_LO.Co : 0;
+  lag('loTin', out + rise);
+  lag('loTb3', out + rise);
+  lag('loTb4', out + rise);
   /* 3.2.0-beta (user 2026-10-30 "OK v3 + bearing temp at vibration", 036 TURBINE OIL tab 1): the bearing metal temperatures and the
      shaft vibrations of the TCS I/O list HMI_AI: 1TEST1009 / 1010 (No.1 / 2 turbine journal), 1TEGE1001 / 1002 (No.3 / 4), 0 ~ 150 C;
-     1VEST10011 / 12, 10021 / 22, 1VEGE10011 / 12, 10021 / 22 (X / Y), 0 ~ 0.4 mm. SNAPSHOT-TO-REPLACE (all the rises and amplitudes
-     below; the TG maintenance manual bearing design / the vendor vibration data are the source). 3.2.1: the values at speed from snapshot P35SHAFT
-     (035 SHAFT MONITOR, 3596 rpm, 130 MW) with the lube oil after the cooler 46 C (36.PNG TILO10021 / 22): bearing metal No.1 / 2 / 3 / 4
-     91 / 102 / 80 / 78 C = the cooler outlet + 45 / 56 / 34 / 32 C x speed / 3600 (before beta.27: 25 / 28 / 22 / 20 without a source), thrust bearing front
-     TIST10111 / 12 54 / 55 C and rear TIST10121 / 22 63 / 60 C = + 8.5 / + 15.5 C; vibration X / Y 0.033 / 0.035, 0.038 / 0.028, 0.016 /
-     0.016, 0.063 / 0.037 mm x (speed / 3600)^2 (the square law and the first critical speed bump of 0.03 mm at about 1700 rpm, bell 250
-     rpm: the critical speed zone of TCE164, 1372 ~ 1723 rpm, the peak height NO-SOURCE). Without oil + 60 C (NO-SOURCE) x speed / 3600 (no film); a lag of 20 s. */
+     1VEST10011 / 12, 10021 / 22, 1VEGE10011 / 12, 10021 / 22 (X / Y), 0 ~ 0.4 mm. Not in the docs (Operation Manual Section 7
+     "Limitation items" is printed "Later"; the maintenance manual lists them only as items to watch, p.747 / 751), so DERIVED, no plant
+     number (user rule 2026-11-28): journal bearing metal = the oil drain + 25 C x (speed / 3600) (the babbitt to drain difference of a
+     tilting pad journal at full speed, vendor practice 20 ~ 30 C), thrust bearing = the oil drain + 10 C; shaft vibration X / Y = 0.04 mm
+     x (speed / 3600)^2 on every bearing (half the zone A / B boundary 4800 / sqrt(n) um p-p = 80 um at 3600 r/min of ISO 7919-2 /
+     20816-2, a good machine) plus a bump of 0.03 mm (NO-SOURCE height) at the calculated first critical speeds 1510 / 1550 r/min
+     (generator / turbine rotor, Operation Manual STIE-14747 8/12, p.42), bell 250 r/min. Without oil + 60 C (NO-SOURCE) x speed / 3600 (no
+     film); a lag of 20 s. */
   const rpm = U.tb ? U.tb.rpm : 0,
-    crit = 0.03 * Math.exp(-(((rpm - 1700) / 250) ** 2)),
+    crit = 0.03 * Math.exp(-(((rpm - 1530) / 250) ** 2)),
     lagS = (k, x) => (U[k] = isFinite(U[k]) ? U[k] + ((x - U[k]) * Math.min(dt, 20)) / 20 : x);
-  [45, 56, 34, 32].forEach((d, i) => lagS('loM' + (i + 1), out + (flow ? d : 60) * sp));
-  lagS('loThF', out + (flow ? 8.5 : 60) * sp);
-  lagS('loThR', out + (flow ? 15.5 : 60) * sp);
-  const VX = [0.033, 0.038, 0.016, 0.063],
-    VY = [0.035, 0.028, 0.016, 0.037];
+  [1, 2, 3, 4].forEach(i => lagS('loM' + i, out + (flow ? rise + 25 * sp : 60 * sp)));
+  lagS('loThF', out + (flow ? rise + 10 * sp : 60 * sp));
+  lagS('loThR', out + (flow ? rise + 10 * sp : 60 * sp));
+  const VX = [0.04, 0.04, 0.04, 0.04],
+    VY = [0.04, 0.04, 0.04, 0.04];
   VX.forEach((v, i) => {
     U['loVx' + (i + 1)] = v * sp * sp + (rpm > 4 ? crit : 0);
     U['loVy' + (i + 1)] = VY[i] * sp * sp + (rpm > 4 ? 0.8 * crit : 0);
