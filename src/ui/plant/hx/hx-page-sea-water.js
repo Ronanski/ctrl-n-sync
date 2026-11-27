@@ -333,6 +333,32 @@
         },
         { x: 1500, y: 345, s: 'closed cooling water heat exchangers', cls: 'hx-note', anchor: 'middle' }
       ]
-    }
+    },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Sea water pumps',
+        pens: [
+          ['Pit level', 'LISW1501', 'm', 2],
+          ['Pump A current', 'IIP1501A', 'A', 0],
+          ['Pump B current', 'IIP1501B', 'A', 0],
+          ['Pump C current', 'IIP1501C', 'A', 0],
+          ['Pump B discharge', 'PGSW1501B', 'kg/cm²', 2],
+          ['Pump C discharge', 'PGSW1501C', 'kg/cm²', 2]
+        ]
+      },
+      {
+        title: 'Condenser cooling water',
+        pens: [
+          ['Inlet pressure A', 'PISW1110A1', 'kg/cm²', 2],
+          ['Outlet pressure A', 'PISW1110A2', 'kg/cm²', 2],
+          ['Inlet temperature A', 'TISW1110A1', '°C'],
+          ['Outlet temperature A', 'TISW1110A2', '°C'],
+          ['Inlet temperature B', 'TISW1110B1', '°C'],
+          ['Outlet temperature B', 'TISW1110B2', '°C']
+        ]
+      }
+    ]
   });
 })();

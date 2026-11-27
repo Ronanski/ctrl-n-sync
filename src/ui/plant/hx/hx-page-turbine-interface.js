@@ -146,6 +146,30 @@
     title: 'Turbine control interface',
     about:
       'The hard-wired states and values between the turbine control system, the generator panel and the DCS: trip and valves, start-up mode, drain valve commands, load control, generator protection and metering. Source: DCS I/O list (TCS-DI / AI / AO, GCP-AI / AO).',
-    plan: { look: 'real', w: 1760, h: 1000, items, pipes: [], texts }
+    plan: { look: 'real', w: 1760, h: 1000, items, pipes: [], texts },
+    /* trend groups (Phase 9, 2026-11-27): every pen is a value or a controller already on this page (its source is in the
+       comments above); at most 8 pens a group (Phase 10 trend recorder) */
+    trends: [
+      {
+        title: 'Load and speed',
+        pens: [
+          ['Target MW to the turbine', 'TCS-AO1001', 'MW'],
+          ['Target MW feedback', 'TCS-AI1001', 'MW'],
+          ['Sent out MW', 'GCP-AO1002', 'MW'],
+          ['Turbine speed', 'TCS-AI1004', 'rpm', 0],
+          ['Frequency', 'TCS-AI1010', 'Hz', 2]
+        ]
+      },
+      {
+        title: 'Generator electrical',
+        pens: [
+          ['Current A', 'TCS-AI1006', 'kA', 2],
+          ['Current B', 'TCS-AI1007', 'kA', 2],
+          ['Current C', 'TCS-AI1011', 'kA', 2],
+          ['Voltage A-B', 'GCP-AI1005', 'kV', 2],
+          ['Reactive power', 'GCP-AI1004', 'MVar']
+        ]
+      }
+    ]
   });
 })();
