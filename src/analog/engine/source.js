@@ -92,20 +92,6 @@ function srcState(t0) {
   /* (never above their own source: the PV of that loop lags one scan, a new plant state must not see the old header) */
   s.Pdo = s.dop ? srcPv('ABC-028', 'PICDO0005') : 0;
   /* 3.2.3: PT-AS1004 is the mass balance of the header (unit.js anAuxStep), no cap at its sources any more */
-  s.Paux = srcPv('ABC-030', 'PICAS1005');
-  /* 1.0.0-beta.326 (JENNIE, Audit 3 #5, was NO-SOURCE "4.5 at MCR, linear"): the turbine heat balance (Hitachi PPE-14-0725 R1, units
-     identical; 310SD07-485 Case 1 100 %, 310SD09-055 Case 4 60 %) gives the stage pressures of the extractions (ata):
-       throttle 458,327 kg/h: No.3 (deaerator) 6.369, No.4 (LP heater #3) 1.914;  273,360 kg/h: No.3 3.943, No.4 1.190.
-     The No.4 extraction goes to LP heater #3, not to the deaerator (same diagrams; flow diagram PD-013): it no longer caps the deaerator
-     pressure (it was 4.5 kg/cm2 there, the heat balance gives 0.88 g). Its transmitter PT-TS1022 (ABC-056 AI0562, snapshot 1.29) keeps
-     the first stage scaling of unit.js (U.pist). No.3: the straight line through the two cases, in ata (a stage pressure goes with the
-     steam through the stages below it, Stodola), less the atmosphere 1.033: 5.34 kg/cm2 g at 458.3 T/H (snapshot PITS1017 5.3 at
-     148.8 MW), 2.91 at 273.4 T/H. */
-  s.Pex3 = s.ext * Math.max(0, 0.358 + 0.013116 * ms - 1.033);
-  /* 3.2.3 SOHEE: through the extraction no. 3 shut-off MOV MV-TS1003 (DITL-96; flow diagram PD-013 extraction 3 -> deaerator; 02.png ZT-TS1003 100.4 %
-     open at load). DITL-96 closes it on turbine trip, deaerator level HI-HI and house operation: shut = no extraction to the deaerator */
-  s.ts3 = typeof anDitlPos === 'function' ? anDitlPos('DITL-96', 0) : null;
-  if (s.ts3 != null && isFinite(s.ts3)) s.Pex3 *= Math.max(0, Math.min(1, s.ts3 / 100));
   AN_SRC.t = t;
   s.sb1001 = typeof anDitlPos === 'function' ? anDitlPos('DITL-80S', 0) : null;
   return (AN_SRC.st = s);
@@ -171,11 +157,8 @@ const SRC_RULES = (() => {
   R.FICCD1120 = s => ({ mul: s.cep });
   R.LICCD1104 = s => ({ hold: !s.cep });
   R.LICCD1110A = s => ({ hold: !s.cep });
-  /* 3.2.1 (IRENE: FEEDWATER): the deaerator gets the turbine extraction while the unit is on load (MV-TS1003 "T/B extraction 3 to
-     deaerator", 4.PNG 100 %): its pressure is not below the extraction pressure, whatever the pegging steam valve does (the pegging
-     PIC holds SV 1.5 only at low load). Extraction no. 3 pressure 5.30 kg/cm2 at 148.8 MW (4.PNG PITS1017), proportional to the turbine
-     steam (beta.326: the heat balance line above); 5.png DEAERATOR PV 5.9 */
-  R.PICCD1104 = s => ({ cap: Math.max(s.Paux, s.Pex3), floor: s.Pex3 });
+  /* Phase 11 (NANA, 2026-11-27): R.PICCD1104 removed: the deaerator pressure PT-CD1104 is written by the deaerator energy balance
+     (unit.js AN_DA / anDeaStep) */
   /* loop 14, feedwater heaters: the drain level is the extraction steam that condenses (turbine on load) */
   for (const t of ['LICHD11051', 'LICHD11061', 'LICHD11011', 'LICHD11021', 'LICHD11031']) R[t] = s => ({ mul: s.ext });
   /* loop 15, turbine oil: the oil is heated by the bearings of the turning turbine */
