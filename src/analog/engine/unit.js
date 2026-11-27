@@ -73,7 +73,6 @@ const AN_UNIT = {
      this object), which had no MW, so MW was undefined until the starting state set it (MW0 / 0). The generator gives 0 MW until then */
   MW: 0,
 
-  tauMW: 10 /* s, steam flow -> MW (reheater, NO-SOURCE: the plant trends are 60 s averages, too slow to fit it) */,
   tcs: 20 /* s, not used since 1.0.0-beta.304 (the MW loop takes the TCE195 gains, AN_TCE195); kept for the save points */,
   /* other steam outlets of the main steam line, flow at 100 % open and the anchor pressure, as a share of the anchor flow (the valve
      sizes: valve sheets below): ABC-050 PICMS1006 HP turbine bypass PCV-MS1020 (main steam -> cold reheat) and
@@ -2951,6 +2950,23 @@ function anGenTemp(U, G, dt) {
   const n = Math.max(0, Math.min(1.2, ((U.tb && U.tb.rpm) || 0) / 3600));
   return (3 * (G.kA * 1000) ** 2 * K.Ra + (G.If * K.ifMain) ** 2 * K.Rf) / 1000 + K.q0 * n ** 3;
 }
+/* Phase 11 (YUI): THE GENERATOR ELECTRICAL OUTPUT U.MW (the one writer; port gen.W = it, anGenInt).
+   - 52G closed on the grid: the shaft power less the generator losses, P = Pm - L. Pm = the blade work less the turbine mechanical loss
+     (U.Pm above, turbine.js AN_TB.mech); L = the losses of the generator (anGenTemp: stator copper 3 I^2 Ra, main field I^2 Rf, core /
+     windage / stray at speed, all to the air coolers, port q.ccw.YUI, GAE-2015-0063 R0 p36 2,120 kW at the rating), of the last step.
+     With the steam cut (turbine trip, 52G still closed) P goes below 0: the machine motors on the grid, the 32 reverse power relay sees it.
+     Before: the turbine side lumped all the losses (AN_TB lo + kq, the HB loss) and tripped P lagged 10 s behind it (tauMW, NO-SOURCE).
+   - house load (52L1 open, the transfer done): the generator gives what the house load takes (D = the TCS target = the house load,
+     elec.js), at once (3.2.4-beta.11).
+   - 52G open: 0. */
+function anGenW(U, onGrid, trip, D) {
+  const tb = U.tb || {};
+  if (!onGrid) return 0;
+  if (U.el && U.el.l52 === false && tb.xfer && !trip && isFinite(D)) return D;
+  const q = typeof anPortGet === 'function' ? anPortGet(U, 'q.ccw.YUI') : null,
+    L = q && isFinite(q.Q) ? q.Q / 1000 : 0;
+  return isFinite(U.Pm) ? U.Pm - L : 0;
+}
 /* the energy meters of page 17 count the sim time while synchronised */
 function anGenInt(dt) {
   const U = AN.unit;
@@ -2962,16 +2978,18 @@ function anGenInt(dt) {
   U.genE.MWh += (P * dt) / 3600;
   U.genE.MVArh += (G.MVAr * dt) / 3600;
   /* Phase 11 ports (ports.js, YUI): the generator output, the unit auxiliary power, the cooler duty and the store of this part, once per
-     plant step. gen.W = U.MW for now (the turbine side writes it); with the RIN shaft port it becomes shaft.W - the generator losses.
+     plant step. gen.W = U.MW = the shaft power less the generator losses (anGenW).
      store.YUI E = the kinetic energy of the generator + exciter rotor: H 4.01 s x 176.5 MVA is the whole machine, and the generator +
      exciter share of its GD2 is 16,200 / (23,700 + 16,200) (GAE-2013-0136 R2), x (speed / 3600)^2 */
   const g52 = !!U.tb && (U.tb.st === 'sync' || U.tb.st === 'load'),
     el = typeof anElec === 'function' ? anElec(U) : null,
     n = Math.max(0, ((U.tb && U.tb.rpm) || 0) / 3600);
-  anPortSet(U, 'gen', { W: g52 ? +U.MW || 0 : 0, x: { b52g: g52 ? 1 : 0 } });
+  anPortSet(U, 'gen', { W: g52 ? +U.MW || 0 : 0, x: { b52g: g52 ? 1 : 0 } }); /* = anGenW */
   anPortSet(U, 'aux.power', { W: el ? el.aux : null });
   anPortSet(U, 'q.ccw.YUI', { Q });
   anPortSet(U, 'store.YUI', { mw: 0, E: U.Hgen * AN_GEN.S * (16200 / (23700 + 16200)) * n * n });
+  /* the pick-up contacts of the generator protection relay (A) for the TCS sheets SH-G-5A / 5B (elec.js anGenRelay) */
+  anPortSet(U, 'relay.gen', { x: anGenRelay(U) });
 }
 /* 3.2.3 (SOHEE : PLANT MODEL HELPER, plan task a7 note): SAMPLING AND CHEMICAL DOSING (page "SAMPLING AND DOSING"). Before: no model,
    every analyzer '-----'. docs/versions/v3.2.1/SAMPLING_DOSING_PLANT_MODEL.md has the full source list.
@@ -4108,7 +4126,6 @@ function anUnitStep0(dt) {
     U.tbS
   );
   anTbPorts(U, tb.rpm, U.mhp);
-  const MWss = onGrid ? anTbGen(U.tbS.Whp + U.tbS.Wip) : 0;
   /* 3.2.4-beta.11: the shaft power on the swing equation (U.Pm): the HP and IP / LP parts of the steam path, each behind its steam
      volume (tSc, tXo above; exact first order for the step dt), so the steam left behind the closed valves still drives the shaft.
      Before, Pm fell with the valves at once and a load rejection from 150 MW peaked at 102.2 % (TG manual STIE-14752: about 106 % within
@@ -4119,22 +4136,13 @@ function anUnitStep0(dt) {
       f = T => 1 - Math.exp(-dt / Math.max(0.01, T));
     tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(U.tSc || 0.3) : hp;
     tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(U.tXo || 0.5) : ip;
-    U.Pm = onGrid ? anTbGen(tb.pH + tb.pI) : 0;
+    /* Phase 11 (RIN / YUI): the shaft side of the swing equation = the blade work less the mechanical loss of the turbine (AN_TB.mech,
+       turbine.js); the generator losses are on the electrical side (anGenW) */
+    U.Pm = onGrid ? tb.pH + tb.pI - AN_TB.mech : 0;
   }
-  /* 3.2.4-beta.11: on house load (52L1 open) the generator gives what the house load takes (elec.js): its MW is that load, at once.
-     Before, the MW fell from 150 to the house load with the 10 s steam lag (tauMW) while the breaker was open */
-  if (onGrid && U.el && U.el.l52 === false && tb.xfer && !trip && isFinite(D)) U.MW = D;
-  else if (onGrid && !trip && isFinite(U.Pm)) {
-    /* 3.2.4 (JENNIE, grid frequency fault): on the grid the shaft speed is the grid, so the generator gives the shaft power of now (U.Pm):
-       the HP part behind the steam chest (0.3 s) and the IP / LP part behind the reheater, whose pressure is its own mass balance (U.rr,
-       Crh: about 20 ~ 30 s). Before, a second lag tauMW 10 s on top of them (the reheater counted twice): +6 MW of governor answer took
-       25 s to show instead of the HP part at once */
-    U.MW = U.Pm;
-  } else U.MW += ((MWss - U.MW) * dt) / U.tauMW;
+  U.MW = anGenW(U, onGrid, trip, D);
   anRp32(U, onGrid && !trip, dt);
   anTbSpeed(U, tb, dt, onGrid && !trip && tb.xfer, U.Pm, D);
-  /* 52G open: no load on the machine */
-  if (U.tc && (tb.st === 'off' || tb.st === 'roll')) U.MW = 0;
   U.rpm = tb.rpm;
   U.icvp = 100 * tb.icv;
   if (U.vpos === undefined || (U.vpos && !U.vpos.icvA)) U.vpos = anVposOf(); /* a save point from before 3.2.3-beta.244 / the A, B split */
