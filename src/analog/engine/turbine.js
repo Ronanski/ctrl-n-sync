@@ -1,7 +1,7 @@
 /* Phase 11 (plant model, MODEL TURBINE REHEAT : RIN, 2026-11-27; user "Ok sinisimulan naba plant model? Gawin nio na", ownership
    /mnt/project-files/phase11/ownership-2026-11-27.md). THE STEAM TURBINE of the one plant model, MOVED here from unit.js unchanged
    (step B: the move only, the same code and the same numbers; the old copy in unit.js is deleted in the same change, so there is one
-   turbine). Next steps replace the per-load heat balance tables AN_TBW / AN_HB with the Stodola stage law and the section efficiencies
+   turbine). Step C (below) replaced the per-load heat balance tables AN_TBW / AN_HB with the Stodola stage law and the section efficiencies
    of the design point (rule 0, RULES.md 3.12). The reheat / bypass part of anUnitStep stays in unit.js (its own section). Joined into
    the one analog script before unit.js (src/analog/order.list). */
 /* 2.2.0-beta.17 (M4 step 4): the operator on the TCS panel (outside the DCS): 'roll' (open the stop valves, IP start mode, rpm up
@@ -172,81 +172,212 @@ function anTurbine0(cmd, arg) {
   }
   return 'Unknown command: ' + cmd;
 }
-/* 3.2.3 SAKURA (user 2026-11-14: the turbine is MHPS, Phase 2 design data are valid for Unit 1): the turbine heat balance, MHPS
-   PPE-14-0725 Rev.1 "Heat Balance Diagram" (SMC Limay Phase II 2 x 150 MW, As Build 2019-01-16; the same Hitachi HB set as SMC Davao
-   PPE-13-0138 R4, read on the PC, not in the repository), pages 6 ~ 12: 30 / 40 / 50 / 60 / 70 / 85 / 100 % load. Main steam kg/h, the
-   stage (extraction) pressures ata and the LP extraction flows kg/h. Cross-check with the repository (mass balance / HEAT_BALANCE.md /
-   FHI heater O&M): 100 % MS 458,327 kg/h, final FW 245.4 C 458,684 kg/h, No.6 45,147, No.3 15,246, No.2 12,270 kg/h, No.5 enthalpy
-   787.1 kcal/kg = 3295.5 kJ/kg, No.3 676.7 = 2833.2, the same as the app. Before, every stage pressure and flow went with main steam / 458.684
-   (NO-SOURCE shape); the HB gives that ratio within 1 ~ 3 % at the HP end and up to 9 % low at 30 % load at the LP end (No.1: 0.357, flow 0.133).
-   anHb(k, ms) = the value of row k at ms over its 100 % value; below 30 % load straight to 0 at no flow, above 100 % on the 85 -> 100 % slope */
-/* 3.2.3 (SAKURA, coordinator / Jennie 2026-11-15: the MW line MW = c x steam - mwK was fitted on the plant trends of 2026-11-08, which
-   the user forbids as a basis): the generator MW from the enthalpy drop of the turbine sections, MHPS Heat Balance Diagram of Unit 1:
-   PPE-13-0106 Rev.2 (SMC Limay Power Plant Project 2 x 150 MW, SMC Consolidated Power Corp., contract XZ-DPC566 = Phase I), pages 5 ~ 11
-   (100 / 85 / 70 / 60 / 50 / 40 / 30 %) and the VWO sheet 310SD09-061 R3 (in pages 12 ~ 20); the same Hitachi sheets 310SD07-485 R4, 310SD09-053 ~ 061 with the same numbers
-   as PPE-14-0725 R1 (Limay Phase II, as built 2019) pages 6 ~ 12 / 14, compared page by page on the PC 2026-11-15. CALC per case,
-   kcal/h / 860 = kW:
-     HP  = (MS - front gland - HP to IP leak) x (H main steam - H HP exhaust); the HP exhaust end gland (to B / C) leaves after the blading.
-     IP / LP = HRH x H HRH + leak x its H + front gland to the crossover (A) x H main steam - (No.5, deaerator, No.3, No.2, No.1
-           extraction x their stage H) - LP exhaust x H exhaust: the mass of each case closes to 0 kg/h. The extractions to the heaters
-           are in it (design line-up; a heater out of service: U.dMWx, below).
-   Per T/H of main steam (kW): wh = HP, wi = IP / LP, with the IP / LP taken on the main steam equivalent (qip = the steam through the
-   ICV, = the main steam with the bypasses shut). Below 30 % the 30 % values are held (no case below 30 % in the HB).
-   Shaft - generator kW of the cases 30 ~ 100 % (power factor 0.85) = 2.64 ~ 3.34 MW: the mechanical and generator losses (not printed in
-   the HB; kW printed after the excitation power), CALC as L = lo + kq x shaft^2 (lo 2.565 MW, kq 3.295e-5 / MW): the 8 cases come back
-   within 0.1 % of the printed kW. With no steam on the grid the same lo is taken from the grid (motoring; the windage of the blading
-   without steam is NO-SOURCE) */
-const AN_TBW = {
-  ms: [149.954, 190.769, 231.94, 273.36, 318.817, 387.587, 458.327, 472.46],
-  wh: [77.49, 77.72, 79.79, 81.25, 81.2, 81.96, 82.0, 81.9],
-  wi: [240.2, 250.85, 255.46, 258.39, 257.31, 254.96, 252.56, 252.04],
+/* Phase 11 C (RIN, 2026-11-27, rule 0 RULES.md 3.12): THE STEAM PATH OF THE TURBINE BY PHYSICS. Replaces the per-load tables AN_TBW
+   (work per T/H at the 7 heat balance loads) and the stage pressure rows of AN_HB (interpolated between the 7 loads), and the
+   temperature factor anTbT. Now each stage pressure, each enthalpy and the shaft work come from two laws:
+     STODOLA (A. Stodola, Steam and Gas Turbines, 1927, the cone law; Cooke, J. Eng. Gas Turbines Power 107, 1985): a stage group
+       passes m = K sqrt((p1^2 - p2^2) / (p1 v1)) (m kg/s, p MPa, v m3/kg). K is the flow area of the group: a property of the blades.
+     EXPANSION: the group takes h1 - h2 = eta (h1 - h2s(p2, s1)), IAPWS-IF97 (steam.js), eta the isentropic efficiency of its blades.
+   K and eta of every group are read ONCE from the design geometry, the Hitachi / MHPS heat balance PPE-14-0725 R1 (YUA PC read
+   2026-11-27, /mnt/project-files/turbine-hb-read-2026-11-27.md): case 1 (100 %, 310SD07-485 R4) for all groups, and the HP group flow
+   area K from case 9 (VWO, valves wide open, 310SD09-061 R3: the blades with nothing throttling them). Never per load: the other six
+   cases (85 / 70 / 60 / 50 / 40 / 30 %) are the TEST (tests/lanes/model/turbine-hb.cjs): stage pressures within 0.5 % (HRH) to 6 %
+   (No.1 LP at 30 %), CRH temperature within 0.6 C, LP exhaust enthalpy within 3.3 kcal/kg, shaft within 0.6 %.
+   HP: the control valves throttle the main steam (constant enthalpy) down to the pressure the HP blades pass the flow at (Stodola from
+   the cold reheat pressure); at VWO that is the inlet 126 ata. The first stage pressure is not printed on the HB (NOT IN DOCS, YUA):
+   this p1 is the CALC pressure in front of the HP blading.
+   Leaks (HB case 1, kg/h, labyrinths pass a flow in line with the pressure in front of them, choked: m = c p / sqrt(p v); c from
+   case 1): HP inlet gland to the steam seal regulator 403 and the N2 packing to the IP / LP crossover 4650 (H 818.3) at p1; the valve
+   stem leak-off to the crossover 1205 at the inlet (main steam); the HP exhaust glands to the deaerator line 4561 (B) and to the steam
+   seal regulator 1417 at the cold reheat. Checked on the 7 other cases: B / C at the CRH within 1.5 %, N2 / HP inlet within 4 %; the
+   stem leak-off rises to 1461 kg/h at 40 % on the HB (a leak-off between two seals whose pressures the HB does not print), here 1205 x
+   inlet pressure ratio: up to 260 kg/h (0.15 % of the flow) apart.
+   Reheater: cold reheat 38.64 ata 446091 kg/h (incl. No.6 extraction 45147) to hot reheat 34.77 ata 400944 kg/h: the drop goes with
+   m^2 v (pipe and tube friction), its coefficient from case 1.
+   The heater draws: the steam the heaters condense (ports ext.w_hp NANA, ext.w_lp MEI). Until those ports land (NANA / MEI PRs agreed
+   2026-11-27 11:25 AM PHT) the draws are read from the heater models as they stand: No.2 / No.1 HP heater U.hpF2 / U.hpF1 - U.hpF2,
+   the LP heaters AN_HB f rows (MEI's), the deaerator in line with the No.1 HP heater draw (HB case 1 22225 / 24200).
+   Units in AN_TB: kg/h, ata, C, kcal/kg as printed (x 4.1868 = kJ/kg). DESIGN-SRC: HB PPE-14-0725 R1 cases 1 / 9 */
+const AN_TB = {
+  c1: {
+    ms: 458327, Pms: 126, Tms: 538, Hms: 823.2, crh: 446091, Pcr: 38.64, Hcr: 751.7, hrh: 400944, Phr: 34.77, Thr: 538, Hhr: 845.2,
+    P5: 14.87, H5: 787.1, x5: 24200, Pda: 6.369, Hda: 736.3, xda: 22225, P3: 1.914, H3: 676.7, x3: 15246, P2: 0.826, H2: 642.6,
+    x2: 12270, P1: 0.373, H1: 614.6, x1: 16834, Pc: 0.07, Hx: 570.1, x6: 45147,
+    lkC: 403, lkN2: 4650, Hn2: 818.3, lkA: 1205, lkB: 4561, lkC2: 1417
+  },
+  vwo: { ms: 472460, Pms: 126, Tms: 538, Hms: 823.2, Pcr: 39.78, lkC: 415, lkN2: 4798, lkA: 1193 },
+  /* shaft - generator: the mechanical and generator losses (the HB prints the generator kW after the excitation; shaft = the sum of
+     m dh of the 8 cases from the HB enthalpies): 3.37 MW at 100 % to 2.65 MW at 30 %, lo + kq x shaft^2 (the friction and windage
+     constant, the copper loss with the square of the load) within 0.03 MW on the 8 cases. DESIGN-SRC: HB PPE-14-0725 R1 (8 cases) */
   lo: 2.565,
   kq: 3.295e-5
 };
-function anTbW(k, m) {
-  const X = AN_TBW.ms,
-    Y = AN_TBW[k],
-    n = X.length;
-  if (!(m > X[0])) return Y[0];
-  if (m >= X[n - 1]) return Y[n - 1];
-  let i = 1;
-  while (X[i] < m) i++;
-  return Y[i - 1] + ((Y[i] - Y[i - 1]) * (m - X[i - 1])) / (X[i] - X[i - 1]);
+const TB_A = 0.0980665; /* MPa per ata */
+/* the upstream pressure (ata) a group needs to pass m (kg/h) to p2 (ata) with inlet enthalpy h (kJ/kg): Stodola solved for p1 */
+function tbP1(K, m, p2, h, p0) {
+  const q = Math.max(0, m) / 3600 / K,
+    b = p2 * TB_A;
+  let p = Math.max(b * 1.001, (p0 || p2 * 1.5) * TB_A);
+  for (let i = 0; i < 6; i++) p = Math.sqrt(b * b + q * q * p * steamVhM(p, h));
+  return p / TB_A;
 }
-/* 1.0.0-beta.346 (JENNIE, T1, user 2026-11-24 "GO DESIGN"): each heat balance case is at its own design steam temperature, the MST /
-   RHT characteristic of the turbine (PPE-14-0725, read per sheet): 30 % 505 / 505 C (98.9 ata, sliding), 40 % 520 / 520, 50 % 529 / 529
-   (Rev. 4, "MST RST corrected according to MST / RST characteristics"), 60 % and up 538 / 538 at 126 ata. So wh / wi of AN_TBW hold only
-   at that temperature. The work per kg of a turbine section at a fixed pressure ratio goes with its inlet temperature (isentropic drop
-   dh = cp T1 (1 - (p2 / p1)^((k - 1) / k)), ideal gas form of the superheated steam expansion): wh x (MST + 273.15) / (Tc + 273.15) and
-   wi x (RHT + 273.15) / (Tc + 273.15), Tc = the case temperature at the same flow (AN_TBW.T, linear in flow like wh / wi). At the design
-   temperature the factor is 1 and the HB MW comes back exactly; hotter or colder steam than the design gives more or less MW per T/H.
-   CALC, no fit. U.hxO.ms / .rh = the SH / RH outlet (hx.js) */
-AN_TBW.T = [505, 520, 529, 538, 538, 538, 538, 538];
-function anTbT(T, m) {
-  const Tc = anTbW("T", Math.max(0, +m || 0)) + 273.15;
-  return isFinite(T) && T > 200 ? Math.max(0.6, Math.min(1.1, (T + 273.15) / Tc)) : 1;
+/* the end enthalpy of a group of efficiency eta from p1 / h1 to p2 (ata, kJ/kg) */
+function tbEx(eta, p1, h1, p2) {
+  return h1 - eta * Math.max(0, h1 - steamHsM(p2 * TB_A, steamPhM(p1 * TB_A, h1).s));
 }
-/* ms = HP turbine steam, qip = IP / LP steam (main steam equivalent), T/H; kh / ki = anTbT of the main / reheat steam; returns the
-   generator MW (negative = motoring) */
-function anTbGen(ms, qip, kh, ki) {
-  const m = Math.max(0, +ms || 0),
-    q = Math.max(0, +qip || 0),
-    sh = (m * anTbW('wh', m) * (kh || 1) + q * anTbW('wi', q) * (ki || 1)) / 1000;
-  return sh - AN_TBW.lo - AN_TBW.kq * sh * sh;
+function tbGroup(m, p1, h1, p2, h2) {
+  const P1 = p1 * TB_A,
+    P2 = p2 * TB_A;
+  return {
+    K: m / 3600 / Math.sqrt((P1 * P1 - P2 * P2) / (P1 * steamVhM(P1, h1))),
+    eta: (h1 - h2) / (h1 - steamHsM(P2, steamPhM(P1, h1).s))
+  };
 }
+const tbHt = (P, T) => steamH(P - 1.0332, T); /* kJ/kg of steam at P ata, T C */
+/* the design geometry (K, eta, leak and drop coefficients), once */
+function tbGeo() {
+  if (AN_TB.G) return AN_TB.G;
+  const d = AN_TB.c1,
+    v = AN_TB.vwo,
+    k = 4.1868,
+    hpF = c => c.ms - c.lkC - c.lkN2 - c.lkA /* the steam through the HP blades */,
+    vhp = hpF(v),
+    /* HP flow area: VWO, the blades at 126 ata in front of them (valves wide open) */
+    Khp = tbGroup(vhp, v.Pms, v.Hms * k, v.Pcr, 751.8 * k).K,
+    p1 = tbP1(Khp, hpF(d), d.Pcr, d.Hms * k),
+    ip2 = d.hrh - d.x5,
+    lp0 = ip2 - d.xda + d.lkN2 + d.lkA,
+    hm = ((ip2 - d.xda) * d.Hda + d.lkN2 * d.Hn2 + d.lkA * d.Hms) / lp0,
+    G = {
+      hp: { K: Khp, eta: tbGroup(hpF(d), p1, d.Hms * k, d.Pcr, d.Hcr * k).eta },
+      ip1: tbGroup(d.hrh, d.Phr, d.Hhr * k, d.P5, d.H5 * k),
+      ip2: tbGroup(ip2, d.P5, d.H5 * k, d.Pda, d.Hda * k),
+      lp1: tbGroup(lp0, d.Pda, hm * k, d.P3, d.H3 * k),
+      lp2: tbGroup(lp0 - d.x3, d.P3, d.H3 * k, d.P2, d.H2 * k),
+      lp3: tbGroup(lp0 - d.x3 - d.x2, d.P2, d.H2 * k, d.P1, d.H1 * k),
+      lp4: tbGroup(lp0 - d.x3 - d.x2 - d.x1, d.P1, d.H1 * k, d.Pc, d.Hx * k)
+    },
+    sv = (P, h) => Math.sqrt(P * steamVhM(P * TB_A, h)) /* p / sqrt(p v) ~ the choked labyrinth flow */,
+    vcr = steamVhM(d.Pcr * TB_A, d.Hcr * k);
+  G.c = {
+    lkC: (d.lkC * sv(p1, d.Hms * k)) / p1,
+    lkN2: (d.lkN2 * sv(p1, d.Hms * k)) / p1,
+    lkA: (d.lkA * sv(d.Pms, d.Hms * k)) / d.Pms,
+    lkB: (d.lkB * sv(d.Pcr, d.Hcr * k)) / d.Pcr,
+    lkC2: (d.lkC2 * sv(d.Pcr, d.Hcr * k)) / d.Pcr,
+    rh: (d.Pcr - d.Phr) / (d.hrh * d.hrh * vcr) /* ata per (kg/h)^2 m3/kg */
+  };
+  return (AN_TB.G = G);
+}
+/* ONE pass of the steam path. I: ms (T/H through the CVs), Pin (ata in front of the CVs), Tms (C), qip (T/H through the ICVs), Thr (C),
+   Pc (ata, condenser), w = { hp6, hp5, da, lp3, lp2, lp1 } T/H drawn, o = the result of the last pass (start values). Returns pressures
+   ata, enthalpies kJ/kg, Whp / Wip MW (shaft work of the HP and of the IP / LP blading), the LP exhaust and the leaks kg/h */
+function tbPath(I, o) {
+  const G = tbGeo(),
+    C = G.c,
+    k = 4.1868,
+    ms = Math.max(0, +I.ms || 0) * 1000,
+    qip = Math.max(0, +I.qip || 0) * 1000,
+    w = I.w || {},
+    Pc = Math.max(0.02, +I.Pc || 1.0332),
+    Pin = Math.max(Pc, +I.Pin || 0),
+    hms = tbHt(Pin, isFinite(I.Tms) ? I.Tms : 538),
+    o0 = o && o.P ? o : null,
+    P = Object.assign({ fs: Pin, crh: Pc, hrh: Pc, x5: Pc, da: Pc, l3: Pc, l2: Pc, l1: Pc }, o0 ? o0.P : {}),
+    H = Object.assign({ x5: 787.1 * k, da: 736.3 * k, l3: 676.7 * k, l2: 642.6 * k, l1: 614.6 * k, x: 570.1 * k }, o0 ? o0.H : {}),
+    sv = (p, h) => Math.sqrt(Math.max(1e-9, p * steamVhM(p * TB_A, h)));
+  P.c = Pc;
+  const hhr = tbHt(Math.max(Pc, P.hrh), isFinite(I.Thr) ? I.Thr : 538),
+    dr = x => Math.max(0, +(w[x] || 0)) * 1000;
+  /* leaks at the pressures of the last pass */
+  const L = {
+    C: (C.lkC * P.fs) / sv(P.fs, hms),
+    N2: (C.lkN2 * P.fs) / sv(P.fs, hms),
+    A: ms > 0 ? (C.lkA * Pin) / sv(Pin, hms) : 0,
+    B: (C.lkB * P.crh) / sv(P.crh, H.crh || 751.7 * k),
+    C2: (C.lkC2 * P.crh) / sv(P.crh, H.crh || 751.7 * k)
+  };
+  for (const x in L) L[x] = Math.min(L[x], ms * 0.02);
+  /* flows through each group (kg/h) */
+  const fhp = Math.max(0, ms - L.C - L.N2 - L.A),
+    f1 = qip,
+    f2 = Math.max(0, f1 - dr('hp5')),
+    flp = Math.max(0, f2 - dr('da') + (ms > 0 ? L.N2 + L.A : 0)),
+    f3 = Math.max(0, flp - dr('lp3')),
+    f4 = Math.max(0, f3 - dr('lp2')),
+    f5 = Math.max(0, f4 - dr('lp1'));
+  /* pressures from the condenser up (Stodola), with the enthalpies of the last pass */
+  P.l1 = tbP1(G.lp4.K, f5, Pc, H.l1, P.l1);
+  P.l2 = tbP1(G.lp3.K, f4, P.l1, H.l2, P.l2);
+  P.l3 = tbP1(G.lp2.K, f3, P.l2, H.l3, P.l3);
+  P.da = tbP1(G.lp1.K, flp, P.l3, H.lm || H.da, P.da);
+  P.x5 = tbP1(G.ip2.K, f2, P.da, H.x5, P.x5);
+  P.hrh = tbP1(G.ip1.K, f1, P.x5, hhr, P.hrh);
+  /* the cold reheat: the hot reheat + the reheater drop of the steam through it (CRH less the No.6 extraction) */
+  const frh = Math.max(0, fhp - L.B - L.C2 - dr('hp6') + (+I.hpb || 0) * 1000);
+  P.crh = P.hrh + C.rh * frh * frh * steamVhM(Math.max(Pc, P.crh) * TB_A, H.crh || 751.7 * k);
+  P.fs = Math.min(Pin, tbP1(G.hp.K, fhp, P.crh, hms, P.fs));
+  /* enthalpies from the inlets down */
+  H.crh = fhp > 0 ? tbEx(G.hp.eta, P.fs, hms, P.crh) : H.crh || 751.7 * k;
+  H.hrh = hhr;
+  H.x5 = f1 > 0 ? tbEx(G.ip1.eta, P.hrh, hhr, P.x5) : H.x5;
+  H.da = f2 > 0 ? tbEx(G.ip2.eta, P.x5, H.x5, P.da) : H.da;
+  const fda = Math.max(0, f2 - dr('da'));
+  H.lm = flp > 0 ? (fda * H.da + (ms > 0 ? L.N2 * AN_TB.c1.Hn2 * k * (hms / (823.2 * k)) + L.A * hms : 0)) / flp : H.da;
+  H.l3 = flp > 0 ? tbEx(G.lp1.eta, P.da, H.lm, P.l3) : H.l3;
+  H.l2 = f3 > 0 ? tbEx(G.lp2.eta, P.l3, H.l3, P.l2) : H.l2;
+  H.l1 = f4 > 0 ? tbEx(G.lp3.eta, P.l2, H.l2, P.l1) : H.l1;
+  H.x = f5 > 0 ? tbEx(G.lp4.eta, P.l1, H.l1, Pc) : H.x;
+  const kW = (f, a, b) => (f / 3600) * (a - b);
+  return {
+    P,
+    H,
+    L,
+    f: { hp: fhp, ip1: f1, ip2: f2, lp: flp, lp2: f3, lp3: f4, lp4: f5, rh: frh },
+    Whp: kW(fhp, hms, H.crh) / 1000,
+    Wip: (kW(f1, hhr, H.x5) + kW(f2, H.x5, H.da) + kW(flp, H.lm, H.l3) + kW(f3, H.l3, H.l2) + kW(f4, H.l2, H.l1) + kW(f5, H.l1, H.x)) / 1000,
+    exh: { m: f5 / 1000, h: H.x }
+  };
+}
+/* the generator MW of a shaft work (MW) on the grid: less the mechanical and generator losses (negative = motoring) */
+function anTbGen(sh) {
+  return sh - AN_TB.lo - AN_TB.kq * sh * sh;
+}
+/* the heater draws (T/H) the steam path takes this step; see the head of this block (ports when written) */
+function tbDraws(U, ms) {
+  const pt = U.pt || {},
+    hp = pt['ext.w_hp'] && pt['ext.w_hp'].x,
+    lp = pt['ext.w_lp'] && pt['ext.w_lp'].x,
+    d = AN_TB.c1,
+    h6 = isFinite(U.hpF2) ? U.hpF2 : 0,
+    h5 = isFinite(U.hpF1) && isFinite(U.hpF2) ? Math.max(0, U.hpF1 - U.hpF2) : 0;
+  return {
+    hp6: hp ? hp.hp2 : h6,
+    hp5: hp ? hp.hp1 : h5,
+    da: hp ? hp.da : (h5 * d.xda) / d.x5,
+    lp3: lp ? lp.lp3 : (d.x3 / 1000) * anHb('f3', ms),
+    lp2: lp ? lp.lp2 : (d.x2 / 1000) * anHb('f2', ms),
+    lp1: lp ? lp.lp1 : (d.x1 / 1000) * anHb('f1', ms)
+  };
+}
+/* the LP heater draws of the LP heater model of unit.js (anLphStep, MEI) until it computes them from its heater duty: the AN_HB rows
+   f3 / f2 / f1 (HB extraction kg/h at the 7 loads), ratio to the 100 % value. NO-FIT-OK: MEI replaces them (agreed 2026-11-27) */
 const AN_HB = {
   ms: [149954, 190769, 231940, 273360, 318817, 387587, 458327],
-  x6: [12.79, 16.35, 19.9, 23.48, 27.25, 32.89, 38.64] /* HP exhaust = No.6 (No.2 HPH) extraction */,
-  x5: [5.0, 6.38, 7.75, 9.13, 10.56, 12.7, 14.87] /* No.5 (No.1 HPH) */,
-  xd: [2.173, 2.769, 3.355, 3.943, 4.553, 5.457, 6.369] /* deaerator */,
-  x3: [0.658, 0.837, 1.014, 1.19, 1.373, 1.643, 1.914] /* No.3 LPH */,
-  x2: [0.286, 0.364, 0.44, 0.516, 0.594, 0.71, 0.826] /* No.2 LPH */,
-  x1: [0.133, 0.167, 0.201, 0.234, 0.269, 0.321, 0.373] /* No.1 LPH */,
   f3: [4251, 5603, 6963, 8422, 10009, 12531, 15246],
   f2: [3426, 4525, 5685, 6871, 8190, 10192, 12270],
   f1: [2243, 4184, 6060, 7935, 10093, 13357, 16834]
 };
+/* anHb(k, ms): 'f3' / 'f2' / 'f1' the AN_HB rows above; 'x6' (cold reheat = No.6), 'x5', 'xd', 'x3', 'x2', 'x1': the stage pressure of
+   the steam path NOW (AN_UNIT.tbS, tbPath) over its 100 % design pressure (the callers multiply it by the design heater pressure) */
 function anHb(k, msT) {
+  if (k[0] === 'x') {
+    const S = typeof AN_UNIT !== 'undefined' && AN_UNIT.tbS,
+      d = AN_TB.c1,
+      key = { x6: ['crh', d.Pcr], x5: ['x5', d.P5], xd: ['da', d.Pda], x3: ['l3', d.P3], x2: ['l2', d.P2], x1: ['l1', d.P1] }[k];
+    if (!key) return 0;
+    return S && S.P && isFinite(S.P[key[0]]) ? Math.max(0, S.P[key[0]] / key[1]) : 0;
+  }
   const X = AN_HB.ms,
     Y = AN_HB[k],
     n = X.length - 1,
