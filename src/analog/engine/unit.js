@@ -32,8 +32,11 @@ function anIdfN(m) {
    - drum steam space at the normal level: half of 1.676 m ID x 12.48 m tangent + heads (K1AU3-B-0-004) = 15 m3, saturated steam
      0.88 kg/m3 per kg/cm2 = 13 kg;
    - superheaters 75.8 m3 (T8 Tab 2 HYD less the water parts), superheated about 450 C, 0.42 kg/m3 per kg/cm2 = 32 kg;
-   - main steam line to the stop valves: NO-SOURCE, about 20 m3 (8 kg).
-   53 kg per kg/cm2 = 190 (T/H) x s per kg/cm2 (CALC). The old field C of a save is not read */
+   - main steam line to the stop valves (Phase 11 KANA 2026-11-27, DOC: line list L1-0-011 and MS BOM P3-1-001 R7, PC read
+     /mnt/project-files/kana-pipe-tube-2026-11-27.md): MS-1-001 18" SCH120 ID 387.4 mm x 132.8 m = 15.65 m3, MS-1-002 / -003
+     12" SCH120 ID 273.0 mm x 17.9 m = 1.05 m3; 16.7 m3 (the BOM lengths are an upper bound: the isos are not in the documents),
+     0.4 kg/m3 per kg/cm2 = 6.7 kg. Before: NO-SOURCE, about 20 m3 (8 kg).
+   51.7 kg per kg/cm2 = 186 (T/H) x s per kg/cm2 (CALC). The old field C of a save is not read */
 /* Phase 11 (KANA, 2026-11-27): THE SUPERHEATER PRESSURE DROP, drum to SH outlet. Turbulent flow in the SH tubes at a Reynolds number
    far above the transition (the friction factor nearly constant): dP = f (L / D) rho V^2 / 2 = k m^2 / rho, the mass flow m and the
    mean steam density rho of the superheaters. k from the one design point, DESIGN-SRC: FHI P2S7 Tab 3 (page 2-7-TAB_3-1) at MCR:
@@ -66,7 +69,7 @@ function anShKdp(U) {
     rho = anShRho(U.Pd, Po, To);
   return isFinite(rho) && rho > 0 ? (k0 * AN_SHDP.rho0) / rho : k0;
 }
-const AN_STORE = { cs: 190 };
+const AN_STORE = { cs: 3.6 * (13 + 32 + 0.4 * ((Math.PI / 4) * (0.3874 ** 2 * 132.8 + 0.273 ** 2 * 17.9))) /* 186, CALC above */ };
 const AN_UNIT = {
   on: false,
   /* sweep 34 (Mina beta.175: AN.unit.MW read NaN once right after a chip load): a load begins with the Reset (anStateInPlace back to
