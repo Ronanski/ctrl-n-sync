@@ -32,13 +32,23 @@ const C = [
 ];
 const name = { H6p: 'LCV-HD1106-1', H6a: 'LCV-HD1106-2', H5p: 'LCV-HD1105-1', H5a: 'LCV-HD1105-2' };
 for (const [h, v, w, P1, P2, T, x] of C) {
-  /* the sheet P1 / P2 include the head and line dz of the valve: take them off to give the shell and the place it drains to */
-  const f = vm.runInContext(`(()=>{const V=AN_HDV.${h}.${v};return anHdW(V, ${x}, ${P1} - V.dz1, ${P2} - V.dz2, ${T});})()`, ctx);
+  /* the valve alone at the printed P1 / P2 and the sheet's own arithmetic (printed kg/cm2 g + 1.0332, bar a) */
+  const f = vm.runInContext(`anHdV(AN_HDV.${h}.${v}, ${x}, (${P1} + 1.0332) * 0.980665, (${P2} + 1.0332) * 0.980665, ${T})`, ctx);
   ck(`${name[h + v]} ${w} t/h at ${x} %`, f, w, 5);
+}
+/* the plant law (2026-11-28): COND 1 from the shell and the place (HB ata, true absolute), with the as-built static head and the
+   line losses of AN_HDV, gives the sheet flow within 7 %: the sheet's choked limit uses its P1 one atmosphere high (its "g" numbers
+   are the HB ata numbers), so a choked case is lower by sqrt((p1 - FF pv) / (p1 + 1.013 - FF pv)), at most 5.8 % (LCV-HD1105-2) */
+for (const [h, v, w, Ps, Pt, T, x] of [
+  ['H6', 'p', 45.147, 37.48, 14.12, 201.3, 57], ['H6', 'a', 45.147, 37.48, 0.07, 201.3, 43],
+  ['H5', 'p', 69.347, 14.12, 6.083, 166.3, 75], ['H5', 'a', 69.347, 14.12, 0.07, 166.3, 65]
+]) {
+  const f = vm.runInContext(`anHdW(AN_HDV.${h}.${v}, ${x}, ${Ps} - 1.0332, ${Pt} - 1.0332, ${T})`, ctx);
+  ck(`${name[h + v]} shell to place ${w} t/h at ${x} %`, f, w, 7);
 }
 const R = s => vm.runInContext(s, ctx);
 ck('shut valve', R('anHdW(AN_HDV.H6.p, 0, 36, 13, 200)'), 0, 1e-9);
-ck('no pressure difference', R('anHdW(AN_HDV.H5.p, 50, 5, 5 + AN_HDV.H5.p.dz1 - AN_HDV.H5.p.dz2, 150)'), 0, 1e-9);
+ck('no pressure difference', R('anHdW(AN_HDV.H5.p, 50, 5, 5 + (anWaterRho(150) * AN_HDV.H5.p.z) / 10000, 150)'), 0, 1e-9);
 ck('more opening, more flow', R('anHdW(AN_HDV.H6.p, 60, 36, 13, 200) > anHdW(AN_HDV.H6.p, 40, 36, 13, 200) ? 1 : 0'), 1, 0);
-console.log(bad ? `hp-drains: FAIL ${bad}` : 'hp-drains: PASS (12 sizing cases of LCV-HD1105 / 1106, choked flow)');
+console.log(bad ? `hp-drains: FAIL ${bad}` : 'hp-drains: PASS (12 sizing cases of LCV-HD1105 / 1106, choked flow; 4 shell-to-place cases with the as-built heads)');
 process.exit(bad ? 1 : 0);

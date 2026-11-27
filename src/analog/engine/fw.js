@@ -31,9 +31,10 @@ function fwHw(P, T) {
      Mm  the metal: 40,000 + 9,830 = 49,830 kg (empty weights), carbon steel SA516-70, cm 0.49 kJ/kg K (textbook carbon steel);
      cw  dhf/dT of the water at T (IF97, numerical);
    In:
-     extraction no. 3 (heat balance "deaerator" stage, PD-013) through MV-TS1003 (DITL-96) and its non-return valve: steam flows
-     only from the higher pressure, w = k sqrt(rho dP) (turbulent line + valves); k from the design point: 26.79 t/h at the stage
-     6.369 ata against the deaerator 5.05 + 1.0332 = 6.083 ata (dP 0.286), rho of the steam at the deaerator inlet 310.3 C (IF97).
+     extraction no. 3 (heat balance "deaerator" stage, PD-013) through MV-TS1003 (DITL-96) and its two non-return valves (XV-TS1710 /
+     1740, tcs-dev.js positions): steam flows from the higher pressure side, both ways (anDaLine, compressible; reverse = the deaerator
+     steam back to the turbine until the NRVs close); k from the design point: 26.79 t/h at the stage 6.369 ata against the deaerator
+     5.05 + 1.0332 = 6.083 ata (dP 0.286), rho of the steam at the deaerator inlet 310.3 C (IF97).
      The stage pressure, temperature and enthalpy are the port ext.da of the turbine part (RIN, turbine.js anTbPorts); not written =
      no steam (ports.js rule 3); a port without h: IF97 at its P and T;
      pegging steam PCV-AS1030 from the auxiliary steam header: the port aux.peg {m t/h, h kJ/kg} of the aux steam part (SUZU, the valve
@@ -55,7 +56,15 @@ const AN_DA = {
   Pd0: 5.05 + 1.0332 /* ata DESIGN-SRC: K2MC2F-001 operating 5.05 kg/cm2 G */,
   Tx0: 310.3 /* C DESIGN-SRC: K2MC2F-001 steam in */,
 };
-AN_DA.k = AN_DA.w0 / Math.sqrt(steamRho(AN_DA.Px0 - 1.0332, AN_DA.Tx0) * (AN_DA.Px0 - AN_DA.Pd0));
+/* the extraction line as a compressible flow (ISA-75.01 gas form, as unit.js anStmW): w = k Y sqrt(rho1 x P1), x = min(xc, dP / P1),
+   Y = 1 - x / (3 xc), xc = (1.3 / 1.4) 0.7; from the higher pressure side (forward: the stage, reverse: the deaerator steam space);
+   k from the design point (26.79 t/h, 6.369 -> 6.083 ata, 310.3 C) */
+function anDaLine(P1, P2, rho1) {
+  const xc = (1.3 / 1.4) * 0.7,
+    x = Math.min(xc, Math.max(0, (P1 - P2) / P1));
+  return P1 > P2 && rho1 > 0 ? (1 - x / (3 * xc)) * Math.sqrt(rho1 * x * P1) : 0;
+}
+AN_DA.k = AN_DA.w0 / anDaLine(AN_DA.Px0, AN_DA.Pd0, steamRho(AN_DA.Px0 - 1.0332, AN_DA.Tx0));
 /* the deaerator pressure transmitter PT-CD1104 (ABC-056 AI0417, U.xt.dea) is written by this model: it is not a loop model any more */
 function anFwStart(U) {
   if (U.own && U.xt && U.xt.dea) for (const [S2, b] of U.xt.dea) U.own.add(S2.rt.st[b.id]);
@@ -84,15 +93,39 @@ function anDeaStep(U, dt) {
     pX = pg('ext.da'),
     Pxa = isFinite(fin(pX && pX.P)) ? fin(pX.P) : 0,
     mov = typeof anDitlPos === 'function' ? anDitlPos('DITL-96', 0) : null,
-    open = mov == null ? 1 : Math.max(0, Math.min(1, mov / 100)),
+    /* the No.3 extraction NRVs XV-TS1710 (primary) and XV-TS1740 (secondary) in series with MV-TS1003: the positions of the TCS
+       device model (tcs-dev.js U.dev.nrv ex3p / ex3s: open on load, closed by the cylinder on a trip or off line) */
+    nv = U.dev && U.dev.nrv ? U.dev.nrv : {},
+    nrv = Math.min(nv.ex3p ? +nv.ex3p.p || 0 : 0, nv.ex3s ? +nv.ex3s.p || 0 : 0) / 100,
+    open = (mov == null ? 1 : Math.max(0, Math.min(1, mov / 100))) * nrv,
     Pda = Pd + 1.0332,
     TxC = Pxa > 0.05 ? Math.max(steamTsat(Pxa - 1.0332), isFinite(fin(pX.T)) ? fin(pX.T) : 0) : Ta,
-    wx = Pxa > Pda && open > 0 ? open * K.k * Math.sqrt(steamRho(Pxa - 1.0332, TxC) * (Pxa - Pda)) : 0,
-    hx = isFinite(fin(pX && pX.h)) ? fin(pX.h) : Pxa > 0.05 ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */ : 0,
+    /* signed: + the stage steam into the deaerator; - (RIN 2026-11-28, load rejection) the deaerator steam space and the flash of its
+       saturated water back into the turbine while the stage pressure falls below the deaerator, until the NRVs close (2 s on the air
+       dump, KARATU VCL-5101-H, /mnt/project-files/rin-extraction-2026-11-28.md), at the saturated steam of the deaerator */
+    wx =
+      open > 0
+        ? Pxa >= Pda
+          ? open * K.k * anDaLine(Pxa, Pda, steamRho(Pxa - 1.0332, TxC))
+          : -open * K.k * anDaLine(Pda, Math.max(0.01, Pxa), steamRho(Pd, steamTsat(Pd)))
+        : 0,
+    hx =
+      wx < 0
+        ? steamH(Pd, steamTsat(Pd) + 0.01) /* the saturated steam of the deaerator going back */
+        : isFinite(fin(pX && pX.h))
+          ? fin(pX.h)
+          : Pxa > 0.05
+            ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */
+            : 0,
     /* pegging steam: the port aux.peg of the aux steam part (SUZU) */
     pP = pg('aux.peg'),
     wp = isFinite(fin(pP && pP.m)) ? Math.max(0, fin(pP.m)) : 0,
     hp = isFinite(fin(pP && pP.h)) ? fin(pP.h) : 0,
+    /* HP gland leak B: the port lk.b of the turbine (RIN), it joins the extraction line to the deaerator (HB PPE-14-0725 note B,
+       DEA heater G 26786 = line 22225 + 4561 kg/h); not written = none (ports.js rule 3) */
+    pB = pg('lk.b'),
+    wb = isFinite(fin(pB && pB.m)) ? Math.max(0, fin(pB.m)) : 0,
+    hb = isFinite(fin(pB && pB.h)) ? fin(pB.h) : 0,
     /* HP heater normal drain */
     h5 = (U.hd || []).find(h => h.k === 'H5'),
     wd = h5 && isFinite(h5.w1) ? Math.max(0, h5.w1) : 0,
@@ -103,12 +136,12 @@ function anDeaStep(U, dt) {
     wc = isFinite(fin(pC && pC.m)) ? fin(pC.m) : 0,
     tc = isFinite(fin(pC && pC.T)) ? fin(pC.T) : Ta,
     hc = isFinite(fin(pC && pC.h)) ? fin(pC.h) : fwHw(Pd, tc),
-    Q = (wx * (hx - hf) + wp * (hp - hf) + wd * (fwHw(Pd, td) - hf) + wc * (hc - hf)) / 3.6 /* kW */,
+    Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (fwHw(Pd, td) - hf) + wc * (hc - hf)) / 3.6 /* kW */,
     C = M * 1000 * cw + K.Mm * 1000 * K.cm /* kJ/K */;
   if (dt > 0) U.da.T = Math.max(Ta - 5, Math.min(200, T + (Q * dt) / C));
   const Pn = Math.max(0, steamPsat(U.da.T));
-  Object.assign(U.da, { P: Pn, M, wx, wp, wd, wc, hx, Q, Pxa });
-  U.daIn = wx + wp + wd; /* T/H into the storage water besides the condensate */
+  Object.assign(U.da, { P: Pn, M, wx, wb, wp, wd, wc, hx, Q, Pxa, rho: anWaterRho(U.da.T), rhoL: anWaterRho(isFinite(U.Tamb) ? U.Tamb : 30) }); /* rho / rhoL: the BFWP suction PT-FW1115 (plantsw.js W.sucP) */
+  U.daIn = wx + wb + wp + wd; /* T/H into the storage water besides the condensate */
   U.daTb = wx; /* the turbine steam taken by the deaerator (the condenser does not get it) */
   if (U.xt && U.xt.dea) anUnitWrite(U.xt.dea, Pn);
   anPortSet(U, 'dea', { P: Pn + 1.0332, T: U.da.T, L: lvl });
@@ -124,7 +157,6 @@ function anDeaStep(U, dt) {
                   491.04 T/H at 1750 m, shut-off 2254.6 m, discharge 165.1 kg/cm2g at suction 6.0, 2946 kW (motor 3550 kW),
                   minimum recirculation 151 m3/h (ARC valve); curve 2250 m at 100, 2140 at 300, 2010 at 400, 1620 at 600 m3/h; power
                   1700 kW at 150, 2230 at 300, 2580 at 400, 3100 at 600 m3/h;
-     snapshot     03.png (150.5 MW): BFWP-A 289.4 A, PIFW1011 165.4 kg/cm2, DPIFW1115A 0.29 kg/cm2, feedwater 499.1 T/H;
      DITL-23B     row 25 PT-FW1011 < 155 kg/cm2 = M.3210 BFWP OUTLET PRESSURE LOW (the standby BFWP in AUTO starts, DITL-22 / 23A);
                   row 26 DPT-FW1115-A strainer DP > 0.8 / 0.9 kg/cm2, alarm > 0.6.
    How it works: flow of a running pump = the feedwater to the drum (plant.js AN_CYC.ffw) / running pumps, at least the ARC minimum
@@ -453,7 +485,7 @@ function anHphStep(U, dt) {
                   more than it gets;
      level        d(level) / dt = (in - out) / (water density x surface), surface = diameter x length x 0.7 (NO-SOURCE: the tube bundle
                   and the heads take the rest); the water density of the design drain temperature (steam table).
-   NO-SOURCE: 0.7. */
+   NO-SOURCE: 0.7 (the LP heaters; the HP heaters use the shell chord at the level, AN_HD.wl, 2026-11-28). */
 const AN_HD = {
   /* key, ABC sheet, level AIs, primary / alternate controller, design extraction t/h, heater before (cascade), H.H. mm, shell ID m,
      length m, water kg/m3, primary capacity t/h at 100 % (150 MW), extraction MOV (DITL) */
@@ -535,7 +567,11 @@ const AN_HD = {
     ]
   ],
   F0: 458.684,
-  fA: 0.7,
+  fA: 0.7 /* the LP heaters (MEI): NO-SOURCE, see the head of this block */,
+  /* the HP heaters (Phase 11 NANA 2026-11-28): the water surface is the chord of the shell at the level, the normal water level
+     0.480 (No.2) / 0.455 (No.1) m below the shell CL, K1AU3-D1-0-036 p6 / p3 (YUA PC read 2026-11-28); the tubes through the surface
+     are not taken off (NO-SOURCE: the tube layout was not read) */
+  wl: { H6: 0.48, H5: 0.455 },
   /* the LP alternates from their valve sheets, E2-0-123 (team-files/plant-study/12-assumptions.md); the HP drains: AN_HDV */
   alt: { H3: 27.0, H2: 37.5, H1: 57.3 }
 };
@@ -552,32 +588,69 @@ const AN_HD = {
    FF = 0.96 - 0.28 sqrt(Pv / Pc) (Pc 220.64 bar, IEC), Pv the saturation of the drain temperature (steam.js), bar absolute.
    FL 0.90: the sheets do not print it; their flashing / cavitating cases (all 9 choked cases of the four valves) give FL 0.897 ~
    0.904 by the same law, and the one liquid case (LCV-HD1105-1 COND 1, 4.90 bar < 0.81 x 6.81) is not choked: one FL closes them all.
-   P1 / P2: the heater shell (U.hpPs) and the place it drains to (No.1 HPH shell U.hpPs, deaerator U.da.P, condenser port 'cd' P)
-   plus the head and line of the sheet: dz = sizing COND 1 P1 / P2 less the design shell / place
-   (No.2 HPH 37.48 ata, No.1 HPH 14.12 ata, K1AU3-D1-0-036; deaerator 6.083 ata, K2MC2F-001; condenser 0.07 ata, HB PPE-14-0725),
-   held at every flow (the heater elevations are NOT IN DOCS: PD-017 / PD-018). Water density: IF97 saturated water (plant.js anWaterRho). */
+   P1 / P2 at the valve (Phase 11 NANA 2026-11-28, was a sheet dz held at every flow, the heater elevations NOT IN DOCS then):
+     the sheet P1 / P2 are the HB PPE-14-0725 heater numbers (ata) carried as "kg/cm2 g" (LCV-HD1106-1 P1 37.48 = the No.2 HPH
+     shell 37.48 ata); the sheet's own arithmetic (FL 0.90 above) reads them as gauge, so the sizing check keeps that reading, and
+     the plant model uses the true absolute pressure with the same trim FL.
+     inlet  = shell + static head of the drain water from the shell water level down to the valve - the inlet line loss;
+     outlet = the place it drains to + the outlet line loss (the flashing two-phase line: its static head is in this loss, the
+              mixture density is NO-SOURCE);
+     a line loss goes with flow^2 (turbulent), its size from the COND 1 case of the sheet less its static head.
+   Elevations (YUA PC read 2026-11-28, /mnt/project-files/pc-reads-npsh-elev-2026-11-28.md): No.1 / No.2 HPH shell CL GL.+17300
+   (DERIVED: supports 1600 on the mezzanine GL.+15700, K1AU3-D1-0-036 p3 / p6; fits LT-HD1105 / 1106 taps GL.+17755 / +17630,
+   E2-0-102 p18), normal water level 455 / 480 below the CL (D1-036 printed) = GL.+16845 / +16820; valves (E2-0-102 as-built):
+   LCV-HD1106-1 GL.+16050 (p18), LCV-HD1105-1 GL.+27850 (p37, roof), LCV-HD1105-2 / 1106-2 GL.+9948 / +9900 (p3).
+   Check of the static head on the sheets: LCV-HD1106-2 P1 38.08 - 37.48 = 0.60 kg/cm2 = 6.92 m x 865 kg/m3 (0.599) and
+   LCV-HD1105-2 14.72 - 14.12 = 0.60 = 6.90 m x 901 kg/m3 (0.622): the sheets carry the as-built heads.
+     valve          z (m, water level - valve)  inlet loss at W0 (sheet dP1 - head)   outlet loss at W0 (sheet P2 - place)
+     LCV-HD1106-1   16.820 - 16.050 = 0.770     0.067                                  14.48 - 14.12 = 0.36
+     LCV-HD1106-2   16.820 -  9.900 = 6.920     0 (0.60 - 0.599)                        0.28 - 0.07 = 0.21
+     LCV-HD1105-1   16.845 - 27.850 = -11.005   0.511 (-1.50 + 0.989)                   7.62 - 6.083 = 1.537
+     LCV-HD1105-2   16.845 -  9.948 = 6.897     0 (0.60 - 0.622)                        0.72 - 0.07 = 0.65
+   LCV-HD1105-1 lifts its drain to the deaerator on the roof frame (H-1104 CL GL.+35600, E2-0-102 p37 / A3-0-002 Section A-A, YUA
+   2026-11-28, nana-da-elevation-2026-11-28.md): at COND 1 its outlet 7.62 is above the saturation of the 166.3 C drain (7.41), so the
+   riser is liquid: outlet static z2 = 35.6 - 27.85 = 7.75 m (0.698 kg/cm2 at 901 kg/m3), its loss 1.537 - 0.698 = 0.839. The
+   others flash at the outlet (two-phase, the mixture density NO-SOURCE): z2 0, all in the loss.
+   (W0 = the COND 1 flow: 45.147 / 69.347 t/h; place: No.1 HPH 14.12 ata, deaerator 6.083 ata K2MC2F-001, condenser 0.07 ata HB.)
+   Water density: IF97 saturated water (plant.js anWaterRho). */
 const AN_HDV = {
   FL: 0.9 /* DESIGN-SRC: E2-0-123 R1 HD1105 / HD1106 sizing cases (derived, see above) */,
   H6: {
-    p: { cv: 25, x: [0, 20, 32, 57, 100], y: [0, 8.6, 18.16, 51.6, 100], dz1: 37.48 - 36.4468, dz2: 14.48 - 13.0868 },
-    a: { cv: 40, x: [0, 14, 24, 43, 100], y: [0, 5.2, 10.95, 31.75, 100], dz1: 38.08 - 36.4468, dz2: 0.28 + 0.9632 }
+    p: { cv: 25, x: [0, 20, 32, 57, 100], y: [0, 8.6, 18.16, 51.6, 100], w0: 45.147, z: 16.82 - 16.05, l1: 0.067, z2: 0, l2: 14.48 - 14.12 },
+    a: { cv: 40, x: [0, 14, 24, 43, 100], y: [0, 5.2, 10.95, 31.75, 100], w0: 45.147, z: 16.82 - 9.9, l1: 0, z2: 0, l2: 0.28 - 0.07 }
   },
   H5: {
-    p: { cv: 50, x: [0, 46, 75, 80, 100], y: [0, 37.2, 76.4, 81.8, 100], dz1: 12.62 - 13.0868, dz2: 7.62 - 5.0498 },
-    a: { cv: 69.27, x: [0, 24, 41, 65, 100], y: [0, 6.76, 14.87, 45.47, 100], dz1: 14.72 - 13.0868, dz2: 0.72 + 0.9632 }
+    p: { cv: 50, x: [0, 46, 75, 80, 100], y: [0, 37.2, 76.4, 81.8, 100], w0: 69.347, z: 16.845 - 27.85, l1: 0.511, z2: 35.6 - 27.85, l2: 7.62 - 6.083 - 0.698 },
+    a: { cv: 69.27, x: [0, 24, 41, 65, 100], y: [0, 6.76, 14.87, 45.47, 100], w0: 69.347, z: 16.845 - 9.948, l1: 0, z2: 0, l2: 0.72 - 0.07 }
   }
 };
-/* drain t/h through valve V at opening x % from the shell at P1 to P2 (kg/cm2 g, before the dz of the sheet), drain T C */
-function anHdW(V, x, P1, P2, T) {
+/* the valve alone: t/h through valve V at opening x % between p1 and p2 bar a at the valve, drain T C (IEC 60534 liquid, choked) */
+function anHdV(V, x, p1, p2, T) {
   const Cv = (V.cv * swInterp(V.x, V.y, Math.max(0, Math.min(100, +x || 0)))) / 100,
-    b = P => (P + 1.0332) * 0.980665,
-    p1 = b(P1 + V.dz1),
-    p2 = b(P2 + V.dz2),
-    pv = b(steamPsat(T)),
+    pv = (steamPsat(T) + 1.0332) * 0.980665,
     FF = 0.96 - 0.28 * Math.sqrt(Math.max(0, pv) / 220.64),
     dP = Math.max(0, Math.min(p1 - p2, AN_HDV.FL * AN_HDV.FL * (p1 - FF * pv))),
     rho = anWaterRho(T);
   return Cv > 0 && isFinite(dP) ? 0.0273 * Cv * Math.sqrt(dP * rho) : 0;
+}
+/* drain t/h from the shell at P1 to the place at P2 (kg/cm2 g), drain T C: the valve with the static head and the line losses of
+   AN_HDV (loss = l (W / w0)^2). W = a sqrt(dP) with dP = dP0 - k W^2 solves to W = a sqrt(dP0 / (1 + a^2 k)), for the liquid
+   (p1 - p2) and for the choked limit FL^2 (p1 - FF pv) alike: no iteration */
+function anHdW(V, x, P1, P2, T) {
+  const Cv = (V.cv * swInterp(V.x, V.y, Math.max(0, Math.min(100, +x || 0)))) / 100,
+    rho = anWaterRho(T),
+    a = 0.0273 * Cv * Math.sqrt(rho),
+    b = 0.980665 /* kg/cm2 -> bar */,
+    p1 = (P1 + 1.0332 + (rho * V.z) / 10000) * b /* bar a at the valve before the inlet loss */,
+    p2 = (P2 + 1.0332 + (rho * V.z2) / 10000) * b /* bar a at the valve outlet before the outlet loss */,
+    k1 = (V.l1 * b) / (V.w0 * V.w0),
+    k2 = (V.l2 * b) / (V.w0 * V.w0),
+    pv = (steamPsat(T) + 1.0332) * b,
+    FF = 0.96 - 0.28 * Math.sqrt(Math.max(0, pv) / 220.64),
+    F2 = AN_HDV.FL * AN_HDV.FL,
+    wl = p1 > p2 ? a * Math.sqrt((p1 - p2) / (1 + a * a * (k1 + k2))) : 0,
+    wc = p1 > FF * pv ? a * Math.sqrt((F2 * (p1 - FF * pv)) / (1 + a * a * F2 * k1)) : 0;
+  return Cv > 0 && isFinite(wl) && isFinite(wc) ? Math.min(wl, wc) : 0;
 }
 /* 3.2.4 (JENNIE, priority list: HP heater tube leak): trainer faults 'hl.1' / 'hl.2' (world.js), a tube of the No.1 / No.2 HP heater
    leaks feedwater into the shell. Physics: the feedwater (BFWP discharge U.fwPd, PT-FW1011) is far below its saturation at the shell
@@ -707,7 +780,9 @@ function anHdStep(U, dt) {
     }
     /* 3.2.1 the drain valves have an airlock (AN_AV): below 3.5 kg/cm2 of instrument air they stay where they are */
     let [w1, w2] = wv(anAv(h.c1, h.fx && h.fx.p ? fxv(h.fx.p, mv(h.v1)) : mv(h.v1)), anAv(h.c2, mv(h.v2)));
-    const M = (rho * D * Ls * K.fA) / 1000; /* kg per mm */
+    const yc = K.wl[k] != null ? h.y / 1000 - K.wl[k] : null /* m from the shell CL */,
+      wS = yc != null ? 2 * Math.sqrt(Math.max(0.0001, (D / 2) * (D / 2) - yc * yc)) : D * K.fA /* surface width m */,
+      M = (rho * wS * Ls) / 1000; /* kg per mm */
     if (h.y <= -300 && w1 + w2 > win) {
       const f = w1 + w2 > 0 ? win / (w1 + w2) : 0;
       w1 *= f;
@@ -734,12 +809,7 @@ function anHdStep(U, dt) {
   U.hdHH = Object.fromEntries(U.hd.map(h => [h.k, h.hh ? 1 : 0]));
 }
 const AN_FWT = {
-  ms0: 472.7,
-  ts13: 14.07,
-  ts17: 5.3,
-  ts26: 0.25 /* PT-TS1026 No.5 extraction, 4.PNG */,
-  ext: { "TT-TS1014": 426, "TT-TS1018": 314, "TT-TS1023": 188, "TT-TS1027": 91 } /* 4.PNG at 148.8 MW, C */,
-  hr0: 540 /* TIHR1004 hot reheat of the same snapshots (OPERATING_POINTS.md), the anchor of the extraction temperatures */,
+  ms0: 472.7 /* SNAPSHOT-TO-REPLACE (audit-NANA): main steam scale still read by unit.js anUnitTagStep; no feedwater use left */,
   crP: 36.6 / 35.1 /* HP exhaust PICR1901x over the hot reheat pressure, as Pcr of the bypass model */,
   K: 35000 / (9.49 * Math.sqrt(165.3 - 142.2)) / 1000,
   cv: {
@@ -776,7 +846,17 @@ function anFwTagStep(U) {
     r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
     r2 = x => (isFinite(x) ? Math.round(100 * x) / 100 : null),
     ms = Math.max(0, +U.ms || 0),
-    stage = P => (P + 1.0332) * (ms / K.ms0) - 1.0332,
+    /* the extraction transmitters read the turbine stage the turbine model computes (RIN anTbPorts, ports ext.*, P kg/cm2 a, T C):
+       PT/TT-TS1013 / 1014 extraction II, PT/TT-TS1017 / 1018 extraction III, TT-TS1023 extraction IV, PT/TT-TS1026 / 1027 extraction V.
+       A port not written yet gives no value (no stand-in). Was: snapshot pressures x main steam / 472.7 and snapshot temperatures */
+    xP = id => {
+      const p = anPortGet(U, id);
+      return p && isFinite(p.P) && p.P !== null ? r2(Math.max(-1, p.P - 1.0332)) : null;
+    },
+    xT = id => {
+      const p = anPortGet(U, id);
+      return p && isFinite(p.T) && p.T !== null ? r1(p.T) : null;
+    },
     C = U.fwC || (U.fwC = {}),
     sh = n => AN.sheets.find(y => y.name === n),
     ctl = (n, t) => {
@@ -853,14 +933,6 @@ function anFwTagStep(U) {
     wrh = anSprW(cvOf(AN_BYS.rh, held('TICHR1002', mvOf('ABC-019', 'TICHR1002'))), Pis, Prh, rSp) * pos('DITL-35') /* TCV-FW1150, XV-FW1151 */,
     whp = anSprW(cvOf(AN_BYS.hp, held('TICMS1022', mvOf('ABC-051', 'TICMS1022'))), Pis, Prh * K.crP, rSp) * pos('DITL-79') /* TCV-FW1060, XV-FW1061 */,
     cr = U.xt && U.xt.T ? U.xt.T.cr : NaN,
-    Xt = U.xt || {},
-    thr = Xt.hr ? anUnitVal(Xt.hr) : NaN,
-    Ta = isFinite(U.Tamb) ? U.Tamb : 30,
-    fx5 = Math.max(0, Math.min(1, ms / (0.05 * K.ms0))),
-    extT = T0 =>
-      isFinite(thr)
-        ? Ta + ((thr + 273.15) * ((T0 + 273.15) / (K.hr0 + 273.15)) - 273.15 - Ta) * fx5
-        : NaN,
     pcr = Prh * K.crP;
   /* beta.258: the spray water, the feedwater and the flue gas biasing dampers (ABC-020 HICHR1002A RH / HICHR1002B SH) for the heat
      transfer chain (hx.js); numbers only on U */
@@ -879,14 +951,14 @@ function anFwTagStep(U) {
   U.dmpR = isFinite(dA) ? dA / 100 : NaN;
   U.dmpS = isFinite(dB) ? dB / 100 : NaN;
   Object.assign(U.tt || (U.tt = {}), {
-    'PT-TS1013': ms > 0 ? r2(Math.max(-1, stage(K.ts13))) : r2(0),
-    'PT-TS1017': ms > 0 ? r2(Math.max(-1, stage(K.ts17))) : r2(0),
+    'PT-TS1013': xP('ext.hp1'),
+    'PT-TS1017': xP('ext.da'),
     'TT-TS1011': r1(cr),
-    'PT-TS1026': ms > 0 ? r2(Math.max(-1, stage(K.ts26))) : r2(0),
-    'TT-TS1014': r1(extT(K.ext['TT-TS1014'])),
-    'TT-TS1018': r1(extT(K.ext['TT-TS1018'])),
-    'TT-TS1023': r1(extT(K.ext['TT-TS1023'])),
-    'TT-TS1027': r1(extT(K.ext['TT-TS1027'])),
+    'PT-TS1026': xP('ext.lp2'),
+    'TT-TS1014': xT('ext.hp1'),
+    'TT-TS1018': xT('ext.da'),
+    'TT-TS1023': xT('ext.lp3'),
+    'TT-TS1027': xT('ext.lp2'),
     PICR19011: r2(pcr),
     PICR19012: r2(pcr),
     PICR19013: r2(pcr),
@@ -958,7 +1030,7 @@ function anSuFw(x, pd, p1) {
    BFWP discharge (U.fwPd, PT-FW1011) less the drum (U.Pd) less the line on each side, both with the square of the flow: pump to valve
    1.5 kg/cm2 at 480 T/H (KSB data sheet discharge 165.1 at 491 T/H against the valve P1 163.6, COND 1), valve to drum 2.2 kg/cm2 at
    480 T/H (P2 147.2 against the drum at MCR 145.0 = SH outlet 129 + SH pressure drop 16, FHI P2S7 design data). Check at 150 MW
-   (Start at 150 MW: drum 133.3, BFWP 165.6): 475 T/H at about 64 % travel; HMI snapshot 03.png 499 T/H at 56 % (check only) */
+   (Start at 150 MW: drum 133.3, BFWP 165.6): 475 T/H at about 64 % travel */
 const AN_MFW = {
   pts: [
     [6, 4.49],
