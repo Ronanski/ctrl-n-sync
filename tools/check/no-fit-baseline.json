@@ -35,7 +35,6 @@
   "and the 60 s averages of the plant trends), Pe = the house load (elec.js). On the grid (52L1 closed) the grid holds 3600 rpm (the"
  ],
  "src/analog/engine/unit.js": [
-  "tauMW: 10 /* s, steam flow -> MW (reheater, NO-SOURCE: the plant trends are 60 s averages, too slow to fit it) */,",
   "/* F11 (user 2026-11-13: the ratio of beta.206 / 207 was a curve fit, not a model). Superheater and reheater tube metal, heated by the flue",
   "/* 3.2.3-beta.265: the plant trend ~1465 (AN_BI), the two transmitters 6 mmH2O apart as on the snapshot (1426 / 1432) */",
   "Design beside it (Audit 3 ranking 5, user Q4 \"close to the DCS 150 MW data, tuned from design, small tolerance\"):",
