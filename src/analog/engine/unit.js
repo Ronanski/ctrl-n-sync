@@ -2105,7 +2105,7 @@ function anLubeCoolStep(U, dt) {
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
     flow = (+U.loBrg || 0) > 1.05,
     mv = U.loMv ? Math.max(0, Math.min(100, anAv('TICLO1002', +U.loMv.S.rt.v[U.loMv.n] || 0))) : 53.1,
-    acw = Math.max(0, Math.min(1, (+U.acQ || 0) / 1500)),
+    acw = Math.max(0, Math.min(1, (+U.acQ || 0) / AN_ACW_MB.Q)) /* MB-021 design flow */,
     W = (K.Wmax * mv * acw) / 100 /* T/H */,
     Cw = (W * 1000 * 4.18) / 3600,
     Tw = isFinite(U.acT2) ? U.acT2 : K.Tamb,

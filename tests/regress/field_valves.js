@@ -85,7 +85,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   });
   console.log(JSON.stringify(r));
   const b = r.base;
-  ck(b.cw.n === 2 && Math.abs(b.cw.Q - 1500) < 30 && Math.abs(b.cw.P1 - 6.4) < 0.1, `150 MW normal line-up: 2 CCWHE in service, ACW flow ${b.cw.Q} m3/h, PT-CW1152 ${b.cw.P1} (27.PNG 6.4)`);
+  ck(b.cw.n === 2 && Math.abs(b.cw.Q - 1500) < 30 && Math.abs(b.cw.P1 - 7.8) < 0.1, `150 MW normal line-up: 2 CCWHE in service, ACW flow ${b.cw.Q} m3/h, PT-CW1152 ${b.cw.P1} (Phase 11: MB-021 item 7 7.8; 27.PNG 6.4)`);
   ck(r.hx1.n === 1 && r.hx1.Q < b.cw.Q && r.hx1.P1 > b.cw.P1, `CCWHE A outlet V-CW1013 closed: 1 CCWHE, flow ${r.hx1.Q}, PT-CW1152 ${r.hx1.P1}`);
   ck(r.hx0.n === 0 && r.hx0.Q === 0 && r.hx0.P1 > r.hx1.P1, `CCWHE A and B outlets closed: no flow (${r.hx0.Q}), PT-CW1152 ${r.hx0.P1} (shut-off)`);
   ck(Math.abs(r.hxBack.Q - b.cw.Q) < 30, `outlets opened again: flow ${r.hxBack.Q}`);

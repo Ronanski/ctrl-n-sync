@@ -47,7 +47,8 @@ const OWN = {
   'engine/cfb.js': 'AOI',
   'engine/fw.js': 'NANA',
   'engine/turbine.js': 'RIN',
-  'engine/model/drum-sh.js': 'KANA'
+  'engine/model/drum-sh.js': 'KANA',
+  'engine/model/cooling.js': 'SUZU'
 };
 const eng = path.join(root, 'src/analog/engine');
 const walk = d =>

@@ -519,11 +519,13 @@ function anMakeupStep(U, dt) {
                   377.44 mm curve (shut-off 67.8 m), shaft power curve (250 kW rated), MCSF 932.4 m3/h, water 991 kg/m3;
      motor        TECO AFJH-WR 300 kW 4P 6600 V (p10): FLC 32.1 A, eff 95.0 %, PF 86.0 %, soft start, LRC <= 240 A; current =
                   shaft power / (1.732 x 6.6 kV x eff x PF);
-     line         ONE design point = HMI snapshot 27.PNG (148 MW, ACWP-A): PICW1152 6.4, PICW1153 5.2 kg/cm2, expansion tank 0.80 m, at
-                  the rated 1500 m3/h (= 2 CCWHE x 750 m3/h of D1-0-041; the ACWP current there, 26.8 A, is the snapshot's 28.2 A
-                  within 5 %): suction static = 6.4 - 4.955 = 1.445 kg/cm2 (tank level + its height, CALIBRATED: the height is not in
-                  the repository), CCWHE + its piping 1.2 kg/cm2 at 1500 m3/h (of it the CCWHE 0.571 = 0.056 MPa of D1-0-041), the
-                  users 3.755 kg/cm2 at 1500 m3/h; both as loss = k Q^2; two pumps in parallel share the flow;
+     line         Phase 11 (SUZU 2026-11-27, was ONE design point on the HMI snapshot 27.PNG, NO-FIT-OK: history): the design point of
+                  mass balance K1AU3-MB-021 rev 0 (A2-0-001 RA p 13, YUA PC read suzu-pc-answers-2026-11-27.md 1a), AN_ACW_MB below:
+                  1500 T/H (item 5), suction 3.0 kg/cm2 G (item 5), header to the CCWHE 7.8 (item 7 = PT-CW1152), CCWHE out 7.2
+                  (item 8 = PT-CW1153), bottom ash conveyor header 6.5 (item 30 = PT-CW1156); the CCWHE part 0.6 kg/cm2 (of it the
+                  CCWHE 0.571 = 0.056 MPa of D1-0-041), the users and the return 4.2 kg/cm2; each a loss = k Q^2; two pumps in parallel
+                  share the flow. Check: the pump curve gives 3.0 + 4.955 (50 m at 1500) = 7.96, the sheet prints 8.0 (item 6). The
+                  plant snapshot 27.PNG reads 6.4 / 5.2 at 148 MW (a plant point, below the design sheet: logged, the sheet is used);
      strainer DP  0.27 kg/cm2 at 1500 m3/h (27.PNG), x (Q / 1500)^2;
      CCWHE        Hisaka (D1-0-041) per unit: ACW 750 m3/h 50 -> 34 C, seawater 1000 m3/h 30 -> 42.12 C, 13,830 kW, counter flow,
                   357.5 m2: clean UA = 13830 / LMTD 5.72 = 2418 kW/K. 2 of the 3 in service (DERIVED: MB-021 header 7 1500 = 2 x 750, MB-020 header 9 2000 = 2 x 1000; the standby is not printed;
@@ -544,6 +546,10 @@ function anMakeupStep(U, dt) {
    LMTD (7.88 - 4.00) / ln(7.88 / 4.00) = 5.72 K -> 2,418 kW/K (U 6,760 W/m2K on 357.5 m2); no fouling factor printed. Kept outside AN_ACW:
    a save carries AN_ACW (state.js AN_STATE_OBJ), so the 150 MW start state would bring back the old fitted 174.8 */
 const AN_ACW_UA = 13830 / ((50 - 42.12 - (34 - 30)) / Math.log((50 - 42.12) / (34 - 30)));
+/* DESIGN-SRC: MB-021 rev 0 (see the head): the design point of the line, kg/cm2 G and T/H. Kept outside AN_ACW: a save carries AN_ACW
+   (state.js AN_STATE_OBJ), so a start state would bring back the old 27.PNG numbers. Lv: the expansion tank normal level NL 1.7 m (SOP 7; INFERRED: the
+   sheet does not print the tank level its suction pressure goes with) */
+const AN_ACW_MB = { Q: 1500, Ps: 3.0, P1: 7.8, P2: 7.2, P6: 6.5, Lv: 1.7 };
 const AN_ACW = {
   acwp: ['DITL-76', 'DITL-77'],
   cQ: [0, 300, 600, 900, 1200, 1500, 1800, 2100, 2400],
@@ -556,10 +562,6 @@ const AN_ACW = {
   Ist: 240,
   ramp: 10 /* s, soft starter: the ACWP starter is a Solcon HRVS-DN 140 A 6.6 kV (E1-0-131 p4, S-1A2 "M-1108A Aux. CW PUMP A 300KW"),
      the same type as the SWP: ACC. TIME 10 s, the vendor set value (O&M L23-3 manual 7.8; the plant setting sheet is not in the docs) */,
-  dQ: 1500,
-  dP1: 6.4,
-  dP2: 5.2,
-  dLv: 0.8,
   dp: 0.27,
   hxN: 2,
   /* beta.316 (JENNIE, Audit #5, was NO-SOURCE): the open ACWP discharge valve V-CW1007 / 1009 at 1500 m3/h, the Crane TP-410 method
@@ -579,8 +581,9 @@ const acwCal = (() => {
   return () => {
     if (c) return c;
     const K = AN_ACW,
-      Ps = K.dP1 - K.rho * swInterp(K.cQ, K.cH, K.dQ);
-    c = { z: Ps - K.rho * K.dLv, kA: (K.dP1 - K.dP2) / (K.dQ * K.dQ), kU: (K.dP2 - Ps) / (K.dQ * K.dQ) };
+      D = AN_ACW_MB,
+      Q2 = D.Q * D.Q;
+    c = { z: D.Ps - K.rho * D.Lv, kA: (D.P1 - D.P2) / Q2, kU: (D.P2 - D.Ps) / Q2, k6: (D.P2 - D.P6) / Q2 };
     return c;
   };
 })();
@@ -622,8 +625,8 @@ function acwSolve(s, kv, kA) {
      sampling rack: fixed sample flows (items 24 / 25, 30.5 T/H 34 -> 43 = 319 kW at the design drum, FHI P2S7 design data SH outlet
        129 + SH drop 16 = 145 kg/cm2 G) x (sample saturation - supply) / (Tsat(145) - 34): the heat goes with the sample temperature;
      turbine lube oil cooler: what anLubeCoolStep removes (U.loQ); bottom ash screw coolers: what anBacStep removes (U.bacQ);
-     generator air coolers (items 14 ~ 21, 3,041 kW design): the generator losses of the generator part (YUI, PR 665: U.genQ, the sum of
-       stator 3 I^2 Ra + field I^2 Rf + the rest at speed, 3,041 kW at the rating; it becomes the port q.ccw.YUI with ports.js).
+     generator air coolers (items 14 ~ 21, 3,041 kW design) and any other part's cooler: the port q.ccw.<part> that part writes
+       (YUI: the generator losses, stator 3 I^2 Ra + field I^2 Rf + the rest at speed, 3,041 kW at the rating).
    The values of the step before (the users step after the loop), a one-scan lag. */
 const AN_CCWQ = { bfp: 414, idf: 617, gah: 3, saf: 21, paf: 7, iaD: 42, paD: 126, smp: 319, Pd: 145, Td: 34 };
 function acwLoad(U) {
@@ -637,8 +640,10 @@ function acwLoad(U) {
     },
     Tsat = isFinite(U.Pd) && typeof steamTsat === 'function' ? steamTsat(Math.max(0, U.Pd)) : 0,
     Tw = isFinite(U.acT2) ? U.acT2 : K.Td,
-    smp = (K.smp * Math.max(0, Tsat - Tw)) / (steamTsat(K.Pd) - K.Td),
-    gen = Math.max(0, +U.genQ || 0);
+    smp = (K.smp * Math.max(0, Tsat - Tw)) / (steamTsat(K.Pd) - K.Td);
+  /* the coolers of the other parts: each writes its own duty as the port q.ccw.<part> (ports.js ccw.q); a port not written adds nothing */
+  let ports = 0;
+  for (const id in U.pt || {}) if (/^q\.ccw\./.test(id)) ports += Math.max(0, +U.pt[id].Q || 0);
   const q = {
     bfp: K.bfp * (U.fwRun || []).reduce((a, r) => a + (r ? 1 : 0), 0),
     fans: (K.idf + K.gah) * idf + K.saf * bit('M.3303') + K.paf * bit('M.3302'),
@@ -646,10 +651,12 @@ function acwLoad(U) {
     smp,
     lo: Math.max(0, +U.loQ || 0),
     bac: Math.max(0, +U.bacQ || 0),
-    gen
+    ports
   };
   U.acLoad = q;
-  return q.bfp + q.fans + q.air + q.smp + q.lo + q.bac + q.gen;
+  const Q = q.bfp + q.fans + q.air + q.smp + q.lo + q.bac + q.ports;
+  if (typeof anPortSet === 'function') anPortSet(U, 'ccw.q', { Q });
+  return Q;
 }
 function anAcwStep(U, dt) {
   const K = AN_ACW,
@@ -657,7 +664,7 @@ function anAcwStep(U, dt) {
     lag = (k, x, tau) => (U[k] = isFinite(U[k]) ? U[k] + ((x - U[k]) * Math.min(dt, tau)) / tau : x),
     run = K.acwp.map(a => anDitlRun(a) || 0),
     n = run.reduce((a, b) => a + b, 0),
-    lv = isFinite(U.etLvl) ? U.etLvl : K.dLv,
+    lv = isFinite(U.etLvl) ? U.etLvl : AN_ACW_MB.Lv,
     stat = c.z + K.rho * lv;
   const first = !U.acSpd;
   U.acSpd = U.acSpd || [0, 0];
@@ -675,8 +682,8 @@ function anAcwStep(U, dt) {
     sc = hxo.reduce((a, o) => a + o * o, 0) /* parallel paths: flow area ~ opening^2 */,
     kA = nHx ? c.kA * (1 - fx + fx * Math.pow(K.hxN / sc, 2)) : Infinity,
     kv = dis.map(o =>
-      o > 0 ? (K.kd100 / (K.dQ * K.dQ)) * (1 / Math.pow(o, 4) - 1) : Infinity
-    ) /* 100 % = the calibration (27.PNG) */,
+      o > 0 ? (K.kd100 / (AN_ACW_MB.Q * AN_ACW_MB.Q)) * (1 / Math.pow(o, 4) - 1) : Infinity
+    ) /* 100 % = the open valve (kd100) */,
     sp = U.acSpd.map((x, i) => (suc[i] > 0 ? x : 0));
   U.acHxN = nHx;
   const key = sp.map(x => x.toFixed(3)).join(',') + '|' + dis.join(',') + '|' + hxo.join(',');
@@ -691,12 +698,12 @@ function anAcwStep(U, dt) {
   const shut = Math.max(0, ...sp.map((x, i) => (x > 0 && dis[i] > 0 ? K.rho * x * x * K.cH[0] : 0)));
   lag('acP1', nHx ? stat + (kA + c.kU) * Q * Q : stat + shut, K.tauP);
   lag('acP2', stat + c.kU * Q * Q, K.tauP);
-  U.acP6 = U.acP2;
+  U.acP6 = U.acP2 - c.k6 * Q * Q; /* PT-CW1156, the bottom ash conveyor header (MB-021 item 30) */
   r.q.forEach((q, i) => {
     const s = U.acSpd[i],
       P = s > 0 ? swInterp(K.cQ, K.pP, q / s) * s * s * s : 0;
     U['acKw' + i] = Math.round(P);
-    lag('acDp' + i, s > 0 ? K.dp * Math.pow(q / K.dQ, 2) : 0, K.tauP);
+    lag('acDp' + i, s > 0 ? K.dp * Math.pow(q / AN_ACW_MB.Q, 2) : 0, K.tauP);
     if (s <= 0) U['acI' + i] = 0;
     else lag('acI' + i, s < 1 ? K.Ist : (1000 * P) / (1732.05 * K.kV * K.eff * K.pf), K.tauI);
   });
@@ -722,7 +729,7 @@ function anAcwStep(U, dt) {
     /* the return (pump discharge, TT-CW1152) is the node; the first step after a starting state starts at its steady value */
     if (first || !isFinite(U.acT1))
       U.acT1 =
-        hx > 0 && Q > 0.5 * K.dQ
+        hx > 0 && Q > 0.5 * AN_ACW_MB.Q
           ? Tsw + Qload / hx
           : Math.min(60, K.Tamb + 10); /* 3.2.1: a throttled first step does not start hot */
     U.acT1 += ((Qload - hx * (U.acT1 - Tsw)) * dt) / K.M;
@@ -737,6 +744,8 @@ function anAcwStep(U, dt) {
     U.acHx = 0;
   }
   U.acT6 = U.acT2;
+  /* the closed cooling water supply the users of the other parts read (ports.js ccw): T/H and C */
+  if (typeof anPortSet === 'function') anPortSet(U, 'ccw', { m: (Q * 991) / 1000, T: U.acT2 });
   U.acTb = n ? U.acT2 + 1 : U.acT2;
   anBacStep(U, dt);
 }
@@ -749,7 +758,7 @@ function anAcwStep(U, dt) {
              (860, 217) = 466 K -> UA = 1.34 kW/K per cooler. Check at the normal case (2000 kg/h, 3 kg/s, 33 C): ash out 89 C < 150 OK.
      ash     the flow of the bed drain step (AN_BI.q 0.8 T/H per rpm, the SIC-L1060x speed) while the cooler runs; in = the bed
              temperature, at most the 920 C of the spec; cp 0.84 kJ/kgK (NO-SOURCE, textbook value of ash).
-     water   3 kg/s per cooler (spec normal) while an ACWP gives flow (x acQ / 1500); in = the supply of the loop (TT-CW1156).
+     water   3 kg/s per cooler (spec normal) while an ACWP gives flow (x acQ / the MB-021 design 1500 T/H); in = the supply of the loop (TT-CW1156).
      stopped no ash: no heat; the water outlets go to the supply, the ash thermocouples cool to the water in. tau 120 s running, 1800 s
              stopped (NO-SOURCE: the metal mass is not in the spec). 16.PNG (all four stopped at 150 MW): ash 31 ~ 55 C, water 36 ~ 38 C.
    TT-BH1060-x1 / x2 = ash in / out (DITL-21A rows 11 / 12 INLET / OUTLET ASH TEMP.); TT-CW1060-x1 / x2 = the SHELL SIDE OUTLET /
@@ -759,7 +768,7 @@ const AN_BAC = { UA: 1.34, cpA: 0.84, mw: 3, Tmax: 920, tauR: 120, tauS: 1800, s
 function anBacStep(U, dt) {
   const K = AN_BAC,
     Tw = isFinite(U.acT6) ? U.acT6 : 30,
-    fw = Math.max(0, Math.min(1, (+U.acQ || 0) / 1500)),
+    fw = Math.max(0, Math.min(1, (+U.acQ || 0) / AN_ACW_MB.Q)),
     Tb = isFinite(U.Tb) ? U.Tb : 30;
   U.bhSilo = K.silo;
   let bacQ = 0;
@@ -791,12 +800,15 @@ function anBacStep(U, dt) {
       }
       tau = K.tauR;
     }
+    /* the water side, screw stopped: while the loop gives flow, the water passes through with no heat put in it (3 kg/s through the
+       shell, seconds), so the outlets are the supply; no flow: it stands with the metal (tauS) */
     const f = Math.min(1, dt / tau),
-      L = (k, v) => (U[k] = isFinite(U[k]) ? U[k] + (v - U[k]) * f : v);
-    L('bh' + x + '1', a1);
-    L('bh' + x + '2', a2);
-    L('bw' + x + '1', w2);
-    L('bw' + x + '2', w2);
+      fW = Ch > 0 ? f : fw > 0 ? 1 : f,
+      L = (k, v, g) => (U[k] = isFinite(U[k]) ? U[k] + (v - U[k]) * g : v);
+    L('bh' + x + '1', a1, f);
+    L('bh' + x + '2', a2, f);
+    L('bw' + x + '1', w2, fW);
+    L('bw' + x + '2', w2, fW);
   });
   U.bacQ = bacQ; /* kW to the closed cooling water (acwLoad) */
 }
