@@ -174,7 +174,7 @@ const AN_BB = {
   /* Phase 11 AOI 2026-11-28 (new st150 of PR 705, 60 plant min headless): main and the char store alone (AN_CBED) hold 150 MW
      (Pms 122.1 ~ 122.6); kKL 3.80 alone swings and grows (coal 85 ~ 95 T/H by 55 min); both together trip at about 52 min. So the
      char store is not the missing fast answer and 3.80 stays held (rank 4b, the 45 MW panel heat with it) */
-  /* RULE 0 VIOLATION, fit, contradicts FHI Fig 9 (team decision 2026-11-28 6:00 AM PHT, TEMPORARY placeholder): 9.2 is a fitted value,
+  /* The Rule 0 tag is on the kKL line below (team decision 2026-11-28 6:00 AM PHT, TEMPORARY placeholder): 9.2 is a fitted value,
      not a design value. FHI P2S7 Fig 9 (furnace DP vs load, with Fig 12 / 13 / 8) gives kKL about 1.7 ~ 3 (rms 4 ~ 8 mmH2O; 9.2 gives
      rms 32, 1,427 at 60 % against 1,380) and the FHI 60 % thermal point gives 3.80 (/mnt/project-files/phase11/aoi-kkl-from-fig9-
      2026-11-28.md). It stays only because the design value leaves the 150 MW pressure loop (PIC-COBM as the manual) under-damped:
