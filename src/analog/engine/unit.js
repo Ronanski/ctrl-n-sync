@@ -259,10 +259,6 @@ const AN_UNIT = {
   rhM: 243.1e3 * 0.5 /* kJ/K */,
   shUA: 261 /* kW/K at the anchor air, CALC above */,
   rhUA: 116 /* kW/K at the anchor air, CALC above */,
-  /* reheater outlet pipe at TT-HR1002 (outlet header and hot reheat pipe to the thermowell): 20 t steel x 0.5 kJ/kg K (NO-SOURCE: no
-     pipe weight in the docs), lagging loss 0.02 kW/K (NO-SOURCE, about 6 days to cool) */
-  rhPipeM: 10000 /* kJ/K */,
-  rhPipeUA: 0.02 /* kW/K */,
   ao: 2.55 /* PR-OPE-5002 4.3.x: "Approximately: 2.55 TPH coal = 1 TPH diesel" (2.2.0-beta.15; beta.14 had 2 ASSUMED) */,
   /* 2.2.0-beta.15 (M4 step 2, coal transfer): the coal burns only in a hot bed: burnt share 0 at 350 C, 1 at 600 C; the rest leaves
      unburnt. 3.2.3-beta.91 sources: Tburn1 600 = PR-OPE-5002 continuous feeding above 600 C. Tburn0 is bounded, not given: below 400 C,
@@ -287,7 +283,25 @@ const AN_UNIT = {
 /* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
    whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
    code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
-const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
+/* Hot reheat pipe metal, lumped (TT-HR1002 reads it): the heat it stores and loses.
+   M: steel volume from the BOM K1AU3-MM-102 Rev 3 p2/3 lengths (YUI read 2026-11-28), walls ASME B36.10 (24" Sch 30 / 80 printed on
+   K1AU3-M1-217 Detail D), ring area pi (OD - t) t:
+     24" Sch 30 (t 14.3)  0.02674 m2 x 105.651 m = 2.825 m3
+     24" Sch 80 (t 31.0)  0.05635 m2 x   6.000 m = 0.338 m3
+     18" Sch 30 (t 11.13) 0.01560 m2 x  24.405 m = 0.381 m3
+     18" Sch 80 (t 23.83) 0.03245 m2 x   1.000 m = 0.032 m3
+     16" Sch 30 (t 9.53)  0.01188 m2 x  27.392 m = 0.325 m3   (fittings and 6" / 8" drains left out)
+     total 3.90 m3 x 7770 kg/m3 (ASTM A335 P91, ASME II-D Table PRD) = 30.3 t
+   x cp of 9Cr-1Mo-V at about 500 C = k / (rho alpha) = 26.6 W/m K / (7770 x 5.8e-6 m2/s) = 0.59 kJ/kg K (ASME II-D Table TCD)
+   = 17.9e3 kJ/K (was 10e3 NO-SOURCE "20 t x 0.5").
+   UA: lagging loss 0.02 kW/K, NO-SOURCE: the hot reheat insulation spec (thickness, material) is asked from the PC docs; replace it then. */
+const AN_RHPIPE = {
+  M: (Math.PI * (0.6096 - 0.0143) * 0.0143 * 105.651 + Math.PI * (0.6096 - 0.031) * 0.031 * 6 + Math.PI * (0.4572 - 0.01113) * 0.01113 * 24.405 +
+    Math.PI * (0.4572 - 0.02383) * 0.02383 * 1 + Math.PI * (0.4064 - 0.00953) * 0.00953 * 27.392) * 7770 * 0.59 /* kJ/K */,
+  UA: 0.02 /* kW/K, NO-SOURCE (insulation spec asked) */
+};
+
+const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -3711,11 +3725,11 @@ function anHxRun(U, dt, tsat) {
   U.hxHe = H.hEco;
   U.hxO = H;
   /* TT-HR1002 is on the reheater outlet pipe, outside the gas path (live Cold start 2026-11-14): heated by the steam that flows out of
-     the last reheater bank, losing to the room through its lagging (rhPipeUA). No steam: the pipe cools */
+     the last reheater bank, losing to the room through its lagging (AN_RHPIPE.UA). No steam: the pipe cools */
   const wR = mRh + Math.max(0, U.wrhs || 0);
   if (!isFinite(U.TpR)) U.TpR = H.rh;
   U.TpR +=
-    (((wR / 3.6) * 2.2 * (H.rh - U.TpR) - (U.rhPipeUA || 0.02) * (U.TpR - U.Tamb)) * dt) / (U.rhPipeM || 10000);
+    (((wR / 3.6) * 2.2 * (H.rh - U.TpR) - AN_RHPIPE.UA * (U.TpR - U.Tamb)) * dt) / AN_RHPIPE.M;
   U.TpR = Math.max(U.Tamb, U.TpR);
   U.wR = wR;
   return H;
