@@ -1,4 +1,4 @@
-/* Phase 11 turbine (RIN, 2026-11-27): the steam properties of src/analog/engine/turbine.js against the IAPWS-IF97 verification values
+/* Phase 11 turbine (RIN, 2026-11-27): the steam properties of src/analog/engine/steam.js against the IAPWS-IF97 verification values
    (release tables 5 and 15). Fails when any value is off by more than 1e-6 relative. */
 const fs = require('fs'),
   path = require('path'),
@@ -6,15 +6,15 @@ const fs = require('fs'),
 const root = path.resolve(__dirname, '..', '..', '..');
 const ctx = {};
 vm.createContext(ctx);
-for (const f of ['steam.js', 'turbine.js']) vm.runInContext(fs.readFileSync(path.join(root, 'src/analog/engine', f), 'utf8'), ctx);
+for (const f of ['steam.js']) vm.runInContext(fs.readFileSync(path.join(root, 'src/analog/engine', f), 'utf8'), ctx);
 let bad = 0;
 const ck = (name, v, t) => {
   const ok = Math.abs(v / t - 1) < 1e-6;
   if (!ok) bad++;
   console.log((ok ? 'ok   ' : 'FAIL ') + name + ' ' + v.toFixed(6) + ' (IF97 ' + t + ')');
 };
-const r1 = (p, T) => vm.runInContext(`tbR1(${p},${T})`, ctx),
-  r2 = (p, T) => vm.runInContext(`tbR2(${p},${T})`, ctx);
+const r1 = (p, T) => vm.runInContext(`steamR1(${p},${T})`, ctx),
+  r2 = (p, T) => vm.runInContext(`steamR2(${p},${T})`, ctx);
 /* table 5, region 1 */
 ck('R1 h 3 MPa 300 K', r1(3, 300).h, 115.331273);
 ck('R1 s 3 MPa 300 K', r1(3, 300).s, 0.392294792);
