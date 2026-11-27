@@ -46,19 +46,8 @@ const AN_EL = {
      (P kW, Q kvar, the same numbers as its current): AOI PAF / SAF / IDF / FA blowers (boiler.js anFdEl / anFabEl, TECO curves),
      NANA BFWP A / B (fw.js anFwEl, TECO AEZW-S2), MEI CEP A / B (unit.js anCepI, load schedule point). Before: current x a fixed ETAP
      pf for every motor, which counted the magnetizing current of a part-loaded motor as active power. */
-  parts: ['AOI', 'NANA', 'MEI', 'SUZU'] /* a port not written adds nothing (as q.ccw.<part>) */,
-  /* still current x the ETAP pf (K1AU3-E1-0-307, see above) until SUZU writes q.motor.SUZU: SUZU's PR that writes it deletes these
-     rows in the same commit, so the load is never counted twice */
-  mot: [
-    ['swIa0', 'Seawater pump A', 0.927],
-    ['swIa1', 'Seawater pump B', 0.927],
-    ['swIa2', 'Seawater pump C', 0.927],
-    ['acI0', 'Auxiliary cooling water pump A', 0.919],
-    ['acI1', 'Auxiliary cooling water pump B', 0.919],
-    ['paI0', 'Plant air compressor A', 0.922],
-    ['paI1', 'Plant air compressor B', 0.922],
-    ['paI2', 'Plant air compressor C', 0.922]
-  ]
+  parts: ['AOI', 'NANA', 'MEI', 'SUZU'] /* a port not written adds nothing (as q.ccw.<part>); SUZU (2026-11-28): SWP / ACWP / PA
+     compressors (cooling.js anSuzuMotorPort, TECO motor tables); the last current x ETAP pf rows (AN_EL.mot) deleted with it */
 };
 /* the losses of a transformer at S MVA through it: [MW, Mvar] (AN_EL.tr) */
 function anTrLoss(T, S) {
@@ -83,12 +72,10 @@ function anElec(U) {
     Qm = pm.reduce((a, x) => a + (+x.Q || 0), 0) / 1000,
     Pa =
       Pm +
-      AN_EL.mot.reduce((a, [k, , pf]) => a + (Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000, 0) +
       LV * AN_EL.lv[0] +
       ESP * AN_EL.esp[0],
     Qa =
       Qm +
-      AN_EL.mot.reduce((a, [k, , pf]) => a + ((Math.sqrt(3) * AN_EL.kV * Math.max(0, +U[k] || 0) * pf) / 1000) * Math.tan(Math.acos(pf)), 0) +
       LV * AN_EL.lv[1] +
       ESP * AN_EL.esp[1],
     Pg = g52 && G ? +U.MW || 0 : 0 /* beta.240: negative = reverse power from the grid */,

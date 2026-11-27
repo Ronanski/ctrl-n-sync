@@ -47,7 +47,7 @@ function pkgDo(sh, adr) {
    run 8 h, N02 closes, ball collection 30 min, N01 closes, F01 off after N01 is closed, idle 16 h, then again without watering.
    Ready to start = AUTO mode AND no FAIL AND no normal / emergency backwash AND the start permissive of the DCS (DITL-119 DOP-CTCS100x,
    "any seawater pump running"). REMOTE AUTO: the DCS AUTO START / STOP pulses (DITL-119 MOR / MOS-CTCS100x).
-   The HMI snapshot of the plant at 150 MW shows CTCS-A and B STOP (docs/hmi/OPERATING_POINTS.md): the start state is the initial one.
+   The start state is the initial one (CTCS-A and B STOP).
    The selector stands in REMOTE AUTO (the DCS start / stop pulses of DITL-119 act only in that mode); the instructor can turn it.
    AUTO STOP (CT-CP 5.1 ~ 5.4, per phase) is not in the PC summary: here a stop in watering or run closes in the cycle-end order (N02,
    collection, N01, F01), a stop in idle goes to the initial state: INFERRED from the cycle end, marked so.

@@ -1,6 +1,6 @@
 // 3.2.4-beta.71 (JENNIE): the bottom ash screw coolers L-1060A ~ D of the plant model (unit.js AN_BAC; Rauma E130122B). The one world
 // ON, plant model ON, 150 MW. Checks:
-//  at rest (16.PNG: all four coolers stopped): ash / water temperatures have values (not '-----'), water outlets = the supply
+//  at rest (the start state: all four coolers stopped): ash / water temperatures have values (not '-----'), water outlets = the supply
 //    TT-CW1156; LT-BH1750 15.8 %; the ESP AND ASH page shows them;
 //  MANUAL SEQUENCE MODE (DITL-21C row 16) and START of cooler A (DITL-21A): at its speed: ash out far below ash in, both water outlets (shell x1 / shaft x2, DITL-21A rows 14 / 13) above the supply, inside the spec
 //    (ash out < 150 C at <= 2.5 rpm, water out < 60 C); the stopped ones stay as at rest.
@@ -23,8 +23,8 @@ const html =
     { timeout: 120000 }
   );
   await page.waitForTimeout(2000);
-  /* beta.570 (YUA): the 150 MW start of the app (start screen, 150 MW), not AN.plantLoad150 alone: since beta.260 that is only the line-up
-     of the snapshot, the unit fell to 144 MW in 2 min and tripped before the checks, and the stopped coolers then lag the falling supply */
+  /* beta.570 (YUA): the 150 MW start of the app (start screen, 150 MW), not AN.plantLoad150 alone: since beta.260 that is only a line-up,
+     the unit fell to 144 MW in 2 min and tripped before the checks, and the stopped coolers then lag the falling supply */
   await startAs(page, '150 MW');
   await page.evaluate(() => (AN._startP || Promise.resolve()).then(() => 1));
   const r = await page.evaluate(async () => {
@@ -58,7 +58,7 @@ const html =
       pg = ['err ' + e.message];
     }
     /* the coolers stand in their AUTO SEQUENCE (ditl150.js); at 150 MW the furnace DP stays under the 1500 mmH2O start of DITL-21D. The
-       operator takes the MANUAL SEQUENCE MODE (DITL-21C row 16 M.2121, as 16.PNG shows MANUAL) and starts cooler A (DITL-21A START) */
+       operator takes the MANUAL SEQUENCE MODE (DITL-21C row 16 M.2121, MANUAL in the start state) and starts cooler A (DITL-21A START) */
     const sh = n => S.sheets.find(x => x.name.endsWith(')' + n));
     WORLD.live = true;
     const okM = LS_OP.dpress(sh('DITL-21C').name, 15);
