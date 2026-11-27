@@ -55,6 +55,8 @@ jobs:
         run: node tools/check/one-path.cjs
       - name: Unit constants come from the code on every load (Phase 11 rank 8)
         run: node tools/check/u-const.cjs
+      - name: No plant snapshot / trend / SOP value in the plant model, tests or judges, not even as a check (user 2026-11-28 5:18 AM PHT); count only goes down
+        run: node tools/check/no-snapshot.cjs
       - name: TCS soft logic sheets (straight wires only, keys, sources)
         run: node tools/data/tce_check.mjs
       - name: TCS block meanings from the HIACS macro list, every kind on the sheets known (Audit 3 #4 step 2)
