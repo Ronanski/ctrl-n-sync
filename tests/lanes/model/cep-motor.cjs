@@ -8,7 +8,7 @@ const fs = require('fs'),
   vm = require('vm');
 const src = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'src/analog/engine/unit.js'), 'utf8'),
   k = src.match(/^const AN_CD_M = [^\n]+\n/m),
-  f = src.match(/^function anCepI\(Ps\) \{[\s\S]*?\n\}\n/m);
+  f = src.match(/^function anCepI\(Ps(?:, o)?\) \{[\s\S]*?\n\}\n/m);
 let bad = 0;
 const ck = (ok, w) => {
   console.log((ok ? 'PASS ' : 'FAIL ') + w);
