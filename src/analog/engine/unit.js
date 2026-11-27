@@ -487,6 +487,7 @@ function anUnitStart() {
     Tw: steamTsat(Pd0),
     oilF: 0,
     cbed: 0,
+    cbV: 1 /* the char store law of step 4 (cfb.js AN_CBED) */,
     /* 3.2.0-beta.14: the sources of the loops at the anchor (source.js), before the first step */
     Pms: P0,
     Fc: F0,
@@ -1015,6 +1016,7 @@ function anUnitCold() {
     burn: 0,
     unb: 0,
     cbed: 0,
+    cbV: 1,
     t: 0
   });
   U.o2v = 21;
@@ -1323,7 +1325,9 @@ const AN_CD = {
    At the design point the balance gives 31.56 A exactly; at the KSB duty 252 kW 27.0 A; at shut-off (105 kW) 14.6 A. Snapshot check only
    (28.png CP-A 28.1 A at 150 MW). DESIGN-SRC: K1AU3-E1-0-302 Rev A, induction motor equivalent circuit */
 const AN_CD_M = { V: 6.6, P: 298.4, eff: 0.94, pf: 0.88, i0: 0.3, fix: 0.36 };
-function anCepI(Ps) {
+/* Phase 11 (YUI, MEI OK): o (optional) gets the electrical input of the same fixed point, o.P kW and o.Q kvar (house load, port
+   q.motor.MEI) */
+function anCepI(Ps, o) {
   const M = AN_CD_M,
     r3 = Math.sqrt(3),
     Pin = M.P / M.eff,
@@ -1337,6 +1341,7 @@ function anCepI(Ps) {
       P = Math.max(0, Ps) + M.fix * Pl + (1 - M.fix) * Pl * u,
       Q = Q0 + (Qfl - Q0) * u;
     I = Math.sqrt(P * P + Q * Q) / (r3 * M.V);
+    if (o) (o.P = P), (o.Q = Q);
   }
   return I;
 }
@@ -1471,10 +1476,14 @@ function anCondStep(U, dt) {
   U.cdHw = hw;
   U.cdRun = run;
   U.cdPd = Math.max(0, Math.min(25, anCdPdis(Qt, n, U.cdP, hw)));
+  const el = { P: 0, Q: 0 };
   run.forEach((r, i) => {
-    U['cdI' + i] = r ? Math.round(10 * anCepI(swInterp(K.pQ, K.pP, q))) / 10 : 0;
+    const o = {};
+    U['cdI' + i] = r ? Math.round(10 * anCepI(swInterp(K.pQ, K.pP, q), o)) / 10 : 0;
+    if (r) (el.P += o.P), (el.Q += o.Q);
     U['cdDp' + i] = r ? Math.round(1000 * K.dp0 * (q / K.q0) * (q / K.q0)) / 1000 : 0;
   });
+  if (typeof anPortSet === 'function') anPortSet(U, 'q.motor.MEI', el);
 }
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
 /* Phase 11 (NANA, 2026-11-27): moved to engine/fw.js (feedwater part of the plant model) */
@@ -3713,13 +3722,19 @@ function anUnitStep0(dt) {
     }, 0),
     oil = (U.oilN || []).reduce((a, x) => a + Math.max(0, +x.S.rt.v[x.n] || 0), 0),
     bf = Math.max(0, Math.min(1, (U.Tb - U.Tburn0) / (U.Tburn1 - U.Tburn0))),
-    cb0 = isFinite(U.cbed) && U.cbed > 0 ? U.cbed : 0,
-    cbB = (bf * cb0 * 3600) / AN_CBED.tau /* T/H of the held coal that burns */,
-    Fb = bf * F + cbB /* coal burnt, T/H */;
+    tauC = anCharTau(U.Tb, U.o2v) /* s, cfb.js */,
+    /* Phase 11 AOI step 4: a save of an engine before the char store (no U.cbV) held no char at a hot bed (all fed coal burnt in the
+       scan): its store starts at the steady one of the fed coal, so the load does not lose 61 % of the fire for two minutes */
+    cb0 =
+      (isFinite(U.cbed) && U.cbed > 0 ? U.cbed : 0) +
+      (U.cbV === 1 ? 0 : (bf * F * (1 - AN_CBED.fV) * tauC) / 3600),
+    cbB = (bf * cb0 * 3600) / tauC /* T/H of the char (and held coal) that burns, cfb.js AN_CBED */,
+    Fb = bf * F * AN_CBED.fV + cbB /* coal burnt, T/H: the volatiles at once + the char store */;
   U.oilF = oil;
   U.burn = bf;
   U.cbn = Fb;
-  U.cbed = Math.max(0, cb0 + (((1 - bf) * F - cbB) * dt) / 3600);
+  U.cbed = Math.max(0, cb0 + (((1 - bf * AN_CBED.fV) * F - cbB) * dt) / 3600);
+  U.cbV = 1;
   U.unb = F - Fb; /* fed minus burnt: negative while held coal burns out */
   U.Fc = F; /* 3.2.0-beta.14: coal of the feeders (source.js: SOx) */
   /* beta.261: the steam made (U.Qs) is the bed / wall heat balance below over the boiling heat; the fuel line a x coal (a fitted on the

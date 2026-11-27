@@ -233,12 +233,14 @@ function anFwPdAt(U, w) {
   const q = Math.max(K.qMin, Math.max(0, w) / K.sg / n);
   return Math.max(0, Math.min(250, Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz));
 }
-/* motor current (A) of a BFWP at a shaft power kW (TECO data sheet, see AN_FW) */
-function anFwAmp(kW) {
+/* a BFWP motor at a shaft power kW (TECO data sheet, see AN_FW): current I (A), electrical input P (kW) and Q (kvar) from the same
+   numbers (Phase 11 YUI: P / Q go to the house load, port q.motor.NANA) */
+function anFwEl(kW) {
   const K = AN_FW,
+    V = Math.sqrt(3) * K.mV,
     Ir = K.mA * Math.sqrt(1 - K.mPf * K.mPf),
-    Ia = Math.max(0, kW) / (K.mEff * Math.sqrt(3) * K.mV);
-  return Math.sqrt(Ia * Ia + Ir * Ir);
+    Ia = Math.max(0, kW) / (K.mEff * V);
+  return { I: Math.sqrt(Ia * Ia + Ir * Ir), P: V * Ia, Q: V * Ir };
 }
 function anFwStep(U, dt) {
   const K = AN_FW,
@@ -263,8 +265,10 @@ function anFwStep(U, dt) {
     0,
     Math.min(250, n ? Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz : Ps)
   );
+  const el = run.map(r => (r ? anFwEl(swInterp(K.pQ, K.pP, q)) : null));
+  anPortSet(U, 'q.motor.NANA', { P: el.reduce((a, x) => a + (x ? x.P : 0), 0), Q: el.reduce((a, x) => a + (x ? x.Q : 0), 0) });
   run.forEach((r, i) => {
-    U['fwI' + i] = r ? Math.round(10 * anFwAmp(swInterp(K.pQ, K.pP, q))) / 10 : 0;
+    U['fwI' + i] = r ? Math.round(10 * el[i].I) / 10 : 0;
     U['fwDp' + i] = r ? Math.round(1000 * K.stK * q * q) / 1000 : 0; /* DPT-FW1115-A / B */
   });
   /* 3.2.4-beta.21: PUMP HEAT. All the shaft power goes into the water: dh = P / m (KSB curve Q43446D shaft power pP and head qH at
