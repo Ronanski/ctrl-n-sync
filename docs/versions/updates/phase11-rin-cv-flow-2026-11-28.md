@@ -42,3 +42,21 @@
 - To make 150 MW the pressure at the turbine has to rise toward the HB 126 ata. The DCS pressure set point decides this; it is not adjusted to hit 150 MW.
 - The extra heater draws belong to KANA (CBD), NANA and MEI.
 - U.P0 (the TCS pressure compensation base) still comes from the save point. It is the rated pressure of LME237, which is not yet read from the backup.
+
+## Follow-up: CV effective area from TCE500 FG A011 (2026-11-28)
+- **What was wrong**: the pure curtain area passed too much steam at low lift. HB case 4 (58 % flow) needed only 33 % flow demand (lift A 16 %), while the TCS curves FG 003 / 036 make demand about equal to flow.
+- **The change**: the effective area of the two CVs against the lift sum is now read from the TCS lift-to-flow table TCE500 FG A011. Each point is the area that passes that share of VWO at 126 ata into the HP blading, with the first-stage pressure from tbPath (tbCvTab). The sum of 200 is the seat area.
+- **HB cases now need these flow demands**:
+  - 95.8 % at 97 % flow
+  - 83.9 % at 82 %
+  - 72.5 % at 67.5 %
+  - 66.7 % at 58 %
+  - 61.9 % at 49 %
+  - 51.6 % at 40 %
+  - 99.4 % at VWO
+- **Bug fixed in tbPath**: from a cold start (no last pass) the CRH volume was taken at the condenser pressure. At 87.5 % of VWO that gave 1840 ata and a NaN path. The volume is now taken at no less than the hot reheat pressure.
+- **Tests**:
+  - turbine-hb: 8 cases pass.
+  - u-const / one-path / no-fit pass.
+  - 150 MW 20 min: no trip, 147.8 ~ 150.2 MW (old st150).
+  - House load peak 101.1 %, 52G rejection peak 101.6 %.

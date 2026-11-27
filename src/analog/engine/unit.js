@@ -4027,11 +4027,10 @@ function anUnitStep0(dt) {
   tcsVtStep(U, dt);
   U.kdp = anShKdp(U); /* Phase 11: the SH pressure drop law at the density of this scan (anShKdp) */
   U.kln = anMsKln(U); /* Phase 11: the main steam line drop law at the density of this scan (anMsKln) */
-  /* Phase 11 RIN 2026-11-28: the CV areas from the TCS lift curves (tbCvLift) of each side (tcsVtSide: the valve test), x the share of the
+  /* Phase 11 RIN 2026-11-28: the CV effective area (tbCvAs, TCE500 FG A011) at the TCS lifts (tbCvLift) of each side (tcsVtSide: the valve test), x the share of the
      main steam stop MOV MV-MS1391 / its bypass (U.msG); the flow the CVs and the HP blading pass together (tbMsFlow). Kt (m0 / P0 of the
      save point) is deleted */
-  const Av =
-    (tbCvA(tbCvLift(U, 'A', tcsVtSide(U, 'A'))) + tbCvA(tbCvLift(U, 'B', tcsVtSide(U, 'B')))) * (U.msG == null ? 1 : U.msG);
+  const Av = tbCvAs(tbCvLift(U, 'A', tcsVtSide(U, 'A')), tbCvLift(U, 'B', tcsVtSide(U, 'B'))) * (U.msG == null ? 1 : U.msG);
   U.ms = Math.max(0, tbMsFlow(U, Av, U.hxO && U.hxO.ms));
   /* the other outlets: flow = share x anchor flow x opening x MSP / anchor MSP */
   const P1 = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
