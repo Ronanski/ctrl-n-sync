@@ -7,7 +7,8 @@
      sheet p.2. Both are manufacturer documents and they disagree (logged in docs/versions/updates/phase11-gen-batch2.md). The choice
      between the two is the machine's own sudden short-circuit test, LM-GEE-2014-0822 R0 p27, Td' 0.92 s measured: at the terminals
      Td' = T'do x X'd / Xd with this model's Xd 1.92 / X'd 0.21 gives 0.84 s with 7.69 and 0.94 s with 8.6. A choice of source, not a
-     fitted value. (The on-line lag below adds Xt; that is not the test value.) The open circuit voltage = field flux x speed (the saturation
+     fitted value. (The on-line lag below adds Xt; that is not the test value.) T'qo 1.0 s: the same Hitachi reply, Annex A
+     p1-2 (yui-reads-2.md 2), for the E'd of the round rotor after a 52G opening (below). The open circuit voltage = field flux x speed (the saturation
      curve is not in the docs: NO-SOURCE, linear). Brushless exciter fed by the UNITROL 6080 (GEE-2015-0152 p.7): exciter field no load
      4.5 A / 28 V, ceiling 17.6 A / 109.8 V, so the field forcing ceiling is 17.6 / 4.5 = 3.9 times the no-load field.
      AVR (Phase 11 YUI 2026-11-28): the UNITROL 6000 voltage regulator of ABB 3BHS823069 E62 "Computer Models Excitation System"
@@ -33,6 +34,7 @@
 const TCS_GEN = {
   x3: 3 /* G-1B */,
   to: 300 /* G-1B 5 min */,
+  tqo: 1.0 /* s, T'qo (Hitachi GDR Annex A p1-2) */,
   tdo: 8.6 /* s, Hitachi GDR Annex A p1 item 15a (was 7.69, GAE-2013-0136 R2 p2), header */,
   ceil: 17.6 / 4.5,
   te: 0.4 /* s, NO-SOURCE */,
@@ -91,8 +93,13 @@ function tcsGenPh(eq, P) {
     vr = 1 - K.xt * ii,
     vi = K.xt * ir,
     p = vr * ir + vi * ii,
-    q = vi * ir - vr * ii;
-  return { d, I: Math.hypot(ir, ii), V: Math.hypot(vr, vi), P: p, Q: q };
+    q = vi * ir - vr * ii,
+    /* the transient EMF E' = Vt + j Xd' I, its part on the q axis (the angle d of E): the field flux linkage the rotor carries */
+    epr = vr - K.xdp * ii,
+    epi = vi + K.xdp * ir,
+    eqp = epr * Math.cos(d) + epi * Math.sin(d),
+    edp = epi * Math.cos(d) - epr * Math.sin(d);
+  return { d, I: Math.hypot(ir, ii), V: Math.hypot(vr, vi), P: p, Q: q, eqp, edp };
 }
 /* the flux that holds the terminal voltage v at load P (steady state of the AVR: error 0), by bisection on |Vt| (it rises with eq) */
 function tcsGenEqFor(v, P) {
@@ -191,6 +198,17 @@ function tcsGenStep(U, dt) {
     else g.vr = Math.max(0.9, Math.min(1.1, g.vr + g.oVs * K.vrr * Math.min(dt, g.oV)));
     g.oV = Math.max(0, g.oV - dt);
   }
+  /* Phase 11 (YUI, 2026-11-28): 52G opens with the field on (load rejection, 52G trip): the field flux linkage does not jump (the
+     constant flux linkage of the rotor, Kundur ch. 3 / 5.1), so the open circuit voltage starts at the transient EMF E'q of the last
+     on-line scan, not at the EMF behind Xd (which gave 1.9 pu at 150 MW); then it moves with T'do and the AVR. Before: eq kept the
+     on-line EMF behind Xd. The d-axis part E'd (the rotor body currents of the round rotor) is there too at the opening and dies with
+     T'qo 1.0 s (Hitachi GDR Annex A p1-2, yui-reads-2.md 2): the open circuit voltage = |E'q, E'd| x speed. */
+  if (g.on52 && !g52 && g.f41 && Number.isFinite(g.eqp)) {
+    g.eq = Math.max(0, g.eqp);
+    g.ed = Number.isFinite(g.edp) ? g.edp : 0;
+  }
+  g.ed = g52 || !Number.isFinite(g.ed) ? 0 : g.ed * Math.exp(-dt / K.tqo);
+  g.on52 = g52;
   if (g.f41) {
     const m = Math.max(1, Math.ceil(dt / 0.05)),
       h = dt / m;
@@ -204,7 +222,7 @@ function tcsGenStep(U, dt) {
       g.zl = g.efd / K.kr;
     }
     for (let i = 0; i < m; i++) {
-      const e = g.vr - (g52 ? tcsGenPh(g.eq, P).V : g.eq * n);
+      const e = g.vr - (g52 ? tcsGenPh(g.eq, P).V : Math.hypot(g.eq, g.ed || 0) * n);
       /* the lead-lag KR1 (1 + s TC) / (1 + s TB): VA = KR1 (a e + (1 - a) z), z' = (e - z) / TB, a = TC / TB. A state without z (start,
          save point, MANUAL): z is set so the output is the field it has, so the AVR takes over without a bump */
       const a = K.tc / K.tb,
@@ -232,10 +250,12 @@ function tcsGenStep(U, dt) {
     g.I = ph.I;
     g.Q = ph.Q;
     g.dl = (ph.d * 180) / Math.PI;
+    g.eqp = ph.eqp;
+    g.edp = ph.edp;
     const sm = Math.hypot(ph.P, ph.Q);
     g.pf = sm > 1e-3 ? ph.P / sm : 1;
   } else {
-    g.V = g52 ? 1 : g.eq * n;
+    g.V = g52 ? 1 : Math.hypot(g.eq, g.ed || 0) * n;
     g.I = 0;
     g.Q = 0;
     g.dl = 0;
