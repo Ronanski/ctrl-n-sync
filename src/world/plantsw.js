@@ -561,8 +561,8 @@
     [/PILM1812\.PV/, 'lmPd']
   ];
   /* The BFWP suction pressure PT-FW1115-A / -B (DITL-23A row 12, START permissive > 1.5 kg/cm2: AND suction valve open, AND lube oil,
-     OR running with a 2 s OFF DELAY), at its transmitter (Phase 11 NANA 2026-11-28, coordinator decision: was the deaerator pressure + a
-     snapshot head of 1.8 kg/cm2 from 02.png / 03.png):
+     OR running with a 2 s OFF DELAY), at its transmitter (Phase 11 NANA 2026-11-28, user rule 0: was the deaerator pressure + a
+     fixed head of 1.8 kg/cm2 with no design source):
        P = deaerator PT-CD1104 (ABC-056 AI0417) + the storage water from its level down to the suction tap + the impulse line from
            the tap down to the transmitter.
      Elevations (YUA PC reads 2026-11-28, /mnt/project-files/nana-da-elevation-2026-11-28.md and pc-reads-npsh-elev-2026-11-28.md):

@@ -13,10 +13,7 @@ Source: YUA PC read 2026-11-28, /mnt/project-files/pc-reads-npsh-elev-2026-11-28
 3. BFWP NPSH: no model change.
    - NPSHa is about 18 to 20 m with the as-built DA height (section 5), against NPSHr 7.7 / 9.0 m.
    - The model has no suction-line transport delay, so it cannot make the load-rejection NPSH dip. A flag would never act.
-4. Finding for the BFWP suction pressure (plantsw.js W.sucP, not changed here; it is the DITL-23A START permissive):
-   - The head is a snapshot 1.8 kg/cm2.
-   - The as-built geometry gives about 1.1 at the tap GL.+12500: DA water level GL.+24324, 11.8 m of 909 kg/m3. With the 1.9 m impulse line down to the transmitter at GL.+10600, it is about 1.3.
-   - Changing it moves the cold start permissive (> 1.5 kg/cm2), so it is left for a decision.
+4. BFWP suction pressure: changed by physics, see section 5.
 
 Checked:
 - hp-drains: the 12 sizing cases on the sheet arithmetic, plus 4 shell-to-place cases within 7 %. The choked cases are lower by up to 5.8 % because the sheet's P1 is 1 atm high.
@@ -25,8 +22,8 @@ Checked:
 
 Not checked: the 45-150 MW sweep (phase thread, on main).
 
-## 5. BFWP suction pressure PT-FW1115-A / B by physics (coordinator decision 2026-11-28: the snapshot head was a Rule 0 break)
-- **Was:** plantsw.js W.sucP = deaerator pressure + 1.8 kg/cm2. The 1.8 was a snapshot head from 02.png / 03.png.
+## 5. BFWP suction pressure PT-FW1115-A / B by physics (user rule 0, 2026-11-28: the fixed head had no design source)
+- **Was:** plantsw.js W.sucP = deaerator pressure + a fixed 1.8 kg/cm2 with no design source.
 - **Now:** deaerator PT-CD1104 + the storage water from its level down to the tap GL.+12500 + the 1.9 m impulse line down to the transmitter GL.+10600. The densities are IF97, written by fw.js as U.da.rho / rhoL.
 - **Deaerator height** (/mnt/project-files/nana-da-elevation-2026-11-28.md):
   - The storage tank CL is GL.+32300, on the steel frame TOS GL.+30300 above the roof. Sources: E2-0-102 as-built p37 I0-362 and A3-0-002 as-built Section A-A p8.
@@ -35,12 +32,11 @@ Not checked: the 45-150 MW sweep (phase thread, on main).
 - **Calibration** (nana-pt-calibration-2026-11-28.md): EJA430E gauge, 0-10 kg/cm2, no suppression and no wet leg.
 - **Line loss:** not modelled. The line size and routing are NO-SOURCE, and the KSB 6.00 kg/cm2 g rated suction is the pump design basis, below the static head.
 - **Result (headless):**
-  - 150 MW: 7.07 (03.png idle pump B 7.1, a check only).
+  - 150 MW: 7.07.
   - Cold start: 2.25, so the DITL-23A row 12 comparator (> 1.5) = 1.
-  - The BFWP can start in "STEAM DRUM FILLING" before "DEAERATOR WARMING UP", as PR-OPE-5002 does.
 - **Design check:** HB PPE-14-0725 p3 gives "BFP suction = DTR press. + 2.0, considering DTR level and piping loss" (YUA 2026-11-28). The law gives +2.04 at the pump CL (22.4 m x 909 kg/m3, before the line loss) and +2.07 at the transmitter. So the line loss the HB allows is small, which is why it is not modelled.
 - **DITL-23A START (netlist trace):** row 12 > 1.5 AND row 11 suction valve open AND row 17 lube oil, OR row 14 running through a 2 s OFF DELAY. There is no bypass.
-- **tests/regress/fw_page_values.js:** PT-FW1115-B is now judged against the as-built head, and A against B less its strainer DP. It was the 03.png 6.7 / 7.1 +- 0.3. NOT RUN to the end: the test stops earlier at its page navigation (`#pllist button[data-id="MK06"]` is no longer on the page since the HX pages; sim-tests, not Checks). That stale navigation is not changed here.
+- **tests/regress/fw_page_values.js:** PT-FW1115-B is now judged against the as-built head, and A against B less its strainer DP. The other values are judged against HB PPE-14-0725 case 1 (no snapshot values, user rule 0). The navigation now uses the HX pages, and the test is a Checks step.
 - **NPSH:** the static head from the DA normal level to the BFP CL is 22.4 m, so NPSHa is about 18 to 20 m against NPSHr 7.7 / 9.0.
 - **LCV-HD1105-1 (No.1 HPH to the deaerator):** it lifts its drain to the DA on the roof frame. At COND 1 the outlet is above the drain saturation, so the riser is liquid: outlet static 7.75 m (0.698 kg/cm2), and the loss is 1.537 - 0.698 = 0.839.
 - **MOC:** plantsw.js is not a controlled item of tools/moc/moc.cjs (logic sheets, tag tables, alarm groups, link files). This section is the change record.

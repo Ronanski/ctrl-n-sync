@@ -1,9 +1,11 @@
-// 3.2.1 (IRENE, coordinator 2026-11-04): page 06 FEEDWATER (hmi-mock-fw.js) showed '-----' for the turbine extraction, feedwater and
-// spray transmitters no sheet reads. They now come from the plant model (unit.js anFwTagStep, sources there). At "Start at 150 MW"
-// (one world, plant model ON) the page shows a value for each, near the snapshots (4.PNG PT-TS1013 14.07, PT-TS1017 5.30, TT-TS1011
-// 371; 03.png PT-FW1115-A 6.7, TT-FW1011 162, PT-FW1160 137.7, FT-FW1109 37.5, FT-FW1119 28.2; 5.png FT-FW1149 14.8); the spray valve
-// positions follow the F(X) of their controller (ABC-011 LN47 / LN46). Both BFWP suction valves closed: no spray flow.
-// 2026-11-28 (NANA): read from the HX pages (data-hv), the PT-FW1115 suction judged against the as-built head (plantsw.js W.sucP).
+// The feedwater, extraction and spray transmitters on the HX pages (HX-feedwater, HX-drum-steam, HX-reheat-steam, data-hv) at
+// "Start at 150 MW" with RUN: every box shows a number, and the values are judged against the design only (user rule 0,
+// 2026-11-28: no HMI snapshot, trend or procedure value, not even as a check):
+//   HB PPE-14-0725 case 1 (150 MW): No.2 extraction PT-TS1013 = stage 14.87 ata, No.3 PT-TS1017 = 6.369 ata (+- 1.0 kg/cm2, the
+//   sweep judge band of a pressure), cold reheat TT-TS1011 370.2 C and BFWP outlet TT-FW1011 160.7 C (+- 5 C, the sweep band);
+//   the BFWP suction PT-FW1115 by the as-built head (plantsw.js W.sucP); PT-FW1160 (economizer inlet) has no design value read:
+//   a number only. The spray valves follow the F(X) of their controller (ABC-011 LN47 / LN46); both BFWP suction valves closed:
+//   no spray flow.
 // Usage: node tests/regress/fw_page_values.js [html]
 const fs = require('fs');
 const { open, startAs, pressRun, openHx } = require('./lib.js');
@@ -51,14 +53,14 @@ const html =
   console.log(JSON.stringify(m));
   const near = (k, y, d) => isFinite(m[k]) && Math.abs(m[k] - y) <= d;
   ck(K.every(k => a[k] && !/-----/.test(a[k])), 'HX pages: the 15 values show a number' + (K.some(k => !a[k] || /-----/.test(a[k])) ? ': ' + K.filter(k => !a[k] || /-----/.test(a[k])).join(' ') : ''));
-  ck(near('PT-TS1013', 14.07, 1.5) && near('PT-TS1017', 5.3, 0.8), `main steam ${m.ms} T/H: extraction No.2 ${m['PT-TS1013']}, No.3 ${m['PT-TS1017']} kg/cm2 (4.PNG 14.07 / 5.30 at 472.7 T/H)`);
-  ck(near('TT-TS1011', 371, 25), `cold reheat to No.2 HPH ${m['TT-TS1011']} C (4.PNG 371)`);
-  /* Phase 11 NANA 2026-11-28 (coordinator: Rule 0, was the 03.png 6.7 / 7.1 +- 0.3): the suction at the transmitter by the as-built
+  ck(near('PT-TS1013', 14.87 - 1.0332, 1.0) && near('PT-TS1017', 6.369 - 1.0332, 1.0), `main steam ${m.ms} T/H: extraction No.2 ${m['PT-TS1013']}, No.3 ${m['PT-TS1017']} kg/cm2 (HB case 1: 13.84 / 5.34)`);
+  ck(near('TT-TS1011', 370.2, 5), `cold reheat to No.2 HPH ${m['TT-TS1011']} C (HB case 1: 370.2)`);
+  /* Phase 11 NANA 2026-11-28: the suction at the transmitter by the as-built
      heights (plantsw.js W.sucP): deaerator + the storage water from the normal level GL.+33224 to the tap GL.+12500 + the 1.9 m impulse
      line; the idle pump B reads that, the running pump A that less its strainer DP. The level offset (LT-CD1104, mm) is within 0.02 */
   const sB = m.daP + (m.daRho * (33.224 - 12.5)) / 1e4 + (m.daRhoL * 1.9) / 1e4;
-  ck(near('PT-FW1115-B', sB, 0.05) && m['PT-FW1115-A'] <= m['PT-FW1115-B'] && m['PT-FW1115-B'] - m['PT-FW1115-A'] < 0.5, `BFWP suction A ${m['PT-FW1115-A']} / B ${m['PT-FW1115-B']} kg/cm2 (as-built head ${sB.toFixed(2)}; 03.png 6.7 / 7.1, a check only)`);
-  ck(near('TT-FW1011', 162, 8) && near('PT-FW1160', 137.7, 8), `BFWP discharge ${m['TT-FW1011']} C, economizer inlet ${m['PT-FW1160']} kg/cm2 (03.png 162 / 137.7)`);
+  ck(near('PT-FW1115-B', sB, 0.05) && m['PT-FW1115-A'] <= m['PT-FW1115-B'] && m['PT-FW1115-B'] - m['PT-FW1115-A'] < 0.5, `BFWP suction A ${m['PT-FW1115-A']} / B ${m['PT-FW1115-B']} kg/cm2 (as-built head ${sB.toFixed(2)})`);
+  ck(near('TT-FW1011', 160.7, 5), `BFWP discharge ${m['TT-FW1011']} C (HB case 1: 160.7), economizer inlet ${m['PT-FW1160']} kg/cm2 (no design value read)`);
   ck(m['ZT-FW1110-2'] >= 99 && m['ZT-FW1110-1'] > 0, `No.1 SH spray MV ${m.mv1} %: valves ${m['ZT-FW1110-1']} / ${m['ZT-FW1110-2']} % (LN47 / LN46)`);
   ck(m['FT-FW1109'] > 5 && m['FT-FW1109'] <= 60 && m['FT-FW1119'] >= 0 && m['FT-FW1149'] >= 0 && m['FT-FW1059'] >= 0, `spray flows No.1 ${m['FT-FW1109']}, No.2 ${m['FT-FW1119']}, RH ${m['FT-FW1149']}, HP bypass ${m['FT-FW1059']} T/H`);
   /* both BFWP suction valves closed by hand (V-FW1001 / 1002): no pump head, the sprays have no pressure to flow */
