@@ -445,11 +445,12 @@ function anHphStep(U, dt) {
    How it works (each heater, each step):
      in           its extraction (the HP heaters: AN_HP, with its MOV; the LP heaters: design x main steam / 458.684 x the MOV of DITL-97
                   (MV-TS1004, No.3 LPH) / DITL-98 (MV-TS1005, No.2 LPH)) + the primary drain of the heater before it;
-     out          primary + alternate valve: capacity at 100 % x MV / 100 x sqrt(main steam / 458.684) (the shell pressures and their
-                  differences follow the load); an empty shell (below -300 mm) passes no more than it gets;
+     out          primary + alternate valve: the HP heaters by their valve sheets (AN_HDV, anHdW, Phase 11 NANA 2026-11-27); the LP
+                  heaters (MEI) capacity at 100 % x MV / 100 x sqrt(main steam / 458.684); an empty shell (below -300 mm) passes no
+                  more than it gets;
      level        d(level) / dt = (in - out) / (water density x surface), surface = diameter x length x 0.7 (NO-SOURCE: the tube bundle
                   and the heads take the rest); the water density of the design drain temperature (steam table).
-   NO-SOURCE: the capacity of the HP valves (the design flow at 50 %) and of every alternate valve (= its primary); 0.7. */
+   NO-SOURCE: 0.7. */
 const AN_HD = {
   /* key, ABC sheet, level AIs, primary / alternate controller, design extraction t/h, heater before (cascade), H.H. mm, shell ID m,
      length m, water kg/m3, primary capacity t/h at 100 % (150 MW), extraction MOV (DITL) */
@@ -466,7 +467,7 @@ const AN_HD = {
       1.25,
       9.1385,
       864,
-      45.147 / 0.5,
+      null /* AN_HDV */,
       'DITL-94'
     ],
     [
@@ -481,7 +482,7 @@ const AN_HD = {
       1.156,
       9.595,
       900,
-      91 /* LCV-HD1105 sheet, E2-0-123 */,
+      null /* AN_HDV */,
       'DITL-95'
     ],
     [
@@ -532,9 +533,49 @@ const AN_HD = {
   ],
   F0: 458.684,
   fA: 0.7,
-  /* the alternates from their valve sheets, E2-0-123 (team-files/plant-study/12-assumptions.md); H5 = its primary */
-  alt: { H6: 142, H3: 27.0, H2: 37.5, H1: 57.3 }
+  /* the LP alternates from their valve sheets, E2-0-123 (team-files/plant-study/12-assumptions.md); the HP drains: AN_HDV */
+  alt: { H3: 27.0, H2: 37.5, H1: 57.3 }
 };
+/* Phase 11 NANA (2026-11-27): THE HP HEATER DRAIN VALVES by their valve sheets, in place of a capacity at 100 % x opening x
+   sqrt(main steam / 458.684) (LCV-HD1106 45.147 / 0.5 and its alternate 142 t/h were NO-SOURCE; LCV-HD1105 91 t/h).
+   Source: K1AU3-E2-0-123 R1 (Copes-Vulcan), YUA PC read 2026-11-27, /mnt/project-files/nana-bfp-interstage-2026-11-27.md section 3:
+     valve          to                 Cv      trim            sizing cases (t/h, P1 -> P2 kg/cm2 g, T C, Cv, travel %)
+     LCV-HD1106-1   No.1 HP heater     25      CAV-B9          45.147 37.48 -> 14.48 201.3 12.9 57; 9.482 / 4.5 12.17 -> 4.67 155.3 4.54 32 / 2.15 20
+     LCV-HD1106-2   condenser          40      CAV-B9          45.147 38.08 -> 0.28 201.3 12.7 43; 9.482 / 4.5 12.77 -> 0.17 155.3 4.38 24 / 2.08 14
+     LCV-HD1105-1   deaerator          50      CAV-B9          69.347 12.62 -> 7.62 166.3 38.2 75; 15.144 / 6.9 3.17 -> 2.97 127.7 40.9 80 / 18.6 46
+     LCV-HD1105-2   condenser          69.27   one stage Hush  69.347 14.72 -> 0.72 166.3 31.5 65; 15.144 / 6.9 5.27 -> 0.27 127.7 10.3 41 / 4.68 24
+   Cv against travel: the three printed points of each sheet (Cv / rated) with 0 and 100 % (the curve pages were not tabulated).
+   Flow: IEC 60534 liquid, W kg/h = 27.3 Cv sqrt(dP rho), dP the smaller of P1 - P2 and the choked limit FL^2 (P1 - FF Pv),
+   FF = 0.96 - 0.28 sqrt(Pv / Pc) (Pc 220.64 bar, IEC), Pv the saturation of the drain temperature (steam.js), bar absolute.
+   FL 0.90: the sheets do not print it; their flashing / cavitating cases (all 9 choked cases of the four valves) give FL 0.897 ~
+   0.904 by the same law, and the one liquid case (LCV-HD1105-1 COND 1, 4.90 bar < 0.81 x 6.81) is not choked: one FL closes them all.
+   P1 / P2: the heater shell (U.hpPs) and the place it drains to (No.1 HPH shell U.hpPs, deaerator U.da.P, condenser port 'cd' P)
+   plus the head and line of the sheet: dz = sizing COND 1 P1 / P2 less the design shell / place
+   (No.2 HPH 37.48 ata, No.1 HPH 14.12 ata, K1AU3-D1-0-036; deaerator 6.083 ata, K2MC2F-001; condenser 0.07 ata, HB PPE-14-0725),
+   held at every flow (the heater elevations are NOT IN DOCS: PD-017 / PD-018). Water density: the saturated table (AN_WATER_RHO). */
+const AN_HDV = {
+  FL: 0.9 /* DESIGN-SRC: E2-0-123 R1 HD1105 / HD1106 sizing cases (derived, see above) */,
+  H6: {
+    p: { cv: 25, x: [0, 20, 32, 57, 100], y: [0, 8.6, 18.16, 51.6, 100], dz1: 37.48 - 36.4468, dz2: 14.48 - 13.0868 },
+    a: { cv: 40, x: [0, 14, 24, 43, 100], y: [0, 5.2, 10.95, 31.75, 100], dz1: 38.08 - 36.4468, dz2: 0.28 + 0.9632 }
+  },
+  H5: {
+    p: { cv: 50, x: [0, 46, 75, 80, 100], y: [0, 37.2, 76.4, 81.8, 100], dz1: 12.62 - 13.0868, dz2: 7.62 - 5.0498 },
+    a: { cv: 69.27, x: [0, 24, 41, 65, 100], y: [0, 6.76, 14.87, 45.47, 100], dz1: 14.72 - 13.0868, dz2: 0.72 + 0.9632 }
+  }
+};
+/* drain t/h through valve V at opening x % from the shell at P1 to P2 (kg/cm2 g, before the dz of the sheet), drain T C */
+function anHdW(V, x, P1, P2, T) {
+  const Cv = (V.cv * swInterp(V.x, V.y, Math.max(0, Math.min(100, +x || 0)))) / 100,
+    b = P => (P + 1.0332) * 0.980665,
+    p1 = b(P1 + V.dz1),
+    p2 = b(P2 + V.dz2),
+    pv = b(steamPsat(T)),
+    FF = 0.96 - 0.28 * Math.sqrt(Math.max(0, pv) / 220.64),
+    dP = Math.max(0, Math.min(p1 - p2, AN_HDV.FL * AN_HDV.FL * (p1 - FF * pv))),
+    rho = anWaterRho(T);
+  return Cv > 0 && isFinite(dP) ? 0.0273 * Cv * Math.sqrt(dP * rho) : 0;
+}
 /* 3.2.4 (JENNIE, priority list: HP heater tube leak): trainer faults 'hl.1' / 'hl.2' (world.js), a tube of the No.1 / No.2 HP heater
    leaks feedwater into the shell. Physics: the feedwater (BFWP discharge U.fwPd, PT-FW1011) is far below its saturation at the shell
    pressure (No.2 HPH tube 195.7 ~ 245.4 C, shell 36.48 kg/cm2 A sat 245 C; No.1 HPH tube 160.7 ~ 195.7 C, shell 14.12 sat 196 C, plant-study
@@ -611,6 +652,16 @@ function anHdStep(U, dt) {
     const hl = U.hlW ? (k === 'H5' ? U.hlW[0] : k === 'H6' ? U.hlW[1] : 0) : 0;
     const win = ein + hl + (from && out[from] ? out[from] : 0);
     const c2 = (K.alt[k] != null ? K.alt[k] : cap1) * sq;
+    /* the HP drains by their valve sheets (AN_HDV): shell, the place each valve drains to, the drain temperature */
+    const hv = AN_HDV[k],
+      Pcd = U.pt.cd.P - 1.0332 /* the condenser port of MEI (ata), written every scan */,
+      Psh = hv ? +(U.hpPs || [])[k === 'H6' ? 1 : 0] || 0 : 0,
+      Pto = hv ? (k === 'H6' ? +(U.hpPs || [])[0] || 0 : U.da && isFinite(U.da.P) ? U.da.P : 0) : 0,
+      Tdr = hv ? (k === 'H6' ? U.hpD2 : U.hpD1) : 0,
+      wv = (x1, x2) =>
+        hv
+          ? [anHdW(hv.p, x1, Psh, Pto, Tdr), anHdW(hv.a, x2, Psh, Pcd, Tdr)]
+          : [cap1 * sq * (x1 / 100), c2 * (x2 / 100)];
     /* the split range of the drawing (ABC-035 ~ 039): the primary controller MV goes to the primary valve by an F(X) (LN38 ...) and,
        while the primary is AUTO (M.0236 ... = NOT .MAN), to the alternate station by a second F(X) (LN39 ..., EX-MV); the valve
        opening is that F(X) output (the AO is 100 % minus it: the valve opens on a falling signal) */
@@ -625,7 +676,10 @@ function anHdStep(U, dt) {
     /* "Start at 150 MW": the snapshot has no drain valve opening at full load (02.png is 60 MW), so the primary controller starts at the
        MV whose two valves pass the drain of the load, as the operator found it */
     if (U.hdSeed && sq > 0 && h.v1 && h.fx) {
-      const flow = x => cap1 * sq * (fxv(h.fx.p, x) / 100) + c2 * (h.fx.a ? fxv(h.fx.a, x) / 100 : 0);
+      const flow = x => {
+        const f = wv(fxv(h.fx.p, x), h.fx.a ? fxv(h.fx.a, x) : 0);
+        return f[0] + f[1];
+      };
       let a = 0,
         b = 100;
       for (let i = 0; i < 30; i++) {
@@ -649,8 +703,7 @@ function anHdStep(U, dt) {
       }
     }
     /* 3.2.1 the drain valves have an airlock (AN_AV): below 3.5 kg/cm2 of instrument air they stay where they are */
-    let w1 = cap1 * sq * (anAv(h.c1, h.fx && h.fx.p ? fxv(h.fx.p, mv(h.v1)) : mv(h.v1)) / 100),
-      w2 = c2 * (anAv(h.c2, mv(h.v2)) / 100);
+    let [w1, w2] = wv(anAv(h.c1, h.fx && h.fx.p ? fxv(h.fx.p, mv(h.v1)) : mv(h.v1)), anAv(h.c2, mv(h.v2)));
     const M = (rho * D * Ls * K.fA) / 1000; /* kg per mm */
     if (h.y <= -300 && w1 + w2 > win) {
       const f = w1 + w2 > 0 ? win / (w1 + w2) : 0;
