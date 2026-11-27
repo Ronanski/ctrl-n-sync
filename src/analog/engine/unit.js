@@ -110,7 +110,7 @@ const AN_UNIT = {
      -> 'sync' (3600 rpm, the TCS closes the GCB: I.0931 = 1 / I.0932 = 0, INITIAL LOAD 4.5 MW on the ICV) -> 'load' (LOAD UP
      at rate MW/min = 5 % of 150 MW per minute; the HP control valves open as the flow demand passes the CV opening bias (anTbFlow), ICV -> CV
      TRANSFER COMPLETE I.0418 = 1, "transfer at 20 MW or HP bypass closed"). While the generator is on the grid the MW is the HP
-     steam and the IP / LP steam, each x its enthalpy drop (turbine.js tbPath, Stodola + IF97, Phase 11), less the losses (anTbGen). Before the transfer the IP / LP steam comes from the HP bypass through the
+     steam and the IP / LP steam, each x its enthalpy drop (turbine.js tbPath, Stodola + IF97, Phase 11), less the mechanical loss (AN_TB.mech) and the generator losses (anGenW, YUI). Before the transfer the IP / LP steam comes from the HP bypass through the
      reheater (U.rr integrator of beta.16, with the ICV flow out). DCS CONTROL MODE PERMISSIVE I.0081 (3.2.3-beta.135, TCS soft logic
      TCE 331DM09784 p.127 TCE180, read 2026-11-12 on the PC): the NOT of the reset group of DCS CONTROL MODE = 52G closed, no TURBINE
      TRIP, no FORCED CLOSE (HOUSE LOAD OPERATION), and in IP START the TRANSFER REGION COMPLETE(IP); was MWperm 45 MW (the NORMAL
@@ -570,15 +570,16 @@ function anUnitStart() {
     O20 = o2a.length ? o2a.reduce((a, q) => a + q, 0) / o2a.length : NaN;
   U.afs = 0;
   if (U.taf.length === 3 && isFinite(O20) && O20 > 0 && O20 < 21 && taf0 > 0 && F0 > 0) {
-    U.afs = AN_GAS.afs; /* T/H of air per T/H of coal, stoichiometric, boiler.js */
+    U.afs = AN_FUEL.afs; /* T/H of air per T/H of coal, stoichiometric, CALC from FHI P2S7 Tab 2 (cfb.js AN_FUEL) */
     U.O20 = U.o2v = O20;
     U.taf0 = taf0;
   }
   U.pa = ais('ABC-006', 'AI0166');
   U.bedDp = [
-    /* 3.2.3-beta.265: the plant trend ~1465 (AN_BI), the two transmitters 6 mmH2O apart as on the snapshot (1426 / 1432) */
-    [ais('ABC-006', 'AI0134'), 1462],
-    [ais('ABC-006', 'AI0262'), 1468]
+    /* Phase 11 (AOI): both transmitters read the one overall DP, the design 1630 mmH2O at the design inventory (cfb.js AN_BI t0,
+       DESIGN-SRC: FHI P2S7 Fig 9); the 6 mmH2O split was a snapshot reading */
+    [ais('ABC-006', 'AI0134'), AN_BI.dp0],
+    [ais('ABC-006', 'AI0262'), AN_BI.dp0]
   ];
   U.soxAI = anUnitAIs('1|AI0466'); /* stack SOx, boiler.js anSoxStep */
   U.bedSc = [
@@ -1729,15 +1730,15 @@ function anHxTagStep(U, dt) {
      FT-CD1115     LP bypass spray (Phase 11, MEI): TCV-CD1115 by its valve sheet K1AU3-D1-0-043 R0 p12 (RIN PC read, rin-valve-reads.md):
                    1 in, Cv 25.4, modified equal %: Cv % 7 / 36 / 72 at travel 17 / 54 / 81 %; liquid ISA w = 0.8566 Cv sqrt(dp SG) (T/H,
                    kg/cm2, as plant.js AN_CDH); the travel = ABC-052 TICHR1012 MV through its airlock (AN_AV) x the block valve XV-CD1114
-                   (DITL-66) share; P1 = the CEP discharge U.cdPd (abs; the line to the valve not counted), P2 = the LP bypass outlet U.Plpo
-                   (abs, turbine side), at least the condenser. Check, sheet case 1: 45.3 T/H at 14.6 -> 4.0 kg/cm2 a needs Cv 16.3 = 64 %
+                   (DITL-66) share; P1 = the CEP discharge U.cdPd (abs; the line to the valve not counted), P2 = the LP bypass valve body
+                   outlet U.Pvlo (ata, RIN: max(condenser, 4.0 / 217.1 ata per T/H outlet flow, PCV-HR1010 sheet); the nozzle No. 84 is in the valve). Check, sheet case 1: 45.3 T/H at 14.6 -> 4.0 kg/cm2 a needs Cv 16.3 = 64 %
                    Cv = 76 % travel. Before: travel x 68 T/H (NO-SOURCE). */
 const AN_LPS = { cv: 25.4, tr: [0, 17, 54, 81, 100], pc: [0, 7, 36, 72, 100], sg: 0.9922 /* water at 40 C */ };
 function anLpbSpray(U, tr) {
   const K = AN_LPS,
     cv = (K.cv * swInterp(K.tr, K.pc, Math.max(0, Math.min(100, tr)))) / 100,
     P1 = (+U.cdPd || 0) + 1.0332,
-    P2 = Math.max(+U.cdP || 0, (+U.Plpo || 0) + 1.0332),
+    P2 = isFinite(U.Pvlo) ? U.Pvlo : +U.cdP || 1.0332 /* the LP bypass valve body outlet, ata (RIN, PCV-HR1010 sheet): the spray nozzle is in the valve */,
     w = (+U.cdQt || 0) > 0 && P1 > P2 ? 0.8566 * cv * Math.sqrt((P1 - P2) * K.sg) : 0;
   U.lpbW = w;
   return w;
@@ -1823,12 +1824,8 @@ function anCdTagStep(U, ld) {
      PTST11101 ~ 3 = PT-CD1110 (the model condenser U.cdP); TEST11101 ~ 3 = the LP exhaust hood of the TCS model (tcs.js c.Tx, start-up),
      the condenser saturation without it (Start at 150 MW);
      ZT-AS1020-1 / -2 = the F(X) of the PIC-AS1005 MV (held by the airlock without air, AN_AV);
-     gland header (in service: the TCS gland sealing, or a turbine on load): 0.32 kg/cm2 = 29.PNG; the steam seal feed valve
-     sheet (TG maintenance manual p2500 ~ 2501) gives a set point of about 0.3 kg/cm2 g (CALC), the LOW alarm is 0.10 kg/cm2 (ATS 1.10);
-     out of service 0;
-     NO-SOURCE (no load curve in the docs): from no load (fed from the aux steam header, TT-AS1015 = TT-AS1003) to 150 MW (self-sealing, 29.PNG)
-     linear in the load: TT-AS1015 + 21 C, TEGS1002 + 107 C over TT-AS1015, TEGS1003 = TEGS1002 - 2, PV-GS1034 42.6 %; the temperatures
-     follow with 300 s;
+     gland header PTGS10011 / 2, PV-GS1031 / 1034, TEGS1002 / 1003: the gland header volume and its energy balance in anAuxStep
+     (AN_AS; Phase 11 SUZU 2026-11-27, was a 0.32 kg/cm2 fallback and a load law on 29.PNG), TT-AS1015 the steam before PV-GS1031;
      MV-AS1011 = 40 % while the TCS is in HP TURBINE WARMING (step 0, phase warm), else 0. */
 function anAsTagStep(U, dt) {
   const r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
@@ -1836,8 +1833,6 @@ function anAsTagStep(U, dt) {
     C = U.asC || (U.asC = {}),
     c = U.tc,
     Ta = isFinite(U.Tamb) ? U.Tamb : 30,
-    L = Math.max(0, Math.min(1, (+U.MW || 0) / 150)),
-    gland = isFinite(U.gsP) ? U.gsP >= 0.1 : c ? !!c.gland : (U.tb && U.tb.rpm > 100) || (+U.MW || 0) > 0,
     Ps = isFinite(U.cdP) ? anTsatA(U.cdP) : NaN,
     hood = c && isFinite(c.Tx) ? c.Tx : isFinite(Ps) ? Ps : Ta;
   /* PIC-AS1005 MV -> the two valves (ABC-030 F(X)) */
@@ -1848,7 +1843,6 @@ function anAsTagStep(U, dt) {
     C.n = k ? k.out : null;
     C.f1 = C.S ? C.S.blk.find(b => b.k === 'FX' && b.p && b.p.ln === 'LN17') || null : null;
     C.f2 = C.S ? C.S.blk.find(b => b.k === 'FX' && b.p && b.p.ln === 'LN16') || null : null;
-    C.taux = anUnitAIs('2|AI0642');
   }
   let mv = C.S ? Math.max(0, Math.min(100, +C.S.rt.v[C.n] || 0)) : NaN;
   if (AN_AV.hold.PICAS1005) {
@@ -1859,12 +1853,7 @@ function anAsTagStep(U, dt) {
     mv = H['mv:PICAS1005'];
   }
   const fx = b => (b && isFinite(mv) ? Math.max(0, Math.min(100, anFXs(b.p, mv).y)) : NaN),
-    Taux = anUnitVal(C.taux || []),
-    t15 = gland ? (isFinite(Taux) ? Taux : Ta) + 21 * L : Ta,
-    tgs = gland ? t15 + 107 * L : Ta,
-    lag = (k, x) => (U[k] = !isFinite(U[k]) ? x : dt > 0 ? U[k] + ((x - U[k]) * Math.min(dt, 300)) / 300 : U[k]); /* beta.241: dt 0 (anTagsNow at a load) holds the lag */
-  lag('asT15', t15);
-  lag('asTgs', tgs);
+    Tst = x => (isFinite(x) ? x : Ta) /* TT-AS1015 / TEGS1002: the balances of anAuxStep (AN_AS), the room before its first step */;
   Object.assign(U.tt || (U.tt = {}), {
     PTST11101: r3(U.cdP),
     PTST11102: r3(U.cdP),
@@ -1874,12 +1863,12 @@ function anAsTagStep(U, dt) {
     TEST11103: r1(hood),
     'ZT-AS1020-1': r1(fx(C.f1)),
     'ZT-AS1020-2': r1(fx(C.f2)),
-    'TT-AS1015': r1(U.asT15),
-    PTGS10011: isFinite(U.gsP) ? r3(U.gsP) : gland ? 0.32 : 0,
-    PTGS10012: isFinite(U.gsP) ? r3(U.gsP) : gland ? 0.32 : 0,
-    TEGS1002: r1(U.asTgs),
-    TEGS1003: r1(U.asTgs - 2 * L),
-    'PV-GS1034': isFinite(U.gsV34) ? r1(U.gsV34) : gland ? r1(42.6 * L) : 0,
+    'TT-AS1015': r1(Tst(U.asT15)),
+    PTGS10011: r3(U.gsP) /* the gland header volume of anAuxStep (was a 0.32 fallback of 29.PNG) */,
+    PTGS10012: r3(U.gsP),
+    TEGS1002: r1(Tst(U.asTgs)),
+    TEGS1003: r1(Tst(U.asTgs)),
+    'PV-GS1034': isFinite(U.gsV34) ? r1(U.gsV34) : 0 /* the gland PI of anAuxStep (NO-FIT-OK: history, was a 42.6 % x MW / 150 fallback) */,
     'PV-GS1031': isFinite(U.gsV31) ? r1(U.gsV31) : 0,
     'ZT-AS1011': c && c.cur === 0 && c.ph === 'warm' ? 40 : 0
   });
@@ -1936,7 +1925,20 @@ const AN_AS = {
   gKp: 60 /* % per kg/cm2, NO-SOURCE */,
   gTi: 15 /* s, NO-SOURCE */,
   Kseal: 2170 / Math.sqrt(1.31 * 1.31 - 0.07 * 0.07),
-  Whp0: 2694,
+  /* Phase 11 (SUZU 2026-11-27, Rule 0; was Whp0 2694 = 2243 + 451 FIT on 29.PNG, NO-FIT-OK: history). Hitachi heat balance
+     PPE-14-0725 R1 case 1 (150 MW, 310SD07-485, YUA read suzu-gland-2026-11-27.md 3): the HP packings put 403 kg/h (inlet end, outer,
+     main steam 823.2 kcal/kg) + 1,417 kg/h (exhaust end, outer, cold reheat 751.7 kcal/kg) = 1,820 kg/h into the steam seal regulator
+     (the gland header); the header gives 421 (gland steam condenser) + 372 (main condenser, No.3 PKG) = 793 kg/h to the LP / outer
+     seals and spills 1,027 to the No.1 LP heater (PV-GS1034). So the seal users on load are the LP / outer glands only (kLP from the
+     793 at the HB 0.070 ata and the 0.32 kg/cm2 g header); off load the HP packings take seal steam too: kHP = Kseal - kLP (the feed
+     valve sheet NOR 2,170 kg/h at no load). */
+  Whp0: 1820,
+  hpMs: 403 / 1820 /* share of the leak at the main steam enthalpy, the rest at the cold reheat (HB case 1) */,
+  kLP: 793 / Math.sqrt(1.353 * 1.353 - 0.0714 * 0.0714),
+  /* the warm-up orifice around PV-GS1031 (Hitachi 310PK01-852 R1 as-built, GS-n-022 / 023 1", RO 5 mm, no valve; between MV-GSn030
+     and PV-GS1031 to the header): Cv of a 5 mm sharp-edged orifice, Cd 0.61 (textbook): Q = Cd A sqrt(2 dP / rho), 0.70 gpm at 1 psi
+     of water = Cv 0.70 (DERIVED). MV-GSn030 (TCS TCA650, auto open) is taken open while the gland sealing is in service */
+  cvWu: 0.7,
   Vc: 338,
   cdaLeak: 25.5 / 3600 / 235 /* m2, the orifice that passes 25.5 kg/h into the design vacuum */,
   cdaGl: 0.00072,
@@ -2115,7 +2117,8 @@ function anAuxStep(U, dt) {
       wGf = anStmW(K.cvGf * oF, Pa, Pg, K.Tg),
       Pga = Pg + 1.0332,
       Pc = anCdP(Tc, U.cdAirP),
-      wSeal = Pga > Pc ? K.Kseal * Math.sqrt(Pga * Pga - Pc * Pc) : 0,
+      wSeal = Pga > Pc ? (onLoad ? K.kLP : K.Kseal) * Math.sqrt(Pga * Pga - Pc * Pc) : 0 /* HB case 1: on load the HP packings feed (wHp), not take */,
+      wWu = gsOn ? anStmW(K.cvWu, Pa, Pg, K.Ta) : 0 /* the 5 mm warm-up orifice around PV-GS1031 */,
       Pcra = Pcr + 1.0332,
       wHp =
         onLoad && Pcra > Pga
@@ -2125,8 +2128,8 @@ function anAuxStep(U, dt) {
     /* header pressures: dm = V drho/dP dP (drho/dP of IF97 at the header state) */
     const dRa = Math.max(0.05, (steamRho(Pa + 0.05, K.Ta) - steamRho(Pa - 0.05, K.Ta)) / 0.1),
       dRg = Math.max(0.05, (steamRho(Pg + 0.05, K.Tg) - steamRho(Pg - 0.05, K.Tg)) / 0.1);
-    U.asP = Math.max(-1, Pa + ((w1010 + w1020 - w1030 - wej - wGf) / 3600) * (h / (K.Va * dRa)));
-    U.gsP = Math.max(Pc - 1.0332, Pg + ((wGf + wHp - wSeal - wGu) / 3600) * (h / (K.Vg * dRg)));
+    U.asP = Math.max(-1, Pa + ((w1010 + w1020 - w1030 - wej - wGf - wWu) / 3600) * (h / (K.Va * dRa)));
+    U.gsP = Math.max(Pc - 1.0332, Pg + ((wGf + wWu + wHp - wSeal - wGu) / 3600) * (h / (K.Vg * dRg)));
     /* condenser air */
     /* 3.2.4 (JENNIE): trainer fault cd.air "Condenser air in-leakage (grows)": a crack at a flange or an expansion joint under
        vacuum. The in-leakage orifice (25.5 kg/h design, ED 066 p6) opens: x2 every 10 min (NO-SOURCE trainer rate) up to x64
@@ -2149,7 +2152,7 @@ function anAuxStep(U, dt) {
       sJ = anAsTab(K.sSjae, Pc) * m1396 * fm * cep,
       aout = ((sS + sJ) * rhoA) / 3600;
     U.cdAirP = Math.max(0, U.cdAirP + ((ain - aout) * h * 287 * (Tc + 273.15)) / K.Vc / 98066.5);
-    Object.assign(F, { w1010, w1020, w1030, wej, wGf, wSeal, wHp, wGu, ain: ain * 3600, aout: aout * 3600, oF, oU });
+    Object.assign(F, { w1010, w1020, w1030, wej, wGf, wWu, wSeal, wHp, wGu, ain: ain * 3600, aout: aout * 3600, oF, oU });
   }
   for (const k in F) F[k] = Math.round(F[k] * 1000) / 1000;
   U.asF = F;
@@ -2203,7 +2206,27 @@ function anAuxStep(U, dt) {
       hG = steamH(Pa, Math.max(tsA, T3)),
       T17in = wG > 0 ? tOf(Pg, (wG * hG + sG * hw) / (wG + sG), tsG) : NaN,
       Tgs = isFinite(U.asTgs) ? U.asTgs : Ta0;
-    metal('asT17', T17in, wG + sG, K.Mc17, K.UA17, K.G17, Tgs);
+    const T17 = metal('asT17', T17in, wG + sG, K.Mc17, K.UA17, K.G17, Tgs);
+    /* Phase 11 (SUZU 2026-11-27, Rule 0, NO-FIT-OK: history; was TEGS1002 = TT-AS1015 + 107 C x MW / 150, a load law on 29.PNG):
+       TT-AS1015 (STN102 AI0643 "gland steam desuperheater outlet") is the steam after the
+       spray, upstream of PV-GS1031 (PD-014 zone G-H: desuperheater, TT-AS1015, drain pot DP-AS01, MV-GSn030, PV-GS1031, header): the
+       steam of the aux header that the feed valve and the 5 mm warm-up orifice pass (29.PNG reads 257 C at 150 MW with the feed valve
+       shut). TEGS1002 (the gland steam seal header) is the energy balance of the header
+       metal: in, the feed of PV-GS1031 at TT-AS1017, the warm-up orifice at TT-AS1015 and the HP packing leak wHp (throttled,
+       constant enthalpy, HB case 1 mix of main steam and cold reheat), out the same flow; metal and loss of the header as the gland pipe (Mc17 / UA17, NO-SOURCE). TEGS1003 (LP inlet) is
+       the header steam: the loss of the line to the LP glands is not in the docs (NO-SOURCE), none. */
+    const wH = F.wHp || 0,
+      wW = F.wWu || 0,
+      wF = wG + wW,
+      /* TT-AS1015: the steam after the desuperheater at the aux header pressure, while PV-GS1031 or the warm-up orifice passes it
+         (the spray only with the feed valve open: TICAS1017); no steam: the line cools to the room (300 s, NO-SOURCE) */
+      h15 = wF > 0 ? (wF * hG + sG * hw) / (wF + sG) : NaN,
+      T15 = wF > 0 ? tOf(Pa, h15, tsA) : Ta0;
+    U.asT15 = wF > 0 || !isFinite(U.asT15) ? T15 : U.asT15 + ((T15 - U.asT15) * Math.min(dt, 300)) / 300;
+    const hLk = K.hpMs * h1 + (1 - K.hpMs) * hR /* HB case 1: 403 kg/h at the main steam, 1,417 at the cold reheat enthalpy */,
+      wGs = wG + sG + wW + wH,
+      TgsIn = wGs > 0 ? tOf(Pg, ((wG + sG) * steamH(Pg, Math.max(tsG, T17)) + wW * h15 + wH * hLk) / wGs, tsG) : NaN;
+    metal('asTgs', TgsIn, wGs, K.Mc17, K.UA17, 0, Ta0);
     U.asT1 = T1;
     U.asT3 = T3;
     anUnitWrite(U.asTAI[0], U.asT1);
@@ -3649,8 +3672,7 @@ function anUnitStep0(dt) {
     bf = Math.max(0, Math.min(1, (U.Tb - U.Tburn0) / (U.Tburn1 - U.Tburn0))),
     cb0 = isFinite(U.cbed) && U.cbed > 0 ? U.cbed : 0,
     cbB = (bf * cb0 * 3600) / AN_CBED.tau /* T/H of the held coal that burns */,
-    Fb = bf * F + cbB /* coal burnt, T/H */,
-    Fe = Fb + U.ao * oil;
+    Fb = bf * F + cbB /* coal burnt, T/H */;
   U.oilF = oil;
   U.burn = bf;
   U.cbn = Fb;
@@ -3969,7 +3991,9 @@ function anUnitStep0(dt) {
   const qOn = l => !!(l && l.S && l.S.rt && +l.S.rt.v[l.n] > 0.5),
     qHp = qOn(U.qo && U.qo.hp);
   for (const x of U.vlv) {
-    const o = x.rh && qHp ? 100 : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))),
+    const o = x.rh
+        ? anVlvStroke(U, 'hpb', qHp ? 100 : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))), qHp, dt)
+        : Math.max(0, Math.min(100, anAv(x.t, +x.S.rt.v[x.n] || 0))) /* PCV-MS1001: stroke time NOT IN DOCS (positioner only, no solenoid): as commanded */,
       /* Phase 11 rank 9: the valve law of the vendor Cv (turbine.js anVlvW): main steam at the SH outlet (P1, the finishing SH steam
          temperature) to the reheater (its pressure, the step before: the cold reheat line is the reheater inlet; with the turbine
          tripped the steam path has no HP exhaust pressure of its own) or to the silencer (atmosphere; the blow-off is choked at every
@@ -3993,9 +4017,7 @@ function anUnitStep0(dt) {
   /* drum: stored energy. 2.2.0-beta.14 (cold start): the firing heats the water first (U.Tw), then the pressure rises against the
      storage of the steam AND of the saturated water (C + Cw x dTsat/dP) */
   const tsatOf = steamTsat; /* 3.2.0-beta.15: IF97 steam table (steam.js), was the fit 100 + 47.1 x ln(P + 1) */
-  /* air share (total air over the anchor), used by the cooling below and by the bed temperature */
-  const taf = U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0),
-    as = U.taf0 > 0 ? Math.max(0.05, taf / U.taf0) : 1;
+  const taf = U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0);
   /* beta.258: the cooling of an unfired boiler by the draft and the room is inside the bed / wall heat balance below (one model) */
   /* 3.2.3-beta.258 (user 2026-11-15 "isang unit lng naman yan"): ONE model for every state. The bed heat balance below runs at every load
      (before: Cold only; "Start at 150 MW" had the curve anBedSS and a steam made from a fuel line) */
@@ -4009,18 +4031,20 @@ function anUnitStep0(dt) {
       tPa = isFinite(U.aphPa) ? U.aphPa : U.Tamb,
       tSa = isFinite(U.aphSa) ? U.aphSa : U.Tamb,
       dW = U.Tb - U.Tw /* bed over the wall water, both signs */,
-      fg = (Fb * (1 - AN_FG.ash * (U.coalR || 1)) + oil) / 3.6 /* fuel gas, kg/s (beta.13: the ash share with the wet coal) */,
+      /* Phase 11 rank 3 (AOI): the gas of the furnace from the mole balance (cfb.js anFgMol, FHI P2S7 Tab 2): the air into the furnace,
+         the coal burnt, the oil, the limestone CO2, the S taken up and the steam of a wall leak */
+      fgm = anFgMol(Fb, U.coalR || 1, oil, av[0] + av[1] + av[2], U.lmQ || 0, isFinite(U.soxF) ? 1 - U.soxF : 0, U.tlW || 0),
+      mGas = Math.max(0, fgm.m - (U.tlW || 0)) / 3.6 /* kg/s of gas less the leak steam (the leak is its own term, qTl) */,
       /* beta.261: cp(T). Air: Incropera Table A.4 (300 K 1.007, 700 K 1.075, 1100 K 1.159 kJ/kg K) as cp = 1.0 + 0.000155 T(C), CALC;
          flue gas: anHxCp (hx.js, FHI Tab 2 fuel at 20 % excess air). The heat to bring the air in and the fuel to the bed is the enthalpy
          of the flue gas at the bed less that of the air as it comes in (preheated by the air heater), both from the room */
       hAir = T => 1.0 * T + 0.0000775 * T * T,
       hFg = T => 1.08 * T + 0.0001065 * T * T,
-      mAir = (av[0] + av[1] + av[2]) / 3.6,
-      gcp = (mAir + fg) * anHxCp(U.Tb) /* kW/K, flue gas at the bed */,
-      /* 3.2.4-beta.16 (user "Physics nga"): the gas that lifts the solids is the air AND the steam of a water wall tube leak, which boils in
-         the bed: per kg 28.9 / 18 times the volume of air (ideal gas, same temperature and pressure) */
-      /* beta.256: the velocity share is to the gas of the 150 MW anchor, which leaves the bed at the anchor bed tbA (AN_BB), not Tb0 */
-      uRel = U.taf0 > 0 ? ((av[0] + av[1] + av[2] + ((U.tlW || 0) * 28.9) / 18) / U.taf0) * ((U.Tb + 273) / (B.tbA + 273)) : 0,
+      gcp = mGas * anHxCp(U.Tb) /* kW/K, flue gas at the bed */,
+      /* the gas that lifts the solids: its volume (ideal gas, the moles of the mole balance, the steam of a wall leak in them, at the bed)
+         over the DESIGN gas of 100 % MCR at the design bed tbA (cfb.js AN_FG0, DESIGN-SRC: FHI P2S7 Fig 12 / 13). Was the air alone over
+         the air of the "Start at 150 MW" state (U.taf0) */
+      uRel = (fgm.wet * (U.Tb + 273.15)) / (AN_FG0.wet * (B.tbA + 273.15)),
       phi = Math.min(1.2, Math.max(0, isFinite(U.bedI) ? U.bedI / AN_BI.t0 : 1)) * anBbPhiV(uRel) /* beta.282: Kunii & Levenspiel (AN_BB kKL) */,
       /* beta.263: the lower furnace refractory is its own lump. 25 mm castable k 1.5 W/m K over the tubes (13-thermal-masses), bed film
          300 W/m2 K (textbook), 359 m2: bed -> refractory centre 1 / (1/300 + 0.0125/1.5) = 85.7 W/m2 K = 30.8 kW/K, centre -> water
@@ -4065,7 +4089,7 @@ function anUnitStep0(dt) {
       qPan = isFinite(U.hxQp) ? U.hxQp : 0 /* kW, to the in-furnace SH panels (hx.js, last scan, from Tu) */,
       qFuel = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) + oil * B.lhvO,
       qAirG =
-        (mAir + fg) * (hFg(U.Tb) - hFg(U.Tamb)) -
+        mGas * (hFg(U.Tb) - hFg(U.Tamb)) -
         (av[0] / 3.6) * (hAir(tPa) - hAir(U.Tamb)) -
         (av[1] / 3.6) * (hAir(tSa) - hAir(U.Tamb)),
       Cb = Math.max(0, isFinite(U.bedI) ? U.bedI : AN_BI.tCold) * 1000 * B.cpS;
@@ -4099,7 +4123,8 @@ function anUnitStep0(dt) {
     /* 1.0.0-beta.14 (JENNIE, live test F-t): only the water wall leak leaves the furnace with the gas. The economizer leak enters the
        gas at the No.1 economizer (hx.js, I.mL), after the superheaters and reheaters: adding it here sent its mass through the SH / RH
        banks at the furnace exit temperature and the hot reheat went HIGH-HIGH (live run S87, 75 MW, 63 T/H leak) */
-    U.mG = (av[0] + av[1] + av[2]) / 3.6 + fg + (U.tlW || 0) / 3.6 /* flue gas kg/s, to the backpass (hx.js), with a water wall leak */;
+    U.mG = fgm.m / 3.6 /* flue gas kg/s, to the backpass (hx.js), with a water wall leak (mole balance) */;
+    U.fgM = fgm /* the gas of the mole balance: O2 below, the port gas.fe */;
     U.phi = phi;
     /* water walls, T/H of steam-equivalent (the unit of Cw / C): both ways, a bed under the water cools it. The air cooling of the
        unfired boiler (kcool) is inside this balance now; the loss to the room (kamb) stays */
@@ -4172,10 +4197,10 @@ function anUnitStep0(dt) {
   }
   const Pms = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
   U.Pms = Pms; /* 3.2.0-beta.14: source of the reducing stations (source.js) */
-  /* generator: the shaft work of the steam path less the mechanical and generator losses (anTbGen, turbine.js); qip = the reheat
+  /* generator: the shaft work of the steam path less the mechanical and generator losses (AN_TB.mech, turbine.js; generator losses anGenW, YUI); qip = the reheat
      pressure x the ICV opening, = the HP steam when the bypass is shut and the ICV full open; 0 off the grid */
   /* 3.2.3-beta.240 (user 2026-11-14, reverse power): on the grid the MW is not held at 0 or above. With too little steam the generator
-     takes power from the grid to keep the shaft at 3600 rpm (motoring): the losses of anTbGen stay when the steam is gone. The 32 relay
+     takes power from the grid to keep the shaft at 3600 rpm (motoring): the mechanical and generator losses stay when the steam is gone. The 32 relay
      (anRp32) sees the negative power */
   /* Phase 11 C (RIN): the steam the IP turbine takes from the reheater (T/H) = its Stodola swallowing capacity at the reheater pressure
      (the IP / LP blading of turbine.js from the condenser up: m = Kip sqrt(Prh^2 - Pc^2), Kip read off the last pass of the steam path,
@@ -4279,7 +4304,8 @@ function anUnitStep0(dt) {
     shifted = (L, d) => anUnitWrite(L, i => L.a0[i] + d);
   /* reheat pressure: proportional to the steam through the IP / LP turbine = turbine steam + HP bypass, less what the LP bypass
      takes (its size lpb x the anchor flow at the anchor pressure); first stage pressure: proportional to the turbine steam */
-  const olp = qOn(U.qo && U.qo.lp) ? 100 : U.lpv ? Math.max(0, Math.min(100, +U.lpv.S.rt.v[U.lpv.n] || 0)) : 0;
+  const qLp = qOn(U.qo && U.qo.lp),
+    olp = anVlvStroke(U, 'lpb', qLp ? 100 : U.lpv ? Math.max(0, Math.min(100, +U.lpv.S.rt.v[U.lpv.n] || 0)) : 0, qLp, dt);
   /* 3.2.3-beta.239: one mass balance of the reheater at every load (was: this balance until the ICV to CV transfer, then a steady
      state law (ms + mhp) / (m0 (1 + LP bypass)) with a 10 s lag that took the reheater pressure from 19 to 5.7 kg/cm2 at the transfer
      while the ICV was thrown open). In = HP turbine exhaust (the CV steam U.ms) + HP bypass; out = ICV (qip) + LP bypass + RH blow-off.
@@ -4313,6 +4339,11 @@ function anUnitStep0(dt) {
        and F5 = 1.263 x the steam F4 (spray from the CP outlet, 216949 / 171756). Gauge = ata - 1.033; shut, the line is at condenser
        vacuum and the 0 ~ 50 transmitter reads 0 (snapshot 0.0 at 150 MW) */
     U.Plpo = Math.max(0, 0.0538 * 1.263 * U.qlp - 1.033);
+    /* Phase 11 rank 9b (RIN, for MEI's spray TCV-CD1115): the PCV-HR1010 BODY outlet, where the spray nozzle No. 84 of the DSCV injects
+       (K1AU3-D1-0-043 R0 p9): the sheet P2 4.0 / 2.02 / 0.58 kg/cm2a at 217.1 / 111.8 / 33.2 T/H outlet flow = 0.0184 ata per T/H
+       (cond 1; the line after it is choked, pressure in line with flow, as PT-HR1011 above), never below the condenser. ata (abs).
+       The outlet flow = the steam x 217102 / 171756 (the spray of cond 1). DESIGN-SRC: vendor sheet K1AU3-D1-0-043 R0 p9 */
+    U.Pvlo = Math.max(isFinite(U.cdP) ? U.cdP : 1.0332, (4.0 / 217.102) * U.qlp * (217102 / 171756));
   }
   /* PT-ST1002-1 / -2 / -3 (after reheat valve A, the IP turbine inlet): the IP turbine passes steam in line with its inlet pressure
      (Stodola, the same law as qip above), so the absolute pressure = 150 MW value x qip / m0. 150 MW anchor: PIST10021 / 2 / 3 =
@@ -4342,21 +4373,15 @@ function anUnitStep0(dt) {
     h.x = T;
     for (const L of h.L) anUnitWrite(L, T);
   }
-  /* O2 of the flue gas: 21 x (1 - stoichiometric air / total air), analyzer lag. Both analyzers read it: FHI gives one curve (Fig 7) and
-     the 6.4 / 2.2 % of one snapshot has no source, it stood the B side on LOW-LOW at 150 MW */
-  if (U.afs > 0) {
-    const taf = Math.max(0, U.taf.reduce((a, n) => a + (+U.tafS.rt.v[n] || 0), 0) - (U.aphLk || 0) * (typeof AN_APK !== 'undefined' ? AN_APK.pa + AN_APK.sa : 0)) /* beta.21: less the air heater seal leak, which joins after the analyzer */,
-      o2a = Math.max(0, Math.min(21, 21 * (1 - ((Fe - Fb * (1 - (U.coalR || 1))) * U.afs) / Math.max(1, taf)))),
-      /* 3.2.4 (JENNIE): the analyzers sit at the air heater gas inlet (plant service reports "AT-FG3122 / 3123 GAH INLET O2
-         ANALYZER", unit 3 of the same design) and read the gas as it is, wet (the stack design O2 of K1AU3-E2-0-005 sheet 2 is
-         "4.22 % Vol, wet base"). A tube leak (water wall U.tlW, economizer U.tlE) adds steam that brings no oxygen: the same O2 in
-         more moles, O2 x n / (n + leak). Moles of the gas: the air, 28.9 kg/kmol; the leak, 18. The air does not change */
-      nA = taf / 28.9,
-      nL = ((U.tlW || 0) + (U.tlE || 0)) / 18,
-      o2s = nA > 0 ? (o2a * nA) / (nA + nL) : o2a;
+  /* O2 of the flue gas at the analyzers (ABC-002 AT-FG1122 / 1123, the air heater gas inlet, ahead of the air heater seal leak): the dry
+     O2 of the mole balance (cfb.js anFgMol, AN_FUEL: the dry basis is the one the FHI design curves agree on). Both analyzers read it:
+     FHI gives one curve (Fig 7). Phase 11 rank 3: was 21 x (1 - air needed / air), with the oil as 2.55 t of coal for its air and a wall
+     leak diluting a wet reading. On the dry basis the leak steam does not change the O2 (it is taken out with the water) */
+  if (U.afs > 0 && U.fgM) {
+    const g = U.fgM;
     /* audit 2026-11-21 B1: the air needed over the air given (above 1 = short of air: the stack CO of boiler.js anAphStep) */
-    U.airR = taf > 1 ? ((Fe - Fb * (1 - (U.coalR || 1))) * U.afs) / taf : 0;
-    U.o2v += ((o2s - U.o2v) * dt) / U.tauO2;
+    U.airR = g.airR;
+    U.o2v += ((g.o2d - U.o2v) * dt) / U.tauO2;
     for (const L of U.o2) anUnitWrite(L, U.o2v);
   }
   /* bed inventory and the furnace pressure drop */
@@ -4378,7 +4403,10 @@ function anUnitStep0(dt) {
         Math.max(0, +U.tafS.rt.v[U.paNet]),
         U.taf && U.taf.length === 3 ? Math.max(0, +U.tafS.rt.v[U.taf[2]]) : null
       );
-    for (const [L, a] of U.bedDp || []) if (L.length) anUnitWrite(L, a * k);
+    /* Phase 11 (AOI): the DP comes from the engine constant AN_BI.dp0, not from the anchor kept in U.bedDp: a save point (st150 and the
+       user saves) keeps U.bedDp as it was when it was made, so the old snapshot anchors 1426 / 1432 came back with every start at
+       150 MW and the step 2 design value never reached the transmitters */
+    for (const [L] of U.bedDp || []) if (L.length) anUnitWrite(L, AN_BI.dp0 * k);
     /* 3.2.4-beta.16 (user "Physics nga"): the split of the bed DP. Plenum / upper (DPT-FG1081 / 1082, above) = the weight of all the
        solids in the furnace. Of them, the upper furnace holds the solids the gas lifts: its density is the share phi of the bed balance
        (the same suspension that carries the heat to the walls, AN_BB.nU), so lower / upper (DPT-FG1083 / 1183) = its anchor x phi, and

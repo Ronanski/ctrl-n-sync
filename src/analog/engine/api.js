@@ -21,6 +21,12 @@ function anEngAPI() {
     fxIn: anFXIn,
     netRange: anNetRange,
     extRange: anExtRange,
+    /* Phase 11 AOI: the dry O2 % of the flue gas mole balance (cfb.js anFgMol) at a coal and an air flow (T/H), with the coal moisture,
+       limestone, SOx capture and leak steam of the live unit: the O2 the plant would read at that air (sweep judge, s.O2bal) */
+    fgO2dry: (coal, air) => {
+      const U = AN.unit || {};
+      return anFgMol(coal, U.coalR || 1, 0, air, U.lmQ || 0, isFinite(U.soxF) ? 1 - U.soxF : 0, U.tlW || 0).o2d;
+    },
     plantLoad150: anPlantLoad150,
     plantCold: anPlantCold,
     plantColdAsync: anPlantColdAsync,
