@@ -36,6 +36,20 @@
     for (const d of LS_MOCK.defs) if (d.unit && d.unit[tag]) return d.unit[tag];
     return null;
   };
+  /* Phase 10 (the trend recorder of hx-core.js samples every pen on its own timer, DCS textbook: collection whatever screen is shown):
+     a value whose page is not open is read through the SAME link its page uses (plant.js lsPlantRead = the reader of api.reg): the
+     logic transmitter first, else the plant model key of the temporary page, as hmi-mock.js [data-v] */
+  const linkV = it =>
+    call(() => {
+      const X = window.lsPlantRead(it);
+      return X && isFinite(X.v) ? +X.v : null;
+    }, null);
+  const offPage = key => {
+    const lg = linkV(/\|/.test(key) ? { t: 'val', tag: key, ref: key, v: '' } : { t: 'val', tag: key, v: '' });
+    if (lg != null) return lg;
+    const u = unitKey(key);
+    return u && !/^(tt|ux):/.test(u) ? linkV({ t: 'val', tag: 'UNIT.' + u, v: '' }) : null;
+  };
   /* the sheet and tag of a valve: hx-registry.js (what the temporary pages bind) */
   const bindOf = tag => {
     const m = R.machines[tag],
@@ -314,6 +328,7 @@
       needVal(key);
       const e = pq('[data-v="' + key + '"]'),
         t = e ? e.textContent : '';
+      if (!e) return offPage(key);
       return /^-?[0-9]/.test(t) ? parseFloat(t) : null;
     },
     machine(name) {
@@ -364,7 +379,7 @@
     },
     loop(tag) {
       needLoop(tag);
-      const X = S && S.CT[tag];
+      const X = (S && S.CT[tag]) || call(() => window.lsPlantRead({ t: 'ctl', tag }), null);
       if (!X) return null;
       const u = (R.loops[tag] && R.loops[tag].s && R.loops[tag].s.unit) || '';
       return {
