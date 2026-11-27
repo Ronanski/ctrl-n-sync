@@ -86,7 +86,7 @@ const AN_PORTS = {
     'lk.b': { by: 'RIN', to: ['NANA'], kind: 'steam', v: ['m', 'h'], note: 'HP gland leak B from the cold reheat into the deaerator extraction line', d150: { m: 4.561 }, src: 'HB PPE-14-0725 note: B joins the deaerator extraction line; DEA heater G 26786 = line 22225 + 4561' },
     'ext.lp3': { by: 'RIN', to: ['MEI'], kind: 'steam', v: ['P', 'T', 'h'], note: 'extraction IV PT-TS1022 to No.3 LP heater H-1103', d150: {} },
     'ext.lp2': { by: 'RIN', to: ['MEI'], kind: 'steam', v: ['P', 'T', 'h'], note: 'extraction V PT-TS1026 to No.2 LP heater H-1102', d150: {} },
-    'ext.lp1': { by: 'RIN', to: ['MEI'], kind: 'steam', v: ['P', 'T', 'h'], note: 'extraction VI to No.1 LP heater', d150: {} },
+    'ext.lp1': { by: 'RIN', to: ['MEI', 'SUZU'], kind: 'steam', v: ['P', 'T', 'h'], note: 'extraction VI to No.1 LP heater', d150: {} },
     'ext.w_hp': { by: 'NANA', to: ['RIN'], kind: 'steam', v: ['m'], note: 'extraction flows drawn: x = {hp2, hp1, da}', d150: {} },
     'ext.w_lp': { by: 'MEI', to: ['RIN'], kind: 'steam', v: ['m'], note: 'extraction flows drawn: x = {lp3, lp2, lp1}', d150: {} },
     'lp.exh': { by: 'RIN', to: ['MEI'], kind: 'steam', v: ['m', 'h'], note: 'LP turbine exhaust into the condenser', d150: {} },
