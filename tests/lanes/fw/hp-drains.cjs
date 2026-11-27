@@ -9,12 +9,12 @@ const root = path.resolve(__dirname, '..', '..', '..');
 const ctx = { console };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/analog/engine/steam.js'), 'utf8'), ctx);
-const RW = fs.readFileSync(path.join(root, 'src/analog/engine/plant.js'), 'utf8').match(/const AN_WATER_RHO = (\[[^;]*\]);/)[1];
 vm.runInContext(
-  `var swInterp=(X,Y,x)=>{if(x<=X[0])return Y[0];for(let i=1;i<X.length;i++)if(x<=X[i])return Y[i-1]+(Y[i]-Y[i-1])*(x-X[i-1])/(X[i]-X[i-1]);return Y[Y.length-1];};
-   var anWaterRho=T=>{const R=${RW};for(let i=1;i<R.length;i++)if(T<=R[i][0])return R[i-1][1]+(R[i][1]-R[i-1][1])*(T-R[i-1][0])/(R[i][0]-R[i-1][0]);return R[R.length-1][1];};`,
+  'var swInterp=(X,Y,x)=>{if(x<=X[0])return Y[0];for(let i=1;i<X.length;i++)if(x<=X[i])return Y[i-1]+(Y[i]-Y[i-1])*(x-X[i-1])/(X[i]-X[i-1]);return Y[Y.length-1];};',
   ctx
 );
+const WR = fs.readFileSync(path.join(root, 'src/analog/engine/plant.js'), 'utf8').match(/function anWaterRho\(T\) \{[\s\S]*?\n\}/)[0];
+vm.runInContext(WR, ctx);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/analog/engine/fw.js'), 'utf8'), ctx);
 let bad = 0;
 const ck = (n, v, t, tol) => {

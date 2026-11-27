@@ -26,12 +26,10 @@ const ck = (n, v, t, tol, pct) => {
   console.log(`${ok ? 'PASS' : 'FAIL'} ${n} ${(+v).toFixed(3)} / ${t}`);
 };
 const R = s => vm.runInContext(s, ctx);
-/* water density: the saturated table of plant.js (AN_WATER_RHO, as the model) */
-const RW = eval(fs.readFileSync(path.join(root, 'src/analog/engine/plant.js'), 'utf8').match(/const AN_WATER_RHO = (\[[^;]*\]);/)[1]),
-  rho = T => {
-    for (let i = 1; i < RW.length; i++) if (T <= RW[i][0]) return RW[i - 1][1] + ((RW[i][1] - RW[i - 1][1]) * (T - RW[i - 1][0])) / (RW[i][0] - RW[i - 1][0]);
-    return RW[RW.length - 1][1];
-  };
+/* water density: IF97 saturated water, plant.js anWaterRho (as the model) */
+const WR = fs.readFileSync(path.join(root, 'src/analog/engine/plant.js'), 'utf8').match(/function anWaterRho\(T\) \{[\s\S]*?\n\}/)[0];
+vm.runInContext(WR, ctx);
+const rho = T => vm.runInContext(`anWaterRho(${T})`, ctx);
 ck('3rd-stage tap at 540 m3/h, kg/cm2 g', 6.0 + (0.9093 / 10) * R('swInterp(AN_BYS.tQ, AN_BYS.tH, 540)'), 71.6, 0.2);
 const cv = x => R(`AN_BYS.hp.cv * swInterp(AN_BYS.hp.x, AN_BYS.hp.y, ${x}) / 100`);
 /* [kg/h, P1 a, P2 a, T, printed Cv, printed travel] */
