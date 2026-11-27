@@ -133,6 +133,12 @@
     ports: { t: [0, -16], b: [0, 16] },
     svg: '<path class="rxv" d="M-9 -16h18v8h-18zM-7 -8h14v8h-14zM-5 0h10v8h-10z"/><path class="rxv" d="M-11 8h22l-4 8h-14z"/>'
   });
+  /* fluid (hydraulic) coupling on a shaft between motor and fan: a short drum. No ports */
+  R.coupling = () => ({
+    box: [-8, -10, 8, 10],
+    ports: {},
+    svg: '<rect class="rxv" x="-7" y="-9.5" width="14" height="19" rx="3"/><path class="rxe" d="M-7 -3h14M-7 3h14"/>'
+  });
   /* drain pot: a small upright vessel under a steam line */
   R.pot = () => ({
     box: [-7, -13, 7, 13],

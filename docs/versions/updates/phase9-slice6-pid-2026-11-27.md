@@ -76,3 +76,11 @@ Source: /mnt/project-files/phase9-pid-positions-2026-11-27.md (flow diagram set 
 - L-1904 = ang two-way separator (nakalimbag L-1094); S-1092 = ang vibrating screens A / B (map).
 - Mga bagong simbolo: `R.pots` (hanay ng maliit na vessel), `R.spout` (loading spout).
 - Bilang: 319 / 349 may simbolo, 8 wala sa docs, 22 natitira.
+
+## Furnace gas, sea water, min flow orifices (9:20 AM)
+- Furnace gas: hydraulic coupling Z-1056 sa shaft ng ID fan (PD-051 F-8); air buffer tanks T-1064A / B ng biasing dampers
+  (K1AU3-D1-0-070 R0): A sa reheater pass damper (PT-IA1064-A), B sa superheater pass damper (PT-IA1064-B). Walang label (map).
+- Sea water: priming air ejectors Z-1113A / B (nakalimbag Z-1131A / B, PD-020 rev D A-7 / A-8), walang linya.
+- Min flow orifices: RO-IW0715A / B (PD-025), RO-MU0709A ~ C (PD-024 B-8; kung aling orifice ang sa aling pump: NOT IN DOCS,
+  ayos A, B, C), OR-CW1001A / B sa cooling water ng lube oil coolers (PD-021 D-3). Maikling sanga lang ang linya.
+- Bilang: 331 / 349 may simbolo, 8 wala sa docs, 10 natitira.

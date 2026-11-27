@@ -93,6 +93,14 @@
           yn: [90, -20]
         }),
         at(E('stack', '', '', [], { flow: GAS }), SX, SY, { id: 'st', under: true, sc: SS }),
+        /* Z-1056 hydraulic coupling between the motor and the induced draft fan (PD-051 F-8, YUA P&ID read 2026-11-27); no
+           label: the fan's words are under it; named in docs/phase9/equipment.json map */
+        at(E('coupling', '', '', []), 1497, IY - 3, { id: 'hcp', sc: 1.3 }),
+        /* T-1064A / B air buffer tanks of the biasing dampers (K1AU3-D1-0-070 R0, 0.3 m3; YUA read 2026-11-27, vendor data,
+           no flow line): A with the reheater pass damper (its air pressure PT-IA1064-A), B with the superheater pass damper
+           (PT-IA1064-B). No label: named in docs/phase9/equipment.json map */
+        at(E('tank', '', '', [], { id: 'bta', liquid: 'none', w: 14, h: 24 }), 648, 548, { id: 'bta' }),
+        at(E('tank', '', '', [], { id: 'btb', liquid: 'none', w: 14, h: 24 }), 908, 548, { id: 'btb' }),
 
         /* ---- dampers and controllers ---- */
         at(

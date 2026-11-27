@@ -141,6 +141,10 @@
         /* suction of each make-up pump (PD-024 D-7 / E-7 / F-7, YUA P&ID read 2026-11-27): V-MU0003 / 4 / 5 -> STR-MU0001 /
            2 / 3 -> EJ-MU000x -> P-0709x; the hand valves as valve symbols so the strainer has its place on the line */
         ...['V-MU0003', 'V-MU0004', 'V-MU0005'].map((t, i) => at(HX.HV(t), 524, MY[i], { id: 'hs' + i, lab: 'b' })),
+        /* minimum flow lines MU-0-011 / 012 / 013 with their orifices RO-MU0709A ~ C (tag not printed), checks V-MU0012 / 14 / 16
+           and V-MU0013 / 15 / 17, back to T-0708A / B (PD-024 B-8, YUA P&ID read 2026-11-27). Which orifice is on which pump's line
+           is NOT IN DOCS (the lines cross on the sheet); drawn in order A, B, C, as a short branch with no label (map) */
+        ...N.map((n, i) => at(E('orifice', '', '', []), 655, MY[i] - 75, { id: 'rm' + i, rot: 90 })),
         ...N.map((n, i) =>
           at(E('strainer', '', '', [], { flow: 'm:MWP-' + n }), 558, MY[i], { id: 'sm' + i, sc: 0.8 }) /* no label: the pump's Y button sits above; named in docs/phase9/equipment.json map */
         ),
@@ -171,7 +175,9 @@
             pts: ['m' + i + '.d', [MX - 2, MY[i] - 58], [MHX, MY[i] - 58]],
             flow: 'm:MWP-' + n,
             arrow: false
-          }
+          },
+          { med: 'water', w: 3, pts: [[655, MY[i] - 58], 'rm' + i + '.r'], flow: 'm:MWP-' + n, arrow: false },
+          { med: 'water', w: 3, pts: ['rm' + i + '.l', [655, MY[i] - 92]], flow: 'm:MWP-' + n } /* back to the tanks (not drawn further) */
         ]),
         {
           med: 'water',

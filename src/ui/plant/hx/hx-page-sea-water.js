@@ -14,7 +14,7 @@
    - pool level LT-SW1501; hypochlorite dosing pumps P-0762A / B and unloading pump P-0761A (K1AU3-PD-043, local panel).
    Machines, currents and values are the ones temporary page 01 "030 CIRCULATING WATER" binds (DITL-29A, DITL-30, DITL-39).
    Drawn simpler: the ball separators L-1111 / L-1112 sit in the condenser outlets and the ball vessels T-1115 / T-1116
-   beside the two tube cleaning machines; the ball lines and V pieces are not drawn; the priming air ejectors Z-1131A / B are not drawn; the two paths of the
+   beside the two tube cleaning machines; the ball lines and V pieces are not drawn; the priming air ejectors Z-1113A / B (printed Z-1131A / B) stand beside the condenser without their lines; the two paths of the
    condenser are one line with the values of path A / path B side by side.
    The hand valves V-SW1002 ~ V-SW1020 (pump discharge, condenser inlet / outlet of path A and path B, booster discharge)
    are valve symbols on their lines (HX.HV): red = open, the hand wheel rises with the opening, a click opens the field
@@ -142,6 +142,12 @@
            outlet hand valve is NOT IN DOCS (the read gives only condenser outlet -> separator -> header). */
         at(E('strainer', '', '', [], { flow: SW }), 1046, MY - PATH, { id: 'bsa', sc: 0.8 }),
         at(E('strainer', '', '', [], { flow: SW }), 1046, MY + PATH, { id: 'bsb', sc: 0.8 }),
+        /* water box priming air ejectors (PD-020 rev D A-7 / A-8, printed Z-1131A / B; equipment list Z-1113A / B; YUA P&ID read
+           2026-11-27 part 2): vent headers SW-1-064 / 065 of the condenser water boxes, motive plant air PA-1-092, exhaust to
+           drain. Their lines are not drawn. */
+        ...['A', 'B'].map((n, i) =>
+          at(E('ejector', 'Priming air ejector ' + n, 'Z-1113' + n, [], { wrap: 12 }), 1160, 290 + i * 70, { id: 'pe' + i, lab: 'l' })
+        ),
         /* ball vessels (PD-020 D-6 / D-7): P-1113 -> MV-SW1005 -> T-1115 -> condenser inlets; P-1114 -> MV-SW1003 -> T-1116 */
         at(E('tank', 'Ball vessel', 'T-1115', [], { id: 'bva', w: 26, h: 40 }), 790, 815, { id: 'bva', lab: 't' }),
         at(E('tank', 'Ball vessel', 'T-1116', [], { id: 'bvb', w: 26, h: 40 }), 990, 815, { id: 'bvb', lab: 't' }),

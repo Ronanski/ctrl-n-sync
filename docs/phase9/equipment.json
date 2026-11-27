@@ -259,6 +259,38 @@
   "S-1091": [
    "ash|id=bgf",
    "bag filter on the bottom ash silo roof before F-1091 (PD-071 sh1/2 C-8, YUA P&ID read 2026-11-27); drawn with no label on the fan suction"
+  ],
+  "Z-1056": [
+   "furnace-gas|id=hcp",
+   "hydraulic coupling between the IDF motor and fan (PD-051 F-8, YUA P&ID read 2026-11-27); drawn with no label on the shaft"
+  ],
+  "T-1064A": [
+   "furnace-gas|id=bta",
+   "air buffer tank of the reheater pass biasing damper (K1AU3-D1-0-070 R0; PT-IA1064-A); drawn with no label beside the damper"
+  ],
+  "T-1064B": [
+   "furnace-gas|id=btb",
+   "air buffer tank of the superheater pass biasing damper (K1AU3-D1-0-070 R0; PT-IA1064-B); drawn with no label beside the damper"
+  ],
+  "RO-MU0709A": [
+   "makeup-cooling|id=rm0",
+   "minimum flow orifice of make-up pump P-0709A (PD-024 B-8, tag not printed; which orifice is on which line NOT IN DOCS, drawn in order); no label"
+  ],
+  "RO-MU0709B": [
+   "makeup-cooling|id=rm1",
+   "minimum flow orifice of make-up pump P-0709B (PD-024 B-8, tag not printed; which orifice is on which line NOT IN DOCS, drawn in order); no label"
+  ],
+  "RO-MU0709C": [
+   "makeup-cooling|id=rm2",
+   "minimum flow orifice of make-up pump P-0709C (PD-024 B-8, tag not printed; which orifice is on which line NOT IN DOCS, drawn in order); no label"
+  ],
+  "OR-CW1001A": [
+   "turbine-oil|id=oc0",
+   "orifice on the cooling water out of lube oil cooler A (PD-021 D-3, tag not printed, YUA P&ID read 2026-11-27); no label"
+  ],
+  "OR-CW1001B": [
+   "turbine-oil|id=oc1",
+   "orifice on the cooling water out of lube oil cooler B (PD-021 D-3, tag not printed, YUA P&ID read 2026-11-27); no label"
   ]
  },
  "approved": {},

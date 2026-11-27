@@ -148,6 +148,7 @@
         /* T-1395 in the equipment list; printed T-n935 control oil accumulator on 310PB64-455 (T-1935 most likely) */
         at(E('tank', 'Control oil accumulator', 'T-1395', [], { id: 'cac', liquid: 'oil', w: 18, h: 34 }), 1500, 445, {
           id: 'cac', lab: 'r', wrap: 12 }),
+        ...[0, 1].map(i => at(E('orifice', '', '', []), 850, (i ? BY : AY) - 42, { id: 'oc' + i, rot: 90, sc: 0.8 })) /* OR-CW1001A / B, no label (map) */,
         /* T-1128 turning gear air buffer tank, 0.5 m3 (PD-023 sh4/6 C-3/4, YUA P&ID read 2026-11-27): instrument air
            IA-1-109 to the turning gear of the Hitachi lube oil system; its pressure PT-IA1128 is the row under the turning gear */
         at(E('tank', 'Air buffer tank', 'T-1128', [], { id: 'iab', liquid: 'none', w: 22, h: 38 }), 110, 300, { id: 'iab', lab: 't' }),
@@ -230,6 +231,12 @@
         /* cooling water to the coolers */
         { med: 'cooling', w: W_S, pts: ['cwl.r', 'tv.l'], flow: 'l:TICLO1002', arrow: false },
         { med: 'cooling', w: W_S, pts: ['tv.r', [CX, 575], 'ca.t'], flow: 'l:TICLO1002' },
+        /* cooling water out of each lube oil cooler through its orifice OR-CW1001A / B (PD-021 D-3: cooler -> SG-CW1002 / 1001 -> RO,
+           tag not printed -> V-CW1022 / 1021 -> return CW-1-022 / 021; YUA P&ID read 2026-11-27), drawn as a short stub */
+        ...['ca', 'cb'].flatMap((c, i) => [
+          { med: 'cooling', w: W_S, pts: [c + '.b1', [850, (i ? BY : AY) - 22], 'oc' + i + '.r'], flow: i ? '' : 'l:TICLO1002', arrow: false },
+          { med: 'cooling', w: W_S, pts: ['oc' + i + '.l', [850, (i ? BY : AY) - 64]], flow: i ? '' : 'l:TICLO1002' }
+        ]),
         /* control oil */
         { med: 'lube', w: W_S, pts: ['tk.b', [KX, 985], [1090, 985], [1090, AY]], flow: COP, arrow: false },
         { med: 'lube', w: W_S, pts: [[1090, AY], 'qa.s'], flow: 'm:COP-A', arrow: false },
