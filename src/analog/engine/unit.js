@@ -2611,11 +2611,8 @@ function anCondStep(U, dt) {
   const run = [srcBit(['M.3350']) > 0.5 ? 1 : 0, srcBit(['M.3351']) > 0.5 ? 1 : 0],
     n = run[0] + run[1],
     u = (typeof AN_CYC !== 'undefined' && AN_CYC.u) || {},
-    Qt = n
-      ? (Math.min(520, typeof anDaQ === 'function' ? anDaQ(u.da) : 21.7 * Math.max(0, u.da || 0)) +
-          2.5 * Math.max(0, Math.min(100, u.cf || 0))) /
-        0.9926
-      : 0,
+    wr = 2.23 * Math.max(0, Math.min(100, u.cf || 0)) /* FCV-CD1120, valve sheet p96, 223 T/H (as plant.js anCycFlows) */,
+    Qt = n ? (anDaQ(u.da, wr) + wr) / 0.9926 : 0,
     q = n ? Qt / n : 0,
     hw = anUnitVal(U.cdHwL || []),
     Psuc = U.cdP - 1.033 + 0.09926 * (K.zS + (isFinite(hw) ? hw : 0) / 1000);
