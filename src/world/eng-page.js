@@ -174,7 +174,7 @@
         /* 3.2.0 Web Worker: the page keeps running the plant itself (local) while the worker loads the drawings (seconds on a slow
            device: before, the page was the mirror at once and the plant stood still until the worker was ready; a Run pressed then
            started ~9 s late, mcc_valve on the cloud). The state goes over at 'ready' (E._go), so nothing done meanwhile is lost */
-        w.postMessage({ t: 'init', apre: txt('apre'), ades: txt('ades'), ds, sv: AN.sv || {}, lne: AN.lne || {}, i: AN.i });
+        w.postMessage({ t: 'init', apre: txt('apre'), ades: txt('ades'), st150: txt('st150') /* the 150 MW start state (hmi-op.js anPlantLoad150G) */, ds, sv: AN.sv || {}, lne: AN.lne || {}, i: AN.i });
       } catch (e) {
         fail('init', e.message);
         no(e);

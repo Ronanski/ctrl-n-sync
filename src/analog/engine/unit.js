@@ -58,11 +58,14 @@ function anIdfN(m) {
    Before: kdp = (drum - MSP) / MSF^2 of the plant snapshot at 150 MW (134.2 - 122.6 at 474.1 T/H), a constant fitted to one plant (NO-FIT-OK: history note)
    reading with no density term (no-fit baseline, Audit 3 ranking 5). U.kdp is kept as the name the valve flow solve reads. */
 /* The tap pressures inside the chain, PT-BR1130 (after SH panel #1 = spray 1 point) and PT-BR1150 (finishing SH inlet = spray 2
-   point), are the drum less the share s1 / s2 of this drop. The shares are where the taps sit along the drop, read on the plant
-   transmitters of 03.png (150.5 MW: drum 134.2, PIBR1130 127.8, PIBR1150 124.9, MSP 122.6: 6.4 / 11.6 and 9.3 / 11.6). OPEN (Phase 11,
-   KANA): the share from the tube geometry needs the panel SH drawings (C series, not in the documents; hx.js); until then the shares
-   stay and the size of the drop is the design law. Before, the taps took 6.4 / 9.3 kg/cm2 x (MSF / 474.1)^2 by themselves. */
-const AN_SHDP = { dp0: 16, m0: 460, Po: 129, To: 541, s1: 6.4 / 11.6, s2: 9.3 / 11.6 };
+   point), are the drum less the share s1 / s2 of this drop. Phase 11 KANA 2026-11-28: the shares are the design spray points, the
+   outlet pressure P2 of the spray valves at the MCR spray of FHI Fig 10 (2.7 % x 460 = 12.4 T/H): control valve data sheet
+   K1AU3-E2-0-123 R1 item 19 TCV-FW1110-1 COND 2 12,500 kg/h 166.5 -> 142.0 kg/cm2 G (pdf p102) and item 23 TCV-FW1120-1 COND 2
+   10,000 kg/h 166.5 -> 138.5 kg/cm2 G (pdf p122) (YUA read, /mnt/project-files/kana-sh-tap-reads-2026-11-28.md), against the drum
+   at MCR = SH outlet 129 + SH drop 16 = 145 (FHI P2S7 Tab 1, DERIVED): s1 = (145 - 142.0) / 16, s2 = (145 - 138.5) / 16.
+   NO-SOURCE: the desuperheater nozzle DP (no DSH data sheet in the docs) is taken as 0, so the steam pressure at each spray point is
+   the valve P2. The tube geometry route (Darcy by bank) is closed: tube ID and tubes per panel are NOT IN DOCS. */
+const AN_SHDP = { dp0: 16, m0: 460, Po: 129, To: 541, s1: (145 - 142.0) / 16, s2: (145 - 138.5) / 16 };
 /* the pressure at the share s of the SH drop (kg/cm2 G), drum Pd, steam through the SH m (T/H) */
 function anShTap(U, s, Pd, m) {
   const k = isFinite(U && U.kdp) ? U.kdp : AN_SHDP.dp0 / (AN_SHDP.m0 * AN_SHDP.m0);
@@ -2062,7 +2065,7 @@ function anCdTagStep(U) {
      PT-FW1160          drum pressure + 3.5 kg/cm2 x (feedwater / 499.1)^2 (03.png 137.7 - 134.2);
      ZT-FW1110 / 1120   the F(X) of the controller MV (its airlock AN_AV: the MV is held without air);
      FT-FW1109 / 1119   0.7674 T/H x (Cv(-1) x XV-1 + Cv(-2) x XV-2) x sqrt(PT-FW1011 - spray point), Cv from the travel by the sheet
-                        points; spray point = drum - 6.4 / 9.3 kg/cm2 x (main steam / 474.1)^2 (03.png); 0.7674 from item 19 COND 1. The
+                        points; spray point = the SH tap of anShTap (AN_SHDP s1 / s2 = spray valve P2, E2-0-123 items 19 / 23 COND 2); 0.7674 from item 19 COND 1. The
                         No.1 spray gives 37.3 T/H at the 03.png point (37.5). The No.2 spray gives 9.6 T/H by its sheet against 28.2 in
                         03.png: UNUSUAL (the equal % curve at 14.9 % travel is far below what flows); beta.259: the x 2.94 snapshot calibration is removed (no patches: the Cv of the data sheet only);
      FT-FW1149 / 1059   Phase 11 NANA 2026-11-27: fw.js AN_BYS / anSprW (TCV-FW1150 Cv 6.2, TCV-FW1060 Cv 10.3 modified equal % from the

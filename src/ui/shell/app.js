@@ -1832,49 +1832,21 @@
     d.head('Starting state of the plant');
     /* 3.2.0 retest #54: the starting states load in slices with a progress bar (AN.loadStart); AN._startP = the load, for the
        callers that go on after it (Practise, the PLANT chip) */
-    /* 3.2.3-beta.260 (user 2026-11-15 "isang unit lng naman yan.. isang planta"): the HMI snapshot is only the line-up (modes, equipment
-       running); the plant then takes the steady state that its own model and logic reach at 150 MW with every loop in AUTO (#st150: a
-       save point made by tools/steady150/make.cjs, which runs this same model from the snapshot until it settles). Before: every value
-       was the snapshot, which the physics did not hold (air 593 against the 646 T/H of the air control, steam 476 against 428 T/H in the
-       first scan): the coal went from 87 to 97 T/H in 5 s. No #st150 in the build: the snapshot alone, as before */
-    const st150 = async () => {
-      const e = document.getElementById('st150'),
-        t = e && e.textContent.trim();
-      if (!t || !window.DITL150 || !DITL150.savePut) return;
-      const o = JSON.parse(await gunz(Uint8Array.from(atob(t), c => c.charCodeAt(0))));
-      await DITL150.savePut({ kf: o.kf, kd: o.kd, ver: o.ver || 'st150' });
-      AN.paint();
-      msg('Plant at 150 MW: the steady state of the plant model, every loop in AUTO. Press Run.');
-    };
+    /* Phase 11 Rule 0 (MEI 2026-11-28, user rule of 2026-11-28: no plant screen in the plant model): "At 150 MW" is one load, the steady
+       state that the plant's own model and logic reach at 150 MW with every loop in AUTO (#st150 of the build, src/data/st150.txt,
+       re-settled by tools/steady150/settle.cjs), applied whole by AN.loadStart (hmi-op.js anPlantLoad150G: ABC and DITL keyframes).
+       Before: a line-up of the control-room screens was written first, then DITL150.apply, then #st150 overwrote all of it */
     btn(
       'load150',
       'At 150 MW',
-      'Reset, then the plant at 150 MW in the steady state of its own model (every loop in AUTO), from the line-up of the control-room HMI snapshots',
+      'Reset, then the plant at 150 MW in the steady state of its own model and logic (every loop in AUTO)',
       () => {
         window.lsRestartKind = null;
         /* roadmap 3 (SPEC S5 / S6): a starting state is for the plant model ON only: picking one turns the model ON */
         AN._startP = AN.loadStart('150', true).then(
-          n => {
-            AN.settle();
+          () => {
             AN.paint();
-            msg('Plant at 150 MW: ' + n + ' transmitters set from the HMI snapshots. Press Run.');
-            /* the DITL is part of the start: AN._startP waits for it, else a Run right after the pick scans a cold DITL */
-            if (window.DITL150)
-              return (
-                (AN.ades ? AN.ades() : Promise.resolve())
-                  /* 3.2.0 Web Worker: DITL150.apply runs in the engine only there and gives a promise of its answer */
-                  .then(() => DITL150.apply())
-                  .then(r => {
-                    if (r)
-                      msg(
-                        'Plant at 150 MW: ' +
-                          n +
-                          ' ABC transmitters from the HMI snapshots, DITL in service (MFT reset). Press Run.'
-                      );
-                    return st150();
-                  })
-                  .catch(() => {})
-              );
+            msg('Plant at 150 MW: the steady state of the plant model, every loop in AUTO. Press Run.');
           },
           e => msg('Could not load the 150 MW state: ' + e.message)
         );
