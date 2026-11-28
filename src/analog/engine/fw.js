@@ -215,7 +215,9 @@ const AN_FW = {
      TCV-FW1060   E2-0-123 R1 A PDF p15: Cv 10.3 at 1.25 in, modified equal %, air fail closed; sizing (Cv % at travel %):
                   Cv 0.68 / 24, 1.70 / 34 (COND 2; COND 3 prints Cv 1.30 at the same 34 %, taken as a misprint), 6.88 / 73 %
                   travel (the printed Cv over 10.3: 6.6, 16.5, 66.8 %).
-     TCV-FW1150   Cv 6.2 (L21 sheet, the RH spray), its characteristic NO-SOURCE: linear (as before).
+     TCV-FW1150   Copes-Vulcan, Cv 6.2, modified linear, air fail closed (L21 sheet, YUA PC read 2026-11-28,
+                  /mnt/project-files/nana-fw-reads-2-2026-11-28.md): sizing COND 1 21 t/h 68.9 -> 45.9, Cv 5.37 at 87 % travel;
+                  COND 2 1 t/h 83.2 -> 9.03, Cv 0.14 at 5 %: the printed points with 0 and 100 % (was linear, NO-SOURCE).
      flow         liquid, IEC 60534: W kg/h = 27.3 Cv sqrt(dP bar x rho); the line from the tap to the valve inlet: dP = k W^2, k from
                   the turbine trip case of both sheets: tap 69.4 kg/cm2 g (KSB item 8) against the TCV-FW1060 COND 1 inlet 68.34 kg/cm2 a
                   at 30.019 t/h: k = (69.4 - 67.31) / 30.019^2. With P1 = tap - k W^2 the flow is W = a sqrt(dP / (1 + a^2 k)),
@@ -226,7 +228,7 @@ const AN_BYS = {
   tH: [894, 857, 816, 722, 661] /* m */,
   kL: (69.4 - (68.34 - 1.0332)) / (30.019 * 30.019) /* kg/cm2 per (t/h)^2, DESIGN-SRC: KSB 997274702 item 8 + E2-0-123 TCV-FW1060 COND 1 */,
   hp: { cv: 10.3, x: [0, 24, 34, 73, 100], y: [0, 6.6, 16.5, 66.8, 100] } /* travel %, Cv % = printed Cv / 10.3, DESIGN-SRC: E2-0-123 R1 TCV-FW1060 */,
-  rh: { cv: 6.2, x: [0, 100], y: [0, 100] } /* DESIGN-SRC: L21 TCV-FW1150 Cv 6.2; characteristic NO-SOURCE (linear) */
+  rh: { cv: 6.2, x: [0, 5, 87, 100], y: [0, (0.14 / 6.2) * 100, (5.37 / 6.2) * 100, 100] } /* travel %, Cv %, DESIGN-SRC: L21 TCV-FW1150 sizing COND 2 / COND 1 */
 };
 /* spray water t/h through a valve of Cv (at its opening) from the tap at Pis to the outlet P2 (kg/cm2 g), water density rho kg/m3 */
 function anSprW(Cv, Pis, P2, rho) {
