@@ -37,6 +37,15 @@ const minAir = s => {
   const y = at(C.fhi.fig12_air_TH.total, (s.MSF / MCR) * 100);
   return y != null && y < MINAIR.total;
 };
+/* LOGGED DIFFERENCE (AOI 2026-11-28): FHI Fig 12 PA / SA are the air INTO the furnace (FHI mass balance MB-052: PAF outlet 388 T/H =
+   furnace PA 354 + air heater seal leak 34); the DCS flows FICFA1071 / FICFA1081 (s.PA / s.SA) are measured at the fan side, before the
+   leak. Design leak at MCR: PA 34.0, SA 19.0 T/H (Howden L20 OMM sheet 16), taken in proportion to the flow (the same law as the model's
+   leak). So the fan-side target is Fig 12 x (354 + 34) / 354 for PA, x (218 + 19) / 218 for SA, and the total adds both leaks */
+const LEAK = { pa: 34.0 / 354, sa: 19.0 / 218 };
+const leakAt = s => {
+  const x = (s.MSF / MCR) * 100, p = at(C.fhi.fig12_air_TH.pa, x), q = at(C.fhi.fig12_air_TH.sa, x);
+  return (p == null ? 0 : p * LEAK.pa) + (q == null ? 0 : q * LEAK.sa);
+};
 /* [label, sample key, curve points, x basis, document]. x: 'mcr' or 'load'. f = a function of the sample when the key is derived */
 const CURVES = [
   ['SH outlet temperature, C', 'MST', C.fhi.fig6_sh_rh_temp_C.pts, 'mcr', 'FHI Fig 6'],
@@ -45,9 +54,9 @@ const CURVES = [
   ['Furnace average temperature, C', 'Tu', C.fhi.fig8_furnace_avg_C.pts, 'mcr', 'FHI Fig 8'],
   ['Furnace DP (bed inventory), mmH2O', 'dp', C.fhi.fig9_furnace_dp_mmH2O.pts, 'mcr', 'FHI Fig 9; DPICFG108 SV low limit 1450 floor', (s, y) => Math.max(y, DPMIN)],
   ['SH spray, T/H', 'sp', C.fhi.fig10_sh_spray_pct_of_MSF.pts, 'mcr', 'FHI Fig 10 (% of MSF x MSF)', (s, y) => (y * s.MSF) / 100],
-  ['Total air, T/H', 'air', C.fhi.fig12_air_TH.total, 'mcr', 'FHI Fig 12; where the DCS air demand is higher, the demand (PA + SA SV + the FA blower flow FIFA1055, AOI)', (s, y) => Math.max(y, MINAIR.total, s.PAsv + s.SAsv + (s.air - s.PA - s.SA))],
-  ['Primary air, T/H', 'PA', C.fhi.fig12_air_TH.pa, 'mcr', 'FHI Fig 12; at the DCS minimum air the logic PA demand (FICFA1071 SV)', (s, y) => (minAir(s) ? s.PAsv : y)],
-  ['Secondary air, T/H', 'SA', C.fhi.fig12_air_TH.sa, 'mcr', 'FHI Fig 12; at the DCS minimum air the logic SA demand (FICFA1081 SV)', (s, y) => (minAir(s) ? s.SAsv : y)],
+  ['Total air, T/H', 'air', C.fhi.fig12_air_TH.total, 'mcr', 'FHI Fig 12 + the air heater seal leak (L20); where the DCS air demand is higher, the demand (PA + SA SV + the FA blower flow FIFA1055, AOI)', (s, y) => Math.max(y + leakAt(s), MINAIR.total, s.PAsv + s.SAsv + (s.air - s.PA - s.SA))],
+  ['Primary air, T/H', 'PA', C.fhi.fig12_air_TH.pa, 'mcr', 'FHI Fig 12 + the PA seal leak (L20, fan side); at the DCS minimum air the logic PA demand (FICFA1071 SV)', (s, y) => (minAir(s) ? s.PAsv : y * (1 + LEAK.pa))],
+  ['Secondary air, T/H', 'SA', C.fhi.fig12_air_TH.sa, 'mcr', 'FHI Fig 12 + the SA seal leak (L20, fan side); at the DCS minimum air the logic SA demand (FICFA1081 SV)', (s, y) => (minAir(s) ? s.SAsv : y * (1 + LEAK.sa))],
   ['Coal, T/H', 'coal', C.fhi.fig13_coal_TH.pts, 'mcr', 'FHI Fig 13'],
   ['Air heater gas in, C', 'ahGi', C.fhi.l20_aph_gas_in_C.pts, 'mcr', 'L20 Howden APH'],
   ['Main steam flow, T/H', 'MSF', hbPts(HB.ms_TH), 'load', 'HB PPE-14-0725'],

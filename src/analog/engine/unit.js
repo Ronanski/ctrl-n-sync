@@ -3082,14 +3082,14 @@ function anGridHz(U, dt) {
   U.gridHz = aim < f ? Math.max(aim, f - AN_GRID.down * dt) : Math.min(aim, f + AN_GRID.up * dt);
   return U.gridHz;
 }
-/* the rating of the machine (GAE-2013-0136 R2: 176.5 MVA, 13.8 kV, 60 Hz) and the page 17 energy meters, which start at the meter
-   reading of snapshot 37.PNG (a meter reading, not a physics value; the GCP meters of tcs-dev.js count from 0) */
+/* the rating of the machine (GAE-2013-0136 R2: 176.5 MVA, 13.8 kV, 60 Hz) and the page 17 energy meters, which count from 0 as the
+   GCP meters of tcs-dev.js (rule 0, user 2026-11-28: no plant reading as a start value; was a meter reading of a screen) */
 const AN_GEN = {
   kV: 13.8,
   Hz: 60,
   S: 176.5,
-  MWh: 7266257,
-  MVArh: 882996
+  MWh: 0,
+  MVArh: 0
 };
 function anGenEl() {
   const U = AN.unit;
@@ -3101,9 +3101,8 @@ function anGenEl() {
     /* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): ONE generator model. The terminal voltage, stator current, Mvar, power
        factor and field are the ones of the field and on-line phasor model of tcs-gen.js (tcsGenStep / tcsGenPh: EMF behind Xd 1.92 pu,
        TR 2310 Xt 0.137 pu, stiff 230 kV bus; GEE-2015-0152 R1 p6, GAE-2013-0136 R2, K1AU3E1-0003 rev 2; checked against the V curves
-       310SD23-270 R1 within 1.5 %), the same values the TCS I/O, the Modbus list and the var-hour meter read. Before, this page computed
-       its own Mvar with a fixed power factor 0.977 (screen 37.PNG) and its own field scaled on that screen: two answers for one machine
-       (150 MW: 33.1 Mvar here, 8.8 Mvar in the TCS). Read only: the mirror page does not make U.gen (beta.277) */
+       310SD23-270 R1 within 1.5 %), the same values the TCS I/O, the Modbus list and the var-hour meter read (one model; the old fixed
+       power factor of this page is gone). Read only: the mirror page does not make U.gen (beta.277) */
     g = U.gen || {},
     G = TCS_GEN,
     /* beta.240: P negative = reverse power (motoring) */
