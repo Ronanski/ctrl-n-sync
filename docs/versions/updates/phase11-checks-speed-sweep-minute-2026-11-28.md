@@ -20,3 +20,8 @@ Tested
 Not tested
 - The new matrix timing: this PR's own Checks run is the first measurement. The floor is the sootblower-steam test (~46 min) until it is
   made faster (SUZU asked).
+
+## FEEDWATER VALUES test: display resolution (2026-11-28, 10:20 AM PHT)
+- Red on main and on 724: BFWP suction B 7.1 vs the as-built head 7.04, tolerance 0.05. The test reads `AN.unit.tt`, which holds the value as shown at 0.1 kg/cm2 (fw.js `r1`), so rounding alone can be 0.05 off.
+- Fix: tolerance = the 0.05 law tolerance + half the display resolution (0.05). The physics and the expected head are unchanged.
+- Tested: `tests/regress/fw_page_values.js` ALL PASS (B 7.1, head 7.05).
