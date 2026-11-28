@@ -352,7 +352,7 @@ const AN_FN = {
   /* Phase 11 rank 10: I0 / fI are now only the HMI estimate without the plant model (hmi2.js, AN.fanI); the plant model takes the
      PAF / SAF / IDF pressures and currents from the design documents (AN_FD below) */
   fI: { paf: 0.47, saf: 0.51, idf: 0.57 },
-  fa: { Q0: 26.3, z0: 42.8, P0: [3257, 3315] },
+  fa: { Q0: 26.3, z0: 42.8, P0: [3257, 3315] } /* RULE 0 VIOLATION, FA flow at the damper and header pressure from a plant screen: no inlet valve Kv curve and no header system curve in the docs */,
   run: {
     paf: 'DITL-26A',
     saf: 'DITL-27A',
@@ -860,21 +860,23 @@ function anAphStep(U, dt) {
     U.espEta = qN > 1000 ? 1 - Math.exp(-AN_ESP.wA / qN) : 1;
     /* audit 2026-11-21 B1: the transmitters of the air and gas path that no sheet reads (AN.unit.tt, the HX pages).
        TT-FA1073 / 1074, TT-FA1083 / 1084  PAF / SAF outlet air = tpa / tsa above (FHI Tab 3: ambient 35, PA 45, SA 39 C at MCR).
-       AT-FG1131  O2 after the air heater: the furnace gas (U.o2v) with the seal leak air (lp + ls, 20.9 %) mixed in by mass. The
-                  snapshot 7.PNG reads 19.2 % there with 4.3 % ahead of the air heater: no leak of the OMM (sheet 16, about 8 % of
-                  the gas) gives that, so that reading is taken as an analyzer drawing air, not as the gas.
+       AT-FG1131  O2 after the air heater: the furnace gas (U.o2v) with the seal leak air (lp + ls, 20.9 %) mixed in by mass.
        AT-FG1057-4  stack O2 = the same gas (no air enters after the air heater in the model).
-       AT-FG1057-2  NOx, fuel nitrogen (CALC): Tab 2 coal N 0.59 % = 0.000421 kmol per kg over 0.2551 kmol wet gas (AN_SOX note) =
-                  1651 ppm if all of it became NO; the snapshot 7.PNG stack 69 ppm gives the conversion 69 / 1651 = 4.2 %, held
-                  (the bed temperature effect is not in the docs: FHI says only that low temperature suppresses NOx). Diluted like
-                  the SOx (U.soxD: fuel per air, coal share of the fuel).
+       AT-FG1057-2  NOx (AN_NOX): the FHI guarantee, 180 ppm dry at 6 % O2 on the design coal, times the two correction factors of the
+                  same document (FHI Performance Test Procedure K1AU3-R3-0-001 Rev 2, section 3.6, p15-16): Ft for the combustion
+                  (bed) temperature U.Tb and Fea for the excess air of the furnace gas, EA = O2 / (20.9 - O2) (the model O2 is
+                  21 x (1 - stoichiometric air / total air), AN_SOX note), both 1.00 at the design point 850 C / 20 % EA. The
+                  printed curve points are read in AN_NOX.ft / fea; outside the printed span the end value is held. The analyzer reads
+                  the stack gas: ppm = NOx at 6 % x (20.9 - stack O2) / (20.9 - 6) (the reference formula of the same section). Only
+                  the coal makes NOx in the model: times the coal share of the fuel burnt (as the SOx); no coal burning = 0.
        AT-FG1057-3  CO: the model burns the fuel fully while there is excess air, so 0. Short of air (U.airR = air needed / air
                   given above 1, unit.js) the missing O2 share of the gas is 21 x (airR - 1) %; the carbon that finds no O2 for CO2
                   burns to CO (C + 1/2 O2), half the O2 of CO2: CO = 2 x that share, 2 x 21 x (airR - 1) x 10,000 ppm.
        AT-FG1057-5  dust = ESP inlet x (1 - Deutsch collection), the top of the transmitter 100 mg/m3 (I/O list AI0464).
-       AT-FG1057-6  opacity by Beer-Lambert, b from the one plant reading 12.5 % at 2.9 mg/m3 (7.PNG).
-       FT-FG1057-7  stack gas velocity: 21.5 m/s at the MCR wet gas 509,000 Nm3/h and 148 C (7.PNG, AN_SOX note), the actual volume
-                  flow over the same stack area (qN x T / T0). */
+       AT-FG1057-6  opacity by Beer-Lambert from the dust (the Rule 0 tag is on the code line: b 12.5 % at 2.9 mg/m3 is a plant screen value; the fly
+                  ash particle size that gives b is not in the design documents).
+       FT-FG1057-7  stack gas velocity: the actual volume flow over the stack area, qN x T / T0 (the Rule 0 tag is on the code line: the 21.5 m/s at
+                  509,000 Nm3/h and 148 C is a plant screen value; the stack inner diameter is needed). */
     const o2f = isFinite(U.o2v) ? Math.max(0, Math.min(20.9, U.o2v)) : 20.9,
       lk = lp + ls,
       o2a = gg > 1 ? (gg * o2f + lk * 20.9) / (gg + lk) : 20.9,
@@ -888,11 +890,11 @@ function anAphStep(U, dt) {
       'TT-FA1084': r1(tsa),
       'AT-FG1131': r1(o2a),
       'AT-FG1057-4': r1(o2a),
-      'AT-FG1057-2': Math.round(1651 * (69 / 1651) * (isFinite(U.soxD) ? U.soxD : 0)),
+      'AT-FG1057-2': anNox(U, o2f, o2a, gg),
       'AT-FG1057-3': gg > 1 && U.airR > 1 ? Math.round(2e4 * 21 * (U.airR - 1)) : 0,
       'AT-FG1057-5': r1(dust),
-      'AT-FG1057-6': r1(100 * (1 - Math.exp((Math.log(1 - 0.125) / 2.9) * dust))),
-      'FT-FG1057-7': r1(qN > 1000 ? (21.5 * (qN / 509000) * (Tst + 273.15)) / (148 + 273.15) : 0)
+      'AT-FG1057-6': r1(100 * (1 - Math.exp((Math.log(1 - 0.125) / 2.9) * dust))) /* RULE 0 VIOLATION, b from a plant screen: no fly-ash particle size in the docs */,
+      'FT-FG1057-7': r1(qN > 1000 ? (21.5 * (qN / 509000) * (Tst + 273.15)) / (148 + 273.15) : 0) /* RULE 0 VIOLATION, stack area from a plant screen: no stack inner diameter in the docs */
     });
   }
   /* 3.2.3-beta.212 (live Cold sweep F16: TT-FG1110 / 1113, TT-FG1124 / 1125, TT-FG1132 / 1133, TT-FG1152 '-----'): no sheet of the logic
@@ -900,13 +902,13 @@ function anAphStep(U, dt) {
      U.ecoGo  gas leaving the No.2 economizer (TT-FG1110 R / 1113 S, ahead of the No.1 economizer): the No.1 economizer takes eco = 43 / 120
               of the gap between this gas and the feedwater it heats (AN_GAS.eco, Tab 3), so the gas ahead of it is
               (gas to the air heater - eco x feedwater) / (1 - eco); the feedwater = the No.2 HP heater outlet U.hpT2 (unit.js anHpStep).
-              MCR check: (322 - 0.358 x 245.4) / 0.642 = 365 C (snapshot TIFG1110 / 1113 359 / 369). Never under the gas leaving.
+              MCR: (322 - 0.358 x 245.4) / 0.642 = 365 C. Never under the gas leaving.
      U.idfGo  ID fan outlet to the stack (TT-FG1152): the gas leaving the air heater plus the heat of the fan, dT = dp / (rho cp eta),
               dp = the fan pressure rise of the fan model (U.fnGo - U.fnGi, mmH2O), flue gas rho 0.85 kg/m3 at about 140 C and
               cp 1.05 kJ/kg K (Tab 3 gas), eta 0.87 (beta.310, was 0.8 NO-SOURCE: ID fan specification sheet RF2-0582-DOC-6-0 sheet 2,
               K1AU3-D1-0-003 R0 (PC only): design 17,621 m3/min at 150 C, 858 mmH2O, TE / SE 87 / 84 %; the total efficiency, since all
               the shaft work that is not pressure ends up as heat in the gas): about 9 C at
-              MCR (snapshot 148 - 146 = 2 C after the precipitator losses, which are not modelled). */
+              MCR (the precipitator losses are not modelled). */
   {
     const tf = isFinite(U.hpT2) ? U.hpT2 : amb;
     U.ecoGo =
@@ -1333,6 +1335,27 @@ function baPub(U) {
    air 20 % (Tab 3) O2 = 21 x (1 - 1 / 1.2) = 3.5 %. SO2 = raw x capture x (21 - O2) / 17.5 x (coal burnt / all fuel burnt as coal
    equivalent: U.burn x coal over U.burn x coal + 2.55 x oil, PR-OPE-5002 4.3.x). No coal burning = 0 (the oil sulphur is not counted:
    NO-SOURCE, the diesel analysis is not in the docs). */
+/* NOx at the stack analyzer AT-FG1057-2 (see the AN.unit.tt note): FHI guarantee x Ft x Fea, K1AU3-R3-0-001 Rev 2 section 3.6 */
+const AN_NOX = {
+  g: 180 /* ppm dry at 6 % O2, design coal; DESIGN-SRC: FHI K1AU3-R3-0-001 Rev 2 p15 */,
+  o2r: 6,
+  ft: [[830, 0.975], [840, 0.97], [850, 1.0], [860, 1.03], [870, 1.06], [880, 1.09], [890, 1.125], [900, 1.155], [910, 1.19], [920, 1.22], [930, 1.25]] /* DESIGN-SRC: K1AU3-R3-0-001 p16 Ft curve */,
+  fea: [[15, 0.84], [20, 1.0], [25, 1.16], [30, 1.32], [35, 1.48], [40, 1.645]] /* DESIGN-SRC: K1AU3-R3-0-001 p16 Fea curve */
+};
+const anNoxLin = (t, x) => {
+  if (!(x > t[0][0])) return t[0][1];
+  for (let i = 1; i < t.length; i++) if (x <= t[i][0]) return t[i - 1][1] + ((t[i][1] - t[i - 1][1]) * (x - t[i - 1][0])) / (t[i][0] - t[i - 1][0]);
+  return t[t.length - 1][1];
+};
+function anNox(U, o2f, o2s, gg) {
+  const K = AN_NOX,
+    cb = isFinite(U.cbn) ? U.cbn : 0,
+    fe = cb + (U.ao || 0) * (U.oilF || 0);
+  if (!(gg > 1) || !(cb > 0.01) || !(fe > 0.01) || !isFinite(U.Tb)) return 0;
+  const ea = (100 * o2f) / Math.max(0.1, 20.9 - o2f),
+    n6 = K.g * anNoxLin(K.ft, U.Tb) * anNoxLin(K.fea, ea);
+  return Math.round((n6 * Math.max(0, 20.9 - o2s)) / (20.9 - K.o2r) * (cb / fe));
+}
 const AN_SOX = { raw: 1822, k: 0.814, z0: 2.71, tau: 22400, o2d: 21 * (1 - 1 / 1.2) };
 function anSoxStep(U, dt) {
   const K = AN_SOX;
