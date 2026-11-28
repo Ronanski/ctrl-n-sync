@@ -737,20 +737,32 @@ function anTbPorts(U, rpm, hpb) {
    20 s x 150 MW) = 0.033 %/s per MW (NO-SOURCE), 3.3 times the drawing: the MW was held to +-0.02 MW at 150 MW while the main steam
    pressure swings as on the plant (plant trend SCENARIO 1 A, 150 MW hold: MW sd 0.43, MW / MSF correlation 0.86, MW / MSP 0.40). With the
    drawing the loop closes in about 100 / (0.01 x 150) = 67 s, so the steam pressure swings of the boiler reach the MW as on the plant.
-   Kept: the feedforward D / M0 of the model (the drawing has none: X tracks GOV SET, the target enters only through the error; finding) */
-const AN_TCE195 = { g1: 0.05, g2: 1.0, ti: 5.0 };
+   Phase 11 RIN 2026-11-28 (one logic, as drawn; YUA read /mnt/project-files/rin-lms027-reads-2026-11-28.md, TCA.pdf 331DM09788):
+   - PIV is the VELOCITY PI of ML 13 (TCA014): Y = G1 (X(j) - X(j-1)) + G2 TS / TI X(j) + F, F = 0: its output is the change of the
+     GOV CONTROL SIGNAL per cycle, which TCE196 GOV SET integrates. So GOV SET moves at G1 dX/dt + (G2 / TI) X: 0.05 % per MW at
+     once and 0.2 %/s per MW of error (was G1 G2 / TI = 0.01 %/s per MW, the ISA form, not the macro list).
+   - LMS027 is the value clamp of ML 41 (TCA017) on the error, HL / LL set each cycle by PA2 027: 2.5 x LOAD UP / DOWN RATE (TCE185:
+     L-RATE %/min x G010 0.025), or 2.5 x +/-0.06 on RUNBACK COMMAND. HL = 0.0625 x L-RATE. A clamped error moves GOV SET at E / TI =
+     0.75 x L-RATE %/min (DERIVED in the read). The error unit is MW: SUB001 takes TARGET MW DEMAND and GEN. MW (TCE070 in MW, TMR AI
+     HL 244.8 MW) and TCE195 has no MW-to-% gain (G021 K 1); DERIVED, the unit is not printed. L-RATE = U.rateUp (MW/min) x 100 / 150
+     (the AI0421 / TCE970-2 0 ~ 5 %/min). The TCE195 RUNBACK COMMAND input has no source in the model (drawn '-'): the load rates hold.
+   - The feedforward D / M0 of the model (not drawn) and the offset integral tb.fi are deleted; tb.fy is GOV SET of MW CONTROL (TCE196),
+     limited 110 / -5 % (PIV022 HL / LL), set to the flow demand in INITIAL, GOV MANUAL and LLM limiting (X tracks GOV SET) */
+const AN_TCE195 = { g1: 0.05, g2: 1.0, ti: 5.0, hl: 110, ll: -5, kr: 2.5, kl: 0.025 }; /* TCE195 PIV022 G1, G2, TI s, HL / LL %; G028 / G029 K; TCE185 G010 K */
 function anTbFlow(U, tb, D, dt, dirt) {
   const B = U.cvBias || 0.2,
-    M0 = U.MW0 || 150,
     L = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
-  if (!isFinite(tb.fd)) {
-    tb.fd = tb.xfer ? B + (1 - B) * L(+U.gv || 0, 0, 1.4) : B * L(+tb.icv || 0, 0, 1);
-    tb.fi = tb.fd - D / M0;
-  }
-  if (!isFinite(tb.fi)) tb.fi = tb.fd - D / M0;
+  if (!isFinite(tb.fd)) tb.fd = tb.xfer ? B + (1 - B) * L(+U.gv || 0, 0, 1.4) : B * L(+tb.icv || 0, 0, 1);
   const P = AN_TCE195,
-    eMW = D - U.MW;
-  tb.fi = L(tb.fi + (dt * eMW * P.g1 * P.g2) / (100 * P.ti), -0.5, 0.5);
+    lo = P.ll / 100,
+    hi = P.hl / 100,
+    lr = (P.kr * P.kl * (isFinite(U.rateUp) ? U.rateUp : 7.5) * 100) / 150 /* LMS027 HL = -LL, MW */,
+    eMW = L(D - U.MW, -lr, lr) /* LMS027 clamp, G021 K 1 */,
+    e0 = isFinite(tb.e0) ? tb.e0 : eMW;
+  /* PIV022 (velocity) into GOV SET (TCE196): X tracks GOV SET while not in MW control (bumpless) */
+  if (!isFinite(tb.fy)) tb.fy = L(tb.fd, lo, hi);
+  tb.fy = L(tb.fy + (P.g1 * (eMW - e0) + (P.g2 * dt * eMW) / P.ti) / 100, lo, hi);
+  tb.e0 = eMW;
   /* 3.2.4 (JENNIE): the speed path of TCE206 (p.140, ADD008 with GOV.SET) acts on the grid too: flow span x (rpm - 3600, less the dead
      band) / (droop x 3600), the same law as on house load. The MW error integral (TCE195) then takes the MW back to its target. It is
      added after the rate limit (the FILTER LME240 T 0.3 s is shorter than the scan of the model): the droop answers at once */
@@ -760,9 +772,9 @@ function anTbFlow(U, tb, D, dt, dirt) {
      the target load follow it, so the return to MW CONTROL is bumpless (TCE195 PIV022 X tracks GOV SET) */
   if (tb.govMan && isFinite(tb.gov)) {
     tb.fd = L(tb.fd + L(L(tb.gov / (tb.gk || 1), 0, 1.4) - tb.fd, -r, r), 0, 1.4);
-    tb.fi = L(tb.fd - D / M0, -0.5, 0.5);
+    tb.fy = L(tb.fd, lo, hi);
     if (isFinite(U.MW)) tb.aim = tb.tgt = U.MW;
-  } else tb.fd = L(tb.fd + L(L(D / M0 + tb.fi + (eMW * P.g1) / 100, 0, 1.4) - tb.fd, -r, r), 0, 1.4);
+  } else tb.fd = L(tb.fd + L(L(tb.fy, 0, 1.4) - tb.fd, -r, r), 0, 1.4);
   tb.fdD = dr;
   const s = (U.vRate || 0.1) * dt,
     /* TCE206: FLOW DEMAND = low select of GOV SET and LLM SET (tcs.js tcsGovLlm), then the speed path */
@@ -773,7 +785,7 @@ function anTbFlow(U, tb, D, dt, dirt) {
   tb.icv = L(i0 + L(icvD - i0, -s, s), 0, 1);
   U.gv = L((+U.gv || 0) + L(cvD - (+U.gv || 0), -s, s), 0, 1.4);
   /* the MW error integral follows the GOV SET held by the LLM (tcs.js tcsGovLlm, TCE196 GOV follow): no wind-up while limiting */
-  if (tb.lim && !tb.govMan) tb.fi = L(tb.fd - D / M0, -0.5, 0.5);
+  if (tb.lim && !tb.govMan) tb.fy = L(tb.fd, lo, hi);
   if (!tb.xfer && cvD > 0.005) {
     tb.xfer = true;
     dirt(U.di.xfer, 1);

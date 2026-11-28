@@ -4207,12 +4207,12 @@ function anUnitStep0(dt) {
   if (tb.st === 'roll' && onGrid && !trip) tb.rej = true;
   if (tb.st !== 'roll' || trip) tb.rej = false;
   const D = U.tcsT;
-  /* LMYP OTS 1.0.0-beta.3 (JENNIE, live Hot roll 2026-11-19, F-CN): the load loop of the TCS (TCE207 flow demand tb.fd, MW error integral
-     tb.fi) works only with 52G closed. Off the grid (turbine stopped, tripped or under speed control) it starts again from the valves at
+  /* LMYP OTS 1.0.0-beta.3 (JENNIE, live Hot roll 2026-11-19, F-CN): the load loop of the TCS (TCE207 flow demand tb.fd, TCE195 PIV022 integral
+     tb.fy) works only with 52G closed. Off the grid (turbine stopped, tripped or under speed control) it starts again from the valves at
      the next 52G close (anTbFlow: tb.fd = CV OPENING BIAS x ICV opening). Before, the flow demand of the last loaded run stayed in the
      plant and in every save point after it (0.82 at S68, 3600 rpm no load): at the 52G close the CVs went to 77 % in seconds, the main
      steam flow 187 -> 418 T/H at 0 MW and the turbine tripped on HP TURBINE INLET / EXHAUST DIFF. PRESS. VERY HIGH (IBD TA-21) */
-  if (!onGrid) tb.fd = tb.fi = NaN;
+  if (!onGrid) tb.fd = tb.fy = tb.e0 = NaN;
   if (U.turb === false) {
     /* 2.2.0-beta.14: cold start, the turbine is not rolled yet: the stop valves are shut (M4 step 4 opens them) */
     U.gv = 0;
