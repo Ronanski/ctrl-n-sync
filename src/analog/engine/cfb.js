@@ -427,7 +427,7 @@ const AN_FG0 = anFgMol(89.5, 1, 0, 596, 12, 1 - 200 / 1822, 0);
    - lining: AN_BB.mRef kJ/K x U.Trf;
    - drum water and evaporative steel: U.Cw (T/H s per K) x AN_BB.kW x U.Tw (unit.js drum law, r = B.kW / kWe);
    - drum steam space and flash: AN_STORE.cs (T/H s per kg/cm2) x U.kWe x U.Pd (the same drum law);
-   - reheat pipe: U.rhPipeM kJ/K x U.TpR;
+   - reheat pipe: AN_RHPIPE.M kJ/K (unit.js, BOM K1AU3-MM-102 R3) x U.TpR;
    - tube metal of every bank: AN_HX [metal kJ/K] x U.hxM (hx.js; U.shM / U.rhM are not used by the scan and are not counted);
    - coal held in the bed (char store): U.cbed t x AN_BB.lhvC x 3600 x (1 - AN_BB.fUC), the heat it gives when it burns. */
 function anStoredE(U) {
@@ -448,7 +448,7 @@ function anStoredE(U) {
     B.mRef * n(U.Trf) +
     n(U.Cw) * B.kW * n(U.Tw) +
     AN_STORE.cs * n(U.kWe) * n(U.Pd) +
-    (U.rhPipeM || 10000) * n(U.TpR) +
+    AN_RHPIPE.M * n(U.TpR) +
     hx +
     n(U.cbed) * B.lhvC * 3600 * (1 - B.fUC)
   );
