@@ -1367,7 +1367,7 @@ const AN_CD = {
               velocity: K_s = 1.3 (1 - f) + (1 / f - 1)^2 = 3.79;
        area   screen open area / pipe area 3 (NO-SOURCE: the usual minimum of a basket / Y strainer), so on the pipe velocity
               K = K_s / 3^2 = 0.42; the housing turn is not counted.
-     DP = K rho v^2 / 2: 0.003 kg/cm2 at 400 m3/h, clean. Before: 0.019 kg/cm2 at 383 T/H, a plant reading (gone). */
+     DP = K rho v^2 / 2: 0.003 kg/cm2 at 400 m3/h, clean. */
   str: { D: 0.3334, f: 0.367, ar: 3, rho: 992.6 /* water at 40 C, KSB sp. gr. 0.9926 */ }
 };
 /* the clean suction strainer DP, kg/cm2, at q m3/h through one pump (AN_CD.str above) */
@@ -1576,7 +1576,10 @@ function anCondStep(U, dt) {
      shell      the pressure of the extraction NOW (ports ext.lp1 ~ 3, RIN tbPath) less the line drop to the shell. The drop goes with
                 m^2 v (v ~ 1 / P): dP = dPd x (w / wd)^2 x (Pd / P), dPd and wd at HB PPE-14-0725 case 1 (turbine 1.914 / 0.826 / 0.373
                 ata, heaters 1.818 / 0.785 / 0.354 ata: 0.096 / 0.041 / 0.019 ata at 15246 / 12270 / 16834 kg/h), w the draw of the step
-                before; x the extraction MOV (DITL-97 No.3, DITL-98 No.2; the No.1 LPH has none), as AN_HP / AN_HD;
+                before; x the extraction MOV (DITL-97 No.3, DITL-98 No.2; the No.1 LPH has none), as AN_HP / AN_HD; x the extraction
+                non-return valve in series with it (tcs-dev.js U.dev.nrv: TC-44 ex4 = No.4 extraction to the No.3 LPH, TC-45 ex5 =
+                No.5 to the No.2 LPH; the No.6 line to the No.1 LPH has no NRV, YUA read mei-lph-flash-reads-2026-11-28.md): the
+                lower of the two openings throttles the line, a shut NRV isolates the shell (no steam, no draw);
      condensate effectiveness-NTU of a condensing shell: tube out = Ts - (Ts - Tin) exp(-NTU), NTU = UA / (m cp) with UA fixed from
                 the O&M design point (NTU_d = ln((Ts - Tin) / (Ts - Tout)) at 362.594 t/h; then NTU = NTU_d x 362.594 / m_tube), the
                 tube share s of anHtrPath, the bypass water mixed after (mass weighted);
@@ -1591,11 +1594,12 @@ function anCondStep(U, dt) {
      HB PPE-14-0725 R1 case 1, IAPWS-IF97 */
 const AN_LP = {
   F0: 458.684,
-  /* key, design shell kgf/cm2A, design condensate in / out C, DCA, extraction MOV, steam path stage, port, HB extraction P / kg/h */
+  /* key, design shell kgf/cm2A, design condensate in / out C, DCA, extraction MOV, steam path stage, port, HB extraction P / kg/h,
+     extraction NRV (tcs-dev.js U.dev.nrv key) */
   h: [
-    ['H1', 0.354, 40, 70.8, 5.62, null, 'ext.lp1', 'lp1', 0.373, 16834],
-    ['H2', 0.785, 70.8, 90.7, 5.61, 'DITL-98', 'ext.lp2', 'lp2', 0.826, 12270],
-    ['H3', 1.818, 90.7, 114.9, 5.62, 'DITL-97', 'ext.lp3', 'lp3', 1.914, 15246]
+    ['H1', 0.354, 40, 70.8, 5.62, null, 'ext.lp1', 'lp1', 0.373, 16834, null],
+    ['H2', 0.785, 70.8, 90.7, 5.61, 'DITL-98', 'ext.lp2', 'lp2', 0.826, 12270, 'ex5'],
+    ['H3', 1.818, 90.7, 114.9, 5.62, 'DITL-97', 'ext.lp3', 'lp3', 1.914, 15246, 'ex4']
   ],
   Fd: 362.594 /* t/h, condensate of the O&M design point */,
   tau: 120
@@ -1647,11 +1651,13 @@ function anLphStep(U, dt) {
     fl = typeof anCycFlows === 'function' ? anCycFlows(0) : null,
     m = fl ? Math.max(0, +fl.fda || 0) : 0,
     W0 = U.lpW || {};
-  for (const [k, P0, ti, to, dca, mov, port, q, Pd, wd] of K.h) {
+  const nvs = U.dev && U.dev.nrv ? U.dev.nrv : null,
+    nrv = key => (key && nvs && nvs[key] && isFinite(+nvs[key].p) ? Math.max(0, Math.min(100, +nvs[key].p)) : 100);
+  for (const [k, P0, ti, to, dca, mov, port, q, Pd, wd, nk] of K.h) {
     const e = anPortGet(U, port),
       Pe = e && isFinite(e.P) ? Math.max(0, e.P) : 0,
       wr = Math.max(0, +W0[q] || 0) / (wd / 1000),
-      Ps = Pe > 0 ? Math.max(0.5 * Pe, Pe - (Pd - P0) * wr * wr * (Pd / Pe)) * thr(pos(mov)) : 0,
+      Ps = Pe > 0 ? Math.max(0.5 * Pe, Pe - (Pd - P0) * wr * wr * (Pd / Pe)) * thr(Math.min(pos(mov), nrv(nk))) : 0,
       ts = anTsatA(Ps),
       Tsd = anTsatA(P0),
       sh = wL[k] ? wL[k].s : 1,
@@ -1837,16 +1843,16 @@ function anHxTagStep(U, dt) {
                    first on the line (HB PPE-14-0725 R1 Attachment-1 r: "between condensate pump and gland steam condenser"). Its share =
                    the steam-side duties of HB case 1 (310SD07-485 R4): SJAE 400 kg/h x (752.0 - 152.0) = 240,000 kcal/h, GSC 421 kg/h x
                    (767.6 - 99.1) = 281,400 kcal/h: 0.460 (the steam side, as the condensate side 38.7 -> 39.3 -> 40.1 kcal/kg is rounded
-                   to 0.1, +-15 %). Before: 1/2 (a plant screen, gone). When SUZU / RIN write the ej.steam / gs.leak ports this becomes
+                   to 0.1, +-15 %). When SUZU / RIN write the ej.steam / gs.leak ports this becomes
                    their duties;
      TT-CD1110-4   the flash chamber: the No.1 LPH drain (and the drains sent to it) flashes there and the chamber vents to the condenser
                    shell, so its water leaves at the saturation of the condenser pressure: = U.cdTs (first law, flash at constant
-                   enthalpy). Before: hotwell + 2 C x load share (a load shape, gone);
+                   enthalpy).;
      FT-CD1122     the condensate that the deaerator level valve passes (plant.js anCycFlows fda, without the recirculation of FT-CD1120);
      PT-CD1122     the deaerator inlet = the LCV-CD1104 outlet of the hydraulic model (plant.js anDaQ, one path): deaerator PT-CD1104 +
                    z2 + kN fda^2, z2 / kN from the two conditions of the valve data sheet K1AU3-E2-0-123 R1 item 14 (COND 1 P2 10.1
                    kg/cm2 g at 362.59 T/H with the deaerator at 5.02 g, COND 2 P2 3.02 at 36 T/H at the atmosphere; anCdHydK): the
-                   water column up to the deaerator and its spring-loaded spray nozzles (L15-2 1.2). Before: PT-CD1104 + 1.6 fixed;
+                   water column up to the deaerator and its spring-loaded spray nozzles (L15-2 1.2).;
      TT-CD1104     the storage tank water at the saturation of the deaerator pressure PT-CD1104 (first principles);
      FT-CD1115     LP bypass spray (Phase 11, MEI): TCV-CD1115 by its valve sheet K1AU3-D1-0-043 R0 p12 (RIN PC read, rin-valve-reads.md):
                    1 in, Cv 25.4, modified equal %: Cv % 7 / 36 / 72 at travel 17 / 54 / 81 %; liquid ISA w = 0.8566 Cv sqrt(dp SG) (T/H,
