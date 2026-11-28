@@ -835,8 +835,8 @@ function anUnitStart() {
      - TT-CR1005-1 / -2 (ABC-019, after the RH spray): the cold reheat less the cooling of the RH spray (39 C at the anchor spray)
      - TT-HR1004 hot reheat (ABC-052): the reheater outlet, PV of TICHR1002 (TT-HR1002), with its own offset of the snapshot
      - TT-AS1003 aux steam header (ABC-034): 236 C with the header in service (PT-AS1004 source of ABC-030), ambient without it
-     - TT-FW1160 economizer inlet (ABC-010): the deaerator water (saturation of PT-CD1104, ambient while it is not heated) plus the HP
-       heaters, whose extraction steam goes with the turbine load (244 C at the anchor)
+     - TT-FW1160 economizer inlet (ABC-010): the No.2 HP heater outlet of the heater model (fw.js anHphStep U.hpT2); before the heater
+       model has a value, the deaerator water (saturation of PT-CD1104, ambient while it is not heated)
      - TT-FA1055-A / -B FA blower outlet (ABC-006): the heat of compression while the blowers run (81 / 76 C at the anchor) */
   U.xt = {
     cr: ais('ABC-051', 'AI0900'),
@@ -870,8 +870,6 @@ function anUnitStart() {
     X.rhi0 = X.rhi.map(L => a(L));
     X.rhv0 = X.rhPv && X.rhPv.c.q ? +X.rhPv.S.rt.v[X.rhPv.n] : NaN; /* RH spray MV at the anchor */
     X.hrOff = X.rhPv && X.rhPv.c.q && X.rhPv.c.q.pv != null ? a(X.hr) - +X.rhPv.S.rt.v[X.rhPv.c.q.pv] : 0;
-    X.fw0 = a(X.fw);
-    X.dea0 = a(X.dea);
     X.faF0 = a(X.faF);
     X.lt2Off = X.lt13.length ? a(X.lt2) - X.lt13.reduce((s, L) => s + a(L), 0) / X.lt13.length : NaN;
     X.T = {};
@@ -2047,42 +2045,10 @@ function anCdTagStep(U) {
     'FT-CD1115': isFinite(mv) && isFinite(uf) ? r1(anLpbSpray(U, anAv('TICHR1012', mv) * uf)) : null
   });
 }
-/* 3.2.1 (IRENE, page 06 FEEDWATER): the turbine extraction, feedwater and spray transmitters of the page that no sheet reads (AN.unit.tt).
-   Sources:
-     4.PNG (004 EXTRACTION STEAM, 148.8 MW, MSF 472.7 T/H): PT-TS1013 (No.2 extraction) 14.07, PT-TS1017 (No.3 extraction) 5.30 kg/cm2,
-       TT-TS1011 (cold reheat to the No.2 HPH) 371 C, FT-FW1059 1.8 T/H with TCV-FW1060 0.1 % MANUAL and XV-FW1061 closed;
-     03.png (003 MAIN WATER / STEAM, 150.5 MW, MSF 474.1): PIFW1011 165.4, drum PIBR10011 134.2, PIBR1130 (after SH panel #1) 127.8,
-       PIBR1150 (finishing SH inlet) 124.9, PIFW1160 137.7 kg/cm2, TIFW1011 162 C, PIFW1115A / B 6.7 / 7.1 with DPIFW1115A 0.29,
-       TICBR1130 MV 57.6 -> TCV-FW1110-1 45.5 / -2 100.7 %, FIQFW1109 37.5; TICBR1150 MV 30.2 -> TCV-FW1120-1 14.9 / -2 99.7 %, FIQFW1119 28.2;
-     5.png (005 REHEATER STEAM, 152.5 MW, MSF 482.2): TCV-FW1150 66.0 % AUTO, XV-FW1151 open, FIQFW1149 14.8 T/H;
-     control valve data sheets K1AU3-E2-0-123 R1 (PC), items 19 / 20 / 23 / 24 (Copes-Vulcan): TCV-FW1110-1 linear, Cv 0.17 / 3.29 /
-       9.49 / 14 at 2 / 25 / 68 / 100 % travel, 35000 kg/h at 165.3 -> 142.2 kg/cm2 g; TCV-FW1110-2 cascade 0.05 / 0.99 / 1.67 at
-       6 / 59 / 100 %; TCV-FW1120-1 equal % 0.17 / 2.46 / 8.84 / 15 at 10 / 48 / 75 / 100 %; TCV-FW1120-2 equal % 0.05 / 0.99 / 1.5 at
-       19 / 90 / 100 %; the start-up valves (-2) in parallel with the main (-1), each behind its block valve XV-FW1111-1 / -2 (DITL-32 /
-       #B), XV-FW1121-1 / -2 (DITL-33 / #B);
-     ABC-011 / 012 F(X) LN47 / LN46, LN49 / LN48: the controller MV to valve (1) / (2) (MV 57.6 -> 45.6 / 100, MV 30.2 -> 14.9 / 100).
-   How it works:
-     PT-TS1013 / 1017   the snapshot pressure x main steam / 472.7 (absolute, a turbine stage, as AN_HP);
-     TT-TS1011          the cold reheat temperature of the unit model (anUnitStepX X.T.cr);
-     PT-TS1026          (beta.33) the same stage law from 0.25 kg/cm2 g (4.PNG PITS1026, STN102 AI0563, range -1 ~ 5);
-     TT-TS1014 / 1018 / 1023 / 1027  (beta.33) 4.PNG 426 / 314 / 188 / 91 C: with the stage pressure ratios fixed (Stodola), the
-                        absolute temperature of an extraction keeps its ratio to the hot reheat (TT-HR1004, X.hr against TIHR1004 540 C of the snapshot);
-                        below 5 % main steam it goes to the ambient (NO-SOURCE, no flow through the turbine);
-     PICR19011 / 12 / 13 (beta.33) HP turbine exhaust steam pressure A / B / C (DCS loop list STN2 SI1700-1702, 0 ~ 50): the hot
-                        reheat pressure x 36.6 / 35.1, the Pcr of the bypass model (snapshots 35.4 ~ 36.1 at 150 MW);
-     PT-FW1115-A / B    the suction header (plantsw.js sucP) minus the loss of a running pump's branch = its strainer DP (AN_FW fwDp)
-                        x 0.4 / 0.29 (03.png: running A 6.7 = idle B 7.1 - 0.4 at strainer DP 0.29; low load check: DP 0.07 -> 4.0 - 0.1
-                        = 3.9, PIFW1115A 3.9);
-     TT-FW1011          the deaerator water: saturation of PT-CD1104 (the pump heating not modelled; 03.png 162 C);
-     PT-FW1160          drum pressure + 3.5 kg/cm2 x (feedwater / 499.1)^2 (03.png 137.7 - 134.2);
-     ZT-FW1110 / 1120   the F(X) of the controller MV (its airlock AN_AV: the MV is held without air);
-     FT-FW1109 / 1119   0.7674 T/H x (Cv(-1) x XV-1 + Cv(-2) x XV-2) x sqrt(PT-FW1011 - spray point), Cv from the travel by the sheet
-                        points; spray point = drum - 6.4 / 9.3 kg/cm2 x (main steam / 474.1)^2 (03.png); 0.7674 from item 19 COND 1. The
-                        No.1 spray gives 37.3 T/H at the 03.png point (37.5). The No.2 spray gives 9.6 T/H by its sheet against 28.2 in
-                        03.png: UNUSUAL (the equal % curve at 14.9 % travel is far below what flows); beta.259: the x 2.94 snapshot calibration is removed (no patches: the Cv of the data sheet only);
-     FT-FW1149 / 1059   Phase 11 NANA 2026-11-27: fw.js AN_BYS / anSprW (TCV-FW1150 Cv 6.2, TCV-FW1060 Cv 10.3 modified equal % from the
-                        BFWP 3rd-stage tap, KSB curve Q43446D, PD-017); was 14.8 / 40 T/H x MV x sqrt(dp / 130.5) from the pump discharge.
-   Not on any DCS sheet: XV-TS1700 / 1710 (NO-SOURCE, not modelled). */
+/* Page 06 FEEDWATER transmitters that no sheet reads (extraction PT / TT-TS10xx, PT-FW1115-A / B, TT-FW1011, PT-FW1160, the SH / RH /
+   HP bypass spray flows and valve positions): fw.js anFwTagStep, from the turbine ports ext.* (RIN), the BFWP and strainer law
+   (KSB), the economizer line law (AN_MFW) and the valve data sheets K1AU3-E2-0-123 R1 / L21; its comment gives each source
+   (Phase 11 NANA 2026-11-28: the old screen-scaled description that stood here is deleted). */
 /* 3.2.1 (IRENE: page 08 AUX STEAM AND VACUUM; docs/versions/v3.2.1/AUX_STEAM_PLANT_MODEL.md). The values of page 08 that no ABC / DITL
    sheet reads, in AN.unit.tt for the plant page.
    Sources:
@@ -4989,13 +4955,12 @@ function anUnitStepX(dt, mso) {
        the header pressure before beta.223) */
     if (X.aux && X.aux.length && isFinite(U.asT3)) anUnitWrite(X.aux, U.asT3);
     /* feedwater to the economizer: deaerator water + HP heaters (with the turbine load) */
-    if (X.fw && X.fw.length && isFinite(X.fw0)) {
+    if (X.fw && X.fw.length) {
       const pd = val(X.dea),
-        tdea = isFinite(pd) && pd > 0.05 ? steamTsat(pd) : U.Tamb,
-        tdea0 = isFinite(X.dea0) && X.dea0 > 0.05 ? steamTsat(X.dea0) : 120,
-        ld = U.MW0 > 0 ? Math.max(0, Math.min(1.1, (U.MW || 0) / U.MW0)) : 0;
-      /* 3.2.1 (IRENE: HP HEATERS): the outlet of the No.2 HPH of the heater model (anHphStep), 03.png TIFW1106 243 / TIFW1160 244 C */
-      anUnitWrite(X.fw, isFinite(U.hpT2) ? U.hpT2 : lag('fw', tdea + Math.max(0, X.fw0 - tdea0) * ld, 600));
+        tdea = isFinite(pd) && pd > 0.05 ? steamTsat(pd) : U.Tamb;
+      /* the outlet of the No.2 HPH of the heater model (anHphStep); no heater value yet = the deaerator water (Phase 11 NANA 2026-11-28:
+         was a lag to the anchor value of the state scaled with the MW, a screen value) */
+      anUnitWrite(X.fw, isFinite(U.hpT2) ? U.hpT2 : tdea);
     }
     /* the second drum level transmitter: the same water as the other two */
     if (isFinite(X.lt2Off) && X.lt2.length) {
