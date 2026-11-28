@@ -10,7 +10,7 @@ vm.runInContext(fs.readFileSync('src/analog/engine/ports.js', 'utf8') + ';' + fs
 const { anElec, anElecStep, anElecL52, AN_EL } = ctx.API;
 const lab = () => ({ S: { rt: { force: {}, ext: {} }, ext: [5] }, n: 5 });
 /* desk inputs (not a plant reading): three part ports and the 6.6 kV currents of the rows still in AN_EL.mot */
-const PT = { 'q.motor.AOI': { P: 5990, Q: 2900 }, 'q.motor.NANA': { P: 3030, Q: 1700 }, 'q.motor.MEI': { P: 260, Q: 140 } };
+const PT = { 'q.motor.AOI': { P: 5990, Q: 2900 }, 'q.motor.NANA': { P: 3030, Q: 1700 }, 'q.motor.MEI': { P: 260, Q: 140 }, 'q.motor.SUZU': { P: 2400, Q: 1900 } };
 const mk = () => ({ on: true, MW: 150, tcsT: 150, tb: { st: 'load', rpm: 3600 }, di: { l52: lab(), on: lab() }, pt: JSON.parse(JSON.stringify(PT)), swIa0: 230, swIa1: 230, acI0: 26.8, paI0: 43.8 });
 let fail = 0;
 const ck = (ok, w, x) => {
@@ -22,7 +22,7 @@ const r3 = Math.sqrt(3),
 let P = 0,
   Q = 0;
 for (const k in PT) (P += PT[k].P / 1000), (Q += PT[k].Q / 1000);
-for (const [k, , pf] of AN_EL.mot) {
+for (const [k, , pf] of AN_EL.mot || []) {
   const p = (r3 * 6.6 * (+u0[k] || 0) * pf) / 1000;
   (P += p), (Q += p * Math.tan(Math.acos(pf)));
 }

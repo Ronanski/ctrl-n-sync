@@ -39,9 +39,25 @@ const runOne = f =>
 (async () => {
   const firstF = path.join(lanes, 'first.txt'),
     first = fs.existsSync(firstF) ? fs.readFileSync(firstF, 'utf8').split(/\r?\n/).map(l => l.trim()).filter(l => l && l[0] !== '#') : [],
-    rank = f => (first.includes(relOf(f)) ? first.indexOf(relOf(f)) : first.length);
-  const par = list.filter(f => !serial.includes(relOf(f))).sort((a, b) => rank(a) - rank(b)),
+    rank = f => { const k = first.findIndex(l => l.replace(/^alone /, '') === relOf(f)); return k < 0 ? first.length : k; };
+  let par = list.filter(f => !serial.includes(relOf(f))).sort((a, b) => rank(a) - rank(b)),
     ser = list.filter(f => serial.includes(relOf(f)));
+  /* Checks speed (2026-11-28, DOUBLE TIME): LANE_SHARD=i/N runs one part of the list, one Checks job per part (checks.yml matrix).
+     The ALONE first lines of tests/lanes/first.txt (the slowest tests, marked "alone") get one part each (parts 0, 1, ...); the rest
+     go round-robin over the other parts. Every test runs in exactly one part; without LANE_SHARD everything runs here as before */
+  const sh = /^(\d+)\/(\d+)$/.exec(process.env.LANE_SHARD || '');
+  if (sh) {
+    const I = +sh[1], N = +sh[2],
+      alone = fs.existsSync(firstF) ? fs.readFileSync(firstF, 'utf8').split(/\r?\n/).map(l => l.trim()).filter(l => /^alone /.test(l)).map(l => l.slice(6).trim()) : [],
+      A = alone.slice(0, N - 1),
+      rest = [...par, ...ser].filter(f => !A.includes(relOf(f))),
+      mine = I < A.length ? list.filter(f => relOf(f) === A[I]) : rest.filter((f, k) => k % (N - A.length) === I - A.length);
+    par = par.filter(f => mine.includes(f));
+    ser = ser.filter(f => mine.includes(f));
+    list.splice(0, list.length, ...par, ...ser);
+    console.log('LANE_SHARD ' + I + '/' + N + ': ' + list.length + ' tests');
+  }
+  if (process.env.LANE_DRY) { for (const f of list) console.log(relOf(f)); process.exit(0); }
   let i = 0;
   await Promise.all(Array.from({ length: Math.min(J, par.length) }, async () => { while (i < par.length) await runOne(par[i++]); }));
   for (const f of ser) await runOne(f);

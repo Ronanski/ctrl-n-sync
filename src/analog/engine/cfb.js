@@ -7,10 +7,10 @@
    since beta.256, rule-0 list 2026-11-24 item 5) are deleted.
    Rule 0 (RULES.md 3.12): physics from first principles and the design data only; the open fits of this file are on
    docs/audit/rule0-fit-list-2026-11-24.md items 1 (kKL) and 2 (bed inventory anchor) and go away in the next steps of Phase 11. */
-/* FIFA1079 (hot PA to the grate plenum) over FIFA1071 (the PA fan flow). Phase 11 AOI 2026-11-28 (user rule: no snapshot): DESIGN-SRC
+/* FIFA1079 (hot PA to the grate plenum) over FIFA1071 (the PA fan flow). Phase 11 AOI 2026-11-28: DESIGN-SRC
    the FHI mass balance at 100 % BMCR, PA sheet (YUA read, /mnt/project-files/aoi-design-reads-2026-11-28.md): PAF outlet 388 t/h, of it
    325 to the grate plenum (4 x 81.25), 27 to the coal pipes, 3 cold to the feeder seals, 33 lost in the air heater. The loop seals and
-   cyclones are on the FA blowers (not PA). Was 328.2 / 354.0 from an HMI snapshot */
+   cyclones are on the FA blowers (not PA). */
 const AN_PA_FURN = 325 / 388;
 /* bed temperature at steady firing. FHI Fig 8 (furnace temperature) on the coal share of Fig 13, scaled to the bed of the anchor; more air than
    Fig 12 gives at that firing cools it with the same exponent 0.45. Below 40 % load no curve is printed: the start-up law of beta.15 (a small
