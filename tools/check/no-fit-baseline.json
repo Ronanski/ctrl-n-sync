@@ -7,7 +7,6 @@
   "/* live Cold start 2026-11-14 (user: \"WALANG DAYAIN\", no curve fits): THE BED HEAT BALANCE of the Cold path. Before, the bed went first",
   "order to a law fitted on the plant trend (start-up exponent kBedSU 0.168 and the AN_BED table), and the water walls took",
   "by the plant DCS trend, scenario 1 (14-plant-trends): bed TIFG1090 flat 952 ~ 962 C from 150 to 90 MW with PA + SA 610 -> 505 T/H.",
-  "snapshot thermocouples (plant trend 952 ~ 962 C). The design bed: P2S4 p2-4-8 850 ~ 900 C normal (above 900 C call FHI), the",
   "kKL, CALC from the plant at 90 MW: scenario 1 of the plant DCS trend (14-plant-trends: coal 55.4 T/H, PA 318 + SA 187 T/H,",
   "lower velocity only); 9.2 itself is the plant trend value of beta.282 (finding D3 stays open) */"
  ],

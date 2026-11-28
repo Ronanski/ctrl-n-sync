@@ -414,9 +414,13 @@ const AN_HMI_FF = {
 /* 2.1.0-beta.11: manual stations (MAN blocks, hand loaders) of the snapshots, in the unit of the station: 33.PNG MW OUTPUT HIGH /
    LOW LIMIT SET, OUTPUT CHANGE RATE SET; the MAN stations that are in AN_HMI_CTL take their MV (% station) or PV (other unit) */
 const AN_HMI_MAN = {
-  'HIC-MWHL': [238.4, '33.PNG MW OUTPUT HIGH LIMIT SET (clamped to the range of the station)'],
-  'HIC-MWLL': [0.0, '33.PNG MW OUTPUT LOW LIMIT SET'],
-  'HIC-MWRL': [3.0, '33.PNG OUTPUT CHANGE RATE SET (MW/MIN)'],
+  /* Phase thread 2026-11-28 (user rule of 5:18 AM PHT, no plant screen): the three load limit stations of ABC-001A / 001B were 238.4 / 0.0 / 3.0
+     from a screen. HIC-MWHL = its MV high limit MH 75.5 % x SH 200 MW = 151 MW (backup parameters, face-defaults); HIC-MWLL = its range
+     low end SL 0 (ML 0 %); HIC-MWRL = the design normal load change rate -0.8 %/min x 150 MW = 1.2 MW/min (MHPS PPE-15-0080 R1 start-up /
+     shutdown curves, 100 ~ 60 % load; YUA read /mnt/project-files/aoi-load-response-search-2026-11-28.md) */
+  'HIC-MWHL': [151.0, 'MH 75.5 % x SH 200 MW (backup parameters)'],
+  'HIC-MWLL': [0.0, 'SL 0 MW (station range)'],
+  'HIC-MWRL': [1.2, 'PPE-15-0080 R1 design load rate 0.8 %/min x 150 MW'],
   /* ABC-002 HIC-TADBS (station -50 ~ +50) -> F(X) S1-LN14 "PA FLOW BIAS" (x 0 % -> -30 T/H, 50 % -> 0, 100 % -> +30). LOGIC-SRC: the
      neutral point of LN14, station 0 = 0 T/H bias (the PA demand is S1-LN12 of the coal alone). Phase thread 2026-11-28, user rule of
      5:18 AM PHT (no plant snapshot in the plant model): was -50 taken from an operating screen */
