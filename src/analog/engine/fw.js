@@ -14,6 +14,18 @@
        volume 120.9 m3, ID 3338.
      Hitachi heat balance PPE-14-0725 R1 case 1 (turbine.js AN_TB c1): deaerator extraction stage 6.369 ata at 458,327 kg/h main steam. */
 
+/* Phase 11 NANA 2026-11-28: specific heat of the vessel steel, kJ/kg K, at T C. The heater and deaerator shells are SA516-70 (plain
+   C-Mn steel) with SA387-11 CL2 (1.25Cr-0.5Mo) courses on the HP heater shells (YUA PC read 2026-11-28). DESIGN-SRC (material property):
+   Incropera & DeWitt, Fundamentals of Heat and Mass Transfer, Table A.1, plain carbon steel: 434 J/kg K at 300 K, 487 at 400 K,
+   559 at 600 K, 685 at 800 K; a straight line between the printed points. The Cr-Mo courses are taken at the same line (the alloy is
+   1.75 % by mass; their share of each shell is not printed). Was a fixed 0.49 (textbook, no temperature). */
+function anSteelCp(T) {
+  const x = [26.85, 126.85, 326.85, 526.85],
+    y = [0.434, 0.487, 0.559, 0.685],
+    t = Math.max(x[0], Math.min(x[3], isFinite(T) ? T : x[0]));
+  for (let i = 1; i < 4; i++) if (t <= x[i]) return y[i - 1] + ((y[i] - y[i - 1]) * (t - x[i - 1])) / (x[i] - x[i - 1]);
+  return y[3];
+}
 /* water enthalpy kJ/kg at P kg/cm2 G (at least its saturation pressure) and T C */
 function fwHw(P, T) {
   const Tc = Math.max(0.01, Math.min(350, +T || 0)),
@@ -28,7 +40,8 @@ function fwHw(P, T) {
    extraction N4 are open to the atmosphere while it is cold), so PT-CD1104 reads 0 kg/cm2 G, never a vacuum.
      M   the water: 100.4 + 3.54 = 103.94 t at the normal level (operating less empty weight, K2MC2G-001 / K2MC2F-001), plus the level
          read from normal x the storage tank kg per mm of plant.js AN_CYC.kgmm.da;
-     Mm  the metal: 40,000 + 9,830 = 49,830 kg (empty weights), carbon steel SA516-70, cm 0.49 kJ/kg K (textbook carbon steel);
+     Mm  the metal: 40,000 + 9,830 = 49,830 kg (empty weights), SA516-70 (deaerator 12t, storage tank 19t; YUA PC read 2026-11-28,
+         /mnt/project-files/nana-heater-material-reads-2026-11-28.md), cm = anSteelCp(T) (plain carbon steel, see there);
      cw  dhf/dT of the water at T (IF97, numerical);
    In:
      extraction no. 3 (heat balance "deaerator" stage, PD-013) through MV-TS1003 (DITL-96) and its two non-return valves (XV-TS1710 /
@@ -50,7 +63,6 @@ function fwHw(P, T) {
 const AN_DA = {
   M0: 103.94 /* t water at the normal level, DESIGN-SRC: K2MC2G-001 + K2MC2F-001 operating - empty weight */,
   Mm: 49.83 /* t metal, DESIGN-SRC: K2MC2G-001 40,000 + K2MC2F-001 9,830 kg empty */,
-  cm: 0.49 /* kJ/kg K carbon steel */,
   w0: 26.79 /* t/h DESIGN-SRC: K2MC2F-001 steam inlet */,
   Px0: 6.369 /* ata DESIGN-SRC: HB PPE-14-0725 case 1 deaerator stage */,
   Pd0: 5.05 + 1.0332 /* ata DESIGN-SRC: K2MC2F-001 operating 5.05 kg/cm2 G */,
@@ -137,7 +149,7 @@ function anDeaStep(U, dt) {
     tc = isFinite(fin(pC && pC.T)) ? fin(pC.T) : Ta,
     hc = isFinite(fin(pC && pC.h)) ? fin(pC.h) : fwHw(Pd, tc),
     Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (fwHw(Pd, td) - hf) + wc * (hc - hf)) / 3.6 /* kW */,
-    C = M * 1000 * cw + K.Mm * 1000 * K.cm /* kJ/K */;
+    C = M * 1000 * cw + K.Mm * 1000 * anSteelCp(T) /* kJ/K */;
   if (dt > 0) U.da.T = Math.max(Ta - 5, Math.min(200, T + (Q * dt) / C));
   const Pn = Math.max(0, steamPsat(U.da.T));
   Object.assign(U.da, { P: Pn, M, wx, wb, wp, wd, wc, hx, Q, Pxa, rho: anWaterRho(U.da.T), rhoL: anWaterRho(isFinite(U.Tamb) ? U.Tamb : 30) }); /* rho / rhoL: the BFWP suction PT-FW1115 (plantsw.js W.sucP) */
@@ -316,12 +328,14 @@ function anFwStep(U, dt) {
      UA of each zone: from the design point above (zone duties from IF97, LMTD), times (feedwater / design)^0.8 off design (the tube side
      film controls, Dittus-Boelter Nu ~ Re^0.8; the condensing shell film is several times higher). No other constant.
      extraction e   from the energy balance of the heater: e (h steam - h drain) + cascade (h cascade - h drain) = feedwater duty.
-     metal / water  the outlet follows its steady value with tau = (metal x 0.49 + water x cp) / (feedwater x cp), metal = the
-                    fabricated weight, water = operating - fabricated weight; no feedwater = no change. */
+     metal / water  the outlet follows its steady value with tau = (metal x anSteelCp + water x cp) / (feedwater x cp), metal = the
+                    fabricated weight (D1-036: H-1105 22,200 kg, operating 29,300 kg, the heater alone; the 16,900 / 22,320 of the
+                    support table is one saddle of two), water = operating - fabricated weight; shells SA516-70 + SA387-11 CL2, heads
+                    SA516-70 (YUA PC read 2026-11-28); the water cp is IF97 at the tube pressure and the outlet temperature; no
+                    feedwater = no change. */
 const AN_HP = {
   m0: 458.684 /* t/h feedwater, DESIGN-SRC: K1AU3-D1-0-036 */,
   nRe: 0.8 /* Dittus-Boelter exponent, DESIGN-SRC: textbook (Incropera 8.60) */,
-  cm: 0.49 /* kJ/kg K carbon steel, DESIGN-SRC: textbook */,
   /* No.1 HPH (H5, extraction II, port ext.hp1), No.2 HPH (H6, cold reheat, port ext.hp2); DESIGN-SRC: K1AU3-D1-0-036, HB case 1 */
   h: [
     { k: 'H5', port: 'ext.hp1', mov: 'DITL-95', Ps: 14.12, Px: 14.87, Tx: 417.8, Td: 166.3, Ti: 160.7, To: 195.7, e: 24.2, cas: 45.147, Tc: 201.3, Mm: 22200, Mw: 7100 },
@@ -455,8 +469,11 @@ function anHphStep(U, dt) {
     st[i].e = r.e;
     st[i].eo = ro.e;
     const ss = T + w[i].s * (r.To - T),
-      C = K.h[i].Mm * K.cm + K.h[i].Mw * 4.4,
-      k = ffw > 0 && dt > 0 ? Math.min(1, (dt * ((ffw * 1000) / 3600) * 4.4) / C) : 0;
+      /* water cp from IF97 region 1 at the tube pressure and the outlet temperature (dh/dT over 1 C; was a fixed 4.4) */
+      Tc = isFinite(st[i].T) ? st[i].T : ss,
+      cw = isFinite(Tc) ? hpHw(Pt, Tc + 0.5) - hpHw(Pt, Tc - 0.5) : NaN,
+      C = K.h[i].Mm * anSteelCp(Tc) + K.h[i].Mw * cw,
+      k = ffw > 0 && dt > 0 && isFinite(cw) && cw > 0 ? Math.min(1, (dt * ((ffw * 1000) / 3600) * cw) / C) : 0;
     /* a start (Start at a load, a save point without this state): the heater at the steady state of the first step that has its
        extraction port and the deaerator water; before that the outlet is the steady value */
     if (isFinite(st[i].T)) st[i].T += (ss - st[i].T) * k;
