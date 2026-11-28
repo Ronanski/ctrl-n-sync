@@ -625,8 +625,8 @@ const AN_HD = {
      shell 37.48 ata); the sheet's own arithmetic (FL 0.90 above) reads them as gauge, so the sizing check keeps that reading, and
      the plant model uses the true absolute pressure with the same trim FL.
      inlet  = shell + static head of the drain water from the shell water level down to the valve - the inlet line loss;
-     outlet = the place it drains to + the outlet line loss (the flashing two-phase line: its static head is in this loss, the
-              mixture density is NO-SOURCE);
+     outlet = the place it drains to + the outlet line loss (the flashing two-phase line: its static head is in this loss; the
+              loss goes with W^2 x the mixture specific volume, homogeneous flash at the place pressure, IF97, anHdVm);
      a line loss goes with flow^2 (turbulent), its size from the COND 1 case of the sheet less its static head.
    Elevations (YUA PC read 2026-11-28, /mnt/project-files/pc-reads-npsh-elev-2026-11-28.md): No.1 / No.2 HPH shell CL GL.+17300
    (DERIVED: supports 1600 on the mezzanine GL.+15700, K1AU3-D1-0-036 p3 / p6; fits LT-HD1105 / 1106 taps GL.+17755 / +17630,
@@ -642,18 +642,20 @@ const AN_HD = {
    LCV-HD1105-1 lifts its drain to the deaerator on the roof frame (H-1104 CL GL.+35600, E2-0-102 p37 / A3-0-002 Section A-A, YUA
    2026-11-28, nana-da-elevation-2026-11-28.md): at COND 1 its outlet 7.62 is above the saturation of the 166.3 C drain (7.41), so the
    riser is liquid: outlet static z2 = 35.6 - 27.85 = 7.75 m (0.698 kg/cm2 at 901 kg/m3), its loss 1.537 - 0.698 = 0.839. The
-   others flash at the outlet (two-phase, the mixture density NO-SOURCE): z2 0, all in the loss.
+   others flash at the outlet (two-phase): z2 0, all in the loss, which goes with W^2 v_m / v_m0 (Phase 11 NANA 2026-11-28, was W^2 at
+   one density, the mixture density NO-SOURCE then): v_m the homogeneous mixture after an isenthalpic flash of the drain (saturated
+   water at its temperature) to the place pressure, v_m0 the same at the sheet COND 1 (T0 drain C, pp0 place ata).
    (W0 = the COND 1 flow: 45.147 / 69.347 t/h; place: No.1 HPH 14.12 ata, deaerator 6.083 ata K2MC2F-001, condenser 0.07 ata HB.)
    Water density: IF97 saturated water (plant.js anWaterRho). */
 const AN_HDV = {
   FL: 0.9 /* DESIGN-SRC: E2-0-123 R1 HD1105 / HD1106 sizing cases (derived, see above) */,
   H6: {
-    p: { cv: 25, x: [0, 20, 32, 57, 100], y: [0, 8.6, 18.16, 51.6, 100], w0: 45.147, z: 16.82 - 16.05, l1: 0.067, z2: 0, l2: 14.48 - 14.12 },
-    a: { cv: 40, x: [0, 14, 24, 43, 100], y: [0, 5.2, 10.95, 31.75, 100], w0: 45.147, z: 16.82 - 9.9, l1: 0, z2: 0, l2: 0.28 - 0.07 }
+    p: { cv: 25, x: [0, 20, 32, 57, 100], y: [0, 8.6, 18.16, 51.6, 100], w0: 45.147, z: 16.82 - 16.05, l1: 0.067, z2: 0, l2: 14.48 - 14.12, T0: 201.3, pp0: 14.12 },
+    a: { cv: 40, x: [0, 14, 24, 43, 100], y: [0, 5.2, 10.95, 31.75, 100], w0: 45.147, z: 16.82 - 9.9, l1: 0, z2: 0, l2: 0.28 - 0.07, T0: 201.3, pp0: 0.07 }
   },
   H5: {
     p: { cv: 50, x: [0, 46, 75, 80, 100], y: [0, 37.2, 76.4, 81.8, 100], w0: 69.347, z: 16.845 - 27.85, l1: 0.511, z2: 35.6 - 27.85, l2: 7.62 - 6.083 - 0.698 },
-    a: { cv: 69.27, x: [0, 24, 41, 65, 100], y: [0, 6.76, 14.87, 45.47, 100], w0: 69.347, z: 16.845 - 9.948, l1: 0, z2: 0, l2: 0.72 - 0.07 }
+    a: { cv: 69.27, x: [0, 24, 41, 65, 100], y: [0, 6.76, 14.87, 45.47, 100], w0: 69.347, z: 16.845 - 9.948, l1: 0, z2: 0, l2: 0.72 - 0.07, T0: 166.3, pp0: 0.07 }
   }
 };
 /* the valve alone: t/h through valve V at opening x % between p1 and p2 bar a at the valve, drain T C (IEC 60534 liquid, choked) */
@@ -664,6 +666,14 @@ function anHdV(V, x, p1, p2, T) {
     dP = Math.max(0, Math.min(p1 - p2, AN_HDV.FL * AN_HDV.FL * (p1 - FF * pv))),
     rho = anWaterRho(T);
   return Cv > 0 && isFinite(dP) ? 0.0273 * Cv * Math.sqrt(dP * rho) : 0;
+}
+/* m3/kg of the drain (saturated water at T C) flashed at constant enthalpy to the place at P ata: homogeneous mixture, IF97 */
+function anHdVm(P, T) {
+  const p = Math.max(0.002, P * 0.0980665),
+    S = steamSatM(p),
+    hl = steamR1(Math.max(p, (steamPsat(T) + 1.0332) * 0.0980665), T + 273.15).h,
+    x = Math.max(0, Math.min(1, (hl - S.hf) / (S.hg - S.hf)));
+  return (1 - x) * steamR1(p, S.T).v + x * steamV2(p, S.T);
 }
 /* drain t/h from the shell at P1 to the place at P2 (kg/cm2 g), drain T C: the valve with the static head and the line losses of
    AN_HDV (loss = l (W / w0)^2). W = a sqrt(dP) with dP = dP0 - k W^2 solves to W = a sqrt(dP0 / (1 + a^2 k)), for the liquid
@@ -676,7 +686,7 @@ function anHdW(V, x, P1, P2, T) {
     p1 = (P1 + 1.0332 + (rho * V.z) / 10000) * b /* bar a at the valve before the inlet loss */,
     p2 = (P2 + 1.0332 + (rho * V.z2) / 10000) * b /* bar a at the valve outlet before the outlet loss */,
     k1 = (V.l1 * b) / (V.w0 * V.w0),
-    k2 = (V.l2 * b) / (V.w0 * V.w0),
+    k2 = ((V.l2 * b) / (V.w0 * V.w0)) * (V.T0 ? anHdVm(P2 + 1.0332, T) / anHdVm(V.pp0, V.T0) : 1) /* flashing outlet: W^2 v_m */,
     pv = (steamPsat(T) + 1.0332) * b,
     FF = 0.96 - 0.28 * Math.sqrt(Math.max(0, pv) / 220.64),
     F2 = AN_HDV.FL * AN_HDV.FL,
