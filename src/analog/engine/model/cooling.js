@@ -125,13 +125,14 @@ const AN_SW = {
      kc   condenser tube side loss: FHI condenser O&M H-3110 / H-4110 (K3MD1A Rev C) 1.1.2: 0.47 bar = 0.479 kg/cm2 at 31,500 t/h
           (two water box paths, sp. gr. 1.02: 15,441 m3/h each); k = 0.479 / 15,441^2, the same tubes at any flow (drop ~ flow^2).
           MB-020 prints 17,900 t/h per path at 0.5 kg/cm2; the vendor flow is 31,500 t/h in all (UNUSUAL, in the report).
-     oDes condenser outlet opening of the design point (the start state line-up; SNAPSHOT-TO-REPLACE) */
+     The condenser outlet valve opening of the design point is DERIVED in swCal (c.oDes, about 30 %): the start state line-up
+     AN_SW_V0 takes it (team decision 2026-11-28: MB-020 is the design flow) */
 /* SWP soft starter (Solcon HRVS-DN) current limit while it ramps: the vendor factory default 400 % FLA (see the head), FLA = 260 A (TECO
    D1-0-064 p26 at 100 % load). Kept outside AN_SW (a save carries it) */
 const AN_SWP_SS = { Ilim: 4.0 * 260 };
 /* SWBP motor TECO AEHLPA-WC1 100 HP 460 V (D1-0-034 R0 p10), for its current (see the head). Kept outside AN_SW (a save carries it) */
 const AN_SWB_M = { kV: 0.46, eff: 0.94, Im: 120 * Math.sin(Math.acos(0.835)) };
-const AN_SW_DP = { L: -(6.37 + 9.78) / 2, dF: 2.8 - 2.5, rB: 4.0 - 2.5, kc: (0.47 * 1.01972) / Math.pow(31500 / 1.02 / 2, 2), oDes: 40 };
+const AN_SW_DP = { L: -(6.37 + 9.78) / 2, dF: 2.8 - 2.5, rB: 4.0 - 2.5, kc: (0.47 * 1.01972) / Math.pow(31500 / 1.02 / 2, 2) };
 const swInterp = (X, Y, x) => {
   if (x <= X[0]) return Y[0] + ((Y[1] - Y[0]) * (x - X[0])) / (X[1] - X[0]);
   for (let i = 1; i < X.length; i++)
@@ -195,7 +196,11 @@ function swCal() {
   c.qcD = q;
   c.ki = K.ki100 / (q * q);
   c.kc = D.kc;
-  c.ko = (Pci - D.kc * q * q) / (q * q) / swVk(D.oDes); /* outlet loss at 100 % open */
+  /* the condenser outlet valve V-SW1009 / 1010, fully open: a butterfly as the inlet valve (Crane TP-410 25 fT, ki100), the only loss
+     after the water box (the discharge line to the siphon pit: NO-SOURCE). Its opening at the design point is DERIVED: the opening
+     whose loss takes the outlet water box pressure (inlet less the vendor tube loss) at the design flow, swVk(o) = Pout / (ko q^2) */
+  c.ko = K.ki100 / (q * q);
+  c.oDes = 100 * Math.pow(K.ki100 / Math.max(1e-6, Pci - D.kc * q * q), 0.25);
   const dpF = (K.dp0 * Math.pow(Qt / K.f1Q, 2)) / 1e4;
   c.kup = (Ph - dpF - PN) / (Qt * Qt); /* header -> node N (pipes, NO-SOURCE elevation lumped in) */
   return (swCalC = c);
@@ -292,7 +297,9 @@ function anSeawaterStep(U, dt) {
     st.vo,
     st.vb,
     st.L,
-    st.dirt.toFixed(2)
+    st.dirt.toFixed(2),
+    /* SUZU fix 25: the constants of the network (swCal) too, so a solution saved with an older model (U._swR in the save) is not used */
+    Object.values(c).map(x => (typeof x === 'number' ? x.toPrecision(6) : '')).join(',')
   ].join('|');
   if (!U._swR || U._swK !== key) {
     U._swR = swSolve(st);

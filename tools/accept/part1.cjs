@@ -230,8 +230,18 @@ const judge = (v, tg, tol, kind) => {
         /* 2026-11-28 (minute-sample sweep): one 1 % press per 3 min could not follow a large error (MSP 127 -> 39 ata while the
            SV slid to 99, then 39 -> 131 at 45 MW, a ~1 h cycle): the operator presses as many 1 % steps as the size of d asks
            (one per 3 units of d, at most 5), still once per 3 min, so the small-error behaviour above is the same */
-        const np = Math.max(1, Math.min(5, Math.round(Math.abs(d) / 3)));
-        if (OP.n - (OP.last || -9) >= 3 && Math.abs(d) >= 0.5 && (OP.last = OP.n)) for (let k = 0; k < np; k++) await fpBtn('ABC-001C', 'HIC-BM', d > 0 ? '▲' : '▼');
+        /* 2026-11-28 (RIN sweep on 6aefec0: on the TCS ramp down the MSP stayed 13 ~ 14 kg/cm2 above the sliding SV, the firing by the
+           pressure error alone lags the load): the operator also moves the firing with the load the TCS has taken off since the last
+           press, in proportion (first principles: the steam, so the fuel, scales with the load; no curve, so the coal row is not fed
+           its own target): ff = MV x dMW / MW, in 1 % presses. The pressure part (d / 3 presses) is as before */
+        if (OP.mwRef == null) OP.mwRef = s.MW;
+        const ff = isFinite(s.bmMv) && s.MW > 1 ? (s.bmMv * (s.MW - OP.mwRef)) / s.MW : 0,
+          q = d / 3 + ff,
+          np = Math.max(1, Math.min(5, Math.round(Math.abs(q))));
+        if (OP.n - (OP.last || -9) >= 3 && (Math.abs(d) >= 0.5 || Math.abs(ff) >= 0.5) && (OP.last = OP.n)) {
+          OP.mwRef = s.MW;
+          for (let k = 0; k < np; k++) await fpBtn('ABC-001C', 'HIC-BM', q > 0 ? '▲' : '▼');
+        }
       }
       /* the O2 trim AICFG112 (ABC-002) is forced MANUAL below 220 T/H (M.0102 / M.0103); the operator puts it at 50 % = neutral
          (OPERATOR_GUIDE 5.4 / 7.7, uat check M5). Left at its last MV the trim holds the air off its demand, and the total air cross

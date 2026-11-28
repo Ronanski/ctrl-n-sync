@@ -341,7 +341,7 @@ const AN_HMI_CTL = {
   'PIC-COBM': { pv: 122.7, sv: 122.3, mv: 0.8, mode: 'A' },
   'PICAS1004': { pv: null, sv: 9.4, mv: 0.0, mode: 'A' },
   'PICAS1005': { pv: null, sv: 10.2, mv: 4.2, mode: 'A' },
-  'PICCD1104': { pv: 5.9, sv: 1.5, mv: 0.0, mode: 'A' },
+  'PICCD1104': { pv: 5.9, sv: 0.2, mv: 0.0, mode: 'A' } /* start SV 0.2 kg/cm2g: PCV-AS1030 spec sheet K1AU3-E2-0-123 R1 p42 COND 2 (P2 0.2 kg/cm2g); normal SV = operator COS (ABC-056 sh53, no value); below HB PPE-14-0725 case 7 DA 1.03 G, so no pegging 45 ~ 150 MW (was 1.5 from a screen) */,
   'PICDO1043A': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
   'PICDO1043B': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
   'PICDO1043C': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
