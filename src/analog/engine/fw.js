@@ -178,8 +178,12 @@ function anDeaStep(U, dt) {
    TECO AEZW-S2 "Boiler Feed Water Pump MOTOR DATA SHEET" p1 (DESIGN-SRC): 3550 kW, 2 pole, 6600 V, 60 Hz, direct coupling (fixed
    speed 3580 rpm: no hydraulic coupling or scoop), at 100 % load 355 A, efficiency 96.2 %, power factor 91.0 % (355 = 3550 / (0.962
    x 0.91 x sqrt3 x 6.6), the sheet closes). Induction motor: the active current = shaft power / (efficiency x sqrt3 x V), the
-   magnetizing (reactive) current = 355 x sin(acos 0.91) = 147 A, held at rated voltage; I = sqrt(Ia^2 + Ir^2). The efficiency is held
-   at its rated value (the sheet gives only the 100 % point: NO-SOURCE part load efficiency).
+   magnetizing (reactive) current = 355 x sin(acos 0.91) = 147 A, held at rated voltage; I = sqrt(Ia^2 + Ir^2). Part load (Phase 11
+   NANA 2026-11-28; the TECO A-2 motor document prints the 100 % point only, YUA PC read /mnt/project-files/nana-fw-reads-2-2026-11-28.md):
+   the textbook induction motor loss split from the rated point, losses = fixed (core, friction, windage) + load^2 x variable (I^2 R),
+   rated losses 3550 (1 / 0.962 - 1) = 140.2 kW, split so that the efficiency is highest at 75 % load (fixed = variable x 0.75^2, the
+   textbook design point): fixed 50.5, variable 89.7 kW; input = shaft + fixed + variable (shaft / 3550)^2. Was the rated 96.2 % at
+   every load.
    suction strainer (Phase 11 NANA 2026-11-27, was a plant screen DP and a 0.4 branch loss with no design
    source): KSB Y strainer, Filteration Engineers FE/KSB/GAD/YST/FR-3453-02 rev 03 (O&M V7 BFP, "14 Y TYPE STRAINER" p2; YUA PC read
    2026-11-27, /mnt/project-files/nana-doc-reads.md): 250 NB, 40 mesh, design 563.5 m3/h at 158.4 C, maximum allowable pressure drop
@@ -198,8 +202,9 @@ const AN_FW = {
   kz: 0,
   mkW: 3550 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
   mA: 355 /* A at 100 %, DESIGN-SRC: TECO AEZW-S2 data sheet */,
-  mEff: 0.962 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
   mPf: 0.91 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
+  mLf: (3550 * (1 / 0.962 - 1) * 0.5625) / 1.5625 /* kW fixed losses (TECO 3550 kW at 96.2 %), DERIVED: rated losses split for the highest efficiency at 75 % load */,
+  mLv: (3550 * (1 / 0.962 - 1)) / 1.5625 /* kW load losses at rated load, DERIVED as mLf */,
   mV: 6.6 /* kV */,
   stK: 0.1 / (563.5 * 563.5) /* kg/cm2 per (m3/h)^2, clean strainer, DESIGN-SRC: KSB FE/KSB/GAD/YST/FR-3453-02 r03 */
 };
@@ -262,7 +267,8 @@ function anFwEl(kW) {
   const K = AN_FW,
     V = Math.sqrt(3) * K.mV,
     Ir = K.mA * Math.sqrt(1 - K.mPf * K.mPf),
-    Ia = Math.max(0, kW) / (K.mEff * V);
+    L = Math.max(0, kW) / K.mkW,
+    Ia = kW > 0 ? (Math.max(0, kW) + K.mLf + K.mLv * L * L) / V : 0;
   return { I: Math.sqrt(Ia * Ia + Ir * Ir), P: V * Ia, Q: V * Ir };
 }
 function anFwStep(U, dt) {
