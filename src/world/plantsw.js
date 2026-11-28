@@ -79,12 +79,12 @@
   /* 3.2.3-beta.63 (Sakura, ash_fp.js): the switch held the row at 1 on every scan, so the EMERGENCY STOP of the faceplate (the field operator,
      LS_OP.fieldRow row 18 = 0) did nothing. The contact follows the field: pressed (the row set to 0 by the field) = 0, RELEASE = 1 again; dead band 0 (a contact, the 10 of the level switches kept it made) */
   for (const a of ['I.0256', 'I.0536', 'I.0646', 'I.0686']) L.push([a, m => (m.s.sig && m.s.sig[m.row + ':S'] === false ? 0 : 1), 0.5, 'hi', 0, 0, /EMERGENCY STOP/, /DITL-21A/]);
-  /* Mina M3 (beta.88 / beta.89: PR-OPE-5002 19.5 "Initiate START of LOP of BFP A/B"). Each BFWP has two auxiliary lube oil pumps, DCS
+  /* Mina M3 (beta.88 / beta.89). Each BFWP has two auxiliary lube oil pumps, DCS
      motors of DITL-22 (IO list STN103: machine A = LOP A of BFWP-A O.0126 / I.0050, B = LOP B of BFWP-A O.0446 / I.0370, C = LOP A of
      BFWP-B O.0127 / I.0053, D = LOP B of BFWP-B O.0447 / I.0373; world.js isLop4). The lube oil HEADER pressure is held by the pressure control valve at 2.0 kg/cm2(g) while an oil pump runs (KSB
      "30 LPM lube oil system" O&M manual, o&m-package-phase-1/L7 BFP/D .../5 LOS-O&M MANUAL, p.13 Annexure-I: lube oil supply 2.0,
-     pump delivery 6.0; KSB P&ID PR 73691 B: supply 1.5 ~ 2 kg/cm2(g)); 0 with the pump stopped (PR-OPE-5002 section 20: the LOP is
-     started before the BFP). The header switches (Annexure-II 24.1 < 1.5, 24.3 < 1.0; memory list STN103 I.0090 / I.0410 and
+     pump delivery 6.0; KSB P&ID PR 73691 B: supply 1.5 ~ 2 kg/cm2(g)); 0 with the pump stopped (DITL-23A row 17: the lube oil pressure is a
+     START permissive of the BFWP). The header switches (Annexure-II 24.1 < 1.5, 24.3 < 1.0; memory list STN103 I.0090 / I.0410 and
      I.0092 / I.0412) follow it. The "> 2.0" switch I.0091 / I.0411 (memory list "PS-LO1115-A2 ( > 2.0Kg/cm2 )"; Annexure-II 24.2 set point
      2.0) is the oil-pressure-established contact: a pressure switch makes at its set point on a rising pressure, and the header is
      held by the pressure control valve AT that set point (Annexure-I "Pressure Control valve (Upstream) Lube oil supply 2.0"), so it
@@ -110,8 +110,8 @@
     ['PS-LO1115-' + k + '2', lopP(k), 2.0, 'ge', 0, 0], ['PS-LO1115-' + k + '1', lopP(k), 1.5, 'lo', 0, 0], ['PS-LO1115-' + k + '3', lopP(k), 1.0, 'lo', 0, 0]);
   /* 3.2.1 (IRENE: FEEDWATER): DITL-23A row 11 (machine instance #B for pump B) "ZSO-FW1031 BFWP A / B SUCTION MANUAL VALVE OPEN"
      (IO list STN102 I.028F ZSO-FW1031 / I.032F ZSO-FW1032), a START permissive of the HV soft starter (with the lube oil > 2.0 and the
-     suction pressure > 1.5): the limit switch of the field valve V-FW1001 / 1002 of the plant model (unit.js AN_FV0), touched at fully
-     open (PR-OPE-5002 19.16 "Fully OPEN ... Check if the limit switch is touched"). Before: the row stayed 0 and the standby BFWP B
+     suction pressure > 1.5): the limit switch of the field valve V-FW1001 / 1002 of the plant model (unit.js AN_FV0), made at fully
+     open (an open limit switch). Before: the row stayed 0 and the standby BFWP B
      never started on its AUTO START (O.1400) */
   const fvOf = t => () => (window.AN && AN.fv && isFinite(AN.fv(t)) ? AN.fv(t) : NaN);
   /* beta.580: the row of the copy #B names its own switch, ZSO-FW1032 (world.js tagsK, TAGN) */
