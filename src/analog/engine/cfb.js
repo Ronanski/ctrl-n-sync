@@ -118,22 +118,9 @@ const AN_BB = {
   cpA: 1.005,
   cpS: 0.84,
   mRef: 204650,
-  /* 1.0.0-beta.256 (JENNIE): the upper furnace suspension (the bed balance, unit step). Was ua0w 289.3 kW/K, CALC with the bed AND the
-     furnace exit both at 850 C. CALC of the 150 MW anchor (phi 1, drum 145 kg/cm2 g = 338.5 C, IF97):
-     - tbA 937 C: the bed, the average of the eighteen lower layer thermocouples TT-FG1090 / 1091 A ~ I of the HMI snapshot at 150 MW
-       (the anchor the thermocouples are written from, anGasA0; trend scenario 1 TIFG1090 952 ~ 962 C);
-     - furnace exit 850 C: FHI design data / Fig 8 (the gas the backpass chain of hx.js is built on);
-     - evaporator 157.2 MW (design heat balance, as before): the lower refractory 17.96 kW/K x (937 - 338.5) = 10.75 MW, the upper
-       walls 146.45 MW;
-     - SH panels 62.5 MW: the panel heat of uaP 75 at the 150 MW state of the model (bed 856 C, metals p1 412.7 / p2 465.8 C, save
-       "150 MW bed AUTO 2 coolers" 2026-11-22), held: the panels now see Tu, uaP is CALC again in hx.js;
-     - Cs = (146.45 + 62.5) MW / (937 - 850) K = 2,402 kW/K; less the flue gas 237 kW/K (anHxCp, 188 kg/s): cSol 2,165 kW/K, that is
-       2,577 kg/s of solids at 0.84 kJ/kg K = 21.7 kg/m2 s over the 119 m2 grate (check: CFB circulation flux 10 ~ 100 kg/m2 s, Basu,
-       Circulating Fluidized Bed Boilers, ch. 2; the rate itself is not in the documents);
-     - the profile of the bed balance with these sinks gives Tu 892.3 C; Uw = 146.45 MW / (892.3 - 338.5) = 264.5 kW/K, of it the gas
-       radiation uag(892 C) 106.9 (WSGG, upper walls): uaS 157.6 kW/K by the solids. */
-  /* 1.0.0-beta.348 (JENNIE, D9 of user 2026-11-24 "GO DESIGN"): THE ANCHOR IS THE DESIGN, NOT THE PLANT. tbA 937 above was the HMI
-     snapshot thermocouples (plant trend 952 ~ 962 C). The design bed: P2S4 p2-4-8 850 ~ 900 C normal (above 900 C call FHI), the
+  /* 1.0.0-beta.256 (JENNIE): the first CALC of the upper furnace suspension (was ua0w 289.3 kW/K, bed and exit both at 850 C) took its
+     bed from a plant screen. Replaced by the design anchor of beta.348 below, with the same sinks (git history has the old working) */
+  /* 1.0.0-beta.348 (JENNIE, D9 of user 2026-11-24 "GO DESIGN"): THE ANCHOR IS THE DESIGN, NOT THE PLANT. The design bed: P2S4 p2-4-8 850 ~ 900 C normal (above 900 C call FHI), the
      procedure holds 850 ~ 870 C (SU:10198); FHI P2S7 Fig 8 furnace average 840 C at 100 %. tbA = 860 C (the middle of the held band),
      furnace exit 840 C (Fig 8 at 100 %, was 850 FHI design data). Same CALC as beta.256, same sinks (upper walls 146.45 MW, SH panels
      62.5 MW, drum 338.5 C, flue gas 237 kW/K):
