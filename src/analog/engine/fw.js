@@ -700,14 +700,14 @@ function anHdW(V, x, P1, P2, T) {
    leaks feedwater into the shell. Physics: the feedwater (BFWP discharge U.fwPd, PT-FW1011) is far below its saturation at the shell
    pressure (No.2 HPH tube 195.7 ~ 245.4 C, shell 36.48 kg/cm2 A sat 245 C; No.1 HPH tube 160.7 ~ 195.7 C, shell 14.12 sat 196 C, plant-study
    09 section 5), so it does not flash in the hole: a sharp orifice, w = Cd A sqrt(2 rho dP), Cd 0.61 (textbook), rho of the tube water.
-   The hole: 3 mm (NO-SOURCE, trainer setting); like the boiler tube leak (AN_TL) its jet cuts the next tubes and the open area doubles
-   every 10 min (NO-SOURCE), with no cap: "a tube which bursts will cause the surrounding tubes to burst" (HP heater O&M, FHI 2015, Sect 2 p2), so it keeps failing until the operator takes it out; the pump curve (anFwStep) limits the flow. The tubes leak only while they are
+   The hole: 3 mm (TRAINER-SET: the size of the fault the instructor starts, not a plant value); like the boiler tube leak (AN_TL) its jet cuts the next tubes and the open area doubles
+   every 10 min (TRAINER-SET, as AN_TL), with no cap: "a tube which bursts will cause the surrounding tubes to burst" (HP heater O&M, FHI 2015, Sect 2 p2), so it keeps failing until the operator takes it out; the pump curve (anFwStep) limits the flow. The tubes leak only while they are
    pressurised: the inlet or the outlet valve open (V-FW1012 / 1013 No.2, V-FW1009 / 1010 No.1); bypassed and isolated = no leak.
    Where it goes: into the shell with the condensate of the extraction (anHdStep): the drain valves open, the alternate to the condenser
    takes the rest, then LEVEL HIGH-HIGH (LS-HD1106 / 1105, DITL-94 / 95 close the extraction MOV). The BFWP passes it too (anFwStep).
    The water comes back by the drains, so the cycle inventory does not change; the heat to bring the leak water to the shell saturation
    (about 1 % of the extraction per 26 T/H) is left out. U.hlW = [No.1, No.2] T/H, U.hlA = area / 3 mm hole */
-const AN_HL = { d: 0.003 /* m, NO-SOURCE */, cd: 0.61, t2: 600 /* s, NO-SOURCE, as AN_TL */, rho: [880, 840] /* kg/m3, tube water ~178 / ~220 C, AN_WATER_RHO */ };
+const AN_HL = { d: 0.003 /* m, TRAINER-SET */, cd: 0.61, t2: 600 /* s, TRAINER-SET, as AN_TL */, rho: [880, 840] /* kg/m3, tube water ~178 / ~220 C, AN_WATER_RHO */ };
 function anHpLeak(U, dt) {
   const W = typeof window !== 'undefined' ? window.WORLD : null,
     K = AN_HL,
