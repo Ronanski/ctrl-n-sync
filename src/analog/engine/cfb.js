@@ -93,6 +93,19 @@ const AN_FG = { cpG: 1.15, ash: 0.0682, mCy: 780e3, hA: 120, mF: 138e3, mB: 642e
      the bed temperature in the share phi (capped 1).
    Steady check at the anchor (coal 87.5 T/H, air 593 T/H, hot air about 285 C, drum 145 kg/cm2): bed about 820 C, steam about
    470 T/H, against the design 850 C (FHI design data) and 476 T/H: not fitted, the result of the balance. */
+/* Phase 11 AOI 2026-11-28 (user "FULL FORCE", the backpass gas of KANA's hx check): POST-COMBUSTION IN THE CYCLONES. Part of the coal
+   leaves the furnace still burning (fine char carried up past the dense bed, the CO and volatiles that meet the secondary air at the top)
+   and gives its heat in the cyclones (refractory lined, no tubes) to the gas on its way to the backpass (Basu, Circulating Fluidized Bed
+   Boilers, the cyclone temperature rise). Its size is DERIVED from the FHI Tab 3 heat balance at MCR (first principles, no plant data):
+   the backpass absorbs SH 110.8 + RH 43.0 + eco 36.2 MW less the furnace share = 127.5 MW from 184.2 kg/s of gas cooled to the air
+   heater inlet 322 C (Tab 3), which needs the gas at 894 C into the backpass; the gas leaves the furnace at the design 840 C (FHI
+   Fig 8 furnace at 100 % MCR, the exit tgF of the bed balance), so 184.2 x (hFg(894) - hFg(840)) = 184.2 x 68.3 kJ/kg = 12.58 MW
+   must be released after the furnace exit: 12.58 / (89 T/H x lhvC 4,259 kW per T/H x (1 - fUC) = 366.9 MW) = 3.43 % of the coal
+   heat released (CALC, KANA
+   /mnt/project-files/phase11/kana-sh-rh-outlet-2026-11-28.md). ASSUMPTION: the same share at every load (one design point, no
+   document gives the cyclone heat release, YUA 2026-11-28); judged only by the full 45 - 150 MW sweep, and a part-load miss is fixed
+   in the physics form (char burnout against residence time / temperature), never by a share per load. It is the same coal: this share leaves the bed balance and goes to the cyclone gas (anHxRun). */
+const AN_PC = { f: 0.0343 /* DERIVED: FHI P2S7 Tab 3 heat balance at MCR, see above */ };
 const AN_BB = {
   lhvC: (3662 * 4.1868) / 3.6,
   /* 3.2.3-beta.271 (Jennie, physics audit 2026-11-15 MISSING item): the coal heat that never reaches the bed, gas or water: carbon
