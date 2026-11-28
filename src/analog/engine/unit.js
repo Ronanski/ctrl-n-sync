@@ -1790,7 +1790,7 @@ function anHxTagStep(U, dt) {
     fr = U.bedI > 0 ? U.bedI / AN_BI.t0 : 0,
     T = U.tt || (U.tt = {});
   Object.assign(T, {
-    /* Phase 11 RIN 2026-11-28 (was 4 C "at MCR 472.7 T/H" and 0.7 kg/cm2 x (mr / 472.7)^2: a plant snapshot flow, deleted):
+    /* Phase 11 RIN 2026-11-28 (was 4 C "at MCR 472.7 T/H" and 0.7 kg/cm2 x (mr / 472.7)^2: a flow with no design source, deleted):
        TT-MS1007 (at PT-MS1006, the HP bypass tee end of the 18" run, AN_MSLN): the steam of TE-MS1004 / the MSP throttled at constant
        enthalpy through the line drop to the tee (anMsDrop) less the heat the 18" run loses through its lagging (anMsT, AN_MSQ) */
     'TT-MS1007': r1(
