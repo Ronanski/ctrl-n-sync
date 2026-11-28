@@ -1,8 +1,9 @@
 // 3.2.1 (IRENE, user 2026-11-04 "ITULOY PLANT MODEL"): page 08 AUX STEAM AND VACUUM (hmi-mock-as.js) showed '-----' for the values no
 // sheet reads. They come from the plant model now (unit.js anAsTagStep; sources there and in docs/versions/v3.2.1/AUX_STEAM_PLANT_MODEL.md).
-// At "Start at 150 MW" (one world, plant model ON) each shows a number near 29.PNG (151 MW): PTST11101 ~ 3 0.056 / 0.053 / 0.053 kg/cm2A,
-// TEST11101 ~ 3 38 / 38 / 37 C, PCV-AS1020-1 / -2 0.1 / 32.2 %, TT-AS1015 257 C, gland header 0.32 kg/cm2, TEGS1002 / 1003 364 / 362 C,
-// PV-GS1034 42.6 %, MV-AS1011 0 %; PIC-AS1005 in MANUAL 50 %: the two valves follow the ABC-030 F(X) (LN17 42.5 %, LN16 100 %).
+// At "Start at 150 MW" (one world, plant model ON) each value comes from the design data and physics (user rule 0 2026-11-28: no plant
+// snapshot, not even as a check): the hood = the condenser, the cold reheat valves = the ABC-030 F(X), the gland header at its set point
+// (the PV-GS1031 sheet NOR outlet 1.31 kg/cm2 A), its steam superheated, the unloading valve throttling, MV-AS1011 shut on load;
+// PIC-AS1005 in MANUAL 50 %: the two valves follow the ABC-030 F(X) (LN17 42.5 %, LN16 100 %).
 // Usage: node tests/regress/as_page_values.js [html]
 const fs = require('fs');
 const { open, startAs } = require('./lib.js');
@@ -63,10 +64,13 @@ const html =
   ck(['TEST11101', 'TEST11102', 'TEST11103'].every(k => Math.abs(num(a[k]) - m.Ts) <= 1.5), `exhaust hood temperature ${a.TEST11101} / ${a.TEST11102} / ${a.TEST11103} C = saturation ${m.Ts.toFixed(1)} C at ${m.cdP.toFixed(3)} kg/cm2A`);
   /* beta.359: the two cold reheat valves are the ABC-030 F(X) of the PIC-AS1005 output (unit.js): the page shows the logic value */
   ck(near('ZT-AS1020-1', m.f1, 0.11) && near('ZT-AS1020-2', m.f2, 0.11), `PCV-AS1020-1 / -2 page ${a['ZT-AS1020-1']} / ${a['ZT-AS1020-2']} % = F(X) of PIC-AS1005 ${m.f1} / ${m.f2} %`);
-  /* Phase 11 (SUZU 2026-11-27): the gland header by the Hitachi HB case 1 balance (1,820 kg/h of HP packing leak in, 793 to the seals,
-     the rest spilled by PV-GS1034): its steam is the leak mix (767.5 kcal/kg) less the header loss, so near 29.PNG 364 / 362; TT-AS1015
-     is the aux header steam that the 5 mm warm-up orifice passes with PV-GS1031 shut (PD-014, 310PK01-852), = TT-AS1003 (29.PNG 257) */
-  ck(near('PTGS10011', 0.32, 0.01) && near('TEGS1002', 364, 20) && near('TEGS1003', 362, 20) && near('TT-AS1015', m.T3, 3) && m.F.wWu > 10 && m.F.wGf < 1, `gland header ${a.PTGS10011} kg/cm2, ${a.TEGS1002} / ${a.TEGS1003} C (29.PNG 0.32, 364 / 362), TT-AS1015 ${a['TT-AS1015']} C = the aux header TT-AS1003 ${(+m.T3).toFixed(1)} C through the warm-up orifice ${m.F.wWu} kg/h, feed PV-GS1031 ${m.F.wGf} kg/h (self-sealing; 29.PNG 257)`);
+  /* Phase 11 (SUZU 2026-11-28, user rule 0): the gland header by the Hitachi HB case 1 balance (1,820 kg/h of HP packing leak in, 793 to
+     the seals, the rest spilled by PV-GS1034) at its set point 1.31 kg/cm2 A = 0.277 G (the PV-GS1031 sheet NOR outlet); its steam is the
+     leak mix (main steam and cold reheat) throttled to the header: superheated, below the main steam 541 C; TEGS1003 = TEGS1002 (the line
+     loss to the LP glands is not in the docs); TT-AS1015 is the aux header steam that the 5 mm warm-up orifice passes with PV-GS1031 shut
+     (PD-014, 310PK01-852), = TT-AS1003 */
+  const TsG = 1730.63 / (8.07131 - Math.log10(((num(a.PTGS10011) + 1.0332) * 980.665) / 1.33322)) - 233.426;
+  ck(near('PTGS10011', 1.31 - 1.0332, 0.01) && num(a.TEGS1002) > TsG + 20 && num(a.TEGS1002) < 541 && near('TEGS1003', num(a.TEGS1002), 1) && near('TT-AS1015', m.T3, 3) && m.F.wWu > 10 && m.F.wGf < 1, `gland header ${a.PTGS10011} kg/cm2 (set point 0.277), ${a.TEGS1002} / ${a.TEGS1003} C (superheated: saturation ${TsG.toFixed(1)} C, below 541), TT-AS1015 ${a['TT-AS1015']} C = the aux header TT-AS1003 ${m.T3} C through the warm-up orifice ${m.F.wWu} kg/h, feed PV-GS1031 ${m.F.wGf} kg/h (self-sealing)`);
   /* beta.359: no snapshot number (design is the model): the unloading valve throttles (between closed and full open) to hold the gland
      header checked above; the HP warming valve MV-AS1011 is shut on load */
   ck(num(a['PV-GS1034']) > 1 && num(a['PV-GS1034']) < 99 && num(a['ZT-AS1011']) === 0, `unloading valve PV-GS1034 ${a['PV-GS1034']} % throttling, HP warming MV-AS1011 ${a['ZT-AS1011']} % shut`);

@@ -1,9 +1,9 @@
 // 3.2.1 (IRENE: MAKE-UP WATER and CLOSED COOLING WATER plant model, unit.js AN_MU / AN_ACW; docs/versions/v3.2.1/MU_CCW_PLANT_MODEL.md).
 // The one world ON (ABC + DITL), plant model ON. Checks:
-//  150 MW (Start at 150 MW + the DITL in service): ACWP-A runs, ACWP-B standby in AUTO (27.PNG); loop 1500 m3/h, PT-CW1152 7.8,
-//    PT-CW1153 7.2 kg/cm2 (Phase 11: MB-021; was 27.PNG 6.4 / 5.2), supply between 30 and 34 C (energy balance; was 27.PNG 40 / 38), ACWP current from the motor data (26.8 A); the logic reads the same numbers
-//    (DITL-76 row 28 PT-CW1152, DITL-41 row 14 PT-CW1156, DITL-21A row 13 TT-CW1060, DITL-112 row 28 PT-MU0709); MWP header 9.0 kg/cm2
-//    (28.png); no low-flow switch FS-CW1060 made;
+//  150 MW (Start at 150 MW + the DITL in service): ACWP-A runs, ACWP-B standby in AUTO (the start state); loop 1500 m3/h, PT-CW1152 7.8,
+//    PT-CW1153 7.2 kg/cm2 (Phase 11: MB-021), supply between 30 and 34 C (energy balance), ACWP current from the motor data (26.8 A); the logic reads the same numbers
+//    (DITL-76 row 28 PT-CW1152, DITL-41 row 14 PT-CW1156, DITL-21A row 13 TT-CW1060, DITL-112 row 28 PT-MU0709); MWP header about 7.9 kg/cm2
+//    (design head and the E2-0-102 elevations); no low-flow switch FS-CW1060 made;
 //  ACWP-A trip (DITL-76 row 3 I.0087): the logic starts ACWP-B (DITL-77 auto start), the flow and pressure come back;
 //  all SWBP tripped (no seawater in the CCWHE): the loop warms (TT-CW1152 > 45 C after 10 min);
 //  Cold (every pump stopped): no flow, the header at the static head (PT-CW1152 < 3.5 = the low pressure of DITL-41 / 76), the flow
@@ -78,13 +78,13 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   });
   const d = r.d,
     near = (x, y, e) => isFinite(x) && Math.abs(x - y) <= e;
-  ck(d.n === 1 && d.autoB === 1 && d.runB === 0, '150 MW: ACWP-A runs, ACWP-B standby in AUTO (27.PNG): running ' + d.n + ', B AUTO SELECTED ' + d.autoB + ', B running ' + d.runB);
+  ck(d.n === 1 && d.autoB === 1 && d.runB === 0, '150 MW: ACWP-A runs, ACWP-B standby in AUTO (the start state): running ' + d.n + ', B AUTO SELECTED ' + d.autoB + ', B running ' + d.runB);
   ck(near(d.Q, 1500, 30), '150 MW: closed cooling flow ' + d.Q + ' m3/h (MB-021 item 5 1500 = 2 CCWHE x 750; the pump curve meets the MB-021 line)');
-  ck(near(d.P1, 7.8, 0.1) && near(d.P2, 7.2, 0.1) && near(d.P6, 6.5, 0.1), '150 MW: PT-CW1152 ' + d.P1 + ', PT-CW1153 ' + d.P2 + ', PT-CW1156 ' + d.P6 + ' kg/cm2 (Phase 11: MB-021 items 7 / 8 / 30 7.8 / 7.2 / 6.5; the plant snapshot 27.PNG reads 6.4 / 5.2)');
-  ck(d.T2 >= 30 && d.T2 <= 34 && near((d.T1 - d.T2) * (d.Q * 991 * 4.18) / 3600, d.load, 0.1 * d.load), '150 MW: TT-CW1152 ' + d.T1 + ', TT-CW1153 ' + d.T2 + ' C: supply between the sea water 30 C (MB-020) and the MB-021 design supply 34 C, return - supply = the users ' + d.load + ' kW / (flow x cp) within 10 % (one-node loop, 900 s after the start state) (Phase 11 energy balance; the plant snapshot 27.PNG reads 40 / 38)');
-  ck(d.I[0] > 25 && d.I[0] < 29.5 && d.I[1] === 0, '150 MW: ACWP-A current ' + d.I[0] + ' A (motor 300 kW 6.6 kV; 27.PNG 28.2)');
+  ck(near(d.P1, 7.8, 0.1) && near(d.P2, 7.2, 0.1) && near(d.P6, 6.5, 0.1), '150 MW: PT-CW1152 ' + d.P1 + ', PT-CW1153 ' + d.P2 + ', PT-CW1156 ' + d.P6 + ' kg/cm2 (Phase 11: MB-021 items 7 / 8 / 30 7.8 / 7.2 / 6.5)');
+  ck(d.T2 >= 30 && d.T2 <= 34 && near((d.T1 - d.T2) * (d.Q * 991 * 4.18) / 3600, d.load, 0.1 * d.load), '150 MW: TT-CW1152 ' + d.T1 + ', TT-CW1153 ' + d.T2 + ' C: supply between the sea water 30 C (MB-020) and the MB-021 design supply 34 C, return - supply = the users ' + d.load + ' kW / (flow x cp) within 10 % (one-node loop, 900 s after the start state) (Phase 11 energy balance)');
+  ck(d.I[0] > 25 && d.I[0] < 29.5 && d.I[1] === 0, '150 MW: ACWP-A current ' + d.I[0] + ' A (motor 300 kW 6.6 kV)');
   ck(near(d.d76, d.P1, 0.01) && near(d.d41, d.P6, 0.01) && near(d.d21, d.Tb, 0.05) && near(d.d112, d.muP, 0.01), 'the logic reads the plant: DITL-76 PT-CW1152 ' + d.d76 + ', DITL-41 PT-CW1156 ' + d.d41 + ', DITL-21A TT-CW1060 ' + d.d21 + ', DITL-112 PT-MU0709 ' + d.d112);
-  ck(near(d.muP, 7.9, 0.3) && d.muN === 2, '150 MW: make-up header PT-MU0709 ' + d.muP + ' kg/cm2 with ' + d.muN + ' MWP (Phase 11: 0.1 x (tank 13.8 m + LT zero +10.200 - PT body +10.400 (K1AU3-E2-0-102) + KEW-65/200 head 64.9 m at the recirculation flow) = 7.85; the plant snapshot 28.png reads 9.0)');
+  ck(near(d.muP, 7.9, 0.3) && d.muN === 2, '150 MW: make-up header PT-MU0709 ' + d.muP + ' kg/cm2 with ' + d.muN + ' MWP (Phase 11: 0.1 x (tank 13.8 m + LT zero +10.200 - PT body +10.400 (K1AU3-E2-0-102) + KEW-65/200 head 64.9 m at the recirculation flow) = 7.85)');
   ck(d.fs === 0, '150 MW: no low-flow switch FS-CW1060 made (' + d.fs + ')');
   const t = r.trip;
   ck(t.runB === 1 && t.n === 1 && near(t.Q, 1500, 30) && near(t.P1, 7.8, 0.1), 'ACWP-A trip: the logic starts ACWP-B (running ' + t.runB + '), flow ' + t.Q + ' m3/h, PT-CW1152 ' + t.P1);

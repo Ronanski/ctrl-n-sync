@@ -1,7 +1,7 @@
 // 3.2.1 (IRENE: INSTRUMENT AND PLANT AIR plant model, unit.js AN_AIR / anAirStep; docs/versions/v3.2.1/AIR_PLANT_MODEL.md).
 // The one world ON (ABC + DITL), plant model ON. Checks:
-//  150 MW: one IA and one PA compressor run (PR-OPE-5002 "at least one IA compressor and one PA compressor are running"), the tanks at
-//    7.0 kg/cm2 (39.PNG, SOP), the currents from the motor data, the logic reads the plant (DITL-113 / 114 rows 1 ~ 3);
+//  150 MW: one IA and one PA compressor run (the start state), the tanks at
+//    the model set pressure 7.0 kg/cm2 (unit.js AN_AIR, SNAPSHOT-TO-REPLACE there), the currents from the motor data, the logic reads the plant (DITL-113 / 114 rows 1 ~ 3);
 //  IA compressor A trip (DITL-113 row 7 I.0016): the tanks fall, < 5.0 kg/cm2 for 3 s = M.0300, the START COMMAND of compressor B,
 //    the model runs it (its RUNNING contact I.0095 back to the logic) and the tanks come back to 7.0;
 //  the same for the plant air (DITL-114, M.0310);
@@ -99,7 +99,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     const d = r.d[k],
       K = k.toUpperCase();
     ck(d.R.join() === '1,0,0' && d.dRun.join() === '1,0,0', `150 MW ${K}: compressor A runs (model ${d.R}, logic RUNNING ${d.dRun})`);
-    ck(near(d.P, 7.0, 0.05), `150 MW ${K}: tanks ${d.P} kg/cm2 (SOP / 39.PNG 7.0)`);
+    ck(near(d.P, 7.0, 0.05), `150 MW ${K}: tanks ${d.P} kg/cm2 (the model set pressure 7.0)`);
     ck(d.av.length >= 3 && d.av.every(v => v > 6.5 && v <= 7.0), `150 MW ${K}: the logic reads the tank / header pressures ${d.av}`);
     ck(k === 'ia' ? d.I[0] > 150 && d.I[0] < 286 : d.I[0] > 35 && d.I[0] < 69.9, `150 MW ${K}: compressor A current ${d.I[0]} A (motor data)`);
     const t = r.trip[k],
