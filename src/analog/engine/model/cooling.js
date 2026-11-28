@@ -297,7 +297,9 @@ function anSeawaterStep(U, dt) {
     st.vo,
     st.vb,
     st.L,
-    st.dirt.toFixed(2)
+    st.dirt.toFixed(2),
+    /* SUZU fix 25: the constants of the network (swCal) too, so a solution saved with an older model (U._swR in the save) is not used */
+    Object.values(c).map(x => (typeof x === 'number' ? x.toPrecision(6) : '')).join(',')
   ].join('|');
   if (!U._swR || U._swK !== key) {
     U._swR = swSolve(st);
