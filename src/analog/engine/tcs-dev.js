@@ -105,12 +105,24 @@ function tcsDev(U, dt) {
   }
   /* the non return valves: open with the steam flow while the solenoid holds (turbine on load, no trip), closed by the cylinder */
   const nOpen = onLoad && !c.trip;
+  /* Phase 11 (YUI with RIN, 2026-11-28): the extraction NRVs are swing checks (azbil / KARATU VCL-5101-H, data sheets PVD-13-0074,
+     /mnt/project-files/rin-extraction-2026-11-28.md 3): the disc closes on reverse flow by itself, the spring-loaded air cylinder only
+     assists. Reverse flow = the stage pressure (port ext.<x>.P of the turbine) below the shell pressure of the heater behind the valve;
+     the sign is taken from the pressures, not from the gated draw (a closed disc draws 0, which would read as not reverse and chatter).
+     The closing on reverse flow takes the dump rate (within 2 s, DERIVED from the same data sheet wording). Shell pressure modelled:
+     the deaerator (No.3, saturation of its water U.da.T, fw.js); the HP1 / LP3 / LP2 shells of fw.js / unit.js are solved below their
+     stage pressure (no reverse state there), so No.2 / 4 / 5 keep the trip-only closing until a shell store is modelled */
+  const pX = typeof anPortGet === 'function' ? anPortGet(U, 'ext.da') : null,
+    Pxa = pX && isFinite(pX.P) ? +pX.P : NaN,
+    Pda = U.da && isFinite(U.da.T) && typeof steamPsat === 'function' ? Math.max(0, steamPsat(U.da.T)) + 1.0332 : NaN,
+    rev = { ex3p: Pxa < Pda, ex3s: Pxa < Pda };
   for (const k of K.nrv) {
     let v = nrv[k];
     if (!v) tcsDevSw((v = nrv[k] = {}), nOpen ? 100 : 0);
-    /* they close on the TURBINE TRIP only (the ETS relay dump; not on OPC / PLU: TEQ via YUA, /mnt/project-files/mei-lph-flash-reads-2026-11-28.md):
-       off load without a trip (a load rejection, 52G open) they keep their position */
-    tcsDevRun(v, c.trip ? 0 : nOpen ? 100 : v.p, c.trip ? K.rNrvDump : K.rAov, dt, false);
+    /* they close on the TURBINE TRIP (the ETS relay dump; not on OPC / PLU: TEQ via YUA, /mnt/project-files/mei-lph-flash-reads-2026-11-28.md)
+       and, being swing checks, on reverse flow (above); off load without a trip and with forward flow they keep their position */
+    const shut = c.trip || rev[k];
+    tcsDevRun(v, shut ? 0 : nOpen ? 100 : v.p, shut ? K.rNrvDump : K.rAov, dt, false);
   }
   /* the generator watt-hour meter of the generator control panel (GCP-AI1003, a pulse counter to the DCS): the integral of the MW,
      counted from 0 when this state is made (a meter reading of the plant is not a physics value) */
