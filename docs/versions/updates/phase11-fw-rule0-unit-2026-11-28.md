@@ -7,7 +7,7 @@
   - Before the heater has a value, it is the deaerator water.
   - Before, it lagged to the anchor value of the state scaled with MW, which was a screen value. X.fw0 / X.dea0 are deleted.
 - **fw.js:** AN_FWT.ms0 472.7 (SNAPSHOT-TO-REPLACE) is deleted, since nothing reads it.
-- **no-snapshot baseline:** `--update` takes it from 577 to 561 lines.
+- **no-snapshot baseline:** `--update` lowers fw.js 2 -> 1 and unit.js 98 -> 83 (total 567 -> 551 after merging main).
 
 ## Tested (headless)
 - Guards: no-snapshot, no-fit, one-path and u-const pass.
