@@ -917,7 +917,8 @@ function anUnitStart() {
   anBoilerStart(U); /* 3.2.1 SEULGI: the boiler-side plant model (boiler.js) */
   U.on = true;
   /* 3.2.0-beta.68: "Start at 150 MW" = the air compressors in service, the tanks at their pressure (AN_AIR, 39.PNG 7.0 kg/cm2) */
-  U.iaP = U.paP = AN_AIR.P;
+  U.iaP = AN_AIR_SP.ia;
+  U.paP = AN_AIR_SP.pa;
   U.avH = {};
   U.iaRun = U.paRun = null; /* 3.2.1: the compressors as the DITL of the scenario (anAirStep, first step) */
   U.paW0 = U.paW1 = U.paW2 = NaN;
@@ -1861,8 +1862,10 @@ function anCdTagStep(U) {
      ZT-AS1020-1 / -2 = the F(X) of the PIC-AS1005 MV (held by the airlock without air, AN_AV);
      gland header PTGS10011 / 2, PV-GS1031 / 1034, TEGS1002 / 1003: the gland header volume and its energy balance in anAuxStep
      (AN_AS; Phase 11 SUZU 2026-11-27, was a 0.32 kg/cm2 fallback and a load law read from the plant), TT-AS1015 the steam before
-     PV-GS1031; MV-AS1011 = 40 % while the TCS is in HP TURBINE WARMING (step 0, phase warm), else 0 (SNAPSHOT-TO-REPLACE: an operating
-     procedure number; the opening should come from the TCS warming logic). */
+     PV-GS1031; MV-AS1011 = 40 % while the TCS is in HP TURBINE WARMING (step 0, phase warm), else 0: TCA686 inches the valve open
+     (1 s every 15 s) while the HP exhaust is below 5.0 kg/cm2 and the position below 41 / 40 % (YUA read suzu-design-reads-2026-11-28.md
+     8; TCA685 permissive: aux header >= 7.0 kg/cm2). TCA685 / 686 are drawn, not live in the engine: the warm phase of the TCS model
+     stands for the HP exhaust condition. */
 function anAsTagStep(U, dt) {
   const r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
     r3 = x => (isFinite(x) ? Math.round(1000 * x) / 1000 : null),
@@ -2012,18 +2015,24 @@ const AN_AS = {
      PCV-AS1010 throttles the main steam at constant enthalpy, the spray TCV-CD1124 (MV of TICAS1001) mixes condensate into it
      (TT-AS1001, IO list S2 AI0641 "main steam desuperheater downstream"); the header TT-AS1003 (S2 AI0642) mixes that steam with
      the cold reheat through PCV-AS1020-1 / -2; TT-AS1017 (S2 AI0902 "gland steam turbine side") is fed by PV-GS1031 from the
-     header and the gland desuperheater spray (MV of TICAS1017). Spray capacities, metal heat capacities and losses: NO-SOURCE
-     (not in the docs). UA3 (the header heat loss) and G17 (the TT-AS1017 pipe coupling to the gland header while PV-GS1031 is
-     shut) are SNAPSHOT-TO-REPLACE: set from plant readings at 150 MW; the insulation of the lines is not in the docs read yet */
+     header and the gland desuperheater spray (MV of TICAS1017). Spray capacities and UA1 / Mc1: NO-SOURCE (not in the docs).
+     Header (Mc3, UA3) and gland (Mc17, UA17) are DERIVED from design data (fix 18): metal = the line lengths of the aux steam
+     isometrics K1AU3-MM-2304 (sister unit #2, main lines AS-1-002 ~ 036, pipe only, 105.9 W/K, 5751 kg) and of the gland lines in
+     MHPS TDA-15-046 R2 Att-2 (GS-n-001 8" 10.1 m, GS-n-040 6" 13.7 m, GS-n-010 ~ 025 8" 2.2 m: 913 kg), ASME B36.10 S40 / STD
+     kg/m, carbon steel cp 0.49 kJ/kg K; loss per metre = TDA-15-046 R2 Att-2 design losses over (T op - 35 C): 3" 95.3 W/m at
+     260 C = 0.424, 6" 197.6 at 337 = 0.654, 8" 244.8 at 369 = 0.733 W/m K, other sizes linear in the outside diameter (12" 0.895,
+     4" 0.497, 14" 0.944). The FHI aux steam insulation thickness is NOT IN DOCS (isometric field blank): the same MHPS design basis
+     (surface <= 60 C at 35 C) is used for those lines. G17 (the TT-AS1017 pipe coupling to the gland header while PV-GS1031 is
+     shut) is SNAPSHOT-TO-REPLACE */
   sprA: 1000 /* kg/h TCV-CD1124 full open, NO-SOURCE */,
   sprG: 300 /* kg/h gland desuperheater spray full open, NO-SOURCE */,
   cps: 2.2 /* kJ/kg K steam */,
   Mc1: 300 /* kJ/K, NO-SOURCE */,
   UA1: 0.05 /* kW/K, NO-SOURCE */,
-  Mc3: 2000 /* kJ/K, NO-SOURCE */,
-  UA3: 0.131 /* kW/K, SNAPSHOT-TO-REPLACE (see above) */,
-  Mc17: 300 /* kJ/K, NO-SOURCE */,
-  UA17: 0.05 /* kW/K, NO-SOURCE */,
+  Mc3: 2818 /* kJ/K, DERIVED 5751 kg x 0.49 (see above) */,
+  UA3: 0.106 /* kW/K, DERIVED 105.9 W/K (see above) */,
+  Mc17: 447 /* kJ/K, DERIVED 913 kg x 0.49 (see above) */,
+  UA17: 0.018 /* kW/K, DERIVED 18.0 W/K (see above) */,
   G17: 0.0433 /* kW/K, SNAPSHOT-TO-REPLACE (see above) */,
   k: { sh: null }
 };
@@ -2508,8 +2517,9 @@ function anMotorStep(U, dt) {
      IA motor     TECO-YASKAWA FELA-8T 190 kW CONT 460 V 2 P (outline P1309238 RATINGS; the thermal sheet says 165 kW): 286 A at 190 kW; starting current with a reactor 80 % tap
                   532 % (the torque / current curve);
      tanks        D1-0-059 document index and PD-023: T-0705A / B 10 m3 (PA), T-0706A / B 5 m3 (IA), max. working pressure 0.98 MPa;
-     pressure     7.0 kg/cm2 (SNAPSHOT-TO-REPLACE: an operating procedure number; the compressor package set pressure of D1-0-059 is
-                  not read yet; the tanks max. working pressure 0.98 MPa is above it);
+     pressure     the set pressure of the compressor panel, AN_AIR_SP: PA = IHI TRE set point list 10-01 (IXB-01424 ~ 01426, O&M L17-2
+                  pp 9 ~ 10, YUA read suzu-design-reads-2026-11-28.md 6): PIC1 constant pressure 0.800 MPa = 8.16 kg/cm2 G; IA 7.0
+                  (SNAPSHOT-TO-REPLACE: the IA package set point list is not read yet); the tanks max. working pressure 0.98 MPa is above it;
      alarm list   tanks and unit header L 5.0, IA LL 3.5, PSL-IA1706 / PSL-PA1705 2.8 kg/cm2;
      I/O list     ranges 0 ~ 10 kg/cm2, dryer outlet flow 0 ~ 2700 (IA) / 0 ~ 5800 (PA) m3/h, compressor current 0 ~ 500 (IA) / 0 ~ 140
                   (PA) A (the transmitter holds its range top).
@@ -2519,9 +2529,9 @@ function anMotorStep(U, dt) {
                   the local panel; it stops on its TRIP contact (rows 7 / 14 / 21, a field trip of the test tool). The model owns the RUNNING
                   contact (rows 6 / 13 / 20, I.0015 / I.0095 / I.0335 IA, I.0010 / I.0090 / I.0330 PA): the logic reads it (DITL-42
                   "COMPRESSOR STOPPED", the auto start). The state of the scenario (Start at 150 MW, Cold) is taken at its first step;
-     tanks        one header: dP/dt = (Q in - Q use) x 1.033 / V / 3600 (isothermal, free air m3/h, V of both tanks); the PIC holds 7.0:
+     tanks        one header: dP/dt = (Q in - Q use) x 1.033 / V / 3600 (isothermal, free air m3/h, V of both tanks); the PIC holds the set pressure AN_AIR_SP:
                   at 7.0 the compressors give only the use, below it each gives its capacity;
-     use          the consumption at 7.0 (NO-SOURCE: IA 1200, PA 1500 m3/h, as 3.2.0-beta.68) through fixed openings: proportional to the
+     use          the consumption at the set pressure (NO-SOURCE: IA 1200, PA 1500 m3/h, as 3.2.0-beta.68) through fixed openings: proportional to the
                   absolute pressure;
      capacity     Mass Balance Diagram K1AU3-MB-023 (A2-0-001 Rev A) sheets 1/2 and 2/2, items 2 / 4 / 6: PA 5100 Nm3/h, IA 1500 Nm3/h
                   per compressor (the MB operating point has 2 running: 10200 / 3000); IA power at full
@@ -2534,8 +2544,9 @@ function anMotorStep(U, dt) {
      unit header  the tank pressure less 0.2 kg/cm2 at the design use (NO-SOURCE), with the use squared;
      dryer outlet the tank pressure plus 0.15 kg/cm2 at the design use (NO-SOURCE), with the flow squared; flow over the dryers in
                   service, over the three while none is (their inlet valves stay open). */
+/* the set pressure of the compressor panels, kg/cm2 G (see AN_AIR). Kept outside AN_AIR: a save carries AN_AIR (state.js AN_STATE_OBJ) */
+const AN_AIR_SP = { pa: 0.8 * 10.1972 /* IHI TRE PIC1 0.800 MPa */, ia: 7.0 /* SNAPSHOT-TO-REPLACE */ };
 const AN_AIR = {
-  P: 7.0,
   Pa: 1.033,
   loss: 0.2,
   dD: 0.15,
@@ -2930,12 +2941,13 @@ function anAirStep(U, dt) {
     trip.forEach((r, i) => (U[k + 'T' + i] = r));
     dry.forEach((r, i) => (U[k + 'D' + i] = r));
     /* the tanks */
-    const P0 = isFinite(U[k + 'P']) ? Math.max(0, U[k + 'P']) : 0,
-      use = ((Y.Qd * (P0 + K.Pa)) / (K.P + K.Pa)) * (iso ? 1 : 1 - K.fU);
+    const Psp = AN_AIR_SP[k],
+      P0 = isFinite(U[k + 'P']) ? Math.max(0, U[k + 'P']) : 0,
+      use = ((Y.Qd * (P0 + K.Pa)) / (Psp + K.Pa)) * (iso ? 1 : 1 - K.fU);
     let P = P0 + (((n * Y.Qc + xin - use) * K.Pa) / Y.V / 3600) * dt,
       qin = n * Y.Qc;
-    if (n && P >= K.P) {
-      P = K.P; /* the constant pressure loop of the compressor panel */
+    if (n && P >= Psp) {
+      P = Psp; /* the constant pressure loop of the compressor panel */
       qin = Math.max(0, use - xin);
     }
     P = Math.max(0, P);

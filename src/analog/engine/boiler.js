@@ -1196,8 +1196,8 @@ const AN_BA = {
 };
 /* the transmitter's air tank: the plant air receivers (no flow into it at rest), else the header */
 function baTank(U) {
-  /* before the first step of the air model (the 150 MW start): the receivers at their start pressure (unit.js AN_AIR.P) */
-  return isFinite(U.paP) ? U.paP : typeof AN_AIR !== 'undefined' ? AN_AIR.P : 0;
+  /* before the first step of the air model (the 150 MW start): the receivers at their set pressure (unit.js AN_AIR_SP) */
+  return isFinite(U.paP) ? U.paP : typeof AN_AIR_SP !== 'undefined' ? AN_AIR_SP.pa : 0;
 }
 function anBaStart(U) {
   U.ba = { v: {}, sw: {}, lv: 0, p: 0, press: 0, tw: 0, gi: { A: 0, B: 0, C: 0, D: 0 } };
