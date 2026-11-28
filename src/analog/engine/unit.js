@@ -197,12 +197,14 @@ const AN_UNIT = {
      the pulse O.0178 of ABC-001C while I.0081, reset by O.0179 or by the reset group (permissive lost); while ON the TCS target load
      tracks GEN. MW (TCE p.134), so at OFF the TCS holds the load it has. These inputs are written by the model in every plant state (3.2.5-beta.8; before only in a start-up, U.cold); the snapshot of
      "Start at 150 MW" gives the first values only. */
-  rollRate: 120 /* rpm/min, PR-OPE-5002 cold start (the holds at 1800 / 3600 rpm of the procedure are the operator's; not modelled) */,
+  rollRate: 120 /* rpm/min, the ATS acceleration rate of the cold modes (ATS sequence 310SC90-775 page 19 *2, tcs.js TCS.rate) */,
   icvRoll: 0.13 /* ICV opening for the roll steam (about 14 T/H at 7.6 kg/cm2 reheat, NO-SOURCE: the SOP gives CV 10 / 3 % at 400 rpm, no ICV opening) */,
   /* 3.2.3-beta.240 (live Cold start Load up): the TCS flow demand splits to the ICV and the CVs (TCE 331DM09784 p.141 TCE207 FLOW
      CONTROL(2), A007 HEAT SOAK CONTROL: CV OPENING BIAS SG C008 K:20.0 %, ICV MIN OPENING K:-0.5 %, RI / RD 0.03 % per 30 ms cycle = 1 %/s;
-     p.144 TCE212 / p.145 TCE214: CV and ICV demand through FG (PARA-LIST, NO-SOURCE) to the VALVE CONTROL MT1, ICV opening speed SG C007
-     K:10.0 %/s). cvBias = the flow demand where the CVs start to open (IP START); fdRate = 1 %/s; vRate = 10 %/s (CV taken the same, NO-SOURCE) */
+     p.144 TCE212: CV demand through UNT-FG 003 / 036 (LME010, curves from the HIACS backup, turbine.js AN_CV fgA / fgB) to the VALVE
+     CONTROL MT1; p.145 TCE214: ICV opening speed SG C007 K:10.0 %/s; p.143 TCE211: CV OPENING RATE SG A035 10.0 %/s, CLOSING RATE SG A037
+     999999.9 %/s (no limit) outside a test). cvBias = the flow demand where the CVs start to open (SG C008); fdRate = 1 %/s (A007 RI / RD,
+     DERIVED: the 0.03 % read as per 30 ms cycle of the EHG+MD controller); vRate = 10 %/s (ICV SG C007 and CV SG A035) */
   cvBias: 0.2,
   fdRate: 0.01,
   vRate: 0.1,

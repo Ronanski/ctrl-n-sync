@@ -681,8 +681,8 @@ function anTbPorts(U, rpm, hpb) {
    the TCS load loop on the grid. FLOW DEMAND (TCE206 p.140: GOV.SET through the low select with LLM SET, which the ATS has at its upper
    limit) = the TCS target load as a share of the rating (feedforward, the target MW of TCE195) + the integral of the MW error (TCE195 GOV
    CONTROL PI on TARGET MW - GEN. MW, AN_TCE195 below), moved at most 1 %/s (TCE207 A007 RI / RD). TCE207: ICV demand =
-   flow demand / CV OPENING BIAS (full open at 20 %), CV demand = (flow demand - 20 %) / 80 % (the FG curves of TCE212 / TCE214 are
-   PARA-LIST, NO-SOURCE: linear here). The valves follow at 10 %/s (TCE214 SG C007). TRANSFER (ICV TO CV TRANSFER COMPLETE I.0418) =
+   flow demand / CV OPENING BIAS (full open at 20 %), CV demand = (flow demand - 20 %) / 80 % (the CV share U.gv; each CV's lift is then
+   the TCE212 UNT-FG 003 / 036 of the flow demand, tbCvLift). The valves follow at 10 %/s (TCE214 SG C007, TCE211 SG A035). TRANSFER (ICV TO CV TRANSFER COMPLETE I.0418) =
    the CV demand over 0.5 % (TCE207 CV OPEN CMP C004). So the CVs open as the demand rises past the ICV range, the same demand that
    opened the ICV: no step at the transfer (was: the ICV integrator, then a switch to a slow CV integrator from 2 %, beta.239) */
 /* 1.0.0-beta.304 (JENNIE, user 2026-11-22: "s totoong planta, hnd static mga values kht na attain mo ang target mw mo"): the MW loop
