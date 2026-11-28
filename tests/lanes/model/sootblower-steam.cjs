@@ -1,6 +1,6 @@
 // 3.2.3 (SOHEE): the steam the sootblowers take (unit.js AN_SB; Diamond Power N11639-SC1 "Sootblower steam data", IK4M manual o&m L10-2
-// page 93) and the sootblower header from the shut-off MOV MV-SB1001 (source.js PICSB1052; 18.PNG: MV-SB1001 0 %, header 0.4 kg/cm2,
-// every lance retracted at 150 MW). Checks:
+// page 93) and the sootblower header from the shut-off MOV MV-SB1001 (source.js PICSB1052; every lance retracted and MV-SB1001 shut at
+// the 150 MW start). Checks:
 //   - Cold and "Start at 150 MW": no sootblower blows by itself (no steam taken, every lance retracted), MV-SB1001 shut;
 //   - 150 MW with MV-SB1001 shut: PCV-SB1053 opened by hand (MANUAL 60 %) gives no header pressure;
 //   - MV-SB1001 held open in the field and PCV-SB1053 at 60 %: the header has steam; one blower is started (its lance is sent out as
@@ -191,12 +191,14 @@ const W = require('../../../tools/trace/world.cjs');
   /* 5. drain temperatures */
   const d0 = r.cold.dr, d1 = r.l150.dr, d2 = r.open.dr, d3 = r.drHot, d4 = r.drCool;
   ck(Math.abs(d0.a - 30) < 1 && Math.abs(d0.b - 30) < 1 && d0.bp !== 1, `Cold: drain temperatures ${d0.a} / ${d0.b} C (ambient), no blowing permissive`);
-  ck(Math.abs(d1.a - 107) < 3 && Math.abs(d1.b - 105) < 3 && d1.bp !== 1, `150 MW, MV-SB1001 shut: drains ${d1.a} / ${d1.b} C (18.PNG 107 / 105), no blowing permissive`);
+  /* Phase 11 (SUZU 2026-11-28, user rule 0: design data and physics only; was 107 / 105 C read from the plant): no steam reaches the drain
+     lines behind the shut MOV, so they cool toward the ambient (unit.js AN_SB.dr; a start state saved before this change still carries
+     its warmer drains, which then cool with tauC): between the ambient and the 220 C of the permissive, no blowing permissive */
+  ck(d1.a >= 29 && d1.b >= 29 && d1.a < 220 && d1.b < 220 && d1.bp !== 1, `150 MW, MV-SB1001 shut: drains ${d1.a} / ${d1.b} C (no steam behind the shut MOV: at or cooling to the ambient), no blowing permissive`);
   /* 1.0.0-beta.346 (JENNIE, GO DESIGN): no design value of the panel #1 outlet in the documents; the design CALC of the panels (hx.js uaP,
-     62.5 MW at 150 MW with the FHI Fig 10 spray) puts the panel #1 metal at 412.7 C, the steam a little below it: 395 ~ 425 C. The
-     03.png TT-BR1120 458 / 454 C is a plant snapshot, sanity only */
+     62.5 MW at 150 MW with the FHI Fig 10 spray) puts the panel #1 metal at 412.7 C, the steam a little below it: 395 ~ 425 C */
   ck(d1.src > 395 && d1.src < 425, `150 MW: S/H panel #1 outlet steam ${d1.src} C (design CALC of the panels: metal 412.7 C)`);
-  ck(d1.avw.length >= 2 && d1.avw.includes(d1.a) && d1.avw.includes(d1.b), `DITL-80P reads the drain temperatures of the plant model (${d1.avw.join(' / ')})`);
+  ck(d1.avw.length >= 2 && [d1.a, d1.b].every(x => d1.avw.some(y => Math.abs(y - x) < 0.5)), `DITL-80P reads the drain temperatures of the plant model (${d1.avw.join(' / ')})`);
   /* the header steam is the panel #1 steam throttled (isenthalpic) to the header: it must stay above the 250 C the drains need for the
      blowing permissive (DITL-80P, check below), not a fixed number from the plant source temperature */
   ck(d2.hdrT > 250 && d2.hdrT < d1.src && d2.a > d1.a && d2.a < d2.hdrT, `MV-SB1001 open 120 s: header steam ${d2.hdrT} C (throttled), drains warming ${d2.a} / ${d2.b} C`);

@@ -1853,18 +1853,16 @@ function anCdTagStep(U) {
                    kg/cm2g, TEGS1002 "GLAND STEAM SEAL HEADER TEMP.", TEGS1003 "GLAND STEAM SEAL LP INLET TEMP.", ZTGS1034 "STEAM
                    PACKING UNLOADING VALVE POSITION", ZTAS1011 / MVAS1011 "HP TURBINE WARMING VALVE POSITION";
      DCS IO list   STN102 AI0643 TT-AS1015 gland steam desuperheater outlet, AI0706 / AI0720 ZT-AS1020-1 / -2;
-     ABC-030       PIC-AS1005 MV -> F(X) LN17 (valve 1) / LN16 (valve 2) (29.PNG MV 4.2 -> 0.1 / 32.2 %; the F(X) gives 0 / 32.3);
-     29.PNG 150 MW condenser 0.056 / 0.053 / 0.053 kg/cm2A, hood 38 / 38 / 37 C (= the saturation of the condenser: wet steam on load);
-                   gland header 0.32 kg/cm2, TEGS1002 / 1003 364 / 362 C, TT-AS1015 257 C, aux header TT-AS1003 236 C, PV-GS1034
-                   42.6 % (the unloading valve spills the HP packing leak-off on load to the No.1 LPH: the plant self-seals);
-     PR-OPE-5002   GLAND SEALING: TIAS1015 220 C (cold 150 ~ 260); HP TURBINE WARMING: TCS opens MV-AS1011 to 40 ~ 42 %, closes it at the end.
+     ABC-030       PIC-AS1005 MV -> F(X) LN17 (valve 1) / LN16 (valve 2);
+     Hitachi HB    on load the unloading valve spills the HP packing leak-off to the No.1 LPH (case 1): the turbine self-seals.
    How it works:
      PTST11101 ~ 3 = PT-CD1110 (the model condenser U.cdP); TEST11101 ~ 3 = the LP exhaust hood of the TCS model (tcs.js c.Tx, start-up),
      the condenser saturation without it (Start at 150 MW);
      ZT-AS1020-1 / -2 = the F(X) of the PIC-AS1005 MV (held by the airlock without air, AN_AV);
      gland header PTGS10011 / 2, PV-GS1031 / 1034, TEGS1002 / 1003: the gland header volume and its energy balance in anAuxStep
-     (AN_AS; Phase 11 SUZU 2026-11-27, was a 0.32 kg/cm2 fallback and a load law on 29.PNG), TT-AS1015 the steam before PV-GS1031;
-     MV-AS1011 = 40 % while the TCS is in HP TURBINE WARMING (step 0, phase warm), else 0. */
+     (AN_AS; Phase 11 SUZU 2026-11-27, was a 0.32 kg/cm2 fallback and a load law read from the plant), TT-AS1015 the steam before
+     PV-GS1031; MV-AS1011 = 40 % while the TCS is in HP TURBINE WARMING (step 0, phase warm), else 0 (SNAPSHOT-TO-REPLACE: an operating
+     procedure number; the opening should come from the TCS warming logic). */
 function anAsTagStep(U, dt) {
   const r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
     r3 = x => (isFinite(x) ? Math.round(1000 * x) / 1000 : null),
@@ -1902,7 +1900,7 @@ function anAsTagStep(U, dt) {
     'ZT-AS1020-1': r1(fx(C.f1)),
     'ZT-AS1020-2': r1(fx(C.f2)),
     'TT-AS1015': r1(Tst(U.asT15)),
-    PTGS10011: r3(U.gsP) /* the gland header volume of anAuxStep (was a 0.32 fallback of 29.PNG) */,
+    PTGS10011: r3(U.gsP) /* the gland header volume of anAuxStep (was a 0.32 fallback) */,
     PTGS10012: r3(U.gsP),
     TEGS1002: r1(Tst(U.asTgs)),
     TEGS1003: r1(Tst(U.asTgs)),
@@ -1931,8 +1929,9 @@ function anAsTagStep(U, dt) {
                       the steam seal feed valve PV-GS1031; the volume 5.5 m3 of the isometrics (AN_AS.Va); the header steam at 350 C (MB-014 items 2 / 5 operating 11 kg/cm2 G, 350 C);
      gland header     PV-GS1031 Cv 75 linear DN80 (TG maintenance manual p2385 ~ 2394) from the aux header, PV-GS1034 unloading Cv 375
                       equal % (p2395 ~ 2404) to the No.1 LP heater; one PI on PT-GS1001 (p103: feed at vacuum up / low load, unloading
-                      spills the surplus on load), split at 0; set point 0.32 kg/cm2 G (29.PNG 150 MW; the feed valve sheet NOR outlet
-                      1.31 kg/cm2 A = 0.28 G); PI gains NO-SOURCE; the glands take K sqrt(P^2 - Pc^2) (labyrinth), K from the NOR case
+                      spills the surplus on load), split at 0; set point = the PV-GS1031 sheet NOR outlet
+                      1.31 kg/cm2 A = 0.28 G (Phase 11 SUZU 2026-11-28, user rule 0: was 0.32 read from the plant; the gland PI set
+                      point is not on a DCS / TCS sheet read yet); PI gains NO-SOURCE; the glands take K sqrt(P^2 - Pc^2) (labyrinth), K from the NOR case
                       2170 kg/h at 1.31 abs into a condenser at 0.07 abs; on load the HP / IP packing leaks into the header with the cold
                       reheat pressure (Hitachi HB case 1: 1,820 kg/h at 150 MW, AN_AS.Whp0); volume 0.45 m3 (AN_AS.Vg); "in service" (ATS 1.10) = header >= 0.10 kg/cm2 G (IBD TD-3 LOW alarm);
      condenser air    the evacuated volume 338 m3 (ED 066 p15) at the condenser temperature; in: the air in-leakage, an orifice that passes
@@ -1964,11 +1963,11 @@ const AN_AS = {
   cvGf: 75,
   cvGu: 375,
   ej: { sjae: 425, start: 1477, Pm: 12.0332 },
-  gSv: 0.32,
+  gSv: 1.31 - 1.0332 /* kg/cm2 G, PV-GS1031 sheet NOR outlet 1.31 A (see the head) */,
   gKp: 60 /* % per kg/cm2, NO-SOURCE */,
   gTi: 15 /* s, NO-SOURCE */,
   Kseal: 2170 / Math.sqrt(1.31 * 1.31 - 0.07 * 0.07),
-  /* Phase 11 (SUZU 2026-11-27, Rule 0; was Whp0 2694 = 2243 + 451 FIT on 29.PNG, NO-FIT-OK: history). Hitachi heat balance
+  /* Phase 11 (SUZU 2026-11-27, Rule 0; was Whp0 2694 = 2243 + 451, a plant FIT, NO-FIT-OK: history). Hitachi heat balance
      PPE-14-0725 R1 case 1 (150 MW, 310SD07-485, YUA read suzu-gland-2026-11-27.md 3): the HP packings put 403 kg/h (inlet end, outer,
      main steam 823.2 kcal/kg) + 1,417 kg/h (exhaust end, outer, cold reheat 751.7 kcal/kg) = 1,820 kg/h into the steam seal regulator
      (the gland header); the header gives 421 (gland steam condenser) + 372 (main condenser, No.3 PKG) = 793 kg/h to the LP / outer
@@ -2014,19 +2013,18 @@ const AN_AS = {
      (TT-AS1001, IO list S2 AI0641 "main steam desuperheater downstream"); the header TT-AS1003 (S2 AI0642) mixes that steam with
      the cold reheat through PCV-AS1020-1 / -2; TT-AS1017 (S2 AI0902 "gland steam turbine side") is fed by PV-GS1031 from the
      header and the gland desuperheater spray (MV of TICAS1017). Spray capacities, metal heat capacities and losses: NO-SOURCE
-     (not in the docs). Two numbers are set by 29.PNG at 150 MW (not a fit of a curve, the one unknown of each balance):
-     UA3 gives TT-AS1003 236 C with the header steam of that load; with PV-GS1031 shut (self-sealing) the TT-AS1017 pipe sits
-     between the gland header (TEGS1002 364 C) and the room, 185 C = G17 about UA17 */
+     (not in the docs). UA3 (the header heat loss) and G17 (the TT-AS1017 pipe coupling to the gland header while PV-GS1031 is
+     shut) are SNAPSHOT-TO-REPLACE: set from plant readings at 150 MW; the insulation of the lines is not in the docs read yet */
   sprA: 1000 /* kg/h TCV-CD1124 full open, NO-SOURCE */,
   sprG: 300 /* kg/h gland desuperheater spray full open, NO-SOURCE */,
   cps: 2.2 /* kJ/kg K steam */,
   Mc1: 300 /* kJ/K, NO-SOURCE */,
   UA1: 0.05 /* kW/K, NO-SOURCE */,
   Mc3: 2000 /* kJ/K, NO-SOURCE */,
-  UA3: 0.131 /* kW/K, 29.PNG: the SJAE steam 397 kg/h of cold reheat at 347 C after PCV-AS1020 holds 236 C (the other header users are not modelled yet) */,
+  UA3: 0.131 /* kW/K, SNAPSHOT-TO-REPLACE (see above) */,
   Mc17: 300 /* kJ/K, NO-SOURCE */,
   UA17: 0.05 /* kW/K, NO-SOURCE */,
-  G17: 0.0433 /* kW/K, 29.PNG (see above) */,
+  G17: 0.0433 /* kW/K, SNAPSHOT-TO-REPLACE (see above) */,
   k: { sh: null }
 };
 /* steam through a control valve, kg/h (ISA-75.01, see AN_AS): P kg/cm2 G, T C */
@@ -2108,7 +2106,7 @@ function anAuxStep(U, dt) {
   const gsOn = c ? (c.gsOn != null ? !!c.gsOn : !!c.gland || !!c.fromLoad) : onLoad;
   if (c && c.gsOn == null) c.gsOn = gsOn;
   if (!isFinite(U.gsP)) U.gsP = gsOn ? K.gSv : 0;
-  /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history; was -42.6 % x MW / 150 of 29.PNG): the gland PI starts at rest; a save (st150) brings its state */
+  /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history; was -42.6 % x MW / 150, a plant fit): the gland PI starts at rest; a save (st150) brings its state */
   if (!isFinite(U.gsY)) U.gsY = 0;
   const Tc = isFinite(U.cdTs) ? U.cdTs : isFinite(U.Tamb) ? U.Tamb : 30,
     Psc = Math.min(1.033, anPsat(Tc));
@@ -2167,7 +2165,7 @@ function anAuxStep(U, dt) {
         onLoad && Pcra > Pga
           ? (K.Whp0 * Math.sqrt(Pcra * Pcra - Pga * Pga)) / Math.sqrt(Pcr0 * Pcr0 - 1.353 * 1.353)
           : 0,
-      /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history; was the back pressure max(Pc, 0.366 x MW / 150) and 364 C of 29.PNG): PV-GS1034 spills
+      /* Phase 11 (SUZU 2026-11-27, NO-FIT-OK: history; was the back pressure max(Pc, 0.366 x MW / 150) and 364 C, plant readings): PV-GS1034 spills
          to the No.1 LP heater (HB case 1, via FV-GS1036): its shell = the extraction VI pressure of RIN's port ext.lp1 (ata), not below
          the condenser; the steam at the gland header temperature (TEGS1002). Only the port: no flow until RIN has written it */
       lp1 = U.pt && U.pt['ext.lp1'],
@@ -2255,11 +2253,10 @@ function anAuxStep(U, dt) {
       T17in = wG > 0 ? tOf(Pg, (wG * hG + sG * hw) / (wG + sG), tsG) : NaN,
       Tgs = isFinite(U.asTgs) ? U.asTgs : Ta0;
     const T17 = metal('asT17', T17in, wG + sG, K.Mc17, K.UA17, K.G17, Tgs);
-    /* Phase 11 (SUZU 2026-11-27, Rule 0, NO-FIT-OK: history; was TEGS1002 = TT-AS1015 + 107 C x MW / 150, a load law on 29.PNG):
+    /* Phase 11 (SUZU 2026-11-27, Rule 0, NO-FIT-OK: history; was TEGS1002 = TT-AS1015 + 107 C x MW / 150, a plant load law):
        TT-AS1015 (STN102 AI0643 "gland steam desuperheater outlet") is the steam after the
        spray, upstream of PV-GS1031 (PD-014 zone G-H: desuperheater, TT-AS1015, drain pot DP-AS01, MV-GSn030, PV-GS1031, header): the
-       steam of the aux header that the feed valve and the 5 mm warm-up orifice pass (29.PNG reads 257 C at 150 MW with the feed valve
-       shut). TEGS1002 (the gland steam seal header) is the energy balance of the header
+       steam of the aux header that the feed valve and the 5 mm warm-up orifice pass. TEGS1002 (the gland steam seal header) is the energy balance of the header
        metal: in, the feed of PV-GS1031 at TT-AS1017, the warm-up orifice at TT-AS1015 and the HP packing leak wHp (throttled,
        constant enthalpy, HB case 1 mix of main steam and cold reheat), out the same flow; metal and loss of the header as the gland pipe (Mc17 / UA17, NO-SOURCE). TEGS1003 (LP inlet) is
        the header steam: the loss of the line to the LP glands is not in the docs (NO-SOURCE), none. */
@@ -2297,7 +2294,7 @@ function anLubeCoolStep(U, dt) {
   const K = AN_LO,
     sp = Math.max(0, Math.min(1, (U.tb ? U.tb.rpm : 0) / 3600)),
     flow = (+U.loBrg || 0) > 1.05,
-    mv = U.loMv ? Math.max(0, Math.min(100, anAv('TICLO1002', +U.loMv.S.rt.v[U.loMv.n] || 0))) : 0 /* no TICLO1002 output: no command, TCV-CW1201 shut (was the 27.PNG 53.1 %) */,
+    mv = U.loMv ? Math.max(0, Math.min(100, anAv('TICLO1002', +U.loMv.S.rt.v[U.loMv.n] || 0))) : 0 /* no TICLO1002 output: no command, TCV-CW1201 shut (was a fixed 53.1 % read from the plant) */,
     acw = Math.max(0, Math.min(1, (+U.acQ || 0) / AN_ACW_MB.Q)) /* MB-021 design flow */,
     W = (K.Wmax * mv * acw) / 100 /* T/H */,
     Cw = (W * 1000 * 4.18) / 3600,
@@ -2348,10 +2345,9 @@ function anLubeCoolStep(U, dt) {
 }
 /* 3.2.0 live test #54: MOTOR BEARING / WINDING TEMPERATURE AND VIBRATION of the seawater pumps P-1501A / B / C, the aux. cooling water
    pumps P-1108A / B and the ID fan (I/O list STN103: TT-SW1501-x3 / x4 / xU / xV / xW AI0720 ~ 0758, VT-SW1501-x1 / x2; TT-CW1108-x3 /
-   x4 / xU / xV / xW AI0912 ~ 0932; TT-FG1056-1 ~ 4 / U / V / W AI0672 ~ 0678, VT-FG1056-1 ~ 4 AI0528 ~ 0531). PR-OPE-5002 2.19 / 2.21
-   / 2.27 (TI SW1501A3 / A4, VI SW1501A1 / A2) and 22.13 ~ 22.15 ask the operator to read them. No curve of the motors in the repository:
+   x4 / xU / xV / xW AI0912 ~ 0932; TT-FG1056-1 ~ 4 / U / V / W AI0672 ~ 0678, VT-FG1056-1 ~ 4 AI0528 ~ 0531). No curve of the motors in the repository:
      running      bearing to 55 C (NO-SOURCE) with a 30 min time constant, winding to 85 C (NO-SOURCE) with 15 min; vibration 1.8 mm/s (pumps)
-                  / 2.2 mm/s (IDF) (NO-SOURCE; the alarm list and the SOP give limits only) at once;
+                  / 2.2 mm/s (IDF) (NO-SOURCE; the alarm list gives limits only) at once;
      stopped      back to the ambient 30 C with twice the time constant, vibration 0.1 mm/s;
      each element +0 ~ 2.5 C / +0 ~ 0.3 mm/s of its own (NO-SOURCE) so that two elements are not one number.
    Limits (alarm list "Alarm List _20160912" TE / VT): SWP bearing H 95 / HH 100, winding H 145 / HH 155, vibration H 7.6 / HH 11.9;
@@ -2366,7 +2362,7 @@ const AN_MT = {
     ['ACWP-B', 'DITL-77', 'CW1108-B', ['3', '4'], [], 1.8],
     ['IDF', 'IDF', 'FG1056-', ['1', '2', '3', '4'], ['1', '2', '3', '4'], 2.2],
     /* 3.2.1 (IRENE, SEULGI finding): PAF / SAF (DITL-26B / 27B rows 5 ~ 15) and the FA blowers A / B (DITL-28B and its #B, rows 1 ~ 14):
-       motor and fan bearings 1 ~ 4, windings U / V / W, vibration 1 ~ 4; the same NO-SOURCE running values as the IDF (no snapshot or
+       motor and fan bearings 1 ~ 4, windings U / V / W, vibration 1 ~ 4; the same NO-SOURCE running values as the IDF (no design or
        vendor value of these temperatures in the repository; the DITL comparators: bearing 90 / 95, winding 145 C, FA blower 110 / 120 /
        155 C) */
     ['PAF', 'DITL-26A', 'FA1053-', ['1', '2', '3', '4'], ['1', '2', '3', '4'], 2.2],
@@ -2512,7 +2508,8 @@ function anMotorStep(U, dt) {
      IA motor     TECO-YASKAWA FELA-8T 190 kW CONT 460 V 2 P (outline P1309238 RATINGS; the thermal sheet says 165 kW): 286 A at 190 kW; starting current with a reactor 80 % tap
                   532 % (the torque / current curve);
      tanks        D1-0-059 document index and PD-023: T-0705A / B 10 m3 (PA), T-0706A / B 5 m3 (IA), max. working pressure 0.98 MPa;
-     pressure     PR-OPE-5002 "Ensure Plant Air Compressor is running and compressed air pressure is up to 7 Kg/cm2"; 39.PNG 7.0;
+     pressure     7.0 kg/cm2 (SNAPSHOT-TO-REPLACE: an operating procedure number; the compressor package set pressure of D1-0-059 is
+                  not read yet; the tanks max. working pressure 0.98 MPa is above it);
      alarm list   tanks and unit header L 5.0, IA LL 3.5, PSL-IA1706 / PSL-PA1705 2.8 kg/cm2;
      I/O list     ranges 0 ~ 10 kg/cm2, dryer outlet flow 0 ~ 2700 (IA) / 0 ~ 5800 (PA) m3/h, compressor current 0 ~ 500 (IA) / 0 ~ 140
                   (PA) A (the transmitter holds its range top).
@@ -2527,7 +2524,7 @@ function anMotorStep(U, dt) {
      use          the consumption at 7.0 (NO-SOURCE: IA 1200, PA 1500 m3/h, as 3.2.0-beta.68) through fixed openings: proportional to the
                   absolute pressure;
      capacity     Mass Balance Diagram K1AU3-MB-023 (A2-0-001 Rev A) sheets 1/2 and 2/2, items 2 / 4 / 6: PA 5100 Nm3/h, IA 1500 Nm3/h
-                  per compressor (the MB operating point has 2 running: 10200 / 3000; the SOP and the snapshot have 1); IA power at full
+                  per compressor (the MB operating point has 2 running: 10200 / 3000); IA power at full
                   flow 176 kW = 1500 m3/h at the PA ratio 600 kW / 85 m3/min (NO-SOURCE ratio, the IA compressor power is not in the docs);
      power        proportional to the compressor flow, not below the surge flow (the anti-surge loop blows off the rest): 70 % of the
                   capacity (NO-SOURCE); 100 % = PA 600 kW (TRE60-600kW), IA 176 kW (above);
@@ -2890,7 +2887,7 @@ function anAirStep(U, dt) {
       nd = dry.reduce((a, b) => a + b, 0);
     /* the compressors: the state of the scenario at the first step, then the START COMMAND of the logic (only a compressor whose
        local panel is in REMOTE), its TRIP contact, and a start / stop at the local panel (the field operator writes the RUNNING
-       contact: guide.js LS_OP.fieldRow, PR-OPE-5002 "Ensure the compressor is in Local Position ... Initiate RUN") */
+       contact: guide.js LS_OP.fieldRow) */
     let run = U[k + 'Run'];
     if (!Array.isArray(run)) {
       if (!s) continue;
@@ -2996,14 +2993,14 @@ function anGridHz(U, dt) {
   U.gridHz = aim < f ? Math.max(aim, f - AN_GRID.down * dt) : Math.min(aim, f + AN_GRID.up * dt);
   return U.gridHz;
 }
-/* the rating of the machine (GAE-2013-0136 R2: 176.5 MVA, 13.8 kV, 60 Hz) and the page 17 energy meters, which start at the meter
-   reading of snapshot 37.PNG (a meter reading, not a physics value; the GCP meters of tcs-dev.js count from 0) */
+/* the rating of the machine (GAE-2013-0136 R2: 176.5 MVA, 13.8 kV, 60 Hz) and the page 17 energy meters, which count from 0 as the
+   GCP meters of tcs-dev.js (rule 0, user 2026-11-28: no plant reading as a start value; was a meter reading of a screen) */
 const AN_GEN = {
   kV: 13.8,
   Hz: 60,
   S: 176.5,
-  MWh: 7266257,
-  MVArh: 882996
+  MWh: 0,
+  MVArh: 0
 };
 function anGenEl() {
   const U = AN.unit;
@@ -3015,9 +3012,8 @@ function anGenEl() {
     /* Phase 11 (MODEL GENERATOR ELECTRICAL : YUI, 2026-11-27): ONE generator model. The terminal voltage, stator current, Mvar, power
        factor and field are the ones of the field and on-line phasor model of tcs-gen.js (tcsGenStep / tcsGenPh: EMF behind Xd 1.92 pu,
        TR 2310 Xt 0.137 pu, stiff 230 kV bus; GEE-2015-0152 R1 p6, GAE-2013-0136 R2, K1AU3E1-0003 rev 2; checked against the V curves
-       310SD23-270 R1 within 1.5 %), the same values the TCS I/O, the Modbus list and the var-hour meter read. Before, this page computed
-       its own Mvar with a fixed power factor 0.977 (screen 37.PNG) and its own field scaled on that screen: two answers for one machine
-       (150 MW: 33.1 Mvar here, 8.8 Mvar in the TCS). Read only: the mirror page does not make U.gen (beta.277) */
+       310SD23-270 R1 within 1.5 %), the same values the TCS I/O, the Modbus list and the var-hour meter read (one model; the old fixed
+       power factor of this page is gone). Read only: the mirror page does not make U.gen (beta.277) */
     g = U.gen || {},
     G = TCS_GEN,
     /* beta.240: P negative = reverse power (motoring) */
@@ -3170,8 +3166,7 @@ function anGenInt(dt) {
      Z-1107A/B tri-sodium phosphate 200 ml/min -> economizer inlet (PD-017); Z-1108A/B neutral amine 250 ml/min -> condensate;
      Z-1109A/B carbon hydraride (carbohydrazide) 100 ml/min -> deaerator; agitator Z-1101. No DCS command: the I/O list has the
      RUNNING / ELECTRIC TROUBLE DI only (I.0120 ~ I.012D), so the pumps are FIELD equipment (AN.field tspA ... agt, the local panel).
-     PR-OPE-5002: amine at the hotwell (3534 ~ 3569), carbohydrazide at the deaerator (3770 ~ 3781), phosphate after the drum fill
-     (4200 "OPEN V-CH1007 and Start Phosphate Dosing pump"): one pump each (A), B standby.
+     The dosing points are those of PD-042 above; one pump each (A) runs, B standby (the state of the scenario).
    Water and steam (all CALC from the documents below, no fitted number):
      amine     the neutral amine stays in the cycle (volatile: it leaves the drum with the steam and comes back with the condensate);
                it leaves only with the blowdown (CBD + MBD of the drum model, AN_CYC.cbd / mbd) and is replaced by make-up without
@@ -3180,15 +3175,14 @@ function anGenInt(dt) {
                O&M section 1 p 2) + feedwater tank 140.4 - 40 = 100.4 t and deaerator 13.37 - 9.83 = 3.54 t of water (DA O&M section 1
                p 2, operating minus empty) + the boiler 252 m3 (hydrostatic test procedure K1AU3-R3-0-101 p 8, includes the
                superheater: an upper bound) at the density of the drum water.
-     pH        target 9.0 (PR-OPE-5002 3929 "PH level = 9.0"; FHI 2-8-TAB_3 p 2 amines 8.8 ~ 9.2). A weak base: [OH-] grows with the
+     pH        target 9.0 (the middle of FHI 2-8-TAB_3 p 2 amines 8.8 ~ 9.2). A weak base: [OH-] grows with the
                square root of its concentration, pH = 9.0 + 0.5 log10(c), not below the make-up water pH 7.5 (alarm list AT-SP1006
                normal). Feedwater AT-SP1001 / 1003 / 1009 and main steam AT-SP1016 (the amine goes with the steam).
      phosphate stays in the boiler water: dP/dt = (dose - P x Fbd) / Mb, Mb = the boiler 252 m3 above. The dose holds 2 ppm PO4 at the
                design CBD 15 T/H. 3.2.4-beta.71 (JENNIE, Rosé: AL2-SP01 stood in ALARM at 150 MW): was 5 ppm, the low end of the FHI band
                (Figure 2-8-TAB_3-2: PO4 5 ~ 10 ppm, pH 9.1 ~ 9.8), but there the drum water of this curve is pH 9.50 and 19.1 uS/cm,
-               over the plant alarm list (AT-SP1011 H 9.5, AT-SP1012 H 10 uS/cm; snapshot AISP1012 4.6 uS/cm). The plant runs its
-               phosphate inside its own alarm limits: 2 ppm = pH 9.08, 7.6 uS/cm (NO-SOURCE: the plant PO4 is not in a snapshot; the
-               snapshot pair pH 9.5 / 4.6 uS/cm cannot be one water: OH- alone at pH 9.5 and 25 C is 6.3 uS/cm).
+               over the plant alarm list (AT-SP1011 H 9.5, AT-SP1012 H 10 uS/cm). The phosphate is held inside the alarm limits: 2 ppm =
+               pH 9.08, 7.6 uS/cm (NO-SOURCE: the operating PO4 is not in the design documents).
      drum pH   AT-SP1011: FHI Figure 2-8-TAB_3-3, curve Na/PO4 = 2.6 (FHI: maintain Na/PO4 <= 2.6), read at 1 / 2.5 / 5 / 7.5 / 10 / 15 /
                20 ppm (the curve is the phosphate water; no phosphate = the feedwater pH, never below it).
      drum cond AT-SP1012 specific conductivity of the phosphate water at 25 C: Na+ = 2.6 PO4, HPO4-- / PO4--- from the charge balance,
@@ -3208,7 +3202,7 @@ function anGenInt(dt) {
                (lam above): 0.09 uS/cm.
      steam     AT-SP1014 saturated steam specific conductivity: the amine is volatile and goes with the steam (only the phosphate
                stays in the drum): NH4+ 73.5 (Kohlrausch, 25 C) + OH- 198.0 S cm2/mol x 10^(pH - 14) at the feedwater pH: 2.7 uS/cm at
-               pH 9.0 (snapshot 3.8 = pH 9.15).
+               pH 9.0.
      silica    AT-SP1008 / 1013 / 1015 / 1017: 0, like the sodium: the model has no silica source (no demineralizer slip, no leak).
    Not modelled (kept '-----' on the page): the tank
    levels (the tank height is not in PD-042: the level switches LSH / LSL / LSLL 0.48 / 0.12 / 0.09 m of the alarm list cannot be
@@ -3264,16 +3258,16 @@ const AN_CHEM = {
      the other 5 IK4M locations (2 each)                              8.0    230 / 244   0.6
      the IK4M-PT locations (#3 Eco, RH Int Lower ~ #2 Eco, 2/2/2/4)    8.7    116 / 120   0.9
      Above #1 Common Eco (IK4M-PT, 4)                                  8.7     98 / 102   0.9
-   Total 3882 kg of steam for one cycle of the whole set. The tags by location: page MK15 (snapshot 18.PNG) draws N-1011 / 1012 above
+   Total 3882 kg of steam for one cycle of the whole set. The tags by location: the HMI page MK15 draws N-1011 / 1012 above
    the RH upper and N-1013 / 1014 above the SH upper (the 4 of 1.2 kg/s); N-1015 ~ 1022, 1025, 1026 are the other IK4M (DITL-80O group
    M.4246); N-1023, 24, 27 ~ 34 the IK4M-PT and N-1035 ~ 38 the common economizer (M.4240 / M.4242), as the lance travel of world.js.
    The steam blows while the poppet valve is open: blowing time / unit operation time of the table, so from (oper - blow) / 2 s of
    travel out (50.8 mm/s) to the same point back: 356 mm (IK4M), 102 mm (IK4M-PT). The source is the sootblower header (S/H panel #1
-   outlet through MV-SB1001 and PCV-SB1053, 18.PNG): no header pressure, no steam. Below its head pressure a blower passes less: critical
+   outlet through MV-SB1001 and PCV-SB1053): MV-SB1001 shut = no header pressure, no steam. Below its head pressure a blower passes less: critical
    flow through the nozzles, proportional to the absolute pressure before them (CALC). The steam leaves the boiler between the drum and
    the main steam flow transmitter FT-MS1031 (boiler outlet), so FT-MS1031 does not see it: the drum (pressure and level) loses it and
    the cycle needs it back as make-up (plant.js AN_CYC.dl). U.msb (T/H), U.sbN (blowers blowing). No blower moves unless the operator
-   starts it (the lances start retracted, 18.PNG). NO-SOURCE: the header pressure drop under the flow (PCV-SB1053 has no Cv in the docs);
+   starts it (the lances start retracted). NO-SOURCE: the header pressure drop under the flow (PCV-SB1053 has no Cv in the docs);
    the air heater blowers N-1040 / 1042 (no data in the table) */
 const AN_SB = {
   head: { a: 12.9, b: 8.0, c: 8.7 },
@@ -3303,15 +3297,15 @@ const AN_SB = {
      and rows 18 / 19 (> 250 C = the drain SOVs XV-SB1054 / 1059 close by themselves). Flow diagram PD-015: the steam comes from the
      S/H panel #1 outlet. Its temperature (CALC): the heat balance of the No.1 spray, steam in = (steam out x h(spray 1 outlet) - spray x
      h(water)) / (steam out - spray), steam out = main steam - No.2 spray (FT-FW1119), spray FT-FW1109 at TT-FW1011, h(water) = 4.19 x T
-     (liquid, within 2 % of the steam table), pressure = the PT-BR1130 tap of KANA's SH drop law (anShTap). Check at 03.png (150.5 MW:
-     MSF 474.1, spray 37.5 / 28.2 T/H, TICBR1130 394 C, PIBR1130 127.8, TIFW1011 162 C): 460 C against TT-BR1120-1 / -2 458 / 454 C.
+     (liquid, within 2 % of the steam table), pressure = the PT-BR1130 tap of KANA's SH drop law (anShTap).
      Through MV-SB1001 and PCV-SB1053 the steam is throttled at constant enthalpy to the header pressure (PICSB1052): steam.js steamTph
-     (IAPWS-IF97 region 2). With steam in the header (above 0.5 kg/cm2: 18.PNG reads 0.4 with MV-SB1001 shut) the drains go to that
-     temperature with the lag tauH; without steam they go back to their rest value with tauC. Rest: 18.PNG (149.8 MW, MV-SB1001 shut)
-     107 / 105 C, scaled down to the ambient with the boiler water temperature (ambient at Cold). NO-SOURCE: tauH, tauC (the warm-up and
-     the cooling of the drain lines) and the scaling of the rest value; the dead leg with its drain SOV shut is not modelled (the trap
-     passes the condensate) */
-  dr: { rest: [107, 105], Pon: 0.5, tauH: 120, tauC: 1800, P0: 134.2 }
+     (IAPWS-IF97 region 2). With steam in the header (above Pon 0.5 kg/cm2, NO-SOURCE: the transmitter zero band) the drains go to that
+     temperature with the lag tauH; without steam they cool to the ambient with tauC (first principles: no steam reaches a line behind a
+     shut MOV; Phase 11 SUZU 2026-11-28, user rule 0: was a rest of 107 / 105 C read from the plant, scaled with the boiler water
+     temperature). NO-SOURCE: tauH, tauC (the warm-up and the cooling of the drain
+     lines); the leak-by of MV-SB1001 and the heat it brings are not in the docs and not modelled; the dead leg with its drain SOV shut
+     is not modelled (the trap passes the condensate) */
+  dr: { Pon: 0.5, tauH: 120, tauC: 1800, P0: 134.2 /* read by turbine.js TT-HR1010 (RIN) */ }
 };
 /* U.sbT = S/H panel #1 outlet steam (C), U.sbTh = header steam (C, NaN without steam), U.sbTa / U.sbTb = TT-SB1056 / TT-SB1057 */
 function anSbDrain(U, dt, P) {
@@ -3326,7 +3320,7 @@ function anSbDrain(U, dt, P) {
     Tf = tt['TT-FW1011'] != null && isFinite(tt['TT-FW1011']) ? +tt['TT-FW1011'] : Ta;
   let Ts = NaN;
   if (isFinite(T1) && Pd > 0) {
-    /* Phase 11 (SUZU 2026-11-28, NO-FIT-OK: history; was drum - 6.4 x (MSF / 474.1)^2 of 03.png): the PT-BR1130 tap of KANA's SH drop
+    /* Phase 11 (SUZU 2026-11-28, NO-FIT-OK: history; was drum - 6.4 x (MSF / 474.1)^2 read from the plant): the PT-BR1130 tap of KANA's SH drop
        law (anShTap, FHI design drop 16 kg/cm2 at 460 T/H with the steam density; its tap share is KANA's open item) */
     const P1 = Math.max(0, anShTap(U, AN_SHDP.s1, Pd, ms)),
       mo = ms - w2;
@@ -3335,12 +3329,9 @@ function anSbDrain(U, dt, P) {
     U.sbTh = isFinite(P) && P > K.Pon ? steamTph(P, steamH(P1, Ts)) : NaN;
   } else U.sbTh = NaN;
   U.sbT = isFinite(Ts) ? Math.round(Ts * 10) / 10 : NaN;
-  const Tw = isFinite(U.Tw) ? U.Tw : Ta,
-    f = Math.max(0, Math.min(1, (Tw - Ta) / (steamTsat(K.P0) - Ta)));
-  ['sbTa', 'sbTb'].forEach((k, i) => {
-    const rest = Ta + (K.rest[i] - Ta) * f,
-      tg = isFinite(U.sbTh) ? Math.max(rest, U.sbTh) : rest;
-    if (!isFinite(U[k])) U[k] = rest;
+  ['sbTa', 'sbTb'].forEach(k => {
+    const tg = isFinite(U.sbTh) ? Math.max(Ta, U.sbTh) : Ta;
+    if (!isFinite(U[k])) U[k] = Ta;
     const tau = tg > U[k] ? K.tauH : K.tauC;
     U[k] += (tg - U[k]) * Math.min(1, dt / tau);
   });
@@ -3443,7 +3434,7 @@ function anChemStep(U, dt) {
   const amn = on('amnA', 'amnB'),
     tsp = on('tspA', 'tspB'),
     chz = on('chzA', 'chzB');
-  if (!isFinite(U.chC)) U.chC = 1; /* the water of the cycle was conditioned before the fill (PR-OPE-5002 3284) */
+  if (!isFinite(U.chC)) U.chC = 1; /* the start state: the water of the cycle at its target (NO-SOURCE: a start state) */
   if (!isFinite(U.chP)) U.chP = tsp ? K.P0 : 0;
   if (!isFinite(U.chS)) U.chS = chz;
   for (let t = 0; t < dt; t += 60) {
