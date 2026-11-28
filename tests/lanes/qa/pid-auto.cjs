@@ -54,8 +54,14 @@ const ONLY = (process.argv[2] || '').split(',').filter(Boolean);
         span = rhi - rlo,
         lo = P.lo ?? 0,
         hi = P.hi ?? 100;
+      /* the inputs from other sheets hold their 150 MW values (phase thread 2026-11-28): a link written during the step (e.g. ABC-001C
+         I.0082 DCS CONTROL MODE ON from the TCS) is put back each scan, so the PID alone is judged, not a mode change of another sheet */
+      const ext0 = base.ext ? Object.assign(Array.isArray(base.ext) ? [] : {}, base.ext) : null;
       const run = sec => {
-        for (let i = 0; i < sec * 4; i++) anStep(S, 0.25);
+        for (let i = 0; i < sec * 4; i++) {
+          anStep(S, 0.25);
+          if (ext0) for (const n of S.ext || []) if (S.rt.force[n] === undefined && ext0[n] !== undefined) S.rt.ext[n] = ext0[n];
+        }
       };
       const outv = () => +S.rt.st[b.id].out;
       const sv0 = +S.rt.v[q.sv];

@@ -28,3 +28,7 @@
 ## Also in this PR
 - Sweep tool (tools/accept/part1.cjs): the Pms sample is at the MSVs (PT-MS1002 less the main steam line drop anMsDrop(U, ms, mhp).msv, RIN 721), the HB row's own point; MSTt is the turbine inlet U.Tt (anMsT, RIN 721).
 - no-snapshot guard: the RULE 0 VIOLATION tags have a ceiling in the baseline (`_rule0`, 4 on main after AOI's 725: cfb.js kKL, boiler.js opacity, stack velocity, FA flow / header). More tags = FAIL; `--update` refuses an increase. Tested: a 5th tag FAILs, removed it PASSes.
+
+## PID AUTO lane test: other sheets' inputs held (second Checks run)
+- Red: ABC-001C PIC-COBM, the PV +10 % step: the output froze at -20.3 (tracking) and the down step did not move it. Traced: during the step a link wrote ABC-001C I.0082 (DCS CONTROL MODE ON from the TCS) 1 -> 0, so the turbine master went to force manual (M.2016 / M.2017), the boiler master left AUTO (M.201B) and PIC-COBM tracked. On main the same happens, but the output had already reached its -25 limit, so the test passed by the limit rule.
+- Fix (tests/lanes/qa/pid-auto.cjs): the test's own rule, "the inputs from other sheets hold their 150 MW values", is now enforced each scan (ext inputs put back unless the test forces them). Result: 68 PID, PASS 37, MAN 29, LIMIT 2 (main with the same test: PASS 36, MAN 30, LIMIT 2; no PID loses its PASS).
