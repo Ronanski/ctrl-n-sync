@@ -85,11 +85,12 @@ const html =
       oilF: f(U().oilF || 0)
     });
     const o = {};
-    AN.run = false;
-    AN.reset();
-    ditlStates();
-    AN.plantLoad150();
-    DITL150.apply();
+    /* the one start path "At 150 MW" of the app (the st150 steady save, as feedwater / sootblower): the bare AN.plantLoad150 left the
+       pressure controllers away from their set points (header 13.9 / ring 9.7 against 12.8 / 11.5) */
+    await AN.ades();
+    WORLD.set(true);
+    document.getElementById('load150').click();
+    await AN._startP;
     await run(30);
     o.s150 = snap();
     o.av = Object.assign({}, sh('DITL-31').avw);
@@ -226,8 +227,9 @@ const html =
   );
   ck(r.cold.P1 < 0.1 && r.cold.Q === 0, 'Cold: no pump, no pressure ' + JSON.stringify(r.cold));
   ck(
-    r.c1.Q === 25 && r.c1.P1 > 1 && r.c1.P1 < 3 && r.c2.P1 > 10 && r.c3.Q === 0 && r.c3.P1 < 0.1,
-    `Cold, the start: pump A with every valve open ${r.c1.P1} kg/cm2, PCV-DO0002 20 % ${r.c2.P1}, strainer inlet closed ${r.c3.P1}`
+    /* a screw pump: its flow stays with the pressure, ALLWEILER SNH660 33.9 m3/h x 0.87 kg/dm3 = 29.5 T/H (K1AU3-D1-0-060 R0 p6 / 8, boiler.js AN_DO.Qp) */
+    Math.abs(r.c1.Q - 33.9 * 0.87) < 0.1 && r.c1.P1 > 1 && r.c1.P1 < 3 && r.c2.P1 > 10 && r.c3.Q === 0 && r.c3.P1 < 0.1,
+    `Cold, the start: pump A with every valve open ${r.c1.Q} T/H at ${r.c1.P1} kg/cm2, PCV-DO0002 20 % ${r.c2.P1}, strainer inlet closed ${r.c3.P1}`
   );
   console.log('page errors: ' + errs.length + (errs.length ? ' ' + errs.slice(0, 3).join(' | ') : ''));
   console.log(fail ? fail + ' FAIL' : 'ALL PASS');

@@ -773,7 +773,7 @@ function tcsStep(U, dt) {
      the speed goes to the selected target at the selected acceleration (held by a HOLD outside the critical zone, as the ATS ramp);
      CLOSE VALVES (0) closes the ICV and the turbine coasts down at the rate of the rub check (100 rpm/min, page 17) */
   tcsOstStep(U, dt);
-  if (c.spd && c.spd.sel != null && c.cur < 0 && tb.st === 'roll' && !tcsOstOn(c)) {
+  if (c.spd && c.spd.sel != null && c.cur < 0 && tb.st === 'roll' && !tb.rej && !tcsOstOn(c)) {
     if (c.spd.sel > 0) {
       tb.icv = Math.min(TCS_ICV, tb.icv + dt / 60);
       if (run && tb.rpm < c.spd.sel) tb.rpm = Math.min(c.spd.sel, tb.rpm + (c.spd.acc * dt) / 60);
