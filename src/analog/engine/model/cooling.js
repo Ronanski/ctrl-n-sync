@@ -16,29 +16,27 @@
      SWP gauge        PG-SW1501 at the discharge center GL +1.8 m (p4 "DISCHARGE CENTER GL +1800"): P = 0.102 x (H - 1.8 + forebay).
      SWP motor        TECO 2050 kW 6.6 kV, D1-0-064 p26 "Starting & operating performance": load 25 / 50 / 75 / 100 / 125 % =
                       166 / 182 / 216 / 260 / 317 A (load = shaft power / 2050 kW; below 25 % the 25 ~ 50 % line, extrapolated).
-                      Start: soft starter (Solcon HRVS-DN, E1-0-131), 500 A while it ramps (SNAPSHOT-TO-REPLACE: an operating
-                      procedure number, not a design value; the starter current limit setting is not in the docs read yet).
+                      Start: soft starter (Solcon HRVS-DN, E1-0-131), 500 A while it ramps (SNAPSHOT-TO-REPLACE: no design source;
+                      the plant current limit setting is NOT IN DOCS, the HRVS-DN range is 100 ~ 400 % FLA, manual p42).
      SWBP curve       PACO CL12151, K1AU3-D1-0-034 p8 "Pump Performance Datasheet": rated 1,000 m3/h x 15 m, 1,180 rpm, head at
                       shut-off (rated diameter) 19.9 m, efficiency 80.25 % at rated, BEP 1,129.9 m3/h, rated power 50.87 kW;
                       H = 19.9 - 4.9e-6 Q^2 (through the two points), efficiency = e x (2r - r^2), r = Q / 1,129.9, e from 80.25 %.
      SWBP motor       TECO 100 HP 460 V, D1-0-034 p10: 100 % load = 120 A, Y / delta start (LRC 685 % / 3 = 274 A);
-                      Current = line through (the shaft power at the design point, 90 A: SNAPSHOT-TO-REPLACE, an operating procedure
-                      number, no motor load curve in the docs read yet) and (74.6 kW = 100 HP, 120 A).
+                      Current = line through (the shaft power at the design point, 90 A: SNAPSHOT-TO-REPLACE, no design source:
+                      only the 100 % point is printed on D1-0-034 p10, the part-load current is NOT IN DOCS) and (74.6 kW = 100 HP, 120 A).
      Debris filters   S-1502 DN2400 (O&M L18-4, Technical details): normal flow 37,800 m3/h, clean DP 500 mmH2O, backwash starts at
                       800 mmH2O (L18-4 p36 7.4: DP above 80 mbar for 30 s), flushing period 3 min, max DP 1.0 kg/cm2; S-1504 DN600 (O&M
                       L18-5): normal flow 2,000 m3/h, clean 500, backwash 800 mmH2O. DP = clean x (flow / normal)^2 x (1 + dirt).
      Calibration      the design point = the two vendor documents that agree: 2 SWP at 18,900 m3/h = 37,800 m3/h = the S-1502 normal
-     (one point)      flow; SWP discharge valves 100 %, condenser inlet 100 % / outlet 40 % (the valve line-up of the start state),
-                      forebay -4 m: PG-SW1501 = 0.102 x (28 - 1.8 - 4) = 2.26 kg/cm2, condenser inlet water box 1.05 kg/cm2,
-                      condenser drop 0.4 kg/cm2, 2 SWBP at 2.35 kg/cm2 discharge with suction = node N. The constants of the lines
-                      come from this point. SNAPSHOT-TO-REPLACE: the forebay level, the water box pressure, the condenser drop and
-                      the SWBP discharge are operating procedure numbers; the design ones (sea water mass balance MB-020 header
-                      pressures, condenser D1-0-039 water side drop, the intake civil level) are not read yet.
+     (one point)      flow; SWP discharge valves 100 %, condenser inlet 100 % / outlet 40 % (the valve line-up of the start state);
+                      the forebay, the condenser inlet water box, the condenser tube loss and the SWBP discharge of AN_SW_DP (civil
+                      HWL / LWL, sea water mass balance MB-020, condenser vendor O&M; fix 19). The constants of the lines come from
+                      this point.
      Valves           the manual valves are field valves (no DCS signal; AN_SRC.valve, set by the field operator): loss = loss at 100 %
                       / (opening)^4, flow area = opening^2 (NO-SOURCE: no valve data in the repository); closed = no flow.
      Condenser water  in: 30 C (AN_SW_TIN, D1-0-039 R1); out = in + the heat of the condenser port (MEI, ports.js cd) / (water x cp)
                       (Phase 11; the old rise 5.6 C x steam / 316 T/H was a second copy of the condenser duty, deleted).
-   The forebay is at -4 m (SNAPSHOT-TO-REPLACE, see the calibration). UNUSUAL (in the report): the alarm list H of LT-SW1501 is -6.0 m. */
+   The forebay is at GL -8.08 m (AN_SW_DP.L, DERIVED). UNUSUAL (in the report): the alarm list H of LT-SW1501 is -6.0 m. */
 /* C, condenser seawater inlet design, K1AU3-D1-0-039 R1 sheet K2MC3A-100 (in / out 30 / 35.6 C). beta.362 D21: was AN_SW.Tin 28.5 / 28.6
    (no source); kept outside AN_SW because a save carries AN_SW (state.js AN_STATE_OBJ) and the starting states of
    the app (Cold / 150 MW) had 28.5 / 28.6 in it */
@@ -87,12 +85,8 @@ const AN_SW = {
   cycT: 4 * 3600,
   hiT: 30,
   dirtT: 4 * 3600 /* = cycT (above): clean -> 800 mmH2O at the normal flow */,
-  /* design point (calibration) */
+  /* design point (calibration): the flow here, the pressures in AN_SW_DP (below) */
   dQ: 18900,
-  dL: -4,
-  dPci: 1.05,
-  dPdc: 0.4,
-  dPbd: 2.35,
   /* beta.312 (JENNIE, Audit #5, the three valve losses were NO-SOURCE): loss = K x v^2 / 2g, K of the open valve from the Crane TP-410
      table (K = n x fT, fT = the fully rough friction factor 1 / (2 log10(3.7 D / e))^2, e = 0.046 mm), v from the line size of the docs.
      hv100: SWP discharge DN1350 (D1-0-064 p4 "DISCHARGE 1350 mm"), 18,900 m3/h -> v 3.67 m/s, v^2/2g 0.686 m, fT 0.0099;
@@ -104,7 +98,6 @@ const AN_SW = {
   hv100: 0.51 /* m, open SWP check + discharge valve at 18,900 m3/h (above) */,
   ki100: 0.0069 /* kg/cm2, open condenser inlet valve at the design path flow (above) */,
   hb100: 0.34 /* m, open SWBP discharge valve at 1,000 m3/h (above) */,
-  oDes: 40 /* condenser outlet opening of the design point (the start state line-up; SNAPSHOT-TO-REPLACE, the head) */,
   /* read by the condenser step (MEI, unit.js anCondStep: its steam estimate) until its duty comes from the turbine port (rank 6); not
      used by the sea water: D1-0-039 R0 p7 shell 316.024 T/H, FHI MCR 460 T/H */
   cSt: 316.024,
@@ -115,6 +108,25 @@ const AN_SW = {
   tauT: 60,
   tauI: 1
 };
+/* Phase 11 SUZU fix 19: the design point of the sea water lines. Kept outside AN_SW: a save carries AN_SW (state.js AN_STATE_OBJ) and
+   the 150 MW start would bring back the old numbers. kg/cm2 G, m (GL), m3/h.
+     L    forebay level, DERIVED: the midpoint of HWL GL -6.37 m and LWL GL -9.78 m (K1AU3-D1-0-105 R8 p10, LIMAY-SW-CV030 Section A;
+          the normal level is not printed there) = GL -8.08 m.
+     The pressures start from the pump: the EBARA curve (28 m at 18,900 m3/h), the open check + discharge valve (hv100 0.51 m), the
+     gauge at GL +1.8 m and the forebay give the SWP header 0.102 x (28 - 0.51 - 1.8 - 8.08) = 1.80 kg/cm2 G (PG-SW1501, the pump
+     side of the valve, 1.85). From there the drops of the sea water mass balance K1AU3-MB-020 R0 (sheet 12 of K1AU3-A2-0-001 RA,
+     column heading "KG/CM2 G"):
+     dF   SWP header (streams 1 / 2, 2.8) -> after the debris filter S-1502 (stream 3, 2.5) = the condenser inlet (5-1 / 5-2, 2.5) and
+          the SWBP suction (4, 2.5): 0.3 kg/cm2 = node N; condenser inlet = node N - the open inlet valve (ki100);
+     rB   SWBP rise: discharge (7-1 ~ 7-3, 4.0) - suction (4, 2.5) = 1.5 kg/cm2 = 14.7 m -> PACO curve 1,036 m3/h per pump (MB-020 1,000).
+     UNUSUAL (in the report): the MB-020 pressures themselves cannot all hold with the vendor pump: 2.8 G at the SWP discharge needs
+     2.8 / 0.102 + 1.8 + 8.08 = 37 m of head, and the EBARA curve gives 37 m only at about 7,700 m3/h. The vendor curve and the civil
+     levels set the level of the pressures, MB-020 the drops between the points.
+     kc   condenser tube side loss: FHI condenser O&M H-3110 / H-4110 (K3MD1A Rev C) 1.1.2: 0.47 bar = 0.479 kg/cm2 at 31,500 t/h
+          (two water box paths, sp. gr. 1.02: 15,441 m3/h each); k = 0.479 / 15,441^2, the same tubes at any flow (drop ~ flow^2).
+          MB-020 prints 17,900 t/h per path at 0.5 kg/cm2; the vendor flow is 31,500 t/h in all (UNUSUAL, in the report).
+     oDes condenser outlet opening of the design point (the start state line-up; SNAPSHOT-TO-REPLACE) */
+const AN_SW_DP = { L: -(6.37 + 9.78) / 2, dF: 2.8 - 2.5, rB: 4.0 - 2.5, kc: (0.47 * 1.01972) / Math.pow(31500 / 1.02 / 2, 2), oDes: 40 };
 const swInterp = (X, Y, x) => {
   if (x <= X[0]) return Y[0] + ((Y[1] - Y[0]) * (x - X[0])) / (X[1] - X[0]);
   for (let i = 1; i < X.length; i++)
@@ -152,34 +164,39 @@ const swBisect = (f, a, b, n) => {
    little area at a small opening; NO-SOURCE: no valve curve in the repository) */
 const swVk = pct => (pct > 0.5 ? 1 / Math.pow(Math.min(100, pct) / 100, 4) : Infinity);
 /* the line constants from the design point (once) */
-/* SWBP efficiency: a plain function, a function kept in K.c does not cross the Worker snapshot (Mina beta.103, c.eb is not a function) */
+/* SWBP efficiency: a plain function, a function kept in K.c does not cross the Worker state copy (Mina beta.103, c.eb is not a function) */
 const swEb = (K, r) => (K.bEff / (2 * (K.bQr / K.bBep) - Math.pow(K.bQr / K.bBep, 2))) * Math.max(0, 2 * r - r * r);
+/* the line constants: computed once in this realm, not kept in AN_SW (a save carries AN_SW and would bring back old constants) */
+let swCalC = null;
 function swCal() {
-  const K = AN_SW;
-  if (K.c) return K.c;
+  const K = AN_SW,
+    D = AN_SW_DP;
+  if (swCalC) return swCalC;
   const c = {};
   c.kv = K.hv100 / (K.dQ * K.dQ); /* m per (m3/h)^2, SWP valve open */
-  /* SWBP at the 2.35 discharge with suction = node N (SNAPSHOT-TO-REPLACE, the head) */
-  const PN = K.dPci + K.ki100,
-    hb = (K.dPbd - PN) / K.kP,
+  /* the SWP header from the pump curve and the forebay, node N = header - the MB-020 drop to after the filter (AN_SW_DP) */
+  const Ph = K.kP * (swH(K.dQ, 1) - c.kv * K.dQ * K.dQ - K.zD + D.L),
+    PN = Ph - D.dF,
+    Pci = PN - K.ki100,
+    Pbd = PN + D.rB,
+    hb = D.rB / K.kP,
     qb = Math.sqrt((K.bH0 - hb) / K.bA);
   c.kbv = K.hb100 / (K.bQr * K.bQr);
   c.qbD = qb;
-  const Pbv = K.dPbd - K.kP * c.kbv * qb * qb;
+  const Pbv = Pbd - K.kP * c.kbv * qb * qb;
   c.kb = Pbv / Math.pow(2 * qb, 2); /* kg/cm2 per (m3/h)^2: S-1504, CCW HX and the return of the 2 SWBP */
   const Qt = 2 * K.dQ,
     q = (Qt - 2 * qb) / 2; /* per condenser path */
   c.qcD = q;
   c.ki = K.ki100 / (q * q);
-  c.kc = K.dPdc / (q * q);
-  c.ko = (K.dPci - K.dPdc) / (q * q) / swVk(K.oDes); /* outlet loss at 100 % open */
-  const Ph = K.kP * (K.dQ ? swH(K.dQ, 1) - c.kv * K.dQ * K.dQ - K.zD + K.dL : 0),
-    dpF = (K.dp0 * Math.pow(Qt / K.f1Q, 2)) / 1e4;
+  c.kc = D.kc;
+  c.ko = (Pci - D.kc * q * q) / (q * q) / swVk(D.oDes); /* outlet loss at 100 % open */
+  const dpF = (K.dp0 * Math.pow(Qt / K.f1Q, 2)) / 1e4;
   c.kup = (Ph - dpF - PN) / (Qt * Qt); /* header -> node N (pipes, NO-SOURCE elevation lumped in) */
   /* SWBP shaft power at the design point (for its current line) */
   const eb = r => swEb(K, r);
   c.bPsop = (1020 * 9.80665 * (qb / 3600) * hb) / 1000 / Math.max(0.25, eb(qb / K.bBep));
-  return (K.c = c);
+  return (swCalC = c);
 }
 /* the SWBP branch: the flows of the running booster pumps with node N at PN */
 function swBooster(PN, sb, vb, c) {
@@ -250,8 +267,8 @@ function anSeawaterStep(U, dt) {
   bp.forEach((r, i) => (U.swbSpd[i] = r ? (first ? 1 : Math.min(1, U.swbSpd[i] + dt / K.bRamp)) : 0));
   U.swN = sw.reduce((a, b) => a + b, 0);
   U.swNb = bp.reduce((a, b) => a + b, 0);
-  /* the forebay level K.dL (SNAPSHOT-TO-REPLACE: the head of the file) */
-  U.swLvl = K.dL;
+  /* the forebay level (AN_SW_DP.L, DERIVED from the civil HWL / LWL) */
+  U.swLvl = AN_SW_DP.L;
   if (!isFinite(U.swDirt1)) U.swDirt1 = 0;
   if (!isFinite(U.swDirt2)) U.swDirt2 = 0;
   const st = {
@@ -394,7 +411,7 @@ function anSwValve(tag, pct) {
                   the tank normal level of the P&ID is not read yet); LS-MU0708-A / B (alarm list 0.2 m,
                   DITL-112 rows 19 / 21) follow it (plantsw.js);
      expansion tank (as 3.2.0-beta.63 / live test #50) fills while XV-MU1109 (DITL-78 row 4) or V-MU1033 is open and the header is above
-                  6 kg/cm2 (SNAPSHOT-TO-REPLACE: an operating procedure number) at 0.003 m/s (NO-SOURCE), primes the closed loop at the first opening of V-CW1001 (NO-SOURCE volume).
+                  the static head of the tank (AN_MU_ETP 2.0 kg/cm2, CW isometrics) at 0.003 m/s (NO-SOURCE), primes the closed loop at the first opening of V-CW1001 (NO-SOURCE volume).
    Logic: DITL-112 START / trip of each MWP drives the pumps here; PT-MU0709 (< 5.5 kg/cm2 = M.2506 L.L. = standby AUTO start),
    LT-MU0708-A / B (< 0.2 m), DPT-MU0709-A / B / C (>= 1.0 kg/cm2) go back into DITL-112, LT-CW1109 into DITL-76 / 77 / 78. */
 /* T/H, MV-MU1001 fully open: MB-016 item 20. Kept outside AN_MU: a save carries AN_MU (state.js AN_STATE_OBJ), and a save made
@@ -403,6 +420,12 @@ const AN_MU_QMV = 70;
 /* m, the static head of PT-MU0709 over the demi tank level: K1AU3-E2-0-102 LT-MU0708 zero +10.200 - PT-MU0709 body +10.400 (see the
    head). Kept outside AN_MU for the same reason: the st150 save carries AN_MU and would bring back the old 11.3 m fit */
 const AN_MU_Z = -0.2;
+/* kg/cm2 G at PT-MU0709, Phase 11 SUZU fix 19: the make-up header fills the expansion tank T-1109 (open, CW-1-099 O.P. 0.000) only above
+   the static head of the tank: DERIVED from the CW isometrics K1AU3-P3-2-101 R3 (unit 2, the 4 units identical; YUA read
+   suzu-mb020-units-and-t1109-elevation-2026-11-28.md): tank bottom outlet CW-2-001 8" GL +28.386 m, upper connection CW-2-099 6"
+   GL +30.386 m (= the LT-CW1109 range 0 ~ 2 m); the nozzle of the XV-MU1109 line is not on the sheets read, so the top of the tank:
+   0.1 x (30.386 - 10.400 PT-MU0709 body) = 2.0. Kept outside AN_MU (a save carries it) */
+const AN_MU_ETP = 0.1 /* kg/cm2 per m, AN_MU.kP */ * (30.386 - 10.4);
 const AN_MU = {
   mwp: ['DITL-112', 'DITL-112 #B', 'DITL-112 #C'],
   xv: 'DITL-78@3',
@@ -461,7 +484,7 @@ function anMakeupStep(U, dt) {
   /* the flow out of the header: the hotwell make-up and the expansion tank filling (the header pressure of the step before decides
      whether the tank fills), plus the recirculation of each running pump */
   U.muLine = anFv('V-MU1031') > 0 && anFv('V-MU1032') > 0 ? 1 : 0;
-  const fill = U.muLine && (U.muXv || U.muByp) && U.muP > 6 && U.etLvl < K.etMax;
+  const fill = U.muLine && (U.muXv || U.muByp) && U.muP > AN_MU_ETP && U.etLvl < K.etMax;
   U.muFill = fill ? 1 : 0;
   /* 3.2.1 the field valves (AN_FV0): a pump has water when a demi tank outlet (V-MU0001 / 0002) and its suction (V-MU0003 / 4 / 5) are
      open; it feeds the header through its discharge (V-MU0007 / 9 / 11) and returns its recirculation through V-MU0013 / 15 / 17; a
@@ -481,6 +504,9 @@ function anMakeupStep(U, dt) {
   const hw = typeof AN_CYC !== 'undefined' && AN_CYC.flows ? Math.max(0, AN_CYC.flows('net').mu) : 0,
     qOut = ss > 0 ? hw + (fill ? K.etQ : 0) : 0,
     lv = Math.max(K.lv[0], K.lv[1]);
+  /* Phase 11 port 'mu' (SUZU -> MEI, ports.js): the make-up water into the hotwell, T/H, only while a make-up pump feeds the header.
+     T = the demi water tanks at the ambient (AN_UNIT.Tamb; the make-up temperature of MB-016 is not read: NOT IN DOCS read) */
+  if (typeof anPortSet === 'function') anPortSet(U, 'mu', { m: ss > 0 ? hw : 0, T: U.Tamb });
   /* the feeding pumps share the flow by speed (identical pumps in parallel), each with its recirculation */
   let H = 0;
   U.muQ = [0, 0, 0];
@@ -513,7 +539,7 @@ function anMakeupStep(U, dt) {
   }
   U.etPct = (100 * U.etLvl) / K.etMax;
   /* live test #50: the alarms of LT-CW1109 (alarm list LT: H 1700 mm (DCS), L 800 mm (DCS); LS: LSLL-CW1109 300 mm = DITL-77 row 26
-     M.1238 "EXPANSION TANK LEVEL < 0.3 M", the ACWP trip). UNUSUAL: the H alarm is the normal level NL 1.7 m used here (SNAPSHOT-TO-REPLACE, AN_ACW_MB.Lv) */
+     M.1238 "EXPANSION TANK LEVEL < 0.3 M", the ACWP trip). The level of AN_ACW_MB.Lv 1.7 m = the DITL-78 fill stop (fix 19, below) */
   U.etAlm = U.etLvl <= K.etLL ? 'LL' : U.etLvl <= K.etL ? 'L' : U.etLvl > K.etH ? 'H' : '';
   lag('muF', qOut, K.tauP);
 }
@@ -554,8 +580,9 @@ function anMakeupStep(U, dt) {
    a save carries AN_ACW (state.js AN_STATE_OBJ), so the 150 MW start state would bring back the old fitted 174.8 */
 const AN_ACW_UA = 13830 / ((50 - 42.12 - (34 - 30)) / Math.log((50 - 42.12) / (34 - 30)));
 /* DESIGN-SRC: MB-021 rev 0 (see the head): the design point of the line, kg/cm2 G and T/H. Kept outside AN_ACW: a save carries AN_ACW
-   (state.js AN_STATE_OBJ), so a start state would bring back the old numbers. Lv: the expansion tank normal level NL 1.7 m (SNAPSHOT-TO-REPLACE:
-   an operating procedure number; the sheet does not print the tank level its suction pressure goes with) */
+   (state.js AN_STATE_OBJ), so a start state would bring back the old numbers. Lv: the expansion tank level the suction pressure goes with (the sheet does not print it), DERIVED
+   from the logic: DITL-78 (sheet 97, as-built 2017-10-03) opens XV-MU1109 below 40 % (LAL-CW1109) and closes it above 85 % (LAH-CW1109)
+   of LT-CW1109 0 ~ 2 m, so every fill ends at 0.85 x 2 = 1.7 m; the normal level itself is NOT IN DOCS (fix 19) */
 const AN_ACW_MB = { Q: 1500, Ps: 3.0, P1: 7.8, P2: 7.2, P6: 6.5, Lv: 1.7 };
 const AN_ACW = {
   acwp: ['DITL-76', 'DITL-77'],
