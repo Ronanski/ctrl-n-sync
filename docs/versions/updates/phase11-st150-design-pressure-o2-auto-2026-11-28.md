@@ -18,7 +18,11 @@
 - AOI's design air heater seal leak (OMM sheet 16: PA 34.0, SA 19.0 T/H; boiler.js / unit.js) is now IN, brought in during the settle: tools/steady150/init/lineup-leak.js ramps AN.aphLeakShare 0 -> 1 over 30 plant minutes with the O2 trim in AUTO (a step of the whole leak forced the coal and boiler masters to MANUAL, coal feeders > 83.3 %, M.014F ~ 016F with M.3405).
 - Settle 90 min from main's st150: PT-MS1002 126.54, 150.9 MW, 462.2 T/H; PIC-COBM, AICFG112, FIC-CM, HS-COAL AUTO; coal 88.3 T/H (FHI design 89), O2 3.0 %.
 
-## Tested
+## Tested (second settle)
+- Behaviour gate 20 min: ALL PASS (MW 150.92 -> 150.98, PT-MS1002 126.54 -> 126.57, drum level max move 4.8 mm, SAVE / LOAD and repeat runs equal).
+- gen-electrical load-down, headless: 150 -> 73 MW through CCS, boiler master AUTO until M.2013 at 220 T/H (as the logic does), blow-off shut.
+
+## Tested (first settle)
 - Behaviour gate 20 min on the station build: ALL PASS (MW 151.06 -> 150.92, PT-MS1002 126.73 -> 126.52, drum level max move 7 mm, SAVE / LOAD and repeat runs equal).
 
 ## Also in this PR
