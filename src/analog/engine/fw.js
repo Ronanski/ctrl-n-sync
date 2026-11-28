@@ -429,6 +429,8 @@ function anHphStep(U, dt) {
     Pt = (isFinite(U.fwPd) ? Math.max(0, U.fwPd) : 0) + 1.0332,
     w = [anHtrPath(anFv('V-FW1009'), anFv('V-FW1010'), anFv('V-FW1011')), anHtrPath(anFv('V-FW1012'), anFv('V-FW1013'), anFv('V-FW1014'))],
     port = i => anPortGet(U, K.h[i].port) || {},
+    nvH = U.dev && U.dev.nrv ? U.dev.nrv.ex2 : null,
+    hpNrv = nvH ? Math.max(0, Math.min(1, (+nvH.p || 0) / 100)) : 0,
     st = U.hpS || (U.hpS = [{}, {}]),
     /* the cascade into No.1: the No.2 primary drain (LCV-HD1106-1, anHdStep, the last step) at its temperature */
     h6 = (U.hd || []).find(h => h.k === 'H6'),
@@ -440,7 +442,10 @@ function anHphStep(U, dt) {
     To = Tin;
   for (let i = 0; i < 2; i++) {
     const p = port(i),
-      a = pos(K.h[i].mov) / 100,
+      /* Phase 11 NANA 2026-11-28 (YUI / RIN): No.1 HPH extraction II line has the No.2 extraction NRV (TC-41, swing check VCL-5101-H,
+         tcs-dev.js U.dev.nrv.ex2): it shuts on a trip or a reverse flow, so the heater opening is the MOV x the NRV, as the deaerator
+         (ex3p / ex3s, anDeaStep). The No.2 HPH draws from the cold reheat line before its check (TC-19 crv): no NRV of its own */
+      a = (pos(K.h[i].mov) / 100) * (i === 0 ? hpNrv : 1),
       mt = ffw * w[i].s,
       c = i === 0 ? cas : 0,
       hc = i === 0 && isFinite(U.hpD2) && isFinite(U.hpPs && U.hpPs[1]) ? hpHw(U.hpPs[1] + 1.0332, U.hpD2) : 0,

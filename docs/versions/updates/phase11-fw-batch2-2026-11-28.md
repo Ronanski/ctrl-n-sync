@@ -23,3 +23,8 @@ Source of truth: first principles + design data (KSB HGC 5/1+6 data sheet and cu
 ## Open
 - FW flow at 45 MW is 160.4 against HB 150.3 (main steam 153.9). The extra 6.5 T/H leaves the drum outside the feedwater part; it is with KANA.
 - AN_FWT.ms0 is read by unit.js only (phase thread list).
+
+## 3. No.1 HP heater extraction NRV (YUI / RIN, 2026-11-28)
+- The extraction II line to No.1 HPH H-1105 has the No.2 extraction NRV (TC-41, swing check VCL-5101-H, tcs-dev.js U.dev.nrv.ex2). The heater opening in anHphStep is now the MOV x the NRV, as the deaerator (ex3p / ex3s). A trip that shuts the NRV takes the heater draw off the turbine.
+- The No.2 HPH draws from the cold reheat line before the cold reheat check (TC-19), so it has no NRV of its own.
+- Tested headless: 150 MW start held 30 plant min at the app step (E.step 150 x 0.5 s), MW 149.9, No.1 HPH out 195.9 C, no trip. After an MFT / turbine trip the No.1 HPH extraction goes to 0 (the NRV shut). The hp-heaters lane passes.
