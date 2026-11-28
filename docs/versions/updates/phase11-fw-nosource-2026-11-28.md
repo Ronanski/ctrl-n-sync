@@ -1,6 +1,6 @@
 # Phase 11 FEEDWATER: the last NO-SOURCE values closed from design and physics (NANA, 2026-11-28 PHT)
 
-## Changes (fw.js)
+## Changes (fw.js, plant.js)
 - **HP heater drain outlet line (LCV-HD1106 / -1105 normal and alternate):** the line loss beyond the valve was one fixed density (NO-SOURCE). It is now dP = k W^2 v_m. Here v_m is the homogeneous specific volume after an isenthalpic flash of the drain at the line pressure (IF97 region 1 + saturation). It is scaled from the valve sheet design point (T0, outlet pressure pp0 in AN_HDV). A drain that flashes more takes more line drop, from physics.
 - **TCV-FW1150 characteristic:** it was linear (NO-SOURCE). It is now modified linear through the printed points of the L21 valve sheet: COND 1 Cv 5.37 at 87 %, COND 2 Cv 0.14 at 5 %, rated Cv 6.2.
 - **BFWP motor current at part load:** it was a fixed efficiency of 0.962 at every load. The TECO AEZW-S2 rated losses, 3550 kW x (1/0.962 - 1), are now split into fixed and load (I^2R) losses, with the highest efficiency at 75 % load (fixed = load loss x 0.5625, DERIVED, the usual induction motor design point). The current is (shaft + fixed + load x L^2) / (sqrt3 x 6.6 kV) together with the magnetizing current.
