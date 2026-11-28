@@ -16,8 +16,9 @@
      SWP gauge        PG-SW1501 at the discharge center GL +1.8 m (p4 "DISCHARGE CENTER GL +1800"): P = 0.102 x (H - 1.8 + forebay).
      SWP motor        TECO 2050 kW 6.6 kV, D1-0-064 p26 "Starting & operating performance": load 25 / 50 / 75 / 100 / 125 % =
                       166 / 182 / 216 / 260 / 317 A (load = shaft power / 2050 kW; below 25 % the 25 ~ 50 % line, extrapolated).
-                      Start: soft starter (Solcon HRVS-DN, E1-0-131), 500 A while it ramps (SNAPSHOT-TO-REPLACE: no design source;
-                      the plant current limit setting is NOT IN DOCS, the HRVS-DN range is 100 ~ 400 % FLA, manual p42).
+                      Start: soft starter (Solcon HRVS-DN, E1-0-131), held at its current limit while it ramps (AN_SWP_SS):
+                      the site setting is NOT IN DOCS (E1-0-131 has no setting sheet), so the HRVS-DN factory default 400 % FLA
+                      (manual 27.03.2012 p52; range 100 ~ 400 % p42) of the motor full load current 260 A = 1,040 A.
      SWBP curve       PACO CL12151, K1AU3-D1-0-034 p8 "Pump Performance Datasheet": rated 1,000 m3/h x 15 m, 1,180 rpm, head at
                       shut-off (rated diameter) 19.9 m, efficiency 80.25 % at rated, BEP 1,129.9 m3/h, rated power 50.87 kW;
                       H = 19.9 - 4.9e-6 Q^2 (through the two points), efficiency = e x (2r - r^2), r = Q / 1,129.9, e from 80.25 %.
@@ -59,7 +60,6 @@ const AN_SW = {
   mL: [0, 25, 50, 75, 100, 125],
   mI: [150, 166, 182, 216, 260, 317] /* 0 % = the 25 ~ 50 % line extrapolated */,
   mkW: 2050,
-  Ist: 500,
   /* SWBP D1-0-034 p8 / p10 */
   bH0: 19.9,
   bA: 4.9e-6,
@@ -126,6 +126,9 @@ const AN_SW = {
           (two water box paths, sp. gr. 1.02: 15,441 m3/h each); k = 0.479 / 15,441^2, the same tubes at any flow (drop ~ flow^2).
           MB-020 prints 17,900 t/h per path at 0.5 kg/cm2; the vendor flow is 31,500 t/h in all (UNUSUAL, in the report).
      oDes condenser outlet opening of the design point (the start state line-up; SNAPSHOT-TO-REPLACE) */
+/* SWP soft starter (Solcon HRVS-DN) current limit while it ramps: the vendor factory default 400 % FLA (see the head), FLA = 260 A (TECO
+   D1-0-064 p26 at 100 % load). Kept outside AN_SW (a save carries it) */
+const AN_SWP_SS = { Ilim: 4.0 * 260 };
 /* SWBP motor TECO AEHLPA-WC1 100 HP 460 V (D1-0-034 R0 p10), for its current (see the head). Kept outside AN_SW (a save carries it) */
 const AN_SWB_M = { kV: 0.46, eff: 0.94, Im: 120 * Math.sin(Math.acos(0.835)) };
 const AN_SW_DP = { L: -(6.37 + 9.78) / 2, dF: 2.8 - 2.5, rB: 4.0 - 2.5, kc: (0.47 * 1.01972) / Math.pow(31500 / 1.02 / 2, 2), oDes: 40 };
@@ -363,7 +366,7 @@ function anSeawaterStep(U, dt) {
     U['swKw' + i] = Math.round(P);
     /* Mina F15: an open breaker carries no current: stopped = 0 at once, the lag is for the start only */
     if (s <= 0) U['swIa' + i] = 0;
-    else lag('swIa' + i, s < 1 ? K.Ist : swInterp(K.mL, K.mI, (100 * P) / K.mkW), K.tauI);
+    else lag('swIa' + i, s < 1 ? AN_SWP_SS.Ilim : swInterp(K.mL, K.mI, (100 * P) / K.mkW), K.tauI);
   });
   /* SWBP: suction (PG-SW1503x1) = node N, discharge (PG-SW1503x2) before its valve; current from its shaft power */
   r.b.q.forEach((q, i) => {
