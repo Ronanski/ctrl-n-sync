@@ -932,7 +932,6 @@ function anHdStep(U, dt) {
   U.hdHH = Object.fromEntries(U.hd.map(h => [h.k, h.hh ? 1 : 0]));
 }
 const AN_FWT = {
-  ms0: 472.7 /* SNAPSHOT-TO-REPLACE (audit-NANA): main steam scale still read by unit.js anUnitTagStep; no feedwater use left */,
   crP: 36.6 / 35.1 /* HP exhaust PICR1901x over the hot reheat pressure, as Pcr of the bypass model */,
   K: 35000 / (9.49 * Math.sqrt(165.3 - 142.2)) / 1000,
   cv: {
