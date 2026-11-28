@@ -59,7 +59,9 @@ const html =
      heights (plantsw.js W.sucP): deaerator + the storage water from the normal level GL.+33224 to the tap GL.+12500 + the 1.9 m impulse
      line; the idle pump B reads that, the running pump A that less its strainer DP. The level offset (LT-CD1104, mm) is within 0.02 */
   const sB = m.daP + (m.daRho * (33.224 - 12.5)) / 1e4 + (m.daRhoL * 1.9) / 1e4;
-  ck(near('PT-FW1115-B', sB, 0.05) && m['PT-FW1115-A'] <= m['PT-FW1115-B'] && m['PT-FW1115-B'] - m['PT-FW1115-A'] < 0.5, `BFWP suction A ${m['PT-FW1115-A']} / B ${m['PT-FW1115-B']} kg/cm2 (as-built head ${sB.toFixed(2)})`);
+  /* the page shows PT-FW1115 to 0.1 kg/cm2 (r1): the band is the 0.05 of the law plus half of the display step, so a head of 7.05 shown
+     as 7.1 is not a fail of the rounding alone (YUI 2026-11-28) */
+  ck(near('PT-FW1115-B', sB, 0.05 + 0.05) && m['PT-FW1115-A'] <= m['PT-FW1115-B'] && m['PT-FW1115-B'] - m['PT-FW1115-A'] < 0.5, `BFWP suction A ${m['PT-FW1115-A']} / B ${m['PT-FW1115-B']} kg/cm2 (as-built head ${sB.toFixed(2)})`);
   ck(near('TT-FW1011', 160.7, 5), `BFWP discharge ${m['TT-FW1011']} C (HB case 1: 160.7), economizer inlet ${m['PT-FW1160']} kg/cm2 (no design value read)`);
   ck(m['ZT-FW1110-2'] >= 99 && m['ZT-FW1110-1'] > 0, `No.1 SH spray MV ${m.mv1} %: valves ${m['ZT-FW1110-1']} / ${m['ZT-FW1110-2']} % (LN47 / LN46)`);
   ck(m['FT-FW1109'] > 5 && m['FT-FW1109'] <= 60 && m['FT-FW1119'] >= 0 && m['FT-FW1149'] >= 0 && m['FT-FW1059'] >= 0, `spray flows No.1 ${m['FT-FW1109']}, No.2 ${m['FT-FW1119']}, RH ${m['FT-FW1149']}, HP bypass ${m['FT-FW1059']} T/H`);
