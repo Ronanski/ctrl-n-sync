@@ -89,7 +89,58 @@ function anShKdp(U) {
    Crane K (LR elbow 0.2, gate 0.1, MOV 0.1, 45 0.2, split 0.5, tee branch 1.0): 18" 1.41 + 12" 0.34 = 1.74 kg/cm2. The BOM lengths are
    all the MS installation pipe of each size (the isometrics M1-201 ~ 214 are not in the documents), so this drop is an UPPER BOUND.
    Before: kln = (MSP - PT-MS1006) / MSF^2 of the 150 MW start (0.50 kg/cm2 at 464 T/H; a constant from the snapshot taps, no density; NO-FIT-OK: history note) */
-const AN_MSLN = { dp0: 1.74, m0: 474, Po: 122.4, To: 536 };
+/* Phase 11 RIN 2026-11-28 (one owner of the line drop from here on, phase thread): WHICH FLOW EACH SECTION CARRIES, flow diagram PD-011
+   rev 0 2015-03-03 (A1-0-001-R0 p8; YUA /mnt/project-files/rin-ms-line-pd011-2026-11-28.md). Along the line from the SH outlet: FT-MS1031,
+   PT-MS1002 (the MSP), the 8" blow-off take-off to PCV-MS1001, ZV-MS1001, the gear stop valve V-MS1001, PT-MS1901-1/2, PT-MS1006-1/2,
+   TE-MS1007, the scope break, the HP BYPASS TAKE-OFF (V-MS1003, MS-1-004 8" to PCV-MS1020), MV-MS1391 (bypass MV-MS1392), then the
+   split into the two 12" leads MS-1-002 / -003 to MSV (A) / (B). So the 18" run (1.41 of the 1.74 kg/cm2 above) carries the turbine
+   AND the HP bypass steam up to the tee; the 12" leads (0.34) the turbine steam only. PT-MS1006 (U.tin) stands at the tee end of the
+   18" run (after it only TE-MS1007 and the scope break before the tee). f18 = the 18" share of the design drop. */
+const AN_MSLN = { dp0: 1.74, m0: 474, Po: 122.4, To: 536, f18: 1.41 / 1.74 };
+/* the main steam line heat loss (RIN 2026-11-28): class HW6 on the as-built isos (MS-1-001-HF1W-18"-HW6, K1AU3-P3-1-001 R7), thickness
+   FHI K1AU3-P1-0-001 p6: 18" 190 mm, 12" 175 mm, rock wool ASTM C547 Type II; loss per metre by the MHPS TDA-15-046 R2 / JIS A9501 law
+   (k 0.0945 W/m K, h 9.4 W/m2 K back-calculated from the TDA printed rows; YUA read, /mnt/project-files/rin-hrh-ms-insulation-reads-2026-11-28.md)
+   at 538 / 35 C: 18" 475 W/m (printed in the read), 12" (OD 323.8, dn 673.8 mm) 503 / (ln(673.8/323.8) / (2 pi 0.0945) + 1 / (9.4 pi 0.6738))
+   = 392 W/m (CALC). Lengths = the MS BOM (AN_MSLN above): 18" 132.8 m, 12" 17.9 m. UA kW/K = sum(L Q) / (538 - 35) */
+const AN_MSQ = {
+  ua18: (132.8 * 475) / (538 - 35) / 1000,
+  ua12: (17.9 * 503 / (Math.log(673.8 / 323.8) / (2 * Math.PI * 0.0945) + 1 / (9.4 * Math.PI * 0.6738))) / (538 - 35) / 1000
+};
+/* the steam temperature after the line: the SH outlet enthalpy at the MSP (TE-MS1004 / the model SH outlet) less the heat the line loses
+   on the flow it carries, throttled to the downstream pressure Pa (ata). part: 'tee' = the 18" run (turbine + HP bypass steam, to PT-MS1006),
+   'msv' = the 18" run and a 12" lead (the turbine inlet). Below 5 % MCR flow the drop of 5 % flow is kept (the line metal store with no
+   steam is not modelled) */
+function anMsT(U, Tsh, ms, mhp, Pa, part) {
+  if (!isFinite(Tsh) || !isFinite(U.Pms)) return Tsh;
+  const ta = +U.Tamb || 30,
+    a = Math.max(0, +ms || 0),
+    t = a + Math.max(0, +mhp || 0),
+    q18 = AN_MSQ.ua18 * Math.max(0, Tsh - ta),
+    q12 = AN_MSQ.ua12 * Math.max(0, Tsh - ta),
+    lo = 0.05 * 460 /* T/H */,
+    h0 = steamH(U.Pms, Tsh),
+    dh = (3.6 * q18) / Math.max(lo, t) + (part === 'msv' ? (3.6 * q12) / Math.max(lo, a) : 0);
+  return steamPhM(Math.max(0.01, Pa) * 0.0980665, h0 - dh).T - 273.15;
+}
+/* the hot reheat line, reheater outlet (PT-HR1001) to the turbine end (PT-HR1003): dp0 kg/cm2 at m0 T/H and the design state (Po kg/cm2 G,
+   To C) = FHI P2S7 RH outlet 35.1 kg/cm2 G (36.13 ata) less HB PPE-14-0725 case 1 HRH 34.77 ata, at 400.944 T/H, 538 C (RIN 2026-11-28) */
+const AN_HRLN = { dp0: 35.1 + 1.0332 - 34.77, m0: 400.944, Po: 34.77 - 1.0332, To: 538 };
+function anHrDrop(U, m, Pg) {
+  const D = AN_HRLN;
+  if (!D.rho0) D.rho0 = steamRho(D.Po, D.To);
+  const rho = steamRho(Math.max(0, +Pg || 0), U && U.hxO && isFinite(U.hxO.rh) ? U.hxO.rh : D.To),
+    x = Math.max(0, +m || 0) / D.m0;
+  return isFinite(rho) && rho > 0 ? (D.dp0 * x * x * D.rho0) / rho : 0;
+}
+/* the main steam line drops (kg/cm2) at the turbine flow ms and the HP bypass flow mhp (T/H): to PT-MS1006 / the bypass tee, and to the MSVs */
+function anMsDrop(U, ms, mhp) {
+  const k = +U.kln || 0,
+    f = AN_MSLN.f18,
+    a = Math.max(0, +ms || 0),
+    t = a + Math.max(0, +mhp || 0),
+    tee = k * f * t * t;
+  return { tee, msv: tee + k * (1 - f) * a * a };
+}
 function anMsKln(U) {
   const D = AN_MSLN,
     k0 = D.dp0 / (D.m0 * D.m0);
@@ -146,12 +197,14 @@ const AN_UNIT = {
      the pulse O.0178 of ABC-001C while I.0081, reset by O.0179 or by the reset group (permissive lost); while ON the TCS target load
      tracks GEN. MW (TCE p.134), so at OFF the TCS holds the load it has. These inputs are written by the model in every plant state (3.2.5-beta.8; before only in a start-up, U.cold); the snapshot of
      "Start at 150 MW" gives the first values only. */
-  rollRate: 120 /* rpm/min, PR-OPE-5002 cold start (the holds at 1800 / 3600 rpm of the procedure are the operator's; not modelled) */,
+  rollRate: 120 /* rpm/min, the ATS acceleration rate of the cold modes (ATS sequence 310SC90-775 page 19 *2, tcs.js TCS.rate) */,
   icvRoll: 0.13 /* ICV opening for the roll steam (about 14 T/H at 7.6 kg/cm2 reheat, NO-SOURCE: the SOP gives CV 10 / 3 % at 400 rpm, no ICV opening) */,
   /* 3.2.3-beta.240 (live Cold start Load up): the TCS flow demand splits to the ICV and the CVs (TCE 331DM09784 p.141 TCE207 FLOW
      CONTROL(2), A007 HEAT SOAK CONTROL: CV OPENING BIAS SG C008 K:20.0 %, ICV MIN OPENING K:-0.5 %, RI / RD 0.03 % per 30 ms cycle = 1 %/s;
-     p.144 TCE212 / p.145 TCE214: CV and ICV demand through FG (PARA-LIST, NO-SOURCE) to the VALVE CONTROL MT1, ICV opening speed SG C007
-     K:10.0 %/s). cvBias = the flow demand where the CVs start to open (IP START); fdRate = 1 %/s; vRate = 10 %/s (CV taken the same, NO-SOURCE) */
+     p.144 TCE212: CV demand through UNT-FG 003 / 036 (LME010, curves from the HIACS backup, turbine.js AN_CV fgA / fgB) to the VALVE
+     CONTROL MT1; p.145 TCE214: ICV opening speed SG C007 K:10.0 %/s; p.143 TCE211: CV OPENING RATE SG A035 10.0 %/s, CLOSING RATE SG A037
+     999999.9 %/s (no limit) outside a test). cvBias = the flow demand where the CVs start to open (SG C008); fdRate = 1 %/s (A007 RI / RD,
+     DERIVED: the 0.03 % read as per 30 ms cycle of the EHG+MD controller); vRate = 10 %/s (ICV SG C007 and CV SG A035) */
   cvBias: 0.2,
   fdRate: 0.01,
   vRate: 0.1,
@@ -215,28 +268,8 @@ const AN_UNIT = {
      - STEAM TEMPERATURE while cold: the superheaters cannot give more than the gas (plant.js pr.tcap = the SH / RH tube metal, F11) and not
        less than saturation (pr.tsat); TAB_9: SH outlet <= 535 C before synchronisation */
   Tamb: 30,
-  /* F11 (user 2026-11-13: the ratio of beta.206 / 207 was a curve fit, not a model). Superheater and reheater tube metal, heated by the flue
-     gas, cooled by the steam that flows (anUnitStep0, U.cold only):
-     - metal mass: GA p6 K1AU3A-201 rev 1 "PRESSURE PARTS EMPTY WEIGHT" (13-thermal-masses): SH = backpass walls 121.01 + in-furnace SH
-       80.58 + finishing SH 151.67 = 353.26 t; RH = 243.10 t. Steel specific heat 0.5 kJ/kg K (textbook carbon / low-alloy steel).
-     - gas side UA at MCR, CALC from the design heat balance (T1 / T3 / Fig 8): SH 460 T/H, drum 145 kg/cm2 g saturated vapour (h about
-       2,625 kJ/kg) to 541 C at 129 kg/cm2 g (h about 3,443): 104.5 MW; gas = furnace outlet 840 C (Fig 8, 100 %), metal about the mean
-       steam (340 + 541) / 2 = 440 C: UA = 104.5 MW / 400 K = 261 kW/K. RH 401 T/H (MB-012), 370 C / 36.6 (h about 3,145) to 541 C / 35.1
-       (h about 3,545): 44.6 MW, metal about 455 C: UA = 44.6 MW / 385 K = 116 kW/K.
-     - UA moves with the gas flow ^ 0.6 (forced convection over tube banks, Colburn / Grimison exponent, textbook); gas flow = the total
-       air (the fuel is under 10 % of the gas mass). The gas cannot give more than it carries: Q <= gas x 1.15 kJ/kg K (flue gas, textbook)
-       x (gas - metal). The gas temperature: the bed, less the upper furnace walls, then the cyclone refractory (AN_FG, beta.230).
-     - steam side: the steam leaves at the metal temperature (film coefficient far above the gas side); it takes steam x 2.2 kJ/kg K x
-       (metal - inlet), inlet = saturation (SH) / the cold reheat temperature, HP bypass outlet and HP exhaust mixed (RH, beta.227).
-       No steam flow: the metal and the stagnant steam heat from the gas alone. */
-  shM: 353.26e3 * 0.5 /* kJ/K */,
-  rhM: 243.1e3 * 0.5 /* kJ/K */,
-  shUA: 261 /* kW/K at the anchor air, CALC above */,
-  rhUA: 116 /* kW/K at the anchor air, CALC above */,
-  /* reheater outlet pipe at TT-HR1002 (outlet header and hot reheat pipe to the thermowell): 20 t steel x 0.5 kJ/kg K (NO-SOURCE: no
-     pipe weight in the docs), lagging loss 0.02 kW/K (NO-SOURCE, about 6 days to cool) */
-  rhPipeM: 10000 /* kJ/K */,
-  rhPipeUA: 0.02 /* kW/K */,
+  /* Phase 11 KANA: the SH / RH tube metal (shM / rhM) and the old lumped gas UAs (shUA / rhUA) are deleted: the scan uses the hx.js banks
+     (AN_HX [metal kJ/K] per bank, GA p6 K1AU3A-201: SH 353.26 t, RH 243.1 t x 0.5 kJ/kg K) */
   ao: 2.55 /* PR-OPE-5002 4.3.x: "Approximately: 2.55 TPH coal = 1 TPH diesel" (2.2.0-beta.15; beta.14 had 2 ASSUMED) */,
   /* 2.2.0-beta.15 (M4 step 2, coal transfer): the coal burns only in a hot bed: burnt share 0 at 350 C, 1 at 600 C; the rest leaves
      unburnt. 3.2.3-beta.91 sources: Tburn1 600 = PR-OPE-5002 continuous feeding above 600 C. Tburn0 is bounded, not given: below 400 C,
@@ -245,7 +278,13 @@ const AN_UNIT = {
      coal-dependent, set at commissioning). 350 and the straight line between are NO-SOURCE inside that bound. */
   Tburn0: 350,
   Tburn1: 600,
-  Cw: 1726 /* water 175.6 t (T8 Tab 2) x 4.18 + evaporative steel 437.7 t (B-0-001) x 0.5 kJ/kg K = 953 MJ/K, in units of 0.554 MW */,
+  Cw: (51 * 6.4 + 437.7 * 0.5) / 0.554 /* 984 = 545 MJ/K in units of 0.554 MW. Phase 11 (KANA 2026-11-27): the stored heat of what sits at
+     saturation, DP-CALC at 150 MW (139.6 kg/cm2, Tsat 336 C, rho_f 620 kg/m3): water 51 t = downcomers 18.7 m3 full (4 x 14" x 48 m +
+     6 x 8" x 26 m, FHI P2S7 Tab 1) + risers / walls 69.9 m3 at the mean void 0.23 (plant.js AN_RISER, Astrom-Bell) = 53.8 m3 liquid +
+     the drum below NWL 9.8 m3 (30.7 % of 31.8 m3, K1AU3D-101 / -109), x dh_f/dT_sat 6.4 kJ/kg K (IF97, 1594.4 - 1462.2 over 320 -> 340
+     C); evaporative steel 437.7 t (B-0-001) x 0.5 kJ/kg K. Before: 1726 = water 175.6 t (FHI P2S8 Tab 2, hydro full at 15.5 C, with
+     the 55.4 t of the subcooled economizer and the drum full) x 4.18. OPEN: whether B-0-001 437.7 t holds the economizer steel (hx.js
+     has its own 112 MJ/K metal store); the inventory is held at the 150 MW point (does not follow the level / void) */,
   kcool: 60 /* 2.2.0-beta.21: cooling of the unfired boiler by the air, T/H steam-equivalent at the anchor air and 300 C (ASSUMED, Fig. 5) */,
   kamb: 1 /* 2.2.0-beta.21: bottled boiler loss to the ambient, T/H steam-equivalent at 300 C (ASSUMED) */,
   tauB: 900,
@@ -261,7 +300,29 @@ const AN_UNIT = {
 /* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
    whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
    code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
-const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
+/* Hot reheat pipe metal, lumped (TT-HR1002 reads it): the heat it stores and loses.
+   M: steel volume from the BOM K1AU3-MM-102 Rev 3 p2/3 lengths (YUI read 2026-11-28), walls ASME B36.10 (24" Sch 30 / 80 printed on
+   K1AU3-M1-217 Detail D), ring area pi (OD - t) t:
+     24" Sch 30 (t 14.3)  0.02674 m2 x 105.651 m = 2.825 m3
+     24" Sch 80 (t 31.0)  0.05635 m2 x   6.000 m = 0.338 m3
+     18" Sch 30 (t 11.13) 0.01560 m2 x  24.405 m = 0.381 m3
+     18" Sch 80 (t 23.83) 0.03245 m2 x   1.000 m = 0.032 m3
+     16" Sch 30 (t 9.53)  0.01188 m2 x  27.392 m = 0.325 m3   (fittings and 6" / 8" drains left out)
+     total 3.90 m3 x 7770 kg/m3 (ASTM A335 P91, ASME II-D Table PRD) = 30.3 t
+   x cp of 9Cr-1Mo-V at about 500 C = k / (rho alpha) = 26.6 W/m K / (7770 x 5.8e-6 m2/s) = 0.59 kJ/kg K (ASME II-D Table TCD)
+   = 17.9e3 kJ/K (was 10e3 NO-SOURCE "20 t x 0.5").
+   UA: lagging loss. Class HW6 on the as-built isos (K1AU3-P3-1-002 R7), thickness FHI K1AU3-P1-0-001 p6: 24" 200 mm, 18" / 16" 190 mm,
+   rock wool ASTM C547 Type II. Loss per metre by the MHPS TDA-15-046 R2 / JIS A9501 law Q = (To - Ta) / (ln(dn/do)/(2 pi k) + 1/(h pi dn)),
+   k 0.0945 W/m K and h 9.4 W/m2 K back-calculated from the TDA printed rows (YUA read 2026-11-28,
+   /mnt/project-files/rin-hrh-ms-insulation-reads-2026-11-28.md), at 538 / 35 C: 24" 570, 18" 475, 16" 436 W/m. UA = sum(L Q) / (538 - 35):
+   (111.651 x 570 + 25.405 x 475 + 27.392 x 436) / 503 = 0.174 kW/K (87.7 kW at 538 C; was 0.02 NO-SOURCE). Cool-down time M / UA about 29 h. */
+const AN_RHPIPE = {
+  M: (Math.PI * (0.6096 - 0.0143) * 0.0143 * 105.651 + Math.PI * (0.6096 - 0.031) * 0.031 * 6 + Math.PI * (0.4572 - 0.01113) * 0.01113 * 24.405 +
+    Math.PI * (0.4572 - 0.02383) * 0.02383 * 1 + Math.PI * (0.4064 - 0.00953) * 0.00953 * 27.392) * 7770 * 0.59 /* kJ/K */,
+  UA: (111.651 * 570 + 25.405 * 475 + 27.392 * 436) / (538 - 35) / 1000 /* kW/K */
+};
+
+const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -1306,7 +1367,7 @@ const AN_CD = {
               velocity: K_s = 1.3 (1 - f) + (1 / f - 1)^2 = 3.79;
        area   screen open area / pipe area 3 (NO-SOURCE: the usual minimum of a basket / Y strainer), so on the pipe velocity
               K = K_s / 3^2 = 0.42; the housing turn is not counted.
-     DP = K rho v^2 / 2: 0.003 kg/cm2 at 400 m3/h, clean. Before: 0.019 kg/cm2 at 383 T/H, a plant reading (gone). */
+     DP = K rho v^2 / 2: 0.003 kg/cm2 at 400 m3/h, clean. */
   str: { D: 0.3334, f: 0.367, ar: 3, rho: 992.6 /* water at 40 C, KSB sp. gr. 0.9926 */ }
 };
 /* the clean suction strainer DP, kg/cm2, at q m3/h through one pump (AN_CD.str above) */
@@ -1515,7 +1576,10 @@ function anCondStep(U, dt) {
      shell      the pressure of the extraction NOW (ports ext.lp1 ~ 3, RIN tbPath) less the line drop to the shell. The drop goes with
                 m^2 v (v ~ 1 / P): dP = dPd x (w / wd)^2 x (Pd / P), dPd and wd at HB PPE-14-0725 case 1 (turbine 1.914 / 0.826 / 0.373
                 ata, heaters 1.818 / 0.785 / 0.354 ata: 0.096 / 0.041 / 0.019 ata at 15246 / 12270 / 16834 kg/h), w the draw of the step
-                before; x the extraction MOV (DITL-97 No.3, DITL-98 No.2; the No.1 LPH has none), as AN_HP / AN_HD;
+                before; x the extraction MOV (DITL-97 No.3, DITL-98 No.2; the No.1 LPH has none), as AN_HP / AN_HD; x the extraction
+                non-return valve in series with it (tcs-dev.js U.dev.nrv: TC-44 ex4 = No.4 extraction to the No.3 LPH, TC-45 ex5 =
+                No.5 to the No.2 LPH; the No.6 line to the No.1 LPH has no NRV, YUA read mei-lph-flash-reads-2026-11-28.md): the
+                lower of the two openings throttles the line, a shut NRV isolates the shell (no steam, no draw);
      condensate effectiveness-NTU of a condensing shell: tube out = Ts - (Ts - Tin) exp(-NTU), NTU = UA / (m cp) with UA fixed from
                 the O&M design point (NTU_d = ln((Ts - Tin) / (Ts - Tout)) at 362.594 t/h; then NTU = NTU_d x 362.594 / m_tube), the
                 tube share s of anHtrPath, the bypass water mixed after (mass weighted);
@@ -1530,11 +1594,12 @@ function anCondStep(U, dt) {
      HB PPE-14-0725 R1 case 1, IAPWS-IF97 */
 const AN_LP = {
   F0: 458.684,
-  /* key, design shell kgf/cm2A, design condensate in / out C, DCA, extraction MOV, steam path stage, port, HB extraction P / kg/h */
+  /* key, design shell kgf/cm2A, design condensate in / out C, DCA, extraction MOV, steam path stage, port, HB extraction P / kg/h,
+     extraction NRV (tcs-dev.js U.dev.nrv key) */
   h: [
-    ['H1', 0.354, 40, 70.8, 5.62, null, 'ext.lp1', 'lp1', 0.373, 16834],
-    ['H2', 0.785, 70.8, 90.7, 5.61, 'DITL-98', 'ext.lp2', 'lp2', 0.826, 12270],
-    ['H3', 1.818, 90.7, 114.9, 5.62, 'DITL-97', 'ext.lp3', 'lp3', 1.914, 15246]
+    ['H1', 0.354, 40, 70.8, 5.62, null, 'ext.lp1', 'lp1', 0.373, 16834, null],
+    ['H2', 0.785, 70.8, 90.7, 5.61, 'DITL-98', 'ext.lp2', 'lp2', 0.826, 12270, 'ex5'],
+    ['H3', 1.818, 90.7, 114.9, 5.62, 'DITL-97', 'ext.lp3', 'lp3', 1.914, 15246, 'ex4']
   ],
   Fd: 362.594 /* t/h, condensate of the O&M design point */,
   tau: 120
@@ -1586,11 +1651,13 @@ function anLphStep(U, dt) {
     fl = typeof anCycFlows === 'function' ? anCycFlows(0) : null,
     m = fl ? Math.max(0, +fl.fda || 0) : 0,
     W0 = U.lpW || {};
-  for (const [k, P0, ti, to, dca, mov, port, q, Pd, wd] of K.h) {
+  const nvs = U.dev && U.dev.nrv ? U.dev.nrv : null,
+    nrv = key => (key && nvs && nvs[key] && isFinite(+nvs[key].p) ? Math.max(0, Math.min(100, +nvs[key].p)) : 100);
+  for (const [k, P0, ti, to, dca, mov, port, q, Pd, wd, nk] of K.h) {
     const e = anPortGet(U, port),
       Pe = e && isFinite(e.P) ? Math.max(0, e.P) : 0,
       wr = Math.max(0, +W0[q] || 0) / (wd / 1000),
-      Ps = Pe > 0 ? Math.max(0.5 * Pe, Pe - (Pd - P0) * wr * wr * (Pd / Pe)) * thr(pos(mov)) : 0,
+      Ps = Pe > 0 ? Math.max(0.5 * Pe, Pe - (Pd - P0) * wr * wr * (Pd / Pe)) * thr(Math.min(pos(mov), nrv(nk))) : 0,
       ts = anTsatA(Ps),
       Tsd = anTsatA(P0),
       sh = wL[k] ? wL[k].s : 1,
@@ -1710,19 +1777,29 @@ function anHxTagStep(U, dt) {
       return isFinite(v) ? v : h ? +h[0] : NaN;
     },
     r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
-    ms0 = AN_FWT.ms0,
     ms = Math.max(0, +U.ms || 0),
     Ta = isFinite(U.Tamb) ? U.Tamb : 30,
     H = U.hxO || {},
     t1004 = ai('1|AI0612'),
     pd = ai('1|AI0128'),
-    lf = (ms / ms0) * (ms / ms0),
-    mr = ms + Math.max(0, +U.mhp || 0),
+    /* the reheater outlet flow (T/H): the steam path's reheater flow (turbine.js tbPath f.rh: the CRH less the No.6 extraction, plus the
+       HP bypass) */
+    mr = U.tbS && U.tbS.f && isFinite(U.tbS.f.rh) ? Math.max(0, U.tbS.f.rh / 1000) : ms + Math.max(0, +U.mhp || 0),
+    p1003 = ai('2|AI0421'),
     fr = U.bedI > 0 ? U.bedI / AN_BI.t0 : 0,
     T = U.tt || (U.tt = {});
   Object.assign(T, {
-    'TT-MS1007': r1(isFinite(t1004) ? Math.max(Ta, t1004 - Math.min(t1004 - Ta, (4 * ms0) / Math.max(ms, 0.05 * ms0))) : NaN),
-    'PT-HR1001': r1(ai('2|AI0421') + 0.7 * (mr / ms0) * (mr / ms0)),
+    /* Phase 11 RIN 2026-11-28 (was 4 C "at MCR 472.7 T/H" and 0.7 kg/cm2 x (mr / 472.7)^2: a flow with no design source, deleted):
+       TT-MS1007 (at PT-MS1006, the HP bypass tee end of the 18" run, AN_MSLN): the steam of TE-MS1004 / the MSP throttled at constant
+       enthalpy through the line drop to the tee (anMsDrop) less the heat the 18" run loses through its lagging (anMsT, AN_MSQ) */
+    'TT-MS1007': r1(
+      isFinite(t1004) && isFinite(U.Pms)
+        ? anMsT(U, t1004, ms, U.mhp, U.Pms - anMsDrop(U, ms, U.mhp).tee + 1.0332, 'tee')
+        : NaN
+    ),
+    /* PT-HR1001 (the reheater outlet): PT-HR1003 (AI0421, the turbine end) + the hot reheat line drop dP = k m^2 / rho, k from the design:
+       FHI P2S7 RH outlet 35.1 kg/cm2 G against HB PPE-14-0725 case 1 HRH 34.77 ata at 400,944 kg/h, 538 C: 1.36 kg/cm2 (AN_HRLN) */
+    'PT-HR1001': r1(isFinite(p1003) ? p1003 + anHrDrop(U, mr, p1003) : NaN),
     'TT-BR1020': r1(H.e1o),
     'TT-BR1030': r1(H.e2o),
     'TT-BR1040': r1(H.tEco),
@@ -1766,16 +1843,16 @@ function anHxTagStep(U, dt) {
                    first on the line (HB PPE-14-0725 R1 Attachment-1 r: "between condensate pump and gland steam condenser"). Its share =
                    the steam-side duties of HB case 1 (310SD07-485 R4): SJAE 400 kg/h x (752.0 - 152.0) = 240,000 kcal/h, GSC 421 kg/h x
                    (767.6 - 99.1) = 281,400 kcal/h: 0.460 (the steam side, as the condensate side 38.7 -> 39.3 -> 40.1 kcal/kg is rounded
-                   to 0.1, +-15 %). Before: 1/2 (a plant screen, gone). When SUZU / RIN write the ej.steam / gs.leak ports this becomes
+                   to 0.1, +-15 %). When SUZU / RIN write the ej.steam / gs.leak ports this becomes
                    their duties;
      TT-CD1110-4   the flash chamber: the No.1 LPH drain (and the drains sent to it) flashes there and the chamber vents to the condenser
                    shell, so its water leaves at the saturation of the condenser pressure: = U.cdTs (first law, flash at constant
-                   enthalpy). Before: hotwell + 2 C x load share (a load shape, gone);
+                   enthalpy).;
      FT-CD1122     the condensate that the deaerator level valve passes (plant.js anCycFlows fda, without the recirculation of FT-CD1120);
      PT-CD1122     the deaerator inlet = the LCV-CD1104 outlet of the hydraulic model (plant.js anDaQ, one path): deaerator PT-CD1104 +
                    z2 + kN fda^2, z2 / kN from the two conditions of the valve data sheet K1AU3-E2-0-123 R1 item 14 (COND 1 P2 10.1
                    kg/cm2 g at 362.59 T/H with the deaerator at 5.02 g, COND 2 P2 3.02 at 36 T/H at the atmosphere; anCdHydK): the
-                   water column up to the deaerator and its spring-loaded spray nozzles (L15-2 1.2). Before: PT-CD1104 + 1.6 fixed;
+                   water column up to the deaerator and its spring-loaded spray nozzles (L15-2 1.2).;
      TT-CD1104     the storage tank water at the saturation of the deaerator pressure PT-CD1104 (first principles);
      FT-CD1115     LP bypass spray (Phase 11, MEI): TCV-CD1115 by its valve sheet K1AU3-D1-0-043 R0 p12 (RIN PC read, rin-valve-reads.md):
                    1 in, Cv 25.4, modified equal %: Cv % 7 / 36 / 72 at travel 17 / 54 / 81 %; liquid ISA w = 0.8566 Cv sqrt(dp SG) (T/H,
@@ -2528,8 +2605,8 @@ function anMotorStep(U, dt) {
                   532 % (the torque / current curve);
      tanks        D1-0-059 document index and PD-023: T-0705A / B 10 m3 (PA), T-0706A / B 5 m3 (IA), max. working pressure 0.98 MPa;
      pressure     the set pressure of the compressor panel, AN_AIR_SP: PA = IHI TRE set point list 10-01 (IXB-01424 ~ 01426, O&M L17-2
-                  pp 9 ~ 10, YUA read suzu-design-reads-2026-11-28.md 6): PIC1 constant pressure 0.800 MPa = 8.16 kg/cm2 G; IA 7.0
-                  (SNAPSHOT-TO-REPLACE: the IA package set point list is not read yet); the tanks max. working pressure 0.98 MPa is above it;
+                  pp 9 ~ 10, YUA read suzu-design-reads-2026-11-28.md 6): PIC1 constant pressure 0.800 MPa = 8.16 kg/cm2 G; IA = IHI T2A
+                  panel IXE-00037 ~ 39 (O&M L17-3 sheet 10-45, suzu-reads-batch-2026-11-28.md 1): PIC1 0.700 MPa = 7.14 kg/cm2 G; the tanks max. working pressure 0.98 MPa is above it;
      alarm list   tanks and unit header L 5.0, IA LL 3.5, PSL-IA1706 / PSL-PA1705 2.8 kg/cm2;
      I/O list     ranges 0 ~ 10 kg/cm2, dryer outlet flow 0 ~ 2700 (IA) / 0 ~ 5800 (PA) m3/h, compressor current 0 ~ 500 (IA) / 0 ~ 140
                   (PA) A (the transmitter holds its range top).
@@ -2555,7 +2632,7 @@ function anMotorStep(U, dt) {
      dryer outlet the tank pressure plus 0.15 kg/cm2 at the design use (NO-SOURCE), with the flow squared; flow over the dryers in
                   service, over the three while none is (their inlet valves stay open). */
 /* the set pressure of the compressor panels, kg/cm2 G (see AN_AIR). Kept outside AN_AIR: a save carries AN_AIR (state.js AN_STATE_OBJ) */
-const AN_AIR_SP = { pa: 0.8 * 10.1972 /* IHI TRE PIC1 0.800 MPa */, ia: 7.0 /* SNAPSHOT-TO-REPLACE */ };
+const AN_AIR_SP = { pa: 0.8 * 10.1972 /* IHI TRE PIC1 0.800 MPa */, ia: 0.7 * 10.1972 /* IHI T2A IA panel IXE-00037 ~ 39 PIC1 0.700 MPa (L17-3 sheet 10-45) */ };
 const AN_AIR = {
   Pa: 1.033,
   loss: 0.2,
@@ -3721,11 +3798,11 @@ function anHxRun(U, dt, tsat) {
   U.hxHe = H.hEco;
   U.hxO = H;
   /* TT-HR1002 is on the reheater outlet pipe, outside the gas path (live Cold start 2026-11-14): heated by the steam that flows out of
-     the last reheater bank, losing to the room through its lagging (rhPipeUA). No steam: the pipe cools */
+     the last reheater bank, losing to the room through its lagging (AN_RHPIPE.UA). No steam: the pipe cools */
   const wR = mRh + Math.max(0, U.wrhs || 0);
   if (!isFinite(U.TpR)) U.TpR = H.rh;
   U.TpR +=
-    (((wR / 3.6) * 2.2 * (H.rh - U.TpR) - (U.rhPipeUA || 0.02) * (U.TpR - U.Tamb)) * dt) / (U.rhPipeM || 10000);
+    (((wR / 3.6) * 2.2 * (H.rh - U.TpR) - AN_RHPIPE.UA * (U.TpR - U.Tamb)) * dt) / AN_RHPIPE.M;
   U.TpR = Math.max(U.Tamb, U.TpR);
   U.wR = wR;
   return H;
@@ -3947,7 +4024,7 @@ function anUnitStep0(dt) {
   if (U.tc) {
     /* the ATS sets the speed and the ICV (tcs.js); a stopped machine coasts down to the turning gear */
     if (!U.turb && tb.rpm > 4) tb.rpm = Math.max(0, tb.rpm - (3600 * dt) / 600);
-  } else if (tb.st === 'roll') {
+  } else if (tb.st === 'roll' && !tb.rej) {
     tb.rpm = Math.min(3600, tb.rpm + (U.rollRate * dt) / 60);
     tb.icv = Math.min(U.icvRoll, tb.icv + (U.icvRoll * dt) / 60);
   } else if (!U.turb) tb.rpm = Math.max(0, tb.rpm - (3600 * dt) / 600);
@@ -3971,6 +4048,14 @@ function anUnitStep0(dt) {
   } else if (!isFinite(U.tcsT)) U.tcsT = U.MW;
   /* plan c4: 52L1 as the ABC input, and on house load the turbine carries the house load only (elec.js) */
   if (typeof anElecStep === 'function') anElecStep(U);
+  /* Phase 11 RIN 2026-11-28: LOAD REJECTION. 52G opening on load without a turbine trip (elec.js anElec52gTrip, the Plant-menu fault
+     'gen.52g'; the TCS shutdown step 52G OPEN of TCA587 the same) leaves the turbine latched with its valves open and no electrical load:
+     the speed is the swing equation (anTbSpeed, Pe = the no-load losses of the generator), the PLU closes the CV / ICV at the fast-acting
+     rate and the speed governor takes the speed back (the house-load branch below with no load), as TG operator manual tg-2-1-1 p.137
+     (full load rejection: about 106 % in about 1 s). tb.rej holds until the machine trips, stops or is synchronised again. Before, the
+     state 'roll' set the CVs shut and the speed to the roll ramp at once: no overspeed */
+  if (tb.st === 'roll' && onGrid && !trip) tb.rej = true;
+  if (tb.st !== 'roll' || trip) tb.rej = false;
   const D = U.tcsT;
   /* LMYP OTS 1.0.0-beta.3 (JENNIE, live Hot roll 2026-11-19, F-CN): the load loop of the TCS (TCE207 flow demand tb.fd, MW error integral
      tb.fi) works only with 52G closed. Off the grid (turbine stopped, tripped or under speed control) it starts again from the valves at
@@ -3987,10 +4072,10 @@ function anUnitStep0(dt) {
     /* turbine trip: the TCS closes the valves; the load set point is gone */
     U.gv = Math.max(0, U.gv - dt / AN_TBV.cv);
     U.tcsT = 0;
-  } else if (tb.st === 'roll') {
+  } else if (tb.st === 'roll' && !tb.rej) {
     U.gv = 0;
     U.tcsT = 0;
-  } else if (!tb.xfer) {
+  } else if (!tb.xfer && !tb.rej) {
     /* IP start mode (TCE207): the one flow demand opens the ICV first; the CVs stay shut until it passes the CV OPENING BIAS (20 %) */
     anTbFlow(U, tb, D, dt, dirt);
   } else {
@@ -4000,10 +4085,11 @@ function anUnitStep0(dt) {
        load, elec.js) and the turbine power U.MW minus that load over 40 % of U.MW0. The valves close at the fast-acting rate (AN_TBV.cvOpc / icvOpc, the same
        fast acting dump through the NG6 solenoid, derived in turbine.js) until the unbalance is under 40 %, then the speed control opens them again.
        Not modelled: the 2 out of 3 voting (one value) */
-    const ld = U.el && U.el.l52 === false ? D : U.MW,
+    const hl = (U.el && U.el.l52 === false) || !!tb.rej /* house load (52L1 open) or load rejection (52G open): the speed governor */,
+      ld = tb.rej ? 0 : U.el && U.el.l52 === false ? D : U.MW,
       /* 3.2.3 house load speed: the power side is the steam power of the last step (U.Pm, no tauMW lag: the reheat bowl pressure falls
          as soon as the ICV closes); before, the lagged U.MW kept the valves shut about 7 s and the speed fell to 95.8 % */
-      plu = U.el && U.el.l52 === false && ((isFinite(U.Pm) ? U.Pm : U.MW) - ld) / U.MW0 > 0.4;
+      plu = hl && ((isFinite(U.Pm) ? U.Pm : U.MW) - ld) / U.MW0 > 0.4;
     if (plu && !tb.plu && typeof window !== 'undefined' && window.lsEventAdd && !(window.ENG && ENG.mode === 'mirror'))
       lsEventAdd(
         'TCS',
@@ -4015,13 +4101,13 @@ function anUnitStep0(dt) {
           ' MW load'
       );
     tb.plu = plu;
-    if (plu || (U.el && U.el.l52 === false)) tb.fd = NaN;
+    if (plu || hl) tb.fd = NaN;
     if (plu) {
       U.gv = Math.max(0.02, U.gv - dt / AN_TBV.cvOpc);
       tb.icv = Math.max(0, tb.icv - dt / AN_TBV.icvOpc);
       tb.gs = U.rbIP;
       tb.hlT = (tb.hlT || 0) + dt;
-    } else if (U.el && U.el.l52 === false) {
+    } else if (hl) {
       /* 3.2.3 house load: the speed governor (TCE p.140 TCE206): flow demand = GOV.SET - flow span x (rpm - 3600) / (droop x 3600), the
          HP CV opening U.gv taken as the flow demand (1 = the anchor flow). GOV.SET (tb.gs) starts at the CV opening after the PLU and is
          trimmed by the TCS load loop toward the house load (elec.js, as before). The CV moves at its servo rate (AN_TBV.cvServo, turbine.js).
@@ -4071,14 +4157,26 @@ function anUnitStep0(dt) {
   tcsVtStep(U, dt);
   U.kdp = anShKdp(U); /* Phase 11: the SH pressure drop law at the density of this scan (anShKdp) */
   U.kln = anMsKln(U); /* Phase 11: the main steam line drop law at the density of this scan (anMsKln) */
-  /* Phase 11 RIN 2026-11-28: the CV areas from the TCS lift curves (tbCvLift) of each side (tcsVtSide: the valve test), x the share of the
+  /* Phase 11 (KANA 2026-11-27, RIN finding on the 52G load rejection): the SH pressure drop is on the WHOLE steam that leaves the
+     SH outlet, the turbine m plus the other outlets mo (HP bypass PCV-MS1020, blow-off PCV-MS1001, SH safety valves): SH outlet =
+     drum - kdp (m + mo)^2. Before it was the turbine flow alone, so with the CVs shut and 286 T/H through the bypass the SH outlet
+     rose to the drum pressure and lifted the SH safety valve. mo is the flow of these outlets of the scan before (U.mso, they depend on
+     the SH outlet pressure: the fixed point converges, 2 kdp (m + mo) x dmo/dP is about 0.1 at 400 T/H); tbMsFlow takes it too */
+  const mo = isFinite(U.mso) ? Math.max(0, U.mso) : 0;
+  /* Phase 11 RIN 2026-11-28: the CV effective area (tbCvAs, TCE500 FG A011) at the TCS lifts (tbCvLift) of each side (tcsVtSide: the valve test), x the share of the
      main steam stop MOV MV-MS1391 / its bypass (U.msG); the flow the CVs and the HP blading pass together (tbMsFlow). Kt (m0 / P0 of the
      save point) is deleted */
-  const Av =
-    (tbCvA(tbCvLift(U, 'A', tcsVtSide(U, 'A'))) + tbCvA(tbCvLift(U, 'B', tcsVtSide(U, 'B')))) * (U.msG == null ? 1 : U.msG);
-  U.ms = Math.max(0, tbMsFlow(U, Av, U.hxO && U.hxO.ms));
-  /* the other outlets: flow = share x anchor flow x opening x MSP / anchor MSP */
-  const P1 = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
+  /* Phase 11 RIN 2026-11-28 (YUI finding, IBD TA-6): x the stop valve opening of the trip oil (tcs-trip.js tcsVp, MSV / RSV closing at
+     AN_TBV): on a trip the steam is cut by the MSVs in series with the CVs, so the shaft power falls while 52G is still closed and 52G opens
+     on MAIN STOP VALVE FULL CLOSE (TA-6 -> SH-G-9 -> I.0400). Before, the flow ignored the stop valves and the steam work stopped at the
+     52G opening instead. The MSV taken as an area in series proportional to its opening (its bore is not read: the closing lasts 0.38 s) */
+  const vpS = U.tc || U.tco ? tcsVp(U, U.tc || U.tco) : 1,
+    Av = tbCvAs(tbCvLift(U, 'A', tcsVtSide(U, 'A')), tbCvLift(U, 'B', tcsVtSide(U, 'B'))) * (U.msG == null ? 1 : U.msG) * vpS;
+  /* the turbine inlet temperature: the SH outlet steam after the line drop and the line heat loss (anMsT), on the flow of the last scan */
+  U.Tt = anMsT(U, U.hxO && U.hxO.ms, U.ms, U.mhp, Math.max(0, (+U.Pms || 0) - anMsDrop(U, U.ms, U.mhp).msv) + 1.0332, 'msv');
+  U.ms = Math.max(0, tbMsFlow(U, Av, U.Tt, mo));
+  /* the other outlets: their valve laws at the SH outlet pressure P1 */
+  const P1 = Math.max(0, U.Pd - U.kdp * (U.ms + mo) * (U.ms + mo));
   U.mb = 0;
   U.mhp = 0;
   const qOn = l => !!(l && l.S && l.S.rt && +l.S.rt.v[l.n] > 0.5),
@@ -4106,7 +4204,9 @@ function anUnitStep0(dt) {
     }
   }
   /* 3.2.4-beta.1: the safety valves of the drum (drum pressure) and of the SH outlet (main steam pressure P1), AN_SV */
-  U.msv = anSvFlow(U, AN_SV.d, U.Pd) + anSvFlow(U, AN_SV.s, P1);
+  const svS = anSvFlow(U, AN_SV.s, P1);
+  U.msv = anSvFlow(U, AN_SV.d, U.Pd) + svS;
+  U.mso = U.mb + svS; /* the SH outlet flow besides the turbine, for the SH drop of the next scan (above) */
   /* drum: stored energy. 2.2.0-beta.14 (cold start): the firing heats the water first (U.Tw), then the pressure rises against the
      storage of the steam AND of the saturated water (C + Cw x dTsat/dP) */
   const tsatOf = steamTsat; /* 3.2.0-beta.15: IF97 steam table (steam.js), was the fit 100 + 47.1 x ln(P + 1) */
@@ -4159,7 +4259,7 @@ function anUnitStep0(dt) {
       /* 1.0.0-beta.256 (JENNIE, Full Audit 3, live 150 MW 2026-11-22: bed 856 C, plant TIFG1090 ~955 C): THE UPPER FURNACE SUSPENSION.
          The bed (the dense lower furnace, U.Tb) and the furnace exit gas are two temperatures on the plant: the eighteen lower layer
          thermocouples TT-FG1090 / 1091 A ~ I average 937 C at 150 MW (HMI snapshot, hmi-op.js; trend scenario 1 TIFG1090 952 ~ 962 C),
-         while the gas leaving the furnace is 850 C (FHI design data / Fig 8 "furnace", the gas the backpass UAs shUA / rhUA and the
+         while the gas leaving the furnace is 850 C (FHI design data / Fig 8 "furnace", the gas the backpass banks and the
          chain of hx.js are built on; plant cyclone outlet TIFG1095 867 C at ~140 MW). Before, the model held the gas at the bed up to
          the exit (share phi) and took all the solids' wall heat at the bed temperature: one 856 C for both, 80 C under the bed.
          Now the gas and the circulating solids (heat capacity flow Cs = gas + phi x cSol) rise from the bed at Tb and give heat on
@@ -4292,7 +4392,7 @@ function anUnitStep0(dt) {
       m = U.idfV ? Math.max(0, Math.min(100, +U.idfV.S.rt.v[U.idfV.n] || 0)) : 0;
     anUnitWrite(U.idfS, () => (on ? anIdfN(m) : 0));
   }
-  const Pms = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
+  const Pms = Math.max(0, U.Pd - U.kdp * (U.ms + (isFinite(U.mso) ? U.mso : 0)) ** 2) /* the SH drop on the whole outlet flow (above) */;
   U.Pms = Pms; /* 3.2.0-beta.14: source of the reducing stations (source.js) */
   /* generator: the shaft work of the steam path less the mechanical and generator losses (AN_TB.mech, turbine.js; generator losses anGenW, YUI); qip = the reheat
      pressure x the ICV opening, = the HP steam when the bypass is shut and the ICV full open; 0 off the grid */
@@ -4309,7 +4409,7 @@ function anUnitStep0(dt) {
       U.tbS && U.tbS.f.ip1 > 1000 && U.tbS.P.hrh > tbPc * 1.01
         ? U.tbS.f.ip1 / 1000 / Math.sqrt(U.tbS.P.hrh * U.tbS.P.hrh - tbPc * tbPc)
         : AN_TB.c1.hrh / 1000 / Math.sqrt(AN_TB.c1.Phr * AN_TB.c1.Phr - AN_TB.c1.Pc * AN_TB.c1.Pc),
-    qip = tbK * Math.sqrt(Math.max(0, tbPr * tbPr - tbPc * tbPc)) * tb.icv * tcsVtIcvF(U);
+    qip = tbK * Math.sqrt(Math.max(0, tbPr * tbPr - tbPc * tbPc)) * tb.icv * tcsVtIcvF(U) * (U.tc || U.tco ? tcsVp(U, U.tc || U.tco) : 1) /* x the RSVs (trip oil) */;
   /* Phase 11 C (RIN): the steam path of the turbine by physics (turbine.js tbPath: Stodola stage pressures, IF97 expansion of each
      group, the design geometry of HB PPE-14-0725 R1 case 1 / VWO only). In: the steam through the CVs (U.ms) at the turbine inlet
      pressure and the main steam temperature, the steam through the ICVs (qip) at the reheat temperature, the condenser pressure
@@ -4318,8 +4418,8 @@ function anUnitStep0(dt) {
   U.tbS = tbPath(
     {
       ms: U.ms,
-      Pin: Math.max(0, Pms - U.kln * U.ms * U.ms) + 1.0332,
-      Tms: U.hxO && U.hxO.ms,
+      Pin: Math.max(0, Pms - anMsDrop(U, U.ms, U.mhp).msv) + 1.0332,
+      Tms: U.Tt,
       qip,
       Thr: U.hxO && U.hxO.rh,
       Pc: isFinite(U.cdP) ? U.cdP : 1.0332,
@@ -4334,18 +4434,40 @@ function anUnitStep0(dt) {
      Before, Pm fell with the valves at once and a load rejection from 150 MW peaked at 102.2 % (TG manual STIE-14752: about 106 % within
      about 1 s) */
   {
-    const hp = onGrid ? Math.max(0, U.tbS.Whp) : 0,
-      ip = onGrid ? Math.max(0, U.tbS.Wip) : 0,
+    const sp = onGrid || !!tb.rej /* the steam drives the shaft: on the grid, or after a load rejection (52G open, not tripped) */,
+      hp = sp ? Math.max(0, U.tbS.Whp) : 0,
+      ip = sp ? Math.max(0, U.tbS.Wip) : 0,
       f = T => 1 - Math.exp(-dt / Math.max(0.01, T));
     tb.pH = isFinite(tb.pH) ? tb.pH + (hp - tb.pH) * f(AN_TB.tSc) : hp;
     tb.pI = isFinite(tb.pI) ? tb.pI + (ip - tb.pI) * f(AN_TB.tXo) : ip;
     /* Phase 11 (RIN / YUI): the shaft side of the swing equation = the blade work less the mechanical loss of the turbine (AN_TB.mech,
        turbine.js); the generator losses are on the electrical side (anGenW) */
-    U.Pm = onGrid ? tb.pH + tb.pI - AN_TB.mech : 0;
+    U.Pm = sp ? tb.pH + tb.pI - AN_TB.mech : 0;
+    /* Phase 11 RIN 2026-11-28: after a trip 52G opens on MAIN STOP VALVE FULL CLOSE (TA-6) with the steam behind the closed valves still
+       expanding (tb.pH / tb.pI decaying at tSc / tXo): that work goes into the rotor (swing equation, the losses of the generator and the
+       turbine against it) until it is spent; the coast-down after it is the existing one */
+    if (!sp && tb.st === 'off' && tb.rpm > 1000 && tb.pH + tb.pI > 0.5 && U.Hgen > 0) {
+      const w = tb.rpm / 3600,
+        Pr = tb.pH + tb.pI - AN_TB.mech - (U.genT && isFinite(U.genT.L) ? U.genT.L / 1000 : 0);
+      tb.rpm = Math.max(0, (w + (dt * Pr) / (2 * U.Hgen * AN_GEN.S * w)) * 3600);
+    }
   }
   U.MW = anGenW(U, onGrid, trip, D);
   tcsLo86(U); /* gen-panel.js: the lockout relays 86G-A / 86G-B / 86T (their coils: SH-G-5A / SH-G-6A, the 32 relay among them) */
-  anTbSpeed(U, tb, dt, onGrid && !trip && tb.xfer, U.Pm, D);
+  /* the load on the shaft: on house load the house load (elec.js), after a load rejection the no-load losses of the generator (anGenTemp
+     U.genT.L at 0 kA: field, exciter, core and windage / friction, LM-GEE-2014-0822 R0 p31) */
+  /* the shaft work over the step is the mean of the power at its start and at its end (trapezoid): the valves close in 0.15 ~ 0.47 s,
+     a few scans, and the end value alone dropped the work done while they moved (2026-11-28) */
+  const PmA = isFinite(tb.PmL) ? (tb.PmL + U.Pm) / 2 : U.Pm;
+  tb.PmL = U.Pm;
+  anTbSpeed(
+    U,
+    tb,
+    dt,
+    (onGrid && !trip && tb.xfer) || !!tb.rej,
+    PmA,
+    tb.rej ? (U.genT && isFinite(U.genT.L) ? U.genT.L / 1000 : 0) : D
+  );
   U.rpm = tb.rpm;
   U.icvp = 100 * tb.icv;
   if (U.vpos === undefined || (U.vpos && !U.vpos.icvA)) U.vpos = anVposOf(); /* a save point from before 3.2.3-beta.244 / the A, B split */
@@ -4381,7 +4503,7 @@ function anUnitStep0(dt) {
   anUnitWrite(U.msp, Pms);
   /* live Cold start sweep (user 2026-11-13): written as exactly 0 the SELECT CIRCUIT of ABC-050 took PT-MS1006-1 / -2 as lost and held
      122.0 kg/cm2 on the HP bypass PV with the main steam at 0. A live transmitter at 0 kg/cm2 is a healthy 4 mA signal: not exactly 0 */
-  for (const l of U.tin) anUnitWrite(l, Math.max(1e-3, Pms - U.kln * U.ms * U.ms));
+  for (const l of U.tin) anUnitWrite(l, Math.max(1e-3, Pms - anMsDrop(U, U.ms, U.mhp).tee)) /* PT-MS1006 at the bypass tee (AN_MSLN) */;
   anUnitWrite(U.drum, U.Pd);
   /* 1.0.0-beta.370 (JENNIE, Rosé: Warm / Hot saves, EIC-TM PV 151 MW at 0 MW): the generator MW transmitters GCPAI1001 / 1002 at 0 MW are a live
      4 mA signal, written a hair above 0 as the turbine inlet pressure above; exactly 0 made the AVERAGE SELECT of ABC-001C hold the 151 MW of the trip */
@@ -4391,11 +4513,18 @@ function anUnitStep0(dt) {
      compensated flow is proportional to the raw value at a given pressure and temperature (SQRT block: out = in, in units of
      flow), so raw = U.ms x raw / compensated of the last scan */
   /* 2.2.0-beta.12: FT-MS1031 is at the boiler outlet: it sees the steam to the turbine AND to the HP bypass / blow-off (U.mb) */
+  /* Phase 11 KANA 2026-11-28 (time step check, NANA / phase thread: the 150 MW start tripped on drum L.L. at a 0.2 s step): the
+     compensated flow is a block output of ABC-001C, so it moves only at the sheet's scan (1.0 s, plant.js anStep), while this line runs
+     every plant step. Before, raw = U.ms x raw / compensated took the stale compensated value against the raw of this step, so the raw
+     compounded at every step between two scans (at 0.2 s: 465 -> 350 T/H in four steps, then 500, the top): the steam flow of the
+     3-element feedwater swung 343 / 490 T/H every second and the feedwater valve with it. Now the factor raw / compensated is taken
+     only from a scan, as the pair that scan used (the raw written in the step before it, U.msfW), and held between scans; the step
+     size no longer changes it */
   const mso = U.ms + U.mb,
-    raw = anUnitVal(U.msf),
     cmp = +v[U.cn];
-  if (isFinite(raw) && raw > 0 && isFinite(cmp) && cmp > 1) anUnitWrite(U.msf, (mso * raw) / cmp);
-  else anUnitWrite(U.msf, mso);
+  if (!(S.rt.cacc > 0) && isFinite(U.msfW) && U.msfW > 0 && isFinite(cmp) && cmp > 1) U.msfK = U.msfW / cmp;
+  anUnitWrite(U.msf, isFinite(U.msfK) && U.msfK > 0 ? mso * U.msfK : mso);
+  U.msfW = anUnitVal(U.msf);
   /* ---- 2.2.0-beta.11 (M2 steps 1 ~ 3) ---- */
   const scaled = (L, r) => anUnitWrite(L, i => L.a0[i] * r),
     shifted = (L, d) => anUnitWrite(L, i => L.a0[i] + d);

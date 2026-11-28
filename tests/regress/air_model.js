@@ -1,7 +1,7 @@
 // 3.2.1 (IRENE: INSTRUMENT AND PLANT AIR plant model, unit.js AN_AIR / anAirStep; docs/versions/v3.2.1/AIR_PLANT_MODEL.md).
 // The one world ON (ABC + DITL), plant model ON. Checks:
 //  150 MW: one IA and one PA compressor run (the start state), the tanks at
-//    the set pressure of the compressor panel (unit.js AN_AIR_SP: PA 0.800 MPa IHI TRE list, IA 7.0 not in the docs read yet), the currents from the motor data, the logic reads the plant (DITL-113 / 114 rows 1 ~ 3);
+//    the set pressure of the compressor panel (unit.js AN_AIR_SP: PA 0.800 MPa IHI TRE list, IA 0.700 MPa IHI T2A IXE-00037 ~ 39), the currents from the motor data, the logic reads the plant (DITL-113 / 114 rows 1 ~ 3);
 //  IA compressor A trip (DITL-113 row 7 I.0016): the tanks fall, < 5.0 kg/cm2 for 3 s = M.0300, the START COMMAND of compressor B,
 //    the model runs it (its RUNNING contact I.0095 back to the logic) and the tanks come back to the set pressure (the trip is watched 240 s: from 8.16 the PA tanks take longer to reach 5.0);
 //  the same for the plant air (DITL-114, M.0310);
@@ -95,8 +95,8 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
   });
   console.log(JSON.stringify(r));
   const near = (x, y, e) => isFinite(x) && Math.abs(x - y) <= e;
-  /* the set pressures from the docs: PA = IHI TRE set point list PIC1 0.800 MPa; IA 7.0 not in the docs read yet (unit.js AN_AIR_SP) */
-  r.sp = { pa: 0.8 * 10.1972, ia: 7.0 };
+  /* the set pressures from the docs: PA = IHI TRE set point list PIC1 0.800 MPa; IA = IHI T2A IXE-00037 ~ 39 PIC1 0.700 MPa (unit.js AN_AIR_SP) */
+  r.sp = { pa: 0.8 * 10.1972, ia: 0.7 * 10.1972 };
   for (const k of ['ia', 'pa']) {
     const d = r.d[k],
       K = k.toUpperCase();
