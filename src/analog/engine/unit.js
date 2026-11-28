@@ -1886,7 +1886,7 @@ function anLphStep(U, dt) {
      TT-BR1120-1 / -2  S/H No.1 outlet header: the steam leaving panel 1 of the chain (hx.js p1o), both thermocouples.
      PT-BR1130    No.2 S/H panel inlet and PT-BR1150 finishing S/H inlet = drum PT-BR1001-1 (AI0128) less the S/H DP to there, flow
                   squared: 134.2 - 127.8 = 6.4 and 134.2 - 124.9 = 9.3 kg/cm2 at MCR, the same as the spray water DP of anFwTagStep.
-     PT-FG1009-A2 / B2  seal pot fluidizing pressure (2), the lower tap: tap (1) (AI0146 / AI0147) + the solids column between the
+     PT-FG1009-A2 / B2  seal pot fluidizing pressure (2), the lower tap: tap (1) (the furnace pressure AI0132, see below) + the solids column between the
                   taps, its weight a share of the bed inventory (U.bedI / AN_BI.t0): 533 + 82 = 615 and 308 + 84 = 392 mmH2O (snapshot).
      LT-CL1008-A ~ C  coal bunker level: the bunkers stand (simulator scope 2026-11-07, the coal yard is outside the model, like the
                   ash silos): the snapshot 4.56 / 3.65 / 3.89 m.
@@ -1907,8 +1907,6 @@ function anTagsNow(U) {
 function anHxTagStep(U, dt) {
   const C = U.hxtC || (U.hxtC = {}),
     ai = k => anUnitVal(C[k] || (C[k] = anUnitAIs(k))),
-    /* Phase 11 rule 0 (SUZU 2026-11-28): a transmitter on no sheet has no value (the old screen table is gone) */
-    aiH = ai,
     r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
     ms = Math.max(0, +U.ms || 0),
     Ta = isFinite(U.Tamb) ? U.Tamb : 30,
@@ -1941,8 +1939,11 @@ function anHxTagStep(U, dt) {
     'TT-BR1120-2': r1(H.p1o),
     'PT-BR1130': r1(anShTap(U, AN_SHDP.s1, pd, ms)),
     'PT-BR1150': r1(anShTap(U, AN_SHDP.s2, pd, ms)),
-    'PT-FG1009-A2': Math.round(aiH('1|AI0146') + 615 * fr),
-    'PT-FG1009-B2': Math.round(aiH('1|AI0147') + 392 * fr),
+    /* Phase 11 rule 0 (SUZU 2026-11-28): tap (1) is the gas space of the seal pot, open to the furnace through the return leg, so it
+       reads the furnace pressure PT-FG1085 (STN101 AI0132, PICFG108); the head between the return point and the furnace pressure tap
+       is NO-SOURCE (no elevation in the docs read). Was the screen value of PT-FG1009-A1 / B1 (AI0146 / AI0147, on no sheet) */
+    'PT-FG1009-A2': Math.round(ai('1|AI0132') + 615 * fr),
+    'PT-FG1009-B2': Math.round(ai('1|AI0132') + 392 * fr),
     'LT-CL1008-A': 4.56,
     'LT-CL1008-B': 3.65,
     'LT-CL1008-C': 3.89
