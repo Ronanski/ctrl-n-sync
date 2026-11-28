@@ -1,7 +1,7 @@
 /* QA TRACE (lane 8): the one world of the app (ABC + DITL + plant model), headless in Node, from the SAME src/ files the Worker runs
    (tools/build/engine-bundle.js worldBundle, as tests/regress/eng_world.js). Nothing of the app is changed: the trace only reads.
-   start(kind): '150' = the "Normal operation at full load" start of the app (AN.loadStart 150, DITL150.apply, then the #st150 save point
-   made by tools/steady150/make.cjs, as src/ui/shell/app.js st150()); 'cold' = Reset (AN.reset + ditlStates). */
+   start(kind): '150' = the "At 150 MW" start of the app (AN.loadStart 150: the #st150 save point src/data/st150.txt, hmi-op.js
+   anPlantLoad150G); 'cold' = Reset (AN.reset + ditlStates). */
 const fs = require('fs'),
   vm = require('vm'),
   zlib = require('zlib'),
@@ -39,6 +39,9 @@ function load() {
   for (const sh of AN.sheets) ctx.ENGINE.E.ensure(sh);
   const ADES = JSON.parse(gz('ades.txt'));
   AN.adesPut(ADES);
+  /* the 150 MW start state, as the Worker gets it (eng-host.js init) */
+  ctx.__st150 = gz('st150.txt');
+  vm.runInContext('AN.st150 = JSON.parse(__st150); delete globalThis.__st150', ctx);
   DITL.S = {
     sheets: gz('pre.txt')
       .split('\n')
@@ -70,10 +73,6 @@ function load() {
         return;
       }
       await AN.loadStart('150', true);
-      AN.settle();
-      vm.runInContext('DITL150.apply()', ctx);
-      ctx.__st150 = JSON.parse(gz('st150.txt'));
-      await vm.runInContext('DITL150.savePut({kf:__st150.kf,kd:__st150.kd,ver:__st150.ver||"st150"})', ctx);
       E.step(4);
     }
   };
