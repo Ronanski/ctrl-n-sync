@@ -112,8 +112,9 @@ function anDeaStep(U, dt) {
     open = (mov == null ? 1 : Math.max(0, Math.min(1, mov / 100))) * nrv,
     Pda = Pd + 1.0332,
     TxC = Pxa > 0.05 ? Math.max(steamTsat(Pxa - 1.0332), isFinite(fin(pX.T)) ? fin(pX.T) : 0) : Ta,
-    /* the line flow at a steam space pressure P ata: forward only. XV-TS1710 / 1740 are swing check (non-return) valves: a reverse
-       dP seats the disc, so the deaerator steam and the flash of its water cannot go back into the turbine (the air cylinder only
+    /* the line flow at a steam space pressure P ata: forward only. XV-TS1710 / 1740 are swing check (non-return) valves (azbil / KARATU
+       VCL-5101-H swing check with a spring-loaded air cylinder, NRV data sheets PVD-13-0074, TEQ / MT p1869-1874; YUA PC read
+       /mnt/project-files/rin-extraction-2026-11-28.md): a reverse dP seats the disc, so the deaerator steam and the flash of its water cannot go back into the turbine (the air cylinder only
        speeds the closing on a trip). Phase 11 NANA 2026-11-28: was signed (a reverse flow until the NRVs closed), which gave the
        negative draws of the 90 MW swing */
     lineW = P => (open > 0 && Pxa > P ? open * K.k * anDaLine(Pxa, P, steamRho(Pxa - 1.0332, TxC)) : 0),
