@@ -6,7 +6,8 @@
       26.79 +-1.5 t/h of steam, from a start 10 C away on either side (the line law is the physics, not a fit at one point).
    3. Sweep: the extraction stage from 30 % to 100 % of the heat balance line (anHb 'xd'), condensate + drains scaled with the
       steam, the drain at its own load's deaerator water + the design DCA: the deaerator pressure is below the stage pressure at every point and rises with it (monotonic, no step).
-   4. Reverse flow on a stage pressure collapse, and none with an NRV shut. */
+   4. A stage pressure collapse: no reverse flow (swing checks), the storage water flashes; none with an NRV shut.
+   5. A stage rise: the steam space follows, the steam = the condensing need. */
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
@@ -59,16 +60,30 @@ for (let f = 0.3; f <= 1.0001; f += 0.05) {
   if (!(d.P > last)) fail(`load ${f.toFixed(2)}: pressure ${d.P.toFixed(3)} not above the lower load ${last.toFixed(3)}`);
   last = d.P;
 }
-/* 4. Reverse (RIN 2026-11-28, load rejection): the stage falls to 2.0 ata under the deaerator at 158.4 C: the steam goes back to the
-   turbine (wx < 0) at the saturated steam of the deaerator and the water cools by its flash; the NRVs shut (tcs-dev.js) = no flow */
+/* 4. Stage collapse (load rejection; Phase 11 NANA 2026-11-28, was a reverse flow back to the turbine): XV-TS1710 / 1740 are swing
+   checks, a reverse dP seats the disc: no steam goes back (wx 0), the storage water flashes and cools under the condensate. */
 {
-  const d = run(158.4, 2.0, 0, 114.9, 0, 158.4, 1 / 300);
-  console.log(`reverse: stage 2.0 ata, deaerator ${d.P.toFixed(3)} G: steam ${d.wx.toFixed(2)} t/h`);
-  if (!(d.wx < -26.79)) fail(`reverse steam ${d.wx.toFixed(2)} t/h: not back to the turbine above the design forward flow`);
+  const d = run(158.4, 2.0, 362.59, 114.9, 0, 158.4, 5);
+  console.log(`stage collapse: stage 2.0 ata, deaerator ${d.P.toFixed(3)} G after 5 min: steam ${d.wx.toFixed(2)} t/h, water ${d.T.toFixed(2)} C`);
+  if (d.wx !== 0) fail(`stage collapse: steam ${d.wx.toFixed(2)} t/h, a swing check passes no reverse flow`);
+  if (!(d.T < 158.4 - 0.5)) fail(`stage collapse: water ${d.T.toFixed(2)} C did not cool by its flash under the condensate`);
   nrvS = 0;
-  const z = run(158.4, 2.0, 0, 114.9, 0, 158.4, 1 / 300);
+  const z = run(158.4, 6.369, 0, 114.9, 0, 158.4, 1 / 300);
   if (z.wx !== 0) fail(`NRV shut: steam ${z.wx} t/h, not 0`);
   nrvS = 100;
 }
-console.log(bad ? `deaerator: ${bad} FAIL` : 'deaerator: PASS (IF97 r1, design point, 30 ~ 100 % sweep, reverse flow + NRV)');
+/* 5. Stage rise (load rise): the steam space follows the stage at once, the storage water heats slowly from the trays. The steam is
+   what condensing the inflows needs at the new steam space pressure, not the line flow against the old storage saturation. */
+{
+  const d = run(158.4, 6.369 * 1.1, 362.59, 114.9, 69.35, 166.3, 1 / 300),
+    hf = P => vm.runInContext(`fwHw(${P}, steamTsat(${P}))`, ctx),
+    hxs = vm.runInContext(`steamH(${6.369 * 1.1 - 1.0332}, 310.3)`, ctx),
+    h = hf(d.P),
+    pd = vm.runInContext('steamPsat(158.4)', ctx),
+    need = (362.59 * (h - vm.runInContext(`fwHw(${pd}, 114.9)`, ctx)) + 69.35 * (h - vm.runInContext(`fwHw(${pd}, 166.3)`, ctx))) / (hxs - h);
+  console.log(`stage +10 %: steam space ${d.P.toFixed(3)} G (storage ${d.T.toFixed(2)} C), steam ${d.wx.toFixed(2)} t/h, need ${need.toFixed(2)}`);
+  if (!(d.P > vm.runInContext(`steamPsat(${d.T})`, ctx) + 0.05)) fail(`stage +10 %: steam space ${d.P.toFixed(3)} G not above the storage saturation`);
+  if (!(Math.abs(d.wx - need) < 0.02 * need)) fail(`stage +10 %: steam ${d.wx.toFixed(2)} t/h, the condensing need ${need.toFixed(2)}`);
+}
+console.log(bad ? `deaerator: ${bad} FAIL` : 'deaerator: PASS (IF97 r1, design point, 30 ~ 100 % sweep, stage collapse + NRV, stage rise)');
 process.exit(bad ? 1 : 0);
