@@ -1,4 +1,5 @@
 {
+ "_rule0": 4,
  "src/analog/engine/alarm-pri.js": 1,
  "src/analog/engine/api.js": 1,
  "src/analog/engine/boiler.js": 40,
@@ -40,7 +41,6 @@
  "tests/regress/fab_standby_current.js": 1,
  "tests/regress/fans.js": 3,
  "tests/regress/feedwater.js": 6,
- "tests/regress/fw_page_values.js": 0,
  "tests/regress/fx_page.js": 2,
  "tests/regress/heater_hihi_mov.js": 1,
  "tests/regress/hmi_op.js": 4,

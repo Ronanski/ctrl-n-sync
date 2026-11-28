@@ -17,3 +17,7 @@
 
 ## Tested
 - Behaviour gate 20 min on the station build: ALL PASS (MW 151.06 -> 150.92, PT-MS1002 126.73 -> 126.52, drum level max move 7 mm, SAVE / LOAD and repeat runs equal).
+
+## Also in this PR
+- Sweep tool (tools/accept/part1.cjs): the Pms sample is at the MSVs (PT-MS1002 less the main steam line drop anMsDrop(U, ms, mhp).msv, RIN 721), the HB row's own point; MSTt is the turbine inlet U.Tt (anMsT, RIN 721).
+- no-snapshot guard: the RULE 0 VIOLATION tags have a ceiling in the baseline (`_rule0`, 4 on main after AOI's 725: cfb.js kKL, boiler.js opacity, stack velocity, FA flow / header). More tags = FAIL; `--update` refuses an increase. Tested: a 5th tag FAILs, removed it PASSes.
