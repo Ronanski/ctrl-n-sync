@@ -4212,7 +4212,7 @@ function anUnitStep0(dt) {
      the next 52G close (anTbFlow: tb.fd = CV OPENING BIAS x ICV opening). Before, the flow demand of the last loaded run stayed in the
      plant and in every save point after it (0.82 at S68, 3600 rpm no load): at the 52G close the CVs went to 77 % in seconds, the main
      steam flow 187 -> 418 T/H at 0 MW and the turbine tripped on HP TURBINE INLET / EXHAUST DIFF. PRESS. VERY HIGH (IBD TA-21) */
-  if (!onGrid) tb.fd = tb.fy = NaN;
+  if (!onGrid) tb.fd = tb.fy = tb.e0 = NaN;
   if (U.turb === false) {
     /* 2.2.0-beta.14: cold start, the turbine is not rolled yet: the stop valves are shut (M4 step 4 opens them) */
     U.gv = 0;
