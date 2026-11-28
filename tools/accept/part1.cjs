@@ -71,15 +71,20 @@ const judge = (v, tg, tol, kind) => {
       }
       if (Math.abs(y - s.sv) >= 1) await page.evaluate(v => TOP.auto('DPICFG108', v), y);
     };
+    /* one plant minute at a time, so the sweep has a sample every minute also inside run(SETTLE) (before 2026-11-28 a run(60) gave ONE
+       sample after 60 min: the 150 -> 90 MW ramp was not sampled and read as a one-minute load drop) */
     const run = async m => {
-      await run1(m);
-      dpAcc += m;
-      if (dpAcc >= 1) { dpAcc = 0; await bedDp(); }
-      if (!SWEEP) return;
-      swAcc += m;
-      if (swAcc >= 1) {
-        swAcc = 0;
-        SW.push(await snap());
+      for (let left = m; left > 1e-9; left -= 1) {
+        const d = Math.min(1, left);
+        await run1(d);
+        dpAcc += d;
+        if (dpAcc >= 1) { dpAcc = 0; await bedDp(); }
+        if (!SWEEP) continue;
+        swAcc += d;
+        if (swAcc >= 1) {
+          swAcc = 0;
+          SW.push(await snap());
+        }
       }
     };
     const snap = () => page.evaluate(() => {
@@ -222,7 +227,11 @@ const judge = (v, tg, tol, kind) => {
       if (s.bm === 'MAN') {
         OP.h = OP.h || []; OP.h.push(s.P); OP.n = (OP.n || 0) + 1;
         const dP3 = OP.h.length > 3 ? s.P - OP.h[OP.h.length - 4] : 0, d = 0.3 * (s.sv - s.P) - 3.0 * dP3;
-        if (OP.n - (OP.last || -9) >= 3 && Math.abs(d) >= 0.5 && (OP.last = OP.n)) await fpBtn('ABC-001C', 'HIC-BM', d > 0 ? '▲' : '▼');
+        /* 2026-11-28 (minute-sample sweep): one 1 % press per 3 min could not follow a large error (MSP 127 -> 39 ata while the
+           SV slid to 99, then 39 -> 131 at 45 MW, a ~1 h cycle): the operator presses as many 1 % steps as the size of d asks
+           (one per 3 units of d, at most 5), still once per 3 min, so the small-error behaviour above is the same */
+        const np = Math.max(1, Math.min(5, Math.round(Math.abs(d) / 3)));
+        if (OP.n - (OP.last || -9) >= 3 && Math.abs(d) >= 0.5 && (OP.last = OP.n)) for (let k = 0; k < np; k++) await fpBtn('ABC-001C', 'HIC-BM', d > 0 ? '▲' : '▼');
       }
       /* the O2 trim AICFG112 (ABC-002) is forced MANUAL below 220 T/H (M.0102 / M.0103); the operator puts it at 50 % = neutral
          (OPERATOR_GUIDE 5.4 / 7.7, uat check M5). Left at its last MV the trim holds the air off its demand, and the total air cross
