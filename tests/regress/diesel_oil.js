@@ -1,13 +1,13 @@
 // 3.2.1 (SEULGI : PLANT MODEL, boiler side: DIESEL OIL SYSTEM, src/analog/engine/boiler.js AN_DO; docs/versions/v3.2.1/
 // DIESEL_OIL_PLANT_MODEL.md). The one world ON (ABC + DITL), plant model ON. Checks:
-//  150 MW: the snapshot 6.PNG (PIDO0005 12.8, PIDO1008 11.0, DPIDO0001 0.029, LIDO0701 4.978 m, P-0702A 25.4 A), the logic reads the
-//    plant (DITL-31 rows 15 / 17 / 28);
+//  150 MW: the pump header and the burner ring at the set points of their controllers PICDO0005 / PICDO1008 (the logic), pump A
+//    running, B standby (user rule 0 2026-11-28: no plant snapshot, not even as a check), the logic reads the plant (DITL-31 rows 15 / 17 / 28);
 //  burner A then all four burners on oil (shut-off valves open, FICDO1043x MAN 100 %): gun pressure <= 5 bar (M&S load curve), the
 //    oil reaches the firing (FT-DO1043-x), the ring pressure drops and PICDO1008 / PICDO0005 answer, the tank level falls;
 //  pump A trip (DITL-31 row 11 I.0004): the header falls, the standby pump B (AUTO) starts (DITL-31 #B), the header comes back;
 //  both pumps tripped: no oil header, no oil to the burners;
-//  Cold: no pump, no pressure; pump A started with every valve open (SOP 20) = low header, PCV-DO0002 throttled in MANUAL = the
-//    header rises (SOP: 12.5 kg/cm2); the strainer inlet V-DO0004 closed = no flow.
+//  Cold: no pump, no pressure; pump A started with every valve open = low header, PCV-DO0002 throttled in MANUAL = the
+//    header rises; the strainer inlet V-DO0004 closed = no flow.
 // Usage: node tests/regress/diesel_oil.js [html]
 const fs = require('fs'), url = require('url'), path = require('path');
 const { open } = require('./lib.js');
@@ -54,6 +54,11 @@ const html =
         c = AN.hmiCtrls(T).find(q => q.tag === t);
       return f(+T.rt.v[c.q.pv]);
     };
+    const sv = (k, t) => {
+      const T = AN.sheets.find(s => s.name === k).S,
+        c = AN.hmiCtrls(T).find(q => q.tag === t);
+      return f(+T.rt.v[c.q.sv]);
+    };
     const U = () => AN.unit;
     const snap = () => ({
       P1: f(U().doP1),
@@ -71,6 +76,8 @@ const html =
       pv: {
         p5: pv('ABC-028', 'PICDO0005'),
         p8: pv('ABC-029', 'PICDO1008'),
+        s5: sv('ABC-028', 'PICDO0005'),
+        s8: sv('ABC-029', 'PICDO1008'),
         fA: pv('ABC-003A', 'FICDO1043A'),
         pA: pv('ABC-003A', 'PICDO1043A')
       },
@@ -100,7 +107,7 @@ const html =
     }
     /* beta.292 (JENNIE): since 3.2.3-beta.233 the tank never falls below its starting level AN_DO.L0 (the unlimited oil supply,
        boiler.js anDieselOilStep), and the 150 MW state starts at L0, so the level could not fall here: start 1 m above L0 */
-    U().doLv += 1; /* the 150 MW state is at L0 (snapshot 6.PNG 4.978 m) */
+    U().doLv += 1; /* the 150 MW state is at L0 (the start state) */
     const lv0 = U().doLv;
     await run(600);
     o.b4 = snap();
@@ -129,15 +136,15 @@ const html =
     AN.plantCold();
     await run(20);
     o.cold = snap();
-    /* 3.2.1 (IRENE, AN_AV): the oil valves have an airlock, they do not move without instrument air; the SOP starts the
+    /* 3.2.1 (IRENE, AN_AV): the oil valves have an airlock, they do not move without instrument air; the operator starts the
        instrument air compressor (Step 10) before the diesel oil (Step 21): local panel RUNNING of compressor A (DITL-113 row 6) */
     set('DITL-113', 5, true);
     await run(120);
     o.iaCold = AN.unit.iaPU;
-    /* SOP 20: PCV-DO0002, PCV-DO1009 M 100 %, FCV-DO1012 100 %, then START pump A */
+    /* the start: PCV-DO0002, PCV-DO1009 M 100 %, FCV-DO1012 100 %, then START pump A */
     H.man('ABC-028', 'PICDO0005', 100);
     H.man('ABC-029', 'PICDO1008', 100);
-    { /* 3.2.3: the Cold has FCV-DO1012 at 0 (closed); SOP 20 opens it: HICDO1012 is a MAN station (no faceplate controller), as guide.js A.man */
+    { /* 3.2.3: the Cold has FCV-DO1012 at 0 (closed); the start opens it: HICDO1012 is a MAN station (no faceplate controller), as guide.js A.man */
       const T = AN.sheets.find(x => x.name === 'ABC-029').S, b = T.blk.find(z => z.k === 'MAN' && (z.tag === 'HICDO1012' || (z.txt || []).includes('HICDO1012')));
       if (AN.latchMode) AN.latchMode('HICDO1012', 'MAN');
       AN.stVal('ABC-029', b.id, 100, (b.i || []).filter((n, i, L) => n >= 0 && L.indexOf(n) === i && T.ext.includes(n) && !(T.xlk && T.xlk[n]) && (AN.nm(T, n) || '').trim() === 'HICDO1012.MV'));
@@ -160,13 +167,12 @@ const html =
   });
   const s = r.s150;
   ck(
-    Math.abs(s.P1 - 12.8) < 0.2 &&
-      Math.abs(s.P2 - 11.0) < 0.2 &&
-      Math.abs(s.dp - 0.029) < 0.003 &&
-      Math.abs(s.lv - 4.978) < 0.01 &&
-      Math.abs(s.I[0] - 25.4) < 0.5 &&
+    Math.abs(s.P1 - s.pv.s5) < 0.3 &&
+      Math.abs(s.P2 - s.pv.s8) < 0.3 &&
+      s.dp > 0 &&
+      s.I[0] > 0 &&
       s.I[1] === 0,
-    '150 MW = snapshot 6.PNG: ' + JSON.stringify(s)
+    '150 MW: header / ring at the PICDO0005 / PICDO1008 set points, pump A runs, B standby: ' + JSON.stringify(s)
   );
   ck(
     Math.abs(s.pv.p5 - s.P1) < 0.05 &&
@@ -176,7 +182,7 @@ const html =
       Math.abs(r.av.r17 - s.dp) < 0.005,
     'logic reads the plant: PICDO0005 / PICDO1008 PV, DITL-31 rows 15 / 17 / 28 ' + JSON.stringify(r.av)
   );
-  /* the BMS holds the oil valve at its IGNITION POSITION (25 %, 6.PNG) until the release: the flow is between MIN 0.614 and MAX
+  /* the BMS holds the oil valve at its IGNITION POSITION (25 %) until the release: the flow is between MIN 0.614 and MAX
      3.072 T/H, the gun pressure 1 ~ 5 bar (M&S 1612 13-4-71) */
   ck(
     r.bA.qb[0] > 0.6 &&
@@ -221,7 +227,7 @@ const html =
   ck(r.cold.P1 < 0.1 && r.cold.Q === 0, 'Cold: no pump, no pressure ' + JSON.stringify(r.cold));
   ck(
     r.c1.Q === 25 && r.c1.P1 > 1 && r.c1.P1 < 3 && r.c2.P1 > 10 && r.c3.Q === 0 && r.c3.P1 < 0.1,
-    `Cold, SOP 20: pump A with every valve open ${r.c1.P1} kg/cm2, PCV-DO0002 20 % ${r.c2.P1}, strainer inlet closed ${r.c3.P1}`
+    `Cold, the start: pump A with every valve open ${r.c1.P1} kg/cm2, PCV-DO0002 20 % ${r.c2.P1}, strainer inlet closed ${r.c3.P1}`
   );
   console.log('page errors: ' + errs.length + (errs.length ? ' ' + errs.slice(0, 3).join(' | ') : ''));
   console.log(fail ? fail + ' FAIL' : 'ALL PASS');
