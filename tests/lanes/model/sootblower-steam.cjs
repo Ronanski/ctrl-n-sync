@@ -26,15 +26,19 @@ const W = require('../../../tools/trace/world.cjs');
     const C1 = AN.sheets.find(s => s.name === 'ABC-001C');
     const r1 = x => Math.round(x * 100) / 100;
     let hold = null;
-    const run = async (sec, f) => {
+    /* the app step 0.5 s; `until` (looked at every 5 s) ends a case once its end state is reached, so the run is not longer than the
+       case (Checks speed, phase thread 2026-11-28); `sec` is the most the case may take */
+    const run = async (sec, f, until) => {
       for (let i = 0; i < sec * 2; i++) {
         WORLD.live = true;
         if (hold) hold();
         AN.stepSet(C1, 0.5);
         WORLD.tick(0.5);
         if (f) f();
+        if (until && i % 10 === 9 && until()) return (i + 1) / 2;
         if (i % 100 === 99) await new Promise(r => setTimeout(r, 0));
       }
+      return sec;
     };
     const T = k => AN.sheets.find(s => s.name === k).S;
     const ctl = (k, t) => AN.hmiCtrls(T(k)).find(c => c.tag === t);
@@ -67,7 +71,7 @@ const W = require('../../../tools/trace/world.cjs');
     AN.reset();
     ditlStates();
     AN.plantCold();
-    await run(300);
+    await run(120);
     const U = AN.unit;
     o.cold = { msb: U.msb, n: U.sbN, out: out(), mv: pos(), P: r1(hdr()), L: lances().length, dr: dr() };
     /* 2. Start at 150 MW */
@@ -78,7 +82,7 @@ const W = require('../../../tools/trace/world.cjs');
     AN.settle();
     DITL150.apply();
     await DITL150.savePut({ kf: __st150.kf, kd: __st150.kd, ver: __st150.ver || 'st150' });
-    await run(300);
+    await run(120);
     o.l150 = { msb: U.msb, n: U.sbN, out: out(), mv: pos(), P: r1(hdr()), L: lances().length, dr: dr() };
     man('ABC-017', 'PICSB1052', 60);
     await run(120);
@@ -98,14 +102,17 @@ const W = require('../../../tools/trace/world.cjs');
         pk = 0,
         dlPk = 0;
       s._lance.dir = 1;
-      await run(270, () => {
-        kg += (U.msb / 3.6) * 0.5;
-        if (U.msb > 0) tOn += 0.5;
-        if (U.msb > pk) {
-          pk = U.msb;
-          dlPk = AN_CYC.dl - dl0;
+      await run(
+        270,
+        () => {
+          kg += (U.msb / 3.6) * 0.5;
+          if (U.msb > 0) tOn += 0.5;
+          if (U.msb > pk) {
+            pk = U.msb;
+            dlPk = AN_CYC.dl - dl0;
+          }
         }
-      });
+      ); /* the full 270 s: the program goes on to the next step after the lance is back (an early end left the air heater start short) */
       return { n, kg: r1(kg), tOn, pk: r1(pk), dl: r1(dlPk), back: s._lance.x, after: U.msb, P: r1(hdr()) };
     };
     o.b1011 = await blow(1011);
@@ -139,14 +146,15 @@ const W = require('../../../tools/trace/world.cjs');
     await run(10, cnt);
     o.a0 = { A: A(), op: AN.ditlRun('DITL-80F@25'), msb: r1(U.msb), dl: r1(AN_CYC.dl - dl1 - (rest() - re1)), r40: rsp(/N-1040.*RESET/), r42: rsp(/N-1042.*RESET/) };
     opRow(false);
-    await run(2400, cnt);
+    await run(2400, cnt, () => tA > 0 && U.msb === 0 && U.sbA && U.sbA.ph === 0 /* the program is over */);
     o.a1 = { A: A(), kg: r1(kgA), t: tA, msb: U.msb, r40: rsp(/N-1040.*RESET/), r42: rsp(/N-1042.*RESET/) };
     o.drHot = dr();
     /* MV-SB1001 shut again: the drains cool back */
     hold = () => {
       MST[v.name][0].pos = 0;
     };
-    await run(1800);
+    const T3 = U.sbTa;
+    o.tCool = await run(1800, null, () => U.sbTa < T3 - 50 && dr().bp !== 1 /* cooled 50 C and the permissive off: within 30 min */);
     o.drCool = dr();
     hold = null;
     return o;
@@ -203,7 +211,7 @@ const W = require('../../../tools/trace/world.cjs');
      blowing permissive (DITL-80P, check below), not a fixed number from the plant source temperature */
   ck(d2.hdrT > 250 && d2.hdrT < d1.src && d2.a > d1.a && d2.a < d2.hdrT, `MV-SB1001 open 120 s: header steam ${d2.hdrT} C (throttled), drains warming ${d2.a} / ${d2.b} C`);
   ck(d3.a > 250 && d3.b > 250 && d3.bp === 1, `after the warm-up: drains ${d3.a} / ${d3.b} C (> 220 and > 250), BLOWING PERMISSIVE on`);
-  ck(d4.a < d3.a - 50 && d4.bp !== 1, `MV-SB1001 shut 30 min: drains cool to ${d4.a} / ${d4.b} C, no blowing permissive`);
+  ck(d4.a < d3.a - 50 && d4.bp !== 1, `MV-SB1001 shut: drains cool to ${d4.a} / ${d4.b} C in ${r.tCool} s (at most 30 min), no blowing permissive`);
   ck(errs.length === 0, 'no page error' + (errs.length ? ': ' + errs.join(' | ') : ''));
   console.log(fail ? 'FAILED ' + fail : 'ALL PASS');
   process.exit(fail ? 1 : 0);
