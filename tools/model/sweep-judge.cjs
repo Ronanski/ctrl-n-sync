@@ -72,7 +72,14 @@ const CURVES = [
   ['Turbine heat rate, kcal/kWh', 'HR', hb7('heat_rate_kcal_kWh'), 'load', 'HB PPE-14-0725']
 ];
 const at = (pts, x) => {
-  if (!pts || !pts.length || x < pts[0][0] || x > pts[pts.length - 1][0]) return null;
+  if (!pts || !pts.length) return null;
+  /* a point within 2 % of the curve's end is judged at the end value (phase thread 2026-11-28: the 150 MW hold runs at 101.3 % MCR,
+     466 T/H, and fell out of every % MCR row); further out it is not judged (no extrapolation) */
+  const a = pts[0][0],
+    e = pts[pts.length - 1][0];
+  if (x > e && x <= e * 1.02) x = e;
+  if (x < a && x >= a * 0.98) x = a;
+  if (x < a || x > e) return null;
   for (let i = 1; i < pts.length; i++)
     if (x <= pts[i][0]) {
       const [x0, y0] = pts[i - 1],
