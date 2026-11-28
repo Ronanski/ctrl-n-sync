@@ -1902,8 +1902,12 @@ function anLphStep(U, dt) {
      TT-BR1120-1 / -2  S/H No.1 outlet header: the steam leaving panel 1 of the chain (hx.js p1o), both thermocouples.
      PT-BR1130    No.2 S/H panel inlet and PT-BR1150 finishing S/H inlet = drum PT-BR1001-1 (AI0128) less the S/H DP to there, flow
                   squared: 134.2 - 127.8 = 6.4 and 134.2 - 124.9 = 9.3 kg/cm2 at MCR, the same as the spray water DP of anFwTagStep.
-     PT-FG1009-A2 / B2  seal pot fluidizing pressure (2), the lower tap: tap (1) (AI0146 / AI0147) + the solids column between the
-                  taps, its weight a share of the bed inventory (U.bedI / AN_BI.t0): 533 + 82 = 615 and 308 + 84 = 392 mmH2O (snapshot).
+     PT-FG1009-A2 / B2  seal pot fluidizing pressure (2), the lower tap: tap (1) (AI0146 / AI0147) + the weight of the solids column
+                  between the taps. Phase 11 AOI 2026-11-28 (Rule 0): the column was 533 / 308 mmH2O from a plant screen, deleted.
+                  Physics, the pressure balance of the loop: the solids at the foot of the down leg stand against the furnace at the
+                  return port, so the lower tap reads the furnace pressure at the top (tap 1) + the weight of the suspension above
+                  the return port = U.dpUp (the Fig 9 suspension share of the bed balance, below). The return port is taken at the top of
+                  the dense bed, the loop seal chamber head is left out: both NO-SOURCE (no seal pot elevations in the documents).
      LT-CL1008-A ~ C  coal bunker level: the bunkers stand (simulator scope 2026-11-07, the coal yard is outside the model, like the
                   ash silos): the snapshot 4.56 / 3.65 / 3.89 m.
      MIA-CL1061-x1  coal feeder totalized coal (t): the feeder feedrate (ABC-004x AI0480 / 0512 / 0544, T/H) summed in time since
@@ -1939,7 +1943,6 @@ function anHxTagStep(U, dt) {
        HP bypass) */
     mr = U.tbS && U.tbS.f && isFinite(U.tbS.f.rh) ? Math.max(0, U.tbS.f.rh / 1000) : ms + Math.max(0, +U.mhp || 0),
     p1003 = ai('2|AI0421'),
-    fr = U.bedI > 0 ? U.bedI / AN_BI.t0 : 0,
     T = U.tt || (U.tt = {});
   Object.assign(T, {
     /* Phase 11 RIN 2026-11-28 (was 4 C "at MCR 472.7 T/H" and 0.7 kg/cm2 x (mr / 472.7)^2: a flow with no design source, deleted):
@@ -1961,8 +1964,8 @@ function anHxTagStep(U, dt) {
     'TT-BR1120-2': r1(H.p1o),
     'PT-BR1130': r1(anShTap(U, AN_SHDP.s1, pd, ms)),
     'PT-BR1150': r1(anShTap(U, AN_SHDP.s2, pd, ms)),
-    'PT-FG1009-A2': Math.round(aiH('1|AI0146') + 615 * fr),
-    'PT-FG1009-B2': Math.round(aiH('1|AI0147') + 392 * fr),
+    'PT-FG1009-A2': Math.round(aiH('1|AI0146') + (U.dpUp && isFinite(U.dpUp[0]) ? U.dpUp[0] : 0)),
+    'PT-FG1009-B2': Math.round(aiH('1|AI0147') + (U.dpUp && isFinite(U.dpUp[1]) ? U.dpUp[1] : 0)),
     'LT-CL1008-A': 4.56,
     'LT-CL1008-B': 3.65,
     'LT-CL1008-C': 3.89
@@ -2891,10 +2894,12 @@ const AN_TL = { d: 0.01 /* m, NO-SOURCE */, dpE: 3.5 /* kg/cm2 at MCR, FHI T3 */
      follow anCoalWet (below). The fuel line gives the change to the bed at the burnt coal, the CCS answers through the pressure.
    The lots come from a fixed sequence (a linear congruential generator, state U.clS saved with the plant), so a run is the same on
    every PC and SAVE / LOAD gives the same plant; a lot only moves on while coal is fed (a stopped feeder keeps its lot).
-   The spreads are set from the plant trend above, which measures them: clSd so the coal flow (the load cells) moves sd 0.45 T/H (headless
-   120 min at 150 MW: 0.52), clSm small enough that the coal stays there (0.025 gave coal sd 2.0 and bed sd 5.9 against 1.4 ~ 3). The lot
-   sizes and the speed loop time are NO-SOURCE (the feeder manual gives the accuracy +/- 0.5 % of the totalized coal, not the speed loop) */
-const AN_CLOT = { clLd: 1.25, clSd: 0.021, clTb: 20, clTs: 60, clLm: 30, clSm: 0.006, clTm: 300 };
+   The spreads (Phase 11 AOI 2026-11-28, Rule 0): both 0, NO-SOURCE (the old values had no design source and are
+   deleted). No design document gives the lot-to-lot spread of belt load or moisture: the Yamato accuracy (+/- 0.5 % of the totalized coal,
+   CFC-201) is a long-term total, not a spread, and its page is not in the repo. FHI P2S7 Tab 2 gives the design coal, not a spread.
+   The lot law stays (a spread can come in from a design source later), and with 0 the coal stream is the feeder demand. The lot sizes
+   and the speed loop time are NO-SOURCE */
+const AN_CLOT = { clLd: 1.25, clSd: 0, clTb: 20, clTs: 60, clLm: 30, clSm: 0, clTm: 300 };
 function anClRnd(U) {
   /* two normal deviates (Box-Muller) from the generator; U.clS is an integer below 2^31 */
   const nx = () => ((U.clS = (Math.imul(U.clS, 1103515245) + 12345) & 0x7fffffff), (U.clS + 0.5) / 2147483648);
@@ -4530,16 +4535,9 @@ function anUnitStep0(dt) {
     U.gCy = a0.cy.map(t);
     U.gSp = a0.sp.map(t);
   }
-  /* 3.2.1 (LISA, Mina Normal shutdown on beta.115: PIFA1085 LOW-LOW at 65 MW, SA 160 T/H): the SA pressures are the bed back pressure at
-     the SA ports plus the duct / air preheater / nozzle drop. Before, all of it went with the square of the SA flow (805 mmH2O at 160 T/H).
-     Split 600 / 827 of the 1427 anchor from the SAF start procedure ("SAF pressure above 1200 mmH2O with bed, above 600 mmH2O without bed",
-     SU 4954-5090): 600 = the bed back pressure at the anchor bed DP (DPIFG1081 1426 mmH2O, 7.PNG), read from the bed model (U.bedK = bed DP
-     / 1426, read only); the rest with the square of the SA flow. PIFA1088 the same with its own anchor (1273). The SA port dampers that
-     ABC-057 closes with load (S3-LN1 ~ 22) are not in it: damper characteristic NO-SOURCE */
   /* Phase 11 rank 10 (AOI): on the D2-003 system curve (boiler.js anFanStep U.fnSaP: SA entry 1016 x bed + 521 at MCR fan flow 236.95
-     T/H); PIFA1088 after the air heater = less its duct 31 and air heater 100. Before: the snapshot anchors 1427 / 1273 (U field a0,
-     restored by every save) split 600 / rest. The start procedure check (above 1200 with bed, above 600 without) stands: with no bed
-     the start flow gives the duct loss only */
+     T/H); PIFA1088 after the air heater = less its duct 31 and air heater 100. With no bed the flow gives the duct loss only. (The old
+     screen anchors and their start-procedure split are deleted, Rule 0, 2026-11-28.) */
   if (U.saP && U.saP.length && U.saN >= 0 && isFinite(U.fnSaP)) {
     const r = Math.max(0, +U.tafS.rt.v[U.saN] || 0) / AN_FD.sa.Q,
       p = [U.fnSaP, Math.max(0, U.fnSaP - AN_FD.sa.Lah * r * r)];
@@ -4794,15 +4792,19 @@ function anUnitStep0(dt) {
     /* 3.2.4-beta.16 (user "Physics nga"): the split of the bed DP. Plenum / upper (DPT-FG1081 / 1082, above) = the weight of all the
        solids in the furnace. Of them, the upper furnace holds the solids the gas lifts: its density is the share phi of the bed balance
        (the same suspension that carries the heat to the walls, AN_BB.nU), so lower / upper (DPT-FG1083 / 1183) = its anchor x phi, and
-       plenum / lower (DPT-FG1084 / 1184) loses what is lifted. Anchors: the HMI snapshot 1016 / 1014 and 70 / 41 mmH2O (hmi-op.js).
+       plenum / lower (DPT-FG1084 / 1184) loses what is lifted. Anchors (Phase 11 AOI 2026-11-28, Rule 0; were the HMI snapshot 1016 /
+       1014 and 70 / 41 mmH2O): the FHI P2S7 Fig 9 split of the MCR furnace DP, CALC (/mnt/project-files/phase11/aoi-kkl-from-fig9-
+       2026-11-28.md, least squares over 60 ~ 100 % MCR, rms 4 mmH2O): dense bed B 1,029 and suspension A 604 mmH2O, B + A = 1,633 ~
+       AN_BI.dp0 1,630. The taps are taken at the top of the dense bed and at the furnace roof: their heights are NO-SOURCE (P&ID gives
+       no elevation), both sides (A / B) the same.
        More gas (load up, more air, a tube leak's steam) lifts more: the upper DP rises, the bed DP falls, the total stays. Not on any
        DCS logic sheet (display only): U.dpLo / U.dpUp, read by the HMI page (hmi2.js) */
     {
       const kq = U.bedK > 0 && U.bedI > 0 ? k / (U.bedI / AN_BI.t0) : 0,
         fr = U.bedI / AN_BI.t0,
         ph = isFinite(U.phi) ? U.phi : fr;
-      U.dpUp = [70, 41].map(a => a * kq * ph);
-      U.dpLo = [[1016, 70], [1014, 41]].map(([b, a]) => Math.max(0, b * k - a * kq * (ph - fr)));
+      U.dpUp = [604, 604].map(a => a * kq * ph);
+      U.dpLo = [[1029, 604], [1029, 604]].map(([b, a]) => Math.max(0, b * k - a * kq * (ph - fr)));
     }
   }
   /* PA to the furnace follows the PAF flow */
