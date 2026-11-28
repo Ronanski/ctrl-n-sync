@@ -4390,7 +4390,7 @@ function anUnitStep0(dt) {
          over the DESIGN gas of 100 % MCR at the design bed tbA (cfb.js AN_FG0, DESIGN-SRC: FHI P2S7 Fig 12 / 13). Was the air alone over
          the air of the "Start at 150 MW" state (U.taf0) */
       uRel = (fgm.wet * (U.Tb + 273.15)) / (AN_FG0.wet * (B.tbA + 273.15)),
-      phi = Math.min(1.2, Math.max(0, isFinite(U.bedI) ? U.bedI / AN_BI.t0 : 1)) * anBbPhiV(uRel) /* beta.282: Kunii & Levenspiel (AN_BB kKL) */,
+      phi = Math.min(1.2, Math.max(0, isFinite(U.bedI) ? U.bedI / AN_BI.t0 : 1)) * anBbPhiV(uRel) /* Phase 11: Johnsson & Leckner (AN_BB jl) */,
       /* beta.263: the lower furnace refractory is its own lump. 25 mm castable k 1.5 W/m K over the tubes (13-thermal-masses), bed film
          300 W/m2 K (textbook), 359 m2: bed -> refractory centre 1 / (1/300 + 0.0125/1.5) = 85.7 W/m2 K = 30.8 kW/K, centre -> water
          1.5 / 0.0125 = 120 W/m2 K = 43.1 kW/K (in series 17.9 = uaL). Its time constant L2 / alpha (alpha = 1.5 / (2300 x 1000)) is
@@ -4428,17 +4428,18 @@ function anUnitStep0(dt) {
         const Tp = p.length === 2 && typeof AN_HX !== 'undefined' ? (AN_HX.uaP1 * p[0] + AN_HX.uaP2 * p[1]) / (AN_HX.uaP1 + AN_HX.uaP2) : p.length ? p.reduce((a, v) => a + v, 0) / p.length : U.Tw;
         return { U: p.length ? p.length * uaP * anBbPanF(isFinite(U.Tu) ? U.Tu : U.Tb, Tp, phi) : 0 /* beta.286: gas + solids (AN_BB fgP) */, T: Tp };
       })() /* the SH panels: conductance and metal of the last scan */,
-      sus = anBbSus(U.Tb, U.Tw, gcp, phi, up, U.Tu) /* the suspension above (uag at the mean Tu of the last scan) */,
+      qUp = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) * AN_UF.f /* kW, the coal heat released in the upper furnace (cfb.js AN_UF) */,
+      sus = anBbSus(U.Tb, U.Tw, gcp, phi, up, U.Tu, anBbFluxV(uRel), qUp) /* the suspension above (uag at the mean Tu of the last scan) */,
       qWu = sus.qW /* kW, the suspension to the upper walls (both signs) */,
       qSol = qWu + qRW /* kW, to the furnace walls: the upper walls + through the lower refractory */,
       qPan = isFinite(U.hxQp) ? U.hxQp : 0 /* kW, to the in-furnace SH panels (hx.js, last scan, from Tu) */,
       qPc = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) * AN_PC.f /* kW, the coal heat released in the cyclones (cfb.js AN_PC) */,
-      qFuel = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) * (1 - AN_PC.f) + oil * B.lhvO,
+      qFuel = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) * (1 - AN_PC.f - AN_UF.f) + oil * B.lhvO /* the bed share (AN_PC cyclones, AN_UF upper furnace) */,
       qAirG =
         mGas * (hFg(U.Tb) - hFg(U.Tamb)) -
         (av[0] / 3.6) * (hAir(tPa) - hAir(U.Tamb)) -
         (av[1] / 3.6) * (hAir(tSa) - hAir(U.Tamb)),
-      Cb = Math.max(0, isFinite(U.bedI) ? U.bedI : AN_BI.tCold) * 1000 * B.cpS;
+      Cb = Math.max(0, isFinite(U.bedI) ? U.bedI : AN_BI.tCold) * 1000 * anBedCp(U.Tb) /* Phase 11: cp(T) of the bed solids (cfb.js) */;
     /* 3.2.4 (JENNIE): the limestone in the bed (U.lmQ T/H, boiler.js). Thermochemistry from the standard heats of formation (NIST:
        CaCO3 -1207.6, CaO -634.9, CO2 -393.5, SO2 -296.8, CaSO4 -1434.5 kJ/mol):
        - calcination CaCO3 -> CaO + CO2 takes 179.2 kJ/mol = 1790 kJ/kg CaCO3 (93.66 % CaCO3, FHI P2S7 Tab 3 page 2);
@@ -4460,8 +4461,9 @@ function anUnitStep0(dt) {
        the exit, already in qAirG (the gas heated to Tb): the bed pays the solids share only, and the gas leaves at tgF (beta.256) */
     /* 1.0.0-beta.366 (JENNIE, D31): the terms of this balance, kW and kJ/K, for the energy check of tests/regress/bed_heatup.js */
     U.qPc = qPc;
-    U.bbQ = { fuel: qFuel, pc: qPc, lm: qLm, tl: qTl, airG: qAirG, sus: qWu + qPan - gcp * (U.Tb - sus.tgF), br: qBR, Cb };
-    U.Tb = Math.max(U.Tamb, U.Tb + ((qFuel - qLm - qTl - qAirG - (qWu + qPan - gcp * (U.Tb - sus.tgF)) - qBR) * dt) / Cb);
+    U.qUp = qUp;
+    U.bbQ = { fuel: qFuel, pc: qPc, up: qUp, lm: qLm, tl: qTl, airG: qAirG, sus: qWu + qPan - qUp - gcp * (U.Tb - sus.tgF), br: qBR, Cb };
+    U.Tb = Math.max(U.Tamb, U.Tb + ((qFuel - qLm - qTl - qAirG - (qWu + qPan - qUp - gcp * (U.Tb - sus.tgF)) - qBR) * dt) / Cb) /* Phase 11: the solids pay the suspension heat less what burns in it (qUp) */;
     U.Trf = Trf + ((qBR - qRW) * dt) / B.mRef;
     /* the furnace exit gas and the mean of the upper furnace (the panels of hx.js take Tu): the suspension above */
     U.tgF = sus.tgF;
