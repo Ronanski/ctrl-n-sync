@@ -4386,11 +4386,18 @@ function anUnitStep0(dt) {
      compensated flow is proportional to the raw value at a given pressure and temperature (SQRT block: out = in, in units of
      flow), so raw = U.ms x raw / compensated of the last scan */
   /* 2.2.0-beta.12: FT-MS1031 is at the boiler outlet: it sees the steam to the turbine AND to the HP bypass / blow-off (U.mb) */
+  /* Phase 11 KANA 2026-11-28 (time step check, NANA / phase thread: the 150 MW start tripped on drum L.L. at a 0.2 s step): the
+     compensated flow is a block output of ABC-001C, so it moves only at the sheet's scan (1.0 s, plant.js anStep), while this line runs
+     every plant step. Before, raw = U.ms x raw / compensated took the stale compensated value against the raw of this step, so the raw
+     compounded at every step between two scans (at 0.2 s: 465 -> 350 T/H in four steps, then 500, the top): the steam flow of the
+     3-element feedwater swung 343 / 490 T/H every second and the feedwater valve with it. Now the factor raw / compensated is taken
+     only from a scan, as the pair that scan used (the raw written in the step before it, U.msfW), and held between scans; the step
+     size no longer changes it */
   const mso = U.ms + U.mb,
-    raw = anUnitVal(U.msf),
     cmp = +v[U.cn];
-  if (isFinite(raw) && raw > 0 && isFinite(cmp) && cmp > 1) anUnitWrite(U.msf, (mso * raw) / cmp);
-  else anUnitWrite(U.msf, mso);
+  if (!(S.rt.cacc > 0) && isFinite(U.msfW) && U.msfW > 0 && isFinite(cmp) && cmp > 1) U.msfK = U.msfW / cmp;
+  anUnitWrite(U.msf, isFinite(U.msfK) && U.msfK > 0 ? mso * U.msfK : mso);
+  U.msfW = anUnitVal(U.msf);
   /* ---- 2.2.0-beta.11 (M2 steps 1 ~ 3) ---- */
   const scaled = (L, r) => anUnitWrite(L, i => L.a0[i] * r),
     shifted = (L, d) => anUnitWrite(L, i => L.a0[i] + d);

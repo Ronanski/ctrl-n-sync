@@ -26,3 +26,7 @@ B-0-001 (evaporative steel), IAPWS-IF97. Finding ng RIN (load rejection).
   - mass balance (mas mababa ang FW): -16 mm;
   - mas maraming steam sa riser (sw 131 vs 91 mm): -40 mm.
 - Ang +43 mm ay galing sa mas mataas na drum pressure (pisika), hindi bagong swing. Lumalampas ito sa DRUM LEVEL H.H. 254 mm, kaya nag-MFT sa 194 s bago ang reverse power relay. Hindi binago ang test; ang generator lane ang may hawak ng case.
+
+## Time step: ang 150 MW start ay nag-trip sa drum L.L. sa 0.2 s (pasado sa 0.5 s)
+- Ugat: ang main steam flow transmitter (FT-MS1031, AI0129) ay isinusulat sa bawat plant step bilang raw = steam x raw / compensated. Ang compensated ay output ng block ng ABC-001C, kaya nagbabago lang ito sa scan (1.0 s). Sa pagitan ng mga scan, paulit-ulit na lumalaki o lumiliit ang raw sa bawat step. Sa 0.2 s, umiikot ang steam flow ng 3-element 343 / 490 T/H bawat segundo, kasunod ang FICFW1007 MV 47 / 61 % at ang feedwater 402 / 453 T/H, kaya bumababa ang level hanggang L.L.
+- Ayos: ang factor na raw / compensated ay kinukuha lang mula sa scan, bilang ang pares na ginamit ng scan na iyon (U.msfW / U.msfK), at hinahawakan sa pagitan ng mga scan. Sa 0.2 s, FT-MS1031 ay 463.9 T/H at steady na.
