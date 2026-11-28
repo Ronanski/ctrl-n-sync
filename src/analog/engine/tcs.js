@@ -1306,7 +1306,7 @@ function tcsState() {
 /* LMYP OTS (JENNIE, TCS study 2026-11-19, user: "Dalawang magkaibang system at hmi at controllers tlga c tcs at dcs"): the GOVERNOR SET and
    the LOAD LIMITER of the TCS CRT, from the Hitachi TCS soft logic 331DM09784 (TCE, read on the PC 2026-11-19; page = index page):
    - TCE196 GOVERNOR CONTROL(2) p.138: GOV SET integrator. In MW CONTROL it follows the GOV CONTROL SIGNAL (TCE195 PI on TARGET MW - GEN MW,
-     the model's anTbFlow tb.fd / tb.fi); GOV RAISE / LOWER of the CRT (CRT OPE INC/DEC, rate 1.0 %) sets GOV. MANUAL OPERATION, limits
+     the model's anTbFlow tb.fd / tb.fy); GOV RAISE / LOWER of the CRT (CRT OPE INC/DEC, rate 1.0 %) sets GOV. MANUAL OPERATION, limits
      107 % / -67.7 %. TCE195 PIV022: its X input tracks GOV SET, so the return to MW CONTROL is bumpless (here: the MW error integral is set
      from the flow demand while in manual).
    - TCE205 LLM CONTROL p.141: LLM SET integrator (TI 0.03 s, HL 102 %, LL -2 %), CRT INC/DEC (rate 1.0 %), LLM MANUAL OPERATION by the CRT.

@@ -45,8 +45,8 @@ function fwHw(P, T) {
      cw  dhf/dT of the water at T (IF97, numerical);
    In:
      extraction no. 3 (heat balance "deaerator" stage, PD-013) through MV-TS1003 (DITL-96) and its two non-return valves (XV-TS1710 /
-     1740, tcs-dev.js positions): steam flows from the higher pressure side, both ways (anDaLine, compressible; reverse = the deaerator
-     steam back to the turbine until the NRVs close); k from the design point: 26.79 t/h at the stage 6.369 ata against the deaerator
+     1740, tcs-dev.js positions, swing checks: forward only): the steam the deaerating section condenses, the steam space pressure
+     set by the line law (anDaLine, compressible) below the stage, see the steam space note in anDeaStep; k from the design point: 26.79 t/h at the stage 6.369 ata against the deaerator
      5.05 + 1.0332 = 6.083 ata (dP 0.286), rho of the steam at the deaerator inlet 310.3 C (IF97).
      The stage pressure, temperature and enthalpy are the port ext.da of the turbine part (RIN, turbine.js anTbPorts); not written =
      no steam (ports.js rule 3); a port without h: IF97 at its P and T;
@@ -112,23 +112,39 @@ function anDeaStep(U, dt) {
     open = (mov == null ? 1 : Math.max(0, Math.min(1, mov / 100))) * nrv,
     Pda = Pd + 1.0332,
     TxC = Pxa > 0.05 ? Math.max(steamTsat(Pxa - 1.0332), isFinite(fin(pX.T)) ? fin(pX.T) : 0) : Ta,
-    /* signed: + the stage steam into the deaerator; - (RIN 2026-11-28, load rejection) the deaerator steam space and the flash of its
-       saturated water back into the turbine while the stage pressure falls below the deaerator, until the NRVs close (2 s on the air
-       dump, KARATU VCL-5101-H, /mnt/project-files/rin-extraction-2026-11-28.md), at the saturated steam of the deaerator */
-    wx =
-      open > 0
-        ? Pxa >= Pda
-          ? open * K.k * anDaLine(Pxa, Pda, steamRho(Pxa - 1.0332, TxC))
-          : -open * K.k * anDaLine(Pda, Math.max(0.01, Pxa), steamRho(Pd, steamTsat(Pd)))
-        : 0,
-    hx =
-      wx < 0
-        ? steamH(Pd, steamTsat(Pd) + 0.01) /* the saturated steam of the deaerator going back */
-        : isFinite(fin(pX && pX.h))
-          ? fin(pX.h)
-          : Pxa > 0.05
-            ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */
-            : 0,
+    /* the line flow at a steam space pressure P ata: forward only. XV-TS1710 / 1740 are swing check (non-return) valves (azbil / KARATU
+       VCL-5101-H swing check with a spring-loaded air cylinder, NRV data sheets PVD-13-0074, TEQ / MT p1869-1874; YUA PC read
+       /mnt/project-files/rin-extraction-2026-11-28.md): a reverse dP seats the disc, so the deaerator steam and the flash of its water cannot go back into the turbine (the air cylinder only
+       speeds the closing on a trip). Phase 11 NANA 2026-11-28: was signed (a reverse flow until the NRVs closed), which gave the
+       negative draws of the 90 MW swing */
+    lineW = (P, Pg) => (open > 0 && Pg > P ? open * K.k * anDaLine(Pg, P, steamRho(Pg - 1.0332, TxC)) : 0),
+    /* the stage answers the draw in the same solve (MEI 2026-11-28, as unit.js anLphStep Sx): Stodola's ellipse law for the stages
+       behind the tap, G P = (P^2 - Pnext^2) / S per group, the groups chained from the condenser up through the LP taps (ports lp.exh,
+       ext.lp1 ~ 3, ext.w_lp): Pg(w) = Pxa - Sda (w - w0), w0 the draw the turbine saw (the last scan). Without it the draw of the scan
+       before sets the stage of this scan and the pair flip-flops at small margins (90 MW: draw -11 <-> +23 T/H every 2 scans) */
+    Sda = (() => {
+      const P = id => {
+          const x = pg(id);
+          return x && isFinite(x.P) ? Math.max(0, +x.P) : 0;
+        },
+        ex = pg('lp.exh'),
+        xl = (pg('ext.w_lp') || {}).x || {},
+        G5 = ex && isFinite(ex.m) ? Math.max(1, +ex.m) : 0,
+        Pc = isFinite(U.cdP) ? Math.max(0.01, U.cdP) : 0.07,
+        P1 = P('ext.lp1'),
+        P2 = P('ext.lp2'),
+        P3 = P('ext.lp3'),
+        G4 = G5 + (+xl.lp1 || 0),
+        G3 = G4 + (+xl.lp2 || 0),
+        Gd = G3 + (+xl.lp3 || 0),
+        S1 = G5 > 1 && P1 > Pc ? (P1 * P1 - Pc * Pc) / (G5 * P1) : 0,
+        S2 = G4 > 1 && P2 > P1 ? (P2 * P2 - P1 * P1) / (G4 * P2) + (P1 / P2) * S1 : 0,
+        S3 = G3 > 1 && P3 > P2 ? (P3 * P3 - P2 * P2) / (G3 * P3) + (P2 / P3) * S2 : 0;
+      return Gd > 1 && Pxa > P3 ? (Pxa * Pxa - P3 * P3) / (Gd * Pxa) + (P3 / Pxa) * S3 : 0;
+    })(),
+    w0 = U.da && isFinite(U.da.wx) ? U.da.wx : 0,
+    Pgw = w => Math.max(0.01, Pxa - Sda * (w - w0)),
+    hx = isFinite(fin(pX && pX.h)) ? fin(pX.h) : Pxa > 0.05 ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */ : 0,
     /* pegging steam: the port aux.peg of the aux steam part (SUZU) */
     pP = pg('aux.peg'),
     wp = isFinite(fin(pP && pP.m)) ? Math.max(0, fin(pP.m)) : 0,
@@ -148,11 +164,57 @@ function anDeaStep(U, dt) {
     wc = isFinite(fin(pC && pC.m)) ? fin(pC.m) : 0,
     tc = isFinite(fin(pC && pC.T)) ? fin(pC.T) : Ta,
     hc = isFinite(fin(pC && pC.h)) ? fin(pC.h) : fwHw(Pd, tc),
-    Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (fwHw(Pd, td) - hf) + wc * (hc - hf)) / 3.6 /* kW */,
+    hd = fwHw(Pd, td),
+    /* the BFWP minimum flow recirculation (ARC valve, 151 m3/h a pump, anFwStep U.fwRc t/h): deaerator water that went through the
+       pump comes back with the shaft heat dh = P / m (U.fwDh kJ/kg, isenthalpic through the ARC valve), so it heats the deaerator;
+       its mass leaves and returns (not in U.daIn). Phase 11 NANA 2026-11-28: the heat was lost before */
+    wr = isFinite(U.fwRc) ? Math.max(0, U.fwRc) : 0,
+    dhr = isFinite(U.fwDh) ? Math.max(0, U.fwDh) : 0,
+    /* the steam space (Phase 11 NANA 2026-11-28). A spray / tray deaerator is a direct contact heater: the steam condenses on the
+       condensate, the drains and the steam it meets and brings them to saturation at the steam space pressure Ps; the water falls into
+       the storage tank. The steam space holds a few m3 of steam, so Ps settles in seconds: the extraction flow is the steam that
+       condensing needs (need), and the line law sets Ps below the stage (lineW(Ps) = need(Ps), one root: lineW falls and need rises
+       with P). The storage water can be colder than saturation at Ps (a load rise: the tank heats slowly from the trays). When the
+       stage gives less than the water needs even at the saturation of the storage water, the storage water flashes and holds Ps at
+       its own saturation (pinned: Ps = Psat(T), the line flow at that pressure, the flash cools the tank). Vented below 100 C. */
+    hfP = P => fwHw(Math.max(0, P - 1.0332), steamTsat(Math.max(0, P - 1.0332))),
+    need = P => {
+      const h = hfP(P);
+      return (wb * (h - hb) + wp * (h - hp) + wd * (h - hd) + wc * (h - hc) - wr * dhr) / Math.max(100, hx - h);
+    },
+    Pt = Pd + 1.0332;
+  /* pinned: the line flow into the storage saturation, w = lineW(Pt, Pg(w)) (w falls as the stage falls with it) */
+  let wx = 0,
+    Ps = Pt;
+  if (open > 0 && Pxa > 0.05) {
+    let lo = 0,
+      hi = Math.max(1, open * K.k * anDaLine(Pgw(0), Pt, steamRho(Pgw(0) - 1.0332, TxC)));
+    for (let i = 0; i < 40 && hi - lo > 1e-6; i++) {
+      const m = 0.5 * (lo + hi);
+      if (lineW(Pt, Pgw(m)) > m) lo = m;
+      else hi = m;
+    }
+    wx = lo /* 0 when the stage is under the storage saturation */;
+  }
+  /* unpinned: the steam space above the storage saturation, w = need(Ps) = lineW(Ps, Pg(w)), one root in Ps */
+  if (T >= 100 && wx > need(Pt) && need(Pgw(0)) > 0) {
+    let lo = Pt,
+      hi = Pgw(0);
+    for (let i = 0; i < 40 && hi - lo > 1e-6; i++) {
+      const m = 0.5 * (lo + hi),
+        n = need(m);
+      if (lineW(m, Pgw(n)) > n) lo = m;
+      else hi = m;
+    }
+    Ps = 0.5 * (lo + hi);
+    wx = Math.max(0, need(Ps));
+  }
+  /* the storage water: every inflow ends in it (the trays bring them to hf(Ps); pinned, the flash takes the difference) */
+  const Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (hd - hf) + wc * (hc - hf) + wr * dhr) / 3.6 /* kW */,
     C = M * 1000 * cw + K.Mm * 1000 * anSteelCp(T) /* kJ/K */;
   if (dt > 0) U.da.T = Math.max(Ta - 5, Math.min(200, T + (Q * dt) / C));
-  const Pn = Math.max(0, steamPsat(U.da.T));
-  Object.assign(U.da, { P: Pn, M, wx, wb, wp, wd, wc, hx, Q, Pxa, rho: anWaterRho(U.da.T), rhoL: anWaterRho(isFinite(U.Tamb) ? U.Tamb : 30) }); /* rho / rhoL: the BFWP suction PT-FW1115 (plantsw.js W.sucP) */
+  const Pn = Ps > Pt + 1e-9 ? Ps - 1.0332 : Math.max(0, steamPsat(U.da.T)) /* kg/cm2 G of the steam space */;
+  Object.assign(U.da, { P: Pn, Ps, M, wx, wb, wp, wd, wc, hx, Q, Pxa, rho: anWaterRho(U.da.T), rhoL: anWaterRho(isFinite(U.Tamb) ? U.Tamb : 30) }); /* rho / rhoL: the BFWP suction PT-FW1115 (plantsw.js W.sucP) */
   U.daIn = wx + wb + wp + wd; /* T/H into the storage water besides the condensate */
   U.daTb = wx; /* the turbine steam taken by the deaerator (the condenser does not get it) */
   if (U.xt && U.xt.dea) anUnitWrite(U.xt.dea, Pn);
@@ -306,11 +368,20 @@ function anFwStep(U, dt) {
   /* 3.2.4-beta.21: PUMP HEAT. All the shaft power goes into the water: dh = P / m (KSB curve Q43446D shaft power pP and head qH at
      the pump flow q). Of the useful part rho g Q H only (1 - T beta) warms the water (isentropic compression of a liquid:
      dT_s = T beta v dp / cp); the losses (P - rho g Q H) warm it in full. dT = (P - (1 - T beta) rho g Q H) / (m cp), with
-     T beta = 0.45 and cp 4.33 kJ/kg K at 158.4 C (IAPWS-IF97 water properties). 150 MW (549 m3/h): about 2.8 C; at the ARC minimum
-     151 m3/h about 7.5 C. The water to No.1 HPH is the deaerator saturation + dT (anHphStep). */
+     T beta (beta = -(1/rho) d rho / dT) and cp of the pumped water at its temperature, IAPWS-IF97 (plant.js anWaterRho, fwHw;
+     Phase 11 NANA 2026-11-28, was T beta 0.45 and cp 4.33 of 158.4 C at every load: at 122 C T beta is 0.34, cp 4.25). The pump
+     runs at constant speed (3580 rpm), so at part load its shaft power stays high against the flow: 150 MW about 2.8 C, 45 MW
+     (about 170 m3/h) about 6 C. The heat balance PPE-14-0725 prints its own BFP dH (case 7: 3.4 kcal/kg, 122.1 C out), which is not
+     this pump's curve: the vendor curve is the source here. The water to No.1 HPH is the deaerator water + dT (anHphStep). */
   const Hy = n ? (sg * 1000 * 9.81 * (q / 3600) * swInterp(K.qQ, K.qH, q)) / 1000 : 0,
-    mk = (sg * 1000 * q) / 3600;
-  U.fwDT = n && mk > 0 ? Math.max(0, (Ph - 0.55 * Hy) / (mk * 4.33)) : 0;
+    mk = (sg * 1000 * q) / 3600,
+    Tw = U.da && isFinite(U.da.T) ? U.da.T : isFinite(U.Tamb) ? U.Tamb : 30,
+    cpw = fwHw(Ps, Tw + 0.5) - fwHw(Ps, Tw - 0.5),
+    Tb = ((Tw + 273.15) * (anWaterRho(Tw - 0.5) - anWaterRho(Tw + 0.5))) / anWaterRho(Tw);
+  U.fwDT = n && mk > 0 ? Math.max(0, (Ph - (1 - Tb) * Hy) / (mk * cpw)) : 0;
+  /* the ARC recirculation back to the deaerator (t/h) and the shaft heat it carries (kJ/kg), read by anDeaStep */
+  U.fwRc = n ? Math.max(0, (n * q * sg) - ffw - (U.hlW ? U.hlW[0] + U.hlW[1] : 0)) : 0;
+  U.fwDh = n && mk > 0 ? Ph / mk : 0;
 }
 /* Phase 11 rank 5 (NANA, user 2026-11-27 "Go fix 11"): THE HP HEATERS by energy balance and heat transfer, in place of the old
    model (3.2.1 IRENE: FW out = saturation + a fixed TTD, extraction = design flow x feedwater / 458.684 x rise / design rise, shell

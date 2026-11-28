@@ -1282,8 +1282,9 @@ const AN_SW_V0 = {
   'V-SW1006': 100,
   'V-SW1007': 100,
   'V-SW1008': 100,
-  'V-SW1009': 40,
-  'V-SW1010': 40,
+  /* the condenser outlet valves at the opening of the design point (cooling.js swCal c.oDes, DERIVED) */
+  'V-SW1009': Math.round(swCal().oDes * 10) / 10,
+  'V-SW1010': Math.round(swCal().oDes * 10) / 10,
   'V-SW1016': 100,
   'V-SW1018': 100,
   'V-SW1020': 100
@@ -3904,7 +3905,8 @@ function anHxRun(U, dt, tsat) {
     qCyB = K.kAB * (U.Tcy - U.TcyB); /* kW, hot face to the back */
   U.Tcy += ((qCy - qCyB) * dt) / K.mF;
   U.TcyB += (qCyB * dt) / K.mB;
-  const tG = gcp > 0.01 ? U.tgF - qCy / gcp : U.Tcy; /* gas into the backpass */
+  /* + the coal heat released in the cyclones (cfb.js AN_PC, set by the bed balance) */
+  const tG = gcp > 0.01 ? U.tgF - qCy / gcp + (U.qPc > 0 ? U.qPc : 0) / gcp : U.Tcy; /* gas into the backpass */
   U.tgB = tG;
   /* the cyclone outlet thermocouples TT-FG1095-A / B read the gas leaving the cyclones */
   U.gCy = [tG, tG];
@@ -4205,12 +4207,12 @@ function anUnitStep0(dt) {
   if (tb.st === 'roll' && onGrid && !trip) tb.rej = true;
   if (tb.st !== 'roll' || trip) tb.rej = false;
   const D = U.tcsT;
-  /* LMYP OTS 1.0.0-beta.3 (JENNIE, live Hot roll 2026-11-19, F-CN): the load loop of the TCS (TCE207 flow demand tb.fd, MW error integral
-     tb.fi) works only with 52G closed. Off the grid (turbine stopped, tripped or under speed control) it starts again from the valves at
+  /* LMYP OTS 1.0.0-beta.3 (JENNIE, live Hot roll 2026-11-19, F-CN): the load loop of the TCS (TCE207 flow demand tb.fd, TCE195 PIV022 integral
+     tb.fy) works only with 52G closed. Off the grid (turbine stopped, tripped or under speed control) it starts again from the valves at
      the next 52G close (anTbFlow: tb.fd = CV OPENING BIAS x ICV opening). Before, the flow demand of the last loaded run stayed in the
      plant and in every save point after it (0.82 at S68, 3600 rpm no load): at the 52G close the CVs went to 77 % in seconds, the main
      steam flow 187 -> 418 T/H at 0 MW and the turbine tripped on HP TURBINE INLET / EXHAUST DIFF. PRESS. VERY HIGH (IBD TA-21) */
-  if (!onGrid) tb.fd = tb.fi = NaN;
+  if (!onGrid) tb.fd = tb.fy = tb.e0 = NaN;
   if (U.turb === false) {
     /* 2.2.0-beta.14: cold start, the turbine is not rolled yet: the stop valves are shut (M4 step 4 opens them) */
     U.gv = 0;
@@ -4430,7 +4432,8 @@ function anUnitStep0(dt) {
       qWu = sus.qW /* kW, the suspension to the upper walls (both signs) */,
       qSol = qWu + qRW /* kW, to the furnace walls: the upper walls + through the lower refractory */,
       qPan = isFinite(U.hxQp) ? U.hxQp : 0 /* kW, to the in-furnace SH panels (hx.js, last scan, from Tu) */,
-      qFuel = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) + oil * B.lhvO,
+      qPc = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) * AN_PC.f /* kW, the coal heat released in the cyclones (cfb.js AN_PC) */,
+      qFuel = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) * (1 - AN_PC.f) + oil * B.lhvO,
       qAirG =
         mGas * (hFg(U.Tb) - hFg(U.Tamb)) -
         (av[0] / 3.6) * (hAir(tPa) - hAir(U.Tamb)) -
@@ -4456,7 +4459,8 @@ function anUnitStep0(dt) {
     /* the suspension gives qWu + qPan = Cs (Tb - tgF) on its way up; of it the gas share gcp (Tb - tgF) is the gas cooling from the bed to
        the exit, already in qAirG (the gas heated to Tb): the bed pays the solids share only, and the gas leaves at tgF (beta.256) */
     /* 1.0.0-beta.366 (JENNIE, D31): the terms of this balance, kW and kJ/K, for the energy check of tests/regress/bed_heatup.js */
-    U.bbQ = { fuel: qFuel, lm: qLm, tl: qTl, airG: qAirG, sus: qWu + qPan - gcp * (U.Tb - sus.tgF), br: qBR, Cb };
+    U.qPc = qPc;
+    U.bbQ = { fuel: qFuel, pc: qPc, lm: qLm, tl: qTl, airG: qAirG, sus: qWu + qPan - gcp * (U.Tb - sus.tgF), br: qBR, Cb };
     U.Tb = Math.max(U.Tamb, U.Tb + ((qFuel - qLm - qTl - qAirG - (qWu + qPan - gcp * (U.Tb - sus.tgF)) - qBR) * dt) / Cb);
     U.Trf = Trf + ((qBR - qRW) * dt) / B.mRef;
     /* the furnace exit gas and the mean of the upper furnace (the panels of hx.js take Tu): the suspension above */
