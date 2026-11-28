@@ -448,11 +448,13 @@ function anCycFlows(t) {
   const mt = s.ms || 0;
   /* Phase 11 (NANA, 2026-11-27): the deaerator takes the extraction no. 3, the pegging steam and the No.1 HP heater drain of the
      deaerator model (unit.js anDeaStep U.daIn), not 25 % of the turbine steam. The turbine steam that does not reach the condenser:
-     the deaerator extraction (U.daTb) and the HP heater extractions (hpF1: the No.1 + No.2 drains) less what the HP heater
-     alternate drains send to the condenser. With no unit model (no starting state) there is no steam to split */
+     the turbine steam that the deaerator model takes in (U.daIn less the pegging steam, which comes from the auxiliary header and not
+     from the turbine: the extraction no. 3, the HP gland leak lk.b, and the No.1 HP heater normal drain, which carries the No.1 + No.2
+     extraction steam). The HP heater alternate drains go to the condenser and are not in U.daIn, so they stay in the hotwell.
+     (Phase 11 NANA 2026-11-28, MEI: was daTb + hpF1 - alternate drains, which left lk.b out and counted it in the hotwell a second
+     time, +4.65 T/H at 150 MW.) With no unit model (no starting state) there is no steam to split */
   const U1 = typeof AN_UNIT !== 'undefined' && AN_UNIT.on && isFinite(AN_UNIT.daIn) ? AN_UNIT : null,
-    hdAlt = U1 && U1.hd ? U1.hd.filter(h => h.k === 'H5' || h.k === 'H6').reduce((a, h) => a + (isFinite(h.w2) ? h.w2 : 0), 0) : 0,
-    tbDa = U1 ? (U1.daTb || 0) + (isFinite(U1.hpF1) ? U1.hpF1 : 0) - hdAlt : 0;
+    tbDa = U1 ? U1.daIn - (U1.da && isFinite(U1.da.wp) ? U1.da.wp : 0) : 0;
   return { fda, frec, hwIn: mt - tbDa + (s.mhp || 0), daIn: U1 ? U1.daIn : 0, mu: muOff ? 0 : 0.58 /* LCV-MU1110, valve sheet p90 */ * (AN_CYC.u.hw || 0) + muMv };
 }
 AN_CYC.flows = anCycFlows;
