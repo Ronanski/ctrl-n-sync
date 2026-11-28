@@ -6,10 +6,10 @@ await page.waitForFunction(()=>AN.sheets&&AN.sheets.length>=54&&window.WORLD&&WO
 const rd=()=>page.evaluate(()=>{const m=AN.plAIs(),g=t=>{const l=m.get(t);return l&&l.length?+l[0].S.rt.v[l[0].n]:null},U=AN.unit;return {a:g('AT-FG1122'),b:g('AT-FG1123'),pa:g('TT-FA1076'),sa:g('TT-FA1086'),o2:U.o2v,gi:U.aphGi,go:U.aphGo}});
 await page.evaluate(async()=>{await AN.ades();WORLD.set(true);document.getElementById('load150').click();await AN._startP;
  /* 1.0.0-beta.364 (JENNIE, Lisa queue "AH gas in 308 vs 322"): FHI Tab 3 is the design point, and a design point carries the design
-    fouling of the banks. Every start state starts clean (hx.js AN_FOUL), which gives 308 C; the banks at the design fouling rInf, 20 min:
+    fouling of the banks. Phase 11 KANA: every bank now carries the design fouling rInf at all times (hx.js AN_FOUL_R); 20 min:
     gas in 322.8, and the air heater alone (boiler.js anAphStep, no fit) gives PA 285.9 / SA 301.9 against Tab 3 285.8 / 301.6. The gas in
     is not a free check here (rInf is the CALC that gives 322); PA / SA are */
- const C=AN.sheets.find(s=>s.name==='ABC-001C'),U=AN.unit;if(U.hxF)for(const k in U.hxF.R)U.hxF.R[k]=0.0042 /* hx.js AN_FOUL.rInf, not global in the page */;
+ const C=AN.sheets.find(s=>s.name==='ABC-001C');
  for(let k=0;k<2400;k++){WORLD.live=true;AN.stepSet(C,.5);WORLD.tick(.5);if(k%200===199)await new Promise(r=>setTimeout(r,0))}});
 const r=await rd();console.log(JSON.stringify(r));
 ck(r.o2>3.2&&r.o2<4.3,'O2 at 150 MW near Fig 7 3.6 and the set point 3.5: '+r.o2.toFixed(2));

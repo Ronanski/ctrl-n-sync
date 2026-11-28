@@ -168,65 +168,17 @@ function anHxA(g) {
   const [D, , , N, n, dep] = g;
   return N * n * Math.PI * D * (dep - 0.2);
 }
-/* 3.2.4: ASH DEPOSITS ON THE BACKPASS BANKS AND THE SOOTBLOWERS THAT CLEAN THEM. Clean banks give the air heater gas in 298 C at 150 MW (headless, 3.2.4);
-   the design (FHI P2S7 Tab 3) has 322: the design is a fouled boiler. Each bank
-   carries a deposit resistance R (m2K/W, U.hxF, numbers only). It grows while coal burns, at the rate of the ash (coal burnt / 89 T/H
-   MCR, FHI Tab 2), toward rInf (Kern-Seaton asymptotic fouling, R = rInf (1 - exp(-t / tau))); it stays when the coal stops.
-   - rInf: CALC, the value that takes the air heater gas in from 298 to the design 322 C at 150 MW with every bank fully fouled
-     (headless 2026-11-17: 321.2 C at 0.0042, 20 min after the deposit).
-   - tau 56 h: CALC from the plant DCS trend (team-files/plant-trends, Scenario 1 Trend B, 60 s samples, PC only). Held loads, no load
-     change: 105 MW 1.33 - 2.67 h, 2nd spray TICBR1150.MV 10.5 -> 9.4 % (-0.83 %/h, the fastest creep of the trend); 4.0 - 4.67 h
-     13.6 % flat; full load 0 h and 10 h (BM 67.2, MST 542 / 541) 30.2 and 27.0 % (-0.3 %/h). With tau 8 h (the blowing interval
-     of PR P3S3 "economizer once per shift, then once a day" taken as the fouling time) the 150 MW start state crept -5.9 %/h
-     (headless 8 h, 2026-11-21: 15.1 -> 9.3 % in 1 h, the spray at 0 in 2.75 h, then MST 540 -> 531). Early on the creep goes as
-     rInf / tau, so tau = 8 h x 5.9 / 0.83 = 57 h: 56 h (7 shifts). Blowing once a shift then takes off what one shift lays down
-     (13 % of rInf), which is the plant's practice; it does not need a fully fouled bank.
-   - Cleaning: the retractable lances of Diamond Power N11639 (L10-2 Sootblower, IK4M-EMD full / IK4M-EL half retract). Each pair
-     (LSW / RSW) blows half the width; a lance cleans the banks it sits between (elevations FL+20982 to +42300 in the manual):
-     N1011/12 above RH upper -> R-6; N1013/14 above SH upper -> F3; N1015/16 -> R-6, R-5; N1017/18 -> F3, F2; N1019/20 -> R-5, R-4;
-     N1021/22 -> F2, F1; N1023/24 -> R-4, R-3; N1025/26 -> F1, eco 3; N1027/28 and N1031/32 -> R-3, eco 2 R; N1029/30 -> eco 3;
-     N1033/34 -> eco 3, eco 2 S; N1035 - 38 above eco 1 -> eco 1. Each traverse of a lance (in or out, s._lance.x in world.js)
-     removes e = 0.8 (NO-SOURCE) of the deposit over its half: one full blow of a pair, in and out, leaves (1 - 0.4)^4 = 13 %.
-   Every start state starts clean. */
-const AN_FOUL = { rInf: 0.0042 /* m2K/W, CALC (see above) */, tau: 56 * 3600 /* s, CALC from the plant trend (see above) */, e: 0.8 /* NO-SOURCE */, mcr: 89 },
-  AN_FOUL_MAP = (() => {
-    const m = {},
-      set = (a, b, k) => {
-        for (let n = a; n <= b; n++) m[n] = k;
-      };
-    set(1011, 1012, ['r3']);
-    set(1013, 1014, ['f2']);
-    set(1015, 1016, ['r3', 'r2']);
-    set(1017, 1018, ['f2', 'f1']);
-    set(1019, 1020, ['r2', 'r1']);
-    set(1021, 1022, ['f1', 'f0']);
-    set(1023, 1024, ['r1', 'r0']);
-    set(1025, 1026, ['f0', 'e3']);
-    set(1027, 1028, ['r0', 'e2r']);
-    set(1029, 1030, ['e3']);
-    set(1031, 1032, ['r0', 'e2r']);
-    set(1033, 1034, ['e3', 'e2s']);
-    set(1035, 1038, ['e1']);
-    return m;
-  })();
-function anHxFoul(U, dt) {
-  const F = U.hxF || (U.hxF = { R: { r0: 0, r1: 0, r2: 0, r3: 0, f0: 0, f1: 0, f2: 0, e1: 0, e2r: 0, e2s: 0, e3: 0 }, lx: {} }),
-    R = F.R,
-    a = Math.max(0, (isFinite(U.cbn) ? U.cbn : 0) / AN_FOUL.mcr);
-  if (a > 0) for (const k in R) R[k] += ((AN_FOUL.rInf - R[k]) * a * dt) / AN_FOUL.tau;
-  const W = typeof window !== 'undefined' ? window.WORLD : null,
-    L = W && W.sbLances ? W.sbLances() : [];
-  for (const s of L) {
-    const l = s._lance,
-      b = l && AN_FOUL_MAP[l.n];
-    if (!b) continue;
-    const x0 = isFinite(F.lx[l.n]) ? F.lx[l.n] : l.x,
-      f = Math.min(1, (Math.abs(l.x - x0) / Math.max(1, l.len)) * 0.5 * AN_FOUL.e);
-    F.lx[l.n] = l.x;
-    if (f > 0 && l.x > 0) for (const k of b) R[k] *= 1 - f;
-  }
-  return R;
-}
+/* ASH DEPOSITS ON THE BACKPASS BANKS (Phase 11 KANA, Rule 0). Clean banks give the air heater gas in 298 C at 150 MW (headless, 3.2.4);
+   the design (FHI P2S7 Tab 3) has 322: the design is a fouled boiler. Every bank carries the design deposit resistance
+   rInf (m2K/W) at all loads and in every start state:
+   - rInf 0.0042: CALC, the value that takes the air heater gas in from 298 to the design 322 C at 150 MW with every bank at the
+     same deposit (headless 2026-11-17: 321.2 C at 0.0042).
+   The deposit does not grow or get blown off: no document gives a fouling rate, a blowing interval or a lance effectiveness
+   (Diamond Power N11639-SC1 gives 28 blowers, 84 min, 3,882 kg only; PC read kana-sh-tubes-sootblow-2026-11-28.md). The growth
+   time and the lance effectiveness that were here had no design source; both are deleted. The soot
+   blowers still run in the logic; they do not change the heat transfer until a document gives those numbers. */
+const AN_FOUL = { rInf: 0.0042 /* m2K/W, CALC (see above) */ },
+  AN_FOUL_R = { r0: AN_FOUL.rInf, r1: AN_FOUL.rInf, r2: AN_FOUL.rInf, r3: AN_FOUL.rInf, f0: AN_FOUL.rInf, f1: AN_FOUL.rInf, f2: AN_FOUL.rInf, e1: AN_FOUL.rInf, e2r: AN_FOUL.rInf, e2s: AN_FOUL.rInf, e3: AN_FOUL.rInf };
 /* UA (kW/K) of a bank g = [D, St, Sl, legs, elements, depth] at gas m kg/s, gas T, metal Tm */
 function anHxUA(g, m, T, Tm) {
   const [D, St, Sl, N, n, dep] = g,
@@ -381,7 +333,7 @@ function anHxStep(U, I, dt) {
   const mGR = (lo + hi) / 2,
     mGS = mG - mGR;
   /* ---- gas side ---- */
-  const Rf = I.settle ? {} : anHxFoul(U, dt);
+  const Rf = AN_FOUL_R;
   const gWl = anHxGas(M.wl, null, mG, I.Tg);
   const gR4 = [];
   let tR = gWl.Tg;

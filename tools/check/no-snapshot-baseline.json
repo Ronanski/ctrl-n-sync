@@ -7,7 +7,7 @@
  "src/analog/engine/face-defaults.js": 4,
  "src/analog/engine/fw.js": 2,
  "src/analog/engine/hmi-op.js": 146,
- "src/analog/engine/hx.js": 3,
+ "src/analog/engine/hx.js": 1,
  "src/analog/engine/model/cooling.js": 4,
  "src/analog/engine/plant.js": 53,
  "src/analog/engine/sheets.js": 1,
