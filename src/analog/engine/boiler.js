@@ -417,8 +417,7 @@ const anFabKw = (m, p2) => {
    (read +-1 %); the same law as the PAF / SAF / IDF motors (anFdEl, AN_FD.mot.fab) */
 const anFabEl = kw => anFdEl(AN_FD.mot.fab, AN_FD.mot.fab.kW, kw);
 /* current of one FA blower: running, its flow (T/H), the header gauge pressure (mmH2O) */
-/* Phase 11 AOI 2026-11-28 (user rule: no snapshot, not even as a check): the current is the TECO motor at the blower curve's machine
-   kW, no longer scaled to the 9.png 37.3 A (the old scale x 0.90 above is gone) */
+/* Phase 11 AOI 2026-11-28: the current is the TECO motor at the blower curve's machine kW (DESIGN-SRC, no other scale) */
 const anFabI = (on, q, p2) => (on ? anFabEl(anFabKw(q * 1000, p2)).I : 0);
 /* motor current: no-load share + the rest x air power over the snapshot one. Same law on the HMI (api.js fanI); the HMI fallback
    passes only the snapshot current, so the share is found by it */
