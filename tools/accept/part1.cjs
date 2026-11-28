@@ -267,11 +267,26 @@ const judge = (v, tg, tol, kind) => {
     };
     const runOp = async mins => { for (let m = 0; m < mins; m++) { await run(1); await operate(); } };
     const R = {};
+    const savePt = async nm => { if (!process.env.SAVE_DIR) return; const o = await page.evaluate(() => ({ kf: AN.engState.capture(), kd: (typeof ditlCapture === 'function' ? ditlCapture : window.DITL.ditlCapture)(), ver: 'sweep save ' + Math.round(AN.unit.MW) + ' MW' })); fs.writeFileSync(require('path').join(process.env.SAVE_DIR, nm + '.json'), JSON.stringify(o)); console.log('saved', nm); };
+    const FROM = process.env.FROM; /* segment mode (user 2026-11-28 8:47 PM PHT: use save points, run the legs in parallel). SAVE_DIR=<dir> writes sp90 (the settled 90 MW
+       hold) and sp45 with the app's own save (AN.engState.capture + ditlCapture, loaded by DITL150.savePut). FROM=<sp90.json> runs only the
+       90 -> 45 leg; STOP_AT=90 runs only 150 -> 90. Join the two sample files with tools/accept/sweep-join.cjs, then sweep-judge.cjs.
+       Remake the save points after any model change (a stale sp90 tests the old plant). Check 2026-11-28: the joined legs gave the same
+       5/22 as the one full run, per curve within 1 ~ 3 % of the samples */
+    if (FROM) {
+      const sv = JSON.parse(fs.readFileSync(FROM, 'utf8'));
+      await page.evaluate(async o => { await DITL150.savePut(o); }, sv);
+      await run(2);
+    } else {
     await run(5);
     R[150] = await win();
     R.t90 = await press(90);
     await run(SETTLE);
     R[90] = await win();
+    await savePt('sp90');
+    }
+    const STOP90 = process.env.STOP_AT === '90'; /* segment mode A: 150 -> 90 only (run beside the FROM=sp90 segment; the samples are joined) */
+    if (STOP90) { R[45] = R[90]; R.t45 = NaN; } else {
     R.t45 = await press(45);
     OP.aim = 45;
     /* the TCS ramp to the aim first (0.6 MW/min below 220 T/H), then the settle time */
@@ -299,6 +314,9 @@ const judge = (v, tg, tol, kind) => {
     for (let m = 0; m < 80 && !(await slide()); m++) await runOp(1);
     await runOp(SETTLE);
     R[45] = await win();
+    await savePt('sp45');
+    }
+    if (FROM) { R[150] = R[45]; R[90] = R[45]; R.t90 = NaN; }
     const f = x => (isFinite(x) ? (Math.abs(x) >= 100 ? x.toFixed(1) : x.toFixed(2)) : '-');
     const out = ['| Item | 45 MW app / design | 90 MW app / design | 150 MW app / design |', '|---|---|---|---|'];
     let pass = 0, fail = 0;
