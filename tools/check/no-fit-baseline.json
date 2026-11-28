@@ -29,7 +29,6 @@
  "src/analog/engine/unit.js": [
   "Design beside it (Audit 3 ranking 5, user Q4 \"close to the DCS 150 MW data, tuned from design, small tolerance\"):",
   "from one load of the feeder to the next. Plant DCS trend scenario 1 (team-files/plant-study/14-plant-trends, 60 s values, 150 MW held",
-  "The spreads are set from the plant trend above, which measures them: clSd so the coal flow (the load cells) moves sd 0.45 T/H (headless",
   "/* beta.261: the steam made (U.Qs) is the bed / wall heat balance below over the boiling heat; the fuel line a x coal (a fitted on the",
   "2026-11-08 plant trends) and its lag tauF are gone */"
  ]
