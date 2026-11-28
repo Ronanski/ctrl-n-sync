@@ -14,14 +14,16 @@ Asked by YUI (PR 724: the extraction NRVs as swing checks, tcs-dev.js U.dev.nrv)
 - no-fit, one-path, u-const, ports PASS; tests/gate/behaviour.cjs 150 MW 20 min ALL PASS. no-snapshot fails on main (cfb.js, AOI),
   not in this diff. st150 not committed.
 
-## LP heater shell flash (load rejection, RIN request 2026-11-28)
-- unit.js AN_LPF + anLphStep: each LP shell holds saturated water at its normal level (D1-037, YUA read: No.1 0.68, No.2 0.32,
-  No.3 0.37 m3; metal not counted). When the stage falls under the shell, the water flashes: the shell feeds its tubes and sends
-  the rest back to the turbine (a negative ext.w_lp draw), limited by the reverse line law (the same dP law as forward), the
-  choked flow at the smallest bore (No.4 14 in nozzle, No.5 2 x 12 in, No.6 2 x 20 in; rin-extraction-2026-11-28.md) x the NRV
-  opening, and the stored heat (first law). The shell temperature is a state with C dT = (steam in - tube duty) dt.
-- Solver relaxation (not plant data): the signed draw follows its target with a 2.5 s lag, because the draw and the stage
-  pressure of tbPath are solved one after the other each scan.
-- Tested headless, 150 MW, 52G opened (house load), 0.5 s scans, on RIN's PR 721 branch (the PLU closes the CVs / ICVs): back
-  steam peaks 18.0 / 13.2 / 17.1 T/H (No.3 / No.2 / No.1 LPH) at 2 ~ 3 s, the shells cool 116 -> 79 C and 71.8 -> 53 C in 4 s,
-  then the draws turn forward again as the stage settles. Steady 150 MW: no change (behaviour gate ALL PASS).
+## LP heater shell flash: taken out of this PR (next PR)
+- A first version of the shell flash on a load rejection (shell water at saturation, back steam to the turbine) was tried in this
+  PR and taken out before the merge. The sweep 150 -> 45 MW showed it fighting the forward draw law at part load: the shell state
+  floor is the line-drop saturation, which moves with the draw, so the draw swung between scans (5 to -1 T/H at 54 ~ 71 MW) and,
+  with 30 min settles, stuck at a back flow (-3.3 T/H on the No.3 LPH at 48 MW, shell 8.8 K over its stage).
+- Next PR: the shell temperature as one implicit state each scan (the line law both ways + the shell first law, solved together),
+  so there is one law for the draw and no swing. Back steam on a load rejection waits for that PR.
+
+## LP heater steam vs the HB at 150 MW (sweep on this branch, steady 150 MW)
+- No.3 LPH 15.08 / 15.25 T/H, No.2 12.24 / 12.27 T/H: within 1 % (condensate flow, rise and shell pressure on the HB).
+- No.1 LPH 18.07 / 16.83 T/H (+8 %): the HB also feeds the No.1 LPH shell with the gland steam seal regulator spill-over
+  (SSR to LP1, 1,027 kg/h at 767.6 kcal/kg, case 1; 328 at case 4, 0 at case 7). The model has no such inflow, so the extraction
+  makes up that heat: 1,027 x (767.6 - 45.6) = 0.74 Gcal/h = 1.3 T/H of No.6 steam. The spill-over is the turbine gland (RIN).

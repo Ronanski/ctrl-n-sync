@@ -1543,26 +1543,6 @@ const AN_LP = {
   tau: 120
 };
 /* saturation temperature (C) of a pressure in kg/cm2A: the Antoine inverse of anPsat */
-/* Phase 11 (MEI, RIN request 2026-11-28, load rejection): the SHELL FLASH of the LP heaters. Each shell holds saturated water at its
-   normal level; when the extraction stage pressure falls (load rejection, trip) the shell is above the stage, the water flashes and
-   its steam goes BACK to the turbine through the extraction line (a negative draw, ext.w_lp signed, turbine.js tbPath) until the
-   shell has cooled to the stage saturation, or the extraction non-return valve shuts (tcs-dev.js U.dev.nrv: No.4 / No.5 close on the
-   turbine trip only, the No.6 line has no NRV; YUA read mei-lph-flash-reads-2026-11-28.md).
-     water  V m3 at the normal level, from D1-037 (YUA read): No.1 LPH NWL 435 mm below the centre, ID 1130 -> 0.68 m3; No.2 415 mm,
-            ID 1060 -> 0.32 m3; No.3 ~400 mm (scaled, under a revision cloud), ID 1020 -> 0.37 m3; its heat capacity C = rho V cp
-            (IAPWS-IF97 region 1 at the shell saturation). The shell and tube metal is not counted (its weight is not in the read):
-            the tube metal gives its heat to the condensate inside it, the shell wall is a lower bound left out;
-     line   the back flow is choked at the smallest bore of the line, G* = 0.668 sqrt(P rho) (k 1.3, the critical flow of steam),
-            rho of the saturated vapour as an ideal gas, P the shell pressure: No.4 the 14 in STD turbine nozzle (ID 336.6 mm, rin-
-            extraction-2026-11-28.md, line TS-1-004), No.5 two 12 in S-40 nozzle branches (ID 303 mm, TS-1-006 / 007), No.6 two 20 in
-            STD (ID 489 mm, TS-1-009 / 010); x the NRV opening.
-   First law of the shell each step: C dTsh = -(the tube duty + the back steam x hfg) dt while the shell is above the stage; with
-   the stage above the shell it follows the stage (the normal case: Tsh = the line-drop shell saturation, no change at steady load). */
-const AN_LPF = {
-  H1: { V: 0.68, A: 2 * (Math.PI / 4) * 0.489 ** 2 },
-  H2: { V: 0.32, A: 2 * (Math.PI / 4) * 0.303 ** 2 },
-  H3: { V: 0.37, A: (Math.PI / 4) * 0.3366 ** 2 }
-};
 const anTsatA = P => (P > 0.005 ? 1730.63 / (8.07131 - Math.log10((P * 980.665) / 1.33322)) - 233.426 : -Infinity);
 /* water enthalpy kJ/kg on the condensate line (IAPWS-IF97 region 1 at 1 MPa: the pressure moves h by under 0.1 %) */
 const anCdHw = T => steamR1(1, Math.max(274, (isFinite(T) ? T : 30) + 273.15)).h;
@@ -1616,10 +1596,7 @@ function anLphStep(U, dt) {
       Pe = e && isFinite(e.P) ? Math.max(0, e.P) : 0,
       wr = Math.max(0, +W0[q] || 0) / (wd / 1000),
       Ps = Pe > 0 ? Math.max(0.5 * Pe, Pe - (Pd - P0) * wr * wr * (Pd / Pe)) * thr(Math.min(pos(mov), nrv(nk))) : 0,
-      tq = anTsatA(Ps),
-      /* the shell flash state (AN_LPF): a shell above its stage holds its own saturation */
-      Tsh = U.lpSh && isFinite(U.lpSh[k]) ? U.lpSh[k] : tq,
-      ts = Math.max(tq, Tsh),
+      ts = anTsatA(Ps),
       Tsd = anTsatA(P0),
       sh = wL[k] ? wL[k].s : 1,
       ntu = m * sh > 0.1 ? (Math.log((Tsd - ti) / (Tsd - to)) * K.Fd) / (m * sh) : 50,
@@ -1627,15 +1604,13 @@ function anLphStep(U, dt) {
       tout = lag(k, tin + sh * (tt - tin)),
       h = hd.find(x => x.k === k),
       drains = h && h.win > 0.5;
-    t[k] = { in: tin, out: tout, Ps, tq, ts, nk, dr: lag(k + 'd', drains ? tin + dca : Math.max(tin, ts)) };
+    t[k] = { in: tin, out: tout, Ps, dr: lag(k + 'd', drains ? tin + dca : Math.max(tin, ts)) };
     tin = tout;
   }
   U.lpHt = t;
   /* the draws, No.3 first (its drain goes down to No.2, then No.1, then the condenser) */
   {
-    const W = { lp3: 0, lp2: 0, lp1: 0, d1: 0, h1: 0 },
-      SH = U.lpSh || (U.lpSh = {}),
-      dts = Math.max(0, +dt || 0);
+    const W = { lp3: 0, lp2: 0, lp1: 0, d1: 0, h1: 0 };
     let D = 0,
       hin = 0;
     for (let i = K.h.length - 1; i >= 0; i--) {
@@ -1645,52 +1620,8 @@ function anLphStep(U, dt) {
         hd1 = anCdHw(x.dr),
         hs = e && isFinite(e.h) ? e.h : 0,
         duty = m * Math.max(0, anCdHw(x.out) - anCdHw(x.in)) - (D > 0 ? D * Math.max(0, hin - hd1) : 0);
-      let w = hs - hd1 > 50 ? Math.max(0, duty / (hs - hd1)) : 0;
-      /* the shell flash (AN_LPF, first law): above its stage the shell gets no steam; its water feeds the tubes and sends the rest
-         back to the turbine, choked at the line and throttled by the NRV, and cools */
-      const F = AN_LPF[k],
-        row = K.h[i],
-        Pe = e && isFinite(e.P) ? Math.max(0, e.P) : 0,
-        Psh = anPsat(x.ts);
-      let bt = 0,
-        be = 0;
-      if (F && dts > 0 && Psh > Pe && x.ts > x.tq + 0.01) {
-        const Pa = Psh * 98066.5,
-          sat = steamSatM(Pa / 1e6),
-          hfg = Math.max(1, sat.hg - sat.hf),
-          C = (1 / steamR1(Pa / 1e6, x.ts + 273.15).v) * F.V * 4.19 /* kJ/K: rho V cp */,
-          rhoG = Pa / 1000 / (0.4615 * (x.ts + 273.15)),
-          bmax = 3.6 * 0.668 * Math.sqrt(Pa * rhoG) * F.A * (nrv(x.nk) / 100) /* T/H, choked */,
-          /* the line law of the shell above, the other way: dP = dPd (w / wd)^2 (Pd / P) -> w = wd sqrt(dP P / (dPd Pd)) */
-          bl = (row[9] / 1000) * Math.sqrt(((Psh - Pe) * Psh) / ((row[8] - row[1]) * row[8]));
-        be = Math.max(0, (3.6 * ((C * (x.ts - x.tq)) / dts - duty / 3.6)) / hfg); /* T/H the water can give besides the tubes */
-        bt = Math.min(bmax, bl, be);
-      }
-      /* solver relaxation (not plant data): the draw and the stage pressure of tbPath are solved one after the other each scan; the
-         signed draw follows its target with a 2.5 s lag (0.2 of the way per 0.5 s scan) (the duty draw, or the back flow) so the pair settles instead of
-         swinging scan to scan; the back flow is never more than the stored heat gives (first law) */
-      /* a shell still above its line-drop saturation and not able to blow back (the stage is above it): its water flashes into
-         the tubes, so the turbine gives that much less steam (first law); the shell then sits at the line-drop saturation */
-      if (!(bt > 0) && F && dts > 0 && x.ts > x.tq + 0.01 && hs - hd1 > 50) {
-        const Pa = Psh * 98066.5,
-          C = (1 / steamR1(Pa / 1e6, x.ts + 273.15).v) * F.V * 4.19;
-        w = Math.max(0, w - (3.6 * ((C * (x.ts - x.tq)) / dts)) / (hs - hd1));
-      }
-      const wt = bt > 0 ? -bt : w,
-        wp = isFinite(W0[q]) ? +W0[q] : wt;
-      w = wp + (wt - wp) * (dts > 0 ? Math.min(1, dts / 2.5) : 1);
-      if (w < 0) w = -Math.min(-w, be);
-      /* the shell water above the line-drop saturation: first law, C dTsh = (steam in x (h_ext - h_drain) or the back steam x hfg
-         - the tube duty) dt; at or below it the shell is the line-drop saturation */
-      if (F && dts > 0 && x.ts > x.tq + 0.01) {
-        const Pa = Psh * 98066.5,
-          sat = steamSatM(Pa / 1e6),
-          C = (1 / steamR1(Pa / 1e6, x.ts + 273.15).v) * F.V * 4.19,
-          qin = w > 0 ? (w / 3.6) * Math.max(0, hs - hd1) : (w / 3.6) * (sat.hg - sat.hf);
-        SH[k] = Math.max(x.tq, Math.min(x.ts, x.ts + (dts * (qin - duty / 3.6)) / C));
-      } else SH[k] = x.tq;
-      W[q] = w;
-      D += Math.max(0, w);
+      W[q] = hs - hd1 > 50 ? Math.max(0, duty / (hs - hd1)) : 0;
+      D += W[q];
       hin = hd1;
     }
     W.d1 = D;
