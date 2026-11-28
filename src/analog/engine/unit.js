@@ -97,6 +97,31 @@ function anShKdp(U) {
    AND the HP bypass steam up to the tee; the 12" leads (0.34) the turbine steam only. PT-MS1006 (U.tin) stands at the tee end of the
    18" run (after it only TE-MS1007 and the scope break before the tee). f18 = the 18" share of the design drop. */
 const AN_MSLN = { dp0: 1.74, m0: 474, Po: 122.4, To: 536, f18: 1.41 / 1.74 };
+/* the main steam line heat loss (RIN 2026-11-28): class HW6 on the as-built isos (MS-1-001-HF1W-18"-HW6, K1AU3-P3-1-001 R7), thickness
+   FHI K1AU3-P1-0-001 p6: 18" 190 mm, 12" 175 mm, rock wool ASTM C547 Type II; loss per metre by the MHPS TDA-15-046 R2 / JIS A9501 law
+   (k 0.0945 W/m K, h 9.4 W/m2 K back-calculated from the TDA printed rows; YUA read, /mnt/project-files/rin-hrh-ms-insulation-reads-2026-11-28.md)
+   at 538 / 35 C: 18" 475 W/m (printed in the read), 12" (OD 323.8, dn 673.8 mm) 503 / (ln(673.8/323.8) / (2 pi 0.0945) + 1 / (9.4 pi 0.6738))
+   = 392 W/m (CALC). Lengths = the MS BOM (AN_MSLN above): 18" 132.8 m, 12" 17.9 m. UA kW/K = sum(L Q) / (538 - 35) */
+const AN_MSQ = {
+  ua18: (132.8 * 475) / (538 - 35) / 1000,
+  ua12: (17.9 * 503 / (Math.log(673.8 / 323.8) / (2 * Math.PI * 0.0945) + 1 / (9.4 * Math.PI * 0.6738))) / (538 - 35) / 1000
+};
+/* the steam temperature after the line: the SH outlet enthalpy at the MSP (TE-MS1004 / the model SH outlet) less the heat the line loses
+   on the flow it carries, throttled to the downstream pressure Pa (ata). part: 'tee' = the 18" run (turbine + HP bypass steam, to PT-MS1006),
+   'msv' = the 18" run and a 12" lead (the turbine inlet). Below 5 % MCR flow the drop of 5 % flow is kept (the line metal store with no
+   steam is not modelled) */
+function anMsT(U, Tsh, ms, mhp, Pa, part) {
+  if (!isFinite(Tsh) || !isFinite(U.Pms)) return Tsh;
+  const ta = +U.Tamb || 30,
+    a = Math.max(0, +ms || 0),
+    t = a + Math.max(0, +mhp || 0),
+    q18 = AN_MSQ.ua18 * Math.max(0, Tsh - ta),
+    q12 = AN_MSQ.ua12 * Math.max(0, Tsh - ta),
+    lo = 0.05 * 460 /* T/H */,
+    h0 = steamH(U.Pms, Tsh),
+    dh = (3.6 * q18) / Math.max(lo, t) + (part === 'msv' ? (3.6 * q12) / Math.max(lo, a) : 0);
+  return steamPhM(Math.max(0.01, Pa) * 0.0980665, h0 - dh).T - 273.15;
+}
 /* the hot reheat line, reheater outlet (PT-HR1001) to the turbine end (PT-HR1003): dp0 kg/cm2 at m0 T/H and the design state (Po kg/cm2 G,
    To C) = FHI P2S7 RH outlet 35.1 kg/cm2 G (36.13 ata) less HB PPE-14-0725 case 1 HRH 34.77 ata, at 400.944 T/H, 538 C (RIN 2026-11-28) */
 const AN_HRLN = { dp0: 35.1 + 1.0332 - 34.77, m0: 400.944, Po: 34.77 - 1.0332, To: 538 };
@@ -1767,11 +1792,10 @@ function anHxTagStep(U, dt) {
   Object.assign(T, {
     /* Phase 11 RIN 2026-11-28 (was 4 C "at MCR 472.7 T/H" and 0.7 kg/cm2 x (mr / 472.7)^2: a plant snapshot flow, deleted):
        TT-MS1007 (at PT-MS1006, the HP bypass tee end of the 18" run, AN_MSLN): the steam of TE-MS1004 / the MSP throttled at constant
-       enthalpy through the line drop to the tee (anMsDrop; adiabatic: the insulation is not in the documents read, and any heat loss of
-       a lagged 18" line, a few tens of kW, is under 0.1 C at load) */
+       enthalpy through the line drop to the tee (anMsDrop) less the heat the 18" run loses through its lagging (anMsT, AN_MSQ) */
     'TT-MS1007': r1(
       isFinite(t1004) && isFinite(U.Pms)
-        ? steamPhM(Math.max(0.01, U.Pms - anMsDrop(U, ms, U.mhp).tee + 1.0332) * 0.0980665, steamH(U.Pms, t1004)).T - 273.15
+        ? anMsT(U, t1004, ms, U.mhp, U.Pms - anMsDrop(U, ms, U.mhp).tee + 1.0332, 'tee')
         : NaN
     ),
     /* PT-HR1001 (the reheater outlet): PT-HR1003 (AI0421, the turbine end) + the hot reheat line drop dP = k m^2 / rho, k from the design:
@@ -4133,7 +4157,9 @@ function anUnitStep0(dt) {
      52G opening instead. The MSV taken as an area in series proportional to its opening (its bore is not read: the closing lasts 0.38 s) */
   const vpS = U.tc || U.tco ? tcsVp(U, U.tc || U.tco) : 1,
     Av = tbCvAs(tbCvLift(U, 'A', tcsVtSide(U, 'A')), tbCvLift(U, 'B', tcsVtSide(U, 'B'))) * (U.msG == null ? 1 : U.msG) * vpS;
-  U.ms = Math.max(0, tbMsFlow(U, Av, U.hxO && U.hxO.ms));
+  /* the turbine inlet temperature: the SH outlet steam after the line drop and the line heat loss (anMsT), on the flow of the last scan */
+  U.Tt = anMsT(U, U.hxO && U.hxO.ms, U.ms, U.mhp, Math.max(0, (+U.Pms || 0) - anMsDrop(U, U.ms, U.mhp).msv) + 1.0332, 'msv');
+  U.ms = Math.max(0, tbMsFlow(U, Av, U.Tt));
   /* the other outlets: flow = share x anchor flow x opening x MSP / anchor MSP */
   const P1 = Math.max(0, U.Pd - U.kdp * U.ms * U.ms);
   U.mb = 0;
@@ -4376,7 +4402,7 @@ function anUnitStep0(dt) {
     {
       ms: U.ms,
       Pin: Math.max(0, Pms - anMsDrop(U, U.ms, U.mhp).msv) + 1.0332,
-      Tms: U.hxO && U.hxO.ms,
+      Tms: U.Tt,
       qip,
       Thr: U.hxO && U.hxO.rh,
       Pc: isFinite(U.cdP) ? U.cdP : 1.0332,

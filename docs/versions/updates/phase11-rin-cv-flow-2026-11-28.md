@@ -59,3 +59,10 @@
   - u-const / one-path / no-fit pass.
   - 150 MW 20 min: no trip, 147.8 ~ 150.2 MW (old st150).
   - House load peak 101.1 %, 52G rejection peak 101.6 %.
+
+## Line heat losses and the hot reheat pipe metal (design only)
+
+- Hot reheat pipe metal (TT-HR1002, `AN_RHPIPE.M`): 30.3 t P91 from the BOM K1AU3-MM-102 R3 lengths and the ASME B36.10 walls, x 0.59 kJ/kg K (ASME II-D TCD) = 17.9e3 kJ/K (was 10e3, no source).
+- Lagging loss, class HW6 (as-built isos), thickness FHI K1AU3-P1-0-001 p6, MHPS TDA-15-046 / JIS A9501 law (YUA read `rin-hrh-ms-insulation-reads-2026-11-28.md`):
+  - hot reheat `AN_RHPIPE.UA` 0.174 kW/K (87.7 kW at 538 C; was 0.02, no source);
+  - main steam `AN_MSQ`: 18" 132.8 m x 475 W/m + 12" 17.9 m x 392 W/m = 70 kW at 538 C. The turbine inlet temperature `U.Tt` (anMsT) is now the SH outlet enthalpy less the line loss, throttled to the MSV inlet; TT-MS1007 the same on the 18" run to the tee. At 150 MW: SH out 535.6 C, turbine inlet 534.7 C, TT-MS1007 534.9 C.
