@@ -15,6 +15,7 @@ phase6-tcs-records-2026-11-26.md and tcs-macros-*.json). No new PC read was need
   - turbine.js anTbFlow header: the CV lift is the TCE212 FG of the flow demand.
 - Comments only: no value, logic or test changes. no-snapshot baseline 588 -> 587.
 
-Still NO-SOURCE in this area (model side, not a TCS logic value): unit.js icvRoll (ICV opening for the roll steam).
+icvRoll and rollRate: the unit.js roll branch was dead code (the TCS ATS always sets the roll speed and the ICV); RIN deletes it with
+both constants in PR 732, so one path is left. Nothing open in this area.
 
 Tests: tce-complete 419 of 419, no-snapshot PASS.
