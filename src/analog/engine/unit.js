@@ -789,27 +789,19 @@ function anUnitStart() {
   /* furnace pressure: the two IDF actuators in series (hydraulic coupling PICFG108, inlet damper PICFG108A) take the flue gas out */
   U.fp = procsOf('ABC-008', ['PICFG108', 'PICFG108A']);
   U.idf = labOf('ABC-008', 'M.3304');
-  /* 3.2.0-beta.23: the furnace / cyclone thermocouples (the bed temperature, see the step) */
-  U.tbed = Object.keys(AN_HMI_AI)
-    .filter(k => /^TIFG(1090|1091|1095|1096|1009)[A-Z]?$/.test(AN_HMI_AI[k][1]))
-    .map(k => anUnitAnchor(anUnitAIs(k)))
-    .filter(l => l.length);
+  /* 3.2.0-beta.23: the bed thermocouples on the logic sheets (the bed temperature, see the step), by their I/O list address; the
+     cyclone outlet and seal pot thermocouples are on no sheet (their pages read U.gCy / U.gSp) */
+  U.tbed = AN_IO_T.bed.map(k => anUnitAIs(k)).filter(l => l.length);
   /* 3.2.0-beta.39 (roadmap 2, HMI thread: in Cold, all fans stopped, the air preheater outlet kept the 150 MW snapshot): the air
      preheater outlet air temperatures TT-FA1086 / 1087 (SA, ABC-003A) and TT-FA1076 / 1077 (PA, ABC-006) follow the hot gas like
      the bed thermocouples; the SA pressures PT-FA1085 (SAF outlet, ABC-057) and PT-FA1088 (hot SA, ABC-003A) go with the square
-     of the SA flow FT-FA1081 (fan law). The ID fan speed ST-LO1756 (ABC-008 AI0481, no value in the snapshots) is the hydraulic
-     coupling PICFG108 over the speed range of the fan manual (I.D. fan 350 ~ 1140 rpm), 0 with the fan stopped.
-     3.2.3-beta.104 (plan b3, ID fan cold start): the curve goes through the 150 MW snapshot 7.PNG "HYDRAULIC COUPLING (IDF) 46.1 % /
-     872 rpm" (OPERATING_POINTS.md), two straight pieces 0 % 350 / 46.1 % 872 / 100 % 1140 rpm. Before: one straight line 350 ~ 1140
-     (ASSUMED), which read 714 rpm at the snapshot MV */
-  const aiList = re =>
-    Object.keys(AN_HMI_AI)
-      .filter(k => re.test(AN_HMI_AI[k][1]))
-      .map(k => anUnitAnchor(anUnitAIs(k)))
-      .filter(l => l.length);
-  U.aphT = aiList(/^TIFA(1086|1087|1076|1077)$/);
-  U.aphL = { pa: aiList(/^TIFA(1076|1077)$/).flat(), sa: aiList(/^TIFA(1086|1087)$/).flat() }; /* boiler.js anAphStep */
-  U.saP = aiList(/^PIFA(1085|1088)$/);
+     of the SA flow FT-FA1081 (fan law). The ID fan speed ST-LO1756 (ABC-008 AI0481) is the hydraulic coupling PICFG108 over the
+     speed range of the fan manual (I.D. fan 350 ~ 1140 rpm), 0 with the fan stopped (anIdfN). The transmitters by their I/O list
+     address (AN_IO_T) */
+  const aiList = L => L.map(k => anUnitAnchor(anUnitAIs(k))).filter(l => l.length);
+  U.aphT = aiList(AN_IO_T.aphPa.concat(AN_IO_T.aphSa));
+  U.aphL = { pa: aiList(AN_IO_T.aphPa).flat(), sa: aiList(AN_IO_T.aphSa).flat() }; /* boiler.js anAphStep */
+  U.saP = aiList(AN_IO_T.saP);
   U.saN = U.tafS ? netOf(U.tafS, 'FIFA1081.PV') : -1;
   U.sa0 = U.saN >= 0 ? +U.tafS.rt.v[U.saN] : NaN;
   U.idfS = ais('ABC-008', 'AI0481');
@@ -860,12 +852,8 @@ function anUnitStart() {
     const X = U.xt,
       a = L => (L && L.a0 && isFinite(L.a0[0]) ? L.a0[0] : NaN);
     X.cr0 = a(X.cr);
-    /* TT-MS1022 at the anchor: the HMI snapshot TIMS10221 359 C (bypass shut: the HP exhaust it sees); the a0 of the start state is
-       the old snapshot loop, not a plant reading */
-    {
-      const q = typeof AN_HMI_AI !== 'undefined' ? Object.values(AN_HMI_AI).find(x => x[1] === 'TIMS10221') : null;
-      X.byo0 = q && isFinite(+q[0]) ? +q[0] : a(X.byo);
-    }
+    /* TT-MS1022 at the anchor: its value in the start state (the energy balance of the bypass line writes it, see TT-MS1022 below) */
+    X.byo0 = a(X.byo);
     X.rhi0 = X.rhi.map(L => a(L));
     X.rhv0 = X.rhPv && X.rhPv.c.q ? +X.rhPv.S.rt.v[X.rhPv.n] : NaN; /* RH spray MV at the anchor */
     X.hrOff = X.rhPv && X.rhPv.c.q && X.rhPv.c.q.pv != null ? a(X.hr) - +X.rhPv.S.rt.v[X.rhPv.c.q.pv] : 0;
@@ -1919,12 +1907,8 @@ function anTagsNow(U) {
 function anHxTagStep(U, dt) {
   const C = U.hxtC || (U.hxtC = {}),
     ai = k => anUnitVal(C[k] || (C[k] = anUnitAIs(k))),
-    /* a transmitter on no sheet reads the snapshot value of the HMI (hmi-op.js), as its own page shows it */
-    aiH = k => {
-      const v = ai(k),
-        h = typeof AN_HMI_AI !== 'undefined' ? AN_HMI_AI[k] : null;
-      return isFinite(v) ? v : h ? +h[0] : NaN;
-    },
+    /* Phase 11 rule 0 (SUZU 2026-11-28): a transmitter on no sheet has no value (the old screen table is gone) */
+    aiH = ai,
     r1 = x => (isFinite(x) ? Math.round(10 * x) / 10 : null),
     ms = Math.max(0, +U.ms || 0),
     Ta = isFinite(U.Tamb) ? U.Tamb : 30,
@@ -3870,23 +3854,16 @@ function anUnitStep(dt) {
     if (M) M.on = 0;
   }
 }
-/* 3.2.3-beta.212 (F16): snapshot values of the furnace / cyclone / seal pot thermocouples (hmi-op.js AN_HMI_AI), kept off U */
-let AN_GAS_A0 = null;
-function anGasA0() {
-  if (AN_GAS_A0) return AN_GAS_A0;
-  const by = re =>
-      Object.values(AN_HMI_AI)
-        .filter(x => re.test(x[1]))
-        .map(x => +x[0]),
-    avg = a => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : NaN),
-    one = tg => avg(by(new RegExp('^' + tg + '$')));
-  return (AN_GAS_A0 = {
-    u: avg(by(/^TIFG1091[A-I]$/)),
-    l: avg(by(/^TIFG1090[A-I]$/)),
-    cy: [one('TIFG1095A'), one('TIFG1095B')],
-    sp: [one('TIFG1009A'), one('TIFG1009B')]
-  });
-}
+/* Phase 11 rule 0 (SUZU 2026-11-28): the bed thermocouples and the air heater / SA transmitters by their DCS I/O list address (loop list src/ui/plant/dcslists.js,
+   from the I/O list STN101 / STN103); before, the old screen table of hmi-op.js gave the list and each thermocouple its own value */
+const AN_IO_T = {
+  /* lower layer under TT-FG1090-A ~ I (STN103 AI0832 ~ 0837, 0864 ~ 0866), above TT-FG1091-A ~ I (AI0816 ~ 0821, 0848 ~ 0850) */
+  bed: ['3|AI0816', '3|AI0817', '3|AI0818', '3|AI0819', '3|AI0820', '3|AI0821', '3|AI0848', '3|AI0849', '3|AI0850',
+    '3|AI0832', '3|AI0833', '3|AI0834', '3|AI0835', '3|AI0836', '3|AI0837', '3|AI0864', '3|AI0865', '3|AI0866'],
+  aphPa: ['1|AI0656', '1|AI0672'] /* PA after the air heater TT-FA1076 / 1077 */,
+  aphSa: ['1|AI0657', '1|AI0673'] /* SA after the air heater TT-FA1086 / 1087 */,
+  saP: ['1|AI0288', '1|AI0289'] /* SA pressure PT-FA1085 (SAF outlet) / PT-FA1088 (hot SA) */
+};
 /* the cyclone refractory, the heat transfer chain (hx.js anHxStep) and the reheat outlet pipe, one scan; U.hxO = its outputs.
    Beta.245 (Jennie, Rosé real-click test at 150 MW: values "-----" while paused): it ran only inside the unit step, so a state saved
    by an older engine (src/data/st150.txt, 11-19: U.hxO without p1o / e1o / e2o of audit 2026-11-21 B1) showed TT-BR1020 / 1030 /
@@ -4498,33 +4475,18 @@ function anUnitStep0(dt) {
       U.Tw = tsatOf(U.Pd);
     }
   }
-  /* 3.2.0-beta.23: the furnace and cyclone thermocouples (TIFG1090 / 1091 lower layer under / above, TIFG1095 / 1096 cyclone,
-     TIFG1009 furnace) follow the bed: ambient + (snapshot - ambient) x bed rise / anchor bed rise. Before, they kept the 150 MW
-     snapshot (933 C) in Cold: ABC-027 SI0122 > 700 C = M.2504 "ADEQUATE FOR COAL FIRING (PURGE BY-PASS)" was 1 on a cold boiler,
-     DITL-02 completed the purge by itself and reset the MFT before the operator could press FURNACE PURGE START */
-  /* 3.2.3-beta.273 (live run beta.272: the 150 MW start showed bed 881 C on the overview and TIFG1090 / 1091 HIGH-HIGH 980 C on every
-     thermocouple): the anchor of the thermocouples is the bed the snapshot thermocouples read (the average of the eighteen lower layer
-     TT-FG1090 / 1091 A ~ I, 937 C), not the model anchor Tb0 850 C. Their average is now the bed temperature U.Tb, each with its own
-     snapshot spread; one bed for the overview, the logic (ABC-026 alarms 950 / 980 / 820) and the pages */
-  const tbA = (() => { const a0 = anGasA0(); return isFinite(a0.u) && isFinite(a0.l) ? (a0.u + a0.l) / 2 : U.Tb0; })();
-  if (U.tbed && U.tbed.length) {
-    const k = Math.max(0, (U.Tb - U.Tamb) / Math.max(1, tbA - U.Tamb));
-    for (const L of U.tbed) anUnitWrite(L, i => U.Tamb + (L.a0[i] - U.Tamb) * k);
-  }
-  /* 3.2.3-beta.212 (live Cold sweep F16: AIR AND FLUE GAS page '-----' for the furnace, cyclone outlet and seal pot temperatures with
-     the bed at 220 C): the cyclone outlet TT-FG1095-A / B (I/O list 1|AI0660 / 0661) and the seal pots TT-FG1009-A / B (1|AI0594 /
-     0662) are read by no sheet of the logic, so the line above never reached them. They are the same solids loop as the bed (the gas
-     and the circulating ash leave the furnace through the cyclone and come back through the seal pot): the same rule as the bed
-     thermocouples, each on its own snapshot value (hmi-op.js AN_HMI_AI). U.gFu / U.gFl = the average of the nine lower layer above /
-     under thermocouples TT-FG1091-A ~ I / TT-FG1090-A ~ I the page shows as one value. Numbers only on U (SAVE keeps U as JSON) */
+  /* 3.2.0-beta.23 / Phase 11 rule 0 (SUZU 2026-11-28): the furnace, cyclone and seal pot thermocouples (TIFG1090 / 1091 lower layer under /
+     above, TIFG1095 / 1096 cyclone outlet, TIFG1009 seal pot) read the solids loop. A circulating bed is well mixed: every bed
+     thermocouple reads the bed temperature U.Tb, the seal pot returns the same circulating ash at the bed temperature, the cyclone
+     outlet reads the gas leaving the cyclones (anHxRun U.gCy, first principles there). A spread between the thermocouples has no design
+     source (NO-SOURCE); before, each kept its own value of the old screen table. In Cold the bed is at the ambient, so ABC-027 SI0122
+     > 700 C (M.2504 PURGE BY-PASS) stays 0 on a cold boiler. U.gFu / U.gFl = the lower layer above / under the page shows as one value,
+     U.gSp the seal pots. Numbers only on U (SAVE keeps U as JSON) */
   {
-    const k = Math.max(0, (U.Tb - U.Tamb) / Math.max(1, tbA - U.Tamb)),
-      a0 = anGasA0(),
-      t = x => (isFinite(x) ? U.Tamb + (x - U.Tamb) * k : NaN);
-    U.gFu = t(a0.u);
-    U.gFl = t(a0.l);
-    U.gCy = a0.cy.map(t);
-    U.gSp = a0.sp.map(t);
+    for (const L of U.tbed || []) anUnitWrite(L, () => U.Tb);
+    U.gFu = U.Tb;
+    U.gFl = U.Tb;
+    U.gSp = [U.Tb, U.Tb];
   }
   /* 3.2.1 (LISA, Mina Normal shutdown on beta.115: PIFA1085 LOW-LOW at 65 MW, SA 160 T/H): the SA pressures are the bed back pressure at
      the SA ports plus the duct / air preheater / nozzle drop. Before, all of it went with the square of the SA flow (805 mmH2O at 160 T/H).

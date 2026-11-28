@@ -1,109 +1,110 @@
 /* DITL 150 MW (2.2.0-beta.3): "Start at 150 MW" for the DITL sheets too.
    The DITL starts cold (MFT tripped, every motor stopped). At 150 MW the plant runs: this puts every DITL sheet in the running
-   state of the control-room HMI snapshots, like the operator brought it there:
+   state of the design full load line-up (Phase 11 rule 0, 2026-11-28: design data and the logic, no plant screen), like the operator
+   brought it there:
    1. the input rows that come from the field / CRT / local panels (not from another sheet) take the state of the plant:
-      equipment running or stopped as on the snapshots (docs/hmi/operating-points.json), REMOTE selected, no trip / fault /
-      alarm / limit, push buttons released;
+      the duty machines running and the spare on standby in AUTO, REMOTE selected, no trip / fault / alarm / limit, push buttons
+      released (a duty without a design document says NO-SOURCE; the line-up only makes the start state, src/data/st150.txt keeps it);
    2. the operator sequence runs fast on the real DITL logic (one world scans): purge, MFT reset, START of the equipment that
       runs, so the latches, timers and motors of the drawing reach their running state by themselves.
    The logic of the sheets is not changed. Reset / Simulate OFF -> cold again. */
 (function () {
-  /* equipment on the 150 MW snapshots (run = running, auto = standby selected in AUTO). 02.png (60 MW) is not used. */
+  /* equipment at full load (run = running, auto = standby selected in AUTO for the auto start of the DITL) */
   const EQ = [
-    [/\bBFWP\s*A\b(?!\s*AUX)/, 1, 0, '03.png BFWP-A 289.4 A, R M'],
-    /* 3.2.1 (IRENE: HEATER LEVELS): 4.PNG MVTS1001 ~ 1005 "A R" (AUTO, REMOTE). Before, DITL-94 ~ 98 stood in MANUAL and a heater level
-       HI-HI (ABC-036 M.0203) did not close MV-TS1001: the drawing closes it only in AUTO */
-    [/EXTRACTION STM NO\.?\s*\d\b.*SHUT-?OFF\s*MOV/, 1, 1, '4.PNG MVTS1001 ~ 1005 open, A R'],
-    [/\bBFWP\s*B\b(?!\s*AUX)/, 0, 1, '03.png BFWP-B standby, R A'],
+    [/\bBFWP\s*A\b(?!\s*AUX)/, 1, 0, 'BFWP-A duty, R M (NO-SOURCE: the duty count of the BFWP)'],
+    /* 3.2.1 (IRENE: HEATER LEVELS): MVTS1001 ~ 1005 in AUTO, REMOTE: the heater level HI-HI (ABC-036 M.0203) closes MV-TS1001 only in
+       AUTO (the drawing); the heaters are in service at full load (HB PPE-14-0725 case 1, every extraction flowing) */
+    [/EXTRACTION STM NO\.?\s*\d\b.*SHUT-?OFF\s*MOV/, 1, 1, 'MVTS1001 ~ 1005 open (HB case 1 extractions), A R'],
+    [/\bBFWP\s*B\b(?!\s*AUX)/, 0, 1, 'BFWP-B spare on standby, R A'],
     [/\bAUX\.?\s*LOP\b/, 0, 1, 'not on a screen: the main pump runs, the auxiliary lube oil pump is on standby'],
-    [/COAL FEEDER\s*[ABC]\b|ALL COAL FEEDER/, 1, 0, '11.png feeders A / B / C running'],
-    [/\bIDF\b|INDUCED DRAFT FAN/, 1, 0, '7.PNG F-1056 IDF 199.6 A'],
-    [/\bPAF\s*LUB\.?\s*OIL PUMP\s*A\b|\bLOP-?A\b.*PAF/, 0, 1, '7.PNG LOP-A (PAF) stopped, R A'],
-    [/\bPAF\s*LUB\.?\s*OIL PUMP\s*B\b|\bLOP-?B\b.*PAF/, 1, 0, '7.PNG LOP-B (PAF) running, R M'],
-    [/\bPAF\b|PRIMARY AIR FAN/, 1, 0, '7.PNG F-1053 PAF 253.6 A'],
-    [/\bSAF\b|SECONDARY AIR FAN/, 1, 0, '7.PNG F-1054 SAF 134.0 A'],
-    [/\bFAB\s*A\b|FA BLOWER\s*-?A\b|ANY FAB/, 1, 0, 'F-1055A FA BLOWER-A 37.3 A, R M'],
+    [/COAL FEEDER\s*[ABC]\b|ALL COAL FEEDER/, 1, 0, 'feeders A / B / C running (FHI Fig 13 full load coal on the three feeders)'],
+    [/\bIDF\b|INDUCED DRAFT FAN/, 1, 0, 'F-1056 IDF running'],
+    [/\bPAF\s*LUB\.?\s*OIL PUMP\s*A\b|\bLOP-?A\b.*PAF/, 0, 1, 'LOP-A (PAF) spare on standby, R A (NO-SOURCE: which pump is the duty)'],
+    [/\bPAF\s*LUB\.?\s*OIL PUMP\s*B\b|\bLOP-?B\b.*PAF/, 1, 0, 'LOP-B (PAF) running, R M (NO-SOURCE: which pump is the duty)'],
+    [/\bPAF\b|PRIMARY AIR FAN/, 1, 0, 'F-1053 PAF running'],
+    [/\bSAF\b|SECONDARY AIR FAN/, 1, 0, 'F-1054 SAF running'],
+    [/\bFAB\s*A\b|FA BLOWER\s*-?A\b|ANY FAB/, 1, 0, 'F-1055A FA BLOWER-A duty, R M'],
     [/\bFAB\s*B\b|FA BLOWER\s*-?B\b/, 0, 1, 'F-1055B FA BLOWER-B standby, R A'],
     [/ALL FAB/, 1, 0, 'FAB A runs (FAB B on standby): not all FAB stopped'],
-    [/SEAWATER BOOSTER PUMP\s*A\b|\bSWBP\s*-?A\b/, 1, 0, 'SWBP-A 87.3 A, R M'],
+    [/SEAWATER BOOSTER PUMP\s*A\b|\bSWBP\s*-?A\b/, 1, 0, 'SWBP-A duty, R M (two of three SWBP: cooling.js AN_SW, PACO D1-0-034)'],
     [/SEAWATER BOOSTER PUMP\s*B\b|\bSWBP\s*-?B\b/, 0, 1, 'SWBP-B standby, R A'],
-    [/SEAWATER BOOSTER PUMP\s*C\b|\bSWBP\s*-?C\b/, 1, 0, 'SWBP-C 87.2 A, R M'],
-    [/SEAWATER PUMP\s*A\b|\bSWP\s*-?A\b/, 0, 0, 'SWP-A stopped, R M'],
-    [/SEAWATER PUMP\s*[BC]\b|\bSWP\s*-?[BC]\b|ANY SEAWATER PUMP/, 1, 0, 'SWP-B 242.5 A, SWP-C 207.6 A'],
-    /* 3.2.0 roadmap 3: the condensate pumps had no rule: at 150 MW with Run both read stopped, the condenser lost its vacuum
-       (unit.js: no condensate pump) and the turbine tripped on LOW VACUUM after ~30 s */
-    [/CONDENSATE PUMP\s*-?A\b/, 1, 0, '28.png CP-A (P-1116A) 28.1 A, R M (full load)'],
-    [/CONDENSATE PUMP\s*-?B\b/, 0, 1, '28.png CP-B (P-1116B) standby, R A'],
-    [/\bDOP\s*A\b|DIESEL OIL PUMP\s*A\b/, 1, 0, 'P-0702A DIESEL OIL PUMP 25.4 A, R M'],
+    [/SEAWATER BOOSTER PUMP\s*C\b|\bSWBP\s*-?C\b/, 1, 0, 'SWBP-C duty, R M'],
+    [/SEAWATER PUMP\s*A\b|\bSWP\s*-?A\b/, 0, 0, 'SWP-A spare, R M (two of three SWP: 2 x 18,900 m3/h = the S-1502 normal flow, cooling.js AN_SW)'],
+    [/SEAWATER PUMP\s*[BC]\b|\bSWP\s*-?[BC]\b|ANY SEAWATER PUMP/, 1, 0, 'SWP-B / C duty (the two of the design flow)'],
+    /* the condensate pumps: one in service at full load (HB case 1 condensate 362,594 kg/h), the other on standby */
+    [/CONDENSATE PUMP\s*-?A\b/, 1, 0, 'CP-A (P-1116A) duty, R M'],
+    [/CONDENSATE PUMP\s*-?B\b/, 0, 1, 'CP-B (P-1116B) spare on standby, R A'],
+    [/\bDOP\s*A\b|DIESEL OIL PUMP\s*A\b/, 1, 0, 'P-0702A DIESEL OIL PUMP duty, R M'],
     [/\bDOP\s*B\b|DIESEL OIL PUMP\s*B\b/, 0, 1, 'P-0702B standby, R A'],
-    /* 3.2.1 (IRENE, MU / CCW plant model): the aux. cooling water pumps had no rule: at 150 MW both stood stopped, so the closed
-       cooling loop had no flow (27.PNG: ACWP-A running 28.2 A R M, ACWP-B 0.0 A R A standby) */
-    [/\bA-AUX\.?\s*CW PUMP\b|AUX\.?\s*COOLING WATER PUMP\s*[-(]?\s*A\b|\bACWP\s*-?A\b/, 1, 0, '27.PNG ACWP-A (P-1108A) 28.2 A, R M'],
-    [/\bB-AUX\.?\s*CW PUMP\b|AUX\.?\s*COOLING WATER PUMP\s*[-(]?\s*B\b|\bACWP\s*-?B\b/, 0, 1, '27.PNG ACWP-B (P-1108B) 0.0 A, R A standby'],
-    [/\bMWP\s*[AC]\b/, 1, 0, 'MWP-A 20.5 A, MWP-C 20.8 A'],
+    /* 3.2.1 (IRENE, MU / CCW plant model): the aux. cooling water pumps, one in service and one on standby (the closed cooling loop
+       needs its flow at load) */
+    [/\bA-AUX\.?\s*CW PUMP\b|AUX\.?\s*COOLING WATER PUMP\s*[-(]?\s*A\b|\bACWP\s*-?A\b/, 1, 0, 'ACWP-A (P-1108A) duty, R M'],
+    [/\bB-AUX\.?\s*CW PUMP\b|AUX\.?\s*COOLING WATER PUMP\s*[-(]?\s*B\b|\bACWP\s*-?B\b/, 0, 1, 'ACWP-B (P-1108B) spare on standby, R A'],
+    [/\bMWP\s*[AC]\b/, 1, 0, 'MWP-A / C running (NO-SOURCE: the duty of the make-up pumps)'],
     [/\bMWP\s*B\b/, 0, 0, 'MWP-B stopped, R M'],
     [/NOT\s+EMERGENCY\s+STOP/, 1, 0, 'local emergency stop released (N.C. contact), DITL-21A row 18'],
     /* 3.2.3-beta.265 (SOHEE, Jennie): the coolers stand in their AUTO SEQUENCE (DITL-21B row 2 AUTO SELECTED, DITL-21C row 8 AUTO SEQUENCE MODE):
-       the logic starts and stops them on the overall furnace DP (DITL-21D > 1500 cycle, > 1900 speed control, < 1600 / < 1400 stop). Stopped at
-       the load as on 16.PNG (L-1060A ~ D stopped at 1426 mmH2O); the snapshot shows MANUAL, the design (FHI, DITL-21) runs them in AUTO */
+       the logic starts and stops them on the overall furnace DP (DITL-21D > 1500 cycle, > 1900 speed control, < 1600 / < 1400 stop). Stopped in
+       the start state (the logic starts them when the furnace DP asks), in AUTO as the design (FHI, DITL-21) runs them */
     [/BOTTOM ASH SCREW COOLER|ASH COOLER/, 0, 1, 'L-1060A ~ D ASH COOLER stopped, AUTO SEQUENCE'],
     /* the STOP contact of a running conveyor is 0: it matched the rule below and held the ash coolers off (DITL-21A, Mina item 2) */
     [/CHAIN CONVEYOR.*STOP/, 0, 0, 'L-1090 CHAIN CONVEYOR STOP contact'],
     [/CHAIN CONVEYOR/, 1, 0, 'L-1090 CHAIN CONVEYOR running'],
-    /* 3.2.1 (SEULGI, bottom ash plant model): the other machines of 16.PNG (before: no rule, they stood stopped) */
-    [/BUCKET ELEVATOR/, 1, 0, '16.PNG L-1091 BUCKET ELEVATOR running (R)'],
-    [/SCREW CONVEYOR/, 1, 0, '16.PNG L-1092 SCREW CONVEYOR running (R)'],
-    [/FILTER VENTING FAN|VENTING FAN\s*\(F-1091\)/, 1, 0, '16.PNG F-1091 VENTING FAN running (R)'],
-    [/VIBRATING SCREEN/, 0, 0, '16.PNG S-1092 VIBRATING SCREEN A / B stopped (R)'],
-    [/AIR PREHEATER|\bAPH\b/, 1, 0, 'APH MAIN DRIVE MOTOR 4.7 A'],
+    /* 3.2.1 (SEULGI, bottom ash plant model): the ash removal line to the ash silo (DITL-BA66 ~ 69 interlock chain) */
+    [/BUCKET ELEVATOR/, 1, 0, 'L-1091 BUCKET ELEVATOR running (R)'],
+    [/SCREW CONVEYOR/, 1, 0, 'L-1092 SCREW CONVEYOR running (R)'],
+    [/FILTER VENTING FAN|VENTING FAN\s*\(F-1091\)/, 1, 0, 'F-1091 VENTING FAN running (R)'],
+    [/VIBRATING SCREEN/, 0, 0, 'S-1092 VIBRATING SCREEN A / B stopped (R): the leg to the ash silo, not to the screens'],
+    [/AIR PREHEATER|\bAPH\b/, 1, 0, 'APH MAIN DRIVE MOTOR running'],
     [/LIMESTONE FEEDER|ROTO FEEDER/, 1, 0, 'L-1311 ROTO FEEDER running'],
-    /* 3.2.0-beta.68 (INSTRUMENT & PLANT AIR HMI): air in service at 150 MW (39.PNG instrument air buffer tanks 7.0 kg/cm2); the compressor
-       and dryer pages (PICT 24 / 25) are not in the snapshots: compressor A and dryer A in service is ASSUMED (B and C standby) */
-    [/(INSTRUMENT|PLANT) AIR COMPRESSOR\s*-?\s*A\b/, 1, 0, '39.PNG air 7.0 kg/cm2: compressor A running (ASSUMED A)'],
-    [/(INSTRUMENT|PLANT) AIR DRYER\s*-?\s*A\b/, 1, 0, '39.PNG air 7.0 kg/cm2: dryer A running (ASSUMED A)'],
-    [/IGNITER/, 0, 0, '6.PNG: oil burners out of service (FIC-OM 0 %), no igniter'],
-    [/\bBURNER\s*[A-D]\b|ALL BURNER|ANY BURNER/, 0, 0, '6.PNG: oil burners out of service (oil flow 0, FIC-OM M 0 %)']
+    /* 3.2.0-beta.68 (INSTRUMENT & PLANT AIR HMI): air in service at load (IA set pressure 0.700 MPa, unit.js AN_AIR_SP); compressor A
+       and dryer A in service, B and C standby (NO-SOURCE: the duty count of the compressors and dryers) */
+    [/(INSTRUMENT|PLANT) AIR COMPRESSOR\s*-?\s*A\b/, 1, 0, 'compressor A running (NO-SOURCE: duty)'],
+    [/(INSTRUMENT|PLANT) AIR DRYER\s*-?\s*A\b/, 1, 0, 'dryer A running (NO-SOURCE: duty)'],
+    [/IGNITER/, 0, 0, 'oil burners out of service at load (the fuel at load is coal, FHI Fig 13 solid fuel), no igniter'],
+    [/\bBURNER\s*[A-D]\b|ALL BURNER|ANY BURNER/, 0, 0, 'oil burners out of service at load (the fuel at load is coal, FHI Fig 13 solid fuel)']
   ];
   /* valves and dampers at 150 MW: open = 1 (OPENED 1, CLOSED 0), shut = 0, null = modulating (neither end switch made) */
   const VALVES = [
-    /* 2.2.0-beta.6: drains first (29.PNG MVAS1392 / 1393 / 1397 0.0 % TQ: the gland steam drains are shut too; before, the
-       GLAND rule below read "GLAND STM DRAIN SEPARATOR DRAIN MOV" as open) */
-    [/DRAIN (MOV|VALVE|VLV)|DRN (MOV|VLV)|WARMING LINE DRN|LINE DRAIN|\bDRAIN\b.*\bMOV\b/, 0, '29.PNG / 4.PNG: unit on load, the drains are shut (MVAS1392 / 1393 / 1397 0.0 % TQ)'],
-    [/GLAND.*DESUPERHEATER|DESUPERHEATER.*GLAND/, 0, '29.PNG XVCD1125 condensate to gland steam desuperheater: closed'],
-    [/(FAB|BLOWER)-?\s*B\s*OUTLET/, 0, '9.png XVFA1055B3 FA blower-B (standby) discharge: closed (green)'],
-    [/LP HTR.*BYPASS|LPH.*BYPASS/, 0, '02.png MVCD1003 #1 LPH bypass 0.0 % TQ'],
-    [/LP HTR.*(INLET|OUTLET)|LPH.*(INLET|OUTLET)/, 1, '02.png MVCD1001 / MVCD1002 #1 LPH inlet 99.6 % / outlet 99.4 %'],
-    [/START-UP EJECTOR/, 0, '29.PNG MVAS1395 aux steam to start-up ejector 0.0 %'],
-    [/STEAM JET AIR EJECTOR/, 1, '29.PNG MVAS1396 aux steam to steam jet air ejectors 100.6 %'],
-    [/VACUUM\s*BREAKER/, 0, '4.PNG condenser 0.057 kg/cm2A: vacuum held, the vacuum breaker is shut'],
-    [/DISCHARGE VALVE/, 1, '11.png: coal feeders A / B / C running, outlet discharge valve open'],
-    [/SILO.*OUTLET VALVE/, 1, '11.png: coal silos feed the running feeders'],
-    [/\bOIL\b.*(VALVE|\bFV\b|SOV)|IGNITER.*VALVE/, 0, '6.PNG: oil burners out of service, supply oil valves closed'],
-    [/BYPASS.*DESUPERHEATING/, 0, '5.PNG: HP / LP bypass shut on load, their spray block valves shut'],
+    /* 2.2.0-beta.6: drains first (the gland steam drains MV-AS1392 / 1393 / 1397 too; else the GLAND rule below reads "GLAND STM DRAIN
+       SEPARATOR DRAIN MOV" as open) */
+    [/DRAIN (MOV|VALVE|VLV)|DRN (MOV|VLV)|WARMING LINE DRN|LINE DRAIN|\bDRAIN\b.*\bMOV\b/, 0, 'unit on load, the drains are shut (HB case 1: no steam leaves the cycle, make-up 0)'],
+    [/GLAND.*DESUPERHEATER|DESUPERHEATER.*GLAND/, 0, 'XVCD1125 condensate to gland steam desuperheater: closed (NO-SOURCE)'],
+    [/(FAB|BLOWER)-?\s*B\s*OUTLET/, 0, 'XVFA1055B3 FA blower-B (standby) discharge: closed'],
+    [/LP HTR.*BYPASS|LPH.*BYPASS/, 0, 'MVCD1003 #1 LPH bypass shut (HB case 1: the condensate through No.1 LPH)'],
+    [/LP HTR.*(INLET|OUTLET)|LPH.*(INLET|OUTLET)/, 1, 'MVCD1001 / MVCD1002 #1 LPH inlet / outlet open (HB case 1)'],
+    [/START-UP EJECTOR/, 0, 'MVAS1395 aux steam to start-up ejector shut (HB case 1: SJAE motive steam D only)'],
+    [/STEAM JET AIR EJECTOR/, 1, 'MVAS1396 aux steam to steam jet air ejectors open (HB case 1 leak D = SJAE motive steam)'],
+    [/VACUUM\s*BREAKER/, 0, 'vacuum held (HB case 1 condenser 0.07 ata), the vacuum breaker is shut'],
+    [/DISCHARGE VALVE/, 1, 'coal feeders A / B / C running, outlet discharge valve open'],
+    [/SILO.*OUTLET VALVE/, 1, 'coal silos feed the running feeders'],
+    [/\bOIL\b.*(VALVE|\bFV\b|SOV)|IGNITER.*VALVE/, 0, 'oil burners out of service at load, supply oil valves closed'],
+    [/BYPASS.*DESUPERHEATING/, 0, 'HP / LP bypass shut on load (HB case 1: no bypass flow), their spray block valves shut'],
     [/EMERGENCY DRAIN/, 0, 'unit on load: emergency drains shut'],
-    [/SPRAY WATER.*(SOV|SHUT|BLOCK)|DESUPERHEATER SPRAY/, 1, '03.png / 4.PNG: SH and RH spray in service (TCV 69.7 %, 66 %)'],
-    [/(FAB|BLOWER)-?\s*B\b.*SILENCE|SILENCE.*(FAB|BLOWER)-?\s*B\b/, 1, '9.png XVFA1055B2 FA blower-B (standby) to silencer: open (red)'],
-    [/TO SILENCE|SILENCER/, 0, '9.png XVFA1055A2 FA blower-A (running) to silencer: closed (green); 4.PNG main steam / hot reheat to silencer shut'],
+    [/SPRAY WATER.*(SOV|SHUT|BLOCK)|DESUPERHEATER SPRAY/, 1, 'SH spray in service at full load (FHI Fig 10 SH spray), RH spray block open'],
+    [/(FAB|BLOWER)-?\s*B\b.*SILENCE|SILENCE.*(FAB|BLOWER)-?\s*B\b/, 1, 'XVFA1055B2 FA blower-B (standby) to silencer: open'],
+    [/TO SILENCE|SILENCER/, 0, 'XVFA1055A2 FA blower-A (running) to silencer: closed; main steam / hot reheat to silencer shut on load'],
     [/FAB\s*A\s*OUTLET|BLOWER-?A OUTLET/, 1, 'FA blower A in service: outlet valve open'],
-    [/INLET VANE|BIAS DAMPER|\bVANE\b/, null, '7.PNG: fan vanes and the bias dampers modulate'],
-    [/EXTRACTION STM NO\.?\s*\d\s*SHUT-?OFF/, 1, '4.PNG: unit on load, the heaters are in service (extraction steam open)'],
+    [/INLET VANE|BIAS DAMPER|\bVANE\b/, null, 'fan vanes and the bias dampers modulate (their controllers in AUTO)'],
+    [/EXTRACTION STM NO\.?\s*\d\s*SHUT-?OFF/, 1, 'unit on load, the heaters are in service (HB case 1: extraction steam open)'],
     [/MAIN STM TO AUX|AUX STEAM HEADER|GLAND/, 1, 'unit on load: steam to the auxiliary and gland headers'],
-    [/BYPASS.*(VALVE|VLV)/, 0, '5.PNG: HP / LP bypass shut on load'],
-    [/POLISHER.*(INLET|OUTLET).*MOV/, 0, '28.png MVCD1007 / MVCD1008 0.0 %: condensate polisher bypassed (FCVCD1121 100.6 %)'],
-    [/MAKE-UP WTR TO COND.*SHUT-?OFF/, 0, '28.png MVMU1001 make-up to condenser 0.0 %']
+    [/BYPASS.*(VALVE|VLV)/, 0, 'HP / LP bypass shut on load (HB case 1)'],
+    [/POLISHER.*(INLET|OUTLET).*MOV/, 0, 'MVCD1007 / MVCD1008 shut: condensate polisher bypassed (FCVCD1121 open) (NO-SOURCE: polisher in or out at load)'],
+    [/MAKE-UP WTR TO COND.*SHUT-?OFF/, 0, 'MVMU1001 make-up to condenser shut (HB case 1 make-up 0)']
   ];
-  /* analog inputs of the DITL comparators at 150 MW (transmitter tag in the row text -> value of the snapshot) */
+  /* analog inputs of the DITL comparators at full load (transmitter tag in the row text -> design value). A linked row reads its
+     ABC value after the first scan (world.js avw); the rows that stay on this value are listed in phase11-suzu-26 (NOT LINKED) */
   const ANALOG = [
-    [/PT-CD1110\b/, 0.057, '4.PNG PICD1110 condenser pressure 0.057 kg/cm2A'],
-    [/ZT-MS1020\b/, 1.1, '5.PNG PCVMS1020 HP bypass 1.1 %'],
-    [/ZT-HR1010\b/, 1.3, '5.PNG PCVHR1010 LP bypass 1.3 %'],
-    [/ZT-TS1001\b|AI0738\b/, 99.8, '4.PNG MVTS1001 99.8 %'],
-    [/ZT-TS1002\b|AI0739\b/, 99.4, '4.PNG MVTS1002 99.4 %'],
-    [/ZT-TS1003\b|AI0740\b/, 100.0, '02.png MVTS1003 100.4 %'],
-    [/ZT-TS1004\b|AI0741\b/, 99.0, '02.png MVTS1004 99.0 %'],
-    [/ZT-TS1005\b|AI0742\b/, 100.0, '02.png MVTS1005 100.4 %'],
-    [/TIHR1002[12]|TT-HR1002/, 541, '4.PNG RHT 541 C'],
-    [/PT-IA1706|PT-IA0706|PIIA/, 7.0, '39.PNG instrument air buffer tanks 7.0 kg/cm2']
+    [/PT-CD1110\b/, 0.071, 'condenser 0.0710 ata (HB PPE-14-0725 case 1)'],
+    [/ZT-MS1020\b/, 0, 'HP bypass shut on load (HB case 1: no bypass flow)'],
+    [/ZT-HR1010\b/, 0, 'LP bypass shut on load (HB case 1)'],
+    [/ZT-TS1001\b|AI0738\b/, 100, 'MVTS1001 open (HB case 1 extraction)'],
+    [/ZT-TS1002\b|AI0739\b/, 100, 'MVTS1002 open (HB case 1 extraction)'],
+    [/ZT-TS1003\b|AI0740\b/, 100, 'MVTS1003 open (HB case 1 extraction)'],
+    [/ZT-TS1004\b|AI0741\b/, 100, 'MVTS1004 open (HB case 1 extraction)'],
+    [/ZT-TS1005\b|AI0742\b/, 100, 'MVTS1005 open (HB case 1 extraction)'],
+    [/TIHR1002[12]|TT-HR1002/, 541, 'RH outlet 541 C (FHI P2S7 design data)'],
+    [/PT-IA1706|PT-IA0706|PIIA/, 0.7 * 10.1972, 'IA set pressure 0.700 MPa (IHI T2A IXE-00037 ~ 39, unit.js AN_AIR_SP.ia)']
   ];
   const valveOf = t => {
     for (const [re, open, why] of VALVES) if (re.test(t)) return { open, why };
@@ -123,14 +124,14 @@
       .replace(/\s+/g, ' ')
       .trim();
     if (!t) return null;
-    /* 37.PNG GENERATOR: synchronized, 52L1 / DS / 52G1 / field CB closed (red), NORMAL OPERATION MODE (not house operation) */
+    /* the generator on the grid at load: synchronized, 52L1 / DS / 52G1 / field CB closed, NORMAL OPERATION MODE (not house operation) */
     if (/HOUSE OPERATION/.test(t)) return 0;
     if (/\b52G1?\b|\bGCB\b/.test(t) && /\bON\b|CLOSED/.test(t)) return 1;
     if (/\b52G1?\b|\bGCB\b/.test(t) && /\bOFF\b|OPEN/.test(t)) return 0;
     /* a compound condition ("... NOT RUNNING AND SPEED L/LL") is left to the logic */
     if (/\bNOT\b/.test(t) && /\bAND\b/.test(t)) return null;
-    /* Mina beta.114: the ash screw cooler speed switch SS-BH1060-x "SPEED NOT LOW" read 1 with the cooler STOPPED (16.PNG: all four stopped
-       at 150 MW): the NOT rule below made it 1. It follows its own cooler (plantsw.js SS-BH1060-x), so the load leaves it to that */
+    /* Mina beta.114: the ash screw cooler speed switch SS-BH1060-x "SPEED NOT LOW" read 1 with the cooler STOPPED (the coolers stand
+       stopped in the start state): the NOT rule below made it 1. It follows its own cooler (plantsw.js SS-BH1060-x), so the load leaves it to that */
     if (/SPEED NOT LOW/.test(t) && /SS-BH1060|COOLER/.test(t)) return null;
     if (/\bNOT\b/.test(t)) {
       const b = rowVal(t.replace(/\bNOT\b/, ' '));
@@ -164,7 +165,7 @@
     if (/P\.\s*B\.?|\bPB\b|PUSH ?BUTTON|\bCOMMAND\b|\bRESET\b|ACKNOW|LAMP TEST|\bTEST\b|AUTO START|STARTING|STOPPING/.test(t))
       return 0;
     /* HI-HI / LO-LO level switches: not made on load (the MOV TORQUE switch is left to the MOV model: a drain MOV shut on
-       its seat shows TQ on the screens, 28.png MVCD1007 "R TQ") */
+       its seat shows TQ, its torque switch made on the seat) */
     if (/HI-HI|LO-LO/.test(t)) return 0;
     if (
       /TRIP|FAULT|FAIL|ABNORMAL|OVERLOAD|ALARM|UNSUCCESSFUL|PLUG|LEAK|\bFIRE\b(?! WATER| PUMP| FIGHTING)|\bH\.?\s?H\.?\b|\bL\.?\s?L\.?\b|\bHIGH\b|\bLOW\b|\bL\.(?=\s|$)|\bH\.(?=\s|$)|[<>]|VIBRATION|EXCESS|OVER ?SPEED|SHUTDOWN MODE|MFT/.test(
@@ -182,7 +183,7 @@
     /* every station on the screens is in REMOTE (DCS) at 150 MW; "LOCAL / REMOTE" names the selector, it is REMOTE */
     if (/\bREMOTE\b/.test(t)) return 1;
     if (/\bLOCAL\b/.test(t)) return 0;
-    /* AUTO / MANUAL selection: only when the snapshot shows it (the standby machine in AUTO) */
+    /* AUTO / MANUAL selection: only when a rule names it (the standby machine in AUTO for the auto start of its DITL) */
     if (/\bAUTO\b/.test(t)) return e ? e.auto : null;
     if (/\bMANUAL\b/.test(t)) return e ? (e.auto ? 0 : 1) : null;
     if (/RUNNING|IN SERVICE|IN OPERATION|ENERGIZED|\bRUN\b/.test(t)) return e ? e.run : null;
@@ -238,11 +239,7 @@
         if (hit) (s.av150 = s.av150 || {})[a.key] = hit[1];
       }
       for (const i of plantRows(s)) {
-        /* a bit that the 150 MW load of the ABC takes from a snapshot (hmi-op.js AN_HMI_DI, e.g. I.0418 ICV TO CV TRANSFER
-           COMPLETE = 1 on 4.PNG) is the same address here */
-        const ad = WORLD.addrK ? WORLD.addrK(s, i) : (textOf(s, i, 'S').match(/\b[IM]\.[0-9A-F]{4}\b/) || [])[0],
-          hd = ad && AN.hmiDI ? AN.hmiDI[ad] : null,
-          v = hd ? hd[0] : rowVal(textOf(s, i, 'S'));
+        const v = rowVal(textOf(s, i, 'S'));
         if (v) {
           s.sig[i + ':S'] = true;
           rep.set++;
@@ -279,7 +276,7 @@
      L-1090 whenever the plant was not Cold (boiler.js: U.baConv = !U.cold || ...), so its ash coolers run on that contact (DITL-21A row 10
      CHAIN CONVEYOR RUNNING I.0163), while the ON COMMAND latches of the conveyors (DITL-BA66 ~ BA69) were never set: now that the chain
      follows its command, such a save would stop the chain and trip the coolers at the first scan. The save gets the line-up of the 150 MW
-     start (HMI snapshot 16.PNG): the ON COMMAND latches of the screw (BA66 row 5), bucket elevator (BA67 row 4), chain (BA68 row 4) and
+     start (the ash removal line to the ash silo, DITL-BA66 ~ 69): the ON COMMAND latches of the screw (BA66 row 5), bucket elevator (BA67 row 4), chain (BA68 row 4) and
      venting fan (BA69 row 4) set, as their START buttons (DITL-BA61) leave them, the separator closed (the leg to the ash silo), and the
      running bits that the old start seeded on DITL-BA59 (rows 7 ~ 9, 13: the plant model makes them now) cleared. A Cold save and a save
      with the chain latch already set are left as saved */
@@ -338,14 +335,14 @@
   /* 3.2.3 SOHEE (Mina F151-1): a save point made before beta.154 (no version in it; every save before that one had none). Before
      beta.150 the plant model did not read the FA blower surge SOV XV-FA1055-A2 / B2 nor its outlet SOV (DITL-28C), so a save could hold a
      running blower with its surge valve open and its outlet closed (opened by hand at the FAB step of the Training, never closed): it
-     blew 26 T/H then, and loads now with no FA flow (0.03 T/H at 150 MW). Such a blower is put on the line-up of PR-OPE-5002 FAB
-     START-UP after the start ("Ensure Surge Valve will CLOSE and FAB Discharge Valve will OPEN"): the CLOSE P.B. of its surge valve
+     blew 26 T/H then, and loads now with no FA flow (0.03 T/H at 150 MW). Such a blower is put on the running line-up of its DITL-28C
+     (a running blower blows through its outlet, its surge valve closed): the CLOSE P.B. of its surge valve
      (row 5, M.1031 / 1041) and the OPEN P.B. of its outlet (row 12, M.1050 / 1060) of its DITL-28C, held for the first scans after
      Run (dock-eng.js press). One Event log line names it.
      Mina S154-3 (the same b142 save): the STANDBY blower B (stopped, the other one running) had its surge valve closed: DITL-28A #B
      row 5 FCD READY (M.1043 <- DITL-28C #B surge valve opened AND ABC-014 M.3116 damper demand at its start position) stayed 0, so the
-     AUTO cut-in of B was blocked when A stopped: no FA flow, MFT in 56 s. PR-OPE-5002 FAB START-UP: before the start the surge valve
-     is OPEN and in AUTO, the discharge valve CLOSED and in AUTO ("Set Standby FAB in AUTO Mode"). Such a standby blower gets both SOVs
+     AUTO cut-in of B was blocked when A stopped: no FA flow, MFT in 56 s. The start permissive of DITL-28A row 5 FCD READY asks the
+     surge valve opened, so the standby blower stands with its surge valve OPEN and in AUTO, the discharge valve CLOSED and in AUTO. Such a standby blower gets both SOVs
      of its DITL-28C in AUTO (rows 2 / 13 AUTO MODE SELECTED, kept) and the OPEN P.B. of its surge valve (row 1) and the CLOSE P.B. of its
      outlet (row 16); a fresh 150 MW start has blower B so (fa_silencer.js). Two stopped blowers (a cold save) are left as saved */
   D.faLineup = () => {
@@ -375,8 +372,8 @@
         } catch (e) {}
         /* the inlet damper of the standby blower at its start position: ABC-014 M.3115 / M.3116 = MV > 23 % AND < 27 % (DRAWING_AUDIT
            v2.5.0 ABC-014); the 25 % of the BU-CMD comes only as a 2 s pulse after a stop, so a blower that never ran kept the 0 % of the
-           Cold state (b142: FICFA1055B M 0 %). Put in MANUAL at 25 % (PR-OPE-5002 "at least 25% OPEN"; HMI snapshot 9.png FCVFA1055B1
-           24.9 % M) */
+           Cold state (b142: FICFA1055B M 0 %). Put in MANUAL at 25 %, the middle of the 23 ~ 27 % window
+           of the drawing */
         let dmp = false;
         try {
           const T0 = AN.sheets ? AN.sheets.find(z => z.name === 'ABC-014') : null,
@@ -416,7 +413,7 @@
       done.push(k);
     });
     if (done.length && typeof lsEventAdd === 'function')
-      for (const k of done) lsEventAdd('DITL-28C', 'DCS', 'Save point from an older version: FA blower ' + k + ' running with its surge valve open or its outlet closed; surge valve CLOSE and outlet OPEN pressed (PR-OPE-5002 FAB start-up line-up)');
+      for (const k of done) lsEventAdd('DITL-28C', 'DCS', 'Save point from an older version: FA blower ' + k + ' running with its surge valve open or its outlet closed; surge valve CLOSE and outlet OPEN pressed (DITL-28C running line-up)');
     if (sby.length && typeof lsEventAdd === 'function')
       for (const [k, dmp, sov] of sby)
         lsEventAdd(
@@ -424,7 +421,7 @@
           'DCS',
           'Save point from an older version: standby FA blower ' + k + ' was not ready to start (FCD READY missing); ' +
             [sov ? 'its surge and outlet SOVs set to AUTO, surge valve OPEN and outlet CLOSE pressed' : 'its surge and outlet SOVs set to AUTO', dmp ? 'inlet damper FICFA1055' + k + ' MANUAL 25 %' : ''].filter(Boolean).join(', ') +
-            ' (PR-OPE-5002 standby FAB line-up)'
+            ' (DITL-28A FCD READY start permissive)'
         );
     return done.concat(sby.map(x => x[0]));
   };
@@ -513,25 +510,12 @@
         const v = outVal(textOf(s, o.row, 'RS'));
         if (v != null) put(s, o.row, v);
       }
-    const abc = new Map();
-    const known = AN.hmiDI || {};
-    for (const a of (window.WORLD.idx && WORLD.idx.ain) || []) {
-      /* only the bits that the 150 MW load takes from a snapshot (hmi-op.js AN_HMI_DI); the others are 0 by default, not a fact */
-      if (!known[String(AN.nm(a.sh.S, a.n) || '').trim()]) continue;
-      const k = a.d.name + '#' + a.row,
-        v = a.sh.S && a.sh.S.rt ? (a.sh.S.rt.ext[a.n] > 0.5 ? 1 : 0) : null;
-      if (v == null) continue;
-      if (abc.has(k) && abc.get(k)[1] !== v) abc.get(k)[2] = 1;
-      else if (!abc.has(k)) abc.set(k, [a, v, 0]);
-    }
-    abc.forEach(([a, v, x]) => {
-      if (x) bad.add(a.d.name + '#' + a.row);
-      else put(a.d, a.row, v);
-    });
+    /* Phase 11 rule 0 (SUZU, 2026-11-28): the wishes of the ABC bits of the old screen line-up (hmi-op.js AN_HMI_DI) are gone; the
+       DITL outputs the ABC reads take the state the logic gives (the start state src/data/st150.txt keeps the line-up) */
     W.forEach((m, s) => m.forEach((v, k) => bad.has(s.name + '#' + k) && m.delete(k)));
     return W;
   };
-  /* the latches (FF) of the drawing take the state of a plant in service: the start was done before the snapshot. One FF at a
+  /* the latches (FF) of the drawing take the state of a plant in service: the start-up was done before. One FF at a
      time, kept only when more wanted outputs of its sheet agree */
   /* the state of one sheet that the solver may change: latches (FF), seal-in nets, motor and valve models */
   const snap = s => ({
@@ -660,8 +644,7 @@
         if (!f && k > 1) break;
       }
       /* 3.2.0 P1 #3 / #4: the eight valves of DITL-38 (one drawing, src/world/world.js W.MCV). On load the turbine takes its steam
-         through the main steam stop MOV MV-MS1391 (4.PNG) and the feedwater flows through the discharge MOVs of the pumps (03.png
-         BFWP-A in service, BFWP-B standby in AUTO: its discharge open so that the auto start feeds at once); the warming bypass
+         through the main steam stop MOV MV-MS1391 and the feedwater flows through the discharge MOVs of the pumps (BFWP-A in service, BFWP-B standby in AUTO: its discharge open so that the auto start feeds at once); the warming bypass
          MV-MS1392, the filling bypasses MV-FW1391 / 1392, the mass blowdown MV-BD1001 and the continuous blowdown MV-BD1002 are shut
          (design: HB PPE-14-0725 case 1 has no make-up, so no blowdown leaves the cycle at 150 MW; the 15 T/H of MB-019 item 22 is the
          sizing flow of the CBD line). Before 2026-11-28 MV-BD1002 was 100 % open (14.8 T/H) */
@@ -696,7 +679,7 @@
       D.scan(3, 1);
       rs.forEach(([s, i]) => delete s.sig[i + ':S']);
       D.scan(10, 1);
-      /* lane 3 (KIRARA, beta.563): the bottom ash conveyors at load (HMI snapshot 16.PNG: chain L-1090, bucket elevator L-1091, screw
+      /* lane 3 (KIRARA, beta.563): the bottom ash conveyors at load (chain L-1090, bucket elevator L-1091, screw
          L-1092 and bag filter venting fan F-1091 running, both vibrating screens stopped, the leg of the two-way separator L-1094 to the
          ash silo in service). The operator starts them from the CRT buttons of DITL-BA61 (rows from 0: 12 VENTING FAN START, 7 TO CLOSE
          TWO-WAY, 4 SCREW, 2 BUCKET ELEVATOR, 0 CHAIN CONVEYOR START), in the order their interlocks ask (DITL-BA66: fan running and
