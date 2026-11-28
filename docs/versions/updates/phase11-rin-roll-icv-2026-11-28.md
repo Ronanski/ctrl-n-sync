@@ -5,3 +5,4 @@
 - Operator view: nothing changes in the turbine start; one path for the roll.
 - Tested: u-const, one-path, no-fit, no-snapshot (baseline 588 -> 587), turbine-rejection, tcs_gen_desk. tcs_ibd_desk / tcs_cmd_refused / tcs_ibd_b3_desk fail the same on main without this change (not in Checks).
 - cfb.js stored-heat sum (AOI store port): the reheat pipe term now reads AN_RHPIPE.M (17.9e3 kJ/K, BOM), not the deleted U.rhPipeM || 10000 (KANA finding).
+- New port gs.spill (RIN to MEI): the steam seal regulator spill-over to the No.1 LP heater shell = HP gland leaks C (lkC + lkC2) less the gland steam condenser 421 and LP gland seals 372 kg/h (HB PPE-14-0725 R1, same every case). 150 MW: 1.025 T/H at 3210 kJ/kg (HB 1.027 at 767.6 kcal/kg). turbine-hb checks it on all 8 HB cases (within 21 kg/h). Before, those leaks left the turbine and went nowhere.

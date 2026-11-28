@@ -91,6 +91,7 @@ const AN_PORTS = {
     'ext.w_lp': { by: 'MEI', to: ['RIN'], kind: 'steam', v: ['m'], note: 'extraction flows drawn: x = {lp3, lp2, lp1}', d150: {} },
     'lp.exh': { by: 'RIN', to: ['MEI'], kind: 'steam', v: ['m', 'h'], note: 'LP turbine exhaust into the condenser', d150: {} },
     'lp.bypass': { by: 'RIN', to: ['MEI'], kind: 'steam', v: ['m', 'h'], note: 'LP bypass after its spray into the condenser', d150: { m: 0 }, src: 'HB PPE-14-0725 case 1 has no such flow: closed at load' },
+    'gs.spill': { by: 'RIN', to: ['MEI'], kind: 'steam', v: ['m', 'h'], note: 'steam seal regulator spill-over to the No.1 LP heater shell (HP gland leaks C less the GSC and LP gland seals)', d150: { m: 1.027 }, src: 'HB PPE-14-0725 R1 case 1 SSR_to_LP1 1027 kg/h at 767.6 kcal/kg' },
     'gs.leak': { by: 'RIN', to: ['MEI'], kind: 'steam', v: ['m', 'h'], note: 'gland leak-off to the gland steam condenser', d150: {} },
     'gs.supply': { by: 'SUZU', to: ['RIN'], kind: 'steam', v: ['m', 'P', 'T', 'h'], note: 'gland steam seal supply from the auxiliary steam', d150: {} },
     /* ---- condenser, condensate, deaerator ---- */

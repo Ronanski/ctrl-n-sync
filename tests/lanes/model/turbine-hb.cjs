@@ -28,6 +28,8 @@ const HB = {
    splits it into the turbine mechanical loss (turbine.js AN_TB.mech) and the generator losses of the machine data (YUI anGenW) */
 vm.runInContext('var HBGEN = sh => sh - 2.565 - 3.295e-5 * sh * sh;', ctx);
 let bad = 0;
+/* HB SSR_to_LP1 (the steam seal regulator spill-over to the No.1 LP heater), kg/h as printed per case */
+const SSR = { 1: 1027, 2: 764, 3: 503, 4: 328, 5: 167, 6: 4, 7: 0, VWO: 1079 };
 const lim = { 6: [2, 2, 2, 4, 4], 7: [2, 2, 2, 4, 8] };
 for (const k of Object.keys(HB)) {
   const [ms, Pms, Tms, hrh, Phr, Thr, Pcr, Tcr, x, Ps, Pc, Hx, kW] = HB[k];
@@ -48,6 +50,7 @@ for (const k of Object.keys(HB)) {
   ck('Tcr', r.Tcr, Tcr, 2, 0);
   ck('Hx', r.H.x / 4.1868, Hx, 4, 0);
   ck('MW', r.MW, kW / 1000, 1, 0) /* 1 MW, ACCEPTANCE Part 1 generator MW tolerance */;
+  ck('SSR', r.gs.m, SSR[k], 60, 0) /* kg/h: the gland leaks follow the stage pressures (within 60 kg/h = 6 % of case 1) */;
   console.log(k.padEnd(4) + row.join(' | '));
 }
 console.log(bad ? 'turbine-hb: ' + bad + ' values off the heat balance' : 'turbine-hb: the steam path gives all 8 heat balance cases');
