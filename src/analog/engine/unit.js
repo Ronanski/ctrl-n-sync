@@ -2607,8 +2607,8 @@ function anMotorStep(U, dt) {
                   532 % (the torque / current curve);
      tanks        D1-0-059 document index and PD-023: T-0705A / B 10 m3 (PA), T-0706A / B 5 m3 (IA), max. working pressure 0.98 MPa;
      pressure     the set pressure of the compressor panel, AN_AIR_SP: PA = IHI TRE set point list 10-01 (IXB-01424 ~ 01426, O&M L17-2
-                  pp 9 ~ 10, YUA read suzu-design-reads-2026-11-28.md 6): PIC1 constant pressure 0.800 MPa = 8.16 kg/cm2 G; IA 7.0
-                  (SNAPSHOT-TO-REPLACE: the IA package set point list is not read yet); the tanks max. working pressure 0.98 MPa is above it;
+                  pp 9 ~ 10, YUA read suzu-design-reads-2026-11-28.md 6): PIC1 constant pressure 0.800 MPa = 8.16 kg/cm2 G; IA = IHI T2A
+                  panel IXE-00037 ~ 39 (O&M L17-3 sheet 10-45, suzu-reads-batch-2026-11-28.md 1): PIC1 0.700 MPa = 7.14 kg/cm2 G; the tanks max. working pressure 0.98 MPa is above it;
      alarm list   tanks and unit header L 5.0, IA LL 3.5, PSL-IA1706 / PSL-PA1705 2.8 kg/cm2;
      I/O list     ranges 0 ~ 10 kg/cm2, dryer outlet flow 0 ~ 2700 (IA) / 0 ~ 5800 (PA) m3/h, compressor current 0 ~ 500 (IA) / 0 ~ 140
                   (PA) A (the transmitter holds its range top).
@@ -2634,7 +2634,7 @@ function anMotorStep(U, dt) {
      dryer outlet the tank pressure plus 0.15 kg/cm2 at the design use (NO-SOURCE), with the flow squared; flow over the dryers in
                   service, over the three while none is (their inlet valves stay open). */
 /* the set pressure of the compressor panels, kg/cm2 G (see AN_AIR). Kept outside AN_AIR: a save carries AN_AIR (state.js AN_STATE_OBJ) */
-const AN_AIR_SP = { pa: 0.8 * 10.1972 /* IHI TRE PIC1 0.800 MPa */, ia: 7.0 /* SNAPSHOT-TO-REPLACE */ };
+const AN_AIR_SP = { pa: 0.8 * 10.1972 /* IHI TRE PIC1 0.800 MPa */, ia: 0.7 * 10.1972 /* IHI T2A IA panel IXE-00037 ~ 39 PIC1 0.700 MPa (L17-3 sheet 10-45) */ };
 const AN_AIR = {
   Pa: 1.033,
   loss: 0.2,
