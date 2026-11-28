@@ -1284,8 +1284,9 @@ const AN_SW_V0 = {
   'V-SW1006': 100,
   'V-SW1007': 100,
   'V-SW1008': 100,
-  'V-SW1009': 40,
-  'V-SW1010': 40,
+  /* the condenser outlet valves at the opening of the design point (cooling.js swCal c.oDes, DERIVED) */
+  'V-SW1009': Math.round(swCal().oDes * 10) / 10,
+  'V-SW1010': Math.round(swCal().oDes * 10) / 10,
   'V-SW1016': 100,
   'V-SW1018': 100,
   'V-SW1020': 100

@@ -138,6 +138,8 @@ function anEngAPI() {
     bedStep: (U, dt, rpm, pa, fa) => anBedStep(U, dt, rpm, pa, fa),
     swValve: (tag, pct) => anSwValve(tag, pct) || anDoValve(tag, pct),
     swValves: () => Object.assign({}, AN_SW_V0, AN_FV0, AN_DO.fv0, AN_LM.fv0, AN_SRC.valve || {}),
+    /* Phase 11 SUZU fix 25: the start line-up of the seawater valves alone (unit.js AN_SW_V0, the condenser outlet at its DERIVED opening), read by tools/steady150/init/sw-outlet.js */
+    swV0: () => Object.assign({}, AN_SW_V0),
     /* 3.2.1 (IRENE): the opening of one field valve (unit.js anFv / boiler.js anDoFv), read by the limit switch rows (world/plantsw.js) */
     fv: tag => (tag in AN_DO.fv0 ? anDoFv(tag) : anFv(tag)),
     /* 3.2.1 (IRENE): the position of a DITL valve machine (0 ~ 100 %) and the pneumatic valves on the instrument air (unit.js AN_AV) */
