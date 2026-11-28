@@ -504,6 +504,9 @@ function anMakeupStep(U, dt) {
   const hw = typeof AN_CYC !== 'undefined' && AN_CYC.flows ? Math.max(0, AN_CYC.flows('net').mu) : 0,
     qOut = ss > 0 ? hw + (fill ? K.etQ : 0) : 0,
     lv = Math.max(K.lv[0], K.lv[1]);
+  /* Phase 11 port 'mu' (SUZU -> MEI, ports.js): the make-up water into the hotwell, T/H, only while a make-up pump feeds the header.
+     T = the demi water tanks at the ambient (AN_UNIT.Tamb; the make-up temperature of MB-016 is not read: NOT IN DOCS read) */
+  if (typeof anPortSet === 'function') anPortSet(U, 'mu', { m: ss > 0 ? hw : 0, T: U.Tamb });
   /* the feeding pumps share the flow by speed (identical pumps in parallel), each with its recirculation */
   let H = 0;
   U.muQ = [0, 0, 0];
