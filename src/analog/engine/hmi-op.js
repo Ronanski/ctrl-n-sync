@@ -390,7 +390,7 @@ const AN_HMI_CTL = {
   'PICFG108A': { pv: null, sv: null, mv: 99.1, mode: 'M' } /* 2.1.0-beta.6: IDF inlet damper PCDFG10561 M 99.1 % (7.PNG) */,
   'PICHR1003': { pv: 34.4, sv: 36.0, mv: 0.8, mode: 'R' },
   'PICHR1391': { pv: 34.4, sv: 35.5, mv: null, mode: 'A' },
-  'PICMS1002': { pv: 122.1, sv: 128.0, mv: 0.0, mode: 'A' },
+  'PICMS1002': { pv: 122.1, sv: 130.0, mv: 0.0, mode: 'A' } /* ABC-013 as-built R3: preset SI0361 a = 130 kg/cm2 at load (b = 115 on M.0256); was 128.0 from a screen */,
   'PICMS1006': { pv: 121.1, sv: 123.1, mv: 0.0, mode: 'R' },
   'SICL1060A': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,
   'SICL1060B': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,

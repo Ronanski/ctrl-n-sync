@@ -5,7 +5,7 @@
    of the design point (rule 0, RULES.md 3.12). The reheat / bypass part of anUnitStep stays in unit.js (its own section). Joined into
    the one analog script before unit.js (src/analog/order.list). */
 /* 2.2.0-beta.17 (M4 step 4): the operator on the TCS panel (outside the DCS): 'roll' (open the stop valves, IP start mode, rpm up
-   at rollRate), 'sync' (at 3600 rpm: GCB closed, initial load MWinit), 'loadup' (target MW at rateUp MW/min; default 45 = NORMAL
+   by the ATS), 'sync' (at 3600 rpm: GCB closed, initial load MWinit), 'loadup' (target MW at rateUp MW/min; default 45 = NORMAL
    OPERATION). Returns the state or a reason ('' = done) */
 /* 3.2.3-beta.152 S149-3 / S149-4 (Mina, beta.149 normal shutdown): ATS SHUT-DOWN was refused ("Finish step 7 NORMAL OPERATION") and the
    answer went only to the status bar (the TCS / Field menu, the Training buttons), so the press looked silent; a Turbine trip that was not
@@ -207,6 +207,12 @@ const AN_TB = {
     lkC: 403, lkN2: 4650, Hn2: 818.3, lkA: 1205, lkB: 4561, lkC2: 1417
   },
   vwo: { ms: 472460, Pms: 126, Tms: 538, Hms: 823.2, Pcr: 39.78, lkC: 415, lkN2: 4798, lkA: 1193 },
+  /* the steam seal header C (gland steam seal regulator SSR), HB PPE-14-0725 R1 "Gland and leak flows" (turbine-hb-read-2026-11-27.md):
+     in = HP inlet leak C (lkC) + HP exhaust gland leak C (lkC2); out = the gland steam condenser 421 kg/h and the LP gland seals 372 kg/h
+     (the same in every case 1 ~ 9). The rest spills over to the No.1 LP heater shell (SSR_to_LP1): case 1 403 + 1417 - 421 - 372 = 1027,
+     case 5 209 + 751 - 793 = 167, case 6 173 + 624 - 793 = 4 kg/h, as printed; below that the header takes main steam (case 7 MS_line_to_C
+     166 = 793 - 136 - 491), the supply side (gs.supply). The spill enthalpy is the mix of the two leaks (case 1 767.5 vs printed 767.6) */
+  ssr: { gsc: 421, lps: 372 },
   /* (lo / kq, the HB lumped mechanical + generator loss, deleted 2026-11-27: the generator losses are YUI's anGenW / anGenTemp from
      the machine data, the turbine keeps only AN_TB.mech below; the test turbine-hb.cjs holds the lumped HB loss to read the HB kW) */
 };
@@ -359,7 +365,13 @@ function tbPath(I, o) {
     f: { hp: fhp, ip1: f1, ip2: f2, lp: flp, lp2: f3, lp3: f4, lp4: f5, rh: frh },
     Whp: kW(fhp, hms, H.crh) / 1000,
     Wip: (kW(f1, hhr, H.x5) + kW(f2, H.x5i, H.da) + kW(flp, H.lm, H.l3) + kW(f3, H.l3i, H.l2) + kW(f4, H.l2i, H.l1) + kW(f5, H.l1i, H.x)) / 1000,
-    exh: { m: f5 / 1000, h: H.x }
+    exh: { m: f5 / 1000, h: H.x },
+    /* the SSR spill-over to the No.1 LP heater (AN_TB.ssr): kg/h, kJ/kg */
+    gs: (() => {
+      const lc = L.C + L.C2,
+        m = Math.max(0, lc - AN_TB.ssr.gsc - AN_TB.ssr.lps);
+      return { m, h: lc > 0 ? (L.C * hms + L.C2 * H.crh) / lc : hms };
+    })()
   };
 }
 /* the heater draws (T/H) the steam path takes this step; see the head of this block (ports when written) */
@@ -676,6 +688,8 @@ function anTbPorts(U, rpm, hpb) {
   anPortSet(U, 'lk.b', { m: S.L && isFinite(S.L.B) ? S.L.B / 1000 : 0, h: S.H && isFinite(S.H.crh) ? S.H.crh : null });
   /* the LP bypass PCV-HR1010 steam (anVlvW, the step before) at the hot reheat enthalpy (a throttle keeps h); its spray TCV-CD1115 is
      condensate the condenser part adds (x.spray: not written here) */
+  /* the steam seal regulator spill-over to the No.1 LP heater shell (MEI): tbPath S.gs, HB SSR_to_LP1 */
+  anPortSet(U, 'gs.spill', { m: S.gs ? S.gs.m / 1000 : 0, h: S.gs ? S.gs.h : null });
   anPortSet(U, 'lp.bypass', { m: +U.qlp || 0, h: S.H && isFinite(S.H.hrh) ? S.H.hrh : null });
   anPortSet(U, 'shaft', { W: S.Whp + S.Wip > 0 ? S.Whp + S.Wip - AN_TB.mech : 0, n: isFinite(rpm) ? rpm : null });
 }

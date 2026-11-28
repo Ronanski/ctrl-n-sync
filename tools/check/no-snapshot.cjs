@@ -29,18 +29,8 @@ for (const f of files) {
 const BF = path.join(__dirname, 'no-snapshot-baseline.json'),
   base = fs.existsSync(BF) ? JSON.parse(fs.readFileSync(BF, 'utf8')) : {};
 const total = Object.values(cnt).reduce((a, b) => a + b, 0),
-  btotal = Object.values(base).reduce((a, b) => a + b, 0);
+  btotal = Object.entries(base).reduce((a, [f, b]) => a + (f === '_rule0' ? 0 : b), 0);
 if (process.argv.includes('--list')) for (const f of Object.keys(cnt)) console.log(cnt[f], f, 'lines', hits[f].join(','));
-if (process.argv.includes('--update')) {
-  const up = Object.keys(cnt).filter(f => cnt[f] > (base[f] || 0));
-  if (up.length && Object.keys(base).length) {
-    console.log('FAIL no-snapshot --update: the baseline only goes down; more lines than the baseline in ' + up.join(', '));
-    process.exit(1);
-  }
-  fs.writeFileSync(BF, JSON.stringify(cnt, null, 1) + '\n');
-  console.log('no-snapshot baseline written: ' + total + ' lines in ' + Object.keys(cnt).length + ' files (was ' + btotal + ')');
-  process.exit(0);
-}
 /* KNOWN RULE 0 VIOLATIONS (team decision 2026-11-28: a fit kept as a placeholder until its design source exists, e.g. cfb.js kKL 9.2
    against FHI Fig 9). The line carries the tag "RULE 0 VIOLATION". It is printed as a FAIL row in red and as a GitHub error annotation
    on the line, and counted, every run, so it stays in sight. It does not stop the job (it would block every PR), and it is not a pass */
@@ -48,6 +38,17 @@ const RV = /RULE 0 VIOLATION/,
   viol = [];
 for (const f of SCOPE.flatMap(walk).filter(f => /\.(c?js|json|md)$/.test(f) && !/no-snapshot/.test(f)).sort())
   fs.readFileSync(path.join(root, f), 'utf8').split('\n').forEach((l, i) => RV.test(l) && viol.push([f, i + 1, l.trim().slice(0, 160)]));
+if (process.argv.includes('--update')) {
+  const up = Object.keys(cnt).filter(f => cnt[f] > (base[f] || 0));
+  if (base._rule0 != null && viol.length > base._rule0) up.push('RULE 0 VIOLATION tags ' + viol.length + ' > ' + base._rule0);
+  if (up.length && Object.keys(base).length) {
+    console.log('FAIL no-snapshot --update: the baseline only goes down; more lines than the baseline in ' + up.join(', '));
+    process.exit(1);
+  }
+  fs.writeFileSync(BF, JSON.stringify(Object.assign({ _rule0: viol.length }, cnt), null, 1) + '\n');
+  console.log('no-snapshot baseline written: ' + total + ' lines in ' + Object.keys(cnt).length + ' files (was ' + btotal + ')');
+  process.exit(0);
+}
 const GH = !!process.env.GITHUB_ACTIONS;
 for (const [f, n, l] of viol) {
   console.log('\x1b[31mKNOWN FAIL (RULE 0 VIOLATION) ' + f + ':' + n + '  ' + l + '\x1b[0m');
@@ -55,6 +56,11 @@ for (const [f, n, l] of viol) {
 }
 if (viol.length) console.log('\x1b[31mKNOWN FAIL: ' + viol.length + ' RULE 0 VIOLATION line(s) still in the plant model\x1b[0m');
 const bad = Object.keys(cnt).filter(f => cnt[f] > (base[f] || 0));
+/* the RULE 0 VIOLATION tags only go down too (ceiling _rule0 in the baseline): a new fit cannot hide behind the tag */
+if (base._rule0 != null && viol.length > base._rule0) {
+  console.log('FAIL no-snapshot: ' + viol.length + ' RULE 0 VIOLATION tags, more than the ceiling ' + base._rule0 + ' (they only go down; replace the fit by its design source)');
+  process.exit(1);
+}
 if (bad.length) {
   for (const f of bad) console.log('NEW ' + f + ': ' + cnt[f] + ' lines (baseline ' + (base[f] || 0) + '), lines ' + hits[f].join(','));
   console.log('FAIL no-snapshot: a plant snapshot (*.PNG, operating points), plant trend or SOP (PR-OPE) named in the plant model, its start state, tests or judges (user 2026-11-28). Use a design / logic source.');

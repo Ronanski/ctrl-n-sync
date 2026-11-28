@@ -633,13 +633,31 @@ const AN_APL = { dp: 110 /* D2-003 rotary air heater gas loss at MCR */, t: 1800
 /* 3.2.4 (JENNIE, list item: air heater leak): the radial / axial seals of the tri-sector air heater wear and pass more air to the gas side
    (trainer fault aph.leak, world.js). L20 Howden APH OMM sheet 16, duty 1 (performance coal): PA to gas 33,993 kg/h, SA to gas 19,036
    kg/h, total air to gas 7.82 % of the gas inlet. Check of the mixing rule: the same sheet gives the gas out 132.8 C undiluted and
-   126.2 C diluted with the air in at 46 C: (132.8 + 0.0782 x 46) / 1.0782 = 126.5 C (CALC). The design leak is inside the plant
-   values the model already stands on (fan flows of the snapshot); the fault adds +1 x the design leak every 30 min (NO-SOURCE trainer
+   126.2 C diluted with the air in at 46 C: (132.8 + 0.0782 x 46) / 1.0782 = 126.5 C (CALC). The fault adds +1 x the design leak every 30 min (NO-SOURCE trainer
    rate) up to +2 x. The air flow transmitters are at the fan inlets (FT-FA1071 / FA1081, alarm list FT sheet), so they read the leak
    too: the furnace gets less air than they read, the O2 at the air heater gas inlet falls, the O2 trim raises the fans, the ID fan
    takes the leak on top of the furnace gas and the gas leaving the air heater is cooled by the cold air (anAphStep).
+   Phase 11 AOI 2026-11-28: the DESIGN leak now always flows (it was taken as "inside the fan flows", which left the furnace with all
+   the fan air). Each side leaks its design share at its design fan flow, and in proportion to its fan flow (seal gap fixed, orifice
+   law: leak ~ sqrt(dp), and the air side dp ~ Q^2 of its system, so leak ~ Q; DERIVED). Design fan flow = FHI P2S7 Fig 12 furnace air
+   at 100 % MCR + the OMM leak: PA 351.8 + 34.0 = 385.8 T/H (the FHI mass balance K1AU4-MB-052 prints PAF outlet 388 with the 33 t/h
+   APH loss), SA 216.0 + 19.0 = 235.0 T/H. anAphLeak gives [PA, SA] leak in T/H.
    U.aphLk = the added leak in units of the design leak; clearing the fault (seals set again) puts it back to 0 */
-const AN_APK = { pa: 33.993, sa: 19.036, t: 1800, max: 2 };
+const AN_APK = {
+  pa: 33.993 /* T/H, DESIGN-SRC: L20 Howden APH OMM sheet 16 */,
+  sa: 19.036 /* T/H, DESIGN-SRC: L20 Howden APH OMM sheet 16 */,
+  qPa: 351.8 + 33.993 /* T/H PAF at 100 % MCR, DESIGN-SRC: FHI P2S7 Fig 12 + OMM sheet 16 */,
+  qSa: 216.0 + 19.036 /* T/H SAF at 100 % MCR, DESIGN-SRC: FHI P2S7 Fig 12 + OMM sheet 16 */,
+  t: 1800,
+  max: 2
+};
+/* AN.aphLeakShare (0 ~ 1, default 1): a settle / line-up input, not a model constant. The 150 MW settle (tools/steady150) ramps the
+   design leak in over its run while the O2 trim raises the SA; the plant model itself always runs at 1 */
+const anAphLeak = (U, v) => {
+  const sh = typeof AN !== 'undefined' && isFinite(AN.aphLeakShare) ? Math.max(0, Math.min(1, AN.aphLeakShare)) : 1,
+    f = sh + (U.aphLk > 0 ? U.aphLk : 0);
+  return [Math.min(v[0], (f * AN_APK.pa * Math.max(0, v[0])) / AN_APK.qPa), Math.min(v[1], (f * AN_APK.sa * Math.max(0, v[1])) / AN_APK.qSa)];
+};
 /* 3.2.4 (JENNIE, list item: stack dust): THE ELECTROSTATIC PRECIPITATOR. Dust in: the fly ash of the bed balance (unit.js U.flyA, coal ash
    6.82 % + the limestone solids, the 80 % that does not go to the bed drain) in the flue gas, Nm3/h = gas T/H / 1.338 kg/Nm3 (CALC:
    681 T/H of gas, AN_GAS.gm, at 509,000 Nm3/h wet, FHI Tab 3, boiler.js anSOx). Collection: the Deutsch equation (textbook),
@@ -848,9 +866,8 @@ function anAphStep(U, dt) {
   U.aphPa = pa;
   U.aphSa = sa;
   {
-    /* the extra seal leak (AN_APK): it bypasses the heating and joins the gas at the air inlet temperature (OMM sheet 16 dilution) */
-    const lp = Math.min(v[0], (U.aphLk || 0) * AN_APK.pa),
-      ls = Math.min(v[1], (U.aphLk || 0) * AN_APK.sa),
+    /* the seal leak (AN_APK, design + fault): it bypasses the heating and joins the gas at the air inlet temperature (OMM sheet 16 dilution) */
+    const [lp, ls] = anAphLeak(U, v),
       go = anAphOut(z.gi, v[0] - lp, tpa, pa, v[1] - ls, tsa, sa, v[2]),
       gg = (v[0] - lp + v[1] - ls + v[2]) * K.gm;
     U.aphGo = lp + ls > 0.01 && gg > 1 ? (gg * go + lp * tpa + ls * tsa) / (gg + lp + ls) : go;

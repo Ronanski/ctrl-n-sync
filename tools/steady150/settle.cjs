@@ -25,6 +25,7 @@ const MIN = +process.argv[2] || 10;
   if (INIT) E.js(fs.readFileSync(path.join(__dirname, 'init', INIT + '.js'), 'utf8'));
   for (let m = 0; m < MIN; m++) {
     E.step(120);
+    E.js('typeof __settleMinute === "function" && __settleMinute(' + (m + 1) + ')') /* an init may move a set point at an operator's rate (one call a plant minute) */;
     console.log(m + 1, E.js('JSON.stringify({ MW: +AN.unit.MW.toFixed(2), Pd: +AN.unit.Pd.toFixed(2), Pms: +AN.unit.Pms.toFixed(2), ms: +AN.unit.ms.toFixed(1) })'));
   }
   if (!/"tw"/.test(JSON.stringify(o.kf))) E.js('delete AN.unit.ba.tw');
