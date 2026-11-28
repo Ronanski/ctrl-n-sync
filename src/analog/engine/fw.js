@@ -117,7 +117,33 @@ function anDeaStep(U, dt) {
        /mnt/project-files/rin-extraction-2026-11-28.md): a reverse dP seats the disc, so the deaerator steam and the flash of its water cannot go back into the turbine (the air cylinder only
        speeds the closing on a trip). Phase 11 NANA 2026-11-28: was signed (a reverse flow until the NRVs closed), which gave the
        negative draws of the 90 MW swing */
-    lineW = P => (open > 0 && Pxa > P ? open * K.k * anDaLine(Pxa, P, steamRho(Pxa - 1.0332, TxC)) : 0),
+    lineW = (P, Pg) => (open > 0 && Pg > P ? open * K.k * anDaLine(Pg, P, steamRho(Pg - 1.0332, TxC)) : 0),
+    /* the stage answers the draw in the same solve (MEI 2026-11-28, as unit.js anLphStep Sx): Stodola's ellipse law for the stages
+       behind the tap, G P = (P^2 - Pnext^2) / S per group, the groups chained from the condenser up through the LP taps (ports lp.exh,
+       ext.lp1 ~ 3, ext.w_lp): Pg(w) = Pxa - Sda (w - w0), w0 the draw the turbine saw (the last scan). Without it the draw of the scan
+       before sets the stage of this scan and the pair flip-flops at small margins (90 MW: draw -11 <-> +23 T/H every 2 scans) */
+    Sda = (() => {
+      const P = id => {
+          const x = pg(id);
+          return x && isFinite(x.P) ? Math.max(0, +x.P) : 0;
+        },
+        ex = pg('lp.exh'),
+        xl = (pg('ext.w_lp') || {}).x || {},
+        G5 = ex && isFinite(ex.m) ? Math.max(1, +ex.m) : 0,
+        Pc = isFinite(U.cdP) ? Math.max(0.01, U.cdP) : 0.07,
+        P1 = P('ext.lp1'),
+        P2 = P('ext.lp2'),
+        P3 = P('ext.lp3'),
+        G4 = G5 + (+xl.lp1 || 0),
+        G3 = G4 + (+xl.lp2 || 0),
+        Gd = G3 + (+xl.lp3 || 0),
+        S1 = G5 > 1 && P1 > Pc ? (P1 * P1 - Pc * Pc) / (G5 * P1) : 0,
+        S2 = G4 > 1 && P2 > P1 ? (P2 * P2 - P1 * P1) / (G4 * P2) + (P1 / P2) * S1 : 0,
+        S3 = G3 > 1 && P3 > P2 ? (P3 * P3 - P2 * P2) / (G3 * P3) + (P2 / P3) * S2 : 0;
+      return Gd > 1 && Pxa > P3 ? (Pxa * Pxa - P3 * P3) / (Gd * Pxa) + (P3 / Pxa) * S3 : 0;
+    })(),
+    w0 = U.da && isFinite(U.da.wx) ? U.da.wx : 0,
+    Pgw = w => Math.max(0.01, Pxa - Sda * (w - w0)),
     hx = isFinite(fin(pX && pX.h)) ? fin(pX.h) : Pxa > 0.05 ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */ : 0,
     /* pegging steam: the port aux.peg of the aux steam part (SUZU) */
     pP = pg('aux.peg'),
@@ -152,18 +178,31 @@ function anDeaStep(U, dt) {
       return (wb * (h - hb) + wp * (h - hp) + wd * (h - hd) + wc * (h - hc)) / Math.max(100, hx - h);
     },
     Pt = Pd + 1.0332;
-  let Ps = Pt,
-    wx = lineW(Pt);
-  if (T >= 100 && wx > need(Pt) && need(Pxa) > 0) {
-    let lo = Pt,
-      hi = Pxa;
+  /* pinned: the line flow into the storage saturation, w = lineW(Pt, Pg(w)) (w falls as the stage falls with it) */
+  let wx = 0,
+    Ps = Pt;
+  if (open > 0 && Pxa > 0.05) {
+    let lo = 0,
+      hi = Math.max(1, open * K.k * anDaLine(Pgw(0), Pt, steamRho(Pgw(0) - 1.0332, TxC)));
     for (let i = 0; i < 40 && hi - lo > 1e-6; i++) {
       const m = 0.5 * (lo + hi);
-      if (lineW(m) > need(m)) lo = m;
+      if (lineW(Pt, Pgw(m)) > m) lo = m;
+      else hi = m;
+    }
+    wx = lo /* 0 when the stage is under the storage saturation */;
+  }
+  /* unpinned: the steam space above the storage saturation, w = need(Ps) = lineW(Ps, Pg(w)), one root in Ps */
+  if (T >= 100 && wx > need(Pt) && need(Pgw(0)) > 0) {
+    let lo = Pt,
+      hi = Pgw(0);
+    for (let i = 0; i < 40 && hi - lo > 1e-6; i++) {
+      const m = 0.5 * (lo + hi),
+        n = need(m);
+      if (lineW(m, Pgw(n)) > n) lo = m;
       else hi = m;
     }
     Ps = 0.5 * (lo + hi);
-    wx = lineW(Ps);
+    wx = Math.max(0, need(Ps));
   }
   /* the storage water: every inflow ends in it (the trays bring them to hf(Ps); pinned, the flash takes the difference) */
   const Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (hd - hf) + wc * (hc - hf)) / 3.6 /* kW */,
