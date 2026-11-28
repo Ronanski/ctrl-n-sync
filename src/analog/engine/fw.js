@@ -3,7 +3,7 @@
    naman may existing na plant model na"; ownership /mnt/project-files/phase11/ownership-2026-11-27.md): the feed pumps (AN_FW), the
    HP heaters and drains (AN_HP, AN_HD, AN_HL), the feedwater / spray tags (AN_FWT), the feedwater valves (AN_SUFW, AN_MFW). New: the
    deaerator energy balance (AN_DA) below. It replaces the
-   loop model of PICCD1104 (plant.js PV anchored at the snapshot + source.js R.PICCD1104 cap / floor) and the 25 % split of the turbine
+   loop model of PICCD1104 (plant.js, MEI + source.js R.PICCD1104 cap / floor) and the 25 % split of the turbine
    steam to the deaerator (plant.js anCycFlows daIn); both are removed. Boundary (ports.js, Phase 11 port thread): condensate at the deaerator inlet -> economizer inlet.
    RULES.md 3.12 / rule 0: first principles + design data only; no per-load table, no constant fitted to a snapshot or a trend. NO-FIT-OK: rule text
    Design data (read on the PC 2026-11-27, /mnt/project-files/phase11/fw/pc-reads-2026-11-27.md):
@@ -162,20 +162,20 @@ function anDeaStep(U, dt) {
    How it works: flow of a running pump = the feedwater to the drum (plant.js AN_CYC.ffw) / running pumps, at least the ARC minimum
    flow 151 m3/h; outlet PT-FW1011 = suction (plantsw.js sucP) + head of the curve (the data sheet: 6.0 + 1750 m x 0.9093 / 10 =
    165.1 kg/cm2g; kz 0); running = the DITL-23A machine (A) / #B (B);
-   current (Phase 11 NANA 2026-11-27, was 289.4 A x shaft power / its power at 150 MW, a snapshot ratio): the motor of the pump, NO-FIT-OK: history note
+   current (Phase 11 NANA 2026-11-27, was a plant screen current x shaft power ratio, no design source): the motor of the pump, NO-FIT-OK: history note
    TECO AEZW-S2 "Boiler Feed Water Pump MOTOR DATA SHEET" p1 (DESIGN-SRC): 3550 kW, 2 pole, 6600 V, 60 Hz, direct coupling (fixed
    speed 3580 rpm: no hydraulic coupling or scoop), at 100 % load 355 A, efficiency 96.2 %, power factor 91.0 % (355 = 3550 / (0.962
    x 0.91 x sqrt3 x 6.6), the sheet closes). Induction motor: the active current = shaft power / (efficiency x sqrt3 x V), the
    magnetizing (reactive) current = 355 x sin(acos 0.91) = 147 A, held at rated voltage; I = sqrt(Ia^2 + Ir^2). The efficiency is held
    at its rated value (the sheet gives only the 100 % point: NO-SOURCE part load efficiency).
-   suction strainer (Phase 11 NANA 2026-11-27, was 0.29 kg/cm2 at 549 m3/h of the 03.png snapshot and a 0.4 branch loss of the same
-   snapshot): KSB Y strainer, Filteration Engineers FE/KSB/GAD/YST/FR-3453-02 rev 03 (O&M V7 BFP, "14 Y TYPE STRAINER" p2; YUA PC read
+   suction strainer (Phase 11 NANA 2026-11-27, was a plant screen DP and a 0.4 branch loss with no design
+   source): KSB Y strainer, Filteration Engineers FE/KSB/GAD/YST/FR-3453-02 rev 03 (O&M V7 BFP, "14 Y TYPE STRAINER" p2; YUA PC read
    2026-11-27, /mnt/project-files/nana-doc-reads.md): 250 NB, 40 mesh, design 563.5 m3/h at 158.4 C, maximum allowable pressure drop
    0.10 kg/cm2 clean (0.15 at 50 % clogged). Turbulent flow through a screen: dP = k Q^2 (the square law), k from the clean point. The
    pump inlet PT-FW1115 = suction header - strainer DP; the suction pipe loss between the header and the strainer is NO-SOURCE (no line
    size / length in D1-0-052 or the strainer list MS-017) and is not modelled. */
 const AN_FW = {
-  sg: 0.9093,
+  sg: 0.9093 /* DESIGN-SRC: KSB data sheet sp. gr. at 158.4 C: the curves pP below are at this density; the pumped water uses anFwSg */,
   qQ: [0, 100, 200, 300, 400, 500, 540, 600, 700],
   qH: [2254.6, 2250, 2215, 2140, 2010, 1840, 1750, 1620, 1380],
   pQ: [0, 150, 300, 400, 540, 600],
@@ -222,15 +222,23 @@ function anSprW(Cv, Pis, P2, rho) {
     a = 0.0273 * Cv * Math.sqrt(0.980665 * rho);
   return Cv > 0 && dP > 0 && rho > 0 ? a * Math.sqrt(dP / (1 + a * a * AN_BYS.kL)) : 0;
 }
+/* Phase 11 NANA 2026-11-28: the specific gravity of the pumped water = the deaerator water (IF97 saturated water, plant.js anWaterRho, at
+   U.da.T; ambient water before the deaerator has a state). The pump head in metres does not change with the density; the pressure it
+   gives does (dp = rho g H) and the volume flow is the mass flow / rho. Was the data sheet 0.9093 (158.4 C) at every load: at part load
+   the deaerator water is colder and denser, so the discharge read low (45 MW about 4 % of the head) */
+function anFwSg(U) {
+  return anWaterRho(U.da && isFinite(U.da.T) ? U.da.T : isFinite(U.Tamb) ? U.Tamb : 30) / 1000;
+}
 /* the BFWP discharge (kg/cm2 g) at a total feedwater flow w (T/H), with the pumps that run now: the same law as anFwStep */
 function anFwPdAt(U, w) {
   const K = AN_FW,
+    sg = anFwSg(U),
     n = (U.fwRun || []).reduce((a, r) => a + (r ? 1 : 0), 0),
     ps = typeof window !== 'undefined' && window.WORLD && WORLD.sucP ? WORLD.sucP() : NaN,
     Ps = isFinite(ps) ? ps : 0;
   if (!n) return Ps;
-  const q = Math.max(K.qMin, Math.max(0, w) / K.sg / n);
-  return Math.max(0, Math.min(250, Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz));
+  const q = Math.max(K.qMin, Math.max(0, w) / sg / n);
+  return Math.max(0, Math.min(250, Ps - K.stK * q * q + (sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz));
 }
 /* a BFWP motor at a shaft power kW (TECO data sheet, see AN_FW): current I (A), electrical input P (kW) and Q (kvar) from the same
    numbers (Phase 11 YUI: P / Q go to the house load, port q.motor.NANA) */
@@ -243,6 +251,7 @@ function anFwEl(kW) {
 }
 function anFwStep(U, dt) {
   const K = AN_FW,
+    sg = anFwSg(U),
     dr = d => (typeof anDitlRun === 'function' ? anDitlRun(d) : null),
     /* a running pump with its suction manual valve closed (V-FW1001 / 1002) gives no head (dry: the motor protection is not modelled) */
     run = [
@@ -252,19 +261,21 @@ function anFwStep(U, dt) {
     n = run[0] + run[1],
     ffw = typeof AN_CYC !== 'undefined' && isFinite(AN_CYC.ffw) ? Math.max(0, AN_CYC.ffw) : 0,
     /* an HP heater tube leak passes the pumps too (anHpLeak, last step) */
-    q = n ? Math.max(K.qMin, (ffw + (U.hlW ? U.hlW[0] + U.hlW[1] : 0)) / K.sg / n) : 0,
+    q = n ? Math.max(K.qMin, (ffw + (U.hlW ? U.hlW[0] + U.hlW[1] : 0)) / sg / n) : 0,
     ps = typeof window !== 'undefined' && window.WORLD && WORLD.sucP ? WORLD.sucP() : NaN,
     Ps = isFinite(ps) ? ps : 0;
   U.fwRun = run;
   U.fwQp = Math.round(q);
   /* the 3rd-stage tap-off (KSB curve Q43446D lower curve): the RH and HP bypass spray water (PD-017 FW-1-025 / 026 -> FW-1-016) */
-  U.fwPis = Math.max(0, Math.min(250, n ? Ps - K.stK * q * q + (K.sg / 10) * swInterp(AN_BYS.tQ, AN_BYS.tH, q) : Ps));
+  U.fwPis = Math.max(0, Math.min(250, n ? Ps - K.stK * q * q + (sg / 10) * swInterp(AN_BYS.tQ, AN_BYS.tH, q) : Ps));
   /* the pump inlet = the suction header less the strainer DP (stK, KSB strainer drawing) */
   U.fwPd = Math.max(
     0,
-    Math.min(250, n ? Ps - K.stK * q * q + (K.sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz : Ps)
+    Math.min(250, n ? Ps - K.stK * q * q + (sg / 10) * swInterp(K.qQ, K.qH, q) - K.kz : Ps)
   );
-  const el = run.map(r => (r ? anFwEl(swInterp(K.pQ, K.pP, q)) : null));
+  /* shaft power at this density: the data sheet curve x sg / 0.9093 (the power of a pump goes with rho at the same Q and H) */
+  const Ph = n ? (swInterp(K.pQ, K.pP, q) * sg) / K.sg : 0,
+    el = run.map(r => (r ? anFwEl(Ph) : null));
   anPortSet(U, 'q.motor.NANA', { P: el.reduce((a, x) => a + (x ? x.P : 0), 0), Q: el.reduce((a, x) => a + (x ? x.Q : 0), 0) });
   run.forEach((r, i) => {
     U['fwI' + i] = r ? Math.round(10 * el[i].I) / 10 : 0;
@@ -275,9 +286,8 @@ function anFwStep(U, dt) {
      dT_s = T beta v dp / cp); the losses (P - rho g Q H) warm it in full. dT = (P - (1 - T beta) rho g Q H) / (m cp), with
      T beta = 0.45 and cp 4.33 kJ/kg K at 158.4 C (IAPWS-IF97 water properties). 150 MW (549 m3/h): about 2.8 C; at the ARC minimum
      151 m3/h about 7.5 C. The water to No.1 HPH is the deaerator saturation + dT (anHphStep). */
-  const Ph = n ? swInterp(K.pQ, K.pP, q) : 0,
-    Hy = n ? (K.sg * 1000 * 9.81 * (q / 3600) * swInterp(K.qQ, K.qH, q)) / 1000 : 0,
-    mk = (K.sg * 1000 * q) / 3600;
+  const Hy = n ? (sg * 1000 * 9.81 * (q / 3600) * swInterp(K.qQ, K.qH, q)) / 1000 : 0,
+    mk = (sg * 1000 * q) / 3600;
   U.fwDT = n && mk > 0 ? Math.max(0, (Ph - 0.55 * Hy) / (mk * 4.33)) : 0;
 }
 /* Phase 11 rank 5 (NANA, user 2026-11-27 "Go fix 11"): THE HP HEATERS by energy balance and heat transfer, in place of the old
@@ -419,6 +429,8 @@ function anHphStep(U, dt) {
     Pt = (isFinite(U.fwPd) ? Math.max(0, U.fwPd) : 0) + 1.0332,
     w = [anHtrPath(anFv('V-FW1009'), anFv('V-FW1010'), anFv('V-FW1011')), anHtrPath(anFv('V-FW1012'), anFv('V-FW1013'), anFv('V-FW1014'))],
     port = i => anPortGet(U, K.h[i].port) || {},
+    nvH = U.dev && U.dev.nrv ? U.dev.nrv.ex2 : null,
+    hpNrv = nvH ? Math.max(0, Math.min(1, (+nvH.p || 0) / 100)) : 0,
     st = U.hpS || (U.hpS = [{}, {}]),
     /* the cascade into No.1: the No.2 primary drain (LCV-HD1106-1, anHdStep, the last step) at its temperature */
     h6 = (U.hd || []).find(h => h.k === 'H6'),
@@ -430,7 +442,10 @@ function anHphStep(U, dt) {
     To = Tin;
   for (let i = 0; i < 2; i++) {
     const p = port(i),
-      a = pos(K.h[i].mov) / 100,
+      /* Phase 11 NANA 2026-11-28 (YUI / RIN): No.1 HPH extraction II line has the No.2 extraction NRV (TC-41, swing check VCL-5101-H,
+         tcs-dev.js U.dev.nrv.ex2): it shuts on a trip or a reverse flow, so the heater opening is the MOV x the NRV, as the deaerator
+         (ex3p / ex3s, anDeaStep). The No.2 HPH draws from the cold reheat line before its check (TC-19 crv): no NRV of its own */
+      a = (pos(K.h[i].mov) / 100) * (i === 0 ? hpNrv : 1),
       mt = ffw * w[i].s,
       c = i === 0 ? cas : 0,
       hc = i === 0 && isFinite(U.hpD2) && isFinite(U.hpPs && U.hpPs[1]) ? hpHw(U.hpPs[1] + 1.0332, U.hpD2) : 0,
@@ -475,8 +490,8 @@ function anHphStep(U, dt) {
                   No.2 HPH 1250 / 9138.5, No.1 LPH 1130 / 13612, No.2 LPH 1080 / 10679, No.3 LPH 1030 / 10674 mm;
      levels       alarm list (LT-HD110x, from the normal level, mm): H.H. No.1 HPH / No.3 LPH 140, the others 150 (the LS-HD110x level
                   switch, DITL-41; ABC-036 M.0203 = No.2 HPH HI-HI -> DITL-94 closes MV-TS1001); H 40 / 50, L -40 / -50;
-     valves       02.png (60 MW): No.3 LPH primary 32.4 % at FIQHD1103 7.7 T/H; No.2 LPH primary 99.9 % at FIQHD1102 3.4 T/H with its
-                  alternate 53.7 %; No.1 LPH primary 13.6 %. The HP valves have no snapshot in service (02.png: manual, 0.1 %).
+     valves       the opening follows the level controller of the DCS logic (ABC-035 ~ 039); at a steady start the MV is the one whose
+                  valves pass the design drain (below), no plant screen value.
    How it works (each heater, each step):
      in           its extraction (the HP heaters: AN_HP, with its MOV; the LP heaters: design x main steam / 458.684 x the MOV of DITL-97
                   (MV-TS1004, No.3 LPH) / DITL-98 (MV-TS1005, No.2 LPH)) + the primary drain of the heater before it;
@@ -710,9 +725,9 @@ function anHdStep(U, dt) {
       h.y = isFinite(v) ? v : 0;
       h.off = h.L.map(l => (isFinite(anUnitVal(l)) ? anUnitVal(l) - h.y : 0));
       /* 3.2.1-beta.148 (LISA, Mina fresh 150 MW: NO.1 / NO.2 LPH level HIGH): "Start at 150 MW" is a steady state, so the level stands at
-         the SV of its primary controller (snapshot SV, ABC-035 ~ 039). Before, it started from the transmitter, which the loop model of
-         the drawing moved at the end of the load while the snapshot MV of 02.png (60 MW, LCV-HD1102 99.9 %) was on it: LPH2 -5 -> -97 mm,
-         then the controller refilled it past HIGH (alarm list LT-HD1102 H 10 mm) */
+         the SV of its primary controller (the DCS set point, ABC-035 ~ 039). Before, it started from the transmitter, which the loop model
+         moved at the end of the load while a part-load valve opening was still on it: LPH2 -5 -> -97 mm, then the controller refilled it
+         past HIGH (alarm list LT-HD1102 H 10 mm) */
       if (U.hdSeed && h.v1) {
         const c = (AN.hmiCtrls(h.v1.S) || []).find(q => q.out === h.v1.n),
           sv = c && c.q && c.q.sv != null ? +h.v1.S.rt.v[c.q.sv] : NaN;
@@ -749,8 +764,8 @@ function anHdStep(U, dt) {
       h.fx = { p: fxs.find(toSub) || null, a: fxs.find(b => !toSub(b)) || null };
     }
     const fxv = (b, x) => (b && typeof anFXs === 'function' ? Math.max(0, Math.min(100, anFXs(b.p, x).y)) : x);
-    /* "Start at 150 MW": the snapshot has no drain valve opening at full load (02.png is 60 MW), so the primary controller starts at the
-       MV whose two valves pass the drain of the load, as the operator found it */
+    /* "Start at 150 MW" is a steady state: the primary controller starts at the MV whose two valves pass the drain of the load (the
+       valve law below, the design drain flow), so no level moves at the first step */
     if (U.hdSeed && sq > 0 && h.v1 && h.fx) {
       const flow = x => {
         const f = wv(fxv(h.fx.p, x), h.fx.a ? fxv(h.fx.a, x) : 0);
@@ -769,7 +784,7 @@ function anHdStep(U, dt) {
         if (h.v1.S.rt.st[c.b.id] && typeof hmiPidSet === 'function') hmiPidSet(h.v1.S.rt.st[c.b.id], c.b, x);
         h.v1.S.rt.v[h.v1.n] = x;
       }
-      /* Mina F14: the alternate starts where the primary puts it. It kept its 60 MW snapshot opening (02.png 53.7 %): the No.2 LP heater drained at
+      /* Mina F14: the alternate starts where the primary puts it. Before, it kept a part-load opening: the No.2 LP heater drained at
          once and stood LOW-LOW, then the controller came back over 5 minutes */
       if (h.v2 && h.fx.a) {
         const x2 = fxv(h.fx.a, x),
@@ -848,7 +863,7 @@ function anFwTagStep(U) {
     ms = Math.max(0, +U.ms || 0),
     /* the extraction transmitters read the turbine stage the turbine model computes (RIN anTbPorts, ports ext.*, P kg/cm2 a, T C):
        PT/TT-TS1013 / 1014 extraction II, PT/TT-TS1017 / 1018 extraction III, TT-TS1023 extraction IV, PT/TT-TS1026 / 1027 extraction V.
-       A port not written yet gives no value (no stand-in). Was: snapshot pressures x main steam / 472.7 and snapshot temperatures */
+       A port not written yet gives no value (no stand-in). Was: fixed plant screen values scaled with the main steam */
     xP = id => {
       const p = anPortGet(U, id);
       return p && isFinite(p.P) && p.P !== null ? r2(Math.max(-1, p.P - 1.0332)) : null;
@@ -923,7 +938,7 @@ function anFwTagStep(U) {
     z12 = fx('ABC-011', 'TICBR1130', 'LN46', m1),
     z21 = fx('ABC-012', 'TICBR1150', 'LN49', m2),
     z22 = fx('ABC-012', 'TICBR1150', 'LN48', m2),
-    w1 = K.K * (cv(K.cv.a1, z11) * pos('DITL-32') + cv(K.cv.a2, z12) * pos('DITL-32 #B')) * sq(anShTap(U, AN_SHDP.s1, drum, ms)) /* the spray goes in at the SH tap 1 (KANA anShTap: the design SH drop law); was drum - 6.4 x (ms / 474.1)^2 of 03.png */,
+    w1 = K.K * (cv(K.cv.a1, z11) * pos('DITL-32') + cv(K.cv.a2, z12) * pos('DITL-32 #B')) * sq(anShTap(U, AN_SHDP.s1, drum, ms)) /* the spray goes in at the SH tap 1 (KANA anShTap: the design SH drop law); was a fixed drum - 6.4 square law with no design source */,
     w2 = K.K * (cv(K.cv.b1, z21) * pos('DITL-33') + cv(K.cv.b2, z22) * pos('DITL-33 #B')) * sq(anShTap(U, AN_SHDP.s2, drum, ms)) /* SH tap 2 */,
     Prh = isFinite(U.Prh) ? U.Prh : 0,
     /* the RH and HP bypass spray from the BFWP 3rd stage (AN_BYS, anSprW), at the deaerator water (U.tSr of the last step) */
@@ -967,7 +982,7 @@ function anFwTagStep(U) {
     'TT-FW1011': isFinite(Pda) ? r1(Pda > 0.05 ? steamTsat(Pda) : isFinite(U.Tamb) ? U.Tamb : 30) : null,
     /* Phase 11 NANA: the economizer inlet = drum + the drop from the feedwater valve outlet to the drum at the economizer flow, the
        same law as the valve (AN_MFW kDn 2.2 kg/cm2 at 480 T/H: Raven sheet P2 147.2 against the FHI P2S7 drum 145.0 at MCR); was
-       drum + 3.5 x (feedwater / 499.1)^2 of the 03.png snapshot */
+       a fixed drum + 3.5 square law with no design source */
     'PT-FW1160': isFinite(drum) ? r1(drum + AN_MFW.kDn * (fdr / AN_MFW.w0) * (fdr / AN_MFW.w0)) : null,
     'ZT-FW1110-1': r1(z11),
     'ZT-FW1110-2': r1(z12),

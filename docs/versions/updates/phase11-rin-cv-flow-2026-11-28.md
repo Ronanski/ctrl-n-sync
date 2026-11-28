@@ -35,10 +35,34 @@
 - **150 MW save point of main, 40 min**: no trip. The MW settles at 148.0 ~ 148.6.
   - The CVs are wide open (gv 1.03 = flow demand 102 %, lift 105 % = full).
   - Main steam is 455 T/H at MSP 122.0 ~ 122.6.
-  - The 4.PNG check point is 148.8 MW at MSP 122.9.
 - **Scan time**: +11 % (the flow solve).
 
 ## Open
 - To make 150 MW the pressure at the turbine has to rise toward the HB 126 ata. The DCS pressure set point decides this; it is not adjusted to hit 150 MW.
 - The extra heater draws belong to KANA (CBD), NANA and MEI.
 - U.P0 (the TCS pressure compensation base) still comes from the save point. It is the rated pressure of LME237, which is not yet read from the backup.
+
+## Follow-up: CV effective area from TCE500 FG A011 (2026-11-28)
+- **What was wrong**: the pure curtain area passed too much steam at low lift. HB case 4 (58 % flow) needed only 33 % flow demand (lift A 16 %), while the TCS curves FG 003 / 036 make demand about equal to flow.
+- **The change**: the effective area of the two CVs against the lift sum is now read from the TCS lift-to-flow table TCE500 FG A011. Each point is the area that passes that share of VWO at 126 ata into the HP blading, with the first-stage pressure from tbPath (tbCvTab). The sum of 200 is the seat area.
+- **HB cases now need these flow demands**:
+  - 95.8 % at 97 % flow
+  - 83.9 % at 82 %
+  - 72.5 % at 67.5 %
+  - 66.7 % at 58 %
+  - 61.9 % at 49 %
+  - 51.6 % at 40 %
+  - 99.4 % at VWO
+- **Bug fixed in tbPath**: from a cold start (no last pass) the CRH volume was taken at the condenser pressure. At 87.5 % of VWO that gave 1840 ata and a NaN path. The volume is now taken at no less than the hot reheat pressure.
+- **Tests**:
+  - turbine-hb: 8 cases pass.
+  - u-const / one-path / no-fit pass.
+  - 150 MW 20 min: no trip, 147.8 ~ 150.2 MW (old st150).
+  - House load peak 101.1 %, 52G rejection peak 101.6 %.
+
+## Line heat losses and the hot reheat pipe metal (design only)
+
+- Hot reheat pipe metal (TT-HR1002, `AN_RHPIPE.M`): 30.3 t P91 from the BOM K1AU3-MM-102 R3 lengths and the ASME B36.10 walls, x 0.59 kJ/kg K (ASME II-D TCD) = 17.9e3 kJ/K (was 10e3, no source).
+- Lagging loss, class HW6 (as-built isos), thickness FHI K1AU3-P1-0-001 p6, MHPS TDA-15-046 / JIS A9501 law (YUA read `rin-hrh-ms-insulation-reads-2026-11-28.md`):
+  - hot reheat `AN_RHPIPE.UA` 0.174 kW/K (87.7 kW at 538 C; was 0.02, no source);
+  - main steam `AN_MSQ`: 18" 132.8 m x 475 W/m + 12" 17.9 m x 392 W/m = 70 kW at 538 C. The turbine inlet temperature `U.Tt` (anMsT) is now the SH outlet enthalpy less the line loss, throttled to the MSV inlet; TT-MS1007 the same on the 18" run to the tee. At 150 MW: SH out 535.6 C, turbine inlet 534.7 C, TT-MS1007 534.9 C.

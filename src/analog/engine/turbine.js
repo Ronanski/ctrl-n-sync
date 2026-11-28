@@ -331,7 +331,9 @@ function tbPath(I, o) {
   P.hrh = tbP1(G.ip1.K, f1, P.x5, hhr, P.hrh);
   /* the cold reheat: the hot reheat + the reheater drop of the steam through it (CRH less the No.6 extraction) */
   const frh = Math.max(0, fhp - L.B - L.C2 - dr('hp6') + (+I.hpb || 0) * 1000);
-  P.crh = P.hrh + C.rh * frh * frh * steamVhM(Math.max(Pc, P.crh) * TB_A, H.crh || 751.7 * k);
+  /* the specific volume at the cold reheat of the last pass, not below the hot reheat (the CRH is never below it): from a cold start
+     (P.crh = the condenser) the volume at 0.07 ata gave a CRH of 1840 ata and a NaN path (2026-11-28, found at 87.5 % of VWO) */
+  P.crh = P.hrh + C.rh * frh * frh * steamVhM(Math.max(Pc, P.hrh, P.crh) * TB_A, H.crh || 751.7 * k);
   P.fs = Math.min(Pin, tbP1(G.hp.K, fhp, P.crh, hms, P.fs));
   /* enthalpies from the inlets down */
   H.crh = fhp > 0 ? tbEx(G.hp.eta, P.fs, hms, P.crh) : H.crh || 751.7 * k;
@@ -457,7 +459,46 @@ function tbCvLift(U, s, g) {
   const B = U.cvBias || 0.2;
   return tbFg(s === 'B' ? AN_CV.fgB : AN_CV.fgA, 100 * (B + (1 - B) * g)) / 100;
 }
-/* the flow area (m2) of one CV at lift l */
+/* the CV EFFECTIVE AREA against lift (2026-11-28, replaces the pure curtain pi d x lift, which at choked flow passed 58 % of VWO at
+   16 % lift where the TCS curves FG 003 / 036 give 33 % flow demand: the sleeve valve with its pilot and plug passes less at low lift).
+   The TCS's own lift-to-flow table, TCE500 FG A011 (the CV A + CV B position sum, % : the flow, % of VWO, the flow check of the speed
+   reference; YUA /mnt/project-files/rin-control-stage-2026-11-27.md), read as the flow the two valves pass at the rated inlet (HB VWO
+   126 ata / 538 C) into the HP blading: for each point the steam path (tbPath) gives the first-stage pressure at that flow, and the area
+   that passes it (tbCvFs inverse) is the effective area at that lift sum. At the sum 200 (both full lift) it is the seat area of AN_CV */
+AN_CV.a011 = [[0, 0], [11.07, 6.25], [15.36, 11.25], [55.89, 46.25], [66.12, 63.75], [92.69, 87.5], [115.06, 93.75], [200, 100]];
+function tbCvTab() {
+  if (AN_CV.tab) return AN_CV.tab;
+  const v = AN_TB.vwo,
+    c = AN_TB.c1,
+    k = 4.1868,
+    h = v.Hms * k,
+    Aful = 2 * tbCvA(1),
+    t = [[0, 0]];
+  for (const [S, F] of AN_CV.a011.slice(1)) {
+    const f = F / 100,
+      w = { hp6: (c.x6 * f) / 1000, hp5: (c.x5 * f) / 1000, da: (c.xda * f) / 1000, lp3: (c.x3 * f) / 1000, lp2: (c.x2 * f) / 1000, lp1: (c.x1 * f) / 1000 },
+      I = { ms: (v.ms * f) / 1000, Pin: v.Pms, Tms: v.Tms, qip: (c.hrh * (v.ms / c.ms) * f) / 1000, Thr: v.Tms, Pc: c.Pc, w };
+    let o = null;
+    for (let i = 0; i < 12; i++) o = tbPath(I, o);
+    const m = v.ms * f - o.L.A;
+    let lo = 0,
+      hi = Aful;
+    if (S >= 200) lo = hi;
+    else
+      for (let i = 0; i < 50; i++) {
+        const a = (lo + hi) / 2;
+        if (tbCvW(a, v.Pms, h, o.P.fs) > m) hi = a;
+        else lo = a;
+      }
+    t.push([S, (lo + hi) / 2]);
+  }
+  return (AN_CV.tab = t);
+}
+/* the effective flow area (m2) of the two CVs at the lifts lA, lB (0 ~ 1.05) */
+function tbCvAs(lA, lB) {
+  return tbFg(tbCvTab(), Math.max(0, Math.min(200, 100 * ((+lA || 0) + (+lB || 0)))));
+}
+/* the seat-limited curtain area (m2) of one CV at lift l: the full-lift area of AN_CV (VWO, tbGeo) */
 function tbCvA(l) {
   const d = AN_CV.d;
   return Math.max(0, Math.min(Math.PI * d * AN_CV.S * Math.min(1, l), (Math.PI * d * d) / 4));
@@ -485,14 +526,15 @@ function tbCvFs(A, m, Pin, h) {
   return ((lo + hi) / 2) * Pin;
 }
 /* the main steam (T/H) that the CVs (total area Av, m2) and the HP blading pass together, from the drum pressure U.Pd (kg/cm2 g) through
-   the SH and main steam line drops (U.kdp, U.kln: P = Pd - kdp (m + mo)^2 - kln m^2 in front of the CVs; mo T/H, the other SH outlets of
-   the last scan, U.mso: HP bypass, blow-off, SH safety valves, which pass the SH but not the main steam line), at the steam temperature T (C), against
+   the SH drop (U.kdp, on the whole SH outlet flow m + mo; mo T/H, the other SH outlets of the last scan, U.mso: HP bypass, blow-off,
+   SH safety valves) and the main steam line drops (unit.js anMsDrop: the 18" run with the HP bypass steam of the last scan U.mhp, the
+   12" leads with the turbine steam) in front of the CVs, at the steam temperature T (C), against
    the cold reheat pressure of the steam path (the last scan, U.tbS). The CV passes the main steam less the stem leak A, the blades also
    less the packing leaks C and N2 (the shares of the last scan, HB case 1 at the start). Solved by regula falsi (Illinois) on [0, mHi] */
 function tbMsFlow(U, Av, T, mo) {
   const Pd = +U.Pd || 0,
-    ks = Math.max(0, +U.kdp || 0),
-    kd = ks + Math.max(0, +U.kln || 0),
+    kd = Math.max(0, (+U.kdp || 0) + (+U.kln || 0)),
+    mhp = Math.max(0, +U.mhp || 0),
     mO = mo > 0 ? mo : 0;
   if (!(Av > 0) || !(Pd > 0)) return 0;
   const G = tbGeo(),
@@ -503,7 +545,7 @@ function tbMsFlow(U, Av, T, mo) {
     rb = m1 > 0 ? S.f.hp / m1 : (c.ms - c.lkC - c.lkN2 - c.lkA) / c.ms,
     Pcr = S && S.P && isFinite(S.P.crh) && S.P.crh > 0 ? S.P.crh : 1.0332,
     g = m => {
-      const Pin = Pd - ks * (m + mO) * (m + mO) - (kd - ks) * m * m + 1.0332;
+      const Pin = Pd - (+U.kdp || 0) * (m + mO) * (m + mO) - anMsDrop(U, m, mhp).msv + 1.0332;
       if (Pin <= 1.0332) return -m;
       const h = tbHt(Pin, isFinite(T) ? T : steamTsat(Pin - 1.0332)),
         fb = m > 0 ? tbP1(G.hp.K, m * 1000 * rb, Math.min(Pcr, Pin * 0.999), h) : Math.min(Pcr, Pin);
@@ -700,7 +742,7 @@ function anTbFlow(U, tb, D, dt, dirt) {
    sync check relay 25 closes 52L1 at once in the model, elec.js) */
 function anTbSpeed(U, tb, dt, on, Pm, Pe) {
   const hz = anGridHz(U, dt);
-  if (!(U.el && U.el.l52 === false)) {
+  if (!(U.el && U.el.l52 === false) && !tb.rej) {
     /* on the grid the shaft turns with the grid (2-pole, 60 Hz = 3600 rpm) */
     if (tb.st === 'sync' || tb.st === 'load') tb.rpm = hz * 60;
     return;

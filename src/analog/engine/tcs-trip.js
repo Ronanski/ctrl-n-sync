@@ -202,8 +202,8 @@ const TCS_IBD_NET = {
   'TA-42': { 27: (U, c) => (c.ib && c.ib.v['TA-41'] ? c.ib.v['TA-41'][23] || 0 : 0) },
   /* c2 batch 3 (3.2.3): the inputs of the IBD that the model already has a value for. A contact of the TSI with its set point written on the
      sheet is 1 at that set point. TA-18 (IBD page 37): SHAFT VIBRATION HIGH ON >= 0.125 mm; TA-17 (page 36): VERY HIGH ON >= 0.200 mm, X = -1,
-     Y = -2; VE-ST1001 No.1 / VE-ST1002 No.2 turbine, VE-GE1001 No.3 / VE-GE1002 No.4 generator = loVx1..4 / loVy1..4 of tcsOil (snapshot
-     035 SHAFT MONITOR). TA-17 nets 21 / 22 / 23: the second input of the A gate of No.2 / 3 / 4, drawn with no source: the note of page 36
+     Y = -2; VE-ST1001 No.1 / VE-ST1002 No.2 turbine, VE-GE1001 No.3 / VE-GE1002 No.4 generator = loVx1..4 / loVy1..4 of tcsOil (tags of
+     the TSI on the IBD page 36 / 37). TA-17 nets 21 / 22 / 23: the second input of the A gate of No.2 / 3 / 4, drawn with no source: the note of page 36
      says it is "similar to No.1", that is ANY OTHER SHAFT VIBRATION HIGH (the OR of the HIGH of the other shafts) */
   'TA-18': Object.fromEntries([0, 1, 2, 3, 4, 5, 6, 7].map(k => [k, U => tcsVib(U, k) >= 0.125])),
   'TA-17': {
@@ -224,7 +224,7 @@ const TCS_IBD_NET = {
     23: U => tcsVibHighBut(U, 3)
   },
   /* TD-2 (page 85): bearing metal temperatures, HIGH ON >= 115 C journal / ON >= 85 C thrust. TE-ST1009 / 1010 No.1 / 2 journal, TE-GE1001 /
-     1002 No.3 / 4 = loM1..4; TE-ST1011-1 / -2 thrust front = loThF, TE-ST1012-1 / -2 thrust rear = loThR (tcsOil, snapshot 035) */
+     1002 No.3 / 4 = loM1..4; TE-ST1011-1 / -2 thrust front = loThF, TE-ST1012-1 / -2 thrust rear = loThR (tcsOil, tags of the IBD TD-2) */
   'TD-2': {
     0: U => U.loM1,
     24: U => U.loM2,
@@ -246,7 +246,7 @@ const TCS_IBD_NET = {
   /* TD-3 (page 86): PT-GS1001-2 GLAND STEAM SEAL HEADER PRESS. (A) = the gland header of unit.js (U.gsP), shown on the sheet */
   'TD-3': { 0: U => U.gsP },
   /* GD-5 (page 99): TE-GE1006-1 ~ 6 GEN. STATOR COIL TEMP. (HIGH ON >= 123 C), TE-GE1004-1 ~ 4 GEN. COOLING GAS AIR (ON >= 50 C), TE-GE1005
-     AC EXCITER OUTLET AIR (ON >= 95 C) = the generator temperatures of unit.js anGenTemp (U.genT ts / ta / ex, snapshot 035 SHAFT MONITOR) */
+     AC EXCITER OUTLET AIR (ON >= 95 C) = the generator temperatures of unit.js anGenTemp (U.genT ts / ta / ex, tags of the IBD GD-5) */
   'GD-5': {
     ...Object.fromEntries([0, 2, 4, 6, 8, 10].map((n, i) => [n, U => (U.genT ? U.genT.ts[i] : NaN)])),
     ...Object.fromEntries([12, 14, 16, 18].map((n, i) => [n, U => (U.genT ? U.genT.ta[i] : NaN)])),
@@ -402,7 +402,8 @@ const TCS_IBD_DEV = {
     init: (v, c) => ((v[11] = c.tg ? 1 : 0), (v[17] = c.tgAu ? 1 : 0)),
     pre: (v, c, U) => {
       v[43] = c.tg ? 1 : 0; /* TURNING GEAR MOTOR RUNNING */
-      v[30] = c.tg && tcsRpm(U) <= 4 ? 1 : 0; /* TURNING GEAR ENGAGED (TB-10 solenoid; disengages above 4 rpm, PR-OPE-5002 7955) */
+      v[30] = c.tg && tcsRpm(U) <= 4 ? 1 : 0; /* TURNING GEAR ENGAGED (TB-10 solenoid; disengages above 4 rpm = the gear speed
+      3 rpm of the TG maintenance manual p.35 + 1, DERIVED: tcs.js TCS_OIL) */
       v[36] = tcsRpm(U) < 1 ? 1 : 0; /* TURBINE ZERO SPEED */
       v[53] = 0; /* ZS-LO1003 HAND TURNING INTERLOCK: the hand turning bar is not modelled (stowed) */
     },
