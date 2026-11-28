@@ -6,7 +6,7 @@
    not change with this move; the dead bed laws (AN_BED / anBedSS, the start-up exponent kBedSU, tauBc and uaW of AN_UNIT: no reader
    since beta.256, rule-0 list 2026-11-24 item 5) are deleted.
    Rule 0 (RULES.md 3.12): physics from first principles and the design data only; the open fits of this file are on
-   docs/audit/rule0-fit-list-2026-11-24.md item 2 (bed inventory anchor); item 1 (kKL 9.2) is replaced by the Johnsson & Leckner law (AN_BB jl, 2026-11-28). */
+   docs/audit/rule0-fit-list-2026-11-24.md items 1 (kKL) and 2 (bed inventory anchor) and go away in the next steps of Phase 11. */
 /* FIFA1079 (hot PA to the grate plenum) over FIFA1071 (the PA fan flow). Phase 11 AOI 2026-11-28: DESIGN-SRC
    the FHI mass balance at 100 % BMCR, PA sheet (YUA read, /mnt/project-files/aoi-design-reads-2026-11-28.md): PAF outlet 388 t/h, of it
    325 to the grate plenum (4 x 81.25), 27 to the coal pipes, 3 cold to the feeder seals, 33 lost in the air heater. The loop seals and
@@ -105,39 +105,6 @@ const AN_FG = { cpG: 1.15, ash: 0.0682, mCy: 780e3, hA: 120, mF: 138e3, mB: 642e
    /mnt/project-files/phase11/kana-sh-rh-outlet-2026-11-28.md). ASSUMPTION: the same share at every load (one design point, no
    document gives the cyclone heat release, YUA 2026-11-28); judged only by the full 45 - 150 MW sweep, and a part-load miss is fixed
    in the physics form (char burnout against residence time / temperature), never by a share per load. It is the same coal: this share leaves the bed balance and goes to the cyclone gas (anHxRun). */
-/* Phase 11 AOI 2026-11-28: THE HEAT CAPACITY OF THE BED SOLIDS AT ITS TEMPERATURE. The bed is the FHI P2S7 Tab 3 silica sand + the coal
-   ash and the limestone solids; as quartz (the sand, the bulk of the inventory): NIST Chemistry WebBook, SiO2 Shomate equation,
-   alpha-quartz (298 - 847 K: A -6.076591, B 251.6755, C -324.7964, D 168.5604, E 0.002548) and beta-quartz (847 - 1996 K: A 58.75,
-   B 10.279, C -0.131403, D 0.025211, E 0.025601), M 60.08 g/mol; cp 0.74 kJ/kg K at 25 C, 1.17 at 860 C (was 0.84 at all T). The ash
-   and limestone shares are not separated (NOT IN DOCS: the bed composition by mass); cp below 25 C is held at the 25 C value */
-const AN_QZ = { M: 60.08, Tt: 847, a: [-6.076591, 251.6755, -324.7964, 168.5604, 0.002548], b: [58.75, 10.279, -0.131403, 0.025211, 0.025601] };
-function anBedCp(T) {
-  const K = Math.max(298.15, Math.min(1996, (isFinite(T) ? T : 25) + 273.15)),
-    c = K < AN_QZ.Tt ? AN_QZ.a : AN_QZ.b,
-    t = K / 1000;
-  return (c[0] + c[1] * t + c[2] * t * t + c[3] * t ** 3 + c[4] / (t * t)) / AN_QZ.M /* kJ/kg K */;
-}
-/* the sensible heat of the bed solids from 0 C, kJ/kg (the integral of anBedCp; Shomate H, the 0 - 25 C part at the 25 C cp) */
-function anBedH(T) {
-  const H = (c, K) => {
-      const t = K / 1000;
-      return (c[0] * t + (c[1] * t * t) / 2 + (c[2] * t ** 3) / 3 + (c[3] * t ** 4) / 4 - c[4] / t) * 1000 /* J/mol */;
-    },
-    K = Math.max(298.15, Math.min(1996, (isFinite(T) ? T : 25) + 273.15)),
-    h0 = anBedCp(25) * 25,
-    hA = K < AN_QZ.Tt ? H(AN_QZ.a, K) - H(AN_QZ.a, 298.15) : H(AN_QZ.a, AN_QZ.Tt) - H(AN_QZ.a, 298.15) + H(AN_QZ.b, K) - H(AN_QZ.b, AN_QZ.Tt);
-  return h0 + hA / AN_QZ.M + (isFinite(T) && T < 25 ? anBedCp(25) * (T - 25) : 0);
-}
-/* Phase 11 AOI 2026-11-28: THE COAL THAT BURNS IN THE UPPER FURNACE. Below the secondary air the lower furnace gets only the air of the
-   grate, the coal pipes, the feeder seals and the loop seals, and it burns no more than that air's oxygen (the lower furnace of a CFB
-   runs short of air, the char and the volatiles meet the rest of the oxygen above the SA ports: Basu, Circulating Fluidized Bed Boilers,
-   ch. 5, combustion zones). DESIGN-SRC FHI mass balance at 100 % BMCR (PA sheet, /mnt/project-files/aoi-design-reads-2026-11-28.md):
-   grate 325 + coal pipes 27 + feeder seals 3 t/h; FHI P2S7 Fig 12 total air to the furnace 596 t/h at 20 % excess air (P2S7 design
-   data), SA 216 (Fig 12), so the loop seal air is 596 - 325 - 27 - 3 - 216 = 25 t/h (CALC, between the two FA documents 22.8 / 27.4).
-   Lower furnace air 380 of the stoichiometric 596 / 1.2 = 496.7 t/h = 76.5 % of the oxygen the coal needs: 23.5 % of the coal heat is
-   released above the SA ports, of it 3.43 % in the cyclones (AN_PC), so f = 0.235 - 0.0343 = 0.20 in the upper furnace suspension
-   (CALC). That heat goes to the suspension (anBbSus), not to the bed. ASSUMPTION: the same share at every load (one design point) */
-const AN_UF = { f: 0.2 /* DERIVED: FHI mass balance + Fig 12 air at MCR, see above */ };
 const AN_PC = { f: 0.0343 /* DERIVED: FHI P2S7 Tab 3 heat balance at MCR, see above */ };
 const AN_BB = {
   lhvC: (3662 * 4.1868) / 3.6,
@@ -149,8 +116,7 @@ const AN_BB = {
   fUC: 0.032,
   lhvO: 42700 / 3.6,
   cpA: 1.005,
-  /* cpS (was 0.84 kJ/kg K, a room-temperature value): the bed solids heat capacity is now a function of the temperature, anBedCp /
-     anBedH below (Phase 11 AOI 2026-11-28) */
+  cpS: 0.84,
   mRef: 204650,
   /* 1.0.0-beta.256 (JENNIE): the upper furnace suspension (the bed balance, unit step). Was ua0w 289.3 kW/K, CALC with the bed AND the
      furnace exit both at 850 C. CALC of the 150 MW anchor (phi 1, drum 145 kg/cm2 g = 338.5 C, IF97):
@@ -177,18 +143,8 @@ const AN_BB = {
      - the profile (anBbSus) at these: Tu 849.9 C, Uw = 146.45 MW / (849.9 - 338.5) = 286.4 kW/K, gas radiation uag(849.9) 100.6 (WSGG):
        uaS 185.8 kW/K. Checked by anBbSus itself: tgF 840.0, walls 146.47, panels 62.51 MW (scratchpad d3solve.cjs, the app's laws) */
   tbA: 860,
-  /* Phase 11 AOI 2026-11-28 (phase thread: one law for one quantity): the solids heat flow up the furnace at MCR is no longer the
-     isothermal 860 / 840 C closure above (cSol 10,211 kW/K = 102 kg/m2 s) but the J&L flux at MCR, KANA
-     /mnt/project-files/phase11/kana-furnace-solids-law-2026-11-28.md section 3: G = rho_top (U0 - ut) = 5.7 x 3.83 = 22 kg/m2 s over the
-     grate 15.5067 x 7.6835 = 119.1 m2 (FHI Tab 2), at the bed solids cp(T) (anBedCp): gS x A x cp = 3,065 kW/K at 860 C (in anBbSus).
-     The wall / panel anchors are solved again with the app's laws at the same design sinks (bed 860 C, walls 146.45 MW, SH panels
-     62.5 MW, drum 338.5 C, panel metal 412.7 / 465.8 C, flue gas 237 kW/K; scratchpad sol/s.cjs): Tu 827.6 C, uaS 202.0 kW/K, the
-     panel conductance x 1.057 (kPan). The furnace exit at MCR is then 796.7 C, against FHI P2S7 Fig 8 840 C: the two design data
-     disagree (the J&L flux from Tab 3 sand and geometry vs the Fig 8 exit); the flux wins as the one law, Fig 8 stays a curve of the sweep */
-  gS: 22 /* kg/m2 s, J&L flux at MCR (KANA, see above) */,
-  aG: 15.5067 * 7.6835 /* m2, the grate (FHI Tab 2) */,
-  kPan: 1.057 /* CALC: the SH panel conductance on the new suspension profile (see above) */,
-  uaS: 202.0 /* Phase 11 2026-11-28: re-solved on the J&L flux (see gS); was 185.8 */,
+  cSol: 10211,
+  uaS: 185.8,
   uaL: 18,
   uaBR: 30.8 /* kW/K, bed -> refractory centre (beta.263, see the bed balance) */,
   uaRW: 43.1 /* kW/K, refractory centre -> water */,
@@ -231,32 +187,12 @@ const AN_BB = {
   /* Phase 11 AOI 2026-11-28 (new st150 of PR 705, 60 plant min headless): main and the char store alone (AN_CBED) hold 150 MW
      (Pms 122.1 ~ 122.6); kKL 3.80 alone swings and grows (coal 85 ~ 95 T/H by 55 min); both together trip at about 52 min. So the
      char store is not the missing fast answer and 3.80 stays held (rank 4b, the 45 MW panel heat with it) */
-  /* (history) The Rule 0 tag was on the kKL line (team decision 2026-11-28 6:00 AM PHT, TEMPORARY placeholder; replaced by AN_BB jl below): 9.2 is a fitted value,
+  /* The Rule 0 tag is on the kKL line below (team decision 2026-11-28 6:00 AM PHT, TEMPORARY placeholder): 9.2 is a fitted value,
      not a design value. FHI P2S7 Fig 9 (furnace DP vs load, with Fig 12 / 13 / 8) gives kKL about 1.7 ~ 3 (rms 4 ~ 8 mmH2O; 9.2 gives
      rms 32, 1,427 at 60 % against 1,380) and the FHI 60 % thermal point gives 3.80 (/mnt/project-files/phase11/aoi-kkl-from-fig9-
      2026-11-28.md). It stays only because the design value leaves the 150 MW pressure loop (PIC-COBM as the manual) under-damped:
      the steam answers the firing in ~6 min (bed lag) against the 165 s integral time. Goes out when the fast-answer physics is found. */
-  /* Phase 11 AOI 2026-11-28 (KANA law, /mnt/project-files/phase11/kana-furnace-solids-law-2026-11-28.md): kKL 9.2 (fit) is REPLACED by
-     the transport-zone law of Johnsson & Leckner (1995, Chem. Eng. Sci. 50, large CFB boilers): solids density above the bed
-     rho(h) = rho0 e^(-K (h - Hb)), K = 0.23 / (U - ut) 1/m. Against the MCR profile the share at the furnace top is
-     phi = e^(-0.23 H (1 / (U - ut) - 1 / (U0 - ut))) (density, walls / panels by anBbMeanH as before) and the solids flux carried up
-     (G = rho_top (U - ut), the cSol share) is phi (U - ut) / (U0 - ut) (anBbFluxV). At MCR both are 1: the anchors uaS, uaP, cSol stay.
-     Each constant: */
-  /* Phase 11 AOI 2026-11-28: THE SOLIDS HEAT TO A SURFACE IS PART CONVECTION, PART RADIATION (Basu & Nag 1996; Basu, Circulating
-     Fluidized Bed Boilers, ch. 6: h = hc + hr). hc = 40 rho^0.5 W/m2 K (the law already used here) at the MCR wall mean density
-     46.5 x 0.323 = 15.0 kg/m3 (KANA J&L profile) = 155 W/m2 K; hr = sigma (Ts^4 - Tw^4) / (Ts - Tw) / (1/es + 1/ew - 1), suspension
-     emissivity es = 0.5 (1 + ep) with particle ep 0.8 (Basu ch. 6) = 0.9, wall ew 0.8 (oxidised steel, textbook; NOT IN DOCS) = x 0.735,
-     at the anchor tuA 849.9 C against the wall metal ~345 C: 162 x 0.735 = 119 W/m2 K. Radiation share at the anchor
-     fR = 119 / (155 + 119) = 0.43 (CALC). The anchors uaS / uaP keep the design heat at MCR; only the temperature shape changes: the
-     radiation part goes with (Ts^4 - Tw^4) / (Ts - Tw) over its anchor value (anBbRadF) */
-  fR: 0.43 /* CALC, see above */,
-  kSettle: 9.2 /* SETTLE-ONLY: the old fitted law (kKL) the 150 MW start was settled on; read only while AN.jlShare < 1 (settle blend), never by the plant model */,
-  jl: {
-    K: 0.23 /* 1/m x m/s, Johnsson & Leckner 1995 (textbook correlation) */,
-    H: 34.9 /* m, bed surface FL 7.6 (grate FL 6.4 + the FHI P2S7 Fig 9 bed DP 1630 mmH2O at ~1300 kg/m3) to the furnace top FL 42.527 (K1AU3C-201) */,
-    U0: 4.92 /* m/s, MCR gas 184.2 kg/s (FHI P2S7 Tab 3) at 860 C (rho 0.314, M 29.2) over 15.5067 x 7.6835 = 119.1 m2 (FHI Tab 2): CALC */,
-    ut: 1.09 /* m/s, sand terminal velocity, Haider & Levenspiel 1989, d50 0.20 mm (FHI P2S7 Tab 3 band 0.15 ~ 0.30, middle), 2650 kg/m3 (quartz, textbook; NOT IN DOCS), gas 4.47e-5 Pa s at 860 C: CALC */,
-  },
+  kKL: 9.2 /* RULE 0 VIOLATION, fit, contradicts FHI Fig 9 (temporary placeholder, see above) */,
   /* 1.0.0-beta.286 (JENNIE, F3 of report 282: start-up save points S10 / S12 / S29): beta.282 gave the SH panels only the solids part
      (uaP x phi^0.5), so at the low air of a start-up (phi ~ 1e-4) they took no heat at all (S12: 0.0 ~ 0.4 MW, was 1.3 ~ 2.0; the panel
      outlet steam 156 C after 30 min, was 176) and the bed rose 40 C faster. The gas in the upper furnace radiates to the panels as it
@@ -288,7 +224,7 @@ const AN_BB = {
   fgP: (610 * (0.0514 + 0.01)) / 152.2,
   aPan: 610 /* m2, panel faces (K1AU3C-201, CALC above) */,
   lPan: 1.03 /* m, lane beam between two panels */,
-  tuA: 827.6 /* Phase 11 2026-11-28: the anchor Tu on the J&L flux (see gS); was 849.9 (beta.348, D9 above) */,
+  tuA: 849.9 /* beta.348: the design anchor (D9 above) */,
   /* 1.0.0-beta.334 (JENNIE, whole boiler balance 2026-11-23, plant-study/15-boiler-balance-2026-11-23.md): THE SOLIDS DENSITY ALONG
      THE HEIGHT. The law of beta.282 (Kunii & Levenspiel) makes the density fall with the height as e^(-a h), a = c / U, and phi is its
      share at the furnace top. The walls and the panels gave both phi (the top), but they do not sit at the top: the upper walls run
@@ -316,45 +252,9 @@ function anBbUag(tg, tw) {
   const K1 = tg + 273.15, K2 = tw + 273.15;
   return B.aUp * (B.hcUp + (B.fwUp * anHxEps(tg, B.lUp) * 5.67e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tw));
 }
-/* Phase 11 AOI 2026-11-28: the solids DENSITY share phi at the top at the gas velocity share u (Johnsson & Leckner, AN_BB jl above;
-   u capped 1.2 as before; no solids above the bed when the gas is slower than the terminal velocity) */
-function anBbPhiJL(u) {
-  const J = AN_BB.jl,
-    du = J.U0 * Math.min(1.2, u) - J.ut;
-  return u > 0.05 && du > 0.01 ? Math.exp(-J.K * J.H * (1 / du - 1 / (J.U0 - J.ut))) : 0;
-}
-/* AN.jlShare (0 ~ 1, default 1): a settle / line-up input, not a model constant (as AN.aphLeakShare, boiler.js). The 150 MW start was
-   settled on the old fitted law (kKL 9.2, AN_BB.kSettle); the settle (tools/steady150/init/jl-law.js) brings the J&L law in over its run.
-   The plant model itself always runs at 1 (the J&L law alone) */
-const anBbJlS = () => (typeof AN !== 'undefined' && isFinite(AN.jlShare) ? Math.max(0, Math.min(1, AN.jlShare)) : 1);
-const anBbPhiK = u => (u > 0.05 ? Math.exp(-AN_BB.kSettle * (1 / Math.min(1.2, u) - 1)) : 0);
+/* 1.0.0-beta.282: the circulating solids share phi at the gas velocity share u (AN_BB kKL above; u capped 1.2 as before) */
 function anBbPhiV(u) {
-  const s = anBbJlS();
-  return s >= 1 ? anBbPhiJL(u) : s * anBbPhiJL(u) + (1 - s) * anBbPhiK(u);
-}
-/* the solids FLUX share carried to the top per density share, G = rho (U - ut) over its MCR value (AN_BB jl; the cSol share is phi x
-   this); during the settle blend the flux of the old law is its density share (flux = phi) */
-function anBbFluxV(u) {
-  const J = AN_BB.jl,
-    fJ = u > 0.05 ? Math.max(0, J.U0 * Math.min(1.2, u) - J.ut) / (J.U0 - J.ut) : 0,
-    s = anBbJlS();
-  if (s >= 1) return fJ;
-  const pJ = anBbPhiJL(u),
-    pK = anBbPhiK(u),
-    p = s * pJ + (1 - s) * pK;
-  return p > 1e-12 ? (s * pJ * fJ + (1 - s) * pK) / p : fJ;
-}
-/* the solids coefficient of a surface at the suspension tu against the surface tw over its anchor value (AN_BB fR): convection
-   (1 - fR) as it is, radiation fR x (Ts^4 - Tw^4) / (Ts - Tw) over the same at the anchor tuA */
-function anBbRadF(tu, tw) {
-  const B = AN_BB,
-    g = t => {
-      const K1 = t + 273.15,
-        K2 = tw + 273.15;
-      return Math.abs(t - tw) > 1 ? (K1 ** 4 - K2 ** 4) / (t - tw) : 4 * K2 ** 3;
-    },
-    gA = g(B.tuA);
-  return isFinite(tu) && isFinite(tw) && gA > 0 ? 1 - B.fR + (B.fR * g(tu)) / gA : 1;
+  return u > 0.05 ? Math.exp(-AN_BB.kKL * (1 / Math.min(1.2, u) - 1)) : 0;
 }
 /* beta.286: the share of the anchor conductance of an SH panel at the suspension tu, panel metal tm, solids share phi (AN_BB fgP) */
 function anBbPanF(tu, tm, phi) {
@@ -366,18 +266,17 @@ function anBbPanF(tu, tm, phi) {
       return B.hcUp + (B.fwUp * anHxEps(tg, B.lPan) * 5.67e-11 * (K1 ** 4 - K2 ** 4)) / (tg - tm);
     },
     gA = hL(B.tuA);
-  return B.kPan * (B.fgP * (gA > 0 && isFinite(tu) ? hL(tu) / gA : 0) + (1 - B.fgP) * Math.sqrt(anBbMeanH(phi, B.xP, 1)) * anBbRadF(tu, tm)) /* beta.334: the panels' own height; Phase 11: x the radiation shape (anBbRadF), x kPan */;
+  return B.fgP * (gA > 0 && isFinite(tu) ? hL(tu) / gA : 0) + (1 - B.fgP) * Math.sqrt(anBbMeanH(phi, B.xP, 1)) /* beta.334: the panels' own height */;
 }
 /* the upper furnace suspension of the bed balance (unit step): exit tgF and mean Tu of the gas + circulating solids that leave the bed
    at Tb, with the walls (Uw, sink Tw) and the SH panels (Up, sink Tp) in parallel; uag at the mean of the last scan (tu0) */
-function anBbSus(Tb, Tw, gcp, phi, up, tu0, fx, qu) {
+function anBbSus(Tb, Tw, gcp, phi, up, tu0) {
   const B = AN_BB,
-    Uw = anBbUag(isFinite(tu0) ? tu0 : Tb, Tw) + Math.sqrt(anBbMeanH(phi, B.xW, 1)) * B.uaS * anBbRadF(isFinite(tu0) ? tu0 : Tb, Tw) /* Phase 11: x the radiation shape (anBbRadF) */ /* beta.282: h ~ rho^0.5 (AN_BB); beta.334: over the walls' height */,
-    Cs = gcp + phi * (isFinite(fx) ? fx : 1) * B.gS * B.aG * anBedCp(Tb) /* Phase 11: solids heat flow = flux share (density x velocity, anBbFluxV) x cSol */,
+    Uw = anBbUag(isFinite(tu0) ? tu0 : Tb, Tw) + Math.sqrt(anBbMeanH(phi, B.xW, 1)) * B.uaS /* beta.282: h ~ rho^0.5 (AN_BB); beta.334: over the walls' height */,
+    Cs = gcp + phi * B.cSol,
     Ut = Uw + up.U;
   if (!(Cs > 0.01) || !(Ut > 0)) return { tgF: Tb, Tu: Tb, Uw, qW: 0, qP: 0 };
-  /* Phase 11: a heat qu (kW) released evenly in the suspension (AN_UF) lifts its sink by qu / Ut: Cs dT/dx = -Ut (T - Ts) + qu */
-  const Ts = (Uw * Tw + up.U * up.T) / Ut + (qu > 0 ? qu / Ut : 0),
+  const Ts = (Uw * Tw + up.U * up.T) / Ut,
     N = Ut / Cs,
     e = Math.exp(-N),
     Tu = Ts + ((Tb - Ts) * (1 - e)) / N;
@@ -412,10 +311,9 @@ function anBedMigrate(U) {
      of the old law (velocity share ^ nU on the Tb0 basis): its velocity share is read back from it, then the law of today (anBbPhiV) */
   const u0 = Math.pow(Math.max(1e-9, phi), 1 / B.nU) * ((U.Tb0 + 273) / (B.tbA + 273)),
     out = T => {
-    const uT = (u0 * (T + 273)) / (Tb + 273),
-      ph = anBbPhiV(uT),
+    const ph = anBbPhiV((u0 * (T + 273)) / (Tb + 273)),
       uaP = typeof AN_HX !== 'undefined' ? (AN_HX.uaP1 + AN_HX.uaP2) / 2 : 0 /* beta.342: mean of the two panels (F13) */,
-      s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * anBbPanF(T, Tp, ph), T: Tp }, T, anBbFluxV(uT));
+      s = anBbSus(T, Tw, gcp, ph, { U: pm.length * uaP * anBbPanF(T, Tp, ph), T: Tp }, T);
     return { q: s.qW + s.qP + B.uaBR * (T - Trf) + gcp * (s.tgF - tg0), s, ph };
   };
   let lo = Math.min(Tb, Tw) - 50,
@@ -538,7 +436,7 @@ const AN_FG0 = anFgMol(89.5, 1, 0, 596, 12, 1 - 200 / 1822, 0);
    stores, so a judge of a steady design curve on a ramp minute can take out the stored heat that leaves or enters (dE/dt). Read only,
    changes no plant state. Only dE/dt has a meaning (absolute temperatures, no reference state). The terms are the same capacities the
    scan integrates, nothing new:
-   - bed: inventory U.bedI t x anBedH(U.Tb) (unit.js bed balance Cb = bedI x anBedCp(Tb));
+   - bed: inventory U.bedI t x AN_BB.cpS x U.Tb (unit.js bed balance Cb);
    - lining: AN_BB.mRef kJ/K x U.Trf;
    - drum water and evaporative steel: U.Cw (T/H s per K) x AN_BB.kW x U.Tw (unit.js drum law, r = B.kW / kWe);
    - drum steam space and flash: AN_STORE.cs (T/H s per kg/cm2) x U.kWe x U.Pd (the same drum law);
@@ -559,7 +457,7 @@ function anStoredE(U) {
       else hx += n(K[k][0]) * n(m);
     }
   return (
-    n(U.bedI) * 1000 * anBedH(n(U.Tb)) /* Phase 11: the sensible heat at the bed cp(T) */ +
+    n(U.bedI) * 1000 * B.cpS * n(U.Tb) +
     B.mRef * n(U.Trf) +
     n(U.Cw) * B.kW * n(U.Tw) +
     AN_STORE.cs * n(U.kWe) * n(U.Pd) +
