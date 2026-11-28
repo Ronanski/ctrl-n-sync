@@ -552,9 +552,7 @@ function anFlashG(Pd, Tw, col) {
   return Math.min(gl, Math.sqrt(2 * rho * Math.max(0, p0 - ps) + gs * gs));
 }
 /* 3.2.3-beta.182 (Mina S177-3, beta.177 shutdown: the drum level stood at +218.83 mm for 6.7 h while the bottled boiler cooled, no
-   shrink): ON. It was OFF "until the Training has the drain steps" (PR-OPE-5002 WARMING UP: "Observe steam drum level: swelling ... use
-   lowering header drain ... MBD and CBD"); the drains are in the Training since beta.51. PR-OPE-5004-01 bottle-up step 4 "Fill steam drum
-   to +200 mm" is the reserve for this shrink. Probe (Hot restart, faster cooling): water 309 -> 292 C, level +166 -> -199 mm */
+   shrink): ON. It was OFF until the drain valves (lower header drain, MBD, CBD) were in the Training; they are since beta.51. Probe (Hot restart, faster cooling): water 309 -> 292 C, level +166 -> -199 mm */
 const AN_THERM = { vEvap: 147, on: true }; /* not in AN_CYC: a loaded state replaces AN_CYC's fields */
 /* Phase 11 (KANA, 2026-11-27, GO FIX 11 rank 7): SHRINK AND SWELL of the drum level from the steam in the risers (natural circulation),
    replacing the lag term ks 10 mm per kg/cm2 / tauS 60 s (NO-SOURCE). The water walls and the evaporator panels carry a mixture of water
@@ -1053,10 +1051,7 @@ function anProcStep(S, dt) {
           (pr.integ.fwp && pr.integ.fwp.mul != null
             ? pr.integ.fwp.mul
             : 1); /* 2.2.0-beta.12: no BFWP, no start-up flow */
-      /* 2.1.0-beta.11: water that leaves the drum besides the main steam (blowdown and the rest), from "Start at 150 MW":
-         03.png feedwater 499.1 - main steam 474.1 = 25.0 T/H (pr.integLoss, removed by Reset) */
-      /* Mina H1 (Step 28: the drum overfilled to +660 mm). PR-OPE-5002 (drum level): "Use lowering header drain until to control the level
-         and at steam drum pressure of above 10 Kg/cm2 use the MBD and CBD". The lower ring header drains of flow diagram K1AU3-PD-019 Rev D:
+      /* Mina H1 (Step 28: the drum overfilled to +660 mm). The lower ring header drains of flow diagram K1AU3-PD-019 Rev D:
          BD-1-005 / 006 (1") and BD-1-008 / 010 / 012 / 014 (2") from the furnace water wall lower ring header, manual valves V-BD1005 ~
          V-BD1021, to the blowdown tank T-1051 (field valves, AN.field('lhd', %)). Their flow
          Q = Cd x A x (opening / 100) x G:
@@ -1083,8 +1078,7 @@ function anProcStep(S, dt) {
       if (typeof AN_SRC !== 'undefined' && AN_SRC.field && AN_SRC.field.lhd && AN_SRC.lhdPct > 0 && q.y > lo) {
         lhdQ = 0.61 * 0.00912 * (Math.min(100, AN_SRC.lhdPct) / 100) * anFlashG(drumP, drumTw, 7.748) * 3.6; /* kg/s -> T/H */
       }
-      /* 3.2.3 MASS BLOWDOWN (PR-OPE-5002 5698: "at steam drum pressure of above 10 Kg/cm2 use the MBD and CBD to control the level"; FHI
-         SECT_8 TAB_9: "if the water level is abnormally high, reduce the level by opening the intermittent blowdown valves"). Flow
+      /* 3.2.3 MASS BLOWDOWN (FHI SECT_8 TAB_9: "if the water level is abnormally high, reduce the level by opening the intermittent blowdown valves"). Flow
          diagram K1AU3-PD-019 (A1-0-001 RA p15): the drum line BD-1-001-LE1W-2.5" goes through V-BD1002 to the mass blowdown MOV
          MV-BD1001 (DITL-38, its position) and BD-1-002-DC1W-8" MASS BLOWDOWN LINE to the blowdown tank T-1051. Saturated water
          flashing is choked at the smallest bore: flow = Cd x A x G x opening, A = the MV-BD1001 valve bore, 45.0 mm inlet (62.6 mm outlet),
@@ -1105,13 +1099,13 @@ function anProcStep(S, dt) {
       /* 3.2.4-beta.1: the drum and SH safety valves (unit.js AN_SV) too */
       if (typeof AN_UNIT !== 'undefined' && AN_UNIT.on && AN_UNIT.msv > 0) lhdQ += AN_UNIT.msv;
       AN_CYC.mbd = mbdQ;
-      /* 3.2.3 CONTINUOUS BLOWDOWN (PR-OPE-5002 5698 "MBD and CBD"; flow diagram K1AU3-PD-019: MV-BD1002, DITL-38 #MV-BD1002, line
+      /* 3.2.3 CONTINUOUS BLOWDOWN (flow diagram K1AU3-PD-019: MV-BD1002, DITL-38 #MV-BD1002, line
          BD-1-003). The water that leaves the drum besides the main steam at 150 MW (pr.integLoss, 15 T/H, MB-019 item 22) is
          taken as the continuous blowdown in service (src/world/ditl150.js: MV-BD1002 open). Mass balance K1AU3-A2-0-001 sheet K1AU3-MB-019
          (boiler vent and drain, PDF p 11): item 22, the CBD line from the drum to the flash tank, design 15 T/H (5.5 kg/cm2, 160 C);
          item 23, the MBD line to the blowdown tank, 50 T/H; item 24, the common drum outlet, 50 T/H at 142.5 kg/cm2; item 25, the
          soot blowing steam 8 T/H (taken from the superheater, intermittent). 3.2.3-beta.66: integLoss is now the CBD design 15 T/H
-         (hmi-op.js AN_CBD_DESIGN); before it was the 25 T/H snapshot difference, of which 10 T/H had no outlet on MB-019. integLoss stays the setting of the
+         (hmi-op.js AN_CBD_DESIGN); before it was a 25 T/H plant value, of which 10 T/H had no outlet on MB-019. integLoss stays the setting of the
          field blowdown valve (AN.blowdown); now it also follows the MOV position and, as a choked flashing flow, the drum pressure:
          x G(P) / G(142.5 kg/cm2). Phase 11 (KANA 2026-11-27): the 15 T/H of item 22 is a design flow, so the normaliser is the drum
          pressure of the same design sheet (MB-019 item 24, the common drum outlet, 142.5 kg/cm2), DOC; before it was 134 kg/cm2, the
@@ -1128,8 +1122,7 @@ function anProcStep(S, dt) {
       /* 3.2.4-beta.7: a tube leak (unit.js anTubeLeak): the water wall leak leaves the drum water, the economizer leak never reaches it */
       const tlQ = typeof AN_UNIT !== 'undefined' && AN_UNIT.on ? (AN_UNIT.tlW || 0) + (AN_UNIT.tlE || 0) : 0;
       q.y = Math.max(lo, Math.min(lo + span, q.y + dt * AN_CYC.rate('dr', q.y) * (ffw - fst - loss - lhdQ - tlQ)));
-      /* 3.2.3 THERMAL EXPANSION of the boiler water (PR-OPE-5002 5697: "Observe steam drum level: swelling approximately > 100 C; use
-         lowering header drain ... above 10 kg/cm2 the MBD and CBD"). The economizer, waterwall and downcomers stay full of water: when it
+      /* 3.2.3 THERMAL EXPANSION of the boiler water. The economizer, waterwall and downcomers stay full of water: when it
          heats its density falls (anWaterRho, steam table) and the water it no longer holds goes into the drum, kg = AN_THERM.vEvap x the
          density drop; cooling takes it back (shrink after a trip). The drum water itself is the level (kgmm.dr). OFF until the Training
          has the drain steps (AN_THERM.on, also AN.therm for a test, coordinator 2026-11-10): the density is tracked always, so switching it on does not jump */

@@ -20,7 +20,7 @@
    the bed model, AN_BB); the steam leaves at Tin + eps (Tm - Tin), eps = 1 - exp(-NTU), NTU = 3 x (m / m0)^-0.2 (steam film ~ m^0.8);
    metal M dTm/dt = q gas - q steam. No flow: the stagnant steam is at the metal. A spray mixes by enthalpy (IF97 steam.js).
 
-   SOURCES (no fit to a plant snapshot or trend):
+   SOURCES (design data and first principles only, no fit):
    - Tube banks, as-built FHI drawings: reheater K1AU3-B-0-008 (R-001, R-002 A-A): 4 banks R-3 .. R-6 of 106 elements, OD 57.15 mm
      (2.25 in), 114.3 mm both ways, legs per element counted on R-001 (R-3, R-4, R-5 24, R-6 18), RH pass depth 3,371.9 mm, backpass
      width 12,242.8 mm. Finishing SH K1AU3-B-0-003 (C-001): S-35, S-36, S-37 of 106 elements, OD 50.8 mm, 114.3 x 101.6 mm, legs
