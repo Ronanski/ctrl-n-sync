@@ -132,12 +132,16 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
     E2.js(`(()=>{const sh=AN.sheets.find(s=>s.name==='ABC-001A'),S=sh.S,b=S.blk.find(x=>x.k==='MAN'&&x.tag==='HIC-ULD');AN.stVal(sh.name,b.id,${v});
       const si=b.svI>=0?b.i[b.svI]:null,dr=si!=null?(S.drv[si]||[]).find(z=>z.k==='AMT'):null,ds=dr&&S.rt.st[dr.id];
       if(dr&&ds&&ds.pk==='A'&&dr.a!=null&&S.ext.includes(dr.a))S.rt.ext[dr.a]=${v};AN.settle&&AN.settle();return ''})()`);
-  /* the CCS brings it down at HIC-MWRL 3 MW/min until the logic takes the boiler master out of AUTO (ABC-001C HIC-BM BU-CMD M.2013,
-     steam flow < 220 T/H): HIC-ULD then tracks the load (about 73 MW here). The case goes on from where the logic stops it */
+  /* the CCS brings it down at the HIC-MWRL rate of the start until the logic takes the boiler master out of AUTO (ABC-001C HIC-BM
+     BU-CMD M.2013, steam flow < 220 T/H): HIC-ULD then tracks the load (about 73 MW here). The case goes on from where the logic stops
+     it. 2026-11-28: the start's rate is the design 1.2 MW/min (PPE-15-0080 R1; was 3.0 from a screen), so the wait is sized from the rate
+     the start holds (E2.step(240) = 2 plant min), not from a fixed 40 min */
   uld(45);
+  const rate = +E2.js(`(()=>{const S=AN.sheets.find(s=>s.name==='ABC-001B').S,b=S.blk.find(x=>x.k==='MAN'&&x.tag==='HIC-MWRL');return S.rt.st[b.id].val})()`) || 3;
+  const nMax = Math.ceil((150 - 70) / rate / 2) + 10;
   let mLow = 150,
     mPrev = 150;
-  for (let m = 0; m < 20 && mLow > 46; m++) {
+  for (let m = 0; m < nMax && mLow > 46; m++) {
     E2.step(240);
     (mPrev = mLow), (mLow = +E2.js('AN.unit.MW'));
     if (mLow < 90 && Math.abs(mPrev - mLow) < 1) break;

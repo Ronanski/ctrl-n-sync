@@ -179,13 +179,13 @@ const AN_UNIT = {
   /* the LP bypass PCV-HR1010: turbine.js AN_VLV.lpb (Cv 1700, Phase 11 rank 9; was lpb 1.05 of the anchor flow). tauRH (10 s) deleted:
      read nowhere (audit B6) */
   /* 2.2.0-beta.16 (M4 step 3, bypass system and pressure raise): while the turbine is shut (cold start, before the roll) the reheater
-     is a closed volume: the HP bypass fills it, the LP bypass (ABC-052 PCV-HR1003) and the RH blow-off (ABC-054 PICHR1391, PR-OPE-5002
-     "Reheat blow-off MVHR1391 open" for warming, closed when the LP bypass is in service) empty it. Crh = steam stored per kg/cm2 of
+     is a closed volume: the HP bypass fills it, the LP bypass (ABC-052 PCV-HR1003) and the RH blow-off (ABC-054 PICHR1391 through MV-HR1391,
+     the operator's warming line-up) empty it. Crh = steam stored per kg/cm2 of
      hot reheat pressure ((T/H) x s per kg/cm2; the reheater alone is 60 m3 (FHI T8T2 60,068 kg of water, hydro test 60 m3; RH alone Crh = 120), the piping volume is NO-SOURCE, about 200 m3 in all kept: steam at
      7.6 kg/cm2 is about 4 kg/m3, so about 110 kg per kg/cm2 = 400 (T/H) x s; 40 T/H through the HP bypass fills 0 -> 7.6 kg/cm2 in
      about 75 s); rhb = size of the RH blow-off as a share of the anchor flow at the anchor reheat pressure (silencer, below) */
   /* Crh (the reheater steam storage) and rhb (RH blow-off) are turbine.js AN_VLV.Crh / rhbT (engine constants, Phase 11 rank 9) */
-  /* 2.2.0-beta.17 (M4 step 4, turbine roll / sync / load up; PR-OPE-5002 4.4 ~ 4.6): the turbine and its TCS are a black box outside
+  /* 2.2.0-beta.17 (M4 step 4, turbine roll / sync / load up; the TCS ATS of tcs.js, TCE / TCA 331DM09784): the turbine and its TCS are a black box outside
      the DCS drawings (the DCS only sees the TCS digital inputs of the I/O list and the TARGET MW feedback AI0420). State U.tb:
      st 'off' (stop valves shut) -> 'roll' (the ATS of tcs.js sets the speed and the ICV)
      -> 'sync' (3600 rpm, the TCS closes the GCB: I.0931 = 1 / I.0932 = 0, INITIAL LOAD 4.5 MW on the ICV) -> 'load' (LOAD UP
@@ -195,7 +195,7 @@ const AN_UNIT = {
      reheater (U.rr integrator of beta.16, with the ICV flow out). DCS CONTROL MODE PERMISSIVE I.0081 (3.2.3-beta.135, TCS soft logic
      TCE 331DM09784 p.127 TCE180, read 2026-11-12 on the PC): the NOT of the reset group of DCS CONTROL MODE = 52G closed, no TURBINE
      TRIP, no FORCED CLOSE (HOUSE LOAD OPERATION), and in IP START the TRANSFER REGION COMPLETE(IP); was MWperm 45 MW (the NORMAL
-     OPERATION select of PR-OPE-5002, an operator step of the ATS, not this permissive). Not modelled from that group: GOV. MANUAL, LLM
+     OPERATION select, an operator step of the ATS, not this permissive). Not modelled from that group: GOV. MANUAL, LLM
      MANUAL, GEN. MW ABN., TARGET MW DEMAND ABN., IP LIMITING (the operator does not select them here). DCS CONTROL MODE ON I.0082 set by
      the pulse O.0178 of ABC-001C while I.0081, reset by O.0179 or by the reset group (permissive lost); while ON the TCS target load
      tracks GEN. MW (TCE p.134), so at OFF the TCS holds the load it has. These inputs are written by the model in every plant state (3.2.5-beta.8; before only in a start-up, U.cold); the snapshot of
@@ -209,7 +209,8 @@ const AN_UNIT = {
   cvBias: 0.2,
   fdRate: 0.01,
   vRate: 0.1,
-  MWinit: 4.5 /* PR-OPE-5002: initial load 4.5 MW */,
+  MWinit: 4.5 /* MW: TCE190 LOAD CONTROL(1) p.132 initial load set 4.5 MW (3 %) outside hot mode (7.5 MW, 5 %, hot mode: the ATS sets
+    U.MWinit from TCS.init, tcs.js); this is the value before an ATS start */,
   rateUp: 7.5 /* MW/min = 5 % / min (PR-OPE-5002 LOAD UP), AI0421 max load-up rate 0 ~ 5 %/min */,
   tauT: 362 /* metal over steam: SH steel 232 t (B-0-001) x 0.5 kJ/kg K = 116 MJ/K, over 128 kg/s x 2.5 kJ/kg K = 0.32 MW/K */,
   tauO2: 20,
@@ -4728,10 +4729,10 @@ function anUnitStep0(dt) {
        The outlet flow = the steam x 217102 / 171756 (the spray of cond 1). DESIGN-SRC: vendor sheet K1AU3-D1-0-043 R0 p9 */
     U.Pvlo = Math.max(isFinite(U.cdP) ? U.cdP : 1.0332, (4.0 / 217.102) * U.qlp * (217102 / 171756));
   }
-  /* PT-ST1002-1 / -2 / -3 (after reheat valve A, the IP turbine inlet): the IP turbine passes steam in line with its inlet pressure
-     (Stodola, the same law as qip above), so the absolute pressure = 150 MW value x qip / m0. 150 MW anchor: PIST10021 / 2 / 3 =
-     33.0 / 33.2 / 33.2 kg/cm2 g (OPERATING_POINTS), mean 33.13 g = 34.16 ata. ICV shut or the turbine off: 0 */
-  U.Pip = Math.max(0, (34.16 * qip) / Math.max(1, U.m0) - 1.033);
+  /* PT-ST1002-1 / -2 / -3 (after reheat valve A, the IP turbine inlet): the IP blading inlet pressure of the steam path (turbine.js
+     tbPath P.hrh, Stodola at the IP flow, HB PPE-14-0725 geometry; case 1: 34.77 ata at 400.9 T/H), gauge. ICV shut or the turbine
+     off: 0. Phase 11 RIN 2026-11-28 (rule 0): was 34.16 ata x qip / m0 from a plant screen mean */
+  U.Pip = qip > 0 && U.tbS && U.tbS.P && isFinite(U.tbS.P.hrh) ? Math.max(0, U.tbS.P.hrh - 1.0332) : 0;
   /* 2.2.0-beta.17: not exactly 0 while the HP valves are shut: the SELECT CIRCUIT of ABC-052 (SI0181) reads 0 as a lost transmitter
      (SIG.AB) and would hold the 150 MW value, so the LP bypass REMOTE set point (LN12 of the first stage + 5.1) would stay at 30.9 */
   for (const L of U.pist) scaled(L, Math.max(1e-3, U.ms / U.m0));

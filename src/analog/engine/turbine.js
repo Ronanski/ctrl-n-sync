@@ -47,13 +47,13 @@ function anTurbine0(cmd, arg) {
   const lk = typeof tcsLinkRefuse === 'function' ? tcsLinkRefuse(U, cmd, arg) : '';
   if (lk) return lk;
   /* live run 2026-11-19 (F-CP): LOAD UP with the TCS panel target load and load-up rate { mw, rate %/min }. The rate is the TCS load-up
-     rate setting, 0 ~ 5 %/min of 150 MW (rateUp, PR-OPE-5002 LOAD UP 5 %/min); a plain number stays the target MW alone */
+     rate setting, 0 ~ 5 %/min of 150 MW (rateUp; TCE185 L-RATE, AO TCE970-2 MAX TURBINE LOAD UP RATE 0 ~ 5 %/MIN); a plain number stays the target MW alone */
   if (cmd === 'loadup' && arg && typeof arg === 'object') {
     const rt = +arg.rate;
     if (isFinite(rt) && rt > 0) U.rateUp = (Math.min(5, rt) * 150) / 100;
     arg = arg.mw;
   }
-  /* 3.2.0-beta.66: the 036 TURBINE OIL pumps at the 150 MW snapshot (no TCS model): the oil-only state of tcs.js */
+  /* 3.2.0-beta.66: the 036 TURBINE OIL pumps of the Start at 150 MW state (no TCS model then): the oil-only state of tcs.js */
   if (cmd === 'trip') return tcsTripManual(U);
   /* the generator control panel (gen-panel.js): SYN AUTO / MAN, AVR AUTO / MAN, 7-90R, 7-65, 52G CLOSE, lockout reset */
   if (cmd === 'gen') return tcsGenCmd(U, arg || {});
