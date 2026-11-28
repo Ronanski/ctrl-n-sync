@@ -5,17 +5,17 @@
      SYNCH. & INITIAL LOAD (Fig. 3 hold timer, initial load 3 % / 5 %), 26 ~ 27 LOAD UP (ICV -> CV transfer), 28 NORMAL OPERATION
    - ATS Criteria 310SC90-776: page 3 criteria table (step-in A, step criteria B, step-out D), page 5 ~ 14 criteria list, page 21 Fig.
      2 / 3 allowable steam - metal temperature (MSV inlet vs HP first stage inner wall, CRV inlet vs reheat bowl inner wall)
-   - PR-OPE-5002-02 (SNAPSHOT-TO-REPLACE, every number of this line: SOP, user rule 2026-11-28): GLAND SEALING (6118: MS > 12, aux > 7 kg/cm2, TIAS1015 220 C, turning gear, vacuum breaker open), VACUUM UP
-     (6512: aux > 10, gland done, vacuum breaker MV-AV1391 closed, ejectors), ROLLING (8254: cold MS 60 kg/cm2 / 400 C, RH 7.5 / 415 C),
-     heat soak table (8437), LP exhaust hood < 80 C before sync (8673) and < 52 C before load up (9123)
-   Table of the criteria against the app: docs/tcs/ATS_CRITERIA.md. The numbers that the drawings give as "REFER TO IBD" (graphic, not
-   readable here) were taken from PR-OPE-5002: each is marked SNAPSHOT-TO-REPLACE (user rule 2026-11-28: no snapshot, trend or SOP number
-   in the model, not even as a check; the source is the TCS logic / IBD / backup or a design document); the HP / IP metal time constants are CALC from the TCS thermal stress rotor model (TCA752 ~ 757) and the start-up modes by the time since shutdown (FHI SECT_7, STIE-14811 p147), see tauMetal / tauCool.
+   - the TG Operation Manual STIE-14747 (design document of the vendor): rub check 200 r/min (p.40), critical speeds (p.42), LP exhaust
+     hood < 80 C before sync (p.43) and < 52 C before load up (p.45); aux steam minimum 7.0 kg/cm2g (p.32)
+   Table of the criteria against the app: docs/tcs/ATS_CRITERIA.md. Every number is from the TCS logic (TCE / TCA, IBD, the HIACS
+   backup) or a design document (user rule 2026-11-28: design data and TCS logic are the only sources of the model); the HP / IP
+   metal time constants are CALC from the TCS thermal stress rotor model (TCA752 ~ 757) and the start-up modes by the time since shutdown
+   (FHI SECT_7, STIE-14811 p147), see tauMetal / tauCool.
    The state is AN_UNIT.tc; the operator acts on the TCS panel with AN.turbine(cmd) (unit.js anTurbine). */
 const TCS = {
   /* start-up mode judgement on the lower of the reheat bowl and the HP first stage inner wall metal temperatures (page 12). The
-     judgement temperatures are in the IBD; taken from the break points of the heat soak timers (Fig. 1 / 2: 150 / 170 / 230 / 420 C)
-     that the procedure table (8437) gives per mode: ambient 88 / 86 min, cold 1 58 / 55, cold 2 30 / 25, warm 0 / 22, hot 0 / 0 */
+     judgement temperatures are in the IBD; taken from the break points of the heat soak timers (310SC90-775 Fig. 1 / 2: 150 / 170 /
+     230 / 420 C), the soak minutes per mode below are read from the same figures */
   modes: [
     ['amb', 150, 'AMBIENT COLD'],
     ['c1', 170, 'COLD 1'],
@@ -33,22 +33,17 @@ const TCS = {
       : m === 'warm'
         ? 15
         : 0 /* min, page 25 Fig. 3 (40 below 230 C, 15 to 420 C) */,
-  /* rolling steam (PR-OPE-5002 8254 COLD START-UP: MS 60 kg/cm2 / 400 C, RH 7.5 kg/cm2 / 415 C; START ACCELERATION table 8407: warm MS
-     81.6, hot 110 / 455 C, RH 485 C): criteria 1.3 ~ 1.6 MAIN / REHEAT STEAM PRESS. / TEMP. NOT LOW (set point "NOT LESS THAN", IBD).
-     3.2.0-beta.38: the reheat pressure "NOT LOW" at 7.0: the procedure gives 7.5 kg/cm2 as the rolling condition and holds it with the
-     LP bypass at SV 7.6 ("HP and LP bypass and RH BOV automatically open to maintain RHP SV = 7.6"); with 7.5 as the limit the step
-     criteria B dropped in and out on the 0.1 ~ 0.5 kg/cm2 swing of the LP bypass. The criteria themselves now use the set
-     points of the TCS drawings (TCS.cri below); this table stays the rolling steam of the procedure, for the guide text only
-     (SNAPSHOT-TO-REPLACE: SOP numbers, not used by the model or the criteria) */
+  /* rolling steam of each start-up mode [MS kg/cm2g, MS C, RH kg/cm2g, RH C] = the set points of the ATS criteria 1.3 ~ 1.6 on the TCS
+     drawings (TCS.cri below, TCA536 / TCA532): ambient / cold 1 / cold 2 use the COLD set (neither HOT MODE nor WARM MODE, ASW 039 / 040
+     / 044 / 045 off). For the Training guide of a restart (ats.steam); the criteria themselves read TCS.cri. */
   steam: {
-    amb: [60, 400, 7.0, 415],
-    c1: [60, 400, 7.0, 415],
-    c2: [60, 400, 7.0, 415],
-    warm: [81.6, 400, 7.0, 415],
-    hot: [110, 455, 7.0, 485]
+    amb: [58.12, 304, 7.14, 201],
+    c1: [58.12, 304, 7.14, 201],
+    c2: [58.12, 304, 7.14, 201],
+    warm: [78.01, 323, 7.14, 201],
+    hot: [107.38, 345, 7.14, 201]
   },
-  /* the set points of the ATS criteria 1.3 ~ 1.6 on the TCS drawings (331DM09788), which decide where they differ from the rolling steam
-     above (that one is the procedure target, for the guide): TCA536 CRI 1.3 MAIN STEAM PRESS. NOT LOW = CPL A003 against SG 037 / 038 / 041
+  /* the set points of the ATS criteria 1.3 ~ 1.6 on the TCS drawings (331DM09788): TCA536 CRI 1.3 MAIN STEAM PRESS. NOT LOW = CPL A003 against SG 037 / 038 / 041
      K 105.3 / 76.5 / 57.0 barg by HOT MODE / WARM MODE (ASW 039 / 040), CRI 1.4 MAIN STEAM TEMP. NOT LOW = CPL A007 against SG 042 / 043 /
      046 K 345 / 323 / 304 C (ASW 044 / 045); TCA532 CRI 1.5 REHEAT STEAM PRESS. NOT LOW = CPL A003 HL / LL 7.0 barg, CRI 1.6 REHEAT STEAM
      TEMP. NOT LOW = CPL A007 HL / LL 201.0 C. barg in kg/cm2 g: x 1.01972 (1 bar = 1.01972 kg/cm2) */
@@ -940,12 +935,12 @@ function tcsStep(U, dt) {
      vapour extractor  F-1937 (main oil tank vacuum PGLO1920 -20 ~ -50 mmH2O);
      oil purifier      P-1941, local panel (AN_SRC.field.pur), discharge 3.0 kg/cm2 DERIVED (the purifier manual STIE-14666 is not read:
                        a centrifugal purifier feed pump of vendor practice, 2 ~ 3 kg/cm2; display only).
-   Values (user rule 2026-11-28: no snapshot, trend or SOP number in the model; design document or TCS logic, else DERIVED from physics):
+   Values (user rule 2026-11-28: design document or TCS logic, else DERIVED from physics):
      MOP discharge     6.63 kg/cm2g while running = 0.65 MPa(g), the design MAIN OIL PUMP DISCHARGE OIL of the TG lube oil system
                        drawing 310SD14-354 (TG maintenance manual 2-1-2, legend; bearing oil 0.18 MPa(g) there). The header is held by
                        the LUBE OIL PRESSURE CONTROL VALVE V-LOn004 (valve list), so a set value; no pump curve in the docs (the pump
                        datasheet is a scan). IBD TB-1 / TB-2 resets the LOW of the running pump only ABOVE 6.1 (CMP 5.6 / 6.1);
-     bearing oil       1.84 kg/cm2g = 0.18 MPa(g), the design BEARING OIL of the same drawing 310SD14-354 (was 3.3 from a snapshot), with a
+     bearing oil       1.84 kg/cm2g = 0.18 MPa(g), the design BEARING OIL of the same drawing 310SD14-354, with a
                        MOP; 1.6 with the EOP only (NO-SOURCE, above its 1.05 start); else 0;
      EOP discharge     1.6 while running (NO-SOURCE);
      COP discharge     163 kg/cm2g while running (310PB64-455 specification of equipments: 163 kg/cm2, 60 L/min x 2; master trip valve
@@ -1129,7 +1124,7 @@ function tcsOil(U, dt) {
   lag('loBrg', c.lop ? K.brg : c.eop ? K.brgEop : 0);
   c.brgOk = U.loBrg > K.brgLo || c.lop || c.eop;
   /* the control oil pumps sit on the main oil tank and draw from it (310PB64-455), not from the lube oil header: a COP gives control
-     oil without a MOP (before: it needed the lube oil header, read from a snapshot) */
+     oil without a MOP */
   const suc = true;
   lag('loCa', c.cop[0] && suc ? K.cop : 0);
   lag('loCb', c.cop[1] && suc ? K.cop : 0);
