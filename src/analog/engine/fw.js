@@ -184,8 +184,10 @@ function anDeaStep(U, dt) {
    source): KSB Y strainer, Filteration Engineers FE/KSB/GAD/YST/FR-3453-02 rev 03 (O&M V7 BFP, "14 Y TYPE STRAINER" p2; YUA PC read
    2026-11-27, /mnt/project-files/nana-doc-reads.md): 250 NB, 40 mesh, design 563.5 m3/h at 158.4 C, maximum allowable pressure drop
    0.10 kg/cm2 clean (0.15 at 50 % clogged). Turbulent flow through a screen: dP = k Q^2 (the square law), k from the clean point. The
-   pump inlet PT-FW1115 = suction header - strainer DP; the suction pipe loss between the header and the strainer is NO-SOURCE (no line
-   size / length in D1-0-052 or the strainer list MS-017) and is not modelled. */
+   pump inlet PT-FW1115 = suction header - strainer DP; the suction pipe loss between the header and the strainer is not modelled:
+   FW-1-001 / 002 / 003 are 12" SCH 40 (line list K1AU3-L1-0-011 R0 sheet 21, 481.7 t/h; PD-017 R2), the length and fittings are
+   NOT IN DOCS (YUA PC read 2026-11-28). At 481.7 t/h in 12" SCH 40 the velocity is about 1.8 m/s (0.017 kg/cm2 per 10 m of pipe,
+   Darcy f 0.013): small against the strainer 0.1. */
 const AN_FW = {
   sg: 0.9093 /* DESIGN-SRC: KSB data sheet sp. gr. at 158.4 C: the curves pP below are at this density; the pumped water uses anFwSg */,
   qQ: [0, 100, 200, 300, 400, 500, 540, 600, 700],
