@@ -102,8 +102,9 @@ const AN_FG = { cpG: 1.15, ash: 0.0682, mCy: 780e3, hA: 120, mF: 138e3, mB: 642e
    Fig 8 furnace at 100 % MCR, the exit tgF of the bed balance), so 184.2 x (hFg(894) - hFg(840)) = 184.2 x 68.3 kJ/kg = 12.58 MW
    must be released after the furnace exit: 12.58 / (89 T/H x lhvC 4,259 kW per T/H x (1 - fUC) = 366.9 MW) = 3.43 % of the coal
    heat released (CALC, KANA
-   /mnt/project-files/phase11/kana-sh-rh-outlet-2026-11-28.md). The same share at every load (one design point; the part-load
-   curves of the sweep judge it). It is the same coal: this share leaves the bed balance and goes to the cyclone gas (anHxRun). */
+   /mnt/project-files/phase11/kana-sh-rh-outlet-2026-11-28.md). ASSUMPTION: the same share at every load (one design point, no
+   document gives the cyclone heat release, YUA 2026-11-28); judged only by the full 45 - 150 MW sweep, and a part-load miss is fixed
+   in the physics form (char burnout against residence time / temperature), never by a share per load. It is the same coal: this share leaves the bed balance and goes to the cyclone gas (anHxRun). */
 const AN_PC = { f: 0.0343 /* DERIVED: FHI P2S7 Tab 3 heat balance at MCR, see above */ };
 const AN_BB = {
   lhvC: (3662 * 4.1868) / 3.6,
