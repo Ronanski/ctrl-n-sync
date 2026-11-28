@@ -215,24 +215,8 @@ const AN_UNIT = {
      - STEAM TEMPERATURE while cold: the superheaters cannot give more than the gas (plant.js pr.tcap = the SH / RH tube metal, F11) and not
        less than saturation (pr.tsat); TAB_9: SH outlet <= 535 C before synchronisation */
   Tamb: 30,
-  /* F11 (user 2026-11-13: the ratio of beta.206 / 207 was a curve fit, not a model). Superheater and reheater tube metal, heated by the flue
-     gas, cooled by the steam that flows (anUnitStep0, U.cold only):
-     - metal mass: GA p6 K1AU3A-201 rev 1 "PRESSURE PARTS EMPTY WEIGHT" (13-thermal-masses): SH = backpass walls 121.01 + in-furnace SH
-       80.58 + finishing SH 151.67 = 353.26 t; RH = 243.10 t. Steel specific heat 0.5 kJ/kg K (textbook carbon / low-alloy steel).
-     - gas side UA at MCR, CALC from the design heat balance (T1 / T3 / Fig 8): SH 460 T/H, drum 145 kg/cm2 g saturated vapour (h about
-       2,625 kJ/kg) to 541 C at 129 kg/cm2 g (h about 3,443): 104.5 MW; gas = furnace outlet 840 C (Fig 8, 100 %), metal about the mean
-       steam (340 + 541) / 2 = 440 C: UA = 104.5 MW / 400 K = 261 kW/K. RH 401 T/H (MB-012), 370 C / 36.6 (h about 3,145) to 541 C / 35.1
-       (h about 3,545): 44.6 MW, metal about 455 C: UA = 44.6 MW / 385 K = 116 kW/K.
-     - UA moves with the gas flow ^ 0.6 (forced convection over tube banks, Colburn / Grimison exponent, textbook); gas flow = the total
-       air (the fuel is under 10 % of the gas mass). The gas cannot give more than it carries: Q <= gas x 1.15 kJ/kg K (flue gas, textbook)
-       x (gas - metal). The gas temperature: the bed, less the upper furnace walls, then the cyclone refractory (AN_FG, beta.230).
-     - steam side: the steam leaves at the metal temperature (film coefficient far above the gas side); it takes steam x 2.2 kJ/kg K x
-       (metal - inlet), inlet = saturation (SH) / the cold reheat temperature, HP bypass outlet and HP exhaust mixed (RH, beta.227).
-       No steam flow: the metal and the stagnant steam heat from the gas alone. */
-  shM: 353.26e3 * 0.5 /* kJ/K */,
-  rhM: 243.1e3 * 0.5 /* kJ/K */,
-  shUA: 261 /* kW/K at the anchor air, CALC above */,
-  rhUA: 116 /* kW/K at the anchor air, CALC above */,
+  /* Phase 11 KANA: the SH / RH tube metal (shM / rhM) and the old lumped gas UAs (shUA / rhUA) are deleted: the scan uses the hx.js banks
+     (AN_HX [metal kJ/K] per bank, GA p6 K1AU3A-201: SH 353.26 t, RH 243.1 t x 0.5 kJ/kg K) */
   /* reheater outlet pipe at TT-HR1002 (outlet header and hot reheat pipe to the thermowell): 20 t steel x 0.5 kJ/kg K (NO-SOURCE: no
      pipe weight in the docs), lagging loss 0.02 kW/K (NO-SOURCE, about 6 days to cool) */
   rhPipeM: 10000 /* kJ/K */,
@@ -267,7 +251,7 @@ const AN_UNIT = {
 /* Phase 11 rank 8 (2026-11-27, AOI finding): the constants of AN_UNIT. "At 150 MW" (src/data/st150.txt) and every save point restore the
    whole AN_UNIT, so a constant changed in code never reached the plant: the old saved number won. A load puts these back from the
    code (state.js anStateApply); tools/check/u-const.cjs keeps this list equal to the keys that no function writes */
-const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
+const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'rhPipeM', 'rhPipeUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -4170,7 +4154,7 @@ function anUnitStep0(dt) {
       /* 1.0.0-beta.256 (JENNIE, Full Audit 3, live 150 MW 2026-11-22: bed 856 C, plant TIFG1090 ~955 C): THE UPPER FURNACE SUSPENSION.
          The bed (the dense lower furnace, U.Tb) and the furnace exit gas are two temperatures on the plant: the eighteen lower layer
          thermocouples TT-FG1090 / 1091 A ~ I average 937 C at 150 MW (HMI snapshot, hmi-op.js; trend scenario 1 TIFG1090 952 ~ 962 C),
-         while the gas leaving the furnace is 850 C (FHI design data / Fig 8 "furnace", the gas the backpass UAs shUA / rhUA and the
+         while the gas leaving the furnace is 850 C (FHI design data / Fig 8 "furnace", the gas the backpass banks and the
          chain of hx.js are built on; plant cyclone outlet TIFG1095 867 C at ~140 MW). Before, the model held the gas at the bed up to
          the exit (share phi) and took all the solids' wall heat at the bed temperature: one 856 C for both, 80 C under the bed.
          Now the gas and the circulating solids (heat capacity flow Cs = gas + phi x cSol) rise from the bed at Tb and give heat on
