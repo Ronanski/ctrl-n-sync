@@ -218,13 +218,35 @@ const AN_TB = {
 };
 const TB_A = 0.0980665; /* MPa per ata */
 /* the upstream pressure (ata) a group needs to pass m (kg/h) to p2 (ata) with inlet enthalpy h (kJ/kg): Stodola solved for p1 */
-function tbP1(K, m, p2, h, p0) {
+function tbP1(K, m, p2, h, p0, ec) {
   const q = Math.max(0, m) / 3600 / K,
     b = p2 * TB_A;
   let p = Math.max(b * 1.001, (p0 || p2 * 1.5) * TB_A);
+  if (ec > 0) {
+    /* the general ellipse (tbPsi) of a group with a critical pressure ratio: solve m = K sqrt(p / v) psi(p2 / p) by bisection on p */
+    let lo = b * 1.0001,
+      hi = Math.max(p * 4, b * 50);
+    const w = x => K * Math.sqrt(x / steamVhM(x, h)) * tbPsi(b / x, ec);
+    for (let i = 0; i < 50; i++) {
+      const x = 0.5 * (lo + hi);
+      if (w(x) > m / 3600) hi = x;
+      else lo = x;
+    }
+    return (0.5 * (lo + hi)) / TB_A;
+  }
   for (let i = 0; i < 6; i++) p = Math.sqrt(b * b + q * q * p * steamVhM(p, h));
   return p / TB_A;
 }
+/* Phase 11 RIN 2026-11-28: the general Stodola ellipse (Stodola 1922; Cooke, "On prediction of off-design multistage turbine pressures
+   by Stodola's ellipse", ASME J. Eng. Gas Turbines Power 1985; Traupel, Thermische Turbomaschinen): flow ~ sqrt(p1 / v1) psi,
+   psi = sqrt(1 - ((r - ec) / (1 - ec))^2) above the critical ratio ec, 1 below it (the group is choked). The cone law (ec 0) holds for
+   many stages; the last LP group is ONE stage (stage 24 after the No.6 extraction: 310PK03-994, LP diaphragms 22 / 23 / 24), whose
+   critical ratio is Traupel's 0.85 / sqrt(z + 1.5) = 0.54 for z = 1. At HB case 1 (0.07 / 0.373 = 0.19) and case 7 (0.053 / 0.133 = 0.40)
+   it is choked: the No.6 stage pressure follows the flow, not the condenser (the cone law gave case 7 0.141 vs HB 0.133) */
+function tbPsi(r, ec) {
+  return r <= ec ? 1 : Math.sqrt(Math.max(0, 1 - ((r - ec) / (1 - ec)) ** 2));
+}
+AN_TB.ecLp4 = 0.85 / Math.sqrt(1 + 1.5);
 /* the end enthalpy of a group of efficiency eta from p1 / h1 to p2 (ata, kJ/kg) */
 function tbEx(eta, p1, h1, p2) {
   return h1 - eta * Math.max(0, h1 - steamHsM(p2 * TB_A, steamPhM(p1 * TB_A, h1).s));
@@ -272,7 +294,14 @@ function tbGeo() {
       lp3: tbGroup(lp0 - d.x3 - d.x2, d.P2, d.H2 * k, d.P1, d.H1 * k),
       /* the last group expands to the expansion line end point (ELEP); the HB exhaust enthalpy 570.1 is the used energy end point
          (UEEP) = ELEP + the leaving loss of the last stage (tbEL) */
-      lp4: tbGroup(lp0 - d.x3 - d.x2 - d.x1, d.P1, d.H1 * k, d.Pc, d.Hx * k - tbEL(lp0 - d.x3 - d.x2 - d.x1, d.Pc, d.Hx * k))
+      lp4: (() => {
+        const m4 = lp0 - d.x3 - d.x2 - d.x1,
+          g = tbGroup(m4, d.P1, d.H1 * k, d.Pc, d.Hx * k - tbEL(m4, d.Pc, d.Hx * k)),
+          P1 = d.P1 * TB_A;
+        /* K of the general ellipse (tbPsi) at case 1, in place of the cone law K */
+        g.K = m4 / 3600 / (Math.sqrt(P1 / steamVhM(P1, d.H1 * k)) * tbPsi(d.Pc / d.P1, AN_TB.ecLp4));
+        return g;
+      })()
     },
     sv = (P, h) => Math.sqrt(P * steamVhM(P * TB_A, h)) /* p / sqrt(p v) ~ the choked labyrinth flow */,
     vcr = steamVhM(d.Pcr * TB_A, d.Hcr * k);
@@ -329,7 +358,7 @@ function tbPath(I, o) {
     f4 = Math.max(0, f3 - dr('lp2')),
     f5 = Math.max(0, f4 - dr('lp1'));
   /* pressures from the condenser up (Stodola), with the enthalpies of the last pass */
-  P.l1 = tbP1(G.lp4.K, f5, Pc, H.l1i || H.l1, P.l1);
+  P.l1 = tbP1(G.lp4.K, f5, Pc, H.l1i || H.l1, P.l1, AN_TB.ecLp4);
   P.l2 = tbP1(G.lp3.K, f4, P.l1, H.l2i || H.l2, P.l2);
   P.l3 = tbP1(G.lp2.K, f3, P.l2, H.l3i || H.l3, P.l3);
   P.da = tbP1(G.lp1.K, flp, P.l3, H.lm || H.da, P.da);
