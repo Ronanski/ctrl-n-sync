@@ -171,7 +171,8 @@ function tcsGenStep(U, dt) {
   /* the grid frequency of the model (unit.js anGridHz: this drift plus a grid fault), the one the shaft turns with on the line */
   const fgr = isFinite(U.gridHz) ? U.gridHz : tcsGridHz(isFinite(U.t) ? U.t : g.t);
   /* turbine speed before 52G (ATS step 4 / 5 at rated speed): the TCS speed control holds the speed set; the ASD 15R / 15L pulses move it */
-  if (!g52 && c && c.step >= 3 && c.cur !== 3 && tb.rpm > 3500 && !c.trip) {
+  /* Phase 11 RIN 2026-11-28: not after a load rejection (tb.rej, unit.js): there the speed is the swing equation under the speed governor */
+  if (!g52 && c && c.step >= 3 && c.cur !== 3 && tb.rpm > 3500 && !c.trip && !tb.rej) {
     if (!isFinite(g.nref)) g.nref = 3600;
     g.nref += K.nrr * dt * ((g.pR > 0 ? 1 : 0) - (g.pL > 0 ? 1 : 0));
     tb.rpm += (g.nref - tb.rpm) * Math.min(1, dt / K.tn);
