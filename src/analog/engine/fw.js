@@ -363,11 +363,17 @@ function anFwStep(U, dt) {
   /* 3.2.4-beta.21: PUMP HEAT. All the shaft power goes into the water: dh = P / m (KSB curve Q43446D shaft power pP and head qH at
      the pump flow q). Of the useful part rho g Q H only (1 - T beta) warms the water (isentropic compression of a liquid:
      dT_s = T beta v dp / cp); the losses (P - rho g Q H) warm it in full. dT = (P - (1 - T beta) rho g Q H) / (m cp), with
-     T beta = 0.45 and cp 4.33 kJ/kg K at 158.4 C (IAPWS-IF97 water properties). 150 MW (549 m3/h): about 2.8 C; at the ARC minimum
-     151 m3/h about 7.5 C. The water to No.1 HPH is the deaerator saturation + dT (anHphStep). */
+     T beta (beta = -(1/rho) d rho / dT) and cp of the pumped water at its temperature, IAPWS-IF97 (plant.js anWaterRho, fwHw;
+     Phase 11 NANA 2026-11-28, was T beta 0.45 and cp 4.33 of 158.4 C at every load: at 122 C T beta is 0.34, cp 4.25). The pump
+     runs at constant speed (3580 rpm), so at part load its shaft power stays high against the flow: 150 MW about 2.8 C, 45 MW
+     (about 170 m3/h) about 6 C. The heat balance PPE-14-0725 prints its own BFP dH (case 7: 3.4 kcal/kg, 122.1 C out), which is not
+     this pump's curve: the vendor curve is the source here. The water to No.1 HPH is the deaerator water + dT (anHphStep). */
   const Hy = n ? (sg * 1000 * 9.81 * (q / 3600) * swInterp(K.qQ, K.qH, q)) / 1000 : 0,
-    mk = (sg * 1000 * q) / 3600;
-  U.fwDT = n && mk > 0 ? Math.max(0, (Ph - 0.55 * Hy) / (mk * 4.33)) : 0;
+    mk = (sg * 1000 * q) / 3600,
+    Tw = U.da && isFinite(U.da.T) ? U.da.T : isFinite(U.Tamb) ? U.Tamb : 30,
+    cpw = fwHw(Ps, Tw + 0.5) - fwHw(Ps, Tw - 0.5),
+    Tb = ((Tw + 273.15) * (anWaterRho(Tw - 0.5) - anWaterRho(Tw + 0.5))) / anWaterRho(Tw);
+  U.fwDT = n && mk > 0 ? Math.max(0, (Ph - (1 - Tb) * Hy) / (mk * cpw)) : 0;
 }
 /* Phase 11 rank 5 (NANA, user 2026-11-27 "Go fix 11"): THE HP HEATERS by energy balance and heat transfer, in place of the old
    model (3.2.1 IRENE: FW out = saturation + a fixed TTD, extraction = design flow x feedwater / 458.684 x rise / design rise, shell
