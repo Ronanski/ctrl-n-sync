@@ -12,8 +12,11 @@
 - After 60 min: MW 151.1, PT-MS1002 126.73, main steam 461.7 T/H; minutes 50 ~ 60 within 126.37 ~ 126.75.
 - Modes on the new start after 2 min: PIC-COBM AUTO (SV 126.58), AICFG112 AUTO, FIC-CM AUTO, HS-COAL AUTO.
 
-## Not in this state
-- AOI's design air heater seal leak (OMM sheet 16): added as a step on a settled state it took 53 T/H from the furnace at once, the three coal feeder demands passed 83.3 % (M.014F / 015F / 016F), ABC-004A TON 30 s AND M.3405 forced FIC-CM and then the boiler master to MANUAL, and pressure ran to 134. AOI agrees: the leak goes in with a settle where the O2 trim raises the SA from the start.
+## Second settle (after PR 729's first Checks run, on main with 721 / 723 / 725 / 727)
+- Red in the first run: gen-electrical load-down (150 -> 45 MW at 3 MW/min) stopped at about 112 MW. The SH outlet overshoot (126.6 -> 129.0) opened the main steam blow-off PICMS1002, whose SV 128.0 came from a screen. Its demand > 5 % (M.0255) gave the boiler master BU-CMD (M.2013).
+- Fix: PICMS1002 SV = the logic's at-load preset 130 kg/cm2 (ABC-013 as-built R3 SI0361 a; b = 115 on M.0256, AUTO forced on M.0252 or MSP > 134 for 2 s); hmi-op.js AN_HMI_MAN and tools/steady150/init/blowoff-sv.js. Read: /mnt/project-files/phase11-pcv-ms1001-sv-reads-2026-11-28.md.
+- AOI's design air heater seal leak (OMM sheet 16: PA 34.0, SA 19.0 T/H; boiler.js / unit.js) is now IN, brought in during the settle: tools/steady150/init/lineup-leak.js ramps AN.aphLeakShare 0 -> 1 over 30 plant minutes with the O2 trim in AUTO (a step of the whole leak forced the coal and boiler masters to MANUAL, coal feeders > 83.3 %, M.014F ~ 016F with M.3405).
+- Settle 90 min from main's st150: PT-MS1002 126.54, 150.9 MW, 462.2 T/H; PIC-COBM, AICFG112, FIC-CM, HS-COAL AUTO; coal 88.3 T/H (FHI design 89), O2 3.0 %.
 
 ## Tested
 - Behaviour gate 20 min on the station build: ALL PASS (MW 151.06 -> 150.92, PT-MS1002 126.73 -> 126.52, drum level max move 7 mm, SAVE / LOAD and repeat runs equal).

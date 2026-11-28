@@ -4212,9 +4212,11 @@ function anUnitStep0(dt) {
     /* the bed heat balance (AN_BB above): the bed, the furnace exit gas and the heat of the water walls, no fitted law */
     const B = AN_BB,
       ts = tsatOf(U.Pd),
-      lkA = (U.aphLk || 0) * (typeof AN_APK !== 'undefined' ? [AN_APK.pa, AN_APK.sa, 0] : [0, 0, 0]),
-      /* beta.21: the air heater seal leak (boiler.js AN_APK) goes round the furnace: the bed gets the measured air less it */
-      av = (U.tafS && U.taf.length === 3 ? U.taf.map(n => Math.max(0, +U.tafS.rt.v[n] || 0)) : [taf, 0, 0]).map((x, i) => Math.max(0, x - (lkA[i] || 0))),
+      av0 = U.tafS && U.taf.length === 3 ? U.taf.map(n => Math.max(0, +U.tafS.rt.v[n] || 0)) : [taf, 0, 0],
+      /* beta.21 / Phase 11 AOI: the air heater seal leak (boiler.js AN_APK, design + fault) goes round the furnace: the bed gets the
+         measured air (fan inlet transmitters) less it */
+      lkA = typeof anAphLeak === 'function' && U.taf.length === 3 ? anAphLeak(U, av0) : [0, 0, 0],
+      av = av0.map((x, i) => Math.max(0, x - (lkA[i] || 0))),
       tPa = isFinite(U.aphPa) ? U.aphPa : U.Tamb,
       tSa = isFinite(U.aphSa) ? U.aphSa : U.Tamb,
       dW = U.Tb - U.Tw /* bed over the wall water, both signs */,
