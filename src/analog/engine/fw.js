@@ -178,14 +178,20 @@ function anDeaStep(U, dt) {
    TECO AEZW-S2 "Boiler Feed Water Pump MOTOR DATA SHEET" p1 (DESIGN-SRC): 3550 kW, 2 pole, 6600 V, 60 Hz, direct coupling (fixed
    speed 3580 rpm: no hydraulic coupling or scoop), at 100 % load 355 A, efficiency 96.2 %, power factor 91.0 % (355 = 3550 / (0.962
    x 0.91 x sqrt3 x 6.6), the sheet closes). Induction motor: the active current = shaft power / (efficiency x sqrt3 x V), the
-   magnetizing (reactive) current = 355 x sin(acos 0.91) = 147 A, held at rated voltage; I = sqrt(Ia^2 + Ir^2). The efficiency is held
-   at its rated value (the sheet gives only the 100 % point: NO-SOURCE part load efficiency).
+   magnetizing (reactive) current = 355 x sin(acos 0.91) = 147 A, held at rated voltage; I = sqrt(Ia^2 + Ir^2). Part load (Phase 11
+   NANA 2026-11-28; the TECO A-2 motor document prints the 100 % point only, YUA PC read /mnt/project-files/nana-fw-reads-2-2026-11-28.md):
+   the textbook induction motor loss split from the rated point, losses = fixed (core, friction, windage) + load^2 x variable (I^2 R),
+   rated losses 3550 (1 / 0.962 - 1) = 140.2 kW, split so that the efficiency is highest at 75 % load (fixed = variable x 0.75^2, the
+   textbook design point): fixed 50.5, variable 89.7 kW; input = shaft + fixed + variable (shaft / 3550)^2. Was the rated 96.2 % at
+   every load.
    suction strainer (Phase 11 NANA 2026-11-27, was a plant screen DP and a 0.4 branch loss with no design
    source): KSB Y strainer, Filteration Engineers FE/KSB/GAD/YST/FR-3453-02 rev 03 (O&M V7 BFP, "14 Y TYPE STRAINER" p2; YUA PC read
    2026-11-27, /mnt/project-files/nana-doc-reads.md): 250 NB, 40 mesh, design 563.5 m3/h at 158.4 C, maximum allowable pressure drop
    0.10 kg/cm2 clean (0.15 at 50 % clogged). Turbulent flow through a screen: dP = k Q^2 (the square law), k from the clean point. The
-   pump inlet PT-FW1115 = suction header - strainer DP; the suction pipe loss between the header and the strainer is NO-SOURCE (no line
-   size / length in D1-0-052 or the strainer list MS-017) and is not modelled. */
+   pump inlet PT-FW1115 = suction header - strainer DP; the suction pipe loss between the header and the strainer is not modelled:
+   FW-1-001 / 002 / 003 are 12" SCH 40 (line list K1AU3-L1-0-011 R0 sheet 21, 481.7 t/h; PD-017 R2), the length and fittings are
+   NOT IN DOCS (YUA PC read 2026-11-28). At 481.7 t/h in 12" SCH 40 the velocity is about 1.8 m/s (0.017 kg/cm2 per 10 m of pipe,
+   Darcy f 0.013): small against the strainer 0.1. */
 const AN_FW = {
   sg: 0.9093 /* DESIGN-SRC: KSB data sheet sp. gr. at 158.4 C: the curves pP below are at this density; the pumped water uses anFwSg */,
   qQ: [0, 100, 200, 300, 400, 500, 540, 600, 700],
@@ -196,8 +202,9 @@ const AN_FW = {
   kz: 0,
   mkW: 3550 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
   mA: 355 /* A at 100 %, DESIGN-SRC: TECO AEZW-S2 data sheet */,
-  mEff: 0.962 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
   mPf: 0.91 /* DESIGN-SRC: TECO AEZW-S2 data sheet */,
+  mLf: (3550 * (1 / 0.962 - 1) * 0.5625) / 1.5625 /* kW fixed losses (TECO 3550 kW at 96.2 %), DERIVED: rated losses split for the highest efficiency at 75 % load */,
+  mLv: (3550 * (1 / 0.962 - 1)) / 1.5625 /* kW load losses at rated load, DERIVED as mLf */,
   mV: 6.6 /* kV */,
   stK: 0.1 / (563.5 * 563.5) /* kg/cm2 per (m3/h)^2, clean strainer, DESIGN-SRC: KSB FE/KSB/GAD/YST/FR-3453-02 r03 */
 };
@@ -215,7 +222,9 @@ const AN_FW = {
      TCV-FW1060   E2-0-123 R1 A PDF p15: Cv 10.3 at 1.25 in, modified equal %, air fail closed; sizing (Cv % at travel %):
                   Cv 0.68 / 24, 1.70 / 34 (COND 2; COND 3 prints Cv 1.30 at the same 34 %, taken as a misprint), 6.88 / 73 %
                   travel (the printed Cv over 10.3: 6.6, 16.5, 66.8 %).
-     TCV-FW1150   Cv 6.2 (L21 sheet, the RH spray), its characteristic NO-SOURCE: linear (as before).
+     TCV-FW1150   Copes-Vulcan, Cv 6.2, modified linear, air fail closed (L21 sheet, YUA PC read 2026-11-28,
+                  /mnt/project-files/nana-fw-reads-2-2026-11-28.md): sizing COND 1 21 t/h 68.9 -> 45.9, Cv 5.37 at 87 % travel;
+                  COND 2 1 t/h 83.2 -> 9.03, Cv 0.14 at 5 %: the printed points with 0 and 100 % (was linear, NO-SOURCE).
      flow         liquid, IEC 60534: W kg/h = 27.3 Cv sqrt(dP bar x rho); the line from the tap to the valve inlet: dP = k W^2, k from
                   the turbine trip case of both sheets: tap 69.4 kg/cm2 g (KSB item 8) against the TCV-FW1060 COND 1 inlet 68.34 kg/cm2 a
                   at 30.019 t/h: k = (69.4 - 67.31) / 30.019^2. With P1 = tap - k W^2 the flow is W = a sqrt(dP / (1 + a^2 k)),
@@ -226,7 +235,7 @@ const AN_BYS = {
   tH: [894, 857, 816, 722, 661] /* m */,
   kL: (69.4 - (68.34 - 1.0332)) / (30.019 * 30.019) /* kg/cm2 per (t/h)^2, DESIGN-SRC: KSB 997274702 item 8 + E2-0-123 TCV-FW1060 COND 1 */,
   hp: { cv: 10.3, x: [0, 24, 34, 73, 100], y: [0, 6.6, 16.5, 66.8, 100] } /* travel %, Cv % = printed Cv / 10.3, DESIGN-SRC: E2-0-123 R1 TCV-FW1060 */,
-  rh: { cv: 6.2, x: [0, 100], y: [0, 100] } /* DESIGN-SRC: L21 TCV-FW1150 Cv 6.2; characteristic NO-SOURCE (linear) */
+  rh: { cv: 6.2, x: [0, 5, 87, 100], y: [0, (0.14 / 6.2) * 100, (5.37 / 6.2) * 100, 100] } /* travel %, Cv %, DESIGN-SRC: L21 TCV-FW1150 sizing COND 2 / COND 1 */
 };
 /* spray water t/h through a valve of Cv (at its opening) from the tap at Pis to the outlet P2 (kg/cm2 g), water density rho kg/m3 */
 function anSprW(Cv, Pis, P2, rho) {
@@ -258,7 +267,8 @@ function anFwEl(kW) {
   const K = AN_FW,
     V = Math.sqrt(3) * K.mV,
     Ir = K.mA * Math.sqrt(1 - K.mPf * K.mPf),
-    Ia = Math.max(0, kW) / (K.mEff * V);
+    L = Math.max(0, kW) / K.mkW,
+    Ia = kW > 0 ? (Math.max(0, kW) + K.mLf + K.mLv * L * L) / V : 0;
   return { I: Math.sqrt(Ia * Ia + Ir * Ir), P: V * Ia, Q: V * Ir };
 }
 function anFwStep(U, dt) {
@@ -625,8 +635,8 @@ const AN_HD = {
      shell 37.48 ata); the sheet's own arithmetic (FL 0.90 above) reads them as gauge, so the sizing check keeps that reading, and
      the plant model uses the true absolute pressure with the same trim FL.
      inlet  = shell + static head of the drain water from the shell water level down to the valve - the inlet line loss;
-     outlet = the place it drains to + the outlet line loss (the flashing two-phase line: its static head is in this loss, the
-              mixture density is NO-SOURCE);
+     outlet = the place it drains to + the outlet line loss (the flashing two-phase line: its static head is in this loss; the
+              loss goes with W^2 x the mixture specific volume, homogeneous flash at the place pressure, IF97, anHdVm);
      a line loss goes with flow^2 (turbulent), its size from the COND 1 case of the sheet less its static head.
    Elevations (YUA PC read 2026-11-28, /mnt/project-files/pc-reads-npsh-elev-2026-11-28.md): No.1 / No.2 HPH shell CL GL.+17300
    (DERIVED: supports 1600 on the mezzanine GL.+15700, K1AU3-D1-0-036 p3 / p6; fits LT-HD1105 / 1106 taps GL.+17755 / +17630,
@@ -642,18 +652,20 @@ const AN_HD = {
    LCV-HD1105-1 lifts its drain to the deaerator on the roof frame (H-1104 CL GL.+35600, E2-0-102 p37 / A3-0-002 Section A-A, YUA
    2026-11-28, nana-da-elevation-2026-11-28.md): at COND 1 its outlet 7.62 is above the saturation of the 166.3 C drain (7.41), so the
    riser is liquid: outlet static z2 = 35.6 - 27.85 = 7.75 m (0.698 kg/cm2 at 901 kg/m3), its loss 1.537 - 0.698 = 0.839. The
-   others flash at the outlet (two-phase, the mixture density NO-SOURCE): z2 0, all in the loss.
+   others flash at the outlet (two-phase): z2 0, all in the loss, which goes with W^2 v_m / v_m0 (Phase 11 NANA 2026-11-28, was W^2 at
+   one density, the mixture density NO-SOURCE then): v_m the homogeneous mixture after an isenthalpic flash of the drain (saturated
+   water at its temperature) to the place pressure, v_m0 the same at the sheet COND 1 (T0 drain C, pp0 place ata).
    (W0 = the COND 1 flow: 45.147 / 69.347 t/h; place: No.1 HPH 14.12 ata, deaerator 6.083 ata K2MC2F-001, condenser 0.07 ata HB.)
    Water density: IF97 saturated water (plant.js anWaterRho). */
 const AN_HDV = {
   FL: 0.9 /* DESIGN-SRC: E2-0-123 R1 HD1105 / HD1106 sizing cases (derived, see above) */,
   H6: {
-    p: { cv: 25, x: [0, 20, 32, 57, 100], y: [0, 8.6, 18.16, 51.6, 100], w0: 45.147, z: 16.82 - 16.05, l1: 0.067, z2: 0, l2: 14.48 - 14.12 },
-    a: { cv: 40, x: [0, 14, 24, 43, 100], y: [0, 5.2, 10.95, 31.75, 100], w0: 45.147, z: 16.82 - 9.9, l1: 0, z2: 0, l2: 0.28 - 0.07 }
+    p: { cv: 25, x: [0, 20, 32, 57, 100], y: [0, 8.6, 18.16, 51.6, 100], w0: 45.147, z: 16.82 - 16.05, l1: 0.067, z2: 0, l2: 14.48 - 14.12, T0: 201.3, pp0: 14.12 },
+    a: { cv: 40, x: [0, 14, 24, 43, 100], y: [0, 5.2, 10.95, 31.75, 100], w0: 45.147, z: 16.82 - 9.9, l1: 0, z2: 0, l2: 0.28 - 0.07, T0: 201.3, pp0: 0.07 }
   },
   H5: {
     p: { cv: 50, x: [0, 46, 75, 80, 100], y: [0, 37.2, 76.4, 81.8, 100], w0: 69.347, z: 16.845 - 27.85, l1: 0.511, z2: 35.6 - 27.85, l2: 7.62 - 6.083 - 0.698 },
-    a: { cv: 69.27, x: [0, 24, 41, 65, 100], y: [0, 6.76, 14.87, 45.47, 100], w0: 69.347, z: 16.845 - 9.948, l1: 0, z2: 0, l2: 0.72 - 0.07 }
+    a: { cv: 69.27, x: [0, 24, 41, 65, 100], y: [0, 6.76, 14.87, 45.47, 100], w0: 69.347, z: 16.845 - 9.948, l1: 0, z2: 0, l2: 0.72 - 0.07, T0: 166.3, pp0: 0.07 }
   }
 };
 /* the valve alone: t/h through valve V at opening x % between p1 and p2 bar a at the valve, drain T C (IEC 60534 liquid, choked) */
@@ -664,6 +676,14 @@ function anHdV(V, x, p1, p2, T) {
     dP = Math.max(0, Math.min(p1 - p2, AN_HDV.FL * AN_HDV.FL * (p1 - FF * pv))),
     rho = anWaterRho(T);
   return Cv > 0 && isFinite(dP) ? 0.0273 * Cv * Math.sqrt(dP * rho) : 0;
+}
+/* m3/kg of the drain (saturated water at T C) flashed at constant enthalpy to the place at P ata: homogeneous mixture, IF97 */
+function anHdVm(P, T) {
+  const p = Math.max(0.002, P * 0.0980665),
+    S = steamSatM(p),
+    hl = steamR1(Math.max(p, (steamPsat(T) + 1.0332) * 0.0980665), T + 273.15).h,
+    x = Math.max(0, Math.min(1, (hl - S.hf) / (S.hg - S.hf)));
+  return (1 - x) * steamR1(p, S.T).v + x * steamV2(p, S.T);
 }
 /* drain t/h from the shell at P1 to the place at P2 (kg/cm2 g), drain T C: the valve with the static head and the line losses of
    AN_HDV (loss = l (W / w0)^2). W = a sqrt(dP) with dP = dP0 - k W^2 solves to W = a sqrt(dP0 / (1 + a^2 k)), for the liquid
@@ -676,7 +696,7 @@ function anHdW(V, x, P1, P2, T) {
     p1 = (P1 + 1.0332 + (rho * V.z) / 10000) * b /* bar a at the valve before the inlet loss */,
     p2 = (P2 + 1.0332 + (rho * V.z2) / 10000) * b /* bar a at the valve outlet before the outlet loss */,
     k1 = (V.l1 * b) / (V.w0 * V.w0),
-    k2 = (V.l2 * b) / (V.w0 * V.w0),
+    k2 = ((V.l2 * b) / (V.w0 * V.w0)) * (V.T0 ? anHdVm(P2 + 1.0332, T) / anHdVm(V.pp0, V.T0) : 1) /* flashing outlet: W^2 v_m */,
     pv = (steamPsat(T) + 1.0332) * b,
     FF = 0.96 - 0.28 * Math.sqrt(Math.max(0, pv) / 220.64),
     F2 = AN_HDV.FL * AN_HDV.FL,
@@ -688,14 +708,14 @@ function anHdW(V, x, P1, P2, T) {
    leaks feedwater into the shell. Physics: the feedwater (BFWP discharge U.fwPd, PT-FW1011) is far below its saturation at the shell
    pressure (No.2 HPH tube 195.7 ~ 245.4 C, shell 36.48 kg/cm2 A sat 245 C; No.1 HPH tube 160.7 ~ 195.7 C, shell 14.12 sat 196 C, plant-study
    09 section 5), so it does not flash in the hole: a sharp orifice, w = Cd A sqrt(2 rho dP), Cd 0.61 (textbook), rho of the tube water.
-   The hole: 3 mm (NO-SOURCE, trainer setting); like the boiler tube leak (AN_TL) its jet cuts the next tubes and the open area doubles
-   every 10 min (NO-SOURCE), with no cap: "a tube which bursts will cause the surrounding tubes to burst" (HP heater O&M, FHI 2015, Sect 2 p2), so it keeps failing until the operator takes it out; the pump curve (anFwStep) limits the flow. The tubes leak only while they are
+   The hole: 3 mm (TRAINER-SET: the size of the fault the instructor starts, not a plant value); like the boiler tube leak (AN_TL) its jet cuts the next tubes and the open area doubles
+   every 10 min (TRAINER-SET, as AN_TL), with no cap: "a tube which bursts will cause the surrounding tubes to burst" (HP heater O&M, FHI 2015, Sect 2 p2), so it keeps failing until the operator takes it out; the pump curve (anFwStep) limits the flow. The tubes leak only while they are
    pressurised: the inlet or the outlet valve open (V-FW1012 / 1013 No.2, V-FW1009 / 1010 No.1); bypassed and isolated = no leak.
    Where it goes: into the shell with the condensate of the extraction (anHdStep): the drain valves open, the alternate to the condenser
    takes the rest, then LEVEL HIGH-HIGH (LS-HD1106 / 1105, DITL-94 / 95 close the extraction MOV). The BFWP passes it too (anFwStep).
    The water comes back by the drains, so the cycle inventory does not change; the heat to bring the leak water to the shell saturation
    (about 1 % of the extraction per 26 T/H) is left out. U.hlW = [No.1, No.2] T/H, U.hlA = area / 3 mm hole */
-const AN_HL = { d: 0.003 /* m, NO-SOURCE */, cd: 0.61, t2: 600 /* s, NO-SOURCE, as AN_TL */, rho: [880, 840] /* kg/m3, tube water ~178 / ~220 C, AN_WATER_RHO */ };
+const AN_HL = { d: 0.003 /* m, TRAINER-SET */, cd: 0.61, t2: 600 /* s, TRAINER-SET, as AN_TL */, rho: [880, 840] /* kg/m3, tube water ~178 / ~220 C, AN_WATER_RHO */ };
 function anHpLeak(U, dt) {
   const W = typeof window !== 'undefined' ? window.WORLD : null,
     K = AN_HL,

@@ -23,7 +23,7 @@
     "mw": [45, 60, 75, 90, 105, 127.5, 150],
     "ms_TH": [149.954, 190.769, 231.94, 273.36, 318.817, 387.587, 458.327],
     "mst_rht_C": [505, 520, 529, 538, 538, 538, 538],
-    "ms_press_ata": { "pts": [[30, 98.9], [60, 126.0], [100, 126.0]], "note": "sliding below 60 %; 40 / 50 % values not in repo", "status": "repo (part), pc (rest)" },
+    "ms_press_ata": { "pts": [[30, 98.9], [40, 126.0], [100, 126.0]], "note": "HB PPE-14-0725 R1 MS pressure at the MSVs per case: 126 ata at 40 / 50 / 60 / 70 / 85 / 100 % (cases 6 ~ 1), 98.9 ata at 30 % (case 7); sliding between 30 and 40 % only (RIN 2026-11-28, from /mnt/project-files/turbine-hb-read-2026-11-27.md, the same values as tests/lanes/model/turbine-hb.cjs; was a slide from 60 % with 40 / 50 % not read)", "status": "repo" },
     "crh_ata_x6": [12.79, 16.35, 19.9, 23.48, 27.25, 32.89, 38.64],
     "x5_ata": [5.0, 6.38, 7.75, 9.13, 10.56, 12.7, 14.87],
     "deaerator_ata": [2.173, 2.769, 3.355, 3.943, 4.553, 5.457, 6.369],
