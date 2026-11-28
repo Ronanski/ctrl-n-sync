@@ -165,6 +165,11 @@ function anDeaStep(U, dt) {
     tc = isFinite(fin(pC && pC.T)) ? fin(pC.T) : Ta,
     hc = isFinite(fin(pC && pC.h)) ? fin(pC.h) : fwHw(Pd, tc),
     hd = fwHw(Pd, td),
+    /* the BFWP minimum flow recirculation (ARC valve, 151 m3/h a pump, anFwStep U.fwRc t/h): deaerator water that went through the
+       pump comes back with the shaft heat dh = P / m (U.fwDh kJ/kg, isenthalpic through the ARC valve), so it heats the deaerator;
+       its mass leaves and returns (not in U.daIn). Phase 11 NANA 2026-11-28: the heat was lost before */
+    wr = isFinite(U.fwRc) ? Math.max(0, U.fwRc) : 0,
+    dhr = isFinite(U.fwDh) ? Math.max(0, U.fwDh) : 0,
     /* the steam space (Phase 11 NANA 2026-11-28). A spray / tray deaerator is a direct contact heater: the steam condenses on the
        condensate, the drains and the steam it meets and brings them to saturation at the steam space pressure Ps; the water falls into
        the storage tank. The steam space holds a few m3 of steam, so Ps settles in seconds: the extraction flow is the steam that
@@ -175,7 +180,7 @@ function anDeaStep(U, dt) {
     hfP = P => fwHw(Math.max(0, P - 1.0332), steamTsat(Math.max(0, P - 1.0332))),
     need = P => {
       const h = hfP(P);
-      return (wb * (h - hb) + wp * (h - hp) + wd * (h - hd) + wc * (h - hc)) / Math.max(100, hx - h);
+      return (wb * (h - hb) + wp * (h - hp) + wd * (h - hd) + wc * (h - hc) - wr * dhr) / Math.max(100, hx - h);
     },
     Pt = Pd + 1.0332;
   /* pinned: the line flow into the storage saturation, w = lineW(Pt, Pg(w)) (w falls as the stage falls with it) */
@@ -205,7 +210,7 @@ function anDeaStep(U, dt) {
     wx = Math.max(0, need(Ps));
   }
   /* the storage water: every inflow ends in it (the trays bring them to hf(Ps); pinned, the flash takes the difference) */
-  const Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (hd - hf) + wc * (hc - hf)) / 3.6 /* kW */,
+  const Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (hd - hf) + wc * (hc - hf) + wr * dhr) / 3.6 /* kW */,
     C = M * 1000 * cw + K.Mm * 1000 * anSteelCp(T) /* kJ/K */;
   if (dt > 0) U.da.T = Math.max(Ta - 5, Math.min(200, T + (Q * dt) / C));
   const Pn = Ps > Pt + 1e-9 ? Ps - 1.0332 : Math.max(0, steamPsat(U.da.T)) /* kg/cm2 G of the steam space */;
@@ -374,6 +379,9 @@ function anFwStep(U, dt) {
     cpw = fwHw(Ps, Tw + 0.5) - fwHw(Ps, Tw - 0.5),
     Tb = ((Tw + 273.15) * (anWaterRho(Tw - 0.5) - anWaterRho(Tw + 0.5))) / anWaterRho(Tw);
   U.fwDT = n && mk > 0 ? Math.max(0, (Ph - (1 - Tb) * Hy) / (mk * cpw)) : 0;
+  /* the ARC recirculation back to the deaerator (t/h) and the shaft heat it carries (kJ/kg), read by anDeaStep */
+  U.fwRc = n ? Math.max(0, (n * q * sg) - ffw - (U.hlW ? U.hlW[0] + U.hlW[1] : 0)) : 0;
+  U.fwDh = n && mk > 0 ? Ph / mk : 0;
 }
 /* Phase 11 rank 5 (NANA, user 2026-11-27 "Go fix 11"): THE HP HEATERS by energy balance and heat transfer, in place of the old
    model (3.2.1 IRENE: FW out = saturation + a fixed TTD, extraction = design flow x feedwater / 458.684 x rise / design rise, shell
