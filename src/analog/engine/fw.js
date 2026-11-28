@@ -45,8 +45,8 @@ function fwHw(P, T) {
      cw  dhf/dT of the water at T (IF97, numerical);
    In:
      extraction no. 3 (heat balance "deaerator" stage, PD-013) through MV-TS1003 (DITL-96) and its two non-return valves (XV-TS1710 /
-     1740, tcs-dev.js positions): steam flows from the higher pressure side, both ways (anDaLine, compressible; reverse = the deaerator
-     steam back to the turbine until the NRVs close); k from the design point: 26.79 t/h at the stage 6.369 ata against the deaerator
+     1740, tcs-dev.js positions, swing checks: forward only): the steam the deaerating section condenses, the steam space pressure
+     set by the line law (anDaLine, compressible) below the stage, see the steam space note in anDeaStep; k from the design point: 26.79 t/h at the stage 6.369 ata against the deaerator
      5.05 + 1.0332 = 6.083 ata (dP 0.286), rho of the steam at the deaerator inlet 310.3 C (IF97).
      The stage pressure, temperature and enthalpy are the port ext.da of the turbine part (RIN, turbine.js anTbPorts); not written =
      no steam (ports.js rule 3); a port without h: IF97 at its P and T;
@@ -112,23 +112,12 @@ function anDeaStep(U, dt) {
     open = (mov == null ? 1 : Math.max(0, Math.min(1, mov / 100))) * nrv,
     Pda = Pd + 1.0332,
     TxC = Pxa > 0.05 ? Math.max(steamTsat(Pxa - 1.0332), isFinite(fin(pX.T)) ? fin(pX.T) : 0) : Ta,
-    /* signed: + the stage steam into the deaerator; - (RIN 2026-11-28, load rejection) the deaerator steam space and the flash of its
-       saturated water back into the turbine while the stage pressure falls below the deaerator, until the NRVs close (2 s on the air
-       dump, KARATU VCL-5101-H, /mnt/project-files/rin-extraction-2026-11-28.md), at the saturated steam of the deaerator */
-    wx =
-      open > 0
-        ? Pxa >= Pda
-          ? open * K.k * anDaLine(Pxa, Pda, steamRho(Pxa - 1.0332, TxC))
-          : -open * K.k * anDaLine(Pda, Math.max(0.01, Pxa), steamRho(Pd, steamTsat(Pd)))
-        : 0,
-    hx =
-      wx < 0
-        ? steamH(Pd, steamTsat(Pd) + 0.01) /* the saturated steam of the deaerator going back */
-        : isFinite(fin(pX && pX.h))
-          ? fin(pX.h)
-          : Pxa > 0.05
-            ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */
-            : 0,
+    /* the line flow at a steam space pressure P ata: forward only. XV-TS1710 / 1740 are swing check (non-return) valves: a reverse
+       dP seats the disc, so the deaerator steam and the flash of its water cannot go back into the turbine (the air cylinder only
+       speeds the closing on a trip). Phase 11 NANA 2026-11-28: was signed (a reverse flow until the NRVs closed), which gave the
+       negative draws of the 90 MW swing */
+    lineW = P => (open > 0 && Pxa > P ? open * K.k * anDaLine(Pxa, P, steamRho(Pxa - 1.0332, TxC)) : 0),
+    hx = isFinite(fin(pX && pX.h)) ? fin(pX.h) : Pxa > 0.05 ? steamH(Pxa - 1.0332, TxC) /* h of the port P and T */ : 0,
     /* pegging steam: the port aux.peg of the aux steam part (SUZU) */
     pP = pg('aux.peg'),
     wp = isFinite(fin(pP && pP.m)) ? Math.max(0, fin(pP.m)) : 0,
@@ -148,11 +137,39 @@ function anDeaStep(U, dt) {
     wc = isFinite(fin(pC && pC.m)) ? fin(pC.m) : 0,
     tc = isFinite(fin(pC && pC.T)) ? fin(pC.T) : Ta,
     hc = isFinite(fin(pC && pC.h)) ? fin(pC.h) : fwHw(Pd, tc),
-    Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (fwHw(Pd, td) - hf) + wc * (hc - hf)) / 3.6 /* kW */,
+    hd = fwHw(Pd, td),
+    /* the steam space (Phase 11 NANA 2026-11-28). A spray / tray deaerator is a direct contact heater: the steam condenses on the
+       condensate, the drains and the steam it meets and brings them to saturation at the steam space pressure Ps; the water falls into
+       the storage tank. The steam space holds a few m3 of steam, so Ps settles in seconds: the extraction flow is the steam that
+       condensing needs (need), and the line law sets Ps below the stage (lineW(Ps) = need(Ps), one root: lineW falls and need rises
+       with P). The storage water can be colder than saturation at Ps (a load rise: the tank heats slowly from the trays). When the
+       stage gives less than the water needs even at the saturation of the storage water, the storage water flashes and holds Ps at
+       its own saturation (pinned: Ps = Psat(T), the line flow at that pressure, the flash cools the tank). Vented below 100 C. */
+    hfP = P => fwHw(Math.max(0, P - 1.0332), steamTsat(Math.max(0, P - 1.0332))),
+    need = P => {
+      const h = hfP(P);
+      return (wb * (h - hb) + wp * (h - hp) + wd * (h - hd) + wc * (h - hc)) / Math.max(100, hx - h);
+    },
+    Pt = Pd + 1.0332;
+  let Ps = Pt,
+    wx = lineW(Pt);
+  if (T >= 100 && wx > need(Pt) && need(Pxa) > 0) {
+    let lo = Pt,
+      hi = Pxa;
+    for (let i = 0; i < 40 && hi - lo > 1e-6; i++) {
+      const m = 0.5 * (lo + hi);
+      if (lineW(m) > need(m)) lo = m;
+      else hi = m;
+    }
+    Ps = 0.5 * (lo + hi);
+    wx = lineW(Ps);
+  }
+  /* the storage water: every inflow ends in it (the trays bring them to hf(Ps); pinned, the flash takes the difference) */
+  const Q = (wx * (hx - hf) + wb * (hb - hf) + wp * (hp - hf) + wd * (hd - hf) + wc * (hc - hf)) / 3.6 /* kW */,
     C = M * 1000 * cw + K.Mm * 1000 * anSteelCp(T) /* kJ/K */;
   if (dt > 0) U.da.T = Math.max(Ta - 5, Math.min(200, T + (Q * dt) / C));
-  const Pn = Math.max(0, steamPsat(U.da.T));
-  Object.assign(U.da, { P: Pn, M, wx, wb, wp, wd, wc, hx, Q, Pxa, rho: anWaterRho(U.da.T), rhoL: anWaterRho(isFinite(U.Tamb) ? U.Tamb : 30) }); /* rho / rhoL: the BFWP suction PT-FW1115 (plantsw.js W.sucP) */
+  const Pn = Ps > Pt + 1e-9 ? Ps - 1.0332 : Math.max(0, steamPsat(U.da.T)) /* kg/cm2 G of the steam space */;
+  Object.assign(U.da, { P: Pn, Ps, M, wx, wb, wp, wd, wc, hx, Q, Pxa, rho: anWaterRho(U.da.T), rhoL: anWaterRho(isFinite(U.Tamb) ? U.Tamb : 30) }); /* rho / rhoL: the BFWP suction PT-FW1115 (plantsw.js W.sucP) */
   U.daIn = wx + wb + wp + wd; /* T/H into the storage water besides the condensate */
   U.daTb = wx; /* the turbine steam taken by the deaerator (the condenser does not get it) */
   if (U.xt && U.xt.dea) anUnitWrite(U.xt.dea, Pn);
