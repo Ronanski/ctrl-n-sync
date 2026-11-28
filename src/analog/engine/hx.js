@@ -30,7 +30,8 @@
    - Gas: FHI Tab 2 fuel (C 42.97, H 2.75, O 11.42, N 0.59, S 1.49, ash 6.82, water 33.96 %) at 20 % excess air (Tab 3): 7.45 kg gas
      per kg coal, x CO2 0.140, x H2O 0.128, M 29.2; cp = 1.08 + 0.000213 T kJ/kg K (mass-weighted N2 / CO2 / H2O / O2).
    - Steam-cooled backpass walls (side, front, rear, division, roof): 1,130 m2 from the GA (12.24 m x (3.37 + 3.03) m pass, FL 25,200 to
-     43,650), h = 5.5 W/m2K along the wall + the same gas radiation.
+     43,650), the gas convection along the wall (anHxWallH: Dittus-Boelter in the two-pass duct, Phase 11 KANA, was a fixed 5.5 W/m2K
+     with no source) + the same gas radiation.
    - In-furnace SH panels #1 and #2 (7 each, P4S1, equal size): their drawing (C series) is not in the documents, so uaP is CALC from the
      FHI MCR balance (Tab 3: 460 T/H, feedwater 245.4 C, SH out 541 C 129 kg/cm2, RH 401 T/H 370 -> 541 C 36.6 kg/cm2), the whole
      chain of this file at a 875 C bed (middle of FHI 850 - 900 C, P2S4 p2-4-8), both biasing dampers full open (the vendor normal
@@ -93,6 +94,13 @@ const AN_HX = {
   gE2s: [0.0508, 0.1143, 0.1016, 10, 106, 3.0289],
   gE3: [0.0508, 0.1143, 0.1016, 40, 106, 3.0289],
   wA: 1130 /* m2, steam-cooled backpass walls */,
+  /* Phase 11 KANA 2026-11-28 (Rule 0, audit item "wall h 5.5 NO-SRC"): the gas runs along the walls as in a duct, so the wall film is
+     the turbulent duct law (Dittus-Boelter, Nu = 0.023 Re^0.8 Pr^0.4, gas cooled: n 0.3; Incropera ch. 8) in the hydraulic diameter
+     of the two passes together: area W x (RH pass 3.3719 + SH pass 3.0289) = 78.37 m2, wetted perimeter 2 (W + 3.3719) + 2 (W + 3.0289)
+     = 61.77 m (GA, the pass depths above): Dh = 4 x 78.37 / 61.77 = 5.075 m (CALC). Gas properties the same as the banks (anHxUA mu, k;
+     anHxCp). Hand check at 150 MW (184 kg/s, 800 C): Re 2.7e5, h 7.0 W/m2 K (the 5.5 before); 45 MW (122 kg/s, 588 C) 4.7 */
+  wAf: 12.2428 * (3.3719 + 3.0289) /* m2, the two passes (CALC above) */,
+  wDh: (4 * 12.2428 * (3.3719 + 3.0289)) / (2 * (12.2428 + 3.3719) + 2 * (12.2428 + 3.0289)) /* m (CALC above) */,
   /* beta.262: the CALC above had NO spray, but the FHI design (02 Fig 10, P4S1) has 2.7 % SH spray at MCR = 12.4 T/H (0 at 60 %,
      1.1 % at 70, 1.95 % at 85): with 59 the 150 MW steady of the model took no spray (541 C only by the outer loop tracking at 0) and
      every load change had no spray margin. CALC in the app at the 150 MW steady of the plant model (bed 830 C from its heat balance,
@@ -193,6 +201,17 @@ function anHxUA(g, m, T, Tm) {
     hr = Math.abs(dT) > 1 ? (AN_HX.sig * anHxEps(T, Lb) * (Math.pow(K, 4) - Math.pow(Tm + 273.15, 4))) / dT : 4 * AN_HX.sig * anHxEps(T, Lb) * K * K * K;
   return (A * (hc + Math.max(0, hr))) / 1e3;
 }
+/* the gas film along the steam-cooled backpass walls, W/m2 K, at gas m kg/s and T C (AN_HX wDh: Dittus-Boelter in the duct) */
+function anHxWallH(m, T) {
+  if (!(m > 0)) return 0;
+  const K = T + 273.15,
+    mu = (1.716e-5 * Math.pow(K / 273.15, 1.5) * 384.15) / (K + 111),
+    k = 0.0253 * Math.pow(K / 273.15, 0.81),
+    D = AN_HX.wDh,
+    Re = ((m / AN_HX.wAf) * D) / mu,
+    Pr = (anHxCp(T) * 1000 * mu) / k;
+  return (0.023 * Math.pow(Re, 0.8) * Math.pow(Pr, 0.3) * k) / D;
+}
 /* flue gas density, kg/m3 (M 29.2, backpass ~ 98.6 kPa abs: damper data sheet -282 mmAq) */
 function anHxRho(T) {
   return (98600 * 29.2) / (8314 * (Math.max(0, T) + 273.15));
@@ -273,7 +292,7 @@ function anHxGas(Tm, g, m, Tg, rf) {
     Cg = m * anHxCp(Tgm);
     const UA = g
       ? 1 / (1 / Math.max(1e-6, anHxUA(g, m, Tgm, Tm)) + rA)
-      : (AN_HX.wA * (5.5 + (Math.abs(Tgm - Tm) > 1 ? (AN_HX.sig * anHxEps(Tgm, 0.21) * (Math.pow(Tgm + 273.15, 4) - Math.pow(Tm + 273.15, 4))) / (Tgm - Tm) : 0))) / 1e3;
+      : (AN_HX.wA * (anHxWallH(m, Tgm) + (Math.abs(Tgm - Tm) > 1 ? (AN_HX.sig * anHxEps(Tgm, 0.21) * (Math.pow(Tgm + 273.15, 4) - Math.pow(Tm + 273.15, 4))) / (Tgm - Tm) : 0))) / 1e3;
     q = Cg * (1 - Math.exp(-Math.max(0, UA) / Cg)) * (Tg - Tm);
     Tgm = Tg - q / Cg / 2;
   }
@@ -482,6 +501,17 @@ function anHxStep(U, I, dt) {
       mix: tMix,
       e1In: tE1,
       e1: gE1.Tg
+    },
+    /* the steam / water side heat of each bank, kW (an export of the same chain, no change to the run) */
+    qS: {
+      wl: sWl.q,
+      p1: sP1.q,
+      p2: sP2.q,
+      fsh: sF.map(x => x.q),
+      rh: sR.map(x => x.q),
+      e1: sE1.q,
+      e2: sE2r.q + sE2s.q,
+      e3: sE3.q
     },
     gRh: tR,
     gFs: tS,
