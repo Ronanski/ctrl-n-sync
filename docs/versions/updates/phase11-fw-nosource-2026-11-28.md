@@ -18,6 +18,8 @@
 - The live app.
 - The full 45-150 MW sweep (the phase thread runs it on main).
 
+- **Hotwell return (plant.js anCycFlows, MEI finding):** the turbine steam the deaerator keeps is now U.daIn less the pegging steam (extraction no. 3 + the HP gland leak lk.b + the No.1 HPH normal drain). The old daTb + hpF1 - alternate drains left lk.b out, so the hotwell got 4.65 T/H too much at 150 MW.
+
 ## Left
 - fw.js ms0 472.7 (SNAPSHOT-TO-REPLACE): read only by unit.js anUnitTagStep, on the phase thread's list.
 - The pump-to-valve line loss at start-up flows (NOT IN DOCS: the line length).
