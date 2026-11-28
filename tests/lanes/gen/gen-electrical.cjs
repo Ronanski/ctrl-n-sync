@@ -123,10 +123,27 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
   const E2 = load();
   await E2.start('150');
   E2.step(10);
-  /* this case judges the generator relay alone: with GOV SET 0 at full firing the boiler goes to MFT (drum pressure and level rise, KANA
-     2026-11-28), which trips the turbine through TA-9 BOILER MFT 1 / 2 before the 32 times out. Those two TA-9 inputs are held at 0 for
-     this case (an IBD force, AN.turbine('fault'), as the instructor's jumper), so the turbine stays latched and the steam goes to 0 */
-  for (const net of [21, 22]) E2.js(`AN.turbine('fault',{id:'TA-9',net:${net},on:0})`);
+  /* the honest form (phase thread 2026-11-28, no mask): the unit comes down first through the DCS, as the operator does it. In CCS (DCS
+     control mode ON) the load is set on HIC-ULD (ABC-001A), the same write as its faceplate (hmi.js: the station output and, in AUTO,
+     its own set input SI0243 TARGET MW SETUP FROM CCS CRT), to 45 MW, the HB case 7 load (32.7 %, the low end of the design sweep, docs/ACCEPTANCE.md).
+     There the boiler fires for 45 MW, so GOV SET 0 does not take the drum to H.H. (at 150 MW it does: BOILER MFT trips the turbine
+     through TA-9 before the 32 times out, KANA 2026-11-28, which is the plant's own protection) */
+  const uld = v =>
+    E2.js(`(()=>{const sh=AN.sheets.find(s=>s.name==='ABC-001A'),S=sh.S,b=S.blk.find(x=>x.k==='MAN'&&x.tag==='HIC-ULD');AN.stVal(sh.name,b.id,${v});
+      const si=b.svI>=0?b.i[b.svI]:null,dr=si!=null?(S.drv[si]||[]).find(z=>z.k==='AMT'):null,ds=dr&&S.rt.st[dr.id];
+      if(dr&&ds&&ds.pk==='A'&&dr.a!=null&&S.ext.includes(dr.a))S.rt.ext[dr.a]=${v};AN.settle&&AN.settle();return ''})()`);
+  /* the CCS brings it down at HIC-MWRL 3 MW/min until the logic takes the boiler master out of AUTO (ABC-001C HIC-BM BU-CMD M.2013,
+     steam flow < 220 T/H): HIC-ULD then tracks the load (about 73 MW here). The case goes on from where the logic stops it */
+  uld(45);
+  let mLow = 150,
+    mPrev = 150;
+  for (let m = 0; m < 20 && mLow > 46; m++) {
+    E2.step(240);
+    (mPrev = mLow), (mLow = +E2.js('AN.unit.MW'));
+    if (mLow < 90 && Math.abs(mPrev - mLow) < 1) break;
+  }
+  const low = JSON.parse(E2.js(`JSON.stringify({MW:AN.unit.MW,st:AN.unit.tb.st})`));
+  ok(low.st === 'load' && low.MW < 80, 'load down through CCS (HIC-ULD set 45 MW): ' + low.MW.toFixed(1) + ' MW where the logic holds it, 52G closed');
   E2.js("AN.turbine('gov',{op:'set',v:0})");
   let tNeg = -1,
     tLo = -1,
@@ -147,7 +164,6 @@ const { load } = require(path.join(root, 'tools', 'trace', 'world.cjs'));
     'motoring power ' + (mot ? mot.MW.toFixed(2) : '?') + ' MW = turbine ' + (mot ? mot.m.toFixed(2) : '?') + ' + generator ' + (mot ? (mot.L / 1000).toFixed(2) : '?') + ' MW no load, ' + (mot ? (mot.MW / 176.5).toFixed(4) : '?') + ' pu (2nd step -0.013, 1st -0.008)');
   E2.step(10);
   const st2 = E2.js('AN.unit.tb.st');
-  for (const net of [21, 22]) E2.js(`AN.turbine('fault',{id:'TA-9',net:${net}})`);
   ok(tNeg > 0 && tLo - tNeg >= 9 && tLo - tNeg <= 12 && st2 === 'off',
     'reverse power: ' + mwNeg.toFixed(2) + ' MW (motoring at the losses), 86G-A / 86G-B ' + (tLo - tNeg) + ' s after -2.3 MW (' + why + '), turbine off');
   ok(E2.js("AN.turbine('gen',{op:'reset86'})") === '' && !JSON.parse(E2.js('JSON.stringify(AN.unit.lo86)')).a, 'lockouts reset once the relay has dropped out (52G open)');

@@ -1,10 +1,10 @@
 // 3.2.1 (SEULGI : PLANT MODEL, boiler side: BOTTOM ASH, src/analog/engine/boiler.js AN_BA; docs/versions/v3.2.1/BOTTOM_ASH_PLANT_MODEL.md).
 // The one world ON (ABC + DITL), plant model ON. The field devices of the bottom ash transmitter and conveyors answer the DITL-BA
 // drawings (IO list station 103). Checks:
-//  150 MW at rest (16.PNG: chain conveyor, bucket elevator, screw conveyor and venting fan running in REMOTE; O&M L6 p.7 primary
+//  150 MW at rest (the start state: chain conveyor, bucket elevator, screw conveyor and venting fan running in REMOTE; O&M L6 p.7 primary
 //    conditions): the four transmitter valves closed (ZSC made, no VALVE ABNORMAL on DITL-BA38 / BA39), vessel pressure low switch made,
 //    no CONVEYORS EMG.STOP (DITL-BA62), no SPEED FAULT (DITL-BA66 / 67 / 68);
-//  the air tank switch PS-BH1750 reads the plant air receivers of the model (7.0, 39.PNG) against the O&M set point 7 kg/cm2: not low,
+//  the air tank switch PS-BH1750 reads the plant air receivers of the model (7.0) against the O&M set point 7 kg/cm2: not low,
 //    no AIR SOURCE PRESSURE LOW, no SYSTEM FAULT (DITL-BA25 / BA48);
 //  one charging (O&M L6 5 a, LOP "Charging"): the sand silo venting fan F-1301 started (the destination is the sand silo; DITL-BA05 row 14),
 //    RESET(DCS), then LI1-S-1090 CHARGING (LOP): the inlet gate valve opens (ZSO), the vessel fills.
@@ -88,7 +88,7 @@ const html =
   );
   ck(
     s.emg === 0 && s.spd.every(x => x === 0),
-    'conveyors: no EMG.STOP latch, no speed fault (16.PNG running in REMOTE) ' + JSON.stringify(s)
+    'conveyors: no EMG.STOP latch, no speed fault (running in REMOTE) ' + JSON.stringify(s)
   );
   ck(
     s.air === 0 && s.pa >= 7 && s.sf === 0,
