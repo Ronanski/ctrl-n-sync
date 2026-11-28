@@ -38,7 +38,7 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
     };
     const f = x => Math.round(x * 1000) / 1000;
     const U = () => AN.unit;
-    const g = () => ({ P: f(U().cdP), T: f(U().cdT), Q: U().cdQ, W: U().swQc, q: U().cdQp, Pd: f(U().cdPd), I: [U().cdI0, U().cdI1], dp: [U().cdDp0, U().cdDp1], d61: (sh('DITL-61B').avw || {}).r20, d55: f(window.WORLD && WORLD.condP ? WORLD.condP() : NaN), hw: f(U().cdHw), run: U().cdRun, tb: U().tb && U().tb.st, trip: !!(U().vtrip && U().vtrip.S.rt.ext[U().vtrip.n] === 1) });
+    const g = () => ({ P: f(U().cdP), T: f(U().cdT), Q: U().cdQ, W: U().swQc, Ti: (U().swTiA + U().swTiB) / 2, q: U().cdQp, Pd: f(U().cdPd), I: [U().cdI0, U().cdI1], dp: [U().cdDp0, U().cdDp1], d61: (sh('DITL-61B').avw || {}).r20, d55: f(window.WORLD && WORLD.condP ? WORLD.condP() : NaN), hw: f(U().cdHw), run: U().cdRun, tb: U().tb && U().tb.st, trip: !!(U().vtrip && U().vtrip.S.rt.ext[U().vtrip.n] === 1) });
     const V = (t, p) => AN.swValve(t, p);
     const o = {};
     /* beta.320 (JENNIE): the app's own "At 150 MW" (index #load150: the reset, the save point st150 and the unit start, AN._startP);
@@ -91,7 +91,27 @@ const html = process.argv.find(a => /\.html$/.test(a)) || 'dist/' + fs.readdirSy
      (+-0.01 for the seawater and the steam of the model point). CEP: PT-CD1117 above its LOW 14.0 (DITL-61B row 19) and below the
      shut-off head 210 m of the KSB curve Q43495D (~21.6 kg/cm2 g with the suction); current inside the motor balance of the load
      schedule K1AU3-E1-0-302 (14.6 A at the shut-off power 105 kW, F.L.A. 31.56 A at 298.4 kW) */
-  ck(b.P > 0.06 && b.P < 0.08 && b.T > 36 && b.T < 41.5, `150 MW condenser ${b.P} kg/cm2A at ${b.T} C (heat ${b.Q} MW, seawater ${b.W} m3/h; O&M design 0.070 / 38.65 C)`);
+  /* the vacuum judged by the tube law at the ACTUAL seawater flow and inlet temperature (coordinator 2026-11-28; no vendor BP curve in
+     the docs, YUA read mei-condenser-vendor-reads-2026-11-28.md). Written here on its own from the design data, not taken from the model:
+     O&M L15-1 195.7 MW, 31,500 t/h, 30 -> 35.6 C, 38.65 C / 68.6 mbar, CF 0.85; D1-039 titanium OD 20 x 0.5 mm, 9,898 m2, 2.4 m/s.
+     UA = A / (1 / h_w + R_wall + R_rest): h_w Dittus-Boelter (Vogel viscosity, Ramires conductivity), R_rest from the design point.
+     First the law must give the design point itself (38.65 C within 0.05 C), then the model within 0.002 kg/cm2 of the law at its own
+     heat, seawater flow and inlet temperature (the model's seawater cp 3.994 and the 1.02 t/h per m3/h of AN_SW) */
+  const law = (() => {
+    const D = 0.019, Do = 0.02, A = 9898, kTi = 21.9,
+      hw = (V, T) => { const Tk = T + 273.15, mu = 2.414e-5 * 10 ** (247.8 / (Tk - 140)), t = Tk / 298.15, k = 0.6065 * (-1.48445 + 4.12292 * t - 1.63866 * t * t);
+        return (0.023 * ((996 * V * D) / mu) ** 0.8 * ((mu * 4180) / k) ** 0.4 * k) / D * (D / Do); },
+      Rw = (Do * Math.log(Do / D)) / (2 * kTi),
+      lmtd = 5.6 / Math.log(8.65 / 3.05), Ud = (195.7e6 / lmtd) / A, Rr = 1 / Ud - 1 / hw(2.4, 32.8) - Rw,
+      Ts = (Qkw, Wt, Ti, cp) => { const C = (Wt / 3.6) * cp, UA = A / (1 / hw((2.4 * Wt) / 31500, Ti + Qkw / (2 * C)) + Rw + Rr) / 1000;
+        return Ti + Qkw / (C * (1 - Math.exp(-UA / C))); };
+    return { Ts, design: Ts(195700, 31500, 30, (195.7e3 / 5.6) / (31500 / 3.6)) };
+  })();
+  const psat = T => (10 ** (8.07131 - 1730.63 / (233.426 + T)) * 1.33322) / 980.665,
+    Tl = law.Ts(b.Q * 1000, b.W * 1.02, b.Ti, 3.994),
+    Pl = psat(Tl);
+  ck(Math.abs(law.design - 38.65) < 0.05, `the tube law gives the O&M design point: ${law.design.toFixed(2)} C (38.65 C, 68.6 mbar)`);
+  ck(Math.abs(b.P - Pl) <= 0.002 && b.T > 30 && b.T < 41.5, `150 MW condenser ${b.P} kg/cm2A at ${b.T} C vs the tube law ${Pl.toFixed(4)} at ${Tl.toFixed(2)} C (heat ${b.Q} MW, seawater ${b.W} m3/h at ${b.Ti.toFixed(1)} C)`);
   ck(b.run[0] === 1 && b.run[1] === 0 && b.Pd > 14.0 && b.Pd < 21.6 && b.I[0] > 14.6 && b.I[0] < 31.56 && b.d61 === b.Pd, `CEP A ${b.q} m3/h, PT-CD1117 ${b.Pd} kg/cm2 (LOW 14.0 < Pd < shut-off), ${b.I[0]} A (14.6 ~ 31.56, load schedule), DITL-61B row 19 reads ${b.d61}`);
   ck(r.trMin < 14 && r.trB != null, `CEP A tripped: PT-CD1117 down to ${r.trMin} kg/cm2 (< 14.0, DITL-61B M.3217), CEP B running after ${r.trB} s`);
   ck(r.tr30.run[1] === 1 && r.tr30.Pd > 14, `the logic started CEP B: ${r.tr30.q} m3/h, PT-CD1117 ${r.tr30.Pd}, ${r.tr30.I[1]} A`);

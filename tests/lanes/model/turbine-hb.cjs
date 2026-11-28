@@ -30,7 +30,7 @@ vm.runInContext('var HBGEN = sh => sh - 2.565 - 3.295e-5 * sh * sh;', ctx);
 let bad = 0;
 /* HB SSR_to_LP1 (the steam seal regulator spill-over to the No.1 LP heater), kg/h as printed per case */
 const SSR = { 1: 1027, 2: 764, 3: 503, 4: 328, 5: 167, 6: 4, 7: 0, VWO: 1079 };
-const lim = { 6: [2, 2, 2, 4, 4], 7: [2, 2, 2, 4, 8] };
+const lim = {} /* 2 % on every stage of every case since the last LP stage takes the general ellipse (turbine.js tbPsi); was 4 / 8 % at cases 6 / 7 with the cone law */
 for (const k of Object.keys(HB)) {
   const [ms, Pms, Tms, hrh, Phr, Thr, Pcr, Tcr, x, Ps, Pc, Hx, kW] = HB[k];
   const I = { ms: ms / 1000, Pin: Pms, Tms, qip: hrh / 1000, Thr, Pc, w: { hp6: x[0] / 1000, hp5: x[1] / 1000, da: x[2] / 1000, lp3: x[3] / 1000, lp2: x[4] / 1000, lp1: x[5] / 1000 } };

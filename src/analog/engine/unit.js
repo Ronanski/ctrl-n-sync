@@ -1331,8 +1331,10 @@ const AN_SW_V0 = {
    How it works:
      heat         Q = 195.7 MW x steam to the condenser / 316.0 T/H (the same steam as AN_SW: main steam share + LP bypass);
      condenser    the seawater of both water boxes (AN_SW swQc) at its inlet temperature: Ts = Tin + Q / (C (1 - exp(-UA / C))),
-                  UA = 36,430 kW/K at the design flow (from the O&M point: NTU = ln(8.65 / 3.05)), x (flow / design)^0.5 (NO-SOURCE:
-                  the usual water velocity factor); Ts follows with tau 30 s (NO-SOURCE); no seawater = no condensing: Ts goes to 100 C;
+                  UA = 36,430 kW/K at the design point (O&M: NTU = ln(8.65 / 3.05)); off the design point UA = A / (1 / h_w + R_wall
+                  + R_rest), the series resistances of the tube (anCdUA, AN_CDU): the seawater film by Dittus-Boelter at the tube
+                  velocity and the mean water temperature, the titanium wall, and the rest (steam film + fouling at CF 0.85) taken
+                  from the design point; Ts follows with tau 30 s (NO-SOURCE); no seawater = no condensing: Ts goes to 100 C;
      pressure     PT-CD1110 = saturation of Ts, and the air of a condenser not in vacuum (U.vac, the ejectors) takes it to the atmosphere;
                   hotwell temperature = Ts (alarm list normal 38.6 = saturation of the design 68.6 mbar);
      turbine      the TCS LOW VACUUM trip at 0.26 kg/cm2 abs (IBD 310SC90-794 rev 2 sheet TA-10: 2 of 3, ON >= 0.26, OFF <= 0.22; LOW alarm 0.14);
@@ -1500,13 +1502,48 @@ function anCdDuty(U) {
     q({ m: +U.lpbW || 0, h: anCdHw(isFinite(U.cdT) ? U.cdT : Ts) })
   );
 }
+/* Phase 11 (MEI): the condenser tube law (replaces UA x (flow / design)^0.5, NO-SOURCE). Tubes (K1AU3-D1-0-039 R1 / K2MC3A O&M L15-1,
+   YUA read mei-condenser-vendor-reads-2026-11-28.md): titanium SB338-2, OD 20 mm, 0.5 mm wall (ID 19 mm; the 900 impact tubes 0.7 mm
+   are taken as 0.5: under 8 % of the area), 9,898 m2, 1 pass, 2.4 m/s at 31,500 t/h, seawater 30 -> 35.6 C, CF 0.85, 68.6 mbar.
+   Per m2 of outer tube area, three resistances in series:
+     water   h_w = Nu k / D, Nu = 0.023 Re^0.8 Pr^0.4 (Dittus-Boelter, turbulent, heated water), Re = V D / nu, at the mean water
+             temperature; water properties: viscosity Vogel mu = 2.414e-5 x 10^(247.8 / (T - 140)) Pa s, conductivity
+             k = 0.6065 (-1.48445 + 4.12292 t - 1.63866 t^2), t = T / 298.15 (Ramires 1995), cp 4.18, rho 996 (fresh water: the
+             seawater shift of the properties cancels in the ratio to the design point, it moves the rest R_rest only); referred to
+             the outer area x D / Do;
+     wall    Do ln(Do / D) / (2 k_Ti), k_Ti 21.9 W/m K (titanium grade 2, ASME II-D);
+     rest    the steam film and the fouling: 1 / U_d - 1 / h_w,d - R_wall at the design point (U_d = 36,430 kW/K / 9,898 m2 =
+             3.68 kW/m2 K, CF 0.85 inside it), kept as is (the steam film changes little: Nusselt ~ dT^-1/4).
+   So at the design point the law gives 36,430 kW/K and 38.65 C / 68.6 mbar; the CW velocity moves only the water film (V^0.8) */
+const AN_CDU = { D: 0.019, Do: 0.02, A: 9898, Vd: 2.4, kTi: 21.9, Tm: 32.8 };
+function anCdHw2(V, T) {
+  const K = AN_CDU,
+    Tk = T + 273.15,
+    mu = 2.414e-5 * Math.pow(10, 247.8 / (Tk - 140)),
+    t = Tk / 298.15,
+    k = 0.6065 * (-1.48445 + 4.12292 * t - 1.63866 * t * t),
+    Re = (996 * Math.max(0, V) * K.D) / mu,
+    Pr = (mu * 4180) / k;
+  return Re > 0 ? (0.023 * Math.pow(Re, 0.8) * Math.pow(Pr, 0.4) * k) / K.D : 0; /* W/m2 K, inner area */
+}
+/* UA in kW/K of a share s of the tubes (1 = all, 0.5 = one water box path) carrying W t/h at the mean water temperature Tm */
+function anCdUA(s, W, Tm) {
+  const K = AN_CDU,
+    Rw = (K.Do * Math.log(K.Do / K.D)) / (2 * K.kTi),
+    rD = K.D / K.Do,
+    hwd = anCdHw2(K.Vd, K.Tm) * rD,
+    Rr = 1 / ((AN_CD.UA * 1000) / K.A) - 1 / hwd - Rw,
+    V = (K.Vd * W) / (AN_CD.Cd * Math.max(1e-6, s)),
+    hw = anCdHw2(V, isFinite(Tm) ? Tm : K.Tm) * rD;
+  return hw > 0 ? (s * K.A) / (1 / hw + Rw + Rr) / 1000 : 0;
+}
 function anCondStep(U, dt) {
   const K = AN_CD,
     Q = anCdDuty(U),
     Tin = isFinite(U.swTiA) ? (U.swTiA + U.swTiB) / 2 : AN_SW_TIN[0],
     W = Math.max(0, (U.swQc || 0) * 1.02),
     C = (W / 3.6) * K.cp,
-    UA = K.UA * Math.sqrt(W / K.Cd);
+    UA = anCdUA(1, W, Tin + (C > 1 ? Q / (2 * C) : 0)) /* the mean water temperature: inlet + half the rise */;
   /* no seawater (C ~ 0): nothing takes the heat out, so the shell does not cool to the seawater inlet; with steam coming in it heats
      to 100 C, with no steam (turbine tripped, LP bypass shut) it holds where it is (first law, no cooling term; the shell losses to the
      air are not modelled). Before: no steam with no seawater went to the seawater inlet temperature, a cooling with no water */
@@ -1528,7 +1565,7 @@ function anCondStep(U, dt) {
   const qBox = (Wt, Ti) => {
     const Wi = Math.max(0, (Wt || 0) * 1.02),
       Ci = (Wi / 3.6) * K.cp,
-      UAi = (K.UA / 2) * Math.sqrt(Wi / (K.Cd / 2));
+      UAi = anCdUA(0.5, Wi, Ti + Math.max(0, U.cdTs - Ti) / 4) /* mean water temperature: inlet + half its rise (~ half the approach) */;
     return Ci > 1 && isFinite(Ti) ? Ci * (1 - Math.exp(-UAi / Ci)) * Math.max(0, U.cdTs - Ti) : 0;
   },
     QA = qBox(U.swQcA, isFinite(U.swTiA) ? U.swTiA : Tin),
