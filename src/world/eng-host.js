@@ -70,6 +70,7 @@
     AN.plantOn = true;
     for (const sh of AN.sheets) G.ENGINE.E.ensure(sh);
     AN.adesPut(JSON.parse(await gunz(m.ades)));
+    if (m.st150 && m.st150.trim()) AN.st150 = JSON.parse(await gunz(m.st150)); /* the 150 MW start state (hmi-op.js anPlantLoad150G) */
     DITL.S = { sheets: m.ds ? JSON.parse(m.ds) : lines(await gunz(m.pre)), cur: 0 };
     AN.sv = m.sv || {};
     AN.lne = m.lne || {};

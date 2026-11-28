@@ -1,7 +1,8 @@
 /* 2.0.0 (user tip): PLANT AT 150 MW. The measurements of the control-room HMI snapshots (docs/hmi/operating-points.json, the
    full-load screens of 2023-10-18 / 2023-12-01; the 60 MW screen, the MFT screen and the drafts are left out), by station and
-   address (STN101 AI0129 = '1|AI0129'). AN.plantLoad150() writes them into the transmitters (AI blocks) of every sheet, so the
-   simulation starts like the plant in service instead of a cold boiler. Generated from the json; one value per address. */
+   address (STN101 AI0129 = '1|AI0129'). Phase 11 Rule 0 (MEI 2026-11-28): no start writes them any more (the 150 MW start is the
+   physics state src/data/st150.txt, anPlantLoad150G); the table stays only while the plant model still reads it (unit.js, SUZU), and
+   goes with those reads. Generated from the json; one value per address. */
 const AN_HMI_AI = {
   /* 2.2.0-beta.3: the LP heaters and the deaerator are only on 02.png (about 60 MW). Their levels are CONTROLLED (the same
      set point at any load), so the level of 02.png is the operating point; before, the levels started at the bottom / top of
@@ -300,172 +301,8 @@ const AN_HMI_AI = {
   '5|AI0240': [13.7, 'LIMU0708B'],
   '5|AI0245': [4.978, 'LIDO0701']
 };
-/* the controllers on the same snapshots: PV / SV / MV and the mode shown (A = AUTO, R = REMOTE, M = MANUAL) */
-const AN_HMI_CTL = {
-  /* 2.2.0-beta.3: LP heater drains and deaerator level, from 02.png (the only screen with them; valve positions at about 60 MW) */
-  LICCD1104: { pv: null, sv: null, mv: 17.5, mode: 'A' },
-  LICHD11011: { pv: null, sv: null, mv: 13.6, mode: 'A' },
-  LICHD11012: { pv: null, sv: null, mv: 0.1, mode: 'A' },
-  LICHD11021: { pv: null, sv: null, mv: 99.9, mode: 'A' },
-  LICHD11022: { pv: null, sv: null, mv: 53.7, mode: 'A' },
-  LICHD11031: { pv: null, sv: null, mv: 32.4, mode: 'A' },
-  LICHD11032: { pv: null, sv: null, mv: 0.1, mode: 'A' },
-  'LICBR1001B': { pv: null, sv: null, mv: 0.6, mode: 'M' } /* start-up drum level valve FCVFW11302 0.6 % M (03.png) */,
-  'AICFG10571': { pv: 41.0, sv: 200.0, mv: 11.0, mode: 'M' },
-  'AICFG112': { pv: null, sv: 3.5, mv: 72.5, mode: 'A' } /* 3.2.3-beta.272: AUTO as the logic at full load (M.0103 / M.0102 = 0): healthy analyzers, the trim on LN16 SV 3.5 (plant-study 14: simulator keeps the drawing; a held trim is an analyzer fault scenario) */ /* 3.2.1 b6: plant trends 2026-11-08: the O2 sensors fail often (user), the trim is held: SA = (LN5 air - PA - FA) x 1.09 at 150 and 90 MW = S1-LN15(72.5 %) */ /* 2.2.0-beta.7: MV from the drawing: SA demand 211.5 T/H x O2 trim = SAF FLOW CTL R-SV 215.3 (7.PNG) -> trim 1.0 = S1-LN15(50 %), the MH of AICFG112 (PID summary). Before: the O2 model was anchored at the manual 100 % of the cold start and went to 2.4 % */,
-  /* 1.0.0-beta.348 (JENNIE, B4 of "GO DESIGN"): the full-load start state is the design, not the plant day of the snapshot (pv 1434,
-     sv 1475, MANUAL 0 %, so the four bottom ash screw coolers stood still and the bed filled). ABC-009A: the furnace differential
-     pressure controller in AUTO drives the cooler master PIC-BASC and the four cooler stations in AUTO (A/M, BU-CMD); its set point is
-     the FHI P2S7 Fig 9 normal overall furnace pressure drop at 100 % load, 1630 mmH2O (low limit 1450, high 2100). MV from the logic */
-  'DPICFG108': { pv: null, sv: 1630.0, mv: null, mode: 'A' },
-  'EIC-TM': { pv: 148.6, sv: 150.0, mv: 75.0, mode: 'A' },
-  'FIC-CF': { pv: 72.8, sv: 73.0, mv: 72.8, mode: 'R' } /* 2.2.0-beta.1: not on a screen; from the drawing: PV = average of the 3 feeder MVs (72.8 %), MV = feeder AUTO-MV (bias 0.0), SV = FIC-CM.MV 73.0 % */,
-  'FIC-CM': { pv: 87.0, sv: 87.4, mv: 73.0, mode: 'R' },
-  'FIC-OM': { pv: 0.0, sv: 0.0, mv: 0.0, mode: 'M' },
-  'FICCL1061A': { pv: 29.0, sv: 29.1, mv: 72.8, mode: 'A' },
-  'FICCL1061B': { pv: 29.1, sv: 29.1, mv: 72.8, mode: 'A' },
-  'FICCL1061C': { pv: 28.9, sv: 29.1, mv: 72.8, mode: 'A' },
-  'FICDO1043A': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
-  'FICDO1043B': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
-  'FICDO1043C': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
-  'FICDO1043D': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
-  'FICFA1071': { pv: null, sv: 354.6, mv: 35.6, mode: 'R' } /* 2.2.0-beta.3: MV = PAF inlet damper MCVFA10531 35.6 % (7.PNG) */,
-  'FICFA1081': { pv: null, sv: 215.3, mv: 37.1, mode: 'R' } /* 2.2.0-beta.3: MV = SAF inlet damper MCVFA10541 37.1 % (7.PNG) */,
-  'FICFW1007': { pv: 499.1, sv: 500.3, mv: 56.0, mode: 'R' },
-  'HIC-BM': { pv: 68.4, sv: 68.3, mv: 68.3, mode: 'A' },
-  'HIC-ULD': { pv: 150.0, sv: 150.0, mv: 75.0, mode: 'A' },
-  'HICHR1002A': { pv: 11.0, sv: 11.0, mv: 11.0, mode: 'A' },
-  'HICHR1002B': { pv: 89.0, sv: 89.0, mv: 89.0, mode: 'A' },
-  'LICBR1001': { pv: 3.0, sv: 0.0, mv: 4.8, mode: 'A' },
-  'LICBR1001A': { pv: 3.0, sv: 0.0, mv: 56.0, mode: 'A' },
-  'PIC-COBM': { pv: 122.7, sv: 122.3, mv: 0.8, mode: 'A' },
-  'PICAS1004': { pv: null, sv: 9.4, mv: 0.0, mode: 'A' },
-  'PICAS1005': { pv: null, sv: 10.2, mv: 4.2, mode: 'A' },
-  'PICCD1104': { pv: 5.9, sv: 0.2, mv: 0.0, mode: 'A' } /* start SV 0.2 kg/cm2g: PCV-AS1030 spec sheet K1AU3-E2-0-123 R1 p42 COND 2 (P2 0.2 kg/cm2g); normal SV = operator COS (ABC-056 sh53, no value); below HB PPE-14-0725 case 7 DA 1.03 G, so no pegging 45 ~ 150 MW (was 1.5 from a screen) */,
-  'PICDO1043A': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
-  'PICDO1043B': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
-  'PICDO1043C': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
-  'PICDO1043D': { pv: 0.0, sv: 0.0, mv: 25.0, mode: 'M' },
-  'FICCD1120': { pv: null, sv: null, mv: 0.1, mode: 'A' } /* 2.1.0-beta.10: valve FCVCD1120 0.1 % A (28.png) */,
-  'FICCD1121': { pv: null, sv: null, mv: 100.0, mode: 'M' } /* 2.1.0-beta.10: valve FCVCD1121 100.0 % M (28.png) */,
-  'FICFA1043A': { pv: null, sv: null, mv: 2.5, mode: 'M' } /* 2.1.0-beta.10: valve MCVFA1043A 2.5 % M (L shown, R-SV 26.0) (12.PNG) */,
-  'FICFA1043B': { pv: null, sv: null, mv: 5.5, mode: 'M' } /* 2.1.0-beta.10: valve MCVFA1043B 5.5 % M (R shown, R-SV 26.0) (13.PNG) */,
-  'FICFA1043C': { pv: null, sv: null, mv: 5.0, mode: 'M' } /* 2.1.0-beta.10: valve MCVFA1043C 5.0 % M (L shown, R-SV 26.0) (14.PNG) */,
-  'FICFA1043D': { pv: null, sv: null, mv: 1.7, mode: 'M' } /* 2.1.0-beta.10: valve MCVFA1043D 1.7 % M (L shown, R-SV 26.0) (15.PNG) */,
-  'FICFA1055A': { pv: null, sv: null, mv: 42.8, mode: 'A' } /* 2.1.0-beta.10: valve FCVFA1055A1 42.8 % A (9.png) */,
-  'FICFA1055B': { pv: null, sv: null, mv: 24.9, mode: 'M' } /* 2.1.0-beta.10: valve FCVFA1055B1 24.9 % M (9.png) */,
-  'HICBR1391': { pv: null, sv: null, mv: 0.0, mode: 'R' } /* 2.1.0-beta.10: valve MVBR1391 0.0 % R TQ (A) (03.png) */,
-  'HICDO1012': { pv: null, sv: null, mv: 100.0, mode: 'M' } /* 2.1.0-beta.10: valve FCVDO1012 100.0 % M (6.PNG) */,
-  'HICFA1005': { pv: null, sv: null, mv: 24.9, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1005 24.9 % R A TQ (magenta) (8.PNG) */,
-  'HICFA1006': { pv: null, sv: null, mv: 49.2, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1006 49.2 % R A (8.PNG) */,
-  'HICFA1007': { pv: null, sv: null, mv: 25.3, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1007 25.3 % R A (8.PNG) */,
-  'HICFA1008': { pv: null, sv: null, mv: 49.1, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1008 49.1 % R A (8.PNG) */,
-  'HICFA1009': { pv: null, sv: null, mv: 21.2, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1009 21.2 % R A TQ (magenta) (8.PNG) */,
-  'HICFA1010': { pv: null, sv: null, mv: 48.5, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1010 48.5 % R A (8.PNG) */,
-  'HICFA1011': { pv: null, sv: null, mv: 25.3, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1011 25.3 % R A (8.PNG) */,
-  'HICFA1012': { pv: null, sv: null, mv: 48.8, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1012 48.8 % R A (8.PNG) */,
-  'HICFA1013': { pv: null, sv: null, mv: 24.2, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1013 24.2 % R A (8.PNG) */,
-  'HICFA1014': { pv: null, sv: null, mv: 49.4, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1014 49.4 % R A (8.PNG) */,
-  'HICFA1015': { pv: null, sv: null, mv: 24.3, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1015 24.3 % R A (8.PNG) */,
-  'HICFA1016': { pv: null, sv: null, mv: 49.0, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1016 49.0 % R A (8.PNG) */,
-  'HICFA1017': { pv: null, sv: null, mv: 25.1, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1017 25.1 % R A (8.PNG) */,
-  'HICFA1018': { pv: null, sv: null, mv: 0.5, mode: 'A' } /* 2.1.0-beta.10: valve MCVFA1018 0.5 % L A TQ (magenta) (8.PNG) */,
-  'HICFA1019': { pv: null, sv: null, mv: 25.5, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1019 25.5 % R A (8.PNG) */,
-  'HICFA1020': { pv: null, sv: null, mv: 49.1, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1020 49.1 % R A (8.PNG) */,
-  'HICFA1021': { pv: null, sv: null, mv: 24.6, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1021 24.6 % R A (8.PNG) */,
-  'HICFA1022': { pv: null, sv: null, mv: 48.7, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1022 48.7 % R A (8.PNG) */,
-  'HICFA1023': { pv: null, sv: null, mv: 23.5, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1023 23.5 % R A (8.PNG) */,
-  'HICFA1024': { pv: null, sv: null, mv: 48.7, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1024 48.7 % R A (8.PNG) */,
-  'HICFA1025': { pv: null, sv: null, mv: 25.4, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1025 25.4 % R A (8.PNG) */,
-  'HICFA1026': { pv: null, sv: null, mv: 48.3, mode: 'R' } /* 2.1.0-beta.10: valve MCVFA1026 48.3 % R A (8.PNG) */,
-  'LICCD1110A': { pv: null, sv: null, mv: 33.0, mode: 'A' } /* 2.1.0-beta.10: valve LCVMU1110 14.0 % A (28.png). 3.2.3-beta.87 (Mina B83-1: at 150 MW the hotwell fell 3 -> -7 mm in 4 min with the make-up in AUTO): CALC the balance MV. Mass balance MB-013: the hotwell gets the main steam less the 25 % extractions (480 x 0.75 = 360 T/H) and gives the deaerator 380 T/H, so the make-up is about 19 T/H (the CBD 15 T/H of MB-019 item 22 and the vents); the make-up valve gives 0.58 T/H per % (plant.js anCycFlows, valve sheet p90), 19 / 0.58 = 33 %. Mina's run read the same gap: -2.5 mm/min x 68.8 m2 = 10.3 T/H short at 15 %. The snapshot 14 % is a check only (user 2026-11-07) */,
-  'LICCD1110B': { pv: null, sv: null, mv: 0.1, mode: 'A' } /* 2.1.0-beta.10: valve LCVCD1110 0.1 % A (28.png) */,
-  'PICDO0005': { pv: null, sv: null, mv: 24.2, mode: 'A' } /* 2.1.0-beta.10: valve PCVDO0002 24.2 % A (6.PNG) */,
-  'PICDO1008': { pv: null, sv: null, mv: 85.7, mode: 'A' } /* 2.1.0-beta.10: valve PCVDO1009 85.7 % A (6.PNG) */,
-  'PICSB1052': { pv: null, sv: null, mv: 0.2, mode: 'M' } /* 2.1.0-beta.10: valve PCVSB1053 0.2 % M (18.PNG) */,
-  'TICAS1001': { pv: null, sv: null, mv: 0.1, mode: 'M' } /* 2.1.0-beta.10: valve TCVCD1124 0.1 % M (29.PNG) */,
-  'TICLO1002': { pv: null, sv: null, mv: 53.1, mode: 'R' } /* 2.1.0-beta.10: valve TCVCW1201 53.1 % R (27.PNG) */,
-  'HS-COAL': { pv: 81.2, sv: 81.2, mv: 33.1, mode: 'R' } /* 2.2.0-beta.1: 11.png "TOTAL COAL FLOW CORRECT." = HS-COAL (TOTAL COAL FLOW CORRECTION CONTROL 0 ~ 120 T/H): MV 33.1 % -> LN3 0.932, 87.0 T/H x 0.932 = 81.1 T/H; 4450 x 0.932 = 4150 Kcal/Kg on the screen */,
-  'PICFG108': { pv: -16.0, sv: -16.0, mv: 46.1, mode: 'A' } /* 2.1.0-beta.6: IDF hydraulic coupling A 46.1 % (7.PNG) */,
-  'PICFG108A': { pv: null, sv: null, mv: 99.1, mode: 'M' } /* 2.1.0-beta.6: IDF inlet damper PCDFG10561 M 99.1 % (7.PNG) */,
-  'PICHR1003': { pv: 34.4, sv: 36.0, mv: 0.8, mode: 'R' },
-  'PICHR1391': { pv: 34.4, sv: 35.5, mv: null, mode: 'A' },
-  'PICMS1002': { pv: 122.1, sv: 130.0, mv: 0.0, mode: 'A' } /* ABC-013 as-built R3: preset SI0361 a = 130 kg/cm2 at load (b = 115 on M.0256); was 128.0 from a screen */,
-  'PICMS1006': { pv: 121.1, sv: 123.1, mv: 0.0, mode: 'R' },
-  'SICL1060A': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,
-  'SICL1060B': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,
-  'SICL1060C': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,
-  'SICL1060D': { pv: null, sv: null, mv: null, mode: 'A' } /* beta.348 B4: AUTO under DPICFG108 (ABC-009A / B) */,
-  'TICAS1017': { pv: 185.0, sv: 259.0, mv: 0.0, mode: 'A' },
-  'TICBR1130': { pv: 394.0, sv: 394.0, mv: 57.6, mode: 'R' },
-  'TICBR1140': { pv: 462.0, sv: 462.0, mv: 65.6, mode: 'A' },
-  'TICBR1150': { pv: 420.0, sv: 418.0, mv: 30.2, mode: 'R' },
-  'TICHR1002': { pv: 541.0, sv: 541.0, mv: 79.4, mode: 'A' },
-  'TICHR1002A': { pv: 541.0, sv: 538.0, mv: 36.0, mode: 'R' },
-  'TICHR1012': { pv: 136.0, sv: 137.0, mv: 0.0, mode: 'M' },
-  'TICMS1004': { pv: 542.0, sv: 541.0, mv: 69.7, mode: 'A' },
-  'TICMS1022': { pv: 360.0, sv: 300.0, mv: 0.0, mode: 'M' }
-};
-/* 2.1.0-beta.6: selections the operator made earlier that the drawing keeps in a flip-flop (sheet|output of the FF): on the snapshot
-   they are already made. ABC-008 M.0202 = HYDRAULIC CONTROL SELECT (7.PNG: hydraulic coupling PICFG108 in AUTO, damper in MANUAL) */
-const AN_HMI_FF = {
-  'ABC-008|M.0202': [1, 'IDF hydraulic coupling control selected (7.PNG)']
-};
-/* 2.1.0-beta.11: manual stations (MAN blocks, hand loaders) of the snapshots, in the unit of the station: 33.PNG MW OUTPUT HIGH /
-   LOW LIMIT SET, OUTPUT CHANGE RATE SET; the MAN stations that are in AN_HMI_CTL take their MV (% station) or PV (other unit) */
-const AN_HMI_MAN = {
-  'HIC-MWHL': [238.4, '33.PNG MW OUTPUT HIGH LIMIT SET (clamped to the range of the station)'],
-  'HIC-MWLL': [0.0, '33.PNG MW OUTPUT LOW LIMIT SET'],
-  'HIC-MWRL': [3.0, '33.PNG OUTPUT CHANGE RATE SET (MW/MIN)'],
-  /* ABC-002 HIC-TADBS (station -50 ~ +50) -> F(X) S1-LN14 "PA FLOW BIAS" (x 0 % -> -30 T/H, 50 % -> 0, 100 % -> +30). LOGIC-SRC: the
-     neutral point of LN14, station 0 = 0 T/H bias (the PA demand is S1-LN12 of the coal alone). Phase thread 2026-11-28, user rule of
-     5:18 AM PHT (no plant snapshot in the plant model): was -50 taken from an operating screen */
-  'HIC-TADBS': [0.0, 'S1-LN14 neutral: 0 T/H PA flow bias']
-};
-/* 2.1.0-beta.11: digital inputs that the drawing names only by a text beside the wire (no address): [sheet, text, nth (same text
-   counted top to bottom), value, why]. ABC-004A: the 8 "BNR SUPPLY OIL VALVE CLOSE" inputs of HS-COAL (I/O list STN104
-   I.0001 / I.0003 / I.0321 / I.0323 / I.0641 / I.0643 / I.0961 / I.0963); the oil burners are out of service at full load
-   (6.PNG: oil flows 0, FIC-OM M 0 %), the valves are closed */
-const AN_HMI_TXT = [
-  ['ABC-004A', 'A-BNR SUPPLY OIL', 0, 1], ['ABC-004A', 'A-BNR SUPPLY OIL', 1, 1],
-  ['ABC-004A', 'B-BNR SUPPLY OIL', 0, 1], ['ABC-004A', 'B-BNR SUPPLY OIL', 1, 1],
-  ['ABC-004A', 'C-BNR SUPPLY OIL', 0, 1], ['ABC-004A', 'C-BNR SUPPLY OIL', 1, 1],
-  ['ABC-004A', 'D-BNR SUPPLY OIL', 0, 1], ['ABC-004A', 'D-BNR SUPPLY OIL', 1, 1]
-];
-/* the input wire whose free end is nearest to the text (the same rule as the UAT scenarios, src/ui/uat/scen.js nearOf) */
-function hmiNearNet(S, txt, nth) {
-  const tx = (S.tx || []).filter(x => String(x.t).trim() === txt).sort((a, b) => a.y - b.y || a.x - b.x)[nth || 0];
-  if (!tx) return -1;
-  let bn = -1,
-    bd = 60;
-  for (const m of S.ext)
-    for (const i of S.nets[m].segs) {
-      const g = S.seg[i];
-      for (const [x, y] of [[g.x1, g.y1], [g.x2, g.y2]]) {
-        const d = Math.hypot(tx.x - x, tx.y - y);
-        if (d < bd) {
-          bd = d;
-          bn = m;
-        }
-      }
-    }
-  return bn;
-}
-/* plant equipment in service on the same snapshots (digital inputs of the ABC sheets; the meaning is the text written beside
-   the address on the drawing / the memory list): 1 = running / complete, 0 = stopped / standby */
-/* 2.2.0-beta.3: raw transmitter -> the compensated value of the drawing that is on the snapshot */
-const AN_HMI_COMP = [
-  ['ABC-010', 'AI0130', 'LIBR10011.PV', 0.0],
-  ['ABC-010', 'AI0258', 'LIBR10012.PV', 2.0],
-  ['ABC-010', 'AI0386', 'LIBR10013.PV', 8.0],
-  /* main steam flow FT-MS1031: the snapshot 474.1 T/H (03.png, FIQMS1031) is the flow after the pressure / temperature
-     compensation of the drawing (SQRT of LN31(p) x LN32(T) x AI0129) */
-  ['ABC-001C', 'AI0129', 'SQRT', 474.1],
-  /* primary / secondary air flow FT-FA1071 / FT-FA1081: temperature compensated (SQRT of TP(T, DP), 35 C reference); 7.PNG
-     FIFA1071 354.0 T/H, FIFA1081 213.0 T/H. Before: 265.5 / 157.5 T/H after the load (PRIMARY AIR FLOW L.L. -> MFT on the DITL) */
-  ['ABC-006', 'AI0484', 'FIFA1071.PV', 354.0],
-  ['ABC-006', 'AI0513', 'FIFA1081.PV', 213.0]
-];
+/* Phase 11 Rule 0 step C (MEI 2026-11-28): the running bits of the 150 MW start come from src/data/st150.txt now (anPlantLoad150G); this
+   table is read only by src/world/ditl150.js through AN.hmiDI (SUZU removes those reads, then it goes) */
 const AN_HMI_DI = {
   'M.3343': [1, 'BFWP A running (03.png: BFWP-A 289.4 A)'],
   'M.3344': [0, 'BFWP B running (03.png: BFWP-B standby)'],
@@ -491,12 +328,15 @@ const AN_HMI_DI = {
      oil went to 40 C and the cooling water valve to 62 % (27.PNG TCVCW1201 53.1 %) */
   'I.0931': [1, 'GCB 52G1 on (37.PNG: synchronized, 52G1 closed, red)']
 };
-/* 2.2.0-beta.3: the drum level transmitters LT-BR1001-1 / 2 / 3 (ABC-010 AI0130 / AI0258 / AI0386) and the main steam flow
-   FT-MS1031 (ABC-001C AI0129) are raw values; the snapshot value is the COMPENSATED one that the drawing computes from them
-   (drum level: 100 % - LT %, LN38(p), / LN39(p); steam flow: SQRT of LN31(p) x LN32(T) x DP). Before, the snapshot value was
-   written as the raw one: drum level 393 / 146 / 393 mm at the end of the load (DRUM LEVEL H.H. > 254 mm, M.0173 / M.0175 ->
-   MFT on the DITL), steam flow 461 instead of 474.1 T/H. The raw value is found so that the compensated one is the snapshot
-   (secant, 4 steps); the drum level plant model (integrating) starts again from there */
+/* the three drum level transmitters LT-BR1001-1 / 2 / 3 (ABC-010 AI0130 / AI0258 / AI0386) are raw values; the level the drawing
+   computes from them is the compensated one (100 % - LT %, LN38(p), / LN39(p)). hmiComp finds the raw value that gives a wanted
+   compensated level (secant, 4 steps): the Cold start puts the one drum level on all three (AN_COLD_DRUM). [sheet, AI, compensated
+   net, offset of that transmitter from the drum level, mm] (one drum: no offset) */
+const AN_HMI_COMP = [
+  ['ABC-010', 'AI0130', 'LIBR10011.PV', 0],
+  ['ABC-010', 'AI0258', 'LIBR10012.PV', 0],
+  ['ABC-010', 'AI0386', 'LIBR10013.PV', 0]
+];
 function hmiComp(only, wantOf) {
   for (const [shn, ai, pv, want0] of AN_HMI_COMP) {
     if (only && !only(ai)) continue;
@@ -538,396 +378,49 @@ function hmiComp(only, wantOf) {
     for (let k = 0; k < 2; k++) for (const sh of AN.sheets) if (sh.S && !/^ABC-000/.test(sh.name)) stepSet(sh, 0);
   } catch (e) {}
 }
+/* THE 150 MW START (Phase 11 Rule 0, MEI 2026-11-28, user rule of 2026-11-28 5:18 AM PHT: no plant screen in the plant model). One
+   path: the plant at 150 MW is the steady state its own model and logic reach, src/data/st150.txt (re-settled on main by
+   tools/steady150/settle.cjs), applied whole (ABC keyframe and DITL keyframe, ditl150.js DITL150.savePut). Before, a line-up of the
+   control-room screens (transmitter values, controller PV / SV / MV / modes, MAN stations, running bits, flip-flops) was written first
+   and st150 then overwrote all of it: the start with every screen value blanked was the same to the bit over 20 plant min (MEI test
+   2026-11-28). The Cold start builds on this state (anPlantColdG).
+   The data: the page reads #st150 of the build (anSt150Ready), the Web Worker gets it with its drawings (eng-page.js init), the headless
+   world reads the file (tools/trace/world.cjs) */
+function anSt150Ready() {
+  if (AN.st150) return Promise.resolve(AN.st150);
+  if (AN._st150P) return AN._st150P;
+  const e = typeof document !== 'undefined' ? document.getElementById('st150') : null,
+    t = e && e.textContent.trim();
+  if (!t || typeof gunz !== 'function') return Promise.reject(new Error('no 150 MW start state (src/data/st150.txt) in this build'));
+  return (AN._st150P = gunz(Uint8Array.from(atob(t), c => c.charCodeAt(0))).then(s => (AN.st150 = JSON.parse(s))));
+}
 function anPlantLoad150() {
   return anGenRun(anPlantLoad150S());
 }
 /* 3.2.0 retest #54 (user 2026-10-28: the page froze over 1 min at "Gabay: Cold -> 150 MW", no loading sign): the starting states are
-   generators that yield after each sheet step. AN.plantCold() / plantLoad150() run them at once (the tests, the same result as
-   before); AN.plantColdAsync() / plantLoad150Async() run them in slices of 40 ms, so the page paints a progress bar in between */
-function* anPlantLoad150S() {
+   generators that yield after each step. AN.plantCold() / plantLoad150() run them at once (the tests); AN.plantColdAsync() /
+   plantLoad150Async() run them in slices of 40 ms, so the page paints a progress bar in between */
+function* anPlantLoad150S(kfOnly) {
   AN.steady = true;
   try {
-    return yield* anPlantLoad150G();
+    return yield* anPlantLoad150G(kfOnly);
   } finally {
     AN.steady = false;
   }
 }
-function* anPlantLoad150G() {
-  let n = 0;
-  /* 2.5.0-beta.7: the snapshot is a steady state, so no pulse is running: the first scan after Reset took every pulse input that is
-     already 1 as a new edge (ABC-020 TPS of NOT HICHR1002B.MAN, 2 s): with the ID fan running of the load it set M.017A and the SH and
-     RH gas bias dampers stayed MANUAL at 150 MW (39.PNG: both A) */
-  for (const sh of AN.sheets)
-    if (sh.S && sh.S.rt)
-      for (const b of sh.S.blk)
-        if ((b.k === 'TPS' || b.k === 'TPV') && sh.S.rt.st[b.id]) Object.assign(sh.S.rt.st[b.id], { run: 0, out: 0, acc: 0 });
-  for (const sh of AN.sheets) {
-    if (/^ABC-000/.test(sh.name)) continue;
-    let S;
-    try {
-      S = ensure(sh);
-    } catch (e) {
-      continue;
-    }
-    let st = null;
-    try {
-      st = shStn(sh);
-    } catch (e) {}
-    if (st == null) continue;
-    for (const b of S.blk) {
-      if (b.k !== 'AI' || !b.o || b.o[0] == null) continue;
-      const nm = (AN.nm(S, b.o[0]) || '').trim(),
-        m = /^(?:S(\d)\s*)?(AI\d{4})$/.exec(nm);
-      if (!m) continue;
-      const x = AN_HMI_AI[(m[1] || st) + '|' + m[2]],
-        s = S.rt.st[b.id];
-      if (!x || !s) continue;
-      s.val = s.act = x[0];
-      s.snap = 1;
-      n++;
-    }
+/* kfOnly (the Cold start): the ABC half only, the DITL stays as the Reset left it (ditlStates), as before */
+function* anPlantLoad150G(kfOnly) {
+  const o = AN.st150,
+    D = typeof DITL150 !== 'undefined' ? DITL150 : typeof window !== 'undefined' ? window.DITL150 : null;
+  if (!o || !o.kf || !o.kd) throw new Error('no 150 MW start state (src/data/st150.txt) loaded');
+  yield;
+  if (kfOnly) anStateApply(o.kf);
+  else {
+    if (!D || !D.savePut) throw new Error('the 150 MW start needs the DITL world (DITL150.savePut)');
+    D.savePut({ kf: o.kf, kd: o.kd, ver: o.ver || 'st150' });
   }
-  hmiComp();
-  /* equipment in service */
-  let nd = 0;
-  for (const sh of AN.sheets) {
-    if (/^ABC-000/.test(sh.name) || !sh.S) continue;
-    const S = sh.S;
-    for (const n of S.ext) {
-      if (!S.nets[n] || !S.nets[n].dig) continue;
-      const x = AN_HMI_DI[(AN.nm(S, n) || '').trim()];
-      if (x) {
-        S.rt.ext[n] = x[0];
-        nd++;
-      }
-    }
-  }
-  /* 2.2.0-beta.9: 33.PNG CCS OPERATION: the plant is in CCS (EIC-TM turbine master A, SV 150 / MV 75 %, TARGET MW SETPOINT FROM TCS
-     149.5 MW): the TCS gives the control to the DCS. STN101 ABC-001C I.0081 DCS CONTROL MODE PERMISSIVE FROM TCS, I.0082 DCS CONTROL
-     MODE ON FROM TCS (M.2017 = NOT I.0082 forced the turbine master to MANUAL). Only on ABC-001C: the same address on STN102 is
-     another signal (DITL-61A I.0082 CONDENSATE PUMP A REMOTE SELECTED) */
-  try {
-    const s1 = AN.sheets.find(x => x.name === 'ABC-001C');
-    if (s1 && s1.S)
-      for (const l of ['I.0081', 'I.0082']) {
-        const n = s1.S.lab.findIndex(x => x && String(x.t).trim() === l);
-        if (n >= 0 && s1.S.ext.includes(n)) {
-          s1.S.rt.ext[n] = 1;
-          nd++;
-        }
-      }
-  } catch (e) {}
-  for (const k in AN_HMI_FF) {
-    const [sn, lb] = k.split('|'),
-      sh = AN.sheets.find(x => x.name === sn);
-    if (!sh || !sh.S) continue;
-    const S = sh.S;
-    for (const b of S.blk) if (b.k === 'FF' && (b.o || []).some(n => (AN.nm(S, n) || '').trim() === lb) && S.rt.st[b.id]) S.rt.st[b.id].q = AN_HMI_FF[k][0];
-  }
-  for (const [sn, t, k, val] of AN_HMI_TXT) {
-    const sh = AN.sheets.find(x => x.name === sn);
-    if (!sh || !sh.S) continue;
-    const m = hmiNearNet(sh.S, t, k);
-    if (m >= 0 && sh.S.nets[m].dig) {
-      sh.S.rt.ext[m] = val;
-      nd++;
-    }
-  }
-  let nm_ = 0;
-  for (const sh of AN.sheets) {
-    if (/^ABC-000/.test(sh.name) || !sh.S) continue;
-    const S = sh.S;
-    for (const b of S.blk) {
-      if (b.k !== 'MAN' || !S.rt.st[b.id]) continue;
-      const tag = b.tag || (b.txt || []).find(t => t && t !== 'MAN' && !/^S\d-MDL/.test(t));
-      const P = b.p || {},
-        lo = P.lo != null ? P.lo : 0,
-        hi = P.hi != null ? P.hi : 100,
-        h = AN_HMI_CTL[tag],
-        x = AN_HMI_MAN[tag];
-      let v = x ? x[0] : null;
-      if (v == null && h) v = String(P.u || '%').trim() === '%' ? (h.mv != null ? h.mv : h.pv) : h.pv != null ? h.pv : h.sv;
-      if (v == null || !isFinite(v)) continue;
-      S.rt.st[b.id].val = Math.max(lo, Math.min(hi, v));
-      /* a station that follows its own set input in AUTO (plant.js MAN: svI from an AMT on leg A): that input is the target
-         (ABC-001A HIC-ULD: TARGET MW, COS SI0243 = 150 MW on 33.PNG) */
-      try {
-        const si = b.svI >= 0 ? b.i[b.svI] : null,
-          dr = si != null ? (S.drv[si] || []).find(z => z.k === 'AMT') : null;
-        if (dr && dr.a != null && S.ext.includes(dr.a) && !(S.xlk && S.xlk[dr.a])) S.rt.ext[dr.a] = Math.max(lo, Math.min(hi, v));
-        /* 2.2.0-beta.9: a station whose set input is its OWN output through the AMT (ABC-001B HIC-MWRL: AMT leg A = HIC-MWRL.MV): the
-           value goes on that loop too (output nets and AMT out), else the next scan read the old output back (0.1 MW/MIN instead of
-           3.0 MW/MIN of 33.PNG: the unit load changed 30 times slower than the operator set it) */
-        if (dr && dr.o && dr.o[0] != null && !S.ext.includes(dr.a)) {
-          const x = Math.max(lo, Math.min(hi, v));
-          S.rt.v[dr.o[0]] = x;
-          for (const n of b.o || []) if (n != null && n >= 0) S.rt.v[n] = x;
-        }
-      } catch (e) {}
-      nm_++;
-    }
-  }
-  /* controllers: MV, operator SV and mode as on the snapshot (the station and the SV switch, like the operator would set them) */
-  let nc = 0;
-  const modes = [];
-  if (AN.hmiCtrls)
-    for (const sh of AN.sheets) {
-      if (/^ABC-000/.test(sh.name) || !sh.S) continue;
-      const S = sh.S,
-        rt = S.rt;
-      let cs = [];
-      try {
-        cs = AN.hmiCtrls(S) || [];
-      } catch (e) {}
-      for (const c of cs) {
-        const h = AN_HMI_CTL[c.tag];
-        if (!h) continue;
-        nc++;
-        if (h.mv != null) {
-          const ps = rt.st[c.b.id];
-          if (ps) hmiPidSet(ps, c.b, h.mv);
-          if (c.manBlk && rt.st[c.manBlk.id]) rt.st[c.manBlk.id].val = h.mv;
-          else if (c.manNet != null && S.ext.includes(c.manNet)) rt.ext[c.manNet] = h.mv;
-        }
-        if (h.sv != null) hmiSvWrite(S, c, h.sv);
-        if (h.mode) modes.push([S, c, h.mode]);
-      }
-      rt.pm = {}; /* the plant model starts again from these commands (anchored at the snapshot) */
-    }
-  /* mode status of the drawing (.MAN / .LOC / .REM, every sheet with the tag): M = MANUAL, A = LOCAL (AUTO), R = REMOTE */
-  const MK = { MAN: ['MAN', 'MANUAL'], LOC: ['LOC', 'LOCAL', 'AUTO', 'AUT'], REM: ['REM', 'REMOTE'] };
-  for (const [, c, m] of modes)
-    for (const sh of AN.sheets) {
-      if (/^ABC-000/.test(sh.name) || !sh.S) continue;
-      const S = sh.S;
-      for (const n of S.ext)
-        for (const nm0 of [AN.nm(S, n)].concat((S.alias && S.alias[n]) || [])) {
-          /* 2.3.0-beta.1: also the mode status written beside an address-named wire (S.alias, ABC-011 TICBR1130.LOC = M.0230) */
-          const nm = (nm0 || '').trim().toUpperCase(),
-            k = nm.startsWith(c.tag.toUpperCase() + '.') ? nm.slice(c.tag.length + 1) : null;
-          if (!k) continue;
-          if (MK.MAN.includes(k)) S.rt.ext[n] = m === 'M' ? 1 : 0;
-          else if (MK.REM.includes(k)) S.rt.ext[n] = m === 'R' ? 1 : 0;
-          else if (MK.LOC.includes(k)) S.rt.ext[n] = m === 'A' ? 1 : 0;
-        }
-    }
-  /* 2.1.0-beta.6: the PV of every loop from the snapshot transmitters, with the plant model OFF for a moment (logic only); the
-     plant model of the loop is anchored at that PV (plant.js pr.hopReq) at the end of the load, with the MV of the snapshot */
-  const caps = [],
-    heldOn = [];
-  let nsv = 0;
-  try {
-    const L = AN.sheets.filter(sh => sh.S && !/^ABC-000/.test(sh.name)),
-      was = [];
-    for (const sh of L)
-      for (const b of sh.S.procs || [])
-        if (b.proc) {
-          was.push([b.proc, b.proc.on]);
-          b.proc.on = false;
-        }
-    for (let k = 0; k < 6; k++) for (const sh of L) (stepSet(sh, 0), yield);
-    for (const sh of L) {
-      const S = sh.S;
-      for (const b of S.procs || []) {
-        const pr = b.proc;
-        if (!pr || pr.mode === 'shared') continue;
-        const TS = pr.remote ? pr.remote.S : S,
-          ids = (pr.remote ? pr.remote.ai : pr.ai) || [];
-        if (!ids.some(id => TS.rt.st[id] && TS.rt.st[id].snap)) continue;
-        /* the command of the snapshot when every valve on this PV has its MV there (parallel: the sum; in series: the product) */
-        const grp = [b].concat(S.procs.filter(g => g !== b && g.proc && g.proc.mode === 'shared' && g.proc.pv === pr.pv)),
-          mvs = grp.map(g => (AN_HMI_CTL[(g.txt || [])[1]] || {}).mv);
-        let mv = null;
-        if (mvs.every(x => x != null))
-          mv = grp.some(g => AN_SERIES[(g.txt || [])[1]])
-            ? mvs.reduce((a, x) => (a * x) / 100, 100)
-            : Math.max(-100, Math.min(100, mvs.reduce((a, x, i) => a + ((grp[i].p.act < 0) === (b.p.act < 0) ? 1 : -1) * x, 0))); /* opposite ACT: subtracted (plant.js u) */
-        caps.push([pr, S.rt.v[pr.pv], mv]);
-      }
-      /* 2.1.0-beta.10: a loop with no SV on the snapshot (and not in REMOTE there): the operator SV = its PV now, while the PV is
-         still the snapshot one (the plant runs steady at full load: PV = SV). Before, the operator SV stayed 0 and the PID drove
-         the valve to 0 or 100 % (ABC-029 PICDO1008, ABC-031 LICCD1110A, ABC-035 LICHD11051 ...) */
-      let cs = [];
-      try {
-        cs = AN.hmiCtrls(S) || [];
-      } catch (e) {}
-      for (const c of cs) {
-        const h = AN_HMI_CTL[c.tag];
-        if ((h && (h.sv != null || h.mode === 'R')) || !c.q || c.q.pv == null) continue;
-        if (h && h.mv != null && (h.mv < 2 || h.mv > 98)) continue; /* the valve at a limit on the snapshot: the loop is not at PV = SV (ABC-032 FICCD1120 min-flow valve 0.1 % at 380 T/H) */
-        if (hmiSvWrite(S, c, S.rt.v[c.q.pv])) nsv++;
-      }
-    }
-    /* 2.2.0-beta.3: the loops whose transmitters have a snapshot value keep their plant model OFF until the end of the load,
-       when the anchor (hopReq) is set: before, their unanchored model ran in the 10 s below and moved the transmitters away
-       (ABC-012 main steam temperature AI0612 / AI0644: 542 -> 494 C, back to 541 only after 300 s; with it the compensated
-       main steam flow, the feedwater SV, 550 T/H of feedwater and the drum level H.H. 285 mm) */
-    const held = new Set(caps.map(c => c[0]));
-    for (const [pr, on] of was) {
-      if (held.has(pr)) heldOn.push([pr, on]);
-      else pr.on = on;
-    }
-  } catch (e) {}
-  /* the plant runs 10 s so that the interlocks of the cold boiler clear, then the operator sets the modes (a station that
-     was forced to MANUAL stays MANUAL until AUTO is pressed again: user rule 2026-10-15) */
-  try {
-    for (const sh of AN.sheets) if (sh.S && !/^ABC-000/.test(sh.name)) for (let k = 0; k < 20; k++) (stepSet(sh, 0.5), yield);
-  } catch (e) {}
-  /* 2.2.0-beta.10 (CLAUDE.md 10): a MAN station that a BU-CMD of the drawing forced to MANUAL while the cold plant was loading stays
-     MANUAL (the latch, plant.js). Right after the 10 s the operator selects the modes of the snapshot: AUTO (MAN off) for a station
-     that is not M there and whose BU-CMD is gone (33.PNG: HIC-BM A, EIC-TM A; 11.png feeders A). It is done HERE, before the MV of
-     the snapshot is written again and before the plant models are anchored: done after them, the coal feeders A / B / C kept the
-     values they tracked while MANUAL (26.5 / 38.2 / 38.2 T/H instead of 29) and the unit model anchored its coal at 103 T/H */
-  try {
-    for (let k = 0; k < 2; k++) {
-      for (const sh of AN.sheets) {
-        if (/^ABC-000/.test(sh.name) || !sh.S) continue;
-        const S = sh.S;
-        for (const b of S.blk) {
-          const s = b.k === 'MAN' && S.rt.st[b.id];
-          if (!s || !s.fmSet || !b._mn) continue;
-          const h = AN_HMI_CTL[b.tag];
-          if (h && h.mode === 'M') continue;
-          const dr = b.svI >= 0 ? (S.drv[b.i[b.svI]] || []).find(x => x.k === 'AMT') : null,
-            ast = dr && S.rt.st[dr.id];
-          if (!ast || ast.fman) continue;
-          for (const [S2, n] of b._mn) if (S2.rt.force[n] === undefined) S2.rt.ext[n] = 0;
-          ast.fm = 'A';
-          s.fmSet = 0;
-        }
-      }
-      for (const sh of AN.sheets) if (sh.S && !/^ABC-000/.test(sh.name)) (stepSet(sh, 0), yield);
-    }
-  } catch (e) {}
-  /* 2.1.0-beta.6: the MV of the snapshot again after the 10 s: a start pulse of the drawing may have preset it (ABC-008 M.020E:
-     ID fan start -> PICFG108 MV 13 %), but on the snapshot the equipment was already running; then 2 s so the force manual
-     that came from that preset clears (M.0206 = MV < 14 %) */
-  try {
-    for (const [S, c] of modes) {
-      const h = AN_HMI_CTL[c.tag],
-        rt = S.rt;
-      if (!h || h.mv == null) continue;
-      if (c.manBlk && rt.st[c.manBlk.id]) rt.st[c.manBlk.id].val = h.mv;
-      else if (c.manNet != null && S.ext.includes(c.manNet)) rt.ext[c.manNet] = h.mv;
-      const ps = rt.st[c.b.id];
-      if (ps) hmiPidSet(ps, c.b, h.mv);
-    }
-    for (const sh of AN.sheets) if (sh.S && !/^ABC-000/.test(sh.name)) for (let k = 0; k < 4; k++) (stepSet(sh, 0.5), yield);
-  } catch (e) {}
-  for (const [pr, pv, mv] of caps) pr.hopReq = { pv, mv };
-  /* the held plant models start now, from the snapshot PV (pr.y0) and the anchor */
-  hmiComp();
-  for (const [pr, on] of heldOn) pr.on = on;
-  try {
-    for (const sh of AN.sheets)
-      if (sh.S && sh.S.rt && sh.S.rt.pm)
-        for (const b of sh.S.procs || [])
-          if (b.proc && heldOn.some(h => h[0] === b.proc)) {
-            delete sh.S.rt.pm[b.id];
-            b.proc.y0 = 1;
-          }
-  } catch (e) {}
-  const AN_CBD_DESIGN = 15; /* T/H, MB-019 item 22 */
-  /* 2.1.0-beta.11: drum level (integrating, plant.js): the water that leaves the drum besides the main steam.
-     3.2.3-beta.66 (user: no ASSUMED): the continuous blowdown design flow 15 T/H, mass balance K1AU3-A2-0-001 sheet K1AU3-MB-019
-     item 22 (PDF p 11, drum to the flash tank, 5.5 kg/cm2, 160 C). Before: the snapshot difference 03.png FICFW1007 499.1 - main
-     steam AI0129 474.1 = 25 T/H, of which 10 T/H had no outlet on MB-019. The level control trims the feedwater (about 489 T/H) */
-  try {
-    const fw = AN_HMI_CTL.FICFW1007,
-      ms = AN_HMI_AI['1|AI0129'];
-    for (const sh of AN.sheets)
-      if (sh.S)
-        for (const b of sh.S.procs || []) if (b.proc && (b.txt || [])[1] === 'LICBR1001' && fw && ms) b.proc.integLoss = b.proc.integLoss0 = AN_CBD_DESIGN;
-  } catch (e) {}
-  try {
-    for (const sh of AN.sheets) if (sh.S && !/^ABC-000/.test(sh.name)) (stepSet(sh, 0.5), yield);
-  } catch (e) {}
-  for (const [S, c, m] of modes) {
-    const rt = S.rt;
-    if (c.amt) {
-      const st = rt.st[c.amt.id];
-      if (st) {
-        st.al = c.autoLeg;
-        st.fm = m === 'M' ? (c.autoLeg === 'A' ? 'B' : 'A') : c.autoLeg;
-      }
-    }
-    if (c.svSw) {
-      const q = rt.st[c.svSw.id];
-      if (q) {
-        q.al = 'A';
-        q.fm = m === 'R' ? 'A' : 'B';
-      }
-    }
-  }
-  /* 2.1.0-beta.11: the plant runs steady at full load: the rate limiters and the lags of the drawing have reached their input
-     (before, the MW demand ABC-001B SI0212 started at 0 and its rate limit of 3 MW/min needed 50 min to reach 150 MW, so the
-     boiler master feedforward, the fuel and the air demands stayed low) */
-  try {
-    for (let it = 0; it < 6; it++) {
-      for (const sh of AN.sheets) {
-        if (/^ABC-000/.test(sh.name) || !sh.S) continue;
-        const S = sh.S,
-          rt = S.rt;
-        for (const b of S.blk) {
-          const st = rt.st[b.id];
-          if (!st) continue;
-          if (b.k === 'LAG' && b.i && b.i[0] != null && isFinite(rt.v[b.i[0]])) st.y = rt.v[b.i[0]];
-          else if ((b.k === 'RATE' || b.k === 'RAMPB') && b.main !== undefined && isFinite(rt.v[b.main])) st.y = rt.v[b.main];
-        }
-      }
-      for (const sh of AN.sheets) if (sh.S && !/^ABC-000/.test(sh.name)) (stepSet(sh, 0), yield);
-      /* the controller outputs of the snapshot once more: an integral that moved while the demands were still low comes back
-         (ABC-001C PIC-COBM: 0.8 % on 33.PNG, 13.1 % after the 10 s) */
-      for (const [S, c] of modes) {
-        const h = AN_HMI_CTL[c.tag],
-          ps = h && h.mv != null ? S.rt.st[c.b.id] : null;
-        if (ps) hmiPidSet(ps, c.b, h.mv);
-      }
-    }
-  } catch (e) {}
-  /* 2.2.0-beta.7: the operator's mode selection once more, after the plant has settled: an interlock that a not-yet-selected mode
-     held for one scan (ABC-002 M.0103 / M.0102 = NOT FICFA1081.REM: the O2 trim AICFG112 is forced manual until the SA flow is in
-     REMOTE) is clear now, like the operator who puts the SA flow in REMOTE first and then the O2 trim in AUTO (7.PNG O2 CONTROL R).
-     A force manual of the drawing that is still active keeps the station manual (plant.js) */
-  try {
-    for (const [S, c, m] of modes) {
-      if (m === 'M') {
-        /* a MANUAL station: its manual MV of the snapshot again (the COS of the manual leg followed the PID output while the auto
-           leg was selected in the cold start: ABC-051 TICMS1022 HP bypass spray 7.9 % instead of 0.0 %, 4.PNG TCVFW1060 0.1 % M) */
-        const h = AN_HMI_CTL[c.tag],
-          rt = S.rt;
-        if (h && h.mv != null) {
-          if (c.manBlk && rt.st[c.manBlk.id]) rt.st[c.manBlk.id].val = h.mv;
-          else if (c.manNet != null && S.ext.includes(c.manNet)) rt.ext[c.manNet] = h.mv;
-          if (c.amt && rt.st[c.amt.id]) rt.st[c.amt.id].hold = h.mv;
-        }
-        continue;
-      }
-      const st = c.amt ? S.rt.st[c.amt.id] : null;
-      if (st) st.fm = c.autoLeg;
-      if (c.svSw && m === 'R') {
-        const q = S.rt.st[c.svSw.id];
-        if (q) q.fm = 'A';
-      }
-    }
-    for (const sh of AN.sheets) if (sh.S && !/^ABC-000/.test(sh.name)) (stepSet(sh, 0), yield);
-    for (const [S, c] of modes) {
-      const h = AN_HMI_CTL[c.tag],
-        ps = h && h.mv != null ? S.rt.st[c.b.id] : null;
-      if (ps) hmiPidSet(ps, c.b, h.mv);
-    }
-  } catch (e) {}
-  /* 2.2.0-beta.9 (M2): the boiler and the turbine run as one plant from here (unit.js) */
-  try {
-    anUnitStart();
-    AN._unitErr = null;
-  } catch (e) {
-    AN._unitErr = e; /* kept for the checks: the unit model did not start */
-  }
-  AN.load150 = { ai: n, ctl: nc, di: nd, sv: nsv, man: nm_, unit: AN_UNIT.on };
-  AN.hmiDI = AN_HMI_DI;
-  AN.hmiComp = hmiComp;
-  return n;
+  AN.load150 = { st150: 1, unit: AN_UNIT.on };
+  return 1;
 }
 /* 2.2.0-beta.14 (M4 step 1, PR-OPE-5002 / boiler manual Fig 2): START COLD. The anchors of "Start at 150 MW" are kept (they are
    the gains of every loop model), then the plant is put cold: the digital inputs of a boiler out of service (coal feeders and fans
@@ -1019,7 +512,7 @@ function anPlantCold() {
   return anGenRun(anPlantColdG());
 }
 function* anPlantColdG() {
-  const n = yield* anPlantLoad150S();
+  const n = yield* anPlantLoad150S(true);
   if (!AN_UNIT.on) return 0;
   const L = AN.sheets.filter(sh => sh.S && !/^ABC-000/.test(sh.name));
   /* 2.2.0-beta.16: the cold state is a steady state too: a digital input the cold map sets (ABC-050 I.0932 "GCB 52G1 off" = 1) changed
@@ -1259,6 +752,7 @@ function anLoadStart(kind, on) {
       })()
     );
   const p = new Promise(r => setTimeout(r, 40))
+    .then(anSt150Ready)
     .then(build)
     .then(() => {
       if (on && !AN.plantOn && AN.plantSwitch) AN.plantSwitch(true, true);
@@ -1323,18 +817,4 @@ function anDrumLvlState() {
 function hmiPidSet(ps, b, mv) {
   ps.out = mv;
   ps.I = mv - ((b.p && b.p.kp != null ? b.p.kp : 1) * (ps.es || 0));
-}
-/* the operator SV of a controller, written where the faceplate writes it (src/ui/hmi/hmi.js svSet): the SV net when it is an input,
-   else the operator leg (B) of the SV switch */
-function hmiSvWrite(S, c, v) {
-  if (!isFinite(v) || !c.q || c.q.sv == null) return false;
-  if (S.ext.includes(c.q.sv) && !(S.xlk && S.xlk[c.q.sv])) {
-    S.rt.ext[c.q.sv] = v;
-    return true;
-  }
-  if (c.svSw && c.svSw.b != null && S.ext.includes(c.svSw.b)) {
-    S.rt.ext[c.svSw.b] = v;
-    return true;
-  }
-  return false;
 }

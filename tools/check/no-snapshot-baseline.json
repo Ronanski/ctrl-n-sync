@@ -7,7 +7,7 @@
  "src/analog/engine/compile-step.js": 4,
  "src/analog/engine/face-defaults.js": 4,
  "src/analog/engine/fw.js": 2,
- "src/analog/engine/hmi-op.js": 146,
+ "src/analog/engine/hmi-op.js": 55,
  "src/analog/engine/hx.js": 1,
  "src/analog/engine/model/cooling.js": 3,
  "src/analog/engine/plant.js": 53,
@@ -56,7 +56,5 @@
  "tests/regress/unit_trip.js": 2,
  "tools/accept/part1.cjs": 3,
  "tools/steady150/init/drum-law.js": 1,
- "tools/steady150/make.cjs": 5,
- "tools/steady150/modes.cjs": 3,
- "tools/steady150/settle.cjs": 1
+ "tools/steady150/modes.cjs": 3
 }

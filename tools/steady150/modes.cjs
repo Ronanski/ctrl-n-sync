@@ -1,5 +1,5 @@
 /* Phase 5 (2026-11-26): puts loops of the 150 MW start state (src/data/st150.txt) in AUTO without making the whole state again
-   (make.cjs runs the plant 60 min in the browser and loses the line-ups other lanes put on the start state since). Headless
+   (the old make.cjs, deleted 2026-11-28, remade it from a screen line-up). Headless
    (tools/trace/world.cjs): the start "At 150 MW", the A press of each loop below as the faceplate does it (check.js autoSv: the A / M
    switch on its auto leg, mode status LOC), 10 s of the whole world, then the keyframe is written back.
    Loops and their source (YUA PC read 2026-11-26, /mnt/project-files/phase5-pc-reads-2026-11-26.md):

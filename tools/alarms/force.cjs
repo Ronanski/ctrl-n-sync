@@ -20,7 +20,7 @@ async function run() {
   const L = c.LANE_ALARMS || c.window.LANE_ALARMS || [];
   const lines = () => new Map(AN.laneAlm(new Map()));
   const restore = async () => {
-    await E.js('DITL150.savePut({kf:__st150.kf,kd:__st150.kd,ver:__st150.ver||"st150"})');
+    await E.js('DITL150.savePut({kf:AN.st150.kf,kd:AN.st150.kd,ver:AN.st150.ver||"st150"})');
     E.step(4);
   };
   const base = new Set(lines().keys());
