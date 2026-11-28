@@ -184,7 +184,7 @@ const AN_UNIT = {
   /* Crh (the reheater steam storage) and rhb (RH blow-off) are turbine.js AN_VLV.Crh / rhbT (engine constants, Phase 11 rank 9) */
   /* 2.2.0-beta.17 (M4 step 4, turbine roll / sync / load up; PR-OPE-5002 4.4 ~ 4.6): the turbine and its TCS are a black box outside
      the DCS drawings (the DCS only sees the TCS digital inputs of the I/O list and the TARGET MW feedback AI0420). State U.tb:
-     st 'off' (stop valves shut) -> 'roll' (rpm ramps at rollRate, IP START MODE: the ICV lets roll steam from the hot reheat, icvRoll)
+     st 'off' (stop valves shut) -> 'roll' (the ATS of tcs.js sets the speed and the ICV)
      -> 'sync' (3600 rpm, the TCS closes the GCB: I.0931 = 1 / I.0932 = 0, INITIAL LOAD 4.5 MW on the ICV) -> 'load' (LOAD UP
      at rate MW/min = 5 % of 150 MW per minute; the HP control valves open as the flow demand passes the CV opening bias (anTbFlow), ICV -> CV
      TRANSFER COMPLETE I.0418 = 1, "transfer at 20 MW or HP bypass closed"). While the generator is on the grid the MW is the HP
@@ -197,8 +197,6 @@ const AN_UNIT = {
      the pulse O.0178 of ABC-001C while I.0081, reset by O.0179 or by the reset group (permissive lost); while ON the TCS target load
      tracks GEN. MW (TCE p.134), so at OFF the TCS holds the load it has. These inputs are written by the model in every plant state (3.2.5-beta.8; before only in a start-up, U.cold); the snapshot of
      "Start at 150 MW" gives the first values only. */
-  rollRate: 120 /* rpm/min, the ATS acceleration rate of the cold modes (ATS sequence 310SC90-775 page 19 *2, tcs.js TCS.rate) */,
-  icvRoll: 0.13 /* ICV opening for the roll steam (about 14 T/H at 7.6 kg/cm2 reheat, NO-SOURCE: the SOP gives CV 10 / 3 % at 400 rpm, no ICV opening) */,
   /* 3.2.3-beta.240 (live Cold start Load up): the TCS flow demand splits to the ICV and the CVs (TCE 331DM09784 p.141 TCE207 FLOW
      CONTROL(2), A007 HEAT SOAK CONTROL: CV OPENING BIAS SG C008 K:20.0 %, ICV MIN OPENING K:-0.5 %, RI / RD 0.03 % per 30 ms cycle = 1 %/s;
      p.144 TCE212: CV demand through UNT-FG 003 / 036 (LME010, curves from the HIACS backup, turbine.js AN_CV fgA / fgB) to the VALVE
@@ -322,7 +320,7 @@ const AN_RHPIPE = {
   UA: (111.651 * 570 + 25.405 * 475 + 27.392 * 436) / (538 - 35) / 1000 /* kW/K */
 };
 
-const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
+const AN_UNIT_K = ['tcs', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -386,6 +384,7 @@ function anUnitStop() {
   U.iaP = U.paP = NaN; /* 3.2.0-beta.68: the air tanks are set again by the start state (AN_AIR) */
   U.avH = {}; /* 3.2.1 the positions held by the airlocks (AN_AV) */
   U.lpT = undefined; /* 3.2.1 the LP heater temperatures start again at their steady value (AN_LP) */
+  U.lpSh = undefined; /* Phase 11: the LP shell water too (anLphStep starts it at its steady root) */
   U.iaRun = U.paRun = null; /* 3.2.1: the compressors are read again from the DITL (anAirStep) */
   U.acT1 = U.acT2 = NaN; /* 3.2.0-beta.69: the aux cooling water temperatures start again (AN_ACW) */
   for (const m of U.mul || []) for (const p of m.pr) p.mul = undefined;
@@ -1018,6 +1017,7 @@ function anUnitStart() {
   U.loTr = NaN; /* 3.2.1 AN_LO: the lube oil starts at its steady value */
   U.cdTs = NaN; /* 3.2.1 AN_CD: the condenser starts at its steady value */
   U.lpT = undefined; /* 3.2.1 AN_LP: the LP heaters too */
+  U.lpSh = undefined;
   U.bedI = NaN; /* the bed inventory starts again (anBedStep) */
   U.svOpen = {}; /* 3.2.4-beta.1: the safety valves start seated (AN_SV) */
   U.soxZ = NaN; /* the lime in the bed too (boiler.js anSoxStep) */
@@ -1100,6 +1100,7 @@ function anUnitCold() {
   U.loTr = NaN; /* 3.2.1 AN_LO: the lube oil starts at its steady value */
   U.cdTs = NaN; /* 3.2.1 AN_CD: the condenser starts at its steady value */
   U.lpT = undefined; /* 3.2.1 AN_LP: the LP heaters too */
+  U.lpSh = undefined;
   U.bedI = NaN; /* the bed inventory starts again (anBedStep) */
   U.svOpen = {}; /* 3.2.4-beta.1: the safety valves start seated (AN_SV) */
   U.soxZ = NaN; /* the lime in the bed too (boiler.js anSoxStep) */
@@ -1573,24 +1574,28 @@ function anCondStep(U, dt) {
    Tags (IO list STN102): TT-CD1101 No.1 LPH inlet, TT-CD1102 No.2 LPH inlet, TT-CD1103-1 No.3 LPH inlet, TT-CD1103-2 No.3 LPH outlet,
    TT-CD1122 deaerator inlet, TT-HD1102 / 1103 No.2 / 3 LPH drain, TT-HD1105 / 1106 No.1 / 2 HPH drain (AN_HP hpD1 / hpD2).
    How it works (Phase 11 rank 6, MEI: first principles in place of the load share; one path):
-     shell      the pressure of the extraction NOW (ports ext.lp1 ~ 3, RIN tbPath) less the line drop to the shell. The drop goes with
-                m^2 v (v ~ 1 / P): dP = dPd x (w / wd)^2 x (Pd / P), dPd and wd at HB PPE-14-0725 case 1 (turbine 1.914 / 0.826 / 0.373
-                ata, heaters 1.818 / 0.785 / 0.354 ata: 0.096 / 0.041 / 0.019 ata at 15246 / 12270 / 16834 kg/h), w the draw of the step
-                before; x the extraction MOV (DITL-97 No.3, DITL-98 No.2; the No.1 LPH has none), as AN_HP / AN_HD; x the extraction
-                non-return valve in series with it (tcs-dev.js U.dev.nrv: TC-44 ex4 = No.4 extraction to the No.3 LPH, TC-45 ex5 =
-                No.5 to the No.2 LPH; the No.6 line to the No.1 LPH has no NRV, YUA read mei-lph-flash-reads-2026-11-28.md): the
-                lower of the two openings throttles the line, a shut NRV isolates the shell (no steam, no draw);
+     shell      ONE state, the shell water temperature Ts (saturated: shell pressure Psat(Ts)), solved implicitly each scan from
+                the first law of the shell water (AN_LPF, see anLphStep). The draw is the line law both ways between the extraction
+                NOW (ports ext.lp1 ~ 3, RIN tbPath, with the stage answer S to the draw) and the shell: dP = dPd x (w / wd)^2 x
+                (Pd / P_up), dPd and wd at HB PPE-14-0725 case 1 (turbine 1.914 / 0.826 / 0.373 ata, heaters 1.818 / 0.785 / 0.354 ata:
+                0.096 / 0.041 / 0.019 ata at 15246 / 12270 / 16834 kg/h); x the extraction MOV (DITL-97 No.3, DITL-98 No.2; the No.1
+                LPH has none), as AN_HP / AN_HD; x the extraction non-return valve in series with it (tcs-dev.js U.dev.nrv: TC-44 ex4 =
+                No.4 extraction to the No.3 LPH, TC-45 ex5 = No.5 to the No.2 LPH; the No.6 line to the No.1 LPH has no NRV, YUA read
+                mei-lph-flash-reads-2026-11-28.md): the lower of the two openings throttles the line, a shut NRV isolates the shell;
      condensate effectiveness-NTU of a condensing shell: tube out = Ts - (Ts - Tin) exp(-NTU), NTU = UA / (m cp) with UA fixed from
                 the O&M design point (NTU_d = ln((Ts - Tin) / (Ts - Tout)) at 362.594 t/h; then NTU = NTU_d x 362.594 / m_tube), the
                 tube share s of anHtrPath, the bypass water mixed after (mass weighted);
      drain      condensate in + DCA while the heater drains (else the shell saturation), O&M DCA;
-     draw       the steam each heater condenses, first law of the shell: w (h_ext - h_drain) + D_in (h_drain,in - h_drain) =
-                m (h_out - h_in), h_ext of the port, the drains cascade No.3 -> No.2 -> No.1 -> condenser (O&M L15-5 ~ 7); written to
-                the port ext.w_lp (RIN takes it from the steam path) and U.lpW (the No.1 drain to the condenser, anCdDuty);
+     draw       at steady load the first law of the shell gives w (h_ext - h_drain) + D_in (h_drain,in - h_drain) + spill (h_spill -
+                h_drain) = m (h_out - h_in), h_ext of the port, the drains cascade No.3 -> No.2 -> No.1 -> condenser (O&M L15-5 ~ 7),
+                the spill-over of the gland steam seal regulator into the No.1 LPH (port gs.spill, RIN); signed (below 0 = the shell
+                flashing back to the turbine); written to the port ext.w_lp (RIN takes it from the steam path), U.lpW (the No.1
+                drain to the condenser, anCdDuty); U.lpW.lp1 ~ 3 = the steam each shell condenses (never below 0, the
+                spill in: what the drain system fw.js takes in), U.lpW.x = the signed draws of the port;
      GSC / EJ   the gland steam condenser and the ejector condenser between the hotwell and the No.1 LPH: their duty is that of the
                 design point, 362.594 t/h x (h(40) - h(38.65)) = 568 kW (condenser O&M L15-1 p16 38.65 C, No.1 LPH O&M 40 C), on the
                 whole CEP flow (U.cdQt) while the condenser holds its vacuum (cdP < 0.5 ata: the gland seal and the ejectors are in).
-     lag 120 s (NO-SOURCE, as AN_HP). NO-SOURCE: no pipe heat loss to the deaerator. DESIGN-SRC: FHI heater O&M L15-5 ~ 7,
+     lag 120 s on the tube outlet (NO-SOURCE, as AN_HP: the tube metal and water box). NO-SOURCE: no pipe heat loss to the deaerator. DESIGN-SRC: FHI heater O&M L15-5 ~ 7,
      HB PPE-14-0725 R1 case 1, IAPWS-IF97 */
 const AN_LP = {
   F0: 458.684,
@@ -1603,6 +1608,22 @@ const AN_LP = {
   ],
   Fd: 362.594 /* t/h, condensate of the O&M design point */,
   tau: 120
+};
+/* Phase 11 (MEI): the LP heater SHELL WATER (anLphStep, the one shell state). Each shell holds saturated water at its normal level;
+   when the extraction stage falls under the shell (load rejection, trip) the water flashes and its steam goes BACK to the turbine
+   through the extraction line (a negative draw, ext.w_lp signed, turbine.js tbPath), until the shell has cooled to the stage or the
+   NRV shuts (tcs-dev.js U.dev.nrv: No.4 / No.5 close on the turbine trip, the No.6 line has none; YUA read
+   mei-lph-flash-reads-2026-11-28.md).
+     water  V m3 at the normal level, from D1-037 (YUA read): No.1 LPH NWL 435 mm below the centre, ID 1130 -> 0.68 m3; No.2 415 mm,
+            ID 1060 -> 0.32 m3; No.3 ~400 mm (scaled, under a revision cloud), ID 1020 -> 0.37 m3; C = rho V cp (IAPWS-IF97 region
+            1). The shell and tube metal is not counted (its weight is not in the read).
+     bore   the back flow is choked at the smallest bore of the line, G* = 0.668 sqrt(P rho) (k 1.3), rho of the saturated vapour
+            as an ideal gas: No.4 the 14 in STD nozzle (ID 336.6 mm, rin-extraction-2026-11-28.md, TS-1-004), No.5 two 12 in S-40
+            branches (ID 303 mm, TS-1-006 / 007), No.6 two 20 in STD (ID 489 mm, TS-1-009 / 010); x the opening. */
+const AN_LPF = {
+  H1: { V: 0.68, A: 2 * (Math.PI / 4) * 0.489 ** 2 },
+  H2: { V: 0.32, A: 2 * (Math.PI / 4) * 0.303 ** 2 },
+  H3: { V: 0.37, A: (Math.PI / 4) * 0.3366 ** 2 }
 };
 /* saturation temperature (C) of a pressure in kg/cm2A: the Antoine inverse of anPsat */
 const anTsatA = P => (P > 0.005 ? 1730.63 / (8.07131 - Math.log10((P * 980.665) / 1.33322)) - 233.426 : -Infinity);
@@ -1653,44 +1674,134 @@ function anLphStep(U, dt) {
     W0 = U.lpW || {};
   const nvs = U.dev && U.dev.nrv ? U.dev.nrv : null,
     nrv = key => (key && nvs && nvs[key] && isFinite(+nvs[key].p) ? Math.max(0, Math.min(100, +nvs[key].p)) : 100);
+  /* each shell, in the condensate order (No.1 -> No.3): ONE state, the shell water temperature Ts (saturated: the shell pressure is
+     Psat(Ts)), solved implicitly each scan from the first law of the shell water (AN_LPF):
+       C (Ts - Ts0) / dt = w (h_ext - h_drain)  [w < 0: w (hg - hf), the water flashing back to the turbine]
+                           + D_in (h_drain,in - h_drain) + spill (h_spill - h_drain) - Q_tube(Ts)
+     w(Ts) the line law both ways (dP = dPd (w / wd)^2 (Pd / P_up), the opening x MOV / NRV), the back flow also choked at the smallest
+     bore; Q_tube by the NTU above; D_in the drain of the heater above, of the step before (it falls through its drain line). C dTs / dt
+     goes up and the right side goes down with Ts, so the root is one, found by bisection: no draw lag, no relaxation, one law.
+     At steady load C dTs = 0 gives the first law of the shell of before (w (h_ext - h_drain) + D_in (...) = m (h_out - h_in)) and
+     the shell at the line-drop pressure. dt = 0 (a page refresh): Ts stays. No state yet (a start, a load): the steady root. */
+  const SH = U.lpSh || (U.lpSh = {}),
+    dts = Math.max(0, +dt || 0),
+    sp = anPortGet(U, 'gs.spill'),
+    ms = sp && isFinite(sp.m) ? Math.max(0, +sp.m) : 0,
+    hsp = sp && isFinite(sp.h) ? +sp.h : 0,
+    O0 = W0.o || {},
+    up = { H1: 'H2', H2: 'H3', H3: null },
+    W = { lp3: 0, lp2: 0, lp1: 0, d1: 0, h1: 0, o: {}, x: { lp3: 0, lp2: 0, lp1: 0 } };
+  /* the stage answers the draw in the same solve: the turbine sets each stage pressure from the flow after it (turbine.js tbP1,
+     Stodola P^2 - P_next^2 ~ G^2), so a draw w lowers its stage: dPe/dw = -S, S = (P^2 - P_next^2) / (G P) + (P_next / P) S_next
+     (the draw also passes the stages below), G the flow after the extraction (lp.exh, then + the draws below, of the step before).
+     Solving the shell with the stage of the step before only (the turbine solves after) swings scan to scan; with S the pair is
+     one solve. Pe(w) = Pe0 - S (w - w0), w0 the draw the turbine used */
+  const Sx = {};
+  {
+    const ex = anPortGet(U, 'lp.exh'),
+      G5 = ex && isFinite(ex.m) ? Math.max(1, +ex.m) : 0,
+      Pc = isFinite(U.cdP) ? Math.max(0.01, U.cdP) : 0.07,
+      Pp = id => {
+        const x = anPortGet(U, id);
+        return x && isFinite(x.P) ? Math.max(0, x.P) : 0;
+      },
+      P1 = Pp('ext.lp1'),
+      P2 = Pp('ext.lp2'),
+      P3 = Pp('ext.lp3'),
+      w1 = (W0.x && +W0.x.lp1) || 0,
+      w2 = (W0.x && +W0.x.lp2) || 0,
+      G4 = G5 + w1,
+      G3 = G4 + w2;
+    Sx.H1 = G5 > 1 && P1 > Pc ? (P1 * P1 - Pc * Pc) / (G5 * P1) : 0;
+    Sx.H2 = G4 > 1 && P2 > P1 ? (P2 * P2 - P1 * P1) / (G4 * P2) + (P1 / P2) * Sx.H1 : 0;
+    Sx.H3 = G3 > 1 && P3 > P2 ? (P3 * P3 - P2 * P2) / (G3 * P3) + (P2 / P3) * Sx.H2 : 0;
+  }
   for (const [k, P0, ti, to, dca, mov, port, q, Pd, wd, nk] of K.h) {
     const e = anPortGet(U, port),
       Pe = e && isFinite(e.P) ? Math.max(0, e.P) : 0,
-      wr = Math.max(0, +W0[q] || 0) / (wd / 1000),
-      Ps = Pe > 0 ? Math.max(0.5 * Pe, Pe - (Pd - P0) * wr * wr * (Pd / Pe)) * thr(Math.min(pos(mov), nrv(nk))) : 0,
-      ts = anTsatA(Ps),
+      he = e && isFinite(e.h) ? e.h : 0,
+      F = AN_LPF[k],
+      op = Math.min(pos(mov), nrv(nk)),
+      g = thr(op),
+      kL = wd / 1000 / Math.sqrt((Pd - P0) * Pd) /* T/H per sqrt(ata2): the line law at HB case 1 */,
       Tsd = anTsatA(P0),
       sh = wL[k] ? wL[k].s : 1,
       ntu = m * sh > 0.1 ? (Math.log((Tsd - ti) / (Tsd - to)) * K.Fd) / (m * sh) : 50,
-      tt = ts > tin ? ts - (ts - tin) * Math.exp(-Math.min(50, ntu)) : tin,
-      tout = lag(k, tin + sh * (tt - tin)),
       h = hd.find(x => x.k === k),
-      drains = h && h.win > 0.5;
-    t[k] = { in: tin, out: tout, Ps, dr: lag(k + 'd', drains ? tin + dca : Math.max(tin, ts)) };
+      drains = h && h.win > 0.5,
+      u = up[k],
+      Din = u && O0[u] && isFinite(O0[u].m) ? O0[u].m : 0,
+      hIn = u && O0[u] && isFinite(O0[u].h) ? O0[u].h : 0,
+      msk = k === 'H1' ? ms : 0,
+      S = Sx[k] || 0,
+      w0 = W0.x && isFinite(W0.x[q]) ? +W0.x[q] : 0,
+      line = (P, Psh, Ts) => {
+        if (P >= Psh) return g * kL * Math.sqrt((P - Psh) * P);
+        const Pa = Psh * 98066.5,
+          rhoG = Pa / 1000 / (0.4615 * (Ts + 273.15)),
+          bmax = 3.6 * 0.668 * Math.sqrt(Pa * rhoG) * F.A * (op / 100) /* T/H, choked at the bore */;
+        return -Math.min(g * kL * Math.sqrt((Psh - P) * Psh), bmax);
+      },
+      /* the draw at a shell temperature: w = line(Pe0 - S (w - w0)), one root (the right side falls as w rises) */
+      flow = Ts => {
+        const Psh = anPsat(Ts);
+        if (!(S > 0)) return line(Pe, Psh, Ts);
+        let a = -400,
+          b = 400;
+        for (let j = 0; j < 36; j++) {
+          const c = (a + b) / 2;
+          if (line(Math.max(0, Pe - S * (c - w0)), Psh, Ts) > c) a = c;
+          else b = c;
+        }
+        return (a + b) / 2;
+      },
+      tt = Ts => (Ts > tin ? Ts - (Ts - tin) * Math.exp(-Math.min(50, ntu)) : tin),
+      Td = Ts => (drains ? Math.min(Ts, tin + dca) : Ts),
+      net = Ts => {
+        const w = flow(Ts),
+          hdr = anCdHw(Td(Ts)),
+          Q = ((m * sh) / 3.6) * (anCdHw(tt(Ts)) - anCdHw(tin));
+        let qs;
+        if (w >= 0) qs = (w / 3.6) * (he - hdr);
+        else {
+          const sat = steamSatM((anPsat(Ts) * 98066.5) / 1e6);
+          qs = (w / 3.6) * (sat.hg - sat.hf);
+        }
+        return qs + (Din / 3.6) * (hIn - hdr) + (msk / 3.6) * (hsp - hdr) - Q; /* kW into the shell water */
+      },
+      Ts0 = isFinite(SH[k]) ? SH[k] : null,
+      C = (1 / steamR1(Math.max(0.002, (anPsat(Ts0 != null ? Ts0 : Tsd) * 98066.5) / 1e6), (Ts0 != null ? Ts0 : Tsd) + 273.15).v) * F.V * 4.19;
+    let Ts;
+    if (Ts0 != null && !(dts > 0)) Ts = Ts0;
+    else {
+      const cT = Ts0 != null ? C / dts : 0,
+        f = T => cT * (T - (Ts0 != null ? Ts0 : T)) - net(T);
+      let lo = Math.min(tin, Ts0 != null ? Ts0 : tin) - 1,
+        hi = Math.max(Ts0 != null ? Ts0 : 0, Pe > 0 ? anTsatA(Pe) : tin, tin) + 1;
+      for (let j = 0; j < 20 && f(hi) < 0; j++) hi += 10;
+      for (let j = 0; j < 20 && f(lo) > 0; j++) lo -= 10;
+      for (let j = 0; j < 40; j++) {
+        const mid = (lo + hi) / 2;
+        if (f(mid) > 0) hi = mid;
+        else lo = mid;
+      }
+      Ts = (lo + hi) / 2;
+    }
+    SH[k] = Ts;
+    const w = flow(Ts),
+      tout = lag(k, tin + sh * (tt(Ts) - tin)),
+      dr = Td(Ts);
+    W.x[q] = w; /* the signed extraction draw (port ext.w_lp) */
+    W[q] = Math.max(0, w) + msk; /* the steam that condenses in the shell: what the drain system takes in (fw.js) */
+    W.o[k] = { m: Math.max(0, w) + Din + msk, h: anCdHw(dr) };
+    t[k] = { in: tin, out: tout, Ps: anPsat(Ts), ts: Ts, dr };
     tin = tout;
   }
   U.lpHt = t;
-  /* the draws, No.3 first (its drain goes down to No.2, then No.1, then the condenser) */
-  {
-    const W = { lp3: 0, lp2: 0, lp1: 0, d1: 0, h1: 0 };
-    let D = 0,
-      hin = 0;
-    for (let i = K.h.length - 1; i >= 0; i--) {
-      const [k, , , , , , port, q] = K.h[i],
-        x = t[k],
-        e = anPortGet(U, port),
-        hd1 = anCdHw(x.dr),
-        hs = e && isFinite(e.h) ? e.h : 0,
-        duty = m * Math.max(0, anCdHw(x.out) - anCdHw(x.in)) - (D > 0 ? D * Math.max(0, hin - hd1) : 0);
-      W[q] = hs - hd1 > 50 ? Math.max(0, duty / (hs - hd1)) : 0;
-      D += W[q];
-      hin = hd1;
-    }
-    W.d1 = D;
-    W.h1 = hin;
-    U.lpW = W;
-    anPortSet(U, 'ext.w_lp', { m: W.lp3 + W.lp2 + W.lp1, x: { lp3: W.lp3, lp2: W.lp2, lp1: W.lp1 } });
-  }
+  W.d1 = W.o.H1.m;
+  W.h1 = W.o.H1.h;
+  U.lpW = W;
+  anPortSet(U, 'ext.w_lp', { m: W.x.lp3 + W.x.lp2 + W.x.lp1, x: { lp3: W.x.lp3, lp2: W.x.lp2, lp1: W.x.lp1 } });
   /* Phase 11 (MEI): the cd.out port (ports.js) for the deaerator (NANA): the condensate after the No.3 LP heater through LCV-CD1104.
      m = the flow anDaQ solves (plant.js anCycFlows fda); P = the valve outlet P2 = deaerator PT-CD1104 + z2 + kN m^2 (plant.js
      anCdHydK, LCV-CD1104 sheet + deaerator O&M L15-2), absolute; T = the No.3 LP heater outlet; h = IAPWS-IF97 region 1 (steamR1).
@@ -3942,7 +4053,7 @@ function anUnitStep0(dt) {
   if (typeof tcsLinkStep === 'function') tcsLinkStep(U, dt);
   anHrWarm(U, dt); /* 3.2.3 SOHEE: LP bypass warming valve XV-HR1010-1, TT-HR1010 */
   const trip = (U.trip || []).some(t => +t.S.rt.v[t.n] > 0.5);
-  /* ---- 2.2.0-beta.17 (M4 step 4): the turbine black box (see AN_UNIT rollRate ...) ---- */
+  /* ---- 2.2.0-beta.17 (M4 step 4): the turbine black box (see AN_UNIT MWinit ...) ---- */
   const tb = U.tb || (U.tb = { st: 'load', rpm: 3600, icv: 1, xfer: true, tgt: NaN, aim: NaN }),
     dirt = (l, x) => {
       if (l && l.S.rt.force[l.n] === undefined && l.S.ext.includes(l.n) && l.S.rt.ext[l.n] !== x) l.S.rt.ext[l.n] = x;
@@ -4024,9 +4135,9 @@ function anUnitStep0(dt) {
   if (U.tc) {
     /* the ATS sets the speed and the ICV (tcs.js); a stopped machine coasts down to the turning gear */
     if (!U.turb && tb.rpm > 4) tb.rpm = Math.max(0, tb.rpm - (3600 * dt) / 600);
-  } else if (tb.st === 'roll' && !tb.rej) {
-    tb.rpm = Math.min(3600, tb.rpm + (U.rollRate * dt) / 60);
-    tb.icv = Math.min(U.icvRoll, tb.icv + (U.icvRoll * dt) / 60);
+    /* Phase 11 RIN 2026-11-28: the kinematic roll without the ATS (rpm at rollRate 120 rpm/min, ICV at icvRoll 0.13, NO-SOURCE) is
+       deleted: the roll comes only from the ATS (tcs.js TURBINE PREPARATION sets 'roll' with U.tc, and the ATS sets the speed and the
+       ICV); without U.tc (U.tco, the oil-only state) 'roll' is reached only by a load rejection, where the swing equation drives it */
   } else if (!U.turb) tb.rpm = Math.max(0, tb.rpm - (3600 * dt) / 600);
   /* turbine valves (TCS): MW to the turbine master demand */
   /* DCS control mode ON (CCS, 33.PNG): the TCS follows the turbine master of the DCS (EIC-TM output, AO0359 TO TCS; in AUTO it is
@@ -4218,9 +4329,11 @@ function anUnitStep0(dt) {
     /* the bed heat balance (AN_BB above): the bed, the furnace exit gas and the heat of the water walls, no fitted law */
     const B = AN_BB,
       ts = tsatOf(U.Pd),
-      lkA = (U.aphLk || 0) * (typeof AN_APK !== 'undefined' ? [AN_APK.pa, AN_APK.sa, 0] : [0, 0, 0]),
-      /* beta.21: the air heater seal leak (boiler.js AN_APK) goes round the furnace: the bed gets the measured air less it */
-      av = (U.tafS && U.taf.length === 3 ? U.taf.map(n => Math.max(0, +U.tafS.rt.v[n] || 0)) : [taf, 0, 0]).map((x, i) => Math.max(0, x - (lkA[i] || 0))),
+      av0 = U.tafS && U.taf.length === 3 ? U.taf.map(n => Math.max(0, +U.tafS.rt.v[n] || 0)) : [taf, 0, 0],
+      /* beta.21 / Phase 11 AOI: the air heater seal leak (boiler.js AN_APK, design + fault) goes round the furnace: the bed gets the
+         measured air (fan inlet transmitters) less it */
+      lkA = typeof anAphLeak === 'function' && U.taf.length === 3 ? anAphLeak(U, av0) : [0, 0, 0],
+      av = av0.map((x, i) => Math.max(0, x - (lkA[i] || 0))),
       tPa = isFinite(U.aphPa) ? U.aphPa : U.Tamb,
       tSa = isFinite(U.aphSa) ? U.aphSa : U.Tamb,
       dW = U.Tb - U.Tw /* bed over the wall water, both signs */,
