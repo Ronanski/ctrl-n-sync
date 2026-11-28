@@ -5,7 +5,7 @@
    of the design point (rule 0, RULES.md 3.12). The reheat / bypass part of anUnitStep stays in unit.js (its own section). Joined into
    the one analog script before unit.js (src/analog/order.list). */
 /* 2.2.0-beta.17 (M4 step 4): the operator on the TCS panel (outside the DCS): 'roll' (open the stop valves, IP start mode, rpm up
-   at rollRate), 'sync' (at 3600 rpm: GCB closed, initial load MWinit), 'loadup' (target MW at rateUp MW/min; default 45 = NORMAL
+   by the ATS), 'sync' (at 3600 rpm: GCB closed, initial load MWinit), 'loadup' (target MW at rateUp MW/min; default 45 = NORMAL
    OPERATION). Returns the state or a reason ('' = done) */
 /* 3.2.3-beta.152 S149-3 / S149-4 (Mina, beta.149 normal shutdown): ATS SHUT-DOWN was refused ("Finish step 7 NORMAL OPERATION") and the
    answer went only to the status bar (the TCS / Field menu, the Training buttons), so the press looked silent; a Turbine trip that was not

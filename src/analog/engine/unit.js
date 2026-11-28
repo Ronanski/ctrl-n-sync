@@ -184,7 +184,7 @@ const AN_UNIT = {
   /* Crh (the reheater steam storage) and rhb (RH blow-off) are turbine.js AN_VLV.Crh / rhbT (engine constants, Phase 11 rank 9) */
   /* 2.2.0-beta.17 (M4 step 4, turbine roll / sync / load up; PR-OPE-5002 4.4 ~ 4.6): the turbine and its TCS are a black box outside
      the DCS drawings (the DCS only sees the TCS digital inputs of the I/O list and the TARGET MW feedback AI0420). State U.tb:
-     st 'off' (stop valves shut) -> 'roll' (rpm ramps at rollRate, IP START MODE: the ICV lets roll steam from the hot reheat, icvRoll)
+     st 'off' (stop valves shut) -> 'roll' (the ATS of tcs.js sets the speed and the ICV)
      -> 'sync' (3600 rpm, the TCS closes the GCB: I.0931 = 1 / I.0932 = 0, INITIAL LOAD 4.5 MW on the ICV) -> 'load' (LOAD UP
      at rate MW/min = 5 % of 150 MW per minute; the HP control valves open as the flow demand passes the CV opening bias (anTbFlow), ICV -> CV
      TRANSFER COMPLETE I.0418 = 1, "transfer at 20 MW or HP bypass closed"). While the generator is on the grid the MW is the HP
@@ -197,8 +197,6 @@ const AN_UNIT = {
      the pulse O.0178 of ABC-001C while I.0081, reset by O.0179 or by the reset group (permissive lost); while ON the TCS target load
      tracks GEN. MW (TCE p.134), so at OFF the TCS holds the load it has. These inputs are written by the model in every plant state (3.2.5-beta.8; before only in a start-up, U.cold); the snapshot of
      "Start at 150 MW" gives the first values only. */
-  rollRate: 120 /* rpm/min, PR-OPE-5002 cold start (the holds at 1800 / 3600 rpm of the procedure are the operator's; not modelled) */,
-  icvRoll: 0.13 /* ICV opening for the roll steam (about 14 T/H at 7.6 kg/cm2 reheat, NO-SOURCE: the SOP gives CV 10 / 3 % at 400 rpm, no ICV opening) */,
   /* 3.2.3-beta.240 (live Cold start Load up): the TCS flow demand splits to the ICV and the CVs (TCE 331DM09784 p.141 TCE207 FLOW
      CONTROL(2), A007 HEAT SOAK CONTROL: CV OPENING BIAS SG C008 K:20.0 %, ICV MIN OPENING K:-0.5 %, RI / RD 0.03 % per 30 ms cycle = 1 %/s;
      p.144 TCE212 / p.145 TCE214: CV and ICV demand through FG (PARA-LIST, NO-SOURCE) to the VALVE CONTROL MT1, ICV opening speed SG C007
@@ -330,7 +328,7 @@ const AN_RHPIPE = {
   UA: (111.651 * 570 + 25.405 * 475 + 27.392 * 436) / (538 - 35) / 1000 /* kW/K */
 };
 
-const AN_UNIT_K = ['tcs', 'rollRate', 'icvRoll', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
+const AN_UNIT_K = ['tcs', 'cvBias', 'fdRate', 'vRate', 'tauT', 'tauO2', 'mcr', 'droop', 'flowSpan', 'Hgen', 'dbRpm', 'rbIP', 'rbT', 'Tamb', 'shM', 'rhM', 'shUA', 'rhUA', 'ao', 'Tburn0', 'Tburn1', 'Cw', 'kcool', 'kamb', 'tauB', 'Tb0', 'vacUp', 'vacDn'];
 /* the AI blocks of one address on every sheet (station | address, like "Start at 150 MW") */
 function anUnitAIs(key) {
   const out = [];
@@ -3944,7 +3942,7 @@ function anUnitStep0(dt) {
   if (typeof tcsLinkStep === 'function') tcsLinkStep(U, dt);
   anHrWarm(U, dt); /* 3.2.3 SOHEE: LP bypass warming valve XV-HR1010-1, TT-HR1010 */
   const trip = (U.trip || []).some(t => +t.S.rt.v[t.n] > 0.5);
-  /* ---- 2.2.0-beta.17 (M4 step 4): the turbine black box (see AN_UNIT rollRate ...) ---- */
+  /* ---- 2.2.0-beta.17 (M4 step 4): the turbine black box (see AN_UNIT MWinit ...) ---- */
   const tb = U.tb || (U.tb = { st: 'load', rpm: 3600, icv: 1, xfer: true, tgt: NaN, aim: NaN }),
     dirt = (l, x) => {
       if (l && l.S.rt.force[l.n] === undefined && l.S.ext.includes(l.n) && l.S.rt.ext[l.n] !== x) l.S.rt.ext[l.n] = x;
@@ -4026,9 +4024,9 @@ function anUnitStep0(dt) {
   if (U.tc) {
     /* the ATS sets the speed and the ICV (tcs.js); a stopped machine coasts down to the turning gear */
     if (!U.turb && tb.rpm > 4) tb.rpm = Math.max(0, tb.rpm - (3600 * dt) / 600);
-  } else if (tb.st === 'roll' && !tb.rej) {
-    tb.rpm = Math.min(3600, tb.rpm + (U.rollRate * dt) / 60);
-    tb.icv = Math.min(U.icvRoll, tb.icv + (U.icvRoll * dt) / 60);
+    /* Phase 11 RIN 2026-11-28: the kinematic roll without the ATS (rpm at rollRate 120 rpm/min, ICV at icvRoll 0.13, NO-SOURCE) is
+       deleted: the roll comes only from the ATS (tcs.js TURBINE PREPARATION sets 'roll' with U.tc, and the ATS sets the speed and the
+       ICV); without U.tc (U.tco, the oil-only state) 'roll' is reached only by a load rejection, where the swing equation drives it */
   } else if (!U.turb) tb.rpm = Math.max(0, tb.rpm - (3600 * dt) / 600);
   /* turbine valves (TCS): MW to the turbine master demand */
   /* DCS control mode ON (CCS, 33.PNG): the TCS follows the turbine master of the DCS (EIC-TM output, AO0359 TO TCS; in AUTO it is
