@@ -3905,7 +3905,8 @@ function anHxRun(U, dt, tsat) {
     qCyB = K.kAB * (U.Tcy - U.TcyB); /* kW, hot face to the back */
   U.Tcy += ((qCy - qCyB) * dt) / K.mF;
   U.TcyB += (qCyB * dt) / K.mB;
-  const tG = gcp > 0.01 ? U.tgF - qCy / gcp : U.Tcy; /* gas into the backpass */
+  /* + the coal heat released in the cyclones (cfb.js AN_PC, set by the bed balance) */
+  const tG = gcp > 0.01 ? U.tgF - qCy / gcp + (U.qPc > 0 ? U.qPc : 0) / gcp : U.Tcy; /* gas into the backpass */
   U.tgB = tG;
   /* the cyclone outlet thermocouples TT-FG1095-A / B read the gas leaving the cyclones */
   U.gCy = [tG, tG];
@@ -4431,7 +4432,8 @@ function anUnitStep0(dt) {
       qWu = sus.qW /* kW, the suspension to the upper walls (both signs) */,
       qSol = qWu + qRW /* kW, to the furnace walls: the upper walls + through the lower refractory */,
       qPan = isFinite(U.hxQp) ? U.hxQp : 0 /* kW, to the in-furnace SH panels (hx.js, last scan, from Tu) */,
-      qFuel = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) + oil * B.lhvO,
+      qPc = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) * AN_PC.f /* kW, the coal heat released in the cyclones (cfb.js AN_PC) */,
+      qFuel = Fb * B.lhvC * (U.coalK || 1) * (1 - B.fUC) * (1 - AN_PC.f) + oil * B.lhvO,
       qAirG =
         mGas * (hFg(U.Tb) - hFg(U.Tamb)) -
         (av[0] / 3.6) * (hAir(tPa) - hAir(U.Tamb)) -
@@ -4457,7 +4459,8 @@ function anUnitStep0(dt) {
     /* the suspension gives qWu + qPan = Cs (Tb - tgF) on its way up; of it the gas share gcp (Tb - tgF) is the gas cooling from the bed to
        the exit, already in qAirG (the gas heated to Tb): the bed pays the solids share only, and the gas leaves at tgF (beta.256) */
     /* 1.0.0-beta.366 (JENNIE, D31): the terms of this balance, kW and kJ/K, for the energy check of tests/regress/bed_heatup.js */
-    U.bbQ = { fuel: qFuel, lm: qLm, tl: qTl, airG: qAirG, sus: qWu + qPan - gcp * (U.Tb - sus.tgF), br: qBR, Cb };
+    U.qPc = qPc;
+    U.bbQ = { fuel: qFuel, pc: qPc, lm: qLm, tl: qTl, airG: qAirG, sus: qWu + qPan - gcp * (U.Tb - sus.tgF), br: qBR, Cb };
     U.Tb = Math.max(U.Tamb, U.Tb + ((qFuel - qLm - qTl - qAirG - (qWu + qPan - gcp * (U.Tb - sus.tgF)) - qBR) * dt) / Cb);
     U.Trf = Trf + ((qBR - qRW) * dt) / B.mRef;
     /* the furnace exit gas and the mean of the upper furnace (the panels of hx.js take Tu): the suspension above */

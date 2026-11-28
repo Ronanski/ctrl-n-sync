@@ -230,8 +230,18 @@ const judge = (v, tg, tol, kind) => {
         /* 2026-11-28 (minute-sample sweep): one 1 % press per 3 min could not follow a large error (MSP 127 -> 39 ata while the
            SV slid to 99, then 39 -> 131 at 45 MW, a ~1 h cycle): the operator presses as many 1 % steps as the size of d asks
            (one per 3 units of d, at most 5), still once per 3 min, so the small-error behaviour above is the same */
-        const np = Math.max(1, Math.min(5, Math.round(Math.abs(d) / 3)));
-        if (OP.n - (OP.last || -9) >= 3 && Math.abs(d) >= 0.5 && (OP.last = OP.n)) for (let k = 0; k < np; k++) await fpBtn('ABC-001C', 'HIC-BM', d > 0 ? '▲' : '▼');
+        /* 2026-11-28 (RIN sweep on 6aefec0: on the TCS ramp down the MSP stayed 13 ~ 14 kg/cm2 above the sliding SV, the firing by the
+           pressure error alone lags the load): the operator also moves the firing with the load the TCS has taken off since the last
+           press, in proportion (first principles: the steam, so the fuel, scales with the load; no curve, so the coal row is not fed
+           its own target): ff = MV x dMW / MW, in 1 % presses. The pressure part (d / 3 presses) is as before */
+        if (OP.mwRef == null) OP.mwRef = s.MW;
+        const ff = isFinite(s.bmMv) && s.MW > 1 ? (s.bmMv * (s.MW - OP.mwRef)) / s.MW : 0,
+          q = d / 3 + ff,
+          np = Math.max(1, Math.min(5, Math.round(Math.abs(q))));
+        if (OP.n - (OP.last || -9) >= 3 && (Math.abs(d) >= 0.5 || Math.abs(ff) >= 0.5) && (OP.last = OP.n)) {
+          OP.mwRef = s.MW;
+          for (let k = 0; k < np; k++) await fpBtn('ABC-001C', 'HIC-BM', q > 0 ? '▲' : '▼');
+        }
       }
       /* the O2 trim AICFG112 (ABC-002) is forced MANUAL below 220 T/H (M.0102 / M.0103); the operator puts it at 50 % = neutral
          (OPERATOR_GUIDE 5.4 / 7.7, uat check M5). Left at its last MV the trim holds the air off its demand, and the total air cross
@@ -266,20 +276,25 @@ const judge = (v, tg, tol, kind) => {
     OP.aim = 45;
     /* the TCS ramp to the aim first (0.6 MW/min below 220 T/H), then the settle time */
     /* the operator slides the PIC-COBM SV with the load on the HB sliding pressure line (PPE-14-0725: 126 ata from 60 % load down to
-       98.9 ata at 30 %), 0.5 kg/cm2 a minute at most, during the ramp too (the sweep judges every minute). HB is ATA, the SV is gauge
-       (- 1.0332); before 2026-11-27 the SV went to 98.9 gauge after the ramp */
+       98.9 ata at 30 %), during the ramp too (the sweep judges every minute). HB is ATA, the SV is gauge (- 1.0332); before 2026-11-27
+       the SV went to 98.9 gauge after the ramp. Rate limit: no design pressure-rate or load-rate spec exists (FHI P2 Sect 7 / Sect 8
+       searched, YUA read /mnt/project-files/phase-msp-fhi-reads-2026-11-28.md); the only printed rule is the drum saturation
+       temperature limit 83 C/h falling (FHI Fig. 1, Sect 8 Tab 9). DERIVED: at 100 ~ 126 kg/cm2G dTsat/dP ~ 0.66 C per kg/cm2, so
+       83 / 60 / 0.66 = 2.1 kg/cm2 a minute falling (was 0.5, NO-SOURCE). FHI Fig. 11 (SH outlet 125.6 ~ 129 kg/cm2G from 40 to 100 %,
+       100.0 at 30 %) agrees with the HB line the goal follows */
     const SJ0 = require(path.join(root, 'tools/model/sweep-judge.cjs')), PMS = SJ0.CURVES.find(c => c[1] === 'Pms')[2];
+    const PMS_FALL = 2.1; /* kg/cm2 a minute, DERIVED above from the FHI 83 C/h saturation limit */
     const slide = async () => {
       const s = await st(), y = SJ0.at(PMS, Math.max(PMS[0][0], (s.MW / 150) * 100));
       if (y == null || !isFinite(s.sv)) return true;
-      const goal = y - 1.0332, sv = s.sv > goal ? Math.max(goal, s.sv - 0.5) : s.sv;
+      const goal = y - 1.0332, sv = s.sv > goal ? Math.max(goal, s.sv - PMS_FALL) : s.sv;
       if (sv < s.sv) await page.evaluate(v => TOP.auto('PIC-COBM', v), sv);
       return sv <= goal + 1e-6;
     };
     for (let m = 0; m < 120 && Math.abs((await st()).MW - OP.aim) > 1; m++) { await slide(); await runOp(1); }
     /* 1.0.0-beta.356 (D15, user 2026-11-24 "Ang design ang masusunod"): the design main steam pressure of the 45 MW point is the HB
        case 7 sliding pressure (PPE-14-0725, 98.9, the Pms target of this column). The operator slides
-       the PIC-COBM SV down 0.5 kg/cm2 a minute on its faceplate (no step: a step to 98.9 cut the coal to 17 T/H and tripped on
+       the PIC-COBM SV down at most PMS_FALL kg/cm2 a minute on its faceplate (no step: a step to 98.9 cut the coal to 17 T/H and tripped on
        FURNACE TEMP. INADEQUATE FOR COAL FIRING) */
     for (let m = 0; m < 80 && !(await slide()); m++) await runOp(1);
     await runOp(SETTLE);
