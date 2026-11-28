@@ -71,15 +71,20 @@ const judge = (v, tg, tol, kind) => {
       }
       if (Math.abs(y - s.sv) >= 1) await page.evaluate(v => TOP.auto('DPICFG108', v), y);
     };
+    /* one plant minute at a time, so the sweep has a sample every minute also inside run(SETTLE) (before 2026-11-28 a run(60) gave ONE
+       sample after 60 min: the 150 -> 90 MW ramp was not sampled and read as a one-minute load drop) */
     const run = async m => {
-      await run1(m);
-      dpAcc += m;
-      if (dpAcc >= 1) { dpAcc = 0; await bedDp(); }
-      if (!SWEEP) return;
-      swAcc += m;
-      if (swAcc >= 1) {
-        swAcc = 0;
-        SW.push(await snap());
+      for (let left = m; left > 1e-9; left -= 1) {
+        const d = Math.min(1, left);
+        await run1(d);
+        dpAcc += d;
+        if (dpAcc >= 1) { dpAcc = 0; await bedDp(); }
+        if (!SWEEP) continue;
+        swAcc += d;
+        if (swAcc >= 1) {
+          swAcc = 0;
+          SW.push(await snap());
+        }
       }
     };
     const snap = () => page.evaluate(() => {
